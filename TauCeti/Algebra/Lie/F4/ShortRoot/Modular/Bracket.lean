@@ -14,13 +14,13 @@ public import TauCeti.Algebra.AlgebraicGroup.ConstantMultiplication.Basic
 
 The characteristic-two short-root ideal is a twenty-six-dimensional Lie algebra. Its bracket
 has constant structure matrices in the distinguished weight basis. The numbered root
-exponentials and the weight torus preserve this tensor over every commutative coefficient
-algebra. These polynomial identities let the generated short-root group act by automorphisms
-of the bracket, and constrain its tangent matrices to be derivations.
+exponentials preserve this tensor over every commutative coefficient algebra. These polynomial
+identities let the generated short-root group act by automorphisms of the bracket, and constrain
+its tangent matrices to be derivations.
 
 The root calculation uses `f4ShortRootExponential_toMatrix_mul_adjoint` and
-`f4RootExponential_intertwines`; the torus calculation uses the integral weight support of
-`f4ShortRootAdjointMatrix`. No reduction of the character lattice modulo two is involved.
+`f4RootExponential_intertwines`. The bracket coefficients also respect the integral weight
+support of `f4ShortRootAdjointMatrix`; no reduction of the character lattice modulo two is involved.
 
 ## References
 
@@ -37,8 +37,6 @@ open TauCeti.F4ShortRoot
 
 noncomputable section
 
-attribute [local instance high] Algebra.toModule
-
 /-- The matrix of bracketing on the left with the `a`th distinguished short-root ideal vector. -/
 def f4ShortRootBracketMatrix (a : Fin 26) : Matrix (Fin 26) (Fin 26) (ZMod 2) :=
   f4ShortRootAdjointMatrix (f4ShortRootLieIdealBasis a : f4ModularChevalleyLieAlgebra)
@@ -48,6 +46,20 @@ theorem f4ShortRootBracketMatrix_def (a : Fin 26) :
     f4ShortRootBracketMatrix a =
       f4ShortRootAdjointMatrix (f4ShortRootLieIdealBasis a : f4ModularChevalleyLieAlgebra) :=
   (rfl)
+
+/-- An entry of the bracket tensor is the corresponding coefficient in the ambient
+Chevalley basis. -/
+@[simp] theorem f4ShortRootBracketMatrix_apply (a i j : Fin 26) :
+    f4ShortRootBracketMatrix a i j =
+      f4ModularChevalleyBasis.repr
+        (⁅(f4ShortRootLieIdealBasis a : f4ModularChevalleyLieAlgebra),
+          (f4ShortRootLieIdealBasis j : f4ModularChevalleyLieAlgebra)⁆ :
+          f4ModularChevalleyLieAlgebra)
+        (f4ShortRootBasisCoordinate i) := by
+  exact (congrFun (congrFun (f4ShortRootBracketMatrix_def a) i) j).trans
+    (f4ShortRootAdjointMatrix_apply _ i j)
+
+attribute [local instance high] Algebra.toModule
 
 /-- A nonzero bracket coefficient adds the integral weights of its inputs. -/
 theorem f4ShortRootBracketMatrix_weight_support (a i j : Fin 26)
@@ -111,7 +123,7 @@ private theorem imageStructureMatrix_eq_idealAdjointMatrix
 
 /-- Every numbered root exponential preserves the short-root ideal's bracket tensor after
 arbitrary extension of scalars from `𝔽₂`. -/
-theorem f4ShortRootBracketMatrix_preserves_rootSubgroupPoints
+theorem preservesBracket_rootSubgroupPoints
     (k : Fin 4 ⊕ Fin 4) (u : Multiplicative A) :
     ConstantMultiplication.Preserves (ZMod 2) 26 f4ShortRootBracketMatrix
       ((rootSubgroupPoints k A u : Matrix.GeneralLinearGroup (Fin 26) A) :
@@ -130,29 +142,6 @@ theorem f4ShortRootBracketMatrix_preserves_rootSubgroupPoints
         f4ShortRootExponential_toMatrix_mul_adjoint k (Multiplicative.toAdd u)
           (f4ShortRootBaseChangeInclusion (b a))
     _ = _ := congrArg (· * M) (imageStructureMatrix_eq_idealAdjointMatrix e a).symm
-
-/-- Every weight-torus matrix preserves the short-root ideal's bracket tensor over any
-commutative `𝔽₂`-algebra. -/
-theorem f4ShortRootBracketMatrix_preserves_diagonal_torusCharacter (s : Fin 4 → Aˣ) :
-    ConstantMultiplication.Preserves (ZMod 2) 26 f4ShortRootBracketMatrix
-      (Matrix.diagonal fun i => (torusCharacter s (f4ShortRootWeight i) : A)) := by
-  classical
-  rw [ConstantMultiplication.preserves_def]
-  intro a
-  have himage : ConstantMultiplication.imageStructureMatrix (ZMod 2) 26
-      f4ShortRootBracketMatrix
-        (Matrix.diagonal fun i => (torusCharacter s (f4ShortRootWeight i) : A)) a =
-      (torusCharacter s (f4ShortRootWeight a) : A) •
-        (f4ShortRootBracketMatrix a).map (algebraMap (ZMod 2) A) := by
-    simp [ConstantMultiplication.imageStructureMatrix_def, Matrix.diagonal_apply]
-  rw [himage]
-  ext i j
-  simp only [Matrix.diagonal_mul, Matrix.mul_diagonal, Matrix.smul_apply, Matrix.map_apply,
-    smul_eq_mul]
-  by_cases h : f4ShortRootBracketMatrix a i j = 0
-  · simp [h]
-  · rw [f4ShortRootBracketMatrix_weight_support a i j h, torusCharacter_add, Units.val_mul]
-    ring
 
 end
 
