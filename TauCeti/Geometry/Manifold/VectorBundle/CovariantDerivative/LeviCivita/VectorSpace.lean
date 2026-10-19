@@ -218,6 +218,23 @@ theorem leviCivitaConnection_eq_fderiv_model_space
     hV u 0 (fun w ↦ by simp)
   simpa only [add_zero] using h
 
+/-- For the standard Riemannian metric on a finite-dimensional real inner-product space, constant
+vector fields are parallel: their Levi-Civita derivative vanishes. -/
+theorem leviCivitaConnection_const_model_space
+    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+    (a x : F) :
+    leviCivitaConnection (modelWithCornersSelf ℝ F) F
+      (fun y ↦ (tangentSpaceCastModel (modelWithCornersSelf ℝ F) y).symm a) x = 0 := by
+  ext u
+  apply (tangentSpaceCastModel (modelWithCornersSelf ℝ F) x).injective
+  have h := leviCivitaConnection_eq_fderiv_model_space (x := x)
+    (V := fun y ↦ (tangentSpaceCastModel (modelWithCornersSelf ℝ F) y).symm a)
+    (differentiableAt_const a) (tangentSpaceCastModel (modelWithCornersSelf ℝ F) x u)
+  -- The field is constant once its tangent spaces are read as `F`.
+  have hc : fderiv ℝ (fun y ↦ (tangentSpaceCastModel (modelWithCornersSelf ℝ F) y).symm a) x = 0 :=
+    fderiv_const_apply a
+  simpa [hc] using h
+
 end Christoffel
 
 end TauCeti.Manifold
