@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Distributions.Exponential.Basic
 import TauCeti.MeasureTheory.Measure.Measurability
 import TauCeti.Probability.Distributions.Gamma.Basic
+import Mathlib.Analysis.Calculus.Deriv.MeanValue
 
 /-!
 # The generalized Pareto distribution
@@ -48,7 +49,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory ProbabilityTheory
+open MeasureTheory ProbabilityTheory Set
 
 namespace TauCeti.Probability
 
@@ -84,6 +85,75 @@ theorem measurable_generalizedParetoMap_right (s ξ : ℝ) :
     Measurable (generalizedParetoMap s ξ) :=
   measurable_generalizedParetoMap.comp
     ((measurable_const.prodMk measurable_const).prodMk measurable_id)
+
+/-- The generalized Pareto transformation has derivative `s * exp (ξ * e)` at every input. -/
+theorem hasDerivAt_generalizedParetoMap (s ξ e : ℝ) :
+    HasDerivAt (generalizedParetoMap s ξ) (s * Real.exp (ξ * e)) e := by
+  by_cases hξ : ξ = 0
+  · subst ξ
+    convert (hasDerivAt_id e).const_mul s using 1
+    · exact funext (generalizedParetoMap_zero s)
+    · simp
+  · have hfun : generalizedParetoMap s ξ =
+        fun e ↦ s * (Real.exp (ξ * e) - 1) / ξ :=
+      funext (generalizedParetoMap_of_shape_ne_zero hξ s)
+    rw [hfun]
+    convert ((((hasDerivAt_id e).const_mul ξ).exp.sub_const 1).const_mul s).div_const ξ using 1 <;>
+      simp only [id_eq, mul_one]
+    field_simp
+
+/-- At positive scale, the generalized Pareto transformation is strictly increasing. -/
+theorem strictMono_generalizedParetoMap {s : ℝ} (hs : 0 < s) (ξ : ℝ) :
+    StrictMono (generalizedParetoMap s ξ) :=
+  strictMono_of_hasDerivAt_pos (hasDerivAt_generalizedParetoMap s ξ)
+    (fun _ ↦ mul_pos hs (Real.exp_pos _))
+
+/-- At positive scale, the generalized Pareto transformation sends positive inputs to positive
+values. -/
+theorem generalizedParetoMap_pos {s : ℝ} (hs : 0 < s) (ξ : ℝ) {e : ℝ} (he : 0 < e) :
+    0 < generalizedParetoMap s ξ e := by
+  have hzero : generalizedParetoMap s ξ 0 = 0 := by
+    by_cases hξ : ξ = 0
+    · simp [hξ]
+    · simp [generalizedParetoMap_of_shape_ne_zero hξ]
+  simpa only [hzero] using strictMono_generalizedParetoMap hs ξ he
+
+/-- The affine support factor of the generalized Pareto transformation is exponential at nonzero
+scale. -/
+theorem one_add_mul_generalizedParetoMap_div {s : ℝ} (hs : s ≠ 0) (ξ e : ℝ) :
+    1 + ξ * generalizedParetoMap s ξ e / s = Real.exp (ξ * e) := by
+  by_cases hξ : ξ = 0
+  · simp [hξ]
+  · rw [generalizedParetoMap_of_shape_ne_zero hξ]
+    field_simp
+    ring
+
+/-- At positive scale, the image of the positive half-line is the open generalized Pareto
+support. -/
+theorem image_generalizedParetoMap_Ioi {s : ℝ} (hs : 0 < s) (ξ : ℝ) :
+    generalizedParetoMap s ξ '' Ioi 0 = {x | 0 < x ∧ 0 < 1 + ξ * x / s} := by
+  ext x
+  constructor
+  · rintro ⟨e, he, rfl⟩
+    refine ⟨generalizedParetoMap_pos hs ξ he, ?_⟩
+    rw [one_add_mul_generalizedParetoMap_div hs.ne']
+    exact Real.exp_pos _
+  · rintro ⟨hx, hb⟩
+    by_cases hξ : ξ = 0
+    · subst ξ
+      exact ⟨x / s, div_pos hx hs, by rw [generalizedParetoMap_zero, mul_div_cancel₀ _ hs.ne']⟩
+    · refine ⟨Real.log (1 + ξ * x / s) / ξ, ?_, ?_⟩
+      · rcases lt_or_gt_of_ne hξ with hξ | hξ
+        · exact div_pos_of_neg_of_neg (Real.log_neg hb (by
+            have := div_neg_of_neg_of_pos (mul_neg_of_neg_of_pos hξ hx) hs
+            linarith)) hξ
+        · exact div_pos (Real.log_pos (by
+            have := div_pos (mul_pos hξ hx) hs
+            linarith)) hξ
+      · rw [generalizedParetoMap_of_shape_ne_zero hξ, mul_div_cancel₀ _ hξ,
+          Real.exp_log hb]
+        field_simp
+        ring
 
 /-- The generalized Pareto measure with scale `s` and shape `ξ`.
 
