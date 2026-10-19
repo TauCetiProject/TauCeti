@@ -46,7 +46,7 @@ instance _root_.AlgebraicGeometry.Scheme.isAffineHom_frobenius
     simpa only [Scheme.frobenius_preimage] using hU
 
 /-- Absolute Frobenius is integral, without any finiteness or reducedness hypothesis. -/
-instance _root_.AlgebraicGeometry.Scheme.isIntegralHom_frobenius
+instance AlgebraicGeometry.absoluteFrobenius_integral
     (hX : (p : Γ(X, ⊤)) = 0) : IsIntegralHom (X.frobenius p hX) where
   isIntegral_app U _ := by
     rw [Scheme.Hom.app_eq_appLE]
@@ -97,7 +97,7 @@ instance _root_.AlgebraicGeometry.Scheme.universallyInjective_frobenius
   exact h
 
 /-- Absolute Frobenius remains a homeomorphism after every base change. -/
-instance _root_.AlgebraicGeometry.Scheme.isUniversalHomeomorphism_frobenius
+instance AlgebraicGeometry.absoluteFrobenius_universalHomeomorphism
     (hX : (p : Γ(X, ⊤)) = 0) : AlgebraicGeometry.IsUniversalHomeomorphism (X.frobenius p hX) :=
   (AlgebraicGeometry.isUniversalHomeomorphism_iff_isIntegralHom_universallyInjective_surjective
     _).mpr
@@ -106,7 +106,7 @@ instance _root_.AlgebraicGeometry.Scheme.isUniversalHomeomorphism_frobenius
 variable (π : X ⟶ S) (hS : (p : Γ(S, ⊤)) = 0)
 
 /-- Relative Frobenius is integral over an arbitrary characteristic-`p` base. -/
-instance _root_.AlgebraicGeometry.Scheme.Hom.isIntegralHom_relativeFrobenius :
+instance AlgebraicGeometry.relativeFrobenius_integral :
     IsIntegralHom (π.relativeFrobenius p hS) := by
   have : IsIntegralHom (π.relativeFrobenius p hS ≫ pullback.fst _ _) := by
     rw [Scheme.Hom.relativeFrobenius_fst]
@@ -140,7 +140,7 @@ instance _root_.AlgebraicGeometry.Scheme.Hom.surjective_relativeFrobenius :
 
 /-- Relative Frobenius remains a homeomorphism after every base change, with no flatness or
 perfectness hypothesis on the base. -/
-instance _root_.AlgebraicGeometry.Scheme.Hom.isUniversalHomeomorphism_relativeFrobenius :
+instance AlgebraicGeometry.relativeFrobenius_universalHomeomorphism :
     AlgebraicGeometry.IsUniversalHomeomorphism (π.relativeFrobenius p hS) :=
   (AlgebraicGeometry.isUniversalHomeomorphism_iff_isIntegralHom_universallyInjective_surjective
     _).mpr

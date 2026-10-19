@@ -85,6 +85,24 @@ instance (f : X ⟶ Y) [IsUniversalHomeomorphism f] : UniversallyInjective f := 
   exact MorphismProperty.universally_mono h f
     IsUniversalHomeomorphism.universally_isHomeomorph
 
+/-- An explicit universal-homeomorphism hypothesis implies surjectivity on points. -/
+theorem IsUniversalHomeomorphism.surjective {f : X ⟶ Y}
+    (h : IsUniversalHomeomorphism f) : Surjective f := by
+  let := h
+  infer_instance
+
+/-- An explicit universal-homeomorphism hypothesis implies universal closedness. -/
+theorem IsUniversalHomeomorphism.universallyClosed {f : X ⟶ Y}
+    (h : IsUniversalHomeomorphism f) : UniversallyClosed f := by
+  let := h
+  infer_instance
+
+/-- An explicit universal-homeomorphism hypothesis implies universal injectivity. -/
+theorem IsUniversalHomeomorphism.universallyInjective {f : X ⟶ Y}
+    (h : IsUniversalHomeomorphism f) : UniversallyInjective f := by
+  let := h
+  infer_instance
+
 /-- The second pullback projection is a universal homeomorphism when the first input map is. -/
 instance (f : X ⟶ S) (g : Y ⟶ S) [IsUniversalHomeomorphism f] :
     IsUniversalHomeomorphism (pullback.snd f g) :=
@@ -156,7 +174,8 @@ instance (f : X ⟶ Y) (g : Y ⟶ Z) [IsUniversalHomeomorphism f]
   MorphismProperty.comp_mem @IsUniversalHomeomorphism f g inferInstance inferInstance
 
 /-- Every isomorphism of schemes is a universal homeomorphism. -/
-instance (f : X ⟶ Y) [IsIso f] : IsUniversalHomeomorphism f :=
+instance IsUniversalHomeomorphism.of_isIso (f : X ⟶ Y) [IsIso f] :
+    IsUniversalHomeomorphism f :=
   (isUniversalHomeomorphism_iff_universallyClosed_universallyInjective_surjective f).mpr
     ⟨inferInstance, inferInstance, inferInstance⟩
 
