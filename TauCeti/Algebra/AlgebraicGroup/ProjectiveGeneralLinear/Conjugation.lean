@@ -106,7 +106,8 @@ theorem toLinAlgEquiv_conjugationMatrix (X Y : Matrix (Fin n) (Fin n) S) :
     Matrix.toLinAlgEquiv (matrixUnitBasis n S) (conjugationMatrix X Y) =
       LinearMap.mulLeft S X ∘ₗ LinearMap.mulRight S Y := by
   rw [← toMatrix_mulLeft_comp_mulRight]
-  exact (Matrix.toLinAlgEquiv (matrixUnitBasis n S)).apply_symm_apply _
+  -- `toMatrixAlgEquiv b` has the same underlying map as `LinearMap.toMatrix b b`.
+  exact Matrix.toLinAlgEquiv_toMatrixAlgEquiv (matrixUnitBasis n S) _
 
 /-- The conjugation matrix of the identity is the identity. -/
 @[simp]
