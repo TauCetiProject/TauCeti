@@ -27,10 +27,10 @@ ball. Rescaling `s` by a nonzero scalar `c` divides the gauge by `‖c‖`, and 
 the gauge of the closed unit ball is the norm.
 If `M` is a topological module and `s` is a balanced bounded neighbourhood of zero, the open gauge
 balls are a basis of neighbourhoods of zero, so the gauge induces the topology of `M` and its
-uniform structure, so it is complete when `M` is; its zero set is the closure of zero, so it is a
-norm exactly when `M` is Hausdorff. If moreover `s + s ⊆ s` and `M` is Hausdorff, the gauge is
-bundled as a complete ultrametric norm `TauCeti.latticeGaugeNormedAddCommGroup` inducing the
-uniform structure of `M`.
+uniform structure, so it is complete when `M` is; its zero set is the closure of zero, so it
+separates points exactly when `M` is Hausdorff. If moreover `s + s ⊆ s` and `M` is
+Hausdorff, the gauge is bundled as a complete ultrametric norm
+`TauCeti.latticeGaugeNormedAddCommGroup` inducing the uniform structure of `M`.
 Finally, the gauges of a lattice `A₀` in an algebra `A` and of a lattice `M₀` in an `A`-module
 are compatible: `A₀ • M₀ ⊆ M₀` gives
 `latticeGauge K M₀ (a • m) ≤ latticeGauge K A₀ a * latticeGauge K M₀ m`; in particular the gauge
