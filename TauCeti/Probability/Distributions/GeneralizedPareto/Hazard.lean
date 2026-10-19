@@ -19,9 +19,9 @@ with the exponential branch `x / s` at shape zero.
 
 The cumulative hazard includes the value zero at the lower endpoint. The chosen density
 vanishes at that endpoint, so the pointwise hazard and derivative formulas assume `x > 0`.
-The hazard is integrable from zero to every nonnegative point of positive survival, and its
-integral equals the displayed cumulative hazard. At negative shape these statements exclude
-the finite upper endpoint.
+The hazard is integrable on every compact interval where survival remains positive. Its
+integral from zero equals the displayed cumulative hazard. At negative shape these statements
+exclude the finite upper endpoint.
 
 ## References
 
@@ -100,12 +100,12 @@ theorem hasDerivAt_neg_log_one_sub_cdf_generalizedParetoMeasure
     using 1 <;> simp only [id_eq]
   field_simp
 
-/-- The generalized Pareto hazard is integrable from zero up to any nonnegative point where
-survival remains positive. -/
+/-- The generalized Pareto hazard is integrable on every compact interval where survival
+remains positive, as determined by its value at the larger endpoint. -/
 theorem intervalIntegrable_generalizedParetoPDFReal_div_one_sub_cdf
-    (hs : 0 < s) (hx : 0 ≤ x) (hb : 0 < s + ξ * x) :
+    (hs : 0 < s) (a b : ℝ) (hS : cdf (generalizedParetoMeasure s ξ) (max a b) < 1) :
     IntervalIntegrable (fun t => generalizedParetoPDFReal s ξ t /
-      (1 - cdf (generalizedParetoMeasure s ξ) t)) volume 0 x := by
+      (1 - cdf (generalizedParetoMeasure s ξ) t)) volume a b := by
   let _ := isProbabilityMeasure_generalizedParetoMeasure hs ξ
   apply intervalIntegrable_div_one_sub_cdf_of_eq_withDensity
     (by rw [generalizedParetoMeasure_eq_withDensity,
@@ -113,8 +113,7 @@ theorem intervalIntegrable_generalizedParetoPDFReal_div_one_sub_cdf
     (measurable_generalizedParetoPDFReal s ξ).aemeasurable
     (ae_of_all _ (generalizedParetoPDFReal_nonneg s ξ))
   intro t ht
-  exact (monotone_cdf _ ((uIcc_of_le hx ▸ ht).2)).trans_lt
-    ((cdf_generalizedParetoMeasure_lt_one_iff hs hx).2 hb)
+  exact (monotone_cdf _ ht.2).trans_lt hS
 
 /-- Integrating the generalized Pareto hazard from zero gives its logarithmic cumulative
 hazard, with the exponential branch at zero shape. -/
