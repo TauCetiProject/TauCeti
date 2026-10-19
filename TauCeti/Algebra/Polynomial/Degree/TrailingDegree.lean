@@ -24,22 +24,22 @@ variable {R S : Type*} [Semiring R] [Semiring S] {φ : R →+* S} {p : Polynomia
 
 /-- An injective coefficient map preserves the trailing degree, including for zero. -/
 @[simp]
-theorem trailingDegree_map_of_injective (hφ : Function.Injective φ) :
+theorem trailingDegree_map_eq_of_injective (hφ : Function.Injective φ) :
     (p.map φ).trailingDegree = p.trailingDegree := by
   exact congrArg (fun s : Finset ℕ ↦ s.min) (Polynomial.support_map_of_injective p hφ)
 
 /-- An injective coefficient map preserves the natural trailing degree, including for zero. -/
 @[simp]
-theorem natTrailingDegree_map_of_injective (hφ : Function.Injective φ) :
+theorem natTrailingDegree_map_eq_of_injective (hφ : Function.Injective φ) :
     (p.map φ).natTrailingDegree = p.natTrailingDegree := by
-  rw [Polynomial.natTrailingDegree, trailingDegree_map_of_injective hφ]
+  rw [Polynomial.natTrailingDegree, trailingDegree_map_eq_of_injective hφ]
   rfl
 
 /-- The trailing coefficient commutes with an injective coefficient map. -/
 @[simp]
 theorem trailingCoeff_map_of_injective (hφ : Function.Injective φ) :
     (p.map φ).trailingCoeff = φ p.trailingCoeff := by
-  rw [Polynomial.trailingCoeff, natTrailingDegree_map_of_injective hφ, Polynomial.coeff_map]
+  rw [Polynomial.trailingCoeff, natTrailingDegree_map_eq_of_injective hφ, Polynomial.coeff_map]
   rfl
 
 end TauCeti

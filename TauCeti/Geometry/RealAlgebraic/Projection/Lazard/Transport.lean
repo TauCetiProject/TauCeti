@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Polynomial.Degree.TrailingDegree
-public import TauCeti.RingTheory.MvPolynomial.Lazard.Associated
+public import TauCeti.RingTheory.MvPolynomial.Lazard.Valuation
 public import TauCeti.RingTheory.Polynomial.Content
 public import TauCeti.Geometry.RealAlgebraic.Projection.Lazard.Basic
 
@@ -41,7 +41,7 @@ variable {R S : Type*} [CommRing R] [CommRing S]
 /-- A coefficient ring equivalence transports the Lazard projection exactly at the level of
 associate classes. This holds for arbitrary finite families and bases, including zero inputs,
 without compatibility between the two normalized gcd structures. -/
-theorem lazardProjection_image_map_equiv [DecidableEq (Polynomial S)]
+theorem image_associatesMk_lazardProjection_image_map_equiv [DecidableEq (Polynomial S)]
     [DecidableEq (Associates S)] (e : R ≃+* S) (F B : Finset (Polynomial R)) :
     ((F.image (Polynomial.map e.toRingHom)).lazardProjection
       (B.image (Polynomial.map e.toRingHom))).image Associates.mk =
@@ -115,7 +115,7 @@ theorem lazardValuation_eq_lazardProjection_image_map_equiv_iff
         (B.image (Polynomial.map e.toRingHom)), q.lazardValuation x = q.lazardValuation y) ↔
       ∀ q ∈ F.lazardProjection B, (e q).lazardValuation x = (e q).lazardValuation y := by
   classical
-  have hset := lazardProjection_image_map_equiv e F B
+  have hset := image_associatesMk_lazardProjection_image_map_equiv e F B
   constructor
   · intro h q hq
     have hmem : Associates.mk (e q) ∈
