@@ -40,8 +40,9 @@ are specialised to `R = ℤ_p`, where the coordinate is `x` itself.
   `AbstractMeasure.inverseWeight_weight_id_smul_one`: `x · J μ` and `J (x · μ)` are both the
   restriction of `μ` to `ℤ_pˣ`.
 * `AbstractMeasure.restrictMultiples_inverseWeight`: `J μ` is supported on `ℤ_pˣ`.
-* `AbstractMeasure.inverseWeight_map_mulLeft`: `J` commutes with dilation by a unit `a`, up to
-  the factor `a⁻¹`.
+* `AbstractMeasure.inverseWeight_map_mulLeft`, `AbstractMeasure.inverseWeight_map_mulLeft_unit`:
+  `J` commutes with dilation by `a`, up to the factor `ringInverse p R a`, which is `a⁻¹` for a
+  unit `a`.
 * `AbstractMeasure.existsUnique_unitSupported_div_id`: a measure supported on `ℤ_pˣ` is `x · ν`
   for a unique measure `ν` supported on `ℤ_pˣ`.
 
@@ -70,35 +71,30 @@ def ringInverse : C(ℤ_[p], R) :=
 
 variable {p R}
 
-@[simp]
 theorem ringInverse_apply (x : ℤ_[p]) :
     ringInverse p R x = algebraMap ℤ_[p] R (Ring.inverse x) :=
   (rfl)
 
 /-- At a unit `u`, `ringInverse` is the inverse of `u`. -/
-theorem ringInverse_units (u : ℤ_[p]ˣ) :
+@[simp]
+theorem ringInverse_unit (u : ℤ_[p]ˣ) :
     ringInverse p R u = algebraMap ℤ_[p] R ↑u⁻¹ := by
   rw [ringInverse_apply, Ring.inverse_unit]
 
 /-- On `pℤ_p`, `ringInverse` vanishes. -/
+@[simp]
 theorem ringInverse_of_dvd {x : ℤ_[p]} (hx : (p : ℤ_[p]) ∣ x) : ringInverse p R x = 0 := by
-  rw [ringInverse_apply, Ring.inverse_non_unit x, map_zero]
-  rwa [PadicInt.not_isUnit_iff, PadicInt.norm_lt_one_iff_dvd]
+  rw [ringInverse_apply, Ring.inverse_non_unit x (PadicInt.not_isUnit_iff_dvd.mpr hx), map_zero]
 
 /-- `ringInverse` inverts the coordinate on `ℤ_pˣ`: the product of the two is the characteristic
 function `1 - χ` of `ℤ_pˣ`. -/
 theorem ringInverse_mul_id_smul_one :
     ringInverse p R * (ContinuousMap.id ℤ_[p] • 1) = 1 - pMultiplesIndicator p R := by
   ext x
-  rw [ContinuousMap.mul_apply, ContinuousMap.smul_apply', ContinuousMap.id_apply,
-    ContinuousMap.one_apply, ContinuousMap.sub_apply, ContinuousMap.one_apply]
   by_cases hx : (p : ℤ_[p]) ∣ x
-  · rw [ringInverse_of_dvd hx, zero_mul, pMultiplesIndicator_eq_one hx, sub_self]
-  · have hu : IsUnit x := by
-      rwa [← not_not (a := IsUnit x), PadicInt.not_isUnit_iff, PadicInt.norm_lt_one_iff_dvd]
-    lift x to ℤ_[p]ˣ using hu
-    rw [ringInverse_units, pMultiplesIndicator_eq_zero hx, sub_zero,
-      ← Algebra.algebraMap_eq_smul_one, ← map_mul, Units.inv_mul, map_one]
+  · simp [hx]
+  · lift x to ℤ_[p]ˣ using not_not.mp (mt PadicInt.not_isUnit_iff_dvd.mp hx)
+    simp [hx, ← Algebra.algebraMap_eq_smul_one, ← map_mul]
 
 /-- `ringInverse` vanishes on `pℤ_p`, the support of the characteristic function `χ`. -/
 theorem pMultiplesIndicator_mul_ringInverse :
@@ -131,9 +127,9 @@ theorem inverseWeight_dirac (x : ℤ_[p]) :
 
 /-- Division by the coordinate scales the Dirac measure at a unit `u` by `u⁻¹`. -/
 @[simp]
-theorem inverseWeight_dirac_units (u : ℤ_[p]ˣ) :
+theorem inverseWeight_dirac_unit (u : ℤ_[p]ˣ) :
     inverseWeight (dirac R (u : ℤ_[p])) = algebraMap ℤ_[p] R ↑u⁻¹ • dirac R (u : ℤ_[p]) := by
-  rw [inverseWeight_dirac, ringInverse_units]
+  rw [inverseWeight_dirac, ringInverse_unit]
 
 /-- Division by the coordinate kills a Dirac measure on `pℤ_p`. -/
 @[simp]
@@ -163,18 +159,23 @@ theorem inverseWeight_weight_id_smul_one (μ : D(ℤ_[p], R)) :
   rw [inverseWeight_eq_weight, ← weight_mul, ringInverse_mul_id_smul_one,
     unitRestriction_eq_weight]
 
+/-- Division by the coordinate commutes with the dilation `x ↦ a x`, up to the factor
+`ringInverse p R a`, which is `a⁻¹` for a unit `a` and `0` for `a ∈ pℤ_p`. -/
+theorem inverseWeight_map_mulLeft (a : ℤ_[p]) (μ : D(ℤ_[p], R)) :
+    inverseWeight (map (ContinuousMap.mulLeft a) μ) =
+      ringInverse p R a • map (ContinuousMap.mulLeft a) (inverseWeight μ) := by
+  have h : (ringInverse p R).comp (ContinuousMap.mulLeft a) =
+      ContinuousMap.const ℤ_[p] (ringInverse p R a) * ringInverse p R := by
+    ext x
+    simp [ringInverse_apply, Ring.mul_inverse_rev, mul_comm]
+  rw [inverseWeight_eq_weight, ← map_weight, h, weight_mul, weight_const, map_smul]
+
 /-- Division by the coordinate commutes with the dilation `x ↦ a x` by a unit `a`, up to the
 factor `a⁻¹`. -/
-theorem inverseWeight_map_mulLeft (a : ℤ_[p]ˣ) (μ : D(ℤ_[p], R)) :
+theorem inverseWeight_map_mulLeft_unit (a : ℤ_[p]ˣ) (μ : D(ℤ_[p], R)) :
     inverseWeight (map (ContinuousMap.mulLeft (a : ℤ_[p])) μ) =
       algebraMap ℤ_[p] R ↑a⁻¹ • map (ContinuousMap.mulLeft (a : ℤ_[p])) (inverseWeight μ) := by
-  have h : (ringInverse p R).comp (ContinuousMap.mulLeft (a : ℤ_[p])) =
-      ContinuousMap.const ℤ_[p] (algebraMap ℤ_[p] R ↑a⁻¹) * ringInverse p R := by
-    ext x
-    rw [ContinuousMap.comp_apply, ContinuousMap.coe_mulLeft, ringInverse_apply,
-      ContinuousMap.mul_apply, ContinuousMap.const_apply, ringInverse_apply, Ring.mul_inverse_rev,
-      Ring.inverse_unit, map_mul, mul_comm]
-  rw [inverseWeight_eq_weight, ← map_weight, h, weight_mul, weight_const, map_smul]
+  rw [inverseWeight_map_mulLeft, ringInverse_unit]
 
 /-- **Division by `x` on unit-supported measures.** A measure `μ` on `ℤ_p` supported on `ℤ_pˣ` is
 `x · ν` for a unique measure `ν` supported on `ℤ_pˣ`, namely `ν = inverseWeight μ`. -/
