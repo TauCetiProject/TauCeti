@@ -35,9 +35,10 @@ categories of smooth and of discrete `A`-modules. This file proves:
 * when the family `J` is directed downwards, smoothness is closed under all colimits (in particular
   arbitrary direct sums) and under finite limits (in particular finite products), so the smooth
   modules form an abelian category;
+* for an arbitrary topology on `A`, the discrete modules are closed under all colimits and under
+  finite limits, so they form an abelian category;
 * when addition by a constant is continuous on `A`, the discrete modules are the smooth modules for
-  the family of all open left ideals, which is directed, so the discrete modules are closed under
-  the same constructions and form an abelian category;
+  the family of all open left ideals;
 * when the `J i` form a basis of neighborhoods of `0`, smoothness for `J` and discreteness coincide;
 * restriction of scalars along a ring homomorphism preserves smoothness when the pulled-back
   ideals dominate the given family, and preserves discreteness along a continuous one.
@@ -56,6 +57,8 @@ categories of smooth and of discrete `A`-modules. This file proves:
 * `TauCeti.smoothModules_directSum`: a direct sum of smooth modules is smooth.
 * `TauCeti.discreteModules_iff_isOpen`: a module is discrete if and only if every set
   `{a | a • m = x}` is open.
+* `TauCeti.discreteModules_of_iSup_range_eq_top`: a module spanned by the images of linear maps out
+  of discrete modules is discrete; hence discreteness is closed under colimits.
 * `TauCeti.discreteModules_eq_smoothModules`: discrete modules are the smooth modules for the
   family of open left ideals.
 * `TauCeti.smoothModules_eq_discreteModules`: if the `J i` form a basis of neighborhoods of `0`,
@@ -248,25 +251,70 @@ instance : (discreteModules.{v} A).IsClosedUnderSubobjects where
         ((ModuleCat.mono_iff_injective f).1 hf).eq_iff]
     exact this ▸ hN (f m) (f x)
 
-/-- Discreteness passes to the target of a surjective linear map. -/
-instance : (discreteModules.{v} A).IsClosedUnderQuotients where
-  prop_of_epi {M N} f hf hM := by
-    rw [discreteModules_iff_isOpen] at hM ⊢
-    intro n y
-    obtain ⟨m, rfl⟩ := (ModuleCat.epi_iff_surjective f).1 hf n
-    have : {a : A | a • f m = y} = ⋃ x ∈ f ⁻¹' {y}, {a | a • m = x} := by
-      ext a
-      simp only [Set.mem_ofPred_eq, Set.mem_iUnion, Set.mem_preimage, Set.mem_singleton_iff,
-        exists_prop, ← map_smul]
-      exact ⟨fun h => ⟨_, h, rfl⟩, by rintro ⟨x, hx, rfl⟩; exact hx⟩
-    exact this ▸ isOpen_biUnion fun x _ => hM m x
-
 /-- The zero module is discrete. -/
 instance : (discreteModules.{v} A).ContainsZero where
   exists_zero := ⟨ModuleCat.of A PUnit, ModuleCat.isZero_of_subsingleton _,
     discreteModules_iff_isOpen.2 fun m x => by
       have : {a : A | a • m = x} = Set.univ := Set.eq_univ_of_forall fun _ => Subsingleton.elim _ _
       exact this ▸ isOpen_univ⟩
+
+/-- A module spanned by the images of linear maps out of discrete modules is discrete. -/
+theorem discreteModules_of_iSup_range_eq_top {κ : Type*} {M : κ → ModuleCat.{v'} A}
+    {N : ModuleCat.{v} A} (f : ∀ k, M k →ₗ[A] N) (hf : ⨆ k, LinearMap.range (f k) = ⊤)
+    (hM : ∀ k, discreteModules A (M k)) : discreteModules A N := by
+  simp only [discreteModules_iff_isOpen] at hM ⊢
+  intro n
+  refine Submodule.iSup_induction _ (motive := fun n => ∀ x : N, IsOpen {a : A | a • n = x})
+    (hf ▸ Submodule.mem_top) ?_ (fun x => by simp) ?_
+  · rintro k _ ⟨m, rfl⟩ y
+    -- `{a | a • f m = y}` is the union of the open sets `{a | a • m = x}` over `x ∈ f⁻¹(y)`.
+    have : {a : A | a • f k m = y} = ⋃ x ∈ f k ⁻¹' {y}, {a | a • m = x} := by
+      ext a
+      simp only [Set.mem_ofPred_eq, Set.mem_iUnion, Set.mem_preimage, Set.mem_singleton_iff,
+        exists_prop, ← map_smul]
+      exact ⟨fun h => ⟨_, h, rfl⟩, by rintro ⟨x, hx, rfl⟩; exact hx⟩
+    exact this ▸ isOpen_biUnion fun x _ => hM k m x
+  · intro m n hm hn x
+    -- `{a | a • (m + n) = x}` is the union over `y` of `{a | a • m = y} ∩ {a | a • n = x - y}`.
+    have : {a : A | a • (m + n) = x} = ⋃ y, {a | a • m = y} ∩ {a | a • n = x - y} := by
+      ext a
+      simp only [Set.mem_ofPred_eq, Set.mem_iUnion, Set.mem_inter_iff, smul_add]
+      exact ⟨fun h => ⟨_, rfl, eq_sub_of_add_eq' h⟩, by
+        rintro ⟨y, rfl, h⟩
+        rw [h, add_sub_cancel]⟩
+    exact this ▸ isOpen_iUnion fun y => (hm y).inter (hn (x - y))
+
+/-- Discreteness passes to the target of a surjective linear map. -/
+instance : (discreteModules.{v} A).IsClosedUnderQuotients where
+  prop_of_epi {M _} f hf hM :=
+    discreteModules_of_iSup_range_eq_top (M := fun _ : Unit => M) (fun _ => f.hom)
+      (by simpa using LinearMap.range_eq_top.2 ((ModuleCat.epi_iff_surjective f).1 hf))
+      fun _ => hM
+
+/-- Discreteness is closed under colimits of any shape. -/
+instance (K : Type*) [Category* K] : (discreteModules.{v} A).IsClosedUnderColimitsOfShape K where
+  colimitsOfShape_le := by
+    rintro _ ⟨p⟩
+    exact discreteModules_of_iSup_range_eq_top (fun k => (p.ι.app k).hom)
+      (ModuleCat.iSup_range_eq_top_of_isColimit p.isColimit) p.prop_diag_obj
+
+/-- Discreteness is closed under finite limits. -/
+instance : (discreteModules.{v} A).IsClosedUnderFiniteLimits where
+  isClosedUnderLimitsOfShape K _ _ := ⟨by
+    rintro _ ⟨p⟩
+    rw [discreteModules_iff_isOpen]
+    intro m x
+    -- `{a | a • m = x}` is the intersection of the sets `{a | a • π k m = π k x}`.
+    have : {a : A | a • m = x} = ⋂ k, {a | a • p.π.app k m = p.π.app k x} := by
+      ext a
+      simp only [Set.mem_ofPred_eq, Set.mem_iInter, ← map_smul]
+      exact ⟨fun h k => h ▸ rfl, fun h => Concrete.isLimit_ext _ p.isLimit (a • m) x h⟩
+    exact this ▸ isOpen_iInter_of_finite fun k =>
+      discreteModules_iff_isOpen.1 (p.prop_diag_obj k) _ _⟩
+
+/-- The discrete modules form an abelian category. -/
+example : Abelian (discreteModules.{v} A).FullSubcategory :=
+  inferInstance
 
 /-- When addition by a constant is continuous on `A`, the discrete modules are the smooth modules
 for the family of open left ideals of `A`. -/
@@ -290,28 +338,6 @@ theorem discreteModules_eq_smoothModules [SeparatelyContinuousAdd A] :
     have := hIm _ ha
     simp only [add_smul, neg_smul, add_neg_eq_zero] at this
     exact this.trans ha₀
-
-/-- When addition by a constant is continuous on `A`, the discrete modules are closed under
-colimits of any shape. -/
-instance [SeparatelyContinuousAdd A] (K : Type*) [Category* K] :
-    (discreteModules.{v} A).IsClosedUnderColimitsOfShape K := by
-  have : Nonempty {I : Submodule A A // IsOpen (I : Set A)} := ⟨⟨⊤, isOpen_univ⟩⟩
-  rw [discreteModules_eq_smoothModules]
-  exact isClosedUnderColimitsOfShape_smoothModules
-    (fun I I' => ⟨⟨I.1 ⊓ I'.1, I.2.inter I'.2⟩, inf_le_left, inf_le_right⟩) K
-
-/-- When addition by a constant is continuous on `A`, the discrete modules are closed under finite
-limits. -/
-instance [SeparatelyContinuousAdd A] : (discreteModules.{v} A).IsClosedUnderFiniteLimits := by
-  have : Nonempty {I : Submodule A A // IsOpen (I : Set A)} := ⟨⟨⊤, isOpen_univ⟩⟩
-  rw [discreteModules_eq_smoothModules]
-  exact isClosedUnderFiniteLimits_smoothModules
-    fun I I' => ⟨⟨I.1 ⊓ I'.1, I.2.inter I'.2⟩, inf_le_left, inf_le_right⟩
-
-/-- When addition by a constant is continuous on `A`, the discrete modules form an abelian
-category. -/
-example [SeparatelyContinuousAdd A] : Abelian (discreteModules.{v} A).FullSubcategory :=
-  inferInstance
 
 variable {J : ι → Submodule A A}
 
