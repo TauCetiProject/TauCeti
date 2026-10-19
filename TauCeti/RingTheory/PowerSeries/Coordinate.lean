@@ -51,10 +51,6 @@ coordinates over `K` and the opposite of `K⟦X⟧ ≃ₐ[K] K⟦X⟧`, with inv
 * `TauCeti.FormalCoordinate.substAlgEquiv_mul`: `σ_(φ ∘ ψ) = σ_ψ ∘ σ_φ`.
 * `TauCeti.FormalCoordinate.constantCoeff_substAlgEquiv`: substitution automorphisms preserve
   constant coefficients.
-* `AlgHom.constantCoeff_apply_X`: over a field, every algebra endomorphism of `K⟦X⟧` sends `X`
-  to a series of zero constant coefficient.
-* `AlgHom.apply_eq_subst`: over a field, every algebra endomorphism `σ` of `K⟦X⟧` is the
-  substitution of `σ X`.
 * `TauCeti.FormalCoordinate.substAlgEquiv_ofAlgEquiv`: over a field, every automorphism of
   `K⟦X⟧` is the substitution of its value at `X`.
 -/
@@ -62,25 +58,6 @@ coordinates over `K` and the opposite of `K⟦X⟧ ≃ₐ[K] K⟦X⟧`, with inv
 public section
 
 open PowerSeries
-
-/-- Over a field `K`, every `K`-algebra endomorphism `σ` of `K⟦X⟧` sends `X` to a series of zero
-constant coefficient: if `σ X` had constant coefficient `c ≠ 0`, the unit `X - c` would map to
-the nonunit `σ X - c`. -/
-theorem AlgHom.constantCoeff_apply_X {K : Type*} [Field K] (σ : K⟦X⟧ →ₐ[K] K⟦X⟧) :
-    constantCoeff (σ X) = 0 := by
-  by_contra hc
-  have hu : IsUnit (X - C (constantCoeff (σ X)) : K⟦X⟧) := by
-    simpa [isUnit_iff_constantCoeff] using hc
-  have hσ : σ (X - C (constantCoeff (σ X))) = σ X - C (constantCoeff (σ X)) := by
-    rw [map_sub, ← algebraMap_eq, AlgHom.commutes]
-  simpa [hσ, isUnit_iff_constantCoeff] using hu.map σ
-
-/-- Over a field `K`, every `K`-algebra endomorphism `σ` of `K⟦X⟧` is the substitution
-`f ↦ f (σ X)`. -/
-theorem AlgHom.apply_eq_subst {K : Type*} [Field K] (σ : K⟦X⟧ →ₐ[K] K⟦X⟧) (f : K⟦X⟧) :
-    σ f = f.subst (σ X) := by
-  rw [← coe_substAlgHom (.of_constantCoeff_zero' σ.constantCoeff_apply_X),
-    ← algHom_eq_substAlgHom σ.constantCoeff_apply_X]
 
 namespace TauCeti
 
@@ -102,6 +79,11 @@ attribute [simp] constantCoeff_toPowerSeries
 /-- Power series can be substituted into a formal coordinate. -/
 theorem hasSubst (φ : FormalCoordinate R) : HasSubst φ.toPowerSeries :=
   .of_constantCoeff_zero' φ.constantCoeff_toPowerSeries
+
+@[simp]
+theorem X_subst_toPowerSeries (φ : FormalCoordinate R) :
+    (X : R⟦X⟧).subst φ.toPowerSeries = φ.toPowerSeries :=
+  subst_X φ.hasSubst
 
 /-- The product `φ * ψ` of formal coordinates is the composite `φ ∘ ψ`, the series `φ (ψ)`. -/
 noncomputable instance : Mul (FormalCoordinate R) where
@@ -145,7 +127,7 @@ noncomputable instance : Group (FormalCoordinate R) where
   mul_assoc φ ψ χ := FormalCoordinate.ext (subst_subst ψ χ _)
   one_mul φ := by
     ext1
-    simp [subst_X φ.hasSubst]
+    simp
   mul_one φ := by
     ext1
     simp
@@ -182,7 +164,7 @@ theorem substAlgEquiv_apply (φ : FormalCoordinate R) (f : R⟦X⟧) :
   simp [substAlgEquiv, coe_substAlgHom]
 
 theorem substAlgEquiv_X (φ : FormalCoordinate R) : φ.substAlgEquiv X = φ.toPowerSeries := by
-  simp [subst_X φ.hasSubst]
+  simp
 
 @[simp]
 theorem substAlgEquiv_symm (φ : FormalCoordinate R) : φ.substAlgEquiv.symm = φ⁻¹.substAlgEquiv :=
@@ -190,6 +172,7 @@ theorem substAlgEquiv_symm (φ : FormalCoordinate R) : φ.substAlgEquiv.symm = �
 
 /-- Substitution automorphisms reverse composition: `σ_(φ ∘ ψ) = σ_ψ ∘ σ_φ`, since
 `f (φ (ψ)) = f (φ) (ψ)`. -/
+@[simp]
 theorem substAlgEquiv_mul (φ ψ : FormalCoordinate R) :
     (φ * ψ).substAlgEquiv = ψ.substAlgEquiv * φ.substAlgEquiv :=
   AlgEquiv.ext fun f ↦ by simp [subst_subst]
@@ -203,21 +186,26 @@ theorem substAlgEquiv_injective :
     Function.Injective (substAlgEquiv : FormalCoordinate R → R⟦X⟧ ≃ₐ[R] R⟦X⟧) := fun φ ψ h ↦
   FormalCoordinate.ext <| by rw [← substAlgEquiv_X, h, substAlgEquiv_X]
 
+/-- Substitution by a formal coordinate preserves constant coefficients. -/
+@[simp]
+theorem constantCoeff_subst_toPowerSeries (φ : FormalCoordinate R) (f : R⟦X⟧) :
+    constantCoeff (f.subst φ.toPowerSeries) = constantCoeff f := by
+  -- the multivariate constant coefficient of `f (φ)` is its univariate one
+  exact (constantCoeff_subst_of_constantCoeff_zero φ.constantCoeff_toPowerSeries f).trans
+    (Algebra.algebraMap_self_apply _)
+
 /-- Substitution automorphisms preserve constant coefficients: they fix the ideal `(X)` and
 induce the identity on `R⟦X⟧ / (X) = R`. -/
 theorem constantCoeff_substAlgEquiv (φ : FormalCoordinate R) (f : R⟦X⟧) :
     constantCoeff (φ.substAlgEquiv f) = constantCoeff f := by
-  rw [substAlgEquiv_apply]
-  -- the multivariate constant coefficient of `f (φ)` is its univariate one
-  exact (constantCoeff_subst_of_constantCoeff_zero φ.constantCoeff_toPowerSeries f).trans
-    (Algebra.algebraMap_self_apply _)
+  simp
 
 /-- The map `φ ↦ σ_φ` from formal coordinates to the opposite of the automorphism group of `R⟦X⟧`.
 It is a homomorphism because `σ_(φ ∘ ψ) = σ_ψ ∘ σ_φ`. -/
 noncomputable def substAlgEquivHom : FormalCoordinate R →* (R⟦X⟧ ≃ₐ[R] R⟦X⟧)ᵐᵒᵖ where
   toFun φ := .op φ.substAlgEquiv
   map_one' := by simp
-  map_mul' φ ψ := by simp [substAlgEquiv_mul]
+  map_mul' φ ψ := by simp
 
 @[simp]
 theorem substAlgEquivHom_apply (φ : FormalCoordinate R) :
@@ -231,11 +219,11 @@ section Field
 
 variable {K : Type*} [Field K]
 
-/-- Over a field, the formal coordinate `σ X` defined by an automorphism `σ` of `K⟦X⟧`. Its
-linear coefficient is a unit because `σ⁻¹ X` is a compositional inverse of `σ X`. -/
+/-- Over a field, the formal coordinate `σ X` defined by an automorphism `σ` of `K⟦X⟧`. -/
 noncomputable def ofAlgEquiv (σ : K⟦X⟧ ≃ₐ[K] K⟦X⟧) : FormalCoordinate K where
   toPowerSeries := σ X
   constantCoeff_toPowerSeries := σ.toAlgHom.constantCoeff_apply_X
+  -- The inverse image `σ⁻¹ X` is a compositional inverse of `σ X`.
   isUnit_coeff_one := isUnit_coeff_one_of_subst_eq_X (P := σ.symm X)
     (.of_constantCoeff_zero' σ.toAlgHom.constantCoeff_apply_X)
     (by simpa using (σ.toAlgHom.apply_eq_subst (σ.symm X)).symm)
