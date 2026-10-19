@@ -76,9 +76,10 @@ theorem minkowskiSum_add_eq_add_iff_of_mem_supportingFace
       WithTop.coe_eq_coe]
     nlinarith
 
+-- Prefer the split characterization to the generic `mem_supportingFace` simp rule.
 /-- A supporting face of the Minkowski sum consists exactly of sums of contact indices
 for the two supporting lines of the same slope. -/
-theorem mem_supportingFace_minkowskiSum_iff (hc : IsSupportingLine h σ c)
+@[simp 1100] theorem mem_supportingFace_minkowskiSum_iff (hc : IsSupportingLine h σ c)
     (hd : IsSupportingLine g σ d) {n : ℕ} :
     n ∈ supportingFace (minkowskiSum h g) σ (c + d) ↔
       ∃ i j, i + j = n ∧ i ∈ supportingFace h σ c ∧ j ∈ supportingFace g σ d := by
