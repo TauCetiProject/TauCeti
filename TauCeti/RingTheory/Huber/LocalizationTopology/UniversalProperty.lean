@@ -108,12 +108,9 @@ private theorem exists_pow_mul_locSubring_mem_of_isBounded {B : Type*} [Ring B]
   -- `f` sends each product of fractions into the bounded submonoid `M`
   have hμ {μ : S} (hμ : μ ∈ Submonoid.closure (Set.range fun t : T ↦ (divBy (t : A) s : S))) :
       f μ ∈ Submonoid.closure ((fun t ↦ f (divBy t s)) '' T) := by
-    induction hμ using Submonoid.closure_induction with
-    | mem _ hx =>
-      obtain ⟨⟨t, ht⟩, rfl⟩ := hx
-      exact Submonoid.subset_closure ⟨t, ht, rfl⟩
-    | one => simp
-    | mul _ _ _ _ hx hy => simpa using Submonoid.mul_mem _ hx hy
+    refine (Submonoid.closure_le (S := (Submonoid.closure _).comap (f : S →* B))).mpr ?_ hμ
+    rintro _ ⟨t, rfl⟩
+    exact Submonoid.subset_closure ⟨t, t.2, rfl⟩
   refine ⟨m, fun x hx ↦ ?_⟩
   -- `D` is the `A₀`-span of the products of fractions
   have hx' : x ∈ Submodule.span P.ringOfDefinition

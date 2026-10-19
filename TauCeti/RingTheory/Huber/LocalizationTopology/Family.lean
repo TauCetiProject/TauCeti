@@ -255,13 +255,10 @@ theorem isBounded_submonoidClosure_familyNumerators [SeparatelyContinuousMul A]
     (hden : HasDenominatorPower P (familyNumerators T s) (∏ i, s i) S) :
     letI := locTopology P (familyNumerators T s) (∏ i, s i) S hden
     IsBounded (Submonoid.closure
-      {x : S | ∃ i, ∃ t ∈ T i, algebraMap A S (s i) * x = algebraMap A S t} : Set S) := by
-  let _ := locTopology P (familyNumerators T s) (∏ i, s i) S hden
-  refine (isBounded_locSubring P _ _ S hden).subset fun x hx ↦ ?_
-  refine (Submonoid.closure_le
-    (S := (locSubring P (familyNumerators T s) (∏ i, s i) S).toSubmonoid)).mpr ?_ hx
-  rintro _ ⟨i, t, ht, hx⟩
-  exact mem_locSubring_familyNumerators_of_algebraMap_mul_eq s S P T ht hx
+      {x : S | ∃ i, ∃ t ∈ T i, algebraMap A S (s i) * x = algebraMap A S t} : Set S) :=
+  isBounded_submonoidClosure_of_subset_locSubring P _ _ S hden <| by
+    rintro _ ⟨i, t, ht, hx⟩
+    exact mem_locSubring_familyNumerators_of_algebraMap_mul_eq s S P T ht hx
 
 /-- **Wedhorn 5.51, the universal property of `A(T/s)`.** A ring homomorphism `φ : A →+* B` into
 a nonarchimedean ring extends to `A(T/s)` in exactly one continuous way, provided `φ` is
