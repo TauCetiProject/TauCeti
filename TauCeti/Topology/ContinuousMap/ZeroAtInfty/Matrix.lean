@@ -183,16 +183,22 @@ theorem matrixCoeff_inj {u v : C₀(J, R) →L[R] C₀(I, R)} : u.matrixCoeff = 
 
 variable [IsUltrametricDist R]
 
-/-- Over an ultrametric ring, a uniform bound `C` on the entries of the matrix bounds the operator
-norm. -/
-theorem ringOpNorm_le_of_forall_norm_matrixCoeff_le (u : C₀(J, R) →L[R] C₀(I, R)) {C : ℝ}
-    (hC : 0 ≤ C) (h : ∀ i j, ‖u.matrixCoeff i j‖ ≤ C) : ‖u‖ ≤ C := by
-  refine ringOpNorm_le_bound u hC fun x ↦ (norm_le (by positivity)).2 fun i ↦ ?_
+/-- Over an ultrametric ring, a uniform bound `C` on the entries of the matrix of `u` gives the
+uniform bound `‖u x‖ ≤ C * ‖x‖`. No pseudo-uniformiser is needed. -/
+theorem norm_apply_le_of_forall_norm_matrixCoeff_le (u : C₀(J, R) →L[R] C₀(I, R)) {C : ℝ}
+    (hC : 0 ≤ C) (h : ∀ i j, ‖u.matrixCoeff i j‖ ≤ C) (x : C₀(J, R)) : ‖u x‖ ≤ C * ‖x‖ := by
+  refine (norm_le (by positivity)).2 fun i ↦ ?_
   rw [← (u.hasSum_mul_matrixCoeff x i).tsum_eq]
   refine IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg (by positivity) fun j ↦ ?_
   refine (norm_mul_le _ _).trans ?_
   rw [mul_comm C]
   exact mul_le_mul (norm_coe_le_norm x j) (h i j) (norm_nonneg _) (norm_nonneg _)
+
+/-- Over an ultrametric ring, a uniform bound `C` on the entries of the matrix bounds the operator
+norm. -/
+theorem ringOpNorm_le_of_forall_norm_matrixCoeff_le (u : C₀(J, R) →L[R] C₀(I, R)) {C : ℝ}
+    (hC : 0 ≤ C) (h : ∀ i j, ‖u.matrixCoeff i j‖ ≤ C) : ‖u‖ ≤ C :=
+  ringOpNorm_le_bound u hC (u.norm_apply_le_of_forall_norm_matrixCoeff_le hC h)
 
 variable [TauCeti.NormedRing.IsTate R]
 
