@@ -53,6 +53,11 @@ forces `X` to reduce to a root of the residue cubic. From the normal form of Ste
   `Iₙ*` subprocedure of Step 7, a solution `(ϖ^(k+2) X, ϖ^(k+2) Y)` makes `Y` a root of the residue
   quadratic modulo `ϖ`. `WeierstrassCurve.dvd_quadratic_of_equation_even` is the analogue at an
   even stage, where `X` is a root of the residue quadratic modulo `ϖ`.
+* `WeierstrassCurve.dvd_and_dvd_add_of_equation`,
+  `WeierstrassCurve.dvd_of_equation_sq_mul`,
+  `WeierstrassCurve.dvd_and_dvd_of_equation_pow` and
+  `WeierstrassCurve.pow_dvd_and_pow_dvd_of_equation`: coordinate divisibility on the
+  normal forms of the `Iₙ*` subprocedure over a domain with a prime uniformiser.
 * `WeierstrassCurve.Affine.nonsingularReduction_eq_top_of_isTateTerminal`: at an additive symbol,
   if no integral solution has both coordinates divisible by `ϖ`, then `E₀(F) = W(F)`.
 * `WeierstrassCurve.Affine.nonsingularReduction_eq_top_of_isTateTerminal_IStar_zero`: at `I₀*`, if
@@ -82,6 +87,83 @@ namespace WeierstrassCurve
 section Domain
 
 variable {R : Type*} [CommRing R] [IsDomain R] (W : WeierstrassCurve R) {ϖ : R}
+
+section IStarPointDivisibility
+
+variable {π : R}
+
+/-- On the normal form `π ∣ a₁`, `a₂ = π A₂`, `π² ∣ a₃`, `π³ ∣ a₄`, `π⁴ ∣ a₆` of Step 7 of Tate's
+algorithm, a solution `(π X, π Y)` with `π ∤ X` has `π ∣ Y` and `X ≡ −A₂` modulo `π`: the residue
+of `X` is the simple root of the residue cubic `T² (T + A₂)`. -/
+theorem dvd_and_dvd_add_of_equation (hπ : Prime π) (h₁ : π ∣ W.a₁) {A₂ : R}
+    (h₂ : W.a₂ = π * A₂) (h₃ : π ^ 2 ∣ W.a₃) (h₄ : π ^ 3 ∣ W.a₄) (h₆ : π ^ 4 ∣ W.a₆) {X Y : R}
+    (hX : ¬ π ∣ X) (h : W.toAffine.Equation (π * X) (π * Y)) : π ∣ Y ∧ π ∣ X + A₂ := by
+  obtain ⟨α₁, hα₁⟩ := h₁
+  obtain ⟨α₃, hα₃⟩ := h₃
+  obtain ⟨α₄, hα₄⟩ := h₄
+  obtain ⟨α₆, hα₆⟩ := h₆
+  rw [Affine.equation_iff, hα₁, h₂, hα₃, hα₄, hα₆] at h
+  -- the equation divided by `π²` gives `π ∣ Y²`
+  obtain ⟨Y, rfl⟩ : π ∣ Y := hπ.dvd_of_dvd_pow (n := 2)
+    ⟨X ^ 3 + A₂ * X ^ 2 + π * α₄ * X + π * α₆ - α₁ * X * Y - α₃ * Y,
+      mul_left_cancel₀ (pow_ne_zero 2 hπ.ne_zero) (by linear_combination h)⟩
+  -- then the equation divided by `π³` gives `π ∣ X² (X + A₂)`
+  refine ⟨dvd_mul_right π Y, (hπ.dvd_or_dvd (a := X ^ 2) ?_).resolve_left fun h' ↦
+    hX (hπ.dvd_of_dvd_pow h')⟩
+  exact ⟨Y ^ 2 + α₁ * X * Y + α₃ * Y - α₄ * X - α₆,
+    mul_left_cancel₀ (pow_ne_zero 3 hπ.ne_zero) (by linear_combination -h)⟩
+
+/-- If `π² ∣ a₃`, `π ∣ a₄` and `π³ ∣ a₆`, a solution `(π² X, π Y)` has `π ∣ Y`. -/
+theorem dvd_of_equation_sq_mul (hπ : Prime π) (h₃ : π ^ 2 ∣ W.a₃) (h₄ : π ∣ W.a₄)
+    (h₆ : π ^ 3 ∣ W.a₆) {X Y : R} (h : W.toAffine.Equation (π ^ 2 * X) (π * Y)) : π ∣ Y := by
+  obtain ⟨α₃, hα₃⟩ := h₃
+  obtain ⟨α₄, hα₄⟩ := h₄
+  obtain ⟨α₆, hα₆⟩ := h₆
+  rw [Affine.equation_iff, hα₃, hα₄, hα₆] at h
+  exact hπ.dvd_of_dvd_pow (n := 2)
+    ⟨π ^ 3 * X ^ 3 + π * W.a₂ * X ^ 2 + α₄ * X + α₆ - W.a₁ * X * Y - α₃ * Y,
+      mul_left_cancel₀ (pow_ne_zero 2 hπ.ne_zero) (by linear_combination h)⟩
+
+/-- **One stage of the `Iₙ*` subprocedure, on points.** With `π ∣ a₁`, `a₂ = π A₂`, `π ∤ A₂`, and
+`π^(j+1) ∣ a₃`, `π^(j+2) ∣ a₄`, `π^(2j+2) ∣ a₆` for `j = i + 2`, a solution `(π^j X, π^j Y)` has
+`π ∣ X` and `π ∣ Y`: the equation divided by `π^(2j)` forces `π ∣ Y`, and then divided by
+`π^(2j+1)` it forces `π ∣ A₂ X²`. -/
+theorem dvd_and_dvd_of_equation_pow (hπ : Prime π) (i : ℕ) (h₁ : π ∣ W.a₁) {A₂ : R}
+    (h₂ : W.a₂ = π * A₂) (hA₂ : ¬ π ∣ A₂) (h₃ : π ^ (i + 3) ∣ W.a₃) (h₄ : π ^ (i + 4) ∣ W.a₄)
+    (h₆ : π ^ (2 * i + 6) ∣ W.a₆) {X Y : R}
+    (h : W.toAffine.Equation (π ^ (i + 2) * X) (π ^ (i + 2) * Y)) : π ∣ X ∧ π ∣ Y := by
+  obtain ⟨α₁, hα₁⟩ := h₁
+  obtain ⟨α₃, hα₃⟩ := h₃
+  obtain ⟨α₄, hα₄⟩ := h₄
+  obtain ⟨α₆, hα₆⟩ := h₆
+  rw [Affine.equation_iff, hα₁, h₂, hα₃, hα₄, hα₆] at h
+  obtain ⟨Y, rfl⟩ : π ∣ Y := hπ.dvd_of_dvd_pow (n := 2)
+    ⟨π ^ (i + 1) * X ^ 3 + A₂ * X ^ 2 + π * α₄ * X + π * α₆ - α₁ * X * Y - α₃ * Y,
+      mul_left_cancel₀ (pow_ne_zero (2 * i + 4) hπ.ne_zero) (by linear_combination h)⟩
+  refine ⟨hπ.dvd_of_dvd_pow (n := 2) ((hπ.dvd_or_dvd (a := A₂) ?_).resolve_left hA₂),
+    dvd_mul_right π Y⟩
+  exact ⟨Y ^ 2 + α₁ * X * Y + α₃ * Y - π ^ i * X ^ 3 - α₄ * X - α₆,
+    mul_left_cancel₀ (pow_ne_zero (2 * i + 5) hπ.ne_zero) (by linear_combination -h)⟩
+
+/-- **The `Iₙ*` subprocedure, on points.** With `π ∣ a₁`, `a₂ = π A₂`, `π ∤ A₂`,
+`π^(k+2) ∣ a₃`, `π^(k+3) ∣ a₄` and `π^(2k+4) ∣ a₆`, a solution `(x, y)` with `π² ∣ x` and `π² ∣ y`
+has `π^(k+2) ∣ x` and `π^(k+2) ∣ y`. -/
+theorem pow_dvd_and_pow_dvd_of_equation (hπ : Prime π) {k : ℕ} (h₁ : π ∣ W.a₁) {A₂ : R}
+    (h₂ : W.a₂ = π * A₂) (hA₂ : ¬ π ∣ A₂) (h₃ : π ^ (k + 2) ∣ W.a₃) (h₄ : π ^ (k + 3) ∣ W.a₄)
+    (h₆ : π ^ (2 * k + 4) ∣ W.a₆) {x y : R} (h : W.toAffine.Equation x y) (hx : π ^ 2 ∣ x)
+    (hy : π ^ 2 ∣ y) : π ^ (k + 2) ∣ x ∧ π ^ (k + 2) ∣ y := by
+  suffices ∀ i ≤ k, π ^ (i + 2) ∣ x ∧ π ^ (i + 2) ∣ y from this k le_rfl
+  intro i hi
+  induction i with
+  | zero => exact ⟨hx, hy⟩
+  | succ i ih =>
+    obtain ⟨⟨X, rfl⟩, ⟨Y, rfl⟩⟩ := ih (by omega)
+    obtain ⟨⟨X, rfl⟩, ⟨Y, rfl⟩⟩ := W.dvd_and_dvd_of_equation_pow hπ i h₁ h₂ hA₂
+      ((pow_dvd_pow π (by omega)).trans h₃) ((pow_dvd_pow π (by omega)).trans h₄)
+      ((pow_dvd_pow π (by omega)).trans h₆) h
+    exact ⟨⟨X, by ring⟩, ⟨Y, by ring⟩⟩
+
+end IStarPointDivisibility
 
 /-- **On the normal form of Step 6 of Tate's algorithm, a solution divisible by `ϖ` reduces to a
 root of the residue cubic.** Over a domain with a prime `ϖ`, suppose that `ϖ ∣ a₁`, `ϖ² ∣ a₃`,

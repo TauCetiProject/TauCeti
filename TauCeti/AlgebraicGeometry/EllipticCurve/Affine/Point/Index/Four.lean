@@ -98,77 +98,6 @@ namespace WeierstrassCurve
 
 variable {R : Type*} [CommRing R] [IsDomain R] (W : WeierstrassCurve R) {π : R}
 
-/-- On the normal form `π ∣ a₁`, `a₂ = π A₂`, `π² ∣ a₃`, `π³ ∣ a₄`, `π⁴ ∣ a₆` of Step 7 of Tate's
-algorithm, a solution `(π X, π Y)` with `π ∤ X` has `π ∣ Y` and `X ≡ −A₂` modulo `π`: the residue
-of `X` is the simple root of the residue cubic `T² (T + A₂)`. -/
-private theorem dvd_and_dvd_add_of_equation (hπ : Prime π) (h₁ : π ∣ W.a₁) {A₂ : R}
-    (h₂ : W.a₂ = π * A₂) (h₃ : π ^ 2 ∣ W.a₃) (h₄ : π ^ 3 ∣ W.a₄) (h₆ : π ^ 4 ∣ W.a₆) {X Y : R}
-    (hX : ¬ π ∣ X) (h : W.toAffine.Equation (π * X) (π * Y)) : π ∣ Y ∧ π ∣ X + A₂ := by
-  obtain ⟨α₁, hα₁⟩ := h₁
-  obtain ⟨α₃, hα₃⟩ := h₃
-  obtain ⟨α₄, hα₄⟩ := h₄
-  obtain ⟨α₆, hα₆⟩ := h₆
-  rw [Affine.equation_iff, hα₁, h₂, hα₃, hα₄, hα₆] at h
-  -- the equation divided by `π²` gives `π ∣ Y²`
-  obtain ⟨Y, rfl⟩ : π ∣ Y := hπ.dvd_of_dvd_pow (n := 2)
-    ⟨X ^ 3 + A₂ * X ^ 2 + π * α₄ * X + π * α₆ - α₁ * X * Y - α₃ * Y,
-      mul_left_cancel₀ (pow_ne_zero 2 hπ.ne_zero) (by linear_combination h)⟩
-  -- then the equation divided by `π³` gives `π ∣ X² (X + A₂)`
-  refine ⟨dvd_mul_right π Y, (hπ.dvd_or_dvd (a := X ^ 2) ?_).resolve_left fun h' ↦
-    hX (hπ.dvd_of_dvd_pow h')⟩
-  exact ⟨Y ^ 2 + α₁ * X * Y + α₃ * Y - α₄ * X - α₆,
-    mul_left_cancel₀ (pow_ne_zero 3 hπ.ne_zero) (by linear_combination -h)⟩
-
-/-- If `π² ∣ a₃`, `π ∣ a₄` and `π³ ∣ a₆`, a solution `(π² X, π Y)` has `π ∣ Y`. -/
-private theorem dvd_of_equation_sq_mul (hπ : Prime π) (h₃ : π ^ 2 ∣ W.a₃) (h₄ : π ∣ W.a₄)
-    (h₆ : π ^ 3 ∣ W.a₆) {X Y : R} (h : W.toAffine.Equation (π ^ 2 * X) (π * Y)) : π ∣ Y := by
-  obtain ⟨α₃, hα₃⟩ := h₃
-  obtain ⟨α₄, hα₄⟩ := h₄
-  obtain ⟨α₆, hα₆⟩ := h₆
-  rw [Affine.equation_iff, hα₃, hα₄, hα₆] at h
-  exact hπ.dvd_of_dvd_pow (n := 2)
-    ⟨π ^ 3 * X ^ 3 + π * W.a₂ * X ^ 2 + α₄ * X + α₆ - W.a₁ * X * Y - α₃ * Y,
-      mul_left_cancel₀ (pow_ne_zero 2 hπ.ne_zero) (by linear_combination h)⟩
-
-/-- **One stage of the `Iₙ*` subprocedure, on points.** With `π ∣ a₁`, `a₂ = π A₂`, `π ∤ A₂`, and
-`π^(j+1) ∣ a₃`, `π^(j+2) ∣ a₄`, `π^(2j+2) ∣ a₆` for `j = i + 2`, a solution `(π^j X, π^j Y)` has
-`π ∣ X` and `π ∣ Y`: the equation divided by `π^(2j)` forces `π ∣ Y`, and then divided by
-`π^(2j+1)` it forces `π ∣ A₂ X²`. -/
-private theorem dvd_and_dvd_of_equation_pow (hπ : Prime π) (i : ℕ) (h₁ : π ∣ W.a₁) {A₂ : R}
-    (h₂ : W.a₂ = π * A₂) (hA₂ : ¬ π ∣ A₂) (h₃ : π ^ (i + 3) ∣ W.a₃) (h₄ : π ^ (i + 4) ∣ W.a₄)
-    (h₆ : π ^ (2 * i + 6) ∣ W.a₆) {X Y : R}
-    (h : W.toAffine.Equation (π ^ (i + 2) * X) (π ^ (i + 2) * Y)) : π ∣ X ∧ π ∣ Y := by
-  obtain ⟨α₁, hα₁⟩ := h₁
-  obtain ⟨α₃, hα₃⟩ := h₃
-  obtain ⟨α₄, hα₄⟩ := h₄
-  obtain ⟨α₆, hα₆⟩ := h₆
-  rw [Affine.equation_iff, hα₁, h₂, hα₃, hα₄, hα₆] at h
-  obtain ⟨Y, rfl⟩ : π ∣ Y := hπ.dvd_of_dvd_pow (n := 2)
-    ⟨π ^ (i + 1) * X ^ 3 + A₂ * X ^ 2 + π * α₄ * X + π * α₆ - α₁ * X * Y - α₃ * Y,
-      mul_left_cancel₀ (pow_ne_zero (2 * i + 4) hπ.ne_zero) (by linear_combination h)⟩
-  refine ⟨hπ.dvd_of_dvd_pow (n := 2) ((hπ.dvd_or_dvd (a := A₂) ?_).resolve_left hA₂),
-    dvd_mul_right π Y⟩
-  exact ⟨Y ^ 2 + α₁ * X * Y + α₃ * Y - π ^ i * X ^ 3 - α₄ * X - α₆,
-    mul_left_cancel₀ (pow_ne_zero (2 * i + 5) hπ.ne_zero) (by linear_combination -h)⟩
-
-/-- **The `Iₙ*` subprocedure, on points.** With `π ∣ a₁`, `a₂ = π A₂`, `π ∤ A₂`,
-`π^(k+2) ∣ a₃`, `π^(k+3) ∣ a₄` and `π^(2k+4) ∣ a₆`, a solution `(x, y)` with `π² ∣ x` and `π² ∣ y`
-has `π^(k+2) ∣ x` and `π^(k+2) ∣ y`. -/
-private theorem pow_dvd_and_pow_dvd_of_equation (hπ : Prime π) {k : ℕ} (h₁ : π ∣ W.a₁) {A₂ : R}
-    (h₂ : W.a₂ = π * A₂) (hA₂ : ¬ π ∣ A₂) (h₃ : π ^ (k + 2) ∣ W.a₃) (h₄ : π ^ (k + 3) ∣ W.a₄)
-    (h₆ : π ^ (2 * k + 4) ∣ W.a₆) {x y : R} (h : W.toAffine.Equation x y) (hx : π ^ 2 ∣ x)
-    (hy : π ^ 2 ∣ y) : π ^ (k + 2) ∣ x ∧ π ^ (k + 2) ∣ y := by
-  suffices ∀ i ≤ k, π ^ (i + 2) ∣ x ∧ π ^ (i + 2) ∣ y from this k le_rfl
-  intro i hi
-  induction i with
-  | zero => exact ⟨hx, hy⟩
-  | succ i ih =>
-    obtain ⟨⟨X, rfl⟩, ⟨Y, rfl⟩⟩ := ih (by omega)
-    obtain ⟨⟨X, rfl⟩, ⟨Y, rfl⟩⟩ := W.dvd_and_dvd_of_equation_pow hπ i h₁ h₂ hA₂
-      ((pow_dvd_pow π (by omega)).trans h₃) ((pow_dvd_pow π (by omega)).trans h₄)
-      ((pow_dvd_pow π (by omega)).trans h₆) h
-    exact ⟨⟨X, by ring⟩, ⟨Y, by ring⟩⟩
-
 namespace Affine
 
 variable {F Γ₀ : Type*} [Field F] [LinearOrderedCommGroupWithZero Γ₀] (v : Valuation F Γ₀)
@@ -178,41 +107,6 @@ variable {F Γ₀ : Type*} [Field F] [LinearOrderedCommGroupWithZero Γ₀] (v :
 local notation "𝒪" => v.valuationSubring
 
 /-! ### The normal form of the stopping test -/
-
-/-- Both branches of the stopping test for `Iₙ*` satisfy the normal form of stage `1` of the
-subprocedure: `ϖ ∣ a₁`, `ϖ ∥ a₂`, `ϖ² ∣ a₃`, `ϖ³ ∣ a₄` and `ϖ⁴ ∣ a₆`. -/
-private theorem isTateOddStage_zero_of_isTateTerminal_IStar {ϖ : v.valuationSubring} {n : ℕ}
-    (h : (integralModel v.valuationSubring W).IsTateTerminal ϖ (.IStar (n + 1))) :
-    IsTateOddStage ϖ 0 (integralModel v.valuationSubring W) := by
-  rcases isTateTerminal_IStar_add_one.1 h with ⟨k, -, hs, -⟩ | ⟨k, -, hs, -⟩
-  · obtain ⟨h₁, h₂, h₂', h₃, h₄, h₆⟩ := isTateOddStage_iff.1 hs
-    exact isTateOddStage_iff.2 ⟨h₁, h₂, h₂', (pow_dvd_pow ϖ (by omega)).trans h₃,
-      (pow_dvd_pow ϖ (by omega)).trans h₄, (pow_dvd_pow ϖ (by omega)).trans h₆⟩
-  · obtain ⟨h₁, h₂, h₂', h₃, h₄, h₆⟩ := isTateEvenStage_iff.1 hs
-    exact isTateOddStage_iff.2 ⟨h₁, h₂, h₂', (pow_dvd_pow ϖ (by omega)).trans h₃,
-      (pow_dvd_pow ϖ (by omega)).trans h₄, (pow_dvd_pow ϖ (by omega)).trans h₆⟩
-
-/-- The stopping test at `I*_{2k+1}` is the odd stage `k` with `ϖ^(2k+5) ∤ b₆`. -/
-private theorem isTateOddStage_of_isTateTerminal_IStar {ϖ : v.valuationSubring} {k : ℕ}
-    (h : (integralModel v.valuationSubring W).IsTateTerminal ϖ (.IStar (2 * k + 1))) :
-    IsTateOddStage ϖ k (integralModel v.valuationSubring W) ∧
-      ¬ ϖ ^ (2 * k + 5) ∣ (integralModel v.valuationSubring W).b₆ := by
-  rcases isTateTerminal_IStar_add_one.1 h with ⟨k', hk, hs, hb⟩ | ⟨k', hk, -, -⟩
-  · obtain rfl : k' = k := by omega
-    exact ⟨hs, hb⟩
-  · omega
-
-/-- The stopping test at `I*_{2k+2}` is the even stage `k` with
-`ϖ^(2k+7) ∤ a₄² − 4 a₂ a₆`. -/
-private theorem isTateEvenStage_of_isTateTerminal_IStar {ϖ : v.valuationSubring} {k : ℕ}
-    (h : (integralModel v.valuationSubring W).IsTateTerminal ϖ (.IStar (2 * k + 2))) :
-    IsTateEvenStage ϖ k (integralModel v.valuationSubring W) ∧
-      ¬ ϖ ^ (2 * k + 7) ∣ discrim (integralModel v.valuationSubring W).a₂
-        (integralModel v.valuationSubring W).a₄ (integralModel v.valuationSubring W).a₆ := by
-  rcases isTateTerminal_IStar_add_one.1 h with ⟨k', hk, -, -⟩ | ⟨k', hk, hs, hb⟩
-  · omega
-  · obtain rfl : k' = k := by omega
-    exact ⟨hs, hb⟩
 
 /-- The data of the normal form of stage `1`: `ϖ` is prime, the reduction is singular at the
 origin, and `a₂ = ϖ A₂` with `A₂` a unit. -/
@@ -292,9 +186,9 @@ private theorem exists_root_of_mem_farPoints_odd {ϖ : v.valuationSubring}
     (hP : P ∈ farPoints v ϖ) :
     ∃ t : ResidueField v.valuationSubring, t ^ 2 + residue _ A₃ * t - residue _ A₆ = 0 := by
   obtain ⟨hp, -, -, -, A₂, hA₂, hA₂'⟩ :=
-    stage_data v hϖ (isTateOddStage_zero_of_isTateTerminal_IStar v h)
+    stage_data v hϖ (h.isTateOddStage_zero_of_IStar)
   obtain ⟨h₁, h₂, -, h₃', h₄, h₆'⟩ :=
-    isTateOddStage_iff.1 (isTateOddStage_of_isTateTerminal_IStar v h).1
+    isTateOddStage_iff.1 (h.isTateOddStage_of_IStar_two_mul_add_one).1
   obtain ⟨x, y, hxy, -, hx, hy⟩ := hP
   have hE := (equation_integralModel_iff v).2 hxy.left
   obtain ⟨⟨X, rfl⟩, ⟨Y, rfl⟩⟩ := (integralModel _ W).pow_dvd_and_pow_dvd_of_equation hp h₁ hA₂
@@ -315,8 +209,8 @@ private theorem exists_mem_farPoints_odd [HenselianLocalRing v.valuationSubring]
     {t : ResidueField v.valuationSubring} (ht : t ^ 2 + residue _ A₃ * t - residue _ A₆ = 0) :
     ∃ P : W.Point, P ∈ farPoints v ϖ := by
   set Wo := integralModel v.valuationSubring W
-  obtain ⟨hp, -⟩ := stage_data v hϖ (isTateOddStage_zero_of_isTateTerminal_IStar v h)
-  obtain ⟨-, hb₆⟩ := isTateOddStage_of_isTateTerminal_IStar v h
+  obtain ⟨hp, -⟩ := stage_data v hϖ (h.isTateOddStage_zero_of_IStar)
+  obtain ⟨-, hb₆⟩ := h.isTateOddStage_of_IStar_two_mul_add_one
   have hD : IsUnit (A₃ ^ 2 + 4 * A₆) := by
     rw [isUnit_iff_not_dvd hϖ]
     rintro ⟨e, he⟩
@@ -350,8 +244,8 @@ private theorem exists_root_of_mem_farPoints_even {ϖ : v.valuationSubring}
     (hP : P ∈ farPoints v ϖ) : ∃ t : ResidueField v.valuationSubring,
       residue _ A₂ * t ^ 2 + residue _ A₄ * t + residue _ A₆ = 0 := by
   obtain ⟨h₁, -, h₂', h₃, -, -⟩ :=
-    isTateEvenStage_iff.1 (isTateEvenStage_of_isTateTerminal_IStar v h).1
-  obtain ⟨hp, -⟩ := stage_data v hϖ (isTateOddStage_zero_of_isTateTerminal_IStar v h)
+    isTateEvenStage_iff.1 (h.isTateEvenStage_of_IStar_two_mul_add_two).1
+  obtain ⟨hp, -⟩ := stage_data v hϖ (h.isTateOddStage_zero_of_IStar)
   have hA₂ : ¬ ϖ ∣ A₂ := fun hd ↦ h₂' (by rw [h₂, pow_two]; exact mul_dvd_mul_left ϖ hd)
   obtain ⟨x, y, hxy, -, hx, hy⟩ := hP
   have hE := (equation_integralModel_iff v).2 hxy.left
@@ -375,8 +269,8 @@ private theorem exists_mem_farPoints_even [HenselianLocalRing v.valuationSubring
     (ht : residue _ A₂ * t ^ 2 + residue _ A₄ * t + residue _ A₆ = 0) :
     ∃ P : W.Point, P ∈ farPoints v ϖ := by
   set Wo := integralModel v.valuationSubring W
-  obtain ⟨hp, -⟩ := stage_data v hϖ (isTateOddStage_zero_of_isTateTerminal_IStar v h)
-  obtain ⟨-, hdisc⟩ := isTateEvenStage_of_isTateTerminal_IStar v h
+  obtain ⟨hp, -⟩ := stage_data v hϖ (h.isTateOddStage_zero_of_IStar)
+  obtain ⟨-, hdisc⟩ := h.isTateEvenStage_of_IStar_two_mul_add_two
   -- the discriminant `A₄² − 4 A₂ A₆` is a unit, so `2 A₂ z + A₄` is a unit at a root `z`
   have hD : ¬ ϖ ∣ discrim A₂ A₄ A₆ := by
     rw [discrim]
@@ -733,7 +627,7 @@ theorem index_nonsingularReduction_dvd_four_of_isTateTerminal_IStar {ϖ : v.valu
     (hϖ : maximalIdeal v.valuationSubring = Ideal.span {ϖ}) {n : ℕ}
     (h : (integralModel v.valuationSubring W).IsTateTerminal ϖ (.IStar (n + 1))) :
     (W.nonsingularReduction v).index ∣ 4 := by
-  have hst := isTateOddStage_zero_of_isTateTerminal_IStar v h
+  have hst := h.isTateOddStage_zero_of_IStar
   rw [← AddSubgroup.relIndex_mul_index (le_nearSubgroup v hϖ hst)]
   exact mul_dvd_mul (relIndex_nearSubgroup_dvd_two v hϖ hst) (index_nearSubgroup_dvd_two v hϖ hst)
 
@@ -750,7 +644,7 @@ theorem index_nonsingularReduction_dvd_two_of_isTateTerminal_IStar_two_mul_add_o
     (hroot : ∀ t : ResidueField v.valuationSubring,
       t ^ 2 + residue _ A₃ * t - residue _ A₆ ≠ 0) :
     (W.nonsingularReduction v).index ∣ 2 := by
-  have hst := isTateOddStage_zero_of_isTateTerminal_IStar v h
+  have hst := h.isTateOddStage_zero_of_IStar
   rw [← AddSubgroup.relIndex_mul_index (le_nearSubgroup v hϖ hst),
     index_nearSubgroup_eq_one v hϖ hst fun P hP ↦
       (exists_root_of_mem_farPoints_odd v hϖ h h₃ h₆ hP).elim hroot, mul_one]
@@ -771,7 +665,7 @@ theorem index_nonsingularReduction_eq_two_of_isTateTerminal_IStar_two_mul_add_on
     (hroot : ∀ t : ResidueField v.valuationSubring,
       t ^ 2 + residue _ A₃ * t - residue _ A₆ ≠ 0) :
     (W.nonsingularReduction v).index = 2 := by
-  have hst := isTateOddStage_zero_of_isTateTerminal_IStar v h
+  have hst := h.isTateOddStage_zero_of_IStar
   rw [← AddSubgroup.relIndex_mul_index (le_nearSubgroup v hϖ hst),
     index_nearSubgroup_eq_one v hϖ hst fun P hP ↦
       (exists_root_of_mem_farPoints_odd v hϖ h h₃ h₆ hP).elim hroot, mul_one]
@@ -791,7 +685,7 @@ theorem index_nonsingularReduction_eq_four_of_isTateTerminal_IStar_two_mul_add_o
     (h₆ : (integralModel v.valuationSubring W).a₆ = ϖ ^ (2 * k + 4) * A₆)
     {t : ResidueField v.valuationSubring} (ht : t ^ 2 + residue _ A₃ * t - residue _ A₆ = 0) :
     (W.nonsingularReduction v).index = 4 := by
-  have hst := isTateOddStage_zero_of_isTateTerminal_IStar v h
+  have hst := h.isTateOddStage_zero_of_IStar
   obtain ⟨P, hP⟩ := exists_mem_farPoints_odd v hϖ h h₃ h₆ ht
   rw [← AddSubgroup.relIndex_mul_index (le_nearSubgroup v hϖ hst),
     relIndex_nearSubgroup_eq_two v hϖ hst, index_nearSubgroup_eq_two v hϖ hst hP]
@@ -810,7 +704,7 @@ theorem index_nonsingularReduction_dvd_two_of_isTateTerminal_IStar_two_mul_add_t
     (hroot : ∀ t : ResidueField v.valuationSubring,
       residue _ A₂ * t ^ 2 + residue _ A₄ * t + residue _ A₆ ≠ 0) :
     (W.nonsingularReduction v).index ∣ 2 := by
-  have hst := isTateOddStage_zero_of_isTateTerminal_IStar v h
+  have hst := h.isTateOddStage_zero_of_IStar
   rw [← AddSubgroup.relIndex_mul_index (le_nearSubgroup v hϖ hst),
     index_nearSubgroup_eq_one v hϖ hst fun P hP ↦
       (exists_root_of_mem_farPoints_even v hϖ h h₂ h₄ h₆ hP).elim hroot, mul_one]
@@ -832,7 +726,7 @@ theorem index_nonsingularReduction_eq_two_of_isTateTerminal_IStar_two_mul_add_tw
     (hroot : ∀ t : ResidueField v.valuationSubring,
       residue _ A₂ * t ^ 2 + residue _ A₄ * t + residue _ A₆ ≠ 0) :
     (W.nonsingularReduction v).index = 2 := by
-  have hst := isTateOddStage_zero_of_isTateTerminal_IStar v h
+  have hst := h.isTateOddStage_zero_of_IStar
   rw [← AddSubgroup.relIndex_mul_index (le_nearSubgroup v hϖ hst),
     index_nearSubgroup_eq_one v hϖ hst fun P hP ↦
       (exists_root_of_mem_farPoints_even v hϖ h h₂ h₄ h₆ hP).elim hroot, mul_one]
@@ -854,7 +748,7 @@ theorem index_nonsingularReduction_eq_four_of_isTateTerminal_IStar_two_mul_add_t
     {t : ResidueField v.valuationSubring}
     (ht : residue _ A₂ * t ^ 2 + residue _ A₄ * t + residue _ A₆ = 0) :
     (W.nonsingularReduction v).index = 4 := by
-  have hst := isTateOddStage_zero_of_isTateTerminal_IStar v h
+  have hst := h.isTateOddStage_zero_of_IStar
   obtain ⟨P, hP⟩ := exists_mem_farPoints_even v hϖ h h₂ h₄ h₆ ht
   rw [← AddSubgroup.relIndex_mul_index (le_nearSubgroup v hϖ hst),
     relIndex_nearSubgroup_eq_two v hϖ hst, index_nearSubgroup_eq_two v hϖ hst hP]
