@@ -42,7 +42,7 @@ variable {P E : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] [CompleteSpace
   [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 private theorem isManifoldNondegenerateCriticalPoint_symm_of_mem_maximalAtlas
-    {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) 2 M]
+    {M : Type*} [TopologicalSpace M] [ChartedSpace E M]
     {c : OpenPartialHomeomorph M E} (he : c ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) 2 M)
     {f : M → ℝ} {v : E} (hv : v ∈ (c.extend 𝓘(ℝ, E)).target)
     (h : IsNondegenerateCriticalPoint (f ∘ (c.extend 𝓘(ℝ, E)).symm) v) :
@@ -53,7 +53,7 @@ private theorem isManifoldNondegenerateCriticalPoint_symm_of_mem_maximalAtlas
   simpa only [(c.extend 𝓘(ℝ, E)).right_inv hv] using h
 
 private theorem manifoldMorseIndex_symm_of_mem_maximalAtlas
-    {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) 2 M]
+    {M : Type*} [TopologicalSpace M] [ChartedSpace E M]
     {c : OpenPartialHomeomorph M E} (he : c ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) 2 M)
     {f : M → ℝ} {v : E} (hv : v ∈ (c.extend 𝓘(ℝ, E)).target)
     (h : IsNondegenerateCriticalPoint (f ∘ (c.extend 𝓘(ℝ, E)).symm) v) :
