@@ -90,7 +90,7 @@ theorem exchangeableLaw_infinitePi_const (P : ProbabilityMeasure α) :
 coordinatewise to a parameter and an independent exchangeable noise sequence gives an
 exchangeable law. -/
 theorem exchangeableLaw_map_prod_coding {T β : Type*} [MeasurableSpace T] [MeasurableSpace β]
-    (π : Measure T) {ρ : Measure (ℕ → β)} [SFinite ρ]
+    (π : Measure T) [SFinite π] {ρ : Measure (ℕ → β)} [SFinite ρ]
     (hρ : ExchangeableLaw ρ) {f : T → β → α} (hf : Measurable (Function.uncurry f)) :
     ExchangeableLaw ((π.prod ρ).map fun p i => f p.1 (p.2 i)) := by
   refine ExchangeableLaw.intro fun τ => ?_

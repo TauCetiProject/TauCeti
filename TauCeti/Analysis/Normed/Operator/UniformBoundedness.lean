@@ -108,37 +108,8 @@ theorem ringOpNorm_le_of_forall_norm_lt (ϖ : PseudoUniformizer R) (f : E →L[R
     {δ B : ℝ} (k : ℤ) (hδ : ‖(ϖ.unit : R)‖ ^ k < δ) (hB : 0 ≤ B)
     (hf : ∀ x : E, ‖x‖ < δ → ‖f x‖ ≤ B) :
     ‖f‖ ≤ B * (‖(ϖ.unit : R)‖ ^ (k + 1))⁻¹ := by
-  set r := ‖(ϖ.unit : R)‖
-  have hr0 : 0 < r := ϖ.norm_pos
-  refine f.ringOpNorm_le_bound (by positivity) fun x ↦ ?_
-  rcases eq_or_ne ‖x‖ 0 with hx | hx
-  · have h := (inseparable_zero_iff_norm.mpr hx).map f.continuous
-    rw [map_zero, inseparable_zero_iff_norm] at h
-    simp [h, hx]
-  obtain ⟨n, ⟨hn₁, hn₂⟩, -⟩ := ϖ.existsUnique_norm_zpow_smul_mem_Ioc hx
-  rw [ϖ.norm_zpow_smul] at hn₁ hn₂
-  have hpow : r ^ (n + k) = r ^ n * r ^ k := zpow_add₀ hr0.ne' n k
-  have hy : ‖((ϖ.unit ^ (n + k) : Rˣ) : R) • x‖ < δ := by
-    rw [ϖ.norm_zpow_smul, hpow]
-    calc r ^ n * r ^ k * ‖x‖ = r ^ k * (r ^ n * ‖x‖) := by ring
-      _ ≤ r ^ k * 1 := by gcongr
-      _ < δ := by simpa using hδ
-  have hfy : r ^ n * r ^ k * ‖f x‖ ≤ B := by
-    have hfy' := hf _ hy
-    rwa [map_smul, ϖ.norm_zpow_smul, hpow] at hfy'
-  have hrn : 0 < r ^ n := zpow_pos hr0 n
-  have hrk1 : 0 < r ^ (k + 1) := zpow_pos hr0 (k + 1)
-  have h1 : r ^ n * (r ^ (k + 1) * ‖f x‖) ≤ r ^ n * (B * ‖x‖) := by
-    calc r ^ n * (r ^ (k + 1) * ‖f x‖)
-        = (r ^ n * r ^ k * ‖f x‖) * r := by rw [zpow_add_one₀ hr0.ne']; ring
-      _ ≤ B * r := by gcongr
-      _ ≤ B * (r ^ n * ‖x‖) := by gcongr
-      _ = r ^ n * (B * ‖x‖) := by ring
-  have h2 : r ^ (k + 1) * ‖f x‖ ≤ B * ‖x‖ := le_of_mul_le_mul_left h1 hrn
-  calc ‖f x‖ = (r ^ (k + 1))⁻¹ * (r ^ (k + 1) * ‖f x‖) := by
-        rw [inv_mul_cancel_left₀ hrk1.ne']
-    _ ≤ (r ^ (k + 1))⁻¹ * (B * ‖x‖) := by gcongr
-    _ = B * (r ^ (k + 1))⁻¹ * ‖x‖ := by ring
+  exact f.ringOpNorm_le_bound (by positivity)
+    (ϖ.bound_of_forall_norm_lt f k hδ hB hf)
 
 end NormedRing.PseudoUniformizer
 

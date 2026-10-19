@@ -299,7 +299,8 @@ theorem isOpenMap_of_isTate (f : M →L[R] N) (hsurj : Surjective f) : IsOpenMap
 /-- A surjective continuous linear map from a complete ultrametric seminormed module to a complete
 normed module over a Tate ring is a quotient map. -/
 theorem isQuotientMap_of_isTate (f : M →L[R] N) (hsurj : Surjective f) : IsQuotientMap f :=
-  (f.isOpenMap_of_isTate hsurj).isQuotientMap f.continuous hsurj
+  TauCeti.HasZeroSequenceOfUnits.isQuotientMap f hsurj f.continuous.continuousAt
+    fun _ ↦ (continuous_id.smul continuous_const).continuousAt
 
 /-- **Quantitative Open Mapping Theorem**: for a surjective continuous linear map `f : M →L[R] N`
 from a complete ultrametric seminormed module to a complete normed module over a Tate ring, there
@@ -311,18 +312,21 @@ theorem exists_preimage_norm_le_of_isTate (f : M →L[R] N) (hsurj : Surjective 
 /-- A continuous linear map `f : M →L[R] N` with closed range is open onto its range. -/
 theorem isOpenMap_rangeRestrict_of_isClosed_range (f : M →L[R] N)
     (hclosed : IsClosed (Set.range f)) :
-    IsOpenMap f.rangeRestrict := by
-  have hclosed' : IsClosed (f.range : Set N) := by rwa [LinearMap.coe_range]
-  have : CompleteSpace f.range := hclosed'.completeSpace_coe
-  exact f.rangeRestrict.isOpenMap_of_isTate f.toLinearMap.surjective_rangeRestrict
+    IsOpenMap f.rangeRestrict :=
+  (LinearMap.isStrictMap_iff_isOpenQuotientMap_rangeRestrict.mp
+    (TauCeti.HasZeroSequenceOfUnits.isStrictMap_of_isClosed_range f.toLinearMap
+      f.continuous.continuousAt
+      (fun _ ↦ (continuous_id.smul continuous_const).continuousAt)
+      (by rwa [LinearMap.coe_range]))).isOpenMap
 
 /-- A continuous linear map `f : M →L[R] N` with closed range is a strict morphism
 (`Topology.IsStrictMap`). -/
 theorem isStrictMap_of_isClosed_range (f : M →L[R] N) (hclosed : IsClosed (Set.range f)) :
     Topology.IsStrictMap f :=
-  LinearMap.isStrictMap_iff_isOpenQuotientMap_rangeRestrict.mpr
-    ⟨f.toLinearMap.surjective_rangeRestrict, f.rangeRestrict.continuous,
-      f.isOpenMap_rangeRestrict_of_isClosed_range hclosed⟩
+  TauCeti.HasZeroSequenceOfUnits.isStrictMap_of_isClosed_range f.toLinearMap
+    f.continuous.continuousAt
+    (fun _ ↦ (continuous_id.smul continuous_const).continuousAt)
+    (by rwa [LinearMap.coe_range])
 
 /-- **Quantitative preimage bound for closed-range operators**: if `f : M →L[R] N` has closed
 range, there exists `C > 0` such that every `y ∈ Set.range f` lifts to `x : M` with `f x = y` and
@@ -400,16 +404,10 @@ theorem equivRangeOfIsTate_apply (f : M →L[R] N) (hinj : Injective f)
   rfl
 
 @[simp]
-theorem equivRangeOfIsTate_symm_apply_apply (f : M →L[R] N) (hinj : Injective f)
-    (hclosed : IsClosed (Set.range f)) (x : M) :
-    (f.equivRangeOfIsTate hinj hclosed).symm (Set.rangeFactorization f x) = x :=
-  (f.equivRangeOfIsTate hinj hclosed).symm_apply_apply x
-
-@[simp]
 theorem equivRangeOfIsTate_symm_apply (f : M →L[R] N) (hinj : Injective f)
     (hclosed : IsClosed (Set.range f)) (x : M) :
     (f.equivRangeOfIsTate hinj hclosed).symm ⟨f x, f.mem_range_self x⟩ = x :=
-  f.equivRangeOfIsTate_symm_apply_apply hinj hclosed x
+  (f.equivRangeOfIsTate hinj hclosed).symm_apply_apply x
 
 /-- A continuous linear endomorphism of a complete ultrametric normed module over a Tate ring is a
 unit in `N →L[R] N` if and only if it is bijective. -/

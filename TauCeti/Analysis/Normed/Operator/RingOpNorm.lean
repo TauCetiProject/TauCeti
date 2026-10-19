@@ -63,6 +63,61 @@ open Set
 
 namespace TauCeti
 
+namespace NormedRing.PseudoUniformizer
+
+variable {R E F 𝓕 : Type*} [SeminormedRing R]
+  [SeminormedAddCommGroup E] [Module R E] [IsBoundedSMul R E]
+  [SeminormedAddCommGroup F] [Module R F] [IsBoundedSMul R F]
+  [FunLike 𝓕 E F] [LinearMapClass 𝓕 R E F]
+
+/-- A constant bound on a ball gives a global linear bound by rescaling with a multiplicative
+pseudo-uniformiser. Continuity of the linear map is not required. -/
+theorem bound_of_forall_norm_lt (ϖ : PseudoUniformizer R) (f : 𝓕)
+    {δ B : ℝ} (k : ℤ) (hδ : ‖(ϖ.unit : R)‖ ^ k < δ) (hB : 0 ≤ B)
+    (hf : ∀ x : E, ‖x‖ < δ → ‖f x‖ ≤ B) (x : E) :
+    ‖f x‖ ≤ B * (‖(ϖ.unit : R)‖ ^ (k + 1))⁻¹ * ‖x‖ := by
+  set r := ‖(ϖ.unit : R)‖
+  have hr0 : 0 < r := ϖ.norm_pos
+  rcases eq_or_ne ‖x‖ 0 with hx | hx
+  · have hbound : ∀ n : ℕ, ‖f x‖ ≤ r ^ n * B := by
+      intro n
+      have hy : ‖((ϖ.unit ^ (-(n : ℤ)) : Rˣ) : R) • x‖ < δ := by
+        rw [ϖ.norm_zpow_smul, hx, mul_zero]
+        exact (zpow_pos hr0 k).trans hδ
+      have hfy := hf _ hy
+      rw [map_smul, ϖ.norm_zpow_smul, zpow_neg, zpow_natCast] at hfy
+      exact (inv_mul_le_iff₀ (pow_pos hr0 n)).mp hfy
+    have hzero : ‖f x‖ ≤ 0 := by
+      have hlim := (tendsto_pow_atTop_nhds_zero_of_lt_one hr0.le ϖ.norm_lt_one).mul_const B
+      exact ge_of_tendsto (by simpa using hlim) (Filter.Eventually.of_forall hbound)
+    simpa [hx] using hzero
+  obtain ⟨n, ⟨hn₁, hn₂⟩, -⟩ := ϖ.existsUnique_norm_zpow_smul_mem_Ioc hx
+  rw [ϖ.norm_zpow_smul] at hn₁ hn₂
+  have hpow : r ^ (n + k) = r ^ n * r ^ k := zpow_add₀ hr0.ne' n k
+  have hy : ‖((ϖ.unit ^ (n + k) : Rˣ) : R) • x‖ < δ := by
+    rw [ϖ.norm_zpow_smul, hpow]
+    calc r ^ n * r ^ k * ‖x‖ = r ^ k * (r ^ n * ‖x‖) := by ring
+      _ ≤ r ^ k * 1 := by gcongr
+      _ < δ := by simpa using hδ
+  have hfy : r ^ n * r ^ k * ‖f x‖ ≤ B := by
+    have hfy' := hf _ hy
+    rwa [map_smul, ϖ.norm_zpow_smul, hpow] at hfy'
+  have hrn : 0 < r ^ n := zpow_pos hr0 n
+  have hrk1 : 0 < r ^ (k + 1) := zpow_pos hr0 (k + 1)
+  have h1 : r ^ n * (r ^ (k + 1) * ‖f x‖) ≤ r ^ n * (B * ‖x‖) := by
+    calc r ^ n * (r ^ (k + 1) * ‖f x‖)
+        = (r ^ n * r ^ k * ‖f x‖) * r := by rw [zpow_add_one₀ hr0.ne']; ring
+      _ ≤ B * r := by gcongr
+      _ ≤ B * (r ^ n * ‖x‖) := by gcongr
+      _ = r ^ n * (B * ‖x‖) := by ring
+  have h2 : r ^ (k + 1) * ‖f x‖ ≤ B * ‖x‖ := le_of_mul_le_mul_left h1 hrn
+  calc ‖f x‖ = (r ^ (k + 1))⁻¹ * (r ^ (k + 1) * ‖f x‖) := by
+        rw [inv_mul_cancel_left₀ hrk1.ne']
+    _ ≤ (r ^ (k + 1))⁻¹ * (B * ‖x‖) := by gcongr
+    _ = B * (r ^ (k + 1))⁻¹ * ‖x‖ := by ring
+
+end NormedRing.PseudoUniformizer
+
 namespace NormedRing.IsTate
 
 variable {R E F 𝓕 : Type*} [SeminormedRing R] [IsTate R]
@@ -77,35 +132,14 @@ pseudo-uniformiser satisfies `‖f x‖ ≤ C * ‖x‖` for some `C > 0`. -/
 theorem bound_of_continuous (f : 𝓕) (hf : Continuous f) :
     ∃ C, 0 < C ∧ ∀ x, ‖f x‖ ≤ C * ‖x‖ := by
   obtain ⟨ϖ⟩ := nonempty_pseudoUniformizer (R := R)
-  set r := ‖(ϖ.unit : R)‖ with hr
-  have hr0 : 0 < r := ϖ.norm_pos
-  -- Continuity at zero: vectors of norm `< δ` have images of norm `< 1`.
   obtain ⟨δ, hδ, hfδ⟩ : ∃ δ > 0, ∀ x : E, ‖x‖ < δ → ‖f x‖ < 1 := by
     simpa [dist_eq_norm, map_zero] using Metric.continuous_iff.mp hf 0 1 one_pos
-  obtain ⟨k, hk⟩ : ∃ k : ℕ, r ^ k < δ := exists_pow_lt_of_lt_one hδ ϖ.norm_lt_one
-  refine ⟨(r ^ (k + 1))⁻¹, by positivity, fun x ↦ ?_⟩
-  rcases eq_or_ne ‖x‖ 0 with hx | hx
-  · -- A vector of norm zero is inseparable from `0`, hence so is its image.
-    have h := ((inseparable_zero_iff_norm.mpr hx).map hf)
-    rw [map_zero, inseparable_zero_iff_norm] at h
-    simp [h, hx]
-  -- Rescale `x` into the shell `‖ϖ‖ < ‖ϖ ^ n • x‖ ≤ 1`, then by `ϖ ^ k` into the ball of radius
-  -- `δ`, where the image is controlled.
-  obtain ⟨n, ⟨hn₁, hn₂⟩, -⟩ := ϖ.existsUnique_norm_zpow_smul_mem_Ioc hx
-  rw [ϖ.norm_zpow_smul] at hn₁ hn₂
-  have hpow : r ^ (n + k : ℤ) = r ^ n * r ^ k := by rw [zpow_add₀ hr0.ne', zpow_natCast]
-  have hfy : r ^ (n + k : ℤ) * ‖f x‖ < 1 := by
-    have hy : ‖((ϖ.unit ^ (n + k : ℤ) : Rˣ) : R) • x‖ < δ := by
-      rw [ϖ.norm_zpow_smul, hpow]
-      calc r ^ n * r ^ k * ‖x‖ = r ^ k * (r ^ n * ‖x‖) := by ring
-        _ ≤ r ^ k * 1 := by gcongr
-        _ < δ := by simpa using hk
-    simpa [map_smul, ϖ.norm_zpow_smul] using hfδ _ hy
-  have hrn : 0 < r ^ n := zpow_pos hr0 n
-  have hrk : 0 < r ^ k := pow_pos hr0 k
-  rw [hpow] at hfy
-  rw [inv_mul_eq_div, le_div_iff₀ (by positivity), pow_succ]
-  nlinarith [mul_lt_mul_of_pos_right hfy (mul_pos hrk hr0), norm_nonneg (f x)]
+  obtain ⟨k, hk⟩ : ∃ k : ℕ, ‖(ϖ.unit : R)‖ ^ k < δ :=
+    exists_pow_lt_of_lt_one hδ ϖ.norm_lt_one
+  refine ⟨(‖(ϖ.unit : R)‖ ^ ((k : ℤ) + 1))⁻¹,
+    inv_pos.mpr (zpow_pos ϖ.norm_pos _), fun x ↦ ?_⟩
+  simpa using ϖ.bound_of_forall_norm_lt f (k : ℤ) (by simpa using hk) zero_le_one
+    (fun x hx ↦ (hfδ x hx).le) x
 
 end NormedRing.IsTate
 
