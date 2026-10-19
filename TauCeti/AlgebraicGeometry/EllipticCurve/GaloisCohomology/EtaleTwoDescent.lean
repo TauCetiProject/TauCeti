@@ -40,9 +40,8 @@ The cohomological descent map is injective. A class whose factorwise images vani
 by a cocycle `z` with `e₂(z(g), T)` trivial whenever `g` fixes `T ∈ E(Kˢ)[2]`, since the fixer of
 a point `(x, 0)` of order two is the absolute Galois group of the factor field embedded by
 `θ ↦ x`. Such a cocycle is a coboundary, because `E(Kˢ)[2]` is a Klein four-group on which two
-distinct nonzero points pair to `-1`. The explicit and cohomological `2`-Selmer groups are compared
-through this injective map; that comparison also needs the agreement of the local conditions,
-which is not proved in this file.
+distinct nonzero points pair to `-1`. Consequently a class lies in the image of the Kummer map
+exactly when its cohomological descent image lies in the image of the explicit `x - T` map.
 
 ## Main definitions
 
@@ -70,6 +69,8 @@ which is not proved in this file.
 * `TauCeti.TwoDescent.eq_zero_of_forall_factorCohomologicalMap_eq_zero`: a class of
   `H¹(G_K, E[2])` whose factorwise images all vanish is zero.
 * `TauCeti.TwoDescent.cohomologicalMap_injective`: the cohomological descent map is injective.
+* `TauCeti.TwoDescent.cohomologicalMap_mem_range_μ_iff`: the cohomological descent image of a
+  class lies in the explicit descent image exactly when the class is a Kummer class.
 
 ## References
 
@@ -625,6 +626,17 @@ theorem cohomologicalMap_injective (h2 : IsUnit ((2 : ℕ) : K)) :
   refine (injective_iff_map_eq_one _).2 fun c hc ↦ Multiplicative.toAdd.injective ?_
   exact eq_zero_of_forall_factorCohomologicalMap_eq_zero W h2 (fun _ ↦ IsSepClosed.lift)
     ((cohomologicalMap_eq_one_iff W _ h2 c.toAdd).1 hc)
+
+/-- **The cohomological and explicit local conditions agree.** The image of a cohomology class
+under the cohomological `2`-descent map lies in the image of the explicit `x - T` descent map if
+and only if the class itself lies in the image of the cohomological Kummer map. -/
+theorem cohomologicalMap_mem_range_μ_iff (h2 : IsUnit ((2 : ℕ) : K))
+    {c : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff 2)} :
+    cohomologicalMap W h2 (.ofAdd c) ∈ (WeierstrassCurve.Affine.μ (W := W.toAffine)).range ↔
+      c ∈ (W.kummerMap 2 h2).range := by
+  rw [← cohomologicalMap_comp_kummerMap W h2, MonoidHom.range_comp,
+    Subgroup.mem_map_iff_mem (cohomologicalMap_injective W h2)]
+  exact Iff.rfl
 
 end TwoDescent
 
