@@ -12,13 +12,11 @@ public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Map
 
 A bounded coefficient homomorphism with a uniform bound on coefficient lifts induces an open
 quotient map of restricted-series rings for their Gauss norm topologies. The lift has the same
-norm bound as the coefficient lifts, at every positive real polyradius. Its kernel consists of
-the series whose coefficients belong to the coefficient kernel.
+norm bound as the coefficient lifts, at every positive real polyradius.
 
-These statements supply topological quotient interfaces for coefficient base change and finite
-presentations. Neither completeness nor a finite variable set is needed. The lifting hypothesis
-is stronger than algebraic surjectivity; the quotient topology alone does not assert equality
-with a prescribed quotient norm.
+Neither completeness nor a finite variable set is needed. The lifting hypothesis is stronger
+than algebraic surjectivity; the quotient topology alone does not assert equality with a
+prescribed quotient norm.
 
 The coefficientwise lifting construction extends
 `TauCeti.MvPowerSeries.restrictedMap_surjective`, using Mathlib's `isRestricted_map`.
@@ -46,14 +44,7 @@ theorem exists_restrictedMap_eq_and_norm_le {L : ℝ} (hL : 0 ≤ L)
     (g : IsRestricted.subring (R := S) c) :
     ∃ f, restrictedMap φ hφ f = g ∧ ‖f‖ ≤ L * ‖g‖ := by
   obtain ⟨f, hf, hcoeff⟩ := exists_restrictedMap_eq_and_norm_coeff_le φ hφ hlift g
-  refine ⟨f, hf, (norm_le_iff (mul_nonneg hL (norm_nonneg g))).mpr fun t ↦ ?_⟩
-  calc
-    ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·) ≤
-        L * ‖coeff t (g : MvPowerSeries σ S)‖ * t.prod (c · ^ ·) :=
-      mul_le_mul_of_nonneg_right (hcoeff t) (prod_pow_pos t).le
-    _ ≤ L * ‖g‖ := by
-      rw [mul_assoc]
-      exact mul_le_mul_of_nonneg_left (norm_coeff_mul_prod_le g t) hL
+  exact ⟨f, hf, norm_le_mul_of_norm_coeff_le hL hcoeff⟩
 
 /-- Uniformly bounded coefficient lifts make the induced map of restricted series open. -/
 theorem isOpenMap_restrictedMap {L : ℝ} (hL : 0 < L)

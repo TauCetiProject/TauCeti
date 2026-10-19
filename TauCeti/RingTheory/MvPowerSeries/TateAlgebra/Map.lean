@@ -147,11 +147,10 @@ theorem restrictedMap_restrictedMap {T : Type*} [NormedRing T] [IsUltrametricDis
 theorem norm_restrictedMap_le [∀ i, Fact (0 < c i)] (hC : 0 ≤ C)
     (f : IsRestricted.subring (R := R) c) :
     ‖restrictedMap φ hφ f‖ ≤ C * ‖f‖ := by
-  rw [norm_le_iff (mul_nonneg hC (norm_nonneg f))]
+  apply norm_le_mul_of_norm_coeff_le hC
   intro t
   rw [coeff_restrictedMap]
-  exact (mul_le_mul_of_nonneg_right (hφ _) (prod_pow_pos t).le).trans
-    (by rw [mul_assoc]; exact mul_le_mul_of_nonneg_left (norm_coeff_mul_prod_le f t) hC)
+  exact hφ _
 
 /-- Bounded coefficient maps are Lipschitz for the Gauss norm. -/
 theorem lipschitzWith_restrictedMap [∀ i, Fact (0 < c i)] (hC : 0 ≤ C) :
