@@ -22,9 +22,7 @@ open FirstOrder FirstOrder.Language
 -- A tuple listing every element of a finite structure has orbit rank zero.
 example {L : Language} [L.IsRelational] {M : Type} [L.Structure M] [Finite M] {n : ℕ}
     (a : Fin n → M) (ha : Function.Surjective a) : orbitRank (L := L) a = 0 := by
-  have h := orbitRank_le_natCard_sub_ncard_range (L := L) a
-  rwa [Set.range_eq_univ.mpr ha, Set.ncard_univ, Nat.sub_self, Nat.cast_zero,
-    nonpos_iff_eq_zero] at h
+  simpa [Set.range_eq_univ.mpr ha] using orbitRank_le_natCard_sub_ncard_range (L := L) a
 
 -- An empty structure, even one interpreting a nullary relation, has internal Scott rank one.
 example :

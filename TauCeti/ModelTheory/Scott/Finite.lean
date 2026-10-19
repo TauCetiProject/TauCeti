@@ -26,8 +26,6 @@ structure stabilizes internally at `Nat.card M`, and its internal Scott rank is 
 
 ## Main results
 
-* `SameAtomicType.exists_embedding_comp_eq`: a surjective tuple with the same atomic type as
-  another tuple induces an embedding.
 * `BFEquiv.exists_embedding_comp_eq`: enough rounds of the back-and-forth game from a tuple of a
   finite structure give an embedding of the whole structure.
 * `bfEquiv_iff_exists_equiv_comp_eq`: in a finite structure, back-and-forth equivalence at such
@@ -52,25 +50,6 @@ open scoped Ordinal
 
 variable {L : Language.{u, v}} [L.IsRelational]
 variable {M : Type w} {N : Type w'} [L.Structure M] [L.Structure N] {n : ℕ}
-
-/-- If a tuple onto `M` has the same atomic type as a tuple `b` of `N`, then sending each entry
-to the corresponding entry of `b` is an embedding of `M` into `N`. Repeated entries are
-allowed. -/
-theorem SameAtomicType.exists_embedding_comp_eq {a : Fin n → M} {b : Fin n → N}
-    (h : SameAtomicType (L := L) a b) (ha : Function.Surjective a) :
-    ∃ f : M ↪[L] N, f ∘ a = b := by
-  obtain ⟨f, a', ha', hb', hdom⟩ := h.exists_fgEquiv
-  have hle : (⊤ : L.Substructure M) ≤ f.1.dom := fun x _ => by
-    rw [← SetLike.mem_coe, hdom]
-    exact ha x
-  refine ⟨f.1.toEmbedding.comp
-    ((Substructure.inclusion hle).comp Substructure.topEquiv.symm.toEmbedding),
-    funext fun i => ?_⟩
-  rw [← hb' i, Function.comp_apply, Embedding.comp_apply]
-  refine congrArg f.1.toEmbedding (Subtype.ext ?_)
-  have hx := Substructure.topEquiv.apply_symm_apply (L := L) (a i)
-  rw [Substructure.coe_topEquiv] at hx
-  simpa [ha'] using hx
 
 /-- Back-and-forth equivalence of a tuple `a` of a finite structure `M` with a tuple `b`, at a
 natural level `k` large enough to enumerate the elements of `M` outside the range of `a`, gives
