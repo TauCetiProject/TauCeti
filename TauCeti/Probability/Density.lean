@@ -39,8 +39,8 @@ family can import it without acquiring the others.
 * `integral_withDensity_ofReal` — and its integral is the integral of the `f`-weighted integrand;
 * `measureReal_withDensity_ofReal` — the real mass of a measurable set on which the density `f` is
   nonnegative and integrable is its integral over that set.
-* `support_withDensity_volume_eq_Icc` — a law carried by `[a, b]` whose density is positive on
-  `(a, b)` has topological support `[a, b]` when `a < b`.
+* `support_withDensity_volume_eq_closure` — a law carried by the closure of an open set on which
+  its Lebesgue density is nonzero has that closure as its topological support.
 
 The density bridges are stated for an arbitrary codomain and codomain measure, since neither proof
 uses anything about `ℝ` or `volume`, and both ask only for `AEMeasurable f μ`.
@@ -129,21 +129,21 @@ theorem measureReal_withDensity_ofReal (hnn : 0 ≤ᵐ[μ.restrict s] ρ)
 
 end RealDensity
 
-/-- A measure with a Lebesgue density that is nonzero throughout `(a, b)` and is almost surely
-carried by `[a, b]` has topological support `[a, b]` when `a < b`. -/
-theorem support_withDensity_volume_eq_Icc {a b : ℝ} (hab : a < b) {f : ℝ → ℝ≥0∞}
-    (hf : AEMeasurable f volume) (hpos : ∀ x ∈ Set.Ioo a b, f x ≠ 0)
-    (hmem : ∀ᵐ x ∂volume.withDensity f, x ∈ Set.Icc a b) :
-    (volume.withDensity f).support = Set.Icc a b := by
-  refine Set.Subset.antisymm (Measure.support_subset_of_isClosed isClosed_Icc hmem) fun x hx ↦ ?_
+/-- A measure with a Lebesgue density that is nonzero throughout an open set `U` and is almost
+surely carried by `closure U` has topological support `closure U`. -/
+theorem support_withDensity_volume_eq_closure {U : Set ℝ} (hU : IsOpen U) {f : ℝ → ℝ≥0∞}
+    (hf : AEMeasurable f volume) (hpos : ∀ x ∈ U, f x ≠ 0)
+    (hmem : ∀ᵐ x ∂volume.withDensity f, x ∈ closure U) :
+    (volume.withDensity f).support = closure U := by
+  refine Set.Subset.antisymm (Measure.support_subset_of_isClosed isClosed_closure hmem)
+    fun x hx ↦ ?_
   rw [Measure.mem_support_iff_forall]
-  intro U hU
-  obtain ⟨V, hVU, hVo, hxV⟩ := mem_nhds_iff.mp hU
-  have hne : (V ∩ Set.Ioo a b).Nonempty :=
-    mem_closure_iff.mp (by rwa [closure_Ioo hab.ne]) V hVo hxV
-  refine lt_of_lt_of_le ?_ (measure_mono hVU)
+  intro W hW
+  obtain ⟨V, hVW, hVo, hxV⟩ := mem_nhds_iff.mp hW
+  have hne : (V ∩ U).Nonempty := mem_closure_iff.mp hx V hVo hxV
+  refine lt_of_lt_of_le ?_ (measure_mono hVW)
   rw [pos_iff_ne_zero, Ne, withDensity_apply_eq_zero' hf]
-  refine (lt_of_lt_of_le ((hVo.inter isOpen_Ioo).measure_pos volume hne)
+  refine (lt_of_lt_of_le ((hVo.inter hU).measure_pos volume hne)
     (measure_mono ?_)).ne'
   rintro y ⟨hyV, hy⟩
   refine ⟨?_, hyV⟩

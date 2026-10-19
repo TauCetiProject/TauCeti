@@ -132,13 +132,13 @@ interval. -/
 @[simp]
 theorem support_betaMeasure {α β : ℝ} (hα : 0 < α) (hβ : 0 < β) :
     (betaMeasure α β).support = Icc 0 1 := by
-  rw [betaMeasure]
-  refine support_withDensity_volume_eq_Icc zero_lt_one
+  rw [betaMeasure, ← closure_Ioo zero_ne_one]
+  refine support_withDensity_volume_eq_closure isOpen_Ioo
     (measurable_betaPDFReal α β).ennreal_ofReal.aemeasurable ?_ ?_
   · intro x hx
     simpa only [betaPDF] using
       (ENNReal.ofReal_pos.2 (betaPDFReal_pos hx.1 hx.2 hα hβ)).ne'
-  · rw [← betaMeasure]
+  · rw [← betaMeasure, closure_Ioo zero_ne_one]
     exact ae_mem_Icc_betaMeasure α β
 
 private lemma betaPDFReal_mul_rpow_mul_one_sub_rpow {α β q s x : ℝ}

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.Chi.Basic
 public import Mathlib.MeasureTheory.Measure.Support
+import TauCeti.Probability.Density
 
 /-!
 # Nakagami distributions
@@ -228,21 +229,14 @@ and empty otherwise. -/
 theorem support_nakagamiMeasure (m Ω : ℝ) :
     (nakagamiMeasure m Ω).support = if 0 < m ∧ 0 < Ω then Ici 0 else ∅ := by
   split_ifs with h
-  · apply Subset.antisymm
-    · exact Measure.support_subset_of_isClosed isClosed_Ici
-        ((ae_pos_nakagamiMeasure m Ω).mono fun _ hx ↦ hx.le)
-    · have hac : volume.restrict (Ioi (0 : ℝ)) ≪ nakagamiMeasure m Ω := by
-        rw [nakagamiMeasure_of_pos h.1 h.2, map_sqrt_gammaMeasure]
-        apply withDensity_absolutelyContinuous' (by fun_prop)
-        filter_upwards [ae_restrict_mem measurableSet_Ioi] with x hx
-        obtain ⟨hm, hΩ⟩ := h
-        have hx' : 0 < x := hx
-        exact (ENNReal.ofReal_pos.2 (by positivity)).ne'
-      rw [← closure_Ioi (a := (0 : ℝ))]
-      apply closure_minimal ?_ (nakagamiMeasure m Ω).isClosed_support
-      intro x hx
-      apply hac.support_mono
-      exact Measure.interior_inter_support ⟨by simpa using hx, by simp [Measure.support_eq_univ]⟩
+  · rw [nakagamiMeasure_eq_withDensity, ← closure_Ioi]
+    refine support_withDensity_volume_eq_closure isOpen_Ioi
+      (measurable_nakagamiPDF m Ω).aemeasurable ?_ ?_
+    · intro x hx
+      rw [nakagamiPDF_eq_ofReal]
+      exact (ENNReal.ofReal_pos.2 ((nakagamiPDFReal_pos_iff h.1 h.2).2 hx)).ne'
+    · rw [← nakagamiMeasure_eq_withDensity, closure_Ioi]
+      exact (ae_pos_nakagamiMeasure m Ω).mono fun _ hx ↦ hx.le
   · simp [nakagamiMeasure_of_not_pos h, Measure.support_zero]
 
 /-- Squaring a Nakagami variable recovers its defining Gamma law. -/

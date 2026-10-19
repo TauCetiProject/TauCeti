@@ -291,19 +291,13 @@ positive mass. -/
 @[simp]
 theorem support_logNormalMeasure (m : ℝ) (hv : v ≠ 0) :
     (logNormalMeasure m v).support = Ici 0 := by
-  apply Set.Subset.antisymm
-  · apply Measure.support_subset_of_isClosed isClosed_Ici
-    filter_upwards [ae_pos_logNormalMeasure m v] with x hx
-    exact hx.le
-  · rw [Measure.support_eq_forall_isOpen]
-    intro x hx U hxU hU
-    have hxClosure : x ∈ closure (Ioi (0 : ℝ)) := by
-      rw [closure_Ioi]
-      exact hx
-    obtain ⟨y, hyU, hyPos⟩ := mem_closure_iff.mp hxClosure U hU hxU
-    rw [logNormalMeasure_eq_withDensity m hv, withDensity_apply _ hU.measurableSet,
-      setLIntegral_pos_iff (measurable_logNormalPDF m v), support_logNormalPDF m hv]
-    exact (isOpen_Ioi.inter hU).measure_pos volume ⟨y, hyPos, hyU⟩
+  rw [logNormalMeasure_eq_withDensity m hv, ← closure_Ioi]
+  refine support_withDensity_volume_eq_closure isOpen_Ioi
+    (measurable_logNormalPDF m v).aemeasurable ?_ ?_
+  · intro x hx
+    exact (logNormalPDF_pos m hv hx).ne'
+  · rw [← logNormalMeasure_eq_withDensity m hv, closure_Ioi]
+    exact (ae_pos_logNormalMeasure m v).mono fun _ hx ↦ hx.le
 
 /-- At zero log-variance, the topological support of the log-normal law is its single atom. -/
 theorem support_logNormalMeasure_zero_var (m : ℝ) :
