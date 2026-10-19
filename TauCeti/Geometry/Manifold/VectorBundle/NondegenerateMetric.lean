@@ -17,9 +17,10 @@ This file bundles a smooth field of symmetric nondegenerate real bilinear forms 
 bundle. Positivity is not required.
 
 The metric is stored as a native `ContMDiffSection` of the bundle of continuous bilinear forms.
-Its pointwise nondegeneracy produces flat and sharp musical isomorphisms through
-`LinearMap.BilinForm.toDual`. Every smooth Riemannian metric gives such a nondegenerate metric,
-which connects this general carrier to Mathlib's positive-definite Riemannian carrier.
+When the model space is finite-dimensional, its pointwise nondegeneracy produces flat and sharp
+musical isomorphisms through `LinearMap.BilinForm.toDual`. Every smooth Riemannian metric gives
+such a nondegenerate metric, which connects this general carrier to Mathlib's positive-definite
+Riemannian carrier.
 
 These objects are the algebraic and smooth carrier needed to state the Koszul construction of the
 Levi-Civita connection for an indefinite metric.
@@ -28,8 +29,10 @@ Levi-Civita connection for an indefinite metric.
 
 * `TauCeti.Manifold.ContMDiffNondegenerateMetric`: a smooth symmetric nondegenerate tangent
   bilinear form.
-* `TauCeti.Manifold.ContMDiffNondegenerateMetric.flat`: its fibrewise flat musical equivalence.
-* `TauCeti.Manifold.ContMDiffNondegenerateMetric.sharp`: the inverse musical equivalence.
+* `TauCeti.Manifold.ContMDiffNondegenerateMetric.flat`: its fibrewise flat musical equivalence,
+  for a finite-dimensional model space.
+* `TauCeti.Manifold.ContMDiffNondegenerateMetric.sharp`: the inverse musical equivalence, for a
+  finite-dimensional model space.
 * `Bundle.ContMDiffRiemannianMetric.toNondegenerateMetric`: the positive-definite specialization.
 
 ## References
@@ -104,40 +107,53 @@ variable [FiniteDimensional ℝ E]
 /-- The flat musical isomorphism induced by a smooth nondegenerate metric at `x`. Its inverse is
 the sharp musical isomorphism. -/
 noncomputable def flat (g : ContMDiffNondegenerateMetric (I := I) (M := M)) (x : M) :
-    TangentSpace I x ≃ₗ[ℝ] Module.Dual ℝ (TangentSpace I x) := by
-  let _ : FiniteDimensional ℝ (TangentSpace I x) :=
-    VectorBundle.finiteDimensional ℝ E (TangentSpace I) x
-  exact (g x).toBilinForm.toDual (g.nondegenerate x)
+    TangentSpace I x ≃ₗ[ℝ] Module.Dual ℝ (TangentSpace I x) :=
+  (g x).toBilinForm.toDual (g.nondegenerate x)
+
+/-- The flat musical isomorphism is Mathlib's dual equivalence of the fibrewise bilinear form. -/
+theorem flat_eq_toDual (g : ContMDiffNondegenerateMetric (I := I) (M := M)) (x : M) :
+    g.flat x = (g x).toBilinForm.toDual (g.nondegenerate x) := by
+  rw [flat]
 
 /-- The sharp musical isomorphism induced by a smooth nondegenerate metric at `x`. -/
-noncomputable abbrev sharp (g : ContMDiffNondegenerateMetric (I := I) (M := M)) (x : M) :
+noncomputable def sharp (g : ContMDiffNondegenerateMetric (I := I) (M := M)) (x : M) :
     Module.Dual ℝ (TangentSpace I x) ≃ₗ[ℝ] TangentSpace I x :=
   (g.flat x).symm
+
+/-- The inverse of the flat musical isomorphism is the sharp musical isomorphism. -/
+@[simp]
+theorem flat_symm (g : ContMDiffNondegenerateMetric (I := I) (M := M)) (x : M) :
+    (g.flat x).symm = g.sharp x := by
+  rw [sharp]
+
+/-- Flat undoes sharp. -/
+@[simp]
+theorem flat_sharp_apply (g : ContMDiffNondegenerateMetric (I := I) (M := M))
+    (x : M) (f : Module.Dual ℝ (TangentSpace I x)) : g.flat x (g.sharp x f) = f :=
+  (g.flat x).apply_symm_apply f
+
+/-- Sharp undoes flat. -/
+@[simp]
+theorem sharp_flat_apply (g : ContMDiffNondegenerateMetric (I := I) (M := M))
+    (x : M) (v : TangentSpace I x) : g.sharp x (g.flat x v) = v :=
+  (g.flat x).symm_apply_apply v
 
 /-- The flat musical isomorphism evaluates as the metric pairing. -/
 @[simp]
 theorem flat_apply_apply (g : ContMDiffNondegenerateMetric (I := I) (M := M))
     (x : M) (v w : TangentSpace I x) : g.flat x v w = g x v w := by
-  let _ : FiniteDimensional ℝ (TangentSpace I x) :=
-    VectorBundle.finiteDimensional ℝ E (TangentSpace I) x
-  change (g x).toBilinForm.toDual (g.nondegenerate x) v w = g x v w
-  rw [LinearMap.BilinForm.toDual_def]
-  rfl
+  rw [flat_eq_toDual, LinearMap.BilinForm.toDual_def, ContinuousLinearMap.toBilinForm_apply]
 
 /-- The sharp representative of a covector pairs against every vector to give that covector. -/
 @[simp]
 theorem apply_sharp_apply (g : ContMDiffNondegenerateMetric (I := I) (M := M))
     (x : M) (f : Module.Dual ℝ (TangentSpace I x)) (w : TangentSpace I x) :
     g x (g.sharp x f) w = f w := by
-  let _ : FiniteDimensional ℝ (TangentSpace I x) :=
-    VectorBundle.finiteDimensional ℝ E (TangentSpace I) x
-  change (g x).toBilinForm
-      (((g x).toBilinForm.toDual (g.nondegenerate x)).symm f) w = f w
-  exact LinearMap.BilinForm.apply_toDual_symm_apply f w
+  rw [← g.flat_apply_apply, flat_sharp_apply]
 
-/-- By symmetry, the sharp representative also represents a covector in the first argument. -/
+/-- By symmetry, the sharp representative also represents a covector in the second argument. -/
 @[simp]
-theorem apply_sharp_apply_left (g : ContMDiffNondegenerateMetric (I := I) (M := M))
+theorem apply_apply_sharp (g : ContMDiffNondegenerateMetric (I := I) (M := M))
     (x : M) (f : Module.Dual ℝ (TangentSpace I x)) (w : TangentSpace I x) :
     g x w (g.sharp x f) = f w := by
   rw [g.apply_comm, g.apply_sharp_apply]
@@ -153,7 +169,7 @@ theorem eq_sharp_iff (g : ContMDiffNondegenerateMetric (I := I) (M := M))
   · intro h
     apply (g.flat x).injective
     ext w
-    rw [g.flat_apply_apply, h, LinearEquiv.apply_symm_apply]
+    rw [g.flat_apply_apply, h, flat_sharp_apply]
 
 end FiniteDimensional
 
@@ -177,13 +193,10 @@ def toNondegenerateMetric
   toContMDiffSection := ⟨g.inner, g.contMDiff⟩
   symm x := ⟨g.symm x⟩
   nondegenerate x := by
-    constructor
+    constructor <;>
     · intro v hv
       by_contra hv0
-      exact (ne_of_gt (g.pos x v hv0)) (hv v)
-    · intro v hv
-      by_contra hv0
-      exact (ne_of_gt (g.pos x v hv0)) (hv v)
+      exact (g.pos x v hv0).ne' (hv v)
 
 /-- Viewing a Riemannian metric as a nondegenerate metric preserves its pointwise pairing. -/
 @[simp]
