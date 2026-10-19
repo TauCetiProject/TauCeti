@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.Action.Pointwise.Set.Basic
 public import Mathlib.Algebra.Group.Subgroup.Ker
+public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.Data.Fintype.BigOperators
 public import Mathlib.Tactic.Abel
 public import TauCeti.Combinatorics.Network.Basic
@@ -41,7 +42,8 @@ at the sink `t`. A loop at `v` enters and leaves `v`, so it contributes nothing 
   entering `S` minus the value leaving `S`.
 * `TauCeti.sum_excessAt`: the total excess over all vertices vanishes.
 * `TauCeti.excessAt_source_eq_neg_sink`: an assignment conserved away from `s` and `t` has opposite
-  excesses at `s` and `t`.
+  excesses at `s` and `t`, and `TauCeti.excessAt_sink_eq_arrowSum_sub` computes the excess at `t`
+  as the net value across any vertex set containing `s` but not `t`.
 * `TauCeti.isCirculation_iff_mem_ker`: circulations form the kernel of `excessHom`, and
   `TauCeti.setOf_excessAt_eq_eq_vadd_ker` identifies every nonempty prescribed-excess fibre with a
   translate of that kernel.
@@ -115,6 +117,12 @@ theorem map_arrowSum {L F : Type*} [AddCommMonoid L] [FunLike F K L] [AddMonoidH
     (φ : F) (f : Assignment Q K) (S T : Finset V) :
     φ (arrowSum f S T) = arrowSum (fun ⦃a b⦄ (e : Q a b) ↦ φ (f e)) S T := by
   simp [arrowSum_def, map_sum]
+
+/-- Summing over the arrows between two vertex sets is monotone in the assignment. -/
+@[gcongr]
+theorem arrowSum_mono [PartialOrder K] [IsOrderedAddMonoid K] {f g : Assignment Q K} (h : f ≤ g)
+    (S T : Finset V) : arrowSum f S T ≤ arrowSum g S T :=
+  sum_le_sum fun v _ ↦ sum_le_sum fun w _ ↦ sum_le_sum fun e _ ↦ h v w e
 
 end AddCommMonoid
 
@@ -213,6 +221,17 @@ theorem excessAt_source_eq_neg_sink (f : Assignment Q K) {s t : V}
     rw [hs, neg_zero]
   · rw [eq_neg_iff_add_eq_zero, ← sum_excessAt f,
       Fintype.sum_eq_add s t hst fun v hv ↦ hconserve v hv.1 hv.2]
+
+/-- **Value across a cut.** If an assignment is conserved at every vertex other than `s` and `t`,
+then for every vertex set `S` containing `s` but not `t`, the excess at `t` is the value on arrows
+leaving `S` minus the value on arrows entering `S`. -/
+theorem excessAt_sink_eq_arrowSum_sub [DecidableEq V] (f : Assignment Q K) {s t : V}
+    (hconserve : ∀ v, v ≠ s → v ≠ t → excessAt f v = 0) {S : Finset V} (hs : s ∈ S)
+    (ht : t ∉ S) : excessAt f t = arrowSum f S Sᶜ - arrowSum f Sᶜ S := by
+  have hsum : ∑ v ∈ S, excessAt f v = excessAt f s :=
+    sum_eq_single_of_mem s hs fun v hv hvs ↦ hconserve v hvs (ne_of_mem_of_not_mem hv ht)
+  rw [← neg_sub, ← sum_excessAt_eq_arrowSum_sub, hsum, excessAt_source_eq_neg_sink f hconserve,
+    neg_neg]
 
 /-- Mapping the values of an assignment along an additive group homomorphism commutes with
 taking excess. -/
