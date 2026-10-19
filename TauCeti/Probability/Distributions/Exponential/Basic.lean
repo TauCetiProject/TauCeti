@@ -306,6 +306,36 @@ theorem memoryless_expMeasure (hr : 0 < r) (hs : 0 ≤ s) (ht : 0 ≤ t) :
   rw [← ENNReal.ofReal_inv_of_pos (exp_pos _), ← ENNReal.ofReal_mul (by positivity),
     ← Real.exp_neg, ← Real.exp_add, hexponent]
 
+/-- The excess above a nonnegative threshold, conditional on exceeding that threshold, has
+the original exponential law. This is the measure-level form of memorylessness. -/
+theorem map_sub_cond_expMeasure (hr : 0 < r) (hs : 0 ≤ s) :
+    (cond (expMeasure r) (Ioi s)).map (fun x => x - s) = expMeasure r := by
+  let _ := isProbabilityMeasure_expMeasure hr
+  have htail : expMeasure r (Ioi s) ≠ 0 := by
+    rw [measure_Ioi_expMeasure hr, ite_eq_left hs]
+    exact (ENNReal.ofReal_pos.mpr (Real.exp_pos _)).ne'
+  let _ := cond_isProbabilityMeasure htail
+  apply Measure.eq_of_cdf
+  ext x
+  have hpre : (fun y : ℝ => y - s) ⁻¹' Iic x = Iic (s + x) := by
+    ext y
+    simp only [mem_preimage, mem_Iic]
+    constructor <;> intro h <;> linarith
+  rw [cdf_eq_real, map_measureReal_apply (by fun_prop) measurableSet_Iic, hpre]
+  by_cases hx : 0 ≤ x
+  · have hmemory : (cond (expMeasure r) (Ioi s)).real (Ioi (s + x)) =
+        (expMeasure r).real (Ioi x) :=
+      congrArg ENNReal.toReal (memoryless_expMeasure hr hs hx)
+    rw [← compl_Ioi, measureReal_compl measurableSet_Ioi, probReal_univ, hmemory,
+      cdf_eq_real, ← compl_Ioi, measureReal_compl measurableSet_Ioi, probReal_univ]
+  · have hinter : Ioi s ∩ Iic (s + x) = ∅ := by
+      ext y
+      simp only [mem_inter_iff, mem_Ioi, mem_Iic, mem_empty_iff_false, iff_false]
+      rintro ⟨hy, hy'⟩
+      linarith
+    rw [measureReal_def, cond_apply measurableSet_Ioi, hinter]
+    simp [cdf_expMeasure_eq hr, hx]
+
 /-- **The minimum of independent exponential laws is exponential.** Mapping the product of
 positive-rate exponential laws under the pointwise minimum gives the exponential law whose rate
 is the sum of the input rates. -/
