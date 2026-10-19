@@ -467,6 +467,28 @@ theorem isSemialgebraic_setOf_mem_roots_derivative_signs_eq_and_card_roots_lt
   exact ⟨fun ⟨r, hr, hτ, hcard⟩ => ⟨⟨r, hr, hτ⟩, (hcard_eq hr hτ).symm.trans hcard⟩,
     fun ⟨⟨r, hr, hτ⟩, hcard⟩ => ⟨r, hr, hτ, (hcard_eq hr hτ).trans hcard⟩⟩
 
+/-- Combine a prescribed root index with a predicate whose realization at each Thom word is
+semialgebraic. The shared word ensures that both witnesses are the same root. -/
+private theorem isSemialgebraic_setOf_mem_roots_card_roots_lt_and
+    (P : (MvPolynomial σ R)[X]) (i : ℕ) (Φ : (σ → R) → R → Prop)
+    (hΦ : ∀ τ : Fin P.natDegree → SignType,
+      IsSemialgebraic {x : σ → R | ∃ r ∈ (P.map (MvPolynomial.eval x)).roots.toFinset,
+        (∀ j : Fin P.natDegree,
+          SignType.sign (((derivative^[j.val + 1] P).map
+            (MvPolynomial.eval x)).eval r) = τ j) ∧ Φ x r}) :
+    IsSemialgebraic {x : σ → R | ∃ r ∈ (P.map (MvPolynomial.eval x)).roots.toFinset,
+      {z ∈ (P.map (MvPolynomial.eval x)).roots.toFinset | z < r}.card = i ∧ Φ x r} := by
+  convert IsSemialgebraic.iUnion (fun τ : Fin P.natDegree → SignType =>
+    (isSemialgebraic_setOf_mem_roots_derivative_signs_eq_and_card_roots_lt P τ i).inter
+      (hΦ τ)) using 1
+  ext x
+  simp only [mem_ofPred_eq, mem_iUnion, mem_inter_iff]
+  exact ⟨fun ⟨r, hr, hcard, hΦ⟩ =>
+    ⟨fun j => SignType.sign (((derivative^[j.val + 1] P).map (MvPolynomial.eval x)).eval r),
+      ⟨r, hr, fun _ => rfl, hcard⟩, ⟨r, hr, fun _ => rfl, hΦ⟩⟩,
+    fun ⟨_, ⟨r, hr, hτ, hcard⟩, ⟨r', hr', hτ', hΦ⟩⟩ =>
+      ⟨r, hr, hcard, eq_of_mem_roots_derivative_signs_eq hr hr' hτ hτ' ▸ hΦ⟩⟩
+
 /-- **Equality with the `i`-th distinct root.** For polynomials `P` and `T`, the parameters `x` at
 which `P.map (MvPolynomial.eval x)` has an `i`-th distinct root `r` (with `i` distinct roots
 strictly below `r`) and `MvPolynomial.eval x T = r` form a semialgebraic set. -/
@@ -475,16 +497,9 @@ theorem isSemialgebraic_setOf_mem_roots_card_roots_lt_and_eval_eq
     IsSemialgebraic {x : σ → R | ∃ r ∈ (P.map (MvPolynomial.eval x)).roots.toFinset,
       {z ∈ (P.map (MvPolynomial.eval x)).roots.toFinset | z < r}.card = i ∧
         MvPolynomial.eval x T = r} := by
-  convert IsSemialgebraic.iUnion (fun τ : Fin P.natDegree → SignType =>
-    (isSemialgebraic_setOf_mem_roots_derivative_signs_eq_and_card_roots_lt P τ i).inter
-      (isSemialgebraic_setOf_mem_roots_derivative_signs_eq_and_eval_eq P T τ)) using 1
-  ext x
-  simp only [mem_ofPred_eq, mem_iUnion, mem_inter_iff]
-  exact ⟨fun ⟨r, hr, hcard, hT⟩ =>
-    ⟨fun j => SignType.sign (((derivative^[j.val + 1] P).map (MvPolynomial.eval x)).eval r),
-      ⟨r, hr, fun _ => rfl, hcard⟩, ⟨r, hr, fun _ => rfl, hT⟩⟩,
-    fun ⟨_, ⟨r, hr, hτ, hcard⟩, ⟨r', hr', hτ', hT⟩⟩ =>
-      ⟨r, hr, hcard, eq_of_mem_roots_derivative_signs_eq hr hr' hτ hτ' ▸ hT⟩⟩
+  exact isSemialgebraic_setOf_mem_roots_card_roots_lt_and P i
+    (fun x r => MvPolynomial.eval x T = r)
+    (isSemialgebraic_setOf_mem_roots_derivative_signs_eq_and_eval_eq P T)
 
 /-- **Region where a polynomial lies strictly below the `i`-th distinct root.** For polynomials `P`
 and `T`, the parameters `x` at which `P.map (MvPolynomial.eval x)` has an `i`-th distinct root `r`
@@ -494,16 +509,9 @@ theorem isSemialgebraic_setOf_mem_roots_card_roots_lt_and_eval_lt
     IsSemialgebraic {x : σ → R | ∃ r ∈ (P.map (MvPolynomial.eval x)).roots.toFinset,
       {z ∈ (P.map (MvPolynomial.eval x)).roots.toFinset | z < r}.card = i ∧
         MvPolynomial.eval x T < r} := by
-  convert IsSemialgebraic.iUnion (fun τ : Fin P.natDegree → SignType =>
-    (isSemialgebraic_setOf_mem_roots_derivative_signs_eq_and_card_roots_lt P τ i).inter
-      (isSemialgebraic_setOf_mem_roots_derivative_signs_eq_and_eval_lt P T τ)) using 1
-  ext x
-  simp only [mem_ofPred_eq, mem_iUnion, mem_inter_iff]
-  exact ⟨fun ⟨r, hr, hcard, hlt⟩ =>
-    ⟨fun j => SignType.sign (((derivative^[j.val + 1] P).map (MvPolynomial.eval x)).eval r),
-      ⟨r, hr, fun _ => rfl, hcard⟩, ⟨r, hr, fun _ => rfl, hlt⟩⟩,
-    fun ⟨_, ⟨r, hr, hτ, hcard⟩, ⟨r', hr', hτ', hlt⟩⟩ =>
-      ⟨r, hr, hcard, eq_of_mem_roots_derivative_signs_eq hr hr' hτ hτ' ▸ hlt⟩⟩
+  exact isSemialgebraic_setOf_mem_roots_card_roots_lt_and P i
+    (fun x r => MvPolynomial.eval x T < r)
+    (isSemialgebraic_setOf_mem_roots_derivative_signs_eq_and_eval_lt P T)
 
 /-- **Region where a polynomial lies strictly above the `i`-th distinct root.** For polynomials `P`
 and `T`, the parameters `x` at which `P.map (MvPolynomial.eval x)` has an `i`-th distinct root `r`
@@ -513,16 +521,9 @@ theorem isSemialgebraic_setOf_mem_roots_card_roots_lt_and_lt_eval
     IsSemialgebraic {x : σ → R | ∃ r ∈ (P.map (MvPolynomial.eval x)).roots.toFinset,
       {z ∈ (P.map (MvPolynomial.eval x)).roots.toFinset | z < r}.card = i ∧
         r < MvPolynomial.eval x T} := by
-  convert IsSemialgebraic.iUnion (fun τ : Fin P.natDegree → SignType =>
-    (isSemialgebraic_setOf_mem_roots_derivative_signs_eq_and_card_roots_lt P τ i).inter
-      (isSemialgebraic_setOf_mem_roots_derivative_signs_eq_and_lt_eval P T τ)) using 1
-  ext x
-  simp only [mem_ofPred_eq, mem_iUnion, mem_inter_iff]
-  exact ⟨fun ⟨r, hr, hcard, hlt⟩ =>
-    ⟨fun j => SignType.sign (((derivative^[j.val + 1] P).map (MvPolynomial.eval x)).eval r),
-      ⟨r, hr, fun _ => rfl, hcard⟩, ⟨r, hr, fun _ => rfl, hlt⟩⟩,
-    fun ⟨_, ⟨r, hr, hτ, hcard⟩, ⟨r', hr', hτ', hlt⟩⟩ =>
-      ⟨r, hr, hcard, eq_of_mem_roots_derivative_signs_eq hr hr' hτ hτ' ▸ hlt⟩⟩
+  exact isSemialgebraic_setOf_mem_roots_card_roots_lt_and P i
+    (fun x r => r < MvPolynomial.eval x T)
+    (isSemialgebraic_setOf_mem_roots_derivative_signs_eq_and_lt_eval P T)
 
 variable {n : ℕ}
 

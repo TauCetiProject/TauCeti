@@ -436,20 +436,13 @@ theorem card_roots_lt_eq_card_thomEncodings_thomLT (hrolle : PolynomialRolle R) 
     {r : R} (hr : p.eval r = 0) :
     {x ∈ p.roots.toFinset | x < r}.card =
       {σ ∈ p.thomEncodings | ThomLT σ (thomEncoding p r)}.card := by
-  have himg : {σ ∈ p.thomEncodings | ThomLT σ (thomEncoding p r)} =
-      ({x ∈ p.roots.toFinset | x < r}).image (thomEncoding p) := by
-    rw [thomEncodings, Finset.filter_image]
-    congr 1
-    refine Finset.filter_congr fun x hx => ?_
-    have hp : p ≠ 0 := fun hp => by simp [hp] at hx
-    rw [Multiset.mem_toFinset, mem_roots hp, IsRoot.def] at hx
-    exact (lt_iff_thomLT_of_eval_eq_zero hrolle hp hx hr).symm
-  rw [himg]
-  refine (Finset.card_image_of_injOn fun a ha b hb h => ?_).symm
-  have hp : p ≠ 0 := fun hp => by simp [hp] at ha
-  simp only [Finset.mem_coe, Finset.mem_filter, Multiset.mem_toFinset, mem_roots hp,
-    IsRoot.def] at ha hb
-  exact thomEncoding_injOn p hrolle hp ha.1 hb.1 h
+  classical
+  rw [card_roots_lt_eq_card_filter_thomLT_of_natDegree_le le_rfl hrolle hr rfl]
+  congr 1
+  ext σ
+  simp only [Finset.mem_filter, Finset.mem_univ, true_and, thomEncodings,
+    Finset.mem_image, ← thomEncoding_apply]
+  exact and_comm
 
 /-- Distinct realized Thom encodings are comparable by `ThomLT`. -/
 theorem thomLT_or_thomLT_of_mem_thomEncodings (hrolle : PolynomialRolle R) {p : R[X]}
