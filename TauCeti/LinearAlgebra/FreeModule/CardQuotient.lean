@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
+import Mathlib.RingTheory.Ideal.Quotient.Index
 
 /-!
 # The index of the image of an endomorphism of a free module over a PID
@@ -33,6 +34,10 @@ for `k ≠ 0`.
   acting on `ι → R`.
 * `Matrix.card_quotient_range_mulVecLin_eq_pow`: over a discrete valuation ring, if `det A` is
   associated to `ϖ ^ k` for a uniformizer `ϖ`, the quotient has `q ^ k` elements.
+* `TauCeti.finite_quotient_range_iff`: over a principal ideal domain, an endomorphism of a
+  finite free module with nonzero determinant has finite cokernel exactly when the quotient
+  by its determinant ideal is finite.
+* `TauCeti.finite_quotient_range_mulVecLin_iff`: the same finiteness criterion for a square matrix.
 * `TauCeti.finite_quotient_range_mulVecLin`: finiteness of the image quotient for a
   square matrix with nonzero determinant when the residue field is finite.
 -/
@@ -129,18 +134,40 @@ end Matrix
 
 namespace TauCeti
 
-variable {R ι : Type*} [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
-  [Fintype ι] [DecidableEq ι]
+variable {R : Type*} [CommRing R] [IsDomain R]
+
+/-- An endomorphism of a finite free module over a principal ideal domain with nonzero
+determinant has finite cokernel if and only if the quotient by its determinant ideal is finite. -/
+theorem finite_quotient_range_iff {M : Type*} [IsPrincipalIdealRing R]
+    [AddCommGroup M] [Module R M] [Module.Free R M] [Module.Finite R M]
+    {f : M →ₗ[R] M} (hf : f.det ≠ 0) :
+    Finite (M ⧸ LinearMap.range f) ↔ Finite (R ⧸ Ideal.span {f.det}) := by
+  simpa only [Nat.card_ne_zero, (inferInstance : Nonempty (M ⧸ LinearMap.range f)),
+    (inferInstance : Nonempty (R ⧸ Ideal.span {f.det})), true_and] using
+    (congrArg (· ≠ 0)
+      (_root_.LinearMap.card_quotient_range_eq_card_quotient_span_det hf)).to_iff
+
+/-- A square matrix over a principal ideal domain with nonzero determinant has finite cokernel
+if and only if the quotient by its determinant ideal is finite. -/
+theorem finite_quotient_range_mulVecLin_iff {ι : Type*} [Fintype ι] [DecidableEq ι]
+    [IsPrincipalIdealRing R] {A : Matrix ι ι R} (hA : A.det ≠ 0) :
+    Finite ((ι → R) ⧸ LinearMap.range A.mulVecLin) ↔ Finite (R ⧸ Ideal.span {A.det}) := by
+  have h := finite_quotient_range_iff (f := Matrix.toLin' A) (by rwa [LinearMap.det_toLin'])
+  rwa [LinearMap.det_toLin', Matrix.toLin'_apply'] at h
 
 /-- A square matrix over a discrete valuation ring with nonzero determinant has finite cokernel
 when the residue field is finite. -/
-theorem finite_quotient_range_mulVecLin {A : Matrix ι ι R}
+theorem finite_quotient_range_mulVecLin {ι : Type*} [Fintype ι] [DecidableEq ι]
+    [IsDiscreteValuationRing R] {A : Matrix ι ι R}
     [Finite (IsLocalRing.ResidueField R)] (hA : A.det ≠ 0) :
     Finite ((ι → R) ⧸ LinearMap.range A.mulVecLin) := by
   obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible R
   obtain ⟨k, hdet⟩ := IsDiscreteValuationRing.associated_pow_irreducible hA hπ
-  apply Nat.finite_of_card_ne_zero
-  rw [_root_.Matrix.card_quotient_range_mulVecLin_eq_pow hπ hdet]
-  exact pow_ne_zero _ Nat.card_pos.ne'
+  apply (finite_quotient_range_mulVecLin_iff hA).mpr
+  rw [Ideal.span_singleton_eq_span_singleton.mpr hdet, ← Ideal.span_singleton_pow,
+    ← hπ.maximalIdeal_eq]
+  -- The residue field is by definition the quotient by the maximal ideal.
+  have : Finite (R ⧸ IsLocalRing.maximalIdeal R) := ‹Finite (IsLocalRing.ResidueField R)›
+  exact Ideal.finite_quotient_pow (IsNoetherian.noetherian _) k
 
 end TauCeti
