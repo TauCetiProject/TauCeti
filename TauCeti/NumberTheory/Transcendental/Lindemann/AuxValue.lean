@@ -83,8 +83,7 @@ theorem auxValue_zero (l p : ℕ) (γ : K) : auxValue (0 : K[K]) l p γ = 0 := b
 theorem auxValue_galConj {F : Type*} [CommSemiring F] [Algebra F K] (τ : K ≃ₐ[F] K) (x : K[K])
     (l p : ℕ) (γ : K) : auxValue (galConj τ x) l p (τ γ) = τ (auxValue x l p γ) := by
   have hS : (galConj τ x).coeff.support = x.coeff.support.image (τ : K →+* K) := by
-    rw [support_galConj, map_eq_image, Equiv.coe_toEmbedding, AlgEquiv.coe_toEquiv,
-      RingHom.coe_coe]
+    simp [support_galConj, map_eq_image]
   have hf : auxPoly (x.coeff.support.image (τ : K →+* K)) l p (τ γ) =
       (auxPoly x.coeff.support l p γ).map (τ : K →+* K) := by
     rw [auxPoly_map, RingHom.coe_coe]
@@ -149,7 +148,8 @@ theorem auxValue_ne_zero [NumberField K] {x : K[K]} {l p : ℕ} {γ : K}
   let w' : 𝓞 K := ⟨w, hw⟩
   have heq : δ' * A' ^ p = algebraMap ℤ (𝓞 K) (-p) * w' := by
     apply RingOfIntegers.coe_injective
-    rw [map_mul, map_pow, map_mul, map_neg, map_natCast, map_neg, map_natCast]
+    simp only [map_mul, map_pow, map_neg, map_natCast]
+    -- The coercions `↑δ'`, `↑A'`, `↑w'` are `x.coeff γ`, `A`, `w` by `RingOfIntegers.coe_mk`.
     exact (by linear_combination h - h0 : x.coeff γ * A ^ p = -(p : K) * w)
   have hA : A ≠ 0 :=
     mul_ne_zero (pow_ne_zero _ (Nat.cast_ne_zero.2 hl₀))
