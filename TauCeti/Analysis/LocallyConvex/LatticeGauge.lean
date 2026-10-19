@@ -29,8 +29,9 @@ If `M` is a topological module and `s` is a balanced bounded neighbourhood of ze
 balls are a basis of neighbourhoods of zero, so the gauge induces the topology of `M` and its
 uniform structure, so it is complete when `M` is; its zero set is the closure of zero, so it
 separates points exactly when `M` is Hausdorff. If moreover `s + s ⊆ s` and `M` is
-Hausdorff, the gauge is bundled as a complete ultrametric norm
-`TauCeti.latticeGaugeNormedAddCommGroup` inducing the uniform structure of `M`.
+Hausdorff, the gauge is bundled as an ultrametric norm
+`TauCeti.latticeGaugeNormedAddCommGroup` inducing the uniform structure of `M`, complete when `M`
+is.
 Finally, the gauges of a lattice `A₀` in an algebra `A` and of a lattice `M₀` in an `A`-module
 are compatible: `A₀ • M₀ ⊆ M₀` gives
 `latticeGauge K M₀ (a • m) ≤ latticeGauge K A₀ a * latticeGauge K M₀ m`; in particular the gauge
@@ -318,6 +319,9 @@ noncomputable abbrev latticeGaugeNormedAddCommGroup (hb : Balanced K s) (hadd : 
       norm_eq_zero_iff := (t2Space_iff_forall_latticeGauge_eq_zero_iff hb hs₀ hbd).1 inferInstance }
   .ofCoreReplaceUniformity core <| (hasBasis_uniformity_latticeGauge hb hs₀ hbd).eq_of_same_basis <|
     (@Metric.uniformity_basis_dist M (.ofSeminormedSpaceCore core.toCore)).congr (fun _ ↦ .rfl)
+      -- `PseudoMetricSpace.ofSeminormedSpaceCore` defines `dist x y` as `‖-x + y‖`, which
+      -- `neg_add_eq_sub` turns into `‖y - x‖`; the closing `rfl` unfolds the local `Norm`
+      -- instance above, whose norm is `latticeGauge K s` by definition.
       fun _ _ ↦ by simp only [dist, neg_add_eq_sub]; rfl
 
 /-- The norm of `TauCeti.latticeGaugeNormedAddCommGroup` is the lattice gauge. -/
