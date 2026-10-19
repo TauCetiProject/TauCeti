@@ -283,7 +283,7 @@ theorem generalizedParetoMeasure_eq_withDensity (s ξ : ℝ) :
         (φ' := fun e => s * Real.exp (ξ * e)) (f := generalizedParetoPDF s ξ)
         measurableSet_Ioi (measurable_generalizedParetoMap_right s ξ)
         (fun e _ => (generalizedParetoMap_deriv hξ e).hasDerivWithinAt)
-        (generalizedParetoMap_injOn hs hξ)
+        (strictMono_generalizedParetoMap hs ξ).injective.injOn
       have hweight :
           (fun e : ℝ => ENNReal.ofReal |s * Real.exp (ξ * e)| *
             generalizedParetoPDF s ξ (generalizedParetoMap s ξ e))
