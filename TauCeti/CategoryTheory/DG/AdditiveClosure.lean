@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.DG.Functor
+public import TauCeti.CategoryTheory.DG.Functor.Basic
 public import TauCeti.CategoryTheory.DG.HomComplexData
 
 /-!

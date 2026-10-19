@@ -441,7 +441,7 @@ theorem finrank_center_even (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
     finrank K (Subalgebra.center K (even Q)) = finrank K (AdjoinRoot p) :=
       e.toLinearEquiv.finrank_eq.symm
     _ = p.natDegree := (AdjoinRoot.powerBasis (X_pow_sub_C_ne_zero two_pos _)).finrank
-    _ = 2 := natDegree_X_pow_sub_C
+    _ = 2 := natDegree_X_pow_sub_C _
 
 /-- If the centre of a regular, positive even-dimensional even Clifford algebra is a field, then
 the algebra has dimension `2 ^ (finrank K V - 2)` over its centre. -/

@@ -11,6 +11,7 @@ public import TauCeti.Analysis.PDE.EnergyForm.Integrated.Symmetry
 public import TauCeti.Analysis.PDE.EnergyForm.VariableLp
 public import TauCeti.Analysis.Sobolev.Poincare.W1p0
 import Mathlib.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 
 /-!
 # The divergence-form energy form on `H¹(Ω)`, and Gårding's inequality
@@ -287,6 +288,19 @@ theorem memLp_energyIntegrand_of_continuous (hLam : ∀ x, ‖matrixBilinearForm
       simpa [Real.norm_eq_abs] using
         (matrixBilinearForm (a x)).le_of_opNorm₂_le_of_le (hLam x) le_rfl le_rfl)
     (fun _ _ => by simp) (fun _ _ => by simp)
+
+/-- Coefficient fields continuous on the compact closure of `Ω` define an essentially bounded field
+of pointwise energy forms on `Ω`. No bound on the coefficients is assumed: compactness supplies
+one. -/
+theorem memLp_energyIntegrand_of_continuousOn
+    (hΩ : IsCompact (closure (Omega : Set (EuclideanSpace ℝ ι))))
+    (ha : ContinuousOn a (closure Omega)) (hb : ContinuousOn b (closure Omega))
+    (hc : ContinuousOn c (closure Omega)) :
+    MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega) :=
+  -- The codomain is named explicitly: elaboration does not infer it by unification with the goal.
+  ContinuousOn.memLp_top_restrict_of_subset_isCompact
+    (E := (ℝ × EuclideanSpace ℝ ι) →L[ℝ] (ℝ × EuclideanSpace ℝ ι) →L[ℝ] ℝ)
+    (ContinuousOn.energyIntegrand ha hb hc) hΩ Omega.isOpen.measurableSet subset_closure
 
 variable [mu.IsAddHaarMeasure]
 

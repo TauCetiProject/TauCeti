@@ -105,7 +105,7 @@ private theorem natCard_normQuotient_le_of_le_fixingSubgroup
   have : NeZero (p : K) := ⟨Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero⟩
   obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot (SeparableClosure K) p
   have hζF : ζ ∈ fixedField Lay.ground.toSubgroup :=
-    (le_iff_le _ _).2 hμ (subset_adjoin K _ hζ.pow_eq_one)
+    (le_fixedField_iff_le_fixingSubgroup _ _).2 hμ (subset_adjoin K _ hζ.pow_eq_one)
   have : HasEnoughRootsOfUnity (fixedField Lay.ground.toSubgroup) p :=
     ⟨⟨⟨ζ, hζF⟩, hζ.of_map_of_injective (f := (fixedField Lay.ground.toSubgroup).val)
       (fixedField Lay.ground.toSubgroup).val.injective⟩, inferInstance⟩

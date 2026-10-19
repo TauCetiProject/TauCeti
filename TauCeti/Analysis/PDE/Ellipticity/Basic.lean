@@ -14,6 +14,7 @@ public import Mathlib.LinearAlgebra.Matrix.Symmetric
 public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 public import TauCeti.Analysis.Calculus.Gradient
 public import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
+import Mathlib.Analysis.Calculus.ContDiff.RCLike
 
 /-!
 # Uniform ellipticity for divergence-form PDE coefficients
@@ -48,10 +49,14 @@ and Lax--Milgram arguments: constants are parameters, not hidden existential dat
 * `TauCeti.PDE.contDiff_matrixBilinearForm_gradient` and
   `TauCeti.PDE.tsupport_matrixBilinearForm_gradient_subset`: smoothness and support of a
   conormal component of a smooth gradient.
+* `TauCeti.PDE.locallyLipschitzOn_matrixBilinearForm_of_contDiffOn`: a coefficient field with
+  `C¹` entries on an open set has locally Lipschitz bilinear forms there.
 * `TauCeti.PDE.matrixBilinearFormLinear`: the coefficient matrix-to-bilinear-form map as a
   continuous linear map.
 * `TauCeti.PDE.matrixBilinearForm_opNorm_le_of_upper_bound`: a pointwise bilinear upper
   bound controls the operator norm of the attached matrix bilinear form.
+* `TauCeti.PDE.norm_matrixBilinearForm_le_sum_abs`: the operator norm of the attached bilinear
+  form is at most the sum of the absolute values of the entries.
 * `TauCeti.PDE.norm_toEuclideanCLM_apply_le`: the operator norm of the attached bilinear form
   bounds the action of the matrix on Euclidean space.
 * `TauCeti.PDE.mul_sq_mul_norm_sq_le_matrixBilinearForm_add`: the pointwise absorption
@@ -286,6 +291,21 @@ lemma matrixBilinearForm_opNorm_le_of_upper_bound (A : Matrix n n ℝ) {Lam : �
   refine (matrixBilinearForm A).opNorm_le_bound₂ hLam_nonneg ?_
   intro η ξ
   exact norm_matrixBilinearForm_le_of_upper_bound A hA η ξ
+
+/-- The operator norm of a matrix bilinear form is at most the sum of the absolute values of the
+entries of the matrix. -/
+lemma norm_matrixBilinearForm_le_sum_abs (A : Matrix n n ℝ) :
+    ‖matrixBilinearForm A‖ ≤ ∑ i, ∑ j, |A i j| := by
+  refine matrixBilinearForm_opNorm_le_of_upper_bound A (by positivity) fun η ξ => ?_
+  simp only [dotProduct, Matrix.mulVec, Finset.mul_sum, Finset.sum_mul]
+  refine (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun i _ =>
+    (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun j _ => ?_))
+  -- `|ηᵢ Aᵢⱼ ξⱼ| ≤ |Aᵢⱼ| ‖η‖ ‖ξ‖`, since each coordinate is bounded by the Euclidean norm.
+  have hη : |η i| ≤ ‖η‖ := by simpa only [Real.norm_eq_abs] using PiLp.norm_apply_le η i
+  have hξ : |ξ j| ≤ ‖ξ‖ := by simpa only [Real.norm_eq_abs] using PiLp.norm_apply_le ξ j
+  rw [abs_mul, abs_mul, mul_left_comm, mul_assoc]
+  exact mul_le_mul_of_nonneg_left (mul_le_mul hη hξ (abs_nonneg _) (norm_nonneg _))
+    (abs_nonneg _)
 
 /-- The action of a matrix on Euclidean space is bounded by the operator norm of its bilinear
 form: `‖A ξ‖² = (A ξ)ᵀ A ξ ≤ ‖A‖ ‖A ξ‖ ‖ξ‖`. -/
@@ -911,6 +931,31 @@ theorem contDiff_matrixBilinearForm_gradient {A : Matrix n n ℝ}
     {ψ : EuclideanSpace ℝ n → ℝ} (hψ : ContDiff ℝ ∞ ψ) (η : EuclideanSpace ℝ n) :
     ContDiff ℝ ∞ (fun y => matrixBilinearForm A η (∇ ψ y)) :=
   (matrixBilinearForm A η).contDiff.comp (hψ.gradient_right (m := ∞) (by simp))
+
+/-- **`C¹` coefficient fields have locally Lipschitz bilinear forms.** If the entries of `a` are
+continuously differentiable on an open set `s`, then `x ↦ (η, ξ ↦ ηᵀ a(x) ξ)` is locally Lipschitz
+on `s` in the operator norm. -/
+theorem locallyLipschitzOn_matrixBilinearForm_of_contDiffOn {a : EuclideanSpace ℝ n → Matrix n n ℝ}
+    {s : Set (EuclideanSpace ℝ n)} (hs : IsOpen s)
+    (ha : ∀ i j, ContDiffOn ℝ 1 (fun x => a x i j) s) :
+    LocallyLipschitzOn s fun x => matrixBilinearForm (a x) := by
+  intro x hx
+  -- Near `x` each entry is Lipschitz, and the operator norm is at most the sum of the entries.
+  choose K t ht hKt using fun i j =>
+    ((ha i j).contDiffAt (hs.mem_nhds hx)).exists_lipschitzOnWith
+  refine ⟨∑ i, ∑ j, K i j, ⋂ i, ⋂ j, t i j,
+    mem_nhdsWithin_of_mem_nhds (Filter.iInter_mem.2 fun i => Filter.iInter_mem.2 (ht i)), ?_⟩
+  refine LipschitzOnWith.of_dist_le_mul fun y hy z hz => ?_
+  simp only [mem_iInter] at hy hz
+  rw [dist_eq_norm, ← matrixBilinearForm_sub]
+  refine (norm_matrixBilinearForm_le_sum_abs _).trans ?_
+  push_cast
+  rw [Finset.sum_mul]
+  refine Finset.sum_le_sum fun i _ => ?_
+  rw [Finset.sum_mul]
+  refine Finset.sum_le_sum fun j _ => ?_
+  rw [Matrix.sub_apply, ← Real.dist_eq]
+  exact (hKt i j).dist_le_mul y (hy i j) z (hz i j)
 
 /-- The conormal component of a gradient, for a possibly variable coefficient field, is
 supported where the function is. -/

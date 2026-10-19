@@ -20,6 +20,10 @@ applying the criterion once for each argument.
 The criterion applies over arbitrary smooth finite-dimensional manifolds, including
 noncompact manifolds and manifolds with boundary, and places no finite-dimensionality
 assumption on the target fibres.
+
+The file also records that pulling back a fixed continuous bilinear form on the model fibre
+along a trivialization gives a `C^n` field of bilinear forms over its base set
+(`TauCeti.Manifold.contMDiffOn_trivializationAt_pullbackForm`).
 -/
 
 public section
@@ -75,5 +79,39 @@ theorem contMDiff_hom_iff (A : Π x : M, V x →L[ℝ] W x) :
           dsimp only [Pi.smul_apply']
           simp only [(hu hy).1, Pi.one_apply, one_smul]))
     exact hlocal.contMDiffAt (huopen.mem_nhds hxu)
+
+section PullbackForm
+
+variable {EB : Type*} [NormedAddCommGroup EB] [NormedSpace ℝ EB]
+  {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners ℝ EB HB} {n : ℕ∞}
+  {B : Type*} [TopologicalSpace B] [ChartedSpace HB B]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {E : B → Type*} [TopologicalSpace (TotalSpace F E)]
+  [∀ b, TopologicalSpace (E b)] [∀ b, AddCommGroup (E b)] [∀ b, Module ℝ (E b)]
+  [FiberBundle F E] [VectorBundle ℝ F E]
+
+/-- The field of bilinear forms `b ↦ φ (e b ·) (e b ·)` obtained by pulling back a fixed bilinear
+form `φ` on the model fibre along the preferred trivialization `e` at `x` is `C^n` on the base set
+of `e`. -/
+theorem contMDiffOn_trivializationAt_pullbackForm [ContMDiffVectorBundle n F E IB]
+    (φ : F →L[ℝ] F →L[ℝ] ℝ) (x : B) :
+    ContMDiffOn IB (IB.prod 𝓘(ℝ, F →L[ℝ] F →L[ℝ] ℝ)) n
+      (fun b ↦ TotalSpace.mk' (F →L[ℝ] F →L[ℝ] ℝ) b
+        ((ContinuousLinearMap.precomp ℝ ((trivializationAt F E x).continuousLinearMapAt ℝ b)).comp
+          (φ.comp ((trivializationAt F E x).continuousLinearMapAt ℝ b))))
+      (trivializationAt F E x).baseSet := by
+  -- Recording this instance locally keeps the instance search for the vector bundle structure on
+  -- the bundle of bilinear forms within the default budget.
+  have : ∀ b, ContinuousAdd (E b →L[ℝ] ℝ) := fun b ↦ inferInstance
+  rw [Trivialization.contMDiffOn_section_iff (F := F →L[ℝ] F →L[ℝ] ℝ)
+    (E := fun b ↦ E b →L[ℝ] E b →L[ℝ] ℝ) (trivializationAt _ _ x)
+    (trivializationAt F E x).open_baseSet (by simp [hom_trivializationAt_baseSet])]
+  -- Read in the corresponding trivialization of the bundle of bilinear forms, the field is the
+  -- constant `φ`.
+  refine (contMDiffOn_const (c := φ)).congr fun b hb ↦ ?_
+  ext v w
+  simp [hom_trivializationAt_apply, ContinuousLinearMap.inCoordinates, hb]
+
+end PullbackForm
 
 end TauCeti.Manifold
