@@ -33,7 +33,7 @@ Siegel bound in the entries of `A` is not invariant under this substitution.
 
 * `Matrix.minorGcd_mul`: multiplying on the left by a square matrix `U` multiplies the minor gcd
   by `normalize (det U)`; `Matrix.minorGcd_unit_mul` is the unimodular case.
-* `Matrix.sq_minorGcd_dvd_det_mul_transpose`: the square of the minor gcd divides the Gram
+* `Matrix.sq_minorGcd_dvd_det_mul_transpose_self`: the square of the minor gcd divides the Gram
   determinant of the rows.
 * `Matrix.linearIndependent_rows_rat_iff`: the rows of an integer matrix are linearly independent
   over `ℚ` exactly when `det (A * Aᵀ) ≠ 0`.
@@ -112,7 +112,7 @@ theorem minorGcd_fin_one (A : Matrix (Fin 1) ι R) : A.minorGcd = Finset.univ.gc
 
 /-- The square of the minor gcd divides the Gram determinant of the rows, which is the sum of the
 squares of the maximal minors. -/
-theorem sq_minorGcd_dvd_det_mul_transpose (A : Matrix (Fin m) ι R) :
+theorem sq_minorGcd_dvd_det_mul_transpose_self (A : Matrix (Fin m) ι R) :
     A.minorGcd ^ 2 ∣ (A * Aᵀ).det := by
   rw [det_mul_transpose_self_eq_sum_sq]
   exact Finset.dvd_sum fun s _ ↦ pow_dvd_pow_of_dvd (minorGcd_dvd_plucker A s) 2
@@ -136,6 +136,14 @@ theorem minorGcd_unit_mul {U : Matrix (Fin m) (Fin m) R} (hU : IsUnit U.det)
   rw [minorGcd_mul, normalize_eq_one.2 hU, one_mul]
 
 end StrongNormalizedGCDMonoid
+
+omit [LinearOrder ι] in
+/-- Multiplying a matrix on the left by a square matrix `U` multiplies the Gram determinant of its
+rows by `det U ^ 2`. -/
+theorem det_mul_transpose_self_mul (U : Matrix (Fin m) (Fin m) R) (A : Matrix (Fin m) ι R) :
+    ((U * A) * (U * A)ᵀ).det = U.det ^ 2 * (A * Aᵀ).det := by
+  rw [transpose_mul, Matrix.mul_assoc, ← Matrix.mul_assoc A, det_mul, det_mul, det_transpose]
+  ring
 
 /-! ### Integer matrices -/
 
@@ -173,10 +181,10 @@ theorem one_le_minorGcd {A : Matrix (Fin m) ι ℤ}
 
 /-- The square of the minor gcd of an integer matrix is at most the Gram determinant of its rows.
 -/
-theorem sq_minorGcd_le_det_mul_transpose (A : Matrix (Fin m) ι ℤ) :
+theorem sq_minorGcd_le_det_mul_transpose_self (A : Matrix (Fin m) ι ℤ) :
     A.minorGcd ^ 2 ≤ (A * Aᵀ).det := by
   rcases (det_mul_transpose_self_nonneg A).lt_or_eq with h | h
-  · exact Int.le_of_dvd h A.sq_minorGcd_dvd_det_mul_transpose
+  · exact Int.le_of_dvd h A.sq_minorGcd_dvd_det_mul_transpose_self
   · rw [← h, minorGcd_eq_zero_iff.2 ((det_mul_transpose_self_eq_zero_iff A).1 h.symm)]
     simp
 
@@ -184,8 +192,7 @@ omit [LinearOrder ι] in
 /-- A row operation with determinant `±1` does not change the Gram determinant of the rows. -/
 theorem det_mul_transpose_self_unit_mul {U : Matrix (Fin m) (Fin m) ℤ} (hU : IsUnit U.det)
     (A : Matrix (Fin m) ι ℤ) : ((U * A) * (U * A)ᵀ).det = (A * Aᵀ).det := by
-  rw [transpose_mul, Matrix.mul_assoc, ← Matrix.mul_assoc A, ← Matrix.mul_assoc, det_mul,
-    det_mul, det_transpose, mul_right_comm, ← sq, Int.isUnit_sq hU, one_mul]
+  rw [det_mul_transpose_self_mul, Int.isUnit_sq hU, one_mul]
 
 /-- **The invariance of the Bombieri–Vaaler bound** (Bombieri–Vaaler (2.5)): the quantity
 `√det (A * Aᵀ) / minorGcd A` is unchanged by `A ↦ U * A` for `U ∈ GL_m(ℤ)`. -/
