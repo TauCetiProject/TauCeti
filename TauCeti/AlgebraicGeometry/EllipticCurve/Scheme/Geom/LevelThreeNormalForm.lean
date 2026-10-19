@@ -125,15 +125,38 @@ instance : curveULift.{u}.IsElliptic := by
   rw [curveULift_eq]
   infer_instance
 
+/-- The point `(0, 0)` lies on the universal curve over `ULift.{u} ℤ[1/3, ζ₃][μ, 1/(μ³ - 1)]`. -/
+theorem equation_curveULift_zero : curveULift.{u}.toAffine.Equation 0 0 := by
+  rw [curveULift_eq_levelThreeNormalForm]
+  exact equation_levelThreeNormalForm_zero _
+
+/-- The point `(-(μ² + μ + 1), (μ² + μ + 1)(μ - ζ))` lies on the universal curve over
+`ULift.{u} ℤ[1/3, ζ₃][μ, 1/(μ³ - 1)]`. -/
+theorem equation_curveULift_basisPoint :
+    curveULift.{u}.toAffine.Equation (-(parameterULift ^ 2 + parameterULift + 1))
+      ((parameterULift ^ 2 + parameterULift + 1) * (parameterULift - rootOfUnityULift)) := by
+  rw [curveULift_eq_levelThreeNormalForm]
+  exact equation_levelThreeNormalForm_basisPoint _ rootOfUnityULift_sq_add_rootOfUnityULift_add_one
+
 /-- The point `(0, 0)` of the universal curve, the first point of its basis of the `3`-torsion. -/
 noncomputable def firstPoint : Spec (.of (ULift.{u} Ring)) ⟶ curveULift.{u}.projModel :=
-  curveULift.projModelAffinePoint (equation_levelThreeNormalForm_zero parameterULift)
+  curveULift.projModelAffinePoint equation_curveULift_zero
 
 /-- The point `(-(μ² + μ + 1), (μ² + μ + 1)(μ - ζ))` of the universal curve, the second point of its
 basis of the `3`-torsion. -/
 noncomputable def secondPoint : Spec (.of (ULift.{u} Ring)) ⟶ curveULift.{u}.projModel :=
-  curveULift.projModelAffinePoint (equation_levelThreeNormalForm_basisPoint parameterULift
-    rootOfUnityULift_sq_add_rootOfUnityULift_add_one)
+  curveULift.projModelAffinePoint equation_curveULift_basisPoint
+
+/-- The first basis point is the affine point `(0, 0)` of the projective model. -/
+theorem firstPoint_def :
+    firstPoint.{u} = curveULift.projModelAffinePoint equation_curveULift_zero :=
+  (rfl)
+
+/-- The second basis point is the affine point `(-(μ² + μ + 1), (μ² + μ + 1)(μ - ζ))` of the
+projective model. -/
+theorem secondPoint_def :
+    secondPoint.{u} = curveULift.projModelAffinePoint equation_curveULift_basisPoint :=
+  (rfl)
 
 /-- The first basis point is a section of the projective model of the universal curve. -/
 @[reassoc (attr := simp)]
