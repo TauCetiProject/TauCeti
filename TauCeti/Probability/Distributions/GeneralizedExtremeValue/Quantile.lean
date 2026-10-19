@@ -33,11 +33,11 @@ open Filter MeasureTheory ProbabilityTheory Real Set Topology
 
 namespace TauCeti.Probability
 
-variable {m s ξ u : ℝ}
+variable {s ξ u : ℝ}
 
 /-- The quantile of a positive-scale generalized extreme-value law at nonzero shape. -/
-theorem quantile_generalizedExtremeValueMeasure_of_shape_ne_zero (hs : 0 < s) (hξ : ξ ≠ 0)
-    (hu : u ∈ Ioo 0 1) :
+theorem quantile_generalizedExtremeValueMeasure_of_shape_ne_zero (hs : 0 < s) (m : ℝ)
+    (hξ : ξ ≠ 0) (hu : u ∈ Ioo 0 1) :
     (generalizedExtremeValueMeasure m s ξ).quantile u =
       m + s * ((-log u) ^ (-ξ) - 1) / ξ := by
   let _ := isProbabilityMeasure_generalizedExtremeValueMeasure hs m ξ
@@ -62,19 +62,16 @@ theorem quantile_generalizedExtremeValueMeasure_of_shape_ne_zero (hs : 0 < s) (h
     · rw [ite_eq_right (not_lt.mpr hξ.le)]
       constructor
       · intro _
-        exact (generalizedExtremeValueMap_le_iff_of_shape_neg hs hξ hlog).2
-          ((le_of_not_gt hx).trans (rpow_pos_of_pos hlog _).le)
+        exact generalizedExtremeValueMap_le_of_shape_neg_of_nonpos hs hξ hlog hx
       · exact fun _ ↦ hu.2.le
     · rw [ite_eq_left hξ]
       constructor
       · exact fun h ↦ (not_le.mpr hu.1 h).elim
       · intro hle
-        exact ((not_le_of_gt (rpow_pos_of_pos hlog _))
-          ((generalizedExtremeValueMap_le_iff_of_shape_pos hs hξ hlog).1 hle |>.trans
-            (le_of_not_gt hx))).elim
+        exact (not_generalizedExtremeValueMap_le_of_shape_pos_of_nonpos hs hξ hlog hx hle).elim
 
 /-- The generalized extreme-value quantile, including its Gumbel branch at shape zero. -/
-theorem quantile_generalizedExtremeValueMeasure (hs : 0 < s) (hu : u ∈ Ioo 0 1) :
+theorem quantile_generalizedExtremeValueMeasure (m ξ : ℝ) (hs : 0 < s) (hu : u ∈ Ioo 0 1) :
     (generalizedExtremeValueMeasure m s ξ).quantile u =
       if ξ = 0 then m - s * log (-log u)
       else m + s * ((-log u) ^ (-ξ) - 1) / ξ := by
@@ -83,34 +80,44 @@ theorem quantile_generalizedExtremeValueMeasure (hs : 0 < s) (hu : u ∈ Ioo 0 1
     rw [ite_eq_left rfl, generalizedExtremeValueMeasure_zero,
       quantile_gumbelMeasure hs m hu]
   · rw [ite_eq_right hξ]
-    exact quantile_generalizedExtremeValueMeasure_of_shape_ne_zero hs hξ hu
+    exact quantile_generalizedExtremeValueMeasure_of_shape_ne_zero hs m hξ hu
+
+private theorem tendsto_quantile_generalizedExtremeValueMeasure_finite_endpoint
+    (hs : 0 < s) (m : ℝ) (hξ : ξ ≠ 0) {l : Filter ℝ}
+    (hu : ∀ᶠ u in l, u ∈ Ioo (0 : ℝ) 1)
+    (hrpow : Tendsto (fun u : ℝ ↦ (-log u) ^ (-ξ)) l (𝓝 0)) :
+    Tendsto (fun u ↦ ((generalizedExtremeValueMeasure m s ξ).quantile u : EReal)) l
+      (𝓝 (m - s / ξ)) := by
+  have hlim : Tendsto (fun u : ℝ ↦ m + s * ((-log u) ^ (-ξ) - 1) / ξ) l
+      (𝓝 (m - s / ξ)) := by
+    have hlim' : Tendsto (fun u : ℝ ↦ m + s * ((-log u) ^ (-ξ) - 1) / ξ) l
+        (𝓝 (m + s * (0 - 1) / ξ)) :=
+      tendsto_const_nhds.add
+        ((tendsto_const_nhds.mul (hrpow.sub tendsto_const_nhds)).div_const ξ)
+    convert hlim' using 1
+    ring_nf
+  apply (EReal.tendsto_coe.mpr hlim).congr'
+  filter_upwards [hu] with u hu
+  exact congrArg (fun x : ℝ ↦ (x : EReal))
+    (quantile_generalizedExtremeValueMeasure_of_shape_ne_zero hs m hξ hu).symm
 
 /-- For positive shape, generalized extreme-value quantiles tend to the finite lower endpoint
 `m - s / ξ` as the level tends to zero from above. -/
 theorem tendsto_quantile_generalizedExtremeValueMeasure_nhdsGT_zero_of_shape_pos
-    (hs : 0 < s) (hξ : 0 < ξ) :
+    (hs : 0 < s) (m : ℝ) (hξ : 0 < ξ) :
     Tendsto (fun u ↦ ((generalizedExtremeValueMeasure m s ξ).quantile u : EReal))
       (𝓝[>] 0) (𝓝 (m - s / ξ)) := by
   have hlog : Tendsto (fun u : ℝ ↦ -log u) (𝓝[>] 0) atTop :=
     tendsto_neg_atBot_atTop.comp tendsto_log_nhdsGT_zero
   have hrpow : Tendsto (fun u : ℝ ↦ (-log u) ^ (-ξ)) (𝓝[>] 0) (𝓝 0) :=
     (tendsto_rpow_neg_atTop hξ).comp hlog
-  have hlim : Tendsto (fun u : ℝ ↦ m + s * ((-log u) ^ (-ξ) - 1) / ξ)
-      (𝓝[>] 0) (𝓝 (m - s / ξ)) := by
-    have hlim' : Tendsto (fun u : ℝ ↦ m + s * ((-log u) ^ (-ξ) - 1) / ξ)
-        (𝓝[>] 0) (𝓝 (m + s * (0 - 1) / ξ)) :=
-      tendsto_const_nhds.add
-        ((tendsto_const_nhds.mul (hrpow.sub tendsto_const_nhds)).div_const ξ)
-    simpa [sub_eq_add_neg, neg_div] using hlim'
-  apply (EReal.tendsto_coe.mpr hlim).congr'
-  filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with u hu
-  exact congrArg (fun x : ℝ ↦ (x : EReal))
-    (quantile_generalizedExtremeValueMeasure_of_shape_ne_zero hs hξ.ne' hu).symm
+  exact tendsto_quantile_generalizedExtremeValueMeasure_finite_endpoint hs m hξ.ne'
+    (Ioo_mem_nhdsGT zero_lt_one) hrpow
 
 /-- For negative shape, generalized extreme-value quantiles tend to minus infinity as the level
 tends to zero from above. -/
 theorem tendsto_quantile_generalizedExtremeValueMeasure_nhdsGT_zero_of_shape_neg
-    (hs : 0 < s) (hξ : ξ < 0) :
+    (hs : 0 < s) (m : ℝ) (hξ : ξ < 0) :
     Tendsto (fun u ↦ ((generalizedExtremeValueMeasure m s ξ).quantile u : EReal))
       (𝓝[>] 0) (𝓝 ⊥) := by
   let _ := isProbabilityMeasure_generalizedExtremeValueMeasure hs m ξ
@@ -130,7 +137,7 @@ theorem tendsto_quantile_generalizedExtremeValueMeasure_nhdsGT_zero_of_shape_neg
 /-- For positive shape, generalized extreme-value quantiles tend to plus infinity as the level
 tends to one from below. -/
 theorem tendsto_quantile_generalizedExtremeValueMeasure_nhdsLT_one_of_shape_pos
-    (hs : 0 < s) (hξ : 0 < ξ) :
+    (hs : 0 < s) (m : ℝ) (hξ : 0 < ξ) :
     Tendsto (fun u ↦ ((generalizedExtremeValueMeasure m s ξ).quantile u : EReal))
       (𝓝[<] 1) (𝓝 ⊤) := by
   let _ := isProbabilityMeasure_generalizedExtremeValueMeasure hs m ξ
@@ -150,7 +157,7 @@ theorem tendsto_quantile_generalizedExtremeValueMeasure_nhdsLT_one_of_shape_pos
 /-- For negative shape, generalized extreme-value quantiles tend to the finite upper endpoint
 `m - s / ξ` as the level tends to one from below. -/
 theorem tendsto_quantile_generalizedExtremeValueMeasure_nhdsLT_one_of_shape_neg
-    (hs : 0 < s) (hξ : ξ < 0) :
+    (hs : 0 < s) (m : ℝ) (hξ : ξ < 0) :
     Tendsto (fun u ↦ ((generalizedExtremeValueMeasure m s ξ).quantile u : EReal))
       (𝓝[<] 1) (𝓝 (m - s / ξ)) := by
   have hlog : Tendsto (fun u : ℝ ↦ -log u) (𝓝[<] 1) (𝓝 0) := by
@@ -159,21 +166,12 @@ theorem tendsto_quantile_generalizedExtremeValueMeasure_nhdsLT_one_of_shape_neg
     exact hlog'.mono_left nhdsWithin_le_nhds
   have hrpow : Tendsto (fun u : ℝ ↦ (-log u) ^ (-ξ)) (𝓝[<] 1) (𝓝 0) :=
     hlog.rpow_const_nhds_zero (neg_pos.mpr hξ)
-  have hlim : Tendsto (fun u : ℝ ↦ m + s * ((-log u) ^ (-ξ) - 1) / ξ)
-      (𝓝[<] 1) (𝓝 (m - s / ξ)) := by
-    have hlim' : Tendsto (fun u : ℝ ↦ m + s * ((-log u) ^ (-ξ) - 1) / ξ)
-        (𝓝[<] 1) (𝓝 (m + s * (0 - 1) / ξ)) :=
-      tendsto_const_nhds.add
-        ((tendsto_const_nhds.mul (hrpow.sub tendsto_const_nhds)).div_const ξ)
-    simpa [sub_eq_add_neg, neg_div] using hlim'
-  apply (EReal.tendsto_coe.mpr hlim).congr'
-  filter_upwards [Ioo_mem_nhdsLT zero_lt_one] with u hu
-  exact congrArg (fun x : ℝ ↦ (x : EReal))
-    (quantile_generalizedExtremeValueMeasure_of_shape_ne_zero hs hξ.ne hu).symm
+  exact tendsto_quantile_generalizedExtremeValueMeasure_finite_endpoint hs m hξ.ne
+    (Ioo_mem_nhdsLT zero_lt_one) hrpow
 
 /-- At shape zero, generalized extreme-value quantiles tend to minus infinity at the lower
 endpoint, as do Gumbel quantiles. -/
-theorem tendsto_quantile_generalizedExtremeValueMeasure_zero_nhdsGT_zero (hs : 0 < s) :
+theorem tendsto_quantile_generalizedExtremeValueMeasure_zero_nhdsGT_zero (hs : 0 < s) (m : ℝ) :
     Tendsto (fun u ↦ ((generalizedExtremeValueMeasure m s 0).quantile u : EReal))
       (𝓝[>] 0) (𝓝 ⊥) := by
   simpa only [generalizedExtremeValueMeasure_zero] using
@@ -181,7 +179,7 @@ theorem tendsto_quantile_generalizedExtremeValueMeasure_zero_nhdsGT_zero (hs : 0
 
 /-- At shape zero, generalized extreme-value quantiles tend to plus infinity at the upper
 endpoint, as do Gumbel quantiles. -/
-theorem tendsto_quantile_generalizedExtremeValueMeasure_zero_nhdsLT_one (hs : 0 < s) :
+theorem tendsto_quantile_generalizedExtremeValueMeasure_zero_nhdsLT_one (hs : 0 < s) (m : ℝ) :
     Tendsto (fun u ↦ ((generalizedExtremeValueMeasure m s 0).quantile u : EReal))
       (𝓝[<] 1) (𝓝 ⊤) := by
   simpa only [generalizedExtremeValueMeasure_zero] using

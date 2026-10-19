@@ -37,39 +37,26 @@ namespace TauCeti.Probability
 
 variable {m s ξ x e : ℝ}
 
+private lemma generalizedExtremeValue_support_sub_eq (hs : s ≠ 0) (hξ : ξ ≠ 0) (t : ℝ) :
+    1 + ξ * ((x - m) / s) - t =
+      (ξ / s) * (x - (m + s * (t - 1) / ξ)) := by
+  field_simp [hs, hξ]
+  ring
+
 /-- For positive shape, comparison with the generalized extreme-value transformation reduces to
 comparison with a negative real power of the positive exponential input. -/
 theorem generalizedExtremeValueMap_le_iff_of_shape_pos (hs : 0 < s) (hξ : 0 < ξ)
     (he : 0 < e) :
     generalizedExtremeValueMap m s ξ e ≤ x ↔
       e ^ (-ξ) ≤ 1 + ξ * ((x - m) / s) := by
-  rw [generalizedExtremeValueMap_of_shape_ne_zero hξ.ne']
-  have hrpow : exp (-ξ * log e) = e ^ (-ξ) := by
-    rw [rpow_def_of_pos he]
-    congr 1
-    ring
-  rw [hrpow]
-  have halgebra :
-      m + s * (e ^ (-ξ) - 1) / ξ ≤ x ↔
-        e ^ (-ξ) ≤ 1 + ξ * ((x - m) / s) := by
-    constructor
-    · intro h
-      have hmul : s * (e ^ (-ξ) - 1) ≤ (x - m) * ξ :=
-        (div_le_iff₀ hξ).mp (by linarith)
-      have hdiv : e ^ (-ξ) - 1 ≤ (x - m) * ξ / s :=
-        (le_div_iff₀ hs).2 (by simpa [mul_comm] using hmul)
-      calc
-        e ^ (-ξ) ≤ 1 + (x - m) * ξ / s := by linarith
-        _ = 1 + ξ * ((x - m) / s) := by ring
-    · intro h
-      have hdiv : e ^ (-ξ) - 1 ≤ (x - m) * ξ / s := by
-        rw [show 1 + ξ * ((x - m) / s) = 1 + (x - m) * ξ / s by ring] at h
-        linarith
-      have hmul : s * (e ^ (-ξ) - 1) ≤ (x - m) * ξ := by
-        simpa [mul_comm] using (le_div_iff₀ hs).mp hdiv
-      have := (div_le_iff₀ hξ).2 hmul
-      linarith
-  exact halgebra
+  rw [generalizedExtremeValueMap_eq_rpow he, ite_eq_right hξ.ne']
+  constructor
+  · intro h
+    rw [← sub_nonneg, generalizedExtremeValue_support_sub_eq hs.ne' hξ.ne']
+    exact mul_nonneg (div_pos hξ hs).le (sub_nonneg.mpr h)
+  · intro h
+    rw [← sub_nonneg, generalizedExtremeValue_support_sub_eq hs.ne' hξ.ne'] at h
+    exact sub_nonneg.mp ((mul_nonneg_iff_of_pos_left (div_pos hξ hs)).mp h)
 
 /-- For negative shape, comparison with the generalized extreme-value transformation reverses the
 algebraic comparison before reducing to a positive real power of the exponential input. -/
@@ -77,29 +64,32 @@ theorem generalizedExtremeValueMap_le_iff_of_shape_neg (hs : 0 < s) (hξ : ξ < 
     (he : 0 < e) :
     generalizedExtremeValueMap m s ξ e ≤ x ↔
       1 + ξ * ((x - m) / s) ≤ e ^ (-ξ) := by
-  rw [generalizedExtremeValueMap_of_shape_ne_zero hξ.ne]
-  have hrpow : exp (-ξ * log e) = e ^ (-ξ) := by
-    rw [rpow_def_of_pos he]
-    congr 1
-    ring
-  rw [hrpow]
+  rw [generalizedExtremeValueMap_eq_rpow he, ite_eq_right hξ.ne]
   constructor
   · intro h
-    have hmul : (x - m) * ξ ≤ s * (e ^ (-ξ) - 1) :=
-      (div_le_iff_of_neg hξ).mp (by linarith)
-    have hdiv : (x - m) * ξ / s ≤ e ^ (-ξ) - 1 :=
-      (div_le_iff₀ hs).2 (by simpa [mul_comm] using hmul)
-    calc
-      1 + ξ * ((x - m) / s) = 1 + (x - m) * ξ / s := by ring
-      _ ≤ e ^ (-ξ) := by linarith
+    rw [← sub_nonpos, generalizedExtremeValue_support_sub_eq hs.ne' hξ.ne]
+    exact mul_nonpos_of_nonpos_of_nonneg (div_nonpos_of_nonpos_of_nonneg hξ.le hs.le)
+      (sub_nonneg.mpr h)
   · intro h
-    have hdiv : (x - m) * ξ / s ≤ e ^ (-ξ) - 1 := by
-      rw [show 1 + ξ * ((x - m) / s) = 1 + (x - m) * ξ / s by ring] at h
-      linarith
-    have hmul : (x - m) * ξ ≤ s * (e ^ (-ξ) - 1) := by
-      simpa [mul_comm] using (div_le_iff₀ hs).mp hdiv
-    have := (div_le_iff_of_neg hξ).2 hmul
-    linarith
+    rw [← sub_nonpos, generalizedExtremeValue_support_sub_eq hs.ne' hξ.ne] at h
+    exact sub_nonneg.mp (nonneg_of_mul_nonpos_right h (div_neg_of_neg_of_pos hξ hs))
+
+/-- At or above the finite upper endpoint for negative shape, every positive source input maps
+below the comparison point. -/
+theorem generalizedExtremeValueMap_le_of_shape_neg_of_nonpos (hs : 0 < s) (hξ : ξ < 0)
+    (he : 0 < e) (hx : ¬0 < 1 + ξ * ((x - m) / s)) :
+    generalizedExtremeValueMap m s ξ e ≤ x :=
+  (generalizedExtremeValueMap_le_iff_of_shape_neg hs hξ he).2
+    ((le_of_not_gt hx).trans (rpow_pos_of_pos he _).le)
+
+/-- Below the finite lower endpoint for positive shape, no positive source input maps below the
+comparison point. -/
+theorem not_generalizedExtremeValueMap_le_of_shape_pos_of_nonpos (hs : 0 < s) (hξ : 0 < ξ)
+    (he : 0 < e) (hx : ¬0 < 1 + ξ * ((x - m) / s)) :
+    ¬generalizedExtremeValueMap m s ξ e ≤ x := fun hle ↦
+  (not_le_of_gt (rpow_pos_of_pos he _))
+    ((generalizedExtremeValueMap_le_iff_of_shape_pos hs hξ he).1 hle |>.trans
+      (le_of_not_gt hx))
 
 /-- On the interior of its support, the generalized extreme-value transformation is at most `x`
 exactly when the source exponential variable exceeds the inverse threshold. -/
@@ -150,17 +140,14 @@ theorem cdf_generalizedExtremeValueMeasure_eq (hs : 0 < s) (hξ : ξ ≠ 0) (m x
         filter_upwards [ae_pos_expMeasure 1] with e he
         apply propext
         simp only [mem_preimage, mem_Iic, mem_univ, iff_true]
-        exact (generalizedExtremeValueMap_le_iff_of_shape_neg hs hξ he).2
-          ((le_of_not_gt hx).trans (rpow_pos_of_pos he _).le)
+        exact generalizedExtremeValueMap_le_of_shape_neg_of_nonpos hs hξ he hx
       rw [measure_congr hpre, measure_univ, ENNReal.toReal_one]
     · rw [ite_eq_left hξ]
       have hpre : generalizedExtremeValueMap m s ξ ⁻¹' Iic x =ᵐ[expMeasure 1] ∅ := by
         filter_upwards [ae_pos_expMeasure 1] with e he
         apply propext
         simp only [mem_preimage, mem_Iic, mem_empty_iff_false, iff_false]
-        exact fun hle ↦ (not_le_of_gt (rpow_pos_of_pos he _))
-          ((generalizedExtremeValueMap_le_iff_of_shape_pos hs hξ he).1 hle |>.trans
-            (le_of_not_gt hx))
+        exact not_generalizedExtremeValueMap_le_of_shape_pos_of_nonpos hs hξ he hx
       rw [measure_congr hpre, measure_empty, ENNReal.toReal_zero]
 
 /-- At shape zero, the generalized extreme-value cdf is the Gumbel cdf. -/
