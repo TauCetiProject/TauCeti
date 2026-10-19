@@ -79,6 +79,8 @@ finite-dimensional representations.
   invariants.
 * `Representation.invariants_comp_of_surjective`: restriction along a surjective homomorphism
   does not change the invariants.
+* `Representation.tmul_mem_invariants_tprod`: the tensor product of invariant vectors is
+  invariant.
 * `Representation.finrank_invariants_tprod_of_comp`: invariant dimensions of tensor products may
   be compared along a surjective homomorphism of groups.
 * `Rep.invariantsFunctor_map_surjective_of_surjective_of_projective`: taking invariants preserves
@@ -316,6 +318,13 @@ namespace Representation
 variable {k G H V V' W W' : Type*} [CommRing k] [Group G] [Group H]
   [AddCommGroup V] [Module k V] [AddCommGroup V'] [Module k V']
   [AddCommGroup W] [Module k W] [AddCommGroup W'] [Module k W']
+
+/-- The tensor product of invariant vectors is an invariant vector of the tensor product
+representation. -/
+theorem tmul_mem_invariants_tprod {X : Representation k G V} {Y : Representation k G W}
+    {v : V} {w : W} (hv : v ∈ X.invariants) (hw : w ∈ Y.invariants) :
+    v ⊗ₜ[k] w ∈ (X.tprod Y).invariants :=
+  fun g ↦ by rw [tprod_apply, TensorProduct.map_tmul, hv g, hw g]
 
 /-- **Invariant dimensions of tensor products along a surjective homomorphism of groups.** If the
 restrictions of `X` and `Y` along a surjective `f : G →* H` are equivalent to `X'` and `Y'`, then

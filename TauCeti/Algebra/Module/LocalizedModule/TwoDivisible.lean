@@ -86,6 +86,16 @@ namespace IsUniquelyTwoDivisible
 
 variable {G : Type*} [AddCommGroup G]
 
+/-- Unique two-divisibility is preserved by additive equivalences. -/
+theorem of_addEquiv (h : IsUniquelyTwoDivisible G) {H : Type*} [AddCommGroup H]
+    (e : G ≃+ H) : IsUniquelyTwoDivisible H := by
+  rw [isUniquelyTwoDivisible_iff] at h ⊢
+  have he : (fun y : H ↦ (2 : ℤ) • y) = e ∘ (fun x : G ↦ (2 : ℤ) • x) ∘ e.symm := by
+    ext y
+    simp
+  rw [he]
+  exact e.bijective.comp (h.comp e.symm.bijective)
+
 /-- A uniquely two-divisible abelian group is a module over `ℤ[1/2]`. Its compatibility with the
 canonical integer action, `IsScalarTower ℤ (Localization.Away 2) G`, is automatic from Mathlib's
 instance `AddCommGroup.intIsScalarTower`. -/

@@ -53,7 +53,7 @@ def track (F : SmoothIsotopy f₀ f₁) :
 
 /-- Forgetting smoothness preserves the track. -/
 @[simp] theorem toContinuousMap_track (F : SmoothIsotopy f₀ f₁) :
-    _root_.toContinuousMap F.track = F.toIsotopy.track := by
+    ContinuousMap.ofClass F.track = F.toIsotopy.track := by
   apply ContinuousMap.ext
   intro p
   exact (F.track_apply p).trans (by simp)

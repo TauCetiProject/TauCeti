@@ -5,19 +5,27 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Monoidal.CommMon_
 public import Mathlib.CategoryTheory.Monoidal.Grp
 public import Mathlib.CategoryTheory.Monoidal.Mon
 
 /-!
 # Monoid objects
 
-This file provides general-purpose facts about monoid objects and their commutativity.
+This file provides general-purpose facts about monoid objects, their monomorphisms, and their
+commutativity.
 
 ## Main declarations
 
+* `CategoryTheory.Mon.mono_of_mono_hom`: monicity of an underlying morphism implies monicity of
+  the morphism of monoid objects.
+* `CategoryTheory.Mon.mono_of_mono_left`: the corresponding reflection for monoid objects in a
+  slice category.
 * `TauCeti.isCommMonObj_of_grp_iso`: commutativity of a group object is preserved by isomorphism.
 * `TauCeti.isCommMonObj_of_mono`: a monoid subobject of a commutative monoid object is commutative.
 * `TauCeti.monObj_eq_of_mono`: a monomorphism admits at most one compatible monoid structure.
+* `TauCeti.commMon_eqToHom_hom_hom`: the underlying morphism of an `eqToHom` between commutative
+  monoid objects is an `eqToHom`.
 * `CategoryTheory.MonObj.isMonHom_one`: the unit of a monoid object is a monoid homomorphism
   from the trivial monoid on the tensor unit.
 * `CategoryTheory.MonObj.isMonHom_mul`: the multiplication of a commutative monoid object is a
@@ -30,6 +38,25 @@ public section
 
 open CategoryTheory
 open scoped CategoryTheory.MonObj
+
+namespace CategoryTheory.Mon
+
+universe u v
+
+/-- A morphism of monoid objects is monic if its underlying morphism is monic. -/
+instance (priority := 900) mono_of_mono_hom {C : Type u} [Category.{v} C]
+    [MonoidalCategory C] {M N : Mon C} (f : M ⟶ N) [hf : Mono f.hom] : Mono f :=
+  -- The forgetful functor maps `f` to `f.hom` by definition.
+  (Mon.forget C).mono_of_mono_map hf
+
+/-- A morphism of monoid objects over a base is monic if its underlying morphism is monic. -/
+instance (priority := 900) mono_of_mono_left {C : Type u} [Category.{v} C] {X : C}
+    [MonoidalCategory (Over X)] {M N : Mon (Over X)} (f : M ⟶ N)
+    [Mono f.hom.left] : Mono f := by
+  have := Over.mono_of_mono_left f.hom
+  exact mono_of_mono_hom f
+
+end CategoryTheory.Mon
 
 namespace TauCeti
 
@@ -65,6 +92,15 @@ theorem isCommMonObj_of_mono
   mul_comm := by
     apply (cancel_mono i).1
     simp [IsMonHom.mul_hom, ← BraidedCategory.braiding_naturality_assoc]
+
+/-- The morphism of underlying objects of an `eqToHom` between commutative monoid objects is an
+`eqToHom`. -/
+theorem commMon_eqToHom_hom_hom
+    {C : Type u} [Category.{v} C] [MonoidalCategory C] [BraidedCategory C]
+    {A B : CommMon C} (h : A = B) (h' : A.X = B.X) :
+    (eqToHom h).hom.hom = eqToHom h' := by
+  subst h
+  rw [eqToHom_refl, eqToHom_refl, CommMon.id_hom]
 
 end TauCeti
 

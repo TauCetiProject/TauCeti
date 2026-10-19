@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Representability
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Normal.Basic
 
 /-!
 # Representability of dynamic unipotent subgroups
@@ -162,6 +163,18 @@ theorem quotientPointsSubgroup_unipotentDefiningHopfIdeal
     simp only [IsConcreteLE.le_iff, HopfIdeal.mem_toIdeal, RingHom.mem_ker]
   rw [hker, unipotentDefiningHopfIdeal_toIdeal]
   exact unipotentCoefficientIdeal_le_ker_iff l g
+
+/-- If the dynamic parabolic of a cocharacter is the whole group, then the dynamic unipotent
+subgroup is a normal closed subgroup of the whole group. -/
+theorem isNormal_unipotentDefiningHopfIdeal_of_parabolicDefiningHopfIdeal_eq_bot
+    (l : H →ₐc[R] LaurentPolynomial R) (hl : parabolicDefiningHopfIdeal l = ⊥) :
+    l.unipotentDefiningHopfIdeal.IsNormal := by
+  rw [CommHopfAlgCat.isNormal_iff_quotientPointsSubgroup_normal (_root_.CommHopfAlgCat.of R H)]
+  rintro ⟨A⟩
+  rw [quotientPointsSubgroup_unipotentDefiningHopfIdeal]
+  refine ⟨fun u hu g ↦ conj_mem_unipotent ?_ hu⟩
+  rw [parabolic_eq_top_of_parabolicDefiningHopfIdeal_eq_bot l hl]
+  exact Subgroup.mem_top g
 
 /-- The coefficient Hopf quotient represents the dynamic unipotent functor. -/
 noncomputable def unipotentPointsIso (l : H →ₐc[R] LaurentPolynomial R) :

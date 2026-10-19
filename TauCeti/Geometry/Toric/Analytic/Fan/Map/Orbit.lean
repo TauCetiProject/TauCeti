@@ -17,7 +17,8 @@ of that cone. It need not map onto the target orbit: the induced torus homomorph
 be surjective.
 
 The orbit partition gives exact preimage formulas. The preimage of a target orbit is the union
-of the source orbits whose least target cone is that cone; the preimage of an affine chart is
+of the source orbits whose least target cone is that cone, and the preimage of its closure is the
+union of those whose least target cone contains that cone; the preimage of an affine chart is
 the union of the source orbits whose cones map into its cone. These formulas include empty fans
 and provide the cone-by-cone description needed for restrictions and properness.
 
@@ -116,6 +117,17 @@ theorem preimage_analyticMap_analyticConeOrbit (τ : Ψ.cones) :
   rw [mem_preimage, f.analyticMap_mem_analyticConeOrbit_iff hΦ hΨ hx, mem_iUnion₂]
   exact ⟨fun h ↦ ⟨σ, h, hx⟩, fun ⟨σ', h, hx'⟩ ↦
     Φ.eq_of_mem_analyticConeOrbit hΦ hx' hx ▸ h⟩
+
+/-- The preimage of the closure of a target orbit is exactly the union of the source orbits whose
+least target cone contains that cone. -/
+theorem preimage_analyticMap_closure_analyticConeOrbit (τ : Ψ.cones) :
+    f.analyticMap hΦ hΨ ⁻¹' closure (Ψ.analyticConeOrbit hΨ τ) =
+      ⋃ σ : Φ.cones, ⋃ (_ : τ.1 ≤ f.leastCone σ.2), Φ.analyticConeOrbit hΦ σ := by
+  ext x
+  obtain ⟨σ, hx⟩ := Φ.exists_mem_analyticConeOrbit hΦ x
+  rw [mem_preimage,
+    Ψ.mem_closure_analyticConeOrbit_iff hΨ (f.mapsTo_analyticConeOrbit hΦ hΨ σ hx), mem_iUnion₂]
+  exact ⟨fun h ↦ ⟨σ, h, hx⟩, fun ⟨σ', h, hx'⟩ ↦ Φ.eq_of_mem_analyticConeOrbit hΦ hx' hx ▸ h⟩
 
 /-- On a source orbit, membership of the image in a target affine chart is precisely containment
 of the least target cone in the chart's cone. -/

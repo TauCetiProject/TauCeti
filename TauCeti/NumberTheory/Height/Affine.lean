@@ -51,6 +51,8 @@ drop under re-indexing.
   The second fails for `Height.mulHeight`.
 * `Height.mulHeightAff_comp_le`, `Height.mulHeightAff_comp_equiv`: monotonicity under
   re-indexing between finite index types, and equality for a bijection between arbitrary ones.
+* `Height.mulHeight_cons_one`: for `x : Fin n → K`, prepending the coordinate `1` with
+  `Fin.cons` instead of appending it gives the same height.
 * `Height.mulHeightAff_zero`, `Height.mulHeightAff_one`: the zero tuple (for finite `ι`) and the
   tuple of ones have affine height `1`.
 * `Height.mulHeightAff_unique`, `Height.mulHeightAff_fin_one`: on a one-element tuple the
@@ -136,6 +138,23 @@ lemma logHeightAff_comp_equiv (e : ι ≃ ι') (x : ι' → K) :
     logHeightAff (x ∘ e) = logHeightAff x := by
   rw [logHeightAff_eq_log_mulHeightAff, logHeightAff_eq_log_mulHeightAff,
     mulHeightAff_comp_equiv]
+
+/-- The affine height may equally be computed by prepending the coordinate `1` to a tuple
+indexed by `Fin n`: the projective height of `Fin.cons 1 x` is `Height.mulHeightAff x`. -/
+@[simp]
+lemma mulHeight_cons_one {n : ℕ} (x : Fin n → K) :
+    mulHeight (Fin.cons 1 x : Fin (n + 1) → K) = mulHeightAff x := by
+  have h : (Fin.cons 1 x : Fin (n + 1) → K) = (fun o : Option (Fin n) ↦ o.elim 1 x) ∘
+      finSuccEquiv n := by
+    funext i
+    cases i using Fin.cases <;> simp
+  rw [h, mulHeight_comp_equiv, mulHeightAff_def]
+
+/-- The logarithmic form of `Height.mulHeight_cons_one`. -/
+@[simp]
+lemma logHeight_cons_one {n : ℕ} (x : Fin n → K) :
+    logHeight (Fin.cons 1 x : Fin (n + 1) → K) = logHeightAff x := by
+  rw [logHeight_eq_log_mulHeight, mulHeight_cons_one, logHeightAff_eq_log_mulHeightAff]
 
 section Finite
 

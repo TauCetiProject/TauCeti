@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.ExtDeriv
-public import TauCeti.Analysis.Normed.Module.Alternating.TopDegree
+public import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 public import TauCeti.Analysis.Calculus.DifferentialForm.Pullback
 public import Mathlib.Geometry.Manifold.MFDeriv.UniqueDifferential
 
