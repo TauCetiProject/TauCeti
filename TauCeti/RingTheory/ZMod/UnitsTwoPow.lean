@@ -135,7 +135,7 @@ and `k` read through their canonical representatives. -/
 @[simp]
 theorem unitsTwoPowEquiv_symm_apply (s : ZMod 2) (k : ZMod (2 ^ (e + 1))) :
     (unitsTwoPowEquiv e).symm (ofAdd (s, k)) = (-1) ^ s.val * unitsTwoPowFive e ^ k.val := by
-  simp [unitsTwoPowEquiv, unitsTwoPowHom_apply]
+  rw [unitsTwoPowEquiv, MulEquiv.symm_symm, MulEquiv.ofBijective_apply, unitsTwoPowHom_apply]
 
 /-- `ZMod.unitsTwoPowEquiv` sends `-1` to `(1, 0)`. -/
 @[simp]
