@@ -1046,7 +1046,7 @@ noncomputable def spinGroupMulEquivSpecialLinearGroup
 
 /-- The polarized Spin-to-special-linear equivalence is the matrix of the even half-spin action. -/
 theorem coe_spinGroupMulEquivSpecialLinearGroup_apply
-    [NeZero (2 : K)] (P : SpinPolarizationData Q) [FiniteDimensional K (spinPlus Q P)]
+    (P : SpinPolarizationData Q) [FiniteDimensional K (spinPlus Q P)]
     [FiniteDimensional K V]
     (hline : P.line = ⊥)
     (hWfin : finrank K P.W = 3) (hW : P.W ≠ ⊥) (hplus : finrank K (spinPlus Q P) = 4)
