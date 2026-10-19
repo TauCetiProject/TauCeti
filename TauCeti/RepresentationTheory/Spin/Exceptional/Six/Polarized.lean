@@ -58,6 +58,139 @@ variable {K : Type u} [Field K] {V : Type v} [AddCommGroup V] [Module K V]
 -- Formal lineage: the split comparison was introduced in Tau Ceti PR #16324, and the
 -- arbitrary-form group endpoint in `Six.Group` was introduced in Tau Ceti PR #17008.
 
+private theorem polarizedSpinGroupFirstFactor_matrix
+    [NeZero (2 : K)] [Invertible (2 : K)] (P : SpinPolarizationData Q)
+    [FiniteDimensional K V]
+    [FiniteDimensional K (spinPlus Q P)]
+    (hline : P.line = ⊥)
+    (hW : P.W ≠ ⊥) (hplus : finrank K (spinPlus Q P) = 4)
+    (hV : finrank K V = 6) (b : Basis (Fin 4) K (spinPlus Q P))
+    (hb : b = Module.finBasisOfFinrankEq K (spinPlus Q P) hplus) (s : spinGroup Q) :
+    let e := P.evenCliffordEquivProdMatrix (l := 3) hW (by omega)
+    let u := e.evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix
+      (P.nondegenerate_of_line_eq_bot hline) hV
+    (u (spinGroupToEvenUnitary Q s) : Matrix (Fin 4) (Fin 4) K) =
+      LinearMap.toMatrix b b (spinPlusAction Q P hline (spinGroupToEven Q s)) := by
+  dsimp
+  calc
+    _ = (P.evenCliffordEquivProdMatrix (l := 3) hW (by omega)
+        (spinGroupToEven Q s)).1 := by
+      rw [AlgEquiv.coe_evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix_apply,
+        CliffordAlgebra.evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_apply]
+    _ = (Algebra.endAlgEquivMatrix K (spinPlus Q P) hplus
+        (spinPlusAction Q P hline (spinGroupToEven Q s))) := by
+      simpa using congrArg Prod.fst
+        (P.evenCliffordEquivProdMatrix_apply (l := 3) hW (by omega)
+          (spinGroupToEven Q s))
+    _ = _ := by
+      rw [Algebra.endAlgEquivMatrix_apply K _ _]
+      rw [hb]
+
+private noncomputable def polarizedSpinGroupMulHom
+    [NeZero (2 : K)] (P : SpinPolarizationData Q) [FiniteDimensional K (spinPlus Q P)]
+    (hline : P.line = ⊥)
+    (hWfin : finrank K P.W = 3) (hW : P.W ≠ ⊥) (hplus : finrank K (spinPlus Q P) = 4)
+    (hV : finrank K V = 6) (b : Basis (Fin 4) K (spinPlus Q P))
+    (hb : b = Module.finBasisOfFinrankEq K (spinPlus Q P) hplus) :
+    spinGroup Q →* Matrix.SpecialLinearGroup (Fin 4) K := by
+  let _ : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
+  let _ : FiniteDimensional K (spinPlus Q P) := Module.finite_of_finrank_pos (by omega)
+  let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
+  let e := P.evenCliffordEquivProdMatrix (l := 3) hW (by omega)
+  let u := e.evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix
+    (P.nondegenerate_of_line_eq_bot hline) hV
+  exact
+    { toFun := fun s ↦ ⟨u (spinGroupToEvenUnitary Q s), by
+          have hm : (u (spinGroupToEvenUnitary Q s) : Matrix (Fin 4) (Fin 4) K) =
+              LinearMap.toMatrix b b
+                (spinPlusAction Q P hline (spinGroupToEven Q s)) := by
+            simpa only [e, u] using
+              polarizedSpinGroupFirstFactor_matrix P hline hW hplus hV b hb s
+          rw [hm, LinearMap.det_toMatrix]
+          exact det_spinPlusAction_spinGroupToEven P hline hWfin s⟩
+      map_one' := Subtype.ext (by
+        change (u (spinGroupToEvenUnitary Q 1) : Matrix (Fin 4) (Fin 4) K) = 1
+        rw [map_one, map_one, Units.val_one])
+      map_mul' := fun s t ↦ Subtype.ext (by
+        change (u (spinGroupToEvenUnitary Q (s * t)) : Matrix (Fin 4) (Fin 4) K) =
+          (u (spinGroupToEvenUnitary Q s) : Matrix (Fin 4) (Fin 4) K) *
+            (u (spinGroupToEvenUnitary Q t) : Matrix (Fin 4) (Fin 4) K)
+        rw [map_mul, map_mul, Units.val_mul]) }
+
+private theorem polarizedSpinGroupMulHom_matrix
+    [NeZero (2 : K)] (P : SpinPolarizationData Q) [FiniteDimensional K (spinPlus Q P)]
+    (hline : P.line = ⊥)
+    (hWfin : finrank K P.W = 3) (hW : P.W ≠ ⊥) (hplus : finrank K (spinPlus Q P) = 4)
+    (hV : finrank K V = 6) (b : Basis (Fin 4) K (spinPlus Q P))
+    (hb : b = Module.finBasisOfFinrankEq K (spinPlus Q P) hplus) (s : spinGroup Q) :
+    (polarizedSpinGroupMulHom P hline hWfin hW hplus hV b hb s : Matrix (Fin 4) (Fin 4) K) =
+      LinearMap.toMatrix b b (spinPlusAction Q P hline (spinGroupToEven Q s)) := by
+  let _ : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
+  let _ : FiniteDimensional K (spinPlus Q P) := Module.finite_of_finrank_pos (by omega)
+  let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
+  let e := P.evenCliffordEquivProdMatrix (l := 3) hW (by omega)
+  let u := e.evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix
+    (P.nondegenerate_of_line_eq_bot hline) hV
+  change (u (spinGroupToEvenUnitary Q s) : Matrix (Fin 4) (Fin 4) K) = _
+  exact polarizedSpinGroupFirstFactor_matrix P hline hW hplus hV b hb s
+
+private theorem polarizedSpinGroupMulHom_bijective
+    [NeZero (2 : K)] (P : SpinPolarizationData Q) [FiniteDimensional K (spinPlus Q P)]
+    (hline : P.line = ⊥)
+    (hWfin : finrank K P.W = 3) (hW : P.W ≠ ⊥) (hplus : finrank K (spinPlus Q P) = 4)
+    (hV : finrank K V = 6) (b : Basis (Fin 4) K (spinPlus Q P))
+    (hb : b = Module.finBasisOfFinrankEq K (spinPlus Q P) hplus) :
+    Function.Bijective (polarizedSpinGroupMulHom P hline hWfin hW hplus hV b hb) := by
+  let _ : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
+  let _ : FiniteDimensional K (spinPlus Q P) := Module.finite_of_finrank_pos (by omega)
+  let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
+  let e := P.evenCliffordEquivProdMatrix (l := 3) hW (by omega)
+  let u := e.evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix
+    (P.nondegenerate_of_line_eq_bot hline) hV
+  constructor
+  · intro s t h
+    apply spinGroupToEvenUnitary_injective Q
+    apply u.injective
+    apply Units.ext
+    exact congrArg Subtype.val h
+  · intro A
+    let a : Module.End K (spinPlus Q P) :=
+      (LinearMap.toMatrix b b).symm (A : Matrix (Fin 4) (Fin 4) K)
+    have hdet : LinearMap.det a = 1 := by
+      rw [← LinearMap.det_toMatrix b, LinearEquiv.apply_symm_apply]
+      exact A.property
+    obtain ⟨s, hs⟩ :=
+      exists_spinPlusAction_spinGroupToEven_eq_of_det_eq_one P hline hWfin a hdet
+    refine ⟨s, Subtype.ext ?_⟩
+    change (polarizedSpinGroupMulHom P hline hWfin hW hplus hV b hb s :
+      Matrix (Fin 4) (Fin 4) K) = A
+    rw [polarizedSpinGroupMulHom_matrix P hline hWfin hW hplus hV b hb s, hs]
+    exact LinearEquiv.apply_symm_apply (LinearMap.toMatrix b b)
+      (A : Matrix (Fin 4) (Fin 4) K)
+
+/-- The first Clifford factor gives the polarized Spin-to-`SL₄` equivalence in the basis of the
+even half-spin module. -/
+private noncomputable def polarizedSpinGroupMulEquiv
+    [NeZero (2 : K)] (P : SpinPolarizationData Q) [FiniteDimensional K (spinPlus Q P)]
+    (hline : P.line = ⊥)
+    (hWfin : finrank K P.W = 3) (hW : P.W ≠ ⊥) (hplus : finrank K (spinPlus Q P) = 4)
+    (hV : finrank K V = 6) (b : Basis (Fin 4) K (spinPlus Q P))
+    (hb : b = Module.finBasisOfFinrankEq K (spinPlus Q P) hplus) :
+    spinGroup Q ≃* Matrix.SpecialLinearGroup (Fin 4) K :=
+  MulEquiv.ofBijective (polarizedSpinGroupMulHom P hline hWfin hW hplus hV b hb)
+    (polarizedSpinGroupMulHom_bijective P hline hWfin hW hplus hV b hb)
+
+private theorem polarizedSpinGroupMulEquiv_matrix
+    [NeZero (2 : K)] (P : SpinPolarizationData Q) [FiniteDimensional K (spinPlus Q P)]
+    (hline : P.line = ⊥)
+    (hWfin : finrank K P.W = 3) (hW : P.W ≠ ⊥) (hplus : finrank K (spinPlus Q P) = 4)
+    (hV : finrank K V = 6) (b : Basis (Fin 4) K (spinPlus Q P))
+    (hb : b = Module.finBasisOfFinrankEq K (spinPlus Q P) hplus) (s : spinGroup Q) :
+    (polarizedSpinGroupMulEquiv P hline hWfin hW hplus hV b hb s : Matrix (Fin 4) (Fin 4) K) =
+      LinearMap.toMatrix b b (spinPlusAction Q P hline (spinGroupToEven Q s)) := by
+  rw [polarizedSpinGroupMulEquiv, MulEquiv.ofBijective_apply]
+  exact polarizedSpinGroupMulHom_matrix P hline hWfin hW hplus hV b hb s
+
 /-- Over a field of characteristic different from two, a polarization of a six-dimensional
 quadratic space identifies its Spin group with `SL₄` so that the even half-spin representation
 is standard and the odd half-spin representation is its dual. The group and representation
@@ -79,67 +212,12 @@ theorem
   have hplus : finrank K (spinPlus Q P) = 4 := by
     rw [finrank_spinPlus P hW, hWfin]
     norm_num
+  let _ : FiniteDimensional K (spinPlus Q P) := Module.finite_of_finrank_pos (by omega)
   let b := Module.finBasisOfFinrankEq K (spinPlus Q P) hplus
-  let e := P.evenCliffordEquivProdMatrix (l := 3) hW (by omega)
-  let u := e.evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix
-    (P.nondegenerate_of_line_eq_bot hline) hV
-  have hu (s : spinGroup Q) :
-      (u (spinGroupToEvenUnitary Q s) : Matrix (Fin 4) (Fin 4) K) =
-        LinearMap.toMatrix b b
-          (spinPlusAction Q P hline (spinGroupToEven Q s)) := by
-    calc
-      (u (spinGroupToEvenUnitary Q s) : Matrix (Fin 4) (Fin 4) K) =
-          (e (spinGroupToEven Q s)).1 := by
-        rw [AlgEquiv.coe_evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix_apply,
-          CliffordAlgebra.evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_apply]
-      _ = (Algebra.endAlgEquivMatrix K (spinPlus Q P) hplus
-          (spinPlusAction Q P hline (spinGroupToEven Q s))) := by
-        simpa only [e, hplus] using congrArg Prod.fst
-          (P.evenCliffordEquivProdMatrix_apply (l := 3) hW (by omega)
-            (spinGroupToEven Q s))
-      _ = _ := by
-        simpa only [b] using Algebra.endAlgEquivMatrix_apply K _ _ _
-  let f : spinGroup Q →* Matrix.SpecialLinearGroup (Fin 4) K :=
-    { toFun := fun s ↦ ⟨u (spinGroupToEvenUnitary Q s), by
-          rw [hu, LinearMap.det_toMatrix]
-          exact det_spinPlusAction_spinGroupToEven P hline hWfin s⟩
-      map_one' := Subtype.ext (by
-        -- `map_one` rewrites the underlying unit, so expose its matrix coercion; it cannot
-        -- rewrite the subtype-wrapped goal produced by `Subtype.ext` directly.
-        change (u (spinGroupToEvenUnitary Q 1) : Matrix (Fin 4) (Fin 4) K) = 1
-        rw [map_one, map_one, Units.val_one])
-      map_mul' := fun s t ↦ Subtype.ext (by
-        -- The homomorphism laws apply to matrix-valued coercions, not the subtype wrappers left
-        -- by `Subtype.ext`, so this `change` exposes the only form that those rewrites can reach.
-        change (u (spinGroupToEvenUnitary Q (s * t)) : Matrix (Fin 4) (Fin 4) K) =
-          (u (spinGroupToEvenUnitary Q s) : Matrix (Fin 4) (Fin 4) K) *
-            (u (spinGroupToEvenUnitary Q t) : Matrix (Fin 4) (Fin 4) K)
-        rw [map_mul, map_mul, Units.val_mul]) }
-  have hf_bijective : Function.Bijective f := by
-    constructor
-    · intro s t h
-      apply spinGroupToEvenUnitary_injective Q
-      apply u.injective
-      apply Units.ext
-      exact congrArg Subtype.val h
-    · intro A
-      let a : Module.End K (spinPlus Q P) :=
-        (LinearMap.toMatrix b b).symm (A : Matrix (Fin 4) (Fin 4) K)
-      have hdet : LinearMap.det a = 1 := by
-        rw [← LinearMap.det_toMatrix b, LinearEquiv.apply_symm_apply]
-        exact A.property
-      obtain ⟨s, hs⟩ :=
-        exists_spinPlusAction_spinGroupToEven_eq_of_det_eq_one P hline hWfin a hdet
-      refine ⟨s, Subtype.ext ?_⟩
-      -- `hu` and `hs` are matrix equalities, while `Subtype.ext` leaves a special-linear value;
-      -- expose its matrix coercion because those lemmas cannot rewrite the wrapped goal directly.
-      change (u (spinGroupToEvenUnitary Q s) : Matrix (Fin 4) (Fin 4) K) = A
-      rw [hu, hs]
-      exact LinearEquiv.apply_symm_apply (LinearMap.toMatrix b b)
-        (A : Matrix (Fin 4) (Fin 4) K)
-  let φ := MulEquiv.ofBijective f hf_bijective
+  have hb : b = Module.finBasisOfFinrankEq K (spinPlus Q P) hplus := rfl
+  let φ := polarizedSpinGroupMulEquiv P hline hWfin hW hplus hV b hb
   obtain ⟨eplus⟩ := nonempty_spinPlusSubrep_equiv_stdSLRep_of_matrix_action hline b φ
-    (fun s ↦ by rw [MulEquiv.ofBijective_apply]; exact hu s)
+    (fun s ↦ polarizedSpinGroupMulEquiv_matrix P hline hWfin hW hplus hV b hb s)
   obtain ⟨hline', ⟨eminus⟩⟩ :=
     exists_spinMinusSubrep_equiv_dual_spinPlusSubrep_of_finrank_eq_six P hV
   have hh : hline' = hline := Subsingleton.elim _ _
