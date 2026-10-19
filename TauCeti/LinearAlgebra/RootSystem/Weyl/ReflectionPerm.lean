@@ -13,7 +13,8 @@ public import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 Two root pairings on the same root index type have canonically isomorphic Weyl groups
 if their reflection permutations agree and both Weyl groups act faithfully on root
 indices. This comparison does not require an equivalence of weight lattices: it applies,
-for example, to the simply connected and adjoint integral data of type A.
+for example, to the full coordinate-difference (GLₙ) datum and the adjoint datum
+of type A, whose character lattices have different ranks.
 
 The construction compares the ranges of Mathlib's `RootPairing.weylGroupToPerm`,
 using `RootPairing.range_weylGroupToPerm`. The resulting equivalence preserves the

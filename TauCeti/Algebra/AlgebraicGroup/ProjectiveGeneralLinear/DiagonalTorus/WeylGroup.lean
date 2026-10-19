@@ -14,8 +14,9 @@ public import TauCeti.LinearAlgebra.RootSystem.Weyl.ReflectionPerm
 
 The Weyl group of the adjoint type-A datum on the normalized diagonal torus of
 `PGL_{r+1}` is the symmetric group on the `r + 1` coordinate lines. Its reflections
-are transpositions, and its action on characters permutes the coordinate differences
-`ε_i - ε_r`. The last coordinate is normalized to zero, so a permutation moving it
+are transpositions, and a permutation `e` sends each basis character `ε_i - ε_r`
+to `ε_{e(i)} - ε_{e(r)}`. Thus the action permutes all coordinate differences.
+The last coordinate is normalized to zero, so a permutation moving it
 does not merely permute the remaining `r` coordinates.
 
 The comparison uses the existing coordinate-difference Weyl-group computation:
@@ -99,14 +100,6 @@ theorem diagonalPermMulEquivWeylGroup_symm_ofIdx
   apply (diagonalPermMulEquivWeylGroup r).injective
   rw [MulEquiv.apply_symm_apply, diagonalPermMulEquivWeylGroup_swap _ _ p.2]
 
-private theorem diagonalRootDatum_root_castSucc_last (i : ULift.{u} (Fin r)) :
-    (diagonalRootDatum.{u} r).root
-        ⟨(i.down.castSucc, Fin.last r), (Fin.castSucc_lt_last i.down).ne⟩ =
-      Finsupp.single i 1 := by
-  ext j
-  simp [diagonalRootDatum_root_apply, diagonalTorusWeight_apply,
-    Finsupp.single_apply, eq_comm]
-
 /-- On a basis character `ε_i - ε_r`, a permutation gives `ε_{e(i)} - ε_{e(r)}`,
 expressed in the normalized projective coordinates. -/
 @[simp]
@@ -117,8 +110,8 @@ theorem diagonalPermMulEquivWeylGroup_smul_single
         (coordinatePermRootIndex e
           ⟨(i.down.castSucc, Fin.last r), (Fin.castSucc_lt_last i.down).ne⟩) := by
   rw [← diagonalRootDatum_root_castSucc_last]
-  simpa only [RootPairing.weylGroupToPerm, MonoidHom.domRestrict_apply,
-    RootPairing.Equiv.indexHom_apply, diagonalPermMulEquivWeylGroup_indexEquiv_apply] using
+  simpa only [RootPairing.weylGroupToPerm_apply,
+    diagonalPermMulEquivWeylGroup_indexEquiv_apply] using
     (diagonalRootDatum.{u} r).weylGroup_apply_root (diagonalPermMulEquivWeylGroup r e)
       ⟨(i.down.castSucc, Fin.last r), (Fin.castSucc_lt_last i.down).ne⟩
 

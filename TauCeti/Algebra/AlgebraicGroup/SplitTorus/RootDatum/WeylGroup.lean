@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import Mathlib.LinearAlgebra.RootSystem.WeylGroup
+public import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.RootDatum.Basic
 import Mathlib.GroupTheory.Perm.Sign
 
@@ -286,8 +286,7 @@ theorem coordinateRootDatum_weylGroupToPerm_injective :
   apply Equiv.ext
   intro p
   simpa only [coordinatePermRootIndexHom_apply,
-    RootPairing.weylGroupToPerm, MonoidHom.domRestrict_apply,
-    RootPairing.Equiv.indexHom_apply, coordinatePermMulEquivWeylGroup_indexEquiv_apply] using
+    RootPairing.weylGroupToPerm_apply, coordinatePermMulEquivWeylGroup_indexEquiv_apply] using
     congrArg (fun g : Equiv.Perm (CoordinateRootIndex σ) ↦ g p) h
 
 /-- A coordinate transposition corresponds to the reflection in the associated root. -/
