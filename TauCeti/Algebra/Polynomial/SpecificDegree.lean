@@ -43,6 +43,9 @@ field" into the classical resolvent conditions — irreducible, splits completel
 * `Polynomial.exists_natDegree_eq_two_of_natDegree_eq_three_of_isRoot`
 * `Polynomial.splits_iff_isSquare_discr_of_natDegree_eq_two` and
   `Polynomial.splits_iff_isSquare_discr_of_natDegree_eq_three_of_isRoot`
+* `Polynomial.isSquare_discr_iff_exists_isRoot_of_degree_eq_two`: **the quadratic formula**; away
+  from characteristic `2`, a quadratic has a root in the base field exactly when its discriminant
+  is a square.
 * `Polynomial.Splits.of_natDegree_eq_three_of_isRoot_of_isRoot_of_ne` and
   `Polynomial.Splits.exists_isRoot_ne`
 * `Polynomial.X_sq_add_C_mul_X_add_C_dvd_X_pow_four_add_iff`: when a monic quadratic divides a
@@ -125,6 +128,21 @@ theorem splits_iff_isSquare_discr_of_natDegree_eq_two {q : F[X]} (hchar : ringCh
   rw [hdiscr]
   conv_lhs => rw [eq_quadratic_of_degree_le_two hdeg2.le]
   exact splits_quadratic_iff_isSquare hlc
+
+/-- **The quadratic formula.** Away from characteristic `2`, a quadratic polynomial over a field
+has a root in that field exactly when its discriminant is a square there. -/
+theorem isSquare_discr_iff_exists_isRoot_of_degree_eq_two [NeZero (2 : F)]
+    {f : F[X]} (hf : f.degree = 2) : IsSquare f.discr ↔ ∃ x, f.IsRoot x := by
+  have hn : f.natDegree = 2 := natDegree_eq_of_degree_eq_some hf
+  have ha : f.coeff 2 ≠ 0 := coeff_ne_zero_of_eq_degree hf
+  have heval (x : F) : f.eval x = f.coeff 2 * (x * x) + f.coeff 1 * x + f.coeff 0 := by
+    rw [eval_eq_sum_range, hn]
+    simp only [Finset.sum_range_succ, Finset.sum_range_zero]
+    ring
+  rw [discr_eq_discrim_of_degree_eq_two hf]
+  simp only [IsRoot.def, heval]
+  exact ⟨exists_quadratic_eq_zero ha,
+    fun ⟨x, hx⟩ => ⟨_, (discrim_eq_sq_of_quadratic_eq_zero hx).trans (sq _)⟩⟩
 
 /-- **Away from characteristic two, a monic cubic with a root in its coefficient field splits
 there exactly when its discriminant is a square.** The root splits off a quadratic factor whose

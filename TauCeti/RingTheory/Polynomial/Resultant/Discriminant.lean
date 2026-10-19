@@ -80,9 +80,6 @@ depressed specialization of that formula is used to compare a quartic with its c
   a prime not dividing the leading coefficient, in particular of a monic one.
 * `Polynomial.discr_eq_discrim_of_degree_eq_two`: the discriminant of a quadratic is Mathlib's
   `discrim` of its coefficients, `b ^ 2 - 4ac`.
-* `Polynomial.isSquare_discr_iff_exists_isRoot_of_degree_eq_two`: **the quadratic formula**; away
-  from characteristic `2`, a quadratic has a root in the base field exactly when its discriminant
-  is a square.
 * `Cubic.toPoly_discr`: the two discriminants of a cubic with nonzero leading coefficient agree,
   so that `Cubic.discr` and `Polynomial.discr` may be used interchangeably in degree three.
 * `Polynomial.Monic.discr_of_natDegree_eq_four`, `TauCeti.discr_depressedQuartic`: the
@@ -912,21 +909,6 @@ theorem discr_eq_discrim_of_degree_eq_two {f : R[X]} (hf : f.degree = 2) :
     f.discr = discrim (f.coeff 2) (f.coeff 1) (f.coeff 0) := by
   rw [discr_of_degree_eq_two hf, discrim]
   ring
-
-/-- **The quadratic formula.** Away from characteristic `2`, a quadratic polynomial over a field
-has a root in that field exactly when its discriminant is a square there. -/
-theorem isSquare_discr_iff_exists_isRoot_of_degree_eq_two {F : Type*} [Field F] [NeZero (2 : F)]
-    {f : F[X]} (hf : f.degree = 2) : IsSquare f.discr ↔ ∃ x, f.IsRoot x := by
-  have hn : f.natDegree = 2 := natDegree_eq_of_degree_eq_some hf
-  have ha : f.coeff 2 ≠ 0 := coeff_ne_zero_of_eq_degree hf
-  have heval (x : F) : f.eval x = f.coeff 2 * (x * x) + f.coeff 1 * x + f.coeff 0 := by
-    rw [eval_eq_sum_range, hn]
-    simp only [Finset.sum_range_succ, Finset.sum_range_zero]
-    ring
-  rw [discr_eq_discrim_of_degree_eq_two hf]
-  simp only [IsRoot.def, heval]
-  exact ⟨exists_quadratic_eq_zero ha,
-    fun ⟨x, hx⟩ => ⟨_, (discrim_eq_sq_of_quadratic_eq_zero hx).trans (sq _)⟩⟩
 
 end Polynomial
 
