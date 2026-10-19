@@ -121,10 +121,11 @@ human reacting on a status message never confuses reconciliation.
 Two workflows drive it:
 
 - [`pr-status.yml`](../../.github/workflows/pr-status.yml): on PR events,
-  review-state comments, and `workflow_run` of `pr-build` and `Review`. It
-  reconciles in batches ([`batch.py`](batch.py)): one run at a time, each covering
-  every PR with activity since the previous successful run started, so a burst of
-  events costs one or two GitHub-hosted jobs rather than one per event. Per PR it
+  review-state comments, and `workflow_run` of `pr-build` and `Review`, plus
+  hourly/manual recovery. It reconciles in batches ([`batch.py`](batch.py)):
+  one run at a time, retaining pending work across interruptions and discovering
+  new activity before advancing the saved window. Bursts coalesce into one or
+  two GitHub-hosted jobs rather than one per event. Per PR it
   runs the status-label reconcile, then the Zulip reconcile: creating the message
   only while the PR is open (so churn on a closed PR can never create a late post),
   keeping its roadmap metadata current, owning the merged/closed ending, and
