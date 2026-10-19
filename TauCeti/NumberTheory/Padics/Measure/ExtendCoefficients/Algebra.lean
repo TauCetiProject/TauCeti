@@ -15,9 +15,8 @@ Extension of coefficients from the closed unit ball respects the right-handed co
 measures on a profinite topological monoid. The ring homomorphism
 `TauCeti.AbstractMeasure.extendCoefficientsRingHom` makes the extension available to ring-theoretic
 constructions, without requiring the monoid to be commutative or the
-source coefficient ring to be normed or complete. The coefficient homomorphism is assumed
-continuous; an isometric coefficient embedding satisfies this hypothesis when the source carries
-its norm topology.
+source coefficient ring to be normed or complete. Continuity of the coefficient homomorphism is
+needed only for the comparison formulas on arbitrary source-valued continuous test functions.
 
 Composing this extension with character integration gives
 `TauCeti.ContinuousMonoidHom.extendedCharacterRingHom`, the scalar map used to evaluate
@@ -60,17 +59,60 @@ theorem convolveFunRight_extendCoefficients_comp (ν : D(G, O)) (f : C(G, O)) :
   exact extendCoefficients_apply_comp j ν hj hjc
     ⟨fun y ↦ f (x * y), by fun_prop⟩
 
-include hjc in
+omit [Monoid G] [ContinuousMul G] in
+private theorem extendCoefficients_apply_locallyConstant (μ : D(G, O))
+    (f : LocallyConstant G O) :
+    extendCoefficients j hj μ (f.map j) = j (μ f) := by
+  classical
+  let q : C(G, f.discreteQuotient) := ⟨_, f.discreteQuotient.proj_continuous⟩
+  let := Fintype.ofFinite f.discreteQuotient
+  have hf : (f : C(G, O)) = (equivFnOfDiscrete.symm f.lift).comp q := by
+    ext x
+    exact (congrFun f.lift_comp_proj x).symm
+  have hjf : (f.map j : C(G, K)) =
+      (equivFnOfDiscrete.symm (j ∘ f.lift)).comp q := by
+    ext x
+    exact congrArg j (congrFun f.lift_comp_proj x).symm
+  rw [hjf, extendCoefficients_apply_comp_eq_sum, hf,
+    apply_comp_eq_sum_finiteProjection, map_sum]
+  simp
+
 /-- Extension of coefficients preserves convolution, including on noncommutative monoids. -/
 @[simp]
 theorem extendCoefficients_mul (μ ν : D(G, O)) :
     extendCoefficients j hj (μ * ν) =
       extendCoefficients j hj μ * extendCoefficients j hj ν := by
-  symm
-  apply eq_extendCoefficients_of_apply_comp j (μ * ν) hj hjc
-  intro f
-  rw [AbstractMeasure.mul_apply, convolveFunRight_extendCoefficients_comp j hj hjc,
-    extendCoefficients_apply_comp, AbstractMeasure.mul_apply]
+  classical
+  apply finiteProjection_ext
+  intro q
+  ext a
+  rw [finiteProjection_extendCoefficients, Finsupp.mapRange_apply,
+    finiteProjection_apply, finiteProjection_apply]
+  let m : C(G × G, G) := ⟨fun p ↦ p.1 * p.2, continuous_mul⟩
+  let f : C(G × G, ℤ) := (q.comp m).fiberIndicator a
+  -- Discrete integer-valued tests have exact finite sums of separated functions.
+  obtain ⟨n, g, h, hgh⟩ := f.exists_finite_sum_mul_approximation_of_mem_uniformity
+    (S := SetRel.id) (DiscreteUniformity.relId_mem_uniformity ℤ)
+  let gO (i : Fin n) : LocallyConstant G O :=
+    ⟨fun x ↦ (g i x : O), ((IsLocallyConstant.iff_continuous _).mpr
+      (g i).continuous).comp Int.cast⟩
+  let hO (i : Fin n) : LocallyConstant G O :=
+    ⟨fun x ↦ (h i x : O), ((IsLocallyConstant.iff_continuous _).mpr
+      (h i).continuous).comp Int.cast⟩
+  have htestO : (q.fiberIndicator (R := O) a).comp m =
+      ∑ i, (gO i : C(G, O)).prodMul (hO i) := by
+    ext p
+    have hp := congrArg (Int.castRingHom O) (hgh p.1 p.2)
+    simpa [f, fiberIndicator_apply, gO, hO] using hp
+  have htestK : (q.fiberIndicator (R := K) a).comp m =
+      ∑ i, ((gO i).map j : C(G, K)).prodMul ((hO i).map j) := by
+    ext p
+    have hp := congrArg (Int.castRingHom K) (hgh p.1 p.2)
+    simpa [f, fiberIndicator_apply, gO, hO] using hp
+  simp only [mul_def, map_apply]
+  rw [htestO, htestK]
+  simp only [map_sum, prodMul_def, prodMk'_prod_apply, map_mul,
+    extendCoefficients_apply_locallyConstant]
 
 omit [ContinuousMul G] in
 /-- The convolution identity, the Dirac measure at `1`, is preserved by coefficient extension. -/
@@ -82,12 +124,12 @@ theorem extendCoefficients_one : extendCoefficients j hj (1 : D(G, O)) = 1 := by
 def extendCoefficientsRingHom : D(G, O) →+* D(G, K) :=
   { extendCoefficients j hj with
     map_one' := extendCoefficients_one j hj
-    map_mul' := extendCoefficients_mul j hj hjc }
+    map_mul' := extendCoefficients_mul j hj }
 
 /-- The ring homomorphism has the same underlying function as the additive coefficient extension. -/
 @[simp]
 theorem coe_extendCoefficientsRingHom :
-    ⇑(extendCoefficientsRingHom (G := G) j hj hjc) = extendCoefficients j hj :=
+    ⇑(extendCoefficientsRingHom (G := G) j hj) = extendCoefficients j hj :=
   (rfl)
 
 end AbstractMeasure
@@ -99,24 +141,25 @@ variable (χ : G →ₜ* K) (j : O →+* K) (hj : ∀ a, ‖j a‖ ≤ 1) (hjc :
 /-- Integration of a scalar-valued continuous character after extending integral coefficients.
 This is a ring map on measures, not on their total quotient ring. -/
 def extendedCharacterRingHom : D(G, O) →+* K :=
-  χ.characterIntegralAlgHom.toRingHom.comp (AbstractMeasure.extendCoefficientsRingHom j hj hjc)
+  χ.characterIntegralAlgHom.toRingHom.comp (AbstractMeasure.extendCoefficientsRingHom j hj)
 
 /-- The extended character map integrates the character against the extended measure. -/
 @[simp]
 theorem extendedCharacterRingHom_apply (μ : D(G, O)) :
-    extendedCharacterRingHom χ j hj hjc μ = extendCoefficients j hj μ χ := by
+    extendedCharacterRingHom χ j hj μ = extendCoefficients j hj μ χ := by
   simp [extendedCharacterRingHom]
 
 /-- The extended character map recovers the character on a Dirac measure. -/
 theorem extendedCharacterRingHom_dirac (x : G) :
-    extendedCharacterRingHom χ j hj hjc (dirac O x) = χ x := by
+    extendedCharacterRingHom χ j hj (dirac O x) = χ x := by
   simp
 
+include hjc in
 /-- If a scalar-valued character is obtained by applying `j` to an `O`-valued character, its
 extended integral is `j` applied to the original character integral. -/
 theorem extendedCharacterRingHom_eq_of_forall_eq (κ : G →ₜ* O)
     (hχ : ∀ x, χ x = j (κ x)) (μ : D(G, O)) :
-    extendedCharacterRingHom χ j hj hjc μ = j (κ.characterIntegralAlgHom μ) := by
+    extendedCharacterRingHom χ j hj μ = j (κ.characterIntegralAlgHom μ) := by
   have htest : (χ : C(G, K)) = (⟨j, hjc⟩ : C(O, K)).comp κ := by
     ext x
     exact hχ x
@@ -127,21 +170,21 @@ end ContinuousMonoidHom
 
 open TauCeti.AbstractMeasure TauCeti.ContinuousMonoidHom
 
-variable (j : O →+* K) (hj : ∀ a, ‖j a‖ ≤ 1) (hjc : Continuous j)
+variable (j : O →+* K) (hj : ∀ a, ‖j a‖ ≤ 1)
 
 /-! These computations check the multiplicity and the order of the convolution factors. -/
 
 example (x y : G) (a b : O) :
-    extendCoefficientsRingHom j hj hjc ((a • dirac O x) * (b • dirac O y)) =
+    extendCoefficientsRingHom j hj ((a • dirac O x) * (b • dirac O y)) =
       (j a * j b) • dirac K (x * y) := by
   simp [smul_smul, mul_comm, dirac_mul_dirac]
 
 example (χ : G →ₜ* K) (x : G) (a : O) :
-    extendedCharacterRingHom χ j hj hjc (a • dirac O x) = j a * χ x := by
+    extendedCharacterRingHom χ j hj (a • dirac O x) = j a * χ x := by
   simp
 
 example (χ : G →ₜ* K) (x : G) :
-    extendedCharacterRingHom χ j hj hjc (dirac O x - 1) = χ x - 1 := by
+    extendedCharacterRingHom χ j hj (dirac O x - 1) = χ x - 1 := by
   rw [map_sub, map_one]
   simp
 
