@@ -21,6 +21,10 @@ As for Mathlib's `NormedSpace.toDiffeology`, the construction is not a global in
 This avoids conflicting diffeologies on normed spaces and products. In particular, the normed
 space construction agrees with the manifold construction.
 
+After `open TauCeti`, the plot conversion lemmas support dot notation: `hp.isPlot` turns
+a smooth Cartesian parametrization into a plot, and `hp.contMDiff` turns a plot into a smooth
+manifold map. The equivalence is also available as `isPlot_iff_contMDiff`.
+
 The plot axioms and compatibility interface follow Mathlib's
 `DiffeologicalSpace.ofCorePlotsOn` and `Diffeology.IsContDiffCompatible`.
 -/
