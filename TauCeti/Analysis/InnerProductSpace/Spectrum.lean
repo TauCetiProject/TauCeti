@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Positive
 public import Mathlib.Analysis.InnerProductSpace.Spectrum
 public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
+public import TauCeti.Data.Fin.Tuple.Sort
 public import TauCeti.LinearAlgebra.Eigenspace.Anticommute
 import Mathlib.LinearAlgebra.Eigenspace.ContinuousLinearMap
 
@@ -64,8 +65,9 @@ nonzero eigenvalue, which is the form the eigenvalue problem of an elliptic oper
   finite-dimensional spectral splitting.
 * `LinearMap.IsSymmetric.eigenvalues_rev_of_anticommute`: if an invertible operator anticommutes
   with `T`, the `i`-th largest eigenvalue of `T` is minus its `i`-th smallest.
-* `LinearMap.IsSymmetric.finrank_positiveSpectralSubspace_of_anticommute`: in that case the
-  positive and negative spectral subspaces have the same dimension.
+* `finrank_positiveSpectralSubspace_eq_finrank_negativeSpectralSubspace_of_anticommute`, in the
+  same namespace: in that case the positive and negative spectral subspaces have the same
+  dimension.
 * `LinearMap.IsPositive.det_nonneg`: a positive operator on a finite-dimensional space has
   nonnegative determinant, the product of its eigenvalues.
 * `LinearMap.IsPositive.det_pos`: an injective positive operator on a finite-dimensional space has
@@ -423,28 +425,23 @@ theorem eigenvalues_rev_of_anticommute (hT : T.IsSymmetric) (hn : Module.finrank
       rw [← hT.card_filter_eigenvalues_eq hn]
       simp only [RCLike.ofReal_inj]
     rw [hcard, hcard, RCLike.ofReal_neg, finrank_genEigenspace_neg_of_anticommute e h]
-  -- The family `j ↦ -λ_{rev j}` is again decreasing, with the same multiset of values, so it is
-  -- the ordered eigenvalue family itself.
-  set g : Fin n → ℝ := fun j ↦ -hT.eigenvalues hn j.rev with hg
-  have hanti : Antitone g := fun j k hjk ↦
-    neg_le_neg (hT.eigenvalues_antitone hn (Fin.rev_le_rev.2 hjk))
-  have hperm : (List.ofFn g).Perm (List.ofFn (hT.eigenvalues hn)) := by
-    rw [← Multiset.coe_eq_coe, ← Fin.univ_val_map, ← Fin.univ_val_map]
-    ext μ
-    simp only [Multiset.count_map, ← Finset.filter_val, ← Finset.card_def, eq_comm (a := μ)]
+  -- The family `j ↦ -λ_{rev j}` is again decreasing, and every value occurs in it as often as
+  -- in the ordered eigenvalue family, so it is that family itself.
+  have hgev : (fun j ↦ -hT.eigenvalues hn j.rev) = hT.eigenvalues hn := by
+    refine Antitone.eq_of_card_filter_eq
+      (fun j k hjk ↦ neg_le_neg (hT.eigenvalues_antitone hn (Fin.rev_le_rev.2 hjk)))
+      (hT.eigenvalues_antitone hn) fun μ ↦ ?_
     rw [← hcount μ]
     refine Finset.card_equiv Fin.revPerm fun j ↦ ?_
-    simp only [hg, Finset.mem_filter, Finset.mem_univ, true_and, Fin.revPerm_apply]
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and, Fin.revPerm_apply]
     constructor <;> intro hj <;> linarith
-  have hgev := List.ofFn_injective (hperm.eq_of_sortedGE hanti.sortedGE_ofFn
-    (hT.eigenvalues_antitone hn).sortedGE_ofFn)
-  simpa [hg] using (congrFun hgev i.rev).symm
+  simpa using (congrFun hgev i.rev).symm
 
 /-- If an invertible operator anticommutes with a symmetric operator `T`, then `T` has as many
 positive as negative eigenvalues, counted with multiplicity: its positive and negative spectral
 subspaces have the same dimension. -/
-theorem finrank_positiveSpectralSubspace_of_anticommute (hT : T.IsSymmetric)
-    (hn : Module.finrank 𝕜 E = n) (e : E ≃ₗ[𝕜] E) (h : T * e + e * T = 0) :
+theorem finrank_positiveSpectralSubspace_eq_finrank_negativeSpectralSubspace_of_anticommute
+    (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 E = n) (e : E ≃ₗ[𝕜] E) (h : T * e + e * T = 0) :
     Module.finrank 𝕜 (hT.positiveSpectralSubspace hn) =
       Module.finrank 𝕜 (hT.negativeSpectralSubspace hn) := by
   rw [finrank_positiveSpectralSubspace, finrank_negativeSpectralSubspace]
