@@ -50,18 +50,28 @@ theorem contDiff_realPlaneDx {n : WithTop ℕ∞} : ContDiff ℝ n realPlaneDx :
 theorem contDiff_realPlaneDy {n : WithTop ℕ∞} : ContDiff ℝ n realPlaneDy :=
   contDiff_const
 
+/-- The coordinate one-form `dx` is independent of its base point. -/
+theorem realPlaneDx_eq_const : realPlaneDx = fun _ : ℝ × ℝ ↦ realPlaneDx (0, 0) := by
+  funext p
+  ext v
+  simp
+
+/-- The coordinate one-form `dy` is independent of its base point. -/
+theorem realPlaneDy_eq_const : realPlaneDy = fun _ : ℝ × ℝ ↦ realPlaneDy (0, 0) := by
+  funext p
+  ext v
+  simp
+
 /-- The exterior derivative of the constant coordinate one-form `dx` vanishes. -/
 @[simp]
 theorem extDeriv_realPlaneDx (p : ℝ × ℝ) : extDeriv realPlaneDx p = 0 := by
-  have hconst : realPlaneDx = fun _ : ℝ × ℝ ↦ realPlaneDx p := by rfl
-  rw [hconst]
-  exact ContinuousAlternatingMap.extDeriv_const (realPlaneDx p) p
+  rw [realPlaneDx_eq_const]
+  exact ContinuousAlternatingMap.extDeriv_const (realPlaneDx (0, 0)) p
 
 /-- The exterior derivative of the constant coordinate one-form `dy` vanishes. -/
 @[simp]
 theorem extDeriv_realPlaneDy (p : ℝ × ℝ) : extDeriv realPlaneDy p = 0 := by
-  have hconst : realPlaneDy = fun _ : ℝ × ℝ ↦ realPlaneDy p := by rfl
-  rw [hconst]
-  exact ContinuousAlternatingMap.extDeriv_const (realPlaneDy p) p
+  rw [realPlaneDy_eq_const]
+  exact ContinuousAlternatingMap.extDeriv_const (realPlaneDy (0, 0)) p
 
 end Prod

@@ -34,12 +34,7 @@ theorem mextDeriv_realPlaneDx :
         ((fun p ↦ _root_.Prod.realPlaneDx p) : RoughForm (𝓘(ℝ, ℝ × ℝ))
           (ℝ × ℝ) ℝ 1) =
       (0 : RoughForm (𝓘(ℝ, ℝ × ℝ)) (ℝ × ℝ) ℝ 2) := by
-  have hconst : (fun p ↦ _root_.Prod.realPlaneDx p) =
-      (fun _ ↦ _root_.Prod.realPlaneDx (0, 0)) := by
-    funext p
-    ext v
-    simp
-  rw [hconst]
+  rw [_root_.Prod.realPlaneDx_eq_const]
   exact mextDeriv_const (_root_.Prod.realPlaneDx (0, 0))
 
 /-- The manifold exterior derivative of `dy` vanishes. -/
@@ -49,12 +44,7 @@ theorem mextDeriv_realPlaneDy :
         ((fun p ↦ _root_.Prod.realPlaneDy p) : RoughForm (𝓘(ℝ, ℝ × ℝ))
           (ℝ × ℝ) ℝ 1) =
       (0 : RoughForm (𝓘(ℝ, ℝ × ℝ)) (ℝ × ℝ) ℝ 2) := by
-  have hconst : (fun p ↦ _root_.Prod.realPlaneDy p) =
-      (fun _ ↦ _root_.Prod.realPlaneDy (0, 0)) := by
-    funext p
-    ext v
-    simp
-  rw [hconst]
+  rw [_root_.Prod.realPlaneDy_eq_const]
   exact mextDeriv_const (_root_.Prod.realPlaneDy (0, 0))
 
 end Prod
