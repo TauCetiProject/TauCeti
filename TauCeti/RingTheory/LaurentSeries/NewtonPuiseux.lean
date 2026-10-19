@@ -8,7 +8,6 @@ module
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import Mathlib.RingTheory.Polynomial.ScaleRoots
 public import TauCeti.RingTheory.LaurentSeries.Puiseux
-import Mathlib.Algebra.Polynomial.Lifts
 import TauCeti.Algebra.Polynomial.LinearFactor
 import TauCeti.Algebra.Polynomial.Taylor
 import TauCeti.RingTheory.LaurentSeries.Basic
@@ -73,7 +72,7 @@ namespace TauCeti.LaurentSeries
 
 open _root_.LaurentSeries
 
-variable {R : Type*} [CommRing R]
+variable {R : Type*} [CommSemiring R]
 
 /-- Multiplying the ramified series `c(X ^ q)` by `X ^ (-k)` leaves no terms of negative degree
 when `k ≤ q * ord c`. -/

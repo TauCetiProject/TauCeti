@@ -45,6 +45,8 @@ public section
 
 namespace Polynomial
 
+section CommRing
+
 variable {R : Type*} [CommRing R]
 
 /-- The Taylor expansion of `p` at `r` starts in degree `p.rootMultiplicity r`. -/
@@ -88,6 +90,12 @@ theorem pow_sub_dvd_hasseDeriv_of_pow_dvd {p : R[X]} {r : R} {n : ℕ} (k : ℕ)
   rw [← LinearMap.comp_apply, hasseDeriv_comp, LinearMap.smul_apply, nsmul_eq_mul, eval_mul, this,
     mul_zero]
 
+end CommRing
+
+section CommSemiring
+
+variable {R : Type*} [CommSemiring R]
+
 /-- Translating the variable by `r` adds `n * r` times the leading coefficient to the coefficient
 of `X ^ (n - 1)`, where `n` is the degree. -/
 theorem nextCoeff_taylor (p : R[X]) (r : R) :
@@ -104,5 +112,7 @@ theorem nextCoeff_taylor (p : R[X]) (r : R) :
   rw [Nat.add_sub_of_le h, Nat.choose_symm_of_eq_add (Nat.sub_add_cancel h).symm,
     Nat.choose_one_right]
   ring
+
+end CommSemiring
 
 end Polynomial
