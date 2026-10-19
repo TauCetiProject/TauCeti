@@ -6,7 +6,6 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.ProjectiveGeneralLinear.Tangent.Basic
-public import Mathlib.LinearAlgebra.Dimension.Constructions
 
 /-!
 # Coordinates and a basis for the projective tangent Lie algebra
@@ -15,8 +14,9 @@ The tangent Lie algebra of `PGL_{r+1}` has a basis indexed by all matrix units e
 `E_{rr}`. Its elements act on the matrix algebra by commutators with those matrix units.
 The coordinates of a commutator with `X` are the entries of `X - X_{rr} I`, omitting
 the zero last diagonal entry. Thus the tangent module is free over any commutative
-coefficient algebra. Over a nontrivial coefficient ring its rank is `(r+1)² - 1`,
-including in characteristics dividing `r+1`.
+coefficient algebra. More generally, the tangent module of `PGL_n` is finite and free
+for every `n`. Over a nontrivial coefficient ring its rank is `n² - 1`, including
+in characteristics dividing `n`.
 
 These coordinates separate the off-diagonal directions from the diagonal directions
 without choosing trace-zero representatives. They provide a matrix model for computing
@@ -116,28 +116,28 @@ theorem tangentEnd_tangentBasis
     LinearEquiv.apply_symm_apply, Matrix.adRangeEquivPi_symm_single,
     LieHom.rangeRestrict_apply]
 
+variable (n : ℕ)
+
 /-- The projective tangent module is free over every commutative coefficient algebra. -/
 instance moduleFree_tangent :
-    Module.Free B (Derivation R (coordinateHopfAlgebra (r + 1) R)
-      (Bialgebra.CounitAlgebra R (coordinateHopfAlgebra (r + 1) R) B)) :=
-  Module.Free.of_basis (tangentBasis r)
+    Module.Free B (Derivation R (coordinateHopfAlgebra n R)
+      (Bialgebra.CounitAlgebra R (coordinateHopfAlgebra n R) B)) :=
+  Module.Free.of_equiv (tangentLieEquivInnerDerivations (R := R) (B := B) n).toLinearEquiv.symm
 
 /-- The projective tangent module is finite over every commutative coefficient algebra. -/
 instance moduleFinite_tangent :
-    Module.Finite B (Derivation R (coordinateHopfAlgebra (r + 1) R)
-      (Bialgebra.CounitAlgebra R (coordinateHopfAlgebra (r + 1) R) B)) :=
-  Module.Finite.of_basis (tangentBasis r)
+    Module.Finite B (Derivation R (coordinateHopfAlgebra n R)
+      (Bialgebra.CounitAlgebra R (coordinateHopfAlgebra n R) B)) :=
+  Module.Finite.equiv (tangentLieEquivInnerDerivations (R := R) (B := B) n).toLinearEquiv.symm
 
-/-- The projective tangent module has rank `(r+1)² - 1`. In particular, this dimension
+/-- The projective tangent module has rank `n² - 1`. In particular, this dimension
 formula does not require the matrix size to be invertible in the coefficient ring. -/
 @[simp]
 theorem finrank_tangent [Nontrivial B] :
-    Module.finrank B (Derivation R (coordinateHopfAlgebra (r + 1) R)
-      (Bialgebra.CounitAlgebra R (coordinateHopfAlgebra (r + 1) R) B)) =
-      (r + 1) ^ 2 - 1 := by
-  rw [Module.finrank_eq_card_basis (tangentBasis r), Fintype.card_subtype_compl,
-    Fintype.card_subtype_eq, Fintype.card_prod, Fintype.card_fin]
-  exact congrArg (fun n => n - 1) (pow_two (r + 1)).symm
+    Module.finrank B (Derivation R (coordinateHopfAlgebra n R)
+      (Bialgebra.CounitAlgebra R (coordinateHopfAlgebra n R) B)) = n ^ 2 - 1 := by
+  rw [(tangentLieEquivInnerDerivations (R := R) (B := B) n).toLinearEquiv.finrank_eq,
+    Matrix.finrank_adRange, Fintype.card_fin]
 
 end
 

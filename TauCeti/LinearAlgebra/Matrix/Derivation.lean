@@ -6,6 +6,9 @@ Authors: Codex
 module
 
 public import Mathlib.LinearAlgebra.Matrix.StdBasis
+public import Mathlib.LinearAlgebra.Dimension.Constructions
+public import Mathlib.RingTheory.FiniteType
+public import TauCeti.Algebra.Lie.AdjointAction.Basic
 public import TauCeti.Algebra.Lie.Derivation.Basic
 
 /-!
@@ -99,20 +102,8 @@ variable {R ι : Type*} [CommRing R] [Fintype ι] [DecidableEq ι]
 is scalar. -/
 theorem ad_eq_zero_iff (X : Matrix ι ι R) :
     LieAlgebra.ad R (Matrix ι ι R) X = 0 ↔ X ∈ Set.range (scalar ι) := by
-  classical
-  constructor
-  · intro h
-    apply mem_range_scalar_iff_commute_single'.mpr
-    intro i j
-    have hij := LinearMap.congr_fun h (single i j 1)
-    rw [commute_iff_eq]
-    exact (sub_eq_zero.mp hij).symm
-  · rintro ⟨c, rfl⟩
-    apply LinearMap.ext
-    intro Y
-    simp only [LieAlgebra.ad_apply, LieRing.of_associative_ring_bracket,
-      LinearMap.zero_apply, sub_eq_zero]
-    exact (scalar_commute c (Commute.all c) Y).eq
+  rw [TauCeti.LieAlgebra.ad_eq_zero_iff_mem_center, ← Subalgebra.mem_toSubring,
+    Subalgebra.center_toSubring, ← SetLike.mem_coe, Subring.coe_center, Matrix.center_eq_range]
 
 noncomputable section
 
@@ -236,7 +227,10 @@ theorem adRangeEquivPi_symm_apply (p : ι)
       (of fun i j => if h : (i, j) = (p, p) then 0 else c ⟨(i, j), h⟩) * Y -
         Y * (of fun i j => if h : (i, j) = (p, p) then 0 else c ⟨(i, j), h⟩) := by
   classical
-  rfl
+  simp only [adRangeEquivPi, LinearEquiv.symm_symm, LinearEquiv.ofBijective_apply,
+    adFromCoordinates, LinearMap.comp_apply, LieHom.coe_toLinearMap,
+    LieHom.rangeRestrict_apply, LieAlgebra.ad_apply, Ring.lie_def,
+    adCoordinateMatrix, LinearMap.coe_mk, AddHom.coe_mk]
 
 /-- A coordinate unit corresponds to commutation with the same matrix unit. -/
 @[simp]
@@ -251,6 +245,30 @@ theorem adRangeEquivPi_symm_single (p : ι) (ij : {ij : ι × ι // ij ≠ (p, p
   simp only [LinearEquiv.apply_symm_apply, LieHom.rangeRestrict_apply,
     adRangeEquivPi_apply_ad, hpp, ite_self, sub_zero]
   simp [Pi.single_apply, single_apply, Subtype.ext_iff, Prod.ext_iff, eq_comm]
+
+/-- Inner derivations of a finite matrix algebra form a free module, including when the
+matrix index type is empty. -/
+instance moduleFree_adRange : Module.Free R (LieAlgebra.ad R (Matrix ι ι R)).range := by
+  classical
+  cases isEmpty_or_nonempty ι with
+  | inl h => infer_instance
+  | inr h => exact Module.Free.of_equiv (adRangeEquivPi R ι (Classical.choice h)).symm
+
+/-- Inner derivations of a finite matrix algebra form a finite module. -/
+instance moduleFinite_adRange : Module.Finite R (LieAlgebra.ad R (Matrix ι ι R)).range :=
+  Module.Finite.range (LieAlgebra.ad R (Matrix ι ι R)).toLinearMap
+
+/-- The module of inner derivations of a finite matrix algebra has rank `card ι ^ 2 - 1`,
+including for an empty index type and in every characteristic. -/
+@[simp]
+theorem finrank_adRange [Nontrivial R] :
+    Module.finrank R (LieAlgebra.ad R (Matrix ι ι R)).range = Fintype.card ι ^ 2 - 1 := by
+  classical
+  cases isEmpty_or_nonempty ι with
+  | inl h => simp [Module.finrank_eq_zero_of_subsingleton]
+  | inr h =>
+    rw [(adRangeEquivPi R ι (Classical.choice h)).finrank_eq, Module.finrank_pi,
+      Fintype.card_subtype_compl, Fintype.card_subtype_eq, Fintype.card_prod, ← pow_two]
 
 end
 
