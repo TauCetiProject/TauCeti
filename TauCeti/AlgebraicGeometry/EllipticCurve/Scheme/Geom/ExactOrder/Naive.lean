@@ -160,21 +160,19 @@ variable {S : Scheme.{u}} {E : EllipticCurveGeom S} {P : 𝟙_ (Over S) ⟶ Over
 theorem IsOfExactOrder.pow_left_apply_ne_zero (h : E.IsOfExactOrder P N) {s : S}
     (hN : (N : S.residueField s) ≠ 0) {k : ℕ} (hk : 0 < k) (hkN : k < N) :
     (P ^ k).left s ≠ E.zero s := by
-  -- the base change `E'` of `E` to an algebraic closure `L` of the residue field at `s`
-  let L := AlgebraicClosure (S.residueField s)
-  let t : Spec (.of L) ⟶ S :=
-    Spec.map (CommRingCat.ofHom (algebraMap (S.residueField s) L)) ≫ S.fromSpecResidueField s
+  -- the base change `E'` of `E` to an algebraic closure of the residue field at `s`
+  let t := S.fromSpecAlgebraicClosure s
   let E' := E.baseChange t
   have hg := E.isPullback_baseChange t
   have h0 : E'.zero ≫ (E.baseChangeIso t).hom ≫ pullback.fst _ _ = t ≫ E.zero := by simp [E']
-  have htp (p : Spec (.of L)) : t p = s := Scheme.fromSpecResidueField_apply s _
   have h' := (h.pointsPullback hg h0).pow_ne_one_of_isSepClosed
-    (fun p ↦ t.natCast_residueField_ne_zero (by rwa [htp p])) hk hkN
-  obtain ⟨p⟩ : Nonempty (Spec (.of L)) := inferInstance
+    (fun p ↦ t.natCast_residueField_ne_zero (by rwa [Scheme.fromSpecAlgebraicClosure_apply])) hk
+    hkN
+  obtain ⟨p⟩ : Nonempty (Spec (.of (AlgebraicClosure (S.residueField s)))) := inferInstance
   intro hs
   apply h'
   rw [E'.eq_one_iff_left_apply_eq_zero _ p, ← map_pow,
-    pointsPullback_left_apply_eq_zero_iff hg h0 _ p, htp p]
+    pointsPullback_left_apply_eq_zero_iff hg h0 _ p, Scheme.fromSpecAlgebraicClosure_apply]
   exact hs
 
 /-- **A point of exact order `N` gives a naive `[Γ₁(N)]`-structure where `N` is invertible.** If
