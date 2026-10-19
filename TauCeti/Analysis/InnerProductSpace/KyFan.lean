@@ -155,9 +155,9 @@ with `k` members, `‖∑ᵢ (⟪P₁ uᵢ, A (P₂ vᵢ)⟫ + ⟪Q₁ uᵢ, A (
 `A`.
 
 With `P₁ = P₂ = 1` and `Q₁ = Q₂ = 0` this is Ky Fan's maximum principle
-`LinearMap.norm_sum_inner_le_kyFanSum`. Taking `P = sin (τ T)` and `Q = cos (τ T)` for symmetric
-`T`, it bounds sums twisted by the phases `sin (τ (αᵢ - βⱼ))` of two spectra, without passing to
-complex scalars. -/
+`LinearMap.norm_sum_inner_le_kyFanSum`. For symmetric `S` on `F` and `T` on `E` with eigenvalues
+`αᵢ` and `βⱼ`, taking `P₁ = sin (τ S)`, `Q₁ = cos (τ S)`, `P₂ = cos (τ T)` and `Q₂ = -sin (τ T)`,
+it bounds sums twisted by the phases `sin (τ (αᵢ - βⱼ))`, without passing to complex scalars. -/
 theorem norm_sum_inner_add_inner_le_kyFanSum {ι : Type*} [Fintype ι] (A : E →ₗ[𝕜] F)
     {P₁ Q₁ : F →ₗ[𝕜] F} {P₂ Q₂ : E →ₗ[𝕜] E} (hP₁ : P₁.IsSymmetric) (hQ₁ : Q₁.IsSymmetric)
     (hP₂ : P₂.IsSymmetric) (hQ₂ : Q₂.IsSymmetric) (h₁ : ∀ y, ‖P₁ y‖ ^ 2 + ‖Q₁ y‖ ^ 2 ≤ ‖y‖ ^ 2)

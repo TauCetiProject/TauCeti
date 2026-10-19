@@ -246,8 +246,8 @@ theorem norm_cfc_apply_sq_add_norm_cfc_apply_sq (hT : T.IsSymmetric) {f g : ℝ 
     exact hT.cfc_congr fun μ hμ ↦ by simpa [sq] using hfg μ hμ
   have hsq (h : ℝ → ℝ) : ‖hT.cfc h x‖ ^ 2 = RCLike.re ⟪x, (hT.cfc h * hT.cfc h) x⟫_𝕜 := by
     rw [@norm_sq_eq_re_inner 𝕜, Module.End.mul_apply, hT.isSymmetric_cfc h]
-  rw [hsq, hsq, ← map_add, ← inner_add_right, ← LinearMap.add_apply, h1, Module.End.one_apply,
-    @norm_sq_eq_re_inner 𝕜]
+  simp only [hsq, ← map_add, ← inner_add_right, ← LinearMap.add_apply, h1, Module.End.one_apply,
+    @norm_sq_eq_re_inner 𝕜 _ _ _ _ x]
 
 /-- **Positivity.** If `f` is nonnegative at every eigenvalue of `T`, then `f(T)` is positive. -/
 theorem isPositive_cfc (hT : T.IsSymmetric) {f : ℝ → ℝ}
