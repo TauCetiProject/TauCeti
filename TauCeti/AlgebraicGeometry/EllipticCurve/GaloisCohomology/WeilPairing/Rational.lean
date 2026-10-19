@@ -30,7 +30,7 @@ no new choices of divisors or functions enter the descent.
 
 ## References
 
-* [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], III.8.1.
+* [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], III.8.1–2.
 -/
 
 public section
@@ -108,10 +108,12 @@ theorem rationalWeilPairing_unique
 
 /-- Over a separably closed base, descent recovers the original divisor-defined Weil pairing. -/
 @[simp]
-theorem rationalWeilPairing_eq_weilPairing [IsSepClosed K] [NeZero m]
+theorem rationalWeilPairing_eq_weilPairing [IsSepClosed K]
     (P Q : W.toAffine.Point[(m : ℤ)]) :
+    letI := hm.neZero_natCast
     rationalWeilPairing W m hm P Q = weilPairing W m hm.ne_zero P Q := by
   classical
+  have := hm.neZero_natCast
   apply (rationalWeilPairing_eq_iff W m hm P Q _).2
   rw [W.torsionCoeffWeilPairing_apply m hm hm.natCast_ne_zero_of_algebra,
     W.torsionByCongr_symm_baseTorsionCoeff, W.torsionByCongr_symm_baseTorsionCoeff]
