@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
-public import TauCeti.LinearAlgebra.CliffordAlgebra.ScalarTrace
+public import TauCeti.LinearAlgebra.CliffordAlgebra.ScalarTrace.Basic
 import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
 import TauCeti.LinearAlgebra.ExteriorAlgebra.AlgebraMapInv

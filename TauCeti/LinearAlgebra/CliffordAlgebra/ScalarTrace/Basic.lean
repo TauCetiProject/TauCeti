@@ -17,6 +17,7 @@ import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 import TauCeti.LinearAlgebra.CliffordAlgebra.Monomials
 import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement
 import TauCeti.LinearAlgebra.ExteriorAlgebra.AlgebraMapInv
+import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalBasis
 
 /-!
 # The scalar-part trace of a Clifford algebra
@@ -243,14 +244,7 @@ for every quadratic form on a finite-dimensional space,
 theorem trace_mulLeft_eq_two_pow_mul_scalarTrace (x : CliffordAlgebra Q) :
     LinearMap.trace K (CliffordAlgebra Q) (LinearMap.mulLeft K x) =
       2 ^ finrank K V * scalarTrace Q x := by
-  obtain ⟨b, hb⟩ := LinearMap.BilinForm.exists_orthogonal_basis
-    (B := QuadraticMap.associated Q) (QuadraticForm.associated_isSymm K Q)
-  have hl : (List.ofFn b).Pairwise Q.IsOrtho :=
-    List.pairwise_ofFn.mpr fun _ _ hij =>
-      QuadraticMap.associated_isOrtho.mp (hb (Fin.ne_of_lt hij))
-  have hspan : Submodule.span K {x : V | x ∈ List.ofFn b} = ⊤ := by
-    have hset : {x : V | x ∈ List.ofFn b} = Set.range b := by ext x; simp
-    rw [hset, b.span_eq]
+  obtain ⟨l, hl, hspan⟩ := QuadraticMap.exists_list_pairwise_isOrtho Q
   rw [trace_mulLeft_eq_finrank_mul_scalarTrace hl hspan, finrank_eq_two_pow, Nat.cast_pow,
     Nat.cast_ofNat]
 
