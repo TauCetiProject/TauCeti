@@ -5,21 +5,21 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.LocalField.ProP.Marked
+public import TauCeti.NumberTheory.LocalField.ProP.Marked.Basic
 import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.Map
 import TauCeti.NumberTheory.LocalField.RootsOfUnity.Tower
 
 /-!
 # Functoriality of the marked presentations of `G_K(p)`
 
-The marked theorems of `TauCeti.NumberTheory.LocalField.ProP.Marked` present `G_K(p)`, for `K` a
-finite extension of `ℚ_p` containing a primitive `p`th root of unity, by a single relator on
+The marked theorems of `TauCeti.NumberTheory.LocalField.ProP.Marked.Basic` present `G_K(p)`, for
+`K` a finite extension of `ℚ_p` containing a primitive `p`th root of unity, by a single relator on
 `[K : ℚ_p] + 2` generators, and record the values of the cyclotomic orientation on those
 generators. This file proves that this marked data is carried along an isomorphism of local fields
 over `ℚ_p`: for `e : K ≃ₐ[ℚ_p] K'` the induced isomorphism `absoluteGaloisGroupProPCongr e` of
 maximal pro-`p` Galois groups carries the presentation of `G_K(p)` to a presentation of `G_{K'}(p)`,
 and the values of the cyclotomic orientation of `G_{K'}(p)` on the transported generators are the
-values that `Marked.lean` records for `K`.
+values that `Marked/Basic.lean` records for `K`.
 
 Three ingredients make the marking functorial.
 
@@ -112,7 +112,7 @@ variable {P : Type*} [Group P] [TopologicalSpace P]
 /-- **Naturality of the marked orientation.** An isomorphism of fields carries a presentation of
 `G_K(p)` to a presentation of `G_{K'}(p)`, and the value of the cyclotomic orientation of
 `G_{K'}(p)` on a transported generator is the value recorded for `K` on that generator. Applied to
-the marked presentations of `Marked.lean`, this says that
+the marked presentations of `Marked/Basic.lean`, this says that
 `(absoluteGaloisGroupProPCongr e).trans m` is a marked presentation of `G_{K'}(p)` with the same
 relator word and the same values. -/
 theorem cyclotomicOrientation_trans_absoluteGaloisGroupProPCongr (e : K ≃+* K')
