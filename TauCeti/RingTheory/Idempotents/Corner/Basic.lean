@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Idempotents
+public import Mathlib.RingTheory.Noetherian.Basic
 
 /-!
 # Corners cut out by two idempotents
@@ -35,6 +36,8 @@ can be compared with `A` as `R`-algebras, for instance through Mathlib's `Morita
 * `IsIdempotentElem.cornerEquiv`: a ring equivalence restricts to an equivalence of corners.
 * `IsIdempotentElem.cornerPiEquiv`: the corner of an idempotent in a product of rings is the
   product of the corners of its components.
+* `IsIdempotentElem.isNoetherian_corner`: the corner of a Noetherian algebra is Noetherian, so the
+  corner of a finite-dimensional algebra is finite-dimensional.
 
 ## Main results
 
@@ -314,5 +317,11 @@ theorem coe_cornerLinearEquivCornerSubmodule_apply (b : he.Corner) :
 @[simp]
 theorem val_cornerLinearEquivCornerSubmodule_symm_apply (x : TauCeti.cornerSubmodule R e e) :
     ((he.cornerLinearEquivCornerSubmodule (R := R)).symm x).1 = x := (rfl)
+
+/-- **The corner of a Noetherian algebra is Noetherian**: if `A` is a Noetherian `R`-module, so is
+`eAe`, a submodule of `A`. In particular the corner of a finite-dimensional algebra is
+finite-dimensional. -/
+instance isNoetherian_corner [IsNoetherian R A] : IsNoetherian R he.Corner :=
+  isNoetherian_of_linearEquiv (he.cornerLinearEquivCornerSubmodule (R := R)).symm
 
 end IsIdempotentElem
