@@ -152,6 +152,7 @@ theorem smul_def (σ : Field.absoluteGaloisGroup k) (a : AlgebraicClosure k) :
     σ • a = toAlgEquiv σ a := rfl
 
 /-- The absolute-Galois action on a pure tensor acts on its scalar factor. -/
+@[simp]
 theorem smul_tmul {A : Type*} [Semiring A] [Algebra k A]
     (σ : Field.absoluteGaloisGroup k) (a : AlgebraicClosure k) (x : A) :
     σ • (a ⊗ₜ[k] x) = (σ • a) ⊗ₜ[k] x :=
