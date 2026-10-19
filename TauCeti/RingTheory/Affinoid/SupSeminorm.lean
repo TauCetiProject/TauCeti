@@ -89,29 +89,29 @@ noncomputable def supSeminorm (f : A) : ℝ :=
 
 section PointNorm
 
-theorem pointNorm_nonneg (x : MaximalSpectrum A) (f : A) : 0 ≤ pointNorm K x f := by
+theorem pointNorm_nonneg {x : MaximalSpectrum A} (f : A) : 0 ≤ pointNorm K x f := by
   let := Ideal.Quotient.field x.asIdeal
   exact spectralNorm_nonneg _
 
 @[simp]
-theorem pointNorm_algebraMap (x : MaximalSpectrum A) (c : K) :
+theorem pointNorm_algebraMap {x : MaximalSpectrum A} (c : K) :
     pointNorm K x (algebraMap K A c) = ‖c‖ := by
   let := Ideal.Quotient.field x.asIdeal
   rw [pointNorm, Ideal.Quotient.mk_algebraMap, spectralNorm_extends]
 
 @[simp]
-theorem pointNorm_zero (x : MaximalSpectrum A) : pointNorm K x 0 = 0 := by
-  simpa using pointNorm_algebraMap (A := A) x (0 : K)
+theorem pointNorm_zero {x : MaximalSpectrum A} : pointNorm K x 0 = 0 := by
+  simpa using pointNorm_algebraMap (x := x) (0 : K)
 
 @[simp]
-theorem pointNorm_one (x : MaximalSpectrum A) : pointNorm K x 1 = 1 := by
-  simpa using pointNorm_algebraMap (A := A) x (1 : K)
+theorem pointNorm_one {x : MaximalSpectrum A} : pointNorm K x 1 = 1 := by
+  simpa using pointNorm_algebraMap (x := x) (1 : K)
 
 /-- The absolute value at a classical point can be computed in any field `L` over `K` that
 receives the residue field: if a `K`-algebra map `ψ : A → L` vanishes on `x`, then `|f(x)|` is
 the spectral norm of `ψ f`. -/
-theorem pointNorm_eq_spectralNorm {L : Type*} [Field L] [Algebra K L] (x : MaximalSpectrum A)
-    (ψ : A →ₐ[K] L) (hψ : x.asIdeal ≤ RingHom.ker ψ) (f : A) :
+theorem pointNorm_eq_spectralNorm {L : Type*} [Field L] [Algebra K L] {x : MaximalSpectrum A}
+    {ψ : A →ₐ[K] L} (hψ : x.asIdeal ≤ RingHom.ker ψ) (f : A) :
     pointNorm K x f = spectralNorm K L (ψ f) := by
   -- `ψ` factors through the residue field.
   let := Ideal.Quotient.field x.asIdeal
@@ -127,9 +127,9 @@ theorem IsAffinoidAlgebra.pointNorm_maximalSpectrumComap [IsUltrametricDist K] [
     (a : A) : pointNorm K (hB.maximalSpectrumComap φ x) a = pointNorm K x (φ a) := by
   let := Ideal.Quotient.field x.asIdeal
   let q := Ideal.Quotient.mkₐ K x.asIdeal
-  rw [pointNorm_eq_spectralNorm _ (q.comp φ)
+  rw [pointNorm_eq_spectralNorm (ψ := q.comp φ)
       (fun b hb ↦ by simpa [q, Ideal.Quotient.eq_zero_iff_mem] using hb),
-    pointNorm_eq_spectralNorm x q
+    pointNorm_eq_spectralNorm (x := x) (ψ := q)
       (fun b hb ↦ by simpa [q, Ideal.Quotient.eq_zero_iff_mem] using hb),
     AlgHom.comp_apply]
 
@@ -235,7 +235,7 @@ theorem supSeminorm_eq_iSup (f : A) : supSeminorm K f = ⨆ x : MaximalSpectrum 
   (rfl)
 
 theorem supSeminorm_nonneg (f : A) : 0 ≤ supSeminorm K f :=
-  Real.iSup_nonneg fun x ↦ pointNorm_nonneg x f
+  Real.iSup_nonneg fun _ ↦ pointNorm_nonneg f
 
 /-- A nonnegative bound for all point norms bounds the supremum seminorm. -/
 theorem supSeminorm_le {f : A} {r : ℝ} (hr : 0 ≤ r) (h : ∀ x, pointNorm K x f ≤ r) :
@@ -298,7 +298,7 @@ theorem supSeminorm_mul_le (hA : IsAffinoidAlgebra K A) (f g : A) :
   supSeminorm_le (mul_nonneg (supSeminorm_nonneg f) (supSeminorm_nonneg g)) fun x ↦ by
     rw [hA.pointNorm_mul]
     exact mul_le_mul (hA.pointNorm_le_supSeminorm x f) (hA.pointNorm_le_supSeminorm x g)
-      (pointNorm_nonneg x g) (supSeminorm_nonneg f)
+      (pointNorm_nonneg g) (supSeminorm_nonneg f)
 
 /-- The supremum seminorm is ultrametric. -/
 theorem supSeminorm_add_le (hA : IsAffinoidAlgebra K A) (f g : A) :
@@ -327,7 +327,7 @@ statement fails on the zero algebra. -/
 theorem supSeminorm_pow (hA : IsAffinoidAlgebra K A) (f : A) {n : ℕ} (hn : n ≠ 0) :
     supSeminorm K (f ^ n) = supSeminorm K f ^ n := by
   simp only [supSeminorm, hA.pointNorm_pow,
-    Real.iSup_pow_of_ne_zero (fun x ↦ pointNorm_nonneg x f) hn]
+    Real.iSup_pow_of_ne_zero (fun _ ↦ pointNorm_nonneg f) hn]
 
 /-- The supremum seminorm of an affinoid algebra is power-multiplicative:
 `|f ^ n|sup = |f|sup ^ n` for `n ≥ 1`. -/
@@ -342,7 +342,7 @@ theorem supSeminorm_eq_zero_iff_forall_mem (hA : IsAffinoidAlgebra K A) {f : A} 
   simp_rw [← hA.pointNorm_eq_zero_iff]
   constructor
   · intro h x
-    exact le_antisymm (h ▸ hA.pointNorm_le_supSeminorm x f) (pointNorm_nonneg x f)
+    exact le_antisymm (h ▸ hA.pointNorm_le_supSeminorm x f) (pointNorm_nonneg f)
   · intro h
     exact le_antisymm (supSeminorm_le le_rfl fun x ↦ (h x).le) (supSeminorm_nonneg f)
 
