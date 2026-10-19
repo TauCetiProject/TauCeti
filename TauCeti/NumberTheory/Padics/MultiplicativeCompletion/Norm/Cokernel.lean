@@ -91,8 +91,7 @@ theorem nsmul_mem_range_padicCompletionUnitsNorm
   refine (Submodule.span_le (p := (LinearMap.range (padicCompletionUnitsNorm p K L)).comap
     (n • LinearMap.id)).2 ?_ hx)
   rintro _ ⟨u, rfl⟩
-  obtain ⟨v, hv⟩ := mem_normGroup_iff.1 (hn u)
-  have hv : Algebra.normUnits K v = u ^ n := Units.ext (by rw [Algebra.coe_normUnits, hv])
+  obtain ⟨v, hv⟩ := mem_normGroup_iff_exists_normUnits.1 (hn u)
   exact ⟨Additive.ofMul (padicCompletionUnitsOf p L v), by simp [hv]⟩
 
 end Multiple
@@ -151,12 +150,8 @@ exponent dividing `p ^ m`. -/
 theorem padicCompletionUnitsNormResidue_pow_smul [Fact p.Prime] (m : ℕ)
     (y : Additive ↑(padicCompletionUnits p K)) :
     padicCompletionUnitsNormResidue p K L m ((p : ℤ_[p]) ^ m • y) = 0 := by
-  rw [← Nat.cast_pow, padicCompletionUnits_natCast_smul, map_nsmul]
-  obtain ⟨g, hg⟩ :=
-    QuotientGroup.mk_surjective (padicCompletionUnitsNormResidue p K L m y).toMul
-  rw [← ofMul_toMul (padicCompletionUnitsNormResidue p K L m y), ← hg, ← ofMul_pow,
-    ← QuotientGroup.mk_pow, (QuotientGroup.eq_one_iff _).2 ((mem_powerSubgroup_iff _).2 ⟨g, rfl⟩),
-    ofMul_one]
+  rw [← Nat.cast_pow, padicCompletionUnits_natCast_smul, map_nsmul, ← ofMul_toMul (_ • _),
+    toMul_nsmul, powerClassQuotient_pow_eq_one, ofMul_one]
 
 /-- If `p ^ m` contains the full power of `p` dividing `#Gal(L/K)^ab`, then every
 `p ^ m`-multiple in `A(K)` is a completed norm. -/
@@ -167,11 +162,6 @@ private theorem pow_smul_mem_range_padicCompletionUnitsNorm [Fact p.Prime] (hpK 
     (p : ℤ_[p]) ^ m • y ∈ LinearMap.range (padicCompletionUnitsNorm p K L) := by
   have := finiteIndex_range_powMonoidHom hpK
   set n := Nat.card (Abelianization Gal(L/K))
-  -- The norm residue isomorphism makes `n`-th powers norms.
-  have hn (u : Kˣ) : u ^ n ∈ normGroup K L := by
-    rw [← QuotientGroup.eq_one_iff, QuotientGroup.mk_pow,
-      ← map_eq_one_iff _ (normResidue K L).injective, map_pow]
-    exact pow_card_eq_one'
   have hn0 : n ≠ 0 := Nat.card_pos.ne'
   -- Write `p ^ m = n * (p ^ (m - v) * b⁻¹)` with `n = p ^ v * b` and `b` a `p`-adic unit.
   set b := ordCompl[p] n
@@ -183,7 +173,8 @@ private theorem pow_smul_mem_range_padicCompletionUnitsNorm [Fact p.Prime] (hpK 
       (n : ℤ_[p]) * ((p : ℤ_[p]) ^ (m - n.factorization p) * ↑hb.unit⁻¹) := by
     rw [hnb, mul_mul_mul_comm, ← pow_add, Nat.add_sub_cancel' hm, IsUnit.mul_val_inv, mul_one]
   rw [hpm, mul_smul, padicCompletionUnits_natCast_smul]
-  exact nsmul_mem_range_padicCompletionUnitsNorm p K L hn _
+  exact nsmul_mem_range_padicCompletionUnitsNorm p K L
+    (pow_natCard_abelianization_mem_normGroup K L) _
 
 /-- **The kernel of the completed norm residue map is the image of the completed norm**, once
 `p ^ m` contains the full power of `p` dividing `#Gal(L/K)^ab`. Together with
@@ -208,15 +199,11 @@ theorem ker_padicCompletionUnitsNormResidue [Fact p.Prime] (hpK : (p : K) ≠ 0)
     obtain ⟨c, rfl⟩ := (normResidue K L).surjective g
     obtain ⟨w, rfl⟩ := QuotientGroup.mk_surjective c
     have hnorm : u * (w ^ p ^ m)⁻¹ ∈ normGroup K L := by
-      rw [← QuotientGroup.eq_one_iff, ← map_eq_one_iff _ (normResidue K L).injective,
-        QuotientGroup.mk_mul, map_mul, QuotientGroup.mk_inv, map_inv, QuotientGroup.mk_pow,
-        map_pow, hg, mul_inv_cancel]
-    obtain ⟨v, hv⟩ := mem_normGroup_iff.1 hnorm
-    have hu : u = Algebra.normUnits K v * w ^ p ^ m := by
-      have hv' : Algebra.normUnits K v = u * (w ^ p ^ m)⁻¹ :=
-        Units.ext (by rw [Algebra.coe_normUnits, hv])
-      rw [hv', inv_mul_cancel_right]
-    rw [hu, map_mul, ofMul_mul, map_pow, ofMul_pow, ← padicCompletionUnits_natCast_smul,
+      rw [← normResidue_mk_eq_one_iff, QuotientGroup.mk_mul, map_mul, QuotientGroup.mk_inv,
+        map_inv, QuotientGroup.mk_pow, map_pow, hg, mul_inv_cancel]
+    obtain ⟨v, hv⟩ := mem_normGroup_iff_exists_normUnits.1 hnorm
+    rw [eq_mul_inv_iff_mul_eq] at hv
+    rw [← hv, map_mul, ofMul_mul, map_pow, ofMul_pow, ← padicCompletionUnits_natCast_smul,
       Nat.cast_pow, add_assoc, ← smul_add]
     refine add_mem ⟨Additive.ofMul (padicCompletionUnitsOf p L v), by simp⟩ ?_
     exact pow_smul_mem_range_padicCompletionUnitsNorm p K L hpK hm _
@@ -225,8 +212,8 @@ theorem ker_padicCompletionUnitsNormResidue [Fact p.Prime] (hpK : (p : K) ≠ 0)
     obtain ⟨v, hv⟩ := QuotientGroup.mk_surjective (y.toMul.1 m)
     rw [padicCompletionUnitsNormResidue_eq p K L (u := Algebra.normUnits K v)
       (by rw [padicCompletionUnitsNorm_apply, ← hv, padicCompletionPowerClassNorm_mk]),
-      (QuotientGroup.eq_one_iff _).2 (mem_normGroup_iff.2 ⟨v, by rw [Algebra.coe_normUnits]⟩),
-      map_one, QuotientGroup.mk_one, ofMul_one]
+      (normResidue_mk_eq_one_iff K L _).2 (normUnits_mem_normGroup K L v), QuotientGroup.mk_one,
+      ofMul_one]
 
 /-- **The cokernel of the completed norm** `A(L) → A(K)` is `Gal(L/K)^ab / (Gal(L/K)^ab)^(p^m)`,
 the maximal `p`-quotient of `Gal(L/K)^ab`, once `p ^ m` contains the full power of `p` dividing
