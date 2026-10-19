@@ -34,6 +34,7 @@ variable {X : Type*} [EMetricSpace X] [MeasurableSpace X] [BorelSpace X]
 
 /-- A set is null for the Euclidean Hausdorff measure `μHE[d]` if and only if it is null for the
 raw Hausdorff measure `μH[d]`. -/
+@[simp]
 theorem euclideanHausdorffMeasure_eq_zero_iff {d : ℕ} {s : Set X} :
     μHE[d] s = 0 ↔ μH[d] s = 0 := by
   rw [euclideanHausdorffMeasure_def, smul_apply, ENNReal.smul_def, smul_eq_mul, mul_eq_zero,
@@ -42,6 +43,7 @@ theorem euclideanHausdorffMeasure_eq_zero_iff {d : ℕ} {s : Set X} :
 
 /-- A set has finite Euclidean Hausdorff measure `μHE[d]` if and only if it has finite raw
 Hausdorff measure `μH[d]`. -/
+@[simp]
 theorem euclideanHausdorffMeasure_lt_top_iff {d : ℕ} {s : Set X} :
     μHE[d] s < ∞ ↔ μH[d] s < ∞ := by
   rw [euclideanHausdorffMeasure_def, smul_apply, ENNReal.smul_def, smul_eq_mul]

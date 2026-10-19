@@ -18,6 +18,8 @@ sets and infinite outer volumes, and supplies the scaling law for volume inequal
 We also bound the additive Haar measure of the closure of a set in a finite-dimensional real
 normed space by the measure of the unit ball times the dimension power of its diameter. This is
 the elementary estimate converting coverings by sets of small diameter into measure bounds.
+Combined with the diameter bound for Lipschitz images, it bounds the measure of the closure of
+the image of a set under a Lipschitz map.
 -/
 
 public section
@@ -71,3 +73,27 @@ theorem addHaar_closure_le_mul_ediam_pow (μ : Measure E) [μ.IsAddHaarMeasure] 
         ENNReal.ofReal_pow Metric.diam_nonneg, Metric.diam, ENNReal.ofReal_toReal hs]
 
 end MeasureTheory.Measure
+
+namespace LipschitzOnWith
+
+open MeasureTheory
+open scoped NNReal
+
+variable {X E : Type*} [PseudoEMetricSpace X] [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+
+/-- The closure of the image of a set `A` under a `K`-Lipschitz map into an `n`-dimensional real
+normed space has additive Haar measure at most `μ (ball 0 1) * K ^ n * ediam A ^ n`. -/
+theorem addHaar_closure_image_le_mul_ediam_pow (μ : Measure E) [μ.IsAddHaarMeasure] {K : ℝ≥0}
+    {f : X → E} {A : Set X} (hf : LipschitzOnWith K f A) :
+    μ (closure (f '' A)) ≤
+      μ (Metric.ball 0 1) * K ^ Module.finrank ℝ E * Metric.ediam A ^ Module.finrank ℝ E := by
+  have hdiam : Metric.ediam (f '' A) ≤ K * Metric.ediam A :=
+    Metric.ediam_image_le_iff.2 fun x hx x' hx' ↦
+      (hf hx hx').trans (by gcongr; exact Metric.edist_le_ediam_of_mem hx hx')
+  calc μ (closure (f '' A)) ≤ μ (Metric.ball 0 1) * Metric.ediam (f '' A) ^ Module.finrank ℝ E :=
+        Measure.addHaar_closure_le_mul_ediam_pow μ _
+    _ ≤ μ (Metric.ball 0 1) * (K * Metric.ediam A) ^ Module.finrank ℝ E := by gcongr
+    _ = _ := by rw [mul_pow, mul_assoc]
+
+end LipschitzOnWith

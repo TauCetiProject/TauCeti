@@ -70,17 +70,6 @@ variable {X Y : Type*} [EMetricSpace X]
 
 namespace LipschitzOnWith
 
-/-- The closure of the image of a set under a `K`-Lipschitz map into an `m`-dimensional space
-has Haar measure at most `μ (ball 0 1) * K ^ m * ediam A ^ m`. -/
-private lemma measure_closure_image_le (hf : LipschitzOnWith K f A) :
-    μ (closure (f '' A)) ≤ μ (ball 0 1) * K ^ finrank ℝ Y * ediam A ^ finrank ℝ Y := by
-  have hdiam : ediam (f '' A) ≤ K * ediam A := ediam_image_le_iff.2 fun x hx x' hx' ↦
-    (hf hx hx').trans (by gcongr; exact edist_le_ediam_of_mem hx hx')
-  calc μ (closure (f '' A)) ≤ μ (ball 0 1) * ediam (f '' A) ^ finrank ℝ Y :=
-        addHaar_closure_le_mul_ediam_pow μ _
-    _ ≤ μ (ball 0 1) * (K * ediam A) ^ finrank ℝ Y := by gcongr
-    _ = _ := by rw [mul_pow, mul_assoc]
-
 /-- A single countable cover `c` of `A` yields a measurable function dominating, at every `y`,
 the approximate `t`-dimensional Hausdorff content of the fiber over `y` at every scale bounding
 the diameters of the cover. Its integral is controlled by the `(m + t)`-dimensional sum of the
@@ -115,7 +104,7 @@ private lemma exists_measurable_of_cover (hf : LipschitzOnWith K f A) (ht : 0 �
         ≤ ediam (c n ∩ A) ^ t *
             (μ (ball 0 1) * K ^ finrank ℝ Y * ediam (c n ∩ A) ^ finrank ℝ Y) := by
           gcongr
-          exact measure_closure_image_le μ (hf.mono inter_subset_right)
+          exact addHaar_closure_image_le_mul_ediam_pow μ (hf.mono inter_subset_right)
       _ = μ (ball 0 1) * K ^ finrank ℝ Y * ediam (c n ∩ A) ^ ((finrank ℝ Y : ℝ) + t) := by
           rw [ENNReal.rpow_add_of_nonneg _ _ (Nat.cast_nonneg _) ht, ENNReal.rpow_natCast]
           ring
@@ -194,7 +183,7 @@ theorem exists_measurable_hausdorffMeasure_inter_preimage_le (hf : LipschitzOnWi
   · rw [lintegral_indicator_const isClosed_closure.measurableSet, hA]
     rcases eq_or_ne (μ (ball 0 1) * K ^ finrank ℝ Y) 0 with hC | hC
     · have h0 : μ (closure (f '' A)) = 0 := by
-        simpa [hC] using measure_closure_image_le μ hf
+        simpa [hC] using addHaar_closure_image_le_mul_ediam_pow μ hf
       simp [h0]
     · rw [ENNReal.mul_top hC]
       exact le_top
