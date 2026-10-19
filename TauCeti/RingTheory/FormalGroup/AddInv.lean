@@ -83,64 +83,73 @@ private theorem hasSubst_addInv_sum (n : ℕ) :
   MvPowerSeries.hasSubst_of_constantCoeff_zero fun i ↦ by
     fin_cases i <;> simp [← constantCoeff_eq, zero_pow_eq, addInvAux]
 
+-- The recursive coefficient update affects only the linear term of the group law.
+private theorem coeff_addInvAux_step (k : ℕ) (d : Fin 2 →₀ ℕ) :
+    coeff (k + 1)
+      (((∑ i ∈ range (k + 1), C (addInvAux F i) * X ^ i) +
+        C (addInvAux F (k + 1)) * X ^ (k + 1)) ^ d 0 * X ^ d 1) =
+      coeff (k + 1) ((∑ i ∈ range (k + 1), C (addInvAux F i) * X ^ i) ^ d 0 *
+        X ^ d 1) + if d = single 0 1 then addInvAux F (k + 1) else 0 := by
+  generalize hB : (∑ i ∈ range (k + 1), C (addInvAux F i) * X ^ i) = B
+  have coeff_B : constantCoeff B = 0 := by simp [← hB, zero_pow_eq, addInvAux]
+  rw [coeff_mul_X_pow', coeff_mul_X_pow']
+  by_cases hd : d = single 0 1
+  · simp [hd]
+  rw [ite_eq_right hd, add_zero]
+  by_cases hd_le : d 1 ≤ k + 1
+  · simp_rw [ite_eq_left hd_le, add_pow, map_sum]
+    rw [Finset.sum_eq_single (d 0) _ (by simp)]
+    · simp
+    · intro i hi_mem hi
+      rw [mul_pow, ← pow_mul]
+      -- Normalize the product so the explicit power of X controls its degree.
+      have hmonomial : B ^ i * (C (addInvAux F (k + 1)) ^ (d 0 - i) *
+          X ^ ((k + 1) * (d 0 - i))) * ((d 0).choose i : PowerSeries R) =
+            (B ^ i * C (addInvAux F (k + 1)) ^ (d 0 - i) * ((d 0).choose i : PowerSeries R)) *
+              X ^ ((k + 1) * (d 0 - i)) := by ac_rfl
+      rw [hmonomial, coeff_mul_X_pow']
+      by_cases hd₀ : d 1 = 0 ∧ d 0 - i = 1
+      · have i_ne_zero : i ≠ 0 := by
+          intro hi
+          subst i
+          apply hd
+          ext j
+          fin_cases j <;> simp_all
+        simp [hd₀, coeff_B, zero_pow i_ne_zero]
+      have : k + 1 ≤ (k + 1) * (d 0 - i) :=
+        Nat.le_mul_of_pos_right _ (by grind)
+      rw [ite_eq_right _]
+      by_cases hd₀' : d 1 = 0
+      · have : (k + 1) * 2 ≤ (k + 1) * (d 0 - i) :=
+          Nat.mul_le_mul_left _ (by grind)
+        -- Two new factors have degree at least 2 * (k + 1), above k + 1.
+        omega
+      -- A positive X exponent lowers the available degree below k + 1.
+      omega
+  · simp_rw [ite_eq_right hd_le]
+
 private theorem coeff_subst_addInv_sum (n : ℕ) :
     coeff n (F.toPowerSeries.subst
       ![∑ i ∈ range (n + 1), C (addInvAux F i) * X ^ i, X]) = 0 := by
   obtain _ | k := n
   · simp [addInvAux, FormalGroup.zeroX_eq_X]
   · rw [sum_range_succ]
-    generalize hB : (∑ i ∈ range (k + 1), C (addInvAux F i) * X ^ i) = B
-    have coeff_B : constantCoeff B = 0 := by simp [← hB, zero_pow_eq, addInvAux]
     have ha := hasSubst_addInv_sum F (k + 1)
-    rw [sum_range_succ, hB] at ha
+    rw [sum_range_succ] at ha
     rw [coeff, MvPowerSeries.coeff_subst ha]
     simp only [Finsupp.prod_pow, Fin.prod_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one,
       Matrix.cons_val_fin_one, smul_eq_mul]
-    -- Adding the coefficient in degree k + 1 affects only the linear X term of F.
-    have eq_aux (d : Fin 2 →₀ ℕ) : coeff (k + 1)
-        ((B + C (addInvAux F (k + 1)) * X ^ (k + 1)) ^ d 0 * X ^ d 1) =
-          coeff (k + 1) (B ^ d 0 * X ^ d 1) +
-            if d = single 0 1 then addInvAux F (k + 1) else 0 := by
-      rw [coeff_mul_X_pow', coeff_mul_X_pow']
-      by_cases hd : d = single 0 1
-      · simp [hd]
-      rw [ite_eq_right hd, add_zero]
-      by_cases hd_le : d 1 ≤ k + 1
-      · simp_rw [ite_eq_left hd_le, add_pow, map_sum]
-        rw [Finset.sum_eq_single (d 0) _ (by simp)]
-        · simp
-        · intro i hi_mem hi
-          rw [mul_pow, mul_assoc, mul_assoc, mul_comm ((X ^ (k + 1)) ^ (d 0 - i)),
-            ← mul_assoc, ← mul_assoc, ← pow_mul, coeff_mul_X_pow']
-          by_cases hd₀ : d 1 = 0 ∧ d 0 - i = 1
-          · have i_ne_zero : i ≠ 0 := by
-              intro hi
-              subst i
-              apply hd
-              ext j
-              fin_cases j <;> simp_all
-            simp [hd₀, coeff_B, zero_pow i_ne_zero]
-          have : k + 1 ≤ (k + 1) * (d 0 - i) :=
-            Nat.le_mul_of_pos_right _ (by grind)
-          rw [ite_eq_right _]
-          by_cases hd₀' : d 1 = 0
-          · have : (k + 1) * 2 ≤ (k + 1) * (d 0 - i) :=
-              Nat.mul_le_mul_left _ (by grind)
-            omega
-          omega
-      · simp_rw [ite_eq_right hd_le]
     -- The remaining contribution is the linear coefficient 1 times the new coefficient.
     -- The recursion cancels it against the error of the preceding partial sum.
     simp only [coeff_coeToMvPowerSeries]
-    simp_rw [eq_aux, mul_add]
+    simp_rw [coeff_addInvAux_step, mul_add]
     rw [finsum_add_distrib]
     · nth_rw 2 [finsum_eq_single _ (single 0 1) fun d hd ↦ by rw [ite_eq_right hd, mul_zero]]
       rw [ite_eq_left rfl, F.lin_coeff_X, one_mul, addInvAux_succ]
-      rw [← hB]
       rw [coeff, MvPowerSeries.coeff_subst (hasSubst_addInv_sum F k)]
       simp [Finsupp.prod_pow, Fin.prod_univ_two]
     · simpa only [Finsupp.prod_pow, Fin.prod_univ_two, Matrix.cons_val_zero,
-        Matrix.cons_val_one, Matrix.cons_val_fin_one, smul_eq_mul, hB,
+        Matrix.cons_val_one, Matrix.cons_val_fin_one, smul_eq_mul,
         coeff_coeToMvPowerSeries] using
         MvPowerSeries.coeff_subst_finite (hasSubst_addInv_sum F k) F.toPowerSeries
           (single () (k + 1))
@@ -201,14 +210,14 @@ noncomputable instance instNegPoint : Neg (F.Point σ) where
 
 /-- The underlying series of the negative of a point. -/
 @[simp]
-theorem neg_point_val (x : F.Point σ) :
+theorem neg_apply (x : F.Point σ) :
     (-x).val = PowerSeries.subst x.val (addInvX F) := (rfl)
 
 /-- Native points of a formal group form an additive group. -/
 noncomputable instance instAddGroupPoint : AddGroup (F.Point σ) where
   zsmul := zsmulRec
   neg_add_cancel x := Subtype.ext <| by
-    rw [FormalGroup.add_apply, neg_point_val, FormalGroup.zero_apply]
+    rw [FormalGroup.add_apply, neg_apply, FormalGroup.zero_apply]
     exact subst_addInvX_self F x.property
 
 /-- Native points of a commutative formal group form an additive commutative group. -/
@@ -228,7 +237,7 @@ theorem eq_subst_addInvX_iff {f g : MvPowerSeries σ R}
     have h' : y + x = 0 := Subtype.ext h
     have heq : y = -x := eq_neg_of_add_eq_zero_left h'
     have hval := congrArg (fun z : F.Point σ ↦ z.val) heq
-    rw [neg_point_val] at hval
+    rw [neg_apply] at hval
     simpa only [x, y] using hval
 
 /-- The inverse coordinate gives right inverses too, without assuming commutativity of `F`. -/
@@ -237,8 +246,13 @@ theorem subst_self_addInvX {f : MvPowerSeries σ R} (hf : PowerSeries.HasSubst f
     F.toPowerSeries.subst ![f, PowerSeries.subst f (addInvX F)] = 0 := by
   let x : F.Point σ := ⟨f, hf⟩
   have h := congrArg (fun z : F.Point σ ↦ z.val) (add_neg_cancel x)
-  rw [FormalGroup.add_apply, neg_point_val, FormalGroup.zero_apply] at h
+  rw [FormalGroup.add_apply, neg_apply, FormalGroup.zero_apply] at h
   exact h
+
+/-- The inverse coordinate is a right inverse: `F(X, i(X)) = 0`. -/
+@[simp]
+theorem subst_X_addInvX : F.toPowerSeries.subst ![X, addInvX F] = 0 := by
+  simpa only [PowerSeries.X_subst] using subst_self_addInvX F PowerSeries.HasSubst.X'
 
 /-- A right inverse of a native point is obtained by substituting it into `addInvX`. -/
 theorem eq_subst_addInvX_iff_right {f g : MvPowerSeries σ R}
@@ -253,7 +267,7 @@ theorem eq_subst_addInvX_iff_right {f g : MvPowerSeries σ R}
     have h' : x + y = 0 := Subtype.ext h
     have heq : y = -x := eq_neg_of_add_eq_zero_right h'
     have hval := congrArg (fun z : F.Point σ ↦ z.val) heq
-    rw [neg_point_val] at hval
+    rw [neg_apply] at hval
     simpa only [x, y] using hval
 
 /-- Inverting twice returns the original coordinate. -/
@@ -261,7 +275,7 @@ theorem eq_subst_addInvX_iff_right {f g : MvPowerSeries σ R}
 theorem subst_addInvX_addInvX : PowerSeries.subst (addInvX F) (addInvX F) = X := by
   let x : F.Point Unit := ⟨X, PowerSeries.HasSubst.X'⟩
   have h := congrArg (fun z : F.Point Unit ↦ z.val) (neg_neg x)
-  rw [neg_point_val, neg_point_val] at h
+  rw [neg_apply, neg_apply] at h
   simpa only [x, PowerSeries.X_subst] using h
 
 /-- The zero-constant inverse coordinate is uniquely characterized by its left inverse law. -/
