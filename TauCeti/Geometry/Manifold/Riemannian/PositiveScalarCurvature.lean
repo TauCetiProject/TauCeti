@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar
+public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Pullback
 
 /-!
 # Positive scalar curvature
@@ -14,7 +14,9 @@ A smooth Riemannian metric `g` on the tangent bundle has positive scalar curvatu
 scalar curvature `Bundle.ContMDiffRiemannianMetric.scalarCurvature`, that of the Levi-Civita
 connection of `g`, is positive at every point. Since scalar curvature is a smooth function of
 the point, on a compact manifold such a metric has scalar curvature bounded below by a positive
-constant. No assumption on the boundary is made.
+constant. Scalar curvature is invariant under diffeomorphisms, so pulling a metric back along a
+diffeomorphism preserves and reflects positive scalar curvature. No assumption on the
+boundary is made.
 
 ## Main definitions and results
 
@@ -23,6 +25,8 @@ constant. No assumption on the boundary is made.
   manifold, positive scalar curvature has a uniform positive lower bound.
 * `Bundle.ContMDiffRiemannianMetric.hasPositiveScalarCurvature_iff_exists_pos_le`: on a compact
   manifold, positive scalar curvature is equivalent to a uniform positive lower bound.
+* `Bundle.ContMDiffRiemannianMetric.hasPositiveScalarCurvature_pullback_iff`: the pullback of a
+  metric along a diffeomorphism has positive scalar curvature exactly when the metric does.
 
 ## References
 
@@ -72,5 +76,33 @@ curvature has a uniform positive lower bound. -/
 theorem hasPositiveScalarCurvature_iff_exists_pos_le [CompactSpace M] :
     g.HasPositiveScalarCurvature ↔ ∃ ε : ℝ, 0 < ε ∧ ∀ x, ε ≤ g.scalarCurvature x :=
   ⟨HasPositiveScalarCurvature.exists_pos_le, fun ⟨_, hε, h⟩ x ↦ hε.trans_le (h x)⟩
+
+section Pullback
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'}
+  {N : Type*} [TopologicalSpace N] [T2Space N] [ChartedSpace H' N] [IsManifold J ∞ N]
+
+/-- The pullback of a metric along a diffeomorphism has positive scalar curvature exactly when the
+metric does. -/
+@[simp]
+theorem hasPositiveScalarCurvature_pullback_iff
+    (g : ContMDiffRiemannianMetric J ∞ F (fun y : N ↦ TangentSpace J y))
+    (Φ : M ≃ₘ^∞⟮I, J⟯ N) (hf : ContMDiff I J (∞ + 1) Φ)
+    (hinj : ∀ x, Function.Injective (mfderiv I J Φ x)) :
+    (g.pullback Φ hf hinj).HasPositiveScalarCurvature ↔ g.HasPositiveScalarCurvature := by
+  simp only [hasPositiveScalarCurvature_iff, scalarCurvature_pullback]
+  exact ⟨fun h y ↦ by simpa using h (Φ.symm y), fun h x ↦ h (Φ x)⟩
+
+variable {g : ContMDiffRiemannianMetric J ∞ F (fun y : N ↦ TangentSpace J y)} in
+/-- Pulling a metric of positive scalar curvature back along a diffeomorphism gives a metric of
+positive scalar curvature. -/
+theorem HasPositiveScalarCurvature.pullback (h : g.HasPositiveScalarCurvature)
+    (Φ : M ≃ₘ^∞⟮I, J⟯ N) (hf : ContMDiff I J (∞ + 1) Φ)
+    (hinj : ∀ x, Function.Injective (mfderiv I J Φ x)) :
+    (g.pullback Φ hf hinj).HasPositiveScalarCurvature :=
+  (hasPositiveScalarCurvature_pullback_iff g Φ hf hinj).2 h
+
+end Pullback
 
 end Bundle.ContMDiffRiemannianMetric
