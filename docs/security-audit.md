@@ -36,19 +36,28 @@ reviewer must return incomplete if it cannot finish the inspection.
 Individual commits are inspected in order: a later revert cannot conceal an earlier
 dangerous version. Candidate code is never executed. The model has no GitHub
 credential, general filesystem access, shell or editing authority; trusted Worker
-code verifies its structured verdict and updates the ref. A finding, incomplete
-review or unsupported source blob stops the cursor for human attention.
-Provider service errors without a final model answer may be retried without human
-source attestation. The Worker makes at most two automatic retries with backoff,
-resuming the same retained conversation with unchanged source, inspection policy,
-model, tool restrictions and read receipt. Progress notes and all failed requests
-are retained. Findings, incomplete verdicts, malformed answers/streams and
-unauthorized tools cannot be retried as service errors. Exhausted retries leave
-the cursor blocked until a later service recovery; an admin may use the Worker's
-`retry-service --state DIR --reason ...` command to continue the same retained
-inspection. Only a complete pass and confirmed reference update clear that block. Local input bundles, actual launchers/environments/prompts,
-transcripts, read receipts, native Codex
-compaction/usage records, verdicts and advancement records are retained by the worker.
+code verifies its structured verdict and updates the ref. In judgment protocol v2,
+the model returns only `verdict` and `findings`, plus the final `read_token` for
+paged inputs. The Worker attaches the immutable input digest and ordered commit
+list from its own launch record. Model output never supplies that identity;
+unknown response fields are rejected. Complete coverage and final-token checks
+remain required, and host-owned identity does not establish source safety.
+A source finding, explained uncertainty or unsupported source blob stops the
+cursor for human attention.
+
+Provider service failures, timeouts and eligible mechanical output failures may
+resume the same native conversation without human source attestation. Immediate
+retries share at most three launches, with 5- and 10-second delays. Afterward,
+the ordinary worker loop uses a durable 5/10/20/40/60-minute backoff, capped at
+one recovery invocation per hour. Each invocation rechecks hard quota limits,
+admin authority, the current cursor, exact next main prefix, unchanged input,
+native UUID, reader, catalog, launcher and exact inspection prompt. It preserves
+all prior findings and notes. Only a fresh complete passing judgment and confirmed
+reference update clear the block. Native history and reader receipts are durable
+while the model runs, including if the Worker dies before capturing stdout.
+Local input bundles, actual launchers/environments/prompts, transcripts, read
+receipts, native Codex compaction/usage records, verdicts, retry budgets and
+advancement records are retained by the worker.
 A recognized pre-inspection commit-budget block from an older planner can be archived and
 replanned when the exact next commit fits the current limits. That does not attest the
 commit or retry a model verdict; source findings and incomplete verdicts still
@@ -74,20 +83,23 @@ excluded from the isolated reviewer's environment. Without notification configur
 reporting remains in the local evidence and worker logs. Failed notification delivery
 does not clear an audit block or prevent unrelated maintenance.
 
-An unexplained `incomplete` answer with an empty findings list, or a paged `pass`
-whose input digest omits only its final character, may receive bounded output repair
-in the same retained Luna conversation. The exact ordered commits and remaining
-schema must validate; paged input must have complete receipt coverage and the correct
-final token. A repaired answer must echo the exact full digest. The response schema
-fixes that digest to prevent copying errors. Earlier source findings and explained
-incomplete verdicts remain binding. The repair preserves all notes and uncertainty;
-only a new complete passing answer can approve the original batch. Service retries
-and repairs share at most three launches per invocation. Each batch permits at most two
-explicit admin `repair-output --state DIR --reason ...` invocation. Failed answers,
-repair counts and recovery kinds are retained in the evidence and ledger. Exhausted
-repairs remain blocked. The original pre-profile incident has a narrowly pinned
-compatibility continuation for its exact reader-context failure; it does not permit
-other explained incomplete verdicts to be retried.
+Automatic mechanical repair requires an empty-finding pass, complete page
+coverage and a final-output validation failure, such as a damaged reader token or
+legacy copied commit identity. It never converts that answer into approval. A
+reviewed version-1 launcher profile can migrate in the same retained Luna session
+to the worker-bound response format, preserving the original evidence. There is
+no exception for a particular commit SHA. The new response schema requires no SHA
+or digest copying. An unexplained empty `incomplete` may receive bounded immediate
+repair, but is not scheduled again afterward. Source findings, explained uncertainty,
+missing coverage, unknown profiles, unauthorized tools and mismatched evidence
+remain blocked. Findings in earlier native history or ledger records remain
+binding after retries, compaction and restarts. Provider recovery may preserve an
+earlier mechanical answer, but never rerolls a source finding or explained uncertainty.
+
+Historical administrative `retry-service`, `repair-output` and narrowly pinned
+reader continuations remain restricted to their original profiles. They do not
+widen ordinary automatic recovery eligibility. Operational recovery needs no
+manual command or human source attestation; source findings still require review.
 
 Local blocks are not a shared authorization service. Administrators must not evade
 a finding by changing worker IDs, and should keep admin credentials out of ordinary

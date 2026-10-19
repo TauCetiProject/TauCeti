@@ -84,6 +84,11 @@ variable {a r s t : ℝ} {n : ℕ}
 theorem expMeasure_eq_withDensity (r : ℝ) :
     expMeasure r = volume.withDensity (exponentialPDF r) := rfl
 
+/-- Every singleton has zero exponential measure, for every rate. -/
+instance nullSingletonClass_expMeasure (r : ℝ) : NullSingletonClass (expMeasure r) := by
+  rw [expMeasure_eq_withDensity]
+  infer_instance
+
 /-- `expMeasure r` is its exponential density against Lebesgue measure restricted to the
 positive half-line. -/
 theorem expMeasure_eq_withDensity_restrict_Ioi (r : ℝ) :
