@@ -64,11 +64,14 @@ private theorem exists_hyperbolicSix_spinPlus_equiv_stdSLRep :
     (finrank_hyperbolicSixSpinPlus K)
   let hWfin : finrank K P.W = 3 := by
     simp [P]
-  have hmatrix := fun s ↦ coe_spinGroupMulEquivSpecialLinearGroup_apply P hline hWfin hW
+  have hmatrix := fun s ↦ coe_spinGroupEquivSpecialLinearGroupOfFinrankEqSix_apply P hline hWfin hW
     (finrank_hyperbolicSixSpinPlus K) hV b rfl s
-  exact nonempty_spinPlusSubrep_equiv_stdSLRep_of_matrix_action hline b
-    (hyperbolicSixSpinEquivSpecialLinear K).toMonoidHom (by
-      exact hmatrix)
+  obtain ⟨eplus⟩ := nonempty_spinPlusSubrep_equiv_stdSLRep_of_matrix_action hline b
+    (hyperbolicSixSpinEquivSpecialLinear K).toMonoidHom (by exact hmatrix)
+  obtain ⟨eplus, _⟩ :=
+    nonempty_spinPlusSubrep_equiv_and_spinMinusSubrep_equiv_dual P hV hline
+      ((stdSLRep K 4).comp (hyperbolicSixSpinEquivSpecialLinear K).toMonoidHom) ⟨eplus⟩
+  exact eplus
 
 /-- For three hyperbolic planes, the even half-spin representation is the standard
 four-dimensional representation pulled back along `hyperbolicSixSpinEquivSpecialLinear`, and the
@@ -86,12 +89,10 @@ theorem nonempty_hyperbolicSix_halfSpin_equiv_stdSLRep_and_dual :
               ((stdSLRep K 4).comp
                 (hyperbolicSixSpinEquivSpecialLinear K).toMonoidHom))) := by
   obtain ⟨eplus⟩ := exists_hyperbolicSix_spinPlus_equiv_stdSLRep K
-  obtain ⟨hline, ⟨eminus⟩⟩ :=
-    exists_spinMinusSubrep_equiv_dual_spinPlusSubrep_of_finrank_eq_six
-      (splitEvenPolarization K 3)
-        ((finrank_splitEvenSpace K 3).trans (by norm_num : (2 : ℕ) * 3 = 6))
-  have hh : hline = splitEvenPolarization_line K 3 := Subsingleton.elim _ _
-  cases hh
-  exact ⟨⟨eplus⟩, ⟨eminus.trans eplus.dual⟩⟩
+  exact nonempty_spinPlusSubrep_equiv_and_spinMinusSubrep_equiv_dual
+    (splitEvenPolarization K 3)
+    ((finrank_splitEvenSpace K 3).trans (by norm_num : (2 : ℕ) * 3 = 6))
+    (splitEvenPolarization_line K 3)
+    ((stdSLRep K 4).comp (hyperbolicSixSpinEquivSpecialLinear K).toMonoidHom) ⟨eplus⟩
 
 end TauCeti
