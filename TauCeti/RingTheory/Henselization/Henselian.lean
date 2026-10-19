@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.Henselization.Jacobson
 public import TauCeti.RingTheory.Henselization.Residue
-public import Mathlib.RingTheory.Etale.StandardEtale
+public import TauCeti.RingTheory.Etale.StandardEtaleQuotient
 public import Mathlib.RingTheory.Henselian
 
 /-!
@@ -26,8 +26,6 @@ still `R ⧸ I`, so it is a further neighbourhood, and it contains an actual roo
 
 * `TauCeti.Henselization.quotientMap_stage_bijective`: each stage map induces an isomorphism of
   closed fibres.
-* `TauCeti.Henselization.reducedMap_bijective_of_hasMap`: a standard étale algebra with a
-  residue point congruent to its generator has the same closed fibre as its base.
 * `TauCeti.Henselization.exists_hom_isRoot_sub_mem`: a simple root modulo `I` at an étale
   neighbourhood becomes a root at a further étale neighbourhood.
 * `TauCeti.Henselization.henselian`: the pair `(algebra I, extended I)` is henselian.
@@ -103,49 +101,6 @@ theorem isUnit_quotient_stage_iff (B : Neighbourhood.{u, u} I) (b : B.obj) :
     simp [e]
   rw [← he, isUnit_map_iff]
 
-/-- A standard étale algebra has the same closed fibre as its base along an ideal `J`, provided
-its defining equations hold modulo `J` at an element `a` of the base and its generator is
-congruent to `a` modulo the extended ideal. -/
-theorem reducedMap_bijective_of_hasMap {A : Type*} [CommRing A] (J : Ideal A)
-    (P : StandardEtalePair A) {a : A} (ha : P.HasMap (Ideal.Quotient.mk J a))
-    (hX : P.X - algebraMap A P.Ring a ∈ J.map (algebraMap A P.Ring)) :
-    Function.Bijective (reducedMap J P.Ring) := by
-  -- The map `X ↦ a` is a retraction onto the closed fibre of `A`, and it is inverse to the
-  -- reduced map because the generator is congruent to `a`.
-  let σ := P.lift _ ha
-  have hker : J.map (algebraMap A P.Ring) ≤ RingHom.ker (σ : P.Ring →+* A ⧸ J) := by
-    rw [Ideal.map_le_iff_le_comap]
-    intro j hj
-    rw [Ideal.mem_comap, RingHom.mem_ker, RingHom.coe_coe, AlgHom.commutes,
-      Ideal.Quotient.algebraMap_eq]
-    exact Ideal.Quotient.eq_zero_iff_mem.mpr hj
-  let σbar := Ideal.Quotient.lift _ (σ : P.Ring →+* A ⧸ J) fun y hy ↦
-    RingHom.mem_ker.mp (hker hy)
-  have hleft : σbar.comp (reducedMap J P.Ring) = RingHom.id _ := by
-    apply Ideal.Quotient.ringHom_ext
-    ext r
-    simp only [RingHom.comp_apply, reducedMap_mk, σbar, Ideal.Quotient.lift_mk, RingHom.coe_coe,
-      AlgHom.commutes, Ideal.Quotient.algebraMap_eq, RingHom.id_apply]
-  have hright : (reducedMap J P.Ring).comp σbar = RingHom.id _ := by
-    have h : (IsScalarTower.toAlgHom A (A ⧸ J) (P.Ring ⧸ J.map (algebraMap A P.Ring))).comp σ =
-        Ideal.Quotient.mkₐ A (J.map (algebraMap A P.Ring)) := by
-      apply P.hom_ext
-      rw [AlgHom.comp_apply, P.lift_X, IsScalarTower.coe_toAlgHom', Ideal.Quotient.mkₐ_eq_mk,
-        Ideal.Quotient.algebraMap_quotient_map_quotient]
-      exact (Ideal.Quotient.eq.mpr hX).symm
-    apply Ideal.Quotient.ringHom_ext
-    ext y
-    obtain ⟨r, hr⟩ := Ideal.Quotient.mk_surjective (σ y)
-    have hy := DFunLike.congr_fun h y
-    rw [AlgHom.comp_apply, IsScalarTower.coe_toAlgHom', ← hr,
-      Ideal.Quotient.algebraMap_quotient_map_quotient, Ideal.Quotient.mkₐ_eq_mk] at hy
-    simp only [RingHom.comp_apply, RingHom.id_apply, σbar, Ideal.Quotient.lift_mk,
-      RingHom.coe_coe]
-    rw [← hr, reducedMap_mk]
-    exact hy
-  exact Function.bijective_iff_has_inverse.mpr
-    ⟨σbar, RingHom.congr_fun hleft, RingHom.congr_fun hright⟩
-
 /-- A simple root modulo the extended ideal at an étale neighbourhood becomes an actual root at a
 further étale neighbourhood, congruent to it modulo the extended ideal. -/
 theorem exists_hom_isRoot_sub_mem (B : Neighbourhood.{u, u} I) {p : B.obj[X]} (hp : p.Monic)
@@ -172,7 +127,7 @@ theorem exists_hom_isRoot_sub_mem (B : Neighbourhood.{u, u} I) {p : B.obj[X]} (h
   -- The adjoined root is congruent to `a` modulo the extended ideal.
   have hxa : x - algebraMap B.obj P.Ring a ∈ J.map (algebraMap B.obj P.Ring) := by
     have h := congrArg (aeval x) hq
-    rw [hpx, map_add, map_mul, map_sub, aeval_C, aeval_X, aeval_C] at h
+    simp only [hpx, map_add, map_mul, map_sub, aeval_C, aeval_X] at h
     have h' : (x - algebraMap B.obj P.Ring a) * aeval x q =
         -algebraMap B.obj P.Ring (p.eval a) := by
       linear_combination -h
@@ -187,8 +142,9 @@ theorem exists_hom_isRoot_sub_mem (B : Neighbourhood.{u, u} I) {p : B.obj[X]} (h
       exact Ideal.Quotient.eq_zero_iff_mem.mpr hpa
     · rw [hmk, eval_mul, hqa, map_mul]
       exact hu.mul hu
-  have hPbij : Function.Bijective (reducedMap J P.Ring) :=
-    reducedMap_bijective_of_hasMap J P hσ hxa
+  have hPbij : Function.Bijective (reducedMap J P.Ring) := by
+    convert P.algebraMap_quotient_bijective_of_hasMap J hσ hxa
+    exact Ideal.Quotient.ringHom_ext (RingHom.ext (reducedMap_mk J P.Ring))
   -- The standard étale algebra is an étale neighbourhood of `(R, I)` over `B`.
   let : Algebra R P.Ring := ((algebraMap B.obj P.Ring).comp (algebraMap R B.obj)).toAlgebra
   have : IsScalarTower R B.obj P.Ring := IsScalarTower.of_algebraMap_eq' rfl
@@ -221,7 +177,8 @@ instance henselian : HenselianRing (algebra I) (extended I) where
       simp [g, Polynomial.map_sum, hbj]
     have hga (r : B.obj[X]) :
         stage I B (r.eval (b none)) = (r.map (stage I B : B.obj →+* algebra I)).eval a₀ := by
-      rw [eval_map, ← hb₀, ← RingHom.coe_coe, eval₂_hom]
+      rw [← hb₀]
+      exact (eval_map_apply ..).symm
     -- At the stage `B`, the simple-root hypotheses hold modulo the extended ideal of `B`.
     obtain ⟨D, φ, c, hroot, hc⟩ := exists_hom_isRoot_sub_mem I B hg (a := b none)
       (by rw [← comap_stage_extended I B, Ideal.mem_comap, RingHom.coe_coe, hga, hgf]; exact hfa₀)
@@ -231,8 +188,8 @@ instance henselian : HenselianRing (algebra I) (extended I) where
       ext y
       exact stage_hom_apply I φ y
     refine ⟨stage I D c, ?_, ?_⟩
-    · rw [← hgf, ← hφ, ← Polynomial.map_map, IsRoot, eval_map, ← RingHom.coe_coe, eval₂_hom,
-        hroot.eq_zero, map_zero]
+    · simpa only [Polynomial.map_map, hφ, hgf, RingHom.coe_coe] using
+        hroot.map (stage I D : D.obj →+* algebra I)
     · rw [← hb₀, ← stage_hom_apply I φ (b none), ← map_sub, ← map_stage_map_algebraMap I D]
       exact Ideal.mem_map_of_mem _ hc
 
