@@ -32,8 +32,8 @@ rings (Stacks, Definition 15.113.1 (09E4)).
 * `AlgebraicGeometry.Scheme.Hom.map_maximalIdeal_eq_pow_ramificationIdxAt`: at a point of coheight
   one of a locally Noetherian normal integral scheme and for a dominant map to a reduced scheme
   with non-generic image point, `𝔪_{f(x)} 𝒪_{X,x} = 𝔪_x ^ e` with `e = ramificationIdxAt f x`.
-* `AlgebraicGeometry.Scheme.Hom.ramificationIdxAt_eq_dvr`: the index equals any exponent satisfying
-  the maximal-ideal identity of Stacks, Definition 15.113.1 (09E4).
+* `AlgebraicGeometry.Scheme.Hom.ramificationIdxAt_eq_of_map_maximalIdeal_eq_pow`: the index equals
+  any exponent satisfying the maximal-ideal identity of Stacks, Definition 15.113.1 (09E4).
 
 ## References
 
@@ -123,7 +123,7 @@ identity in Stacks, Definition 15.113.1 (09E4).
 Divergence from Stacks: only the source stalk needs to be a DVR. No dominance or assumption
 on the target is required when the maximal-ideal power identity is supplied. -/
 @[stacks 09E4 "comparison with the exponent in the maximal-ideal identity"]
-theorem ramificationIdxAt_eq_dvr [IsLocallyNoetherian X] [IsNormalScheme X]
+theorem ramificationIdxAt_eq_of_map_maximalIdeal_eq_pow [IsLocallyNoetherian X] [IsNormalScheme X]
     (x : X) (hx : coheight x = 1) {exponent : ℕ}
     (hexponent : (maximalIdeal (Y.presheaf.stalk (f x))).map (f.stalkMap x).hom =
       maximalIdeal (X.presheaf.stalk x) ^ exponent) :

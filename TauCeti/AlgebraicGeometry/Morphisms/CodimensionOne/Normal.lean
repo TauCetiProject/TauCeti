@@ -25,7 +25,7 @@ codimension one to points of codimension one. This supplies the input `hf` of
 
 * `AlgebraicGeometry.Scheme.Hom.coheight_apply_eq_coheight`: a finite dominant morphism of integral
   schemes with locally Noetherian normal target preserves the coheight of every point.
-* `AlgebraicGeometry.Scheme.Hom.coheight_apply_eq_one_of_isNormalScheme`: in particular it sends
+* `AlgebraicGeometry.Scheme.Hom.coheight_apply_eq_one_of_coheight_eq_one`: in particular it sends
   points of coheight one to points of coheight one.
 
 ## References
@@ -93,7 +93,7 @@ points of coheight one to points of coheight one (going down, Stacks, Propositio
 (00H8)). This is the scheme-theoretic codimension consequence of going down, rather than
 the ring-theoretic existence statement of that tag. -/
 @[stacks 00H8 "codimension-one consequence for finite dominant morphisms to normal schemes"]
-theorem coheight_apply_eq_one_of_isNormalScheme [IsLocallyNoetherian Y] [IsNormalScheme Y]
+theorem coheight_apply_eq_one_of_coheight_eq_one [IsLocallyNoetherian Y] [IsNormalScheme Y]
     [IsFinite f] [IsDominant f] [IsIntegral X]
     (x : X) (hx : coheight x = 1) : coheight (f x) = 1 :=
   (coheight_apply_eq_coheight f x).trans hx
