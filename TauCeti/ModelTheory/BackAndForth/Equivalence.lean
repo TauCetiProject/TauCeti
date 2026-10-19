@@ -145,6 +145,40 @@ theorem trans {α : Ordinal.{o}} (hab : BFEquiv (L := L) α n a b)
     exact (limit hα a c).mpr fun β hβ =>
       ih β hβ ((limit hα a b).mp hab β hβ) ((limit hα b c).mp hbc β hβ)
 
+/-- Back-and-forth equivalence is preserved when the two tuples are reindexed in the same way. -/
+theorem comp {α : Ordinal.{o}} (h : BFEquiv (L := L) α n a b) {m : ℕ}
+    (g : Fin m → Fin n) : BFEquiv (L := L) α m (a ∘ g) (b ∘ g) := by
+  induction α using Ordinal.limitRecOn generalizing n m with
+  | zero => exact zero.mpr ((zero.mp h).comp g)
+  | add_one α ih =>
+    obtain ⟨h, hforth, hback⟩ := (add_one α a b).mp h
+    refine (add_one α (a ∘ g) (b ∘ g)).mpr ⟨ih h g, ?_, ?_⟩
+    · intro x
+      obtain ⟨y, hy⟩ := hforth x
+      let g' : Fin (m + 1) → Fin (n + 1) := snoc (castSucc ∘ g) (last n)
+      refine ⟨y, ?_⟩
+      have ha : snoc a x ∘ g' = snoc (a ∘ g) x := by
+        funext i
+        refine Fin.lastCases ?_ (fun j => ?_) i <;> simp [g', Function.comp_apply]
+      have hb : snoc b y ∘ g' = snoc (b ∘ g) y := by
+        funext i
+        refine Fin.lastCases ?_ (fun j => ?_) i <;> simp [g', Function.comp_apply]
+      simpa only [ha, hb] using ih hy g'
+    · intro y
+      obtain ⟨x, hx⟩ := hback y
+      let g' : Fin (m + 1) → Fin (n + 1) := snoc (castSucc ∘ g) (last n)
+      refine ⟨x, ?_⟩
+      have ha : snoc a x ∘ g' = snoc (a ∘ g) x := by
+        funext i
+        refine Fin.lastCases ?_ (fun j => ?_) i <;> simp [g', Function.comp_apply]
+      have hb : snoc b y ∘ g' = snoc (b ∘ g) y := by
+        funext i
+        refine Fin.lastCases ?_ (fun j => ?_) i <;> simp [g', Function.comp_apply]
+      simpa only [ha, hb] using ih hx g'
+  | limit α hα ih =>
+    exact (limit hα (a ∘ g) (b ∘ g)).mpr fun β hβ =>
+      ih β hβ ((limit hα a b).mp h β hβ) g
+
 /-- Swapping the two tuples does not change back-and-forth equivalence. -/
 theorem symm_iff (α : Ordinal.{o}) (a : Fin n → M) (b : Fin n → N) :
     BFEquiv (L := L) α n a b ↔ BFEquiv (L := L) α n b a := ⟨symm, symm⟩
