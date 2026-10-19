@@ -341,9 +341,9 @@ theorem AEStronglyMeasurable.eLpNorm_le_of_forall_enorm_integral_inner_le {H : T
         ring_nf
     · simp [hg_def, hu_def, Set.indicator_of_notMem hx, Real.zero_rpow (by linarith : r ≠ 0)]
   have hu_supp : ∀ x, x ∉ spanningSets μ N → u x = 0 := fun x hx =>
-    Set.indicator_of_notMem (fun h => hx h.1) _
+    Set.indicator_of_notMem (fun h => hx (Set.mem_of_mem_inter_left h)) _
   have hg_supp : ∀ x, x ∉ spanningSets μ N → g x = 0 := fun x hx =>
-    Set.indicator_of_notMem (fun h => hx h.1) _
+    Set.indicator_of_notMem (fun h => hx (Set.mem_of_mem_inter_left h)) _
   have hum : StronglyMeasurable u := hh'.indicator (hSm N)
   have hgm : AEStronglyMeasurable g μ := by
     refine (StronglyMeasurable.indicator ?_ (hSm N)).aestronglyMeasurable

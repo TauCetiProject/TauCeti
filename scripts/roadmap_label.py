@@ -19,7 +19,7 @@ A PR gets exactly one label, decided in this order:
 6. `roadmap/Unknown` -- attribution is absent, invalid, or conflicting.
 
 Evidence from steps 3--5 must agree. Area names are read at runtime from active
-and completed roadmaps, and labels are created on first use (`ensure_label`).
+and completed roadmaps, and labels are created only when missing (`ensure_label`).
 File paths and conventional-commit titles are deliberately not used as roadmap
 evidence.
 
@@ -36,19 +36,28 @@ evidence.
     roadmap_label.py --backfill --repo ... --roadmap-dir roadmap \
         --apply --allow-relabel
 
-`--apply`/`--nudge` shell out to `gh`, which must be authenticated (GH_TOKEN).
-`classify` and the parsing helpers are pure and are what the tests exercise.
+API calls shell out to authenticated `gh`. GH_READ_TOKEN can separate reads
+from App writes (GH_TOKEN). --reconcile-open repairs missed event runs;
+--sync-labels maintains label presentation separately from per-PR writes.
+test_roadmap_label.py covers the pure classifier and parsing helpers;
+test_roadmap_api.py covers the API, mutation, and recovery paths.
 """
 
 from __future__ import annotations
 
 import argparse
+import functools
+import hashlib
+import math
+import os
 import json
 import pathlib
 import re
-import subprocess
 import sys
 import time
+from urllib.parse import quote
+
+from github_api import APIError, Deferred, GitHub, history_snapshots, pr_snapshot
 
 # --- label namespace -------------------------------------------------------
 
@@ -222,39 +231,47 @@ def canonical_areas(roadmap_dir: pathlib.Path) -> set[str]:
 # --- gh plumbing (only reached in --apply/--nudge/--pr/--backfill IO paths) --
 
 
-def _gh(args: list[str], retries: int = 3) -> str:
-    """Run `gh`, retrying transient failures (API 5xx, secondary rate limits).
+def ensure_label(api: GitHub, repo: str, name: str, color: str, desc: str) -> None:
+    """Create only on a definite 404, and cache the result for a reconciliation pass."""
+    key = (repo, name)
+    if key in api.known_labels:
+        return
+    try:
+        api.request("GET", f"repos/{repo}/labels/{quote(name, safe='')}")
+    except APIError as error:
+        if error.status != 404:
+            raise
+        try:
+            api.request("POST", f"repos/{repo}/labels",
+                        {"name": name, "color": color, "description": desc})
+        except APIError as create_error:
+            # Another run may have created it between our probe and POST.
+            errors = create_error.data.get("errors", []) if isinstance(create_error.data, dict) else []
+            if create_error.status != 422 or not any(
+                isinstance(item, dict) and item.get("code") == "already_exists" for item in errors
+            ):
+                raise
+    api.known_labels.add(key)
 
-    Every call site is idempotent (label add/remove, `label create --force`, and
-    comments guarded by a marker), so a retry after a partial failure is safe.
-    """
-    last = ""
-    for attempt in range(retries):
-        r = subprocess.run(
-            ["gh", *args], text=True,
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-        )
-        if r.returncode == 0:
-            return r.stdout or ""
-        last = r.stderr or ""
-        if attempt < retries - 1:
-            time.sleep(2 * (attempt + 1))
-    raise RuntimeError(f"gh {' '.join(args)} failed after {retries} tries: {last}")
 
-
-def ensure_label(repo: str, name: str, color: str, desc: str) -> None:
-    """Create the label if missing (idempotent; `--force` heals colour/desc)."""
-    _gh([
-        "label", "create", name, "--repo", repo,
-        "--color", color, "--description", desc, "--force",
-    ])
+def sync_labels(api: GitHub, repo: str, areas: set[str]) -> None:
+    """Maintain presentation separately from the per-PR event path (manual opt-in)."""
+    existing = {row["name"]: row for row in api.items(f"repos/{repo}/labels")}
+    for name in sorted({NONE_LABEL, UNKNOWN_LABEL} | {area_label(a) for a in areas}):
+        color, desc = _label_meta(name, areas)
+        row = existing.get(name)
+        if row is None:
+            ensure_label(api, repo, name, color, desc)
+        elif row["color"].lower() != color or (row.get("description") or "") != desc:
+            api.request("PATCH", f"repos/{repo}/labels/{quote(name, safe='')}",
+                        {"color": color, "description": desc})
 
 
 def _label_meta(name: str, areas: set[str]) -> tuple[str, str]:
     if name == NONE_LABEL:
         return NONE_COLOR, "No roadmap association (declared, infrastructure, or pin-only bump)"
     if name == UNKNOWN_LABEL:
-        return UNKNOWN_COLOR, "Missing, invalid, or conflicting roadmap association"
+        return UNKNOWN_COLOR, "Missing, invalid, conflicting, or unverifiable roadmap association"
     return AREA_COLOR, "PR declares the {} roadmap as its primary association".format(
         name[len("roadmap/"):])
 
@@ -274,148 +291,381 @@ NUDGE_BODY = (
 )
 
 
-def apply_label(repo: str, pr: int, target: str, areas: set[str]) -> None:
-    """Set the PR's roadmap/* label to `target`, removing any stale ones."""
-    color, desc = _label_meta(target, areas)
-    ensure_label(repo, target, color, desc)
-    current = json.loads(_gh([
-        "pr", "view", str(pr), "--repo", repo, "--json", "labels",
-    ]))["labels"]
-    have = {l["name"] for l in current}
-    stale = [n for n in have if n.startswith("roadmap/") and n != target]
-    edits: list[str] = []
+def apply_label(api: GitHub, repo: str, pr: int, target: str, areas: set[str], current) -> None:
+    """Change only roadmap labels; preserve every unrelated label."""
+    have = {item["name"] for item in current}
+    stale = sorted(n for n in have if n.startswith("roadmap/") and n != target)
+    if target in have and not stale:
+        api.skip_write("roadmap-label")
+        return  # No label creation, presentation update, or mutation for an unchanged PR.
     if target not in have:
-        edits += ["--add-label", target]
-    for s in stale:
-        edits += ["--remove-label", s]
-    if edits:  # nothing to do when the PR already carries exactly this label
-        _gh(["pr", "edit", str(pr), "--repo", repo, *edits])
+        color, desc = _label_meta(target, areas)
+        ensure_label(api, repo, target, color, desc)
+        api.request("POST", f"repos/{repo}/issues/{pr}/labels", {"labels": [target]})
+    for name in stale:
+        try:
+            api.request("DELETE", f"repos/{repo}/issues/{pr}/labels/{quote(name, safe='')}")
+        except APIError as error:
+            if error.status != 404:  # A concurrent reconciliation already removed it.
+                raise
 
 
-def _already_nudged(repo: str, pr: int) -> bool:
-    comments = json.loads(_gh([
-        "pr", "view", str(pr), "--repo", repo, "--json", "comments",
-    ]))["comments"]
-    return any(NUDGE_MARKER in (c.get("body") or "") for c in comments)
-
-
-def nudge(repo: str, pr: int) -> None:
-    """Post the citation nudge once (idempotent via a hidden marker)."""
-    if _already_nudged(repo, pr):
+def nudge(api: GitHub, repo: str, pr: int) -> None:
+    """Post the attribution nudge once; never retry an ambiguous comment POST."""
+    comments = api.items(f"repos/{repo}/issues/{pr}/comments")
+    if any(NUDGE_MARKER in (c.get("body") or "") for c in comments):
         return
-    _gh(["pr", "comment", str(pr), "--repo", repo, "--body", NUDGE_BODY])
-
-
-def _pr_fields(repo: str, pr: int) -> tuple[str, str, list[str]]:
-    d = json.loads(_gh([
-        "pr", "view", str(pr), "--repo", repo, "--json", "title,body,files",
-    ]))
-    return d.get("title") or "", d.get("body") or "", [f["path"] for f in d.get("files") or []]
+    api.request("POST", f"repos/{repo}/issues/{pr}/comments", {"body": NUDGE_BODY})
 
 
 # --- CLI -------------------------------------------------------------------
 
 
-def _run_one(args, areas) -> int:
-    title, body, files = _pr_fields(args.repo, args.pr)
-    label = classify(title, body, files, areas)
-    print(f"#{args.pr}\t{label}\t{title}")
+MAX_RETRIES = 5
+
+
+@functools.lru_cache(maxsize=1)
+def policy_key():
+    """Hash the three classifier/client/nudge source files, cached for this process.
+
+    Any source-byte change invalidates saved successes and retry budgets.
+    """
+    root = pathlib.Path(__file__).parent
+    return hashlib.sha256(b"".join((root / name).read_bytes() for name in
+                          ("roadmap_label.py", "github_api.py", "structure_nudge.py"))).hexdigest()
+
+
+def input_key(info, areas):
+    """Hash head SHA, base branch name, body, state, sorted areas, and policy.
+
+    Labels, comments, title, and the moving base SHA do not affect this identity;
+    ``RecoveryState.select`` checks roadmap-label drift separately.
+    """
+    # Comments/status labels and a moving main tip do not change a PR's attribution inputs.
+    values = {"head": info["head"]["sha"], "base": info["base"]["ref"],
+              "body": info.get("body") or "", "state": info["state"], "areas": sorted(areas), "policy": policy_key()}
+    return hashlib.sha256(json.dumps(values, sort_keys=True).encode()).hexdigest()
+
+
+class RecoveryState:
+    """Persist successful input hashes and bounded retries without storing PR bodies."""
+
+    def __init__(self, path=None, *, reset=False):
+        """Load and validate an existing state file, or start empty if absent/reset.
+
+        Invalid saved records raise; ``reset`` bypasses loading the file entirely.
+        """
+        self.records, self.inputs, self.seen = {}, {}, set()
+        self.listed = False
+        if path and not reset and pathlib.Path(path).is_file():
+            value = json.loads(pathlib.Path(path).read_text())
+            if value.get("version") != 1 or not isinstance(value.get("prs"), dict):
+                raise RuntimeError("invalid recovery state")
+            for number, record in value["prs"].items():
+                if not number.isdigit() or not isinstance(record, dict):
+                    raise RuntimeError("invalid recovery record")
+                if not re.fullmatch(r"[0-9a-f]{64}", record.get("key", "")) or type(record.get("attempts")) is not int or not 0 <= record["attempts"] <= MAX_RETRIES:
+                    raise RuntimeError("invalid recovery retry/input hash")
+                if record["attempts"] == 0 and not isinstance(record.get("label"), str):
+                    raise RuntimeError("invalid recovery success label")
+                if "retry_at" in record:
+                    retry_at = record["retry_at"]
+                    if type(retry_at) not in (int, float) or not 0 <= retry_at < math.inf:
+                        raise RuntimeError("invalid recovery retry timestamp")
+                self.records[int(number)] = record
+        if reset:
+            self.records.clear()
+
+    def select(self, info, areas):
+        """Record this PR as seen and return whether its current inputs need work.
+
+        Remember its input hash for failures, discard records for changed inputs
+        or elapsed cooldowns, and skip matching successes with the right label.
+        Exhausted retries stay skipped until cooldown, input change, or reset.
+        """
+        number = info["number"]
+        key = input_key(info, areas)
+        self.inputs[number] = key
+        self.seen.add(number)
+        record = self.records.get(number)
+        if not record or record["key"] != key:
+            self.records.pop(number, None)
+            return True  # Unknown/changed inputs self-heal even outside the time window.
+        if record["attempts"] >= MAX_RETRIES:
+            retry_at = record.get("retry_at")
+            if retry_at is not None and time.time() >= retry_at:
+                self.records.pop(number)
+                return True
+            print(f"::warning::PR #{number}: recovery retries exhausted; " +
+                  (f"automatic retry after epoch {retry_at}" if retry_at else "change its inputs or run a full scan"))
+            return False
+        if record["attempts"]:
+            return True  # Retry even when a previous successful window has passed it.
+        current = {item["name"] for item in info["labels"] if item["name"].startswith("roadmap/")}
+        return current != {record["label"]}  # A changed roadmap label must self-heal too.
+
+    def success(self, number, label, key):
+        """Replace retries with the label and input hash actually processed."""
+        self.records[number] = {"key": key, "label": label, "attempts": 0}
+
+    def failure(self, number, error, key=None, *, transient=False):
+        """Count a failure for these inputs, capped at ``MAX_RETRIES``.
+
+        Default to the hash remembered by ``select``; changed inputs restart the
+        count. At exhaustion, transient or HTTP 5xx errors get a six-hour
+        cooldown; other errors require changed inputs or an explicit reset.
+        """
+        key = key or self.inputs[number]
+        previous = self.records.get(number, {})
+        attempts = previous.get("attempts", 0) if previous.get("key") == key else 0
+        self.records[number] = {"key": key, "attempts": min(MAX_RETRIES, attempts + 1),
+                                "error": str(error)[:300]}
+        if attempts + 1 >= MAX_RETRIES and (transient or isinstance(error, APIError) and error.status >= 500):
+            # Persistent server/input-listing failures can recover without a PR edit.
+            # Pause six hours between bounded retry cycles instead of quarantining forever.
+            self.records[number]["retry_at"] = time.time() + 6 * 3600
+
+    def save(self, path):
+        """Atomically replace the state file, retaining progress on failed runs.
+
+        Once ``listed`` marks a complete listing, omit unseen PRs from the file;
+        an incomplete listing preserves them. In-memory records are unchanged.
+        """
+        records = {str(number): record for number, record in self.records.items()
+                   if not self.listed or number in self.seen}
+        target = pathlib.Path(path)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        temporary = target.with_suffix(".tmp")
+        temporary.write_text(json.dumps({"version": 1, "prs": records}, sort_keys=True))
+        temporary.replace(target)
+
+    def report(self):
+        """Report pending/exhausted retries to stderr and the Actions summary.
+
+        The summary lists PR numbers and attempt counts, including exhausted
+        records still waiting for their cooldown; it does not change state.
+        """
+        pending = [number for number, record in self.records.items() if 0 < record["attempts"] < MAX_RETRIES]
+        exhausted = [number for number, record in self.records.items() if record["attempts"] == MAX_RETRIES]
+        summary = f"Recovery: {len(pending)} PRs queued for retry; {len(exhausted)} exhausted."
+        print(summary, file=sys.stderr)
+        if os.environ.get("GITHUB_STEP_SUMMARY"):
+            with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as stream:
+                stream.write("\n" + summary + "\n")
+                for number in pending + exhausted:
+                    stream.write(f"- #{number}: attempt {self.records[number]['attempts']}/{MAX_RETRIES}\n")
+
+
+def run_pr(api, args, areas, pr, snapshot=None, preserve_labels=False):
+    """Return a PR's label, optionally applying it and an advisory structure comment.
+
+    Reuse a supplied metadata/files snapshot or fetch one through ``api``.
+    Incomplete diffs classify conservatively and skip nudges. ``preserve_labels``
+    suppresses label writes for historical backfills; structure analysis remains
+    independent. Record the processed input hash and completeness on ``args``
+    for recovery, and propagate label errors to its retry handling.
+    """
+    snapshot = snapshot if snapshot is not None else pr_snapshot(api, args.repo, pr)
+    info = snapshot["info"]
+    title, body = info.get("title") or "", info.get("body") or ""
+    files = [row["filename"] for row in snapshot["files"]]
+    incomplete = info.get("incomplete_files", False)
+    if incomplete:
+        label = NONE_LABEL if files and is_infra(files) else UNKNOWN_LABEL
+        print(f"::notice::PR #{pr}: incomplete diff; using {label} and skipping structure analysis")
+    else:
+        label = classify(title, body, files, areas)
+    args._processed_key = input_key(info, areas)
+    args._processed_incomplete = incomplete and not info.get("files_capped", False)
+    state_column = info["state"].upper() + "\t" if args.backfill else ""
+    print(f"#{pr}\t{state_column}{label}\t{title}")
     declared_present, declared = parse_declared_area(body, areas)
-    if (is_infra(files) or is_pin_only(files)) and declared_present and declared not in {None, "none"}:
+    if label == NONE_LABEL and (is_infra(files) or is_pin_only(files)) and declared_present and declared not in {None, "none"}:
         reason = "infrastructure/empty diff" if is_infra(files) else "pin-only bump"
-        print(
-            f"::notice::Roadmap: {declared} is overridden by the {reason} classification"
-        )
-    if args.apply:
-        apply_label(args.repo, args.pr, label, areas)
-        if args.nudge and label == UNKNOWN_LABEL:
-            nudge(args.repo, args.pr)
-    return 0
+        print(f"::notice::Roadmap: {declared} is overridden by the {reason} classification")
+    if args.apply and not preserve_labels:
+        apply_label(api, args.repo, pr, label, areas, info["labels"])
+        if args.nudge and args.pr is not None and not incomplete and label == UNKNOWN_LABEL:
+            nudge(api, args.repo, pr)
+    if args.structure_nudge and info["state"] == "open" and not incomplete:
+        try:
+            import structure_nudge
+            structure_nudge.run_pr(args.repo, pr, args.apply, api=api, snapshot=snapshot)
+        except Deferred:
+            # A recovery pass must not advance its watermark past an unapplied comment.
+            if args.reconcile_open:
+                raise
+            print(f"::warning::Structure nudge for #{pr} deferred; hourly reconciliation will retry")
+        except Exception as error:
+            if args.reconcile_open:
+                raise  # Preserve the recovery window for a transient advisory failure too.
+            print(f"::warning::Structure nudge for #{pr} failed: {error}")
+    return label
 
 
-def _run_backfill(args, areas) -> int:
-    prs = json.loads(_gh([
-        "pr", "list", "--repo", args.repo, "--state", "all",
-        "--limit", str(args.limit),
-        "--json", "number,title,body,files,state,labels",
-    ]))
-    from collections import Counter
-    tally: Counter[str] = Counter()
-    plan = []
-    for p in prs:
-        files = [f["path"] for f in p.get("files") or []]
-        label = classify(p.get("title") or "", p.get("body") or "", files, areas)
-        tally[label] += 1
-        current = {
-            item["name"] for item in p.get("labels") or []
-            if item["name"].startswith("roadmap/")
-        }
-        plan.append((p["number"], label, current))
-        print(f"#{p['number']}\t{p['state']}\t{label}\t{p.get('title','')}")
+def recovery_since(api, repo):
+    """Only successful recovery runs advance the window; overlap their start time."""
+    runs = api.request("GET", f"repos/{repo}/actions/workflows/roadmap-label-reconcile.yml/runs"
+                       "?status=success&branch=main&per_page=1")["workflow_runs"]
+    if not runs:
+        return "1970-01-01T00:00:00Z"
+    import datetime as dt
+    start = dt.datetime.fromisoformat(runs[0]["run_started_at"].replace("Z", "+00:00"))
+    # Match the status reconciler's overlap for clock skew and concurrent listing changes.
+    return (start - dt.timedelta(minutes=2)).strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    failed: list[int] = []
-    if args.apply:
-        # A per-PR failure must not abandon the rest of the backfill; collect and
-        # retry once at the end (transient API errors are already retried in _gh).
-        for num, label, current in plan:
-            if current == {label}:
+
+def candidates(api, args, areas):
+    """Yield PR numbers needing inspection, without changing GitHub state.
+
+    Page open PRs for recovery or all PRs for backfills. Saved input hashes and
+    retries select recovery work; without state, use the successful-run window
+    plus missing/invalid labels. A truncated recovery listing raises instead of
+    allowing its progress to be treated as complete.
+    """
+    since = args.since
+    if args.reconcile_open and since == "auto" and not getattr(args, "_state", None):
+        since = recovery_since(api, args.repo)
+    state = "open" if args.reconcile_open else "all"
+    recovery = getattr(args, "_state", None)
+    order = "created" if recovery else "updated" if args.reconcile_open else "created"
+    count = 0
+    valid = {NONE_LABEL, UNKNOWN_LABEL} | {area_label(a) for a in areas}
+    for page in api.pages(f"repos/{args.repo}/pulls?state={state}&sort={order}&direction=desc"):
+        for info in page:
+            if count >= args.limit:
+                if args.reconcile_open:
+                    raise RuntimeError("PR listing reached --limit; increase it to complete reconciliation")
+                return  # Historical backfills intentionally inspect only the requested count.
+            count += 1
+            if recovery:
+                decision = recovery.select(info, areas)
+                if decision is False:
+                    continue
+                if decision is True:
+                    yield info["number"]
+                    continue
+            current = {item["name"] for item in info["labels"] if item["name"].startswith("roadmap/")}
+            # Old PRs with missing/invalid labels also self-heal, regardless of the window.
+            if args.reconcile_open and since and info["updated_at"] < since and len(current) == 1 and current <= valid:
                 continue
-            if current and current != {label} and not args.allow_relabel:
-                print(
-                    f"  - #{num}: preserving {', '.join(sorted(current))}; "
-                    "pass --allow-relabel to change it",
-                    file=sys.stderr,
-                )
+            if args.apply and args.backfill and current and not args.allow_relabel:
                 continue
-            try:
-                apply_label(args.repo, num, label, areas)  # never nudges
-            except Exception as e:  # noqa: BLE001 -- keep going, report at the end
-                print(f"  ! #{num}: {e}", file=sys.stderr)
-                failed.append(num)
-        for num in list(failed):
-            label = next(label for plan_num, label, _ in plan if plan_num == num)
-            try:
-                apply_label(args.repo, num, label, areas)
-                failed.remove(num)
-            except Exception as e:  # noqa: BLE001
-                print(f"  ! #{num} (retry): {e}", file=sys.stderr)
-
-    print("\n=== summary ===", file=sys.stderr)
-    for name, n in sorted(tally.items(), key=lambda kv: -kv[1]):
-        print(f"  {name:24} {n}", file=sys.stderr)
-    if failed:
-        print(f"  UNAPPLIED (needs another run): {failed}", file=sys.stderr)
-        return 1
-    return 0
+            yield info["number"]
 
 
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(description="Assign roadmap labels to PRs.")
+    ap = argparse.ArgumentParser(description="Assign roadmap labels and reconcile missed events.")
     ap.add_argument("--repo", default="TauCetiProject/TauCeti")
-    ap.add_argument("--roadmap-dir", required=True,
-                    help="path to a TauCetiRoadmap checkout (for the canonical area set)")
-    ap.add_argument("--pr", type=int, help="classify a single PR")
-    ap.add_argument("--backfill", action="store_true", help="classify every PR")
-    ap.add_argument("--limit", type=int, default=5000, help="max PRs for --backfill")
-    ap.add_argument("--apply", action="store_true", help="write the label to the PR(s)")
-    ap.add_argument(
-        "--allow-relabel", action="store_true",
-        help="with --backfill --apply, permit changing an existing roadmap/* label",
-    )
-    ap.add_argument("--nudge", action="store_true",
-                    help="with --pr --apply: comment once when the label is roadmap/Unknown")
-    a = ap.parse_args(argv)
-
-    areas = canonical_areas(pathlib.Path(a.roadmap_dir))
+    ap.add_argument("--roadmap-dir", required=True)
+    mode = ap.add_mutually_exclusive_group(required=True)
+    mode.add_argument("--pr", type=int)
+    mode.add_argument("--backfill", action="store_true", help="inspect historical PRs")
+    mode.add_argument("--reconcile-open", action="store_true", help="repair open PRs since a successful recovery")
+    ap.add_argument("--since", default="auto", help="recovery window start (ISO UTC); auto uses the previous success")
+    ap.add_argument("--limit", type=int, default=5000)
+    ap.add_argument("--apply", action="store_true")
+    ap.add_argument("--max-wait", type=int, default=180, help="cumulative quota/transient retry wait budget in seconds")
+    ap.add_argument("--state-in", help="previous recovery input hashes and retry queue")
+    ap.add_argument("--state-out", help="recovery input hashes and retries for the next run")
+    ap.add_argument("--retry-exhausted", action="store_true", help="reset cached successes and exhausted retries")
+    ap.add_argument("--allow-relabel", action="store_true")
+    ap.add_argument("--nudge", action="store_true")
+    ap.add_argument("--structure-nudge", action="store_true", help="reuse the diff for the advisory structure nudge")
+    ap.add_argument("--sync-labels", action="store_true", help="also maintain repository label colours/descriptions")
+    args = ap.parse_args(argv)
+    if args.max_wait < 0:
+        ap.error("--max-wait must be nonnegative")
+    if args.limit < 1:
+        ap.error("--limit must be positive")
+    if args.since != "auto":
+        import datetime as dt
+        try:
+            moment = dt.datetime.fromisoformat(args.since.replace("Z", "+00:00"))
+            if moment.utcoffset() != dt.timedelta(0):
+                raise ValueError("UTC required")
+            args.since = moment.strftime("%Y-%m-%dT%H:%M:%SZ")
+        except ValueError:
+            ap.error("--since must be an ISO timestamp in UTC")
+    areas = canonical_areas(pathlib.Path(args.roadmap_dir))
     if not areas:
-        print(f"no roadmap areas found under {a.roadmap_dir}", file=sys.stderr)
+        print("no roadmap areas found", file=sys.stderr)
         return 2
-    if a.backfill:
-        return _run_backfill(a, areas)
-    if a.pr is not None:
-        return _run_one(a, areas)
-    ap.error("one of --pr or --backfill is required")
-    return 2
+    api = GitHub(max_wait=args.max_wait)
+    failed = False
+    args._state = None
+    try:
+        if args.reconcile_open and args.apply and args.state_out:
+            args._state = RecoveryState(args.state_in, reset=args.retry_exhausted)
+        if args.sync_labels and args.apply:
+            sync_labels(api, args.repo, areas)
+        if args.pr is not None:
+            run_pr(api, args, areas, args.pr)
+        elif args.backfill:
+            from collections import Counter
+            tally = Counter()
+            for pr, snapshot in history_snapshots(api, args.repo, args.limit):
+                if isinstance(snapshot, Exception):
+                    print(f"PR #{pr} unapplied: {snapshot}", file=sys.stderr)
+                    failed = True
+                    continue
+                current = {item["name"] for item in snapshot["info"]["labels"] if item["name"].startswith("roadmap/")}
+                # Keep the historical classification report even when existing labels are preserved.
+                try:
+                    label = run_pr(api, args, areas, pr, snapshot=snapshot,
+                                   preserve_labels=bool(current and not args.allow_relabel))
+                    tally[label] += 1
+                    if args.apply and current != {label} and current and not args.allow_relabel:
+                        print(f"PR #{pr}: preserving {sorted(current)}; pass --allow-relabel to change it", file=sys.stderr)
+                except Deferred:
+                    raise
+                except Exception as error:
+                    print(f"PR #{pr} unapplied: {error}", file=sys.stderr)
+                    failed = True
+            print("\n=== summary ===", file=sys.stderr)
+            for label, count in tally.most_common():
+                print(f"  {label}: {count}", file=sys.stderr)
+        else:
+            # Finish paging before mutations move PRs to the front of the updated list.
+            pending = list(candidates(api, args, areas))
+            if args._state:
+                args._state.listed = True
+            for pr in pending:
+                args._processed_key = None
+                args._processed_incomplete = False
+                try:
+                    label = run_pr(api, args, areas, pr)
+                    if args._state:
+                        if args._processed_incomplete:
+                            args._state.failure(pr, RuntimeError("temporary incomplete diff; queued for retry"),
+                                                args._processed_key, transient=True)
+                        else:
+                            args._state.success(pr, label, args._processed_key)
+                except Deferred:
+                    raise  # Do not hammer a blocked credential for each remaining PR.
+                except Exception as error:
+                    print(f"::warning::PR #{pr} unapplied: {error}", file=sys.stderr)
+                    if isinstance(error, APIError) and error.status == 0:
+                        raise  # A transport outage is global; stop instead of probing every PR.
+                    if args._state:
+                        args._state.failure(pr, error, args._processed_key)
+                    else:
+                        failed = True
+                finally:
+                    if args._state:
+                        args._state.save(args.state_out)
+        return 1 if failed else 0
+    except Deferred as error:
+        print(f"::warning::{error}; hourly reconciliation will retry", file=sys.stderr)
+        return 1  # A deferred recovery must not become the successful watermark.
+    except Exception as error:
+        print(f"Roadmap reconciliation failed: {error}", file=sys.stderr)
+        return 1
+    finally:
+        if args._state:
+            args._state.save(args.state_out)
+            args._state.report()
+        api.report()
 
 
 if __name__ == "__main__":

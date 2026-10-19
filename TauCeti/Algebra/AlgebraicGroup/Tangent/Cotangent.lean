@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.DerivationMap
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Naturality
 public import Mathlib.LinearAlgebra.Contraction
 public import Mathlib.RingTheory.Ideal.Cotangent
@@ -33,6 +34,12 @@ to turn the coefficient-natural adjoint action into an action on one fixed finit
   space and counit-valued derivations.
 * `Derivation.tangentScalarExtensionEquiv`: scalar extension of the
   cotangent dual when the cotangent space is finite projective.
+* `TauCeti.Bialgebra.cotangentSpaceMap` and `Derivation.dualCotangentMap`: a bialgebra morphism
+  `φ : A →ₐc[R] A'` maps cotangent spaces covariantly, hence their duals contravariantly; the
+  dual map is the differential of `Spec A' → Spec A` and agrees with precomposition of
+  derivations (`Derivation.cotangentLinearEquiv_comp_cotangentSpaceMap`,
+  `Derivation.cotangentLinearEquiv_dualCotangentMap`).
+* `Derivation.dualCotangentEquiv`: the differential of a bialgebra equivalence.
 
 ## References
 
@@ -128,6 +135,30 @@ lemma cotangentMap_mul (a b : A) :
   · dsimp [x, y]
     simp only [_root_.Bialgebra.counit_mul, Algebra.smul_def, map_mul]
     ring
+
+section Map
+
+variable {R A} {A' : Type*} [CommRing A'] [Bialgebra R A']
+
+/-- The cotangent map of a bialgebra morphism: `φ : A →ₐc[R] A'` sends the augmentation ideal of
+`A` into that of `A'`, hence the cotangent space of `A` to that of `A'`. -/
+noncomputable def cotangentSpaceMap (φ : A →ₐc[R] A') :
+    CotangentSpace R A →ₗ[R] CotangentSpace R A' :=
+  Ideal.mapCotangent _ _ (φ : A →ₐ[R] A') fun x hx ↦ by
+    simp only [RingHom.mem_ker, Ideal.mem_comap] at hx ⊢
+    simpa only [_root_.Bialgebra.counitAlgHom_apply, AlgHom.coe_toRingHom, BialgHom.coe_toAlgHom,
+      CoalgHomClass.counit_comp_apply] using hx
+
+/-- The cotangent map sends the displacement of `a` from the identity to that of `φ a`. -/
+@[simp]
+lemma cotangentSpaceMap_cotangentMap (φ : A →ₐc[R] A') (a : A) :
+    cotangentSpaceMap φ (cotangentMap R A a) = cotangentMap R A' (φ a) := by
+  rw [cotangentMap_apply, cotangentMap_apply, cotangentSpaceMap, Ideal.mapCotangent_toCotangent]
+  congr 1
+  ext
+  simp [CoalgHomClass.counit_comp_apply, AlgHomClass.commutes]
+
+end Map
 
 end Bialgebra
 
@@ -246,6 +277,16 @@ lemma cotangentLinearEquiv_apply_apply
     (R := R) (A := A) (B := B)
     (f (Bialgebra.cotangentMap R A a) : Bialgebra.CounitAlgebra R A B)).symm
 
+/-- Cotangent duality evaluates a functional on the first-order displacement, after the
+canonical identification of counit-valued coefficients with the coefficient ring. -/
+-- Apply before the inner cotangent evaluation introduces a coefficient-synonym coercion.
+@[simp↓]
+lemma algEquivSelf_cotangentLinearEquiv_apply
+    (f : Bialgebra.CotangentSpace R A →ₗ[R] B) (a : A) :
+    Bialgebra.CounitAlgebra.algEquivSelf R A B (cotangentLinearEquiv f a) =
+      f (Bialgebra.cotangentMap R A a) := by
+  rw [cotangentLinearEquiv_apply, algEquivSelf_ofCotangentLinearMap_apply]
+
 /-- The inverse cotangent-duality equivalence evaluates a derivation on a
 representative in the augmentation ideal. -/
 @[simp]
@@ -258,6 +299,107 @@ lemma cotangentLinearEquiv_symm_toCotangent
   exact toCotangentLinearMap_toCotangent d x
 
 end Ring
+
+section Functoriality
+
+variable {A' A'' : Type*} [CommRing A'] [Bialgebra R A'] [CommRing A''] [Bialgebra R A'']
+
+/-- The differential of a bialgebra morphism `φ : A →ₐc[R] A'`, that is, of the morphism
+`Spec A' → Spec A`, on Lie algebras written as duals of augmentation cotangent spaces. -/
+noncomputable def dualCotangentMap (φ : A →ₐc[R] A') :
+    Module.Dual R (Bialgebra.CotangentSpace R A') →ₗ[R]
+      Module.Dual R (Bialgebra.CotangentSpace R A) :=
+  (Bialgebra.cotangentSpaceMap φ).dualMap
+
+/-- Under cotangent duality, precomposition with the cotangent map of `φ` is precomposition of
+derivations along `φ`. -/
+lemma cotangentLinearEquiv_comp_cotangentSpaceMap [Ring B] [Algebra R B] (φ : A →ₐc[R] A')
+    (f : Bialgebra.CotangentSpace R A' →ₗ[R] B) :
+    cotangentLinearEquiv (R := R) (A := A) (B := B) (f ∘ₗ Bialgebra.cotangentSpaceMap φ) =
+      derivationComp (B := B) φ (cotangentLinearEquiv (R := R) (A := A') (B := B) f) := by
+  ext a
+  rw [cotangentLinearEquiv_apply_apply, derivationComp_apply, cotangentLinearEquiv_apply_apply,
+    LinearMap.comp_apply, Bialgebra.cotangentSpaceMap_cotangentMap]
+  -- Both sides are the same value of `B`, read in the two counit coefficient synonyms.
+  rfl
+
+/-- The differential on cotangent duals is precomposition of derivations along `φ`. -/
+@[simp]
+lemma cotangentLinearEquiv_dualCotangentMap (φ : A →ₐc[R] A')
+    (y : Module.Dual R (Bialgebra.CotangentSpace R A')) :
+    cotangentLinearEquiv (R := R) (A := A) (B := R) (dualCotangentMap φ y) =
+      derivationComp (B := R) φ (cotangentLinearEquiv (R := R) (A := A') (B := R) y) := by
+  rw [dualCotangentMap, LinearMap.dualMap_apply']
+  exact cotangentLinearEquiv_comp_cotangentSpaceMap φ y
+
+/-- A surjective coordinate map induces an injective differential on cotangent duals. -/
+lemma _root_.BialgHom.dualCotangentMap_injective_of_surjective (φ : A →ₐc[R] A')
+    (hφ : Function.Surjective φ) : Function.Injective (dualCotangentMap φ) := by
+  intro x y hxy
+  apply (cotangentLinearEquiv (R := R) (A := A') (B := R)).injective
+  apply derivationComp_injective_of_surjective φ hφ
+  simpa only [← cotangentLinearEquiv_dualCotangentMap] using
+    congrArg (cotangentLinearEquiv (R := R) (A := A) (B := R)) hxy
+
+/-- The differential on cotangent duals of a derivation is its precomposition along `φ`. -/
+lemma dualCotangentMap_cotangentLinearEquiv_symm (φ : A →ₐc[R] A')
+    (d : Derivation R A' (Bialgebra.CounitAlgebra R A' R)) :
+    dualCotangentMap φ ((cotangentLinearEquiv (R := R) (A := A') (B := R)).symm d) =
+      (cotangentLinearEquiv (R := R) (A := A) (B := R)).symm (derivationComp (B := R) φ d) := by
+  rw [LinearEquiv.eq_symm_apply, cotangentLinearEquiv_dualCotangentMap,
+    LinearEquiv.apply_symm_apply]
+
+/-- The differential of the identity is the identity. -/
+@[simp]
+lemma dualCotangentMap_id : dualCotangentMap (BialgHom.id R A) = LinearMap.id := by
+  ext y : 1
+  apply (cotangentLinearEquiv (R := R) (A := A) (B := R)).injective
+  rw [cotangentLinearEquiv_dualCotangentMap, derivationComp_id, LinearMap.id_apply,
+    LinearMap.id_apply]
+
+/-- The differential is contravariantly functorial. -/
+lemma dualCotangentMap_comp (ψ : A' →ₐc[R] A'') (φ : A →ₐc[R] A') :
+    dualCotangentMap (ψ.comp φ) = dualCotangentMap φ ∘ₗ dualCotangentMap ψ := by
+  ext y : 1
+  apply (cotangentLinearEquiv (R := R) (A := A) (B := R)).injective
+  rw [LinearMap.comp_apply, cotangentLinearEquiv_dualCotangentMap,
+    cotangentLinearEquiv_dualCotangentMap, cotangentLinearEquiv_dualCotangentMap,
+    derivationComp_comp, LinearMap.comp_apply]
+
+/-- The differential of a bialgebra equivalence, as a linear equivalence of Lie algebras written
+as duals of augmentation cotangent spaces. -/
+noncomputable def dualCotangentEquiv (e : A ≃ₐc[R] A') :
+    Module.Dual R (Bialgebra.CotangentSpace R A') ≃ₗ[R]
+      Module.Dual R (Bialgebra.CotangentSpace R A) :=
+  LinearEquiv.ofLinearMap (dualCotangentMap (e : A →ₐc[R] A'))
+    (dualCotangentMap (e.symm : A' →ₐc[R] A))
+    (by rw [← dualCotangentMap_comp, BialgEquiv.symm_comp, dualCotangentMap_id])
+    (by rw [← dualCotangentMap_comp, BialgEquiv.comp_symm, dualCotangentMap_id])
+
+@[simp]
+lemma dualCotangentEquiv_apply (e : A ≃ₐc[R] A')
+    (y : Module.Dual R (Bialgebra.CotangentSpace R A')) :
+    dualCotangentEquiv e y = dualCotangentMap (e : A →ₐc[R] A') y :=
+  (rfl)
+
+@[simp]
+lemma dualCotangentEquiv_symm_apply (e : A ≃ₐc[R] A')
+    (y : Module.Dual R (Bialgebra.CotangentSpace R A)) :
+    (dualCotangentEquiv e).symm y = dualCotangentMap (e.symm : A' →ₐc[R] A) y :=
+  (rfl)
+
+lemma coe_dualCotangentEquiv (e : A ≃ₐc[R] A') :
+    (dualCotangentEquiv e : Module.Dual R (Bialgebra.CotangentSpace R A') →ₗ[R]
+      Module.Dual R (Bialgebra.CotangentSpace R A)) = dualCotangentMap (e : A →ₐc[R] A') :=
+  (rfl)
+
+/-- The differential of a bialgebra equivalence is bijective on cotangent duals. -/
+lemma _root_.BialgEquiv.dualCotangentMap_bijective (e : A ≃ₐc[R] A') :
+    Function.Bijective (dualCotangentMap (e : A →ₐc[R] A')) := by
+  simpa only [← coe_dualCotangentEquiv, LinearEquiv.coe_coe] using
+    (dualCotangentEquiv e).bijective
+
+end Functoriality
 
 section ScalarExtension
 
@@ -325,6 +467,15 @@ lemma tangentScalarExtensionEquiv_tmul_apply
       (b * algebraMap R B (f (Bialgebra.cotangentMap R A a)) :
         Bialgebra.CounitAlgebra R A B)).symm
 
+/-- Scalar extension evaluates a pure tangent tensor by multiplying its coefficient by the
+cotangent functional's value, in the original coefficient ring. -/
+lemma algEquivSelf_tangentScalarExtensionEquiv_tmul_apply
+    (b : B) (f : Module.Dual R (Bialgebra.CotangentSpace R A)) (a : A) :
+    Bialgebra.CounitAlgebra.algEquivSelf R A B
+        (tangentScalarExtensionEquiv (R := R) (A := A) (B := B) (b ⊗ₜ[R] f) a) =
+      b * algebraMap R B (f (Bialgebra.cotangentMap R A a)) :=
+  algEquivSelf_tangentScalarExtensionEquivBase_tmul_apply b f a
+
 /-- On pure tensors, scalar extension is coefficient change of the cotangent-dual tangent
 vector, followed by multiplication by the tensor coefficient. -/
 @[simp]
@@ -343,6 +494,25 @@ theorem tangentScalarExtensionEquiv_tmul
       (algebraMap R B (f (Bialgebra.cotangentMap R A a)) :
         Bialgebra.CounitAlgebra R A B)]
   exact algEquivSelf_tangentScalarExtensionEquivBase_tmul_apply b f a
+
+/-- Scalar extension of tangent vectors intertwines the differential of `φ : A →ₐc[R] A'` on
+cotangent duals with precomposition of `B`-valued derivations. -/
+lemma tangentScalarExtensionEquiv_lTensor_dualCotangentMap {A' : Type*} [CommRing A']
+    [Bialgebra R A'] [Module.Finite R (Bialgebra.CotangentSpace R A')]
+    [Module.Projective R (Bialgebra.CotangentSpace R A')] (φ : A →ₐc[R] A')
+    (x : B ⊗[R] Module.Dual R (Bialgebra.CotangentSpace R A')) :
+    tangentScalarExtensionEquiv (R := R) (A := A) (B := B)
+        (LinearMap.lTensor B (dualCotangentMap φ) x) =
+      derivationComp (B := B) φ
+        (tangentScalarExtensionEquiv (R := R) (A := A') (B := B) x) := by
+  induction x using TensorProduct.inductionOn with
+  | add x y hx hy => simp only [map_add, hx, hy]
+  | tmul b y =>
+    ext a
+    rw [LinearMap.lTensor_tmul, derivationComp_apply, tangentScalarExtensionEquiv_tmul_apply,
+      tangentScalarExtensionEquiv_tmul_apply, ← cotangentLinearEquiv_apply_apply,
+      ← cotangentLinearEquiv_apply_apply, cotangentLinearEquiv_dualCotangentMap,
+      derivationComp_apply]
 
 end ScalarExtension
 

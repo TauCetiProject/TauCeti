@@ -12,8 +12,9 @@ public import Mathlib.RingTheory.Ideal.Operations
 # Derivations and ideals
 
 A derivation `D : A → M` satisfies the Leibniz rule `D (a * b) = a • D b + b • D a`, so it maps
-the square `I ^ 2` of an ideal `I` of `A` into `I • M`. In particular, an element `f` of an ideal
-`I` with `D f ∉ I` does not lie in `I ^ 2`.
+the power `I ^ (n + 1)` of an ideal `I` of `A` into `I ^ n • M`. This is what makes every
+derivation continuous for the `I`-adic topologies. For `n = 1`, it maps the square `I ^ 2` into
+`I • M`; in particular, an element `f` of an ideal `I` with `D f ∉ I` does not lie in `I ^ 2`.
 
 This is the elementary half of the Jacobian criterion: if a partial derivative of `f` does not
 vanish at a point, then `f` is not in the square of the maximal ideal there. When the ambient
@@ -26,6 +27,8 @@ point and generators vanishing at that point.
 
 ## Main results
 
+* `Derivation.apply_mem_pow_smul_top_of_mem_pow_succ`: a derivation maps `I ^ (n + 1)` into
+  `I ^ n • M`.
 * `Derivation.apply_mem_smul_top_of_mem_sq`: a derivation maps `I ^ 2` into `I • M`.
 * `Derivation.apply_eq_zero_of_mem_span`: vanishing on generators that annihilate the target
   extends to their ideal span.
@@ -50,15 +53,25 @@ theorem apply_eq_zero_of_mem_span (D : Derivation R A M) {S : Set A}
   | add a b _ _ ha hb => simp [map_add, add_smul, ha, hb]
   | smul a b _ hb => simp [smul_eq_mul, D.leibniz, mul_smul, hb]
 
+/-- A derivation maps the power `I ^ (n + 1)` of an ideal `I` into `I ^ n • M`. -/
+theorem apply_mem_pow_smul_top_of_mem_pow_succ (D : Derivation R A M) {I : Ideal A} {n : ℕ}
+    {x : A} (hx : x ∈ I ^ (n + 1)) : D x ∈ I ^ n • (⊤ : Submodule A M) := by
+  induction n generalizing x with
+  | zero => simp
+  | succ n ih =>
+    rw [pow_succ'] at hx
+    refine Submodule.mul_induction_on hx (fun a ha b hb ↦ ?_) fun x y hx hy ↦ ?_
+    · -- `a • D b ∈ I • I ^ n • M` and `b • D a ∈ I ^ (n + 1) • M`
+      rw [D.leibniz, pow_succ', Submodule.mul_smul]
+      refine add_mem (Submodule.smul_mem_smul ha (ih hb)) ?_
+      rw [← Submodule.mul_smul, ← pow_succ']
+      exact Submodule.smul_mem_smul hb Submodule.mem_top
+    · rw [map_add]
+      exact add_mem hx hy
+
 /-- A derivation maps the square of an ideal `I` into `I • M`. -/
 theorem apply_mem_smul_top_of_mem_sq (D : Derivation R A M) {I : Ideal A} {x : A}
     (hx : x ∈ I ^ 2) : D x ∈ I • (⊤ : Submodule A M) := by
-  rw [pow_two] at hx
-  refine Submodule.mul_induction_on hx (fun a ha b hb ↦ ?_) fun x y hx hy ↦ ?_
-  · rw [D.leibniz]
-    exact add_mem (Submodule.smul_mem_smul ha Submodule.mem_top)
-      (Submodule.smul_mem_smul hb Submodule.mem_top)
-  · rw [map_add]
-    exact add_mem hx hy
+  simpa using D.apply_mem_pow_smul_top_of_mem_pow_succ (n := 1) hx
 
 end Derivation

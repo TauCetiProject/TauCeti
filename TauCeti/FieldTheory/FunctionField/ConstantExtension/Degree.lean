@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.IntermediateField
+public import Mathlib.FieldTheory.PurelyInseparable.Tower
+import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
 
 /-!
 # Degrees over subfields after extending constants
@@ -15,14 +17,21 @@ For an exact constant field `k` in `F`, extending constants by a separable algeb
 containing `k`, with `E` replaced by its compositum `E · k'`. The ambient field `F'` is the
 compositum of `F` and `k'`, expressed by `constantCompositum F k' F' = ⊤`. The constant extension
 may be infinite; in particular this applies to an algebraic closure over a perfect constant
-field. No function-field hypothesis is needed.
+field. No function-field hypothesis is needed. Without separability or exactness the degree
+`[F : k(x)]` can only drop. For a purely inseparable extension of constants, the degree
+`[F : E]` is preserved whenever `F / E` is separable algebraic, without exactness of the constants.
+This uses Mathlib's linear disjointness of separable and purely inseparable extensions.
 
 ## Main results
 
 * `TauCeti.finrank_over_adjoin_simple_eq_of_constantCompositum_eq_top`:
   `[F' : k'(x)] = [F : k(x)]` for every `x ∈ F`.
+* `TauCeti.finrank_over_adjoin_simple_le_of_constantCompositum_eq_top`:
+  `[F' : k'(x)] ≤ [F : k(x)]` for any constant extension, when `F / k(x)` is finite.
 * `TauCeti.finrank_over_constantCompositum_eq_finrank_of_constantCompositum_eq_top`:
   `[F' : E · k'] = [F : E]` for every subfield `E` of `F` containing `k`.
+* `TauCeti.finrank_over_constantCompositum_eq_finrank_of_isPurelyInseparable`:
+  `[F' : E · k'] = [F : E]` for purely inseparable constants and separable algebraic `F / E`.
 * `TauCeti.adjoin_simple_eq_top_of_constantCompositum_eq_top` and
   `TauCeti.minpoly_algebraMap_eq_map_of_constantCompositum_eq_top`: a primitive element `y` of
   `F / E` stays primitive over `E · k'`; when `F / E` is finite, its minimal polynomial
@@ -53,17 +62,58 @@ theorem finrank_over_adjoin_simple_eq_of_constantCompositum_eq_top
     [Algebra.IsSeparable k k'] (hex : IsIntegrallyClosedIn k F)
     (h : constantCompositum F k' F' = ⊤) (x : F) :
     Module.finrank k'⟮algebraMap F F' x⟯ F' = Module.finrank k⟮x⟯ F := by
-  let f := IsScalarTower.toAlgHom k F F'
-  have hmap : (f.comp (k⟮x⟯).val).fieldRange = k⟮algebraMap F F' x⟯ := by
-    rw [IntermediateField.fieldRange_comp_val, IntermediateField.adjoin_map]
-    simp only [Set.image_singleton, f, IsScalarTower.toAlgHom_apply]
-  have hrange : Set.range (algebraMap k⟮x⟯ F') = (k⟮algebraMap F F' x⟯ : Set F') := by
-    -- Both maps from `k⟮x⟯` to `F'` are the inclusion followed by `F → F'`.
-    exact congrArg SetLike.coe hmap
   let b := Module.Basis.ofVectorSpace k⟮x⟯ F
   have hdegree := Module.finrank_eq_nat_card_basis (constantExtensionBasis hex h k⟮x⟯ b)
-  rwa [hrange, IntermediateField.adjoin_adjoin_right, ← Module.finrank_eq_nat_card_basis b]
-    at hdegree
+  rwa [IntermediateField.range_algebraMap_adjoin_simple, IntermediateField.adjoin_adjoin_right,
+    ← Module.finrank_eq_nat_card_basis b] at hdegree
+
+omit [Algebra k k'] [Algebra k F'] [IsScalarTower k k' F'] [IsScalarTower k F F'] in
+private theorem span_range_basis_of_finite_constantCompositum
+    (h : constantCompositum F k' F' = ⊤) (C : IntermediateField k F)
+    [FiniteDimensional C F] {ι : Type*} (b : Module.Basis ι C F) :
+    Submodule.span (IntermediateField.adjoin k' (Set.range (algebraMap C F')))
+      (Set.range (algebraMap F F' ∘ b)) = ⊤ := by
+  let C' := IntermediateField.adjoin k' (Set.range (algebraMap C F'))
+  let g : C →+* C' := (algebraMap C F').codRestrict C'.toSubring fun x =>
+    IntermediateField.subset_adjoin k' _ ⟨x, rfl⟩
+  let : Algebra C C' := g.toAlgebra
+  have : IsScalarTower C C' F' := .of_algebraMap_eq fun _ => rfl
+  let f := IsScalarTower.toAlgHom C F F'
+  let A := IntermediateField.adjoin C' (Set.range (algebraMap F F'))
+  have hle : (constantCompositum F k' F' : Set F') ⊆ A := by
+    rw [constantCompositum_def]
+    refine (IntermediateField.adjoin_subset_adjoin_iff F).2 ?_
+    constructor
+    · rintro _ ⟨x, rfl⟩
+      exact IntermediateField.subset_adjoin C' _ ⟨x, rfl⟩
+    · rintro _ ⟨c, rfl⟩
+      rw [IsScalarTower.algebraMap_apply k' C' F' c]
+      exact A.algebraMap_mem (algebraMap k' C' c)
+  have htop : A = ⊤ := eq_top_iff.mpr fun z _ => hle (by simp [h])
+  have halg : ∀ z ∈ Set.range (algebraMap F F'), IsAlgebraic C' z := by
+    rintro _ ⟨x, rfl⟩
+    have hx : IsAlgebraic C (algebraMap F F' x) :=
+      IsAlgebraic.algHom f (Algebra.IsAlgebraic.isAlgebraic (R := C) x)
+    exact hx.tower_top C'
+  have htop' : (IntermediateField.adjoin C' (Set.range (algebraMap F F'))).toSubalgebra =
+      ⊤ := by
+    simpa only [A, IntermediateField.top_toSubalgebra] using
+      congrArg IntermediateField.toSubalgebra htop
+  rw [IntermediateField.adjoin_toSubalgebra_of_isAlgebraic halg] at htop'
+  exact C.span_range_basis_eq_top_of_adjoin_eq_top b htop'
+
+/-- **Extending constants can only lower a finite degree over `k(x)`**: if `F' = F · k'`
+and `F / k(x)` is finite, then `[F' : k'(x)] ≤ [F : k(x)]`. The extension `k' / k` may be
+transcendental; neither separability nor exactness of the constant field is assumed. -/
+theorem finrank_over_adjoin_simple_le_of_constantCompositum_eq_top
+    (h : constantCompositum F k' F' = ⊤) (x : F) [FiniteDimensional k⟮x⟯ F] :
+    Module.finrank k'⟮algebraMap F F' x⟯ F' ≤ Module.finrank k⟮x⟯ F := by
+  let b := Module.finBasis k⟮x⟯ F
+  have hle := finrank_range_le_card
+    (R := IntermediateField.adjoin k' (Set.range (algebraMap k⟮x⟯ F'))) (algebraMap F F' ∘ b)
+  rwa [Set.finrank, span_range_basis_of_finite_constantCompositum h k⟮x⟯ b, finrank_top,
+    Fintype.card_fin, IntermediateField.range_algebraMap_adjoin_simple,
+    IntermediateField.adjoin_adjoin_right] at hle
 
 /-- **A separable algebraic extension of an exact constant field preserves the degree over any
 subfield** (Stichtenoth, Proposition 3.6.1(c), for an arbitrary intermediate field): if `E` is a
@@ -102,6 +152,40 @@ theorem finrank_over_constantCompositum_eq_finrank_of_constantCompositum_eq_top 
       rfl
   exact (Module.finrank_eq_nat_card_basis b').trans
     (Module.finrank_eq_nat_card_basis b).symm
+
+/-- A purely inseparable constant extension preserves the degree of a separable algebraic
+extension `F / E`. No exactness assumption on the constants is needed. -/
+theorem finrank_over_constantCompositum_eq_finrank_of_isPurelyInseparable {E : Type*}
+    [Field E] [Algebra k E] [Algebra E F] [IsScalarTower k E F] [Algebra E F']
+    [IsScalarTower E F F'] [IsPurelyInseparable k k'] [Algebra.IsSeparable E F]
+    (h : constantCompositum F k' F' = ⊤) :
+    Module.finrank (constantCompositum E k' F') F' = Module.finrank E F := by
+  have : IsScalarTower k E F' := IsScalarTower.of_algebraMap_eq fun c ↦ by
+    rw [IsScalarTower.algebraMap_apply E F F', ← IsScalarTower.algebraMap_apply k E F,
+      ← IsScalarTower.algebraMap_apply k F F']
+  let C := constantCompositum E k' F'
+  let : Algebra k' C := constantCompositumAlgebra E k' F'
+  have : IsScalarTower k' C F' := isScalarTower_constantCompositum E k' F'
+  have : IsScalarTower k k' C := isScalarTower_base_constantCompositum k E k' F'
+  have hC : constantCompositum E k' C = ⊤ := (constantCompositum_eq_top_iff E k' F' C).mpr rfl
+  have : IsPurelyInseparable E C := isPurelyInseparable_of_constantCompositum_eq_top (k := k) hC
+  let f := IsScalarTower.toAlgHom E F F'
+  have : Algebra.IsSeparable E f.fieldRange := AlgEquiv.Algebra.isSeparable f.equivFieldRange
+  -- The two fields over `E` are respectively separable and purely inseparable.
+  have hd := f.fieldRange.linearDisjoint_of_isPurelyInseparable_of_isSeparable C
+  have hrank := hd.adjoin_rank_eq_rank_left_of_isAlgebraic_left
+  have htop : IntermediateField.adjoin C (f.fieldRange : Set F') = ⊤ := by
+    refine eq_top_iff.mpr fun z _ ↦ ?_
+    have hle : constantCompositum F k' F' ≤
+        (IntermediateField.adjoin C (f.fieldRange : Set F')).toSubfield.toIntermediateField
+          (fun a ↦ IntermediateField.subset_adjoin C _ ⟨a, rfl⟩) := by
+      apply (constantCompositum_le_iff F k' F').mpr
+      intro c
+      exact (IntermediateField.adjoin C (f.fieldRange : Set F')).algebraMap_mem
+        ⟨_, algebraMap_mem_constantCompositum E k' F' c⟩
+    exact hle (h ▸ IntermediateField.mem_top)
+  rw [htop, IntermediateField.rank_top'] at hrank
+  exact (congrArg Cardinal.toNat hrank).trans f.equivFieldRange.toLinearEquiv.finrank_eq.symm
 
 section Subfield
 

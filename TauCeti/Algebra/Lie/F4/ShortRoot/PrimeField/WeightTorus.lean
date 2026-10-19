@@ -66,14 +66,14 @@ def weightTorusDefiningIdeal : HopfIdeal (ZMod 2) Q :=
 split torus. -/
 def weightTorusQuotientIso :
     CommHopfAlgCat.quotient Q weightTorusDefiningIdeal ≅ generatorCodomain (.inr ()) :=
-  CommHopfAlgCat.quotientKerOfSurjectiveIso weightTorusRestriction
+  CommHopfAlgCat.Hom.quotientKerOfSurjectiveIso weightTorusRestriction
     weightTorusRestriction_surjective
 
 /-- The canonical quotient map followed by the torus isomorphism is restriction. -/
 @[reassoc (attr := simp)] theorem mkQuotient_comp_weightTorusQuotientIso_hom :
     CommHopfAlgCat.mkQuotient Q weightTorusDefiningIdeal ≫ weightTorusQuotientIso.hom =
       weightTorusRestriction :=
-  CommHopfAlgCat.mkQuotient_comp_quotientKerOfSurjectiveIso_hom _ _
+  CommHopfAlgCat.Hom.mkQuotient_comp_quotientKerOfSurjectiveIso_hom _ _
 
 /-- The coordinate algebra of the closed weight torus is a split torus of rank four. -/
 theorem splitTorusCommHopfAlgProperty_quotient_weightTorusDefiningIdeal :
@@ -95,16 +95,16 @@ theorem map_quotientPointsSubgroup_weightTorusDefiningIdeal
   have hpoint (q : HopfAlgebra.points (H := generatorCodomain (.inr ()))
       (CommAlgCat.of (ZMod 2) A)) :
       coordinatePointsEquiv A
-          (AlgHom.mapDomain weightTorusRestriction.hom q) =
+          (BialgHom.mapDomain weightTorusRestriction.hom q) =
         weightTorusPoints A (SplitTorus.pointsMulEquiv q) := by
     apply Subtype.ext
     calc
       _ = (coordinatePointsEquiv A
-          ((CommHopfAlgCat.mapPointsFunctor weightTorusRestriction).app
+          ((CommHopfAlgCat.Hom.mapPointsFunctor weightTorusRestriction).app
             (CommAlgCat.of (ZMod 2) A) q) : GL (Fin 26) A) := by
-        rw [CommHopfAlgCat.mapPointsFunctor_app_apply, AlgHom.mapDomain_apply]
+        rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, BialgHom.mapDomain_apply]
       _ = GeneralLinear.pointsMulEquiv 26
-          ((CommHopfAlgCat.mapPointsFunctor (generator (.inr ()))).app
+          ((CommHopfAlgCat.Hom.mapPointsFunctor (generator (.inr ()))).app
             (CommAlgCat.of (ZMod 2) A) q) :=
         coe_coordinatePointsEquiv_commonKernelLift (.inr ()) A q
       _ = _ := (coe_weightTorusPoints_pointsMulEquiv A q).symm
@@ -121,8 +121,8 @@ theorem map_quotientPointsSubgroup_weightTorusDefiningIdeal
     refine ⟨_, ⟨q, rfl⟩, ?_⟩
     rw [MulEquiv.coe_toMonoidHom]
     calc
-      _ = coordinatePointsEquiv A (AlgHom.mapDomain weightTorusRestriction.hom q) := by
-        rw [CommHopfAlgCat.mapPointsFunctor_app_apply, AlgHom.mapDomain_apply]
+      _ = coordinatePointsEquiv A (BialgHom.mapDomain weightTorusRestriction.hom q) := by
+        rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, BialgHom.mapDomain_apply]
       _ = weightTorusPoints A (SplitTorus.pointsMulEquiv q) := hpoint q
       _ = _ := congrArg _ (MulEquiv.apply_symm_apply _ s)
 

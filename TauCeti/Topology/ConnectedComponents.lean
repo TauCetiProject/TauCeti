@@ -5,12 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Algebra.ConstMulAction
+public import Mathlib.Topology.Connected.TotallyDisconnected
 public import Mathlib.Topology.Connected.Clopen
 public import Mathlib.Topology.Connected.LocallyConnected
 public import Mathlib.Topology.Irreducible
 public import Mathlib.SetTheory.Cardinal.Finite
 public import TauCeti.Topology.PathComponent
 public import Mathlib.Topology.Order.OrderClosed
+import Mathlib.Topology.DiscreteSubset
 import Mathlib.Topology.Homeomorph.Lemmas
 import Mathlib.Topology.Order.IntermediateValue
 
@@ -22,6 +25,8 @@ space by them.
 
 ## Main declarations
 
+* `ConnectedComponents.instMulActionOfContinuousConstSMul`: an action by continuous maps descends
+  to connected components.
 * `Homeomorph.image_connectedComponent`: a homeomorphism maps a connected component onto
   the connected component of the image point.
 * `TauCeti.frontier_connectedComponentIn_subset_compl`: in a locally connected space, a connected
@@ -30,6 +35,9 @@ space by them.
   side of a value it never takes is a connected component.
 * `TauCeti.isPreconnected_compl_of_isPreconnected_frontier`: in a preconnected, locally connected
   space, an open set with preconnected frontier has preconnected complement.
+* `TauCeti.isPreconnected_compl_of_isDiscrete`: removing from a preconnected space a closed
+  discrete set, each point of which has small connected punctured neighbourhoods, leaves it
+  preconnected.
 * `TauCeti.instT1SpaceConnectedComponents`: the connected-components quotient of any topological
   space is a T1 space.
 * `TauCeti.connectedComponentsSigmaHomeomorph`: a locally connected space is homeomorphic
@@ -47,6 +55,34 @@ open Function Set Topology
 universe u
 
 variable {X : Type u} [TopologicalSpace X]
+
+namespace ConnectedComponents
+
+variable {G X : Type*} [Monoid G] [TopologicalSpace X] [MulAction G X]
+  [ContinuousConstSMul G X]
+
+/-- An action by continuous maps induces an action on connected components. -/
+noncomputable instance instMulActionOfContinuousConstSMul :
+    MulAction G (ConnectedComponents X) where
+  smul g := (continuous_const_smul g : Continuous (fun x : X ↦ g • x)).connectedComponentsMap
+  one_smul x := by
+    obtain ⟨x, rfl⟩ := surjective_coe x
+    exact congrArg ConnectedComponents.mk (one_smul G x)
+  mul_smul g h x := by
+    obtain ⟨x, rfl⟩ := surjective_coe x
+    exact congrArg ConnectedComponents.mk (mul_smul g h x)
+
+/-- The action on components sends the component of a point to that of its translate. -/
+@[simp]
+theorem smul_mk (g : G) (x : X) :
+    g • ConnectedComponents.mk x = ConnectedComponents.mk (g • x) := (rfl)
+
+/-- Each fixed element still acts continuously on the quotient space of components. -/
+instance : ContinuousConstSMul G (ConnectedComponents X) where
+  continuous_const_smul g :=
+    (continuous_const_smul g : Continuous (fun x : X ↦ g • x)).connectedComponentsMap_continuous
+
+end ConnectedComponents
 
 namespace Homeomorph
 
@@ -140,6 +176,57 @@ theorem isPreconnected_compl_of_isPreconnected_frontier [LocallyConnectedSpace X
       exact connectedComponentIn_subset _ _ hx (subset_closure hxU)
   rw [hcover]
   exact isPreconnected_iUnion ⟨p, mem_iInter.mpr fun _ => Or.inl hp⟩ hpiece
+
+/-- **Removing a closed discrete set keeps a space preconnected**, provided each removed point
+has arbitrarily small neighbourhoods whose punctured versions are connected.
+
+The hypothesis on the punctured neighbourhoods is what fails in `ℝ`, where removing `0`
+disconnects the line. -/
+theorem isPreconnected_compl_of_isDiscrete [PreconnectedSpace X] {s : Set X} (hs : IsClosed s)
+    (hd : IsDiscrete s) (h : ∀ x ∈ s, ∀ U ∈ 𝓝 x, ∃ V ∈ 𝓝 x, V ⊆ U ∧ IsConnected (V \ {x})) :
+    IsPreconnected sᶜ := by
+  have hV : ∀ x ∈ s, ∃ V ∈ 𝓝 x, V \ {x} ⊆ sᶜ ∧ IsConnected (V \ {x}) := by
+    intro x hx
+    obtain ⟨u, hu, hus⟩ := isDiscrete_iff_forall_mem_exists_isOpen.1 hd x hx
+    have hxu : x ∈ u := (hus.symm ▸ mem_singleton x : x ∈ u ∩ s).1
+    obtain ⟨V, hV, hVu, hc⟩ := h x hx u (hu.mem_nhds hxu)
+    refine ⟨V, hV, fun y hy hys ↦ hy.2 ?_, hc⟩
+    simpa [← hus] using And.intro (hVu hy.1) hys
+  choose! V hVn hVs hVc using hV
+  -- The punctured neighbourhood of a removed point lies on one side of a separation of `sᶜ`;
+  -- putting the point on that side separates the whole space, so one side is empty.
+  rw [isPreconnected_iff_subset_of_disjoint]
+  intro u v hu hv hcov hdisj
+  have hside (x : X) (hx : x ∈ s) : V x \ {x} ⊆ u ∨ V x \ {x} ⊆ v :=
+    isPreconnected_iff_subset_of_disjoint.1 (hVc x hx).isPreconnected u v hu hv
+      ((hVs x hx).trans hcov) (subset_empty_iff.1 <| hdisj ▸ inter_subset_inter_left _ (hVs x hx))
+  -- Extending each side by the removed points whose punctured neighbourhood it contains
+  -- separates the whole space.
+  have hext (w : Set X) (hw : IsOpen w) : IsOpen (w \ s ∪ {x | x ∈ s ∧ V x \ {x} ⊆ w}) := by
+    refine isOpen_iff_mem_nhds.2 fun y hy ↦ ?_
+    rcases hy with hy | ⟨hys, hyw⟩
+    · exact Filter.mem_of_superset ((hw.inter hs.isOpen_compl).mem_nhds hy) subset_union_left
+    · refine Filter.mem_of_superset (hVn y hys) fun z hz ↦ ?_
+      rcases eq_or_ne z y with rfl | hzy
+      · exact Or.inr ⟨hys, hyw⟩
+      · exact Or.inl ⟨hyw ⟨hz, hzy⟩, hVs y hys ⟨hz, hzy⟩⟩
+  have hnot (x : X) (hx : x ∈ s) (hxu : V x \ {x} ⊆ u) (hxv : V x \ {x} ⊆ v) : False := by
+    obtain ⟨z, hz⟩ := (hVc x hx).nonempty
+    exact (eq_empty_iff_forall_notMem.1 hdisj) z ⟨hVs x hx hz, hxu hz, hxv hz⟩
+  rcases isPreconnected_iff_subset_of_disjoint.1 isPreconnected_univ _ _ (hext u hu) (hext v hv)
+    (fun y _ ↦ by
+      by_cases hys : y ∈ s
+      · exact (hside y hys).imp (fun h ↦ Or.inr ⟨hys, h⟩) fun h ↦ Or.inr ⟨hys, h⟩
+      · exact (hcov hys).imp (fun h ↦ Or.inl ⟨h, hys⟩) fun h ↦ Or.inl ⟨h, hys⟩)
+    (by
+      refine eq_empty_iff_forall_notMem.2 fun y ⟨_, hyu, hyv⟩ ↦ ?_
+      rcases hyu with hyu | hyu <;> rcases hyv with hyv | hyv
+      · exact (eq_empty_iff_forall_notMem.1 hdisj) y ⟨hyu.2, hyu.1, hyv.1⟩
+      · exact (hyu.2 hyv.1).elim
+      · exact (hyv.2 hyu.1).elim
+      · exact hnot y hyu.1 hyu.2 hyv.2) with h | h
+  · exact Or.inl fun y hy ↦ ((h (mem_univ y)).resolve_right fun h' ↦ hy h'.1).1
+  · exact Or.inr fun y hy ↦ ((h (mem_univ y)).resolve_right fun h' ↦ hy h'.1).1
 
 /-- The quotient of a topological space by its connected components is a T1 space. -/
 instance instT1SpaceConnectedComponents : T1Space (ConnectedComponents X) :=

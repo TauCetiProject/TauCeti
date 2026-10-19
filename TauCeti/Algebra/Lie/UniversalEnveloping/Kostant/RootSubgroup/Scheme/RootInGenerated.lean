@@ -93,7 +93,7 @@ theorem mono_kostantRootSubgroupToGenerated :
     Mono (kostantRootSubgroupToGenerated e h ρ M hM hnil b i) :=
   have := isClosedImmersion_kostantRootSubgroupToGenerated
     e h ρ M hM i hnil b hc hstep hsq
-  mono_of_isClosedImmersion_underlying
+  Grp.mono_of_mono_left
     (kostantRootSubgroupToGenerated e h ρ M hM hnil b i)
 
 /-- The `i`th Kostant root subgroup as a closed subgroup scheme of the generated Chevalley

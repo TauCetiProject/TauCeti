@@ -636,6 +636,47 @@ theorem cellularIncidence_eq_inv_cellLocalClass {i : cell C n} (x : skeletonObj 
     ← ModuleCat.comp_apply,
     IsIso.hom_inv_id, ModuleCat.id_apply, smul_eq_mul, mul_one]
 
+/-- If the attaching map of an `(n + 1)`-cell misses a point of the open `n`-cell `i`, then the
+incidence coefficient of `i` in its boundary is zero.  This is the local-degree form of the
+geometric fact that only cells met by the attaching map can occur in a cellular boundary. -/
+theorem cellularIncidence_eq_zero_of_not_mem_cellFrontier {i : cell C n}
+    (x : skeletonObj C (n + 1)) (hx : (x : X) ∈ openCell n i) (j : cell C (n + 1))
+    (hmiss : (x : X) ∉ cellFrontier (n + 1) j) :
+    cellularIncidence C R n i j = 0 := by
+  let P := TopPair.ofSubset ({x}ᶜ : Set (skeletonObj C (n + 1)))
+  have hfront (z : TopCat.diskBoundary.{w} (n + 1)) :
+      ((cellAttachingMap j z : skeletonObj C (n + 1)) : X) ∈ cellFrontier (n + 1) j := by
+    refine ⟨_, mem_sphere_zero_iff_norm.2 <|
+      (norm_diskHomeomorphClosedBall_eq_one_iff _).2 ⟨z, rfl⟩, ?_⟩
+    exact (coe_cellAttachingMap_apply j z).symm
+  have hg (z : TopCat.diskBoundary.{w} (n + 1)) : cellAttachingMap j z ∈ ({x}ᶜ :
+      Set (skeletonObj C (n + 1))) := by
+    intro hz
+    exact hmiss ((congrArg (fun y : skeletonObj C (n + 1) ↦ (y : X)) hz).symm ▸ hfront z)
+  let g : TopCat.diskBoundary.{w} (n + 1) ⟶ P.snd := TopCat.ofHom
+    { toFun := fun z ↦ ⟨cellAttachingMap j z, hg z⟩
+      continuous_toFun := (cellAttachingMap j).hom.continuous.subtype_mk _ }
+  have hfac : g ≫ P.map = cellAttachingMap j := by
+    ext z
+    exact Subtype.ext rfl
+  have hzero :
+      SSet.homologyMap (TopCat.toSSet.map (cellAttachingMap j)) (ModuleCat.of R R) n ≫
+        P.singularHomologyπ (ModuleCat.of R R) n = 0 := by
+    let Q := TopPair.ofSubset (∅ : Set (TopCat.diskBoundary.{w} (n + 1)))
+    have hmaps : Set.MapsTo (cellAttachingMap j) (∅ : Set (TopCat.diskBoundary.{w} (n + 1)))
+        ({x}ᶜ : Set (skeletonObj C (n + 1))) := fun _ hz ↦ hz.elim
+    have hf : Q.singularHomologyMap (TopPair.ofSubsetMap (cellAttachingMap j) hmaps)
+        (ModuleCat.of R R) n = 0 :=
+      TopPair.singularHomologyMap_eq_zero_of_fac _ (ModuleCat.of R R) g
+        (hfac.trans (TopPair.ofSubsetMap_fst _ _).symm) n
+    have hπ := TopPair.singularHomologyπ_naturality (R := ModuleCat.of R R)
+      (f := TopPair.ofSubsetMap (cellAttachingMap j) hmaps) n
+    rw [TopPair.ofSubsetMap_fst, hf, comp_zero] at hπ
+    exact hπ
+  rw [cellularIncidence_eq_inv_cellLocalClass C R x hx j]
+  erw [← ModuleCat.comp_apply, ← ModuleCat.comp_apply, ← Category.assoc, hzero, zero_comp]
+  rfl
+
 end Ring
 
 end TauCeti

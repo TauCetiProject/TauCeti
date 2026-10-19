@@ -19,7 +19,7 @@ hypothesis on the ambient space, where the adjoint of a bounded operator need no
 
 A map `T P_U` that factors through the projection onto a finite-dimensional `U` has rank at most
 `dim U`. For subspaces `U` and `V` of the same finite dimension, `U ⊓ Vᗮ` and `V ⊓ Uᗮ` have the
-same dimension.
+same dimension. The orthogonal complement of a nonzero vector has codimension one.
 
 For finite-dimensional `U` and `V` with `dim V ≤ dim U`, a lower bound `k ‖u‖² ≤ ‖P_V u‖²` for
 `u ∈ U` transfers to the same lower bound `k ‖v‖² ≤ ‖P_U v‖²` for `v ∈ V`.
@@ -28,11 +28,19 @@ The projection `P_U v` is the point of `v + Uᗮ` of least norm, and it is the o
 `w` with `‖w‖ ≤ ‖P_U w‖` equals `P_U w`. Equivalently, `v ∈ U` exactly when adding a vector of
 `Uᗮ` never decreases the norm of `v`.
 
+Since the kernel of `P_V` is `Vᗮ`, the projection `P_V` is injective on `U` exactly when no
+nonzero vector of `U` is orthogonal to `V`.
+
+Compressing the square of the difference `P_U - P_V` to `U`, from either side, gives
+`P_U - P_U P_V P_U`.
+
 ## Main results
 
 * `Submodule.norm_starProjection_comp_starProjection_comm`: `‖P_U P_V‖ = ‖P_V P_U‖`.
 * `Submodule.finrank_range_comp_starProjection_le`: `rank (T P_U) ≤ dim U`.
 * `Submodule.finrank_inf_orthogonal_comm`: `dim (U ⊓ Vᗮ) = dim (V ⊓ Uᗮ)` when `dim U = dim V`.
+* `Submodule.finrank_orthogonal_span_singleton_eq_finrank_sub_one`: `dim (𝕜 ∙ v)ᗮ = dim E - 1`
+  for a nonzero vector `v`.
 * `Submodule.mul_norm_sq_le_norm_starProjection_sq_of_finrank_le`: for finite-dimensional
   subspaces with `dim V ≤ dim U`, a lower bound on `‖P_V u‖²` over `U` transfers to the same
   bound on `‖P_U v‖²` over `V`.
@@ -40,6 +48,11 @@ The projection `P_U v` is the point of `v + Uᗮ` of least norm, and it is the o
   is its projection.
 * `Submodule.mem_iff_forall_mem_orthogonal_norm_le_norm_add`: `v ∈ U` if and only if
   `‖v‖ ≤ ‖v + w‖` for every `w ∈ Uᗮ`.
+* `Submodule.injOn_starProjection_iff_disjoint`: `P_V` is injective on `U` if and only if
+  `U ⊓ Vᗮ = ⊥`.
+* `Submodule.starProjection_sub_starProjection_sq_mul_starProjection`,
+  `Submodule.starProjection_mul_starProjection_sub_starProjection_sq`:
+  `(P_U - P_V)² P_U = P_U (P_U - P_V)² = P_U - P_U P_V P_U`.
 -/
 
 public section
@@ -119,6 +132,14 @@ theorem finrank_inf_orthogonal_comm [FiniteDimensional 𝕜 U] [FiniteDimensiona
   rw [← hker] at h₁
   omega
 
+/-- In a finite-dimensional inner product space, the orthogonal complement of the span of a
+nonzero vector has codimension one. Unlike `Submodule.finrank_orthogonal_span_singleton`, the
+dimension of the ambient space is not fixed in advance. -/
+theorem finrank_orthogonal_span_singleton_eq_finrank_sub_one [FiniteDimensional 𝕜 E] {v : E}
+    (hv : v ≠ 0) : Module.finrank 𝕜 (𝕜 ∙ v)ᗮ = Module.finrank 𝕜 E - 1 := by
+  have := Module.finrank_pos_iff_exists_ne_zero (R := 𝕜).2 ⟨v, hv⟩
+  exact finrank_add_finrank_orthogonal' <| by rw [finrank_span_singleton hv]; omega
+
 /-- For finite-dimensional subspaces with `dim V ≤ dim U`, a lower bound `k ‖u‖² ≤ ‖P_V u‖²` on
 the cosines of `U` towards `V` transfers to the same lower bound for `V` towards `U`. -/
 theorem mul_norm_sq_le_norm_starProjection_sq_of_finrank_le [FiniteDimensional 𝕜 U]
@@ -183,5 +204,31 @@ theorem mem_iff_forall_mem_orthogonal_norm_le_norm_add {v : E} :
     rw [add_sub_cancel] at hle
     rw [U.eq_starProjection_of_norm_le hle]
     exact U.starProjection_apply_mem v
+
+omit [U.HasOrthogonalProjection] in
+/-- The orthogonal projection onto `V` is injective on `U` exactly when `U ⊓ Vᗮ = ⊥`, since its
+kernel is `Vᗮ`. -/
+theorem injOn_starProjection_iff_disjoint :
+    Set.InjOn V.starProjection U ↔ Disjoint U Vᗮ := by
+  simpa using (LinearMap.disjoint_ker_iff_injOn (f := (V.starProjection : E →ₗ[𝕜] E))
+    (p := U)).symm
+
+/-- Compressing `(P_U - P_V)²` to `U` on the right gives `P_U - P_U P_V P_U`. -/
+theorem starProjection_sub_starProjection_sq_mul_starProjection :
+    (U.starProjection - V.starProjection) ^ 2 * U.starProjection =
+      U.starProjection - U.starProjection * V.starProjection * U.starProjection := by
+  have hP := U.isIdempotentElem_starProjection
+  have hQ := V.isIdempotentElem_starProjection
+  simp only [sq, sub_mul, mul_sub, mul_assoc, hP.eq, hQ.mul_self_mul]
+  abel
+
+/-- Compressing `(P_U - P_V)²` to `U` on the left gives `P_U - P_U P_V P_U`. -/
+theorem starProjection_mul_starProjection_sub_starProjection_sq :
+    U.starProjection * (U.starProjection - V.starProjection) ^ 2 =
+      U.starProjection - U.starProjection * V.starProjection * U.starProjection := by
+  have hP := U.isIdempotentElem_starProjection
+  have hQ := V.isIdempotentElem_starProjection
+  simp only [sq, sub_mul, mul_sub, mul_assoc, hP.eq, hQ.eq, hP.mul_self_mul]
+  abel
 
 end Submodule

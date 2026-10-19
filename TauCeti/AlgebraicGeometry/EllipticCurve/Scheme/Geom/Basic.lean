@@ -83,6 +83,8 @@ a ring isomorphism `φ` with `WeierstrassCurve.map`, and identifies `projModel (
 is `WeierstrassCurve.projModel`, and the local model of `EllipticCurveGeom` is a nonempty pointed
 Weierstrass atlas, which is equivalent to `IsLocallyWeierstrass` by
 `nonempty_pointedWeierstrassAtlas_iff`.
+* `EllipticCurveGeom.isClosed_setOf_left_apply_eq_zero`: for any over-morphism into an elliptic
+  curve, meeting its zero section is a closed condition.
 -/
 
 public section
@@ -490,6 +492,13 @@ theorem modelPoint_modelIso_inv_toTotal :
     c.modelPoint hP ≫ c.modelIso.inv ≫ c.toTotal = (c.baseIso.inv ≫ c.baseMap) ≫ P := by
   simp [modelPoint]
 
+/-- The projective model of the equation of a chart, mapped to `X` through `modelIso` and `toTotal`,
+is the base change of `π` along `Spec c.ring ≅ c.base ⟶ S`. -/
+theorem isPullback_modelIso_inv_toTotal : IsPullback (c.modelIso.inv ≫ c.toTotal)
+    c.equation.projModelOver π (c.baseIso.inv ≫ c.baseMap) :=
+  c.isPullback.of_iso c.modelIso (.refl _) c.baseIso (.refl _) (by simp) c.modelIso_over.symm
+    (by simp) (by simp)
+
 /-- The zero section of the projective model, carried back to `X`, is the restriction of the
 section `zero` to the base of the chart. -/
 @[reassoc]
@@ -504,6 +513,14 @@ theorem projModelZero_modelIso_inv_toTotal :
 theorem modelPoint_zero (hzero : zero ≫ π = 𝟙 S) :
     c.modelPoint hzero = c.equation.projModelZero := by
   simp [modelPoint, c.modelIso_zero]
+
+/-- The model point of a section `Q` that differs from a section `P` at every point differs from
+the model point of `P` at every point. -/
+theorem modelPoint_apply_ne_modelPoint {Q : S ⟶ X} (hQ : Q ≫ π = 𝟙 S) (h : ∀ s, Q s ≠ P s)
+    (s : Spec c.ring) : c.modelPoint hQ s ≠ c.modelPoint hP s := fun hs ↦
+  h ((c.baseIso.inv ≫ c.baseMap) s) (by
+    simpa only [← Scheme.Hom.comp_apply, modelPoint_modelIso_inv_toTotal] using
+      congrArg (c.modelIso.inv ≫ c.toTotal) hs)
 
 /-- The model point of a section `P` missing the section `zero` at every point misses the zero
 section of the projective model at every point. -/
@@ -585,6 +602,15 @@ theorem zero_comp_structureMap {S : Scheme.{u}} (E : EllipticCurveGeom S) :
     E.zero ≫ E.structureMap = 𝟙 S :=
   E.zero_comp
 
+/-- The zero section of an elliptic curve is a closed immersion, being a section of the separated
+structure morphism. -/
+instance isClosedImmersion_zero {S : Scheme.{u}} (E : EllipticCurveGeom S) :
+    IsClosedImmersion E.zero := by
+  have : IsClosedImmersion (E.zero ≫ E.structureMap) := by
+    rw [zero_comp_structureMap]
+    infer_instance
+  exact .of_comp E.zero E.structureMap
+
 /-- A point `x` of `E` with values in a scheme `Z` over `S` takes a value in the image of the zero
 section at a point `z` of `Z` exactly when it agrees there with the zero section over the image of
 `z` in `S`. -/
@@ -597,6 +623,16 @@ theorem left_apply_mem_range_zero_iff {S : Scheme.{u}} {E : EllipticCurveGeom S}
     simpa using congr($(Over.w x) z)
   rw [← hx, ← hs, ← Scheme.Hom.comp_apply E.zero, zero_comp_structureMap]
   rfl
+
+/-- **Meeting the zero section is a closed condition.** For an over-morphism `x` from a scheme
+`Z` over `S` to an elliptic curve `E`, the points of `Z` at which `x` meets the zero section form
+a closed set: it is the preimage of the image of the zero section, a closed immersion. -/
+theorem isClosed_setOf_left_apply_eq_zero {S : Scheme.{u}} {E : EllipticCurveGeom S}
+    {Z : Over S} (x : Z ⟶ Over.mk E.structureMap) :
+    IsClosed {z | x.left z = E.zero (Z.hom z)} := by
+  convert E.zero.isClosedEmbedding.isClosed_range.preimage x.left.continuous using 1
+  ext z
+  exact (left_apply_mem_range_zero_iff x z).symm
 
 /-- An elliptic curve over `S` satisfies the local-model condition `IsLocallyWeierstrass` for its
 structure morphism and zero section: the pointwise form of the atlas condition `localModel`. -/

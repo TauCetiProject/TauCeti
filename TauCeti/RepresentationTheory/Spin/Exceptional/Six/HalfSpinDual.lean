@@ -11,6 +11,7 @@ public import Mathlib.RepresentationTheory.Intertwining
 import TauCeti.Algebra.Algebra.Prod
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.LowRank.Six.GeneralLinear
 import TauCeti.LinearAlgebra.Dual.End
+import TauCeti.RepresentationTheory.Intertwining
 import Mathlib.LinearAlgebra.GeneralLinearGroup.AlgEquiv
 
 /-!
@@ -316,16 +317,12 @@ theorem exists_spinMinusSubrep_equiv_dual_spinPlusSubrep_of_finrank_eq_six
       apply Subtype.ext
       rfl
     rw [heplus]
-    have heven : spinGroupToEven Q g⁻¹ =
-        ⟨(g⁻¹ : spinGroup Q), spinGroup.mem_even (g⁻¹ : spinGroup Q).2⟩ :=
-      Subtype.ext (coe_spinGroupToEven_apply Q g⁻¹)
-    rw [heven]
-    exact (coe_spinPlusAction_spinGroup_apply P hline g⁻¹ p).symm
+    exact (coe_spinPlusAction_spinGroupToEven_apply P hline g⁻¹ p).symm
   have hminusAction : eminus.symm ((spinMinusSubrep P hline).toRepresentation g s) =
       spinMinusAction Q P hline (spinGroupToEven Q g) (eminus.symm s) := by
     apply Subtype.ext
     simpa [eminus] using
-      (coe_spinMinusAction_spinGroup_apply P hline g (eminus.symm s)).symm
+      (coe_spinMinusAction_spinGroupToEven_apply P hline g (eminus.symm s)).symm
   -- The remaining equality is the evaluation pairing for the transported dual action.
   simp only [E, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.trans_apply,
     LinearEquiv.dualMap_apply]
@@ -338,5 +335,19 @@ theorem exists_spinMinusSubrep_equiv_dual_spinPlusSubrep_of_finrank_eq_six
     (eplus.symm.dualMap (T.symm (eminus.symm s)))
       ((spinPlusSubrep P hline).toRepresentation g⁻¹ (eplus p))
   rw [LinearEquiv.dualMap_apply, hplusAction]
+
+/-- Combine an equivalence of the even half-spin representation with the canonical duality of the
+odd and even half-spin representations in dimension six. -/
+theorem nonempty_spinMinusSubrep_equiv_dual_of_spinPlusSubrep_equiv
+    [NeZero (2 : K)] (P : SpinPolarizationData Q) (hV : finrank K V = 6)
+    (hline : P.line = ⊥) {M : Type w} [AddCommMonoid M] [Module K M]
+    (ρ : Representation K (spinGroup Q) M)
+    (eplus : Nonempty ((spinPlusSubrep P hline).toRepresentation.Equiv ρ)) :
+    Nonempty ((spinMinusSubrep P hline).toRepresentation.Equiv (Representation.dual ρ)) := by
+  obtain ⟨hline', ⟨eminus⟩⟩ :=
+    exists_spinMinusSubrep_equiv_dual_spinPlusSubrep_of_finrank_eq_six P hV
+  have hh : hline' = hline := Subsingleton.elim _ _
+  cases hh
+  exact ⟨eminus.trans eplus.some.dual⟩
 
 end TauCeti

@@ -6,12 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Exchangeability.ConditionallyIID.Basic
-public import TauCeti.Probability.Process.IIDMixture
+public import TauCeti.Probability.Process.IIDMixture.Basic
 public import TauCeti.Probability.Process.PathLaw.Joint
 -- Non-public: mixing-law uniqueness is used only inside the proof of
 -- `ConditionallyIIDWith.jointPathLaw_eq_of_pathLaw_eq`.
 import TauCeti.Probability.Exchangeability.MixedIID.Mixture
-import TauCeti.MeasureTheory.Measure.GiryMonad
 
 /-!
 # The full-path joint disintegration
@@ -29,7 +28,7 @@ measure together with the entire process is the disintegration `∫ δ_{ν ω} �
 ## Implementation
 
 The right-hand side is not a new construction: `iidMixtureLaw (μ.map ν) id` is the canonical
-two-stage law of `Process.IIDMixture` — draw a probability measure from the mixing law
+two-stage law of `Process.IIDMixture.Basic` — draw a probability measure from the mixing law
 `μ.map ν`, then sample i.i.d. from it, keeping the drawn measure as a coordinate. So the theorem
 says the abstract conditional predicate is *exactly* realised by that generative construction, which
 is a stronger statement than naming a bespoke disintegration measure would be.
@@ -39,7 +38,7 @@ prefix. For the joint law that prefix marginal is the defining identity of `Cond
 at the selection `Fin n → ℕ`, which is
 `map_prefixProjPair_jointPathLaw_eq_disintegration`. For the mixture law it is
 `map_prefixProjPair_iidMixtureLaw` — a general fact about `iidMixtureLaw`, and so kept with the
-construction in `Process/IIDMixture.lean` — proved fibrewise: over each point `t` of the
+construction in `Process/IIDMixture/Basic.lean` — proved fibrewise: over each point `t` of the
 mixing law the fibre `δ_t ⊗ (P t)^{⊗ℕ}` projects to `δ_t ⊗ (P t)^{⊗ Fin n}`, which is
 `map_infinitePi_pair_block` at the prefix selection — the tag `t` and the sampled law `P t`
 differ there, which is why that lemma carries an arbitrary tag. Instantiating at the identity
@@ -109,9 +108,8 @@ theorem ConditionallyIIDWith.jointPathLaw_eq_iidMixtureLaw [IsFiniteMeasure μ]
     map_prefixProjPair_iidMixtureLaw
       (P := (id : ProbabilityMeasure α → ProbabilityMeasure α)) measurable_id n]
   simp only [id_eq]
-  rw [← hF, TauCeti.MeasureTheory.bind_map h.measurable_directing.aemeasurable
+  rw [← hF, Measure.bind_map h.measurable_directing.aemeasurable
     hker.aemeasurable]
-  rfl
 
 /-- **The joint law of a directing measure and a path is a function of the path law.** Two
 conditionally i.i.d. processes with the same path law — on possibly different sample spaces — have

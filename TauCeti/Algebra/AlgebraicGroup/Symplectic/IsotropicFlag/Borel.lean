@@ -141,15 +141,15 @@ private theorem isInvariantForm_toBilin'_JFin (π : Symplectic.coordinateHopfAlg
   dsimp only
   rw [Representation.isInvariantForm_iff]
   intro g x y
-  let S := Symplectic.pointsMulEquiv k m (A := k) (AlgHom.mapDomain π g)
+  let S := Symplectic.pointsMulEquiv k m (A := k) (BialgHom.mapDomain π g)
   have hact (w : Fin (m + m) → k) :
       Comodule.basePointsRepresentation (H := Q) (Fin (m + m) → k) g w =
         (S.val : Matrix (Fin (m + m)) (Fin (m + m)) k) *ᵥ w := by
     let _ := GeneralLinear.standardComodule k (m + m)
     rw [Comodule.basePointsRepresentation_corestrict,
       GeneralLinear.basePointsRepresentation_eq_mulVec, ← GeneralLinear.pointsMulEquiv_apply,
-      AlgHom.mapDomain_apply, ← pointsMulEquiv_comp_coordinateMap, BialgHom.comp_toAlgHom,
-      AlgHom.mapDomain_apply, ofConv_toConv, AlgHom.comp_assoc]
+      BialgHom.mapDomain_apply, ← pointsMulEquiv_comp_coordinateMap, BialgHom.comp_toAlgHom,
+      BialgHom.mapDomain_apply, ofConv_toConv, AlgHom.comp_assoc]
   have hS := GLSymplecticFin.mem_iff'.mp S.2
   rw [hact, hact, Matrix.toBilin'_apply', Matrix.toBilin'_apply']
   conv_rhs => rw [← hS, ← Matrix.mulVec_mulVec, ← Matrix.mulVec_mulVec,
