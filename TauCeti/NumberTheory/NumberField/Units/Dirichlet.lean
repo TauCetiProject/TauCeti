@@ -29,6 +29,7 @@ consume — for instance the exact number of unit square classes in
   has unit rank one.
 * `NumberField.rank_add_nrComplexPlaces_add_one`: the unit rank plus the number of complex
   places plus one is the degree.
+* `NumberField.Units.fundSystem_not_mem_torsion`: fundamental units are nontorsion.
 -/
 
 public section
@@ -131,5 +132,18 @@ theorem rank_eq_one_of_finrank_eq_two_of_isReal {F : Type*} [Field F] [NumberFie
     exact Fintype.card_ne_zero
   rw [rank, InfinitePlace.card_eq_nrRealPlaces_add_nrComplexPlaces]
   omega
+
+namespace Units
+
+variable {K : Type*} [Field K] [NumberField K]
+
+/-- No member of a fundamental system is a torsion unit. -/
+theorem fundSystem_not_mem_torsion (i : Fin (rank K)) : fundSystem K i ∉ torsion K := by
+  intro hi
+  have hzero := dirichletUnitTheorem.logEmbedding_eq_zero_iff.mpr hi
+  rw [logEmbedding_fundSystem] at hzero
+  exact (basisUnitLattice K).ne_zero i (Subtype.ext hzero)
+
+end Units
 
 end NumberField

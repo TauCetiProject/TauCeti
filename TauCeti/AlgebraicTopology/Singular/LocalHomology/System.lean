@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.ChartedSpace
 public import TauCeti.AlgebraicTopology.FundamentalGroupoid.Glue
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Basic
+public import TauCeti.Topology.OpenPartialHomeomorph.Basic
 
 /-!
 # The local homology system of a manifold
@@ -149,7 +150,7 @@ theorem isIso_localHomologyRestriction_symm_image [T2Space M] (φ : OpenPartialH
     IsIso (localHomologyRestriction R
       (singleton_subset_iff.2 ⟨φ x, hxK, φ.left_inv hx⟩ : {x} ⊆ φ.symm '' K) k) :=
   isIso_singularHomologyMap_compl_of_chart R φ hx hK hxK hKc.isBounded
-    hKc.isClosed (hKc.image_of_continuousOn (φ.continuousOn_symm.mono hKφ)).isClosed hKφ k
+    hKc.isClosed (φ.isClosed_image_symm_of_isCompact hKc hKφ) hKφ k
 
 /-- An open, bounded, convex subset of the target of a chart whose closure also lies in the
 target. These patches index the cover over which the local homology system is glued. -/
@@ -451,6 +452,46 @@ theorem eq_localHomologyTransport (k : ℕ)
     exact (hpatch P (γ.map continuous_subtype_val) fun s ↦ (γ s).2).trans
       (P.localHomologyTransport_mk R (γ.map continuous_subtype_val) (fun s ↦ (γ s).2) k).symm
   exact eq_of_heq (Functor.hcongr_hom hG f)
+
+/-- **Restrictions of a global class are parallel.** The restrictions
+`Hₖ(M, M ∖ M) ⟶ Hₖ(M, M ∖ {x})` to the points of `M` are compatible with the transport of local
+homology along every path class, in every degree. -/
+@[reassoc (attr := simp)]
+theorem localHomologyRestriction_univ_comp_localHomologyTransport (k : ℕ)
+    {x y : FundamentalGroupoid M} (f : x ⟶ y) :
+    localHomologyRestriction R (subset_univ {x.as}) k ≫ localHomologyTransport R M E k f =
+      localHomologyRestriction R (subset_univ {y.as}) k := by
+  -- Along a path in the domain of a patch, compare through the closed image of the patch.
+  have hpatch (P : Patch M E) {a b : M} (γ : Path a b) (hγ : ∀ s, γ s ∈ P.domain) :
+      localHomologyRestriction R (subset_univ {a}) k ≫
+        localHomologyTransport R M E k
+          (Path.Homotopic.Quotient.mk γ : FundamentalGroupoid.mk a ⟶ FundamentalGroupoid.mk b) =
+        localHomologyRestriction R (subset_univ {b}) k := by
+    have ha : a ∈ P.domain := γ.source ▸ hγ 0
+    rw [P.localHomologyTransport_mk R γ hγ k,
+      ← localHomologyRestriction_comp R (P.singleton_subset_closedImage ha) (subset_univ _),
+      ← P.iso_hom R ha, Category.assoc, Iso.hom_inv_id_assoc]
+    simp [Patch.iso_hom]
+  -- The path classes along which the restrictions are compatible form a subgroupoid.
+  let S : Subgroupoid (FundamentalGroupoid M) :=
+    { arrows c d := {f | localHomologyRestriction R (subset_univ {c.as}) k ≫
+        localHomologyTransport R M E k f = localHomologyRestriction R (subset_univ {d.as}) k}
+      inv {c d f} hf := by
+        rw [Set.mem_ofPred_eq, ← hf]
+        simp [← localHomologyTransport_comp]
+      mul {c d e f} hf {g} hg := by
+        rw [Set.mem_ofPred_eq, localHomologyTransport_comp, ← Category.assoc, hf, hg] }
+  -- It contains the classes of paths inside the domains of patches, so it is everything.
+  have hS : S = ⊤ := by
+    rw [eq_top_iff, ← FundamentalGroupoid.iSup_im_map_subtypeVal_eq_top
+      (U := Patch.domain (M := M) (E := E)) Patch.exists_domain_mem_nhds]
+    refine iSup_le fun P ↦ ?_
+    rw [Subgroupoid.im, Subgroupoid.map_le_iff_le_comap]
+    rintro ⟨⟨a⟩, ⟨b⟩, g⟩ -
+    induction g using Path.Homotopic.Quotient.ind with | mk γ =>
+    exact hpatch P (γ.map continuous_subtype_val) fun s ↦ (γ s).2
+  have hf : f ∈ S.arrows x y := hS ▸ trivial
+  exact hf
 
 end Chart
 

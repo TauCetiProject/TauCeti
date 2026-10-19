@@ -24,6 +24,9 @@ of measures.
   measurable map is measurable on `ProbabilityMeasure`.
 * `TauCeti.MeasureTheory.measurable_map_of_measurable_uncurry` — pushing a fixed s-finite measure
   forward along a jointly measurable family of maps is measurable in the parameter.
+* `TauCeti.MeasureTheory.measurable_map_finiteMeasure_of_measurable_uncurry` — jointly varying a
+  finite measure and the map that pushes it forward is measurable, with a probability-measure
+  specialization.
 -/
 
 public section
@@ -69,6 +72,41 @@ theorem measurable_map_of_measurable_uncurry {α β γ : Type*} [MeasurableSpace
     funext fun a => (Measure.map_map hf measurable_prodMk_left).symm
   rw [hsec]
   exact (Measure.measurable_map _ hf).comp Measurable.map_prodMk_left
+
+/-- Pushing a finite measure forward along a jointly measurable family of maps is jointly
+measurable in the measure and the parameter.
+
+This complements `Measure.measurable_map`, where the map is fixed, and
+`measurable_map_of_measurable_uncurry`, where the measure is fixed. -/
+theorem measurable_map_finiteMeasure_of_measurable_uncurry
+    {α β γ : Type*} [MeasurableSpace α] [MeasurableSpace β] [MeasurableSpace γ]
+    {f : γ → α → β} (hf : Measurable (Function.uncurry f)) :
+    Measurable fun p : FiniteMeasure α × γ => (p.1 : Measure α).map (f p.2) := by
+  let diracFinite (c : γ) : FiniteMeasure γ := ⟨Measure.dirac c, inferInstance⟩
+  have hdirac : Measurable diracFinite := by
+    exact Measure.measurable_dirac.subtype_mk
+  have hprod : Measurable fun p : FiniteMeasure α × γ =>
+      (Measure.dirac p.2).prod (p.1 : Measure α) := by
+    exact FiniteMeasure.measurable_fun_prod.comp
+      ((hdirac.comp measurable_snd).prodMk measurable_fst)
+  have hmap : Measurable fun p : FiniteMeasure α × γ =>
+      ((Measure.dirac p.2).prod (p.1 : Measure α)).map (Function.uncurry f) :=
+    (Measure.measurable_map _ hf).comp hprod
+  convert hmap using 1
+  funext p
+  rw [Measure.dirac_prod, Measure.map_map hf measurable_prodMk_left]
+  rfl
+
+/-- The probability-measure specialization of
+`measurable_map_finiteMeasure_of_measurable_uncurry`. -/
+theorem measurable_probabilityMeasure_map_of_measurable_uncurry
+    {α β γ : Type*} [MeasurableSpace α] [MeasurableSpace β] [MeasurableSpace γ]
+    {f : γ → α → β} (hf : Measurable (Function.uncurry f)) :
+    Measurable fun p : ProbabilityMeasure α × γ => p.1.map (f p.2) := by
+  have htoFinite : Measurable fun μ : ProbabilityMeasure α => μ.toFiniteMeasure := by
+    exact measurable_subtype_coe.subtype_mk
+  exact ((measurable_map_finiteMeasure_of_measurable_uncurry hf).comp
+    (htoFinite.comp measurable_fst |>.prodMk measurable_snd)).subtype_mk
 
 end MeasureTheory
 

@@ -363,14 +363,8 @@ theorem isNoetherianRing_isRestricted_subring_intervalRing (hρ : ρ₁ ≤ ρ�
   have := isNoetherianRing_of_surjective _ _ _
     (RadiusRing.restrictedEvalIntervalRing_surjective p hv hϖ hϖ' hρ₁ hρ₂ (c := c ∘ e.symm) hρ)
   -- renaming the variables along `e` identifies the two rings
-  refine isNoetherianRing_of_ringEquiv _ (RingEquiv.restrict
-    (MvPowerSeries.renameEquiv B e).toRingEquiv (MvPowerSeries.IsRestricted.subring (R := B) c)
-      (MvPowerSeries.IsRestricted.subring (R := B) (c ∘ e.symm)) fun f ↦ ?_).symm
-  -- membership in `IsRestricted.subring` is `IsRestricted` by definition
-  change _ ↔ MvPowerSeries.IsRestricted _ (MvPowerSeries.renameEquiv B e f)
-  rw [MvPowerSeries.isRestricted_renameEquiv_iff, Function.comp_assoc, e.symm_comp_self,
-    Function.comp_id]
-  rfl
+  exact isNoetherianRing_of_ringEquiv _
+    (MvPowerSeries.IsRestricted.renameAlgEquiv (R := B) e.symm c).toRingEquiv
 
 open TauCeti.Huber in
 /-- **The interval ring `B^I` is strongly noetherian** (Kedlaya, Theorem 4.10 and Remark 4.11),

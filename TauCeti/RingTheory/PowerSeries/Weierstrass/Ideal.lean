@@ -73,7 +73,7 @@ theorem IsDistinguished.le_of_mem_span_singleton (hc : 0 < c)
   obtain ⟨j, hj⟩ := exists_isDistinguished hc k.2 hk0
   have hmul : IsDistinguished c (s + j)
       ((f * k : PowerSeries.IsRestricted.subring (R := R) c) : PowerSeries R) := by
-    rw [hcoe]; exact hf.mul hj hc
+    rw [hcoe]; exact hf.mul hj hc (norm_mul _ _)
   have := hg.unique hmul
   omega
 

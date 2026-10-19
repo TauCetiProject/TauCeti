@@ -11,7 +11,7 @@ public import Mathlib.Algebra.Homology.ShortComplex.Exact
 public import Mathlib.Algebra.Group.End
 public import Mathlib.Algebra.Order.Interval.Finset.SuccPred
 public import Mathlib.Data.Int.Interval
-public import Mathlib.Data.Int.SuccPred
+public import Mathlib.Order.SuccPred.Int
 
 /-!
 # Split maps between coproducts, and cokernels of maps between coproducts
@@ -63,6 +63,14 @@ summand of `e s`.  Then `𝟙 - t` is a split monomorphism (`TauCeti.isSplitMono
 retraction `TauCeti.shiftRetraction` telescopes along each orbit, from height `0` to the summand
 at hand.  This is why the chains of an infinite cyclic cover inject into themselves under
 `𝟙 - τ_*`, for the deck transformation `τ`.
+
+## Coproducts of families with finite support
+
+In a category with zero morphisms and finite coproducts, a family of objects indexed by an
+arbitrary type has a coproduct as soon as only finitely many of its objects are nonzero
+(`TauCeti.hasCoproduct_of_finite_setOf_not_isZero`): the coproduct of the nonzero objects is a
+coproduct of the whole family. This is how a bounded complex has coproducts over the infinitely
+many degrees in a residue class, as used by its periodic compression.
 -/
 
 public section
@@ -269,5 +277,30 @@ theorem isSplitMono_id_sub (hh : ∀ s, h (e s) = h s + 1) {t : c.pt ⟶ c.pt}
   IsSplitMono.mk' ⟨shiftRetraction hc e h, id_sub_comp_shiftRetraction hc hh ht⟩
 
 end Shift
+
+section FiniteSupport
+
+variable {C : Type*} [Category* C] [HasFiniteCoproducts C]
+
+/-- A family of objects which are zero outside a finite set of indices has a coproduct in a
+category with finite coproducts: the coproduct of its finitely many nonzero terms. -/
+theorem hasCoproduct_of_finite_setOf_not_isZero {J : Type*} (f : J → C)
+    (hf : {j | ¬IsZero (f j)}.Finite) : HasCoproduct f := by
+  let s := {j | ¬IsZero (f j)}
+  have : Finite s := hf
+  classical
+  -- The summands outside `s` are zero objects, so each has a unique map to the coproduct.
+  refine ⟨⟨Cofan.mk (∐ fun j : s ↦ f j)
+    (fun j ↦ if h : j ∈ s then Sigma.ι (fun j : s ↦ f j) ⟨j, h⟩
+      else ((not_not.1 h) : IsZero (f j)).to_ _),
+    Cofan.IsColimit.mk _ (fun t ↦ Sigma.desc fun j : s ↦ t.inj j) (fun t j ↦ ?_)
+      (fun t m hm ↦ ?_)⟩⟩
+  · by_cases h : j ∈ s
+    · simp [h]
+    · simpa only [dite_eq_right h] using (not_not.1 h).eq_of_src _ _
+  · refine Sigma.hom_ext (f := fun j : s ↦ f j) _ _ fun j ↦ ?_
+    simpa [j.2] using hm j
+
+end FiniteSupport
 
 end TauCeti

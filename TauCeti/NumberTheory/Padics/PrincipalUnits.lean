@@ -58,12 +58,16 @@ is all of `ℤ_2ˣ`, so every subgroup of `ℤ_2ˣ` is pro-`2`.
 * `TauCeti.unitsPrincipalMk`: the element of `U^(f)` with a prescribed value `v ≡ 1 mod p ^ f`.
 * `TauCeti.isOpen_unitsPrincipal`, `TauCeti.isClosed_unitsPrincipal`,
   `TauCeti.unitsPrincipal_antitone`, `TauCeti.iInf_unitsPrincipal_eq_bot`,
-  `TauCeti.hasBasis_nhds_one_unitsPrincipal`: the topology of the filtration.
+  `TauCeti.hasBasis_nhds_one_unitsPrincipal`: the topology of the filtration;
+  `TauCeti.exists_unitsPrincipal_le_of_isOpen`: every open subgroup contains some `U^(f)`.
+* `TauCeti.ker_unitsToZModPow`, `TauCeti.unitsToZModPow_eq_one_iff`: `U^(f)` is the kernel of
+  the truncation `PadicInt.unitsToZModPow f`.
 * `TauCeti.index_unitsPrincipal`: `[ℤ_pˣ : U^(f)] = φ(p ^ f)`, so `p ^ (f - 1) * (p - 1)`
   for `f ≥ 1`, and `2 ^ (f - 1)` for `p = 2`; `TauCeti.relIndex_unitsPrincipal`:
   `[U^(f) : U^(f+k)] = p ^ k` for `f ≥ 1`.
 * `TauCeti.exists_mem_unitsPrincipal_and_notMem_succ`: every unit other than `1` has an exact
   level.
+* `TauCeti.neg_one_notMem_unitsPrincipal`: `-1 ∉ U^(f)` once `p ^ f > 2`.
 * `TauCeti.neg_one_mem_unitsPrincipal_two_iff`, `TauCeti.neg_mem_unitsPrincipal_two_two_iff`:
   in `ℤ_2ˣ`, `-1 ∉ U^(f)` for `f ≥ 2`, and `u ≡ ±1 mod 4` with exactly one sign;
   `TauCeti.inv_mul_mem_unitsPrincipal_two_succ`: two dyadic units of the same exact level are
@@ -249,14 +253,33 @@ theorem hasBasis_nhds_one_unitsPrincipal :
   rw [Metric.mem_ball, dist_eq_norm]
   exact (mem_unitsPrincipal_iff_norm.mp hu).trans_lt hf
 
+/-- Every open subgroup of `ℤ_pˣ` contains some principal unit group `U^(f)`. -/
+theorem exists_unitsPrincipal_le_of_isOpen {H : Subgroup ℤ_[p]ˣ}
+    (hH : IsOpen (H : Set ℤ_[p]ˣ)) : ∃ f, unitsPrincipal p f ≤ H := by
+  obtain ⟨f, -, hf⟩ := (hasBasis_nhds_one_unitsPrincipal p).mem_iff.mp (hH.mem_nhds H.one_mem)
+  exact ⟨f, hf⟩
+
+variable (p) in
+/-- `U^(f)` is the kernel of truncation modulo `p ^ f` on units. -/
+theorem ker_unitsToZModPow (f : ℕ) :
+    (PadicInt.unitsToZModPow (p := p) f).toMonoidHom.ker = unitsPrincipal p f := by
+  ext u
+  simp [mem_unitsPrincipal_iff_toZModPow, Units.ext_iff]
+
+/-- A unit truncates to `1` modulo `p ^ f` exactly when it lies in `U^(f)`. -/
+@[simp]
+theorem unitsToZModPow_eq_one_iff {f : ℕ} {u : ℤ_[p]ˣ} :
+    PadicInt.unitsToZModPow f u = 1 ↔ u ∈ unitsPrincipal p f := by
+  simp [← ker_unitsToZModPow]
+
 /-! ### Indices -/
 
 variable (p) in
 /-- `[ℤ_pˣ : U^(f)] = φ(p ^ f)`: reduction modulo `p ^ f` is surjective on units. -/
 @[simp]
 theorem index_unitsPrincipal (f : ℕ) : (unitsPrincipal p f).index = Nat.totient (p ^ f) := by
-  rw [unitsPrincipal, Subgroup.index_ker,
-    MonoidHom.range_eq_top_of_surjective _ (PadicInt.surjective_units_map_toZModPow f),
+  rw [← ker_unitsToZModPow, Subgroup.index_ker,
+    MonoidHom.range_eq_top_of_surjective _ (PadicInt.unitsToZModPow_surjective f),
     Subgroup.card_top, Nat.card_eq_fintype_card, ZMod.card_units_eq_totient]
 
 variable (p) in
@@ -284,6 +307,13 @@ theorem neg_one_mem_unitsPrincipal_two_iff {f : ℕ} :
     one_add_one_eq_two, dvd_neg,
     ← pow_dvd_pow_iff (by norm_num : (2 : ℤ_[2]) ≠ 0) PadicInt.p_nonunit (n := f) (m := 1),
     pow_one]
+
+/-- `-1 ∉ U^(f)` once `p ^ f > 2`: then `-1 ≢ 1 mod p ^ f`. -/
+theorem neg_one_notMem_unitsPrincipal {f : ℕ} (h : 2 < p ^ f) :
+    (-1 : ℤ_[p]ˣ) ∉ unitsPrincipal p f := by
+  have : Fact (2 < p ^ f) := ⟨h⟩
+  rw [mem_unitsPrincipal_iff_toZModPow, Units.val_neg, Units.val_one, map_neg, map_one]
+  exact ZMod.neg_one_ne_one
 
 /-- `U^(2) = 1 + 4ℤ_2` has index `2` in `ℤ_2ˣ` and does not contain `-1`, so a dyadic unit `u`
 lies outside `1 + 4ℤ_2` iff `-u` lies inside: `u ≡ 1` or `u ≡ -1 mod 4`, and not both. -/

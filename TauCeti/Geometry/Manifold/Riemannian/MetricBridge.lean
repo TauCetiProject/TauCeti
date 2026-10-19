@@ -62,12 +62,11 @@ namespace Manifold
 section Path
 
 variable {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-  [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsManifold I 1 M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
 
 attribute [local instance] normedAddCommGroupTangentSpaceVectorSpace
   normedSpaceTangentSpaceVectorSpace
 
-omit [IsManifold I 1 M] in
 /-- A bound on the differential of a vector-valued function applied to the within-derivative of a
 `C¹` path controls the displacement of the function along that path. -/
 theorem enorm_sub_le_mul_pathELength {f : M → F} {γ : ℝ → M} {a b : ℝ}
@@ -101,7 +100,7 @@ theorem enorm_sub_le_mul_pathELength {f : M → F} {γ : ℝ → M} {a b : ℝ}
   simpa using hbound
 
 /-- A chart-valued instance of `enorm_sub_le_mul_pathELength`. -/
-theorem enorm_extChartAt_sub_le_mul_pathELength (x : M) {γ : ℝ → M} {a b : ℝ}
+theorem enorm_extChartAt_sub_le_mul_pathELength [IsManifold I 1 M] (x : M) {γ : ℝ → M} {a b : ℝ}
     (hab : a ≤ b) (hγ : CMDiff[Icc a b] 1 γ)
     (hγsrc : ∀ t ∈ Icc a b, γ t ∈ (chartAt H x).source)
     {C : ℝ≥0} (hC : ∀ t ∈ Icc a b,
@@ -119,13 +118,11 @@ end Path
 section LocalComparison
 
 variable {M : Type*} [PseudoEMetricSpace M] [ChartedSpace H M]
-  [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsRiemannianManifold I M]
-  [IsManifold I 1 M] [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsManifold I 1 M]
 
 attribute [local instance] normedAddCommGroupTangentSpaceVectorSpace
   normedSpaceTangentSpaceVectorSpace
 
-omit [IsRiemannianManifold I M] [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] in
 /-- Along a `C¹` path which stays where the chart at `x` distorts Riemannian norms by less than
 `r`, a continuous linear functional `ℓ` on `T_x M`, read in that chart, changes by at most
 `r ‖ℓ‖` times the length of the path. -/
@@ -185,7 +182,9 @@ private theorem enorm_apply_extChartAt_sub_le_mul_pathELength {x : M} {r : ℝ}
 /-- **Sharp local Lipschitz bound for the extended chart.** For `r > 1`, near `x` every continuous
 linear functional `ℓ` on `T_x M`, read in the extended chart at `x`, is `(r ‖ℓ‖)`-Lipschitz at `x`
 for the Riemannian distance. -/
-theorem eventually_enorm_apply_extChartAt_sub_le (x : M) {r : ℝ} (hr : 1 < r) :
+theorem eventually_enorm_apply_extChartAt_sub_le [IsRiemannianManifold I M]
+    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
+    (x : M) {r : ℝ} (hr : 1 < r) :
     ∀ᶠ y in 𝓝 x, ∀ ℓ : TangentSpace I x →L[ℝ] ℝ,
       ‖ℓ (extChartAt I x y - extChartAt I x x)‖ₑ ≤ ENNReal.ofReal r * ‖ℓ‖ₑ * edist x y := by
   have hu : {y | y ∈ (chartAt H x).source ∧

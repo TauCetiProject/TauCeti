@@ -170,7 +170,7 @@ theorem points_mulVec_mem
     ((g : Matrix.GeneralLinearGroup (Fin 26) k) : Matrix (Fin 26) (Fin 26) k) *ᵥ v ∈ N := by
   have h := GeneralLinear.corestrictStandardComodule_mulVec_mem k 26 (coordinateMap k).hom
     N ((specializedPointsMulEquiv k).symm g) hv
-  rwa [AlgHom.mapDomain_apply, pointToGeneralLinear_specializedPointsMulEquiv,
+  rwa [BialgHom.mapDomain_apply, pointToGeneralLinear_specializedPointsMulEquiv,
     MulEquiv.apply_symm_apply] at h
 
 /-- On the weight torus the standard comodule is diagonal with the short-root weight table.

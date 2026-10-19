@@ -8,7 +8,7 @@ module
 public import Mathlib.Basic.Complex.Basic
 -- The two subalgebras of functions on `GL n k` the definitions below are stated against; this
 -- module also supplies `MvPolynomial.eval`, in which their coordinate form is written.
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.PolynomialFunctions
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.PolynomialFunctions.Basic
 -- The subalgebra-generic behaviour of matrix coefficients under change of basis, quotients,
 -- tensor products and tensor powers; this module also supplies `Basis.piTensorProduct`, the basis
 -- the tensor-power results below are stated against.
@@ -97,7 +97,7 @@ namespace TauCeti
 
 section Defs
 
-variable {n : ℕ} {W : Type v} [AddCommGroup W] [Module ℂ W]
+variable {n : ℕ} {W : Type v} [AddCommMonoid W] [Module ℂ W]
 
 /-- **A polynomial representation** of `GL n ℂ`: in some basis of the carrier, every matrix entry of
 `ρ g` is a polynomial in the entries of `g`.  The carrier is forced to be finite-dimensional, since
@@ -164,7 +164,7 @@ end Defs
 
 section BasisIndependence
 
-variable {n : ℕ} {W : Type v} [AddCommGroup W] [Module ℂ W]
+variable {n : ℕ} {W : Type v} [AddCommMonoid W] [Module ℂ W]
 variable {ρ : Representation ℂ (GL (Fin n) ℂ) W}
 
 /-- **Polynomiality is basis independent.**  A representation is polynomial exactly when, against
@@ -218,9 +218,12 @@ theorem IsPolynomialRep.isRationalRep (h : IsPolynomialRep ρ) : IsRationalRep �
 
 /-- **A quotient of a polynomial representation is polynomial.**  This is the form in which the
 functorial powers below inherit polynomiality from the tensor power. -/
-theorem IsPolynomialRep.of_surjective {V : Type y} [AddCommGroup V] [Module ℂ V]
+theorem IsPolynomialRep.of_surjective {V : Type y} [AddCommMonoid V] [Module ℂ V]
     {σ : Representation ℂ (GL (Fin n) ℂ) V} (h : IsPolynomialRep ρ)
     (f : Representation.IntertwiningMap ρ σ) (hf : Function.Surjective f) : IsPolynomialRep σ := by
+  -- `Module.finBasis` needs an additive group; over the field `ℂ` one is recovered from the module
+  -- structure, with negation `(-1) • ·`, extending the given `AddCommMonoid`.
+  let _ : AddCommGroup V := Module.addCommMonoidToAddCommGroup ℂ
   obtain ⟨b, P, hP⟩ := h
   have : Module.Finite ℂ W := Module.Finite.of_basis b
   have : Module.Finite ℂ V := Module.Finite.of_surjective f.toLinearMap hf
@@ -230,9 +233,12 @@ theorem IsPolynomialRep.of_surjective {V : Type y} [AddCommGroup V] [Module ℂ 
       (fun p l => mem_polynomialFunctions.mpr ⟨P p l, fun g => hP g p l⟩) i j
 
 /-- **A quotient of a rational representation is rational.** -/
-theorem IsRationalRep.of_surjective {V : Type y} [AddCommGroup V] [Module ℂ V]
+theorem IsRationalRep.of_surjective {V : Type y} [AddCommMonoid V] [Module ℂ V]
     {σ : Representation ℂ (GL (Fin n) ℂ) V} (h : IsRationalRep ρ)
     (f : Representation.IntertwiningMap ρ σ) (hf : Function.Surjective f) : IsRationalRep σ := by
+  -- `Module.finBasis` needs an additive group; over the field `ℂ` one is recovered from the module
+  -- structure, with negation `(-1) • ·`, extending the given `AddCommMonoid`.
+  let _ : AddCommGroup V := Module.addCommMonoidToAddCommGroup ℂ
   obtain ⟨b, P, m, hP⟩ := h
   have : Module.Finite ℂ W := Module.Finite.of_basis b
   have : Module.Finite ℂ V := Module.Finite.of_surjective f.toLinearMap hf
@@ -302,12 +308,17 @@ end Examples
 section TensorProduct
 
 variable {n : ℕ}
-variable {W : Type v} [AddCommGroup W] [Module ℂ W] {W' : Type x} [AddCommGroup W'] [Module ℂ W']
+variable {W : Type v} [AddCommMonoid W] [Module ℂ W]
+  {W' : Type x} [AddCommMonoid W'] [Module ℂ W']
 variable {ρ : Representation ℂ (GL (Fin n) ℂ) W} {σ : Representation ℂ (GL (Fin n) ℂ) W'}
 
 /-- **A tensor product of polynomial representations is polynomial.** -/
 theorem IsPolynomialRep.tprod (hρ : IsPolynomialRep ρ) (hσ : IsPolynomialRep σ) :
     IsPolynomialRep (ρ.tprod σ) := by
+  -- `Representation.toMatrix_tprod_mem` is stated for additive groups; over the field `ℂ` they are
+  -- recovered from the module structures, with negation `(-1) • ·`, extending the given monoids.
+  let _ : AddCommGroup W := Module.addCommMonoidToAddCommGroup ℂ
+  let _ : AddCommGroup W' := Module.addCommMonoidToAddCommGroup ℂ
   obtain ⟨b, P, hP⟩ := hρ
   obtain ⟨c, Q, hQ⟩ := hσ
   refine (isPolynomialRep_iff_forall_mem_polynomialFunctions (b.tensorProduct c)).mpr fun i j => ?_
@@ -318,6 +329,10 @@ theorem IsPolynomialRep.tprod (hρ : IsPolynomialRep ρ) (hσ : IsPolynomialRep 
 /-- **A tensor product of rational representations is rational.** -/
 theorem IsRationalRep.tprod (hρ : IsRationalRep ρ) (hσ : IsRationalRep σ) :
     IsRationalRep (ρ.tprod σ) := by
+  -- `Representation.toMatrix_tprod_mem` is stated for additive groups; over the field `ℂ` they are
+  -- recovered from the module structures, with negation `(-1) • ·`, extending the given monoids.
+  let _ : AddCommGroup W := Module.addCommMonoidToAddCommGroup ℂ
+  let _ : AddCommGroup W' := Module.addCommMonoidToAddCommGroup ℂ
   obtain ⟨b, P, mP, hP⟩ := hρ
   obtain ⟨c, Q, mQ, hQ⟩ := hσ
   refine (isRationalRep_iff_forall_mem_rationalFunctions (b.tensorProduct c)).mpr fun i j => ?_

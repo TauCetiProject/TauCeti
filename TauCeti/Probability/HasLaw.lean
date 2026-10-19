@@ -6,11 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.HasLaw
+public import Mathlib.Probability.ConditionalProbability
 public import TauCeti.MeasureTheory.Measure.Atom
 public import TauCeti.MeasureTheory.Measure.Dirac
 
 /-!
-# Laws of maps and source atoms
+# Conditioning laws and source atoms
+
+Conditioning a map on the preimage of a measurable event conditions its law on that event.
+This allows conditional distribution identities proved on a canonical law to be used for
+arbitrary random variables with that law, including null conditioning events.
 
 A finite-mass measurable atom of a source measure is an obstruction to a prescribed law: every
 almost-everywhere measurable map sends its whole mass to a single point of a standard Borel target.
@@ -20,6 +25,7 @@ transporting Dirac measures and for laws that are null on singletons.
 
 ## Main results
 
+* `ProbabilityTheory.HasLaw.cond` — conditioning transports a prescribed law;
 * `ProbabilityTheory.HasLaw.measure_singleton_le` — the law of `T` gives `{T x}` at least the
   mass the source gives `{x}`, with `ProbabilityTheory.HasLaw.measure_singleton_eq_zero` and
   `TauCeti.Probability.not_hasLaw_of_measure_singleton_ne_zero` its reading for a law that is
@@ -47,6 +53,18 @@ namespace Probability
 
 variable {X : Type*} {Y : Type*} [MeasurableSpace X] [MeasurableSpace Y] {T : X → Y}
 variable {μ : Measure X} {ν : Measure Y}
+
+/-- Conditioning a random variable on the preimage of a measurable event gives its law
+conditioned on that event. The statement includes events of zero or infinite mass, when both
+conditional measures vanish. -/
+theorem _root_.ProbabilityTheory.HasLaw.cond (hT : HasLaw T ν μ) {s : Set Y}
+    (hs : MeasurableSet s) :
+    HasLaw T (ProbabilityTheory.cond ν s) (ProbabilityTheory.cond μ (T ⁻¹' s)) := by
+  refine ⟨hT.aemeasurable.mono_ac cond_absolutelyContinuous, ?_⟩
+  rw [ProbabilityTheory.cond, Measure.map_smul _ hT.aemeasurable.restrict,
+    ← Measure.restrict_map_of_aemeasurable hT.aemeasurable hs,
+    ← Measure.map_apply_of_aemeasurable hT.aemeasurable hs, hT.map_eq,
+    ProbabilityTheory.cond]
 
 section Atom
 

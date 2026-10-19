@@ -23,6 +23,8 @@ maximal order itself is packaged as `maximalNumberFieldOrder K`.
 ## Main definitions
 
 * `TauCeti.GlobalNumberFields.NumberFieldOrder`: an order in a number field.
+* `TauCeti.GlobalNumberFields.NumberFieldOrder.ofIsFractionRing`: the image of a finite
+  integer algebra in its fraction field, packaged as an order.
 * `TauCeti.GlobalNumberFields.NumberFieldOrder.toRingOfIntegers`: an order as a subalgebra of the
   maximal order.
 * `TauCeti.GlobalNumberFields.maximalNumberFieldOrder`: the ring of integers as an order.
@@ -65,6 +67,40 @@ structure NumberFieldOrder (K : Type u) [Field K] [NumberField K] where
   spans : Submodule.span ℚ (toSubalgebra : Set K) = ⊤
 
 namespace NumberFieldOrder
+
+section FractionRing
+
+variable (R : Type*) (K : Type u) [CommRing R] [IsDomain R] [Field K] [NumberField K]
+variable [Module.Finite ℤ R] [Algebra R K] [IsFractionRing R K]
+
+/-- A domain finite over `ℤ` is an order in its fraction field when that field is a number field. -/
+def ofIsFractionRing : NumberFieldOrder K where
+  toSubalgebra := (IsScalarTower.toAlgHom ℤ R K).range
+  finite := Module.Finite.of_surjective
+    (IsScalarTower.toAlgHom ℤ R K).rangeRestrict.toLinearMap
+    (AlgHom.rangeRestrict_surjective _)
+  spans := by
+    have : CharZero R := (algebraMap R K).charZero
+    have hspan := span_eq_top_localization_localization ℚ ℤ⁰ K
+      (Submodule.span_univ : Submodule.span ℤ (Set.univ : Set R) = ⊤)
+    simpa only [Set.image_univ, AlgHom.coe_range, IsScalarTower.coe_toAlgHom'] using hspan
+
+/-- Membership in this order means being the image of an element of the original domain. -/
+theorem mem_ofIsFractionRing {x : K} :
+    x ∈ (ofIsFractionRing R K).toSubalgebra ↔ ∃ r : R, algebraMap R K r = x :=
+  (Iff.rfl)
+
+/-- A finite integer algebra is isomorphic to its image order in its fraction field. -/
+def ofIsFractionRingEquiv : R ≃+* (ofIsFractionRing R K).toSubalgebra :=
+  (AlgEquiv.ofInjective (IsScalarTower.toAlgHom ℤ R K) (IsFractionRing.injective R K)).toRingEquiv
+
+/-- The order isomorphism sends each element to its image in the fraction field. -/
+@[simp]
+theorem coe_ofIsFractionRingEquiv (r : R) :
+    (ofIsFractionRingEquiv R K r : K) = algebraMap R K r :=
+  (rfl)
+
+end FractionRing
 
 variable {K : Type u} [Field K] [NumberField K]
 

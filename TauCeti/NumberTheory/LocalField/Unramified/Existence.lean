@@ -30,7 +30,7 @@ arbitrary extension `Ω`. So when `Ω` is separably closed, such as `AlgebraicCl
 These are the finite levels of the maximal unramified extension of `K`.
 
 The local-field structure carried by an intermediate field is not unique as data, but any two
-structures compatible with `K` agree (`TauCeti.finiteExtensionValuativeRel_eq`). The theorems
+structures compatible with `K` agree (`TauCeti.algebraicExtensionValuativeRel_eq`). The theorems
 below are therefore stated for an arbitrary compatible structure, and
 `TauCeti.existsUnique_isUnramified_finrank_eq` packages the statement for the canonical structure
 of `TauCeti.finiteIntermediateFieldValuativeRel`.
@@ -119,7 +119,7 @@ theorem unramifiedExtension_le_of_dvd {f g : ℕ} (hg : g ≠ 0) (h : f ∣ g) :
   obtain ⟨k, rfl⟩ := h
   refine unramifiedExtension_le_iff.2 fun x hx ↦ rootSet_subset_unramifiedExtension K Ω _ ?_
   rw [Polynomial.mem_rootSet, map_sub, map_pow, aeval_X, sub_eq_zero] at hx ⊢
-  refine ⟨FiniteField.X_pow_card_pow_sub_X_ne_zero _ hg Finite.one_lt_card, ?_⟩
+  refine ⟨X_pow_sub_X_ne_zero (Nat.one_lt_pow hg Finite.one_lt_card), ?_⟩
   -- `x` is fixed by `y ↦ y ^ (q ^ f)`, hence by its `k`-th iterate `y ↦ y ^ (q ^ (f * k))`.
   have hfix : Function.IsFixedPt (· ^ Nat.card 𝓀[K] ^ f) x := hx.2
   have h := hfix.iterate k
@@ -149,7 +149,7 @@ theorem unramifiedExtension_le_restrictScalars_unramifiedExtension (L : Type*) [
   · simp
   refine unramifiedExtension_le_iff.2 fun x hx ↦ rootSet_subset_unramifiedExtension L Ω f ?_
   rw [Polynomial.mem_rootSet, map_sub, map_pow, aeval_X, sub_eq_zero] at hx ⊢
-  refine ⟨FiniteField.X_pow_card_pow_sub_X_ne_zero _ hf Finite.one_lt_card, ?_⟩
+  refine ⟨X_pow_sub_X_ne_zero (Nat.one_lt_pow hf Finite.one_lt_card), ?_⟩
   -- `x` is fixed by `y ↦ y ^ (q ^ f)`, hence by its `f(L/K)`-th iterate `y ↦ y ^ (q' ^ f)`.
   have hfix : Function.IsFixedPt (· ^ Nat.card 𝓀[K] ^ f) x := hx.2
   have h := hfix.iterate (inertiaDegree K L)
@@ -174,7 +174,7 @@ theorem unramifiedExtension_eq_adjoin_setOf_pow_eq_one {f : ℕ} (hf : f ≠ 0) 
     rw [hsucc, pow_succ] at h
     exact mul_right_cancel₀ hx0 (by rw [one_mul, h])
   · refine Polynomial.mem_rootSet.2
-      ⟨FiniteField.X_pow_card_pow_sub_X_ne_zero _ hf Finite.one_lt_card, ?_⟩
+      ⟨X_pow_sub_X_ne_zero (Nat.one_lt_pow hf Finite.one_lt_card), ?_⟩
     rw [map_sub, map_pow, aeval_X, hsucc, pow_succ, hx, one_mul, sub_self]
 
 variable {K Ω} in
@@ -198,7 +198,7 @@ theorem exists_isPrimitiveRoot_natCard_pow_sub_one [IsSepClosed Ω] {f : ℕ} (h
     (algebraMap K Ω)
   rw [map_natCast, map_natCast] at h
   have : NeZero ((Nat.card 𝓀[K] ^ f - 1 : ℕ) : Ω) := ⟨h.ne_zero⟩
-  exact HasEnoughRootsOfUnity.exists_primitiveRoot Ω _
+  exact HasEnoughRootsOfUnity.exists_isPrimitiveRoot Ω _
 
 /-- The unramified extension of degree `f` is a finite extension of `K`. -/
 instance finiteDimensional_unramifiedExtension (f : ℕ) :

@@ -47,6 +47,26 @@ reconciliation.
 The backfill updates label descriptions once, continues after individual errors,
 and reports failures. A rate limit stops the remaining pass visibly.
 
+PR-status batches checkpoint pending PR numbers and retry counts after each completed
+PR. The workflow restores the latest verified `pr-status-progress` artifact, including
+from failed runs, and uploads progress with `always()`. A retained quota deadline
+defers the next batch before any App reads. Finishing a resumed scan advances its
+watermark only to a completely read discovery boundary. Resuming also discovers
+new activity, skipping only updates older than the start of a finished PR check;
+changes during that check remain eligible. Active CI is refreshed. An hourly
+recovery trigger and manual dispatch can resume work without a new PR event.
+
+Restoration verifies the producing workflow and event through GitHub. A
+`pull_request_target` run executes trusted base code even when its recorded head
+repository is a fork; ordinary `pull_request` runs cannot supply progress. Other
+accepted events (`workflow_run`, `issue_comment`, schedule and manual dispatch)
+must name upstream `main`.
+The former retry-only artifact is migrated at deployment. Missing/expired state
+uses the existing bounded time-window fallback. Invalid state warns and rebuilds
+from that fallback, then writes a replacement checkpoint rather than repeatedly
+restoring the corrupt one. Lost state or a hard runner loss before upload can
+repeat work since the last uploaded checkpoint.
+
 The workflows check out the exact policy revision used by Auto-merge, without
 persisting credentials. The workflow-pin tests require labels, the health report,
 and their tests to use that same revision. For local commands, check out that
@@ -103,10 +123,11 @@ human reacting on a status message never confuses reconciliation.
 Two workflows drive it:
 
 - [`pr-status.yml`](../../.github/workflows/pr-status.yml): on PR events,
-  review-state comments, and `workflow_run` of `pr-build` and `Review`. It
-  reconciles in batches ([`batch.py`](batch.py)): one run at a time, each covering
-  every PR with activity since the previous successful run started, so a burst of
-  events costs one or two GitHub-hosted jobs rather than one per event. Per PR it
+  review-state comments, and `workflow_run` of `pr-build` and `Review`, plus
+  hourly/manual recovery. It reconciles in batches ([`batch.py`](batch.py)):
+  one run at a time, retaining pending work across interruptions and discovering
+  new activity before advancing the saved window. Bursts coalesce into one or
+  two GitHub-hosted jobs rather than one per event. Per PR it
   runs the status-label reconcile, then the Zulip reconcile: creating the message
   only while the PR is open (so churn on a closed PR can never create a late post),
   keeping its roadmap metadata current, owning the merged/closed ending, and
@@ -312,3 +333,9 @@ checkout described above. `test_zulip` covers review reactions, PR post
 rendering, legacy-message rewriting, batch continuation, dry runs, and rate-limit
 retry. All GitHub and Zulip reads and writes are stubbed, so these need no
 network.
+
+GitHub reads require `gh` and `jq`. The read helper captures response headers,
+honors `Retry-After` and exhausted-quota reset times, and applies jq filters
+locally after decoding JSON response boundaries. Paginated bodies never include
+HTTP headers. If the requested wait exceeds the remaining 180-second sleep
+budget, it stops immediately and holds later reads until that deadline.

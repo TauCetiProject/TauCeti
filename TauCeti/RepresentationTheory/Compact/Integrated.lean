@@ -37,22 +37,22 @@ isotypic projector is in
 
 ## Main definitions
 
-* `TauCeti.ContRepresentation.integratedOperator`: the operator `∫ g, f g • π g` by which a
+* `ContRepresentation.integratedOperator`: the operator `∫ g, f g • π g` by which a
   continuous scalar function acts on a continuous representation.
-* `TauCeti.ContRepresentation.integratedOperatorₗ`: the same, linear in the acting function.
-* `TauCeti.ContRepresentation.integratedIntertwiner`: the integrated operator of a class function,
+* `ContRepresentation.integratedOperatorₗ`: the same, linear in the acting function.
+* `ContRepresentation.integratedIntertwiner`: the integrated operator of a class function,
   packaged as a continuous self-intertwiner.
 
 ## Main results
 
-* `TauCeti.ContRepresentation.trace_integratedOperator`: the trace of the integrated operator is
+* `ContRepresentation.trace_integratedOperator`: the trace of the integrated operator is
   `∫ g, f g · χ_π g`.
 * `ContRepresentation.comp_integratedOperator`: integrated operators are natural with
   respect to continuous intertwiners.
-* `TauCeti.ContRepresentation.integratedOperator_comp`: a class function acts by an intertwiner.
-* `TauCeti.ContRepresentation.integratedOperator_eq_smul_id`: **a class function acts on a
+* `ContRepresentation.integratedOperator_comp`: a class function acts by an intertwiner.
+* `ContRepresentation.integratedOperator_eq_smul_id`: **a class function acts on a
   finite-dimensional irreducible representation by the scalar `(dim V)⁻¹ · ∫ g, f g · χ_π g`.**
-* `TauCeti.ContRepresentation.integratedOperator_eq_zero`: it acts as zero when that integral
+* `ContRepresentation.integratedOperator_eq_zero`: it acts as zero when that integral
   vanishes.
 
 ## Implementation notes
@@ -67,7 +67,7 @@ family valued in the operator space `V →L[𝕜] V`, so it inherits that averag
 Bochner integral reads is completeness of that codomain, and `[CompleteSpace V]` is what supplies
 it; failing that, the average is the integral's junk value `0` rather than the classical integrated
 form `π(f)`. Completeness therefore enters with
-`TauCeti.ContRepresentation.integratedOperator_apply`, finite-dimensionality with the trace, and
+`ContRepresentation.integratedOperator_apply`, finite-dimensionality with the trace, and
 algebraic closedness of the scalars with Schur's lemma. The integrated operator
 of the trivial group action and other structural identities are not developed here: what the
 character projections need is linearity in `f`, the trace, and the scalar theorem.
@@ -86,17 +86,13 @@ Groups*, Springer GTM 98 (1985), Chapter II.
 
 public section
 
-open _root_.ContRepresentation
-
-open MeasureTheory
-
-namespace TauCeti
+open MeasureTheory TauCeti
 
 namespace ContRepresentation
 
 section Conjugation
 
-variable {𝕜 G : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
 /-- Conjugating the group variable, as a continuous self-map of the group. -/
 private def conjMap (h : G) : C(G, G) :=
@@ -106,12 +102,13 @@ private def conjMap (h : G) : C(G, G) :=
 private theorem conjMap_apply (h g : G) : conjMap h g = h⁻¹ * (g * h) :=
   (rfl)
 
-variable [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
+variable {𝕜 W : Type*} [NontriviallyNormedField 𝕜]
+  [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
+  [NormedAddCommGroup W] [NormedSpace 𝕜 W] [NormedSpace ℝ W] [SMulCommClass ℝ 𝕜 W]
 
 /-- Haar averaging does not see the conjugation of the group variable: it is a right translation
 followed by a left translation. -/
-private theorem haarAverage_comp_conjMap {W : Type*} [NormedAddCommGroup W] [NormedSpace 𝕜 W]
-    [NormedSpace ℝ W] [SMulCommClass ℝ 𝕜 W] (F : C(G, W)) (h : G) :
+private theorem haarAverage_comp_conjMap (F : C(G, W)) (h : G) :
     haarAverage G (𝕜 := 𝕜) (F.comp (conjMap h)) = haarAverage G (𝕜 := 𝕜) F := by
   rw [conjMap, ← ContinuousMap.comp_assoc, haarAverage_comp_mulRight, haarAverage_comp_mulLeft]
 
@@ -119,24 +116,29 @@ end Conjugation
 
 section Integrated
 
-variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
-  [NormedAddCommGroup V] [NormedSpace 𝕜 V] [NormedSpace ℝ V] [SMulCommClass ℝ 𝕜 V]
-  [CompleteSpace V]
+section
 
-variable (π : ContRepresentation 𝕜 G V) (hπ : Continuous π)
+variable {𝕜 G V : Type*} [NontriviallyNormedField 𝕜] [Group G]
+  [NormedAddCommGroup V] [NormedSpace 𝕜 V] (π : ContRepresentation 𝕜 G V)
 
-include hπ
+/-- Conjugation `S ↦ π h⁻¹ ∘ S ∘ π h`, packaged as a continuous linear map on operators. -/
+private noncomputable def conjOp (h : G) : (V →L[𝕜] V) →L[𝕜] V →L[𝕜] V :=
+  (ContinuousLinearMap.compL 𝕜 V V V (π h⁻¹)).comp
+    ((ContinuousLinearMap.compL 𝕜 V V V).flip (π h))
 
-omit [CompleteSpace V] in
+/-- `conjOp` is conjugation, unfolded. -/
+private theorem conjOp_apply (h : G) (S : V →L[𝕜] V) :
+    conjOp π h S = (π h⁻¹).comp (S.comp (π h)) := by
+  simp [conjOp, ContinuousLinearMap.compL_apply]
+
+variable [TopologicalSpace G] (hπ : Continuous π)
+
 /-- The integrand `g ↦ f g • π g` of the integrated operator, as a continuous map on the group.
 Continuity is where the continuity hypothesis on the representation is used. -/
 private noncomputable def weightFamily (f : C(G, 𝕜)) : C(G, V →L[𝕜] V) where
   toFun g := f g • π g
   continuous_toFun := f.continuous.smul hπ
 
-omit [IsTopologicalGroup G] [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
-  [NormedSpace ℝ V] [SMulCommClass ℝ 𝕜 V] [CompleteSpace V] in
 /-- The integrand of the integrated operator, evaluated at a group element. This is the unfolding
 lemma that keeps the proofs below from reaching through `weightFamily`'s definition. -/
 @[simp]
@@ -144,7 +146,32 @@ private theorem weightFamily_apply (f : C(G, 𝕜)) (g : G) :
     weightFamily π hπ f g = f g • π g :=
   (rfl)
 
-omit [CompleteSpace V] in
+variable [IsTopologicalGroup G]
+
+/-- Conjugating the integrand of a class function by the action at `h` conjugates its group
+variable: `π h⁻¹ ∘ (f g • π g) ∘ π h = f (h⁻¹ g h) • π (h⁻¹ g h)`. -/
+private theorem conjOp_comp_weightFamily {f : C(G, 𝕜)} (hf : ∀ g h : G, f (h * g * h⁻¹) = f g)
+    (h : G) :
+    (conjOp π h : C(V →L[𝕜] V, V →L[𝕜] V)).comp (weightFamily π hπ f)
+      = (weightFamily π hπ f).comp (conjMap h) := by
+  ext g v
+  have hclass : f (h⁻¹ * (g * h)) = f g := by
+    have := hf g h⁻¹
+    rwa [inv_inv, mul_assoc] at this
+  simp only [ContinuousMap.comp_apply, ContinuousMap.coe_ofClass, conjOp_apply,
+    ContinuousLinearMap.comp_apply, weightFamily_apply, conjMap_apply, hclass, smul_apply,
+    map_smul, map_mul π, mul_apply_eq_comp]
+
+end
+
+section
+
+variable {𝕜 G V : Type*} [NontriviallyNormedField 𝕜] [Group G] [TopologicalSpace G]
+  [IsTopologicalGroup G] [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
+  [NormedAddCommGroup V] [NormedSpace 𝕜 V] [NormedSpace ℝ V]
+  [SMulCommClass ℝ 𝕜 V] [SMulCommClass 𝕜 ℝ V]
+  (π : ContRepresentation 𝕜 G V) (hπ : Continuous π)
+
 /-- **The operator by which a continuous scalar function acts on a continuous representation**,
 `∫ g, f g • π g ∂(haarProb G)`.
 
@@ -156,6 +183,51 @@ supplies; that is why the results below that read the operator's actual value ca
 noncomputable def integratedOperator (f : C(G, 𝕜)) : V →L[𝕜] V :=
   haarAverage G (𝕜 := 𝕜) (weightFamily π hπ f)
 
+/-! ### Linearity in the acting function -/
+
+@[simp]
+theorem integratedOperator_zero : integratedOperator π hπ (0 : C(G, 𝕜)) = 0 := by
+  have hzero : weightFamily π hπ (0 : C(G, 𝕜)) = 0 := by
+    ext g v
+    simp
+  rw [integratedOperator, hzero, map_zero]
+
+@[simp]
+theorem integratedOperator_add (f₁ f₂ : C(G, 𝕜)) :
+    integratedOperator π hπ (f₁ + f₂)
+      = integratedOperator π hπ f₁ + integratedOperator π hπ f₂ := by
+  have hadd : weightFamily π hπ (f₁ + f₂) = weightFamily π hπ f₁ + weightFamily π hπ f₂ := by
+    ext g v
+    simp [add_smul]
+  rw [integratedOperator, integratedOperator, integratedOperator, hadd, map_add]
+
+@[simp]
+theorem integratedOperator_smul (c : 𝕜) (f : C(G, 𝕜)) :
+    integratedOperator π hπ (c • f) = c • integratedOperator π hπ f := by
+  have hsmul : weightFamily π hπ (c • f) = c • weightFamily π hπ f := by
+    ext g v
+    simp [mul_smul]
+  rw [integratedOperator, integratedOperator, hsmul, map_smul]
+
+/-- The integrated operator, bundled as a linear map in the acting function. Bundling supplies the
+remaining additive identities (`map_neg`, `map_sub`, `map_sum`) through the `LinearMap` API. -/
+noncomputable def integratedOperatorₗ : C(G, 𝕜) →ₗ[𝕜] V →L[𝕜] V where
+  toFun := integratedOperator π hπ
+  map_add' := integratedOperator_add π hπ
+  map_smul' := integratedOperator_smul π hπ
+
+@[simp]
+theorem integratedOperatorₗ_apply (f : C(G, 𝕜)) :
+    integratedOperatorₗ π hπ f = integratedOperator π hπ f :=
+  (rfl)
+
+end
+
+variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
+  [NormedAddCommGroup V] [NormedSpace 𝕜 V] [NormedSpace ℝ V] [SMulCommClass ℝ 𝕜 V]
+  [CompleteSpace V] (π : ContRepresentation 𝕜 G V) (hπ : Continuous π)
+
 /-- The integrated operator, evaluated at a vector. -/
 theorem integratedOperator_apply (f : C(G, 𝕜)) (v : V) :
     integratedOperator π hπ f v = ∫ g, f g • π g v ∂haarProb G := by
@@ -163,7 +235,7 @@ theorem integratedOperator_apply (f : C(G, 𝕜)) (v : V) :
     (weightFamily π hπ f)
   simp only [ContinuousLinearMap.apply_apply] at h
   rw [integratedOperator, ← h, haarAverage_apply]
-  simp only [ContinuousMap.comp_apply, ContinuousMap.coe_coe, ContinuousLinearMap.apply_apply,
+  simp only [ContinuousMap.comp_apply, ContinuousMap.coe_ofClass, ContinuousLinearMap.apply_apply,
     weightFamily_apply, smul_apply]
 
 section Naturality
@@ -174,7 +246,7 @@ variable {W : Type*} [NormedAddCommGroup W] [NormedSpace 𝕜 W] [NormedSpace �
 
 /-- **Integrated operators are natural in the representation.** A continuous intertwiner commutes
 with the operators obtained by integrating the same scalar function on its source and target. -/
-theorem _root_.ContRepresentation.comp_integratedOperator
+theorem comp_integratedOperator
     (T : ContIntertwiningMap π rho) (f : C(G, 𝕜)) :
     T.toContinuousLinearMap.comp (integratedOperator π hπ f) =
       (integratedOperator rho hrho f).comp T.toContinuousLinearMap := by
@@ -193,49 +265,6 @@ theorem _root_.ContRepresentation.comp_integratedOperator
 
 end Naturality
 
-/-! ### Linearity in the acting function -/
-
-omit [CompleteSpace V] in
-@[simp]
-theorem integratedOperator_zero : integratedOperator π hπ (0 : C(G, 𝕜)) = 0 := by
-  have hzero : weightFamily π hπ (0 : C(G, 𝕜)) = 0 := by
-    ext g v
-    simp
-  rw [integratedOperator, hzero, map_zero]
-
-omit [CompleteSpace V] in
-@[simp]
-theorem integratedOperator_add (f₁ f₂ : C(G, 𝕜)) :
-    integratedOperator π hπ (f₁ + f₂)
-      = integratedOperator π hπ f₁ + integratedOperator π hπ f₂ := by
-  have hadd : weightFamily π hπ (f₁ + f₂) = weightFamily π hπ f₁ + weightFamily π hπ f₂ := by
-    ext g v
-    simp [add_smul]
-  rw [integratedOperator, integratedOperator, integratedOperator, hadd, map_add]
-
-omit [CompleteSpace V] in
-@[simp]
-theorem integratedOperator_smul (c : 𝕜) (f : C(G, 𝕜)) :
-    integratedOperator π hπ (c • f) = c • integratedOperator π hπ f := by
-  have hsmul : weightFamily π hπ (c • f) = c • weightFamily π hπ f := by
-    ext g v
-    simp [mul_smul]
-  rw [integratedOperator, integratedOperator, hsmul, map_smul]
-
-omit [CompleteSpace V] in
-/-- The integrated operator, bundled as a linear map in the acting function. Bundling supplies the
-remaining additive identities (`map_neg`, `map_sub`, `map_sum`) through the `LinearMap` API. -/
-noncomputable def integratedOperatorₗ : C(G, 𝕜) →ₗ[𝕜] V →L[𝕜] V where
-  toFun := integratedOperator π hπ
-  map_add' := integratedOperator_add π hπ
-  map_smul' := integratedOperator_smul π hπ
-
-omit [CompleteSpace V] in
-@[simp]
-theorem integratedOperatorₗ_apply (f : C(G, 𝕜)) :
-    integratedOperatorₗ π hπ f = integratedOperator π hπ f :=
-  (rfl)
-
 /-! ### A class function acts by an intertwiner
 
 Conjugation by a fixed pair of action operators is a continuous *linear* map on operators, so it
@@ -243,47 +272,18 @@ commutes with Haar averaging; on the integrand it acts as the conjugation `g ↦
 variable, which normalized Haar measure does not see and which a class function does not see
 either. -/
 
-/-- Conjugation `S ↦ π h⁻¹ ∘ S ∘ π h`, packaged as a continuous linear map on operators. -/
-private noncomputable def conjOp (h : G) : (V →L[𝕜] V) →L[𝕜] V →L[𝕜] V :=
-  (ContinuousLinearMap.compL 𝕜 V V V (π h⁻¹)).comp
-    ((ContinuousLinearMap.compL 𝕜 V V V).flip (π h))
-
-omit hπ [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G] [MeasurableSpace G]
-  [BorelSpace G] [NormedSpace ℝ V] [SMulCommClass ℝ 𝕜 V] [CompleteSpace V] in
-/-- `conjOp` is conjugation, unfolded. -/
-private theorem conjOp_apply (h : G) (S : V →L[𝕜] V) :
-    conjOp π h S = (π h⁻¹).comp (S.comp (π h)) := by
-  simp [conjOp, ContinuousLinearMap.compL_apply]
-
-variable {f : C(G, 𝕜)} (hf : ∀ g h : G, f (h * g * h⁻¹) = f g)
-
-include hf
-
-omit [CompactSpace G] [MeasurableSpace G] [BorelSpace G] [NormedSpace ℝ V]
-  [SMulCommClass ℝ 𝕜 V] [CompleteSpace V] in
-/-- Conjugating the integrand of a class function by the action at `h` conjugates its group
-variable: `π h⁻¹ ∘ (f g • π g) ∘ π h = f (h⁻¹ g h) • π (h⁻¹ g h)`. -/
-private theorem conjOp_comp_weightFamily (h : G) :
-    (conjOp π h : C(V →L[𝕜] V, V →L[𝕜] V)).comp (weightFamily π hπ f)
-      = (weightFamily π hπ f).comp (conjMap h) := by
-  ext g v
-  have hclass : f (h⁻¹ * (g * h)) = f g := by
-    have := hf g h⁻¹
-    rwa [inv_inv, mul_assoc] at this
-  simp only [ContinuousMap.comp_apply, ContinuousMap.coe_coe, conjOp_apply,
-    ContinuousLinearMap.comp_apply, weightFamily_apply, conjMap_apply, hclass, smul_apply,
-    map_smul, map_mul π, mul_apply_eq_comp]
+variable {f : C(G, 𝕜)}
 
 /-- The integrated operator of a class function is fixed by conjugation:
 `π h⁻¹ ∘ π(f) ∘ π h = π(f)`. -/
-private theorem conjOp_integratedOperator (h : G) :
+private theorem conjOp_integratedOperator (hf : ∀ g h : G, f (h * g * h⁻¹) = f g) (h : G) :
     conjOp π h (integratedOperator π hπ f) = integratedOperator π hπ f := by
   rw [integratedOperator, ← ContinuousLinearMap.haarAverage_comp_comm,
     conjOp_comp_weightFamily π hπ hf h, haarAverage_comp_conjMap]
 
 /-- **A class function acts by an intertwiner.** The integrated operator of a function constant on
 conjugacy classes commutes with every action operator. -/
-theorem integratedOperator_comp (h : G) :
+theorem integratedOperator_comp (hf : ∀ g h : G, f (h * g * h⁻¹) = f g) (h : G) :
     (integratedOperator π hπ f).comp (π h) = (π h).comp (integratedOperator π hπ f) := by
   have hconj := conjOp_integratedOperator π hπ hf h
   rw [conjOp_apply] at hconj
@@ -299,12 +299,13 @@ theorem integratedOperator_comp (h : G) :
     _ = (π h).comp (integratedOperator π hπ f) := by rw [hconj]
 
 /-- The action of a class function, packaged as a term of Mathlib's `ContIntertwiningMap`. -/
-noncomputable def integratedIntertwiner : ContIntertwiningMap π π where
+noncomputable def integratedIntertwiner (hf : ∀ g h : G, f (h * g * h⁻¹) = f g) :
+    ContIntertwiningMap π π where
   __ := integratedOperator π hπ f
   isIntertwining' h := integratedOperator_comp π hπ hf h
 
 @[simp]
-theorem toContinuousLinearMap_integratedIntertwiner :
+theorem toContinuousLinearMap_integratedIntertwiner (hf : ∀ g h : G, f (h * g * h⁻¹) = f g) :
     (integratedIntertwiner π hπ hf).toContinuousLinearMap = integratedOperator π hπ f :=
   (rfl)
 
@@ -325,22 +326,18 @@ local instance instCompleteSpaceIntegrated : CompleteSpace V :=
 
 variable (π : ContRepresentation 𝕜 G V) (hπ : Continuous π)
 
-include hπ
-
 /-- **The trace of the integrated operator is the Haar integral of `f · χ_π`.** No hypothesis on
 `f` is needed. This is what fixes the normalizing factor in
-`TauCeti.ContRepresentation.integratedOperator_eq_smul_id`. -/
+`ContRepresentation.integratedOperator_eq_smul_id`. -/
 theorem trace_integratedOperator (f : C(G, 𝕜)) :
     LinearMap.trace 𝕜 V (integratedOperator π hπ f : V →ₗ[𝕜] V)
       = ∫ g, f g * character π hπ g ∂haarProb G := by
   have h := (traceCLM 𝕜 V).haarAverage_comp_comm (G := G) (weightFamily π hπ f)
   rw [← traceCLM_apply, integratedOperator, ← h, haarAverage_apply]
-  simp only [ContinuousMap.comp_apply, ContinuousMap.coe_coe, weightFamily_apply, map_smul,
+  simp only [ContinuousMap.comp_apply, ContinuousMap.coe_ofClass, weightFamily_apply, map_smul,
     traceCLM_apply, smul_eq_mul, character_apply]
 
-variable [IsAlgClosed 𝕜] {f : C(G, 𝕜)} (hf : ∀ g h : G, f (h * g * h⁻¹) = f g)
-
-include hf
+variable [IsAlgClosed 𝕜] {f : C(G, 𝕜)}
 
 /-- **A class function acts on a finite-dimensional irreducible representation by the scalar
 `(dim V)⁻¹ · ∫ g, f g · χ_π g`.**
@@ -349,7 +346,7 @@ This is the operator form of the statement that the centre of the group algebra 
 irreducible by central characters; specialized to `f = conj χ_π` it gives the blockwise identities
 of the character projection in
 `TauCeti/RepresentationTheory/Compact/Character/Projection.lean`. -/
-theorem integratedOperator_eq_smul_id
+theorem integratedOperator_eq_smul_id (hf : ∀ g h : G, f (h * g * h⁻¹) = f g)
     (hirr : Representation.IsIrreducible π.toRepresentation) :
     integratedOperator π hπ f
       = ((Module.finrank 𝕜 V : 𝕜)⁻¹ * ∫ g, f g * character π hπ g ∂haarProb G) •
@@ -362,7 +359,7 @@ theorem integratedOperator_eq_smul_id
 
 /-- A class function whose Haar integral against the character vanishes acts as zero on an
 irreducible representation. -/
-theorem integratedOperator_eq_zero
+theorem integratedOperator_eq_zero (hf : ∀ g h : G, f (h * g * h⁻¹) = f g)
     (hirr : Representation.IsIrreducible π.toRepresentation)
     (hzero : ∫ g, f g * character π hπ g ∂haarProb G = 0) :
     integratedOperator π hπ f = 0 := by
@@ -371,5 +368,3 @@ theorem integratedOperator_eq_zero
 end Trace
 
 end ContRepresentation
-
-end TauCeti
