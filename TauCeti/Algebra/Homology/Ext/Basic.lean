@@ -27,9 +27,11 @@ This file collects general `Ext` API that Mathlib does not state in this form:
   `Function.Exact` statements about the composition maps: `TauCeti.exact_postcomp` and
   `TauCeti.exact_precomp` for `CategoryTheory.Abelian.Ext.postcomp` and
   `CategoryTheory.Abelian.Ext.precomp`, and `TauCeti.exact_postcompOfLinear` and
-  `TauCeti.exact_precompOfLinear` for their `R`-linear forms; `TauCeti.exact_precomp₃` and
-  `TauCeti.exact_precompOfLinear₃` are the same repackaging one step further along the
-  contravariant sequence, where the incoming map is precomposition with the extension class.
+  `TauCeti.exact_precompOfLinear` for their `R`-linear forms; `TauCeti.exact_precomp₁` and
+  `TauCeti.exact_precompOfLinear₁` (respectively `TauCeti.exact_precomp₃` and
+  `TauCeti.exact_precompOfLinear₃`) are the same repackaging one step further along the
+  contravariant sequence, where the outgoing (respectively incoming) map is precomposition with
+  the extension class.
 
 The exactness statements are `CategoryTheory.Abelian.Ext.covariant_sequence_exact₂` and
 `CategoryTheory.Abelian.Ext.contravariant_sequence_exact₂` with the vanishing of the composite
@@ -233,5 +235,23 @@ theorem exact_precompOfLinear₃ (R : Type t) [CommRing R] [Linear R C] (hS : S.
       (Ext.precompOfLinear (Ext.mk₀ S.g) R Y (zero_add n₁)) := by
   simp only [coe_precompOfLinear]
   exact exact_precomp₃ hS Y n₀ n₁ h
+
+/-- Exactness of `Extⁿ⁰(S.X₂, Y) → Extⁿ⁰(S.X₁, Y) → Extⁿ¹(S.X₃, Y)` at the middle term, for a
+short exact sequence `S` and `n₁ = 1 + n₀`. The second map is precomposition with the extension
+class of `S`. This is `CategoryTheory.Abelian.Ext.contravariant_sequence_exact₁'` with its
+`AddCommGrpCat` wrapper removed. -/
+theorem exact_precomp₁ (hS : S.ShortExact) (Y : C) (n₀ n₁ : ℕ) (h : 1 + n₀ = n₁) :
+    Function.Exact (Ext.precomp (Ext.mk₀ S.f) Y (zero_add n₀))
+      (Ext.precomp hS.extClass Y h) :=
+  (ShortComplex.ab_exact_iff_function_exact _).1
+    (Ext.contravariant_sequence_exact₁' hS Y n₀ n₁ h)
+
+/-- The `R`-linear form of `TauCeti.exact_precomp₁`. -/
+theorem exact_precompOfLinear₁ (R : Type t) [CommRing R] [Linear R C] (hS : S.ShortExact) (Y : C)
+    (n₀ n₁ : ℕ) (h : 1 + n₀ = n₁) :
+    Function.Exact (Ext.precompOfLinear (Ext.mk₀ S.f) R Y (zero_add n₀))
+      (Ext.precompOfLinear hS.extClass R Y h) := by
+  simp only [coe_precompOfLinear]
+  exact exact_precomp₁ hS Y n₀ n₁ h
 
 end TauCeti

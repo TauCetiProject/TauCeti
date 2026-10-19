@@ -26,8 +26,10 @@ naturally both in the object of the site and in the coefficient sheaf.
 * `TauCeti.CategoryTheory.freeYonedaSheafFunctor J`, the functor sending `U` to the sheafification
   of the free abelian presheaf on `yoneda.obj U`;
 * `TauCeti.CategoryTheory.sheafH'_eq`, identifying Mathlib's `Sheaf.H'` with `Ext` from that
-  functor, and `TauCeti.CategoryTheory.cohomologyPresheaf_map_apply`, identifying the restriction
-  maps of the cohomology presheaf with precomposition by the induced maps of free abelian sheaves;
+  functor, the same identification `CategoryTheory.Sheaf.H'AddEquivExt` as an additive
+  equivalence, and `CategoryTheory.Sheaf.cohomologyPresheaf_map_apply`, identifying the
+  restriction maps of the cohomology presheaf with precomposition by the induced maps of free
+  abelian sheaves;
 * `TauCeti.CategoryTheory.freeYonedaSheafSectionsEquiv`, the additive equivalence between
   morphisms from that sheaf to `F` and sections of `F` over `U`, and
   `TauCeti.CategoryTheory.freeYonedaSheafCorepresentableBy`, the same universal property phrased
@@ -35,7 +37,7 @@ naturally both in the object of the site and in the coefficient sheaf.
 * `TauCeti.CategoryTheory.cohomologyZeroSectionsEquiv F U`, identifying degree-zero cohomology
   over `U` with sections, and `TauCeti.CategoryTheory.cohomologyPresheafZeroIso F`, identifying
   degree-zero cohomology with sections and their restriction maps, and
-  `TauCeti.CategoryTheory.cohomologyPresheaf_zero_map_surjective`, transferring surjectivity of a
+  `CategoryTheory.Sheaf.cohomologyPresheaf_zero_map_surjective`, transferring surjectivity of a
   restriction map of sections to degree-zero cohomology;
 * `TauCeti.CategoryTheory.mono_freeYonedaSheafFunctor_map`, saying that a monomorphism of site
   objects induces a monomorphism between the corresponding free abelian sheaves.
@@ -63,7 +65,7 @@ variable [HasSheafify J AddCommGrpCat.{v}]
 
 /-- The sheafification of the free abelian presheaf on `yoneda.obj U`, functorial in `U`. This is
 the source-object functor used in Mathlib's definition of `Sheaf.H'`. -/
-@[expose] noncomputable def freeYonedaSheafFunctor :
+noncomputable def freeYonedaSheafFunctor :
     C ⥤ _root_.CategoryTheory.Sheaf J AddCommGrpCat.{v} :=
   yoneda ⋙ (Functor.whiskeringRight _ _ _).obj AddCommGrpCat.free ⋙
     presheafToSheaf J AddCommGrpCat.{v}
@@ -145,27 +147,39 @@ section
 
 variable {J} [HasExt.{w} (_root_.CategoryTheory.Sheaf J AddCommGrpCat.{v})]
 
+/-- Mathlib's sheaf cohomology `Hⁿ(U, F)` is additively equivalent to `Ext` from the free abelian
+sheaf on `U`. This is the identity, and transports elements between the two forms. -/
+def _root_.CategoryTheory.Sheaf.H'AddEquivExt
+    (F : _root_.CategoryTheory.Sheaf J AddCommGrpCat.{v}) (n : ℕ) (U : C) :
+    F.H' n U ≃+ Abelian.Ext ((freeYonedaSheafFunctor J).obj U) F n :=
+  AddEquiv.refl _
+
 /-- The restriction maps of Mathlib's cohomology presheaf are precomposition with the induced maps
 of free abelian sheaves. -/
-lemma cohomologyPresheaf_map_apply (F : _root_.CategoryTheory.Sheaf J AddCommGrpCat.{v})
-    {U V : C} (i : U ⟶ V) (n : ℕ) (x : F.H' n V) :
-    (F.cohomologyPresheaf n).map i.op x =
-      (Abelian.Ext.mk₀ ((freeYonedaSheafFunctor J).map i)).comp
-        (x : Abelian.Ext ((freeYonedaSheafFunctor J).obj V) F n) (zero_add n) :=
+lemma _root_.CategoryTheory.Sheaf.cohomologyPresheaf_map_apply
+    (F : _root_.CategoryTheory.Sheaf J AddCommGrpCat.{v}) {U V : C} (i : U ⟶ V) (n : ℕ)
+    (x : F.H' n V) :
+    F.H'AddEquivExt n U ((F.cohomologyPresheaf n).map i.op x) =
+      (Abelian.Ext.mk₀ ((freeYonedaSheafFunctor J).map i)).comp (F.H'AddEquivExt n V x)
+        (zero_add n) :=
   (rfl)
 
 /-- If restriction of sections along `i : U ⟶ V` is surjective, then so is the restriction map
 `H⁰(V, F) ⟶ H⁰(U, F)` of the cohomology presheaf. -/
-theorem cohomologyPresheaf_zero_map_surjective
+theorem _root_.CategoryTheory.Sheaf.cohomologyPresheaf_zero_map_surjective
     (F : _root_.CategoryTheory.Sheaf J AddCommGrpCat.{v}) {U V : C} (i : U ⟶ V)
     (hF : Function.Surjective (F.obj.map i.op)) :
     Function.Surjective ((F.cohomologyPresheaf 0).map i.op) := by
   intro y
-  obtain ⟨t, ht⟩ := hF (freeYonedaSheafSectionsEquiv J U F (Abelian.Ext.addEquiv₀ y))
-  refine ⟨Abelian.Ext.mk₀ ((freeYonedaSheafSectionsEquiv J V F).symm t), ?_⟩
-  refine (cohomologyPresheaf_map_apply F i 0 _).trans <|
-    (Abelian.Ext.mk₀_comp_mk₀ _ _).trans <|
-      (congrArg Abelian.Ext.mk₀ ?_).trans (Abelian.Ext.mk₀_addEquiv₀_apply y)
+  obtain ⟨t, ht⟩ :=
+    hF (freeYonedaSheafSectionsEquiv J U F (Abelian.Ext.addEquiv₀ (F.H'AddEquivExt 0 U y)))
+  refine ⟨(F.H'AddEquivExt 0 V).symm
+    (Abelian.Ext.mk₀ ((freeYonedaSheafSectionsEquiv J V F).symm t)), ?_⟩
+  apply (F.H'AddEquivExt 0 U).injective
+  refine (F.cohomologyPresheaf_map_apply i 0 _).trans ?_
+  rw [AddEquiv.apply_symm_apply, Abelian.Ext.mk₀_comp_mk₀, ← Abelian.Ext.mk₀_addEquiv₀_apply
+    (F.H'AddEquivExt 0 U y)]
+  congr 1
   apply (freeYonedaSheafSectionsEquiv J U F).injective
   rw [freeYonedaSheafSectionsEquiv_naturality_left, AddEquiv.apply_symm_apply]
   exact ht
@@ -188,9 +202,10 @@ lemma cohomologyZeroSectionsEquiv_naturality_left
     (F : _root_.CategoryTheory.Sheaf J AddCommGrpCat.{v}) {U V : C} (i : U ⟶ V)
     (x : F.H' 0 V) :
     cohomologyZeroSectionsEquiv F U ((F.cohomologyPresheaf 0).map i.op x) =
-      F.obj.map i.op (cohomologyZeroSectionsEquiv F V x) := by
-  rw [cohomologyPresheaf_map_apply]
-  exact (congrArg (freeYonedaSheafSectionsEquiv J U F) (ext_addEquiv₀_mk₀_comp _ _)).trans
+      F.obj.map i.op (cohomologyZeroSectionsEquiv F V x) :=
+  (congrArg (freeYonedaSheafSectionsEquiv J U F)
+    ((congrArg Abelian.Ext.addEquiv₀ (F.cohomologyPresheaf_map_apply i 0 x)).trans
+      (ext_addEquiv₀_mk₀_comp _ _))).trans
     (freeYonedaSheafSectionsEquiv_naturality_left J i F _)
 
 /-- The degree-zero identification with sections commutes with maps of coefficient sheaves. -/
