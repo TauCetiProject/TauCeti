@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Inner
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
+import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
 # The Levi-Civita connection of an isometric immersion
@@ -25,7 +26,7 @@ This computes the connection of a submanifold of Euclidean space, such as the ro
 ordinary derivatives in the ambient space.
 
 The proof evaluates the Koszul formula: the derivative of `⟪Y, Z⟫ = ⟪df Y, df Z⟫` follows the
-product rule `mvfderiv_inner_apply`, and `df [X, Y] = D_X (df Y) - D_Y (df X)` by
+product rule `TauCeti.mvfderiv_inner_apply`, and `df [X, Y] = D_X (df Y) - D_Y (df X)` by
 `mvfderiv_mlieBracket`.
 
 ## Main result
@@ -88,8 +89,8 @@ theorem IsLeviCivitaConnection.inner_apply_eq_inner_mvfderiv (h : cov.IsLeviCivi
     have heq : (fun y ↦ inner ℝ (V y) (W y)) =
         fun y ↦ inner ℝ (mvfderiv I f y (V y)) (mvfderiv I f y (W y)) :=
       funext fun y ↦ hg y (V y) (W y)
-    rw [heq, mvfderiv_inner_apply (mdifferentiableAt_mvfderiv_apply hf hn hV)
-      (mdifferentiableAt_mvfderiv_apply hf hn hW), real_inner_comm _ (mvfderiv I f x (V x))]
+    rw [heq, TauCeti.mvfderiv_inner_apply (TauCeti.mdifferentiableAt_mvfderiv_apply hf hn hV)
+      (TauCeti.mdifferentiableAt_mvfderiv_apply hf hn hW), real_inner_comm _ (mvfderiv I f x (V x))]
   -- The differential of the immersion carries brackets to commutators of ambient derivatives.
   have hbracket {U V W : Π y : M, TangentSpace I y} (hU : MDiffAt (T% U) x)
       (hV : MDiffAt (T% V) x) :

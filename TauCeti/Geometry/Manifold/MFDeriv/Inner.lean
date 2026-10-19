@@ -18,7 +18,7 @@ differentiable at `x`, the derivative of `y ↦ ⟪g y, g' y⟫` obeys the produ
 
 ## Main result
 
-* `mvfderiv_inner_apply`: the product rule for the inner product.
+* `TauCeti.mvfderiv_inner_apply`: the product rule for the inner product.
 -/
 
 public section
@@ -30,6 +30,8 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   {𝕜 : Type*} [RCLike 𝕜]
   {F : Type*} [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [NormedSpace ℝ F]
+
+namespace TauCeti
 
 /-- The **product rule** for the inner product of two vector-valued functions on a manifold. -/
 theorem mvfderiv_inner_apply {g g' : M → F} {x : M} (hg : MDiffAt g x) (hg' : MDiffAt g' x)
@@ -54,3 +56,5 @@ theorem mvfderiv_inner_apply {g g' : M → F} {x : M} (hg : MDiffAt g x) (hg' : 
     hinner.differentiableAt hpair.mdifferentiableAt, hinner.fderiv,
     hpair']
   simp only [fderivInnerCLM_apply, ContinuousLinearMap.prod_apply, add_comm]
+
+end TauCeti
