@@ -128,9 +128,9 @@ determinant of `c (j + 1)` with respect to `c' (j + 1)`. -/
 theorem torsionBracket_eq_det_mul (c' : ∀ i, Basis (Fin (n i)) F (C.X i)) :
     torsionBracket c' h b₁ b₀ s hs =
       (c' (j + 1)).det (c (j + 1)) * torsionBracket c h b₁ b₀ s hs := by
-  rw [torsionBracket, torsionBracket, ← Basis.det_mul_det _ ((c (j + 1)).reindex _),
-    Basis.det_reindex, Basis.coe_reindex, Function.comp_assoc, Equiv.symm_comp_self,
-    Function.comp_id]
+  rw [torsionBracket, torsionBracket, ← Basis.det_mul_det _ ((c (j + 1)).reindex
+    ((finCongr (eq_add_of_exactAt c h b₁ b₀)).trans finSumFinEquiv.symm))]
+  simp [Basis.det_reindex, Function.comp_assoc, -Equiv.symm_trans, -Equiv.coe_trans]
 
 /-- A bracket is nonzero. -/
 theorem torsionBracket_ne_zero : torsionBracket c h b₁ b₀ s hs ≠ 0 :=
