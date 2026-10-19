@@ -58,13 +58,6 @@ variable {N V : Type u} [AddCommGroup N] [AddCommGroup V] [Module ℝ V] {i : N 
 
 /-! ### The open subfans away from the center -/
 
-private theorem notLe_subset (σ : PointedCone ℝ V) : {C | C ∈ Φ.cones ∧ ¬σ ≤ C} ⊆ Φ.cones :=
-  fun _ hC ↦ hC.1
-
-private theorem notLe_closedUnderFaces (σ : PointedCone ℝ V) :
-    ∀ ⦃C F⦄, C ∈ {C | C ∈ Φ.cones ∧ ¬σ ≤ C} → F.IsFaceOf C → F ∈ {C | C ∈ Φ.cones ∧ ¬σ ≤ C} :=
-  fun _ _ hC hF ↦ ⟨Φ.mem_of_isFaceOf hC.1 hF, fun h ↦ hC.2 (h.trans hF.le)⟩
-
 private theorem preimageCones_starSubdivisionAlong :
     (Φ.starSubdivisionAlong_isSubdivision hΦ hσ hσ0).toFanHom.preimageCones
         {C | C ∈ Φ.cones ∧ ¬σ ≤ C} = {C | C ∈ Φ.cones ∧ ¬σ ≤ C} := by
@@ -80,8 +73,9 @@ private theorem preimageCones_starSubdivisionAlong :
 fan equivalence between the preimage subfan and the subfan of those cones. -/
 private noncomputable def complFanEquiv :
     FanEquiv ((Φ.starSubdivisionAlong_isSubdivision hΦ hσ hσ0).toFanHom.preimageSubfan
-        {C | C ∈ Φ.cones ∧ ¬σ ≤ C} (notLe_closedUnderFaces Φ σ))
-      (Φ.subfan {C | C ∈ Φ.cones ∧ ¬σ ≤ C} (notLe_subset Φ σ) (notLe_closedUnderFaces Φ σ)) where
+        {C | C ∈ Φ.cones ∧ ¬σ ≤ C} (Φ.setOf_not_le_closedUnderFaces σ))
+      (Φ.subfan {C | C ∈ Φ.cones ∧ ¬σ ≤ C} (Φ.setOf_not_le_subset_cones σ)
+        (Φ.setOf_not_le_closedUnderFaces σ)) where
   latticeEquiv := AddEquiv.refl N
   realEquiv := LinearEquiv.refl ℝ V
   map_lattice _ := rfl
@@ -92,7 +86,8 @@ private noncomputable def complFanEquiv :
 private theorem toFanHom_complFanEquiv :
     (complFanEquiv Φ hΦ hσ hσ0).toFanHom =
       (Φ.starSubdivisionAlong_isSubdivision hΦ hσ hσ0).toFanHom.restrictToPreimage
-        {C | C ∈ Φ.cones ∧ ¬σ ≤ C} (notLe_subset Φ σ) (notLe_closedUnderFaces Φ σ) :=
+        {C | C ∈ Φ.cones ∧ ¬σ ≤ C} (Φ.setOf_not_le_subset_cones σ)
+        (Φ.setOf_not_le_closedUnderFaces σ) :=
   FanHom.ext (by simp [complFanEquiv])
 
 /-- The open subset of the preimage subfan is the complement of the exceptional divisor. -/
@@ -101,11 +96,11 @@ private theorem range_subfanAnalyticMap_preimageCones :
         _ ((Φ.starSubdivisionAlong_isSubdivision hΦ hσ hσ0).toFanHom.preimageCones_subset
           {C | C ∈ Φ.cones ∧ ¬σ ≤ C})
         ((Φ.starSubdivisionAlong_isSubdivision hΦ hσ hσ0).toFanHom.preimageCones_closedUnderFaces
-          _ (notLe_closedUnderFaces Φ σ))) =
+          _ (Φ.setOf_not_le_closedUnderFaces σ))) =
       ((Φ.starSubdivisionAlong hΦ hσ).analyticBoundaryComponent
         (Φ.isRegular_starSubdivisionAlong hΦ hσ) (Φ.starSubdivisionAlongRay hΦ hσ hσ0))ᶜ := by
-  rw [FanHom.range_preimageSubfanAnalyticMap _ _ hΦ _ (notLe_subset Φ σ)
-      (notLe_closedUnderFaces Φ σ),
+  rw [FanHom.range_preimageSubfanAnalyticMap _ _ hΦ _ (Φ.setOf_not_le_subset_cones σ)
+      (Φ.setOf_not_le_closedUnderFaces σ),
     Φ.range_subfanAnalyticMap_setOf_not_le hΦ ⟨σ, hσ⟩, preimage_compl,
     preimage_analyticMap_closure_analyticConeOrbit_starSubdivisionAlong]
 
@@ -118,21 +113,23 @@ private theorem analyticMap_comp_subfanAnalyticMap :
         ((Φ.starSubdivisionAlong_isSubdivision hΦ hσ hσ0).toFanHom.preimageCones_subset
           {C | C ∈ Φ.cones ∧ ¬σ ≤ C})
         ((Φ.starSubdivisionAlong_isSubdivision hΦ hσ hσ0).toFanHom.preimageCones_closedUnderFaces
-          _ (notLe_closedUnderFaces Φ σ)) =
-      Φ.subfanAnalyticMap hΦ _ (notLe_subset Φ σ) (notLe_closedUnderFaces Φ σ) ∘
+          _ (Φ.setOf_not_le_closedUnderFaces σ)) =
+      Φ.subfanAnalyticMap hΦ _ (Φ.setOf_not_le_subset_cones σ)
+          (Φ.setOf_not_le_closedUnderFaces σ) ∘
         (complFanEquiv Φ hΦ hσ hσ0).toFanHom.analyticMap
           ((Φ.isRegular_starSubdivisionAlong hΦ hσ).preimageSubfan _ _
-            (notLe_closedUnderFaces Φ σ)) (hΦ.subfan _ (notLe_subset Φ σ)
-              (notLe_closedUnderFaces Φ σ)) := by
+            (Φ.setOf_not_le_closedUnderFaces σ)) (hΦ.subfan _ (Φ.setOf_not_le_subset_cones σ)
+              (Φ.setOf_not_le_closedUnderFaces σ)) := by
   ext x
   rw [toFanHom_complFanEquiv]
   exact ConcreteCategory.congr_hom (FanHom.preimageSubfanAnalyticMap_comp_analyticMap _ _ hΦ _
-    (notLe_subset Φ σ) (notLe_closedUnderFaces Φ σ)) x
+    (Φ.setOf_not_le_subset_cones σ) (Φ.setOf_not_le_closedUnderFaces σ)) x
 
 private theorem bijective_analyticMap_complFanEquiv :
     Function.Bijective ((complFanEquiv Φ hΦ hσ hσ0).toFanHom.analyticMap
-      ((Φ.isRegular_starSubdivisionAlong hΦ hσ).preimageSubfan _ _ (notLe_closedUnderFaces Φ σ))
-      (hΦ.subfan _ (notLe_subset Φ σ) (notLe_closedUnderFaces Φ σ))) := by
+      ((Φ.isRegular_starSubdivisionAlong hΦ hσ).preimageSubfan _ _
+        (Φ.setOf_not_le_closedUnderFaces σ))
+      (hΦ.subfan _ (Φ.setOf_not_le_subset_cones σ) (Φ.setOf_not_le_closedUnderFaces σ))) := by
   rw [← FanEquiv.analyticIso_hom]
   exact ConcreteCategory.bijective_of_isIso _
 
@@ -165,8 +162,9 @@ theorem injOn_analyticMap_starSubdivisionAlong_compl :
         (Φ.isRegular_starSubdivisionAlong hΦ hσ) hΦ)
       ((Φ.starSubdivisionAlong hΦ hσ).analyticBoundaryComponent
         (Φ.isRegular_starSubdivisionAlong hΦ hσ) (Φ.starSubdivisionAlongRay hΦ hσ hσ0))ᶜ := by
-  have hinj := (Φ.subfanAnalyticMap_injective hΦ _ (notLe_subset Φ σ)
-    (notLe_closedUnderFaces Φ σ)).comp (bijective_analyticMap_complFanEquiv Φ hΦ hσ hσ0).injective
+  have hinj := (Φ.subfanAnalyticMap_injective hΦ _ (Φ.setOf_not_le_subset_cones σ)
+    (Φ.setOf_not_le_closedUnderFaces σ)).comp
+      (bijective_analyticMap_complFanEquiv Φ hΦ hσ hσ0).injective
   rw [← analyticMap_comp_subfanAnalyticMap Φ hΦ hσ hσ0] at hinj
   rw [← range_subfanAnalyticMap_preimageCones]
   rintro _ ⟨a, rfl⟩ _ ⟨b, rfl⟩ h
@@ -189,18 +187,22 @@ theorem isLocalDiffeomorphOn_analyticMap_starSubdivisionAlong_compl (n : ℕ∞�
   let _ := Φ.analyticChartedSpace hΦ
   -- The complex structures of the two open subfans, which the chain rule below passes through.
   let _ := ((Φ.starSubdivisionAlong_isSubdivision hΦ hσ hσ0).toFanHom.preimageSubfan
-    _ (notLe_closedUnderFaces Φ σ)).analyticChartedSpace
-      ((Φ.isRegular_starSubdivisionAlong hΦ hσ).preimageSubfan _ _ (notLe_closedUnderFaces Φ σ))
-  let _ := (Φ.subfan _ (notLe_subset Φ σ) (notLe_closedUnderFaces Φ σ)).analyticChartedSpace
-    (hΦ.subfan _ (notLe_subset Φ σ) (notLe_closedUnderFaces Φ σ))
+    _ (Φ.setOf_not_le_closedUnderFaces σ)).analyticChartedSpace
+      ((Φ.isRegular_starSubdivisionAlong hΦ hσ).preimageSubfan _ _
+        (Φ.setOf_not_le_closedUnderFaces σ))
+  let _ := (Φ.subfan _ (Φ.setOf_not_le_subset_cones σ)
+    (Φ.setOf_not_le_closedUnderFaces σ)).analyticChartedSpace
+    (hΦ.subfan _ (Φ.setOf_not_le_subset_cones σ) (Φ.setOf_not_le_closedUnderFaces σ))
   rintro ⟨_, hx⟩
   rw [← range_subfanAnalyticMap_preimageCones] at hx
   obtain ⟨a, rfl⟩ := hx
-  refine ((Φ.starSubdivisionAlong hΦ hσ).isLocalDiffeomorph_subfanAnalyticMap
-    (Φ.isRegular_starSubdivisionAlong hΦ hσ) _ _ _ n a).of_comp ?_
+  dsimp only
+  refine IsLocalDiffeomorphAt.of_comp_right ?_
+    ((Φ.starSubdivisionAlong hΦ hσ).isLocalDiffeomorph_subfanAnalyticMap
+      (Φ.isRegular_starSubdivisionAlong hΦ hσ) _ _ _ n a)
   rw [analyticMap_comp_subfanAnalyticMap Φ hΦ hσ hσ0, ← FanEquiv.coe_analyticDiffeomorph _ _ _ n]
   exact (Diffeomorph.isLocalDiffeomorph _ a).comp (hg := Φ.isLocalDiffeomorph_subfanAnalyticMap hΦ
-    _ (notLe_subset Φ σ) (notLe_closedUnderFaces Φ σ) n _)
+    _ (Φ.setOf_not_le_subset_cones σ) (Φ.setOf_not_le_closedUnderFaces σ) n _)
 
 /-- The blow-down of the star subdivision of a regular fan `Φ` along a nonzero cone `σ`, as a
 biholomorphism from the complement of the exceptional divisor onto the complement of the orbit

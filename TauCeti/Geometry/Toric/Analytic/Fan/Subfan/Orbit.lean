@@ -53,8 +53,8 @@ theorem mem_range_subfanAnalyticMap_iff {sigma : Phi.cones}
 /-- The invariant open subset associated to the subfan of cones not containing a cone `sigma` is
 the complement of the orbit closure of `sigma`. -/
 theorem range_subfanAnalyticMap_setOf_not_le (sigma : Phi.cones) :
-    range (Phi.subfanAnalyticMap hPhi {tau | tau ∈ Phi.cones ∧ ¬sigma.1 ≤ tau} (fun _ h ↦ h.1)
-        fun _ _ h hF ↦ ⟨Phi.mem_of_isFaceOf h.1 hF, fun hle ↦ h.2 (hle.trans hF.le)⟩) =
+    range (Phi.subfanAnalyticMap hPhi _ (Phi.setOf_not_le_subset_cones sigma.1)
+        (Phi.setOf_not_le_closedUnderFaces sigma.1)) =
       (closure (Phi.analyticConeOrbit hPhi sigma))ᶜ := by
   ext x
   obtain ⟨tau, hx⟩ := Phi.exists_mem_analyticConeOrbit hPhi x

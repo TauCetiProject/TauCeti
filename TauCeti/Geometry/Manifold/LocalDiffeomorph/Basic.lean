@@ -49,7 +49,7 @@ right of a composite local diffeomorphism.
   local diffeomorphism at every point of its source.
 * `IsLocalDiffeomorphAt.eventually`: being a local diffeomorphism at a point is an open
   condition.
-* `IsLocalDiffeomorphAt.of_comp`: a map whose composite with a local diffeomorphism is a local
+* `IsLocalDiffeomorphAt.of_comp_right`: a map whose composite with a local diffeomorphism is a local
   diffeomorphism is itself one.
 * `TauCeti.isLocalDiffeomorph_of_mfderiv_eq`: the global version.
 
@@ -221,10 +221,10 @@ theorem _root_.IsLocalDiffeomorphAt.eventually {f : M → N} {x : M}
 /-- **Cancelling a local diffeomorphism on the right.** If `e` is a `C^n` local diffeomorphism at
 `x` and `f ∘ e` is a `C^n` local diffeomorphism at `x`, then `f` is a `C^n` local diffeomorphism at
 `e x`: near `e x` it is `f ∘ e` composed with a local inverse of `e`. -/
-theorem _root_.IsLocalDiffeomorphAt.of_comp {F' : Type*} [NormedAddCommGroup F']
+theorem _root_.IsLocalDiffeomorphAt.of_comp_right {F' : Type*} [NormedAddCommGroup F']
     [NormedSpace 𝕂 F'] {G' : Type*} [TopologicalSpace G'] {K : ModelWithCorners 𝕂 F' G'}
     {P : Type*} [TopologicalSpace P] [ChartedSpace G' P] {e : M → N} {f : N → P} {x : M}
-    (he : IsLocalDiffeomorphAt I J n e x) (hfe : IsLocalDiffeomorphAt I K n (f ∘ e) x) :
+    (hfe : IsLocalDiffeomorphAt I K n (f ∘ e) x) (he : IsLocalDiffeomorphAt I J n e x) :
     IsLocalDiffeomorphAt J K n f (e x) := by
   obtain ⟨Ψ, hxΨ, hfeΨ⟩ := hfe
   have hx : he.localInverse (e x) = x := he.localInverse_left_inv he.localInverse_mem_target
