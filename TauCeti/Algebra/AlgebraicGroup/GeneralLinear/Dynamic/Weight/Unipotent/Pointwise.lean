@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Unipotent
+public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Unipotent.Basic
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Dynamic.Weight.Unipotent.Basic
 
 /-!

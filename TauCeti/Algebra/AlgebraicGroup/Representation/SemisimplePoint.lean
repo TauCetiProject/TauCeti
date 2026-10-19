@@ -33,6 +33,8 @@ invariant under conjugation.
   comodule.
 * `TauCeti.HopfAlgebra.isSemisimplePoint_iff_forall_isSemisimple_endOfPoint`: the equivalent
   formulation using the underlying comodule action endomorphisms.
+* `TauCeti.HopfAlgebra.IsSemisimplePoint.isSemisimple_basePointsRepresentation`: a semisimple
+  base-valued point acts semisimply on every finite-dimensional comodule.
 * `TauCeti.HopfAlgebra.IsSemisimplePoint.inv`, `.mul_of_commute`, and `.zpow`: closure under
   inversion, commuting products, and integer powers.
 * `TauCeti.HopfAlgebra.IsSemisimplePoint.mapDomain`: precomposition by a bialgebra morphism
@@ -99,7 +101,7 @@ Hopf algebras, this says that a homomorphism of affine groups sends semisimple p
 points. -/
 theorem IsSemisimplePoint.mapDomain {g : WithConv (H₂ →ₐ[k] K)}
     (hg : IsSemisimplePoint g) (φ : H₁ →ₐc[k] H₂) :
-    IsSemisimplePoint (AlgHom.mapDomain φ g) := by
+    IsSemisimplePoint (BialgHom.mapDomain φ g) := by
   rw [isSemisimplePoint_def] at hg ⊢
   intro M
   rw [← Comodule.pointsAction_corestrict_obj φ M g]
@@ -108,14 +110,14 @@ theorem IsSemisimplePoint.mapDomain {g : WithConv (H₂ →ₐ[k] K)}
 /-- Semisimplicity of points is invariant under precomposition by a bialgebra isomorphism. -/
 theorem isSemisimplePoint_mapDomain_iff
     (e : H₁ ≃ₐc[k] H₂) (g : WithConv (H₂ →ₐ[k] K)) :
-    IsSemisimplePoint (AlgHom.mapDomain (e : H₁ →ₐc[k] H₂) g) ↔ IsSemisimplePoint g := by
+    IsSemisimplePoint (BialgHom.mapDomain (e : H₁ →ₐc[k] H₂) g) ↔ IsSemisimplePoint g := by
   constructor
   · intro hg
     have h := hg.mapDomain (e.symm : H₂ →ₐc[k] H₁)
-    have he : AlgHom.mapDomain (e.symm : H₂ →ₐc[k] H₁)
-        (AlgHom.mapDomain (e : H₁ →ₐc[k] H₂) g) = g := by
-      rw [← AlgHom.mapDomainMulEquiv_symm_apply e, ← AlgHom.mapDomainMulEquiv_apply e]
-      exact (AlgHom.mapDomainMulEquiv (A := K) e).left_inv g
+    have he : BialgHom.mapDomain (e.symm : H₂ →ₐc[k] H₁)
+        (BialgHom.mapDomain (e : H₁ →ₐc[k] H₂) g) = g := by
+      rw [← BialgEquiv.mapDomainMulEquiv_symm_apply e, ← BialgEquiv.mapDomainMulEquiv_apply e]
+      exact (BialgEquiv.mapDomainMulEquiv (A := K) e).left_inv g
     rwa [he] at h
   · intro hg
     exact hg.mapDomain (e : H₁ →ₐc[k] H₂)
@@ -288,12 +290,12 @@ theorem isSemisimplePoint_pointsMulEquiv_iff
     have hgleft : IsSemisimplePoint gleft := by
       have h := hleft.mapDomain (Bialgebra.TensorProduct.projectLeft
         (R := k) (H₁ := H₁) (H₂ := H₂))
-      simpa only [AlgHom.mapDomain_apply, gleft, e,
+      simpa only [BialgHom.mapDomain_apply, gleft, e,
         AffineGroup.Product.mapDomain_projectLeft] using h
     have hgright : IsSemisimplePoint gright := by
       have h := hright.mapDomain (Bialgebra.TensorProduct.projectRight
         (R := k) (H₁ := H₁) (H₂ := H₂))
-      simpa only [AlgHom.mapDomain_apply, gright, e,
+      simpa only [BialgHom.mapDomain_apply, gright, e,
         AffineGroup.Product.mapDomain_projectRight] using h
     have hfactor : g = gleft * gright := by
       simpa only [e, gleft, gright, map_mul, MulEquiv.symm_apply_apply] using
@@ -304,5 +306,29 @@ theorem isSemisimplePoint_pointsMulEquiv_iff
 end Product
 
 end HopfAlgebra
+
+namespace HopfAlgebra.IsSemisimplePoint
+
+universe u v
+
+variable {k : Type u} {H : Type v} {M : Type u}
+variable [Field k] [Semiring H] [_root_.HopfAlgebra k H]
+variable [AddCommGroup M] [Module k M] [Comodule k H M] [Module.Finite k M]
+
+/-- A semisimple base-valued point acts by a semisimple operator on every finite-dimensional
+comodule. -/
+theorem isSemisimple_basePointsRepresentation {g : WithConv (H →ₐ[k] k)}
+    (hg : IsSemisimplePoint g) :
+    (Comodule.basePointsRepresentation (R := k) (H := H) M g).IsSemisimple := by
+  refine (LinearEquiv.isSemisimple_iff (f := Comodule.endOfPoint M g.ofConv) _
+    (TensorProduct.lid k M) ?_).mp
+    ((isSemisimplePoint_iff_forall_isSemisimple_endOfPoint g).mp hg
+      (FGComoduleCat.of (R := k) (C := H) M))
+  refine TensorProduct.ext' fun a m ↦ ?_
+  rw [LinearMap.comp_apply, LinearMap.comp_apply, Comodule.endOfPoint_tmul,
+    Comodule.endOfPoint_one_tmul_eq_one_tmul_basePointsRepresentation]
+  simp
+
+end HopfAlgebra.IsSemisimplePoint
 
 end TauCeti

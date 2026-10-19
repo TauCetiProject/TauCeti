@@ -32,7 +32,8 @@ finite, not surjective.
 
 *How does it move along homomorphisms?* A homomorphism carries squares to squares, so `G²` lands
 inside the preimage of `H²`. This is the side condition that descends a homomorphism to the
-quotients by squares.
+quotients by squares. In the same way `Gⁿ` lands inside the preimage of `Hⁿ`, so a subgroup with
+finite image in `G ⧸ Gⁿ` has finite image in `H ⧸ Hⁿ`.
 
 ## Main results
 

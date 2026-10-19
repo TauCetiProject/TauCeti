@@ -81,7 +81,104 @@ private theorem yTerm_zpow_neg (q u : Kˣ) (n : ℤ) :
 
 end Field
 
-variable {K : Type*} [NormedField K] [CompleteSpace K]
+variable {K : Type*} [NormedField K]
+
+/-- The first Tate coordinate series, for a multiplicative parameter `u`.
+It gives a uniformisation coordinate when `‖q‖ < 1` and `u ∉ q^ℤ`; at a pole its
+zero-denominator summand is totalised to zero. -/
+noncomputable def tateUniformizationX (q u : Kˣ) : K :=
+  (∑' n : ℤ, (q : K) ^ n * (u : K) / (1 - (q : K) ^ n * (u : K)) ^ 2) -
+    2 * divisorSumAt 1 (q : K)
+
+/-- The second Tate coordinate series. The same convergence and pole conventions as
+`tateUniformizationX` apply. -/
+noncomputable def tateUniformizationY (q u : Kˣ) : K :=
+  (∑' n : ℤ, ((q : K) ^ n * (u : K)) ^ 2 / (1 - (q : K) ^ n * (u : K)) ^ 3) +
+    divisorSumAt 1 (q : K)
+
+/-- The series formula for the first Tate coordinate. -/
+theorem tateUniformizationX_def (q u : Kˣ) :
+    tateUniformizationX q u =
+      (∑' n : ℤ, (q : K) ^ n * (u : K) / (1 - (q : K) ^ n * (u : K)) ^ 2) -
+        2 * divisorSumAt 1 (q : K) := (rfl)
+
+/-- The series formula for the second Tate coordinate. -/
+theorem tateUniformizationY_def (q u : Kˣ) :
+    tateUniformizationY q u =
+      (∑' n : ℤ, ((q : K) ^ n * (u : K)) ^ 2 / (1 - (q : K) ^ n * (u : K)) ^ 3) +
+        divisorSumAt 1 (q : K) := (rfl)
+
+/-- The first Tate coordinate is constant on the multiplicative cosets of `q^ℤ`. -/
+@[simp]
+theorem tateUniformizationX_zpow_mul (q u : Kˣ) (k : ℤ) :
+    tateUniformizationX q (q ^ k * u) = tateUniformizationX q u := by
+  rw [tateUniformizationX_def, tateUniformizationX_def]
+  congr 1
+  have h := (Equiv.addRight k).tsum_eq
+    (fun n : ℤ ↦ (q : K) ^ n * (u : K) / (1 - (q : K) ^ n * (u : K)) ^ 2)
+  simpa [zpow_add₀ q.ne_zero, mul_assoc] using h
+
+/-- The second Tate coordinate is constant on the multiplicative cosets of `q^ℤ`. -/
+@[simp]
+theorem tateUniformizationY_zpow_mul (q u : Kˣ) (k : ℤ) :
+    tateUniformizationY q (q ^ k * u) = tateUniformizationY q u := by
+  rw [tateUniformizationY_def, tateUniformizationY_def]
+  congr 1
+  have h := (Equiv.addRight k).tsum_eq
+    (fun n : ℤ ↦ ((q : K) ^ n * (u : K)) ^ 2 / (1 - (q : K) ^ n * (u : K)) ^ 3)
+  simpa [zpow_add₀ q.ne_zero, mul_assoc] using h
+
+/-- Multiplication of the parameter by `q` leaves the first Tate coordinate unchanged. -/
+@[simp]
+theorem tateUniformizationX_self_mul (q u : Kˣ) :
+    tateUniformizationX q (q * u) = tateUniformizationX q u := by
+  simpa using tateUniformizationX_zpow_mul q u 1
+
+/-- Multiplication of the parameter by `q` leaves the second Tate coordinate unchanged. -/
+@[simp]
+theorem tateUniformizationY_self_mul (q u : Kˣ) :
+    tateUniformizationY q (q * u) = tateUniformizationY q u := by
+  simpa using tateUniformizationY_zpow_mul q u 1
+
+/-- Multiplication of the parameter by a natural power of `q` leaves the first Tate
+coordinate unchanged. -/
+@[simp]
+theorem tateUniformizationX_pow_mul (q u : Kˣ) (n : ℕ) :
+    tateUniformizationX q (q ^ n * u) = tateUniformizationX q u := by
+  simpa only [zpow_natCast] using tateUniformizationX_zpow_mul q u n
+
+/-- Multiplication of the parameter by a natural power of `q` leaves the second Tate
+coordinate unchanged. -/
+@[simp]
+theorem tateUniformizationY_pow_mul (q u : Kˣ) (n : ℕ) :
+    tateUniformizationY q (q ^ n * u) = tateUniformizationY q u := by
+  simpa only [zpow_natCast] using tateUniformizationY_zpow_mul q u n
+
+/-- Multiplication of the parameter by `q⁻¹` leaves the first Tate coordinate unchanged. -/
+@[simp]
+theorem tateUniformizationX_inv_mul (q u : Kˣ) :
+    tateUniformizationX q (q⁻¹ * u) = tateUniformizationX q u := by
+  simpa only [zpow_neg_one] using tateUniformizationX_zpow_mul q u (-1)
+
+/-- Multiplication of the parameter by `q⁻¹` leaves the second Tate coordinate unchanged. -/
+@[simp]
+theorem tateUniformizationY_inv_mul (q u : Kˣ) :
+    tateUniformizationY q (q⁻¹ * u) = tateUniformizationY q u := by
+  simpa only [zpow_neg_one] using tateUniformizationY_zpow_mul q u (-1)
+
+/-- Inverting the multiplicative parameter leaves the first Tate coordinate unchanged. -/
+@[simp]
+theorem tateUniformizationX_inv (q u : Kˣ) :
+    tateUniformizationX q u⁻¹ = tateUniformizationX q u := by
+  rw [tateUniformizationX_def, tateUniformizationX_def]
+  congr 1
+  have h := (Equiv.neg ℤ).tsum_eq
+    (fun n : ℤ ↦ xTerm ((q : K) ^ n * (u : K)))
+  simp only [Equiv.neg_apply] at h
+  simp_rw [xTerm_zpow_neg] at h
+  simpa only [xTerm, Units.val_inv_eq_inv_val] using h
+
+variable [CompleteSpace K]
 
 private theorem summable_xTerm_nat (q : K) (hq : ‖q‖ < 1) (u : K) :
     Summable (fun n : ℕ ↦ xTerm (q ^ n * u)) := by
@@ -129,114 +226,6 @@ theorem summable_tateUniformizationY (q : Kˣ) (hq : ‖(q : K)‖ < 1) (u : Kˣ
   · simpa only [yTerm_zpow_neg, zpow_natCast] using
       (summable_yTerm_nat (q : K) hq (u : K)⁻¹).neg.sub
         (summable_xTerm_nat (q : K) hq (u : K)⁻¹)
-
-omit [CompleteSpace K] in
-/-- The first Tate coordinate series, for a multiplicative parameter `u`.
-It gives a uniformisation coordinate when `‖q‖ < 1` and `u ∉ q^ℤ`; at a pole its
-zero-denominator summand is totalised to zero. -/
-noncomputable def tateUniformizationX (q u : Kˣ) : K :=
-  (∑' n : ℤ, (q : K) ^ n * (u : K) / (1 - (q : K) ^ n * (u : K)) ^ 2) -
-    2 * divisorSumAt 1 (q : K)
-
-omit [CompleteSpace K] in
-/-- The second Tate coordinate series. The same convergence and pole conventions as
-`tateUniformizationX` apply. -/
-noncomputable def tateUniformizationY (q u : Kˣ) : K :=
-  (∑' n : ℤ, ((q : K) ^ n * (u : K)) ^ 2 / (1 - (q : K) ^ n * (u : K)) ^ 3) +
-    divisorSumAt 1 (q : K)
-
-omit [CompleteSpace K] in
-/-- The series formula for the first Tate coordinate. -/
-theorem tateUniformizationX_def (q u : Kˣ) :
-    tateUniformizationX q u =
-      (∑' n : ℤ, (q : K) ^ n * (u : K) / (1 - (q : K) ^ n * (u : K)) ^ 2) -
-        2 * divisorSumAt 1 (q : K) := (rfl)
-
-omit [CompleteSpace K] in
-/-- The series formula for the second Tate coordinate. -/
-theorem tateUniformizationY_def (q u : Kˣ) :
-    tateUniformizationY q u =
-      (∑' n : ℤ, ((q : K) ^ n * (u : K)) ^ 2 / (1 - (q : K) ^ n * (u : K)) ^ 3) +
-        divisorSumAt 1 (q : K) := (rfl)
-
-omit [CompleteSpace K] in
-/-- The first Tate coordinate is constant on the multiplicative cosets of `q^ℤ`. -/
-@[simp]
-theorem tateUniformizationX_zpow_mul (q u : Kˣ) (k : ℤ) :
-    tateUniformizationX q (q ^ k * u) = tateUniformizationX q u := by
-  rw [tateUniformizationX_def, tateUniformizationX_def]
-  congr 1
-  have h := (Equiv.addRight k).tsum_eq
-    (fun n : ℤ ↦ (q : K) ^ n * (u : K) / (1 - (q : K) ^ n * (u : K)) ^ 2)
-  simpa [zpow_add₀ q.ne_zero, mul_assoc] using h
-
-omit [CompleteSpace K] in
-/-- The second Tate coordinate is constant on the multiplicative cosets of `q^ℤ`. -/
-@[simp]
-theorem tateUniformizationY_zpow_mul (q u : Kˣ) (k : ℤ) :
-    tateUniformizationY q (q ^ k * u) = tateUniformizationY q u := by
-  rw [tateUniformizationY_def, tateUniformizationY_def]
-  congr 1
-  have h := (Equiv.addRight k).tsum_eq
-    (fun n : ℤ ↦ ((q : K) ^ n * (u : K)) ^ 2 / (1 - (q : K) ^ n * (u : K)) ^ 3)
-  simpa [zpow_add₀ q.ne_zero, mul_assoc] using h
-
-omit [CompleteSpace K] in
-/-- Multiplication of the parameter by `q` leaves the first Tate coordinate unchanged. -/
-@[simp]
-theorem tateUniformizationX_self_mul (q u : Kˣ) :
-    tateUniformizationX q (q * u) = tateUniformizationX q u := by
-  simpa using tateUniformizationX_zpow_mul q u 1
-
-omit [CompleteSpace K] in
-/-- Multiplication of the parameter by `q` leaves the second Tate coordinate unchanged. -/
-@[simp]
-theorem tateUniformizationY_self_mul (q u : Kˣ) :
-    tateUniformizationY q (q * u) = tateUniformizationY q u := by
-  simpa using tateUniformizationY_zpow_mul q u 1
-
-omit [CompleteSpace K] in
-/-- Multiplication of the parameter by a natural power of `q` leaves the first Tate
-coordinate unchanged. -/
-@[simp]
-theorem tateUniformizationX_pow_mul (q u : Kˣ) (n : ℕ) :
-    tateUniformizationX q (q ^ n * u) = tateUniformizationX q u := by
-  simpa only [zpow_natCast] using tateUniformizationX_zpow_mul q u n
-
-omit [CompleteSpace K] in
-/-- Multiplication of the parameter by a natural power of `q` leaves the second Tate
-coordinate unchanged. -/
-@[simp]
-theorem tateUniformizationY_pow_mul (q u : Kˣ) (n : ℕ) :
-    tateUniformizationY q (q ^ n * u) = tateUniformizationY q u := by
-  simpa only [zpow_natCast] using tateUniformizationY_zpow_mul q u n
-
-omit [CompleteSpace K] in
-/-- Multiplication of the parameter by `q⁻¹` leaves the first Tate coordinate unchanged. -/
-@[simp]
-theorem tateUniformizationX_inv_mul (q u : Kˣ) :
-    tateUniformizationX q (q⁻¹ * u) = tateUniformizationX q u := by
-  simpa only [zpow_neg_one] using tateUniformizationX_zpow_mul q u (-1)
-
-omit [CompleteSpace K] in
-/-- Multiplication of the parameter by `q⁻¹` leaves the second Tate coordinate unchanged. -/
-@[simp]
-theorem tateUniformizationY_inv_mul (q u : Kˣ) :
-    tateUniformizationY q (q⁻¹ * u) = tateUniformizationY q u := by
-  simpa only [zpow_neg_one] using tateUniformizationY_zpow_mul q u (-1)
-
-omit [CompleteSpace K] in
-/-- Inverting the multiplicative parameter leaves the first Tate coordinate unchanged. -/
-@[simp]
-theorem tateUniformizationX_inv (q u : Kˣ) :
-    tateUniformizationX q u⁻¹ = tateUniformizationX q u := by
-  rw [tateUniformizationX_def, tateUniformizationX_def]
-  congr 1
-  have h := (Equiv.neg ℤ).tsum_eq
-    (fun n : ℤ ↦ xTerm ((q : K) ^ n * (u : K)))
-  simp only [Equiv.neg_apply] at h
-  simp_rw [xTerm_zpow_neg] at h
-  simpa only [xTerm, Units.val_inv_eq_inv_val] using h
 
 /-- Inversion gives the negation formula of the Tate equation `y² + xy = x³ + a₄x + a₆`:
 `Y(u⁻¹) = -Y(u) - X(u)`. -/

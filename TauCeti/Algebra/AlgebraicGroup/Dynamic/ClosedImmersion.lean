@@ -16,7 +16,7 @@ subgroup of the induced cocharacter. If the morphism is injective on `R[T;T⁻¹
 points, Levi membership is detected by the ambient group, so the Levi subgroup is the inverse
 image of an ambient Levi subgroup. This injectivity holds for every closed immersion: in
 coordinates a closed immersion is a surjective bialgebra homomorphism, and pre-composition by
-one is injective on points (`TauCeti.AlgHom.mapDomain_injective_of_surjective`).
+one is injective on points (`BialgHom.mapDomain_injective_of_surjective`).
 
 Consequently, a Hopf ideal cutting out the ambient Levi has image cutting out the Levi of the
 closed subgroup, which gives a representing closed subgroup scheme.
@@ -57,29 +57,29 @@ variable [CommSemiring A] [Algebra R A]
 /-- The generic point of a cocharacter commutes with precomposition by a bialgebra morphism. -/
 theorem mapDomain_genericPoint (φ : H →ₐc[R] K)
     (l : K →ₐc[R] LaurentPolynomial R) :
-    AlgHom.mapDomain φ (genericPoint A l) = genericPoint A (l.comp φ) := by
+    BialgHom.mapDomain φ (genericPoint A l) = genericPoint A (l.comp φ) := by
   apply WithConv.ofConv_injective
   apply AlgHom.ext
   intro x
-  simp only [AlgHom.mapDomain_apply_apply, genericPoint_eq_pointsHom,
+  simp only [BialgHom.mapDomain_apply_apply, genericPoint_eq_pointsHom,
     pointsHom_apply, BialgHom.coe_comp, Function.comp_apply]
 
 /-- A constant point commutes with precomposition by a bialgebra morphism. -/
 theorem mapDomain_constPoint (φ : H →ₐc[R] K)
     (g : WithConv (K →ₐ[R] A)) :
-    AlgHom.mapDomain φ (constPoint A g) =
-      constPoint A (AlgHom.mapDomain φ g) := by
+    BialgHom.mapDomain φ (constPoint A g) =
+      constPoint A (BialgHom.mapDomain φ g) := by
   rw [constPoint_apply, constPoint_apply]
   convert DFunLike.congr_fun
-    (AlgHom.mapValue_mapDomain φ (IsScalarTower.toAlgHom R A (LaurentPolynomial A))) g using 1 <;>
-      simp only [MonoidHom.comp_apply, AlgHom.mapDomain_apply, AlgHom.mapValue_apply,
+    (BialgHom.mapValue_mapDomain φ (IsScalarTower.toAlgHom R A (LaurentPolynomial A))) g using 1 <;>
+      simp only [MonoidHom.comp_apply, BialgHom.mapDomain_apply, AlgHom.mapValue_apply,
         AlgHom.comp_assoc]
 
 /-- Generic conjugation is natural in the coordinate Hopf algebra. -/
 theorem mapDomain_conjugate (φ : H →ₐc[R] K)
     (l : K →ₐc[R] LaurentPolynomial R) (g : WithConv (K →ₐ[R] A)) :
-    AlgHom.mapDomain φ (conjugate A l g) =
-      conjugate A (l.comp φ) (AlgHom.mapDomain φ g) := by
+    BialgHom.mapDomain φ (conjugate A l g) =
+      conjugate A (l.comp φ) (BialgHom.mapDomain φ g) := by
   simp only [conjugate_apply, map_mul, map_inv, mapDomain_genericPoint,
     mapDomain_constPoint]
 
@@ -87,7 +87,7 @@ theorem mapDomain_conjugate (φ : H →ₐc[R] K)
 the induced cocharacter. -/
 theorem mapDomain_mem_levi (φ : H →ₐc[R] K)
     (l : K →ₐc[R] LaurentPolynomial R) {g : WithConv (K →ₐ[R] A)}
-    (hg : g ∈ levi A l) : AlgHom.mapDomain φ g ∈ levi A (l.comp φ) := by
+    (hg : g ∈ levi A l) : BialgHom.mapDomain φ g ∈ levi A (l.comp φ) := by
   rw [mem_levi_iff, ← mapDomain_conjugate, ← mapDomain_constPoint,
     mem_levi_iff.mp hg]
 
@@ -95,10 +95,10 @@ theorem mapDomain_mem_levi (φ : H →ₐc[R] K)
 the dynamic Levi exactly when its image lies in the ambient dynamic Levi. This applies to closed
 immersions, see `mem_levi_iff_of_surjective`. -/
 theorem mem_levi_iff_of_injective (φ : H →ₐc[R] K)
-    (hφ : Function.Injective (AlgHom.mapDomain (A := LaurentPolynomial A) φ))
+    (hφ : Function.Injective (BialgHom.mapDomain (A := LaurentPolynomial A) φ))
     (l : K →ₐc[R] LaurentPolynomial R)
     (g : WithConv (K →ₐ[R] A)) :
-    g ∈ levi A l ↔ AlgHom.mapDomain φ g ∈ levi A (l.comp φ) := by
+    g ∈ levi A l ↔ BialgHom.mapDomain φ g ∈ levi A (l.comp φ) := by
   refine ⟨mapDomain_mem_levi φ l, fun hg => ?_⟩
   apply mem_levi_iff.mpr
   apply hφ
@@ -108,9 +108,9 @@ theorem mem_levi_iff_of_injective (φ : H →ₐc[R] K)
 /-- If pre-composition by `φ` is injective on `LaurentPolynomial A`-valued points, the dynamic
 Levi is the inverse image of the ambient dynamic Levi. -/
 theorem levi_eq_comap_of_injective (φ : H →ₐc[R] K)
-    (hφ : Function.Injective (AlgHom.mapDomain (A := LaurentPolynomial A) φ))
+    (hφ : Function.Injective (BialgHom.mapDomain (A := LaurentPolynomial A) φ))
     (l : K →ₐc[R] LaurentPolynomial R) :
-    levi A l = (levi A (l.comp φ)).comap (AlgHom.mapDomain φ) := by
+    levi A l = (levi A (l.comp φ)).comap (BialgHom.mapDomain φ) := by
   ext g
   exact mem_levi_iff_of_injective φ hφ l g
 
@@ -119,14 +119,14 @@ ambient dynamic Levi. This holds over every commutative value algebra, including
 ones. -/
 theorem mem_levi_iff_of_surjective (φ : H →ₐc[R] K) (hφ : Function.Surjective φ)
     (l : K →ₐc[R] LaurentPolynomial R) (g : WithConv (K →ₐ[R] A)) :
-    g ∈ levi A l ↔ AlgHom.mapDomain φ g ∈ levi A (l.comp φ) :=
-  mem_levi_iff_of_injective φ (AlgHom.mapDomain_injective_of_surjective φ hφ) l g
+    g ∈ levi A l ↔ BialgHom.mapDomain φ g ∈ levi A (l.comp φ) :=
+  mem_levi_iff_of_injective φ (BialgHom.mapDomain_injective_of_surjective φ hφ) l g
 
 /-- The dynamic Levi of a closed subgroup is the inverse image of the ambient dynamic Levi. -/
 theorem levi_eq_comap_of_surjective (φ : H →ₐc[R] K) (hφ : Function.Surjective φ)
     (l : K →ₐc[R] LaurentPolynomial R) :
-    levi A l = (levi A (l.comp φ)).comap (AlgHom.mapDomain φ) :=
-  levi_eq_comap_of_injective φ (AlgHom.mapDomain_injective_of_surjective φ hφ) l
+    levi A l = (levi A (l.comp φ)).comap (BialgHom.mapDomain φ) :=
+  levi_eq_comap_of_injective φ (BialgHom.mapDomain_injective_of_surjective φ hφ) l
 
 end TauCeti.Cocharacter
 
@@ -150,7 +150,8 @@ theorem mem_quotientPointsSubgroup_map_iff_mem_levi (φ : H ⟶ K)
     g ∈ CommHopfAlgCat.quotientPointsSubgroup K (J.map φ.hom) A ↔ g ∈ levi A l := by
   rw [CommHopfAlgCat.mem_quotientPointsSubgroup_map_iff φ,
     CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, hJ]
-  exact (mem_levi_iff_of_surjective φ.hom hφ l g).symm
+  simpa only [BialgHom.mapDomain_apply] using
+    (mem_levi_iff_of_surjective φ.hom hφ l g).symm
 
 /-- The quotient by the image of a Hopf ideal cutting out the ambient Levi represents the
 dynamic Levi of the closed subgroup, naturally in the commutative value algebra. -/
