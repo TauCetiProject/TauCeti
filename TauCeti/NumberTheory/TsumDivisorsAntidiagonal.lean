@@ -153,8 +153,7 @@ theorem hasSum_sum_divisors_mul_pow_sub (a b : ℕ → K) {C D : ℝ} {k l : ℕ
     (hf : ∀ r, ‖r‖ < 1 → (∑' d : ℕ, a (d + 1) * r ^ (d + 1)) = f r)
     (hg : ∀ r, ‖r‖ < 1 → (∑' d : ℕ, b (d + 1) * r ^ (d + 1)) = g r)
     (hinv : ∀ r, f r⁻¹ = g r) (q u : Kˣ) (hq : ‖(q : K)‖ < 1)
-    (hqu : ‖(q : K) * (u : K)‖ < 1) (hqui : ‖(q : K) * (u : K)⁻¹‖ < 1)
-    (hs : Summable (fun n : ℤ ↦ f ((q : K) ^ n * (u : K)))) :
+    (hqu : ‖(q : K) * (u : K)‖ < 1) (hqui : ‖(q : K) * (u : K)⁻¹‖ < 1) :
     HasSum (fun n : ℕ ↦ (∑ d ∈ n.divisors,
         (a d * (u : K) ^ d + b d * (u : K)⁻¹ ^ d)) * (q : K) ^ n)
       ((∑' n : ℤ, f ((q : K) ^ n * (u : K))) - f (u : K)) := by
@@ -164,6 +163,31 @@ theorem hasSum_sum_divisors_mul_pow_sub (a b : ℕ → K) {C D : ℝ} {k l : ℕ
     rw [hn, pow_succ, mul_assoc, norm_mul]
     exact lt_of_le_of_lt (mul_le_of_le_one_left (norm_nonneg _)
       (by rw [norm_pow]; exact pow_le_one₀ (norm_nonneg _) hq.le)) hv
+  have htail (c : ℕ → K) {E : ℝ} {m : ℕ}
+      (hc : ∀ d, ‖c d‖ ≤ E * (d : ℝ) ^ m) (v : K) (hv : ‖(q : K) * v‖ < 1)
+      (F : K → K)
+      (hF : ∀ r, ‖r‖ < 1 → (∑' d : ℕ, c (d + 1) * r ^ (d + 1)) = F r) :
+      Summable (fun n : ℕ+ ↦ F ((q : K) ^ (n : ℕ) * v)) := by
+    have h := (summable_norm_mul_pow_mul_pow_prod_of_norm_le_mul_pow c hc hq hv).of_norm.prod
+    convert h using 1
+    funext n
+    rw [← hF _ (hsmall hv n),
+      tsum_pnat_eq_tsum_succ (f := fun d : ℕ ↦ c d * v ^ d * (q : K) ^ ((n : ℕ) * d))]
+    apply tsum_congr
+    intro d
+    rw [mul_pow, ← pow_mul]
+    ring
+  have hneg (n : ℕ+) : f (((q : K) ^ (n : ℕ))⁻¹ * (u : K)) =
+      g ((q : K) ^ (n : ℕ) * (u : K)⁻¹) := by
+    simpa only [mul_inv, inv_inv] using hinv ((q : K) ^ (n : ℕ) * (u : K)⁻¹)
+  have hs : Summable (fun n : ℤ ↦ f ((q : K) ^ n * (u : K))) := by
+    apply Summable.of_nat_of_neg
+    · simpa only [zpow_natCast] using
+        (summable_pnat_iff_summable_nat (f := fun n : ℕ ↦ f ((q : K) ^ n * (u : K)))).mp
+          (htail a ha (u : K) hqu f hf)
+    · apply (summable_pnat_iff_summable_nat
+        (f := fun n : ℕ ↦ f ((q : K) ^ (-(n : ℤ)) * (u : K)))).mp
+      simpa only [zpow_neg, zpow_natCast, hneg] using htail b hb (u : K)⁻¹ hqui g hg
   have hp := hasSum_sum_divisors_mul_pow_mul_of_norm_le_mul_pow a ha hq hqu
   have hm := hasSum_sum_divisors_mul_pow_mul_of_norm_le_mul_pow b hb hq hqui
   convert hp.add hm using 1
@@ -171,9 +195,6 @@ theorem hasSum_sum_divisors_mul_pow_sub (a b : ℕ → K) {C D : ℝ} {k l : ℕ
     simp only [Finset.sum_add_distrib, add_mul]
   · have hsplit := tsum_int_eq_zero_add_tsum_pnat hs
     simp only [zpow_natCast, zpow_neg, zpow_zero, one_mul] at hsplit
-    have hneg (n : ℕ+) : f (((q : K) ^ (n : ℕ))⁻¹ * (u : K)) =
-        g ((q : K) ^ (n : ℕ) * (u : K)⁻¹) := by
-      simpa only [mul_inv, inv_inv] using hinv ((q : K) ^ (n : ℕ) * (u : K)⁻¹)
     simp_rw [hneg] at hsplit
     simp_rw [hf _ (hsmall hqu _), hg _ (hsmall hqui _)]
     rw [hsplit]

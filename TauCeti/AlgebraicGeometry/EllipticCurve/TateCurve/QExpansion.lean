@@ -63,7 +63,7 @@ theorem hasSum_tateUniformizationX_sub (q u : Kˣ) (hq : ‖(q : K)‖ < 1)
     (fun d ↦ (d : K)) (fun d ↦ (d : K)) ha ha
     (fun r ↦ r / (1 - r) ^ 2) (fun r ↦ r / (1 - r) ^ 2)
     tsum_natCast_succ_mul_pow_succ tsum_natCast_succ_mul_pow_succ
-    (fun r ↦ inv_div_one_sub_inv_sq r) q u hq hqu hqui (summable_tateUniformizationX q hq u)
+    (fun r ↦ inv_div_one_sub_inv_sq r) q u hq hqu hqui
   have hs := (hasSum_sum_divisors_mul_pow_of_norm_le_mul_pow
     (fun d ↦ (d : K)) ha hq).summable.hasSum
   convert ht.sub (hs.mul_left 2) using 1
@@ -121,7 +121,7 @@ theorem hasSum_tateUniformizationY_sub (q u : Kˣ) (hq : ‖(q : K)‖ < 1)
     (fun d ↦ -((d + 1).choose 2 : K)) hp hm
     (fun r ↦ r ^ 2 / (1 - r) ^ 3) (fun r ↦ -r / (1 - r) ^ 3)
     tsum_choose_two_mul_pow_succ tsum_neg_choose_two_mul_pow_succ
-    (fun r ↦ inv_sq_div_one_sub_inv_cube r) q u hq hqu hqui (summable_tateUniformizationY q hq u)
+    (fun r ↦ inv_sq_div_one_sub_inv_cube r) q u hq hqu hqui
   have hs := (hasSum_sum_divisors_mul_pow_of_norm_le_mul_pow
     (fun d ↦ (d : K)) ha hq).summable.hasSum
   convert ht.add hs using 1
