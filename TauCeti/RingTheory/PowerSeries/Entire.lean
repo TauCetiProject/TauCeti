@@ -20,10 +20,9 @@ their factorisations by polynomials.
 
 Restrictedness at one radius implies restrictedness at every smaller one, so it suffices to test
 positive radii (`PowerSeries.isEntire_iff_forall_pos`), or the radii along any sequence tending
-to infinity (`PowerSeries.isEntire_iff_of_tendsto`). Over an ultrametric ring, the entire series
-form the subring `PowerSeries.IsEntire.subring`, the intersection of the restricted subrings at
-all radii. Entire series are stable under Hasse derivatives, rescaling `f(X) ↦ f(aX)` and
-coefficientwise application of bounded ring homomorphisms.
+to infinity (`PowerSeries.isEntire_iff_of_tendsto`). Over any normed ring, the entire series form
+the subring `PowerSeries.IsEntire.subring`. Entire series are stable under Hasse derivatives,
+rescaling `f(X) ↦ f(aX)` and coefficientwise application of bounded ring homomorphisms.
 
 Over a normed ring with `‖a‖ < 1`, the series `∑ a^(n²) Xⁿ` is entire
 (`PowerSeries.isEntire_mk_pow_sq`), while for `a ≠ 0` and a multiplicative norm the series
@@ -184,37 +183,149 @@ theorem not_isEntire_mk_pow [NormMulClass R] {a : R} (ha : a ≠ 0) :
     one_pow] at h
   exact one_ne_zero (tendsto_nhds_unique tendsto_const_nhds h)
 
-variable [IsUltrametricDist R]
+/-- A product of entire series is entire. The proof uses restrictedness at a larger radius to
+absorb the linearly many terms in each coefficient of the product. -/
+theorem IsEntire.mul (hf : f.IsEntire) (hg : g.IsEntire) : (f * g).IsEntire := by
+  intro r
+  rw [← isRestricted_abs_iff, isRestricted_iff']
+  let q := 2 * (|r| + 1)
+  let ρ := |r| / q
+  have hq : 0 < q := by dsimp [q]; positivity
+  have hρ0 : 0 ≤ ρ := div_nonneg (abs_nonneg r) hq.le
+  have hρ1 : ρ < 1 := (div_lt_one hq).mpr (by dsimp [q]; linarith [abs_nonneg r])
+  obtain ⟨A, hA⟩ := ((isRestricted_iff' q f).mp (hf q)).bddAbove_range
+  obtain ⟨B, hB⟩ := ((isRestricted_iff' q g).mp (hg q)).bddAbove_range
+  have hAf (n : ℕ) : ‖coeff n f‖ * q ^ n ≤ A := hA ⟨n, rfl⟩
+  have hBg (n : ℕ) : ‖coeff n g‖ * q ^ n ≤ B := hB ⟨n, rfl⟩
+  have hA0 : 0 ≤ A := (by positivity : 0 ≤ ‖coeff 0 f‖ * q ^ 0).trans (hAf 0)
+  have hB0 : 0 ≤ B := (by positivity : 0 ≤ ‖coeff 0 g‖ * q ^ 0).trans (hBg 0)
+  have hscale : |r| = q * ρ := by dsimp [ρ]; rw [mul_div_cancel₀ _ hq.ne']
+  have hpoly : Tendsto (fun n : ℕ ↦ (n + 1 : ℝ) * ρ ^ n) atTop (𝓝 0) := by
+    have h := (tendsto_self_mul_const_pow_of_lt_one hρ0 hρ1).comp
+      (tendsto_add_atTop_nat 1)
+    have h' := h.const_mul ρ⁻¹
+    by_cases hρ : ρ = 0
+    · exact tendsto_const_nhds.congr' <| (eventually_ge_atTop 1).mono fun n hn ↦ by
+        simp [hρ, zero_pow (Nat.one_le_iff_ne_zero.mp hn)]
+    · convert h' using 1
+      · ext n
+        simp only [Function.comp_apply, Nat.cast_add, Nat.cast_one, pow_add, pow_one]
+        field_simp
+      · simp
+  have hupper : Tendsto (fun n : ℕ ↦ (n + 1 : ℝ) * ρ ^ n * (A * B)) atTop (𝓝 0) := by
+    simpa using hpoly.mul_const (A * B)
+  refine squeeze_zero (fun n ↦ by positivity) (fun n ↦ ?_) hupper
+  rw [coeff_mul]
+  calc
+    ‖∑ p ∈ Finset.antidiagonal n, coeff p.1 f * coeff p.2 g‖ * |r| ^ n
+        ≤ (∑ p ∈ Finset.antidiagonal n, ‖coeff p.1 f * coeff p.2 g‖) * |r| ^ n :=
+      mul_le_mul_of_nonneg_right (norm_sum_le _ _) (by positivity)
+    _ = ∑ p ∈ Finset.antidiagonal n, ‖coeff p.1 f * coeff p.2 g‖ * |r| ^ n := by
+      rw [Finset.sum_mul]
+    _ ≤ ∑ _p ∈ Finset.antidiagonal n, A * B * ρ ^ n := by
+      apply Finset.sum_le_sum
+      intro p hp
+      have hp' := Finset.mem_antidiagonal.mp hp
+      have hfp : ‖coeff p.1 f‖ * |r| ^ p.1 ≤ A * ρ ^ p.1 := by
+        rw [hscale, mul_pow, ← mul_assoc]
+        exact mul_le_mul_of_nonneg_right (hAf p.1) (by positivity)
+      have hgp : ‖coeff p.2 g‖ * |r| ^ p.2 ≤ B * ρ ^ p.2 := by
+        rw [hscale, mul_pow, ← mul_assoc]
+        exact mul_le_mul_of_nonneg_right (hBg p.2) (by positivity)
+      calc
+        ‖coeff p.1 f * coeff p.2 g‖ * |r| ^ n
+            ≤ (‖coeff p.1 f‖ * ‖coeff p.2 g‖) * |r| ^ n := by gcongr; exact norm_mul_le _ _
+        _ = (‖coeff p.1 f‖ * |r| ^ p.1) * (‖coeff p.2 g‖ * |r| ^ p.2) := by
+          rw [← hp', pow_add]
+          ring
+        _ ≤ (A * ρ ^ p.1) * (B * ρ ^ p.2) := by gcongr
+        _ = A * B * ρ ^ n := by rw [← hp', pow_add]; ring
+    _ = (n + 1 : ℝ) * ρ ^ n * (A * B) := by
+      rw [Finset.sum_const, Finset.Nat.card_antidiagonal]
+      ring
 
-/-- Over an ultrametric normed ring, a product of entire series is entire. -/
-theorem IsEntire.mul (hf : f.IsEntire) (hg : g.IsEntire) : (f * g).IsEntire :=
-  fun r ↦ (hf r).mul (hg r)
+/-- A power of an entire series is entire. -/
+theorem IsEntire.pow (hf : f.IsEntire) (n : ℕ) : (f ^ n).IsEntire := by
+  induction n with
+  | zero => simp
+  | succ n hn => simpa [pow_succ] using hn.mul hf
 
-/-- Over an ultrametric normed ring, a power of an entire series is entire. -/
-theorem IsEntire.pow (hf : f.IsEntire) (n : ℕ) : (f ^ n).IsEntire :=
-  fun r ↦ (hf r).pow n
-
-/-- Over an ultrametric normed ring, Hasse derivatives of entire series are entire. -/
-theorem IsEntire.hasseDeriv (hf : f.IsEntire) (k : ℕ) : (hasseDeriv k f).IsEntire :=
-  fun r ↦ (hf r).hasseDeriv k
+/-- Hasse derivatives of entire series are entire. The polynomial growth of the binomial
+coefficient is absorbed by testing the original series at a larger radius. -/
+theorem IsEntire.hasseDeriv (hf : f.IsEntire) (k : ℕ) :
+    (PowerSeries.hasseDeriv k f).IsEntire := by
+  intro r
+  rw [← isRestricted_abs_iff, isRestricted_iff']
+  by_cases hr : r = 0
+  · subst r
+    exact tendsto_const_nhds.congr' <| (eventually_ge_atTop 1).mono fun n hn ↦ by
+      simp [zero_pow (Nat.one_le_iff_ne_zero.mp hn)]
+  let q := 2 * (|r| + 1)
+  let ρ := |r| / q
+  have hq : 0 < q := by dsimp [q]; positivity
+  have hρ0 : 0 < ρ := div_pos (abs_pos.mpr hr) hq
+  have hρ1 : ρ < 1 := (div_lt_one hq).mpr (by dsimp [q]; linarith [abs_nonneg r])
+  obtain ⟨A, hA⟩ := ((isRestricted_iff' q f).mp (hf q)).bddAbove_range
+  have hAf (n : ℕ) : ‖coeff n f‖ * q ^ n ≤ A := hA ⟨n, rfl⟩
+  have hA0 : 0 ≤ A := (by positivity : 0 ≤ ‖coeff 0 f‖ * q ^ 0).trans (hAf 0)
+  have hpoly0 := tendsto_pow_const_mul_const_pow_of_lt_one k hρ0.le hρ1
+  have hpolyShift := hpoly0.comp (tendsto_add_atTop_nat k)
+  have hpoly : Tendsto (fun n : ℕ ↦ (n + k : ℝ) ^ k * ρ ^ n) atTop (𝓝 0) := by
+    have h := hpolyShift.const_mul (ρ⁻¹ ^ k)
+    convert h using 1
+    · ext n
+      simp only [Function.comp_apply, Nat.cast_add, pow_add]
+      rw [inv_pow]
+      field_simp [hρ0.ne']
+    · simp
+  have hupper : Tendsto
+      (fun n : ℕ ↦ ((n + k : ℝ) ^ k * ρ ^ n) * (q⁻¹ ^ k * A)) atTop (𝓝 0) := by
+    simpa using hpoly.mul_const (q⁻¹ ^ k * A)
+  refine squeeze_zero (fun n ↦ by positivity) (fun n ↦ ?_) hupper
+  rw [coeff_hasseDeriv, ← nsmul_eq_mul]
+  have hscaled : ‖coeff (n + k) f‖ * |r| ^ n ≤ q⁻¹ ^ k * A * ρ ^ n := by
+    calc
+      ‖coeff (n + k) f‖ * |r| ^ n
+          = q⁻¹ ^ k * (‖coeff (n + k) f‖ * q ^ (n + k)) * ρ ^ n := by
+            dsimp [ρ]
+            rw [div_pow, inv_pow, pow_add]
+            field_simp [hq.ne']
+      _ ≤ q⁻¹ ^ k * A * ρ ^ n := by
+        gcongr
+        exact hAf (n + k)
+  calc
+    ‖(n + k).choose k • coeff (n + k) f‖ * |r| ^ n
+        ≤ ((n + k).choose k : ℝ) * (‖coeff (n + k) f‖ * |r| ^ n) := by
+          calc
+            _ ≤ ((n + k).choose k : ℝ) * ‖coeff (n + k) f‖ * |r| ^ n :=
+              mul_le_mul_of_nonneg_right norm_nsmul_le (by positivity)
+            _ = _ := by ring
+    _ ≤ ((n + k).choose k : ℝ) * (q⁻¹ ^ k * A * ρ ^ n) := by gcongr
+    _ ≤ ((n + k : ℝ) ^ k) * (q⁻¹ ^ k * A * ρ ^ n) := by
+      gcongr
+      exact_mod_cast Nat.choose_le_pow (n + k) k
+    _ = ((n + k : ℝ) ^ k * ρ ^ n) * (q⁻¹ ^ k * A) := by ring
 
 variable (R) in
-/-- Over an ultrametric normed ring, the entire power series form a subring: the intersection of
-the subrings of series restricted at each radius. -/
-protected noncomputable def IsEntire.subring : Subring R⟦X⟧ :=
-  ⨅ r : ℝ, IsRestricted.subring r
+/-- The entire power series form a subring. -/
+protected noncomputable def IsEntire.subring : Subring R⟦X⟧ where
+  carrier := {f | f.IsEntire}
+  zero_mem' := isEntire_zero
+  one_mem' := isEntire_one
+  add_mem' := fun hf hg ↦ hf.add hg
+  mul_mem' := fun hf hg ↦ hf.mul hg
+  neg_mem' := fun hf ↦ hf.neg
 
 /-- Membership in the subring of entire series is entireness. -/
 @[simp]
-theorem IsEntire.mem_subring : f ∈ IsEntire.subring R ↔ f.IsEntire := by
-  simp only [IsEntire, IsEntire.subring, Subring.mem_iInf, IsRestricted.subring,
-    MvPowerSeries.IsRestricted.mem_subring]
+theorem IsEntire.mem_subring : f ∈ IsEntire.subring R ↔ f.IsEntire :=
+  Iff.rfl
 
-/-- Every entire series is restricted at each radius `r`, so the subring of entire series lies in
-the restricted subring at `r`. -/
-theorem IsEntire.subring_le_isRestrictedSubring (r : ℝ) :
+/-- Over an ultrametric ring, every entire series is restricted at each radius `r`, so the
+subring of entire series lies in the restricted subring at `r`. -/
+theorem IsEntire.subring_le_isRestrictedSubring [IsUltrametricDist R] (r : ℝ) :
     IsEntire.subring R ≤ IsRestricted.subring r :=
-  iInf_le _ r
+  fun _ hf ↦ hf.isRestricted r
 
 end NormedRing
 
@@ -226,8 +337,8 @@ variable {R : Type*} [NormedCommRing R] {f : R⟦X⟧}
 theorem IsEntire.rescale (hf : f.IsEntire) (a : R) : (rescale a f).IsEntire :=
   fun _ ↦ TauCeti.PowerSeries.isRestricted_rescale (hf _)
 
-/-- Over an ultrametric normed commutative ring, the derivative of an entire series is entire. -/
-theorem IsEntire.derivative [IsUltrametricDist R] (hf : f.IsEntire) : (d⁄dX f).IsEntire := by
+/-- The derivative of an entire series is entire. -/
+theorem IsEntire.derivative (hf : f.IsEntire) : (d⁄dX f).IsEntire := by
   rw [← hasseDeriv_one_apply]
   exact hf.hasseDeriv 1
 
