@@ -24,7 +24,7 @@ long exact `Ext` sequence becomes the long exact sequence of the pair
 
 Here `Hⁿ(V, F)` is Mathlib's `CategoryTheory.Sheaf.H'`, which is by definition `Ext` out of the
 free abelian sheaf on `V` (`TauCeti.CategoryTheory.sheafH'_eq`), and the middle map is the
-restriction map of the cohomology presheaf.
+restriction map of the cohomology presheaf (`TauCeti.CategoryTheory.cohomologyPresheaf_map_apply`).
 
 For the site of open subsets of a topological space, an open `W` and a closed subset `S`, the
 morphism `W ∖ S ⟶ W` gives the cohomology of `F` on `W` with supports in `S`; this is developed in
@@ -42,7 +42,7 @@ morphism `W ∖ S ⟶ W` gives the cohomology of `F` on `W` with supports in `S`
   the long exact sequence of the pair, whose exactness is
   `relativeH'.exact_toH'_precomp`, `relativeH'.exact_precomp_δ` and `relativeH'.exact_δ_toH'`;
 * `CategoryTheory.Sheaf.relativeH'.zeroEquiv`: `H⁰(V, U; F)` is the group of sections over `V`
-  restricting to zero along `i`;
+  restricting to zero along `i`, naturally in `F` (`relativeH'.coe_zeroEquiv_naturality_right`);
 * `CategoryTheory.Sheaf.relativeH'.subsingleton_one` and `relativeH'.subsingleton_add_two`:
   vanishing of relative cohomology from vanishing of absolute cohomology.
 
@@ -154,19 +154,6 @@ the site: the `n`-th `Ext` group from the relative free sheaf `ℤ_{V,U}` to `F`
 abbrev relativeH' (F : Sheaf J AddCommGrpCat.{v}) {U V : C} (i : U ⟶ V) (n : ℕ) : Type w :=
   Ext (relativeFreeYonedaSheaf J i) F n
 
-/-- If restriction of sections along `i : U ⟶ V` is surjective, then so is the restriction map
-`H⁰(V, F) ⟶ H⁰(U, F)`, written as precomposition with `ℤ_U ⟶ ℤ_V`. -/
-theorem H'.precomp_mk₀_map_surjective (F : Sheaf J AddCommGrpCat.{v}) {U V : C} (i : U ⟶ V)
-    (hF : Function.Surjective (F.obj.map i.op)) :
-    Function.Surjective
-      ((Ext.mk₀ ((freeYonedaSheafFunctor J).map i)).precomp F (zero_add 0)) := by
-  intro y
-  obtain ⟨t, ht⟩ := hF (freeYonedaSheafSectionsEquiv J U F (Ext.addEquiv₀ y))
-  refine ⟨Ext.mk₀ ((freeYonedaSheafSectionsEquiv J V F).symm t), ?_⟩
-  refine (Ext.mk₀_comp_mk₀ _ _).trans ((congrArg Ext.mk₀ ?_).trans (Ext.mk₀_addEquiv₀_apply y))
-  apply (freeYonedaSheafSectionsEquiv J U F).injective
-  rw [freeYonedaSheafSectionsEquiv_naturality_left, AddEquiv.apply_symm_apply, ht]
-
 namespace relativeH'
 
 variable (F : Sheaf J AddCommGrpCat.{v}) {U V : C} (i : U ⟶ V)
@@ -200,22 +187,24 @@ relative cohomology exactly when its restriction to `U` vanishes. -/
 theorem exact_toH'_precomp (n : ℕ) :
     Function.Exact (toH' F i n)
       ((Ext.mk₀ ((freeYonedaSheafFunctor J).map i)).precomp F (zero_add n)) := by
-  have := Ext.contravariant_sequence_exact₂' (relativeFreeYonedaSequence_shortExact J i) F n
-  rwa [ShortComplex.ab_exact_iff_function_exact] at this
+  rw [toH']
+  exact TauCeti.exact_precomp (relativeFreeYonedaSequence_shortExact J i) F n
 
 /-- The long exact sequence of the pair is exact at `Hⁿ(U, F)`: the kernel of the connecting map
 consists of the restrictions of classes on `V`. -/
 theorem exact_precomp_δ {n₀ n₁ : ℕ} (h : 1 + n₀ = n₁) :
     Function.Exact ((Ext.mk₀ ((freeYonedaSheafFunctor J).map i)).precomp F (zero_add n₀))
       (δ F i h) := by
-  have := Ext.contravariant_sequence_exact₁' (relativeFreeYonedaSequence_shortExact J i) F n₀ n₁ h
-  rwa [ShortComplex.ab_exact_iff_function_exact] at this
+  rw [δ]
+  -- the maps of Mathlib's `AddCommGrpCat`-valued sequence are `AddCommGrpCat.ofHom` of these
+  exact (ShortComplex.ab_exact_iff_function_exact _).1
+    (Ext.contravariant_sequence_exact₁' (relativeFreeYonedaSequence_shortExact J i) F n₀ n₁ h)
 
 /-- The long exact sequence of the pair is exact at `Hⁿ⁺¹(V, U; F)`. -/
 theorem exact_δ_toH' {n₀ n₁ : ℕ} (h : 1 + n₀ = n₁) :
     Function.Exact (δ F i h) (toH' F i n₁) := by
-  have := Ext.contravariant_sequence_exact₃' (relativeFreeYonedaSequence_shortExact J i) F n₀ n₁ h
-  rwa [ShortComplex.ab_exact_iff_function_exact] at this
+  rw [δ, toH']
+  exact TauCeti.exact_precomp₃ (relativeFreeYonedaSequence_shortExact J i) F n₀ n₁ h
 
 end exact
 
@@ -230,21 +219,23 @@ lemma coe_zeroEquiv_apply (x : F.relativeH' i 0) :
       freeYonedaSheafSectionsEquiv J V F (cokernel.π _ ≫ Ext.addEquiv₀ x) :=
   (rfl)
 
+/-- The equivalence `zeroEquiv` is natural in the coefficient sheaf. -/
+lemma coe_zeroEquiv_naturality_right {F G : Sheaf J AddCommGrpCat.{v}} (f : F ⟶ G)
+    (x : F.relativeH' i 0) :
+    (zeroEquiv G i (x.comp (Ext.mk₀ f) (add_zero 0)) : G.obj.obj (op V)) =
+      f.hom.app (op V) (zeroEquiv F i x) := by
+  rw [coe_zeroEquiv_apply, coe_zeroEquiv_apply, TauCeti.ext_addEquiv₀_comp_mk₀, ← Category.assoc,
+    freeYonedaSheafSectionsEquiv_naturality_right]
+
 /-- Under `zeroEquiv` and the identification of degree-zero cohomology with sections, the map
 `toH'` is the inclusion of the sections restricting to zero. -/
 lemma freeYonedaSheafSectionsEquiv_addEquiv₀_toH' (x : F.relativeH' i 0) :
     freeYonedaSheafSectionsEquiv J V F (Ext.addEquiv₀ (toH' F i 0 x)) = zeroEquiv F i x := by
-  have h : Ext.addEquiv₀ (toH' F i 0 x) =
-      cokernel.π ((freeYonedaSheafFunctor J).map i) ≫ Ext.addEquiv₀ x := by
-    apply (Ext.mk₀_bijective _ _).injective
-    rw [Ext.mk₀_addEquiv₀_apply, ← Ext.mk₀_comp_mk₀, Ext.mk₀_addEquiv₀_apply, toH'_apply]
-  rw [h, coe_zeroEquiv_apply]
+  rw [toH'_apply, TauCeti.ext_addEquiv₀_mk₀_comp, coe_zeroEquiv_apply]
 
 /-- Relative cohomology vanishes for an isomorphism. -/
-instance subsingleton_of_isIso [IsIso i] (n : ℕ) : Subsingleton (F.relativeH' i n) := by
-  refine subsingleton_of_forall_eq 0 fun x ↦ ?_
-  rw [← Ext.mk₀_id_comp x, (isZero_relativeFreeYonedaSheaf J i).eq_of_src (𝟙 _) 0, Ext.mk₀_zero,
-    Ext.zero_comp]
+instance subsingleton_of_isIso [IsIso i] (n : ℕ) : Subsingleton (F.relativeH' i n) :=
+  TauCeti.subsingleton_ext_of_isZero_left (isZero_relativeFreeYonedaSheaf J i) F n
 
 section vanishing
 
@@ -258,7 +249,8 @@ theorem subsingleton_one (hF : Function.Surjective (F.obj.map i.op))
     simpa only [sheafH'_eq] using hV
   refine subsingleton_of_forall_eq 0 fun x ↦ ?_
   obtain ⟨y, rfl⟩ := (exact_δ_toH' F i (add_zero 1) x).1 (Subsingleton.elim _ _)
-  obtain ⟨z, rfl⟩ := H'.precomp_mk₀_map_surjective F i hF y
+  obtain ⟨z, hz⟩ := cohomologyPresheaf_zero_map_surjective F i hF y
+  rw [← hz, cohomologyPresheaf_map_apply]
   exact (exact_precomp_δ F i (add_zero 1)).apply_apply_eq_zero z
 
 /-- If `Hⁿ⁺¹(U, F)` and `Hⁿ⁺²(V, F)` vanish, then so does `Hⁿ⁺²(V, U; F)`. -/

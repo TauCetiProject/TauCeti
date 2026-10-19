@@ -17,6 +17,9 @@ This file collects general `Ext` API that Mathlib does not state in this form:
 
 * the transport of `Extⁿ(X, Y)` along isomorphisms `X ≅ X'` and `Y ≅ Y'`, additively as
   `TauCeti.extAddEquivOfIso` and `R`-linearly as `TauCeti.extLinearEquivOfIso`;
+* in degree zero, composition with `CategoryTheory.Abelian.Ext.mk₀ f` corresponds under
+  `CategoryTheory.Abelian.Ext.addEquiv₀` to composition with `f`
+  (`TauCeti.ext_addEquiv₀_mk₀_comp` and `TauCeti.ext_addEquiv₀_comp_mk₀`);
 * the vanishing of `Extⁿ(X, Y)` when either of the two objects is a zero object;
 * short exact cokernel sequences, the cokernel sequence of the chosen embedding into an injective
   object, and a dimension-shift criterion for vanishing of the next `Ext` group;
@@ -86,6 +89,20 @@ theorem extLinearEquivOfIso_apply (R : Type t) [Ring R] [Linear R C] (e : X ≅ 
     extLinearEquivOfIso R e f n x =
       (Ext.mk₀ e.inv).comp (x.comp (Ext.mk₀ f.hom) (add_zero n)) (zero_add n) :=
   (rfl)
+
+/-! ### Composition in degree zero -/
+
+/-- In degree zero, precomposing with `Ext.mk₀ f` is precomposing with `f` in the category. -/
+theorem ext_addEquiv₀_mk₀_comp {Z : C} (f : X ⟶ Y) (x : Ext.{w} Y Z 0) :
+    Ext.addEquiv₀ ((Ext.mk₀ f).comp x (zero_add 0)) = f ≫ Ext.addEquiv₀ x := by
+  apply (Ext.mk₀_bijective _ _).injective
+  rw [Ext.mk₀_addEquiv₀_apply, ← Ext.mk₀_comp_mk₀, Ext.mk₀_addEquiv₀_apply]
+
+/-- In degree zero, postcomposing with `Ext.mk₀ f` is postcomposing with `f` in the category. -/
+theorem ext_addEquiv₀_comp_mk₀ {Z : C} (x : Ext.{w} X Y 0) (f : Y ⟶ Z) :
+    Ext.addEquiv₀ (x.comp (Ext.mk₀ f) (add_zero 0)) = Ext.addEquiv₀ x ≫ f := by
+  apply (Ext.mk₀_bijective _ _).injective
+  rw [Ext.mk₀_addEquiv₀_apply, ← Ext.mk₀_comp_mk₀, Ext.mk₀_addEquiv₀_apply]
 
 /-! ### Vanishing against a zero object -/
 
