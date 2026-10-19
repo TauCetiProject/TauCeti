@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Homology.Additive
 public import TauCeti.RepresentationTheory.Tensor.Induction.Basic
 public import TauCeti.LinearAlgebra.PiTensorProduct.Complex
 
@@ -19,6 +20,8 @@ a grading, both actions preserve each total-degree piece `PiTensorProduct.degree
 These identities supply the permutation-compatible differential for tensor induction of
 complexes. The ground ring need not have characteristic two for equivariance or preservation of
 degree; that hypothesis enters only the square-zero law without Koszul signs.
+Over a commutative ring of characteristic two these restrictions assemble into cochain
+complexes of representations, with terms the total-degree tensor pieces.
 
 ## Main definitions and lemmas
 
@@ -30,6 +33,8 @@ degree; that hypothesis enters only the square-zero law without Koszul signs.
   the wreath action.
 * `TauCeti.tensorInducedRepresentation_mem_degreePiece U s τ`: preservation of total
   degree by tensor induction.
+* `TauCeti.wreathTensorCochainComplex`: the total-degree complex with its wreath action.
+* `TauCeti.tensorInducedCochainComplex`: its restriction along the monomial homomorphism.
 
 Open `TauCeti` and write `wreathTensorDifferential d ι` or `tensorInducedDifferential d s`
 to construct the differentials. The action lemmas likewise take their representation or
@@ -167,5 +172,116 @@ theorem tensorInducedRepresentation_mem_degreePiece {G : Type v} [Group G]
   rw [Subgroup.tensorInducedRepresentation_apply]
   exact wreathTensor_mem_degreePiece τ (G ⧸ U) ℳ hτ
     (U.monomialHom s g) hz
+
+end TauCeti
+
+namespace TauCeti
+
+open CategoryTheory
+
+section Complex
+
+variable {R : Type u} [CommRing R] [CharP R 2] {D : Type v} [Group D]
+  {M : Type w} [AddCommGroup M] [Module R M] {ρ : Representation R D M}
+  (ℳ : ℤ → Submodule R M) (hρ : ∀ g, LinearMap.IsHomogeneous (ρ g) ℳ ℳ 0)
+  (d : ρ.IntertwiningMap ρ) (hdeg : LinearMap.IsHomogeneous d.toLinearMap ℳ ℳ 1)
+  (hd : d.comp d = 0) (ι : Type x) [Fintype ι]
+
+/-- The total-degree tensor complex with its wreath-product action. Its differential is the
+finite tensor differential restricted to each degree piece. -/
+noncomputable def wreathTensorCochainComplex :
+    CochainComplex (Rep.{max u w x} R (WreathProduct D ι)) ℤ :=
+  CochainComplex.of (fun n ↦ Rep.of ((ρ.wreathTensor ι).subrepresentation
+    (PiTensorProduct.degreePiece (fun _ : ι ↦ ℳ) n)
+    (fun a _ hz ↦ wreathTensor_mem_degreePiece ρ ι ℳ hρ a hz)))
+    (fun n ↦ Rep.ofHom {
+      toLinearMap := (PiTensorProduct.differential (fun _ : ι ↦ d.toLinearMap)).restrict
+        (p := PiTensorProduct.degreePiece (fun _ : ι ↦ ℳ) n)
+        (q := PiTensorProduct.degreePiece (fun _ : ι ↦ ℳ) (n + 1))
+        (fun _ hz ↦ (PiTensorProduct.isHomogeneous_differential
+          (fun _ : ι ↦ ℳ) (fun _ ↦ d.toLinearMap) (fun _ ↦ hdeg)).map_mem hz)
+      isIntertwining' a := by
+        ext z
+        exact LinearMap.congr_fun ((wreathTensorDifferential d ι).isIntertwining' a) z })
+    (fun n ↦ by
+      apply Rep.hom_ext
+      apply Representation.IntertwiningMap.ext
+      apply LinearMap.ext
+      intro z
+      apply Subtype.ext
+      exact LinearMap.congr_fun
+        (congrArg Representation.IntertwiningMap.toLinearMap
+          (wreathTensorDifferential_comp_self d ι hd)) z)
+
+/-- A term of the wreath tensor complex is the wreath action restricted to the total-degree
+tensor piece. -/
+@[simp]
+theorem wreathTensorCochainComplex_X (n : ℤ) :
+    (wreathTensorCochainComplex ℳ hρ d hdeg hd ι).X n =
+      Rep.of ((ρ.wreathTensor ι).subrepresentation
+        (PiTensorProduct.degreePiece (fun _ : ι ↦ ℳ) n)
+        (fun a _ hz ↦ wreathTensor_mem_degreePiece ρ ι ℳ hρ a hz)) :=
+  (rfl)
+
+/-- Under the term identifications, the complex differential is the restricted finite tensor
+differential as a linear map. This is an explicit rewrite lemma, since simplification expands
+the composite morphism before this formula applies. -/
+theorem wreathTensorCochainComplex_d (n : ℤ) :
+    (eqToHom (wreathTensorCochainComplex_X ℳ hρ d hdeg hd ι n).symm ≫
+      (wreathTensorCochainComplex ℳ hρ d hdeg hd ι).d n (n + 1) ≫
+      eqToHom (wreathTensorCochainComplex_X ℳ hρ d hdeg hd ι (n + 1))).hom.toLinearMap =
+      (PiTensorProduct.differential (fun _ : ι ↦ d.toLinearMap)).restrict
+        (p := PiTensorProduct.degreePiece (fun _ : ι ↦ ℳ) n)
+        (q := PiTensorProduct.degreePiece (fun _ : ι ↦ ℳ) (n + 1))
+        (fun _ hz ↦ (PiTensorProduct.isHomogeneous_differential
+          (fun _ : ι ↦ ℳ) (fun _ ↦ d.toLinearMap) (fun _ ↦ hdeg)).map_mem hz) := by
+  -- The constructor has definitionally equal terms; eliminate their equality transports
+  -- before applying its differential formula.
+  have hn : wreathTensorCochainComplex_X ℳ hρ d hdeg hd ι n = rfl := Subsingleton.elim _ _
+  have hn' : wreathTensorCochainComplex_X ℳ hρ d hdeg hd ι (n + 1) = rfl :=
+    Subsingleton.elim _ _
+  rw [hn, hn']
+  unfold wreathTensorCochainComplex
+  simp only [CochainComplex.of_d, eqToHom_refl, Category.id_comp, Category.comp_id]
+  rfl
+
+variable {G : Type v} [Group G] {U : Subgroup G} {τ : Representation R U M}
+
+/-- The tensor-induced total-degree complex, obtained by restricting the wreath tensor
+complex along the transversal's monomial homomorphism. -/
+noncomputable def tensorInducedCochainComplex (ℳ : ℤ → Submodule R M)
+    (hτ : ∀ g, LinearMap.IsHomogeneous (τ g) ℳ ℳ 0) (d : τ.IntertwiningMap τ)
+    (hdeg : LinearMap.IsHomogeneous d.toLinearMap ℳ ℳ 1) (hd : d.comp d = 0)
+    (s : U.LeftTransversal) [Fintype (G ⧸ U)] :
+    CochainComplex (Rep.{max u w v} R G) ℤ :=
+  ((Rep.resFunctor (U.monomialHom s)).mapHomologicalComplex (ComplexShape.up ℤ)).obj
+    (wreathTensorCochainComplex ℳ hτ d hdeg hd (G ⧸ U))
+
+/-- A tensor-induced term is the total-degree wreath tensor representation restricted along
+the monomial homomorphism. -/
+@[simp]
+theorem tensorInducedCochainComplex_X (ℳ : ℤ → Submodule R M)
+    (hτ : ∀ g, LinearMap.IsHomogeneous (τ g) ℳ ℳ 0) (d : τ.IntertwiningMap τ)
+    (hdeg : LinearMap.IsHomogeneous d.toLinearMap ℳ ℳ 1) (hd : d.comp d = 0)
+    (s : U.LeftTransversal) [Fintype (G ⧸ U)] (n : ℤ) :
+    (tensorInducedCochainComplex ℳ hτ d hdeg hd s).X n =
+      Rep.res (U.monomialHom s) ((wreathTensorCochainComplex ℳ hτ d hdeg hd (G ⧸ U)).X n) :=
+  (rfl)
+
+/-- The tensor-induced complex differential is the restriction of the wreath tensor complex
+differential along the monomial homomorphism. -/
+@[simp]
+theorem tensorInducedCochainComplex_d (ℳ : ℤ → Submodule R M)
+    (hτ : ∀ g, LinearMap.IsHomogeneous (τ g) ℳ ℳ 0) (d : τ.IntertwiningMap τ)
+    (hdeg : LinearMap.IsHomogeneous d.toLinearMap ℳ ℳ 1) (hd : d.comp d = 0)
+    (s : U.LeftTransversal) [Fintype (G ⧸ U)] (n m : ℤ) :
+    (tensorInducedCochainComplex ℳ hτ d hdeg hd s).d n m =
+      eqToHom (tensorInducedCochainComplex_X ℳ hτ d hdeg hd s n) ≫
+        (Rep.resFunctor (U.monomialHom s)).map
+          ((wreathTensorCochainComplex ℳ hτ d hdeg hd (G ⧸ U)).d n m) ≫
+        eqToHom (tensorInducedCochainComplex_X ℳ hτ d hdeg hd s m).symm :=
+  (rfl)
+
+end Complex
 
 end TauCeti
