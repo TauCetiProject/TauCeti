@@ -48,7 +48,7 @@ use `IsNormalScheme (Spec R)` for it.
   normal scheme, the sections over a nonempty affine open form an integrally closed domain.
 * `TauCeti.AlgebraicGeometry.IsNormalScheme.isDiscreteValuationRing_stalk`: on a locally
   Noetherian normal scheme, the local ring at a point of coheight one is a discrete valuation
-  ring, by the ring-level `TauCeti.IsDiscreteValuationRing.of_ringKrullDim_eq_one`.
+  ring, by the ring-level `IsDiscreteValuationRing.of_ringKrullDim_eq_one`.
 
 ## References
 
@@ -61,7 +61,7 @@ use `IsNormalScheme (Spec R)` for it.
   `9a20b3f351446d64e6015d704198bc71c7002008` (Apache-2.0): it is
   `Pcf.SchemeDivisorPoint.stalk_isDiscreteValuationRing` in
   `lean/Pcf/Bounding/SchemeDynamics.lean`, whose ring-level step (ported as
-  `TauCeti.IsDiscreteValuationRing.of_ringKrullDim_eq_one`) is
+  `IsDiscreteValuationRing.of_ringKrullDim_eq_one`) is
   `Pcf.isDiscreteValuationRing_localizationAtPrime_of_heightOne` in
   `lean/Pcf/Bounding/Divisors.lean`. The source states it for an integral scheme with its own
   affine-sections predicate `Pcf.IsNormalScheme` (`lean/Pcf/Bounding/SchemeExtraction.lean`);
