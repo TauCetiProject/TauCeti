@@ -324,6 +324,12 @@ def diskBoundaryPairToCube : diskBoundaryPair.{u} n ⟶ cubeBoundaryPair.{u} n :
     (by ext; rfl)
 
 variable {n} in
+/-- On the disk, `TauCeti.diskBoundaryPairToCube` is `TauCeti.diskHomeomorphCube`. -/
+lemma diskBoundaryPairToCube_fst_apply_down (z : (diskBoundaryPair.{u} n).fst) :
+    (TopPair.Hom.fst (diskBoundaryPairToCube.{u} n) z).down = diskHomeomorphCube n z :=
+  (rfl)
+
+variable {n} in
 /-- On the boundary sphere, `TauCeti.diskBoundaryPairToCube` is `TauCeti.diskHomeomorphCube`. -/
 lemma diskBoundaryPairToCube_snd_apply_down (s : (diskBoundaryPair.{u} n).snd) :
     (TopPair.Hom.snd (diskBoundaryPairToCube.{u} n) s).1.down =
