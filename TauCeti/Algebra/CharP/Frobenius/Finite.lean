@@ -13,11 +13,12 @@ public import TauCeti.Algebra.CharP.Frobenius.PowRingHom
 # Finiteness of the `p`-th power map
 
 Let `p` be a prime and `A` a commutative ring in which `p` vanishes. The `p`-th power map
-`TauCeti.powRingHom A p h : A →+* A` is always integral: every `a` is a root of `X ^ p - a`, whose
-coefficient `a` is the image of `a` itself. If moreover `A` is of finite type over a perfect ring
-`R`, then `A` is of finite type over its subring of `p`-th powers, because that subring contains the
-image of `R`; so the `p`-th power map is finite. This is the algebraic input to the finiteness of
-the absolute Frobenius of a scheme locally of finite type over a perfect field.
+`TauCeti.powRingHom A p h : A →+* A` is always integral: the power map sends the monic polynomial
+`X ^ p - C a` of the source to `X ^ p - C (a ^ p)`, which vanishes at `a`. If moreover `A` is of
+finite type over a perfect ring `R`, then `A` is of finite type over its subring of `p`-th powers,
+because that subring contains the image of `R`; so the `p`-th power map is finite. This is the
+algebraic input to the finiteness of the absolute Frobenius of a scheme locally of finite type over
+a perfect field.
 
 Without the finite-type hypothesis the `p`-th power map need not be finite: for instance it is not
 finite on the field of rational functions over `𝔽_p` in infinitely many variables.
@@ -42,8 +43,8 @@ namespace TauCeti
 
 variable {A : Type*} [CommRing A] {p : ℕ} [hp : Fact p.Prime]
 
-/-- The `p`-th power map is integral: every `a` is a root of `X ^ p - a` over the `p`-th power
-map. -/
+/-- The `p`-th power map is integral: its image of `X ^ p - C a` is `X ^ p - C (a ^ p)`, which
+vanishes at `a`. -/
 theorem powRingHom_isIntegral (h : (p : A) = 0) : (powRingHom A p h).IsIntegral := fun a ↦
   ⟨X ^ p - C a, monic_X_pow_sub_C a hp.out.ne_zero, by simp⟩
 
