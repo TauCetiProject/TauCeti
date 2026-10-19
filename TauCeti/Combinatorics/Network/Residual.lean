@@ -37,6 +37,7 @@ lower bounds. We prove:
 
 * `TauCeti.ResidualHom Q`: the residual arrow family `fun v w ↦ Q v w ⊕ Q w v`.
 * `TauCeti.residualCapacity lo hi f`: the residual capacities of `f`.
+* `TauCeti.PosResidualHom lo hi f`: the residual arrows of positive residual capacity.
 * `TauCeti.residualNet`: the net change `r e⁺ - r e⁻` of a residual assignment, as an additive
   homomorphism.
 * `TauCeti.residualUpdate f r`: the residual update `f + residualNet r`.
@@ -50,6 +51,9 @@ lower bounds. We prove:
   lowers the excess at `s` by its value at `t`.
 * `TauCeti.image_residualUpdate_Icc`: the residual updates of a feasible `f` by feasible residual
   assignments are exactly the feasible assignments.
+* `TauCeti.arrowSum_residualCapacity`: the residual capacity from `S` to `T` is the room left
+  below `hi` on the arrows from `S` to `T` plus the room left above `lo` on the arrows from `T`
+  to `S`.
 
 ## Implementation notes
 
@@ -102,6 +106,11 @@ theorem residualCapacity_inl (lo hi f : Assignment Q K) {v w : V} (e : Q v w) :
 theorem residualCapacity_inr (lo hi f : Assignment Q K) {v w : V} (e : Q w v) :
     residualCapacity lo hi f (Sum.inr e : ResidualHom Q v w) = f e - lo e :=
   (rfl)
+
+/-- The *positive residual arrows* of an assignment `f` with bounds `lo` and `hi`: the residual
+arrows of positive residual capacity. Their walks are the augmenting walks of `f`. -/
+abbrev PosResidualHom [Zero K] [LT K] (lo hi f : Assignment Q K) (v w : V) : Type v :=
+  {e : ResidualHom Q v w // 0 < residualCapacity lo hi f e}
 
 end Sub
 
@@ -166,6 +175,16 @@ theorem residualCapacity_mem (H : AddSubgroup K) {lo hi f : Assignment Q K}
   rcases e with e | e
   · exact H.sub_mem (hhi e) (hf e)
   · exact H.sub_mem (hf e) (hlo e)
+
+/-- The total residual capacity on the residual arrows from `S` to `T` is the room left below `hi`
+on the original arrows from `S` to `T` plus the room left above `lo` on the original arrows from
+`T` to `S`. -/
+theorem arrowSum_residualCapacity [∀ v w, Fintype (Q v w)] (lo hi f : Assignment Q K)
+    (S T : Finset V) :
+    arrowSum (residualCapacity lo hi f) S T = arrowSum (hi - f) S T + arrowSum (f - lo) T S := by
+  simp only [arrowSum_def, Fintype.sum_sum_type, residualCapacity_inl, residualCapacity_inr,
+    sum_add_distrib, Pi.sub_apply]
+  exact congrArg _ sum_comm
 
 section Excess
 

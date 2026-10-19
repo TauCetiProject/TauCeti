@@ -23,14 +23,19 @@ A walk records the identities of the arrows it traverses, which `TauCeti.ArrowWa
 in order with repetitions. A directed *path* repeats no vertex, and a directed *cycle* is a closed
 walk of positive length that repeats no vertex other than its common endpoints. Since the target
 of each traversed arrow is a later vertex of the walk, neither repeats an arrow; this is what
-bounds the value a path or cycle places on a single arrow in flow augmentation. The *bottleneck* of
-a walk for capacities `c` is the least capacity of an arrow it traverses.
+bounds the value a path or cycle places on a single arrow in flow augmentation. Every walk contains
+a path with the same endpoints, so reachability along an arrow family, the existence of a walk, is
+always witnessed by a path. Walks transport along maps of arrow families that fix every vertex,
+such as the inclusion of the positive-capacity residual arrows into all residual arrows. The
+*bottleneck* of a walk for capacities `c` is the least capacity of an arrow it traverses.
 
 ## Main definitions
 
 * `TauCeti.ArrowWalk Q s t`: directed walks from `s` to `t` along the arrow family `Q`.
 * `TauCeti.ArrowWalk.arrows`: the arrows traversed by a walk, in order.
 * `TauCeti.ArrowWalk.IsPath` and `TauCeti.ArrowWalk.IsCycle`: directed paths and cycles.
+* `TauCeti.ArrowWalk.map`: transport of a walk along a map of arrow families.
+* `TauCeti.ArrowReachable Q v w`: Mathlib's `Quiver.Reachable` along the arrow family `Q`.
 * `TauCeti.ArrowWalk.bottleneck`: the least capacity along a walk that traverses an arrow.
 
 ## Main results
@@ -39,6 +44,10 @@ a walk for capacities `c` is the least capacity of an arrow it traverses.
   the walk after its first.
 * `TauCeti.ArrowWalk.IsPath.nodup_arrows` and `TauCeti.ArrowWalk.IsCycle.nodup_arrows`: paths and
   cycles traverse every arrow at most once.
+* `TauCeti.ArrowWalk.exists_isPath_arrows_subset`: every walk contains a path with the same
+  endpoints.
+* `TauCeti.ArrowReachable.mem_of_mem`: a vertex set that no arrow leaves is closed under
+  reachability.
 * `TauCeti.ArrowWalk.le_bottleneck_iff` and `TauCeti.ArrowWalk.exists_mem_bottleneck_eq`: the
   bottleneck is the minimum of the capacities along the walk.
 -/
@@ -163,6 +172,79 @@ theorem isCycle_loop {s : V} (e : Q s s) : ((nil s).cons e).IsCycle := by
 theorem IsCycle.nodup_arrows {s : V} {c : ArrowWalk Q s s} (hc : c.IsCycle) : c.arrows.Nodup :=
   nodup_arrows_of_nodup_tail hc.2
 
+/-- The vertices of the first part of a concatenation form a prefix of those of the
+concatenation. -/
+theorem vertices_prefix_vertices_comp {s t x : V} (p : ArrowWalk Q s t) (p' : ArrowWalk Q t x) :
+    p.vertices <+: (p.comp p').vertices := by
+  obtain ⟨l, hl⟩ := List.head?_eq_some_iff.1 (@Quiver.Path.vertices_head? V ⟨Q⟩ _ _ p')
+  rw [vertices, vertices, comp, @Quiver.Path.vertices_comp V ⟨Q⟩, hl]
+  conv_lhs => rw [← @Quiver.Path.dropLast_append_end_eq V ⟨Q⟩ _ _ p]
+  exact List.prefix_append_right_inj _ |>.2 (by simp)
+
+/-- **Path extraction.** Every walk contains a path with the same endpoints that traverses only
+arrows of the walk. -/
+theorem exists_isPath_arrows_subset {s t : V} (p : ArrowWalk Q s t) :
+    ∃ p' : ArrowWalk Q s t, p'.IsPath ∧ p'.arrows ⊆ p.arrows := by
+  induction p with
+  | nil => exact ⟨nil _, isPath_nil _, List.Subset.refl _⟩
+  | @cons x y p e ih =>
+    obtain ⟨p', hp', hsub⟩ := ih
+    by_cases hy : y ∈ vertices p'
+    · obtain ⟨p₁, p₂, rfl⟩ := @Quiver.Path.exists_eq_comp_of_mem_vertices V ⟨Q⟩ _ _ p' _ hy
+      refine ⟨p₁, hp'.sublist (vertices_prefix_vertices_comp p₁ p₂).sublist, fun a ha ↦ ?_⟩
+      rw [arrows_cons]
+      exact List.mem_append_left _ (hsub (by rw [arrows_comp]; exact List.mem_append_left _ ha))
+    · refine ⟨p'.cons e, ?_, ?_⟩
+      · rw [isPath_def, vertices, @Quiver.Path.vertices_cons V ⟨Q⟩, List.concat_eq_append]
+        exact hp'.append (List.nodup_singleton y) (List.disjoint_singleton.2 hy)
+      · intro a ha
+        rw [arrows_cons, List.mem_append] at ha ⊢
+        exact ha.imp_left (@hsub a)
+
+/-! ### Changing the arrow family -/
+
+section Map
+
+variable {R : V → V → Type*}
+
+/-- The walk along `R` obtained from a walk along `Q` by replacing each traversed arrow `e` by
+`φ e`, for a map `φ` of arrow families that fixes every vertex. -/
+def map (φ : ∀ ⦃x y⦄, Q x y → R x y) {s t : V} (p : ArrowWalk Q s t) : ArrowWalk R s t :=
+  @Prefunctor.mapPath V ⟨Q⟩ V ⟨R⟩ (@Prefunctor.mk V ⟨Q⟩ V ⟨R⟩ id fun {_ _} e ↦ φ e) s t p
+
+variable (φ : ∀ ⦃x y⦄, Q x y → R x y)
+
+@[simp]
+theorem map_nil (s : V) : (nil s : ArrowWalk Q s s).map φ = nil s :=
+  (rfl)
+
+@[simp]
+theorem map_cons {s t x : V} (p : ArrowWalk Q s t) (e : Q t x) :
+    (p.cons e).map φ = (p.map φ).cons (φ e) :=
+  (rfl)
+
+@[simp]
+theorem vertices_map {s t : V} (p : ArrowWalk Q s t) : (p.map φ).vertices = p.vertices := by
+  induction p with
+  | nil => rfl
+  | cons p e ih => simp [map_cons, vertices, ih]
+
+@[simp]
+theorem arrows_map {s t : V} (p : ArrowWalk Q s t) :
+    (p.map φ).arrows = p.arrows.map fun a ↦ ⟨a.1, a.2.1, φ a.2.2⟩ := by
+  induction p with
+  | nil => rfl
+  | cons p e ih => simp [map_cons, ih]
+
+@[simp]
+theorem length_map {s t : V} (p : ArrowWalk Q s t) : (p.map φ).length = p.length := by
+  rw [← length_arrows, arrows_map, List.length_map, length_arrows]
+
+theorem IsPath.map {s t : V} {p : ArrowWalk Q s t} (hp : p.IsPath) : (p.map φ).IsPath := by
+  rwa [isPath_def, vertices_map]
+
+end Map
+
 /-! ### Bottlenecks -/
 
 section Bottleneck
@@ -199,5 +281,53 @@ theorem lt_bottleneck_iff {x : K} :
 end Bottleneck
 
 end ArrowWalk
+
+/-! ### Reachability -/
+
+variable (Q) in
+/-- A vertex `v` *reaches* `w` along the arrow family `Q` when there is a directed walk from `v` to
+`w`: Mathlib's `Quiver.Reachable` for the quiver with arrow types `Q`, supplied explicitly. -/
+abbrev ArrowReachable (v w : V) : Prop :=
+  @Quiver.Reachable V ⟨Q⟩ v w
+
+namespace ArrowReachable
+
+@[refl]
+theorem refl (v : V) : ArrowReachable Q v v :=
+  @Quiver.Reachable.refl V ⟨Q⟩ v
+
+@[trans]
+theorem trans {u v w : V} (huv : ArrowReachable Q u v) (hvw : ArrowReachable Q v w) :
+    ArrowReachable Q u w :=
+  @Quiver.Reachable.trans V ⟨Q⟩ u v w huv hvw
+
+/-- An arrow from `v` to `w` makes `w` reachable from `v`. -/
+theorem of_arrow {v w : V} (e : Q v w) : ArrowReachable Q v w :=
+  @Quiver.Hom.reachable V ⟨Q⟩ v w e
+
+/-- Reachability along `Q` gives reachability along `R` for every map of arrow families from `Q`
+to `R` that fixes every vertex. -/
+theorem mono {R : V → V → Type*} (φ : ∀ ⦃x y⦄, Q x y → R x y) {v w : V}
+    (h : ArrowReachable Q v w) : ArrowReachable R v w :=
+  let ⟨p⟩ := h
+  ⟨ArrowWalk.map φ p⟩
+
+/-- Reachability is witnessed by a path. -/
+theorem exists_isPath {v w : V} (h : ArrowReachable Q v w) :
+    ∃ p : ArrowWalk Q v w, p.IsPath :=
+  let ⟨p⟩ := h
+  let ⟨p', hp', _⟩ := ArrowWalk.exists_isPath_arrows_subset p
+  ⟨p', hp'⟩
+
+/-- A set of vertices that no arrow leaves contains every vertex reachable from one of its
+members. -/
+theorem mem_of_mem {S : Set V} (hS : ∀ x ∈ S, ∀ y ∉ S, IsEmpty (Q x y)) {v w : V} (hv : v ∈ S)
+    (h : ArrowReachable Q v w) : w ∈ S := by
+  obtain ⟨p⟩ := h
+  induction p with
+  | nil => exact hv
+  | cons p e ih => exact by_contra fun hy ↦ (hS _ ih _ hy).false e
+
+end ArrowReachable
 
 end TauCeti
