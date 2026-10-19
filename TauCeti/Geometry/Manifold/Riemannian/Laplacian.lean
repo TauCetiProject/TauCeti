@@ -239,10 +239,10 @@ theorem laplaceBeltrami_def (I : ModelWithCorners ℝ E H) {M : Type*} [Topologi
     laplaceBeltrami I f x = divergence I (mgradient I f) x := by
   rw [laplaceBeltrami]
 
-/-- The Laplace--Beltrami operator loses one derivative relative to its input, just as the
-ordinary flat Laplacian does.  The finite-regularity statement is useful when the operator is
-used under an integral, where smoothness of the resulting scalar function must be supplied
-explicitly. -/
+/-- On a `C^m` manifold with a `C^k` Riemannian metric, the Laplace--Beltrami operator of a
+`C^(n + 2)` function is `C^n` when `n + 2 ≤ m` and `n + 1 ≤ k`; like the flat Laplacian, it
+loses two derivatives.  The finite-regularity statement is useful when the operator is used under
+an integral, where smoothness of the resulting scalar function must be supplied explicitly. -/
 theorem contMDiff_laplaceBeltrami {n m k : ℕ∞ω}
     {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
     [IsManifold I 2 M] [IsManifold I m M]
