@@ -46,9 +46,7 @@ comparisons, which uses the pushforward of underlying presheaves
 `TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Pushforward`.
 
 When the coefficient map is an isomorphism and the site functor is also cocontinuous, the
-pushforward comparison is invertible. The argument follows the symmetric-power instance
-`TauCeti.SheafOfModules.isIso_pushforwardSymmetricPowerComparison` and uses the general
-`isIso_sheafifyPushforwardComparison` rather than constructing a separate inverse.
+pushforward comparison is invertible.
 
 ## References
 
@@ -163,6 +161,7 @@ theorem pushforwardExteriorPowerComparison_app_comp_map_exteriorPowerOneIso
     (PresheafOfModules.pushforwardExteriorPowerComparison_app_comp_map_exteriorPowerOneIso
       (commRingCatHom φ) M.val)
 
+-- Adapted from `TauCeti.SheafOfModules.isIso_pushforwardSymmetricPowerComparison`.
 /-- Restriction along a continuous and cocontinuous functor with an isomorphism of coefficient
 sheaves preserves every exterior power. -/
 instance isIso_pushforwardExteriorPowerComparison [F.IsCocontinuous J K] [IsIso φ] (n : ℕ) :

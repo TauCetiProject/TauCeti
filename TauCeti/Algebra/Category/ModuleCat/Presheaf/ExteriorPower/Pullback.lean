@@ -18,7 +18,8 @@ Taking its mate under the pullback--pushforward adjunction constructs a natural 
 `α* (⋀ⁿ M) ⟶ ⋀ⁿ (α* M)` for pullback of module presheaves. Only the adjunction is needed
 for this construction. This supplies the sectionwise input to exterior-power pullback comparisons
 for sheaves. Unlike precomposition alone, restriction of scalars does not generally give an
-isomorphism of exterior powers; no invertibility assertion is made here.
+isomorphism of exterior powers. When the coefficient map is an isomorphism, the pushforward
+comparison is invertible.
 
 In degree one the pushforward comparison is the identity, read through the identifications
 `⋀¹ M ≅ M`.
@@ -26,8 +27,6 @@ In degree one the pushforward comparison is the identity, read through the ident
 The construction uses the module-level restriction-of-scalars comparison and Mathlib's
 `CategoryTheory.mateEquiv` for the pullback--pushforward adjunction. The wedge formula specifies
 the pushforward comparison, and the unit equation specifies the pullback comparison.
-The coefficient-isomorphism argument follows the corresponding symmetric-power instance
-`TauCeti.PresheafOfModules.isIso_pushforwardSymmetricPowerComparison`.
 
 ## References
 
@@ -140,6 +139,7 @@ theorem pushforwardExteriorPowerComparison_app_comp_map_exteriorPowerOneIso
       (M := PresheafOfModulesOfCommRing.obj M (F.op.obj U)) m))).trans
       (hS.trans (ModuleCat.exteriorPower.iso₁_hom_apply m)).symm
 
+-- Adapted from `TauCeti.PresheafOfModules.isIso_pushforwardSymmetricPowerComparison`.
 /-- Pushforward along an isomorphism of coefficient presheaves preserves exterior powers
 sectionwise. -/
 instance isIso_pushforwardExteriorPowerComparison [IsIso α] (n : ℕ) :

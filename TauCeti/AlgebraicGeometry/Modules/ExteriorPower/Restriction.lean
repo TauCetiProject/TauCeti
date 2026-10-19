@@ -17,12 +17,9 @@ It is the canonical pushforward comparison for the functor sending an open to it
 with coefficient map the inverse structure-sheaf isomorphism. No quasicoherence, finiteness,
 or flatness hypothesis is required.
 
-This is a comparison for `Scheme.Modules.restrictFunctor`. Identifying its inverse with the
-adjunction-defined exterior-power pullback comparison requires compatibility with the
-restriction--pushforward adjunction; that identification is not asserted here.
-
-The construction follows the symmetric-power restriction comparison
-`Scheme.Modules.restrictSymmetricPowerIso`, using the exterior-power comparisons instead.
+This is a comparison for `AlgebraicGeometry.Scheme.Modules.restrictFunctor`. Identifying its
+inverse with the adjunction-defined exterior-power pullback comparison requires compatibility
+with the restriction--pushforward adjunction; that identification is not asserted here.
 
 ## References
 
@@ -33,7 +30,9 @@ public section
 
 open CategoryTheory AlgebraicGeometry
 
-namespace TauCeti.AlgebraicGeometry
+namespace TauCeti.AlgebraicGeometry.Scheme.Modules
+
+open _root_.AlgebraicGeometry.Scheme.Modules
 
 universe u
 
@@ -41,29 +40,30 @@ noncomputable section
 
 variable {X Y : Scheme.{u}} (f : X ⟶ Y) [IsOpenImmersion f]
 
+-- Adapted from `AlgebraicGeometry.Scheme.Modules.restrictSymmetricPowerIso`.
 /-- Exterior powers commute with restriction along an open immersion, naturally in the module
 sheaf. The forward map is the canonical exterior-power pushforward comparison. -/
 def restrictExteriorPowerIso (n : ℕ) :
-    Scheme.Modules.restrictFunctor f ⋙ _root_.SheafOfModules.exteriorPower X.sheaf n ≅
-      _root_.SheafOfModules.exteriorPower Y.sheaf n ⋙ Scheme.Modules.restrictFunctor f :=
-  @asIso _ _ _ _ (SheafOfModules.pushforwardExteriorPowerComparison
-    (Scheme.Modules.restrictRingCatSheafHom f) n)
+    restrictFunctor f ⋙ _root_.SheafOfModules.exteriorPower X.sheaf n ≅
+      _root_.SheafOfModules.exteriorPower Y.sheaf n ⋙ restrictFunctor f :=
+  @asIso _ _ _ _ (TauCeti.SheafOfModules.pushforwardExteriorPowerComparison
+    (restrictRingCatSheafHom f) n)
     -- The scheme and generic site sheaf categories have different instance heads;
     -- pass the coefficient-map isomorphism explicitly.
-    (@SheafOfModules.isIso_pushforwardExteriorPowerComparison
+    (@TauCeti.SheafOfModules.isIso_pushforwardExteriorPowerComparison
       _ _ _ _ _ _ _ _ _ _ _ _ f.opensFunctor _ X.sheaf Y.sheaf
-      (Scheme.Modules.restrictRingCatSheafHom f) inferInstance
-      (Scheme.Modules.isIso_restrictRingCatSheafHom f) n)
+      (restrictRingCatSheafHom f) inferInstance
+      (isIso_restrictRingCatSheafHom f) n)
 
 /-- The forward restriction isomorphism is the canonical pushforward comparison. -/
 -- Keep this equation named: expanding the forward map would obstruct simplification by the
 -- generic isomorphism inverse laws in importing modules.
 theorem restrictExteriorPowerIso_hom_app (n : ℕ) (M : Y.Modules) :
     (restrictExteriorPowerIso f n).hom.app M =
-      (SheafOfModules.pushforwardExteriorPowerComparison
-        (Scheme.Modules.restrictRingCatSheafHom f) n).app M :=
+      (TauCeti.SheafOfModules.pushforwardExteriorPowerComparison
+        (restrictRingCatSheafHom f) n).app M :=
   (rfl)
 
 end
 
-end TauCeti.AlgebraicGeometry
+end TauCeti.AlgebraicGeometry.Scheme.Modules

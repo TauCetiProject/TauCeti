@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.ExteriorPower
-public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
+public import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
 public import Mathlib.Algebra.Category.ModuleCat.EpiMono
 
 /-!
@@ -15,7 +15,9 @@ public import Mathlib.Algebra.Category.ModuleCat.EpiMono
 Restriction of scalars has a natural exterior-power comparison, sending a wedge over the
 source ring to the same wedge over the target ring. It is an isomorphism when the coefficient
 map is bijective, though not for an arbitrary ring map. This gives exterior-power restriction
-isomorphisms for module presheaves and sheaves. The construction uses Mathlib's
+isomorphisms for module presheaves with isomorphic coefficient maps, and for module sheaves
+when the coefficient map is an isomorphism and the site functor is also cocontinuous.
+The construction uses Mathlib's
 `ModuleCat.exteriorPower.desc` and supplies the sectionwise maps
 for exterior powers of pushforwards of module presheaves.
 -/
@@ -120,8 +122,11 @@ private def restrictScalarsExteriorPowerInv (e : S ≃+* R) (n : ℕ)
 private lemma restrictScalarsExteriorPowerInv_mk (e : S ≃+* R) (n : ℕ)
     (M : ModuleCat.{max u v w} R) (m : Fin n → M) :
     restrictScalarsExteriorPowerInv e n M (ModuleCat.exteriorPower.mk m) =
-      ModuleCat.exteriorPower.mk (M := (ModuleCat.restrictScalars e.toRingHom).obj M) m :=
-  restrictScalarsExteriorPowerInvAux_mk e n M m
+      ModuleCat.exteriorPower.mk (M := (ModuleCat.restrictScalars e.toRingHom).obj M) m := by
+  -- `erw` matches the equivalence functors with their scalar-restriction definitions.
+  erw [restrictScalarsExteriorPowerInv, ModuleCat.comp_apply,
+    ModuleCat.restrictScalarsEquivalenceOfRingEquiv_counitIso_hom_app_apply,
+    ModuleCat.restrictScalars.map_apply, restrictScalarsExteriorPowerInvAux_mk]
 
 private lemma restrictScalarsExteriorPowerComparison_comp_inv
     (e : S ≃+* R) (n : ℕ) (M : ModuleCat.{max u v w} R) :
@@ -152,7 +157,12 @@ private lemma restrictScalarsExteriorPowerComparison_inv_apply
   have hc (m : Fin n → M) : c (ModuleCat.exteriorPower.mk (M := N) m) =
       ModuleCat.exteriorPower.mk (M := M) m :=
     restrictScalarsExteriorPowerComparison_app_mk e.toRingHom n M m
-  have hc' (x : P) : c' x = c x := rfl
+  have hc' (x : P) : c' x = c x := by
+    -- The inverse unit for `e` is the counit for `e.symm`; `erw` exposes these wrappers.
+    dsimp only [c']
+    erw [ModuleCat.comp_apply,
+      ModuleCat.restrictScalarsEquivalenceOfRingEquiv_counitIso_hom_app_apply e.symm,
+      ModuleCat.restrictScalars.map_apply]
   have hright : h ≫ c' = 𝟙 _ := by
     apply ModuleCat.hom_ext
     apply _root_.exteriorPower.linearMap_ext
