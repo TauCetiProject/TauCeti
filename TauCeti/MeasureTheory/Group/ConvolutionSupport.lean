@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.Topology.Algebra.Group.Pointwise
 
 /-!
@@ -15,7 +15,8 @@ Convolutions over a group `G` are parametric integrals `s ↦ ∫ r, F s r ∂μ
 vanishes unless `r ∈ K` and `r⁻¹ * s ∈ L`, where `K` and `L` are the supports of the two factors.
 This file records the resulting support bounds, for any normed-space valued integrand: the
 parametric integral is supported in `K * L`, and for compact `K` and `L` both the integrand on
-`G × G` and the parametric integral are compactly supported.
+`G × G` and the parametric integral are compactly supported. For compact `K` and a jointly
+continuous integrand, the parametric integral is also continuous.
 
 ## Main statements
 
@@ -24,6 +25,8 @@ parametric integral is supported in `K * L`, and for compact `K` and `L` both th
   `G × G`.
 * `TauCeti.hasCompactSupport_integral_of_inv_mul_mem`: the parametric integral is compactly
   supported.
+* `TauCeti.continuous_integral_of_inv_mul_mem`: the parametric integral of a jointly continuous
+  integrand is continuous.
 -/
 
 public section
@@ -47,7 +50,18 @@ theorem support_integral_subset_mul [NormedSpace ℝ E] [MeasurableSpace G] (μ 
   obtain ⟨hrK, hrL⟩ := hF s r hr
   exact h ⟨r, hrK, r⁻¹ * s, hrL, mul_inv_cancel_left r s⟩
 
-variable [TopologicalSpace G] [IsTopologicalGroup G]
+variable [TopologicalSpace G]
+
+/-- The parametric integral `s ↦ ∫ r, F s r` of a jointly continuous integrand which vanishes
+unless `r ∈ K` and `r⁻¹ * s ∈ L`, for compact `K`, is continuous. -/
+theorem continuous_integral_of_inv_mul_mem [NormedSpace ℝ E] [MeasurableSpace G]
+    [OpensMeasurableSpace G] (μ : Measure G) [IsFiniteMeasureOnCompacts μ] (hK : IsCompact K)
+    (hFc : Continuous (uncurry F)) (hF : ∀ s r, F s r ≠ 0 → r ∈ K ∧ r⁻¹ * s ∈ L) :
+    Continuous fun s => ∫ r, F s r ∂μ :=
+  continuousOn_univ.mp <| continuousOn_integral_of_compact_support hK hFc.continuousOn
+    fun s r _ hr => by_contra fun h => hr (hF s r h).1
+
+variable [IsTopologicalGroup G]
 
 /-- A two-variable integrand which vanishes unless `r ∈ K` and `r⁻¹ * s ∈ L`, for compact `K`
 and `L`, is compactly supported on `G × G`. -/

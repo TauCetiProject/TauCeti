@@ -83,11 +83,6 @@ theorem apply_inv_apply (α : CStarAction G A) (g : G) (a : A) :
   rw [← mul_apply]
   simp
 
-/-- Each automorphism of the action is isometric. -/
-@[simp]
-theorem norm_apply (α : CStarAction G A) (g : G) (a : A) : ‖α g a‖ = ‖a‖ :=
-  (StarAlgEquiv.isometry (α g)).norm_map_of_map_zero (map_zero _) a
-
 /-- The automorphism by which a group element acts, as a continuous complex linear map. -/
 def toContinuousLinearMap (α : CStarAction G A) (g : G) : A →L[ℂ] A where
   toFun := α g

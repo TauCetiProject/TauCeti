@@ -59,16 +59,11 @@ namespace CStarAction
 
 variable {G A : Type*} [Group G] [TopologicalSpace G] [NonUnitalCStarAlgebra A]
 
-/-- The automorphism `α g`, as a linear isometry. -/
-private def toLinearIsometry (α : CStarAction G A) (g : G) : A →ₗᵢ[ℂ] A where
-  toLinearMap := (α g : A →ₗ[ℂ] A)
-  norm_map' := α.norm_apply g
-
 /-- Each automorphism of a C⋆-action commutes with Bochner integrals. No integrability is needed,
 since the automorphism is a linear isometry. -/
 theorem integral_comp_comm (α : CStarAction G A) {X : Type*} [MeasurableSpace X] (ν : Measure X)
     (g : G) (F : X → A) : ∫ x, α g (F x) ∂ν = α g (∫ x, F x ∂ν) :=
-  (α.toLinearIsometry g).integral_comp_comm F
+  LinearIsometry.integral_comp_comm ⟨(α g : A →ₗ[ℂ] A), StarAlgEquiv.norm_map (α g)⟩ F
 
 /-! ### The twisted integrand -/
 
@@ -79,9 +74,8 @@ variable (α : CStarAction G A) (f g : C_c(G, A))
 /-- The twisted integrand `(s, r) ↦ f r * α r (g (r⁻¹ * s))` vanishes unless `r ∈ support f`
 and `r⁻¹ * s ∈ support g`. -/
 private theorem mem_support_of_integrand_ne_zero {s r : G}
-    (hsr : f r * α r (g (r⁻¹ * s)) ≠ 0) : r ∈ support f ∧ r⁻¹ * s ∈ support g := by
-  refine ⟨fun hf => hsr (by simp [show f r = 0 from hf]), fun hg => hsr ?_⟩
-  simp [show g (r⁻¹ * s) = 0 from hg]
+    (hsr : f r * α r (g (r⁻¹ * s)) ≠ 0) : r ∈ support f ∧ r⁻¹ * s ∈ support g :=
+  ⟨mem_support.2 fun hf => hsr (by simp [hf]), mem_support.2 fun hg => hsr (by simp [hg])⟩
 
 private theorem mem_tsupport_of_integrand_ne_zero {s r : G}
     (hsr : f r * α r (g (r⁻¹ * s)) ≠ 0) : r ∈ tsupport f ∧ r⁻¹ * s ∈ tsupport g :=
@@ -109,31 +103,34 @@ variable [IsTopologicalGroup G] [MeasurableSpace G] [OpensMeasurableSpace G]
 /-- The twisted convolution of two compactly supported coefficient functions, before bundling. -/
 private noncomputable def convolutionAux : C_c(G, A) where
   toFun s := ∫ r, f r * α r (g (r⁻¹ * s)) ∂μ
-  continuous_toFun := continuousOn_univ.mp <| continuousOn_integral_of_compact_support
-    f.hasCompactSupport (continuous_integrand α f g).continuousOn
-    fun _ _ _ hr => by_contra fun h => hr (mem_tsupport_of_integrand_ne_zero α f g h).1
+  continuous_toFun := continuous_integral_of_inv_mul_mem μ f.hasCompactSupport
+    (continuous_integrand α f g) fun _ _ => mem_tsupport_of_integrand_ne_zero α f g
   hasCompactSupport' := hasCompactSupport_integral_of_inv_mul_mem μ f.hasCompactSupport
     g.hasCompactSupport fun _ _ => mem_tsupport_of_integrand_ne_zero α f g
+
+private theorem convolutionAux_apply (s : G) :
+    convolutionAux α μ f g s = ∫ r, f r * α r (g (r⁻¹ * s)) ∂μ :=
+  rfl
 
 /-- The twisted convolution `(f ⋆ g) s = ∫ r, f r * α r (g (r⁻¹ * s)) ∂μ` on `C_c(G, A)`, as a
 `ℂ`-bilinear map. -/
 noncomputable def convolution : C_c(G, A) →ₗ[ℂ] C_c(G, A) →ₗ[ℂ] C_c(G, A) :=
   LinearMap.mk₂ ℂ (convolutionAux α μ)
     (fun f₁ f₂ g => CompactlySupportedContinuousMap.ext fun s => by
-      simp only [convolutionAux, CompactlySupportedContinuousMap.coe_mk, ContinuousMap.coe_mk,
-        CompactlySupportedContinuousMap.coe_add, Pi.add_apply, add_mul]
+      simp only [convolutionAux_apply, CompactlySupportedContinuousMap.coe_add, Pi.add_apply,
+        add_mul]
       exact integral_add (integrable_integrand α f₁ g μ s) (integrable_integrand α f₂ g μ s))
     (fun c f g => CompactlySupportedContinuousMap.ext fun s => by
-      simp only [convolutionAux, CompactlySupportedContinuousMap.coe_mk, ContinuousMap.coe_mk,
-        CompactlySupportedContinuousMap.coe_smul, Pi.smul_apply, smul_mul_assoc]
+      simp only [convolutionAux_apply, CompactlySupportedContinuousMap.coe_smul, Pi.smul_apply,
+        smul_mul_assoc]
       exact integral_smul c _)
     (fun f g₁ g₂ => CompactlySupportedContinuousMap.ext fun s => by
-      simp only [convolutionAux, CompactlySupportedContinuousMap.coe_mk, ContinuousMap.coe_mk,
-        CompactlySupportedContinuousMap.coe_add, Pi.add_apply, map_add, mul_add]
+      simp only [convolutionAux_apply, CompactlySupportedContinuousMap.coe_add, Pi.add_apply,
+        map_add, mul_add]
       exact integral_add (integrable_integrand α f g₁ μ s) (integrable_integrand α f g₂ μ s))
     (fun c f g => CompactlySupportedContinuousMap.ext fun s => by
-      simp only [convolutionAux, CompactlySupportedContinuousMap.coe_mk, ContinuousMap.coe_mk,
-        CompactlySupportedContinuousMap.coe_smul, Pi.smul_apply, map_smul, mul_smul_comm]
+      simp only [convolutionAux_apply, CompactlySupportedContinuousMap.coe_smul, Pi.smul_apply,
+        map_smul, mul_smul_comm]
       exact integral_smul c _)
 
 @[simp]
@@ -171,8 +168,8 @@ theorem convolution_assoc :
         rw [← integral_comp_comm, ← integral_const_mul_of_integrable, ← integral_mul_left_eq_self
           (fun t => f r * α r (g (r⁻¹ * t)) * α t (h (t⁻¹ * s))) r]
         · simp [mul_apply, mul_assoc]
-        · exact (α.toLinearIsometry r).toContinuousLinearMap.integrable_comp
-            (integrable_integrand α g h μ (r⁻¹ * s))
+        · simpa using
+            (α.toContinuousLinearMap r).integrable_comp (integrable_integrand α g h μ (r⁻¹ * s))
 
 /-- The `L¹` norm is submultiplicative for twisted convolution with respect to a left-invariant
 measure. -/
@@ -181,14 +178,12 @@ theorem integral_norm_convolution_le :
   -- Dominate pointwise by the scalar convolution `s ↦ ∫ r, ‖f r‖ * ‖g (r⁻¹ * s)‖`, then use
   -- Fubini and left invariance.
   have hsupp : ∀ s r, ‖f r‖ * ‖g (r⁻¹ * s)‖ ≠ 0 → r ∈ tsupport f ∧ r⁻¹ * s ∈ tsupport g :=
-    fun s r hsr => ⟨subset_tsupport _ fun hf => hsr (by simp [show f r = 0 from hf]),
-      subset_tsupport _ fun hg => hsr (by simp [show g (r⁻¹ * s) = 0 from hg])⟩
+    fun s r hsr => ⟨subset_tsupport _ (mem_support.2 fun hf => hsr (by simp [hf])),
+      subset_tsupport _ (mem_support.2 fun hg => hsr (by simp [hg]))⟩
   have hcont : Continuous (uncurry fun s r => ‖f r‖ * ‖g (r⁻¹ * s)‖) := by
     rw [uncurry_def]
     fun_prop
-  have hNcont : Continuous fun s => ∫ r, ‖f r‖ * ‖g (r⁻¹ * s)‖ ∂μ :=
-    continuousOn_univ.mp <| continuousOn_integral_of_compact_support f.hasCompactSupport
-      hcont.continuousOn fun s r _ hr => by_contra fun h => hr (hsupp s r h).1
+  have hNcont := continuous_integral_of_inv_mul_mem μ f.hasCompactSupport hcont hsupp
   have hNsupp := hasCompactSupport_integral_of_inv_mul_mem μ f.hasCompactSupport
     g.hasCompactSupport hsupp
   calc ∫ s, ‖α.convolution μ f g s‖ ∂μ
@@ -200,7 +195,7 @@ theorem integral_norm_convolution_le :
         refine norm_integral_le_of_norm_le
           ((hcont.comp (.prodMk_right s)).integrable_of_hasCompactSupport
             (f.hasCompactSupport.mono' fun r hr => (hsupp s r hr).1)) (.of_forall fun r => ?_)
-        simpa using norm_mul_le (f r) (α r (g (r⁻¹ * s)))
+        simpa [StarAlgEquiv.norm_map] using norm_mul_le (f r) (α r (g (r⁻¹ * s)))
     _ = ∫ r, ∫ s, ‖f r‖ * ‖g (r⁻¹ * s)‖ ∂μ ∂μ :=
         integral_integral_swap_of_hasCompactSupport hcont
           (hasCompactSupport_uncurry_of_inv_mul_mem f.hasCompactSupport g.hasCompactSupport hsupp)
