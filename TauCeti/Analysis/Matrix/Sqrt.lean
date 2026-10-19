@@ -41,6 +41,7 @@ commutative ring in `TauCeti/LinearAlgebra/Matrix/InvSub.lean`.
   is Hermitian;
 * `Matrix.PosSemidef.rank_sqrt` — the square root of a positive-semidefinite matrix has the same
   rank;
+* `Matrix.PosSemidef.range_toEuclideanLin_sqrt` — its Euclidean linear map has the same range;
 * `Matrix.inner_toEuclideanCLM_sqrt_toEuclideanLin` — the quadratic form of `Θ` at
   `CFC.sqrt S x` is the quadratic form of the sandwich at `x`;
 * `Matrix.PosSemidef.det_one_sub_smul_sqrt_mul_mul_sqrt_eq_det_one_sub_smul_mul` — for
@@ -77,6 +78,21 @@ theorem PosSemidef.rank_sqrt {S : Matrix ι ι 𝕜} (hS : S.PosSemidef) :
     rw [hh.eq, CFC.sqrt_mul_sqrt_self S hS.nonneg]
   conv_rhs => rw [← hfac]
   rw [Matrix.rank_conjTranspose_mul_self]
+
+open scoped Classical in
+/-- The Euclidean linear maps of a positive-semidefinite matrix and its square root have the same
+range. -/
+@[simp]
+theorem PosSemidef.range_toEuclideanLin_sqrt [DecidableEq ι] {S : Matrix ι ι 𝕜}
+    (hS : S.PosSemidef) :
+    LinearMap.range (toEuclideanLin (CFC.sqrt S)) = LinearMap.range (toEuclideanLin S) := by
+  apply (Submodule.eq_of_le_of_finrank_le ?_ ?_).symm
+  · rintro _ ⟨x, rfl⟩
+    refine ⟨toEuclideanLin (CFC.sqrt S) x, ?_⟩
+    conv_rhs => rw [← CFC.sqrt_mul_sqrt_self S hS.nonneg]
+    simp only [toEuclideanLin, toLpLin_mul_same, LinearMap.comp_apply]
+  · rw [← rank_eq_finrank_range_toEuclideanLin, ← rank_eq_finrank_range_toEuclideanLin,
+      hS.rank_sqrt]
 
 open scoped Classical in
 /-- Sandwiching a Hermitian matrix between two copies of a square root gives a Hermitian

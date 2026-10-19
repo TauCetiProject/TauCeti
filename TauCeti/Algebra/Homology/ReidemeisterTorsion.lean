@@ -41,6 +41,12 @@ any bracket, and changing `bⱼ` multiplies the brackets in degrees `j + 1` and 
 determinant, which enters with opposite exponents. The torsion of a bounded complex vanishes
 exactly when the complex is not acyclic (`HomologicalComplex.reidemeisterTorsion_eq_zero_iff`).
 
+Replacing the chain bases `c i` by `c' i` multiplies the torsion by `∏ᵢ [c'ᵢ / cᵢ] ^ ((-1) ^ i)`,
+where `[c'ᵢ / cᵢ]` is the determinant of `c' i` with respect to `c i`
+(`HomologicalComplex.reidemeisterTorsion_eq_mul_finprod_det`). In particular reordering the chain
+bases multiplies the torsion by the signs of the permutations, and rescaling the basis vectors by
+units multiplies it by the alternating product of their products.
+
 ## Main declarations
 
 * `HomologicalComplex.torsionBracket`: the bracket `[bⱼ₊₁ sⱼ / cⱼ₊₁]` of a degree.
@@ -51,6 +57,12 @@ exactly when the complex is not acyclic (`HomologicalComplex.reidemeisterTorsion
   if and only if the complex is not acyclic.
 * `HomologicalComplex.reidemeisterTorsion_eq_det_zpow`: the torsion of an acyclic complex
   concentrated in two consecutive degrees.
+* `HomologicalComplex.reidemeisterTorsion_eq_mul_finprod_det`: the change of the torsion under a
+  change of the chain bases.
+* `HomologicalComplex.reidemeisterTorsion_reindex`: the change of the torsion under a reordering
+  of the chain bases.
+* `HomologicalComplex.reidemeisterTorsion_unitsSMul`: the change of the torsion under a rescaling
+  of the chain basis vectors by units.
 
 ## References
 
@@ -110,6 +122,15 @@ theorem torsionBracket_eq_mul
       torsionBracket c h b₁ b₀ s hs * (b₁.det b₁' * b₀.det b₀') := by
   simp only [torsionBracket, bracketBasis]
   exact Basis.det_ofExactLift _ _ _ _ _ _ _ _ _ _ _
+
+/-- Replacing the basis `c (j + 1)` of `Cⱼ₊₁` by `c' (j + 1)` multiplies a bracket by the
+determinant of `c (j + 1)` with respect to `c' (j + 1)`. -/
+theorem torsionBracket_eq_det_mul (c' : ∀ i, Basis (Fin (n i)) F (C.X i)) :
+    torsionBracket c' h b₁ b₀ s hs =
+      (c' (j + 1)).det (c (j + 1)) * torsionBracket c h b₁ b₀ s hs := by
+  rw [torsionBracket, torsionBracket, ← Basis.det_mul_det _ ((c (j + 1)).reindex
+    ((finCongr (eq_add_of_exactAt c h b₁ b₀)).trans finSumFinEquiv.symm))]
+  simp [Basis.det_reindex, Function.comp_assoc, -Equiv.symm_trans, -Equiv.coe_trans]
 
 /-- A bracket is nonzero. -/
 theorem torsionBracket_ne_zero : torsionBracket c h b₁ b₀ s hs ≠ 0 :=
@@ -225,6 +246,19 @@ section Bounded
 
 variable {C c} (hn : {i | n i ≠ 0}.Finite) (h : C.Acyclic)
 
+include hn in
+/-- For a bounded complex, the alternating brackets have finite multiplicative support. -/
+private theorem hasFiniteMulSupport_torsionBracket
+    (b : ∀ j, Basis (Fin (finrank F (LinearMap.range (C.d (j + 1) j).hom))) F
+      (LinearMap.range (C.d (j + 1) j).hom))
+    (s : ∀ j, Fin (finrank F (LinearMap.range (C.d (j + 1) j).hom)) → C.X (j + 1))
+    (hs : ∀ j k, (C.d (j + 1) j).hom (s j k) = b j k) :
+    Function.HasFiniteMulSupport fun j : ℤ ↦
+      torsionBracket c (h (j + 1)) (b (j + 1)) (b j) (s j) (hs j) ^ (j.negOnePow : ℤ) :=
+  (hn.preimage (add_left_injective (1 : ℤ)).injOn).subset <|
+    Function.mulSupport_subset_iff'.2 fun j hj ↦ by
+      rw [torsionBracket_eq_one c _ _ _ _ _ (by simpa using hj), one_zpow]
+
 include hn h in
 /-- For a bounded acyclic complex, the alternating product of the brackets does not depend on the
 bases of the boundaries nor on the lifts. -/
@@ -243,10 +277,7 @@ private theorem finprod_torsionBracket_eq
   have hδ_one {j : ℤ} (hj : n j = 0) : δ j = 1 := det_eq_one_of_eq_zero C c hj _ _
   have hn' : {j : ℤ | n (j + 1) ≠ 0}.Finite :=
     hn.preimage (add_left_injective (1 : ℤ)).injOn
-  have hT : Function.HasFiniteMulSupport fun j : ℤ ↦
-      torsionBracket c (h (j + 1)) (b (j + 1)) (b j) (s j) (hs j) ^ (j.negOnePow : ℤ) :=
-    hn'.subset <| Function.mulSupport_subset_iff'.2 fun j hj ↦ by
-      rw [torsionBracket_eq_one c _ _ _ _ _ (by simpa using hj), one_zpow]
+  have hT := hasFiniteMulSupport_torsionBracket (c := c) hn h b s hs
   have hδ₀ : Function.HasFiniteMulSupport fun j : ℤ ↦ δ j ^ (j.negOnePow : ℤ) :=
     hn.subset <| Function.mulSupport_subset_iff'.2 fun j hj ↦ by
       rw [hδ_one (by simpa using hj), one_zpow]
@@ -289,6 +320,78 @@ theorem reidemeisterTorsion_eq_finprod
     (chosenLift_spec C c)
 
 end Bounded
+
+section BasisChange
+
+variable (c' : ∀ i, Basis (Fin (n i)) F (C.X i))
+
+/-- The determinants of one family of bases with respect to another have finite multiplicative
+support when the complex is bounded. -/
+private theorem hasFiniteMulSupport_det_zpow (hn : {i | n i ≠ 0}.Finite) (e : ℤ → ℤ) :
+    Function.HasFiniteMulSupport fun i : ℤ ↦ (c i).det (c' i) ^ e i :=
+  hn.subset <| Function.mulSupport_subset_iff'.2 fun i hi ↦ by
+    have : IsEmpty (Fin (n i)) := by rw [show n i = 0 by simpa using hi]; infer_instance
+    simp
+
+/-- The basis-change formula for the torsion: replacing the bases `c i` of `C` by `c' i`
+multiplies the torsion by `∏ᵢ [c'ᵢ / cᵢ] ^ ((-1) ^ i)`, where `[c'ᵢ / cᵢ]` is the determinant of
+`c' i` with respect to `c i`. This holds for every complex, both sides being `0` when `C` is
+not acyclic or is unbounded. -/
+theorem reidemeisterTorsion_eq_mul_finprod_det :
+    C.reidemeisterTorsion c' =
+      C.reidemeisterTorsion c * ∏ᶠ i : ℤ, (c i).det (c' i) ^ (i.negOnePow : ℤ) := by
+  by_cases hn : {i | n i ≠ 0}.Finite
+  swap
+  · simp [reidemeisterTorsion_of_not_finite _ _ hn]
+  by_cases h : C.Acyclic
+  swap
+  · simp [reidemeisterTorsion_of_not_acyclic _ _ h]
+  -- Compute both torsions with the same boundary bases and lifts; the brackets then differ by
+  -- the factors `[cⱼ₊₁ / c'ⱼ₊₁] ^ ((-1) ^ j) = [c'ⱼ₊₁ / cⱼ₊₁] ^ ((-1) ^ (j + 1))`.
+  have hD : Function.HasFiniteMulSupport fun j : ℤ ↦
+      (c (j + 1)).det (c' (j + 1)) ^ ((j + 1).negOnePow : ℤ) :=
+    (hasFiniteMulSupport_det_zpow C c c' hn fun i ↦ (i.negOnePow : ℤ)).preimage
+      (add_left_injective 1).injOn
+  have hshift : ∏ᶠ i : ℤ, (c i).det (c' i) ^ (i.negOnePow : ℤ) =
+      ∏ᶠ j : ℤ, (c (j + 1)).det (c' (j + 1)) ^ ((j + 1).negOnePow : ℤ) :=
+    (finprod_comp_equiv (Equiv.addRight 1)).symm
+  rw [reidemeisterTorsion_eq_finprod (c := c) hn h (chosenBasis C c) (chosenLift C c)
+      (chosenLift_spec C c),
+    reidemeisterTorsion_eq_finprod (c := c') hn h (chosenBasis C c) (chosenLift C c)
+      (chosenLift_spec C c),
+    hshift]
+  refine (finprod_congr fun j ↦ ?_).trans
+    (finprod_mul_distrib (hasFiniteMulSupport_torsionBracket hn h _ _ _) hD)
+  have hinv : (c (j + 1)).det (c' (j + 1)) = ((c' (j + 1)).det (c (j + 1)))⁻¹ :=
+    eq_inv_of_mul_eq_one_left <| by rw [Basis.det_mul_det, Basis.det_self]
+  rw [torsionBracket_eq_det_mul c (c' := c'), mul_zpow, mul_comm]
+  simp only [Int.negOnePow_succ, Units.val_neg, zpow_neg]
+  congr 1
+  rw [hinv, inv_zpow, inv_inv]
+
+/-- Reordering the bases `c i` of `C` by permutations `σ i` multiplies the torsion by the product
+of the signs of the `σ i`. -/
+theorem reidemeisterTorsion_reindex (σ : ∀ i, Equiv.Perm (Fin (n i))) :
+    C.reidemeisterTorsion (fun i ↦ (c i).reindex (σ i)) =
+      C.reidemeisterTorsion c * ∏ᶠ i : ℤ, ((Equiv.Perm.sign (σ i) : ℤ) : F) := by
+  rw [reidemeisterTorsion_eq_mul_finprod_det C c]
+  congr 1
+  refine finprod_congr fun i ↦ ?_
+  rw [Basis.coe_reindex, AlternatingMap.map_perm, Basis.det_self, Equiv.Perm.sign_symm]
+  rcases Int.units_eq_one_or (Equiv.Perm.sign (σ i)) with hσ | hσ <;>
+    rcases Int.units_eq_one_or i.negOnePow with hi | hi <;>
+    simp only [hσ, hi, one_smul, Units.val_one, Int.cast_one, Units.neg_smul,
+      Units.val_neg, Int.cast_neg, zpow_neg, zpow_one, inv_neg, inv_one]
+
+/-- Rescaling the vectors of the bases `c i` of `C` by units `w i k` multiplies the torsion by
+`∏ᵢ (∏ₖ w i k) ^ ((-1) ^ i)`. -/
+theorem reidemeisterTorsion_unitsSMul (w : ∀ i, Fin (n i) → Fˣ) :
+    C.reidemeisterTorsion (fun i ↦ (c i).unitsSMul (w i)) =
+      C.reidemeisterTorsion c * ∏ᶠ i : ℤ, (∏ k, (w i k : F)) ^ (i.negOnePow : ℤ) := by
+  rw [reidemeisterTorsion_eq_mul_finprod_det C c]
+  simp
+
+end BasisChange
 
 section TwoDegrees
 
