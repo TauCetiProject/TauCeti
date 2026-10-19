@@ -13,7 +13,6 @@ public import TauCeti.Combinatorics.PermutationTriple.IsoClass
 
 import TauCeti.AlgebraicTopology.ThricePuncturedSphere.RestrictOver
 import TauCeti.GroupTheory.GroupAction.Free
-import TauCeti.Topology.OpenPartialHomeomorph.Continuity
 
 /-!
 # Analytic Belyi pairs
@@ -310,6 +309,9 @@ theorem isoClass_eq (ν : P.restrict ⁻¹' {basePt} ≃ Fin (degree P.β)) :
 connected surface `X` with the finitely many points over `0`, `1` and `∞` removed. -/
 instance instPathConnectedSpacePreimageRange :
     PathConnectedSpace (P.β ⁻¹' range toOnePoint) :=
+  -- The projection of `P.toTopBranchedCover rfl` is `⟨P.β, _⟩`, whose coercion is `P.β` by
+  -- definition (`TauCeti.AnalyticBelyiPair.toTopBranchedCover_π_apply` is `rfl`), so the two
+  -- preimages are the same subtype.
   (P.toTopBranchedCover rfl).instPathConnectedSpacePreimageRange
 
 /-- The permutation triple of an analytic Belyi pair is connected. -/
@@ -537,12 +539,15 @@ theorem eq_of_apply_eq {e e' : P.Iso Q} (x : P.β ⁻¹' range toOnePoint) (h : 
     Q.isCoveringMap_restrict.eq_of_comp_eq e.restrict.continuous e'.restrict.continuous
       (by rw [e.restrict_comp_restrict, e'.restrict_comp_restrict]) x (Subtype.ext h)
   have hQ := e.degree_eq.symm
+  -- The unbranched part of `P.toTopBranchedCover rfl` is `P.β ⁻¹' range toOnePoint` by
+  -- definition, since its projection coerces to `P.β`; so `hres` applies to its points.
   have h : (e.toTopBranchedCover rfl hQ).restrict = (e'.toTopBranchedCover rfl hQ).restrict :=
     Homeomorph.ext fun y ↦ Subtype.ext <| by
       simp only [TopBranchedCover.Iso.coe_restrict_apply, toTopBranchedCover_toHomeomorph]
       exact congrArg Subtype.val (congrFun hres y)
-  exact ext fun y ↦ DFunLike.congr_fun
-    (congrArg TopBranchedCover.Iso.toHomeomorph (TopBranchedCover.Iso.restrict_injective h)) y
+  have h' := congrArg TopBranchedCover.Iso.toHomeomorph (TopBranchedCover.Iso.restrict_injective h)
+  rw [toTopBranchedCover_toHomeomorph, toTopBranchedCover_toHomeomorph] at h'
+  exact ext fun y ↦ DFunLike.congr_fun h' y
 
 /-- Evaluation at a point of the fibre over `1/2` embeds the isomorphisms `P ≅ Q` into the fibre
 of `Q` over `1/2`. -/

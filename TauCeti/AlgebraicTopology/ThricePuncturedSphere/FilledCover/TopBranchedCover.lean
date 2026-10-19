@@ -281,7 +281,8 @@ theorem TopBranchedCover.IsoClass.restrict_surjective {n : ℕ} :
 /-- **A branched cover is the filling of its unbranched part.** Every topological branched cover
 `X` of degree `n` is isomorphic to the filled cover of the connected cover of `ℂ ∖ {0, 1}` obtained
 by deleting its marked fibres, by an isomorphism which on the unbranched part is the inclusion into
-the filled cover (`TauCeti.TopBranchedCover.coe_isoFilledCover_apply`). By
+the filled cover
+(`TauCeti.TopBranchedCover.toHomeomorph_isoFilledCover_connectedCoverHomeomorph`). By
 `TauCeti.TopBranchedCover.Iso.restrict_injective`, it is the only such isomorphism. -/
 def TopBranchedCover.isoFilledCover {n : ℕ} (X : TopBranchedCover.{0} n) :
     X.Iso X.connectedCover.toTopBranchedCover :=
@@ -291,8 +292,8 @@ open FilledCover in
 /-- On the unbranched part, `TauCeti.TopBranchedCover.isoFilledCover` is the inclusion of the
 total space of the connected cover into its filled cover. -/
 @[simp]
-theorem TopBranchedCover.coe_isoFilledCover_apply {n : ℕ} (X : TopBranchedCover.{0} n)
-    (x : (X.connectedCover.cover : TopCat)) :
+theorem TopBranchedCover.toHomeomorph_isoFilledCover_connectedCoverHomeomorph {n : ℕ}
+    (X : TopBranchedCover.{0} n) (x : (X.connectedCover.cover : TopCat)) :
     X.isoFilledCover.toHomeomorph (X.connectedCoverHomeomorph x) = incl (chart _) x := by
   rw [← Iso.coe_restrict_apply, isoFilledCover,
     Iso.restrict_ofConnectedCoverIso_connectedCoverHomeomorph,
