@@ -79,6 +79,18 @@ private theorem dirichletChartPDFReal_mul_prod_rpow [DecidableEq ι]
     field_simp
   · simp [dirichletChartPDFReal_of_notMem _ hx]
 
+private theorem dirichletMomentConst_nonneg {a q : ι → ℝ}
+    (ha : ∀ i, 0 < a i) (hq : ∀ i, 0 < a i + q i) :
+    0 ≤ Real.Gamma (∑ i, a i) / Real.Gamma (∑ i, (a i + q i)) *
+      ∏ i, Real.Gamma (a i + q i) / Real.Gamma (a i) := by
+  exact mul_nonneg
+    (div_nonneg (Real.Gamma_pos_of_pos
+      (Finset.sum_pos (fun i _ ↦ ha i) Finset.univ_nonempty)).le
+      (Real.Gamma_pos_of_pos
+        (Finset.sum_pos (fun i _ ↦ hq i) Finset.univ_nonempty)).le)
+    (Finset.prod_nonneg fun i _ ↦ div_nonneg
+      (Real.Gamma_pos_of_pos (hq i)).le (Real.Gamma_pos_of_pos (ha i)).le)
+
 /-- The nonnegative extended integral of a mixed real power under a Dirichlet law, when every
 shifted concentration parameter is positive. -/
 theorem lintegral_prod_rpow_dirichletMeasure {a q : ι → ℝ}
@@ -102,17 +114,16 @@ theorem lintegral_prod_rpow_dirichletMeasure {a q : ι → ℝ}
     simp only [dirichletChartPDF_eq_ofReal]
     rw [← ENNReal.ofReal_mul (dirichletChartPDFReal_nonneg ha i₀ x),
       dirichletChartPDFReal_mul_prod_rpow ha hq]
-    apply ENNReal.ofReal_mul
-    exact mul_nonneg
-      (div_nonneg (Real.Gamma_pos_of_pos
-        (Finset.sum_pos (fun i _ ↦ ha i) Finset.univ_nonempty)).le
-        (Real.Gamma_pos_of_pos
-          (Finset.sum_pos (fun i _ ↦ hq i) Finset.univ_nonempty)).le)
-      (Finset.prod_nonneg fun i _ ↦ div_nonneg
-        (Real.Gamma_pos_of_pos (hq i)).le (Real.Gamma_pos_of_pos (ha i)).le)
+    exact ENNReal.ofReal_mul (dirichletMomentConst_nonneg ha hq)
   simp_rw [Pi.mul_apply, heq]
   rw [lintegral_const_mul _ (measurable_dirichletChartPDF _ i₀),
     lintegral_dirichletChartPDF_eq_one hq i₀, mul_one]
+
+private theorem ae_nonneg_prod_rpow_dirichletMeasure {a q : ι → ℝ}
+    (ha : ∀ i, 0 < a i) :
+    0 ≤ᵐ[dirichletMeasure a] fun x ↦ ∏ i, x i ^ q i := by
+  filter_upwards [ae_pos_dirichletMeasure ha] with x hx
+  exact Finset.prod_nonneg fun i _ ↦ Real.rpow_nonneg (hx i).le _
 
 /-- A mixed real power is integrable under a Dirichlet law if each exponent added to its
 concentration parameter is positive. Negative exponents are allowed. -/
@@ -120,11 +131,10 @@ theorem integrable_prod_rpow_dirichletMeasure {a q : ι → ℝ}
     (ha : ∀ i, 0 < a i) (hq : ∀ i, 0 < a i + q i) :
     Integrable (fun x ↦ ∏ i, x i ^ q i) (dirichletMeasure a) := by
   have hm : Measurable fun x : EuclideanSpace ℝ ι ↦ ∏ i, x i ^ q i := by fun_prop
-  refine ⟨hm.aestronglyMeasurable, (hasFiniteIntegral_iff_ofReal ?_).2 ?_⟩
-  · filter_upwards [ae_pos_dirichletMeasure ha] with x hx
-    exact Finset.prod_nonneg fun i _ ↦ Real.rpow_nonneg (hx i).le _
-  · rw [lintegral_prod_rpow_dirichletMeasure ha hq]
-    exact ENNReal.ofReal_lt_top
+  refine ⟨hm.aestronglyMeasurable,
+    (hasFiniteIntegral_iff_ofReal (ae_nonneg_prod_rpow_dirichletMeasure ha)).2 ?_⟩
+  rw [lintegral_prod_rpow_dirichletMeasure ha hq]
+  exact ENNReal.ofReal_lt_top
 
 /-- The mixed real-power moment of a Dirichlet law is the ratio of the original and shifted
 normalizing constants. -/
@@ -133,20 +143,10 @@ theorem integral_prod_rpow_dirichletMeasure {a q : ι → ℝ}
     ∫ x, (∏ i, x i ^ q i) ∂dirichletMeasure a =
       Real.Gamma (∑ i, a i) / Real.Gamma ((∑ i, a i) + ∑ i, q i) *
         ∏ i, Real.Gamma (a i + q i) / Real.Gamma (a i) := by
-  have hn : 0 ≤ᵐ[dirichletMeasure a] fun x ↦ ∏ i, x i ^ q i := by
-    filter_upwards [ae_pos_dirichletMeasure ha] with x hx
-    exact Finset.prod_nonneg fun i _ ↦ Real.rpow_nonneg (hx i).le _
-  have hm : Measurable fun x : EuclideanSpace ℝ ι ↦ ∏ i, x i ^ q i := by fun_prop
-  rw [integral_eq_lintegral_of_nonneg_ae hn hm.aestronglyMeasurable,
-    lintegral_prod_rpow_dirichletMeasure ha hq, ENNReal.toReal_ofReal]
-  · rw [Finset.sum_add_distrib]
-  · exact mul_nonneg
-      (div_nonneg (Real.Gamma_pos_of_pos
-        (Finset.sum_pos (fun i _ ↦ ha i) Finset.univ_nonempty)).le
-        (Real.Gamma_pos_of_pos
-          (Finset.sum_pos (fun i _ ↦ hq i) Finset.univ_nonempty)).le)
-      (Finset.prod_nonneg fun i _ ↦ div_nonneg
-        (Real.Gamma_pos_of_pos (hq i)).le (Real.Gamma_pos_of_pos (ha i)).le)
+  rw [integral_eq_lintegral_of_nonneg_ae (ae_nonneg_prod_rpow_dirichletMeasure ha)
+    (integrable_prod_rpow_dirichletMeasure ha hq).aestronglyMeasurable,
+    lintegral_prod_rpow_dirichletMeasure ha hq,
+    ENNReal.toReal_ofReal (dirichletMomentConst_nonneg ha hq), Finset.sum_add_distrib]
 
 /-- Every natural mixed moment of a Dirichlet law is integrable. -/
 theorem integrable_prod_pow_dirichletMeasure {a : ι → ℝ} (ha : ∀ i, 0 < a i)
