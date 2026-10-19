@@ -157,21 +157,8 @@ zero elsewhere. -/
 theorem multinomialMeasure_singleton (n : ℕ) (p : StdSimplex NNReal ι) (k : ι → ℕ) :
     multinomialMeasure n p {k} =
       if ∑ i, k i = n then multinomialWeight p.weights k else 0 := by
-  rw [multinomialMeasure, Measure.finsetSum_apply]
-  split_ifs with hk
-  · rw [Finset.sum_eq_single k]
-    · simp
-    · intro b _ hbk
-      simp [hbk]
-    · intro hmem
-      exact (hmem (by simp [Finset.mem_piAntidiag, hk])).elim
-  · rw [Finset.sum_eq_zero]
-    intro b hb
-    have hbk : b ≠ k := by
-      intro h
-      subst b
-      exact hk (Finset.mem_piAntidiag.mp hb).1
-    simp [hbk]
+  simp [multinomialMeasure, Measure.finsetSum_apply, Pi.single_apply,
+    mul_ite, Finset.mem_piAntidiag]
 
 /-- The real singleton mass of a multinomial law, in the usual factorial form. -/
 @[simp]
@@ -244,7 +231,7 @@ theorem multinomialMeasure_sum_eq (n : ℕ) (p : StdSimplex NNReal ι) :
     _ = 1 := sum_multinomialWeight_eq_one n p
 
 /-- Every function is integrable against a multinomial law because the law has finite support. -/
-theorem integrable_multinomialMeasure {E : Type*} [NormedAddGroup E]
+theorem integrable_multinomialMeasure {E : Type*} [SeminormedAddGroup E]
     (f : (ι → ℕ) → E) (n : ℕ) (p : StdSimplex NNReal ι) :
     Integrable f (multinomialMeasure n p) := by
   rw [multinomialMeasure]
