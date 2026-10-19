@@ -9,6 +9,7 @@ public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Adjacent.Contract
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Commuting
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Inverse.Forward
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Inverse.Reverse
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Unit
 public import TauCeti.Algebra.Category.GradedModuleCat.BimoduleTensor.Unit
 public import TauCeti.Algebra.Homology.Bifunctor.Homotopy
 
@@ -24,13 +25,18 @@ This file states those relations for an arbitrary family of complexes in a *grad
 setting* and proves a transfer principle between two such settings. A graded bimodule setting
 is a graded algebra `A` with an internal grading `Ξ`: its graded bimodules are the graded
 modules over the enveloping grading `Ξ.tensorProduct Ξ.opposite`, they are combined by the
-balanced bimodule tensor `GradedModuleCat.bimoduleTensor Ξ Ξ Ξ`, and the regular graded
-bimodule `GradedModuleCat.bimoduleUnit Ξ` is the unit of that tensor. The setting of the
+balanced bimodule tensor `GradedBimoduleTensor`, and the unit complex of the setting is
+`GradedBimoduleUnitComplex k Ξ`, the regular graded bimodule
+`GradedModuleCat.bimoduleUnit Ξ` placed in cohomological degree zero. The setting of the
 zigzag braid complexes is the setting of the zigzag algebra with its signed path-length
 grading; a second setting, over a second graded algebra, is what a transfer reaches.
 
 `KhovanovSeidelRelations` records the three relations for a family `C` of complexes with
-prescribed inverses `C'` in a graded bimodule setting with unit complex `U`.
+prescribed inverses `C'` in a graded bimodule setting. The unit of the relations is the
+unit complex *of that setting*; it is not a free parameter, so the two inverse relations are
+statements about the actual unit of the tensor. For the zigzag setting, the regular graded
+zigzag bimodule is that unit: `zigzagBraidUnitComplexEquiv` identifies the zigzag unit complex
+with the unit complex of the zigzag setting.
 
 `KhovanovSeidelRelationsTransfer` is the transfer principle. A functor `H` from a source
 graded bimodule setting to a target graded bimodule setting, together with
@@ -46,14 +52,23 @@ prolonged source complexes are identified with a target family by the homotopy e
 `a` and `a'`. The two settings need not agree: the target is a second graded algebra, and
 `H` need not be an equivalence.
 
-The monoidal and unit data are hypotheses of this abstract principle, and they are exactly
-what a transfer theorem has to establish in an instantiation. A *Morita* or *derived* transfer,
-in which the target setting is reached through an equivalence of bimodule categories carried
-by a tilting bimodule complex, needs equivalence data between distinct graded algebras and a
-conjugation functor on bimodule complexes; neither exists in this repository yet, and the
-principle is stated so that such a functor can be plugged in once it does. Naturality of the
-transferred relations up to chain homotopy, the derived-Koszul comparison, spherical twists
-and graded-`K₀` statements are out of scope.
+## Scope
+
+The principle is stated for a functor `H` of *bimodule categories*, applied to complexes
+degree by degree through `H.mapHomologicalComplex`. This is the shape of a Morita-type
+equivalence realised by a single bimodule: such an equivalence is an equivalence of bimodule
+categories, and its action on a complex of bimodules is the degreewise action of that
+equivalence.
+
+A *derived* transfer, in which the target setting is reached by conjugating bimodules with a
+tilting bimodule complex, is **not** covered by this principle. Conjugation by a tilting
+complex is not an additive functor on bimodules, so it is not an instance of `H` here, and
+the principle cannot be applied to it. Such a transfer would have to be stated for a functor
+between the (homotopy) categories of complexes, with the monoidal and unit data stated for
+that functor; no such statement is made here.
+
+Naturality of the transferred relations up to chain homotopy, the derived-Koszul comparison,
+spherical twists and graded-`K₀` statements are out of scope.
 
 ## References
 
@@ -106,22 +121,34 @@ abbrev zigzagBraidUnitComplex :
   (HomologicalComplex.single (GradedModuleCat.{max u w} (zigzagEnvelopingGrading k G).piece)
     c 0).obj (zigzagGradedBimodule k G)
 
+/-- The regular graded zigzag bimodule is the unit complex of the graded bimodule setting of
+the zigzag algebra: the homotopy equivalence between the regular graded bimodule in
+cohomological degree zero and `GradedBimoduleUnitComplex` of that setting. It is the
+transport of `zigzagGradedBimoduleUnitIsoLift` to the single-degree complex. -/
+def zigzagBraidUnitComplexEquiv :
+    HomotopyEquiv (zigzagBraidUnitComplex k G)
+      (GradedBimoduleUnitComplex k (zigzagAlgebraInternalGrading k G)) :=
+  HomotopyEquiv.ofIso
+    ((HomologicalComplex.single (GradedModuleCat.{max u w} (zigzagEnvelopingGrading k G).piece)
+      c 0).mapIso (zigzagGradedBimoduleUnitIsoLift k G).symm)
+
 /-- The three Khovanov-Seidel relations for a family `C` of complexes of graded bimodules in
-the graded bimodule setting of `Ξ`, with prescribed inverses `C'` and unit complex `U`: both
-one-sided inverse products `C i ⊗ C' i` and `C' i ⊗ C i` are homotopy equivalent to the unit,
-the nonadjacent factors commute up to chain homotopy, and the adjacent factors satisfy the
-braid relation up to chain homotopy. -/
+the graded bimodule setting of `Ξ`, with prescribed inverses `C'`: both one-sided inverse
+products `C i ⊗ C' i` and `C' i ⊗ C i` are homotopy equivalent to the unit complex of the
+setting, the nonadjacent factors commute up to chain homotopy, and the adjacent factors
+satisfy the braid relation up to chain homotopy. -/
 structure KhovanovSeidelRelations
     {A : Type uA} [Ring A] [Algebra k A]
     (Ξ : InternalGrading k A) [GradedAlgebra Ξ.piece]
-    (U : HomologicalComplex (GradedBimoduleCat k Ξ) c)
     (C C' : V → HomologicalComplex (GradedBimoduleCat k Ξ) c) where
   /-- The forward inverse product `C i ⊗ C' i` is homotopy equivalent to the unit. -/
   inverseForward (i : V) : HomotopyEquiv
-    (HomologicalComplex.mapBifunctor (C i) (C' i) (GradedBimoduleTensor k Ξ) c) U
+    (HomologicalComplex.mapBifunctor (C i) (C' i) (GradedBimoduleTensor k Ξ) c)
+    (GradedBimoduleUnitComplex k Ξ)
   /-- The reverse inverse product `C' i ⊗ C i` is homotopy equivalent to the unit. -/
   inverseReverse (i : V) : HomotopyEquiv
-    (HomologicalComplex.mapBifunctor (C' i) (C i) (GradedBimoduleTensor k Ξ) c) U
+    (HomologicalComplex.mapBifunctor (C' i) (C i) (GradedBimoduleTensor k Ξ) c)
+    (GradedBimoduleUnitComplex k Ξ)
   /-- Nonadjacent factors commute up to chain homotopy. -/
   commute (i j : V) (hij : i ≠ j) (hadj : ¬ G.Adj i j) : HomotopyEquiv
     (HomologicalComplex.mapBifunctor (C i) (C j) (GradedBimoduleTensor k Ξ) c)
@@ -139,10 +166,12 @@ structure KhovanovSeidelRelations
 complexes as prescribed inverses and the regular graded bimodule concentrated in cohomological
 degree zero as the unit. -/
 def zigzagBraidComplexRelations :
-    KhovanovSeidelRelations k G (zigzagAlgebraInternalGrading k G) (zigzagBraidUnitComplex k G)
+    KhovanovSeidelRelations k G (zigzagAlgebraInternalGrading k G)
       (zigzagBraidComplex k G) (zigzagBraidInverseComplex k G) where
-  inverseForward i := zigzagBraidComplexTensorInverseHomotopyEquiv k G i
-  inverseReverse i := zigzagBraidInverseTensorComplexHomotopyEquiv k G i
+  inverseForward i := (zigzagBraidComplexTensorInverseHomotopyEquiv k G i).trans
+    (zigzagBraidUnitComplexEquiv k G)
+  inverseReverse i := (zigzagBraidInverseTensorComplexHomotopyEquiv k G i).trans
+    (zigzagBraidUnitComplexEquiv k G)
   commute := zigzagBraidComplexTensorCommHomotopyEquiv k G
   braid h := zigzagBraidComplexAdjacentHomotopyEquiv k G h
 
@@ -152,8 +181,6 @@ variable {A₁ : Type uA} [Ring A₁] [Algebra k A₁]
 variable {A₂ : Type uB} [Ring A₂] [Algebra k A₂]
 variable (Ξ₁ : InternalGrading k A₁) [GradedAlgebra Ξ₁.piece]
 variable (Ξ₂ : InternalGrading k A₂) [GradedAlgebra Ξ₂.piece]
-variable (U₁ : HomologicalComplex (GradedBimoduleCat k Ξ₁) c)
-variable (U₂ : HomologicalComplex (GradedBimoduleCat k Ξ₂) c)
 variable (H : GradedBimoduleCat k Ξ₁ ⥤ GradedBimoduleCat k Ξ₂) [H.Additive]
 
 /-- The complex prolonged from `X` by the prolongation of the functor `H` to the complexes of
@@ -180,12 +207,15 @@ private def transferInverseForward (i : V)
     {B B' : V → HomologicalComplex (GradedBimoduleCat k Ξ₁) c}
     {C C' : V → HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
     (η : GradedBimoduleMonoidalDatum k Ξ₁ Ξ₂ H)
-    (ε : HomotopyEquiv (GradedBimoduleProlongation k Ξ₁ Ξ₂ H U₁) U₂)
-    (rel : KhovanovSeidelRelations k G Ξ₁ U₁ B B')
+    (ε : HomotopyEquiv
+      (GradedBimoduleProlongation k Ξ₁ Ξ₂ H (GradedBimoduleUnitComplex k Ξ₁))
+      (GradedBimoduleUnitComplex k Ξ₂))
+    (rel : KhovanovSeidelRelations k G Ξ₁ B B')
     (a : ∀ i, HomotopyEquiv (GradedBimoduleProlongation k Ξ₁ Ξ₂ H (B i)) (C i))
     (a' : ∀ i, HomotopyEquiv (GradedBimoduleProlongation k Ξ₁ Ξ₂ H (B' i)) (C' i)) :
     HomotopyEquiv
-      (HomologicalComplex.mapBifunctor (C i) (C' i) (GradedBimoduleTensor k Ξ₂) c) U₂ :=
+      (HomologicalComplex.mapBifunctor (C i) (C' i) (GradedBimoduleTensor k Ξ₂) c)
+      (GradedBimoduleUnitComplex k Ξ₂) :=
   (HomotopyEquiv.mapBifunctor (GradedBimoduleTensor k Ξ₂) c (a i).symm (a' i).symm).trans
     ((η (B i) (B' i)).trans
       ((H.mapHomotopyEquiv (rel.inverseForward i)).trans ε))
@@ -196,12 +226,15 @@ private def transferInverseReverse (i : V)
     {B B' : V → HomologicalComplex (GradedBimoduleCat k Ξ₁) c}
     {C C' : V → HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
     (η : GradedBimoduleMonoidalDatum k Ξ₁ Ξ₂ H)
-    (ε : HomotopyEquiv (GradedBimoduleProlongation k Ξ₁ Ξ₂ H U₁) U₂)
-    (rel : KhovanovSeidelRelations k G Ξ₁ U₁ B B')
+    (ε : HomotopyEquiv
+      (GradedBimoduleProlongation k Ξ₁ Ξ₂ H (GradedBimoduleUnitComplex k Ξ₁))
+      (GradedBimoduleUnitComplex k Ξ₂))
+    (rel : KhovanovSeidelRelations k G Ξ₁ B B')
     (a : ∀ i, HomotopyEquiv (GradedBimoduleProlongation k Ξ₁ Ξ₂ H (B i)) (C i))
     (a' : ∀ i, HomotopyEquiv (GradedBimoduleProlongation k Ξ₁ Ξ₂ H (B' i)) (C' i)) :
     HomotopyEquiv
-      (HomologicalComplex.mapBifunctor (C' i) (C i) (GradedBimoduleTensor k Ξ₂) c) U₂ :=
+      (HomologicalComplex.mapBifunctor (C' i) (C i) (GradedBimoduleTensor k Ξ₂) c)
+      (GradedBimoduleUnitComplex k Ξ₂) :=
   (HomotopyEquiv.mapBifunctor (GradedBimoduleTensor k Ξ₂) c (a' i).symm (a i).symm).trans
     ((η (B' i) (B i)).trans
       ((H.mapHomotopyEquiv (rel.inverseReverse i)).trans ε))
@@ -213,7 +246,7 @@ private def transferCommute (i j : V) (hij : i ≠ j) (hadj : ¬ G.Adj i j)
     {B : V → HomologicalComplex (GradedBimoduleCat k Ξ₁) c}
     {C : V → HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
     (η : GradedBimoduleMonoidalDatum k Ξ₁ Ξ₂ H)
-    (rel : KhovanovSeidelRelations k G Ξ₁ U₁ B B')
+    (rel : KhovanovSeidelRelations k G Ξ₁ B B')
     (a : ∀ i, HomotopyEquiv (GradedBimoduleProlongation k Ξ₁ Ξ₂ H (B i)) (C i)) :
     HomotopyEquiv
       (HomologicalComplex.mapBifunctor (C i) (C j) (GradedBimoduleTensor k Ξ₂) c)
@@ -265,7 +298,7 @@ private def transferAdjacentBridgeLeft {i j : V}
 source family. -/
 private def transferAdjacentMiddle {i j : V} (h : G.Adj j i)
     {B B' : V → HomologicalComplex (GradedBimoduleCat k Ξ₁) c}
-    (rel : KhovanovSeidelRelations k G Ξ₁ U₁ B B') :
+    (rel : KhovanovSeidelRelations k G Ξ₁ B B') :
     HomotopyEquiv
       (GradedBimoduleProlongation k Ξ₁ Ξ₂ H
         (HomologicalComplex.mapBifunctor
@@ -320,7 +353,7 @@ private def transferAdjacent {i j : V} (h : G.Adj j i)
     {B B' : V → HomologicalComplex (GradedBimoduleCat k Ξ₁) c}
     {C : V → HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
     (η : GradedBimoduleMonoidalDatum k Ξ₁ Ξ₂ H)
-    (rel : KhovanovSeidelRelations k G Ξ₁ U₁ B B')
+    (rel : KhovanovSeidelRelations k G Ξ₁ B B')
     (a : ∀ i, HomotopyEquiv (GradedBimoduleProlongation k Ξ₁ Ξ₂ H (B i)) (C i)) :
     HomotopyEquiv
       (HomologicalComplex.mapBifunctor
@@ -331,7 +364,7 @@ private def transferAdjacent {i j : V} (h : G.Adj j i)
         (GradedBimoduleTensor k Ξ₂) c) :=
   (transferAdjacentLeftConj k Ξ₁ Ξ₂ H a).trans
     ((transferAdjacentBridgeLeft k Ξ₁ Ξ₂ H η).trans
-      ((transferAdjacentMiddle k G Ξ₁ Ξ₂ U₁ H h rel).trans
+      ((transferAdjacentMiddle k G Ξ₁ Ξ₂ H h rel).trans
         ((transferAdjacentBridgeRight k Ξ₁ Ξ₂ H η).trans
           (transferAdjacentRightConj k Ξ₁ Ξ₂ H a))))
 
@@ -346,17 +379,19 @@ homotopy equivalences `a` and `a'`, then the target family satisfies the Khovano
 relations in the target setting. -/
 def KhovanovSeidelRelationsTransfer
     (η : GradedBimoduleMonoidalDatum k Ξ₁ Ξ₂ H)
-    (ε : HomotopyEquiv (GradedBimoduleProlongation k Ξ₁ Ξ₂ H U₁) U₂)
+    (ε : HomotopyEquiv
+      (GradedBimoduleProlongation k Ξ₁ Ξ₂ H (GradedBimoduleUnitComplex k Ξ₁))
+      (GradedBimoduleUnitComplex k Ξ₂))
     {B B' : V → HomologicalComplex (GradedBimoduleCat k Ξ₁) c}
-    (rel : KhovanovSeidelRelations k G Ξ₁ U₁ B B')
+    (rel : KhovanovSeidelRelations k G Ξ₁ B B')
     {C C' : V → HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
     (a : ∀ i, HomotopyEquiv (GradedBimoduleProlongation k Ξ₁ Ξ₂ H (B i)) (C i))
     (a' : ∀ i, HomotopyEquiv (GradedBimoduleProlongation k Ξ₁ Ξ₂ H (B' i)) (C' i)) :
-    KhovanovSeidelRelations k G Ξ₂ U₂ C C' where
-  inverseForward i := transferInverseForward k G Ξ₁ Ξ₂ U₁ U₂ H i η ε rel a a'
-  inverseReverse i := transferInverseReverse k G Ξ₁ Ξ₂ U₁ U₂ H i η ε rel a a'
-  commute i j hij hadj := transferCommute k G Ξ₁ Ξ₂ U₁ H i j hij hadj η rel a
-  braid h := transferAdjacent k G Ξ₁ Ξ₂ U₁ H h η rel a
+    KhovanovSeidelRelations k G Ξ₂ C C' where
+  inverseForward i := transferInverseForward k G Ξ₁ Ξ₂ H i η ε rel a a'
+  inverseReverse i := transferInverseReverse k G Ξ₁ Ξ₂ H i η ε rel a a'
+  commute i j hij hadj := transferCommute k G Ξ₁ Ξ₂ H i j hij hadj η rel a
+  braid h := transferAdjacent k G Ξ₁ Ξ₂ H h η rel a
 
 end Transfer
 
@@ -364,42 +399,46 @@ section ZigzagTransfer
 
 variable {A : Type uA} [Ring A] [Algebra k A]
 variable (Ξ : InternalGrading k A) [GradedAlgebra Ξ.piece]
-variable (U : HomologicalComplex (GradedBimoduleCat k Ξ) c)
 variable (H : GradedBimoduleCat k (zigzagAlgebraInternalGrading k G) ⥤ GradedBimoduleCat k Ξ)
   [H.Additive]
 
 /-- Transfer of the Khovanov-Seidel relations of the zigzag braid complexes to a family of
 complexes in a second graded bimodule setting, the setting of the graded algebra `A` with
-internal grading `Ξ` and unit complex `U`. The functor `H` is an additive functor from the
-setting of the zigzag braid complexes to that second setting, `η` is its pointwise
-homotopy-monoidal datum, `ε` compares the prolonged zigzag unit complex with `U`, and `a` and
-`a'` identify the prolonged zigzag braid complexes with the target family. -/
+internal grading `Ξ`. The functor `H` is an additive functor from the setting of the zigzag
+braid complexes to that second setting, `η` is its pointwise homotopy-monoidal datum, `ε`
+compares the prolonged unit complex of the zigzag setting with the unit complex of the
+target setting, and `a` and `a'` identify the prolonged zigzag braid complexes with the
+target family. -/
 def zigzagBraidRelationsTransfer
     (η : GradedBimoduleMonoidalDatum k (zigzagAlgebraInternalGrading k G) Ξ H)
-    (ε : HomotopyEquiv (GradedBimoduleProlongation k (zigzagAlgebraInternalGrading k G) Ξ H
-      (zigzagBraidUnitComplex k G)) U)
+    (ε : HomotopyEquiv
+      (GradedBimoduleProlongation k (zigzagAlgebraInternalGrading k G) Ξ H
+        (GradedBimoduleUnitComplex k (zigzagAlgebraInternalGrading k G)))
+      (GradedBimoduleUnitComplex k Ξ))
     {C C' : V → HomologicalComplex (GradedBimoduleCat k Ξ) c}
     (a : ∀ i, HomotopyEquiv (GradedBimoduleProlongation k (zigzagAlgebraInternalGrading k G)
       Ξ H (zigzagBraidComplex k G i)) (C i))
     (a' : ∀ i, HomotopyEquiv (GradedBimoduleProlongation k (zigzagAlgebraInternalGrading k G)
       Ξ H (zigzagBraidInverseComplex k G i)) (C' i)) :
-    KhovanovSeidelRelations k G Ξ U C C' :=
-  KhovanovSeidelRelationsTransfer k G (zigzagAlgebraInternalGrading k G) Ξ
-    (zigzagBraidUnitComplex k G) U H η ε (zigzagBraidComplexRelations k G) a a'
+    KhovanovSeidelRelations k G Ξ C C' :=
+  KhovanovSeidelRelationsTransfer k G (zigzagAlgebraInternalGrading k G) Ξ H η ε
+    (zigzagBraidComplexRelations k G) a a'
 
 /-- The prolonged zigzag braid complexes satisfy the Khovanov-Seidel relations in the target
 graded bimodule setting: the conjugated version of the transfer theorem, obtained with the
 identity supplied equivalences. -/
 def zigzagBraidProlongedRelations
     (η : GradedBimoduleMonoidalDatum k (zigzagAlgebraInternalGrading k G) Ξ H)
-    (ε : HomotopyEquiv (GradedBimoduleProlongation k (zigzagAlgebraInternalGrading k G) Ξ H
-      (zigzagBraidUnitComplex k G)) U) :
-    KhovanovSeidelRelations k G Ξ U
+    (ε : HomotopyEquiv
+      (GradedBimoduleProlongation k (zigzagAlgebraInternalGrading k G) Ξ H
+        (GradedBimoduleUnitComplex k (zigzagAlgebraInternalGrading k G)))
+      (GradedBimoduleUnitComplex k Ξ)) :
+    KhovanovSeidelRelations k G Ξ
       (fun i => GradedBimoduleProlongation k (zigzagAlgebraInternalGrading k G) Ξ H
         (zigzagBraidComplex k G i))
       (fun i => GradedBimoduleProlongation k (zigzagAlgebraInternalGrading k G) Ξ H
         (zigzagBraidInverseComplex k G i)) :=
-  zigzagBraidRelationsTransfer k G Ξ U H η ε (fun _ => HomotopyEquiv.refl _)
+  zigzagBraidRelationsTransfer k G Ξ H η ε (fun _ => HomotopyEquiv.refl _)
     (fun _ => HomotopyEquiv.refl _)
 
 end ZigzagTransfer

@@ -54,6 +54,18 @@ theorem zigzagGradedBimoduleUnitIso_hom_apply (x : GradedModuleCat.bimoduleUnit.
 theorem zigzagGradedBimoduleUnitIso_inv_apply (x : zigzagGradedBimodule k G) :
     (zigzagGradedBimoduleUnitIso k G).inv.hom x = ULift.up x := (rfl)
 
+/-- The existing graded zigzag bimodule is the regular graded unit lifted to the universe of
+the ground ring. This is the counterpart of `zigzagGradedBimoduleUnitIso` for the unit at the
+lift universe `w`, which is the unit of the graded bimodule setting of a graded algebra over
+`k`. -/
+def zigzagGradedBimoduleUnitIsoLift :
+    GradedModuleCat.bimoduleUnit.{w} Γ ≅ zigzagGradedBimodule k G :=
+  GradedModuleCat.isoMk
+    (ULift.moduleEquiv (R := Z ⊗[k] Zᵐᵒᵖ) (M := zigzagGradedBimodule k G)) fun p x ↦ by
+      rw [GradedModuleCat.mem_bimoduleUnit_piece_iff.{w} Γ,
+        GradedModuleCat.bimoduleUnitEquiv_symm_apply]
+      exact (mem_zigzagBimoduleGrade_iff (d := p) (x := x.down)).symm
+
 variable (M : GradedModuleCat.{max u w} (zigzagEnvelopingGrading k G).piece)
 
 /-- Tensoring the actual regular zigzag bimodule on the left preserves a graded bimodule. -/
