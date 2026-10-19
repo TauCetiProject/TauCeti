@@ -1,0 +1,214 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.RingTheory.PowerSeries.Substitution
+public import Mathlib.Data.Nat.Log
+import Mathlib.Data.Nat.Choose.Lucas
+import Mathlib.Tactic.Ring.NamePowerVars
+
+/-!
+# Additive formal power series
+
+Over a commutative ring killed by a prime `p`, the identity `f(X + Y) = f(X) + f(Y)`
+holds exactly when the coefficients of `f` vanish outside the degrees `p ^ k`.
+No reducedness or field hypothesis is needed. The series `frobeniusSeries p a`
+parametrizes these additive series by the sequence of their Frobenius coefficients.
+The proof uses Mathlib’s `PowerSeries.coeff_subst_X_zero_add_X_one` and the
+Lucas criterion `Choose.eq_pow_multiplicity_of_choose_modEq_zero_nat`.
+At `p = 2` this classification determines the ambiguity in strict logarithms of
+formal groups killed by two: their additive coordinate changes have arbitrary
+coefficients in degrees `2 ^ k`, with coefficient one in degree one.
+
+## Main results
+
+* `subst_add_eq_iff_choose_mul_coeff`: the coefficient criterion over an arbitrary ring.
+* `subst_add_eq_iff_coeff_eq_zero`: the prime-characteristic support criterion.
+* `subst_add_eq_iff_existsUnique_frobeniusSeries`: the unique Frobenius expansion.
+
+## References
+
+* M. Hazewinkel, *Formal Groups and Applications*, Chapter I, §1 (additive series).
+-/
+
+public section
+
+namespace TauCeti
+
+open PowerSeries
+
+variable {R : Type*}
+
+name_power_vars X₀, X₁ over R
+
+section CommRing
+
+variable [CommRing R]
+
+/-- A series is additive precisely when its constant term is zero and each mixed
+binomial coefficient annihilates the corresponding coefficient of the series. -/
+theorem subst_add_eq_iff_choose_mul_coeff (f : PowerSeries R) :
+    f.subst (X₀ + X₁) = f.subst X₀ + f.subst X₁ ↔
+      f.constantCoeff = 0 ∧ ∀ i j : ℕ, 0 < i → 0 < j →
+        ((i + j).choose i : R) * f.coeff (i + j) = 0 := by
+  have hcoeff (d : Fin 2 →₀ ℕ) :
+      MvPowerSeries.coeff d
+        (f.subst X₀ + f.subst X₁) =
+      (if d 1 = 0 then f.coeff (d 0) else 0) +
+        (if d 0 = 0 then f.coeff (d 1) else 0) := by
+    simp [PowerSeries.coeff_subst_single, Finsupp.ext_iff, Fin.forall_fin_two]
+  constructor
+  · intro h
+    have hc := congrArg (MvPowerSeries.coeff 0) h
+    rw [coeff_subst_X_zero_add_X_one, hcoeff] at hc
+    simp only [Finsupp.coe_zero, Pi.zero_apply, zero_add, Nat.choose_zero_right,
+      Nat.cast_one, one_mul, ite_true] at hc
+    refine ⟨?_, ?_⟩
+    · simpa only [coeff_zero_eq_constantCoeff, add_eq_left] using hc.symm
+    · intro i j hi hj
+      have hd := congrArg (MvPowerSeries.coeff
+        (Finsupp.single 0 i + Finsupp.single 1 j)) h
+      rw [coeff_subst_X_zero_add_X_one, hcoeff] at hd
+      simpa [hi.ne', hj.ne'] using hd
+  · rintro ⟨hc, h⟩
+    ext d
+    rw [coeff_subst_X_zero_add_X_one, hcoeff]
+    by_cases h0 : d 0 = 0
+    · simp [h0, hc, coeff_zero_eq_constantCoeff]
+    by_cases h1 : d 1 = 0
+    · simp [h1, h0]
+    simpa [h0, h1] using h (d 0) (d 1) (by omega) (by omega)
+
+/-- In a ring killed by a prime `p`, additive series are precisely the series supported
+in degrees `p ^ k`. This includes rings with nilpotents and the zero ring. -/
+theorem subst_add_eq_iff_coeff_eq_zero (f : PowerSeries R) {p : ℕ} (hp : p.Prime)
+    (hR : (p : R) = 0) :
+    f.subst (X₀ + X₁) = f.subst X₀ + f.subst X₁ ↔
+      ∀ n : ℕ, (¬ ∃ k : ℕ, n = p ^ k) → f.coeff n = 0 := by
+  rw [subst_add_eq_iff_choose_mul_coeff]
+  constructor
+  · rintro ⟨hc, h⟩ n hn
+    by_cases hn0 : n = 0
+    · simpa [hn0, coeff_zero_eq_constantCoeff] using hc
+    by_contra hfn
+    have : Fact p.Prime := ⟨hp⟩
+    apply hn
+    refine ⟨_, Choose.eq_pow_multiplicity_of_choose_modEq_zero_nat
+      (Nat.pos_of_ne_zero hn0) ?_⟩
+    intro i hi
+    obtain ⟨hi, hin⟩ := Finset.mem_Icc.mp hi
+    rw [Nat.modEq_zero_iff_dvd]
+    by_contra hpi
+    have hmix := h i (n - i) hi (by omega)
+    rw [Nat.add_sub_of_le (by omega)] at hmix
+    apply hfn
+    exact (nsmul_eq_zero_iff_of_coprime (hp.coprime_iff_not_dvd.mpr hpi)).mp
+      ⟨by simp [nsmul_eq_mul, hR], by simpa [nsmul_eq_mul] using hmix⟩
+  · intro h
+    refine ⟨?_, ?_⟩
+    · rw [← coeff_zero_eq_constantCoeff]
+      exact h 0 (by rintro ⟨k, hk⟩; exact (pow_ne_zero k hp.ne_zero) hk.symm)
+    · intro i j hi hj
+      by_cases hn : ∃ k : ℕ, i + j = p ^ k
+      · obtain ⟨k, hk⟩ := hn
+        have hd := hp.dvd_choose_pow (n := k) hi.ne' (by omega : i ≠ p ^ k)
+        obtain ⟨a, ha⟩ := hd
+        rw [hk, ha, Nat.cast_mul, hR, zero_mul, zero_mul]
+      · rw [h (i + j) hn, mul_zero]
+
+end CommRing
+
+section Semiring
+
+variable [Semiring R]
+
+/-- The formal sum `∑ₖ aₖ X^(p^k)`, defined coefficientwise.
+The intended bases satisfy `1 < p`; no topology on the coefficient ring is required. -/
+noncomputable def frobeniusSeries (p : ℕ) (a : ℕ → R) : PowerSeries R :=
+  PowerSeries.mk fun n => if n = p ^ Nat.log p n then a (Nat.log p n) else 0
+
+/-- The coefficients of the Frobenius expansion, including its vanishing coefficients. -/
+theorem coeff_frobeniusSeries (p : ℕ) (a : ℕ → R) (n : ℕ) :
+    (frobeniusSeries p a).coeff n =
+      if n = p ^ Nat.log p n then a (Nat.log p n) else 0 := by
+  simp [frobeniusSeries]
+
+/-- The coefficient in degree `p ^ k` is the prescribed `k`th coefficient. -/
+@[simp]
+theorem coeff_pow_frobeniusSeries {p : ℕ} (hp : 1 < p) (a : ℕ → R) (k : ℕ) :
+    (frobeniusSeries p a).coeff (p ^ k) = a k := by
+  simp [coeff_frobeniusSeries, Nat.log_pow hp]
+
+/-- Coefficients outside the powers of `p` vanish. -/
+theorem coeff_frobeniusSeries_eq_zero {p n : ℕ} (a : ℕ → R)
+    (hn : ¬ ∃ k : ℕ, n = p ^ k) : (frobeniusSeries p a).coeff n = 0 := by
+  rw [coeff_frobeniusSeries, ite_eq_right (fun h => hn ⟨_, h⟩)]
+
+/-- A Frobenius expansion has zero constant term. -/
+@[simp]
+theorem constantCoeff_frobeniusSeries (p : ℕ) (a : ℕ → R) :
+    (frobeniusSeries p a).constantCoeff = 0 := by
+  simp [← coeff_zero_eq_constantCoeff, coeff_frobeniusSeries]
+
+/-- The linear coefficient of a Frobenius expansion is its zeroth parameter; thus
+strict additive coordinates have `a 0 = 1`. -/
+@[simp]
+theorem coeff_one_frobeniusSeries (p : ℕ) (a : ℕ → R) :
+    (frobeniusSeries p a).coeff 1 = a 0 := by
+  simp [coeff_frobeniusSeries]
+
+/-- The sequence of Frobenius coefficients uniquely determines its expansion. -/
+theorem frobeniusSeries_injective {p : ℕ} (hp : 1 < p) :
+    Function.Injective (frobeniusSeries (R := R) p) := by
+  intro a b h
+  funext k
+  simpa [coeff_pow_frobeniusSeries hp] using congrArg (PowerSeries.coeff (p ^ k)) h
+
+/-- Changing coefficients commutes with a Frobenius expansion. -/
+@[simp]
+theorem map_frobeniusSeries {S : Type*} [Semiring S] (φ : R →+* S) (p : ℕ) (a : ℕ → R) :
+    PowerSeries.map φ (frobeniusSeries p a) = frobeniusSeries p (φ ∘ a) := by
+  ext n
+  simp only [PowerSeries.coeff_map, coeff_frobeniusSeries, Function.comp_apply]
+  split_ifs <;> simp
+
+end Semiring
+
+section CommRing
+
+variable [CommRing R]
+
+/-- Frobenius expansions are additive over every ring killed by `p`. -/
+theorem subst_add_frobeniusSeries {p : ℕ} (hp : p.Prime) (hR : (p : R) = 0) (a : ℕ → R) :
+    (frobeniusSeries p a).subst (X₀ + X₁) =
+      (frobeniusSeries p a).subst X₀ + (frobeniusSeries p a).subst X₁ := by
+  exact (subst_add_eq_iff_coeff_eq_zero _ hp hR).mpr fun _ hn =>
+    coeff_frobeniusSeries_eq_zero a hn
+
+/-- A series is additive if and only if it has a unique Frobenius expansion. -/
+theorem subst_add_eq_iff_existsUnique_frobeniusSeries (f : PowerSeries R) {p : ℕ}
+    (hp : p.Prime) (hR : (p : R) = 0) :
+    f.subst (X₀ + X₁) = f.subst X₀ + f.subst X₁ ↔
+      ∃! a : ℕ → R, f = frobeniusSeries p a := by
+  rw [subst_add_eq_iff_coeff_eq_zero f hp hR]
+  constructor
+  · intro h
+    refine ⟨fun k => f.coeff (p ^ k), ?_, ?_⟩
+    · ext n
+      rw [coeff_frobeniusSeries]
+      split_ifs with hn
+      · rw [← hn]
+      · exact h n (by rintro ⟨k, rfl⟩; exact hn (by rw [Nat.log_pow hp.one_lt]))
+    · intro a ha
+      funext k
+      simpa [coeff_pow_frobeniusSeries hp.one_lt] using
+        congrArg (PowerSeries.coeff (p ^ k)) ha.symm
+  · rintro ⟨a, rfl, _⟩ n hn
+    exact coeff_frobeniusSeries_eq_zero a hn
+
+end CommRing
+
+end TauCeti
