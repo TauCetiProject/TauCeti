@@ -25,13 +25,20 @@ API_ROOT = "https://api.github.com/repos/" + REPO
 
 def api(path, payload=None):
     """Bound API I/O and keep the status token on the fixed repository authority."""
-    request = urllib.request.Request(API_ROOT + path, headers={
+    headers = {
         "Authorization": "Bearer " + os.environ["GH_TOKEN"],
         "Accept": "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28",
         "User-Agent": "TauCetiBatchFinalizer/1.0",
         "Content-Type": "application/json",
-    }, data=None if payload is None else json.dumps(payload).encode())
+    }
+    if payload is None:
+        # A cached queued job can consume the acquisition budget after its
+        # publisher has finished. Revalidate observation and run-attempt reads;
+        # this does not replace any of the completion or isolation checks.
+        headers.update({"Cache-Control": "no-cache, no-store", "Pragma": "no-cache"})
+    request = urllib.request.Request(API_ROOT + path, headers=headers,
+                                     data=None if payload is None else json.dumps(payload).encode())
     with urllib.request.urlopen(request, timeout=15) as response:
         raw = response.read(MAX_BYTES + 1)
     if len(raw) > MAX_BYTES:
