@@ -286,6 +286,14 @@ theorem sub_indicatorCLM_comp (S : Set I) (u : C₀(J, R) →L[R] C₀(I, R)) :
   ext x i
   by_cases hi : i ∈ S <;> simp [hi]
 
+/-- Over Tate scalars, the output truncation `π_S ∘ u` to a finite set `S` is row compact: its
+rows outside `S` vanish. -/
+theorem isRowCompact_indicatorCLM_comp [TauCeti.NormedRing.IsTate R] (S : Finset I)
+    (u : C₀(J, R) →L[R] C₀(I, R)) : ((indicatorCLM R (S : Set I)).comp u).IsRowCompact := by
+  refine isRowCompact_iff_tendsto_rowNorm.2 (tendsto_const_nhds.congr' ?_)
+  filter_upwards [S.eventually_cofinite_notMem] with i hi
+  simp [hi]
+
 end SeminormedRing
 
 variable [NormedRing R] [IsUltrametricDist R]
