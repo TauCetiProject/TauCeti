@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.ExteriorPower.Basic
 
 import Mathlib.LinearAlgebra.Matrix.Rank
+import TauCeti.LinearAlgebra.Matrix.Determinant.SumElim
 
 /-!
 # Plücker coordinates
@@ -197,40 +198,6 @@ private theorem plucker_eq_det_mul_transpose_single (y : Fin q → ι → K) (t 
   ext i j
   simp [Matrix.mul_apply, Pi.single_apply]
 
-omit [LinearOrder ι] in
-/-- Let `x` span every vector orthogonal to all `y k`, and let `w j` pair with `y` to the standard
-basis vector at `j`. Then, as a function of `z`, the determinant of `x` followed by `z` (against an
-identification `e` of the index types) is the determinant of the pairings of `y` with `z`, times
-its value at `w`. -/
-private theorem det_sumElim_eq_det_mul (e : Fin p ⊕ Fin q ≃ ι) {x : Fin p → ι → K}
-    {y w : Fin q → ι → K}
-    (hx : LinearMap.ker (Matrix.of y).mulVecLin ≤ Submodule.span K (range x))
-    (hw : ∀ j, Matrix.of y *ᵥ w j = Pi.single j 1) (z : Fin q → ι → K) :
-    (Matrix.of fun a b ↦ Sum.elim x z a (e b)).det =
-      (Matrix.of y * (Matrix.of z).transpose).det *
-        (Matrix.of fun a b ↦ Sum.elim x w a (e b)).det := by
-  -- Write `z j = ∑ i, B j i • x i + ∑ k, A j k • w k`, with `A j k = y k ⬝ᵥ z j`.
-  set A : Matrix (Fin q) (Fin q) K := Matrix.of fun j k ↦ y k ⬝ᵥ z j with hA
-  have hu : ∀ j, z j - ∑ k, A j k • w k ∈ Submodule.span K (range x) := fun j ↦ hx <| by
-    rw [LinearMap.mem_ker, Matrix.mulVecLin_apply, Matrix.mulVec_sub, Matrix.mulVec_sum]
-    simp_rw [Matrix.mulVec_smul, hw]
-    ext k
-    simp [hA, Matrix.mulVec, Pi.single_apply]
-  choose B hB using fun j ↦ (Submodule.mem_span_range_iff_exists_fun K).1 (hu j)
-  have hz : ∀ j, z j = ∑ i, B j i • x i + ∑ k, A j k • w k := fun j ↦ by
-    rw [hB j, sub_add_cancel]
-  have hM : (Matrix.of fun a b ↦ Sum.elim x z a (e b)) =
-      Matrix.fromBlocks 1 0 (Matrix.of B) A * Matrix.of fun a b ↦ Sum.elim x w a (e b) := by
-    ext a b
-    rcases a with i | j
-    · simp [Matrix.mul_apply, Fintype.sum_sum_type, Matrix.one_apply]
-    · simp [Matrix.mul_apply, Fintype.sum_sum_type, hz j, Finset.sum_apply]
-  have hAt : Aᵀ = Matrix.of y * (Matrix.of z)ᵀ := by
-    ext k j
-    simp [hA, Matrix.mul_apply, dotProduct]
-  rw [hM, Matrix.det_mul, Matrix.det_fromBlocks_zero₁₂, Matrix.det_one, one_mul, ← hAt,
-    Matrix.det_transpose]
-
 /-- Against any identification `e` of the index types, the determinant of `x` followed by the
 standard basis vectors at the elements of `t` is, up to sign, the Plücker coordinate of `x` at the
 complement of `t`. -/
@@ -297,7 +264,8 @@ theorem exists_plucker_eq_plucker_compl (hm : p + q = Fintype.card ι) {x : Fin 
   have key : ∀ t, ∃ ε : ℤˣ, plucker y t * D = ((ε : ℤ) : K) * plucker x (compl hm t) := by
     intro t
     obtain ⟨ε, hε⟩ := exists_det_sumElim_single_eq hm e x t
-    exact ⟨ε, by rw [plucker_eq_det_mul_transpose_single, ← det_sumElim_eq_det_mul e hker hw, hε]⟩
+    exact ⟨ε, by
+      rw [plucker_eq_det_mul_transpose_single, ← Matrix.det_sumElim_eq_det_mul e hker hw, hε]⟩
   -- Some Plücker coordinate of `x` is nonzero, so `D` is nonzero.
   have hD : D ≠ 0 := by
     obtain ⟨s, hs⟩ : ∃ s, plucker x s ≠ 0 := Function.ne_iff.1 ((plucker_ne_zero_iff x).2 hx)
