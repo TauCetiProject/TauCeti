@@ -74,15 +74,18 @@ theorem isProbabilityMeasure_logUniformMeasure (ha : 0 < a) (hab : a < b) :
   have := isProbabilityMeasure_uniformMeasure hlog
   infer_instance
 
-/-- A log-uniform variable lies in `(a, b]` almost surely. -/
-theorem ae_mem_Ioc_logUniformMeasure (ha : 0 < a) (hab : a < b) :
+/-- A log-uniform variable lies in `(a, b]` almost surely. For invalid endpoints this holds
+because the measure is zero. -/
+theorem ae_mem_Ioc_logUniformMeasure (a b : ℝ) :
     ∀ᵐ y ∂logUniformMeasure a b, y ∈ Ioc a b := by
-  rw [logUniformMeasure_of_pos ha hab]
-  refine (ae_map_iff measurable_exp.aemeasurable measurableSet_Ioc).2 ?_
-  filter_upwards [ae_mem_Ioc_uniformMeasure] with y hy
-  constructor
-  · simpa only [exp_log ha] using Real.exp_lt_exp.mpr hy.1
-  · simpa only [exp_log (ha.trans hab)] using Real.exp_le_exp.mpr hy.2
+  by_cases h : 0 < a ∧ a < b
+  · rw [logUniformMeasure_of_pos h.1 h.2]
+    refine (ae_map_iff measurable_exp.aemeasurable measurableSet_Ioc).2 ?_
+    filter_upwards [ae_mem_Ioc_uniformMeasure] with y hy
+    constructor
+    · simpa only [exp_log h.1] using Real.exp_lt_exp.mpr hy.1
+    · simpa only [exp_log (h.1.trans h.2)] using Real.exp_le_exp.mpr hy.2
+  · simp [logUniformMeasure_of_not_pos h]
 
 /-- Taking logarithms recovers the defining uniform law. -/
 theorem map_log_logUniformMeasure (ha : 0 < a) (hab : a < b) :
@@ -175,14 +178,6 @@ theorem measurable_logUniformPDFReal (a b : ℝ) : Measurable (logUniformPDFReal
 theorem measurable_logUniformPDF (a b : ℝ) : Measurable (logUniformPDF a b) :=
   (measurable_logUniformPDFReal a b).ennreal_ofReal
 
-private theorem exp_mem_Ioo_iff (ha : 0 < a) (hb : 0 < b) (y : ℝ) :
-    exp y ∈ Ioo a b ↔ y ∈ Ioo (log a) (log b) := by
-  constructor <;> intro h
-  · exact ⟨Real.exp_lt_exp.mp (by simpa [exp_log ha] using h.1),
-      Real.exp_lt_exp.mp (by simpa [exp_log hb] using h.2)⟩
-  · exact ⟨by simpa [exp_log ha] using Real.exp_lt_exp.mpr h.1,
-      by simpa [exp_log hb] using Real.exp_lt_exp.mpr h.2⟩
-
 private theorem transform_logUniformPDF (ha : 0 < a) (hab : a < b) :
     (fun y ↦ ENNReal.ofReal |exp y| * logUniformPDF a b (exp y)) =ᵐ[volume]
       fun y ↦ pdf.uniformPDF (Ioc (log a) (log b)) y volume := by
@@ -192,7 +187,9 @@ private theorem transform_logUniformPDF (ha : 0 < a) (hab : a < b) :
   rw [logUniformPDF, uniformPDF_eq_ofReal_uniformPDFReal]
   by_cases hmem : y ∈ Ioc (log a) (log b)
   · have hlt : y < log b := lt_of_le_of_ne hmem.2 hy
-    have hexp : exp y ∈ Ioo a b := (exp_mem_Ioo_iff ha hb y).2 ⟨hmem.1, hlt⟩
+    have hexp : exp y ∈ Ioo a b := ⟨
+      by simpa only [exp_log ha] using Real.exp_lt_exp.mpr hmem.1,
+      by simpa only [exp_log hb] using Real.exp_lt_exp.mpr hlt⟩
     rw [logUniformPDFReal_of_mem ha hab hexp, uniformPDFReal_of_mem hmem,
       abs_of_pos (exp_pos y), ← ENNReal.ofReal_mul (exp_nonneg y)]
     congr 1
@@ -200,7 +197,9 @@ private theorem transform_logUniformPDF (ha : 0 < a) (hab : a < b) :
     field_simp [exp_ne_zero y, sub_ne_zero.mpr hlog.ne]
   · have hnot : exp y ∉ Ioo a b := by
       intro h
-      have hy' := (exp_mem_Ioo_iff ha hb y).1 h
+      have hy' : y ∈ Ioo (log a) (log b) := ⟨
+        Real.exp_lt_exp.mp (by simpa only [exp_log ha] using h.1),
+        Real.exp_lt_exp.mp (by simpa only [exp_log hb] using h.2)⟩
       exact hmem ⟨hy'.1, hy'.2.le⟩
     rw [logUniformPDFReal_of_not (fun _ _ hax ↦
       le_of_not_gt fun hxb ↦ hnot ⟨hax, hxb⟩), uniformPDFReal_of_notMem hmem,
@@ -333,17 +332,20 @@ theorem quantile_logUniformMeasure (ha : 0 < a) (hab : a < b) (hu : u ∈ Ioo 0 
 
 /-! ### Real-power moments -/
 
-/-- Every real power is integrable under a valid log-uniform law. -/
-theorem integrable_rpow_logUniformMeasure (ha : 0 < a) (hab : a < b) (q : ℝ) :
+/-- Every real power is integrable under a log-uniform law, including for invalid endpoints where
+the measure is zero. -/
+theorem integrable_rpow_logUniformMeasure (a b q : ℝ) :
     Integrable (fun x : ℝ ↦ x ^ q) (logUniformMeasure a b) := by
-  rw [logUniformMeasure_of_pos ha hab,
-    integrable_map_measure (by fun_prop) measurable_exp.aemeasurable]
-  refine (integrable_exp_mul_id_uniformMeasure
-    (a := log a) (b := log b) (t := q)).congr ?_
-  filter_upwards with y
-  simp only [Function.comp_apply, Real.rpow_def_of_pos (exp_pos y), log_exp]
-  congr 1
-  ring
+  by_cases h : 0 < a ∧ a < b
+  · rw [logUniformMeasure_of_pos h.1 h.2,
+      integrable_map_measure (by fun_prop) measurable_exp.aemeasurable]
+    refine (integrable_exp_mul_id_uniformMeasure
+      (a := log a) (b := log b) (t := q)).congr ?_
+    filter_upwards with y
+    simp only [Function.comp_apply, Real.rpow_def_of_pos (exp_pos y), log_exp]
+    congr 1
+    ring
+  · simp [logUniformMeasure_of_not_pos h]
 
 /-- The zeroth real-power moment of a valid log-uniform law is one. -/
 theorem integral_rpow_logUniformMeasure_zero (ha : 0 < a) (hab : a < b) :
@@ -397,11 +399,10 @@ theorem variance_id_logUniformMeasure (ha : 0 < a) (hab : a < b) :
     isProbabilityMeasure_logUniformMeasure ha hab
   have hLp : MemLp id 2 (logUniformMeasure a b) :=
     (memLp_two_iff_integrable_sq aestronglyMeasurable_id).2 (by
-      simpa using integrable_rpow_logUniformMeasure ha hab 2)
+      simpa using integrable_rpow_logUniformMeasure a b 2)
   rw [variance_eq_sub hLp]
-  change (∫ x, x ^ 2 ∂logUniformMeasure a b) -
-      (∫ x, x ∂logUniformMeasure a b) ^ 2 = _
-  rw [integral_sq_logUniformMeasure ha hab, integral_id_logUniformMeasure ha hab]
+  simp only [Pi.pow_apply, id_eq, integral_sq_logUniformMeasure ha hab,
+    integral_id_logUniformMeasure ha hab]
 
 /-! ### Exponential integrability -/
 
@@ -418,7 +419,7 @@ theorem integrableExpSet_id_logUniformMeasure (a b : ℝ) :
     ext t
     simp only [mem_univ, iff_true, integrableExpSet, mem_ofPred_eq, id_eq]
     exact integrable_exp_mul_of_mem_Icc measurable_id.aemeasurable
-      ((ae_mem_Ioc_logUniformMeasure ha hab).mono fun _ hy ↦ Ioc_subset_Icc_self hy)
+      ((ae_mem_Ioc_logUniformMeasure a b).mono fun _ hy ↦ Ioc_subset_Icc_self hy)
   · rw [logUniformMeasure_of_not_pos h]
     ext t
     simp [integrableExpSet]
