@@ -58,6 +58,9 @@ a trivialization of the double right dual is the extra datum of a pivotal struct
 ## References
 
 * [P. Etingof, S. Gelaki, D. Nikshych, V. Ostrik, *Tensor categories*][egno15], §2.10
+* [leanprover-community/mathlib4#42145](https://github.com/leanprover-community/mathlib4/pull/42145),
+  for the assembly of the double right dual functor through `Functor.opMop`, which both mixed
+  composites adapt
 -/
 
 public section
