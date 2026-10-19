@@ -33,17 +33,6 @@ open scoped ENNReal
 
 namespace TauCeti.Probability
 
-private theorem finSuccAboveEquiv_last_apply (n : ℕ) (i : Fin n) :
-    finSuccAboveEquiv (Fin.last n) i = ⟨i.castSucc, Fin.castSucc_ne_last i⟩ :=
-  (finSuccAboveEquiv_apply (Fin.last n) i).trans
-    (by apply Subtype.ext; exact Fin.succAbove_last_apply i)
-
-private theorem sum_finSuccAboveEquiv_last (n : ℕ)
-    (z : {i : Fin (n + 1) // i ≠ Fin.last n} → ℝ) :
-    ∑ i : Fin n, z ⟨i.castSucc, Fin.castSucc_ne_last i⟩ = ∑ j, z j := by
-  simpa only [finSuccAboveEquiv_last_apply] using
-    Equiv.sum_comp (finSuccAboveEquiv (Fin.last n)) z
-
 private noncomputable def dirichletCumulative (n : ℕ)
     (z : {i : Fin (n + 1) // i ≠ Fin.last n} → ℝ) : Fin n → ℝ :=
   partialSumsLinearEquiv ℝ n (fun i ↦ z ⟨i.castSucc, Fin.castSucc_ne_last i⟩)
@@ -65,7 +54,9 @@ private theorem map_dirichletCumulative_chart (n : ℕ) :
   let r := (MeasurableEquiv.piCongrLeft (fun _ : J ↦ ℝ) e).symm
   have hr (z : J → ℝ) : r z = fun i ↦ z ⟨i.castSucc, Fin.castSucc_ne_last i⟩ := by
     ext i
-    calc r z i = z (e i) := by simp [r, MeasurableEquiv.piCongrLeft]
+    calc r z i = z (e i) := by
+           simpa only [MeasurableEquiv.piCongrLeft_apply_apply] using
+             congrFun ((MeasurableEquiv.piCongrLeft (fun _ : J ↦ ℝ) e).apply_symm_apply z) (e i)
          _ = z ⟨i.castSucc, Fin.castSucc_ne_last i⟩ :=
            congrArg z (finSuccAboveEquiv_last_apply n i)
   have hg : dirichletCumulative n = (partialSumsLinearEquiv ℝ n) ∘ r := by
@@ -82,7 +73,7 @@ private theorem map_dirichletCumulative_chart (n : ℕ) :
   have hC : MeasurableSet C := measurableSet_strictMono_mem_Ioo n 0 1
   have hpre : dirichletCumulative n ⁻¹' C = dirichletChartRegion (Fin.last n) := by
     ext z
-    have hcube := partialSumsLinearEquiv_mem_orderedCube_iff (0 : ℝ) 1 (r z)
+    have hcube := strictMono_partialSumsLinearEquiv_and_mem_Ioo_iff (0 : ℝ) 1 (r z)
     simp only [zero_add, zero_lt_one, and_true, sub_zero] at hcube
     rw [mem_preimage, hg]
     simp only [Function.comp_apply, C, mem_ofPred_eq, mem_dirichletChartRegion_iff]
@@ -127,8 +118,7 @@ theorem map_tupleSpacings_orderStatistics_pi_uniformMeasure (n : ℕ) :
         (fun x ↦ (EuclideanSpace.equiv (Fin (n + 1)) ℝ).symm
           (tupleSpacings 0 1 (fun i ↦ orderStatistic i x))) =
       dirichletMeasure (fun _ : Fin (n + 1) ↦ 1) := by
-  have hs : Measurable (fun x : Fin n → ℝ ↦ fun i ↦ orderStatistic i x) :=
-    Measurable.of_eval fun i ↦ measurable_orderStatistic i
+  have hs : Measurable (fun x : Fin n → ℝ ↦ fun i ↦ orderStatistic i x) := by fun_prop
   calc
     _ = ((Measure.pi fun _ : Fin n ↦ uniformMeasure 0 1).map
         (fun x i ↦ orderStatistic i x)).map
@@ -160,6 +150,6 @@ theorem hasLaw_tupleSpacings_orderStatistics_iid_uniformMeasure {Ω : Type*} [Me
       (tupleSpacings 0 1 (fun i ↦ orderStatistic i x))) ?_).fun_comp
         (hindep.hasLaw_pi hlaw)
   exact ((measurable_euclidean_tupleSpacings n).comp
-    (Measurable.of_eval fun i ↦ measurable_orderStatistic i)).aemeasurable
+    (by fun_prop)).aemeasurable
 
 end TauCeti.Probability

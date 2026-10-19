@@ -84,6 +84,7 @@ theorem partialSumsLinearEquiv_apply (x : Fin n → R) (i : Fin n) :
   rw [coe_partialSumsLinearEquiv, partialSumsLinearMap_apply]
 
 /-- The inverse partial-sum map takes differences, with an initial zero adjoined. -/
+@[simp]
 theorem partialSumsLinearEquiv_symm_apply (x : Fin n → R) (i : Fin n) :
     (partialSumsLinearEquiv R n).symm x i =
       (Fin.cons 0 x : Fin (n + 1) → R) i.succ -
@@ -126,7 +127,7 @@ theorem tupleSpacings_partialSumsLinearEquiv (a b : R) (x : Fin n → R) :
 
 /-- Positive increments with sum less than the interval length give exactly its strictly
 increasing interior tuples. The endpoint condition also covers the empty tuple. -/
-theorem partialSumsLinearEquiv_mem_orderedCube_iff [LinearOrder R] [IsOrderedAddMonoid R]
+theorem strictMono_partialSumsLinearEquiv_and_mem_Ioo_iff [LinearOrder R] [IsOrderedAddMonoid R]
     (a b : R) (x : Fin n → R) :
     (StrictMono (fun i ↦ a + partialSumsLinearEquiv R n x i) ∧
       (∀ i, a + partialSumsLinearEquiv R n x i ∈ Set.Ioo a b) ∧ a < b) ↔

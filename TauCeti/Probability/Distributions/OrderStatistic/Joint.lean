@@ -40,6 +40,21 @@ variable {α : Type*} [LinearOrder α] [TopologicalSpace α] [OrderClosedTopolog
   [SecondCountableTopology α] [MeasurableSpace α] [BorelSpace α]
   {n : ℕ} {μ : Measure α} [IsProbabilityMeasure μ] [NullSingletonClass μ]
 
+/-- Strictly increasing finite tuples form a measurable set. -/
+theorem measurableSet_setOf_strictMono :
+    MeasurableSet {x : Fin n → α | StrictMono x} := by
+  simp only [StrictMono, ofPred_forall]
+  exact MeasurableSet.iInter fun i => MeasurableSet.iInter fun j =>
+    MeasurableSet.iInter fun _ => measurableSet_lt (measurable_pi_apply i)
+      (measurable_pi_apply j)
+
+/-- The strictly increasing tuples in an open interval form a measurable set. -/
+theorem measurableSet_strictMono_mem_Ioo (n : ℕ) (a b : α) :
+    MeasurableSet {y : Fin n → α | StrictMono y ∧ ∀ i, y i ∈ Ioo a b} := by
+  simp only [ofPred_and, ofPred_forall]
+  exact measurableSet_setOf_strictMono.inter
+    (MeasurableSet.iInter fun i => measurable_pi_apply i measurableSet_Ioo)
+
 /-- Sorting an atomless iid sample multiplies the product law restricted to the strictly
 increasing chamber by `n!`. This includes the empty sample. -/
 theorem map_orderStatistics_pi :
@@ -49,12 +64,8 @@ theorem map_orderStatistics_pi :
   let ρ := Measure.pi fun _ : Fin n => μ
   let S : (Fin n → α) → (Fin n → α) := fun x i => orderStatistic i x
   let C : Equiv.Perm (Fin n) → Set (Fin n → α) := fun σ => {x | StrictMono (x ∘ σ)}
-  have hS : Measurable S := Measurable.of_eval fun i => measurable_orderStatistic i
-  have hmono : MeasurableSet {x : Fin n → α | StrictMono x} := by
-    simp only [StrictMono, ofPred_forall]
-    exact MeasurableSet.iInter fun i => MeasurableSet.iInter fun j =>
-      MeasurableSet.iInter fun _ => measurableSet_lt (measurable_pi_apply i)
-        (measurable_pi_apply j)
+  have hS : Measurable S := by fun_prop
+  have hmono : MeasurableSet {x : Fin n → α | StrictMono x} := measurableSet_setOf_strictMono
   have hC (σ) : MeasurableSet (C σ) :=
     hmono.preimage (Measurable.of_eval fun i => measurable_pi_apply (σ i))
   -- The chambers are disjoint, and sorting covers every tuple with distinct entries.
@@ -101,15 +112,6 @@ theorem map_orderStatistics_pi :
 
 end Atomless
 
-/-- The strictly increasing tuples in an open interval form a measurable set. -/
-theorem measurableSet_strictMono_mem_Ioo (n : ℕ) (a b : ℝ) :
-    MeasurableSet {y : Fin n → ℝ | StrictMono y ∧ ∀ i, y i ∈ Ioo a b} := by
-  simp only [StrictMono, ofPred_and, ofPred_forall]
-  exact (MeasurableSet.iInter fun i => MeasurableSet.iInter fun j =>
-    MeasurableSet.iInter fun _ => measurableSet_lt (measurable_pi_apply i)
-      (measurable_pi_apply j)).inter
-    (MeasurableSet.iInter fun i => measurable_pi_apply i measurableSet_Ioo)
-
 /-- The joint density of the increasingly sorted unit-uniform sample is `n!` on the
 strictly increasing open unit cube and zero elsewhere, relative to product volume.
 The formula also holds for the empty tuple. -/
@@ -151,7 +153,8 @@ theorem hasLaw_orderStatistics_iid_uniformMeasure {Ω : Type*} [MeasurableSpace 
         ({y : Fin n → ℝ | StrictMono y ∧ ∀ i, y i ∈ Ioo (0 : ℝ) 1}.indicator
           fun _ => (n.factorial : ℝ≥0∞))) P := by
   rw [← map_orderStatistics_pi_uniformMeasure]
-  exact (hasLaw_map (Measurable.of_eval fun i => measurable_orderStatistic i).aemeasurable).comp
+  have hs : Measurable (fun x : Fin n → ℝ => fun i => orderStatistic i x) := by fun_prop
+  exact (hasLaw_map hs.aemeasurable).comp
     (hindep.hasLaw_pi hlaw)
 
 end TauCeti.Probability
