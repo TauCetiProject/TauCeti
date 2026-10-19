@@ -832,7 +832,8 @@ lemma IsSelfIntersectionMinusTwoChain.intersection_eq_zero_of_card_eq
       exact hends (by omega)
     · have hsub := (hc.shift (r := u) (s := v - u + 1) (by omega)).intersection_eq_zero
         (by omega) (p := 0) (q := v - u) (by omega) (by omega) (by omega) (by omega) (by omega)
-      simpa [show u + (v - u) = v by omega] using hsub
+      have huv_eq : u + (v - u) = v := by omega
+      simpa [huv_eq] using hsub
   rcases lt_or_gt_of_ne hij with h | h
   · exact hlt i j (by omega) hj
   · rw [T.intersection_comm]

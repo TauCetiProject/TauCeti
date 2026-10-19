@@ -16,7 +16,6 @@ public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Gen
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Genus.One.LongFork
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Genus.One.LongPath
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Genus.One.Star
-import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.DoubleFork
 import TauCeti.Data.PNat.Bounds
 import Mathlib.Tactic.IntervalCases
 
@@ -38,8 +37,8 @@ one, together with uniform divisibility and ratio bounds on their multiplicities
 * `TauCeti.NumericalType.topologicalGenus_pos_or_exists_chain_or_fork_or_star_or_affine`:
   the same without the tree assumption, including the cycle case `0 < T.topologicalGenus`.
 * `TauCeti.NumericalType.IsGenusOneMinimalShape` and
-  `TauCeti.NumericalType.IsMinimal.isGenusOneMinimalShape`: the complete classification of minimal
-  numerical types of arithmetic genus one ([Stacks, Lemma 55.6.2](https://stacks.math.columbia.edu/tag/0C8T)).
+  `TauCeti.NumericalType.isGenusOneMinimalShape_iff_isMinimal_and_arithmeticGenus_eq_one`:
+  the complete classification of minimal numerical types of arithmetic genus one ([Stacks, Lemma 55.6.2](https://stacks.math.columbia.edu/tag/0C8T)).
 * `TauCeti.NumericalType.IsMinimal.exists_multiplicity_dvd_and_le_six_mul` and
   `TauCeti.NumericalType.IsMinimal.exists_weight_dvd_and_le_four_mul`: in a minimal numerical type
   of genus one, the minimum multiplicity divides every multiplicity with quotient at most `6`, and
@@ -422,6 +421,21 @@ theorem IsMinimal.isGenusOneMinimalShape (hT : T.IsMinimal) (hg : T.arithmeticGe
     obtain ⟨e, he, hw, hm, ha⟩ := T.exists_equiv_affineE8 l hl (fun i ↦ hself (l i)) hadj
     exact .inr (.inr (.inr (.inr (.inr (.inr (.inr (.inr (.inr (.inr (.inr (.inr (.inr
       ⟨e, by simpa [he 0] using hw, by simpa [he 8] using hm, by simpa [he 0] using ha⟩))))))))))))
+
+/-- The displayed shape families characterize minimal numerical types of arithmetic genus one. -/
+theorem isGenusOneMinimalShape_iff_isMinimal_and_arithmeticGenus_eq_one :
+    T.IsGenusOneMinimalShape ↔ T.IsMinimal ∧ T.arithmeticGenus = 1 := by
+  constructor
+  · intro h
+    rcases isGenusOneMinimalShape_iff.mp h with ⟨hcard, hgen⟩ | ⟨hindices, -⟩
+    · obtain ⟨i⟩ := T.componentNonempty
+      exact ⟨T.isMinimal_of_card_eq_one hcard,
+        (T.arithmeticGenus_eq_one_iff_of_card_eq_one hcard i).mpr (hgen i).1⟩
+    · exact (T.isMinimal_and_arithmeticGenus_eq_one_iff
+        (T.one_lt_card_of_intersection_self_eq fun i ↦ (hindices i).2)).mpr
+          fun i ↦ T.isMinusTwoIndex_iff.mpr (hindices i)
+  · rintro ⟨hT, hg⟩
+    exact hT.isGenusOneMinimalShape hg
 
 /-! ### Divisibility and ratio bounds for weights and multiplicities -/
 

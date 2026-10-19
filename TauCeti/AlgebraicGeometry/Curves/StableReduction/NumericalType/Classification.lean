@@ -229,9 +229,11 @@ lemma intersection_eq_zero_of_ne_of_intersection_pos (hc : T.IsSelfIntersectionM
     omega
   have hc' := hc.shift (r := 1) (s := t - 2) (by omega)
   have hx' : 0 < T.intersection (c (1 + (r - 1))) x := by
-    simpa [show 1 + (r - 1) = r by omega] using hx
+    have hr_eq : 1 + (r - 1) = r := by omega
+    simpa [hr_eq] using hx
   have hix' : 0 < T.intersection (c (1 + (i - 1))) x := by
-    simpa [show 1 + (i - 1) = i by omega] using hix
+    have hi_eq : 1 + (i - 1) = i := by omega
+    simpa [hi_eq] using hix
   rcases le_total (i - 1) (r - 1) with h | h
   · have := hc'.eq_of_intersection_pos hcard (fun j hj ↦ hx_ne _ (by omega)) hx_self
       (by omega) hix' h hx'
@@ -334,10 +336,12 @@ lemma not_card_eq_succ_of_branch_two (hc : T.IsSelfIntersectionMinusTwoChain t c
     rw [hx_zero i (by omega) (by omega), zero_mul, add_zero] at h
     exact mul_left_cancel₀ hw_ne (by linear_combination h)
   -- Fibre relations at `c (t - 2)` and `c (t - 1)`.
+  have hprev : t - 2 - 1 = t - 3 := by omega
+  have hnext : t - 2 + 1 = t - 1 := by omega
   have hpen := hfib (c (t - 2))
   rw [hc.interior_sum_eq hchainCard _ (by omega) (by omega),
     T.intersection_comm (c (t - 2)) (c (t - 2 - 1)), hedge_prev (t - 2) (by omega) (by omega),
-    show t - 2 - 1 = t - 3 by omega, show t - 2 + 1 = t - 1 by omega,
+    hprev, hnext,
     hc.intersection_self (t - 2) (by omega), hw (t - 2) (by omega),
     hx_zero (t - 2) (by omega) (by omega), zero_mul, add_zero] at hpen
   have hlast := hfib (c (t - 1))
@@ -687,13 +691,15 @@ private lemma exists_fourLeafStar_or_doubleFork (hc : T.IsSelfIntersectionMinusT
   rcases hrs.eq_or_lt with rfl | hrs
   · exact .inl (hc.exists_fourLeafStar hr0 hst hxy hx_ne hy_ne hx hy)
   · have hd := hc.shift (r := r - 1) (s := s - r + 3) (by omega)
+    have hr_s : r - 1 + (s - r + 1) = s := by omega
+    have hr_one : r - 1 + 1 = r := by omega
     have hrf : T.IsSelfIntersectionMinusTwoFork (s - r + 3) (fun k ↦ c (r - 1 + k)) y :=
       ⟨hd, by omega, fun i hi ↦ hy_ne _ (by omega), hy_self,
-        by simpa [show r - 1 + (s - r + 1) = s by omega] using hy⟩
+        by simpa [hr_s] using hy⟩
     have hlf : T.IsSelfIntersectionMinusTwoFork (s - r + 3)
         (fun i ↦ c (r - 1 + (s - r + 3 - 1 - i))) x :=
       ⟨hd.reverse, by omega, fun i hi ↦ hx_ne _ (by omega), hx_self,
-        by simpa [show r - 1 + 1 = r by omega] using hx⟩
+        by simpa [hr_one] using hx⟩
     have hnot : ¬ (s - r + 3 + 2 < Fintype.card T.Component) :=
       hrf.not_oppositeFork hlf (by omega)
     exact .inr ⟨s - r + 3, fun k ↦ c (r - 1 + k), x, y, by omega, by omega, hrf, hlf⟩
@@ -795,13 +801,15 @@ theorem topologicalGenus_pos_or_exists_chain_or_fork_or_star_or_affine
     by_cases hfork_left : r = 1
     · refine .inl ⟨t, fun i ↦ c (t - 1 - i), x, hcard, hc.reverse, by omega,
         fun i hi ↦ hx_ne _ (by omega), hself x, ?_⟩
-      simpa [show t - 1 - (t - 2) = r by omega] using hpos
+      have hreverse : t - 1 - (t - 2) = r := by omega
+      simpa [hreverse] using hpos
     right; right; right; right
     by_cases hdir : 2 * r + 1 ≤ t
     · exact hc.exists_affineE7_or_affineE8_of_card_eq_succ hcard hx_ne (hself x)
         (by omega) hdir hpos hx_zero
-    · have hpos' : 0 < T.intersection (c (t - 1 - (t - 1 - r))) x := by
-        simpa [show t - 1 - (t - 1 - r) = r by omega] using hpos
+    · have hreverse : t - 1 - (t - 1 - r) = r := by omega
+      have hpos' : 0 < T.intersection (c (t - 1 - (t - 1 - r))) x := by
+        simpa [hreverse] using hpos
       exact hc.reverse.exists_affineE7_or_affineE8_of_card_eq_succ hcard
         (fun i hi ↦ hx_ne _ (by omega)) (hself x) (by omega) (by omega) hpos'
         fun i hi hir ↦ hx_zero _ (by omega) (by omega)
@@ -821,10 +829,11 @@ theorem topologicalGenus_pos_or_exists_chain_or_fork_or_star_or_affine
       subst b
       have hr2 := hc.two_le_of_intersection_pos hcU hmax (mem_univ x) hx_ne (hself x)
         (mem_univ y) hy_ne (hself y) hyx hr hpos hby
+      have hreverse : t - 1 - (t - 1 - r) = r := by omega
       have hrt2 := hc.reverse.two_le_of_intersection_pos (fun i hi ↦ hcU _ (by omega)) hmax
         (mem_univ x) (fun i hi ↦ hx_ne _ (by omega)) (hself x) (mem_univ y)
         (fun i hi ↦ hy_ne _ (by omega)) (hself y) hyx (r := t - 1 - r) (by omega)
-        (by simpa [show t - 1 - (t - 1 - r) = r by omega] using hpos) hby
+        (by simpa [hreverse] using hpos) hby
       exact .inr (.inr (.inr (.inr (.inr (.inl
         (hc.exists_affineE6 hr2 (by omega) hyx.symm hx_ne hy_ne hpos hby))))))
     · -- `y` meets `c s`, producing either a four-leaf star or an exhaustive double fork.
