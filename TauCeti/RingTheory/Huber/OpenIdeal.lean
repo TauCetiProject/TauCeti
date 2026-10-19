@@ -346,8 +346,7 @@ open Topology
 variable {B : Type*} [CommRing B] [TopologicalSpace B]
   [IsTopologicalRing A] [IsTopologicalRing B]
 
-omit [SeparatelyContinuousAdd A]
-
+omit [SeparatelyContinuousAdd A] in
 omit [IsTopologicalRing A] in
 /-- For compatible rings of definition, a continuous map extending a source ideal of definition
 to an open ambient ideal makes its extension an ideal of definition in the target subring. -/
