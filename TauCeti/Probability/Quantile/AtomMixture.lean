@@ -36,16 +36,26 @@ variable {μ : Measure ℝ} [IsProbabilityMeasure μ] {c : ℝ} {w : unitInterva
 /-- Up to the combined atom at a lower support boundary, the quantile of an atom mixture is that
 boundary point. -/
 theorem quantile_atomMixture_eq_atom (hμ : μ (Iio c) = 0)
-    (hu : u ∈ Ioo 0 1)
+    (hu : 0 < u)
     (hle : u ≤ (w : ℝ) + (1 - (w : ℝ)) * μ.real {c}) :
     (μ.atomMixture c w).quantile u = c := by
+  have hu_one : u ≤ 1 := hle.trans <| by
+    calc
+      (w : ℝ) + (1 - (w : ℝ)) * μ.real {c} ≤
+          (w : ℝ) + (1 - (w : ℝ)) * 1 :=
+        by
+          simpa only [add_comm] using
+            add_le_add_left
+              (mul_le_mul_of_nonneg_left measureReal_le_one
+                (sub_nonneg.mpr (unitInterval.le_one w))) (w : ℝ)
+      _ = 1 := by ring
   calc
     (μ.atomMixture c w).quantile u = (dirac c).quantile u :=
       quantile_eq_of_le_cdf_iff _ _ fun x => by
         by_cases hx : c ≤ x
         · rw [TauCeti.Probability.cdf_dirac, ite_eq_left hx]
           constructor
-          · exact fun _ => hu.2.le
+          · exact fun _ => hu_one
           · exact fun _ => hle.trans <| by
               rw [← cdf_atomMixture_atom μ c hμ w]
               exact monotone_cdf _ hx
@@ -54,7 +64,7 @@ theorem quantile_atomMixture_eq_atom (hμ : μ (Iio c) = 0)
             TauCeti.Probability.cdf_atomMixture, ite_eq_right hx,
             cdf_eq_zero_of_lt_of_measure_Iio_eq_zero μ hμ hx']
           simp only [mul_zero, add_zero]
-    _ = c := quantile_dirac c hu.1 hu.2.le
+    _ = c := quantile_dirac c hu hu_one
 
 /-- Above the combined atom at a lower support boundary, remove the added weight and rescale the
 probability level to obtain the quantile of the base law. -/
@@ -95,7 +105,7 @@ theorem quantile_atomMixture (hμ : μ (Iio c) = 0) (w : unitInterval)
       if u ≤ (w : ℝ) + (1 - (w : ℝ)) * μ.real {c} then c
       else μ.quantile ((u - (w : ℝ)) / (1 - (w : ℝ))) := by
   split_ifs with h
-  · exact quantile_atomMixture_eq_atom hμ hu h
+  · exact quantile_atomMixture_eq_atom hμ hu.1 h
   · exact quantile_atomMixture_of_lt hμ hu (lt_of_not_ge h)
 
 end MeasureTheory.Measure
