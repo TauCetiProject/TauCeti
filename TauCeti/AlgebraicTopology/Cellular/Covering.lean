@@ -100,6 +100,7 @@ def cellularChainRepresentation (n : ℕ) :
 
 /-- An element `g` acts on the cellular chains of the lift by the chain map of translation by
 `g`. -/
+@[simp]
 lemma cellularChainRepresentation_apply (n : ℕ) (g : G) :
     letI := cwComplexPreimage C hG.isCoveringMap
     haveI := hG.isCoveringMap.t2Space
@@ -107,7 +108,9 @@ lemma cellularChainRepresentation_apply (n : ℕ) (g : G) :
       (cellularChainGroupMap _ _ (isCellular_preimageSMul C hG g) (ModuleCat.of R R) n).hom :=
   (rfl)
 
-/-- An element `g` sends the cellular basis vector of a lifted cell to that of its translate. -/
+/-- An element `g` sends the cellular basis vector of a lifted cell to that of its translate.
+This is not a `simp` lemma: `simp` unfolds `TauCeti.cellularChainBasis` by
+`TauCeti.cellularChainBasis_apply` first. -/
 lemma cellularChainRepresentation_cellularChainBasis {n : ℕ} (g : G)
     (c : letI := cwComplexPreimage C hG.isCoveringMap; cell (p ⁻¹' C) n) :
     letI := cwComplexPreimage C hG.isCoveringMap
