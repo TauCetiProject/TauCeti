@@ -133,6 +133,7 @@ theorem sumLocalInv_brLocalization_eq_zero_of_brLocalization_injective
 
 /-- **The sum formula.** The local invariants of every Brauer class of the number field `K` sum
 to zero. -/
+@[simp]
 theorem sumLocalInv_brLocalization_eq_zero (x : Br K) : sumLocalInv K (brLocalization K x) = 0 :=
   sumLocalInv_brLocalization_eq_zero_of_brLocalization_injective K
     (fun E _ _ _ ↦ brLocalization_injective_of_subsingleton_h1_globalFormation E fun _ ↦
