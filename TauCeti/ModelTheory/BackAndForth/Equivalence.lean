@@ -39,6 +39,13 @@ variable {L : Language.{u, v}} [L.IsRelational]
 variable {M : Type w} {N : Type w'} {P : Type w''}
 variable [L.Structure M] [L.Structure N] [L.Structure P]
 
+/-- Reindexing a tuple and then adjoining its final entry commutes with adjoining an entry. -/
+theorem snoc_comp_snoc_castSucc_comp {Q : Sort*} {m n : ℕ} (c : Fin n → Q) (z : Q)
+    (g : Fin m → Fin n) :
+    snoc c z ∘ snoc (castSucc ∘ g) (last n) = snoc (c ∘ g) z := by
+  funext i
+  exact lastCases (by simp) (fun j => by simp) i
+
 /-- Ordinal back-and-forth equivalence of tuples. At successors the previous level is retained,
 in addition to the forth and back requirements. The language is relational. -/
 noncomputable def BFEquiv (α : Ordinal.{o}) (n : ℕ) (a : Fin n → M) (b : Fin n → N) : Prop :=
@@ -68,6 +75,17 @@ theorem add_one (α : Ordinal.{o}) (a : Fin n → M) (b : Fin n → N) :
       (∀ x : M, ∃ y : N, BFEquiv (L := L) α (n + 1) (snoc a x) (snoc b y)) ∧
       (∀ y : N, ∃ x : M, BFEquiv (L := L) α (n + 1) (snoc a x) (snoc b y)) := by
   simp [BFEquiv]
+
+/-- Level one consists of atomic-type agreement and atomic-type matching of one-element
+extensions in both directions. -/
+@[simp]
+theorem one (a : Fin n → M) (b : Fin n → N) :
+    BFEquiv (L := L) (1 : Ordinal.{o}) n a b ↔
+      SameAtomicType (L := L) a b ∧
+      (∀ x : M, ∃ y : N, SameAtomicType (L := L) (snoc a x) (snoc b y)) ∧
+      (∀ y : N, ∃ x : M, SameAtomicType (L := L) (snoc a x) (snoc b y)) := by
+  rw [← zero_add (1 : Ordinal.{o}), add_one]
+  simp only [zero]
 
 /-- At a limit ordinal, equivalence means equivalence at every smaller ordinal. -/
 @[simp]
@@ -152,29 +170,14 @@ theorem comp {α : Ordinal.{o}} (h : BFEquiv (L := L) α n a b) {m : ℕ}
   | zero => exact zero.mpr ((zero.mp h).comp g)
   | add_one α ih =>
     obtain ⟨h, hforth, hback⟩ := (add_one α a b).mp h
+    let g' : Fin (m + 1) → Fin (n + 1) := snoc (castSucc ∘ g) (last n)
     refine (add_one α (a ∘ g) (b ∘ g)).mpr ⟨ih h g, ?_, ?_⟩
     · intro x
       obtain ⟨y, hy⟩ := hforth x
-      let g' : Fin (m + 1) → Fin (n + 1) := snoc (castSucc ∘ g) (last n)
-      refine ⟨y, ?_⟩
-      have ha : snoc a x ∘ g' = snoc (a ∘ g) x := by
-        funext i
-        refine Fin.lastCases ?_ (fun j => ?_) i <;> simp [g', Function.comp_apply]
-      have hb : snoc b y ∘ g' = snoc (b ∘ g) y := by
-        funext i
-        refine Fin.lastCases ?_ (fun j => ?_) i <;> simp [g', Function.comp_apply]
-      simpa only [ha, hb] using ih hy g'
+      exact ⟨y, by simpa only [g', snoc_comp_snoc_castSucc_comp] using ih hy g'⟩
     · intro y
       obtain ⟨x, hx⟩ := hback y
-      let g' : Fin (m + 1) → Fin (n + 1) := snoc (castSucc ∘ g) (last n)
-      refine ⟨x, ?_⟩
-      have ha : snoc a x ∘ g' = snoc (a ∘ g) x := by
-        funext i
-        refine Fin.lastCases ?_ (fun j => ?_) i <;> simp [g', Function.comp_apply]
-      have hb : snoc b y ∘ g' = snoc (b ∘ g) y := by
-        funext i
-        refine Fin.lastCases ?_ (fun j => ?_) i <;> simp [g', Function.comp_apply]
-      simpa only [ha, hb] using ih hx g'
+      exact ⟨x, by simpa only [g', snoc_comp_snoc_castSucc_comp] using ih hx g'⟩
   | limit α hα ih =>
     exact (limit hα (a ∘ g) (b ∘ g)).mpr fun β hβ =>
       ih β hβ ((limit hα a b).mp h β hβ) g

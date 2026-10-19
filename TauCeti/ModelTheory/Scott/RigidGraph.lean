@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.ModelTheory.Scott.Finite
+public import TauCeti.ModelTheory.Scott.Rank
 public import TauCeti.ModelTheory.BackAndForth.Graph
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.NormNum
@@ -25,19 +25,19 @@ at level two. Thus every vertex has orbit rank two and the graph has internal Sc
 
 ## Main results
 
-* `SimpleGraph.rigidSixGraph_iso_eq_refl`: every automorphism of the graph is the identity.
+* `TauCeti.rigidSixGraph_iso_eq_refl`: every automorphism of the graph is the identity.
 * `TauCeti.orbitRank_rigidSixGraph`: every vertex has orbit rank two.
 * `TauCeti.internalScottRank_rigidSixGraph`: the graph has internal Scott rank three.
 -/
 
 public section
 
-namespace SimpleGraph
+namespace TauCeti
 
 /-- A rigid graph on six vertices: a triangle with paths of lengths two and one attached at
 different vertices. -/
 def rigidSixGraph : SimpleGraph (Fin 6) :=
-  fromRel fun i j =>
+  SimpleGraph.fromRel fun i j =>
     (i = 0 ∧ j = 1) ∨ (i = 0 ∧ j = 2) ∨ (i = 0 ∧ j = 3) ∨
     (i = 1 ∧ j = 2) ∨ (i = 1 ∧ j = 4) ∨ (i = 3 ∧ j = 5)
 
@@ -52,31 +52,22 @@ theorem rigidSixGraph_adj (i j : Fin 6) : rigidSixGraph.Adj i j ↔
     (i = 3 ∧ j = 5) ∨ (i = 5 ∧ j = 3) := by
   fin_cases i <;> fin_cases j <;> simp [rigidSixGraph]
 
-end SimpleGraph
+end TauCeti
 
 namespace TauCeti
 
 open FirstOrder FirstOrder.Language Fin
 open scoped Ordinal
 
-private local instance : Language.graph.Structure (Fin 6) := SimpleGraph.rigidSixGraph.structure
+private local instance : Language.graph.Structure (Fin 6) := rigidSixGraph.structure
 
-private local instance : DecidableRel SimpleGraph.rigidSixGraph.Adj := fun i j =>
-  decidable_of_iff _ (SimpleGraph.rigidSixGraph_adj i j).symm
-
-/-- Level-one back-and-forth equivalence written entirely in terms of atomic types. -/
-private theorem bfEquiv_one_iff {n : ℕ} (a b : Fin n → Fin 6) :
-    BFEquiv (L := Language.graph) (1 : Ordinal.{o}) n a b ↔
-      SameAtomicType (L := Language.graph) a b ∧
-      (∀ x, ∃ y, SameAtomicType (L := Language.graph) (snoc a x) (snoc b y)) ∧
-      ∀ y, ∃ x, SameAtomicType (L := Language.graph) (snoc a x) (snoc b y) := by
-  rw [show (1 : Ordinal.{o}) = 0 + 1 by norm_num, BFEquiv.add_one]
-  simp only [BFEquiv.zero]
+private local instance : DecidableRel rigidSixGraph.Adj := fun i j =>
+  decidable_of_iff _ (rigidSixGraph_adj i j).symm
 
 /-- At level one, all vertices of `rigidSixGraph` are back-and-forth equivalent. -/
 private theorem bfEquiv_one_rigidSixGraph (v w : Fin 6) :
     BFEquiv (L := Language.graph) (1 : Ordinal.{o}) 1 (fun _ => v) (fun _ => w) := by
-  rw [bfEquiv_one_iff]
+  rw [BFEquiv.one]
   simp only [SimpleGraph.sameAtomicType_iff]
   revert v w
   decide
@@ -88,7 +79,7 @@ private theorem exists_separating_move_rigidSixGraph (v w : Fin 6) : v ≠ w →
       (snoc (fun _ : Fin 1 => v) x) (snoc (fun _ : Fin 1 => w) y)) ∨
     (∃ y, ∀ x, ¬ BFEquiv (L := Language.graph) (1 : Ordinal.{o}) 2
       (snoc (fun _ : Fin 1 => v) x) (snoc (fun _ : Fin 1 => w) y)) := by
-  simp only [bfEquiv_one_iff, SimpleGraph.sameAtomicType_iff]
+  simp only [BFEquiv.one, SimpleGraph.sameAtomicType_iff]
   fin_cases v <;> fin_cases w <;> decide
 
 /-- Level two distinguishes all vertices of `rigidSixGraph`. -/
@@ -104,8 +95,8 @@ private theorem bfEquiv_two_rigidSixGraph_iff (v w : Fin 6) :
     exact hy x hxy
 
 /-- Every automorphism of `rigidSixGraph` is the identity. -/
-theorem _root_.SimpleGraph.rigidSixGraph_iso_eq_refl
-    (e : SimpleGraph.rigidSixGraph ≃g SimpleGraph.rigidSixGraph) :
+theorem rigidSixGraph_iso_eq_refl
+    (e : rigidSixGraph ≃g rigidSixGraph) :
     e = SimpleGraph.Iso.refl := by
   apply RelIso.ext
   intro v
@@ -135,7 +126,7 @@ private theorem two_mem_orbitStable_rigidSixGraph {n : ℕ} (a : Fin n → Fin 6
 
 /-- Every vertex of `rigidSixGraph` has orbit rank two. -/
 theorem orbitRank_rigidSixGraph (v : Fin 6) :
-    letI := SimpleGraph.rigidSixGraph.structure
+    letI := rigidSixGraph.structure
     orbitRank (L := Language.graph) (fun _ : Fin 1 => v) = 2 := by
   refine le_antisymm (orbitRank_le _ (two_mem_orbitStable_rigidSixGraph _)) ?_
   rw [← one_add_one_eq_two, Order.add_one_le_iff, lt_iff_not_ge, orbitRank_le_iff,
@@ -150,13 +141,10 @@ theorem orbitRank_rigidSixGraph (v : Fin 6) :
 
 /-- The internal Scott rank of `rigidSixGraph` is three. -/
 theorem internalScottRank_rigidSixGraph :
-    letI := SimpleGraph.rigidSixGraph.structure
+    letI := rigidSixGraph.structure
     internalScottRank (L := Language.graph) (Fin 6) = 3 := by
-  have h3 : (3 : Ordinal) = 2 + 1 := by norm_num
-  refine le_antisymm ((internalScottRank_le_iff _ _).mpr fun n a => ?_) ?_
-  · rw [h3]
-    exact (orbitRank_le a (two_mem_orbitStable_rigidSixGraph a)).trans_lt (lt_add_one 2)
-  · rw [h3, Order.add_one_le_iff, ← orbitRank_rigidSixGraph 0]
-    exact orbitRank_lt_internalScottRank _
+  rw [show (3 : Ordinal) = 2 + 1 by norm_num]
+  exact internalScottRank_eq_add_one_of (fun _ a => two_mem_orbitStable_rigidSixGraph a)
+    (orbitRank_rigidSixGraph 0)
 
 end TauCeti
