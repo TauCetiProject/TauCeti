@@ -23,14 +23,11 @@ morphism `g` on pure tensors by `l ⊗ m ↦ g(l)(m)`.  The total grading and th
 differentials on the tensor product and internal Hom make both maps morphisms of DG right
 modules.  No flatness hypothesis is needed because this is the underived adjunction.
 
-The three carriers are kept in a common universe.  This is the natural categorical formulation:
-both tensor product and internal Hom then remain endofunctors between the chosen categories of
-small DG modules.
+The three carriers are kept in a common universe, so the internal Hom remains in that universe and
+the two functors form an adjoint pair between the chosen categories of small DG modules.
 
 ## Main definitions
 
-* `TauCeti.DGBimoduleCat.tensorRightModule`: tensoring DG right modules with a fixed DG
-  bimodule.
 * `TauCeti.DGBimoduleCat.tensorHomEquiv`: the tensor--Hom equivalence on morphisms.
 * `TauCeti.DGBimoduleCat.tensorInternalHomAdjunction`: the resulting adjunction.
 
@@ -62,68 +59,64 @@ attribute [local instance 100] BalancedTensorProduct.rightModule
   BalancedTensorProduct.rightIsScalarTower
 attribute [local instance] BalancedTensorProduct.tensorGradedOuterRight
 
-variable (M : DGBimoduleCat.{uR, uA, uB, u} hA hB)
-
-/-- Tensoring a DG right `A`-module with the fixed DG `(A, B)`-bimodule `M`. -/
-abbrev tensorRightModule :
-    DGRightModuleCat.{uR, uA, u} hA ⥤ DGRightModuleCat.{uR, uB, u} hB where
-  obj L := DGRightModuleCat.tensorBimoduleObj L M
-  map f := DGRightModuleCat.tensorBimoduleMap f (𝟙 M)
-  map_id L := DGRightModuleCat.tensorBimoduleMap_id L M
-  map_comp f g := by
-    simpa using DGRightModuleCat.tensorBimoduleMap_comp f (𝟙 M) g (𝟙 M)
-
-@[simp]
-theorem tensorRightModule_obj (L : DGRightModuleCat.{uR, uA, u} hA) :
-    (M.tensorRightModule).obj L = DGRightModuleCat.tensorBimoduleObj L M := (rfl)
-
-@[simp]
-theorem tensorRightModule_map {L L' : DGRightModuleCat.{uR, uA, u} hA} (f : L ⟶ L') :
-    M.tensorRightModule.map f = DGRightModuleCat.tensorBimoduleMap f (𝟙 M) := (rfl)
-
-variable {M}
+variable {M : DGBimoduleCat.{uR, uA, uB, u} hA hB}
   {L L' : DGRightModuleCat.{uR, uA, u} hA}
   {N N' : DGRightModuleCat.{uR, uB, u} hB}
 
 namespace TensorHom
 
+private def curryFun (f : DGRightModuleCat.tensorBimoduleObj L M ⟶ N) (l : L) :
+    M →ₗ[Bᵐᵒᵖ] N where
+  toFun m := f (tmul R A l m)
+  map_add' x y := by rw [tmul_add, map_add]
+  map_smul' b m := by
+    rw [← BalancedTensorProduct.smul_tmul_right]
+    simpa only [RingHom.id_apply] using map_smul f b (tmul R A l m)
+
+@[simp]
+private theorem curryFun_apply (f : DGRightModuleCat.tensorBimoduleObj L M ⟶ N)
+    (l : L) (m : M) : curryFun f l m = f (tmul R A l m) := rfl
+
+private theorem curryFun_zero (f : DGRightModuleCat.tensorBimoduleObj L M ⟶ N) :
+    curryFun f 0 = 0 := by
+  ext m
+  rw [curryFun_apply, zero_tmul]
+  exact f.toLinearMap.map_zero
+
+private theorem curryFun_add (f : DGRightModuleCat.tensorBimoduleObj L M ⟶ N) (x y : L) :
+    curryFun f (x + y) = curryFun f x + curryFun f y := by
+  ext m
+  rw [curryFun_apply, add_tmul, map_add, LinearMap.add_apply, curryFun_apply, curryFun_apply]
+
+private theorem curryFun_mem {p : ℤ}
+    (f : DGRightModuleCat.tensorBimoduleObj L M ⟶ N) {l : L} (hl : l ∈ L.grading p) :
+    curryFun f l ∈ dgRightModuleCochains
+      (R := R) (A := B) (ℳ := M.grading) (ℳN := N.grading) p := by
+  rw [dgRightModuleCochains.mem_iff, LinearMap.isHomogeneous_def]
+  intro q m hm
+  have h := Graded.map_mem f
+    (DGRightModuleCat.tmul_mem_tensorBimoduleObj_grading hl hm)
+  -- The cochain predicate views the right-linear map through restriction of scalars.
+  change f (tmul R A l m) ∈ N.grading (q + p)
+  simpa only [add_comm q p] using h
+
 private def curryValue (f : DGRightModuleCat.tensorBimoduleObj L M ⟶ N) (l : L) :
     M.internalHomObj N := by
-  let φ : M →ₗ[Bᵐᵒᵖ] N :=
-    { toFun := fun m ↦ f (tmul R A l m)
-      map_add' := fun x y ↦ by rw [tmul_add, map_add]
-      map_smul' := fun b m ↦ by
-        change f (tmul R A l (b • m)) = _
-        rw [← BalancedTensorProduct.smul_tmul_right]
-        simpa only [RingHom.id_apply] using map_smul f b (tmul R A l m) }
-  refine ⟨⟨φ, ?_⟩⟩
+  refine ⟨⟨curryFun f l, ?_⟩⟩
   induction l using DirectSum.Decomposition.inductionOn L.grading with
   | zero =>
-      convert zero_mem (⨆ p, dgRightModuleCochains (R := R) (A := B)
-        (ℳ := M.grading) (ℳN := N.grading) p) using 1
-      ext m
-      change f (tmul R A 0 m) = 0
-      rw [zero_tmul]
-      exact f.toLinearMap.map_zero
+      rw [curryFun_zero]
+      exact zero_mem _
   | @homogeneous p l =>
-      refine Submodule.mem_iSup_of_mem p (dgRightModuleCochains.mem_iff.2 ?_)
-      rw [LinearMap.isHomogeneous_def]
-      intro q m hm
-      have h := Graded.map_mem f
-        (DGRightModuleCat.tmul_mem_tensorBimoduleObj_grading l.2 hm)
-      simpa only [φ, LinearMap.restrictScalars_apply, LinearMap.coe_mk, AddHom.coe_mk,
-        add_comm q p] using h
+      exact Submodule.mem_iSup_of_mem p (curryFun_mem f l.2)
   | add x y hx hy =>
-      convert add_mem hx hy using 1
-      ext m
-      simp [φ, add_tmul]
+      rw [curryFun_add]
+      exact add_mem hx hy
 
 @[simp]
 private theorem curryValue_apply (f : DGRightModuleCat.tensorBimoduleObj L M ⟶ N)
     (l : L) (m : M) : curryValue f l m = f (tmul R A l m) := by
-  unfold curryValue
-  rw [DGRightModule.InternalHom.mk_apply]
-  rfl
+  rw [curryValue, DGRightModule.InternalHom.mk_apply, curryFun_apply]
 
 @[simp]
 private theorem curryValue_zero (f : DGRightModuleCat.tensorBimoduleObj L M ⟶ N) :
@@ -143,14 +136,15 @@ private theorem curryValue_add (f : DGRightModuleCat.tensorBimoduleObj L M ⟶ N
 private theorem curryValue_mem {p : ℤ}
     (f : DGRightModuleCat.tensorBimoduleObj L M ⟶ N) {l : L} (hl : l ∈ L.grading p) :
     curryValue f l ∈ DGRightModule.InternalHom.grading 𝒜 B M.grading N.grading p := by
+  have h := curryFun_mem f hl
+  rw [dgRightModuleCochains.mem_iff, LinearMap.isHomogeneous_def] at h
   rw [DGRightModule.InternalHom.mem_grading_iff, dgRightModuleCochains.mem_iff,
     LinearMap.isHomogeneous_def]
   intro q m hm
-  have h := Graded.map_mem f
-    (DGRightModuleCat.tmul_mem_tensorBimoduleObj_grading hl hm)
+  -- The internal-Hom wrapper and `curryFun` have the same evaluation map.
   change curryValue f l m ∈ N.grading (q + p)
   rw [curryValue_apply]
-  simpa only [add_comm q p] using h
+  exact h q m hm
 
 private def curryLinearMap (f : DGRightModuleCat.tensorBimoduleObj L M ⟶ N) :
     L →ₗ[Aᵐᵒᵖ] M.internalHomObj N where
@@ -166,7 +160,19 @@ private def curryLinearMap (f : DGRightModuleCat.tensorBimoduleObj L M ⟶ N) :
 @[simp]
 private theorem curryLinearMap_apply (f : DGRightModuleCat.tensorBimoduleObj L M ⟶ N)
     (l : L) (m : M) : curryLinearMap f l m = f (tmul R A l m) := by
-  rw [show curryLinearMap f l = curryValue f l from rfl, curryValue_apply]
+  exact curryValue_apply f l m
+
+private theorem map_d_tmul {p : ℤ}
+    (f : DGRightModuleCat.tensorBimoduleObj L M ⟶ N) {l : L} (hl : l ∈ L.grading p) (m : M) :
+    N.differential (f (tmul R A l m)) =
+      f (tmul R A (L.differential l) m) +
+        p.negOnePow • f (tmul R A l (M.differential m)) := by
+  rw [DGRightModuleCat.map_d f,
+    DGRightModuleCat.tensorBimoduleObj_differential_tmul hl, map_add,
+    TauCeti.negOnePow_smul_eq_negOnePowCast_smul (R := R)]
+  congr 1
+  exact (f.toLinearMap.map_smul_of_tower (TauCeti.negOnePowCast R p) _).trans
+    (TauCeti.negOnePow_smul_eq_negOnePowCast_smul (R := R) p _).symm
 
 /-- Currying a DG module morphism out of a balanced tensor product. -/
 private def curry (f : DGRightModuleCat.tensorBimoduleObj L M ⟶ N) :
@@ -174,6 +180,7 @@ private def curry (f : DGRightModuleCat.tensorBimoduleObj L M ⟶ N) :
   toLinearMap := curryLinearMap f
   map_mem' := curryValue_mem f
   map_d' l := by
+    -- The morphism structures expose `curryValue` only after unfolding their linear maps.
     change DGRightModule.InternalHom.differential 𝒜 M.isDGRightModule N.isDGRightModule
       (curryValue f l) = curryValue f (L.differential l)
     induction l using DirectSum.Decomposition.inductionOn L.grading with
@@ -183,13 +190,7 @@ private def curry (f : DGRightModuleCat.tensorBimoduleObj L M ⟶ N) :
         intro m
         rw [DGRightModule.InternalHom.differential_apply_of_mem _ _
           (curryValue_mem f l.2), curryValue_apply, curryValue_apply, curryValue_apply,
-          DGRightModuleCat.map_d f,
-          DGRightModuleCat.tensorBimoduleObj_differential_tmul l.2, map_add]
-        rw [TauCeti.negOnePow_smul_eq_negOnePowCast_smul (R := R),
-          show f (TauCeti.negOnePowCast R p • tmul R A (l : L) (M.differential m)) =
-              TauCeti.negOnePowCast R p • f (tmul R A (l : L) (M.differential m)) from
-            f.toLinearMap.map_smul_of_tower _ _,
-          TauCeti.negOnePow_smul_eq_negOnePowCast_smul (R := R)]
+          map_d_tmul f l.2]
         exact add_sub_cancel_right _ _
     | add x y hx hy => rw [curryValue_add, map_add, hx, map_add, curryValue_add, hy]
 
@@ -204,6 +205,7 @@ private def uncurryBilinear (g : L ⟶ M.internalHomObj N) : L →ₗ[R] M →�
     simp
   map_smul' r l := by
     ext m
+    -- Coercing the restricted linear map exposes evaluation of the internal-Hom element.
     change (g (r • l)) m = r • (g l) m
     have hg : g (r • l) = r • g l := g.toLinearMap.map_smul_of_tower r l
     rw [hg, DGRightModule.InternalHom.smul_apply]
@@ -222,31 +224,16 @@ private def uncurryLinearMap (g : L ⟶ M.internalHomObj N) :
     DGRightModuleCat.tensorBimoduleObj L M →ₗ[Bᵐᵒᵖ] N where
   toFun := lift (uncurryBilinear g) (uncurryBilinear_balanced g)
   map_add' := map_add _
-  map_smul' b z := by
-    induction z using BalancedTensorProduct.induction_on with
-    | ht l m =>
-        change lift (uncurryBilinear g) (uncurryBilinear_balanced g)
-          (b • tmul R A l m) = _
-        rw [BalancedTensorProduct.smul_tmul_right,
-          lift_tmul, lift_tmul, uncurryBilinear_apply, uncurryBilinear_apply]
-        exact map_smul (g l) b m
-    | ha x y hx hy => simp only [smul_add, map_add, hx, hy]
+  map_smul' b z := BalancedTensorProduct.lift_smul_right Bᵐᵒᵖ
+    (uncurryBilinear g) (uncurryBilinear_balanced g)
+    (fun b l m ↦ map_smul (g l) b m) b z
 
 @[simp]
 private theorem uncurryLinearMap_tmul (g : L ⟶ M.internalHomObj N) (l : L) (m : M) :
     uncurryLinearMap g (tmul R A l m) = g l m := by
+  -- The right-linear wrapper has the balanced lift as its underlying function.
   change lift (uncurryBilinear g) (uncurryBilinear_balanced g) (tmul R A l m) = _
   rw [lift_tmul, uncurryBilinear_apply]
-
-private abbrev uncurryBaseLinearMap (g : L ⟶ M.internalHomObj N) :
-    DGRightModuleCat.tensorBimoduleObj L M →ₗ[R] N where
-  toFun := uncurryLinearMap g
-  map_add' := map_add _
-  map_smul' r z := (uncurryLinearMap g).map_smul_of_tower r z
-
-private theorem uncurryBaseLinearMap_apply (g : L ⟶ M.internalHomObj N)
-    (z : DGRightModuleCat.tensorBimoduleObj L M) :
-    uncurryBaseLinearMap g z = uncurryLinearMap g z := (rfl)
 
 local instance : SetLike.GradedSMul
     (InternalGrading.ofDecomposition 𝒜).opposite.piece
@@ -267,7 +254,7 @@ private def uncurry (g : L ⟶ M.internalHomObj N) :
     have h := map_mem_of_tmul (R := R) (A := A) (M := L) (N := M) (𝒜 := 𝒜)
       (InternalGrading.ofDecomposition L.grading)
       (InternalGrading.ofDecomposition M.grading) N.grading
-      (uncurryBaseLinearMap g) 0
+      (lift (uncurryBilinear g) (uncurryBilinear_balanced g)) 0
       (fun {q r} {l m} hl hm ↦ by
         have hl' : l ∈ L.grading q := by
           simpa only [InternalGrading.ofDecomposition_piece] using hl
@@ -275,10 +262,11 @@ private def uncurry (g : L ⟶ M.internalHomObj N) :
           simpa only [InternalGrading.ofDecomposition_piece] using hm
         have hg := DGRightModule.InternalHom.map_mem_of_mem_grading
           (Graded.map_mem g hl') hm'
-        rw [uncurryBaseLinearMap_apply, uncurryLinearMap_tmul]
+        rw [lift_tmul, uncurryBilinear_apply]
         simpa only [add_zero, add_comm r q] using hg)
       (by simpa only [InternalGrading.ofDecomposition_piece] using hz)
-    rw [uncurryBaseLinearMap_apply] at h
+    -- `uncurryLinearMap` is the right-linear structure on this balanced lift.
+    change lift (uncurryBilinear g) (uncurryBilinear_balanced g) z ∈ N.grading p
     simpa only [add_zero] using h
   map_d' z := by
     induction z using BalancedTensorProduct.induction_on with
@@ -301,8 +289,6 @@ private def uncurry (g : L ⟶ M.internalHomObj N) :
 @[simp]
 private theorem uncurry_tmul (g : L ⟶ M.internalHomObj N) (l : L) (m : M) :
     uncurry g (tmul R A l m) = g l m := by
-  change (uncurry g).toLinearMap (tmul R A l m) = _
-  rw [show (uncurry g).toLinearMap = uncurryLinearMap g from rfl]
   exact uncurryLinearMap_tmul g l m
 
 end TensorHom
@@ -368,10 +354,15 @@ theorem tensorHomEquiv_naturality_right
     tensorHomEquiv_apply_apply]
 
 /-- **Tensoring with a DG bimodule is left adjoint to its internal Hom functor.** -/
-def tensorInternalHomAdjunction : M.tensorRightModule ⊣ M.internalHom :=
+def tensorInternalHomAdjunction :
+    DGRightModuleCat.tensorBimoduleFunctor.flip.obj M ⊣ M.internalHom :=
   Adjunction.mkOfHomEquiv
     { homEquiv := tensorHomEquiv (M := M)
       homEquiv_naturality_left_symm := fun f g ↦ by
+        -- Unfold the flipped bifunctor at this component to expose its tensor map.
+        change (tensorHomEquiv (M := M) _ _).symm (f ≫ g) =
+          DGRightModuleCat.tensorBimoduleMap f (𝟙 M) ≫
+            (tensorHomEquiv (M := M) _ _).symm g
         apply DGRightModuleCat.tensorBimoduleObj_hom_ext
         intro l m
         rw [DGRightModuleCat.comp_apply, DGRightModuleCat.tensorBimoduleMap_tmul,
@@ -379,5 +370,30 @@ def tensorInternalHomAdjunction : M.tensorRightModule ⊣ M.internalHom :=
           tensorHomEquiv_symm_apply_tmul,
           DGRightModuleCat.comp_apply]
       homEquiv_naturality_right := tensorHomEquiv_naturality_right (M := M) }
+
+/-- The hom-set equivalence of the tensor--internal-Hom adjunction is `tensorHomEquiv`. -/
+@[simp]
+theorem tensorInternalHomAdjunction_homEquiv
+    (L : DGRightModuleCat.{uR, uA, u} hA) (N : DGRightModuleCat.{uR, uB, u} hB) :
+    (tensorInternalHomAdjunction (M := M)).homEquiv L N = tensorHomEquiv (M := M) L N := by
+  rw [tensorInternalHomAdjunction, Adjunction.mkOfHomEquiv_homEquiv]
+
+/-- The unit of the tensor--internal-Hom adjunction sends `l` to `m ↦ l ⊗ m`. -/
+theorem tensorInternalHomAdjunction_unit_app_apply_apply
+    (L : DGRightModuleCat.{uR, uA, u} hA) (l : L) (m : M) :
+    (show M.internalHomObj (DGRightModuleCat.tensorBimoduleObj L M) from
+      (tensorInternalHomAdjunction (M := M)).unit.app L l) m = tmul R A l m := by
+  rw [tensorInternalHomAdjunction]
+  change tensorHomEquiv (M := M) L _ (𝟙 _) l m = _
+  rw [tensorHomEquiv_apply_apply, DGRightModuleCat.id_apply]
+
+/-- The counit of the tensor--internal-Hom adjunction is evaluation. -/
+theorem tensorInternalHomAdjunction_counit_app_tmul
+    (N : DGRightModuleCat.{uR, uB, u} hB) (g : M.internalHomObj N) (m : M) :
+    (tensorInternalHomAdjunction (M := M)).counit.app N (tmul R A g m) = g m := by
+  rw [tensorInternalHomAdjunction]
+  change (tensorHomEquiv (M := M) (M.internalHomObj N) N).symm (𝟙 _)
+    (tmul R A g m) = _
+  rw [tensorHomEquiv_symm_apply_tmul, DGRightModuleCat.id_apply]
 
 end TauCeti.DGBimoduleCat
