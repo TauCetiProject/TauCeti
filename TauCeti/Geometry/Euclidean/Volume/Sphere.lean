@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Constructions.HaarToSphere
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+public import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 public import TauCeti.Geometry.Manifold.Instances.Sphere
 public import TauCeti.MeasureTheory.Function.AreaFormula.Basic
 
@@ -47,6 +48,8 @@ lower bound on the dimension is needed: in dimension one, both measures count po
 * `TauCeti.toSphere_volume_eq_comap_euclideanHausdorffMeasure`: Mathlib's surface measure on the
   unit sphere is normalized `(n - 1)`-dimensional Hausdorff measure.
 * `TauCeti.euclideanHausdorffMeasure_restrict_sphere`: the same comparison as measures on `E`.
+* `TauCeti.euclideanHausdorffMeasure_sphere_zero_one_eq_ofReal`: the unit sphere has
+  `(n - 1)`-dimensional Hausdorff measure `2 π ^ (n / 2) / Γ(n / 2)`.
 * `TauCeti.euclideanHausdorffMeasure_sphere`: `μHE[n - 1] (sphere c r) = n ω_n r ^ (n - 1)`.
 
 ## References
@@ -236,6 +239,22 @@ theorem euclideanHausdorffMeasure_sphere_zero_one :
   rw [← toSphere_apply_univ, toSphere_volume_eq_comap_euclideanHausdorffMeasure,
     (MeasurableEmbedding.subtype_coe isClosed_sphere.measurableSet).comap_apply, image_univ,
     Subtype.range_coe]
+
+/-- The unit sphere of an `n`-dimensional real inner product space has `(n - 1)`-dimensional
+Hausdorff measure `2 π ^ (n / 2) / Γ(n / 2)`. In dimension zero both sides vanish. -/
+theorem euclideanHausdorffMeasure_sphere_zero_one_eq_ofReal :
+    μHE[finrank ℝ E - 1] (sphere (0 : E) 1) =
+      ENNReal.ofReal (2 * Real.pi ^ ((finrank ℝ E : ℝ) / 2) / Real.Gamma (finrank ℝ E / 2)) := by
+  rw [euclideanHausdorffMeasure_sphere_zero_one]
+  rcases (finrank ℝ E).eq_zero_or_pos with hn | hn
+  · simp [hn, Real.Gamma_zero]
+  have : Nontrivial E := Module.nontrivial_of_finrank_pos hn
+  have hn' : (0 : ℝ) < finrank ℝ E / 2 := by positivity
+  rw [InnerProductSpace.volume_ball, ENNReal.ofReal_one, one_pow, one_mul, ← ENNReal.ofReal_natCast,
+    ← ENNReal.ofReal_mul (Nat.cast_nonneg _), Real.Gamma_add_one hn'.ne', Real.sqrt_eq_rpow,
+    ← Real.rpow_mul_natCast Real.pi_pos.le]
+  congr 1
+  field_simp
 
 /-- A sphere of radius `r > 0` in an `n`-dimensional real inner product space has
 `(n - 1)`-dimensional Hausdorff measure `n ω_n r ^ (n - 1)`, where `ω_n` is the volume of the
