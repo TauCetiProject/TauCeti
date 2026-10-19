@@ -25,6 +25,8 @@ two-power level from their values at `-1` and `5`.
 
 * `ZMod.unitsTwoPowFive`: the class of `5` in `(ZMod (2 ^ (e + 3)))ˣ`.
 * `ZMod.orderOf_unitsTwoPowFive`: it has order `2 ^ (e + 1)`.
+* `ZMod.unitsMap_unitsTwoPowFive`, `ZMod.unitsMap_neg_one`: reduction modulo `4` sends `5`
+  to `1`, and reduction modulo any divisor sends `-1` to `-1`.
 * `ZMod.neg_one_notMem_zpowers_unitsTwoPowFive`: `-1` is not a power of `5`.
 * `ZMod.unitsTwoPowEquiv`: the isomorphism with `ℤ/2 × ℤ/2^(e+1)`.
 * `ZMod.unitsTwoPowEquiv_symm_apply`, `ZMod.unitsTwoPowEquiv_neg_one`,
@@ -59,22 +61,30 @@ theorem orderOf_unitsTwoPowFive : orderOf (unitsTwoPowFive e) = 2 ^ (e + 1) := b
   rw [← orderOf_units, coe_unitsTwoPowFive]
   exact ZMod.orderOf_five (e + 1)
 
+/-- Reduction modulo a divisor sends the unit `-1` to `-1`. -/
+@[simp]
+theorem unitsMap_neg_one {m n : ℕ} (h : n ∣ m) : unitsMap h (-1) = -1 := by
+  ext
+  simp [unitsMap_val, cast_neg h, cast_one h]
+
+/-- Reduction modulo `4` sends the unit `5` modulo `2 ^ (e + 3)` to `1`. -/
+@[simp]
+theorem unitsMap_unitsTwoPowFive (h : 4 ∣ 2 ^ (e + 3)) : unitsMap h (unitsTwoPowFive e) = 1 := by
+  ext
+  rw [unitsMap_val, coe_unitsTwoPowFive,
+    show (5 : ZMod (2 ^ (e + 3))) = ((5 : ℕ) : ZMod (2 ^ (e + 3))) by norm_num, cast_natCast h]
+  decide
+
 /-- The unit `-1` modulo `2 ^ (e + 3)` is not a power of `5`. -/
 theorem neg_one_notMem_zpowers_unitsTwoPowFive :
     -1 ∉ Subgroup.zpowers (unitsTwoPowFive e) := by
   -- Reduction modulo `4` kills `5` but not `-1`.
   have h4 : 4 ∣ 2 ^ (e + 3) := ⟨2 ^ (e + 1), by ring⟩
-  have hle : Subgroup.zpowers (unitsTwoPowFive e) ≤ (ZMod.unitsMap h4).ker := by
-    rw [Subgroup.zpowers_le, MonoidHom.mem_ker]
-    ext
-    simp only [ZMod.unitsMap_val, coe_unitsTwoPowFive, Units.val_one]
-    rw [show (5 : ZMod (2 ^ (e + 3))) = ((5 : ℕ) : ZMod (2 ^ (e + 3))) by norm_num,
-      ZMod.cast_natCast h4]
-    decide
+  have hle : Subgroup.zpowers (unitsTwoPowFive e) ≤ (unitsMap h4).ker := by
+    rw [Subgroup.zpowers_le, MonoidHom.mem_ker, unitsMap_unitsTwoPowFive]
   intro h
   have h' := hle h
-  rw [MonoidHom.mem_ker, Units.ext_iff, ZMod.unitsMap_val, Units.val_neg, Units.val_one,
-    ZMod.cast_neg h4, ZMod.cast_one h4] at h'
+  rw [MonoidHom.mem_ker, unitsMap_neg_one] at h'
   exact absurd h' (by decide)
 
 /-- The homomorphism `(s, k) ↦ (-1) ^ s * 5 ^ k`, well defined since `(-1) ^ 2 = 1` and
@@ -104,9 +114,9 @@ private theorem unitsTwoPowHom_injective : Function.Injective (unitsTwoPowHom e)
   rw [unitsTwoPowHom_apply] at hx
   obtain rfl | rfl := (by decide : ∀ t : ZMod 2, t = 0 ∨ t = 1) s
   · -- For `s = 0`, the order of `5` divides `k.val`, so `k = 0`.
-    rw [ZMod.val_zero, pow_zero, one_mul, ← orderOf_dvd_iff_pow_eq_one, orderOf_unitsTwoPowFive,
-      ← ZMod.natCast_eq_zero_iff, ZMod.natCast_zmod_val] at hx
-    simp [hx]
+    simp only [ZMod.val_zero, pow_zero, one_mul] at hx
+    rw [← orderOf_dvd_iff_pow_eq_one, orderOf_unitsTwoPowFive] at hx
+    simpa [← ZMod.natCast_eq_zero_iff] using hx
   · -- For `s = 1`, `-1` would be a power of `5`.
     rw [ZMod.val_one'' (by decide), pow_one] at hx
     refine absurd ?_ (neg_one_notMem_zpowers_unitsTwoPowFive e)
@@ -116,8 +126,7 @@ private theorem unitsTwoPowHom_injective : Function.Injective (unitsTwoPowHom e)
 private theorem unitsTwoPowHom_bijective : Function.Bijective (unitsTwoPowHom e) := by
   refine (Fintype.bijective_iff_injective_and_card _).2 ⟨unitsTwoPowHom_injective e, ?_⟩
   rw [ZMod.card_units_eq_totient, Nat.totient_prime_pow Nat.prime_two (by omega)]
-  simp [ZMod.card, pow_succ]
-  ring
+  simp [ZMod.card, pow_succ, mul_comm]
 
 /-- **The units modulo `2 ^ (e + 3)`.** The group `(ℤ/2^(e+3))ˣ` is isomorphic to
 `ℤ/2 × ℤ/2^(e+1)`, with `-1` corresponding to `(1, 0)` and `5` to `(0, 1)`. The inverse is
