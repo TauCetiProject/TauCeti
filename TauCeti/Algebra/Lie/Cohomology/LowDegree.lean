@@ -150,6 +150,8 @@ theorem firstCohomologyLift_unique (f : oneCocycle R L M →ₗ[R] N)
   apply LinearMap.ext
   intro q
   obtain ⟨x, rfl⟩ := (oneCoboundary R L M).mkQ_surjective q
+  -- The representative produced by `mkQ_surjective` uses `Submodule.mkQ`; unfold the
+  -- definitionally equal `firstCohomologyMk` wrapper so the computation lemma applies.
   change g (firstCohomologyMk R L M x) =
     firstCohomologyLift R L M f h (firstCohomologyMk R L M x)
   rw [firstCohomologyLift_mk, ← LinearMap.comp_apply, hg]
