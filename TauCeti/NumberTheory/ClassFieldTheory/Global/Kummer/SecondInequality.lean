@@ -57,12 +57,9 @@ theorem exists_auxiliaryKummerIdeleClassSubgroup_index_eq_finrank
       auxiliaryKummerIdeleClassSubgroup S T p ≤
         (GlobalNumberFields.ideleClassNormMap K L).range := by
   have : NeZero p := ⟨hp.ne_zero⟩
-  have hζK : IsPrimitiveRoot (algebraMap (𝓞 K) K ζ) p :=
-    hζ.map_of_injective (FaithfulSMul.algebraMap_injective (𝓞 K) K)
-  have : HasEnoughRootsOfUnity K p := .of_card_le hζK.card_rootsOfUnity.ge
-  have : (powMonoidHom p : Kˣ →* Kˣ).range.IsFiniteRelIndex
-      ((S : Set (HeightOneSpectrum (𝓞 K))).unit K) :=
-    ⟨by rw [relIndex_range_powMonoidHom_sUnits_numberField]; exact pow_ne_zero _ hp.ne_zero⟩
+  have : HasEnoughRootsOfUnity K p :=
+    ⟨⟨_, hζ.map_of_injective (FaithfulSMul.algebraMap_injective (𝓞 K) K)⟩,
+      rootsOfUnity.isCyclic K p⟩
   obtain ⟨T, hST, hcard, hsurj, hnorm⟩ :=
     exists_auxiliaryKummerIdeleClassSubgroup_le_range_ideleClassNormMap hp S hpS hζ hroots L
   have hindex := index_auxiliaryKummerIdeleClassSubgroup_mul_pow_card hp hST hcl hpS hsurj
@@ -108,12 +105,10 @@ theorem index_range_ideleClassNormMap_eq_finrank_of_le_kummerField_sUnits
     [NumberField L] [IsCyclic Gal(L/K)] :
     (GlobalNumberFields.ideleClassNormMap K L).range.index = Module.finrank K L := by
   have : NeZero p := ⟨hp.ne_zero⟩
-  have hζK : IsPrimitiveRoot (algebraMap (𝓞 K) K ζ) p :=
-    hζ.map_of_injective (FaithfulSMul.algebraMap_injective (𝓞 K) K)
-  have : HasEnoughRootsOfUnity K p := .of_card_le hζK.card_rootsOfUnity.ge
-  have : (powMonoidHom p : Kˣ →* Kˣ).range.IsFiniteRelIndex
-      ((S : Set (HeightOneSpectrum (𝓞 K))).unit K) :=
-    ⟨by rw [relIndex_range_powMonoidHom_sUnits_numberField]; exact pow_ne_zero _ hp.ne_zero⟩
+  have : HasEnoughRootsOfUnity K p :=
+    ⟨⟨_, hζ.map_of_injective (FaithfulSMul.algebraMap_injective (𝓞 K) K)⟩,
+      rootsOfUnity.isCyclic K p⟩
+  -- These instances give `IsGalois K L` via `isAbelianGalois_kummerField`.
   exact le_antisymm
     (Nat.le_of_dvd Module.finrank_pos
       (index_range_ideleClassNormMap_dvd_finrank_of_le_kummerField_sUnits
