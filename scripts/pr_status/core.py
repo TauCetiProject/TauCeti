@@ -11,13 +11,18 @@ contributor comments. The module writes nothing and executes no PR code.
 """
 
 import json
-import email.utils
 import math
 import os
+from pathlib import Path
 import re
 import subprocess
+import sys
 import threading
 import time
+
+# Cone-mode checkouts of scripts/pr_status include scripts' direct files too.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from github_api import response, retry_after
 
 REPO = os.environ.get("GH_REPO", "TauCetiProject/TauCeti")
 KEEP_LABELS = {"keep", "hold", "wip", "human", "do-not-close"}
@@ -64,8 +69,8 @@ _HTTP_STATUS = re.compile(r"\(HTTP (\d{3})\)|\bHTTP (\d{3})\b")
 _RATE_LIMIT_WORDING = ("rate limit", "abuse detection", "was submitted too quickly")
 
 # Total calls, not retries. GitHub asks for at least a minute before retrying a
-# secondary limit, so the waits are 60s then 120s -- not the sub-minute schedule a
-# generic exponential back-off would use, which GitHub warns can prolong the limit.
+# secondary limit without Retry-After, so the fallback waits are 60s then 120s.
+# Response timing takes precedence when GitHub supplies it.
 RATE_LIMIT_ATTEMPTS = 3
 SECONDARY_BACKOFF_SECONDS = 60
 # A PRIMARY limit (quota exhausted) clears only at the hourly reset, which is far
@@ -78,7 +83,7 @@ RATE_LIMIT_MAX_WAIT_SECONDS = 180
 
 class RateLimited(RuntimeError):
     """A rate limit this read gave up on -- whether the retries were spent, the
-    quota's reset was too far off to wait for, or an earlier call already
+    quota's reset or response wait exceeded the remaining budget, or an earlier call already
     established the limit. Distinct from a plain failure so a caller looping over
     many items can tell "GitHub is refusing us" from "this one item is broken"."""
 
@@ -151,8 +156,7 @@ def _http_output(stdout):
         block, separator, body = rest.partition("\n\n")
         if not separator:
             raise RuntimeError("Missing HTTP response header boundary")
-        headers = {key.strip().lower(): value.strip() for line in block.splitlines()[1:]
-                   if ":" in line for key, value in [line.split(":", 1)]}
+        _, headers, _ = response(block + "\n\n")
         body = body.lstrip()
         try:
             _, end = json.JSONDecoder().raw_decode(body)
@@ -169,16 +173,8 @@ def _http_output(stdout):
 
 def _header_wait(headers, now):
     """Seconds requested by Retry-After/reset headers, or None if unavailable."""
-    delays = []
-    value = headers.get("retry-after")
-    if value:
-        try:
-            delays.append(float(value))
-        except ValueError:
-            try:
-                delays.append(email.utils.parsedate_to_datetime(value).timestamp() - now)
-            except (ValueError, TypeError, OverflowError):
-                pass
+    delay = retry_after(headers.get("retry-after"), now, default=None)
+    delays = [] if delay is None else [delay]
     if headers.get("x-ratelimit-remaining") == "0":
         try:
             delays.append(float(headers["x-ratelimit-reset"]) - now + 5)
@@ -195,8 +191,9 @@ def gh_api(path, jq=None, paginate=False):
     the budget failed whichever sink read next: an hourly sweep losing a run, or a
     status label left wrong until some later event fired.
 
-    Only a rate limit is retried, and only on its own terms: at least a minute for
-    a secondary limit, and for an exhausted hourly quota only when its reset is
+    Only a rate limit is retried, and only on its own terms: response Retry-After
+    takes precedence (otherwise at least a minute for a secondary limit), and
+    for an exhausted hourly quota only when its reset is
     within RATE_LIMIT_MAX_WAIT_SECONDS -- a reset further off than that cannot be
     waited for inside a workflow step, so it raises RateLimited immediately and
     blocks later reads until it passes. Every other failure raises on the first
@@ -230,7 +227,7 @@ def gh_api(path, jq=None, paginate=False):
         if out.returncode == 0:
             if jq is None:
                 return body
-            filtered = subprocess.run(["jq", "-r", jq], input=body, capture_output=True, text=True)
+            filtered = subprocess.run(["jq", "-rc", jq], input=body, capture_output=True, text=True)
             if filtered.returncode:
                 raise RuntimeError("Could not filter GitHub JSON response")
             return filtered.stdout
@@ -255,8 +252,8 @@ def gh_api(path, jq=None, paginate=False):
             # releasing after 60s would let a looping caller start the whole
             # 60/120 schedule again, which is what the breaker exists to stop.
             _block_for(delay)
-            raise RateLimited(f"gh api {path} failed after "
-                              f"{RATE_LIMIT_ATTEMPTS} attempts: {stderr}")
+            raise RateLimited(f"gh api {path} stopped after {attempt + 1} attempts; "
+                              f"requested {delay}s wait, {RATE_LIMIT_MAX_WAIT_SECONDS - waited}s budget left: {stderr}")
         print(f"gh api rate-limited; retrying in {delay}s", flush=True)
         # Hold every other caller off while this one waits, so that concurrent callers (batch.py's
         # threads) do not each keep hitting a limit that one of them has already found.

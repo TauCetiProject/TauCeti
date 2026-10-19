@@ -199,6 +199,17 @@ class ResponseHeaders(unittest.TestCase):
         with mock.patch.object(core.subprocess, 'run', side_effect=run):
             self.assertEqual(core.gh_api('/x', jq='.[]', paginate=True), '1\n2\n')
 
+    def test_object_filters_keep_one_compact_json_value_per_line(self):
+        rows = [{'body': 'first\ncomment', 'updated_at': 'today'}, {'body': 'second'}]
+        out = SimpleNamespace(returncode=0, stderr='', stdout='HTTP/2.0 200 OK\nX-Test: yes\n\n' + json.dumps(rows))
+        real_run = core.subprocess.run
+        def run(args, **kwargs):
+            return out if args[0] == 'gh' else real_run(args, **kwargs)
+        with mock.patch.object(core.subprocess, 'run', side_effect=run):
+            actual = core.gh_api('/x', jq='.[] | {body}')
+        self.assertEqual([json.loads(line) for line in actual.splitlines()],
+                         [{'body': row['body']} for row in rows])
+
     def test_near_primary_reset_waits_only_until_reset_with_margin(self):
         failed = SimpleNamespace(returncode=1, stderr=PRIMARY_403, stdout=
             'HTTP/2.0 403 Forbidden\nX-RateLimit-Remaining: 0\nX-RateLimit-Reset: 1010\n\n{}')
