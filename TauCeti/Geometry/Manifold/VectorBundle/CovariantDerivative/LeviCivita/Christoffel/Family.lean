@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Christoffel.Basic
-public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
+public import TauCeti.Geometry.Manifold.ContMDiffMFDeriv
 import TauCeti.Topology.Algebra.Module.BilinearForm
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
 
@@ -72,18 +72,8 @@ theorem contMDiffAt_christoffelSecondKind_family
   -- Differentiate only in the base variable, while both inputs of the family vary.
   have hD : ContMDiffAt (J.prod 𝓘(ℝ, E))
       𝓘(ℝ, E →L[ℝ] E →L[ℝ] E →L[ℝ] ℝ) n
-      (fun q : P × E ↦ fderiv ℝ (g q.1) q.2) z := by
-    have hfamily : ContMDiffAt ((J.prod 𝓘(ℝ, E)).prod 𝓘(ℝ, E))
-        𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ) m
-        (fun q : (P × E) × E ↦ g q.1.1 q.2) (z, z.2) :=
-      hg.comp (z, z.2) ((contMDiffAt_fst.comp _ contMDiffAt_fst).prodMk contMDiffAt_snd)
-    have h := hfamily.mfderiv (fun q : P × E ↦ g q.1) Prod.snd contMDiffAt_snd hnm
-    -- The differentiated source and target are vector spaces; their tangent charts are trivial.
-    convert h using 1
-    ext q : 1
-    erw [inTangentCoordinates_model_space (I := 𝓘(ℝ, E))
-      (I' := 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ))]
-    exact (mfderiv_eq_fderiv (𝕜 := ℝ) (f := g q.1) (x := q.2)).symm
+      (fun q : P × E ↦ fderiv ℝ (g q.1) q.2) z :=
+    contMDiffAt_fderiv_family hg hnm
   -- Raise the index by the inverse metric, which is smooth near the nondegenerate point.
   have hinv : ContMDiffAt (J.prod 𝓘(ℝ, E)) 𝓘(ℝ, (E →L[ℝ] ℝ) →L[ℝ] E) n
       (fun q : P × E ↦ (g q.1 q.2).inverse) z :=
