@@ -133,18 +133,20 @@ theorem symmetricAlgebraMulSemiringAction_smul (g : G) (p : SymmetricAlgebra R M
     g • p = ρ.symmetricAlgebra g p :=
   (rfl)
 
+/-- The bundled action commutes with scalar multiplication by `R`. -/
+theorem smulCommClass_symmetricAlgebraMulSemiringAction :
+    letI := ρ.symmetricAlgebraMulSemiringAction
+    SMulCommClass G R (SymmetricAlgebra R M) :=
+  letI := ρ.symmetricAlgebraMulSemiringAction
+  ⟨fun g r p ↦ map_smul (ρ.symmetricAlgebra g) r p⟩
+
 /-- The invariant subalgebra `Sym(M)^G`: the elements of `Sym M` fixed by the induced action of
-every element of `G`. -/
-def symmetricAlgebraInvariants : Subalgebra R (SymmetricAlgebra R M) where
-  carrier := {p | ∀ g : G, ρ.symmetricAlgebra g p = p}
-  mul_mem' {p q} hp hq g := by
-    simp only [Set.mem_ofPred_eq, symmetricAlgebra_apply] at hp hq ⊢
-    rw [map_mul, hp g, hq g]
-  add_mem' {p q} hp hq g := by
-    simp only [Set.mem_ofPred_eq] at hp hq ⊢
-    rw [map_add, hp g, hq g]
-  algebraMap_mem' r g := by
-    simp only [symmetricAlgebra_apply, AlgHom.commutes]
+every element of `G`, that is, the fixed subalgebra `FixedPoints.subalgebra` of the bundled
+action. -/
+noncomputable def symmetricAlgebraInvariants : Subalgebra R (SymmetricAlgebra R M) :=
+  letI := ρ.symmetricAlgebraMulSemiringAction
+  haveI := ρ.smulCommClass_symmetricAlgebraMulSemiringAction
+  FixedPoints.subalgebra R (SymmetricAlgebra R M) G
 
 /-- An element of `Sym M` is invariant when every `g` fixes it. -/
 @[simp]
@@ -156,8 +158,9 @@ theorem mem_symmetricAlgebraInvariants (p : SymmetricAlgebra R M) :
 invariant. -/
 theorem isHomogeneous_symmetricAlgebraInvariants :
     DirectSum.SetLike.IsHomogeneous (homogeneousSubmodule R M) ρ.symmetricAlgebraInvariants := by
-  intro n p hp g
-  rw [← decompose_symmetricAlgebra, hp g]
+  intro n p hp
+  refine (ρ.mem_symmetricAlgebraInvariants _).2 fun g ↦ ?_
+  rw [← decompose_symmetricAlgebra, (ρ.mem_symmetricAlgebraInvariants p).1 hp g]
 
 /-- A degree-one element `ι m` is invariant exactly when `m` is a fixed vector of `ρ`. -/
 theorem ι_mem_symmetricAlgebraInvariants_iff (m : M) :
@@ -166,21 +169,6 @@ theorem ι_mem_symmetricAlgebraInvariants_iff (m : M) :
     (ι_injective R M).eq_iff]
 
 end CommSemiring
-
-section Group
-
-variable [CommSemiring R] [Group G] [AddCommMonoid M] [Module R M]
-variable (ρ : Representation R G M)
-
-/-- `Sym M` is an invariant extension of the invariant subalgebra for the bundled action: an
-element fixed by every `g` lies in the invariant subalgebra. -/
-theorem isInvariant_symmetricAlgebraInvariants :
-    letI := ρ.symmetricAlgebraMulSemiringAction
-    Algebra.IsInvariant ρ.symmetricAlgebraInvariants (SymmetricAlgebra R M) G :=
-  letI := ρ.symmetricAlgebraMulSemiringAction
-  ⟨fun p hp ↦ ⟨⟨p, hp⟩, rfl⟩⟩
-
-end Group
 
 section CommRing
 
@@ -200,7 +188,9 @@ over the invariant subalgebra: each `p` is a root of the monic orbit polynomial
 instance isIntegral_symmetricAlgebraInvariants [Finite G] :
     Algebra.IsIntegral ρ.symmetricAlgebraInvariants (SymmetricAlgebra R M) :=
   letI := ρ.symmetricAlgebraMulSemiringAction
-  haveI := ρ.isInvariant_symmetricAlgebraInvariants
+  haveI := ρ.smulCommClass_symmetricAlgebraMulSemiringAction
+  haveI : Algebra.IsInvariant ρ.symmetricAlgebraInvariants (SymmetricAlgebra R M) G :=
+    inferInstanceAs (Algebra.IsInvariant (FixedPoints.subalgebra R (SymmetricAlgebra R M) G) _ G)
   Algebra.IsInvariant.isIntegral _ _ G
 
 end CommRing

@@ -55,6 +55,11 @@ namespace Representation
 variable {R G M : Type*} [CommRing R] [Group G] [AddCommMonoid M] [Module R M]
 variable (ρ : Representation R G M) [Fintype G] [Invertible (Fintype.card G : R)]
 
+/-- Averaging the induced action is the normalized sum `#G⁻¹ • ∑ g, g • p` over the group. -/
+private theorem averageMap_symmetricAlgebra_apply (p : SymmetricAlgebra R M) :
+    ρ.symmetricAlgebra.averageMap p = ⅟(Fintype.card G : R) • ∑ g : G, ρ.symmetricAlgebra g p := by
+  rw [averageMap_eq_invOf_card_smul_norm, LinearMap.smul_apply, norm, LinearMap.sum_apply]
+
 /-- The **Reynolds operator** `p ↦ #G⁻¹ • ∑ g, g • p`, from `Sym M` onto the invariant subalgebra.
 It is linear over the invariant subalgebra and restricts to the identity on it, but it is
 generally not multiplicative. -/
@@ -67,9 +72,9 @@ noncomputable def symmetricAlgebraReynolds :
     -- Every `g` fixes the invariant factor `a`, so `a` passes through the group sum.
     have ha := (ρ.mem_symmetricAlgebraInvariants a).1 a.2
     simp only [symmetricAlgebra_apply] at ha
-    simp only [averageMap_eq_invOf_card_smul_norm, LinearMap.smul_apply, norm, LinearMap.sum_apply,
-      symmetricAlgebra_apply, Subalgebra.smul_def, map_mul, ha, RingHom.id_apply, smul_eq_mul,
-      Subalgebra.coe_mul, Finset.mul_sum, mul_smul_comm]
+    simp only [averageMap_symmetricAlgebra_apply, symmetricAlgebra_apply, Subalgebra.smul_def,
+      map_mul, ha, RingHom.id_apply, smul_eq_mul, Subalgebra.coe_mul, Finset.mul_sum,
+      mul_smul_comm]
 
 /-- The Reynolds operator is the averaging projection of the induced representation. -/
 theorem coe_symmetricAlgebraReynolds (p : SymmetricAlgebra R M) :
@@ -77,12 +82,10 @@ theorem coe_symmetricAlgebraReynolds (p : SymmetricAlgebra R M) :
   (rfl)
 
 /-- The Reynolds operator is the normalized sum `#G⁻¹ • ∑ g, g • p` over the group. -/
-@[simp]
 theorem coe_symmetricAlgebraReynolds_eq_sum (p : SymmetricAlgebra R M) :
     (ρ.symmetricAlgebraReynolds p : SymmetricAlgebra R M) =
-      ⅟(Fintype.card G : R) • ∑ g : G, ρ.symmetricAlgebra g p := by
-  rw [coe_symmetricAlgebraReynolds, averageMap_eq_invOf_card_smul_norm, LinearMap.smul_apply,
-    norm, LinearMap.sum_apply]
+      ⅟(Fintype.card G : R) • ∑ g : G, ρ.symmetricAlgebra g p :=
+  ρ.averageMap_symmetricAlgebra_apply p
 
 /-- The Reynolds operator restricts to the identity on the invariant subalgebra. -/
 @[simp]
@@ -96,6 +99,7 @@ theorem symmetricAlgebraReynolds_surjective :
   fun a ↦ ⟨a, ρ.symmetricAlgebraReynolds_coe a⟩
 
 /-- The Reynolds operator is linear over the invariant subalgebra. -/
+@[simp]
 theorem symmetricAlgebraReynolds_coe_mul (a : ρ.symmetricAlgebraInvariants)
     (p : SymmetricAlgebra R M) :
     ρ.symmetricAlgebraReynolds (a * p) = a * ρ.symmetricAlgebraReynolds p :=
