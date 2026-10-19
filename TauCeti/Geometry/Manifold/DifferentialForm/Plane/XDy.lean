@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.ExtDeriv
+public import TauCeti.Geometry.Manifold.DifferentialForm.Plane.Basic
 public import TauCeti.Geometry.Symplectic.Liouville.Plane
 
 /-!

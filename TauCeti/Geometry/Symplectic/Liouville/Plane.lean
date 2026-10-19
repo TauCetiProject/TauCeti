@@ -10,11 +10,15 @@ public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.Specializations
 public import TauCeti.Geometry.Symplectic.Liouville.Linear
 
 /-!
-# Coordinate one-forms on the real plane
+# The one-form `x dy` on the real plane
 
 This file defines the linear-coefficient form `realPlaneXDy = x dy` and proves its exterior
 derivative identity. The constant coordinate forms and their identities are in
 `TauCeti.Analysis.Calculus.DifferentialForm.Plane`.
+
+Contracting `d(x dy)` with the vector field `Z = x ∂_x + ∂_y` gives `x dy - dx`
+(`Prod.curryLeft_extDeriv_realPlaneXDy`), which differs from `x dy`
+(`Prod.curryLeft_extDeriv_realPlaneXDy_ne`).
 
 The computation of `d(x dy)` reuses the radial primitive calculation for a continuous bilinear
 form from `TauCeti.Geometry.Symplectic.Liouville.Linear`.
@@ -67,6 +71,7 @@ theorem extDeriv_realPlaneXDy (p : ℝ × ℝ) :
 theorem curryLeft_extDeriv_realPlaneXDy (p : ℝ × ℝ) :
     (extDeriv realPlaneXDy p).curryLeft (p.1, 1) = realPlaneXDy p - realPlaneDx p := by
   ext v
+  -- Write the single vector as the one-entry tuple `![v 0]` so the wedge evaluation applies.
   rw [← Matrix.cons_head_tail v, Matrix.empty_eq (Matrix.vecTail v)]
   simp
 

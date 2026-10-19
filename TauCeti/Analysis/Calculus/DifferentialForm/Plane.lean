@@ -46,6 +46,10 @@ theorem realPlaneDy_apply (p : ℝ × ℝ) (v : Fin 1 → ℝ × ℝ) :
 theorem contDiff_realPlaneDx {n : WithTop ℕ∞} : ContDiff ℝ n realPlaneDx :=
   contDiff_const
 
+/-- The constant coordinate one-form `dy` is smooth. -/
+theorem contDiff_realPlaneDy {n : WithTop ℕ∞} : ContDiff ℝ n realPlaneDy :=
+  contDiff_const
+
 /-- The exterior derivative of the constant coordinate one-form `dx` vanishes. -/
 @[simp]
 theorem extDeriv_realPlaneDx (p : ℝ × ℝ) : extDeriv realPlaneDx p = 0 := by

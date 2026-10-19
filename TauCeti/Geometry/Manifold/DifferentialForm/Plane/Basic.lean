@@ -31,11 +31,13 @@ theorem mextDeriv_realPlaneDx :
         ((fun p ↦ _root_.Prod.realPlaneDx p) : TauCeti.RoughForm (𝓘(ℝ, ℝ × ℝ))
           (ℝ × ℝ) ℝ 1) =
       (0 : TauCeti.RoughForm (𝓘(ℝ, ℝ × ℝ)) (ℝ × ℝ) ℝ 2) := by
-  funext p
-  have h := TauCeti.mextDeriv_eq_extDeriv
-    ((fun p ↦ _root_.Prod.realPlaneDx p) : TauCeti.RoughForm (𝓘(ℝ, ℝ × ℝ))
-      (ℝ × ℝ) ℝ 1) p
-  exact h.trans (_root_.Prod.extDeriv_realPlaneDx p)
+  have hconst : (fun p ↦ _root_.Prod.realPlaneDx p) =
+      (fun _ ↦ _root_.Prod.realPlaneDx (0, 0)) := by
+    funext p
+    ext v
+    simp
+  rw [hconst]
+  exact TauCeti.mextDeriv_const (_root_.Prod.realPlaneDx (0, 0))
 
 /-- The manifold exterior derivative of `dy` vanishes. -/
 @[simp]
@@ -44,10 +46,12 @@ theorem mextDeriv_realPlaneDy :
         ((fun p ↦ _root_.Prod.realPlaneDy p) : TauCeti.RoughForm (𝓘(ℝ, ℝ × ℝ))
           (ℝ × ℝ) ℝ 1) =
       (0 : TauCeti.RoughForm (𝓘(ℝ, ℝ × ℝ)) (ℝ × ℝ) ℝ 2) := by
-  funext p
-  have h := TauCeti.mextDeriv_eq_extDeriv
-    ((fun p ↦ _root_.Prod.realPlaneDy p) : TauCeti.RoughForm (𝓘(ℝ, ℝ × ℝ))
-      (ℝ × ℝ) ℝ 1) p
-  exact h.trans (_root_.Prod.extDeriv_realPlaneDy p)
+  have hconst : (fun p ↦ _root_.Prod.realPlaneDy p) =
+      (fun _ ↦ _root_.Prod.realPlaneDy (0, 0)) := by
+    funext p
+    ext v
+    simp
+  rw [hconst]
+  exact TauCeti.mextDeriv_const (_root_.Prod.realPlaneDy (0, 0))
 
 end Prod
