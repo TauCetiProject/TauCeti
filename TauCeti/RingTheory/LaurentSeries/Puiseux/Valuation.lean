@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Order.Filter.AtTopBot.Archimedean
-public import Mathlib.RingTheory.HahnSeries.PowerSeries
 public import Mathlib.Topology.Algebra.InfiniteSum.Group
 public import Mathlib.Topology.Algebra.Valued.ValuationTopology
 public import TauCeti.RingTheory.HahnSeries.Valuation
@@ -31,15 +30,13 @@ Unlike each level, the Puiseux field is not complete. The partial sums of
 `∑ j, t ^ ((j + 1) + 1 / (j + 2))` form a Cauchy sequence, since the orders of the terms tend to
 infinity. A limit would have every monomial of this series in its support, by comparing
 coefficients, but the denominators `j + 2` of these exponents are unbounded, so no Puiseux series
-has them all in its support. The same series, as a rational Hahn series, shows that the Puiseux
-field is a proper subfield of `HahnSeries ℚ K`.
+has them all in its support.
 
 ## Main definitions
 
 * `TauCeti.puiseuxField.addVal K`: the additive valuation `ord` on the Puiseux field.
 * `TauCeti.puiseuxField.valuation K`: the multiplicative valuation `exp (-ord)`, which defines the
   `Valued` instance on `puiseuxField K`.
-* `TauCeti.puiseuxField.single K q a`: the monomial `a t ^ q` as a Puiseux series.
 
 ## Main results
 
@@ -54,7 +51,6 @@ field is a proper subfield of `HahnSeries ℚ K`.
 * `TauCeti.puiseuxField.not_tendsto_sum_single`: such partial sums have no limit when the
   denominators of the exponents are unbounded.
 * `TauCeti.puiseuxField.not_completeSpace`: the Puiseux field is not complete.
-* `TauCeti.puiseuxField_lt_top`: the Puiseux field is a proper subfield of `HahnSeries ℚ K`.
 -/
 
 public section
@@ -83,10 +79,6 @@ noncomputable def valuation : Valuation (puiseuxField K) ℚᵐ⁰ :=
 noncomputable instance : Valued (puiseuxField K) ℚᵐ⁰ :=
   Valued.mk' (valuation K)
 
-/-- The monomial `a t ^ q` as a Puiseux series. -/
-noncomputable def single (q : ℚ) (a : K) : puiseuxField K :=
-  ⟨HahnSeries.single q a, single_mem_puiseuxField q a⟩
-
 variable {K}
 
 /-- The additive valuation of a Puiseux series is its order as a rational Hahn series. -/
@@ -104,16 +96,6 @@ theorem valuation_apply (x : puiseuxField K) :
 @[simp]
 theorem v_eq_valuation : (Valued.v : Valuation (puiseuxField K) ℚᵐ⁰) = valuation K :=
   (rfl)
-
-/-- As a Hahn series, the monomial `single K q a` is `HahnSeries.single q a`. -/
-@[simp]
-theorem coe_single (q : ℚ) (a : K) : (single K q a : HahnSeries ℚ K) = HahnSeries.single q a :=
-  (rfl)
-
-/-- The monomial `a t ^ q` vanishes exactly when `a = 0`. -/
-@[simp]
-theorem single_eq_zero_iff {q : ℚ} {a : K} : single K q a = 0 ↔ a = 0 := by
-  rw [← Subtype.coe_inj, coe_single, ZeroMemClass.coe_zero, HahnSeries.single_eq_zero_iff]
 
 /-- The valuation of `x` is below `exp (-q)` exactly when the order of `x` exceeds `q`. -/
 theorem valuation_lt_exp_neg_iff (q : ℚ) {x : puiseuxField K} :
@@ -256,27 +238,6 @@ theorem not_tendsto_sum_single {e : ℕ → ℚ} (he : Function.Injective e)
   obtain ⟨j, hj⟩ := hden n
   exact hj (hn (e j) (by rw [mem_support, hcoeff j]; exact hc j))
 
-/-- The exponents `(j + 1) + 1 / (j + 2)` of the series `∑ j, t ^ ((j + 1) + 1 / (j + 2))`. -/
-private def unboundedDenExponent (j : ℕ) : ℚ := (j + 1 : ℕ) + 1 / (j + 2 : ℕ)
-
-private theorem den_unboundedDenExponent (j : ℕ) : (unboundedDenExponent j).den = j + 2 := by
-  rw [unboundedDenExponent, Rat.natCast_add_den, one_div, Rat.inv_natCast_den_of_pos (by omega)]
-
-private theorem strictMono_unboundedDenExponent : StrictMono unboundedDenExponent := by
-  refine strictMono_nat_of_lt_succ fun j ↦ ?_
-  simp only [unboundedDenExponent]
-  push_cast
-  have h₁ : (1 : ℚ) / (j + 2) ≤ 1 := by
-    rw [div_le_one (by positivity)]
-    linarith [(j.cast_nonneg : (0 : ℚ) ≤ j)]
-  have h₂ : (0 : ℚ) < 1 / (j + 1 + 2) := by positivity
-  linarith
-
-private theorem not_den_dvd_unboundedDenExponent (n : ℕ+) :
-    ¬ (unboundedDenExponent n).den ∣ n := by
-  rw [den_unboundedDenExponent]
-  exact fun h ↦ absurd (Nat.le_of_dvd n.pos h) (by omega)
-
 private theorem tendsto_unboundedDenExponent : Tendsto unboundedDenExponent atTop atTop :=
   tendsto_atTop_mono (fun j ↦ by
     simp only [unboundedDenExponent]
@@ -295,22 +256,5 @@ theorem not_completeSpace : ¬ CompleteSpace (puiseuxField K) := by
     (fun n ↦ ⟨n, not_den_dvd_unboundedDenExponent n⟩) (fun _ ↦ one_ne_zero) x hx
 
 end puiseuxField
-
-variable (K : Type*) [Field K]
-
-/-- **The Puiseux field is a proper subfield of `HahnSeries ℚ K`**: the rational Hahn series
-`∑ j, t ^ ((j + 1) + 1 / (j + 2))` has exponents of unbounded denominator. -/
-theorem puiseuxField_lt_top : puiseuxField K < ⊤ := by
-  refine lt_top_iff_ne_top.mpr fun h ↦ ?_
-  let x : HahnSeries ℚ K := embDomain
-    (OrderEmbedding.ofStrictMono _ puiseuxField.strictMono_unboundedDenExponent)
-    (toPowerSeries.symm (PowerSeries.mk fun _ ↦ 1))
-  obtain ⟨n, hn⟩ := mem_puiseuxField_iff_exists_den_dvd.mp (h ▸ IntermediateField.mem_top : x ∈ _)
-  refine puiseuxField.not_den_dvd_unboundedDenExponent n (hn _ ?_)
-  rw [mem_support]
-  have hcoeff : x.coeff (puiseuxField.unboundedDenExponent n) = 1 := by
-    rw [← OrderEmbedding.coe_ofStrictMono puiseuxField.strictMono_unboundedDenExponent,
-      embDomain_coeff, coeff_toPowerSeries_symm, PowerSeries.coeff_mk]
-  exact hcoeff ▸ one_ne_zero
 
 end TauCeti
