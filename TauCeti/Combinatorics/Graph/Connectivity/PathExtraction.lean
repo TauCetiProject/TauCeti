@@ -82,11 +82,6 @@ def dropUntil {x y : α} : ∀ (p : G.Walk x y) (a : α), a ∈ p.support → G.
             simpa only [support_cons, List.mem_cons] using ha
           exact ha'.resolve_left fun hax => hxa hax.symm
 
-@[simp]
-theorem takeUntil_nil (ha : x ∈ (nil : G.Walk x x).support) :
-    (nil : G.Walk x x).takeUntil x ha = .nil :=
-  (rfl)
-
 theorem takeUntil_cons (e : β) (h : G.IsLink e x y) (p : G.Walk y z)
     (ha : a ∈ p.support) (hxa : x ≠ a) :
     (cons e h p).takeUntil a (by simp [ha]) = cons e h (p.takeUntil a ha) := by
