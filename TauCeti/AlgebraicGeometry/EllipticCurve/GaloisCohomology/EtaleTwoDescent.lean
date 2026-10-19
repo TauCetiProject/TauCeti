@@ -11,7 +11,6 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.LocalCondition
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.XSubT
 public import TauCeti.RingTheory.AdjoinRoot.Factors
 import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.EmbeddingIndependence
-import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Tower
 import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Extension
 
 /-!
@@ -123,16 +122,6 @@ private theorem nonsingular_baseChange_of_aeval_eq_zero {M : Type*} [Field M] [A
   (W.baseChange M).toAffine.nonsingular_of_eval_f_eq_zero <| by
     rw [W.toAffine.baseChange_f, eval_map_algebraMap, hx]
 
-omit [DecidableEq K] [W.IsElliptic] in
-/-- In characteristic-`≠ 2` normal form, a point `(x, 0)` is killed by two. -/
-@[simp]
-theorem evalEval_polynomialY_baseChange {M : Type*} [Field M] [Algebra K M] (x : M) :
-    (W.baseChange M).toAffine.polynomialY.evalEval x 0 = 0 := by
-  let : (W.baseChange M).toAffine.IsCharNeTwoNF := W.toAffine.isCharNeTwoNF_map (algebraMap K M)
-  rw [WeierstrassCurve.Affine.evalEval_polynomialY,
-    WeierstrassCurve.a₁_of_isCharNeTwoNF, WeierstrassCurve.a₃_of_isCharNeTwoNF]
-  ring
-
 omit [DecidableEq K] in
 /-- The universal root of a factor of the `2`-division cubic is a nonsingular point of the
 base-changed elliptic curve. -/
@@ -219,7 +208,8 @@ private theorem explicitFactor_eq_twoDescentUnit (p : W.toAffine.f.Factors)
     AdjoinRoot.modPowEquivPiFactors W.toAffine.f_ne_zero W.toAffine.squarefree_f 2
         (W.toAffine.μ₀ P) p =
       QuotientGroup.mk ((W.baseChange (𝕃 p)).twoDescentUnit
-        (factorRoot_nonsingular W p) (evalEval_polynomialY_baseChange W (θ p))
+        (factorRoot_nonsingular W p)
+        (WeierstrassCurve.Affine.evalEval_polynomialY_zero_eq_zero_of_isCharNeTwoNF _ _)
         (W.toAffine.pointMap (𝕃 p) P)) := by
   match P with
   | 0 =>
@@ -254,7 +244,8 @@ theorem explicitFactor_μ₀_eq_twoDescentUnit (p : W.toAffine.f.Factors)
     explicitFactor W p (W.toAffine.μ₀ P) =
       powerClassHom (𝕃 p)ˣ 2
         ((W.baseChange (𝕃 p)).twoDescentUnit
-          (factorRoot_nonsingular W p) (evalEval_polynomialY_baseChange W (θ p))
+          (factorRoot_nonsingular W p)
+          (WeierstrassCurve.Affine.evalEval_polynomialY_zero_eq_zero_of_isCharNeTwoNF _ _)
           (W.toAffine.pointMap (𝕃 p) P)) := by
   rw [explicitFactor_apply, explicitFactor_eq_twoDescentUnit, powerClassHom_apply,
     QuotientGroup.quotientMulEquivOfEq_mk]
@@ -265,7 +256,8 @@ def factorTorsionCharacter (p : W.toAffine.f.Factors) (h2 : IsUnit ((2 : ℕ) : 
     (W.baseChange (𝕃 p)).TorsionCoeff 2 →+[AbsoluteGaloisGroup (𝕃 p)]
       KummerCoeff (𝕃 p) 2 :=
   (W.baseChange (𝕃 p)).twoTorsionCharacter
-    (factorRoot_nonsingular W p) (evalEval_polynomialY_baseChange W (θ p))
+    (factorRoot_nonsingular W p)
+    (WeierstrassCurve.Affine.evalEval_polynomialY_zero_eq_zero_of_isCharNeTwoNF _ _)
     (by simpa only [map_natCast] using h2.map (ι p))
 
 omit [DecidableEq K] in
@@ -274,7 +266,8 @@ theorem factorTorsionCharacter_def (p : W.toAffine.f.Factors) (h2 : IsUnit ((2 :
     (h2p : IsUnit ((2 : ℕ) : 𝕃 p)) :
     factorTorsionCharacter W p h2 =
       (W.baseChange (𝕃 p)).twoTorsionCharacter
-        (factorRoot_nonsingular W p) (evalEval_polynomialY_baseChange W (θ p)) h2p :=
+        (factorRoot_nonsingular W p)
+        (WeierstrassCurve.Affine.evalEval_polynomialY_zero_eq_zero_of_isCharNeTwoNF _ _) h2p :=
   (rfl)
 
 /-- Restriction to a factor field followed by the Weil-pairing character of its universal root. -/
@@ -294,7 +287,8 @@ noncomputable def rootwiseKummerClass (p : W.toAffine.f.Factors)
   Multiplicative.toAdd
     (kummerMap (𝕃 p) 2 (by simpa only [map_natCast] using h2.map (ι p))
       ((W.baseChange (𝕃 p)).twoDescentUnit
-        (factorRoot_nonsingular W p) (evalEval_polynomialY_baseChange W (θ p))
+        (factorRoot_nonsingular W p)
+        (WeierstrassCurve.Affine.evalEval_polynomialY_zero_eq_zero_of_isCharNeTwoNF _ _)
         (W.toAffine.pointMap (𝕃 p) P)))
 
 omit [DecidableEq K] in
@@ -305,7 +299,8 @@ theorem rootwiseKummerClass_def (p : W.toAffine.f.Factors) (h2 : IsUnit ((2 : �
       Multiplicative.toAdd
         (kummerMap (𝕃 p) 2 h2p
           ((W.baseChange (𝕃 p)).twoDescentUnit
-            (factorRoot_nonsingular W p) (evalEval_polynomialY_baseChange W (θ p))
+            (factorRoot_nonsingular W p)
+            (WeierstrassCurve.Affine.evalEval_polynomialY_zero_eq_zero_of_isCharNeTwoNF _ _)
             (W.toAffine.pointMap (𝕃 p) P))) :=
   (rfl)
 
@@ -334,7 +329,8 @@ theorem factorCohomologicalMap_kummerMap (p : W.toAffine.f.Factors)
   rw [factorCohomologicalMap_apply, W.torsionRes_kummerMap τ h2 P]
   simpa only [factorTorsionCharacter_def W p h2 h2p, rootwiseKummerClass_def W p h2 h2p] using
     (W.baseChange (𝕃 p)).explicitCoeff1_twoTorsionCharacter_kummerMap
-      (factorRoot_nonsingular W p) (evalEval_polynomialY_baseChange W (θ p)) h2p
+      (factorRoot_nonsingular W p)
+      (WeierstrassCurve.Affine.evalEval_polynomialY_zero_eq_zero_of_isCharNeTwoNF _ _) h2p
       (W.toAffine.pointMap (𝕃 p) P)
 
 omit [DecidableEq K] in
@@ -668,95 +664,10 @@ private theorem twoTorsionCharacter_congr {M : Type*} [Field M] [DecidableEq M]
   subst he
   rfl
 
-omit [DecidableEq K] [W.IsElliptic] [W.toAffine.IsCharNeTwoNF] in
-private theorem explicitCoeff1_twoTorsionCharacter_cast {M : Type*} [Field M] [DecidableEq M]
-    {V V' : WeierstrassCurve M} (h : V = V') [V.IsElliptic] [V'.IsElliptic] {e : M}
-    (hT : V.toAffine.Nonsingular e 0) (hψ : V.toAffine.polynomialY.evalEval e 0 = 0)
-    (hT' : V'.toAffine.Nonsingular e 0) (hψ' : V'.toAffine.polynomialY.evalEval e 0 = 0)
-    (h2 : IsUnit ((2 : ℕ) : M)) (x : H1 (AbsoluteGaloisGroup M) (V.TorsionCoeff 2)) :
-    explicitCoeff1 _ _ (V'.twoTorsionCharacter hT' hψ' h2) continuous_of_discreteTopology
-        (explicitCoeff1Equiv _ _
-          (AddEquiv.cast (M := fun V : WeierstrassCurve M ↦ V.TorsionCoeff 2) h)
-          continuous_of_discreteTopology continuous_of_discreteTopology
-          (WeierstrassCurve.cast_torsionCoeff_smul h) x) =
-      explicitCoeff1 _ _ (V.twoTorsionCharacter hT hψ h2) continuous_of_discreteTopology x := by
-  subst h
-  -- after `subst`, the transport is the identity on cocycles: `AddEquiv.cast rfl` is the identity
-  -- by definition, which is what the final `rfl` uses
-  induction x using QuotientAddGroup.induction_on with
-  | _ z =>
-    rw [explicitCoeff1Equiv_mk]
-    exact congrArg (explicitCoeff1 _ _ _ _) (congrArg _ (Subtype.ext (funext fun g ↦
-      (cocyclesMap1_apply _ _ _ _ _ _ _ _ z g).trans rfl)))
-
-/- Restriction along a tower `K → F → M` followed by the transport of `E[2]` from `(W⁄F)⁄M` to
-`W⁄M` carries the universal-root character at `(e, 0)` to the character at the same point of
-`W⁄M`. -/
-omit [DecidableEq K] [W.toAffine.IsCharNeTwoNF] in
-private theorem explicitCoeff1_twoTorsionCharacter_torsionRes_torsionRes
-    {F : Type*} [Field F] [Algebra K F]
-    {M : Type*} [Field M] [Algebra K M] [Algebra F M] [IsScalarTower K F M] [DecidableEq M]
-    (τ₁ : SeparableClosure K →ₐ[K] SeparableClosure F)
-    (τ' : SeparableClosure F →ₐ[F] SeparableClosure M)
-    (τ : SeparableClosure K →ₐ[K] SeparableClosure M) {e : M}
-    (hT : ((W.baseChange F).baseChange M).toAffine.Nonsingular e 0)
-    (hψ : ((W.baseChange F).baseChange M).toAffine.polynomialY.evalEval e 0 = 0)
-    (hT' : (W.baseChange M).toAffine.Nonsingular e 0)
-    (hψ' : (W.baseChange M).toAffine.polynomialY.evalEval e 0 = 0)
-    (h2M : IsUnit ((2 : ℕ) : M)) (c : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff 2)) :
-    explicitCoeff1 _ _ (((W.baseChange F).baseChange M).twoTorsionCharacter hT hψ h2M)
-        continuous_of_discreteTopology ((W.baseChange F).torsionRes τ' 2 (W.torsionRes τ₁ 2 c)) =
-      explicitCoeff1 _ _ ((W.baseChange M).twoTorsionCharacter hT' hψ' h2M)
-        continuous_of_discreteTopology (W.torsionRes τ 2 c) := by
-  rw [W.torsionRes_torsionRes τ₁ τ' τ]
-  exact explicitCoeff1_twoTorsionCharacter_cast _ hT' hψ' hT hψ h2M _
-
-/- Restriction from `F` to `M` carries the universal-root character at `(e, 0)` over `F` to the
-character at `(e, 0)` over `M`, after restriction from `K`. -/
-omit [DecidableEq K] [W.toAffine.IsCharNeTwoNF] in
-private theorem explicitMap1_explicitCoeff1_twoTorsionCharacter_torsionRes
-    {F : Type*} [Field F] [Algebra K F] [DecidableEq F]
-    {M : Type*} [Field M] [Algebra K M] [Algebra F M] [IsScalarTower K F M] [DecidableEq M]
-    (τ₁ : SeparableClosure K →ₐ[K] SeparableClosure F)
-    (τ' : SeparableClosure F →ₐ[F] SeparableClosure M)
-    (τ : SeparableClosure K →ₐ[K] SeparableClosure M) {e : F}
-    (hT : (W.baseChange F).toAffine.Nonsingular e 0)
-    (hψ : (W.baseChange F).toAffine.polynomialY.evalEval e 0 = 0)
-    (hT' : (W.baseChange M).toAffine.Nonsingular (algebraMap F M e) 0)
-    (hψ' : (W.baseChange M).toAffine.polynomialY.evalEval (algebraMap F M e) 0 = 0)
-    (h2F : IsUnit ((2 : ℕ) : F)) (h2M : IsUnit ((2 : ℕ) : M))
-    (c : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff 2)) :
-    explicitMap1 _ _ _ _ (absoluteGaloisGroupMap τ') (kummerCoeffBaseChange 2 τ')
-        continuous_of_discreteTopology (kummerCoeffBaseChange_smul 2 τ')
-        (explicitCoeff1 _ _ ((W.baseChange F).twoTorsionCharacter hT hψ h2F)
-          continuous_of_discreteTopology (W.torsionRes τ₁ 2 c)) =
-      explicitCoeff1 _ _ ((W.baseChange M).twoTorsionCharacter hT' hψ' h2M)
-        continuous_of_discreteTopology (W.torsionRes τ 2 c) := by
-  have hTM : ((W.baseChange F).baseChange M).toAffine.Nonsingular (algebraMap F M e) 0 := by
-    have := ((W.baseChange F).toAffine.map_nonsingular (algebraMap F M).injective e 0).mpr hT
-    rwa [map_zero] at this
-  have hψM :
-      ((W.baseChange F).baseChange M).toAffine.polynomialY.evalEval (algebraMap F M e) 0 = 0 :=
-    (show W.baseChange M = (W.baseChange F).baseChange M from
-      (W.map_baseChange (IsScalarTower.toAlgHom K F M)).symm) ▸ hψ'
-  -- the point `(e, 0)` of `W⁄F` goes to the point `(e, 0)` of `(W⁄F)⁄M`
-  have hTT : (⟨.some (algebraMap F M e) 0 hTM, by
-        rw [AddSubgroup.torsionBy.nsmul_iff, two_nsmul,
-          (WeierstrassCurve.Affine.Point.some_add_self_eq_zero_iff hTM).2 hψM]⟩ :
-        AddSubgroup.torsionBy ((W.baseChange F).baseChange M).toAffine.Point (2 : ℕ)).val =
-      (W.baseChange F).toAffine.pointMap M (⟨.some e 0 hT, by
-        rw [AddSubgroup.torsionBy.nsmul_iff, two_nsmul,
-          (WeierstrassCurve.Affine.Point.some_add_self_eq_zero_iff hT).2 hψ]⟩ :
-        AddSubgroup.torsionBy (W.baseChange F).toAffine.Point (2 : ℕ)).val := by
-    simp only [WeierstrassCurve.Affine.pointMap_some, map_zero]
-  rw [WeierstrassCurve.twoTorsionCharacter_eq_weilPairingCoeff,
-    WeierstrassCurve.explicitMap1_explicitCoeff1_weilPairingCoeff (W.baseChange F) 2 h2F τ' hTT,
-    ← WeierstrassCurve.twoTorsionCharacter_eq_weilPairingCoeff _ hTM hψM]
-  exact explicitCoeff1_twoTorsionCharacter_torsionRes_torsionRes W τ₁ τ' τ hTM hψM hT' hψ' h2M c
-
-/- The power-class form of `explicitMap1_explicitCoeff1_twoTorsionCharacter_torsionRes`. It is
-stated over an arbitrary intermediate field `F` so that it can be applied to a factor field
-`K[X] ⧸ (p)` without unfolding the factor field. -/
+/- The power-class form of
+`WeierstrassCurve.explicitMap1_explicitCoeff1_twoTorsionCharacter_torsionRes`. It is stated over
+an arbitrary intermediate field `F` so that it can be applied to a factor field `K[X] ⧸ (p)`
+without unfolding the factor field. -/
 omit [DecidableEq K] [W.toAffine.IsCharNeTwoNF] in
 private theorem kummerIso_powerClassMap_of_kummerIso_eq
     {F : Type*} [Field F] [Algebra K F] [DecidableEq F]
@@ -778,7 +689,7 @@ private theorem kummerIso_powerClassMap_of_kummerIso_eq
   let τ' : SeparableClosure F →ₐ[F] SeparableClosure M := IsSepClosed.lift
   apply Multiplicative.toAdd.injective
   rw [← explicitMap1_kummerIso 2 τ' h2F, hx, toAdd_ofAdd, toAdd_ofAdd,
-    explicitMap1_explicitCoeff1_twoTorsionCharacter_torsionRes W τ₁ τ' τ hT hψ hT' hψ']
+    W.explicitMap1_explicitCoeff1_twoTorsionCharacter_torsionRes τ₁ τ' τ hT hψ hT' hψ']
 
 omit [DecidableEq K] in
 /-- **The cohomological descent map at a root of the `2`-division cubic.** Let `g` embed the
@@ -803,7 +714,8 @@ theorem kummerIso_powerClassMap_explicitFactor_cohomologicalMap
   have : IsScalarTower K (𝕃 p) M := IsScalarTower.of_algebraMap_eq fun x ↦ (g.commutes x).symm
   have h2p : IsUnit ((2 : ℕ) : 𝕃 p) := by simpa only [map_natCast] using h2.map (ι p)
   exact kummerIso_powerClassMap_of_kummerIso_eq W IsSepClosed.lift τ
-    (factorRoot_nonsingular W p) (evalEval_polynomialY_baseChange W (θ p)) _ _ h2p h2M c
+    (factorRoot_nonsingular W p)
+    (WeierstrassCurve.Affine.evalEval_polynomialY_zero_eq_zero_of_isCharNeTwoNF _ _) _ _ h2p h2M c
     (kummerIso_explicitFactor_cohomologicalMap W p IsSepClosed.lift h2 h2p c)
 
 omit [DecidableEq K] in
@@ -870,9 +782,11 @@ theorem cohomologicalMap_torsionRes {L : Type*} [Field L] [Algebra K L]
   let τq : SeparableClosure L →ₐ[L] SeparableClosure (AdjoinRoot (q : L[X])) := IsSepClosed.lift
   let τN : SeparableClosure K →ₐ[K] SeparableClosure (AdjoinRoot (q : L[X])) := IsSepClosed.lift
   have hT := nonsingular_baseChange_of_aeval_eq_zero W hθ
-  have hψ := evalEval_polynomialY_baseChange W (AdjoinRoot.root (q : L[X]))
+  have hψ := WeierstrassCurve.Affine.evalEval_polynomialY_zero_eq_zero_of_isCharNeTwoNF
+    (W.baseChange (AdjoinRoot (q : L[X]))).toAffine (AdjoinRoot.root (q : L[X]))
   have hT0 := factorRoot_nonsingular (W.baseChange L) q
-  have hψ0 := evalEval_polynomialY_baseChange (W.baseChange L) (AdjoinRoot.root (q : L[X]))
+  have hψ0 := WeierstrassCurve.Affine.evalEval_polynomialY_zero_eq_zero_of_isCharNeTwoNF
+    ((W.baseChange L).baseChange (AdjoinRoot (q : L[X]))).toAffine (AdjoinRoot.root (q : L[X]))
   -- the component at `q` of the left side is computed over `L`, from the root of `q`
   have hL : kummerIso (AdjoinRoot (q : L[X])) 2 h2q (explicitFactor (W.baseChange L) q
       (cohomologicalMap (W.baseChange L) h2L (.ofAdd (W.torsionRes τ 2 c)))) =
@@ -888,7 +802,7 @@ theorem cohomologicalMap_torsionRes {L : Type*} [Field L] [Algebra K L]
   -- Both are the restriction to `L[X] ⧸ (q)` paired with `(θ_q, 0)`. Term-mode composition keeps
   -- the elaborator from unfolding the factor fields, which `rw` does at great cost here.
   refine hL.trans ((congrArg Multiplicative.ofAdd ?_).trans hR.symm)
-  exact (explicitCoeff1_twoTorsionCharacter_torsionRes_torsionRes W τ τq τN hT0 hψ0 hT hψ h2q
+  exact (W.explicitCoeff1_twoTorsionCharacter_torsionRes_torsionRes τ τq τN hT0 hψ0 hT hψ h2q
     c).trans (congrArg (fun χ ↦ explicitCoeff1 _ _ χ continuous_of_discreteTopology
       (W.torsionRes τN 2 c)) (twoTorsionCharacter_congr hg.symm hT hψ _ _ h2q))
 

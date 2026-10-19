@@ -24,9 +24,13 @@ image of `x - T` (`TauCeti.TwoDescent.cohomologicalMap_mem_range_μ_iff`). This 
 cohomological and explicit local conditions used to define the two versions of the `2`-Selmer
 group.
 
-The theorem in this file applies this identification after restriction to every chosen extension
-field. It describes the cohomological `2`-Selmer group entirely in terms of the local explicit
-descent images.
+This file proves two descriptions of the cohomological `2`-Selmer group. The first applies this
+identification after restriction to every chosen extension field, describing the Selmer group
+entirely in terms of the local explicit descent images. The second uses that the cohomological
+descent map commutes with change of field (`TauCeti.TwoDescent.cohomologicalMap_torsionRes`) to
+move the restriction past the descent map: a class lies in the Selmer group exactly when its
+global descent image satisfies the explicit local condition `WeierstrassCurve.Affine.localCondition`
+at every chosen extension field.
 
 ## Main results
 
