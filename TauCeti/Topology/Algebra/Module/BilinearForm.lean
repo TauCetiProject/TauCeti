@@ -40,6 +40,8 @@ continuous bilinear forms.
   `ContinuousLinearMap.isInvertible_of_surjective`: in finite dimensions an injective, equivalently
   a surjective, map into the dual is already invertible, the dual having the same dimension as the
   space (`ContinuousLinearMap.dual_finrank_eq`).
+* `ContinuousLinearMap.isInvertible_of_nondegenerate`: in finite dimensions, a map into the dual
+  with nondegenerate bilinear form is invertible.
 * `TauCeti.isInvertible_toContinuousBilinearMap_iff_separatingLeft`:
   contraction with a bilinear form is invertible exactly when it is left-separating in
   finite dimensions, identifying covectors with vectors for local contraction equations.
@@ -87,6 +89,13 @@ theorem _root_.ContinuousLinearMap.isInvertible_of_surjective
   ContinuousLinearMap.isInvertible_of_injective
     ((LinearMap.injective_iff_surjective_of_finrank_eq_finrank (V₂ := E →L[𝕜] 𝕜)
       ContinuousLinearMap.dual_finrank_eq.symm (f := (L : E →ₗ[𝕜] E →L[𝕜] 𝕜))).2 hsurj)
+
+/-- In finite dimensions, a continuous linear map into the dual whose bilinear form is
+nondegenerate is invertible. This is the musical isomorphism of a nondegenerate metric. -/
+theorem _root_.ContinuousLinearMap.isInvertible_of_nondegenerate
+    (hnd : L.toBilinForm.Nondegenerate) : L.IsInvertible :=
+  ContinuousLinearMap.isInvertible_of_injective
+    ((L.separatingLeft_toBilinForm_iff_injective).1 hnd.1)
 
 /-- Contraction with a bilinear form on a finite-dimensional space is an invertible
 continuous linear map to the continuous dual exactly when the form is left-separating. -/
