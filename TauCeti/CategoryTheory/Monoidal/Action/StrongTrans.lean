@@ -38,7 +38,7 @@ The order conventions are those of `MonoidalLeftAction.pseudofunctor`: the compo
 `SingleObj M` is the product `h * g`, which acts by `actionLeft C g ⋙ actionLeft C h`.
 -/
 
-@[expose] public section
+public section
 
 universe w v u
 
@@ -63,12 +63,12 @@ def commActionLeftIso (c : C) : actionLeft D c ⋙ F ≅ F ⋙ actionLeft D' c :
 @[simp]
 lemma commActionLeftIso_hom_app (c : C) (X : D) :
     ((F.commActionLeftIso c).hom.app X : F.obj (c ⊙ₗ X) ⟶ c ⊙ₗ F.obj X) = δₗ F c X :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma commActionLeftIso_inv_app (c : C) (X : D) :
     ((F.commActionLeftIso c).inv.app X : c ⊙ₗ F.obj X ⟶ F.obj (c ⊙ₗ X)) = μₗ F c X :=
-  rfl
+  (rfl)
 
 end Functor
 
@@ -85,7 +85,7 @@ variable (M) (F : C ⥤ D) [F.LeftLinear (Discrete M)]
 transformation `pseudofunctor M C ⟶ pseudofunctor M D`. Its component at the unique object is
 `F`, and its naturality isomorphism at `g` is the `2`-isomorphism of `Cat` given by
 `F.commActionLeftIso ⟨g⟩ : actionLeft C ⟨g⟩ ⋙ F ≅ F ⋙ actionLeft D ⟨g⟩`. -/
-def strongTrans : Pseudofunctor.StrongTrans (pseudofunctor M C) (pseudofunctor M D) where
+@[expose] def strongTrans : Pseudofunctor.StrongTrans (pseudofunctor M C) (pseudofunctor M D) where
   app _ := F.toCatHom
   naturality g := Cat.Hom.isoMk (F.commActionLeftIso (⟨g.as⟩ : Discrete M))
   -- In the three coherence conditions the component `F.toCatHom` has type `Cat.of C ⟶ Cat.of D`
@@ -119,7 +119,7 @@ def strongTrans : Pseudofunctor.StrongTrans (pseudofunctor M C) (pseudofunctor M
 @[simp]
 lemma strongTrans_app (a : LocallyDiscrete (SingleObj M)) :
     (strongTrans M F).app a = F.toCatHom :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma strongTrans_naturality_hom_toNatTrans_app {a b : LocallyDiscrete (SingleObj M)}
@@ -127,7 +127,7 @@ lemma strongTrans_naturality_hom_toNatTrans_app {a b : LocallyDiscrete (SingleOb
     (((strongTrans M F).naturality g).hom.toNatTrans.app X :
       F.obj ((⟨g.as⟩ : Discrete M) ⊙ₗ X) ⟶ (⟨g.as⟩ : Discrete M) ⊙ₗ F.obj X) =
       δₗ F (⟨g.as⟩ : Discrete M) X :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma strongTrans_naturality_inv_toNatTrans_app {a b : LocallyDiscrete (SingleObj M)}
@@ -135,7 +135,7 @@ lemma strongTrans_naturality_inv_toNatTrans_app {a b : LocallyDiscrete (SingleOb
     (((strongTrans M F).naturality g).inv.toNatTrans.app X :
       (⟨g.as⟩ : Discrete M) ⊙ₗ F.obj X ⟶ F.obj ((⟨g.as⟩ : Discrete M) ⊙ₗ X)) =
       μₗ F (⟨g.as⟩ : Discrete M) X :=
-  rfl
+  (rfl)
 
 end strongTrans
 
@@ -145,7 +145,7 @@ variable (η : Pseudofunctor.StrongTrans (pseudofunctor M C) (pseudofunctor M D)
 
 /-- The functor `C ⥤ D` underlying a strong transformation
 `η : pseudofunctor M C ⟶ pseudofunctor M D`: its component at the unique object. -/
-def functorOfStrongTrans : C ⥤ D :=
+@[expose] def functorOfStrongTrans : C ⥤ D :=
   (η.app ⟨SingleObj.star M⟩).toFunctor
 
 /-- The functor underlying a strong transformation `η : pseudofunctor M C ⟶ pseudofunctor M D`
@@ -255,25 +255,29 @@ instance leftLinearFunctorOfStrongTrans : (functorOfStrongTrans η).LeftLinear (
 lemma functorOfStrongTrans_δₗ (c : Discrete M) (X : C) :
     δₗ (functorOfStrongTrans η) c X =
       (η.naturality c).hom.toNatTrans.app X :=
-  rfl
+  (rfl)
 
 lemma functorOfStrongTrans_μₗ (c : Discrete M) (X : C) :
     μₗ (functorOfStrongTrans η) c X =
       (η.naturality c).inv.toNatTrans.app X :=
-  rfl
+  (rfl)
 
 end functorOfStrongTrans
 
 @[simp]
 lemma functorOfStrongTrans_strongTrans (F : C ⥤ D) [F.LeftLinear (Discrete M)] :
     functorOfStrongTrans (strongTrans M F) = F :=
-  rfl
+  (rfl)
+
+lemma leftLinearFunctorOfStrongTrans_strongTrans (F : C ⥤ D) [inst : F.LeftLinear (Discrete M)] :
+    leftLinearFunctorOfStrongTrans (strongTrans M F) = inst :=
+  (rfl)
 
 @[simp]
 lemma strongTrans_functorOfStrongTrans
     (η : Pseudofunctor.StrongTrans (pseudofunctor M C) (pseudofunctor M D)) :
     strongTrans M (functorOfStrongTrans η) = η :=
-  rfl
+  (rfl)
 
 variable (M C D) in
 /-- Equivariant functors are the strong transformations between the pseudofunctors attached to
@@ -281,13 +285,23 @@ the actions: functors `C ⥤ D` equipped with a left-linear structure for the ac
 `Discrete M` correspond to strong transformations `pseudofunctor M C ⟶ pseudofunctor M D`. The
 correspondence keeps the lineators: the naturality isomorphisms of `strongTrans M F` have
 components the lineators of `F`. -/
-@[simps]
 def strongTransEquiv : (Σ F : C ⥤ D, F.LeftLinear (Discrete M)) ≃
     Pseudofunctor.StrongTrans (pseudofunctor M C) (pseudofunctor M D) where
   toFun F := letI := F.2; strongTrans M F.1
   invFun η := ⟨functorOfStrongTrans η, leftLinearFunctorOfStrongTrans η⟩
   left_inv _ := rfl
   right_inv _ := rfl
+
+@[simp]
+lemma strongTransEquiv_apply (F : Σ F : C ⥤ D, F.LeftLinear (Discrete M)) :
+    strongTransEquiv M C D F = letI := F.2; strongTrans M F.1 :=
+  (rfl)
+
+@[simp]
+lemma strongTransEquiv_symm_apply
+    (η : Pseudofunctor.StrongTrans (pseudofunctor M C) (pseudofunctor M D)) :
+    (strongTransEquiv M C D).symm η = ⟨functorOfStrongTrans η, leftLinearFunctorOfStrongTrans η⟩ :=
+  (rfl)
 
 end MonoidalCategory.MonoidalLeftAction
 
