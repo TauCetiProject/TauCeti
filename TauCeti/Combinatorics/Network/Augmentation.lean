@@ -20,11 +20,11 @@ For `0 ≤ q` it is then an ordinary `s`–`t` flow for any nonnegative capaciti
 `q` along the walk.
 
 Applied to the residual arrows of a feasible assignment, this is augmentation. Augmenting an
-ordinary `s`–`t` flow along a residual walk from `s` to `t` that repeats no arrow, by an amount
-between zero and the residual capacities along the walk, gives a flow of value larger by that
-amount. The largest such amount is the *bottleneck* of the walk, its least residual capacity, which
-is positive on an augmenting path, where every residual capacity is positive. Directed paths and
-cycles repeat no arrow (`TauCeti.ArrowWalk.IsPath.nodup_arrows`,
+ordinary `s`–`t` flow between distinct terminals `s ≠ t` along a residual walk that repeats no
+arrow, by an amount between zero and the residual capacities along the walk, gives a flow of value
+larger by that amount. The largest such amount is the *bottleneck* of the walk, its least residual
+capacity, which is positive on an augmenting path, where every residual capacity is positive.
+Directed paths and cycles repeat no arrow (`TauCeti.ArrowWalk.IsPath.nodup_arrows`,
 `TauCeti.ArrowWalk.IsCycle.nodup_arrows`), so all of this applies to them. Along a closed
 residual walk that repeats no arrow, the residual update preserves feasibility for arbitrary lower
 and upper bounds and preserves every excess: this is cycle augmentation of bounded circulations.
@@ -44,7 +44,8 @@ and upper bounds and preserves every excess: this is cycle augmentation of bound
 * `TauCeti.walkAssignment_mem_Icc`: a walk repeating no arrow, weighted by `q`, lies between zero
   and any nonnegative capacities that are at least `q` along the walk.
 * `TauCeti.Flow.val_augmentWalk` and `TauCeti.Flow.val_augmentBottleneck`: augmentation along a
-  residual `s`–`t` walk increases the value by the augmenting amount.
+  residual `s`–`t` walk between distinct terminals `s ≠ t` increases the value by the augmenting
+  amount.
 * `TauCeti.Flow.val_lt_val_augmentBottleneck`: augmentation along an augmenting `s`–`t` path by its
   bottleneck strictly increases the value.
 * `TauCeti.residualUpdate_walkAssignment_mem_Icc` and
@@ -98,16 +99,19 @@ theorem walkAssignment_zero {s t : V} (p : ArrowWalk Q s t) :
   simp [walkAssignment_apply]
 
 /-- Extending a walk by an arrow adds the weight on that arrow. -/
+@[simp]
 theorem walkAssignment_cons {s t x : V} (p : ArrowWalk Q s t) (e : Q t x) (q : K) :
     walkAssignment (p.cons e) q = walkAssignment p q + Assignment.single e q := by
   classical
   funext a b e'
+  -- `count_singleton` and `Assignment.single_apply` compare the two arrows in opposite orders.
   simp only [walkAssignment_apply, ArrowWalk.arrows_cons, List.count_append, add_nsmul,
     Pi.add_apply, Assignment.single_apply, List.count_singleton, beq_iff_eq,
     eq_comm (a := (⟨t, x, e⟩ : Σ a b, Q a b))]
   split_ifs <;> simp only [one_nsmul, zero_nsmul, add_zero]
 
 /-- The assignment of a concatenation is the sum of the assignments of its pieces. -/
+@[simp]
 theorem walkAssignment_comp {s t x : V} (p : ArrowWalk Q s t) (p' : ArrowWalk Q t x) (q : K) :
     walkAssignment (p.comp p') q = walkAssignment p q + walkAssignment p' q := by
   classical
@@ -300,6 +304,7 @@ noncomputable def augmentBottleneck (f : Flow cap s t) (p : ArrowWalk (ResidualH
 variable {f : Flow cap s t} {p : ArrowWalk (ResidualHom Q) s t} {hp : p.arrows.Nodup}
   {hne : p.arrows ≠ []}
 
+@[simp]
 theorem augmentBottleneck_toFun :
     (f.augmentBottleneck p hp hne).toFun =
       residualUpdate f.toFun

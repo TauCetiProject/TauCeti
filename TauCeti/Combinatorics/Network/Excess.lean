@@ -155,6 +155,32 @@ theorem arrowSum_mono [PartialOrder K] [IsOrderedAddMonoid K] {f g : Assignment 
     (S T : Finset V) : arrowSum f S T ≤ arrowSum g S T :=
   sum_le_sum fun v _ ↦ sum_le_sum fun w _ ↦ sum_le_sum fun e _ ↦ h v w e
 
+/-- The total value entering `v` for a single arrow from `x` to `y` is `q` exactly when
+`v = y`. -/
+theorem sum_sum_single_in [Fintype V] [DecidableEq V] {x y : V} (e : Q x y) (q : K) (v : V) :
+    ∑ w, ∑ e' : Q w v, Assignment.single e q e' = if v = y then q else 0 := by
+  split_ifs with hv
+  · subst hv
+    rw [Fintype.sum_eq_single x fun w hw ↦ sum_eq_zero fun e' _ ↦
+        Assignment.single_apply_of_ne e q fun h ↦ hw (congrArg Sigma.fst h),
+      Fintype.sum_eq_single e fun e' he' ↦ Assignment.single_apply_of_ne e q (by simpa using he'),
+      Assignment.single_apply_self]
+  · exact sum_eq_zero fun w _ ↦ sum_eq_zero fun e' _ ↦
+      Assignment.single_apply_of_ne e q fun h ↦ hv (congrArg (fun a ↦ a.2.1) h)
+
+/-- The total value leaving `v` for a single arrow from `x` to `y` is `q` exactly when
+`v = x`. -/
+theorem sum_sum_single_out [Fintype V] [DecidableEq V] {x y : V} (e : Q x y) (q : K) (v : V) :
+    ∑ w, ∑ e' : Q v w, Assignment.single e q e' = if v = x then q else 0 := by
+  split_ifs with hv
+  · subst hv
+    rw [Fintype.sum_eq_single y fun w hw ↦ sum_eq_zero fun e' _ ↦
+        Assignment.single_apply_of_ne e q fun h ↦ hw (congrArg (fun a ↦ a.2.1) h),
+      Fintype.sum_eq_single e fun e' he' ↦ Assignment.single_apply_of_ne e q (by simpa using he'),
+      Assignment.single_apply_self]
+  · exact sum_eq_zero fun w _ ↦ sum_eq_zero fun e' _ ↦
+      Assignment.single_apply_of_ne e q fun h ↦ hv (congrArg Sigma.fst h)
+
 end AddCommMonoid
 
 section AddCommGroup
@@ -284,27 +310,10 @@ theorem excessAt_comp_equiv {W : Type u'} [Fintype W] {R : W → W → Type v'}
 
 /-- **Excess of a single arrow.** The assignment with value `q` on an arrow from `x` to `y` and
 zero elsewhere has excess `q` at `y` and `-q` at `x`; for a loop the two cancel. -/
+@[simp]
 theorem excessAt_single [DecidableEq V] {x y : V} (e : Q x y) (q : K) (v : V) :
     excessAt (Assignment.single e q) v = (if v = y then q else 0) - (if v = x then q else 0) := by
-  have hin : ∑ w, ∑ e' : Q w v, Assignment.single e q e' = if v = y then q else 0 := by
-    split_ifs with hv
-    · subst hv
-      rw [Fintype.sum_eq_single x fun w hw ↦ sum_eq_zero fun e' _ ↦
-          Assignment.single_apply_of_ne e q fun h ↦ hw (congrArg Sigma.fst h),
-        Fintype.sum_eq_single e fun e' he' ↦ Assignment.single_apply_of_ne e q (by simpa using he'),
-        Assignment.single_apply_self]
-    · exact sum_eq_zero fun w _ ↦ sum_eq_zero fun e' _ ↦
-        Assignment.single_apply_of_ne e q fun h ↦ hv (congrArg (fun a ↦ a.2.1) h)
-  have hout : ∑ w, ∑ e' : Q v w, Assignment.single e q e' = if v = x then q else 0 := by
-    split_ifs with hv
-    · subst hv
-      rw [Fintype.sum_eq_single y fun w hw ↦ sum_eq_zero fun e' _ ↦
-          Assignment.single_apply_of_ne e q fun h ↦ hw (congrArg (fun a ↦ a.2.1) h),
-        Fintype.sum_eq_single e fun e' he' ↦ Assignment.single_apply_of_ne e q (by simpa using he'),
-        Assignment.single_apply_self]
-    · exact sum_eq_zero fun w _ ↦ sum_eq_zero fun e' _ ↦
-        Assignment.single_apply_of_ne e q fun h ↦ hv (congrArg Sigma.fst h)
-  rw [excessAt_def, hin, hout]
+  rw [excessAt_def, sum_sum_single_in, sum_sum_single_out]
 
 /-! ### Circulations and prescribed excess -/
 
