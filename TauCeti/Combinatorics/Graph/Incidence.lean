@@ -136,6 +136,7 @@ theorem incidenceSet_banana_left (x y : α) (E : Set β) :
   simp
 
 /-- Every edge identity of a bouquet is incident to its unique vertex. -/
+@[simp]
 theorem incidenceSet_bouquet (x : α) (E : Set β) :
     (Graph.bouquet x E).incidenceSet x = E := by
   ext e
@@ -164,6 +165,7 @@ theorem incidenceCount_banana_left (x y : α) (E : Set β) :
 
 /-- Every edge identity of a bouquet is a loop at its unique vertex, so its incidence count is the
 number of actual edges. -/
+@[simp]
 theorem incidenceCount_bouquet (x : α) (E : Set β) :
     (Graph.bouquet x E).incidenceCount x = E.ncard := by
   simp [incidenceCount]
