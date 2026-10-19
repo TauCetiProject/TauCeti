@@ -310,9 +310,9 @@ variable {n X x} {Z : TopCat.{u}}
 
 /-- At every step of the tower the cells are attached along based maps: the composite of an
 attaching map at the base point `y` with a based map `g : Y ⟶ Z` is null-homotopic when the
-homotopy groups of `Z` vanish from dimension `n` on. -/
+homotopy group of `Z` in the dimension of the attaching spheres vanishes. -/
 private lemma nullhomotopic_killingAttachingMaps_comp {Y : TopCat.{u}} {y : Y} {m : ℕ}
-    (g : Y ⟶ Z) (hZ : ∀ k, n ≤ k → Subsingleton (π_ k Z (g y)))
+    (g : Y ⟶ Z) (hZ : ∀ k, m = k + 1 → n ≤ k → Subsingleton (π_ k Z (g y)))
     (i : (killingAttachingMaps n Y y m).1) :
     ((killingAttachingMaps n Y y m).2 i ≫ g).hom.Nullhomotopic :=
   -- At step `0` no cell is attached, so only the successor case remains.
@@ -322,7 +322,7 @@ private lemma nullhomotopic_killingAttachingMaps_comp {Y : TopCat.{u}} {y : Y} {
     -- The image of the attaching loop is trivial in `πₖ(Z, g y)`, so its sphere map is
     -- null-homotopic, and the attaching map is that sphere map read on `TopCat.diskBoundary`.
     have h := (HomotopyGroup.mk_eq_one_iff_nullhomotopic_toSphere
-      (GenLoop.map g.hom rfl q.1)).1 ((hZ k q.2).elim _ _)
+      (GenLoop.map g.hom rfl q.1)).1 ((hZ k rfl q.2).elim _ _)
     rw [GenLoop.toSphere_map] at h
     have he : (GenLoop.diskBoundaryMap q.1 ≫ g).hom =
         (g.hom.comp (GenLoop.toSphere q.1)).comp ⟨ULift.down, continuous_uliftDown⟩ := by
@@ -330,10 +330,11 @@ private lemma nullhomotopic_killingAttachingMaps_comp {Y : TopCat.{u}} {y : Y} {
       exact congrArg g.hom (GenLoop.diskBoundaryMap_apply q.1 s)
     exact he ▸ h.comp_left _
 
-/-- **A based map extends over one step of the tower.** If the homotopy groups of `Z` vanish from
-dimension `n` on, every map `g` out of stage `m` extends over stage `m + 1`. -/
+/-- **A based map extends over one step of the tower.** If the homotopy group of `Z` vanishes in
+the dimension of the spheres attached at step `m`, every map `g` out of stage `m` extends over
+stage `m + 1`. -/
 theorem exists_killingStageIncl_comp_eq {m : ℕ} (g : (killingStage n X x m).1 ⟶ Z)
-    (hZ : ∀ k, n ≤ k → Subsingleton (π_ k Z (g (killingStage n X x m).2))) :
+    (hZ : ∀ k, m = k + 1 → n ≤ k → Subsingleton (π_ k Z (g (killingStage n X x m).2))) :
     ∃ g' : (killingStage n X x (m + 1)).1 ⟶ Z, killingStageIncl n X x m ≫ g' = g := by
   choose F hF using fun i ↦ (TopCat.nullhomotopic_iff_exists_diskBoundaryInclusion_comp_eq _).1
     (nullhomotopic_killingAttachingMaps_comp (m := m) g hZ i)
@@ -348,7 +349,7 @@ private def killingStageExtension (f : X ⟶ Z) (hZ : ∀ k, n ≤ k → Subsing
   | m + 1 =>
     have hm := (killingStageExtension f hZ m).2
     have h := exists_killingStageIncl_comp_eq (killingStageExtension f hZ m).1
-      (by rw [hm]; exact hZ)
+      (by rw [hm]; exact fun k _ ↦ hZ k)
     ⟨h.choose, by
       rw [← killingStageIncl_basepoint, ← ConcreteCategory.comp_apply, h.choose_spec, hm]⟩
 
@@ -358,7 +359,7 @@ private lemma killingStageIncl_comp_killingStageExtension (f : X ⟶ Z)
     killingStageIncl n X x m ≫ (killingStageExtension f hZ (m + 1)).1 =
       (killingStageExtension f hZ m).1 :=
   (exists_killingStageIncl_comp_eq (killingStageExtension f hZ m).1
-    (by rw [(killingStageExtension f hZ m).2]; exact hZ)).choose_spec
+    (by rw [(killingStageExtension f hZ m).2]; exact fun k _ ↦ hZ k)).choose_spec
 
 /-- **Maps into a space without homotopy from dimension `n` on extend over
 `TauCeti.killHomotopyGroups n X x`.** If the homotopy groups `πₖ(Z, f x)` vanish for every
