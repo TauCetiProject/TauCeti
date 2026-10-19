@@ -197,6 +197,7 @@ def run_pr(repo: str, pr: int, apply: bool, *, api: GitHub, snapshot=None) -> in
                 raise
     if prev is not None:
         if prev["body"] == body:
+            api.skip_write("structure-comment")
             print(f"structure-nudge: PR #{pr}: comment unchanged")
             return 0
         api.request("PATCH", f"repos/{repo}/issues/comments/{prev['id']}", {"body": body})

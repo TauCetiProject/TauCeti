@@ -835,10 +835,11 @@ private theorem SplitNodal.exists_point [HenselianLocalRing v.valuationSubring]
   have hev : (X - C e * (1 - X) ^ 3 - C c : O[X]).eval c = -(e * (1 - c) ^ 3) := by
     simp only [eval_sub, eval_X, eval_mul, eval_C, eval_pow, eval_one]
     ring
-  obtain ⟨t, ht, -⟩ := TauCeti.HenselianLocalRing.exists_isRoot_sub_mem_maximalIdeal
+  obtain ⟨t, ht, -⟩ := Polynomial.exists_isRoot_sub_mem (J := maximalIdeal O)
     (X - C e * (1 - X) ^ 3 - C c) (a₀ := c)
     (by rw [hev]; exact neg_mem ((maximalIdeal O).mul_mem_right _ he))
     (by
+      apply IsUnit.map (Ideal.Quotient.mk (maximalIdeal O))
       rw [← notMem_maximalIdeal]
       intro hm
       have h1 : (1 : O) ∈ maximalIdeal O := by

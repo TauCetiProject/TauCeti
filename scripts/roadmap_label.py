@@ -296,6 +296,7 @@ def apply_label(api: GitHub, repo: str, pr: int, target: str, areas: set[str], c
     have = {item["name"] for item in current}
     stale = sorted(n for n in have if n.startswith("roadmap/") and n != target)
     if target in have and not stale:
+        api.skip_write("roadmap-label")
         return  # No label creation, presentation update, or mutation for an unchanged PR.
     if target not in have:
         color, desc = _label_meta(target, areas)
@@ -325,12 +326,21 @@ MAX_RETRIES = 5
 
 @functools.lru_cache(maxsize=1)
 def policy_key():
+    """Hash the three classifier/client/nudge source files, cached for this process.
+
+    Any source-byte change invalidates saved successes and retry budgets.
+    """
     root = pathlib.Path(__file__).parent
     return hashlib.sha256(b"".join((root / name).read_bytes() for name in
                           ("roadmap_label.py", "github_api.py", "structure_nudge.py"))).hexdigest()
 
 
 def input_key(info, areas):
+    """Hash head SHA, base branch name, body, state, sorted areas, and policy.
+
+    Labels, comments, title, and the moving base SHA do not affect this identity;
+    ``RecoveryState.select`` checks roadmap-label drift separately.
+    """
     # Comments/status labels and a moving main tip do not change a PR's attribution inputs.
     values = {"head": info["head"]["sha"], "base": info["base"]["ref"],
               "body": info.get("body") or "", "state": info["state"], "areas": sorted(areas), "policy": policy_key()}
@@ -341,6 +351,10 @@ class RecoveryState:
     """Persist successful input hashes and bounded retries without storing PR bodies."""
 
     def __init__(self, path=None, *, reset=False):
+        """Load and validate an existing state file, or start empty if absent/reset.
+
+        Invalid saved records raise; ``reset`` bypasses loading the file entirely.
+        """
         self.records, self.inputs, self.seen = {}, {}, set()
         self.listed = False
         if path and not reset and pathlib.Path(path).is_file():
@@ -363,6 +377,12 @@ class RecoveryState:
             self.records.clear()
 
     def select(self, info, areas):
+        """Record this PR as seen and return whether its current inputs need work.
+
+        Remember its input hash for failures, discard records for changed inputs
+        or elapsed cooldowns, and skip matching successes with the right label.
+        Exhausted retries stay skipped until cooldown, input change, or reset.
+        """
         number = info["number"]
         key = input_key(info, areas)
         self.inputs[number] = key
@@ -385,9 +405,16 @@ class RecoveryState:
         return current != {record["label"]}  # A changed roadmap label must self-heal too.
 
     def success(self, number, label, key):
+        """Replace retries with the label and input hash actually processed."""
         self.records[number] = {"key": key, "label": label, "attempts": 0}
 
     def failure(self, number, error, key=None, *, transient=False):
+        """Count a failure for these inputs, capped at ``MAX_RETRIES``.
+
+        Default to the hash remembered by ``select``; changed inputs restart the
+        count. At exhaustion, transient or HTTP 5xx errors get a six-hour
+        cooldown; other errors require changed inputs or an explicit reset.
+        """
         key = key or self.inputs[number]
         previous = self.records.get(number, {})
         attempts = previous.get("attempts", 0) if previous.get("key") == key else 0
@@ -399,6 +426,11 @@ class RecoveryState:
             self.records[number]["retry_at"] = time.time() + 6 * 3600
 
     def save(self, path):
+        """Atomically replace the state file, retaining progress on failed runs.
+
+        Once ``listed`` marks a complete listing, omit unseen PRs from the file;
+        an incomplete listing preserves them. In-memory records are unchanged.
+        """
         records = {str(number): record for number, record in self.records.items()
                    if not self.listed or number in self.seen}
         target = pathlib.Path(path)
@@ -408,6 +440,11 @@ class RecoveryState:
         temporary.replace(target)
 
     def report(self):
+        """Report pending/exhausted retries to stderr and the Actions summary.
+
+        The summary lists PR numbers and attempt counts, including exhausted
+        records still waiting for their cooldown; it does not change state.
+        """
         pending = [number for number, record in self.records.items() if 0 < record["attempts"] < MAX_RETRIES]
         exhausted = [number for number, record in self.records.items() if record["attempts"] == MAX_RETRIES]
         summary = f"Recovery: {len(pending)} PRs queued for retry; {len(exhausted)} exhausted."
