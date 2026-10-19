@@ -20,11 +20,13 @@ under addition. Thus `s` plays the role of a lattice over the closed unit ball o
 the unit ball `A₀` of a Banach algebra over a complete valued field, or a bounded open
 `A₀`-submodule `M₀` of a Banach module over it.
 
-For a balanced absorbent `s` with `s + s ⊆ s`, the gauge scales exactly,
-`latticeGauge K s (a • x) = ‖a‖ * latticeGauge K s x`, and is ultrametric, so it is a seminorm
-`TauCeti.latticeGaugeSeminorm`. Its open unit ball lies in `s`, and `s` lies in its closed unit
-ball. Rescaling `s` by a nonzero scalar `c` divides the gauge by `‖c‖`, and on the scalar line
-the gauge of the closed unit ball is the norm.
+Over any normed field the gauge scales exactly by nonzero scalars,
+`latticeGauge K s (a • x) = ‖a‖ * latticeGauge K s x` for `a ≠ 0`, and rescaling `s` by a nonzero
+scalar `c` divides the gauge by `‖c‖`. The remaining results assume that `K` is nontrivially
+normed. Then the gauge scales exactly by every scalar, and for a balanced absorbent `s` with
+`s + s ⊆ s` it is ultrametric, so it is a seminorm `TauCeti.latticeGaugeSeminorm`. Its open unit
+ball lies in `s`, and `s` lies in its closed unit ball. On the scalar line the gauge of the closed
+unit ball is the norm.
 If `M` is a topological module and `s` is a balanced bounded neighbourhood of zero, the open gauge
 balls are a basis of neighbourhoods of zero, so the gauge induces the topology of `M` and its
 uniform structure, so it is complete when `M` is; its zero set is the closure of zero, so it
@@ -41,15 +43,15 @@ a nonzero Hausdorff algebra.
 ## Main definitions
 
 * `TauCeti.latticeGauge`: the scalar lattice gauge of a subset of a module over a normed field.
-* `TauCeti.latticeGaugeSeminorm`: the gauge of a balanced absorbent set closed under addition,
-  as a seminorm.
+* `TauCeti.latticeGaugeSeminorm`: over a nontrivially normed field, the gauge of a balanced
+  absorbent set closed under addition, as a seminorm.
 * `TauCeti.latticeGaugeNormedAddCommGroup`, `TauCeti.latticeGaugeNormedSpace`: in a Hausdorff
   uniform module, the gauge of a balanced bounded neighbourhood of zero closed under addition, as
   a norm inducing the given uniform structure.
 
 ## Main results
 
-* `TauCeti.latticeGauge_smul`: exact scaling by every scalar.
+* `TauCeti.latticeGauge_smul`: exact scaling by every scalar of a nontrivially normed field.
 * `TauCeti.latticeGauge_smul_left`, `TauCeti.latticeGauge_mono`: dependence on the lattice.
 * `TauCeti.isNonarchimedean_latticeGauge`: the gauge is ultrametric.
 * `TauCeti.hasBasis_latticeGauge`, `TauCeti.withSeminorms_latticeGaugeSeminorm`: the gauge of a
