@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
-public import TauCeti.LinearAlgebra.CliffordAlgebra.ScalarTrace
+public import TauCeti.LinearAlgebra.CliffordAlgebra.ScalarTrace.Basic
 -- Private: the product, reversal and exterior-basis lemmas below are used only inside proofs.
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
 import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
