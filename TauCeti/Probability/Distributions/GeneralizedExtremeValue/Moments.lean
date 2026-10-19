@@ -74,7 +74,7 @@ theorem memLp_id_generalizedExtremeValueMeasure_iff (hs : 0 < s) (m ξ : ℝ) (p
 /-- A natural absolute moment is finite exactly below the generalized extreme-value tail
 threshold. This includes the zeroth moment and the Gumbel shape. -/
 @[simp]
-theorem integrable_abs_pow_generalizedExtremeValueMeasure_iff (hs : 0 < s)
+theorem integrable_pow_abs_generalizedExtremeValueMeasure_iff (hs : 0 < s)
     (m ξ : ℝ) (n : ℕ) :
     Integrable (fun x : ℝ ↦ |x| ^ n) (generalizedExtremeValueMeasure m s ξ) ↔
       (n : ℝ) * ξ < 1 := by
@@ -95,7 +95,7 @@ theorem integrable_pow_generalizedExtremeValueMeasure_iff (hs : 0 < s)
     (m ξ : ℝ) (n : ℕ) :
     Integrable (fun x : ℝ ↦ x ^ n) (generalizedExtremeValueMeasure m s ξ) ↔
       (n : ℝ) * ξ < 1 := by
-  rw [← integrable_abs_pow_generalizedExtremeValueMeasure_iff hs m ξ n]
+  rw [← integrable_pow_abs_generalizedExtremeValueMeasure_iff hs m ξ n]
   simpa only [Real.norm_eq_abs, norm_pow] using
     (integrable_norm_iff (by fun_prop : AEStronglyMeasurable (fun x : ℝ ↦ x ^ n)
       (generalizedExtremeValueMeasure m s ξ))).symm
