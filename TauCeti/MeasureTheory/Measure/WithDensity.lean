@@ -124,7 +124,7 @@ theorem support_withDensity_eq_closure {X : Type*} [TopologicalSpace X] [Measura
     (μ.withDensity f).support = closure U := by
   apply Set.Subset.antisymm
   · apply support_subset_of_isClosed isClosed_closure
-    change ∀ᵐ x ∂μ.withDensity f, x ∈ closure U
+    rw [← Filter.eventually_mem_set]
     rw [ae_withDensity_iff hf]
     exact ae_of_all _ fun x hx ↦ subset_closure <| by
       rw [← hsupp, Function.mem_support]
