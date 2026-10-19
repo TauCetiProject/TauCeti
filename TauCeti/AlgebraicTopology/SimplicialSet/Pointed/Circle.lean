@@ -105,8 +105,8 @@ end SSet.S1
 
 namespace PointedSSet
 
-/-- The simplicial interval pointed at its zeroth vertex. Its underlying simplicial set is
-definitionally `Δ[1]`. -/
+/-- The simplicial interval pointed at vertex `1`, the image of `δ 0`. Its underlying
+simplicial set is definitionally `Δ[1]`. -/
 noncomputable abbrev interval : PointedSSet.{0} :=
   Under.mk (SSet.stdSimplex.δ 0)
 
@@ -115,15 +115,6 @@ simplicial set is definitionally Mathlib's `SSet.S1`. -/
 noncomputable abbrev circle : PointedSSet.{0} :=
   Under.mk SSet.S1.basepoint
 
-@[simp]
-lemma interval_hom : interval.hom = SSet.stdSimplex.δ 0 := (rfl)
-
-@[simp]
-lemma circle_right : circle.right = SSet.S1 := (rfl)
-
-@[simp]
-lemma circle_hom : circle.hom = SSet.S1.basepoint := (rfl)
-
 /-- The quotient from the pointed interval to the pointed simplicial circle. -/
 noncomputable def circleQuotient : interval ⟶ circle :=
   Under.homMk SSet.S1.quotient (SSet.S1.δ_quotient 0)
@@ -131,15 +122,20 @@ noncomputable def circleQuotient : interval ⟶ circle :=
 @[simp]
 lemma circleQuotient_right : circleQuotient.right = SSet.S1.quotient := (rfl)
 
-/-- A based map from the interval which also sends its other endpoint to the basepoint descends
-to a based map from the simplicial circle. -/
+/-- A based map from the interval which also sends vertex `0`, the image of `δ 1`, to the
+basepoint descends to a based map from the simplicial circle. -/
 noncomputable def circleDesc {X : PointedSSet.{0}} (f : interval ⟶ X)
     (h : SSet.stdSimplex.δ 1 ≫ f.right = X.hom) : circle ⟶ X :=
   Under.homMk (SSet.S1.desc f.right ((Under.w f).trans h.symm)) (by
-    -- Expose the underlying circle so that the unpointed quotient computation applies.
-    change SSet.S1.basepoint ≫ SSet.S1.desc f.right _ = X.hom
-    rw [SSet.S1.basepoint, Category.assoc, SSet.S1.quotient_desc]
+    rw [show circle.hom = SSet.S1.basepoint by exact Under.mk_hom _,
+      SSet.S1.basepoint, Category.assoc, SSet.S1.quotient_desc]
     exact Under.w f)
+
+/-- The underlying map of the based descent is the unpointed circle descent. -/
+@[simp]
+lemma circleDesc_right {X : PointedSSet.{0}} (f : interval ⟶ X)
+    (h : SSet.stdSimplex.δ 1 ≫ f.right = X.hom) :
+    (circleDesc f h).right = SSet.S1.desc f.right ((Under.w f).trans h.symm) := (rfl)
 
 /-- Descending a based interval map and then pulling back along the circle quotient recovers the
 original map. -/
@@ -148,9 +144,8 @@ lemma circleQuotient_circleDesc {X : PointedSSet.{0}} (f : interval ⟶ X)
     (h : SSet.stdSimplex.δ 1 ≫ f.right = X.hom) :
     circleQuotient ≫ circleDesc f h = f := by
   apply Under.UnderMorphism.ext
-  -- Reduce the based maps to the universal property of the underlying circle quotient.
-  change SSet.S1.quotient ≫ SSet.S1.desc f.right _ = f.right
-  exact SSet.S1.quotient_desc _ _
+  simp only [Under.comp_right, circleQuotient_right, circleDesc_right,
+    SSet.S1.quotient_desc]
 
 /-- Based maps out of the simplicial circle are determined by their pullback to the pointed
 interval. -/
@@ -159,17 +154,16 @@ lemma circleHom_ext {X : PointedSSet.{0}} {f g : circle ⟶ X}
     (h : circleQuotient ≫ f = circleQuotient ≫ g) : f = g := by
   apply Under.UnderMorphism.ext
   apply SSet.S1.hom_ext
-  exact congrArg Under.Hom.right h
+  simpa only [Under.comp_right, circleQuotient_right] using congrArg Under.Hom.right h
 
 /-- Based maps from the simplicial circle are equivalent to based maps from the interval which
-send the remaining endpoint to the basepoint. -/
+send vertex `0`, the image of `δ 1`, to the basepoint. -/
 noncomputable def circleHomEquiv (X : PointedSSet.{0}) :
     (circle ⟶ X) ≃
       {f : interval ⟶ X // SSet.stdSimplex.δ 1 ≫ f.right = X.hom} where
   toFun f := ⟨circleQuotient ≫ f, by
-    -- Expose the underlying quotient before using the second-endpoint equation.
-    change SSet.stdSimplex.δ 1 ≫ SSet.S1.quotient ≫ f.right = X.hom
-    simpa only [← Category.assoc, SSet.S1.δ_quotient, circle_hom] using Under.w f⟩
+    simpa only [Under.comp_right, circleQuotient_right, ← Category.assoc,
+      SSet.S1.δ_quotient, Under.mk_hom] using Under.w f⟩
   invFun f := circleDesc f.1 f.2
   left_inv f := circleHom_ext (circleQuotient_circleDesc _ _)
   right_inv f := Subtype.ext (circleQuotient_circleDesc _ _)
