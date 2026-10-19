@@ -29,7 +29,6 @@ law of an ordinary `Flow`.
   suspension is globally Lipschitz.
 * `TauCeti.hasDerivAt_timeDependentFlow`: the evolution solves `x' = v(t, x)`.
 * `TauCeti.timeDependentFlow_trans`: evolution through an intermediate time composes.
-* `TauCeti.timeDependentFlow_comp_swap`: evolving back to the initial time inverts evolution.
 * `TauCeti.timeDependentFlow_eq_integral`: the integral equation from time `s` to time `t`.
 * `TauCeti.eq_timeDependentFlow`: uniqueness for global solutions with prescribed initial time.
 
@@ -124,13 +123,6 @@ theorem timeDependentFlow_trans (v : ℝ → E → E) {K : ℝ≥0}
   have hsum : s - r + (t - s) = t - r := by ring
   rw [hsum, globalSolution_timeDependentSuspension v hv r t x] at h
   simpa only using (congrArg Prod.snd h).symm
-
-/-- The evolution from `t` back to `s` is inverse to the evolution from `s` to `t`. -/
-@[simp]
-theorem timeDependentFlow_comp_swap (v : ℝ → E → E) {K : ℝ≥0}
-    (hv : LipschitzWith K (timeDependentSuspension v)) (s t : ℝ) :
-    timeDependentFlow v hv t s ∘ timeDependentFlow v hv s t = id :=
-  funext fun _ ↦ by simp
 
 /-- The evolution from `t` back to `s` is a left inverse of the evolution from `s` to `t`. -/
 theorem leftInverse_timeDependentFlow (v : ℝ → E → E) {K : ℝ≥0}

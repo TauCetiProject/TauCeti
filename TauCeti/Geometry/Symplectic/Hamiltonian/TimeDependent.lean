@@ -109,11 +109,11 @@ theorem hasDerivAt_timeDependentHamiltonianFlow (omega : SymplecticForm V)
 /-- A Lipschitz autonomous Hamiltonian vector field has a Lipschitz time suspension. -/
 theorem lipschitzWith_timeDependentHamiltonianSuspension_const (omega : SymplecticForm V)
     (H : V → ℝ) {K : ℝ≥0} (hX : LipschitzWith K (omega.hamiltonianVectorField H)) :
-    LipschitzWith (max 0 K)
-      (omega.timeDependentHamiltonianSuspension fun _ ↦ H) := by
-  have h : LipschitzWith (max 0 K) (fun p : ℝ × V ↦
+    LipschitzWith K (omega.timeDependentHamiltonianSuspension fun _ ↦ H) := by
+  have hK : (0 : ℝ≥0) ≤ K := bot_le
+  have h : LipschitzWith K (fun p : ℝ × V ↦
       ((1 : ℝ), omega.hamiltonianVectorField H p.2)) := by
-    simpa only [Function.comp_apply, mul_one] using
+    simpa only [max_eq_right hK, Function.comp_apply, mul_one] using
       (LipschitzWith.const (α := ℝ × V) (1 : ℝ)).prodMk
         (hX.comp LipschitzWith.prod_snd)
   convert h using 1
