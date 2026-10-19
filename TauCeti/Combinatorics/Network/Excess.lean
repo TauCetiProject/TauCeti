@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Group.Action.Pointwise.Set.Basic
 public import Mathlib.Algebra.Group.Subgroup.Ker
 public import Mathlib.Data.Fintype.BigOperators
 public import Mathlib.Tactic.Abel
+public import TauCeti.Combinatorics.Network.Basic
 
 /-!
 # Arrow assignments and their excess
@@ -64,11 +65,6 @@ open Finset Pointwise
 universe u u' v v' w
 
 variable {V : Type u} (Q : V → V → Type v) (K : Type w)
-
-/-- An *arrow assignment* of the arrow family `Q` with values in `K`: a value `f e : K` for every
-arrow `e : Q v w`. It carries no sign, capacity or conservation constraint, and inherits the
-pointwise algebraic structure of `K`. -/
-abbrev Assignment := ∀ ⦃v w : V⦄, Q v w → K
 
 variable {Q K}
 
@@ -295,5 +291,21 @@ theorem setOf_excessAt_eq_eq_vadd_ker {f₀ : Assignment Q K} {b : V → K}
     simpa using hc
 
 end AddCommGroup
+
+namespace Network
+
+/-- Excess of an assignment on a network's arrow family. The network's bounds play no role. -/
+abbrev excessAt {C : Type*} [LE C] (N : Network C V) [Fintype V]
+    [∀ x y, Fintype (N.Hom x y)] {K : Type w} [AddCommGroup K]
+    (f : N.Assignment K) (x : V) : K :=
+  TauCeti.excessAt f x
+
+/-- The additive excess map on a network's arrow family. -/
+abbrev excessHom {C : Type*} [LE C] (N : Network C V) [Fintype V]
+    [∀ x y, Fintype (N.Hom x y)] {K : Type w} [AddCommGroup K] :
+    N.Assignment K →+ (V → K) :=
+  TauCeti.excessHom N.Hom K
+
+end Network
 
 end TauCeti

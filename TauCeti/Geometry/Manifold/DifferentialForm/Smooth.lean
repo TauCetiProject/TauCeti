@@ -301,6 +301,37 @@ namespace SmoothForm
 
 variable {I : ModelWithCorners ℝ E H} [IsManifold I 1 M]
 
+/-- The underlying rough form of a smooth form is a smooth bundle section. -/
+theorem isSmoothBundleForm (φ : SmoothForm I M F k) :
+    IsSmoothBundleForm (I := I) (F := F) (V := Bundle.Trivial M F) (n := ∞) φ.1 :=
+  mem_smoothForms.mp φ.2
+
+/-- The section underlying a smooth form is smooth. -/
+theorem contMDiff (φ : SmoothForm I M F k) :
+    ContMDiff I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F)) ∞
+      (fun x ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) x (φ.1 x)) :=
+  (isSmoothBundleForm_def ∞ φ.1).mp φ.isSmoothBundleForm
+
+/-- The underlying rough form of a smooth form is a smooth fixed-coefficient form. -/
+theorem isSmoothForm (φ : SmoothForm I M F k) : IsSmoothForm I ∞ φ.1 :=
+  (isSmoothForm_def ∞ φ.1).mpr φ.contMDiff
+
+/-- The section underlying a smooth form is differentiable. -/
+theorem mdifferentiable (φ : SmoothForm I M F k) :
+    MDiff (fun x ↦
+      (TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) x (φ.1 x) :
+        TotalSpace (E [⋀^Fin k]→L[ℝ] F)
+          (fun x ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] Bundle.Trivial M F x))) :=
+  φ.contMDiff.mdifferentiable (by simp)
+
+/-- The section underlying a smooth form is differentiable at every point. -/
+theorem mdifferentiableAt (φ : SmoothForm I M F k) (x : M) :
+    MDiffAt (fun x ↦
+      (TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) x (φ.1 x) :
+        TotalSpace (E [⋀^Fin k]→L[ℝ] F)
+          (fun x ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] Bundle.Trivial M F x))) x :=
+  φ.contMDiff.mdifferentiableAt (by simp)
+
 /-- The smooth section underlying a fixed-coefficient smooth form. -/
 def toContMDiffSection {k : ℕ} (φ : SmoothForm I M F k) :
     ContMDiffSection I (E [⋀^Fin k]→L[ℝ] F) ∞

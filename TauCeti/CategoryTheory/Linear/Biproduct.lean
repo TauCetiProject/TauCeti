@@ -88,11 +88,24 @@ instance moduleFinite_hom_biproduct [Finite J] [∀ j, Module.Finite k (X j ⟶ 
     Module.Finite k (⨁ X ⟶ Y) :=
   .equiv (homBiproductLinearEquiv k X Y).symm
 
+/-- Finite Hom modules into each summand give a finite Hom module into a finite
+biproduct. -/
+instance moduleFinite_homTo_biproduct [Finite J] [∀ j, Module.Finite k (Y ⟶ X j)] :
+    Module.Finite k (Y ⟶ ⨁ X) :=
+  .equiv (homToBiproductLinearEquiv k X Y).symm
+
 /-- The rank of Hom out of a finite biproduct is the sum of the ranks from its summands, when
 these are finite free modules. -/
 theorem finrank_hom_biproduct [Fintype J] [StrongRankCondition k]
     [∀ j, Module.Free k (X j ⟶ Y)] [∀ j, Module.Finite k (X j ⟶ Y)] :
     Module.finrank k (⨁ X ⟶ Y) = ∑ j, Module.finrank k (X j ⟶ Y) := by
   rw [(homBiproductLinearEquiv k X Y).finrank_eq, Module.finrank_pi_fintype]
+
+/-- The rank of Hom into a finite biproduct is the sum of the ranks into its summands, when
+these are finite free modules. -/
+theorem finrank_homTo_biproduct [Fintype J] [StrongRankCondition k]
+    [∀ j, Module.Free k (Y ⟶ X j)] [∀ j, Module.Finite k (Y ⟶ X j)] :
+    Module.finrank k (Y ⟶ ⨁ X) = ∑ j, Module.finrank k (Y ⟶ X j) := by
+  rw [(homToBiproductLinearEquiv k X Y).finrank_eq, Module.finrank_pi_fintype]
 
 end TauCeti
