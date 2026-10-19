@@ -34,13 +34,17 @@ namespace TauCeti
 
 variable {X : Type*} [TopologicalSpace X] {s : Set X} {a b c : ℝ}
 
+private lemma mk_mem_frontier_prod_Icc_of_mem_frontier {y : X}
+    (hy : y ∈ s) (hc : c ∈ frontier (Icc a b)) :
+    (y, c) ∈ frontier (s ×ˢ Icc a b) := by
+  rw [frontier_prod_eq]
+  exact Or.inl ⟨subset_closure hy, hc⟩
+
 /-- A loop in a closed cylinder based on an end face can be moved into the frontier,
 without moving its basepoint. This also includes a degenerate interval. -/
-theorem exists_path_frontier_prod_Icc (hs : IsClosed s)
+private theorem exists_path_frontier_prod_Icc (hs : IsClosed s)
     (hc : c ∈ frontier (Icc a b)) (x : s) :
-    let hface : (x.1, c) ∈ frontier (s ×ˢ Icc a b) := by
-      rw [frontier_prod_eq]
-      exact Or.inl ⟨subset_closure x.2, hc⟩
+    let hface := mk_mem_frontier_prod_Icc_of_mem_frontier x.2 hc
     let hsub := (hs.prod isClosed_Icc).frontier_subset
     ∀ q : Path (⟨(x.1, c), x.2, isClosed_Icc.frontier_subset hc⟩ : s ×ˢ Icc a b)
         ⟨(x.1, c), x.2, isClosed_Icc.frontier_subset hc⟩,
@@ -48,9 +52,8 @@ theorem exists_path_frontier_prod_Icc (hs : IsClosed s)
         (p.map (continuous_inclusion hsub)).Homotopic q := by
   intro hface hsub q
   let p : Path (⟨(x.1, c), hface⟩ : frontier (s ×ˢ Icc a b)) ⟨(x.1, c), hface⟩ :=
-    { toFun := fun t => ⟨((q t).1.1, c), by
-        rw [frontier_prod_eq]
-        exact Or.inl ⟨subset_closure (q t).2.1, hc⟩⟩
+    { toFun := fun t => ⟨((q t).1.1, c),
+        mk_mem_frontier_prod_Icc_of_mem_frontier (q t).2.1 hc⟩
       continuous_toFun := by fun_prop
       source' := by apply Subtype.ext; simp
       target' := by apply Subtype.ext; simp }
@@ -70,13 +73,11 @@ theorem exists_path_frontier_prod_Icc (hs : IsClosed s)
 
 /-- At an end-face basepoint, the frontier inclusion of a closed cylinder is surjective
 on fundamental groups. -/
-theorem surjective_fundamentalGroupMap_frontier_prod_Icc_of_mem_frontier
+private theorem surjective_fundamentalGroupMap_frontier_prod_Icc_of_mem_frontier
     (hs : IsClosed s) (hc : c ∈ frontier (Icc a b)) (x : s) :
-    let hface : (x.1, c) ∈ frontier (s ×ˢ Icc a b) := by
-      rw [frontier_prod_eq]
-      exact Or.inl ⟨subset_closure x.2, hc⟩
+    let hface := mk_mem_frontier_prod_Icc_of_mem_frontier x.2 hc
     Function.Surjective (FundamentalGroup.map
-      ⟨inclusion (hs.prod isClosed_Icc).frontier_subset, continuous_inclusion _⟩
+      (ContinuousMap.inclusion (hs.prod isClosed_Icc).frontier_subset)
       (⟨(x.1, c), hface⟩ : frontier (s ×ˢ Icc a b))) := by
   intro hface γ
   obtain ⟨q, hq⟩ := Quotient.exists_rep γ.asHom
@@ -91,9 +92,9 @@ basepoint. The interval may be degenerate or empty; in the empty case there is n
 theorem surjective_fundamentalGroupMap_frontier_prod_Icc
     (hs : IsClosed s) (z : frontier (s ×ˢ Icc a b)) :
     Function.Surjective (FundamentalGroup.map
-      ⟨inclusion (hs.prod isClosed_Icc).frontier_subset, continuous_inclusion _⟩ z) := by
+      (ContinuousMap.inclusion (hs.prod isClosed_Icc).frontier_subset) z) := by
   let j : C(frontier (s ×ˢ Icc a b), s ×ˢ Icc a b) :=
-    ⟨inclusion (hs.prod isClosed_Icc).frontier_subset, continuous_inclusion _⟩
+    ContinuousMap.inclusion (hs.prod isClosed_Icc).frontier_subset
   have hz := (hs.prod isClosed_Icc).frontier_subset z.2
   have hcases := z.2
   simp only [frontier_prod_eq, mem_union, mem_prod] at hcases
@@ -102,9 +103,8 @@ theorem surjective_fundamentalGroupMap_frontier_prod_Icc
       ⟨z.1.1, hz.1⟩
   · have hab : a ≤ b := hz.2.1.trans hz.2.2
     have hb : b ∈ frontier (Icc a b) := by simp [frontier_Icc hab]
-    let w : frontier (s ×ˢ Icc a b) := ⟨(z.1.1, b), by
-      simp only [frontier_prod_eq, mem_union, mem_prod]
-      exact Or.inl ⟨subset_closure hz.1, hb⟩⟩
+    let w : frontier (s ×ˢ Icc a b) :=
+      ⟨(z.1.1, b), mk_mem_frontier_prod_Icc_of_mem_frontier hz.1 hb⟩
     let p : Path z w :=
       { toFun := fun t => ⟨(z.1.1, (1 - (t : ℝ)) * z.1.2 + t * b), by
           simp only [frontier_prod_eq, mem_union, mem_prod]
@@ -113,23 +113,7 @@ theorem surjective_fundamentalGroupMap_frontier_prod_Icc
         continuous_toFun := by fun_prop
         source' := by apply Subtype.ext; simp
         target' := by apply Subtype.ext; simp [w] }
-    have hsurj := surjective_fundamentalGroupMap_frontier_prod_Icc_of_mem_frontier
-      hs hb ⟨z.1.1, hz.1⟩
-    -- Naturality of conjugation transports the end-face surjection along this boundary path.
-    have hnat (g : FundamentalGroup (frontier (s ×ˢ Icc a b)) z) :
-        FundamentalGroup.map j w (FundamentalGroup.fundamentalGroupMulEquivOfPath p g) =
-          FundamentalGroup.fundamentalGroupMulEquivOfPath (p.map j.continuous)
-            (FundamentalGroup.map j z g) := by
-      apply CategoryTheory.End.ext
-      simp only [FundamentalGroup.fundamentalGroupMulEquivOfPath_apply]
-      exact (FundamentalGroupoid.map j).map_conj
-        ((CategoryTheory.Groupoid.isoEquivHom _ _).symm (Path.Homotopic.Quotient.mk p)) g
-    intro g
-    obtain ⟨k, hk⟩ := hsurj (FundamentalGroup.fundamentalGroupMulEquivOfPath
-      (p.map j.continuous) g)
-    refine ⟨(FundamentalGroup.fundamentalGroupMulEquivOfPath p).symm k, ?_⟩
-    apply (FundamentalGroup.fundamentalGroupMulEquivOfPath (p.map j.continuous)).injective
-    rw [← hnat, MulEquiv.apply_symm_apply]
-    exact hk
+    exact surjective_fundamentalGroupMap_of_path j p
+      (surjective_fundamentalGroupMap_frontier_prod_Icc_of_mem_frontier hs hb ⟨z.1.1, hz.1⟩)
 
 end TauCeti

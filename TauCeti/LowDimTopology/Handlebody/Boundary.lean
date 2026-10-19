@@ -37,13 +37,13 @@ namespace TauCeti
 at every boundary basepoint and in every genus, including genus zero. -/
 theorem surjective_fundamentalGroupMap_frontier_handlebody (g : ℕ) :
     ∀ z : frontier (handlebody g), Function.Surjective (FundamentalGroup.map
-      ⟨inclusion (isCompact_handlebody g).isClosed.frontier_subset, continuous_inclusion _⟩ z) := by
+      (ContinuousMap.inclusion (isCompact_handlebody g).isClosed.frontier_subset) z) := by
   -- Transport the subset, its frontier and its inclusion together; the inclusion depends on
   -- the closedness proof, whose type also mentions the subset.
   suffices ∀ (K : Set (ℂ × ℝ)) (hK : IsClosed K),
       K = planarSurface g ×ˢ Icc (-1 : ℝ) 1 →
       ∀ z : frontier K, Function.Surjective (FundamentalGroup.map
-        ⟨inclusion hK.frontier_subset, continuous_inclusion _⟩ z) from
+        (ContinuousMap.inclusion hK.frontier_subset) z) from
     this _ (isCompact_handlebody g).isClosed (Set.ext fun _ => mem_handlebody)
   rintro K hK rfl
   exact surjective_fundamentalGroupMap_frontier_prod_Icc (isCompact_planarSurface g).isClosed

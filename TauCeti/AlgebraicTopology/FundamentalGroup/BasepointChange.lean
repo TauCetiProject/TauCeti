@@ -22,7 +22,8 @@ attached to subgroups. It also descends basepoint change to conjugacy classes, w
 independent of the chosen path.
 
 It also records the element-level behaviour of the transport: path-quotient formulas and its
-compatibility with concatenation of paths.
+compatibility with concatenation of paths and continuous maps. Surjectivity of an induced
+fundamental-group map transports along a path in its source.
 
 Mathlib already supplies the fundamental-group isomorphism
 `FundamentalGroup.fundamentalGroupMulEquivOfPath`; the declarations here are the computation
@@ -498,3 +499,33 @@ lemma basepointChangeNormalizerQuotientEquiv_mk_coe (γ : Path x₀ x₁)
     Subgroup.normalizerQuotientCongr_mk]
 
 end FundamentalGroup
+
+namespace TauCeti
+
+open FundamentalGroup
+
+/-- Applying a continuous map commutes with changing the basepoint along a path. -/
+@[simp]
+lemma map_fundamentalGroupMulEquivOfPath
+    {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] {x y : X}
+    (f : C(X, Y)) (p : Path x y) (g : FundamentalGroup X x) :
+    FundamentalGroup.map f y (fundamentalGroupMulEquivOfPath p g) =
+      fundamentalGroupMulEquivOfPath (p.map f.continuous) (FundamentalGroup.map f x g) := by
+  apply CategoryTheory.End.ext
+  simp only [fundamentalGroupMulEquivOfPath_apply]
+  exact (FundamentalGroupoid.map f).map_conj
+    ((CategoryTheory.Groupoid.isoEquivHom _ _).symm (Path.Homotopic.Quotient.mk p)) g
+
+/-- Surjectivity on fundamental groups at the end of a path implies surjectivity at its start. -/
+lemma surjective_fundamentalGroupMap_of_path
+    {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] {x y : X}
+    (f : C(X, Y)) (p : Path x y) (h : Function.Surjective (FundamentalGroup.map f y)) :
+    Function.Surjective (FundamentalGroup.map f x) := by
+  intro g
+  obtain ⟨k, hk⟩ := h (fundamentalGroupMulEquivOfPath (p.map f.continuous) g)
+  refine ⟨(fundamentalGroupMulEquivOfPath p).symm k, ?_⟩
+  apply (fundamentalGroupMulEquivOfPath (p.map f.continuous)).injective
+  rw [← map_fundamentalGroupMulEquivOfPath, MulEquiv.apply_symm_apply]
+  exact hk
+
+end TauCeti
