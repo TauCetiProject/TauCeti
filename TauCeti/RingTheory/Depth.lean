@@ -30,8 +30,8 @@ The regular-sequence transfer lemmas for linear maps live in
   of the maximal ideal lowers the depth by exactly one.
 * `IsLocalRing.depth_add_length_eq_depth_of_isRegular`: dividing a finite module by an `M`-regular
   sequence `r₁, …, rₙ` lowers the depth by exactly `n`.
-* `IsLocalRing.depth_hom_ge`: depth at least one or two passes from the target module to the
-  module of linear maps (Stacks, Lemma 15.24.10 (0AV5)).
+* `IsLocalRing.depth_linearMap_ge_of_le_two`: depth at least one or two passes from the target
+  module to the module of linear maps (Stacks, Lemma 15.24.10 (0AV5)).
 
 Together with Mathlib's `Module.supportDim_add_length_eq_supportDim_of_isRegular`, which says the
 same for the dimension of the support, these are what make Cohen–Macaulayness stable under
@@ -124,7 +124,7 @@ theorem depth_add_length_eq_depth_of_isRegular [IsNoetherianRing R] [Module.Fini
 /-- Over a Noetherian local ring, depth at least `n ≤ 2` passes from a finite target module
 to the module of linear maps from a finite module. Stacks, Lemma 15.24.10 (0AV5). -/
 @[stacks 0AV5]
-theorem depth_hom_ge {R : Type u} [CommRing R] [IsLocalRing R] [IsNoetherianRing R]
+theorem depth_linearMap_ge_of_le_two {R : Type u} [CommRing R] [IsLocalRing R] [IsNoetherianRing R]
     [Small.{v} R] {M N : Type v} [AddCommGroup M] [AddCommGroup N]
     [Module R M] [Module R N] [Module.Finite R M] [Module.Finite R N]
     {bound : ℕ} (bound_le_two : bound ≤ 2)
