@@ -186,8 +186,7 @@ theorem matrixCoeff_inj {u v : C₀(J, R) →L[R] C₀(I, R)} : u.matrixCoeff = 
 variable [IsUltrametricDist R]
 
 /-- Over an ultrametric ring, a uniform bound `C` on the entries of the matrix of `u` gives
-`‖u x‖ ≤ C * ‖x‖`. Unlike `ringOpNorm_le_of_forall_norm_matrixCoeff_le`, this needs no
-assumption making the operator norm well behaved. -/
+`‖u x‖ ≤ C * ‖x‖`. This needs no Tate hypothesis on `R`. -/
 theorem norm_apply_le_of_forall_norm_matrixCoeff_le (u : C₀(J, R) →L[R] C₀(I, R)) {C : ℝ}
     (hC : 0 ≤ C) (h : ∀ i j, ‖u.matrixCoeff i j‖ ≤ C) (x : C₀(J, R)) : ‖u x‖ ≤ C * ‖x‖ := by
   refine (norm_le (by positivity)).2 fun i ↦ ?_
