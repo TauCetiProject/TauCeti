@@ -167,7 +167,9 @@ private theorem exists_tendsto (hπ : π.IsNondegenerate) (hl : l.IsIncreasingAp
       fun e he => ⟨π (m.fst e), mem_closedBall_zero_iff.2 he, rfl⟩
   set T := ContinuousLinearMap.ofMemClosureImageCoeBounded f
     (Metric.isBounded_closedBall (x := (0 : H →L[ℂ] H)) (r := ‖m‖)) hmem
-  refine ⟨T, fun a => ContinuousLinearMap.ext fun ξ => ?_, hf⟩
+  have hT : ⇑T = f := ContinuousLinearMap.ofMemClosureImageCoeBounded_apply _ _ _
+  refine ⟨T, fun a => ContinuousLinearMap.ext fun ξ => ?_, fun ξ => hT ▸ hf ξ⟩
+  rw [mul_apply_eq_comp, hT]
   exact tendsto_nhds_unique (hf (π a ξ)) (tendsto_apply_apply hl m a ξ)
 
 end ApproximateUnit
