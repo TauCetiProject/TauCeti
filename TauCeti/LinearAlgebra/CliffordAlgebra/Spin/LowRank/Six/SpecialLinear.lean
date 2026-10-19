@@ -925,6 +925,8 @@ private noncomputable def spinGroupToSpecialLinear
     (P.nondegenerate_of_line_eq_bot hline) hV
   exact
     { toFun := fun s ↦ ⟨u (spinGroupToEvenUnitary Q s), by
+          -- The `show` exposes the matrix coercion needed by `det_toMatrix`; the
+          -- application lemma unfolds the general-linear equivalence, not the Spin action.
           rw [show (u (spinGroupToEvenUnitary Q s) : Matrix (Fin 4) (Fin 4) K) =
               LinearMap.toMatrix b b
                 (spinPlusAction Q P hline (spinGroupToEven Q s)) by
@@ -934,9 +936,13 @@ private noncomputable def spinGroupToSpecialLinear
             LinearMap.det_toMatrix]
           exact det_spinPlusAction_spinGroupToEven P hline hWfin s⟩
       map_one' := Subtype.ext (by
+        -- `Subtype.ext` leaves the `MonoidHom` value under the matrix coercion;
+        -- this `change` unfolds only that coercion and the private `toFun` wrapper.
         change (u (spinGroupToEvenUnitary Q 1) : Matrix (Fin 4) (Fin 4) K) = 1
         rw [map_one, map_one, Units.val_one])
       map_mul' := fun s t ↦ Subtype.ext (by
+        -- As above, expose the underlying matrix equality so `map_mul` and
+        -- `Units.val_mul` can be applied to the two equivalence wrappers.
         change (u (spinGroupToEvenUnitary Q (s * t)) : Matrix (Fin 4) (Fin 4) K) =
           (u (spinGroupToEvenUnitary Q s) : Matrix (Fin 4) (Fin 4) K) *
             (u (spinGroupToEvenUnitary Q t) : Matrix (Fin 4) (Fin 4) K)
@@ -960,6 +966,8 @@ private theorem spinGroupToSpecialLinear_bijective
     apply Units.ext
     have hmat := congrArg
       (fun z : Matrix.SpecialLinearGroup (Fin 4) K => (z : Matrix (Fin 4) (Fin 4) K)) h
+    -- The equality is between special-linear subtypes; expose their underlying
+    -- matrix values so injectivity of the unitary equivalence can consume it.
     change (u (spinGroupToEvenUnitary Q s) : Matrix (Fin 4) (Fin 4) K) =
       u (spinGroupToEvenUnitary Q t) at hmat
     dsimp [u, e]
@@ -973,11 +981,15 @@ private theorem spinGroupToSpecialLinear_bijective
     obtain ⟨s, hs⟩ :=
       exists_spinPlusAction_spinGroupToEven_eq_of_det_eq_one P hline hWfin a hdet
     refine ⟨s, Subtype.ext ?_⟩
+    -- Unfold the `MonoidHom` value only far enough to compare its matrix
+    -- projection with the target special-linear subtype.
     change (spinGroupToSpecialLinear P hline hWfin hW hplus hV b hb s :
       Matrix (Fin 4) (Fin 4) K) = A
     have hmatrix :=
       coe_evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix_spinGroupToEvenUnitary_apply
         P hline hW hplus hV b hb s
+    -- The preceding application lemma identifies the same matrix after the
+    -- private `toFun` wrapper is unfolded; retain that projection explicitly.
     change (u (spinGroupToEvenUnitary Q s) : Matrix (Fin 4) (Fin 4) K) = A
     rw [hmatrix, hs]
     exact LinearEquiv.apply_symm_apply (LinearMap.toMatrix b b)
@@ -1010,6 +1022,8 @@ theorem coe_spinGroupEquivSpecialLinearGroupOfFinrankEqSix_apply
       Matrix (Fin 4) (Fin 4) K) =
       LinearMap.toMatrix b b (spinPlusAction Q P hline (spinGroupToEven Q s)) := by
   rw [spinGroupEquivSpecialLinearGroupOfFinrankEqSix, MulEquiv.ofBijective_apply]
+  -- `MulEquiv.ofBijective_apply` leaves the special-linear subtype wrapper;
+  -- expose its matrix projection before applying the shared matrix formula.
   change (spinGroupToSpecialLinear P hline hWfin hW hplus hV b hb s :
     Matrix (Fin 4) (Fin 4) K) = _
   rw [spinGroupToSpecialLinear]
@@ -1113,10 +1127,14 @@ theorem coe_hyperbolicSixSpinEquivSpecialLinear_apply (s : spinGroup (splitEvenF
     let b := Module.finBasisOfFinrankEq K (spinPlus (splitEvenForm K 3) P) hplus
     dsimp [hyperbolicSixSpinEquivSpecialLinear] at ⊢
     rw [spinGroupEquivSpecialLinearGroupOfFinrankEqSix, MulEquiv.ofBijective_apply]
+    -- Unfold the split specialization's special-linear subtype so the shared
+    -- polarized matrix formula can be applied to its underlying value.
     change (spinGroupToSpecialLinear P hline hWfin hW hplus hV b rfl s :
       Matrix (Fin 4) (Fin 4) K) = _
     rw [spinGroupToSpecialLinear]
     let e := P.evenCliffordEquivProdMatrix (l := 3) hW hV
+    -- The general-linear equivalence is an `AlgEquiv`; expose its matrix
+    -- coercion before rewriting through the split product-model formulas.
     change ((e.evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix
       (P.nondegenerate_of_line_eq_bot hline) hV
       (spinGroupToEvenUnitary (splitEvenForm K 3) s)) : Matrix (Fin 4) (Fin 4) K) = _
