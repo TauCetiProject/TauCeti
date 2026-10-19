@@ -166,8 +166,11 @@ theorem logHeight_le_arakelovLogHeight (y : ι → K) : logHeight y ≤ arakelov
 /-- The logarithmic form of `arakelovMulHeight_le_sqrt_natCard_pow_mul_mulHeight`: the relative
 logarithmic Euclidean height exceeds the logarithmic sup height by at most
 `[K : ℚ] / 2 · log #ι`. -/
-theorem arakelovLogHeight_le_mul_log_natCard_add_logHeight [Nonempty ι] (y : ι → K) :
+theorem arakelovLogHeight_le_mul_log_natCard_add_logHeight (y : ι → K) :
     arakelovLogHeight y ≤ finrank ℚ K / 2 * Real.log (Nat.card ι) + logHeight y := by
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · rw [Subsingleton.elim y 0, Nat.card_of_isEmpty, Nat.cast_zero, Real.log_zero]
+    simp
   have hc : 0 < √(Nat.card ι) := Real.sqrt_pos.mpr (Nat.cast_pos.mpr Nat.card_pos)
   rw [arakelovLogHeight_eq_log_arakelovMulHeight]
   calc
