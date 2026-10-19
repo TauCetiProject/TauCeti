@@ -46,8 +46,9 @@ product of division rings and is not a basic ring.
 
 Basicness is the normalization step of Morita theory: every finite-dimensional algebra is Morita
 equivalent to a basic one, obtained by keeping one indecomposable projective per simple module.
-That reduction is not proved here.  The model example is on the quiver side: the path algebra of a
-finite acyclic quiver is basic (`TauCeti.PathAlgebra.isBasic`).
+That reduction is `TauCeti.IsSemiperfectRing.exists_isBasic_isMoritaEquivalent`, in
+`TauCeti.RingTheory.Morita.BasicAlgebra`.  The model example is on the quiver side: the path
+algebra of a finite acyclic quiver is basic (`TauCeti.PathAlgebra.isBasic`).
 
 ## Main definitions
 

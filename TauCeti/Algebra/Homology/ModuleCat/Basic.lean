@@ -31,7 +31,9 @@ is a boundary have the same homology class
 class exactly when it is a boundary (`HomologicalComplex.moduleCat_homologyπ_eq_zero_iff`).
 Given concrete cocycle and coboundary submodules identified with the terms of a cochain complex,
 `HomologicalComplex.moduleCatCohomologyClassOfIso` specializes this class map to the cocycles,
-with its surjectivity and its kernel described by the coboundaries.
+with its surjectivity and its kernel described by the coboundaries.  At a degree where the complex
+is exact, the image of the incoming differential, the term and the image of the outgoing
+differential form a short exact sequence (`HomologicalComplex.exact_subtype_rangeRestrict`).
 -/
 
 public section
@@ -55,6 +57,17 @@ theorem d_comp_d_apply {R : Type*} [Ring R] {ι : Type*} {c : ComplexShape ι}
 
 variable {R : Type*} [Ring R] {ι : Type*} {c : ComplexShape ι}
   (K : HomologicalComplex (ModuleCat R) c) (n : ι)
+
+variable {K} in
+/-- At a degree `j` where a complex of modules is exact, the inclusion of the image of the incoming
+differential `K.X i ⟶ K.X j` and the corestriction of the outgoing differential `K.X j ⟶ K.X k` to
+its image form a short exact sequence. -/
+theorem exact_subtype_rangeRestrict {i j k : ι} (hi : c.prev j = i) (hk : c.next j = k)
+    (h : K.ExactAt j) :
+    Function.Exact (LinearMap.range (K.d i j).hom).subtype (K.d j k).hom.rangeRestrict := by
+  rw [LinearMap.exact_iff, LinearMap.ker_rangeRestrict, Submodule.range_subtype]
+  exact ((ShortComplex.moduleCat_exact_iff_range_eq_ker _).1
+    ((K.exactAt_iff' i j k hi hk).1 h)).symm
 
 /-- The inclusion of the degree-`n` cycles of a homological complex of modules into its degree-`n`
 term is injective. -/

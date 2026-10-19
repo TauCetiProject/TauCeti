@@ -7,8 +7,17 @@ module
 
 public import Mathlib.Analysis.Convolution
 
+import Mathlib.MeasureTheory.Function.Holder
+import Mathlib.MeasureTheory.Group.Integral
+
 /-!
-# Continuous linear maps commute with convolution
+# Convolution existence and continuous linear maps
+
+An essentially bounded function convolves with an integrable function at every point of a
+measurable additive group with a measure invariant under left translations and negation
+(`MeasureTheory.convolutionExists_of_ae_norm_le_of_integrable` and
+`MeasureTheory.convolutionExists_of_integrable_of_ae_norm_le`). No topology on the group or
+sigma-finiteness of the measure is required.
 
 A continuous linear map `L : F →L[𝕜] F'` between real or complex Banach spaces commutes with
 convolution against a scalar kernel `ρ : G → 𝕜`: `ρ ⋆ (L ∘ f) = L (ρ ⋆ f)` at every point where
@@ -21,6 +30,32 @@ public section
 
 open MeasureTheory
 open scoped Convolution
+
+namespace MeasureTheory
+
+variable {G E E' F : Type*} {f : G → E} {g : G → E'} {M : ℝ}
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [AddGroup G] [MeasurableSpace G]
+  [MeasurableAdd G] [MeasurableNeg G] {μ : Measure G} [μ.IsAddLeftInvariant] [μ.IsNegInvariant]
+  (L : E →L[𝕜] E' →L[𝕜] F)
+
+/-- An essentially bounded function convolves with an integrable function at every point. -/
+theorem convolutionExists_of_ae_norm_le_of_integrable (hf : AEStronglyMeasurable f μ)
+    (hfM : ∀ᵐ t ∂μ, ‖f t‖ ≤ M) (hg : Integrable g μ) : ConvolutionExists f g L μ := fun x => by
+  simpa only [ConvolutionExistsAt, Function.comp_def] using
+    L.integrable_of_bilin_of_bdd_left M hf hfM (hg.comp_sub_left x)
+
+/-- An integrable function convolves with an essentially bounded function at every point. -/
+theorem convolutionExists_of_integrable_of_ae_norm_le (hf : Integrable f μ)
+    (hg : AEStronglyMeasurable g μ) (hgM : ∀ᵐ t ∂μ, ‖g t‖ ≤ M) : ConvolutionExists f g L μ :=
+  fun x => by
+    have hsub := (Measure.measurePreserving_sub_left μ x).quasiMeasurePreserving
+    simpa only [ConvolutionExistsAt, Function.comp_def] using
+      L.integrable_of_bilin_of_bdd_right M hf (hg.comp_quasiMeasurePreserving hsub) (hsub.ae hgM)
+
+end MeasureTheory
 
 /-- A continuous linear map commutes with convolution against a scalar kernel, at every point
 where the convolution exists. -/

@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Algebra.ConstMulAction
+public import Mathlib.Topology.Connected.TotallyDisconnected
 public import Mathlib.Topology.Connected.Clopen
 public import Mathlib.Topology.Connected.LocallyConnected
 public import Mathlib.Topology.Irreducible
@@ -23,6 +25,8 @@ space by them.
 
 ## Main declarations
 
+* `ConnectedComponents.instMulActionOfContinuousConstSMul`: an action by continuous maps descends
+  to connected components.
 * `Homeomorph.image_connectedComponent`: a homeomorphism maps a connected component onto
   the connected component of the image point.
 * `TauCeti.frontier_connectedComponentIn_subset_compl`: in a locally connected space, a connected
@@ -51,6 +55,34 @@ open Function Set Topology
 universe u
 
 variable {X : Type u} [TopologicalSpace X]
+
+namespace ConnectedComponents
+
+variable {G X : Type*} [Monoid G] [TopologicalSpace X] [MulAction G X]
+  [ContinuousConstSMul G X]
+
+/-- An action by continuous maps induces an action on connected components. -/
+noncomputable instance instMulActionOfContinuousConstSMul :
+    MulAction G (ConnectedComponents X) where
+  smul g := (continuous_const_smul g : Continuous (fun x : X ↦ g • x)).connectedComponentsMap
+  one_smul x := by
+    obtain ⟨x, rfl⟩ := surjective_coe x
+    exact congrArg ConnectedComponents.mk (one_smul G x)
+  mul_smul g h x := by
+    obtain ⟨x, rfl⟩ := surjective_coe x
+    exact congrArg ConnectedComponents.mk (mul_smul g h x)
+
+/-- The action on components sends the component of a point to that of its translate. -/
+@[simp]
+theorem smul_mk (g : G) (x : X) :
+    g • ConnectedComponents.mk x = ConnectedComponents.mk (g • x) := (rfl)
+
+/-- Each fixed element still acts continuously on the quotient space of components. -/
+instance : ContinuousConstSMul G (ConnectedComponents X) where
+  continuous_const_smul g :=
+    (continuous_const_smul g : Continuous (fun x : X ↦ g • x)).connectedComponentsMap_continuous
+
+end ConnectedComponents
 
 namespace Homeomorph
 

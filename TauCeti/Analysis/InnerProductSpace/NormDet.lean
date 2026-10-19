@@ -9,16 +9,21 @@ public import Mathlib.Analysis.InnerProductSpace.NormDet
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import TauCeti.Analysis.Normed.Lp.GraphDomain
 import Mathlib.LinearAlgebra.Matrix.SchurComplement
+import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.InnerProductSpace.Parseval
 
 /-!
-# Continuity, adjoints, one-dimensional values, and orthogonal extensions of `normDet`
+# Continuity, adjoints, one-dimensional values, and orthogonal extensions of the Jacobian `normDet`
 
 For finite-dimensional real inner product spaces `U` and `V`, the `m`-dimensional Jacobian
 `LinearMap.normDet` of a linear map `U →L[ℝ] V`, `m = dim U`, depends continuously on the map.
 This follows from `normDet² = det (A† A)` (`ContinuousLinearMap.normDet_sq`). Consequently, near an
 injective linear map the Jacobian is controlled up to any factor `τ > 1`, uniformly with the
 antilipschitz constant.
+
+Between spaces of equal finite dimension, a linear map and its adjoint have the same Jacobian.
+Consequently the Jacobian of the adjoint of a surjective map is the Jacobian of its restriction to
+the orthogonal complement of the kernel; this is the Jacobian of the coarea formula.
 
 Extending a linear map `T : U → V` to the Euclidean product `ℝ × U` by sending the new direction
 to a unit vector orthogonal to the range of `T` does not change the Jacobian. This is the linear
@@ -34,15 +39,15 @@ identity.
 * `ContinuousLinearMap.continuous_normDet`: the Jacobian `normDet` is continuous.
 * `LinearMap.normDet_eq_norm_apply_one`: for a map from `ℝ`, the Jacobian is the norm of the
   image of `1`.
+* `LinearMap.normDet_adjoint`: between spaces of equal dimension, the adjoint has the same
+  Jacobian.
+* `LinearMap.normDet_adjoint_eq_normDet_comp_subtype`: the Jacobian of the adjoint of a surjective
+  map is the Jacobian of its restriction to the orthogonal complement of the kernel.
 * `ContinuousLinearMap.exists_ball_antilipschitzWith_normDet_le`: around an injective linear map
   there is a ball with a uniform antilipschitz constant on which `normDet` varies by a factor at
   most `τ`.
-* `TauCeti.normDet_adjoint_of_finrank_eq`: a map between spaces of equal dimension
-  and its adjoint have the same norm determinant.
 * `LinearMap.normDet_toSpanSingleton_coprod`: an orthogonal unit extension of a linear map has the
   same Jacobian.
-* `TauCeti.normDet_domRestrict_orthogonal_ker`: the norm determinant of a surjective map
-  restricted to the orthogonal complement of its kernel equals that of its adjoint.
 * `ContinuousLinearMap.normDet_normalGraphL`: the Jacobian of a linear normal graph.
 -/
 
@@ -62,6 +67,36 @@ theorem normDet_eq_norm_apply_one (A : ℝ →ₗ[ℝ] V) : A.normDet = ‖A 1�
   simp only [OrthonormalBasis.singleton_apply, Matrix.gram_apply,
     real_inner_self_eq_norm_sq, RCLike.ofReal_real_eq_id] at h
   exact sq_eq_sq₀ A.normDet_nonneg (norm_nonneg (A 1)) |>.mp h
+
+/-- Between spaces of the same finite dimension, a linear map and its adjoint have the same
+Jacobian `normDet`. The dimension hypothesis is necessary: an injective map into a larger space
+has positive Jacobian, while its adjoint has a nontrivial kernel. -/
+theorem normDet_adjoint {𝕜 U W : Type*} [RCLike 𝕜] [NormedAddCommGroup U] [InnerProductSpace 𝕜 U]
+    [FiniteDimensional 𝕜 U] [NormedAddCommGroup W] [InnerProductSpace 𝕜 W]
+    [FiniteDimensional 𝕜 W] (f : U →ₗ[𝕜] W) (h : Module.finrank 𝕜 U = Module.finrank 𝕜 W) :
+    f.adjoint.normDet = f.normDet := by
+  let bu := stdOrthonormalBasis 𝕜 U
+  let bw := (stdOrthonormalBasis 𝕜 W).reindex (finCongr h.symm)
+  rw [f.normDet_eq_norm_det_toMatrix bu bw, f.adjoint.normDet_eq_norm_det_toMatrix bw bu,
+    toMatrix_adjoint, Matrix.det_conjTranspose, norm_star]
+
+/-- The Jacobian of the adjoint of a surjective linear map is the Jacobian of the restriction of
+the map to the orthogonal complement of its kernel. This restriction is a linear isomorphism onto
+the codomain. -/
+theorem normDet_adjoint_eq_normDet_comp_subtype {𝕜 U W : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup U] [InnerProductSpace 𝕜 U] [FiniteDimensional 𝕜 U] [NormedAddCommGroup W]
+    [InnerProductSpace 𝕜 W] [FiniteDimensional 𝕜 W] (f : U →ₗ[𝕜] W)
+    (hf : Function.Surjective f) :
+    f.adjoint.normDet = (f ∘ₗ (ker f)ᗮ.subtype).normDet := by
+  have hmem (y : W) : f.adjoint y ∈ (ker f)ᗮ := by
+    rw [orthogonal_ker]
+    exact mem_range_self _ y
+  have hM : f.adjoint.codRestrict _ hmem = (f ∘ₗ (ker f)ᗮ.subtype).adjoint := by
+    rw [eq_adjoint_iff]
+    intro y w
+    simp [adjoint_inner_left]
+  rw [← normDet_codRestrict hmem, hM,
+    normDet_adjoint _ (f.finrank_orthogonal_ker_of_surjective hf)]
 
 end LinearMap
 
@@ -145,51 +180,6 @@ theorem normDet_toSpanSingleton_coprod {e : V} (he : ‖e‖ = 1) {T : U →ₗ[
     LinearMap.det_prodMap, LinearMap.det_id, one_mul]
 
 end LinearMap
-
-namespace TauCeti
-
-/-- Between spaces of equal dimension, a linear map and its adjoint have the same norm
-determinant. This compares the area and coarea factors for an invertible linear map. -/
-theorem normDet_adjoint_of_finrank_eq {𝕜 U V : Type*} [RCLike 𝕜]
-    [NormedAddCommGroup U] [InnerProductSpace 𝕜 U] [FiniteDimensional 𝕜 U]
-    [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] [FiniteDimensional 𝕜 V]
-    (f : U →ₗ[𝕜] V) (h : Module.finrank 𝕜 U = Module.finrank 𝕜 V) :
-    f.adjoint.normDet = f.normDet := by
-  let bU := stdOrthonormalBasis 𝕜 U
-  let bV := (stdOrthonormalBasis 𝕜 V).reindex (finCongr h.symm)
-  rw [LinearMap.normDet_eq_norm_det_toMatrix _ bV bU,
-    LinearMap.toMatrix_adjoint, Matrix.det_conjTranspose,
-    LinearMap.normDet_eq_norm_det_toMatrix _ bU bV]
-  simp
-
-open scoped RealInnerProductSpace
-
-/-- The norm determinant of a surjective map restricted to the orthogonal complement of its
-kernel equals the norm determinant of its adjoint. -/
-theorem normDet_domRestrict_orthogonal_ker (L : U →L[ℝ] V) (hL : Surjective L) :
-    (L.toLinearMap.domRestrict L.kerᗮ).normDet = L.adjoint.normDet := by
-  let P := L.kerᗮ
-  have hmem (y : V) : L.toLinearMap.adjoint y ∈ P := by
-    simpa only [P, LinearMap.orthogonal_ker] using
-      (LinearMap.mem_range_self L.toLinearMap.adjoint y)
-  have heq : (L.toLinearMap.domRestrict L.kerᗮ).adjoint =
-      L.toLinearMap.adjoint.codRestrict P hmem := by
-    apply LinearMap.ext
-    intro y
-    apply ext_inner_right ℝ
-    intro u
-    rw [LinearMap.adjoint_inner_left, Submodule.coe_inner,
-      LinearMap.domRestrict_apply, LinearMap.codRestrict_apply]
-    exact (L.toLinearMap.adjoint_inner_left u y).symm
-  have hdim : Module.finrank ℝ L.kerᗮ = Module.finrank ℝ V :=
-    (LinearEquiv.ofBijective (L.toLinearMap.domRestrict L.kerᗮ)
-      ⟨LinearMap.injective_domRestrict_iff.mpr L.ker.isCompl_orthogonal.disjoint.symm,
-        (LinearMap.surjective_domRestrict_iff hL).mpr
-          L.ker.isCompl_orthogonal.symm.codisjoint⟩).finrank_eq
-  rw [← normDet_adjoint_of_finrank_eq _ hdim,
-    heq, LinearMap.normDet_codRestrict, ContinuousLinearMap.adjoint_toLinearMap]
-
-end TauCeti
 
 /-- The geometric Jacobian of the linear normal graph `x ↦ (A x, x)` is
 `sqrt (1 + ‖A‖²)`. -/
