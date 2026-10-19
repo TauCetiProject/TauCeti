@@ -59,23 +59,24 @@ theorem convolveFunRight_extendCoefficients_comp (ν : D(G, O)) (f : C(G, O)) :
   exact extendCoefficients_apply_comp j ν hj hjc
     ⟨fun y ↦ f (x * y), by fun_prop⟩
 
-omit [Monoid G] [ContinuousMul G] in
-private theorem extendCoefficients_apply_locallyConstant (μ : D(G, O))
-    (f : LocallyConstant G O) :
-    extendCoefficients j hj μ (f.map j) = j (μ f) := by
+/-- Cast an integer-valued continuous test into locally constant ring-valued tests. -/
+private def intCastLocallyConstant {X R : Type*} [TopologicalSpace X] [IntCast R]
+    (f : C(X, ℤ)) : LocallyConstant X R :=
+  ⟨fun x ↦ (f x : R), ((IsLocallyConstant.iff_continuous _).mpr f.continuous).comp Int.cast⟩
+
+/-- Transport an integer fibre-indicator decomposition into any topological commutative ring. -/
+private theorem fiberIndicator_comp_eq_sum_intCast {X A R : Type*} [TopologicalSpace X]
+    [TopologicalSpace A] [DiscreteTopology A] [CommRing R] [TopologicalSpace R]
+    [IsTopologicalRing R] (q : C(X, A)) (m : C(X × X, X)) (a : A) {n : ℕ}
+    (g h : Fin n → C(X, ℤ))
+    (hgh : ∀ x y, (q.comp m).fiberIndicator (R := ℤ) a (x, y) = ∑ i, g i x * h i y) :
+    (q.fiberIndicator (R := R) a).comp m =
+      ∑ i, (intCastLocallyConstant (R := R) (g i) : C(X, R)).prodMul
+        (intCastLocallyConstant (R := R) (h i)) := by
   classical
-  let q : C(G, f.discreteQuotient) := ⟨_, f.discreteQuotient.proj_continuous⟩
-  let := Fintype.ofFinite f.discreteQuotient
-  have hf : (f : C(G, O)) = (equivFnOfDiscrete.symm f.lift).comp q := by
-    ext x
-    exact (congrFun f.lift_comp_proj x).symm
-  have hjf : (f.map j : C(G, K)) =
-      (equivFnOfDiscrete.symm (j ∘ f.lift)).comp q := by
-    ext x
-    exact congrArg j (congrFun f.lift_comp_proj x).symm
-  rw [hjf, extendCoefficients_apply_comp_eq_sum, hf,
-    apply_comp_eq_sum_finiteProjection, map_sum]
-  simp
+  ext p
+  have hp := congrArg (Int.castRingHom R) (hgh p.1 p.2)
+  simpa [fiberIndicator_apply, intCastLocallyConstant] using hp
 
 /-- Extension of coefficients preserves convolution, including on noncommutative monoids. -/
 @[simp]
@@ -93,26 +94,18 @@ theorem extendCoefficients_mul (μ ν : D(G, O)) :
   -- Discrete integer-valued tests have exact finite sums of separated functions.
   obtain ⟨n, g, h, hgh⟩ := f.exists_finite_sum_mul_approximation_of_mem_uniformity
     (S := SetRel.id) (DiscreteUniformity.relId_mem_uniformity ℤ)
-  let gO (i : Fin n) : LocallyConstant G O :=
-    ⟨fun x ↦ (g i x : O), ((IsLocallyConstant.iff_continuous _).mpr
-      (g i).continuous).comp Int.cast⟩
-  let hO (i : Fin n) : LocallyConstant G O :=
-    ⟨fun x ↦ (h i x : O), ((IsLocallyConstant.iff_continuous _).mpr
-      (h i).continuous).comp Int.cast⟩
-  have htestO : (q.fiberIndicator (R := O) a).comp m =
-      ∑ i, (gO i : C(G, O)).prodMul (hO i) := by
-    ext p
-    have hp := congrArg (Int.castRingHom O) (hgh p.1 p.2)
-    simpa [f, fiberIndicator_apply, gO, hO] using hp
+  let gO (i : Fin n) := intCastLocallyConstant (R := O) (g i)
+  let hO (i : Fin n) := intCastLocallyConstant (R := O) (h i)
   have htestK : (q.fiberIndicator (R := K) a).comp m =
       ∑ i, ((gO i).map j : C(G, K)).prodMul ((hO i).map j) := by
-    ext p
-    have hp := congrArg (Int.castRingHom K) (hgh p.1 p.2)
-    simpa [f, fiberIndicator_apply, gO, hO] using hp
+    rw [fiberIndicator_comp_eq_sum_intCast (R := K) q m a g h hgh]
+    apply Finset.sum_congr rfl
+    intro i _
+    congr 1 <;> ext x <;> simp [gO, hO, intCastLocallyConstant]
   simp only [mul_def, map_apply]
-  rw [htestO, htestK]
+  rw [fiberIndicator_comp_eq_sum_intCast (R := O) q m a g h hgh, htestK]
   simp only [map_sum, prodMul_def, prodMk'_prod_apply, map_mul,
-    extendCoefficients_apply_locallyConstant]
+    extendCoefficients_apply_locallyConstant, gO, hO]
 
 omit [ContinuousMul G] in
 /-- The convolution identity, the Dirac measure at `1`, is preserved by coefficient extension. -/
