@@ -15,17 +15,17 @@ public import TauCeti.LinearAlgebra.Complex.LinearPart
 For a complex-valued function `g` on a complex normed space `V`, the **Wirtinger derivatives**
 of `g` at `x` are the complex-linear and complex-antilinear parts of its real derivative:
 
-`∂g(x) v = (Dg(x) v - I * Dg(x)(I • v)) / 2`,  `∂̄g(x) v = (Dg(x) v + I * Dg(x)(I • v)) / 2`.
+`∂g(x) v = (Dg(x) v - I * Dg(x)(I • v)) / 2`,  `\bar∂g(x) v = (Dg(x) v + I * Dg(x)(I • v)) / 2`.
 
 In holomorphic coordinates `z_j = x_j + I y_j` with coordinate vectors `e_j`, these are the
 classical operators `∂g(x) e_j = ∂g/∂z_j = (∂g/∂x_j - I ∂g/∂y_j) / 2` and
-`∂̄g(x) e_j = ∂g/∂(conj z_j) = (∂g/∂x_j + I ∂g/∂y_j) / 2`.
+`\bar∂g(x) e_j = ∂g/∂(conj z_j) = (∂g/∂x_j + I ∂g/∂y_j) / 2`.
 
 The Levi form `TauCeti.leviForm f x` of a real function `f` is defined from the real second
 derivative. The main results of this file compare it with the second Wirtinger derivatives: for
 `C²` real `f`, the mixed Wirtinger derivative `∂²f / ∂z_j ∂(conj z_k)`, taken in either order, is
 the Levi form entry `leviForm f x (e_k) (e_j)`. Consequently, in any complex basis `e` of `V`, the
-Hermitian form with matrix `L_{j k̄} = ∂²f / ∂z_j ∂(conj z_k)` evaluated at the coordinates
+Hermitian form with matrix `L_{j \bar k} = ∂²f / ∂z_j ∂(conj z_k)` evaluated at the coordinates
 `ξ_j = dz_j(v)` of a real tangent vector `v` is one quarter of the real second-derivative sum
 `D²f(x)(v, v) + D²f(x)(I • v, I • v)`.
 
@@ -33,17 +33,17 @@ Hermitian form with matrix `L_{j k̄} = ∂²f / ∂z_j ∂(conj z_k)` evaluated
 
 * `TauCeti.wirtingerDeriv g x`: the complex-linear Wirtinger derivative `∂g(x) : V →L[ℂ] ℂ`.
 * `TauCeti.conjWirtingerDeriv g x`: the complex-antilinear Wirtinger derivative
-  `∂̄g(x) : V →L⋆[ℂ] ℂ`.
+  `\bar∂g(x) : V →L⋆[ℂ] ℂ`.
 
 ## Main results
 
-* `TauCeti.wirtingerDeriv_add_conjWirtingerDeriv`: `∂g + ∂̄g = Dg`.
+* `TauCeti.wirtingerDeriv_add_conjWirtingerDeriv`: `∂g + \bar∂g = Dg`.
 * `TauCeti.coe_wirtingerDeriv_eq_complexLinearPart`,
   `TauCeti.coe_conjWirtingerDeriv_eq_complexAntilinearPart`: the Wirtinger derivatives are the
   complex-linear and complex-antilinear parts of the real derivative.
-* `TauCeti.conjWirtingerDeriv_ofReal`: for real-valued `f`, `∂̄f = conj ∂f`.
+* `TauCeti.conjWirtingerDeriv_ofReal`: for real-valued `f`, `\bar∂f = conj ∂f`.
 * `DifferentiableAt.conjWirtingerDeriv_eq_zero`, `DifferentiableAt.wirtingerDeriv_eq_fderiv`:
-  for complex differentiable `g`, `∂̄g = 0` and `∂g` is the complex derivative.
+  for complex differentiable `g`, `\bar∂g = 0` and `∂g` is the complex derivative.
 * `TauCeti.wirtingerDeriv_conjWirtingerDeriv_eq_leviForm`,
   `TauCeti.conjWirtingerDeriv_wirtingerDeriv_eq_leviForm`: the mixed second Wirtinger
   derivatives of a `C²` real function, in either order, are the entries of its Levi form.
@@ -84,7 +84,7 @@ noncomputable def wirtingerDeriv : V →L[ℂ] ℂ where
     apply Complex.ext <;> simp <;> ring
   cont := by fun_prop
 
-/-- The **conjugate Wirtinger derivative** `∂̄g(x)` of a complex-valued function: the
+/-- The **conjugate Wirtinger derivative** `\bar∂g(x)` of a complex-valued function: the
 complex-antilinear part `v ↦ (Dg(x) v + I * Dg(x)(I • v)) / 2` of its real derivative. On a
 coordinate vector `e_j` it is `∂g / ∂(conj z_j)`. -/
 noncomputable def conjWirtingerDeriv : V →L⋆[ℂ] ℂ where
@@ -140,7 +140,7 @@ theorem coe_conjWirtingerDeriv_eq_complexAntilinearPart :
   ring
 
 /-- For complex differentiable `g`, the conjugate Wirtinger derivative vanishes: this is the
-Cauchy–Riemann equation `∂̄g = 0`. -/
+Cauchy–Riemann equation `\bar∂g = 0`. -/
 theorem _root_.DifferentiableAt.conjWirtingerDeriv_eq_zero {g : V → ℂ} {x : V}
     (hg : DifferentiableAt ℂ g x) : conjWirtingerDeriv g x = 0 := by
   ext v
@@ -191,7 +191,7 @@ private theorem hasFDerivAt_ofReal_fderiv_apply (hf : ContDiffAt ℝ 2 f x) (v :
   exact ofRealCLM.hasFDerivAt.comp x h
 
 /-- **Wirtinger comparison.** For a `C²` real function `f`, the mixed second Wirtinger derivative
-`∂_w ∂̄_v f`, that is `∂²f / ∂z_j ∂(conj z_k)` for coordinate vectors `v = e_k` and `w = e_j`,
+`∂_w \bar∂_v f`, that is `∂²f / ∂z_j ∂(conj z_k)` for coordinate vectors `v = e_k` and `w = e_j`,
 is the Levi form `leviForm f x v w`. -/
 theorem wirtingerDeriv_conjWirtingerDeriv_eq_leviForm (hf : ContDiffAt ℝ 2 f x) (v w : V) :
     wirtingerDeriv (fun y ↦ conjWirtingerDeriv (fun z ↦ (f z : ℂ)) y v) x w =
@@ -208,7 +208,7 @@ theorem wirtingerDeriv_conjWirtingerDeriv_eq_leviForm (hf : ContDiffAt ℝ 2 f x
     hsymm (I • w) (I • v)] <;> ring
 
 /-- **Wirtinger comparison**, in the other order. For a `C²` real function `f`, the mixed second
-Wirtinger derivative `∂̄_v ∂_w f` is the Levi form `leviForm f x v w`. -/
+Wirtinger derivative `\bar∂_v ∂_w f` is the Levi form `leviForm f x v w`. -/
 theorem conjWirtingerDeriv_wirtingerDeriv_eq_leviForm (hf : ContDiffAt ℝ 2 f x) (v w : V) :
     conjWirtingerDeriv (fun y ↦ wirtingerDeriv (fun z ↦ (f z : ℂ)) y w) x v =
       leviForm f x v w := by
@@ -232,9 +232,9 @@ theorem toMatrix₂_leviForm {ι : Type*} [Fintype ι] [DecidableEq ι] (hf : Co
   simp [wirtingerDeriv_conjWirtingerDeriv_eq_leviForm hf]
 
 /-- **The diagonal of the Levi matrix.** In a complex basis `b` of `V`, with holomorphic
-coordinates `ξ_j = dz_j(v)` of `v`, the Hermitian form `∑ L_{j k̄} ξ_j conj ξ_k` with Levi matrix
-`L_{j k̄} = ∂²f / ∂z_j ∂(conj z_k)` of a `C²` real function `f` is one quarter of the real
-second-derivative sum `D²f(x)(v, v) + D²f(x)(I • v, I • v)`. -/
+coordinates `ξ_j = dz_j(v)` of `v`, the Hermitian form `∑ L_{j \bar k} ξ_j conj ξ_k` with Levi
+matrix `L_{j \bar k} = ∂²f / ∂z_j ∂(conj z_k)` of a `C²` real function `f` is one quarter of the
+real second-derivative sum `D²f(x)(v, v) + D²f(x)(I • v, I • v)`. -/
 theorem sum_wirtingerDeriv_conjWirtingerDeriv_eq_hessianQuadraticForm {ι : Type*} [Fintype ι]
     (hf : ContDiffAt ℝ 2 f x) (b : Module.Basis ι ℂ V) (v : V) :
     ∑ j, ∑ k, b.repr v j * conj (b.repr v k) *
