@@ -8,6 +8,7 @@ module
 public import Mathlib.Probability.Distributions.Beta
 public import Mathlib.Probability.Moments.Basic
 public import Mathlib.Probability.Moments.IntegrableExpMul
+public import Mathlib.MeasureTheory.Measure.Support
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.Analysis.SpecialFunctions.Beta
 import TauCeti.Probability.Density
@@ -29,6 +30,7 @@ that the beta law is carried by `[0, 1]`, so every exponential moment exists.
 * `TauCeti.Probability.betaMeasure_eq_withDensity_restrict_Ioo` — the law is its density against
   Lebesgue
   measure on the open unit interval;
+* `TauCeti.Probability.support_betaMeasure` — the exact topological support at positive shapes;
 * `TauCeti.Probability.integrable_rpow_mul_one_sub_rpow_betaMeasure_iff` — the exact integrability
   criterion for mixed real powers;
 * `TauCeti.Probability.integral_rpow_mul_one_sub_rpow_betaMeasure` — the mixed real-power moments
@@ -122,6 +124,30 @@ theorem ae_mem_Icc_betaMeasure (α β : ℝ) :
     ∀ᵐ x ∂betaMeasure α β, x ∈ Set.Icc (0 : ℝ) 1 := by
   filter_upwards [ae_mem_Ioo_betaMeasure α β] with x hx
   exact ⟨hx.1.le, hx.2.le⟩
+
+/-- At positive shape parameters, the topological support of a beta law is the closed unit
+interval. -/
+@[simp]
+theorem support_betaMeasure {α β : ℝ} (hα : 0 < α) (hβ : 0 < β) :
+    (betaMeasure α β).support = Icc 0 1 := by
+  refine subset_antisymm (Measure.support_subset_of_isClosed isClosed_Icc
+    (ae_mem_Icc_betaMeasure α β)) fun x hx ↦ ?_
+  rw [Measure.mem_support_iff_forall]
+  intro U hU
+  obtain ⟨V, hVU, hVo, hxV⟩ := mem_nhds_iff.mp hU
+  have hne : (V ∩ Ioo 0 1).Nonempty :=
+    mem_closure_iff.mp (by rwa [closure_Ioo zero_ne_one]) V hVo hxV
+  have hmeas : Measurable (betaPDF α β) :=
+    (measurable_betaPDFReal α β).ennreal_ofReal
+  refine lt_of_lt_of_le ?_ (measure_mono hVU)
+  rw [pos_iff_ne_zero, betaMeasure, Ne, withDensity_apply_eq_zero' hmeas.aemeasurable]
+  refine (lt_of_lt_of_le ((hVo.inter isOpen_Ioo).measure_pos volume hne)
+    (measure_mono ?_)).ne'
+  rintro y ⟨hyV, hy⟩
+  refine ⟨?_, hyV⟩
+  change betaPDF α β y ≠ 0
+  simpa only [betaPDF] using
+    (ENNReal.ofReal_pos.2 (betaPDFReal_pos hy.1 hy.2 hα hβ)).ne'
 
 private lemma betaPDFReal_mul_rpow_mul_one_sub_rpow {α β q s x : ℝ}
     (hx : x ∈ Ioo (0 : ℝ) 1) :
