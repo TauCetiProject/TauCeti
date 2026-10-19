@@ -103,6 +103,7 @@ variable (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenerate)
 
 /-- **The Hasse product formula.** For every regular form `Q` over a number field `K`, the
 product of the finite Hasse signs and of the real Hasse signs of `Q` is `1`. -/
+@[simp]
 theorem globalInvariants_hasseProduct_eq_one : (Q.globalInvariants hQ).hasseProduct = 1 := by
   obtain ⟨a, hdiag⟩ := Q.equivalent_weightedSumSquares_units_of_nondegenerate'
     (QuadraticMap.nondegenerate_associated_iff.mpr hQ).1
