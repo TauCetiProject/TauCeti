@@ -42,11 +42,12 @@ The restriction of `L` to `(ker L)ᗮ` is an isomorphism onto `F`, whose Jacobia
   measurable sets.
 * `LinearMap.measurable_setLIntegral_preimage_singleton`: measurability of the fibre integrals
   of a surjective linear map.
-* `TauCeti.ae_ae_eq_linear_fiber`: ambient a.e. equality descends to almost every fibre.
-* `TauCeti.aemeasurable_lintegral_linear_fiber`: a.e.-measurable weights have a.e.-measurable
-  fibre integrals.
-* `TauCeti.ae_nullMeasurableSet_linear_fiber`: Lebesgue-measurable sets are Hausdorff measurable
-  on almost every fibre.
+* `TauCeti.ae_ae_eq_restrict_preimage_singleton`: ambient a.e. equality descends to almost
+  every fibre.
+* `TauCeti.aemeasurable_setLIntegral_preimage_singleton_of_aemeasurable`: a.e.-measurable
+  weights have a.e.-measurable fibre integrals.
+* `TauCeti.ae_nullMeasurableSet_restrict_preimage_singleton`: Lebesgue-measurable sets are
+  Hausdorff measurable on almost every fibre.
 * `Submodule.lintegral_setLIntegral_preimage_orthogonalProjectionOnto`: slicing by orthogonal
   projections.
 
@@ -229,11 +230,12 @@ open Function
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
   [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
-  [MeasurableSpace F] [BorelSpace F] {L : E →L[ℝ] F}
+  [MeasurableSpace F] [BorelSpace F]
 
 /-- Ambient almost-everywhere equality descends to Hausdorff-almost-everywhere equality
 on almost every fiber of a surjective linear map. -/
-theorem ae_ae_eq_linear_fiber (hL : Surjective L) {G : Type*} {f g : E → G}
+theorem ae_ae_eq_restrict_preimage_singleton (L : E →L[ℝ] F) (hL : Surjective L)
+    {G : Type*} {f g : E → G}
     (hfg : f =ᵐ[volume] g) :
     ∀ᵐ y : F ∂volume, f =ᵐ[μHE[Module.finrank ℝ L.ker].restrict (L ⁻¹' {y})] g := by
   let s := toMeasurable (volume : Measure E) {x | f x ≠ g x}
@@ -260,7 +262,8 @@ theorem ae_ae_eq_linear_fiber (hL : Surjective L) {G : Type*} {f g : E → G}
 
 /-- A Lebesgue measurable nonnegative weight has a Lebesgue measurable fiber integral.
 No finiteness assumption is imposed on either integral. -/
-theorem aemeasurable_lintegral_linear_fiber (hL : Surjective L) {f : E → ℝ≥0∞}
+theorem aemeasurable_setLIntegral_preimage_singleton_of_aemeasurable (L : E →L[ℝ] F)
+    (hL : Surjective L) {f : E → ℝ≥0∞}
     (hf : AEMeasurable f volume) :
     AEMeasurable
       (fun y : F ↦ ∫⁻ x in L ⁻¹' {y}, f x ∂μHE[Module.finrank ℝ L.ker]) volume := by
@@ -271,16 +274,16 @@ theorem aemeasurable_lintegral_linear_fiber (hL : Surjective L) {f : E → ℝ�
   have hmeas := L.toLinearMap.measurable_setLIntegral_preimage_singleton hL hf.measurable_mk
   simp only [hdim, ContinuousLinearMap.coe_coe] at hmeas
   apply hmeas.aemeasurable.congr
-  filter_upwards [ae_ae_eq_linear_fiber hL hf.ae_eq_mk] with y hy
+  filter_upwards [ae_ae_eq_restrict_preimage_singleton L hL hf.ae_eq_mk] with y hy
   exact (lintegral_congr_ae hy).symm
 
 /-- A Lebesgue measurable set is Hausdorff measurable on almost every linear fiber.
 This permits null modifications of Borel representatives before taking sections. -/
-theorem ae_nullMeasurableSet_linear_fiber (hL : Surjective L) {s : Set E}
-    (hs : NullMeasurableSet s volume) :
+theorem ae_nullMeasurableSet_restrict_preimage_singleton (L : E →L[ℝ] F) (hL : Surjective L)
+    {s : Set E} (hs : NullMeasurableSet s volume) :
     ∀ᵐ y : F ∂volume,
       NullMeasurableSet s (μHE[Module.finrank ℝ L.ker].restrict (L ⁻¹' {y})) := by
-  filter_upwards [ae_ae_eq_linear_fiber hL hs.toMeasurable_ae_eq] with y hy
+  filter_upwards [ae_ae_eq_restrict_preimage_singleton L hL hs.toMeasurable_ae_eq] with y hy
   exact (measurableSet_toMeasurable volume s).nullMeasurableSet.congr hy
 
 end TauCeti
