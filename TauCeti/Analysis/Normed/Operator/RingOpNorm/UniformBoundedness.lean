@@ -24,8 +24,10 @@ This file establishes:
   bounded families of continuous linear maps from a complete seminormed module over a Tate ring;
 * continuity and operator-norm bounds for pointwise limits of continuous linear maps along a
   filter (`LinearMap.continuous_of_tendsto_of_pointwise_bounded`,
-  `LinearMap.continuous_of_tendsto_of_isTate`, `ContinuousLinearMap.ofTendstoOfPointwiseBounded`,
-  `ContinuousLinearMap.ofTendstoOfIsTate`, and `ContinuousLinearMap.ringOpNorm_le_of_tendsto`).
+  `LinearMap.continuous_of_tendsto_of_isCountablyGenerated`,
+  `ContinuousLinearMap.ofTendstoOfPointwiseBounded`,
+  `ContinuousLinearMap.ofTendstoOfIsCountablyGenerated`, and
+  `ContinuousLinearMap.ringOpNorm_le_of_tendsto`).
 
 No commutativity or ultrametric hypothesis on the Tate ring is required in this file.
 
@@ -33,7 +35,8 @@ No commutativity or ultrametric hypothesis on the Tate ring is required in this 
 
 * `TauCeti.NormedRing.IsTate.banach_steinhaus`: a pointwise bounded family of continuous linear
   maps from a complete seminormed module over a Tate ring is uniformly bounded in operator norm.
-* `ContinuousLinearMap.ofTendstoOfPointwiseBounded`, `ContinuousLinearMap.ofTendstoOfIsTate`:
+* `ContinuousLinearMap.ofTendstoOfPointwiseBounded`,
+  `ContinuousLinearMap.ofTendstoOfIsCountablyGenerated`:
   pointwise limits of continuous linear maps from a complete seminormed module over a Tate ring
   are continuous linear maps when the family is pointwise bounded or the filter is countably
   generated (in particular, for sequences).
@@ -131,7 +134,7 @@ theorem continuous_of_tendsto_of_pointwise_bounded [CompleteSpace E] {α : Type*
 /-- If a family `g : α → E →L[R] F` of continuous linear maps on a complete seminormed module over
 a Tate ring converges pointwise along a countably generated nontrivial filter `l` (for instance, a
 sequence along `atTop`) to a linear map `f`, then `f` is continuous. -/
-theorem continuous_of_tendsto_of_isTate [CompleteSpace E] {α : Type*} {l : Filter α}
+theorem continuous_of_tendsto_of_isCountablyGenerated [CompleteSpace E] {α : Type*} {l : Filter α}
     [l.IsCountablyGenerated] [l.NeBot] (f : E →ₗ[R] F) (g : α → E →L[R] F)
     (hf : ∀ x : E, Tendsto (fun a ↦ g a x) l (𝓝 (f x))) :
     Continuous f := by
@@ -179,7 +182,7 @@ def ofTendstoOfPointwiseBounded [CompleteSpace E] {α : Type*} {l : Filter α} [
     (linearMapOfTendsto f (fun a ↦ (g a).toLinearMap) hf) g (tendsto_pi_nhds.mp hf) hb
 
 @[simp]
-theorem coe_ofTendstoOfPointwiseBounded [CompleteSpace E] {α : Type*} {l : Filter α} [l.NeBot]
+theorem coeFn_ofTendstoOfPointwiseBounded [CompleteSpace E] {α : Type*} {l : Filter α} [l.NeBot]
     (f : E → F) (g : α → E →L[R] F)
     (hf : Tendsto (fun a x ↦ g a x) l (𝓝 f))
     (hb : ∀ x : E, ∃ C : ℝ, ∀ a : α, ‖g a x‖ ≤ C) :
@@ -206,33 +209,33 @@ theorem toLinearMap_ofTendstoOfPointwiseBounded [CompleteSpace E] {α : Type*} {
 /-- Construct a bundled continuous linear map from the pointwise limit along a countably generated
 nontrivial filter (in particular, a pointwise convergent sequence) of continuous linear maps on a
 complete seminormed module over a Tate ring. -/
-def ofTendstoOfIsTate [CompleteSpace E] {α : Type*} {l : Filter α}
+def ofTendstoOfIsCountablyGenerated [CompleteSpace E] {α : Type*} {l : Filter α}
     [l.IsCountablyGenerated] [l.NeBot] (f : E → F) (g : α → E →L[R] F)
     (hf : Tendsto (fun a x ↦ g a x) l (𝓝 f)) :
     E →L[R] F where
   toLinearMap := linearMapOfTendsto f (fun a ↦ (g a).toLinearMap) hf
-  cont := (linearMapOfTendsto f (fun a ↦ (g a).toLinearMap) hf).continuous_of_tendsto_of_isTate
-    g (tendsto_pi_nhds.mp hf)
+  cont := LinearMap.continuous_of_tendsto_of_isCountablyGenerated
+    (linearMapOfTendsto f (fun a ↦ (g a).toLinearMap) hf) g (tendsto_pi_nhds.mp hf)
 
 @[simp]
-theorem coe_ofTendstoOfIsTate [CompleteSpace E] {α : Type*} {l : Filter α}
+theorem coeFn_ofTendstoOfIsCountablyGenerated [CompleteSpace E] {α : Type*} {l : Filter α}
     [l.IsCountablyGenerated] [l.NeBot] (f : E → F) (g : α → E →L[R] F)
     (hf : Tendsto (fun a x ↦ g a x) l (𝓝 f)) :
-    ⇑(ofTendstoOfIsTate f g hf) = f :=
+    ⇑(ofTendstoOfIsCountablyGenerated f g hf) = f :=
   (rfl)
 
 @[simp]
-theorem ofTendstoOfIsTate_apply [CompleteSpace E] {α : Type*} {l : Filter α}
+theorem ofTendstoOfIsCountablyGenerated_apply [CompleteSpace E] {α : Type*} {l : Filter α}
     [l.IsCountablyGenerated] [l.NeBot] (f : E → F) (g : α → E →L[R] F)
     (hf : Tendsto (fun a x ↦ g a x) l (𝓝 f)) (x : E) :
-    ofTendstoOfIsTate f g hf x = f x :=
+    ofTendstoOfIsCountablyGenerated f g hf x = f x :=
   (rfl)
 
 @[simp]
-theorem toLinearMap_ofTendstoOfIsTate [CompleteSpace E] {α : Type*} {l : Filter α}
+theorem toLinearMap_ofTendstoOfIsCountablyGenerated [CompleteSpace E] {α : Type*} {l : Filter α}
     [l.IsCountablyGenerated] [l.NeBot] (f : E → F) (g : α → E →L[R] F)
     (hf : Tendsto (fun a x ↦ g a x) l (𝓝 f)) :
-    (ofTendstoOfIsTate f g hf).toLinearMap =
+    (ofTendstoOfIsCountablyGenerated f g hf).toLinearMap =
       linearMapOfTendsto f (fun a ↦ (g a).toLinearMap) hf :=
   (rfl)
 
