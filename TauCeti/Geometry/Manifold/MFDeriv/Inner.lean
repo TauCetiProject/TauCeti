@@ -52,4 +52,5 @@ theorem mvfderiv_inner_apply {g g' : M → F} {x : M} (hg : MDiffAt g x) (hg' : 
     TauCeti.mvfderiv_comp_apply_of_differentiableAt
     (g := fun y ↦ (g y, g' y)) (φ := fun p : F × F ↦ inner 𝕜 p.1 p.2)
     hinner.differentiableAt hpair.mdifferentiableAt, hinner.fderiv,
-    hpair', fderivInnerCLM_apply, ContinuousLinearMap.prod_apply, add_comm]
+    hpair']
+  simp only [fderivInnerCLM_apply, ContinuousLinearMap.prod_apply, add_comm]

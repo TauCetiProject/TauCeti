@@ -64,10 +64,8 @@ theorem mvfderiv_comp_apply_of_differentiableAt {g : M → F} {φ : F → F'} {x
     (hφ : DifferentiableAt 𝕜 φ (g x)) (hg : MDiffAt g x) (v : TangentSpace I x) :
     mvfderiv I (φ ∘ g) x v = fderiv 𝕜 φ (g x) (mvfderiv I g x v) := by
   rw [mvfderiv_comp_apply x hφ.mdifferentiableAt hg, mvfderiv_eq_fderiv,
-    ContinuousLinearMap.comp_apply]
-  -- Both sides differ only by `NormedSpace.fromTangentSpace`, definitionally the identity on
-  -- the underlying vector of a model-space tangent fibre.
-  rfl
+    ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+    NormedSpace.fromTangentSpace_apply, mvfderiv_apply_eq_mfderiv_apply]
 
 /-- The derivative of a vector-valued function, read in the target space, vanishes exactly when
 its manifold derivative does. -/

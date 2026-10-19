@@ -148,9 +148,9 @@ private theorem leviCivitaConnection_field (a b : E) (p : sphere (0 : E) 1) :
   rw [(isLeviCivitaConnection_leviCivitaConnection (I := 𝓡 n)).inner_apply_eq_inner_mvfderiv
       (contMDiff_coe_sphere (m := 2) p) inner_tangentSpace_sphere
       (mdifferentiableAt_field a p) (mdifferentiableAt_field b p),
-    mvfderiv_mvfderiv_coe_field, inner_neg_left, inner_add_left, real_inner_smul_left,
-    real_inner_smul_left, inner_coe_mvfderiv_subtypeVal_sphere, ← inner_tangentSpace_sphere,
-    real_inner_smul_left]
+    mvfderiv_mvfderiv_coe_field]
+  simp only [inner_neg_left, inner_add_left, real_inner_smul_left,
+    inner_coe_mvfderiv_subtypeVal_sphere, ← inner_tangentSpace_sphere]
   ring
 
 /-- The Lie bracket of gradients of height functions: `[X_a, X_b] = ⟪a, p⟫ X_b - ⟪b, p⟫ X_a`. -/
@@ -175,10 +175,11 @@ private theorem leviCivitaConnection_leviCivitaConnection_field (a b c : E)
     funext fun y ↦ leviCivitaConnection_field b c y
   have hg : MDifferentiableAt (𝓡 n) 𝓘(ℝ) (fun q : sphere (0 : E) 1 ↦ -inner ℝ c (q : E)) p :=
     ((contMDiff_height (n := n) c).neg p).mdifferentiableAt (by simp)
-  rw [hfun, ∇.isCovariantDerivativeOnUniv.leibniz (mdifferentiableAt_field b p) hg,
-    add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, leviCivitaConnection_field,
-    mvfderiv_fun_neg, neg_apply, mvfderiv_height, inner_mvfderiv_coe, smul_smul,
-    real_inner_comm (field n c p)]
+  rw [hfun, ∇.isCovariantDerivativeOnUniv.leibniz (mdifferentiableAt_field b p) hg]
+  simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply,
+    leviCivitaConnection_field, mvfderiv_fun_neg, neg_apply, mvfderiv_height,
+    inner_mvfderiv_coe, smul_smul]
+  rw [real_inner_comm (field n c p)]
   module
 
 /-- The curvature operator on gradients of height functions has the constant-curvature form. -/
