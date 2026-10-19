@@ -8,7 +8,6 @@ module
 public import TauCeti.Probability.Distributions.GeneralizedExtremeValue.Basic
 public import TauCeti.Probability.Distributions.Gumbel.Moments
 import TauCeti.Probability.Distributions.Affine
-import TauCeti.Probability.Distributions.Gamma.Basic
 
 /-!
 # Moments of the generalized extreme-value distribution
@@ -69,7 +68,7 @@ theorem memLp_id_generalizedExtremeValueMeasure_iff (hs : 0 < s) (m ξ : ℝ) (p
     filter_upwards [ae_pos_expMeasure 1] with e he
     simp only [Function.comp_apply, id_eq, Real.norm_eq_abs,
       abs_of_pos (Real.rpow_pos_of_pos he _), ← Real.rpow_mul he.le]
-  rw [integrable_congr heq, expMeasure, integrable_rpow_gammaMeasure_iff one_pos one_pos]
+  rw [integrable_congr heq, integrable_rpow_expMeasure_iff one_pos]
   constructor <;> intro h <;> nlinarith
 
 /-- A natural absolute moment is finite exactly below the generalized extreme-value tail
@@ -101,18 +100,6 @@ theorem integrable_pow_generalizedExtremeValueMeasure_iff (hs : 0 < s)
     (integrable_norm_iff (by fun_prop : AEStronglyMeasurable (fun x : ℝ ↦ x ^ n)
       (generalizedExtremeValueMeasure m s ξ))).symm
 
-private lemma integral_pow_source (n : ℕ) (hn : (n : ℝ) * ξ < 1) :
-    ∫ e : ℝ, (e ^ (-ξ)) ^ n ∂expMeasure 1 = Real.Gamma (1 - (n : ℝ) * ξ) := by
-  have heq : (fun e : ℝ ↦ (e ^ (-ξ)) ^ n) =ᵐ[expMeasure 1]
-      fun e ↦ e ^ (-ξ * (n : ℝ)) := by
-    filter_upwards [ae_pos_expMeasure 1] with e he
-    exact (Real.rpow_mul_natCast he.le _ _).symm
-  rw [integral_congr_ae heq, expMeasure,
-    integral_rpow_gammaMeasure one_pos one_pos (by nlinarith)]
-  simp only [Real.one_rpow, Real.Gamma_one, one_mul, div_one]
-  congr 1
-  ring
-
 /-- Natural raw moments at nonzero shape, expressed by the binomial expansion of the
 exponential-variable construction. The strict threshold ensures absolute integrability. -/
 theorem integral_pow_generalizedExtremeValueMeasure (hs : 0 < s) (hξ : ξ ≠ 0)
@@ -135,7 +122,14 @@ theorem integral_pow_generalizedExtremeValueMeasure (hs : 0 < s) (hξ : ξ ≠ 0
     rcases le_or_gt ξ 0 with hξ' | hξ'
     · exact lt_of_le_of_lt (mul_nonpos_of_nonneg_of_nonpos (Nat.cast_nonneg k) hξ') zero_lt_one
     · exact lt_of_le_of_lt (mul_le_mul_of_nonneg_right hkn hξ'.le) hn
-  rw [integral_map (by fun_prop) (by fun_prop), integral_pow_source k hkξ]
+  have heq : (fun e : ℝ ↦ (e ^ (-ξ)) ^ k) =ᵐ[expMeasure 1]
+      fun e ↦ e ^ (-ξ * (k : ℝ)) := by
+    filter_upwards [ae_pos_expMeasure 1] with e he
+    exact (Real.rpow_mul_natCast he.le _ _).symm
+  rw [integral_map (by fun_prop) (by fun_prop), integral_congr_ae heq,
+    integral_rpow_expMeasure one_pos (by nlinarith), Real.one_rpow, div_one]
+  congr 2
+  ring
 
 /-- The identity is integrable exactly when the shape is less than one. -/
 @[simp]

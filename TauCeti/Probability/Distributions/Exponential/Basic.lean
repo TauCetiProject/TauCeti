@@ -44,6 +44,8 @@ the `a = 1` cases of the Gamma results in `TauCeti.Probability.Distributions.Gam
   integrability and integration against the exponential law, transferred to the real density;
 * `integrable_pow_expMeasure` — every moment is integrable, for `0 < r`;
 * `integral_pow_expMeasure` — the `n`-th moment, `n ! / r ^ n`, for `0 < r`;
+* `integrable_rpow_expMeasure_iff`, `integral_rpow_expMeasure` — the exact real-power moment
+  threshold `-1 < q` and formula `Gamma (1 + q) / r ^ q`, for `0 < r`;
 * `integral_id_expMeasure`, `integral_sq_expMeasure` — the mean and the second moment;
 * `variance_id_expMeasure` — the variance `(r ^ 2)⁻¹`;
 * `memLp_log_expMeasure`, `integrable_log_expMeasure`, `integral_log_expMeasure` — finite moments,
@@ -146,6 +148,20 @@ theorem integral_expMeasure_eq_integral_Ioi (hr : 0 < r) (g : ℝ → E) :
   simp only [Real.rpow_one, Gamma_one, div_one, sub_self, rpow_zero, mul_one]
 
 end Transfer
+
+/-- A real power is integrable under a positive-rate exponential law exactly when its exponent
+is greater than `-1`. -/
+@[simp]
+theorem integrable_rpow_expMeasure_iff (hr : 0 < r) (q : ℝ) :
+    Integrable (fun x : ℝ ↦ x ^ q) (expMeasure r) ↔ -1 < q := by
+  rw [expMeasure, integrable_rpow_gammaMeasure_iff one_pos hr]
+
+/-- The real-power moment of a positive-rate exponential law, on its exact integrability
+domain. -/
+theorem integral_rpow_expMeasure (hr : 0 < r) {q : ℝ} (hq : -1 < q) :
+    ∫ x : ℝ, x ^ q ∂expMeasure r = Real.Gamma (1 + q) / r ^ q := by
+  rw [expMeasure, integral_rpow_gammaMeasure one_pos hr hq, Real.Gamma_one, div_one,
+    Real.rpow_neg hr.le, inv_mul_eq_div]
 
 /-- **Every moment of the exponential law is integrable.** This is not implied by the moment
 formula below: Lean's integral is defined for non-integrable functions too, so an integral equality
