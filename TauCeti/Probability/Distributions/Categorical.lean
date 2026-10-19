@@ -36,6 +36,8 @@ connect them to the existing multinomial API.
 * `TauCeti.Probability.categoricalMeasure_singleton` gives its masses;
 * `TauCeti.Probability.integral_categoricalMeasure` evaluates integrals as finite weighted sums;
 * `TauCeti.Probability.measurable_categoricalMeasure` proves parameter measurability;
+* `TauCeti.Probability.continuous_categoricalMeasure` proves weak continuity on the full simplex,
+  including zero weights;
 * `TauCeti.Probability.map_categoricalMeasure` aggregates categories;
 * `TauCeti.Probability.map_piSingle_categoricalMeasure` identifies one-hot encoding with a
   one-trial multinomial law.
