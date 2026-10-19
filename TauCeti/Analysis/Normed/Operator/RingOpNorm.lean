@@ -272,7 +272,9 @@ theorem ringOpNorm_le_of_ball (f : E →L[R] F) {ε C : ℝ} (hε : 0 < ε) (hC 
   have hfk := hf _ hmem
   rw [map_smul, ϖ.norm_zpow_smul, ϖ.norm_zpow_smul, zpow_natCast] at hfk
   have hrk : 0 < ‖(ϖ.unit : R)‖ ^ k := pow_pos ϖ.norm_pos k
-  exact le_of_mul_le_mul_left (by simpa [mul_left_comm] using hfk) hrk
+  have hbound : ‖(ϖ.unit : R)‖ ^ k * ‖f x‖ ≤ ‖(ϖ.unit : R)‖ ^ k * (C * ‖x‖) :=
+    hfk.trans_eq (by ring)
+  exact le_of_mul_le_mul_left hbound hrk
 
 /-- Over a Tate ring, if `‖f x‖ ≤ C * ‖x‖` holds in a neighbourhood of `0`, then `‖f‖ ≤ C`. -/
 theorem ringOpNorm_le_of_nhds_zero (f : E →L[R] F) {C : ℝ} (hC : 0 ≤ C)

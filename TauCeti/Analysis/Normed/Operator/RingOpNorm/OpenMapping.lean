@@ -53,7 +53,7 @@ itself serves as the ultrametric domain):
 * **Quantitative finite spanning**: any finite spanning family `v : ι → N` of a
   complete normed module over a complete ultrametric Tate ring admits a constant `C > 0`
   representing every `y : N` as `∑ i, c i • v i` with `‖c‖ ≤ C * ‖y‖`
-  (`Submodule.exists_linearCombination_eq_and_norm_le`).
+  (`TauCeti.exists_linearCombination_eq_and_norm_le`).
 
 The API and the bounded-inverse, range-equivalence, bijective-map, unit and closed-graph
 packaging are adapted from `Mathlib/Analysis/Normed/Operator/Banach.lean`, in particular
@@ -101,8 +101,8 @@ theorem exists_preimage_norm_le_of_ball_subset (ϖ : PseudoUniformizer R) (f : M
   rw [mem_ball_zero_iff] at hx₀
   have hR₀ : 0 ≤ R₀ := (norm_nonneg x₀).trans hx₀.le
   refine ⟨((ϖ.unit ^ (-n) : Rˣ) : R) • x₀, ?_, ?_⟩
-  · rw [map_smul, hfx₀, ← mul_smul, ← Units.val_mul, zpow_neg, inv_mul_cancel, Units.val_one,
-      one_smul]
+  · rw [map_smul, hfx₀]
+    simp [← mul_smul, ← Units.val_mul]
   · rw [ϖ.norm_zpow_smul, zpow_neg]
     calc (‖(ϖ.unit : R)‖ ^ n)⁻¹ * ‖x₀‖
         ≤ (‖(ϖ.unit : R)‖ ^ n)⁻¹ * R₀ :=
@@ -384,7 +384,7 @@ theorem equivRangeOfIsTate_apply (f : M →L[R] N) (hinj : Injective f)
   rfl
 
 @[simp]
-theorem equivRangeOfIsTate_symm_apply (f : M →L[R] N) (hinj : Injective f)
+theorem equivRangeOfIsTate_symm_apply_apply (f : M →L[R] N) (hinj : Injective f)
     (hclosed : IsClosed (Set.range f)) (x : M) :
     (f.equivRangeOfIsTate hinj hclosed).symm ⟨f x, f.mem_range_self x⟩ = x :=
   (f.equivRangeOfIsTate hinj hclosed).symm_apply_apply x
@@ -393,11 +393,9 @@ theorem equivRangeOfIsTate_symm_apply (f : M →L[R] N) (hinj : Injective f)
 unit in `N →L[R] N` if and only if it is bijective. -/
 theorem isUnit_iff_bijective_of_isTate [IsUltrametricDist N] (f : N →L[R] N) :
     IsUnit f ↔ Bijective f :=
-  ⟨fun ⟨u, hu⟩ ↦ hu ▸ (ContinuousLinearEquiv.unitsEquiv R N u).bijective,
-    fun hf ↦ ⟨(ContinuousLinearEquiv.unitsEquiv R N).symm
-      (ContinuousLinearEquiv.ofBijectiveOfIsTate f hf),
-      show (ContinuousLinearEquiv.ofBijectiveOfIsTate f hf : N →L[R] N) = f from
-        ContinuousLinearEquiv.coe_ofBijectiveOfIsTate f hf⟩⟩
+  ⟨fun ⟨u, hu⟩ ↦ hu ▸ (ContinuousLinearEquiv.ofUnit u).bijective,
+    fun hf ↦ ⟨(ContinuousLinearEquiv.ofBijectiveOfIsTate f hf).toUnit,
+      ContinuousLinearEquiv.coe_ofBijectiveOfIsTate f hf⟩⟩
 
 end ContinuousLinearMap
 
@@ -513,7 +511,7 @@ end ContinuousLinearMap
 
 /-! ### Quantitative finite spanning -/
 
-namespace Submodule
+namespace TauCeti
 
 variable {R N ι : Type*} [Fintype ι] [SeminormedRing R] [IsUltrametricDist R]
   [CompleteSpace R] [TauCeti.NormedRing.IsTate R]
@@ -531,4 +529,4 @@ theorem exists_linearCombination_eq_and_norm_le (v : ι → N)
   exact (Fintype.linearCombination R v).exists_preimage_norm_le_of_surjective
     (Fintype.linearCombination R v).continuous_on_pi hsurj
 
-end Submodule
+end TauCeti

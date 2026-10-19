@@ -35,7 +35,8 @@ No commutativity or ultrametric hypothesis on the Tate ring is required in this 
   maps from a complete seminormed module over a Tate ring is uniformly bounded in operator norm.
 * `ContinuousLinearMap.ofTendstoOfPointwiseBounded`, `ContinuousLinearMap.ofTendstoOfIsTate`:
   pointwise limits of continuous linear maps from a complete seminormed module over a Tate ring
-  are continuous linear maps.
+  are continuous linear maps when the family is pointwise bounded or the filter is countably
+  generated (in particular, for sequences).
 
 The pointwise-limit constructors follow `continuousLinearMapOfTendsto` in
 `Mathlib/Analysis/LocallyConvex/Barrelled.lean` and
