@@ -26,7 +26,9 @@ This file develops the coordinate structure of `C₀(I, E)`:
 * `ZeroAtInftyContinuousMap.mkOfDiscrete`: a family tending to zero along the cofinite filter as
   an element of `C₀(I, E)`;
 * `ZeroAtInftyContinuousMap.single i x`: the coordinate vector supported at `i` with value `x`,
-  of norm `‖x‖` (`ZeroAtInftyContinuousMap.norm_single`);
+  of norm `‖x‖` (`ZeroAtInftyContinuousMap.norm_single`); a finite sum of coordinate vectors at
+  distinct coordinates has the maximum of their norms
+  (`ZeroAtInftyContinuousMap.nnnorm_sum_single`);
 * `ZeroAtInftyContinuousMap.exists_norm_coe_eq_norm`: the sup norm is attained at some
   coordinate when `I` is nonempty;
 * `ZeroAtInftyContinuousMap.hasSum_single`: every `f` is the unconditional sum of its coordinate
@@ -176,6 +178,22 @@ theorem norm_single [DecidableEq I] (i : I) (b : β) : ‖single i b‖ = ‖b�
   refine le_antisymm ((norm_le (norm_nonneg b)).2 fun j ↦ ?_) ?_
   · by_cases h : j = i <;> simp [h]
   · simpa using norm_coe_le_norm (single i b) i
+
+/-- A finite sum of coordinate vectors at distinct coordinates has the maximum of their norms as
+its norm; the empty sum has norm zero. -/
+theorem nnnorm_sum_single [DecidableEq I] (s : Finset I) (b : I → β) :
+    ‖∑ i ∈ s, single i (b i)‖₊ = s.sup fun i ↦ ‖b i‖₊ := by
+  have happly (j : I) : (∑ i ∈ s, single i (b i)) j = if j ∈ s then b j else 0 := by
+    simp [Finset.sum_apply, Pi.single_apply]
+  refine le_antisymm ?_ (Finset.sup_le fun i hi ↦ ?_)
+  · rw [← NNReal.coe_le_coe, coe_nnnorm, norm_le (NNReal.coe_nonneg _)]
+    intro j
+    rw [happly]
+    split_ifs with hj
+    · exact NNReal.coe_le_coe.2 (Finset.le_sup (f := fun i ↦ ‖b i‖₊) hj)
+    · simp
+  · rw [← NNReal.coe_le_coe, coe_nnnorm, coe_nnnorm]
+    simpa [happly, hi] using norm_coe_le_norm (∑ i ∈ s, single i (b i)) i
 
 /-- **The sup norm is attained**: on a nonempty discrete index, some coordinate of `f ∈ C₀(I, β)`
 has norm `‖f‖`. This covers every nonzero `f`, whose index type is necessarily nonempty. -/
