@@ -58,8 +58,12 @@ theorem isAdmissible_iff_mem_Icc [DecidableEq V] [Fintype V] {A B S : Finset V} 
 @[simp]
 theorem isAdmissible_compl_iff [Fintype V] [DecidableEq V] {A B S : Finset V} :
     IsAdmissible B A Sᶜ ↔ IsAdmissible A B S := by
-  simp [isAdmissible_iff, Finset.disjoint_left, Finset.subset_iff]
-  grind
+  rw [isAdmissible_iff_mem_Icc, isAdmissible_iff_mem_Icc]
+  constructor
+  · rintro ⟨hB, hA⟩
+    exact ⟨compl_le_compl_iff_le.mp hA, le_compl_comm.mp hB⟩
+  · rintro ⟨hA, hB⟩
+    exact ⟨le_compl_comm.mp hB, compl_le_compl_iff_le.mpr hA⟩
 
 /-- The complement of an admissible side is admissible for the exchanged terminal sets. -/
 theorem IsAdmissible.compl [Fintype V] [DecidableEq V] {A B S : Finset V}

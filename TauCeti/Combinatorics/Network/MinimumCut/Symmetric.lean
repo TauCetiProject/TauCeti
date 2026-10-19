@@ -74,12 +74,10 @@ theorem smallest_symm_eq_compl_largest [IsOrderedCancelAddMonoid K] (hf : IsSymm
   apply (TerminalCut.smallest_eq_iff hf.submodular hAB.symm).mpr
   constructor
   · exact (TerminalCut.isGreatest_largest hf.submodular hAB).1.compl hf.symm
-  · intro T hT v hv
-    have hTc : TerminalCut.IsMinimum f A B Tᶜ := hT.compl hf.symm
-    have hsub := (TerminalCut.isGreatest_largest hf.submodular hAB).2 hTc
-    simp only [mem_compl] at hv
-    by_contra hvT
-    exact hv (hsub (mem_compl.mpr hvT))
+  · intro T hT
+    simpa only [compl_compl] using
+      compl_le_compl ((TerminalCut.isGreatest_largest hf.submodular hAB).2
+        (hT.compl hf.symm))
 
 /-- Exchanging terminal sets sends the largest minimum source side to the complement of the
 smallest one. -/
@@ -87,15 +85,7 @@ theorem largest_symm_eq_compl_smallest [IsOrderedCancelAddMonoid K] (hf : IsSymm
     {A B : Finset V} (hAB : Disjoint A B) :
     TerminalCut.largest hf.submodular hAB.symm =
       (TerminalCut.smallest hf.submodular hAB)ᶜ := by
-  apply (TerminalCut.largest_eq_iff hf.submodular hAB.symm).mpr
-  constructor
-  · exact (TerminalCut.isLeast_smallest hf.submodular hAB).1.compl hf.symm
-  · intro T hT v hv
-    have hTc : TerminalCut.IsMinimum f A B Tᶜ := hT.compl hf.symm
-    have hsub := (TerminalCut.isLeast_smallest hf.submodular hAB).2 hTc
-    simp only [mem_compl]
-    intro hvSmallest
-    exact (mem_compl.mp (hsub hvSmallest)) hv
+  rw [smallest_symm_eq_compl_largest hf hAB.symm, compl_compl]
 
 end IsSymmSubmodular
 
