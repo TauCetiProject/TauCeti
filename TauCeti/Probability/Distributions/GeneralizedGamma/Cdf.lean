@@ -60,9 +60,7 @@ theorem cdf_generalizedGammaMeasure_eq (ha : 0 < a) (hc : c ≠ 0) (hs : 0 < s) 
       map_measureReal_apply (by fun_prop) measurableSet_Iic]
     have hpre : (fun y : ℝ ↦ s * y ^ c⁻¹) ⁻¹' Iic x =ᵐ[gammaMeasure a 1]
         Ioi ((x / s) ^ c) := by
-      refine Filter.EventuallyEq.trans ?_ (Ioi_ae_eq_Ici' (by
-        rw [gammaMeasure]
-        exact measure_singleton _)).symm
+      refine Filter.EventuallyEq.trans ?_ (Ioi_ae_eq_Ici' (measure_singleton _)).symm
       filter_upwards [ae_pos_gammaMeasure a 1] with y hy
       simp only [mem_preimage, mem_Iic, mem_Ici]
       rw [mul_comm s, ← le_div_iff₀ hs,
