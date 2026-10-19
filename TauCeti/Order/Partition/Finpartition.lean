@@ -11,6 +11,8 @@ public import Mathlib.Algebra.Field.Defs
 public import Mathlib.Algebra.Order.GroupWithZero.Basic
 import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
+import Mathlib.Algebra.BigOperators.Ring.Finset
+import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Data.Set.Finite.Range
 
 /-!
@@ -19,10 +21,11 @@ import Mathlib.Data.Set.Finite.Range
 This file contains general-purpose constructions and facts about finite partitions: the partition
 of the top element into an element and its complement, the partition of a type into the fibres of
 a map to a finite type, the associated indexed partition, cardinality bounds for common
-refinements, the refinement relations of `Finpartition.bind` and of a refining partition's parts,
-the behavior of intersections of parts under refinement, and the coarse parent
-`Finpartition.refinementParent` of a part of a finer partition, together with decomposition and
-summation formulas for the fine parts below a coarse part.
+refinements, a bound on the sum of the squared part sizes, the refinement relations of
+`Finpartition.bind` and of a refining partition's parts, the behavior of intersections of parts
+under refinement, and the coarse parent `Finpartition.refinementParent` of a part of a finer
+partition, together with decomposition and summation formulas for the fine parts below a coarse
+part.
 -/
 
 public section
@@ -80,6 +83,13 @@ theorem biUnion_filter_subset_eq_of_le {ι : Type*} [DecidableEq ι] {s B : Fins
   obtain ⟨B', hB', hCB'⟩ := hQP hC
   obtain rfl := P.eq_of_mem_parts hB' hB (hCB' hxC) hx
   exact Finset.mem_biUnion.2 ⟨C, Finset.mem_filter.2 ⟨hC, hCB'⟩, hxC⟩
+
+/-- If all parts of `P` have size at most `m`, then `∑ A ∈ P.parts, A.card ^ 2 ≤ m * s.card`. -/
+theorem sum_sq_card_parts_le {ι : Type*} [DecidableEq ι] {s : Finset ι} (P : Finpartition s)
+    {m : ℕ} (hm : ∀ A ∈ P.parts, A.card ≤ m) :
+    ∑ A ∈ P.parts, A.card ^ 2 ≤ m * s.card := by
+  rw [← P.sum_card_parts, Finset.mul_sum]
+  exact Finset.sum_le_sum fun A hA ↦ by rw [sq]; exact Nat.mul_le_mul_right _ (hm A hA)
 
 variable {Ω : Type*} {u : Set Ω}
 
