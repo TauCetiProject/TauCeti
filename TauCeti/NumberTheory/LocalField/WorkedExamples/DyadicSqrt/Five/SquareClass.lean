@@ -216,6 +216,17 @@ private theorem fullRep_bijective :
   have : Finite (SquareClassGroup DyadicSqrtFive) := Nat.finite_of_card_ne_zero (by omega)
   exact hinj.bijective_of_nat_card_le (by simp [hcard])
 
+/-- The last coordinate of a full representative of the square class of `a` is the parity of
+the normalized valuation of `a`. -/
+private theorem coord_three_eq_of_squareClass_fullRep {a : DyadicSqrtFiveˣ}
+    {c : Fin 4 → ZMod 2} (hc : squareClass (fullRep c) = squareClass a) :
+    c 3 = ((normalizedValuation DyadicSqrtFive a).toAdd : ZMod 2) := by
+  have hev := ZMod.intCast_eq_zero_iff_even.mpr (even_toAdd_normalizedValuation_of_isSquare
+    ((squareClass_eq_iff_isSquare_mul _ _).mp hc.symm))
+  simp only [map_mul, toAdd_mul, valuation_fullRep] at hev
+  push_cast [ZMod.natCast_zmod_val] at hev
+  rw [eq_neg_of_add_eq_zero_right hev, ZMod.neg_eq_self_mod_two]
+
 /-- The eight unit representatives have pairwise distinct square classes. -/
 theorem squareClass_unitSquareClassRep_injective :
     Function.Injective fun c => squareClass (unitSquareClassRep c) := by
@@ -237,16 +248,8 @@ theorem existsUnique_unitSquareClassRep_iff_even (a : DyadicSqrtFiveˣ) :
     simpa using h
   · intro ha
     obtain ⟨c, hc⟩ := fullRep_bijective.surjective (squareClass a)
-    have hs := (squareClass_eq_iff_isSquare_mul _ _).mp hc.symm
-    have hev := even_toAdd_normalizedValuation_of_isSquare hs
-    simp only [map_mul, toAdd_mul, valuation_fullRep] at hev
-    have h3 : c 3 = 0 := by
-      have hb := ZMod.val_lt (c 3)
-      have hc0 : (c 3).val = 0 := by
-        rcases ha with ⟨n, hn⟩
-        rcases hev with ⟨m, hm⟩
-        omega
-      exact (ZMod.val_eq_zero _).mp hc0
+    have h3 : c 3 = 0 :=
+      (coord_three_eq_of_squareClass_fullRep hc).trans (ZMod.intCast_eq_zero_iff_even.mpr ha)
     have hrep : fullRep c = unitSquareClassRep (fun i => c i.castSucc) := by simp [fullRep, h3]
     have hc' : squareClass (unitSquareClassRep (fun i => c i.castSucc)) = squareClass a :=
       (congrArg squareClass hrep).symm.trans hc
@@ -279,16 +282,8 @@ theorem existsUnique_two_mul_unitSquareClassRep_iff_odd (a : DyadicSqrtFiveˣ) :
     exact ⟨n - 1, by omega⟩
   · intro ha
     obtain ⟨c, hc⟩ := fullRep_bijective.surjective (squareClass a)
-    have hev := even_toAdd_normalizedValuation_of_isSquare
-      ((squareClass_eq_iff_isSquare_mul _ _).mp hc.symm)
-    simp only [map_mul, toAdd_mul, valuation_fullRep] at hev
-    have h3 : c 3 = 1 := by
-      have hb := ZMod.val_lt (c 3)
-      have hc1 : (c 3).val = 1 := by
-        rcases ha with ⟨n, hn⟩
-        rcases hev with ⟨m, hm⟩
-        omega
-      exact (ZMod.val_eq_one (by norm_num) _).mp hc1
+    have h3 : c 3 = 1 :=
+      (coord_three_eq_of_squareClass_fullRep hc).trans (ZMod.intCast_eq_one_iff_odd.mpr ha)
     have hsnoc : Fin.snoc (fun i : Fin 3 => c i.castSucc) 1 = c := by
       funext i
       refine Fin.lastCases ?_ (fun j => ?_) i

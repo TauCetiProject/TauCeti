@@ -50,6 +50,9 @@ namespace TauCeti.DyadicSqrtFive
 
 open _root_.QuadraticMap _root_.ValuativeRel
 
+private theorem zmod_two_cases (z : ZMod 2) : z = 0 ∨ z = 1 := by
+  decide +revert
+
 private def signIndex (c : Fin 3 → ZMod 2) : Fin 2 :=
   ⟨(c 0).val, ZMod.val_lt _⟩
 
@@ -59,11 +62,37 @@ private def coefficientIndex (c : Fin 3 → ZMod 2) : Fin 4 :=
 private theorem coe_rep (c : Fin 3 → ZMod 2) :
     (unitSquareClassRep c : DyadicSqrtFive) = (-1) ^ (signIndex c).val *
       ![1, 2 + sqrtFive, 3 + 2 * sqrtFive, 16 + 7 * sqrtFive] (coefficientIndex c) := by
-  have cases : ∀ z : ZMod 2, z = 0 ∨ z = 1 := by decide
-  rcases cases (c 0) with h0 | h0 <;> rcases cases (c 1) with h1 | h1 <;>
-    rcases cases (c 2) with h2 | h2 <;>
+  rcases zmod_two_cases (c 0) with h0 | h0 <;> rcases zmod_two_cases (c 1) with h1 | h1 <;>
+    rcases zmod_two_cases (c 2) with h2 | h2 <;>
     simp [unitSquareClassRep_def, Fin.prod_univ_three, signIndex, coefficientIndex,
       h0, h1, h2, ZMod.val_one] <;> ring_nf <;> simp [sqrtFive_sq] <;> ring
+
+private theorem nondegenerate_traceTransfer_sq :
+    ((sq (R := DyadicSqrtFive) (A := DyadicSqrtFive)).traceTransfer ℚ_[2]).Nondegenerate :=
+  QuadraticMap.sq.nondegenerate_traceTransfer_iff.mpr
+    (by simpa using nondegenerate_smul_sq (one_ne_zero : (1 : DyadicSqrtFive) ≠ 0))
+
+private theorem nondegenerate_traceTransfer_smul_sq (u : DyadicSqrtFiveˣ) :
+    (((u : DyadicSqrtFive) • sq (R := DyadicSqrtFive)
+      (A := DyadicSqrtFive)).traceTransfer ℚ_[2]).Nondegenerate :=
+  (QuadraticMap.nondegenerate_traceTransfer_iff _).mpr (nondegenerate_smul_sq u.ne_zero)
+
+/-- If `(N) = c₁ (-1) + c₂ (5)`, then `(2) ∪ (-(5 · N)) = (1 + c₂) κ`, by the Steinberg relation
+`(2) ∪ (-1) = 0` and `(2) ∪ (5) = κ`. -/
+private theorem cup_two_neg_five_mul {N : ℚ_[2]ˣ} {c₁ c₂ : ZMod 2}
+    (hN : kummerClass N = c₁ • kummerClass (-1 : ℚ_[2]ˣ) +
+      c₂ • kummerClass (Units.mk0 (5 : ℚ_[2]) (by norm_num))) :
+    (trivialF2TopPairing (AbsoluteGaloisGroup ℚ_[2])).cup 1 1
+        (kummerClass (Units.mk0 (2 : ℚ_[2]) two_ne_zero))
+        (kummerClass (-(Units.mk0 (5 : ℚ_[2]) (by norm_num) * N))) =
+      (1 + c₂) • kummerCup ℚ_[2] (squareClass (-1)) (squareClass (-1)) := by
+  have h2m1 : (trivialF2TopPairing (AbsoluteGaloisGroup ℚ_[2])).cup 1 1
+      (kummerClass (Units.mk0 (2 : ℚ_[2]) two_ne_zero)) (kummerClass (-1)) = 0 :=
+    cup_kummerClass_eq_zero_of_add_eq_one (by norm_num)
+  rw [neg_eq_neg_one_mul, kummerClass_mul, kummerClass_mul, hN,
+    kummerCup_squareClass_squareClass]
+  rcases zmod_two_cases c₁ with h1 | h1 <;> rcases zmod_two_cases c₂ with h2 | h2 <;>
+    simp [h1, h2, h2m1, cup_kummerClass_two_five_eq_neg_one_neg_one_padicTwo, add_smul]
 
 private theorem representative_values
     (σ : DyadicSqrtFive →ₐ[ℚ_[2]] SeparableClosure ℚ_[2]) (c : Fin 3 → ZMod 2)
@@ -84,9 +113,8 @@ private theorem representative_values
   have h2 := sw2Class_traceTransfer_table (signIndex c) (coefficientIndex c) _ (coe_rep c) hQ
   have he := galoisEvens_kummerClass_table σ (signIndex c) (coefficientIndex c) _ (coe_rep c)
   have htwo : (1 + 1 : ZMod 2) = 0 := by decide
-  have cases : ∀ z : ZMod 2, z = 0 ∨ z = 1 := by decide
-  rcases cases (c 0) with h0c | h0c <;> rcases cases (c 1) with h1c | h1c <;>
-    rcases cases (c 2) with h2c | h2c <;>
+  rcases zmod_two_cases (c 0) with h0c | h0c <;> rcases zmod_two_cases (c 1) with h1c | h1c <;>
+    rcases zmod_two_cases (c 2) with h2c | h2c <;>
     simpa [signIndex, coefficientIndex, h0c, h1c, h2c, ZMod.val_one, htwo] using
       And.intro hc (And.intro h1 (And.intro h2 he))
 
@@ -110,10 +138,7 @@ private theorem two_mul_representative_values
           (kummerClass (Units.mk0 (2 : DyadicSqrtFive) (by norm_num) * unitSquareClassRep c)) =
         ((1 + c 0) * (1 + c 1) + c 2) •
           kummerCup ℚ_[2] (squareClass (-1)) (squareClass (-1)) := by
-  have hrep : (((unitSquareClassRep c : DyadicSqrtFive) • sq (R := DyadicSqrtFive)
-      (A := DyadicSqrtFive)).traceTransfer ℚ_[2]).Nondegenerate :=
-    (QuadraticMap.nondegenerate_traceTransfer_iff _).mpr
-      (nondegenerate_smul_sq (unitSquareClassRep c).ne_zero)
+  have hrep := nondegenerate_traceTransfer_smul_sq (unitSquareClassRep c)
   obtain ⟨hcor, hsw1, hsw2, hev⟩ := representative_values σ c hrep
   set u := unitSquareClassRep c
   -- The factor `2` comes from the base field.
@@ -142,25 +167,15 @@ private theorem two_mul_representative_values
     rw [← hcor, galoisCor_kummerClass]
     congr 1
     exact Units.ext (by simp)
-  have h2m1 : (trivialF2TopPairing (AbsoluteGaloisGroup ℚ_[2])).cup 1 1
-      (kummerClass (Units.mk0 (2 : ℚ_[2]) two_ne_zero)) (kummerClass (-1)) = 0 :=
-    cup_kummerClass_eq_zero_of_add_eq_one (by norm_num)
   have hev' : galoisEvens ℚ_[2] DyadicSqrtFive σ finrank_eq_two
       (kummerClass (Units.mk0 (2 : DyadicSqrtFive) (by norm_num) * u)) =
         galoisEvens ℚ_[2] DyadicSqrtFive σ finrank_eq_two (kummerClass u) +
           (1 + c 2) • kummerCup ℚ_[2] (squareClass (-1)) (squareClass (-1)) := by
     rw [hk, galoisEvens2_kummerClass_algebraMap_mul σ finrank_eq_two
       (Units.mk0 (5 : ℚ_[2]) (by norm_num)) sqrtFive_not_mem (by simp [map_ofNat]) _ u]
-    congr 1
-    rw [neg_eq_neg_one_mul, kummerClass_mul, kummerClass_mul, hNu,
-      kummerCup_squareClass_squareClass]
-    have cases : ∀ z : ZMod 2, z = 0 ∨ z = 1 := by decide
-    rcases cases (c 1) with h1 | h1 <;> rcases cases (c 2) with h2 | h2 <;>
-      simp [h1, h2, h2m1, cup_kummerClass_two_five_eq_neg_one_neg_one_padicTwo, add_smul]
+    rw [cup_two_neg_five_mul hNu]
   -- Both classes then follow from the relative formulas for `2 u` and for `u`.
-  have hbase : ((sq (R := DyadicSqrtFive) (A := DyadicSqrtFive)).traceTransfer
-      ℚ_[2]).Nondegenerate := QuadraticMap.sq.nondegenerate_traceTransfer_iff.mpr
-        (by simpa using nondegenerate_smul_sq (one_ne_zero : (1 : DyadicSqrtFive) ≠ 0))
+  have hbase := nondegenerate_traceTransfer_sq
   refine ⟨hcor'.trans hcor, ?_, ?_, ?_⟩
   · rw [sw1Class_formClass_traceTransfer_smul_sq σ _ hQ hbase, hcor', ← hsw1,
       sw1Class_formClass_traceTransfer_smul_sq σ u hrep hbase]
@@ -186,9 +201,7 @@ private theorem relative_values_congr
       sw2Class (formClass _ ha) = sw2Class (formClass _ hb) := by
   have hk : kummerClass a = kummerClass b := by
     rw [← kummerSquareClassEquiv_squareClass, ← kummerSquareClassEquiv_squareClass, hab]
-  have hbase : ((sq (R := DyadicSqrtFive) (A := DyadicSqrtFive)).traceTransfer
-      ℚ_[2]).Nondegenerate := QuadraticMap.sq.nondegenerate_traceTransfer_iff.mpr
-        (by simpa using nondegenerate_smul_sq (one_ne_zero : (1 : DyadicSqrtFive) ≠ 0))
+  have hbase := nondegenerate_traceTransfer_sq
   refine ⟨hk, ?_, ?_⟩
   · rw [sw1Class_formClass_traceTransfer_smul_sq σ a ha hbase,
       sw1Class_formClass_traceTransfer_smul_sq σ b hb hbase, hk]
@@ -219,10 +232,7 @@ theorem existsUnique_relative_traceTransfer_values_of_even
         (1 + (1 + c 0) * (1 + c 1)) •
           kummerCup ℚ_[2] (squareClass (-1)) (squareClass (-1)) := by
   obtain ⟨c, hc, hunique⟩ := (existsUnique_unitSquareClassRep_iff_even a).mpr ha
-  have hrep : (((unitSquareClassRep c : DyadicSqrtFive) • sq (R := DyadicSqrtFive)
-      (A := DyadicSqrtFive)).traceTransfer ℚ_[2]).Nondegenerate :=
-    (QuadraticMap.nondegenerate_traceTransfer_iff _).mpr
-      (nondegenerate_smul_sq (unitSquareClassRep c).ne_zero)
+  have hrep := nondegenerate_traceTransfer_smul_sq (unitSquareClassRep c)
   obtain ⟨hk, hw1, hw2⟩ := relative_values_congr σ hc hQ hrep
   obtain ⟨hcor, hsw1, hsw2, hev⟩ := representative_values σ c hrep
   refine ⟨c, ⟨hc, ?_, hw1.trans hsw1, hw2.trans hsw2, ?_⟩, fun d hd => hunique d hd.1⟩
@@ -256,10 +266,8 @@ theorem existsUnique_relative_traceTransfer_values_of_odd
         ((1 + c 0) * (1 + c 1) + c 2) •
           kummerCup ℚ_[2] (squareClass (-1)) (squareClass (-1)) := by
   obtain ⟨c, hc, hunique⟩ := (existsUnique_two_mul_unitSquareClassRep_iff_odd a).mpr ha
-  have hrep : ((((Units.mk0 (2 : DyadicSqrtFive) (by norm_num) * unitSquareClassRep c :
-      DyadicSqrtFiveˣ) : DyadicSqrtFive) • sq (R := DyadicSqrtFive)
-        (A := DyadicSqrtFive)).traceTransfer ℚ_[2]).Nondegenerate :=
-    (QuadraticMap.nondegenerate_traceTransfer_iff _).mpr (nondegenerate_smul_sq (Units.ne_zero _))
+  have hrep := nondegenerate_traceTransfer_smul_sq
+    (Units.mk0 (2 : DyadicSqrtFive) (by norm_num) * unitSquareClassRep c)
   obtain ⟨hk, hw1, hw2⟩ := relative_values_congr σ hc hQ hrep
   obtain ⟨hcor, hsw1, hsw2, hev⟩ := two_mul_representative_values σ c hrep
   refine ⟨c, ⟨hc, ?_, hw1.trans hsw1, hw2.trans hsw2, ?_⟩, fun d hd => hunique d hd.1⟩
