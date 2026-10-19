@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.LaurentSeries.Convergence
 public import TauCeti.RingTheory.LaurentSeries.Substitution
-public import TauCeti.RingTheory.PowerSeries.Coordinate
+public import TauCeti.RingTheory.PowerSeries.Coordinate.Basic
 
 /-!
 # The valuation topology on formal power series
