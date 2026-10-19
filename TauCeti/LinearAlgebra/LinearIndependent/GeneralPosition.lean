@@ -95,9 +95,11 @@ theorem map [Field K'] (hL : InGeneralPosition L) (σ : K →+* K') :
     InGeneralPosition (fun i j ↦ σ (L i j)) := by
   rw [inGeneralPosition_iff_det_ne_zero] at hL ⊢
   intro e he
-  let B : Matrix (Fin n) (Fin n) K := Matrix.of fun i j ↦ L (e i) j
-  change (σ.mapMatrix B).det ≠ 0
-  rw [← σ.map_det]
+  have hB : Matrix.of (fun i j ↦ σ (L (e i) j)) =
+      σ.mapMatrix (Matrix.of fun i j ↦ L (e i) j) := by
+    ext i j
+    simp
+  rw [hB, ← σ.map_det]
   exact (map_ne_zero σ).mpr (hL e he)
 
 /-- An invertible linear change of coordinates preserves general position.  A row vector `L i`
@@ -138,7 +140,10 @@ section CoordinateForms
 
 variable [Field K]
 
-private theorem linearIndependent_one_option_piSingle_ne (k : Fin n) :
+/-- Omitting the `k`th coordinate vector, the remaining coordinate vectors together with the
+all-ones vector are linearly independent.  The index `none` labels the all-ones vector and
+`some j` labels the `j`th coordinate vector. -/
+theorem linearIndependent_one_option_piSingle_ne (k : Fin n) :
     LinearIndependent K (fun o : Option {j : Fin n // j ≠ k} ↦
       o.casesOn' (fun _ ↦ (1 : K)) (fun j ↦ Pi.single j.1 (1 : K))) := by
   rw [linearIndependent_option']
@@ -164,8 +169,6 @@ labels the sum and `some i` labels the `i`th coordinate vector. -/
 theorem inGeneralPosition_coords_add_sum :
     InGeneralPosition (fun o : Option (Fin n) ↦
       o.casesOn' (fun _ ↦ 1 : Fin n → K) (fun i ↦ Pi.single i 1)) := by
-  let L : Option (Fin n) → Fin n → K := fun o ↦
-    o.casesOn' (fun _ ↦ 1) (fun i ↦ Pi.single i 1)
   intro e he
   have hns : ¬Surjective e := by
     intro hsurj
@@ -175,7 +178,6 @@ theorem inGeneralPosition_coords_add_sum :
   simp only [Surjective] at hns
   push Not at hns
   obtain ⟨z, hz⟩ := hns
-  change LinearIndependent K (L ∘ e)
   cases z with
   | none =>
       have hex (i : Fin n) : ∃ j : Fin n, some j = e i := by
@@ -190,9 +192,8 @@ theorem inGeneralPosition_coords_add_sum :
       have hli := (Pi.basisFun K (Fin n)).linearIndependent.comp f hf_inj
       convert hli using 1
       ext i j
-      change L (e i) j = _
-      rw [← hf i]
-      simp [L]
+      rw [Function.comp_apply, ← hf i]
+      simp
   | some k =>
       let emb : Option {j : Fin n // j ≠ k} → Option (Fin n) := Option.map Subtype.val
       have hex (i : Fin n) : ∃ q, emb q = e i := by
@@ -212,9 +213,8 @@ theorem inGeneralPosition_coords_add_sum :
       have hli := (linearIndependent_one_option_piSingle_ne (K := K) k).comp f hf_inj
       convert hli using 1
       ext i j
-      change L (e i) j = _
-      rw [← hf i]
-      cases hfi : f i <;> simp [L, emb, hfi]
+      rw [Function.comp_apply, ← hf i]
+      cases hfi : f i <;> simp [emb, hfi]
 
 end CoordinateForms
 
