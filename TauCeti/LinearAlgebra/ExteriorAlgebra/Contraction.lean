@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.CliffordAlgebra.Contraction
 public import Mathlib.LinearAlgebra.ExteriorAlgebra.Basis
 import Mathlib.GroupTheory.Perm.Fin
 import Mathlib.Order.Fin.Tuple
+import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
 
 /-!
 # Coordinate projections on an exterior algebra
@@ -27,8 +28,9 @@ replaces an occupied coordinate with an unoccupied one, with the product of thei
 The grade involution is diagonal for the exterior basis as well: it multiplies an exterior
 monomial, and so the basis vector indexed by `s`, by the parity of its degree.
 
-The basis vectors of index sets with one or two elements are the corresponding products of the
-exterior-algebra generators, in increasing order.
+Every basis vector is the product of the exterior-algebra generators of its index set, in
+increasing order; for index sets with one or two elements this is also recorded in the explicit
+forms `TauCeti.ExteriorAlgebra.basis_singleton` and `TauCeti.ExteriorAlgebra.basis_pair`.
 -/
 
 public section
@@ -41,37 +43,31 @@ universe u v w
 
 variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
 
-private theorem contractLeft_ιMulti_eq_zero {n : ℕ}
-    (d : Module.Dual R M) (v : Fin n → M) (h : ∀ i, d (v i) = 0) :
-    contractLeft (Q := (0 : QuadraticForm R M)) d (ExteriorAlgebra.ιMulti R n v) = 0 := by
-  induction n with
-  | zero =>
-      rw [ExteriorAlgebra.ιMulti_zero_apply]
-      exact contractLeft_one (Q := (0 : QuadraticForm R M)) d
-  | succ n ih =>
-      rw [ExteriorAlgebra.ιMulti_succ_apply, contractLeft_ι_mul, h 0, zero_smul,
-        ih (Matrix.vecTail v) (fun i ↦ h i.succ), mul_zero, sub_zero]
+/-- **An exterior-basis vector is the product of its generators in increasing order**: the basis
+vector indexed by `s` is `ι (b i₁) * ⋯ * ι (b iₖ)` for `s.sort = [i₁, …, iₖ]`. -/
+theorem basis_eq_prod_map_sort {I : Type w} [LinearOrder I] (b : Module.Basis I R M)
+    (s : Finset I) :
+    b.ExteriorAlgebra s = ((s.sort.map b).map (ExteriorAlgebra.ι R)).prod := by
+  rw [ExteriorAlgebra.basis_apply_ofCard b rfl, ExteriorAlgebra.ιMulti_family,
+    ExteriorAlgebra.ιMulti_apply]
+  congr 1
+  refine List.ext_getElem (by simp) fun n _ _ ↦ ?_
+  simp only [List.getElem_ofFn, Function.comp_apply, List.getElem_map,
+    Set.powersetCard.ofFinEmbEquiv_symm_apply, Set.powersetCard.ofCard]
+  exact congrArg (fun i ↦ ExteriorAlgebra.ι R (b i)) (Finset.orderEmbOfFin_apply _ _ _)
 
 /-- Contracting an exterior-basis vector by a coordinate not in its index set gives zero. -/
 @[simp]
 private theorem contractLeft_coord_basis_eq_zero_of_not_mem {I : Type w} [LinearOrder I]
     (b : Module.Basis I R M) (i : I) (s : Finset I) (hi : i ∉ s) :
     contractLeft (Q := (0 : QuadraticForm R M)) (b.coord i) (b.ExteriorAlgebra s) = 0 := by
-  rw [ExteriorAlgebra.basis_apply]
-  apply contractLeft_ιMulti_eq_zero
-  intro j
-  simp only [Function.comp_apply, Module.Basis.coord_apply,
-    Module.Basis.repr_self, Finsupp.single_apply]
-  split_ifs with h
-  · exfalso
-    apply hi
-    rw [← h]
-    have hj := (Set.powersetCard.mem_range_ofFinEmbEquiv_symm_iff_mem
-      (Set.powersetCard.prodEquiv.symm s).2
-      (Set.powersetCard.ofFinEmbEquiv.symm (Set.powersetCard.prodEquiv.symm s).2 j)).mp
-      ⟨j, rfl⟩
-    exact hj
-  · rfl
+  rw [basis_eq_prod_map_sort]
+  refine contractLeft_prod_map_ι_eq_zero _ fun m hm ↦ ?_
+  obtain ⟨j, hj, rfl⟩ := List.mem_map.mp hm
+  rw [Module.Basis.coord_apply, Module.Basis.repr_self, Finsupp.single_apply,
+    ite_eq_right_iff]
+  rintro rfl
+  exact absurd ((Finset.mem_sort _).mp hj) hi
 
 /-- **The grade involution acts on an exterior monomial by the parity of its degree.** The
 monomial is the product of its `n` generators, each of which the involution negates. -/
@@ -267,40 +263,14 @@ vector under the exterior-algebra generator. -/
 theorem basis_singleton {I : Type w} [LinearOrder I]
     (b : Module.Basis I R M) (i : I) :
     b.ExteriorAlgebra {i} = ExteriorAlgebra.ι R (b i) := by
-  let a : Set.powersetCard I 1 :=
-    Set.powersetCard.ofCard (s := {i}) (Finset.card_singleton i)
-  rw [ExteriorAlgebra.basis_apply_ofCard b (Finset.card_singleton i)]
-  rw [ExteriorAlgebra.ιMulti_family]
-  rw [ExteriorAlgebra.ιMulti_succ_apply, ExteriorAlgebra.ιMulti_zero_apply, mul_one]
-  have hj := (Set.powersetCard.mem_range_ofFinEmbEquiv_symm_iff_mem
-    a (Set.powersetCard.ofFinEmbEquiv.symm a 0)).mp ⟨0, rfl⟩
-  have hj' : Set.powersetCard.ofFinEmbEquiv.symm a 0 ∈ ({i} : Finset I) := hj
-  have heq : Set.powersetCard.ofFinEmbEquiv.symm a 0 = i := Finset.eq_of_mem_singleton hj'
-  exact congrArg (fun j ↦ ExteriorAlgebra.ι R (b j)) heq
+  simp [basis_eq_prod_map_sort]
 
 /-- The exterior-basis vector indexed by a pair `{i, j}` with `i < j` is the product of the two
 basis vectors in increasing order. -/
 theorem basis_pair {I : Type w} [LinearOrder I] (b : Module.Basis I R M) {i j : I} (hij : i < j) :
     b.ExteriorAlgebra {i, j} = ExteriorAlgebra.ι R (b i) * ExteriorAlgebra.ι R (b j) := by
-  have hcard : ({i, j} : Finset I).card = 2 := Finset.card_pair hij.ne
-  have hlt := ({i, j} : Finset I).orderEmbOfFin hcard |>.strictMono
-    (show (0 : Fin 2) < 1 by decide)
-  have h0 := ({i, j} : Finset I).orderEmbOfFin_mem hcard 0
-  have h1 := ({i, j} : Finset I).orderEmbOfFin_mem hcard 1
-  simp only [Finset.mem_insert, Finset.mem_singleton] at h0 h1
-  -- The increasing enumeration of `{i, j}` must list `i` first and `j` second.
-  obtain ⟨hi, hj⟩ : ({i, j} : Finset I).orderEmbOfFin hcard 0 = i ∧
-      ({i, j} : Finset I).orderEmbOfFin hcard 1 = j := by
-    rcases h0 with h0 | h0 <;> rcases h1 with h1 | h1 <;> rw [h0, h1] at hlt
-    · exact absurd hlt (lt_irrefl _)
-    · exact ⟨h0, h1⟩
-    · exact absurd hlt (lt_asymm hij)
-    · exact absurd hlt (lt_irrefl _)
-  rw [ExteriorAlgebra.basis_apply_ofCard b hcard, ExteriorAlgebra.ιMulti_family,
-    ExteriorAlgebra.ιMulti_succ_apply, ExteriorAlgebra.ιMulti_succ_apply,
-    ExteriorAlgebra.ιMulti_zero_apply, mul_one]
-  simp [Set.powersetCard.ofFinEmbEquiv_symm_apply, Set.powersetCard.ofCard, Matrix.vecTail,
-    hi, hj]
+  rw [basis_eq_prod_map_sort, Finset.sort_insert _ (by simpa using hij.le) (by simpa using hij.ne)]
+  simp
 
 /-- Multiplying the basis vector for `i` by the basis vector for `s.erase i` reconstructs the
 basis vector for `s`, with the shuffle sign that moves `i` to the front. -/
