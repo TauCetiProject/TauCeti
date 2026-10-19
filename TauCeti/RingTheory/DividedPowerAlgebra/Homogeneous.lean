@@ -57,6 +57,39 @@ theorem prod_dp_mem_homogeneousSubmodule (l : List (ℕ × M)) :
   apply Submodule.subset_span
   exact ⟨l, rfl, rfl⟩
 
+/-- A submodule contains the degree-`d` piece if and only if it contains every product of
+divided-power generators whose indices sum to `d`. -/
+theorem homogeneousSubmodule_le_iff {d : ℕ} {p : Submodule R (DividedPowerAlgebra R M)} :
+    homogeneousSubmodule (R := R) (M := M) d ≤ p ↔
+      ∀ l : List (ℕ × M), (l.map Prod.fst).sum = d →
+        (l.map fun nm ↦ dp R nm.1 nm.2).prod ∈ p := by
+  rw [homogeneousSubmodule, Submodule.span_le]
+  constructor
+  · exact fun h l hl ↦ h ⟨l, hl, rfl⟩
+  · rintro h _ ⟨l, hl, rfl⟩
+    exact h l hl
+
+/-- An induction principle for the degree-`d` piece: a property of its elements holds as soon as
+it holds for products of divided-power generators whose indices sum to `d` and is stable under
+zero, addition and scalar multiplication. -/
+@[elab_as_elim]
+theorem homogeneousSubmodule_induction {d : ℕ}
+    {motive : (x : DividedPowerAlgebra R M) → x ∈ homogeneousSubmodule (R := R) (M := M) d → Prop}
+    (prod_dp : ∀ (l : List (ℕ × M)) (hl : (l.map Prod.fst).sum = d),
+      motive (l.map fun nm ↦ dp R nm.1 nm.2).prod (hl ▸ prod_dp_mem_homogeneousSubmodule l))
+    (zero : motive 0 (Submodule.zero_mem _))
+    (add : ∀ x y hx hy, motive x hx → motive y hy → motive (x + y) (Submodule.add_mem _ hx hy))
+    (smul : ∀ (r : R) x hx, motive x hx → motive (r • x) (Submodule.smul_mem _ r hx))
+    {x : DividedPowerAlgebra R M} (hx : x ∈ homogeneousSubmodule (R := R) (M := M) d) :
+    motive x hx := by
+  induction hx using Submodule.span_induction with
+  | mem x hx =>
+      obtain ⟨l, hl, rfl⟩ := hx
+      exact prod_dp l hl
+  | zero => exact zero
+  | add x y _ _ hx hy => exact add x y _ _ hx hy
+  | smul r x _ hx => exact smul r x _ hx
+
 /-- The generator `dp R d m` is homogeneous of degree `d`. -/
 theorem dp_mem_homogeneousSubmodule (d : ℕ) (m : M) :
     dp R d m ∈ homogeneousSubmodule (R := R) (M := M) d := by
