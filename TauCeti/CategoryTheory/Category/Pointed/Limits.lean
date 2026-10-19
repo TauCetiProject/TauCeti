@@ -35,7 +35,9 @@ corresponds to the map `PUnit → X` picking out its basepoint.
 
 The body is exposed so that the generated `simps` lemmas, which identify the underlying types
 and basepoints on both sides, can be stated and proved by `rfl`. -/
-@[expose, simps!]
+@[expose, simps! functor_obj_left_as functor_obj_right functor_obj_hom_hom_apply inverse_obj_X
+  inverse_obj_point inverse_map_toFun unitIso_hom_app_toFun unitIso_inv_app_toFun
+  counitIso_hom_app_right_hom_apply counitIso_inv_app_right_hom_apply]
 def equivUnderPUnit : Pointed.{u} ≌ Under (PUnit.{u + 1} : Type u) where
   functor :=
     { obj X := Under.mk (TypeCat.ofHom fun _ ↦ X.point)
@@ -46,6 +48,13 @@ def equivUnderPUnit : Pointed.{u} ≌ Under (PUnit.{u + 1} : Type u) where
   unitIso := NatIso.ofComponents fun X ↦ Iso.refl X
   counitIso := NatIso.ofComponents fun A ↦
     Under.isoMk (Iso.refl A.right) (by ext; rfl)
+
+/-- The functor `Pointed ⥤ Under PUnit` acts on morphisms by their underlying functions. This is
+stated by hand: the `simps` version would mention `Under.mk` in the types of its coercion. -/
+@[simp]
+lemma equivUnderPUnit_functor_map_right_hom_apply {X Y : Pointed.{u}} (f : X ⟶ Y) (a : X) :
+    (equivUnderPUnit.functor.map f).right a = f.toFun a :=
+  rfl
 
 instance [UnivLE.{w, u}] : HasColimitsOfSize.{w, w} Pointed.{u} :=
   Adjunction.has_colimits_of_equivalence equivUnderPUnit.functor
