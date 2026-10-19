@@ -84,8 +84,6 @@ attribute [local instance 10] Place.algebraIntegersExtension Place.isScalarTower
 
 /-! ### Relative repartitions -/
 
-section Relative
-
 omit [Algebra k k'] [Algebra k' F'] [IsScalarTower k k' F'] in
 variable (k F F') in
 /-- The **relative repartitions** of `F' / F`: the families `β : Place k F → F'` whose entry at
@@ -134,8 +132,6 @@ theorem const_mem_relativeRepartitionSpace [Algebra.IsIntegral F F'] (hF : IsFun
     (x : F') : Function.const (Place k F) x ∈ relativeRepartitionSpace k F F' :=
   Filter.eventually_cofinite.mpr
     (Place.finite_setOf_not_isIntegral hF x (Algebra.IsIntegral.isIntegral x))
-
-end Relative
 
 /-! ### Pulling relative repartitions back to `F'` -/
 

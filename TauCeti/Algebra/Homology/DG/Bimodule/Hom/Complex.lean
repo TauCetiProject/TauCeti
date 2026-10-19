@@ -68,8 +68,6 @@ def dgBimoduleCochains (p : ℤ) :
 
 namespace dgBimoduleCochains
 
-section Elementary
-
 omit [GradedAlgebra 𝒜] [IsScalarTower R A M]
   [SMulCommClass A Bᵐᵒᵖ M] [SMulCommClass A Bᵐᵒᵖ N]
   [DirectSum.Decomposition ℳ] [DirectSum.Decomposition 𝒩]
@@ -114,8 +112,6 @@ theorem map_smul_left {p r : ℤ}
     {a : A} (ha : a ∈ 𝒜 r) (x : M) :
     f.1.1 (a • x) = (p * r).negOnePow • (a • f.1.1 x) :=
   mem_iff.mp f.2 ha x
-
-end Elementary
 
 omit [IsScalarTower R A M] [SMulCommClass A Bᵐᵒᵖ M] [SMulCommClass A Bᵐᵒᵖ N]
   [DirectSum.Decomposition ℳ] [DirectSum.Decomposition 𝒩]

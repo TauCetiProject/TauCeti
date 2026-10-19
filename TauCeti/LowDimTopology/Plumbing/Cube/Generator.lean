@@ -431,7 +431,6 @@ docstring. -/
 
 variable (C : PlumbingCube V) {v w : V}
 
-section
 omit [DecidableEq (V → ℤ)] in
 /-- The two lower faces in distinct directions `v` and `w` agree: both are the cube based at
 `C.base` with directions `(C.directions.erase v).erase w`. -/
@@ -487,8 +486,6 @@ theorem upperFace_lowerFace_comm (hv : v ∈ C.directions) (hw : w ∈ C.directi
   · simp
   · simp only [upperFace_directions, lowerFace_directions]
     exact Finset.erase_right_comm
-
-end
 
 end PlumbingCube
 

@@ -227,8 +227,6 @@ theorem bijective_absoluteGaloisGroup_mapOfAlgebra (h : Function.Bijective (alge
 
 end MapOfAlgebra
 
-section Isomorphism
-
 omit [Algebra K L] in
 /-- **Along a bijective ring homomorphism the map of absolute Galois groups is bijective**, for
 any choice of embedding of algebraic closures made by `Field.absoluteGaloisGroup.map`. -/
@@ -262,7 +260,5 @@ omit [Algebra K L] in
 theorem absoluteGaloisGroupMapEquiv_apply (e : K ≃+* L) (g : Field.absoluteGaloisGroup L) :
     absoluteGaloisGroupMapEquiv e g = Field.absoluteGaloisGroup.map e.toRingHom g :=
   (rfl)
-
-end Isomorphism
 
 end TauCeti
