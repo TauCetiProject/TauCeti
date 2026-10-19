@@ -28,8 +28,6 @@ the partial derivative of the parabola equation with respect to `y` is one.
 
 ## References
 
-* The accompanying Check for `exists_regularSystem_of_quotient` in §0.30 of the
-  SchemeAndStackFoundations roadmap.
 * [Stacks Project, Lemma 10.106.3](https://stacks.math.columbia.edu/tag/00NQ).
 -/
 
