@@ -76,28 +76,14 @@ for `S = Set.univ` this would say that the units topology of the finite ideles i
 topology. -/
 theorem isEmbedding_sIntegralUnits {S : Set (HeightOneSpectrum R)} (hS : S.Finite) :
     Topology.IsEmbedding fun x : sIntegralUnits R K S ↦ ⇑(unitsContinuousMulEquiv R K x) := by
-  have hle : Filter.cofinite ≤ Filter.principal Sᶜ :=
-    Filter.le_principal_iff.mpr hS.compl_mem_cofinite
-  -- the `S`-integral finite ideles land in the restricted product with respect to `𝓟 Sᶜ`
-  have hmem (x : sIntegralUnits R K S) (v : HeightOneSpectrum R) (hv : v ∉ S) :
-      unitsContinuousMulEquiv R K x v ∈ (Submonoid.ofClass (v.adicCompletionIntegers K)).units := by
-    rw [Submonoid.mem_units_iff, coe_unitsContinuousMulEquiv_apply, ← RestrictedProduct.inv_apply,
-      ← map_inv, coe_unitsContinuousMulEquiv_apply]
-    have hx := mem_sIntegralUnits_iff_mem_sIntegralAdeles.mp x.2
-    exact ⟨mem_sIntegralAdeles.mp hx.1 v hv, mem_sIntegralAdeles.mp hx.2 v hv⟩
-  let g : sIntegralUnits R K S →
-      Πʳ v : HeightOneSpectrum R, [(v.adicCompletion K)ˣ,
-        (Submonoid.ofClass (v.adicCompletionIntegers K)).units]_[Filter.principal Sᶜ] :=
-    fun x ↦ ⟨⇑(unitsContinuousMulEquiv R K x), Filter.eventually_principal.mpr (hmem x)⟩
-  -- `RestrictedProduct.inclusion` composed with `g` is the restriction of a homeomorphism
-  have hg : Topology.IsEmbedding g := by
-    refine ⟨((RestrictedProduct.isEmbedding_inclusion_principal hle).isInducing.of_comp_iff).mp
-      ((unitsContinuousMulEquiv R K).toHomeomorph.isInducing.comp
-        Topology.IsInducing.subtypeVal), fun x y hxy ↦ ?_⟩
-    refine Subtype.ext ((unitsContinuousMulEquiv R K).injective ?_)
-    ext v : 1
-    exact RestrictedProduct.ext_iff.mp hxy v
-  exact RestrictedProduct.isEmbedding_coe_of_principal.comp hg
+  refine TauCeti.isEmbedding_restrictedProduct_coe_comp hS
+    ((unitsContinuousMulEquiv R K).toHomeomorph.isEmbedding.comp
+      Topology.IsEmbedding.subtypeVal) fun x v hv ↦ ?_
+  -- an `S`-integral finite idele and its inverse are integral at every place outside `S`
+  rw [SetLike.mem_coe, Submonoid.mem_units_iff, coe_unitsContinuousMulEquiv_apply,
+    ← RestrictedProduct.inv_apply, ← map_inv, coe_unitsContinuousMulEquiv_apply]
+  have hx := mem_sIntegralUnits_iff_mem_sIntegralAdeles.mp x.2
+  exact ⟨mem_sIntegralAdeles.mp hx.1 v hv, mem_sIntegralAdeles.mp hx.2 v hv⟩
 
 /-! ### Principal `S`-integral finite ideles -/
 

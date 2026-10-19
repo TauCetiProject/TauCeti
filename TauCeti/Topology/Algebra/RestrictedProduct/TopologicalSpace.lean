@@ -15,7 +15,9 @@ topology over the principal stages `Πʳ i, [R i, A i]_[𝓟 S]`. A set is open 
 preimage in every principal stage is open: this is the `Prop`-valued form of Mathlib's universal
 property `RestrictedProduct.continuous_dom`. Inserting a single factor is continuous, the analogue
 of `continuous_mulSingle` (and, additively, `continuous_single`) for `Pi` types, and for Hausdorff
-factors it is a closed embedding. Over the cofinite filter, evaluation at an index is an open map.
+factors it is a closed embedding. Over the cofinite filter, evaluation at an index is an open map,
+and on a subspace lying in the reference sets outside finitely many indices the restricted-product
+topology agrees with the product topology.
 
 The restricted-product topology is finer than the topology induced from the full product
 `Π i, R i`, and in general strictly finer. The clearest instance is a family of discrete spaces
@@ -74,6 +76,25 @@ theorem isOpenMap_restrictedProduct_eval (i : ι) :
   · ext j
     exact congrFun (Function.update_eq_self i (⇑x)) j
   · exact Function.update_self i y (⇑x)
+
+/-- **Away from finitely many indices, the restricted-product topology is the product topology.**
+If an embedding `f` into a restricted product over the cofinite filter lands in the reference sets
+at every index outside a finite set `S`, then reading off all coordinates of `f` is an embedding
+into the full product `Π i, R i`. -/
+theorem isEmbedding_restrictedProduct_coe_comp {X : Type w} [TopologicalSpace X] {S : Set ι}
+    (hS : S.Finite) {f : X → Πʳ i, [R i, A i]} (hf : IsEmbedding f)
+    (hmem : ∀ x, ∀ i ∉ S, f x i ∈ A i) :
+    IsEmbedding fun x ↦ ⇑(f x) := by
+  have hle : (cofinite : Filter ι) ≤ 𝓟 Sᶜ := le_principal_iff.mpr hS.compl_mem_cofinite
+  -- `f` factors through the principal stage `Πʳ i, [R i, A i]_[𝓟 Sᶜ]`
+  let g : X → Πʳ i, [R i, A i]_[𝓟 Sᶜ] := fun x ↦ ⟨f x, eventually_principal.mpr (hmem x)⟩
+  -- `RestrictedProduct.inclusion` composed with `g` is `f` by definition
+  have hg : IsEmbedding g := by
+    refine ⟨((RestrictedProduct.isEmbedding_inclusion_principal hle).isInducing.of_comp_iff).mp
+      hf.isInducing, fun x y hxy ↦ hf.injective ?_⟩
+    ext i
+    exact RestrictedProduct.ext_iff.mp hxy i
+  exact RestrictedProduct.isEmbedding_coe_of_principal.comp hg
 
 section
 
