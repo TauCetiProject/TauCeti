@@ -121,7 +121,7 @@ theorem one_add_add_of_inv_dvd_two_pow_sub_one_add_of_inv (a f : ℕ) {x y : G}
   have := χ.isClosed_ker
   have : IsMulCommutative (G ⧸ χ.toMonoidHom.ker) :=
     Subgroup.Normal.quotient_commutative_iff_commutator_le.mpr
-      (Abelianization.commutator_subset_ker _)
+      (Abelianization.commutator_le_ker _)
   have hΓ := hG.quotient χ.toMonoidHom.ker
   -- The marked values: `χ x = -(1 + a)⁻¹` and `χ y = (1 - 2^f)⁻¹`.
   have hx' : (((χ x)⁻¹ : ℤ_[2]ˣ) : ℤ_[2]) = -(1 + a) :=

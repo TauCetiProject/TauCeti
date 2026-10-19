@@ -29,6 +29,7 @@ The topological theorems are in the `TauCeti` namespace. For the arithmetic maps
 `IsDedekindDomain.FiniteAdeleRing`, use:
 
 * `TauCeti.isOpen_integralUnits` and `TauCeti.isCompact_integralUnits` for `integralUnits`;
+* `TauCeti.isOpen_sIntegralUnits` and `TauCeti.isClosed_sIntegralUnits` for `sIntegralUnits`;
 * `TauCeti.isLocallyConstant_toFractionalIdeal` and
   `TauCeti.isOpenQuotientMap_toFractionalIdeal` for `toFractionalIdeal`;
 * `TauCeti.isLocallyConstant_toClassGroup` and `TauCeti.isOpenQuotientMap_toClassGroup`
@@ -62,6 +63,17 @@ theorem isCompact_integralUnits
     IsCompact (integralUnits R K : Set (FiniteAdeleRing R K)ˣ) := by
   rw [integralUnits_eq_units_integralAdeles]
   exact Submonoid.units_isCompact (isCompact_integralAdeles (R := R) (K := K))
+
+/-- The `S`-integral finite ideles form an open subgroup of the finite idele group. -/
+theorem isOpen_sIntegralUnits (S : Set (HeightOneSpectrum R)) :
+    IsOpen (sIntegralUnits R K S : Set (FiniteAdeleRing R K)ˣ) :=
+  Subgroup.isOpen_mono (sIntegralUnits_mono R K (Set.empty_subset S))
+    (sIntegralUnits_empty R K ▸ isOpen_integralUnits R K)
+
+/-- The `S`-integral finite ideles form a closed subgroup of the finite idele group. -/
+theorem isClosed_sIntegralUnits (S : Set (HeightOneSpectrum R)) :
+    IsClosed (sIntegralUnits R K S : Set (FiniteAdeleRing R K)ˣ) :=
+  Subgroup.isClosed_of_isOpen _ (isOpen_sIntegralUnits R K S)
 
 /-- The fractional ideal attached to a finite idele is locally constant, simultaneously
 in all its prime multiplicities. -/

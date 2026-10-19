@@ -170,14 +170,14 @@ theorem hasPerfectCommutatorSubgroup_transDiffeomorph_iff :
   · have := h (complHomeomorphTransDiffeomorph K e x)
     have := Group.IsPerfect.map (H := commutator _)
       (knotGroupTransDiffeomorphMulEquiv K e x).symm.toMonoidHom
-    rwa [← derivedSeries_one, map_derivedSeries_eq (MulEquiv.surjective _), derivedSeries_one]
-      at this
+    rwa [← Subgroup.derivedSeries_one, Subgroup.map_derivedSeries_eq (MulEquiv.surjective _),
+      Subgroup.derivedSeries_one] at this
   · obtain ⟨x, rfl⟩ := (complHomeomorphTransDiffeomorph K e).surjective y
     have := h x
     have := Group.IsPerfect.map (H := commutator _)
       (knotGroupTransDiffeomorphMulEquiv K e x).toMonoidHom
-    rwa [← derivedSeries_one, map_derivedSeries_eq (MulEquiv.surjective _), derivedSeries_one]
-      at this
+    rwa [← Subgroup.derivedSeries_one, Subgroup.map_derivedSeries_eq (MulEquiv.surjective _),
+      Subgroup.derivedSeries_one] at this
 
 end Ambient
 

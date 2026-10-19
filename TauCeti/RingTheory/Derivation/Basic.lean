@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.Derivation.Basic
 
 /-!
-# Derivations vanish on numerals
+# Basic properties of derivations
 
 A derivation vanishes on the image `(n : A)` of a natural number (`Derivation.map_natCast`). A
 numeric literal `(OfNat.ofNat n : A)` with `2 ≤ n` is not syntactically such a cast, so `simp`
@@ -16,9 +16,13 @@ does not apply that lemma to it. This file adds the literal form `Derivation.map
 `simp` differentiates polynomial expressions with numeric coefficients, for instance partial
 derivatives `MvPolynomial.pderiv i (3 * X 0 ^ 2)`.
 
+Iterates of a derivation remain linear over the scalars, so they commute with finite scalar
+linear combinations.
+
 ## Main results
 
 * `Derivation.map_ofNat`: a derivation vanishes on numeric literals.
+* `Derivation.iterate_sum_smul`: iterated differentiation commutes with scalar linear combinations.
 -/
 
 public section
@@ -32,5 +36,12 @@ variable {R A M : Type*} [CommSemiring R] [CommSemiring A] [AddCommMonoid M] [Al
 @[simp]
 theorem map_ofNat (n : ℕ) [n.AtLeastTwo] : D (no_index (OfNat.ofNat n : A)) = 0 := by
   rw [← Nat.cast_ofNat, map_natCast]
+
+/-- Iterated differentiation commutes with finite scalar linear combinations. -/
+theorem iterate_sum_smul {ι : Type*} (D : Derivation R A A) (m : ℕ) (s : Finset ι)
+    (c : ι → R) (f : ι → A) :
+    (D : A → A)^[m] (∑ i ∈ s, c i • f i) = ∑ i ∈ s, c i • (D : A → A)^[m] (f i) := by
+  simpa only [LinearMap.map_smul, Module.End.pow_apply, coeFn_coe] using
+    map_sum (D.toLinearMap ^ m) (fun i ↦ c i • f i) s
 
 end Derivation

@@ -82,9 +82,10 @@ theorem mextDeriv_mextDeriv (φ : RoughForm I M F k)
 @[simp]
 theorem SmoothForm.mextDeriv_mextDeriv (φ : SmoothForm I M F k) :
     mextDeriv (mextDeriv φ.1) = 0 := by
-  have hφ := (isSmoothBundleForm_def ∞ φ.1).mp (mem_smoothForms.mp φ.2)
-  exact TauCeti.mextDeriv_mextDeriv φ.1 ((isSmoothBundleForm_def 2 φ.1).mpr
-    (hφ.of_le (by simp)))
+  have hφ : IsSmoothBundleForm (I := I) (F := F) (V := Trivial M F) 2 φ.1 := by
+    rw [isSmoothBundleForm_def]
+    exact φ.contMDiff.of_le (by simp)
+  exact TauCeti.mextDeriv_mextDeriv φ.1 hφ
 
 variable (I) in
 /-- Successive exterior derivatives compose to zero as linear maps. -/
