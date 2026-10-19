@@ -14,7 +14,7 @@ public import TauCeti.Analysis.PDE.Yamabe.SphereConstant
 Let `E` be a real inner product space of dimension `n`, with Lebesgue measure, and let
 `U = U_{t,b}` be the bubble of scale `t > 0` centred at `b` (`TauCeti.Yamabe.bubble`). With
 `aₙ = 4 (n - 1) / (n - 2)`, `pₙ = 2 n / (n - 2)` and `|Sⁿ|` the area of the unit round sphere
-(`TauCeti.Yamabe.roundSphereVolume`), this file identifies the critical norm and the energy of a
+(`TauCeti.roundSphereVolume`), this file identifies the critical norm and the energy of a
 bubble with the round sphere:
 
 * `∫ U ^ pₙ = |Sⁿ|` for `n ≠ 2`, `n > 0`;
