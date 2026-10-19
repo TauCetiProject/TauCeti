@@ -31,10 +31,12 @@ regular point it is a constant field in a chart, chosen in a direction in which 
 (`TauCeti.chartConstField`). These local fields are glued by Mathlib's
 partition-of-unity theorem for sections with values in fibrewise convex sets,
 `exists_contMDiffSection_forall_mem_convex_of_local`. The convex set at a point asks for
-`df(X) < 0` if the point is regular, and for equality with the Morse field if the point lies in a
+`df(X) < 0` on a closed regular core, and for equality with the Morse field if the point lies in a
 closed neighbourhood of a critical point. These neighbourhoods are chosen pairwise disjoint, which
 is possible because nondegenerate critical points are isolated, so a compact set contains only
-finitely many of them.
+finitely many of them. Continuity enlarges the strict-decrease locus around the regular core; its
+union with the interiors of the critical-point neighbourhoods is the returned neighbourhood of
+`K`.
 
 ## Main declarations
 
