@@ -39,6 +39,19 @@ variable {n : ℕ} {M : Type*} [TopologicalSpace M]
 local instance boundaryRestriction_isManifold : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 1
     ((𝓡∂ (n + 1)).boundary M) := isManifold_boundary M one_ne_zero
 
+/-- Restricting a pulled-back form to the actual boundary is pullback along the restricted map. -/
+theorem boundaryRestriction_mpullback {E' H' N : Type*}
+    [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+    {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
+    {f : M → N} (hf : MDifferentiable (𝓡∂ (n + 1)) J f) (φ : RoughForm J N F k) :
+    boundaryRestriction (mpullback (𝓡∂ (n + 1)) J f φ) =
+      mpullback 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) J
+        (fun x : (𝓡∂ (n + 1)).boundary M ↦ f x) φ := by
+  rw [boundaryRestriction_eq_mpullback]
+  have hinc := (isSmoothEmbedding_subtypeVal_boundary (n := n) (k := 1) M one_ne_zero).contMDiff
+    |>.mdifferentiable one_ne_zero
+  exact (mpullback_comp hinc hf φ).symm
+
 /-- In a boundary-centered chart, boundary restriction is the actual flat pullback along the
 coordinate-zero inclusion. -/
 theorem inChartAt_boundaryRestriction (φ : RoughForm (𝓡∂ (n + 1)) M F k)

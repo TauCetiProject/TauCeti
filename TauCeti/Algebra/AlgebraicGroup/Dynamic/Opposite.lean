@@ -92,16 +92,8 @@ theorem parabolic_inf_oppositeCocharacter (l : H →ₐc[R] LaurentPolynomial R)
         rw [conjugate_oppositeCocharacter] at hz
         simpa [AlgHom.mapValue_apply, ne_of_gt hn] using hz
     let e : LaurentPolynomial A →ₐ[R] A := (laurentEval (R := A) (1 : Aˣ)).restrictScalars R
-    have heval : AlgHom.mapValue e (conjugate A l g) = g := by
-      rw [mapValue_conjugate]
-      have hu : Units.map e.toMonoidHom (LaurentPolynomial.genericUnit A) = 1 := by
-        ext
-        simp [e]
-      have he : e.comp (IsScalarTower.toAlgHom R A (LaurentPolynomial A)) = AlgHom.id R A := by
-        ext a
-        simp [e]
-      rw [hu, he]
-      simp
+    have heval : AlgHom.mapValue e (conjugate A l g) = g :=
+      mapValue_laurentEval_one_conjugate l g
     rw [mem_levi_iff]
     apply WithConv.ext
     apply AlgHom.ext

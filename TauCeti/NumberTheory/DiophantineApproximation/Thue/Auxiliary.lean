@@ -44,8 +44,6 @@ public section
 
 open Polynomial Finset Module NumberField
 
-open scoped IntermediateField
-
 namespace TauCeti
 
 variable {K : Type*} [Field K]
@@ -107,13 +105,9 @@ private theorem exists_thue_auxiliary_polynomials_of_numberField [NumberField K]
       · simp [P, Q, not_lt.mp hn]
     rw [hmap, X_sub_C_pow_dvd_ofFn_iff]
     intro k hk
-    have hk' : ∑ j, e ⟨k, hk⟩ j * (x j : K) = 0 := by
-      have := RingHom.map_mulVec (algebraMap (𝓞 K) K) a (fun j ↦ (x j : 𝓞 K)) ⟨k, hk⟩
-      rw [hax, Pi.zero_apply, map_zero] at this
-      simp only [Matrix.mulVec, dotProduct, Matrix.map_apply, Function.comp_apply,
-        map_intCast] at this
-      -- `algebraMap (𝓞 K) K (a k j)` is `e k j` by `RingOfIntegers.map_mk`, which holds by `rfl`.
-      exact this.symm
+    -- `(a k j : K)` is `e k j` by `RingOfIntegers.map_mk`, which holds by `rfl`.
+    have hk' : ∑ j, e ⟨k, hk⟩ j * (x j : K) = 0 :=
+      sum_mul_intCast_eq_zero_of_mulVec_eq_zero hax ⟨k, hk⟩
     simp only [Fintype.sum_sum_type, e, Sum.elim_inl, Sum.elim_inr] at hk'
     have hb' : (b : K) ^ (m + 1) ≠ 0 := pow_ne_zero _ (by exact_mod_cast hb.ne')
     refine (mul_eq_zero.mp ?_).resolve_left hb'
@@ -202,25 +196,12 @@ theorem exists_thue_auxiliary_polynomials {F : Type*} [Field F] [CharZero F] {α
       P.l1Norm ≤ ((48 * b * max 1 (house α)) ^ ((minpoly ℚ α).natDegree * (1 + 1 / ε))) ^ r ∧
       Q.l1Norm ≤ ((48 * b * max 1 (house α)) ^ ((minpoly ℚ α).natDegree * (1 + 1 / ε))) ^ r := by
   classical
-  have hb₀ : (b : F) ≠ 0 := by exact_mod_cast hb.ne'
-  have hα : IsIntegral ℚ α := by
-    have h := (isIntegral_algebraMap (R := ℚ) (x := ((b : ℚ)⁻¹))).mul
-      (hbα.tower_top (A := ℚ))
-    rwa [map_inv₀, map_natCast, ← mul_assoc, inv_mul_cancel₀ hb₀, one_mul] at h
+  -- Work in the number field `K = ℚ(α)`, of degree `d`.
+  obtain ⟨K, _, α', hα', hdK, hbα', hhouse⟩ :=
+    exists_numberField_of_isIntegral_natCast_mul hb.ne' hbα
   set d := (minpoly ℚ α).natDegree
   set m := ⌊(1 / 2 + ε) * d * r⌋₊
-  -- Work in the number field `K = ℚ(α)`, of degree `d`.
-  let K := ℚ⟮α⟯
-  have : FiniteDimensional ℚ K := IntermediateField.adjoin.finiteDimensional hα
-  have : NumberField K := ⟨⟩
-  have hdK : finrank ℚ K = d := IntermediateField.adjoin.finrank hα
-  set α' := IntermediateField.AdjoinSimple.gen ℚ α
-  have hα' : algebraMap K F α' = α := IntermediateField.AdjoinSimple.algebraMap_gen ℚ α
-  have hbα' : IsIntegral ℤ ((b : K) * α') := by
-    rw [← isIntegral_algHom_iff ((IsScalarTower.toAlgHom ℚ K F).restrictScalars ℤ)
-      (algebraMap K F).injective]
-    simpa [α', IntermediateField.AdjoinSimple.coe_gen] using hbα
-  have hd : 0 < d := minpoly.natDegree_pos hα
+  have hd : 0 < d := hdK ▸ finrank_pos
   have hm : finrank ℚ K * r < 2 * (m + 1) := by
     have h : (1 / 2 + ε) * d * r < m + 1 := Nat.lt_floor_add_one _
     have : (d * r : ℝ) < 2 * (m + 1) := by nlinarith [show (0 : ℝ) ≤ d * r by positivity]
@@ -228,8 +209,6 @@ theorem exists_thue_auxiliary_polynomials {F : Type*} [Field F] [CharZero F] {α
     exact_mod_cast this
   obtain ⟨P, Q, hPQ, hP, hQ, hdvd, hcoeff⟩ :=
     exists_thue_auxiliary_polynomials_of_numberField α' hb hbα' hm
-  have hhouse : NumberField.house α' = house α := by
-    rw [← house_eq_numberField_house, ← house_map (algebraMap K F), hα']
   rw [hhouse, hdK] at hcoeff
   -- The coefficient bound and the degree bound give the length bound.
   have hlen {R : ℤ[X]} (hR : R.natDegree ≤ m) (hRc : ∀ i, |(R.coeff i : ℝ)| ≤

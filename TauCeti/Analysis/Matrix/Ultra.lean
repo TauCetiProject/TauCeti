@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Group.Ultra
-public import Mathlib.Analysis.Normed.Ring.Basic
 public import TauCeti.Algebra.BigOperators.ZPow
+public import TauCeti.Analysis.Normed.Ring.Ultra
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Reverse
 public import TauCeti.LinearAlgebra.Matrix.Minor
 
@@ -40,6 +39,8 @@ bounds compare a row weight with an unrelated column weight.
   `Matrix.norm_principalMinor_le`: determinant and principal-minor bounds.
 * `Matrix.norm_coeff_charpolyRev_le`, `Matrix.norm_coeff_charpolyRev_le_of_norm_le`,
   `Matrix.norm_coeff_charpolyRev_le_zpow`: coefficient bounds for `det (1 - X A)`.
+* `TauCeti.norm_det_sub_le`, `TauCeti.norm_principalMinor_sub_le`: perturbation bounds on
+  entrywise bounded sets, also over seminormed rings.
 
 ## References
 
@@ -126,3 +127,33 @@ theorem norm_coeff_charpolyRev_le_zpow {A : Matrix ι ι R} {σ : ℝ} (hσ₀ :
     exact zpow_le_zpow_right_of_le_one₀ hσ₀ hσ₁ (hm s hs)
 
 end Matrix
+
+namespace TauCeti
+
+/-- Determinants over an ultrametric normed ring are Lipschitz on entrywise bounded sets,
+with constant `M ^ (Fintype.card ι - 1)` and no factorial loss. This includes empty matrices. -/
+theorem norm_det_sub_le {ι R : Type*} [Fintype ι] [DecidableEq ι]
+    [SeminormedCommRing R] [NormOneClass R] [IsUltrametricDist R]
+    {A B : Matrix ι ι R} {M ε : ℝ} (hM : 0 ≤ M) (hε : 0 ≤ ε)
+    (hA : ∀ i j, ‖A i j‖ ≤ M) (hB : ∀ i j, ‖B i j‖ ≤ M)
+    (hAB : ∀ i j, ‖A i j - B i j‖ ≤ ε) :
+    ‖A.det - B.det‖ ≤ ε * M ^ (Fintype.card ι - 1) := by
+  simp only [Matrix.det_apply, ← Finset.sum_sub_distrib, ← smul_sub]
+  refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (by positivity) fun σ _ ↦ ?_
+  rw [norm_units_zsmul]
+  simpa using norm_prod_sub_prod_le (s := Finset.univ) hM hε
+    (fun i _ ↦ hA (σ i) i) (fun i _ ↦ hB (σ i) i) (fun i _ ↦ hAB (σ i) i)
+
+/-- Principal minors are Lipschitz on entrywise bounded sets, independently of the choice of
+indices. The empty principal minors are both one, so the estimate also includes `s = ∅`. -/
+theorem norm_principalMinor_sub_le {ι R : Type*} [DecidableEq ι]
+    [SeminormedCommRing R] [NormOneClass R] [IsUltrametricDist R]
+    {A B : Matrix ι ι R} {M ε : ℝ} {s : Finset ι}
+    (hM : 0 ≤ M) (hε : 0 ≤ ε) (hA : ∀ i j, ‖A i j‖ ≤ M) (hB : ∀ i j, ‖B i j‖ ≤ M)
+    (hAB : ∀ i j, ‖A i j - B i j‖ ≤ ε) :
+    ‖A.principalMinor s - B.principalMinor s‖ ≤ ε * M ^ (s.card - 1) := by
+  simp only [Matrix.principalMinor_def, ← Fintype.card_coe]
+  exact norm_det_sub_le hM hε (fun i j ↦ hA i j) (fun i j ↦ hB i j)
+    (fun i j ↦ hAB i j)
+
+end TauCeti

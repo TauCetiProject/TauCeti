@@ -70,8 +70,8 @@ theorem determinant_eq_mul_relIndex_sq (L M : IntegralLattice V) (hform : L.form
   have hidx : ((L.carrier.toAddSubgroup.relIndex M.carrier.toAddSubgroup : ℕ) : ℚ)
       = |eM.det eL| :=
     AddSubgroup.relIndex_eq_abs_det _ _ ((Submodule.toAddSubgroup_le _ _).mpr hle) eL eM
-      (Submodule.IsLattice.toAddSubgroup_eq_closure_range_extendOfIsLattice bL)
-      (Submodule.IsLattice.toAddSubgroup_eq_closure_range_extendOfIsLattice bM)
+      bL.toAddSubgroup_eq_closure_range_extendOfIsLattice
+      bM.toAddSubgroup_eq_closure_range_extendOfIsLattice
   have hmat : (eM.toMatrix eL)ᵀ * LinearMap.BilinForm.toMatrix eM L.form * eM.toMatrix eL
       = LinearMap.BilinForm.toMatrix eL L.form :=
     LinearMap.BilinForm.toMatrix_mul_basis_toMatrix (b := eM) eL L.form

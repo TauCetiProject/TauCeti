@@ -116,10 +116,6 @@ representations. -/
 theorem isFinDim_arTranslate (M : QuiverRep.{u, v, w, max u v w t} k Q)
     (hM : IsFinDim k Q M) : IsFinDim k Q (arTranslate.{u, v, w, t} k Q M hM) := by
   let P := arPresentation.{u, v, w, t} k Q M hM
-  have : Module.Finite k (AuslanderReitenTranspose P.p) :=
-    Module.Finite.trans kQᵐᵒᵖ _
-  have : Module.Finite kQ (AuslanderReitenTranslate k P.p) :=
-    Module.Finite.of_restrictScalars_finite k kQ _
   let T := ModuleCat.of kQ (AuslanderReitenTranslate k P.p)
   -- The bundled functor restricts scalars along the algebra map; pin that action rather
   -- than allowing typeclass search to use the unbundled dual's scalar action.
