@@ -167,12 +167,11 @@ theorem narrowPicClass_eq_one_iff (J : integralIdealsPrimeTo O.narrowConductorMo
     obtain ⟨w, hw⟩ := h
     let u : (𝓞 K)ˣ := Units.map ((O.toRingOfIntegers.val : O.toRingOfIntegers →+* 𝓞 K).comp
       O.toRingOfIntegersEquiv.symm.toRingHom).toMonoidHom w
-    have hu : ((u : 𝓞 K) : K) = (w : K) := O.coe_toRingOfIntegersEquiv_symm w
+    have hu : ((u : 𝓞 K) : K) = (w : K) := by
+      simp [u, Units.coe_map, O.coe_toRingOfIntegersEquiv_symm]
     refine ⟨u * β, O.toRingOfIntegers.mul_mem (O.toRingOfIntegersEquiv.symm w).2 hβ, ?_, ?_⟩
-    · have huβ : (((u * β : 𝓞 K)) : K) = (w : K) * (x : K) := by
-        rw [hx, ← hu, RingOfIntegers.coe_eq_algebraMap, map_mul,
-          ← RingOfIntegers.coe_eq_algebraMap, ← RingOfIntegers.coe_eq_algebraMap]
-      rwa [Units.smul_def, Subalgebra.smul_def, smul_eq_mul, ← huβ] at hw
+    · have huβ : (((u * β : 𝓞 K)) : K) = (w : K) * (x : K) := by simp [hx, hu]
+      simpa only [huβ, Units.smul_def, Subalgebra.smul_def, smul_eq_mul] using hw
     · rw [hJ, Ideal.span_singleton_mul_left_unit u.isUnit]
   · rintro ⟨β, hβ, hpos, hJ⟩
     obtain ⟨x, hx⟩ : ∃ x : Kˣ, (x : K) = β := ⟨Units.mk0 _
