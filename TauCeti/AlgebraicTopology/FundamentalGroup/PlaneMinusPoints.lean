@@ -18,6 +18,7 @@ import TauCeti.AlgebraicTopology.FundamentalGroup.PuncturedStarConvex
 import TauCeti.AlgebraicTopology.FundamentalGroup.VanKampen.Basic
 import TauCeti.GroupTheory.CoprodI
 import TauCeti.Topology.Homotopy.DeformationRetract
+import TauCeti.Topology.MetricSpace.SeparatedBalls
 
 /-!
 # The fundamental group of the plane minus finitely many points
@@ -464,21 +465,18 @@ private theorem exists_homeomorph_eq_ofReal {s : Set ℂ} (hs : s.Finite) :
   rw [Homeomorph.trans_apply, Homeomorph.coe_mulLeft₀, shearIm_apply, hP]
   apply Complex.ext <;> simp
 
-/-- A finite family of distinct real numbers is uniformly separated. -/
-private theorem exists_pos_pairwise_le_abs_sub [Finite ι] (hc : Function.Injective c) :
-    ∃ δ > 0, Pairwise fun i j ↦ δ ≤ |c i - c j| := by
-  by_cases h : Nonempty {p : ι × ι // p.1 ≠ p.2}
-  · obtain ⟨p, hp⟩ := Finite.exists_min fun p : {p : ι × ι // p.1 ≠ p.2} ↦ |c p.1.1 - c p.1.2|
-    exact ⟨_, abs_pos.2 (sub_ne_zero.2 (hc.ne p.2)), fun i j hij ↦ hp ⟨(i, j), hij⟩⟩
-  · exact ⟨1, one_pos, fun i j hij ↦ (h ⟨⟨(i, j), hij⟩⟩).elim⟩
-
 /-- **The fundamental group of the plane minus finitely many points is free** on those points,
 at every base point. -/
 theorem nonempty_fundamentalGroup_compl_mulEquiv_freeGroup {s : Set ℂ} (hs : s.Finite)
     (z : ↥sᶜ) : Nonempty (FundamentalGroup ↥sᶜ z ≃* FreeGroup s) := by
   obtain ⟨e, c, hc, he⟩ := exists_homeomorph_eq_ofReal hs
-  have : Finite s := hs
-  obtain ⟨δ, hδ, hcδ⟩ := exists_pos_pairwise_le_abs_sub hc.injective
+  -- Finitely many distinct real numbers are uniformly separated.
+  obtain ⟨r, hr, -, hrc⟩ := exists_pos_closedBall_subset_and_lt_dist (T := hs.toFinset.image c)
+    (U := fun _ ↦ univ) fun _ _ ↦ Filter.univ_mem
+  have hmem (x : s) : c x ∈ hs.toFinset.image c := Finset.mem_image_of_mem c (by simp)
+  have hcδ : Pairwise fun i j : s ↦ 2 * r ≤ |c i - c j| := fun i j hij ↦ by
+    simpa only [Real.dist_eq] using
+      (hrc _ (hmem i) _ (hmem j) (hc.ne i.2 j.2 (Subtype.coe_ne_coe.2 hij))).le
   have himage : e '' sᶜ = (range fun i : s ↦ (c i : ℂ))ᶜ := by
     rw [e.image_compl]
     congr 1
@@ -489,7 +487,7 @@ theorem nonempty_fundamentalGroup_compl_mulEquiv_freeGroup {s : Set ℂ} (hs : s
     · rintro ⟨⟨x, hx⟩, rfl⟩
       exact ⟨x, hx, he x hx⟩
   let f : ↥sᶜ ≃ₜ ↥(range fun i : s ↦ (c i : ℂ))ᶜ := (e.image sᶜ).trans (.setCongr himage)
-  obtain ⟨φ⟩ := nonempty_fundamentalGroup_compl_range_mulEquiv_freeGroup hδ hcδ (f z)
+  obtain ⟨φ⟩ := nonempty_fundamentalGroup_compl_range_mulEquiv_freeGroup (by positivity) hcδ (f z)
   exact ⟨(FundamentalGroup.homeomorphMulEquiv f z).trans φ⟩
 
 end TauCeti

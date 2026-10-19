@@ -331,6 +331,6 @@ theorem rank_fundamentalGroup_handlebody_le (x : handlebody g) :
     Group.rank (FundamentalGroup (handlebody g) x) ≤ g := by
   obtain ⟨e⟩ := nonempty_fundamentalGroup_handlebody_mulEquiv_freeGroup x
   rw [Group.rank_congr e]
-  simpa using Group.rank_freeGroup_le (Fin g)
+  simpa using rank_freeGroup_le (Fin g)
 
 end TauCeti
