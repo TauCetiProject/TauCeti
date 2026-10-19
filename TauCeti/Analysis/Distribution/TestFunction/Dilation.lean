@@ -70,7 +70,7 @@ theorem lineDeriv_dilateTestFunction (hr : r ≠ 0) (hVO : MapsTo (fun x : E => 
   rw [(hd y).lineDeriv_eq_fderiv,
     (φ.contDiff.differentiable (by simp) (r⁻¹ • y)).lineDeriv_eq_fderiv,
     fderiv_dilateTestFunction]
-  rfl
+  simp only [smul_apply]
 
 /-- The divergence of a dilated test vector field acquires the inverse dilation factor. -/
 @[simp]
