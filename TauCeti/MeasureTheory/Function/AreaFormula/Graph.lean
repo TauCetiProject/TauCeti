@@ -6,14 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.FDeriv.WithLp
-public import TauCeti.Analysis.InnerProductSpace.NormDet
 public import TauCeti.MeasureTheory.Function.AreaFormula.Integral
 public import TauCeti.MeasureTheory.Measure.Haar.Lipschitz
 public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
-import Mathlib.LinearAlgebra.Matrix.SchurComplement
 
 /-!
-# Surface measure on Lipschitz graphs
+# Surface measure on normal graphs
 
 The normal graph parametrization of a function `φ : E → ℝ` sends `y` to `(φ y, y)` in the
 Euclidean product `WithLp 2 (ℝ × E)`. When `φ` is `K`-Lipschitz, this parametrization is
@@ -38,9 +36,17 @@ respect to Euclidean surface measure.
   comparison of measures on the graph.
 * `LipschitzWith.euclideanHausdorffMeasure_normalGraphEmbedding_image_eq_zero_iff`: null sets
   correspond under a Lipschitz graph parametrization.
-* `ContinuousLinearMap.normDet_normalGraphL`: the Jacobian of a linear normal graph.
 * `TauCeti.lintegral_normalGraphEmbedding_image_eq_lintegral_sqrt_one_add_norm_fderiv_sq_mul`:
   weighted surface integration on a differentiable normal graph.
+* `euclideanHausdorffMeasure_normalGraphEmbedding_image_eq_lintegral_sqrt_one_add_norm_fderiv_sq`:
+  the surface measure of a differentiable normal graph.
+* `integrableOn_normalGraphEmbedding_image_iff_integrableOn_sqrt_one_add_norm_fderiv_sq_smul`:
+  integrability on a differentiable normal graph.
+* `TauCeti.integral_normalGraphEmbedding_image_eq_integral_sqrt_one_add_norm_fderiv_sq_smul`:
+  Bochner surface integration on a differentiable normal graph.
+
+The graph Jacobian itself, `DifferentiableAt.normDet_fderiv_normalGraphEmbedding`, is in
+`TauCeti.Analysis.Calculus.FDeriv.WithLp`.
 
 ## References
 
@@ -52,59 +58,13 @@ public section
 
 noncomputable section
 
-open MeasureTheory Set Module Matrix
+open MeasureTheory Set Module
 open scoped ENNReal NNReal
 
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
-
-/-! ### The graph Jacobian -/
-
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- The geometric Jacobian of the linear normal graph `x ↦ (A x, x)` is
-`sqrt (1 + ‖A‖²)`. -/
-theorem _root_.ContinuousLinearMap.normDet_normalGraphL (A : E →L[ℝ] ℝ) :
-    A.normalGraphL.normDet = Real.sqrt (1 + ‖A‖ ^ 2) := by
-  let b := stdOrthonormalBasis ℝ E
-  let u : Fin (finrank ℝ E) → ℝ := fun i => A (b i)
-  have hfst (v : E) : (A.normalGraphL v).ofLp.1 = A v := by
-    change (A.normalGraphL v).fst = A v
-    rw [ContinuousLinearMap.normalGraphL_apply, normalGraphEmbedding_fst]
-  have hsnd (v : E) : (A.normalGraphL v).ofLp.2 = v := by
-    change (A.normalGraphL v).snd = v
-    rw [ContinuousLinearMap.normalGraphL_apply, normalGraphEmbedding_snd]
-  have hgram : Matrix.gram ℝ (fun i => A.normalGraphL.toLinearMap (b i)) =
-      1 + Matrix.replicateCol Unit u * Matrix.replicateRow Unit u := by
-    ext i j
-    simp only [Matrix.gram_apply]
-    change inner ℝ (A.normalGraphL (b i)) (A.normalGraphL (b j)) = _
-    simp only [WithLp.prod_inner_apply, hfst, hsnd]
-    rw [(orthonormal_iff_ite.mp b.orthonormal i j)]
-    simp [Matrix.mul_apply, u, Matrix.one_apply, mul_comm, add_comm]
-  have hu : u ⬝ᵥ u = ‖A‖ ^ 2 := by
-    let z := ContinuousLinearMap.adjoint A 1
-    have hAz : A = innerSL ℝ z := by
-      ext x
-      simpa [z, real_inner_comm] using (ContinuousLinearMap.adjoint_inner_left A x 1).symm
-    rw [hAz, innerSL_apply_norm]
-    simp only [u, dotProduct, hAz, innerSL_apply_apply]
-    simpa [real_inner_comm, real_inner_self_eq_norm_sq] using b.sum_inner_mul_inner z z
-  have hsq : A.normalGraphL.normDet ^ 2 = 1 + ‖A‖ ^ 2 := by
-    have h := A.normalGraphL.toLinearMap.normDet_sq_eq_det_gram b
-    simp only [RCLike.ofReal_real_eq_id, id_eq] at h
-    rw [h, hgram, Matrix.det_one_add_replicateCol_mul_replicateRow, hu]
-  rw [← Real.sqrt_sq A.normalGraphL.normDet_nonneg, hsq]
-
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- At a differentiability point, the geometric Jacobian of a normal graph parametrization is
-the classical surface factor `sqrt (1 + ‖Dφ‖²)`. -/
-theorem _root_.DifferentiableAt.normDet_fderiv_normalGraphEmbedding {φ : E → ℝ} {x : E}
-    (hφ : DifferentiableAt ℝ φ x) :
-    (fderiv ℝ (normalGraphEmbedding φ) x).normDet =
-      Real.sqrt (1 + ‖fderiv ℝ φ x‖ ^ 2) := by
-  rw [hφ.fderiv_normalGraphEmbedding, ContinuousLinearMap.normDet_normalGraphL]
 
 /-! ### Exact surface integration -/
 
@@ -118,9 +78,7 @@ theorem lintegral_normalGraphEmbedding_image_eq_lintegral_sqrt_one_add_norm_fder
         g (normalGraphEmbedding φ x) := by
   rw [lintegral_image_eq_lintegral_normDet_fderiv_mul (f := normalGraphEmbedding φ) hs
     (fun x hx => (hφ x hx).hasFDerivAt.normalGraphEmbedding.differentiableAt)
-    (fun x hx => by
-      rw [(hφ x hx).fderiv_normalGraphEmbedding]
-      exact (fderiv ℝ φ x).injective_normalGraphL)
+    (fun x hx => (hφ x hx).injective_fderiv_normalGraphEmbedding)
     (injective_normalGraphEmbedding φ).injOn]
   exact setLIntegral_congr_fun hs fun x hx => by
     rw [(hφ x hx).normDet_fderiv_normalGraphEmbedding]
@@ -149,9 +107,7 @@ theorem integrableOn_normalGraphEmbedding_image_iff_integrableOn_sqrt_one_add_no
   rw [integrableOn_image_iff_integrableOn_normDet_fderiv_smul
     (f := normalGraphEmbedding φ) hs
     (fun x hx => (hφ x hx).hasFDerivAt.normalGraphEmbedding.differentiableAt)
-    (fun x hx => by
-      rw [(hφ x hx).fderiv_normalGraphEmbedding]
-      exact (fderiv ℝ φ x).injective_normalGraphL)
+    (fun x hx => (hφ x hx).injective_fderiv_normalGraphEmbedding)
     (injective_normalGraphEmbedding φ).injOn]
   exact integrableOn_congr_fun (fun x hx => by
     rw [(hφ x hx).normDet_fderiv_normalGraphEmbedding]) hs
@@ -169,9 +125,7 @@ theorem integral_normalGraphEmbedding_image_eq_integral_sqrt_one_add_norm_fderiv
         g (normalGraphEmbedding φ x) := by
   rw [integral_image_eq_integral_normDet_fderiv_smul (f := normalGraphEmbedding φ) hs
     (fun x hx => (hφ x hx).hasFDerivAt.normalGraphEmbedding.differentiableAt)
-    (fun x hx => by
-      rw [(hφ x hx).fderiv_normalGraphEmbedding]
-      exact (fderiv ℝ φ x).injective_normalGraphL)
+    (fun x hx => (hφ x hx).injective_fderiv_normalGraphEmbedding)
     (injective_normalGraphEmbedding φ).injOn]
   apply setIntegral_congr_fun hs
   intro x hx
