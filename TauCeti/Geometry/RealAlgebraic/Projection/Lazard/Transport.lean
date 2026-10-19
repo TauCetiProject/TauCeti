@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Polynomial.TrailingDegree
+public import TauCeti.Algebra.Polynomial.Degree.TrailingDegree
 public import TauCeti.RingTheory.MvPolynomial.Lazard.Associated
 public import TauCeti.RingTheory.Polynomial.Content
 public import TauCeti.Geometry.RealAlgebraic.Projection.Lazard.Basic
@@ -107,7 +107,7 @@ theorem lazardProjection_image_map_equiv [DecidableEq (Polynomial S)]
 valuation equality for the images of the original projection polynomials. This is the
 hypothesis needed to apply Lazard lifting after a change of coefficient coordinates. -/
 theorem lazardValuation_eq_lazardProjection_image_map_equiv_iff
-    {A σ : Type*} [CommRing A] [NoZeroDivisors A] [Nontrivial A]
+    {A σ : Type*} [CommRing A]
     [LinearOrder σ] [WellFoundedGT σ] [NormalizedGCDMonoid (MvPolynomial σ A)]
     [DecidableEq (Polynomial (MvPolynomial σ A))]
     (e : R ≃+* MvPolynomial σ A) (F B : Finset (Polynomial R)) (x y : σ → A) :

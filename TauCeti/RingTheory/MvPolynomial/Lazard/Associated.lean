@@ -20,16 +20,16 @@ public section
 namespace TauCeti
 
 variable {σ R : Type*} [LinearOrder σ] [WellFoundedGT σ] [CommSemiring R]
-  [NoZeroDivisors R] [Nontrivial R] {p q : MvPolynomial σ R}
+  {p q : MvPolynomial σ R}
 
 /-- Associated polynomials have the same Lazard valuation at every point. -/
 theorem lazardValuation_eq_of_associated (h : Associated p q) (a : σ → R) :
     p.lazardValuation a = q.lazardValuation a := by
-  obtain ⟨u, rfl⟩ := h
-  rw [MvPolynomial.lazardValuation_mul]
-  have hu : (u : MvPolynomial σ R).lazardValuation a = 0 :=
-    MvPolynomial.lazardValuation_eq_zero_iff.mpr
-      ((u.isUnit.map (MvPolynomial.eval a)).ne_zero)
-  rw [hu, add_zero]
+  have hle {f g : MvPolynomial σ R} (hfg : f ∣ g) :
+      f.lazardValuation a ≤ g.lazardValuation a := by
+    obtain ⟨r, rfl⟩ := hfg
+    exact (le_add_of_nonneg_right (MvPolynomial.zero_le_lazardValuation r a)).trans
+      (MvPolynomial.le_lazardValuation_mul f r a)
+  exact le_antisymm (hle h.dvd) (hle h.symm.dvd)
 
 end TauCeti
