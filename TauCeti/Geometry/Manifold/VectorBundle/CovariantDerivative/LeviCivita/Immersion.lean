@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Inner
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
-import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
 # The Levi-Civita connection of an isometric immersion

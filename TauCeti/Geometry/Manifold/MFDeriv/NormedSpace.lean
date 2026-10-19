@@ -58,8 +58,8 @@ theorem _root_.NormedSpace.fromTangentSpace_symm_apply (x : E) (v : E) :
   rw [mvfderiv, ContinuousLinearMap.comp_apply]
   exact NormedSpace.fromTangentSpace_apply _ _
 
-/-- The chain rule for a manifold-valued map followed by a differentiable map between normed
-spaces, evaluated on a tangent vector. -/
+/-- The chain rule for a vector-valued function on a manifold followed by a map between normed
+spaces that is differentiable at the relevant point, evaluated on a tangent vector. -/
 theorem mvfderiv_comp_apply_of_differentiableAt {g : M → F} {φ : F → F'} {x : M}
     (hφ : DifferentiableAt 𝕜 φ (g x)) (hg : MDiffAt g x) (v : TangentSpace I x) :
     mvfderiv I (φ ∘ g) x v = fderiv 𝕜 φ (g x) (mvfderiv I g x v) := by
