@@ -409,13 +409,21 @@ private def tuple (hq : q ≠ 0) (hμ : μ ≠ 0) : GeneratorTuple q (Module.End
 private def rep (hq : q ≠ 0) (hμ : μ ≠ 0) : UqSl2 q →ₐ[ℂ] Module.End ℂ (ℕ →₀ ℂ) :=
   UqSl2.lift (tuple hq hμ)
 
+private theorem rep_e (hq : q ≠ 0) (hμ : μ ≠ 0) : rep hq hμ (e q) = eOp q μ :=
+  (UqSl2.lift_generator (tuple hq hμ) .e).trans (GeneratorTuple.toFun_e _)
+
+private theorem rep_f (hq : q ≠ 0) (hμ : μ ≠ 0) : rep hq hμ (f q) = fOp :=
+  (UqSl2.lift_generator (tuple hq hμ) .f).trans (GeneratorTuple.toFun_f _)
+
+private theorem rep_k (hq : q ≠ 0) (hμ : μ ≠ 0) : rep hq hμ (k q) = kOp q μ :=
+  (UqSl2.lift_generator (tuple hq hμ) .k).trans (GeneratorTuple.toFun_k _)
+
 private theorem rep_f_pow (hq : q ≠ 0) (hμ : μ ≠ 0) (j : ℕ) :
     rep hq hμ (f q ^ j) (unitVec 0) = unitVec j := by
   induction j with
   | zero => simp
   | succ j ih =>
-    rw [pow_succ', map_mul, Module.End.mul_apply, ih]
-    simpa [rep, tuple] using fOp_unitVec j
+    rw [pow_succ', map_mul, Module.End.mul_apply, ih, rep_f, fOp_unitVec]
 
 /-- The Verma ideal acts trivially on `single 0 1` in the model. -/
 private theorem rep_unitVec_zero_eq_zero (hq : q ≠ 0) (hμ : μ ≠ 0) {a : UqSl2 q}
@@ -423,8 +431,9 @@ private theorem rep_unitVec_zero_eq_zero (hq : q ≠ 0) (hμ : μ ≠ 0) {a : Uq
   induction ha using Submodule.span_induction with
   | mem a ha =>
     rcases ha with rfl | rfl
-    · simpa [rep, tuple] using eOp_zero (q := q) (μ := μ)
-    · simp [rep, tuple, kOp_unitVec]
+    · rw [rep_e, eOp_zero]
+    · rw [map_sub, LinearMap.sub_apply, rep_k, kOp_unitVec, AlgHom.commutes,
+        Module.algebraMap_end_apply, pow_zero, one_mul, sub_self]
   | zero => simp
   | add a c _ _ ha hc => rw [map_add, LinearMap.add_apply, ha, hc, add_zero]
   | smul a c _ hc => rw [smul_eq_mul, map_mul, Module.End.mul_apply, hc, map_zero]
