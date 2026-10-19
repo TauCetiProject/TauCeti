@@ -10,6 +10,7 @@ public import Mathlib.Probability.CDF
 public import Mathlib.Probability.Moments.Basic
 public import Mathlib.Probability.Moments.IntegrableExpMul
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
+public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 public import TauCeti.MeasureTheory.Measure.Mixture.Basic
 public import TauCeti.Probability.Density
 
@@ -29,12 +30,11 @@ arbitrary measurable extension.
 
 * `MeasureTheory.Measure.cdf_bind` computes the cdf of a real-valued probability mixture whose
   components are probability measures almost everywhere.
-* `ProbabilityTheory.Kernel.mem_integrableExpSet_comp_iff` characterizes the exact exponential
+* `MeasureTheory.Measure.mem_integrableExpSet_bind_iff` characterizes the exact exponential
   integrability domain by an iterated nonnegative integral.
-* `ProbabilityTheory.Kernel.mgf_comp`, `ProbabilityTheory.Kernel.cgf_comp`, and
-  `ProbabilityTheory.Kernel.charFun_comp` express its transforms in terms of the components.
-* `MeasureTheory.Measure.charFun_bind` gives characteristic-function linearity under almost
-  everywhere component hypotheses.
+* `MeasureTheory.Measure.mgf_bind`, `MeasureTheory.Measure.cgf_bind`, and
+  `MeasureTheory.Measure.charFun_bind` express transforms of mixtures in terms of their components.
+* The corresponding results in `ProbabilityTheory.Kernel` give the kernel-composition forms.
 * `TauCeti.Probability.hasPDF_of_hasLaw_bind_withDensity` gives the density interface for a random
   variable whose law is a mixture of densities.
 -/
@@ -56,28 +56,62 @@ theorem cdf_bind (rho : Measure A) [IsProbabilityMeasure rho]
     (K : A → Measure ℝ) (hK : AEMeasurable K rho)
     (hprob : ∀ᵐ a ∂rho, IsProbabilityMeasure (K a)) (x : ℝ) :
     cdf (rho.bind K) x = ∫ a, cdf (K a) x ∂rho := by
-  let _ : IsProbabilityMeasure (rho.bind K) := isProbabilityMeasure_bind hK hprob
-  rw [cdf_eq_real, measureReal_def, bind_apply measurableSet_Iic hK,
+  have hmix : IsProbabilityMeasure (rho.bind K) := isProbabilityMeasure_bind hK hprob
+  rw [@cdf_eq_real (rho.bind K) hmix x, measureReal_def, bind_apply measurableSet_Iic hK,
     ← integral_toReal (f := fun a ↦ K a (Iic x))
       ((Measure.measurable_coe measurableSet_Iic).comp_aemeasurable hK)
       (hprob.mono fun a ha ↦ by
-        let _ := ha
-        exact measure_lt_top (K a) (Iic x))]
+        calc
+          K a (Iic x) ≤ K a Set.univ := measure_mono (Set.subset_univ _)
+          _ = 1 := ha.measure_univ
+          _ < ∞ := ENNReal.one_lt_top)]
   apply integral_congr_ae
   filter_upwards [hprob] with a ha
-  let _ := ha
-  rw [← measureReal_def, cdf_eq_real]
+  rw [← measureReal_def, @cdf_eq_real (K a) ha x]
+
+variable {B : Type*} [MeasurableSpace B]
+
+/-- Exponential integrability under a mixture is equivalent to finiteness of the iterated
+nonnegative exponential integral.  This formulation remains meaningful before passing to real
+mgfs and records the exact integrability domain without relying on totalized real integration. -/
+theorem mem_integrableExpSet_bind_iff (rho : Measure A) {K : A → Measure B}
+    (hK : AEMeasurable K rho) {X : B → ℝ} (hX : Measurable X) (t : ℝ) :
+    t ∈ integrableExpSet X (rho.bind K) ↔
+      (∫⁻ a, ∫⁻ x, ENNReal.ofReal (Real.exp (t * X x)) ∂K a ∂rho) < ∞ := by
+  simp only [integrableExpSet, Set.mem_ofPred_eq]
+  constructor
+  · intro h
+    rw [← Measure.lintegral_bind hK (by fun_prop)]
+    exact h.lintegral_lt_top
+  · intro h
+    refine ⟨(by fun_prop), ?_⟩
+    rw [hasFiniteIntegral_iff_enorm]
+    simp_rw [Real.enorm_eq_ofReal (Real.exp_pos _).le]
+    rw [Measure.lintegral_bind hK (by fun_prop)]
+    exact h
+
+/-- On its integrability domain, the mgf of a mixture is the integral of the component mgfs. -/
+theorem mgf_bind (rho : Measure A) {K : A → Measure B} (hK : AEMeasurable K rho)
+    (X : B → ℝ) (t : ℝ) (ht : t ∈ integrableExpSet X (rho.bind K)) :
+    mgf X (rho.bind K) t = ∫ a, mgf X (K a) t ∂rho := by
+  unfold ProbabilityTheory.mgf
+  exact integral_bind rho hK (integrable_of_mem_integrableExpSet ht)
+
+/-- The cgf of a mixture is the logarithm of the integral of the component mgfs, rather than the
+integral of their cgfs. -/
+theorem cgf_bind (rho : Measure A) {K : A → Measure B} (hK : AEMeasurable K rho)
+    (X : B → ℝ) (t : ℝ) (ht : t ∈ integrableExpSet X (rho.bind K)) :
+    cgf X (rho.bind K) t = Real.log (∫ a, mgf X (K a) t ∂rho) := by
+  rw [cgf, mgf_bind rho hK X t ht]
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [MeasurableSpace E] [BorelSpace E]
 
-/-- The characteristic function of a probability mixture is the integral of the component
-characteristic functions when the components are probability measures almost everywhere. -/
-theorem charFun_bind (rho : Measure A) [IsProbabilityMeasure rho]
-    (K : A → Measure E) (hK : AEMeasurable K rho)
-    (hprob : ∀ᵐ a ∂rho, IsProbabilityMeasure (K a)) (t : E) :
+/-- The characteristic function of a finite mixture is the integral of the component
+characteristic functions. -/
+theorem charFun_bind (rho : Measure A) {K : A → Measure E} (hK : AEMeasurable K rho)
+    [IsFiniteMeasure (rho.bind K)] (t : E) :
     charFun (rho.bind K) t = ∫ a, charFun (K a) t ∂rho := by
-  let _ : IsProbabilityMeasure (rho.bind K) := isProbabilityMeasure_bind hK hprob
   have hInt : Integrable (fun x : E ↦ Complex.exp (inner ℝ x t * Complex.I)) (rho.bind K) :=
     (integrable_const (1 : ℂ)).mono (by fun_prop) <| by
       filter_upwards with x
@@ -104,31 +138,21 @@ mgfs and records the exact integrability domain without relying on totalized rea
 theorem mem_integrableExpSet_comp_iff (kappa : Kernel A ℝ) (rho : Measure A) (t : ℝ) :
     t ∈ integrableExpSet id (kappa ∘ₘ rho) ↔
       (∫⁻ a, ∫⁻ x, ENNReal.ofReal (Real.exp (t * x)) ∂kappa a ∂rho) < ∞ := by
-  simp only [integrableExpSet, Set.mem_ofPred_eq, id_eq]
-  constructor
-  · intro h
-    rw [← Measure.lintegral_bind kappa.aemeasurable (by fun_prop)]
-    exact h.lintegral_lt_top
-  · intro h
-    refine ⟨(by fun_prop), ?_⟩
-    rw [hasFiniteIntegral_iff_enorm]
-    simp_rw [Real.enorm_eq_ofReal (Real.exp_pos _).le]
-    rw [Measure.lintegral_bind kappa.aemeasurable (by fun_prop)]
-    exact h
+  simpa only [id_eq] using
+    Measure.mem_integrableExpSet_bind_iff rho kappa.aemeasurable measurable_id t
 
 /-- On its integrability domain, the mgf of a mixture is the integral of the component mgfs. -/
 theorem mgf_comp (kappa : Kernel A ℝ) (rho : Measure A) (t : ℝ)
     (ht : t ∈ integrableExpSet id (kappa ∘ₘ rho)) :
     mgf id (kappa ∘ₘ rho) t = ∫ a, mgf id (kappa a) t ∂rho := by
-  unfold ProbabilityTheory.mgf
-  exact Measure.integral_bind rho kappa.aemeasurable ht
+  exact Measure.mgf_bind rho kappa.aemeasurable id t ht
 
 /-- The cgf of a mixture is the logarithm of the integral of the component mgfs, rather than the
 integral of their cgfs. -/
 theorem cgf_comp (kappa : Kernel A ℝ) (rho : Measure A) (t : ℝ)
     (ht : t ∈ integrableExpSet id (kappa ∘ₘ rho)) :
     cgf id (kappa ∘ₘ rho) t = Real.log (∫ a, mgf id (kappa a) t ∂rho) := by
-  rw [cgf, mgf_comp kappa rho t ht]
+  exact Measure.cgf_bind rho kappa.aemeasurable id t ht
 
 /-- The characteristic function of a finite mixture on a real inner product space is the integral
 of the component characteristic functions. -/
@@ -136,12 +160,7 @@ theorem charFun_comp {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E
     [MeasurableSpace E] [BorelSpace E] (kappa : Kernel A E) [IsFiniteKernel kappa]
     (rho : Measure A) [IsFiniteMeasure rho] (t : E) :
     charFun (kappa ∘ₘ rho) t = ∫ a, charFun (kappa a) t ∂rho := by
-  have hInt : Integrable (fun x : E ↦ Complex.exp (inner ℝ x t * Complex.I)) (kappa ∘ₘ rho) :=
-    (integrable_const (1 : ℂ)).mono (by fun_prop) <| by
-      filter_upwards with x
-      simp
-  rw [charFun_apply, Measure.integral_bind rho kappa.aemeasurable hInt]
-  simp_rw [charFun_apply]
+  exact Measure.charFun_bind rho kappa.aemeasurable t
 
 end ProbabilityTheory.Kernel
 
