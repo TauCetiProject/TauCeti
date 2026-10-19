@@ -239,6 +239,36 @@ theorem laplaceBeltrami_def (I : ModelWithCorners ℝ E H) {M : Type*} [Topologi
     laplaceBeltrami I f x = divergence I (mgradient I f) x := by
   rw [laplaceBeltrami]
 
+/-- The Laplace--Beltrami operator loses one derivative relative to its input, just as the
+ordinary flat Laplacian does.  The finite-regularity statement is useful when the operator is
+used under an integral, where smoothness of the resulting scalar function must be supplied
+explicitly. -/
+theorem contMDiff_laplaceBeltrami {n m k : ℕ∞ω}
+    {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+    [IsManifold I 2 M] [IsManifold I m M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I k E (fun x : M ↦ TangentSpace I x)]
+    (hm : n + 2 ≤ m) (hk : n + 1 ≤ k) {f : M → ℝ}
+    (hf : ContMDiff I 𝓘(ℝ) (n + 2) f) :
+    ContMDiff I 𝓘(ℝ) n (laplaceBeltrami I f) := by
+  let _ : IsManifold I (n + 1 + 1) M := IsManifold.of_le (n := m) (by
+    simpa only [add_assoc, one_add_one_eq_two] using hm)
+  let _ : IsContMDiffRiemannianBundle I (n + 1) E
+      (fun x : M ↦ TangentSpace I x) :=
+    IsContMDiffRiemannianBundle.of_le (n := k) hk
+  have hgrad : ContMDiff I I.tangent (n + 1)
+      (fun x ↦ (⟨x, mgradient I f x⟩ : TangentBundle I M)) := by
+    simpa only [add_assoc] using
+      (contMDiff_mgradient (I := I) (n := n + 1)
+        (f := f) (by simpa only [add_assoc, one_add_one_eq_two] using hf))
+  have hdiv := contMDiff_divergence (I := I) (n := n) (m := m) (k := k) hm hk hgrad
+  have hEq : laplaceBeltrami I f = divergence I (mgradient I f) := by
+    funext x
+    exact laplaceBeltrami_def I f x
+  rw [hEq]
+  exact hdiv
+
 section OperatorLaws
 
 variable (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]
