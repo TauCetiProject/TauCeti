@@ -93,15 +93,13 @@ private theorem exists_orthogonal_ker_equiv (L : E →ₗ[ℝ] F) (hL : Function
   set M := L ∘ₗ W.subtype
   have hMinj : Function.Injective M := by
     refine (injective_iff_map_eq_zero M).2 fun w hw ↦ Subtype.ext ?_
-    exact inner_self_eq_zero.1 (w.2 _ hw)
+    have hk : (w : E) ∈ ker L := by simpa [M] using hw
+    exact inner_self_eq_zero.1 (Submodule.inner_right_of_mem_orthogonal hk w.2)
   have hMbij : Function.Bijective M :=
     ⟨hMinj, (injective_iff_surjective_of_finrank_eq_finrank hdim).mp hMinj⟩
   let e : W ≃L[ℝ] F := (LinearEquiv.ofBijective M hMbij).toContinuousLinearEquiv
   have he (w : W) : e w = L w := by
-    calc
-      e w = LinearEquiv.ofBijective M hMbij w := rfl
-      _ = M w := LinearEquiv.ofBijective_apply M (hf := hMbij) w
-      _ = L w := rfl
+    simp [e, M, LinearEquiv.ofBijective_apply]
   refine ⟨e, ?_, fun g y ↦ ?_⟩
   · -- Lebesgue measure on `F` is the image of Lebesgue measure on `W`, scaled by the Jacobian.
     ext t ht
