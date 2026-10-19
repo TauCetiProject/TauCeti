@@ -56,8 +56,8 @@ scope do not coincide.
   references in comments without double quotes. A local syntax rule needed for elaboration performance
   should document the concrete need at its declaration.
 - The same source guard rejects explicit meta/unsafe declarations, elaborators, initializers,
-  run_cmd/run_elab/run_tac execution, manual elaborator/tactic/macro registrations, and nonlocal
-  macros.
+  run_cmd/run_elab/run_tac/run_meta/by_elab and #eval execution, manual initializer and
+  elaborator/tactic/macro registrations, and nonlocal macros.
   Local macro and macro_rules definitions remain allowed, including existing local syntax needed
   for elaboration performance. Their bodies still require review: this is a conservative token
   check, not a parser or a guarantee that local macros contain no metaprogramming.

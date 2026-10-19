@@ -6,8 +6,14 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
-from check_source_options import forbidden_lines
+from check_source_options import forbidden_tokens
+
+
+def forbidden_lines(source):
+    """Keep line-oriented fixtures concise; the CLI also reports the offending spellings."""
+    return list(forbidden_tokens(source))
 
 
 class SourceOptionsTests(unittest.TestCase):
@@ -20,6 +26,8 @@ class SourceOptionsTests(unittest.TestCase):
             'builtin_initialize tool : IO.Ref Nat ← IO.mkRef 0',
             'run_cmd pure ()', 'run_elab pure ()',
             'example : True := by run_tac pure (); trivial',
+            'run_meta pure ()', 'def x : Nat := by_elab pure (mkNatLit 0)',
+            '#eval (IO.FS.writeFile "x" "" : IO Unit)', '#eval! (pure () : IO Unit)',
         ]
         for source in sources:
             with self.subTest(source=source):
@@ -54,6 +62,7 @@ class SourceOptionsTests(unittest.TestCase):
         for attribute in [
             'command_elab', 'term_elab', 'doElem_elab', 'tactic', 'grind_tactic',
             'try_tactic', 'macro', 'app_unexpander', 'delab', 'inductive_elab',
+            'init',
         ]:
             for prefix in ['', 'builtin_']:
                 name = prefix + attribute
@@ -95,6 +104,36 @@ class SourceOptionsTests(unittest.TestCase):
         self.assertEqual(forbidden_lines(
             'def text := s!"{\'"\'} /- "\n'
             'meta def tool := 1\n-- -/\n'), [2])
+
+    def test_comment_and_literal_local_cannot_authorize_a_global_macro(self):
+        for source in [
+            '-- Only the "finish" proofs below need this, so keep it local\n'
+            'macro "finish" : tactic => `(tactic| trivial)\n',
+            '-- "quoted" local\nmacro_rules | `(finish) => `(tactic| trivial)\n',
+        ]:
+            with self.subTest(source=source):
+                self.assertEqual(forbidden_lines(source), [2])
+        self.assertEqual(forbidden_lines('def text := "local macro"\n'), [1])
+
+    def test_character_literals_cannot_hide_adjacent_forbidden_code_from_fast_path(self):
+        for source in ["'a'meta def tool := 1", "'a'#eval (pure () : IO Unit)"]:
+            with self.subTest(source=source):
+                self.assertEqual(forbidden_lines(source), [1])
+
+    def test_candidate_filter_agrees_with_unconditional_scan(self):
+        # Masking comments/characters can expose boundaries absent from the raw source.
+        sources = [
+            "'a'meta def tool := 1", "'a'#eval! (pure () : IO Unit)",
+            "def macro' := 1", "def αmeta := 1", 'initialize_simps_projections Foo',
+            'attribute /- gap -/ [builtin_init act] r',
+            '-- "quoted" local\nmacro "finish" : tactic => `(tactic| trivial)',
+            'local /- gap -/\nmacro "finish" : tactic => `(tactic| trivial)',
+        ]
+        for source in sources:
+            with self.subTest(source=source):
+                actual = forbidden_tokens(source)
+                with patch('check_source_options.has_candidate', return_value=True):
+                    self.assertEqual(actual, forbidden_tokens(source))
 
     def test_catches_inline_indented_and_split_options(self):
         self.assertEqual(forbidden_lines(
@@ -243,6 +282,8 @@ class SourceOptionsTests(unittest.TestCase):
             self.assertEqual(result.returncode, 1)
             self.assertIn("Bad.lean:2:", result.stdout)
             self.assertIn("TauCeti.lean:1:", result.stdout)
+            self.assertIn("set_option", result.stdout)
+            self.assertIn("comments containing double quotes", result.stdout)
             (library / "Nested" / "Bad.lean").write_text('-- set_option hygiene false\n')
             aggregator.write_text('module\n')
             result = subprocess.run([sys.executable, str(checker), str(library),
