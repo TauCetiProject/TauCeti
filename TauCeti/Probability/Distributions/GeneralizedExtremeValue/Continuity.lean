@@ -25,7 +25,8 @@ converge weakly. No moment hypotheses are needed, even when the shapes cross mom
 ## Main results
 
 * `TauCeti.Probability.continuous_generalizedExtremeValueMeasure` gives joint weak continuity.
-* `TauCeti.Probability.tendsto_generalizedExtremeValueMeasure_shape_zero` gives the Gumbel limit.
+* `TauCeti.Probability.tendsto_generalizedExtremeValueMeasure_nhds_zero_gumbelMeasure`
+  gives the Gumbel limit.
 
 ## References
 
@@ -84,7 +85,8 @@ theorem continuous_generalizedExtremeValueMeasure :
 
 /-- As the shape tends to zero from either side, a fixed-location, positive-scale generalized
 extreme-value law converges weakly to the Gumbel law with that location and scale. -/
-theorem tendsto_generalizedExtremeValueMeasure_shape_zero {s : ℝ} (hs : 0 < s) (m : ℝ) :
+theorem tendsto_generalizedExtremeValueMeasure_nhds_zero_gumbelMeasure
+    {s : ℝ} (hs : 0 < s) (m : ℝ) :
     Tendsto (β := ProbabilityMeasure ℝ) (fun ξ : ℝ =>
       (⟨generalizedExtremeValueMeasure m s ξ,
         isProbabilityMeasure_generalizedExtremeValueMeasure hs m ξ⟩ : ProbabilityMeasure ℝ))
