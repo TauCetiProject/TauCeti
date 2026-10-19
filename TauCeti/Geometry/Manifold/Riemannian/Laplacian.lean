@@ -298,8 +298,9 @@ theorem divergence_smul (c : ℝ) (X : (x : M) → TangentSpace I x) (x : M)
     (CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv.smul_const c hX,
     ContinuousLinearMap.toLinearMap_smul]
 
-/-- The scalar product rule is the local identity used to integrate by parts for the
-Laplace--Beltrami operator. -/
+/-- Product rule for the divergence: at a point where `f` and `X` are differentiable,
+`div (f • X) = f * div X + df(X)`. This is the pointwise input for integrating the
+Laplace--Beltrami operator by parts. -/
 theorem divergence_smul_function (f : M → ℝ) (X : (x : M) → TangentSpace I x) (x : M)
     (hf : MDifferentiableAt I 𝓘(ℝ) f x)
     (hX : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, X y⟩ : TangentBundle I M)) x) :
@@ -307,15 +308,10 @@ theorem divergence_smul_function (f : M → ℝ) (X : (x : M) → TangentSpace I
   have h := (CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv.leibniz
     hX hf
   rw [divergence, h]
-  -- Expose the underlying linear maps so that the trace's additivity and homogeneity apply.
-  change LinearMap.trace ℝ (TangentSpace I x)
-    ((f x) • (CovariantDerivative.leviCivitaConnection I M X x).toLinearMap +
-      ((d% f x).smulRight (X x)).toLinearMap) = _
-  rw [map_add, map_smul]
-  -- The coercion of a continuous rank-one map is definitionally its linear rank-one map.
-  change f x * _ + LinearMap.trace ℝ (TangentSpace I x)
-      ((d% f x).toLinearMap.smulRight (X x)) = _
-  rw [LinearMap.trace_smulRight]
+  rw [ContinuousLinearMap.toLinearMap_add, ContinuousLinearMap.toLinearMap_smul, map_add,
+    map_smul]
+  simp only [ContinuousLinearMap.smulRight, LinearMap.trace_smulRight, smul_eq_mul, divergence]
+  -- The coercion from a continuous linear map to its linear map is its `toLinearMap` field.
   rfl
 
 /-- The Hessian of a constant function is zero. -/
