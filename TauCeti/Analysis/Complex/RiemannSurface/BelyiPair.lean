@@ -12,9 +12,7 @@ public import TauCeti.Analysis.Complex.RiemannSurface.PowerMap
 public import TauCeti.Combinatorics.PermutationTriple.IsoClass
 
 import TauCeti.AlgebraicTopology.ThricePuncturedSphere.RestrictOver
-import TauCeti.Geometry.Manifold.Connected
 import TauCeti.GroupTheory.GroupAction.Free
-import TauCeti.Topology.OpenPartialHomeomorph.Continuity
 
 /-!
 # Analytic Belyi pairs
@@ -83,7 +81,6 @@ sphere.
   degree and isomorphic monodromy triples.
 * `TauCeti.AnalyticBelyiPair.isoSetoid`, `TauCeti.AnalyticBelyiPair.toIsoClass`: isomorphism of
   pairs of degree `n`, and the permutation triple of an isomorphism class of such pairs.
-* `TauCeti.AnalyticBelyiPair.dense_preimage_range`: the points over `ℂ ∖ {0, 1}` are dense.
 * `TauCeti.AnalyticBelyiPair.Iso.eq_of_apply_eq`: an isomorphism of pairs is determined by the
   image of one point over `ℂ ∖ {0, 1}`.
 * `TauCeti.AnalyticBelyiPair.Iso.natCard_le_degree`: there are finitely many isomorphisms of
@@ -311,26 +308,11 @@ theorem isoClass_eq (ν : P.restrict ⁻¹' {basePt} ≃ Fin (degree P.β)) :
 /-- **The cover attached to an analytic Belyi pair is path connected.** Its total space is the
 connected surface `X` with the finitely many points over `0`, `1` and `∞` removed. -/
 instance instPathConnectedSpacePreimageRange :
-    PathConnectedSpace (P.β ⁻¹' range toOnePoint) := by
-  have hfin : (P.β ⁻¹' marked).Finite :=
-    finite_marked.preimage' fun y _ ↦ P.β.finite_fiber y
-  have hconn := isConnected_compl_of_finite_of_one_lt_rank
-    (by rw [Complex.rank_real_complex]; exact Nat.one_lt_ofNat) hfin
-  rw [← preimage_compl, ← range_toOnePoint] at hconn
-  have := ChartedSpace.locallyPathConnectedSpace ℂ P.X
-  have := (isOpenEmbedding_toOnePoint.isOpen_range.preimage
-    P.β.holomorphic.continuous).locallyPathConnectedSpace
-  have := isConnected_iff_connectedSpace.1 hconn
-  exact pathConnectedSpace_iff_connectedSpace.2 this
-
-/-- **The cover attached to an analytic Belyi pair is dense in its surface**: the points of `X`
-over `ℂ ∖ {0, 1}` are the complement of the finitely many points over `0`, `1` and `∞`, none of
-which is isolated. -/
-theorem dense_preimage_range : Dense (P.β ⁻¹' range toOnePoint) := by
-  have : ∀ x : P.X, (𝓝[≠] x).NeBot := fun x ↦
-    (chartAt ℂ x).nhdsNE_neBot (mem_chart_source ℂ x)
-  rw [range_toOnePoint, preimage_compl, compl_eq_univ_sdiff]
-  exact dense_univ.sdiff_finite <| finite_marked.preimage' fun y _ ↦ P.β.finite_fiber y
+    PathConnectedSpace (P.β ⁻¹' range toOnePoint) :=
+  -- The projection of `P.toTopBranchedCover rfl` is `⟨P.β, _⟩`, whose coercion is `P.β` by
+  -- definition (`TauCeti.AnalyticBelyiPair.toTopBranchedCover_π_apply` is `rfl`), so the two
+  -- preimages are the same subtype.
+  (P.toTopBranchedCover rfl).instPathConnectedSpacePreimageRange
 
 /-- The permutation triple of an analytic Belyi pair is connected. -/
 theorem isConnected_isoClass : P.isoClass.IsConnected := by
@@ -556,11 +538,16 @@ theorem eq_of_apply_eq {e e' : P.Iso Q} (x : P.β ⁻¹' range toOnePoint) (h : 
   have hres : ⇑e.restrict = e'.restrict :=
     Q.isCoveringMap_restrict.eq_of_comp_eq e.restrict.continuous e'.restrict.continuous
       (by rw [e.restrict_comp_restrict, e'.restrict_comp_restrict]) x (Subtype.ext h)
-  apply DFunLike.coe_injective
-  rw [← coe_toHomeomorph e, ← coe_toHomeomorph e']
-  refine Continuous.ext_on P.dense_preimage_range
-    e.toHomeomorph.continuous e'.toHomeomorph.continuous fun y hy ↦ ?_
-  simpa using congrArg Subtype.val (congrFun hres ⟨y, hy⟩)
+  have hQ := e.degree_eq.symm
+  -- The unbranched part of `P.toTopBranchedCover rfl` is `P.β ⁻¹' range toOnePoint` by
+  -- definition, since its projection coerces to `P.β`; so `hres` applies to its points.
+  have h : (e.toTopBranchedCover rfl hQ).restrict = (e'.toTopBranchedCover rfl hQ).restrict :=
+    Homeomorph.ext fun y ↦ Subtype.ext <| by
+      simp only [TopBranchedCover.Iso.coe_restrict_apply, toTopBranchedCover_toHomeomorph]
+      exact congrArg Subtype.val (congrFun hres y)
+  have h' := congrArg TopBranchedCover.Iso.toHomeomorph (TopBranchedCover.Iso.restrict_injective h)
+  rw [toTopBranchedCover_toHomeomorph, toTopBranchedCover_toHomeomorph] at h'
+  exact ext fun y ↦ DFunLike.congr_fun h' y
 
 /-- Evaluation at a point of the fibre over `1/2` embeds the isomorphisms `P ≅ Q` into the fibre
 of `Q` over `1/2`. -/

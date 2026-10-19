@@ -26,7 +26,10 @@ has measure `n` times the volume of `Ioo 0 1 • s`. This file identifies it wit
 `μHE[n - 1] (sphere c r) = n ω_n r ^ (n - 1)`, for `r > 0`,
 
 where `ω_n = volume (ball 0 1)`. These are the constants of polar integration with respect to
-Hausdorff measure, and they agree with Mathlib's volume of balls.
+Hausdorff measure, and they agree with Mathlib's volume of balls. The passage from the unit sphere
+to `sphere c r` is a rescaling statement valid for every dimension `d` in every real normed space:
+`μHE[d]` on `sphere c r` is `r ^ d` times the pushforward of `μHE[d]` on the unit sphere by
+`u ↦ c + r • u`.
 
 The comparison is a cone formula for parametrizations of pieces of the unit sphere. If
 `ψ : W → E` takes values in the unit sphere near a measurable set `s`, where `dim W = n - 1`, and
@@ -42,6 +45,11 @@ lower bound on the dimension is needed: in dimension one, both measures count po
 
 ## Main results
 
+* `TauCeti.euclideanHausdorffMeasure_restrict_sphere_eq_smul_map`: rescaling Hausdorff measure on
+  spheres, with the integral and integrability forms
+  `TauCeti.setLIntegral_sphere_eq_mul_setLIntegral_sphere_zero_one`,
+  `TauCeti.setIntegral_sphere_eq_smul_setIntegral_sphere_zero_one` and
+  `TauCeti.integrableOn_sphere_iff`.
 * `TauCeti.euclideanHausdorffMeasure_image_eq_finrank_mul_volume_Ioo_smul`: the cone formula for
   a regular injective parametrization of a piece of the unit sphere.
 * `TauCeti.toSphere_volume_eq_comap_euclideanHausdorffMeasure`: Mathlib's surface measure on the
@@ -63,6 +71,83 @@ open MeasureTheory Measure Module Set Filter Function Metric
 open scoped Pointwise ENNReal Topology RealInnerProductSpace
 
 namespace TauCeti
+
+section Scaling
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
+  [NormedAddCommGroup F]
+
+/-- The affine map `u ↦ c + r • u`, as a measurable equivalence. -/
+private def addSMulEquiv (c : E) {r : ℝ} (hr : r ≠ 0) : E ≃ᵐ E :=
+  ((Homeomorph.smulOfNeZero r hr).trans (Homeomorph.addLeft c)).toMeasurableEquiv
+
+private lemma addSMulEquiv_apply (c : E) {r : ℝ} (hr : r ≠ 0) (u : E) :
+    addSMulEquiv c hr u = c + r • u := rfl
+
+/-- **Rescaling Hausdorff measure on spheres.** For `r > 0`, the `d`-dimensional Hausdorff measure
+on the sphere `sphere c r` is `r ^ d` times the pushforward of the `d`-dimensional Hausdorff
+measure on the unit sphere by `u ↦ c + r • u`. -/
+theorem euclideanHausdorffMeasure_restrict_sphere_eq_smul_map (d : ℕ) (c : E) {r : ℝ}
+    (hr : 0 < r) :
+    (μHE[d] : Measure E).restrict (sphere c r) = ENNReal.ofReal r ^ d •
+      ((μHE[d] : Measure E).restrict (sphere 0 1)).map (fun u ↦ c + r • u) := by
+  set φ := addSMulEquiv c hr.ne'
+  have hφ : ⇑φ = fun u ↦ c + r • u := funext (addSMulEquiv_apply c hr.ne')
+  have hpre : φ ⁻¹' sphere c r = sphere 0 1 := by
+    ext u
+    simp only [mem_preimage, hφ, mem_sphere_iff_norm, add_sub_cancel_left, norm_smul,
+      Real.norm_of_nonneg hr.le, sub_zero]
+    exact ⟨fun h ↦ (mul_eq_left₀ hr.ne').1 h, fun h ↦ by rw [h, mul_one]⟩
+  -- Hausdorff measure of an image under `φ`: translation is an isometry, and dilation by `r`
+  -- multiplies the measure by `r ^ d`.
+  have himage (s : Set E) : μHE[d] (φ '' s) = ENNReal.ofReal r ^ d * μHE[d] s := by
+    have : φ '' s = (c + ·) '' (r • s) := by
+      rw [hφ, ← image_smul, image_image]
+    rw [this, (isometry_add_left c).euclideanHausdorffMeasure_image,
+      euclideanHausdorffMeasure_smul₀ _ hr.ne']
+    simp [ENNReal.smul_def, ← enorm_eq_nnnorm, Real.enorm_eq_ofReal hr.le]
+  rw [← hφ]
+  ext s hs
+  rw [restrict_apply hs, Measure.smul_apply, φ.map_apply,
+    restrict_apply' isClosed_sphere.measurableSet, ← hpre, ← preimage_inter, smul_eq_mul, ← himage,
+    φ.image_preimage]
+
+/-- **Rescaling integrals over spheres.** For `r > 0`, integrating a nonnegative function against
+`d`-dimensional Hausdorff measure on `sphere c r` amounts to integrating its pullback by
+`u ↦ c + r • u` over the unit sphere, with the factor `r ^ d`. -/
+theorem setLIntegral_sphere_eq_mul_setLIntegral_sphere_zero_one (d : ℕ) (c : E) {r : ℝ}
+    (hr : 0 < r) (f : E → ℝ≥0∞) :
+    ∫⁻ y in sphere c r, f y ∂μHE[d] =
+      ENNReal.ofReal r ^ d * ∫⁻ u in sphere 0 1, f (c + r • u) ∂μHE[d] := by
+  rw [euclideanHausdorffMeasure_restrict_sphere_eq_smul_map d c hr, lintegral_smul_measure,
+    ← funext (addSMulEquiv_apply c hr.ne'), lintegral_map_equiv, smul_eq_mul]
+  simp only [addSMulEquiv_apply]
+
+/-- **Rescaling integrals over spheres.** For `r > 0`, integrating a function against
+`d`-dimensional Hausdorff measure on `sphere c r` amounts to integrating its pullback by
+`u ↦ c + r • u` over the unit sphere, with the factor `r ^ d`. -/
+theorem setIntegral_sphere_eq_smul_setIntegral_sphere_zero_one [NormedSpace ℝ F] (d : ℕ)
+    (c : E) {r : ℝ} (hr : 0 < r) (f : E → F) :
+    ∫ y in sphere c r, f y ∂μHE[d] = r ^ d • ∫ u in sphere 0 1, f (c + r • u) ∂μHE[d] := by
+  rw [euclideanHausdorffMeasure_restrict_sphere_eq_smul_map d c hr, integral_smul_measure,
+    ← funext (addSMulEquiv_apply c hr.ne'),
+    (addSMulEquiv c hr.ne').measurableEmbedding.integral_map, ← ENNReal.ofReal_pow hr.le,
+    ENNReal.toReal_ofReal (pow_nonneg hr.le d)]
+  simp only [addSMulEquiv_apply]
+
+/-- A function is integrable for `d`-dimensional Hausdorff measure on `sphere c r`, `r > 0`, if
+and only if its pullback by `u ↦ c + r • u` is integrable on the unit sphere. -/
+theorem integrableOn_sphere_iff (d : ℕ) (c : E) {r : ℝ} (hr : 0 < r) {f : E → F} :
+    IntegrableOn f (sphere c r) μHE[d] ↔
+      IntegrableOn (fun u ↦ f (c + r • u)) (sphere 0 1) μHE[d] := by
+  rw [IntegrableOn, euclideanHausdorffMeasure_restrict_sphere_eq_smul_map d c hr,
+    integrable_smul_measure (pow_ne_zero _ (ENNReal.ofReal_pos.2 hr).ne')
+      (ENNReal.pow_ne_top ENNReal.ofReal_ne_top),
+    ← funext (addSMulEquiv_apply c hr.ne'),
+    (addSMulEquiv c hr.ne').measurableEmbedding.integrable_map_iff]
+  simp only [IntegrableOn, Function.comp_def, addSMulEquiv_apply]
+
+end Scaling
 
 variable {W E : Type*} [NormedAddCommGroup W] [InnerProductSpace ℝ W] [FiniteDimensional ℝ W]
   [MeasurableSpace W] [BorelSpace W]
@@ -243,12 +328,8 @@ unit ball. -/
 theorem euclideanHausdorffMeasure_sphere (c : E) {r : ℝ} (hr : 0 < r) :
     μHE[finrank ℝ E - 1] (sphere c r) =
       finrank ℝ E * volume (ball (0 : E) 1) * ENNReal.ofReal r ^ (finrank ℝ E - 1) := by
-  have h : sphere c r = (c + ·) '' (r • sphere (0 : E) 1) := by
-    rw [smul_sphere' hr.ne', smul_zero, Real.norm_of_nonneg hr.le, mul_one, image_add_left,
-      preimage_add_sphere, zero_sub, neg_neg]
-  rw [h, (isometry_add_left c).euclideanHausdorffMeasure_image,
-    euclideanHausdorffMeasure_smul₀ _ hr.ne', euclideanHausdorffMeasure_sphere_zero_one,
-    ENNReal.smul_def, smul_eq_mul, ENNReal.coe_pow, ← enorm_eq_nnnorm, Real.enorm_eq_ofReal hr.le,
-    mul_comm]
+  rw [← restrict_apply_univ, euclideanHausdorffMeasure_restrict_sphere_eq_smul_map _ c hr,
+    Measure.smul_apply, map_apply (by fun_prop) MeasurableSet.univ, preimage_univ,
+    restrict_apply_univ, euclideanHausdorffMeasure_sphere_zero_one, smul_eq_mul, mul_comm]
 
 end TauCeti

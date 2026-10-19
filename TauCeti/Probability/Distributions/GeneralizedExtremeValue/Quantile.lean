@@ -185,4 +185,30 @@ theorem tendsto_quantile_generalizedExtremeValueMeasure_zero_nhdsLT_one (hs : 0 
   simpa only [generalizedExtremeValueMeasure_zero] using
     tendsto_quantile_gumbelMeasure_nhdsLT_one hs m
 
+/-- Generalized extreme-value quantiles vary continuously with the probability level on the
+open unit interval. -/
+theorem continuousOn_quantile_generalizedExtremeValueMeasure (hs : 0 < s) (m ξ : ℝ) :
+    ContinuousOn (generalizedExtremeValueMeasure m s ξ).quantile (Ioo 0 1) := by
+  by_cases hξ : ξ = 0
+  · have hcont : ContinuousOn (fun v : ℝ ↦ m - s * log (-log v)) (Ioo 0 1) := by
+      apply continuousOn_of_forall_continuousAt
+      intro v hv
+      have hv0 : v ≠ 0 := hv.1.ne'
+      have hlog : -log v ≠ 0 := (neg_pos.mpr (log_neg hv.1 hv.2)).ne'
+      fun_prop
+    refine hcont.congr fun v hv ↦ ?_
+    simpa [hξ] using quantile_gumbelMeasure hs m hv
+  · have hcont : ContinuousOn
+        (fun v : ℝ ↦ m + s * ((-log v) ^ (-ξ) - 1) / ξ) (Ioo 0 1) := by
+      apply continuousOn_of_forall_continuousAt
+      intro v hv
+      have hv0 : v ≠ 0 := hv.1.ne'
+      have hlog : -log v ≠ 0 := (neg_pos.mpr (log_neg hv.1 hv.2)).ne'
+      have hbase : ContinuousAt (fun w : ℝ ↦ -log w) v := by fun_prop
+      exact continuousAt_const.add
+        ((continuousAt_const.mul
+          ((hbase.rpow_const (Or.inl hlog)).sub continuousAt_const)).div_const ξ)
+    refine hcont.congr fun v hv ↦ ?_
+    exact quantile_generalizedExtremeValueMeasure_of_shape_ne_zero hs m hξ hv
+
 end TauCeti.Probability

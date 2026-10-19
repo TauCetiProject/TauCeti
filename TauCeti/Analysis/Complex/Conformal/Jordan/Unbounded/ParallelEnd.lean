@@ -55,12 +55,6 @@ namespace TauCeti
 
 variable {f g : ℂ → ℂ} {q : ℂ}
 
-/-- On the upper half-plane the map is recovered from its inverted coordinate. -/
-private theorem eq_add_inv_of_inverted_coordinate
-    (hgf : EqOn g (fun z => (f z - q)⁻¹) upperHalfPlaneSet) {z : ℂ}
-    (hz : z ∈ upperHalfPlaneSet) : f z = q + (g z)⁻¹ := by
-  rw [hgf hz, inv_inv, add_sub_cancel]
-
 /-- **Each access to infinity lies in one end.**  Let `g = (f - q)⁻¹` be the inverted coordinate
 of a map `f` of the upper half-plane into `U`, continuous on the closed upper half-plane and
 nonzero in its interior, and let `x` be a real zero of `g`.  If far out `U` is covered by pairwise
