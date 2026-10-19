@@ -111,6 +111,13 @@ theorem constantCoeff_nsmulSeries (n : ℕ) :
     rw [nsmulSeries_succ]
     exact constantCoeff_subst_eq_zero (hasSubst_of_constantCoeff_zero ha) ha F.zero_constantCoeff
 
+/-- `[n]_F(T)` and `T` can be substituted into a bivariate power series. -/
+theorem hasSubst_nsmulSeries_X (n : ℕ) : HasSubst ![F.nsmulSeries n, PowerSeries.X] :=
+  hasSubst_of_constantCoeff_zero fun s ↦ by
+    fin_cases s
+    · exact F.constantCoeff_nsmulSeries n
+    · exact PowerSeries.constantCoeff_X
+
 /-- `[m n]_F(T) = [m]_F([n]_F(T))`: multiplication by `m n` is the composite of multiplication by
 `m` and by `n`. -/
 theorem nsmulSeries_mul (m n : ℕ) :
@@ -120,11 +127,7 @@ theorem nsmulSeries_mul (m n : ℕ) :
   induction m with
   | zero => rw [zero_mul, nsmulSeries_zero, ← PowerSeries.coe_substAlgHom hn, map_zero]
   | succ m ih =>
-    have ha : HasSubst ![F.nsmulSeries m, PowerSeries.X] :=
-      hasSubst_of_constantCoeff_zero fun s ↦ by
-        fin_cases s
-        · exact F.constantCoeff_nsmulSeries m
-        · exact PowerSeries.constantCoeff_X
+    have ha := F.hasSubst_nsmulSeries_X m
     -- `[m n + n]_F(T) = F([m]_F([n]_F(T)), [n]_F(T))`, and substituting `[n]_F(T)` into
     -- `[m + 1]_F(T) = F([m]_F(T), T)` gives the same
     rw [add_mul, one_mul, nsmulSeries_add, ih, nsmulSeries_succ,
@@ -141,11 +144,7 @@ private theorem derivative_nsmulSeries_succ (n : ℕ) :
       subst ![F.nsmulSeries n, PowerSeries.X] (pderiv 0 F.toPowerSeries) *
           PowerSeries.derivative (F.nsmulSeries n) +
         subst ![F.nsmulSeries n, PowerSeries.X] (pderiv 1 F.toPowerSeries) := by
-  have ha : HasSubst ![F.nsmulSeries n, PowerSeries.X] :=
-    hasSubst_of_constantCoeff_zero fun s ↦ by
-      fin_cases s
-      · exact F.constantCoeff_nsmulSeries n
-      · exact PowerSeries.constantCoeff_X
+  have ha := F.hasSubst_nsmulSeries_X n
   rw [nsmulSeries_succ]
   -- `PowerSeries.derivative` is by definition the partial derivative in the unique variable
   change pderiv () (subst _ F.toPowerSeries) = _
@@ -163,10 +162,7 @@ theorem subst_nsmulSeries_invariantDifferential_mul_derivative [F.IsComm] (n : �
   | succ n ih =>
     have hF := PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff
     set a : Fin 2 → PowerSeries R := ![F.nsmulSeries n, PowerSeries.X]
-    have ha : HasSubst a := hasSubst_of_constantCoeff_zero fun s ↦ by
-      fin_cases s
-      · exact F.constantCoeff_nsmulSeries n
-      · exact PowerSeries.constantCoeff_X
+    have ha : HasSubst a := F.hasSubst_nsmulSeries_X n
     have hP (i : Fin 2) : subst a (PowerSeries.subst (X (R := R) i) F.invariantDifferential) =
         PowerSeries.subst (a i) F.invariantDifferential := by
       rw [subst_powerSeriesSubst ha (PowerSeries.HasSubst.X i), subst_X ha]
@@ -197,7 +193,7 @@ theorem coeff_one_nsmulSeries (n : ℕ) :
       fin_cases s
       · exact F.constantCoeff_nsmulSeries n
       · exact PowerSeries.constantCoeff_X
-    have ha := hasSubst_of_constantCoeff_zero ha'
+    have ha := F.hasSubst_nsmulSeries_X n
     have hc (G : MvPowerSeries (Fin 2) R) :
         PowerSeries.constantCoeff (subst ![F.nsmulSeries n, PowerSeries.X] G) = constantCoeff G :=
       constantCoeff_subst_of_constantCoeff_zero ha ha' G
