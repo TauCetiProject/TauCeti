@@ -11,11 +11,11 @@ import TauCeti.LinearAlgebra.Eigenspace.DiagonalBasis
 /-!
 # Formal characters from a weight basis
 
-A basis of simultaneous eigenvectors makes honest and generalized weight spaces agree over
-any reduced commutative ring. Over a field, the formal character is
-the sum of the corresponding group-algebra basis elements, counting repeated weights with
-their multiplicities. If the basis weights are pairwise distinct, each occurring weight space
-is a line and each weight has coefficient one.
+For a nilpotent Lie algebra over a reduced commutative ring, a basis of simultaneous
+eigenvectors makes honest and generalized weight spaces agree. Over a field, a finite such
+basis expresses the formal character as the sum of the corresponding group-algebra basis
+elements, counting repeated weights with their multiplicities. If these weights are pairwise
+distinct, each occurring weight space is a line and each weight has coefficient one.
 
 These results connect explicit diagonal actions, such as the exterior model of spinors, to
 `TauCeti.formalCharacter` without requiring algebraic closedness or characteristic zero.
@@ -39,8 +39,8 @@ variable {R : Type u} [CommRing R] [IsReduced R] {L : Type v} [LieRing L] [LieAl
 
 include hb
 
-/-- A basis of weight vectors over a reduced commutative ring makes generalized weight spaces
-equal to honest weight spaces. -/
+/-- For a nilpotent Lie algebra over a reduced commutative ring, a basis of weight vectors
+makes generalized weight spaces equal to honest weight spaces. -/
 theorem genWeightSpace_eq_weightSpace_of_weight_basis (χ : L → R) :
     genWeightSpace M χ = weightSpace M χ := by
   refine le_antisymm (fun m hm => ?_) (weightSpace_le_genWeightSpace M χ)
