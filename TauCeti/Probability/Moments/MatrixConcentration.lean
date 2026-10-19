@@ -101,13 +101,14 @@ theorem measure_exists_lt_norm_sub_le [Norm E] [Sub E]
 omit [Fintype m] [Fintype n] in
 /-- The event that some entry of a random matrix deviates from a fixed matrix by more than `η` is
 measurable when every entry is measurable. -/
-theorem measurableSet_exists_lt_norm_sub [NormedAddCommGroup E] [Finite m] [Finite n]
+theorem measurableSet_exists_lt_norm_sub [SeminormedAddGroup E] [Finite m] [Finite n]
     [MeasurableSpace E] [OpensMeasurableSpace E] [MeasurableSub E]
     (hS : ∀ k l, Measurable fun ω ↦ S ω k l) (η : ℝ) :
     MeasurableSet {ω | ∃ k l, η < ‖S ω k l - A k l‖} := by
   simp only [Set.ofPred_exists]
   exact .iUnion fun k ↦ .iUnion fun l ↦
-    measurableSet_lt measurable_const ((hS k l).sub_const (A k l)).norm
+    measurableSet_lt measurable_const
+      (continuous_norm.measurable.comp ((hS k l).sub_const (A k l)))
 
 /-- **High-probability entrywise closeness.** On a probability space, if every entrywise deviation
 of a random matrix `S` from a fixed matrix `A` has second moment at most `v`, then any set `s`
