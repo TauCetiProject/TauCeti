@@ -25,10 +25,11 @@ from `0` to `z`. Integration by parts evaluates it in terms of the sum of all de
 
 This identity is the analytic input to Hermite's proof of the transcendence of `e` and to the
 Hermite–Lindemann proof of the Lindemann–Weierstrass theorem. For a vanishing exponential relation
-`∑ δⱼ exp γⱼ = 0` it shows that the algebraic number `-∑ δⱼ (sumIDeriv f)(γⱼ)` equals the analytic
-quantity `∑ δⱼ F_f(γⱼ)` (`Polynomial.sum_mul_hermiteIntegral_of_sum_mul_exp_eq_zero`), which the
-elementary estimate `‖F_f(z)‖ ≤ ‖z‖ exp ‖z‖ C` (`Polynomial.norm_hermiteIntegral_le`) makes small
-for well-chosen auxiliary polynomials `f`.
+`∑ δⱼ exp γⱼ = 0` it shows that the polynomial expression `-∑ δⱼ (sumIDeriv f)(γⱼ)` (an algebraic
+number when the coefficients of `f`, the weights `δⱼ` and the points `γⱼ` are algebraic) equals the
+analytic quantity `∑ δⱼ F_f(γⱼ)` (`Polynomial.sum_mul_hermiteIntegral_of_sum_mul_exp_eq_zero`),
+which the elementary estimate `‖F_f(z)‖ ≤ ‖z‖ exp ‖z‖ C` (`Polynomial.norm_hermiteIntegral_le`)
+makes small for well-chosen auxiliary polynomials `f`.
 
 ## Main declarations
 
@@ -193,8 +194,9 @@ theorem hermiteIntegral_X (z : ℂ) : hermiteIntegral X z = cexp z - z - 1 := by
   ring
 
 /-- **Hermite's integral along an exponential relation**: if `∑ δⱼ exp γⱼ = 0`, then
-`∑ δⱼ F_f(γⱼ) = -∑ δⱼ (sumIDeriv f)(γⱼ)`, so that the algebraic right-hand side is controlled by
-the analytic left-hand side. -/
+`∑ δⱼ F_f(γⱼ) = -∑ δⱼ (sumIDeriv f)(γⱼ)`, so that the right-hand side (algebraic when the
+coefficients of `f`, the weights `δⱼ` and the points `γⱼ` are algebraic) is controlled by the
+analytic left-hand side. -/
 theorem sum_mul_hermiteIntegral_of_sum_mul_exp_eq_zero {ι : Type*} (s : Finset ι)
     (δ γ : ι → ℂ) (h : ∑ j ∈ s, δ j * cexp (γ j) = 0) (f : ℂ[X]) :
     ∑ j ∈ s, δ j * hermiteIntegral f (γ j) = -∑ j ∈ s, δ j * (sumIDeriv f).eval (γ j) := by
