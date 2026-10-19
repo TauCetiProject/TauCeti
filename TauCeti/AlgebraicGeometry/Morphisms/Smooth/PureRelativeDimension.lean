@@ -13,15 +13,14 @@ public import TauCeti.AlgebraicGeometry.Morphisms.Syntomic.Smooth
 # Smooth morphisms of pure relative dimension
 
 A morphism of schemes is smooth of relative dimension `n` exactly when it is smooth and has pure
-relative dimension `n`. One direction holds because smooth morphisms of relative dimension `n` are
-syntomic of relative dimension `n`. Conversely, a smooth morphism is covered by standard smooth
-affine charts of various relative dimensions; each chart has pure relative dimension equal to its
-dimension, and since its source is nonempty that dimension is `n`.
+relative dimension `n`. This lets one establish a fixed smooth relative dimension from smoothness
+together with every fibre being pure of dimension `n`, without exhibiting standard smooth charts
+of that dimension.
 
-Consequently, on the smooth locus of a morphism of pure relative dimension `n`, such as the smooth
-locus of a nodal relative curve, the morphism is smooth of relative dimension `n`. This is the
-hypothesis under which a section through the smooth locus is a relative effective Cartier
-divisor.
+Consequently, on the smooth locus of a morphism of pure relative dimension `n` the morphism is
+smooth of relative dimension `n`. For `n = 1`, such as the smooth locus of a nodal relative curve,
+this is the hypothesis under which a section through the smooth locus is a relative effective
+Cartier divisor.
 
 ## Main results
 
