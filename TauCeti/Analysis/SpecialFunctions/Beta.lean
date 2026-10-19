@@ -474,10 +474,12 @@ theorem integral_rpow_mul_one_add_sq_rpow {r : ℝ} (hs : 0 < s) (hsr : s < r) :
   refine setIntegral_congr_fun measurableSet_Ioi fun y (hy : 0 < y) ↦ ?_
   have hpow : (y ^ (2 : ℝ)) ^ (s / 2 - 1) * y = y ^ (s - 1) := by
     rw [← Real.rpow_mul hy.le, ← Real.rpow_add_one hy.ne']
-    ring_nf
-  rw [← hpow, Real.rpow_two]
-  norm_num
-  ring_nf
+    congr 1
+    ring
+  have hexp : -(s / 2 + (r - s) / 2) = -r / 2 := by ring
+  rw [← hpow, Real.rpow_two, hexp, abs_two, show (2 : ℝ) - 1 = 1 by norm_num, Real.rpow_one,
+    smul_eq_mul]
+  ring
 
 end SecondIntegral
 
