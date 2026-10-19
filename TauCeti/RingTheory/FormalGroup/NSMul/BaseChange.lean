@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.FormalGroup.BaseChange
 public import TauCeti.RingTheory.FormalGroup.NSMul.Basic
 
 /-!
@@ -13,8 +12,7 @@ public import TauCeti.RingTheory.FormalGroup.NSMul.Basic
 
 The multiplication series `[n]_F` of a formal group law is natural in its coefficient ring:
 applying a ring homomorphism to its coefficients gives the multiplication series of the
-base-changed formal group. The elementary functoriality and commutativity properties of
-`FormalGroup.map` are supplied by `TauCeti.RingTheory.FormalGroup.BaseChange`.
+base-changed formal group.
 
 ## Main results
 
