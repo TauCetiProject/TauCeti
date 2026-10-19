@@ -5,7 +5,8 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.ProjectiveGeneralLinear.Basic
+public import TauCeti.Algebra.AlgebraicGroup.ProjectiveGeneralLinear.Conjugation
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.Antipode
 public import TauCeti.Algebra.AlgebraicGroup.ConstantMultiplication.Tangent
 public import TauCeti.LinearAlgebra.Matrix.Derivation
 
@@ -63,6 +64,51 @@ theorem tangentEnd_apply
       (GeneralLinear.tangentMatrix (n * n)
         (HopfIdeal.quotientLieHom (definingHopfIdeal n R) d)) := by
   simp [tangentEnd, GeneralLinear.tangentLieEquivMatrix_apply]
+
+/-- The differential of conjugation, in the matrix-unit basis, is the matrix of the
+commutator with the general-linear tangent matrix. -/
+@[simp]
+theorem tangentMatrix_quotientLieHom_derivationComp_conjugationMap
+    (d : Derivation R (GeneralLinear.coordinateHopfAlgebra R n)
+      (Bialgebra.CounitAlgebra R (GeneralLinear.coordinateHopfAlgebra R n) B)) :
+    GeneralLinear.tangentMatrix (n * n)
+        (HopfIdeal.quotientLieHom (definingHopfIdeal n R)
+          (derivationComp (B := B) (conjugationMap n R).hom d)) =
+      conjugationMatrix (GeneralLinear.tangentMatrix n d) 1 -
+        conjugationMatrix 1 (GeneralLinear.tangentMatrix n d) := by
+  classical
+  ext a b
+  rw [HopfIdeal.quotientLieHom_apply, ← LinearMap.comp_apply, ← derivationComp_comp,
+    GeneralLinear.tangentMatrix_apply, algEquivSelf_derivationComp_apply,
+    ← GeneralLinear.genericMatrix_apply]
+  have hentry := congrFun (congrFun (map_genericMatrix_conjugationMap n R) a) b
+  simp only [Matrix.map_apply, CommHopfAlgCat.hom_comp, CommHopfAlgCat.hom_mkQuotient,
+    ← BialgHom.coe_toAlgHom] at hentry
+  rw [hentry, ← GeneralLinear.map_antipode_genericMatrix, conjugationMatrix_apply,
+    Matrix.map_apply, HopfAlgebra.antipodeAlgHom_apply,
+    Bialgebra.CounitAlgebra.algEquivSelf_apply_mul]
+  rw [d.apply_antipode]
+  simp only [HopfAlgebra.counit_antipode, map_neg,
+    ← GeneralLinear.tangentMatrix_apply, conjugationMatrix_apply, Matrix.sub_apply,
+    GeneralLinear.genericMatrix_apply, GeneralLinear.coordinateHopfAlgebra_counit_X,
+    Matrix.one_apply]
+  split_ifs <;>
+    simp_all [sub_eq_add_neg, add_comm, -Bialgebra.CounitAlgebra.algEquivSelf_apply]
+
+/-- The differential of `GLₙ → PGLₙ` sends a tangent matrix `X` to the inner
+derivation `Y ↦ X Y - Y X` of the matrix algebra. -/
+theorem tangentEnd_derivationComp_conjugationMap
+    (d : Derivation R (GeneralLinear.coordinateHopfAlgebra R n)
+      (Bialgebra.CounitAlgebra R (GeneralLinear.coordinateHopfAlgebra R n) B)) :
+    tangentEnd n (derivationComp (B := B) (conjugationMap n R).hom d) =
+      LinearMap.mulLeft B (GeneralLinear.tangentMatrix n d) -
+        LinearMap.mulRight B (GeneralLinear.tangentMatrix n d) := by
+  rw [tangentEnd_apply, tangentMatrix_quotientLieHom_derivationComp_conjugationMap]
+  simp only [map_sub, ← toMatrix_mulLeft_comp_mulRight,
+    LinearMap.mulLeft_one, LinearMap.mulRight_one, LinearMap.comp_id, LinearMap.id_comp]
+  exact congrArg₂ (· - ·)
+    ((Matrix.toLinAlgEquiv (matrixUnitBasis n B)).apply_symm_apply _)
+    ((Matrix.toLinAlgEquiv (matrixUnitBasis n B)).apply_symm_apply _)
 
 /-- The action of the tangent Lie algebra on the matrix algebra is faithful. -/
 theorem tangentEnd_injective : Function.Injective (tangentEnd (R := R) (B := B) n) :=
