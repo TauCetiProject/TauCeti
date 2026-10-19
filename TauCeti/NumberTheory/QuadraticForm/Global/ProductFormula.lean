@@ -33,8 +33,8 @@ invariants of every regular form of positive rank over `K` is then admissible.
 
 ## Main results
 
-* `TauCeti.finprod_hilbertSymbol_mul_prod_hilbertSymbol_eq_one`: Hilbert's product formula for
-  the norm-equation symbols over every number field.
+* `TauCeti.hilbertSymbol_productFormula`: Hilbert's product formula for the norm-equation symbols
+  over every number field.
 * `TauCeti.finprod_hilbertSymbol_padic_mul_hilbertSymbol_real_eq_one`: the product formula over
   `ℚ`, with the local symbols in `ℚ_ℓ` and `ℝ`.
 * `QuadraticForm.globalInvariants_hasseProduct_eq_one`: the Hasse product formula for every regular
@@ -64,7 +64,7 @@ open scoped Classical in
 /-- **Hilbert's product formula.** For `a, b ∈ Kˣ` in a number field `K`, the product of the
 norm-equation Hilbert symbols `(a_v, b_v)_v` over the finite places and of the real Hilbert symbols
 `(a_w, b_w)_w` over the real places of `K` is `1`. -/
-theorem finprod_hilbertSymbol_mul_prod_hilbertSymbol_eq_one (a b : Kˣ) :
+theorem hilbertSymbol_productFormula (a b : Kˣ) :
     (∏ᶠ v : HeightOneSpectrum (𝓞 K),
         hilbertSymbol (v.unitAtFinitePlace a) (v.unitAtFinitePlace b)) *
       ∏ w : {w : InfinitePlace K // w.IsReal},
@@ -86,7 +86,7 @@ theorem finprod_hilbertSymbol_padic_mul_hilbertSymbol_real_eq_one (a b : ℚˣ) 
       unitAtRealPlace w x = Units.map (algebraMap ℚ ℝ).toMonoidHom x := by
     ext
     simp [eq_ratCast]
-  have h := finprod_hilbertSymbol_mul_prod_hilbertSymbol_eq_one a b
+  have h := hilbertSymbol_productFormula a b
   rwa [Fintype.prod_subsingleton _ ⟨Rat.infinitePlace, Rat.isReal_infinitePlace⟩, hreal, hreal,
     ← finprod_comp_equiv (Rat.HeightOneSpectrum.primesEquiv (R := 𝓞 ℚ)).symm,
     finprod_congr fun ℓ ↦ hilbertSymbol_unitAtFinitePlace_rat ℓ a b] at h
@@ -110,7 +110,7 @@ theorem globalInvariants_hasseProduct_eq_one : (Q.globalInvariants hQ).hasseProd
   rw [QuadraticMap.weightedSumSquares_units] at hdiag
   rw [Q.globalInvariants_hasseProduct_eq_prod hQ hdiag]
   exact prod_eq_one fun i _ ↦ prod_eq_one fun j _ ↦
-    TauCeti.finprod_hilbertSymbol_mul_prod_hilbertSymbol_eq_one _ _
+    TauCeti.hilbertSymbol_productFormula _ _
 
 /-- **The local invariants of a global form are admissible.** The system of local invariants of
 every regular form of positive rank over a number field `K` is admissible. -/

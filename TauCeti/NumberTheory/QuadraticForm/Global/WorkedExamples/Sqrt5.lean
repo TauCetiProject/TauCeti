@@ -101,7 +101,7 @@ private theorem hilbertSymbol_thetaUnit_neg_one_of_eq (hmin : minpoly ℤ θ = X
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) {v₂ : HeightOneSpectrum (𝓞 K)}
     (hv₂ : v₂.asIdeal = Ideal.span {(2 : 𝓞 K)}) :
     hilbertSymbol (v₂.unitAtFinitePlace (thetaUnit hmin)) (v₂.unitAtFinitePlace (-1)) = -1 := by
-  have hpf := finprod_hilbertSymbol_mul_prod_hilbertSymbol_eq_one (thetaUnit hmin) (-1)
+  have hpf := hilbertSymbol_productFormula (thetaUnit hmin) (-1)
   rw [finprod_eq_single _ v₂ fun v hv =>
     hilbertSymbol_thetaUnit_neg_one_of_ne hmin hgen (hv₂ ▸ fun h => hv (HeightOneSpectrum.ext h))]
     at hpf
