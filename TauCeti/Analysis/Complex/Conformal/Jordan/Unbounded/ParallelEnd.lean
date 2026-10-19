@@ -61,6 +61,15 @@ theorem eq_add_inv_of_inverted_coordinate
     (hz : z ∈ upperHalfPlaneSet) : f z = q + (g z)⁻¹ := by
   rw [hgf hz, inv_inv, add_sub_cancel]
 
+/-- A nonvanishing holomorphic inverted coordinate recovers a holomorphic original map. -/
+theorem differentiableOn_of_inverted_coordinate
+    (hgd : DifferentiableOn ℂ g upperHalfPlaneSet)
+    (hgf : EqOn g (fun z => (f z - q)⁻¹) upperHalfPlaneSet)
+    (hgne : ∀ z ∈ upperHalfPlaneSet, g z ≠ 0) :
+    DifferentiableOn ℂ f upperHalfPlaneSet :=
+  ((differentiableOn_const q).add (hgd.inv hgne)).congr fun _ hz =>
+    eq_add_inv_of_inverted_coordinate hgf hz
+
 /-- **Each access to infinity lies in one end.**  Let `g = (f - q)⁻¹` be the inverted coordinate
 of a map `f` of the upper half-plane into `U`, continuous on the closed upper half-plane and
 nonzero in its interior, and let `x` be a real zero of `g`.  If far out `U` is covered by pairwise

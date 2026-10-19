@@ -27,7 +27,7 @@ open Bornology Filter Set
 
 namespace TauCeti
 
-variable {α : Type*} [TopologicalSpace α] [Bornology α] {S T E : Set α}
+variable {α : Type*} [TopologicalSpace α] [Bornology α] {S T E E' : Set α}
 
 /-- A set `E` is *preconnected at infinity inside* `S` if, for every bounded set `B`, some
 preconnected subset of `S` disjoint from `B` contains every point of `E` far enough out. -/
@@ -46,5 +46,11 @@ theorem IsPreconnectedAtInfinityIn.mono (hE : IsPreconnectedAtInfinityIn S E) (h
     IsPreconnectedAtInfinityIn T E := fun B hB =>
   let ⟨C, hCS, hC⟩ := hE B hB
   ⟨C, hCS.trans hST, hC⟩
+
+/-- Being preconnected at infinity inside `S` is inherited by every subset of `E`. -/
+theorem IsPreconnectedAtInfinityIn.subset (hE : IsPreconnectedAtInfinityIn S E) (h : E' ⊆ E) :
+    IsPreconnectedAtInfinityIn S E' := fun B hB => by
+  obtain ⟨C, hCS, hCc, hCB, hEC⟩ := hE B hB
+  exact ⟨C, hCS, hCc, hCB, hEC.mono fun w hw hw' => hw (h hw')⟩
 
 end TauCeti

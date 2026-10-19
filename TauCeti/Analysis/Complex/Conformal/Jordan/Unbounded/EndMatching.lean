@@ -142,8 +142,7 @@ theorem eq_of_eventually_mem_of_inverted_coordinate_eq_zero
   obtain ⟨z', ⟨hz'm, hz'H⟩, hzC'⟩ := hnear hx' hfx' isClosed_closedBall.isOpen_compl hx'm
   -- pulled back by the continuous inverse of `f`, it would cross the semicircle
   have hfd : DifferentiableOn ℂ f upperHalfPlaneSet :=
-    ((differentiableOn_const q).add (hgd.inv hgne)).congr fun _ hz =>
-      eq_add_inv_of_inverted_coordinate hgf hz
+    differentiableOn_of_inverted_coordinate hgd hgf hgne
   have hinv := hfi.leftInvOn_invFunOn
   have hC : invFunOn f upperHalfPlaneSet '' C ⊆ ball m s ∪ (closedBall m s)ᶜ := by
     rintro _ ⟨w, hw, rfl⟩
