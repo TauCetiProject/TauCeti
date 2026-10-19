@@ -14,7 +14,8 @@ public import Mathlib.LinearAlgebra.Eigenspace.Basic
 Let `f` and `g` be endomorphisms of a module with `f * g + g * f = 0`. Then
 `(f + μ) g = -g (f - μ)`, so `g` carries the generalized `μ`-eigenspace of `f` into its
 generalized `-μ`-eigenspace, for every exponent. When `g = e` is invertible, its inverse also
-anticommutes with `f`, and `e` identifies the two generalized eigenspaces. In particular the
+anticommutes with `f`, and `e` identifies the two generalized eigenspaces, which therefore have
+equal `finrank`. In particular, for a finite-dimensional vector space over a field, the
 eigenvalues of `f` come in pairs `±μ` with equal geometric and algebraic multiplicities, and `e`
 preserves every generalized eigenspace of `f` at `0`.
 
@@ -96,18 +97,19 @@ def genEigenspaceEquivOfAnticommute (e : M ≃ₗ[R] M) (h : f * e + e * f = 0) 
 @[simp]
 theorem coe_genEigenspaceEquivOfAnticommute_apply (e : M ≃ₗ[R] M) (h : f * e + e * f = 0)
     (μ : R) (k : ℕ∞) (x : f.genEigenspace μ k) :
-    (genEigenspaceEquivOfAnticommute e h μ k x : M) = e x :=
-  (rfl)
+    (genEigenspaceEquivOfAnticommute e h μ k x : M) = e x := by
+  rw [genEigenspaceEquivOfAnticommute, LinearEquiv.ofSubmodules_apply]
 
 @[simp]
 theorem coe_genEigenspaceEquivOfAnticommute_symm_apply (e : M ≃ₗ[R] M)
     (h : f * e + e * f = 0) (μ : R) (k : ℕ∞) (x : f.genEigenspace (-μ) k) :
-    ((genEigenspaceEquivOfAnticommute e h μ k).symm x : M) = e.symm x :=
-  (rfl)
+    ((genEigenspaceEquivOfAnticommute e h μ k).symm x : M) = e.symm x := by
+  rw [genEigenspaceEquivOfAnticommute, LinearEquiv.ofSubmodules_symm_apply]
 
 /-- If an invertible endomorphism anticommutes with `f`, the generalized `μ`- and
-`-μ`-eigenspaces of `f` have the same dimension. For `k = 1` these are the geometric
-multiplicities, and for `k = ⊤` the algebraic multiplicities, of `μ` and `-μ`. -/
+`-μ`-eigenspaces of `f` have the same `finrank`. For a finite-dimensional vector space over a
+field, these are the geometric multiplicities of `μ` and `-μ` when `k = 1`, and their algebraic
+multiplicities when `k = ⊤`. -/
 theorem finrank_genEigenspace_neg_of_anticommute (e : M ≃ₗ[R] M) (h : f * e + e * f = 0)
     (μ : R) (k : ℕ∞) :
     Module.finrank R (f.genEigenspace (-μ) k) = Module.finrank R (f.genEigenspace μ k) :=
