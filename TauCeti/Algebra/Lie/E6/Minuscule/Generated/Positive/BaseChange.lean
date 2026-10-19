@@ -63,6 +63,7 @@ variable (k : Type v) (K : Type max v w) [CommRing k] [CommRing K] [Algebra k K]
 
 /-- Free scalar extension carries the positive generated defining ideal onto the positive
 generated defining ideal over the extension ring. -/
+@[simp]
 theorem map_baseChangeHopfIdeal_definingIdeal :
     (CommHopfAlgCat.baseChangeHopfIdeal (K := K) (definingIdeal k)).map
         (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K 27).hom.hom =
