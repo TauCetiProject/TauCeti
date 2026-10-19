@@ -367,11 +367,9 @@ def mextDerivₗ [IsManifold I 2 M] (k : ℕ) :
     funext x
     apply mextDeriv_add
     · simpa using φ.1.differentiableWithinAt_inChartAt (s := Set.univ) (x := x)
-        (((isSmoothBundleForm_def ∞ φ.1).mp (mem_smoothForms.mp φ.2)).mdifferentiable
-          (by simp)).mdifferentiableAt.mdifferentiableWithinAt
+        (φ.mdifferentiableAt x).mdifferentiableWithinAt
     · simpa using ψ.1.differentiableWithinAt_inChartAt (s := Set.univ) (x := x)
-        (((isSmoothBundleForm_def ∞ ψ.1).mp (mem_smoothForms.mp ψ.2)).mdifferentiable
-          (by simp)).mdifferentiableAt.mdifferentiableWithinAt
+        (ψ.mdifferentiableAt x).mdifferentiableWithinAt
   map_smul' c φ := Subtype.ext (mextDeriv_smul c φ.1)
 
 variable (I) in

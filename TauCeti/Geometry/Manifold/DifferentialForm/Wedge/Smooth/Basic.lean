@@ -134,8 +134,8 @@ theorem smoothForms_wedgeWith_mem (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (φ 
     (ψ : SmoothForm I M F₂ l) :
     RoughForm.wedgeWith μ (φ : RoughForm I M F₁ k) (ψ : RoughForm I M F₂ l) ∈
       smoothForms I M F₃ (k + l) := by
-  have hφ := (isSmoothBundleForm_def ∞ _).mp (mem_smoothForms.mp φ.2)
-  have hψ := (isSmoothBundleForm_def ∞ _).mp (mem_smoothForms.mp ψ.2)
+  have hφ := (isSmoothBundleForm_def ∞ _).mp φ.isSmoothBundleForm
+  have hψ := (isSmoothBundleForm_def ∞ _).mp ψ.isSmoothBundleForm
   exact mem_smoothForms.mpr <| (isSmoothBundleForm_def ∞ _).mpr fun x ↦
     (hφ x).wedgeWith_form μ (hψ x)
 
