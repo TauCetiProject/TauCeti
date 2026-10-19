@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Commutation.Homotopy.Recut
+import TauCeti.Data.Finset.Basic
 import TauCeti.KnotTheory.Grid.Differential.Square.Recut.Geometry
 
 /-!
@@ -232,11 +233,11 @@ private theorem map_swapColumns_reverse_squares {S T : Finset (Fin n × Fin n)} 
           r ∈ Grid.cIco Qb C.oppositeTurnRow) ∧
         ((b, r) ∈ S.map ((Equiv.swap a b).prodCongr (Equiv.refl (Fin n))).toEmbedding ↔
           r ∈ Grid.cIoo C.oppositeTurnRow Qt) := by
-  refine ⟨fun p ha hb => (mem_map_swapColumns_iff_of_ne _ ha hb).trans
+  refine ⟨fun p ha hb => (Finset.mem_map_swap_prodCongr_refl_iff_of_ne _ ha hb).trans
     (hST (by rwa [C.reverse_column]) (by rwa [C.reverse_column])), fun r => ?_⟩
   simp only [C.reverse_column, C.reverse_turnRow] at hSa hSb
-  simp only [mk_mem_map_swapColumns_iff, Equiv.swap_apply_left, Equiv.swap_apply_right, hSa, hSb,
-    and_self]
+  simp only [Finset.mk_mem_map_swap_prodCongr_refl_iff, Equiv.swap_apply_left,
+    Equiv.swap_apply_right, hSa, hSb, and_self]
 
 /-- One of the two rectangles under a hexagon composite has the replaced grid line as a side and
 both intersection rows among its rows. -/
