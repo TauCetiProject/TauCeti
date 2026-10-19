@@ -37,8 +37,6 @@ Minkowski's second theorem is not proved in this file.
 
 ## Main results
 
-* `TauCeti.NumberField.Units.mem_unitLattice_iff`: the unit lattice is the set of logarithmic
-  embeddings of units.
 * `TauCeti.NumberField.Units.span_logEmbedding_eq_unitLattice_iff`: a family of units is a
   fundamental system exactly when its logarithmic embeddings span the unit lattice.
 * `TauCeti.NumberField.Units.closure_sup_torsion_eq_top_of_basis`: units whose logarithmic
@@ -46,9 +44,9 @@ Minkowski's second theorem is not proved in this file.
 * `TauCeti.NumberField.Units.exists_fundSystem_sum_abs_logEmbedding_le_max_one_mul`: a
   fundamental system whose `j`-th member has `ℓ¹` norm at most `max 1 ((j + 1) / 2)` times that of
   the `j`-th member of a given independent family with increasing `ℓ¹` norms.
-* `TauCeti.NumberField.Units.exists_fundSystem_prod_logHeight₁_le` and
-  `TauCeti.NumberField.Units.exists_fundSystem_prod_absLogHeight₁_le`: the resulting bounds for
-  the product of the heights of the fundamental system.
+* `TauCeti.NumberField.Units.exists_fundSystem_prod_logHeight₁_le_of_isMaxRank` and
+  `TauCeti.NumberField.Units.exists_fundSystem_prod_absLogHeight₁_le_of_isMaxRank`: the resulting
+  bounds for the product of the heights of the fundamental system.
 
 ## References
 
@@ -73,16 +71,6 @@ variable {K : Type*} [Field K] [NumberField K]
 
 /-! ### Fundamental systems and bases of the unit lattice -/
 
-/-- A vector lies in the unit lattice exactly when it is the logarithmic embedding of a unit. -/
-theorem mem_unitLattice_iff {y : logSpace K} :
-    y ∈ unitLattice K ↔ ∃ u : (𝓞 K)ˣ, logEmbedding K (Additive.ofMul u) = y :=
-  ⟨fun ⟨z, _, hz⟩ ↦ ⟨z.toMul, hz⟩, fun ⟨u, hu⟩ ↦ ⟨Additive.ofMul u, Submodule.mem_top, hu⟩⟩
-
-/-- The logarithmic embedding of a unit lies in the unit lattice. -/
-@[simp]
-theorem logEmbedding_mem_unitLattice (x : Additive (𝓞 K)ˣ) : logEmbedding K x ∈ unitLattice K :=
-  ⟨x, Submodule.mem_top, rfl⟩
-
 /-- A family of units generates the units together with the torsion subgroup exactly when the
 logarithmic embeddings of its members span the unit lattice over `ℤ`. -/
 theorem span_logEmbedding_eq_unitLattice_iff {ι : Type*} (ε : ι → (𝓞 K)ˣ) :
@@ -101,19 +89,18 @@ theorem span_logEmbedding_eq_unitLattice_iff {ι : Type*} (ε : ι → (𝓞 K)�
       (logEmbedding K) := by
     ext
     simp [unitLattice]
-  rw [← Submodule.toAddSubgroup_inj, hspan, hlat, AddSubgroup.map_eq_map_iff, logEmbedding_ker,
-    top_sup_eq, ← Subgroup.toAddSubgroup.map_sup, ← Subgroup.toAddSubgroup.map_top,
-    Subgroup.toAddSubgroup.apply_eq_iff_eq]
+  rw [← Submodule.toAddSubgroup_inj, hspan, hlat, AddSubgroup.map_eq_map_iff, logEmbedding_ker]
+  simp [← map_sup]
 
 /-- Units whose logarithmic embeddings form a `ℤ`-basis of the unit lattice generate the units
 together with the torsion subgroup. -/
 theorem closure_sup_torsion_eq_top_of_basis {ι : Type*} (b : Basis ι ℤ (unitLattice K))
     {ε : ι → (𝓞 K)ˣ} (hε : ∀ i, logEmbedding K (Additive.ofMul (ε i)) = b i) :
     Subgroup.closure (Set.range ε) ⊔ torsion K = ⊤ := by
-  rw [← span_logEmbedding_eq_unitLattice_iff, show (fun i ↦ logEmbedding K (Additive.ofMul (ε i)))
-    = (unitLattice K).subtype ∘ b from funext hε, Set.range_comp, ← Submodule.map_span, b.span_eq,
-    Submodule.map_top, Submodule.range_subtype]
-
+  have h : (fun i ↦ logEmbedding K (Additive.ofMul (ε i))) = (unitLattice K).subtype ∘ b :=
+    funext hε
+  rw [← span_logEmbedding_eq_unitLattice_iff, h, Set.range_comp, ← Submodule.map_span, b.span_eq]
+  simp
 
 /-! ### Fundamental systems of controlled `ℓ¹` norm -/
 
@@ -144,7 +131,8 @@ open Classical in
 `u 0, …, u (r - 1)` are linearly independent and their `ℓ¹` norms increase, where `r = rank K`,
 some fundamental system `ε` has `∏ i, logHeight₁ (ε i) ≤ r! / 2 ^ (r - 1) * ∏ i, ‖log u i‖₁`,
 where `‖log x‖₁` is the `ℓ¹` norm of the logarithmic embedding of `x`. -/
-theorem exists_fundSystem_prod_logHeight₁_le {u : Fin (rank K) → (𝓞 K)ˣ} (hu : IsMaxRank u)
+theorem exists_fundSystem_prod_logHeight₁_le_of_isMaxRank {u : Fin (rank K) → (𝓞 K)ˣ}
+    (hu : IsMaxRank u)
     (hmono : Monotone fun i ↦ ∑ w, |logEmbedding K (Additive.ofMul (u i)) w|) :
     ∃ ε : Fin (rank K) → (𝓞 K)ˣ, Subgroup.closure (Set.range ε) ⊔ torsion K = ⊤ ∧
       ∏ i, logHeight₁ (ε i : K) ≤ ((rank K).factorial : ℝ) / 2 ^ (rank K - 1) *
@@ -162,13 +150,14 @@ open Classical in
 some fundamental system `ε` has
 `∏ i, absLogHeight₁ (ε i) ≤ r! / (2 ^ (r - 1) * [K : ℚ] ^ r) * ∏ i, ‖log u i‖₁`,
 where `‖log x‖₁` is the `ℓ¹` norm of the logarithmic embedding of `x`. -/
-theorem exists_fundSystem_prod_absLogHeight₁_le {u : Fin (rank K) → (𝓞 K)ˣ} (hu : IsMaxRank u)
+theorem exists_fundSystem_prod_absLogHeight₁_le_of_isMaxRank {u : Fin (rank K) → (𝓞 K)ˣ}
+    (hu : IsMaxRank u)
     (hmono : Monotone fun i ↦ ∑ w, |logEmbedding K (Additive.ofMul (u i)) w|) :
     ∃ ε : Fin (rank K) → (𝓞 K)ˣ, Subgroup.closure (Set.range ε) ⊔ torsion K = ⊤ ∧
       ∏ i, absLogHeight₁ (ε i : K) ≤
         ((rank K).factorial : ℝ) / (2 ^ (rank K - 1) * (finrank ℚ K : ℝ) ^ rank K) *
           ∏ i, ∑ w, |logEmbedding K (Additive.ofMul (u i)) w| := by
-  obtain ⟨ε, hε, hle⟩ := exists_fundSystem_prod_logHeight₁_le hu hmono
+  obtain ⟨ε, hε, hle⟩ := exists_fundSystem_prod_logHeight₁_le_of_isMaxRank hu hmono
   refine ⟨ε, hε, ?_⟩
   have hd : (0 : ℝ) < finrank ℚ K := Nat.cast_pos.mpr finrank_pos
   simp_rw [absLogHeight₁_eq_div, Finset.prod_div_distrib, Finset.prod_const, Finset.card_univ,
