@@ -181,6 +181,11 @@ lemma totalDegree_zero : (0 : G.DegreeDecoration).totalDegree = 0 := by
   simp [totalDegree]
 
 @[simp]
+theorem totalDegree_add (D' : G.DegreeDecoration) :
+    (D + D').totalDegree = D.totalDegree + D'.totalDegree := by
+  simp [totalDegree, sum_add_distrib]
+
+@[simp]
 theorem totalDegree_smul (m : ℕ) : (m • D).totalDegree = m * D.totalDegree := by
   simp [totalDegree, mul_sum]
 
@@ -188,6 +193,12 @@ theorem totalDegree_smul (m : ℕ) : (m • D).totalDegree = m * D.totalDegree :
 lemma weightedLogCanonicalDegree_zero [Fintype ι] (v : G.Vertex) :
     (0 : G.DegreeDecoration).weightedLogCanonicalDegree v = G.logCanonicalDegree v := by
   simp [weightedLogCanonicalDegree_def]
+
+@[simp]
+lemma weightedLogCanonicalDegree_add [Fintype ι] (D' : G.DegreeDecoration) (v : G.Vertex) :
+    (D + D').weightedLogCanonicalDegree v =
+      G.logCanonicalDegree v + 3 * (D.componentDegree v : ℤ) + 3 * (D'.componentDegree v : ℤ) := by
+  simp [weightedLogCanonicalDegree_def, mul_add, add_assoc]
 
 @[simp]
 lemma weightedLogCanonicalDegree_smul [Fintype ι] (m : ℕ) (v : G.Vertex) :
