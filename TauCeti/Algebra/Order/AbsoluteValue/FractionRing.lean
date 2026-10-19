@@ -92,6 +92,8 @@ theorem isNonarchimedean_fractionRingAbsoluteValue (v : AbsoluteValue R S)
   have hd : 0 < v d := v.pos (nonZeroDivisors.ne_zero d.2)
   have hxy : (x + y) * algebraMap R F d = algebraMap R F (a + b) := by
     rw [add_mul, hx, hy, map_add]
+  -- Unwrap the absolute value to reuse the common-denominator lemmas for its underlying
+  -- multiplicative homomorphism; those lemmas cannot rewrite through the wrapper directly.
   change fractionRingAbsHom F v (x + y) ≤
     max (fractionRingAbsHom F v x) (fractionRingAbsHom F v y)
   apply (mul_le_mul_iff_left₀ hd).mp
