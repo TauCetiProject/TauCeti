@@ -51,8 +51,7 @@ theorem quantile_map_intCast_skellamMeasure_eq_iff (r₁ r₂ : ℝ≥0) {u : �
   simp_rw [skellamMeasure_real_Iic]
 
 /-- With only a subtracted Poisson count, the final constant segment starts strictly above the
-mass below zero. The strict inequality is essential at a cumulative jump.
-Use `rw` before simplifying the boundary measure. -/
+mass below zero. The strict inequality is essential at a cumulative jump. -/
 theorem quantile_map_intCast_skellamMeasure_zero_left_eq_zero_iff (r : ℝ≥0) {u : ℝ}
     (hu : u ∈ Ioo 0 1) :
     ((skellamMeasure 0 r).map (Int.cast : ℤ → ℝ)).quantile u = 0 ↔
@@ -107,7 +106,7 @@ theorem tendsto_quantile_map_intCast_skellamMeasure_nhdsGT_zero (r₁ r₂ : ℝ
     rw [ite_eq_left rfl]
     have hcast : (skellamMeasure r₁ 0).map (Int.cast : ℤ → ℝ) = Po(ℝ, r₁) := by
       rw [skellamMeasure_zero_right, Measure.map_map (by fun_prop) (by fun_prop)]
-      rfl
+      simp [Function.comp_def]
     rw [hcast]
     exact tendsto_quantile_map_cast_poissonMeasure_nhdsGT_zero r₁
   · rw [ite_eq_right h₂, EReal.tendsto_coe_nhds_bot_iff]

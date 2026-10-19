@@ -32,23 +32,6 @@ open scoped NNReal ENNReal
 
 namespace TauCeti.Probability
 
-/-- The real singleton mass as a Poisson-product series, uniformly for positive and negative
-integers. The two natural offsets are the positive and negative parts of the integer. -/
-theorem skellamMeasure_real_singleton_eq_tsum (r₁ r₂ : ℝ≥0) (k : ℤ) :
-    (skellamMeasure r₁ r₂).real {k} =
-      ∑' j : ℕ,
-        (exp (-(r₁ : ℝ)) * (r₁ : ℝ) ^ (j + k.toNat) / (j + k.toNat).factorial) *
-        (exp (-(r₂ : ℝ)) * (r₂ : ℝ) ^ (j + (-k).toNat) / (j + (-k).toNat).factorial) := by
-  cases k with
-  | ofNat n => simpa using (hasSum_skellamMeasure_mass r₁ r₂ n).tsum_eq.symm
-  | negSucc n =>
-    have hmass : (skellamMeasure r₁ r₂).real {Int.negSucc n} =
-        (skellamMeasure r₂ r₁).real {((n + 1 : ℕ) : ℤ)} := by
-      simp only [measureReal_def, Int.negSucc_eq, skellamMeasure_singleton_neg,
-        Nat.cast_add, Nat.cast_one]
-    rw [hmass]
-    simpa [mul_comm] using (hasSum_skellamMeasure_mass r₂ r₁ (n + 1)).tsum_eq.symm
-
 /-- The bilateral cumulative mass series over integers converges absolutely. Each integer
 mass is expanded as its convergent Poisson-product series. -/
 theorem hasSum_skellamMeasure_real_Iic_mass (r₁ r₂ : ℝ≥0) (k : ℤ) :
@@ -59,12 +42,8 @@ theorem hasSum_skellamMeasure_real_Iic_mass (r₁ r₂ : ℝ≥0) (k : ℤ) :
       else 0) ((skellamMeasure r₁ r₂).real (Iic k)) := by
   have hmass := (skellamMeasure r₁ r₂).tsum_indicator_apply_singleton (Iic k)
     measurableSet_Iic
-  have hfin : (∑' n : ℤ, (Iic k).indicator (fun n ↦ skellamMeasure r₁ r₂ {n}) n) ≠ ⊤ := by
-    rw [hmass]
-    exact measure_ne_top _ _
-  have hsum := (ENNReal.summable_toReal hfin).hasSum
-  rw [← ENNReal.tsum_toReal_eq (fun n ↦ ENNReal.ne_top_of_tsum_ne_top hfin n),
-    hmass, ← measureReal_def] at hsum
+  have hsum := (ENNReal.summable.hasSum_iff.mpr hmass).toReal (measure_ne_top _ _)
+  rw [← measureReal_def] at hsum
   convert hsum using 1
   funext n
   simp only [indicator_apply, mem_Iic]
@@ -93,14 +72,8 @@ theorem hasSum_skellamMeasure_real_Iic (r₁ r₂ : ℝ≥0) (k : ℤ) :
     refine tsum_congr fun j ↦ ?_
     rw [hpre]
     split_ifs <;> simp
-  have hfin : (∑' j : ℕ,
-      (if 0 ≤ k + j then poissonMeasure r₁ (Iic (k + j).toNat) else 0) *
-        poissonMeasure r₂ {j}) ≠ ⊤ := by
-    rw [← hmass]
-    exact measure_ne_top _ _
-  have hsum := (ENNReal.summable_toReal hfin).hasSum
-  rw [← ENNReal.tsum_toReal_eq (fun j ↦ ENNReal.ne_top_of_tsum_ne_top hfin j),
-    ← hmass, ← measureReal_def] at hsum
+  have hsum := (ENNReal.summable.hasSum_iff.mpr hmass.symm).toReal (measure_ne_top _ _)
+  rw [← measureReal_def] at hsum
   convert hsum using 1
   funext j
   rw [ENNReal.toReal_mul, ← measureReal_def, poissonMeasure_real_singleton]
@@ -143,7 +116,7 @@ theorem skellamMeasure_real_Iic_pos (r₁ : ℝ≥0) {r₂ : ℝ≥0} (h₂ : 0 
   · split_ifs <;> positivity
   · have hk : 0 ≤ k + ((-k).toNat : ℤ) := by omega
     rw [ite_eq_left hk]
-    apply mul_pos (by have : 0 < (r₂ : ℝ) := h₂; positivity)
+    apply mul_pos (by have : 0 < (r₂ : ℝ) := NNReal.coe_pos.mpr h₂; positivity)
     apply lt_of_lt_of_le (exp_pos (-(r₁ : ℝ)))
     simpa using (Finset.single_le_sum (f := fun i : ℕ ↦
       exp (-(r₁ : ℝ)) * (r₁ : ℝ) ^ i / i.factorial)
