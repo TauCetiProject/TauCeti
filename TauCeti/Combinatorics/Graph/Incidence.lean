@@ -136,6 +136,7 @@ theorem incidenceSet_banana_left (x y : α) (E : Set β) :
   simp
 
 /-- Every edge identity of a bouquet is incident to its unique vertex. -/
+@[simp]
 theorem incidenceSet_bouquet (x : α) (E : Set β) :
     (Graph.bouquet x E).incidenceSet x = E := by
   ext e
@@ -155,7 +156,8 @@ theorem loopSet_banana_left (x y : α) (E : Set β) (hxy : x ≠ y) :
   ext e
   simp [hxy]
 
-/-- Every edge identity of a banana graph is incident to its left endpoint. -/
+/-- Every edge identity of a banana graph is incident to its left endpoint, so the incidence
+count there is the number of actual edges. -/
 @[simp]
 theorem incidenceCount_banana_left (x y : α) (E : Set β) :
     (Graph.banana x y E).incidenceCount x = E.ncard := by
@@ -163,6 +165,7 @@ theorem incidenceCount_banana_left (x y : α) (E : Set β) :
 
 /-- Every edge identity of a bouquet is a loop at its unique vertex, so its incidence count is the
 number of actual edges. -/
+@[simp]
 theorem incidenceCount_bouquet (x : α) (E : Set β) :
     (Graph.bouquet x E).incidenceCount x = E.ncard := by
   simp [incidenceCount]
@@ -261,51 +264,41 @@ theorem incidentEdges_mono {S T : Finset G.vertexSet} (hST : S ⊆ T) :
   rintro ⟨x, hx, hex⟩
   exact ⟨x, hST hx, hex⟩
 
-omit [Fintype G.edgeSet] in
-private theorem card_eq_ncard_of_map_val_eq (s : Finset G.edgeSet) (A : Set β)
-    (h : (s.map (Function.Embedding.subtype _) : Set β) = A) : s.card = A.ncard := by
-  calc
-    s.card = (s.map (Function.Embedding.subtype _)).card := (Finset.card_map _).symm
-    _ = (s.map (Function.Embedding.subtype _) : Set β).ncard :=
-      (Set.ncard_coe_finset _).symm
-    _ = A.ncard := congrArg Set.ncard h
-
 /-- The cardinality of the finite incident-edge set of a singleton is its incidence count. -/
 theorem card_incidentEdges_singleton (x : G.vertexSet) :
     (G.incidentEdges {x}).card = G.incidenceCount x.1 := by
-  rw [incidenceCount]
-  apply G.card_eq_ncard_of_map_val_eq
+  rw [incidenceCount, ← Set.ncard_coe_finset,
+    ← Set.ncard_image_of_injective
+      (↑(G.incidentEdges {x}) : Set G.edgeSet) Subtype.val_injective]
+  congr 1
   ext e
   constructor
-  · intro he
-    simp only [Finset.mem_coe, Finset.mem_map] at he
-    obtain ⟨e', he', rfl⟩ := he
+  · rintro ⟨e', he', rfl⟩
     obtain ⟨y, hy, hey⟩ := G.mem_incidentEdges.mp he'
     simp only [Finset.mem_singleton] at hy
     subst y
     exact hey
   · intro he
     have heG := G.incidenceSet_subset_edgeSet x.1 he
-    simp only [Finset.mem_coe, Finset.mem_map]
     refine ⟨⟨e, heG⟩, ?_, rfl⟩
     exact G.mem_incidentEdges.mpr ⟨x, by simp, he⟩
 
 /-- The number of internal edges of a singleton is the number of loops at its vertex. -/
 theorem card_internalEdges_singleton (x : G.vertexSet) :
     (G.internalEdges {x}).card = (G.loopSet x.1).ncard := by
-  apply G.card_eq_ncard_of_map_val_eq
+  rw [← Set.ncard_coe_finset,
+    ← Set.ncard_image_of_injective
+      (↑(G.internalEdges {x}) : Set G.edgeSet) Subtype.val_injective]
+  congr 1
   ext e
   constructor
-  · intro he
-    simp only [Finset.mem_coe, Finset.mem_map] at he
-    obtain ⟨e', he', rfl⟩ := he
+  · rintro ⟨e', he', rfl⟩
     obtain ⟨y, hy, z, hz, heyz⟩ := G.mem_internalEdges.mp he'
     simp only [Finset.mem_singleton] at hy hz
     subst y
     subst z
     exact heyz
   · intro he
-    simp only [Finset.mem_coe, Finset.mem_map]
     refine ⟨⟨e, he.edge_mem⟩, ?_, rfl⟩
     exact G.mem_internalEdges.mpr ⟨x, by simp, x, by simp, he⟩
 
@@ -320,7 +313,9 @@ variable (H : SimpleGraph α)
 /-- The multigraph associated to a simple graph is loopless. -/
 instance : (Graph.ofSimpleGraph H).Loopless where
   not_isLoopAt e x := by
-    rintro ⟨rfl, he⟩
+    intro he
+    rw [Graph.IsLoopAt, Graph.ofSimpleGraph_isLink] at he
+    rcases he with ⟨rfl, he⟩
     exact H.irrefl ((SimpleGraph.mem_edgeSet H).mp he)
 
 /-- The multigraph incidence set of `Graph.ofSimpleGraph H` is the usual simple-graph incidence
@@ -338,11 +333,6 @@ theorem incidenceSet_ofSimpleGraph (x : α) :
 theorem incidenceCount_ofSimpleGraph (x : α) [Fintype (H.neighborSet x)] :
     (Graph.ofSimpleGraph H).incidenceCount x = H.degree x := by
   rw [incidenceCount, incidenceSet_ofSimpleGraph, SimpleGraph.ncard_incidenceSet]
-
-/-- The nonloop incidence count on `Graph.ofSimpleGraph H` is the degree in `H`. -/
-theorem nonloopIncidenceCount_ofSimpleGraph (x : α) [Fintype (H.neighborSet x)] :
-    (Graph.ofSimpleGraph H).nonloopIncidenceCount x = H.degree x := by
-  rw [nonloopIncidenceCount_eq_incidenceCount, incidenceCount_ofSimpleGraph]
 
 end SimpleGraph
 
