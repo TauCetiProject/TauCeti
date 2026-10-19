@@ -42,9 +42,9 @@ not have admissible heights; its `newtonPolygon` is then the all-infinite fallba
 
 * `Polynomial.isLowerConvexEnvelope_newtonPolygon`: the Newton polygon of a polynomial is the
   greatest convex minorant of its coefficient heights.
-* `Polynomial.newtonPolygon_ne_top_iff`: over a division ring, a nonzero polynomial has a
-  polygon whose finite domain is the interval from its order of vanishing at zero to
-  its degree.
+* `Polynomial.newtonPolygon_ne_top_iff`: if only zero has infinite valuation (for example
+  over a division ring), a nonzero polynomial has a polygon whose finite domain is the
+  interval from its order of vanishing at zero to its degree.
 * `Polynomial.newtonPolygon_natTrailingDegree` and `Polynomial.newtonPolygon_natDegree`:
   the polygon begins at the trailing coefficient and ends at the leading coefficient.
 * `Polynomial.ncard_finiteEdges_newtonPolygon`: a polynomial of degree `d` and order `a`
@@ -55,7 +55,8 @@ not have admissible heights; its `newtonPolygon` is then the all-infinite fallba
   a scalar translates the heights, multiplication by `X ^ k` shifts the polygon `k` places,
   the substitution `X ↦ c X` shears it by the valuation of `c`, and an extension of
   coefficients compatible with the valuations preserves it. The corresponding polynomial
-  statements are proved as well.
+  statements are proved as well, with `Polynomial.newtonPolygon_comp_C_mul_X` for the
+  substitution `X ↦ c X`.
 
 ## References
 
@@ -245,6 +246,17 @@ theorem newtonPolygon_X_pow_mul (k : ℕ) :
   simp only [newtonPolygon_def, coeff_X_pow_mul', apply_ite v, AddValuation.map_zero]
   exact lowerConvexEnvelope_shift (fun n => v (f.coeff n)) k
 
+/-- Substituting `c X` for `X` shears the Newton polygon by the valuation of `c`, provided
+that valuation is finite. -/
+theorem newtonPolygon_comp_C_mul_X {c : R} (hc : v c ≠ ⊤) :
+    (f.comp (C c * X)).newtonPolygon v = fun n => f.newtonPolygon v n + n • v c := by
+  lift v c to ℝ using hc with m hm
+  have key (u : WithTop ℝ) (n : ℕ) : u + n • (m : WithTop ℝ) = u + ((0 + m * n : ℝ) : _) := by
+    rw [← WithTop.coe_nsmul, nsmul_eq_mul, zero_add, mul_comm]
+  simp only [newtonPolygon_def, comp_C_mul_X_coeff, AddValuation.map_mul, AddValuation.map_pow,
+    ← hm, key]
+  exact lowerConvexEnvelope_add_affine _ 0 m
+
 /-- Mapping the coefficients along a ring homomorphism compatible with the valuations
 preserves the Newton polygon. -/
 theorem newtonPolygon_map (φ : R →+* S) {w : AddValuation S (WithTop ℝ)}
@@ -278,49 +290,48 @@ theorem newtonPolygon_natDegree : f.newtonPolygon v f.natDegree = v f.leadingCoe
   lowerConvexEnvelope_eq_of_forall_gt fun k hk => by
     rw [coeff_eq_zero_of_natDegree_lt hk, AddValuation.map_zero]
 
-section DivisionRing
-
-variable {K : Type*} [DivisionRing K] {f : K[X]} (v : AddValuation K (WithTop ℝ))
-
-/-- The finite domain of the Newton polygon of a nonzero polynomial runs from its order of
-vanishing at zero to its degree. -/
-theorem newtonPolygon_ne_top_iff (hf : f ≠ 0) {n : ℕ} :
+/-- If only zero has infinite valuation, the finite domain of the Newton polygon of a nonzero
+polynomial runs from its order of vanishing at zero to its degree. Over a division ring the
+hypothesis on `v` is `AddValuation.top_iff`. -/
+theorem newtonPolygon_ne_top_iff (hv : ∀ x, v x = ⊤ → x = 0) {f : R[X]} (hf : f ≠ 0) {n : ℕ} :
     f.newtonPolygon v n ≠ ⊤ ↔ f.natTrailingDegree ≤ n ∧ n ≤ f.natDegree := by
   rw [newtonPolygon_def, lowerConvexEnvelope_ne_top_iff (isAdmissible_addValuation_coeff f v)]
-  simp only [ne_eq, AddValuation.top_iff]
   refine ⟨fun ⟨i, hin, k, hnk, hi, hk⟩ =>
-    ⟨(natTrailingDegree_le_of_ne_zero hi).trans hin, hnk.trans (le_natDegree_of_ne_zero hk)⟩,
+    ⟨(natTrailingDegree_le_of_ne_zero fun h => hi (h ▸ v.map_zero)).trans hin,
+      hnk.trans (le_natDegree_of_ne_zero fun h => hk (h ▸ v.map_zero))⟩,
     fun ⟨hn, hn'⟩ => ⟨_, hn, _, hn', ?_, ?_⟩⟩
-  · exact trailingCoeff_nonzero_iff_nonzero.mpr hf
-  · exact leadingCoeff_ne_zero.mpr hf
+  · exact mt (hv _) (trailingCoeff_nonzero_iff_nonzero.mpr hf)
+  · exact mt (hv _) (leadingCoeff_ne_zero.mpr hf)
 
-/-- The finite unit edges of the Newton polygon of a polynomial are those between its order
-of vanishing at zero and its degree. -/
-@[simp]
-theorem finiteEdges_newtonPolygon (f : K[X]) :
+/-- If only zero has infinite valuation, the finite unit edges of the Newton polygon of a
+polynomial are those between its order of vanishing at zero and its degree. -/
+theorem finiteEdges_newtonPolygon (hv : ∀ x, v x = ⊤ → x = 0) :
     finiteEdges (f.newtonPolygon v) = Set.Ico f.natTrailingDegree f.natDegree := by
   rcases eq_or_ne f 0 with rfl | hf
   · ext n
     simp
   ext n
-  simp only [mem_finiteEdges, newtonPolygon_ne_top_iff v hf, Set.mem_Ico]
+  simp only [mem_finiteEdges, newtonPolygon_ne_top_iff v hv hf, Set.mem_Ico]
   omega
 
-/-- A polynomial of degree `d` and order of vanishing `a` at zero has exactly `d - a` finite
-unit edges. -/
-theorem ncard_finiteEdges_newtonPolygon (f : K[X]) :
+/-- If only zero has infinite valuation, a polynomial of degree `d` and order of vanishing `a`
+at zero has exactly `d - a` finite unit edges. -/
+theorem ncard_finiteEdges_newtonPolygon (hv : ∀ x, v x = ⊤ → x = 0) :
     (finiteEdges (f.newtonPolygon v)).ncard = f.natDegree - f.natTrailingDegree := by
-  rw [finiteEdges_newtonPolygon, Set.ncard_Ico_nat]
+  rw [finiteEdges_newtonPolygon f v hv, Set.ncard_Ico_nat]
 
 /-- A monomial, in particular a constant, has no finite unit edges. -/
-theorem finiteEdges_newtonPolygon_monomial (k : ℕ) (c : K) :
+theorem finiteEdges_newtonPolygon_monomial (k : ℕ) (c : R) :
     finiteEdges ((monomial k c).newtonPolygon v) = ∅ := by
   rcases eq_or_ne c 0 with rfl | hc
   · ext n
     simp
-  rw [finiteEdges_newtonPolygon, natTrailingDegree_monomial hc, natDegree_monomial_eq k hc,
-    Set.Ico_self]
-
-end DivisionRing
+  refine Set.eq_empty_of_forall_notMem fun n hn => ?_
+  obtain ⟨hn, hn'⟩ := mem_finiteEdges.mp hn
+  rcases lt_or_ge n k with h | h
+  · exact hn (newtonPolygon_eq_top_of_lt_natTrailingDegree _ v
+      (by rwa [natTrailingDegree_monomial hc]))
+  · exact hn' (newtonPolygon_eq_top_of_natDegree_lt _ v
+      (by rw [natDegree_monomial_eq k hc]; omega))
 
 end Polynomial
