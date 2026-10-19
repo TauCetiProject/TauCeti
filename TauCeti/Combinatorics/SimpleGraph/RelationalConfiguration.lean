@@ -146,15 +146,19 @@ theorem ae_isSimpleGraph_map_restrict [Countable V] (f : V → W)
 private def arrayStructure (x : V × V → Bool) : Language.graph.Structure V where
   RelMap | .adj => fun v => x (v 0, v 1) = true
 
+/-- In the structure of an array, `adj` holds at a pair of vertices exactly when the array is
+`true` there. -/
+private theorem relMap_adj_arrayStructure (x : V × V → Bool) (v : Fin 2 → V) :
+    (arrayStructure x).RelMap .adj v ↔ x (v 0, v 1) = true := Iff.rfl
+
 /-- The configuration of an array: `adj(u, v)` takes the value of the array at `(u, v)`. -/
 private noncomputable def ofArray (x : V × V → Bool) : RelationalConfiguration Language.graph V :=
   @ofStructure Language.graph V (arrayStructure x)
 
 private theorem eval_ofArray_adjAtom (x : V × V → Bool) (u v : V) :
     (ofArray x).eval (adjAtom u v) = x (u, v) := by
-  let := arrayStructure x
-  rw [ofArray, adjAtom, eval_ofStructure]
-  exact Bool.decide_eq_true
+  rw [ofArray, adjAtom, @eval_ofStructure _ _ (arrayStructure x)]
+  simp [relMap_adj_arrayStructure]
 
 private theorem measurable_ofArray : Measurable (ofArray : (V × V → Bool) → _) :=
   measurable_iff.2 fun a => by

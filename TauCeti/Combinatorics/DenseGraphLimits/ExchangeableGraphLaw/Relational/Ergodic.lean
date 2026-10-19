@@ -32,6 +32,8 @@ is ergodic.
 
 ## Main results
 
+* `TauCeti.RelationalConfiguration.adjArrayEquiv_finitaryPerm_smul` — the array of a
+  relabelled configuration is the relabelled array;
 * `TauCeti.DenseGraphLimits.isDissociated_iff_ergodicSMul_toRelationalLaw` — an exchangeable law
   on infinite graphs is dissociated exactly when the finitary action is ergodic on its relational
   law;
@@ -56,14 +58,20 @@ open _root_.FirstOrder (Language)
 
 namespace TauCeti
 
-namespace DenseGraphLimits
+namespace RelationalConfiguration
 
-/-- Relabelling a configuration of the language of graphs relabels both axes of its array. -/
-private theorem adjArrayEquiv_finitaryPerm_smul (g : FinitaryPerm)
+/-- Relabelling a configuration of the language of graphs relabels both axes of its array: the
+measurable equivalence `adjArrayEquiv` is equivariant for the finitary actions. -/
+@[simp]
+theorem adjArrayEquiv_finitaryPerm_smul (g : FinitaryPerm)
     (c : RelationalConfiguration Language.graph ℕ) :
     adjArrayEquiv (g • c) = g • adjArrayEquiv c := by
   funext p
   simp
+
+end RelationalConfiguration
+
+namespace DenseGraphLimits
 
 /-- **Dissociation is ergodicity of the relational law**: an exchangeable law on infinite graphs
 is dissociated exactly when the finitely supported permutations of `ℕ` act ergodically on its
