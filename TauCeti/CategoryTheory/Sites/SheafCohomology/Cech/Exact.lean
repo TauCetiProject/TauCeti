@@ -200,8 +200,7 @@ variable {S : ShortComplex (Cᵒᵖ ⥤ A)}
   (hSU : ∀ (n : ℕ) (a : Fin (n + 1) → ι),
     (S.map ((evaluation Cᵒᵖ A).obj (op (∏ᶜ fun j ↦ U (a j))))).ShortExact)
 
-include hST hSU
-
+include hST hSU in
 /-- The source and the target of the augmentation of `S` are short exact sequences of complexes. -/
 private lemma shortExact_map_single_and_cechComplexFunctor :
     (S.map ((evaluation Cᵒᵖ A).obj (op T) ⋙
@@ -210,6 +209,7 @@ private lemma shortExact_map_single_and_cechComplexFunctor :
   ⟨hST.map_of_exact (HomologicalComplex.single A (ComplexShape.up ℕ) 0),
     shortExact_map_cechComplexFunctor U S hSU⟩
 
+include hST hSU in
 /-- In degree `0`, the augmentation of `X₁` is injective on cohomology if that of `X₂` is an
 isomorphism. -/
 private lemma mono_homologyMap_cechAugmentation_X₁_zero
@@ -222,6 +222,7 @@ private lemma mono_homologyMap_cechAugmentation_X₁_zero
   exact HomologicalComplex.HomologySequence.mono_homologyMap_τ₁ φ hS₁ hS₂ 0
     (fun _ hi ↦ absurd hi (by simp)) (fun _ hi ↦ absurd hi (by simp)) inferInstance
 
+include hST hSU in
 /-- In degree `0`, the augmentation of `X₁` is a quasi-isomorphism if that of `X₂` is, and that of
 `X₃` is injective on cohomology. -/
 private lemma quasiIsoAt_cechAugmentation_X₁_zero
@@ -236,6 +237,7 @@ private lemma quasiIsoAt_cechAugmentation_X₁_zero
     HomologicalComplex.HomologySequence.isIso_homologyMap_τ₁ φ hS₁ hS₂ 0
       (fun _ hi ↦ absurd hi (by simp)) (fun _ hi ↦ absurd hi (by simp)) inferInstance h₃
 
+include hST hSU in
 /-- **Dimension shifting.** If the augmentation of `X₂` is a quasi-isomorphism, then the
 augmentation of `X₁` is a quasi-isomorphism in degree `n + 1` as soon as that of `X₃` is one in
 degree `n`. -/
@@ -257,8 +259,6 @@ private lemma quasiIsoAt_cechAugmentation_X₁_succ (h₂ : QuasiIso (cechAugmen
   · -- the cohomology of a complex concentrated in degree `0` vanishes in degree `n + 1`
     exact mono_of_source_iso_zero _
       (CochainComplex.exactAt_succ_single_obj (S.X₃.obj (op T)) n).isZero_homology.isoZero
-
-omit hST hSU
 
 /-- **Čech acyclicity from an acyclic resolution.** Let `ε : P ⋙ single₀ ⟶ K` be a morphism from
 a presheaf `P`, placed in degree `0`, to a presheaf of cochain complexes `K`, which is a

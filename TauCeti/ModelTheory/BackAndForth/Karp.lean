@@ -67,6 +67,15 @@ theorem InfEquivAt.of_reindex {ι : Type uι} {κ : Type uκ} (c : IndexCoding �
   simpa only [SentenceInf.realize_def, FormulaInf.realize_def,
     BoundedFormulaInf.realize_reindex] using this
 
+/-- Agreement on the infinitary sentences at any carrier implies elementary equivalence, since
+first-order sentences embed at every carrier. -/
+theorem InfEquivAt.elementarilyEquivalent {κ : Type uκ} (h : InfEquivAt (L := L) κ M N) :
+    M ≅[L] N := by
+  refine elementarilyEquivalent_iff.mpr fun φ => ?_
+  simpa only [SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormula.realize_toInf,
+    Sentence.Realize, Formula.Realize, Subsingleton.elim default Empty.elim] using
+    h (BoundedFormula.toInf φ)
+
 variable [L.IsRelational]
 
 /-- **Pairs in a tuple back-and-forth system satisfy the same infinitary formulas**, at every

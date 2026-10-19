@@ -11,7 +11,7 @@ import Mathlib.Analysis.SpecialFunctions.PolarCoord
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.MeasureTheory.Integral.Prod
-import TauCeti.Analysis.Complex.SmulI
+import TauCeti.LinearAlgebra.Complex.Module
 import TauCeti.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Analysis.Complex.CauchyKernel
 
@@ -92,8 +92,9 @@ private lemma smul_polarCoord_symm_inv_smul {G : Type*} [SeminormedAddCommGroup 
     calc
       (r : ℂ) * ((r : ℂ) * expI θ)⁻¹ = (expI θ)⁻¹ := by field_simp [ofReal_ne_zero.2 hr]
       _ = conj (expI θ) := Complex.inv_eq_conj (norm_expI θ)
-  rw [Complex.polarCoord_symm_apply, ← Complex.coe_smul, smul_smul, hinv,
-    L.conj_smul_apply_one_add_I_smul_apply_I]
+  rw [Complex.polarCoord_symm_apply, ← Complex.coe_smul, smul_smul, hinv]
+  simpa only [ContinuousLinearMap.coe_coe] using
+    L.toLinearMap.conj_smul_apply_one_add_I_smul_apply_I _
 
 variable {u : ℂ → F}
 

@@ -8,6 +8,8 @@ module
 public import TauCeti.RingTheory.Huber.Basic
 public import Mathlib.Topology.Algebra.Module.ModuleTopology
 
+import Mathlib.Topology.Algebra.OpenSubgroup
+
 /-!
 # The natural topology of a finite module over a Huber ring
 
@@ -28,6 +30,8 @@ finitely generated `A₀`-submodule lying in the `A`-span of `K` into `K`.
 
 * `TauCeti.Huber.PairOfDefinition.hasBasis_nhds_zero_idealOfDefinition_pow_smul`: the
   submodules `Iⁿ • M₀` form a neighbourhood basis of `0` for the natural topology.
+* `TauCeti.Huber.PairOfDefinition.isOpen_of_span_eq_top`: an `A₀`-submodule spanning a finite
+  module over `A` is open.
 * `TauCeti.Huber.PairOfDefinition.exists_pow_smul_le`: some `Iʲ • L` lies in `K` whenever `L` is
   finitely generated and lies in the `A`-span of `K`. This is the ideal-of-definition analogue
   of `Subring.exists_pow_smul_le`, which uses the powers of a single topologically nilpotent
@@ -101,6 +105,24 @@ theorem hasBasis_nhds_zero_idealOfDefinition_pow_smul (P : PairOfDefinition A)
   rw [← map_zero (Fintype.linearCombination A v), ← hq.map_nhds_eq]
   simpa only [image_linearCombination_pi_idealImage, hv] using
     (P.hasBasis_nhds_zero_pi s).map (Fintype.linearCombination A v)
+
+/-- **A spanning lattice is open.** If `M` is a finite `A`-module with its natural topology, every
+`A₀`-submodule of `M` spanning `M` over `A` is open in `M`. -/
+theorem isOpen_of_span_eq_top (P : PairOfDefinition A) [Module.Finite A M] [TopologicalSpace M]
+    [IsModuleTopology A M] {M₀ : Submodule P.ringOfDefinition M}
+    (hspan : Submodule.span A (M₀ : Set M) = ⊤) : IsOpen (M₀ : Set M) := by
+  have := IsModuleTopology.isTopologicalAddGroup A M
+  -- `M₀` contains the `A₀`-span `L` of finitely many of its elements, still spanning `M`.
+  obtain ⟨t, htM₀, ht⟩ := (Submodule.fg_span_iff_fg_span_finset_subset (M₀ : Set M)).mp
+    (hspan ▸ Module.Finite.fg_top)
+  let L := Submodule.span P.ringOfDefinition (t : Set M)
+  have hLspan : Submodule.span A (L : Set M) = ⊤ := by
+    rw [Submodule.span_span_of_tower, ← ht, hspan]
+  have hL : (L : Set M) ∈ 𝓝 0 := by
+    simpa using (P.hasBasis_nhds_zero_idealOfDefinition_pow_smul ⟨t, rfl⟩ hLspan).mem_of_mem
+      (i := 0) trivial
+  exact M₀.toAddSubgroup.isOpen_of_mem_nhds
+    (mem_of_superset hL (Submodule.span_le.mpr htM₀))
 
 end IsTopologicalRing
 
