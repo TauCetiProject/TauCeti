@@ -177,7 +177,6 @@ theorem augmentationIdeal_eq_span :
       · refine ⟨z * dp R n m, ?_, ?_⟩
         · exact Ideal.mul_mem_left _ _ (Ideal.subset_span ⟨n, m, hn, rfl⟩)
         · rw [map_mul, augmentation_dp_of_ne_zero hn, mul_zero, map_zero, zero_add]
-  change augmentationIdeal R M = I
   refine le_antisymm (fun z hz ↦ ?_) (Ideal.span_le.mpr ?_)
   · obtain ⟨w, hw, hzw⟩ := decompose z
     have : z = w := by simpa [(mem_augmentationIdeal).mp hz] using hzw
@@ -232,7 +231,8 @@ private theorem detectorFun_mul (n p : ℕ) (m : ZMod 2) :
   · simp [detectorFun]
   rcases le_or_gt 3 (n + p) with h | h
   · rw [detectorFun_mul_eq_zero h]
-    simp [detectorFun, hn, show n + p ≠ 2 by omega]
+    have hne : n + p ≠ 2 := by omega
+    simp [detectorFun, hn, hne]
   · obtain ⟨rfl, rfl⟩ : n = 1 ∧ p = 1 := by omega
     have h2 : (2 : ZMod 2) = 0 := rfl
     simp [detectorFun, ← inr_smul, h2]
