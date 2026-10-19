@@ -121,11 +121,7 @@ theorem splits_iff_isSquare_discr_of_natDegree_eq_two {q : F[X]} (hchar : ringCh
   have hlc : q.coeff 2 ≠ 0 := by
     rw [← hdeg, coeff_natDegree]
     exact leadingCoeff_ne_zero.mpr hq0
-  have hdiscr : q.discr = discrim (q.coeff 2) (q.coeff 1) (q.coeff 0) := by
-    rw [discr_of_degree_eq_two hdeg2]
-    simp only [discrim]
-    ring
-  rw [hdiscr]
+  rw [discr_eq_discrim_of_degree_eq_two hdeg2]
   conv_lhs => rw [eq_quadratic_of_degree_le_two hdeg2.le]
   exact splits_quadratic_iff_isSquare hlc
 
@@ -134,15 +130,11 @@ has a root in that field exactly when its discriminant is a square there. -/
 theorem isSquare_discr_iff_exists_isRoot_of_degree_eq_two [NeZero (2 : F)]
     {f : F[X]} (hf : f.degree = 2) : IsSquare f.discr ↔ ∃ x, f.IsRoot x := by
   have hn : f.natDegree = 2 := natDegree_eq_of_degree_eq_some hf
-  have ha : f.coeff 2 ≠ 0 := coeff_ne_zero_of_eq_degree hf
-  have heval (x : F) : f.eval x = f.coeff 2 * (x * x) + f.coeff 1 * x + f.coeff 0 := by
-    rw [eval_eq_sum_range, hn]
-    simp only [Finset.sum_range_succ, Finset.sum_range_zero]
-    ring
-  rw [discr_eq_discrim_of_degree_eq_two hf]
-  simp only [IsRoot.def, heval]
-  exact ⟨exists_quadratic_eq_zero ha,
-    fun ⟨x, hx⟩ => ⟨_, (discrim_eq_sq_of_quadratic_eq_zero hx).trans (sq _)⟩⟩
+  have hchar : ringChar F ≠ 2 := fun h => NeZero.ne (2 : F) (by
+    simpa [h] using ringChar.Nat.cast_ringChar (R := F))
+  rw [← splits_iff_isSquare_discr_of_natDegree_eq_two hchar hn]
+  exact ⟨fun h => h.exists_eval_eq_zero (by rw [hf]; decide),
+    fun ⟨x, hx⟩ => Splits.of_natDegree_eq_two hn hx⟩
 
 /-- **Away from characteristic two, a monic cubic with a root in its coefficient field splits
 there exactly when its discriminant is a square.** The root splits off a quadratic factor whose
