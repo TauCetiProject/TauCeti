@@ -103,8 +103,8 @@ variable [IsTopologicalGroup G] [MeasurableSpace G] [OpensMeasurableSpace G]
 /-- The twisted convolution of two compactly supported coefficient functions, before bundling. -/
 private noncomputable def convolutionAux : C_c(G, A) where
   toFun s := ∫ r, f r * α r (g (r⁻¹ * s)) ∂μ
-  continuous_toFun := continuous_integral_of_inv_mul_mem μ f.hasCompactSupport
-    (continuous_integrand α f g) fun _ _ => mem_tsupport_of_integrand_ne_zero α f g
+  continuous_toFun := continuous_integral_of_compact_support μ f.hasCompactSupport
+    (continuous_integrand α f g) fun _ _ h => (mem_tsupport_of_integrand_ne_zero α f g h).1
   hasCompactSupport' := hasCompactSupport_integral_of_inv_mul_mem μ f.hasCompactSupport
     g.hasCompactSupport fun _ _ => mem_tsupport_of_integrand_ne_zero α f g
 
@@ -183,7 +183,8 @@ theorem integral_norm_convolution_le :
   have hcont : Continuous (uncurry fun s r => ‖f r‖ * ‖g (r⁻¹ * s)‖) := by
     rw [uncurry_def]
     fun_prop
-  have hNcont := continuous_integral_of_inv_mul_mem μ f.hasCompactSupport hcont hsupp
+  have hNcont := continuous_integral_of_compact_support μ f.hasCompactSupport hcont
+    fun s r h => (hsupp s r h).1
   have hNsupp := hasCompactSupport_integral_of_inv_mul_mem μ f.hasCompactSupport
     g.hasCompactSupport hsupp
   calc ∫ s, ‖α.convolution μ f g s‖ ∂μ
