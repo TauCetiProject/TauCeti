@@ -287,20 +287,21 @@ theorem moduleCat_δ_homologyπ (i j : ι) (hij : c.Rel i j) (z₃ : S.X₃.cycl
     (hx₂ : (S.g.f i).hom x₂ = (S.X₃.iCycles i).hom z₃) (z₁ : S.X₁.cycles j)
     (hz₁ : (S.f.f j).hom ((S.X₁.iCycles j).hom z₁) = (S.X₂.d i j).hom x₂) :
     (hS.δ i j hij).hom ((S.X₃.homologyπ i).hom z₃) = (S.X₁.homologyπ j).hom z₁ := by
-  refine hS.δ_apply' i j hij _ ((S.X₂.pOpcycles i).hom x₂) z₁ ?_ ?_
-  · -- The goal is stated through the forgetful functor to `Ab`, whose action on morphisms is
-    -- definitionally the underlying linear map; `rw` does not see through `forget₂`, so we
-    -- restate it with composites of module morphisms.
-    change (S.X₂.pOpcycles i ≫ HomologicalComplex.opcyclesMap S.g i).hom x₂ =
-      (S.X₃.homologyπ i ≫ S.X₃.homologyι i).hom z₃
-    rw [HomologicalComplex.p_opcyclesMap, HomologicalComplex.homology_π_ι, ModuleCat.hom_comp,
-      ModuleCat.hom_comp, LinearMap.comp_apply, LinearMap.comp_apply, hx₂]
-  · -- Same as above: restate the goal, which goes through `forget₂`, as a composite.
-    change (HomologicalComplex.cyclesMap S.f j).hom z₁ =
-      (S.X₂.pOpcycles i ≫ S.X₂.opcyclesToCycles i j).hom x₂
-    rw [HomologicalComplex.pOpcycles_opcyclesToCycles]
-    apply S.X₂.moduleCat_iCycles_injective j
-    rw [← ModuleCat.comp_apply, HomologicalComplex.cyclesMap_i, ModuleCat.comp_apply, hz₁,
-      ← ModuleCat.comp_apply, HomologicalComplex.toCycles_i]
+  have hd₃ : (S.X₃.d i j).hom ((S.X₃.iCycles i).hom z₃) = 0 := by
+    rw [← ModuleCat.comp_apply, HomologicalComplex.iCycles_d]
+    rfl
+  -- Mathlib's computation of the connecting map, for the cycle `iCycles z₃` and the lift `x₂`.
+  have key := hS.δ_apply i j hij ((S.X₃.iCycles i).hom z₃) hd₃ x₂ hx₂
+    ((S.X₁.iCycles j).hom z₁) hz₁ (c.next j) rfl
+  -- The cycles built by `cyclesMk` from `iCycles z₃` and `iCycles z₁` are `z₃` and `z₁`.
+  have h₃ : S.X₃.cyclesMk ((S.X₃.iCycles i).hom z₃) j (c.next_eq' hij) hd₃ = z₃ :=
+    S.X₃.moduleCat_iCycles_injective i
+      (HomologicalComplex.i_cyclesMk (C := ModuleCat R) S.X₃ _ j (c.next_eq' hij) hd₃)
+  have h₁ : S.X₁.cyclesMk ((S.X₁.iCycles j).hom z₁) (c.next j) rfl
+      (hS.d_eq_zero_of_f_eq_d_apply i j x₂ _ hz₁ _) = z₁ :=
+    S.X₁.moduleCat_iCycles_injective j
+      (HomologicalComplex.i_cyclesMk (C := ModuleCat R) S.X₁ _ (c.next j) rfl _)
+  rw [h₃, h₁] at key
+  exact key
 
 end CategoryTheory.ShortComplex.ShortExact

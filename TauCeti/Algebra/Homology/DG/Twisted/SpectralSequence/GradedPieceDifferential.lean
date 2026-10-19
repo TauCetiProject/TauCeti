@@ -161,15 +161,20 @@ theorem shiftedModuleComplexXEquiv_indexGradedPieceEval_D1X_single (n : ℤ)
         exact fun h ↦ hzx (congrArg Subtype.val h)
     · rw [indexExtend_apply_of_ne _ hz, Pi.single_eq_of_ne]
       exact fun h ↦ hz (h ▸ x.2)
-  rw [shiftedModuleComplexXEquiv_indexGradedPieceEval_f,
-    indexGradedPieceComplexXEquiv_indexGradedPieceD1X,
-    indexGradedPieceComplexXEquiv_indexGradedPieceSingle_f, LinearMap.funLeft_apply, hext,
-    twistedDifferential_single_apply m.m dM x.1 y.1 (shiftedModuleComplexXEquiv hM (b + 1) n α).2,
-    Pi.single_eq_of_ne hyx, zero_add,
-    InternalGrading.koszulTwist_one_apply_of_mem _ (e := n + (b + 1)) (by
-      rw [InternalGrading.ofDecomposition_piece]
-      exact (shiftedModuleComplexXEquiv hM (b + 1) n α).2),
-    smul_comm (MulOpposite.op (m.m x y)), Units.smul_def, Int.cast_smul_eq_zsmul]
+  -- The component at `y` of the twisted differential of `α ⊗ x`.
+  have hcomp : (shiftedModuleComplexXEquiv hM b (n + 1) (((indexGradedPieceEval hM ind y).f
+      (n + 1)).hom (m.indexGradedPieceD1X hM b (b + 1) n
+        (((indexGradedPieceSingle hM ind x).f n).hom α))) : M) =
+      (n + (b + 1)).negOnePow • (MulOpposite.op (m.m x y) •
+        (shiftedModuleComplexXEquiv hM (b + 1) n α : M)) := by
+    rw [shiftedModuleComplexXEquiv_indexGradedPieceEval_f,
+      indexGradedPieceComplexXEquiv_indexGradedPieceD1X,
+      indexGradedPieceComplexXEquiv_indexGradedPieceSingle_f, LinearMap.funLeft_apply, hext,
+      twistedDifferential_single_apply m.m dM x.1 y.1
+        (shiftedModuleComplexXEquiv hM (b + 1) n α).2, Pi.single_eq_of_ne hyx, zero_add]
+  -- Normalizing the sign: it is the Koszul sign of `α`, which commutes with the action.
+  rw [hcomp, koszulTwist_one_eq_negOnePow_smul (shiftedModuleComplexXEquiv hM (b + 1) n α).2]
+  exact smul_comm _ _ _
 
 end Components
 
