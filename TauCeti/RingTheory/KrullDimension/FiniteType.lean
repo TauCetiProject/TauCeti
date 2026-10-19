@@ -16,11 +16,11 @@ public import Mathlib.RingTheory.Polynomial.RationalRoot
 public import Mathlib.RingTheory.Polynomial.UniqueFactorization
 public import Mathlib.RingTheory.Spectrum.Prime.Topology
 public import Mathlib.RingTheory.TensorProduct.MvPolynomial
-public import TauCeti.RingTheory.KrullDimension.Fiber
 public import TauCeti.RingTheory.KrullDimension.Integral
 public import TauCeti.RingTheory.KrullDimension.Quotient
 import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
 import TauCeti.RingTheory.KrullDimension.Basic
+import TauCeti.RingTheory.KrullDimension.Fiber
 
 /-!
 # Krull dimension of finitely generated algebras over a field
@@ -123,8 +123,7 @@ theorem finiteRingKrullDim_of_finiteType (A : Type*) [CommRing A] [Nontrivial A]
 
 variable (k) in
 /-- A finite faithful extension of domains preserves prime heights when the base is a finitely
-generated algebra over a field. Noether normalization reduces both heights to the same prime
-of a polynomial subalgebra, where going down applies. -/
+generated algebra over a field. -/
 theorem _root_.Ideal.height_eq_height_under_of_finite_of_finiteType {R S : Type*}
     [CommRing R] [CommRing S] [IsDomain R] [IsDomain S] [Algebra k R]
     [Algebra.FiniteType k R] [Algebra R S] [Module.Finite R S] [FaithfulSMul R S]
