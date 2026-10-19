@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.EpiMono
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Symmetric
 public import Mathlib.Algebra.DirectSum.Internal
+public import Mathlib.LinearAlgebra.TensorProduct.Submodule
 public import TauCeti.Algebra.Category.ModuleCat.SymmetricPower.Basic
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Grading
 
@@ -31,6 +33,9 @@ Mathlib's `exteriorPower.wedge` does for exterior powers.
 * `ModuleCat.symmetricPower.mul`: the multiplication `Symⁱ M ⊗ Symʲ M ⟶ Symⁱ⁺ʲ M`, computed by
   `ModuleCat.symmetricPower.coe_mul_tmul`;
 * `ModuleCat.symmetricPower.mul_naturality`: naturality in `M`;
+* `ModuleCat.symmetricPower.mul_surjective`: the multiplication is surjective, since `Symⁱ⁺ʲ M`
+  is spanned by products of elements of `Symⁱ M` and `Symʲ M`; hence it is an epimorphism
+  (`ModuleCat.symmetricPower.epi_mul`);
 * `ModuleCat.symmetricPower.mul_assoc`, `mul_comm`, `one_mul` and `mul_one`: the graded
   associativity, commutativity and unit laws.
 -/
@@ -76,6 +81,22 @@ lemma mul_naturality {M N : ModuleCat.{u} R} (f : M ⟶ N) (i j : ℕ) :
   simp only [ConcreteCategory.comp_apply]
   rw [coe_map_apply, coe_mul_tmul, MonoidalCategory.tensorHom_tmul, coe_mul_tmul, coe_map_apply,
     coe_map_apply, map_mul]
+
+/-- The multiplication `Symⁱ M ⊗ Symʲ M ⟶ Symⁱ⁺ʲ M` is surjective: `Symⁱ⁺ʲ M` is the product
+of the submodules `Symⁱ M` and `Symʲ M` of the symmetric algebra. -/
+lemma mul_surjective (M : ModuleCat.{u} R) (i j : ℕ) : Function.Surjective (mul M i j) := by
+  rintro ⟨x, hx⟩
+  rw [homogeneousSubmodule, pow_add, ← Submodule.mulMap_range] at hx
+  obtain ⟨t, rfl⟩ := hx
+  -- `mul M i j` is `Submodule.mulMap` with its codomain restricted to `Symⁱ⁺ʲ M`
+  have h : (homogeneousSubmodule R M (i + j)).subtype ∘ₗ (mul M i j).hom =
+      Submodule.mulMap (homogeneousSubmodule R M i) (homogeneousSubmodule R M j) :=
+    TensorProduct.ext' fun _ _ ↦ rfl
+  exact ⟨t, Subtype.ext (LinearMap.congr_fun h t)⟩
+
+/-- The multiplication `Symⁱ M ⊗ Symʲ M ⟶ Symⁱ⁺ʲ M` is an epimorphism. -/
+instance epi_mul (M : ModuleCat.{u} R) (i j : ℕ) : Epi (mul M i j) :=
+  (ModuleCat.epi_iff_surjective _).2 (mul_surjective M i j)
 
 /-- The multiplication of symmetric powers is associative, up to the identification of the
 degrees `i + (j + k)` and `i + j + k`. -/

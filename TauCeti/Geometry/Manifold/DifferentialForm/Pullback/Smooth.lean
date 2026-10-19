@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Smooth
+public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
 public import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
@@ -189,6 +190,31 @@ theorem mpullback_comp (f : M → M') (g : M' → M'')
   apply Subtype.ext
   simp only [coe_mpullback, LinearMap.comp_apply]
   exact TauCeti.mpullback_comp (hf.mdifferentiable (by simp)) (hg.mdifferentiable (by simp)) φ.1
+
+variable {F₁ F₂ F₃ : Type*}
+  [NormedAddCommGroup F₁] [NormedSpace ℝ F₁]
+  [NormedAddCommGroup F₂] [NormedSpace ℝ F₂]
+  [NormedAddCommGroup F₃] [NormedSpace ℝ F₃]
+  {k l : ℕ}
+
+/-- Smooth pullback is a homomorphism for every fixed continuous coefficient pairing. -/
+theorem mpullback_wedgeWith (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (f : M → M')
+    (hf : ContMDiff I I' ∞ f) (φ : SmoothForm I' M' F₁ k) (ψ : SmoothForm I' M' F₂ l) :
+    mpullback (F := F₃) (k := k + l) f hf (SmoothForm.wedgeWith μ φ ψ) =
+      SmoothForm.wedgeWith μ
+        (mpullback (F := F₁) (k := k) f hf φ)
+        (mpullback (F := F₂) (k := l) f hf ψ) := by
+  apply Subtype.ext
+  simp only [coe_mpullback, SmoothForm.coe_wedgeWith]
+  exact TauCeti.mpullback_wedgeWith μ f φ.1 ψ.1
+
+/-- Smooth real-valued pullback is a homomorphism for the usual wedge. -/
+theorem mpullback_wedge (f : M → M') (hf : ContMDiff I I' ∞ f)
+    (φ : SmoothForm I' M' ℝ k) (ψ : SmoothForm I' M' ℝ l) :
+    mpullback (k := k + l) f hf (SmoothForm.wedge φ ψ) =
+      SmoothForm.wedge (mpullback (k := k) f hf φ) (mpullback (k := l) f hf ψ) := by
+  simpa only [SmoothForm.wedge_def] using
+    mpullback_wedgeWith (ContinuousLinearMap.mul ℝ ℝ) f hf φ ψ
 
 end SmoothForm
 

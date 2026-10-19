@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.SpecialFunctions.Erf
 public import Mathlib.Probability.Distributions.Gaussian.Real
 public import Mathlib.Probability.CDF
+import TauCeti.Probability.Cdf.Density
 
 /-!
 # The cumulative distribution function of a real Gaussian law
@@ -33,6 +34,8 @@ over `Set.Iic x` is then the limit of those interval integrals, using
 * `TauCeti.Probability.cdf_gaussianReal_eq` — the closed-form cdf for a nonzero variance.
 * `TauCeti.Probability.cdf_gaussianReal_zero_one` — the standard Gaussian cdf.
 * `TauCeti.Probability.cdf_gaussianReal_zero` — the cdf at the singular boundary `v = 0`.
+* `TauCeti.Probability.hasDerivAt_cdf_gaussianReal` — the cdf has the Gaussian density as its
+  derivative.
 * `TauCeti.Probability.measureReal_Ioi_gaussianReal` — the upper tail, in terms of
   `TauCeti.Real.erfc`.
 * `TauCeti.Probability.measureReal_le_of_hasLaw_gaussianReal` — the random-variable corollary.
@@ -127,6 +130,14 @@ theorem cdf_gaussianReal_zero (m x : ℝ) :
     cdf (gaussianReal m 0) x = if m ≤ x then 1 else 0 := by
   rw [gaussianReal_zero_var, cdf_eq_real, measureReal_def, Measure.dirac_apply]
   by_cases h : m ≤ x <;> simp [h]
+
+/-- The cumulative distribution function of a Gaussian law with nonzero variance has the Gaussian
+density as its derivative. -/
+theorem hasDerivAt_cdf_gaussianReal (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) (x : ℝ) :
+    HasDerivAt (cdf (gaussianReal m v)) (gaussianPDFReal m v x) x :=
+  hasDerivAt_cdf_of_eq_withDensity (by rw [gaussianReal_of_var_ne_zero m hv, gaussianPDF_def])
+    (measurable_gaussianPDFReal m v).aemeasurable (ae_of_all _ (gaussianPDFReal_nonneg m v))
+    (by rw [gaussianPDFReal_def]; fun_prop)
 
 /-- The upper tail of a Gaussian law with nonzero variance is half the complementary error
 function. -/

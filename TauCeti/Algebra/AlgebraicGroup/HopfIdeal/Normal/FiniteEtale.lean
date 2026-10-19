@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Central
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Central.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Connected.CommHopfAlgCat
 public import Mathlib.RingTheory.Nilpotent.GeometricallyReduced
 import TauCeti.Algebra.AlgebraicGroup.Center.BaseChange
@@ -69,7 +69,7 @@ private theorem conjugate_basePoint_eq (hI : I.IsNormal)
   let _ := CommHopfAlgCat.quotientPointsSubgroup_normal H I hI (CommAlgCat.of k H)
   have hp : p ∈ CommHopfAlgCat.quotientPointsSubgroup H I (CommAlgCat.of k H) :=
     Subgroup.Normal.conj_mem (H :=
-      CommHopfAlgCat.quotientPointsSubgroup H I (CommAlgCat.of k H)) inferInstance tH htH generic
+      CommHopfAlgCat.quotientPointsSubgroup H I (CommAlgCat.of k H)) tH htH generic
   let q := (CommHopfAlgCat.liftQuotientPoint H I (CommAlgCat.of k H) p
     ((CommHopfAlgCat.mem_quotientPointsSubgroup_iff H I (CommAlgCat.of k H) p).mp hp)).ofConv
   have hq (x : H) : q (Ideal.Quotient.mkₐ k I.toIdeal x) = p.ofConv x := by

@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import Mathlib.LinearAlgebra.Trace
+public import TauCeti.Analysis.Distribution.TestFunction.Divergence
 import Mathlib.Analysis.Calculus.Gradient.Basic
 import Mathlib.Analysis.InnerProductSpace.Trace
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
@@ -28,8 +29,15 @@ Hessian: `∫ Δφ • u = ∫ φ • tr G`. This identity is what makes the wea
 `∫ Δφ • u = ∫ φ • f` of Poisson's equation `Δu = f` agree with the strong one, `tr G = f` almost
 everywhere, for twice weakly differentiable `u`.
 
-No boundedness or boundary regularity of `Ω` is used, and the measure need not be a Haar measure:
-both identities come from the defining integration-by-parts identities of weak derivatives.
+Dually, a weakly differentiable scalar function `u` with weak derivative `U` pairs with the
+divergence of a test vector field `φ` as `∫ div φ * u = -∫ U φ`. This is the identity behind the
+total variation of `u`, a supremum of the left-hand side over `‖φ‖ ≤ 1`. Against an additive Haar
+measure, taking `u = 1` gives `∫ div φ = 0`.
+
+No boundedness or boundary regularity of `Ω` is used. Except for `∫ div φ = 0`, which needs an
+additive Haar measure, the measure need not be a Haar measure: the trace identity, the Laplacian
+identity and the pairing `∫ div φ * u = -∫ U φ` all come from the defining integration-by-parts
+identities of weak derivatives.
 
 ## Main declarations
 
@@ -37,6 +45,10 @@ both identities come from the defining integration-by-parts identities of weak d
   divergence of a weakly differentiable vector field is the trace of its weak derivative.
 * `TauCeti.HasWeakFDerivOn.integral_laplacian_smul_eq_integral_smul_trace`: the distributional
   Laplacian of a twice weakly differentiable function is the trace of its weak Hessian.
+* `TauCeti.HasWeakFDerivOn.integral_divergenceCLM_mul_eq_neg_integral`: a weakly differentiable
+  function pairs with the divergence of a test vector field through its weak derivative.
+* `TestFunction.integral_divergenceCLM_eq_zero`: the divergence of a test vector field has
+  integral zero against an additive Haar measure.
 
 ## References
 
@@ -95,5 +107,43 @@ theorem HasWeakFDerivOn.integral_laplacian_smul_eq_integral_smul_trace [BorelSpa
     ∫ x, Δ (φ : E → ℝ) x • u x ∂μ = ∫ x, (φ : E → ℝ) x • LinearMap.trace ℝ E (G x) ∂μ := by
   rw [hu.integral_laplacian_smul_eq_neg_integral_inner φ,
     hg.integral_inner_gradient_eq_neg_integral_smul_trace φ, neg_neg]
+
+/-- **Integration by parts against a divergence.** If the scalar function `u` has weak derivative
+`U` on `Ω`, then for every test vector field `φ` on `Ω`, `∫ div φ * u ∂μ = -∫ U φ ∂μ`. -/
+theorem HasWeakFDerivOn.integral_divergenceCLM_mul_eq_neg_integral [OpensMeasurableSpace E]
+    {u : E → ℝ} {U : E → E →L[ℝ] ℝ} (h : HasWeakFDerivOn μ Ω u U) (φ : 𝓓(Ω, E)) :
+    ∫ x, TestFunction.divergenceCLM φ x * u x ∂μ = -∫ x, U x (φ x) ∂μ := by
+  set b := stdOrthonormalBasis ℝ E
+  -- The `i`-th component `⟪b i, φ⟫` of `φ` is a scalar test function.
+  let ψ : Fin (Module.finrank ℝ E) → 𝓓(Ω, ℝ) := fun i =>
+    TestFunction.postcompCLM (innerSL ℝ (b i)) φ
+  have hψ (i) : (ψ i : E → ℝ) = fun y => ⟪b i, φ y⟫_ℝ := by
+    ext y
+    simp [ψ]
+  calc ∫ x, TestFunction.divergenceCLM φ x * u x ∂μ
+      = ∑ i, ∫ x, lineDeriv ℝ (ψ i : E → ℝ) x (b i) • u x ∂μ := by
+        rw [← integral_finsetSum _ fun i _ =>
+          integrable_lineDeriv_smul_of_locallyIntegrableOn h.locallyIntegrableOn (ψ i) (b i)]
+        refine integral_congr_ae (ae_of_all _ fun x => ?_)
+        simp [hψ, TestFunction.divergenceCLM_apply_eq_sum b, Finset.sum_mul]
+    _ = ∑ i, -∫ x, (ψ i : E → ℝ) x • U x (b i) ∂μ := Finset.sum_congr rfl fun i _ =>
+        (h.hasWeakLineDerivOn (b i)).integral_lineDeriv_smul_eq_neg_integral_smul (ψ i)
+    _ = -∫ x, U x (φ x) ∂μ := by
+        rw [Finset.sum_neg_distrib, ← integral_finsetSum _ fun i _ =>
+          integrable_smul_of_locallyIntegrableOn
+            (h.hasWeakLineDerivOn (b i)).locallyIntegrableOn_deriv (ψ i)]
+        congr 1
+        refine integral_congr_ae (ae_of_all _ fun x => ?_)
+        simp only [hψ, smul_eq_mul]
+        conv_rhs => rw [← b.sum_repr' (φ x)]
+        simp [map_sum, mul_comm]
+
+/-- The divergence of a test vector field has integral zero against an additive Haar measure:
+`∫ div φ ∂μ = 0`. -/
+theorem _root_.TestFunction.integral_divergenceCLM_eq_zero [BorelSpace E] [μ.IsAddHaarMeasure]
+    (φ : 𝓓(Ω, E)) : ∫ x, TestFunction.divergenceCLM φ x ∂μ = 0 := by
+  have h : HasWeakFDerivOn μ Ω (fun _ => (1 : ℝ)) 0 := hasWeakFDerivOn_iff.mpr fun v => by
+    simpa using hasWeakLineDerivOn_const (μ := μ) (Ω := Ω) (v := v) (1 : ℝ)
+  simpa using h.integral_divergenceCLM_mul_eq_neg_integral φ
 
 end TauCeti

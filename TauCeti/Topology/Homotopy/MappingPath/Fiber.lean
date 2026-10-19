@@ -46,6 +46,13 @@ namespace MappingPathFiber
 
 variable (f : C(B, K)) (k : K)
 
+/-- The source projection of the mapping-path fibre. -/
+def proj : C(MappingPathFiber f k, B) :=
+  ⟨fun p ↦ p.val.1, by fun_prop⟩
+
+@[simp]
+theorem proj_apply (p : MappingPathFiber f k) : proj f k p = p.val.1 := (rfl)
+
 /-- Flattening identifies the two-constraint path fibre with the literal endpoint fibre. -/
 def endpointHomeomorph :
     MappingPathFiber f k ≃ₜ {p : MappingPathSpace f // MappingPathSpace.endpoint f p = k} where
@@ -66,6 +73,62 @@ theorem endpointHomeomorph_val (p : MappingPathFiber f k) :
 theorem endpointHomeomorph_symm_val
     (p : {p : MappingPathSpace f // MappingPathSpace.endpoint f p = k}) :
     ((endpointHomeomorph f k).symm p).val = p.val.val := (rfl)
+
+/-- `MappingPathFiber f k` is the base change along `f` of the fixed-end path fibration
+`proj (ContinuousMap.id K) k`. -/
+def pullbackHomeomorph :
+    MappingPathFiber f k ≃ₜ
+      {x : B × MappingPathFiber (ContinuousMap.id K) k // f x.1 = proj (.id K) k x.2} where
+  toFun p := ⟨(p.val.1, ⟨(f p.val.1, p.val.2), p.property⟩), rfl⟩
+  invFun x := ⟨(x.val.1, x.val.2.val.2),
+    x.val.2.property.1.trans x.property.symm, x.val.2.property.2⟩
+  left_inv _ := rfl
+  right_inv x := Subtype.ext (Prod.ext rfl (Subtype.ext (Prod.ext x.property rfl)))
+  continuous_toFun := by
+    refine (continuous_subtype_val.fst.prodMk ?_).subtype_mk _
+    exact ((f.continuous.comp continuous_subtype_val.fst).prodMk
+      continuous_subtype_val.snd).subtype_mk _
+  continuous_invFun :=
+    (continuous_subtype_val.fst.prodMk
+      (continuous_subtype_val.comp continuous_subtype_val.snd).snd).subtype_mk _
+
+@[simp]
+theorem pullbackHomeomorph_val_fst (p : MappingPathFiber f k) :
+    (pullbackHomeomorph f k p).val.1 = p.val.1 := (rfl)
+
+@[simp]
+theorem pullbackHomeomorph_val_snd_val (p : MappingPathFiber f k) :
+    (pullbackHomeomorph f k p).val.2.val = (f p.val.1, p.val.2) := (rfl)
+
+@[simp]
+theorem pullbackHomeomorph_symm_val
+    (x : {x : B × MappingPathFiber (ContinuousMap.id K) k // f x.1 = proj (.id K) k x.2}) :
+    ((pullbackHomeomorph f k).symm x).val = (x.val.1, x.val.2.val.2) := (rfl)
+
+/-- The base-change identification lies over `B`. -/
+theorem proj_eq_comp_pullbackHomeomorph :
+    ⇑(proj f k) = (fun x ↦ x.val.1) ∘ pullbackHomeomorph f k :=
+  (rfl)
+
+/-- The fibre of the source projection over `b` is the native space of paths from `f b`
+to `k`. -/
+def projFiberHomeomorphPath (b : B) :
+    {p : MappingPathFiber f k // proj f k p = b} ≃ₜ Path (f b) k where
+  toFun p := ⟨p.val.val.2, p.val.property.1.trans (congrArg f p.property), p.val.property.2⟩
+  invFun γ := ⟨⟨(b, γ.toContinuousMap), γ.source, γ.target⟩, rfl⟩
+  left_inv p := Subtype.ext (Subtype.ext (Prod.ext p.property.symm rfl))
+  right_inv _ := rfl
+  continuous_toFun :=
+    continuous_induced_rng.2 (continuous_subtype_val.comp continuous_subtype_val).snd
+  continuous_invFun := ((continuous_const.prodMk continuous_induced_dom).subtype_mk _).subtype_mk _
+
+@[simp]
+theorem projFiberHomeomorphPath_apply (b : B) (p : {p : MappingPathFiber f k // proj f k p = b})
+    (t : I) : projFiberHomeomorphPath f k b p t = p.val.val.2 t := (rfl)
+
+@[simp]
+theorem projFiberHomeomorphPath_symm_val_val (b : B) (γ : Path (f b) k) :
+    ((projFiberHomeomorphPath f k b).symm γ).val.val = (b, γ.toContinuousMap) := (rfl)
 
 end MappingPathFiber
 

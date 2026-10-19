@@ -426,6 +426,16 @@ theorem symmetrifySignlessPreprojectiveAlgebraEquiv_symm_preprojectiveMk
   intro _ j _
   cases c j <;> simp
 
+/-- The comparison isomorphism multiplies each doubled arrow by its colour sign: an arrow of `Q` by
+`1` or `-1` according to the colour of its head, and a formal reverse by `1`. -/
+theorem symmetrifySignlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk_ofArrow
+    {x y : Symmetrify Q} (b : x ⟶ y) :
+    symmetrifySignlessPreprojectiveAlgebraEquiv k hc (signlessPreprojectiveMk k _ (ofArrow b)) =
+      doubledLabelling k (fun _ j _ => if c j then (1 : k) else -1) b •
+        preprojectiveMk k Q (ofArrow b) := by
+  rw [symmetrifySignlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk, rescale_ofArrow,
+    map_smul]
+
 /-- **For a source--sink orientation no rescaling is needed**: if every arrow of `Q` ends at a
 vertex coloured `true`, the comparison isomorphism is induced by the identity of the doubled path
 algebra. -/
