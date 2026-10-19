@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Fuchsian.DirichletDomain.Finite
-public import TauCeti.Analysis.Complex.UpperHalfPlane.DirichletDomain.FiniteFaces
+public import TauCeti.Analysis.Complex.UpperHalfPlane.DirichletDomain.Irredundant
 
 /-!
 # Finite face covers of Fuchsian Dirichlet domains
@@ -17,8 +17,8 @@ geodesic segment, allowing finite segments, rays with an ideal endpoint, and com
 between ideal points.
 
 This is the boundary-data step in constructing a finite-sided cuspidal Dirichlet polygon. It does
-not order the faces cyclically or discard empty and singleton faces; those operations require the
-incidence theory of the selected geodesics.
+not order the faces cyclically. An irredundant subfamily discards empty and singleton faces;
+its retained faces contain relative open geodesic intervals.
 
 ## References
 
@@ -54,5 +54,35 @@ theorem exists_finset_dirichletFace_cover_of_isBounded_truncation
     frontier_dirichletDomain_eq_biUnion_dirichletFace_of_eq_iInter hmove hD, ?_⟩
   intro g hg hne
   exact exists_dirichletFace_eq_extGeodesicSegment (hmove g hg).symm hne
+
+/-- A bounded cusp truncation supplies an irredundant finite half-plane description. The
+selected equality faces cover the boundary and each contains a relative open geodesic interval,
+so empty and singleton faces are discarded. The bounded-truncation hypothesis is retained. -/
+theorem exists_finset_irredundant_dirichletFace_cover_of_isBounded_truncation
+    (p : ℍ) (D : ι → Γ.CuspDatum) {A : ι → ℝ} (hA : ∀ i, 0 < A i)
+    (hb : Bornology.IsBounded (sdiff (dirichletDomain Γ p) (⋃ i, (D i).horodisc (A i)))) :
+    ∃ s : Finset Γ, (∀ g ∈ s, p ≠ g • p) ∧
+      dirichletDomain Γ p =
+        ⋂ g ∈ s, _root_.closure (leftHalfPlane (perpBisector p (g • p))) ∧
+      (∀ g ∈ s, dirichletDomain Γ p ⊂
+        ⋂ h ∈ s, ⋂ (_ : h ≠ g), _root_.closure (leftHalfPlane (perpBisector p (h • p)))) ∧
+      frontier (dirichletDomain Γ p) = ⋃ g ∈ s, dirichletFace p g ∧
+      ∀ g ∈ s, ∃ a b : ℝ, a < b ∧
+        geodesicLine (perpBisector p (g • p)) '' Ioo a b ⊆ dirichletFace p g := by
+  classical
+  obtain ⟨s, hmove, hD⟩ :=
+    Γ.exists_finset_dirichletDomain_eq_iInter_closure_leftHalfPlane_of_isBounded_truncation
+      p D hA hb
+  obtain ⟨t, hts, htD, hproper, hfrontier, hfaces⟩ :=
+    exists_finset_irredundant_dirichletFace_cover hmove hD
+  refine ⟨t, fun g hg ↦ hmove g (hts hg), htD, ?_, hfrontier, hfaces⟩
+  intro g hg
+  have herase :
+      (⋂ h ∈ t.erase g, _root_.closure (leftHalfPlane (perpBisector p (h • p)))) =
+        ⋂ h ∈ t, ⋂ (_ : h ≠ g), _root_.closure (leftHalfPlane (perpBisector p (h • p))) := by
+    ext z
+    simp only [mem_iInter, Finset.mem_erase]
+    aesop
+  exact herase ▸ hproper g hg
 
 end Subgroup

@@ -84,7 +84,7 @@ open scoped TensorProduct Topology
 
 noncomputable section
 
-variable {V : Type*} [AddCommGroup V] [Module ℚ V] [FiniteDimensional ℚ V]
+variable {V : Type*} [AddCommGroup V] [Module ℚ V]
 
 /-- Compatible compact-open reference subgroups for the local orthogonal and Spin groups of a
 rational quadratic space.
@@ -134,7 +134,6 @@ def specialOrthogonal (p : Nat.Primes) :
     Subgroup (specialOrthogonalGroup (Q.baseChange ℚ_[p])) :=
   (U.orthogonal p).comap (specialOrthogonalToOrthogonal (Q.baseChange ℚ_[p]))
 
-omit [FiniteDimensional ℚ V] in
 /-- A local special orthogonal point belongs to the derived reference subgroup exactly when its
 image in the orthogonal group belongs to the orthogonal reference subgroup. -/
 @[simp]
@@ -144,7 +143,6 @@ theorem mem_specialOrthogonal_iff (p : Nat.Primes)
       specialOrthogonalToOrthogonal (Q.baseChange ℚ_[p]) g ∈ U.orthogonal p :=
   Iff.rfl
 
-omit [FiniteDimensional ℚ V] in
 /-- The derived special orthogonal reference subgroup is open, being the preimage of an open
 subgroup under the continuous inclusion `SO(Q_p) → O(Q_p)`. -/
 theorem isOpen_specialOrthogonal (p : Nat.Primes) :
@@ -152,7 +150,6 @@ theorem isOpen_specialOrthogonal (p : Nat.Primes) :
   (U.isOpen_orthogonal p).preimage
     (_root_.QuadraticMap.continuous_specialOrthogonalToOrthogonal (Q.baseChange ℚ_[p]))
 
-omit [FiniteDimensional ℚ V] in
 /-- The derived special orthogonal reference subgroup is compact, being the preimage of a compact
 subgroup under the closed embedding `SO(Q_p) → O(Q_p)`. -/
 theorem isCompact_specialOrthogonal (p : Nat.Primes) :
@@ -160,7 +157,6 @@ theorem isCompact_specialOrthogonal (p : Nat.Primes) :
   (_root_.QuadraticMap.isClosedEmbedding_specialOrthogonalToOrthogonal
     (Q.baseChange ℚ_[p])).isCompact_preimage (U.isCompact_orthogonal p)
 
-omit [FiniteDimensional ℚ V] in
 /-- The local Spin projection carries the Spin reference subgroup into the derived special
 orthogonal reference subgroup. -/
 theorem mapsTo_specialOrthogonal (p : Nat.Primes) :
@@ -176,7 +172,6 @@ def spinToSpecialOrthogonal (p : Nat.Primes) :
       (U.spin p).subtype).codRestrict (U.specialOrthogonal p)
     (fun x ↦ U.mapsTo_specialOrthogonal p x.2)
 
-omit [FiniteDimensional ℚ V] in
 /-- The restricted local Spin projection has the same value as the ambient projection. -/
 @[simp]
 theorem coe_spinToSpecialOrthogonal_apply (p : Nat.Primes) (x : U.spin p) :
@@ -188,7 +183,7 @@ theorem coe_spinToSpecialOrthogonal_apply (p : Nat.Primes) (x : U.spin p) :
 
 /-- Every rational special orthogonal point belongs to the derived reference subgroup at almost
 every prime. This is a consequence of orthogonal integrality, not additional data. -/
-theorem eventually_specialOrthogonal (g : specialOrthogonalGroup Q) :
+theorem eventually_specialOrthogonal [FiniteDimensional ℚ V] (g : specialOrthogonalGroup Q) :
     ∀ᶠ p : Nat.Primes in cofinite,
       specialOrthogonalGroupBaseChange (A := ℚ_[p]) Q g ∈ U.specialOrthogonal p := by
   filter_upwards [U.eventually_orthogonal
@@ -196,7 +191,6 @@ theorem eventually_specialOrthogonal (g : specialOrthogonalGroup Q) :
   rw [mem_specialOrthogonal_iff, specialOrthogonalToOrthogonal_specialOrthogonalGroupBaseChange]
   exact hp
 
-omit [FiniteDimensional ℚ V] in
 /-- A Spin reference point acts through an orthogonal reference point. -/
 theorem spinToOrthogonal_mem_orthogonal (p : Nat.Primes) {x : spinGroup (Q.baseChange ℚ_[p])}
     (hx : x ∈ U.spin p) :
@@ -204,14 +198,12 @@ theorem spinToOrthogonal_mem_orthogonal (p : Nat.Primes) {x : spinGroup (Q.baseC
   rw [← CliffordAlgebra.specialOrthogonalToOrthogonal_spinToSpecialOrthogonal]
   exact U.spin_maps p hx
 
-omit [FiniteDimensional ℚ V] in
 /-- Shrinking the orthogonal reference subgroups shrinks the derived special orthogonal ones. -/
 theorem specialOrthogonal_mono {U U' : OrthogonalCompactOpens Q}
     (h : ∀ p, U.orthogonal p ≤ U'.orthogonal p) (p : Nat.Primes) :
     U.specialOrthogonal p ≤ U'.specialOrthogonal p :=
   Subgroup.comap_mono (h p)
 
-omit [FiniteDimensional ℚ V] in
 /-- Orthogonal reference families agreeing at almost every prime have derived special orthogonal
 families agreeing at almost every prime. -/
 theorem eventually_specialOrthogonal_eq {U U' : OrthogonalCompactOpens Q}
@@ -220,6 +212,10 @@ theorem eventually_specialOrthogonal_eq {U U' : OrthogonalCompactOpens Q}
   h.mono fun p hp ↦ by rw [specialOrthogonal, specialOrthogonal, hp]
 
 /-! ### Shrinking a compatible tuple at finitely many primes -/
+
+section InfOpenSubgroup
+
+variable [FiniteDimensional ℚ V]
 
 /-- Intersect the orthogonal reference subgroups of `U` with open subgroups `W p` of the local
 orthogonal groups, and the Spin reference subgroups with the preimages of the `W p`. When
@@ -287,6 +283,8 @@ theorem eventually_infOpenSubgroup_spin_eq :
   filter_upwards [hW] with p hp
   exact inf_eq_left.mpr fun x hx ↦ hp (U.spinToOrthogonal_mem_orthogonal p hx)
 
+end InfOpenSubgroup
+
 /-! ### Transport along a rational isometry -/
 
 section Isometry
@@ -294,7 +292,6 @@ section Isometry
 variable {V' : Type*} [AddCommGroup V'] [Module ℚ V'] {Q' : QuadraticForm ℚ V'}
   (e : Q.IsometryEquiv Q')
 
-omit [FiniteDimensional ℚ V] in
 /-- Transport a compatible compact-open tuple along a rational isometry `e : Q ≃ Q'`: at every
 prime the orthogonal and Spin reference subgroups are carried to those of `Q'` by the local
 isometry `e ⊗ ℚ_p`. The derived special orthogonal family is carried along as well
@@ -335,7 +332,6 @@ def map : OrthogonalCompactOpens Q' where
     rw [e.spinGroupBaseChange_spinGroupEquiv]
     exact Subgroup.mem_map_of_mem _ hp
 
-omit [FiniteDimensional ℚ V] in
 /-- The orthogonal reference subgroups of a transported tuple are the images under the local
 isometries. -/
 @[simp]
@@ -344,7 +340,6 @@ theorem map_orthogonal (p : Nat.Primes) :
       (U.orthogonal p).map ((e.baseChange ℚ_[p]).orthogonalGroupCongr : _ →* _) :=
   (rfl)
 
-omit [FiniteDimensional ℚ V] in
 /-- The Spin reference subgroups of a transported tuple are the images under the local
 isometries. -/
 @[simp]
@@ -352,7 +347,6 @@ theorem map_spin (p : Nat.Primes) :
     (U.map e).spin p = (U.spin p).map ((e.baseChange ℚ_[p]).spinGroupEquiv : _ →* _) :=
   (rfl)
 
-omit [FiniteDimensional ℚ V] in
 /-- The derived special orthogonal reference subgroups of a transported tuple are the images of
 those of the original tuple under the local isometries. -/
 @[simp]
@@ -364,7 +358,6 @@ theorem map_specialOrthogonal (p : Nat.Primes) :
     _root_.QuadraticMap.IsometryEquiv.specialOrthogonalGroupCongr_symm,
     _root_.QuadraticMap.IsometryEquiv.orthogonalGroupCongr_symm]
 
-omit [FiniteDimensional ℚ V] in
 /-- The local isometry `e ⊗ ℚ_p` restricts to a bijection between the orthogonal reference
 subgroups of a tuple and of its transport. -/
 theorem bijOn_map_orthogonal (p : Nat.Primes) :
@@ -373,7 +366,6 @@ theorem bijOn_map_orthogonal (p : Nat.Primes) :
   rw [map_orthogonal, Subgroup.coe_map, MonoidHom.coe_ofClass]
   exact (e.baseChange ℚ_[p]).orthogonalGroupCongr.injective.injOn.bijOn_image
 
-omit [FiniteDimensional ℚ V] in
 /-- The local Spin equivalence induced by `e ⊗ ℚ_p` restricts to a bijection between the Spin
 reference subgroups of a tuple and of its transport. -/
 theorem bijOn_map_spin (p : Nat.Primes) :
@@ -381,7 +373,6 @@ theorem bijOn_map_spin (p : Nat.Primes) :
   rw [map_spin, Subgroup.coe_map, MonoidHom.coe_ofClass]
   exact (e.baseChange ℚ_[p]).spinGroupEquiv.injective.injOn.bijOn_image
 
-omit [FiniteDimensional ℚ V] in
 /-- The local isometry `e ⊗ ℚ_p` restricts to a bijection between the derived special orthogonal
 reference subgroups of a tuple and of its transport. -/
 theorem bijOn_map_specialOrthogonal (p : Nat.Primes) :
@@ -390,13 +381,11 @@ theorem bijOn_map_specialOrthogonal (p : Nat.Primes) :
   rw [map_specialOrthogonal, Subgroup.coe_map, MonoidHom.coe_ofClass]
   exact (e.baseChange ℚ_[p]).specialOrthogonalGroupCongr.injective.injOn.bijOn_image
 
-omit [FiniteDimensional ℚ V] in
 /-- Transport along the identity isometry is the identity. -/
 @[simp]
 theorem map_refl : U.map (_root_.QuadraticMap.IsometryEquiv.refl Q) = U := by
   ext p : 2 <;> simp
 
-omit [FiniteDimensional ℚ V] in
 /-- Transport along a composite of isometries is the composite of the transports. -/
 theorem map_trans {V'' : Type*} [AddCommGroup V''] [Module ℚ V''] {Q'' : QuadraticForm ℚ V''}
     (e' : Q'.IsometryEquiv Q'') : U.map (e.trans e') = (U.map e).map e' := by

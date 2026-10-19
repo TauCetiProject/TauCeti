@@ -30,6 +30,8 @@ manifold differential of a function to tangent vectors whose base point varies.
   `C^m` into the tangent bundle, when `m + 1 ≤ n`.
 * `VectorField.mpullbackWithin_extChartAt_symm_apply`: inverse-chart pullbacks are the
   tangent-bundle coordinate expressions of vector fields.
+* `VectorField.mpullbackWithin_extChartAt_symm_self`: at the chart centre, the inverse-chart
+  pullback is the value of the field.
 * `MDifferentiableWithinAt.differentiableWithinAt_mpullbackWithin_extChartAt_symm`:
   differentiability of these coordinate expressions without a completeness assumption.
 * `TauCeti.mdifferentiableWithinAt_vectorSpace_iff_differentiableWithinAt` and its `At` and `On`
@@ -233,6 +235,14 @@ theorem mpullbackWithin_extChartAt_symm_apply (V : (x : M) → TangentSpace I x)
     (by simpa using hy')]
   exact (Trivialization.symmL_continuousLinearMapAt (R := 𝕜)
     (trivializationAt E (TangentSpace I) x) (by simpa using hy') _).symm
+
+/-- At the centre of the preferred chart, the inverse-chart pullback of a vector field is the
+value of the field. -/
+theorem mpullbackWithin_extChartAt_symm_self (V : (x : M) → TangentSpace I x) (x : M) :
+    VectorField.mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x).symm V (range I)
+      (extChartAt I x x) = V x := by
+  rw [VectorField.mpullbackWithin_apply, extChartAt_to_inv]
+  exact mfderivWithin_extChartAt_symm_inverse_apply _
 
 end VectorField
 

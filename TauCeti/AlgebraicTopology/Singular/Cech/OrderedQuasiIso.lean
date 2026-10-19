@@ -10,7 +10,7 @@ public import TauCeti.Algebra.Homology.TotalComplex
 public import TauCeti.AlgebraicTopology.Singular.Cech
 public import TauCeti.AlgebraicTopology.Singular.Subdivision.Small.Equiv
 
-import Mathlib.AlgebraicTopology.SimplicialSet.Homology.Relative
+import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Coproduct
 import TauCeti.AlgebraicTopology.Singular.Subspace
 
 /-!
@@ -150,9 +150,6 @@ def cechSmallAugmentation :
         ((X.smallSingularSubcomplex (fun i ↦ (U i : Set X)) : SSet).chainComplex R) :=
   (ChainComplex.toSingle₀Equiv _ _).symm
     ⟨cechSmallAugmentationX U R, by
-      have : Mono (SSet.chainComplexMap (X.smallSingularSubcomplex (fun i ↦ (U i : Set X))).ι R) :=
-        inferInstanceAs
-          (Mono (SSet.chainComplexMap (SSetPair.of (X.smallSingularSubcomplex _).ι).hom R))
       rw [← cancel_mono (SSet.chainComplexMap (X.smallSingularSubcomplex _).ι R), zero_comp,
         Category.assoc, cechSmallAugmentationX_comp_ι]
       -- `cechAugmentation` lands in the singular chains of `X`, which are the simplicial chains of

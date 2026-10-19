@@ -76,6 +76,15 @@ theorem symmetricAlgebraMapIso_inv (e : M ≃ₗ[R] N) :
             SymmetricAlgebra.map_surjective R e.symm.toLinearMap e.symm.surjective)) := by
   rw [symmetricAlgebraMapIso, mapIso_inv]
 
+/-- A projective linear automorphism fixes the degree-zero structural morphism. -/
+-- Preserve this square before simplifying the isomorphism to `Proj.map`.
+@[reassoc (attr := simp↓)]
+theorem symmetricAlgebraMapIso_hom_toSpecZero (e : M ≃ₗ[R] M) :
+    (symmetricAlgebraMapIso R e).hom ≫ toSpecZero (homogeneousSubmodule R M) =
+      toSpecZero (homogeneousSubmodule R M) := by
+  rw [symmetricAlgebraMapIso_hom, map_toSpecZero]
+  simp
+
 /-- Inverting a linear equivalence inverts its projective isomorphism. -/
 @[simp]
 theorem symmetricAlgebraMapIso_symm (e : M ≃ₗ[R] N) :

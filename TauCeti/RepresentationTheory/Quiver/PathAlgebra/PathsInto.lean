@@ -130,6 +130,12 @@ noncomputable def pathsBetween (n : ℕ) (i j : R) : Submodule k (pathAlgebra k 
   Submodule.span k
     (Set.range fun p : PathBetween R n i j => (ofPath ⟨i, j, p.1⟩ : pathAlgebra k R))
 
+/-- The paths of length `n` from `i` to `j` span `pathsBetween k n i j`, by definition. -/
+theorem pathsBetween_def (n : ℕ) (i j : R) :
+    pathsBetween k n i j = Submodule.span k
+      (Set.range fun p : PathBetween R n i j => (ofPath ⟨i, j, p.1⟩ : pathAlgebra k R)) :=
+  (rfl)
+
 variable {k}
 
 /-- A path ending at `j` lies in the span of the paths of its length into `j`. -/

@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Finsupp.Indicator
 public import Mathlib.Data.Finsupp.Order
 public import Mathlib.Topology.Algebra.InfiniteSum.ENNReal
+public import TauCeti.Analysis.Convex.Majorization
 
 /-!
 # Symmetric gauges on sequences
@@ -24,19 +25,23 @@ Every symmetric gauge lies between the supremum and the sum of the sequence,
 `Φ b` over the finitely supported `b` dominated by `a`. The extension is total, lies between the
 supremum and the sum of the sequence, and keeps the monotonicity, homogeneity and subadditivity
 of `Φ`, as well as its permutation invariance. These laws feed the ideal-norm properties of the
-induced gauge on operators; its triangle inequality additionally needs weak majorization of
-approximation numbers, which this file does not provide. For a finite-valued sequence the
-extension is the supremum of `Φ` along the initial truncations of the sequence, with no
-monotonicity hypothesis on the sequence.
+induced gauge on operators. For a finite-valued sequence the extension is the supremum of `Φ`
+along the initial truncations of the sequence, with no monotonicity hypothesis on the sequence.
 
 The finite counterpart, a permutation- and sign-invariant seminorm on `ι → ℝ`, is
-`Seminorm.IsSymmetricGauge` in `TauCeti.Analysis.Convex.Majorization`.
+`Seminorm.IsSymmetricGauge` in `TauCeti.Analysis.Convex.Majorization`. Restricting `Φ` to the
+first `n` coordinates gives such a seminorm on `Fin n → ℝ`, so the transfer descent proved there
+applies: symmetric gauges are monotone for weak majorization. If `a` is antitone and every partial
+sum of `a` is at most the corresponding partial sum of `b`, then `Φ∞ a ≤ Φ∞ b`. Applied to
+approximation numbers, this turns Ky Fan dominance into domination for every induced gauge.
 
 ## Main definitions
 
 * `TauCeti.SymmetricGauge`: symmetric gauges on finitely supported nonnegative sequences.
 * `TauCeti.SymmetricGauge.extend`: the extension `Φ∞` of a symmetric gauge to `ℕ → ℝ≥0∞`.
 * `TauCeti.SymmetricGauge.supGauge`: the supremum `⨆ n, a n`, the least symmetric gauge.
+* `TauCeti.SymmetricGauge.finSeminorm`: the restriction of a symmetric gauge to the first `n`
+  coordinates, as a seminorm on `Fin n → ℝ`.
 
 ## Main results
 
@@ -51,11 +56,17 @@ The finite counterpart, a permutation- and sign-invariant seminorm on `ι → �
 * `TauCeti.SymmetricGauge.extend_mono`, `TauCeti.SymmetricGauge.extend_smul`,
   `TauCeti.SymmetricGauge.extend_add_le`, `TauCeti.SymmetricGauge.extend_comp_perm`: the extension
   is monotone, homogeneous, subadditive and permutation invariant.
+* `TauCeti.SymmetricGauge.isSymmetricGauge_finSeminorm`: the restriction to `n` coordinates is a
+  symmetric gauge on `Fin n → ℝ`.
+* `TauCeti.SymmetricGauge.apply_le_apply_of_forall_sum_le`,
+  `TauCeti.SymmetricGauge.extend_le_extend_of_forall_sum_le`: symmetric gauges and their
+  extensions are monotone for weak majorization.
 
 ## References
 
 * I. C. Gohberg, M. G. Krein, *Introduction to the Theory of Linear Nonselfadjoint Operators in
   Hilbert Space*, Translations of Mathematical Monographs 18, AMS (1969), Chapter III.
+* R. Bhatia, *Matrix Analysis*, Graduate Texts in Mathematics 169, Springer (1997), §IV.1.
 * B. Simon, *Trace Ideals and Their Applications*, 2nd ed., Mathematical Surveys and Monographs
   120, AMS (2005).
 -/
@@ -313,6 +324,125 @@ theorem extend_supGauge (a : ℕ → ℝ≥0∞) : supGauge.extend a = ⨆ n, a 
   refine le_antisymm ((supGauge.extend_le_iff).2 fun b hb => ?_) (supGauge.iSup_le_extend a)
   rw [supGauge_apply, ENNReal.coe_iSup b.finite_range.bddAbove]
   exact iSup_mono hb
+
+/-! ### Restriction to finitely many coordinates and weak majorization -/
+
+/-- The restriction of a symmetric gauge to the first `n` coordinates, as a seminorm on real
+`n`-tuples: `x ↦ Φ (|x 0|, …, |x (n - 1)|, 0, 0, …)`. It is a symmetric gauge on `Fin n → ℝ`
+(`TauCeti.SymmetricGauge.isSymmetricGauge_finSeminorm`). -/
+noncomputable def finSeminorm (n : ℕ) : Seminorm ℝ (Fin n → ℝ) where
+  toFun x := Φ (Finsupp.indicator (range n) fun k hk => ‖x ⟨k, mem_range.1 hk⟩‖₊)
+  map_zero' := by
+    rw [NNReal.coe_eq_zero, ← Φ.map_zero]
+    congr 1
+    ext k
+    simp [Finsupp.indicator_apply]
+  add_le' x y := by
+    rw [← NNReal.coe_add, NNReal.coe_le_coe]
+    refine (Φ.mono fun k => ?_).trans (Φ.map_add_le _ _)
+    simp only [Finsupp.indicator_apply, Finsupp.coe_add, Pi.add_apply]
+    split_ifs
+    · exact nnnorm_add_le _ _
+    · simp
+  neg' x := by simp
+  smul' c x := by
+    have : (Finsupp.indicator (range n) fun k hk => ‖(c • x) ⟨k, mem_range.1 hk⟩‖₊) =
+        ‖c‖₊ • Finsupp.indicator (range n) fun k hk => ‖x ⟨k, mem_range.1 hk⟩‖₊ := by
+      ext k
+      simp only [Finsupp.indicator_apply, Finsupp.coe_smul, Pi.smul_apply, smul_eq_mul]
+      split_ifs <;> simp
+    rw [this, map_smul, NNReal.coe_mul, coe_nnnorm]
+
+@[simp]
+theorem finSeminorm_apply (n : ℕ) (x : Fin n → ℝ) :
+    Φ.finSeminorm n x =
+      Φ (Finsupp.indicator (range n) fun k hk => ‖x ⟨k, mem_range.1 hk⟩‖₊) :=
+  (rfl)
+
+/-- The restriction of a symmetric gauge to the first `n` coordinates is a symmetric gauge on
+real `n`-tuples. -/
+theorem isSymmetricGauge_finSeminorm (n : ℕ) : (Φ.finSeminorm n).IsSymmetricGauge where
+  map_comp_perm σ x := by
+    -- Extend `σ` to a permutation of `ℕ` fixing every `k ≥ n`.
+    have h : (Finsupp.indicator (range n) fun k hk => ‖(x ∘ σ) ⟨k, mem_range.1 hk⟩‖₊) =
+        (Finsupp.indicator (range n) fun k hk => ‖x ⟨k, mem_range.1 hk⟩‖₊).equivMapDomain
+          (σ.extendDomain Fin.equivSubtype).symm := by
+      ext k
+      rw [Finsupp.equivMapDomain_apply, Equiv.symm_symm]
+      by_cases hk : k < n
+      · rw [Equiv.Perm.extendDomain_apply_subtype σ Fin.equivSubtype hk]
+        simp [Finsupp.indicator_apply, hk]
+      · rw [Equiv.Perm.extendDomain_apply_not_subtype σ Fin.equivSubtype hk]
+        simp [Finsupp.indicator_apply, hk]
+    rw [finSeminorm_apply, finSeminorm_apply, h, map_equivMapDomain]
+  map_update_neg x i := by
+    rw [finSeminorm_apply, finSeminorm_apply]
+    congr 3
+    ext k hk
+    rcases eq_or_ne (⟨k, mem_range.1 hk⟩ : Fin n) i with h | h
+    · simp [h]
+    · simp [Function.update_of_ne h]
+
+/-- **Symmetric gauges are monotone for weak majorization**, finitely supported form: if `a` is
+antitone and every partial sum of `a` is at most the corresponding partial sum of `b`, then
+`Φ a ≤ Φ b`. No order condition is needed on `b`. -/
+theorem apply_le_apply_of_forall_sum_le {a b : ℕ →₀ ℝ≥0} (ha : Antitone a)
+    (h : ∀ k, ∑ n ∈ range k, a n ≤ ∑ n ∈ range k, b n) : Φ a ≤ Φ b := by
+  classical
+  obtain ⟨N, hN⟩ := (a.support ∪ b.support).exists_nat_subset_range
+  -- Both sequences are read off from their first `N` terms.
+  have hrestrict (c : ℕ →₀ ℝ≥0) (hc : c.support ⊆ range N) :
+      Φ.finSeminorm N (fun i => c i) = Φ c := by
+    simp only [finSeminorm_apply, NNReal.nnnorm_eq]
+    rw [← (Finsupp.eq_indicator_self_iff _).mpr hc]
+  have hle := (Φ.isSymmetricGauge_finSeminorm N).apply_le_of_prefixSum_le
+    (y := fun i => b i) (z := fun i => a i)
+    (fun i j hij => NNReal.coe_le_coe.2 (ha (Fin.le_def.1 hij))) (fun i => (a i).2) fun k => by
+      rw [prefixSum_eq_sum_range k fun n => (a n : ℝ), prefixSum_eq_sum_range k fun n => (b n : ℝ)]
+      exact_mod_cast h (min k N)
+  rwa [hrestrict a (subset_union_left.trans hN), hrestrict b (subset_union_right.trans hN),
+    NNReal.coe_le_coe] at hle
+
+/-- **Symmetric gauges are monotone for weak majorization.** If `a` is antitone and every partial
+sum of `a` is at most the corresponding partial sum of `b`, then `Φ∞ a ≤ Φ∞ b`. No order condition
+is needed on `b`, and the sequences may take the value `∞`. -/
+theorem extend_le_extend_of_forall_sum_le {a b : ℕ → ℝ≥0∞} (ha : Antitone a)
+    (h : ∀ k, ∑ n ∈ range k, a n ≤ ∑ n ∈ range k, b n) : Φ.extend a ≤ Φ.extend b := by
+  classical
+  by_cases hb : ∃ n, b n = ∞
+  · obtain ⟨n, hn⟩ := hb
+    exact le_top.trans (hn ▸ (le_iSup b n).trans (Φ.iSup_le_extend b))
+  simp only [not_exists] at hb
+  -- Both sequences are finite-valued: `a n ≤ a 0 ≤ b 0 < ∞`.
+  have ha_ne (n : ℕ) : a n ≠ ∞ :=
+    ne_top_of_le_ne_top (ne_top_of_le_ne_top (hb 0) (by simpa using h 1)) (ha (Nat.zero_le n))
+  lift a to ℕ → ℝ≥0 using ha_ne
+  lift b to ℕ → ℝ≥0 using hb
+  rw [Φ.extend_coe_eq_iSup_indicator]
+  refine iSup_le fun N => ?_
+  -- Compare the truncations at `N`, then bound the truncation of `b` by `Φ∞ b`.
+  have htrunc (c : ℕ → ℝ≥0) (k : ℕ) :
+      ∑ n ∈ range k, (Finsupp.indicator (range N) fun n _ => c n) n =
+        ∑ n ∈ range (min k N), c n := by
+    simp only [Finsupp.indicator_apply, mem_range, dite_eq_ite, ← sum_filter]
+    congr 1
+    ext n
+    simp [lt_min_iff]
+  calc (Φ (Finsupp.indicator (range N) fun n _ => a n) : ℝ≥0∞)
+      ≤ Φ (Finsupp.indicator (range N) fun n _ => b n) := by
+        refine ENNReal.coe_le_coe.2 (Φ.apply_le_apply_of_forall_sum_le (fun m n hmn => ?_)
+          fun k => ?_)
+        · simp only [Finsupp.indicator_apply, mem_range]
+          split_ifs with hn hm hm
+          · exact ENNReal.coe_le_coe.1 (ha hmn)
+          · exact absurd (hmn.trans_lt hn) hm
+          · exact zero_le
+          · exact le_rfl
+        · rw [htrunc, htrunc]
+          simpa only [← ENNReal.ofNNReal_finsetSum, ENNReal.coe_le_coe] using h (min k N)
+    _ ≤ Φ.extend fun n => b n := Φ.apply_le_extend fun n => by
+        rw [Finsupp.indicator_apply]
+        split_ifs <;> simp
 
 end SymmetricGauge
 

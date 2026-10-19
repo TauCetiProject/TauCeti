@@ -27,7 +27,7 @@ open Pointwise
 
 namespace TauCeti.Huber
 
-variable {k : ℕ} {A B : Type*} [CommRing A] [CommRing B] [TopologicalSpace B]
+variable {k : ℕ} {A B : Type*} [CommSemiring A] [CommSemiring B] [TopologicalSpace B]
 
 /-- For finite weights, power-boundedness of each weighted variable is equivalent to
 power-boundedness of the corresponding set. This lets finite weighted presentations be evaluated

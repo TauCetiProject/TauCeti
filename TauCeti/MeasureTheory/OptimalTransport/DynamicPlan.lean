@@ -41,6 +41,8 @@ plan interpolate between `μ` and `ν`, with `W_p (η_s, η_t) ≤ |s - t| * W_p
 
 * `MeasureTheory.Measure.timeMarginal η t`: the law at time `t` of a dynamic plan `η`.
 * `MeasureTheory.Measure.endpointLaw η`: the joint law of the two endpoints of a dynamic plan `η`.
+* `MeasureTheory.Measure.IsQuadraticOptimalDynamicPlan`: a dynamic plan concentrated on geodesics
+  whose endpoint law is a quadratic optimal coupling.
 
 A dynamic plan is a plain `Measure C(I, X)`, so these declarations live in the namespace of
 Mathlib's `MeasureTheory.Measure`, where dot notation such as `η.timeMarginal t` finds them.
@@ -241,6 +243,58 @@ theorem exists_ae_mem_geodesicPaths_endpointLaw_eq (π : Measure (X × X)) [SFin
     simp [hz.2.1, hz.2.2]
 
 end Polish
+
+section QuadraticOptimal
+
+open TauCeti
+
+variable {X : Type*} [MetricSpace X] [MeasurableSpace X]
+
+/-- A **quadratic optimal dynamic plan** from `μ₀` to `μ₁`: a measure on path space concentrated
+on constant-speed geodesics whose endpoint law is an optimal coupling for the squared-distance
+cost. The optimal-coupling field forces the plan to have total mass one when the endpoints are
+probability laws. -/
+structure IsQuadraticOptimalDynamicPlan (η : Measure C(I, X))
+    (μ₀ μ₁ : ProbabilityMeasure X) : Prop where
+  /-- Almost every path of the dynamic plan is a constant-speed geodesic. -/
+  ae_mem_geodesicPaths : ∀ᵐ γ ∂η, γ ∈ geodesicPaths X
+  /-- The joint law of the two endpoints is a quadratic optimal coupling. -/
+  endpointLaw_isOptimalCoupling :
+    IsOptimalCoupling (fun z : X × X ↦ edist z.1 z.2 ^ (2 : ℝ)) η.endpointLaw
+      (μ₀ : Measure X) (μ₁ : Measure X)
+
+/-- The endpoint law of a quadratic optimal dynamic plan couples its prescribed endpoints. -/
+theorem IsQuadraticOptimalDynamicPlan.endpointLaw_isCoupling {η : Measure C(I, X)}
+    {μ₀ μ₁ : ProbabilityMeasure X} (hη : η.IsQuadraticOptimalDynamicPlan μ₀ μ₁) :
+    TauCeti.IsCoupling η.endpointLaw (μ₀ : Measure X) (μ₁ : Measure X) :=
+  hη.endpointLaw_isOptimalCoupling.toIsCoupling
+
+variable [BorelSpace X]
+
+/-- The time-zero marginal of a quadratic optimal dynamic plan is its source law. -/
+theorem IsQuadraticOptimalDynamicPlan.timeMarginal_zero {η : Measure C(I, X)}
+    {μ₀ μ₁ : ProbabilityMeasure X} (hη : η.IsQuadraticOptimalDynamicPlan μ₀ μ₁) :
+    η.timeMarginal 0 = (μ₀ : Measure X) := by
+  rw [← fst_endpointLaw, hη.endpointLaw_isCoupling.fst_eq]
+
+/-- The time-one marginal of a quadratic optimal dynamic plan is its target law. -/
+theorem IsQuadraticOptimalDynamicPlan.timeMarginal_one {η : Measure C(I, X)}
+    {μ₀ μ₁ : ProbabilityMeasure X} (hη : η.IsQuadraticOptimalDynamicPlan μ₀ μ₁) :
+    η.timeMarginal 1 = (μ₁ : Measure X) := by
+  rw [← snd_endpointLaw, hη.endpointLaw_isCoupling.snd_eq]
+
+/-- A quadratic optimal dynamic plan between probability laws is itself a probability measure on
+path space. -/
+theorem IsQuadraticOptimalDynamicPlan.isProbabilityMeasure {η : Measure C(I, X)}
+    {μ₀ μ₁ : ProbabilityMeasure X} (hη : η.IsQuadraticOptimalDynamicPlan μ₀ μ₁) :
+    IsProbabilityMeasure η := by
+  refine ⟨?_⟩
+  have hend : η.endpointLaw univ = 1 := by
+    rw [← hη.endpointLaw_isCoupling.measure_univ_left, measure_univ]
+  rw [endpointLaw_apply η MeasurableSet.univ] at hend
+  simpa using hend
+
+end QuadraticOptimal
 
 end MeasureTheory.Measure
 

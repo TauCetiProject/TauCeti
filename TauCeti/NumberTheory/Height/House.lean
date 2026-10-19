@@ -7,9 +7,12 @@ module
 
 public import Mathlib.NumberTheory.NumberField.House
 public import TauCeti.NumberTheory.Height.MahlerMeasure
+public import TauCeti.NumberTheory.Height.Naive
 
 import Mathlib.Analysis.Complex.IsIntegral
+import Mathlib.Topology.Algebra.Polynomial
 import TauCeti.NumberTheory.NumberField.AdjoinPair
+import TauCeti.RingTheory.IntegralClosure.IsIntegral.Basic
 
 /-!
 # The house of an algebraic number
@@ -51,6 +54,14 @@ of bounded degree and bounded house.
 * `TauCeti.house_le_mahlerMeasure`,
   `TauCeti.mahlerMeasure_le_leadingCoeff_mul_max_one_house_pow`: the comparisons
   `⌈x⌉ ≤ M(x) ≤ a₀ max(1, ⌈x⌉)ᵈ` with the Mahler measure.
+* `TauCeti.naiveHeight_le_two_mul_pow_of_house_le`, `TauCeti.naiveHeight_le_two_mul_house_pow`:
+  an algebraic integer of degree `d` has naive height at most `(2B)ᵈ` whenever its house is at
+  most `B` with `1 ≤ B`; in particular a nonzero algebraic integer satisfies
+  `H(x) ≤ (2 ⌈x⌉)ᵈ`.
+* `TauCeti.exists_numberField_of_isIntegral_natCast_mul`: an element `α` with `b α` integral
+  lies in the number field `ℚ(α)` of degree `deg α`, with the same house.
+* `NumberField.house_natCast_mul_pow_mul_pow_le`: the house of `c bⁿ αʲ` in a number field is
+  at most `(2 b max(1, ⌈α⌉))ⁿ` when `c ≤ 2ⁿ` and `j ≤ n`.
 
 ## References
 
@@ -62,6 +73,8 @@ of bounded degree and bounded house.
 public section
 
 open Polynomial
+
+open scoped IntermediateField
 
 namespace TauCeti
 
@@ -252,6 +265,74 @@ theorem mahlerMeasure_le_leadingCoeff_mul_max_one_house_pow (x : F) :
   refine Multiset.prod_map_le_prod_map₀ _ _ (fun _ _ ↦ by positivity) fun z hz ↦ ?_
   gcongr
   exact norm_le_house_of_mem_rootSet (mem_rootSet'.2 (mem_aroots'.1 hz))
+
+/-- An algebraic integer of degree `d` whose house is at most `B`, with `1 ≤ B`, has naive height
+at most `(2B)ᵈ`. -/
+theorem naiveHeight_le_two_mul_pow_of_house_le {x : F} (hx : IsIntegral ℤ x) {B : ℝ}
+    (hB : 1 ≤ B) (hxB : house x ≤ B) :
+    naiveHeight x ≤ (2 * B) ^ (minpoly ℚ x).natDegree := by
+  have halg : IsAlgebraic ℚ x := (hx.tower_top (A := ℚ)).isAlgebraic
+  have hmon : (primitiveMinpoly x).Monic := by
+    rw [primitiveMinpoly_eq_minpoly_int hx]
+    exact minpoly.monic hx
+  -- The roots of `F_x` in `ℂ` are the conjugates of `x`, so the coefficients of the monic `F_x`,
+  -- elementary symmetric functions of them, satisfy `|aᵢ| ≤ binom(d, i) Bᵈ⁻ⁱ ≤ 2ᵈ Bᵈ`.
+  have hroots : ∀ z ∈ ((primitiveMinpoly x).map (Int.castRingHom ℂ)).roots, ‖z‖ ≤ B := by
+    intro z hz
+    refine (norm_le_house_of_mem_rootSet ?_).trans hxB
+    rw [← rootSet_primitiveMinpoly halg, rootSet_def, Finset.mem_coe, Multiset.mem_toFinset,
+      aroots_def, algebraMap_int_eq]
+    exact hz
+  obtain ⟨i, hi⟩ := (primitiveMinpoly x).exists_eq_supNorm
+  rw [naiveHeight_def, hi, ← natDegree_primitiveMinpoly]
+  have hcoeff := coeff_le_of_roots_le i hmon (IsAlgClosed.splits _) hroots
+  rw [coeff_map, eq_intCast, Complex.norm_intCast, ← Int.norm_eq_abs] at hcoeff
+  set n := (primitiveMinpoly x).natDegree
+  calc ‖(primitiveMinpoly x).coeff i‖ ≤ B ^ (n - i) * n.choose i := hcoeff
+    _ ≤ B ^ n * 2 ^ n := by
+        gcongr
+        · exact Nat.sub_le n i
+        · exact_mod_cast Nat.choose_le_two_pow n i
+    _ = (2 * B) ^ n := by rw [mul_pow, mul_comm]
+
+/-- A nonzero algebraic integer `x` of degree `d` has naive height at most `(2 ⌈x⌉)ᵈ`. -/
+theorem naiveHeight_le_two_mul_house_pow {x : F} (hx : IsIntegral ℤ x) (h0 : x ≠ 0) :
+    naiveHeight x ≤ (2 * house x) ^ (minpoly ℚ x).natDegree :=
+  naiveHeight_le_two_mul_pow_of_house_le hx (one_le_house hx h0) le_rfl
+
+/-- An element `α` of `F` such that `b α` is integral over `ℤ` for some `b ≠ 0` lies in an
+intermediate number field `K` of degree `deg α`, namely `ℚ(α)`: there is `α' ∈ K` mapping to
+`α` such that `b α'` is integral and `house α' = house α`. This reduces the construction of
+auxiliary polynomials for such `α` to Siegel's lemma over a number field. -/
+theorem exists_numberField_of_isIntegral_natCast_mul {α : F} {b : ℕ} (hb : b ≠ 0)
+    (hbα : IsIntegral ℤ ((b : F) * α)) :
+    ∃ (K : IntermediateField ℚ F) (_ : NumberField K) (α' : K), algebraMap K F α' = α ∧
+      Module.finrank ℚ K = (minpoly ℚ α).natDegree ∧ IsIntegral ℤ ((b : K) * α') ∧
+      NumberField.house α' = house α := by
+  have hα := isIntegral_rat_of_isIntegral_natCast_mul hb hbα
+  have : FiniteDimensional ℚ ℚ⟮α⟯ := IntermediateField.adjoin.finiteDimensional hα
+  have : NumberField ℚ⟮α⟯ := {}
+  have hα' := IntermediateField.AdjoinSimple.algebraMap_gen ℚ α
+  refine ⟨ℚ⟮α⟯, this, IntermediateField.AdjoinSimple.gen ℚ α, hα',
+    IntermediateField.adjoin.finrank hα, ?_, ?_⟩
+  · rw [← isIntegral_algHom_iff ((IsScalarTower.toAlgHom ℚ ℚ⟮α⟯ F).restrictScalars ℤ)
+      (algebraMap ℚ⟮α⟯ F).injective]
+    simpa [IntermediateField.AdjoinSimple.coe_gen] using hbα
+  · rw [← house_coe, ← IntermediateField.algebraMap_apply, hα']
+
+/-- In a number field, the house of `c b ^ n α ^ j` is at most `(2 b max(1, ⌈α⌉)) ^ n` when
+`c ≤ 2 ^ n` and `j ≤ n`. -/
+theorem _root_.NumberField.house_natCast_mul_pow_mul_pow_le {K : Type*} [Field K]
+    [NumberField K] (α : K) {b c j n : ℕ} (hc : c ≤ 2 ^ n) (hj : j ≤ n) :
+    NumberField.house ((c : K) * ((b : K) ^ n * α ^ j)) ≤
+      (2 * b * max 1 (NumberField.house α)) ^ n := by
+  have hα : NumberField.house α ^ j ≤ max 1 (NumberField.house α) ^ n :=
+    (pow_le_pow_left₀ (NumberField.house_nonneg α) (le_max_right _ _) j).trans
+      (pow_le_pow_right₀ (le_max_left _ _) hj)
+  rw [← Nat.cast_pow, NumberField.house_nat_mul, NumberField.house_nat_mul,
+    NumberField.house_pow, mul_pow, mul_pow, Nat.cast_pow, mul_assoc]
+  exact mul_le_mul (by exact_mod_cast hc) (mul_le_mul_of_nonneg_left hα (by positivity))
+    (mul_nonneg (by positivity) (pow_nonneg (NumberField.house_nonneg α) j)) (by positivity)
 
 /-! ### Examples -/
 

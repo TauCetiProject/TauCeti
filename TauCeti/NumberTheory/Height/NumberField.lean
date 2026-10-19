@@ -56,7 +56,7 @@ theorem mulHeight_mul_absNorm_span_range {y : ι → 𝓞 K} (hy : y ≠ 0) :
     mulHeight (fun i ↦ (y i : K)) * (span (Set.range y)).absNorm =
       ∏ v : InfinitePlace K, (⨆ i, v (y i)) ^ v.mult := by
   have hy' : (fun i ↦ (y i : K)) ≠ 0 := by
-    contrapose! hy
+    contrapose hy
     ext i
     exact congrFun hy i
   rw [mulHeight_eq hy', mul_assoc, mul_comm (∏ᶠ _, _), absNorm_mul_finprod_finitePlace_eq_one hy,
@@ -69,7 +69,7 @@ private theorem mulHeight_algebraMap_coe (y : ι → 𝓞 K) :
   · simp [← Pi.zero_def]
   set z : ι → 𝓞 L := fun i ↦ algebraMap (𝓞 K) (𝓞 L) (y i)
   have hz : z ≠ 0 := by
-    contrapose! hy
+    contrapose hy
     funext i
     exact (map_eq_zero_iff _ (RingOfIntegers.algebraMap.injective K L)).mp (congrFun hy i)
   -- `z` is a local definition, so `rw [Set.range_comp]` cannot see the composition in it.

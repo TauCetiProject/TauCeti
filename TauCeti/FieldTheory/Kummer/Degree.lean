@@ -51,6 +51,7 @@ base field here need not be, so the pairing below takes its values in the top fi
 ## Main results
 
 * `TauCeti.isAbelianGalois_kummerField`: `K(Δ^{1/n})/K` is abelian Galois.
+* `TauCeti.exponent_algEquiv_kummerField_dvd`: its Galois group has exponent dividing `n`.
 * `TauCeti.finiteDimensional_kummerField`: it is finite when `Δ ∩ (Kˣ)ⁿ` has finite index in `Δ`.
 * `TauCeti.finrank_kummerField`: `[K(Δ^{1/n}) : K] = [Δ : Δ ∩ (Kˣ)ⁿ]`, when every element of `Δ`
   has an `n`-th root in `E`.
@@ -280,6 +281,28 @@ instance isAbelianGalois_kummerField : IsAbelianGalois K (kummerField E n Δ) :=
     ring
   exact { is_comm := ⟨fun σ τ ↦ AlgEquiv.coe_toAlgHom_injective <|
     algHom_ext_of_eq_adjoin K kummerField_def fun x ⟨a, ha, hx⟩ ↦ hcomm σ τ _ (hgen ha hx)⟩ }
+
+/-- **The Galois group of a Kummer extension has exponent dividing the radical exponent.**
+Every `K`-automorphism of `K(Δ^{1/n})`, raised to the `n`-th power, fixes each radical generator.
+-/
+theorem exponent_algEquiv_kummerField_dvd :
+    Monoid.exponent (kummerField E n Δ ≃ₐ[K] kummerField E n Δ) ∣ n := by
+  rw [Monoid.exponent_dvd_iff_forall_pow_eq_one]
+  intro σ
+  apply AlgEquiv.coe_toAlgHom_injective
+  refine algHom_ext_of_eq_adjoin K kummerField_def fun x ⟨a, ha, hx⟩ ↦ ?_
+  let y : kummerField E n Δ := ⟨x, mem_kummerField_of_pow_eq ha hx⟩
+  have hy : y ^ n = algebraMap K (kummerField E n Δ) a :=
+    Subtype.ext (by simpa using hx)
+  have hy0 : y ≠ 0 := ne_zero_of_pow_eq_algebraMap hy
+  have hpow (k : ℕ) : (σ ^ k) y / y = (σ y / y) ^ k := by
+    induction k with
+    | zero => simp [hy0]
+    | succ k ih => rw [pow_succ, AlgEquiv.mul_apply_div_self_of_pow_eq _ _ hy, ih, pow_succ]
+  have hone : (σ y / y) ^ n = 1 := by
+    rw [div_pow, ← map_pow, hy, AlgEquiv.commutes, div_self (by simp)]
+  rw [AlgEquiv.coe_toAlgHom, AlgEquiv.coe_toAlgHom, AlgEquiv.one_apply, ← div_eq_one_iff_eq hy0,
+    hpow, hone]
 
 /-- In the Galois group of `K(Δ^{1/n})/K`, an automorphism is determined by how it moves one
 chosen `n`-th root `r a` of each `a ∈ Δ`. -/
