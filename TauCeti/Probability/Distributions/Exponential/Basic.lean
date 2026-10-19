@@ -290,6 +290,11 @@ lemma measure_Ioi_expMeasure (hr : 0 < r) (x : ℝ) :
   rw [← measureReal_Ioi_expMeasure hr x, measureReal_def,
     ENNReal.ofReal_toReal (measure_ne_top _ _)]
 
+/-- An exponential law of positive rate has positive survival at every finite point. -/
+theorem cdf_expMeasure_lt_one (hr : 0 < r) (x : ℝ) : cdf (expMeasure r) x < 1 := by
+  rw [cdf_expMeasure_eq hr]
+  split_ifs <;> linarith [Real.exp_pos (-(r * x))]
+
 /-- The memoryless property of a positive-rate exponential law, stated with conditional
 probability: after surviving for time `s`, the chance of surviving a further time `t` is the
 original tail probability at `t`. -/
