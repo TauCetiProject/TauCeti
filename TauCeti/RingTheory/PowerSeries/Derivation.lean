@@ -34,6 +34,7 @@ derivations of `R[X]`.
 
 ## Main results
 
+* `PowerSeries.derivation_coe`: the chain rule `D p = p' • D X` for a polynomial `p`.
 * `PowerSeries.derivation_ext`: derivations of `R⟦X⟧` into an `X`-adically Hausdorff module that
   agree at `X` are equal.
 * `PowerSeries.mkDerivation`: the derivation `f ↦ f' • m` taking the value `m` at `X`.
@@ -48,10 +49,17 @@ public section
 namespace PowerSeries
 
 variable {R : Type*} [CommRing R] {M : Type*} [AddCommGroup M] [Module R⟦X⟧ M] [Module R M]
-  [IsScalarTower R R⟦X⟧ M]
+
+/-- A derivation of `R⟦X⟧` maps a polynomial `p` to `p' • D X`, by the chain rule for
+polynomials. -/
+theorem derivation_coe (D : Derivation R R⟦X⟧ M) (p : Polynomial R) :
+    D (p : R⟦X⟧) = (Polynomial.derivative p : R⟦X⟧) • D X := by
+  simpa only [Polynomial.aeval_def, algebraMap_eq, Polynomial.eval₂_C_X_eq_coe] using
+    D.map_aeval p X
 
 /-- Two derivations of `R⟦X⟧` into an `X`-adically Hausdorff module which agree at `X` are
 equal. -/
+@[ext]
 theorem derivation_ext [IsHausdorff (Ideal.span {(X : R⟦X⟧)}) M] {D₁ D₂ : Derivation R R⟦X⟧ M}
     (h : D₁ X = D₂ X) : D₁ = D₂ := by
   -- the difference `D₁ - D₂` vanishes at `X`; it suffices that such a derivation vanishes
@@ -65,9 +73,10 @@ theorem derivation_ext [IsHausdorff (Ideal.span {(X : R⟦X⟧)}) M] {D₁ D₂ 
   · rw [Ideal.span_singleton_pow]
     exact Ideal.mul_mem_right _ _ (Ideal.mem_span_singleton_self _)
   · -- `D` vanishes on the polynomial `trunc (n + 1) f`, by the chain rule for polynomials
-    rw [← Polynomial.eval₂_C_X_eq_coe, ← algebraMap_eq, ← Polynomial.aeval_def,
-      D.comp_aeval_eq, hD, smul_zero]
+    rw [derivation_coe, hD, smul_zero]
     exact zero_mem _
+
+variable [IsScalarTower R R⟦X⟧ M]
 
 variable (R) in
 /-- The derivation of `R⟦X⟧` taking the value `m` at `X`, namely `f ↦ f' • m`. -/
@@ -78,15 +87,15 @@ noncomputable def mkDerivation : M →ₗ[R⟦X⟧] Derivation R R⟦X⟧ M wher
     ext
     exact smul_comm _ _ _
 
+@[simp]
 theorem mkDerivation_apply (m : M) (f : R⟦X⟧) : mkDerivation R m f = d⁄dX f • m := (rfl)
 
-@[simp]
-theorem mkDerivation_X (m : M) : mkDerivation R m X = m := by simp [mkDerivation_apply]
+theorem mkDerivation_X (m : M) : mkDerivation R m X = m := by simp
 
 @[simp]
 theorem mkDerivation_one : mkDerivation R (1 : R⟦X⟧) = d⁄dX := by
   ext f
-  simp [mkDerivation_apply]
+  simp
 
 variable (R M) in
 /-- For an `X`-adically Hausdorff `R⟦X⟧`-module `M`, `PowerSeries.mkDerivation` is an
@@ -97,8 +106,8 @@ noncomputable def mkDerivationEquiv [IsHausdorff (Ideal.span {(X : R⟦X⟧)}) M
   .symm
     { invFun := mkDerivation R
       toFun D := D X
-      map_add' _ _ := rfl
-      map_smul' _ _ := rfl
+      map_add' _ _ := Derivation.add_apply ..
+      map_smul' _ _ := Derivation.smul_apply ..
       left_inv _ := derivation_ext <| mkDerivation_X _
       right_inv := mkDerivation_X }
 
