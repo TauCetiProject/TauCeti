@@ -521,7 +521,6 @@ theorem coe_β_chebyshev : ⇑chebyshev.β = OnePoint.map fun z : ℂ ↦ 4 * z 
   (FiniteHolomorphicMap.coe_spherePolynomial _).trans onePointMap_eval_four_mul_X_mul_one_sub_X
 
 /-- The Belyi map `z ↦ 4z(1 - z)` has degree `2`. -/
-@[simp]
 theorem degree_β_chebyshev : degree chebyshev.β = 2 :=
   -- The surface of `chebyshev` is `OnePoint ℂ` by definition, so `coe_β_chebyshev` applies.
   (congrArg degree coe_β_chebyshev).trans degree_onePointMap_four_mul_mul_one_sub
