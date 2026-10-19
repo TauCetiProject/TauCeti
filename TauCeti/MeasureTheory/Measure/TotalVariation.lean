@@ -31,6 +31,8 @@ estimates into total-variation estimates.
 
 ## Main declarations
 
+* `MeasureTheory.etvDist_eq_posPart_univ_add_negPart_univ`: `etvDist μ ν` is the total mass of
+  the positive part of the Jordan decomposition of `μ - ν` plus that of its negative part;
 * `MeasureTheory.etvDist_eq_iSup_sub_add_iSup_sub`: `etvDist μ ν` is the largest excess of `μ`
   over `ν` on an event plus the largest excess of `ν` over `μ`;
 * `MeasureTheory.etvDist_eq_two_mul_iSup_sub`: for finite measures of equal total mass, it is
@@ -50,13 +52,20 @@ namespace MeasureTheory
 
 variable {α : Type*} [MeasurableSpace α] {μ ν : Measure α} [IsFiniteMeasure μ] [IsFiniteMeasure ν]
 
+/-- The total variation distance between finite measures is the total mass of the positive part
+of the Jordan decomposition of `μ - ν` plus the total mass of its negative part. -/
+theorem etvDist_eq_posPart_univ_add_negPart_univ :
+    etvDist μ ν = (μ.toSignedMeasure - ν.toSignedMeasure).toJordanDecomposition.posPart univ +
+      (μ.toSignedMeasure - ν.toSignedMeasure).toJordanDecomposition.negPart univ := by
+  rw [etvDist_eq_etvDist_toSignedMeasure, VectorMeasure.etvDist,
+    ← SignedMeasure.totalVariation_eq_variation, SignedMeasure.totalVariation, Measure.add_apply]
+
 /-- The total variation distance between finite measures is the largest excess `μ A - ν A` over
 measurable events plus the largest excess `ν A - μ A`. -/
 theorem etvDist_eq_iSup_sub_add_iSup_sub :
     etvDist μ ν = (⨆ (A : Set α) (_ : MeasurableSet A), μ A - ν A) +
       ⨆ (A : Set α) (_ : MeasurableSet A), ν A - μ A := by
-  rw [etvDist_eq_etvDist_toSignedMeasure, VectorMeasure.etvDist,
-    ← SignedMeasure.totalVariation_eq_variation, SignedMeasure.totalVariation, Measure.add_apply,
+  rw [etvDist_eq_posPart_univ_add_negPart_univ,
     Measure.toJordanDecomposition_toSignedMeasure_sub_posPart_univ_eq_iSup,
     Measure.toJordanDecomposition_toSignedMeasure_sub_negPart_univ_eq_iSup]
 
@@ -64,10 +73,9 @@ theorem etvDist_eq_iSup_sub_add_iSup_sub :
 distance is twice the largest excess `μ A - ν A` over measurable events. -/
 theorem etvDist_eq_two_mul_iSup_sub (h : μ univ = ν univ) :
     etvDist μ ν = 2 * ⨆ (A : Set α) (_ : MeasurableSet A), μ A - ν A := by
-  rw [etvDist_eq_iSup_sub_add_iSup_sub,
-    ← Measure.toJordanDecomposition_toSignedMeasure_sub_posPart_univ_eq_iSup,
-    ← Measure.toJordanDecomposition_toSignedMeasure_sub_negPart_univ_eq_iSup,
-    ← Measure.toJordanDecomposition_toSignedMeasure_sub_posPart_univ_eq_negPart_univ h, two_mul]
+  rw [etvDist_eq_posPart_univ_add_negPart_univ,
+    ← Measure.toJordanDecomposition_toSignedMeasure_sub_posPart_univ_eq_negPart_univ h, ← two_mul,
+    Measure.toJordanDecomposition_toSignedMeasure_sub_posPart_univ_eq_iSup]
 
 /-- **Total variation from eventwise bounds.** If every measurable event has `μ`-mass at most its
 `ν`-mass plus `c`, and `ν`-mass at most its `μ`-mass plus `d`, then `etvDist μ ν ≤ c + d`. -/
