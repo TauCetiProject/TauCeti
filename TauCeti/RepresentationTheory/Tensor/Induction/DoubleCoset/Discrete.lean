@@ -147,16 +147,25 @@ include hr in
 /-- **The Mackey formula for smooth tensor induction.** Restricted to `V`, smooth tensor induction
 from `U` to `G` is the tensor product, over the double cosets `V \ G / U`, of the smooth tensor
 inductions from the Mackey subgroups `V ⊓ (r D) U (r D)⁻¹` to `V` of the restrictions of `A`
-along `y ↦ (r D)⁻¹ y (r D)`. The tensor product is taken in discrete representations. -/
+along `y ↦ (r D)⁻¹ y (r D)`. The tensor product is taken in discrete representations.
+
+The objects are written in the simp-normal form produced by `smoothTensorInductionFunctor_obj`
+and `smoothResFunctor_obj`, so that the pure-tensor computation rule below can be a simp
+lemma. -/
 noncomputable def smoothTensorInducedMackeyIso (A : SmoothDiscreteTopRep.{u, v, w} R U) :
     (toSmoothDiscrete R V).obj (DiscreteRep.piTensorProduct fun D ↦
         (ofSmoothDiscrete R V).obj
-          ((smoothTensorInductionFunctor R V _ (U.isOpen_mackeySubgroup_subgroupOf V hU (r D))
-            (t D)).obj
-              ((smoothResFunctor R (mackeyToH (r D) U V)
-                (U.continuous_mackeyToH V (r D))).obj A))) ≅
-      (smoothResFunctor R V.subtype V.continuous_subtype).obj
-        ((smoothTensorInductionFunctor R G U hU s).obj A) :=
+          ((toSmoothDiscrete R V).obj
+            (DiscreteRep.tensorInduced _ (U.isOpen_mackeySubgroup_subgroupOf V hU (r D)) (t D)
+              ((ofSmoothDiscrete R _).obj
+                ((toSmoothDiscrete R _).obj
+                  (DiscreteRep.res (mackeyToH (r D) U V) (U.continuous_mackeyToH V (r D))
+                    ((ofSmoothDiscrete R U).obj A))))))) ≅
+      (toSmoothDiscrete R V).obj
+        (DiscreteRep.res V.subtype V.continuous_subtype
+          ((ofSmoothDiscrete R G).obj
+            ((toSmoothDiscrete R G).obj
+              (DiscreteRep.tensorInduced U hU s ((ofSmoothDiscrete R U).obj A))))) :=
   (toSmoothDiscrete R V).mapIso
     (DiscreteRep.tensorInducedMackeyIso U V hU r hr t s ((ofSmoothDiscrete R U).obj A))
 
