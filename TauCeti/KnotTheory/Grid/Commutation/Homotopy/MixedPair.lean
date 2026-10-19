@@ -819,10 +819,11 @@ theorem existsUnique_unpairedHexagonComposite_of_initialTerminalPentagonPair
         F ∈ G.hexagonCompositeDecompositions C x z ∧
           F.toRectangleDecomposition = ⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩ ∧
           G.hexagonCompositeWeight C R F = G.pentagonPairWeight C R ⟨y, .inr P, .inl Q⟩ := by
-    rcases Grid.mem_cIoo_or_mem_cIoo_of_ne
-        (ne_of_mem_of_not_mem P.turn_mem_cIco_bottom_top (Grid.right_notMem_cIco _ _))
-        (ne_of_mem_of_not_mem (G.initialTerminal_oppositeTurnRow_mem_cIco C P Q)
-          (Grid.right_notMem_cIco _ _)) C.turnRow_ne_oppositeTurnRow with
+    rcases ((Grid.mem_cIoo_or_mem_cIoo_swap_iff
+        (ne_of_mem_of_not_mem P.turn_mem_cIco_bottom_top (Grid.right_notMem_cIco _ _))).mpr
+        ⟨C.turnRow_ne_oppositeTurnRow.symm,
+          ne_of_mem_of_not_mem (G.initialTerminal_oppositeTurnRow_mem_cIco C P Q)
+            (Grid.right_notMem_cIco _ _)⟩).imp_right Grid.mem_cIoo_cyclic_left with
       hturn | hturn
     · exact G.initialTerminal_hexagonRectangle C R P Q hP hQ hturn
     · exact G.initialTerminal_rectangleHexagon C R P Q hP hQ hturn
