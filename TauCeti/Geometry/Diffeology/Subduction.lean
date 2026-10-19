@@ -14,6 +14,11 @@ This file defines when a map to a target locally lifts through a map from a diff
 and uses it to define subductions: smooth surjections through which every plot of the target
 locally lifts to a plot of the source. A function out of the target of a subduction is
 diffeologically smooth exactly when its composite with the subduction is smooth.
+
+## References
+
+* P. Iglesias-Zemmour, *Diffeology*, Mathematical Surveys and Monographs **185**, American
+  Mathematical Society (2013), Articles 1.46--1.51.
 -/
 
 public noncomputable section

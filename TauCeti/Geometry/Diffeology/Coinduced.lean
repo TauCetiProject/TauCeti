@@ -20,6 +20,11 @@ When `q` is surjective, the constant case is subsumed by lifts, so the coinduced
 quotient diffeology: its plots are the maps that locally lift through `q`. The surjection `q` is
 then a subduction, and a diffeology on `Q` makes `q` a subduction exactly when it is the coinduced
 diffeology.
+
+## References
+
+* P. Iglesias-Zemmour, *Diffeology*, Mathematical Surveys and Monographs **185**, American
+  Mathematical Society (2013), Articles 1.43--1.51.
 -/
 
 public noncomputable section
@@ -125,7 +130,8 @@ theorem LocallyLiftsOrConst.isPlotOn [DiffeologicalSpace Q] {n : ℕ} {q : X →
 /-! ### The coinduced diffeology -/
 
 /-- The diffeology coinduced by a map. Its plots are the maps that, near each point, lift through
-the map to plots of the source or are constant. -/
+the map to plots of the source or are constant. This is the pushforward diffeology of
+Iglesias-Zemmour, *Diffeology*, Article 1.43. -/
 @[instance_reducible]
 def coinducedDiffeology (q : X → Q) : DiffeologicalSpace Q :=
   DiffeologicalSpace.ofCorePlotsOn {
