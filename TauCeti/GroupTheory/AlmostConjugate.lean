@@ -13,6 +13,7 @@ public import Mathlib.GroupTheory.GroupAction.FixedPoints
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.Index
 public import Mathlib.GroupTheory.Perm.Cycle.Type
+public import TauCeti.Algebra.Group.Conj
 public import TauCeti.Algebra.Group.Subgroup.Pointwise
 public import TauCeti.GroupTheory.QuotientGroup.Basic
 
@@ -35,9 +36,11 @@ division-free identity
 where `C_G(g)` is the centralizer of `g`, written as the stabilizer of `g` for the conjugation
 action `ConjAct G`, and `[g]` is the conjugacy class of `g`. Both sides count the `x : G` with
 `x⁻¹ g x ∈ H`: on the left they are grouped by their coset `x H`, which `g` then fixes, and on the
-right by the conjugate `x⁻¹ g x`, whose fibre is a coset of the centralizer. Summing the identity
-shows that almost-conjugate subgroups have the same order and the same index, and then that
-`H` and `K` are almost conjugate exactly when every `g : G` fixes as many cosets of `H` as of `K`.
+right by the conjugate `x⁻¹ g x`, whose fibre is a coset of the centralizer. Summing the defining
+counts over the conjugacy classes shows that almost-conjugate subgroups of a finite group have the
+same order, hence the same index. Dividing the fixed-coset identity by the common order then shows
+that `H` and `K` are almost conjugate exactly when every `g : G` fixes as many cosets of `H` as of
+`K`.
 Through the classification of permutation representations by fixed-point counts this says that
 `H` and `K` are almost conjugate exactly when the permutation representations on `G ⧸ H` and
 `G ⧸ K` are equivalent in characteristic zero; that consequence is
@@ -118,7 +121,7 @@ instance [Fintype G] [DecidableEq G] [DecidablePred (· ∈ H)] [DecidablePred (
 namespace AlmostConjugate
 
 /-- Every subgroup is almost conjugate to itself. -/
-@[refl]
+@[refl, simp]
 theorem refl (H : Subgroup G) : H.AlmostConjugate H :=
   fun _ ↦ rfl
 
@@ -157,8 +160,7 @@ theorem natCard_mem_carrier_map_and_mem_map (e : G ≃* Γ) (H : Subgroup G)
       Nat.card {x : G // x ∈ C.carrier ∧ x ∈ H} := by
   refine (Nat.card_congr (e.toEquiv.subtypeEquiv fun x ↦ and_congr ?_ ?_)).symm
   · obtain ⟨g, rfl⟩ := ConjClasses.mk_surjective C
-    have hmap : ConjClasses.map (e : G →* Γ) (ConjClasses.mk g) = ConjClasses.mk (e g) := (rfl)
-    rw [ConjClasses.mem_carrier_iff_mk_eq, ConjClasses.mem_carrier_iff_mk_eq, hmap,
+    rw [ConjClasses.mem_carrier_iff_mk_eq, ConjClasses.mem_carrier_iff_mk_eq, ConjClasses.map_mk,
       ConjClasses.mk_eq_mk_iff_isConj, ConjClasses.mk_eq_mk_iff_isConj]
     refine ⟨fun hx ↦ (e : G →* Γ).map_isConj hx, fun hx ↦ ?_⟩
     simpa using (e.symm : Γ →* G).map_isConj hx
@@ -200,12 +202,12 @@ theorem exists_map_conj_comap_eq_iff (e : G ≃* Γ) (H K : Subgroup Γ) :
 
 /-- **Conjugate subgroups are almost conjugate.** An inner automorphism maps every conjugacy class
 to itself, so it does not change the number of elements a subgroup has in it. -/
+@[simp]
 theorem almostConjugate_conj_smul (g : G) (H : Subgroup G) :
     H.AlmostConjugate (MulAut.conj g • H) := by
   intro C
-  have hC : C.map (MulAut.conj g : G →* G) = C := by
-    obtain ⟨x, rfl⟩ := ConjClasses.mk_surjective C
-    exact ConjClasses.mk_eq_mk_iff_isConj.mpr (isConj_iff.mpr ⟨g, rfl⟩).symm
+  -- The automorphism action on conjugacy classes is `ConjClasses.map` of the automorphism.
+  have hC : C.map (MulAut.conj g : G →* G) = C := TauCeti.mulAut_conj_smul_conjClasses g C
   rw [← TauCeti.map_conj_eq_conj_smul,
     ← natCard_mem_carrier_map_and_mem_map (MulAut.conj g) H C, hC]
 
@@ -236,20 +238,13 @@ theorem natCard_stabilizer_mul_natCard_mem_carrier (H : Subgroup G) (g : G) :
   have hset : {c : ConjAct G | c • g ∈ H} = QuotientGroup.mk ⁻¹' T := by
     ext c
     simp [T, ofQuotientStabilizer_mk]
-  have e₂ : T ≃ {x : G // x ∈ (ConjClasses.mk g).carrier ∧ x ∈ H} := by
-    refine Equiv.ofBijective
-      (fun q ↦ ⟨ofQuotientStabilizer (ConjAct G) g q, ?_, q.2⟩) ⟨fun q q' hqq' ↦ ?_, ?_⟩
-    · rw [← ConjAct.orbit_eq_carrier_conjClasses]
-      obtain ⟨c, hc⟩ := QuotientGroup.mk_surjective (q : ConjAct G ⧸ stabilizer (ConjAct G) g)
-      rw [← hc, ofQuotientStabilizer_mk]
-      exact mem_orbit g c
-    · exact Subtype.ext (injective_ofQuotientStabilizer (ConjAct G) g
-        (congrArg Subtype.val hqq'))
-    · rintro ⟨y, hy, hyH⟩
-      rw [← ConjAct.orbit_eq_carrier_conjClasses] at hy
-      obtain ⟨c, rfl⟩ := hy
-      exact ⟨⟨QuotientGroup.mk c, by simpa [T, ofQuotientStabilizer_mk] using hyH⟩,
-        Subtype.ext (ofQuotientStabilizer_mk _ _ _)⟩
+  have e₂ : T ≃ {x : G // x ∈ (ConjClasses.mk g).carrier ∧ x ∈ H} :=
+    ((orbitEquivQuotientStabilizer (ConjAct G) g).symm.subtypeEquiv
+        (p := (· ∈ T)) (q := fun y : orbit (ConjAct G) g ↦ (y : G) ∈ H) fun q ↦ by
+          induction q using QuotientGroup.induction_on
+          simp [T, ofQuotientStabilizer_mk]).trans <|
+      (Equiv.subtypeSubtypeEquivSubtypeInter (· ∈ orbit (ConjAct G) g) (· ∈ H)).trans <|
+        Equiv.subtypeEquivRight fun x ↦ by rw [ConjAct.orbit_eq_carrier_conjClasses]
   rw [Nat.card_congr e₁, ← Nat.card_congr e₂, ← Nat.card_prod,
     ← Nat.card_congr (QuotientGroup.preimageMkEquivSubgroupProdSet _ T), ← hset, Set.coe_ofPred]
 
@@ -291,15 +286,13 @@ theorem AlmostConjugate.index_eq (h : H.AlmostConjugate K) : H.index = K.index :
   rw [index_eq_card_div, index_eq_card_div, h.natCard_eq]
 
 /-- **Almost-conjugacy is equality of fixed-coset counts.** Two subgroups `H` and `K` of a finite
-group `G` are almost conjugate exactly when every `g : G` fixes as many cosets of `H` as of `K`.
-
-Both directions are the fixed-coset identity `Subgroup.natCard_fixedBy_mul_natCard`. Forwards,
-almost-conjugate subgroups have the same order, so the identity can be divided by it. Backwards,
-the fixed-coset counts at `g = 1` are the indices, so `H` and `K` have the same order, and the
-identity can be divided by the order of a centralizer. -/
+group `G` are almost conjugate exactly when every `g : G` fixes as many cosets of `H` as of `K`. -/
 theorem almostConjugate_iff_forall_natCard_fixedBy_eq :
     H.AlmostConjugate K ↔
       ∀ g : G, Nat.card (fixedBy (G ⧸ H) g) = Nat.card (fixedBy (G ⧸ K) g) := by
+  -- Both directions divide the fixed-coset identity `natCard_fixedBy_mul_natCard`: forwards by the
+  -- common order, backwards by the order of a centralizer, once the counts at `g = 1` (the
+  -- indices) have shown that `H` and `K` have the same order.
   refine ⟨fun h g ↦ ?_, fun h C ↦ ?_⟩
   · refine Nat.eq_of_mul_eq_mul_right (Nat.card_pos (α := H)) ?_
     rw [natCard_fixedBy_mul_natCard, h.natCard_eq, natCard_fixedBy_mul_natCard,

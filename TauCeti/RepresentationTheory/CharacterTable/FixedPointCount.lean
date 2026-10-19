@@ -179,14 +179,12 @@ theorem index_eq_of_nonempty_equiv_ind_trivial
 /-- **Almost-conjugate subgroups are those with equivalent permutation representations.** Two
 subgroups `H` and `K` of a finite group `G` meet every conjugacy class of `G` in the same number of
 elements exactly when, over a field of characteristic zero, the permutation representations
-`k[G ⧸ H]` and `k[G ⧸ K]` are equivalent.
-
-Almost-conjugacy is equality of the fixed-coset counts
-(`Subgroup.almostConjugate_iff_forall_natCard_fixedBy_eq`), and those counts classify the
-permutation representations (`TauCeti.nonempty_equiv_ofMulAction_iff_forall_natCard_fixedBy_eq`). -/
+`k[G ⧸ H]` and `k[G ⧸ K]` are equivalent. -/
 theorem almostConjugate_iff_nonempty_equiv_ofMulAction [CharZero k] :
     H.AlmostConjugate K ↔
       Nonempty ((ofMulAction k G (G ⧸ H)).Equiv (ofMulAction k G (G ⧸ K))) :=
+  -- Almost-conjugacy is equality of the fixed-coset counts, and those counts classify the
+  -- permutation representations.
   H.almostConjugate_iff_forall_natCard_fixedBy_eq.trans
     (nonempty_equiv_ofMulAction_iff_forall_natCard_fixedBy_eq k).symm
 
