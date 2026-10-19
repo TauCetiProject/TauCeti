@@ -16,7 +16,9 @@ Formal currents in a Lie algebra `L` over `R` are the scalar extension
 `R⸨X⸩ ⊗[R] L`, with the coefficientwise scalar action
 and Mathlib's scalar-extension bracket. The order submodule
 `orderSubmodule R L N` is spanned by tensors whose scalar series vanish below `N`.
-The bracket adds orders, and every current has a finite lower bound.
+The bracket of currents of orders at least `M` and `N` has order at least `M + N`.
+Every current has a finite lower bound. The coefficient, order and truncation API
+also applies to any coefficient module, without a Lie structure.
 
 When `L` is free, coefficients determine a current, and membership in an order
 submodule is equivalent to vanishing of all lower coefficients. These descriptions
@@ -46,16 +48,24 @@ open scoped TensorProduct LaurentSeries LaurentPolynomial
 
 namespace TauCeti
 
-variable (R L : Type*) [CommRing R] [LieRing L] [LieAlgebra R L]
+variable (R L : Type*) [CommRing R]
 
 -- The coefficientwise algebra structure matches the module used by the tensor product.
 -- The other Laurent-series algebra instance has a propositionally equal scalar action.
 attribute [local instance 1100] HahnSeries.instAlgebra
 
-/-- The formal current Lie algebra, with the scalar-extension bracket. -/
-abbrev currentAlgebra := R⸨X⸩ ⊗[R] L
+/-- Formal currents in a module; for a Lie algebra, equipped with the scalar-extension bracket. -/
+abbrev currentAlgebra [AddCommGroup L] [Module R L] := R⸨X⸩ ⊗[R] L
 
 namespace CurrentAlgebra
+
+/-- Formal currents are a module over Laurent series, with the coefficientwise scalar action. -/
+instance [AddCommGroup L] [Module R L] : Module R⸨X⸩ (currentAlgebra R L) :=
+  TensorProduct.leftModule
+
+section LieInstances
+
+variable [LieRing L] [LieAlgebra R L]
 
 /-- The scalar-extension Lie ring, using the coefficientwise scalar action on series. -/
 instance : LieRing (currentAlgebra R L) :=
@@ -68,6 +78,12 @@ instance : LieAlgebra R (currentAlgebra R L) :=
 /-- Formal currents are also a Lie algebra over the Laurent-series ring. -/
 instance : LieAlgebra R⸨X⸩ (currentAlgebra R L) :=
   LieAlgebra.ExtendScalars.instLieAlgebra R R⸨X⸩ L
+
+end LieInstances
+
+section Module
+
+variable [AddCommGroup L] [Module R L]
 
 /-- The coefficient of a formal current at an integer exponent. -/
 def coeff (n : ℤ) : currentAlgebra R L →ₗ[R] L :=
@@ -169,39 +185,51 @@ theorem exists_mem_orderSubmodule (u : currentAlgebra R L) :
       (orderSubmodule_antitone R L (min_le_left _ _) hM)
       (orderSubmodule_antitone R L (min_le_right _ _) hN)⟩
 
-/-- Bracketing formal currents adds their lower orders. -/
+/-- A scalar series of order at least `M` times a current of order at least `N`
+has order at least `M + N`. -/
+theorem smul_mem_orderSubmodule {M N : ℤ} {f : R⸨X⸩} {u : currentAlgebra R L}
+    (hf : (M : WithTop ℤ) ≤ f.orderTop) (hu : u ∈ orderSubmodule R L N) :
+    f • u ∈ orderSubmodule R L (M + N) := by
+  induction hu using Submodule.span_induction with
+  | mem u hu =>
+    obtain ⟨g, x, hg, rfl⟩ := hu
+    rw [TensorProduct.smul_tmul', smul_eq_mul]
+    apply tmul_mem_orderSubmodule
+    have hMN : ((M + N : ℤ) : WithTop ℤ) ≤ f.orderTop + g.orderTop := by
+      simpa using add_le_add hf hg
+    exact hMN.trans HahnSeries.orderTop_add_le_mul
+  | zero => simp
+  | add u v _ _ hu hv => simpa only [smul_add] using Submodule.add_mem _ hu hv
+  | smul r u _ hu => simpa only [smul_comm f r] using Submodule.smul_mem _ r hu
+
+/-- Truncate a formal current strictly below an integer cutoff, producing a polynomial current. -/
+def trunc (N : ℤ) : currentAlgebra R L →ₗ[R] R[T;T⁻¹] ⊗[R] L :=
+  (_root_.LaurentSeries.trunc N).rTensor L
+
+@[simp]
+theorem trunc_tmul (N : ℤ) (f : R⸨X⸩) (x : L) :
+    trunc R L N (f ⊗ₜ x) = _root_.LaurentSeries.trunc N f ⊗ₜ x := (rfl)
+
+end Module
+
+section Lie
+
+variable [LieRing L] [LieAlgebra R L]
+
+/-- The bracket of currents of orders at least `M` and `N` has order at least `M + N`. -/
 theorem lie_mem_orderSubmodule {M N : ℤ} {u v : currentAlgebra R L}
     (hu : u ∈ orderSubmodule R L M) (hv : v ∈ orderSubmodule R L N) :
     ⁅u, v⁆ ∈ orderSubmodule R L (M + N) := by
-  induction hu using Submodule.span_induction with
-  | mem u hu =>
-    obtain ⟨f, x, hf, rfl⟩ := hu
-    induction hv using Submodule.span_induction with
-    | mem v hv =>
-      obtain ⟨g, y, hg, rfl⟩ := hv
-      rw [LieAlgebra.ExtendScalars.bracket_tmul]
-      apply tmul_mem_orderSubmodule
-      have hMN : ((M + N : ℤ) : WithTop ℤ) ≤ f.orderTop + g.orderTop := by
-        simpa using add_le_add hf hg
-      exact hMN.trans HahnSeries.orderTop_add_le_mul
-    | zero =>
-      rw [lie_zero (f ⊗ₜ[R] x : currentAlgebra R L)]
-      exact (orderSubmodule R L (M + N)).zero_mem
-    | add v w _ _ hv hw =>
-      rw [lie_add (f ⊗ₜ[R] x : currentAlgebra R L) v w]
-      exact (orderSubmodule R L _).add_mem hv hw
-    | smul r v _ hv =>
-      rw [lie_smul r (f ⊗ₜ[R] x : currentAlgebra R L) v]
-      exact (orderSubmodule R L _).smul_mem r hv
-  | zero =>
-    rw [zero_lie (L := currentAlgebra R L) v]
-    exact (orderSubmodule R L (M + N)).zero_mem
-  | add u w _ _ hu hw =>
-    rw [add_lie u w v]
-    exact (orderSubmodule R L _).add_mem hu hw
-  | smul r u _ hu =>
-    rw [smul_lie r u v]
-    exact (orderSubmodule R L _).smul_mem r hu
+  let : LieRing (Module.End R (currentAlgebra R L)) := LieRing.ofAssociativeRing
+  refine LinearMap.BilinMap.apply_apply_mem_of_mem_span
+    (orderSubmodule R L (M + N)) _ _ (LieAlgebra.ad R (currentAlgebra R L)).toLinearMap
+    ?_ u v hu hv
+  rintro _ ⟨f, x, hf, rfl⟩ _ ⟨g, y, hg, rfl⟩
+  rw [LieHom.coe_toLinearMap, LieAlgebra.ad_apply, LieAlgebra.ExtendScalars.bracket_tmul]
+  apply tmul_mem_orderSubmodule
+  have hMN : ((M + N : ℤ) : WithTop ℤ) ≤ f.orderTop + g.orderTop := by
+    simpa using add_le_add hf hg
+  exact hMN.trans HahnSeries.orderTop_add_le_mul
 
 /-- The inclusion of polynomial currents into formal currents. -/
 def ofLoop : LieAlgebra.loopAlgebra R ℤ L →ₗ⁅R⁆ currentAlgebra R L :=
@@ -218,10 +246,15 @@ theorem ofLoop_tmul (p : R[T;T⁻¹]) (x : L) :
 @[simp]
 theorem coeff_ofLoop (n : ℤ) (u : LieAlgebra.loopAlgebra R ℤ L) :
     coeff R L n (ofLoop R L u) = LieAlgebra.LoopAlgebra.toFinsupp R ℤ L u n := by
-  induction u using TensorProduct.inductionOn with
-  | tmul p x =>
-    simp [LieAlgebra.LoopAlgebra.toFinsupp, AddMonoidAlgebra.basis]
-  | add u v hu hv => simp [hu, hv]
+  obtain ⟨v, rfl⟩ := (LieAlgebra.LoopAlgebra.toFinsupp R ℤ L).symm.surjective u
+  induction v using Finsupp.induction_linear with
+  | zero => simp
+  | add v w hv hw => simpa only [map_add, Finsupp.add_apply] using congrArg₂ (· + ·) hv hw
+  | single k x =>
+    rw [LieAlgebra.LoopAlgebra.toFinsupp_symm_single]
+    simp only [ofLoop_tmul, coeff_tmul, LaurentPolynomial.coeff_toLaurentSeries,
+      AddMonoidAlgebra.coeff_single, LieAlgebra.LoopAlgebra.toFinsupp_single_tmul]
+    by_cases h : k = n <;> simp [h]
 
 /-- Polynomial currents embed in formal currents over every commutative base ring. -/
 theorem ofLoop_injective : Function.Injective (ofLoop R L) := by
@@ -229,14 +262,6 @@ theorem ofLoop_injective : Function.Injective (ofLoop R L) := by
   apply (LieAlgebra.LoopAlgebra.toFinsupp R ℤ L).injective
   ext n
   simpa only [coeff_ofLoop] using congrArg (coeff R L n) h
-
-/-- Truncate a formal current strictly below an integer cutoff, producing a polynomial current. -/
-def trunc (N : ℤ) : currentAlgebra R L →ₗ[R] LieAlgebra.loopAlgebra R ℤ L :=
-  (_root_.LaurentSeries.trunc N).rTensor L
-
-@[simp]
-theorem trunc_tmul (N : ℤ) (f : R⸨X⸩) (x : L) :
-    trunc R L N (f ⊗ₜ x) = _root_.LaurentSeries.trunc N f ⊗ₜ x := (rfl)
 
 /-- Truncation retains exactly the coefficients strictly below its cutoff. -/
 @[simp]
@@ -260,6 +285,8 @@ theorem ofLoop_trunc_sub_mem_orderSubmodule (N : ℤ) (u : currentAlgebra R L) :
       (_root_.LaurentSeries.le_orderTop_sub_toLaurentSeries_trunc N f) x
   | add u v hu hv =>
     simpa only [map_add, add_sub_add_comm] using (orderSubmodule R L N).add_mem hu hv
+
+end Lie
 
 end CurrentAlgebra
 
