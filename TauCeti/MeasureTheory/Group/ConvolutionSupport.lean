@@ -15,10 +15,7 @@ Convolutions over a group `G` are parametric integrals `s ↦ ∫ r, F s r ∂μ
 vanishes unless `r ∈ K` and `r⁻¹ * s ∈ L`, where `K` and `L` are the supports of the two factors.
 This file records the resulting support bounds, for any normed-space valued integrand: the
 parametric integral is supported in `K * L`, and for compact `K` and `L` both the integrand on
-`G × G` and the parametric integral are compactly supported. Continuity of the parametric integral
-only uses the bound `r ∈ K`, so it is recorded for arbitrary topological spaces: a jointly
-continuous integrand which vanishes unless `r ∈ K`, for compact `K`, has a continuous parametric
-integral.
+`G × G` and the parametric integral are compactly supported.
 
 ## Main statements
 
@@ -27,8 +24,6 @@ integral.
   `G × G`.
 * `TauCeti.hasCompactSupport_integral_of_inv_mul_mem`: the parametric integral is compactly
   supported.
-* `TauCeti.continuous_integral_of_compact_support`: the parametric integral of a jointly
-  continuous integrand which vanishes unless `r ∈ K`, for compact `K`, is continuous.
 -/
 
 public section
@@ -37,16 +32,6 @@ open MeasureTheory Function
 open scoped Pointwise
 
 namespace TauCeti
-
-/-- The parametric integral `s ↦ ∫ r, F s r` of a jointly continuous integrand which vanishes
-unless `r ∈ K`, for compact `K`, is continuous. -/
-theorem continuous_integral_of_compact_support {X Y E : Type*} [TopologicalSpace X]
-    [TopologicalSpace Y] [MeasurableSpace Y] [OpensMeasurableSpace Y] [NormedAddCommGroup E]
-    [NormedSpace ℝ E] {F : X → Y → E} {K : Set Y} (μ : Measure Y) [IsFiniteMeasureOnCompacts μ]
-    (hK : IsCompact K) (hFc : Continuous (uncurry F)) (hF : ∀ s r, F s r ≠ 0 → r ∈ K) :
-    Continuous fun s => ∫ r, F s r ∂μ :=
-  continuousOn_univ.mp <| continuousOn_integral_of_compact_support hK hFc.continuousOn
-    fun s r _ hr => by_contra fun h => hr (hF s r h)
 
 variable {G E : Type*} [Group G] [NormedAddCommGroup E] {F : G → G → E} {K L : Set G}
 
