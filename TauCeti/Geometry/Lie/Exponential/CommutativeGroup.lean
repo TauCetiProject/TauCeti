@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Lie.Exponential.Generation
 public import TauCeti.Geometry.Lie.Exponential.Trotter
-public import Mathlib.Algebra.Module.ZLattice.Basic
+public import TauCeti.Algebra.Module.ZLattice.Circle
 public import TauCeti.Topology.Algebra.Module.Submodule
 import TauCeti.Topology.Algebra.Module.CompactQuotient
 import Mathlib.Topology.Algebra.Group.Neighborhood
@@ -24,7 +24,9 @@ The exponential of a commutative `G` is moreover an open map, so for a preconnec
 identifies `G` with the quotient of `𝔤` by the kernel as topological groups. When `G` is compact
 the quotient of `𝔤` by the kernel is the identity component, hence compact, so the kernel spans
 `𝔤` and is a lattice of full rank: a compact connected commutative Lie group is the quotient of
-its Lie algebra by a lattice.
+its Lie algebra by a lattice. A `ℤ`-basis of that lattice is a real basis of `𝔤`, and the circle
+coordinates `X ↦ (exp (2πi bᵢ*(X)))ᵢ` it defines (`Module.Basis.circleExp`) have exactly the
+lattice as kernel, so they identify the group with the product `(Circle)^r`, `r = dim G`.
 
 ## Main results
 
@@ -45,6 +47,11 @@ its Lie algebra by a lattice.
 * `TauCeti.span_ker_lieExpAddMonoidHom_eq_top`, `TauCeti.isZLattice_ker_lieExpAddMonoidHom` and
   `TauCeti.finrank_ker_lieExpAddMonoidHom`: for a compact commutative Lie group the kernel of the
   exponential is a lattice of full rank in the Lie algebra.
+* `TauCeti.continuousMulEquivPiCircle` and `TauCeti.continuousMulEquivPiCircle_lieExp`: a
+  `ℤ`-basis of the kernel of the exponential identifies a compact connected commutative Lie group
+  with a product of circles, as topological groups, through the circle coordinates of the basis.
+* `TauCeti.nonempty_continuousMulEquiv_pi_circle`: a compact connected commutative Lie group of
+  dimension `r` is isomorphic to `(Circle)^r` as a topological group.
 
 ## References
 
@@ -258,5 +265,108 @@ theorem finrank_ker_lieExpAddMonoidHom :
   ZLattice.rank ℝ _
 
 end Compact
+
+/-! ### Compact connected commutative Lie groups are products of circles -/
+
+section Circle
+
+variable [CompactSpace G] {ι : Type*}
+  (b : Module.Basis ι ℤ (lieExpAddMonoidHom (I := I) (G := G)).ker.toIntSubmodule)
+
+/-- The kernel of the circle coordinates of a `ℤ`-basis of the exponential kernel is that
+kernel. -/
+private theorem ker_circleExp_ofZLatticeBasis_lieExp :
+    (b.ofZLatticeBasis ℝ _).circleExp.ker = (lieExpAddMonoidHom (I := I) (G := G)).ker := by
+  rw [Module.Basis.ker_circleExp_ofZLatticeBasis, AddSubgroup.toIntSubmodule_toAddSubgroup]
+
+/-- The circle coordinates of a `ℤ`-basis of the exponential kernel, descended to the quotient of
+the Lie algebra by that kernel. -/
+private def quotientCircleExp :
+    LeftInvariantDerivation I G ⧸ (lieExpAddMonoidHom (I := I) (G := G)).ker →+
+      Additive (ι → Circle) :=
+  QuotientAddGroup.lift _ (b.ofZLatticeBasis ℝ _).circleExp
+    (ker_circleExp_ofZLatticeBasis_lieExp b).ge
+
+private theorem quotientCircleExp_mk (X : LeftInvariantDerivation I G) :
+    quotientCircleExp b (QuotientAddGroup.mk X) = (b.ofZLatticeBasis ℝ _).circleExp X := by
+  rw [quotientCircleExp, QuotientAddGroup.lift_mk]
+
+private theorem bijective_quotientCircleExp : Function.Bijective (quotientCircleExp b) := by
+  have : Finite ι := Module.Finite.finite_basis b
+  refine ⟨(injective_iff_map_eq_zero _).mpr fun q hq => ?_, fun z => ?_⟩
+  · induction q using QuotientAddGroup.induction_on with | H X => ?_
+    rw [quotientCircleExp_mk, ← AddMonoidHom.mem_ker, ker_circleExp_ofZLatticeBasis_lieExp] at hq
+    exact (QuotientAddGroup.eq_zero_iff X).mpr hq
+  · obtain ⟨X, rfl⟩ := (b.ofZLatticeBasis ℝ _).circleExp_surjective z
+    exact ⟨QuotientAddGroup.mk X, quotientCircleExp_mk b X⟩
+
+/-- The circle coordinates on the quotient of the Lie algebra by the exponential kernel, as a
+homeomorphism onto the product of circles: a continuous bijection out of a compact space. -/
+private def quotientHomeomorphPiCircle :
+    LeftInvariantDerivation I G ⧸ (lieExpAddMonoidHom (I := I) (G := G)).ker ≃ₜ (ι → Circle) :=
+  have : Finite ι := Module.Finite.finite_basis b
+  Continuous.homeoOfEquivCompactToT2
+    (f := (Equiv.ofBijective _ (bijective_quotientCircleExp b)).trans Additive.toMul) <| by
+    refine (QuotientAddGroup.isQuotientMap_mk _).continuous_iff.mpr ?_
+    have hcomp : (fun X : LeftInvariantDerivation I G =>
+        Additive.toMul (quotientCircleExp b (QuotientAddGroup.mk X))) =
+        Additive.toMul ∘ (b.ofZLatticeBasis ℝ _).circleExp :=
+      funext fun X => by rw [quotientCircleExp_mk, Function.comp_apply]
+    exact hcomp ▸ continuous_toMul.comp (b.ofZLatticeBasis ℝ _).continuous_circleExp
+
+private theorem quotientHomeomorphPiCircle_apply
+    (q : LeftInvariantDerivation I G ⧸ (lieExpAddMonoidHom (I := I) (G := G)).ker) :
+    quotientHomeomorphPiCircle b q = Additive.toMul (quotientCircleExp b q) :=
+  -- `Continuous.homeoOfEquivCompactToT2` keeps the underlying equivalence, which is this map.
+  rfl
+
+variable [PreconnectedSpace G]
+
+/-- **A compact connected commutative Lie group is a product of circles.** A `ℤ`-basis `b` of the
+kernel of the exponential, which is a lattice of full rank in the Lie algebra, is a real basis of
+the Lie algebra, and its circle coordinates `lieExp X ↦ (exp (2πi bᵢ*(X)))ᵢ` are a well-defined
+isomorphism of topological groups `G ≃ₜ* (ι → Circle)`. -/
+def continuousMulEquivPiCircle : G ≃ₜ* (ι → Circle) where
+  toFun g := quotientHomeomorphPiCircle b
+    ((lieExpQuotientKerContinuousAddEquiv (I := I) (G := G)).symm (Additive.ofMul g))
+  invFun z := Additive.toMul
+    (lieExpQuotientKerContinuousAddEquiv (I := I) (G := G) ((quotientHomeomorphPiCircle b).symm z))
+  left_inv g := by
+    simp only [Homeomorph.symm_apply_apply, ContinuousAddEquiv.apply_symm_apply, toMul_ofMul]
+  right_inv z := by
+    simp only [ofMul_toMul, ContinuousAddEquiv.symm_apply_apply, Homeomorph.apply_symm_apply]
+  map_mul' g h := by
+    simp only [ofMul_mul, map_add, quotientHomeomorphPiCircle_apply, toMul_add]
+  continuous_toFun := (quotientHomeomorphPiCircle b).continuous.comp
+    ((lieExpQuotientKerContinuousAddEquiv (I := I) (G := G)).symm.continuous.comp continuous_ofMul)
+  continuous_invFun := continuous_toMul.comp
+    ((lieExpQuotientKerContinuousAddEquiv (I := I) (G := G)).continuous.comp
+      (quotientHomeomorphPiCircle b).symm.continuous)
+
+/-- The circle coordinates of `lieExp X` are `exp (2πi bᵢ*(X))`, the coordinates `bᵢ*` taken in
+the real basis of the Lie algebra given by `b`. -/
+@[simp]
+theorem continuousMulEquivPiCircle_lieExp (X : LeftInvariantDerivation I G) :
+    continuousMulEquivPiCircle b (lieExp X) =
+      fun i => Circle.exp (2 * Real.pi * (b.ofZLatticeBasis ℝ _).repr X i) := by
+  simp only [continuousMulEquivPiCircle, ContinuousMulEquiv.coe_mk, MulEquiv.coe_mk,
+    Equiv.coe_fn_mk, lieExpQuotientKerContinuousAddEquiv_symm_apply,
+    quotientHomeomorphPiCircle_apply, quotientCircleExp_mk, Module.Basis.circleExp_apply,
+    toMul_ofMul]
+
+variable (I) in
+include I in
+/-- **A compact connected commutative Lie group of dimension `r` is the torus `(Circle)^r`**, as a
+topological group. -/
+theorem nonempty_continuousMulEquiv_pi_circle :
+    Nonempty (G ≃ₜ* (Fin (Module.finrank ℝ E) → Circle)) := by
+  have := ZLattice.module_free ℝ (lieExpAddMonoidHom (I := I) (G := G)).ker.toIntSubmodule
+  have := ZLattice.module_finite ℝ (lieExpAddMonoidHom (I := I) (G := G)).ker.toIntSubmodule
+  exact ⟨continuousMulEquivPiCircle (Module.finBasisOfFinrankEq ℤ _
+    ((finrank_ker_lieExpAddMonoidHom (I := I) (G := G)).trans
+      (finrank_leftInvariantDerivation_eq_modelVectorSpace
+        (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G)))))⟩
+
+end Circle
 
 end TauCeti
