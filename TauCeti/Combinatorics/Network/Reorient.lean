@@ -182,7 +182,8 @@ interval between the lower and upper bounds. -/
 @[simp]
 theorem reorientAssignment_mem_Icc_iff (σ : ∀ ⦃x y : V⦄, Q x y → Bool)
     (lo hi f : Assignment Q K) :
-    reorientAssignment σ f ∈ Set.Icc (reorientLower σ lo hi) (reorientUpper σ lo hi) ↔
+    reorientLower σ lo hi ≤ reorientAssignment σ f ∧
+        reorientAssignment σ f ≤ reorientUpper σ lo hi ↔
       f ∈ Set.Icc lo hi := by
   constructor
   · intro hf
