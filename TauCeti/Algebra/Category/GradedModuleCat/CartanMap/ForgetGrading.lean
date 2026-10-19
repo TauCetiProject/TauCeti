@@ -321,7 +321,8 @@ theorem gradedFiniteModulesForgetK0_comp_gradedCartanMapSpecialized :
 
 /-- **Forgetting grading is bijective on projective `K₀` exactly when it is on `G₀`**, at
 `q = 1` and provided both the graded and the ungraded Cartan maps are bijective, for instance
-when every finitely generated module has finite projective dimension. The two forgetful maps
+over a left Noetherian algebra whose finitely generated modules, graded or not, have finite
+projective dimension. The two forgetful maps
 then differ by the Cartan isomorphisms in the commuting square
 `TauCeti.gradedFiniteModulesForgetK0_comp_gradedCartanMapSpecialized`. -/
 theorem gradedFiniteProjectiveModulesForgetK0_bijective_iff

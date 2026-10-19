@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.ProjectiveDimension
 public import TauCeti.Algebra.Category.ModuleCat.CartanMap.ProjectiveDimension
 public import TauCeti.RepresentationTheory.GrothendieckGroup.Quiver.ForgetGrading
-import TauCeti.RepresentationTheory.Quiver.Acyclic.PathAlgebra
 import TauCeti.RepresentationTheory.Quiver.Representation.Projective.Dimension
 
 /-!
@@ -61,15 +60,6 @@ universe u v
 variable (k : Type (max u v)) (Q : Type u) [Field k] [Quiver.{v} Q]
   [Finite Q] [FiniteDimensional k (pathAlgebra k Q)]
 
-/-- A finitely generated module over a finite-dimensional path algebra has projective dimension
-at most one. -/
-private theorem hasProjectiveDimensionLE_one (M : ModuleCat.{max u v} (pathAlgebra k Q))
-    (hM : Module.Finite (pathAlgebra k Q) M) : HasProjectiveDimensionLE M 1 := by
-  have : ∀ i j : Q, Finite (i ⟶ j) := finite_hom_of_module_finite_pathAlgebra k Q inferInstance
-  have : Module.Finite k M := Module.Finite.trans (pathAlgebra k Q) M
-  exact hasProjectiveDimensionLT_two_pathAlgebra_of_finiteDimensional k Q
-    ((finiteDimensional_pathAlgebra_iff_isAcyclic k Q).1 inferInstance) M
-
 /-- **Every finitely generated module over a finite-dimensional path algebra has a finite
 resolution by finitely generated projectives**, the hypothesis of `TauCeti.cartanEquiv`. -/
 theorem finiteModules_le_admitsFiniteResolution :
@@ -78,7 +68,7 @@ theorem finiteModules_le_admitsFiniteResolution :
         (finiteProjectiveModules (pathAlgebra k Q)) :=
   have : IsNoetherianRing (pathAlgebra k Q) := IsNoetherianRing.of_finite k (pathAlgebra k Q)
   finiteModules_le_admitsFiniteResolution_of_finite_projectiveDimension fun M hM ↦
-    ⟨1, hasProjectiveDimensionLE_one k Q M hM⟩
+    ⟨1, hasProjectiveDimensionLT_two_pathAlgebra_of_moduleFinite k Q M hM⟩
 
 /-- **Every finite graded module over a finite-dimensional path algebra has a finite resolution
 by finite graded projectives**, for the path-length grading. This is the hypothesis of
@@ -90,7 +80,7 @@ theorem gradedFiniteModules_le_admitsFiniteResolution :
   let _ := integerGradedAlgebra k Q
   have : IsNoetherianRing (pathAlgebra k Q) := IsNoetherianRing.of_finite k (pathAlgebra k Q)
   gradedFiniteModules_le_admitsFiniteResolution_of_finite_projectiveDimension fun _ hM ↦
-    ⟨1, hasProjectiveDimensionLE_one k Q _ hM⟩
+    ⟨1, hasProjectiveDimensionLT_two_pathAlgebra_of_moduleFinite k Q _ hM⟩
 
 /-- **The Cartan map of a finite-dimensional path algebra is bijective**: `K₀(proj kQ)` and
 `G₀(mod kQ)` are identified by the inclusion of projectives. -/
