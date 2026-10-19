@@ -19,6 +19,7 @@ public import Mathlib.RingTheory.TensorProduct.MvPolynomial
 public import TauCeti.RingTheory.KrullDimension.Integral
 public import TauCeti.RingTheory.KrullDimension.Quotient
 import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
+import TauCeti.RingTheory.KrullDimension.Basic
 
 /-!
 # Krull dimension of finitely generated algebras over a field
@@ -110,9 +111,8 @@ variable (k) in
 theorem finiteRingKrullDim_of_finiteType (A : Type*) [CommRing A] [Nontrivial A] [Algebra k A]
     [Algebra.FiniteType k A] : FiniteRingKrullDim A := by
   obtain ⟨s, g, hinj, hint⟩ := exists_integral_inj_algHom_of_fg k A
-  rw [finiteRingKrullDim_iff_ne_bot_and_top,
-    ringKrullDim_eq_of_injective_of_isIntegral_mvPolynomial g hinj hint]
-  exact ⟨WithBot.coe_ne_bot, WithBot.coe_inj.not.2 (ENat.natCast_ne_top _)⟩
+  exact .of_ringKrullDim_eq_natCast
+    (ringKrullDim_eq_of_injective_of_isIntegral_mvPolynomial g hinj hint)
 
 /-- The Krull dimension of `K ⊗[k] A`, for a Noetherian `k`-algebra `K` and a finitely generated
 `k`-algebra `A`, is the sum of the Krull dimensions of `K` and `A`. -/

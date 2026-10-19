@@ -431,9 +431,7 @@ docstring. -/
 
 variable (C : PlumbingCube V) {v w : V}
 
-section
-omit [DecidableEq (V → ℤ)]
-
+omit [DecidableEq (V → ℤ)] in
 /-- The two lower faces in distinct directions `v` and `w` agree: both are the cube based at
 `C.base` with directions `(C.directions.erase v).erase w`. -/
 theorem lowerFace_lowerFace_comm (hv : v ∈ C.directions) (hw : w ∈ C.directions) (hne : v ≠ w) :
@@ -446,6 +444,7 @@ theorem lowerFace_lowerFace_comm (hv : v ∈ C.directions) (hw : w ∈ C.directi
   · simp only [lowerFace_directions]
     exact Finset.erase_right_comm
 
+omit [DecidableEq (V → ℤ)] in
 /-- The two upper faces in distinct directions `v` and `w` agree: both are the cube based at
 `C.base + E_v + E_w` with directions `(C.directions.erase v).erase w`, since the two basis shifts
 commute. -/
@@ -460,6 +459,7 @@ theorem upperFace_upperFace_comm (hv : v ∈ C.directions) (hw : w ∈ C.directi
   · simp only [upperFace_directions]
     exact Finset.erase_right_comm
 
+omit [DecidableEq (V → ℤ)] in
 /-- Taking the lower face in direction `v` then the upper face in direction `w` agrees with taking
 the upper face in direction `w` then the lower face in direction `v`: both are the mixed corner
 based at `C.base + E_w`. -/
@@ -473,6 +473,7 @@ theorem lowerFace_upperFace_comm (hv : v ∈ C.directions) (hw : w ∈ C.directi
   · simp only [upperFace_directions, lowerFace_directions]
     exact Finset.erase_right_comm
 
+omit [DecidableEq (V → ℤ)] in
 /-- Taking the upper face in direction `v` then the lower face in direction `w` agrees with taking
 the lower face in direction `w` then the upper face in direction `v`: both are the mixed corner
 based at `C.base + E_v`. -/
@@ -485,8 +486,6 @@ theorem upperFace_lowerFace_comm (hv : v ∈ C.directions) (hw : w ∈ C.directi
   · simp
   · simp only [upperFace_directions, lowerFace_directions]
     exact Finset.erase_right_comm
-
-end
 
 end PlumbingCube
 

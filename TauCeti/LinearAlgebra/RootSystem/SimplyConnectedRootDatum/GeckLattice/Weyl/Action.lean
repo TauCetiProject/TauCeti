@@ -219,6 +219,14 @@ theorem geckWeylTorusAction_apply_eq_word {w : (t.simplyConnectedRootDatum ht).w
     t.geckWeylTorusAction ht A w s = t.geckWeylWordTorusAction ht l A s := by
   exact DFunLike.congr_fun (t.geckWeylTorusAction_eq_word ht hl A) s
 
+/-- The word-level action undoes the abstract action of the inverse of the element it spells. -/
+theorem geckWeylWordTorusAction_geckWeylTorusAction_inv (l : List (Fin t.rank))
+    (A : Type v) [CommRing A] (s : Fin t.rank → Aˣ) :
+    t.geckWeylWordTorusAction ht l A
+        (t.geckWeylTorusAction ht A (t.geckWeylWordProd ht l)⁻¹ s) = s := by
+  rw [← t.geckWeylTorusAction_apply_eq_word ht rfl, ← MulAut.mul_apply, ← map_mul,
+    mul_inv_cancel, map_one, MulAut.one_apply]
+
 /-- The abstract action of a simple reflection is the pinned simple reflection on torus points. -/
 @[simp]
 theorem geckWeylTorusAction_ofIdx (i : Fin t.rank) (A : Type v) [CommRing A] :

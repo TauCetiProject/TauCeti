@@ -40,12 +40,8 @@ theorem isHomogeneous_span_zigzagAlgebraBasis_inl (i : V) :
     (Ideal.span {e i} : Ideal (zigzagAlgebra k G)).IsHomogeneous
       (zigzagAlgebraIntegerGrade k G) := by
   let _ := zigzagAlgebraIntegerGradedAlgebra k G
-  have he : e i ∈ zigzagAlgebraIntegerGrade k G 0 := by
-    have hg : zigzagAlgebraIntegerGrade k G 0 = zigzagAlgebraGrade k G 0 := by
-      simpa only [Int.natCast_zero] using zigzagAlgebraIntegerGrade_ofNat k G 0
-    rw [hg]
-    exact zigzagAlgebraBasis_inl_mem_grade_zero k G i
-  exact Ideal.homogeneous_span _ _ fun _ hx ↦ ⟨0, (Set.mem_singleton_iff.1 hx) ▸ he⟩
+  exact Ideal.homogeneous_span _ _ fun _ hx ↦
+    ⟨0, (Set.mem_singleton_iff.1 hx) ▸ zigzagAlgebraBasis_inl_mem_integerGrade_zero k G i⟩
 
 /-- The graded principal left ideal `Z e_i` of the public componentwise algebra. -/
 abbrev zigzagAlgebraGradedProjective (i : V) :

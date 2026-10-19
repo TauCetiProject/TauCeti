@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.OperatorIdeal.Carrier
+public import TauCeti.Analysis.OperatorIdeal.Family.Carrier
 
 /-!
 # The operator-norm ideal family
@@ -17,7 +17,7 @@ operators, and its carrier is complete because the operator norm is continuous.
 ## Main declarations
 
 * `TauCeti.OperatorIdealFamily.opNorm`: the operator-ideal family with gauge `‖A‖ₑ`.
-* `TauCeti.OperatorIdealFamily.ideal_opNorm`: every bounded operator lies in its ideal.
+* `TauCeti.OperatorIdealFamily.finiteSubmodule_opNorm`: every bounded operator lies in its ideal.
 * `TauCeti.OperatorIdealFamily.opNorm_isComplete`: the operator-norm family is complete.
 -/
 
@@ -57,7 +57,7 @@ theorem gauge_opNorm (A : E →L[𝕜] F) : (opNorm.{u, v, w} 𝕜).gauge A = �
 variable (E F) in
 /-- Every bounded operator lies in the ideal of the operator-norm family. -/
 @[simp]
-theorem ideal_opNorm : (opNorm.{u, v, w} 𝕜).ideal E F = ⊤ :=
+theorem finiteSubmodule_opNorm : ((opNorm.{u, v, w} 𝕜).operatorGauge E F).finiteSubmodule = ⊤ :=
   eq_top_iff.2 fun A _ ↦ by simp
 
 /-- The operator-norm family is complete. -/

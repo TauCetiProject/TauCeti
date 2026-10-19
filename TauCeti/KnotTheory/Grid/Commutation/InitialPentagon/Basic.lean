@@ -68,7 +68,10 @@ coefficient vanishes in characteristic two.
   the covered squares are those of the underlying rectangle;
   `TauCeti.GridInitialPentagonBetween.mk_mem_coveredSquares_left_column` and
   `TauCeti.GridInitialPentagonBetween.mk_mem_coveredSquares_right_column` give them in those two
-  columns.
+  columns;
+  `TauCeti.GridInitialPentagonBetween.mk_mem_toGridRectangle_coveredSquares_right_column` and
+  `TauCeti.GridInitialPentagonBetween.mk_notMem_toGridRectangle_coveredSquares_left_column` give
+  those of the underlying rectangle.
 * `TauCeti.GridInitialPentagonBetween.disjoint_coveredSquares_XSet_iff`: the `X`-avoidance
   condition column by column.
 * `TauCeti.GridDiagram.commutationMap_apply_apply`: the matrix coefficients of `Φ` are the sums of
@@ -257,6 +260,27 @@ theorem mk_mem_coveredSquares_right_column (P : GridInitialPentagonBetween a s x
     (t : Fin n) : (finRotate n a, t) ∈ P.coveredSquares ↔ t ∈ Grid.cIco P.bottom s := by
   simp only [P.mem_coveredSquares, P.ne_finRotate.symm, ne_eq, not_true_eq_false, false_and,
     true_and, false_or]
+
+/-- In the column after the replaced line the underlying rectangle of an initial-side pentagon
+covers all of its rows. -/
+theorem mk_mem_toGridRectangle_coveredSquares_right_column
+    (P : GridInitialPentagonBetween a s x y) (t : Fin n) :
+    (finRotate n a, t) ∈ P.toGridRectangle.coveredSquares ↔ t ∈ Grid.cIco P.bottom P.top := by
+  simp only [GridRectangle.mem_coveredSquares, GridRectangle.mem_coveredColumns,
+    GridRectangle.mem_coveredRows, GridRectangleBetween.toGridRectangle_left,
+    GridRectangleBetween.toGridRectangle_right, GridRectangleBetween.toGridRectangle_bottom,
+    GridRectangleBetween.toGridRectangle_top, P.left_eq, Grid.left_mem_cIco P.right_ne.symm,
+    true_and]
+
+/-- The underlying rectangle of an initial-side pentagon covers nothing in the column before the
+replaced line. -/
+theorem mk_notMem_toGridRectangle_coveredSquares_left_column
+    (P : GridInitialPentagonBetween a s x y) (t : Fin n) :
+    (a, t) ∉ P.toGridRectangle.coveredSquares := by
+  have ha : a ∉ Grid.cIco (finRotate n a) P.right := by simp
+  simp only [GridRectangle.mem_coveredSquares, GridRectangle.mem_coveredColumns,
+    GridRectangleBetween.toGridRectangle_left, GridRectangleBetween.toGridRectangle_right,
+    P.left_eq, ha, false_and, not_false_eq_true]
 
 /-- A thin initial-side pentagon covers its turn row in every column of its underlying
 rectangle except the column immediately after the first commuted column. -/

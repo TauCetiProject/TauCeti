@@ -12,9 +12,7 @@ public import TauCeti.Analysis.Complex.RiemannSurface.PowerMap
 public import TauCeti.Combinatorics.PermutationTriple.IsoClass
 
 import TauCeti.AlgebraicTopology.ThricePuncturedSphere.RestrictOver
-import TauCeti.Geometry.Manifold.Connected
 import TauCeti.GroupTheory.GroupAction.Free
-import TauCeti.Topology.OpenPartialHomeomorph.Continuity
 
 /-!
 # Analytic Belyi pairs
@@ -54,6 +52,16 @@ of degree `n` (`TauCeti.AnalyticBelyiPair.toTopBranchedCover`). The topological 
 the analytic local multiplicity, and isomorphisms of pairs give isomorphisms of their underlying
 topological branched covers. Consequently this construction descends to isomorphism classes.
 
+Conversely, the complex structure of a pair is determined by its Belyi map: every continuous map
+over the sphere between analytic Belyi pairs is holomorphic
+(`TauCeti.AnalyticBelyiPair.mdifferentiable_of_β`). Away from the points over `0`, `1` and
+`∞` it lifts the Belyi map of the source through the Belyi map of the target, which is a local
+biholomorphism there; the finitely many remaining points are removable singularities. Hence a
+homeomorphism over the sphere is an isomorphism of pairs
+(`TauCeti.AnalyticBelyiPair.Iso.ofHomeomorph`), and the passage to topological branched covers is
+injective on isomorphism classes
+(`TauCeti.AnalyticBelyiPair.toTopBranchedCoverIsoClass_injective`).
+
 The basic examples live on the sphere itself: for `n ≠ 0`, the power map `z ↦ z ^ n` is a Belyi
 map of degree `n`, ramified of index `n` over `0` and `∞` and unramified over `1`
 (`TauCeti.AnalyticBelyiPair.pow`). For `n = 1` this is the trivial pair, the identity of the
@@ -83,7 +91,6 @@ sphere.
   degree and isomorphic monodromy triples.
 * `TauCeti.AnalyticBelyiPair.isoSetoid`, `TauCeti.AnalyticBelyiPair.toIsoClass`: isomorphism of
   pairs of degree `n`, and the permutation triple of an isomorphism class of such pairs.
-* `TauCeti.AnalyticBelyiPair.dense_preimage_range`: the points over `ℂ ∖ {0, 1}` are dense.
 * `TauCeti.AnalyticBelyiPair.Iso.eq_of_apply_eq`: an isomorphism of pairs is determined by the
   image of one point over `ℂ ∖ {0, 1}`.
 * `TauCeti.AnalyticBelyiPair.Iso.natCard_le_degree`: there are finitely many isomorphisms of
@@ -92,11 +99,19 @@ sphere.
   `P.Iso P` divides the degree of `P`.
 * `TauCeti.AnalyticBelyiPair.toTopBranchedCover`: the underlying topological branched cover.
 * `TauCeti.AnalyticBelyiPair.toTopBranchedCoverIsoClass`: the induced map on isomorphism classes.
+* `TauCeti.AnalyticBelyiPair.mdifferentiable_of_β`: a continuous map over the sphere between
+  analytic Belyi pairs is holomorphic.
+* `TauCeti.AnalyticBelyiPair.Iso.ofHomeomorph`: a homeomorphism over the sphere is an isomorphism
+  of analytic Belyi pairs.
+* `TauCeti.AnalyticBelyiPair.toTopBranchedCoverIsoClass_injective`: analytic Belyi pairs with
+  isomorphic underlying topological branched covers are isomorphic.
 * `TauCeti.AnalyticBelyiPair.pow`: the power map `z ↦ z ^ n` of the sphere, of degree `n`
   (`TauCeti.RiemannSurface.degree_onePointMap_pow`).
 
 ## References
 
+* O. Forster, *Lectures on Riemann Surfaces*, Graduate Texts in Mathematics 81, Springer 1981,
+  §8, Theorem 8.5 (uniqueness of the extension of an unbranched covering across a finite set).
 * E. Girondo and G. González-Diez, *Introduction to Compact Riemann Surfaces and Dessins
   d'Enfants*, London Mathematical Society Student Texts 79, Cambridge University Press, 2012,
   Chapter 3 (Belyi functions and Belyi pairs) and §4.3 (the monodromy of a Belyi pair).
@@ -111,7 +126,7 @@ open Function OnePoint Set Topology
 
 open scoped Manifold
 
-universe u
+universe u v
 
 namespace TauCeti
 
@@ -240,6 +255,39 @@ theorem localDegree_toTopBranchedCover (P : AnalyticBelyiPair.{u}) {n : ℕ}
     (P.toTopBranchedCover hdegree).localDegree z = localMultiplicity P.β z :=
   (P.toTopBranchedCover hdegree).localDegree_eq_iff.2 (P.isLocalPowerAt_localMultiplicity z)
 
+/-! ### Maps over the sphere are holomorphic -/
+
+/-- **A continuous map over the sphere between analytic Belyi pairs is holomorphic.** Away from
+the points over `0`, `1` and `∞`, `f` lifts the Belyi map of `P` through that of `Q`, which is a
+local biholomorphism there; the finitely many points over `0`, `1` and `∞` are removable
+singularities. So the complex structure of a pair is determined by its Belyi map. -/
+theorem mdifferentiable_of_β {P : AnalyticBelyiPair.{u}} {Q : AnalyticBelyiPair.{v}}
+    {f : P.X → Q.X} (hf : Continuous f) (hβ : ∀ x, Q.β (f x) = P.β x) :
+    MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f := by
+  have hP : ∀ y, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) P.β y := P.β.holomorphic
+  have hQ : ∀ y, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) Q.β y := Q.β.holomorphic
+  have hβ_comp : Q.β ∘ f = P.β := funext hβ
+  -- Off the marked fibres, `Q.β` has multiplicity one at `f x`, so it is injective near `f x`.
+  have hunb : ∀ x, P.β x ∉ marked → MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f x := fun x hx ↦ by
+    have hfx : Q.β (f x) ∉ Q.β.branchValues := fun h ↦ hx <| by
+      simpa only [mem_marked, mem_insert_iff, mem_singleton_iff, hβ] using
+        Q.branchValues_subset h
+    refine mdifferentiableAt_of_comp_of_injOn hf.continuousAt (.of_forall hQ)
+      ((localMultiplicity_eq_one_iff (.of_forall hQ)).1
+        ((Q.β.notMem_branchValues_iff _).1 hfx _ rfl)) (.of_forall fun y ↦ ?_)
+    rw [hβ_comp]
+    exact hP y
+  intro x
+  by_cases hx : P.β x ∈ marked
+  · -- The marked fibres are finite, so the other points near `x` are unmarked.
+    refine mdifferentiableAt_of_continuousAt_of_eventually_nhdsNE hf.continuousAt ?_
+    have hfin : (P.β ⁻¹' marked).Finite := finite_marked.preimage' fun y _ ↦ P.β.finite_fiber y
+    filter_upwards [nhdsWithin_le_nhds <|
+      (hfin.sdiff (t := {x})).isClosed.isOpen_compl.mem_nhds (by simp), self_mem_nhdsWithin]
+      with y hy hyx
+    exact hunb y fun h ↦ hy ⟨h, hyx⟩
+  · exact hunb x hx
+
 /-! ### The cover of the thrice-punctured sphere -/
 
 /-- The Belyi map restricted to the points of `X` over the thrice-punctured sphere `ℂ ∖ {0, 1}`,
@@ -311,26 +359,11 @@ theorem isoClass_eq (ν : P.restrict ⁻¹' {basePt} ≃ Fin (degree P.β)) :
 /-- **The cover attached to an analytic Belyi pair is path connected.** Its total space is the
 connected surface `X` with the finitely many points over `0`, `1` and `∞` removed. -/
 instance instPathConnectedSpacePreimageRange :
-    PathConnectedSpace (P.β ⁻¹' range toOnePoint) := by
-  have hfin : (P.β ⁻¹' marked).Finite :=
-    finite_marked.preimage' fun y _ ↦ P.β.finite_fiber y
-  have hconn := isConnected_compl_of_finite_of_one_lt_rank
-    (by rw [Complex.rank_real_complex]; exact Nat.one_lt_ofNat) hfin
-  rw [← preimage_compl, ← range_toOnePoint] at hconn
-  have := ChartedSpace.locallyPathConnectedSpace ℂ P.X
-  have := (isOpenEmbedding_toOnePoint.isOpen_range.preimage
-    P.β.holomorphic.continuous).locallyPathConnectedSpace
-  have := isConnected_iff_connectedSpace.1 hconn
-  exact pathConnectedSpace_iff_connectedSpace.2 this
-
-/-- **The cover attached to an analytic Belyi pair is dense in its surface**: the points of `X`
-over `ℂ ∖ {0, 1}` are the complement of the finitely many points over `0`, `1` and `∞`, none of
-which is isolated. -/
-theorem dense_preimage_range : Dense (P.β ⁻¹' range toOnePoint) := by
-  have : ∀ x : P.X, (𝓝[≠] x).NeBot := fun x ↦
-    (chartAt ℂ x).nhdsNE_neBot (mem_chart_source ℂ x)
-  rw [range_toOnePoint, preimage_compl, compl_eq_univ_sdiff]
-  exact dense_univ.sdiff_finite <| finite_marked.preimage' fun y _ ↦ P.β.finite_fiber y
+    PathConnectedSpace (P.β ⁻¹' range toOnePoint) :=
+  -- The projection of `P.toTopBranchedCover rfl` is `⟨P.β, _⟩`, whose coercion is `P.β` by
+  -- definition (`TauCeti.AnalyticBelyiPair.toTopBranchedCover_π_apply` is `rfl`), so the two
+  -- preimages are the same subtype.
+  (P.toTopBranchedCover rfl).instPathConnectedSpacePreimageRange
 
 /-- The permutation triple of an analytic Belyi pair is connected. -/
 theorem isConnected_isoClass : P.isoClass.IsConnected := by
@@ -491,6 +524,21 @@ def toHomeomorph (e : P.Iso Q) : P.X ≃ₜ Q.X :=
 theorem coe_toHomeomorph (e : P.Iso Q) : ⇑e.toHomeomorph = e :=
   (rfl)
 
+/-- **A homeomorphism over the sphere is an isomorphism of analytic Belyi pairs**: it is
+holomorphic by `TauCeti.AnalyticBelyiPair.mdifferentiable_of_β`, hence so is its inverse. -/
+def ofHomeomorph (e : P.X ≃ₜ Q.X) (he : ∀ x, Q.β (e x) = P.β x) : P.Iso Q where
+  toDiffeomorph :=
+    have hf := mdifferentiable_of_β e.continuous he
+    { toEquiv := (e.isHomeomorph.homeomorph e).toEquiv
+      contMDiff_toFun := hf.contMDiff
+      contMDiff_invFun := (e.isHomeomorph.mdifferentiable_symm hf).contMDiff }
+  β_toDiffeomorph := he
+
+@[simp]
+theorem coe_ofHomeomorph (e : P.X ≃ₜ Q.X) (he : ∀ x, Q.β (e x) = P.β x) :
+    ⇑(ofHomeomorph e he) = e :=
+  (rfl)
+
 /-- The isomorphism of covers of `ℂ ∖ {0, 1}` underlying an isomorphism of analytic Belyi pairs:
 its restriction to the points over the thrice-punctured sphere, which commutes with the restricted
 Belyi maps (`TauCeti.AnalyticBelyiPair.Iso.restrict_restrict`). -/
@@ -556,11 +604,16 @@ theorem eq_of_apply_eq {e e' : P.Iso Q} (x : P.β ⁻¹' range toOnePoint) (h : 
   have hres : ⇑e.restrict = e'.restrict :=
     Q.isCoveringMap_restrict.eq_of_comp_eq e.restrict.continuous e'.restrict.continuous
       (by rw [e.restrict_comp_restrict, e'.restrict_comp_restrict]) x (Subtype.ext h)
-  apply DFunLike.coe_injective
-  rw [← coe_toHomeomorph e, ← coe_toHomeomorph e']
-  refine Continuous.ext_on P.dense_preimage_range
-    e.toHomeomorph.continuous e'.toHomeomorph.continuous fun y hy ↦ ?_
-  simpa using congrArg Subtype.val (congrFun hres ⟨y, hy⟩)
+  have hQ := e.degree_eq.symm
+  -- The unbranched part of `P.toTopBranchedCover rfl` is `P.β ⁻¹' range toOnePoint` by
+  -- definition, since its projection coerces to `P.β`; so `hres` applies to its points.
+  have h : (e.toTopBranchedCover rfl hQ).restrict = (e'.toTopBranchedCover rfl hQ).restrict :=
+    Homeomorph.ext fun y ↦ Subtype.ext <| by
+      simp only [TopBranchedCover.Iso.coe_restrict_apply, toTopBranchedCover_toHomeomorph]
+      exact congrArg Subtype.val (congrFun hres y)
+  have h' := congrArg TopBranchedCover.Iso.toHomeomorph (TopBranchedCover.Iso.restrict_injective h)
+  rw [toTopBranchedCover_toHomeomorph, toTopBranchedCover_toHomeomorph] at h'
+  exact ext fun y ↦ DFunLike.congr_fun h' y
 
 /-- Evaluation at a point of the fibre over `1/2` embeds the isomorphisms `P ≅ Q` into the fibre
 of `Q` over `1/2`. -/
@@ -700,6 +753,16 @@ theorem toTopBranchedCoverIsoClass_mk {n : ℕ}
     (P : {P : AnalyticBelyiPair.{u} // degree P.β = n}) :
     toTopBranchedCoverIsoClass n ⟦P⟧ =
       TopBranchedCover.IsoClass.mk (P.1.toTopBranchedCover P.2) := (rfl)
+
+/-- **Analytic Belyi pairs are determined by their underlying topological branched covers**: two
+analytic Belyi pairs of degree `n` whose topological branched covers are isomorphic are isomorphic,
+since a homeomorphism over the sphere is holomorphic (`TauCeti.AnalyticBelyiPair.Iso.ofHomeomorph`).
+-/
+theorem toTopBranchedCoverIsoClass_injective (n : ℕ) :
+    Injective (toTopBranchedCoverIsoClass.{u} n) := by
+  rintro ⟨P⟩ ⟨Q⟩ h
+  obtain ⟨e⟩ := TopBranchedCover.IsoClass.mk_eq_mk_iff.1 h
+  exact Quotient.sound ⟨.ofHomeomorph e.toHomeomorph e.π_apply⟩
 
 /-- The permutation triple of the class of an analytic Belyi pair of degree `n` is the class of
 its monodromy triple, for any numbering of the fibre over `1/2`. -/
