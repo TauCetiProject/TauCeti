@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.PowerSeries.Binomial
+public import Mathlib.RingTheory.PowerSeries.Derivative
 public import Mathlib.RingTheory.PowerSeries.Substitution
 import Mathlib.RingTheory.PowerSeries.Inverse
 import Mathlib.RingTheory.PowerSeries.Trunc
@@ -22,9 +23,15 @@ multiplies orders: `ord (f (φ)) = ord φ * ord f`. Mathlib records only the ine
 `PowerSeries.le_order_subst`. The equality shows that substitution of a nonzero such `φ` is
 injective, which is what extends it to Laurent series by passing to fraction fields.
 
+Substitution of series of zero constant coefficient is compatible with congruences modulo
+powers of `X`, in both the substituted series and the series substituted into. This makes
+truncation modulo `X ^ n` compatible with composition of formal coordinates.
+
 An algebra map on power series whose value at `X` has nilpotent constant coefficient is the
 corresponding substitution, without any continuity hypothesis. Over a field, every algebra
-endomorphism of the power series ring has this form.
+endomorphism of the power series ring has this form. In particular, a perturbation `X + h` of `X`
+with `h ^ 2 = 0` substitutes by the first-order Taylor formula `f (X + h) = f + h f'`, since the
+right-hand side is multiplicative in `f` by the Leibniz rule.
 
 This file also records that the substitution `X ↦ (1 + X) ^ u - 1`, for a binomial series
 `(1 + X) ^ u`, is legitimate: it is the change of variable relating the power-series coordinates
@@ -38,8 +45,12 @@ of a completed group algebra attached to two topological generators.
   has trivial kernel.
 * `PowerSeries.toNat_order_ne_zero`: such a `φ` has positive integer order.
 * `PowerSeries.coeff_one_subst`: linear coefficients multiply under substitution.
+* `PowerSeries.X_pow_dvd_subst`: substitution preserves divisibility by `X ^ n`.
+* `PowerSeries.X_pow_dvd_subst_sub_subst`: substitution respects congruence modulo `X ^ n` of
+  the substituted series.
 * `PowerSeries.algHom_eq_substAlgHom`: an algebra map `R⟦X⟧ → S⟦X⟧` sending `X` to a
   substitutable series is a substitution.
+* `PowerSeries.subst_X_add_of_sq_eq_zero`: `f (X + h) = f + h f'` when `h ^ 2 = 0`.
 * `AlgHom.apply_eq_subst`: over a field, every algebra endomorphism of `K⟦X⟧` is substitution by
   its value at `X`.
 * `TauCeti.hasSubst_binomialSeries_sub_one`: `(1 + X) ^ u - 1` can be substituted.
@@ -123,6 +134,53 @@ theorem algHom_eq_substAlgHom {σ : R⟦X⟧ →ₐ[R] S⟦X⟧} (hσ : HasSubst
   rw [eq_X_pow_mul_shift_add_trunc m f]
   simp only [map_add, map_mul, map_pow, substAlgHom_X, key, zero_add]
   exact congr(coeff n ($hpoly (trunc m f)))
+
+/-- The first-order Taylor formula: substituting a square-zero perturbation `X + h` of `X` gives
+`f (X + h) = f + h f'`. -/
+theorem subst_X_add_of_sq_eq_zero {h : S⟦X⟧} (hh : h ^ 2 = 0) (f : S⟦X⟧) :
+    f.subst (X + h) = f + h * d⁄dX f := by
+  -- `f ↦ f + h f'` is an algebra map, multiplicative by the Leibniz rule and `h ^ 2 = 0`, and it
+  -- sends `X` to `X + h`, so it is the substitution of `X + h`.
+  let T : S⟦X⟧ →ₐ[S] S⟦X⟧ :=
+    { toFun g := g + h * d⁄dX g
+      map_one' := by simp
+      map_mul' g₁ g₂ := by
+        simp only [Derivation.leibniz, smul_eq_mul]
+        linear_combination (-(d⁄dX g₁ * d⁄dX g₂)) * hh
+      map_zero' := by simp
+      map_add' g₁ g₂ := by
+        simp only [map_add]
+        ring
+      commutes' r := by simp }
+  have hT (g : S⟦X⟧) : T g = g + h * d⁄dX g := rfl
+  have hTX : T X = X + h := by rw [hT, derivative_X, mul_one]
+  have hσ := congr($(algHom_eq_substAlgHom (σ := T) (hTX ▸ HasSubst.X'.add (.map ⟨2, hh⟩ _))) f)
+  rw [coe_substAlgHom, hTX, hT] at hσ
+  exact hσ.symm
+
+/-- Substituting a series of zero constant coefficient preserves divisibility by `X ^ n`. -/
+theorem X_pow_dvd_subst {a : S⟦X⟧} (ha : constantCoeff a = 0) {n : ℕ} {f : R⟦X⟧}
+    (hf : X ^ n ∣ f) : X ^ n ∣ f.subst a := by
+  have ha' : HasSubst a := .of_constantCoeff_zero' ha
+  obtain ⟨g, rfl⟩ := hf
+  rw [subst_mul ha', subst_pow ha', subst_X ha']
+  exact (pow_dvd_pow_of_dvd (X_dvd_iff.mpr ha) n).mul_right _
+
+/-- Substitution respects congruence modulo `X ^ n` of the substituted series: if `a ≡ b` modulo
+`X ^ n`, then `f (a) ≡ f (b)` modulo `X ^ n`. -/
+theorem X_pow_dvd_subst_sub_subst {a b : S⟦X⟧} (ha : constantCoeff a = 0)
+    (hb : constantCoeff b = 0) {n : ℕ} (hab : X ^ n ∣ a - b) (f : R⟦X⟧) :
+    X ^ n ∣ f.subst a - f.subst b := by
+  have ha' : HasSubst a := .of_constantCoeff_zero' ha
+  have hb' : HasSubst b := .of_constantCoeff_zero' hb
+  -- On the polynomial truncation this is `a - b ∣ p (a) - p (b)`; the remaining multiple of
+  -- `X ^ n` stays one after either substitution.
+  rw [eq_X_pow_mul_shift_add_trunc n f, subst_add ha', subst_add hb', add_sub_add_comm]
+  refine dvd_add (dvd_sub (X_pow_dvd_subst ha (dvd_mul_right _ _))
+    (X_pow_dvd_subst hb (dvd_mul_right _ _))) (hab.trans ?_)
+  rw [subst_coe ha', subst_coe hb', ← Polynomial.eval_map_algebraMap,
+    ← Polynomial.eval_map_algebraMap]
+  exact Polynomial.sub_dvd_eval_sub _ _ _
 
 end Algebra
 

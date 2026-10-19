@@ -15,8 +15,9 @@ import Mathlib.Probability.Kernel.Composition.IntegralCompProd
 
 This file defines the beta-binomial law by mixing a binomial success probability against a Beta
 law.  It proves normalization, the classical Beta-function mass formula, finite support,
-parameter measurability, integrability, and mixture integration.  The binomial kernel is extended
-measurably to all real mixing values by projection onto the unit interval; this choice is immaterial
+parameter measurability, integrability, finite-sum integration, and mixture integration. The
+binomial kernel is extended measurably to all real mixing values by projection onto the unit
+interval; this choice is immaterial
 because Beta laws are concentrated on the open unit interval.
 
 ## Main results
@@ -26,6 +27,7 @@ because Beta laws are concentrated on the open unit interval.
 * `TauCeti.Probability.betaBinomialMeasure_eq_sum_dirac` gives its finite Dirac-sum form;
 * `TauCeti.Probability.betaBinomialMeasure_singleton_ne_zero_iff` identifies its support;
 * `TauCeti.Probability.integrable_betaBinomialMeasure` proves integrability of every observable;
+* `TauCeti.Probability.integral_betaBinomialMeasure` integrates by the finite mass formula;
 * `TauCeti.Probability.integral_betaBinomialMeasure_eq_integral` integrates via the mixture;
 * `TauCeti.Probability.measurable_betaBinomialMeasure` gives joint parameter measurability.
 
@@ -214,6 +216,22 @@ theorem integrable_map_cast_betaBinomialMeasure {E : Type*} [NormedAddGroup E]
     Integrable f ((betaBinomialMeasure n a b).map (Nat.cast : ℕ → ℝ)) := by
   rw [(MeasurableEmbedding.natCast (α := ℝ)).integrable_map_iff]
   exact integrable_betaBinomialMeasure (fun k => f (k : ℝ)) n a b
+
+/-- Integration against a valid beta-binomial law is a finite sum with its Beta-function
+weights. -/
+theorem integral_betaBinomialMeasure {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [CompleteSpace E] (f : ℕ → E) {a b : ℝ} (ha : 0 < a) (hb : 0 < b) (n : ℕ) :
+    ∫ k, f k ∂betaBinomialMeasure n a b =
+      ∑ k ∈ Finset.Iic n,
+        (n.choose k * beta (a + k) (b + (n - k)) / beta a b) • f k := by
+  rw [betaBinomialMeasure_eq_sum_dirac ha hb, integral_finsetSum_measure]
+  · simp only [integral_smul_measure, integral_dirac]
+    apply Finset.sum_congr rfl
+    intro k _
+    rw [← betaBinomialMeasure_singleton ha hb, ← measureReal_def,
+      betaBinomialMeasure_real_singleton ha hb]
+  · intro k _
+    exact (integrable_dirac (by simp)).smul_measure (by simp)
 
 /-- Integrate a beta-binomial observable by first integrating against its binomial component,
 then against the Beta mixing law. -/

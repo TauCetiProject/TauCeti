@@ -433,6 +433,19 @@ theorem coe_baseTorsionCoeff {m : ℕ} (T : AddSubgroup.torsionBy W.toAffine.Poi
     (W.baseTorsionCoeff m T : W.PointCoeff) = W.basePointCoeff T :=
   (rfl)
 
+open scoped Classical in
+/-- The inclusion of rational torsion agrees with transport along the base-field embedding. -/
+theorem torsionByCongr_symm_baseTorsionCoeff (m : ℕ)
+    (P : AddSubgroup.torsionBy W.toAffine.Point m) :
+    (AddEquiv.torsionByCongr W.pointCoeffEquiv m).symm (W.baseTorsionCoeff m P) =
+      W.torsionMapAlong (algebraMap K (SeparableClosure K)) m P := by
+  apply Subtype.ext
+  simp only [AddEquiv.torsionByCongr_symm_apply_coe, WeierstrassCurve.coe_baseTorsionCoeff,
+    WeierstrassCurve.coe_torsionMapAlong_apply,
+    WeierstrassCurve.basePointCoeff_eq_pointCoeffEquiv_mapAlong]
+  -- `mapAlong` targets `W.map`, whereas the coefficient equivalence uses `W⁄Kˢ`.
+  exact W.pointCoeffEquiv.symm_apply_apply _
+
 /-- **A point of `E(K)[m]` is fixed by `G_K`** after mapping into `E(Kˢ)[m]`. -/
 @[simp]
 theorem smul_baseTorsionCoeff {m : ℕ} (σ : AbsoluteGaloisGroup K)

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Exchangeability.ConditionallyIID.Basic
-import TauCeti.MeasureTheory.Measure.GiryMonad
 -- Non-public: the Giry-measurability of a pushforward is used only inside the proofs below.
 import TauCeti.MeasureTheory.Measure.Measurability
 
@@ -98,7 +97,7 @@ theorem ConditionallyIIDWith.map_values {μ : Measure Ω} {X : ι → Ω → α}
     _ = μ.bind fun ω => ((Measure.dirac (ν ω)).prod
           (ProbabilityMeasure.pi fun _ : Fin m => ν ω).toMeasure).map
           (Prod.map (fun Q : ProbabilityMeasure α => Q.map f) F) :=
-        TauCeti.MeasureTheory.map_bind hK hΦ
+        Measure.map_bind hK hΦ.aemeasurable
     _ = μ.bind fun ω => (Measure.dirac ((ν ω).map f)).prod
           (ProbabilityMeasure.pi fun _ : Fin m => (ν ω).map f).toMeasure := by
         refine congrArg (μ.bind ·) (funext fun ω => ?_)
@@ -143,7 +142,7 @@ theorem ConditionallyIIDWith.of_map {Ω' : Type*} [MeasurableSpace Ω'] {μ : Me
     _ = μ.bind fun ω =>
           (Measure.dirac (ν (φ ω))).prod
             (ProbabilityMeasure.pi fun _ : Fin m => ν (φ ω)).toMeasure :=
-        TauCeti.MeasureTheory.bind_map hφ.aemeasurable hker.aemeasurable
+        Measure.bind_map hφ.aemeasurable hker.aemeasurable
 
 /-- **Path-law transfer, at a named directing measure.** If the coordinate process is conditionally
 i.i.d. under the path law of `X` with directing measure `ν`, then `X` is conditionally i.i.d. with

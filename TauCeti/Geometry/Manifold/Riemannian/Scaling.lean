@@ -45,8 +45,7 @@ differentiable fields; this determines the curvature tensor.
 * `Bundle.ContMDiffRiemannianMetric.curvatureTensor_leviCivitaConnection_rescale_const` and
   `Bundle.ContMDiffRiemannianMetric.ricciTensor_leviCivitaConnection_rescale_const`: the curvature
   and Ricci tensors of `c g` and `g` coincide.
-* `Bundle.ContMDiffRiemannianMetric.scalarCurvature_leviCivitaConnection_rescale_const`:
-  `Scal(c g) = c⁻¹ Scal(g)`.
+* `Bundle.ContMDiffRiemannianMetric.scalarCurvature_rescale_const`: `Scal(c g) = c⁻¹ Scal(g)`.
 * `Bundle.ContMDiffRiemannianMetric.mgradient_rescale_const` and
   `Bundle.ContMDiffRiemannianMetric.laplaceBeltrami_rescale_const`: `grad_{c g} = c⁻¹ grad_g`
   and `Δ_{c g} = c⁻¹ Δ_g`.
@@ -276,12 +275,11 @@ theorem ricciTensor_leviCivitaConnection_rescale_const (x : M) :
 
 /-- **Scaling of scalar curvature.** Multiplying a smooth metric by a positive constant `c`
 multiplies its scalar curvature by `c⁻¹`. -/
-theorem scalarCurvature_leviCivitaConnection_rescale_const (x : M) :
-    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-        ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩;
-      (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x) =
-    c⁻¹ * (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
-      (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x) := by
+@[simp]
+theorem scalarCurvature_rescale_const (x : M) :
+    (g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).scalarCurvature x =
+      c⁻¹ * g.scalarCurvature x := by
+  rw [scalarCurvature_def, scalarCurvature_def]
   -- A `g`-orthonormal basis, recorded through the inner products of `g` itself.
   obtain ⟨d, b, hb, hs⟩ : ∃ (d : ℕ) (b : Module.Basis (Fin d) ℝ (TangentSpace I x)),
       (∀ i j, g.inner x (b i) (b j) = if i = j then 1 else 0) ∧

@@ -109,6 +109,17 @@ theorem mgradient_add {g : M → ℝ} (hf : MDifferentiable I 𝓘(ℝ) f)
   funext x
   simp [mgradient, mvfderiv_add (hf x) (hg x)]
 
+/-- The gradient satisfies the scalar product rule for differentiable functions. -/
+theorem mgradient_mul {g : M → ℝ} (hf : MDifferentiable I 𝓘(ℝ) f)
+    (hg : MDifferentiable I 𝓘(ℝ) g) :
+    mgradient I (f * g) = fun x ↦ f x • mgradient I g x + g x • mgradient I f x := by
+  funext x
+  apply ext_inner_right ℝ
+  intro v
+  rw [inner_mgradient, mvfderiv_mul (hf x) (hg x)]
+  simp only [inner_add_left, real_inner_smul_left, inner_mgradient]
+  simp only [add_apply, smul_apply, smul_eq_mul]
+
 /-- The gradient commutes with multiplication by a real constant. -/
 theorem mgradient_smul (c : ℝ) (hf : MDifferentiable I 𝓘(ℝ) f) :
     mgradient I (c • f) = c • mgradient I f := by
