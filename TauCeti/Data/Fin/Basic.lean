@@ -164,8 +164,8 @@ theorem partialProd_last {M : Type*} [CommMonoid M] {n : ℕ} (f : Fin n → M) 
 
 /-- Multiplying two adjacent entries of a tuple does not change the product of all its
 entries. -/
-@[to_additive /-- Adding two adjacent entries of a tuple does not change the sum of all its
-entries. -/]
+@[to_additive (attr := simp)
+  /-- Adding two adjacent entries of a tuple does not change the sum of all its entries. -/]
 theorem prod_contractNth_castSucc {M : Type*} [CommMonoid M] {n : ℕ} (j : Fin (n + 1))
     (g : Fin (n + 2) → M) : ∏ k, Fin.contractNth j.castSucc (· * ·) g k = ∏ k, g k := by
   have hlast : j.castSucc.succ.succAbove (Fin.last (n + 1)) = Fin.last (n + 2) :=

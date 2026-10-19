@@ -285,6 +285,7 @@ theorem hochschildFace_const_of_isIdempotentElem {x : A} (hx : IsIdempotentElem 
 end Mul
 
 /-- In a commutative monoid every Hochschild face preserves the product of the entries. -/
+@[simp]
 theorem prod_hochschildFace [CommMonoid A] (i : Fin (n + 2)) (a : Fin (n + 2) → A) :
     ∏ k, hochschildFace i a k = ∏ k, a k := by
   induction i using Fin.lastCases with
