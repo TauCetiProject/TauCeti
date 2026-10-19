@@ -100,10 +100,15 @@ private theorem skewPolynomial_X_mul_C (hσ : ∀ a : R, (ofAdd 1 : Multiplicati
     SkewPolynomial.X * SkewPolynomial.CRingHom a =
       SkewPolynomial.CRingHom (σ a) * SkewPolynomial.X +
         SkewPolynomial.CRingHom ((0 : SigmaDerivation σ) a) := by
-  rw [SigmaDerivation.coe_zero, Pi.zero_apply, map_zero, add_zero, SkewPolynomial.CRingHom_eq_C,
-    SkewPolynomial.CRingHom_eq_C, ← SkewPolynomial.monomial_zero_left,
-    SkewPolynomial.X_mul_monomial, SkewPolynomial.C_mul_X_eq_monomial,
-    MulSemiringAction.toRingHom_apply, hσ]
+  simp only [SigmaDerivation.coe_zero, Pi.zero_apply, map_zero, add_zero,
+    SkewPolynomial.CRingHom_eq_C]
+  calc
+    SkewPolynomial.X * SkewPolynomial.C a =
+        SkewPolynomial.monomial 1 ((ofAdd 1 : Multiplicative ℕ) • a) := by
+      rw [← SkewPolynomial.monomial_zero_left, SkewPolynomial.X_mul_monomial,
+        MulSemiringAction.toRingHom_apply]
+    _ = SkewPolynomial.C (σ a) * SkewPolynomial.X := by
+      rw [hσ, SkewPolynomial.C_mul_X_eq_monomial]
 
 /-- The ring homomorphism `OreExtension σ 0 → SkewPolynomial R` fixing constants and the
 variable. -/
