@@ -22,9 +22,9 @@ a singleton at the anchor, not the empty polygon.
 
 Expansion repeats each slope according to its length, giving `FiniteSlopeData`.
 Compression counts equal unit slopes, merging collinear segments. Both round trips hold,
-and equality of represented heights determines compressed data. The construction works
-over any linearly ordered slope type; heights additionally require an additive monoid.
-In particular it applies to rational as well as real slopes.
+and equality of represented heights determines compressed data when addition is cancellative.
+The construction works over any linearly ordered slope type; heights additionally require
+an additive commutative monoid. In particular it applies to rational as well as real slopes.
 
 The expansion and compression reuse Mathlib's `Finsupp.toMultiset`, `Multiset.toFinsupp`
 and `Multiset.sort` rather than a separate run-length encoding algorithm.
@@ -39,28 +39,6 @@ public section
 namespace TauCeti
 
 variable {Γ : Type*} [LinearOrder Γ]
-
-namespace FiniteSlopeData
-
-/-- A nondecreasing unit-slope presentation is determined by its anchor and slope multiset.
-In particular, different subdivisions of equal slopes do not give different unit data. -/
-theorem eq_of_multiset_eq {d e : FiniteSlopeData Γ} (hs : d.start = e.start)
-    (hy : d.initialHeight = e.initialHeight)
-    (hm : (List.ofFn d.slope : Multiset Γ) = (List.ofFn e.slope : Multiset Γ)) : d = e := by
-  have hl := (Multiset.coe_eq_coe.mp hm).eq_of_pairwise'
-    d.monotone.sortedLE_ofFn.pairwise e.monotone.sortedLE_ofFn.pairwise
-  obtain ⟨s, y, n, f, hf⟩ := d
-  obtain ⟨s', y', n', f', hf'⟩ := e
-  dsimp only at hs hy hl
-  subst s' y'
-  have hn := congrArg List.length hl
-  simp only [List.length_ofFn] at hn
-  subst n'
-  have hff := List.ofFn_injective hl
-  subst f'
-  rfl
-
-end FiniteSlopeData
 
 /-- A normalized finite compressed polygon: an anchor and a positive length for every
 slope in a finite support. The increasing enumeration of the support gives the segments.

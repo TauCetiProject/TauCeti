@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Convex.Sequence.Basic
 public import Mathlib.Algebra.Order.Hom.Monoid
 public import TauCeti.Algebra.BigOperators.Finset.PartialSum
+import Mathlib.Data.List.Sort
 import Mathlib.Order.Interval.Set.Infinite
 import Mathlib.Order.Interval.Set.OrdConnectedLinear
 import Mathlib.Order.Interval.Finset.Nat
@@ -79,6 +80,24 @@ structure FiniteSlopeData (Γ : Type*) [Preorder Γ] where
   monotone : Monotone slope
 
 namespace FiniteSlopeData
+
+/-- A nondecreasing unit-slope presentation is determined by its anchor and slope multiset.
+In particular, different subdivisions of equal slopes do not give different unit data. -/
+theorem eq_of_multiset_eq {Γ : Type*} [LinearOrder Γ] {d e : FiniteSlopeData Γ}
+    (hs : d.start = e.start) (hy : d.initialHeight = e.initialHeight)
+    (hm : (List.ofFn d.slope : Multiset Γ) = (List.ofFn e.slope : Multiset Γ)) : d = e := by
+  have hl := (Multiset.coe_eq_coe.mp hm).eq_of_pairwise'
+    d.monotone.sortedLE_ofFn.pairwise e.monotone.sortedLE_ofFn.pairwise
+  obtain ⟨s, y, n, f, hf⟩ := d
+  obtain ⟨s', y', n', f', hf'⟩ := e
+  dsimp only at hs hy hl
+  subst s' y'
+  have hn := congrArg List.length hl
+  simp only [List.length_ofFn] at hn
+  subst n'
+  have hff := List.ofFn_injective hl
+  subst f'
+  rfl
 
 section AddCommMonoid
 
