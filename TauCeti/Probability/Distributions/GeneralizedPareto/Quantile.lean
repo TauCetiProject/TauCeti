@@ -141,8 +141,7 @@ private theorem tendsto_quantile_generalizedParetoMeasure_nhdsLT_one_of_nonneg (
 and to positive infinity for nonnegative shape. -/
 theorem tendsto_quantile_generalizedParetoMeasure_nhdsLT_one (hs : 0 < s) (ξ : ℝ) :
     Tendsto (fun u => ((generalizedParetoMeasure s ξ).quantile u : EReal))
-      (nhdsWithin 1 (Iio 1))
-      (nhds (if ξ < 0 then ((-s / ξ : ℝ) : EReal) else ⊤)) := by
+      (𝓝[<] 1) (𝓝 (if ξ < 0 then ((-s / ξ : ℝ) : EReal) else ⊤)) := by
   by_cases hξ : ξ < 0
   · rw [ite_eq_left hξ]
     exact tendsto_quantile_generalizedParetoMeasure_nhdsLT_one_of_neg hs hξ
