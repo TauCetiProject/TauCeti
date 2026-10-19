@@ -195,8 +195,7 @@ theorem support_stdGaussian (E : Type*) [NormedAddCommGroup E] [InnerProductSpac
     simpa only [f, closure_univ] using
       (Measure.support_withDensity_eq_closure (μ := volume) hf isOpen_univ hsupp)
   rw [← stdGaussian_map e]
-  change ((stdGaussian (EuclideanSpace ℝ (Fin (Module.finrank ℝ E)))).map
-    e.toHomeomorph).support = Set.univ
+  rw [← e.coe_toHomeomorph]
   rw [Measure.support_map_homeomorph, hsupport]
   exact Set.image_univ_of_surjective e.surjective
 
