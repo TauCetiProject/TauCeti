@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Height.Projectivization
+public import Mathlib.Order.Northcott
 public import TauCeti.LinearAlgebra.Projectivization.Plucker
 
 import Mathlib.NumberTheory.Height.NumberField
+import TauCeti.NumberTheory.Height.Northcott
 
 /-!
 # The relative height of a subspace
@@ -22,6 +24,11 @@ relative logarithmic height. Neither needs a number field or characteristic zero
 The zero subspace and the whole space have height `1`, and a line has the height of any nonzero
 vector spanning it. The height of a subspace does not depend on the spanning vectors: over `ℚ`
 the line spanned by `(2, 2)` has height `1`, so no primitive spanning vector is needed.
+
+If the field has finitely many elements of bounded height, for instance a number field, then
+`K^ι` has finitely many subspaces of bounded height, of all dimensions together. A subspace is
+determined by its dimension and its Plücker point, and the projective space of each dimension
+has finitely many points of bounded height.
 
 ## Main definitions
 
@@ -38,6 +45,9 @@ the line spanned by `(2, 2)` has height `1`, so no primitive spanning vector is 
   subspace and the whole space have height `1`.
 * `Submodule.relativeSubspaceHeight_span_singleton`: the line spanned by a nonzero vector has the
   height of that vector.
+* `Submodule.instNorthcottRelativeSubspaceHeight` and
+  `Submodule.instNorthcottRelativeSubspaceLogHeight`: the Northcott property for the relative
+  height and the relative logarithmic height.
 
 ## References
 
@@ -161,12 +171,7 @@ theorem relativeSubspaceHeight_span_singleton {x : ι → K} (hx : x ≠ 0) :
   rw [h, ← mulHeight_comp_equiv powersetCard.ofSingleton]
   congr 1
   ext i
-  -- The single coordinate of the unique element of the singleton `{i}` is `i`.
-  have hi : (powersetCard.ofFinEmbEquiv.symm (powersetCard.ofSingleton i)) 0 = i := by
-    have h := powersetCard.mem_coe_iff.2 <|
-      (powersetCard.mem_range_ofFinEmbEquiv_symm_iff_mem (powersetCard.ofSingleton i) _).1 ⟨0, rfl⟩
-    exact Finset.mem_singleton.1 h
-  simp [plucker_apply, Matrix.det_unique, hi]
+  simp
 
 /-- The relative logarithmic height of the line spanned by a nonzero vector is the logarithmic
 height of the vector. -/
@@ -176,6 +181,34 @@ theorem relativeSubspaceLogHeight_span_singleton {x : ι → K} (hx : x ≠ 0) :
   rw [relativeSubspaceLogHeight_eq_log_relativeSubspaceHeight,
     relativeSubspaceHeight_span_singleton hx,
     logHeight_eq_log_mulHeight]
+
+/-- The relative height of subspaces has the Northcott property whenever the scalar height does,
+for instance over a number field: for every `B` there are finitely many subspaces of `ι → K` of
+relative height at most `B`, of all dimensions together. -/
+instance instNorthcottRelativeSubspaceHeight [Northcott (mulHeight₁ (K := K))] :
+    Northcott (relativeSubspaceHeight (ι := ι) (K := K)) where
+  finite_le B := by
+    have := Fintype.ofFinite ι
+    -- The subspaces of height at most `B` have dimension at most `#ι` and a Plücker point of
+    -- height at most `B`, and the pair of these determines the subspace.
+    have hS : (⋃ p ∈ Iic (Fintype.card ι), Sigma.mk p ''
+        {x : Projectivization K (powersetCard ι p → K) | x.mulHeight ≤ B}).Finite :=
+      (finite_Iic _).biUnion fun p _ ↦ (Northcott.finite_le B).image _
+    refine (hS.preimage finrank_relativePluckerPoint_injective.injOn).subset fun U hU ↦ ?_
+    simp only [mem_preimage, mem_iUnion, mem_image, mem_ofPred_eq, exists_prop]
+    refine ⟨finrank K U, ?_, relativePluckerPoint U, hU, rfl⟩
+    exact (Submodule.finrank_le U).trans_eq (Module.finrank_fintype_fun_eq_card K)
+
+/-- The relative logarithmic height of subspaces has the Northcott property whenever the relative
+height does. -/
+instance instNorthcottRelativeSubspaceLogHeight
+    [Northcott (relativeSubspaceHeight (ι := ι) (K := K))] :
+    Northcott (relativeSubspaceLogHeight (ι := ι) (K := K)) := by
+  have heq : relativeSubspaceLogHeight (ι := ι) (K := K) = Real.log ∘ relativeSubspaceHeight :=
+    funext relativeSubspaceLogHeight_eq_log_relativeSubspaceHeight
+  rw [heq]
+  exact Northcott.comp_of_bddAbove _ _ fun B ↦
+    bddAbove_def.mpr ⟨Real.exp B, fun _ ↦ Real.le_exp_of_log_le⟩
 
 end Submodule
 
@@ -198,3 +231,9 @@ example : (ℚ ∙ ![(1 : ℚ), 2]).relativeSubspaceHeight = 2 := by
       _ = 2 := by
         rw [← Height.mulHeight₁_eq_mulHeight]
         exact_mod_cast Rat.mulHeight₁_natCast 2
+
+/-! Over `ℚ` the Northcott instance applies through Mathlib's number-field instance for the scalar
+height. -/
+
+example (B : ℝ) : {U : Submodule ℚ (Fin 3 → ℚ) | U.relativeSubspaceHeight ≤ B}.Finite :=
+  Northcott.finite_le B

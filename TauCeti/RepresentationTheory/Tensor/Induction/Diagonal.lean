@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Invariants
 public import TauCeti.RepresentationTheory.Tensor.Induction.ChangeTransversal.Basic
-public import TauCeti.RepresentationTheory.Tensor.Induction.Naturality
+public import TauCeti.RepresentationTheory.Tensor.Induction.Naturality.Basic
 import Mathlib.Data.ZMod.Basic
 
 /-!

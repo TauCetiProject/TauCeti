@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Relabel.Coordinates
-public import TauCeti.Topology.PL.Map
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.PL
 
 /-!
 # Descending PL maps through vertex relabelings
@@ -83,5 +83,34 @@ theorem isPLOn_restriction_comp_extendByZero
   simp only [Function.comp_apply,
     ← relabelingHomeomorph_coe_eq_extendByZero P e hK hA x,
     hcoord, relabelingHomeomorph_symm_coe_eq_restriction]
+
+/-- A PL homeomorphism after two injective relabelings descends to a PL homeomorphism before
+relabeling. The two complexes may use different embeddings into the common target vertex type.
+
+The descended coordinate formulas extend the input by zero along the source embedding, apply the
+given formula, and restrict along the target embedding. -/
+theorem PLHomeomorphic.of_common_relabeling
+    {A B : PreAbstractSimplicialComplex α} {e d : α ↪ κ}
+    (h : PLHomeomorphic (A.map e) (B.map d)) : PLHomeomorphic A B := by
+  obtain ⟨φ, f, g, hf, hg, hφ, hφinv⟩ := plHomeomorphic_iff.mp h
+  let rA := A.relabelingHomeomorph e (le_top _) (le_top _)
+  let rB := B.relabelingHomeomorph d (le_top _) (le_top _)
+  let ψ := rA.trans (φ.trans rB.symm)
+  let f' : (α → ℝ) → (α → ℝ) :=
+    Function.ExtendByZero.restriction ℝ d ∘ f ∘
+      Function.ExtendByZero.continuousLinearMap ℝ e
+  let g' : (α → ℝ) → (α → ℝ) :=
+    Function.ExtendByZero.restriction ℝ e ∘ g ∘
+      Function.ExtendByZero.continuousLinearMap ℝ d
+  have hf' := isPLOn_restriction_comp_extendByZero A B e d
+    (le_top _) (le_top _) (le_top _) (le_top _) φ f hf hφ
+  have hg' := isPLOn_restriction_comp_extendByZero B A d e
+    (le_top _) (le_top _) (le_top _) (le_top _) φ.symm g hg hφinv
+  refine PLHomeomorphic.intro ψ f' g' hf'.1 hg'.1 ?_ ?_
+  · intro x
+    simpa only [ψ, rA, rB, f', Function.comp_apply, Homeomorph.trans_apply] using hf'.2 x
+  · intro y
+    simpa only [ψ, rA, rB, g', Function.comp_apply, Homeomorph.symm_trans_apply,
+      Homeomorph.symm_symm] using hg'.2 y
 
 end PreAbstractSimplicialComplex

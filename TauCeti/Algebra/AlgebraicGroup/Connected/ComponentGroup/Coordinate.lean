@@ -179,6 +179,16 @@ theorem eval_componentFunctionAlgHom (H : FiniteTypeCommHopfAlgCat.{u, u} k)
     rw [map_connectedComponentsIdempotent_eq_zero H g hC.symm, mul_zero]
   · simp
 
+/-- The counit evaluates a component-indexed function at the identity component. -/
+@[simp]
+theorem counit_componentFunctionAlgHom (H : FiniteTypeCommHopfAlgCat.{u, u} k)
+    (f : ConnectedComponents (PrimeSpectrum H) → k) :
+    Coalgebra.counit (R := k) (componentFunctionAlgHom H f) = f 1 := by
+  simpa only [AlgHom.convOne_apply, Algebra.algebraMap_self_apply, map_one,
+    Bialgebra.counitAlgHom_apply] using
+    eval_componentFunctionAlgHom H
+      (1 : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k)) f
+
 /-- The component function algebra embeds in the coordinate ring. -/
 theorem componentFunctionAlgHom_injective (H : FiniteTypeCommHopfAlgCat.{u, u} k) :
     Function.Injective (componentFunctionAlgHom H) := by
@@ -566,14 +576,7 @@ theorem exists_map_eq_identityComponentIdempotent
     rw [FiniteTypeCommHopfAlgCat.componentCoordinateHom_apply,
       FiniteTypeCommHopfAlgCat.componentCoordinateMap_indicator] at he
     rwa [FiniteTypeCommHopfAlgCat.connectedComponentsIdempotent_one H] at he
-  rw [coinvariants_kernelHopfIdeal_eq_range f hf] at hecoinv
-  obtain ⟨a, ha⟩ := hecoinv
-  have ha' : f.hom a = e := ha
-  have hinj : Function.Injective f.hom := hf.injective
-  have haidem : IsIdempotentElem a := by
-    apply hinj
-    rw [map_mul, ha']
-    exact PrimeSpectrum.isIdempotentElem_connectedComponentIdempotent z
-  exact ⟨a, haidem, ha'⟩
+  exact f.exists_map_eq_of_isIdempotentElem_mem_coinvariants hf
+    (PrimeSpectrum.isIdempotentElem_connectedComponentIdempotent z) hecoinv
 
 end CommHopfAlgCat.Hom
