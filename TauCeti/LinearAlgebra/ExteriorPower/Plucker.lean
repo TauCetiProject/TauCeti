@@ -58,7 +58,11 @@ independence, which is over a field. The empty family has a single Plücker coor
   (2006), §2.8.
 
 The proofs use Mathlib's exterior-power basis `Module.Basis.exteriorPower` and its coordinate
-formula `exteriorPower.ιMultiDual_apply_ιMulti`, by Sophie Morel and Daniel Morrison.
+formula `exteriorPower.ιMultiDual_apply_ιMulti`, by Sophie Morel and Daniel Morrison. The
+reduction modulo a prime in `TauCeti.gcd_plucker_eq_one` is adapted from Ralf Stephan's
+`Submodule.gcd_plucker_eq_one` in `ArithmeticHeights/RationalLattice.lean` of
+[`rwst/Subspace-Theorems`](https://github.com/rwst/Subspace-Theorems/blob/9894a1c4baf805296b249e95575f0e16e8e1afa3/ArithmeticHeights/RationalLattice.lean),
+commit `9894a1c4baf805296b249e95575f0e16e8e1afa3` (Apache 2.0).
 -/
 
 public section

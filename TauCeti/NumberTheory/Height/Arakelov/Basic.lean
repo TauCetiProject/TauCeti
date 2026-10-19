@@ -35,6 +35,11 @@ of a tuple of coprime integers is its Euclidean norm
 
 * J.-H. Evertse and R. G. Ferretti, *A further improvement of the quantitative Subspace
   Theorem*, Ann. of Math. 177 (2013), §6.1 and §6.3.
+
+`TauCeti.height2_intCast_eq_sqrt_of_gcd_eq_one` is adapted from Ralf Stephan's
+`NumberField.arakelovMulHeight_intCast_of_gcd_eq_one` in `ArithmeticHeights/RationalLattice.lean`
+of [`rwst/Subspace-Theorems`](https://github.com/rwst/Subspace-Theorems/blob/9894a1c4baf805296b249e95575f0e16e8e1afa3/ArithmeticHeights/RationalLattice.lean),
+commit `9894a1c4baf805296b249e95575f0e16e8e1afa3` (Apache 2.0).
 -/
 
 public noncomputable section
