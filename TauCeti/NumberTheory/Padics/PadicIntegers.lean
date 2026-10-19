@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Ring.Units
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import Mathlib.NumberTheory.Padics.ProperSpace
 public import Mathlib.Topology.MetricSpace.Ultra.TotallySeparated
+public import TauCeti.Analysis.Normed.Ring.Units
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 import Mathlib.Data.Finset.Max
 import Mathlib.Data.Int.Associated
@@ -47,6 +48,9 @@ calculation for first continuous cohomology with trivial integer coefficients.
   `w i₀ = 1` at some index `i₀`.
 * `PadicInt.units_neg_one_ne_one`: `-1 ≠ 1` in `ℤ_[p]ˣ`.
 * `PadicInt.range_units_val`: the units of `ℤ_[p]` are the elements of norm `1`.
+* `PadicInt.inv_eq_inverse`, `PadicInt.continuous_inverse`: Mathlib's `PadicInt.inv` is
+  `Ring.inverse`, the inverse on units extended by `0`, and it is continuous because the nonunits
+  `pℤ_p` form an open set.
 * `Int.associated_iff_forall_associated_padicInt`: two integers have equal absolute values
   exactly when they are associated in every `ℤ_[p]`.
 * `Padic.exists_eq_zpow_valuation_mul`: every nonzero `x : ℚ_[p]` is `p ^ v(x)` times a unit of
@@ -103,6 +107,25 @@ theorem units_neg_one_ne_one : (-1 : ℤ_[p]ˣ) ≠ 1 := fun h ↦ by
 theorem range_units_val : Set.range (Units.val : ℤ_[p]ˣ → ℤ_[p]) = {x | ‖x‖ = 1} :=
   -- `IsUnit x` is by definition `∃ u : ℤ_[p]ˣ, ↑u = x`, that is `x ∈ Set.range Units.val`.
   Set.ext fun _ ↦ isUnit_iff
+
+/-- Mathlib's `PadicInt.inv` is the ring inverse: the inverse on units and `0` on nonunits. -/
+theorem inv_eq_inverse (z : ℤ_[p]) : z.inv = Ring.inverse z := by
+  by_cases hz : IsUnit z
+  · lift z to ℤ_[p]ˣ using hz
+    rw [Ring.inverse_unit]
+    exact Units.eq_inv_of_mul_eq_one_left (mul_inv (isUnit_iff.mp z.isUnit))
+  · simp [Ring.inverse_non_unit z hz, PadicInt.inv, mt isUnit_iff.mpr hz]
+
+/-- The nonunits of `ℤ_p` form an open set: they are the open unit ball `pℤ_p`. -/
+theorem isOpen_nonunits : IsOpen (nonunits ℤ_[p]) := by
+  have h : nonunits ℤ_[p] = Metric.ball 0 1 :=
+    Set.ext fun z ↦ by simp [mem_nonunits_iff, not_isUnit_iff]
+  rw [h]
+  exact Metric.isOpen_ball
+
+/-- The ring inverse of `ℤ_p`, extended by `0` on the nonunits, is continuous. -/
+theorem continuous_inverse : Continuous (Ring.inverse : ℤ_[p] → ℤ_[p]) :=
+  NormedRing.continuous_inverse_of_isOpen_nonunits isOpen_nonunits
 
 /-- `ℤ_pˣ` is compact: it is the closed unit sphere of the compact space `ℤ_p`, and the topology
 on the units of the complete normed ring `ℤ_p` is the subspace topology. -/
