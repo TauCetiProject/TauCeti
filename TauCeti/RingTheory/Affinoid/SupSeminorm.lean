@@ -56,17 +56,22 @@ that affinoid algebras are Jacobson rings.
 
 public section
 
+namespace AlgHom
+
+/-- The spectral norm over `K` is invariant under `K`-algebra maps of fields. -/
+theorem spectralNorm_map {K : Type*} [NontriviallyNormedField K] {E L : Type*} [Field E]
+    [Algebra K E] [Field L] [Algebra K L] (ψ : E →ₐ[K] L) (y : E) :
+    spectralNorm K L (ψ y) = spectralNorm K E y := by
+  -- `spectralNorm K L y` is by definition `spectralValue (minpoly K y)`, and the injective map `ψ`
+  -- preserves minimal polynomials.
+  simp only [spectralNorm, minpoly.algHom_eq ψ (ψ : E →+* L).injective]
+
+end AlgHom
+
 namespace TauCeti
 
 variable {K : Type*} [NontriviallyNormedField K]
   {A : Type*} [CommRing A] [Algebra K A] {B : Type*} [CommRing B] [Algebra K B]
-
-/-- The spectral norm over `K` is invariant under `K`-algebra maps of fields. -/
-theorem spectralNorm_algHom_apply {E L : Type*} [Field E] [Algebra K E] [Field L] [Algebra K L]
-    (ψ : E →ₐ[K] L) (y : E) : spectralNorm K L (ψ y) = spectralNorm K E y := by
-  -- `spectralNorm K L y` is by definition `spectralValue (minpoly K y)`, and the injective map `ψ`
-  -- preserves minimal polynomials.
-  simp only [spectralNorm, minpoly.algHom_eq ψ (ψ : E →+* L).injective]
 
 variable (K) in
 /-- The absolute value `|f(x)|` of `f : A` at a maximal ideal `x`: the spectral norm over `K` of
@@ -112,7 +117,7 @@ theorem pointNorm_eq_spectralNorm {L : Type*} [Field L] [Algebra K L] (x : Maxim
   let := Ideal.Quotient.field x.asIdeal
   let ψ' : A ⧸ x.asIdeal →ₐ[K] L := Ideal.Quotient.liftₐ x.asIdeal ψ fun a ha ↦ hψ ha
   have h : ψ' (Ideal.Quotient.mk x.asIdeal f) = ψ f := Ideal.Quotient.lift_mk _ _ _
-  rw [pointNorm, ← h, spectralNorm_algHom_apply]
+  rw [pointNorm, ← h, ψ'.spectralNorm_map]
 
 /-- The absolute value at a classical point is unchanged by pulling the point back along an
 algebra map into an affinoid algebra. -/
