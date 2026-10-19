@@ -75,7 +75,7 @@ theorem hasLaw_gompertzMeasure_of_hasLaw_expMeasure {Ω : Type*} [MeasurableSpac
     Real.log (1 + e / η) / b)).aemeasurable).comp hE
 
 /-- The defining Gompertz transform sends positive inputs to positive outputs. -/
-theorem gompertzTransform_pos (hη : 0 < η) (hb : 0 < b) {e : ℝ} (he : 0 < e) :
+theorem log_one_add_div_div_pos (hη : 0 < η) (hb : 0 < b) {e : ℝ} (he : 0 < e) :
     0 < Real.log (1 + e / η) / b :=
   div_pos (Real.log_pos (by linarith [div_pos he hη])) hb
 
@@ -85,7 +85,7 @@ theorem ae_pos_gompertzMeasure (η b : ℝ) : ∀ᵐ x ∂gompertzMeasure η b, 
   · rw [gompertzMeasure_of_pos h.1 h.2]
     apply (ae_map_iff (by fun_prop) measurableSet_Ioi).2
     filter_upwards [ae_pos_expMeasure 1] with e he
-    exact gompertzTransform_pos h.1 h.2 he
+    exact log_one_add_div_div_pos h.1 h.2 he
   · simp [gompertzMeasure_of_not_pos h]
 
 /-- The Gompertz law gives no mass to the nonpositive half-line, at all parameters. -/

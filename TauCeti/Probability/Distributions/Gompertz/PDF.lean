@@ -124,7 +124,7 @@ private lemma gompertzTransform_image (hη : 0 < η) (hb : 0 < b) :
   ext x
   constructor
   · rintro ⟨e, he, rfl⟩
-    exact gompertzTransform_pos hη hb he
+    exact log_one_add_div_div_pos hη hb he
   · intro hx
     refine ⟨η * (exp (b * x) - 1), mul_pos hη (sub_pos.mpr ?_), ?_⟩
     · exact one_lt_exp_iff.mpr (mul_pos hb hx)
@@ -151,7 +151,7 @@ private lemma gompertzPDF_mul_abs_deriv (hη : 0 < η) (hb : 0 < b) {e : ℝ} (h
       exponentialPDF 1 e := by
   have hp : 0 < 1 + e / η := by positivity
   have hd : 0 < (η + e)⁻¹ / b := div_pos (inv_pos.mpr (add_pos hη he)) hb
-  simp only [gompertzPDF, gompertzPDFReal_of_pos hη hb (gompertzTransform_pos hη hb he),
+  simp only [gompertzPDF, gompertzPDFReal_of_pos hη hb (log_one_add_div_div_pos hη hb he),
     mul_div_cancel₀ _ hb.ne', exp_log hp, abs_of_pos hd,
     ← ENNReal.ofReal_mul hd.le, exponentialPDF_of_nonneg he.le, one_mul]
   have hexp : -η * (1 + e / η - 1) = -e := by field_simp; ring
