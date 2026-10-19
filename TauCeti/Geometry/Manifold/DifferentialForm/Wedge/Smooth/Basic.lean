@@ -218,8 +218,7 @@ theorem wedge_apply_one_one (φ : SmoothForm I M ℝ 1) (ψ : SmoothForm I M ℝ
     (v w : TangentSpace I x) :
     (wedge φ ψ).1 x ![v, w] =
       φ.1 x ![v] * ψ.1 x ![w] - φ.1 x ![w] * ψ.1 x ![v] := by
-  simpa only [wedge, ContinuousLinearMap.mul_apply'] using
-    wedgeWith_apply_one_one (ContinuousLinearMap.mul ℝ ℝ) φ ψ x v w
+  rw [coe_wedge, RoughForm.wedge_apply_one_one]
 
 /-- Swapping smooth paired forms flips the coefficient pairing and contributes the graded sign. -/
 theorem wedgeWith_flip (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
