@@ -44,7 +44,7 @@ theorem continuous_cauchyMeasure :
   exact NNReal.coe_injective (by simp)
 
 /-- Shrinking the nonnegative Cauchy scale to zero gives the Dirac law at the location. -/
-theorem tendsto_cauchyMeasure_nhds_zero (m : ℝ) :
+theorem tendsto_cauchyMeasure_nhds_zero_dirac (m : ℝ) :
     Tendsto (fun γ : ℝ≥0 ↦ (cauchyMeasure m γ).toProbabilityMeasure) (𝓝 0)
       (𝓝 (Measure.dirac m).toProbabilityMeasure) := by
   have h := (continuous_cauchyMeasure.comp
