@@ -222,7 +222,8 @@ variable [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y]
 
 /-- **Riemann's removable singularity theorem on complex curves.** A map between complex curves
 that is continuous at `x` and holomorphic at every point of a punctured neighbourhood of `x` is
-holomorphic at `x`. -/
+holomorphic at `x`. This is Mathlib's
+`Complex.differentiableOn_compl_singleton_and_continuousAt_iff` read in charts. -/
 theorem mdifferentiableAt_of_continuousAt_of_eventually_nhdsNE (hc : ContinuousAt f x)
     (hf : ∀ᶠ y in 𝓝[≠] x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f y) :
     MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f x := by
@@ -263,7 +264,7 @@ theorem mdifferentiableAt_of_continuousAt_of_eventually_nhdsNE (hc : ContinuousA
 
 Compared with `ContMDiffWithinAt.of_comp_isLocalDiffeomorph`, the hypothesis on `g` is
 local injectivity rather than a local diffeomorphism: on complex curves the analytic inverse
-function theorem supplies the local inverse. -/
+function theorem, Mathlib's `AnalyticAt.analyticAt_localInverse`, supplies the local inverse. -/
 theorem mdifferentiableAt_of_comp_of_injOn {Z : Type*} [TopologicalSpace Z] [ChartedSpace ℂ Z]
     [IsManifold 𝓘(ℂ) 1 Z] {g : Y → Z} (hc : ContinuousAt f x)
     (hg : ∀ᶠ y in 𝓝 (f x), MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) g y) (hinj : ∃ U ∈ 𝓝 (f x), InjOn g U)

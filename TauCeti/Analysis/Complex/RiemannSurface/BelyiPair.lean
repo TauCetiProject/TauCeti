@@ -54,7 +54,7 @@ topological branched covers. Consequently this construction descends to isomorph
 
 Conversely, the complex structure of a pair is determined by its Belyi map: every continuous map
 over the sphere between analytic Belyi pairs is holomorphic
-(`TauCeti.AnalyticBelyiPair.mdifferentiable_of_β_apply`). Away from the points over `0`, `1` and
+(`TauCeti.AnalyticBelyiPair.mdifferentiable_of_β`). Away from the points over `0`, `1` and
 `∞` it lifts the Belyi map of the source through the Belyi map of the target, which is a local
 biholomorphism there; the finitely many remaining points are removable singularities. Hence a
 homeomorphism over the sphere is an isomorphism of pairs
@@ -99,7 +99,7 @@ sphere.
   `P.Iso P` divides the degree of `P`.
 * `TauCeti.AnalyticBelyiPair.toTopBranchedCover`: the underlying topological branched cover.
 * `TauCeti.AnalyticBelyiPair.toTopBranchedCoverIsoClass`: the induced map on isomorphism classes.
-* `TauCeti.AnalyticBelyiPair.mdifferentiable_of_β_apply`: a continuous map over the sphere between
+* `TauCeti.AnalyticBelyiPair.mdifferentiable_of_β`: a continuous map over the sphere between
   analytic Belyi pairs is holomorphic.
 * `TauCeti.AnalyticBelyiPair.Iso.ofHomeomorph`: a homeomorphism over the sphere is an isomorphism
   of analytic Belyi pairs.
@@ -261,11 +261,12 @@ theorem localDegree_toTopBranchedCover (P : AnalyticBelyiPair.{u}) {n : ℕ}
 the points over `0`, `1` and `∞`, `f` lifts the Belyi map of `P` through that of `Q`, which is a
 local biholomorphism there; the finitely many points over `0`, `1` and `∞` are removable
 singularities. So the complex structure of a pair is determined by its Belyi map. -/
-theorem mdifferentiable_of_β_apply {P : AnalyticBelyiPair.{u}} {Q : AnalyticBelyiPair.{v}}
+theorem mdifferentiable_of_β {P : AnalyticBelyiPair.{u}} {Q : AnalyticBelyiPair.{v}}
     {f : P.X → Q.X} (hf : Continuous f) (hβ : ∀ x, Q.β (f x) = P.β x) :
     MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f := by
   have hP : ∀ y, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) P.β y := P.β.holomorphic
   have hQ : ∀ y, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) Q.β y := Q.β.holomorphic
+  have hβ_comp : Q.β ∘ f = P.β := funext hβ
   -- Off the marked fibres, `Q.β` has multiplicity one at `f x`, so it is injective near `f x`.
   have hunb : ∀ x, P.β x ∉ marked → MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f x := fun x hx ↦ by
     have hfx : Q.β (f x) ∉ Q.β.branchValues := fun h ↦ hx <| by
@@ -274,7 +275,7 @@ theorem mdifferentiable_of_β_apply {P : AnalyticBelyiPair.{u}} {Q : AnalyticBel
     refine mdifferentiableAt_of_comp_of_injOn hf.continuousAt (.of_forall hQ)
       ((localMultiplicity_eq_one_iff (.of_forall hQ)).1
         ((Q.β.notMem_branchValues_iff _).1 hfx _ rfl)) (.of_forall fun y ↦ ?_)
-    rw [show Q.β ∘ f = P.β from funext hβ]
+    rw [hβ_comp]
     exact hP y
   intro x
   by_cases hx : P.β x ∈ marked
@@ -523,14 +524,14 @@ def toHomeomorph (e : P.Iso Q) : P.X ≃ₜ Q.X :=
 theorem coe_toHomeomorph (e : P.Iso Q) : ⇑e.toHomeomorph = e :=
   (rfl)
 
-/-- **A homeomorphism over the sphere is an isomorphism of analytic Belyi pairs**: it and its
-inverse are holomorphic by `TauCeti.AnalyticBelyiPair.mdifferentiable_of_β_apply`. -/
+/-- **A homeomorphism over the sphere is an isomorphism of analytic Belyi pairs**: it is
+holomorphic by `TauCeti.AnalyticBelyiPair.mdifferentiable_of_β`, hence so is its inverse. -/
 def ofHomeomorph (e : P.X ≃ₜ Q.X) (he : ∀ x, Q.β (e x) = P.β x) : P.Iso Q where
   toDiffeomorph :=
-    { toEquiv := e.toEquiv
-      contMDiff_toFun := (mdifferentiable_of_β_apply e.continuous he).contMDiff
-      contMDiff_invFun := (mdifferentiable_of_β_apply e.symm.continuous fun y ↦ by
-        rw [← he, Homeomorph.apply_symm_apply]).contMDiff }
+    have hf := mdifferentiable_of_β e.continuous he
+    { toEquiv := (e.isHomeomorph.homeomorph e).toEquiv
+      contMDiff_toFun := hf.contMDiff
+      contMDiff_invFun := (e.isHomeomorph.mdifferentiable_symm hf).contMDiff }
   β_toDiffeomorph := he
 
 @[simp]
