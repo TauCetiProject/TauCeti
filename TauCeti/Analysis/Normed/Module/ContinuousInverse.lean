@@ -17,8 +17,8 @@ Mathlib's `ContinuousLinearMap.HasLeftInverse` records that a continuous linear 
 inverse which is itself continuous and linear. This file adds two facts about it.
 
 * Over `ℝ` or `ℂ`, an injective continuous linear map out of a finite-dimensional space has a
-  continuous left inverse, whatever the codomain: its range is finite-dimensional, hence has a
-  closed complement by the Hahn–Banach theorem.
+  continuous left inverse, whatever the locally convex codomain: its range is finite-dimensional,
+  hence has a closed complement by the Hahn–Banach theorem.
 * Having a continuous left inverse is stable in families. If `A x` depends continuously on `x`
   and `A x₀` has a continuous left inverse, then so does `A x` for `x` near `x₀`, and the left
   inverses can be chosen to depend continuously on `x` at `x₀`. If `P` is a left inverse of
@@ -45,16 +45,20 @@ noncomputable section
 open Filter Function Topology
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-  {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
 namespace ContinuousLinearMap.HasLeftInverse
 
-/-- Over `ℝ` or `ℂ`, an injective continuous linear map out of a finite-dimensional space has a
-continuous left inverse. Its range is finite-dimensional, so it has a closed complement, and the
-inverse of `f` on its range is continuous. -/
-theorem of_injective_of_finiteDimensional_domain [IsRCLikeNormedField 𝕜] [FiniteDimensional 𝕜 G]
-    {f : G →L[𝕜] F} (hf : Injective f) : f.HasLeftInverse := by
+variable {G : Type*} [TopologicalSpace G] [AddCommGroup G] [Module 𝕜 G] [IsTopologicalAddGroup G]
+  [ContinuousSMul 𝕜 G]
+  {F : Type*} [TopologicalSpace F] [AddCommGroup F] [Module 𝕜 F] [IsTopologicalAddGroup F]
+  [ContinuousSMul 𝕜 F] [T2Space F]
+
+/-- Over `ℝ` or `ℂ`, an injective continuous linear map out of a finite-dimensional space into a
+locally convex (polynormable) space has a continuous left inverse. Its range is
+finite-dimensional, so it has a closed complement, and the inverse of `f` on its range is
+continuous. -/
+theorem of_injective_of_finiteDimensional_domain [IsRCLikeNormedField 𝕜] [PolynormableSpace 𝕜 F]
+    [FiniteDimensional 𝕜 G] {f : G →L[𝕜] F} (hf : Injective f) : f.HasLeftInverse := by
   let _ : RCLike 𝕜 := IsRCLikeNormedField.rclike 𝕜
   -- A continuous projection `p` onto the range, followed by the inverse of `f` on its range.
   obtain ⟨p, hp⟩ :=
@@ -67,7 +71,8 @@ theorem of_injective_of_finiteDimensional_domain [IsRCLikeNormedField 𝕜] [Fin
 
 end ContinuousLinearMap.HasLeftInverse
 
-variable [CompleteSpace G] {X : Type*} [TopologicalSpace X]
+variable {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G] [CompleteSpace G]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] {X : Type*} [TopologicalSpace X]
 
 /-- **Left inverses vary continuously.** Let `A x` be a continuous linear map depending
 continuously on `x` at `x₀`, into a normed space from a Banach space. If `A x₀` has a continuous

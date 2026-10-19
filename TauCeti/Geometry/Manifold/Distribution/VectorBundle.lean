@@ -40,7 +40,6 @@ For a continuous distribution `hD : IsContMDiffDistribution I n k D`, install
 
 * `TauCeti.instTopologicalSpaceTotalSpaceDistribution`: the subspace topology on the total space
   of a distribution.
-* `TauCeti.IsDistributionFrameOn.basis`: the basis of a fibre of `D` given by a local frame.
 * `TauCeti.IsDistributionFrameOn.trivialization`: the local trivialization of `D` given by a local
   frame on an open set.
 * `TauCeti.IsContMDiffDistribution.fiberBundle`: a continuous distribution of rank `k` is a fibre
@@ -108,19 +107,6 @@ namespace IsDistributionFrameOn
 
 variable {D : Π x : M, Submodule 𝕜 (TangentSpace I x)} {X : ι → Π x : M, TangentSpace I x}
   {U : Set M}
-
-section Basis
-
-/-- At a point `y` of `U`, a local frame of `D` on `U` is a basis of the fibre `D y`. -/
-def basis (hX : IsDistributionFrameOn I n D X U) {y : M} (hy : y ∈ U) : Basis ι 𝕜 (D y) :=
-  (Basis.span (hX.linearIndependent hy)).map (LinearEquiv.ofEq _ _ (hX.span_eq hy))
-
-@[simp]
-theorem coe_basis (hX : IsDistributionFrameOn I n D X U) {y : M} (hy : y ∈ U) (i : ι) :
-    (hX.basis hy i : TangentSpace I y) = X i y := by
-  simp [basis]
-
-end Basis
 
 section Coordinates
 
