@@ -136,3 +136,25 @@ theorem toMul_smul {A : Type v} [Semiring A] [Bialgebra k A]
 end CommHopfAlgCat
 
 end TauCeti
+
+namespace Field.absoluteGaloisGroup
+
+open scoped TensorProduct
+
+variable {k : Type u} [Field k]
+
+/-- View an absolute Galois automorphism as an algebra automorphism of the algebraic closure. -/
+noncomputable abbrev toAlgEquiv : Field.absoluteGaloisGroup k ≃*
+    (AlgebraicClosure k ≃ₐ[k] AlgebraicClosure k) := MulEquiv.refl _
+
+/-- The absolute-Galois action on the algebraic closure is evaluation of its automorphisms. -/
+theorem smul_def (σ : Field.absoluteGaloisGroup k) (a : AlgebraicClosure k) :
+    σ • a = toAlgEquiv σ a := rfl
+
+/-- The absolute-Galois action on a pure tensor acts on its scalar factor. -/
+theorem smul_tmul {A : Type*} [Semiring A] [Algebra k A]
+    (σ : Field.absoluteGaloisGroup k) (a : AlgebraicClosure k) (x : A) :
+    σ • (a ⊗ₜ[k] x) = (σ • a) ⊗ₜ[k] x :=
+  TauCeti.ScalarAut.smul_tmul (toAlgEquiv σ) a x
+
+end Field.absoluteGaloisGroup

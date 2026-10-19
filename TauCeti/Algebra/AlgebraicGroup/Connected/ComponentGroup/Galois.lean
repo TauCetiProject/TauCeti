@@ -9,7 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Connected.ComponentGroup.Functor
 public import TauCeti.Algebra.AlgebraicGroup.FiniteType.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.CharacterLattice.Basic
 public import TauCeti.RingTheory.Spectrum.Prime.Action
-public import TauCeti.Topology.Connected.Components.Action
+public import TauCeti.Topology.ConnectedComponents
 import Mathlib.Topology.Algebra.OpenSubgroup
 
 /-!
@@ -41,9 +41,9 @@ public section
 open CategoryTheory WithConv
 open scoped TensorProduct Pointwise
 
-namespace TauCeti.FiniteTypeCommHopfAlgCat
-
 universe u
+
+namespace TauCeti.FiniteTypeCommHopfAlgCat
 
 variable {k : Type u} [Field k]
 
@@ -82,39 +82,45 @@ theorem geometricComponentMap_surjective (H : FiniteTypeCommHopfAlgCat.{u, u} k)
   (rationalComponentMap_surjective _).comp
     AlgHom.baseChangePointsMulEquiv.surjective
 
+/-- The kernel of the geometric component map is the pullback of the rational-point
+subgroup of the identity component after base change to the algebraic closure. -/
+theorem geometricComponentMap_ker (H : FiniteTypeCommHopfAlgCat.{u, u} k) :
+    (geometricComponentMap H).ker =
+      (CommHopfAlgCat.quotientPointsSubgroup
+        (baseChange (K := AlgebraicClosure k) H).obj
+        (HopfAlgebra.identityComponentHopfIdeal (k := AlgebraicClosure k)
+          (H := AlgebraicClosure k ⊗[k] H))
+        (CommAlgCat.of (AlgebraicClosure k) (AlgebraicClosure k))).comap
+        (AlgHom.baseChangePointsMulEquiv (K := AlgebraicClosure k)).toMonoidHom := by
+  rw [geometricComponentMap, ← MonoidHom.comap_ker, rationalComponentMap_ker]
+
 /-- Applying a Galois automorphism to a geometric point moves its component by the action
 induced from the scalar factor of the coordinate ring. -/
 @[simp↓]
 theorem geometricComponentMap_mapValue (H : FiniteTypeCommHopfAlgCat.{u, u} k)
     (σ : Field.absoluteGaloisGroup k) (g : WithConv (H →ₐ[k] AlgebraicClosure k)) :
     geometricComponentMap H
-        (AlgHom.mapValue (show AlgebraicClosure k ≃ₐ[k] AlgebraicClosure k from σ).toAlgHom g) =
+        (AlgHom.mapValue (Field.absoluteGaloisGroup.toAlgEquiv σ).toAlgHom g) =
       σ • geometricComponentMap H g := by
   let e := AlgHom.baseChangePointsMulEquiv (k := k) (K := AlgebraicClosure k)
     (A := H) (R := AlgebraicClosure k)
-  let τ : AlgebraicClosure k ≃ₐ[k] AlgebraicClosure k := σ
   have heval (x : AlgebraicClosure k ⊗[k] H) :
-      (e (AlgHom.mapValue τ.toAlgHom g)).ofConv x =
-        τ ((e g).ofConv (σ⁻¹ • x)) := by
+      (e (AlgHom.mapValue (Field.absoluteGaloisGroup.toAlgEquiv σ).toAlgHom g)).ofConv x =
+        σ • (e g).ofConv (σ⁻¹ • x) := by
     induction x using TensorProduct.inductionOn with
     | add x y hx hy => simp only [map_add, smul_add, hx, hy]
     | tmul a h =>
-      -- The absolute-Galois wrapper uses the existing scalar-factor action on tensors.
-      change _ = τ ((e g).ofConv (τ⁻¹ • (a ⊗ₜ[k] h)))
-      simp [e, ScalarAut.smul_tmul, AlgHom.mapValue_apply, smul_eq_mul]
+      simp [e, Field.absoluteGaloisGroup.smul_tmul, AlgHom.mapValue_apply,
+        ← Field.absoluteGaloisGroup.smul_def, smul_mul', smul_eq_mul]
   rw [geometricComponentMap_apply, geometricComponentMap_apply,
     rationalComponentMap_apply, rationalComponentMap_apply, ConnectedComponents.smul_mk]
   apply congrArg ConnectedComponents.mk
   apply PrimeSpectrum.ext
   ext x
   rw [PrimeSpectrum.asIdeal_smul, Ideal.mem_pointwise_smul_iff_inv_smul_mem]
-  simp only [rationalKernelPoint, AlgHom.kernelPoint_asIdeal, RingHom.mem_ker]
-  -- Kernel points are scheme points in their defining API. Their ideals and the
-  -- scalar action here are on the underlying tensor-product ring.
-  change (e (AlgHom.mapValue τ.toAlgHom g)).ofConv x = 0 ↔
-    (e g).ofConv (σ⁻¹ • (x : AlgebraicClosure k ⊗[k] H)) = 0
+  rw [mem_rationalKernelPoint_asIdeal, mem_rationalKernelPoint_asIdeal]
   rw [heval]
-  exact τ.map_eq_zero_iff
+  exact smul_eq_zero_iff_eq σ
 
 /-- Galois symmetries preserve the group structure on geometric connected components. -/
 noncomputable instance (H : FiniteTypeCommHopfAlgCat.{u, u} k) :
@@ -151,14 +157,9 @@ theorem isOpen_stabilizer_geometricComponent (H : FiniteTypeCommHopfAlgCat.{u, u
   apply AlgHom.ext_of_adjoin_eq_top hs
   intro a ha
   have hfix := MulAction.mem_stabilizer_iff.mp (Subgroup.mem_iInf.mp hσ ⟨a, ha⟩)
-  -- The absolute-Galois wrapper's transported action is the algebra-equivalence action.
-  change (show AlgebraicClosure k ≃ₐ[k] AlgebraicClosure k from σ) • g.ofConv a =
-    g.ofConv a at hfix
-  rw [AlgEquiv.smul_def] at hfix
-  simp only [AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply]
-  -- Keep the underlying algebra equivalence explicit across the opaque group wrapper.
-  change (show AlgebraicClosure k ≃ₐ[k] AlgebraicClosure k from σ) (g.ofConv a) = g.ofConv a
-  exact hfix
+  rw [Field.absoluteGaloisGroup.smul_def] at hfix
+  simpa only [AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply,
+    AlgEquiv.toAlgHom_apply] using hfix
 
 /-- The absolute-Galois action on geometric components is continuous. -/
 instance (H : FiniteTypeCommHopfAlgCat.{u, u} k) :
@@ -195,7 +196,7 @@ theorem mapGeometricComponentGroup_smul
     mapGeometricComponentGroup_geometricComponentMap, ← geometricComponentMap_mapValue]
   exact congrArg (geometricComponentMap H)
     (DFunLike.congr_fun (BialgHom.mapValue_mapDomain f.hom.hom
-      (show AlgebraicClosure k ≃ₐ[k] AlgebraicClosure k from σ).toAlgHom) g)
+      (Field.absoluteGaloisGroup.toAlgEquiv σ).toAlgHom) g)
 
 /-- The identity homomorphism induces the identity on geometric component groups. -/
 @[simp]
