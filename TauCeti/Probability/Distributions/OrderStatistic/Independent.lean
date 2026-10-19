@@ -43,12 +43,18 @@ theorem cdf_map_orderStatistic_pi_eq_poissonBinomial (k : Fin n) (t : ℝ) :
         (Ioi (k : ℕ)) := by
   rw [cdf_eq_real, map_measureReal_apply (measurable_orderStatistic k) measurableSet_Iic,
     preimage_orderStatistic_Iic]
-  have hindep : iIndepFun (fun i (x : Fin n → ℝ) ↦ x i) (Measure.pi μ) :=
-    iIndepFun_pi (X := fun _ ↦ id) fun _ ↦ aemeasurable_id
-  have hlaw := hindep.hasLaw_card_filter_mem
-    (fun i ↦ (measurePreserving_eval μ i).hasLaw) (fun _ ↦ measurableSet_Iic (a := t))
-  simpa only [cdf_eq_real, Set.mem_Iic, Set.Ioi] using
-    hlaw.measureReal_eq (p := fun j ↦ (k : ℕ) < j) .of_discrete
+  have hcount : Measurable (fun x : Fin n → ℝ ↦ #{i | x i ≤ t}) := by
+    simp_rw [Finset.card_eq_sum_ones, Finset.sum_filter]
+    exact Finset.measurable_fun_sum _ fun i _ ↦
+      Measurable.ite (measurableSet_le (measurable_pi_apply i) measurable_const)
+        measurable_const measurable_const
+  calc
+    _ = ((Measure.pi μ).map (fun x ↦ #{i | x i ≤ t})).real (Ioi (k : ℕ)) :=
+      (map_measureReal_apply hcount measurableSet_Ioi).symm
+    _ = _ := by
+      simpa only [cdf_eq_real, Set.mem_Iic] using
+        congrArg (fun ν : Measure ℕ ↦ ν.real (Ioi (k : ℕ)))
+          (map_card_filter_mem_pi μ (fun _ ↦ measurableSet_Iic (a := t)))
 
 open Classical in
 /-- The cdf of an order statistic is the sum of the probabilities of success sets with more

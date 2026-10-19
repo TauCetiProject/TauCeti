@@ -14,7 +14,6 @@ public import TauCeti.Probability.Distributions.Uniform.Basic
 public import TauCeti.Probability.Quantile
 import Mathlib.Algebra.Order.Interval.Set.SuccPred
 import TauCeti.Probability.Distributions.Beta.Cdf
-import TauCeti.Probability.Distributions.Binomial.Basic
 import TauCeti.Probability.Distributions.Binomial.Tail
 
 /-!
