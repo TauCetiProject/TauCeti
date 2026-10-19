@@ -476,6 +476,21 @@ theorem disjoint_cIco_cIco_of_mem_cIoo {a b c : Fin n} (h : b ∈ cIoo a c) :
   rw [mem_cIoo] at h
   split_ifs at h hxab hxbc <;> omega
 
+/-- Of two distinct points of arcs with a common start, one lies in the arc of the other, and the
+other lies strictly between it and the end of that arc. -/
+theorem mem_cIco_and_mem_cIoo_or_mem_cIco_and_mem_cIoo_of_ne {a b c x y : Fin n}
+    (hx : x ∈ cIco a b) (hy : y ∈ cIco a c) (hxy : x ≠ y) :
+    (x ∈ cIco a c ∧ y ∈ cIoo x c) ∨ (y ∈ cIco a b ∧ x ∈ cIoo y b) := by
+  simp only [mem_cIco, mem_cIoo, ne_eq, ← Fin.val_inj] at hx hy hxy ⊢
+  split_ifs at * <;> omega
+
+/-- Of two distinct points different from a third one, one lies strictly between the other and
+the third. -/
+theorem mem_cIoo_or_mem_cIoo_of_ne {a b c : Fin n} (hac : a ≠ c) (hbc : b ≠ c) (hab : a ≠ b) :
+    b ∈ cIoo a c ∨ a ∈ cIoo b c := by
+  simp only [mem_cIoo, ne_eq, ← Fin.val_inj] at hac hbc hab ⊢
+  split_ifs <;> omega
+
 /-- An interior point cuts a clockwise open arc into two open arcs and the cutting point. -/
 theorem cIoo_union_insert_cIoo_eq_cIoo_of_mem_cIoo {a b c : Fin n} (h : b ∈ cIoo a c) :
     cIoo a b ∪ insert b (cIoo b c) = cIoo a c := by

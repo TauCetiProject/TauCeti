@@ -839,6 +839,24 @@ theorem disjoint_map_swapColumns_XSet_iff (a b : Fin n) (S : Finset (Fin n × Fi
   simpa only [swapColumns, Equiv.symm_swap] using
     G.disjoint_map_relabelColumns_XSet_iff (Equiv.swap a b) S
 
+/-- A square outside two columns is in a set of squares with these columns swapped back exactly
+when it is in the set. -/
+theorem mem_map_swapColumns_iff_of_ne {a b : Fin n} (S : Finset (Fin n × Fin n))
+    {p : Fin n × Fin n} (ha : p.1 ≠ a) (hb : p.1 ≠ b) :
+    p ∈ S.map ((Equiv.swap a b).prodCongr (Equiv.refl (Fin n))).toEmbedding ↔ p ∈ S := by
+  rcases p with ⟨c, r⟩
+  simp only [Finset.mem_map_equiv, Equiv.prodCongr_symm, Equiv.symm_swap, Equiv.refl_symm,
+    Equiv.prodCongr_apply, Prod.map_apply, Equiv.refl_apply]
+  rw [Equiv.swap_apply_of_ne_of_ne ha hb]
+
+/-- A square is in a set of squares with two columns swapped back exactly when the square with
+its column swapped is in the set. -/
+theorem mk_mem_map_swapColumns_iff (a b : Fin n) (S : Finset (Fin n × Fin n)) (c r : Fin n) :
+    (c, r) ∈ S.map ((Equiv.swap a b).prodCongr (Equiv.refl (Fin n))).toEmbedding ↔
+      (Equiv.swap a b c, r) ∈ S := by
+  simp only [Finset.mem_map_equiv, Equiv.prodCongr_symm, Equiv.symm_swap, Equiv.refl_symm,
+    Equiv.prodCongr_apply, Prod.map_apply, Equiv.refl_apply]
+
 /-- Swapping the same pair of rows twice is the identity on grid diagrams. -/
 @[simp]
 theorem swapRows_swapRows (a b : Fin n) : (G.swapRows a b).swapRows a b = G := by
