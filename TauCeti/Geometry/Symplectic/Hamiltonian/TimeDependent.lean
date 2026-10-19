@@ -28,6 +28,7 @@ autonomous Hamiltonian vector field.
 * `TauCeti.SymplecticForm.timeDependentHamiltonianSuspension`: the suspended Hamiltonian field.
 * `TauCeti.SymplecticForm.timeDependentHamiltonianFlow`: its global two-time evolution.
 * `TauCeti.SymplecticForm.hasDerivAt_timeDependentHamiltonianFlow`: the evolution equation.
+* `TauCeti.SymplecticForm.eq_timeDependentHamiltonianFlow`: uniqueness of solutions.
 * `TauCeti.SymplecticForm.timeDependentHamiltonianFlow_const`: recovery of the autonomous flow.
 
 See McDuff--Salamon, *Introduction to Symplectic Topology*, the discussion of time-dependent
@@ -36,6 +37,7 @@ Hamiltonian vector fields and flows.
 
 public section
 
+open Function
 open scoped NNReal
 
 namespace TauCeti.SymplecticForm
@@ -43,7 +45,10 @@ namespace TauCeti.SymplecticForm
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
 /-- The autonomous suspension of the time-dependent Hamiltonian vector field: the clock advances
-at speed one and the spatial component is `X_{H_t}`. -/
+at speed one and the spatial component is `X_{H_t}`. Its body is exposed so that a Lipschitz
+certificate for it is also one for the generic suspension, as `timeDependentHamiltonianFlow_eq`
+requires. -/
+@[expose]
 noncomputable def timeDependentHamiltonianSuspension (omega : SymplecticForm V)
     (H : ℝ → V → ℝ) :
     ℝ × V → ℝ × V :=
@@ -62,6 +67,13 @@ noncomputable def timeDependentHamiltonianFlow (omega : SymplecticForm V) (H : �
     (s t : ℝ) (x : V) : V :=
   timeDependentFlow (fun u y ↦ omega.hamiltonianVectorField (H u) y) hX s t x
 
+/-- The time-dependent Hamiltonian evolution is the time-dependent flow of the Hamiltonian
+vector field. -/
+theorem timeDependentHamiltonianFlow_eq (omega : SymplecticForm V) (H : ℝ → V → ℝ)
+    {K : ℝ≥0} (hX : LipschitzWith K (omega.timeDependentHamiltonianSuspension H)) :
+    omega.timeDependentHamiltonianFlow H hX =
+      timeDependentFlow (fun u y ↦ omega.hamiltonianVectorField (H u) y) hX := (rfl)
+
 /-- The time-dependent Hamiltonian evolution starts at its prescribed point. -/
 @[simp]
 theorem timeDependentHamiltonianFlow_self (omega : SymplecticForm V) (H : ℝ → V → ℝ)
@@ -79,6 +91,12 @@ theorem timeDependentHamiltonianFlow_trans (omega : SymplecticForm V) (H : ℝ �
         (omega.timeDependentHamiltonianFlow H hX r s x) =
       omega.timeDependentHamiltonianFlow H hX r t x :=
   timeDependentFlow_trans _ hX r s t x
+
+/-- Each time map of the time-dependent Hamiltonian evolution is bijective. -/
+theorem bijective_timeDependentHamiltonianFlow (omega : SymplecticForm V) (H : ℝ → V → ℝ)
+    {K : ℝ≥0} (hX : LipschitzWith K (omega.timeDependentHamiltonianSuspension H)) (s t : ℝ) :
+    Bijective (omega.timeDependentHamiltonianFlow H hX s t) :=
+  bijective_timeDependentFlow _ hX s t
 
 /-- The time-dependent Hamiltonian evolution is jointly continuous in both times and the point. -/
 theorem continuous_timeDependentHamiltonianFlow (omega : SymplecticForm V)
@@ -106,6 +124,15 @@ theorem hasDerivAt_timeDependentHamiltonianFlow (omega : SymplecticForm V)
         (omega.timeDependentHamiltonianFlow H hX s t x)) t :=
   hasDerivAt_timeDependentFlow _ hX s t x
 
+/-- **Uniqueness of the time-dependent Hamiltonian evolution.** A global solution of
+`y' = X_{H_t}(y)` is the time-dependent Hamiltonian evolution through its value at any chosen
+initial time. -/
+theorem eq_timeDependentHamiltonianFlow (omega : SymplecticForm V) (H : ℝ → V → ℝ)
+    {K : ℝ≥0} (hX : LipschitzWith K (omega.timeDependentHamiltonianSuspension H)) {y : ℝ → V}
+    (hy : ∀ t, HasDerivAt y (omega.hamiltonianVectorField (H t) (y t)) t) (s t : ℝ) :
+    y t = omega.timeDependentHamiltonianFlow H hX s t (y s) :=
+  eq_timeDependentFlow _ hX hy s t
+
 /-- A Lipschitz autonomous Hamiltonian vector field has a Lipschitz time suspension. -/
 theorem lipschitzWith_timeDependentHamiltonianSuspension_const (omega : SymplecticForm V)
     (H : V → ℝ) {K : ℝ≥0} (hX : LipschitzWith K (omega.hamiltonianVectorField H)) :
@@ -128,11 +155,10 @@ theorem timeDependentHamiltonianFlow_const (omega : SymplecticForm V) (H : V →
         (omega.lipschitzWith_timeDependentHamiltonianSuspension_const H hX) s t x =
       omega.hamiltonianFlow H hX (t - s) x := by
   symm
-  have heq := eq_timeDependentFlow _
+  simpa using omega.eq_timeDependentHamiltonianFlow (fun _ ↦ H)
     (omega.lipschitzWith_timeDependentHamiltonianSuspension_const H hX)
       (y := fun u ↦ omega.hamiltonianFlow H hX (u - s) x)
       (fun u ↦ (omega.hasDerivAt_hamiltonianFlow H hX x (u - s)).comp_sub_const u s) s t
-  simpa [timeDependentHamiltonianFlow] using heq
 
 end TauCeti.SymplecticForm
 
