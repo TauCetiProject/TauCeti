@@ -335,7 +335,7 @@ variable {R : Type*} [NormedCommRing R] {f : R⟦X⟧}
 
 /-- If `f(X)` is entire, so is `f(aX)` for every `a`. -/
 theorem IsEntire.rescale (hf : f.IsEntire) (a : R) : (rescale a f).IsEntire :=
-  fun _ ↦ TauCeti.PowerSeries.isRestricted_rescale (hf _)
+  fun _ ↦ (hf _).rescale
 
 /-- The derivative of an entire series is entire. -/
 theorem IsEntire.derivative (hf : f.IsEntire) : (d⁄dX f).IsEntire := by
