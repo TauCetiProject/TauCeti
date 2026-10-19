@@ -117,7 +117,6 @@ def fundamentalClassOn : localHomology (A := ModuleCat.{0} ℤ) (ModuleCat.of �
   (o.existsUnique_fundamentalClassOn hn hA).exists.choose
 
 /-- The fundamental class along `A` restricts to the local orientation at every point of `A`. -/
-@[simp]
 theorem localHomologyRestriction_fundamentalClassOn {x : M} (hx : x ∈ A) :
     localHomologyRestriction (ModuleCat.of ℤ (ULift.{0} ℤ)) (singleton_subset_iff.2 hx) n
       (o.fundamentalClassOn hn hA) = (o x).val :=
@@ -135,6 +134,7 @@ theorem eq_fundamentalClassOn
 
 /-- The fundamental classes along compact subsets are compatible with restriction: for compact
 `B ⊆ A`, the fundamental class along `A` restricts to the fundamental class along `B`. -/
+@[simp]
 theorem localHomologyRestriction_fundamentalClassOn_of_subset {B : Set M} (hB : IsCompact B)
     (hBA : B ⊆ A) :
     localHomologyRestriction (ModuleCat.of ℤ (ULift.{0} ℤ)) hBA n (o.fundamentalClassOn hn hA) =
@@ -142,6 +142,13 @@ theorem localHomologyRestriction_fundamentalClassOn_of_subset {B : Set M} (hB : 
   refine o.eq_fundamentalClassOn hn hB fun x hx ↦ ?_
   rw [localHomologyRestriction_comp_apply]
   exact o.localHomologyRestriction_fundamentalClassOn hn hA (hBA hx)
+
+/-- The fundamental class along a point is the local orientation there. -/
+@[simp]
+theorem fundamentalClassOn_singleton (x : M) (hx : IsCompact ({x} : Set M)) :
+    o.fundamentalClassOn hn hx = (o x).val := by
+  rw [← o.localHomologyRestriction_fundamentalClassOn hn hx (mem_singleton x),
+    localHomologyRestriction_refl, ModuleCat.id_apply]
 
 /-- Reversing the orientation negates the fundamental class along `A`. -/
 @[simp]
