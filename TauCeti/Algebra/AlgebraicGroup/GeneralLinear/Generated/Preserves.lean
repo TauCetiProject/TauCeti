@@ -39,6 +39,8 @@ In the namespace `TauCeti.GeneralLinear`:
   multiplication and its consequence on matrix points.
 * `constantFormDefiningHopfIdeal_le_commonKernelHopfIdeal` and
   `mul_mul_transpose_of_mem_generatedPointsSubgroup`: the same pair for a constant form.
+* `tangentMatrix_mul_of_constantMultiplicationDefiningHopfIdeal_le`: tangent matrices of the
+  generated subgroup scheme are derivations of the constant multiplication.
 
 The multiplication tangent argument is factored from
 `TauCeti.G2ShortRoot.PrimeField.tangentMatrix_mul_crossOperatorPrime` in

@@ -23,8 +23,8 @@ The proof passes the generator identities in `Modular.Bracket` through the commo
 construction, following the tensor-invariance argument for the short-root G₂ carrier in
 `TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.PreservesTensors`. The differentiation argument
 follows `TauCeti.G2ShortRoot.PrimeField.tangentMatrix_mul_crossOperatorPrime` in
-`TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Root.Space`, now factored through the shared
-generated-group tangent equation.
+`TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Root.Space`, via
+`GeneralLinear.tangentMatrix_mul_of_constantMultiplicationDefiningHopfIdeal_le`.
 
 ## References
 
