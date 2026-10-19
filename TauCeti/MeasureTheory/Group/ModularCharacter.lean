@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Group.ModularCharacter
+public import TauCeti.MeasureTheory.Group.Integral
 
 /-!
 # Continuity of the modular character
@@ -16,8 +17,7 @@ and its right translate. This supplies the continuous weight used in convolution
 
 We use Mathlib's convention: right translation of the argument multiplies an integral by
 `Measure.modularCharacter g`. This is the inverse of the modular function in Dana Williams,
-*Crossed Products of C*-Algebras*, Lemma 1.61. The proof uses Mathlib's
-`haarScalarFactor_eq_integral_div` and `continuous_integral_apply_inv_mul`.
+*Crossed Products of C*-Algebras*, Lemma 1.61.
 -/
 
 public section
@@ -30,14 +30,20 @@ namespace TauCeti
 variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [LocallyCompactSpace G]
 
+/-- The modular character is the scalar relating a right-translated Haar measure to the
+original Haar measure. No regularity assumption on the Haar measure is needed. -/
+theorem modularCharacter_eq_haarScalarFactor [MeasurableSpace G] [BorelSpace G]
+    (μ : Measure G) [μ.IsHaarMeasure] (g : G) :
+    Measure.modularCharacter g = Measure.haarScalarFactor (Measure.map (· * g) μ) μ :=
+  Measure.modularCharacterFun_eq_haarScalarFactor μ g
+
 /-- A nonzero test integral computes the modular character by right translation.
 No regularity assumption on the Haar measure is needed. -/
 theorem modularCharacter_eq_integral_div [MeasurableSpace G] [BorelSpace G]
     {μ : Measure G} [μ.IsHaarMeasure] {f : G → ℝ}
     (hf : Continuous f) (hfc : HasCompactSupport f) (hfi : ∫ x, f x ∂μ ≠ 0) (g : G) :
     (Measure.modularCharacter g : ℝ) = (∫ x, f (x * g) ∂μ) / ∫ x, f x ∂μ := by
-  rw [Measure.modularCharacter, MonoidHom.coe_mk, OneHom.coe_mk,
-    Measure.modularCharacterFun_eq_haarScalarFactor μ,
+  rw [modularCharacter_eq_haarScalarFactor μ,
     Measure.haarScalarFactor_eq_integral_div _ _ hf hfc hfi,
     integral_map (by fun_prop) hf.aestronglyMeasurable]
 
@@ -51,12 +57,7 @@ theorem continuous_modularCharacter : Continuous (Measure.modularCharacter : G �
   have hc : Continuous (fun g : G => ∫ x, f (x * g) ∂(Measure.haar : Measure G)) := by
     have h := continuous_integral_apply_inv_mul (μ := (Measure.haar : Measure G).inv)
       f.continuous hfc
-    have heq (g : G) :
-        (∫ y, f (y⁻¹ * g) ∂(Measure.haar : Measure G).inv) =
-          ∫ y, f (y * g) ∂(Measure.haar : Measure G) := by
-      simpa only [Measure.inv, MeasurableEquiv.inv_apply, inv_inv] using
-        integral_map_equiv (MeasurableEquiv.inv G) (fun y : G => f (y⁻¹ * g))
-    simpa only [heq] using h
+    simpa only [integral_inv_measure, inv_inv] using h
   exact continuous_induced_rng.mpr <| (hc.div_const _).congr fun g =>
     (modularCharacter_eq_integral_div f.continuous hfc hfi g).symm
 
