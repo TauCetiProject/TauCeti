@@ -63,6 +63,9 @@ count are independent pieces of the same multiplication.
   point of a middle loop.
 * `TauCeti.exists_reflTransGen_stackStep_of_middleAdj`: a strand of the stack visits every
   middle point adjacent to one it visits.
+* `TauCeti.eq_or_composeDiagram_val_eq_inr_of_reflTransGen_stackStep`,
+  `TauCeti.eq_or_composeDiagram_val_eq_inl_of_reflTransGen_stackStep`: a through strand at a
+  middle point a strand of the stack visits leads back to its start or on to its far end.
 
 ## References
 
@@ -453,5 +456,37 @@ theorem exists_reflTransGen_stackStep_of_middleAdj {y s₀ s : Fin k ⊕ Fin k}
       subst hc
       exact ⟨Sum.inl b, hw, middlePoint_inl b⟩
   · exact ⟨Sum.inl b, hs.tail (by simp [h]), middlePoint_inl b⟩
+
+/-- **The ends of a strand, at the top.** A through strand of `D₁` from a middle point visited by
+the strand of the stack starting at the outer point `y` up to the top point `j` either retraces
+the first arc of the strand, so `y` is that top point, or ends it: then `D₁ ∘ D₂` joins `y` to
+`j`. -/
+theorem eq_or_composeDiagram_val_eq_inr_of_reflTransGen_stackStep {y s₀ s : Fin k ⊕ Fin k}
+    (h₀ : stackStart D₁ D₂ y = Sum.inr s₀)
+    (hs : Relation.ReflTransGen (fun u v => stackStep D₁ D₂ u = Sum.inr v) s₀ s) {j : Fin k}
+    (h : D₁.val (Sum.inl (middlePoint s)) = Sum.inr j) :
+    Sum.inr j = y ∨ (composeDiagram D₁ D₂).val y = Sum.inr j := by
+  rcases s with a | a <;> simp only [middlePoint_inl, middlePoint_inr] at h
+  · exact Or.inr ((composeDiagram_val_eq_iff D₁ D₂).mpr (Or.inr ⟨s₀, _, h₀, hs, by simp [h]⟩))
+  · rcases hs.cases_tail with rfl | ⟨w, -, hstep⟩
+    · exact Or.inl (h.symm.trans (stackStart_eq_inr_inr_iff.mp h₀).2)
+    · obtain ⟨c, rfl, hc⟩ := stackStep_eq_inr_inr_iff.mp hstep
+      simp [h] at hc
+
+/-- **The ends of a strand, at the bottom.** A through strand of `D₂` from a middle point visited
+by the strand of the stack starting at the outer point `y` down to the bottom point `i` either
+retraces the first arc of the strand, so `y` is that bottom point, or ends it: then `D₁ ∘ D₂`
+joins `y` to `i`. -/
+theorem eq_or_composeDiagram_val_eq_inl_of_reflTransGen_stackStep {y s₀ s : Fin k ⊕ Fin k}
+    (h₀ : stackStart D₁ D₂ y = Sum.inr s₀)
+    (hs : Relation.ReflTransGen (fun u v => stackStep D₁ D₂ u = Sum.inr v) s₀ s) {i : Fin k}
+    (h : D₂.val (Sum.inr (middlePoint s)) = Sum.inl i) :
+    Sum.inl i = y ∨ (composeDiagram D₁ D₂).val y = Sum.inl i := by
+  rcases s with a | a <;> simp only [middlePoint_inl, middlePoint_inr] at h
+  · rcases hs.cases_tail with rfl | ⟨w, -, hstep⟩
+    · exact Or.inl (h.symm.trans (stackStart_eq_inr_inl_iff.mp h₀).2)
+    · obtain ⟨c, rfl, hc⟩ := stackStep_eq_inr_inl_iff.mp hstep
+      simp [h] at hc
+  · exact Or.inr ((composeDiagram_val_eq_iff D₁ D₂).mpr (Or.inr ⟨s₀, _, h₀, hs, by simp [h]⟩))
 
 end TauCeti

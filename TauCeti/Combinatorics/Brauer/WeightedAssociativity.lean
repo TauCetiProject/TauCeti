@@ -190,14 +190,9 @@ private theorem OnStrand.exists_of_inr {i a : Fin k} (ht : OnStrand D₁ D₂ i 
     ∃ b, OnStrand D₁ D₂ i (Sum.inl b) ∧ D₁.val (Sum.inl b) = Sum.inl a := by
   obtain ⟨s, hs, hpath⟩ := ht
   rcases hpath.cases_tail with rfl | ⟨u, hu, hstep⟩
-  · obtain ⟨_, h, -⟩ := stackStart_inl_eq_inr_iff.mp hs
-    simp at h
-  · rcases u with b | b
-    · obtain ⟨c, hc, hb⟩ := stackStep_inl_eq_inr_iff.mp hstep
-      cases Sum.inr_injective hc
-      exact ⟨b, ⟨s, hs, hu⟩, hb⟩
-    · obtain ⟨c, hc, -⟩ := stackStep_inr_eq_inr_iff.mp hstep
-      simp at hc
+  · exact absurd (stackStart_eq_inr_inr_iff.mp hs).1 (by simp)
+  · obtain ⟨b, rfl, hb⟩ := stackStep_eq_inr_inr_iff.mp hstep
+    exact ⟨b, ⟨s, hs, hu⟩, D₁.apply_eq_of_apply_eq hb⟩
 
 /-- A strand reaches the middle point `a` about to run up through `D₁` either along its first
 arc, a through strand of `D₂`, or along a cup of `D₂` ending at `a`. -/
@@ -206,15 +201,9 @@ private theorem OnStrand.exists_of_inl {i a : Fin k} (ht : OnStrand D₁ D₂ i 
       ∃ b, OnStrand D₁ D₂ i (Sum.inr b) ∧ D₂.val (Sum.inr b) = Sum.inr a := by
   obtain ⟨s, hs, hpath⟩ := ht
   rcases hpath.cases_tail with rfl | ⟨u, hu, hstep⟩
-  · obtain ⟨c, hc, hi⟩ := stackStart_inl_eq_inr_iff.mp hs
-    cases Sum.inl_injective hc
-    exact Or.inl hi
-  · rcases u with b | b
-    · obtain ⟨c, hc, -⟩ := stackStep_inl_eq_inr_iff.mp hstep
-      simp at hc
-    · obtain ⟨c, hc, hb⟩ := stackStep_inr_eq_inr_iff.mp hstep
-      cases Sum.inl_injective hc
-      exact Or.inr ⟨b, ⟨s, hs, hu⟩, hb⟩
+  · exact Or.inl (D₂.apply_eq_of_apply_eq (stackStart_eq_inr_inl_iff.mp hs).2)
+  · obtain ⟨b, rfl, hb⟩ := stackStep_eq_inr_inl_iff.mp hstep
+    exact Or.inr ⟨b, ⟨s, hs, hu⟩, D₂.apply_eq_of_apply_eq hb⟩
 
 /-- **A strand runs through the whole upper component it enters**: an arc of the middle graph of
 `D₁` above `D₂` at a middle point of the strand leads to another middle point of the strand. -/
@@ -230,15 +219,10 @@ the bottom point `i'` either retraces the first arc of the strand or ends it: th
 cap joining `i` to `i'`. -/
 private theorem OnStrand.eq_or_composeDiagram {i i' : Fin k} {t : Fin k ⊕ Fin k}
     (ht : OnStrand D₁ D₂ i t) (h : D₂.val (Sum.inr (middlePoint t)) = Sum.inl i') :
-    i' = i ∨ (composeDiagram D₁ D₂).val (Sum.inl i) = Sum.inl i' := by
-  rcases t with a | a <;> simp only [middlePoint_inl, middlePoint_inr] at h
-  · rcases ht.exists_of_inl with hi | ⟨b, -, hba⟩
-    · rw [D₂.apply_eq_of_apply_eq hi] at h
-      exact Or.inl (Sum.inl_injective h).symm
-    · simp [D₂.apply_eq_of_apply_eq hba] at h
-  · obtain ⟨s, hs, hpath⟩ := ht
-    refine Or.inr ((composeDiagram_val_eq_iff D₁ D₂).mpr (Or.inr ⟨s, Sum.inr a, hs, hpath, ?_⟩))
-    simp [stackStep_inr, h]
+    i' = i ∨ (composeDiagram D₁ D₂).val (Sum.inl i) = Sum.inl i' :=
+  let ⟨_, hs, hpath⟩ := ht
+  (eq_or_composeDiagram_val_eq_inl_of_reflTransGen_stackStep hs hpath h).imp
+    (fun h => Sum.inl_injective h) id
 
 /-- If `D₁ ∘ D₂` has a cap at the bottom point `i`, then every middle point the strand from `i`
 reaches carries a cap of `D₁`: a through strand of `D₁` there would carry the strand out of the

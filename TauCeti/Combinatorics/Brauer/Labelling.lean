@@ -228,28 +228,9 @@ private theorem eq_or_composeDiagram_val_eq_of_isAttach {y : Fin k ⊕ Fin k}
     {s₀ s : Fin k ⊕ Fin k} (h₀ : stackStart D₁ D₂ y = Sum.inr s₀)
     (hs : Relation.ReflTransGen (StackRel D₁ D₂) s₀ s) {z : Fin k ⊕ Fin k}
     (hz : IsAttach D₁ D₂ (middlePoint s) z) : z = y ∨ (composeDiagram D₁ D₂).val y = z := by
-  have hexit (h : stackStep D₁ D₂ s = Sum.inl z) : (composeDiagram D₁ D₂).val y = z :=
-    (composeDiagram_val_eq_iff D₁ D₂).mpr (Or.inr ⟨s₀, s, h₀, hs, h⟩)
-  rcases s with b | b <;> simp only [middlePoint_inl, middlePoint_inr] at hz <;>
-    rcases hz with ⟨hz, h⟩ | ⟨hz, h⟩
-  · rcases z with i | j
-    · simp at hz
-    · exact Or.inr (hexit (by simp [h]))
-  · rcases hs.cases_tail with rfl | ⟨w, hw, hstep⟩
-    · exact Or.inl (h.symm.trans (stackStart_eq_inr_inl_iff.mp h₀).2)
-    · obtain ⟨c, rfl, hc⟩ := stackStep_eq_inr_inl_iff.mp hstep
-      rw [h] at hc
-      subst hc
-      simp at hz
-  · rcases hs.cases_tail with rfl | ⟨w, hw, hstep⟩
-    · exact Or.inl (h.symm.trans (stackStart_eq_inr_inr_iff.mp h₀).2)
-    · obtain ⟨c, rfl, hc⟩ := stackStep_eq_inr_inr_iff.mp hstep
-      rw [h] at hc
-      subst hc
-      simp at hz
-  · rcases z with i | j
-    · exact Or.inr (hexit (by simp [h]))
-    · simp at hz
+  rcases hz with ⟨hz, h⟩ | ⟨hz, h⟩ <;> rcases z with i | j <;> simp at hz
+  · exact eq_or_composeDiagram_val_eq_inr_of_reflTransGen_stackStep h₀ hs h
+  · exact eq_or_composeDiagram_val_eq_inl_of_reflTransGen_stackStep h₀ hs h
 
 /-- **The forced labels are consistent.** If the outer labelling is constant on the arcs of the
 composite, then two through strands at middle points joined in the middle graph end at outer
