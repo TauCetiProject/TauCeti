@@ -287,65 +287,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {n : ℕ∞ω}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold I (minSmoothness 𝕜 2) M]
 
-private theorem eventually_mdifferentiableAt_of_contMDiffAt
-    {f : M → F} {x : M} (hf : CMDiffAt n f x) (hn : minSmoothness 𝕜 2 ≤ n) :
-    ∀ᶠ y in 𝓝 x, MDiffAt f y := by
-  have h2n : (2 : ℕ∞ω) ≤ n :=
-    (le_minSmoothness (𝕜 := 𝕜) (n := (2 : ℕ∞ω))).trans hn
-  filter_upwards [(contMDiffAt_iff_contMDiffAt_nhds (n := 2) (by norm_num)).1
-    (hf.of_le h2n)] with y hy
-  exact hy.mdifferentiableAt (by norm_num)
-
-private theorem mdifferentiableAt_tangentMapWithin_apply
-    {f : M → F} {U : ∀ y : M, TangentSpace I y} {x : M} {t : Set M}
-    (ht_open : IsOpen t) (hft : ContMDiffOn I 𝓘(𝕜, F) 2 f t)
-    (hxt : x ∈ t) (hU : MDiffAt (fun y ↦ (U y : TangentBundle I M)) x) :
-    MDiffAt (fun y ↦ tangentMapWithin I 𝓘(𝕜, F) f t
-      (U y : TangentBundle I M)) x := by
-  let u : M → TangentBundle I M := fun y ↦ (U y : TangentBundle I M)
-  have hu_mem : u x ∈ π E (TangentSpace I) ⁻¹' t := hxt
-  have htangent := hft.contMDiffOn_tangentMapWithin
-    (I := I) (I' := 𝓘(𝕜, F)) (m := 1) (by norm_num) ht_open.uniqueMDiffOn
-  have hpre : π E (TangentSpace I) ⁻¹' t ∈ 𝓝 (u x) :=
-    (FiberBundle.continuous_proj E (TangentSpace I)).continuousAt
-      (ht_open.mem_nhds hxt)
-  have htangentAt : MDiffAt (tangentMapWithin I 𝓘(𝕜, F) f t) (u x) := by
-    rw [← mdifferentiableWithinAt_univ]
-    exact ((htangent (u x) hu_mem).mdifferentiableWithinAt (by norm_num)).mono_of_mem_nhdsWithin
-      (by simpa only [nhdsWithin_univ] using hpre)
-  exact htangentAt.comp x hU
-
-private theorem exists_open_contMDiffOn_two
-    {f : M → F} {x : M} (hf : CMDiffAt n f x) (hn : minSmoothness 𝕜 2 ≤ n) :
-    ∃ t : Set M, IsOpen t ∧ t ∈ 𝓝 x ∧ ContMDiffOn I 𝓘(𝕜, F) 2 f t := by
-  have h2n : (2 : ℕ∞ω) ≤ n :=
-    (le_minSmoothness (𝕜 := 𝕜) (n := (2 : ℕ∞ω))).trans hn
-  rcases (contMDiffAt_iff_contMDiffOn_nhds (n := 2) (by norm_num)).1 (hf.of_le h2n) with
-    ⟨s, hs, hfs⟩
-  exact ⟨interior s, isOpen_interior,
-    isOpen_interior.mem_nhds (mem_interior_iff_mem_nhds.mpr hs), hfs.mono interior_subset⟩
-
-private theorem eventuallyEq_tangentMapWithin_apply
-    {f : M → F} {U : ∀ y : M, TangentSpace I y} {x : M} {t : Set M}
-    (ht_open : IsOpen t) (ht : t ∈ 𝓝 x)
-    (hf : CMDiffAt n f x) (hn : minSmoothness 𝕜 2 ≤ n) :
-    (fun y ↦ tangentMapWithin I 𝓘(𝕜, F) f t (U y : TangentBundle I M)) =ᶠ[𝓝 x]
-      fun y ↦ tangentMap I 𝓘(𝕜, F) f (U y : TangentBundle I M) := by
-  filter_upwards [ht, eventually_mdifferentiableAt_of_contMDiffAt hf hn] with y hyt hfy
-  exact tangentMapWithin_eq_tangentMap (ht_open.uniqueMDiffWithinAt hyt) hfy
-
-private theorem mdifferentiableAt_tangentMap_apply
-    {f : M → F} {U : ∀ y : M, TangentSpace I y} {x : M}
-    (hf : CMDiffAt n f x) (hn : minSmoothness 𝕜 2 ≤ n)
-    (hU : MDiffAt (fun y ↦ (U y : TangentBundle I M)) x) :
-    MDiffAt (fun y ↦ tangentMap I 𝓘(𝕜, F) f
-      (U y : TangentBundle I M)) x := by
-  rcases exists_open_contMDiffOn_two hf hn with ⟨t, ht_open, ht, hft⟩
-  have hx : x ∈ t := mem_of_mem_nhds ht
-  have htangentAt := mdifferentiableAt_tangentMapWithin_apply ht_open hft hx hU
-  exact htangentAt.congr_of_eventuallyEq
-    (eventuallyEq_tangentMapWithin_apply (U := U) ht_open ht hf hn).symm
-
 /-- Let `f` be a vector-valued function that is `C^n` at `x` with `n ≥ minSmoothness 𝕜 2` (so `C²`
 over `ℝ` or `ℂ`), and let `U` be a vector field differentiable at `x`. Then the directional
 derivative `y ↦ df_y (U y)` is differentiable at `x`. -/
@@ -354,7 +295,12 @@ theorem mdifferentiableAt_mvfderiv_apply
     (hf : CMDiffAt n f x) (hn : minSmoothness 𝕜 2 ≤ n)
     (hU : MDiffAt (fun y ↦ (U y : TangentBundle I M)) x) :
     MDiffAt (fun y ↦ mvfderiv I f y (U y)) x := by
-  have htangent := mdifferentiableAt_tangentMap_apply hf hn hU
+  have h2n : (2 : ℕ∞ω) ≤ n :=
+    (le_minSmoothness (𝕜 := 𝕜) (n := (2 : ℕ∞ω))).trans hn
+  have htangent : MDiffAt (fun y ↦ tangentMap I 𝓘(𝕜, F) f
+      (U y : TangentBundle I M)) x :=
+    ((hf.contMDiffAt_tangentMap (m := 1) (by norm_num; exact h2n)).mdifferentiableAt
+      (by norm_num)).comp x hU
   have hsnd : MDiffAt (fun p : TangentBundle 𝓘(𝕜, F) F ↦ @id F p.2)
       (tangentMap I 𝓘(𝕜, F) f (U x : TangentBundle I M)) :=
     (contMDiff_snd_tangentBundle_modelSpace F 𝓘(𝕜, F)
