@@ -259,16 +259,13 @@ private theorem mem_cyclicCoboundaries_iff_complex (n : ℕ) (φ : cyclicCochain
       refine ⟨(cyclicCochainComplexXIso R A M n).hom ψ, ?_⟩
       rw [← cyclicCochainComplex_d_apply, hψ, Iso.inv_hom_id_apply]
 
-private abbrev toCycles (n : ℕ) :=
-  (cyclicCochainComplex R A M).moduleCatCocyclesToCyclesOfIso
-    (fun n ↦ cyclicCochains R A M n) (cyclicCocycles R A M)
-    (cyclicCochainComplexXIso R A M) (mem_cyclicCocycles_iff_complex R A M) n
+private abbrev toCycles (n : ℕ) (φ : cyclicCocycles R A M n) :=
+  (cyclicCochainComplex R A M).moduleCatCyclesMk ((cyclicCochainComplexXIso R A M n).inv φ.1)
+    (n + 1) (CochainComplex.next ℕ n) ((mem_cyclicCocycles_iff_complex R A M n φ.1).1 φ.2)
 
 private theorem iCycles_toCycles (n : ℕ) (φ : cyclicCocycles R A M n) :
     (cyclicCochainComplex R A M).iCycles n (toCycles R A M n φ) = φ.1 :=
-  (cyclicCochainComplex R A M).iCycles_moduleCatCocyclesToCyclesOfIso
-    (fun n ↦ cyclicCochains R A M n) (cyclicCocycles R A M)
-    (cyclicCochainComplexXIso R A M) (mem_cyclicCocycles_iff_complex R A M) n φ
+  (cyclicCochainComplex R A M).iCycles_moduleCatCyclesMk _ _ _ _ _
 
 namespace cyclicCohomology
 

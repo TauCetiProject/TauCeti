@@ -156,7 +156,8 @@ multiplication `Aᵢ ⊗ Aⱼ ⟶ Aᵢ₊ⱼ` followed by the inclusion of the s
 theorem ιTotal_tensorHom_ιTotal_mul (A : GradedQuasicoherentAlgebra X) (i j : ℕ) :
     (ιTotal A i ⊗ₘ ιTotal A j) ≫
         μ[(toQuasicoherentAlgebra.obj A).obj.X] =
-      A.mul i j ≫ ιTotal A (i + j) := by
+      GradedObject.Monoidal.ιTensorObj A.obj.X A.obj.X i j (i + j) rfl ≫
+        μ[A.obj.X] (i + j) ≫ ιTotal A (i + j) := by
   let e : ((GradedObject.total ℕ X.Modules).mapCommMon.obj A.obj) ⟶
       (toQuasicoherentAlgebra.obj A).obj :=
     eqToHom (toQuasicoherentAlgebra_obj_obj A).symm
@@ -169,13 +170,15 @@ theorem ιTotal_tensorHom_ιTotal_mul (A : GradedQuasicoherentAlgebra X) (i j : 
   have htotal :
       (GradedObject.ιTotal A.obj.X i ⊗ₘ GradedObject.ιTotal A.obj.X j) ≫
           μ[((GradedObject.total ℕ X.Modules).mapCommMon.obj A.obj).X] =
-        A.mul i j ≫ GradedObject.ιTotal A.obj.X (i + j) := by
+        GradedObject.Monoidal.ιTensorObj A.obj.X A.obj.X i j (i + j) rfl ≫
+          μ[A.obj.X] (i + j) ≫ GradedObject.ιTotal A.obj.X (i + j) := by
     have h : (GradedObject.ιTotal A.obj.X i ⊗ₘ GradedObject.ιTotal A.obj.X j) ≫
         Functor.LaxMonoidal.μ (GradedObject.total ℕ X.Modules) A.obj.X A.obj.X ≫
           (GradedObject.total ℕ X.Modules).map μ[A.obj.X] =
-        A.mul i j ≫ GradedObject.ιTotal A.obj.X (i + j) := by
+        GradedObject.Monoidal.ιTensorObj A.obj.X A.obj.X i j (i + j) rfl ≫
+          μ[A.obj.X] (i + j) ≫ GradedObject.ιTotal A.obj.X (i + j) := by
       rw [GradedObject.ιTotal_tensorHom_ιTotal_total_μ_assoc _ _ i j _ rfl,
-        GradedObject.ιTotal_total_map, mul_def, Category.assoc]
+        GradedObject.ιTotal_total_map]
     rw [total_mapCommMon_mul]
     -- `h` is this goal with the carrier of `mapCommMon.obj A.obj` written as the total object,
     -- as which Mathlib defines it (`Functor.mapCommMon_obj_X`).
@@ -197,7 +200,8 @@ theorem ιTotal_tensorHom_ιTotal_mul (A : GradedQuasicoherentAlgebra X) (i j : 
 summand of degree `0`. -/
 @[simp, reassoc]
 theorem one_toQuasicoherentAlgebra (A : GradedQuasicoherentAlgebra X) :
-    η[(toQuasicoherentAlgebra.obj A).obj.X] = A.one ≫ ιTotal A 0 := by
+    η[(toQuasicoherentAlgebra.obj A).obj.X] =
+      (GradedObject.Monoidal.tensorUnit₀ (C := X.Modules)).inv ≫ η[A.obj.X] 0 ≫ ιTotal A 0 := by
   let e : ((GradedObject.total ℕ X.Modules).mapCommMon.obj A.obj) ⟶
       (toQuasicoherentAlgebra.obj A).obj :=
     eqToHom (toQuasicoherentAlgebra_obj_obj A).symm
@@ -208,12 +212,13 @@ theorem one_toQuasicoherentAlgebra (A : GradedQuasicoherentAlgebra X) :
       η[(toQuasicoherentAlgebra.obj A).obj.X] :=
     IsMonHom.one_hom φ
   have htotal : η[((GradedObject.total ℕ X.Modules).mapCommMon.obj A.obj).X] =
-      A.one ≫ GradedObject.ιTotal A.obj.X 0 := by
+      (GradedObject.Monoidal.tensorUnit₀ (C := X.Modules)).inv ≫ η[A.obj.X] 0 ≫
+        GradedObject.ιTotal A.obj.X 0 := by
     have h : Functor.LaxMonoidal.ε (GradedObject.total ℕ X.Modules) ≫
         (GradedObject.total ℕ X.Modules).map η[A.obj.X] =
-          A.one ≫ GradedObject.ιTotal A.obj.X 0 := by
-      rw [GradedObject.total_ε, Category.assoc, GradedObject.ιTotal_total_map, one_def,
-        Category.assoc]
+          (GradedObject.Monoidal.tensorUnit₀ (C := X.Modules)).inv ≫ η[A.obj.X] 0 ≫
+            GradedObject.ιTotal A.obj.X 0 := by
+      rw [GradedObject.total_ε, Category.assoc, GradedObject.ιTotal_total_map]
     rw [total_mapCommMon_one]
     -- As in `ιTotal_tensorHom_ιTotal_mul`, `h` is this goal up to `Functor.mapCommMon_obj_X`.
     exact h

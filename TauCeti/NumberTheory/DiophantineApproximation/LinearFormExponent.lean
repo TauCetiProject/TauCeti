@@ -5,7 +5,12 @@ Authors: David Roe, Claude
 -/
 module
 
+public import Mathlib.FieldTheory.Minpoly.Basic
 public import TauCeti.NumberTheory.DiophantineApproximation.Exponent
+-- Proof-only: Dirichlet's theorem, and linear independence of powers.
+import Mathlib.RingTheory.PowerBasis
+import TauCeti.NumberTheory.DiophantineApproximation.Dirichlet
+import TauCeti.RingTheory.Algebraic.LinearIndependent
 
 /-!
 # The linear-form exponent and Mahler's exponent
@@ -28,11 +33,14 @@ how small nonzero values of integer polynomials of degree at most `n` can be at 
   irrationality exponent. Consequently rational numbers have exponent `0`
   (`linearFormExponent_ratCast`) and exactly the Liouville numbers have exponent `⊤`
   (`linearFormExponent_eq_top_iff`).
+* `card_le_linearFormExponent`: Dirichlet's lower bound `w(θ) ≥ n` when `1, θ₁, …, θₙ` satisfy no
+  nontrivial integer relation; consequently `w_n(ξ) ≥ n` when `ξ` is not algebraic of degree at
+  most `n` (`natCast_le_mahlerExponent`).
 
 ## References
 
 * Y. Bugeaud, *Exponents of Diophantine approximation*, §1, Definition 1.2 and §2,
-  Definition 2.1.
+  Definition 2.1 and Theorem 2.5.
 -/
 
 public section
@@ -84,13 +92,13 @@ theorem linearFormApproximations_antitone (θ : ι → ℝ) :
     Antitone (linearFormApproximations θ) := fun _ _ hww' _ hx ↦
   ⟨hx.1, hx.2.trans (Real.rpow_le_rpow_of_exponent_le (one_le_norm_of_mem hx) (neg_le_neg hww'))⟩
 
-/-- Only finitely many integer vectors have linear form of absolute value at most one and
-coefficients `(xᵢ)ᵢ` of sup norm at most `N`. -/
-private theorem finite_setOf_abs_le_one_norm_snd_le (θ : ι → ℝ) (N : ℝ) :
-    {x : ℤ × (ι → ℤ) | |(x.1 : ℝ) + ∑ i, (x.2 i : ℝ) * θ i| ≤ 1 ∧ ‖x.2‖ ≤ N}.Finite := by
-  refine ((isCompact_closedBall (0 : ℤ × (ι → ℤ)) (max (1 + N * ∑ i, |θ i|) N)).finite_of_discrete
-    ).subset fun x ⟨hL, hN⟩ ↦ ?_
-  rw [mem_closedBall_zero_iff, Prod.norm_def]
+/-- If the linear form `x₀ + ∑ i, xᵢ θᵢ` of an integer vector `x` has absolute value at most `δ`
+and `‖(xᵢ)ᵢ‖ ≤ N`, then the sup norm of the full vector satisfies
+`‖x‖ ≤ max (δ + N ∑ i, |θᵢ|) N`. -/
+theorem norm_le_max_of_abs_add_sum_mul_le {θ : ι → ℝ} {δ N : ℝ} {x : ℤ × (ι → ℤ)}
+    (hL : |(x.1 : ℝ) + ∑ i, (x.2 i : ℝ) * θ i| ≤ δ) (hN : ‖x.2‖ ≤ N) :
+    ‖x‖ ≤ max (δ + N * ∑ i, |θ i|) N := by
+  rw [Prod.norm_def]
   refine max_le_max ?_ hN
   -- The coordinate `x₀` is the linear form minus the contribution of the other coordinates.
   have hsum : |∑ i, (x.2 i : ℝ) * θ i| ≤ N * ∑ i, |θ i| := by
@@ -101,6 +109,13 @@ private theorem finite_setOf_abs_le_one_norm_snd_le (θ : ι → ℝ) (N : ℝ) 
   have h₁ : (x.1 : ℝ) = ((x.1 : ℝ) + ∑ i, (x.2 i : ℝ) * θ i) - ∑ i, (x.2 i : ℝ) * θ i := by ring
   rw [Int.norm_eq_abs, h₁]
   exact (abs_sub _ _).trans (add_le_add hL hsum)
+
+/-- Only finitely many integer vectors have linear form of absolute value at most one and
+coefficients `(xᵢ)ᵢ` of sup norm at most `N`. -/
+private theorem finite_setOf_abs_le_one_norm_snd_le (θ : ι → ℝ) (N : ℝ) :
+    {x : ℤ × (ι → ℤ) | |(x.1 : ℝ) + ∑ i, (x.2 i : ℝ) * θ i| ≤ 1 ∧ ‖x.2‖ ≤ N}.Finite :=
+  ((isCompact_closedBall (0 : ℤ × (ι → ℤ)) (max (1 + N * ∑ i, |θ i|) N)).finite_of_discrete
+    ).subset fun _ ⟨hL, hN⟩ ↦ mem_closedBall_zero_iff.2 (norm_le_max_of_abs_add_sum_mul_le hL hN)
 
 /-- The linear-form exponent `w(θ)` of `θ : ι → ℝ` is the supremum, in `ℝ≥0∞`, of the real
 exponents `w` for which infinitely many integer vectors `x = (x₀, (xᵢ)ᵢ)` satisfy
@@ -364,6 +379,72 @@ theorem linearFormExponent_eq_top_iff (ξ : ℝ) :
   rw [← irrationalityExponent_eq_top_iff, ← linearFormExponent_one_add, ENNReal.add_eq_top]
   simp
 
+/-! ### Dirichlet's lower bound -/
+
+/-- **Dirichlet's theorem for one linear form, infinitely many solutions.** If `1` and the
+`n ≥ 1` real numbers `θᵢ` satisfy no nontrivial integer relation, then every exponent `w < n` has
+infinitely many solutions `0 < |x₀ + ∑ i, xᵢ θᵢ| ≤ ‖x‖ ^ (-w)`, with the sup norm taken over all
+coordinates of `x`. -/
+theorem infinite_linearFormApproximations_of_lt_card [Nonempty ι] {θ : ι → ℝ}
+    (hθ : ∀ x : ℤ × (ι → ℤ), (x.1 : ℝ) + ∑ i, (x.2 i : ℝ) * θ i = 0 → x = 0) {w : ℝ}
+    (hw : w < Fintype.card ι) : (linearFormApproximations θ w).Infinite := by
+  wlog hw₀ : 0 ≤ w generalizing w
+  · exact (this (Nat.cast_pos.2 Fintype.card_pos) le_rfl).mono
+      (linearFormApproximations_antitone θ (le_of_not_ge hw₀))
+  set n : ℝ := ((Fintype.card ι : ℕ) : ℝ)
+  -- Dirichlet's theorem bounds the linear form by `‖(xᵢ)ᵢ‖ ^ (-n)`, without the coordinate `x₀`.
+  set T := {x : ℤ × (ι → ℤ) | x.2 ≠ 0 ∧ |(x.1 : ℝ) + ∑ i, (x.2 i : ℝ) * θ i| ≤ ‖x.2‖ ^ (-n)}
+  have hT : T.Infinite := by
+    have hD := dirichlet_linearForm_infinite θ fun y ⟨k, hk⟩ ↦ congrArg Prod.snd <|
+      hθ (-k, y) (by push_cast; rw [← hk]; simp [mul_comm])
+    refine (hD.image (neg_injective.prodMap injective_id).injOn).mono ?_
+    rintro _ ⟨p, ⟨hp, hpL⟩, rfl⟩
+    exact ⟨hp, by simpa [n, neg_add_eq_sub, mul_comm] using hpL⟩
+  -- Every solution with `‖(xᵢ)ᵢ‖` large has `‖x‖ ≤ C ‖(xᵢ)ᵢ‖`, and the constant `C` is absorbed
+  -- by the gap between `w` and `n`.
+  set C : ℝ := 1 + ∑ i, |θ i|
+  have hC : 1 ≤ C := le_add_of_nonneg_right (Finset.sum_nonneg fun i _ ↦ abs_nonneg _)
+  obtain ⟨R, hR⟩ := eventually_atTop.1 <|
+    (tendsto_rpow_atTop (sub_pos.2 hw)).eventually_ge_atTop (C ^ w)
+  refine (hT.sdiff (finite_setOf_abs_le_one_norm_snd_le θ R)).mono ?_
+  rintro x ⟨⟨hx, hxL⟩, hxR⟩
+  set N := ‖x.2‖
+  have hN : 1 ≤ N := by
+    obtain ⟨i, hi⟩ := Function.ne_iff.1 hx
+    refine le_trans ?_ (norm_le_pi_norm x.2 i)
+    rw [Int.norm_eq_abs]
+    exact_mod_cast Int.one_le_abs hi
+  have hL₁ : |(x.1 : ℝ) + ∑ i, (x.2 i : ℝ) * θ i| ≤ 1 :=
+    hxL.trans (Real.rpow_le_one_of_one_le_of_nonpos hN (by simp [n]))
+  have hNR : R ≤ N := (not_le.1 (not_and.1 hxR hL₁)).le
+  have hxC : ‖x‖ ≤ C * N := (norm_le_max_of_abs_add_sum_mul_le hL₁ le_rfl).trans <| max_le
+    (by nlinarith [Finset.sum_nonneg fun i (_ : i ∈ Finset.univ) ↦ abs_nonneg (θ i)])
+    (le_mul_of_one_le_left (by linarith) hC)
+  have hN₀ : 0 < N := zero_lt_one.trans_le hN
+  refine ⟨abs_pos.2 fun h ↦ hx (congrArg Prod.snd (hθ x h)), hxL.trans ?_⟩
+  calc N ^ (-n) = N ^ (-w) * (N ^ (n - w))⁻¹ := by
+        rw [← Real.rpow_neg hN₀.le, ← Real.rpow_add hN₀]
+        ring_nf
+    _ ≤ N ^ (-w) * (C ^ w)⁻¹ := by gcongr; exact hR N hNR
+    _ = (C * N) ^ (-w) := by
+        rw [Real.mul_rpow (by linarith) hN₀.le, Real.rpow_neg (by linarith : (0 : ℝ) ≤ C) w,
+          mul_comm]
+    _ ≤ ‖x‖ ^ (-w) :=
+        Real.rpow_le_rpow_of_nonpos (hN₀.trans_le (norm_snd_le x)) hxC (neg_nonpos.2 hw₀)
+
+/-- **Dirichlet's lower bound for the linear-form exponent.** If `1` and the `n` real numbers
+`θᵢ` satisfy no nontrivial integer relation, that is, if they are linearly independent over `ℚ`,
+then the linear-form exponent of `θ` is at least `n`. -/
+theorem card_le_linearFormExponent {θ : ι → ℝ}
+    (hθ : ∀ x : ℤ × (ι → ℤ), (x.1 : ℝ) + ∑ i, (x.2 i : ℝ) * θ i = 0 → x = 0) :
+    (Fintype.card ι : ℝ≥0∞) ≤ linearFormExponent θ := by
+  cases isEmpty_or_nonempty ι
+  · simp
+  refine ENNReal.le_of_forall_nnreal_lt fun r hr ↦ ?_
+  have hr' : (r : ℝ) < Fintype.card ι := by exact_mod_cast hr
+  simpa using
+    le_linearFormExponent_of_infinite (infinite_linearFormApproximations_of_lt_card hθ hr')
+
 /-! ### Mahler's exponent -/
 
 /-- Mahler's exponent `w_n(ξ)` is the linear-form exponent of `(ξ, ξ ^ 2, …, ξ ^ n)`: the
@@ -395,5 +476,24 @@ theorem mahlerExponent_one_add_one (ξ : ℝ) : mahlerExponent 1 ξ + 1 = irrati
     fin_cases j
     simp
   rw [mahlerExponent_def, this, linearFormExponent_one_add]
+
+/-- **Dirichlet's lower bound for Mahler's exponent.** If `ξ` is not algebraic of degree at
+most `n`, then `w_n(ξ) ≥ n`. -/
+theorem natCast_le_mahlerExponent {n : ℕ} {ξ : ℝ}
+    (hξ : ¬(IsAlgebraic ℚ ξ ∧ (minpoly ℚ ξ).natDegree ≤ n)) :
+    (n : ℝ≥0∞) ≤ mahlerExponent n ξ := by
+  -- The powers `1, ξ, …, ξ ^ n` are linearly independent over `ℚ`.
+  have hind : LinearIndependent ℚ fun k : Fin (n + 1) ↦ ξ ^ (k : ℕ) := by
+    by_cases halg : IsAlgebraic ℚ ξ
+    · have hle : n + 1 ≤ (minpoly ℚ ξ).natDegree := Nat.succ_le_of_lt (not_le.1 (hξ ⟨halg, ·⟩))
+      exact (linearIndependent_pow ξ).comp (Fin.castLE hle) (Fin.castLE_injective hle)
+    · exact (Transcendental.linearIndependent_pow halg).comp _ Fin.val_injective
+  -- An integer relation is a rational relation among `1, ξ, …, ξ ^ n`.
+  have hrel (x : ℤ × (Fin n → ℤ)) (hx : (x.1 : ℝ) + ∑ j, (x.2 j : ℝ) * ξ ^ (j.val + 1) = 0) :
+      x = 0 := by
+    have h0 := Fintype.linearIndependent_iff.1 hind (Fin.cons (x.1 : ℚ) fun j ↦ (x.2 j : ℚ))
+      (by simpa [Fin.sum_univ_succ, Rat.smul_def] using hx)
+    exact Prod.ext (by simpa using h0 0) (funext fun j ↦ by simpa using h0 j.succ)
+  simpa [mahlerExponent_def] using card_le_linearFormExponent hrel
 
 end TauCeti

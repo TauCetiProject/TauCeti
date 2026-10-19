@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.RealAlgebraic.Stack.Lazard.Analytic
 public import TauCeti.Geometry.RealAlgebraic.Stack.Lazard.Semialgebraic
+public import TauCeti.RingTheory.MvPolynomial.Lazard.Reindex
 
 /-!
 # Lifting cylindrical decompositions by Lazard delineations
@@ -18,8 +19,9 @@ when the base cells are analytic submanifolds.
 
 The Lazard valuation of every input is constant on each lifted cell when the new cylinder
 coordinate is read last, as required by Lazard evaluation. In the ambient CAD convention the
-new coordinate is coordinate zero. Rotating the input variables reconciles these conventions,
-and the rotated inputs are sign-invariant on every lifted cell.
+new coordinate is coordinate zero. Rotating the input variables reconciles these conventions;
+the rotated inputs are sign-invariant, and `MvPolynomial.lazardValuationReindex` records the
+inverse rotation in their valuation, on every lifted cell.
 
 This is the CAD-level assembly step in Lazard's projection-and-lifting construction. The
 separate analytic lifting theorem supplies the Lazard delineation over each base cell.
@@ -45,9 +47,9 @@ decomposition of `ℝ ^ n` is an analytic submanifold and carries a Lazard delin
 fixed polynomial family. Then the stacks of those delineations form a cylindrical algebraic
 decomposition of `ℝ ^ (n + 1)` with the original decomposition as its projection.
 
-Every lifted cell is an analytic submanifold. The Lazard valuation of each family member is
-constant there when the new coordinate is moved to the final position, and the corresponding
-variable rotation of each member is sign-invariant in the ambient coordinate order. -/
+Every lifted cell is an analytic submanifold. For each rotated family member, its valuation in
+the coordinate order given by the inverse rotation is constant there, and the same rotated
+member is sign-invariant in the ambient coordinate order. -/
 theorem IsCAD.exists_isCAD_lazardValuation_eq_of_lazardDelineation
     {𝓓 : Set (Set (Fin n → ℝ))} (h𝓓 : IsCAD n 𝓓)
     (hanalytic : ∀ C ∈ 𝓓, ∃ d, IsAnalyticSubmanifold d C)
@@ -55,8 +57,10 @@ theorem IsCAD.exists_isCAD_lazardValuation_eq_of_lazardDelineation
     ∃ 𝓒, IsCAD (n + 1) 𝓒 ∧ image Fin.tail '' 𝓒 = 𝓓 ∧
       (∀ E ∈ 𝓒, ∃ d, IsAnalyticSubmanifold d E) ∧
       (∀ k E, E ∈ 𝓒 → ∀ x ∈ E, ∀ y ∈ E,
-        (F k).lazardValuation (Fin.snoc (Fin.tail x) (x 0)) =
-          (F k).lazardValuation (Fin.snoc (Fin.tail y) (y 0))) ∧
+        (rename (finRotate (n + 1)) (F k)).lazardValuationReindex
+            (finRotate (n + 1)).symm x =
+          (rename (finRotate (n + 1)) (F k)).lazardValuationReindex
+            (finRotate (n + 1)).symm y) ∧
       ∀ k E, E ∈ 𝓒 → SignInvariant
         (fun x ↦ eval x (rename (finRotate (n + 1)) (F k))) E := by
   classical
@@ -86,7 +90,9 @@ theorem IsCAD.exists_isCAD_lazardValuation_eq_of_lazardDelineation
     exact ((hθ C hC).2 E hEC).1
   · intro i E hE x hx y hy
     obtain ⟨C, hC, hEC⟩ := mem_iUnion₂.1 hE
-    exact ((hθ C hC).2 E hEC).2.1 i x hx y hy
+    simpa only [lazardValuationReindex_finRotate_symm, rename_rename,
+      Equiv.symm_comp_self, rename_id_apply] using
+      ((hθ C hC).2 E hEC).2.1 i x hx y hy
   · intro i E hE
     obtain ⟨C, hC, hEC⟩ := mem_iUnion₂.1 hE
     exact ((hθ C hC).2 E hEC).2.2 i

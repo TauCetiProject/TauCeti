@@ -31,7 +31,9 @@ We prove the basic properties of the two traces: both are cyclic, so in particul
 under conjugation by an isomorphism; the right adjoint mate exchanges them, by the Freyd–Yetter
 identity `φ_{Xᘁ} = (φ_X⁻¹)ᘁ`, so that the left dimension of `Xᘁ` is the right dimension of `X`;
 both are the identity on scalars `𝟙_ C ⟶ 𝟙_ C`, so that the unit has dimension `𝟙`; and both are
-additive, and `R`-linear in an `R`-linear monoidal category.
+compatible with extracting scalar actions from the outside of a loop; and both are additive, and
+`R`-linear in an `R`-linear monoidal category. The zero object has both dimensions zero in a
+preadditive monoidal category.
 
 ## Main declarations
 
@@ -42,6 +44,9 @@ additive, and `R`-linear in an `R`-linear monoidal category.
   identity, and invariant under isomorphism by `TauCeti.leftDim_congr` and
   `TauCeti.rightDim_congr`;
 * `TauCeti.leftTrace_comm` and `TauCeti.rightTrace_comm`: cyclicity;
+* `TauCeti.leftTrace_comp_whiskerLeft_scalar` and
+  `TauCeti.rightTrace_scalar_whiskerRight_comp`: a scalar acting on the outer side of a loop
+  factors out of the trace;
 * `TauCeti.leftTrace_rightAdjointMate` and `TauCeti.rightTrace_rightAdjointMate`: the mate
   exchanges the two traces, and `TauCeti.leftDim_rightDual` and `TauCeti.rightDim_rightDual`
   exchange the two dimensions;
@@ -61,7 +66,8 @@ additive, and `R`-linear in an `R`-linear monoidal category.
 
 public section
 
-open CategoryTheory MonoidalCategory ExactPairing
+open CategoryTheory CategoryTheory.Limits MonoidalCategory ExactPairing
+open scoped ZeroObject
 
 universe v u
 
@@ -153,6 +159,26 @@ theorem rightTrace_comm {X Y : C} (f : X ⟶ Y) (g : Y ⟶ X) :
   rw [← leftTrace_rightAdjointMate, ← leftTrace_rightAdjointMate, comp_rightAdjointMate,
     comp_rightAdjointMate, leftTrace_comm]
 
+/-- A scalar acting on `Y` from the right factors out of the left trace. -/
+theorem leftTrace_comp_whiskerLeft_scalar {Y : C} (g : Y ⟶ Y) (a : 𝟙_ C ⟶ 𝟙_ C) :
+    leftTrace (g ≫ (ρ_ Y).inv ≫ Y ◁ a ≫ (ρ_ Y).hom) = leftTrace g ≫ a := by
+  have h : (Yᘁ : C) ◁ ((ρ_ Y).inv ≫ Y ◁ a ≫ (ρ_ Y).hom) ≫ ε_ Y Yᘁ = ε_ Y Yᘁ ≫ a := by
+    calc _ = (ρ_ ((Yᘁ : C) ⊗ Y)).inv ≫ ((Yᘁ : C) ⊗ Y) ◁ a ≫
+          ((ρ_ ((Yᘁ : C) ⊗ Y)).hom ≫ ε_ Y Yᘁ) := by monoidal
+      _ = _ := by rw [whiskerLeft_scalar_comp]; simp
+  rw [leftTrace_def, leftTrace_def, MonoidalCategory.whiskerLeft_comp, Category.assoc, h]
+  simp only [Category.assoc]
+
+/-- A scalar acting on `X` from the left factors out of the right trace. -/
+theorem rightTrace_scalar_whiskerRight_comp {X : C} (a : 𝟙_ C ⟶ 𝟙_ C) (f : X ⟶ X) :
+    rightTrace ((λ_ X).inv ≫ a ▷ X ≫ (λ_ X).hom ≫ f) = a ≫ rightTrace f := by
+  have h : η_ X Xᘁ ≫ ((λ_ X).inv ≫ a ▷ X ≫ (λ_ X).hom ≫ f) ▷ (Xᘁ : C) =
+      a ≫ η_ X Xᘁ ≫ f ▷ (Xᘁ : C) := by
+    calc _ = (η_ X Xᘁ ≫ (λ_ (X ⊗ (Xᘁ : C))).inv) ≫ a ▷ (X ⊗ (Xᘁ : C)) ≫
+          (λ_ (X ⊗ (Xᘁ : C))).hom ≫ f ▷ (Xᘁ : C) := by monoidal
+      _ = _ := by rw [comp_scalar_whiskerRight_assoc]; simp
+  rw [rightTrace_def, rightTrace_def, reassoc_of% h]
+
 /-- The left trace is invariant under conjugation by an isomorphism. -/
 theorem leftTrace_conj {X Y : C} (i : X ≅ Y) (f : X ⟶ X) :
     leftTrace (i.inv ≫ f ≫ i.hom) = leftTrace f := by
@@ -235,6 +261,20 @@ theorem leftTrace_add {X : C} (f g : X ⟶ X) : leftTrace (f + g) = leftTrace f 
 theorem leftTrace_zero (X : C) : leftTrace (0 : X ⟶ X) = 0 := by
   simp [leftTrace_def]
 
+/-- The zero object has left pivotal dimension zero. -/
+@[simp]
+theorem leftDim_zero [HasZeroObject C] : leftDim (0 : C) = 0 := by
+  rw [← leftTrace_id, id_zero, leftTrace_zero]
+
+/-- The left trace commutes with finite sums. -/
+@[simp]
+theorem leftTrace_sum {ι : Type*} {X : C} (s : Finset ι) (f : ι → (X ⟶ X)) :
+    leftTrace (∑ i ∈ s, f i) = ∑ i ∈ s, leftTrace (f i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih => simp [hi, ih]
+
 /-- The left trace commutes with negation. -/
 @[simp]
 theorem leftTrace_neg {X : C} (f : X ⟶ X) : leftTrace (-f) = -leftTrace f :=
@@ -255,6 +295,20 @@ theorem rightTrace_add {X : C} (f g : X ⟶ X) :
 @[simp]
 theorem rightTrace_zero (X : C) : rightTrace (0 : X ⟶ X) = 0 := by
   simp [rightTrace_def]
+
+/-- The zero object has right pivotal dimension zero. -/
+@[simp]
+theorem rightDim_zero [HasZeroObject C] : rightDim (0 : C) = 0 := by
+  rw [← rightTrace_id, id_zero, rightTrace_zero]
+
+/-- The right trace commutes with finite sums. -/
+@[simp]
+theorem rightTrace_sum {ι : Type*} {X : C} (s : Finset ι) (f : ι → (X ⟶ X)) :
+    rightTrace (∑ i ∈ s, f i) = ∑ i ∈ s, rightTrace (f i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih => simp [hi, ih]
 
 /-- The right trace commutes with negation. -/
 @[simp]

@@ -289,6 +289,16 @@ theorem mem_quotientPointsSubgroup_derivationMulEquivTangentKer_iff
     · rw [derivationMulEquivTangentKer_apply_snd]
       exact h x (mem_toIdeal.mpr hx)
 
+/-- The whole group, cut out by the zero Hopf ideal, has the whole Lie algebra. -/
+@[simp]
+theorem lieSubalgebra_bot : (⊥ : HopfIdeal R H).lieSubalgebra (B := B) = ⊤ := by
+  rw [eq_top_iff]
+  intro d _
+  rw [mem_lieSubalgebra_iff]
+  intro x hx
+  rw [bot_toIdeal, Ideal.mem_bot] at hx
+  rw [hx, map_zero]
+
 /-- The identity subgroup has zero Lie algebra, over any commutative base ring. -/
 @[simp]
 theorem lieSubalgebra_augmentation :
@@ -411,6 +421,16 @@ theorem quotientLieEquiv_apply_coe (I : HopfIdeal R H)
   congrArg Subtype.val
     (LieHom.equivRangeOfInjective_apply (quotientLieHom (B := B) I)
       (quotientLieHom_injective I) d)
+
+/-- Descending a tangent vector through a quotient identifies membership in the tangent Lie
+algebra cut out by a mapped Hopf ideal with membership in the original tangent Lie algebra. -/
+theorem quotientLieEquiv_symm_mem_lieSubalgebra_map_iff (I J : HopfIdeal R H)
+    (d : lieSubalgebra (B := B) I) :
+    (quotientLieEquiv I).symm d ∈
+        (J.map (Bialgebra.Quotient.mkBialgHom I.toIdeal)).lieSubalgebra ↔
+      d.val ∈ J.lieSubalgebra := by
+  rw [lieSubalgebra_map, LieSubalgebra.mem_comap, derivationCompLieHom_apply,
+    ← quotientLieHom_apply, ← quotientLieEquiv_apply_coe, LieEquiv.apply_symm_apply]
 
 /-- The inverse of the canonical Lie equivalence descends an ambient derivation by evaluating
 on representatives of the quotient. -/

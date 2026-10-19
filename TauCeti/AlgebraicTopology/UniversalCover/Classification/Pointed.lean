@@ -164,7 +164,7 @@ theorem _root_.IsCoveringMap.exists_homeomorph_comp_eq_iff_range_eq
   · refine (IsCoveringMap.exists_continuousMap_comp_eq_iff_range_le hp hq.continuous hqf hpe).mp
       ⟨(h.symm : C(F, E)), h.symm_apply_eq.mpr hh₀.symm, ?_⟩
     funext f
-    simpa only [Function.comp_apply, ContinuousMap.coe_coe, Homeomorph.apply_symm_apply]
+    simpa only [Function.comp_apply, ContinuousMap.coe_ofClass, Homeomorph.apply_symm_apply]
       using (congrFun hhc (h.symm f)).symm
 
 /-- The homeomorphism over `X` between two pointed covers recovering the same subgroup of

@@ -19,7 +19,8 @@ because `f` commutes with the differentials. Its curvature is therefore the same
 curvature of `M` and `N`, without a centrality assumption.
 
 The right action is unchanged. The canonical inclusion of `N` and projection to `M[1]` are
-closed maps, and the adjacent composites vanish in the existing homotopy category.
+closed maps, and the adjacent composites vanish in the existing homotopy category. A closed map
+`g : N ⟶ P` with `f ≫ g = 0` induces the closed map `coneDesc f g hfg : cone(f) ⟶ P`.
 A null-homotopic closed map factors through its source's identity cone via the inclusion.
 
 ## References
@@ -160,6 +161,44 @@ theorem coneInclusion_comp_coneProjection : coneInclusion f ≫ coneProjection f
   intro x
   simp only [closedHom_comp, closedHom_coneInclusion, closedHom_coneProjection, closedHom_zero]
   rfl
+
+section ConeDesc
+
+variable {P : CurvedDGRightModuleCat.{u, u, u} h}
+  (g : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N ⟶
+    ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) P)
+  (hfg : f ≫ g = 0)
+
+/-- A closed map `g` killing the closed map `f` induces the closed map `cone(f) ⟶ P`
+sending `(x, y)` to `g y`. -/
+noncomputable def coneDesc :
+    ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (cone f) ⟶
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) P :=
+  closedHomOf ((closedHom g).comp (LinearMap.snd Aᵐᵒᵖ M N))
+    (fun p x hx ↦ by rw [cone_grading] at hx; exact closedHom_mem g hx.2)
+    (fun x ↦ by
+      have hx : closedHom g (closedHom f x.1) = 0 := by
+        rw [← LinearMap.comp_apply, ← closedHom_comp, hfg, closedHom_zero, LinearMap.zero_apply]
+      -- Evaluate the second projection on the cone's product carrier.
+      change P.differential (closedHom g x.2) = closedHom g ((cone f).differential x).2
+      rw [cone_differential_apply, map_add, hx, zero_add, differential_closedHom])
+
+/-- The map out of the cone applies `g` to the second component. -/
+@[simp]
+theorem closedHom_coneDesc :
+    closedHom (coneDesc f g hfg) = (closedHom g).comp (LinearMap.snd Aᵐᵒᵖ M N) :=
+  closedHom_closedHomOf _ _ _
+
+/-- The cone inclusion followed by the induced map out of the cone is the original map. -/
+@[reassoc (attr := simp)]
+theorem coneInclusion_comp_coneDesc : coneInclusion f ≫ coneDesc f g hfg = g := by
+  apply closedHom_ext
+  intro x
+  rw [closedHom_comp, closedHom_coneDesc, closedHom_coneInclusion]
+  -- Evaluate the second projection after the second inclusion on the cone's product carrier.
+  rfl
+
+end ConeDesc
 
 /-- The first linear inclusion, viewed as a degree-minus-one homotopy into the cone. -/
 noncomputable def coneInclusionHomotopy :

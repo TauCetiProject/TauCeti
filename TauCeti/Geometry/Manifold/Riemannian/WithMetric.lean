@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Diffeomorph
+public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Pullback
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
 
@@ -20,9 +21,10 @@ whose `RiemannianBundle` instance is `g`; different metrics give different copie
 copy has exactly one metric instance.
 
 The copy carries the topology, charts and manifold structure of `M`, transported along the
-tautological equivalence `ofWithMetric : WithMetric g → M`. That map is a diffeomorphism of every
-order, its differential is the identity of the model space, and the metric of the copy is the
-pullback of `g` along it. Two copies of `M` are related by the identity diffeomorphism
+tautological equivalence `ofWithMetric : WithMetric g → M`, and the Borel `σ`-algebra of that
+topology. The map `ofWithMetric` is a diffeomorphism of every order, its differential is the
+identity of the model space, and the metric of the copy is the pullback of `g` along it. Two
+copies of `M` are related by the identity diffeomorphism
 `TauCeti.WithMetric.diffeomorphWithMetric`.
 
 ## Main definitions
@@ -133,6 +135,21 @@ theorem coe_homeomorph : ⇑(homeomorph g) = ofWithMetric :=
 @[simp]
 theorem coe_homeomorph_symm : ⇑(homeomorph g).symm = toWithMetric g :=
   (rfl)
+
+/-- The copy of a compact manifold is compact. -/
+instance [CompactSpace M] : CompactSpace (WithMetric g) :=
+  (homeomorph g).symm.compactSpace
+
+/-- The copy of a Lindelöf manifold is Lindelöf. -/
+instance [LindelofSpace M] : LindelofSpace (WithMetric g) :=
+  isLindelof_univ_iff.1 <| by
+    simpa only [(homeomorph g).symm.surjective.range_eq] using
+      isLindelof_range (homeomorph g).symm.continuous
+
+/-- The copy of `M` carrying `g` is measured on its Borel `σ`-algebra. -/
+instance : MeasurableSpace (WithMetric g) := borel _
+
+instance : BorelSpace (WithMetric g) := ⟨rfl⟩
 
 /-- The copy of `M` carrying `g` has the charts of `M`, precomposed with `ofWithMetric`. -/
 instance : ChartedSpace H (WithMetric g) where

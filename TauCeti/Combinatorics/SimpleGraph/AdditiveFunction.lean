@@ -49,8 +49,9 @@ That classification is not proved here; the results below take `δ` as given.
 * `SimpleGraph.posSemidef_graphCartanMatrix`: `2I - A` is positive semidefinite.
 * `SimpleGraph.ker_mulVecLin_graphCartanMatrix`: on a preconnected graph the null space of
   `2I - A` is the span of the additive function.
-* `SimpleGraph.Connected.exists_pos_two_mul_le_sum`: on a connected graph, a nonzero nonnegative
-  superadditive weight, one with `2 δ i ≤ ∑_{j ∼ i} δ j`, can be replaced by a positive one.
+* `SimpleGraph.Connected.exists_pos_smul_le_sum`: on a connected graph, a nonzero nonnegative
+  weight with `c • δ i ≤ ∑_{j ∼ i} δ j` can be replaced by a positive one. In particular this
+  applies to superadditive weights, for which `c • δ i = 2 * δ i`.
 
 ## References
 
@@ -298,22 +299,24 @@ end Ordered
 
 section Superadditive
 
-variable {G} {R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
+variable {G} {M : Type*} [AddCommMonoid M] [PartialOrder M] [IsOrderedAddMonoid M]
+  {C : Type*} [DistribSMul C M]
 
 omit [DecidableEq V] in
-/-- **On a connected graph a superadditive weight can be made positive.** If a nonzero nonnegative
-weight `δ` satisfies `2 δ i ≤ ∑_{j ∼ i} δ j` at every vertex of a connected finite graph, then so
-does a weight which is positive at every vertex. -/
-theorem Connected.exists_pos_two_mul_le_sum (hG : G.Connected) {δ : V → R} (hδ0 : 0 ≤ δ)
-    (hδ : δ ≠ 0) (hδle : ∀ i, 2 * δ i ≤ ∑ j ∈ G.neighborFinset i, δ j) :
-    ∃ δ' : V → R, (∀ i, 0 < δ' i) ∧ ∀ i, 2 * δ' i ≤ ∑ j ∈ G.neighborFinset i, δ' j := by
+/-- **A nonzero nonnegative weight on a connected graph can be made positive** while preserving
+`c • δ i ≤ ∑_{j ∼ i} δ j` at every vertex. The scalar action need only preserve addition and
+zero; neither an order on the scalars nor compatibility of the action with the order is required.
+For an ordered semiring acting on itself, `c = 2` recovers superadditive weights. -/
+theorem Connected.exists_pos_smul_le_sum (hG : G.Connected) {c : C} {δ : V → M} (hδ0 : 0 ≤ δ)
+    (hδ : δ ≠ 0) (hδle : ∀ i, c • δ i ≤ ∑ j ∈ G.neighborFinset i, δ j) :
+    ∃ δ' : V → M, (∀ i, 0 < δ' i) ∧ ∀ i, c • δ' i ≤ ∑ j ∈ G.neighborFinset i, δ' j := by
   classical
   -- The nonnegative weights satisfying the inequality are closed under sums and under adding to a
   -- weight its neighbour sums, which spreads its support to the neighbouring vertices.
-  set P : (V → R) → Prop := fun x => 0 ≤ x ∧ ∀ i, 2 * x i ≤ ∑ j ∈ G.neighborFinset i, x j
-  have hstep (x : V → R) (hx : P x) : P fun i => x i + ∑ j ∈ G.neighborFinset i, x j := by
+  set P : (V → M) → Prop := fun x => 0 ≤ x ∧ ∀ i, c • x i ≤ ∑ j ∈ G.neighborFinset i, x j
+  have hstep (x : V → M) (hx : P x) : P fun i => x i + ∑ j ∈ G.neighborFinset i, x j := by
     refine ⟨fun i => add_nonneg (hx.1 i) (sum_nonneg fun j _ => hx.1 j), fun i => ?_⟩
-    rw [sum_add_distrib, mul_add, mul_sum]
+    rw [sum_add_distrib, smul_add, smul_sum]
     exact add_le_add (hx.2 i) (sum_le_sum fun j _ => hx.2 j)
   have hwalk {u w : V} (p : G.Walk u w) : (∃ x, P x ∧ 0 < x u) → ∃ x, P x ∧ 0 < x w := by
     induction p with
@@ -332,7 +335,7 @@ theorem Connected.exists_pos_two_mul_le_sum (hG : G.Connected) {δ : V → R} (h
   refine ⟨∑ w, x w, fun i => ?_, fun i => ?_⟩
   · rw [Finset.sum_apply]
     exact (hxw i).trans_le (single_le_sum (fun w _ => (hx w).1 i) (mem_univ i))
-  · simp only [Finset.sum_apply, mul_sum]
+  · simp only [Finset.sum_apply, smul_sum]
     rw [sum_comm]
     exact sum_le_sum fun w _ => (hx w).2 i
 

@@ -6,8 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.FundamentalGroup
+public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import Mathlib.Topology.Homotopy.Path
 import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
+import Mathlib.Topology.CompactOpen
+import TauCeti.AlgebraicTopology.FundamentalGroupoid.CoverGeneration
+import TauCeti.Topology.Homotopy.Path
+import TauCeti.Topology.UnitInterval.OpenSquare
 
 /-!
 # Attaching 2-cells along loops
@@ -27,6 +32,13 @@ makes every loop `γ i` nullhomotopic.
 The space is the quotient of `X ⊕ Σ _ : ι, I × I` which glues the boundary of each square to
 `X`; the quotient presentation is private, and the space is used through the inclusion `incl γ`
 of `X`, the characteristic maps `cell γ i` of the cells, and the universal property `lift`.
+
+Attaching 2-cells does not create new loops: the inclusion of `X` induces a surjection on
+fundamental groups. The open square of each cell is embedded as an open, simply connected subset,
+the open cell, and `X` is embedded as a closed subspace. Every loop is first pushed off the
+centres of the cells through the open cells (`Path.exists_range_subset_homotopic`), and then
+retracted onto `X` along the radial deformation of each punctured cell onto its boundary
+(`unitInterval.radialPush`).
 
 ## Main definitions
 
@@ -48,6 +60,15 @@ of `X`, the characteristic maps `cell γ i` of the cells, and the universal prop
   cells exactly when it makes every loop `γ i` nullhomotopic.
 * `TauCeti.TwoCellAttachment.map_incl_fromPath`: the inclusion kills the class of every loop
   `γ i` in the fundamental group.
+* `TauCeti.TwoCellAttachment.cell_eq_cell_iff`, `TauCeti.TwoCellAttachment.incl_ne_cell`: a point
+  of the open square of a cell is identified with no other point.
+* `TauCeti.TwoCellAttachment.isOpenEmbedding_restrict_cell`,
+  `TauCeti.TwoCellAttachment.isSimplyConnected_image_cell`: the open cells are open, embedded and
+  simply connected.
+* `TauCeti.TwoCellAttachment.cell_eq_incl_iff`: the points of a cell which are points of `X`.
+* `TauCeti.TwoCellAttachment.isClosedEmbedding_incl`: `X` is a closed subspace.
+* `TauCeti.TwoCellAttachment.surjective_map_incl`: the inclusion of `X` induces a surjection on
+  fundamental groups.
 
 ## References
 
@@ -278,6 +299,322 @@ theorem exists_comp_incl_eq_iff (f : C(X, Y)) :
     exact h
   · intro h
     exact ⟨lift f fun i => (h i).some, lift_comp_incl _ _⟩
+
+/-! ### The open cells -/
+
+section OpenCell
+
+variable {i : ι} {q : I × I}
+
+/-- A point of the open square is its own normal form. -/
+private lemma cellNormalize_inr_of_mem (hq : q ∈ Ioo 0 1 ×ˢ Ioo 0 1) :
+    cellNormalize γ (.inr ⟨i, q⟩) = .inr ⟨i, q⟩ := by
+  obtain ⟨⟨h₀, h₁⟩, h₂, h₃⟩ := hq
+  simp [cellNormalize, h₀.ne', h₁.ne, h₂.ne', h₃.ne]
+
+/-- Only a point of a square can have that point as its normal form. -/
+private lemma eq_of_cellNormalize_eq_inr {a : X ⊕ Σ _ : ι, I × I}
+    (h : cellNormalize γ a = .inr ⟨i, q⟩) : a = .inr ⟨i, q⟩ := by
+  rcases a with y | ⟨j, q'⟩
+  · simp [cellNormalize] at h
+  · simp only [cellNormalize, Sum.elim_inr] at h
+    split_ifs at h with h₀ h₁
+    simp_all
+
+/-- A point of the open square of a cell is identified with no other point. -/
+private lemma mk_eq_cell_iff (hq : q ∈ Ioo 0 1 ×ˢ Ioo 0 1) {a : X ⊕ Σ _ : ι, I × I} :
+    mk γ a = cell γ i q ↔ a = .inr ⟨i, q⟩ := by
+  refine ⟨fun h => eq_of_cellNormalize_eq_inr (γ := γ) ?_, fun h => h ▸ rfl⟩
+  rw [← cellNormalize_inr_of_mem hq]
+  exact Quotient.exact h
+
+private lemma sumElim_eq_mk (a : X ⊕ Σ _ : ι, I × I) :
+    Sum.elim (incl γ) (fun q : Σ _ : ι, I × I => cell γ q.1 q.2) a = mk γ a := by
+  rcases a with _ | _ <;> rfl
+
+/-- A point of `X` is not a point of the open square of a cell. -/
+theorem incl_ne_cell (hq : q ∈ Ioo 0 1 ×ˢ Ioo 0 1) (y : X) : incl γ y ≠ cell γ i q := by
+  rw [← mk_inl, Ne, mk_eq_cell_iff hq]
+  simp
+
+/-- A point of a cell agrees with a point of the open square of a cell only when they are the same
+point of the same cell. -/
+theorem cell_eq_cell_iff (hq : q ∈ Ioo 0 1 ×ˢ Ioo 0 1) {j : ι} {q' : I × I} :
+    cell γ j q' = cell γ i q ↔ j = i ∧ q' = q := by
+  rw [← mk_inr, mk_eq_cell_iff hq]
+  simp
+
+/-- The image of an open subset of the open square of a cell is open. -/
+theorem isOpen_image_cell {V : Set (I × I)} (hV : IsOpen V) (hVq : V ⊆ Ioo 0 1 ×ˢ Ioo 0 1) :
+    IsOpen (cell γ i '' V) := by
+  rw [← isQuotientMap_sumElim.isOpen_preimage]
+  have h : Sum.elim (incl γ) (fun q : Σ _ : ι, I × I => cell γ q.1 q.2) ⁻¹' (cell γ i '' V) =
+      Sum.inr '' (Sigma.mk i '' V) := by
+    ext a
+    simp only [mem_preimage, sumElim_eq_mk]
+    constructor
+    · rintro ⟨q, hq, h⟩
+      exact ⟨⟨i, q⟩, ⟨q, hq, rfl⟩, ((mk_eq_cell_iff (hVq hq)).1 h.symm).symm⟩
+    · rintro ⟨_, ⟨q, hq, rfl⟩, rfl⟩
+      exact ⟨q, hq, rfl⟩
+  rw [h]
+  exact isOpenMap_inr _ (isOpenMap_sigmaMk _ hV)
+
+/-- **The open cells.** The characteristic map of a cell restricts to an open embedding of the
+open square. -/
+theorem isOpenEmbedding_restrict_cell :
+    IsOpenEmbedding ((Ioo 0 1 ×ˢ Ioo 0 1 : Set (I × I)).domRestrict (cell γ i)) := by
+  have hT : IsOpen (Ioo 0 1 ×ˢ Ioo 0 1 : Set (I × I)) := isOpen_Ioo.prod isOpen_Ioo
+  refine .of_continuous_injective_isOpenMap ((cell γ i).continuous.comp continuous_subtype_val)
+    (fun q q' h => Subtype.ext ((cell_eq_cell_iff q'.2).1 h).2) fun V hV => ?_
+  rw [domRestrict_eq, image_comp]
+  exact isOpen_image_cell (hT.isOpenMap_subtype_val V hV) (Subtype.coe_image_subset _ _)
+
+/-- The open cells are simply connected. -/
+theorem isSimplyConnected_image_cell :
+    IsSimplyConnected (cell γ i '' (Ioo 0 1 ×ˢ Ioo 0 1)) := by
+  rw [← range_domRestrict, ← image_univ,
+    isOpenEmbedding_restrict_cell.isEmbedding.isSimplyConnected_image,
+    ← IsEmbedding.subtypeVal.isSimplyConnected_image, Subtype.coe_image_univ]
+  exact unitInterval.isSimplyConnected_Ioo_prod_Ioo
+
+/-- A point on an edge of a square is a point of `X`. -/
+theorem cell_mem_range_incl (hq : q ∉ Ioo 0 1 ×ˢ Ioo 0 1) : cell γ i q ∈ range (incl γ) := by
+  obtain ⟨s, t⟩ := q
+  rcases unitInterval.notMem_Ioo_prod_Ioo_iff.1 hq with rfl | rfl | rfl | rfl
+  exacts [⟨_, (cell_apply_zero i t).symm⟩, ⟨_, (cell_apply_one i t).symm⟩,
+    ⟨_, (cell_source i s).symm⟩, ⟨_, (cell_target i s).symm⟩]
+
+end OpenCell
+
+/-! ### `X` is a closed subspace -/
+
+/-- The inclusion of `X` is injective. -/
+theorem incl_injective : Function.Injective (incl γ) := fun _ _ h =>
+  Sum.inl_injective (Quotient.exact h)
+
+/-- A point of a cell is the point `y` of `X` exactly when it lies on the edge `{0} × I` over
+`γ i ⁻¹' {y}`, or on one of the other three edges and `y = x`. -/
+theorem cell_eq_incl_iff {i : ι} {q : I × I} {y : X} :
+    cell γ i q = incl γ y ↔ (q.1 = 0 ∧ γ i q.2 = y) ∨ (y = x ∧ (q.1 = 1 ∨ q.2 = 0 ∨ q.2 = 1)) := by
+  obtain ⟨s, t⟩ := q
+  constructor
+  · intro h
+    have hq : (s, t) ∉ (Ioo 0 1 ×ˢ Ioo 0 1 : Set (I × I)) := fun hq =>
+      incl_ne_cell hq y h.symm
+    rcases unitInterval.notMem_Ioo_prod_Ioo_iff.1 hq with rfl | rfl | rfl | rfl
+    · exact .inl ⟨rfl, incl_injective ((cell_apply_zero i t).symm.trans h)⟩
+    all_goals exact .inr ⟨incl_injective (h.symm.trans (by simp)), by simp⟩
+  · rintro (⟨rfl, rfl⟩ | ⟨rfl, rfl | rfl | rfl⟩) <;> simp
+
+/-- **`X` is a closed subspace.** The inclusion of `X` into the space with the 2-cells attached is
+a closed embedding. -/
+theorem isClosedEmbedding_incl : IsClosedEmbedding (incl γ) := by
+  refine .of_continuous_injective_isClosedMap (incl γ).continuous incl_injective fun A hA => ?_
+  rw [← isQuotientMap_sumElim.isClosed_preimage, isClosed_sum_iff, isClosed_sigma_iff]
+  refine ⟨?_, fun i => ?_⟩
+  · convert hA using 1
+    ext y
+    simp [incl_injective.eq_iff]
+  · have h : Sigma.mk i ⁻¹' (Sum.inr ⁻¹'
+        (Sum.elim (incl γ) (fun q : Σ _ : ι, I × I => cell γ q.1 q.2) ⁻¹' (incl γ '' A))) =
+        ({q : I × I | q.1 = 0} ∩ (fun q : I × I => γ i q.2) ⁻¹' A) ∪
+          {q | x ∈ A ∧ (q.1 = 1 ∨ q.2 = 0 ∨ q.2 = 1)} := by
+      ext q
+      simp only [mem_preimage, Sum.elim_inr, mem_image, mem_union, mem_inter_iff, mem_ofPred_eq]
+      constructor
+      · rintro ⟨y, hy, h⟩
+        rcases cell_eq_incl_iff.1 h.symm with ⟨h₀, rfl⟩ | ⟨rfl, hq⟩
+        exacts [.inl ⟨h₀, hy⟩, .inr ⟨hy, hq⟩]
+      · rintro (⟨h₀, hA⟩ | ⟨hx, h⟩)
+        exacts [⟨_, hA, (cell_eq_incl_iff.2 (.inl ⟨h₀, rfl⟩)).symm⟩,
+          ⟨_, hx, (cell_eq_incl_iff.2 (.inr ⟨rfl, h⟩)).symm⟩]
+    rw [h]
+    refine ((isClosed_eq continuous_fst continuous_const).inter
+      (hA.preimage ((γ i).continuous.comp continuous_snd))).union ?_
+    by_cases hx : x ∈ A
+    · simp only [hx, true_and, ofPred_or]
+      exact (isClosed_eq continuous_fst continuous_const).union
+        ((isClosed_eq continuous_snd continuous_const).union
+          (isClosed_eq continuous_snd continuous_const))
+    · simp [hx]
+
+/-! ### Attaching 2-cells induces a surjection on fundamental groups -/
+
+section Surjective
+
+open unitInterval
+
+variable (γ) in
+/-- The centres of the attached cells. -/
+private abbrev centres : Set (TwoCellAttachment γ) :=
+  range fun i => cell γ i squareCentre
+
+private lemma isClosed_centres : IsClosed (centres γ) := by
+  rw [← isQuotientMap_sumElim.isClosed_preimage, isClosed_sum_iff, isClosed_sigma_iff]
+  refine ⟨?_, fun j => ?_⟩
+  · convert isClosed_empty
+    ext y
+    simpa using fun i => (incl_ne_cell squareCentre_mem_Ioo_prod_Ioo y (i := i)).symm
+  · convert isClosed_singleton (x := squareCentre)
+    ext q
+    simp only [mem_preimage, Sum.elim_inr, mem_range, mem_singleton_iff]
+    constructor
+    · rintro ⟨i, h⟩
+      exact ((cell_eq_cell_iff squareCentre_mem_Ioo_prod_Ioo).1 h.symm).2
+    · rintro rfl
+      exact ⟨j, rfl⟩
+
+/-- The radial deformation of the cells, at time `t`, on `X ⊕ Σ _ : ι, I × I`. -/
+private def deformSum (t : I) : X ⊕ (Σ _ : ι, I × I) → X ⊕ (Σ _ : ι, I × I) :=
+  Sum.map id fun q => ⟨q.1, radialPush t q.2⟩
+
+/-- The radial deformation fixes the normal forms of the points of the edges of the cells. -/
+private lemma mk_deformSum_cellNormalize (t : I) (a : X ⊕ Σ _ : ι, I × I) :
+    mk γ (deformSum t (cellNormalize γ a)) = mk γ (deformSum t a) := by
+  rcases a with y | ⟨i, q⟩
+  · rfl
+  by_cases hq : q ∈ (Ioo 0 1 ×ˢ Ioo 0 1 : Set (I × I))
+  · rw [cellNormalize_inr_of_mem hq]
+  · have h : deformSum t (cellNormalize γ (.inr ⟨i, q⟩)) = cellNormalize γ (.inr ⟨i, q⟩) := by
+      simp only [cellNormalize, Sum.elim_inr]
+      split_ifs <;> simp [deformSum, radialPush_of_notMem hq]
+    rw [h, mk_cellNormalize]
+    simp [deformSum, radialPush_of_notMem hq]
+
+/-- The radial deformation of the cells, at time `t`: points of `X` are fixed, and each cell is
+deformed by `unitInterval.radialPush t`. -/
+private def deform (t : I) : TwoCellAttachment γ → TwoCellAttachment γ :=
+  Quotient.lift (fun a => mk γ (deformSum t a)) fun a b hab => by
+    rw [← mk_deformSum_cellNormalize, ← mk_deformSum_cellNormalize t b]
+    exact congrArg (fun a => mk γ (deformSum t a)) hab
+
+private lemma deform_mk (t : I) (a : X ⊕ Σ _ : ι, I × I) :
+    deform t (mk γ a) = mk γ (deformSum t a) := (rfl)
+
+private lemma deform_incl (t : I) (y : X) : deform t (incl γ y) = incl γ y := (rfl)
+
+private lemma deform_cell (t : I) (i : ι) (q : I × I) :
+    deform t (cell γ i q) = cell γ i (radialPush t q) := (rfl)
+
+private lemma deform_zero (z : TwoCellAttachment γ) : deform 0 z = z := by
+  induction z using ind with
+  | incl y => rfl
+  | cell i q => rw [deform_cell, radialPush_zero]
+
+/-- At time `1` the radial deformation sends every point other than the centres into `X`. -/
+private lemma deform_one_mem_range_incl {z : TwoCellAttachment γ} (hz : z ∉ centres γ) :
+    deform 1 z ∈ range (incl γ) := by
+  induction z using ind with
+  | incl y => exact ⟨y, rfl⟩
+  | cell i q =>
+    rw [deform_cell]
+    exact cell_mem_range_incl (radialPush_one_notMem fun h => hz ⟨i, h ▸ rfl⟩)
+
+/-- The radial deformation is continuous on the complement of the centres. -/
+private lemma continuous_deform :
+    Continuous fun p : I × ↥(centres γ)ᶜ => deform p.1 p.2.1 := by
+  have hf := (isQuotientMap_sumElim (γ := γ)).restrictPreimage_isOpen isClosed_centres.isOpen_compl
+  refine hf.continuous_lift_prod_right ?_
+  simp only [restrictPreimage_coe, sumElim_eq_mk, deform_mk]
+  refine (continuous_quot_mk : Continuous (mk γ)).comp ?_
+  -- The deformation is continuous at every point of the preimage of the complement of the
+  -- centres: on `X` it is the identity, and on a cell it is the radial deformation away from the
+  -- centre.
+  set P := Sum.elim (incl γ) (fun q : Σ _ : ι, I × I => cell γ q.1 q.2) ⁻¹' (centres γ)ᶜ
+  have hopen : IsOpen ((univ : Set I) ×ˢ P) :=
+    isOpen_univ.prod (isClosed_centres.isOpen_compl.preimage isQuotientMap_sumElim.continuous)
+  have hcont : ContinuousOn (fun p : I × (X ⊕ Σ _ : ι, I × I) => deformSum p.1 p.2)
+      ((univ : Set I) ×ˢ P) := by
+    refine (hopen.continuousOn_iff).2 ?_
+    rintro ⟨t, y | ⟨i, q⟩⟩ ⟨-, ha⟩
+    · have he : IsOpenEmbedding (Prod.map id Sum.inl : I × X → I × (X ⊕ Σ _ : ι, I × I)) :=
+        IsOpenEmbedding.id.prodMap IsOpenEmbedding.inl
+      refine (he.continuousAt_iff (x := (t, y))).1 ?_
+      exact (continuous_inl.comp continuous_snd).continuousAt
+    · have he : IsOpenEmbedding (Prod.map id (Sum.inr ∘ Sigma.mk (β := fun _ : ι => I × I) i) :
+          I × (I × I) → I × (X ⊕ Σ _ : ι, I × I)) :=
+        IsOpenEmbedding.id.prodMap (IsOpenEmbedding.inr.comp IsOpenEmbedding.sigmaMk)
+      refine (he.continuousAt_iff (x := (t, q))).1 ?_
+      have hq : q ≠ squareCentre := fun h => ha ⟨i, h ▸ rfl⟩
+      exact (continuous_inr.comp continuous_sigmaMk).continuousAt.comp
+        (continuousAt_radialPush hq)
+  exact hcont.comp_continuous (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))
+    fun p => ⟨trivial, p.2.2⟩
+
+/-- At time `1` the radial deformation retracts the complement of the centres onto `X`. -/
+private def retraction : C(↥(centres γ)ᶜ, X) :=
+  ⟨fun z => isClosedEmbedding_incl.isEmbedding.toHomeomorph.symm
+      ⟨deform 1 z.1, deform_one_mem_range_incl z.2⟩,
+    isClosedEmbedding_incl.isEmbedding.toHomeomorph.symm.continuous.comp
+      ((continuous_deform.comp (continuous_const.prodMk continuous_id)).subtype_mk _)⟩
+
+private lemma incl_retraction (z : ↥(centres γ)ᶜ) : incl γ (retraction z) = deform 1 z.1 :=
+  congrArg Subtype.val
+    (isClosedEmbedding_incl.isEmbedding.toHomeomorph.apply_symm_apply ⟨deform 1 z.1, _⟩)
+
+private lemma retraction_incl (y : X) (hy : incl γ y ∈ (centres γ)ᶜ) :
+    retraction ⟨incl γ y, hy⟩ = y :=
+  incl_injective (incl_retraction _)
+
+/-- The open cells with their centres removed are path connected. -/
+private lemma image_cell_inter_compl_centres (i : ι) :
+    cell γ i '' (Ioo 0 1 ×ˢ Ioo 0 1) ∩ (centres γ)ᶜ =
+      cell γ i '' (Ioo 0 1 ×ˢ Ioo 0 1 \ {squareCentre}) := by
+  ext z
+  constructor
+  · rintro ⟨⟨q, hq, rfl⟩, hz⟩
+    exact ⟨q, ⟨hq, fun h => hz ⟨i, (congrArg (cell γ i) h).symm⟩⟩, rfl⟩
+  · rintro ⟨q, ⟨hq, hqc⟩, rfl⟩
+    refine ⟨⟨q, hq, rfl⟩, ?_⟩
+    rintro ⟨j, h⟩
+    exact hqc ((cell_eq_cell_iff hq).1 h).2.symm
+
+/-- **Attaching 2-cells induces a surjection on fundamental groups.** Every loop in the space with
+the 2-cells attached is homotopic to a loop in `X`. -/
+theorem surjective_map_incl : Function.Surjective (FundamentalGroup.map (incl γ) x) := by
+  have hT : IsOpen (Ioo 0 1 ×ˢ Ioo 0 1 : Set (I × I)) := isOpen_Ioo.prod isOpen_Ioo
+  have hxU : incl γ x ∈ (centres γ)ᶜ := fun ⟨i, h⟩ =>
+    incl_ne_cell squareCentre_mem_Ioo_prod_Ioo x h.symm
+  intro g
+  obtain ⟨p, rfl⟩ : ∃ p : Path (incl γ x) (incl γ x),
+      FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk p) = g :=
+    ⟨Quotient.out (FundamentalGroup.toPath g), congrArg CategoryTheory.End.of (Quotient.out_eq _)⟩
+  -- Push the loop off the centres, through the simply connected open cells.
+  obtain ⟨δ, hδ, hpδ⟩ := Path.exists_range_subset_homotopic
+    (W := fun i => cell γ i '' (Ioo 0 1 ×ˢ Ioo 0 1))
+    (fun z => by
+      by_cases hz : z ∈ (centres γ)ᶜ
+      · exact .inl (isClosed_centres.isOpen_compl.mem_nhds hz)
+      · obtain ⟨i, rfl⟩ := not_not.1 hz
+        exact .inr ⟨i, (isOpen_image_cell hT subset_rfl).mem_nhds
+          ⟨_, squareCentre_mem_Ioo_prod_Ioo, rfl⟩⟩)
+    (fun i => isSimplyConnected_image_cell)
+    (fun i => by
+      rw [image_cell_inter_compl_centres]
+      exact (isPathConnected_Ioo_prod_Ioo_diff_singleton squareCentre_mem_Ioo_prod_Ioo).image
+        (cell γ i).continuous)
+    (fun i j hij => by
+      rintro _ ⟨⟨q, hq, rfl⟩, ⟨q', hq', h⟩⟩
+      exact absurd ((cell_eq_cell_iff hq).1 h).1 (Ne.symm hij))
+    hxU hxU p
+  -- Retract the pushed-off loop onto `X`.
+  let ε : Path x x :=
+    { toFun := fun t => retraction ⟨δ t, hδ (mem_range_self t)⟩
+      continuous_toFun := retraction.continuous.comp (δ.continuous.subtype_mk _)
+      source' := (congrArg retraction (Subtype.ext δ.source)).trans (retraction_incl x hxU)
+      target' := (congrArg retraction (Subtype.ext δ.target)).trans (retraction_incl x hxU) }
+  refine ⟨FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk ε), ?_⟩
+  rw [TauCeti.FundamentalGroup.map_fromPath]
+  refine congrArg CategoryTheory.End.of (Quotient.sound ?_)
+  refine (Path.homotopic_of_continuous_square (fun q => deform q.1 (δ q.2))
+    ((continuous_deform (γ := γ)).comp (continuous_fst.prodMk
+      ((δ.continuous.comp continuous_snd).subtype_mk fun q => hδ (mem_range_self q.2))))
+    (fun t => deform_zero _) (fun t => (incl_retraction ⟨δ t, hδ (mem_range_self t)⟩).symm)
+    (fun t => by rw [δ.source, deform_incl]) (fun t => by rw [δ.target, deform_incl])).symm.trans
+    hpδ.symm
+
+end Surjective
 
 end TwoCellAttachment
 

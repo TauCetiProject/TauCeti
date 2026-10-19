@@ -8,6 +8,10 @@ module
 public import TauCeti.Analysis.Complex.Conformal.Reflection.Basic
 public import TauCeti.Analysis.Complex.Conformal.Removability.Basic
 
+import Mathlib.Analysis.Analytic.IsolatedZeros
+import Mathlib.Analysis.Complex.CauchyIntegral
+import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
+
 /-!
 # The Schwarz reflection principle across the real axis
 
@@ -24,6 +28,10 @@ holomorphy *at* the axis — and that is exactly Painlevé removability of the r
 reflection principle is now a two-line consequence of the two halves of its input: continuity of
 the extension across the axis, and holomorphy off it.
 
+Combined with the principle of isolated zeros for the holomorphic extension, it also shows that
+the zeros on the real axis of such a function, zero-free in the upper half-plane, are isolated:
+`TauCeti.eventually_ne_zero_of_real_on_axis`.
+
 As with the rest of the L0–L3/L4 conformal-mapping material, this is coordinated with the upstream
 Mathlib Riemann-mapping effort leanprover-community/mathlib4#33505; L4 (reflection) is not part of
 that draft, so this is genuinely new Lean formalization, but any shared foundational API should be
@@ -34,7 +42,7 @@ public section
 
 namespace TauCeti
 
-open Complex Set
+open Complex Filter Set Topology
 open scoped ComplexConjugate
 
 variable {f : ℂ → ℂ}
@@ -73,5 +81,33 @@ theorem exists_differentiableOn_eqOn_conj_of_symmetric {Ω : Set ℂ}
     hholo hreal, ?_, ?_⟩
   · exact eqOn_schwarzReflection_of_subset_im_nonneg fun _ hz => hz.2
   · exact fun z hz => schwarzReflection_conj_of_real_on_axis hreal hz
+
+/-- **Boundary zeros of a function real on the axis are isolated.** Let `f` be continuous on the
+closed upper half of a disc about a real point `x`, holomorphic and zero-free on its open upper
+half, and real on its diameter. Then `f` has no zeros in the closed upper half-plane near `x`,
+except possibly at `x` itself. -/
+theorem eventually_ne_zero_of_real_on_axis {x r : ℝ} (hr : 0 < r)
+    (hcont : ContinuousOn f (Metric.ball (x : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}))
+    (hholo : DifferentiableOn ℂ f (Metric.ball (x : ℂ) r ∩ {z : ℂ | 0 < z.im}))
+    (hreal : ∀ z ∈ Metric.ball (x : ℂ) r, z.im = 0 → (f z).im = 0)
+    (hne : ∀ z ∈ Metric.ball (x : ℂ) r, 0 < z.im → f z ≠ 0) :
+    ∀ᶠ z in 𝓝[{z : ℂ | 0 ≤ z.im} \ {(x : ℂ)}] (x : ℂ), f z ≠ 0 := by
+  -- reflect `f` across the diameter and use isolated zeros of the holomorphic extension
+  obtain ⟨F, hFd, hFf, -⟩ := exists_differentiableOn_eqOn_conj_of_symmetric Metric.isOpen_ball
+    (fun z hz => by rwa [Metric.mem_ball, ← Complex.conj_ofReal, Complex.dist_conj_conj]) hcont
+    hholo hreal
+  have hxr : Metric.ball (x : ℂ) r ∈ 𝓝 (x : ℂ) :=
+    Metric.isOpen_ball.mem_nhds (Metric.mem_ball_self hr)
+  rcases (hFd.analyticAt hxr).eventually_eq_zero_or_eventually_ne_zero with h | h
+  · -- an extension vanishing near `x` would vanish somewhere in the upper half-plane
+    have := Real.nhdsWithin_upperHalfPlaneSet_neBot x
+    obtain ⟨z, ⟨hz0, hzr⟩, hzH⟩ :=
+      (((h.and hxr).filter_mono nhdsWithin_le_nhds).and
+        (self_mem_nhdsWithin (s := {z : ℂ | 0 < z.im}))).exists
+    exact absurd (hFf ⟨hzr, le_of_lt hzH⟩ ▸ hz0) (hne z hzr hzH)
+  · have hsub : {z : ℂ | 0 ≤ z.im} \ {(x : ℂ)} ⊆ {(x : ℂ)}ᶜ := fun z hz => hz.2
+    filter_upwards [h.filter_mono (nhdsWithin_mono _ hsub), mem_nhdsWithin_of_mem_nhds hxr,
+      self_mem_nhdsWithin] with z hz hzr hzH
+    rwa [← hFf ⟨hzr, hzH.1⟩]
 
 end TauCeti

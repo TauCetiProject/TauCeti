@@ -71,6 +71,21 @@ theorem coe_le_supportingValue_iff :
     (.inl (EReal.coe_ne_top _)), ← EReal.coe_add]
   rw [← WithTop.toEReal_coe, WithTop.toEReal_le_toEReal_iff]
 
+/-- A real intercept lies below the supporting value exactly when its affine line
+lies below every finite height, compared as real numbers. -/
+theorem coe_le_supportingValue_iff_untop₀ :
+    (c : EReal) ≤ supportingValue a σ ↔
+      ∀ n, a n ≠ ⊤ → c + σ * n ≤ (a n).untop₀ := by
+  rw [coe_le_supportingValue_iff]
+  constructor
+  · intro hc n hn
+    simpa only [WithTop.untop₀_coe] using WithTop.untop₀_le_untop₀ hn (hc n)
+  · intro hc n
+    by_cases hn : a n = ⊤
+    · simp [hn]
+    · exact WithTop.le_of_untop₀_le_untop₀ WithTop.coe_ne_top
+        (by simpa only [WithTop.untop₀_coe] using hc n hn)
+
 /-- The supporting value lies below each tilted height. -/
 theorem supportingValue_le (a : ℕ → WithTop ℝ) (σ : ℝ) (n : ℕ) :
     supportingValue a σ ≤

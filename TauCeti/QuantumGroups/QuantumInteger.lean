@@ -64,6 +64,12 @@ parameter. -/
 theorem sub_inv_ne_zero {q : K} (hq : IsGenericQuantumParameter q) : q - q⁻¹ ≠ 0 :=
   sub_ne_zero.mpr hq.ne_inv
 
+/-- The inverse of a generic quantum parameter is generic. -/
+theorem inv {q : K} (hq : IsGenericQuantumParameter q) : IsGenericQuantumParameter q⁻¹ := by
+  refine ⟨inv_ne_zero hq.ne_zero, fun n hn hpow => ?_⟩
+  apply hq.pow_ne_one hn
+  simpa [inv_pow] using congrArg Inv.inv hpow
+
 end IsGenericQuantumParameter
 
 /-- The symmetric quantum integer `[r]_q = (q^r - q⁻ʳ) / (q - q⁻¹)`. -/

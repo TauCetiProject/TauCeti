@@ -7,6 +7,9 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.NormDet
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
+public import TauCeti.Analysis.Normed.Lp.GraphDomain
+import Mathlib.LinearAlgebra.Matrix.SchurComplement
+import TauCeti.Analysis.InnerProductSpace.Parseval
 
 /-!
 # Continuity, adjoints, one-dimensional values, and orthogonal extensions of `normDet`
@@ -21,6 +24,10 @@ Extending a linear map `T : U → V` to the Euclidean product `ℝ × U` by send
 to a unit vector orthogonal to the range of `T` does not change the Jacobian. This is the linear
 algebra behind cones: for `t > 0`, the Jacobian of `(t, u) ↦ t • ψ u` for a parametrization `ψ`
 of a piece of the unit sphere is `tᵐ` times the Jacobian of `ψ`.
+
+The Jacobian of the linear normal graph `x ↦ (A x, x)` of a functional `A` is
+`sqrt (1 + ‖A‖²)`: its Gram matrix in an orthonormal basis is a rank-one perturbation of the
+identity.
 
 ## Main declarations
 
@@ -38,6 +45,7 @@ of a piece of the unit sphere is `tᵐ` times the Jacobian of `ψ`.
   the orthogonal complement of its kernel, as a continuous linear equivalence.
 * `TauCeti.normDet_orthogonalKerEquivOfSurjective`: the norm determinant of
   this restriction equals that of the adjoint.
+* `ContinuousLinearMap.normDet_normalGraphL`: the Jacobian of a linear normal graph.
 -/
 
 public section
@@ -206,3 +214,25 @@ theorem normDet_orthogonalKerEquivOfSurjective (L : U →L[ℝ] V) (hL : Surject
     heq, LinearMap.normDet_codRestrict, ContinuousLinearMap.adjoint_toLinearMap]
 
 end TauCeti
+
+/-- The geometric Jacobian of the linear normal graph `x ↦ (A x, x)` is
+`sqrt (1 + ‖A‖²)`. -/
+theorem ContinuousLinearMap.normDet_normalGraphL (A : U →L[ℝ] ℝ) :
+    A.normalGraphL.normDet = Real.sqrt (1 + ‖A‖ ^ 2) := by
+  let b := stdOrthonormalBasis ℝ U
+  let u : Fin (Module.finrank ℝ U) → ℝ := fun i => A (b i)
+  have hgram : Matrix.gram ℝ (fun i => A.normalGraphL.toLinearMap (b i)) =
+      1 + Matrix.replicateCol Unit u * Matrix.replicateRow Unit u := by
+    ext i j
+    simp only [Matrix.gram_apply, ContinuousLinearMap.coe_coe, A.coe_normalGraphL,
+      WithLp.prod_inner_apply, WithLp.ofLp_fst, WithLp.ofLp_snd,
+      TauCeti.normalGraphEmbedding_fst, TauCeti.normalGraphEmbedding_snd,
+      orthonormal_iff_ite.mp b.orthonormal i j]
+    simp [Matrix.mul_apply, u, Matrix.one_apply, mul_comm, add_comm]
+  have hu : u ⬝ᵥ u = ‖A‖ ^ 2 := by
+    simpa [u, dotProduct, Real.norm_eq_abs, sq] using b.sum_sq_norm_apply_eq_norm_sq A
+  have hsq : A.normalGraphL.normDet ^ 2 = 1 + ‖A‖ ^ 2 := by
+    have h := A.normalGraphL.toLinearMap.normDet_sq_eq_det_gram b
+    simp only [RCLike.ofReal_real_eq_id, id_eq] at h
+    rw [h, hgram, Matrix.det_one_add_replicateCol_mul_replicateRow, hu]
+  rw [← Real.sqrt_sq A.normalGraphL.normDet_nonneg, hsq]
