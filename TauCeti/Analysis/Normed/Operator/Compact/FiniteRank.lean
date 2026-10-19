@@ -26,6 +26,13 @@ Finiteness of the rank is spelled with Mathlib's `LinearMap.HasFiniteRange`.
 
 * `LinearMap.HasFiniteRange.isCompactOperator`: over a locally compact nontrivially normed field, a
   continuous linear map of finite rank is a compact operator.
+
+## Mathlib sources
+
+Scalar completeness and finite-dimensional local compactness come from
+`IsLeftUniformAddGroup.completeSpace_of_weaklyLocallyCompactSpace` and
+`LocallyCompactSpace.of_finiteDimensional_of_complete`, respectively. Compactness of maps into
+the range is provided by `isCompactOperator_of_locallyCompactSpace_dom`.
 -/
 
 public section
