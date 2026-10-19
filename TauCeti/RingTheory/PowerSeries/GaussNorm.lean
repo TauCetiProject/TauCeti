@@ -78,6 +78,8 @@ closed unit disc next to its Gauss points.
 * `TauCeti.PowerSeries.IsDistinguished.unique`: of no more than one degree.
 * `TauCeti.PowerSeries.isDistinguished_of_norm_coeff_sub_lt`: over an ultrametric ring, a series
   is distinguished once its coefficient in degree `s` is close to an element of maximal norm.
+* `Polynomial.Monic.isDistinguished`: a monic polynomial is distinguished of its degree at every
+  radius bounding its coefficients.
 * `TauCeti.PowerSeries.IsDistinguished.trunc`,
   `TauCeti.PowerSeries.IsDistinguished.gaussNorm_trunc` and
   `TauCeti.PowerSeries.IsDistinguished.gaussNorm_sub_trunc_lt`: the polynomial part of a
@@ -519,6 +521,28 @@ theorem isLowestDominant_X_sub_C [NormOneClass R] (hc : 0 < c) {b : R} (hb : ‖
   refine ⟨hf.gaussNorm_pos, hf.norm_coeff_mul_pow_eq, fun m hm ↦ ?_⟩
   obtain rfl : m = 0 := by omega
   simpa [hnorm] using hb
+
+/-- A monic polynomial is distinguished of its degree at every radius `c` bounding the norms of
+all its coefficients: its Gauss norm `c ^ natDegree` is attained by the leading coefficient. -/
+theorem _root_.Polynomial.Monic.isDistinguished [NormOneClass R] {p : Polynomial R}
+    (hp : p.Monic) (hc : ∀ i, ‖p.coeff i‖ ≤ c) :
+    IsDistinguished c p.natDegree (p : PowerSeries R) := by
+  have hc1 : 1 ≤ c := by simpa [hp.coeff_natDegree] using hc p.natDegree
+  have hnorm : (p : PowerSeries R).gaussNorm norm c = c ^ p.natDegree := by
+    rw [gaussNorm_eq_of_forall_le (s := p.natDegree)]
+    · simp [hp.coeff_natDegree]
+    · intro m
+      simp only [Polynomial.coeff_coe, hp.coeff_natDegree, norm_one, one_mul]
+      rcases lt_or_ge m p.natDegree with hm | hm
+      · calc ‖p.coeff m‖ * c ^ m ≤ c * c ^ m := by gcongr; exact hc m
+          _ = c ^ (m + 1) := by ring
+          _ ≤ c ^ p.natDegree := pow_le_pow_right₀ hc1 hm
+      · rcases hm.eq_or_lt with rfl | hm
+        · simp [hp.coeff_natDegree]
+        · simp only [Polynomial.coeff_eq_zero_of_natDegree_lt hm, norm_zero, zero_mul]
+          positivity
+  refine ⟨by simp [hnorm, hp.coeff_natDegree], fun m hm ↦ ?_⟩
+  simp [hnorm, Polynomial.coeff_eq_zero_of_natDegree_lt hm, zero_lt_one.trans_le hc1]
 
 /-- Truncating a series just past a degree in which its Gauss norm is attained leaves that norm
 unchanged. -/
