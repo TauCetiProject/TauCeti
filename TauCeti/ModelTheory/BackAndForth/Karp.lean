@@ -83,6 +83,15 @@ theorem InfEquivAt.of_reindex {ι : Type uι} {κ : Type uκ} (c : IndexCoding �
   simpa only [SentenceInf.realize_def, FormulaInf.realize_def,
     BoundedFormulaInf.realize_reindex] using this
 
+/-- Agreement on the infinitary sentences at any carrier implies elementary equivalence, since
+first-order sentences embed at every carrier. -/
+theorem InfEquivAt.elementarilyEquivalent {κ : Type uκ} (h : InfEquivAt (L := L) κ M N) :
+    M ≅[L] N := by
+  refine elementarilyEquivalent_iff.mpr fun φ => ?_
+  simpa only [SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormula.realize_toInf,
+    Sentence.Realize, Formula.Realize, Subsingleton.elim default Empty.elim] using
+    h (BoundedFormula.toInf φ)
+
 /-- **Matching one more element.** If two tuples agree on every infinitary formula with carrier
 `κ` and the second structure is coded into `κ`, then every one-element extension of the first
 tuple is matched by a one-element extension of the second that again agrees on every such

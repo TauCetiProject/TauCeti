@@ -116,6 +116,7 @@ jobs:
 
       - name: Infrastructure policy unit tests
         run: |
+          python3 scripts/test_cancel_bors_candidate.py
           PYTHONPATH=scripts python3 scripts/test_loc_graph.py
           PYTHONPATH=scripts python3 scripts/test_roadmap_completion.py
           PYTHONPATH=scripts python3 scripts/test_loc_roadmap_graph.py
@@ -126,9 +127,12 @@ jobs:
           PYTHONPATH=scripts python3 scripts/test_pipeline_health.py
           python3 scripts/pr_status/test_stuck_alerts.py
           python3 scripts/test_roadmap_label.py
+          python3 scripts/test_roadmap_api.py
+          python3 scripts/test_github_api_report.py
           PYTHONPATH=scripts python3 scripts/test_housekeeping.py
           python3 scripts/test_stack_policy.py
           python3 scripts/pr_status/test_pr_labels.py
+          python3 scripts/pr_status/test_batch.py
           python3 scripts/pr_status/test_zulip.py
           python3 scripts/pr_status/test_conflicts.py
           python3 scripts/test_structure_nudge.py
@@ -144,12 +148,14 @@ jobs:
           python3 scripts/test_bors_staging_identity.py
           python3 scripts/test_bors_train_identity.py
           python3 scripts/test_build_lint_driver.py
+          python3 scripts/test_lint_env_locations.py
           python3 scripts/test_elan_pin.py
           python3 scripts/test_dependency_warm.py
           python3 scripts/test_duplicate_audit_workflow.py
           python3 scripts/test_ci_host_resources.py
           python3 scripts/test_web_pins.py
           python3 scripts/test_attest_pr_config.py
+          python3 scripts/test_prepare_pr_integration.py
           python3 scripts/test_profile_workflow.py
           python3 scripts/test_lake_cache_probe.py
           python3 scripts/test_lake_cache_get.py

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.PowerSeries.Restricted
 public import Mathlib.Analysis.SpecificLimits.Basic
+public import Mathlib.Topology.Algebra.InfiniteSum.Module
 public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 public import TauCeti.Analysis.Matrix.Ultra
 public import TauCeti.LinearAlgebra.Matrix.Minor
@@ -42,6 +43,22 @@ row bounds: if `‖A i j‖ ≤ r i` for all entries, then
 The tail estimate depends on `A` only through `r`, so it is uniform over every family of matrices
 sharing one row majorant. The coefficients do not depend on an enumeration of the index type
 (`Matrix.charCoeff_submatrix_equiv`).
+
+The series is compatible with the operations on matrices that act on each principal minor:
+
+* it is unchanged by transposition (`Matrix.charPowerSeries_transpose`);
+* it is unchanged by restriction to the range of an embedding of index types when the rows, or
+  the columns, outside that range vanish, that is, under extension by zero
+  (`Matrix.charPowerSeries_submatrix_of_row_eq_zero`,
+  `Matrix.charPowerSeries_submatrix_of_col_eq_zero`);
+* when the principal minors of `A` are summable, a continuous ring morphism `f` carries it to
+  the series of `A.map f` (`Matrix.charPowerSeries_map`), and the series of `c • A` is that of
+  `A` with the variable scaled by `c`, `det (1 - T (c • A)) = det (1 - (c T) A)`
+  (`Matrix.charPowerSeries_smul`).
+
+The summability hypotheses in the last two are needed because the coefficients are
+unconditional sums: the image of a non-summable family of minors may be summable with a nonzero
+sum.
 
 ## Main definitions
 
@@ -116,16 +133,70 @@ theorem charCoeff_zero (A : Matrix ι ι R) : A.charCoeff 0 = 1 := by
     (hs (Subtype.ext (card_eq_zero.mp s.2))).elim]
   simp
 
-/-- The coefficients of the principal-minor series do not depend on the enumeration of the
-index type. -/
-theorem charCoeff_submatrix_equiv (A : Matrix κ κ R) (e : ι ≃ κ) (n : ℕ) :
+/-- **Extension by zero.** If every row of `A` outside the range of an embedding `e` vanishes,
+for instance if `A` extends a matrix on `ι` by zero, then restricting `A` along `e` does not
+change the coefficients of its principal-minor series. No convergence hypothesis is needed. -/
+theorem charCoeff_submatrix_of_row_eq_zero (A : Matrix κ κ R) (e : ι ↪ κ)
+    (hA : ∀ i ∉ Set.range e, ∀ j, A i j = 0) (n : ℕ) :
     (A.submatrix e e).charCoeff n = A.charCoeff n := by
   rw [charCoeff_def, charCoeff_def]
   congr 1
-  let E : {s : Finset ι // s.card = n} ≃ {t : Finset κ // t.card = n} :=
-    e.finsetCongr.subtypeEquiv fun s ↦ by simp
-  rw [← E.tsum_eq]
-  exact tsum_congr fun s ↦ by simp [E, principalMinor_submatrix_equiv]
+  let g : {s : Finset ι // s.card = n} → {t : Finset κ // t.card = n} :=
+    fun s ↦ ⟨s.1.map e, by rw [card_map, s.2]⟩
+  have hg : Function.Injective g := fun s t h ↦
+    Subtype.ext (Finset.map_injective e (congrArg Subtype.val h))
+  refine (tsum_congr fun s : {s : Finset ι // s.card = n} ↦
+    principalMinor_submatrix A e s.1).trans (hg.tsum_eq (f := fun t ↦ A.principalMinor t.1) ?_)
+  intro t ht
+  -- A nonzero principal minor only involves indices in the range of `e`.
+  have hrange (i : κ) (hi : i ∈ t.1) : i ∈ Set.range e := by_contra fun hi' ↦
+    ht (principalMinor_eq_zero_of_row_eq_zero hi fun j _ ↦ hA i hi' j)
+  have hmap : (t.1.preimage e e.injective.injOn).map e = t.1 := by
+    classical
+    rw [map_eq_image, image_preimage, filter_true_of_mem hrange]
+  exact ⟨⟨t.1.preimage e e.injective.injOn, by rw [← card_map e, hmap, t.2]⟩, Subtype.ext hmap⟩
+
+/-- The coefficients of the principal-minor series do not depend on the enumeration of the
+index type. -/
+theorem charCoeff_submatrix_equiv (A : Matrix κ κ R) (e : ι ≃ κ) (n : ℕ) :
+    (A.submatrix e e).charCoeff n = A.charCoeff n :=
+  charCoeff_submatrix_of_row_eq_zero A e.toEmbedding
+    (fun i hi ↦ (hi (e.surjective i)).elim) n
+
+/-- The coefficients of the principal-minor series are unchanged by transposition. -/
+@[simp]
+theorem charCoeff_transpose (A : Matrix ι ι R) (n : ℕ) : Aᵀ.charCoeff n = A.charCoeff n := by
+  simp only [charCoeff_def, principalMinor_transpose]
+
+/-- **Extension by zero, column form.** If every column of `A` outside the range of an embedding
+`e` vanishes, then restricting `A` along `e` does not change the coefficients of its
+principal-minor series. -/
+theorem charCoeff_submatrix_of_col_eq_zero (A : Matrix κ κ R) (e : ι ↪ κ)
+    (hA : ∀ j ∉ Set.range e, ∀ i, A i j = 0) (n : ℕ) :
+    (A.submatrix e e).charCoeff n = A.charCoeff n := by
+  rw [← charCoeff_transpose, transpose_submatrix,
+    charCoeff_submatrix_of_row_eq_zero Aᵀ e (fun j hj i ↦ hA j hj i), charCoeff_transpose]
+
+/-- **Base change of coefficients.** A continuous ring morphism `f` carries the `n`-th
+coefficient of the principal-minor series of `A` to that of the matrix `A.map f`, provided the
+principal minors of `A` of size `n` are summable. -/
+theorem charCoeff_map {S : Type*} [CommRing S] [TopologicalSpace S] [T2Space S] (f : R →+* S)
+    (hf : Continuous f) {A : Matrix ι ι R} {n : ℕ}
+    (hA : Summable fun s : {s : Finset ι // s.card = n} ↦ A.principalMinor s) :
+    (A.map f).charCoeff n = f (A.charCoeff n) := by
+  rw [charCoeff_def, charCoeff_def, map_mul, map_pow, map_neg, map_one, hA.map_tsum f hf]
+  simp only [principalMinor_map]
+
+/-- **Scaling.** Scaling `A` by `c` multiplies the `n`-th coefficient of its principal-minor
+series by `c ^ n`, provided the principal minors of `A` of size `n` are summable. -/
+theorem charCoeff_smul [ContinuousMul R] [T2Space R] (c : R) {A : Matrix ι ι R} {n : ℕ}
+    (hA : Summable fun s : {s : Finset ι // s.card = n} ↦ A.principalMinor s) :
+    (c • A).charCoeff n = c ^ n * A.charCoeff n := by
+  have hsum : ∑' s : {s : Finset ι // s.card = n}, (c • A).principalMinor s =
+      c ^ n * ∑' s : {s : Finset ι // s.card = n}, A.principalMinor s := by
+    rw [← smul_eq_mul, ← hA.tsum_const_smul]
+    exact tsum_congr fun s ↦ by rw [principalMinor_smul, s.2, smul_eq_mul]
+  rw [charCoeff_def, charCoeff_def, hsum, mul_left_comm]
 
 /-- The principal-minor series `det (1 - T A)`, whose coefficients are `Matrix.charCoeff`. -/
 noncomputable def charPowerSeries (A : Matrix ι ι R) : PowerSeries R :=
@@ -146,6 +217,47 @@ theorem charPowerSeries_submatrix_equiv (A : Matrix κ κ R) (e : ι ≃ κ) :
     (A.submatrix e e).charPowerSeries = A.charPowerSeries := by
   ext n
   simp [charCoeff_submatrix_equiv]
+
+/-- **Extension by zero.** If every row of `A` outside the range of an embedding `e` vanishes,
+then restricting `A` along `e` does not change its principal-minor series. -/
+theorem charPowerSeries_submatrix_of_row_eq_zero (A : Matrix κ κ R) (e : ι ↪ κ)
+    (hA : ∀ i ∉ Set.range e, ∀ j, A i j = 0) :
+    (A.submatrix e e).charPowerSeries = A.charPowerSeries := by
+  ext n
+  simp [charCoeff_submatrix_of_row_eq_zero A e hA]
+
+/-- **Extension by zero, column form.** If every column of `A` outside the range of an embedding
+`e` vanishes, then restricting `A` along `e` does not change its principal-minor series. -/
+theorem charPowerSeries_submatrix_of_col_eq_zero (A : Matrix κ κ R) (e : ι ↪ κ)
+    (hA : ∀ j ∉ Set.range e, ∀ i, A i j = 0) :
+    (A.submatrix e e).charPowerSeries = A.charPowerSeries := by
+  ext n
+  simp [charCoeff_submatrix_of_col_eq_zero A e hA]
+
+/-- The principal-minor series is unchanged by transposition. -/
+@[simp]
+theorem charPowerSeries_transpose (A : Matrix ι ι R) : Aᵀ.charPowerSeries = A.charPowerSeries := by
+  ext n
+  simp
+
+/-- **Base change.** If the principal minors of `A` of each size are summable, a continuous ring
+morphism `f` carries the principal-minor series of `A` to that of the matrix `A.map f`. -/
+theorem charPowerSeries_map {S : Type*} [CommRing S] [TopologicalSpace S] [T2Space S]
+    (f : R →+* S) (hf : Continuous f) {A : Matrix ι ι R}
+    (hA : ∀ n, Summable fun s : {s : Finset ι // s.card = n} ↦ A.principalMinor s) :
+    (A.map f).charPowerSeries = PowerSeries.map f A.charPowerSeries := by
+  ext n
+  rw [PowerSeries.coeff_map, coeff_charPowerSeries, coeff_charPowerSeries,
+    charCoeff_map f hf (hA n)]
+
+/-- **Scaling.** If the principal minors of `A` of each size are summable, the principal-minor
+series of `c • A` is that of `A` with the variable rescaled by `c`: `H_{c A}(T) = H_A(c T)`. -/
+theorem charPowerSeries_smul [ContinuousMul R] [T2Space R] (c : R) {A : Matrix ι ι R}
+    (hA : ∀ n, Summable fun s : {s : Finset ι // s.card = n} ↦ A.principalMinor s) :
+    (c • A).charPowerSeries = PowerSeries.rescale c A.charPowerSeries := by
+  ext n
+  rw [PowerSeries.coeff_rescale, coeff_charPowerSeries, coeff_charPowerSeries,
+    charCoeff_smul c (hA n)]
 
 section Fintype
 

@@ -384,7 +384,7 @@ equivalence. -/
 noncomputable def transport (L : IntegralLattice V) (e : V ≃ₗ[ℚ] W) : IntegralLattice W where
   carrier := L.carrier.map (e.restrictScalars ℤ).toLinearMap
   form := L.form.comp e.symm.toLinearMap e.symm.toLinearMap
-  isLattice := Submodule.IsLattice.map L.carrier e
+  isLattice := Submodule.isLattice_map L.carrier e.toLinearMap e.surjective
   isSymm := ⟨fun x y ↦ L.isSymm.eq (e.symm x) (e.symm y)⟩
   le_dual := by
     rintro _ ⟨x, hx, rfl⟩

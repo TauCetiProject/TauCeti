@@ -7,13 +7,13 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
+public import TauCeti.Analysis.SpecialFunctions.Beta
 import Mathlib.MeasureTheory.Constructions.HaarToSphere
 import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
-import TauCeti.Analysis.SpecialFunctions.Beta
 import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 
 /-!
-# The integral of the Japanese bracket
+# The integral and the moments of the Japanese bracket
 
 Mathlib proves that `x ↦ (1 + ‖x‖ ^ 2) ^ (-r / 2)` is integrable on a finite-dimensional real
 normed space `V` of dimension `d` as soon as `d < r`
@@ -24,13 +24,24 @@ file computes the integral against its canonical Lebesgue measure `volume`:
 
 Integrating in polar coordinates and substituting `u = ‖x‖ ^ 2` turns the integral into Euler's
 second beta integral `∫₀^∞ u ^ (a - 1) (1 + u) ^ (-(a + b)) du = Β(a, b)` with `a = d / 2` and
-`b = (r - d) / 2` (`TauCeti.integral_rpow_mul_one_add_rpow`). For `r = d + 1` this is the
+`b = (r - d) / 2` (`TauCeti.integral_rpow_mul_one_add_rpow`, in the radial form
+`TauCeti.integral_rpow_mul_one_add_sq_rpow`). For `r = d + 1` this is the
 normalization of the multivariate Cauchy distribution and of the Poisson kernel of a half-space.
+
+More generally, for every additive Haar measure `μ` and every real `p ≥ 0` with `d + p < r`, the
+radial moment `∫ x, ‖x‖ ^ p (1 + ‖x‖ ^ 2) ^ (-r / 2) ∂μ` is the beta integral
+`d μ(B(0, 1)) Β((d + p) / 2, (r - d - p) / 2) / 2`. The condition `d + p < r` records the decay
+needed at infinity, and `p ≥ 0` excludes a singularity at the origin. The value of the integral
+above is the case `p = 0`. These formulas are useful for rescaled Euclidean profiles, including
+the moments of the Yamabe bubbles.
 
 ## Main declarations
 
 * `TauCeti.integrable_rpow_neg_sq_add_norm_sq`: the rescaled bracket
   `x ↦ (c ^ 2 + ‖x‖ ^ 2) ^ (-r / 2)`, `c ≠ 0`, is integrable for every additive Haar measure.
+* `TauCeti.integrable_norm_rpow_mul_rpow_neg_one_add_norm_sq`,
+  `TauCeti.integral_norm_rpow_mul_rpow_neg_one_add_norm_sq`: integrability and value of the
+  radial moments of the Japanese bracket, for every additive Haar measure.
 * `TauCeti.sub_two_mul_integral_radial`: an identity between two radial moments of the rescaled
   bracket.
 * `TauCeti.integral_rpow_neg_one_add_norm_sq`: the value of the integral on a real inner
@@ -62,7 +73,62 @@ theorem integrable_rpow_neg_sq_add_norm_sq (μ : Measure V) [μ.IsAddHaarMeasure
   rw [← Real.mul_rpow (by positivity) (by positivity), norm_smul, mul_pow, norm_inv,
     Real.norm_eq_abs, inv_pow, sq_abs, mul_add, mul_one, mul_inv_cancel_left₀ hc2]
 
+/-- The radial moment `x ↦ ‖x‖ ^ p (1 + ‖x‖ ^ 2) ^ (-r / 2)` of order `p ≥ 0` of the Japanese
+bracket is integrable for every additive Haar measure when its decay exponent exceeds
+`dim V + p`. -/
+theorem integrable_norm_rpow_mul_rpow_neg_one_add_norm_sq (μ : Measure V) [μ.IsAddHaarMeasure]
+    {p r : ℝ} (hp : 0 ≤ p) (hr : (finrank ℝ V : ℝ) + p < r) :
+    Integrable (fun x : V ↦ ‖x‖ ^ p * (1 + ‖x‖ ^ 2) ^ (-r / 2)) μ := by
+  have hmajorant := integrable_rpow_neg_one_add_norm_sq (E := V) (μ := μ)
+    (show (finrank ℝ V : ℝ) < r - p by linarith)
+  refine hmajorant.mono' (by fun_prop) (.of_forall fun x ↦ ?_)
+  have hA : 0 < 1 + ‖x‖ ^ 2 := by positivity
+  -- Bound `‖x‖ ^ p = (‖x‖ ^ 2) ^ (p / 2)` by `(1 + ‖x‖ ^ 2) ^ (p / 2)`.
+  have hpow : ‖x‖ ^ p ≤ (1 + ‖x‖ ^ 2) ^ (p / 2) := by
+    have hsq : ‖x‖ ^ p = (‖x‖ ^ 2) ^ (p / 2) := by
+      rw [← Real.rpow_two, ← Real.rpow_mul (norm_nonneg x), mul_div_cancel₀ p two_ne_zero]
+    rw [hsq]
+    gcongr
+    linarith
+  have hexp : p / 2 + -r / 2 = -(r - p) / 2 := by ring
+  rw [Real.norm_of_nonneg (by positivity)]
+  calc
+    ‖x‖ ^ p * (1 + ‖x‖ ^ 2) ^ (-r / 2)
+        ≤ (1 + ‖x‖ ^ 2) ^ (p / 2) * (1 + ‖x‖ ^ 2) ^ (-r / 2) := by gcongr
+    _ = (1 + ‖x‖ ^ 2) ^ (-(r - p) / 2) := by rw [← Real.rpow_add hA, hexp]
+
 end Integrability
+
+section Moment
+
+variable [NormedSpace ℝ V] [FiniteDimensional ℝ V] [Nontrivial V]
+
+/-- **The radial moments of the Japanese bracket.** On a nontrivial finite-dimensional real normed
+space `V` of dimension `d`, for an additive Haar measure `μ` and `0 ≤ p` with `d + p < r`,
+`∫ ‖x‖ ^ p (1 + ‖x‖ ^ 2) ^ (-r / 2) ∂μ = d μ(B(0, 1)) Β((d + p) / 2, (r - d - p) / 2) / 2`.
+For Lebesgue measure on an inner product space the factor `d μ(B(0, 1))` is the area of the unit
+sphere of `V`. -/
+theorem integral_norm_rpow_mul_rpow_neg_one_add_norm_sq (μ : Measure V) [μ.IsAddHaarMeasure]
+    {p r : ℝ} (hp : 0 ≤ p) (hr : (finrank ℝ V : ℝ) + p < r) :
+    ∫ x : V, ‖x‖ ^ p * (1 + ‖x‖ ^ 2) ^ (-r / 2) ∂μ =
+      (finrank ℝ V : ℝ) * μ.real (ball (0 : V) 1) *
+        (beta (((finrank ℝ V : ℝ) + p) / 2) ((r - finrank ℝ V - p) / 2) / 2) := by
+  set d := finrank ℝ V with hd
+  have hd0 : 0 < d := finrank_pos
+  -- In polar coordinates the moment is the radial beta integral with `s = d + p`.
+  have hrad :
+      ∫ y in Ioi (0 : ℝ), y ^ (d - 1) • (y ^ p * (1 + y ^ 2) ^ (-r / 2)) =
+        beta (((d : ℝ) + p) / 2) ((r - d - p) / 2) / 2 := by
+    rw [sub_sub, ← integral_rpow_mul_one_add_sq_rpow (by positivity) hr]
+    refine setIntegral_congr_fun measurableSet_Ioi fun y (hy : 0 < y) ↦ ?_
+    have hexp : ((d - 1 : ℕ) : ℝ) + p = d + p - 1 := by
+      rw [Nat.cast_sub hd0, Nat.cast_one]
+      ring
+    rw [smul_eq_mul, ← mul_assoc, ← Real.rpow_natCast, ← Real.rpow_add hy, hexp]
+  rw [integral_fun_norm_addHaar μ (fun y : ℝ ↦ y ^ p * (1 + y ^ 2) ^ (-r / 2)), hrad,
+    nsmul_eq_mul, smul_eq_mul, mul_assoc]
+
+end Moment
 
 /-- For `n > 2`, the two radial moments of the rescaled Japanese bracket satisfy
 `(n - 2) ∫₀^∞ r ^ (n - 1) r² ψ(r) = n t² ∫₀^∞ r ^ (n - 1) ψ(r)`, where
@@ -156,26 +222,12 @@ theorem integral_rpow_neg_one_add_norm_sq {r : ℝ} (hr : (finrank ℝ V : ℝ) 
   set d := finrank ℝ V with hd
   have hd0 : 0 < d := finrank_pos
   have hsum : (d : ℝ) / 2 + (r - d) / 2 = r / 2 := by ring
-  -- The radial integral is half of Euler's second beta integral, after `u = y ^ 2`.
-  have hrad : ∫ y in Ioi (0 : ℝ), y ^ (d - 1) • (1 + y ^ 2) ^ (-r / 2) =
-      beta (d / 2) ((r - d) / 2) / 2 := by
-    have h := integral_comp_rpow_Ioi (fun u : ℝ ↦
-      (1 / 2 : ℝ) * (u ^ ((d : ℝ) / 2 - 1) * (1 + u) ^ (-((d : ℝ) / 2 + (r - d) / 2))))
-      (p := 2) two_ne_zero
-    rw [integral_const_mul, integral_rpow_mul_one_add_rpow (by positivity) (by linarith)] at h
-    rw [show beta (d / 2) ((r - d) / 2) / 2 = 1 / 2 * beta (d / 2) ((r - d) / 2) by ring, ← h]
-    refine setIntegral_congr_fun measurableSet_Ioi fun y (hy : 0 < y) ↦ ?_
-    have hpow : (y ^ 2) ^ ((d : ℝ) / 2 - 1) * y = y ^ (d - 1) := by
-      rw [← Real.rpow_natCast, ← Real.rpow_mul hy.le, ← Real.rpow_natCast,
-        Nat.cast_sub hd0, Nat.cast_one, ← Real.rpow_add_one hy.ne']
-      ring_nf
-    simp only [smul_eq_mul, hsum, abs_two, neg_div]
-    rw [← hpow]
-    norm_num
-    ring
+  -- This is the moment of order `0`, a beta integral.
+  have hmoment := integral_norm_rpow_mul_rpow_neg_one_add_norm_sq (volume : Measure V)
+    le_rfl (p := 0) (r := r) (by rwa [add_zero])
+  simp only [Real.rpow_zero, one_mul, add_zero, sub_zero] at hmoment
   have hΓ := Gamma_pos_of_pos (show 0 < (d : ℝ) / 2 by positivity)
-  rw [integral_fun_norm_addHaar volume (fun t ↦ (1 + t ^ 2) ^ (-r / 2)), hrad, volume_real_unitBall,
-    beta, nsmul_eq_mul, smul_eq_mul, Gamma_add_one (by positivity), hsum, ← hd]
+  rw [hmoment, volume_real_unitBall, beta, Gamma_add_one (by positivity), hsum, ← hd]
   field_simp
 
 end TauCeti
