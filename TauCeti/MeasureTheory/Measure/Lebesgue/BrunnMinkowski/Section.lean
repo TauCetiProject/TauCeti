@@ -44,6 +44,10 @@ continuity hold trivially.
   of the projection.
 * `Convex.concaveOn_volume_real_hyperplaneSection_rpow`: concavity of hyperplane sections.
 * `Convex.continuousOn_volume_real_hyperplaneSection`: continuity of hyperplane sections.
+* `Convex.volume_hyperplaneSection_pos`: hyperplane sections at interior heights of a convex set
+  with nonempty interior have positive volume.
+* `TauCeti.volume_real_sep_inner_le_eq_integral`: the volume below a hyperplane is an integral
+  of section volumes.
 * `Convex.hasDerivAt_volume_real_sep_inner_le`: the volume below a hyperplane has the section
   volume as derivative.
 
@@ -201,6 +205,68 @@ theorem _root_.Convex.continuousOn_volume_real_hyperplaneSection {s : Set E} (hs
   rw [← fst_image_hyperplaneFibers e he]
   exact (convex_hyperplaneFibers e hs).continuousOn_volume_real_preimage_prodMk hfin
 
+/-- A convex set with nonempty interior has hyperplane sections of positive volume at every
+height interior to `⟪e, s⟫`. -/
+theorem _root_.Convex.volume_hyperplaneSection_pos {s : Set E} (hs : Convex ℝ s)
+    (hs' : (interior s).Nonempty) {e : E} (he : ‖e‖ = 1) {t : ℝ}
+    (ht : t ∈ interior ((fun x ↦ ⟪e, x⟫) '' s)) :
+    0 < volume {y : (ℝ ∙ e)ᗮ | (y : E) + t • e ∈ s} := by
+  obtain ⟨x₀, hx₀⟩ := hs'
+  obtain ⟨l, u, ⟨hl, hu⟩, hlu⟩ :=
+    mem_nhds_iff_exists_Ioo_subset.1 (mem_interior_iff_mem_nhds.1 ht)
+  -- Points of `s` strictly below and strictly above height `t`.
+  obtain ⟨p, hp, hpt⟩ : ∃ p ∈ s, ⟪e, p⟫ < t := by
+    obtain ⟨p, hp, hpe : ⟪e, p⟫ = (l + t) / 2⟩ :=
+      hlu (⟨by linarith, by linarith⟩ : (l + t) / 2 ∈ Ioo l u)
+    exact ⟨p, hp, by linarith⟩
+  obtain ⟨q, hq, hqt⟩ : ∃ q ∈ s, t < ⟪e, q⟫ := by
+    obtain ⟨q, hq, hqe : ⟪e, q⟫ = (t + u) / 2⟩ :=
+      hlu (⟨by linarith, by linarith⟩ : (t + u) / 2 ∈ Ioo l u)
+    exact ⟨q, hq, by linarith⟩
+  -- An interior point of `s` at height `t`, on a segment from `x₀` towards `p` or `q`.
+  obtain ⟨x, hx, rfl⟩ : ∃ x ∈ interior s, ⟪e, x⟫ = t := by
+    have hcombo {p : E} (hp : p ∈ s) (hne : ⟪e, p⟫ - ⟪e, x₀⟫ ≠ 0)
+        (hr₀ : 0 ≤ (t - ⟪e, x₀⟫) / (⟪e, p⟫ - ⟪e, x₀⟫))
+        (hr₁ : (t - ⟪e, x₀⟫) / (⟪e, p⟫ - ⟪e, x₀⟫) < 1) :
+        ∃ x ∈ interior s, ⟪e, x⟫ = t := by
+      set r := (t - ⟪e, x₀⟫) / (⟪e, p⟫ - ⟪e, x₀⟫)
+      refine ⟨(1 - r) • x₀ + r • p,
+        hs.combo_interior_self_mem_interior hx₀ hp (sub_pos.2 hr₁) hr₀ (by ring), ?_⟩
+      simp only [inner_add_right, real_inner_smul_right, r]
+      field_simp
+      ring
+    rcases le_or_gt t ⟪e, x₀⟫ with hle | hlt
+    · exact hcombo hp (sub_neg.2 (by linarith)).ne
+        (div_nonneg_of_nonpos (by linarith) (by linarith))
+        ((div_lt_one_of_neg (by linarith)).2 (by linarith))
+    · exact hcombo hq (sub_pos.2 (by linarith)).ne' (div_nonneg (by linarith) (by linarith))
+        ((div_lt_one (by linarith)).2 (by linarith))
+  -- The section at height `⟪e, x⟫` contains a nonempty open set.
+  have hopen : IsOpen {y : (ℝ ∙ e)ᗮ | (y : E) + ⟪e, x⟫ • e ∈ interior s} :=
+    isOpen_interior.preimage (by fun_prop)
+  have hne : {y : (ℝ ∙ e)ᗮ | (y : E) + ⟪e, x⟫ • e ∈ interior s}.Nonempty :=
+    ⟨((orthogonalLineEquiv e he).symm x).1, by simpa using hx⟩
+  exact (hopen.measure_pos volume hne).trans_le
+    (measure_mono fun y hy ↦ interior_subset (s := s) hy)
+
+/-- For a bounded Borel set lying strictly above height `a` along a unit vector `e`, the volume
+of its part below a height `c ≥ a` is the integral of its hyperplane section volumes from `a`
+to `c`. -/
+theorem volume_real_sep_inner_le_eq_integral {s : Set E} (hsb : Bornology.IsBounded s)
+    (hsm : MeasurableSet s) {e : E} (he : ‖e‖ = 1) {a c : ℝ}
+    (ha : ∀ x ∈ s, a < ⟪e, x⟫) (hac : a ≤ c) :
+    volume.real {x ∈ s | ⟪e, x⟫ ≤ c} =
+      ∫ t in a..c, volume.real {y : (ℝ ∙ e)ᗮ | (y : E) + t • e ∈ s} := by
+  have hfin (t : ℝ) := (hsb.volume_hyperplaneSection_lt_top e t).ne
+  have hsep : {x ∈ s | ⟪e, x⟫ ≤ c} = {x ∈ s | ⟪e, x⟫ ∈ Ioc a c} := by
+    ext x
+    exact and_congr_right fun hx ↦ ⟨fun h ↦ ⟨ha x hx, h⟩, And.right⟩
+  rw [intervalIntegral.integral_of_le hac, measureReal_def, hsep,
+    volume_sep_inner_mem_eq_setLIntegral e he hsm.nullMeasurableSet measurableSet_Ioc]
+  simp only [measureReal_def]
+  rw [integral_toReal (measurable_volume_hyperplaneSection e he hsm).aemeasurable.restrict
+    (ae_of_all _ fun t ↦ (hfin t).lt_top)]
+
 /-- For a bounded Borel convex set, the volume of the part below the hyperplane `⟪e, x⟫ = c` is
 differentiable in `c` at every height interior to `⟪e, s⟫`, and its derivative is the volume of
 the hyperplane section at height `c`. -/
@@ -223,19 +289,7 @@ theorem _root_.Convex.hasDerivAt_volume_real_sep_inner_le {s : Set E} (hs : Conv
     (sub_one_lt _).trans_le ((min_le_left _ _).trans (hmin ⟨x, hx, rfl⟩))
   have hvol : ∀ᶠ c' in nhds c, volume.real {x ∈ s | ⟪e, x⟫ ≤ c'} = ∫ t in a..c', φ t := by
     filter_upwards [lt_mem_nhds ((sub_one_lt _).trans_le (min_le_right m c))] with c' hc'
-    have hsep : {x ∈ s | ⟪e, x⟫ ≤ c'} = {x ∈ s | ⟪e, x⟫ ∈ Ioc a c'} := by
-      ext x
-      exact and_congr_right fun hx ↦ ⟨fun h ↦ ⟨ha x hx, h⟩, And.right⟩
-    have hlin : ∫⁻ t in Ioc a c', volume {y : (ℝ ∙ e)ᗮ | (y : E) + t • e ∈ s} =
-        ENNReal.ofReal (∫ t in Ioc a c', φ t) := by
-      rw [ofReal_integral_eq_lintegral_ofReal hφi.integrableOn
-        (ae_of_all _ fun _ ↦ ENNReal.toReal_nonneg)]
-      exact setLIntegral_congr_fun measurableSet_Ioc fun t _ ↦
-        (ENNReal.ofReal_toReal (hfin t)).symm
-    rw [intervalIntegral.integral_of_le hc'.le, measureReal_def, hsep,
-      volume_sep_inner_mem_eq_setLIntegral e he hsm.nullMeasurableSet measurableSet_Ioc, hlin]
-    exact ENNReal.toReal_ofReal (setIntegral_nonneg measurableSet_Ioc
-      fun _ _ ↦ ENNReal.toReal_nonneg)
+    exact volume_real_sep_inner_le_eq_integral hsb hsm he ha hc'.le
   -- By Brunn's concavity principle `φ` is continuous at the interior height `c`.
   have hcont : ContinuousAt φ c :=
     (hs.continuousOn_volume_real_hyperplaneSection he hfin).continuousAt
