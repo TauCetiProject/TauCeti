@@ -65,8 +65,8 @@ and seventh transports `evalEval_ψc` and `evalEval_ω`, needed `ψc`, `two_mul_
 `map_ω` — the `ω` API this passage once recorded as not yet here. `DivisionPolynomial/Omega.lean`
 now supplies all four, on top of `reducedInvarNum_eq_reducedInvarDenom_mul`, so they are below:
 `evalEval_ψc` and `evalEval_ω` close the transport family, `polyEval_cusp_ψc` reads the
-complement off `complEDS₂_two_three_two`, and `polyEval_cusp_ω` divides the cusp evaluation of
-`two_mul_ω` by two.
+complement off `TauCeti.complEDS₂_two_three_two`, and `polyEval_cusp_ω` divides the cusp
+evaluation of `two_mul_ω` by two.
 
 ## Provenance
 
@@ -85,10 +85,10 @@ in the copyright header.
 `polyEval_cusp_ψ` and `polyEval_cusp_φ` adapt that same file's declarations of those names, at the
 roadmap's NagellLutz pin `dev/modular-curves @ 9fec8eba7652`. Three changes. `ψ` and `φ` need
 qualifying, because this file opens `Universal` rather than `WeierstrassCurve` alone. The source's
-`normEDS_two_three_two` hint is dropped rather than renamed — `normEDS_two_three_two_eq_id` is
-redundant here, since #3364's general `normEDS_two_three_two_eq_intCast` is `@[simp]` and reaches
-the same normal form first. And `polyEval_cusp_φ`'s proof is restructured for the reason given
-above: the source's unfold of `polyEval` is unavailable, so each `map_*` names its ring hom.
+`normEDS_two_three_two` hint is unnecessary here, since the general
+`normEDS_two_three_two_eq_intCast` is `@[simp]` and reaches the same normal form first. And
+`polyEval_cusp_φ`'s proof is restructured for the reason given above: the source's unfold of
+`polyEval` is unavailable, so each `map_*` names its ring hom.
 The source's `polyEval_cusp_ψc` and `polyEval_cusp_ω` are adapted below (read at
 `main @ 1c1c74664e40071c2c2165bc55ca2616a67ccd6b`), with the same two mechanical changes as
 their siblings — qualified names, ring-hom-named `map_*` rewrites in place of unfolding
