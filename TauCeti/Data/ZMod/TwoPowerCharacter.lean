@@ -17,8 +17,8 @@ and with nonzero value at `-1`. Its value on `5` has order `2^(n+1)`. Such a cha
 a cyclic, totally complex subextension of a two-power cyclotomic extension.
 
 The construction uses `TauCeti.CharacterModule.exists_apply_eq_inv_addOrderOf` to extend
-characters and `ZMod.orderOf_unitsTwoPowFive` for the kernel bound. A character modulo four
-ensures the nonzero value at `-1`.
+characters and `TauCeti.ZMod.orderOf_unitsTwoPowFive` for the kernel bound. A character modulo
+four ensures the nonzero value at `-1`.
 
 ## Reference
 
