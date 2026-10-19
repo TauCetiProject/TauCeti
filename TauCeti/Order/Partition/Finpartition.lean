@@ -61,7 +61,7 @@ theorem le_def {α : Type*} [Lattice α] [OrderBot α] {a : α} {P Q : Finpartit
   Iff.rfl
 
 /-- Refinement of finite partitions is decidable when the order on parts is. -/
-instance {α : Type*} [Lattice α] [OrderBot α] [DecidableLE α] {a : α} :
+instance instDecidableLE {α : Type*} [Lattice α] [OrderBot α] [DecidableLE α] {a : α} :
     DecidableLE (Finpartition a) :=
   fun _ _ => decidable_of_iff _ le_def.symm
 
