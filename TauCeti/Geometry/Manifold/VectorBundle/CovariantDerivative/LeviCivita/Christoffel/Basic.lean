@@ -150,6 +150,8 @@ section JetRegularity
 -- `ContinuousLinearMap.toNormedAddCommGroup` and `ContinuousLinearMap.toNormedSpace`.
 -- Fixing both scalar fields and the identity homomorphism makes the match explicit. These
 -- canonical instances are scoped to `TauCeti.Manifold` so first-jet consumers can reuse them.
+-- They are needed when elaborating the public jet-regularity statement, before its proof,
+-- and are definitionally equal to the Mathlib instances rather than new normed structures.
 /-- The canonical normed additive group on metric derivatives, with explicit real scalars. -/
 scoped instance instNormedAddCommGroupTrilinearForm :
     NormedAddCommGroup (E →L[ℝ] E →L[ℝ] E →L[ℝ] ℝ) :=
