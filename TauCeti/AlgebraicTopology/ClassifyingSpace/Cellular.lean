@@ -31,6 +31,12 @@ cellular classifying space (`TauCeti.exists_isEilenbergMacLaneSpaceOne_cellularC
 with no finiteness, countability or presentation hypothesis. This is the cellular counterpart of
 Milnor's classifying space `TauCeti.classifyingSpace G`.
 
+Maps out of this model have the expected universal property: every homomorphism from its
+fundamental group to the fundamental group of a space with vanishing higher homotopy groups is
+induced by a pointed map (`TauCeti.exists_mapOfEq_cellularClassifyingSpace`). The map is first
+constructed on the presentation complex and then extended across the cells that kill the higher
+homotopy groups.
+
 ## Main definitions
 
 * `TauCeti.cellularClassifyingSpace R`: the presentation complex of `⟨S | R⟩` with its higher
@@ -47,6 +53,9 @@ Milnor's classifying space `TauCeti.classifyingSpace G`.
 * `TauCeti.exists_isEilenbergMacLaneSpaceOne_cellularClassifyingSpace`: every group `G` is the
   fundamental group of the cellular classifying space of a presentation of `G`, which is a
   `K(G, 1)`.
+* `TauCeti.exists_mapOfEq_cellularClassifyingSpace`: every homomorphism from the fundamental group
+  of the cellular classifying space to that of a space with vanishing higher homotopy groups is
+  induced by a pointed map.
 
 ## References
 
@@ -60,6 +69,8 @@ public section
 noncomputable section
 
 namespace TauCeti
+
+open scoped Topology Topology.Homotopy
 
 universe u
 
@@ -113,6 +124,37 @@ theorem isEilenbergMacLaneSpaceOne_cellularClassifyingSpace :
       (cellularClassifyingSpaceBasepoint R) :=
   (isEilenbergMacLaneSpaceOne_killHomotopyGroups _ _).of_mulEquiv
     (PresentationComplex.fundamentalGroupMulEquiv R)
+
+/-- **Homomorphisms out of the fundamental group of a cellular classifying space are induced by
+pointed maps.** If the homotopy groups of `(Z, z)` vanish in dimensions at least two, every
+homomorphism from the fundamental group of `cellularClassifyingSpace R` to `π₁(Z, z)` is induced
+by a continuous map taking the base point to `z`.
+
+The result is stated directly for fundamental groups, without choosing an identification of
+`π₁(Z, z)` with another group. -/
+theorem exists_mapOfEq_cellularClassifyingSpace {Z : Type u} [TopologicalSpace Z] {z : Z}
+    (hZ : ∀ k, 2 ≤ k → Subsingleton (π_ k Z z))
+    (fπ : FundamentalGroup (cellularClassifyingSpace R) (cellularClassifyingSpaceBasepoint R) →*
+      FundamentalGroup Z z) :
+    ∃ (f : C(cellularClassifyingSpace R, Z))
+      (hf : f (cellularClassifyingSpaceBasepoint R) = z),
+      FundamentalGroup.mapOfEq f hf = fπ := by
+  let e := cellularClassifyingSpaceFundamentalGroupMulEquiv R
+  obtain ⟨f₀, hf₀, hf₀π⟩ := PresentationComplex.exists_mapOfEq_comp_fundamentalGroupHom
+    (fπ.comp e.symm.toMonoidHom)
+  subst z
+  obtain ⟨f, hf, hfπ⟩ := exists_mapOfEq_comp_killHomotopyGroupsFundamentalGroupMulEquiv
+    (x := PresentationComplex.basepoint R) one_lt_two (TopCat.ofHom f₀) hZ
+  refine ⟨f.hom, hf, MonoidHom.ext fun g ↦ ?_⟩
+  obtain ⟨g, rfl⟩ := e.symm.surjective g
+  rw [cellularClassifyingSpaceFundamentalGroupMulEquiv_symm_apply]
+  have h₁ := DFunLike.congr_fun hfπ (PresentationComplex.fundamentalGroupHom R g)
+  simp only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom] at h₁
+  rw [killHomotopyGroupsFundamentalGroupMulEquiv_apply,
+    FundamentalGroup.mapOfEq_rfl] at h₁
+  exact h₁.trans <| by
+    simpa [e, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, FundamentalGroup.mapOfEq_rfl] using
+      DFunLike.congr_fun hf₀π g
 
 /-- **Every group has a cellular classifying space.** For every group `G` there is a set `R` of
 relators on the generators `G` such that the cellular classifying space of `⟨G | R⟩` is a

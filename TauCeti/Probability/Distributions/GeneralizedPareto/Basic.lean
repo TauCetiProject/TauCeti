@@ -34,6 +34,7 @@ cdf, quantile, moment, threshold-stability, and exponential-integrability theory
 ## Main results
 
 * `generalizedParetoMeasure_zero` identifies the zero-shape law with an exponential law.
+* `generalizedParetoMap_log_div` gives the logarithmic inverse at nonzero shape.
 * `isProbabilityMeasure_generalizedParetoMeasure` proves normalization at positive scale.
 * `hasLaw_generalizedParetoMeasure_of_hasLaw_expMeasure` gives the random-variable construction.
 * `map_mul_generalizedParetoMeasure` gives positive scaling.
@@ -116,6 +117,23 @@ theorem strictMono_generalizedParetoMap {s : ℝ} (hs : 0 < s) (ξ : ℝ) :
     exact mul_lt_mul_of_pos_left
       (sub_lt_sub_right (Real.exp_lt_exp.mpr (mul_lt_mul_of_pos_left hab hξ)) 1) hs
 
+/-- At positive scale the generalized Pareto transformation preserves nonnegativity. -/
+@[simp]
+theorem generalizedParetoMap_nonneg_iff {s : ℝ} (hs : 0 < s) (ξ e : ℝ) :
+    0 ≤ generalizedParetoMap s ξ e ↔ 0 ≤ e := by
+  simpa only [generalizedParetoMap_apply_zero] using
+    (strictMono_generalizedParetoMap hs ξ).le_iff_le (a := 0) (b := e)
+
+/-- At nonzero scale and shape, the logarithmic formula inverts the generalized Pareto
+transformation wherever its logarithm has positive argument. -/
+@[simp]
+theorem generalizedParetoMap_log_div {s ξ x : ℝ} (hs : s ≠ 0) (hξ : ξ ≠ 0)
+    (hw : 0 < 1 + ξ * x / s) :
+    generalizedParetoMap s ξ (Real.log (1 + ξ * x / s) / ξ) = x := by
+  rw [generalizedParetoMap_of_shape_ne_zero hξ, mul_div_cancel₀ _ hξ, Real.exp_log hw]
+  field_simp
+  ring
+
 /-- The generalized Pareto transformation has derivative `s * exp (ξ * e)` at every input. -/
 theorem hasDerivAt_generalizedParetoMap (s ξ e : ℝ) :
     HasDerivAt (generalizedParetoMap s ξ) (s * Real.exp (ξ * e)) e := by
@@ -170,10 +188,7 @@ theorem image_generalizedParetoMap_Ioi {s : ℝ} (hs : 0 < s) (ξ : ℝ) :
         · exact div_pos (Real.log_pos (by
             have := div_pos (mul_pos hξ hx) hs
             linarith)) hξ
-      · rw [generalizedParetoMap_of_shape_ne_zero hξ, mul_div_cancel₀ _ hξ,
-          Real.exp_log hb]
-        field_simp
-        ring
+      · exact generalizedParetoMap_log_div hs.ne' hξ hb
 
 /-- The generalized Pareto measure with scale `s` and shape `ξ`.
 
@@ -223,6 +238,19 @@ theorem isProbabilityMeasure_generalizedParetoMeasure {s : ℝ} (hs : 0 < s) (ξ
   rw [generalizedParetoMeasure_of_pos hs]
   let _ : IsProbabilityMeasure (expMeasure 1) := isProbabilityMeasure_expMeasure one_pos
   infer_instance
+
+/-- A generalized Pareto variable lies almost surely in its open positive support.
+The statement includes the zero law at nonpositive scale. -/
+theorem ae_pos_and_one_add_mul_div_pos_generalizedParetoMeasure (s ξ : ℝ) :
+    ∀ᵐ x ∂generalizedParetoMeasure s ξ, 0 < x ∧ 0 < 1 + ξ * x / s := by
+  rcases le_or_gt s 0 with hs | hs
+  · simp [generalizedParetoMeasure_of_nonpos hs]
+  rw [generalizedParetoMeasure_of_pos hs,
+    ae_map_iff (measurable_generalizedParetoMap_right s ξ).aemeasurable (by measurability)]
+  filter_upwards [ae_pos_expMeasure 1] with e he
+  refine ⟨generalizedParetoMap_pos hs ξ he, ?_⟩
+  rw [one_add_mul_generalizedParetoMap_div hs.ne']
+  exact Real.exp_pos _
 
 /-- Every singleton has zero generalized Pareto measure at positive scale. -/
 theorem nullSingletonClass_generalizedParetoMeasure {s : ℝ} (hs : 0 < s) (ξ : ℝ) :
