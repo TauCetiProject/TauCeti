@@ -84,7 +84,7 @@ theorem SmoothForm.mextDeriv_mextDeriv (φ : SmoothForm I M F k) :
     mextDeriv (mextDeriv φ.1) = 0 := by
   have hφ : IsSmoothBundleForm (I := I) (F := F) (V := Trivial M F) 2 φ.1 := by
     rw [isSmoothBundleForm_def]
-    exact ((isSmoothBundleForm_def ∞ φ.1).mp φ.isSmoothBundleForm).of_le (by simp)
+    exact φ.contMDiff.of_le (by simp)
   exact TauCeti.mextDeriv_mextDeriv φ.1 hφ
 
 variable (I) in

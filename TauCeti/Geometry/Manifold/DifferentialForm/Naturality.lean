@@ -228,8 +228,7 @@ theorem mextDerivₗ_mpullback (f : M → M') (hf : ContMDiff I I' ∞ f) (k : �
   rw [coe_mpullback, mextDerivₗ_apply, mextDerivₗ_apply]
   rw [coe_mpullback]
   have hφ : IsSmoothBundleForm (I := I') (F := F) (V := Trivial M' F) 1 φ.1 :=
-    (isSmoothBundleForm_def 1 φ.1).mpr
-      (((isSmoothBundleForm_def ∞ φ.1).mp φ.isSmoothBundleForm).of_le (by simp))
+    (isSmoothBundleForm_def 1 φ.1).mpr (φ.contMDiff.of_le (by simp))
   exact (TauCeti.mpullback_mextDeriv (hf.of_le (by simp)) hφ).symm
 
 end SmoothForm
