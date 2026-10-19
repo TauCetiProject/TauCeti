@@ -21,8 +21,8 @@ the real axis and the line `im z = β`, holomorphic on the open strip, with boun
 `F t = φ (a α_t(b))` and `F (t + iβ) = φ (α_t(b) a)`.
 
 A *β-KMS state* is a state, that is a positive continuous functional of norm one, admitting a
-KMS function for every pair `a, b`. Positivity refers to the order on `A`, which for a
-C⋆-algebra is the order making it a `StarOrderedRing`; no result here uses positivity.
+KMS function for every pair `a, b`. Positivity refers to the C⋆-algebra order on `A`, the
+order making it a `StarOrderedRing`; no result here uses positivity.
 
 The strip lies above the real axis for `β > 0` and below it for `β < 0`. For `β = 0` it is the
 real axis itself, and the `0`-KMS states are exactly the tracial states, `isKMSState_zero_iff`;
@@ -163,13 +163,15 @@ variable [PartialOrder A]
 /-- A *β-KMS state* of the real action `α` is a state `ω`, a positive continuous functional of
 norm one, such that every pair `a, b` has a KMS function at inverse temperature `β`: a bounded
 continuous function on the closed strip between the real axis and the line `im z = β`,
-holomorphic on the open strip, with boundary values `ω (a α_t(b))` and `ω (α_t(b) a)`. -/
-structure IsKMSState (α : CStarAction (Multiplicative ℝ) A) (β : ℝ) (ω : A →P[ℂ] ℂ) :
-    Prop where
+holomorphic on the open strip, with boundary values `ω (a α_t(b))` and `ω (α_t(b) a)`.
+Positivity is for the C⋆-algebra order, so `StarOrderedRing A` is assumed although no field
+uses it. -/
+structure IsKMSState [StarOrderedRing A] (α : CStarAction (Multiplicative ℝ) A) (β : ℝ)
+    (ω : A →P[ℂ] ℂ) : Prop where
   norm_eq_one : ‖(ω : A →L[ℂ] ℂ)‖ = 1
   exists_isKMSFunction (a b : A) : ∃ F, α.IsKMSFunction β ω a b F
 
-variable {ω : A →P[ℂ] ℂ}
+variable [StarOrderedRing A] {ω : A →P[ℂ] ℂ}
 
 /-- **Analytic form of the KMS condition.** For a β-KMS state `ω` and an entire analytic `b`,
 `ω (a α_{iβ}(b)) = ω (b a)`. -/
