@@ -72,11 +72,8 @@ theorem denseRange_mul_sub_intCast {α : ι → ℝ}
     by_cases h : i = j <;> simp [hF, h]
   have hrel : (-m : ℝ) + ∑ j, (k j : ℝ) * α j = 0 := by
     have hα' : F (0, 1) = α := by ext i; simp [hF]
-    have hs (j : ι) : (fun i ↦ if j = i then (1 : ℝ) else 0) = Pi.single j 1 := by
-      ext i
-      simp [Pi.single_apply, eq_comm]
-    rw [hα', LinearMap.pi_apply_eq_sum_univ] at hm
-    simp_rw [hs, ← he, hk, smul_eq_mul, mul_comm (α _)] at hm
+    rw [hα', pi_eq_sum_univ' α, map_sum] at hm
+    simp_rw [map_smul, ← he, hk, smul_eq_mul, mul_comm (α _)] at hm
     rw [← hm]
     ring
   have hk0 : k = 0 := by simpa using congrArg Prod.snd (hα (-m, k) (by simpa using hrel))
