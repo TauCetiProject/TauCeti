@@ -61,11 +61,8 @@ theorem divergence_def (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSp
         (CovariantDerivative.leviCivitaConnection I M X x).toLinearMap := by
   rw [divergence]
 
-/-- The trace-defined divergence loses one derivative from the vector field and the metric.
-
-The proof reads the endomorphism-valued Levi--Civita derivative in a local tangent-bundle
-trivialization. Its ordinary trace is independent of that trivialization, so the local smooth
-functions glue to the global divergence. -/
+/-- A `C^(n + 1)` vector field on a `C^m` Riemannian manifold with `C^k` metric has `C^n`
+divergence when `n + 2 ≤ m` and `n + 1 ≤ k`. -/
 theorem contMDiff_divergence {n m k : ℕ∞ω}
     {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
     [IsManifold I 2 M] [IsManifold I m M]
