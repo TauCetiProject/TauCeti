@@ -62,10 +62,9 @@ variable {N V ι : Type*} [AddCommGroup N]
 variable (hi : IsIntegralLattice i) (hσ : IsToricCone i σ)
   {b : Module.Basis (ToricRay σ ⊕ ι) ℤ N} (hb : ∀ ρ, IsPrimitiveGenerator i ρ (b (Sum.inl ρ)))
 
-include hσ hb
-
 /-! ### The action in the chart of an extending basis -/
 
+include hσ hb in
 /-- A torus point multiplies the coordinate of the chart indexed by a ray by its value on the
 coordinate functional of the primitive generator of that ray. -/
 theorem coneChartEquiv_smul_fst (T : ComplexTorus N)
@@ -74,6 +73,7 @@ theorem coneChartEquiv_smul_fst (T : ComplexTorus N)
       T (b.coord (Sum.inl ρ)).toAddMonoidHom * (coneChartEquiv hi hσ hb x).1 ρ := by
   simp
 
+include hσ hb in
 /-- A torus point multiplies the coordinate of the chart indexed by a complementary basis vector
 by its value on the coordinate functional of that vector. -/
 theorem coneChartEquiv_smul_snd (T : ComplexTorus N)
@@ -82,6 +82,7 @@ theorem coneChartEquiv_smul_snd (T : ComplexTorus N)
       T (b.coord (Sum.inr j)).toAddMonoidHom * (coneChartEquiv hi hσ hb x).2 j :=
   Units.ext (by simp)
 
+include hσ hb in
 /-- The distinguished point has all chart coordinates equal to `1`. -/
 @[simp]
 theorem coneChartEquiv_default :
@@ -90,6 +91,7 @@ theorem coneChartEquiv_default :
 
 /-! ### The dense torus of the chart -/
 
+include hσ hb in
 /-- The torus acts freely on the distinguished point of the affine chart: the coordinate
 functionals of an extending basis lie in the dual semigroup and determine a torus point. -/
 theorem complexTorus_smul_default_injective :
@@ -105,6 +107,7 @@ theorem complexTorus_smul_default_injective :
   · have hj := congrArg (fun z : (ToricRay σ → ℂ) × (ι → ℂˣ) ↦ (z.2 j : ℂ)) h'
     exact Units.ext (by simpa using hj)
 
+include hσ hb in
 /-- The torus orbit of the distinguished point is the locus of the affine chart where every ray
 coordinate is nonzero: a point with nonzero ray coordinates is the translate of the distinguished
 point by the torus point with those basis coordinates. -/
@@ -122,6 +125,7 @@ theorem mem_orbit_complexTorus_default_iff
       (coneChartEquiv hi hσ hb).injective ?_⟩
     exact Prod.ext (funext fun ρ ↦ by simp) (funext fun j ↦ Units.ext (by simp))
 
+include hσ hb in
 /-- Every invertible character of the dual semigroup of a cone with an extending basis is the
 restriction of a torus point: the torus orbit of the distinguished point is its orbit under all
 invertible characters of the dual semigroup. -/
@@ -136,6 +140,7 @@ theorem orbit_complexTorus_default_eq_orbit :
   intro ρ
   simp
 
+include hσ hb in
 /-- The dense torus of the affine chart is open for the monomial-embedding topology of any finite
 generating family of the dual semigroup. -/
 theorem isOpen_orbit_complexTorus_default (g : AddGeneratingFamily (dualSemigroup hi σ) s) :
@@ -144,6 +149,7 @@ theorem isOpen_orbit_complexTorus_default (g : AddGeneratingFamily (dualSemigrou
   rw [orbit_complexTorus_default_eq_orbit hi hσ hb]
   exact AffineSemigroupComplexPoint.isOpen_orbit_default g
 
+include hσ hb in
 /-- The dense torus of the affine chart is dense for the monomial-embedding topology of any finite
 generating family of the dual semigroup. -/
 theorem dense_orbit_complexTorus_default (g : AddGeneratingFamily (dualSemigroup hi σ) s) :
@@ -151,8 +157,6 @@ theorem dense_orbit_complexTorus_default (g : AddGeneratingFamily (dualSemigroup
       (default : AffineSemigroupComplexPoint (dualSemigroup hi σ))) := by
   rw [orbit_complexTorus_default_eq_orbit hi hσ hb]
   exact dense_orbit_default g (regularDualSemigroupEquiv hi hσ hb)
-
-omit hσ hb
 
 /-! ### The affine chart of the zero cone -/
 

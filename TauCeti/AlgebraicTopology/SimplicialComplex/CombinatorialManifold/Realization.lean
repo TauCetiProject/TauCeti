@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.CombinatorialManifold.Basic
 public import TauCeti.AlgebraicTopology.SimplicialComplex.CombinatorialManifold.Star
-public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Stellar.Homeomorph
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Stellar.PL
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Ball
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.BoundarySphere
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Relabel.Basic
@@ -16,17 +16,18 @@ public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Star.Basic
 /-!
 # Geometric balls and spheres from combinatorial complexes
 
-The weak polyhedron of a combinatorial `n`-ball or `n`-sphere is homeomorphic to the Euclidean
-closed ball or unit sphere. The ball result identifies the closed vertex stars used to construct
-manifold charts, while the sphere result identifies the spherical links at interior vertices. Both
-results concern the actual subpolyhedron of an arbitrary ambient realization, so unused ambient
-vertices contribute no extra points.
+The weak polyhedron of a combinatorial `n`-ball or `n`-sphere is PL-homeomorphic to its standard
+simplicial model and homeomorphic to the Euclidean closed ball or unit sphere. The ball result
+identifies the closed vertex stars used to construct manifold charts, while the sphere result
+identifies the spherical links at interior vertices. The topological results concern the actual
+subpolyhedron of an arbitrary ambient realization, so unused ambient vertices contribute no extra
+points.
 
-Intrinsic stellar equivalence supplies the homeomorphism to a simplex or simplex boundary, and the
-standard models supply the Euclidean closed ball or sphere. Injective relabeling changes the
+Intrinsic stellar equivalence supplies the PL homeomorphism to a simplex or simplex boundary, and
+the standard models supply the Euclidean closed ball or sphere. Injective relabeling changes the
 ambient realization without changing the topology of the polyhedron. No finiteness assumption on
-the ambient complex or its vertex type is required; finiteness follows from the combinatorial
-ball or sphere hypothesis.
+the ambient complex or its vertex type is required; finiteness follows from the combinatorial ball
+or sphere hypothesis.
 
 ## References
 
@@ -42,6 +43,27 @@ namespace PreAbstractSimplicialComplex
 
 variable {ι : Type*} {P : PreAbstractSimplicialComplex ι}
   {A : AbstractSimplicialComplex ι} {n : ℕ}
+
+/-! ### PL standard models -/
+
+/-- A combinatorial ball is PL-homeomorphic to a simplex of the prescribed dimension. -/
+theorem IsCombinatorialBall.exists_plHomeomorphic_simplex
+    [DecidableEq ι] (h : IsCombinatorialBall P n) :
+    ∃ V : Finset ι, V.card = n + 1 ∧ PLHomeomorphic P (simplex V) := by
+  have hfin := h.finite_faces
+  obtain ⟨V, hV, hPV⟩ := isCombinatorialBall_iff.mp h
+  exact ⟨V, hV, hPV.plHomeomorphic hfin⟩
+
+/-- A combinatorial sphere is PL-homeomorphic to the boundary of a simplex of the prescribed
+dimension. -/
+theorem IsCombinatorialSphere.exists_plHomeomorphic_simplexBoundary
+    [DecidableEq ι] (h : IsCombinatorialSphere P n) :
+    ∃ V : Finset ι, V.card = n + 2 ∧ PLHomeomorphic P (simplexBoundary V) := by
+  have hfin := h.finite_faces
+  obtain ⟨V, hV, hPV⟩ := isCombinatorialSphere_iff.mp h
+  exact ⟨V, hV, hPV.plHomeomorphic hfin⟩
+
+/-! ### Topological standard models -/
 
 /-- A combinatorial `n`-ball has a weak polyhedron homeomorphic to the Euclidean closed `n`-ball.
 

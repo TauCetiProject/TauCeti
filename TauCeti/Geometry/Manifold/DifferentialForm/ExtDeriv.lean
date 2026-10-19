@@ -106,7 +106,7 @@ theorem inChartAt_sub (φ η : RoughForm I M F k) (x₀ : M) :
   rw [sub_eq_add_neg, inChartAt_add, inChartAt_neg, sub_eq_add_neg]
 
 /-- Scalar localization of a form multiplies its coordinate expression by the pulled-back scalar. -/
-theorem inChartAt_fun_smul (f : M → ℝ) (φ : RoughForm I M ℝ k) (α : M) (y : E) :
+theorem inChartAt_fun_smul (f : M → ℝ) (φ : RoughForm I M F k) (α : M) (y : E) :
     inChartAt (I := I) (fun x ↦ f x • φ x) α y =
       f ((extChartAt I α).symm y) • φ.inChartAt α y := by
   ext v
