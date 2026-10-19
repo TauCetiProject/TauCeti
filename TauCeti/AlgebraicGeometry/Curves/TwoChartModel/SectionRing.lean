@@ -163,84 +163,86 @@ theorem sectionRingProjInfinityChartIso_inv_ι (hF : IsFunctionField k F) (z : F
   -- identification, and `Proj.awayι` as the inverse of `Proj.basicOpenIsoSpec` followed by `ι`.
   rfl
 
-/-- Evaluation at `X = 1`, `∑ fₙ Xⁿ ↦ ∑ fₙ`, from the section ring of `(z)_∞` to the functions
-regular wherever `z` is a unit: each `fₙ ∈ L(n (z)_∞)` is regular wherever `z` is. These are the
-homogeneous coordinates of the overlap of the two charts. -/
-private noncomputable def evalOne (hF : IsFunctionField k F) (z : Fˣ) :
+/-- Evaluation at `X = 1`, `TauCeti.Divisor.evalOne`, on the section ring of `(z)_∞`, viewed as
+landing in the functions regular wherever `z` is a unit: each `fₙ ∈ L(n (z)_∞)` is regular
+wherever `z` is. These are the homogeneous coordinates of the overlap of the two charts. -/
+private noncomputable def overlapEvalOne (hF : IsFunctionField k F) (z : Fˣ) :
     sectionRing (poles hF z) →ₐ[k]
       holomorphyRing ({P : Place k F | (z : F) ∈ P.integers} ∩
         {P : Place k F | (z : F)⁻¹ ∈ P.integers}) :=
-  (((Polynomial.aeval (R := F) (1 : F)).restrictScalars k).comp (sectionRing _).val).codRestrict _
-    fun g ↦ mem_holomorphyRing_iff.mpr fun P hP ↦ by
-      have hP0 : (poles hF z).coeff P = 0 := (coeff_poles_eq_zero_iff hF z P).mpr hP.1
-      simp only [AlgHom.comp_apply, Subalgebra.coe_val, AlgHom.restrictScalars_apply,
-        Polynomial.coe_aeval_eq_eval, Polynomial.eval_eq_sum_range, one_pow, mul_one]
-      refine sum_mem fun n _ ↦ ?_
-      have hn := mem_riemannRochSpace_iff.mp (mem_coeffSubalgebra_iff.mp g.2 n) P
-      rw [WeilDivisor.coeff_nsmul, hP0, mul_zero, WithZero.exp_zero] at hn
-      exact P.mem_integers_iff.mpr hn
+  (evalOne (poles hF z)).codRestrict _ fun g ↦ mem_holomorphyRing_iff.mpr fun P hP ↦ by
+    have hP0 : (poles hF z).coeff P = 0 := (coeff_poles_eq_zero_iff hF z P).mpr hP.1
+    rw [evalOne_apply, Polynomial.eval_eq_sum_range]
+    simp only [one_pow, mul_one]
+    refine sum_mem fun n _ ↦ ?_
+    have hn := mem_riemannRochSpace_iff.mp (mem_coeffSubalgebra_iff.mp g.2 n) P
+    rw [WeilDivisor.coeff_nsmul, hP0, mul_zero, WithZero.exp_zero] at hn
+    exact P.mem_integers_iff.mpr hn
 
-private theorem coe_evalOne_of_mem {hF : IsFunctionField k F} {z : Fˣ} {n : ℕ}
-    {g : sectionRing (poles hF z)} (hg : g ∈ sectionRingGrade (poles hF z) n) :
-    (evalOne hF z g : F) = (g : F[X]).coeff n :=
-  coeffSubalgebra.eval_one_of_mem_grade hg
+private theorem coe_overlapEvalOne (hF : IsFunctionField k F) (z : Fˣ)
+    (g : sectionRing (poles hF z)) : (overlapEvalOne hF z g : F) = evalOne (poles hF z) g :=
+  AlgHom.coe_codRestrict _ _ _ g
 
-private theorem evalOne_polesSectionOne (hF : IsFunctionField k F) (z : Fˣ) :
-    evalOne hF z (polesSectionOne hF z) = 1 := by
+private theorem overlapEvalOne_polesSectionOne (hF : IsFunctionField k F) (z : Fˣ) :
+    overlapEvalOne hF z (polesSectionOne hF z) = 1 := by
   apply Subtype.ext
-  rw [coe_evalOne_of_mem (monomialDegreeOne_mem_sectionRingGrade _), coe_monomialDegreeOne]
+  rw [coe_overlapEvalOne, evalOne_of_mem (monomialDegreeOne_mem_sectionRingGrade _),
+    coe_monomialDegreeOne]
   simp
 
-private theorem coe_evalOne_polesSectionGenerator (hF : IsFunctionField k F) (z : Fˣ) :
-    (evalOne hF z (polesSectionGenerator hF z) : F) = z := by
-  rw [coe_evalOne_of_mem (monomialDegreeOne_mem_sectionRingGrade _), coe_monomialDegreeOne]
+private theorem coe_overlapEvalOne_polesSectionGenerator (hF : IsFunctionField k F) (z : Fˣ) :
+    (overlapEvalOne hF z (polesSectionGenerator hF z) : F) = z := by
+  rw [coe_overlapEvalOne, evalOne_of_mem (monomialDegreeOne_mem_sectionRingGrade _),
+    coe_monomialDegreeOne]
   simp
 
-private theorem isUnit_evalOne_polesSectionOne (hF : IsFunctionField k F) (z : Fˣ) :
-    IsUnit (evalOne hF z (polesSectionOne hF z)) := by
-  rw [evalOne_polesSectionOne]
+private theorem isUnit_overlapEvalOne_polesSectionOne (hF : IsFunctionField k F) (z : Fˣ) :
+    IsUnit (overlapEvalOne hF z (polesSectionOne hF z)) := by
+  rw [overlapEvalOne_polesSectionOne]
   exact isUnit_one
 
-private theorem isUnit_evalOne_polesSectionGenerator (hF : IsFunctionField k F) (z : Fˣ) :
-    IsUnit (evalOne hF z (polesSectionGenerator hF z)) :=
+private theorem isUnit_overlapEvalOne_polesSectionGenerator (hF : IsFunctionField k F) (z : Fˣ) :
+    IsUnit (overlapEvalOne hF z (polesSectionGenerator hF z)) :=
   isUnit_iff_exists_inv.mpr ⟨⟨(z : F)⁻¹, mem_holomorphyRing_iff.mpr fun _ hP ↦ hP.2⟩,
-    Subtype.ext (by simp [coe_evalOne_polesSectionGenerator])⟩
+    Subtype.ext (by simp [coe_overlapEvalOne_polesSectionGenerator])⟩
 
 /-- On the overlap, the finite chart `A₍X₎ ≅ 𝒪_z` is read through the homogeneous coordinates
-`evalOne`. -/
+`overlapEvalOne`. -/
 private theorem finiteChartRestriction_comp_sectionRingAwayOneEquiv (hF : IsFunctionField k F)
     (z : Fˣ) :
     (finiteChartRestriction (k := k) (z : F)).toRingHom.comp
         (sectionRingAwayOneEquiv hF z).toRingHom =
-      Away.lift _ (evalOne hF z).toRingHom (isUnit_evalOne_polesSectionOne hF z) := by
+      Away.lift _ (overlapEvalOne hF z).toRingHom
+        (isUnit_overlapEvalOne_polesSectionOne hF z) := by
   ext w
   obtain ⟨r, g, hg, rfl⟩ := Away.mk_surjective _ (monomialDegreeOne_mem_sectionRingGrade _) w
   have hg' : g ∈ sectionRingGrade (poles hF z) r := by simpa using hg
-  have hu : (isUnit_evalOne_polesSectionOne hF z).unit = 1 :=
-    Units.ext (evalOne_polesSectionOne hF z)
+  have hu : (isUnit_overlapEvalOne_polesSectionOne hF z).unit = 1 :=
+    Units.ext (overlapEvalOne_polesSectionOne hF z)
   rw [Away.lift_mk, hu]
-  simp [sectionRingAwayOneEquiv_mk hF z r g hg', coe_evalOne_of_mem hg']
+  simp [sectionRingAwayOneEquiv_mk hF z r g hg', coe_overlapEvalOne, evalOne_of_mem hg']
 
 /-- On the overlap, the chart at infinity `A₍z X₎ ≅ 𝒪_{z⁻¹}` is read through the homogeneous
-coordinates `evalOne`. -/
+coordinates `overlapEvalOne`. -/
 private theorem infinityChartRestriction_comp_sectionRingAwayGeneratorEquiv
     (hF : IsFunctionField k F) (z : Fˣ) :
     (infinityChartRestriction (k := k) (z : F)).toRingHom.comp
         (sectionRingAwayGeneratorEquiv hF z).toRingHom =
-      Away.lift _ (evalOne hF z).toRingHom (isUnit_evalOne_polesSectionGenerator hF z) := by
+      Away.lift _ (overlapEvalOne hF z).toRingHom
+        (isUnit_overlapEvalOne_polesSectionGenerator hF z) := by
   ext w
   obtain ⟨r, g, hg, rfl⟩ := Away.mk_surjective _ (monomialDegreeOne_mem_sectionRingGrade _) w
   have hg' : g ∈ sectionRingGrade (poles hF z) r := by simpa using hg
   have hinv := map_units_inv (holomorphyRing ({P : Place k F | (z : F) ∈ P.integers} ∩
     {P : Place k F | (z : F)⁻¹ ∈ P.integers})).val
-    ((isUnit_evalOne_polesSectionGenerator hF z).unit ^ r)
+    ((isUnit_overlapEvalOne_polesSectionGenerator hF z).unit ^ r)
   simp only [Subalgebra.coe_val, Units.val_pow_eq_pow_val, IsUnit.unit_spec,
-    SubmonoidClass.coe_pow, coe_evalOne_polesSectionGenerator] at hinv
+    SubmonoidClass.coe_pow, coe_overlapEvalOne_polesSectionGenerator] at hinv
   rw [Away.lift_mk, MulMemClass.coe_mul, hinv]
-  simp [sectionRingAwayGeneratorEquiv_mk hF z r g hg', coe_evalOne_of_mem hg']
+  simp [sectionRingAwayGeneratorEquiv_mk hF z r g hg', coe_overlapEvalOne, evalOne_of_mem hg']
 
 /-- The inverses of the two chart isomorphisms agree on the overlap `Spec 𝒪_{z, z⁻¹}` of the
-two-chart model: both give the point of `Proj` with homogeneous coordinates `evalOne`. -/
+two-chart model: both give the point of `Proj` with homogeneous coordinates `overlapEvalOne`. -/
 private theorem specMap_chartIso_inv_ι_condition (hF : IsFunctionField k F) (z : Fˣ) :
     Spec.map (CommRingCat.ofHom (finiteChartRestriction (k := k) (z : F)).toRingHom) ≫
         (sectionRingProjFiniteChartIso hF z).inv ≫
