@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Convex.Continuous
 public import Mathlib.Analysis.Convex.Measure
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 public import TauCeti.Analysis.Convex.Prod
+public import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 public import TauCeti.MeasureTheory.Measure.Lebesgue.BrunnMinkowski.Basic
 public import TauCeti.MeasureTheory.Measure.Lebesgue.OrthogonalSlices
 
@@ -155,14 +156,6 @@ private theorem fst_image_hyperplaneFibers (e : E) (he : ‖e‖ = 1) (s : Set E
 
 variable [FiniteDimensional ℝ E]
 
-/-- The orthogonal hyperplane of a unit vector has codimension one. -/
-private theorem finrank_orthogonal_span_singleton_of_norm_eq_one {e : E} (he : ‖e‖ = 1) :
-    Module.finrank ℝ (ℝ ∙ e)ᗮ = Module.finrank ℝ E - 1 := by
-  have he0 : e ≠ 0 := norm_ne_zero_iff.1 (he ▸ one_ne_zero)
-  have : Fact (Module.finrank ℝ E = Module.finrank ℝ E - 1 + 1) :=
-    ⟨(Nat.sub_add_cancel (Module.finrank_pos_iff_exists_ne_zero.2 ⟨e, he0⟩)).symm⟩
-  exact Submodule.finrank_orthogonal_span_singleton he0
-
 variable [MeasurableSpace E] [BorelSpace E]
 
 /-- **Brunn's concavity principle** for hyperplane sections, extended form. Along a unit vector
@@ -181,7 +174,8 @@ theorem _root_.Convex.mul_volume_hyperplaneSection_rpow_add_mul_volume_hyperplan
   rw [← fst_image_hyperplaneFibers e he] at ht hu
   obtain ⟨⟨t, y⟩, hy, rfl⟩ := ht
   obtain ⟨⟨u, z⟩, hz, rfl⟩ := hu
-  rw [← finrank_orthogonal_span_singleton_of_norm_eq_one he]
+  rw [← Submodule.finrank_orthogonal_span_singleton_eq_finrank_sub_one
+    (norm_ne_zero_iff.1 (he ▸ one_ne_zero))]
   exact Convex.mul_volume_preimage_prodMk_rpow_add_mul_volume_preimage_prodMk_rpow_le
     (convex_hyperplaneFibers e hs) ⟨y, hy⟩ ⟨z, hz⟩ ha hb hab
 
@@ -193,7 +187,9 @@ theorem _root_.Convex.concaveOn_volume_real_hyperplaneSection_rpow {s : Set E} (
     ConcaveOn ℝ ((fun x ↦ ⟪e, x⟫) '' s) (fun t : ℝ ↦
       volume.real {y : (ℝ ∙ e)ᗮ | (y : E) + t • e ∈ s} ^
         ((Module.finrank ℝ E - 1 : ℕ) : ℝ)⁻¹) := by
-  rw [← fst_image_hyperplaneFibers e he, ← finrank_orthogonal_span_singleton_of_norm_eq_one he]
+  rw [← fst_image_hyperplaneFibers e he,
+    ← Submodule.finrank_orthogonal_span_singleton_eq_finrank_sub_one
+      (norm_ne_zero_iff.1 (he ▸ one_ne_zero))]
   exact (convex_hyperplaneFibers e hs).concaveOn_volume_real_preimage_prodMk_rpow hfin
 
 /-- If the hyperplane sections of a convex set along a unit vector have finite volume, their
