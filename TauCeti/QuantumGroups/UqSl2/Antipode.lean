@@ -11,8 +11,8 @@ import Mathlib.Algebra.Ring.Action.ConjAct
 /-!
 # The square and the inverse of the antipode of `U_q(sl₂)`
 
-For a nonzero parameter `q`, the antipode `S` of `UqSl2 q` is not involutive. Its square is the
-inner automorphism given by conjugation with the group-like element `K⁻¹`:
+For a nonzero parameter `q`, the antipode `S` of `UqSl2 q` need not be involutive. Its square is
+the inner automorphism given by conjugation with the group-like element `K⁻¹`:
 
 `S² x = K⁻¹ x K`, so that `S² E = q⁻² E`, `S² F = q² F` and `S² K = K`.
 
@@ -95,11 +95,9 @@ theorem antipodeEquiv_apply (x : UqSl2 q) :
 /-- The inverse of the antipode is `x ↦ K S(x) K⁻¹`. -/
 theorem antipodeEquiv_symm_apply (x : (UqSl2 q)ᵐᵒᵖ) :
     (antipodeEquiv q).symm x = k q * antipode ℂ x.unop * kInv q := by
-  rw [AlgEquiv.symm_apply_eq, antipodeEquiv_apply, ← MulOpposite.unop_inj, MulOpposite.unop_op,
-    antipode_mul_antidistrib, antipode_mul_antidistrib, antipode_antipode, antipode_kInv,
-    antipode_k]
-  simp only [mul_assoc, k_mul_kInv, mul_one]
-  rw [← mul_assoc, k_mul_kInv, one_mul]
+  rw [AlgEquiv.symm_apply_eq, antipodeEquiv_apply, ← MulOpposite.unop_inj, MulOpposite.unop_op]
+  simp [antipode_mul_antidistrib, antipode_antipode, mul_assoc]
+  simp [← mul_assoc]
 
 /-- The inverse of the antipode sends `E` to `-E K⁻¹`. -/
 @[simp]
