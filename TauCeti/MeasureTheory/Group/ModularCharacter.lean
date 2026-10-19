@@ -30,21 +30,17 @@ namespace TauCeti
 variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [LocallyCompactSpace G]
 
-/-- The modular character is the scalar relating a right-translated Haar measure to the
-original Haar measure. No regularity assumption on the Haar measure is needed. -/
-theorem modularCharacter_eq_haarScalarFactor [MeasurableSpace G] [BorelSpace G]
-    (μ : Measure G) [μ.IsHaarMeasure] (g : G) :
-    Measure.modularCharacter g = Measure.haarScalarFactor (Measure.map (· * g) μ) μ :=
-  Measure.modularCharacterFun_eq_haarScalarFactor μ g
-
 /-- A nonzero test integral computes the modular character by right translation.
 No regularity assumption on the Haar measure is needed. -/
 theorem modularCharacter_eq_integral_div [MeasurableSpace G] [BorelSpace G]
     {μ : Measure G} [μ.IsHaarMeasure] {f : G → ℝ}
     (hf : Continuous f) (hfc : HasCompactSupport f) (hfi : ∫ x, f x ∂μ ≠ 0) (g : G) :
     (Measure.modularCharacter g : ℝ) = (∫ x, f (x * g) ∂μ) / ∫ x, f x ∂μ := by
-  rw [modularCharacter_eq_haarScalarFactor μ,
-    Measure.haarScalarFactor_eq_integral_div _ _ hf hfc hfi,
+  -- The bundled character has `modularCharacterFun` as its underlying function.
+  have hmod : Measure.modularCharacter g =
+      Measure.haarScalarFactor (Measure.map (· * g) μ) μ :=
+    Measure.modularCharacterFun_eq_haarScalarFactor μ g
+  rw [hmod, Measure.haarScalarFactor_eq_integral_div _ _ hf hfc hfi,
     integral_map (by fun_prop) hf.aestronglyMeasurable]
 
 /-- The modular character is continuous, without countability or separation assumptions. -/
