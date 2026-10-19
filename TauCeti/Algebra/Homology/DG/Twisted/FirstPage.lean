@@ -137,6 +137,63 @@ theorem indexSpectralSequenceFirstPageXIso_eq (pq : ℤ × ℤ) :
   apply Iso.ext
   rfl
 
+/-- The graded piece `F_p / F_q`, for `q + 1 = p`, with the indices given by an equation: the
+cokernel of the transition map `F_q ⟶ F_p` of the functor of the index filtration is the
+graded piece of index `p`. -/
+noncomputable def twistedIndexCokernelIsoOfEq (q p : ℤ) (hqp : q + 1 = p) :
+    cokernel ((m.twistedIndexFiltrationFunctor dM hM).map
+        (homOfLE (CochainComplex.coe_le_coe_of_eq_add_one (rfl : q = q) hqp.symm))) ≅
+      (0 : TwistingCocycle 𝒜 d {x : P // ind x = p} fun x ↦ ind x).twistedCochainComplex dM hM := by
+  subst hqp
+  exact m.twistedIndexCokernelIso dM hM q
+
+/-- With the standard indices, `twistedIndexCokernelIsoOfEq` is `twistedIndexCokernelIso`. -/
+theorem twistedIndexCokernelIsoOfEq_self (q : ℤ) :
+    m.twistedIndexCokernelIsoOfEq dM hM q (q + 1) rfl = m.twistedIndexCokernelIso dM hM q :=
+  -- The equality `q + 1 = q + 1` is `rfl`, so the transport in the definition reduces.
+  (rfl)
+
+/-- The graded-piece isomorphism identifies the cokernel projection with restriction to the
+generators of index `p`. -/
+@[reassoc (attr := simp)]
+theorem cokernel_π_comp_twistedIndexCokernelIsoOfEq_hom (q p : ℤ) (hqp : q + 1 = p) :
+    cokernel.π ((m.twistedIndexFiltrationFunctor dM hM).map
+        (homOfLE (CochainComplex.coe_le_coe_of_eq_add_one (rfl : q = q) hqp.symm))) ≫
+      (m.twistedIndexCokernelIsoOfEq dM hM q p hqp).hom =
+    (m.twistedIndexFiltrationFunctorObjIso dM hM p).hom ≫
+      m.twistedIndexCochainComplexProj dM hM p := by
+  subst hqp
+  exact m.cokernel_π_comp_twistedIndexCokernelIso_hom dM hM q
+
+/-- **The first page of the index spectral sequence**, with the indices `q`, `q + 1` and `p + q`
+given by equations, as in `CochainComplex.spectralSequenceFirstPageXIsoCokernel`: the object at
+`(p, q)` is the cohomology in degree `p + q` of the graded piece of index `q + 1`. -/
+noncomputable def indexSpectralSequenceFirstPageXIsoOfEq (pq : ℤ × ℤ) (i₁ i₂ : ℤ)
+    (hi₁ : i₁ = pq.2) (hi₂ : i₂ = pq.2 + 1) (n : ℤ) (hn : n = pq.1 + pq.2) :
+    ((CochainComplex.spectralSequence (m.twistedIndexFiltrationFunctor dM hM)).page 2).X pq ≅
+      ((0 : TwistingCocycle 𝒜 d {x : P // ind x = i₂} fun x ↦ ind x).twistedCochainComplex dM
+        hM).homology n :=
+  CochainComplex.spectralSequenceFirstPageXIsoCokernel _ pq i₁ i₂ hi₁ hi₂ n hn ≪≫
+    HomologicalComplex.homologyMapIso (m.twistedIndexCokernelIsoOfEq dM hM i₁ i₂ (by omega)) n
+
+/-- `indexSpectralSequenceFirstPageXIsoOfEq` is the generic identification with the cokernel,
+followed by the isomorphism on cohomology induced by `twistedIndexCokernelIsoOfEq`. -/
+theorem indexSpectralSequenceFirstPageXIsoOfEq_eq (pq : ℤ × ℤ) (i₁ i₂ : ℤ) (hi₁ : i₁ = pq.2)
+    (hi₂ : i₂ = pq.2 + 1) (n : ℤ) (hn : n = pq.1 + pq.2) :
+    m.indexSpectralSequenceFirstPageXIsoOfEq dM hM pq i₁ i₂ hi₁ hi₂ n hn =
+      CochainComplex.spectralSequenceFirstPageXIsoCokernel _ pq i₁ i₂ hi₁ hi₂ n hn ≪≫
+        HomologicalComplex.homologyMapIso
+          (m.twistedIndexCokernelIsoOfEq dM hM i₁ i₂ (by omega)) n :=
+  -- The first page isomorphism is defined as this composite.
+  (rfl)
+
+/-- With the standard indices, `indexSpectralSequenceFirstPageXIsoOfEq` is
+`indexSpectralSequenceFirstPageXIso`. -/
+theorem indexSpectralSequenceFirstPageXIsoOfEq_self (pq : ℤ × ℤ) :
+    m.indexSpectralSequenceFirstPageXIsoOfEq dM hM pq pq.2 (pq.2 + 1) rfl rfl (pq.1 + pq.2) rfl =
+      m.indexSpectralSequenceFirstPageXIso dM hM pq :=
+  (m.indexSpectralSequenceFirstPageXIso_eq dM hM pq).symm
+
 end TwistingCocycle
 
 end TauCeti
