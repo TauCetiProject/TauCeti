@@ -17,8 +17,10 @@ output coordinates. Its **row norms** are the suprema `rᵢ(u) = ⨆ j, ‖aᵢ�
 (`ContinuousLinearMap.rowNorm`), and `u` is **row compact** (`ContinuousLinearMap.IsRowCompact`)
 if its entries are uniformly bounded and its row norms tend to zero along the cofinite filter.
 The bound on the entries keeps the real suprema meaningful; it is automatic over Tate scalars.
-Row compactness is the matrix condition of Serre's criterion for complete continuity, and the
-condition under which the Fredholm determinant `det (1 - T u)` is an entire power series.
+Row compactness is the matrix condition of Serre's criterion for complete continuity. For an
+endomorphism `u` of `C₀(I, R)` over a complete commutative ultrametric normed field, it is also
+the condition under which Serre's Fredholm determinant `det (1 - T u)` is an entire power series;
+that determinant is not developed here.
 
 Every column of the matrix of a continuous linear map tends to zero, but its rows need not: the
 identity of `C₀(I, R)` has all row norms one, so it is not row compact on an infinite index type
