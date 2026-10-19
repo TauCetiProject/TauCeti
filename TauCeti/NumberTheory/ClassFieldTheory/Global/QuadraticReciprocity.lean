@@ -86,14 +86,23 @@ private theorem hilbertSymbol_units_map_eq (ℓ : ℕ) [Fact ℓ.Prime] {x y : �
         (Units.map (algebraMap ℚ ℚ_[ℓ]).toMonoidHom b) = hilbertSymbol x y := by
   congr 1 <;> ext <;> simpa
 
-/-- The Hilbert symbol over `ℚ_ℓ` of two global units that are the primes `p` and `q`. -/
-private theorem hilbertSymbol_units_map_eq_natCast (ℓ : Nat.Primes) (ha : (a : ℚ) = p)
-    (hb : (b : ℚ) = q) :
-    hilbertSymbol (Units.map (algebraMap ℚ ℚ_[ℓ]).toMonoidHom a)
-        (Units.map (algebraMap ℚ ℚ_[ℓ]).toMonoidHom b) =
-      hilbertSymbol (Units.mk0 (p : ℚ_[ℓ]) (Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero))
-        (Units.mk0 (q : ℚ_[ℓ]) (Nat.cast_ne_zero.2 (Fact.out : q.Prime).ne_zero)) :=
-  hilbertSymbol_units_map_eq ℓ (by simp [ha]) (by simp [hb])
+/-- The product over the finite places of `ℚ` of the Hilbert symbols of two integers `m` and `n`
+is the product of their Hilbert symbols over `ℚ_ℓ` for `ℓ` in any finite set `S` of primes
+containing `2` and every prime dividing `m` or `n`: at an odd prime dividing neither, both are
+units and the symbol is `1`. -/
+private theorem finprod_hilbertSymbol_unitAtFinitePlace_eq_prod {m n : ℤ} (S : Finset Nat.Primes)
+    (hS : ∀ ℓ : Nat.Primes, ℓ ∉ S → (ℓ : ℕ) ≠ 2 ∧ ¬ (ℓ : ℤ) ∣ m ∧ ¬ (ℓ : ℤ) ∣ n)
+    (ha : (a : ℚ) = m) (hb : (b : ℚ) = n) :
+    ∏ᶠ v : HeightOneSpectrum (𝓞 ℚ), hilbertSymbol (v.unitAtFinitePlace a) (v.unitAtFinitePlace b) =
+      ∏ ℓ ∈ S, hilbertSymbol (Units.map (algebraMap ℚ ℚ_[ℓ]).toMonoidHom a)
+        (Units.map (algebraMap ℚ ℚ_[ℓ]).toMonoidHom b) := by
+  rw [← finprod_comp_equiv (primesEquiv (R := 𝓞 ℚ)).symm,
+    finprod_congr fun ℓ ↦ hilbertSymbol_unitAtFinitePlace_rat ℓ a b,
+    finprod_eq_prod_of_mulSupport_subset _ fun ℓ hℓ ↦ ?_]
+  by_contra hmem
+  obtain ⟨hℓ2, hℓm, hℓn⟩ := hS ℓ hmem
+  exact hℓ ((hilbertSymbol_units_map_eq ℓ (by simp [ha]) (by simp [hb])).trans
+    (Padic.hilbertSymbol_intCast_intCast_eq_one hℓ2 hℓm hℓn))
 
 /-- **The finite part of the Hilbert product formula for two odd primes.** For distinct odd
 primes `p` and `q`, the product over the finite places `v` of `ℚ` of the Hilbert symbols
@@ -111,10 +120,8 @@ theorem coe_finprod_hilbertSymbol_unitAtFinitePlace_eq_legendreSym (hp : p ≠ 2
   let P₂ : Nat.Primes := ⟨2, Nat.prime_two⟩
   let Pp : Nat.Primes := ⟨p, hpp⟩
   let Pq : Nat.Primes := ⟨q, hqp⟩
-  rw [← finprod_comp_equiv (primesEquiv (R := 𝓞 ℚ)).symm,
-    finprod_congr fun ℓ ↦ (hilbertSymbol_unitAtFinitePlace_rat ℓ a b).trans
-      (hilbertSymbol_units_map_eq_natCast ℓ ha hb),
-    finprod_eq_prod_of_mulSupport_subset (s := {P₂, Pp, Pq}) _ fun ℓ hℓ ↦ ?_]
+  rw [finprod_hilbertSymbol_unitAtFinitePlace_eq_prod (m := p) (n := q) {P₂, Pp, Pq}
+    (fun ℓ hmem ↦ ?_) (by simp [ha]) (by simp [hb])]
   · have hne {x y : Nat.Primes} (h : (x : ℕ) ≠ y) : x ≠ y := fun e ↦ h (congrArg _ e)
     have h2p : P₂ ∉ ({Pp, Pq} : Finset Nat.Primes) := by
       simp only [Finset.mem_insert, Finset.mem_singleton, not_or]
@@ -126,22 +133,23 @@ theorem coe_finprod_hilbertSymbol_unitAtFinitePlace_eq_legendreSym (hp : p ≠ 2
       (Int.natCast_dvd_natCast.not.2 hpq')
     have hQ := Padic.hilbertSymbol_intCast_self_eq_legendreSym hq (n := p)
       (Int.natCast_dvd_natCast.not.2 hqp')
-    simp only [Int.cast_natCast] at hP hQ
     rw [hilbertSymbol_comm] at hP
     congr 1
-    · exact congrArg Units.val (hilbertSymbol_natCast_natCast_padicTwo (hpp.odd_of_ne_two hp)
-        (hqp.odd_of_ne_two hq)) |>.trans (by simp)
-    · exact congrArg₂ (· * ·) hP hQ
-  · -- At every other prime both `p` and `q` are units and the symbol is `1`.
-    by_contra hmem
-    apply hℓ
+    · exact congrArg Units.val ((hilbertSymbol_units_map_eq P₂ (by simp [ha]) (by simp [hb])).trans
+        (hilbertSymbol_natCast_natCast_padicTwo (hpp.odd_of_ne_two hp)
+          (hqp.odd_of_ne_two hq))) |>.trans (by simp)
+    · exact congrArg₂ (· * ·)
+        (congrArg Units.val (hilbertSymbol_units_map_eq Pp (by simp [ha]) (by simp [hb]))
+          |>.trans hP)
+        (congrArg Units.val (hilbertSymbol_units_map_eq Pq (by simp [ha]) (by simp [hb]))
+          |>.trans hQ)
+  · -- At every other prime both `p` and `q` are units.
     have hℓ2 : (ℓ : ℕ) ≠ 2 := fun h ↦ hmem (by simp [show ℓ = P₂ from Subtype.ext h])
     have hℓp : ¬ (ℓ : ℕ) ∣ p := fun h ↦ hmem (by
       simp [show ℓ = Pp from Subtype.ext ((Nat.prime_dvd_prime_iff_eq ℓ.2 hpp).1 h)])
     have hℓq : ¬ (ℓ : ℕ) ∣ q := fun h ↦ hmem (by
       simp [show ℓ = Pq from Subtype.ext ((Nat.prime_dvd_prime_iff_eq ℓ.2 hqp).1 h)])
-    simpa only [Int.cast_natCast] using Padic.hilbertSymbol_intCast_intCast_eq_one hℓ2 (m := p)
-      (n := q) (Int.natCast_dvd_natCast.not.2 hℓp) (Int.natCast_dvd_natCast.not.2 hℓq)
+    exact ⟨hℓ2, Int.natCast_dvd_natCast.not.2 hℓp, Int.natCast_dvd_natCast.not.2 hℓq⟩
 
 /-- **The Hilbert reciprocity sum of two odd primes.** For distinct odd primes `p` and `q`, the sign
 of the sum over all places of `ℚ` of the cohomological Hilbert invariants of `p` and `q` is
@@ -202,22 +210,16 @@ theorem coe_finprod_hilbertSymbol_unitAtFinitePlace_eq_mul_legendreSym (hp : p �
   let P₂ : Nat.Primes := ⟨2, Nat.prime_two⟩
   let Pp : Nat.Primes := ⟨p, hpp⟩
   have h2p : P₂ ≠ Pp := fun h ↦ hp (congrArg Subtype.val h).symm
-  rw [← finprod_comp_equiv (primesEquiv (R := 𝓞 ℚ)).symm,
-    finprod_congr fun ℓ ↦ hilbertSymbol_unitAtFinitePlace_rat ℓ a b,
-    finprod_eq_prod_of_mulSupport_subset (s := {P₂, Pp}) _ fun ℓ hℓ ↦ ?_]
-  · rw [Finset.prod_pair h2p, Units.val_mul]
-    -- The place `p` contributes the Legendre symbol `(m / p)`.
+  rw [finprod_hilbertSymbol_unitAtFinitePlace_eq_prod (m := m) (n := p) {P₂, Pp}
+    (fun ℓ hmem ↦ ?_) ha (by simp [hb]), Finset.prod_pair h2p, Units.val_mul]
+  · -- The place `p` contributes the Legendre symbol `(m / p)`.
     exact congrArg _ (congrArg Units.val (hilbertSymbol_units_map_eq p (by simp [ha])
       (by simp [hb])) |>.trans (Padic.hilbertSymbol_intCast_self_eq_legendreSym hp hpm))
-  · -- At every other prime both `m` and `p` are units and the symbol is `1`.
-    by_contra hmem
-    apply hℓ
+  · -- At every other prime both `m` and `p` are units.
     have hℓ2 : (ℓ : ℕ) ≠ 2 := fun h ↦ hmem (by simp [show ℓ = P₂ from Subtype.ext h])
     have hℓp : ¬ (ℓ : ℕ) ∣ p := fun h ↦ hmem (by
       simp [show ℓ = Pp from Subtype.ext ((Nat.prime_dvd_prime_iff_eq ℓ.2 hpp).1 h)])
-    exact (hilbertSymbol_units_map_eq ℓ (by simp [ha]) (by simp [hb])).trans
-      (Padic.hilbertSymbol_intCast_intCast_eq_one hℓ2 (m := m) (n := p) (hm ℓ ℓ.2 hℓ2)
-        (Int.natCast_dvd_natCast.not.2 hℓp))
+    exact ⟨hℓ2, hm ℓ ℓ.2 hℓ2, Int.natCast_dvd_natCast.not.2 hℓp⟩
 
 /-- **The Hilbert reciprocity sum of an odd prime and a power of `2` up to sign.** Let `p` be an
 odd prime and `m` an integer divisible by no odd prime. Then the sign of the sum over all places of
