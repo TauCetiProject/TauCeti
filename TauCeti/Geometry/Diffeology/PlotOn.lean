@@ -36,6 +36,19 @@ def IsPlotOn {n : ℕ} (u : Set (𝔼ⁿ)) (p : 𝔼ⁿ → X) : Prop :=
   ∀ {m : ℕ} (f : 𝔼ᵐ → 𝔼ⁿ), MapsTo f univ u → ContDiff ℝ ∞ f →
     _root_.Diffeology.IsPlot (p ∘ f)
 
+/-- A map is a plot on a subset exactly when its composite with every smooth map having image in
+the subset is a plot. -/
+theorem isPlotOn_iff {n : ℕ} {u : Set (𝔼ⁿ)} {p : 𝔼ⁿ → X} :
+    IsPlotOn u p ↔ ∀ {m : ℕ} (f : 𝔼ᵐ → 𝔼ⁿ), MapsTo f univ u → ContDiff ℝ ∞ f →
+      _root_.Diffeology.IsPlot (p ∘ f) :=
+  Iff.rfl
+
+/-- Composing a plot on a subset with a smooth map into that subset gives a plot. -/
+theorem IsPlotOn.isPlot_comp {n m : ℕ} {u : Set (𝔼ⁿ)} {p : 𝔼ⁿ → X} {f : 𝔼ᵐ → 𝔼ⁿ}
+    (hp : IsPlotOn u p) (hfu : MapsTo f univ u) (hf : ContDiff ℝ ∞ f) :
+    _root_.Diffeology.IsPlot (p ∘ f) :=
+  hp f hfu hf
+
 /-- Globally defined plots are plots on every subset. -/
 theorem isPlotOn_of_isPlot {n : ℕ} {p : 𝔼ⁿ → X}
     (hp : _root_.Diffeology.IsPlot p) (u : Set (𝔼ⁿ)) : IsPlotOn u p := by

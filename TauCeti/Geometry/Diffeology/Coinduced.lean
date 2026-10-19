@@ -43,6 +43,18 @@ def LocallyLiftsOrConst (q : X → Q) {n : ℕ} (u : Set (𝔼ⁿ)) (p : 𝔼ⁿ
   ∀ z ∈ u, ∃ v : Set (𝔼ⁿ), IsOpen v ∧ z ∈ v ∧ v ⊆ u ∧
     (LocallyLifts q v p ∨ ∃ y, EqOn p (fun _ ↦ y) v)
 
+/-- A map locally lifts or is locally constant on a subset exactly when every point has an open
+neighborhood in the subset on which the map either locally lifts or is constant. -/
+theorem locallyLiftsOrConst_iff {n : ℕ} {q : X → Q} {u : Set (𝔼ⁿ)} {p : 𝔼ⁿ → Q} :
+    LocallyLiftsOrConst q u p ↔ ∀ z ∈ u, ∃ v : Set (𝔼ⁿ), IsOpen v ∧ z ∈ v ∧ v ⊆ u ∧
+      (LocallyLifts q v p ∨ ∃ y, EqOn p (fun _ ↦ y) v) :=
+  Iff.rfl
+
+/-- Constant maps on an open set are local lifts or constants. -/
+theorem locallyLiftsOrConst_const {n : ℕ} (q : X → Q) {u : Set (𝔼ⁿ)} (hu : IsOpen u) (y : Q) :
+    LocallyLiftsOrConst q u (fun _ ↦ y) :=
+  fun _ hz ↦ ⟨u, hu, hz, Subset.rfl, .inr ⟨y, eqOn_refl _ _⟩⟩
+
 /-- Local lifts are local lifts or constants. -/
 theorem LocallyLifts.locallyLiftsOrConst {n : ℕ} {q : X → Q} {u : Set (𝔼ⁿ)} {p : 𝔼ⁿ → Q}
     (hp : LocallyLifts q u p) (hu : IsOpen u) : LocallyLiftsOrConst q u p :=
@@ -119,8 +131,7 @@ def coinducedDiffeology (q : X → Q) : DiffeologicalSpace Q :=
   DiffeologicalSpace.ofCorePlotsOn {
     isPlotOn := fun _ p ↦ LocallyLiftsOrConst q _ p
     isPlotOn_congr := fun _ _ _ h ↦ ⟨fun hp ↦ hp.congr h, fun hp ↦ hp.congr h.symm⟩
-    isPlot_const := fun y z _ ↦
-      ⟨univ, isOpen_univ, mem_univ z, Subset.rfl, .inr ⟨y, eqOn_refl _ _⟩⟩
+    isPlot_const := fun y ↦ locallyLiftsOrConst_const q isOpen_univ y
     isPlotOn_reparam := by
       intro n m u v hu hv p f h hp hf
       exact LocallyLiftsOrConst.comp_contDiffOn hp hv hf h
