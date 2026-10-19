@@ -65,7 +65,7 @@ Etingof and Eu; for orientations of graphs which are not trees it is already
 * P. Etingof and C.-H. Eu, *Koszulity and the Hilbert series of preprojective algebras*, Math.
   Res. Lett. 14 (2007), for the theorem.
 * I. M. Gelfand and V. A. Ponomarev, *Model algebras and representations of graphs*, Funct. Anal.
-  Appl. 13 (1979), where the preprojective algebra is introduced through these reflections.
+  Appl. 13 (1979), where the preprojective algebra is introduced.
 -/
 
 

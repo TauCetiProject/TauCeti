@@ -315,22 +315,16 @@ theorem exists_adj_of_pos_two_mul_le_sum [Finite V]
       ∑ j, ((Fintype.card (i ⟶ j) + Fintype.card (j ⟶ i) : ℕ) : S) * δ j)
     (i : V) : ∃ j, G.Adj i j := by
   classical
-  by_contra h
-  have h : ∀ j, ¬ G.Adj i j := fun j hj => h ⟨j, hj⟩
-  have hsum : ∑ j : OrientedQuiver G o,
-      ((Fintype.card (vertex G o i ⟶ j) +
-        Fintype.card (j ⟶ vertex G o i) : ℕ) : S) * δ j ≠ 0 :=
-    ne_of_gt ((mul_pos two_pos (hδ (vertex G o i))).trans_le (hδle (vertex G o i)))
-  obtain ⟨j, -, hj⟩ := Finset.exists_ne_zero_of_sum_ne_zero hsum
-  obtain ⟨w, rfl⟩ := (vertexEquiv G o).surjective j
-  rw [vertexEquiv_apply] at hj
-  have hc : ((Fintype.card (vertex G o i ⟶ vertex G o w) +
-      Fintype.card (vertex G o w ⟶ vertex G o i) : ℕ) : S) ≠ 0 := fun hc' =>
-    hj (by rw [hc', zero_mul])
-  rw [Fintype.card_eq_nat_card, Fintype.card_eq_nat_card, card_hom_add_card_hom G o i w] at hc
-  split_ifs at hc with hw
-  · exact h w hw
-  · exact absurd hc (by simp)
+  have : Fintype V := Fintype.ofFinite V
+  -- The multigraph sum in the superadditivity condition is the neighbour sum.
+  have hδle' : 2 * δ (vertex G o i) ≤ ∑ j ∈ G.neighborFinset i, δ (vertex G o j) :=
+    (hδle (vertex G o i)).trans
+      (sum_card_hom_add_card_hom_mul G o (fun j => δ (vertex G o j)) i).le
+  -- The weight at `i` is positive, so the sum of the weights of its neighbours is nonzero.
+  obtain ⟨j, hj, -⟩ :=
+    Finset.exists_ne_zero_of_sum_ne_zero
+      ((mul_pos two_pos (hδ (vertex G o i))).trans_le hδle').ne'
+  exact ⟨j, (G.mem_neighborFinset i j).1 hj⟩
 
 /-- Forgetting the choice of orientation includes the oriented quiver into the doubled quiver. -/
 def forget : OrientedQuiver G o ⥤q DoubledQuiver G where
