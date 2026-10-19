@@ -40,12 +40,13 @@ are bounded `C¹` subsolutions with bounded derivative
 eventually almost below `u` on the initial slice and almost above `u` on the final slice
 (`MeasureTheory.eventually_convolution_lsmul_lt_of_upperSemicontinuousAt` and
 `MeasureTheory.eventually_lt_convolution_lsmul_of_lowerSemicontinuousAt`), which is the direction
-the inequality needs. Hopf–Lax functions satisfy the difference form only at positive times
-(`TauCeti.hopfLax_norm_rpow_add_add_smul_le`), and are upper semicontinuous there when the initial
-datum and the Lagrangian are bounded below (`TauCeti.upperSemicontinuousOn_hopfLax`). So they must
-be shifted in time, to make the strip lie in positive times, before this theorem applies to them;
-lower semicontinuity on the final slice is a separate hypothesis that the cited results do not
-supply.
+the inequality needs. Hopf–Lax functions satisfy the difference form only at positive times, and
+this is proved for the Lagrangian `‖·‖ ^ p` with `1 ≤ p` and a bounded-below initial datum
+(`TauCeti.hopfLax_norm_rpow_add_add_smul_le`). They are upper semicontinuous at positive times when
+the initial datum and the Lagrangian are bounded below and the Lagrangian is continuous
+(`TauCeti.upperSemicontinuousOn_hopfLax`). So they must be shifted in time, to make the strip lie
+in positive times, before this theorem applies to them; lower semicontinuity on the final slice is
+a separate hypothesis that the cited results do not supply.
 
 The right side is the `ℝ≥0∞`-valued integral of the positive part of `L (vₜ x)`, so neither the
 integrability of the action nor a sign condition on `L` is assumed.
