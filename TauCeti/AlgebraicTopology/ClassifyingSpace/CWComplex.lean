@@ -242,6 +242,26 @@ theorem smul_characteristicMap_universalGSpace (g : G)
   -- Both faces are images under the same relabelling of vertices.
   rfl
 
+/-- Translation preserves the index-ordered enumeration of each simplex of the countable join. -/
+@[simp]
+theorem vertexEmbedding_smul_universalGSpace (g : G)
+    (c : (indexedJoin fun _ : ℕ => G).RealizationCell n) (j : Fin (n + 1)) :
+    (g • c).vertexEmbedding j = g • c.vertexEmbedding j := by
+  have hmono : StrictMonoOn (smulSimplicialMap g) (↑c.1.1 : Set (Σ _ : ℕ, G)) := by
+    intro v hv w hw hvw
+    exact universalGSpaceVertexOrder_lt_of_fst_lt
+      ((universalGSpaceVertexOrder_lt_iff c.1.2 hv hw).mp hvw)
+  have hc : g • c = c.map (smulSimplicialMap g) hmono.injOn := by
+    apply Subtype.ext
+    apply Subtype.ext
+    simp only [RealizationCell.map_face,
+      TauCeti.PreAbstractSimplicialComplex.SimplicialMap.coe_faceOrderHom_apply,
+      smul_realizationCell_face, Finset.map_eq_image]
+    -- Both simplicial maps act on vertices by the same translation.
+    rfl
+  rw [hc]
+  exact congrFun (c.vertexEmbedding_map (smulSimplicialMap g) hmono) j
+
 end RealizationCell
 
 section CWComplex
