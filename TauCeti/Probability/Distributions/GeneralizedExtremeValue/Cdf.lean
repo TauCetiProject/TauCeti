@@ -167,21 +167,14 @@ theorem strictMonoOn_cdf_generalizedExtremeValueMeasure (hs : 0 < s) (hξ : ξ �
   rw [cdf_generalizedExtremeValueMeasure_eq hs hξ m x, ite_eq_left hx',
     cdf_generalizedExtremeValueMeasure_eq hs hξ m y, ite_eq_left hy', exp_lt_exp]
   apply neg_lt_neg
+  have hq : (x - m) / s < (y - m) / s :=
+    div_lt_div_of_pos_right (sub_lt_sub_right hxy m) hs
   rcases lt_or_gt_of_ne hξ with hξ | hξ
   · apply Real.rpow_lt_rpow hy.le
-      (by
-        have hmul := mul_lt_mul_of_neg_left (sub_lt_sub_right hxy m) hξ
-        have hdiv := div_lt_div_of_pos_right hmul hs
-        have hdiv' : ξ * ((y - m) / s) < ξ * ((x - m) / s) := by
-          convert hdiv using 1 <;> ring
-        linarith) (div_pos_of_neg_of_neg (by norm_num) hξ)
+      (by linarith [mul_lt_mul_of_neg_left hq hξ])
+      (div_pos_of_neg_of_neg (by norm_num) hξ)
   · exact Real.rpow_lt_rpow_of_neg hx
-      (by
-        have hmul := mul_lt_mul_of_pos_left (sub_lt_sub_right hxy m) hξ
-        have hdiv := div_lt_div_of_pos_right hmul hs
-        have hdiv' : ξ * ((x - m) / s) < ξ * ((y - m) / s) := by
-          convert hdiv using 1 <;> ring
-        linarith)
+      (by linarith [mul_lt_mul_of_pos_left hq hξ])
       (div_neg_of_neg_of_pos (by norm_num) hξ)
 
 end TauCeti.Probability
