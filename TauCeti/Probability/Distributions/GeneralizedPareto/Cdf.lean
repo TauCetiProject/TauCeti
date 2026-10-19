@@ -62,16 +62,9 @@ theorem cdf_generalizedParetoMeasure_of_nonpos (hs : 0 < s) (ξ : ℝ) (hx : x �
 theorem cdf_generalizedParetoMeasure_of_shape_ne_zero (hs : 0 < s) (hξ : ξ ≠ 0)
     (hx : 0 ≤ x) (hw : 0 < 1 + ξ * x / s) :
     cdf (generalizedParetoMeasure s ξ) x = 1 - (1 + ξ * x / s) ^ (-1 / ξ) := by
-  have hinv : generalizedParetoMap s ξ (Real.log (1 + ξ * x / s) / ξ) = x := by
-    rw [generalizedParetoMap_of_shape_ne_zero hξ]
-    have hcancel : ξ * (Real.log (1 + ξ * x / s) / ξ) =
-        Real.log (1 + ξ * x / s) := by field_simp
-    rw [hcancel, Real.exp_log hw]
-    field_simp
-    ring
+  have hinv := generalizedParetoMap_log_div hs.ne' hξ hw
   have he : 0 ≤ Real.log (1 + ξ * x / s) / ξ := by
-    apply (strictMono_generalizedParetoMap hs ξ).le_iff_le.mp
-    simpa only [hinv, generalizedParetoMap_apply_zero] using hx
+    rwa [← generalizedParetoMap_nonneg_iff hs ξ, hinv]
   rw [← hinv, cdf_generalizedParetoMeasure_generalizedParetoMap hs, cdf_expMeasure_eq one_pos,
     ite_eq_left he, hinv, one_mul, Real.rpow_def_of_pos hw]
   congr 2
@@ -114,6 +107,27 @@ theorem cdf_generalizedParetoMeasure_eq (hs : 0 < s) (ξ x : ℝ) :
     apply (div_le_iff_of_neg hξneg).2
     have := (div_le_iff₀ hs).1 (show ξ * x / s ≤ -1 by linarith)
     nlinarith
+
+/-- On the nonnegative half-line, generalized Pareto survival is positive exactly below
+the upper endpoint, when there is one. -/
+@[simp]
+theorem cdf_generalizedParetoMeasure_lt_one_iff (hs : 0 < s) (hx : 0 ≤ x) :
+    cdf (generalizedParetoMeasure s ξ) x < 1 ↔ 0 < s + ξ * x := by
+  have hb : 0 < 1 + ξ * x / s ↔ 0 < s + ξ * x := by
+    have h : 1 + ξ * x / s = (s + ξ * x) / s := by field_simp
+    rw [h]
+    exact div_pos_iff_of_pos_right hs
+  rcases hx.eq_or_lt with rfl | hx
+  · simp [cdf_generalizedParetoMeasure_of_nonpos hs ξ le_rfl, hs]
+  by_cases hξ : ξ = 0
+  · subst ξ
+    simp [generalizedParetoMeasure_zero hs, cdf_expMeasure_eq (inv_pos.mpr hs),
+      hx.le, Real.exp_pos, hs]
+  rw [cdf_generalizedParetoMeasure_eq hs]
+  simp only [hx.not_ge, hξ, ↓reduceIte]
+  split_ifs with h
+  · exact iff_of_true (by linarith [Real.rpow_pos_of_pos h (-1 / ξ)]) (hb.1 h)
+  · simp [not_lt.mp (mt hb.2 h)]
 
 /-- The generalized Pareto cdf is continuous at every real point, including both support
 endpoints. -/
