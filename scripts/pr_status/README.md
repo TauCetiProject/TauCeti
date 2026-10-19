@@ -51,13 +51,16 @@ PR-status batches checkpoint pending PR numbers and retry counts after each comp
 PR. The workflow restores the latest verified `pr-status-progress` artifact, including
 from failed runs, and uploads progress with `always()`. A retained quota deadline
 defers the next batch before any App reads. Finishing a resumed scan advances its
-watermark only to the original discovery time; the next scan overlaps that boundary
-to catch changes during the interruption. Active CI is refreshed when resuming.
+watermark only to a completely read discovery boundary. Resuming also discovers
+new activity, skipping only updates older than the start of a finished PR check;
+changes during that check remain eligible. Active CI is refreshed. An hourly
+recovery trigger and manual dispatch can resume work without a new PR event.
 
 Restoration verifies the producing workflow and event through GitHub. A
 `pull_request_target` run executes trusted base code even when its recorded head
 repository is a fork; ordinary `pull_request` runs cannot supply progress. Other
-accepted events (`workflow_run` and `issue_comment`) must name upstream `main`.
+accepted events (`workflow_run`, `issue_comment`, schedule and manual dispatch)
+must name upstream `main`.
 The former retry-only artifact is migrated at deployment. Missing/expired state
 uses the existing bounded time-window fallback; a hard runner loss before upload
 can repeat work since the last uploaded checkpoint.

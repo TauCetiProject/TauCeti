@@ -1,11 +1,9 @@
 """Hermetic interruption/resume and artifact-provenance regressions."""
 
 import contextlib
-import datetime as dt
 import json
 import os
 from pathlib import Path
-import re
 import subprocess
 import tempfile
 import unittest
@@ -13,6 +11,8 @@ from unittest.mock import Mock, patch
 
 import batch
 import core
+
+REAL_UPDATED = batch.updated_prs
 
 
 class ResumeTests(unittest.TestCase):
@@ -27,7 +27,6 @@ class ResumeTests(unittest.TestCase):
         self.heads = stack.enter_context(patch.object(batch, 'open_heads', return_value={'h': [1, 2, 3]}))
         self.updated = stack.enter_context(patch.object(batch, 'updated_prs', return_value=([1, 2, 3], {1})))
         stack.enter_context(patch.object(batch, 'touched_by_runs', return_value=(set(), set())))
-        stack.enter_context(patch.object(batch, 'currently_running', return_value=set()))
         self.labels = stack.enter_context(patch.object(batch.labels, 'reconcile'))
         self.zulip = stack.enter_context(patch.object(batch.zulip, 'reconcile'))
         client = Mock()
@@ -59,21 +58,27 @@ class ResumeTests(unittest.TestCase):
         self.path.write_text(json.dumps(failed))
         core._BLOCKED_UNTIL = 0
         self.labels.side_effect = None
+        self.updated.return_value = ([], set())
         self.assertEqual(batch.main(self.args), 0)
         self.assertEqual([c.args[0] for c in self.labels.call_args_list], ['2', '3'])
         done = self.read()
         self.assertIsNone(done['active'])
-        self.assertEqual(done['watermark'], failed['active']['started_at'])
+        self.assertGreaterEqual(done['watermark'], failed['active']['started_at'])
 
     def test_a_mid_scan_change_is_covered_by_the_next_window(self):
         state = batch.load_progress(None, '2026-10-19T08:00:00Z')
-        state['active'] = {'started_at': '2026-10-19T09:00:00Z', 'pending': [2], 'opened': []}
+        state['active'] = {'started_at': '2026-10-19T09:00:00Z', 'pending': [2], 'opened': [], 'completed': {}}
         self.path.write_text(json.dumps(state))
-        self.assertEqual(batch.main(self.args), 0)
-        self.assertEqual(self.read()['watermark'], '2026-10-19T09:00:00Z')
         self.updated.return_value = ([3], set())
         self.assertEqual(batch.main(self.args), 0)
-        self.updated.assert_called_with('2026-10-19T08:58:00Z')
+        # PR 3 was the last event and has no future trigger: catch it now.
+        self.assertEqual([c.args[0] for c in self.labels.call_args_list], ['2', '3'])
+        self.assertEqual(self.updated.call_args.args[0], '2026-10-19T08:58:00Z')
+        watermark = self.read()['watermark']
+        self.updated.return_value = ([], set())
+        self.assertEqual(batch.main(self.args), 0)
+        expected = batch.iso(batch.dt.datetime.fromisoformat(watermark.replace('Z', '+00:00')) - batch.dt.timedelta(minutes=2))
+        self.updated.assert_called_with(expected)
 
     def test_per_pr_failure_is_queued_without_holding_healthy_work_back(self):
         self.labels.side_effect = lambda n: (_ for _ in ()).throw(RuntimeError('bad input')) if n == '2' else None
@@ -106,7 +111,7 @@ class ResumeTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 batch.load_progress(self.path, 'ignored')
         state['blocked_until'] = 0
-        state['active'] = {'started_at': state['watermark'], 'pending': [1, 1], 'opened': []}
+        state['active'] = {'started_at': state['watermark'], 'pending': [1, 1], 'opened': [], 'completed': {}}
         self.path.write_text(json.dumps(state))
         with self.assertRaises(ValueError):
             batch.load_progress(self.path, 'ignored')
@@ -118,11 +123,47 @@ class ResumeTests(unittest.TestCase):
         self.assertIsNone(state['active'])
 
 
+    def test_discovery_ignores_activity_older_than_saved_completion(self):
+        rows = ['1 2026-10-19T09:00:00Z 2026-10-19T08:00:00Z',
+                '2 2026-10-19T09:02:00Z 2026-10-19T09:02:00Z']
+        with patch.object(batch, 'lines', return_value=rows):
+            prs, opened = REAL_UPDATED('2026-10-19T08:00:00Z', {'1': '2026-10-19T09:01:00Z'})
+        self.assertEqual((prs, opened), ([2], {2}))
+
+    def test_mid_batch_config_failure_keeps_error_annotation_and_pending_work(self):
+        self.zulip.side_effect = batch.zulip.ConfigError('invalid credentials')
+        with patch.object(batch.zulip, 'fail_config', return_value=1) as fail:
+            self.assertEqual(batch.main(self.args), 1)
+        fail.assert_called_once_with('invalid credentials')
+        self.assertEqual(self.read()['active']['pending'], [1, 2, 3])
+
+
+    def test_changes_during_a_completed_check_are_not_skipped_on_resume(self):
+        real_datetime = batch.dt.datetime
+        class Clock(real_datetime):
+            tick = real_datetime(2026, 10, 19, 9, tzinfo=batch.dt.timezone.utc)
+            @classmethod
+            def now(cls, tz=None):
+                return cls.tick
+        def label(number):
+            if number == '1':
+                Clock.tick = real_datetime(2026, 10, 19, 9, 1, tzinfo=batch.dt.timezone.utc)
+            elif number == '2':
+                core._block_for(60)
+                raise core.RateLimited('quota')
+        self.labels.side_effect = label
+        with patch.object(batch.dt, 'datetime', Clock):
+            self.assertEqual(batch.main(self.args), 1)
+        # A build finishing at 09:00:30 may have arrived after the snapshot read.
+        # Its update must not be suppressed by the later 09:01 completion time.
+        self.assertEqual(self.read()['active']['completed']['1'], '2026-10-19T09:00:00Z')
+
+
 class ProvenanceTests(unittest.TestCase):
     def test_exact_restore_selector_rejects_untrusted_pr_workflows(self):
         workflow = Path(__file__).resolve().parents[2] / '.github/workflows/pr-status.yml'
         text = workflow.read_text()
-        query = re.search(r"trusted=\$\(gh api .*?--jq '(.*?)'\)", text, re.S).group(1)
+        query = workflow.parents[2].joinpath('scripts/pr_status/trusted-run.jq').read_text()
         base = {'repository': {'full_name': 'TauCetiProject/TauCeti'},
                 'head_repository': {'full_name': 'TauCetiProject/TauCeti'},
                 'event': 'workflow_run', 'path': '.github/workflows/pr-status.yml', 'head_branch': 'main'}

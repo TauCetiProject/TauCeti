@@ -1,6 +1,8 @@
 """Reconcile the status label and the Zulip post of every PR with activity since a point in time.
 
-Usage: batch.py --since <ISO time> [--pr <number>]...
+Usage: batch.py --since <ISO time> [--pr <number>]... [--state-in FILE] [--state-out FILE] [--dry-run]
+
+--since supplies the fallback boundary when no checkpoint is available.
 
 pr-status.yml runs this once per burst of PR events instead of once per event. Its concurrency
 group admits one run at a time and keeps only the newest waiting one, so a burst of events costs at
@@ -75,10 +77,12 @@ def lines(path: str, jq: str, paginate: bool = False) -> list[str]:
     return [l for l in core.gh_api(path, jq=jq, paginate=paginate).splitlines() if l]
 
 
-def updated_prs(since: str) -> tuple[list[int], set[int]]:
+def updated_prs(since: str, completed=None) -> tuple[list[int], set[int]]:
     """PRs whose updated_at is at or after `since`, newest first, and those of them created at or
-    after `since`. The list is sorted by update time, so paging stops at the first page that reaches
-    back past `since`."""
+    after `since`. Paging stops after reaching older activity. ``completed`` maps
+    PR numbers to the start times of finished checks; older updates are skipped.
+    Same-second updates remain eligible to avoid losing concurrent changes.
+    """
     out, opened = [], set()
     page = 1
     while True:
@@ -90,6 +94,10 @@ def updated_prs(since: str) -> tuple[list[int], set[int]]:
             if updated < since:
                 done = True
                 break
+            # Own label writes before completion are not new work. A same-second
+            # update remains eligible because GitHub timestamps lack finer ordering.
+            if completed and updated < completed.get(number, ''):
+                continue
             out.append(int(number))
             if created >= since:
                 opened.add(int(number))
@@ -123,9 +131,13 @@ def workflow_runs(workflow: str, query: str) -> list[dict]:
 ACTIVE = ("requested", "queued", "pending", "waiting", "in_progress")
 
 
-def touched_by_runs(since: str, heads: dict[str, list[int]]) -> tuple[set[int], set[str]]:
+def touched_by_runs(since: str, heads: dict[str, list[int]], completed=None) -> tuple[set[int], set[str]]:
     """PRs whose pr-build or Review runs moved since `since`, and the heads with a pr-build run
-    still queued or in progress (whose CI therefore reads as running)."""
+    still queued or in progress (whose CI therefore reads as running).
+
+    ``completed`` filters activity older than the start of a finished PR check;
+    running flags remain current even when no new reconciliation is needed.
+    """
     prs, running = set(), set()
     lookback = iso(dt.datetime.fromisoformat(since.replace("Z", "+00:00")) - RUN_LOOKBACK)
     # pr-build runs for PRs are pull_request_target runs; Review is started by workflow_run and
@@ -140,7 +152,8 @@ def touched_by_runs(since: str, heads: dict[str, list[int]]) -> tuple[set[int], 
                 if status == "completed" and r["updated_at"] < since:
                     continue
                 if r["head_sha"] in heads:
-                    prs.update(heads[r["head_sha"]])
+                    prs.update(n for n in heads[r["head_sha"]]
+                               if not completed or r['updated_at'] >= completed.get(str(n), ''))
                     if workflow == "pr-build.yml" and status != "completed":
                         running.add(r["head_sha"])
     return prs, running
@@ -153,9 +166,10 @@ def running_prs(heads: dict[str, list[int]], running: set[str], number: int) -> 
 def load_progress(path, since):
     """Load a validated checkpoint, or start at the fallback window boundary.
 
-    A checkpoint records an unfinished scan's pending PRs and start time. Its
-    watermark advances to that scan's start, never to a later resuming run's
-    start, so events arriving during interruptions remain discoverable.
+    Record pending PRs, a completed discovery boundary, and the start times of
+    finished PR checks. A drained batch advances its watermark to that boundary.
+    Resumed batches discover newer activity but skip updates older than the
+    start of a finished check, so changes during its reads remain eligible.
     """
     state = {"version": 1, "watermark": since, "active": None, "retry": {}, "blocked_until": 0}
     if path and Path(path).is_file():
@@ -184,6 +198,13 @@ def load_progress(path, since):
     active = state['active']
     if active is not None:
         timestamp(active['started_at'])
+        completed = active['completed']
+        if not isinstance(completed, dict):
+            raise ValueError('Invalid completion records')
+        for number, finished in completed.items():
+            if not number.isdigit() or int(number) <= 0:
+                raise ValueError('Invalid completed PR')
+            timestamp(finished)
         for field in ('pending', 'opened'):
             numbers = active[field]
             if not isinstance(numbers, list) or any(type(n) is not int or n <= 0 for n in numbers) or len(set(numbers)) != len(numbers):
@@ -196,8 +217,9 @@ def load_progress(path, since):
 def save_progress(path, state):
     """Atomically checkpoint pending work, retries and this process's quota hold.
 
-    Called under the worker lock after each completed PR and in the outer
-    finally block. The workflow uploads this file even when reconciliation fails.
+    Merge core's quota deadline into state and atomically replace ``path``.
+    A missing path suppresses the file write. Callers must hold the worker lock
+    while workers are active. The workflow uploads the file even on failure.
     """
     state['blocked_until'] = max(state['blocked_until'], core._BLOCKED_UNTIL)
     if path:
@@ -206,16 +228,6 @@ def save_progress(path, state):
         temporary = target.with_suffix('.tmp')
         temporary.write_text(json.dumps(state, sort_keys=True))
         temporary.replace(target)
-
-
-def currently_running(heads):
-    """Refresh active build heads on resume without rediscovering completed work."""
-    running = set()
-    for status in ACTIVE:
-        for run in workflow_runs('pr-build.yml', f'status={status}&event=pull_request_target'):
-            if run['head_sha'] in heads:
-                running.add(run['head_sha'])
-    return running
 
 
 def main(argv=None):
@@ -243,13 +255,20 @@ def main(argv=None):
             by_runs, running = touched_by_runs(since, heads)
             ordered = list(dict.fromkeys(args.pr + by_update + sorted(by_runs) + sorted(int(n) for n in state['retry'])))
             state['active'] = {"started_at": started, "pending": ordered,
-                               "opened": sorted(set(ordered) & opened)}
+                               "opened": sorted(set(ordered) & opened), "completed": {}}
         else:
             active = state['active']
-            active['pending'] = list(dict.fromkeys(args.pr + active['pending']))
-            # Refresh current CI rather than displaying the old scan's running flag.
+            discovered = iso(dt.datetime.now(dt.timezone.utc))
             heads = open_heads()
-            running = currently_running(heads)
+            # Include collapsed events since discovery, but omit activity known
+            # to precede the start of an already completed reconciliation.
+            since = iso(dt.datetime.fromisoformat(active['started_at'].replace('Z', '+00:00')) - dt.timedelta(minutes=2))
+            by_update, newly_opened = updated_prs(since, active['completed'])
+            by_runs, running = touched_by_runs(since, heads, active['completed'])
+            active['pending'] = list(dict.fromkeys(args.pr + active['pending'] + by_update + sorted(by_runs)))
+            active['opened'] = sorted(set(active['opened']) | (newly_opened & set(active['pending'])))
+            # Only advance after both discovery streams were read completely.
+            active['started_at'] = discovered
         active = state['active']
         ordered, opened = list(active['pending']), set(active['opened'])
         log(f"scan {active['started_at']}: {len(ordered)} pending PRs; {len(state['retry'])} queued retries")
@@ -272,10 +291,11 @@ def main(argv=None):
             if stop:
                 return
             failed = False
+            checked_from = iso(dt.datetime.now(dt.timezone.utc))
             try:
                 labels.reconcile(str(number))
             except core.RateLimited as exc:
-                stop.append(str(exc))
+                stop.append(('quota', str(exc)))
                 return
             except Exception as exc:
                 failed = True
@@ -283,8 +303,11 @@ def main(argv=None):
             try:
                 ci = 'running' if running_prs(heads, running, number) else None
                 zulip.reconcile(z, str(number), number in opened, ci, bot_id=bot_id, create_if_open=True)
-            except (zulip.ConfigError, core.RateLimited) as exc:
-                stop.append(str(exc))
+            except zulip.ConfigError as exc:
+                stop.append(('config', str(exc)))
+                return
+            except core.RateLimited as exc:
+                stop.append(('quota', str(exc)))
                 return
             except Exception as exc:
                 failed = True
@@ -301,6 +324,7 @@ def main(argv=None):
                         log(f"::warning::giving up on PR #{number} after {MAX_RETRIES} retries")
                 else:
                     state['retry'].pop(key, None)
+                active['completed'][key] = checked_from
                 active['pending'].remove(number)
                 if number in active['opened']:
                     active['opened'].remove(number)
@@ -309,10 +333,11 @@ def main(argv=None):
         with ThreadPoolExecutor(max_workers=PARALLEL) as pool:
             list(pool.map(one, ordered))
         if stop:
-            log(f"stopping: {stop[0]}; {len(active['pending'])} PRs retained")
-            return 1
-        # A resumed run's creation time would skip changes that arrived after
-        # the original scan. Advance only to the original discovery boundary.
+            log(f"stopping: {stop[0][1]}; {len(active['pending'])} PRs retained")
+            config = next((reason for kind, reason in stop if kind == 'config'), None)
+            return zulip.fail_config(config) if config is not None else 1
+        # Advance to a completely read discovery boundary, never merely to
+        # this workflow run's creation time.
         state['watermark'] = active['started_at']
         state['active'] = None
         log(f"done: {len(ordered)} PRs; failures queued for retry: {failures}")
