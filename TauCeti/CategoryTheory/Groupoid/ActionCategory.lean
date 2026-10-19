@@ -41,13 +41,14 @@ orbits of the action.
 
 ## Main declarations
 
-* `CategoryTheory.ActionCategory.totalEquiv`: the arrows of `G ⋉ X` are `G × X`.
+* `CategoryTheory.ActionCategory.totalEquiv`: the arrows of `G ⋉ X` are `G × X`; this holds for
+  any monoid action.
 * `CategoryTheory.ActionCategory.stabilizerMulEquivAut`: the stabilizer of `x` is the
   automorphism group of `x`, compatibly with Mathlib's `ActionCategory.stabilizerIsoEnd`
   (`CategoryTheory.ActionCategory.toEnd_stabilizerMulEquivAut`) and with transport along arrows
   (`CategoryTheory.ActionCategory.autMulEquivOfIso_stabilizerMulEquivAut`).
-* `CategoryTheory.ActionCategory.stabilizerMulEquivVertexGroup`: the stabilizer is the opposite
-  of the vertex group.
+* `CategoryTheory.ActionCategory.stabilizerMulEquivVertexGroupMulOpposite`: the stabilizer is the
+  opposite of the vertex group.
 * `CategoryTheory.ActionCategory.stabilizer_eq_bot_of_faithful`: if `G ⋉ X` has a faithful functor
   to a thin category, all stabilizers are trivial; in particular
   `CategoryTheory.ActionCategory.isEmpty_equivalence_punit`.
@@ -68,56 +69,58 @@ open MulAction
 
 namespace CategoryTheory.ActionCategory
 
-variable {G : Type*} [Group G] {X : Type*} [MulAction G X]
-
 section Arrows
 
-/-- An arrow of the action groupoid goes from a point to its translate by the arrow's label. -/
-theorem hom_smul {x y : X} (f : objEquiv G X x ⟶ objEquiv G X y) :
-    (f.hom : G) • x = y :=
+variable {M : Type*} [Monoid M] {X : Type*} [MulAction M X]
+
+/-- An arrow of the action category goes from a point to its translate by the arrow's label. -/
+theorem hom_smul {x y : X} (f : objEquiv M X x ⟶ objEquiv M X y) :
+    (f.hom : M) • x = y :=
   f.map_val
+
+variable (M X)
+
+/-- The total set of arrows of the action category, identified with `M × X` by recording the
+label and the source of each arrow. The target of the arrow labelled `(m, x)` is `m • x`. -/
+def totalEquiv : Quiver.Total (ActionCategory M X) ≃ M × X where
+  toFun f := (f.hom.hom, f.left.back)
+  invFun p := ⟨objEquiv M X p.2, objEquiv M X (p.1 • p.2), Functor.Elements.homMk p.1 rfl⟩
+  left_inv := by
+    rintro ⟨a, b, f⟩
+    have key : ∀ (b' : ActionCategory M X) (f' : a ⟶ b'), b' = b → f'.hom = f.hom →
+        (⟨a, b', f'⟩ : Quiver.Total (ActionCategory M X)) = ⟨a, b, f⟩ := by
+      rintro _ f' rfl h
+      rw [Functor.Elements.hom_ext h]
+    exact key _ _ ((congrArg (objEquiv M X) f.map_val).trans (back_coe b)) rfl
+  right_inv _ := rfl
+
+variable {M X}
+
+@[simp]
+theorem totalEquiv_apply (f : Quiver.Total (ActionCategory M X)) :
+    totalEquiv M X f = (f.hom.hom, f.left.back) := (rfl)
+
+@[simp]
+theorem totalEquiv_symm_apply_left (p : M × X) :
+    ((totalEquiv M X).symm p).left = objEquiv M X p.2 := (rfl)
+
+@[simp]
+theorem totalEquiv_symm_apply_right (p : M × X) :
+    ((totalEquiv M X).symm p).right = objEquiv M X (p.1 • p.2) := (rfl)
+
+@[simp]
+theorem totalEquiv_symm_apply_hom_hom (p : M × X) :
+    ((totalEquiv M X).symm p).hom.hom = p.1 := (rfl)
+
+end Arrows
+
+variable {G : Type*} [Group G] {X : Type*} [MulAction G X]
 
 /-- The inverse of an arrow of the action groupoid is labelled by the inverse group element. -/
 @[simp]
-theorem inv_hom {a b : ActionCategory G X} (f : a ⟶ b) : (inv f).hom = (f.hom⁻¹ : G) := by
-  rw [← Groupoid.inv_eq_inv]
-  rfl
-
-variable (G X)
-
-/-- The total set of arrows of the action groupoid, identified with `G × X` by recording the
-label and the source of each arrow. The target of the arrow labelled `(g, x)` is `g • x`. -/
-def totalEquiv : Quiver.Total (ActionCategory G X) ≃ G × X where
-  toFun f := (f.hom.hom, f.left.back)
-  invFun p := ⟨objEquiv G X p.2, objEquiv G X (p.1 • p.2), Functor.Elements.homMk p.1 rfl⟩
-  left_inv := by
-    rintro ⟨a, b, f⟩
-    have key : ∀ (b' : ActionCategory G X) (f' : a ⟶ b'), b' = b → f'.hom = f.hom →
-        (⟨a, b', f'⟩ : Quiver.Total (ActionCategory G X)) = ⟨a, b, f⟩ := by
-      rintro _ f' rfl h
-      rw [Functor.Elements.hom_ext h]
-    exact key _ _ ((congrArg (objEquiv G X) f.map_val).trans (back_coe b)) rfl
-  right_inv _ := rfl
-
-variable {G X}
-
-@[simp]
-theorem totalEquiv_apply (f : Quiver.Total (ActionCategory G X)) :
-    totalEquiv G X f = (f.hom.hom, f.left.back) := (rfl)
-
-@[simp]
-theorem totalEquiv_symm_apply_left (p : G × X) :
-    ((totalEquiv G X).symm p).left = objEquiv G X p.2 := (rfl)
-
-@[simp]
-theorem totalEquiv_symm_apply_right (p : G × X) :
-    ((totalEquiv G X).symm p).right = objEquiv G X (p.1 • p.2) := (rfl)
-
-@[simp]
-theorem totalEquiv_symm_apply_hom_hom (p : G × X) :
-    ((totalEquiv G X).symm p).hom.hom = p.1 := (rfl)
-
-end Arrows
+theorem inv_hom {a b : ActionCategory G X} (f : a ⟶ b) : (inv f).hom = (f.hom⁻¹ : G) :=
+  eq_inv_of_mul_eq_one_left <| by
+    rw [← ActionCategory.comp_hom, IsIso.hom_inv_id, ActionCategory.id_hom]
 
 section Isotropy
 
@@ -164,7 +167,7 @@ variable (G)
 /-- The stabilizer of `x` is the opposite of Mathlib's vertex group at the corresponding object.
 The vertex group multiplies in diagrammatic order, `f * g = f ≫ g`, while stabilizer labels
 compose as `g * h = h ≫ g`. -/
-def stabilizerMulEquivVertexGroup (x : X) :
+def stabilizerMulEquivVertexGroupMulOpposite (x : X) :
     stabilizer G x ≃* (objEquiv G X x ⟶ objEquiv G X x)ᵐᵒᵖ where
   toFun g := .op (Functor.Elements.homMk (g : G) g.2)
   invFun f := ⟨f.unop.hom, f.unop.map_val⟩
@@ -175,13 +178,13 @@ def stabilizerMulEquivVertexGroup (x : X) :
 variable {G}
 
 @[simp]
-theorem stabilizerMulEquivVertexGroup_apply_unop_hom (x : X) (g : stabilizer G x) :
-    (stabilizerMulEquivVertexGroup G x g).unop.hom = g := (rfl)
+theorem stabilizerMulEquivVertexGroupMulOpposite_apply_unop_hom (x : X) (g : stabilizer G x) :
+    (stabilizerMulEquivVertexGroupMulOpposite G x g).unop.hom = g := (rfl)
 
 @[simp]
-theorem coe_stabilizerMulEquivVertexGroup_symm_apply (x : X)
+theorem coe_stabilizerMulEquivVertexGroupMulOpposite_symm_apply (x : X)
     (f : (objEquiv G X x ⟶ objEquiv G X x)ᵐᵒᵖ) :
-    ((stabilizerMulEquivVertexGroup G x).symm f : G) = f.unop.hom := (rfl)
+    ((stabilizerMulEquivVertexGroupMulOpposite G x).symm f : G) = f.unop.hom := (rfl)
 
 /-- If the action groupoid admits a faithful functor to a thin category, for instance an
 equivalence with a discrete category, then every stabilizer is trivial. -/
@@ -189,7 +192,8 @@ theorem stabilizer_eq_bot_of_faithful {D : Type*} [Category D] [Quiver.IsThin D]
     (F : ActionCategory G X ⥤ D) [F.Faithful] (x : X) : stabilizer G x = ⊥ := by
   have : Subsingleton (objEquiv G X x ⟶ objEquiv G X x) :=
     ⟨fun _ _ => F.map_injective (Subsingleton.elim _ _)⟩
-  have : Subsingleton (stabilizer G x) := (stabilizerMulEquivVertexGroup G x).toEquiv.subsingleton
+  have : Subsingleton (stabilizer G x) :=
+    (stabilizerMulEquivVertexGroupMulOpposite G x).toEquiv.subsingleton
   exact Subgroup.eq_bot_of_subsingleton _
 
 end Isotropy
@@ -221,11 +225,11 @@ end FixedPoints
 
 section Orbits
 
-/-- Two objects of the action groupoid are connected by an arrow exactly when the corresponding
+/-- Two objects of the action category are connected by an arrow exactly when the corresponding
 points lie in the same orbit. -/
-theorem nonempty_hom_iff {x y : X} :
-    Nonempty (objEquiv G X x ⟶ objEquiv G X y) ↔ ∃ g : G, g • x = y :=
-  ⟨fun ⟨f⟩ => ⟨f.hom, hom_smul f⟩, fun ⟨g, hg⟩ => ⟨Functor.Elements.homMk g hg⟩⟩
+theorem nonempty_hom_iff {M : Type*} [Monoid M] [MulAction M X] {x y : X} :
+    Nonempty (objEquiv M X x ⟶ objEquiv M X y) ↔ ∃ m : M, m • x = y :=
+  ⟨fun ⟨f⟩ => ⟨f.hom, hom_smul f⟩, fun ⟨m, hm⟩ => ⟨Functor.Elements.homMk m hm⟩⟩
 
 /-- Two objects of the action groupoid are isomorphic exactly when the corresponding points lie
 in the same orbit. -/
