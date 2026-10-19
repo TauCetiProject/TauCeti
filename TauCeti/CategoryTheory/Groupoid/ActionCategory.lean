@@ -225,8 +225,8 @@ end FixedPoints
 
 section Orbits
 
-/-- Two objects of the action category are connected by an arrow exactly when the corresponding
-points lie in the same orbit. -/
+/-- There is an arrow from `x` to `y` in the action category exactly when `y` is a translate
+`m • x` of `x`, i.e. lies in the orbit of `x`. -/
 theorem nonempty_hom_iff {M : Type*} [Monoid M] [MulAction M X] {x y : X} :
     Nonempty (objEquiv M X x ⟶ objEquiv M X y) ↔ ∃ m : M, m • x = y :=
   ⟨fun ⟨f⟩ => ⟨f.hom, hom_smul f⟩, fun ⟨m, hm⟩ => ⟨Functor.Elements.homMk m hm⟩⟩
