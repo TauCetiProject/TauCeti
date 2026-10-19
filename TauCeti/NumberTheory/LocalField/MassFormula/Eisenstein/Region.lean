@@ -9,9 +9,10 @@ public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.MeasureTheory.Group.Defs
 public import Mathlib.NumberTheory.LocalField.Basic
 public import Mathlib.RingTheory.Polynomial.Eisenstein.Basic
+public import TauCeti.MeasureTheory.Group.LocalFieldScaling
 public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
 import Mathlib.Topology.Algebra.Module.Compact
-import TauCeti.MeasureTheory.Group.LocalFieldScaling
+import TauCeti.NumberTheory.LocalField.Uniformizer
 
 /-!
 # The Eisenstein region of coefficient space
@@ -29,7 +30,7 @@ The coefficient space `ι → K` carries the additive Haar measure normalized so
 cardinality of the residue field, the box whose `i`-th factor is `𝓂[K] ^ e i` has volume
 `q ^ (-∑ i, e i)`, since it is the image of the integer box under the diagonal matrix with entries
 `ϖ ^ e i` for a uniformizer `ϖ`. The Eisenstein region is the difference of two such boxes, so its
-volume is `q ^ (-n) (1 - q⁻¹)`.
+volume is `q ^ (-n) (1 - q⁻¹)` (`TauCeti.eisensteinSet_eq_diff`).
 
 The measure statements assume only left invariance of the measure and the normalization; no
 product structure on the measure is used.
@@ -37,21 +38,23 @@ product structure on the measure is used.
 ## Main definitions
 
 * `TauCeti.eisensteinSet K n`: the Eisenstein region in `Fin n → K`.
-* `TauCeti.integerBox K ι`: the integer box `𝒪[K] ^ ι` in `ι → K`.
 
 ## Main results
 
 * `TauCeti.mem_eisensteinSet_iff_exists_isEisensteinAt`: a coefficient vector lies in the
   Eisenstein region exactly when it is the coefficient vector of a polynomial over `𝒪[K]` that is
   Eisenstein at `𝓂[K]`.
-* `TauCeti.measure_univ_pi_image_maximalIdeal_pow`: the box with factors `𝓂[K] ^ e i` has volume
-  `q ^ (-∑ i, e i)`.
+* `TauCeti.eisensteinSet_eq_diff`: for `0 < n`, the Eisenstein region is the box `𝓂[K] ^ n` minus
+  the box whose constant coordinate lies in `𝓂[K] ^ 2`.
+* `TauCeti.measurableSet_eisensteinSet`: the Eisenstein region is measurable.
+* `MeasureTheory.Measure.measure_univ_pi_image_maximalIdeal_pow`: the box with factors
+  `𝓂[K] ^ e i` has volume `q ^ (-∑ i, e i)`.
 * `TauCeti.measure_eisensteinSet`: the Eisenstein region has volume `q ^ (-n) (1 - q⁻¹)`.
 
 ## Implementation notes
 
 The volume of a box of ideals is read off the scaling law
-`MeasureTheory.Measure.measure_image_mulVec_univ_pi_integer`, applied to the diagonal matrix
+`MeasureTheory.Measure.measure_image_mulVec_integerBox`, applied to the diagonal matrix
 `Matrix.diagonal fun i ↦ ϖ ^ e i`, whose determinant is `ϖ ^ ∑ i, e i`.
 
 ## References
@@ -88,68 +91,15 @@ theorem mem_eisensteinSet {n : ℕ} {a : Fin n → K} :
       ∀ y : K, valuation K y < 1 → valuation K y ≤ valuation K ((monicOfCoeff a).coeff 0) :=
   Iff.rfl
 
-variable (K) in
-/-- The integer box `𝒪[K] ^ ι` of the coefficient space `ι → K`, on which the Haar measure of the
-coefficient space is normalized. -/
-def integerBox (ι : Type*) : Set (ι → K) :=
-  Set.univ.pi fun _ ↦ (𝒪[K] : Set K)
-
-/-- Membership in the integer box: every coordinate is integral. -/
-@[simp]
-theorem mem_integerBox {ι : Type*} {a : ι → K} : a ∈ integerBox K ι ↔ ∀ i, a i ∈ 𝒪[K] := by
-  simp [integerBox]
+/-- Boxes of ideal powers shrink as the exponents grow. -/
+theorem univ_pi_image_maximalIdeal_pow_subset {ι : Type*} {e e' : ι → ℕ} (h : e' ≤ e) :
+    (Set.univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ e i)) ⊆
+      Set.univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ e' i) :=
+  Set.pi_mono fun i _ ↦ Set.image_mono <| Ideal.pow_le_pow_right (h i)
 
 end CoefficientSpace
 
 variable [TopologicalSpace K] [IsNonarchimedeanLocalField K]
-
-section Valuation
-
-/-- An element of `K` has valuation below `1` exactly when it lies in the maximal ideal of
-`𝒪[K]`. -/
-private theorem valuation_lt_one_iff_mem_image {x : K} :
-    valuation K x < 1 ↔ x ∈ ((↑) : 𝒪[K] → K) '' ↑𝓂[K] := by
-  refine ⟨fun hx ↦ ⟨⟨x, (Valuation.mem_integer_iff _ _).2 hx.le⟩,
-    (valuation K).mem_maximalIdeal_iff.2 hx, rfl⟩, ?_⟩
-  rintro ⟨c, hc, rfl⟩
-  exact (valuation K).mem_maximalIdeal_iff.1 hc
-
-/-- An element `c` of the maximal ideal of `𝒪[K]` has the largest valuation below `1`, that of a
-uniformizer, exactly when it does not lie in the square of the maximal ideal. -/
-private theorem forall_valuation_le_iff_notMem_sq {c : 𝒪[K]} (hc : c ∈ 𝓂[K]) :
-    (∀ y : K, valuation K y < 1 → valuation K y ≤ valuation K c) ↔ c ∉ 𝓂[K] ^ 2 := by
-  constructor
-  · -- If `c = ϖ ^ 2 * d`, then `c` has valuation below that of the uniformizer `ϖ`.
-    intro h hc2
-    obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
-    rw [hϖ.maximalIdeal_eq, Ideal.span_singleton_pow, Ideal.mem_span_singleton] at hc2
-    obtain ⟨d, rfl⟩ := hc2
-    have hϖ1 : valuation K ϖ < 1 :=
-      (valuation K).mem_maximalIdeal_iff.1 ((IsLocalRing.mem_maximalIdeal _).2 hϖ.not_isUnit)
-    have hϖ0 : 0 < valuation K ϖ := by
-      rw [zero_lt_iff, Ne, map_eq_zero, ZeroMemClass.coe_eq_zero]
-      exact hϖ.ne_zero
-    have hd : valuation K d ≤ 1 := (Valuation.mem_integer_iff _ _).1 d.2
-    have hle := h ϖ hϖ1
-    rw [MulMemClass.coe_mul, map_mul, SubmonoidClass.coe_pow, map_pow] at hle
-    exact (hle.trans (mul_le_of_le_one_right' hd)).not_gt (pow_lt_self_of_lt_one₀ hϖ0 hϖ1
-      one_lt_two)
-  · -- If `y ∈ 𝓂` had larger valuation than `c`, then `c = y * (c / y)` would lie in `𝓂 ^ 2`.
-    intro hc2 y hy
-    by_contra! hlt
-    have hy0 : 0 < valuation K y := zero_le.trans_lt hlt
-    have hz : valuation K (c / y) < 1 := by
-      rwa [map_div₀, div_lt_one₀ hy0]
-    refine hc2 ?_
-    have hcy : c = ⟨y, (Valuation.mem_integer_iff _ _).2 hy.le⟩ *
-        ⟨c / y, (Valuation.mem_integer_iff _ _).2 hz.le⟩ := by
-      ext
-      rw [MulMemClass.coe_mul, mul_div_cancel₀ _ ((_root_.map_ne_zero _).1 hy0.ne')]
-    rw [hcy, pow_two]
-    exact Ideal.mul_mem_mul ((valuation K).mem_maximalIdeal_iff.2 hy)
-      ((valuation K).mem_maximalIdeal_iff.2 hz)
-
-end Valuation
 
 section EisensteinPolynomial
 
@@ -171,13 +121,12 @@ theorem mem_eisensteinSet_iff_exists_isEisensteinAt {n : ℕ} {a : Fin n → K} 
       rw [coeff_monicOfCoeff c ⟨i, hi⟩]
       exact hc _
     · rcases n.eq_zero_or_pos with rfl | hn
-      · rw [show (monicOfCoeff c).coeff 0 = 1 by
-          simpa using (monic_monicOfCoeff c).coeff_natDegree]
+      · rw [coeff_monicOfCoeff_self c]
         exact fun h ↦ (Ideal.ne_top_iff_one _).1
           (IsLocalRing.maximalIdeal.isMaximal 𝒪[K]).ne_top (Ideal.pow_le_self two_ne_zero h)
       · rw [coeff_monicOfCoeff c ⟨0, hn⟩]
         rw [coeff_monicOfCoeff a ⟨0, hn⟩] at h0
-        exact (forall_valuation_le_iff_notMem_sq (hc _)).1 h0
+        exact (forall_valuation_le_iff_notMem_maximalIdeal_sq (hc _)).1 h0
   · rintro ⟨f, hf, hE⟩
     have hdeg : f.natDegree = n := by
       rw [← natDegree_map_eq_of_injective (FaithfulSMul.algebraMap_injective 𝒪[K] K) f, hf,
@@ -189,11 +138,38 @@ theorem mem_eisensteinSet_iff_exists_isEisensteinAt {n : ℕ} {a : Fin n → K} 
       exact (valuation K).mem_maximalIdeal_iff.1 (hE.mem (hdeg ▸ i.isLt))
     · rcases n.eq_zero_or_pos with rfl | hn
       · intro y hy
-        rw [show (monicOfCoeff a).coeff 0 = 1 by
-          simpa using (monic_monicOfCoeff a).coeff_natDegree, map_one]
+        rw [coeff_monicOfCoeff_self a, map_one]
         exact hy.le
       · rw [hcoeff]
-        exact (forall_valuation_le_iff_notMem_sq (hE.mem (hdeg ▸ hn))).2 hE.notMem
+        exact (forall_valuation_le_iff_notMem_maximalIdeal_sq (hE.mem (hdeg ▸ hn))).2 hE.notMem
+
+/-- **The Eisenstein region as a difference of boxes**: for `0 < n`, it is the box `𝓂[K] ^ n`
+minus the box whose constant coordinate lies in `𝓂[K] ^ 2` and whose other coordinates lie in
+`𝓂[K]`. -/
+theorem eisensteinSet_eq_diff {n : ℕ} (hn : 0 < n) :
+    eisensteinSet K n = (Set.univ.pi fun _ ↦ ((↑) : 𝒪[K] → K) '' ↑𝓂[K]) \
+      Set.univ.pi fun i ↦
+        ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ Function.update (fun _ ↦ 1) ⟨0, hn⟩ 2 i) := by
+  set i₀ : Fin n := ⟨0, hn⟩
+  set e : Fin n → ℕ := Function.update (fun _ ↦ 1) i₀ 2
+  have he₀ : e i₀ = 2 := Function.update_self ..
+  have he₁ (i : Fin n) (hi : i ≠ i₀) : e i = 1 := Function.update_of_ne hi ..
+  ext a
+  simp only [Set.mem_sdiff, Set.mem_univ_pi, ← valuation_lt_one_iff_mem_image_maximalIdeal,
+    mem_eisensteinSet, coeff_monicOfCoeff a ⟨0, hn⟩]
+  refine and_congr_right fun ha ↦ ?_
+  have hc : (⟨a i₀, (Valuation.mem_integer_iff _ _).2 (ha i₀).le⟩ : 𝒪[K]) ∈ 𝓂[K] :=
+    (valuation K).mem_maximalIdeal_iff.2 (ha i₀)
+  refine (forall_valuation_le_iff_notMem_maximalIdeal_sq hc).trans
+    (not_congr ⟨fun h i ↦ ?_, fun h ↦ ?_⟩)
+  · rcases eq_or_ne i i₀ with rfl | hi
+    · rw [he₀]
+      exact ⟨_, h, rfl⟩
+    · rw [he₁ i hi, pow_one, ← valuation_lt_one_iff_mem_image_maximalIdeal]
+      exact ha i
+  · obtain ⟨c, hc, hca⟩ := h i₀
+    rw [he₀] at hc
+    rwa [show (⟨a i₀, _⟩ : 𝒪[K]) = c from Subtype.ext hca.symm]
 
 end EisensteinPolynomial
 
@@ -201,89 +177,81 @@ section Measure
 
 variable {ι : Type*}
 
-private theorem isClosed_univ_pi_image_maximalIdeal_pow (e : ι → ℕ) :
+/-- A box of ideal powers is closed. -/
+theorem isClosed_univ_pi_image_maximalIdeal_pow (e : ι → ℕ) :
     IsClosed (Set.univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ e i)) :=
   isClosed_set_pi fun _ _ ↦
     ((IsNoetherianRing.isClosed_ideal _).isCompact.image continuous_subtype_val).isClosed
 
-/-- **The volume of a box of ideals**: for an additive Haar measure on `ι → K` normalized on the
+/-- A box of ideal powers is measurable. -/
+theorem measurableSet_univ_pi_image_maximalIdeal_pow [MeasurableSpace (ι → K)]
+    [OpensMeasurableSpace (ι → K)] (e : ι → ℕ) :
+    MeasurableSet (Set.univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ e i)) :=
+  (isClosed_univ_pi_image_maximalIdeal_pow e).measurableSet
+
+/-- The Eisenstein region is measurable. -/
+theorem measurableSet_eisensteinSet {n : ℕ} [MeasurableSpace (Fin n → K)]
+    [OpensMeasurableSpace (Fin n → K)] : MeasurableSet (eisensteinSet K n) := by
+  rcases n.eq_zero_or_pos with rfl | hn
+  · exact Subsingleton.measurableSet
+  · have h₁ := measurableSet_univ_pi_image_maximalIdeal_pow (K := K) fun (_ : Fin n) ↦ 1
+    simp only [pow_one] at h₁
+    rw [eisensteinSet_eq_diff hn]
+    exact h₁.diff (measurableSet_univ_pi_image_maximalIdeal_pow _)
+
+/-- **The volume of a box of ideals**: for a left-invariant measure on `ι → K` normalized on the
 integer box, the box whose `i`-th factor is `𝓂[K] ^ e i` has volume `q ^ (-∑ i, e i)`, where
 `q = Nat.card 𝓀[K]`. -/
-theorem measure_univ_pi_image_maximalIdeal_pow [Fintype ι] [MeasurableSpace (ι → K)]
-    [BorelSpace (ι → K)] (μ : Measure (ι → K)) [μ.IsAddLeftInvariant]
+theorem _root_.MeasureTheory.Measure.measure_univ_pi_image_maximalIdeal_pow [Fintype ι]
+    [MeasurableSpace (ι → K)] [BorelSpace (ι → K)] (μ : Measure (ι → K)) [μ.IsAddLeftInvariant]
     (hμ : μ (integerBox K ι) = 1) (e : ι → ℕ) :
     μ (Set.univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ e i)) =
       1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ∑ i, e i := by
   classical
   -- The box is the image of the integer box under the diagonal matrix with entries `ϖ ^ e i`.
   obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
-  have h := Measure.measure_image_mulVec_univ_pi_integer μ hϖ (k := ∑ i, e i)
+  have h := Measure.measure_image_mulVec_integerBox μ hϖ (k := ∑ i, e i)
     (A := Matrix.diagonal fun i ↦ ϖ ^ e i) (by rw [Matrix.det_diagonal, Finset.prod_pow_eq_pow_sum])
-  rw [integerBox] at hμ
   rw [hμ, mul_one, Matrix.diagonal_map (map_zero _)] at h
   refine Eq.trans (congrArg μ ?_) h
   rw [show (Matrix.diagonal fun i ↦ algebraMap 𝒪[K] K (ϖ ^ e i)).mulVec =
       Pi.map fun i y ↦ algebraMap 𝒪[K] K (ϖ ^ e i) * y from
-    funext fun _ ↦ funext fun _ ↦ Matrix.mulVec_diagonal .., Set.piMap_image_univ_pi]
+    funext fun _ ↦ funext fun _ ↦ Matrix.mulVec_diagonal .., integerBox, Set.piMap_image_univ_pi]
   refine Set.pi_congr rfl fun i _ ↦ ?_
   rw [hϖ.maximalIdeal_eq, Ideal.span_singleton_pow]
   ext x
   constructor
   · rintro ⟨c, hc, rfl⟩
     obtain ⟨d, rfl⟩ := Ideal.mem_span_singleton.1 hc
-    exact ⟨d, d.2, rfl⟩
+    exact ⟨d, d.2, by rw [Algebra.algebraMap_ofSubsemiring_apply, MulMemClass.coe_mul]⟩
   · rintro ⟨y, hy, rfl⟩
-    exact ⟨ϖ ^ e i * ⟨y, hy⟩, Ideal.mem_span_singleton.2 (dvd_mul_right _ _), rfl⟩
+    exact ⟨ϖ ^ e i * ⟨y, hy⟩, Ideal.mem_span_singleton.2 (dvd_mul_right _ _),
+      by rw [Algebra.algebraMap_ofSubsemiring_apply, MulMemClass.coe_mul]⟩
 
-/-- **The volume of the Eisenstein region**: for an additive Haar measure on `Fin n → K` normalized
-on the integer box, the Eisenstein region has volume `q ^ (-n) (1 - q⁻¹)`, where
+/-- **The volume of the Eisenstein region**: for a left-invariant measure on `Fin n → K`
+normalized on the integer box, the Eisenstein region has volume `q ^ (-n) (1 - q⁻¹)`, where
 `q = Nat.card 𝓀[K]`. -/
 theorem measure_eisensteinSet {n : ℕ} (hn : 0 < n) [MeasurableSpace (Fin n → K)]
     [BorelSpace (Fin n → K)] (μ : Measure (Fin n → K)) [μ.IsAddLeftInvariant]
     (hμ : μ (integerBox K (Fin n)) = 1) :
     μ (eisensteinSet K n) =
       1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ n * (1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞)) := by
-  set i₀ : Fin n := ⟨0, hn⟩
-  set e : Fin n → ℕ := Function.update (fun _ ↦ 1) i₀ 2
-  have he₀ : e i₀ = 2 := Function.update_self ..
-  have he₁ (i : Fin n) (hi : i ≠ i₀) : e i = 1 := Function.update_of_ne hi ..
-  -- The Eisenstein region is the box `𝓂[K] ^ n` minus the box with the constant term in `𝓂[K] ^ 2`.
-  have hE : eisensteinSet K n = (Set.univ.pi fun _ ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ 1)) \
-      Set.univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ e i) := by
-    ext a
-    simp only [Set.mem_sdiff, Set.mem_univ_pi, pow_one, ← valuation_lt_one_iff_mem_image,
-      mem_eisensteinSet, coeff_monicOfCoeff a ⟨0, hn⟩]
-    refine and_congr_right fun ha ↦ ?_
-    have hc : (⟨a i₀, (Valuation.mem_integer_iff _ _).2 (ha i₀).le⟩ : 𝒪[K]) ∈ 𝓂[K] :=
-      (valuation K).mem_maximalIdeal_iff.2 (ha i₀)
-    refine (forall_valuation_le_iff_notMem_sq hc).trans (not_congr ⟨fun h i ↦ ?_, fun h ↦ ?_⟩)
-    · rcases eq_or_ne i i₀ with rfl | hi
-      · rw [he₀]
-        exact ⟨_, h, rfl⟩
-      · rw [he₁ i hi, pow_one, ← valuation_lt_one_iff_mem_image]
-        exact ha i
-    · obtain ⟨c, hc, hca⟩ := h i₀
-      rw [he₀] at hc
-      rwa [show (⟨a i₀, _⟩ : 𝒪[K]) = c from Subtype.ext hca.symm]
-  have hsub : (Set.univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ e i)) ⊆
-      Set.univ.pi fun _ ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ 1) :=
-    Set.pi_mono fun i _ ↦ Set.image_mono <| Ideal.pow_le_pow_right <| by
-      rcases eq_or_ne i i₀ with rfl | hi
-      · rw [he₀]
-        exact one_le_two
-      · rw [he₁ i hi]
+  set e : Fin n → ℕ := Function.update (fun _ ↦ 1) ⟨0, hn⟩ 2
+  have hsub := univ_pi_image_maximalIdeal_pow_subset (K := K) (e' := fun _ ↦ 1) (e := e)
+    (le_update_iff.2 ⟨one_le_two, fun _ _ ↦ le_rfl⟩)
   have he : ∑ i, e i = n + 1 := by
     rw [Finset.sum_update_of_mem (Finset.mem_univ _), Finset.sum_const, smul_eq_mul, mul_one,
       Finset.card_sdiff_of_subset (Finset.singleton_subset_iff.2 (Finset.mem_univ _)),
       Finset.card_univ, Fintype.card_fin, Finset.card_singleton]
     omega
-  have h₁ := measure_univ_pi_image_maximalIdeal_pow μ hμ fun _ ↦ 1
-  have h₂ := measure_univ_pi_image_maximalIdeal_pow μ hμ e
+  have h₁ := Measure.measure_univ_pi_image_maximalIdeal_pow μ hμ fun _ ↦ 1
+  have h₂ := Measure.measure_univ_pi_image_maximalIdeal_pow μ hμ e
+  simp only [pow_one] at hsub h₁
   rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, smul_eq_mul, mul_one] at h₁
   rw [he] at h₂
   have hq : (Nat.card 𝓀[K] : ℝ≥0∞) ≠ 0 := by simp [Nat.card_pos.ne']
-  rw [hE, measure_sdiff hsub
-    (isClosed_univ_pi_image_maximalIdeal_pow e).measurableSet.nullMeasurableSet
+  rw [eisensteinSet_eq_diff hn, measure_sdiff hsub
+    (measurableSet_univ_pi_image_maximalIdeal_pow e).nullMeasurableSet
     (h₂ ▸ ENNReal.div_ne_top ENNReal.one_ne_top (pow_ne_zero _ hq)), h₁, h₂]
   simp only [one_div]
   rw [ENNReal.mul_sub fun _ _ ↦ ENNReal.inv_ne_top.2 (pow_ne_zero _ hq), mul_one, pow_succ,

@@ -31,11 +31,15 @@ These volumes are the change of variables in Serre's proof of his mass formula f
 ramified extensions, where `A` is the matrix of multiplication by an element of the ring of
 integers of an extension of `K` in an integral basis and `k` is the valuation of its norm.
 
+## Main definitions
+
+* `TauCeti.integerBox K ι`: the integer box `∏ i, 𝒪[K]` in `ι → K`.
+
 ## Main results
 
-* `MeasureTheory.Measure.measure_image_mulVec_univ_pi_integer`: for a left-invariant `μ`,
+* `MeasureTheory.Measure.measure_image_mulVec_integerBox`: for a left-invariant `μ`,
   the image of the integer box has measure `q ^ (-k)` times that of the box.
-* `MeasureTheory.Measure.measure_image_mulVec_vadd_smul_univ_pi_integer`: the same for every
+* `MeasureTheory.Measure.measure_image_mulVec_vadd_smul_integerBox`: the same for every
   ball `x +ᵥ c • ∏ i, 𝒪[K]` with `c ≠ 0`.
 * `MeasureTheory.Measure.addHaar_image_mulVec`: for a regular Haar measure `μ`,
   `μ (A '' s) = q ^ (-k) * μ s` for every set `s`.
@@ -51,7 +55,25 @@ public section
 open Set ValuativeRel
 open scoped ENNReal Pointwise
 
+namespace TauCeti
+
+variable {K : Type*} [Field K] [ValuativeRel K]
+
+variable (K) in
+/-- The integer box `∏ i, 𝒪[K]` of `ι → K`, on which Haar measure on `ι → K` is normalized. -/
+@[expose] noncomputable def integerBox (ι : Type*) : Set (ι → K) :=
+  univ.pi fun _ ↦ (𝒪[K] : Set K)
+
+/-- Membership in the integer box: every coordinate is integral. -/
+@[simp]
+theorem mem_integerBox {ι : Type*} {a : ι → K} : a ∈ integerBox K ι ↔ ∀ i, a i ∈ 𝒪[K] := by
+  simp [integerBox]
+
+end TauCeti
+
 namespace MeasureTheory.Measure
+
+open TauCeti
 
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] {ι : Type*} [Fintype ι] [DecidableEq ι]
@@ -61,11 +83,11 @@ variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
 `𝒪[K]` is associated to `ϖ ^ k` for a uniformizer `ϖ`, then for every left-invariant measure on
 `ι → K`, the image of the integer box `∏ i, 𝒪[K]` under `A` has `q ^ (-k)` times the measure of
 the box, where `q = Nat.card 𝓀[K]`. -/
-theorem measure_image_mulVec_univ_pi_integer (μ : Measure (ι → K)) [μ.IsAddLeftInvariant]
+theorem measure_image_mulVec_integerBox (μ : Measure (ι → K)) [μ.IsAddLeftInvariant]
     {A : Matrix ι ι 𝒪[K]} {ϖ : 𝒪[K]} (hϖ : Irreducible ϖ) {k : ℕ}
     (hk : Associated A.det (ϖ ^ k)) :
-    μ ((A.map (algebraMap 𝒪[K] K)).mulVec '' univ.pi fun _ ↦ (𝒪[K] : Set K)) =
-      1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ k * μ (univ.pi fun _ ↦ (𝒪[K] : Set K)) := by
+    μ ((A.map (algebraMap 𝒪[K] K)).mulVec '' integerBox K ι) =
+      1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ k * μ (integerBox K ι) := by
   -- Pull `μ` back to the compact group `ι → 𝒪[K]`, whose image in `ι → K` is the box.
   let _ : MeasurableSpace (ι → 𝒪[K]) := borel _
   have _ : BorelSpace (ι → 𝒪[K]) := ⟨rfl⟩
@@ -78,9 +100,9 @@ theorem measure_image_mulVec_univ_pi_integer (μ : Measure (ι → K)) [μ.IsAdd
       fun_prop
     · funext i
       simpa [hj_apply] using congrFun hab i
-  have hrange : range j = univ.pi fun _ ↦ (𝒪[K] : Set K) := by
+  have hrange : range j = integerBox K ι := by
     ext x
-    simp only [mem_range, mem_univ_pi, SetLike.mem_coe]
+    simp only [mem_range, mem_integerBox]
     refine ⟨?_, fun h ↦ ⟨fun i ↦ ⟨x i, h i⟩, ?_⟩⟩
     · rintro ⟨a, rfl⟩ i
       simp [hj_apply, Algebra.algebraMap_ofSubsemiring_apply]
@@ -110,12 +132,11 @@ theorem measure_image_mulVec_univ_pi_integer (μ : Measure (ι → K)) [μ.IsAdd
 associated to `ϖ ^ k` for a uniformizer `ϖ`, then for every left-invariant measure on `ι → K`,
 the image under `A` of the ball `x +ᵥ c • ∏ i, 𝒪[K]` (with `c ≠ 0`) has `q ^ (-k)` times the
 measure of the ball, where `q = Nat.card 𝓀[K]`. -/
-theorem measure_image_mulVec_vadd_smul_univ_pi_integer (μ : Measure (ι → K))
+theorem measure_image_mulVec_vadd_smul_integerBox (μ : Measure (ι → K))
     [μ.IsAddLeftInvariant] {A : Matrix ι ι 𝒪[K]} {ϖ : 𝒪[K]} (hϖ : Irreducible ϖ) {k : ℕ}
     (hk : Associated A.det (ϖ ^ k)) (x : ι → K) {c : K} (hc : c ≠ 0) :
-    μ ((A.map (algebraMap 𝒪[K] K)).mulVec '' (x +ᵥ c • univ.pi fun _ ↦ (𝒪[K] : Set K))) =
-      (1 : ℝ≥0∞) / (Nat.card 𝓀[K] : ℝ≥0∞) ^ k *
-        μ (x +ᵥ c • univ.pi fun _ ↦ (𝒪[K] : Set K)) := by
+    μ ((A.map (algebraMap 𝒪[K] K)).mulVec '' (x +ᵥ c • integerBox K ι)) =
+      (1 : ℝ≥0∞) / (Nat.card 𝓀[K] : ℝ≥0∞) ^ k * μ (x +ᵥ c • integerBox K ι) := by
   -- The measure `T ↦ μ (c • T)` is again left invariant, so the box form applies to it.
   let e : (ι → K) ≃ᵐ (ι → K) := MeasurableEquiv.smul₀ c⁻¹ (inv_ne_zero hc)
   have he (T : Set (ι → K)) : μ.map e T = μ (c • T) := by
@@ -124,7 +145,7 @@ theorem measure_image_mulVec_vadd_smul_univ_pi_integer (μ : Measure (ι → K))
   have _ : (μ.map e).IsAddLeftInvariant :=
     isAddLeftInvariant_map (DistribSMul.toAddMonoidHom (ι → K) c⁻¹).toAddHom e.measurable
       e.surjective
-  have h := measure_image_mulVec_univ_pi_integer (μ.map e) hϖ hk
+  have h := measure_image_mulVec_integerBox (μ.map e) hϖ hk
   rw [he, he] at h
   rw [← Matrix.coe_mulVecLin, image_vadd_distrib, image_smul_set, measure_vadd, measure_vadd,
     Matrix.coe_mulVecLin, h]
@@ -162,14 +183,14 @@ theorem addHaar_image_mulVec (μ : Measure (ι → K)) [μ.IsAddHaarMeasure] [μ
   have _ : (μ.map f).Regular := Regular.map f
   have hsmul := isAddLeftInvariant_eq_smul_of_regular (μ.map f) μ
   -- The constant is read off the integer box, which is compact and open.
-  have hB0 : μ (univ.pi fun _ ↦ (𝒪[K] : Set K)) ≠ 0 :=
+  have hB0 : μ (integerBox K ι) ≠ 0 :=
     (isOpen_set_pi finite_univ fun _ _ ↦ Valuation.isOpen_integer).measure_ne_zero μ
       ⟨0, fun _ _ ↦ zero_mem _⟩
-  have hBtop : μ (univ.pi fun _ ↦ (𝒪[K] : Set K)) ≠ ∞ :=
+  have hBtop : μ (integerBox K ι) ≠ ∞ :=
     (isCompact_univ_pi fun _ ↦
       isCompact_iff_compactSpace.2 (inferInstanceAs (CompactSpace 𝒪[K]))).measure_lt_top.ne
   have hc : (addHaarScalarFactor (μ.map f) μ : ℝ≥0∞) = 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ k := by
-    have h := measure_image_mulVec_univ_pi_integer μ hϖ hk
+    have h := measure_image_mulVec_integerBox μ hϖ hk
     rw [← hf, hsmul, Measure.smul_apply, ENNReal.smul_def, smul_eq_mul] at h
     exact (ENNReal.mul_left_inj hB0 hBtop).1 h
   rw [← hf, hsmul, Measure.smul_apply, ENNReal.smul_def, smul_eq_mul, hc]

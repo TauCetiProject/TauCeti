@@ -14,6 +14,10 @@ This file records the uniformizer predicate for a nonarchimedean local field.  I
 on `Kˣ`, where the normalized valuation is defined.  The characterization below connects it with
 the irreducible elements of the ring of integers, the convention used by the local-fields
 infrastructure.
+
+It also recognises uniformizers inside the maximal ideal `𝓂[K]` without choosing one: an element of
+`𝓂[K]` has the largest valuation below `1` exactly when it does not lie in `𝓂[K] ^ 2`
+(`TauCeti.forall_valuation_le_iff_notMem_maximalIdeal_sq`).
 -/
 
 public section
@@ -24,8 +28,18 @@ open ValuativeRel IsNonarchimedeanLocalField
 
 namespace TauCeti
 
-variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
-  [IsNonarchimedeanLocalField K]
+variable {K : Type*} [Field K] [ValuativeRel K]
+
+/-- An element of `K` has valuation below `1` exactly when it lies in the maximal ideal of
+`𝒪[K]`. -/
+theorem valuation_lt_one_iff_mem_image_maximalIdeal {x : K} :
+    valuation K x < 1 ↔ x ∈ ((↑) : 𝒪[K] → K) '' ↑𝓂[K] := by
+  refine ⟨fun hx ↦ ⟨⟨x, (Valuation.mem_integer_iff _ _).2 hx.le⟩,
+    (valuation K).mem_maximalIdeal_iff.2 hx, rfl⟩, ?_⟩
+  rintro ⟨c, hc, rfl⟩
+  exact (valuation K).mem_maximalIdeal_iff.1 hc
+
+variable [TopologicalSpace K] [IsNonarchimedeanLocalField K]
 
 variable (K) in
 /-- A uniformizer is a nonzero field element whose normalized valuation is one. -/
@@ -81,5 +95,40 @@ theorem exists_isUniformizer : ∃ π : Kˣ, IsUniformizer (K := K) π := by
   obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible (𝒪[K])
   refine ⟨Units.mk0 (ϖ : K) (fun h => hϖ.ne_zero (Subtype.ext h)), ?_⟩
   exact (isUniformizer_iff_exists_irreducible K _).2 ⟨ϖ, hϖ, rfl⟩
+
+/-- An element `c` of the maximal ideal of `𝒪[K]` has the largest valuation below `1`, that of a
+uniformizer, exactly when it does not lie in the square of the maximal ideal. -/
+theorem forall_valuation_le_iff_notMem_maximalIdeal_sq {c : 𝒪[K]} (hc : c ∈ 𝓂[K]) :
+    (∀ y : K, valuation K y < 1 → valuation K y ≤ valuation K c) ↔ c ∉ 𝓂[K] ^ 2 := by
+  constructor
+  · -- If `c = ϖ ^ 2 * d`, then `c` has valuation below that of the uniformizer `ϖ`.
+    intro h hc2
+    obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
+    rw [hϖ.maximalIdeal_eq, Ideal.span_singleton_pow, Ideal.mem_span_singleton] at hc2
+    obtain ⟨d, rfl⟩ := hc2
+    have hϖ1 : valuation K ϖ < 1 :=
+      (valuation K).mem_maximalIdeal_iff.1 ((IsLocalRing.mem_maximalIdeal _).2 hϖ.not_isUnit)
+    have hϖ0 : 0 < valuation K ϖ := by
+      rw [zero_lt_iff, Ne, map_eq_zero, ZeroMemClass.coe_eq_zero]
+      exact hϖ.ne_zero
+    have hd : valuation K d ≤ 1 := (Valuation.mem_integer_iff _ _).1 d.2
+    have hle := h ϖ hϖ1
+    rw [MulMemClass.coe_mul, map_mul, SubmonoidClass.coe_pow, map_pow] at hle
+    exact (hle.trans (mul_le_of_le_one_right' hd)).not_gt (pow_lt_self_of_lt_one₀ hϖ0 hϖ1
+      one_lt_two)
+  · -- If `y ∈ 𝓂` had larger valuation than `c`, then `c = y * (c / y)` would lie in `𝓂 ^ 2`.
+    intro hc2 y hy
+    by_contra! hlt
+    have hy0 : 0 < valuation K y := zero_le.trans_lt hlt
+    have hz : valuation K (c / y) < 1 := by
+      rwa [map_div₀, div_lt_one₀ hy0]
+    refine hc2 ?_
+    have hcy : c = ⟨y, (Valuation.mem_integer_iff _ _).2 hy.le⟩ *
+        ⟨c / y, (Valuation.mem_integer_iff _ _).2 hz.le⟩ := by
+      ext
+      rw [MulMemClass.coe_mul, mul_div_cancel₀ _ ((_root_.map_ne_zero _).1 hy0.ne')]
+    rw [hcy, pow_two]
+    exact Ideal.mul_mem_mul ((valuation K).mem_maximalIdeal_iff.2 hy)
+      ((valuation K).mem_maximalIdeal_iff.2 hz)
 
 end TauCeti
