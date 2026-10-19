@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Frattini
+public import TauCeti.Topology.Algebra.Group.Profinite.Frattini
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Frattini.Basic
 import Mathlib.GroupTheory.Nilpotent
@@ -25,7 +26,7 @@ of the finite `p`-group `G ⧸ U`; a maximal subgroup of a finite `p`-group is n
 is maximal in any group. So for a pro-`p` group the open normal subgroups of index `p`, whose
 intersection defines `TauCeti.proPFrattini`, are exactly the maximal open subgroups, and the
 pro-`p` Frattini subgroup is the intersection of the maximal open subgroups: the Frattini
-subgroup in the usual sense.
+subgroup `TauCeti.profiniteFrattini` in the usual sense.
 
 A subgroup containing an open subgroup is itself open, so a subgroup which is open and maximal
 among all subgroups is the same thing as a maximal element of the lattice of open subgroups; the
@@ -42,9 +43,9 @@ Frattini subgroup agrees with Mathlib's abstract `frattini`.
   subgroup of a compact pro-`p` group is normal of index `p`.
 * `TauCeti.IsProP.isCoatom_iff_index_eq`: an open subgroup of a compact pro-`p` group is maximal
   exactly when it has index `p`.
-* `TauCeti.iInf_isCoatom_le_proPFrattini`: in any topological group, the intersection of the
+* `TauCeti.profiniteFrattini_le_proPFrattini`: in any topological group, the intersection of the
   maximal open subgroups lies in the pro-`p` Frattini subgroup.
-* `TauCeti.IsProP.proPFrattini_eq_iInf_isCoatom`: for a compact pro-`p` group the pro-`p`
+* `TauCeti.IsProP.proPFrattini_eq_profiniteFrattini`: for a compact pro-`p` group the pro-`p`
   Frattini subgroup is the intersection of the maximal open subgroups.
 * `TauCeti.IsProP.proPFrattini_ne_top`: the pro-`p` Frattini subgroup of a nontrivial profinite
   pro-`p` group is proper.
@@ -66,12 +67,10 @@ variable {p : ℕ} [hp : Fact p.Prime] {G : Type u} [Group G] [TopologicalSpace 
 
 /-- In any topological group, the intersection of the maximal open subgroups lies in the pro-`p`
 Frattini subgroup: an open normal subgroup of prime index `p` is a maximal open subgroup. -/
-theorem iInf_isCoatom_le_proPFrattini :
-    ⨅ (M : Subgroup G) (_ : IsOpen (M : Set G)) (_ : IsCoatom M), M ≤ proPFrattini p G := by
+theorem profiniteFrattini_le_proPFrattini : profiniteFrattini G ≤ proPFrattini p G := by
   rw [proPFrattini_def]
-  refine le_iInf fun U ↦ ?_
-  exact (iInf₂_le U.1.toSubgroup U.1.isOpen).trans
-    (iInf_le _ (Subgroup.isCoatom_of_index_prime (by rw [U.2]; exact hp.out)))
+  exact le_iInf fun U ↦ profiniteFrattini_le U.1.isOpen
+    (Subgroup.isCoatom_of_index_prime (by rw [U.2]; exact hp.out))
 
 namespace IsProP
 
@@ -120,11 +119,12 @@ theorem isCoatom_iff_index_eq (hG : IsProP p G) {M : Subgroup G} (hMo : IsOpen (
 /-- **The pro-`p` Frattini subgroup is the intersection of the maximal open subgroups.** For a
 compact pro-`p` group, the open normal subgroups of index `p` are exactly the maximal open
 subgroups, so `proPFrattini p G` is the Frattini subgroup in the usual sense. -/
-theorem proPFrattini_eq_iInf_isCoatom (hG : IsProP p G) :
-    proPFrattini p G = ⨅ (M : Subgroup G) (_ : IsOpen (M : Set G)) (_ : IsCoatom M), M := by
-  refine le_antisymm (le_iInf₂ fun M hMo ↦ le_iInf fun hM ↦ ?_) iInf_isCoatom_le_proPFrattini
+theorem proPFrattini_eq_profiniteFrattini (hG : IsProP p G) :
+    proPFrattini p G = profiniteFrattini G := by
+  refine le_antisymm (fun x hx ↦ mem_profiniteFrattini_iff.mpr fun M hMo hM ↦ ?_)
+    profiniteFrattini_le_proPFrattini
   exact proPFrattini_le (U := ⟨⟨M, hMo⟩, hG.normal_of_isCoatom hMo hM⟩)
-    (hG.index_eq_of_isCoatom hMo hM)
+    (hG.index_eq_of_isCoatom hMo hM) hx
 
 /-- **The Frattini subgroup of a nontrivial pro-`p` group is proper.** Otherwise the trivial
 subgroup together with the Frattini subgroup would generate, and the Frattini subgroup consists
@@ -144,7 +144,6 @@ discrete topology every subgroup is open, so the maximal open subgroups are all 
 subgroups. -/
 theorem _root_.IsPGroup.proPFrattini_eq_frattini [DiscreteTopology G] [Finite G]
     (hG : IsPGroup p G) : proPFrattini p G = frattini G := by
-  rw [hG.isProP.proPFrattini_eq_iInf_isCoatom, frattini, Order.radical]
-  simp only [isOpen_discrete, iInf_true, Set.mem_ofPred_eq]
+  rw [hG.isProP.proPFrattini_eq_profiniteFrattini, profiniteFrattini_eq_frattini]
 
 end TauCeti
