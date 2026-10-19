@@ -105,7 +105,6 @@ theorem Equivalence.endofunctorClassCongr_trans (e : C ≌ D) (f : D ≌ E) :
         f.functor)
 
 /-- Reversing the supplied equivalence reverses transport of endofunctor classes. -/
-@[simp]
 theorem Equivalence.endofunctorClassCongr_symm (e : C ≌ D) :
     e.symm.endofunctorClassCongr = e.endofunctorClassCongr.symm := by
   ext x
@@ -116,6 +115,7 @@ theorem Equivalence.endofunctorClassCongr_symm (e : C ≌ D) :
       e.symm.endofunctorClassCongr_toSkeleton F
     _ = toSkeleton (e.functor ⋙ F ⋙ e.inverse) :=
       congr_toSkeleton_of_iso (Functor.associator _ _ _)
+    -- The inverse MulEquiv uses skeletonEquiv's inverse, the skeleton map of the inverse functor.
     _ = e.endofunctorClassCongr.symm (toSkeleton F) :=
       ((e.congrLeft.trans e.congrRight).inverse.mapSkeleton_obj_toSkeleton F).symm
 
@@ -170,11 +170,11 @@ theorem Equivalence.autoequivalenceClassCongr_trans (e : C ≌ D) (f : D ≌ E) 
     Equivalence.endofunctorClassCongr_trans]
 
 /-- Reversing the supplied equivalence reverses transport of autoequivalence classes. -/
-@[simp]
 theorem Equivalence.autoequivalenceClassCongr_symm (e : C ≌ D) :
     e.symm.autoequivalenceClassCongr = e.autoequivalenceClassCongr.symm := by
   simp only [Equivalence.autoequivalenceClassCongr,
     Equivalence.endofunctorClassCongr_symm, ← Units.mapEquiv_symm]
+  -- Taking MulEquiv.op commutes definitionally with MulEquiv.symm.
   rfl
 
 /-- The endofunctor transported across an equivalence intertwines with the original
