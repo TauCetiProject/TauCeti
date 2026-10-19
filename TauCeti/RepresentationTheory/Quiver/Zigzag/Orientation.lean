@@ -41,6 +41,8 @@ one convenient witness that every graph admits an orientation.
   recovers the adjacency counts of the graph.
 * `TauCeti.DoubledQuiver.OrientedQuiver.sum_card_hom_add_card_hom_mul`: a vertex weight summed
   against the arrow counts of an orientation in both directions is its neighbour sum.
+* `SimpleGraph.exists_adj_of_pos_two_mul_le_sum`: a positive superadditive weight on a graph
+  leaves no isolated vertex.
 * `TauCeti.DoubledQuiver.symmetrifyMap`: the canonical prefunctor from the symmetrification of an
   oriented graph to its doubled quiver.
 * `TauCeti.DoubledQuiver.unsymmetrifyMap`: its inverse prefunctor.
@@ -55,6 +57,29 @@ This is the orientation comparison required in Layer 0 of
 -/
 
 public section
+
+/-!
+### A superadditive weight on a graph excludes isolated vertices
+-/
+
+namespace SimpleGraph
+
+variable {V : Type*} {G : SimpleGraph V}
+
+/-- **A positive superadditive weight on a graph excludes isolated vertices.** If a weight `δ` on
+the vertices of a finite simple graph, over a strictly ordered commutative ring, is positive at
+every vertex and satisfies `2 δ i ≤ ∑_{j ∼ i} δ j` at every vertex, then every vertex of the graph
+has a neighbour. -/
+theorem exists_adj_of_pos_two_mul_le_sum [Fintype V] [DecidableRel G.Adj]
+    {S : Type*} [CommRing S] [LinearOrder S] [IsStrictOrderedRing S]
+    (δ : V → S) (hδ : ∀ i, 0 < δ i)
+    (hδle : ∀ i, 2 * δ i ≤ ∑ j ∈ G.neighborFinset i, δ j)
+    (i : V) : ∃ j, G.Adj i j := by
+  obtain ⟨j, hj, -⟩ :=
+    Finset.exists_ne_zero_of_sum_ne_zero ((mul_pos two_pos (hδ i)).trans_le (hδle i)).ne'
+  exact ⟨j, (G.mem_neighborFinset i j).1 hj⟩
+
+end SimpleGraph
 
 namespace TauCeti
 
@@ -317,14 +342,11 @@ theorem exists_adj_of_pos_two_mul_le_sum [Finite V]
   classical
   have : Fintype V := Fintype.ofFinite V
   -- The multigraph sum in the superadditivity condition is the neighbour sum.
-  have hδle' : 2 * δ (vertex G o i) ≤ ∑ j ∈ G.neighborFinset i, δ (vertex G o j) :=
-    (hδle (vertex G o i)).trans
-      (sum_card_hom_add_card_hom_mul G o (fun j => δ (vertex G o j)) i).le
-  -- The weight at `i` is positive, so the sum of the weights of its neighbours is nonzero.
-  obtain ⟨j, hj, -⟩ :=
-    Finset.exists_ne_zero_of_sum_ne_zero
-      ((mul_pos two_pos (hδ (vertex G o i))).trans_le hδle').ne'
-  exact ⟨j, (G.mem_neighborFinset i j).1 hj⟩
+  have hδle' : ∀ j : V, 2 * δ (vertex G o j) ≤ ∑ j' ∈ G.neighborFinset j, δ (vertex G o j') :=
+    fun j => (hδle (vertex G o j)).trans
+      (sum_card_hom_add_card_hom_mul G o (fun j => δ (vertex G o j)) j).le
+  exact SimpleGraph.exists_adj_of_pos_two_mul_le_sum
+    (fun j => δ (vertex G o j)) (fun j => hδ (vertex G o j)) hδle' i
 
 /-- Forgetting the choice of orientation includes the oriented quiver into the doubled quiver. -/
 def forget : OrientedQuiver G o ⥤q DoubledQuiver G where

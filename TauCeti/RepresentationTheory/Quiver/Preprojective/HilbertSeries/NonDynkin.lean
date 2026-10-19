@@ -88,9 +88,11 @@ theorem
 preprojectiveHilbertSeries_eq_inv_zigzagGradedCartanMatrix_of_not_exists_dynkinType_iso :
     (preprojectiveHilbertSeries k (OrientedQuiver G o)).submatrix
         (OrientedQuiver.vertex G o) (OrientedQuiver.vertex G o) =
-      ((zigzagGradedCartanMatrix k G).map (Polynomial.aeval (-X : ℤ⟦X⟧)))⁻¹ :=
-  (Matrix.inv_eq_right_inv
-    (zigzagGradedCartanMatrix_mul_preprojectiveHilbertSeries_eq_one_of_not_exists_dynkinType_iso
-      k hG hD o)).symm
+      ((zigzagGradedCartanMatrix k G).map (Polynomial.aeval (-X : ℤ⟦X⟧)))⁻¹ := by
+  obtain ⟨δ, hδ, hδle⟩ :=
+    exists_pos_two_mul_le_sum_orientedQuiver_of_not_exists_dynkinType_iso hG hD o
+  exact
+    preprojectiveHilbertSeries_eq_inv_zigzagGradedCartanMatrix_map_aeval_neg_X_of_two_mul_le_sum
+      k o hδ hδle
 
 end TauCeti

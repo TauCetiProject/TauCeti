@@ -120,10 +120,10 @@ theorem forall_preprojectiveMk_ofArrow_reverse_mul_eq_zero_iff_of_not_exists_dyn
 /-- For every orientation of a connected non-Dynkin graph, the left Koszul differential at each
 vertex is injective. -/
 theorem preprojectiveKoszulLeft_injective_of_not_exists_dynkinType_iso (v : OrientedQuiver G o) :
-    Function.Injective (preprojectiveKoszulLeft k v) :=
-  (preprojectiveKoszulLeft_injective_iff k v).2 fun _ hy =>
-    (forall_preprojectiveMk_ofArrow_reverse_mul_eq_zero_iff_of_not_exists_dynkinType_iso
-      k hG hD o v hy).1
+    Function.Injective (preprojectiveKoszulLeft k v) := by
+  obtain ⟨δ, hδ, hδle⟩ :=
+    exists_pos_two_mul_le_sum_orientedQuiver_of_not_exists_dynkinType_iso hG hD o
+  exact preprojectiveKoszulLeft_injective_of_two_mul_le_sum k hδ hδle v
 
 /-- The right vertex module of every orientation of a connected non-Dynkin graph has a linear
 graded Koszul resolution. Its projective terms are generated in internal degrees zero, one and two,
@@ -157,9 +157,10 @@ theorem preprojectiveHilbertSeries_eq_inv_of_not_exists_dynkinType_iso :
       (((1 : PowerSeries ℤ) + PowerSeries.X ^ 2) •
           (1 : Matrix (OrientedQuiver G o) (OrientedQuiver G o) (PowerSeries ℤ)) -
         (PowerSeries.X : PowerSeries ℤ) • Matrix.of fun v w : OrientedQuiver G o =>
-          (Fintype.card (Symmetrify.of.obj w ⟶ Symmetrify.of.obj v) : PowerSeries ℤ))⁻¹ :=
-  (Matrix.inv_eq_right_inv
-    (mul_preprojectiveHilbertSeries_eq_one_of_not_exists_dynkinType_iso k hG hD o)).symm
+          (Fintype.card (Symmetrify.of.obj w ⟶ Symmetrify.of.obj v) : PowerSeries ℤ))⁻¹ := by
+  obtain ⟨δ, hδ, hδle⟩ :=
+    exists_pos_two_mul_le_sum_orientedQuiver_of_not_exists_dynkinType_iso hG hD o
+  exact preprojectiveHilbertSeries_eq_inv_of_two_mul_le_sum k hδ hδle
 
 end Graph
 

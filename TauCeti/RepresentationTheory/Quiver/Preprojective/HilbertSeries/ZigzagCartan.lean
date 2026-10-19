@@ -45,12 +45,13 @@ It holds for every orientation of `G` at which every Koszul complex is a resolut
 proves the identity unconditionally as soon as the oriented quiver carries a positive weight `δ`
 satisfying `2 δ_i ≤ ∑_j (#(i ⟶ j) + #(j ⟶ i)) δ_j` at every vertex of `G`. Orientations without
 sinks are covered separately
-(`TauCeti.preprojectiveHilbertSeries_eq_inv_zigzagGradedCartanMatrix_map_aeval_neg_X`); the
-theorem of Etingof and Eu supplies the weight for every orientation of a connected graph which is
-not a Dynkin diagram
+(`TauCeti.preprojectiveHilbertSeries_eq_inv_zigzagGradedCartanMatrix_map_aeval_neg_X`); a
+connected graph which is not a Dynkin diagram carries such a weight in every orientation
+(`TauCeti.exists_pos_two_mul_le_sum_orientedQuiver_of_not_exists_dynkinType_iso`), so by the
+theorem of Etingof and Eu the identity holds for every orientation
 (`TauCeti.preprojectiveHilbertSeries_eq_inv_zigzagGradedCartanMatrix_of_not_exists_dynkinType_iso`,
-module `HilbertSeries/NonDynkin.lean`), so the non-Dynkin trees, such as `D~ₙ` and `E₆~`, `E₇~`,
-`E₈~`, are covered.
+module `HilbertSeries/NonDynkin.lean`), covering the non-Dynkin trees, such as `D~ₙ` and `E₆~`,
+`E₇~`, `E₈~`.
 
 ## Main results
 
