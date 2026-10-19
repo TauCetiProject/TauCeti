@@ -7,14 +7,13 @@ module
 
 public import TauCeti.ModelTheory.BackAndForth.Countable
 public import TauCeti.ModelTheory.BackAndForth.Karp
-public import Mathlib.SetTheory.Cardinal.Finite
 
 /-!
 # Potential isomorphism of finite structures
 
 In a relational language, a structure potentially isomorphic to a finite structure `M` is
-itself finite: potentially isomorphic structures are elementarily equivalent, and the
-first-order sentence saying that there are not `Nat.card M + 1` distinct elements transfers.
+itself finite: potentially isomorphic structures are elementarily equivalent, and elementary
+equivalence preserves finiteness (`FirstOrder.Language.ElementarilyEquivalent.infinite_iff`).
 Since finite structures are countable, potential isomorphism with a finite structure is
 therefore isomorphism, with no cardinality assumption on the other structure. For infinite
 structures this fails: `ℚ` and `ℝ` are potentially isomorphic dense linear orders but are not
@@ -33,19 +32,17 @@ universe u v w w'
 
 namespace TauCeti
 
-open FirstOrder FirstOrder.Language Cardinal
+open FirstOrder FirstOrder.Language
 
 variable {L : Language.{u, v}} [L.IsRelational]
 variable {M : Type w} {N : Type w'} [L.Structure M] [L.Structure N]
 
 /-- In a relational language, a structure potentially isomorphic to a finite structure is
 finite. -/
-theorem PotentialIso.finite [Finite M] (h : PotentialIso (L := L) M N) : Finite N := by
-  have hM : M ⊨ (Sentence.cardGe L (Nat.card M + 1)).not := by
-    simp [Sentence.realize_not, Sentence.realize_cardGe, ← Nat.cast_card]
-  have hN := ((h.infEquivAt ℕ).elementarilyEquivalent.realize_sentence _).mp hM
-  rw [Sentence.realize_not, Sentence.realize_cardGe, not_le] at hN
-  exact lt_aleph0_iff_finite.mp (hN.trans natCast_lt_aleph0)
+theorem PotentialIso.finite [Finite M] (h : PotentialIso (L := L) M N) : Finite N :=
+  not_infinite_iff_finite.mp fun hN =>
+    not_infinite_iff_finite.mpr ‹Finite M›
+      ((h.infEquivAt ℕ).elementarilyEquivalent.infinite_iff.mpr hN)
 
 /-- In a relational language, a structure is potentially isomorphic to a finite structure
 exactly when it is isomorphic to it. No cardinality assumption is made on `N`. -/

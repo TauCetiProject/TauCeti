@@ -22,12 +22,9 @@ sentence, the characteristic sentence of `M`: there are elements with the atomic
 enumeration of `M`, and every element is one of them. The Scott sentence of a finite structure in
 a finite relational language is therefore equivalent to a first-order sentence.
 
-Finiteness of the language cannot be dropped from this. In the language with a unary predicate
-`P i` for every natural number `i`, no first-order sentence characterizes a one-point structure
-up to isomorphism, even among countable structures: a first-order sentence mentions only finitely
-many predicates, and changing the interpretation of an unmentioned predicate gives a
-non-isomorphic model. The Scott sentence of such a structure, an infinitary sentence, still
-characterizes it.
+Finiteness of the language cannot be dropped from this: `TauCeti.ModelTheory.Scott.NatPredicate`
+shows that in the language of countably many unary predicates, no one-point structure has a
+first-order sentence characterizing it up to isomorphism.
 
 ## Main results
 
@@ -38,8 +35,6 @@ characterizes it.
 * `TauCeti.realize_scottSentence_iff_realize_characteristicSentence`: in a finite relational
   language, the Scott sentence of a finite structure is equivalent to its characteristic
   sentence.
-* `TauCeti.not_exists_sentence_iff_nonempty_equiv_natPredicateStructure`: in the language of
-  countably many unary predicates, no one-point structure has a first-order Scott sentence.
 
 ## References
 
@@ -83,6 +78,15 @@ noncomputable def characteristicSentence : L.Sentence :=
     (BoundedFormula.iSup fun i : Fin (Nat.card M) =>
       (&(Fin.last (Nat.card M))).bdEqual &i.castSucc).all).exs
 
+/-- The characteristic sentence existentially quantifies the atomic diagram of an enumeration
+of `M`, together with the statement that every element is one of the enumerated ones. -/
+theorem characteristicSentence_def :
+    characteristicSentence (L := L) M =
+      (firstOrderAtomicDiagram (L := L) (Finite.equivFin M).symm ⊓
+        (BoundedFormula.iSup fun i : Fin (Nat.card M) =>
+          (&(Fin.last (Nat.card M))).bdEqual &i.castSucc).all).exs := by
+  rfl
+
 variable [L.IsRelational]
 
 /-- In a finite relational language, the characteristic sentence of a finite structure holds
@@ -91,7 +95,7 @@ theorem realize_characteristicSentence_iff :
     N ⊨ characteristicSentence (L := L) M ↔ Nonempty (M ≃[L] N) := by
   let a : Fin (Nat.card M) → M := (Finite.equivFin M).symm
   have ha : Function.Surjective a := (Finite.equivFin M).symm.surjective
-  simp only [characteristicSentence, Sentence.Realize,
+  simp only [characteristicSentence_def, Sentence.Realize,
     BoundedFormula.realize_exs, BoundedFormula.realize_inf, BoundedFormula.realize_all,
     BoundedFormula.realize_iSup, BoundedFormula.realize_bdEqual, Term.realize_var,
     Function.comp_apply, Sum.elim_inr, Fin.snoc_last, Fin.snoc_castSucc,
@@ -121,88 +125,5 @@ theorem realize_scottSentence_iff_realize_characteristicSentence :
   rw [realize_scottSentence_iff_of_finite, realize_characteristicSentence_iff]
 
 end Characteristic
-
-section NatPredicates
-
-/-- The relation symbols of the language of countably many unary predicates: a unary symbol
-`pred i` for each natural number `i`. -/
-inductive NatPredicateRel : ℕ → Type
-  | pred (i : ℕ) : NatPredicateRel 1
-
-/-- The relational language with a unary predicate symbol for each natural number. -/
-@[expose] def natPredicateLanguage : Language := ⟨fun _ => Empty, NatPredicateRel⟩
-  deriving IsRelational
-
-/-- The language of countably many unary predicates has countably many relation symbols. -/
-instance : Countable (Σ k, natPredicateLanguage.Relations k) := by
-  refine Function.Surjective.countable
-    (f := fun i : ℕ => (⟨1, NatPredicateRel.pred i⟩ : Σ k, natPredicateLanguage.Relations k)) ?_
-  rintro ⟨_, ⟨i⟩⟩
-  exact ⟨i, rfl⟩
-
-/-- The one-point structure in the language of countably many unary predicates in which the
-predicate `pred i` holds exactly when `i ∈ S`. -/
-@[instance_reducible]
-def natPredicateStructure (S : Set ℕ) : natPredicateLanguage.Structure Unit where
-  RelMap | .pred i => fun _ => i ∈ S
-
-/-- In `natPredicateStructure S`, the predicate `pred i` holds exactly when `i ∈ S`. -/
-@[simp]
-theorem relMap_natPredicateStructure (S : Set ℕ) (i : ℕ) (x : Fin 1 → Unit) :
-    @Structure.RelMap natPredicateLanguage Unit (natPredicateStructure S) 1
-      (NatPredicateRel.pred i) x ↔ i ∈ S :=
-  Iff.rfl
-
-/-- A first-order formula mentions only finitely many of the predicates: its truth in the
-one-point structures depends only on the predicates below some bound. -/
-private theorem exists_forall_realize_iff {α : Type*} {n : ℕ}
-    (φ : natPredicateLanguage.BoundedFormula α n) :
-    ∃ k : ℕ, ∀ S T : Set ℕ, (∀ i < k, i ∈ S ↔ i ∈ T) → ∀ (v : α → Unit) (xs : Fin n → Unit),
-      (letI := natPredicateStructure S; φ.Realize v xs) ↔
-        (letI := natPredicateStructure T; φ.Realize v xs) := by
-  induction φ with
-  | falsum => exact ⟨0, fun _ _ _ _ _ => Iff.rfl⟩
-  | equal t₁ t₂ =>
-    -- An equation realizes as an equality of elements of `Unit`, which always holds.
-    exact ⟨0, fun _ _ _ _ _ => iff_of_true (Subsingleton.elim _ _) (Subsingleton.elim _ _)⟩
-  | rel R ts =>
-    cases R with
-    | pred i =>
-      refine ⟨i + 1, fun S T h _ _ => ?_⟩
-      simpa only [BoundedFormula.Realize, relMap_natPredicateStructure] using h i i.lt_succ_self
-  | imp φ ψ ihφ ihψ =>
-    obtain ⟨k₁, h₁⟩ := ihφ
-    obtain ⟨k₂, h₂⟩ := ihψ
-    refine ⟨max k₁ k₂, fun S T h v xs => ?_⟩
-    simp only [BoundedFormula.realize_imp]
-    exact imp_congr (h₁ S T (fun i hi => h i (lt_max_of_lt_left hi)) v xs)
-      (h₂ S T (fun i hi => h i (lt_max_of_lt_right hi)) v xs)
-  | all φ ih =>
-    obtain ⟨k, hk⟩ := ih
-    refine ⟨k, fun S T h v xs => ?_⟩
-    simp only [BoundedFormula.realize_all]
-    exact forall_congr' fun x => hk S T h v (Fin.snoc xs x)
-
-/-- In the language of countably many unary predicates, no first-order sentence characterizes a
-one-point structure up to isomorphism, even among countable structures. Its Scott sentence, an
-infinitary sentence, does characterize it (`realize_scottSentence_iff_of_finite`). -/
-theorem not_exists_sentence_iff_nonempty_equiv_natPredicateStructure (S : Set ℕ) :
-    letI := natPredicateStructure S
-    ¬ ∃ φ : natPredicateLanguage.Sentence, ∀ (N : Type) [natPredicateLanguage.Structure N]
-      [Countable N], N ⊨ φ ↔ Nonempty (Unit ≃[natPredicateLanguage] N) := by
-  let := natPredicateStructure S
-  rintro ⟨φ, hφ⟩
-  obtain ⟨k, hk⟩ := exists_forall_realize_iff φ
-  -- Flip the predicate `pred k`, which `φ` does not mention.
-  let T : Set ℕ := {i | i ∈ S ↔ i ≠ k}
-  have hT : (letI := natPredicateStructure T; Unit ⊨ φ) := by
-    refine (hk S T (fun i hi => ?_) default default).mp ((hφ Unit).mpr ⟨.refl _ _⟩)
-    simp [T, hi.ne]
-  obtain ⟨e⟩ := (@hφ Unit (natPredicateStructure T) _).mp hT
-  have hk' := @Equiv.map_rel _ _ _ (natPredicateStructure S) (natPredicateStructure T) e _
-    (NatPredicateRel.pred k) default
-  simp [T] at hk'
-
-end NatPredicates
 
 end TauCeti

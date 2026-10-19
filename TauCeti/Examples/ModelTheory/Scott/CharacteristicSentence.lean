@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.ModelTheory.Scott.CharacteristicSentence
+import TauCeti.ModelTheory.Scott.NatPredicate
 
 /-!
 # Regression examples for Scott sentences of finite structures

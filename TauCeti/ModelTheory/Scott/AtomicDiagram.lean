@@ -69,6 +69,15 @@ noncomputable def firstOrderAtomicDiagram (a : Fin n → M) : L.BoundedFormula E
   exact BoundedFormula.iInf fun i : AtomicIdx L n =>
     if i.Holds a then i.toFormula else i.toFormula.not
 
+open Classical in
+/-- The first-order atomic diagram is the finite conjunction of signed atomic formulas. -/
+theorem firstOrderAtomicDiagram_def (a : Fin n → M) :
+    firstOrderAtomicDiagram (L := L) a =
+      BoundedFormula.iInf fun i : AtomicIdx L n =>
+        if i.Holds a then i.toFormula else i.toFormula.not := by
+  classical
+  rfl
+
 /-- Over a finite relational language, the first-order atomic diagram characterizes
 atomic-type agreement in every structure. -/
 @[simp]
@@ -77,7 +86,7 @@ theorem realize_firstOrderAtomicDiagram_iff_sameAtomicType [L.IsRelational]
     (firstOrderAtomicDiagram (L := L) a).Realize v b ↔ SameAtomicType (L := L) a b := by
   classical
   rw [Subsingleton.elim v Empty.elim]
-  simp only [firstOrderAtomicDiagram, BoundedFormula.realize_iInf, sameAtomicType_def]
+  simp only [firstOrderAtomicDiagram_def, BoundedFormula.realize_iInf, sameAtomicType_def]
   apply forall_congr'
   intro i
   by_cases h : i.Holds a <;> simp [h]
