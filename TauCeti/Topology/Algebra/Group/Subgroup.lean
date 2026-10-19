@@ -44,6 +44,7 @@ series of a profinite group.
 
 ## Main results
 
+* `Subgroup.continuous_subtype`: the inclusion of a subgroup is continuous.
 * `Subgroup.continuous_inclusion`: the inclusion of a subgroup into a larger one is continuous.
 * `Subgroup.subgroupOfContinuousMulEquivOfLe_smul`: the topological identification of a subgroup
   with its copy inside a larger subgroup respects every restricted ambient action.
@@ -155,6 +156,13 @@ instance isClosed_center [SeparatelyContinuousMul G] [T2Space G] :
     IsClosed (center G : Set G) := by
   simpa only [coe_center, Set.centralizer_univ] using
     Set.isClosed_centralizer (Set.univ : Set G)
+
+/-- The inclusion of a subgroup, as a monoid homomorphism, is continuous. This is
+`continuous_subtype_val` stated for the coercion of `Subgroup.subtype`, which is the form that
+restriction along the inclusion takes. -/
+@[fun_prop]
+theorem continuous_subtype (H : Subgroup G) : Continuous H.subtype :=
+  continuous_subtype_val
 
 /-- The inclusion of `U ⊓ D` into `U`, where `U ⊓ D` is presented as the subgroup `U.subgroupOf D`
 of `D`, is continuous. -/
