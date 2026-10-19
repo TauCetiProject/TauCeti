@@ -69,7 +69,7 @@ theorem exchangeableGraphLawEquivInfinite_mixtureExchangeableLaw_law
     (P : ProbabilityMeasure (GraphonSpace Ω μ)) :
     (exchangeableGraphLawEquivInfinite (mixtureExchangeableLaw P)).law =
       (P : Measure (GraphonSpace Ω μ)).bind infiniteSampleLawOnSpace := by
-  refine measure_ext_of_map_restrictFin fun n => ?_
+  refine SimpleGraph.measure_ext_of_map_restrictFin fun n => ?_
   rw [Measure.map_bind measurable_infiniteSampleLawOnSpace.aemeasurable
     (SimpleGraph.measurable_restrictFin n).aemeasurable]
   simp_rw [infiniteSampleLawOnSpace_map_restrictFin]

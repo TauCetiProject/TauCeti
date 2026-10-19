@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
 public import Mathlib.MeasureTheory.Constructions.Pi
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import Mathlib.MeasureTheory.Measure.Prod
+public import TauCeti.Analysis.Convex.LogConcave
 -- Proof-only: weighted AM-GM, the minimum below a geometric mean, the layer-cake formula in
 -- `ℝ≥0∞` and one-dimensional Brunn–Minkowski.
 import Mathlib.Analysis.MeanInequalities
@@ -44,6 +45,12 @@ the weighted AM-GM inequality gives Prékopa–Leindler, and truncation removes 
 Tensorization then gives the inequality for Lebesgue measure on `ι → ℝ`, and linear isometries
 transport it to every finite-dimensional real inner product space.
 
+Applied once in the second variable, the inequality says that a marginal
+`x ↦ ∫⁻ y, f (x, y) ∂ν` of a log-concave function `f` is log-concave. For the indicator of a
+convex set this is Brunn's principle in log-concave form: the measures of the parallel slices of
+a convex set form a log-concave function, so for a symmetric convex set the central slice is the
+largest. This is the form in which Vaaler's cube-slicing theorem uses the inequality.
+
 ## Main results
 
 * `MeasureTheory.Measure.HasPrekopaLeindler`: the measurable extended-integral inequality.
@@ -54,6 +61,12 @@ transport it to every finite-dimensional real inner product space.
 * `TauCeti.Real.hasPrekopaLeindler_volume`: the **Prékopa–Leindler inequality** on `ℝ`.
 * `TauCeti.hasPrekopaLeindler_volume_pi`, `TauCeti.hasPrekopaLeindler_volume`: the inequality on
   `ι → ℝ` and on finite-dimensional real inner product spaces.
+* `TauCeti.LogConcave.lintegral_prod_right`, `TauCeti.LogConcave.setLIntegral_prod_right`:
+  marginals of log-concave functions are log-concave.
+* `Convex.logConcave_measure_preimage_prodMk`: the slice measures of a convex set are
+  log-concave.
+* `Convex.measure_preimage_prodMk_le_measure_preimage_prodMk_zero`: the central slice of a
+  symmetric convex set is the largest.
 
 ## References
 
@@ -66,6 +79,10 @@ transport it to every finite-dimensional real inner product space.
   355–405, for the one-dimensional level-set argument.
 * Terence Tao, [The Brunn–Minkowski inequality for nilpotent groups]
   (https://terrytao.wordpress.com/2011/09/16/the-brunn-minkowski-inequality-for-nilpotent-groups/).
+* E. Bombieri and W. Gubler, *Heights in Diophantine Geometry*, Cambridge University Press, 2006,
+  Lemma C.3.4, for marginals of log-concave functions. The statements and proofs of the marginal
+  results are adapted from the Apache-2.0 formalization in `rwst/Subspace-Theorems` (files
+  `ArithmeticHeights/LogConcave.lean` and `ArithmeticHeights/CubeSlicing.lean`), by Ralf Stephan.
 -/
 
 public section
@@ -331,5 +348,82 @@ theorem hasPrekopaLeindler_volume (E : Type*) [NormedAddCommGroup E] [InnerProdu
     (b.repr.symm ∘ WithLp.toLp 2)
     (b.measurePreserving_repr_symm.comp (PiLp.volume_preserving_toLp _))
     (fun x y ↦ by simp) hf hg hh hfgh
+
+end TauCeti
+
+/-! ### Marginals of log-concave functions -/
+
+namespace TauCeti
+
+section AddCommMonoid
+
+variable {E F : Type*} [MeasurableSpace E] [AddCommMonoid E] [Module ℝ E]
+  [MeasurableSpace F] [AddCommMonoid F] [Module ℝ F] {ν : Measure F}
+
+/-- **Marginals of log-concave functions are log-concave** (Prékopa; Bombieri–Gubler, Lemma
+C.3.4). If `f : E × F → ℝ≥0∞` is measurable and log-concave and `ν` has the Prékopa–Leindler
+property at every weight, then `x ↦ ∫⁻ y, f (x, y) ∂ν` is log-concave. No measure on `E` and no
+finiteness of the integrals is needed. -/
+theorem LogConcave.lintegral_prod_right
+    (hν : ∀ ⦃θ : ℝ⦄, 0 ≤ θ → θ ≤ 1 → ν.HasPrekopaLeindler θ) {f : E × F → ℝ≥0∞}
+    (hf : Measurable f) (hlc : LogConcave f) :
+    LogConcave fun x ↦ ∫⁻ y, f (x, y) ∂ν := by
+  refine logConcave_def.2 fun x₁ x₂ a b ha hb hab ↦ ?_
+  obtain rfl : a = 1 - b := by linarith
+  have hPL := hν hb (by linarith) (hf.comp measurable_prodMk_left)
+    (hf.comp measurable_prodMk_left) (hf.comp measurable_prodMk_left) fun y₁ y₂ ↦ by
+      simpa [ENNReal.rpow_eq_pow] using
+        hlc.rpow_mul_rpow_le (x := (x₁, y₁)) (y := (x₂, y₂)) ha hb hab
+  simpa [ENNReal.rpow_eq_pow] using hPL
+
+/-- **Marginals over a convex set of log-concave functions are log-concave** (Bombieri–Gubler,
+Lemma C.3.4). If `f : E × F → ℝ≥0∞` is measurable and log-concave, `s ⊆ F` is measurable and
+convex, and `ν` has the Prékopa–Leindler property at every weight, then
+`x ↦ ∫⁻ y in s, f (x, y) ∂ν` is log-concave. -/
+theorem LogConcave.setLIntegral_prod_right
+    (hν : ∀ ⦃θ : ℝ⦄, 0 ≤ θ → θ ≤ 1 → ν.HasPrekopaLeindler θ) {f : E × F → ℝ≥0∞}
+    (hf : Measurable f) (hlc : LogConcave f) {s : Set F} (hs : MeasurableSet s)
+    (hsc : Convex ℝ s) :
+    LogConcave fun x ↦ ∫⁻ y in s, f (x, y) ∂ν := by
+  have h := (hlc.mul ((hsc.linear_preimage (LinearMap.snd ℝ E F)).logConcave_indicator 1)
+    ).lintegral_prod_right hν (hf.mul (measurable_const.indicator (hs.preimage measurable_snd)))
+  convert h using 2 with x
+  rw [← lintegral_indicator hs]
+  congr 1 with y
+  by_cases hy : y ∈ s <;> simp [hy]
+
+/-- **Brunn's principle, in log-concave form.** For a measurable convex set `s ⊆ E × F` and a
+measure `ν` with the Prékopa–Leindler property at every weight, the measure of the slices,
+`x ↦ ν (Prod.mk x ⁻¹' s)`, is log-concave. -/
+theorem _root_.Convex.logConcave_measure_preimage_prodMk
+    (hν : ∀ ⦃θ : ℝ⦄, 0 ≤ θ → θ ≤ 1 → ν.HasPrekopaLeindler θ) {s : Set (E × F)}
+    (hs : MeasurableSet s) (hsc : Convex ℝ s) :
+    LogConcave fun x ↦ ν (Prod.mk x ⁻¹' s) := by
+  convert (hsc.logConcave_indicator 1).lintegral_prod_right hν
+    (measurable_const.indicator hs) using 2 with x
+  rw [← lintegral_indicator_one (measurable_prodMk_left hs)]
+  exact lintegral_congr fun y ↦ by by_cases hy : (x, y) ∈ s <;> simp [hy]
+
+end AddCommMonoid
+
+variable {E F : Type*} [MeasurableSpace E] [AddCommGroup E] [Module ℝ E]
+  [MeasurableSpace F] [AddCommGroup F] [Module ℝ F] {ν : Measure F}
+
+/-- **The central slice of a symmetric convex set is the largest.** For a measurable convex set
+`s ⊆ E × F` with `-s = s` and a negation-invariant measure `ν` with the Prékopa–Leindler
+property at every weight, every slice `Prod.mk x ⁻¹' s` has measure at most that of the central
+slice `Prod.mk 0 ⁻¹' s`. -/
+theorem _root_.Convex.measure_preimage_prodMk_le_measure_preimage_prodMk_zero
+    [MeasurableNeg F] [ν.IsNegInvariant]
+    (hν : ∀ ⦃θ : ℝ⦄, 0 ≤ θ → θ ≤ 1 → ν.HasPrekopaLeindler θ) {s : Set (E × F)}
+    (hs : MeasurableSet s) (hsc : Convex ℝ s) (hneg : ∀ p ∈ s, -p ∈ s) (x : E) :
+    ν (Prod.mk x ⁻¹' s) ≤ ν (Prod.mk 0 ⁻¹' s) := by
+  refine (hsc.logConcave_measure_preimage_prodMk hν hs).apply_le_apply_zero (fun x ↦ ?_) x
+  have hslice : Prod.mk (-x) ⁻¹' s = -(Prod.mk x ⁻¹' s) := by
+    ext y
+    simp only [mem_preimage, Set.mem_neg]
+    exact ⟨fun h ↦ by simpa using hneg _ h, fun h ↦ by simpa using hneg _ h⟩
+  dsimp only
+  rw [hslice, Measure.measure_neg]
 
 end TauCeti
