@@ -103,6 +103,15 @@ theorem pathIntegral_symm (φ : RoughForm I M F 1) (γ : ℝ → M) (a b : ℝ) 
     pathIntegral φ γ b a = -pathIntegral φ γ a b :=
   intervalIntegral.integral_symm a b
 
+/-- Line integrals over adjacent intervals add up, as soon as the form evaluated on the velocity
+is interval integrable on both intervals. For a continuous form along a `C¹` curve this is
+`TauCeti.IsSmoothForm.intervalIntegrable_apply_curveVelocity`. -/
+theorem pathIntegral_add_adjacent {φ : RoughForm I M F 1} {γ : ℝ → M} {a b c : ℝ}
+    (hab : IntervalIntegrable (fun t ↦ φ (γ t) fun _ ↦ Manifold.curveVelocity I γ t) volume a b)
+    (hbc : IntervalIntegrable (fun t ↦ φ (γ t) fun _ ↦ Manifold.curveVelocity I γ t) volume b c) :
+    pathIntegral φ γ a b + pathIntegral φ γ b c = pathIntegral φ γ a c :=
+  intervalIntegral.integral_add_adjacent_intervals hab hbc
+
 /-! ### Linearity in the form -/
 
 /-- The line integral of the zero form vanishes. -/
@@ -122,6 +131,26 @@ theorem pathIntegral_neg (φ : RoughForm I M F 1) (γ : ℝ → M) (a b : ℝ) :
 theorem pathIntegral_smul (c : ℝ) (φ : RoughForm I M F 1) (γ : ℝ → M) (a b : ℝ) :
     pathIntegral (c • φ) γ a b = c • pathIntegral φ γ a b := by
   simp [pathIntegral_def, intervalIntegral.integral_smul]
+
+/-- The line integral of a sum of forms is the sum of the line integrals, as soon as both forms
+evaluated on the velocity are interval integrable. For continuous forms along a `C¹` curve this
+is `TauCeti.IsSmoothForm.intervalIntegrable_apply_curveVelocity`. -/
+theorem pathIntegral_add {φ ψ : RoughForm I M F 1} {γ : ℝ → M} {a b : ℝ}
+    (hφ : IntervalIntegrable (fun t ↦ φ (γ t) fun _ ↦ Manifold.curveVelocity I γ t) volume a b)
+    (hψ : IntervalIntegrable (fun t ↦ ψ (γ t) fun _ ↦ Manifold.curveVelocity I γ t) volume a b) :
+    pathIntegral (φ + ψ) γ a b = pathIntegral φ γ a b + pathIntegral ψ γ a b := by
+  simp only [pathIntegral_def, Pi.add_apply, ContinuousAlternatingMap.add_apply]
+  exact intervalIntegral.integral_add hφ hψ
+
+/-- The line integral of a difference of forms is the difference of the line integrals, as soon
+as both forms evaluated on the velocity are interval integrable. For continuous forms along a
+`C¹` curve this is `TauCeti.IsSmoothForm.intervalIntegrable_apply_curveVelocity`. -/
+theorem pathIntegral_sub {φ ψ : RoughForm I M F 1} {γ : ℝ → M} {a b : ℝ}
+    (hφ : IntervalIntegrable (fun t ↦ φ (γ t) fun _ ↦ Manifold.curveVelocity I γ t) volume a b)
+    (hψ : IntervalIntegrable (fun t ↦ ψ (γ t) fun _ ↦ Manifold.curveVelocity I γ t) volume a b) :
+    pathIntegral (φ - ψ) γ a b = pathIntegral φ γ a b - pathIntegral ψ γ a b := by
+  simp only [pathIntegral_def, Pi.sub_apply, ContinuousAlternatingMap.sub_apply]
+  exact intervalIntegral.integral_sub hφ hψ
 
 section Continuous
 
@@ -144,32 +173,6 @@ theorem IsSmoothForm.intervalIntegrable_apply_curveVelocity {φ : RoughForm I M 
     (hφ : IsSmoothForm I 0 φ) {γ : ℝ → M} (hγ : ContMDiff 𝓘(ℝ, ℝ) I 1 γ) (a b : ℝ) :
     IntervalIntegrable (fun t ↦ φ (γ t) fun _ ↦ Manifold.curveVelocity I γ t) volume a b :=
   (hφ.continuous_apply_curveVelocity hγ).intervalIntegrable a b
-
-/-- The line integral of a sum of continuous forms along a `C¹` curve is the sum of the line
-integrals. -/
-theorem pathIntegral_add {φ ψ : RoughForm I M F 1} (hφ : IsSmoothForm I 0 φ)
-    (hψ : IsSmoothForm I 0 ψ) {γ : ℝ → M} (hγ : ContMDiff 𝓘(ℝ, ℝ) I 1 γ) (a b : ℝ) :
-    pathIntegral (φ + ψ) γ a b = pathIntegral φ γ a b + pathIntegral ψ γ a b := by
-  simp only [pathIntegral_def, Pi.add_apply, ContinuousAlternatingMap.add_apply]
-  exact intervalIntegral.integral_add (hφ.intervalIntegrable_apply_curveVelocity hγ a b)
-    (hψ.intervalIntegrable_apply_curveVelocity hγ a b)
-
-/-- The line integral of a difference of continuous forms along a `C¹` curve is the difference
-of the line integrals. -/
-theorem pathIntegral_sub {φ ψ : RoughForm I M F 1} (hφ : IsSmoothForm I 0 φ)
-    (hψ : IsSmoothForm I 0 ψ) {γ : ℝ → M} (hγ : ContMDiff 𝓘(ℝ, ℝ) I 1 γ) (a b : ℝ) :
-    pathIntegral (φ - ψ) γ a b = pathIntegral φ γ a b - pathIntegral ψ γ a b := by
-  simp only [pathIntegral_def, Pi.sub_apply, ContinuousAlternatingMap.sub_apply]
-  exact intervalIntegral.integral_sub (hφ.intervalIntegrable_apply_curveVelocity hγ a b)
-    (hψ.intervalIntegrable_apply_curveVelocity hγ a b)
-
-/-- Line integrals of a continuous form along a `C¹` curve over adjacent intervals add up. -/
-theorem pathIntegral_add_adjacent {φ : RoughForm I M F 1} (hφ : IsSmoothForm I 0 φ)
-    {γ : ℝ → M} (hγ : ContMDiff 𝓘(ℝ, ℝ) I 1 γ) (a b c : ℝ) :
-    pathIntegral φ γ a b + pathIntegral φ γ b c = pathIntegral φ γ a c :=
-  intervalIntegral.integral_add_adjacent_intervals
-    (hφ.intervalIntegrable_apply_curveVelocity hγ a b)
-    (hφ.intervalIntegrable_apply_curveVelocity hγ b c)
 
 /-- **Reparametrization invariance.** The line integral of a continuous form along `γ ∘ σ`, for
 a `C¹` change of parameter `σ`, is the line integral along `γ` between the image endpoints. The
