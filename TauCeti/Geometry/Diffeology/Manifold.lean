@@ -69,6 +69,30 @@ class IsContMDiffCompatible (E : outParam (Type*)) [NormedAddCommGroup E] [Norme
   isPlot_iff {n : ℕ} {p : EuclideanSpace ℝ (Fin n) → M} :
     IsPlot p ↔ ContMDiff 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 𝓘(ℝ, E) ∞ p
 
+section
+
+omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M]
+
+variable [DiffeologicalSpace M] [IsContMDiffCompatible E M]
+
+/-- A Cartesian parametrization is a plot exactly when it is smooth as a manifold map. -/
+theorem isPlot_iff_contMDiff {n : ℕ} {p : EuclideanSpace ℝ (Fin n) → M} :
+    IsPlot p ↔ ContMDiff 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 𝓘(ℝ, E) ∞ p :=
+  IsContMDiffCompatible.isPlot_iff
+
+/-- A smooth Cartesian parametrization of a compatible manifold is a plot. -/
+@[fun_prop]
+protected theorem ContMDiff.isPlot {n : ℕ} {p : EuclideanSpace ℝ (Fin n) → M}
+    (hp : ContMDiff 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 𝓘(ℝ, E) ∞ p) : IsPlot p :=
+  isPlot_iff_contMDiff.mpr hp
+
+/-- A plot of a compatible manifold is smooth as a manifold map. -/
+protected theorem Diffeology.IsPlot.contMDiff {n : ℕ} {p : EuclideanSpace ℝ (Fin n) → M}
+    (hp : IsPlot p) : ContMDiff 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 𝓘(ℝ, E) ∞ p :=
+  isPlot_iff_contMDiff.mp hp
+
+end
+
 instance : @IsContMDiffCompatible E _ _ M _ _ (manifoldDiffeology E M) := by
   let := manifoldDiffeology E M
   exact ⟨Iff.rfl⟩
