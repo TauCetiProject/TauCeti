@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.InnerProductSpace.NormDet
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Analysis.InnerProductSpace.NormDet
+import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.MeasureTheory.Measure.Lebesgue.OrthogonalSlices
 
 /-!
 # The coarea formula for linear maps
@@ -30,13 +32,10 @@ for measurable sets, indexed by an affine subspace rather than by the projection
 The proof decomposes `E` orthogonally as `ker L × (ker L)ᗮ`. Mathlib's
 `Submodule.measurePreserving_measurableEquivProd` then reduces the formula to Tonelli's theorem.
 The restriction of `L` to `(ker L)ᗮ` is an isomorphism onto `F`, whose Jacobian is computed by
-`LinearMap.euclideanHausdorffMeasure_image_eq_normDet_mul_volume`. This linear case underlies
-the chart comparisons in the nonlinear coarea formula.
+`LinearMap.euclideanHausdorffMeasure_image_eq_normDet_mul_volume`.
 
 ## Main statements
 
-* `Submodule.lintegral_eq_lintegral_lintegral_add`: Tonelli's theorem along an orthogonal
-  decomposition.
 * `LinearMap.lintegral_setLIntegral_preimage_singleton`: the linear coarea formula.
 * `LinearMap.lintegral_euclideanHausdorffMeasure_inter_preimage_singleton`: its form for
   measurable sets.
@@ -56,26 +55,6 @@ public section
 open MeasureTheory Measure Set Module
 open scoped ENNReal
 
-namespace Submodule
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E]
-
-/-- Tonelli's theorem along an orthogonal decomposition `E = Kᗮ ⊕ K`. -/
-theorem lintegral_eq_lintegral_lintegral_add (K : Submodule ℝ E)
-    {g : E → ℝ≥0∞} (hg : AEMeasurable g) :
-    ∫⁻ x, g x = ∫⁻ w : Kᗮ, ∫⁻ a : K, g (w + a) := by
-  set e := K.measurableEquivProd (0 : E)
-  have he : MeasurePreserving e := by
-    simpa only [InnerProductSpace.euclideanHausdorffMeasure_eq_volume] using
-      K.measurePreserving_measurableEquivProd (0 : E)
-  rw [MeasurePreserving.lintegral_map_equiv g e.symm he.symm, volume_eq_prod,
-    lintegral_prod_symm (fun q ↦ g (e.symm q))
-      (hg.comp_quasiMeasurePreserving he.symm.quasiMeasurePreserving)]
-  simp [e, add_comm]
-
-end Submodule
-
 namespace LinearMap
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
@@ -83,9 +62,9 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
   [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F]
 
 omit [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F] in
-/-- The fibre of `L` through `w`, measured by Hausdorff measure of the dimension of `ker L`,
-is the kernel translated by `w`. -/
-theorem setLIntegral_preimage_singleton_apply (L : E →ₗ[ℝ] F) (w : E) (g : E → ℝ≥0∞) :
+/-- The integral of `g` over the fibre `L ⁻¹' {L w}`, with Hausdorff measure of the dimension of
+`ker L`, equals the Lebesgue integral over `ker L` of `a ↦ g (w + a)`. -/
+theorem setLIntegral_preimage_singleton_eq_lintegral_ker (L : E →ₗ[ℝ] F) (w : E) (g : E → ℝ≥0∞) :
     ∫⁻ x in L ⁻¹' {L w}, g x ∂μHE[finrank ℝ (ker L)] = ∫⁻ a : ker L, g (w + a) := by
   let φ : ker L → E := fun a ↦ w + a
   have hφ : Isometry φ := (isometry_add_left w).comp isometry_subtype_coe
@@ -107,12 +86,10 @@ private theorem exists_orthogonal_ker_equiv (L : E →ₗ[ℝ] F) (hL : Function
         (volume : Measure (ker L)ᗮ).map e.toHomeomorph.toMeasurableEquiv ∧
       ∀ (g : E → ℝ≥0∞) (y : F), ∫⁻ x in L ⁻¹' {y}, g x ∂μHE[finrank ℝ E - finrank ℝ F] =
         ∫⁻ a : ker L, g (e.symm y + a) := by
+  have hdim := L.finrank_orthogonal_ker_of_surjective hL
   have h₁ := (ker L).finrank_add_finrank_orthogonal
-  have h₂ := L.finrank_range_add_finrank_ker
-  rw [range_eq_top.mpr hL, finrank_top] at h₂
   set W := (ker L)ᗮ
   set M := L ∘ₗ W.subtype
-  have hdim : finrank ℝ W = finrank ℝ F := by omega
   have hMinj : Function.Injective M := by
     refine (injective_iff_map_eq_zero M).2 fun w hw ↦ Subtype.ext ?_
     exact inner_self_eq_zero.1 (w.2 _ hw)
@@ -130,17 +107,8 @@ private theorem exists_orthogonal_ker_equiv (L : E →ₗ[ℝ] F) (hL : Function
     exact ⟨fun hy ↦ ⟨e.symm y, by simpa using hy, e.apply_symm_apply y⟩,
       by rintro ⟨w, hw, rfl⟩; exact hw⟩
   · have hy : L (e.symm y : E) = y := e.apply_symm_apply y
-    rw [← L.setLIntegral_preimage_singleton_apply (e.symm y), hy,
+    rw [← L.setLIntegral_preimage_singleton_eq_lintegral_ker (e.symm y), hy,
       show finrank ℝ E - finrank ℝ F = finrank ℝ (ker L) by omega]
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- A linear map that is not surjective has almost every fibre empty. -/
-private theorem ae_preimage_singleton_eq_empty (L : E →ₗ[ℝ] F) (hL : ¬Function.Surjective L) :
-    ∀ᵐ y : F, L ⁻¹' {y} = ∅ := by
-  have hr : (range L : Set F) =ᵐ[volume] (∅ : Set F) :=
-    ae_eq_empty.2 (addHaar_submodule volume _ (mt range_eq_top.mp hL))
-  filter_upwards [measure_eq_zero_iff_ae_notMem.1 (ae_eq_empty.1 hr)] with y hy
-  exact eq_empty_of_forall_notMem fun x hx ↦ hy ⟨x, hx⟩
 
 /-- The fibre integrals of a measurable function along a surjective linear map depend measurably
 on the fibre. -/
@@ -161,7 +129,7 @@ theorem aemeasurable_setLIntegral_preimage_singleton (L : E →ₗ[ℝ] F) {g : 
   by_cases hL : Function.Surjective L
   · exact (L.measurable_setLIntegral_preimage_singleton hL hg).aemeasurable
   · exact (aemeasurable_const (b := (0 : ℝ≥0∞))).congr
-      ((L.ae_preimage_singleton_eq_empty hL).mono fun y hy ↦ by simp [hy])
+      ((L.ae_preimage_singleton_eq_empty volume hL).mono fun y hy ↦ by simp [hy])
 
 /-- **The coarea formula for linear maps.** Integrating over the fibres of `L`, each with the
 normalized Hausdorff measure of dimension `dim E - dim F`, gives the Jacobian `normDet` of the
@@ -181,7 +149,8 @@ theorem lintegral_setLIntegral_preimage_singleton (L : E →ₗ[ℝ] F) {g : E �
         Submodule.orthogonal_eq_bot_iff]
       exact mt range_eq_top.mp hL
     rw [hJ, ENNReal.ofReal_zero, zero_mul, ← lintegral_zero]
-    exact lintegral_congr_ae ((L.ae_preimage_singleton_eq_empty hL).mono fun y hy ↦ by simp [hy])
+    exact lintegral_congr_ae
+      ((L.ae_preimage_singleton_eq_empty volume hL).mono fun y hy ↦ by simp [hy])
 
 /-- **The coarea formula for linear maps**, for Lebesgue-measurable sets: integrating the
 `(dim E - dim F)`-dimensional measures of the fibres of a set gives the Jacobian of the adjoint
@@ -190,10 +159,14 @@ theorem lintegral_euclideanHausdorffMeasure_inter_preimage_singleton (L : E →�
     (hs : NullMeasurableSet s) :
     ∫⁻ y, μHE[finrank ℝ E - finrank ℝ F] (s ∩ L ⁻¹' {y}) =
       ENNReal.ofReal L.adjoint.normDet * volume s := by
+  have hind {t : Set E} (ht : MeasurableSet t) (y : F) :
+      ∫⁻ x in L ⁻¹' {y}, t.indicator 1 x ∂μHE[finrank ℝ E - finrank ℝ F] =
+        μHE[finrank ℝ E - finrank ℝ F] (t ∩ L ⁻¹' {y}) := by
+    rw [lintegral_indicator_one ht, Measure.restrict_apply ht]
   have key {t : Set E} (ht : MeasurableSet t) :
       ∫⁻ y, μHE[finrank ℝ E - finrank ℝ F] (t ∩ L ⁻¹' {y}) =
         ENNReal.ofReal L.adjoint.normDet * volume t := by
-    simpa [lintegral_indicator_one ht, Measure.restrict_apply ht] using
+    simpa [hind ht, lintegral_indicator_one ht] using
       L.lintegral_setLIntegral_preimage_singleton (measurable_one.indicator ht).aemeasurable
   -- Squeeze `s` between measurable sets `t ⊆ s ⊆ u` differing by a null set.
   obtain ⟨t, hts, ht, hst⟩ := hs.exists_measurable_subset_ae_eq
@@ -206,7 +179,7 @@ theorem lintegral_euclideanHausdorffMeasure_inter_preimage_singleton (L : E →�
     have h := key (hu.diff ht)
     rw [hut, mul_zero] at h
     refine (lintegral_eq_zero_iff' ?_).1 h
-    simpa [lintegral_indicator_one (hu.diff ht), Measure.restrict_apply (hu.diff ht)] using
+    simpa [hind (hu.diff ht)] using
       L.aemeasurable_setLIntegral_preimage_singleton (measurable_one.indicator (hu.diff ht))
   rw [← measure_congr hst, ← key ht]
   refine lintegral_congr_ae (hnull.mono fun y hy ↦ le_antisymm ?_ (measure_mono ?_))

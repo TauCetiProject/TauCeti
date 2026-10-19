@@ -40,6 +40,8 @@ identity.
   image of `1`.
 * `LinearMap.normDet_adjoint`: between spaces of equal dimension, the adjoint has the same
   Jacobian.
+* `LinearMap.finrank_orthogonal_ker_of_surjective`: the orthogonal complement of the kernel of a
+  surjective map has the dimension of the codomain.
 * `LinearMap.normDet_adjoint_eq_normDet_comp_subtype`: the Jacobian of the adjoint of a surjective
   map is the Jacobian of its restriction to the orthogonal complement of the kernel.
 * `ContinuousLinearMap.exists_ball_antilipschitzWith_normDet_le`: around an injective linear map
@@ -79,6 +81,15 @@ theorem normDet_adjoint {𝕜 U W : Type*} [RCLike 𝕜] [NormedAddCommGroup U] 
   rw [f.normDet_eq_norm_det_toMatrix bu bw, f.adjoint.normDet_eq_norm_det_toMatrix bw bu,
     toMatrix_adjoint, Matrix.det_conjTranspose, norm_star]
 
+/-- The orthogonal complement of the kernel of a surjective linear map has the dimension of the
+codomain. -/
+theorem finrank_orthogonal_ker_of_surjective {𝕜 U W : Type*} [RCLike 𝕜] [NormedAddCommGroup U]
+    [InnerProductSpace 𝕜 U] [FiniteDimensional 𝕜 U] [NormedAddCommGroup W]
+    [InnerProductSpace 𝕜 W] [FiniteDimensional 𝕜 W] (f : U →ₗ[𝕜] W)
+    (hf : Function.Surjective f) :
+    Module.finrank 𝕜 (ker f)ᗮ = Module.finrank 𝕜 W := by
+  rw [orthogonal_ker, finrank_range_adjoint, range_eq_top.mpr hf, finrank_top]
+
 /-- The Jacobian of the adjoint of a surjective linear map is the Jacobian of the restriction of
 the map to the orthogonal complement of its kernel. This restriction is a linear isomorphism onto
 the codomain. -/
@@ -94,10 +105,8 @@ theorem normDet_adjoint_eq_normDet_comp_subtype {𝕜 U W : Type*} [RCLike 𝕜]
     rw [eq_adjoint_iff]
     intro y w
     simp [adjoint_inner_left]
-  have h₁ := (ker f).finrank_add_finrank_orthogonal
-  have h₂ := f.finrank_range_add_finrank_ker
-  rw [range_eq_top.mpr hf, finrank_top] at h₂
-  rw [← normDet_codRestrict hmem, hM, normDet_adjoint _ (by omega)]
+  rw [← normDet_codRestrict hmem, hM,
+    normDet_adjoint _ (f.finrank_orthogonal_ker_of_surjective hf)]
 
 end LinearMap
 

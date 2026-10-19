@@ -20,6 +20,10 @@ by the absolute value of the determinant of its linear part
 (`MeasureTheory.Measure.addHaar_image_affineMap`, and
 `MeasureTheory.Measure.addHaar_image_affineEquiv` for affine equivalences), the affine form of
 Mathlib's `MeasureTheory.Measure.addHaar_image_linearMap`.
+
+A linear map into a finite-dimensional real normed space that is not surjective has almost every
+fibre empty for every additive Haar measure on the codomain
+(`LinearMap.ae_preimage_singleton_eq_empty`), since its range is a strict subspace.
 -/
 
 public section
@@ -64,3 +68,19 @@ theorem addHaar_image_affineEquiv (f : F ≃ᵃ[ℝ] F) (s : Set F) :
   addHaar_image_affineMap μ (f : F →ᵃ[ℝ] F) s
 
 end MeasureTheory.Measure
+
+namespace LinearMap
+
+variable {E F : Type*} [AddCommGroup E] [Module ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F]
+
+/-- A linear map that is not surjective has almost every fibre empty, for every additive Haar
+measure on its finite-dimensional codomain. -/
+theorem ae_preimage_singleton_eq_empty (μ : Measure F) [μ.IsAddHaarMeasure] (L : E →ₗ[ℝ] F)
+    (hL : ¬Function.Surjective L) :
+    ∀ᵐ y ∂μ, L ⁻¹' {y} = ∅ := by
+  filter_upwards [measure_eq_zero_iff_ae_notMem.1
+    (Measure.addHaar_submodule μ _ (mt range_eq_top.mp hL))] with y hy
+  exact eq_empty_of_forall_notMem fun x hx ↦ hy ⟨x, hx⟩
+
+end LinearMap
