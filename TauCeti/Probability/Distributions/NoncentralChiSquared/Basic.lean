@@ -149,8 +149,7 @@ theorem nullSingletonClass_noncentralChiSquaredMeasure (hk : 0 < k) (l : ℝ≥0
   rw [noncentralChiSquaredMeasure_apply hk.le]
   apply ENNReal.tsum_eq_zero.2
   intro n
-  let _ := nullSingletonClass_chiSquaredMeasure (k := k + 2 * n) (by positivity)
-  simp
+  rw [chiSquaredMeasure_singleton (by positivity), mul_zero]
 
 /-- At degree zero, the Poisson count zero contributes the atom and every positive count
 contributes a positive-degree central law. -/
@@ -173,9 +172,8 @@ theorem noncentralChiSquaredMeasure_zero_degree_mass (l : ℝ≥0) :
     noncentralChiSquaredMeasure 0 l {0} = ENNReal.ofReal (exp (-(l : ℝ) / 2)) := by
   rw [noncentralChiSquaredMeasure_zero_degree, Measure.add_apply,
     Measure.sum_apply _ (measurableSet_singleton 0)]
-  have hzero (n : ℕ) : chiSquaredMeasure (2 * ((n : ℝ) + 1)) {0} = 0 := by
-    let _ := nullSingletonClass_chiSquaredMeasure (k := 2 * ((n : ℝ) + 1)) (by positivity)
-    exact measure_singleton 0
+  have hzero (n : ℕ) : chiSquaredMeasure (2 * ((n : ℝ) + 1)) {0} = 0 :=
+    chiSquaredMeasure_singleton (by positivity) 0
   simp [Measure.smul_apply, hzero]
 
 /-- Zero is the only possible atom, for every degree and noncentrality. -/
@@ -188,9 +186,8 @@ theorem noncentralChiSquaredMeasure_singleton_of_ne_zero (hx : x ≠ 0) (k : ℝ
     intro n
     by_cases hdeg : k + 2 * n = 0
     · simp [hdeg, chiSquaredMeasure_zero, hx]
-    · let _ := nullSingletonClass_chiSquaredMeasure
-        (lt_of_le_of_ne (by positivity) (Ne.symm hdeg))
-      simp
+    · rw [chiSquaredMeasure_singleton (lt_of_le_of_ne (by positivity) (Ne.symm hdeg)),
+        mul_zero]
   · simp [noncentralChiSquaredMeasure_of_neg (lt_of_not_ge hk)]
 
 /-- The support is empty for negative degree, the singleton zero at zero degree and

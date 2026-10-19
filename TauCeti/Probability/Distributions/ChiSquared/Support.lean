@@ -30,6 +30,13 @@ theorem nullSingletonClass_chiSquaredMeasure {k : ℝ} (hk : 0 < k) :
   rw [chiSquaredMeasure_eq_gammaMeasure hk]
   infer_instance
 
+/-- A chi-squared law of positive degree gives zero mass to every singleton. -/
+@[simp]
+theorem chiSquaredMeasure_singleton {k : ℝ} (hk : 0 < k) (x : ℝ) :
+    chiSquaredMeasure k {x} = 0 := by
+  let _ := nullSingletonClass_chiSquaredMeasure hk
+  exact measure_singleton x
+
 /-- A chi-squared variable of positive degree is positive almost surely. -/
 theorem ae_pos_chiSquaredMeasure {k : ℝ} (hk : 0 < k) :
     ∀ᵐ x ∂chiSquaredMeasure k, 0 < x := by
