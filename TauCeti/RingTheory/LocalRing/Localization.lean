@@ -26,7 +26,7 @@ public section
 
 namespace IsLocalRing
 
-variable (R S : Type*) [CommRing R] [CommRing S] [Algebra R S] [IsLocalRing S]
+variable (R S : Type*) [CommSemiring R] [CommSemiring S] [Algebra R S] [IsLocalRing S]
 
 /-- A local `R`-algebra `S` is isomorphic, as an `R`-algebra, to its localization at its maximal
 ideal: that localization inverts only units. -/

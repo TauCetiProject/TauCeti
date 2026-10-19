@@ -37,7 +37,7 @@ finite and dominant) the map is surjective, and when `f` is quasi-compact its fi
 * `Scheme.Hom.codimensionOneMap_surjective`: for a surjective, locally quasi-finite
   morphism of irreducible schemes, every codimension-one point of the target is the image of a
   codimension-one point.
-* `Scheme.Hom.finite_codimensionOneMap_fiber`: the fibres of `codimensionOneMap` of a
+* `Scheme.Hom.codimensionOneMap_finite_preimage_singleton`: the fibres of `codimensionOneMap` of a
   quasi-compact locally quasi-finite morphism are finite.
 * `Scheme.Hom.codimensionOneMap_comp`, `Scheme.Hom.codimensionOneMap_id`:
   functoriality.
@@ -53,7 +53,7 @@ finite and dominant) the map is surjective, and when `f` is quasi-compact its fi
   `Pcf.SchemeDivisorPoint.mapFiniteDominantNormal_surjective` (there for a normal target), in
   `lean/Pcf/Bounding/SchemeDynamics.lean`; `coheight_eq_one_of_coheight_apply_eq_one` is the
   scheme form of its `Pcf.height_eq_one_of_liesOver_heightOne`, in
-  `lean/Pcf/Bounding/Divisors.lean`; and `finite_codimensionOneMap_fiber` is its
+  `lean/Pcf/Bounding/Divisors.lean`; and `codimensionOneMap_finite_preimage_singleton` is its
   `Pcf.schemeDivisorMap_finite_fiber`, in `lean/Pcf/Bounding/SchemeWiring.lean`.
 -/
 
@@ -114,7 +114,7 @@ theorem codimensionOneMap_surjective [Surjective f] [LocallyQuasiFinite f]
 
 /-- The fibres of the map on codimension-one points of a quasi-compact locally quasi-finite
 morphism are finite. -/
-theorem finite_codimensionOneMap_fiber [LocallyQuasiFinite f] [QuasiCompact f]
+theorem codimensionOneMap_finite_preimage_singleton [LocallyQuasiFinite f] [QuasiCompact f]
     (hf : ∀ x : X, coheight x = 1 → coheight (f x) = 1)
     (y : TauCeti.AlgebraicGeometry.CodimensionOnePoint Y) :
     (codimensionOneMap f hf ⁻¹' {y}).Finite := by
@@ -123,6 +123,7 @@ theorem finite_codimensionOneMap_fiber [LocallyQuasiFinite f] [QuasiCompact f]
   simpa using congrArg Subtype.val hx
 
 /-- The map on codimension-one points of a composite is the composite of the maps. -/
+@[simp]
 theorem codimensionOneMap_comp {Z : Scheme.{u}} (g : Y ⟶ Z)
     (hf : ∀ x : X, coheight x = 1 → coheight (f x) = 1)
     (hg : ∀ y : Y, coheight y = 1 → coheight (g y) = 1) :
@@ -133,6 +134,7 @@ theorem codimensionOneMap_comp {Z : Scheme.{u}} (g : Y ⟶ Z)
   simp
 
 /-- The map on codimension-one points of the identity is the identity. -/
+@[simp]
 theorem codimensionOneMap_id :
     codimensionOneMap (𝟙 X) (fun x hx ↦ by simpa using hx) = id := by
   funext x
