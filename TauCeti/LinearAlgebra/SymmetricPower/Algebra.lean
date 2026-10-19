@@ -20,6 +20,7 @@ to be used degreewise on the symmetric algebra.
 ## Main declarations
 
 * `TauCeti.SymmetricPower.toSymmetricAlgebra` multiplies the generators of a pure symmetric tensor.
+* `TauCeti.SymmetricPower.toHomogeneous` restricts multiplication to its homogeneous component.
 * `TauCeti.SymmetricPower.equivHomogeneous` is the resulting equivalence for a free module.
 -/
 
@@ -55,18 +56,39 @@ theorem toSymmetricAlgebra_tprod (n : ℕ) (m : Fin n → M) :
     toSymmetricAlgebra R M n (⨂ₛ[R] i, m i) = ∏ i, SymmetricAlgebra.ι R M (m i) := by
   simp [toSymmetricAlgebra, algebraMultilinear]
 
+/-- Multiplication preserves the degree of a symmetric tensor. -/
+theorem toSymmetricAlgebra_mem (n : ℕ) (x : Sym[R]^n M) :
+    toSymmetricAlgebra R M n x ∈
+      TauCeti.SymmetricAlgebra.homogeneousSubmodule R M n := by
+  have hle : (⊤ : Submodule R (Sym[R]^n M)) ≤
+      (TauCeti.SymmetricAlgebra.homogeneousSubmodule R M n).comap
+        (toSymmetricAlgebra R M n) := by
+    rw [← span_tprod_eq_top R (Fin n) M, Submodule.span_le]
+    rintro _ ⟨m, rfl⟩
+    apply (Submodule.mem_comap).mpr
+    rw [toSymmetricAlgebra_tprod]
+    simpa only [List.length_ofFn, List.map_ofFn, List.prod_ofFn, Function.comp_def] using
+      TauCeti.SymmetricAlgebra.prod_map_ι_mem_homogeneousSubmodule R M (List.ofFn m)
+  exact hle Submodule.mem_top
+
+/-- Multiplication with codomain restricted to the homogeneous component of the same degree. -/
+noncomputable def toHomogeneous (n : ℕ) :
+    Sym[R]^n M →ₗ[R] TauCeti.SymmetricAlgebra.homogeneousSubmodule R M n :=
+  (toSymmetricAlgebra R M n).codRestrict _ (toSymmetricAlgebra_mem R M n)
+
+/-- The homogeneous multiplication map has ordinary multiplication as its underlying map. -/
+@[simp]
+theorem coe_toHomogeneous_apply (n : ℕ) (x : Sym[R]^n M) :
+    (toHomogeneous R M n x : SymmetricAlgebra R M) = toSymmetricAlgebra R M n x :=
+  (rfl)
+
 /-- The image of multiplication is exactly the homogeneous component of the same degree. -/
 theorem range_toSymmetricAlgebra (n : ℕ) :
     LinearMap.range (toSymmetricAlgebra R M n) =
       TauCeti.SymmetricAlgebra.homogeneousSubmodule R M n := by
   apply le_antisymm
-  · rw [← Submodule.map_top, ← span_tprod_eq_top R (Fin n) M, Submodule.map_span,
-      Submodule.span_le]
-    rintro _ ⟨_, ⟨m, rfl⟩, rfl⟩
-    rw [toSymmetricAlgebra_tprod]
-    convert TauCeti.SymmetricAlgebra.prod_map_ι_mem_homogeneousSubmodule R M
-      (List.ofFn m) using 1
-    simp [List.prod_ofFn]
+  · rintro _ ⟨x, rfl⟩
+    exact toSymmetricAlgebra_mem R M n x
   · rw [TauCeti.SymmetricAlgebra.homogeneousSubmodule_eq_span, Submodule.span_le]
     rintro _ ⟨l, hl, rfl⟩
     subst n
@@ -116,10 +138,13 @@ theorem toSymmetricAlgebra_injective [Module.Free R M] (n : ℕ) :
 /-- The symmetric tensor power of a free module is canonically its degree-`n` homogeneous
 symmetric-algebra component. -/
 noncomputable def equivHomogeneous [Module.Free R M] (n : ℕ) :
-    Sym[R]^n M ≃ₗ[R] TauCeti.SymmetricAlgebra.homogeneousSubmodule R M n :=
-  (LinearEquiv.ofInjective (toSymmetricAlgebra R M n)
-    (toSymmetricAlgebra_injective n)).trans
-      (LinearEquiv.ofEq _ _ (range_toSymmetricAlgebra R M n))
+    Sym[R]^n M ≃ₗ[R] TauCeti.SymmetricAlgebra.homogeneousSubmodule R M n := by
+  refine LinearEquiv.ofBijective (toHomogeneous R M n) ⟨?_, ?_⟩
+  · intro x y h
+    exact toSymmetricAlgebra_injective n (congrArg Subtype.val h)
+  · intro p
+    obtain ⟨x, hx⟩ := (range_toSymmetricAlgebra R M n).ge p.property
+    exact ⟨x, Subtype.ext hx⟩
 
 /-- The homogeneous equivalence has multiplication as its underlying map. -/
 @[simp]
