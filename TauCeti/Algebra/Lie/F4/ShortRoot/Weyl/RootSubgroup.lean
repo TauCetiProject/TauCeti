@@ -132,24 +132,10 @@ theorem weightTorusPoints_conj_weylRootSubgroupPoints (l : List (Fin 4)) (i : Fi
           ((TauCeti.torusCharacter s
               ((F4.simplyConnectedRootDatum valid_F4).root
                 (F4.geckWeylRootIndex valid_F4 l i)) : A) *
-            Multiplicative.toAdd u)) := by
-  -- Write `s` as the word's action on `s' = w⁻¹ • s`, so that the torus point of `s` is the
-  -- conjugate of the torus point of `s'` by the word's Weyl representative.
-  set s' : Fin 4 → Aˣ := F4.geckWeylTorusAction valid_F4 A (F4.geckWeylWordProd valid_F4 l)⁻¹ s
-  have hT : weylWordPoint l A * weightTorusPoints A s' * (weylWordPoint l A)⁻¹ =
-      weightTorusPoints A s :=
-    (weylWordPoint_conj_weightTorusPoints l A s').trans
-      (congrArg _ (F4.geckWeylWordTorusAction_geckWeylTorusAction_inv valid_F4 l A s))
-  have hchar :
-      (TauCeti.torusCharacter s'
-          ((F4.simplyConnectedRootDatum valid_F4).root (F4.simpleIndex valid_F4 i)) : A) =
-        TauCeti.torusCharacter s
-          ((F4.simplyConnectedRootDatum valid_F4).root (F4.geckWeylRootIndex valid_F4 l i)) :=
-    congrArg Units.val
-      (F4.torusCharacter_geckWeylTorusAction_inv_root_simpleIndex valid_F4 l i A s)
-  rw [weylRootSubgroupPoints_apply, weylRootSubgroupPoints_apply, ← hT, ← hchar,
-    ← weightTorusPoints_conj_rootSubgroupPoints_root_simpleIndex valid_F4 i A s' u]
-  group
+            Multiplicative.toAdd u)) :=
+  F4.conj_conj_eq_torusCharacter_root_geckWeylRootIndex valid_F4 _ _ _ l i
+    (weylWordPoint_conj_weightTorusPoints l A)
+    (weightTorusPoints_conj_rootSubgroupPoints_root_simpleIndex valid_F4 i A) s u
 
 /-! ## A selected family indexed by every root -/
 

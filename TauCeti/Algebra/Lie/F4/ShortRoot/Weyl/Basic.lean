@@ -174,7 +174,7 @@ theorem weylWordPoint_append (l l' : List (Fin 4)) (A : Type v) [CommRing A] :
   simp only [weylWordPoint, List.map_append, List.prod_append]
 
 /-- Weyl-word representatives commute with change of value ring. -/
-@[simp]
+@[simp↓]
 theorem map_weylWordPoint {A : Type v} {B : Type w} [CommRing A] [CommRing B]
     (f : A →+* B) (l : List (Fin 4)) :
     (pointsPresentation A).map (pointsPresentation B) f (weylWordPoint l A) =
@@ -190,28 +190,9 @@ action on the represented weight torus.** -/
 theorem weylWordPoint_conj_weightTorusPoints (l : List (Fin 4))
     (A : Type v) [CommRing A] (s : Fin 4 → Aˣ) :
     weylWordPoint l A * weightTorusPoints A s * (weylWordPoint l A)⁻¹ =
-      weightTorusPoints A (F4.geckWeylWordTorusAction valid_F4 l A s) := by
-  induction l with
-  | nil =>
-      rw [weylWordPoint_nil, one_mul, inv_one, mul_one]
-      exact congrArg _ (DFunLike.congr_fun (F4.geckWeylWordTorusAction_nil valid_F4 A) s).symm
-  | cons i l ih =>
-      rw [weylWordPoint_cons]
-      calc
-        (simpleWeylPoint i A * weylWordPoint l A) * weightTorusPoints A s *
-              (simpleWeylPoint i A * weylWordPoint l A)⁻¹ =
-            simpleWeylPoint i A *
-              (weylWordPoint l A * weightTorusPoints A s * (weylWordPoint l A)⁻¹) *
-              (simpleWeylPoint i A)⁻¹ := by group
-        _ = simpleWeylPoint i A *
-              weightTorusPoints A (F4.geckWeylWordTorusAction valid_F4 l A s) *
-              (simpleWeylPoint i A)⁻¹ := by rw [ih]
-        _ = weightTorusPoints A
-              (F4.geckSimpleReflectionTorusPoint valid_F4 i A
-                (F4.geckWeylWordTorusAction valid_F4 l A s)) :=
-          simpleWeylPoint_conj_weightTorusPoints i A _
-        _ = weightTorusPoints A (F4.geckWeylWordTorusAction valid_F4 (i :: l) A s) :=
-          congrArg _ (DFunLike.congr_fun (F4.geckWeylWordTorusAction_cons valid_F4 i l A) s).symm
+      weightTorusPoints A (F4.geckWeylWordTorusAction valid_F4 l A s) :=
+  F4.list_prod_conj_eq_geckWeylWordTorusAction valid_F4 _ _
+    (simpleWeylPoint_conj_weightTorusPoints · A) l s
 
 /-- Every Weyl-word representative normalizes the represented weight torus. -/
 theorem weylWordPoint_mem_normalizer_weightTorusPoints (l : List (Fin 4))
