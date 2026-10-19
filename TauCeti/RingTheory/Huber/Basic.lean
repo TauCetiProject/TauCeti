@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.AdicCompletion.Topology
 public import Mathlib.RingTheory.Finiteness.Ideal
-public import Mathlib.Topology.Algebra.Nonarchimedean.AdicTopology
+public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology
 public import Mathlib.Topology.Algebra.Ring.Ideal
 public import TauCeti.RingTheory.Huber.PowerBounded
 import Mathlib.Topology.Algebra.IsUniformGroup.Basic
@@ -526,24 +526,8 @@ def map [IsTopologicalRing A] {B : Type*} [CommRing B] [TopologicalSpace B] [IsT
         exact hf.isOpenMap _ P.isOpen_ringOfDefinition
       idealOfDefinition := P.idealOfDefinition.map f₀
       fg_idealOfDefinition := P.fg_idealOfDefinition.map f₀
-      isAdic_idealOfDefinition := isAdic_iff.mpr ⟨?_, ?_⟩ }
-  · intro n
-    rw [← Ideal.map_pow]
-    have hset : ((P.idealOfDefinition ^ n).map f₀ : Set A₀) =
-        f₀ '' ((P.idealOfDefinition ^ n : Ideal P.ringOfDefinition) :
-          Set P.ringOfDefinition) := by
-      ext y
-      exact Ideal.mem_map_iff_of_surjective f₀ hf₀_surj
-    rw [hset]
-    exact hf₀_open _ ((isAdic_iff.mp P.isAdic_idealOfDefinition).1 n)
-  · intro s hs
-    obtain ⟨n, hn⟩ := (isAdic_iff.mp P.isAdic_idealOfDefinition).2
-      (f₀ ⁻¹' s) (hf₀_cont.continuousAt.preimage_mem_nhds (by simpa using hs))
-    refine ⟨n, ?_⟩
-    rw [← Ideal.map_pow]
-    rintro y hy
-    obtain ⟨x, hx, rfl⟩ := Ideal.mem_map_iff_of_surjective f₀ hf₀_surj |>.mp hy
-    exact hn hx
+      isAdic_idealOfDefinition := isAdic_map_of_isOpenQuotientMap P.isAdic_idealOfDefinition
+        f₀ ⟨hf₀_surj, hf₀_cont, hf₀_open⟩ }
 
 /-- The ring of definition of the image of a pair of definition along an open quotient map is the
 image of the original one. -/

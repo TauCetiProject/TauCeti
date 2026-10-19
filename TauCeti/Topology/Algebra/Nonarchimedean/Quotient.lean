@@ -6,7 +6,6 @@ Authors: Chris Birkbeck
 module
 
 public import TauCeti.Topology.Algebra.Nonarchimedean.Basic
-public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology
 public import Mathlib.Topology.Algebra.Group.Quotient
 public import Mathlib.Topology.Algebra.Module.Basic
 public import Mathlib.Topology.Algebra.Ring.Ideal
@@ -39,10 +38,6 @@ requires `[NonarchimedeanRing B]` on its target. Wedhorn's Example 6.38 presents
 localisation as a quotient `C ⧸ a` of a ring of restricted power series, so applying that
 universal property to `C ⧸ a` needs exactly the ring instance below.
 
-For adic rings, `TauCeti.isAdic_map_of_isOpenQuotientMap` identifies the quotient topology
-with the adic topology of the extended defining ideal. It requires neither finite generation
-nor completeness.
-
 ## Main results
 
 * `QuotientGroup.instNonarchimedeanGroup`, and its additive form
@@ -54,7 +49,6 @@ nor completeness.
 ## References
 
 * [Wedhorn, *Adic Spaces*][wedhorn_adic], Example 6.38.
-* A. Grothendieck and J. Dieudonné, *Éléments de géométrie algébrique I*, Ch. 0, (7.3.5).
 -/
 
 public section
@@ -100,27 +94,3 @@ instance instNonarchimedeanAddGroup : NonarchimedeanAddGroup (M ⧸ N) :=
   .nonarchimedean_of_isOpenMap N.mkQ.toAddMonoidHom N.continuous_mkQ.continuousAt N.isOpenMap_mkQ
 
 end Submodule.Quotient
-
-namespace TauCeti
-
-/-- An open quotient of an adic ring has the adic topology of the extended ideal. Neither
-finite generation nor completeness of the defining ideal is required. -/
-theorem isAdic_map_of_isOpenQuotientMap {R S : Type*} [CommRing R] [CommRing S]
-    [TopologicalSpace R] [TopologicalSpace S] [IsTopologicalRing S]
-    {I : Ideal R} (hI : IsAdic I) (f : R →+* S) (hf : IsOpenQuotientMap f) :
-    IsAdic (I.map f) := by
-  have hmap (n : ℕ) : (((I.map f) ^ n : Ideal S) : Set S) =
-      f '' ((I ^ n : Ideal R) : Set R) := by
-    rw [← Ideal.map_pow]
-    ext y
-    exact Ideal.mem_map_iff_of_surjective f hf.surjective
-  refine isAdic_iff.mpr ⟨fun n ↦ ?_, fun s hs ↦ ?_⟩
-  · rw [hmap]
-    exact hf.isOpenMap _ (hI.isOpen_pow n)
-  · obtain ⟨n, -, hn⟩ := hI.hasBasis_nhds_zero.mem_iff.mp
-      (hf.continuous.continuousAt.preimage_mem_nhds (by simpa using hs))
-    refine ⟨n, ?_⟩
-    rw [hmap]
-    exact Set.image_subset_iff.mpr hn
-
-end TauCeti
