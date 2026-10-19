@@ -48,17 +48,15 @@ theorem finrank_hom_simple_eq_simpleMultiplicities (S X : C) [Simple S] :
   let := hι
   let := hf
   let := hbf
-  rw [simpleMultiplicities_apply_eq_card f e,
+  rw [simpleMultiplicities_apply_classOf_eq_sum f e S,
     (CategoryTheory.Linear.homCongr k (Iso.refl S) e).finrank_eq,
     finrank_homTo_biproduct]
   simp_rw [CategoryTheory.finrank_hom_simple_simple]
-  simp only [Nat.card_eq_fintype_card, Fintype.card_subtype, Finset.card_eq_sum_ones,
-    Finset.sum_filter, SimpleClasses.classOf_eq_iff_nonempty_iso, Iso.nonempty_iso_symm]
 
 /-- The dimension of the morphisms from an object to a simple object is the multiplicity of that
 simple object in the source. -/
 @[simp]
-theorem finrank_hom_to_simple_eq_simpleMultiplicities (X S : C) [Simple S] :
+theorem finrank_homTo_simple_eq_simpleMultiplicities (X S : C) [Simple S] :
     Module.finrank k (X ⟶ S) = simpleMultiplicities X (SimpleClasses.classOf S) := by
   classical
   obtain ⟨ι, hι, f, hf, hbf, ⟨e⟩⟩ :=
@@ -66,11 +64,10 @@ theorem finrank_hom_to_simple_eq_simpleMultiplicities (X S : C) [Simple S] :
   let := hι
   let := hf
   let := hbf
-  rw [simpleMultiplicities_apply_eq_card f e,
+  rw [simpleMultiplicities_apply_classOf_eq_sum f e S,
     (CategoryTheory.Linear.homCongr k e (Iso.refl S)).finrank_eq,
     finrank_hom_biproduct]
   simp_rw [CategoryTheory.finrank_hom_simple_simple]
-  simp only [Nat.card_eq_fintype_card, Fintype.card_subtype, Finset.card_eq_sum_ones,
-    Finset.sum_filter, SimpleClasses.classOf_eq_iff_nonempty_iso, Iso.nonempty_iso_symm]
+  simp only [Iso.nonempty_iso_symm]
 
 end TauCeti
