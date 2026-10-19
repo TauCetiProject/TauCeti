@@ -8,7 +8,7 @@ module
 public import TauCeti.LinearAlgebra.PiTensorProduct.Sigma
 public import TauCeti.RepresentationTheory.Induction.Mackey.Basic
 public import TauCeti.RepresentationTheory.Tensor.Induction.Diagonal
-public import TauCeti.RepresentationTheory.Tensor.Pi
+public import TauCeti.RepresentationTheory.Tensor.Pi.Basic
 
 /-!
 # Double-coset regrouping for tensor induction

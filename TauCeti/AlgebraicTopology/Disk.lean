@@ -13,6 +13,8 @@ public import Mathlib.Topology.Homotopy.Contractible
 public import TauCeti.Topology.Category.TopPair
 public import TauCeti.Topology.Homotopy.Cube.Radius
 
+import TauCeti.Topology.UnitInterval.OpenSquare
+
 /-!
 # Euclidean disks and their boundaries
 
@@ -265,6 +267,15 @@ theorem diskHomeomorphCube_mem_boundary_iff (z : TopCat.disk.{u} n) :
       z ∈ Set.range (TopCat.diskBoundaryInclusion.{u} n) := by
   rw [← norm_diskHomeomorphClosedBall_eq_one_iff, ← norm_cubeHomeomorphClosedBall_eq_one_iff,
     diskHomeomorphCube, Homeomorph.trans_apply, Homeomorph.apply_symm_apply]
+
+/-- A point of the disk `𝔻 2` lies on its boundary circle exactly when the corresponding point of
+the square `I × I` lies on the boundary of the square. -/
+lemma piFinTwo_diskHomeomorphCube_notMem_iff (z : TopCat.disk.{u} 2) :
+    Homeomorph.piFinTwo (fun _ ↦ I) (diskHomeomorphCube 2 z) ∉
+        Set.Ioo (0 : I) 1 ×ˢ Set.Ioo (0 : I) 1 ↔
+      z ∈ Set.range (TopCat.diskBoundaryInclusion.{u} 2) := by
+  rw [← diskHomeomorphCube_mem_boundary_iff, unitInterval.notMem_Ioo_prod_Ioo_iff]
+  simp [Cube.boundary, Fin.exists_fin_two, or_assoc]
 
 variable {n} in
 /-- The point of the closed ball corresponding to a point of the cube has norm one exactly when the

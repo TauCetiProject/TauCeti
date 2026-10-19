@@ -187,20 +187,21 @@ variable [IsScalarTower k k' F'] [IsScalarTower k F F']
 
 section LocalIntegralClosure
 
-omit [Field k'] [Algebra k k'] [Algebra k' F'] [Algebra k F'] [IsScalarTower k k' F']
-  [IsScalarTower k F F']
-
 variable (F') (P : Place k F)
 
 attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
 
 variable [FiniteDimensional F F']
 
+omit [Field k'] [Algebra k k'] [Algebra k' F'] [Algebra k F'] [IsScalarTower k k' F']
+  [IsScalarTower k F F'] in
 /-- The local model `𝒪'_P` — the integral closure of `𝒪_P` in `F'` — has fraction field `F'`. -/
 instance isFractionRing_integralClosure :
     IsFractionRing (integralClosure (P.integers) F') F' :=
   IsIntegralClosure.isFractionRing_of_finite_extension (P.integers) F F' _
 
+omit [Field k'] [Algebra k k'] [Algebra k' F'] [Algebra k F'] [IsScalarTower k k' F']
+  [IsScalarTower k F F'] in
 /-- More precisely, `F'` is the localization of the local model `𝒪'_P` at the nonzero divisors
 of `𝒪_P`. -/
 theorem isLocalization_integralClosure :
@@ -210,16 +211,22 @@ theorem isLocalization_integralClosure :
 
 variable [Algebra.IsSeparable F F']
 
+omit [Field k'] [Algebra k k'] [Algebra k' F'] [Algebra k F'] [IsScalarTower k k' F']
+  [IsScalarTower k F F'] in
 /-- The local model `𝒪'_P` is a Dedekind domain. -/
 instance isDedekindDomain_integralClosure :
     IsDedekindDomain (integralClosure (P.integers) F') :=
   integralClosure.isDedekindDomain (A := P.integers) (K := F) (L := F')
 
+omit [Field k'] [Algebra k k'] [Algebra k' F'] [Algebra k F'] [IsScalarTower k k' F']
+  [IsScalarTower k F F'] in
 /-- The local model `𝒪'_P` is module-finite over `𝒪_P`. -/
 instance moduleFinite_integralClosure :
     Module.Finite (P.integers) (integralClosure (P.integers) F') :=
   IsIntegralClosure.finite (A := P.integers) (K := F) (L := F') _
 
+omit [Field k'] [Algebra k k'] [Algebra k' F'] [Algebra k F'] [IsScalarTower k k' F']
+  [IsScalarTower k F F'] in
 /-- Separability of `F' / F`, transported to the canonical fraction fields used by the
 integral-closure API. -/
 instance isSeparable_fractionRing_integralClosure :
