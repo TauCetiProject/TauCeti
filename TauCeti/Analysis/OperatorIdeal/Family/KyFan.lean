@@ -65,7 +65,8 @@ theorem gauge_kyFan (k : ℕ) (hk : 0 < k) (A : E →L[𝕜] F) :
 variable (E F) in
 /-- Every bounded operator lies in each finite Ky Fan ideal. -/
 @[simp]
-theorem ideal_kyFan (k : ℕ) (hk : 0 < k) : (kyFan 𝕜 k hk).ideal E F = ⊤ :=
+theorem finiteSubmodule_kyFan (k : ℕ) (hk : 0 < k) :
+    ((kyFan 𝕜 k hk).operatorGauge E F).finiteSubmodule = ⊤ :=
   eq_top_iff.2 fun A _ ↦ by simp
 
 /-- Every finite Ky Fan operator-ideal family has complete normed carriers. -/
