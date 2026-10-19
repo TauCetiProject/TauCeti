@@ -39,8 +39,9 @@ variable
 
 /-- A `C^n` Riemannian metric regarded as a `C^m` Riemannian metric, for `m ≤ n`. -/
 -- The body is exposed so that the fibre metric `(g.ofLE h).toRiemannianMetric` installed as a
--- `RiemannianBundle` instance is definitionally that of `g`: curvature quantities carry
--- instance-dependent smoothness arguments, so `toRiemannianMetric_ofLE` cannot rewrite them.
+-- `RiemannianBundle` instance is definitionally that of `g`: structure fields such as
+-- `HyperbolicMetric.complete` carry instance-dependent smoothness arguments, so
+-- `toRiemannianMetric_ofLE` cannot rewrite them.
 @[expose] def ofLE (g : ContMDiffRiemannianMetric IB n F E) (h : m ≤ n) :
     ContMDiffRiemannianMetric IB m F E :=
   { g with contMDiff := g.contMDiff.of_le h }

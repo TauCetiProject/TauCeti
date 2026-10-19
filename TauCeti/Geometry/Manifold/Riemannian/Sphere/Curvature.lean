@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Sectional
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar
+public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Basic
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Immersion
@@ -38,6 +39,8 @@ every tangent space. The Gauss formula for the isometric inclusion `Sⁿ → E` 
 * `TauCeti.ricciTensor_sphere`: the Ricci tensor of the round `n`-sphere is `n - 1` times the
   metric.
 * `TauCeti.scalarCurvature_sphere`: the scalar curvature of the round `n`-sphere is `n (n - 1)`.
+* `TauCeti.scalarCurvature_sphereRoundMetric_ofLE`: the same, for the round metric regarded as a
+  smooth metric.
 
 ## References
 
@@ -224,5 +227,14 @@ theorem hasConstantSectionalCurvature_sphere :
     rw [TauCeti.finrank_tangentSpace, finrank_euclideanSpace_fin]
   rw [∇.scalarCurvature_eq_of_curvatureTensor_eq_smul_inner_sub p 1 fun w u v ↦ by
       rw [curvatureTensor_sphere, one_smul], hdim, mul_one]
+
+/-- The scalar curvature of the round metric on the unit `n`-sphere, regarded as a smooth metric,
+is `n (n - 1)`. -/
+@[simp]
+theorem scalarCurvature_sphereRoundMetric_ofLE (p : sphere (0 : E) 1) :
+    ((sphereRoundMetric (E := E) (n := n)).ofLE le_top).scalarCurvature p = n * ((n : ℝ) - 1) := by
+  rw [ContMDiffRiemannianMetric.scalarCurvature_eq_scalarCurvature_leviCivitaConnection _
+    (ContMDiffRiemannianMetric.toRiemannianMetric_ofLE _ _).symm]
+  exact scalarCurvature_sphere p
 
 end TauCeti

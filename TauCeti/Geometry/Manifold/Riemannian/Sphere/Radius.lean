@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.PositiveScalarCurvature
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Curvature
-public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Basic
 
 /-!
 # The round sphere of radius `r`
@@ -29,8 +28,6 @@ the circle `S¹` are flat.
 
 * `TauCeti.sphereRoundMetricOfRadius_inner_eq_inner_mvfderiv_smul`: the round metric of radius `r`
   is induced by the embedding `p ↦ r • p`.
-* `TauCeti.scalarCurvature_sphereRoundMetric_ofLE`: the round metric on the unit `n`-sphere has
-  scalar curvature `n (n - 1)`.
 * `TauCeti.scalarCurvature_sphereRoundMetricOfRadius`: the round `n`-sphere of radius `r` has
   scalar curvature `n (n - 1) / r²`.
 * `TauCeti.hasPositiveScalarCurvature_sphereRoundMetricOfRadius_iff`: the round `n`-sphere of
@@ -86,15 +83,6 @@ theorem sphereRoundMetricOfRadius_inner_eq_inner_mvfderiv_smul (hr : 0 < r)
       -mvfderiv_apply_eq_mfderiv_apply]
   rw [h, h, real_inner_smul_left, real_inner_smul_right, sphereRoundMetricOfRadius_inner,
     inner_tangentSpace_sphere, ← mul_assoc, sq]
-
-/-- The scalar curvature of the round metric on the unit `n`-sphere is `n (n - 1)`. -/
-@[simp]
-theorem scalarCurvature_sphereRoundMetric_ofLE (p : sphere (0 : E) 1) :
-    ((sphereRoundMetric (E := E) (n := n)).ofLE le_top).scalarCurvature p = n * ((n : ℝ) - 1) := by
-  rw [ContMDiffRiemannianMetric.scalarCurvature_def]
-  -- The fibre metric installed by `scalarCurvature_def` is `sphereRoundMetric.toRiemannianMetric`
-  -- by the exposed body of `ofLE`, which is the `RiemannianBundle` instance on the sphere.
-  exact scalarCurvature_sphere p
 
 /-- **Scalar curvature of the round sphere.** The round `n`-sphere of radius `r` has scalar
 curvature `n (n - 1) / r²`. -/
