@@ -46,8 +46,9 @@ namespace TauCeti.PDE
 variable {n : ℕ} {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
 
 /-- A weak solution of `-Δu = f` with Hölder data has a `C²` representative on an open
-set whose positive thickening lies in a relatively compact subdomain. -/
-private theorem exists_contDiffOn_two_ae_eq_on_of_holderOnWith
+set whose positive thickening lies in a relatively compact subdomain. Hölder control of
+the data is needed only on this thickening, rather than throughout the original domain. -/
+theorem exists_contDiffOn_two_ae_eq_on_of_holderOnWith
     {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1)
     {u : W1p volume Omega 2} {f : EuclideanSpace ℝ (Fin (n + 1)) → ℝ}
     (hf : MemLp f 2 (volume.restrict Omega))
