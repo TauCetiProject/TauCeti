@@ -174,6 +174,18 @@ private theorem torusCharacter_diagonalLiftWeight {A : Type v} [CommRing A]
       simp [diagonalLiftWeight, Pi.single_apply, ← ULift.down_inj, eq_comm]
     simp [hweight]
 
+/-- The character at `Eᵢⱼ` evaluates to the ratio of the normalized diagonal
+coordinates. The last coordinate is one, so this includes roots involving it. -/
+@[simp]
+theorem torusCharacter_diagonalTorusWeight {A : Type v} [CommRing A]
+    (s : ULift.{u} (Fin r) → Aˣ) (a : Fin ((r + 1) * (r + 1))) :
+    torusCharacter s (diagonalTorusWeight r a) =
+      Fin.lastCases 1 (fun k ↦ s (ULift.up k)) (finProdFinEquiv.symm a).1 /
+        Fin.lastCases 1 (fun k ↦ s (ULift.up k)) (finProdFinEquiv.symm a).2 := by
+  -- Unfold only the difference of lift weights, then use their evaluation formula.
+  simp only [diagonalTorusWeight, torusCharacter_sub,
+    torusCharacter_diagonalLiftWeight]
+
 /-- On algebra-valued points, the projective diagonal torus acts on the matrix
 algebra by conjugation with `diag(s₀, …, s_{r-1}, 1)`. -/
 @[simp]
