@@ -19,8 +19,8 @@ field-degree power, with the usual projective junk value one at the zero tuple.
 
 The local formula and its normalization follow Evertse--Ferretti, where this Euclidean height is
 used for Plücker coordinates of subspaces. The elementary API here records the zero convention,
-reindexing, and the corresponding logarithmic and affine heights. Over `ℚ`, the Euclidean height
-of a tuple of coprime integers is its Euclidean norm
+reindexing, sign changes of coordinates, and the corresponding logarithmic and affine heights.
+Over `ℚ`, the Euclidean height of a tuple of coprime integers is its Euclidean norm
 (`TauCeti.height2_intCast_eq_sqrt_of_gcd_eq_one`).
 
 ## Main definitions
@@ -317,6 +317,31 @@ theorem arakelovMulHeight_comp_equiv {ι ι' : Type*} [Finite ι] [Finite ι'] (
     rw [arakelovMulHeight_of_ne_zero hye, arakelovMulHeight_of_ne_zero hy,
       height2_comp_equiv]
 
+/-- The Euclidean height is unchanged by changing the signs of some coordinates. -/
+theorem height2_eq_of_forall_eq_or_eq_neg {ι : Type*} [Finite ι] {x y : ι → K}
+    (h : ∀ i, y i = x i ∨ y i = -x i) : height2 y = height2 x := by
+  let _ := Fintype.ofFinite ι
+  simp only [height2]
+  congr 1
+  · refine Finset.prod_congr rfl fun w _ ↦ ?_
+    congr 1
+    exact Finset.sum_congr rfl fun i _ ↦ by rcases h i with h | h <;> simp [h]
+  · refine finprod_congr fun v ↦ ?_
+    congr 1
+    exact iSup_congr fun i ↦ by rcases h i with h | h <;> simp [h]
+
+/-- The relative Euclidean projective height is unchanged by changing the signs of some
+coordinates. -/
+theorem arakelovMulHeight_eq_of_forall_eq_or_eq_neg {ι : Type*} [Finite ι] {x y : ι → K}
+    (h : ∀ i, y i = x i ∨ y i = -x i) : arakelovMulHeight y = arakelovMulHeight x := by
+  have hy : y = 0 ↔ x = 0 := by
+    simp only [funext_iff, Pi.zero_apply]
+    exact forall_congr' fun i ↦ by rcases h i with h | h <;> simp [h]
+  rcases eq_or_ne x 0 with hx | hx
+  · rw [hy.2 hx, hx]
+  · rw [arakelovMulHeight_of_ne_zero hx, arakelovMulHeight_of_ne_zero (hy.not.2 hx),
+      height2_eq_of_forall_eq_or_eq_neg h]
+
 /-- The logarithmic projective height of the zero tuple is zero. -/
 @[simp]
 theorem arakelovLogHeight_zero {ι : Type*} [Finite ι] :
@@ -343,6 +368,12 @@ theorem arakelovLogHeight_smul {ι : Type*} [Finite ι] (y : ι → K) {c : K} (
 theorem arakelovLogHeight_comp_equiv {ι ι' : Type*} [Finite ι] [Finite ι'] (e : ι ≃ ι')
     (y : ι' → K) : arakelovLogHeight (y ∘ e) = arakelovLogHeight y := by
   simp [arakelovLogHeight]
+
+/-- The logarithmic projective height is unchanged by changing the signs of some coordinates. -/
+theorem arakelovLogHeight_eq_of_forall_eq_or_eq_neg {ι : Type*} [Finite ι] {x y : ι → K}
+    (h : ∀ i, y i = x i ∨ y i = -x i) : arakelovLogHeight y = arakelovLogHeight x := by
+  rw [arakelovLogHeight_eq_log_arakelovMulHeight, arakelovLogHeight_eq_log_arakelovMulHeight,
+    arakelovMulHeight_eq_of_forall_eq_or_eq_neg h]
 
 /-- The affine multiplicative and logarithmic heights agree by definition. -/
 theorem arakelovLogHeightAff_eq_log_arakelovMulHeightAff {ι : Type*} [Finite ι] (x : ι → K) :

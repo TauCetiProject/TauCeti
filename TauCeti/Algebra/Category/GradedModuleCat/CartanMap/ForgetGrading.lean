@@ -21,7 +21,9 @@ groups factor through specialization at `q = 1`.
 The resulting square with the graded and ungraded Cartan maps commutes. An underlying module need
 not admit a grading, so the forgetful map need not be an isomorphism in general. It is an
 isomorphism when matched graded and ungraded simple families give bases of the two Grothendieck
-groups: after specialization, forgetting sends one basis to the other. No decomposition hypothesis
+groups: after specialization, forgetting sends one basis to the other. When both Cartan maps are
+bijective, forgetting grading on projective `K₀` is bijective exactly when it is on `G₀`
+(`TauCeti.gradedFiniteProjectiveModulesForgetK0_bijective_iff`). No decomposition hypothesis
 on the algebra grading is needed for the comparison square, since the graded projective subcategory
 is defined by projectivity of the underlying module.
 
@@ -316,5 +318,21 @@ theorem gradedFiniteModulesForgetK0_comp_gradedCartanMapSpecialized :
     gradedCartanMap_of, gradedFiniteModulesForgetK0_mk_of,
     gradedFiniteProjectiveModulesForgetK0_mk_of, AddMonoidHom.coe_toIntLinearMap,
     gradedFiniteProjectiveModulesForget_obj, cartanMap_of, gradedFiniteModulesForget_obj]
+
+/-- **Forgetting grading is bijective on projective `K₀` exactly when it is on `G₀`**, at
+`q = 1` and provided both the graded and the ungraded Cartan maps are bijective, for instance
+over a left Noetherian algebra whose finitely generated modules, graded or not, have finite
+projective dimension. The two forgetful maps
+then differ by the Cartan isomorphisms in the commuting square
+`TauCeti.gradedFiniteModulesForgetK0_comp_gradedCartanMapSpecialized`. -/
+theorem gradedFiniteProjectiveModulesForgetK0_bijective_iff
+    (hc : Function.Bijective (cartanMap A)) (hgc : Function.Bijective (gradedCartanMap 𝒜)) :
+    Function.Bijective (gradedFiniteProjectiveModulesForgetK0 𝒜) ↔
+      Function.Bijective (gradedFiniteModulesForgetK0 𝒜) := by
+  have hsq := congrArg DFunLike.coe
+    (gradedFiniteModulesForgetK0_comp_gradedCartanMapSpecialized 𝒜)
+  simp only [LinearMap.coe_comp, AddMonoidHom.coe_toIntLinearMap] at hsq
+  rw [← hc.of_comp_iff' (gradedFiniteProjectiveModulesForgetK0 𝒜), ← hsq]
+  exact (LaurentSpecialization.map_bijective 1 hgc).of_comp_iff _
 
 end TauCeti
