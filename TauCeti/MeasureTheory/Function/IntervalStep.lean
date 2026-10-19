@@ -53,7 +53,7 @@ theorem integrableOn_intervalStep (a b δ : ℝ) (g : ℝ → E) :
     simpa only [image_image, Function.comp_def] using
       h.image (fun n : ℕ ↦ g (a + n * δ))
   obtain ⟨C, hC⟩ := hfinite.isBounded.exists_norm_le
-  apply (integrable_const C).mono' hm.aestronglyMeasurable
+  apply volume.integrableOn_of_bounded measure_Ioc_lt_top.ne hm.aestronglyMeasurable
   exact (ae_restrict_mem measurableSet_Ioc).mono fun t ht ↦
     hC _ (mem_image_of_mem _ ⟨ht.1.le, ht.2⟩)
 
