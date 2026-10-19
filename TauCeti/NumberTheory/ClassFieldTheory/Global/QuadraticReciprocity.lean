@@ -250,7 +250,7 @@ theorem coe_hilbertSign_sum_finiteHilbertInvariantAt_add_sum_infiniteHilbertInva
     hℓ.one_lt.ne' (Nat.dvd_one.1 (Int.natCast_dvd_natCast.1 (dvd_neg.1 h)))
   rw [coe_hilbertSign_sum_finiteHilbertInvariantAt_add_sum_infiniteHilbertInvariantAt_eq_mul hp hm
     (by simpa using ha) hb, congrArg Units.val (hilbertSymbol_units_map_eq 2 (by simp [ha])
-      (by simp [hb])) |>.trans (hilbertSymbol_neg_one_natCast_padicTwo
+      (by simp [hb])) |>.trans (coe_hilbertSymbol_neg_one_natCast_padicTwo
         ((Fact.out : p.Prime).odd_of_ne_two hp))]
 
 /-- **The first supplementary law is Hilbert reciprocity for `-1` and an odd prime.** For an odd
@@ -282,7 +282,7 @@ theorem coe_hilbertSign_sum_finiteHilbertInvariantAt_add_sum_infiniteHilbertInva
     hℓ2 ((Nat.prime_dvd_prime_iff_eq hℓ Nat.prime_two).1 (Int.natCast_dvd_natCast.1 h))
   rw [coe_hilbertSign_sum_finiteHilbertInvariantAt_add_sum_infiniteHilbertInvariantAt_eq_mul hp hm
     (by simpa using ha) hb, congrArg Units.val (hilbertSymbol_units_map_eq 2 (by simp [ha])
-      (by simp [hb])) |>.trans (hilbertSymbol_two_natCast_padicTwo
+      (by simp [hb])) |>.trans (coe_hilbertSymbol_two_natCast_padicTwo
         ((Fact.out : p.Prime).odd_of_ne_two hp))]
 
 /-- **The second supplementary law is Hilbert reciprocity for `2` and an odd prime.** For an odd
