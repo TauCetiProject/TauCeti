@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import TauCeti.Analysis.Fredholm.ClosedRange
+public import TauCeti.Analysis.ODE.EnergyEstimate.Adjoint
 public import TauCeti.Analysis.ODE.EnergyEstimate.Sobolev
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
 
@@ -75,23 +76,6 @@ section Orthogonal
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
 
-omit [InnerProductSpace ℝ E] [CompleteSpace E] in
-/-- An `L²` path is locally integrable on the line. -/
-private theorem locallyIntegrableOn_Lp
-    (g : Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))) :
-    LocallyIntegrableOn g ((⊤ : Opens ℝ) : Set ℝ) volume :=
-  locallyIntegrableOn_of_locallyIntegrable_restrict
-    ((Lp.memLp g).locallyIntegrable (by norm_num))
-
-omit [CompleteSpace E] in
-/-- The coefficient applied to an `L²` path is the `L²` path given by Hölder's inequality. -/
-private theorem holder_ae_eq (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
-    (v : Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))) :
-    ⇑((ContinuousLinearMap.id ℝ (E →L[ℝ] E)).holder 2 AL v)
-      =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] fun s ↦ AL s (v s) := by
-  filter_upwards [(ContinuousLinearMap.id ℝ (E →L[ℝ] E)).coeFn_holder (r := 2) AL v] with s hs
-  simp [hs]
-
 /-- Pairing `v` with `D_A (φ • e)` for a test function `φ` and a vector `e` gives the pairing of
 `e` with `∫ φ' v + ∫ φ A v`, when `A` is almost everywhere symmetric. Both directions of the
 identification of the cokernel of `D_A` with the kernel of `D_{-A}` are read off from it. -/
@@ -102,9 +86,11 @@ private theorem inner_trajectoryOperator_smulRightW1pL
     (φ : 𝓓((⊤ : Opens ℝ), ℝ)) :
     ⟪trajectoryOperator (p := 2) AL (smulRightW1pL e (W1p.ofTestFunctionₗ volume ⊤ 2 φ)), v⟫_ℝ =
       ⟪e, (∫ s, lineDeriv ℝ (φ : ℝ → ℝ) s 1 • v s) + ∫ s, (φ : ℝ → ℝ) s • AL s (v s)⟫_ℝ := by
-  have hi1 := integrable_lineDeriv_smul_of_locallyIntegrableOn (locallyIntegrableOn_Lp v) φ 1
-  have hi2 := integrable_smul_of_locallyIntegrableOn
-    ((locallyIntegrableOn_Lp _).congr (holder_ae_eq AL v)) φ
+  have hi1 := integrable_lineDeriv_smul_of_locallyIntegrableOn
+    (Lp.locallyIntegrableOn v (by norm_num)) φ 1
+  have hi2 := integrable_smul_of_locallyIntegrableOn (w := fun s ↦ AL s (v s))
+    ((Lp.locallyIntegrableOn _ (by norm_num)).congr
+      ((ContinuousLinearMap.id ℝ (E →L[ℝ] E)).coeFn_holder (r := 2) AL v)) φ
   have hψ : ContDiff ℝ 1 fun s ↦ (φ : ℝ → ℝ) s • e :=
     (φ.contDiff.of_le (by exact_mod_cast le_top)).smul contDiff_const
   have hDu := trajectoryOperator_apply_ae_eq_deriv_add AL _
@@ -122,6 +108,25 @@ private theorem inner_trajectoryOperator_smulRightW1pL
   simp only [map_smul, inner_add_left, inner_smul_left, inner_smul_right, RCLike.conj_to_real,
     hsyms.apply_clm]
 
+/-- An element `z` of `W^{1,2}(ℝ, E)` lies in the kernel of `D_{-A}` exactly when its value `v`
+has weak derivative `A v`. -/
+private theorem trajectoryOperator_neg_eq_zero_iff
+    (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (z : WeakDerivStep volume ⊤ 2
+      (ContinuousLinearMap.id ℝ (Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
+    trajectoryOperator (-AL) z = 0 ↔ HasWeakLineDerivOn volume ⊤
+      (prev (ContinuousLinearMap.id ℝ (Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) z
+        : Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+      (fun s ↦ AL s
+        (prev (ContinuousLinearMap.id ℝ (Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) z s))
+      1 := by
+  rw [trajectoryOperator_eq_iff_hasWeakLineDerivOn]
+  refine ⟨fun h ↦ h.congr_ae_deriv ?_, fun h ↦ h.congr_ae_deriv ?_⟩ <;>
+  · filter_upwards [Lp.coeFn_zero E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)),
+      Lp.coeFn_neg AL] with s h0 hneg
+    rw [h0, hneg]
+    simp
+
 /-- **A path orthogonal to the range solves the adjoint equation weakly.** If the coefficient of
 the trajectory operator `D_A u = u' + A u` is almost everywhere symmetric, then every
 `v ∈ L²(ℝ, E)` orthogonal to the range of `D_A` has weak derivative `A v`: it is a weak solution
@@ -132,8 +137,9 @@ theorem hasWeakLineDerivOn_of_mem_orthogonal_range_trajectoryOperator
     {v : Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
     (hv : v ∈ (trajectoryOperator (p := 2) AL).rangeᗮ) :
     HasWeakLineDerivOn volume ⊤ v (fun s ↦ AL s (v s)) 1 := by
-  refine hasWeakLineDerivOn_iff_testFunction.mpr ⟨inferInstance, locallyIntegrableOn_Lp v,
-    (locallyIntegrableOn_Lp _).congr (holder_ae_eq AL v), fun φ ↦ ?_⟩
+  refine hasWeakLineDerivOn_iff_testFunction.mpr ⟨inferInstance,
+    Lp.locallyIntegrableOn v (by norm_num), (Lp.locallyIntegrableOn _ (by norm_num)).congr
+      ((ContinuousLinearMap.id ℝ (E →L[ℝ] E)).coeFn_holder (r := 2) AL v), fun φ ↦ ?_⟩
   -- The pairing of `∫ φ' v + ∫ φ A v` with every vector vanishes, so this vector is zero.
   have hpair (e : E) := (inner_trajectoryOperator_smulRightW1pL hsym v e φ).symm.trans
     ((Submodule.mem_orthogonal _ _).mp hv _ (LinearMap.mem_range_self _ _))
@@ -161,16 +167,12 @@ theorem orthogonal_range_trajectoryOperator_le_map_ker
     intro r
     refine (by simpa using h.smul_direction r : HasWeakLineDerivOn _ _ _ _ r).congr_ae_deriv ?_
     filter_upwards [lift.coeFn_compLp ((ContinuousLinearMap.id ℝ (E →L[ℝ] E)).holder 2 AL v),
-      holder_ae_eq AL v] with s hs hAs
+      (ContinuousLinearMap.id ℝ (E →L[ℝ] E)).coeFn_holder (r := 2) AL v] with s hs hAs
     simp [D, lift, hs, hAs]
   refine ⟨mk _ v D hD, ?_, by simp⟩
   rw [SetLike.mem_coe, LinearMap.mem_ker, ContinuousLinearMap.coe_coe,
-    trajectoryOperator_eq_iff_hasWeakLineDerivOn, prev_mk]
-  refine h.congr_ae_deriv ?_
-  filter_upwards [Lp.coeFn_zero E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)),
-    Lp.coeFn_neg AL] with s h0 hneg
-  rw [h0, hneg]
-  simp
+    trajectoryOperator_neg_eq_zero_iff, prev_mk]
+  exact h
 
 /-- **The kernel of the formal adjoint is orthogonal to the range.** If the coefficient of
 `D_A u = u' + A u` is almost everywhere symmetric and `E` is finite dimensional, the value of
@@ -185,12 +187,8 @@ theorem map_ker_le_orthogonal_range_trajectoryOperator [FiniteDimensional ℝ E]
   rintro _ ⟨z, hz, rfl⟩
   set v := prev (ContinuousLinearMap.id ℝ (Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) z
   -- The value `v` of `z` has weak derivative `A v`.
-  have h : HasWeakLineDerivOn volume ⊤ v (fun s ↦ AL s (v s)) 1 := by
-    refine ((trajectoryOperator_eq_iff_hasWeakLineDerivOn (-AL) z 0).mp hz).congr_ae_deriv ?_
-    filter_upwards [Lp.coeFn_zero E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)),
-      Lp.coeFn_neg AL] with s h0 hneg
-    rw [h0, hneg]
-    simp only [Pi.zero_apply, Pi.neg_apply, neg_apply, zero_sub, neg_neg, v]
+  have h : HasWeakLineDerivOn volume ⊤ v (fun s ↦ AL s (v s)) 1 :=
+    (trajectoryOperator_neg_eq_zero_iff AL z).mp hz
   -- The paths `u` with `⟪v, D_A u⟫ = 0` form a closed subspace containing the test fields.
   let K := ((innerSL ℝ v).comp (trajectoryOperator (p := 2) AL)).ker
   have hK := ((innerSL ℝ v).comp (trajectoryOperator (p := 2) AL)).isClosed_ker
@@ -251,13 +249,26 @@ private theorem finiteDimensional_ker_trajectoryOperator_neg
     (hdbot : Tendsto (deriv A) atBot (𝓝 0)) (hdtop : Tendsto (deriv A) atTop (𝓝 0))
     (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
-    FiniteDimensional ℝ (trajectoryOperator (p := 2) (-AL)).ker :=
-  finiteDimensional_ker_trajectoryOperator (A := -A) hA.neg
-    (fun s ↦ by simpa using LinearMap.IsSymmetric.zero.sub (hsym s)) hα
-    (Aminus := -Aminus) (Aplus := -Aplus) (by simpa using hminus) (by simpa using hplus)
-    hbot.neg htop.neg (by simpa [deriv.neg'] using hdbot.neg)
-    (by simpa [deriv.neg'] using hdtop.neg) (-AL)
+    FiniteDimensional ℝ (trajectoryOperator (p := 2) (-AL)).ker := by
+  obtain ⟨hB, hBsym, hBminus, hBplus, hdBbot, hdBtop⟩ :=
+    neg_trajectory_hypotheses hA hsym hminus hplus hdbot hdtop
+  exact finiteDimensional_ker_trajectoryOperator hB hBsym hα hBminus hBplus hbot.neg htop.neg
+    hdBbot hdBtop (-AL)
     (by filter_upwards [Lp.coeFn_neg AL, hAL] with s hs hAs; simp only [hs, Pi.neg_apply, hAs])
+
+/-- Under the hypotheses of `TauCeti.WeakDerivStep.isClosed_range_trajectoryOperator`, the range
+of `D_A` is complete, so its orthogonal complement in `L²(ℝ, E)` is a complement of it. -/
+private theorem completeSpace_range_trajectoryOperator
+    (hA : ContDiff ℝ 1 A) (hsym : ∀ s, (A s).toLinearMap.IsSymmetric)
+    {Aminus Aplus : E →L[ℝ] E} {α : ℝ} (hα : 0 < α)
+    (hminus : ∀ v, α * ‖v‖ ≤ ‖Aminus v‖) (hplus : ∀ v, α * ‖v‖ ≤ ‖Aplus v‖)
+    (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus))
+    (hdbot : Tendsto (deriv A) atBot (𝓝 0)) (hdtop : Tendsto (deriv A) atTop (𝓝 0))
+    (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
+    CompleteSpace (trajectoryOperator (p := 2) AL).range :=
+  (isClosed_range_trajectoryOperator hA hsym hα hminus hplus hbot htop hdbot hdtop AL
+    hAL).completeSpace_coe
 
 /-- **The cokernel of the trajectory operator is finite dimensional.** For a `C¹` family of
 symmetric operators with invertible limits at both ends and derivative tending to zero, the
@@ -272,9 +283,8 @@ theorem finiteDimensional_coker_trajectoryOperator
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
     FiniteDimensional ℝ (Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) ⧸
       (trajectoryOperator (p := 2) AL).range) := by
-  have : CompleteSpace (trajectoryOperator (p := 2) AL).range :=
-    (isClosed_range_trajectoryOperator hA hsym hα hminus hplus hbot htop hdbot hdtop AL
-      hAL).completeSpace_coe
+  have := completeSpace_range_trajectoryOperator hA hsym hα hminus hplus hbot htop hdbot hdtop AL
+    hAL
   -- The orthogonal complement of the range lies in the image of the kernel of `D_{-A}`.
   have := finiteDimensional_ker_trajectoryOperator_neg hA hsym hα hminus hplus hbot htop hdbot
     hdtop AL hAL
@@ -316,9 +326,8 @@ theorem index_trajectoryOperator
     (trajectoryOperator (p := 2) AL).index =
       (Module.finrank ℝ (trajectoryOperator (p := 2) AL).ker : ℤ) -
         Module.finrank ℝ (trajectoryOperator (p := 2) (-AL)).ker := by
-  have : CompleteSpace (trajectoryOperator (p := 2) AL).range :=
-    (isClosed_range_trajectoryOperator hA hsym hα hminus hplus hbot htop hdbot hdtop AL
-      hAL).completeSpace_coe
+  have := completeSpace_range_trajectoryOperator hA hsym hα hminus hplus hbot htop hdbot hdtop AL
+    hAL
   -- The value map `W^{1,2}(ℝ, E) → L²(ℝ, E)` is injective.
   have hinj : Function.Injective
       (prevL (ContinuousLinearMap.id ℝ (Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :=

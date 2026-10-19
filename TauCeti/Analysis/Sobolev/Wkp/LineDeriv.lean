@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
 import Mathlib.Analysis.InnerProductSpace.Adjoint
 import Mathlib.Analysis.InnerProductSpace.PiL2
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # Directional derivatives of higher-order Sobolev functions
@@ -182,7 +183,7 @@ private theorem W1p.exists_value_eq_gradient_eq (b : OrthonormalBasis ι ℝ E)
     rw [hsum, innerSL_apply_apply, sum_inner]
     simp [hcomp, inner_smul_left, OrthonormalBasis.inner_eq_ite]
   have hu : LocallyIntegrableOn (u : E → ℝ) Omega mu :=
-    locallyIntegrableOn_of_locallyIntegrable_restrict ((Lp.memLp u).locallyIntegrable Fact.out)
+    Lp.locallyIntegrableOn u Fact.out
   have hw : HasWeakFDerivOn mu Omega u (fun x => innerSL ℝ (g x)) :=
     b.toBasis.hasWeakFDerivOn_of_forall hu fun k => by
       simpa only [OrthonormalBasis.coe_toBasis] using (hd k).congr_ae_deriv (hg k).symm
