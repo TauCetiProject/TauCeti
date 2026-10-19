@@ -38,7 +38,8 @@ largest summand, so Mathlib's dominant-antidiagonal theorem applies.
 * `MvPowerSeries.IsRestricted.exists_achievesGaussNorm_max`: a nonzero restricted series has a
   largest norm-achieving exponent for any monomial order, and
   `MvPowerSeries.IsRestricted.norm_coeff_mul_norm_coeff_lt`: the product of the coefficients at
-  such exponents of two series dominates every other summand of the product coefficient.
+  such exponents of two series dominates every other summand of the product coefficient;
+  `MvPowerSeries.IsRestricted.exists_norm_coeff_mul_norm_coeff_lt` chooses such exponents.
 * `MvPowerSeries.exists_achievesGaussNorm` and `MvPowerSeries.exists_norm_coeff_mul_prod_gap`: a
   restricted series attains its norm, and its smaller weighted coefficient norms stay below a
   constant smaller than its norm.
@@ -329,6 +330,25 @@ theorem IsRestricted.exists_achievesGaussNorm_max (m : MonomialOrder σ) {f : Mv
     exact ⟨by simpa [S] using (hmax i hi_mem).trans_eq h.symm, h⟩
   exact (not_le_of_gt ht) (hnmax t ht_mem)
 
+omit [IsUltrametricDist R] in
+/-- A nonzero restricted series has positive Gauss norm. -/
+theorem IsRestricted.gaussNorm_pos {f : MvPowerSeries σ R} (hf : IsRestricted c f)
+    (hf0 : f ≠ 0) : 0 < gaussNorm norm c f :=
+  (gaussNorm_nonneg norm c f norm_nonneg).lt_of_ne' fun h ↦ hf0 <|
+    (gaussNorm_eq_zero_iff norm c f norm_zero norm_nonneg (fun _ ↦ norm_eq_zero.mp)
+      (fun i ↦ (hc i).out) hf.hasGaussNorm).mp h
+
+omit [IsUltrametricDist R] in
+/-- A nonzero restricted series has a nonzero coefficient at every exponent where it attains its
+Gauss norm. -/
+theorem IsRestricted.coeff_ne_zero_of_achievesGaussNorm {f : MvPowerSeries σ R}
+    (hf : IsRestricted c f) (hf0 : f ≠ 0) {i : σ →₀ ℕ} (hi : AchievesGaussNorm norm c f i) :
+    coeff i f ≠ 0 := by
+  intro h
+  rw [AchievesGaussNorm, h, norm_zero, zero_mul] at hi
+  exact (hf.gaussNorm_pos hf0).ne hi
+
+omit [IsUltrametricDist R] in
 /-- **The dominant product summand.** Let `i` and `j` be the largest exponents, for a monomial
 order `m`, at which nonzero restricted series `f` and `g` attain their Gauss norms. Every other
 summand `coeff p.1 f * coeff p.2 g` of the coefficient of `f * g` at `i + j` has a strictly
@@ -341,12 +361,6 @@ theorem IsRestricted.norm_coeff_mul_norm_coeff_lt [DecidableEq σ] (m : Monomial
     (hjmax : ∀ t, m.toSyn j < m.toSyn t → ‖coeff t g‖ * t.prod (c · ^ ·) < gaussNorm norm c g)
     {p : (σ →₀ ℕ) × (σ →₀ ℕ)} (hp : p ∈ Finset.antidiagonal (i + j)) (hne : p ≠ (i, j)) :
     ‖coeff p.1 f‖ * ‖coeff p.2 g‖ < ‖coeff i f‖ * ‖coeff j g‖ := by
-  have hfp : 0 < gaussNorm norm c f := by
-    rw [← norm_eq_gaussNorm (⟨f, hf⟩ : IsRestricted.subring c)]
-    exact norm_pos_iff.mpr fun h ↦ hf0 (congrArg Subtype.val h)
-  have hgp : 0 < gaussNorm norm c g := by
-    rw [← norm_eq_gaussNorm (⟨g, hg⟩ : IsRestricted.subring c)]
-    exact norm_pos_iff.mpr fun h ↦ hg0 (congrArg Subtype.val h)
   have hp' : p.1 + p.2 = i + j := Finset.mem_antidiagonal.mp hp
   -- Every summand at this exponent has the same positive weight.
   have hweight : p.1.prod (c · ^ ·) * p.2.prod (c · ^ ·) =
@@ -362,12 +376,12 @@ theorem IsRestricted.norm_coeff_mul_norm_coeff_lt [DecidableEq σ] (m : Monomial
     · have hp2 : m.toSyn j < m.toSyn p.2 :=
         lt_of_add_lt_add_left (hsyn ▸ add_lt_add_left h (m.toSyn p.2))
       exact mul_lt_mul' (le_gaussNorm norm c f hf.hasGaussNorm p.1)
-        (hjmax p.2 hp2) (mul_nonneg (norm_nonneg _) (prod_pow_pos _).le) hfp
+        (hjmax p.2 hp2) (mul_nonneg (norm_nonneg _) (prod_pow_pos _).le) (hf.gaussNorm_pos hf0)
     · have hp1 : m.toSyn i < m.toSyn p.1 :=
         lt_of_add_lt_add_right (hsyn ▸ add_lt_add_right h (m.toSyn p.1))
       simpa only [mul_comm] using
         mul_lt_mul' (le_gaussNorm norm c g hg.hasGaussNorm p.2) (himax p.1 hp1)
-          (mul_nonneg (norm_nonneg _) (prod_pow_pos _).le) hgp
+          (mul_nonneg (norm_nonneg _) (prod_pow_pos _).le) (hg.gaussNorm_pos hg0)
   rw [← hi, ← hj] at hlt
   -- Cancel the common positive weight.
   apply (mul_lt_mul_iff_of_pos_right
@@ -379,6 +393,33 @@ theorem IsRestricted.norm_coeff_mul_norm_coeff_lt [DecidableEq σ] (m : Monomial
         (‖coeff j g‖ * j.prod (c · ^ ·)) := hlt
     _ = _ := by ring
 
+omit [IsUltrametricDist R] in
+/-- **A dominant product summand exists.** Nonzero restricted series `f` and `g` attain their
+Gauss norms at exponents `i` and `j` that are not attained at any proper multiple
+`i + s` or `j + s`, and such that `coeff i f * coeff j g` has a strictly larger product of
+coefficient norms than every other summand of the coefficient of `f * g` at `i + j`. -/
+theorem IsRestricted.exists_norm_coeff_mul_norm_coeff_lt [DecidableEq σ] {f g : MvPowerSeries σ R}
+    (hf : IsRestricted c f) (hg : IsRestricted c g) (hf0 : f ≠ 0) (hg0 : g ≠ 0) :
+    ∃ i j, AchievesGaussNorm norm c f i ∧ AchievesGaussNorm norm c g j ∧
+      (∀ s ≠ 0, ‖coeff (i + s) f‖ * (i + s).prod (c · ^ ·) < gaussNorm norm c f) ∧
+      (∀ s ≠ 0, ‖coeff (j + s) g‖ * (j + s).prod (c · ^ ·) < gaussNorm norm c g) ∧
+      ∀ p ∈ Finset.antidiagonal (i + j), p ≠ (i, j) →
+        ‖coeff p.1 f‖ * ‖coeff p.2 g‖ < ‖coeff i f‖ * ‖coeff j g‖ := by
+  classical
+  -- Choose lexicographically largest norm-achieving exponents. The order is only proof data.
+  let : LinearOrder σ := linearOrderOfSTO (Function.swap WellOrderingRel)
+  have : WellFoundedGT σ := (WellOrderingRel.isWellOrder (α := σ)).wf.mono fun _ _ h ↦ h
+  let m : MonomialOrder σ := MonomialOrder.lex
+  obtain ⟨i, hi, himax⟩ := hf.exists_achievesGaussNorm_max m hf0
+  obtain ⟨j, hj, hjmax⟩ := hg.exists_achievesGaussNorm_max m hg0
+  -- A proper multiple is larger in every monomial order.
+  have hlt (k s : σ →₀ ℕ) (hs : s ≠ 0) : m.toSyn k < m.toSyn (k + s) := by
+    rw [map_add]
+    exact lt_add_of_pos_right _
+      (m.toSyn_lt_iff_ne_zero.mpr ((m.toSyn_eq_zero_iff s).not.mpr hs))
+  exact ⟨i, j, hi, hj, fun s hs ↦ himax _ (hlt i s hs), fun s hs ↦ hjmax _ (hlt j s hs),
+    fun p hp hne ↦ hf.norm_coeff_mul_norm_coeff_lt m hg hf0 hg0 hi himax hj hjmax hp hne⟩
+
 /-- The Gauss norm of a product of restricted series is the product of their Gauss norms when
 the coefficient norm is multiplicative. Positive polyradii are arbitrary. -/
 theorem IsRestricted.gaussNorm_mul [NormMulClass R] {f g : MvPowerSeries σ R}
@@ -389,17 +430,12 @@ theorem IsRestricted.gaussNorm_mul [NormMulClass R] {f g : MvPowerSeries σ R}
   · simp [hf0, gaussNorm_zero (R := R) norm c norm_zero]
   by_cases hg0 : g = 0
   · simp [hg0, gaussNorm_zero (R := R) norm c norm_zero]
-  -- Choose lexicographically largest norm-achieving exponents. The order is only proof data.
-  let : LinearOrder σ := linearOrderOfSTO (Function.swap WellOrderingRel)
-  have : WellFoundedGT σ := (WellOrderingRel.isWellOrder (α := σ)).wf.mono fun _ _ h ↦ h
-  obtain ⟨i, hi, himax⟩ := hf.exists_achievesGaussNorm_max MonomialOrder.lex hf0
-  obtain ⟨j, hj, hjmax⟩ := hg.exists_achievesGaussNorm_max MonomialOrder.lex hg0
+  obtain ⟨i, j, hi, hj, -, -, hdom⟩ := hf.exists_norm_coeff_mul_norm_coeff_lt hg hf0 hg0
   refine gaussNorm_mul_eq_mul norm c f g hf.hasGaussNorm hg.hasGaussNorm
     (hf.mul hg).hasGaussNorm norm_nonneg norm_zero
     IsUltrametricDist.isNonarchimedean_norm norm_mul norm_neg
     (fun _ ↦ norm_eq_zero.mp) (fun i ↦ (hc i).out) ⟨i, j, hi, hj, fun p hp hne ↦ ?_⟩
-  simpa only [norm_mul] using
-    hf.norm_coeff_mul_norm_coeff_lt MonomialOrder.lex hg hf0 hg0 hi himax hj hjmax hp hne
+  simpa only [norm_mul] using hdom p hp hne
 
 /-- The Gauss norm inherits multiplicativity from the coefficient norm. -/
 instance [NormMulClass R] : NormMulClass (IsRestricted.subring (R := R) c) where

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Ring.MulUnit
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
+import TauCeti.Analysis.Normed.Group.Ultra
 
 /-!
 # Units of restricted power series
@@ -28,8 +29,9 @@ extend to such rings.
 When the norm of `R` is multiplicative and `R` is nontrivial, the converse holds: a restricted
 series is a unit exactly when its constant coefficient is a unit and strictly dominates the
 weighted norm `‖aₜ‖ cᵗ` of every other coefficient. Restrictedness turns these pointwise strict
-inequalities into a uniform one, which is what the Neumann series needs. Over a field the
-constant coefficient need only be nonzero. These criteria hold at arbitrary positive polyradii.
+inequalities into a uniform one, which is what the Neumann series needs. Over a field, or any
+division ring, the constant coefficient need only be nonzero. These criteria hold at arbitrary
+positive polyradii.
 
 ## Main results
 
@@ -43,8 +45,8 @@ constant coefficient need only be nonzero. These criteria hold at arbitrary posi
   unit.
 * `MvPowerSeries.norm_coeff_mul_prod_lt_of_isUnit`: for a multiplicative coefficient norm, the
   constant coefficient of a unit strictly dominates every other weighted coefficient.
-* `MvPowerSeries.isUnit_iff_isUnit_constantCoeff_and_norm_coeff_mul_prod_lt` and, over a field,
-  `MvPowerSeries.isUnit_iff_constantCoeff_ne_zero_and_norm_coeff_mul_prod_lt`: the units of
+* `MvPowerSeries.isUnit_iff_isUnit_constantCoeff_and_norm_coeff_mul_prod_lt` and, over a division
+  ring, `MvPowerSeries.isUnit_iff_constantCoeff_ne_zero_and_norm_coeff_mul_prod_lt`: the units of
   `R{X/c}`.
 
 ## References
@@ -64,49 +66,27 @@ section NormedRing
 
 variable {σ R : Type*} [NormedRing R] [IsUltrametricDist R] {c : σ → ℝ}
 
-/-- For a unit `a` of `R`, the constant series `a⁻¹` is the inverse of the constant series `a`. -/
-private theorem C_inv_mul_C (a : Rˣ) :
-    (⟨C ((a⁻¹ : Rˣ) : R), isRestricted_C c _⟩ : IsRestricted.subring (R := R) c) *
-      ⟨C (a : R), isRestricted_C c _⟩ = 1 :=
-  Subtype.ext <| by simp [← map_mul]
-
 /-- The factorization `f = a * (1 - a⁻¹ * (a - f))` behind the Neumann series criterion. -/
 private theorem eq_C_mul_one_sub (a : Rˣ) (f : IsRestricted.subring (R := R) c) :
     f = ⟨C (a : R), isRestricted_C c _⟩ *
       (1 - ⟨C ((a⁻¹ : Rˣ) : R), isRestricted_C c _⟩ * (⟨C (a : R), isRestricted_C c _⟩ - f)) := by
   have h : (⟨C (a : R), isRestricted_C c _⟩ : IsRestricted.subring (R := R) c) *
       ⟨C ((a⁻¹ : Rˣ) : R), isRestricted_C c _⟩ = 1 :=
-    Subtype.ext <| by simp [← map_mul]
+    (Units.map
+      (C.codRestrict (IsRestricted.subring (R := R) c) (isRestricted_C c)).toMonoidHom a).mul_inv
   rw [mul_sub, mul_one, ← mul_assoc, h, one_mul, sub_sub_cancel]
 
 variable [∀ i, Fact (0 < c i)]
 
-/-- Constant series preserve multiplicative units: multiplying a restricted series by a constant
-`u` scales every weighted coefficient norm by `‖u‖`. -/
-theorem isNormMulUnit_C {u : R} (hu : IsNormMulUnit u) :
-    IsNormMulUnit (⟨C u, isRestricted_C c u⟩ : IsRestricted.subring (R := R) c) := by
-  refine (isNormMulUnit_iff _).mpr ⟨hu.isUnit.map (C.codRestrict _ (isRestricted_C c)), fun f ↦
-    le_antisymm ((norm_mul_le _ _).trans_eq (by rw [norm_C])) ?_⟩
-  rw [norm_C]
-  rcases (norm_nonneg u).eq_or_lt with h | h
-  · rw [← h, zero_mul]
-    exact norm_nonneg _
-  rw [← le_div_iff₀' h, norm_le_iff (div_nonneg (norm_nonneg _) h.le)]
-  intro t
-  rw [le_div_iff₀' h, ← mul_assoc, ← hu.norm_mul]
-  simpa [coeff_C_mul] using
-    norm_coeff_mul_prod_le ((⟨C u, isRestricted_C c u⟩ : IsRestricted.subring (R := R) c) * f) t
-
-/-- If `‖f - a‖ < ‖a‖` for a constant `a`, then `f` has norm `‖a‖`. -/
-theorem norm_eq_of_norm_sub_C_lt {a : R} {f : IsRestricted.subring (R := R) c}
-    (hf : ‖f - ⟨C a, isRestricted_C c a⟩‖ < ‖a‖) : ‖f‖ = ‖a‖ := by
-  rw [← norm_C (c := c) a] at hf ⊢
-  rw [← add_sub_cancel ⟨C a, isRestricted_C c a⟩ f,
-    IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm hf.ne', max_eq_left hf.le]
-
 section NormOne
 
 variable [NormOneClass R]
+
+/-- Constant series preserve multiplicative units, since taking constant series is a
+norm-preserving ring homomorphism. -/
+theorem isNormMulUnit_C {u : R} (hu : IsNormMulUnit u) :
+    IsNormMulUnit (⟨C u, isRestricted_C c u⟩ : IsRestricted.subring (R := R) c) :=
+  hu.map (C.codRestrict (IsRestricted.subring (R := R) c) (isRestricted_C c)) (norm_C (c := c))
 
 /-- If `‖f - a‖ < ‖a‖` for a multiplicative unit `a`, then `a⁻¹ * (a - f)` has norm less than
 one. -/
@@ -143,9 +123,9 @@ theorem hasSum_inverse_of_norm_sub_C_lt {a : Rˣ} (ha : IsNormMulUnit (a : R))
       (Ring.inverse f) := by
   have hA := (isNormMulUnit_C (c := c) ha).isUnit
   have hB : Ring.inverse (⟨C (a : R), isRestricted_C c _⟩ : IsRestricted.subring (R := R) c) =
-      ⟨C ((a⁻¹ : Rˣ) : R), isRestricted_C c _⟩ := by
-    rw [← one_mul (Ring.inverse _), eq_comm, Ring.eq_mul_inverse_iff_mul_eq _ _ _ hA]
-    exact C_inv_mul_C a
+      ⟨C ((a⁻¹ : Rˣ) : R), isRestricted_C c _⟩ :=
+    Ring.inverse_unit
+      (Units.map (C.codRestrict (IsRestricted.subring (R := R) c) (isRestricted_C c)).toMonoidHom a)
   have hf' : Ring.inverse f = Ring.inverse (1 - ⟨C ((a⁻¹ : Rˣ) : R), isRestricted_C c _⟩ *
       (⟨C (a : R), isRestricted_C c _⟩ - f)) * ⟨C ((a⁻¹ : Rˣ) : R), isRestricted_C c _⟩ := by
     conv_lhs => rw [eq_C_mul_one_sub a f]
@@ -160,7 +140,9 @@ theorem norm_inverse_of_norm_sub_C_lt {a : R} (ha : IsNormMulUnit a)
     ‖Ring.inverse f‖ = ‖a‖⁻¹ := by
   obtain ⟨u, hu⟩ := (isNormMulUnit_of_norm_sub_C_lt ha hf).isUnit
   have h := (Units.isNormMulUnit_iff_norm_inv u).mp (hu ▸ isNormMulUnit_of_norm_sub_C_lt ha hf)
-  rw [← hu, Ring.inverse_unit, h, hu, norm_eq_of_norm_sub_C_lt hf]
+  rw [← hu, Ring.inverse_unit, h, hu, ← IsUltrametricDist.norm_eq_of_norm_sub_lt_left
+    (x := (⟨C a, isRestricted_C c a⟩ : IsRestricted.subring (R := R) c))
+    (by rwa [norm_sub_rev, norm_C]), norm_C]
 
 /-- **Dominant constant coefficient.** Over a complete ultrametric norm-one ring, a restricted
 series whose constant coefficient is a multiplicative unit strictly dominating the weighted norm
@@ -213,34 +195,19 @@ theorem norm_coeff_mul_prod_lt_of_isUnit {f : IsRestricted.subring (R := R) c} (
   have hfg' : (f : MvPowerSeries σ R) * g = 1 := congrArg Subtype.val hfg
   have hf0 : (f : MvPowerSeries σ R) ≠ 0 := fun h ↦ zero_ne_one (by rw [← hfg', h, zero_mul])
   have hg0 : (g : MvPowerSeries σ R) ≠ 0 := fun h ↦ zero_ne_one (by rw [← hfg', h, mul_zero])
-  -- Choose lexicographically largest norm-achieving exponents. The order is only proof data.
-  let : LinearOrder σ := linearOrderOfSTO (Function.swap WellOrderingRel)
-  have : WellFoundedGT σ := (WellOrderingRel.isWellOrder (α := σ)).wf.mono fun _ _ h ↦ h
-  obtain ⟨i, hi, himax⟩ := f.2.exists_achievesGaussNorm_max MonomialOrder.lex hf0
-  obtain ⟨j, hj, hjmax⟩ := g.2.exists_achievesGaussNorm_max MonomialOrder.lex hg0
-  -- A coefficient at which a nonzero series attains its Gauss norm is nonzero.
-  have hcoeff {F : IsRestricted.subring (R := R) c} {k : σ →₀ ℕ} (hF : (F : MvPowerSeries σ R) ≠ 0)
-      (hk : AchievesGaussNorm norm c (F : MvPowerSeries σ R) k) :
-      coeff k (F : MvPowerSeries σ R) ≠ 0 := by
-    intro h0
-    rw [AchievesGaussNorm, h0, norm_zero, zero_mul, ← norm_eq_gaussNorm] at hk
-    exact hF (congrArg Subtype.val (norm_eq_zero.mp hk.symm))
+  obtain ⟨i, j, hi, hj, himax, -, hdom'⟩ := f.2.exists_norm_coeff_mul_norm_coeff_lt g.2 hf0 hg0
   -- The dominant summand of the coefficient of `f * g = 1` at `i + j` is nonzero, so `i = 0`.
   have hdom := antidiagonal_dominant norm (f : MvPowerSeries σ R) g i j
     IsUltrametricDist.isNonarchimedean_norm norm_mul (fun a ↦ (norm_neg a).symm)
-    fun p hp hne ↦ by
-      simpa only [norm_mul] using
-        f.2.norm_coeff_mul_norm_coeff_lt MonomialOrder.lex g.2 hf0 hg0 hi himax hj hjmax hp hne
+    fun p hp hne ↦ by simpa only [norm_mul] using hdom' p hp hne
   have hij : i + j = 0 := by
     by_contra hne
     rw [hfg', coeff_one, ite_eq_right hne, norm_zero, norm_mul] at hdom
-    exact mul_ne_zero (norm_ne_zero_iff.mpr (hcoeff hf0 hi))
-      (norm_ne_zero_iff.mpr (hcoeff hg0 hj)) hdom.symm
+    exact mul_ne_zero (norm_ne_zero_iff.mpr (f.2.coeff_ne_zero_of_achievesGaussNorm hf0 hi))
+      (norm_ne_zero_iff.mpr (g.2.coeff_ne_zero_of_achievesGaussNorm hg0 hj)) hdom.symm
   obtain rfl : i = 0 := (add_eq_zero.mp hij).1
-  have hlt := himax t (by
-    rw [map_zero, MonomialOrder.toSyn_lt_iff_ne_zero, Ne, MonomialOrder.toSyn_eq_zero_iff]
-    exact ht)
-  rwa [← hi, Finsupp.prod_zero_index, mul_one, coeff_zero_eq_constantCoeff_apply] at hlt
+  have hlt := himax t ht
+  rwa [zero_add, ← hi, Finsupp.prod_zero_index, mul_one, coeff_zero_eq_constantCoeff_apply] at hlt
 
 /-- **The units of the ring of restricted series.** Over a complete ultrametric normed ring with
 multiplicative norm, a restricted series is a unit exactly when its constant coefficient is a unit
@@ -259,15 +226,15 @@ end NormMulClass
 
 end NormedRing
 
-section NormedField
+section NormedDivisionRing
 
-variable {σ K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K] {c : σ → ℝ}
+variable {σ K : Type*} [NormedDivisionRing K] [IsUltrametricDist K] [CompleteSpace K] {c : σ → ℝ}
   [∀ i, Fact (0 < c i)]
 
-/-- **The units of a Tate algebra over a field.** Over a complete ultrametric normed field, a
-restricted series is a unit exactly when its constant coefficient is nonzero and strictly dominates
-the weighted norm of every other coefficient, that is, when the constant coefficient is the only
-one attaining the Gauss norm. -/
+/-- **The units of a Tate algebra over a division ring.** Over a complete ultrametric normed
+division ring, for instance a field, a restricted series is a unit exactly when its constant
+coefficient is nonzero and strictly dominates the weighted norm of every other coefficient, that
+is, when the constant coefficient is the only one attaining the Gauss norm. -/
 theorem isUnit_iff_constantCoeff_ne_zero_and_norm_coeff_mul_prod_lt
     (f : IsRestricted.subring (R := K) c) :
     IsUnit f ↔ constantCoeff (f : MvPowerSeries σ K) ≠ 0 ∧
@@ -275,6 +242,6 @@ theorem isUnit_iff_constantCoeff_ne_zero_and_norm_coeff_mul_prod_lt
         ‖constantCoeff (f : MvPowerSeries σ K)‖ := by
   rw [isUnit_iff_isUnit_constantCoeff_and_norm_coeff_mul_prod_lt, isUnit_iff_ne_zero]
 
-end NormedField
+end NormedDivisionRing
 
 end MvPowerSeries
