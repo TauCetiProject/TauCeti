@@ -729,7 +729,7 @@ variable [IsSimpleModule A S]
 
 /-- **The range of evaluation is the `S`-isotypic component of `M`.**  A map out of `S` lands in
 the component, and every submodule of `M` isomorphic to `S` is the range of such a map.  This
-needs neither finiteness nor any hypothesis on the scalars. -/
+needs no finiteness and no field hypothesis: a commutative ring of scalars suffices. -/
 @[simp]
 theorem range_isotypicEval :
     LinearMap.range (isotypicEval k (S := S) (M := M)) = isotypicComponent A M S := by

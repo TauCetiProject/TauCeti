@@ -15,8 +15,9 @@ import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 # An isotypic component is its type tensored with its multiplicity space
 
 Let `A` be an algebra over a field `k` and let `S` be a simple `A`-module.  For any `A`-module `M`
-the **multiplicity space** of `S` in `M` is the hom space `S →ₗ[A] M`; when `k` is algebraically
-closed and `S` is finite-dimensional its dimension is the multiplicity of `S` in `M`
+the **multiplicity space** of `S` in `M` is the hom space `S →ₗ[A] M`.  Its dimension deserves the
+name: when `k` is algebraically closed, `S` is finite-dimensional and `M` is a finite product of
+simple modules, that dimension is the number of factors of `M` isomorphic to `S`
 (`TauCeti.finrank_linearMap_eq_natCard_of_linearEquiv_pi`).  Evaluation
 
 `TauCeti.isotypicEval : S ⊗[k] (S →ₗ[A] M) →ₗ[A] M`, `s ⊗ f ↦ f s`,
@@ -29,12 +30,13 @@ as its range (`TauCeti.range_isotypicEval`).  This file proves that it is inject
 Injectivity asks that `S` be simple and finite-dimensional over an algebraically closed `k`, and
 nothing at all of `M`.
 
-This is the *uncounted* form of the isotypic decomposition.  The counted form is already available
+This is the *uncounted* form of the isotypic decomposition.  A counted form is already available
 — `TauCeti.nonempty_linearEquiv_isotypicComponent` writes the component as `S ^ m` with
-`m = finrank k (S →ₗ[A] M)` — but only up to a choice of isomorphism, so it destroys any structure
-the multiplicity space carries.  The tensor form keeps it: every endomorphism of `M` commuting with
-`A` acts on the second factor and on nothing else (`TauCeti.isotypicEval_comp`), which is exactly
-what a double-centralizer decomposition consumes.
+`m = finrank k (S →ₗ[A] M)` — but it asks `M` itself to be finite-dimensional over `k`, and it
+produces only an unspecified isomorphism, so it destroys any structure the multiplicity space
+carries.  The tensor form asks nothing of `M` and keeps that structure: every `A`-linear map out
+of `M` acts on the second factor and on nothing else (`TauCeti.isotypicEval_comp`), which is
+exactly what a double-centralizer decomposition consumes.
 
 ## Main definitions
 
@@ -48,10 +50,10 @@ what a double-centralizer decomposition consumes.
 * `TauCeti.isotypicEval_injective`: **evaluation is injective**, for `S` simple and
   finite-dimensional over an algebraically closed `k`, with no finiteness asked of the target.
 * `TauCeti.isotypicComponentTensorEquiv_map_coe` and `TauCeti.isotypicTensorEquiv_map`:
-  **naturality in the target** — an `A`-linear map acts on the multiplicity space and on nothing
-  else, read on the equivalences.
-* `TauCeti.isotypicTensorEquiv_symm_apply_map`: the same read on the inverse — the form that
-  transports the commutant of `A` onto the multiplicity space.
+  **naturality in the target** — an `A`-linear map `M →ₗ[A] N` acts on the multiplicity space and
+  on nothing else, read on the equivalences.
+* `TauCeti.isotypicTensorEquiv_symm_apply_map`: the same read on the inverse — the form that,
+  taking `N = M`, transports the commutant of `A` onto the multiplicity space.
 
 ## References
 
@@ -188,27 +190,27 @@ theorem isotypicTensorEquiv_apply (h : isotypicComponent A M S = ⊤)
 -- Not `@[simp]`: `isotypicTensorEquiv_apply` already rewrites the left-hand side, after which
 -- `isotypicEval_map_apply` finishes, so tagging this lemma would leave it outside simp normal
 -- form.
-/-- **The tensor decomposition is natural in the target.**  An `A`-linear endomorphism of `M` acts
-on the multiplicity space alone: this is `TauCeti.isotypicEval_comp` read through the
-equivalence. -/
-theorem isotypicTensorEquiv_map (h : isotypicComponent A M S = ⊤) (g : M →ₗ[A] M)
-    (x : S ⊗[k] (S →ₗ[A] M)) :
-    isotypicTensorEquiv k h
+/-- **The tensor decomposition is natural in the target.**  For `M` and `N` both their own
+`S`-isotypic components, an `A`-linear map `g : M →ₗ[A] N` acts on the multiplicity space alone:
+this is `TauCeti.isotypicEval_comp` read through the equivalences. -/
+theorem isotypicTensorEquiv_map (hM : isotypicComponent A M S = ⊤)
+    (hN : isotypicComponent A N S = ⊤) (g : M →ₗ[A] N) (x : S ⊗[k] (S →ₗ[A] M)) :
+    isotypicTensorEquiv k hN
         (AlgebraTensorModule.map (LinearMap.id (R := A) (M := S))
-          (LinearMap.compRight (M := S) k g) x) = g (isotypicTensorEquiv k h x) := by
+          (LinearMap.compRight (M := S) k g) x) = g (isotypicTensorEquiv k hM x) := by
   rw [isotypicTensorEquiv_apply, isotypicTensorEquiv_apply, isotypicEval_map_apply]
 
-/-- **Transporting a commuting operator to the multiplicity space.**  Reading
-`TauCeti.isotypicTensorEquiv_map` backwards: the inverse equivalence carries an `A`-linear
-endomorphism `g` of `M` to `1 ⊗ (g ∘ ·)`, so under the decomposition the commutant of `A` in
-`Module.End k M` acts on the multiplicity space and trivially on `S`. -/
+/-- **Transporting a map to the multiplicity space.**  Reading
+`TauCeti.isotypicTensorEquiv_map` backwards: the inverse equivalences carry an `A`-linear map
+`g : M →ₗ[A] N` to `1 ⊗ (g ∘ ·)`.  For `N = M` this says that under the decomposition the
+commutant of `A` in `Module.End k M` acts on the multiplicity space and trivially on `S`. -/
 @[simp]
-theorem isotypicTensorEquiv_symm_apply_map (h : isotypicComponent A M S = ⊤) (g : M →ₗ[A] M)
-    (y : M) :
-    (isotypicTensorEquiv k h).symm (g y) =
+theorem isotypicTensorEquiv_symm_apply_map (hM : isotypicComponent A M S = ⊤)
+    (hN : isotypicComponent A N S = ⊤) (g : M →ₗ[A] N) (y : M) :
+    (isotypicTensorEquiv k hN).symm (g y) =
       AlgebraTensorModule.map (LinearMap.id (R := A) (M := S))
-        (LinearMap.compRight (M := S) k g) ((isotypicTensorEquiv k h).symm y) := by
-  apply (isotypicTensorEquiv k h).injective
-  rw [LinearEquiv.apply_symm_apply, isotypicTensorEquiv_map, LinearEquiv.apply_symm_apply]
+        (LinearMap.compRight (M := S) k g) ((isotypicTensorEquiv k hM).symm y) := by
+  apply (isotypicTensorEquiv k hN).injective
+  rw [LinearEquiv.apply_symm_apply, isotypicTensorEquiv_map k hM hN, LinearEquiv.apply_symm_apply]
 
 end TauCeti
