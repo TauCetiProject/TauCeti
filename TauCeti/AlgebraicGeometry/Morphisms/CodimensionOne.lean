@@ -27,20 +27,20 @@ finite and dominant) the map is surjective, and when `f` is quasi-compact its fi
 
 ## Main definitions
 
-* `Scheme.Hom.codimensionOneMap`: the map on codimension-one points induced by a
-  morphism that preserves codimension one.
+* `AlgebraicGeometry.Scheme.Hom.codimensionOneMap`: the map on codimension-one points induced by
+  a morphism that preserves codimension one.
 
 ## Main results
 
-* `Scheme.Hom.coheight_eq_one_of_coheight_apply_eq_one`: a point over a point of
-  codimension one has codimension one.
-* `Scheme.Hom.codimensionOneMap_surjective`: for a surjective, locally quasi-finite
-  morphism of irreducible schemes, every codimension-one point of the target is the image of a
-  codimension-one point.
-* `Scheme.Hom.codimensionOneMap_finite_preimage_singleton`: the fibres of `codimensionOneMap` of a
-  quasi-compact locally quasi-finite morphism are finite.
-* `Scheme.Hom.codimensionOneMap_comp`, `Scheme.Hom.codimensionOneMap_id`:
-  functoriality.
+* `AlgebraicGeometry.Scheme.Hom.coheight_eq_one_of_coheight_apply_eq_one`: a point over a point
+  of codimension one has codimension one.
+* `AlgebraicGeometry.Scheme.Hom.codimensionOneMap_surjective`: for a surjective, locally
+  quasi-finite morphism of irreducible schemes, every codimension-one point of the target is the
+  image of a codimension-one point.
+* `AlgebraicGeometry.Scheme.Hom.codimensionOneMap_finite_preimage_singleton`: the fibres of
+  `codimensionOneMap` of a quasi-compact locally quasi-finite morphism are finite.
+* `AlgebraicGeometry.Scheme.Hom.codimensionOneMap_comp` and
+  `AlgebraicGeometry.Scheme.Hom.codimensionOneMap_id`: functoriality.
 
 ## References
 
@@ -61,7 +61,7 @@ public section
 
 open CategoryTheory AlgebraicGeometry Order
 
-namespace Scheme.Hom
+namespace AlgebraicGeometry.Scheme.Hom
 
 universe u
 
@@ -141,4 +141,4 @@ theorem codimensionOneMap_id :
   apply Subtype.ext
   simp
 
-end Scheme.Hom
+end AlgebraicGeometry.Scheme.Hom

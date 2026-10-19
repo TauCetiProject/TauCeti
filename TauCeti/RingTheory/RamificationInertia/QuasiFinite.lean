@@ -6,7 +6,7 @@ Authors: Taylor Dupuy, Thomas Tucker, Zhuoran Wang
 module
 
 public import Mathlib.RingTheory.RamificationInertia.Ramification
-public import TauCeti.RingTheory.LocalRing.Localization
+public import TauCeti.RingTheory.QuasiFinite.Basic
 
 /-!
 # Positivity of the ramification index at a quasi-finite prime
@@ -20,8 +20,8 @@ algebras (`Ideal.ramificationIdx_pos`) and Dedekind domains
 This file discharges both hypotheses when `S` is quasi-finite over `R` at `q`
 (`Algebra.QuasiFiniteAt R q`): `q` is then the only prime of `S` below `q` over `p`
 (`Algebra.QuasiFiniteAt.eq_of_le_of_under_eq`), so it is minimal over `p S`. The local fibre
-`S_q ⧸ p S_q` is Artinian by `Ideal.isArtinianRing_quotient_of_quasiFiniteAt` from the local-ring
-localization module. This covers the stalk homomorphisms of a quasi-finite morphism of schemes,
+`S_q ⧸ p S_q` is Artinian by `Ideal.isArtinianRing_quotient_of_quasiFiniteAt` from the quasi-finite
+module. This covers the stalk homomorphisms of a quasi-finite morphism of schemes,
 which are neither integral nor maps of Dedekind domains in general.
 
 ## Main results

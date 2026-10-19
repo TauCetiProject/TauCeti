@@ -24,12 +24,12 @@ quasi-finite and `Ideal.ramificationIdx_pos_of_quasiFiniteAt` applies.
 
 ## Main definitions
 
-* `Scheme.Hom.ramificationIdxAt`: the ramification index of a morphism at a point.
+* `AlgebraicGeometry.Scheme.Hom.ramificationIdxAt`: the ramification index of a morphism at a point.
 
 ## Main results
 
-* `Scheme.Hom.ramificationIdxAt_def`: the defining equation.
-* `Scheme.Hom.ramificationIdxAt_pos`: the ramification index is positive at every
+* `AlgebraicGeometry.Scheme.Hom.ramificationIdxAt_def`: the defining equation.
+* `AlgebraicGeometry.Scheme.Hom.ramificationIdxAt_pos`: the ramification index is positive at every
   point where the morphism is quasi-finite.
 
 ## References
@@ -47,7 +47,7 @@ public section
 
 open AlgebraicGeometry
 
-namespace Scheme.Hom
+namespace AlgebraicGeometry.Scheme.Hom
 
 universe u
 
@@ -77,4 +77,4 @@ theorem ramificationIdxAt_pos {x : X} (hx : f.QuasiFiniteAt x) : 0 < ramificatio
   rw [ramificationIdxAt_def]
   exact Ideal.ramificationIdx_pos_of_quasiFiniteAt _
 
-end Scheme.Hom
+end AlgebraicGeometry.Scheme.Hom
