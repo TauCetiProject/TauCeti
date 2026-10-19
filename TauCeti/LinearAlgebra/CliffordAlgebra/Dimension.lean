@@ -51,7 +51,10 @@ matrix algebras one size down, acting on the two half-spin summands.
 `basis` transports Mathlib's `Module.Basis.ExteriorAlgebra` along `equivExterior`, so its elements
 are not by definition the products `ι Q (b i₁) * ⋯ * ι Q (b iₖ)` of generators: `equivExterior` is
 built from `CliffordAlgebra.changeForm`, which corrects a product of generators by lower-order
-terms. Nothing below needs the products, only their number. Identifying the two families is the
+terms. For a basis `b` orthogonal for `Q` the corrections vanish and the elements are the ordered
+products (`CliffordAlgebra.basis_eq_prod_map_sort` in
+`TauCeti.LinearAlgebra.CliffordAlgebra.OrthogonalBasis`). Nothing below needs the products, only
+their number. Identifying the two families is the
 Clifford analogue of a Poincaré-Birkhoff-Witt theorem, and is the content of the associated-graded
 isomorphism `gr (CliffordAlgebra Q) ≅ ExteriorAlgebra R M` for the degree filtration of
 `TauCeti/LinearAlgebra/CliffordAlgebra/Filtration.lean`; that isomorphism is
@@ -109,7 +112,8 @@ variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M] [I
 of the index set of `b`, obtained by transporting Mathlib's basis of `ExteriorAlgebra R M` along
 `CliffordAlgebra.equivExterior`.
 
-Its elements are not products of generators by construction; see the implementation notes.
+Its elements are not products of generators by construction; see the implementation notes, and
+`CliffordAlgebra.basis_eq_prod_map_sort` for an orthogonal basis.
 
 `@[expose]` because the characteristic equation `basis_apply` below is a public theorem whose proof
 has to unfold this definition. -/
@@ -117,7 +121,11 @@ has to unfold this definition. -/
     Basis (Finset I) R (CliffordAlgebra Q) :=
   b.ExteriorAlgebra.map (equivExterior Q).symm
 
-@[simp]
+/-- The characteristic equation of `CliffordAlgebra.basis`.
+
+Not a `simp` lemma: `simp` would continue by unfolding `CliffordAlgebra.equivExterior` to the
+underlying `CliffordAlgebra.changeForm`, while the members of the basis have the better simp normal
+forms `CliffordAlgebra.basis_empty` and `CliffordAlgebra.basis_singleton`. -/
 theorem basis_apply {I : Type w} [LinearOrder I] (b : Basis I R M) (s : Finset I) :
     basis Q b s = (equivExterior Q).symm (b.ExteriorAlgebra s) :=
   rfl

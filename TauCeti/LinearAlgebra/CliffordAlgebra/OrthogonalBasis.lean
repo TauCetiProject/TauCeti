@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.ExteriorAlgebra.Basis
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 public import TauCeti.LinearAlgebra.CliffordAlgebra.ScalarTrace
 import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
@@ -16,12 +16,12 @@ import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 # The ordered-product basis of a Clifford algebra
 
 Let `b` be a basis of `M`, indexed by a linearly ordered type `I`, and let `Q` be a quadratic form
-on `M` over a ring in which `2` is invertible. Transporting Mathlib's exterior basis
-`Module.Basis.ExteriorAlgebra`, indexed by finite sets of indices, along the module isomorphism
-`CliffordAlgebra.equivExterior` gives a basis `Module.Basis.cliffordAlgebra` of
-`CliffordAlgebra Q`. When `b` is orthogonal for `Q` its member at `s` is the ordered product
+on `M` over a ring in which `2` is invertible. The basis `CliffordAlgebra.basis Q b` of
+`CliffordAlgebra Q`, indexed by finite sets of indices, is transported from Mathlib's exterior basis
+`Module.Basis.ExteriorAlgebra` along the module isomorphism `CliffordAlgebra.equivExterior`. When
+`b` is orthogonal for `Q` its member at `s` is the ordered product
 `e_s = ι Q (b i₁) * ⋯ * ι Q (b iₖ)` over the elements `i₁ < ⋯ < iₖ` of `s`
-(`Module.Basis.cliffordAlgebra_apply`). The form may be degenerate.
+(`CliffordAlgebra.basis_eq_prod_map_sort`). The form may be degenerate.
 
 For an orthogonal basis the scalar part `τ = CliffordAlgebra.scalarTrace Q` pairs these monomials
 diagonally:
@@ -33,23 +33,19 @@ So the coordinates of `x` in this basis are read off by `τ`, and the form
 ordered ring, if every `Q (b i)` is nonnegative then `τ (reverse x * x) ≥ 0`, and if every
 `Q (b i)` is positive then `τ (reverse x * x) = 0` only for `x = 0`.
 
-## Main definitions
-
-* `Module.Basis.cliffordAlgebra`: the basis of `CliffordAlgebra Q` transported from the exterior
-  basis along `CliffordAlgebra.equivExterior`.
-
 ## Main results
 
-* `Module.Basis.cliffordAlgebra_apply`: for an orthogonal basis, its members are the ordered
-  products of basis vectors.
-* `Module.Basis.cliffordAlgebra_repr_empty`: the coefficient of `1` is the scalar part.
+* `CliffordAlgebra.basis_eq_prod_map_sort`: for an orthogonal basis, the members of
+  `CliffordAlgebra.basis Q b` are the ordered products of basis vectors.
+* `CliffordAlgebra.basis_repr_empty`: the coefficient of `1` is the scalar part.
 * `CliffordAlgebra.scalarTrace_reverse_prod_mul_prod`: the scalar part pairs the ordered products
-  of an orthogonal family diagonally, and `Module.Basis.scalarTrace_reverse_cliffordAlgebra_mul`
-  is the basis form.
-* `Module.Basis.prod_mul_cliffordAlgebra_repr`: `(∏ i ∈ s, Q (b i)) * xₛ = τ (reverse e_s * x)`.
-* `Module.Basis.scalarTrace_reverse_mul`: `τ (reverse x * y) = ∑ₛ (∏ i ∈ s, Q (b i)) * xₛ * yₛ`.
-* `Module.Basis.scalarTrace_reverse_mul_self_nonneg` and
-  `Module.Basis.scalarTrace_reverse_mul_self_eq_zero_iff`: positivity and faithfulness.
+  of an orthogonal family diagonally, and `CliffordAlgebra.scalarTrace_reverse_basis_mul` is the
+  basis form.
+* `CliffordAlgebra.prod_mul_basis_repr`: `(∏ i ∈ s, Q (b i)) * xₛ = τ (reverse e_s * x)`.
+* `CliffordAlgebra.scalarTrace_reverse_mul_eq_sum_basis_repr`:
+  `τ (reverse x * y) = ∑ₛ (∏ i ∈ s, Q (b i)) * xₛ * yₛ`.
+* `CliffordAlgebra.scalarTrace_reverse_mul_self_nonneg` and
+  `CliffordAlgebra.scalarTrace_reverse_mul_self_eq_zero_iff`: positivity and faithfulness.
 
 ## References
 
@@ -160,92 +156,73 @@ theorem scalarTrace_reverse_prod_mul_prod (hv : Pairwise fun i j => Q.IsOrtho (v
       rw [← s.sort_toFinset (· ≤ ·), h, t.sort_toFinset])
     rw [ite_eq_right hsort, ite_eq_right hst]
 
-end CliffordAlgebra
+section Basis
 
-namespace Module.Basis
+open Module
 
-open CliffordAlgebra
-
-variable {R : Type u} {M : Type v} {I : Type w} [CommRing R] [AddCommGroup M] [Module R M]
-  [Invertible (2 : R)] [LinearOrder I] (b : Basis I R M) (Q : QuadraticForm R M)
-
-/-- The basis of `CliffordAlgebra Q` indexed by finite sets of indices, transported from the
-exterior basis `Module.Basis.ExteriorAlgebra` along `CliffordAlgebra.equivExterior`. When `b` is
-orthogonal for `Q`, its member at `s` is the product of the generators `ι Q (b i)`, `i ∈ s`, in
-increasing order of the indices (`Module.Basis.cliffordAlgebra_apply`). -/
-noncomputable def cliffordAlgebra : Basis (Finset I) R (CliffordAlgebra Q) :=
-  b.ExteriorAlgebra.map (equivExterior Q).symm
-
-/-- `CliffordAlgebra.equivExterior` sends `b.cliffordAlgebra Q` to the exterior basis.
-
-Not a `simp` lemma: `simp` unfolds `CliffordAlgebra.equivExterior` to the underlying
-`CliffordAlgebra.changeForm`. -/
-theorem equivExterior_cliffordAlgebra (s : Finset I) :
-    equivExterior Q (b.cliffordAlgebra Q s) = b.ExteriorAlgebra s := by
-  rw [cliffordAlgebra, map_apply, LinearEquiv.apply_symm_apply]
+variable (Q) (b : Basis I R M)
 
 /-- **The ordered-product basis.** For a basis orthogonal for `Q`, the member of
-`b.cliffordAlgebra Q` at `s` is the product of the generators `ι Q (b i)`, `i ∈ s`, in increasing
-order of the indices. -/
-theorem cliffordAlgebra_apply (hb : Pairwise fun i j => Q.IsOrtho (b i) (b j)) (s : Finset I) :
-    b.cliffordAlgebra Q s = ((s.sort.map b).map (ι Q)).prod := by
+`CliffordAlgebra.basis Q b` at `s` is the product of the generators `ι Q (b i)`, `i ∈ s`, in
+increasing order of the indices. -/
+theorem basis_eq_prod_map_sort (hb : Pairwise fun i j => Q.IsOrtho (b i) (b j)) (s : Finset I) :
+    basis Q b s = ((s.sort.map b).map (ι Q)).prod := by
   apply (equivExterior Q).injective
-  rw [equivExterior_cliffordAlgebra, TauCeti.ExteriorAlgebra.basis_eq_prod_map_sort,
+  rw [equivExterior_basis, TauCeti.ExteriorAlgebra.basis_eq_prod_map_sort,
     equivExterior_prod_map_ι]
   exact List.pairwise_map.mpr ((List.sortedLT_iff_pairwise.mp s.sortedLT_sort).imp fun h =>
     hb h.ne)
 
-/-- The member of `b.cliffordAlgebra Q` at the empty set is `1`. -/
+/-- The member of `CliffordAlgebra.basis Q b` at the empty set is `1`. -/
 @[simp]
-theorem cliffordAlgebra_empty : b.cliffordAlgebra Q ∅ = 1 := by
+theorem basis_empty : basis Q b ∅ = 1 := by
   apply (equivExterior Q).injective
-  rw [equivExterior_cliffordAlgebra, TauCeti.ExteriorAlgebra.basis_eq_prod_map_sort]
+  rw [equivExterior_basis, TauCeti.ExteriorAlgebra.basis_eq_prod_map_sort]
   simp [equivExterior]
 
-/-- The member of `b.cliffordAlgebra Q` at `{i}` is the generator `ι Q (b i)`. -/
+/-- The member of `CliffordAlgebra.basis Q b` at `{i}` is the generator `ι Q (b i)`. -/
 @[simp]
-theorem cliffordAlgebra_singleton (i : I) : b.cliffordAlgebra Q {i} = ι Q (b i) := by
+theorem basis_singleton (i : I) : basis Q b {i} = ι Q (b i) := by
   apply (equivExterior Q).injective
-  rw [equivExterior_cliffordAlgebra, TauCeti.ExteriorAlgebra.basis_singleton]
+  rw [equivExterior_basis, TauCeti.ExteriorAlgebra.basis_singleton]
   simp [equivExterior]
 
-/-- The scalar part of the member of `b.cliffordAlgebra Q` at `s` is `1` if `s` is empty and `0`
-otherwise. -/
+/-- The scalar part of the member of `CliffordAlgebra.basis Q b` at `s` is `1` if `s` is empty and
+`0` otherwise. -/
 @[simp]
-theorem scalarTrace_cliffordAlgebra (s : Finset I) :
-    scalarTrace Q (b.cliffordAlgebra Q s) = if s = ∅ then 1 else 0 := by
-  rw [scalarTrace_apply, equivExterior_cliffordAlgebra, ExteriorAlgebra.algebraMapInv_basis]
+theorem scalarTrace_basis (s : Finset I) :
+    scalarTrace Q (basis Q b s) = if s = ∅ then 1 else 0 := by
+  rw [scalarTrace_apply, equivExterior_basis, ExteriorAlgebra.algebraMapInv_basis]
 
-/-- The coefficient of `1` in the basis `b.cliffordAlgebra Q` is the scalar part. -/
+/-- The coefficient of `1` in the basis `CliffordAlgebra.basis Q b` is the scalar part. -/
 @[simp]
-theorem cliffordAlgebra_repr_empty (x : CliffordAlgebra Q) :
-    (b.cliffordAlgebra Q).repr x ∅ = scalarTrace Q x := by
-  have h : (b.cliffordAlgebra Q).coord ∅ = scalarTrace Q :=
-    (b.cliffordAlgebra Q).ext fun s => by
-      rw [coord_apply, repr_self, Finsupp.single_apply, scalarTrace_cliffordAlgebra]
+theorem basis_repr_empty (x : CliffordAlgebra Q) : (basis Q b).repr x ∅ = scalarTrace Q x := by
+  have h : (basis Q b).coord ∅ = scalarTrace Q :=
+    (basis Q b).ext fun s => by
+      rw [Basis.coord_apply, Basis.repr_self, Finsupp.single_apply, scalarTrace_basis]
   exact LinearMap.congr_fun h x
 
-variable {b Q} (hb : Pairwise fun i j => Q.IsOrtho (b i) (b j))
+variable {Q b} (hb : Pairwise fun i j => Q.IsOrtho (b i) (b j))
 include hb
 
 /-- **The scalar part pairs the ordered-product basis diagonally**:
 `τ (reverse e_s * e_t)` is `∏ i ∈ s, Q (b i)` if `s = t` and `0` otherwise. -/
-theorem scalarTrace_reverse_cliffordAlgebra_mul (s t : Finset I) :
-    scalarTrace Q (reverse (b.cliffordAlgebra Q s) * b.cliffordAlgebra Q t) =
+theorem scalarTrace_reverse_basis_mul (s t : Finset I) :
+    scalarTrace Q (reverse (basis Q b s) * basis Q b t) =
       if s = t then ∏ i ∈ s, Q (b i) else 0 := by
-  rw [b.cliffordAlgebra_apply Q hb, b.cliffordAlgebra_apply Q hb,
+  rw [basis_eq_prod_map_sort Q b hb, basis_eq_prod_map_sort Q b hb,
     scalarTrace_reverse_prod_mul_prod hb]
 
 /-- **The scalar part reads off coordinates**: the coefficient of `x` at `s` in the ordered-product
 basis, weighted by `∏ i ∈ s, Q (b i)`, is `τ (reverse e_s * x)`. -/
-theorem prod_mul_cliffordAlgebra_repr (s : Finset I) (x : CliffordAlgebra Q) :
-    (∏ i ∈ s, Q (b i)) * (b.cliffordAlgebra Q).repr x s =
-      scalarTrace Q (reverse (b.cliffordAlgebra Q s) * x) := by
-  have h : (∏ i ∈ s, Q (b i)) • (b.cliffordAlgebra Q).coord s =
-      scalarTrace Q ∘ₗ LinearMap.mulLeft R (reverse (b.cliffordAlgebra Q s)) :=
-    (b.cliffordAlgebra Q).ext fun t => by
-      rw [LinearMap.smul_apply, coord_apply, repr_self, Finsupp.single_apply, LinearMap.comp_apply,
-        LinearMap.mulLeft_apply, scalarTrace_reverse_cliffordAlgebra_mul hb, smul_eq_mul]
+theorem prod_mul_basis_repr (s : Finset I) (x : CliffordAlgebra Q) :
+    (∏ i ∈ s, Q (b i)) * (basis Q b).repr x s = scalarTrace Q (reverse (basis Q b s) * x) := by
+  have h : (∏ i ∈ s, Q (b i)) • (basis Q b).coord s =
+      scalarTrace Q ∘ₗ LinearMap.mulLeft R (reverse (basis Q b s)) :=
+    (basis Q b).ext fun t => by
+      rw [LinearMap.smul_apply, Basis.coord_apply, Basis.repr_self, Finsupp.single_apply,
+        LinearMap.comp_apply, LinearMap.mulLeft_apply, scalarTrace_reverse_basis_mul hb,
+        smul_eq_mul]
       by_cases hst : s = t
       · simp [hst]
       · simp [hst, Ne.symm hst]
@@ -253,15 +230,14 @@ theorem prod_mul_cliffordAlgebra_repr (s : Finset I) (x : CliffordAlgebra Q) :
 
 /-- **The scalar-part pairing is diagonal in the ordered-product basis**:
 `τ (reverse x * y) = ∑ s, (∏ i ∈ s, Q (b i)) * xₛ * yₛ`. -/
-theorem scalarTrace_reverse_mul [Fintype I] (x y : CliffordAlgebra Q) :
+theorem scalarTrace_reverse_mul_eq_sum_basis_repr [Fintype I] (x y : CliffordAlgebra Q) :
     scalarTrace Q (reverse x * y) =
-      ∑ s, (∏ i ∈ s, Q (b i)) * (b.cliffordAlgebra Q).repr x s *
-        (b.cliffordAlgebra Q).repr y s := by
-  conv_lhs => rw [← (b.cliffordAlgebra Q).sum_repr y]
+      ∑ s, (∏ i ∈ s, Q (b i)) * (basis Q b).repr x s * (basis Q b).repr y s := by
+  conv_lhs => rw [← (basis Q b).sum_repr y]
   rw [Finset.mul_sum, map_sum]
   refine Finset.sum_congr rfl fun s _ => ?_
   rw [mul_smul_comm, map_smul, smul_eq_mul, ← scalarTrace_reverse, reverse.map_mul,
-    reverse_reverse, ← prod_mul_cliffordAlgebra_repr hb, mul_comm]
+    reverse_reverse, ← prod_mul_basis_repr hb, mul_comm]
 
 section Ordered
 
@@ -272,7 +248,7 @@ variable [LinearOrder R] [Finite I]
 theorem scalarTrace_reverse_mul_self_nonneg [IsOrderedRing R] (hQ : ∀ i, 0 ≤ Q (b i))
     (x : CliffordAlgebra Q) : 0 ≤ scalarTrace Q (reverse x * x) := by
   cases nonempty_fintype I
-  rw [scalarTrace_reverse_mul hb]
+  rw [scalarTrace_reverse_mul_eq_sum_basis_repr hb]
   exact Finset.sum_nonneg fun s _ => by
     rw [mul_assoc]
     exact mul_nonneg (Finset.prod_nonneg fun i _ => hQ i) (mul_self_nonneg _)
@@ -284,13 +260,15 @@ theorem scalarTrace_reverse_mul_self_eq_zero_iff [IsStrictOrderedRing R] (hQ : �
   refine ⟨fun h => ?_, fun h => by simp [h]⟩
   cases nonempty_fintype I
   have hpos (s : Finset I) : 0 < ∏ i ∈ s, Q (b i) := Finset.prod_pos fun i _ => hQ i
-  rw [scalarTrace_reverse_mul hb, Finset.sum_eq_zero_iff_of_nonneg fun s _ => by
+  rw [scalarTrace_reverse_mul_eq_sum_basis_repr hb, Finset.sum_eq_zero_iff_of_nonneg fun s _ => by
     rw [mul_assoc]; exact mul_nonneg (hpos s).le (mul_self_nonneg _)] at h
-  rw [← (b.cliffordAlgebra Q).repr.map_eq_zero_iff]
+  rw [← (basis Q b).repr.map_eq_zero_iff]
   ext s
   have hs := h s (Finset.mem_univ s)
   rwa [mul_assoc, mul_eq_zero, or_iff_right (hpos s).ne', mul_self_eq_zero] at hs
 
 end Ordered
 
-end Module.Basis
+end Basis
+
+end CliffordAlgebra
