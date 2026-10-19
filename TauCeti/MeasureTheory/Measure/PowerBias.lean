@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.MeasureTheory.Measure.Weighted
+public import Mathlib.MeasureTheory.Measure.Tilted
 
 /-!
 # Power-biased probability laws
@@ -70,6 +71,35 @@ theorem lintegral_powerBiasWeight_eq_of_integrable {μ : Measure ℝ} {q : ℝ}
   simp_rw [ENNReal.ofNNReal_toNNReal]
   rw [← ofReal_integral_eq_lintegral_ofReal hq
     (hμ.mono fun x hx => Real.rpow_nonneg hx q)]
+
+/-- On an almost surely positive law, power biasing agrees with exponential tilting by the
+logarithmic statistic `q * log x` whenever the normalizing power moment is finite. -/
+theorem powerBias_eq_tilted_log {μ : Measure ℝ} {q : ℝ} (hμ : ∀ᵐ x ∂μ, 0 < x)
+    (hq : Integrable (fun x : ℝ => x ^ q) μ) :
+    μ.powerBias q = μ.tilted (fun x => q * Real.log x) := by
+  rcases eq_or_ne μ 0 with rfl | hμ0
+  · simp [powerBias_def]
+  let _ : NeZero μ := ⟨hμ0⟩
+  have hweight :
+      (fun x : ℝ => Real.exp (q * Real.log x)) =ᵐ[μ] fun x => x ^ q := by
+    filter_upwards [hμ] with x hx
+    simp only [Real.rpow_def_of_pos hx, mul_comm]
+  have hexp : Integrable (fun x : ℝ => Real.exp (q * Real.log x)) μ :=
+    hq.congr hweight.symm
+  have hZ : ∫ x, Real.exp (q * Real.log x) ∂μ = ∫ x, x ^ q ∂μ :=
+    integral_congr_ae hweight
+  have hZpos : 0 < ∫ x, x ^ q ∂μ := by
+    rw [← hZ]
+    exact integral_exp_pos hexp
+  rw [powerBias_def, weighted_eq_withDensity _ (measurable_powerBiasWeight q).aemeasurable,
+    Measure.tilted, hZ,
+    lintegral_powerBiasWeight_eq_of_integrable (hμ.mono fun x hx => hx.le) hq]
+  apply withDensity_congr_ae
+  filter_upwards [hμ] with x hx
+  rw [ENNReal.ofReal_div_of_pos hZpos, div_eq_mul_inv, ENNReal.ofNNReal_toNNReal,
+    Real.rpow_def_of_pos hx]
+  rw [mul_comm q (Real.log x)]
+  ac_rfl
 
 /-- A positive finite power moment makes the corresponding power bias a probability measure. -/
 theorem isProbabilityMeasure_powerBias {μ : Measure ℝ} {q : ℝ}
