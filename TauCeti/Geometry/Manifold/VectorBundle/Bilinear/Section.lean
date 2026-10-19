@@ -7,18 +7,20 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
+public import Mathlib.LinearAlgebra.Projection
 
 /-!
-# Symmetrization of smooth bilinear forms
+# Symmetrization of `C^n` bilinear fields
 
-The transpose of a bilinear form field is smooth. Consequently averaging a field with its
-transpose defines a linear projection onto the symmetric smooth sections. This provides a
-linear ambient space for smooth Riemannian metrics, without choosing an inner product on
-the original bundle fibres.
+The transpose of a `C^n` bilinear field is `C^n`. When two is nonzero in the scalar field,
+averaging a field with its transpose defines a linear projection onto the symmetric `C^n`
+sections. Over the reals this provides a linear ambient space for `C^n` Riemannian metrics,
+without choosing an inner product on the original bundle fibres.
 
 The construction uses Mathlib's `ContMDiffSection` of the iterated hom bundle. In bundle
 coordinates transposition is the fixed continuous linear isometry
-`ContinuousLinearMap.flipₗᵢ`; in particular smoothness is valid in boundary charts as well.
+`ContinuousLinearMap.flipₗᵢ`; in particular preservation of regularity is valid in boundary
+charts as well.
 No compactness or finite-dimensionality is needed. The fibres are topological vector spaces
 isomorphic to the normed model fibre and need not carry chosen norms.
 -/
@@ -36,35 +38,35 @@ attribute [local instance 1001] NormedAddCommGroup.toSeminormedAddCommGroup
 
 namespace TauCeti.Manifold
 
-variable {EB : Type*} [NormedAddCommGroup EB] [NormedSpace ℝ EB]
-  {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners ℝ EB HB}
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+  {EB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
+  {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners 𝕜 EB HB}
   {B : Type*} [TopologicalSpace B] [ChartedSpace HB B]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {V : B → Type*} [TopologicalSpace (TotalSpace F V)]
-  [∀ x, TopologicalSpace (V x)] [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
-  [FiberBundle F V] [VectorBundle ℝ F V]
+  [∀ x, TopologicalSpace (V x)] [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)]
+  [FiberBundle F V] [VectorBundle 𝕜 F V]
   {n : ℕ∞ω}
 
-/-- Smooth bilinear form fields on a real vector bundle. -/
+/-- `C^n` bilinear fields with values in a normed space on a vector bundle. -/
 abbrev BilinearSection :=
-  Cₛ^n⟮IB; F →L[ℝ] F →L[ℝ] ℝ, fun x : B ↦ V x →L[ℝ] V x →L[ℝ] ℝ⟯
+  Cₛ^n⟮IB; F →L[𝕜] F →L[𝕜] G, fun x : B ↦ V x →L[𝕜] V x →L[𝕜] G⟯
 
-/-- Transposition as a linear involution on smooth bilinear form fields. -/
-def transposeBilinearSection :
-    BilinearSection (IB := IB) (F := F) (V := V) (n := n) →ₗ[ℝ]
-      BilinearSection (IB := IB) (F := F) (V := V) (n := n) := by
-  -- Transfer normability without changing the topology or choosing fibre norms.
-  letI : ∀ x, IsNormableSpace ℝ (V x) := fun x ↦
-    (VectorBundle.continuousLinearEquivAt ℝ F V x).isNormableSpace
-  refine
-    { toFun := fun b ↦ ⟨fun x ↦ (b x).flip, ?_⟩
-      map_add' := fun b c ↦ by ext x v w; simp
-      map_smul' := fun a b ↦ by ext x v w; simp }
-  intro x
-  have hb := b.contMDiff x
+section Flip
+
+variable [∀ x, IsNormableSpace 𝕜 (V x)]
+
+/-- Fibrewise flip preserves `C^n` regularity at a point. -/
+theorem contMDiffAt_flip_section
+    {b : ∀ x : B, V x →L[𝕜] V x →L[𝕜] G} {x : B}
+    (hb : ContMDiffAt IB (IB.prod 𝓘(𝕜, F →L[𝕜] F →L[𝕜] G)) n
+      (fun y ↦ TotalSpace.mk' (F →L[𝕜] F →L[𝕜] G) y (b y)) x) :
+    ContMDiffAt IB (IB.prod 𝓘(𝕜, F →L[𝕜] F →L[𝕜] G)) n
+      (fun y ↦ TotalSpace.mk' (F →L[𝕜] F →L[𝕜] G) y (b y).flip) x := by
   rw [contMDiffAt_section] at hb ⊢
   -- The unbundled bound avoids identifying the normed and seminormed structures on hom spaces.
-  have hflip : IsBoundedLinearMap ℝ (fun c : F →L[ℝ] F →L[ℝ] ℝ ↦ c.flip) :=
+  have hflip : IsBoundedLinearMap 𝕜 (fun c : F →L[𝕜] F →L[𝕜] G ↦ c.flip) :=
     { map_add := fun c d ↦ by ext v w; simp
       map_smul := fun a c ↦ by ext v w; simp
       bound := ⟨1, by norm_num, fun c ↦ by simp⟩ }
@@ -78,30 +80,51 @@ def transposeBilinearSection :
     inCoordinates_apply_eq₂ hy hy (by simp)]
   simp
 
+/-- Fibrewise flip preserves `C^n` regularity of a bilinear section. -/
+theorem contMDiff_flip_section
+    {b : ∀ x : B, V x →L[𝕜] V x →L[𝕜] G}
+    (hb : ContMDiff IB (IB.prod 𝓘(𝕜, F →L[𝕜] F →L[𝕜] G)) n
+      (fun y ↦ TotalSpace.mk' (F →L[𝕜] F →L[𝕜] G) y (b y))) :
+    ContMDiff IB (IB.prod 𝓘(𝕜, F →L[𝕜] F →L[𝕜] G)) n
+      (fun x ↦ TotalSpace.mk' (F →L[𝕜] F →L[𝕜] G) x (b x).flip) :=
+  fun x ↦ contMDiffAt_flip_section (hb x)
+
+end Flip
+
+/-- Transposition as a linear involution on `C^n` bilinear fields. -/
+def transposeBilinearSection :
+    BilinearSection (IB := IB) (F := F) (V := V) (G := G) (n := n) →ₗ[𝕜]
+      BilinearSection (IB := IB) (F := F) (V := V) (G := G) (n := n) :=
+  -- Transfer normability without changing the topology or choosing fibre norms.
+  letI : ∀ x, IsNormableSpace 𝕜 (V x) := fun x ↦
+    (VectorBundle.continuousLinearEquivAt 𝕜 F V x).isNormableSpace
+  { toFun b := ⟨fun x ↦ (b x).flip, contMDiff_flip_section b.contMDiff⟩
+    map_add' b c := by ext x v w; simp
+    map_smul' a b := by ext x v w; simp }
+
 @[simp]
 theorem transposeBilinearSection_apply
-    (b : BilinearSection (IB := IB) (F := F) (V := V) (n := n))
+    (b : BilinearSection (IB := IB) (F := F) (V := V) (G := G) (n := n))
     (x : B) (v w : V x) : transposeBilinearSection b x v w = b x w v := by
-  have : IsNormableSpace ℝ (V x) :=
-    (VectorBundle.continuousLinearEquivAt ℝ F V x).isNormableSpace
-  exact ContinuousLinearMap.flip_apply (b x) w v
+  -- The term-mode definition evaluates to the fibrewise flip.
+  rfl
 
-/-- Transposing a smooth bilinear field twice recovers the original field. -/
+/-- Transposing a `C^n` bilinear field twice recovers the original field. -/
 @[simp]
-theorem transposeBilinearSection_transpose
-    (b : BilinearSection (IB := IB) (F := F) (V := V) (n := n)) :
+theorem transposeBilinearSection_transposeBilinearSection
+    (b : BilinearSection (IB := IB) (F := F) (V := V) (G := G) (n := n)) :
     transposeBilinearSection (transposeBilinearSection b) = b := by
   ext x v w
   simp
 
-/-- The linear subspace of symmetric smooth bilinear forms. -/
+/-- The linear subspace of symmetric `C^n` bilinear fields. -/
 def symmetricBilinearSections :
-    Submodule ℝ (BilinearSection (IB := IB) (F := F) (V := V) (n := n)) :=
+    Submodule 𝕜 (BilinearSection (IB := IB) (F := F) (V := V) (G := G) (n := n)) :=
   LinearMap.ker (transposeBilinearSection - LinearMap.id)
 
 @[simp]
 theorem mem_symmetricBilinearSections
-    (b : BilinearSection (IB := IB) (F := F) (V := V) (n := n)) :
+    (b : BilinearSection (IB := IB) (F := F) (V := V) (G := G) (n := n)) :
     b ∈ symmetricBilinearSections ↔ ∀ x v w, b x v w = b x w v := by
   simp only [symmetricBilinearSections, LinearMap.mem_ker, LinearMap.sub_apply,
     LinearMap.id_apply, sub_eq_zero]
@@ -112,31 +135,40 @@ theorem mem_symmetricBilinearSections
     ext x v w
     simpa using h x w v
 
-/-- The symmetrization projection `b ↦ (b + bᵀ) / 2` on smooth bilinear fields. -/
+/-- Transposition fixes every symmetric section. -/
+@[simp]
+theorem transposeBilinearSection_of_mem
+    {b : BilinearSection (IB := IB) (F := F) (V := V) (G := G) (n := n)}
+    (hb : b ∈ symmetricBilinearSections) : transposeBilinearSection b = b := by
+  simpa only [symmetricBilinearSections, LinearMap.mem_ker, LinearMap.sub_apply,
+    LinearMap.id_apply, sub_eq_zero] using hb
+
+/-- The symmetrization projection `b ↦ (b + bᵀ) / 2` on `C^n` bilinear fields. -/
 def symmetrizeBilinearSection :
-    BilinearSection (IB := IB) (F := F) (V := V) (n := n) →ₗ[ℝ]
-      BilinearSection (IB := IB) (F := F) (V := V) (n := n) :=
-  (1 / 2 : ℝ) • (LinearMap.id + transposeBilinearSection)
+    BilinearSection (IB := IB) (F := F) (V := V) (G := G) (n := n) →ₗ[𝕜]
+      BilinearSection (IB := IB) (F := F) (V := V) (G := G) (n := n) :=
+  (2 : 𝕜)⁻¹ • (LinearMap.id + transposeBilinearSection)
 
 @[simp]
 theorem symmetrizeBilinearSection_apply
-    (b : BilinearSection (IB := IB) (F := F) (V := V) (n := n))
+    (b : BilinearSection (IB := IB) (F := F) (V := V) (G := G) (n := n))
     (x : B) (v w : V x) :
-    symmetrizeBilinearSection b x v w = (b x v w + b x w v) / 2 := by
-  simp [symmetrizeBilinearSection, div_eq_mul_inv, mul_comm]
-  ring
+    symmetrizeBilinearSection b x v w = (2 : 𝕜)⁻¹ • (b x v w + b x w v) := by
+  simp [symmetrizeBilinearSection]
 
 /-- Symmetrization takes values in the symmetric sections. -/
 @[simp↓]
 theorem symmetrizeBilinearSection_mem
-    (b : BilinearSection (IB := IB) (F := F) (V := V) (n := n)) :
+    (b : BilinearSection (IB := IB) (F := F) (V := V) (G := G) (n := n)) :
     symmetrizeBilinearSection b ∈ symmetricBilinearSections := by
   simp [add_comm]
+
+variable [NeZero (2 : 𝕜)]
 
 /-- The fixed points of symmetrization are exactly the symmetric sections. -/
 @[simp]
 theorem symmetrizeBilinearSection_eq_self_iff
-    (b : BilinearSection (IB := IB) (F := F) (V := V) (n := n)) :
+    (b : BilinearSection (IB := IB) (F := F) (V := V) (G := G) (n := n)) :
     symmetrizeBilinearSection b = b ↔ b ∈ symmetricBilinearSections := by
   constructor
   · intro h
@@ -145,18 +177,25 @@ theorem symmetrizeBilinearSection_eq_self_iff
   · intro h
     ext x v w
     rw [symmetrizeBilinearSection_apply, (mem_symmetricBilinearSections b).mp h x v w]
-    ring
+    rw [← two_smul 𝕜, inv_smul_smul₀ (NeZero.ne (2 : 𝕜))]
 
-/-- Symmetrization is idempotent. -/
+/-- Symmetrization fixes every symmetric section. -/
 @[simp]
-theorem symmetrizeBilinearSection_idem
-    (b : BilinearSection (IB := IB) (F := F) (V := V) (n := n)) :
-    symmetrizeBilinearSection (symmetrizeBilinearSection b) = symmetrizeBilinearSection b :=
-  (symmetrizeBilinearSection_eq_self_iff _).mpr (symmetrizeBilinearSection_mem b)
+theorem symmetrizeBilinearSection_of_mem
+    {b : BilinearSection (IB := IB) (F := F) (V := V) (G := G) (n := n)}
+    (hb : b ∈ symmetricBilinearSections) : symmetrizeBilinearSection b = b :=
+  (symmetrizeBilinearSection_eq_self_iff b).mpr hb
 
-/-- Every symmetric smooth field is the symmetrization of a smooth bilinear field. -/
+/-- Symmetrization is a projection onto the submodule of symmetric sections. -/
+theorem isProj_symmetrizeBilinearSection :
+    LinearMap.IsProj symmetricBilinearSections
+      (symmetrizeBilinearSection (IB := IB) (F := F) (V := V) (G := G) (n := n)) where
+  map_mem := symmetrizeBilinearSection_mem
+  map_id _ hb := symmetrizeBilinearSection_of_mem hb
+
+/-- Every symmetric `C^n` field is the symmetrization of a `C^n` bilinear field. -/
 theorem range_symmetrizeBilinearSection :
-    LinearMap.range (symmetrizeBilinearSection (IB := IB) (F := F) (V := V) (n := n)) =
+    LinearMap.range (symmetrizeBilinearSection (IB := IB) (F := F) (V := V) (G := G) (n := n)) =
       symmetricBilinearSections := by
   ext b
   constructor
