@@ -245,7 +245,7 @@ private theorem exists_sumLocalInv_ideleLocalization_eq_aux {E : Ω}
       hζ.pow_eq_one, one_mul]
   have hmem : τ ζ ∈ Ev := rootSet_subset_unramifiedExtension _ _ n <| by
     rw [Polynomial.mem_rootSet]
-    refine ⟨FiniteField.X_pow_card_pow_sub_X_ne_zero _ hn hq, ?_⟩
+    refine ⟨Polynomial.X_pow_sub_X_ne_zero (Nat.one_lt_pow hn hq), ?_⟩
     simp [hτζ]
   let ζv : Ev := ⟨τ ζ, hmem⟩
   have hζv : IsPrimitiveRoot ζv (Nat.card 𝓀[v.adicCompletion K] ^ n - 1) :=

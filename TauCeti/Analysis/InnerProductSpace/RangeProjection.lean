@@ -45,8 +45,11 @@ open Function Filter Topology
 
 namespace ContinuousLinearMap
 
-variable {𝕜 F V : Type*} [RCLike 𝕜] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
-  [CompleteSpace F] [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] [CompleteSpace V]
+variable {𝕜 F V : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
+
+section Adjoint
+
+variable [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F] [CompleteSpace V]
 
 /-- The Gram operator `B† B` of an operator out of a finite-dimensional space is invertible
 exactly when `B` is injective. -/
@@ -72,20 +75,29 @@ theorem starProjection_range_eq {B : F →L[𝕜] V} [B.range.HasOrthogonalProje
   rw [coe_coe, inner_sub_left]
   simp only [← adjoint_inner_left, h, sub_self]
 
-omit [CompleteSpace F] [CompleteSpace V] in
+/-- For an isometry `B`, the operator `B B†` is the orthogonal projection onto the range of `B`. -/
+theorem comp_adjoint_eq_starProjection_range {B : F →L[𝕜] V} (hB : Isometry B)
+    [B.range.HasOrthogonalProjection] : B ∘L adjoint B = B.range.starProjection := by
+  have h := (isometry_iff_adjoint_comp_self B).1 hB
+  rw [starProjection_range_eq (h ▸ isUnit_one), h, Ring.inverse_one, one_def, id_comp]
+
+end Adjoint
+
+section Range
+
+variable [AddCommMonoid F] [Module 𝕜 F] [TopologicalSpace F]
+
 /-- The orthogonal projection onto the range of `B` fixes every value of `B`. -/
 @[simp]
 theorem starProjection_range_apply (B : F →L[𝕜] V) [B.range.HasOrthogonalProjection] (x : F) :
     B.range.starProjection (B x) = B x :=
   Submodule.starProjection_eq_self_iff.2 (LinearMap.mem_range_self (B : F →ₗ[𝕜] V) x)
 
-omit [CompleteSpace F] [CompleteSpace V] in
 /-- The orthogonal projection onto the complement of the range of `B` kills every value of `B`. -/
 theorem starProjection_orthogonal_range_apply (B : F →L[𝕜] V) [B.range.HasOrthogonalProjection]
     (x : F) : B.rangeᗮ.starProjection (B x) = 0 :=
   Submodule.starProjection_orthogonal_apply_eq_zero (LinearMap.mem_range_self (B : F →ₗ[𝕜] V) x)
 
-omit [CompleteSpace F] [CompleteSpace V] in
 /-- An operator followed by the orthogonal projection onto its range is unchanged. -/
 @[simp]
 theorem starProjection_range_comp (B : F →L[𝕜] V) [B.range.HasOrthogonalProjection] :
@@ -93,7 +105,6 @@ theorem starProjection_range_comp (B : F →L[𝕜] V) [B.range.HasOrthogonalPro
   ext x
   simp
 
-omit [CompleteSpace F] [CompleteSpace V] in
 /-- An operator followed by the orthogonal projection onto the complement of its range is zero. -/
 @[simp]
 theorem starProjection_orthogonal_range_comp (B : F →L[𝕜] V) [B.range.HasOrthogonalProjection] :
@@ -101,11 +112,7 @@ theorem starProjection_orthogonal_range_comp (B : F →L[𝕜] V) [B.range.HasOr
   ext x
   simp
 
-/-- For an isometry `B`, the operator `B B†` is the orthogonal projection onto the range of `B`. -/
-theorem comp_adjoint_eq_starProjection_range {B : F →L[𝕜] V} (hB : Isometry B)
-    [B.range.HasOrthogonalProjection] : B ∘L adjoint B = B.range.starProjection := by
-  have h := (isometry_iff_adjoint_comp_self B).1 hB
-  rw [starProjection_range_eq (h ▸ isUnit_one), h, Ring.inverse_one, one_def, id_comp]
+end Range
 
 end ContinuousLinearMap
 
@@ -124,6 +131,8 @@ theorem LinearMap.finrank_orthogonal_range_of_injective {A : E →ₗ[𝕜] V}
   omega
 
 end LinearMap
+
+section Submodule
 
 variable {𝕜 V : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
 
@@ -156,6 +165,10 @@ theorem Submodule.starProjection_inverse_apply {K W : Submodule 𝕜 V}
   have hinv : Ring.inverse R (R w) = w := by
     rw [← mul_apply_eq_comp, Ring.inverse_mul_cancel _ hR, one_apply_eq_self]
   rw [← hRw, hinv, hw']
+
+end Submodule
+
+section ContDiffAt
 
 variable {X E V : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
   [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
@@ -201,3 +214,5 @@ theorem ContDiffAt.starProjection_orthogonal_range {A : X → E →L[ℝ] V} {u�
   refine (contDiffAt_const (c := (1 : V →L[ℝ] V))).sub (hA.starProjection_range hinj)
     |>.congr_of_eventuallyEq ?_
   exact Eventually.of_forall fun u => Submodule.starProjection_orthogonal' _
+
+end ContDiffAt

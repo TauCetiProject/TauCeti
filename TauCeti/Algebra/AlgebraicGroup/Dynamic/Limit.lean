@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Unipotent.Representability
+public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Levi.Representability
 public import TauCeti.Algebra.AlgebraicGroup.Dynamic.LeviDecomposition.Naturality
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.Yoneda
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Scheme.Kernel
@@ -17,7 +18,7 @@ For a cocharacter `l` of an affine group, the dynamic limit on its parabolic sub
 is a morphism of affine groups. Its coordinate morphism sends a function to the constant
 Laurent coefficient of universal conjugation, restricted to the parabolic. Its
 scheme-theoretic kernel is the dynamic unipotent subgroup, including on nonreduced value
-algebras.
+algebras. Restriction to the Levi subgroup recovers its ambient inclusion.
 
 The coordinate formula computes the limit of any parabolic point over a commutative value
 algebra in an arbitrary universe. The kernel identity identifies the quotient of the
@@ -113,6 +114,35 @@ theorem mapPointsFunctor_parabolicLimitCoordinateMap_app
   rw [parabolicLimitCoordinateMap_apply, limit_apply_eq_coeff_conjugate,
     coeff_conjugate, hp, CommHopfAlgCat.quotientPointsHom_apply]
   rfl
+
+/-- Restricting the represented limit to the Levi subgroup gives its ambient inclusion. -/
+@[simp]
+theorem parabolicLimitCoordinateMap_comp_quotientMapOfLe
+    (l : H →ₐc[R] LaurentPolynomial R) :
+    parabolicLimitCoordinateMap l ≫
+        CommHopfAlgCat.quotientMapOfLe (_root_.CommHopfAlgCat.of R H)
+          (by rw [leviDefiningHopfIdeal_def]; exact le_sup_left) =
+      CommHopfAlgCat.mkQuotient (_root_.CommHopfAlgCat.of R H)
+        (leviDefiningHopfIdeal l) := by
+  let Z := CommHopfAlgCat.quotient (_root_.CommHopfAlgCat.of R H)
+    (leviDefiningHopfIdeal l)
+  let A := CommAlgCat.of R Z
+  let q : HopfAlgebra.points (R := R) (H := Z) A := toConv (AlgHom.id R Z)
+  let g := CommHopfAlgCat.quotientPointsHom (_root_.CommHopfAlgCat.of R H)
+    (leviDefiningHopfIdeal l) A q
+  have hg : g ∈ levi A l := by
+    rw [← quotientPointsSubgroup_leviDefiningHopfIdeal]
+    exact CommHopfAlgCat.quotientPointsHom_mem_quotientPointsSubgroup _ _ A q
+  apply _root_.CommHopfAlgCat.hom_ext
+  ext h
+  rw [_root_.CommHopfAlgCat.comp_apply, parabolicLimitCoordinateMap_apply,
+    ← _root_.CommHopfAlgCat.comp_apply,
+    CommHopfAlgCat.mkQuotient_comp_quotientMapOfLe]
+  have hc := congrArg (fun p : WithConv (H →ₐ[R] A) => p.ofConv h)
+    (limit_of_mem_levi hg)
+  rw [limit_apply_eq_coeff_conjugate, coeff_conjugate] at hc
+  simpa only [g, q, A, Z, CommHopfAlgCat.quotientPointsHom_apply, ofConv_toConv,
+    AlgHom.comp_apply, AlgHom.id_apply, BialgHom.coe_toAlgHom] using hc
 
 /-- The scheme-theoretic kernel of the dynamic limit is the dynamic unipotent subgroup.
 The ideal is written in the parabolic coordinate algebra by mapping the ambient unipotent

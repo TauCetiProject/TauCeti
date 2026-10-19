@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.PDE.GreenFunction.HalfSpace
 import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue.Basic
 import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue.Converse
-import TauCeti.Analysis.SpecialFunctions.JapaneseBracket
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 
 /-!

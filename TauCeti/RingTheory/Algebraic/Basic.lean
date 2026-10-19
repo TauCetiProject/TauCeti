@@ -15,11 +15,18 @@ Adding a base-ring constant to a transcendental element preserves transcendence,
 arbitrary commutative ring and in an arbitrary ring algebra. So does applying an injective algebra
 homomorphism, the transcendental counterpart of Mathlib's `isAlgebraic_algHom_iff`.
 An algebraic extension of scalars also preserves transcendence in a common overfield.
+Dually, every root in `A` of a polynomial over `R` is algebraic over `R`
+(`isAlgebraic_of_mem_aroots`).
 -/
 
 public section
 
 open Polynomial
+
+/-- A root in `A` of a polynomial over `R` is algebraic over `R`. -/
+theorem isAlgebraic_of_mem_aroots {R A : Type*} [CommRing R] [CommRing A] [IsDomain A]
+    [Algebra R A] {p : R[X]} {x : A} (hx : x ∈ p.aroots A) : IsAlgebraic R x :=
+  ⟨p, fun hp ↦ by simp [hp] at hx, (mem_aroots'.1 hx).2⟩
 
 namespace Transcendental
 

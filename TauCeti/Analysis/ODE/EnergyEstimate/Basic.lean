@@ -15,8 +15,8 @@ import Mathlib.Analysis.Calculus.ContDiff.Comp
 /-!
 # Energy estimates for a first-order operator on the line
 
-For a continuously differentiable family of symmetric operators `A(s)` on a real inner product
-space, integration by parts gives
+For a continuously differentiable family of operators `A(s)` on a real inner product
+space, symmetric wherever the path is nonzero, integration by parts gives
 
 `∫ ‖u' + A u‖² = ∫ ‖u'‖² + ∫ ‖A u‖² - ∫ ⟪u, A' u⟫`.
 
@@ -65,9 +65,10 @@ theorem integrable_norm_apply_sq_and_inner_deriv_apply (hA : ContDiff ℝ 1 A) (
   exact ⟨hiA, hiCorr⟩
 
 /-- The energy identity for `d/ds + A(s)`. The coefficient derivative contributes with a minus
-sign; symmetry is needed only for the coefficients, not assumed separately for their derivative. -/
+sign. Symmetry is needed only on the support of the path, and is not assumed separately for the
+coefficient derivative. -/
 theorem integral_norm_deriv_add_sq_eq (hA : ContDiff ℝ 1 A)
-    (hsym : ∀ s, (A s).toLinearMap.IsSymmetric) (hu : ContDiff ℝ 1 u)
+    (hsym : ∀ s ∈ Function.support u, (A s).toLinearMap.IsSymmetric) (hu : ContDiff ℝ 1 u)
     (hc : HasCompactSupport u) :
     (∫ s, ‖deriv u s + A s (u s)‖ ^ 2) =
       (∫ s, ‖deriv u s‖ ^ 2) + (∫ s, ‖A s (u s)‖ ^ 2) -
@@ -92,9 +93,11 @@ theorem integral_norm_deriv_add_sq_eq (hA : ContDiff ℝ 1 A)
       ((hA.differentiable one_ne_zero s).hasDerivAt.clm_apply
         (hu.differentiable one_ne_zero s).hasDerivAt) using 1
     simp only [inner_add_right]
-    rw [← (hsym s).apply_clm (u s) (deriv u s),
-      real_inner_comm (A s (u s)) (deriv u s)]
-    ring
+    by_cases hs : u s = 0
+    · simp [hs]
+    · rw [← (hsym s hs).apply_clm (u s) (deriv u s),
+        real_inner_comm (A s (u s)) (deriv u s)]
+      ring
   have hzero := integral_eq_zero_of_hasDerivAt_of_integrable hder
     ((hiCross.const_mul 2).add hiCorr)
     ((hu.inner ℝ (hA.clm_apply hu)).continuous.integrable_of_hasCompactSupport hpot)
@@ -109,10 +112,10 @@ theorem integral_norm_deriv_add_sq_eq (hA : ContDiff ℝ 1 A)
   linarith
 
 /-- A spectral gap and a bound on the coefficient derivative give a coercive estimate for a
-compactly supported path. Both bounds need hold only where the path is nonzero. The estimate is
-useful when `β < α²`, but is valid without that extra hypothesis. -/
+compactly supported path. Symmetry and both bounds need hold only where the path is nonzero.
+The estimate is useful when `β < α²`, but is valid without that extra hypothesis. -/
 theorem integral_norm_deriv_sq_add_mul_integral_norm_sq_le (hA : ContDiff ℝ 1 A)
-    (hsym : ∀ s, (A s).toLinearMap.IsSymmetric) (hu : ContDiff ℝ 1 u)
+    (hsym : ∀ s ∈ Function.support u, (A s).toLinearMap.IsSymmetric) (hu : ContDiff ℝ 1 u)
     (hc : HasCompactSupport u) {α β : ℝ} (hα : 0 ≤ α)
     (hgap : ∀ s ∈ Function.support u, α * ‖u s‖ ≤ ‖A s (u s)‖)
     (hsmall : ∀ s ∈ Function.support u, ⟪u s, deriv A s (u s)⟫_ℝ ≤ β * ‖u s‖ ^ 2) :
@@ -195,7 +198,8 @@ theorem exists_pos_forall_integral_norm_deriv_sq_add_mul_integral_norm_sq_le
       exact hrminus s hsm
   -- Apply the energy estimate with gap `α / 2` and derivative bound `α² / 8`.
   refine ⟨R, hRpos, fun u hu hc hs ↦ ?_⟩
-  have hest := integral_norm_deriv_sq_add_mul_integral_norm_sq_le hA hsym hu hc hhalf.le
+  have hest := integral_norm_deriv_sq_add_mul_integral_norm_sq_le hA (fun s _ ↦ hsym s)
+    hu hc hhalf.le
     (fun s hu ↦ (htail s (hs hu)).1 (u s))
     (β := α ^ 2 / 8) (fun s hu ↦ ?_)
   · have hcoeff : (α / 2) ^ 2 - α ^ 2 / 8 = α ^ 2 / 8 := by ring

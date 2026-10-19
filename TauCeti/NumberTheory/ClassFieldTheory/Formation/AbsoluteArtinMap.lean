@@ -98,7 +98,7 @@ def abelianizationRestrict (V : OpenNormalSubgroup G) :
       (Abelianization.of.comp
         ((galOfOpenNormalEquiv V).symm.toMonoidHom.comp (QuotientGroup.mk' V.toSubgroup))) <| by
       -- The kernel contains `V`, so it is open, hence closed; it contains every commutator.
-      refine Subgroup.topologicalClosure_minimal _ (Abelianization.commutator_subset_ker _) ?_
+      refine Subgroup.topologicalClosure_minimal _ (Abelianization.commutator_le_ker _) ?_
       refine Subgroup.isClosed_of_isOpen _ (Subgroup.isOpen_mono (fun g hg ↦ ?_) V.isOpen)
       rw [MonoidHom.mem_ker, MonoidHom.comp_apply, MonoidHom.comp_apply,
         QuotientGroup.mk'_apply, (QuotientGroup.eq_one_iff g).mpr hg, map_one, map_one]
