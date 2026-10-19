@@ -8,11 +8,6 @@ module
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.Brauer.SumFormula
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.Hilbert.Invariant
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.InvariantSum
-import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
-import TauCeti.FieldTheory.Kummer.Cyclic
-import TauCeti.NumberTheory.ClassFieldTheory.Global.Cyclotomic.Compositum
-import TauCeti.NumberTheory.ClassFieldTheory.Global.IdeleClass.SecondInequality
-import TauCeti.NumberTheory.ClassFieldTheory.Local.CyclicClass
 
 /-!
 # Hilbert reciprocity
@@ -23,29 +18,14 @@ cohomological form it is the statement that the local invariants of the Brauer c
 the cup product of the Kummer classes of `a` and `b`, sum to zero: by
 `finiteInvAt_kummerBrauerClass` and `infiniteInvAt_kummerBrauerClass` these local invariants are
 the Hilbert invariants read in `ℚ/ℤ` (`sumLocalInv_brLocalization_kummerBrauerClass`). The local
-invariants of every Brauer class of `K` sum to zero once `H¹` of the idele-class formation
-vanishes on every layer (`sumLocalInv_brLocalization_eq_zero_of_subsingleton_h1_globalFormation`),
-and that vanishing is the companion of the second fundamental inequality
-(`subsingleton_h1_globalFormation`).
-
-The file also proves the vanishing of the sum of the local invariants of the Kummer-cup class
-`(a) ∪ (b)` of exponent `n` directly from the cyclotomic product formula, whenever an `n`-th root
-`s` of `b` lies in a cyclotomic extension of `K`
-(`sumLocalInv_brLocalization_kummerBrauerClass_eq_zero_of_mem_adjoin`). The class `(a) ∪ (b)` is
-split by the cyclic Kummer extension `K(s)/K`: it is minus the inflation of the cyclic class of `a`
-(`kummerBrauerClass_eq_neg_relBrInfl_cyclicClass`). If `K(s)` lies in `K(μ_m)`, the sum of the
-local invariants of every class split by `K(s)` vanishes
-(`sumLocalInv_brLocalization_relBrInfl_eq_zero_of_le_adjoin_nth_roots`), by the product formula
-for the local Artin symbols of the cyclotomic extensions.
+invariants of every Brauer class of `K` sum to zero (`sumLocalInv_brLocalization_eq_zero`), and so
+Hilbert reciprocity holds.
 
 ## Main results
 
 * `TauCeti.ClassFieldTheory.sumLocalInv_brLocalization_kummerBrauerClass`: the sum of the local
   invariants of the quadratic Kummer-cup class is the sum of the Hilbert invariants, read in
   `ℚ/ℤ`.
-* `TauCeti.ClassFieldTheory.sumLocalInv_brLocalization_kummerBrauerClass_eq_zero_of_mem_adjoin`:
-  the local invariants of `(a) ∪ (b)` sum to zero when an `n`-th root of `b` lies in a cyclotomic
-  extension.
 * `TauCeti.ClassFieldTheory.hilbertProductFormula`: Hilbert reciprocity over every number field.
 
 ## References
@@ -62,7 +42,7 @@ noncomputable section
 
 namespace TauCeti.ClassFieldTheory
 
-open _root_.NumberField _root_.IntermediateField
+open _root_.NumberField
 
 variable {K : Type} [Field K] [NumberField K]
 
@@ -80,29 +60,6 @@ theorem sumLocalInv_brLocalization_kummerBrauerClass (a b : Kˣ) :
   · rw [mem_brauerSupport, finiteInvAt_kummerBrauerClass] at hv
     exact (mem_finiteHilbertSupport K).2 fun h ↦ hv (by rw [h, map_zero])
 
-/-- **The product formula for a Kummer-cup class with a cyclotomic radicand.** Let `ζ ∈ K` be a
-primitive `n`-th root of unity and `a, b ∈ Kˣ`. If some `n`-th root `s` of `b` in `Kˢ` lies in the
-cyclotomic extension `K(μ_m)` for some `m ≠ 0`, then the local invariants of the Brauer class
-`(a) ∪ (b)` sum to zero. -/
-theorem sumLocalInv_brLocalization_kummerBrauerClass_eq_zero_of_mem_adjoin {n : ℕ} [NeZero n]
-    {ζ : K} (hζ : IsPrimitiveRoot ζ n) (a b : Kˣ) {s : SeparableClosure K}
-    (hs : s ^ n = algebraMap K (SeparableClosure K) b) {m : ℕ} (hm : m ≠ 0)
-    (hsm : s ∈ adjoin K {x : SeparableClosure K | x ^ m = 1}) :
-    sumLocalInv K (brLocalization K (kummerBrauerClass ζ hζ a b)) = 0 := by
-  -- `E = K(s)` is a cyclic Kummer extension of `K` inside `K(μ_m)`, and it splits `(a) ∪ (b)`.
-  set E := K⟮s⟯
-  have ht : AdjoinSimple.gen K s ^ n = algebraMap K E b :=
-    Subtype.ext <| by
-      simpa only [SubmonoidClass.coe_pow, AdjoinSimple.coe_gen, coe_algebraMap_apply] using hs
-  have hgen : K⟮AdjoinSimple.gen K s⟯ = ⊤ := adjoin_adjoinSimple_gen_eq_top s
-  have : FiniteDimensional K E := adjoin.finiteDimensional (Algebra.IsIntegral.isIntegral s)
-  have := isGalois_of_pow_eq_of_adjoin_eq_top hζ b.ne_zero ht hgen
-  obtain ⟨g, hg, hd, hgs⟩ := exists_forall_mem_zpowers_apply_eq hζ b.ne_zero ht hgen
-  have : IsCyclic Gal(E/K) := ⟨⟨g, hg⟩⟩
-  rw [kummerBrauerClass_eq_neg_relBrInfl_cyclicClass hζ a b ht hg hd hgs E.val, map_neg, map_neg,
-    sumLocalInv_brLocalization_relBrInfl_eq_zero_of_le_adjoin_nth_roots E hm
-      (adjoin_simple_le_iff.2 hsm), neg_zero]
-
 /-- **Hilbert reciprocity.** For `a, b ∈ Kˣ`, the Hilbert invariants of `a` and `b` at all the
 finite and infinite places of the number field `K` sum to zero. -/
 theorem hilbertProductFormula (a b : Kˣ) :
@@ -110,7 +67,6 @@ theorem hilbertProductFormula (a b : Kˣ) :
         ∑ w : InfinitePlace K, infiniteHilbertInvariantAt K w a b = 0 :=
   ZMod.toRatAddCircle_injective 2 <| by
     rw [← sumLocalInv_brLocalization_kummerBrauerClass, map_zero,
-      sumLocalInv_brLocalization_eq_zero_of_subsingleton_h1_globalFormation K
-        fun _ _ _ _ _ ↦ subsingleton_h1_globalFormation _]
+      sumLocalInv_brLocalization_eq_zero]
 
 end TauCeti.ClassFieldTheory
