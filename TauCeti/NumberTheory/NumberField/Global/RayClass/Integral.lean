@@ -42,6 +42,9 @@ everything: this is the moving lemma, `idealClass_surjective`.
   prime to `𝔪` is inverted by the ray class of another such ideal.
 * `TauCeti.GlobalNumberFields.idealClass_surjective`: **the moving lemma**, that every ray class is
   the class of a nonzero integral ideal prime to the modulus.
+* `TauCeti.GlobalNumberFields.RayClassGroup.hom_ext`: homomorphisms out of the ray class group
+  agreeing after `idealClass 𝔪` are equal; `eq_idealClassLift` is the matching uniqueness of
+  `idealClassLift`.
 * `TauCeti.GlobalNumberFields.mem_ker_idealClassLift`: the kernel of `idealClassLift φ hφ` consists
   of the ray classes of the integral ideals killed by `φ`.
 * `TauCeti.GlobalNumberFields.idealClass_eq_one_iff_exists_generator`: the generator form of
@@ -233,6 +236,23 @@ theorem idealClassLift_comp_idealClass {𝔪 : Modulus K} {M : Type*} [Monoid M]
     (φ : integralIdealsPrimeTo 𝔪 →* M) (hφ : ∀ J, idealClass 𝔪 J = 1 → φ J = 1) :
     (idealClassLift φ hφ).comp (idealClass 𝔪) = φ :=
   MonoidHom.ext (idealClassLift_idealClass φ hφ)
+
+/-- **Homomorphisms out of the ray class group are determined on ideals.**  Two homomorphisms out
+of `RayClassGroup 𝔪` that agree on the ray classes of the integral ideals prime to `𝔪` are equal,
+since every ray class is such a class by the moving lemma. -/
+@[ext]
+theorem RayClassGroup.hom_ext {𝔪 : Modulus K} {M : Type*} [Monoid M]
+    {f g : RayClassGroup 𝔪 →* M} (h : f.comp (idealClass 𝔪) = g.comp (idealClass 𝔪)) : f = g :=
+  MonoidHom.ext fun c ↦ by
+    obtain ⟨J, rfl⟩ := idealClass_surjective 𝔪 c
+    exact DFunLike.congr_fun h J
+
+/-- **Uniqueness of the factorization through the ray class map.**  A homomorphism out of
+`RayClassGroup 𝔪` whose composite with `idealClass 𝔪` is `φ` is `idealClassLift φ hφ`. -/
+theorem eq_idealClassLift {𝔪 : Modulus K} {M : Type*} [Monoid M]
+    {φ : integralIdealsPrimeTo 𝔪 →* M} (hφ : ∀ J, idealClass 𝔪 J = 1 → φ J = 1)
+    {f : RayClassGroup 𝔪 →* M} (h : f.comp (idealClass 𝔪) = φ) : f = idealClassLift φ hφ :=
+  RayClassGroup.hom_ext (by rw [h, idealClassLift_comp_idealClass])
 
 /-- The factorization of a surjective homomorphism through the ray class map is surjective. -/
 theorem idealClassLift_surjective {𝔪 : Modulus K} {M : Type*} [Monoid M]

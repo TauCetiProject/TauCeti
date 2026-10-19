@@ -217,8 +217,7 @@ of `Pic O`: the square formed with `narrowToPic` and the transition map `classMa
 theorem narrowToPic_comp_rayClassToNarrowPic :
     O.narrowToPic.comp O.rayClassToNarrowPic =
       O.rayClassToPic.comp (classMap O.conductorModulus_dvd_narrowConductorModulus) := by
-  refine MonoidHom.ext fun c ↦ ?_
-  obtain ⟨J, rfl⟩ := idealClass_surjective _ c
+  ext J
   simp
 
 /-- Every principal narrow Picard class is the narrow Picard class of a principal ideal of `𝓞 K`
