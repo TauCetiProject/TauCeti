@@ -62,8 +62,10 @@ repository is a fork; ordinary `pull_request` runs cannot supply progress. Other
 accepted events (`workflow_run`, `issue_comment`, schedule and manual dispatch)
 must name upstream `main`.
 The former retry-only artifact is migrated at deployment. Missing/expired state
-uses the existing bounded time-window fallback; a hard runner loss before upload
-can repeat work since the last uploaded checkpoint.
+uses the existing bounded time-window fallback. Invalid state warns and rebuilds
+from that fallback, then writes a replacement checkpoint rather than repeatedly
+restoring the corrupt one. Lost state or a hard runner loss before upload can
+repeat work since the last uploaded checkpoint.
 
 The workflows check out the exact policy revision used by Auto-merge, without
 persisting credentials. The workflow-pin tests require labels, the health report,

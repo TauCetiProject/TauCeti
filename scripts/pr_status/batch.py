@@ -94,8 +94,9 @@ def updated_prs(since: str, completed=None) -> tuple[list[int], set[int]]:
             if updated < since:
                 done = True
                 break
-            # Own label writes before completion are not new work. A same-second
-            # update remains eligible because GitHub timestamps lack finer ordering.
+            # Skip only updates older than a finished check's start. Writes
+            # during the check may cause one extra reconciliation on resume.
+            # Same-second updates remain eligible because ordering is unknown.
             if completed and updated < completed.get(number, ''):
                 continue
             out.append(int(number))
@@ -240,7 +241,11 @@ def main(argv=None):
     args = ap.parse_args(argv)
     if any(number <= 0 for number in args.pr):
         ap.error('--pr must be a positive PR number')
-    state = load_progress(args.state_in, args.since)
+    try:
+        state = load_progress(args.state_in, args.since)
+    except (OSError, ValueError, KeyError, TypeError):
+        log('::warning::Invalid PR-status checkpoint; rebuilding from the fallback window')
+        state = load_progress(None, args.since)
     output = None if args.dry_run else args.state_out
     lock = threading.Lock()
     try:

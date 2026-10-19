@@ -122,6 +122,15 @@ class ResumeTests(unittest.TestCase):
         self.assertEqual(state['retry'], {'2': 3})
         self.assertIsNone(state['active'])
 
+    def test_invalid_checkpoint_is_replaced_instead_of_poisoning_future_runs(self):
+        for content in ('not JSON', '{"version":1}', '{"version":1,"watermark":null}'):
+            self.path.write_text(content)
+            self.assertEqual(batch.main(self.args), 0)
+            repaired = batch.load_progress(self.path, 'ignored')
+            self.assertEqual(repaired['version'], 1)
+            self.assertIsNone(repaired['active'])
+        self.updated.assert_called_with('2026-10-19T07:58:00Z')
+
 
     def test_discovery_ignores_activity_older_than_saved_completion(self):
         rows = ['1 2026-10-19T09:00:00Z 2026-10-19T08:00:00Z',
