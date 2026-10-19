@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Asymptotics.Lemmas
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Map
 public import TauCeti.RingTheory.PowerSeries.HasseDeriv.GaussNorm
 public import TauCeti.RingTheory.PowerSeries.Restricted
@@ -183,25 +184,9 @@ theorem not_isEntire_mk_pow [NormMulClass R] {a : R} (ha : a ≠ 0) :
     one_pow] at h
   exact one_ne_zero (tendsto_nhds_unique tendsto_const_nhds h)
 
-/-- For `0 ≤ ρ < 1`, the shifted polynomial-times-geometric sequence `(n + k)ᵏ ρⁿ` tends to `0`.
-This absorbs the polynomially many terms, or polynomially large binomial coefficients, that appear
-when the coefficients of a product or a Hasse derivative are bounded at a smaller radius. -/
-private theorem tendsto_add_pow_mul_pow_of_lt_one (k : ℕ) {ρ : ℝ} (hρ0 : 0 ≤ ρ) (hρ1 : ρ < 1) :
-    Tendsto (fun n : ℕ ↦ (n + k : ℝ) ^ k * ρ ^ n) atTop (𝓝 0) := by
-  rcases hρ0.eq_or_lt with rfl | hρ
-  · exact tendsto_const_nhds.congr' <| (eventually_ge_atTop 1).mono fun n hn ↦ by
-      simp [zero_pow (Nat.one_le_iff_ne_zero.mp hn)]
-  have h := ((tendsto_pow_const_mul_const_pow_of_lt_one k hρ0 hρ1).comp
-    (tendsto_add_atTop_nat k)).const_mul (ρ⁻¹ ^ k)
-  convert h using 1
-  · ext n
-    simp only [Function.comp_apply, Nat.cast_add, pow_add, inv_pow]
-    field_simp [hρ.ne']
-  · simp
-
-/-- A product of entire series is entire. The proof uses restrictedness at a larger radius to
-absorb the linearly many terms in each coefficient of the product. -/
+/-- A product of entire series is entire. -/
 theorem IsEntire.mul (hf : f.IsEntire) (hg : g.IsEntire) : (f * g).IsEntire := by
+  -- Restrictedness at a larger radius absorbs the linearly many terms in each coefficient.
   intro r
   rw [← isRestricted_abs_iff, isRestricted_iff']
   let q := 2 * (|r| + 1)
@@ -217,7 +202,7 @@ theorem IsEntire.mul (hf : f.IsEntire) (hg : g.IsEntire) : (f * g).IsEntire := b
   have hB0 : 0 ≤ B := (by positivity : 0 ≤ ‖coeff 0 g‖ * q ^ 0).trans (hBg 0)
   have hscale : |r| = q * ρ := by dsimp [ρ]; rw [mul_div_cancel₀ _ hq.ne']
   have hupper : Tendsto (fun n : ℕ ↦ (n + 1 : ℝ) * ρ ^ n * (A * B)) atTop (𝓝 0) := by
-    simpa using (tendsto_add_pow_mul_pow_of_lt_one 1 hρ0 hρ1).mul_const (A * B)
+    simpa using (TauCeti.tendsto_add_pow_mul_pow_of_lt_one 1 hρ0 hρ1).mul_const (A * B)
   refine squeeze_zero (fun n ↦ by positivity) (fun n ↦ ?_) hupper
   rw [coeff_mul]
   calc
@@ -270,7 +255,8 @@ theorem IsEntire.hasseDeriv (hf : f.IsEntire) (k : ℕ) :
   have hA0 : 0 ≤ A := (by positivity : 0 ≤ ‖coeff 0 f‖ * q ^ 0).trans (hAf 0)
   have hupper : Tendsto
       (fun n : ℕ ↦ ((n + k : ℝ) ^ k * ρ ^ n) * (q⁻¹ ^ k * A)) atTop (𝓝 0) := by
-    simpa using (tendsto_add_pow_mul_pow_of_lt_one k hρ0 hρ1).mul_const (q⁻¹ ^ k * A)
+    simpa using
+      (TauCeti.tendsto_add_pow_mul_pow_of_lt_one k hρ0 hρ1).mul_const (q⁻¹ ^ k * A)
   refine squeeze_zero (fun n ↦ by positivity) (fun n ↦ ?_) hupper
   rw [coeff_hasseDeriv, ← nsmul_eq_mul]
   have hscaled : ‖coeff (n + k) f‖ * |r| ^ n ≤ q⁻¹ ^ k * A * ρ ^ n := by
