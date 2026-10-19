@@ -16,9 +16,9 @@ import Mathlib.Topology.Algebra.OpenSubgroup
 # Galois action on geometric component groups
 
 For a finite-type affine group over a field `k`, take the connected components after
-extension to `k̄`. The absolute Galois group acts through the scalar factor of its coordinate
-ring. This action preserves the component-group multiplication, and the surjection from
-geometric points to components is equivariant for postcomposition on points.
+extension to an algebraic closure of `k`. The absolute Galois group acts through the scalar
+factor of its coordinate ring. This action preserves the component-group multiplication, and
+the surjection from geometric points to components is equivariant for postcomposition on points.
 
 The action is continuous for the discrete quotient topology: a finite set of algebra
 generators of the coordinate ring has values with a common open Galois stabilizer.
