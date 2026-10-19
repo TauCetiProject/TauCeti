@@ -32,10 +32,10 @@ where it fails. Taking `X = G ⧸ H` and `Y = G ⧸ K` for subgroups `H` and `K`
 that the trivial representations of `H` and of `K` induce to equivalent representations of `G`
 precisely when every element of `G` fixes as many cosets of `H` as of `K` — the classical condition
 of Gassmann, satisfied by non-conjugate subgroups, so that `G ⧸ H` and `G ⧸ K` need not be
-isomorphic `G`-sets. By the fixed-coset identity of `TauCeti/GroupTheory/AlmostConjugate.lean`
-the condition says that `H` and `K` are almost conjugate, meeting every conjugacy class of `G` in
-the same number of elements (`Subgroup.AlmostConjugate`). Nothing about Gassmann's examples is
-proved here; what is proved is the criterion they are examples for.
+isomorphic `G`-sets. By the fixed-coset identity `Subgroup.natCard_fixedBy_mul_natCard` the
+condition says that `H` and `K` are almost conjugate, meeting every conjugacy class of `G` in the
+same number of elements (`Subgroup.almostConjugate_iff_forall_natCard_fixedBy_eq`). Nothing about
+Gassmann's examples is proved here; what is proved is the criterion they are examples for.
 
 One numerical consequence is recorded along the way, and it needs no assumption on the
 characteristic: equivalent permutation representations come from `G`-sets of the same size, because
