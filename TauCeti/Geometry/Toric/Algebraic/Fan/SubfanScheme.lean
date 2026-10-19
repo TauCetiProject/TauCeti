@@ -218,13 +218,9 @@ private theorem exists_affineToricChartι_eq_of_algebraicMap_mem (σ : Φ.cones)
     refine f.leastCone_le _ (Ψ.mem_of_isFaceOf υ.2 hρ) ?_
     rintro _ ⟨x, hx, rfl⟩
     refine ⟨f.mapsTo_leastCone σ.2 hx.1, ?_⟩
-    have hm' : (dualSemigroupMap Φ.lattice Ψ.lattice f.latticeMap f.realMap f.map_lattice hmaps
-        ⟨m, hm⟩ : N →+ ℤ) = m.comp f.latticeMap := by
-      ext n
-      simp
     have hx₂ := LinearMap.mem_ker.1 hx.2
-    rwa [hm', Φ.lattice.realCharacter_comp Ψ.lattice f.latticeMap f.realMap f.map_lattice]
-      at hx₂
+    rwa [coe_dualSemigroupMap,
+      Φ.lattice.realCharacter_comp Ψ.lattice f.latticeMap f.realMap f.map_lattice] at hx₂
   exact (Ψ.isFaceOf_of_le (Ψ.inf_mem υ.2 τ.2) (f.leastCone_mem _) hle).trans
     (Ψ.inf_isFaceOf_right υ.2 τ.2)
 

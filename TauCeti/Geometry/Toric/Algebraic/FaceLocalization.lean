@@ -52,9 +52,9 @@ functoriality needed for the overlap and cocycle maps in fan gluing.
   `TauCeti.Toric.IsLatticeRational.range_faceAffineToricSchemeMap_inf`: the image of the affine
   toric scheme of a face is a basic open set; for faces of a lattice-rational cone the image of
   their intersection is the intersection of their images.
-* `TauCeti.Toric.preimage_range_faceAffineToricSchemeMap_inf_ker`: the inverse image of the face
-  cut out by a character, under the affine toric morphism of a cone map, is the face cut out by
-  the pulled-back character.
+* `TauCeti.Toric.preimage_range_faceAffineToricSchemeMap_inf_ker`: the inverse image, under the
+  affine toric morphism of a cone map, of the open subscheme of the face cut out by a character is
+  the open subscheme of the face cut out by the pulled-back character.
 * `TauCeti.Toric.Fan.affineToricChart`, `TauCeti.Toric.Fan.affineToricOverlap`,
   `TauCeti.Toric.Fan.affineToricOverlapLeft` and `TauCeti.Toric.Fan.affineToricOverlapRight`: the
   affine toric charts of a fan and the two maps from their pairwise overlap; these maps are open
