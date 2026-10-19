@@ -55,6 +55,8 @@ the `a = 1` cases of the Gamma results in `TauCeti.Probability.Distributions.Gam
 * `charFun_expMeasure` — characteristic function `(r : ℂ) / (r - I * t)`;
 * `measureReal_Ioi_expMeasure`, `measure_Ioi_expMeasure` — tail probabilities;
 * `memoryless_expMeasure` — the conditional tail is unchanged by elapsed time;
+* `map_sub_cond_expMeasure` — conditional on exceeding a nonnegative threshold, the excess
+  has the original exponential law;
 * `map_min_expMeasure` — the minimum map sends a product of exponential laws to the exponential
   law whose rate is the sum of the rates;
 * `hasLaw_min_expMeasure_of_indepFun` — minimum of independent exponentials;

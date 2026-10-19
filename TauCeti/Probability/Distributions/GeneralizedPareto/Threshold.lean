@@ -43,16 +43,9 @@ private theorem exists_generalizedParetoMap_eq {s ξ v : ℝ} (hs : 0 < s) (hv :
   have hw' : 0 < 1 + ξ * v / s := by
     have := div_pos hw hs
     simpa [add_div, hs.ne'] using this
-  have hinv : generalizedParetoMap s ξ (Real.log (1 + ξ * v / s) / ξ) = v := by
-    rw [generalizedParetoMap_of_shape_ne_zero hξ]
-    have hcancel : ξ * (Real.log (1 + ξ * v / s) / ξ) =
-        Real.log (1 + ξ * v / s) := by field_simp
-    rw [hcancel, Real.exp_log hw']
-    field_simp
-    ring
+  have hinv := generalizedParetoMap_log_div hs.ne' hξ hw'
   refine ⟨_, ?_, hinv⟩
-  apply (strictMono_generalizedParetoMap hs ξ).le_iff_le.mp
-  simpa only [generalizedParetoMap_apply_zero, hinv] using hv
+  rwa [← generalizedParetoMap_nonneg_iff hs ξ, hinv]
 
 private theorem generalizedParetoMap_sub_threshold (s ξ a e : ℝ) :
     generalizedParetoMap s ξ e - generalizedParetoMap s ξ a =

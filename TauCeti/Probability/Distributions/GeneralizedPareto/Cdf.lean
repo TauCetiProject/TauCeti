@@ -62,16 +62,9 @@ theorem cdf_generalizedParetoMeasure_of_nonpos (hs : 0 < s) (ξ : ℝ) (hx : x �
 theorem cdf_generalizedParetoMeasure_of_shape_ne_zero (hs : 0 < s) (hξ : ξ ≠ 0)
     (hx : 0 ≤ x) (hw : 0 < 1 + ξ * x / s) :
     cdf (generalizedParetoMeasure s ξ) x = 1 - (1 + ξ * x / s) ^ (-1 / ξ) := by
-  have hinv : generalizedParetoMap s ξ (Real.log (1 + ξ * x / s) / ξ) = x := by
-    rw [generalizedParetoMap_of_shape_ne_zero hξ]
-    have hcancel : ξ * (Real.log (1 + ξ * x / s) / ξ) =
-        Real.log (1 + ξ * x / s) := by field_simp
-    rw [hcancel, Real.exp_log hw]
-    field_simp
-    ring
+  have hinv := generalizedParetoMap_log_div hs.ne' hξ hw
   have he : 0 ≤ Real.log (1 + ξ * x / s) / ξ := by
-    apply (strictMono_generalizedParetoMap hs ξ).le_iff_le.mp
-    simpa only [hinv, generalizedParetoMap_apply_zero] using hx
+    rwa [← generalizedParetoMap_nonneg_iff hs ξ, hinv]
   rw [← hinv, cdf_generalizedParetoMeasure_generalizedParetoMap hs, cdf_expMeasure_eq one_pos,
     ite_eq_left he, hinv, one_mul, Real.rpow_def_of_pos hw]
   congr 2
