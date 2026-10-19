@@ -310,15 +310,20 @@ theorem divergence_smul_function (f : M → ℝ) (X : (x : M) → TangentSpace I
   rw [divergence, h]
   rw [ContinuousLinearMap.toLinearMap_add, ContinuousLinearMap.toLinearMap_smul, map_add,
     map_smul]
+  -- Name the projection from the continuous rank-one constructor before applying the trace rule.
+  have h_smulRight :
+      ((d% f x).smulRight (X x)).toLinearMap = (d% f x).toLinearMap.smulRight (X x) := by
+    ext v
+    simp only [ContinuousLinearMap.smulRight_apply, LinearMap.smulRight_apply,
+      ContinuousLinearMap.coe_coe]
+  -- The `d%` notation is `mvfderiv`; use its named coercion fact at the final application.
   have h_trace :
       LinearMap.trace ℝ (TangentSpace I x) ((d% f x).smulRight (X x)).toLinearMap =
-        (d% f x).toLinearMap (X x) := by
-    simpa only [ContinuousLinearMap.smulRight] using
-      (LinearMap.trace_smulRight (R := ℝ) (M := TangentSpace I x)
-        (d% f x).toLinearMap (X x))
+        mvfderiv I f x (X x) := by
+    rw [h_smulRight, LinearMap.trace_smulRight]
+    exact congrFun (ContinuousLinearMap.coe_coe (d% f x)) (X x)
   rw [h_trace]
   simp only [smul_eq_mul, divergence]
-  simp [mvfderiv]
 
 /-- The Hessian of a constant function is zero. -/
 @[simp]
