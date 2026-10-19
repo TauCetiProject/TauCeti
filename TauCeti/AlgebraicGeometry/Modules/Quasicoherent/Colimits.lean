@@ -142,7 +142,6 @@ variable {X : Scheme.{u}} {U : X.Opens}
 
 /-- Over an affine open `U`, the sections functor is global sections on the affine chart
 `Spec Γ(X, U) ⟶ X`, naturally in the module: the components are `fromSpecSectionsEquiv`. -/
-@[expose, simps! hom_app inv_app]
 def _root_.AlgebraicGeometry.IsAffineOpen.restrictFromSpecCompModuleSpecΓFunctorIso
     (hU : IsAffineOpen U) :
     restrictFunctor hU.fromSpec ⋙ moduleSpecΓFunctor ≅ sectionsFunctor U :=
@@ -154,6 +153,24 @@ def _root_.AlgebraicGeometry.IsAffineOpen.restrictFromSpecCompModuleSpecΓFuncto
       f.app U ((M.fromSpecSectionsEquiv hU).symm x)
     rw [LinearEquiv.symm_apply_eq, ← Scheme.Modules.Hom.fromSpecSectionsEquiv_naturality]
     exact congrArg _ ((M.fromSpecSectionsEquiv hU).apply_symm_apply x).symm
+
+/-- The components of `restrictFromSpecCompModuleSpecΓFunctorIso` are the inverses of
+`fromSpecSectionsEquiv`. -/
+@[simp]
+theorem _root_.AlgebraicGeometry.IsAffineOpen.restrictFromSpecCompModuleSpecΓFunctorIso_hom_app
+    (hU : IsAffineOpen U) (M : X.Modules) :
+    hU.restrictFromSpecCompModuleSpecΓFunctorIso.hom.app M =
+      ModuleCat.ofHom (M.fromSpecSectionsEquiv hU).symm.toLinearMap :=
+  NatIso.ofComponents_hom_app _ _ M
+
+/-- The components of the inverse of `restrictFromSpecCompModuleSpecΓFunctorIso` are
+`fromSpecSectionsEquiv`. -/
+@[simp]
+theorem _root_.AlgebraicGeometry.IsAffineOpen.restrictFromSpecCompModuleSpecΓFunctorIso_inv_app
+    (hU : IsAffineOpen U) (M : X.Modules) :
+    hU.restrictFromSpecCompModuleSpecΓFunctorIso.inv.app M =
+      ModuleCat.ofHom (M.fromSpecSectionsEquiv hU).toLinearMap :=
+  NatIso.ofComponents_inv_app _ _ M
 
 /-- Sections over an affine open send a colimit, in the category of all sheaves of modules, of a
 small diagram of quasicoherent sheaves to a colimit of `Γ(X, U)`-modules. -/
