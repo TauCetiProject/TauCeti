@@ -65,6 +65,7 @@ theorem comp_apply (g : N ≃ₚ[L] P) (f : M ≃ₚ[L] N) (h : f.cod ≤ g.dom)
 
 /-- The codomain of the composite is the image under the second partial equivalence of the
 codomain of the first. -/
+@[simp]
 theorem mem_cod_comp (g : N ≃ₚ[L] P) (f : M ≃ₚ[L] N) (h : f.cod ≤ g.dom) {p : P} :
     p ∈ (g.comp f h).cod ↔ ∃ y : f.cod, (g.toEquiv (Substructure.inclusion h y) : P) = p :=
   Iff.rfl
