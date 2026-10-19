@@ -98,8 +98,9 @@ private noncomputable def unitsTwoPowHom :
       simp only [zmultiplesHom_apply, ← ofMul_zpow, zpow_natCast, ← orderOf_unitsTwoPowFive,
         pow_orderOf_eq_one, ofMul_one]⟩)
 
-private theorem unitsTwoPowHom_apply (s : ZMod 2) (k : ZMod (2 ^ (e + 1))) :
-    unitsTwoPowHom e (ofAdd (s, k)) = (-1) ^ s.val * unitsTwoPowFive e ^ k.val := by
+private theorem unitsTwoPowHom_apply (x : ZMod 2 × ZMod (2 ^ (e + 1))) :
+    unitsTwoPowHom e (ofAdd x) = (-1) ^ x.1.val * unitsTwoPowFive e ^ x.2.val := by
+  obtain ⟨s, k⟩ := x
   have hs : s = ((s.val : ℤ) : ZMod 2) := by simp
   have hk : k = ((k.val : ℤ) : ZMod (2 ^ (e + 1))) := by simp
   conv_lhs => rw [hs, hk]
@@ -138,8 +139,8 @@ noncomputable def unitsTwoPowEquiv :
 /-- The inverse of `ZMod.unitsTwoPowEquiv` sends `(s, k)` to `(-1) ^ s * 5 ^ k`, with `s`
 and `k` read through their canonical representatives. -/
 @[simp]
-theorem unitsTwoPowEquiv_symm_apply (s : ZMod 2) (k : ZMod (2 ^ (e + 1))) :
-    (unitsTwoPowEquiv e).symm (ofAdd (s, k)) = (-1) ^ s.val * unitsTwoPowFive e ^ k.val := by
+theorem unitsTwoPowEquiv_symm_apply (x : ZMod 2 × ZMod (2 ^ (e + 1))) :
+    (unitsTwoPowEquiv e).symm (ofAdd x) = (-1) ^ x.1.val * unitsTwoPowFive e ^ x.2.val := by
   rw [unitsTwoPowEquiv, MulEquiv.symm_symm, MulEquiv.ofBijective_apply, unitsTwoPowHom_apply]
 
 /-- `ZMod.unitsTwoPowEquiv` sends `-1` to `(1, 0)`. -/
