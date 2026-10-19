@@ -26,7 +26,8 @@ the two points of `S⁰`.
   unit cube onto the complement of the pole.
 * `TauCeti.sphereCWComplex h`: the CW structure, which is finite
   (`TauCeti.finite_sphereCWComplex`) with one cell in dimension `0` and one in dimension `n`
-  (`TauCeti.nat_card_cell_sphereCWComplex`).
+  (`TauCeti.nat_card_cell_sphereCWComplex`); for `1 ≤ k ≤ n` its `k`-skeleton is the pole
+  (`TauCeti.skeletonLT_sphereCWComplex`).
 * `TauCeti.finiteCWType_sphere`: the unit sphere of every finite-dimensional real normed space has
   finite CW type.
 
@@ -255,6 +256,23 @@ theorem isEmpty_cell_sphereCWComplex {m : ℕ} (hm : n + 1 ≤ m) :
     letI := sphereCWComplex h
     IsEmpty (cell (sphere (0 : EuclideanSpace ℝ ι) 1) m) :=
   isEmpty_sphereCell hm
+
+/-- For `1 ≤ k ≤ n`, the `k`-skeleton of the CW structure on `Sⁿ`, the union of its cells of
+dimension less than `k`, is the pole. -/
+theorem skeletonLT_sphereCWComplex {k : ℕ∞} (hk : 1 ≤ k) (hkn : k ≤ n) :
+    letI := sphereCWComplex h
+    (skeletonLT (sphere (0 : EuclideanSpace ℝ ι) 1) k : Set (EuclideanSpace ℝ ι)) =
+      {spherePole h} := by
+  let _ := sphereCWComplex h
+  refine subset_antisymm (fun y hy ↦ ?_) (singleton_subset_iff.2 ?_)
+  · obtain ⟨⟨⟩⟩ | ⟨m, hm, ⟨⟨⟨rfl⟩⟩ | ⟨⟨rfl⟩⟩⟩, hy⟩ := mem_skeletonLT_iff.1 hy
+    · rwa [openCell_zero_eq_singleton] at hy
+    · exact absurd (hm.trans_le hkn) (lt_irrefl _)
+  · have hp : spherePole h ∈ closedCell (C := sphere (0 : EuclideanSpace ℝ ι) 1) 0
+        (⟨.inl ⟨rfl⟩⟩ : SphereCell.{u} n 0) := by
+      rw [closedCell_zero_eq_singleton]
+      rfl
+    exact skeletonLT_mono (by exact_mod_cast hk) (closedCell_subset_skeletonLT _ _ hp)
 
 /-- The unit sphere of a finite-dimensional real normed space has finite CW type: it is
 homeomorphic to the unit sphere of `EuclideanSpace ℝ (ULift (Fin (n + 1)))` for `n + 1` the

@@ -74,26 +74,12 @@ theorem subsingleton_homotopyGroup_sphere_of_lt {E : Type*} [NormedAddCommGroup 
   have hF : Fintype.card (Fin (m + 2)) = m + 1 + 1 := Fintype.card_fin _
   let _ := sphereCWComplex hF
   have := finite_sphereCWComplex hF
-  -- The `m`-skeleton of the CW structure on `Sᵐ⁺¹` is the point of its unique `0`-cell.
-  obtain ⟨_, ⟨j₀⟩⟩ := Nat.card_eq_one_iff_unique.1
-    ((nat_card_cell_sphereCWComplex hF 0).trans (by simp))
-  let A : Set F := skeletonLT (sphere (0 : F) 1) (m + 1)
-  have hA : A = {map 0 j₀ ![]} := by
-    refine subset_antisymm (fun y hy ↦ ?_) ?_
-    · obtain ⟨⟨⟩⟩ | ⟨k, hk, j, hj⟩ := mem_skeletonLT_iff.1 hy
-      rcases k with _ | k
-      · rwa [Subsingleton.elim j j₀, openCell_zero_eq_singleton] at hj
-      · have := FiniteType.finite_cell (C := sphere (0 : F) 1) (D := ∅) (k + 1)
-        have : IsEmpty (cell (sphere (0 : F) 1) (k + 1)) := Finite.card_eq_zero_iff.1 <| by
-          norm_cast at hk
-          simpa [nat_card_cell_sphereCWComplex hF] using hk.ne
-        exact isEmptyElim j
-    · rw [← closedCell_zero_eq_singleton]
-      exact (closedCell_subset_skeletonLT 0 j₀).trans (skeletonLT_mono (by simp))
-  have hp : map 0 j₀ ![] ∈ A := hA ▸ rfl
-  have : Subsingleton A := (hA ▸ subsingleton_singleton : A.Subsingleton).coe_sort
-  have : Subsingleton (HomotopyGroup N A ⟨_, hp⟩) := ⟨fun a b ↦ Quotient.inductionOn₂ a b
-    fun f g ↦ congrArg _ (GenLoop.ext f g fun _ ↦ Subsingleton.elim _ _)⟩
+  -- The `m`-skeleton of the CW structure on `Sᵐ⁺¹` is its pole, the unique `0`-cell.
+  have hA := skeletonLT_sphereCWComplex hF (k := m + 1) (by simp) le_rfl
+  have hp : spherePole hF ∈ (skeletonLT (sphere (0 : F) 1) (m + 1) : Set F) :=
+    hA ▸ mem_singleton _
+  have : Subsingleton (skeletonLT (sphere (0 : F) 1) (m + 1)) :=
+    (hA ▸ subsingleton_singleton : Set.Subsingleton _).coe_sort
   -- Every class at the `0`-cell comes from the `m`-skeleton (Hatcher, Corollary 4.12); move the
   -- base point along a path in the sphere, and pass from `F` to `E`.
   have hpole := (surjective_homotopyGroupMap_skeletonLT (N := N) (by omega) rfl
@@ -153,6 +139,17 @@ def MooreLoopSpace.doubleFirstHomologySphereAddEquiv (b : OrthonormalBasis (Fin 
   have : Subsingleton (π_ 2 (sphere (0 : E) 1) x) :=
     subsingleton_homotopyGroup_sphere_of_basis b (by simp) x
   (doubleFirstHomologyAddEquiv x).symm.trans (homotopyGroupSphereAddEquiv (n := 1) b x)
+
+/-- `TauCeti.MooreLoopSpace.doubleFirstHomologySphereAddEquiv` is the inverse of degree-one
+Hurewicz for the double Moore loop space followed by `TauCeti.homotopyGroupSphereAddEquiv`. -/
+theorem MooreLoopSpace.doubleFirstHomologySphereAddEquiv_apply
+    (b : OrthonormalBasis (Fin 4) ℝ E) (x : sphere (0 : E) 1)
+    [Subsingleton (π_ 2 (sphere (0 : E) 1) x)]
+    (a : ((singularChains ℤ).obj
+      (TopCat.of (MooreLoopSpace (MooreLoopSpace (sphere (0 : E) 1) x) 1))).homology 1) :
+    doubleFirstHomologySphereAddEquiv b x a =
+      homotopyGroupSphereAddEquiv (n := 1) b x ((doubleFirstHomologyAddEquiv x).symm a) :=
+  (rfl)
 
 end Hurewicz
 
