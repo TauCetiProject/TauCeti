@@ -164,6 +164,7 @@ theorem pointNorm_smul (hA : IsAffinoidAlgebra K A) (x : MaximalSpectrum A) (c :
     pointNorm K x (c • f) = ‖c‖ * pointNorm K x f := by
   rw [Algebra.smul_def, hA.pointNorm_mul, pointNorm_algebraMap]
 
+@[simp]
 theorem pointNorm_neg (hA : IsAffinoidAlgebra K A) (x : MaximalSpectrum A) (f : A) :
     pointNorm K x (-f) = pointNorm K x f := by
   let := Ideal.Quotient.field x.asIdeal
@@ -297,6 +298,7 @@ theorem isNonarchimedean_supSeminorm (hA : IsAffinoidAlgebra K A) :
     IsNonarchimedean (supSeminorm K : A → ℝ) :=
   hA.supSeminorm_add_le
 
+@[simp]
 theorem supSeminorm_neg (hA : IsAffinoidAlgebra K A) (f : A) :
     supSeminorm K (-f) = supSeminorm K f := by
   simp only [supSeminorm, hA.pointNorm_neg]
