@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Dynamics.Flow.TimeDependent
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Flow
-import TauCeti.Analysis.Calculus.ParametricFDeriv
+public import TauCeti.Analysis.Calculus.ParametricFDeriv
 
 /-!
 # Time-dependent Hamiltonian flows on symplectic vector spaces
@@ -31,6 +31,8 @@ the autonomous Hamiltonian vector field.
 * `TauCeti.SymplecticForm.timeDependentHamiltonianFlow`: its global two-time evolution.
 * `TauCeti.SymplecticForm.hasDerivAt_timeDependentHamiltonianFlow`: the evolution equation.
 * `TauCeti.SymplecticForm.eq_timeDependentHamiltonianFlow`: uniqueness of solutions.
+* `TauCeti.SymplecticForm.hamiltonianVectorField_eq_inverse_spatialFDeriv`: the fixed-time
+  Hamiltonian field in terms of the spatial Jacobian of `H`.
 * `TauCeti.SymplecticForm.contDiff_timeDependentHamiltonianSuspension`: smoothness of the
   suspended Hamiltonian field.
 * `TauCeti.SymplecticForm.apply_fderiv_timeDependentHamiltonianFlow`: time-dependent Hamiltonian
@@ -118,49 +120,32 @@ theorem continuous_timeDependentHamiltonianFlow (omega : SymplecticForm V)
       omega.timeDependentHamiltonianFlow H hX p.1.1 p.1.2 p.2 :=
   continuous_timeDependentFlow _ hX
 
+/-- At a point where `H` is jointly differentiable, the Hamiltonian vector field of the
+fixed-time Hamiltonian `H t` is the contraction-dual of the spatial Jacobian of `H`. -/
+theorem hamiltonianVectorField_eq_inverse_spatialFDeriv (omega : SymplecticForm V)
+    {H : ℝ → V → ℝ} {t : ℝ} {x : V} (hH : DifferentiableAt ℝ (Function.uncurry H) (t, x)) :
+    omega.hamiltonianVectorField (H t) x =
+      omega.toBilinForm.toContinuousBilinearMap.inverse
+        (spatialFDeriv (Function.uncurry H) x t) := by
+  rw [eq_comm, eq_hamiltonianVectorField_iff, ← fderiv_timeSlice hH]
+  exact fun w ↦ congrArg (fun L : V →L[ℝ] ℝ ↦ L w)
+    (omega.isInvertible_toContinuousBilinearMap.self_apply_inverse _)
+
 /-- A jointly `C^(n+2)` time-dependent Hamiltonian has a `C^(n+1)` suspended Hamiltonian vector
 field. -/
 theorem contDiff_timeDependentHamiltonianSuspension (omega : SymplecticForm V) (n : ℕ)
     {H : ℝ → V → ℝ} (hH : ContDiff ℝ (n + 2) (Function.uncurry H)) :
     ContDiff ℝ (n + 1) (omega.timeDependentHamiltonianSuspension H) := by
-  let i : V →L[ℝ] ℝ × V := ContinuousLinearMap.inr ℝ ℝ V
-  have hD : ContDiff ℝ (n + 1) (fun p : ℝ × V ↦
-      (fderiv ℝ (Function.uncurry H) p).comp i) :=
-    (hH.fderiv_right (m := n + 1) (by norm_cast)).clm_comp contDiff_const
-  have hX : ContDiff ℝ (n + 1) (fun p : ℝ × V ↦
-      omega.toBilinForm.toContinuousBilinearMap.inverse
-        ((fderiv ℝ (Function.uncurry H) p).comp i)) :=
-    omega.toBilinForm.toContinuousBilinearMap.inverse.contDiff.comp hD
-  have heq : (fun p : ℝ × V ↦ omega.hamiltonianVectorField (H p.1) p.2) =
-      fun p ↦ omega.toBilinForm.toContinuousBilinearMap.inverse
-        ((fderiv ℝ (Function.uncurry H) p).comp i) := by
-    funext p
-    symm
-    apply (omega.eq_hamiltonianVectorField_iff (H p.1) p.2 _).2
-    intro w
-    have hinv := congrArg (fun L : V →L[ℝ] ℝ ↦ L w)
-      (omega.isInvertible_toContinuousBilinearMap.self_apply_inverse
-        ((fderiv ℝ (Function.uncurry H) p).comp i))
-    have hinv_apply : omega
-        (omega.toBilinForm.toContinuousBilinearMap.inverse
-          ((fderiv ℝ (Function.uncurry H) p).comp i)) w =
-        ((fderiv ℝ (Function.uncurry H) p).comp i) w := by
-      simpa only [LinearMap.toContinuousBilinearMap_apply] using hinv
-    have hslice := fderiv_timeSlice (hH.differentiable (by simp) p)
-    rw [spatialFDeriv_def] at hslice
-    have hslice_fun : (fun y ↦ Function.uncurry H (p.1, y)) = H p.1 := rfl
-    rw [hslice_fun] at hslice
-    exact hinv_apply.trans
-      (congrArg (fun L : V →L[ℝ] ℝ ↦ L w) hslice.symm)
-  have hpair : ContDiff ℝ (n + 1) (fun p : ℝ × V ↦
-      ((1 : ℝ), omega.hamiltonianVectorField (H p.1) p.2)) :=
-    contDiff_const.prodMk (heq ▸ hX)
   have hfun : omega.timeDependentHamiltonianSuspension H = fun p : ℝ × V ↦
-      ((1 : ℝ), omega.hamiltonianVectorField (H p.1) p.2) := by
-    funext p
-    exact omega.timeDependentHamiltonianSuspension_apply H p.1 p.2
+      ((1 : ℝ), omega.toBilinForm.toContinuousBilinearMap.inverse
+        ((fderiv ℝ (Function.uncurry H) p).comp (ContinuousLinearMap.inr ℝ ℝ V))) := by
+    funext ⟨t, x⟩
+    rw [timeDependentHamiltonianSuspension_apply,
+      omega.hamiltonianVectorField_eq_inverse_spatialFDeriv (hH.differentiable (by simp) (t, x)),
+      spatialFDeriv_def]
   rw [hfun]
-  exact hpair
+  exact contDiff_const.prodMk (omega.toBilinForm.toContinuousBilinearMap.inverse.contDiff.comp
+    ((hH.fderiv_right (m := n + 1) (by norm_cast)).clm_comp contDiff_const))
 
 /-- Each evolution map of a time-dependent Hamiltonian preserves the symplectic form on tangent
 vectors, provided the suspended Hamiltonian field is `C¹` and each fixed-time Hamiltonian is
