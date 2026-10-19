@@ -83,23 +83,19 @@ theorem contMDiff_transportVectorField_iff (X : (x : M) → TangentSpace I x) :
         (fun x ↦ (⟨x, transportVectorField I X x⟩ :
           TangentBundle 𝓘(ℝ, E) (BoundarylessModel I M))) ↔
       ContMDiff I I.tangent ∞ (fun x ↦ (⟨x, X x⟩ : TangentBundle I M)) := by
-  let h := diffeomorph I (M := M) ∞
+  set h := diffeomorph I (M := M) ∞ with hh
   have heq : (fun x ↦ (⟨x, transportVectorField I X x⟩ :
       TangentBundle 𝓘(ℝ, E) (BoundarylessModel I M))) =
-      h.tangent ∘ (fun x ↦ (⟨x, X x⟩ : TangentBundle I M)) ∘ h.symm := by
+      (h.tangent ∘ fun x ↦ (⟨x, X x⟩ : TangentBundle I M)) ∘ h.symm := by
     funext x
     ext
     · simp only [Function.comp_apply]
       rw [Diffeomorph.coe_tangent, tangentMap_proj, h.apply_symm_apply]
     · simp only [Function.comp_apply]
-      rw [Diffeomorph.coe_tangent, tangentMap_snd, transportVectorField]
-      change mfderiv I 𝓘(ℝ, E) h ((homeomorph I M).symm x)
-          (X ((homeomorph I M).symm x)) ≍
-        mfderiv I 𝓘(ℝ, E) h (h.symm x) (X (h.symm x))
-      rw [coe_diffeomorph_symm]
+      rw [Diffeomorph.coe_tangent, tangentMap_snd, transportVectorField, ← hh,
+        coe_diffeomorph_symm]
+      exact HEq.rfl
   rw [heq]
-  change ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E).tangent ∞
-      ((h.tangent ∘ (fun x ↦ (⟨x, X x⟩ : TangentBundle I M))) ∘ h.symm) ↔ _
   rw [h.symm.contMDiff_comp_diffeomorph_iff (by simp)]
   rw [h.tangent.contMDiff_diffeomorph_comp_iff (by simp)]
 
