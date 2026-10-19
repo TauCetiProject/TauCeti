@@ -35,7 +35,7 @@ along which a transitive group is built from primitive pieces.
 
 * `TauCeti.blockMemOrderIsoCongr`: an equivariant equivalence transports the lattice of blocks
   containing a point, without requiring transitivity.
-* `MulAction.BlockMem.injective_stabilizer_iff_isPretransitive`: the block–stabilizer map is
+* `TauCeti.blockMem_stabilizer_injective_iff_isPretransitive`: the block–stabilizer map is
   injective exactly for transitive actions, so the correspondence needs transitivity.
 * `MulAction.IsBlock.isAtom_iff_stabilizer_covBy`: atomicity of a block is equivalent to its
   stabilizer covering the point stabilizer.
@@ -110,15 +110,16 @@ variable (G : Type*) {X : Type*} [Group G] [MulAction G X]
 is transitive. Without transitivity the orbit of `a` and the whole space are distinct blocks
 containing `a`, and both are stabilized by every element; for instance, the trivial group acting
 on a two-point set. -/
-theorem _root_.MulAction.BlockMem.injective_stabilizer_iff_isPretransitive (a : X) :
+theorem blockMem_stabilizer_injective_iff_isPretransitive (a : X) :
     Function.Injective (fun B : BlockMem G a ↦ stabilizer G (B : Set X)) ↔
       IsPretransitive G X := by
   refine ⟨fun h ↦ ?_, fun _ ↦ ?_⟩
   · rw [isPretransitive_iff_orbit_eq_univ a]
-    have hstab : stabilizer G (orbit G a) = stabilizer G (Set.univ : Set X) := by
-      rw [stabilizer_univ, eq_top_iff]
+    have hstab : stabilizer G (orbit G a) = stabilizer G ((⊤ : BlockMem G a) : Set X) := by
+      rw [BlockMem.coe_top, stabilizer_univ, eq_top_iff]
       exact fun g _ ↦ smul_orbit g a
-    exact congrArg Subtype.val (@h ⟨orbit G a, mem_orbit_self a, .orbit a⟩ ⊤ hstab)
+    simpa only [BlockMem.coe_top] using
+      congrArg Subtype.val (@h ⟨orbit G a, mem_orbit_self a, .orbit a⟩ ⊤ hstab)
   · intro B₁ B₂ hB
     apply (block_stabilizerOrderIso G a).injective
     -- Mathlib's block correspondence sends a block to its setwise stabilizer, by definition.
