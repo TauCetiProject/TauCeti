@@ -134,18 +134,16 @@ theorem natCard_nthRoots_prime_pow_eq_natCard_nthRoots {p n k : ℕ} [Fact p.Pri
     have : NeZero (p ^ (k + 1)) := ⟨pow_ne_zero _ (Fact.out : p.Prime).ne_zero⟩
     let : IsLocalRing (ZMod (p ^ (k + 1))) := isLocalRing_prime_pow p (k + 1) k.succ_pos
     let : IsArtinianRing (ZMod (p ^ (k + 1))) := isArtinian_of_finite
-    have hres (x y : ZMod (p ^ (k + 1))) :
-        IsLocalRing.residue _ x = IsLocalRing.residue _ y ↔ π x = π y := by
-      rw [← sub_eq_zero, ← map_sub, IsLocalRing.residue_eq_zero_iff,
-        IsLocalRing.mem_maximalIdeal, mem_nonunits_iff,
-        isUnit_prime_pow_iff_castHom_ne_zero p (k + 1) k.succ_pos, not_not, map_sub, sub_eq_zero]
     set x₀ : ZMod (p ^ (k + 1)) := (z.val : ZMod (p ^ (k + 1)))
     have hπx₀ : π x₀ ^ n = a := by rw [map_natCast, natCast_zmod_val, hz]
     obtain ⟨x, hx, hxx₀⟩ := TauCeti.HenselianLocalRing.exists_pow_eq_of_residue_pow_eq
       (u := (a : ZMod (p ^ (k + 1)))) ((isUnit_iff_coprime n _).mpr (hn.pow_right _))
       (hunit x₀ hπx₀)
-      (by rw [← map_pow, hres, map_pow, hπx₀, map_intCast])
-    exact ⟨x, by simpa using hx, by rw [(hres x x₀).mp hxx₀, map_natCast, natCast_zmod_val]⟩
+      (by rw [← map_pow, residue_eq_residue_iff_castHom_eq p (k + 1) k.succ_pos,
+        map_pow, hπx₀, map_intCast])
+    exact ⟨x, by simpa using hx, by
+      rw [(residue_eq_residue_iff_castHom_eq p (k + 1) k.succ_pos x x₀).mp hxx₀,
+        map_natCast, natCast_zmod_val]⟩
 
 /-! Modulo `9`, the units `4` and `7` are `2 ^ 2` and `4 ^ 2`. The hypothesis that `p` is odd is
 needed: `5` is congruent to one modulo `2` but is not a square modulo `8`. -/

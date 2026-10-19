@@ -90,25 +90,25 @@ theorem natCard_sq_add_one_eq_zero (N : ℕ) :
     simp [Nat.card_of_isEmpty]
   have hcrt := ZMod.natCard_aeval_eq_zero_eq_prod_primeFactors hN (.X ^ 2 + 1)
   simp only [map_add, map_pow, Polynomial.aeval_X, map_one] at hcrt
+  have hfour : 4 = 2 ^ 2 := by norm_num
   have h4 : 4 ∣ N ↔ 2 ≤ N.factorization 2 := by
-    rw [show 4 = 2 ^ 2 by norm_num]
+    rw [hfour]
     exact Nat.prime_two.pow_dvd_iff_le_factorization hN
-  rw [hcrt, Nat.cast_prod]
   split_ifs with hN4
-  · -- Modulo `4`, and hence modulo `2 ^ v₂(N)`, the polynomial `x² + 1` has no roots.
-    refine Finset.prod_eq_zero (i := 2)
-      (Nat.mem_primeFactors.mpr ⟨Nat.prime_two, (by norm_num : 2 ∣ 4).trans hN4, hN⟩) ?_
+  · -- A root modulo `N` would reduce to a root modulo `4`.
     have h0 := ZMod.natCard_aeval_eq_zero_eq_zero_of_dvd (P := .X ^ 2 + 1) (m := 4)
-      (pow_dvd_pow 2 (h4.mp hN4)) (by simpa using h4')
+      hN4 (by simpa using h4')
     simp only [map_add, map_pow, Polynomial.aeval_X, map_one] at h0
     rw [h0, Nat.cast_zero]
-  · refine Finset.prod_congr rfl fun p hp ↦ ?_
+  · rw [hcrt, Nat.cast_prod]
+    refine Finset.prod_congr rfl fun p hp ↦ ?_
     have hpp := Nat.prime_of_mem_primeFactors hp
     have : Fact p.Prime := ⟨hpp⟩
     have hk : N.factorization p ≠ 0 :=
       (hpp.factorization_pos_of_dvd hN (Nat.dvd_of_mem_primeFactors hp)).ne'
     rcases eq_or_ne p 2 with rfl | hp2
-    · rw [show N.factorization 2 = 1 by omega, pow_one, Nat.card_eq_fintype_card]
+    · have htwoExponent : N.factorization 2 = 1 := by omega
+      rw [htwoExponent, pow_one, Nat.card_eq_fintype_card]
       decide
     · exact natCard_sq_add_one_eq_zero_prime_pow hp2 hk
 
@@ -155,19 +155,18 @@ theorem natCard_sq_sub_self_add_one_eq_zero (N : ℕ) :
     simp [Nat.card_of_isEmpty]
   have hcrt := ZMod.natCard_aeval_eq_zero_eq_prod_primeFactors hN (.X ^ 2 - .X + 1)
   simp only [map_add, map_sub, map_pow, Polynomial.aeval_X, map_one] at hcrt
+  have hnine : 9 = 3 ^ 2 := by norm_num
   have h9N : 9 ∣ N ↔ 2 ≤ N.factorization 3 := by
-    rw [show 9 = 3 ^ 2 by norm_num]
+    rw [hnine]
     exact Nat.prime_three.pow_dvd_iff_le_factorization hN
-  rw [hcrt, Nat.cast_prod]
   split_ifs with hN9
-  · -- Modulo `9`, and hence modulo `3 ^ v₃(N)`, the polynomial `x² - x + 1` has no roots.
-    refine Finset.prod_eq_zero (i := 3)
-      (Nat.mem_primeFactors.mpr ⟨Nat.prime_three, (by norm_num : 3 ∣ 9).trans hN9, hN⟩) ?_
+  · -- A root modulo `N` would reduce to a root modulo `9`.
     have h0 := ZMod.natCard_aeval_eq_zero_eq_zero_of_dvd (P := .X ^ 2 - .X + 1) (m := 9)
-      (pow_dvd_pow 3 (h9N.mp hN9)) (by simpa using h9)
+      hN9 (by simpa using h9)
     simp only [map_add, map_sub, map_pow, Polynomial.aeval_X, map_one] at h0
     rw [h0, Nat.cast_zero]
-  · refine Finset.prod_congr rfl fun p hp ↦ ?_
+  · rw [hcrt, Nat.cast_prod]
+    refine Finset.prod_congr rfl fun p hp ↦ ?_
     have hpp := Nat.prime_of_mem_primeFactors hp
     have : Fact p.Prime := ⟨hpp⟩
     have hk : N.factorization p ≠ 0 :=
@@ -181,7 +180,8 @@ theorem natCard_sq_sub_self_add_one_eq_zero (N : ℕ) :
         _root_.legendreSym.at_two (p := 3) (by norm_num)]
       decide
     rcases eq_or_ne p 3 with rfl | hp3
-    · rw [show N.factorization 3 = 1 by omega, pow_one, Nat.card_eq_fintype_card]
+    · have hthreeExponent : N.factorization 3 = 1 := by omega
+      rw [hthreeExponent, pow_one, Nat.card_eq_fintype_card]
       decide
     · exact natCard_sq_sub_self_add_one_eq_zero_prime_pow hp2 hp3 hk
 
