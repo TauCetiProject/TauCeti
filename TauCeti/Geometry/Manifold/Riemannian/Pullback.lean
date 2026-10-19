@@ -175,13 +175,29 @@ theorem pullback_inner
 stated for arbitrary proofs of smoothness and injectivity so that it rewrites
 pullbacks without exposing proof terms in downstream APIs. -/
 
-/-- Pulling a Riemannian metric back along the identity leaves its inner product unchanged. -/
-theorem pullback_id_inner
+omit [FiniteDimensional ℝ E] in
+/-- Smooth Riemannian metrics are equal when all their fibrewise inner products agree. -/
+@[ext]
+theorem ext {g h : ContMDiffRiemannianMetric I n E (fun y : M ↦ TangentSpace I y)}
+    (heq : ∀ x v w, g.inner x v w = h.inner x v w) : g = h := by
+  cases g with
+  | mk ginner gsymm gpos gisVonNBounded gcontMDiff =>
+    cases h with
+    | mk hinner hsymm hpos hisVonNBounded hcontMDiff =>
+      congr 1
+      funext x
+      ext v w
+      exact heq x v w
+
+/-- Pulling a Riemannian metric back along the identity leaves it unchanged. -/
+@[simp]
+theorem pullback_id
     (g : ContMDiffRiemannianMetric I n E (fun y : M ↦ TangentSpace I y))
     (hf : ContMDiff I I (n + 1) id)
-    (hinj : ∀ x, Function.Injective (mfderiv I I id x)) (x : M)
-    (v w : TangentSpace I x) :
-    (g.pullback id hf hinj).inner x v w = g.inner x v w := by
+    (hinj : ∀ x, Function.Injective (mfderiv I I id x)) :
+    g.pullback id hf hinj = g := by
+  apply ext
+  intro x v w
   rw [pullback_inner]
   simp only [mfderiv_id, ContinuousLinearMap.id_apply, id_eq]
 
