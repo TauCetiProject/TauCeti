@@ -15,19 +15,20 @@ import TauCeti.NumberTheory.LocalField.RootsOfUnity.Tower
 The marked theorems of `TauCeti.NumberTheory.LocalField.ProP.Marked.Basic` present `G_K(p)`, for
 `K` a finite extension of `ℚ_p` containing a primitive `p`th root of unity, by a single relator on
 `[K : ℚ_p] + 2` generators, and record the values of the cyclotomic orientation on those
-generators. This file proves that this marked data is carried along an isomorphism of local fields
-over `ℚ_p`: for `e : K ≃ₐ[ℚ_p] K'` the induced isomorphism `absoluteGaloisGroupProPCongr e` of
-maximal pro-`p` Galois groups carries the presentation of `G_K(p)` to a presentation of `G_{K'}(p)`,
-and the values of the cyclotomic orientation of `G_{K'}(p)` on the transported generators are the
-values that `Marked/Basic.lean` records for `K`.
+generators. This file proves that this marked data is carried along an isomorphism of fields
+`e : K ≃+* K'`: the induced isomorphism `absoluteGaloisGroupProPCongr e` of maximal pro-`p` Galois
+groups carries the presentation of `G_K(p)` to a presentation of `G_{K'}(p)`, and the values of the
+cyclotomic orientation of `G_{K'}(p)` on the transported generators are the values that
+`Marked/Basic.lean` records for `K`.
 
 Three ingredients make the marking functorial.
 
 * The cyclotomic character does not see the choice of embedding of algebraic closures
   (`TauCeti.localCyclotomicCharacter_map`), so the image of the cyclotomic character is an invariant
   of the field (`TauCeti.range_localCyclotomicCharacter_eq_of_ringEquiv`). The image separates the
-  two even dyadic branches, so the arithmetic branch predicates that select the relator word are
-  invariant as well (`TauCeti.isQNeTwoCase_iff_of_algEquiv` and the three dyadic variants).
+  two even dyadic branches, so together with the degree over `ℚ_p` the arithmetic branch predicates
+  that select the relator word are invariant as well (`TauCeti.isQNeTwoCase_iff_of_algEquiv` and the
+  three dyadic variants).
 * The cyclotomic orientation is natural
   (`TauCeti.cyclotomicOrientation_maximalProPQuotient_congr_symm`), which makes the recorded values
   of a marked presentation transport
@@ -36,6 +37,17 @@ Three ingredients make the marking functorial.
   isomorphism of local fields over `ℚ_p` (`LinearEquiv.finrank_eq`,
   `TauCeti.localRootOfUnityOrder_eq_of_ringEquiv`), so the abstract group that the marked theorems
   present for `K` also presents `G_{K'}(p)`.
+
+The isomorphism `e` of the three transport theorems is an isomorphism of *fields*, not an
+isomorphism of local fields over `ℚ_p`. The conclusions of those theorems only concern the
+transport of the recorded values, and the naturality of the cyclotomic orientation gives that for
+any isomorphism of fields, so the `ℚ_p`-structure plays no role in them. The `ℚ_p`-structure is
+what makes the *arithmetic data* that the marked presentation of `K` records — the degree
+`[K : ℚ_p]`, the number `q(K)` of `p`-power roots of unity and the dyadic branch — agree with the
+data of `K'`, and that agreement is what makes the transported presentation the marked presentation
+of `G_{K'}(p)` in the sense of `TauCeti.NumberTheory.LocalField.ProP.Marked.Basic`. The four branch
+lemmas below establish the agreement for isomorphisms of local fields over `ℚ_p`; for an arbitrary
+isomorphism of fields it has to be assumed.
 
 The transports are stated at the parameters of `K`: the relator word, the number of generators and
 the recorded values are those of the marked theorem for `K`, and the invariants above are what allow
@@ -79,8 +91,8 @@ namespace TauCeti
 variable (p : ℕ) [Fact p.Prime]
 
 /-- The isomorphism of maximal pro-`p` Galois groups induced by an isomorphism of fields
-`e : K ≃+* K'`: the form in which an isomorphism of local fields over `ℚ_p` acts on the marked
-presentations. It is contravariant, going from `G_{K'}(p)` to `G_K(p)`. -/
+`e : K ≃+* K'`: the form in which an isomorphism of fields acts on the marked presentations. It is
+contravariant, going from `G_{K'}(p)` to `G_K(p)`. -/
 noncomputable abbrev absoluteGaloisGroupProPCongr (K K' : Type*) [Field K] [Field K']
     (e : K ≃+* K') : absoluteGaloisGroupProP p K' ≃ₜ* absoluteGaloisGroupProP p K :=
   maximalProPQuotient.congr (absoluteGaloisGroupMapEquiv e)
@@ -121,9 +133,6 @@ theorem cyclotomicOrientation_trans_absoluteGaloisGroupProPCongr (e : K ≃+* K'
     cyclotomicOrientation p K' hmu'
         (((absoluteGaloisGroupProPCongr p K K' e).trans m).symm y) =
       cyclotomicOrientation p K hmu (m.symm y) := by
-  change cyclotomicOrientation p K' hmu'
-      (((maximalProPQuotient.congr (absoluteGaloisGroupMapEquiv e)).trans m).symm y) =
-    cyclotomicOrientation p K hmu (m.symm y)
   rw [ContinuousMulEquiv.symm_trans_apply,
     cyclotomicOrientation_maximalProPQuotient_congr_symm p e hmu' (m.symm y)]
 
@@ -270,15 +279,23 @@ end DyadicEven
 section MarkedQNeTwo
 
 variable {K K' : Type*} [Field K] [Algebra ℚ_[p] K] [ValuativeRel K] [TopologicalSpace K]
-  [IsNonarchimedeanLocalField K] [Field K'] [Algebra ℚ_[p] K']
+  [IsNonarchimedeanLocalField K] [Field K']
 
-/-- **Functoriality of the marked presentation when `q(K) ≠ 2`.** Let `e : K ≃ₐ[ℚ_p] K'` be an
-isomorphism of local fields over `ℚ_p`, and let `m` be a marked presentation of `G_K(p)` with the
-relator word and the values that `TauCeti.absoluteGaloisGroupProP_marked_of_q_ne_two` records for
-`K`. Then `(absoluteGaloisGroupProPCongr e).trans m` is a marked presentation of `G_{K'}(p)` with
-the same relator word and the same values: the number `q(K)` of `p`-power roots of unity and the
-degree `[K : ℚ_p]` are invariants of the isomorphism class of the field. -/
-theorem absoluteGaloisGroupProP_marked_of_q_ne_two_congr (e : K ≃ₐ[ℚ_[p]] K')
+/-- **Functoriality of the marked presentation when `q(K) ≠ 2`.** Let `e : K ≃+* K'` be an
+isomorphism of fields, and let `m` be a marked presentation of `G_K(p)` with the relator word and
+the values that `TauCeti.absoluteGaloisGroupProP_marked_of_q_ne_two` records for `K`. Then
+`(absoluteGaloisGroupProPCongr e).trans m` presents `G_{K'}(p)` by the same relator word and takes
+the same values of the cyclotomic orientation on the generators.
+
+Only the transport of the recorded values is claimed, and it uses no property of `e` beyond being an
+isomorphism of fields: it is the naturality of the cyclotomic orientation along the induced
+isomorphism of the absolute Galois groups
+(`TauCeti.cyclotomicOrientation_trans_absoluteGaloisGroupProPCongr`). For the transported
+presentation to be *the* marked presentation of `G_{K'}(p)` in the sense of
+`TauCeti.absoluteGaloisGroupProP_marked_of_q_ne_two`, the target must have the same degree over
+`ℚ_p` and the same number of `p`-power roots of unity as the source; an isomorphism of local fields
+over `ℚ_p` provides that (`TauCeti.isQNeTwoCase_iff_of_algEquiv`). -/
+theorem absoluteGaloisGroupProP_marked_of_q_ne_two_congr (e : K ≃+* K')
     (hmu : ∃ ζ : K, IsPrimitiveRoot ζ p) (hmu' : ∃ ζ : K', IsPrimitiveRoot ζ p)
     (m : absoluteGaloisGroupProP p K ≃ₜ*
       presentedProP p (Fin (Module.finrank ℚ_[p] K + 2))
@@ -295,22 +312,22 @@ theorem absoluteGaloisGroupProP_marked_of_q_ne_two_congr (e : K ≃ₐ[ℚ_[p]] 
       cyclotomicOrientation p K hmu
         (m.symm (presentedProPGen p (Module.finrank ℚ_[p] K + 2) _ i)) = 1) :
     ((cyclotomicOrientation p K' hmu'
-          (((absoluteGaloisGroupProPCongr p K K' e.toRingEquiv).trans m).symm
+          (((absoluteGaloisGroupProPCongr p K K' e).trans m).symm
             (presentedProPGen p (Module.finrank ℚ_[p] K + 2) _ 1)) : ℤ_[p]) *
         (1 - (localRootOfUnityOrder p K
           (finite_pPowerRootsOfUnity (hmu.elim fun _ hζ ↦ hζ.neZero'.out)) : ℤ_[p])) = 1) ∧
       ∀ i : ℕ, i ≠ 1 → i < Module.finrank ℚ_[p] K + 2 →
         cyclotomicOrientation p K' hmu'
-          (((absoluteGaloisGroupProPCongr p K K' e.toRingEquiv).trans m).symm
+          (((absoluteGaloisGroupProPCongr p K K' e).trans m).symm
             (presentedProPGen p (Module.finrank ℚ_[p] K + 2) _ i)) = 1 := by
   have htrans : ∀ i : ℕ,
       cyclotomicOrientation p K' hmu'
-          (((absoluteGaloisGroupProPCongr p K K' e.toRingEquiv).trans m).symm
+          (((absoluteGaloisGroupProPCongr p K K' e).trans m).symm
             (presentedProPGen p (Module.finrank ℚ_[p] K + 2) _ i)) =
         cyclotomicOrientation p K hmu
           (m.symm (presentedProPGen p (Module.finrank ℚ_[p] K + 2) _ i)) :=
     fun i ↦ cyclotomicOrientation_trans_absoluteGaloisGroupProPCongr (p := p) (K := K)
-      (K' := K') e.toRingEquiv hmu hmu' m _
+      (K' := K') e hmu hmu' m _
   refine ⟨?_, ?_⟩
   · rw [htrans 1]
     exact hm₁
@@ -322,15 +339,23 @@ end MarkedQNeTwo
 
 section MarkedDyadic
 
-variable {K K' : Type*} [Field K] [Algebra ℚ_[2] K] [Field K'] [Algebra ℚ_[2] K']
+variable {K K' : Type*} [Field K] [Algebra ℚ_[2] K] [Field K']
 
-/-- **Functoriality of the marked presentation in odd degree.** Let `e : K ≃ₐ[ℚ₂] K'` be an
-isomorphism of local fields over `ℚ₂`, and let `m` be a marked presentation of `G_K(2)` with the
-relator word and the values that `TauCeti.absoluteGaloisGroupProP_two_marked_of_degree_odd`
-records for `K`. Then `(absoluteGaloisGroupProPCongr e).trans m` is a marked presentation of
-`G_{K'}(2)` with the same relator word `demushkinWordTwoOdd` and the same values on the generators
-`0`, `2` and the remaining ones. -/
-theorem absoluteGaloisGroupProP_two_marked_of_degree_odd_congr (e : K ≃ₐ[ℚ_[2]] K')
+/-- **Functoriality of the marked presentation in odd degree.** Let `e : K ≃+* K'` be an isomorphism
+of fields, and let `m` be a marked presentation of `G_K(2)` with the relator word and the values
+that `TauCeti.absoluteGaloisGroupProP_two_marked_of_degree_odd` records for `K`. Then
+`(absoluteGaloisGroupProPCongr e).trans m` presents `G_{K'}(2)` by the same relator word
+`demushkinWordTwoOdd` and takes the same values on the generators `0`, `2` and the remaining ones.
+
+Only the transport of the recorded values is claimed, and it uses no property of `e` beyond being an
+isomorphism of fields; the transport is the naturality of the cyclotomic orientation along the
+induced isomorphism of the absolute Galois groups
+(`TauCeti.cyclotomicOrientation_trans_absoluteGaloisGroupProPCongr`). For the transported
+presentation to be *the* marked presentation of `G_{K'}(2)` in the sense of
+`TauCeti.absoluteGaloisGroupProP_two_marked_of_degree_odd`, the target must have the same odd degree
+over `ℚ₂` as the source; an isomorphism of local fields over `ℚ₂` provides that
+(`TauCeti.isDyadicOddCase_iff_of_algEquiv`). -/
+theorem absoluteGaloisGroupProP_two_marked_of_degree_odd_congr (e : K ≃+* K')
     (hmu : ∃ ζ : K, IsPrimitiveRoot ζ 2) (hmu' : ∃ ζ : K', IsPrimitiveRoot ζ 2)
     (m : absoluteGaloisGroupProP 2 K ≃ₜ*
       presentedProP 2 (Fin (Module.finrank ℚ_[2] K + 2))
@@ -345,24 +370,24 @@ theorem absoluteGaloisGroupProP_two_marked_of_degree_odd_congr (e : K ≃ₐ[ℚ
       cyclotomicOrientation 2 K hmu
         (m.symm (presentedProPGen 2 (Module.finrank ℚ_[2] K + 2) _ i)) = 1) :
     cyclotomicOrientation 2 K' hmu'
-          (((absoluteGaloisGroupProPCongr 2 K K' e.toRingEquiv).trans m).symm
+          (((absoluteGaloisGroupProPCongr 2 K K' e).trans m).symm
             (presentedProPGen 2 (Module.finrank ℚ_[2] K + 2) _ 0)) = -1 ∧
       ((cyclotomicOrientation 2 K' hmu'
-          (((absoluteGaloisGroupProPCongr 2 K K' e.toRingEquiv).trans m).symm
+          (((absoluteGaloisGroupProPCongr 2 K K' e).trans m).symm
             (presentedProPGen 2 (Module.finrank ℚ_[2] K + 2) _ 2)) : ℤ_[2]) *
         (1 - 2 ^ 2) = 1) ∧
       ∀ i : ℕ, i ≠ 0 → i ≠ 2 → i < Module.finrank ℚ_[2] K + 2 →
         cyclotomicOrientation 2 K' hmu'
-          (((absoluteGaloisGroupProPCongr 2 K K' e.toRingEquiv).trans m).symm
+          (((absoluteGaloisGroupProPCongr 2 K K' e).trans m).symm
             (presentedProPGen 2 (Module.finrank ℚ_[2] K + 2) _ i)) = 1 := by
   have htrans : ∀ i : ℕ,
       cyclotomicOrientation 2 K' hmu'
-          (((absoluteGaloisGroupProPCongr 2 K K' e.toRingEquiv).trans m).symm
+          (((absoluteGaloisGroupProPCongr 2 K K' e).trans m).symm
             (presentedProPGen 2 (Module.finrank ℚ_[2] K + 2) _ i)) =
         cyclotomicOrientation 2 K hmu
           (m.symm (presentedProPGen 2 (Module.finrank ℚ_[2] K + 2) _ i)) :=
     fun i ↦ cyclotomicOrientation_trans_absoluteGaloisGroupProPCongr (p := 2) (K := K)
-      (K' := K') e.toRingEquiv hmu hmu' m _
+      (K' := K') e hmu hmu' m _
   refine ⟨?_, ?_, ?_⟩
   · rw [htrans 0]
     exact hm₀
@@ -378,11 +403,21 @@ theorems `TauCeti.absoluteGaloisGroupProP_two_marked_of_degree_even_plusMinus` a
 word `demushkinWordTwoEven a f (N + 2)` on `N + 2` generators and record the same values on the
 second and fourth marked generators, the value `-(1 + a)⁻¹` and the value `(1 - 2^f)⁻¹`; they differ
 only in the hypotheses that select the parameters `a` and `f`. Hence the transport of their marking
-is a single statement. For `e : K ≃ₐ[ℚ₂] K'` an isomorphism of local fields over `ℚ₂`, the
-transported isomorphism `(absoluteGaloisGroupProPCongr e).trans m` of a marked presentation of
-`G_K(2)` of the even form is a marked presentation of `G_{K'}(2)` with the same relator word and the
-same values. -/
-theorem absoluteGaloisGroupProP_two_marked_of_degree_even_congr (e : K ≃ₐ[ℚ_[2]] K')
+is a single statement. For `e : K ≃+* K'` an isomorphism of fields, the transported isomorphism
+`(absoluteGaloisGroupProPCongr e).trans m` of a marked presentation of `G_K(2)` of the even form
+presents `G_{K'}(2)` by the same relator word and takes the same values.
+
+Only the transport of the recorded values is claimed, and it uses no property of `e` beyond being an
+isomorphism of fields; the transport is the naturality of the cyclotomic orientation along the
+induced isomorphism of the absolute Galois groups
+(`TauCeti.cyclotomicOrientation_trans_absoluteGaloisGroupProPCongr`). For the transported
+presentation to be *the* marked presentation of `G_{K'}(2)` in the sense of
+`TauCeti.absoluteGaloisGroupProP_two_marked_of_degree_even_plusMinus` or
+`TauCeti.absoluteGaloisGroupProP_two_marked_of_degree_even_principal`, the target must have the
+same even degree over `ℚ₂` and the same cyclotomic image as the source; an isomorphism of local
+fields over `ℚ₂` provides that (`TauCeti.isDyadicEvenPlusMinusCase_iff_of_algEquiv` and
+`TauCeti.isDyadicEvenPrincipalCase_iff_of_algEquiv`). -/
+theorem absoluteGaloisGroupProP_two_marked_of_degree_even_congr (e : K ≃+* K')
     (hmu : ∃ ζ : K, IsPrimitiveRoot ζ 2) (hmu' : ∃ ζ : K', IsPrimitiveRoot ζ 2) {a f : ℕ}
     (m : absoluteGaloisGroupProP 2 K ≃ₜ*
       presentedProP 2 (Fin (Module.finrank ℚ_[2] K + 2))
@@ -398,25 +433,25 @@ theorem absoluteGaloisGroupProP_two_marked_of_degree_even_congr (e : K ≃ₐ[�
       cyclotomicOrientation 2 K hmu
         (m.symm (presentedProPGen 2 (Module.finrank ℚ_[2] K + 2) _ i)) = 1) :
     ((cyclotomicOrientation 2 K' hmu'
-          (((absoluteGaloisGroupProPCongr 2 K K' e.toRingEquiv).trans m).symm
+          (((absoluteGaloisGroupProPCongr 2 K K' e).trans m).symm
             (presentedProPGen 2 (Module.finrank ℚ_[2] K + 2) _ 1)) : ℤ_[2]) *
         (1 + (a : ℤ_[2])) = -1) ∧
       ((cyclotomicOrientation 2 K' hmu'
-          (((absoluteGaloisGroupProPCongr 2 K K' e.toRingEquiv).trans m).symm
+          (((absoluteGaloisGroupProPCongr 2 K K' e).trans m).symm
             (presentedProPGen 2 (Module.finrank ℚ_[2] K + 2) _ 3)) : ℤ_[2]) *
         (1 - 2 ^ f) = 1) ∧
       ∀ i : ℕ, i ≠ 1 → i ≠ 3 → i < Module.finrank ℚ_[2] K + 2 →
         cyclotomicOrientation 2 K' hmu'
-          (((absoluteGaloisGroupProPCongr 2 K K' e.toRingEquiv).trans m).symm
+          (((absoluteGaloisGroupProPCongr 2 K K' e).trans m).symm
             (presentedProPGen 2 (Module.finrank ℚ_[2] K + 2) _ i)) = 1 := by
   have htrans : ∀ i : ℕ,
       cyclotomicOrientation 2 K' hmu'
-          (((absoluteGaloisGroupProPCongr 2 K K' e.toRingEquiv).trans m).symm
+          (((absoluteGaloisGroupProPCongr 2 K K' e).trans m).symm
             (presentedProPGen 2 (Module.finrank ℚ_[2] K + 2) _ i)) =
         cyclotomicOrientation 2 K hmu
           (m.symm (presentedProPGen 2 (Module.finrank ℚ_[2] K + 2) _ i)) :=
     fun i ↦ cyclotomicOrientation_trans_absoluteGaloisGroupProPCongr (p := 2) (K := K)
-      (K' := K') e.toRingEquiv hmu hmu' m _
+      (K' := K') e hmu hmu' m _
   refine ⟨?_, ?_, ?_⟩
   · rw [htrans 1]
     exact hm₁
