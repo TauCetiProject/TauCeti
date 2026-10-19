@@ -42,6 +42,8 @@ all three use the same noncanonical choice of basis for the even half-spin modul
 * `TauCeti.RepresentationTheory.Spin.Exceptional.Six.Group` supplies the arbitrary-form group
   endpoint; `SpecialLinear` and `HalfSpinDual` supply the group construction and half-spin
   duality used below.
+* Tau Ceti PR #16324 introduced the split formalization, and PR #17008 introduced the
+  arbitrary-form group endpoint used here.
 -/
 
 public section
@@ -71,20 +73,8 @@ private theorem polarizedSpinGroupFirstFactor_matrix
       (P.nondegenerate_of_line_eq_bot hline) hV
     (u (spinGroupToEvenUnitary Q s) : Matrix (Fin 4) (Fin 4) K) =
       LinearMap.toMatrix b b (spinPlusAction Q P hline (spinGroupToEven Q s)) := by
-  dsimp
-  calc
-    _ = (P.evenCliffordEquivProdMatrix (l := 3) hW (by omega)
-        (spinGroupToEven Q s)).1 := by
-      rw [AlgEquiv.coe_evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix_apply,
-        CliffordAlgebra.evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_apply]
-    _ = (Algebra.endAlgEquivMatrix K (spinPlus Q P) hplus
-        (spinPlusAction Q P hline (spinGroupToEven Q s))) := by
-      simpa using congrArg Prod.fst
-        (P.evenCliffordEquivProdMatrix_apply (l := 3) hW (by omega)
-          (spinGroupToEven Q s))
-    _ = _ := by
-      rw [Algebra.endAlgEquivMatrix_apply K _ _]
-      rw [hb]
+  exact coe_evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix_spinGroupToEvenUnitary_apply
+    P hline hW hplus hV b hb s
 
 private noncomputable def polarizedSpinGroupMulHom
     [NeZero (2 : K)] (P : SpinPolarizationData Q) [FiniteDimensional K (spinPlus Q P)]
@@ -224,7 +214,7 @@ theorem
   let b := Module.finBasisOfFinrankEq K (spinPlus Q P) hplus
   have hb : b = Module.finBasisOfFinrankEq K (spinPlus Q P) hplus := rfl
   let φ := polarizedSpinGroupMulEquiv P hline hWfin hW hplus hV b hb
-  obtain ⟨eplus⟩ := nonempty_spinPlusSubrep_equiv_stdSLRep_of_matrix_action hline b φ
+  obtain ⟨eplus⟩ := nonempty_spinPlusSubrep_equiv_stdSLRep_of_matrix_action hline b φ.toMonoidHom
     (fun s ↦ polarizedSpinGroupMulEquiv_matrix P hline hWfin hW hplus hV b hb s)
   obtain ⟨hline', ⟨eminus⟩⟩ :=
     exists_spinMinusSubrep_equiv_dual_spinPlusSubrep_of_finrank_eq_six P hV

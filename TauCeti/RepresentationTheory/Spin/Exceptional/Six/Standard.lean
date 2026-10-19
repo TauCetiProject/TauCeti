@@ -76,29 +76,39 @@ private theorem hyperbolicSixSpinEquivSpecialLinear_eq_toMatrix
           (spinGroupToEven (splitEvenForm K 3) g)) := by
   let hW := splitEvenPolarization_W_ne_bot K (by norm_num : (3 : ℕ) ≠ 0)
   let hV := finrank_splitEvenSpace K 3
-  let x := spinGroupToEven (splitEvenForm K 3) g
+  let P := splitEvenPolarization K 3
+  let hline := splitEvenPolarization_line K 3
+  let b := Module.finBasisOfFinrankEq K (spinPlus (splitEvenForm K 3) P)
+    (hyperbolicSix_spinPlus_finrank K)
+  have h := coe_evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix_spinGroupToEvenUnitary_apply
+    P hline hW (hyperbolicSix_spinPlus_finrank K) hV b rfl g
+  dsimp at h ⊢
   calc
-    (hyperbolicSixSpinEquivSpecialLinear K g : Matrix (Fin 4) (Fin 4) K) =
-        hyperbolicSixEvenUnitaryEquivGeneralLinear K
-          (spinGroupToEvenUnitary (splitEvenForm K 3) g) :=
+    _ = (hyperbolicSixEvenUnitaryEquivGeneralLinear K
+        (spinGroupToEvenUnitary (splitEvenForm K 3) g) : Matrix (Fin 4) (Fin 4) K) :=
       coe_hyperbolicSixSpinEquivSpecialLinear_apply K g
     _ = (hyperbolicSixEvenEquivMatrixProd K
           (evenUnitaryGroupEvenPart (splitEvenForm K 3)
             (spinGroupToEvenUnitary (splitEvenForm K 3) g))).1 :=
       coe_hyperbolicSixEvenUnitaryEquivGeneralLinear_apply K _
-    _ = (hyperbolicSixEvenEquivMatrixProd K x).1 :=
-      congrArg (fun y ↦ (hyperbolicSixEvenEquivMatrixProd K y).1)
-        (evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_apply (splitEvenForm K 3) g)
-    _ = ((splitEvenPolarization K 3).evenCliffordEquivProdMatrix hW hV x).1 :=
-      congrArg Prod.fst (hyperbolicSixEvenEquivMatrixProd_apply K x)
-    _ = Algebra.endAlgEquivMatrix K
-        (spinPlus (splitEvenForm K 3) (splitEvenPolarization K 3))
-        (hyperbolicSix_spinPlus_finrank K)
-        (spinPlusAction (splitEvenForm K 3) (splitEvenPolarization K 3)
-          (splitEvenPolarization_line K 3) x) :=
-      congrArg Prod.fst
-        ((splitEvenPolarization K 3).evenCliffordEquivProdMatrix_apply hW hV x)
-    _ = _ := Algebra.endAlgEquivMatrix_apply K _ _ _
+    _ = (P.evenCliffordEquivProdMatrix (l := 3) hW hV
+        (spinGroupToEven (splitEvenForm K 3) g)).1 := by
+      calc
+        _ = (P.evenCliffordEquivProdMatrix (l := 3) hW hV
+          (evenUnitaryGroupEvenPart (splitEvenForm K 3)
+            (spinGroupToEvenUnitary (splitEvenForm K 3) g))).1 := by
+          rw [hyperbolicSixEvenEquivMatrixProd_apply]
+        _ = _ := by
+          rw [evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_apply]
+    _ = (AlgEquiv.evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix
+        (P.evenCliffordEquivProdMatrix (l := 3) hW hV)
+        (P.nondegenerate_of_line_eq_bot hline) hV
+        (spinGroupToEvenUnitary (splitEvenForm K 3) g) : Matrix (Fin 4) (Fin 4) K) := by
+      rw [AlgEquiv.coe_evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix_apply
+        (P.evenCliffordEquivProdMatrix (l := 3) hW hV)
+        (P.nondegenerate_of_line_eq_bot hline) hV,
+        evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_apply]
+    _ = _ := h
 
 private theorem exists_hyperbolicSix_spinPlus_equiv_stdSLRep :
     Nonempty
@@ -110,7 +120,7 @@ private theorem exists_hyperbolicSix_spinPlus_equiv_stdSLRep :
   let b := Module.finBasisOfFinrankEq K (spinPlus (splitEvenForm K 3) P)
     (hyperbolicSix_spinPlus_finrank K)
   exact nonempty_spinPlusSubrep_equiv_stdSLRep_of_matrix_action hline b
-    (hyperbolicSixSpinEquivSpecialLinear K)
+    (hyperbolicSixSpinEquivSpecialLinear K).toMonoidHom
       (hyperbolicSixSpinEquivSpecialLinear_eq_toMatrix K)
 
 /-- For three hyperbolic planes, the even half-spin representation is the standard
