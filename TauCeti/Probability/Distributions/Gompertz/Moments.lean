@@ -33,8 +33,14 @@ namespace TauCeti.Probability
 
 variable {η b : ℝ}
 
+private lemma exp_mul_gompertzTransform (hη : 0 < η) {e : ℝ} (he : 0 < e) (t b : ℝ) :
+    exp (t * (log (1 + e / η) / b)) = (1 + e / η) ^ (t / b) := by
+  rw [rpow_def_of_pos (by positivity : 0 < 1 + e / η)]
+  congr 1
+  ring
+
 /-- Every real exponential moment of a valid Gompertz law is integrable. -/
-theorem integrable_exp_mul_gompertzMeasure (hη : 0 < η) (hb : 0 < b) (t : ℝ) :
+theorem integrable_exp_mul_id_gompertzMeasure (hη : 0 < η) (hb : 0 < b) (t : ℝ) :
     Integrable (fun x => exp (t * x)) (gompertzMeasure η b) := by
   let _ := isProbabilityMeasure_expMeasure one_pos
   rw [gompertzMeasure_of_pos hη hb, integrable_map_measure (by fun_prop) (by fun_prop)]
@@ -53,8 +59,7 @@ theorem integrable_exp_mul_gompertzMeasure (hη : 0 < η) (hb : 0 < b) (t : ℝ)
   have hbase : 1 ≤ 1 + e / η := by linarith [div_pos he hη]
   simp only [norm_of_nonneg (exp_nonneg _), Real.norm_eq_abs,
     abs_of_pos (zero_lt_one.trans_le hbase)]
-  have hexp : t * (log (1 + e / η) / b) = log (1 + e / η) * (t / b) := by ring
-  rw [hexp, ← rpow_def_of_pos (zero_lt_one.trans_le hbase)]
+  rw [exp_mul_gompertzTransform hη he]
   simpa only [rpow_natCast] using rpow_le_rpow_of_exponent_le hbase hn.le
 
 /-- The exact exponential-integrability domain of a valid Gompertz law is all of `ℝ`. -/
@@ -62,7 +67,7 @@ theorem integrable_exp_mul_gompertzMeasure (hη : 0 < η) (hb : 0 < b) (t : ℝ)
 theorem integrableExpSet_id_gompertzMeasure (hη : 0 < η) (hb : 0 < b) :
     integrableExpSet id (gompertzMeasure η b) = univ := by
   ext t
-  exact iff_true_intro (integrable_exp_mul_gompertzMeasure hη hb t)
+  exact iff_true_intro (integrable_exp_mul_id_gompertzMeasure hη hb t)
 
 /-- Every natural raw moment of a Gompertz law is integrable. -/
 theorem integrable_pow_gompertzMeasure (hη : 0 < η) (hb : 0 < b) (n : ℕ) :
@@ -112,9 +117,7 @@ theorem mgf_id_gompertzMeasure (hη : 0 < η) (hb : 0 < b) (t : ℝ) :
   apply setIntegral_congr_fun measurableSet_Ioi
   intro e he
   simp only [one_mul, id_eq, smul_eq_mul]
-  have he' : 0 < e := he
-  have hexp : t * (log (1 + e / η) / b) = log (1 + e / η) * (t / b) := by ring
-  rw [rpow_def_of_pos (by positivity : 0 < 1 + e / η), hexp, mul_comm]
+  rw [exp_mul_gompertzTransform hη he, mul_comm]
 
 /-- The Gompertz cgf is the logarithm of its convergent shifted-power integral. -/
 theorem cgf_id_gompertzMeasure (hη : 0 < η) (hb : 0 < b) (t : ℝ) :

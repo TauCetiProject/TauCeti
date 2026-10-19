@@ -74,14 +74,25 @@ theorem hasLaw_gompertzMeasure_of_hasLaw_expMeasure {Ω : Type*} [MeasurableSpac
   exact (hasLaw_map (by fun_prop : Measurable (fun e : ℝ =>
     Real.log (1 + e / η) / b)).aemeasurable).comp hE
 
+/-- The defining Gompertz transform sends positive inputs to positive outputs. -/
+theorem gompertzTransform_pos (hη : 0 < η) (hb : 0 < b) {e : ℝ} (he : 0 < e) :
+    0 < Real.log (1 + e / η) / b :=
+  div_pos (Real.log_pos (by linarith [div_pos he hη])) hb
+
 /-- Gompertz variables are almost surely positive, including on the invalid zero branch. -/
 theorem ae_pos_gompertzMeasure (η b : ℝ) : ∀ᵐ x ∂gompertzMeasure η b, 0 < x := by
   by_cases h : 0 < η ∧ 0 < b
   · rw [gompertzMeasure_of_pos h.1 h.2]
     apply (ae_map_iff (by fun_prop) measurableSet_Ioi).2
     filter_upwards [ae_pos_expMeasure 1] with e he
-    exact div_pos (Real.log_pos (by linarith [div_pos he h.1])) h.2
+    exact gompertzTransform_pos h.1 h.2 he
   · simp [gompertzMeasure_of_not_pos h]
+
+/-- The Gompertz law gives no mass to the nonpositive half-line, at all parameters. -/
+@[simp]
+theorem gompertzMeasure_Iic_zero (η b : ℝ) : gompertzMeasure η b (Iic 0) = 0 :=
+  measure_mono_null (fun _ hy => not_lt.mpr (mem_Iic.mp hy))
+    (ae_iff.mp (ae_pos_gompertzMeasure η b))
 
 /-- The totalized Gompertz family is jointly measurable in both parameters. -/
 @[fun_prop]

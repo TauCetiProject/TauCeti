@@ -38,35 +38,26 @@ theorem cdf_gompertzMeasure_eq (hη : 0 < η) (hb : 0 < b) (x : ℝ) :
   let _ := isProbabilityMeasure_gompertzMeasure hη hb
   by_cases hx : x ≤ 0
   · rw [ite_eq_left hx, cdf_eq_real, measureReal_def]
-    have hz : gompertzMeasure η b (Iic x) = 0 := by
-      exact measure_mono_null (fun y hy => not_lt.mpr ((mem_Iic.mp hy).trans hx))
-        (ae_iff.mp (ae_pos_gompertzMeasure η b))
-    rw [hz, ENNReal.toReal_zero]
+    rw [measure_mono_null (Iic_subset_Iic.mpr hx) (gompertzMeasure_Iic_zero η b),
+      ENNReal.toReal_zero]
   · have hx' : 0 < x := lt_of_not_ge hx
     have he : 0 ≤ η * (exp (b * x) - 1) :=
       mul_nonneg hη.le (sub_nonneg.mpr (one_le_exp (by positivity)))
     have heq : (fun e : ℝ => log (1 + e / η) / b) ⁻¹' Iic x =ᵐ[expMeasure 1]
         Iic (η * (exp (b * x) - 1)) := by
       filter_upwards [ae_pos_expMeasure 1] with e he
-      simp only [mem_preimage, mem_Iic, div_le_iff₀ hb,
-        log_le_iff_le_exp (by positivity : 0 < 1 + e / η)]
       apply propext
-      rw [mul_comm x b]
-      constructor <;> intro hh
-      · have hdiv : e / η ≤ exp (b * x) - 1 := by linarith
-        have := (div_le_iff₀ hη).mp hdiv
-        nlinarith
-      · apply le_of_sub_nonneg
-        have hnum : e ≤ (exp (b * x) - 1) * η := by nlinarith
-        have := (div_le_iff₀ hη).mpr hnum
-        linarith
+      simp only [mem_preimage, mem_Iic]
+      rw [div_le_iff₀' hb, log_le_iff_le_exp (by positivity : 0 < 1 + e / η),
+        ← le_sub_iff_add_le', div_le_iff₀' hη]
     rw [ite_eq_right hx, cdf_eq_real, gompertzMeasure_of_pos hη hb,
       map_measureReal_apply (by fun_prop) measurableSet_Iic,
       measureReal_congr heq, ← cdf_eq_real, cdf_expMeasure_eq one_pos, ite_eq_left he, one_mul]
     congr 2
     ring
 
-/-- The Gompertz survival function on the nonnegative half-line is strictly positive. -/
+/-- On the nonnegative half-line the Gompertz survival function is
+`exp (-η * (exp (b * x) - 1))`. -/
 theorem one_sub_cdf_gompertzMeasure (hη : 0 < η) (hb : 0 < b) (hx : 0 ≤ x) :
     1 - cdf (gompertzMeasure η b) x = exp (-η * (exp (b * x) - 1)) := by
   rw [cdf_gompertzMeasure_eq hη hb]

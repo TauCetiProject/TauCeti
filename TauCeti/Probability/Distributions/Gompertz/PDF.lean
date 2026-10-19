@@ -53,18 +53,30 @@ theorem gompertzPDFReal_of_pos (hη : 0 < η) (hb : 0 < b) (hx : 0 < x) :
     gompertzPDFReal η b x = η * b * exp (b * x) * exp (-η * (exp (b * x) - 1)) := by
   rw [gompertzPDFReal, ite_eq_left ⟨hη, hb, hx⟩]
 
-/-- The Gompertz density vanishes outside its parameter and support domain. -/
+/-- The Gompertz density vanishes on the nonpositive half-line. -/
 @[simp]
-theorem gompertzPDFReal_of_not_pos (h : ¬ (0 < η ∧ 0 < b ∧ 0 < x)) :
+theorem gompertzPDFReal_of_nonpos (hx : x ≤ 0) (η b : ℝ) :
     gompertzPDFReal η b x = 0 := by
-  rw [gompertzPDFReal, ite_eq_right h]
+  rw [gompertzPDFReal, ite_eq_right fun h => hx.not_gt h.2.2]
+
+/-- The Gompertz density vanishes at invalid parameters. -/
+@[simp]
+theorem gompertzPDFReal_of_not_pos (h : ¬ (0 < η ∧ 0 < b)) (x : ℝ) :
+    gompertzPDFReal η b x = 0 := by
+  rw [gompertzPDFReal, ite_eq_right fun h' => h ⟨h'.1, h'.2.1⟩]
+
+/-- At positive parameters the Gompertz density is strictly positive on its open support. -/
+theorem gompertzPDFReal_pos (hη : 0 < η) (hb : 0 < b) (hx : 0 < x) :
+    0 < gompertzPDFReal η b x := by
+  rw [gompertzPDFReal_of_pos hη hb hx]
+  positivity
 
 /-- The Gompertz density is nonnegative everywhere. -/
 theorem gompertzPDFReal_nonneg (η b x : ℝ) : 0 ≤ gompertzPDFReal η b x := by
-  by_cases h : 0 < η ∧ 0 < b ∧ 0 < x
-  · rcases h with ⟨hη, hb, hx⟩
-    rw [gompertzPDFReal_of_pos hη hb hx]
-    positivity
+  by_cases h : 0 < η ∧ 0 < b
+  · by_cases hx : 0 < x
+    · exact (gompertzPDFReal_pos h.1 h.2 hx).le
+    · rw [gompertzPDFReal_of_nonpos (le_of_not_gt hx)]
   · rw [gompertzPDFReal_of_not_pos h]
 
 /-- Converting the extended density to a real number recovers the real density. -/
@@ -104,68 +116,72 @@ theorem support_gompertzPDF (hη : 0 < η) (hb : 0 < b) :
     Function.support (gompertzPDF η b) = Ioi 0 := by
   ext x
   rw [Function.mem_support, gompertzPDF, ne_eq, ENNReal.ofReal_eq_zero, not_le, mem_Ioi]
-  constructor
-  · contrapose!
-    intro hx
-    rw [gompertzPDFReal_of_not_pos (by grind)]
-  · intro hx
-    rw [gompertzPDFReal_of_pos hη hb hx]
-    positivity
+  exact ⟨fun h => lt_of_not_ge fun hx => h.ne' (gompertzPDFReal_of_nonpos hx η b),
+    gompertzPDFReal_pos hη hb⟩
 
 private lemma gompertzTransform_image (hη : 0 < η) (hb : 0 < b) :
     (fun e : ℝ => log (1 + e / η) / b) '' Ioi 0 = Ioi 0 := by
   ext x
   constructor
   · rintro ⟨e, he, rfl⟩
-    exact div_pos (log_pos (by linarith [div_pos he hη])) hb
+    exact gompertzTransform_pos hη hb he
   · intro hx
     refine ⟨η * (exp (b * x) - 1), mul_pos hη (sub_pos.mpr ?_), ?_⟩
     · exact one_lt_exp_iff.mpr (mul_pos hb hx)
     · simp only [mul_div_cancel_left₀ _ hη.ne', add_sub_cancel, log_exp,
         mul_div_cancel_left₀ _ hb.ne']
 
+private lemma injOn_gompertzTransform (hη : 0 < η) (hb : 0 < b) :
+    InjOn (fun e : ℝ => log (1 + e / η) / b) (Ioi 0) := by
+  intro e he f hf hef
+  have hp (y : ℝ) (hy : 0 < y) : 0 < 1 + y / η := by positivity
+  have hh := (log_injOn_pos (hp e he) (hp f hf)) ((div_left_inj' hb.ne').mp hef)
+  exact (div_left_inj' hη.ne').mp (by linarith)
+
+private lemma hasDerivAt_gompertzTransform (hη : 0 < η) (b : ℝ) {e : ℝ} (he : 0 < e) :
+    HasDerivAt (fun y : ℝ => log (1 + y / η) / b) ((η + e)⁻¹ / b) e := by
+  have hp : 0 < 1 + e / η := by positivity
+  have hd : (1 / η) / (1 + e / η) / b = (η + e)⁻¹ / b := by
+    field_simp
+  simpa only [id_eq, hd] using
+    ((((hasDerivAt_id e).div_const η).const_add 1).log hp.ne').div_const b
+
+private lemma gompertzPDF_mul_abs_deriv (hη : 0 < η) (hb : 0 < b) {e : ℝ} (he : 0 < e) :
+    ENNReal.ofReal |(η + e)⁻¹ / b| * gompertzPDF η b (log (1 + e / η) / b) =
+      exponentialPDF 1 e := by
+  have hp : 0 < 1 + e / η := by positivity
+  have hd : 0 < (η + e)⁻¹ / b := div_pos (inv_pos.mpr (add_pos hη he)) hb
+  simp only [gompertzPDF, gompertzPDFReal_of_pos hη hb (gompertzTransform_pos hη hb he),
+    mul_div_cancel₀ _ hb.ne', exp_log hp, abs_of_pos hd,
+    ← ENNReal.ofReal_mul hd.le, exponentialPDF_of_nonneg he.le, one_mul]
+  have hexp : -η * (1 + e / η - 1) = -e := by field_simp; ring
+  simp only [hexp]
+  congr 1
+  field_simp [(add_pos hη he).ne']
+
 /-- The Gompertz law is Lebesgue measure weighted by its named density, at all parameters. -/
 theorem gompertzMeasure_eq_withDensity (η b : ℝ) :
     gompertzMeasure η b = volume.withDensity (gompertzPDF η b) := by
   by_cases h : 0 < η ∧ 0 < b
-  · have hη := h.1
-    have hb := h.2
-    have hp (e : ℝ) (he : 0 < e) : 0 < 1 + e / η := by positivity
-    have hinj : InjOn (fun e : ℝ => log (1 + e / η) / b) (Ioi 0) := by
-      intro e he f hf hef
-      have hh := (log_injOn_pos (hp e he) (hp f hf)) ((div_left_inj' h.2.ne').mp hef)
-      exact (div_left_inj' h.1.ne').mp (by linarith)
+  · obtain ⟨hη, hb⟩ := h
     have hmap := TauCeti.MeasureTheory.map_withDensity_abs_deriv_mul
       (s := Ioi (0 : ℝ)) (φ := fun e : ℝ => log (1 + e / η) / b)
       (φ' := fun e => (η + e)⁻¹ / b) (f := gompertzPDF η b)
-      measurableSet_Ioi (by fun_prop) (fun e he => ?_) hinj
-    · have hw : (fun e : ℝ => ENNReal.ofReal |(η + e)⁻¹ / b| *
-          gompertzPDF η b (log (1 + e / η) / b)) =ᵐ[volume.restrict (Ioi 0)]
-          exponentialPDF 1 := by
-        filter_upwards [ae_restrict_mem measurableSet_Ioi] with e he
-        have hlog : 0 < log (1 + e / η) / b :=
-          div_pos (log_pos (by linarith [div_pos he h.1])) h.2
-        rw [gompertzPDF, gompertzPDFReal_of_pos h.1 h.2 hlog,
-          mul_div_cancel₀ _ h.2.ne', exp_log (hp e he),
-          abs_of_pos (div_pos (inv_pos.mpr (add_pos h.1 he)) h.2),
-          ← ENNReal.ofReal_mul (div_nonneg (inv_nonneg.mpr (add_pos hη he).le) hb.le),
-          exponentialPDF_of_nonneg he.le, one_mul]
-        have hexp : -η * (1 + e / η - 1) = -e := by field_simp; ring
-        rw [hexp]
-        congr 1
-        field_simp [(add_pos hη he).ne']
-      rw [withDensity_congr_ae hw, gompertzTransform_image h.1 h.2] at hmap
-      rw [gompertzMeasure_of_pos h.1 h.2, expMeasure_eq_withDensity_restrict_Ioi, hmap,
-        ← withDensity_indicator measurableSet_Ioi]
-      congr 1
-      exact indicator_eq_self.mpr (support_gompertzPDF h.1 h.2).le
-    · convert ((((hasDerivAt_id e).div_const η).const_add 1).log
-        (hp e he).ne').div_const b |>.hasDerivWithinAt using 1
-      · rfl
-      · simp only [id_eq]
-        field_simp
+      measurableSet_Ioi (by fun_prop)
+      (fun e he => (hasDerivAt_gompertzTransform hη b he).hasDerivWithinAt)
+      (injOn_gompertzTransform hη hb)
+    have hw : (fun e : ℝ => ENNReal.ofReal |(η + e)⁻¹ / b| *
+        gompertzPDF η b (log (1 + e / η) / b)) =ᵐ[volume.restrict (Ioi 0)]
+        exponentialPDF 1 := by
+      filter_upwards [ae_restrict_mem measurableSet_Ioi] with e he
+      exact gompertzPDF_mul_abs_deriv hη hb he
+    rw [withDensity_congr_ae hw, gompertzTransform_image hη hb] at hmap
+    rw [gompertzMeasure_of_pos hη hb, expMeasure_eq_withDensity_restrict_Ioi, hmap,
+      ← withDensity_indicator measurableSet_Ioi]
+    congr 1
+    exact indicator_eq_self.mpr (support_gompertzPDF hη hb).le
   · have hz : gompertzPDF η b = 0 := funext fun x => by
-      rw [gompertzPDF, gompertzPDFReal_of_not_pos (by grind), ENNReal.ofReal_zero, Pi.zero_apply]
+      simp [gompertzPDF, gompertzPDFReal_of_not_pos h]
     rw [gompertzMeasure_of_not_pos h, hz, withDensity_zero]
 
 /-- The topological support is the closed nonnegative half-line. -/
