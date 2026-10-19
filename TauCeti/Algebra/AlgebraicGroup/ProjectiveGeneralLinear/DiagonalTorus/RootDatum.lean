@@ -26,6 +26,8 @@ nonzero weights of the adjoint representation is a further assertion.
 
 ## References
 
+* The API layout and root-character identification follow
+  `TauCeti.Algebra.AlgebraicGroup.SpecialLinear.DiagonalTorus.RootDatum`.
 * J. S. Milne, *Algebraic Groups* (2017), §21.
 * J. E. Humphreys, *Linear Algebraic Groups* (1975), §§26–27.
 -/
@@ -157,8 +159,8 @@ private lemma rootProjection_single_apply (a : Fin (r + 1)) (i : ULift.{u} (Fin 
         ((if p.1.2 = q.1.1 then 1 else 0) - (if p.1.2 = q.1.2 then 1 else 0)) := by
   have h : (diagonalRootDatum.{u} r).pairing p q =
       (coordinateRootDatum (Fin (r + 1))).pairing p q := projected_pairing p q
-  rw [h, coordinateRootDatum_pairing_apply]
-  split_ifs <;> rfl
+  -- The coordinate formula uses classical decidability, whereas this statement uses `Fin`'s.
+  exact h.trans (by convert coordinateRootDatum_pairing_apply p q)
 
 /-- Reflections transpose both matrix indices. -/
 @[simp] theorem diagonalRootDatum_reflectionPerm (p q : CoordinateRootIndex (Fin (r + 1))) :
