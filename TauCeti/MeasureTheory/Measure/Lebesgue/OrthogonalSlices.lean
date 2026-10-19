@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Markov
 public import TauCeti.Analysis.InnerProductSpace.LinearIsometry
+import Mathlib.Geometry.Euclidean.Volume.Measure
 
 /-!
 # Orthogonal line coordinates and Lebesgue sections
@@ -22,6 +23,10 @@ without choosing a Borel representative permanently.
 Dually, the volume is the integral over heights `t` of the volumes of the hyperplane sections
 `{y ∈ (ℝ ∙ e)ᗮ | y + t • e ∈ s}`, and restricting the heights to a Borel set gives the volume
 of the corresponding part of the set. Hyperplane sections of bounded sets have finite volume.
+
+More generally, for any subspace `K`, Tonelli's theorem splits Lebesgue integrals over `E` along
+the orthogonal decomposition `E = Kᗮ ⊕ K` (`Submodule.lintegral_eq_lintegral_lintegral_add`),
+via Mathlib's `Submodule.measurePreserving_measurableEquivProd`.
 
 The coordinate construction uses Mathlib's `Submodule.orthogonalDecomposition` and
 `LinearIsometryEquiv.toSpanUnitSingleton`; its normalization follows Mathlib's volume
@@ -179,3 +184,23 @@ theorem volume_sep_inner_mem_eq_setLIntegral (e : E) (he : ‖e‖ = 1) {s : Set
   by_cases ht : t ∈ I <;> simp [ht, inner_add_smul e he]
 
 end TauCeti
+
+namespace Submodule
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E]
+
+/-- Tonelli's theorem along an orthogonal decomposition `E = Kᗮ ⊕ K`. -/
+theorem lintegral_eq_lintegral_lintegral_add (K : Submodule ℝ E)
+    {g : E → ℝ≥0∞} (hg : AEMeasurable g) :
+    ∫⁻ x, g x = ∫⁻ w : Kᗮ, ∫⁻ a : K, g (w + a) := by
+  set e := K.measurableEquivProd (0 : E)
+  have he : MeasurePreserving e := by
+    simpa only [InnerProductSpace.euclideanHausdorffMeasure_eq_volume] using
+      K.measurePreserving_measurableEquivProd (0 : E)
+  rw [MeasurePreserving.lintegral_map_equiv g e.symm he.symm, Measure.volume_eq_prod,
+    lintegral_prod_symm (fun q ↦ g (e.symm q))
+      (hg.comp_quasiMeasurePreserving he.symm.quasiMeasurePreserving)]
+  simp [e, add_comm]
+
+end Submodule

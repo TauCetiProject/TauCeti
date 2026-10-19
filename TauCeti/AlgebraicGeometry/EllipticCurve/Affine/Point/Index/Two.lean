@@ -59,7 +59,7 @@ singular reduction exists, so the index is exactly `2`. Writing `x = ϖ X` and `
 becomes a cubic in `X` whose reduction is linear with unit coefficient `a₄ / ϖ − s a₃ / ϖ`: this is
 again the condition `ϖ³ ∤ b₈`. Its leading coefficient `ϖ` is not a unit, so the root is lifted by
 Hensel's lemma for polynomials that are not monic
-(`TauCeti.HenselianLocalRing.exists_isRoot_sub_mem_maximalIdeal`).
+(`Polynomial.exists_isRoot_sub_mem`).
 
 At the symbol `III*`, where `ϖ ∣ a₁`, `ϖ² ∣ a₂`, `ϖ³ ∣ a₃`, `ϖ³ ∣ a₄`, `ϖ⁵ ∣ a₆` and
 `ϖ⁴ ∤ a₄`, comparing powers of `ϖ` in the Weierstrass equation shows that a point with singular
@@ -227,14 +227,14 @@ private theorem exists_cubic_eq_zero {R : Type*} [CommRing R] [HenselianLocalRin
   set X₀ := -(γ * ↑he₁.unit⁻¹)
   have hX₀ : e₁ * X₀ = -γ := by
     rw [mul_neg, mul_left_comm, IsUnit.mul_val_inv, mul_one]
-  obtain ⟨X, hX, -⟩ := TauCeti.HenselianLocalRing.exists_isRoot_sub_mem_maximalIdeal p
+  obtain ⟨X, hX, -⟩ := Polynomial.exists_isRoot_sub_mem (J := maximalIdeal R) p
     (a₀ := X₀) (by
       have hpX₀ : p.eval X₀ = ϖ * -X₀ ^ 3 + e₂ * X₀ ^ 2 := by
         simp only [hp, eval_sub, eval_add, eval_mul, eval_neg, eval_C, eval_pow, eval_X]
         linear_combination (-1 : R) * hX₀
       rw [hpX₀]
       exact add_mem ((maximalIdeal R).mul_mem_right _ hϖ) ((maximalIdeal R).mul_mem_right _ he₂))
-    (hder X₀ ▸ hunit X₀)
+    (by simpa [hder X₀] using (hunit X₀).map (Ideal.Quotient.mk (maximalIdeal R)))
   exact ⟨X, by simpa [hp] using hX.eq_zero, hunit X⟩
 
 /-! ### The reduction symbol `III` -/

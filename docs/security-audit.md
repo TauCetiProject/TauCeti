@@ -87,10 +87,17 @@ at most 20 commits, and the workload target can select fewer. Audit-only workers
 inspect any nonempty backlog. Audit blocks preserve the cursor and release gate,
 while the combined worker can continue bump/progress work.
 
-When private Zulip notifications are configured on the trusted worker, a new source
-finding, incomplete inspection or operational pause sends a direct message to the
-configured recipient with the affected commit range, recorded diagnostic and local
-evidence paths. Repeated alerts for the same blocked range and kind are suppressed
+When private Zulip notifications are configured on the trusted worker, a source
+finding or explained code-safety uncertainty sends an immediate direct message
+marked **Human review required**, with the affected commit range, recorded diagnostic
+and local evidence paths. Routine unfinished turns and provider failures stay in
+local logs while automatic recovery handles them. An **Operational stall** DM is
+sent only if the same cursor has remained held for at least one hour after the
+first observed operational pause. It explains that no source finding is recorded
+and eligible automatic recovery continues. The timer is durable across retries,
+changed attempts and Worker restarts; cursor advancement starts a fresh delay.
+These notification rules never clear a block, waive source review or change recovery
+eligibility. Repeated alerts for the same blocked range and kind are suppressed
 using durable receipts. Failed delivery backs off and is retried on subsequent audit
 rounds. No GitHub issue is created. The bot credential and configuration path are
 excluded from the isolated reviewer's environment. Without notification configuration,

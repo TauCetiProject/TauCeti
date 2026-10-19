@@ -59,7 +59,7 @@ theorem negativeBinomialMeasure_real_Iic (hr : 0 < r) (hp : 0 < p) (hp1 : p ≤ 
   | zero =>
       have hIic : (Iic 0 : Set ℕ) = {0} := Iic_bot
       rw [hIic, negativeBinomialMeasure_real_singleton hr.le hp hp1,
-        negativeBinomialWeightReal_eq_coeff hr]
+        negativeBinomialWeightReal_eq_coeff hr.le]
       norm_num
       exact regularizedIncompleteBeta_one_right hr hp.le hp1 |>.symm
   | succ k ih =>

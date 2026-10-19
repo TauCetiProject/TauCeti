@@ -12,8 +12,6 @@ public import Mathlib.Probability.Kernel.Basic
 -- Non-public: `map_infinitePi_infinitePi_of_inj` is used inside the prefix-marginal and
 -- block-selection proofs.
 import Mathlib.Probability.Independence.InfinitePi
--- Non-public: `map_bind` is used only inside the mixture prefix-rectangle proof.
-import TauCeti.MeasureTheory.Measure.GiryMonad
 
 /-!
 # Product probability-measure kernels
@@ -356,7 +354,7 @@ theorem map_prefixProj_bind_infinitePi_pi {α : Type*} [MeasurableSpace α]
       (Measure.infinitePi fun _ : ℕ ↦ (P : Measure α)).map
         fun x : ℕ → α ↦ fun i : Fin n ↦ x i) π :=
     ((Measure.measurable_map _ hproj).comp measurable_infinitePi_const).aemeasurable
-  rw [map_bind measurable_infinitePi_const.aemeasurable hproj,
+  rw [Measure.map_bind measurable_infinitePi_const.aemeasurable hproj.aemeasurable,
     Measure.bind_apply (MeasurableSet.univ_pi hB) hmeas]
   refine lintegral_congr fun P ↦ ?_
   rw [map_prefixProj_infinitePi_const, Measure.pi_pi]

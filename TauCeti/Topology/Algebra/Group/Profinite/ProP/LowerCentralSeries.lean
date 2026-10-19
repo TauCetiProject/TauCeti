@@ -108,8 +108,6 @@ noncomputable def _root_.ContinuousMonoidHom.pLowerCentralSeriesDesc
     -- The class of `g ∈ λ_k(G)` lies in `λ_k(G ⧸ λ_{k+1})`, which `ψ` carries into
     -- `λ_k(H ⧸ λ_{k+1})`, the image of `λ_k(H)`.
     -- `H ⧸ λ_{k+1}` is Hausdorff, as `λ_{k+1}(H)` is closed.
-    have hH : IsClosed ((pLowerCentralSeries p H (k + 1) : Subgroup H) : Set H) :=
-      isClosed_pLowerCentralSeries _
     have h1 : ψ (g : G ⧸ pLowerCentralSeries p G (k + 1)) ∈
         pLowerCentralSeries p (H ⧸ pLowerCentralSeries p H (k + 1)) k :=
       ψ.toMonoidHom.map_pLowerCentralSeries_le ψ.continuous k
@@ -183,8 +181,6 @@ theorem IsTopologicallyFinitelyGenerated.isOpen_pLowerCentralSeries
   | zero => rw [pLowerCentralSeries_zero, coe_top]; exact isOpen_univ
   | succ k ih =>
     let U : OpenSubgroup G := ⟨pLowerCentralSeries p G k, ih⟩
-    have : CompactSpace U.toSubgroup :=
-      isCompact_iff_compactSpace.mp (isClosed_pLowerCentralSeries k).isCompact
     -- The Frattini subgroup of `λ_k` maps into `λ_{k+1}`.
     have hle : (proPFrattini p U.toSubgroup).map U.toSubgroup.subtype ≤
         pLowerCentralSeries p G (k + 1) := by
