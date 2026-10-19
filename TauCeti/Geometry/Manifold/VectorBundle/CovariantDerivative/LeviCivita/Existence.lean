@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Nondegenerate
+public import TauCeti.Geometry.Manifold.VectorBundle.NondegenerateMetric.Musical
 
 /-!
 # Existence of the Levi-Civita connection for a nondegenerate metric
@@ -49,10 +50,7 @@ variable [FiniteDimensional ℝ E]
 
 private def connectionOfMDiffAt (hY : MDiffAt (T% Y) x) :
     TangentSpace I x →L[ℝ] TangentSpace I x :=
-  -- Convert continuous covectors to algebraic covectors before applying the native sharp map.
-  (1 / 2 : ℝ) • (((LinearMap.toContinuousLinearMap :
-    Module.Dual ℝ (TangentSpace I x) ≃ₗ[ℝ] (TangentSpace I x →L[ℝ] ℝ)).symm.trans
-      (g.sharp x)).toContinuousLinearEquiv.toContinuousLinearMap ∘L
+  (1 / 2 : ℝ) • ((g x).inverse ∘L
     TensorialAt.mkHom₂ (fun X Z ↦ g.koszul X Y Z x) x
       (fun _ hZ ↦ g.tensorialAt_koszul_first hY hZ)
       (fun _ hX ↦ g.tensorialAt_koszul_third hX hY))
