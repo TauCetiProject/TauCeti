@@ -35,6 +35,9 @@ in Ralf Stephan's `ArithmeticHeights/SUnitTheorem.lean` in `rwst/Subspace-Theore
   its torsion and free parts.
 * `TauCeti.NumberField.SUnit.closure_fundSystem_sup_torsion_eq_top`: the fundamental system and
   torsion generate all S-units.
+* `TauCeti.NumberField.SUnit.IsFundSystem`: the predicate that a family of S-units is a
+  fundamental system; `TauCeti.NumberField.SUnit.isFundSystem_fundSystem` says that the chosen
+  fundamental system satisfies it.
 
 ## References
 
@@ -121,6 +124,25 @@ theorem closure_fundSystem_sup_torsion_eq_top :
   obtain ⟨c, rfl, _⟩ := exist_unique_eq_mul_prod S x
   exact Subgroup.mul_mem_sup (SetLike.coe_mem c.1) <| Subgroup.prod_mem _
     fun i _ ↦ Subgroup.zpow_mem _ (Subgroup.subset_closure (Set.mem_range_self i)) _
+
+variable {S} in
+/-- A family `ε` of S-units is a *fundamental system* if it is finite with
+`NumberField.Units.rank K + Nat.card S` members and generates the group of S-units together with
+its torsion subgroup. The notion is meant for finite `S`, where `Nat.card S` is the number of
+places in `S`. -/
+structure IsFundSystem {ι : Type*} (ε : ι → S.unit K) : Prop where
+  /-- The family and the torsion subgroup generate the group of S-units. -/
+  closure_sup_torsion_eq_top :
+    Subgroup.closure (Set.range ε) ⊔ CommGroup.torsion (S.unit K) = ⊤
+  /-- The family is finite. -/
+  finite : Finite ι
+  /-- The family has `NumberField.Units.rank K + Nat.card S` members. -/
+  card_eq : Nat.card ι = NumberField.Units.rank K + Nat.card S
+
+/-- The chosen fundamental system `TauCeti.NumberField.SUnit.fundSystem` is a fundamental
+system. -/
+theorem isFundSystem_fundSystem : IsFundSystem (fundSystem S) :=
+  ⟨closure_fundSystem_sup_torsion_eq_top S, inferInstance, Nat.card_fin _⟩
 
 end
 

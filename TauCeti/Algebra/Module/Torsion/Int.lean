@@ -24,6 +24,8 @@ take both the `n`-torsion and the reduction mod `n` of a `ℤ`-module.
 * `TauCeti.subsingleton_quotSMulTop_of_surjective_zsmul`,
   `TauCeti.subsingleton_torsionBy_of_injective_zsmul`: if multiplication by `ℓ` on `V` is
   surjective, respectively injective, then `V ⧸ ℓV`, respectively `V[ℓ]`, is zero.
+* `TauCeti.span_sup_torsion_int_eq_top_iff`: a subset generates a commutative group modulo
+  torsion exactly when it spans the associated `ℤ`-module modulo torsion.
 -/
 
 public section
@@ -71,5 +73,18 @@ theorem ofMul_mem_torsion_int_iff {G : Type*} [CommGroup G] {x : G} :
     Additive.ofMul x ∈ Submodule.torsion ℤ (Additive G) ↔ x ∈ CommGroup.torsion G := by
   rw [← Submodule.mem_toAddSubgroup, Submodule.torsion_int, AddCommGroup.mem_torsion,
     isOfFinAddOrder_ofMul_iff, CommGroup.mem_torsion]
+
+/-- A subset `s` of a commutative group `G` generates `G` modulo its torsion subgroup exactly when
+its image spans the `ℤ`-module `Additive G` modulo its torsion submodule. -/
+theorem span_sup_torsion_int_eq_top_iff {G : Type*} [CommGroup G] {s : Set G} :
+    Submodule.span ℤ (Additive.toMul ⁻¹' s) ⊔ Submodule.torsion ℤ (Additive G) = ⊤ ↔
+      Subgroup.closure s ⊔ CommGroup.torsion G = ⊤ := by
+  rw [← Submodule.toAddSubgroup_eq_top, Submodule.sup_toAddSubgroup,
+    Submodule.span_int_eq_addSubgroupClosure, ← Subgroup.toAddSubgroup_closure,
+    ← Subgroup.toAddSubgroup.injective.eq_iff, map_sup, map_top]
+  congr! 2
+  ext x
+  rw [Submodule.mem_toAddSubgroup, Additive.mem_toAddSubgroup, ← ofMul_toMul x,
+    ofMul_mem_torsion_int_iff, toMul_ofMul]
 
 end TauCeti

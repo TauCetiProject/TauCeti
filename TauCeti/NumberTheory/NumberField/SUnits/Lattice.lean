@@ -34,6 +34,10 @@ the covolume of this lattice is what one calls the `S`-regulator.
 * **The quotient.** The kernel of the `S`-logarithmic embedding is the torsion
   (`TauCeti.NumberField.SUnit.logEmbedding_ker`), so the embedding induces a `ℤ`-linear
   equivalence from the `S`-units modulo torsion onto the lattice.
+* **Fundamental systems.** Through that equivalence, a family generates the `S`-units modulo
+  torsion exactly when its image spans the lattice. A spanning family is a basis exactly when it
+  has as many members as the rank, because a spanning family of a free `ℤ`-module of finite rank
+  is linearly independent once its size equals the rank.
 
 ## Main definitions and results
 
@@ -48,6 +52,9 @@ the covolume of this lattice is what one calls the `S`-regulator.
   torsion onto the lattice.
 * `TauCeti.NumberField.SUnit.basisUnitLattice`: the basis of the lattice given by the
   `S`-logarithmic images of a fundamental system of `S`-units.
+* `TauCeti.NumberField.SUnit.isFundSystem_iff_basis`: a family of `S`-units is a fundamental
+  system exactly when its `S`-logarithmic images form a `ℤ`-basis of the lattice, and
+  `TauCeti.NumberField.SUnit.IsFundSystem.basis` is that basis.
 
 ## References
 
@@ -249,6 +256,77 @@ theorem logEmbedding_fundSystem
     logEmbedding S (Additive.ofMul (fundSystem (S : Set (HeightOneSpectrum (𝓞 K))) i)) =
       basisUnitLattice S i := by
   rw [basisUnitLattice, Basis.map_apply, ← fundSystem_mk, logEmbeddingEquiv_mk]
+
+/-! ### Fundamental systems and lattice bases -/
+
+variable {S} {ι : Type*} {ε : ι → (S : Set (HeightOneSpectrum (𝓞 K))).unit K}
+
+/-- The `S`-logarithmic images of a family of `S`-units span the `S`-unit lattice exactly when
+the family generates the `S`-units together with their torsion subgroup. -/
+theorem span_logEmbedding_eq_unitLattice_iff :
+    Submodule.span ℤ (Set.range fun i ↦ logEmbedding S (Additive.ofMul (ε i))) = unitLattice S ↔
+      Subgroup.closure (Set.range ε) ⊔
+        CommGroup.torsion ((S : Set (HeightOneSpectrum (𝓞 K))).unit K) = ⊤ := by
+  have hrange : (Set.range fun i ↦ logEmbedding S (Additive.ofMul (ε i))) =
+      (logEmbedding S).toIntLinearMap '' (Additive.toMul ⁻¹' Set.range ε) := by
+    ext y
+    simp [Additive.ofMul.surjective.exists]
+  rw [hrange, ← Submodule.map_span, unitLattice, Submodule.map_eq_range_iff,
+    ker_logEmbedding_toIntLinearMap, codisjoint_iff, span_sup_torsion_int_eq_top_iff]
+
+open Classical in
+/-- A family of `S`-units is a fundamental system exactly when its `S`-logarithmic images are
+linearly independent over `ℤ` and span the `S`-unit lattice. -/
+theorem isFundSystem_iff_linearIndependent_and_span_eq :
+    IsFundSystem ε ↔ LinearIndependent ℤ (fun i ↦ logEmbedding S (Additive.ofMul (ε i))) ∧
+      Submodule.span ℤ (Set.range fun i ↦ logEmbedding S (Additive.ofMul (ε i))) =
+        unitLattice S := by
+  constructor
+  · rintro ⟨hcl, hfin, hcard⟩
+    have hspan := span_logEmbedding_eq_unitLattice_iff.mpr hcl
+    have := Fintype.ofFinite ι
+    refine ⟨?_, hspan⟩
+    rw [linearIndependent_iff_card_eq_finrank_span, Set.finrank, hspan, unitLattice_rank,
+      Fintype.card_eq_nat_card, hcard, Finset.coe_sort_coe, Nat.card_eq_finsetCard]
+  · rintro ⟨hli, hspan⟩
+    let b := (Basis.span hli).map (LinearEquiv.ofEq _ _ hspan)
+    refine ⟨span_logEmbedding_eq_unitLattice_iff.mp hspan, Module.Finite.finite_basis b, ?_⟩
+    rw [← finrank_eq_nat_card_basis b, unitLattice_rank, Finset.coe_sort_coe,
+      Nat.card_eq_finsetCard]
+
+/-- The basis of the `S`-unit lattice formed by the `S`-logarithmic images of a fundamental
+system of `S`-units. -/
+def IsFundSystem.basis (h : IsFundSystem ε) : Basis ι ℤ (unitLattice S) :=
+  (Basis.span (isFundSystem_iff_linearIndependent_and_span_eq.mp h).1).map
+    (LinearEquiv.ofEq _ _ (isFundSystem_iff_linearIndependent_and_span_eq.mp h).2)
+
+/-- The `i`-th vector of the basis given by a fundamental system `ε` is the `S`-logarithmic image
+of `ε i`. -/
+@[simp]
+theorem IsFundSystem.coe_basis_apply (h : IsFundSystem ε) (i : ι) :
+    (h.basis i : logSpace S) = logEmbedding S (Additive.ofMul (ε i)) := by
+  simp [IsFundSystem.basis, Basis.span_apply]
+
+/-- A family of `S`-units is a fundamental system exactly when its `S`-logarithmic images form a
+`ℤ`-basis of the `S`-unit lattice. -/
+theorem isFundSystem_iff_basis :
+    IsFundSystem ε ↔ ∃ b : Basis ι ℤ (unitLattice S),
+      ∀ i, (b i : logSpace S) = logEmbedding S (Additive.ofMul (ε i)) := by
+  refine ⟨fun h ↦ ⟨h.basis, h.coe_basis_apply⟩, fun ⟨b, hb⟩ ↦ ?_⟩
+  have hcoe : (fun i ↦ logEmbedding S (Additive.ofMul (ε i))) = (unitLattice S).subtype ∘ b :=
+    funext fun i ↦ (hb i).symm
+  rw [isFundSystem_iff_linearIndependent_and_span_eq, hcoe, Set.range_comp,
+    ← Submodule.map_span, b.span_eq, Submodule.map_top, Submodule.range_subtype]
+  exact ⟨b.linearIndependent.map' _ (Submodule.ker_subtype _), rfl⟩
+
+variable (S) in
+/-- The basis given by the fundamental system `TauCeti.NumberField.SUnit.fundSystem` is
+`basisUnitLattice S`. This is the `S`-analogue of Mathlib's
+`NumberField.Units.basisOfIsMaxRank_fundSystem`. -/
+theorem basis_isFundSystem_fundSystem :
+    (isFundSystem_fundSystem (S : Set (HeightOneSpectrum (𝓞 K)))).basis = basisUnitLattice S :=
+  Basis.eq_of_apply_eq fun i ↦ Subtype.ext <| by
+    rw [IsFundSystem.coe_basis_apply, logEmbedding_fundSystem]
 
 end
 
