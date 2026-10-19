@@ -5,15 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.Instances.Sphere
+public import Mathlib.Analysis.Normed.Module.Connected
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Comparison
 public import TauCeti.AlgebraicTopology.Homotopy.LoopSpace.FirstHomology
+public import TauCeti.AlgebraicTopology.Homotopy.Relative.Skeleton
 public import TauCeti.AlgebraicTopology.Singular.Sphere
 public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
-public import TauCeti.Topology.Homotopy.AvoidPoint
+public import TauCeti.Topology.CWComplex.Classical.Sphere.Basic
+public import TauCeti.Topology.Homotopy.HomotopyGroup.BasepointChange
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Homeomorph
-public import TauCeti.Topology.Homotopy.HomotopyGroup.Map
-public import TauCeti.Topology.Homotopy.HomotopyGroup.TopologicalVectorSpace
 
 /-!
 # Homotopy groups of spheres up to their dimension
@@ -25,14 +25,12 @@ the homology of spheres, `πₙ(Sⁿ, x) ≅ ℤ` for `n ≥ 2` (`TauCeti.homoto
 and the double Moore loop space of `S³` has first integral homology `ℤ`
 (`TauCeti.MooreLoopSpace.doubleFirstHomologySphereAddEquiv`).
 
-The vanishing is Hatcher's argument for Corollary 4.9. A generalized loop `Iᵏ → Sⁿ` is a map out
-of the cube, a compactum of dimension `k < n`. Read through the stereographic projection from the
-base point, which is a chart of `Sⁿ` onto `ℝⁿ` whose source misses the base point, it is homotopic
-relative to the boundary of the cube to a generalized loop omitting a point of the sphere
-(`ContinuousMap.exists_homotopyRel_notMem_range`, the smooth form of Hatcher's Lemma 4.10). The
-sphere minus that point is homeomorphic to `ℝⁿ` by the stereographic projection from it, so all
-its homotopy groups are trivial. Spheres of normed spaces are reduced to Euclidean ones through
-`TauCeti.sphereHomeomorphOfFinrankEq`.
+The vanishing follows from cellular compression, as in Hatcher's Corollary 4.12. The sphere
+`Sⁿ` has a CW structure with one `0`-cell and one `n`-cell (`TauCeti.sphereCWComplex`), so its
+`(n - 1)`-skeleton is a single point. The inclusion of that skeleton is surjective on `πₖ` for
+`k ≤ n - 1` (`TauCeti.surjective_homotopyGroupMap_skeletonLT`), so `πₖ(Sⁿ)` is trivial at the
+`0`-cell, and hence at every base point since `Sⁿ` is path connected. Spheres of normed spaces are
+reduced to Euclidean ones through `TauCeti.sphereHomeomorphOfFinrankEq`.
 
 The isomorphism `πₙ(Sⁿ, x) ≅ ℤ` is the cubical Hurewicz isomorphism
 `HomotopyGroup.cubicalHurewiczSingularHomologyAddEquiv` followed by the identification
@@ -48,7 +46,7 @@ basis, so its sign depends on the orientation of that basis.
 ## References
 
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
-  Section 4.1, Corollary 4.9 and Lemma 4.10, and Section 4.2, Corollary 4.25.
+  Section 4.1, Corollaries 4.9 and 4.12, and Section 4.2, Corollary 4.25.
 * J.-F. Barraud, M. Damian, V. Humilière, A. Oancea, *Floer homology with DG coefficients.
   Applications to cotangent bundles*, arXiv:2404.07953, Proposition 5.11.
 -/
@@ -57,102 +55,56 @@ public section
 
 noncomputable section
 
-open Metric Set Module CategoryTheory
+open Metric Set Module CategoryTheory Topology.RelCWComplex
 open scoped unitInterval Topology Topology.Homotopy
 
 namespace TauCeti
-
-section InnerProduct
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {N : Type*}
-
-/-- The unit sphere minus one point is homeomorphic to `ℝⁿ`, by stereographic projection from
-that point. -/
-private def sphereComplSingletonHomeomorph (n : ℕ) [Fact (finrank ℝ E = n + 1)]
-    (y : sphere (0 : E) 1) :
-    ({y}ᶜ : Set (sphere (0 : E) 1)) ≃ₜ EuclideanSpace ℝ (Fin n) :=
-  (Homeomorph.setCongr (stereographic'_source y).symm).trans <|
-    (stereographic' n y).toHomeomorphSourceTarget.trans <|
-      (Homeomorph.setCongr (stereographic'_target y)).trans (Homeomorph.Set.univ _)
-
-/-- A generalized loop on the unit sphere omitting a point other than the base point is homotopic
-to the constant loop: it lies in the punctured sphere, which is homeomorphic to `ℝⁿ`. -/
-private theorem mk_eq_mk_const_of_notMem_range (n : ℕ) [Fact (finrank ℝ E = n + 1)]
-    {x y : sphere (0 : E) 1} (hxy : x ≠ y)
-    (p : Ω^ N (sphere (0 : E) 1) x) (hp : y ∉ range p) :
-    (⟦p⟧ : HomotopyGroup N (sphere (0 : E) 1) x) = ⟦GenLoop.const⟧ := by
-  have hpy (t : I^N) : p t ∈ ({y}ᶜ : Set (sphere (0 : E) 1)) := fun h ↦ hp ⟨t, h⟩
-  let x' : ({y}ᶜ : Set (sphere (0 : E) 1)) := ⟨x, hxy⟩
-  have : Subsingleton (HomotopyGroup N ({y}ᶜ : Set (sphere (0 : E) 1)) x') :=
-    (HomotopyGroup.homeomorphEquiv (N := N) (sphereComplSingletonHomeomorph n y)
-      x').subsingleton_congr.mpr inferInstance
-  -- The loop `p`, with values in the punctured sphere.
-  let p' : Ω^ N ({y}ᶜ : Set (sphere (0 : E) 1)) x' :=
-    ⟨⟨fun t ↦ ⟨p t, hpy t⟩, p.1.continuous.subtype_mk hpy⟩,
-      fun t ht ↦ Subtype.ext (GenLoop.boundary p t ht)⟩
-  let ι : C(({y}ᶜ : Set (sphere (0 : E) 1)), sphere (0 : E) 1) := ⟨Subtype.val, by fun_prop⟩
-  have hp' : GenLoop.map ι rfl p' = p := GenLoop.ext _ _ fun t ↦ GenLoop.map_apply ι rfl p' t
-  have hp'1 : (⟦p'⟧ : HomotopyGroup N ({y}ᶜ : Set (sphere (0 : E) 1)) x') = ⟦GenLoop.const⟧ :=
-    this.elim _ _
-  rw [← hp', ← HomotopyGroup.map_mk, hp'1, HomotopyGroup.map_mk, GenLoop.map_const]
-
-/-- Every generalized loop of dimension `k < n` on the unit sphere of an `(n + 1)`-dimensional
-real inner product space is homotopic to the constant loop. -/
-private theorem mk_eq_mk_const_sphere {n : ℕ} [Fact (finrank ℝ E = n + 1)] [Finite N]
-    (hN : Nat.card N < n) (x : sphere (0 : E) 1)
-    (p : Ω^ N (sphere (0 : E) 1) x) :
-    (⟦p⟧ : HomotopyGroup N (sphere (0 : E) 1) x) = ⟦GenLoop.const⟧ := by
-  have := Fintype.ofFinite N
-  -- Read the loop on the closed unit ball of `N → ℝ`, and push it off a point of the
-  -- stereographic chart at the base point, relative to the points that are not sent into the
-  -- chart. These include the boundary of the cube, which is sent to the base point.
-  let e := cubeHomeomorphClosedBall N
-  let φ := stereographic' n x
-  let f : C(closedBall (0 : N → ℝ) 1, sphere (0 : E) 1) :=
-    (p : C(I^N, sphere (0 : E) 1)).comp (e.symm : C(closedBall (0 : N → ℝ) 1, I^N))
-  have hdim : finrank ℝ (N → ℝ) < finrank ℝ (EuclideanSpace ℝ (Fin n)) := by
-    rwa [finrank_fintype_fun_eq_card, finrank_euclideanSpace_fin, ← Nat.card_eq_fintype_card]
-  have hball : ball (0 : EuclideanSpace ℝ (Fin n)) 1 ⊆ φ.target := by
-    simp [φ, stereographic'_target]
-  obtain ⟨g, ⟨H⟩, -, q, hq, hgq⟩ :=
-    ContinuousMap.exists_homotopyRel_notMem_range f isClosed_closedBall hdim φ one_pos hball
-  -- The chart source omits the base point, so the missed point is not the base point, and the
-  -- homotopy fixes every point sent to the base point.
-  have hsource {z : sphere (0 : E) 1} (hz : z ∈ φ.symm '' ball 0 1) : z ≠ x := by
-    obtain ⟨w, hw, rfl⟩ := hz
-    simpa [φ, stereographic'_source] using φ.map_target (hball hw)
-  have hfe (t : I^N) : f (e t) = p t := congrArg p (e.symm_apply_apply t)
-  have hfix {t : I^N} (ht : t ∈ Cube.boundary N) :
-      e t ∈ (f ⁻¹' (φ.symm '' ball 0 1))ᶜ := fun h ↦
-    hsource h ((hfe t).trans (GenLoop.boundary p t ht))
-  let p' : Ω^ N (sphere (0 : E) 1) x :=
-    ⟨g.comp (e : C(I^N, closedBall (0 : N → ℝ) 1)), fun t ht ↦
-      ((H.fst_eq_snd (hfix ht)).symm.trans (hfe t)).trans (GenLoop.boundary p t ht)⟩
-  have hpp' : (⟦p⟧ : HomotopyGroup N (sphere (0 : E) 1) x) = ⟦p'⟧ := by
-    refine Quotient.sound ⟨{ toHomotopy := (H.toHomotopy.compContinuousMap
-        (e : C(I^N, closedBall (0 : N → ℝ) 1))).cast (ContinuousMap.ext hfe) rfl, prop' := ?_ }⟩
-    exact fun s t ht ↦ (H.eq_fst s (hfix ht)).trans (hfe t)
-  rw [hpp']
-  exact mk_eq_mk_const_of_notMem_range n (hsource ⟨q, hq, rfl⟩).symm p'
-    fun ⟨t, ht⟩ ↦ hgq ⟨e t, ht⟩
-
-end InnerProduct
 
 /-- **Spheres are `(n - 1)`-connected** (Hatcher, Corollary 4.9). For the unit sphere `Sⁿ` of an
 `(n + 1)`-dimensional real normed space, the homotopy set `πₖ(Sⁿ, x)` is trivial for every
 `k = Nat.card N < n`. In degree zero this says that `Sⁿ` is path connected for `n ≥ 1`. -/
 theorem subsingleton_homotopyGroup_sphere_of_lt {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] [FiniteDimensional ℝ E] {n : ℕ} (hE : finrank ℝ E = n + 1)
+    [NormedSpace ℝ E] {n : ℕ} (hE : finrank ℝ E = n + 1)
     {N : Type*} [Finite N] (hN : Nat.card N < n) (x : sphere (0 : E) 1) :
     Subsingleton (HomotopyGroup N (sphere (0 : E) 1) x) := by
-  let F := EuclideanSpace ℝ (Fin (n + 1))
-  have : Fact (finrank ℝ F = n + 1) := ⟨finrank_euclideanSpace_fin⟩
-  let h := sphereHomeomorphOfFinrankEq (hE.trans finrank_euclideanSpace_fin.symm :
+  have := Fintype.ofFinite N
+  have := Module.finite_of_finrank_eq_succ hE
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero (n := n) (by omega)
+  let F := EuclideanSpace ℝ (Fin (m + 2))
+  have hF : Fintype.card (Fin (m + 2)) = m + 1 + 1 := Fintype.card_fin _
+  let _ := sphereCWComplex hF
+  have := finite_sphereCWComplex hF
+  -- The `m`-skeleton of the CW structure on `Sᵐ⁺¹` is the point of its unique `0`-cell.
+  obtain ⟨_, ⟨j₀⟩⟩ := Nat.card_eq_one_iff_unique.1
+    ((nat_card_cell_sphereCWComplex hF 0).trans (by simp))
+  let A : Set F := skeletonLT (sphere (0 : F) 1) (m + 1)
+  have hA : A = {map 0 j₀ ![]} := by
+    refine subset_antisymm (fun y hy ↦ ?_) ?_
+    · obtain ⟨⟨⟩⟩ | ⟨k, hk, j, hj⟩ := mem_skeletonLT_iff.1 hy
+      rcases k with _ | k
+      · rwa [Subsingleton.elim j j₀, openCell_zero_eq_singleton] at hj
+      · have := FiniteType.finite_cell (C := sphere (0 : F) 1) (D := ∅) (k + 1)
+        have : IsEmpty (cell (sphere (0 : F) 1) (k + 1)) := Finite.card_eq_zero_iff.1 <| by
+          norm_cast at hk
+          simpa [nat_card_cell_sphereCWComplex hF] using hk.ne
+        exact isEmptyElim j
+    · rw [← closedCell_zero_eq_singleton]
+      exact (closedCell_subset_skeletonLT 0 j₀).trans (skeletonLT_mono (by simp))
+  have hp : map 0 j₀ ![] ∈ A := hA ▸ rfl
+  have : Subsingleton A := (hA ▸ subsingleton_singleton : A.Subsingleton).coe_sort
+  have : Subsingleton (HomotopyGroup N A ⟨_, hp⟩) := ⟨fun a b ↦ Quotient.inductionOn₂ a b
+    fun f g ↦ congrArg _ (GenLoop.ext f g fun _ ↦ Subsingleton.elim _ _)⟩
+  -- Every class at the `0`-cell comes from the `m`-skeleton (Hatcher, Corollary 4.12); move the
+  -- base point along a path in the sphere, and pass from `F` to `E`.
+  have hpole := (surjective_homotopyGroupMap_skeletonLT (N := N) (by omega) rfl
+    (skeletonLT (sphere (0 : F) 1) _).subset_complex ⟨_, hp⟩).subsingleton
+  have : PathConnectedSpace (sphere (0 : F) 1) := isPathConnected_iff_pathConnectedSpace.1 <|
+    isPathConnected_sphere (by rw [← finrank_eq_rank, finrank_euclideanSpace_fin]; norm_cast; omega)
+      0 zero_le_one
+  let h := sphereHomeomorphOfFinrankEq (hE.trans (finrank_euclideanSpace_fin (n := m + 2)).symm :
     finrank ℝ E = finrank ℝ F)
-  refine (HomotopyGroup.homeomorphEquiv (N := N) h x).subsingleton_congr.mpr ⟨fun a b ↦ ?_⟩
-  induction a using Quotient.inductionOn with | h p => ?_
-  induction b using Quotient.inductionOn with | h q => ?_
-  exact (mk_eq_mk_const_sphere hN _ p).trans (mk_eq_mk_const_sphere hN _ q).symm
+  exact (HomotopyGroup.homeomorphEquiv (N := N) h x).subsingleton_congr.mpr
+    ((homotopyGroupEquivOfPath (PathConnectedSpace.somePath _ _)).subsingleton_congr.mp hpole)
 
 section Hurewicz
 
@@ -163,7 +115,6 @@ basis. -/
 private theorem subsingleton_homotopyGroup_sphere_of_basis {m : ℕ}
     (b : OrthonormalBasis (Fin (m + 1)) ℝ E) {N : Type} [Finite N] (hN : Nat.card N < m)
     (x : sphere (0 : E) 1) : Subsingleton (HomotopyGroup N (sphere (0 : E) 1) x) :=
-  have := Module.Finite.of_basis b.toBasis
   subsingleton_homotopyGroup_sphere_of_lt (by simp [finrank_eq_card_basis b.toBasis]) hN x
 
 /-- **The `n`-th homotopy group of `Sⁿ` is `ℤ`** for `n ≥ 2` (Hatcher, Corollary 4.25). For the
