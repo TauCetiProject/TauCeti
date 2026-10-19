@@ -35,7 +35,7 @@ theorem integrableExpSet_id_generalizedParetoMeasure {s ξ : ℝ} (hs : 0 < s) :
     integrableExpSet id (generalizedParetoMeasure s ξ) =
       if 0 < ξ then Iic 0 else if ξ = 0 then Iio s⁻¹ else univ := by
   let _ := isProbabilityMeasure_generalizedParetoMeasure hs ξ
-  have hpos := ae_mem_generalizedParetoMeasure s ξ
+  have hpos := ae_pos_and_one_add_mul_div_pos_generalizedParetoMeasure s ξ
   by_cases hξ : 0 < ξ
   · simp only [hξ, ↓reduceIte]
     ext t

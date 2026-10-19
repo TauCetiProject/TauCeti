@@ -241,7 +241,7 @@ theorem isProbabilityMeasure_generalizedParetoMeasure {s : ℝ} (hs : 0 < s) (ξ
 
 /-- A generalized Pareto variable lies almost surely in its open positive support.
 The statement includes the zero law at nonpositive scale. -/
-theorem ae_mem_generalizedParetoMeasure (s ξ : ℝ) :
+theorem ae_pos_and_one_add_mul_div_pos_generalizedParetoMeasure (s ξ : ℝ) :
     ∀ᵐ x ∂generalizedParetoMeasure s ξ, 0 < x ∧ 0 < 1 + ξ * x / s := by
   rcases le_or_gt s 0 with hs | hs
   · simp [generalizedParetoMeasure_of_nonpos hs]

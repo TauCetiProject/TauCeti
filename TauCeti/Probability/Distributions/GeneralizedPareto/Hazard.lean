@@ -132,7 +132,7 @@ theorem integral_generalizedParetoPDFReal_div_one_sub_cdf
     (ae_of_all _ (generalizedParetoPDFReal_nonneg s ξ))
     (measure_mono_null Iio_subset_Iic_self (by
       simpa only [ae_iff, not_lt, ← Iic_def] using
-        (ae_mem_generalizedParetoMeasure s ξ).mono fun _ ht => ht.1))
+        (ae_pos_and_one_add_mul_div_pos_generalizedParetoMeasure s ξ).mono fun _ ht => ht.1))
     ((cdf_generalizedParetoMeasure_lt_one_iff hs hx).2 hb),
     neg_log_one_sub_cdf_generalizedParetoMeasure hs hx hb]
 
