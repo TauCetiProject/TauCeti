@@ -201,15 +201,10 @@ private theorem exists_isAttach {b : Fin k} (hb : ¬IsMiddleVertex D₁ D₂ b) 
 
 /-- A middle point with a through strand does not lie on a closed middle loop. -/
 private theorem not_onMiddleLoop_of_isAttach {b : Fin k} {z : Fin k ⊕ Fin k}
-    (hz : IsAttach D₁ D₂ b z) : ¬OnMiddleLoop D₁ D₂ b := fun hb => by
-  obtain ⟨h₁, h₂⟩ := (isMiddleVertex_def D₁ D₂ b).mp hb.isMiddleVertex
-  rw [isCap_def] at h₁
-  rw [isCup_def] at h₂
+    (hz : IsAttach D₁ D₂ b z) : ¬OnMiddleLoop D₁ D₂ b := by
   rcases hz with ⟨hz, h⟩ | ⟨hz, h⟩
-  · rw [h] at h₁
-    rcases z with i | j <;> simp_all
-  · rw [h] at h₂
-    rcases z with i | j <;> simp_all
+  · exact not_onMiddleLoop_of_isThrough_left (by rcases z <;> simp_all [isThrough_def])
+  · exact not_onMiddleLoop_of_isThrough_right (by rcases z <;> simp_all [isThrough_def])
 
 /-- The strand of the stack that starts at the outer end `y` of a through strand at the middle
 point `a` crosses the middle boundary at `a`. -/
@@ -226,58 +221,6 @@ private theorem exists_stackStart_eq_inr {a : Fin k} {y : Fin k ⊕ Fin k}
 /-- The relation of following a strand from one middle state to the next. -/
 private abbrev StackRel (D₁ D₂ : BrauerDiagram k) (s t : Fin k ⊕ Fin k) : Prop :=
   stackStep D₁ D₂ s = Sum.inr t
-
-/-- A strand starts by running up to the middle point `a` from the bottom point `y` exactly when
-the arc of `D₂` at the top point `a` runs down to `y`. -/
-private theorem stackStart_eq_inr_inl_iff {y : Fin k ⊕ Fin k} {a : Fin k} :
-    stackStart D₁ D₂ y = Sum.inr (Sum.inl a) ↔ y.isLeft ∧ D₂.val (Sum.inr a) = y := by
-  rcases y with i | j
-  · have key : D₂.val (Sum.inr a) = Sum.inl i ↔ D₂.val (Sum.inl i) = Sum.inr a :=
-      ⟨D₂.apply_eq_of_apply_eq, D₂.apply_eq_of_apply_eq⟩
-    rw [stackStart_inl, key]
-    rcases D₂.val (Sum.inl i) with i' | a' <;> simp
-  · rw [stackStart_inr]
-    rcases D₁.val (Sum.inr j) with a' | j' <;> simp
-
-/-- A strand starts by running down to the middle point `a` from the top point `y` exactly when
-the arc of `D₁` at the bottom point `a` runs up to `y`. -/
-private theorem stackStart_eq_inr_inr_iff {y : Fin k ⊕ Fin k} {a : Fin k} :
-    stackStart D₁ D₂ y = Sum.inr (Sum.inr a) ↔ y.isRight ∧ D₁.val (Sum.inl a) = y := by
-  rcases y with i | j
-  · rw [stackStart_inl]
-    rcases D₂.val (Sum.inl i) with i' | a' <;> simp
-  · have key : D₁.val (Sum.inl a) = Sum.inr j ↔ D₁.val (Sum.inr j) = Sum.inl a :=
-      ⟨D₁.apply_eq_of_apply_eq, D₁.apply_eq_of_apply_eq⟩
-    rw [stackStart_inr, key]
-    rcases D₁.val (Sum.inr j) with a' | j' <;> simp
-
-/-- A strand reaches the middle state `Sum.inl a`, about to run up through `D₁` at `a`, exactly
-when it has just come up along a cup of `D₂` ending at `a`. -/
-private theorem stackStep_eq_inr_inl_iff {w : Fin k ⊕ Fin k} {a : Fin k} :
-    stackStep D₁ D₂ w = Sum.inr (Sum.inl a) ↔
-      ∃ c, w = Sum.inr c ∧ D₂.val (Sum.inr a) = Sum.inr c := by
-  rcases w with c | c
-  · rw [stackStep_inl]
-    rcases D₁.val (Sum.inl c) with c' | j <;> simp
-  · have key : D₂.val (Sum.inr a) = Sum.inr c ↔ D₂.val (Sum.inr c) = Sum.inr a :=
-      ⟨D₂.apply_eq_of_apply_eq, D₂.apply_eq_of_apply_eq⟩
-    rw [stackStep_inr]
-    simp only [Sum.inr.injEq, exists_eq_left', key]
-    rcases D₂.val (Sum.inr c) with i | c' <;> simp
-
-/-- A strand reaches the middle state `Sum.inr a`, about to run down through `D₂` at `a`, exactly
-when it has just come down along a cap of `D₁` ending at `a`. -/
-private theorem stackStep_eq_inr_inr_iff {w : Fin k ⊕ Fin k} {a : Fin k} :
-    stackStep D₁ D₂ w = Sum.inr (Sum.inr a) ↔
-      ∃ c, w = Sum.inl c ∧ D₁.val (Sum.inl a) = Sum.inl c := by
-  rcases w with c | c
-  · have key : D₁.val (Sum.inl a) = Sum.inl c ↔ D₁.val (Sum.inl c) = Sum.inl a :=
-      ⟨D₁.apply_eq_of_apply_eq, D₁.apply_eq_of_apply_eq⟩
-    rw [stackStep_inl]
-    simp only [Sum.inl.injEq, exists_eq_left', key]
-    rcases D₁.val (Sum.inl c) with c' | j <;> simp
-  · rw [stackStep_inr]
-    rcases D₂.val (Sum.inr c) with i | c' <;> simp
 
 /-- **A strand is closed under the middle graph.** If a middle point is visited by the strand of
 the stack starting at the outer point `y`, so is every middle point adjacent to it: one arc at
@@ -405,13 +348,6 @@ private theorem isConstantOnArcs_of_forall
       · exact (hatt a _ (Or.inr ⟨rfl, hD⟩)).symm
       · exact (hadj a b ((middleAdj_def D₁ D₂ a b).mpr (Or.inr hD))).symm
 
-/-- Two least points of closed middle loops joined in the middle graph are equal. -/
-private theorem eq_of_isMiddleLoopMin {p q : Fin k} (hp : IsMiddleLoopMin D₁ D₂ p)
-    (hq : IsMiddleLoopMin D₁ D₂ q) (hpq : Relation.ReflTransGen (MiddleAdj D₁ D₂) p q) :
-    p = q :=
-  le_antisymm (((isMiddleLoopMin_def D₁ D₂ p).mp hp).2 q hpq)
-    (((isMiddleLoopMin_def D₁ D₂ q).mp hq).2 p (MiddleAdj.reflTransGen_symm hpq))
-
 /-- A middle point off the closed loops is joined in the middle graph to a through strand. -/
 private theorem exists_isAttach_of_not_onMiddleLoop {a : Fin k} (ha : ¬OnMiddleLoop D₁ D₂ a) :
     ∃ z b, Relation.ReflTransGen (MiddleAdj D₁ D₂) a b ∧ IsAttach D₁ D₂ b z := by
@@ -459,8 +395,7 @@ private theorem restrictLoopMin_surjective
     have hspec := ha.exists_isMiddleLoopMin.choose_spec
     simp only [m, ha, ↓reduceDIte]
     congr 2
-    exact eq_of_isMiddleLoopMin hspec.1 hp
-      ((MiddleAdj.reflTransGen_symm hspec.2).trans hap)
+    exact hspec.1.eq_of_reflTransGen hp ((MiddleAdj.reflTransGen_symm hspec.2).trans hap)
   have hoff {a : Fin k} (ha : ¬OnMiddleLoop D₁ D₂ a) {b : Fin k} {z : Fin k ⊕ Fin k}
       (hab : Relation.ReflTransGen (MiddleAdj D₁ D₂) a b) (hz : IsAttach D₁ D₂ b z) :
       m a = Sum.elim u v z := by

@@ -216,6 +216,12 @@ theorem OnMiddleLoop.exists_isMiddleLoopMin {a : Fin k} (ha : OnMiddleLoop D₁ 
     {b : Fin k | Relation.ReflTransGen (MiddleAdj D₁ D₂) a b} id (Set.toFinite _) ⟨a, .refl⟩
   refine ⟨m, ⟨ha.reflTransGen hm, fun c hc => hmin c (hm.trans hc)⟩, hm⟩
 
+/-- **A loop has only one least point.** Two least points of closed middle loops joined in the
+middle graph are equal. -/
+theorem IsMiddleLoopMin.eq_of_reflTransGen {p q : Fin k} (hp : IsMiddleLoopMin D₁ D₂ p)
+    (hq : IsMiddleLoopMin D₁ D₂ q) (hpq : Relation.ReflTransGen (MiddleAdj D₁ D₂) p q) : p = q :=
+  le_antisymm (hp.2 q hpq) (hq.2 p (MiddleAdj.reflTransGen_symm hpq))
+
 /-! ### The count -/
 
 /-- **No loop, no count.** The middle-loop count vanishes exactly when no middle point lies on a
@@ -240,9 +246,7 @@ theorem middleLoopCount_eq_ncard_image (D₁ D₂ : BrauerDiagram k) :
       (Quot.mk (MiddleAdj D₁ D₂) '' {a | OnMiddleLoop D₁ D₂ a}).ncard := by
   have hinj : Set.InjOn (Quot.mk (MiddleAdj D₁ D₂)) {a | IsMiddleLoopMin D₁ D₂ a} := by
     intro a ha b hb hab
-    have h := (mk_middleAdj_eq_mk_iff D₁ D₂).mp hab
-    exact le_antisymm (((isMiddleLoopMin_def D₁ D₂ a).mp ha).2 b h)
-      (((isMiddleLoopMin_def D₁ D₂ b).mp hb).2 a (MiddleAdj.reflTransGen_symm h))
+    exact IsMiddleLoopMin.eq_of_reflTransGen ha hb ((mk_middleAdj_eq_mk_iff D₁ D₂).mp hab)
   rw [middleLoopCount_def, ← hinj.ncard_image]
   congr 1
   ext S
@@ -337,7 +341,7 @@ theorem two_mul_middleLoopCount_le (D₁ D₂ : BrauerDiagram k) :
     rw [Set.disjoint_left]
     rintro b hb ⟨a, ha, rfl⟩
     have hab : Relation.ReflTransGen (MiddleAdj D₁ D₂) a (f a) := .single (hadj a ha)
-    exact hne a ha (le_antisymm (hb.2 a (MiddleAdj.reflTransGen_symm hab)) (ha.2 _ hab))
+    exact hne a ha (IsMiddleLoopMin.eq_of_reflTransGen ha hb hab).symm
   have hcard : (S ∪ f '' S).ncard = S.ncard + S.ncard := by
     rw [Set.ncard_union_eq hdisj, hinj.ncard_image]
   have hle : (S ∪ f '' S).ncard ≤ (Set.univ : Set (Fin k)).ncard :=

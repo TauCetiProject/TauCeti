@@ -32,8 +32,10 @@ restricts along `TauCeti.BrauerAlgebra.ofPerm` to the group-algebra action
 single-arc generator `TauCeti.orthogonalCupCapAt`.
 
 This is the action through which the Brauer algebra is the partner of the orthogonal group in
-Schur-Weyl duality: its image is the commutant of the diagonal action of the form-orthogonal group
-of `V` (Brauer's theorem), which is not part of this file.
+Schur-Weyl duality: over `ℂ` (more generally, over an algebraically closed field of characteristic
+zero), its image is the commutant of the diagonal action of the form-orthogonal group of `V`
+(Brauer's theorem). That theorem does not hold over an arbitrary commutative semiring, and it is
+not part of this file.
 
 ## Main definitions
 

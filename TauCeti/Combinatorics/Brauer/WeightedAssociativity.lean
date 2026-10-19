@@ -178,34 +178,6 @@ private theorem tripleLoopCount_flip (D₁ D₂ D₃ : BrauerDiagram k) :
 
 /-! ### The strands of the stack of `D₁` above `D₂` in the stack of three -/
 
-/-- A strand of the stack of `D₁` above `D₂` that starts at a bottom point and crosses the middle
-boundary runs up a through strand of `D₂`. -/
-private theorem stackStart_inl_eq_inr_iff {i : Fin k} {s : Fin k ⊕ Fin k} :
-    stackStart D₁ D₂ (Sum.inl i) = Sum.inr s ↔
-      ∃ a, s = Sum.inl a ∧ D₂.val (Sum.inl i) = Sum.inr a := by
-  rw [stackStart_inl]
-  rcases D₂.val (Sum.inl i) with i' | a
-  · simp
-  · simp [eq_comm]
-
-/-- A strand about to run up through `D₁` that stays in the middle follows a cap of `D₁`. -/
-private theorem stackStep_inl_eq_inr_iff {a : Fin k} {v : Fin k ⊕ Fin k} :
-    stackStep D₁ D₂ (Sum.inl a) = Sum.inr v ↔
-      ∃ b, v = Sum.inr b ∧ D₁.val (Sum.inl a) = Sum.inl b := by
-  rw [stackStep_inl]
-  rcases D₁.val (Sum.inl a) with b | j
-  · simp [eq_comm]
-  · simp
-
-/-- A strand about to run down through `D₂` that stays in the middle follows a cup of `D₂`. -/
-private theorem stackStep_inr_eq_inr_iff {a : Fin k} {v : Fin k ⊕ Fin k} :
-    stackStep D₁ D₂ (Sum.inr a) = Sum.inr v ↔
-      ∃ b, v = Sum.inl b ∧ D₂.val (Sum.inr a) = Sum.inr b := by
-  rw [stackStep_inr]
-  rcases D₂.val (Sum.inr a) with i | b
-  · simp
-  · simp [eq_comm]
-
 /-- The strand of the stack of `D₁` above `D₂` starting at the bottom point `i` reaches the
 middle state `t`. -/
 private def OnStrand (D₁ D₂ : BrauerDiagram k) (i : Fin k) (t : Fin k ⊕ Fin k) : Prop :=
