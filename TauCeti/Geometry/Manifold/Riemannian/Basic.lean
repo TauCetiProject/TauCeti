@@ -24,6 +24,8 @@ to a fixed vector, depends continuously on the base point.
   induces the ambient Riemannian distance.
 * `Bundle.ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle_inner`: the packaged metric is
   the bundle's inner product.
+* `Bundle.ContMDiffRiemannianMetric.inner_riemannianBundle`: conversely, installing a metric as the
+  `RiemannianBundle` instance makes its inner product the fiber inner product.
 * `Bundle.IsContinuousRiemannianBundle.toIsContMDiffZero`: view a continuous Riemannian bundle as
   a `C^0` Riemannian bundle.
 * `IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle`: conversely, view a `C^n`
@@ -77,6 +79,13 @@ theorem ofIsContMDiffRiemannianBundle_inner
     (x : B) (v w : V x) :
     (ofIsContMDiffRiemannianBundle (IB := IB) (n := n) (F := F) (V := V)).inner x v w =
       RiemannianBundle.g.inner x v w := by
+  rfl
+
+/-- Once a `C^n` Riemannian metric `g` is installed as the `RiemannianBundle` instance, the inner
+product of each fiber is `g.inner`. -/
+theorem inner_riemannianBundle (g : ContMDiffRiemannianMetric IB n F V) (x : B) (v w : V x) :
+    letI : RiemannianBundle V := ⟨g.toRiemannianMetric⟩
+    Inner.inner ℝ v w = g.inner x v w := by
   rfl
 
 end Bundle.ContMDiffRiemannianMetric

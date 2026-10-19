@@ -42,7 +42,7 @@ other.
   forces total reality.
 * `NumberField.isTotallyComplex_of_sq_ratCast_of_neg`: a negative square forces total
   complexity.
-* `NumberField.IsUnramifiedAtInfinitePlaces_of_isTotallyComplex`: a totally complex base is
+* `NumberField.IsTotallyComplex.isUnramifiedAtInfinitePlaces`: a totally complex base is
   unramified at all infinite places of any extension.
 * `NumberField.InfinitePlace.nrComplexPlaces_eq_one_of_finrank_eq_two`: a totally complex
   field of degree `2` — an imaginary quadratic field — has exactly one complex place.
@@ -164,8 +164,8 @@ theorem isTotallyComplex_of_sq_ratCast_of_neg [Algebra ℚ K] {x : K} {r : ℚ}
 /-- **A totally complex base is unramified at all infinite places.** Since a totally complex field
 has only complex infinite places and a complex place never ramifies, every infinite place is
 unramified in any extension `K` of a totally complex field `k`. -/
-lemma IsUnramifiedAtInfinitePlaces_of_isTotallyComplex {k K : Type*} [Field k] [Field K]
-    [Algebra k K] [IsTotallyComplex k] : IsUnramifiedAtInfinitePlaces k K where
+theorem IsTotallyComplex.isUnramifiedAtInfinitePlaces {k : Type*} [Field k] [Algebra k K]
+    [IsTotallyComplex k] : IsUnramifiedAtInfinitePlaces k K where
   isUnramified w := by
     rw [InfinitePlace.isUnramified_iff]
     exact Or.inr (IsTotallyComplex.isComplex _)
@@ -245,30 +245,30 @@ theorem InfinitePlace.embedding_of_isReal_comap {k : Type*} [Field k] (f : k →
   rw [embedding_of_isReal_apply, RingHom.comp_apply, embedding_of_isReal_apply,
     comap_embedding_of_isReal _ (hw.comap f), RingHom.comp_apply]
 
-/-- An infinite place of `L` lies over its restriction to `k`.
+/-- An infinite place of `K` lies over its restriction to `k`.
 
 Mathlib's `AbsoluteValue.LiesOver` instance is this statement for `AbsoluteValue.under`, which is
 not the spelling `InfinitePlace.comap` produces, so it is registered here. Constructions indexed by
-`w.comap (algebraMap k L)` that consume a `LiesOver` hypothesis, such as
+`w.comap (algebraMap k K)` that consume a `LiesOver` hypothesis, such as
 `NumberField.LiesOver.completionMap`, need it. -/
-instance InfinitePlace.liesOver_comap {k L : Type*} [Field k] [Field L] [Algebra k L]
-    (w : InfinitePlace L) : w.LiesOver (w.comap (algebraMap k L)) :=
+instance InfinitePlace.liesOver_comap {k : Type*} [Field k] [Algebra k K]
+    (w : InfinitePlace K) : w.LiesOver (w.comap (algebraMap k K)) :=
   ⟨rfl⟩
 
-/-- An infinite place of `L` lies over an infinite place `v` of `k` exactly when its restriction
+/-- An infinite place of `K` lies over an infinite place `v` of `k` exactly when its restriction
 to `k` is `v`. -/
-theorem InfinitePlace.liesOver_iff_comap_eq {k L : Type*} [Field k] [Field L] [Algebra k L]
-    {w : InfinitePlace L} {v : InfinitePlace k} :
-    w.LiesOver v ↔ w.comap (algebraMap k L) = v :=
+theorem InfinitePlace.liesOver_iff_comap_eq {k : Type*} [Field k] [Algebra k K]
+    {w : InfinitePlace K} {v : InfinitePlace k} :
+    w.LiesOver v ↔ w.comap (algebraMap k K) = v :=
   ⟨fun _ ↦ InfinitePlace.LiesOver.comap_eq w v, fun h ↦ h ▸ InfinitePlace.liesOver_comap w⟩
 
 /-- Lying over is transitive for infinite places in a field tower. -/
-theorem InfinitePlace.LiesOver.trans {k L M : Type*} [Field k] [Field L] [Field M]
-    [Algebra k L] [Algebra L M] [Algebra k M] [IsScalarTower k L M]
-    (u : InfinitePlace M) (w : InfinitePlace L) (v : InfinitePlace k)
+theorem InfinitePlace.LiesOver.trans {k L : Type*} [Field k] [Field L]
+    [Algebra k K] [Algebra K L] [Algebra k L] [IsScalarTower k K L]
+    (u : InfinitePlace L) (w : InfinitePlace K) (v : InfinitePlace k)
     [u.LiesOver w] [w.LiesOver v] : u.LiesOver v := by
-  have h : u.comap (algebraMap k M) = v := by
-    rw [IsScalarTower.algebraMap_eq k L M, InfinitePlace.comap_comp,
+  have h : u.comap (algebraMap k L) = v := by
+    rw [IsScalarTower.algebraMap_eq k K L, InfinitePlace.comap_comp,
       InfinitePlace.LiesOver.comap_eq u w, InfinitePlace.LiesOver.comap_eq w v]
   exact ⟨congrArg Subtype.val h⟩
 
@@ -277,13 +277,13 @@ and its conjugate, in one order or the other. This pairs the restriction of `w.e
 `InfinitePlace.LiesOver.embedding_comp_eq_or_conjugate_embedding_comp_eq` with the matching
 restriction of its conjugate. -/
 theorem InfinitePlace.LiesOver.embedding_comp_eq_and_conjugate_embedding_comp_eq_or
-    {k L : Type*} [Field k] [Field L] [Algebra k L]
-    (w : InfinitePlace L) (v : InfinitePlace k) [w.LiesOver v] :
-    (w.embedding.comp (algebraMap k L) = v.embedding ∧
-      (ComplexEmbedding.conjugate w.embedding).comp (algebraMap k L) =
+    {k : Type*} [Field k] [Algebra k K]
+    (w : InfinitePlace K) (v : InfinitePlace k) [w.LiesOver v] :
+    (w.embedding.comp (algebraMap k K) = v.embedding ∧
+      (ComplexEmbedding.conjugate w.embedding).comp (algebraMap k K) =
         ComplexEmbedding.conjugate v.embedding) ∨
-    (w.embedding.comp (algebraMap k L) = ComplexEmbedding.conjugate v.embedding ∧
-      (ComplexEmbedding.conjugate w.embedding).comp (algebraMap k L) = v.embedding) := by
+    (w.embedding.comp (algebraMap k K) = ComplexEmbedding.conjugate v.embedding ∧
+      (ComplexEmbedding.conjugate w.embedding).comp (algebraMap k K) = v.embedding) := by
   rcases embedding_comp_eq_or_conjugate_embedding_comp_eq w v with h | h
   · exact .inl ⟨h, by rw [ComplexEmbedding.conjugate_comp, h]⟩
   · refine .inr ⟨?_, h⟩

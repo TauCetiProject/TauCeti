@@ -177,6 +177,12 @@ lemma compressionMap_comp (f : K ⟶ L) (g : L ⟶ M) :
   ext r i hi
   simp
 
+variable (K L) in
+@[simp]
+lemma compressionMap_zero : compressionMap n (0 : K ⟶ L) = 0 := by
+  ext r i hi
+  simp
+
 /-- An isomorphism of complexes induces an isomorphism of their compressions. -/
 noncomputable def compressionMapIso (e : K ≅ L) : compression n K ≅ compression n L where
   hom := compressionMap n e.hom

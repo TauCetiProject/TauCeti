@@ -26,7 +26,7 @@ Its Lie algebra is the Lie radical by
 Centrality of the tangent image then gives the required inclusion; the center of any Lie
 algebra lies in its solvable radical.
 
-Import `TauCeti.Algebra.Lie.Reductive` and install `hG.hasCentralRadical_lieAlgebra` as a
+Import `TauCeti.Algebra.Lie.Reductive.Basic` and install `hG.hasCentralRadical_lieAlgebra` as a
 local instance to apply
 `TauCeti.isCompl_center_derivedSeries` and `TauCeti.isKilling_derivedSeries` to the tangent
 Lie algebra. These statements concern the derived ideal of the Lie algebra; comparison

@@ -125,8 +125,9 @@ private def reducedSingularHomologyComplRangeSphereIsoAux :
       refine eq_univ_of_forall fun x ↦ ?_
       simp only [D₁, D₂, mem_union, mem_ofPred_eq, coe_neg_sphere, inner_neg_right, neg_nonneg]
       exact le_total _ _
-    have hunion : (h '' D₁)ᶜ ∪ (h '' D₂)ᶜ = (range (h ∘ equatorInclusion p))ᶜ := by
+    have hunion : (h '' D₁)ᶜ ∪ (h '' D₂)ᶜ = (range (h ∘ equatorInclusion (p : E)))ᶜ := by
       rw [← compl_inter, ← image_inter hi, range_comp, range_equatorInclusion]
+      simp only [D₁, D₂, coe_neg_sphere]
     (TopCat.reducedMayerVietorisIsoOfIsZero M (Y := of Y) (isOpen_compl_image_hemisphere hc p)
       (isOpen_compl_image_hemisphere hc (-p)) hinter hunion
       (isZero_compl_image_hemisphere M hY hc hi p _)
@@ -135,8 +136,8 @@ private def reducedSingularHomologyComplRangeSphereIsoAux :
       (isZero_compl_image_hemisphere M hY hc hi (-p) _)).symm ≪≫
       reducedSingularHomologyComplRangeSphereIsoAux d (ℝ ∙ (p : E))ᗮ
         (Submodule.finrank_orthogonal_span_singleton (ne_zero_of_mem_unit_sphere p))
-        (h ∘ equatorInclusion p) (hc.comp (continuous_equatorInclusion p))
-        (hi.comp (injective_equatorInclusion p)) (i + 1) ≪≫
+        (h ∘ equatorInclusion (p : E)) (hc.comp (continuous_equatorInclusion (p : E)))
+        (hi.comp (isometry_equatorInclusion (p : E)).injective) (i + 1) ≪≫
       eqToIso (congrArg (fun k ↦ (reducedSingularHomologyFunctor M k).obj (of Y)) (by omega))
 
 end InnerProduct
