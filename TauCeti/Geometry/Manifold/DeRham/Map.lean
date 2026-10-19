@@ -42,6 +42,16 @@ variable {E H E' H' E'' H'' : Type*}
   [TopologicalSpace M'] [ChartedSpace H' M'] [IsManifold I' 2 M']
   [TopologicalSpace M''] [ChartedSpace H'' M''] [IsManifold I'' 2 M'']
 
+/-- Pullback of smooth forms along a smooth map commutes with the exterior derivative. -/
+theorem SmoothForm.mextDerivₗ_mpullback {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    (f : M → M') (hf : ContMDiff I I' ∞ f) (k : ℕ) (φ : SmoothForm I' M' F k) :
+    mextDerivₗ I k (SmoothForm.mpullback f hf φ) =
+      SmoothForm.mpullback f hf (mextDerivₗ I' k φ) := by
+  apply Subtype.ext
+  rw [mextDerivₗ_apply, SmoothForm.coe_mpullback, SmoothForm.coe_mpullback, mextDerivₗ_apply]
+  exact (mpullback_mextDeriv (hf.of_le (by simp)) ((isSmoothBundleForm_def 1 φ.1).mpr
+    (((isSmoothBundleForm_def ∞ φ.1).mp (mem_smoothForms.mp φ.2)).of_le (by simp)))).symm
+
 namespace closedForms
 
 /-- Pullback of closed smooth forms along a smooth map. -/
@@ -49,19 +59,9 @@ def mpullback (f : M → M') (hf : ContMDiff I I' ∞ f) (k : ℕ) :
     closedForms I' M' k →ₗ[ℝ] closedForms I M k :=
   ((SmoothForm.mpullback f hf).domRestrict (closedForms I' M' k)).codRestrict
     (closedForms I M k) fun φ ↦ by
-      rw [mem_closedForms]
-      have hclosed := (mem_closedForms (I := I') (M := M') φ.1).mp φ.2
-      have hclosed' : mextDerivₗ I' k φ.1 = 0 := by
-        apply Subtype.ext
-        rw [mextDerivₗ_apply]
-        exact hclosed
-      -- The codomain restriction hides the underlying smooth form from the naturality theorem.
-      change mextDeriv (SmoothForm.mpullback f hf φ.1).1 = 0
-      have hnat := congrArg Subtype.val
-        (SmoothForm.mpullback_mextDerivₗ f hf k φ.1)
-      simp only [mextDerivₗ_apply] at hnat
-      rw [← hnat, hclosed', map_zero]
-      rfl
+      rw [mem_closedForms_iff_mextDerivₗ_eq_zero, LinearMap.domRestrict_apply,
+        SmoothForm.mextDerivₗ_mpullback,
+        (mem_closedForms_iff_mextDerivₗ_eq_zero I' φ.1).mp φ.2, map_zero]
 
 /-- The underlying smooth form of a pullback of a closed form is the usual smooth pullback. -/
 @[simp]
@@ -100,17 +100,8 @@ theorem mpullback_mem_exactForms (f : M → M') (hf : ContMDiff I I' ∞ f) (k :
   | succ k =>
       rw [exactForms_succ, LinearMap.mem_range] at hφ ⊢
       obtain ⟨ψ, hψ⟩ := hφ
-      refine ⟨SmoothForm.mpullback f hf ψ, ?_⟩
-      apply Subtype.ext
-      simp only [mextDerivₗ_apply]
-      rw [coe_mpullback]
-      -- Subtype extensionality leaves smooth-form coercions that naturality cannot match directly.
-      have hpull := congrArg (SmoothForm.mpullback f hf) hψ
-      have hpull' := congrArg Subtype.val hpull
-      have hnat := congrArg Subtype.val
-        (SmoothForm.mpullback_mextDerivₗ f hf k ψ)
-      simp only [mextDerivₗ_apply] at hnat
-      rw [← hnat, hpull']
+      exact ⟨SmoothForm.mpullback f hf ψ, by
+        rw [SmoothForm.mextDerivₗ_mpullback, hψ, coe_mpullback]⟩
 
 end closedForms
 

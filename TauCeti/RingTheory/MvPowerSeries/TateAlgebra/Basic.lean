@@ -409,6 +409,12 @@ noncomputable instance instAlgebraIsRestrictedSubring :
 theorem coe_algebraMap_isRestrictedSubring (r : R) :
     (algebraMap R (IsRestricted.subring (R := R) c) r : MvPowerSeries σ R) = C r := (rfl)
 
+/-- Without variables every restricted series is a constant. -/
+theorem algebraMap_isRestrictedSubring_surjective [IsEmpty σ] :
+    Function.Surjective (algebraMap R (IsRestricted.subring (R := R) c)) := fun g ↦
+  let ⟨r, hr⟩ := C_surjective (g : MvPowerSeries σ R)
+  ⟨r, Subtype.ext hr⟩
+
 /-- A restricted monomial `r Xᵗ` is the constant `r` times the monomial `Xᵗ` in the variables. -/
 theorem mk_monomial_eq_algebraMap_mul_prod (t : σ →₀ ℕ) (r : R) :
     (⟨monomial t r, isRestricted_monomial c t r⟩ : IsRestricted.subring (R := R) c) =

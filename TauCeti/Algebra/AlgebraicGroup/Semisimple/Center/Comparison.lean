@@ -48,8 +48,8 @@ noncomputable def centerQuotientIsoOfIsIsogeny
     (hH : semisimpleCommHopfAlgProperty k H)
     (hK : semisimpleCommHopfAlgProperty k K)
     (f : H.obj ⟶ K.obj) (hf : CommHopfAlgCat.IsIsogeny f) :
-    hH.centerQuotient.obj ≅ hK.centerQuotient.obj := by
-  exact hK.centerQuotientIsoOfIsCentralIsogeny (hH.centerQuotientι ≫ f)
+    hH.reductive.centerQuotient.obj ≅ hK.reductive.centerQuotient.obj := by
+  exact hK.centerQuotientIsoOfIsCentralIsogeny (hH.reductive.centerQuotientι ≫ f)
     ((hH.isCentralIsogeny_centerQuotientι.isIsogeny.comp hf).isCentralIsogeny_of_charZero
       hK.geometricallyConnected)
     ((adjointSemisimpleCommHopfAlgProperty_iff _).mp hH.adjointSemisimple_centerQuotient)
@@ -61,8 +61,8 @@ theorem centerQuotientIsoOfIsIsogeny_hom_comp
     (hH : semisimpleCommHopfAlgProperty k H)
     (hK : semisimpleCommHopfAlgProperty k K)
     (f : H.obj ⟶ K.obj) (hf : CommHopfAlgCat.IsIsogeny f) :
-    (hH.centerQuotientIsoOfIsIsogeny hK f hf).hom ≫ hK.centerQuotientι =
-      hH.centerQuotientι ≫ f := by
+    (hH.centerQuotientIsoOfIsIsogeny hK f hf).hom ≫ hK.reductive.centerQuotientι =
+      hH.reductive.centerQuotientι ≫ f := by
   simp [centerQuotientIsoOfIsIsogeny]
 
 /-- The inverse comparison also intertwines the quotient projections and the isogeny. -/
@@ -71,8 +71,8 @@ theorem centerQuotientIsoOfIsIsogeny_inv_comp
     (hH : semisimpleCommHopfAlgProperty k H)
     (hK : semisimpleCommHopfAlgProperty k K)
     (f : H.obj ⟶ K.obj) (hf : CommHopfAlgCat.IsIsogeny f) :
-    (hH.centerQuotientIsoOfIsIsogeny hK f hf).inv ≫ hH.centerQuotientι ≫ f =
-      hK.centerQuotientι := by
+    (hH.centerQuotientIsoOfIsIsogeny hK f hf).inv ≫ hH.reductive.centerQuotientι ≫ f =
+      hK.reductive.centerQuotientι := by
   rw [← hH.centerQuotientIsoOfIsIsogeny_hom_comp hK f hf,
     Iso.inv_hom_id_assoc]
 
@@ -82,8 +82,8 @@ theorem centerQuotientIsoOfIsIsogeny_hom_unique
     (hH : semisimpleCommHopfAlgProperty k H)
     (hK : semisimpleCommHopfAlgProperty k K)
     (f : H.obj ⟶ K.obj) (hf : CommHopfAlgCat.IsIsogeny f)
-    (g : hH.centerQuotient.obj ⟶ hK.centerQuotient.obj)
-    (hg : g ≫ hK.centerQuotientι = hH.centerQuotientι ≫ f) :
+    (g : hH.reductive.centerQuotient.obj ⟶ hK.reductive.centerQuotient.obj)
+    (hg : g ≫ hK.reductive.centerQuotientι = hH.reductive.centerQuotientι ≫ f) :
     g = (hH.centerQuotientIsoOfIsIsogeny hK f hf).hom := by
   apply hK.centerQuotientIsoOfIsCentralIsogeny_hom_unique
   exact hg
@@ -93,7 +93,7 @@ theorem centerQuotientIsoOfIsIsogeny_hom_unique
 theorem centerQuotientIsoOfIsIsogeny_id
     (hH : semisimpleCommHopfAlgProperty k H) :
     hH.centerQuotientIsoOfIsIsogeny hH (𝟙 H.obj) (CommHopfAlgCat.isIsogeny_id H.obj) =
-      Iso.refl hH.centerQuotient.obj := by
+      Iso.refl hH.reductive.centerQuotient.obj := by
   apply Iso.ext
   symm
   apply hH.centerQuotientIsoOfIsIsogeny_hom_unique

@@ -88,8 +88,7 @@ include hG
 section KilledByP
 
 variable {i : ℕ} (hi : 0 < i)
-include hi
-
+include hi in
 omit [Infinite G] in
 /-- The `p`-torsion of `I(χ)/pⁱ` is the image of `I(χ)/p` under multiplication by `pⁱ⁻¹`, in the
 form the transport along `mulPow` consumes. -/
@@ -97,6 +96,7 @@ private theorem exists_mulPow_eq (y : ZModTwist (demushkinCharacter hG) i) (hy :
     ∃ x, ZModTwist.mulPow (demushkinCharacter hG) (Nat.add_sub_cancel' hi) x = y :=
   ZModTwist.exists_mulPow_eq_of_nsmul_eq_zero _ _ (by rwa [pow_one])
 
+include hi in
 /-- The `p`-torsion of `H²(G, I(χ)/pⁱ)` is the image of `H²(G, I(χ)/p)` under multiplication by
 `pⁱ⁻¹`, in the form the transport along `mulPow` consumes. -/
 private theorem exists_explicitCoeff2_mulPow_eq (y : H2 G (ZModTwist (demushkinCharacter hG) i))
@@ -105,8 +105,6 @@ private theorem exists_explicitCoeff2_mulPow_eq (y : H2 G (ZModTwist (demushkinC
       (ZModTwist.mulPow (demushkinCharacter hG) (Nat.add_sub_cancel' hi))
       continuous_of_discreteTopology x = y :=
   hG.exists_explicitCoeff2_mulPow_eq_of_nsmul_eq_zero _ (by rwa [pow_one])
-
-omit hi
 
 variable (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
   [DistribMulAction G M] [ContinuousSMul G M] [Finite M] (hM : ∀ x : M, p • x = 0)

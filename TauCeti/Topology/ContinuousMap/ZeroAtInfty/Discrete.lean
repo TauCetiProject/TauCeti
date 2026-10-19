@@ -154,14 +154,8 @@ theorem norm_single [DecidableEq I] (i : I) (b : β) : ‖single i b‖ = ‖b�
 /-- **The sup norm is attained**: on a nonempty discrete index, some coordinate of `f ∈ C₀(I, β)`
 has norm `‖f‖`. This covers every nonzero `f`, whose index type is necessarily nonempty. -/
 theorem exists_norm_coe_eq_norm [Nonempty I] (f : C₀(I, β)) : ∃ i, ‖f i‖ = ‖f‖ := by
-  by_cases hf : ∃ i, ‖f i‖ ≠ 0
-  · obtain ⟨i, hi⟩ := TauCeti.exists_forall_norm_le_of_tendsto_cofinite_zero f.tendsto_cofinite hf
-    exact ⟨i, le_antisymm (norm_coe_le_norm f i) ((norm_le (norm_nonneg _)).2 hi)⟩
-  · push Not at hf
-    obtain ⟨i⟩ := ‹Nonempty I›
-    refine ⟨i, ?_⟩
-    rw [hf i]
-    exact (le_antisymm ((norm_le le_rfl).2 fun j ↦ (hf j).le) (norm_nonneg f)).symm
+  obtain ⟨i, hi⟩ := f.tendsto_cofinite.exists_forall_norm_le
+  exact ⟨i, le_antisymm (norm_coe_le_norm f i) ((norm_le (norm_nonneg _)).2 hi)⟩
 
 section
 
