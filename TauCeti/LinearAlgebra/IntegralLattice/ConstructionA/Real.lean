@@ -99,8 +99,8 @@ theorem intCast_div_sqrt_mem_realLattice [NeZero m] {C : AddSubgroup (ι → ZMo
     simpa [hwz] using hw
   · exact fun hz ↦ ⟨z, hz, rfl⟩
 
-/-- For finite coordinates, the real Construction A carrier is a full, finitely generated
-lattice in `ι → ℝ`. -/
+/-- For a nonzero modulus and finite coordinates, the real Construction A carrier is a full,
+finitely generated lattice in `ι → ℝ`. -/
 instance isLattice_realLattice [NeZero m] [Finite ι] (C : AddSubgroup (ι → ZMod m)) :
     (realLattice m C).IsLattice ℝ where
   fg := (Submodule.IsLattice.fg (A := ℚ) (M := lattice m C)).map _

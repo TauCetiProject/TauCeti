@@ -97,7 +97,8 @@ theorem single_mem_lattice [DecidableEq ι] (C : AddSubgroup (ι → ZMod m)) (i
   rw [← hcast ℚ, intCast_mem_lattice, hcast (ZMod m)]
   simp
 
-/-- Every Construction A carrier is a full, finitely generated integer lattice. -/
+/-- For a nonzero modulus and finite coordinates, every Construction A carrier is a full,
+finitely generated integer lattice. -/
 instance isLattice [NeZero m] [Finite ι] (C : AddSubgroup (ι → ZMod m)) :
     (lattice m C).IsLattice ℚ where
   fg := (IsNoetherian.noetherian _).map _
