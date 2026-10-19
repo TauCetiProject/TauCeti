@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Coordinate.HopfAlgebra
 public import TauCeti.Algebra.AlgebraicGroup.LinearlyReductive
-import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.LinearlyReductive
+import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.LinearlyReductive.Basic
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.SmoothConnected
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Center
 import TauCeti.Algebra.AlgebraicGroup.Representation.Normal.Invariants

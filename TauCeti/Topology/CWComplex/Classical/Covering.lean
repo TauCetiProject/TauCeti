@@ -433,12 +433,11 @@ theorem exists_cellPreimageEquiv_fst_eq (hsurj : Function.Surjective p) (i : cel
   obtain ⟨e, he⟩ := hsurj (map n i 0)
   exact ⟨(cellPreimageEquiv C hp n).symm ⟨i, e, he⟩, by rw [Equiv.apply_symm_apply]⟩
 
-omit c
-
 section Finite
 
 variable (hfin : ∀ b, Finite ↥(p ⁻¹' {b}))
 
+omit c in
 omit [TopologicalSpace E] [T2Space B] in
 include hfin in
 private theorem finite_coverCell [RelCWComplex.FiniteType C] (n : ℕ) :
@@ -446,6 +445,7 @@ private theorem finite_coverCell [RelCWComplex.FiniteType C] (n : ℕ) :
   have : _root_.Finite (cell C n) := FiniteType.finite_cell n
   inferInstance
 
+omit c in
 omit [TopologicalSpace E] [T2Space B] in
 private theorem eventually_isEmpty_coverCell [RelCWComplex.FiniteDimensional C] :
     ∀ᶠ n in Filter.atTop, IsEmpty (CoverCell p C n) :=
@@ -454,6 +454,7 @@ private theorem eventually_isEmpty_coverCell [RelCWComplex.FiniteDimensional C] 
 
 include hfin
 
+omit c in
 /-- The lift of a finite CW complex along a covering map with finite fibres is finite. -/
 theorem finite_cwComplexPreimage [RelCWComplex.Finite C] :
     letI := cwComplexPreimage C hp
@@ -462,6 +463,7 @@ theorem finite_cwComplexPreimage [RelCWComplex.Finite C] :
   { eventually_isEmpty_cell := eventually_isEmpty_coverCell C
     finite_cell := finite_coverCell C hfin }
 
+omit c in
 /-- The number of `n`-cells of the lift of `C` along `p` is the sum, over the `n`-cells of `C`, of
 the number of points over their centres. -/
 theorem nat_card_cell_preimage [RelCWComplex.FiniteType C] :
@@ -471,6 +473,7 @@ theorem nat_card_cell_preimage [RelCWComplex.FiniteType C] :
   have := Fintype.ofFinite (cell C n)
   rw [Nat.card_congr (cellPreimageEquiv C hp n), Nat.card_sigma, finsum_eq_sum_of_fintype]
 
+omit c in
 /-- **Cells of a `d`-sheeted cover.** If every fibre of `p` over `C` has `d` points, the lift of `C`
 along `p` has `d` times as many `n`-cells as `C`. -/
 theorem nat_card_cell_preimage_of_card_fiber [RelCWComplex.FiniteType C] {d : ℕ}
@@ -486,6 +489,7 @@ theorem nat_card_cell_preimage_of_card_fiber [RelCWComplex.FiniteType C] {d : �
 
 end Finite
 
+omit c in
 include hp in
 /-- The total space of a covering, with finite fibres, of a finite CW complex has finite CW type: it
 is a finite CW complex itself. -/
