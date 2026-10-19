@@ -8,16 +8,44 @@ module
 import TauCeti.RingTheory.Huber.Completion.Noetherian
 
 /-!
-# Examples of completions of adic rings
+# Examples: adic completeness and noetherianity of completions
 
-The integers with the `(p)`-adic topology and its additive uniformity form a noetherian adic
-ring; their uniform completion is complete for the extended ideal `(p)` and is noetherian. The
-zero ideal gives the discrete topology, whose completion is complete for the zero ideal.
+The completion of a ring with the `I`-adic topology, `I` finitely generated, is complete for the
+extended ideal. These examples apply this at the zero ideal (discrete topology), at the unit ideal
+(indiscrete topology, whose Hausdorff completion is the zero ring), at the ideal `(p)` of `ℤ` with
+its `(p)`-adic topology and additive uniformity, and at the ideal `(X)` of `ℤ[X]` with its
+`X`-adic topology; in the last two cases the completion is moreover Noetherian.
+
+## References
+
+* [The Stacks Project][stacks], Lemma 10.96.3 (tag
+  [05GG](https://stacks.math.columbia.edu/tag/05GG)).
 -/
 
 open UniformSpace
 
--- `ℤ` with the `(p)`-adic topology: the completion is complete for `(p)` and noetherian.
+section Generic
+
+variable {R : Type*} [CommRing R] [UniformSpace R] [IsUniformAddGroup R] [IsTopologicalRing R]
+
+-- The zero ideal: the topology is discrete and the completion is complete for the zero ideal.
+example (h : IsAdic (⊥ : Ideal R)) :
+    IsAdicComplete ((⊥ : Ideal R).map (Completion.coeRingHom : R →+* Completion R))
+      (Completion R) :=
+  h.isAdicComplete_map_coeRingHom Submodule.fg_bot
+
+-- The unit ideal: the topology is indiscrete and the completion is complete for the unit ideal.
+example (h : IsAdic (⊤ : Ideal R)) :
+    IsAdicComplete ((⊤ : Ideal R).map (Completion.coeRingHom : R →+* Completion R))
+      (Completion R) :=
+  h.isAdicComplete_map_coeRingHom ⟨{1}, by simp⟩
+
+end Generic
+
+section Integers
+
+-- `ℤ` with the `(p)`-adic topology and its additive uniformity: the completion is complete for the
+-- extended ideal `(p)` and Noetherian.
 example (p : ℤ) :
     letI := (Ideal.span {p}).adicTopology
     letI := IsTopologicalAddGroup.rightUniformSpace ℤ
@@ -28,17 +56,28 @@ example (p : ℤ) :
   let := IsTopologicalAddGroup.rightUniformSpace ℤ
   have := isUniformAddGroup_of_addCommGroup (G := ℤ)
   have hI : IsAdic (Ideal.span {p}) := rfl
-  exact ⟨TauCeti.Huber.isAdicComplete_completion_of_isAdic hI (Submodule.fg_span_singleton p),
-    TauCeti.Huber.isNoetherianRing_completion_of_isAdic hI⟩
+  exact ⟨hI.isAdicComplete_map_coeRingHom (Submodule.fg_span_singleton p),
+    hI.isNoetherianRing_completion⟩
 
--- The zero ideal: the completion of a discretely topologized ring is complete for the zero ideal.
-example (R : Type*) [CommRing R] :
-    letI := (⊥ : Ideal R).adicTopology
-    letI := IsTopologicalAddGroup.rightUniformSpace R
-    haveI := isUniformAddGroup_of_addCommGroup (G := R)
-    IsAdicComplete ((⊥ : Ideal R).map (Completion.coeRingHom : R →+* Completion R))
-      (Completion R) := by
-  let := (⊥ : Ideal R).adicTopology
-  let := IsTopologicalAddGroup.rightUniformSpace R
-  have := isUniformAddGroup_of_addCommGroup (G := R)
-  exact TauCeti.Huber.isAdicComplete_completion_of_isAdic rfl Submodule.fg_bot
+end Integers
+
+section Polynomial
+
+open Polynomial
+
+-- `ℤ[X]` with its `(X)`-adic topology: the completion is complete for the extended ideal `(X)`.
+example :
+    letI : WithIdeal ℤ[X] := ⟨Ideal.span {X}⟩
+    IsAdicComplete ((Ideal.span {X}).map (Completion.coeRingHom : ℤ[X] →+* Completion ℤ[X]))
+      (Completion ℤ[X]) :=
+  letI : WithIdeal ℤ[X] := ⟨Ideal.span {X}⟩
+  IsAdic.isAdicComplete_map_coeRingHom (by rfl) (Submodule.fg_span_singleton X)
+
+-- `ℤ[X]` with its `(X)`-adic topology: the completion, that is `ℤ⟦X⟧`, is Noetherian.
+example :
+    letI : WithIdeal ℤ[X] := ⟨Ideal.span {X}⟩
+    IsNoetherianRing (Completion ℤ[X]) :=
+  letI : WithIdeal ℤ[X] := ⟨Ideal.span {X}⟩
+  IsAdic.isNoetherianRing_completion (I := Ideal.span {X}) (by rfl)
+
+end Polynomial

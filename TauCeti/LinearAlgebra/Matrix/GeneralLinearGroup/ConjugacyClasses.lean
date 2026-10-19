@@ -30,7 +30,7 @@ import TauCeti.FieldTheory.Finite.FrobeniusFixed
 import Mathlib.FieldTheory.Finite.Trace
 -- Non-public: lifting an invertible scalar matrix to a unit of `F` is used only inside the
 -- surjectivity half of the classification.
-import TauCeti.Algebra.GroupWithZero.Units.Basic
+import TauCeti.Algebra.Group.Units.Basic
 
 /-!
 # The conjugacy classes of `GL₂` over a field

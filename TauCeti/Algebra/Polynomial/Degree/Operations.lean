@@ -21,24 +21,9 @@ into the coefficient window used for polynomial relations with formal degree bou
 `Polynomial.natDegree_multiset_prod_X_sub_C_le` bounds the degree of a product of `card s` monic
 linear factors by `card s` over any commutative ring, without the nontriviality that Mathlib's
 `Polynomial.natDegree_multiset_prod_X_sub_C_eq_card` needs.
-
-The simp lemma `Polynomial.natDegree_X_pow_sub_X` computes the degree of `X ^ p - X` for
-any ring and any exponent `p > 1`.
 -/
 
 public section
-
-namespace Polynomial
-
-/-- The nonconstant part of an Artin–Schreier polynomial has its expected natural degree. -/
-@[simp]
-theorem natDegree_X_pow_sub_X {R : Type*} [Ring R] [Nontrivial R]
-    {p : ℕ} (hp : 1 < p) : (X ^ p - X : R[X]).natDegree = p := by
-  rw [natDegree_sub_eq_left_of_natDegree_lt] <;> rw [natDegree_X_pow]
-  rw [natDegree_X]
-  exact hp
-
-end Polynomial
 
 namespace TauCeti
 

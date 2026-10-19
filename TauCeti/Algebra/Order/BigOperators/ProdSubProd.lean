@@ -40,19 +40,22 @@ namespace TauCeti
 
 open Finset
 
-/-- **A finite product of unit-ball elements lies in the unit ball.** Mathlib's
-`Finset.norm_prod_le` gives this over a `NormedCommRing`, but only submultiplicativity of the norm
-and `‖1‖ = 1` are used, so it holds over a seminormed ring. -/
-theorem norm_prod_le_one {ι R : Type*} [SeminormedCommRing R] [NormOneClass R] {s : Finset ι}
-    {b : ι → R} (hb : ∀ i ∈ s, ‖b i‖ ≤ 1) : ‖∏ i ∈ s, b i‖ ≤ 1 := by
+/-- The norm of a finite product is bounded by the product of the norms, over a seminormed
+commutative ring with `‖1‖ = 1`. -/
+theorem norm_prod_le_prod_norm {ι R : Type*} [SeminormedCommRing R] [NormOneClass R]
+    (s : Finset ι) (f : ι → R) : ‖∏ i ∈ s, f i‖ ≤ ∏ i ∈ s, ‖f i‖ := by
   classical
   induction s using Finset.induction with
   | empty => simp
   | insert j s hj ih =>
-      rw [Finset.prod_insert hj]
-      exact (norm_mul_le _ _).trans
-        ((mul_le_of_le_one_left (norm_nonneg _) (hb j (Finset.mem_insert_self j s))).trans
-          (ih fun i hi => hb i (Finset.mem_insert_of_mem hi)))
+    rw [Finset.prod_insert hj, Finset.prod_insert hj]
+    exact (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_left ih (norm_nonneg _))
+
+/-- **A finite product of unit-ball elements lies in the unit ball**, over a seminormed
+commutative ring with `‖1‖ = 1`. -/
+theorem norm_prod_le_one {ι R : Type*} [SeminormedCommRing R] [NormOneClass R] {s : Finset ι}
+    {b : ι → R} (hb : ∀ i ∈ s, ‖b i‖ ≤ 1) : ‖∏ i ∈ s, b i‖ ≤ 1 :=
+  (norm_prod_le_prod_norm s b).trans (Finset.prod_le_one₀ (fun _ _ ↦ norm_nonneg _) hb)
 
 /-- **Telescoping bound for a product of unit-ball elements.** If `‖a i‖ ≤ 1` and `‖b i‖ ≤ 1` for
 every `i ∈ s`, then the difference of the products is at most the sum of the pointwise

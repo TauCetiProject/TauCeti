@@ -716,7 +716,7 @@ theorem le_inertiaField_iff (E : IntermediateField F F') :
         (P.restrict k E).ResidueField := by
   rw [isSeparable_iff_finInsepDegree_eq_one, ← mul_eq_one,
     ramificationIdx_mul_finInsepDegree_restrict_eq_relIndex, Subgroup.relIndex_eq_one,
-    inertiaField, IntermediateField.le_iff_le]
+    inertiaField, IntermediateField.le_fixedField_iff_le_fixingSubgroup]
 
 variable [Algebra.IsSeparable (P.restrict k F).ResidueField P.ResidueField]
 

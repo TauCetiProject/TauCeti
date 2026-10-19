@@ -74,7 +74,7 @@ private theorem exists_basis_coord_index (hK : Module.finrank ℚ K = 2) :
       Submodule.Quotient.mk_eq_zero]
     exact (O.mem_iff_coord_mem b hb x).symm
   have hindex : O.index = J.absNorm := by
-    rw [O.index_def, ← hker]
+    rw [O.index_def, ← hker, Ideal.absNorm_eq_natCard]
     exact Nat.card_congr (q.quotKerEquivOfSurjective hq).toEquiv
   -- The positive generator of an integer ideal is its absolute norm.
   have hJ : O.toRingOfIntegers.toSubmodule.map (b.coord 1) =

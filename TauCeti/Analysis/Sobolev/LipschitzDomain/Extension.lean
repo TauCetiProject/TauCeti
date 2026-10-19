@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.LipschitzDomain.Basic
+public import TauCeti.Analysis.Sobolev.LipschitzDomain.Localization
 public import TauCeti.Analysis.Sobolev.Trace.Epigraph.Extension
-public import TauCeti.Analysis.Sobolev.W1p.Localization
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
@@ -26,11 +25,10 @@ for every `1 ≤ p ≤ ∞`, whose value on `Ω` is `ψ u`
 (`TauCeti.W1p.value_lipschitzChartExtensionL_ae_eq_zero`). Its norm is at most `4 M (1 + L)²`
 when `ψ` and its gradient are bounded by `M`.
 
-The construction restricts `u` to the part of `Ω` in the chart cylinder, multiplies by `ψ` and
-extends by zero to the whole region above the graph (`TauCeti.W1p.localizeL`), passes to chart
-coordinates (`TauCeti.W1p.compAffineIsometryEquivL`), extends across the graph by flattening and
-even reflection (`TauCeti.W1p.normalEpigraphExtensionL`), and returns to the original
-coordinates. The shorter normal radius of the support is what keeps the reflected function inside
+The construction localizes `ψ u` to the whole epigraph in chart coordinates
+(`TauCeti.W1p.lipschitzChartLocalizeL`), extends across the graph by flattening and even
+reflection (`TauCeti.W1p.normalEpigraphExtensionL`), and returns to the original coordinates.
+The shorter normal radius of the support is what keeps the reflected function inside
 the chart cylinder: over a tangential point `y` with `‖y‖ < b`, the graph height satisfies
 `|φ y| ≤ L b`, so the reflection `t ↦ 2 φ y - t` maps `(-(a - 2 L b), a - 2 L b)` into `(-a, a)`.
 Without it the reflected values could reach points of `Ω` outside the chart, and the extension
@@ -118,38 +116,12 @@ private def chartCylinder (e : WithLp 2 (ℝ × E) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ 
     Opens (WithLp 2 (ℝ × E)) :=
   ⟨e ⁻¹' normalCylinder a b, (isOpen_normalCylinder a b).preimage e.continuous⟩
 
-/-- The points whose chart coordinates lie strictly above the graph of `φ`. -/
-private def chartEpigraph (e : WithLp 2 (ℝ × E) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E))
-    (hφ : Continuous φ) : Opens (WithLp 2 (ℝ × E)) :=
-  ⟨e ⁻¹' normalEpigraph ⟨φ, hφ⟩, (normalEpigraph _).isOpen.preimage e.continuous⟩
-
-private theorem mem_chartEpigraph {hφ : Continuous φ} {x : WithLp 2 (ℝ × E)} :
-    x ∈ chartEpigraph e hφ ↔ φ (e x).snd < (e x).fst :=
-  mem_normalEpigraph _ _
-
 /-- The cylinder carrying the support of the cutoff lies in the chart cylinder. -/
 private theorem normalCylinder_sub_subset
     (h : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzChartWith L e φ a b) :
     normalCylinder (E := E) (a - 2 * L * b) b ⊆ normalCylinder a b :=
   normalCylinder_mono (by nlinarith [((Set.isLipschitzChartWith_iff ..).1 h).2.1, L.coe_nonneg])
     le_rfl
-
-/-- Inside the chart cylinder, `Ω` lies above the graph. -/
-private theorem inf_chartCylinder_le_chartEpigraph
-    (h : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzChartWith L e φ a b) :
-    Ω ⊓ chartCylinder e a b ≤ chartEpigraph e h.lipschitzWith.continuous := fun _ hx =>
-  mem_chartEpigraph.2 ((h.mem_iff hx.2).1 hx.1)
-
-/-- Inside the shorter cylinder carrying the support of the cutoff, the region above the graph
-lies in `Ω`. -/
-private theorem chartEpigraph_inter_tsupport_subset
-    (h : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzChartWith L e φ a b)
-    (hs : tsupport ψ ⊆ e ⁻¹' normalCylinder (a - 2 * L * b) b) :
-    (chartEpigraph e h.lipschitzWith.continuous : Set (WithLp 2 (ℝ × E))) ∩ tsupport ψ ⊆
-      (Ω ⊓ chartCylinder e a b : Opens (WithLp 2 (ℝ × E))) := by
-  rintro x ⟨hxG, hxs⟩
-  have hxC : e x ∈ normalCylinder a b := normalCylinder_sub_subset h (hs hxs)
-  exact ⟨(h.mem_iff hxC).2 (mem_chartEpigraph.1 hxG), hxC⟩
 
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
@@ -165,16 +137,6 @@ private theorem measurePreserving_graphReflection (hφ : Continuous φ) :
     graphFlattening_symm_apply, WithLp.toLp_fst, WithLp.toLp_snd]
   congr 2
   ring
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- The region above the graph in chart coordinates is the preimage, under the inverse chart
-coordinates, of the region above the graph in the original coordinates. -/
-private theorem coe_normalEpigraph_eq_preimage (e : WithLp 2 (ℝ × E) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E))
-    (hφ : Continuous φ) :
-    ((normalEpigraph ⟨φ, hφ⟩ : Opens (WithLp 2 (ℝ × E))) : Set (WithLp 2 (ℝ × E))) =
-      e.symm ⁻¹' chartEpigraph e hφ := by
-  ext x
-  simp [chartEpigraph]
 
 /-! ### The extension operator -/
 
@@ -192,12 +154,8 @@ def W1p.lipschitzChartExtensionL
     W1p volume Ω p →L[ℝ] W1p volume (⊤ : Opens (WithLp 2 (ℝ × E))) p :=
   (W1p.compAffineIsometryEquivL e (by simp)).comp <|
     (W1p.normalEpigraphExtensionL (φ := ⟨φ, _⟩) h.lipschitzWith).comp <|
-    (W1p.compAffineIsometryEquivL e.symm
-      (coe_normalEpigraph_eq_preimage e h.lipschitzWith.continuous)).comp <|
-      (W1p.localizeL (inf_chartCylinder_le_chartEpigraph h) ψ hψ hM
-        (fun x hx => hψM x hx.1) (fun x hx => hgM x hx.1)
-        (chartEpigraph_inter_tsupport_subset h hs)).comp
-        (W1p.restrictL inf_le_left)
+    W1p.lipschitzChartLocalizeL h ψ hψ hM hψM hgM
+      (hs.trans (preimage_mono (normalCylinder_sub_subset h)))
 
 private theorem lipschitzChartExtensionL_apply
     (h : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzChartWith L e φ a b)
@@ -207,11 +165,8 @@ private theorem lipschitzChartExtensionL_apply
     W1p.lipschitzChartExtensionL h ψ hψ hM hψM hgM hs u =
       W1p.compAffineIsometryEquivL e (by simp)
         (W1p.normalEpigraphExtensionL (φ := ⟨φ, _⟩) h.lipschitzWith
-        (W1p.compAffineIsometryEquivL e.symm
-          (coe_normalEpigraph_eq_preimage e h.lipschitzWith.continuous)
-          (W1p.localizeL (inf_chartCylinder_le_chartEpigraph h) ψ hψ hM
-            (fun x hx => hψM x hx.1) (fun x hx => hgM x hx.1)
-            (chartEpigraph_inter_tsupport_subset h hs) (W1p.restrictL inf_le_left u)))) :=
+          (W1p.lipschitzChartLocalizeL h ψ hψ hM hψM hgM
+            (hs.trans (preimage_mono (normalCylinder_sub_subset h))) u)) :=
   (rfl)
 
 /-- The pointwise description of the extension behind its two value theorems: above the graph it
@@ -229,32 +184,22 @@ private theorem value_lipschitzChartExtensionL_ae_aux
       else if (e x).fst < φ (e x).snd then f (e.symm (graphReflection φ (e x))) else 0 := by
   intro f
   have hφc : Continuous φ := h.lipschitzWith.continuous
-  let loc := W1p.localizeL (inf_chartCylinder_le_chartEpigraph h) ψ hψ hM
-    (fun x hx => hψM x hx.1) (fun x hx => hgM x hx.1)
-    (chartEpigraph_inter_tsupport_subset h hs) (W1p.restrictL (p := p) inf_le_left u)
-  -- The localized function is the cutoff product, extended by zero from `U`.
-  have hloc : ∀ᵐ y ∂volume, y ∈ chartEpigraph e hφc → W1p.value loc y = f y := by
-    have h1 := (ae_restrict_iff' (chartEpigraph e hφc).isOpen.measurableSet).1
-      (W1p.value_localizeL_ae (inf_chartCylinder_le_chartEpigraph h) hψ hM
-        (fun x hx => hψM x hx.1) (fun x hx => hgM x hx.1)
-        (chartEpigraph_inter_tsupport_subset h hs) (W1p.restrictL (p := p) inf_le_left u))
-    have h2 := (ae_restrict_iff' (Ω ⊓ chartCylinder e a b).isOpen.measurableSet).1
-      (W1p.value_restrictL_ae (p := p) (inf_le_left : Ω ⊓ chartCylinder e a b ≤ Ω) u)
-    filter_upwards [h1, h2] with y hy1 hy2 hyG
-    rw [hy1 hyG]
-    simp only [f]
-    by_cases hyU : y ∈ ((Ω ⊓ chartCylinder e a b : Opens (WithLp 2 (ℝ × E))) : Set _)
-    · rw [indicator_of_mem hyU, indicator_of_mem hyU, hy2 hyU]
-    · rw [indicator_of_notMem hyU, indicator_of_notMem hyU]
-  -- In chart coordinates, above the graph, it is the same function of the original point.
-  let v := W1p.compAffineIsometryEquivL e.symm (coe_normalEpigraph_eq_preimage e hφc) loc
+  have hs' := hs.trans (preimage_mono (normalCylinder_sub_subset h))
+  let v := W1p.lipschitzChartLocalizeL h ψ hψ hM hψM hgM hs' u
   have hchart : ∀ᵐ z ∂volume, z ∈ normalEpigraph ⟨φ, hφc⟩ → W1p.value v z = f (e.symm z) := by
     have h1 := (ae_restrict_iff' (normalEpigraph ⟨φ, hφc⟩).isOpen.measurableSet).1
-      (W1p.value_compAffineIsometryEquivL_ae e.symm (coe_normalEpigraph_eq_preimage e hφc) loc)
-    filter_upwards [h1, e.symm.measurePreserving.quasiMeasurePreserving.ae hloc]
-      with z hz1 hz2 hzG
-    rw [hz1 hzG, hz2]
-    simpa [mem_chartEpigraph, mem_normalEpigraph] using hzG
+      (W1p.value_lipschitzChartLocalizeL_ae h hψ hM hψM hgM hs' u)
+    filter_upwards [h1] with z hz hzG
+    rw [hz hzG]
+    by_cases hzC : e (e.symm z) ∈ normalCylinder a b
+    · by_cases hzΩ : e.symm z ∈ Ω
+      · have hzU : e.symm z ∈ (Ω ⊓ chartCylinder e a b : Opens _) := ⟨hzΩ, hzC⟩
+        simp only [f, indicator_of_mem hzΩ, indicator_of_mem hzU]
+      · have hzU : e.symm z ∉ (Ω ⊓ chartCylinder e a b : Opens _) := fun hx => hzΩ hx.1
+        simp only [f, indicator_of_notMem hzΩ, indicator_of_notMem hzU]
+    · have hψz : ψ (e.symm z) = 0 :=
+        image_eq_zero_of_notMem_tsupport fun hzs => hzC (hs' hzs)
+      simp [f, indicator, hψz]
   have hext := W1p.value_normalEpigraphExtensionL_ae (φ := ⟨φ, hφc⟩) h.lipschitzWith v
   have hfrom := W1p.value_compAffineIsometryEquivL_ae (p := p) (U := ⊤) (V := ⊤) e (by simp)
     (W1p.normalEpigraphExtensionL (φ := ⟨φ, hφc⟩) h.lipschitzWith v)
@@ -317,7 +262,7 @@ theorem W1p.value_lipschitzChartExtensionL_ae
   by_cases hxC : e x ∈ normalCylinder a b
   · have hxU : x ∈ ((Ω ⊓ chartCylinder e a b : Opens (WithLp 2 (ℝ × E))) : Set _) :=
       ⟨hxΩ, hxC⟩
-    rw [hx, ite_eq_left ((h.mem_iff hxC).1 hxΩ), indicator_of_mem hxU]
+    rw [hx, ite_eq_left ((h.toIsLipschitzChart.mem_iff hxC).1 hxΩ), indicator_of_mem hxU]
   · have hψx : ψ x = 0 := image_eq_zero_of_notMem_tsupport fun hxs =>
       hxC (normalCylinder_sub_subset h (hs hxs))
     rw [hzero hxC, hψx, zero_smul]
@@ -352,13 +297,8 @@ theorem W1p.norm_lipschitzChartExtensionL_le
   rw [lipschitzChartExtensionL_apply]
   refine (W1p.norm_compAffineIsometryEquivL_le e _ _).trans
     ((W1p.norm_normalEpigraphExtensionL_le _ _).trans ?_)
-  have hloc := (W1p.norm_compAffineIsometryEquivL_le e.symm
-    (coe_normalEpigraph_eq_preimage e h.lipschitzWith.continuous) _).trans
-    ((W1p.norm_localizeL_le (inf_chartCylinder_le_chartEpigraph h) hψ hM
-      (fun x hx => hψM x hx.1) (fun x hx => hgM x hx.1)
-      (chartEpigraph_inter_tsupport_subset h hs) _).trans
-      (mul_le_mul_of_nonneg_left (W1p.norm_restrictL_le (p := p) inf_le_left u)
-        (by positivity : (0 : ℝ) ≤ 2 * M)))
+  have hloc := W1p.norm_lipschitzChartLocalizeL_le h hψ hM hψM hgM
+    (hs.trans (preimage_mono (normalCylinder_sub_subset h))) u
   calc _ ≤ 2 * (1 + (L : ℝ)) ^ 2 * (2 * M * ‖u‖) := by gcongr
     _ = _ := by ring
 

@@ -9,6 +9,7 @@ public import Mathlib.Topology.CWComplex.Abstract.Basic
 public import Mathlib.Topology.CWComplex.Classical.Basic
 public import TauCeti.AlgebraicTopology.Disk
 import TauCeti.Topology.CWComplex.Abstract.ClosureFinite
+import TauCeti.Topology.CWComplex.Classical.Skeleton.Basic
 import TauCeti.Topology.Category.TopCat.RelativeCellComplex
 
 /-!
@@ -286,5 +287,15 @@ lemma range_incl_app_eq_toRelCWComplex_skeletonLT [T2Space Y] (n : ℕ) :
   rw [c.range_incl_app_eq_union_toRelCWComplex_closedCell,
     Topology.RelCWComplex.coe_skeletonLT]
   simp only [ENat.natCast_lt_natCast]
+
+/-- Below the dimension of its lowest cells, the classical skeleton is the base: if no cells of
+dimension less than `n` are attached, then `skeletonLT univ n` is the range of `f`. -/
+lemma skeletonLT_toRelCWComplex_eq_range [T2Space Y] {n : ℕ}
+    (hc : ∀ m < n, IsEmpty (c.attachCells m (not_isMax m)).ι) :
+    letI := c.toRelCWComplex
+    (Topology.RelCWComplex.skeletonLT (univ : Set Y) n : Set Y) = range f :=
+  letI := c.toRelCWComplex
+  TauCeti.skeletonLT_eq_base_of_isEmpty_cell (univ : Set Y) n fun m hm ↦
+    (c.toRelCWComplexCellEquiv m).isEmpty_congr.2 (hc m hm)
 
 end TopCat.RelativeCWComplex

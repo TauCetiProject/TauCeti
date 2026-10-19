@@ -9,6 +9,9 @@ public import TauCeti.LinearAlgebra.PiTensorProduct.TwoStrand
 public import TauCeti.RepresentationTheory.ClassicalGroups.Symplectic
 public import TauCeti.RepresentationTheory.Symmetric.TensorAction.Basic
 public import TauCeti.RepresentationTheory.Tensor.Power
+-- Non-public: the entrywise identities `Matrix.J_apply_swap` and `Matrix.sum_sum_J_mul_J` the
+-- relations below contract with; no statement mentions them.
+import TauCeti.LinearAlgebra.SymplecticGroup
 
 /-!
 # The cap, the cup, and the Brauer relations on the symplectic tensor square
@@ -37,7 +40,10 @@ cap and with the cup (`TauCeti.symplecticCap_comp_symplecticFlip` and
 `TauCeti.symplecticFlip_comp_symplecticCup`), and the relations `s * e = e = e * s` fail for it.
 The Brauer crossing is therefore taken to be **minus** the flip,
 `TauCeti.symplecticCrossing`, and with that choice all three relations hold. This is the sign that
-has to be fixed before a Brauer action on `V^{⊗k}` is well defined.
+has to be fixed before a Brauer action on `V^{⊗k}` is well defined. The single arc on two of `k`
+strands is built in
+`TauCeti/RepresentationTheory/ClassicalGroups/BrauerGenerators/Symplectic/TensorPower.lean`, where
+the two sign changes turn out to cancel.
 
 The sign is forced, not chosen. The two anti-invariances give `flip * e = -e`, so if the bare flip
 were the crossing then `s * e = e` would force `2 • e = 0`, which is false over `ℂ` for `n ≥ 1`
@@ -229,20 +235,6 @@ end Cup
 
 section Loop
 
-/-- `J` is antisymmetric, entrywise. -/
-private theorem J_apply_swap (x y : Fin n ⊕ Fin n) :
-    Matrix.J (Fin n) k y x = -Matrix.J (Fin n) k x y := by
-  have h := congrFun (congrFun (Matrix.J_transpose (Fin n) k) x) y
-  simpa only [Matrix.transpose_apply, Matrix.neg_apply] using h
-
-/-- Each row of `J` pairs with itself to `1`, because `J * Jᵀ = 1`. -/
-private theorem sum_J_mul_J (x : Fin n ⊕ Fin n) :
-    ∑ y : Fin n ⊕ Fin n, Matrix.J (Fin n) k x y * Matrix.J (Fin n) k x y = 1 := by
-  have hJ : Matrix.J (Fin n) k * (Matrix.J (Fin n) k)ᵀ = 1 := by
-    rw [Matrix.J_transpose, Matrix.mul_neg, Matrix.J_squared, neg_neg]
-  have h := congrFun (congrFun hJ x) x
-  simpa only [Matrix.mul_apply, Matrix.one_apply_eq, Matrix.transpose_apply] using h
-
 /-- **The loop value.** A cup stacked under a cap closes into a loop, and the loop contracts the
 pairing `J` against the copairing `-J`: the value is `-∑ₓ ∑_y (J x y) * (J x y)`, which is
 `-tr (J * Jᵀ) = -tr 1 = -2n`. -/
@@ -255,15 +247,12 @@ theorem symplecticCap_comp_symplecticCup_apply (c : k) :
     rw [map_neg, map_sum]
     have h1 : ∀ x : Fin n ⊕ Fin n, symplecticCap k n
         (∑ y : Fin n ⊕ Fin n, Matrix.J (Fin n) k x y •
-          PiTensorProduct.tprod k ![Pi.single x (1 : k), Pi.single y (1 : k)]) = 1 := by
+          PiTensorProduct.tprod k ![Pi.single x (1 : k), Pi.single y (1 : k)]) =
+        ∑ y : Fin n ⊕ Fin n, Matrix.J (Fin n) k x y * Matrix.J (Fin n) k x y := by
       intro x
       rw [map_sum]
       simp only [map_smul, symplecticCap_tprod_single, smul_eq_mul]
-      exact sum_J_mul_J k n x
-    rw [Finset.sum_congr rfl fun x _ => h1 x, Finset.sum_const, Finset.card_univ,
-      Fintype.card_sum, Fintype.card_fin, nsmul_eq_mul, mul_one]
-    push_cast
-    ring
+    rw [Finset.sum_congr rfl fun x _ => h1 x, Matrix.sum_sum_J_mul_J, Fintype.card_fin]
   rw [symplecticCup_apply, map_smul, h, smul_eq_mul, mul_comm]
 
 /-- The loop value, as an identity of linear maps: `cap ∘ cup` is multiplication by `-2n`. -/
@@ -334,7 +323,7 @@ theorem symplecticFlip_comp_symplecticCup :
     refine Finset.sum_congr rfl fun a _ => ?_
     rw [← Finset.sum_neg_distrib]
     refine Finset.sum_congr rfl fun b _ => ?_
-    rw [J_apply_swap k n a b]
+    rw [Matrix.J_apply_swap (Fin n) k a b]
     exact neg_smul (M := ⨂[k]^2 ((Fin n ⊕ Fin n) → k)) _ _
   refine LinearMap.ext_ring ?_
   rw [LinearMap.comp_apply, symplecticCup_apply_one, LinearMap.neg_apply, symplecticCup_apply_one,
