@@ -34,38 +34,7 @@ open Set Function MvPolynomial
 
 namespace TauCeti
 
-variable {α : Type*} [LinearOrder α] {n m k : ℕ} {C : Set (Fin n → α)}
-  (θ : Fin k → C → α) (f : (Fin m → α) → Fin n → α)
-
-omit [LinearOrder α] in
-/-- Pullback of an ambient section along a base map. The height coordinate is unchanged. -/
-theorem image_cylinder_sectionSet_comp (i : Fin k) :
-    cylinder (f ⁻¹' C) '' sectionSet (fun i x ↦ θ i ⟨f x.1, x.2⟩) i =
-      (fun y ↦ Fin.cons (y 0) (f (Fin.tail y))) ⁻¹' (cylinder C '' sectionSet θ i) := by
-  ext y
-  simp only [mem_image_cylinder, mem_sectionSet, mem_preimage, Fin.tail_cons, Fin.cons_zero]
-
-/-- Pullback of an ambient sector along a base map, including either unbounded sector. -/
-theorem image_cylinder_sectorSet_comp (j : Fin (k + 1)) :
-    cylinder (f ⁻¹' C) '' sectorSet (fun i x ↦ θ i ⟨f x.1, x.2⟩) j =
-      (fun y ↦ Fin.cons (y 0) (f (Fin.tail y))) ⁻¹' (cylinder C '' sectorSet θ j) := by
-  ext y
-  simp only [mem_image_cylinder, mem_sectorSet, mem_preimage, Fin.tail_cons, Fin.cons_zero]
-
-/-- The cells of a pulled-back stack are precisely the inverse images of the original cells.
-This holds even when the base map is not injective or surjective. -/
-theorem stackCells_comp :
-    stackCells (f ⁻¹' C) (fun i x ↦ θ i ⟨f x.1, x.2⟩) =
-      (fun E ↦ (fun y ↦ Fin.cons (y 0) (f (Fin.tail y))) ⁻¹' E) '' stackCells C θ := by
-  ext E
-  simp only [mem_stackCells, mem_image]
-  constructor
-  · rintro (⟨i, rfl⟩ | ⟨j, rfl⟩)
-    · exact ⟨_, Or.inl ⟨i, rfl⟩, (image_cylinder_sectionSet_comp θ f i).symm⟩
-    · exact ⟨_, Or.inr ⟨j, rfl⟩, (image_cylinder_sectorSet_comp θ f j).symm⟩
-  · rintro ⟨E, (⟨i, rfl⟩ | ⟨j, rfl⟩), rfl⟩
-    · exact Or.inl ⟨i, image_cylinder_sectionSet_comp θ f i⟩
-    · exact Or.inr ⟨j, image_cylinder_sectorSet_comp θ f j⟩
+variable {n m k : ℕ}
 
 /-- A polynomial change of base preserves semialgebraic stacks. This uses only inverse images,
 not closure of semialgebraic sets under projection. -/
