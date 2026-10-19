@@ -26,10 +26,11 @@ The definitions are total: they make sense in every dimension, and at `n = 2` th
 only for `n > 2`, which is the setting of the Yamabe problem.
 
 Classically, for `n > 2`, `U_{t,b} ^ (4 / (n - 2))` times the Euclidean metric is the pullback of
-the unit round metric of `Sⁿ` under `x ↦ σ⁻¹ ((x - b) / t)`, with `σ` a stereographic projection;
-this identification is `TauCeti.Yamabe.inner_mfderiv_stereographic'_symm_smul_sub`, for Mathlib's
-stereographic charts. Accordingly, the bubble solves the conformal Laplacian
-equation whose right-hand side carries the scalar curvature `n (n - 1)` of the unit sphere:
+the unit round metric of `Sⁿ` under `x ↦ σ⁻¹ ((2 / t) • (x - b))`, where `σ = stereographic' n v`
+is Mathlib's stereographic chart from a unit vector `v`; this identification is
+`TauCeti.Yamabe.inner_mfderiv_stereographic'_symm_smul_sub`. Accordingly, the bubble solves the
+conformal Laplacian equation whose right-hand side carries the scalar curvature `n (n - 1)` of the
+unit sphere:
 
 `aₙ (-Δ U_{t,b}) = n (n - 1) U_{t,b} ^ (pₙ - 1)`.
 
