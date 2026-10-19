@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.GCDMonoid.Finset
 public import TauCeti.LinearAlgebra.ExteriorPower.Basic
+
+import Mathlib.Algebra.Field.ZMod
 
 /-!
 # Plücker coordinates
@@ -46,6 +49,8 @@ independence, which is over a field. The empty family has a single Plücker coor
 * `TauCeti.det_mul_conjTranspose_eq_sum_plucker_mul_star`: its Hermitian form.
 * `TauCeti.plucker_ne_zero_iff`: over a field, the Plücker coordinates of a family are not all
   zero exactly when the family is linearly independent.
+* `TauCeti.gcd_plucker_eq_one`: the Plücker coordinates of a basis of a saturated submodule of
+  `ℤ^ι` are coprime.
 
 ## References
 
@@ -169,5 +174,57 @@ theorem plucker_ne_zero_iff [Finite ι] (x : Fin p → ι → K) :
   rw [h, Finsupp.coe_eq_zero, LinearEquiv.map_eq_zero_iff]
 
 end Field
+
+/-- **The Plücker coordinates of a saturated integral basis are coprime.** Let `N` be a saturated
+submodule of `ℤ^ι`: it contains every `z` of which it contains a nonzero multiple. Then the
+Plücker coordinates of any basis of `N` have greatest common divisor `1`. -/
+theorem gcd_plucker_eq_one [Fintype ι] {N : Submodule ℤ (ι → ℤ)}
+    (hN : ∀ (c : ℤ) (z : ι → ℤ), c ≠ 0 → c • z ∈ N → z ∈ N) (b : Module.Basis (Fin p) ℤ N) :
+    Finset.univ.gcd (plucker fun i ↦ (b i : ι → ℤ)) = 1 := by
+  set y : Fin p → ι → ℤ := fun i ↦ (b i : ι → ℤ)
+  have hg0 : 0 ≤ Finset.univ.gcd (plucker y) := by
+    rw [← Finset.normalize_gcd, ← Int.abs_eq_normalize]
+    exact abs_nonneg _
+  set g := Finset.univ.gcd (plucker y)
+  by_contra hg
+  -- Some prime `q` divides every Plücker coordinate of `y`.
+  have hg1 : g.natAbs ≠ 1 := fun h ↦ hg <| by rw [← Int.natAbs_of_nonneg hg0, h, Nat.cast_one]
+  obtain ⟨q, hq, hqg⟩ := Nat.exists_prime_and_dvd hg1
+  have : Fact q.Prime := ⟨hq⟩
+  have hqp (s : powersetCard ι p) : (q : ℤ) ∣ plucker y s :=
+    (Int.ofNat_dvd_left.2 hqg).trans (Finset.gcd_dvd (Finset.mem_univ s))
+  -- Hence the reductions of the `y i` modulo `q` are linearly dependent.
+  have hdep : ¬LinearIndependent (ZMod q) fun i j ↦ (y i j : ZMod q) := by
+    intro h
+    refine (plucker_ne_zero_iff (K := ZMod q) _).2 h (funext fun s ↦ ?_)
+    have hmap := plucker_map (Int.castRingHom (ZMod q)) y s
+    simp only [eq_intCast] at hmap
+    rw [hmap, Pi.zero_apply, ZMod.intCast_zmod_eq_zero_iff_dvd]
+    exact hqp s
+  obtain ⟨c, hc, i₀, hi₀⟩ := Fintype.not_linearIndependent_iff.1 hdep
+  -- Lift the relation to `ℤ`: the integral combination `v` of the `y i` is divisible by `q`.
+  set c' : Fin p → ℤ := fun i ↦ ((c i).val : ℤ)
+  have hc' (i : Fin p) : (c' i : ZMod q) = c i := by simp [c']
+  set v : ι → ℤ := ∑ i, c' i • y i
+  have hv (j : ι) : (q : ℤ) ∣ v j := by
+    rw [← ZMod.intCast_zmod_eq_zero_iff_dvd]
+    simpa [v, hc'] using congrFun hc j
+  choose z hz using hv
+  have hvz : v = (q : ℤ) • z := funext fun j ↦ by simp [hz j]
+  have hvN : v ∈ N := N.sum_mem fun i _ ↦ N.smul_mem _ (b i).2
+  have hzN : z ∈ N := hN q z (by exact_mod_cast hq.ne_zero) (hvz ▸ hvN)
+  -- By saturation `z` is an integral combination of the `y i`, so `q` divides every `c' i`.
+  have hli : LinearIndependent ℤ y := b.linearIndependent.map' N.subtype N.ker_subtype
+  have hzsum : z = ∑ i, b.repr ⟨z, hzN⟩ i • y i := by
+    have h := congrArg Subtype.val (b.sum_repr ⟨z, hzN⟩)
+    simp only [Submodule.coe_sum, Submodule.coe_smul] at h
+    exact h.symm
+  have hrel : ∑ i, (c' i - q * b.repr ⟨z, hzN⟩ i) • y i = 0 := by
+    simp only [sub_smul, Finset.sum_sub_distrib, mul_smul, ← Finset.smul_sum, ← hzsum]
+    rw [← hvz, sub_self]
+  have h0 := Fintype.linearIndependent_iff.1 hli _ hrel i₀
+  apply hi₀
+  rw [← hc', sub_eq_zero.1 h0]
+  simp
 
 end TauCeti
