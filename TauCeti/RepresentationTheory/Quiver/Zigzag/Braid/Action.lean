@@ -75,8 +75,6 @@ local notation "c" => ComplexShape.up ℤ
 
 /-- Tensoring with the braid complex `Bᵢ` is an autoequivalence of the homotopy category of graded
 `Z`-modules, with inverse given by tensoring with the inverse complex `Bᵢ'`. -/
--- Exposed so that composites of these autoequivalences are composites of tensor actions.
-@[expose]
 def zigzagBraidAutoequivalence (i : V) :
     HomotopyCategory (GradedModuleCat.{max u w} (zigzagAlgebraInternalGrading k G).piece) c ≌
       HomotopyCategory (GradedModuleCat.{max u w} (zigzagAlgebraInternalGrading k G).piece) c :=

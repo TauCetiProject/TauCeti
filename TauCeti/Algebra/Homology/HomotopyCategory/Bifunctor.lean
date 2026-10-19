@@ -10,7 +10,6 @@ public import Mathlib.Algebra.Homology.Single
 public import TauCeti.Algebra.Homology.Bifunctor.Associator
 public import TauCeti.Algebra.Homology.Bifunctor.Homotopy
 public import TauCeti.Algebra.Homology.Bifunctor.Support
-public import TauCeti.Algebra.Homology.ComplexShape.Signs
 
 /-!
 # Bifunctors on homotopy categories
@@ -45,7 +44,7 @@ on homotopy categories.
 
 * `CategoryTheory.Functor.map₂HomotopyCategory`: the bifunctor on homotopy categories induced by
   a bifunctor `F`.
-* `HomologicalComplex.mapBifunctorLeftUnitor`: the isomorphism `mapBifunctor X[0] K F c ≅ K`
+* `CategoryTheory.Functor.mapBifunctorLeftUnitor`: the isomorphism `mapBifunctor X[0] K F c ≅ K`
   attached to `e : F.obj X ≅ 𝟭 D`.
 * `CategoryTheory.Functor.map₂HomotopyCategoryLeftUnitor`: its descent, an isomorphism between
   `(F.map₂HomotopyCategory c c c).obj X[0]` and the identity functor of `K(D)`.
@@ -133,17 +132,15 @@ lemma map₂HomotopyCategory_map_app {K₁ L₁ : HomologicalComplex C₁ c₁} 
       (HomotopyCategory.quotient D c).map (mapBifunctorMap f₁ (𝟙 K₂) F c) :=
   (rfl)
 
-end CategoryTheory.Functor
-
-namespace HomologicalComplex
-
-section LeftUnitor
+section MapBifunctorLeftUnitor
 
 variable {C : Type u₁} {D : Type u₂} [Category.{v₁} C] [Category.{v₂} D]
   [HasZeroMorphisms C] [HasZeroObject C] [Preadditive D]
   (F : C ⥤ D ⥤ D) [F.PreservesZeroMorphisms] [∀ X, (F.obj X).PreservesZeroMorphisms]
   (X : C) (e : F.obj X ≅ 𝟭 D)
   {I : Type*} [AddMonoid I] [DecidableEq I] {c : ComplexShape I} [c.TensorSigns]
+
+open HomologicalComplex
 
 /-- The term of degree `j` of `mapBifunctor X[0] K F c` is `K.X j`, given `e : F.obj X ≅ 𝟭 D`. -/
 private def mapBifunctorLeftUnitorX (K : HomologicalComplex D c)
@@ -229,11 +226,7 @@ lemma mapBifunctorLeftUnitor_naturality {K L : HomologicalComplex D c} (f : K �
   rw [← cancel_mono (mapBifunctorLeftUnitor F X e L).inv, assoc, assoc, Iso.hom_inv_id,
     comp_id, mapBifunctorLeftUnitor_inv_naturality, Iso.hom_inv_id_assoc]
 
-end LeftUnitor
-
-end HomologicalComplex
-
-namespace CategoryTheory.Functor
+end MapBifunctorLeftUnitor
 
 section LeftUnitor
 
