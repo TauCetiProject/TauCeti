@@ -5,7 +5,6 @@ Authors: Taylor Dupuy, Thomas Tucker, Zhuoran Wang
 -/
 module
 
-public import Mathlib.RingTheory.QuasiFinite.Basic
 public import Mathlib.RingTheory.RamificationInertia.Ramification
 public import TauCeti.RingTheory.LocalRing.Localization
 
@@ -20,15 +19,13 @@ algebras (`Ideal.ramificationIdx_pos`) and Dedekind domains
 
 This file discharges both hypotheses when `S` is quasi-finite over `R` at `q`
 (`Algebra.QuasiFiniteAt R q`): `q` is then the only prime of `S` below `q` over `p`
-(`Algebra.QuasiFiniteAt.eq_of_le_of_under_eq`), so it is minimal over `p S`, and `S_q ⧸ p S_q` is
-Artinian. This covers the stalk homomorphisms of a quasi-finite morphism of schemes, which are
-neither integral nor maps of Dedekind domains in general.
+(`Algebra.QuasiFiniteAt.eq_of_le_of_under_eq`), so it is minimal over `p S`. The local fibre
+`S_q ⧸ p S_q` is Artinian by `Ideal.isArtinianRing_quotient_of_quasiFiniteAt` from the local-ring
+localization module. This covers the stalk homomorphisms of a quasi-finite morphism of schemes,
+which are neither integral nor maps of Dedekind domains in general.
 
 ## Main results
 
-* `Ideal.isArtinianRing_quotient_of_quasiFiniteAt`: if `S` is quasi-finite over `R` at a prime `q`,
-  then `S_q ⧸ (q ∩ R) S_q` is an Artinian ring (an instance, the pointwise form of Mathlib's
-  instance for a quasi-finite algebra).
 * `Ideal.ramificationIdx_pos_of_quasiFiniteAt`: if `S` is quasi-finite over `R` at `q`, then the
   ramification index of `q` over `R` is positive.
 
@@ -46,27 +43,6 @@ public section
 namespace Ideal
 
 variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
-
-/-- If `S` is quasi-finite over `R` at a prime `q`, the quotient of `S_q` by the extension of
-`q.under R` is an Artinian ring. -/
-instance isArtinianRing_quotient_of_quasiFiniteAt (q : Ideal S) [q.IsPrime]
-    [Algebra.QuasiFiniteAt R q] :
-    IsArtinianRing (Localization.AtPrime q ⧸
-      (q.under R).map (algebraMap R (Localization.AtPrime q))) := by
-  -- `S_q` is quasi-finite over `R`, so Mathlib's instance applies to the maximal ideal `m` of
-  -- `S_q`; the localization of the local ring `S_q` at `m` is `S_q` itself
-  -- (`IsLocalRing.algEquivLocalizationAtMaximalIdeal`).
-  let Sq := Localization.AtPrime q
-  let m := IsLocalRing.maximalIdeal Sq
-  have hunder : m.under R = q.under R := by
-    rw [← Ideal.under_under (B := S), Localization.AtPrime.under_maximalIdeal]
-  have : m.LiesOver (q.under R) := ⟨hunder.symm⟩
-  let e := IsLocalRing.algEquivLocalizationAtMaximalIdeal R Sq
-  have hmap : ((q.under R).map (algebraMap R Sq)).map
-      (e.toAlgHom : Sq →+* Localization.AtPrime m) =
-      (q.under R).map (algebraMap R (Localization.AtPrime m)) := by
-    rw [Ideal.map_map, AlgHom.comp_algebraMap]
-  exact (Ideal.quotientEquiv _ _ e.toRingEquiv hmap.symm).symm.isArtinianRing
 
 /-- If `S` is quasi-finite over `R` at the prime `q`, the ramification index of `q` over `R` is
 positive. -/
