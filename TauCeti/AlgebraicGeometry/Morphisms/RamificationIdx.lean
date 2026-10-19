@@ -14,10 +14,10 @@ public import TauCeti.RingTheory.RamificationInertia.QuasiFinite
 The ramification index `ramificationIdxAt f x` of a morphism of schemes `f : X ⟶ Y` at a point
 `x` is Mathlib's ramification index `Ideal.ramificationIdx` of the maximal ideal of the local ring
 `𝒪_{X,x}` over `𝒪_{Y,f(x)}` along the stalk map, that is, the length of
-`𝒪_{X,x} ⧸ 𝔪_{f(x)} 𝒪_{X,x}` when this length is finite, and `0` when it is infinite. At a point
-of codimension one of a locally Noetherian normal scheme over such a point, both local rings are
-discrete valuation rings, and this length is the ramification index of that extension (Stacks,
-Definition 15.113.1 (09E4)); that comparison is not made in this file.
+`𝒪_{X,x} ⧸ 𝔪_{f(x)} 𝒪_{X,x}` when this length is finite, and `0` when it is infinite. When the stalk
+map is a finite injective local homomorphism of discrete valuation rings, this is the usual
+ramification index of that extension (Stacks, Definition 15.113.1 (09E4)); that comparison is not
+proved in this file.
 
 It is finite and positive at every point where `f` is quasi-finite, since the stalk map is then
 quasi-finite and `Ideal.ramificationIdx_pos_of_quasiFiniteAt` applies.
