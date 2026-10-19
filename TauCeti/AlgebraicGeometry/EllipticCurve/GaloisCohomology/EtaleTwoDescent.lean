@@ -9,27 +9,50 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Restricti
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.TwoDescent
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.XSubT
 public import TauCeti.RingTheory.AdjoinRoot.Factors
+import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.EmbeddingIndependence
 import TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.LocalCondition
+import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Extension
 
 /-!
 # The cohomological and étale-algebra `2`-descent maps
 
 This file compares the Kummer map for multiplication by two with the explicit `x - T` descent
 map into the square classes of the étale algebra of the cubic `2`-division polynomial. The
-comparison is made one irreducible factor at a time. For a factor `p`, its universal root
+comparison is first made one irreducible factor at a time. For a factor `p`, its universal root
 `θ ∈ K[X]/(p)` gives a rational point `(θ, 0)` of order two after base change. Applying the Weil
 pairing character attached to this point to the restricted cohomological Kummer class recovers
 the `p`-component of the explicit descent map.
 
-This is the factorwise compatibility needed to assemble the explicit and cohomological
-`2`-Selmer groups. The rootwise identity is the classical calculation in Silverman X.1.4.
+The square classes of the étale algebra are the product of the square classes of its field
+factors, and the Kummer isomorphism identifies the square classes of each factor field with its
+`H¹(G, μ₂)`. Reading the factorwise maps through these identifications assembles them into one
+cohomological `2`-descent map
+
+```text
+H¹(G_K, E[2]) ⟶ (K[X] ⧸ (f))ˣ ⧸ squares,
+```
+
+which does not depend on the embeddings of separable closures used for the restrictions. Composed
+with the Kummer map `E(K) → H¹(G_K, E[2])` it is the explicit `x - T` descent map. The rootwise
+identity is the classical calculation in Silverman X.1.4.
+
+The cohomological descent map is injective. A class whose factorwise images vanish is represented
+by a cocycle `z` with `e₂(z(g), T)` trivial whenever `g` fixes `T ∈ E(Kˢ)[2]`, since the fixer of
+a point `(x, 0)` of order two is the absolute Galois group of the factor field embedded by
+`θ ↦ x`. Such a cocycle is a coboundary, because `E(Kˢ)[2]` is a Klein four-group on which two
+distinct nonzero points pair to `-1`. Consequently a class lies in the image of the Kummer map
+exactly when its cohomological descent image lies in the image of the explicit `x - T` map.
 
 ## Main definitions
 
 * `TauCeti.TwoDescent.explicitFactor`: projection of an étale-algebra square class to the power
   classes of one irreducible factor.
+* `TauCeti.TwoDescent.explicitFactorEquiv`: the square classes of the étale algebra as the product
+  of the square classes of its field factors.
 * `TauCeti.TwoDescent.factorCohomologicalMap`: restriction to the factor field followed by the
   Weil-pairing character attached to its universal root.
+* `TauCeti.TwoDescent.cohomologicalMap`: the cohomological `2`-descent map
+  `H¹(G_K, E[2]) → (K[X] ⧸ (f))ˣ ⧸ squares`.
 
 ## Main results
 
@@ -37,6 +60,17 @@ This is the factorwise compatibility needed to assemble the explicit and cohomol
   power class of the rootwise descent unit.
 * `TauCeti.TwoDescent.factorCohomologicalMap_kummerMap`: the factorwise cohomological image of
   the Kummer class of `P` is the Kummer class of that same rootwise descent unit.
+* `TauCeti.TwoDescent.kummerIso_explicitFactor_cohomologicalMap`: the factor components of the
+  cohomological descent map, for any embeddings of separable closures.
+* `TauCeti.TwoDescent.cohomologicalMap_eq_one_iff`: a class lies in the kernel of the
+  cohomological descent map exactly when all of its factorwise images vanish.
+* `TauCeti.TwoDescent.cohomologicalMap_kummerMap`: on the Kummer class of `P`, the cohomological
+  descent map is the explicit descent map `μ₀(P)`.
+* `TauCeti.TwoDescent.eq_zero_of_forall_factorCohomologicalMap_eq_zero`: a class of
+  `H¹(G_K, E[2])` whose factorwise images all vanish is zero.
+* `TauCeti.TwoDescent.cohomologicalMap_injective`: the cohomological descent map is injective.
+* `TauCeti.TwoDescent.cohomologicalMap_mem_range_μ_iff`: the cohomological descent image of a
+  class lies in the explicit descent image exactly when the class is a Kummer class.
 
 ## References
 
@@ -94,14 +128,26 @@ theorem factorRoot_polynomialY (p : W.toAffine.f.Factors) :
     WeierstrassCurve.a₁_of_isCharNeTwoNF, WeierstrassCurve.a₃_of_isCharNeTwoNF]
   ring
 
-/-- Projection of an étale-algebra square class to the power classes of one irreducible factor. -/
+/-- The square classes of the étale algebra are the product of the square classes of its field
+factors. -/
+noncomputable def explicitFactorEquiv :
+    W.toAffine.M ≃* ((p : W.toAffine.f.Factors) → powerClassQuotient (𝕃 p)ˣ 2) :=
+  (AdjoinRoot.modPowEquivPiFactors W.toAffine.f_ne_zero W.toAffine.squarefree_f 2).trans
+    (MulEquiv.piCongrRight fun p ↦ QuotientGroup.quotientMulEquivOfEq
+      (powerSubgroup_eq_range_powMonoidHom (𝕃 p)ˣ 2).symm)
+
+/-- Projection of an étale-algebra square class to the power classes of one irreducible factor:
+the component at `p` of `explicitFactorEquiv`. -/
 noncomputable def explicitFactor (p : W.toAffine.f.Factors) :
     W.toAffine.M →* powerClassQuotient (𝕃 p)ˣ 2 :=
-  (QuotientGroup.quotientMulEquivOfEq
-      (powerSubgroup_eq_range_powMonoidHom (𝕃 p)ˣ 2).symm).toMonoidHom.comp
-    ((Pi.evalMonoidHom _ p).comp
-      (AdjoinRoot.modPowEquivPiFactors W.toAffine.f_ne_zero
-        W.toAffine.squarefree_f 2).toMonoidHom)
+  (Pi.evalMonoidHom _ p).comp (explicitFactorEquiv W).toMonoidHom
+
+omit [DecidableEq K] in
+/-- The components of `explicitFactorEquiv` are the projections `explicitFactor`. -/
+@[simp]
+theorem explicitFactorEquiv_apply (m : W.toAffine.M) (p : W.toAffine.f.Factors) :
+    explicitFactorEquiv W m p = explicitFactor W p m :=
+  (rfl)
 
 omit [DecidableEq K] in
 /-- `explicitFactor` is the corresponding component of `modPowEquivPiFactors`. -/
@@ -276,6 +322,321 @@ theorem factorCohomologicalMap_kummerMap (p : W.toAffine.f.Factors)
     (W.baseChange (𝕃 p)).explicitCoeff1_twoTorsionCharacter_kummerMap
       (factorRoot_nonsingular W p) (factorRoot_polynomialY W p) h2p
       (W.toAffine.pointMap (𝕃 p) P)
+
+omit [DecidableEq K] in
+/-- `factorCohomologicalMap` is independent of the embedding of separable closures. -/
+theorem factorCohomologicalMap_eq_factorCohomologicalMap (p : W.toAffine.f.Factors)
+    (τ τ' : SeparableClosure K →ₐ[K] SeparableClosure (𝕃 p)) (h2 : IsUnit ((2 : ℕ) : K)) :
+    factorCohomologicalMap W p τ h2 = factorCohomologicalMap W p τ' h2 := by
+  unfold factorCohomologicalMap
+  rw [W.torsionRes_eq_torsionRes τ τ' 2]
+
+/-! ### The assembled cohomological descent map -/
+
+/-- **The cohomological `2`-descent map** `H¹(G_K, E[2]) → (K[X] ⧸ (f))ˣ ⧸ squares`, where `f`
+is the `2`-division cubic. Its component at an irreducible factor `p` of `f` is
+`factorCohomologicalMap`, read in the square classes of `K[X] ⧸ (p)` through the Kummer
+isomorphism. The restriction to `K[X] ⧸ (p)` uses a fixed embedding of separable closures;
+`TauCeti.TwoDescent.kummerIso_explicitFactor_cohomologicalMap` holds for every embedding. -/
+noncomputable def cohomologicalMap (h2 : IsUnit ((2 : ℕ) : K)) :
+    Multiplicative (H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff 2)) →* W.toAffine.M :=
+  (explicitFactorEquiv W).symm.toMonoidHom.comp <| MonoidHom.pi fun p ↦
+    (kummerIso (𝕃 p) 2 (by simpa only [map_natCast] using h2.map (ι p))).symm.toMonoidHom.comp
+      (factorCohomologicalMap W p IsSepClosed.lift h2).toMultiplicative
+
+omit [DecidableEq K] in
+/-- The component at `p` of the cohomological descent map, for the fixed embedding of separable
+closures used to define it. -/
+private theorem explicitFactor_cohomologicalMap (p : W.toAffine.f.Factors)
+    (h2 : IsUnit ((2 : ℕ) : K)) (h2p : IsUnit ((2 : ℕ) : 𝕃 p))
+    (x : Multiplicative (H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff 2))) :
+    explicitFactor W p (cohomologicalMap W h2 x) =
+      (kummerIso (𝕃 p) 2 h2p).symm
+        (.ofAdd (factorCohomologicalMap W p IsSepClosed.lift h2 x.toAdd)) :=
+  -- `cohomologicalMap` is by definition `(explicitFactorEquiv W).symm` of the family of components
+  congrFun ((explicitFactorEquiv W).apply_symm_apply _) p
+
+omit [DecidableEq K] in
+/-- **The components of the cohomological descent map.** Through the Kummer isomorphism, the
+component at `p` of the image of a class `c` is `factorCohomologicalMap W p τ h2 c`, for every
+embedding `τ` of separable closures. -/
+theorem kummerIso_explicitFactor_cohomologicalMap (p : W.toAffine.f.Factors)
+    (τ : SeparableClosure K →ₐ[K] SeparableClosure (𝕃 p)) (h2 : IsUnit ((2 : ℕ) : K))
+    (h2p : IsUnit ((2 : ℕ) : 𝕃 p)) (c : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff 2)) :
+    kummerIso (𝕃 p) 2 h2p (explicitFactor W p (cohomologicalMap W h2 (.ofAdd c))) =
+      .ofAdd (factorCohomologicalMap W p τ h2 c) := by
+  simp only [explicitFactor_cohomologicalMap W p h2 h2p, MulEquiv.apply_symm_apply, toAdd_ofAdd,
+    factorCohomologicalMap_eq_factorCohomologicalMap W p IsSepClosed.lift τ]
+
+omit [DecidableEq K] in
+/-- **The kernel of the cohomological descent map**: a class is sent to the trivial square class
+exactly when its restriction to every factor field is killed by the universal-root character. -/
+theorem cohomologicalMap_eq_one_iff
+    (τ : (p : W.toAffine.f.Factors) → SeparableClosure K →ₐ[K] SeparableClosure (𝕃 p))
+    (h2 : IsUnit ((2 : ℕ) : K)) (c : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff 2)) :
+    cohomologicalMap W h2 (.ofAdd c) = 1 ↔ ∀ p, factorCohomologicalMap W p (τ p) h2 c = 0 := by
+  refine ⟨fun h p ↦ ?_, fun h ↦ (explicitFactorEquiv W).injective (funext fun p ↦ ?_)⟩
+  all_goals have h2p : IsUnit ((2 : ℕ) : 𝕃 p) := by simpa only [map_natCast] using h2.map (ι p)
+  · have hp := kummerIso_explicitFactor_cohomologicalMap W p (τ p) h2 h2p c
+    simpa only [h, map_one, ofAdd_eq_one] using hp.symm
+  · simp only [explicitFactorEquiv_apply, map_one]
+    apply (kummerIso (𝕃 p) 2 h2p).injective
+    simp only [kummerIso_explicitFactor_cohomologicalMap W p (τ p) h2 h2p c, h p, map_one,
+      ofAdd_zero]
+
+/-- **The cohomological descent map extends the explicit one**: on the Kummer class of a rational
+point `P`, the cohomological `2`-descent map is the `x - T` descent map `μ₀(P)` into the square
+classes of the étale algebra of the `2`-division cubic (Silverman X.1.4). -/
+theorem cohomologicalMap_kummerMap (h2 : IsUnit ((2 : ℕ) : K)) (P : W.toAffine.Point) :
+    cohomologicalMap W h2 (.ofAdd (W.kummerMap 2 h2 P)) = W.toAffine.μ₀ P := by
+  -- `explicitFactor_μ₀_eq_twoDescentUnit` is stated for the classical decidable equality
+  obtain rfl : ‹DecidableEq K› = Classical.decEq K := Subsingleton.elim _ _
+  refine (explicitFactorEquiv W).injective (funext fun p ↦ ?_)
+  simp only [explicitFactorEquiv_apply]
+  have h2p : IsUnit ((2 : ℕ) : 𝕃 p) := by simpa only [map_natCast] using h2.map (ι p)
+  apply (kummerIso (𝕃 p) 2 h2p).injective
+  simp only [kummerIso_explicitFactor_cohomologicalMap W p IsSepClosed.lift h2 h2p,
+    factorCohomologicalMap_kummerMap, rootwiseKummerClass_def W p h2 h2p, ofAdd_toAdd,
+    explicitFactor_μ₀_eq_twoDescentUnit, kummerIso_apply, kummerClassMap_powerClassHom]
+
+/-- The homomorphism form of `TauCeti.TwoDescent.cohomologicalMap_kummerMap`: the cohomological
+descent map composed with the Kummer map is the explicit descent homomorphism `μ`. -/
+theorem cohomologicalMap_comp_kummerMap (h2 : IsUnit ((2 : ℕ) : K)) :
+    (cohomologicalMap W h2).comp (W.kummerMap 2 h2).toMultiplicative = W.toAffine.μ := by
+  refine MonoidHom.ext fun P ↦ ?_
+  simpa only [MonoidHom.comp_apply, AddMonoidHom.toMultiplicative_apply_apply, ofAdd_toAdd] using
+    (cohomologicalMap_kummerMap W h2 P.toAdd).trans (WeierstrassCurve.Affine.μ_apply P.toAdd).symm
+
+/-! ### Injectivity of the cohomological descent map -/
+
+omit [DecidableEq K] [W.IsElliptic] [W.toAffine.IsCharNeTwoNF] in
+/-- A class restricted along `τ` and killed by a map `χ` into coefficients with trivial action is
+killed by `χ` pointwise on the restricted cocycle. -/
+-- Stated over an arbitrary extension `L`: elaborating the same unfolding directly over a factor
+-- field `K[X] ⧸ (p)` is much slower.
+private theorem apply_torsionCoeffBaseChange_eq_zero {L : Type*} [Field L] [Algebra K L]
+    (τ : SeparableClosure K →ₐ[K] SeparableClosure L) {m : ℕ} {A : Type*} [AddCommGroup A]
+    [TopologicalSpace A] [IsTopologicalAddGroup A] [DistribMulAction (AbsoluteGaloisGroup L) A]
+    [ContinuousSMul (AbsoluteGaloisGroup L) A]
+    (htriv : ∀ (g : AbsoluteGaloisGroup L) (a : A), g • a = a)
+    (χ : (W.baseChange L).TorsionCoeff m →+[AbsoluteGaloisGroup L] A) (hχ : Continuous χ)
+    {z : Z1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)}
+    (hz : explicitCoeff1 _ _ χ hχ (W.torsionRes τ m (z : H1 _ _)) = 0)
+    (h : AbsoluteGaloisGroup L) :
+    χ (W.torsionCoeffBaseChange τ m
+      ((z : AbsoluteGaloisGroup K → W.TorsionCoeff m) (absoluteGaloisGroupMap τ h))) = 0 := by
+  rw [WeierstrassCurve.torsionRes_eq_explicitMap1, explicitMap1_mk, explicitCoeff1_mk,
+    H1pi_eq_zero_iff, B1_eq_bot_of_smul_eq_self htriv, AddSubgroup.mem_bot] at hz
+  have hval := (cocyclesMap1_apply _ _ _ _ _ _ _ _ _ h).symm.trans (congrFun hz h)
+  rwa [cocyclesMap1_apply] at hval
+
+omit [DecidableEq K] [W.toAffine.IsCharNeTwoNF] in
+/-- **A cocycle into `E(Kˢ)[2]` killed on stabilizers is a coboundary.** If `z : G_K → E(Kˢ)[2]`
+is a `1`-cocycle and `e₂(z(g), T) = 0` whenever `g` fixes `T`, then `z` is a `1`-coboundary. -/
+private theorem isCoboundary₁_of_torsionCoeffWeilPairing_eq_zero
+    (h2 : IsUnit ((2 : ℕ) : K)) {z : AbsoluteGaloisGroup K → W.TorsionCoeff 2}
+    (hz : groupCohomology.IsCocycle₁ z)
+    (H : ∀ (T : W.TorsionCoeff 2) (g : AbsoluteGaloisGroup K), g • T = T →
+      W.torsionCoeffWeilPairing 2 h2 (z g) T = 0) :
+    groupCohomology.IsCoboundary₁ z := by
+  classical
+  have := Fintype.ofFinite (W.TorsionCoeff 2)
+  set e := W.torsionCoeffWeilPairing 2 h2
+  have he (g : AbsoluteGaloisGroup K) (P Q : W.TorsionCoeff 2) : e (g • P) (g • Q) = e P Q := by
+    rw [WeierstrassCurve.torsionCoeffWeilPairing_smul, mu2_smul_eq_self]
+  -- a representative `r T` of the orbit of `T`, and an element `γ T` moving it to `T`
+  let r (T : W.TorsionCoeff 2) : W.TorsionCoeff 2 :=
+    (Quotient.mk (MulAction.orbitRel (AbsoluteGaloisGroup K) _) T).out
+  have hr (g : AbsoluteGaloisGroup K) (T : W.TorsionCoeff 2) : r (g • T) = r T :=
+    congrArg Quotient.out (Quotient.sound (MulAction.orbitRel_apply.2 (MulAction.mem_orbit T g)))
+  have hγ (T : W.TorsionCoeff 2) : ∃ g : AbsoluteGaloisGroup K, g • r T = T := by
+    obtain ⟨g, hg⟩ := MulAction.mem_orbit_iff.1 (MulAction.orbitRel_apply.1
+      (Quotient.mk_out (s := MulAction.orbitRel (AbsoluteGaloisGroup K) _) T))
+    exact ⟨g⁻¹, by simp only [r, ← hg, inv_smul_smul]⟩
+  choose γ hγ using hγ
+  -- `m T = e₂(z(g), T)` for every `g` moving `r T` to `T`, as `z` is killed on the fixer of `r T`
+  let m (T : W.TorsionCoeff 2) : KummerCoeff K 2 := e (z (γ T)) T
+  have hm {g : AbsoluteGaloisGroup K} {T : W.TorsionCoeff 2} (hg : g • r T = T) :
+      e (z g) T = m T := by
+    have hfix : ((γ T)⁻¹ * g) • r T = r T := by rw [mul_smul, hg, inv_smul_eq_iff, hγ]
+    have hzg := hz (γ T) ((γ T)⁻¹ * g)
+    rw [mul_inv_cancel_left] at hzg
+    have h0 : e (γ T • z ((γ T)⁻¹ * g)) T = 0 := by
+      calc e (γ T • z ((γ T)⁻¹ * g)) T = e (γ T • z ((γ T)⁻¹ * g)) (γ T • r T) := by rw [hγ T]
+        _ = 0 := by rw [he, H _ _ hfix]
+    rw [hzg, map_add, AddMonoidHom.add_apply, h0, zero_add]
+  -- so `e₂(z(g), T) = m T - m (g⁻¹ T)`
+  have hzm (g : AbsoluteGaloisGroup K) (T : W.TorsionCoeff 2) :
+      e (z g) T = m T - m (g⁻¹ • T) := by
+    have hg : (g * γ (g⁻¹ • T)) • r T = T := by
+      rw [mul_smul, ← hr g⁻¹ T, hγ, smul_inv_smul]
+    have h := hm hg
+    rw [hz _ _, map_add, AddMonoidHom.add_apply] at h
+    rw [← h, ← smul_inv_smul g T, he, smul_inv_smul,
+      hm (by rw [hγ] : γ (g⁻¹ • T) • r (g⁻¹ • T) = g⁻¹ • T)]
+    abel
+  -- the sum `P` of the `T` with `m T ≠ 0` has `e₂(P, S) = ∑ m - m O - m S` for `S ≠ O`
+  let P : W.TorsionCoeff 2 := ∑ T, if m T = 0 then 0 else T
+  have hP {S : W.TorsionCoeff 2} (hS : S ≠ 0) : e P S = (∑ T, m T) - m 0 - m S := by
+    have hterm (T : W.TorsionCoeff 2) : e (if m T = 0 then 0 else T) S =
+        m T - (if T = 0 then m T else 0) - (if T = S then m T else 0) := by
+      by_cases hT0 : T = 0
+      · simp [hT0, Ne.symm hS]
+      by_cases hTS : T = S
+      · subst hTS
+        rcases eq_or_ne (m T) 0 with h | h <;> simp [h, hS, e]
+      simp only [hT0, hTS, ↓reduceIte, sub_zero]
+      have : Invertible (2 : K) := (by simpa using h2 : IsUnit (2 : K)).invertible
+      rcases eq_zero_or_eq_mu2NegOne (m T) with h | h
+      · simp [h]
+      · simp only [h, mu2NegOne_ne_zero, ↓reduceIte]
+        exact WeierstrassCurve.torsionCoeffWeilPairing_two_eq_mu2NegOne h2 hT0 hS hTS
+    simp only [P, map_sum, AddMonoidHom.finsetSum_apply, hterm, Finset.sum_sub_distrib,
+      Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte]
+  -- and `z` is the coboundary of `P`, by nondegeneracy of the Weil pairing
+  refine ⟨P, fun g ↦ ?_⟩
+  rw [← sub_eq_zero, ← neg_sub, neg_eq_zero]
+  refine W.torsionCoeffWeilPairing_nondegenerate 2 h2 fun S ↦ ?_
+  by_cases hS : S = 0
+  · rw [hS, map_zero]
+  have hS' : g⁻¹ • S ≠ 0 := by rwa [ne_eq, smul_eq_zero_iff_eq]
+  have hgP : e (g • P) S = e P (g⁻¹ • S) := by rw [← he g⁻¹, inv_smul_smul]
+  rw [map_sub, map_sub, AddMonoidHom.sub_apply, AddMonoidHom.sub_apply, hgP, hP hS, hP hS',
+    hzm]
+  abel
+
+omit [DecidableEq K] [W.IsElliptic] in
+open scoped Classical in
+/-- A nonzero point of `E(Kˢ)[2]` is `(x, 0)` for a root `x` of an irreducible factor of the
+`2`-division cubic. -/
+private theorem exists_factor_of_ne_zero (h2 : IsUnit ((2 : ℕ) : K)) {T : W.TorsionCoeff 2}
+    (hT : T ≠ 0) :
+    ∃ (p : W.toAffine.f.Factors) (x : SeparableClosure K) (_ : aeval x (p : K[X]) = 0)
+      (h : (W.baseChange (SeparableClosure K)).toAffine.Nonsingular x 0),
+      (T : W.PointCoeff) = W.pointCoeffEquiv (.some x 0 h) := by
+  obtain ⟨Q, hQ⟩ := W.pointCoeffEquiv.surjective T
+  rcases Q with _ | ⟨x, y, h⟩
+  · exact absurd (Subtype.ext (hQ.symm.trans (map_zero _))) hT
+  -- `2 (x, y) = O` forces `ψ₂(x, y) = 2y = 0`
+  have h2T := AddSubgroup.torsionBy.nsmul_iff.1 T.2
+  rw [← hQ, ← map_nsmul, two_nsmul, AddEquiv.map_eq_zero_iff,
+    WeierstrassCurve.Affine.Point.some_add_self_eq_zero_iff h,
+    WeierstrassCurve.Affine.evalEval_polynomialY, WeierstrassCurve.a₁_of_isCharNeTwoNF,
+    WeierstrassCurve.a₃_of_isCharNeTwoNF, zero_mul, add_zero, add_zero] at h2T
+  obtain rfl : y = 0 := (mul_eq_zero.1 h2T).resolve_left (by
+    simpa using h2.natCast_ne_zero_of_algebra (L := SeparableClosure K))
+  -- so `x` is a root of `f`, hence of one of its irreducible factors
+  have hfx := (WeierstrassCurve.Affine.equation_iff_eval_f_eq_sq _ x 0).1 h.1
+  rw [WeierstrassCurve.Affine.baseChange_f, zero_pow two_ne_zero] at hfx
+  obtain ⟨p, hp⟩ := Polynomial.Factors.exists_dvd_map (algebraMap K (SeparableClosure K))
+    W.toAffine.f_ne_zero (prime_X_sub_C x) (dvd_iff_isRoot.2 hfx)
+  refine ⟨p, x, ?_, h, hQ.symm⟩
+  rw [aeval_def, ← eval_map]
+  exact dvd_iff_isRoot.1 hp
+
+omit [DecidableEq K] in
+/-- If every factorwise image of the class of a cocycle `z` vanishes, then `e₂(z(g), T)` is
+trivial whenever `g` fixes `T ∈ E(Kˢ)[2]`. -/
+private theorem torsionCoeffWeilPairing_eq_zero_of_smul_eq (h2 : IsUnit ((2 : ℕ) : K))
+    {z : Z1 (AbsoluteGaloisGroup K) (W.TorsionCoeff 2)}
+    (hz : ∀ p τ, factorCohomologicalMap W p τ h2 (z : H1 _ _) = 0)
+    {T : W.TorsionCoeff 2} {g : AbsoluteGaloisGroup K} (hg : g • T = T) :
+    W.torsionCoeffWeilPairing 2 h2 ((z : AbsoluteGaloisGroup K → W.TorsionCoeff 2) g) T = 0 := by
+  by_cases hT : T = 0
+  · rw [hT, map_zero]
+  obtain ⟨p, x, hx, hxT, hT'⟩ := exists_factor_of_ne_zero W h2 hT
+  -- the embedding `σ : K[X] ⧸ (p) → Kˢ` with `θ ↦ x`, and the induced identification `τ`
+  let σ : 𝕃 p →ₐ[K] SeparableClosure K := AdjoinRoot.liftAlgHom _ (Algebra.ofId K _) x hx
+  have hσ : σ (θ p) = x := AdjoinRoot.liftAlgHom_root _ _ _ _
+  let τ := separableClosureAlgEquiv K (𝕃 p) σ
+  -- `g` fixes `x`, hence the image of `σ`
+  have hgx : g x = x := by
+    classical
+    have h := congrArg Subtype.val hg
+    rw [WeierstrassCurve.coe_smul_torsionCoeff, hT', WeierstrassCurve.smul_pointCoeffEquiv,
+      WeierstrassCurve.Affine.Point.map_some] at h
+    simpa using h
+  have hgσ : g ∈ σ.fieldRange.fixingSubgroup := by
+    have hcomp : (g : SeparableClosure K →ₐ[K] SeparableClosure K).comp σ = σ :=
+      AdjoinRoot.algHom_ext (by rw [AlgHom.comp_apply, hσ, AlgEquiv.coe_toAlgHom, hgx])
+    rw [IntermediateField.mem_fixingSubgroup_iff]
+    rintro _ ⟨a, rfl⟩
+    exact AlgHom.congr_fun hcomp a
+  -- the element `h` of `G_{𝕃 p}` restricting to `g`
+  let h : AbsoluteGaloisGroup (𝕃 p) :=
+    (absoluteGaloisGroupEquivFixingSubgroup K (𝕃 p) σ).symm ⟨g, hgσ⟩
+  have hh : absoluteGaloisGroupMap (τ : SeparableClosure K →ₐ[K] SeparableClosure (𝕃 p)) h =
+      g := by
+    rw [absoluteGaloisGroupMap_separableClosureAlgEquiv, ContinuousMonoidHom.comp_toFun,
+      ContinuousMonoidHom.coe_coe, ContinuousMonoidHom.subgroupSubtype_apply,
+      ContinuousMulEquiv.apply_symm_apply]
+  -- the universal-root character kills `τ (z g)`, so `τ (z g)` is `O` or `(θ, 0)`
+  have hzp := hz p τ
+  rw [factorCohomologicalMap_apply] at hzp
+  have hval := apply_torsionCoeffBaseChange_eq_zero W _ (mu2_smul_eq_self _)
+    (factorTorsionCharacter W p h2) continuous_of_discreteTopology hzp h
+  rw [hh, factorTorsionCharacter_def W p h2 (by simpa only [map_natCast] using h2.map (ι p)),
+    WeierstrassCurve.twoTorsionCharacter_eq_zero_iff,
+    WeierstrassCurve.coe_torsionCoeffBaseChange] at hval
+  -- `τ` carries `T = (x, 0)` to `(θ, 0)`
+  have hτT : W.pointCoeffBaseChange τ (T : W.PointCoeff) =
+      (W.baseChange (𝕃 p)).basePointCoeff (.some (θ p) 0 (factorRoot_nonsingular W p)) := by
+    have hτx : τ x = algebraMap (𝕃 p) (SeparableClosure (𝕃 p)) (θ p) := by
+      rw [← hσ]
+      exact (separableClosureAlgEquiv_apply K (𝕃 p) σ _).trans
+        (separableClosureRingEquiv_symm_apply_eq_algebraMap K (𝕃 p) σ (θ p))
+    rw [hT', WeierstrassCurve.pointCoeffBaseChange_pointCoeffEquiv_some,
+      WeierstrassCurve.basePointCoeff_some]
+    simp only [AlgEquiv.coe_toAlgHom, hτx, map_zero]
+  -- hence `z g` is `O` or `T`, as `τ` is injective on points
+  have hinj := (W.pointCoeffBaseChange_bijective
+    (τ := (τ : SeparableClosure K →ₐ[K] SeparableClosure (𝕃 p))) τ.bijective).1
+  rcases hval with h0 | h1
+  · have hz0 : ((z : AbsoluteGaloisGroup K → W.TorsionCoeff 2) g : W.PointCoeff) =
+        ((0 : W.TorsionCoeff 2) : W.PointCoeff) :=
+      hinj (by rw [h0, ZeroMemClass.coe_zero, map_zero])
+    rw [Subtype.ext hz0, map_zero, AddMonoidHom.zero_apply]
+  · rw [Subtype.ext (hinj (h1.trans hτT.symm)), WeierstrassCurve.torsionCoeffWeilPairing_self]
+
+omit [DecidableEq K] in
+/-- **A class of `H¹(G_K, E[2])` is detected by its factorwise images** (Silverman X.1.4): if its
+restriction to every factor field `K[X] ⧸ (p)` of the `2`-division cubic is killed by the
+universal-root character, for some embeddings of separable closures, the class is zero. -/
+theorem eq_zero_of_forall_factorCohomologicalMap_eq_zero (h2 : IsUnit ((2 : ℕ) : K))
+    (τ : (p : W.toAffine.f.Factors) → SeparableClosure K →ₐ[K] SeparableClosure (𝕃 p))
+    {c : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff 2)}
+    (hc : ∀ p, factorCohomologicalMap W p (τ p) h2 c = 0) : c = 0 := by
+  -- the factorwise images vanish along every embedding of separable closures
+  have hc' (p : W.toAffine.f.Factors) (τ' : SeparableClosure K →ₐ[K] SeparableClosure (𝕃 p)) :
+      factorCohomologicalMap W p τ' h2 c = 0 :=
+    (DFunLike.congr_fun (factorCohomologicalMap_eq_factorCohomologicalMap W p τ' (τ p) h2) c).trans
+      (hc p)
+  induction c using QuotientAddGroup.induction_on with
+  | _ z =>
+  rw [H1pi_eq_zero_iff, mem_B1_iff]
+  exact isCoboundary₁_of_torsionCoeffWeilPairing_eq_zero W h2 (mem_Z1_iff.1 z.2).2
+    fun _ _ hg ↦ torsionCoeffWeilPairing_eq_zero_of_smul_eq W h2 hc' hg
+
+omit [DecidableEq K] in
+/-- **The cohomological `2`-descent map is injective** (Silverman X.1.4):
+`H¹(G_K, E[2]) → (K[X] ⧸ (f))ˣ ⧸ squares` embeds the Galois cohomology of `E[2]` into the square
+classes of the étale algebra of the `2`-division cubic `f`. -/
+theorem cohomologicalMap_injective (h2 : IsUnit ((2 : ℕ) : K)) :
+    Function.Injective (cohomologicalMap W h2) := by
+  refine (injective_iff_map_eq_one _).2 fun c hc ↦ Multiplicative.toAdd.injective ?_
+  exact eq_zero_of_forall_factorCohomologicalMap_eq_zero W h2 (fun _ ↦ IsSepClosed.lift)
+    ((cohomologicalMap_eq_one_iff W _ h2 c.toAdd).1 hc)
+
+/-- **The cohomological and explicit local conditions agree.** The image of a cohomology class
+under the cohomological `2`-descent map lies in the image of the explicit `x - T` descent map if
+and only if the class itself lies in the image of the cohomological Kummer map. -/
+theorem cohomologicalMap_mem_range_μ_iff (h2 : IsUnit ((2 : ℕ) : K))
+    {c : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff 2)} :
+    cohomologicalMap W h2 (.ofAdd c) ∈ (WeierstrassCurve.Affine.μ (W := W.toAffine)).range ↔
+      c ∈ (W.kummerMap 2 h2).range := by
+  rw [← cohomologicalMap_comp_kummerMap W h2, MonoidHom.range_comp,
+    Subgroup.mem_map_iff_mem (cohomologicalMap_injective W h2),
+    MonoidHom.coe_toMultiplicative_range, Multiplicative.mem_toSubgroup, toAdd_ofAdd]
 
 end TwoDescent
 

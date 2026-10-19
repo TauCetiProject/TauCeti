@@ -334,7 +334,7 @@ variable {K : Type*} [CommRing K] [Nontrivial K] (W : Affine K)
 
 lemma ringChar_ne_two [W.IsElliptic] [W.IsCharNeTwoNF] : ringChar K ≠ 2 := by
   have h := W.isUnit_Δ.ne_zero
-  contrapose! h
+  contrapose h
   have h2 : (2 : K) = 0 := by
     have := ringChar.Nat.cast_ringChar (R := K)
     rw [h] at this

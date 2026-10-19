@@ -55,7 +55,9 @@ jobs:
 
       - name: Infrastructure policy unit tests
         run: |
+          python3 scripts/test_cancel_bors_candidate.py
           PYTHONPATH=scripts python3 scripts/test_ci_graphs.py
+          python3 -m unittest scripts/test_ci_live_summary.py
           PYTHONPATH=scripts python3 scripts/test_loc_graph.py
           PYTHONPATH=scripts python3 scripts/test_roadmap_completion.py
           PYTHONPATH=scripts python3 scripts/test_loc_roadmap_graph.py
@@ -82,6 +84,7 @@ jobs:
           python3 scripts/test_ci_host_resources.py
           python3 scripts/test_web_pins.py
           python3 scripts/test_attest_pr_config.py
+          python3 scripts/test_prepare_pr_integration.py
           python3 scripts/test_profile_workflow.py
           python3 scripts/test_lake_cache_probe.py
           python3 scripts/test_lake_cache_get.py

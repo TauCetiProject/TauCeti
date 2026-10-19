@@ -91,26 +91,6 @@ variable {K : Type} [Field K] [NumberField K]
 
 local notation "Ω" => FiniteGaloisIntermediateField K (SeparableClosure K)
 
-/-- The coordinate at `v` of an idele of `E`, along a suitable embedding of separable closures, is
-its component at a place `w` of `E` above `v`. -/
-private theorem exists_ideleCoeffComponent_ideleCoeffOf_eq {E : Ω} {v : HeightOneSpectrum (𝓞 K)}
-    (w : HeightOneSpectrum (𝓞 E)) [w.asIdeal.LiesOver v.asIdeal] (a : IdeleGroup (𝓞 E) E) :
-    ∃ (τ' : w.adicCompletion E →ₐ[v.adicCompletion K] SeparableClosure (v.adicCompletion K))
-      (τ : SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K)),
-      (ideleCoeffComponent τ (ideleCoeffOf K E (.ofMul a))).toMul =
-        Units.map (τ' : w.adicCompletion E →* _) (w.ideleFiniteCoord a) := by
-  let τ' : w.adicCompletion E →ₐ[v.adicCompletion K] SeparableClosure (v.adicCompletion K) :=
-    IsSepClosed.lift
-  let φ : E →ₐ[K] SeparableClosure (v.adicCompletion K) :=
-    (τ'.restrictScalars K).comp (IsScalarTower.toAlgHom K E (w.adicCompletion E))
-  obtain ⟨τ, hτ⟩ := IsSepClosed.surjective_domRestrict_of_isSeparable (K := K)
-    E.toIntermediateField (E := SeparableClosure K) (M := SeparableClosure (v.adicCompletion K)) φ
-  have hτ' (x : E) : τ x = τ' (algebraMap E (w.adicCompletion E) x) :=
-    congrArg (fun φ : E →ₐ[K] _ ↦ φ x) hτ
-  refine ⟨τ', τ, ?_⟩
-  have h := @toMul_ideleCoeffComponent_ideleCoeffOf_eq_map_ideleFiniteCoord _ _ _ v E w _ τ' τ
-  exact h hτ' a
-
 /-- An idele of a finite Galois subextension `E` with `E = K` is a `G_K`-invariant idele of
 `Kˢ`. -/
 private def baseIdele {E : Ω} (hE : E.toIntermediateField = ⊥) (a : IdeleGroup (𝓞 E) E) :
@@ -145,7 +125,10 @@ private theorem exists_ideleCoeffComponent_placeIdele {E : Ω} {v : HeightOneSpe
     ∃ τ : SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K),
       ideleCoeffComponent τ (ideleCoeffOf K E (.ofMul (placeIdele w π))) =
         (baseUnitsEquivInvariants _ (.ofMul π) : UnitsCoeff _) := by
-  obtain ⟨τ', τ, h⟩ := exists_ideleCoeffComponent_ideleCoeffOf_eq (v := v) w (placeIdele w π)
+  obtain ⟨τ', τ, h⟩ :=
+    exists_ideleCoeffComponent_ideleCoeffOfIntermediateField_eq (v := v) w
+  have h := h (placeIdele w π)
+  simp only [ideleCoeffOfIntermediateField_coe] at h
   have h2 := ideleFiniteCoord_placeIdele_self w π
   -- Term-mode `trans` chains: rewriting the coordinates with `rw` is far slower.
   exact ⟨τ, Additive.toMul.injective (h.trans ((congrArg (Units.map (τ' : w.adicCompletion E →*
@@ -160,8 +143,10 @@ private theorem exists_ideleCoeffComponent_placeIdele_eq_zero {E : Ω}
     ∃ τ : SeparableClosure K →ₐ[K] SeparableClosure (v'.adicCompletion K),
       ideleCoeffComponent τ (ideleCoeffOf K E (.ofMul (placeIdele w π))) = 0 := by
   obtain ⟨w', rfl⟩ := HeightOneSpectrum.under_surjective (𝓞 K) (𝓞 E) v'
-  obtain ⟨τ', τ, h⟩ := exists_ideleCoeffComponent_ideleCoeffOf_eq (v := w'.under (𝓞 K)) w'
-    (placeIdele w π)
+  obtain ⟨τ', τ, h⟩ := exists_ideleCoeffComponent_ideleCoeffOfIntermediateField_eq
+    (v := w'.under (𝓞 K)) w'
+  have h := h (placeIdele w π)
+  simp only [ideleCoeffOfIntermediateField_coe] at h
   have hw : w' ≠ w := by
     rintro rfl
     exact hv (HeightOneSpectrum.ext (Ideal.LiesOver.over (P := w'.asIdeal)).symm)
@@ -176,8 +161,9 @@ private theorem ideleCoeffInfiniteComponent_placeIdele {E : Ω} {v : HeightOneSp
     ideleCoeffInfiniteComponent τ (ideleCoeffOf K E (.ofMul (placeIdele w π))) = 0 := by
   -- The infinite part of `IdeleGroup.ofAdicCompletion` is `1` by definition.
   have h1 : ((placeIdele w π : IdeleGroup (𝓞 E) E) : AdeleRing (𝓞 E) E).1 = 1 := rfl
-  refine Additive.toMul.injective (Units.ext ((toMul_ideleCoeffInfiniteComponent_ideleCoeffOf τ E
-    _).trans ?_))
+  have hc := toMul_ideleCoeffInfiniteComponent_ideleCoeffOfIntermediateField τ E (placeIdele w π)
+  simp only [ideleCoeffOfIntermediateField_coe] at hc
+  refine Additive.toMul.injective (Units.ext (hc.trans ?_))
   simp only [h1, map_one, toMul_zero, Units.val_one]
 
 /-- **A carry class of an idele concentrated at a finite place is supported there**: for an idele
@@ -259,7 +245,7 @@ private theorem exists_sumLocalInv_ideleLocalization_eq_aux {E : Ω}
       hζ.pow_eq_one, one_mul]
   have hmem : τ ζ ∈ Ev := rootSet_subset_unramifiedExtension _ _ n <| by
     rw [Polynomial.mem_rootSet]
-    refine ⟨FiniteField.X_pow_card_pow_sub_X_ne_zero _ hn hq, ?_⟩
+    refine ⟨Polynomial.X_pow_sub_X_ne_zero (Nat.one_lt_pow hn hq), ?_⟩
     simp [hτζ]
   let ζv : Ev := ⟨τ ζ, hmem⟩
   have hζv : IsPrimitiveRoot ζv (Nat.card 𝓀[v.adicCompletion K] ^ n - 1) :=

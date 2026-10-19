@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Matrix.Basis
 public import Mathlib.LinearAlgebra.Matrix.Trace
 public import TauCeti.RingTheory.CyclicCohomology.Cohomology
+public import TauCeti.RingTheory.CyclicCohomology.ConnesOperator
 import TauCeti.Data.Fin.Basic
 
 /-!
@@ -15,8 +16,10 @@ import TauCeti.Data.Fin.Basic
 
 The generalized matrix trace extends a scalar cochain to matrices by summing over closed
 paths of matrix indices. This construction is multilinear, preserves signed cyclicity,
-and recovers the original cochain on a single diagonal corner. It is the cochain-level
-input to matrix Morita invariance and pairings with idempotents and invertibles.
+and recovers the original cochain on a single diagonal corner. Matrix extension commutes
+with cyclic rotation, the cyclic norm, insertion of the unit, and Connes' operator `B`.
+It is the cochain-level input to matrix Morita invariance and pairings with idempotents and
+invertibles.
 
 No multiplication on the coefficient module is needed. In degree zero the construction
 is ordinary matrix trace followed by the original linear functional.
@@ -34,7 +37,7 @@ The construction uses `MultilinearMap.compLinearMapₗ` and `Matrix.entryLinearM
 ## Main definitions
 
 * `TauCeti.matrixCochainExtension`: the matrix extension `φ ↦ φ#Tr`.
-* `TauCeti.cyclicMatrixCochainExtension`: its restriction to cyclic cochains.
+* `TauCeti.matrixCyclicCochainExtension`: its restriction to cyclic cochains.
 * `TauCeti.cyclicCohomology.matrixExtension`: the induced map on cyclic cohomology.
 
 ## Main results
@@ -123,6 +126,38 @@ theorem matrixCochainExtension_cyclic (ι : Type*) [Fintype ι] (n : ℕ)
   rw [matrixCochainExtension_rotate, matrixCochainExtension_apply_eq_sum_pathEntries]
   simp only [hφ, Finset.smul_sum]
 
+/-- Matrix extension sends cyclic cochains to cyclic cochains. -/
+theorem matrixCochainExtension_mem_cyclicCochains
+    {R : Type*} [CommSemiring R] {A M : Type*} [AddCommMonoid A] [Module R A]
+    [AddCommGroup M] [Module R M] [SMulCommClass R R M]
+    (ι : Type*) [Fintype ι] (n : ℕ) (φ : cyclicCochains R A M n) :
+    matrixCochainExtension ι n φ.1 ∈ cyclicCochains R (Matrix ι ι A) M n := by
+  rw [mem_cyclicCochains_iff]
+  intro a
+  rw [matrixCochainExtension_rotate]
+  rw [matrixCochainExtension_apply_eq_sum_pathEntries, ← Finset.sum_zsmul]
+  simp only [cyclicCochains_apply_finRotate_symm]
+
+/-- Extension of cyclic cochains to square matrix algebras. -/
+noncomputable def matrixCyclicCochainExtension
+    {R : Type*} [CommSemiring R] {A M : Type*} [AddCommMonoid A] [Module R A]
+    [AddCommGroup M] [Module R M] [SMulCommClass R R M]
+    (ι : Type*) [Fintype ι] (n : ℕ) :
+    cyclicCochains R A M n →ₗ[R] cyclicCochains R (Matrix ι ι A) M n :=
+  ((matrixCochainExtension ι n).domRestrict (cyclicCochains R A M n)).codRestrict
+    (cyclicCochains R (Matrix ι ι A) M n)
+    (matrixCochainExtension_mem_cyclicCochains ι n)
+
+/-- The underlying cochain of a matrix-extended cyclic cochain is its generalized matrix trace. -/
+@[simp]
+theorem coe_matrixCyclicCochainExtension_apply
+    {R : Type*} [CommSemiring R] {A M : Type*} [AddCommMonoid A] [Module R A]
+    [AddCommGroup M] [Module R M] [SMulCommClass R R M]
+    (ι : Type*) [Fintype ι] (n : ℕ) (φ : cyclicCochains R A M n) :
+    (matrixCyclicCochainExtension ι n φ :
+      MultilinearMap R (fun _ : Fin (n + 1) => Matrix ι ι A) M) =
+      matrixCochainExtension ι n φ.1 := (rfl)
+
 /-- On a one-by-one matrix algebra, matrix extension is the original cochain. -/
 @[simp] theorem matrixCochainExtension_unique (ι : Type*) [Fintype ι] [Unique ι] (n : ℕ)
     (φ : MultilinearMap R (fun _ : Fin (n + 1) => A) M)
@@ -207,6 +242,17 @@ theorem matrixCochainExtension_injective (ι : Type*) [Fintype ι] [Nonempty ι]
   ext x
   have hx := congrArg (fun f => f (fun j => Matrix.single r r (x j))) h
   simpa only [matrixCochainExtension_single] using hx
+
+/-- Matrix extension is injective on cyclic cochains for a nonempty matrix index type. -/
+theorem matrixCyclicCochainExtension_injective
+    {R : Type*} [CommSemiring R] {A M : Type*} [AddCommMonoid A] [Module R A]
+    [AddCommGroup M] [Module R M] [SMulCommClass R R M]
+    (ι : Type*) [Fintype ι] [Nonempty ι] (n : ℕ) :
+    Function.Injective (matrixCyclicCochainExtension (R := R) (A := A) (M := M) ι n) := by
+  intro φ ψ h
+  apply Subtype.ext
+  apply matrixCochainExtension_injective ι n
+  simpa only [coe_matrixCyclicCochainExtension_apply] using congrArg Subtype.val h
 
 /-- In degree zero, matrix extension is ordinary trace followed by the unary cochain. -/
 @[simp] theorem matrixCochainExtension_zero_eq_trace (ι : Type*) [Fintype ι]
@@ -344,35 +390,6 @@ theorem matrixCochainExtension_hochschildCoboundary (ι : Type*) [Fintype ι] (n
 
 end Coboundary
 
-section Cyclic
-
-variable {R A M : Type*} [CommSemiring R] [AddCommMonoid A] [Module R A] [AddCommGroup M]
-  [Module R M] {ι : Type*} [Fintype ι] {n : ℕ}
-
-/-- Matrix extension preserves cyclic cochains. -/
-theorem matrixCochainExtension_mem_cyclicCochains
-    {φ : MultilinearMap R (fun _ : Fin (n + 1) => A) M} (hφ : φ ∈ cyclicCochains R A M n) :
-    matrixCochainExtension ι n φ ∈ cyclicCochains R (Matrix ι ι A) M n :=
-  mem_cyclicCochains_iff.2 fun a ↦ by
-    rw [matrixCochainExtension_rotate, matrixCochainExtension_apply_eq_sum_pathEntries]
-    simp only [mem_cyclicCochains_iff.1 hφ, Finset.smul_sum]
-
-variable (M ι n) in
-/-- Matrix extension `φ ↦ φ#Tr` as a linear map of cyclic cochains. -/
-noncomputable def cyclicMatrixCochainExtension :
-    cyclicCochains R A M n →ₗ[R] cyclicCochains R (Matrix ι ι A) M n :=
-  (matrixCochainExtension ι n).restrict fun _ ↦ matrixCochainExtension_mem_cyclicCochains
-
-/-- Matrix extension of cyclic cochains is matrix extension of the underlying cochains. -/
-@[simp]
-theorem coe_cyclicMatrixCochainExtension_apply (φ : cyclicCochains R A M n) :
-    (cyclicMatrixCochainExtension M ι n φ :
-        MultilinearMap R (fun _ : Fin (n + 1) => Matrix ι ι A) M) =
-      matrixCochainExtension ι n (φ : MultilinearMap R (fun _ : Fin (n + 1) => A) M) :=
-  (rfl)
-
-end Cyclic
-
 section CyclicCohomology
 
 variable {R A M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {ι : Type*} [Fintype ι]
@@ -383,24 +400,24 @@ section NonUnital
 variable [NonUnitalSemiring A] [Module R A] [IsScalarTower R A A] [SMulCommClass R A A]
 
 /-- Matrix extension of cyclic cochains commutes with the Hochschild coboundary. -/
-theorem cyclicHochschildCoboundary_cyclicMatrixCochainExtension (φ : cyclicCochains R A M n) :
-    cyclicHochschildCoboundary R (Matrix ι ι A) M n (cyclicMatrixCochainExtension M ι n φ) =
-      cyclicMatrixCochainExtension M ι (n + 1) (cyclicHochschildCoboundary R A M n φ) := by
+theorem cyclicHochschildCoboundary_matrixCyclicCochainExtension (φ : cyclicCochains R A M n) :
+    cyclicHochschildCoboundary R (Matrix ι ι A) M n (matrixCyclicCochainExtension ι n φ) =
+      matrixCyclicCochainExtension ι (n + 1) (cyclicHochschildCoboundary R A M n φ) := by
   ext : 1
   simp [matrixCochainExtension_hochschildCoboundary]
 
 /-- Matrix extension maps cyclic cocycles to cyclic cocycles. -/
-theorem cyclicMatrixCochainExtension_mem_cyclicCocycles {φ : cyclicCochains R A M n}
+theorem matrixCyclicCochainExtension_mem_cyclicCocycles {φ : cyclicCochains R A M n}
     (hφ : φ ∈ cyclicCocycles R A M n) :
-    cyclicMatrixCochainExtension M ι n φ ∈ cyclicCocycles R (Matrix ι ι A) M n := by
+    matrixCyclicCochainExtension ι n φ ∈ cyclicCocycles R (Matrix ι ι A) M n := by
   rw [mem_cyclicCocycles_iff] at hφ ⊢
-  rw [coe_cyclicMatrixCochainExtension_apply, ← matrixCochainExtension_hochschildCoboundary, hφ,
+  rw [coe_matrixCyclicCochainExtension_apply, ← matrixCochainExtension_hochschildCoboundary, hφ,
     map_zero]
 
 /-- Matrix extension maps cyclic coboundaries to cyclic coboundaries. -/
-theorem cyclicMatrixCochainExtension_mem_cyclicCoboundaries {φ : cyclicCochains R A M n}
+theorem matrixCyclicCochainExtension_mem_cyclicCoboundaries {φ : cyclicCochains R A M n}
     (hφ : φ ∈ cyclicCoboundaries R A M n) :
-    cyclicMatrixCochainExtension M ι n φ ∈ cyclicCoboundaries R (Matrix ι ι A) M n := by
+    matrixCyclicCochainExtension ι n φ ∈ cyclicCoboundaries R (Matrix ι ι A) M n := by
   cases n with
   | zero =>
     rw [cyclicCoboundaries_zero, Submodule.mem_bot] at hφ ⊢
@@ -408,7 +425,7 @@ theorem cyclicMatrixCochainExtension_mem_cyclicCoboundaries {φ : cyclicCochains
   | succ n =>
     obtain ⟨ψ, rfl⟩ := (mem_cyclicCoboundaries_succ_iff _ _ _).1 hφ
     exact (mem_cyclicCoboundaries_succ_iff _ _ _).2
-      ⟨_, cyclicHochschildCoboundary_cyclicMatrixCochainExtension ψ⟩
+      ⟨_, cyclicHochschildCoboundary_matrixCyclicCochainExtension ψ⟩
 
 end NonUnital
 
@@ -421,20 +438,104 @@ variable (M ι n) in
 cyclic cocycles. -/
 noncomputable def matrixExtension :
     cyclicCohomology R A M n →ₗ[R] cyclicCohomology R (Matrix ι ι A) M n :=
-  desc n (mk R (Matrix ι ι A) M n ∘ₗ (cyclicMatrixCochainExtension M ι n).restrict
-      fun _ ↦ cyclicMatrixCochainExtension_mem_cyclicCocycles)
-    fun _ hφ ↦ (mk_eq_zero_iff _ _ _ n _).2 (cyclicMatrixCochainExtension_mem_cyclicCoboundaries hφ)
+  desc n (mk R (Matrix ι ι A) M n ∘ₗ (matrixCyclicCochainExtension ι n).restrict
+      fun _ ↦ matrixCyclicCochainExtension_mem_cyclicCocycles)
+    fun _ hφ ↦ (mk_eq_zero_iff _ _ _ n _).2 (matrixCyclicCochainExtension_mem_cyclicCoboundaries hφ)
 
 /-- The induced map sends the class of a cyclic cocycle to the class of its matrix extension. -/
 @[simp]
 theorem matrixExtension_mk (φ : cyclicCocycles R A M n) :
     matrixExtension M ι n (mk R A M n φ) =
-      mk R (Matrix ι ι A) M n ⟨cyclicMatrixCochainExtension M ι n φ,
-        cyclicMatrixCochainExtension_mem_cyclicCocycles φ.2⟩ :=
+      mk R (Matrix ι ι A) M n ⟨matrixCyclicCochainExtension ι n φ,
+        matrixCyclicCochainExtension_mem_cyclicCocycles φ.2⟩ :=
   desc_mk _ _ _ φ
 
 end cyclicCohomology
 
 end CyclicCohomology
+
+section Differential
+
+variable {R A M : Type*} [CommSemiring R] [AddCommMonoid A] [One A] [Module R A]
+  [AddCommGroup M] [Module R M] [SMulCommClass R R M]
+
+omit [One A] in
+/-- Matrix extension commutes with the cyclic operator. -/
+theorem matrixCochainExtension_cyclicOperator (ι : Type*) [Fintype ι] (n : ℕ)
+    (φ : MultilinearMap R (fun _ : Fin (n + 1) => A) M) :
+    matrixCochainExtension (R := R) ι n (cyclicOperator R A M n φ) =
+      cyclicOperator R (Matrix ι ι A) M n
+        (matrixCochainExtension (R := R) ι n φ) := by
+  ext a
+  rw [cyclicOperator_apply, matrixCochainExtension_apply_eq_sum_pathEntries,
+    matrixCochainExtension_rotate]
+  simp only [cyclicOperator_apply, Finset.smul_sum]
+
+omit [One A] in
+private theorem matrixCochainExtension_cyclicOperator_pow (ι : Type*) [Fintype ι]
+    (n k : ℕ) (φ : MultilinearMap R (fun _ : Fin (n + 1) => A) M) :
+    matrixCochainExtension (R := R) ι n ((cyclicOperator R A M n ^ k) φ) =
+      (cyclicOperator R (Matrix ι ι A) M n ^ k)
+        (matrixCochainExtension (R := R) ι n φ) := by
+  exact (LinearMap.congr_fun (Module.End.commute_pow_left_of_commute
+    (LinearMap.ext fun ψ => (matrixCochainExtension_cyclicOperator ι n ψ).symm) k) φ).symm
+
+omit [One A] in
+/-- Matrix extension commutes with the cyclic norm. -/
+theorem matrixCochainExtension_cyclicNorm (ι : Type*) [Fintype ι] (n : ℕ)
+    (φ : MultilinearMap R (fun _ : Fin (n + 1) => A) M) :
+    matrixCochainExtension (R := R) ι n (cyclicNorm R A M n φ) =
+      cyclicNorm R (Matrix ι ι A) M n (matrixCochainExtension (R := R) ι n φ) := by
+  rw [cyclicNorm_def, cyclicNorm_def, LinearMap.sum_apply, LinearMap.sum_apply, map_sum]
+  exact Finset.sum_congr rfl fun k _ => matrixCochainExtension_cyclicOperator_pow ι n k φ
+
+/-- Matrix extension commutes with insertion of the unit in the first cochain argument. -/
+theorem matrixCochainExtension_barContraction (ι : Type*) [Fintype ι] [DecidableEq ι]
+    (n : ℕ) (φ : MultilinearMap R (fun _ : Fin (n + 2) => A) M) :
+    matrixCochainExtension (R := R) ι n (barContraction R A M n φ) =
+      barContraction R (Matrix ι ι A) M n
+        (matrixCochainExtension (R := R) ι (n + 1) φ) := by
+  classical
+  ext a
+  rw [matrixCochainExtension_apply]
+  simp_rw [barContraction_apply]
+  rw [matrixCochainExtension_apply]
+  rw [← (Fin.consEquiv (fun _ : Fin (n + 2) => ι)).sum_comp]
+  rw [Fintype.sum_prod_type, Finset.sum_comm]
+  apply Finset.sum_congr rfl
+  intro p _
+  rw [Finset.sum_eq_single (p 0)]
+  · have hindex (j : Fin (n + 1)) :
+        @Fin.cons _ (fun _ => ι) (p 0) p (finRotate (n + 2) j.succ) =
+          p (finRotate (n + 1) j) := by
+      rw [← congrFun (Fin.snoc_eq_cons_rotate p (p 0)) j.succ]
+      by_cases hj : j = Fin.last n
+      · subst j
+        simp
+      · have heq : j.succ = (finRotate (n + 1) j).castSucc := by
+          ext
+          exact (coe_finRotate_of_ne_last hj).symm
+        rw [heq, Fin.snoc_castSucc]
+    congr 1
+    funext j
+    refine Fin.cases (by simp) (fun j => ?_) j
+    simp only [Fin.cons_succ, Fin.consEquiv_apply]
+    rw [hindex]
+  · intro r _ hr
+    exact φ.map_coord_zero 0 (by simp [hr])
+  · intro h
+    exact (h (Finset.mem_univ _)).elim
+
+/-- Matrix extension commutes with Connes' operator `B`. -/
+theorem matrixCochainExtension_connesB (ι : Type*) [Fintype ι] [DecidableEq ι]
+    (n : ℕ) (φ : MultilinearMap R (fun _ : Fin (n + 2) => A) M) :
+    matrixCochainExtension (R := R) ι n (connesB R A M n φ) =
+      connesB R (Matrix ι ι A) M n
+        (matrixCochainExtension (R := R) ι (n + 1) φ) := by
+  rw [connesB_apply, connesB_apply, matrixCochainExtension_cyclicNorm,
+    matrixCochainExtension_barContraction, map_sub,
+    matrixCochainExtension_cyclicOperator]
+
+end Differential
 
 end TauCeti

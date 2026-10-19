@@ -129,6 +129,25 @@ lemma ιCompression_d (i j : ℤ) (hij : i + 1 = j) (r s : ZMod n) (hi : (i : ZM
   simp [compression, ιCompression, compressionDifferential,
     GradedObject.ιMapObjOrZero_eq _ _ _ _ hj]
 
+variable {K} in
+/-- Identifying two equal integer degrees before including them into the compression does not
+change the inclusion. -/
+@[reassoc (attr := simp)]
+lemma XIsoOfEq_hom_comp_ιCompression {i j : ℤ} (hij : i = j) (r : ZMod n)
+    (hj : (j : ZMod n) = r) :
+    (K.XIsoOfEq hij).hom ≫ ιCompression n K j r hj = ιCompression n K i r (hij ▸ hj) := by
+  subst hij
+  simp
+
+/-- Composing the inclusion of a summand with the identification of two equal residue degrees of
+the compression gives the inclusion into the other degree. -/
+@[reassoc (attr := simp)]
+lemma ιCompression_XIsoOfEq_hom (i : ℤ) {r s : ZMod n} (h : r = s) (hi : (i : ZMod n) = r) :
+    ιCompression n K i r hi ≫ ((compression n K).XIsoOfEq h).hom =
+      ιCompression n K i s (hi.trans h) := by
+  subst h
+  simp
+
 variable {K L M}
 
 /-- The morphism of compressions induced by a morphism of cochain complexes. -/
@@ -155,6 +174,12 @@ lemma compressionMap_id : compressionMap n (𝟙 K) = 𝟙 _ := by
 @[reassoc, simp]
 lemma compressionMap_comp (f : K ⟶ L) (g : L ⟶ M) :
     compressionMap n (f ≫ g) = compressionMap n f ≫ compressionMap n g := by
+  ext r i hi
+  simp
+
+variable (K L) in
+@[simp]
+lemma compressionMap_zero : compressionMap n (0 : K ⟶ L) = 0 := by
   ext r i hi
   simp
 

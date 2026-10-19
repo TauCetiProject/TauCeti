@@ -118,7 +118,7 @@ theorem evenPairing_matrixExtension_mk {ι : Type*} [Fintype ι] [DecidableEq ι
       (m ! : R)⁻¹ • matrixCochainExtension ι (2 * m)
         ((φ : cyclicCochains R A M (2 * m)) :
           MultilinearMap R (fun _ : Fin (2 * m + 1) ↦ A) M) fun _ ↦ e := by
-  rw [matrixExtension_mk, evenPairing_mk, coe_cyclicMatrixCochainExtension_apply]
+  rw [matrixExtension_mk, evenPairing_mk, coe_matrixCyclicCochainExtension_apply]
 
 end cyclicCohomology
 

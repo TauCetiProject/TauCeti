@@ -217,26 +217,13 @@ theorem not_module_finite_preprojectiveAlgebra_orientedQuiver_of_two_mul_le_sum
     (o : Orientation G) {S : Type*} [CommRing S] [LinearOrder S] [IsStrictOrderedRing S]
     {δ : V → S} (hδ0 : 0 ≤ δ) (hδ : δ ≠ 0) (hδle : ∀ i, 2 * δ i ≤ ∑ j ∈ G.neighborFinset i, δ j) :
     ¬ Module.Finite k (preprojectiveAlgebra k (OrientedQuiver G o)) := by
-  have hc (i j : V) :
-      ((Fintype.card (OrientedQuiver.vertex G o i ⟶ OrientedQuiver.vertex G o j) +
-        Fintype.card (OrientedQuiver.vertex G o j ⟶ OrientedQuiver.vertex G o i) : ℕ) : S) =
-          if G.Adj i j then 1 else 0 := by
-    rw [Fintype.card_eq_nat_card, Fintype.card_eq_nat_card,
-      OrientedQuiver.card_hom_add_card_hom G o i j]
-    split_ifs <;> simp
   set e := OrientedQuiver.vertexEquiv G o
   refine not_module_finite_preprojectiveAlgebra_of_two_mul_le_sum k (Q := OrientedQuiver G o)
     (δ := fun i => δ (e.symm i)) (fun i => hδ0 (e.symm i))
     (fun h => hδ (funext fun v => by simpa using congrFun h (e v))) fun i => ?_
   obtain ⟨i, rfl⟩ := e.surjective i
-  have hsum :
-      ∑ j ∈ G.neighborFinset i, δ j = ∑ j : V, (if G.Adj i j then (1 : S) else 0) * δ j := by
-    simp only [ite_mul, one_mul, zero_mul]
-    rw [← Finset.sum_filter]
-    exact Finset.sum_congr (by ext j; simp) fun _ _ => rfl
-  simp only [Equiv.symm_apply_apply]
-  refine (hδle i).trans_eq (hsum.trans (Fintype.sum_equiv e _ _ fun j => ?_))
-  simp only [e, OrientedQuiver.vertexEquiv_apply, OrientedQuiver.vertexEquiv_symm_vertex, hc i j]
+  simp only [e, OrientedQuiver.vertexEquiv_apply, OrientedQuiver.vertexEquiv_symm_vertex]
+  exact (hδle i).trans_eq (OrientedQuiver.sum_card_hom_add_card_hom_mul G o δ i).symm
 
 /-- **The preprojective algebra of an affine simply-laced diagram is infinite-dimensional**, for
 every orientation of a valid graphical affine diagram and over every field. The multiplicity-two
@@ -268,15 +255,8 @@ finite-dimensional `k`-vector space. -/
 theorem not_module_finite_preprojectiveAlgebra_orientedQuiver_of_not_posDef [DecidableEq V]
     [DecidableRel G.Adj] (o : Orientation G) (h : ¬ (G.graphCartanMatrix ℝ).PosDef) :
     ¬ Module.Finite k (preprojectiveAlgebra k (OrientedQuiver G o)) := by
-  obtain ⟨δ, hδ0, hδ, hMδ⟩ := Matrix.exists_nonneg_mulVec_nonpos_of_not_posDef
-    (G.isSymm_graphCartanMatrix) (fun i j hij ↦ by
-      simp only [SimpleGraph.graphCartanMatrix_apply, hij, ↓reduceIte]
-      split_ifs <;> norm_num) h
-  refine not_module_finite_preprojectiveAlgebra_orientedQuiver_of_two_mul_le_sum k o hδ0 hδ
-    fun i ↦ ?_
-  have hi := hMδ i
-  rw [Pi.zero_apply, SimpleGraph.graphCartanMatrix_mulVec_apply] at hi
-  linarith
+  obtain ⟨δ, hδ0, hδ, hδle⟩ := SimpleGraph.exists_nonneg_two_mul_le_sum_of_not_posDef h
+  exact not_module_finite_preprojectiveAlgebra_orientedQuiver_of_two_mul_le_sum k o hδ0 hδ hδle
 
 /-- **The preprojective algebra of a connected non-Dynkin graph is infinite-dimensional.** If a
 connected finite simple graph `G` is not isomorphic to the diagram of any valid Dynkin type, then

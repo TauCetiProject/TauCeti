@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DeRham.Basic
-public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth
+public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Basic
 import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
 import Mathlib.LinearAlgebra.Isomorphisms
 

@@ -11,6 +11,8 @@ public import Mathlib.NumberTheory.Padics.ProperSpace
 public import Mathlib.Topology.MetricSpace.Ultra.TotallySeparated
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 import Mathlib.Data.Finset.Max
+import Mathlib.Data.Int.Associated
+import Mathlib.Data.Nat.Factorization.Basic
 import TauCeti.LinearAlgebra.Quotient.Pi.SpanSingleton
 
 /-!
@@ -45,6 +47,8 @@ calculation for first continuous cohomology with trivial integer coefficients.
   `w i₀ = 1` at some index `i₀`.
 * `PadicInt.units_neg_one_ne_one`: `-1 ≠ 1` in `ℤ_[p]ˣ`.
 * `PadicInt.range_units_val`: the units of `ℤ_[p]` are the elements of norm `1`.
+* `Int.associated_iff_forall_associated_padicInt`: two integers have equal absolute values
+  exactly when they are associated in every `ℤ_[p]`.
 * `Padic.exists_eq_zpow_valuation_mul`: every nonzero `x : ℚ_[p]` is `p ^ v(x)` times a unit of
   `ℤ_[p]`.
 * `Padic.inv_natCast_le_norm_natCast`: the `p`-adic norm of a positive integer `m` is at least
@@ -141,6 +145,21 @@ theorem exists_apply_eq_one_and_eq_smul {ι : Type*} [Finite ι] [Nonempty ι] (
   exact ⟨i₀, v i₀, w, hw, hv⟩
 
 end PadicInt
+
+/-- Two integers are associated, that is, have equal absolute values, exactly when their images
+are associated in `ℤ_[p]` for every prime `p`. -/
+theorem Int.associated_iff_forall_associated_padicInt {a b : ℤ} :
+    Associated a b ↔ ∀ (p : ℕ) [Fact p.Prime], Associated (a : ℤ_[p]) (b : ℤ_[p]) := by
+  refine ⟨fun h p _ ↦ h.map (Int.castRingHom ℤ_[p]), fun h ↦ ?_⟩
+  have key (p k : ℕ) (hp : p.Prime) : p ^ k ∣ a.natAbs ↔ p ^ k ∣ b.natAbs := by
+    have := Fact.mk hp
+    rw [← Int.natCast_dvd, ← Int.natCast_dvd, Nat.cast_pow, ← PadicInt.pow_p_dvd_int_iff,
+      ← PadicInt.pow_p_dvd_int_iff]
+    exact (h p).dvd_iff_dvd_right
+  rw [← Int.natAbs_eq_iff_associated]
+  exact Nat.dvd_antisymm
+    ((Nat.dvd_iff_prime_pow_dvd_dvd _ _).mpr fun p k hp ↦ (key p k hp).mp)
+    ((Nat.dvd_iff_prime_pow_dvd_dvd _ _).mpr fun p k hp ↦ (key p k hp).mpr)
 
 namespace Padic
 
