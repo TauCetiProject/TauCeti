@@ -37,6 +37,8 @@ components.
   is closed under small colimits;
 * `AlgebraicGeometry.Scheme.Modules.isQuasicoherent_sigma`: a small coproduct of quasicoherent
   sheaves is quasicoherent;
+* `AlgebraicGeometry.IsAffineOpen.restrictFromSpecCompModuleSpecΓFunctorIso`: over an affine
+  open, sections are naturally global sections on the affine chart;
 * `TauCeti.AlgebraicGeometry.isColimitMapCoconeSectionsFunctor`: sections over an affine open
   preserve small colimits of quasicoherent sheaves;
 * `TauCeti.AlgebraicGeometry.toModule_sectionsFunctor_map_bijective`: the sections over an affine
@@ -140,7 +142,9 @@ variable {X : Scheme.{u}} {U : X.Opens}
 
 /-- Over an affine open `U`, the sections functor is global sections on the affine chart
 `Spec Γ(X, U) ⟶ X`, naturally in the module: the components are `fromSpecSectionsEquiv`. -/
-private def restrictFromSpecCompModuleSpecΓFunctorIso (hU : IsAffineOpen U) :
+@[expose, simps! hom_app inv_app]
+def _root_.AlgebraicGeometry.IsAffineOpen.restrictFromSpecCompModuleSpecΓFunctorIso
+    (hU : IsAffineOpen U) :
     restrictFunctor hU.fromSpec ⋙ moduleSpecΓFunctor ≅ sectionsFunctor U :=
   NatIso.ofComponents (fun M ↦ (M.fromSpecSectionsEquiv hU).toModuleIso.symm) fun {M N} f ↦ by
     ext x
@@ -157,7 +161,7 @@ def isColimitMapCoconeSectionsFunctor {K : J ⥤ X.Modules} (hK : ∀ j, (K.obj 
     {c : Cocone K} (hc : IsColimit c) (hU : IsAffineOpen U) :
     IsColimit ((sectionsFunctor U).mapCocone c) :=
   have := hU.isOpenImmersion_fromSpec
-  IsColimit.mapCoconeEquiv (restrictFromSpecCompModuleSpecΓFunctorIso hU)
+  IsColimit.mapCoconeEquiv hU.restrictFromSpecCompModuleSpecΓFunctorIso
     (isColimitMapCoconeModuleSpecΓFunctor (K := K ⋙ restrictFunctor hU.fromSpec)
       (fun j ↦ have := hK j; isQuasicoherent_restrictFunctor _ _)
       (isColimitOfPreserves (restrictFunctor hU.fromSpec) hc))
