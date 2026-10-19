@@ -8,7 +8,6 @@ module
 public import TauCeti.KnotTheory.PDCode.Components
 public import TauCeti.Data.Fintype.Fiber
 public import TauCeti.GroupTheory.Perm.Basic
-public import Mathlib.Data.Multiset.Fintype
 
 /-! # Labelled components of oriented PD-codes
 
@@ -61,7 +60,7 @@ def componentOfOutgoing (D : OrientedPDCode n)
 
 -- Not simp: the native outgoing-traversal simp lemma expands the argument first.
 /-- Traversing to the next outgoing half-edge does not change the component. -/
-theorem componentOfOutgoing_apply (D : OrientedPDCode n)
+theorem componentOfOutgoing_componentPermOutgoing (D : OrientedPDCode n)
     (h : {h : Fin (4 * n) // D.orientation h = true}) :
     D.componentOfOutgoing (D.componentPermOutgoing h) = D.componentOfOutgoing h := by
   rw [componentOfOutgoing_eq_iff]
@@ -94,23 +93,19 @@ def componentEquiv (D : OrientedPDCode n) (E : OrientedPDCode m)
     (he : E.componentPermOutgoing = e.permCongr D.componentPermOutgoing)
     (isolated : Fin D.crossinglessComponentCount ≃ Fin E.crossinglessComponentCount) :
     D.Component ≃ E.Component :=
-  Equiv.sumCongr (Quotient.congr (ra := SameCycle.setoid D.componentPermOutgoing)
-    (rb := SameCycle.setoid E.componentPermOutgoing) e (fun x y => by
-      have hs : D.componentPermOutgoing.SameCycle x y ↔
-          E.componentPermOutgoing.SameCycle (e x) (e y) := by
-        rw [he]
-        exact (sameCycle_permCongr D.componentPermOutgoing e).symm
-      exact hs)) isolated
+  Equiv.sumCongr (sameCycleQuotientCongr e he) isolated
 
 /-- Component transport sends a represented component to the transported representative. -/
-@[simp] theorem componentEquiv_ofOutgoing (D : OrientedPDCode n) (E : OrientedPDCode m)
+@[simp] theorem componentEquiv_componentOfOutgoing (D : OrientedPDCode n) (E : OrientedPDCode m)
     (e : {h : Fin (4 * n) // D.orientation h = true} ≃
       {h : Fin (4 * m) // E.orientation h = true})
     (he : E.componentPermOutgoing = e.permCongr D.componentPermOutgoing)
     (isolated : Fin D.crossinglessComponentCount ≃ Fin E.crossinglessComponentCount)
     (h : {h : Fin (4 * n) // D.orientation h = true}) :
     D.componentEquiv E e he isolated (D.componentOfOutgoing h) =
-      E.componentOfOutgoing (e h) := (rfl)
+      E.componentOfOutgoing (e h) := by
+  simp only [componentEquiv, componentOfOutgoing, Equiv.sumCongr_apply, Sum.map_inl,
+    sameCycleQuotientCongr_mk]
 
 /-- Component transport acts on crossing-free circles by the supplied bijection. -/
 @[simp] theorem componentEquiv_inr (D : OrientedPDCode n) (E : OrientedPDCode m)
@@ -124,8 +119,7 @@ def componentEquiv (D : OrientedPDCode n) (E : OrientedPDCode m)
 /-- Identity traversal and label bijections induce identity component transport. -/
 @[simp] theorem componentEquiv_refl (D : OrientedPDCode n) :
     D.componentEquiv D (Equiv.refl _) (by ext h; simp) (Equiv.refl _) = Equiv.refl _ := by
-  ext c
-  rcases D.component_cases c with ⟨h, rfl⟩ | ⟨i, rfl⟩ <;> rfl
+  rw [componentEquiv, sameCycleQuotientCongr_refl, Equiv.sumCongr_refl]
 
 /-- Component transport respects composition, including the chosen crossing-free labels. -/
 theorem componentEquiv_trans (D : OrientedPDCode n) (E : OrientedPDCode m)
@@ -140,8 +134,7 @@ theorem componentEquiv_trans (D : OrientedPDCode n) (E : OrientedPDCode m)
     (j : Fin E.crossinglessComponentCount ≃ Fin F.crossinglessComponentCount) :
     (D.componentEquiv E e he i).trans (E.componentEquiv F f hf j) =
       D.componentEquiv F (e.trans f) (by ext h; simp [hf, he]) (i.trans j) := by
-  ext c
-  rcases D.component_cases c with ⟨h, rfl⟩ | ⟨k, rfl⟩ <;> rfl
+  simp only [componentEquiv, Equiv.sumCongr_trans, sameCycleQuotientCongr_trans]
 
 /-- Native relabelling transports components and keeps the crossing-free labels fixed. -/
 def relabelComponentEquiv (D : OrientedPDCode n)
@@ -151,11 +144,12 @@ def relabelComponentEquiv (D : OrientedPDCode n)
     (D.componentPermOutgoing_relabel half cross) (finCongr (by simp))
 
 /-- Relabelling transports the component of an outgoing half-edge to that of its image. -/
-@[simp] theorem relabelComponentEquiv_ofOutgoing (D : OrientedPDCode n)
+@[simp] theorem relabelComponentEquiv_componentOfOutgoing (D : OrientedPDCode n)
     (half : Fin (4 * n) ≃ Fin (4 * m)) (cross : Fin n ≃ Fin m)
     (h : {h : Fin (4 * n) // D.orientation h = true}) :
     D.relabelComponentEquiv half cross (D.componentOfOutgoing h) =
-      (D.relabel half cross).componentOfOutgoing (D.relabelOutgoingEquiv half cross h) := (rfl)
+      (D.relabel half cross).componentOfOutgoing (D.relabelOutgoingEquiv half cross h) := by
+  exact D.componentEquiv_componentOfOutgoing _ _ _ _ h
 
 /-- Relabelling fixes each crossing-free component label. -/
 @[simp] theorem relabelComponentEquiv_inr (D : OrientedPDCode n)
@@ -169,10 +163,11 @@ def mirrorComponentEquiv (D : OrientedPDCode n) : D.Component ≃ D.mirror.Compo
   D.componentEquiv _ D.mirrorOutgoingEquiv D.componentPermOutgoing_mirror (finCongr (by simp))
 
 /-- Mirroring transports the component of each outgoing half-edge. -/
-@[simp] theorem mirrorComponentEquiv_ofOutgoing (D : OrientedPDCode n)
+@[simp] theorem mirrorComponentEquiv_componentOfOutgoing (D : OrientedPDCode n)
     (h : {h : Fin (4 * n) // D.orientation h = true}) :
     D.mirrorComponentEquiv (D.componentOfOutgoing h) =
-      D.mirror.componentOfOutgoing (D.mirrorOutgoingEquiv h) := (rfl)
+      D.mirror.componentOfOutgoing (D.mirrorOutgoingEquiv h) := by
+  exact D.componentEquiv_componentOfOutgoing _ _ _ _ h
 
 /-- Mirroring fixes each crossing-free component label. -/
 @[simp] theorem mirrorComponentEquiv_inr (D : OrientedPDCode n)
@@ -189,12 +184,9 @@ namespace CrossinglessLabelling
 
 /-- Crossing-free circles admit orientation labels, including when there are no such circles. -/
 instance (D : OrientedPDCode n) : Nonempty D.CrossinglessLabelling := by
-  let e : Fin D.crossinglessComponentCount ≃ D.crossinglessComponents :=
-    (Fintype.equivFinOfCardEq (by simp)).symm
-  refine ⟨⟨fun i => (e i : Bool), ?_⟩⟩
-  simpa only [Multiset.map_map, Function.comp_def] using
-    (congrArg (Multiset.map (fun x : D.crossinglessComponents => (x : Bool)))
-      (Multiset.map_univ_val_equiv e)).trans (Multiset.map_univ_coe _)
+  obtain ⟨o, ho⟩ := exists_map_univ_eq (X := Fin D.crossinglessComponentCount)
+    D.crossinglessComponents (by simp)
+  exact ⟨⟨o, ho⟩⟩
 
 /-- Reindex the crossing-free labels, keeping their orientation multiset unchanged. -/
 def reindex {D : OrientedPDCode n} (o : D.CrossinglessLabelling)
@@ -223,16 +215,14 @@ theorem reindex_trans {D : OrientedPDCode n} (o : D.CrossinglessLabelling)
   rfl
 
 /-- The number of labels of a given orientation is its multiplicity in the native multiset. -/
-@[simp] theorem occCount {D : OrientedPDCode n} (o : D.CrossinglessLabelling) (b : Bool) :
+@[simp] theorem occCount_val {D : OrientedPDCode n} (o : D.CrossinglessLabelling) (b : Bool) :
     Function.occCount o.val b = D.crossinglessComponents.count b := by
-  simpa only [Multiset.count_map, ← Finset.filter_val, Finset.card,
-    eq_comm, Function.occCount_eq_card_filter] using congrArg (Multiset.count b) o.property
+  rw [occCount_eq_count_map_univ, o.property]
 
 /-- Any two choices of orientation labels differ by a permutation of the individual circles. -/
 theorem exists_reindex_eq {D : OrientedPDCode n} (o p : D.CrossinglessLabelling) :
     ∃ e : Equiv.Perm (Fin D.crossinglessComponentCount), p.reindex e = o := by
-  obtain ⟨e, he⟩ := Function.exists_perm_of_occCount_eq
-    (u := o.val) (v := p.val) (fun b => by simp)
+  obtain ⟨e, he⟩ := exists_perm_of_map_univ_eq (o.property.trans p.property.symm)
   exact ⟨e, Subtype.ext he⟩
 
 end CrossinglessLabelling

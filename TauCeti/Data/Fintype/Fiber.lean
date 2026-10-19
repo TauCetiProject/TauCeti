@@ -9,6 +9,7 @@ public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.Data.Fintype.Card
 public import Mathlib.SetTheory.Cardinal.Finite
+public import Mathlib.Data.Multiset.Fintype
 
 /-! # Occurrence counts in finite families
 
@@ -29,6 +30,9 @@ covering the range is weighted by its occurrence count.
 * `Function.occCount_castSucc`, `Function.occCount_succ`: split off the last or first position.
 * `Function.sum_occCount_eq_card`: the total occurrence count is the cardinality of the index type.
 * `Function.exists_perm_of_occCount_eq`: equal counts on finite families give a permutation.
+* `TauCeti.occCount_eq_count_map_univ`: occurrence counts as multiset multiplicities.
+* `TauCeti.exists_perm_of_map_univ_eq`: equal multisets give a permutation.
+* `TauCeti.exists_map_univ_eq`: enumeration of a multiset by any type of matching size.
 
 -/
 
@@ -167,3 +171,35 @@ theorem exists_perm_of_occCount_eq [Finite X] {u v : X → S}
   exact Equiv.ofFiberEquiv_map _ i
 
 end Function
+
+namespace TauCeti
+
+variable {X S : Type*}
+
+open Function
+
+/-- Occurrence counts are the multiplicities in the multiset of values of a finite family. -/
+theorem occCount_eq_count_map_univ [Fintype X] [DecidableEq S] (f : X → S) (y : S) :
+    occCount f y = (Finset.univ.val.map f).count y := by
+  rw [occCount_eq_card_filter, Multiset.count_map, ← Finset.filter_val, Finset.card_val]
+  congr 1
+  exact Finset.filter_congr fun _ _ => eq_comm
+
+/-- Finite families with the same multiset of values differ by a permutation of their indices. -/
+theorem exists_perm_of_map_univ_eq [Fintype X] {u v : X → S}
+    (h : Finset.univ.val.map u = Finset.univ.val.map v) :
+    ∃ σ : Equiv.Perm X, v ∘ σ = u := by
+  classical
+  apply exists_perm_of_occCount_eq
+  intro a
+  rw [occCount_eq_count_map_univ, occCount_eq_count_map_univ, h]
+
+/-- Any multiset with as many entries as a finite type can be enumerated by that type. -/
+theorem exists_map_univ_eq [Fintype X] (s : Multiset S) (h : s.card = Fintype.card X) :
+    ∃ f : X → S, Finset.univ.val.map f = s := by
+  classical
+  let e : X ≃ s := Fintype.equivOfCardEq (by simp [h])
+  refine ⟨(fun x : s => (x : S)) ∘ e, ?_⟩
+  rw [← Multiset.map_map, Multiset.map_univ_val_equiv, Multiset.map_univ_coe]
+
+end TauCeti
