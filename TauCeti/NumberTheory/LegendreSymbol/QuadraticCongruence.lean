@@ -9,14 +9,14 @@ public import Mathlib.NumberTheory.LegendreSymbol.QuadraticReciprocity
 import TauCeti.Data.ZMod.Count
 import TauCeti.Data.ZMod.LocalRing
 import TauCeti.Data.ZMod.PrincipalUnits
-import TauCeti.NumberTheory.LegendreSymbol.NegThree
+import TauCeti.NumberTheory.Multiquadratic.Legendre.PrimeDiscriminant.Basic
 
 /-!
 # Counting solutions of the congruences `x² + 1 ≡ 0` and `x² - x + 1 ≡ 0`
 
 For an odd prime `p` and an integer `a` prime to `p`, reduction modulo `p` is a bijection from the
 square roots of `a` modulo `p ^ k` (`k ≥ 1`) to those modulo `p`, by Hensel's lemma
-`ZMod.natCard_nthRoots_primePow_eq_natCard_nthRoots`. So their number is `1 + (a | p)` at every
+`ZMod.natCard_nthRoots_prime_pow_eq_natCard_nthRoots`. So their number is `1 + (a | p)` at every
 level `p ^ k`.
 
 Combined with the Chinese remainder theorem this counts the solutions of `x² + 1 ≡ 0 (mod N)` and
@@ -36,7 +36,7 @@ elliptic points of order two and three of `Γ₀(N)`.
 
 ## Main results
 
-* `TauCeti.ZMod.natCard_sqrts_primePow_eq_legendreSym_add_one`: the count `1 + (a | p)` of
+* `TauCeti.ZMod.natCard_sqrts_prime_pow_eq_legendreSym_add_one`: the count `1 + (a | p)` of
   square roots of a unit `a` modulo `p ^ k`.
 * `TauCeti.ZMod.natCard_sq_add_one_eq_zero`: the number of roots of `x² + 1` modulo `N`.
 * `TauCeti.ZMod.natCard_sq_sub_self_add_one_eq_zero`: the number of roots of `x² - x + 1` modulo
@@ -59,10 +59,10 @@ variable {p : ℕ} [Fact p.Prime]
 
 /-- **Square roots modulo odd prime powers.** For an odd prime `p`, an integer `a` prime to `p`
 and `k ≠ 0`, the number of square roots of `a` modulo `p ^ k` is `1 + (a | p)`. -/
-theorem natCard_sqrts_primePow_eq_legendreSym_add_one (hp : p ≠ 2) {k : ℕ} (hk : k ≠ 0) {a : ℤ}
+theorem natCard_sqrts_prime_pow_eq_legendreSym_add_one (hp : p ≠ 2) {k : ℕ} (hk : k ≠ 0) {a : ℤ}
     (ha : (a : ZMod p) ≠ 0) :
     (Nat.card {x : ZMod (p ^ k) // x ^ 2 = a} : ℤ) = legendreSym p a + 1 := by
-  rw [ZMod.natCard_nthRoots_primePow_eq_natCard_nthRoots
+  rw [ZMod.natCard_nthRoots_prime_pow_eq_natCard_nthRoots
       ((Nat.coprime_primes Nat.prime_two Fact.out).mpr (Ne.symm hp)) hk ha,
     ← _root_.legendreSym.card_sqrts p hp a, ← Nat.card_eq_card_toFinset, Set.coe_ofPred]
 
@@ -74,7 +74,7 @@ theorem natCard_sq_add_one_eq_zero_prime_pow (hp : p ≠ 2) {k : ℕ} (hk : k �
   have hneg : Nat.card {x : ZMod (p ^ k) // x ^ 2 + 1 = 0} =
       Nat.card {x : ZMod (p ^ k) // x ^ 2 = ((-1 : ℤ) : ZMod (p ^ k))} :=
     Nat.card_congr (Equiv.subtypeEquivRight fun x ↦ by push_cast; exact add_eq_zero_iff_eq_neg)
-  rw [hneg, natCard_sqrts_primePow_eq_legendreSym_add_one hp hk
+  rw [hneg, natCard_sqrts_prime_pow_eq_legendreSym_add_one hp hk
     (by push_cast; exact neg_ne_zero.mpr one_ne_zero), _root_.legendreSym.at_neg_one hp, add_comm]
 
 /-- **Square roots of `-1` modulo `N`.** The polynomial `x² + 1` has no roots modulo `N` if
@@ -135,8 +135,11 @@ theorem natCard_sq_sub_self_add_one_eq_zero_prime_pow (hp2 : p ≠ 2) (hp3 : p �
   have ha : ((-3 : ℤ) : ZMod p) ≠ 0 := by
     rw [Ne, ZMod.intCast_zmod_eq_zero_iff_dvd, Int.dvd_neg]
     exact_mod_cast fun h ↦ hp3 ((Nat.prime_dvd_prime_iff_eq Fact.out Nat.prime_three).mp h)
-  rw [hsq, natCard_sqrts_primePow_eq_legendreSym_add_one hp2 hk ha,
-    TauCeti.legendreSym.at_neg_three hp2, add_comm]
+  -- `(-3 | p) = (p | 3)` is quadratic reciprocity for the odd prime discriminant `3* = -3`.
+  have h3 : legendreSym p (-3) = legendreSym 3 p := by
+    simpa using Multiquadratic.legendreSym_oddPrimeDiscriminant_eq_legendreSym (p := 3) (q := p)
+      (by norm_num) hp2
+  rw [hsq, natCard_sqrts_prime_pow_eq_legendreSym_add_one hp2 hk ha, h3, add_comm]
 
 /-- **Primitive cube roots of unity modulo `N`.** The polynomial `x² - x + 1` has no roots modulo
 `N` if `9 ∣ N`, and otherwise `∏_{p ∣ N} (1 + (p | 3))` roots. The factor `1 + (p | 3)` is `0` at
