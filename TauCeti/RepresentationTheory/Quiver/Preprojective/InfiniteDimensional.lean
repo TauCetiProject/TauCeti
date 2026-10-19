@@ -74,7 +74,7 @@ infinite-dimensional.
 ## Implementation notes
 
 The oriented quiver of a graph has `Finite` vertex and arrow types; as in
-`TauCeti.RepresentationTheory.Quiver.Zigzag.Preprojective`, the `Fintype` structures its
+`TauCeti.RepresentationTheory.Quiver.Preprojective.GraphOrientation`, the `Fintype` structures its
 preprojective algebra needs are supplied by `Fintype.ofFinite`.
 
 ## References
