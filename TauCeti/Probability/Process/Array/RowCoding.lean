@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Process.IIDMixture.Coding
-import TauCeti.MeasureTheory.Measure.MixtureInjective
+import TauCeti.MeasureTheory.Measure.Mixture.Injective
 
 /-!
 # Sampling array rows from a random path law
