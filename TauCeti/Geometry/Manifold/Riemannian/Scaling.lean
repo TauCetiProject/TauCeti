@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Conformal
+import TauCeti.Geometry.Manifold.Riemannian.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric
 
 /-!
 # Curvature under constant rescaling of a metric
@@ -29,6 +31,8 @@ differentiable fields; this determines the curvature tensor.
 
 ## Main results
 
+* `Bundle.ContMDiffRiemannianMetric.isMetricCompatible_rescale_const_iff`: a connection is
+  compatible with `c g` exactly when it is compatible with `g`.
 * `Bundle.ContMDiffRiemannianMetric.isLeviCivitaConnection_rescale_const_iff`: a connection is
   Levi-Civita for `c g` exactly when it is Levi-Civita for `g`.
 * `Bundle.ContMDiffRiemannianMetric.leviCivitaConnection_rescale_const_apply`: the Levi-Civita
@@ -60,28 +64,50 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
 
+section MetricCompatible
+
+variable [IsManifold I 1 M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
+  [∀ x, TopologicalSpace (V x)] [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
+  [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
+  [FiberBundle F V] [VectorBundle ℝ F V] [ContMDiffVectorBundle 1 F V I] {n : ℕ∞ω}
+
+omit [FiniteDimensional ℝ E] in
+/-- Multiplying a `C¹` bundle metric by a positive constant does not change which connections are
+compatible with it. -/
+theorem isMetricCompatible_rescale_const_iff (g : ContMDiffRiemannianMetric I n F V)
+    (hn : 1 ≤ n) {c : ℝ} (hc : 0 < c) (cov : CovariantDerivative I F V) :
+    (letI : RiemannianBundle V :=
+        ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩;
+      letI : IsContMDiffRiemannianBundle I 1 F V := IsContMDiffRiemannianBundle.of_le hn;
+      cov.IsMetricCompatible) ↔
+    (letI : RiemannianBundle V := ⟨g.toRiemannianMetric⟩;
+      letI : IsContMDiffRiemannianBundle I 1 F V := IsContMDiffRiemannianBundle.of_le hn;
+      cov.IsMetricCompatible) := by
+  -- The derivative of `c g(σ, τ)` is `c` times the derivative of `g(σ, τ)`.
+  have key : ∀ ⦃x : M⦄ ⦃σ τ : Π x : M, V x⦄, MDiffAt (T% σ) x → MDiffAt (T% τ) x →
+      mvfderiv I (fun y ↦ c * g.inner y (σ y) (τ y)) x =
+        c • mvfderiv I (fun y ↦ g.inner y (σ y) (τ y)) x := by
+    intro x σ τ hσ hτ
+    let _ : RiemannianBundle V := ⟨g.toRiemannianMetric⟩
+    let _ : IsContMDiffRiemannianBundle I 1 F V := IsContMDiffRiemannianBundle.of_le hn
+    have hg : MDiffAt (fun y ↦ g.inner y (σ y) (τ y)) x := by
+      simpa only [inner_riemannianBundle] using hσ.inner_bundle hτ
+    rw [mvfderiv_fun_mul mdifferentiableAt_const hg, mvfderiv_const, smul_zero, add_zero]
+  rw [isMetricCompatible_iff_inner _ hn, isMetricCompatible_iff_inner g hn]
+  refine ⟨fun h x X σ τ hX hσ hτ ↦ ?_, fun h x X σ τ hX hσ hτ ↦ ?_⟩
+  · have h := h hX hσ hτ
+    simp only [rescale_inner, key hσ hτ, smul_apply, smul_eq_mul] at h
+    exact mul_left_cancel₀ hc.ne' (by linear_combination h)
+  · simp only [rescale_inner, key hσ hτ, smul_apply, smul_eq_mul, h hX hσ hτ]
+    ring
+
+end MetricCompatible
+
 section LeviCivita
 
 variable [IsManifold I 2 M] {n : ℕ∞ω}
-
-/-- Metric compatibility with a `C¹` metric `g`, written with the inner products of `g`. -/
-private theorem isMetricCompatible_iff_inner
-    (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)) (hn : 1 ≤ n)
-    (cov : CovariantDerivative I E (fun x : M ↦ TangentSpace I x)) :
-    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
-      letI : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
-        IsContMDiffRiemannianBundle.of_le hn;
-      CovariantDerivative.IsMetricCompatible (V := fun x : M ↦ TangentSpace I x) cov) ↔
-      ∀ ⦃x : M⦄ ⦃X Y Z : Π x : M, TangentSpace I x⦄,
-        MDiffAt (T% X) x → MDiffAt (T% Y) x → MDiffAt (T% Z) x →
-        mvfderiv I (fun y ↦ g.inner y (Y y) (Z y)) x (X x) =
-          g.inner x (cov Y x (X x)) (Z x) + g.inner x (Y x) (cov Z x (X x)) := by
-  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
-  let _ : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
-    IsContMDiffRiemannianBundle.of_le hn
-  rw [CovariantDerivative.isMetricCompatible_iff]
-  -- The inner product of the installed `RiemannianBundle` is `g.inner` by definition.
-  exact ⟨fun h x X Y Z hX hY hZ ↦ h hX hY hZ, fun h x X Y Z hX hY hZ ↦ h hX hY hZ⟩
 
 /-- Multiplying a `C¹` metric by a positive constant does not change which connections are
 Levi-Civita connections. -/
@@ -97,38 +123,18 @@ theorem isLeviCivitaConnection_rescale_const_iff
       letI : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
         IsContMDiffRiemannianBundle.of_le hn;
       cov.IsLeviCivitaConnection) := by
-  -- Both metric-compatibility conditions are read through the inner products of `g`.
-  have key : ∀ ⦃x : M⦄ ⦃Y Z : Π x : M, TangentSpace I x⦄,
-      MDiffAt (T% Y) x → MDiffAt (T% Z) x →
-      mvfderiv I (fun y ↦ c * g.inner y (Y y) (Z y)) x =
-        c • mvfderiv I (fun y ↦ g.inner y (Y y) (Z y)) x := by
-    intro x Y Z hY hZ
-    let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+  have hm := isMetricCompatible_rescale_const_iff g hn hc cov
+  -- Torsion does not involve the metric.
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩ <;> obtain ⟨h₁, h₂⟩ := h
+  · let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
     let _ : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
       IsContMDiffRiemannianBundle.of_le hn
-    -- As above, `g.inner` is by definition the inner product of the installed metric.
-    have hg : MDiffAt (fun y ↦ g.inner y (Y y) (Z y)) x :=
-      TauCeti.Manifold.mdifferentiableAt_inner hY hZ
-    rw [mvfderiv_fun_mul mdifferentiableAt_const hg, mvfderiv_const, smul_zero, add_zero]
-  have hm := (isMetricCompatible_iff_inner (g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc)
-    hn cov).trans <| (Iff.intro (fun h x X Y Z hX hY hZ ↦ ?_) fun h x X Y Z hX hY hZ ↦ ?_).trans
-      (isMetricCompatible_iff_inner g hn cov).symm
-  · -- Torsion does not involve the metric.
-    refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩ <;> obtain ⟨h₁, h₂⟩ := h
-    · let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
-      let _ : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
-        IsContMDiffRiemannianBundle.of_le hn
-      exact ⟨hm.1 h₁, h₂⟩
-    · let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-        ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩
-      let _ : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
-        IsContMDiffRiemannianBundle.of_le hn
-      exact ⟨hm.2 h₁, h₂⟩
-  · have h := h hX hY hZ
-    simp only [rescale_inner, key hY hZ, smul_apply, smul_eq_mul] at h
-    exact mul_left_cancel₀ hc.ne' (by linear_combination h)
-  · simp only [rescale_inner, key hY hZ, smul_apply, smul_eq_mul, h hX hY hZ]
-    ring
+    exact ⟨hm.1 h₁, h₂⟩
+  · let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+      ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩
+    let _ : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
+      IsContMDiffRiemannianBundle.of_le hn
+    exact ⟨hm.2 h₁, h₂⟩
 
 /-- The Levi-Civita connections of a `C¹` metric and of a positive constant multiple of it agree
 on every vector field differentiable at the point. -/
@@ -175,8 +181,8 @@ theorem curvatureTensor_leviCivitaConnection_rescale_const (x : M) :
       (CovariantDerivative.leviCivitaConnection I M).curvatureTensor x) =
     (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
       (CovariantDerivative.leviCivitaConnection I M).curvatureTensor x) :=
-  CovariantDerivative.curvatureTensor_congr _
-    (fun _ _ hY ↦ leviCivitaConnection_rescale_const_apply g (by simp) hc hY) x
+  CovariantDerivative.curvatureTensor_congr _ (fun _ hσ y ↦
+    leviCivitaConnection_rescale_const_apply g (by simp) hc (hσ.mdifferentiable (by simp) y)) x
 
 /-- Multiplying a smooth metric by a positive constant does not change the Ricci tensor of its
 Levi-Civita connection. -/
@@ -208,8 +214,7 @@ theorem scalarCurvature_leviCivitaConnection_rescale_const (x : M) :
     let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
     let b := stdOrthonormalBasis ℝ (TangentSpace I x)
     refine ⟨_, b.toBasis, fun i j ↦ ?_, ?_⟩
-    · -- The inner product of the installed metric is `g.inner` by definition.
-      rw [b.coe_toBasis]
+    · rw [b.coe_toBasis, ← inner_riemannianBundle]
       exact orthonormal_iff_ite.1 b.orthonormal i j
     · rw [b.coe_toBasis]
       exact CovariantDerivative.scalarCurvature_eq_sum _ x b
@@ -222,21 +227,17 @@ theorem scalarCurvature_leviCivitaConnection_rescale_const (x : M) :
   have hon : Orthonormal ℝ (b.unitsSMul fun _ ↦ Units.mk0 s⁻¹ (inv_ne_zero hs0.ne')) := by
     rw [orthonormal_iff_ite]
     intro i j
-    simp only [Module.Basis.unitsSMul_apply, Units.smul_def, Units.val_mk0]
-    -- The inner product of the installed metric is, by definition, the `inner` field of the
-    -- rescaled metric; Mathlib states no unfolding lemma for `RiemannianBundle` inner products.
-    change (g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).inner x (s⁻¹ • b i)
-      (s⁻¹ • b j) = _
-    rw [rescale_inner, map_smul, map_smul, smul_apply, smul_eq_mul, smul_eq_mul, hb]
-    calc c * (s⁻¹ * (s⁻¹ * if i = j then (1 : ℝ) else 0))
-        = c * (s⁻¹ * s⁻¹) * if i = j then (1 : ℝ) else 0 := by ring
-      _ = if i = j then 1 else 0 := by rw [hss, mul_inv_cancel₀ hc.ne', one_mul]
+    simp only [Module.Basis.unitsSMul_apply, Units.smul_def, Units.val_mk0,
+      inner_riemannianBundle, rescale_inner, map_smul, smul_apply, smul_eq_mul, hb]
+    split_ifs
+    · field_simp
+      exact (Real.sq_sqrt hc.le).symm
+    · simp
   rw [CovariantDerivative.scalarCurvature_eq_sum _ x ((b.unitsSMul _).toOrthonormalBasis hon),
     ricciTensor_leviCivitaConnection_rescale_const g hc x, hs, Finset.mul_sum]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   simp only [Module.Basis.coe_toOrthonormalBasis, Module.Basis.unitsSMul_apply, Units.smul_def,
-    Units.val_mk0]
-  rw [map_smul, map_smul, LinearMap.smul_apply, smul_eq_mul, smul_eq_mul, ← mul_assoc, hss]
+    Units.val_mk0, map_smul, LinearMap.smul_apply, smul_eq_mul, ← mul_assoc, hss]
 
 end Curvature
 
