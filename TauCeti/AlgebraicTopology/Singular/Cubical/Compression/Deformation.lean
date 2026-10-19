@@ -353,8 +353,7 @@ def subspaceCubeDeformation : SubspaceCubeDeformation A where
   isDegenerateAt_curry {m} c i hc s := (levels hA m).isDegenerateAt_curry c i hc s
   homotopy_of_range_subset {m} c hc s y := (levels hA m).apply_of_range_subset c hc s y
 
-omit hA
-
+omit hA in
 /-- A deformation of the singular cubes into `A` compresses every cube with boundary in `A`: its
 homotopy is relative to the boundary of the cube and ends at a cube with values in `A`. -/
 theorem SubspaceCubeDeformation.homotopicRel (D : SubspaceCubeDeformation A) {m : ℕ}
@@ -379,6 +378,7 @@ theorem SubspaceCubeDeformation.homotopicRel (D : SubspaceCubeDeformation A) {m 
            map_one_left _ := rfl
            prop' := fun s y hy ↦ hbd s y hy }⟩
 
+omit hA in
 /-- **The singular cubes of `X` deform into `A` exactly when `A` is compressible in `X`**: when
 every singular cube with boundary in `A` is homotopic, relative to the boundary of the cube, to a
 cube with values in `A`. -/
@@ -396,6 +396,7 @@ section RelHomotopyGroup
 
 variable {X : TopCat} {A : Set X}
 
+omit hA in
 /-- **Compressing a singular cube.** Let `A ⊆ X` be such that the relative homotopy set
 `π_{n+1}(X, A, a)` is trivial for every `a ∈ A`. Then every singular `(n + 1)`-cube of `X` sending
 the boundary of the cube into `A` is homotopic, relative to that boundary, to a cube with values
@@ -423,6 +424,7 @@ theorem SingularCube.exists_homotopicRel_range_subset_of_subsingleton {n : ℕ}
   rintro _ ⟨y, rfl⟩
   exact hg' ⟨e y, rfl⟩
 
+omit hA in
 /-- **The singular cubes deform into `A` when the relative homotopy sets vanish.** If every point
 of `X` is joined by a path to a point of `A`, and the relative homotopy set `π_{n+1}(X, A, a)` is
 trivial for every `n` and every `a ∈ A`, then there is a deformation of the singular cubes of `X`

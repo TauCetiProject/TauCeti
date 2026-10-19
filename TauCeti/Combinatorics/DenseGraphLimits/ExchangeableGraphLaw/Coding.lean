@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.ArrayLaw
 public import TauCeti.Combinatorics.DenseGraphLimits.Sampling.Infinite
-public import TauCeti.Probability.Exchangeability.Arrays.AldousHoover.Dissociated
+public import TauCeti.Probability.Process.Array.AldousHoover.Frozen
 import TauCeti.MeasureTheory.Measure.GiryMonad
 import TauCeti.MeasureTheory.Measure.ProductKernel
 import TauCeti.Probability.Independence.InfinitePi
@@ -319,24 +319,9 @@ theorem graphLawOfArray_map_jointArray {f : I × I × I × I → Bool} (hf : Mea
     graphLawOfArray ((noiseMeasure Unit (Sym2 ℕ)).map fun u p => jointArray f p u) =
       (volume : Measure I).bind fun t =>
         infiniteSampleLaw (codingGraphon (fun q => f (t, q)) (hf.comp measurable_prodMk_left)) := by
-  have hΦ : Measurable fun x : I × (NoiseIndex Unit (Sym2 ℕ) → I) =>
-      fun p => jointArray (fun q => f (x.1, q.2)) p x.2 :=
-    Measurable.of_eval fun p => by simp only [jointArray_apply]; fun_prop
-  have hκ : Measurable fun t : I =>
-      (noiseMeasure Unit (Sym2 ℕ)).map fun u p => jointArray (fun q => f (t, q.2)) p u := by
-    have hsection : (fun t : I =>
-        (noiseMeasure Unit (Sym2 ℕ)).map fun u p => jointArray (fun q => f (t, q.2)) p u) =
-          fun t => ((noiseMeasure Unit (Sym2 ℕ)).map (Prod.mk t)).map
-            fun x : I × (NoiseIndex Unit (Sym2 ℕ) → I) =>
-              fun p => jointArray (fun q => f (x.1, q.2)) p x.2 := by
-      funext t
-      rw [Measure.map_map hΦ measurable_prodMk_left]
-      -- the composite with `Prod.mk t` is the frozen coding itself
-      rfl
-    rw [hsection]
-    exact (Measure.measurable_map _ hΦ).comp Measurable.map_prodMk_left
   rw [map_jointArray_eq_bind_frozen hf, graphLawOfArray_def,
-    TauCeti.MeasureTheory.map_bind hκ.aemeasurable measurable_graphOfArray]
+    TauCeti.MeasureTheory.map_bind (measurable_map_jointArray_frozen hf).aemeasurable
+      measurable_graphOfArray]
   congr 1
   funext t
   rw [← graphLawOfArray_def]

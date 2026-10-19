@@ -279,6 +279,8 @@ def main():
                   'workflow_sha': os.environ.get('CI_RESOURCE_WORKFLOW_SHA'),
                   'tested_head_sha': os.environ.get('CI_RESOURCE_TESTED_HEAD'),
                   'tested_base_sha': os.environ.get('CI_RESOURCE_TESTED_BASE'),
+                  'tested_commit_sha': os.environ.get('CI_RESOURCE_TESTED_COMMIT'),
+                  'tested_tree_sha': os.environ.get('CI_RESOURCE_TESTED_TREE'),
                   'dependency_bump': os.environ.get('CI_RESOURCE_DEPENDENCY_BUMP', 'unknown'),
                   'started_at': started, 'completed_at': now(), 'elapsed_s': time.monotonic() - start,
                   'exit_code': code, 'cancel_signals': cancelled,

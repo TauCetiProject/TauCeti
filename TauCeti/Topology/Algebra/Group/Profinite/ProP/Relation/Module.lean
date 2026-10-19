@@ -171,7 +171,7 @@ theorem exists_finite_span_completedGroupAlgebraModule_topologicalAbelianization
         (Subtype.val ⁻¹' S))) = ⊤ :=
   haveI : IsClosed (χ.ker : Set G) := χ.coe_ker ▸ isClosed_singleton.preimage hχ
   hG.exists_finite_span_completedGroupAlgebraModule_topologicalAbelianization_eq_top hfg
-    (Abelianization.commutator_subset_ker χ)
+    (Abelianization.commutator_le_ker χ)
 
 /-- **Labute's module is finitely generated.** For a continuous character `χ : G → A` of a
 topologically finitely generated pro-`p` group `G` to a commutative `T1` group, the topological
@@ -191,7 +191,7 @@ theorem module_finite_completedGroupAlgebraModule_topologicalAbelianization_ker 
       (Additive (TopologicalAbelianization χ.ker)) :=
   haveI : IsClosed (χ.ker : Set G) := χ.coe_ker ▸ isClosed_singleton.preimage hχ
   hG.module_finite_completedGroupAlgebraModule_topologicalAbelianization_of_commutator_le hfg
-    (Abelianization.commutator_subset_ker χ)
+    (Abelianization.commutator_le_ker χ)
 
 end CommutatorLe
 

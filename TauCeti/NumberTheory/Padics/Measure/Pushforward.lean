@@ -64,12 +64,12 @@ theorem toCLMEquiv_map [CommRing R] [TopologicalSpace R] [IsTopologicalRing R]
 end AbstractMeasure
 
 variable [CompactSpace X] [CompactSpace Y] [NontriviallyNormedField R]
-  [NormedAddCommGroup E] [NormedSpace R E]
 
 namespace AbstractMeasure
 
 /-- Pushforward between compact spaces does not increase the continuous-dual operator norm. -/
-theorem norm_toCLMEquiv_map_le (μ : AbstractMeasure X R E) (f : C(X, Y)) :
+theorem norm_toCLMEquiv_map_le [SeminormedAddCommGroup E] [NormedSpace R E]
+    (μ : AbstractMeasure X R E) (f : C(X, Y)) :
     ‖toCLMEquiv (map f μ)‖ ≤ ‖toCLMEquiv μ‖ := by
   have hcomp : ‖f.compCLM R R‖ ≤ 1 := by
     refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun g ↦ ?_
@@ -87,7 +87,8 @@ namespace ContinuousMap
 omit [CompactSpace X] [CompactSpace Y] in
 /-- Pushforward is continuous for Mathlib's strong measure topologies, which on compact
 spaces are the continuous-dual operator-norm topologies. -/
-theorem continuous_abstractMeasure_map_strong (f : C(X, Y)) :
+theorem continuous_abstractMeasure_map_strong [NormedAddCommGroup E] [NormedSpace R E]
+    (f : C(X, Y)) :
     @Continuous _ _ (StrongTopology (X := X) (R := R) (E := E))
       (StrongTopology (X := Y) (R := R) (E := E)) (map (R := R) (E := E) f) := by
   let : TopologicalSpace (AbstractMeasure X R E) := StrongTopology

@@ -68,6 +68,6 @@ the automorphism group of `A`, the units of `ZMod (Nat.card A)`. -/
 theorem isMulCommutative_quotient_ker_toPermHom :
     IsMulCommutative (G ⧸ (MulAction.toPermHom G A).ker) := by
   exact Subgroup.Normal.quotient_commutative_iff_commutator_le.mpr
-    (ker_actionUnits G A ▸ Abelianization.commutator_subset_ker (actionUnits G A))
+    (ker_actionUnits G A ▸ Abelianization.commutator_le_ker (actionUnits G A))
 
 end TauCeti
