@@ -44,27 +44,26 @@ variable {f : PowerSeries.IsRestricted.subring (R := R) c}
 
 private noncomputable def divisionPair (g : PowerSeries.IsRestricted.subring (R := R) c) :
     PowerSeries.IsRestricted.subring (R := R) c × PowerSeries.IsRestricted.subring (R := R) c :=
-  (hf.toIsDistinguished.existsUnique_mul_add_eq_subring (Fact.out : 0 < c)
-    hf.isNormMulUnit_coeff g).exists.choose
+  (hf.existsUnique_mul_add_eq_subring (Fact.out : 0 < c) g).exists.choose
 
 private theorem divisionPair_spec (g : PowerSeries.IsRestricted.subring (R := R) c) :
     (∀ n, s ≤ n → ((divisionPair hf g).2 : PowerSeries R).coeff n = 0) ∧
       (divisionPair hf g).1 * f + (divisionPair hf g).2 = g :=
-  (hf.toIsDistinguished.existsUnique_mul_add_eq_subring (Fact.out : 0 < c)
-    hf.isNormMulUnit_coeff g).exists.choose_spec
+  (hf.existsUnique_mul_add_eq_subring (Fact.out : 0 < c) g).exists.choose_spec
 
 private theorem divisionPair_eq {g q r : PowerSeries.IsRestricted.subring (R := R) c}
     (hr : ∀ n, s ≤ n → (r : PowerSeries R).coeff n = 0) (h : q * f + r = g) :
     divisionPair hf g = (q, r) := by
-  obtain ⟨p, -, huniq⟩ := hf.toIsDistinguished.existsUnique_mul_add_eq_subring
-    (Fact.out : 0 < c) hf.isNormMulUnit_coeff g
+  obtain ⟨p, -, huniq⟩ := hf.existsUnique_mul_add_eq_subring
+    (Fact.out : 0 < c) g
   exact (huniq _ (divisionPair_spec hf g)).trans (huniq _ ⟨hr, h⟩).symm
 
 private theorem norm_divisionPair (g : PowerSeries.IsRestricted.subring (R := R) c) :
     ‖g‖ = max (‖(divisionPair hf g).1‖ * ‖f‖) ‖(divisionPair hf g).2‖ := by
-  have h := hf.toIsDistinguished.gaussNorm_mul_add_eq_max (Fact.out : 0 < c)
-    (fun x ↦ by rw [mul_comm x, hf.isNormMulUnit_coeff.norm_mul, mul_comm])
+  have h := hf.gaussNorm_mul_add_eq_max (Fact.out : 0 < c)
     (divisionPair hf g).1.2 (divisionPair_spec hf g).1
+  rw [mul_comm (f : PowerSeries R),
+    mul_comm ((f : PowerSeries R).gaussNorm norm c)] at h
   rw [← norm_eq_gaussNorm, ← norm_eq_gaussNorm, ← norm_eq_gaussNorm] at h
   -- The subring operations coerce to the formal-series operations in the norm identity.
   simpa only [← Subring.coe_mul, ← Subring.coe_add, ← norm_eq_gaussNorm,
@@ -117,10 +116,14 @@ noncomputable def weierstrassRemainder :
     (fun g ↦ by rw [one_mul]; exact norm_divisionPair_snd_le hf g)
 
 private theorem weierstrassQuotient_apply (g : PowerSeries.IsRestricted.subring (R := R) c) :
-    weierstrassQuotient hf g = (divisionPair hf g).1 := (rfl)
+    weierstrassQuotient hf g = (divisionPair hf g).1 := by
+  simp only [weierstrassQuotient, LinearMap.mkContinuous_apply, LinearMap.comp_apply,
+    LinearMap.fst_apply, divisionLinearMap, LinearMap.coe_mk, AddHom.coe_mk]
 
 private theorem weierstrassRemainder_apply (g : PowerSeries.IsRestricted.subring (R := R) c) :
-    weierstrassRemainder hf g = (divisionPair hf g).2 := (rfl)
+    weierstrassRemainder hf g = (divisionPair hf g).2 := by
+  simp only [weierstrassRemainder, LinearMap.mkContinuous_apply, LinearMap.comp_apply,
+    LinearMap.snd_apply, divisionLinearMap, LinearMap.coe_mk, AddHom.coe_mk]
 
 /-- The remainder has degree strictly less than the distinguished degree of the divisor. -/
 @[simp]
@@ -138,7 +141,7 @@ theorem weierstrassQuotient_mul_add_weierstrassRemainder
   rw [weierstrassQuotient_apply, weierstrassRemainder_apply]
   exact (divisionPair_spec hf g).2
 
-/-- The division operators are characterized by the decomposition and the remainder bound. -/
+/-- The division operators are characterized by the decomposition and the remainder degree bound. -/
 theorem weierstrassQuotient_eq_and_weierstrassRemainder_eq
     {g q r : PowerSeries.IsRestricted.subring (R := R) c}
     (hr : ∀ n, s ≤ n → (r : PowerSeries R).coeff n = 0) (h : q * f + r = g) :

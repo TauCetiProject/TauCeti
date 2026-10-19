@@ -98,8 +98,8 @@ noncomputable def IsDistinguished.polynomialQuotientEquiv
       simp [← hm.natDegree_eq, hm.monic.coeff_natDegree]
     have hp' : IsDistinguished c s (polynomialToRestricted c p : PowerSeries R) := by
       simpa only [coe_polynomialToRestricted] using hp
-    obtain ⟨q, r, hr, hqr⟩ := hp'.exists_mul_add_eq_subring hc
-      (isNormMulUnit_iff_isUnit _ |>.mpr hu) g
+    obtain ⟨q, r, hr, hqr⟩ :=
+      (isMulDistinguished_iff_isUnit.mpr ⟨hp', hu⟩).exists_mul_add_eq_subring hc g
     refine ⟨Ideal.Quotient.mk _ (PowerSeries.trunc s (r : PowerSeries R)), ?_⟩
     rw [Ideal.quotient_map_mkₐ]
     rw [polynomialToRestricted_trunc_eq_of_coeff_eq_zero r hr, ← hqr, map_add, map_mul]

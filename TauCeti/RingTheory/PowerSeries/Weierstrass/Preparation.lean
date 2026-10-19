@@ -139,7 +139,7 @@ theorem isUnit_iff_isDistinguished_zero_and_isUnit_coeff_zero [CompleteSpace R] 
     exact (hx.map (PowerSeries.IsRestricted.subring (R := R) c).subtype).map _
   -- Dividing `1` by `x` leaves a remainder vanishing in every degree.
   obtain ⟨q, r, hq, hr, hqr⟩ :=
-    hx.exists_mul_add_eq (isNormMulUnit_iff_isUnit _ |>.mpr hu) hc x.2
+    (isMulDistinguished_iff_isUnit.mpr ⟨hx, hu⟩).exists_mul_add_eq hc x.2
       (PowerSeries.isRestricted_one c)
   have hr0 : r = 0 := PowerSeries.ext fun m ↦ by rw [hr m (Nat.zero_le m), map_zero]
   rw [hr0, add_zero] at hqr
@@ -173,7 +173,7 @@ theorem IsDistinguished.exists_isUnit_isMonicOfDegree_mul_eq [CompleteSpace R]
     isRestricted_of_forall_coeff_eq_zero (n := s + 1) fun m hm ↦ by
       rw [PowerSeries.coeff_X_pow, ite_eq_right (by omega : ¬(m = s))]
   obtain ⟨q, r, hq, hr, hqr⟩ :=
-    hf.exists_mul_add_eq (isNormMulUnit_iff_isUnit _ |>.mpr hu) hc hfr hXr
+    (isMulDistinguished_iff_isUnit.mpr ⟨hf, hu⟩).exists_mul_add_eq hc hfr hXr
   have hrr : r.IsRestricted c := isRestricted_of_forall_coeff_eq_zero hr
   -- The Gauss norm of `X ^ s` is `c ^ s`, so the remainder is bounded by `c ^ s`.
   have hXle : ∀ m, ‖(PowerSeries.X ^ s : PowerSeries R).coeff m‖ * c ^ m
@@ -236,7 +236,8 @@ theorem IsDistinguished.exists_isUnit_isMonicOfDegree_mul_eq [CompleteSpace R]
       rw [Polynomial.coeff_coe]
       exact Polynomial.coeff_eq_zero_of_natDegree_lt (by omega)
   obtain ⟨e, r', he, hr', her'⟩ :=
-    hωd.exists_mul_add_eq (by rw [hωs]; exact isNormMulUnit_one) hc hωr hfr
+    (show IsMulDistinguished c s (ω : PowerSeries R) from
+      ⟨hωd, by rw [hωs]; exact isNormMulUnit_one⟩).exists_mul_add_eq hc hωr hfr
   have hself : e * q * f + r' = 1 * f + 0 := by
     rw [mul_assoc, ← hωq, her', one_mul, add_zero]
   obtain ⟨heq, hr0⟩ := hf.eq_and_eq_of_mul_add_eq_mul_add hc (fun _ ↦ norm_mul _ _)
