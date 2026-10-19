@@ -24,6 +24,12 @@ send the last position to the last position.
   `k.succ` and updating `k.castSucc`.
 * `Fin.snoc_comp_snoc_castSucc_comp`: reindexing along `g` and then appending agrees with
   appending and then reindexing along the extension of `g` that fixes the last position.
+* `Fin.tail_contractNth_succ`, `Fin.init_contractNth_castSucc`: contracting two adjacent entries
+  away from the first (last) one commutes with dropping the first (last) entry.
+* `Fin.contractNth_zero_cons`, `Fin.contractNth_succ_cons`: contracting entries of a tuple
+  `Fin.cons x a`.
+* `Fin.init_contractNth_castSucc_last`: contracting the last two entries and dropping the last
+  one drops the last two entries.
 -/
 
 public section
@@ -67,5 +73,45 @@ theorem snoc_comp_snoc_castSucc_comp {n : ℕ} (c : Fin n → α) (z : α) (g : 
     snoc c z ∘ snoc (castSucc ∘ g) (last n) = snoc (c ∘ g) z := by
   funext i
   exact lastCases (by simp) (fun j => by simp) i
+
+section ContractNth
+
+variable {n : ℕ} (op : α → α → α)
+
+/-- Contracting two adjacent entries after the first commutes with dropping the first entry. -/
+theorem tail_contractNth_succ (j : Fin (n + 1)) (a : Fin (n + 2) → α) :
+    tail (contractNth j.succ op a) = contractNth j op (tail a) := by
+  funext k
+  simp only [tail, contractNth, val_succ, Nat.add_lt_add_iff_right, Nat.add_right_cancel_iff,
+    succ_castSucc]
+
+/-- Contracting two adjacent entries before the last commutes with dropping the last entry. -/
+theorem init_contractNth_castSucc (j : Fin (n + 1)) (a : Fin (n + 2) → α) :
+    init (contractNth j.castSucc op a) = contractNth j op (init a) := by
+  funext k
+  simp only [init, contractNth, val_castSucc, succ_castSucc]
+
+/-- Contracting the first two entries of `Fin.cons x a` combines `x` with the first entry of `a`
+under `op`. -/
+theorem contractNth_zero_cons (x : α) (a : Fin (n + 1) → α) :
+    contractNth 0 op (cons x a) = cons (op x (a 0)) (tail a) := by
+  funext k
+  cases k using Fin.cases with
+  | zero => rfl
+  | succ k => rfl
+
+/-- Contracting two entries of `Fin.cons x a` other than the first contracts `a`. -/
+theorem contractNth_succ_cons (j : Fin (n + 1)) (x : α) (a : Fin (n + 1) → α) :
+    contractNth j.succ op (cons x a) = cons x (contractNth j op a) := by
+  rw [← cons_self_tail (contractNth j.succ op (cons x a)), tail_contractNth_succ, tail_cons]
+  rfl
+
+/-- Contracting the last two entries and dropping the last one drops the last two entries. -/
+theorem init_contractNth_castSucc_last (a : Fin (n + 2) → α) :
+    init (contractNth (last n).castSucc op a) = init (init a) := by
+  funext k
+  simp only [init, contractNth, val_castSucc, val_last, k.is_lt, ↓reduceIte]
+
+end ContractNth
 
 end Fin
