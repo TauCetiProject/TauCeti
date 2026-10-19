@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Distributions.GeneralizedPareto.Moments
-import TauCeti.Probability.Moments.IntegrableExpMul
+public import TauCeti.Probability.Distributions.GeneralizedPareto.Basic
+import TauCeti.Probability.Distributions.Affine
+import TauCeti.Probability.Distributions.GeneralizedPareto.Relations
 
 /-!
 # Exponential integrability of generalized Pareto laws
@@ -38,19 +39,11 @@ theorem integrableExpSet_id_generalizedParetoMeasure {s ξ : ℝ} (hs : 0 < s) :
   have hpos := ae_pos_and_one_add_mul_div_pos_generalizedParetoMeasure s ξ
   by_cases hξ : 0 < ξ
   · simp only [hξ, ↓reduceIte]
-    ext t
-    simp only [integrableExpSet, mem_ofPred_eq, id_eq, mem_Iic]
-    refine ⟨fun ht => le_of_not_gt fun htpos => ?_, fun ht =>
-      TauCeti.integrable_exp_mul_of_ge t 0 ht measurable_id.aemeasurable
-        (hpos.mono fun _ hx => hx.1.le)⟩
-    obtain ⟨n, hn⟩ := exists_nat_gt ξ⁻¹
-    have hnξ : ¬ (n : ℝ) * ξ < 1 := by
-      have := mul_lt_mul_of_pos_right hn hξ
-      rw [inv_mul_cancel₀ hξ.ne'] at this
-      linarith
-    exact TauCeti.not_integrable_exp_mul_of_not_integrable_pow n
-      measurable_id.aemeasurable (hpos.mono fun _ hx => hx.1.le)
-      (fun h => hnξ ((integrable_pow_generalizedParetoMeasure_iff hs n).1 h)) htpos ht
+    simpa only [one_mul, map_add_generalizedParetoMeasure_eq_paretoMeasure hs hξ,
+      integrableExpSet_id_paretoMeasure (div_pos hs hξ) (one_div_pos.mpr hξ),
+      preimage_id'] using
+        (integrableExpSet_id_map_affine
+          (μ := generalizedParetoMeasure s ξ) (a := s / ξ) (b := 1)).symm
   · simp only [hξ, ↓reduceIte]
     by_cases hzero : ξ = 0
     · simp [hzero, generalizedParetoMeasure_zero hs,
