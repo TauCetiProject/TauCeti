@@ -201,13 +201,6 @@ theorem coeff_neg_one_substAlgHom_mul_derivative (f : K⸨X⸩) :
     rw [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, valuation_substAlgHom]
     exact pow_le_one' hg _
 
-/-- The finite-map residue formula written in terms of the Laurent-series order `(φ : K⸨X⸩).order`:
-`Res(f(φ) Dφ dX) = (φ : K⸨X⸩).order • Res(f dX)`. -/
-theorem coeff_neg_one_substAlgHom_mul_derivative_eq_order_zsmul (f : K⸨X⸩) :
-    (substAlgHom hφ hφ₀ f * _root_.LaurentSeries.derivative K (φ : K⸨X⸩)).coeff (-1) =
-      (φ : K⸨X⸩).order • f.coeff (-1) := by
-  rw [coeff_neg_one_substAlgHom_mul_derivative, PowerSeries.order_coe, natCast_zsmul]
-
 /-- **Coordinate-change invariance of the residue (`ord φ = 1`).** If `φ` has order one, then
 `Res(f(φ) Dφ dX) = Res(f dX)`. -/
 theorem coeff_neg_one_substAlgHom_mul_derivative_of_order_eq_one (hφ₁ : φ.order = 1) (f : K⸨X⸩) :

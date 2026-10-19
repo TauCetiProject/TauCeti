@@ -37,8 +37,7 @@ for `e, k ≥ 1`, which governs the behaviour of residues under a substitution `
 
 * `PowerSeries.derivative_map`: the derivative commutes with change of coefficients.
 * `PowerSeries.nsmul_coeff_mul_succ_pow_succ`,
-  `PowerSeries.nsmul_coeff_mul_succ_pow_succ_eq_coeff_pow_mul_derivative`,
-  `PowerSeries.coeff_mul_succ_pow_succ_eq_coeff_pow_mul_derivative`:
+  `PowerSeries.nsmul_coeff_mul_succ_pow_succ_eq_coeff_pow_mul_derivative`:
   `e • coeff (e * (n + 1)) (v ^ (n + 1)) = coeff (e * (n + 1) - 1) (v ^ n * v')` for `e ≠ 0`, and
   its `X *`-shifted form for all `e`.
 * `PowerSeries.coeff_succ_pow_succ_eq_coeff_pow_mul_derivative`: the `e = 1` case
@@ -102,12 +101,6 @@ theorem nsmul_coeff_mul_succ_pow_succ_eq_coeff_pow_mul_derivative (v : R⟦X⟧)
     e • coeff (e * (n + 1)) (v ^ (n + 1)) = coeff (e * (n + 1) - 1) (v ^ n * d⁄dX v) := by
   obtain ⟨m, hm⟩ := Nat.exists_eq_add_one_of_ne_zero (mul_ne_zero he (Nat.succ_ne_zero n))
   rw [nsmul_coeff_mul_succ_pow_succ, hm, coeff_succ_X_mul, Nat.add_sub_cancel]
-
-/-- Multiplication form of `nsmul_coeff_mul_succ_pow_succ_eq_coeff_pow_mul_derivative`. -/
-theorem coeff_mul_succ_pow_succ_eq_coeff_pow_mul_derivative (v : R⟦X⟧) {e : ℕ} (he : e ≠ 0)
-    (n : ℕ) :
-    (e : R) * coeff (e * (n + 1)) (v ^ (n + 1)) = coeff (e * (n + 1) - 1) (v ^ n * d⁄dX v) := by
-  rw [← nsmul_eq_mul, nsmul_coeff_mul_succ_pow_succ_eq_coeff_pow_mul_derivative v he n]
 
 /-- The coefficient of `X ^ (n + 1)` in `v ^ (n + 1)` is the coefficient of `X ^ n` in
 `v ^ n * v'`, over any commutative semiring. -/

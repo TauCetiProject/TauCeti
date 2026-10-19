@@ -118,9 +118,7 @@ variable {R : Type*} [CommSemiring R]
 of `φ`. -/
 theorem trunc_derivative_eq_of_trunc_eq {m : ℕ} {φ ψ : R⟦X⟧}
     (h : trunc (m + 1) φ = trunc (m + 1) ψ) : trunc m (d⁄dX φ) = trunc m (d⁄dX ψ) := by
-  rw [trunc_eq_iff]
-  intro n hn
-  rw [coeff_derivative, coeff_derivative, coeff_eq_of_trunc_eq h (Nat.add_lt_add_right hn 1)]
+  rw [trunc_derivative, trunc_derivative, h]
 
 end CommSemiring
 
