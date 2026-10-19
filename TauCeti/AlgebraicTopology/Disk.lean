@@ -23,7 +23,7 @@ boundary sphere is a closed embedding (`TauCeti.TopCat.isClosedEmbedding_diskBou
 This module also constructs the standard `TopPair` consisting of a disk and its boundary, providing
 the topological input for relative-homology calculations. A map out of the boundary sphere is
 null-homotopic exactly when it extends over the disk
-(`TauCeti.TopCat.nullhomotopic_iff_exists_diskBoundaryInclusion_comp_eq`), which is how maps are
+(`TopCat.Hom.nullhomotopic_iff_exists_diskBoundaryInclusion_comp_eq`), which is how maps are
 extended over attached cells.
 
 Mathlib's `TopCat.diskBoundary n` is the universe lift of the unit sphere of
@@ -101,6 +101,10 @@ lemma coe_diskBoundaryInclusion_apply_down (n : ℕ) (s : TopCat.diskBoundary.{u
         EuclideanSpace ℝ (Fin n)) :=
   rfl
 
+end TauCeti.TopCat
+
+namespace TopCat.Hom
+
 /-- **A map out of the boundary sphere of a disk is null-homotopic exactly when it extends over
 the disk.** -/
 theorem nullhomotopic_iff_exists_diskBoundaryInclusion_comp_eq {Y : TopCat.{u}} {n : ℕ}
@@ -115,7 +119,7 @@ theorem nullhomotopic_iff_exists_diskBoundaryInclusion_comp_eq {Y : TopCat.{u}} 
     exact ((id_nullhomotopic (TopCat.disk n)).comp_right F.hom).comp_left
       (TopCat.diskBoundaryInclusion n).hom
 
-end TauCeti.TopCat
+end TopCat.Hom
 
 namespace TauCeti
 

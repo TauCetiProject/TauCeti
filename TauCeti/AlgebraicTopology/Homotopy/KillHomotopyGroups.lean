@@ -43,7 +43,7 @@ Maps out of the colimit are built in the same way, stage by stage. Every cell of
 attached along a based map, so a map `f : X ⟶ Z` into a space whose homotopy groups `πₖ(Z, f x)`
 vanish for `k ≥ n` extends over each new cell, and these extensions form a cocone on the tower: `f`
 extends over `killHomotopyGroups n X x`
-(`TauCeti.exists_killHomotopyGroupsIncl_comp_eq`). For `n ≥ 2` the extension induces on `π₁` the
+(`TopCat.Hom.exists_killHomotopyGroupsIncl_comp_eq`). For `n ≥ 2` the extension induces on `π₁` the
 map induced by `f` (`TauCeti.exists_mapOfEq_comp_killHomotopyGroupsFundamentalGroupMulEquiv`). In
 particular, for `n = 2` every map from `X` into a `K(H, 1)` space extends over
 `killHomotopyGroups 2 X x`, realizing the same homomorphism of fundamental groups; for a Hausdorff,
@@ -67,7 +67,7 @@ path-connected `X` that space is a `K(π₁(X, x), 1)`.
   on vanish.
 * `TauCeti.isEilenbergMacLaneSpaceOne_killHomotopyGroups`: for `n = 2` and path-connected `X`,
   the colimit is a `K(π₁(X, x), 1)`.
-* `TauCeti.exists_killHomotopyGroupsIncl_comp_eq`: maps into a space whose homotopy groups
+* `TopCat.Hom.exists_killHomotopyGroupsIncl_comp_eq`: maps into a space whose homotopy groups
   vanish from dimension `n` on extend over the colimit.
 * `TauCeti.exists_mapOfEq_comp_killHomotopyGroupsFundamentalGroupMulEquiv`: for `n ≥ 2`, the
   extension induces the given map on fundamental groups.
@@ -333,22 +333,24 @@ private lemma nullhomotopic_killingAttachingMaps_comp {Y : TopCat.{u}} {y : Y} {
 /-- **A based map extends over one step of the tower.** If the homotopy group of `Z` vanishes in
 the dimension of the spheres attached at step `m`, every map `g` out of stage `m` extends over
 stage `m + 1`. -/
-theorem exists_killingStageIncl_comp_eq {m : ℕ} (g : (killingStage n X x m).1 ⟶ Z)
+theorem _root_.TopCat.Hom.exists_killingStageIncl_comp_eq {m : ℕ}
+    (g : (killingStage n X x m).1 ⟶ Z)
     (hZ : ∀ k, m = k + 1 → n ≤ k → Subsingleton (π_ k Z (g (killingStage n X x m).2))) :
     ∃ g' : (killingStage n X x (m + 1)).1 ⟶ Z, killingStageIncl n X x m ≫ g' = g := by
-  choose F hF using fun i ↦ (TopCat.nullhomotopic_iff_exists_diskBoundaryInclusion_comp_eq _).1
-    (nullhomotopic_killingAttachingMaps_comp (m := m) g hZ i)
+  choose F hF using fun i ↦
+    (TopCat.Hom.nullhomotopic_iff_exists_diskBoundaryInclusion_comp_eq _).1
+      (nullhomotopic_killingAttachingMaps_comp (m := m) g hZ i)
   exact ⟨cellAttachmentLift _ g F fun i ↦ (hF i).symm, cellAttachmentIncl_lift _ _ _ _⟩
 
 /-- The extensions of a map `f : X ⟶ Z` over the successive stages of the tower, each extending
-the previous one by `TauCeti.exists_killingStageIncl_comp_eq`. They all send the base point of
+the previous one by `TopCat.Hom.exists_killingStageIncl_comp_eq`. They all send the base point of
 their stage to `f x`. -/
 private def killingStageExtension (f : X ⟶ Z) (hZ : ∀ k, n ≤ k → Subsingleton (π_ k Z (f x))) :
     (m : ℕ) → {g : (killingStage n X x m).1 ⟶ Z // g (killingStage n X x m).2 = f x}
   | 0 => ⟨f, rfl⟩
   | m + 1 =>
     have hm := (killingStageExtension f hZ m).2
-    have h := exists_killingStageIncl_comp_eq (killingStageExtension f hZ m).1
+    have h := (killingStageExtension f hZ m).1.exists_killingStageIncl_comp_eq
       (by rw [hm]; exact fun k _ ↦ hZ k)
     ⟨h.choose, by
       rw [← killingStageIncl_basepoint, ← ConcreteCategory.comp_apply, h.choose_spec, hm]⟩
@@ -358,7 +360,7 @@ private lemma killingStageIncl_comp_killingStageExtension (f : X ⟶ Z)
     (hZ : ∀ k, n ≤ k → Subsingleton (π_ k Z (f x))) (m : ℕ) :
     killingStageIncl n X x m ≫ (killingStageExtension f hZ (m + 1)).1 =
       (killingStageExtension f hZ m).1 :=
-  (exists_killingStageIncl_comp_eq (killingStageExtension f hZ m).1
+  ((killingStageExtension f hZ m).1.exists_killingStageIncl_comp_eq
     (by rw [(killingStageExtension f hZ m).2]; exact fun k _ ↦ hZ k)).choose_spec
 
 /-- **Maps into a space without homotopy from dimension `n` on extend over
@@ -366,7 +368,7 @@ private lemma killingStageIncl_comp_killingStageExtension (f : X ⟶ Z)
 `k ≥ n`, then `f : X ⟶ Z` extends along the inclusion `X ⟶ killHomotopyGroups n X x`. Only the
 homotopy groups at the base point `f x` enter, because every cell of the tower is attached along
 a based map. -/
-theorem exists_killHomotopyGroupsIncl_comp_eq (f : X ⟶ Z)
+theorem _root_.TopCat.Hom.exists_killHomotopyGroupsIncl_comp_eq (f : X ⟶ Z)
     (hZ : ∀ k, n ≤ k → Subsingleton (π_ k Z (f x))) :
     ∃ F : killHomotopyGroups n X x ⟶ Z, killHomotopyGroupsIncl n X x ≫ F = f := by
   -- The extensions over the stages are compatible, so they form a cocone on the tower.
@@ -386,7 +388,7 @@ theorem exists_mapOfEq_comp_killHomotopyGroupsFundamentalGroupMulEquiv [T2Space 
       (FundamentalGroup.mapOfEq F.hom hF).comp
           (killHomotopyGroupsFundamentalGroupMulEquiv n X x hn).toMonoidHom =
         FundamentalGroup.mapOfEq f.hom rfl := by
-  obtain ⟨F, hF⟩ := exists_killHomotopyGroupsIncl_comp_eq f hZ
+  obtain ⟨F, hF⟩ := f.exists_killHomotopyGroupsIncl_comp_eq hZ
   have hFx : F (killHomotopyGroupsIncl n X x x) = f x := by
     rw [← ConcreteCategory.comp_apply, hF]
   refine ⟨F, hFx, MonoidHom.ext fun g ↦ ?_⟩

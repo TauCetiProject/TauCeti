@@ -147,7 +147,7 @@ theorem cellAttachment_attachingMap_nullhomotopic
     (φ : ι → (TopCat.diskBoundary n ⟶ X)) (i : ι) :
     ((cellAttachmentIncl φ).hom.comp (φ i).hom).Nullhomotopic := by
   rw [← TopCat.hom_comp]
-  exact (TopCat.nullhomotopic_iff_exists_diskBoundaryInclusion_comp_eq _).2
+  exact (TopCat.Hom.nullhomotopic_iff_exists_diskBoundaryInclusion_comp_eq _).2
     ⟨_, (cellAttachment_boundary φ i).symm⟩
 
 end TauCeti
