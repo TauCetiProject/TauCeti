@@ -150,6 +150,6 @@ theorem dualCotangentMap_bijective_of_etaleKernel (hf : IsIsogeny f)
     simp only [e, LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply,
       LieEquiv.coe_toLinearEquiv, lieEquivOfEtaleKernel_apply,
       Derivation.cotangentLinearEquiv_dualCotangentMap]
-  simpa only [Function.Bijective, Function.Injective, Function.Surjective, he] using e.bijective
+  exact (funext he : ⇑e = _) ▸ e.bijective
 
 end TauCeti.CommHopfAlgCat.IsIsogeny

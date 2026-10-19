@@ -393,6 +393,12 @@ lemma coe_dualCotangentEquiv (e : A ≃ₐc[R] A') :
       Module.Dual R (Bialgebra.CotangentSpace R A)) = dualCotangentMap (e : A →ₐc[R] A') :=
   (rfl)
 
+/-- The differential of a bialgebra equivalence is bijective on cotangent duals. -/
+lemma _root_.BialgEquiv.dualCotangentMap_bijective (e : A ≃ₐc[R] A') :
+    Function.Bijective (dualCotangentMap (e : A →ₐc[R] A')) := by
+  simpa only [← coe_dualCotangentEquiv, LinearEquiv.coe_coe] using
+    (dualCotangentEquiv e).bijective
+
 end Functoriality
 
 section ScalarExtension

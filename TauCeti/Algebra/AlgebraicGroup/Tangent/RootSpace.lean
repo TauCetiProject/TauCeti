@@ -409,6 +409,12 @@ section Transport
 variable {R H L M : Type u} [CommRing R] [CommRing H] [CommRing L] [HopfAlgebra R H]
   [HopfAlgebra R L] [CommGroup M]
 
+-- Identify the linear map underlying `ofBijective` through its public application lemma.
+private lemma ofBijective_dualCotangentMap_toLinearMap (φ : H →ₐc[R] L)
+    (hφ : Function.Bijective (dualCotangentMap φ)) :
+    (LinearEquiv.ofBijective (dualCotangentMap φ) hφ).toLinearMap = dualCotangentMap φ :=
+  LinearMap.ext fun _ ↦ LinearEquiv.ofBijective_apply ..
+
 variable [Module.Finite R (Bialgebra.CotangentSpace R H)]
   [Module.Projective R (Bialgebra.CotangentSpace R H)]
   [Module.Finite R (Bialgebra.CotangentSpace R L)]
@@ -450,8 +456,7 @@ theorem _root_.BialgHom.map_dualCotangentMap_adjointWeightSpace_of_bijective (φ
     (adjointWeightSpace π α).map (dualCotangentMap φ) = adjointWeightSpace (π.comp φ) α := by
   ext x
   obtain ⟨y, rfl⟩ := hφ.surjective x
-  rw [← show (LinearEquiv.ofBijective (dualCotangentMap φ) hφ).toLinearMap =
-      dualCotangentMap φ from rfl,
+  rw [← ofBijective_dualCotangentMap_toLinearMap φ hφ,
     Submodule.mem_map_equiv, LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply]
   exact (φ.dualCotangentMap_mem_adjointWeightSpace_iff_of_injective hφ.injective π α y).symm
 
@@ -463,8 +468,7 @@ theorem _root_.BialgHom.nontrivialAdjointWeights_comp_of_bijective (φ : H →�
   ext α
   rw [mem_nontrivialAdjointWeights, mem_nontrivialAdjointWeights,
     ← φ.map_dualCotangentMap_adjointWeightSpace_of_bijective hφ,
-    ← show (LinearEquiv.ofBijective (dualCotangentMap φ) hφ).toLinearMap =
-      dualCotangentMap φ from rfl]
+    ← ofBijective_dualCotangentMap_toLinearMap φ hφ]
   exact and_congr_right' (not_congr Submodule.map_eq_bot_iff)
 
 /-- A bijective differential restricts to a linear equivalence of corresponding adjoint
@@ -475,8 +479,7 @@ noncomputable def _root_.BialgHom.adjointWeightSpaceEquivOfBijective (φ : H →
   ((LinearEquiv.ofBijective (dualCotangentMap φ) hφ).submoduleMap
     (adjointWeightSpace π α)).trans
       (LinearEquiv.ofEq _ _ (by
-        rw [show (LinearEquiv.ofBijective (dualCotangentMap φ) hφ).toLinearMap =
-          dualCotangentMap φ from rfl]
+        rw [ofBijective_dualCotangentMap_toLinearMap φ hφ]
         exact φ.map_dualCotangentMap_adjointWeightSpace_of_bijective hφ π α))
 
 /-- The restricted equivalence acts by the differential on weight vectors. -/
@@ -496,8 +499,7 @@ theorem map_dualCotangentMap_adjointWeightSpace (e : H ≃ₐc[R] L)
     (adjointWeightSpace π α).map (dualCotangentMap (e : H →ₐc[R] L)) =
       adjointWeightSpace (π.comp (e : H →ₐc[R] L)) α :=
   BialgHom.map_dualCotangentMap_adjointWeightSpace_of_bijective _
-    (by simpa only [← coe_dualCotangentEquiv, LinearEquiv.coe_coe] using
-      (dualCotangentEquiv e).bijective) π α
+    e.dualCotangentMap_bijective π α
 
 /-- Transport along a bialgebra equivalence preserves the nontrivial adjoint weights. -/
 @[simp]
@@ -505,16 +507,14 @@ theorem nontrivialAdjointWeights_comp_bialgEquiv (e : H ≃ₐc[R] L)
     (π : L →ₐc[R] MonoidAlgebra R M) :
     nontrivialAdjointWeights (π.comp (e : H →ₐc[R] L)) = nontrivialAdjointWeights π :=
   BialgHom.nontrivialAdjointWeights_comp_of_bijective _
-    (by simpa only [← coe_dualCotangentEquiv, LinearEquiv.coe_coe] using
-      (dualCotangentEquiv e).bijective) π
+    e.dualCotangentMap_bijective π
 
 /-- The differential of a bialgebra equivalence, restricted to an adjoint weight space. -/
 noncomputable def adjointWeightSpaceEquiv (e : H ≃ₐc[R] L) (π : L →ₐc[R] MonoidAlgebra R M)
     (α : M) :
     adjointWeightSpace π α ≃ₗ[R] adjointWeightSpace (π.comp (e : H →ₐc[R] L)) α :=
   BialgHom.adjointWeightSpaceEquivOfBijective _
-    (by simpa only [← coe_dualCotangentEquiv, LinearEquiv.coe_coe] using
-      (dualCotangentEquiv e).bijective) π α
+    e.dualCotangentMap_bijective π α
 
 /-- The weight-space equivalence is the differential of the bialgebra equivalence. -/
 @[simp]
