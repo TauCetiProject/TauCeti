@@ -15,10 +15,10 @@ public import TauCeti.RepresentationTheory.InvariantForm.SumOfConjugates
 
 A real inner product can be summed over a finite monoid representation.  The resulting
 positive-definite symmetric bilinear form controls the original norm, and its positive strict
-sublevel sets are neighbourhoods of the origin, open in finite dimensions; arbitrarily small such
-sublevel sets fit inside a prescribed open neighbourhood.  When the monoid is a group, so that it
-acts by linear automorphisms, the form is preserved by the action, without any faithfulness
-assumption, and so are its sublevel sets.
+sublevel sets contain the origin and, in finite dimensions, are open neighbourhoods of it;
+arbitrarily small such sublevel sets fit inside a prescribed open neighbourhood.  When the monoid
+is a group, so that it acts by linear automorphisms, the form is preserved by the action, without
+any faithfulness assumption, and so are its sublevel sets.
 
 These invariant ellipsoids are the linear-algebraic shrinking device in finite-action charts: an
 equivariant chart about a fixed point can be restricted to an invariant ball while retaining every
