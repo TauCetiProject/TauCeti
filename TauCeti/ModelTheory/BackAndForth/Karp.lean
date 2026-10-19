@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.ModelTheory.BackAndForth.Countable
 public import TauCeti.ModelTheory.BackAndForth.Presentation
 public import TauCeti.ModelTheory.Infinitary.Reindex
 
@@ -21,7 +22,8 @@ when they satisfy the same infinitary sentences. The forward direction holds at 
 the converse at any carrier `κ` into which both structures are coded. Full infinitary equivalence
 `InfEquivW` quantifies, outside the syntax, over all carriers in the universe of `M ⊕ N`, and the
 carrier `M ⊕ N` packages the converse. No countability is assumed, and the carrier and the
-universes of the two structures are independent.
+universes of the two structures are independent. For countable structures, which are coded into
+`ℕ`, agreement on the `L_{ω₁ω}` sentences is therefore isomorphism.
 
 The theorem is Carol Karp's, *Finite-quantifier equivalence* (1965). Cameron Freer's
 `cameronfreer/infinitary-logic`, `InfinitaryLogic/Karp/CarrierTheorem.lean` at checkpoint
@@ -46,6 +48,8 @@ The theorem is Carol Karp's, *Finite-quantifier equivalence* (1965). Cameron Fre
 * `TauCeti.karp_theorem`: Karp's theorem for full infinitary equivalence.
 * `TauCeti.InfEquivAt.infEquivW` and `TauCeti.InfEquivW.infEquivAt`: agreement at one coded
   carrier gives full infinitary equivalence, which gives agreement at carriers in every universe.
+* `TauCeti.countable_infEquivAt_nat_iff_iso`: on countable structures, agreement on the
+  `L_{ω₁ω}` sentences is isomorphism.
 -/
 
 public section
@@ -247,5 +251,16 @@ theorem InfEquivAt.infEquivW (cM : IndexCoding M κ) (cN : IndexCoding N κ)
 theorem InfEquivW.infEquivAt (h : InfEquivW (L := L) M N) (μ : Type uμ) :
     InfEquivAt (L := L) μ M N :=
   (karp_theorem.2 h).infEquivAt μ
+
+/-- **Karp's theorem for countable structures.** Countable structures in a relational language are
+isomorphic exactly when they satisfy the same `L_{ω₁ω}` sentences, the infinitary sentences whose
+conjunctions and disjunctions are indexed by `ℕ`. -/
+theorem countable_infEquivAt_nat_iff_iso [Countable M] [Countable N] :
+    InfEquivAt (L := L) ℕ M N ↔ Nonempty (M ≃[L] N) := by
+  -- Both structures are coded into `ℕ`, so Karp's theorem applies at that carrier.
+  let _ := Encodable.ofCountable M
+  let _ := Encodable.ofCountable N
+  exact (karp_theorem_at (IndexCoding.ofEncodable M) (IndexCoding.ofEncodable N)).symm.trans
+    countable_potentialIso_iff_iso
 
 end TauCeti

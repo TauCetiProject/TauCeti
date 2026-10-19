@@ -8,7 +8,6 @@ module
 public import TauCeti.Probability.Process.IIDMixture.Basic
 public import TauCeti.Probability.Process.PathLaw.Mixture
 public import TauCeti.Probability.Kernel.Randomization
-import TauCeti.MeasureTheory.Measure.GiryMonad
 
 /-!
 # Uniform coding of mixtures of i.i.d. path laws
@@ -80,10 +79,10 @@ theorem _root_.MeasureTheory.Measure.map_prod_unitIntervalCoding_eq_deFinettiBar
     _ = (iidMixtureLaw π id).map Prod.snd := by
           rw [Measure.map_prod_unitIntervalCoding_eq_iidMixtureLaw]
     _ = Measure.deFinettiBarycenter π := by
-          rw [iidMixtureLaw_def, TauCeti.MeasureTheory.map_bind
+          rw [iidMixtureLaw_def, Measure.map_bind
             (TauCeti.MeasureTheory.measurable_dirac_prod_infinitePi_const
               (id : ProbabilityMeasure α → ProbabilityMeasure α) measurable_id).aemeasurable
-            measurable_snd, Measure.deFinettiBarycenter_def]
+            measurable_snd.aemeasurable, Measure.deFinettiBarycenter_def]
           simp
 
 end TauCeti.Probability
