@@ -310,15 +310,32 @@ private theorem injective_d_of_concentrated :
   rw [eq_zero_of_eq_zero (c := c) (hn (j + 1 + 1 + 1) (by omega) (by omega)) x, map_zero]
   exact zero_mem _
 
+variable (c) in
+include c h hn in
+/-- An acyclic complex concentrated in degrees `j + 1` and `j + 2` has bases of the same size in
+both degrees, as its differential `Cⱼ₊₂ → Cⱼ₊₁` is then an isomorphism. -/
+theorem card_eq_card_of_concentrated : n (j + 1) = n (j + 1 + 1) := by
+  have hsurj : Function.Surjective (C.d (j + 1 + 1) (j + 1)).hom := fun y ↦ by
+    obtain ⟨⟨_, x, rfl⟩, hx⟩ := ((exact_subtype_rangeRestrict (i := j + 1 + 1) (k := j)
+      (by simp) (by simp) (h (j + 1))) y).1
+        (Subtype.ext (eq_zero_of_eq_zero (c := c) (hn j (by omega) (by omega)) _))
+    exact ⟨x, hx⟩
+  have h₁ := finrank_eq_card_basis (c (j + 1))
+  have h₂ := finrank_eq_card_basis ((c (j + 1 + 1)).map
+    (LinearEquiv.ofBijective _ ⟨injective_d_of_concentrated (c := c) h hn, hsurj⟩))
+  simp only [Fintype.card_fin] at h₁ h₂
+  omega
+
 include hn h in
 /-- The torsion of an acyclic complex concentrated in two consecutive degrees `j + 1` and `j + 2`
 is `det (d) ^ ((-1) ^ j)`, where `det (d)` is the determinant of the differential
 `Cⱼ₊₂ → Cⱼ₊₁` in the bases `c (j + 2)` and `c (j + 1)`. For `j = -1` this is the normalization
 of the torsion: a complex concentrated in degrees `1` and `0` has torsion `det (d)⁻¹`, so that
 multiplication by `a ≠ 0` on `F`, from degree `1` to degree `0`, has torsion `a⁻¹`. -/
-theorem reidemeisterTorsion_eq_det_zpow (hd : n (j + 1) = n (j + 1 + 1)) :
+theorem reidemeisterTorsion_eq_det_zpow :
     C.reidemeisterTorsion c = ((c (j + 1)).det fun k ↦
-      (C.d (j + 1 + 1) (j + 1)).hom (c (j + 1 + 1) (Fin.cast hd k))) ^ (j.negOnePow : ℤ) := by
+      (C.d (j + 1 + 1) (j + 1)).hom (c (j + 1 + 1)
+        (Fin.cast (card_eq_card_of_concentrated c h hn) k))) ^ (j.negOnePow : ℤ) := by
   classical
   -- The images of the basis `c (j + 2)` form a basis of the boundaries `Bⱼ₊₁ = Cⱼ₊₁`, with the
   -- basis `c (j + 2)` itself as lifts; elsewhere the boundaries vanish.
@@ -341,7 +358,8 @@ theorem reidemeisterTorsion_eq_det_zpow (hd : n (j + 1) = n (j + 1 + 1)) :
       exact hi (hn i hi'.1 hi'.2)
   rw [reidemeisterTorsion_eq_finprod hfin h b s hs,
     finprod_eq_prod_of_mulSupport_subset (s := {j, j + 1}), Finset.prod_pair (by omega),
-    torsionBracket_eq_det_left c (h (j + 1)) (b (j + 1)) (b j) (s j) (hs j) (hd.trans hr),
+    torsionBracket_eq_det_left c (h (j + 1)) (b (j + 1)) (b j) (s j) (hs j)
+      ((card_eq_card_of_concentrated c h hn).trans hr),
     torsionBracket_eq_det_right c (h (j + 1 + 1)) (b (j + 1 + 1)) (b (j + 1)) (s (j + 1))
       (hs (j + 1)) hr]
   · simp [s, b, β, Function.comp_def, Basis.det_self]
