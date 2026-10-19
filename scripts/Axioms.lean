@@ -13,6 +13,11 @@ This catches `sorry`/`admit`, native-decision axioms, and custom axioms, includi
 ones and dependencies reached through imports. Enumerating sources includes the empty
 root and orphan modules. `--duplicates-only` isolates the ownership fixtures.
 
+By default the audit covers the whole library. If `AXIOMS_ONLY_MODULES` names a file of module
+names (see `AxiomAudit.scope`), it covers only declarations defined in those modules and in every
+`TauCeti` module that imports one of them, directly or transitively (see
+`AxiomAudit.importersClosure`).
+
 `ShadowAudit` emits per-owner inventory and results for the research harness
 `scripts/shadow_audits.py` through the optional `--shadow-*` modes. Production workflows
 do not use those modes; the default audit and its diagnostics are unchanged.
@@ -96,13 +101,12 @@ partial def reachesDisallowedAxiom (c : Name) : AxiomCacheM Bool := do
   modify (·.insert c res)
   return res
 
-/-- `seed` together with every module that imports one of them, directly or transitively.
-
-A module's compiled declarations depend on the code it imports as well as on its own source: a
-changed macro, elaborator, tactic, attribute handler or initializer in one module can change what
-an unchanged module that uses it emits when Lake rebuilds it. So the modules whose declarations a
-change can affect are exactly the changed ones and everything downstream of them; every other
-module compiles to what `main` already audited. -/
+/-- `seed` together with every module of `env` that imports one of them, directly or
+transitively, computed from the import lists in `env`'s module headers. -/
+-- Why the closure and not just `seed`: a module's compiled declarations depend on the code it
+-- imports as well as on its own source. A changed macro, elaborator, tactic, attribute handler or
+-- initializer in one module can change what an unchanged module that uses it emits when Lake
+-- rebuilds it, so the modules a change can affect are the changed ones and everything downstream.
 def importersClosure (env : Environment) (seed : Std.HashSet Name) : Std.HashSet Name := Id.run do
   let names := env.header.moduleNames
   let data := env.header.moduleData
@@ -121,9 +125,10 @@ def importersClosure (env : Environment) (seed : Std.HashSet Name) : Std.HashSet
         todo := todo.push d
   return seen
 
-/-- Audit every declaration defined in `TauCeti` (in the scope, if one is given). Returns the number audited and a list of
-violation messages, **already rendered to `String`**, and optional counts/messages per owner
-for the shadow prototype. The authoritative entry point leaves `groupResults` disabled.
+/-- Audit every declaration defined in `TauCeti`, or, if `only` is given, every one defined in a
+module of `importersClosure env only`. Returns the number audited, a list of violation messages,
+**already rendered to `String`**, and optional counts/messages per owner for the shadow
+prototype. The authoritative entry point leaves `groupResults` disabled.
 
 The strings must be materialized here, inside the environment callback: declaration and
 axiom `Name`s loaded from `.olean`s live in a memory-mapped region that is unmapped once
@@ -168,16 +173,15 @@ def auditResults (only : Option (Std.HashSet Name)) (groupResults := false) :
         results := results.insert mod (count, msgs.push message)
   return (candidates.size, messages, results)
 
--- Return the exit code (rather than `IO.Process.exit`) so the Lean runtime tears the
--- imported environment down in order; an abrupt `exit()` can segfault during teardown.
-/-- The optional audit scope: `AXIOMS_ONLY_MODULES` names a file listing module names, one per line
-(pr-build.yml passes the changed modules of an ordinary PR). Unset or empty means the whole library.
-The audit then covers those modules and everything that imports them (`importersClosure`).
-
-That is sound because the library on `main` passed the full audit (every push to `main` and every
-merge-queue build runs it unscoped): a module outside the closure imports nothing that changed, so
-it compiles to exactly what was audited. Lake-pin bumps, which change what everything depends on,
-and any change the module list cannot name are audited in full by the caller. -/
+/-- The optional audit scope. If the environment variable `AXIOMS_ONLY_MODULES` is unset or empty,
+returns `none` (audit the whole library). Otherwise it names a file listing module names, one per
+line; blank lines and surrounding ASCII whitespace are ignored, and the result is the set of those
+names. `audit` widens the set to its `importersClosure`. -/
+-- Soundness of a scoped run rests on the caller (`.github/workflows/pr-build.yml`), which sets
+-- `AXIOMS_ONLY_MODULES` only for an ordinary PR build with unchanged Lake pins whose every changed
+-- `.lean` file is a named module. The library on `main` has passed the full audit (every push to
+-- `main` and every merge-queue build runs it unscoped), and a module outside the closure imports
+-- nothing that changed, so it compiles to exactly what was audited.
 def scope : IO (Option (Std.HashSet Name)) := do
   match (← IO.getEnv "AXIOMS_ONLY_MODULES") with
   | none | some "" => return none
