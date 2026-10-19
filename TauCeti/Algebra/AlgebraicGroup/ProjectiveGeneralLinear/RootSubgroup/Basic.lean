@@ -85,14 +85,15 @@ theorem map_genericMatrix_rootSubgroupCoordinateMap (hij : i ≠ j) :
     rw [Matrix.map_apply, GeneralLinear.genericMatrix_apply,
       GeneralLinear.rootSubgroupCoordinateMap_apply_X]
     rfl
+  have hinv : (Matrix.transvection i j (SymmetricAlgebra.ι R R 1))⁻¹ =
+      Matrix.transvection i j (-SymmetricAlgebra.ι R R 1) := by
+    apply Matrix.inv_eq_left_inv
+    simp [Matrix.transvection_mul_transvection_same i j hij]
   rw [rootSubgroupCoordinateMap_def, ← Category.assoc, CommHopfAlgCat.hom_comp,
     BialgHom.coe_comp, ← Matrix.map_map, map_genericMatrix_conjugationMap,
     conjugationMatrix_map]
-  rw [← BialgHom.coe_toAlgHom,
-    GeneralLinear.map_inv_genericMatrix, BialgHom.coe_toAlgHom, hroot]
-  rw [← coe_transvectionUnit hij, ← Matrix.GeneralLinearGroup.coe_inv,
-    transvectionUnit_inv, coe_transvectionUnit]
-  simp only [coe_transvectionUnit]
+  simp only [← BialgHom.coe_toAlgHom, GeneralLinear.map_inv_genericMatrix]
+  simp only [BialgHom.coe_toAlgHom, hroot, hinv]
 
 /-- The coefficient taking `Eⱼⱼ` to `Eᵢⱼ` pulls back to the additive parameter.
 This is the coordinate that proves the root map is a closed immersion. -/
@@ -129,25 +130,21 @@ theorem pointsMulEquiv_rootSubgroupPoints (A : CommAlgCat.{w} R) (hij : i ≠ j)
     pointsMulEquiv n R A (rootSubgroupPoints A hij f) =
       Matrix.GeneralLinearGroup.innerAut (transvectionUnit hij
         (Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv f))) := by
-  apply autToGeneralLinear_injective n
-  rw [autToGeneralLinear_pointsMulEquiv]
+  -- Express the composite point as a general-linear root point followed by conjugation.
+  -- Unfolding here only identifies precomposition with the composite coordinate map.
+  simp only [rootSubgroupPoints, rootSubgroupCoordinateMap_def, BialgHom.mapDomain_apply,
+    CommHopfAlgCat.hom_comp, BialgHom.comp_toAlgHom, ← AlgHom.comp_assoc]
+  rw [pointsMulEquiv_conjugationMap n R A
+    (toConv (f.ofConv.comp (GeneralLinear.rootSubgroupCoordinateMap hij).hom.toAlgHom))]
+  congr 1
   apply Units.ext
-  rw [coe_autToGeneralLinear_innerAut, ← Matrix.GeneralLinearGroup.coe_inv,
-    transvectionUnit_inv, coe_transvectionUnit, coe_transvectionUnit]
-  rw [GeneralLinear.pointsMulEquiv_apply,
-    ← GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear]
   ext a b
-  have h := congrArg (fun M : Matrix (Fin (n * n)) (Fin (n * n))
-      (AdditiveGroup.coordinateHopfAlgebra R) ↦ f.ofConv (M a b))
-    (map_genericMatrix_rootSubgroupCoordinateMap (R := R) hij)
-  rw [Matrix.map_apply, CommHopfAlgCat.hom_comp, BialgHom.comp_apply] at h
-  erw [CommHopfAlgCat.mkQuotient_apply] at h
-  rw [Matrix.map_apply]
-  -- The concrete-category coercion hides the quotient point homomorphism here.
-  erw [CommHopfAlgCat.quotientPointsHom_apply_apply, rootSubgroupPoints_apply_apply]
-  simpa only [conjugationMatrix_apply, Matrix.transvection, Matrix.add_apply,
-    Matrix.one_apply, Matrix.single_apply, map_mul, map_add, map_neg, map_zero, map_one,
-    apply_ite, AdditiveGroup.toAdd_gaPointsMulEquiv] using h
+  simp only [GeneralLinear.pointsMulEquiv_apply, GeneralLinear.pointToGeneralLinear_apply,
+    AlgHom.comp_apply, BialgHom.coe_toAlgHom]
+  rw [GeneralLinear.rootSubgroupCoordinateMap_apply_X]
+  simp [coe_transvectionUnit, Matrix.transvection, Matrix.one_apply, Matrix.single_apply,
+    AdditiveGroup.toAdd_gaPointsMulEquiv]
+  split_ifs <;> simp_all
 
 /-- Root-subgroup points are natural in the commutative value algebra. -/
 theorem mapPoints_rootSubgroupPoints {A B : CommAlgCat.{w} R} (φ : A ⟶ B)
