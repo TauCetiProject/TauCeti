@@ -82,13 +82,13 @@ theorem generalizedParetoPDF_ne_top (s ξ x : ℝ) : generalizedParetoPDF s ξ x
 
 /-- A nonpositive scale gives the zero real-valued density. -/
 @[simp]
-theorem generalizedParetoPDFReal_of_nonpos (hs : s ≤ 0) (ξ x : ℝ) :
+theorem generalizedParetoPDFReal_of_scale_nonpos (hs : s ≤ 0) (ξ x : ℝ) :
     generalizedParetoPDFReal s ξ x = 0 := by
   simp [generalizedParetoPDFReal, not_lt.mpr hs]
 
 /-- The real-valued density vanishes at nonpositive points. -/
 @[simp]
-theorem generalizedParetoPDFReal_of_nonpos_argument (hx : x ≤ 0) (s ξ : ℝ) :
+theorem generalizedParetoPDFReal_of_nonpos (hx : x ≤ 0) (s ξ : ℝ) :
     generalizedParetoPDFReal s ξ x = 0 := by
   simp [generalizedParetoPDFReal, not_lt.mpr hx]
 
@@ -135,15 +135,16 @@ theorem generalizedParetoPDFReal_pos_iff (hs : 0 < s) :
 
 /-- A nonpositive scale gives the zero `ℝ≥0∞`-valued density. -/
 @[simp]
-theorem generalizedParetoPDF_of_nonpos (hs : s ≤ 0) (ξ x : ℝ) :
+theorem generalizedParetoPDF_of_scale_nonpos (hs : s ≤ 0) (ξ x : ℝ) :
     generalizedParetoPDF s ξ x = 0 := by
-  rw [generalizedParetoPDF_eq_ofReal, generalizedParetoPDFReal_of_nonpos hs, ENNReal.ofReal_zero]
+  rw [generalizedParetoPDF_eq_ofReal, generalizedParetoPDFReal_of_scale_nonpos hs,
+    ENNReal.ofReal_zero]
 
 /-- The `ℝ≥0∞`-valued density vanishes at nonpositive points. -/
 @[simp]
-theorem generalizedParetoPDF_of_nonpos_argument (hx : x ≤ 0) (s ξ : ℝ) :
+theorem generalizedParetoPDF_of_nonpos (hx : x ≤ 0) (s ξ : ℝ) :
     generalizedParetoPDF s ξ x = 0 := by
-  rw [generalizedParetoPDF_eq_ofReal, generalizedParetoPDFReal_of_nonpos_argument hx,
+  rw [generalizedParetoPDF_eq_ofReal, generalizedParetoPDFReal_of_nonpos hx,
     ENNReal.ofReal_zero]
 
 /-- The `ℝ≥0∞`-valued density vanishes beyond the finite endpoint of a negative-shape law. -/
@@ -207,72 +208,33 @@ theorem measurable_generalizedParetoPDF (s ξ : ℝ) : Measurable (generalizedPa
 
 /-! ### Density of the measure -/
 
-private theorem generalizedParetoMap_deriv (hξ : ξ ≠ 0) (e : ℝ) :
-    HasDerivAt (generalizedParetoMap s ξ) (s * Real.exp (ξ * e)) e := by
-  have hraw : HasDerivAt (fun y => s * (Real.exp (ξ * y) - 1) / ξ)
-      (s * (Real.exp (ξ * e) * ξ) / ξ) e := by
-    simpa only [Function.comp_apply] using
-      ((((Real.hasDerivAt_exp (ξ * e)).comp e (hasDerivAt_const_mul ξ)).sub_const 1).const_mul
-        s).div_const ξ
-  convert hraw using 1
-  · funext y
-    rw [generalizedParetoMap_of_shape_ne_zero hξ]
-  · field_simp [hξ]
-
-private theorem generalizedParetoMap_base (hs : 0 < s) (hξ : ξ ≠ 0) (e : ℝ) :
-    1 + ξ * generalizedParetoMap s ξ e / s = Real.exp (ξ * e) := by
-  rw [generalizedParetoMap_of_shape_ne_zero hξ]
-  field_simp
-  ring
-
-private theorem generalizedParetoMap_pos (hs : 0 < s) (hξ : ξ ≠ 0) {e : ℝ} (he : 0 < e) :
-    0 < generalizedParetoMap s ξ e := by
-  rw [generalizedParetoMap_of_shape_ne_zero hξ]
-  rcases lt_or_gt_of_ne hξ with hξ | hξ
-  · exact div_pos_of_neg_of_neg (mul_neg_of_pos_of_neg hs (sub_neg.mpr
-      ((Real.exp_lt_one_iff).mpr (mul_neg_of_neg_of_pos hξ he)))) hξ
-  · exact div_pos (mul_pos hs (sub_pos.mpr ((Real.one_lt_exp_iff).mpr (mul_pos hξ he)))) hξ
-
-private theorem image_generalizedParetoMap_Ioi (hs : 0 < s) (hξ : ξ ≠ 0) :
-    generalizedParetoMap s ξ '' Ioi 0 = {x | 0 < x ∧ 0 < 1 + ξ * x / s} := by
+/-- At positive scale and nonnegative shape, the interior of the generalized Pareto support is
+the positive half-line. -/
+theorem setOf_generalizedPareto_eq_Ioi (hs : 0 < s) (hξ : 0 ≤ ξ) :
+    {x : ℝ | 0 < x ∧ 0 < 1 + ξ * x / s} = Ioi 0 := by
   ext x
-  constructor
-  · rintro ⟨e, he, rfl⟩
-    exact ⟨generalizedParetoMap_pos hs hξ he,
-      generalizedParetoMap_base hs hξ e ▸ Real.exp_pos _⟩
-  · rintro ⟨hx, hsupp⟩
-    let e := Real.log (1 + ξ * x / s) / ξ
-    have he : 0 < e := by
-      rcases lt_or_gt_of_ne hξ with hξneg | hξpos
-      · have hbase_lt : 1 + ξ * x / s < 1 := by
-          have : ξ * x / s < 0 := div_neg_of_neg_of_pos (mul_neg_of_neg_of_pos hξneg hx) hs
-          linarith
-        exact div_pos_of_neg_of_neg (Real.log_neg hsupp hbase_lt) hξneg
-      · have hbase : 1 < 1 + ξ * x / s := by
-          have : 0 < ξ * x / s := div_pos (mul_pos hξpos hx) hs
-          linarith
-        exact div_pos (Real.log_pos hbase) hξpos
-    refine ⟨e, he, ?_⟩
-    have hξe : ξ * e = Real.log (1 + ξ * x / s) := by
-      dsimp [e]
-      field_simp
-    rw [generalizedParetoMap_of_shape_ne_zero hξ, hξe, Real.exp_log hsupp]
-    field_simp
-    ring
+  simp only [Set.mem_ofPred_eq, mem_Ioi]
+  exact and_iff_left_of_imp fun hx => by positivity
 
-private theorem generalizedParetoMap_injOn (hs : 0 < s) (hξ : ξ ≠ 0) :
-    InjOn (generalizedParetoMap s ξ) (Ioi 0) := by
-  apply StrictMonoOn.injOn
-  intro a _ha b _hb hab
-  rw [generalizedParetoMap_of_shape_ne_zero hξ,
-    generalizedParetoMap_of_shape_ne_zero hξ]
-  rcases lt_or_gt_of_ne hξ with hξneg | hξpos
-  · apply (div_lt_div_right_of_neg hξneg).2
-    exact mul_lt_mul_of_pos_left (sub_lt_sub_right (Real.exp_lt_exp.mpr
-      (mul_lt_mul_of_neg_left hab hξneg)) 1) hs
-  · exact div_lt_div_of_pos_right
-      (mul_lt_mul_of_pos_left (sub_lt_sub_right (Real.exp_lt_exp.mpr
-        (mul_lt_mul_of_pos_left hab hξpos)) 1) hs) hξpos
+/-- At positive scale and negative shape, the interior of the generalized Pareto support is the
+interval from zero to its finite upper endpoint. -/
+theorem setOf_generalizedPareto_eq_Ioo (hs : 0 < s) (hξ : ξ < 0) :
+    {x : ℝ | 0 < x ∧ 0 < 1 + ξ * x / s} = Ioo 0 (-s / ξ) := by
+  ext x
+  rw [Set.mem_ofPred_eq, mem_Ioo, one_add_div hs.ne',
+    div_pos_iff_of_pos_right hs, lt_div_iff_of_neg hξ]
+  constructor <;> rintro ⟨hx, hbound⟩ <;> refine ⟨hx, ?_⟩ <;> nlinarith
+
+/-- At positive scale, the function support of the generalized Pareto density is the interior of
+the law's support. -/
+@[simp]
+theorem support_generalizedParetoPDF (hs : 0 < s) (ξ : ℝ) :
+    Function.support (generalizedParetoPDF s ξ) =
+      {x | 0 < x ∧ 0 < 1 + ξ * x / s} := by
+  ext x
+  rw [Function.mem_support, generalizedParetoPDF, ENNReal.ofReal_ne_zero_iff,
+    generalizedParetoPDFReal_pos_iff hs]
+  rfl
 
 private theorem generalizedParetoMap_weight (hs : 0 < s) (hξ : ξ ≠ 0) {e : ℝ} (he : 0 < e) :
     ENNReal.ofReal |s * Real.exp (ξ * e)| *
@@ -284,34 +246,24 @@ private theorem generalizedParetoMap_weight (hs : 0 < s) (hξ : ξ ≠ 0) {e : �
     (mul_pos hs (Real.exp_pos _)), ← ENNReal.ofReal_mul
     (mul_nonneg hs.le (Real.exp_pos _).le)]
   congr 1
-  rw [hbase, ← Real.exp_mul]
+  have hexponent : ξ * e * (-1 / ξ - 1) = -e - ξ * e := by
+    field_simp [hξ]
+  rw [hbase, ← Real.exp_mul, hexponent,
+    show -e - ξ * e = -e + -(ξ * e) by ring, Real.exp_add, Real.exp_neg]
   field_simp [hs.ne']
-  rw [← Real.exp_add]
-  congr 1
-  field_simp [hξ]
-  ring
-
-private theorem indicator_generalizedParetoPDF :
-    {x : ℝ | 0 < x ∧ 0 < 1 + ξ * x / s}.indicator (generalizedParetoPDF s ξ) =
-      generalizedParetoPDF s ξ := by
-  ext x
-  by_cases hx : x ∈ {x : ℝ | 0 < x ∧ 0 < 1 + ξ * x / s}
-  · simp [hx]
-  · rw [Set.indicator_of_notMem hx]
-    simp only [Set.mem_ofPred_eq, not_and_or, not_lt] at hx
-    rcases hx with hx | hx
-    · rw [generalizedParetoPDF, generalizedParetoPDFReal_of_nonpos_argument hx]
-      exact ENNReal.ofReal_zero.symm
-    · rw [generalizedParetoPDF, generalizedParetoPDFReal_of_one_add_nonpos hx]
-      exact ENNReal.ofReal_zero.symm
+  calc
+    Real.exp (ξ * e) * Real.exp (-(ξ * e)) = Real.exp (ξ * e + -(ξ * e)) :=
+      (Real.exp_add _ _).symm
+    _ = Real.exp (e + -e) := by ring_nf
+    _ = Real.exp e * Real.exp (-e) := Real.exp_add _ _
 
 /-- The generalized Pareto law is Lebesgue measure weighted by its density, for every parameter
 value. -/
 theorem generalizedParetoMeasure_eq_withDensity (s ξ : ℝ) :
     generalizedParetoMeasure s ξ = volume.withDensity (generalizedParetoPDF s ξ) := by
   rcases le_or_gt s 0 with hs | hs
-  · have hpdf : generalizedParetoPDF s ξ = 0 := funext fun x => by
-      simp [generalizedParetoPDF, generalizedParetoPDFReal_of_nonpos hs]
+  · have hpdf : generalizedParetoPDF s ξ = 0 :=
+      funext (generalizedParetoPDF_of_scale_nonpos hs ξ)
     rw [generalizedParetoMeasure_of_nonpos hs, hpdf, withDensity_zero]
   · rcases eq_or_ne ξ 0 with rfl | hξ
     · rw [generalizedParetoMeasure_zero hs, expMeasure_eq_withDensity]
@@ -319,7 +271,7 @@ theorem generalizedParetoMeasure_eq_withDensity (s ξ : ℝ) :
       filter_upwards [compl_mem_ae_iff.2 (measure_singleton (μ := volume) (0 : ℝ))] with x hx
       have hx0 : x ≠ 0 := Set.mem_compl_singleton_iff.mp hx
       rcases lt_or_gt_of_ne hx0 with hxneg | hxpos
-      · rw [generalizedParetoPDF, generalizedParetoPDFReal_of_nonpos_argument hxneg.le,
+      · rw [generalizedParetoPDF, generalizedParetoPDFReal_of_nonpos hxneg.le,
           exponentialPDF_of_neg hxneg, ENNReal.ofReal_zero]
       · rw [generalizedParetoPDF, generalizedParetoPDFReal_zero hs hxpos,
           exponentialPDF_of_nonneg hxpos.le]
@@ -341,7 +293,62 @@ theorem generalizedParetoMeasure_eq_withDensity (s ξ : ℝ) :
       rw [withDensity_congr_ae hweight, image_generalizedParetoMap_Ioi hs hξ] at hmap
       rw [generalizedParetoMeasure_of_pos hs, expMeasure_eq_withDensity_restrict_Ioi, hmap,
         ← withDensity_indicator (by measurability : MeasurableSet
-          {x : ℝ | 0 < x ∧ 0 < 1 + ξ * x / s}), indicator_generalizedParetoPDF]
+          {x : ℝ | 0 < x ∧ 0 < 1 + ξ * x / s}),
+        Set.indicator_eq_self.2 (support_generalizedParetoPDF hs ξ).subset]
+
+/-- The `ℝ≥0∞`-valued generalized Pareto density has total mass `1` at positive scale. -/
+theorem lintegral_generalizedParetoPDF_eq_one (hs : 0 < s) (ξ : ℝ) :
+    ∫⁻ x, generalizedParetoPDF s ξ x = 1 := by
+  let _ := isProbabilityMeasure_generalizedParetoMeasure hs ξ
+  have h : generalizedParetoMeasure s ξ Set.univ = 1 := measure_univ
+  rwa [generalizedParetoMeasure_eq_withDensity, withDensity_apply _ MeasurableSet.univ,
+    Measure.restrict_univ] at h
+
+/-- The real-valued generalized Pareto density has integral `1` at positive scale. -/
+theorem integral_generalizedParetoPDFReal_eq_one (hs : 0 < s) (ξ : ℝ) :
+    ∫ x, generalizedParetoPDFReal s ξ x = 1 := by
+  simp_rw [← toReal_generalizedParetoPDF]
+  rw [integral_toReal (measurable_generalizedParetoPDF s ξ).aemeasurable
+      (ae_of_all _ fun x => lt_top_iff_ne_top.mpr (generalizedParetoPDF_ne_top s ξ x)),
+    lintegral_generalizedParetoPDF_eq_one hs ξ, ENNReal.toReal_one]
+
+/-- The real-valued generalized Pareto density is integrable for every scale and shape. -/
+theorem integrable_generalizedParetoPDFReal (s ξ : ℝ) :
+    Integrable (generalizedParetoPDFReal s ξ) := by
+  rcases le_or_gt s 0 with hs | hs
+  · have hzero : generalizedParetoPDFReal s ξ = 0 :=
+      funext (generalizedParetoPDFReal_of_scale_nonpos hs ξ)
+    rw [hzero]
+    exact integrable_zero ℝ ℝ volume
+  · apply Integrable.of_integral_ne_zero
+    rw [integral_generalizedParetoPDFReal_eq_one hs ξ]
+    exact one_ne_zero
+
+/-! ### Transfer to the density -/
+
+section Transfer
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- A function is integrable against a generalized Pareto measure exactly when its
+density-weighted version is Lebesgue integrable. This includes the zero-measure branch. -/
+theorem integrable_generalizedParetoMeasure_iff (s ξ : ℝ) {g : ℝ → E} :
+    Integrable g (generalizedParetoMeasure s ξ) ↔
+      Integrable fun y => generalizedParetoPDFReal s ξ y • g y := by
+  rw [generalizedParetoMeasure_eq_withDensity, funext (generalizedParetoPDF_eq_ofReal s ξ)]
+  exact integrable_withDensity_ofReal_iff (measurable_generalizedParetoPDFReal s ξ).aemeasurable
+    (ae_of_all _ (generalizedParetoPDFReal_nonneg s ξ))
+
+/-- An integral against a generalized Pareto measure is the corresponding density-weighted
+Lebesgue integral. This includes the zero-measure branch. -/
+theorem integral_generalizedParetoMeasure_eq (s ξ : ℝ) (g : ℝ → E) :
+    ∫ y, g y ∂generalizedParetoMeasure s ξ =
+      ∫ y, generalizedParetoPDFReal s ξ y • g y := by
+  rw [generalizedParetoMeasure_eq_withDensity, funext (generalizedParetoPDF_eq_ofReal s ξ)]
+  exact integral_withDensity_ofReal (measurable_generalizedParetoPDFReal s ξ).aemeasurable
+    (ae_of_all _ (generalizedParetoPDFReal_nonneg s ξ)) g
+
+end Transfer
 
 /-! ### Standard density API -/
 
@@ -370,17 +377,6 @@ theorem rnDeriv_generalizedParetoMeasure (s ξ : ℝ) :
 
 /-! ### Topological support -/
 
-/-- At positive scale, the function support of the generalized Pareto density is the interior of
-the law's support. -/
-@[simp]
-theorem support_generalizedParetoPDF (hs : 0 < s) (ξ : ℝ) :
-    Function.support (generalizedParetoPDF s ξ) =
-      {x | 0 < x ∧ 0 < 1 + ξ * x / s} := by
-  ext x
-  rw [Function.mem_support, generalizedParetoPDF, ENNReal.ofReal_ne_zero_iff,
-    generalizedParetoPDFReal_pos_iff hs]
-  rfl
-
 /-- A positive-scale generalized Pareto law has support `[0, ∞)` at nonnegative shape and
 `[0, -s / ξ]` at negative shape. -/
 theorem support_generalizedParetoMeasure (hs : 0 < s) (ξ : ℝ) :
@@ -394,32 +390,10 @@ theorem support_generalizedParetoMeasure (hs : 0 < s) (ξ : ℝ) :
     Measure.support_withDensity_eq_closure (measurable_generalizedParetoPDF s ξ) hopen
       (support_generalizedParetoPDF hs ξ)]
   split_ifs with hξ
-  · have hset : {x : ℝ | 0 < x ∧ 0 < 1 + ξ * x / s} = Ioi 0 := by
-      ext x
-      simp only [Set.mem_ofPred_eq, mem_Ioi]
-      exact and_iff_left_of_imp fun hx => by positivity
-    rw [hset, closure_Ioi]
+  · rw [setOf_generalizedPareto_eq_Ioi hs hξ, closure_Ioi]
   · have hξneg : ξ < 0 := lt_of_not_ge hξ
-    have hset : {x : ℝ | 0 < x ∧ 0 < 1 + ξ * x / s} = Ioo 0 (-s / ξ) := by
-      ext x
-      simp only [Set.mem_ofPred_eq, Set.mem_Ioo]
-      constructor
-      · rintro ⟨hx, hsupp⟩
-        refine ⟨hx, ?_⟩
-        rw [lt_div_iff_of_neg hξneg]
-        have := (mul_pos hs hsupp)
-        field_simp at this ⊢
-        linarith
-      · rintro ⟨hx, hupper⟩
-        refine ⟨hx, ?_⟩
-        have hrewrite : 1 + ξ * x / s = (s + ξ * x) / s := by field_simp
-        rw [hrewrite]
-        apply div_pos
-        · rw [lt_div_iff_of_neg hξneg] at hupper
-          nlinarith
-        · exact hs
     have hend : (0 : ℝ) ≠ -s / ξ := (div_pos_of_neg_of_neg (neg_neg_of_pos hs) hξneg).ne
-    rw [hset, closure_Ioo hend]
+    rw [setOf_generalizedPareto_eq_Ioo hs hξneg, closure_Ioo hend]
 
 /-- A nonpositive scale gives the zero measure and hence empty topological support. -/
 theorem support_generalizedParetoMeasure_of_nonpos (hs : s ≤ 0) (ξ : ℝ) :

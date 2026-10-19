@@ -85,6 +85,86 @@ theorem measurable_generalizedParetoMap_right (s ξ : ℝ) :
   measurable_generalizedParetoMap.comp
     ((measurable_const.prodMk measurable_const).prodMk measurable_id)
 
+/-- The derivative of the nonzero-shape generalized Pareto transformation. -/
+theorem generalizedParetoMap_deriv {s ξ : ℝ} (hξ : ξ ≠ 0) (e : ℝ) :
+    HasDerivAt (generalizedParetoMap s ξ) (s * Real.exp (ξ * e)) e := by
+  have hraw : HasDerivAt (fun y => s * (Real.exp (ξ * y) - 1) / ξ)
+      (s * (Real.exp (ξ * e) * ξ) / ξ) e := by
+    simpa only [Function.comp_apply] using
+      ((((Real.hasDerivAt_exp (ξ * e)).comp e (hasDerivAt_const_mul ξ)).sub_const 1).const_mul
+        s).div_const ξ
+  convert hraw using 1
+  · funext y
+    rw [generalizedParetoMap_of_shape_ne_zero hξ]
+  · field_simp [hξ]
+
+/-- The affine base of the nonzero-shape generalized Pareto transformation is exponential. -/
+theorem generalizedParetoMap_base {s ξ : ℝ} (hs : 0 < s) (hξ : ξ ≠ 0) (e : ℝ) :
+    1 + ξ * generalizedParetoMap s ξ e / s = Real.exp (ξ * e) := by
+  rw [generalizedParetoMap_of_shape_ne_zero hξ]
+  field_simp
+  ring
+
+/-- The generalized Pareto transformation is positive on positive inputs at positive scale. -/
+theorem generalizedParetoMap_pos {s ξ e : ℝ} (hs : 0 < s) (hξ : ξ ≠ 0) (he : 0 < e) :
+    0 < generalizedParetoMap s ξ e := by
+  rw [generalizedParetoMap_of_shape_ne_zero hξ]
+  rcases lt_or_gt_of_ne hξ with hξ | hξ
+  · exact div_pos_of_neg_of_neg (mul_neg_of_pos_of_neg hs (sub_neg.mpr
+      ((Real.exp_lt_one_iff).mpr (mul_neg_of_neg_of_pos hξ he)))) hξ
+  · exact div_pos (mul_pos hs (sub_pos.mpr ((Real.one_lt_exp_iff).mpr (mul_pos hξ he)))) hξ
+
+/-- At positive scale and nonzero shape, the generalized Pareto transformation is strictly
+increasing on the positive half-line. -/
+theorem strictMonoOn_generalizedParetoMap {s ξ : ℝ} (hs : 0 < s) (hξ : ξ ≠ 0) :
+    StrictMonoOn (generalizedParetoMap s ξ) (Set.Ioi 0) := by
+  intro a _ha b _hb hab
+  rw [generalizedParetoMap_of_shape_ne_zero hξ,
+    generalizedParetoMap_of_shape_ne_zero hξ]
+  rcases lt_or_gt_of_ne hξ with hξneg | hξpos
+  · apply (div_lt_div_right_of_neg hξneg).2
+    exact mul_lt_mul_of_pos_left (sub_lt_sub_right (Real.exp_lt_exp.mpr
+      (mul_lt_mul_of_neg_left hab hξneg)) 1) hs
+  · exact div_lt_div_of_pos_right
+      (mul_lt_mul_of_pos_left (sub_lt_sub_right (Real.exp_lt_exp.mpr
+        (mul_lt_mul_of_pos_left hab hξpos)) 1) hs) hξpos
+
+/-- At positive scale and nonzero shape, the generalized Pareto transformation is injective on
+the positive half-line. -/
+theorem generalizedParetoMap_injOn {s ξ : ℝ} (hs : 0 < s) (hξ : ξ ≠ 0) :
+    Set.InjOn (generalizedParetoMap s ξ) (Set.Ioi 0) :=
+  (strictMonoOn_generalizedParetoMap hs hξ).injOn
+
+/-- The generalized Pareto transformation maps the positive half-line onto the interior of the
+law's support. -/
+theorem image_generalizedParetoMap_Ioi {s ξ : ℝ} (hs : 0 < s) (hξ : ξ ≠ 0) :
+    generalizedParetoMap s ξ '' Set.Ioi 0 =
+      {x | 0 < x ∧ 0 < 1 + ξ * x / s} := by
+  ext x
+  constructor
+  · rintro ⟨e, he, rfl⟩
+    exact ⟨generalizedParetoMap_pos hs hξ he,
+      generalizedParetoMap_base hs hξ e ▸ Real.exp_pos _⟩
+  · rintro ⟨hx, hsupp⟩
+    let e := Real.log (1 + ξ * x / s) / ξ
+    have he : 0 < e := by
+      rcases lt_or_gt_of_ne hξ with hξneg | hξpos
+      · have hbase_lt : 1 + ξ * x / s < 1 := by
+          have : ξ * x / s < 0 := div_neg_of_neg_of_pos (mul_neg_of_neg_of_pos hξneg hx) hs
+          linarith
+        exact div_pos_of_neg_of_neg (Real.log_neg hsupp hbase_lt) hξneg
+      · have hbase : 1 < 1 + ξ * x / s := by
+          have : 0 < ξ * x / s := div_pos (mul_pos hξpos hx) hs
+          linarith
+        exact div_pos (Real.log_pos hbase) hξpos
+    refine ⟨e, he, ?_⟩
+    have hξe : ξ * e = Real.log (1 + ξ * x / s) := by
+      dsimp [e]
+      field_simp
+    rw [generalizedParetoMap_of_shape_ne_zero hξ, hξe, Real.exp_log hsupp]
+    field_simp
+    ring
+
 /-- The generalized Pareto measure with scale `s` and shape `ξ`.
 
 For positive scale this is the pushforward of a rate-one exponential law by
