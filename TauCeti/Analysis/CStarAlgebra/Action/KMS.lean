@@ -196,9 +196,7 @@ theorem isKMSState_zero_iff :
     α.IsKMSState 0 ω ↔ ‖(ω : A →L[ℂ] ℂ)‖ = 1 ∧ ∀ a b, ω (a * b) = ω (b * a) := by
   refine ⟨fun hω => ⟨hω.norm_eq_one, fun a b => ?_⟩, fun ⟨hnorm, htr⟩ => ⟨hnorm, fun a b => ?_⟩⟩
   · obtain ⟨F, hF⟩ := hω.exists_isKMSFunction a b
-    have h := hF.apply_ofReal_add_mul_I 0
-    rw [show ((0 : ℝ) : ℂ) + ((0 : ℝ) : ℂ) * I = ((0 : ℝ) : ℂ) by simp, hF.apply_ofReal] at h
-    simpa using h
+    simpa [ofReal_zero ▸ hF.apply_ofReal 0] using hF.apply_ofReal_add_mul_I 0
   -- on the real axis the KMS function is `z ↦ ω (a α_{re z}(b))`
   refine ⟨fun z => ω (a * α (Multiplicative.ofAdd z.re) b), ?_, ?_, ?_, fun t => by simp,
     fun t => by simp [htr]⟩
