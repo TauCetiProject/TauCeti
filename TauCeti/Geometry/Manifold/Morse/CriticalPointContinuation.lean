@@ -14,8 +14,8 @@ import TauCeti.Analysis.Calculus.Morse.CriticalPointContinuation
 
 A nondegenerate critical point of a jointly `C³` real family on a finite-dimensional
 boundaryless manifold extends to a locally unique `C²` branch. Nondegeneracy and the Morse
-index persist, the critical value is `C²`, and its derivative is obtained by holding the
-spatial variable fixed at the original critical point.
+index persist, and the critical value is `C²`. At the base parameter, its derivative agrees
+with the parameter derivative of the family at the original critical point.
 
 The uniqueness assertion concerns a neighbourhood in the product of parameter and manifold,
 not all critical points of a nearby member. The branch is a total function, but no properties
@@ -39,7 +39,33 @@ open scoped ContDiff Manifold
 namespace TauCeti
 
 variable {P E : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] [CompleteSpace P]
-  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+private theorem isManifoldNondegenerateCriticalPoint_symm_of_mem_maximalAtlas
+    {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) 2 M]
+    {c : OpenPartialHomeomorph M E} (he : c ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) 2 M)
+    {f : M → ℝ} {v : E} (hv : v ∈ (c.extend 𝓘(ℝ, E)).target)
+    (h : IsNondegenerateCriticalPoint (f ∘ (c.extend 𝓘(ℝ, E)).symm) v) :
+    IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f ((c.extend 𝓘(ℝ, E)).symm v) := by
+  have hs : (c.extend 𝓘(ℝ, E)).symm v ∈ c.source := by
+    simpa only [OpenPartialHomeomorph.extend_source] using (c.extend 𝓘(ℝ, E)).map_target hv
+  apply (isManifoldNondegenerateCriticalPoint_iff_of_mem_maximalAtlas he hs).mpr
+  simpa only [(c.extend 𝓘(ℝ, E)).right_inv hv] using h
+
+private theorem manifoldMorseIndex_symm_of_mem_maximalAtlas
+    {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) 2 M]
+    {c : OpenPartialHomeomorph M E} (he : c ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) 2 M)
+    {f : M → ℝ} {v : E} (hv : v ∈ (c.extend 𝓘(ℝ, E)).target)
+    (h : IsNondegenerateCriticalPoint (f ∘ (c.extend 𝓘(ℝ, E)).symm) v) :
+    manifoldMorseIndex 𝓘(ℝ, E) f ((c.extend 𝓘(ℝ, E)).symm v) =
+      morseIndex (f ∘ (c.extend 𝓘(ℝ, E)).symm) v := by
+  have hs : (c.extend 𝓘(ℝ, E)).symm v ∈ c.source := by
+    simpa only [OpenPartialHomeomorph.extend_source] using (c.extend 𝓘(ℝ, E)).map_target hv
+  have hnd := isManifoldNondegenerateCriticalPoint_symm_of_mem_maximalAtlas he hv h
+  rw [manifoldMorseIndex_eq_morseIndex_of_mem_maximalAtlas he hs hnd.contMDiffAt
+    hnd.mvfderiv_eq_zero, (c.extend 𝓘(ℝ, E)).right_inv hv]
+
+variable [FiniteDimensional ℝ E]
 
 private theorem exists_criticalPoint_continuation_self
     {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) 3 M]
@@ -59,6 +85,7 @@ private theorem exists_criticalPoint_continuation_self
   let c := chartAt E x
   let φ := extChartAt 𝓘(ℝ, E) x
   let G : P × E → ℝ := fun q ↦ F (q.1, φ.symm q.2)
+  -- Construct the coordinate branch, then compose with the inverse chart for its regularity.
   have hx : x ∈ φ.source := mem_extChartAt_source x
   have hcx : φ x ∈ φ.target := mem_extChartAt_target x
   have hinv : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ, E) 3 φ.symm (φ x) :=
@@ -81,26 +108,21 @@ private theorem exists_criticalPoint_continuation_self
   have htarget : ∀ᶠ q in 𝓝 p, η q ∈ φ.target :=
     hη.continuousAt.preimage_mem_nhds (hηp ▸ (isOpen_extChartAt_target x).mem_nhds hcx)
   have he : c ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) 2 M := IsManifold.chart_mem_maximalAtlas x
-  have hφ : c.extend 𝓘(ℝ, E) = φ := rfl
   have hsliceFun (q : P) : (fun v ↦ G (q, v)) = (fun y ↦ F (q, y)) ∘ φ.symm := rfl
-  have hsource : ∀ᶠ q in 𝓝 p, ψ q ∈ c.source := by
-    filter_upwards [htarget] with q hq
-    simpa only [ψ, φ, extChartAt_source, c] using φ.map_target hq
   -- Nondegeneracy and inertia are read in this fixed chart, not the varying preferred charts.
   have hnd' : ∀ᶠ q in 𝓝 p,
       IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) (fun y ↦ F (q, y)) (ψ q) := by
-    filter_upwards [hnd, htarget, hsource] with q hq ht hs
-    apply (isManifoldNondegenerateCriticalPoint_iff_of_mem_maximalAtlas he hs).mpr
-    rw [hφ]
-    simpa only [hsliceFun, ψ, φ.right_inv ht] using hq
+    filter_upwards [hnd, htarget] with q hq ht
+    exact isManifoldNondegenerateCriticalPoint_symm_of_mem_maximalAtlas he ht hq
   have hindex' : ∀ᶠ q in 𝓝 p,
       manifoldMorseIndex 𝓘(ℝ, E) (fun y ↦ F (q, y)) (ψ q) =
         manifoldMorseIndex 𝓘(ℝ, E) (fun y ↦ F (p, y)) x := by
-    filter_upwards [hnd', hindex, hsource, htarget] with q hq hi hs ht
-    rw [manifoldMorseIndex_eq_morseIndex_of_mem_maximalAtlas he hs hq.contMDiffAt
-      hq.mvfderiv_eq_zero, manifoldMorseIndex_def]
-    rw [hφ]
-    simpa only [hsliceFun, ψ, φ.right_inv ht] using hi
+    filter_upwards [hnd, hindex, htarget] with q hq hi ht
+    have hchart : manifoldMorseIndex 𝓘(ℝ, E) (fun y ↦ F (q, y)) (ψ q) =
+        morseIndex (fun v ↦ G (q, v)) (η q) :=
+      manifoldMorseIndex_symm_of_mem_maximalAtlas he ht hq
+    rw [hchart, manifoldMorseIndex_def]
+    exact hi
   -- Pull the joint uniqueness neighbourhood back through the coordinate map.
   have hmap : ContinuousAt (fun q : P × M ↦ (q.1, φ q.2)) (p, x) :=
     continuousAt_fst.prodMk ((continuousAt_extChartAt (I := 𝓘(ℝ, E)) x).comp continuousAt_snd)
@@ -116,11 +138,7 @@ private theorem exists_criticalPoint_continuation_self
         (by norm_num)
     rw [hsliceFun] at hslice
     rw [mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm_eq_zero hs hslice]
-    rw [hsliceFun] at hu
-    rw [hu]
-    exact ⟨fun heq ↦ by simp [ψ, heq, φ.left_inv hs], fun heq ↦ by
-      have := congrArg φ heq
-      simpa only [ψ, φ.right_inv ht] using this⟩
+    exact hu.trans (φ.symm_apply_eq hs ht).symm
   refine ⟨ψ, hψp, hψ, hnd', hindex', huniq', hval, ?_⟩
   simpa only [G, hηp, φ.left_inv hx] using hderiv
 
@@ -186,10 +204,7 @@ theorem IsManifoldNondegenerateCriticalPoint.exists_contMDiffAt_criticalPoint_co
       have heval : e.symm (e q.2) = q.2 := e.symm_apply_apply q.2
       rw [heval] at hz
       simpa only [F', comp_def] using hz
-    rw [hz] at hq
-    refine hq.trans ⟨fun hq ↦ ?_, fun hq ↦ ?_⟩
-    · exact (congrArg e.symm hq).trans (e.symm_apply_apply q.2)
-    · exact e.symm.injective (hq.trans (e.symm_apply_apply q.2).symm)
+    exact hz.symm.trans (hq.trans e.toEquiv.symm_apply_eq.symm)
   · simpa only [F', hηp, e.symm_apply_apply] using hderiv
 
 end TauCeti
