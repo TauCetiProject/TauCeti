@@ -84,6 +84,26 @@ theorem norm_principalMinor_le {A : Matrix ι ι R} {r : ι → ℝ} (hA : ∀ i
   rw [principalMinor_def, ← prod_coe_sort s r]
   exact norm_det_le_prod_of_norm_le fun i j ↦ hA i j
 
+omit [Fintype ι] in
+/-- Two-sided entry bounds bound each principal minor by the product of their diagonal
+products. Neither factor separately needs to be bounded. -/
+theorem norm_principalMinor_le_prod_mul {A : Matrix ι ι R} {c d : ι → ℝ}
+    (hA : ∀ i j, ‖A i j‖ ≤ c i * d j) (s : Finset ι) :
+    ‖A.principalMinor s‖ ≤ ∏ i ∈ s, c i * d i := by
+  rw [principalMinor_def, prod_mul_distrib, ← prod_coe_sort s c, ← prod_coe_sort s d]
+  exact norm_det_le_prod_mul_prod fun i j ↦ hA i j
+
+omit [Fintype ι] in
+/-- An integer two-sided weight bound controls a principal minor by the sum of the
+weight differences on its index set, including negative differences. -/
+theorem norm_principalMinor_le_zpow {A : Matrix ι ι R} {σ : ℝ} (hσ : 0 < σ)
+    {w w' : ι → ℤ} (hA : ∀ i j, ‖A i j‖ ≤ σ ^ (w i - w' j)) (s : Finset ι) :
+    ‖A.principalMinor s‖ ≤ σ ^ (∑ i ∈ s, (w i - w' i)) := by
+  have h (i j : ι) : ‖A i j‖ ≤ σ ^ w i * σ ^ (-w' j) := by
+    simpa only [← zpow_add₀ hσ.ne', sub_eq_add_neg] using hA i j
+  simpa only [← zpow_add₀ hσ.ne', ← sub_eq_add_neg,
+    prod_zpow_eq_zpow_sum₀ s hσ.ne'] using norm_principalMinor_le_prod_mul h s
+
 /-- **Coefficient bound.** If `‖A i j‖ ≤ c i * d j` for all entries and `C ≥ 0` bounds
 `(∏ i ∈ s, c i) * ∏ i ∈ s, d i` for every `k`-element set `s`, then `C` bounds the `k`-th
 coefficient of `det (1 - X A)`. -/
