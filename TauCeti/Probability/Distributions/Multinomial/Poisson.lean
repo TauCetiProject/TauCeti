@@ -185,7 +185,7 @@ theorem cond_pi_poissonMeasure_zero :
   rw [cond_apply' (measurableSet_singleton k), hzero, inv_one, one_mul]
   by_cases hk : k = 0
   · subst k
-    simp [Measure.pi_singleton, poissonMeasure_singleton]
+    simp [Measure.pi_singleton]
   · have hsum : ∑ i, k i ≠ 0 := by simpa [funext_iff] using hk
     rw [Set.inter_singleton_of_notMem (s := {l : ι → ℕ | ∑ i, l i = 0}) hsum]
     simp [hk]
