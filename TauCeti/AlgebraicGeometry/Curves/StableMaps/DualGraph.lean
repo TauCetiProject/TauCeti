@@ -41,7 +41,8 @@ independent of the chosen ample polarization.
   contracted-component criterion is equivalent to positivity of every weighted degree.
 * `TauCeti.DualGraph.DegreeDecoration.sum_weightedLogCanonicalDegree`: the weighted degrees sum
   to `2g - 2 + n + 3d`.
-* `TauCeti.DualGraph.DegreeDecoration.IsStable.stableRange`: the numerical stable range.
+* `IsStable.two_mul_arithmeticGenus_sub_two_add_card_add_three_mul_totalDegree_pos` (in
+  `TauCeti.DualGraph.DegreeDecoration`): the numerical stable range `2g - 2 + n + 3d > 0`.
 * `TauCeti.DualGraph.DegreeDecoration.isStable_congr`: stability depends only on the degree-zero
   components.
 
@@ -148,49 +149,69 @@ theorem isStable_congr [Fintype ι] {D' : G.DegreeDecoration}
 theorem isStable_of_dualGraph_isStable [Fintype ι] (hG : G.IsStable) : D.IsStable :=
   fun v _ ↦ G.isStable_iff.mp hG v
 
-/-- The decoration assigning degree zero to every component. It describes the degree data of a
-constant map. -/
-def zero : G.DegreeDecoration where
-  componentDegree := 0
+/-- Decorations add componentwise. The zero decoration assigns degree zero to every component;
+it describes the degree data of a constant map. -/
+instance : AddCommMonoid G.DegreeDecoration where
+  zero := ⟨0⟩
+  add D D' := ⟨D.componentDegree + D'.componentDegree⟩
+  nsmul m D := ⟨m • D.componentDegree⟩
+  add_assoc _ _ _ := DegreeDecoration.ext (add_assoc _ _ _)
+  zero_add _ := DegreeDecoration.ext (zero_add _)
+  add_zero _ := DegreeDecoration.ext (add_zero _)
+  add_comm _ _ := DegreeDecoration.ext (add_comm _ _)
+  nsmul_zero _ := DegreeDecoration.ext (zero_nsmul _)
+  nsmul_succ _ _ := DegreeDecoration.ext (succ_nsmul _ _)
 
 @[simp]
-lemma componentDegree_zero (v : G.Vertex) : (zero (G := G)).componentDegree v = 0 :=
+lemma componentDegree_zero (v : G.Vertex) : (0 : G.DegreeDecoration).componentDegree v = 0 :=
   (rfl)
 
 @[simp]
-lemma totalDegree_zero : (zero (G := G)).totalDegree = 0 := by
+lemma componentDegree_add (D' : G.DegreeDecoration) (v : G.Vertex) :
+    (D + D').componentDegree v = D.componentDegree v + D'.componentDegree v :=
+  (rfl)
+
+@[simp]
+lemma componentDegree_smul (m : ℕ) (v : G.Vertex) :
+    (m • D).componentDegree v = m * D.componentDegree v :=
+  (rfl)
+
+@[simp]
+lemma totalDegree_zero : (0 : G.DegreeDecoration).totalDegree = 0 := by
   simp [totalDegree]
+
+@[simp]
+theorem totalDegree_smul (m : ℕ) : (m • D).totalDegree = m * D.totalDegree := by
+  simp [totalDegree, mul_sum]
+
+@[simp]
+lemma weightedLogCanonicalDegree_zero [Fintype ι] (v : G.Vertex) :
+    (0 : G.DegreeDecoration).weightedLogCanonicalDegree v = G.logCanonicalDegree v := by
+  simp [weightedLogCanonicalDegree_def]
+
+@[simp]
+lemma weightedLogCanonicalDegree_smul [Fintype ι] (m : ℕ) (v : G.Vertex) :
+    (m • D).weightedLogCanonicalDegree v =
+      G.logCanonicalDegree v + 3 * m * (D.componentDegree v : ℤ) := by
+  simp [weightedLogCanonicalDegree_def, mul_assoc]
 
 /-- The zero decoration is stable exactly when the pointed source graph is stable. This is the
 numerical form of the fact that a constant prestable map is stable exactly when its source is. -/
 @[simp]
-theorem isStable_zero_iff [Fintype ι] : (zero (G := G)).IsStable ↔ G.IsStable := by
+theorem isStable_zero_iff [Fintype ι] : (0 : G.DegreeDecoration).IsStable ↔ G.IsStable := by
   simp [isStable_iff, DualGraph.isStable_iff]
-
-/-- Multiply every component degree by `m`. -/
-def scale (m : ℕ) : G.DegreeDecoration where
-  componentDegree v := m * D.componentDegree v
-
-@[simp]
-lemma componentDegree_scale (m : ℕ) (v : G.Vertex) :
-    (D.scale m).componentDegree v = m * D.componentDegree v :=
-  (rfl)
-
-@[simp]
-theorem totalDegree_scale (m : ℕ) : (D.scale m).totalDegree = m * D.totalDegree := by
-  simp [totalDegree, mul_sum]
 
 /-- Scaling all component degrees by a positive integer does not change stability. In particular,
 the exponent used for an ample polarization does not change the numerical criterion. -/
 @[simp]
-theorem isStable_scale_iff [Fintype ι] {m : ℕ} (hm : 0 < m) :
-    (D.scale m).IsStable ↔ D.IsStable :=
-  (D.scale m).isStable_congr (D' := D) fun v ↦ by
-    rw [D.componentDegree_scale]
+theorem isStable_smul_iff [Fintype ι] {m : ℕ} (hm : 0 < m) :
+    (m • D).IsStable ↔ D.IsStable :=
+  (m • D).isStable_congr (D' := D) fun v ↦ by
     simp [Nat.ne_of_gt hm]
 
 /-- A stable decorated dual graph satisfies `2g - 2 + n + 3d > 0`. -/
-theorem IsStable.stableRange [Fintype ι] (hD : D.IsStable) :
+theorem IsStable.two_mul_arithmeticGenus_sub_two_add_card_add_three_mul_totalDegree_pos [Fintype ι]
+    (hD : D.IsStable) :
     0 < 2 * (G.arithmeticGenus : ℤ) - 2 + Fintype.card ι + 3 * D.totalDegree := by
   rw [← D.sum_weightedLogCanonicalDegree]
   exact Finset.sum_pos (fun v _ ↦ D.isStable_iff_weightedLogCanonicalDegree_pos.mp hD v)
