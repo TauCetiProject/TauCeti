@@ -190,8 +190,8 @@ def hours_since(s):
 
 
 # ----- gh helpers -------------------------------------------------------------
-# `gh api --jq` prints each jq result on its own line, and `--paginate` simply
-# concatenates the per-page streams, so a jq that yields ONE VALUE PER LINE gives
+# core.gh_api decodes response boundaries and applies jq -r to each page body,
+# so a jq that yields ONE VALUE PER LINE gives
 # valid JSONL across any number of pages. gh_stream parses that (fixes the naive
 # single-`json.loads` that broke past one page). gh_obj is for a jq yielding a
 # single JSON value; gh_scalar is for a raw string (never JSON-decoded).

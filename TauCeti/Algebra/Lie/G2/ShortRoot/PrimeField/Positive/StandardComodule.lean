@@ -131,7 +131,7 @@ theorem rootSubgroupPoints_mulVec_mem
     (A := coordinateHopfAlgebra) (R := k)) p
   have h := GeneralLinear.corestrictStandardComodule_mulVec_mem k 7
     (standardCoordinateMap k).hom N p' hv
-  simp only [AlgHom.mapDomain_apply, standardCoordinateMap] at h
+  simp only [BialgHom.mapDomain_apply, standardCoordinateMap] at h
   rw [GeneralLinear.pointToGeneralLinear_baseChangeMap, MulEquiv.symm_apply_apply] at h
   have hcomp : p.ofConv.comp (CommHopfAlgCat.mkQuotient _ definingIdeal).hom.toAlgHom =
       q.ofConv.comp (PrimeField.generator (.inl (.inl i))).hom.toAlgHom := by
@@ -141,7 +141,7 @@ theorem rootSubgroupPoints_mulVec_mem
         (CommHopfAlgCat.mkQuotient_comp_commonKernelLift generator (.inl i))
   rw [hcomp] at h
   have hmatrix := PrimeField.coe_rootSubgroupPoints_gaPointsMulEquiv (.inl i) k q
-  rw [CommHopfAlgCat.mapPointsFunctor_app_apply, GeneralLinear.pointsMulEquiv_apply,
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, GeneralLinear.pointsMulEquiv_apply,
     MulEquiv.apply_symm_apply] at hmatrix
   rwa [← hmatrix] at h
 

@@ -10,12 +10,12 @@ public import TauCeti.RingTheory.GradedAlgebra.HomogeneousLocalization.BaseChang
 public import Mathlib.AlgebraicGeometry.Pullbacks
 
 /-!
-# Flat base change of projective spectra
+# Base change of projective spectra
 
-The projective spectrum of a graded algebra commutes with flat extension of its coefficient
+The projective spectrum of a graded algebra commutes with arbitrary extension of its coefficient
 ring. The comparison identifies the scheme fiber product, including its structure sheaf,
-rather than only its points. Over a field, every coefficient extension is flat. This permits
-projective linear transformations to be assembled into algebraic families.
+rather than only its points. This permits projective constructions to be transported through
+nonflat closed fibres as well as flat families.
 
 The construction combines `Proj.map` for coefficient inclusion, the homogeneous chart
 comparison `HomogeneousLocalization.Away.baseChangeEquiv`, and Mathlib's
@@ -107,8 +107,8 @@ theorem baseChangeProjection_toSpecCoeff :
   apply Subtype.ext
   simp [baseChangeMap, GradedRingHom.gradedZeroRingHom]
 
-/-- The affine standard-chart square of flat coefficient extension is cartesian. -/
-theorem isPullback_away_baseChange [Module.Flat R S] {f : A} {n : ℕ}
+/-- The affine standard-chart square of coefficient extension is cartesian. -/
+theorem isPullback_away_baseChange {f : A} {n : ℕ}
     (hf : f ∈ 𝒜 n) :
     IsPullback (Spec.map (CommRingCat.ofHom (Away.baseChangeMap 𝒜 S f)))
       (Spec.map (CommRingCat.ofHom
@@ -149,9 +149,9 @@ theorem isPullback_away_baseChange [Module.Flat R S] {f : A} {n : ℕ}
     intro r
     exact e.commutes r
 
-/-- Flat extension of coefficients makes the projective structural square cartesian. No
+/-- Extension of coefficients makes the projective structural square cartesian. No
 finite-generation hypothesis on the graded algebra is needed. -/
-theorem isPullback_baseChangeProjection [Module.Flat R S] :
+theorem isPullback_baseChange :
     IsPullback (baseChangeProjection 𝒜 S)
       (toSpecCoeff (fun n ↦ (𝒜 n).baseChange S))
       (toSpecCoeff 𝒜) (Spec.map (CommRingCat.ofHom (algebraMap R S))) := by
@@ -190,24 +190,24 @@ theorem isPullback_baseChangeProjection [Module.Flat R S] :
   all_goals first | rfl |
     (convert heq_of_eq (awayι_toSpecCoeff 𝒜 hf n.pos) using 1 <;> rfl)
 
-/-- The canonical identification of the projective spectrum after flat coefficient extension
+/-- The canonical identification of the projective spectrum after arbitrary coefficient extension
 with the fiber product over the original coefficient spectrum. -/
-noncomputable def baseChangeIso [Module.Flat R S] :
+noncomputable def baseChangeIso :
     Proj (fun n ↦ (𝒜 n).baseChange S) ≅
       pullback (toSpecCoeff 𝒜) (Spec.map (CommRingCat.ofHom (algebraMap R S))) :=
-  (isPullback_baseChangeProjection 𝒜 S).isoPullback
+  (isPullback_baseChange 𝒜 S).isoPullback
 
 /-- The first projection of the comparison is the projective coefficient projection. -/
 @[reassoc (attr := simp)]
-theorem baseChangeIso_hom_fst [Module.Flat R S] :
+theorem baseChangeIso_hom_fst :
     (baseChangeIso 𝒜 S).hom ≫ pullback.fst _ _ = baseChangeProjection 𝒜 S :=
-  (isPullback_baseChangeProjection 𝒜 S).isoPullback_hom_fst
+  (isPullback_baseChange 𝒜 S).isoPullback_hom_fst
 
 /-- The second projection of the comparison is the extended coefficient structure map. -/
 @[reassoc (attr := simp)]
-theorem baseChangeIso_hom_snd [Module.Flat R S] :
+theorem baseChangeIso_hom_snd :
     (baseChangeIso 𝒜 S).hom ≫ pullback.snd _ _ =
       toSpecCoeff (fun n ↦ (𝒜 n).baseChange S) :=
-  (isPullback_baseChangeProjection 𝒜 S).isoPullback_hom_snd
+  (isPullback_baseChange 𝒜 S).isoPullback_hom_snd
 
 end AlgebraicGeometry.Proj

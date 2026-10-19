@@ -48,6 +48,8 @@ centre gives the `Γ.withCenter` readings.
   `K` has finite index relative to `f(H)`.
 * `Subgroup.finiteIndex_of_map_eq`: the image of a finite-index subgroup under a surjective
   homomorphism has finite index.
+* `Subgroup.finiteIndex_map_mk'`: the instance making the image of a finite-index subgroup in a
+  quotient group finite-index.
 * `MonoidHom.finiteIndex_range_comp`: finite index of ranges is preserved by composition
   with a homomorphism of finite-index range.
 * `MonoidHom.mk_mul_out_bijective`: right cosets of a composite range are represented by
@@ -258,6 +260,13 @@ theorem finiteIndex_of_map_eq {G N : Type*} [Group G] [Group N] (H : Subgroup G)
     K.FiniteIndex :=
   ⟨h ▸ ne_zero_of_dvd_ne_zero FiniteIndex.index_ne_zero (H.index_map_dvd hf)⟩
 
+/-- The image of a finite-index subgroup in a quotient group has finite index. -/
+@[to_additive /-- The image of a finite-index additive subgroup in a quotient additive group has
+finite index. -/]
+instance finiteIndex_map_mk' {G : Type*} [Group G] (H : Subgroup G) [H.FiniteIndex]
+    (N : Subgroup G) [N.Normal] : (H.map (QuotientGroup.mk' N)).FiniteIndex :=
+  .map_of_surjective _ (QuotientGroup.mk'_surjective N)
+
 /-- `Γ` with the centre of the ambient group adjoined. For `Γ ≤ SL(2, ℤ)` the centre is
 `{±I}`, which acts trivially on `ℍ`; it is the cosets of `Γ·{±I}` — not those of `Γ` itself —
 that name the distinct translates of `𝒟` tiling a `Γ` fundamental domain, since `q` and `-q`
@@ -318,6 +327,9 @@ has the same relative index in `H ⊔ N` as in `N`, that is `[H ⊔ N : H] = [N 
 
 This is the counterpart of Mathlib's `Subgroup.relIndex_sup_right`, which measures the index of the
 normal factor instead. -/
+@[to_additive TauCeti.relIndex_sup_of_le_normalizer
+  /-- If an additive subgroup `H` normalises `N`, then `H` has the same relative index in
+  `H ⊔ N` as in `N`: `[H ⊔ N : H] = [N : H ⊓ N]`. -/]
 theorem relIndex_sup_of_le_normalizer {H N : Subgroup G} (hH : H ≤ normalizer N) :
     H.relIndex (H ⊔ N) = H.relIndex N := by
   -- The inclusion `N → H ⊔ N` induces a bijection on cosets of `H`.

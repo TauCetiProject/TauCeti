@@ -33,6 +33,8 @@ simplicity statement is made here.
   coordinate map is surjective.
 * `TauCeti.E6Minuscule.rootSubgroupIntegralCoordinateMap_surjective`: every integral numbered
   root-subgroup coordinate map from the quotient by `definingIdeal` is surjective.
+* `TauCeti.E6Minuscule.rootSubgroupToBaseChangeCoordinateMap_surjective`: the same surjectivity
+  after base change to any commutative ring.
 * `TauCeti.E6Minuscule.isClosedImmersion_rootSubgroup`: every numbered root-subgroup morphism is a
   closed immersion.
 * `TauCeti.E6Minuscule.rootSubgroupClosedSubgroup`: its image as a closed subgroup scheme.
@@ -160,7 +162,7 @@ instance isClosedImmersion_rootSubgroup (k : Fin 6 ⊕ Fin 6) :
 
 /-- Every numbered root-subgroup map into the type-`E₆` minuscule carrier is a monomorphism. -/
 theorem mono_rootSubgroup (k : Fin 6 ⊕ Fin 6) : Mono (rootSubgroup k) :=
-  mono_of_isClosedImmersion_underlying (rootSubgroup k)
+  Grp.mono_of_mono_left (rootSubgroup k)
 
 /-- **A numbered type-`E₆` minuscule root subgroup as a closed subgroup scheme of the carrier.** -/
 noncomputable def rootSubgroupClosedSubgroup (k : Fin 6 ⊕ Fin 6) :
@@ -199,6 +201,18 @@ theorem rootSubgroupIntegralCoordinateMap_surjective (k : Fin 6 ⊕ Fin 6) :
     TauCeti.UniversalEnvelopingAlgebra.mkQuotient_comp_kostantRootSubgroupToralCoordinateMap,
     ← mkQuotient_comp_rootSubgroupIntegralCoordinateMap] at hs
   exact Function.Surjective.of_comp hs
+
+/-- Surjectivity of the numbered root-subgroup coordinate maps persists over every commutative
+base ring, in the transported quotient presentation of the carrier. -/
+theorem rootSubgroupToBaseChangeCoordinateMap_surjective
+    (A : Type*) [CommRing A] (k : Fin 6 ⊕ Fin 6) :
+    Function.Surjective (rootSubgroupToBaseChangeCoordinateMap A k).hom := by
+  rw [← baseChangeCoordinateIso_hom_comp_rootSubgroupBaseChangeMap A k]
+  exact (AdditiveGroup.gaScalarTensorBialgEquiv (k := ℤ) (K := A)).surjective.comp
+    ((CommHopfAlgCat.baseChangeMap_surjective (K := A)
+      (rootSubgroupIntegralCoordinateMap k)
+      (rootSubgroupIntegralCoordinateMap_surjective k)).comp
+      (ConcreteCategory.bijective_of_isIso (baseChangeCoordinateIso A).hom).2)
 
 end
 

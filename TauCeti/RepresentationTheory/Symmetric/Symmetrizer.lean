@@ -496,7 +496,7 @@ theorem asAlgebraHom_antisymmetrizerOn_apply_eq_zero {M : Type*} [AddCommGroup M
     (V : Representation ℚ (Equiv.Perm α) M) {X : Finset α} {p : Equiv.Perm α}
     (hp : ∀ k ∉ X, p k = k) (hsign : Equiv.Perm.sign p = -1) {v : M} (hv : V p v = v) :
     V.asAlgebraHom (antisymmetrizerOn X) v = 0 := by
-  have : IsAddTorsionFree M := .of_module_rat _
+  have : HasUniqueDiv M := .of_module_rat _
   rw [antisymmetrizerOn_def]
   refine asAlgebraHom_subgroupCharSum_apply_eq_zero _ _ (nsmul_right_injective two_ne_zero) V
     (mem_fixingSubgroup_compl_of_forall_notMem hp) ?_ hv

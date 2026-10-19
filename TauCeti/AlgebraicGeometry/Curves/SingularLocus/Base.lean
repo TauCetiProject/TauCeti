@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Curves.SingularLocus.Basic
 public import TauCeti.RingTheory.Kaehler.UnramifiedBase
+import TauCeti.AlgebraicGeometry.Curves.SingularLocus.Etale
 
 /-!
 # Independence of the singular locus from an unramified base
@@ -98,7 +99,7 @@ theorem singularLocus_eq_comap_of_isOpenImmersion_of_formallyUnramified_base
     inferInstanceAs (TauCeti.AlgebraicGeometry.PureRelativeDimension 1
       (i ≫ (Y ↘ Spec (.of R))))
   rw [← singularLocus_eq_of_formallyUnramified_base h]
-  exact singularLocus_eq_comap_of_isOpenImmersion i
+  exact singularLocus_eq_comap_of_etale i
 
 /-- Restriction of sources and a formally unramified change of affine base give a
 pullback square of singular subschemes. -/

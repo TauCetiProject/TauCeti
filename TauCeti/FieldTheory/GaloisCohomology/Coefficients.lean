@@ -20,7 +20,7 @@ import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 -- Non-public: the nonvanishing of `n` in `Kˢ` is used only inside a proof.
 import TauCeti.Algebra.Algebra.NatCast
 -- Non-public: lifting a unit of `Kˢ` lying in `K` to a unit of `K` is used only inside a proof.
-import TauCeti.Algebra.GroupWithZero.Units.Basic
+import TauCeti.Algebra.Group.Units.Basic
 
 /-!
 # The multiplicative coefficient modules of Galois cohomology

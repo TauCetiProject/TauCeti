@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Polynomial.Eval.Sign
 public import TauCeti.Algebra.Polynomial.LinearFactor
-public import TauCeti.Algebra.Polynomial.Thom
+public import TauCeti.Algebra.Polynomial.Thom.Basic
 public import Mathlib.Algebra.Polynomial.FieldDivision
 public import Mathlib.Basic.Sign.Basic
 import Mathlib.Topology.Algebra.Order.Field

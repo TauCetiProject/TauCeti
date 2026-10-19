@@ -55,7 +55,7 @@ theorem isNormal_comapOfSurjective_unipotentRadicalDefiningIdeal (hI : I.IsNorma
   let R := unipotentRadicalDefiningIdeal N
   let J := R.comapOfSurjective q.hom (CommHopfAlgCat.mkQuotient_surjective H.obj I)
   -- The ambient presentation of the radical inherits smoothness from the subgroup presentation.
-  let eJ := CommHopfAlgCat.quotientIsoOfSurjective q
+  let eJ := CommHopfAlgCat.Hom.quotientIsoOfSurjective q
     (CommHopfAlgCat.mkQuotient_surjective H.obj I) R
   have hsm : smoothCommHopfAlgProperty k (CommHopfAlgCat.quotient H.obj J) :=
     (smoothCommHopfAlgProperty k).prop_of_iso eJ.symm
@@ -110,7 +110,7 @@ theorem unipotentRadicalDefiningIdeal_le_comapOfSurjective_quotient (hI : I.IsNo
   let J := R.comapOfSurjective q.hom (CommHopfAlgCat.mkQuotient_surjective H.obj I)
   let eJ : quotient H J ≅ unipotentRadical N :=
     ObjectProperty.isoMk (finiteTypeCommHopfAlgProperty k)
-      (CommHopfAlgCat.quotientIsoOfSurjective q
+      (CommHopfAlgCat.Hom.quotientIsoOfSurjective q
         (CommHopfAlgCat.mkQuotient_surjective H.obj I) R)
   apply unipotentRadicalDefiningIdeal_le
   refine .mk (isNormal_comapOfSurjective_unipotentRadicalDefiningIdeal H I hI) ?_ ?_

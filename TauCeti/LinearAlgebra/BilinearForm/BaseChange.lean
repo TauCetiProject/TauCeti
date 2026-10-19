@@ -12,7 +12,10 @@ public import Mathlib.LinearAlgebra.BilinearForm.IsometryEquiv
 public import Mathlib.LinearAlgebra.BilinearForm.TensorProduct
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
+public import Mathlib.Algebra.Order.Algebra
+public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 import Mathlib.Algebra.Ring.Hom.InjSurj
+import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
 
 /-!
 # Bilinear forms and base change
@@ -34,6 +37,10 @@ and nondegeneracy without any finiteness or freeness hypothesis on the module ca
 In particular, this applies to arbitrary extensions of fields, even in infinite dimension.
 Injective localizations also preserve separation and nondegeneracy without any condition on the
 module carrying the form.
+
+Over ordered fields, base change along an order-preserving structure map also preserves and
+reflects positive definiteness of a symmetric form on a finite-dimensional space; this is how a
+rational form is compared with its real extension.
 
 ## Main declarations
 
@@ -63,6 +70,9 @@ module carrying the form.
   base-changes to an isometric equivalence of their base changes.
 * `TauCeti.bilinFormBaseChangeProdIsometry`: base change commutes with products of
   bilinear forms, via the canonical tensor-product equivalence.
+* `LinearMap.BilinForm.posDef_toQuadraticMap_baseChange_iff`: along an order-preserving extension
+  of ordered fields, base change preserves and reflects positive definiteness of a symmetric form
+  on a finite-dimensional space.
 -/
 
 public section
@@ -454,3 +464,59 @@ theorem bilinFormBaseChangeProdIsometry_symm_tmul (B₁ : LinearMap.BilinForm R 
 end IsometryEquiv
 
 end TauCeti
+
+namespace LinearMap.BilinForm
+
+section PosDef
+
+variable {F K V : Type*} [Field F] [LinearOrder F] [IsStrictOrderedRing F]
+  [Field K] [LinearOrder K] [IsStrictOrderedRing K] [Algebra F K] [SMulPosStrictMono F K]
+  [AddCommGroup V] [Module F V] [FiniteDimensional F V]
+
+/-- **Positive definiteness is preserved and reflected by an ordered field extension.** For a
+symmetric bilinear form on a finite-dimensional space over an ordered field `F`, and an ordered
+field `K` whose structure map from `F` is strictly monotone, the base change of `B` to `K` is
+positive definite exactly when `B` is. In particular a rational symmetric form is positive
+definite exactly when its real extension is. -/
+theorem posDef_toQuadraticMap_baseChange_iff {B : LinearMap.BilinForm F V} (hB : B.IsSymm) :
+    (B.baseChange K).toQuadraticMap.PosDef ↔ B.toQuadraticMap.PosDef := by
+  have hmap {a : F} : 0 < algebraMap F K a ↔ 0 < a := by
+    simpa using (algebraMap_strictMono (α := F) K).lt_iff_lt (a := 0) (b := a)
+  constructor
+  · -- Reflection: evaluate on the nonzero vector `1 ⊗ x`.
+    intro h x hx
+    have h1 : (1 : K) ⊗ₜ[F] x ≠ 0 :=
+      fun h0 ↦ hx ((Module.FaithfullyFlat.one_tmul_eq_zero_iff F V x).mp h0)
+    have := h _ h1
+    rw [LinearMap.BilinMap.toQuadraticMap_apply, baseChange_tmul, one_mul,
+      ← Algebra.algebraMap_eq_smul_one, hmap] at this
+    rwa [LinearMap.BilinMap.toQuadraticMap_apply]
+  · -- The orthogonal basis `v` base-changes to an orthogonal basis `w` of `B.baseChange K`,
+    -- whose diagonal values are the images of the positive diagonal values of `B`.
+    intro h z hz
+    let _ : Invertible (2 : F) := invertibleOfNonzero two_ne_zero
+    obtain ⟨v, hv⟩ := exists_orthogonal_basis (isSymm_iff.mp hB)
+    set w := v.baseChange K
+    have hw (i j) : B.baseChange K (w i) (w j) = algebraMap F K (B (v i) (v j)) := by
+      simp [w, Basis.baseChange_apply, baseChange_tmul, Algebra.algebraMap_eq_smul_one]
+    have hpos (i) : 0 < algebraMap F K (B (v i) (v i)) := by
+      rw [hmap, ← LinearMap.BilinMap.toQuadraticMap_apply]
+      exact h _ (v.ne_zero i)
+    -- So in the basis `w`, the form is a sum of squares with positive weights.
+    have hz' : B.baseChange K z z =
+        ∑ i, w.repr z i * w.repr z i * algebraMap F K (B (v i) (v i)) := by
+      conv_lhs => rw [← w.sum_repr z]
+      simp only [sum_left, sum_right, smul_left, smul_right, hw]
+      refine Finset.sum_congr rfl fun i _ ↦ ?_
+      rw [Finset.sum_eq_single i (fun j _ hji ↦ by rw [hv hji, map_zero, mul_zero]) (by simp)]
+      ring
+    obtain ⟨i, hi⟩ : ∃ i, w.repr z i ≠ 0 := by
+      by_contra! h0
+      exact hz (w.repr.injective (by ext i; simp [h0]))
+    rw [LinearMap.BilinMap.toQuadraticMap_apply, hz']
+    exact Finset.sum_pos' (fun j _ ↦ mul_nonneg (mul_self_nonneg _) (hpos j).le)
+      ⟨i, Finset.mem_univ _, mul_pos (mul_self_pos.mpr hi) (hpos i)⟩
+
+end PosDef
+
+end LinearMap.BilinForm

@@ -104,30 +104,37 @@ lemma initialVertex_zero (σ : (TopCat.toSSet.obj X) _⦋0⦌) :
 the unique path class between two points of its simplex. -/
 def pathTransport (σ : (TopCat.toSSet.obj X).obj n) (z w : toTop.{v}.obj n.unop) :
     (⟨TopCat.simplexMap σ z⟩ : FundamentalGroupoid X) ⟶ ⟨TopCat.simplexMap σ w⟩ :=
-  (FundamentalGroupoid.map (TopCat.simplexMap σ)).map
-    (default : (⟨z⟩ : FundamentalGroupoid (toTop.{v}.obj n.unop)) ⟶ ⟨w⟩)
+  (TopCat.simplexMap σ).pathClass z w
 
-/-- Transport inside a simplex is the image of the unique path class of the topological simplex
-under the map of fundamental groupoids induced by the simplex. -/
-lemma pathTransport_def (σ : (TopCat.toSSet.obj X).obj n) (z w : toTop.{v}.obj n.unop) :
-    pathTransport σ z w = (FundamentalGroupoid.map (TopCat.simplexMap σ)).map
-      (default : (⟨z⟩ : FundamentalGroupoid (toTop.{v}.obj n.unop)) ⟶ ⟨w⟩) := (rfl)
+/-- Transport inside a simplex is the path class inside the image of the simplex, from the image
+of one point to the image of the other. -/
+lemma pathTransport_eq_pathClass (σ : (TopCat.toSSet.obj X).obj n) (z w : toTop.{v}.obj n.unop) :
+    pathTransport σ z w = (TopCat.simplexMap σ).pathClass z w :=
+  (rfl)
 
 /-- Transport inside a simplex is represented by the image of any path joining its endpoints. -/
 lemma pathTransport_eq_mk (σ : (TopCat.toSSet.obj X).obj n)
     {z w : toTop.{v}.obj n.unop} (q : Path z w) :
     pathTransport σ z w = Path.Homotopic.Quotient.mk
-      (q.map (TopCat.simplexMap σ).continuous) := by
-  unfold pathTransport
-  rw [Subsingleton.elim (default : (⟨z⟩ : FundamentalGroupoid (toTop.{v}.obj n.unop)) ⟶ ⟨w⟩)
+      (q.map (TopCat.simplexMap σ).continuous) :=
+  (TopCat.simplexMap σ).pathClass_eq_mk q
+
+/-- Transport inside a simplex is the image of the unique path class of the topological simplex
+under the map of fundamental groupoids induced by the simplex. -/
+lemma pathTransport_def (σ : (TopCat.toSSet.obj X).obj n) (z w : toTop.{v}.obj n.unop) :
+    pathTransport σ z w = (FundamentalGroupoid.map (TopCat.simplexMap σ)).map
+      (default : (⟨z⟩ : FundamentalGroupoid (toTop.{v}.obj n.unop)) ⟶ ⟨w⟩) := by
+  obtain ⟨q⟩ := PathConnectedSpace.joined z w
+  rw [pathTransport_eq_mk σ q, Subsingleton.elim
+    (default : (⟨z⟩ : FundamentalGroupoid (toTop.{v}.obj n.unop)) ⟶ ⟨w⟩)
     (Path.Homotopic.Quotient.mk q)]
-  exact (Path.Homotopic.Quotient.mk_map q (TopCat.simplexMap σ)).symm
+  exact Path.Homotopic.Quotient.mk_map q (TopCat.simplexMap σ)
 
 /-- Transport inside a simplex from a point to itself is the identity. -/
 @[simp]
 lemma pathTransport_self (σ : (TopCat.toSSet.obj X).obj n) (z : toTop.{v}.obj n.unop) :
     pathTransport σ z z = 𝟙 _ :=
-  Functor.map_default_self _ _
+  (TopCat.simplexMap σ).pathClass_self z
 
 /-- Transports inside a simplex compose: running from `z` to `w` and then from `w` to `y` is
 running from `z` to `y`. -/
@@ -135,7 +142,7 @@ running from `z` to `y`. -/
 lemma pathTransport_comp (σ : (TopCat.toSSet.obj X).obj n)
     (z w y : toTop.{v}.obj n.unop) :
     pathTransport σ z w ≫ pathTransport σ w y = pathTransport σ z y :=
-  Functor.map_default_comp _ _ _ _
+  (TopCat.simplexMap σ).pathClass_comp_pathClass z w y
 
 /-- Transport inside a simplex may be moved along an equality of its target point. -/
 @[reassoc]
@@ -152,12 +159,10 @@ images of the two points under the reindexing. -/
 lemma pathTransport_map (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m)
     (z w : toTop.{v}.obj n.unop) :
     pathTransport ((TopCat.toSSet.obj X).map α σ) z w =
-      pathTransport σ (toTop.map α.unop z) (toTop.map α.unop w) := by
-  have h : ((FundamentalGroupoid.map (toTop.map α.unop).hom).map
-        (default : (⟨z⟩ : FundamentalGroupoid (toTop.{v}.obj n.unop)) ⟶ ⟨w⟩) :
-      (⟨toTop.map α.unop z⟩ : FundamentalGroupoid (toTop.{v}.obj m.unop)) ⟶
-        ⟨toTop.map α.unop w⟩) = default := Subsingleton.elim _ _
-  exact (FundamentalGroupoid.map_comp_map _ _ _).trans (congrArg _ h)
+      pathTransport σ (toTop.map α.unop z) (toTop.map α.unop w) :=
+  -- The simplex `(TopCat.toSSet.obj X).map α σ` is definitionally `σ` precomposed with the
+  -- reindexing map of topological simplices.
+  (TopCat.simplexMap σ).pathClass_comp (toTop.map α.unop).hom z w
 
 /-- Pushing a singular simplex forward along a continuous map carries transport inside it to
 transport inside the image simplex. -/
@@ -165,7 +170,7 @@ lemma map_pathTransport (f : X ⟶ Y) (σ : (TopCat.toSSet.obj X).obj n)
     (z w : toTop.{v}.obj n.unop) :
     (FundamentalGroupoid.map f.hom).map (pathTransport σ z w) =
       pathTransport ((TopCat.toSSet.map f).app n σ) z w :=
-  (FundamentalGroupoid.map_comp_map _ _ _).symm
+  ContinuousMap.map_pathClass f.hom (TopCat.simplexMap σ) z w
 
 /-- Transport inside equal simplices between equal points agrees up to the identification of the
 endpoints. -/
@@ -185,6 +190,11 @@ def vertexTransport (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m) :
     initialVertex σ ⟶ initialVertex ((TopCat.toSSet.obj X).map α σ) :=
   pathTransport σ (toTopInitialVertex m.unop) (toTop.map α.unop (toTopInitialVertex n.unop))
 
+/-- Vertex transport is transport inside the simplex between the two initial vertices. -/
+lemma vertexTransport_def (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m) :
+    vertexTransport α σ = pathTransport σ (toTopInitialVertex m.unop)
+      (toTop.map α.unop (toTopInitialVertex n.unop)) := (rfl)
+
 /-- Vertex transport is represented by the image of any path to the reindexed initial vertex. -/
 lemma vertexTransport_eq_mk (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m)
     (q : Path (toTopInitialVertex m.unop)
@@ -192,6 +202,12 @@ lemma vertexTransport_eq_mk (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m)
     vertexTransport α σ = Path.Homotopic.Quotient.mk
       (q.map (TopCat.simplexMap σ).continuous) := by
   rw [vertexTransport, pathTransport_eq_mk σ q]
+
+/-- Vertex transport is the path class inside the simplex between the two vertices. -/
+lemma vertexTransport_eq_pathClass (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m) :
+    vertexTransport α σ = (TopCat.simplexMap σ).pathClass (toTopInitialVertex m.unop)
+      (toTop.map α.unop (toTopInitialVertex n.unop)) :=
+  (rfl)
 
 /-- Reindexing along an identity does not move the initial vertex, so the transport it induces is
 the `eqToHom` between the two (equal) initial vertices. -/
@@ -274,6 +290,12 @@ def twistedChains : SimplicialObject (ModuleCat.{max v w} R) where
 def ιTwistedChains (σ : (TopCat.toSSet.obj X).obj n) :
     L.obj (initialVertex σ) ⟶ (twistedChains L).obj n :=
   Sigma.ι (fun τ : (TopCat.toSSet.obj X).obj n ↦ L.obj (initialVertex τ)) σ
+
+/-- Twisted chains in a simplicial degree are the coproduct of the coefficient fibres at the
+initial vertices of its singular simplices. -/
+def isColimitCofanTwistedChains (n : SimplexCategoryᵒᵖ) :
+    IsColimit (Cofan.mk ((twistedChains L).obj n) (ιTwistedChains L)) :=
+  coproductIsCoproduct _
 
 /-- Two maps out of a module of twisted chains agree as soon as they agree on every summand. -/
 @[ext]
@@ -363,6 +385,22 @@ attached to a singular `k`-simplex. -/
 def ιTwistedChainComplex (k : ℕ) (σ : (TopCat.toSSet.obj X) _⦋k⦌) :
     L.obj (initialVertex σ) ⟶ (twistedChainComplex L).X k :=
   ιTwistedChains L σ
+
+/-- Twisted singular chains are the alternating face map complex of their simplicial module.
+The comparison preserves the chosen simplex summands. -/
+def twistedChainComplexIsoAlternatingFaceMapComplex :
+    twistedChainComplex L ≅
+      (AlgebraicTopology.alternatingFaceMapComplex _).obj (twistedChains L) :=
+  Iso.refl _
+
+/-- The alternating-face comparison preserves each simplex inclusion. -/
+@[reassoc (attr := simp)]
+lemma ιTwistedChainComplex_isoAlternatingFaceMapComplex_hom_f (k : ℕ)
+    (σ : (TopCat.toSSet.obj X) _⦋k⦌) :
+    ιTwistedChainComplex L k σ ≫
+        (twistedChainComplexIsoAlternatingFaceMapComplex L).hom.f k =
+      ιTwistedChains L σ :=
+  Category.comp_id _
 
 /-- The cofan exhibiting the degree-`k` term of the twisted chain complex as a family indexed by the
 singular `k`-simplices. -/
@@ -480,6 +518,16 @@ lemma twistedChainsCoefficientMap_comp (η : L ⟶ K) (θ : K ⟶ J) :
 def twistedChainComplexCoefficientMap (η : L ⟶ K) :
     twistedChainComplex L ⟶ twistedChainComplex K :=
   (AlgebraicTopology.alternatingFaceMapComplex _).map (twistedChainsCoefficientMap η)
+
+/-- Changing coefficients commutes with the alternating-face comparison. -/
+@[reassoc]
+lemma twistedChainComplexIsoAlternatingFaceMapComplex_hom_naturality (η : L ⟶ K) :
+    twistedChainComplexCoefficientMap η ≫
+        (twistedChainComplexIsoAlternatingFaceMapComplex K).hom =
+      (twistedChainComplexIsoAlternatingFaceMapComplex L).hom ≫
+        (AlgebraicTopology.alternatingFaceMapComplex _).map (twistedChainsCoefficientMap η) := by
+  simp [twistedChainComplexIsoAlternatingFaceMapComplex, twistedChainComplexCoefficientMap,
+    twistedChainComplex]
 
 /-- In each degree, a morphism of local coefficient systems acts on the summand of a simplex `σ`
 through its component at the initial vertex of `σ`. -/
@@ -736,6 +784,15 @@ lemma ιTwistedChains_twistedChainsMap_app (n : SimplexCategoryᵒᵖ)
 def twistedChainComplexMap :
     twistedChainComplex ((pullback f.hom).obj L) ⟶ twistedChainComplex L :=
   (AlgebraicTopology.alternatingFaceMapComplex _).map (twistedChainsMap f L)
+
+/-- Continuous maps commute with the alternating-face comparison of twisted chains. -/
+@[reassoc]
+lemma twistedChainComplexIsoAlternatingFaceMapComplex_hom_space_naturality :
+    twistedChainComplexMap f L ≫ (twistedChainComplexIsoAlternatingFaceMapComplex L).hom =
+      (twistedChainComplexIsoAlternatingFaceMapComplex ((pullback f.hom).obj L)).hom ≫
+        (AlgebraicTopology.alternatingFaceMapComplex _).map (twistedChainsMap f L) := by
+  simp [twistedChainComplexIsoAlternatingFaceMapComplex, twistedChainComplexMap,
+    twistedChainComplex]
 
 /-- Equal continuous maps induce the same map on twisted chain complexes, after the canonical
 identification of their pullback coefficient systems. -/

@@ -45,7 +45,7 @@ noncomputable section
 
 namespace TauCeti.ClassFieldTheory
 
-open _root_.IntermediateField ValuativeRel
+open _root_.IntermediateField _root_.ValuativeRel
 
 variable {K : Type} [Field K] [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
   {n : ℕ} [NeZero n] {ζ : K} (hζ : IsPrimitiveRoot ζ n)

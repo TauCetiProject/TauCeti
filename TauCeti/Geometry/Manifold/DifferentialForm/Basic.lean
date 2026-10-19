@@ -56,4 +56,12 @@ theorem RoughForm.ofFunction_apply {I : ModelWithCorners ℝ E H} {M : Type*} [T
     (f : M → F) (x : M) (v : Fin 0 → TangentSpace I x) :
     RoughForm.ofFunction I f x v = f x := (rfl)
 
+/-- Every `0`-form is the `0`-form of its values on the empty tuple of tangent vectors. -/
+theorem RoughForm.eq_ofFunction {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
+    [ChartedSpace H M] {F : Type*} [AddCommGroup F] [Module ℝ F] [TopologicalSpace F]
+    (φ : RoughForm I M F 0) : φ = RoughForm.ofFunction I fun x ↦ φ x 0 := by
+  funext x
+  ext v
+  rw [RoughForm.ofFunction_apply, Subsingleton.elim v 0]
+
 end TauCeti

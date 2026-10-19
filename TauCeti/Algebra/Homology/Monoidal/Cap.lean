@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.LinearYoneda
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
-public import TauCeti.Algebra.Homology.Monoidal.TensorCochain
+public import TauCeti.Algebra.Homology.Monoidal.Tensor.Cochain
 
 /-!
 # Cap products of chains and cochains along a diagonal

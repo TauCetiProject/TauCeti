@@ -156,7 +156,7 @@ theorem isBaseChange_localizationToCompletion :
   -- composite of the rationalization `L → V` and the completion `V → V_p`: both base changes.
   -- The two composites carry different (propositionally equal) `ℤ`-module structures on `V_p`,
   -- one restricted from `ℤ_p` and one from `ℚ`, so they are matched by `convert`.
-  convert (Submodule.IsLattice.isBaseChange_subtype L.carrier).comp
+  convert (Submodule.isBaseChange_subtype L.carrier).comp
     (TensorProduct.isBaseChange ℚ V ℚ_[p])
   ext x
   simp

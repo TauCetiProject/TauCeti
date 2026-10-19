@@ -316,16 +316,12 @@ theorem exists_spinMinusSubrep_equiv_dual_spinPlusSubrep_of_finrank_eq_six
       apply Subtype.ext
       rfl
     rw [heplus]
-    have heven : spinGroupToEven Q g⁻¹ =
-        ⟨(g⁻¹ : spinGroup Q), spinGroup.mem_even (g⁻¹ : spinGroup Q).2⟩ :=
-      Subtype.ext (coe_spinGroupToEven_apply Q g⁻¹)
-    rw [heven]
-    exact (coe_spinPlusAction_spinGroup_apply P hline g⁻¹ p).symm
+    exact (coe_spinPlusAction_spinGroupToEven_apply P hline g⁻¹ p).symm
   have hminusAction : eminus.symm ((spinMinusSubrep P hline).toRepresentation g s) =
       spinMinusAction Q P hline (spinGroupToEven Q g) (eminus.symm s) := by
     apply Subtype.ext
     simpa [eminus] using
-      (coe_spinMinusAction_spinGroup_apply P hline g (eminus.symm s)).symm
+      (coe_spinMinusAction_spinGroupToEven_apply P hline g (eminus.symm s)).symm
   -- The remaining equality is the evaluation pairing for the transported dual action.
   simp only [E, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.trans_apply,
     LinearEquiv.dualMap_apply]

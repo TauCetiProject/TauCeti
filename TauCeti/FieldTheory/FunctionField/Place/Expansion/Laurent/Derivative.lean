@@ -48,12 +48,23 @@ place `P`, `dz/dt` is integral at `P` whenever `z` is. This is the local input f
 orders of Wronskians, and for comparing regular Kähler differentials with regular Weil
 differentials.
 
+The transformation formula and the residue of a differential also carry over to a place `P` of
+arbitrary degree whose residue field `F_P` is separable over `k`, with Laurent expansions and
+residues taking values in `F_P`
+(`TauCeti.Place.laurentSeriesExpansionResidueField`, `TauCeti.Place.residueResidueField`).
+The residue `res_P(ω) ∈ F_P` of a Kähler differential is again well defined, and so is its trace
+`Tr_{F_P/k} res_P(ω) ∈ k`, the `k`-valued residue at a place of higher degree (Stichtenoth,
+Remark 4.3.7). At a rational place the latter is the residue `TauCeti.Place.kaehlerResidue`.
+
 ## Main definitions
 
 * `TauCeti.Place.kaehlerResidue`: the residue `res_P(ω)` of a Kähler differential `ω` at a
   rational place, computed with a separating uniformizer.
 * `TauCeti.Place.kaehlerResidueOfPerfectField`: the residue `res_P(ω)` at a rational place of a
   function field over a perfect field, with no uniformizer in its signature.
+* `TauCeti.Place.kaehlerResidueResidueField`: the residue `res_P(ω) ∈ F_P` at a place with
+  separable residue field, computed with a separating uniformizer.
+* `TauCeti.Place.kaehlerTraceResidue`: its trace `Tr_{F_P/k} res_P(ω) ∈ k`.
 
 ## Main results
 
@@ -76,11 +87,18 @@ differentials.
 * `TauCeti.Place.kaehlerResidue_D`: exact differentials have residue zero.
 * `TauCeti.Place.kaehlerResidueOfPerfectField_smul_D`: over a perfect field, `res_P(z dt)` is
   `res_{P,t}(z)` for every prime element `t`.
+* `TauCeti.Place.residueResidueField_eq_residueResidueField_mul_derivativeOfSeparating`: the
+  transformation formula at a place with separable residue field.
+* `TauCeti.Place.kaehlerResidueResidueField_eq_kaehlerResidueResidueField` and
+  `TauCeti.Place.kaehlerTraceResidue_eq_kaehlerTraceResidue`: there too, the residue of a
+  differential is independent of the uniformizer used to compute it.
+* `TauCeti.Place.kaehlerTraceResidue_eq_kaehlerResidue`: at a rational place the `k`-valued
+  residue is `TauCeti.Place.kaehlerResidue`.
 
 ## References
 
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
-  Section IV.2, Proposition 4.2.9 and Definition 4.2.10.
+  Section IV.2, Proposition 4.2.9 and Definition 4.2.10, and Remark 4.3.7.
 -/
 
 public section
@@ -360,6 +378,129 @@ theorem kaehlerResidueOfPerfectField_D (y : F) :
   rw [P.kaehlerResidueOfPerfectField_eq_kaehlerResidue hP ht hF hsep.1, kaehlerResidue_D]
 
 end PerfectField
+
+/-! ### Places with separable residue field -/
+
+section ResidueField
+
+variable [Algebra.IsSeparable k P.ResidueField] (htr : Transcendental k t)
+  [Algebra.IsSeparable k⟮t⟯ F]
+
+/-- **Stichtenoth's transformation formula** `res_{P,s}(z) = res_{P,t}(z · ds/dt)` at a place
+with separable residue field, for two uniformizers `s` and `t` with `t` separating, the residues
+taking values in `F_P` (Proposition 4.2.9). -/
+theorem residueResidueField_eq_residueResidueField_mul_derivativeOfSeparating
+    (hs : P.ord s = 1) (z : F) :
+    P.residueResidueField hs z = P.residueResidueField ht (z * derivativeOfSeparating htr s) :=
+  P.residueResidueField_eq_residueResidueField_mul ht hs
+    (P.laurentSeriesExpansionResidueField_derivativeOfSeparating ht htr s) z
+
+/-- **The transformation formula for `k`-valued residues** at a place with separable residue
+field: `Tr_{F_P/k} res_{P,s}(z) = Tr_{F_P/k} res_{P,t}(z · ds/dt)`. -/
+theorem traceResidue_eq_traceResidue_mul_derivativeOfSeparating (hs : P.ord s = 1) (z : F) :
+    P.traceResidue hs z = P.traceResidue ht (z * derivativeOfSeparating htr s) :=
+  P.traceResidue_eq_traceResidue_mul ht hs
+    (P.laurentSeriesExpansionResidueField_derivativeOfSeparating ht htr s) z
+
+/-- The derivative `dy/dt` has residue zero with respect to `t` at a place with separable residue
+field: the formal derivative of a Laurent series has no `T⁻¹` term. -/
+@[simp]
+theorem residueResidueField_derivativeOfSeparating (y : F) :
+    P.residueResidueField ht (derivativeOfSeparating htr y) = 0 := by
+  rw [residueResidueField_apply, laurentSeriesExpansionResidueField_derivativeOfSeparating,
+    LaurentSeries.derivative_apply, LaurentSeries.hasseDeriv_coeff]
+  simp
+
+/-- The derivative `dy/dt` has `k`-valued residue zero with respect to `t`. -/
+@[simp]
+theorem traceResidue_derivativeOfSeparating (y : F) :
+    P.traceResidue ht (derivativeOfSeparating htr y) = 0 := by
+  rw [traceResidue_apply, residueResidueField_derivativeOfSeparating, map_zero]
+
+/-- The **residue** `res_P(ω) ∈ F_P` of a Kähler differential `ω` at a place with separable
+residue field (Stichtenoth, Definition 4.2.10 and Remark 4.3.7): writing `ω = z dt` for a
+separating uniformizer `t` at `P`, it is the residue `res_{P,t}(z)`. It does not depend on `t`
+(`TauCeti.Place.kaehlerResidueResidueField_eq_kaehlerResidueResidueField`). -/
+noncomputable def kaehlerResidueResidueField : Ω[F⁄k] →ₗ[k] P.ResidueField :=
+  P.residueResidueField ht ∘ₗ ((kaehlerBasisOfSeparating htr).coord ()).restrictScalars k
+
+/-- The residue of `ω` is the residue of its coordinate `ω / dt` in the basis `dt`. -/
+theorem kaehlerResidueResidueField_apply (ω : Ω[F⁄k]) :
+    P.kaehlerResidueResidueField ht htr ω =
+      P.residueResidueField ht ((kaehlerBasisOfSeparating htr).coord () ω) :=
+  (rfl)
+
+/-- The residue of `z dt` is `res_{P,t}(z)`. -/
+@[simp]
+theorem kaehlerResidueResidueField_smul_D (z : F) :
+    P.kaehlerResidueResidueField ht htr (z • D k F t) = P.residueResidueField ht z := by
+  simp [kaehlerResidueResidueField_apply]
+
+/-- **Exact differentials have residue zero**: `res_P(dy) = 0`. -/
+@[simp]
+theorem kaehlerResidueResidueField_D (y : F) :
+    P.kaehlerResidueResidueField ht htr (D k F y) = 0 := by
+  rw [← derivativeOfSeparating_smul_D htr y, kaehlerResidueResidueField_smul_D,
+    residueResidueField_derivativeOfSeparating]
+
+/-- **The residue of a differential at a place with separable residue field is well defined**
+(Stichtenoth, Definition 4.2.10): it does not depend on the separating uniformizer used to
+compute it. -/
+theorem kaehlerResidueResidueField_eq_kaehlerResidueResidueField (hs : P.ord s = 1)
+    (hstr : Transcendental k s) [Algebra.IsSeparable k⟮s⟯ F] :
+    P.kaehlerResidueResidueField hs hstr = P.kaehlerResidueResidueField ht htr := by
+  -- Both sides are `F`-semilinear in `ω`, so it suffices to compare them on `ω = z ds`, where
+  -- `z ds = (z · ds/dt) dt`.
+  refine LinearMap.ext fun ω ↦ ?_
+  obtain ⟨z, rfl⟩ : ∃ z : F, z • D k F s = ω :=
+    ⟨(kaehlerBasisOfSeparating hstr).coord () ω, by
+      simpa using (kaehlerBasisOfSeparating hstr).sum_repr ω⟩
+  rw [kaehlerResidueResidueField_smul_D, ← derivativeOfSeparating_smul_D htr s, smul_smul,
+    kaehlerResidueResidueField_smul_D,
+    P.residueResidueField_eq_residueResidueField_mul_derivativeOfSeparating ht htr hs]
+
+/-- The `k`-valued **residue** `Tr_{F_P/k} res_P(ω)` of a Kähler differential `ω` at a place with
+separable residue field (Stichtenoth, Remark 4.3.7). It does not depend on the separating
+uniformizer `t` (`TauCeti.Place.kaehlerTraceResidue_eq_kaehlerTraceResidue`), and at a rational
+place it is `TauCeti.Place.kaehlerResidue` (`TauCeti.Place.kaehlerTraceResidue_eq_kaehlerResidue`).
+-/
+noncomputable def kaehlerTraceResidue : Ω[F⁄k] →ₗ[k] k :=
+  (Algebra.trace k P.ResidueField).comp (P.kaehlerResidueResidueField ht htr)
+
+/-- The `k`-valued residue is the trace of the residue. -/
+theorem kaehlerTraceResidue_apply (ω : Ω[F⁄k]) :
+    P.kaehlerTraceResidue ht htr ω =
+      Algebra.trace k P.ResidueField (P.kaehlerResidueResidueField ht htr ω) :=
+  (rfl)
+
+/-- The `k`-valued residue of `z dt` is `Tr_{F_P/k} res_{P,t}(z)`. -/
+@[simp]
+theorem kaehlerTraceResidue_smul_D (z : F) :
+    P.kaehlerTraceResidue ht htr (z • D k F t) = P.traceResidue ht z := by
+  rw [kaehlerTraceResidue_apply, kaehlerResidueResidueField_smul_D, traceResidue_apply]
+
+/-- **Exact differentials have `k`-valued residue zero.** -/
+@[simp]
+theorem kaehlerTraceResidue_D (y : F) : P.kaehlerTraceResidue ht htr (D k F y) = 0 := by
+  rw [kaehlerTraceResidue_apply, kaehlerResidueResidueField_D, map_zero]
+
+/-- **The `k`-valued residue of a differential is well defined**: it does not depend on the
+separating uniformizer used to compute it. -/
+theorem kaehlerTraceResidue_eq_kaehlerTraceResidue (hs : P.ord s = 1)
+    (hstr : Transcendental k s) [Algebra.IsSeparable k⟮s⟯ F] :
+    P.kaehlerTraceResidue hs hstr = P.kaehlerTraceResidue ht htr := by
+  rw [kaehlerTraceResidue, kaehlerTraceResidue,
+    P.kaehlerResidueResidueField_eq_kaehlerResidueResidueField ht htr hs hstr]
+
+/-- At a rational place the `k`-valued residue of a differential is its residue
+`TauCeti.Place.kaehlerResidue`. -/
+theorem kaehlerTraceResidue_eq_kaehlerResidue :
+    P.kaehlerTraceResidue ht htr = P.kaehlerResidue hP ht htr :=
+  LinearMap.ext fun ω ↦ by
+    rw [kaehlerTraceResidue_apply, kaehlerResidueResidueField_apply, ← traceResidue_apply,
+      traceResidue_eq_residue _ _ hP, kaehlerResidue_apply]
+
+end ResidueField
 
 end Place
 

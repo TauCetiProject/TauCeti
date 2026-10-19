@@ -8,6 +8,8 @@ module
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import TauCeti.Analysis.Calculus.Morse.Index
 public import TauCeti.Geometry.Manifold.Morse.Basic
+import TauCeti.Analysis.Calculus.DerivativeTest
+import TauCeti.Geometry.Manifold.MFDeriv.Chart
 
 /-!
 # The Morse index on a smooth manifold
@@ -23,7 +25,8 @@ theorem makes the construction reduce exactly to the existing calculus definitio
 not compare the preferred chart with arbitrary manifold charts.
 
 When the preferred-chart Hessian is nondegenerate, the indices of a function and its negation add
-to the dimension of the model space.
+to the dimension of the model space. At a local minimum of a `C²` function on a boundaryless
+manifold, the index vanishes without a nondegeneracy assumption.
 
 ## Main declarations
 
@@ -32,6 +35,8 @@ to the dimension of the model space.
   function.
 * `TauCeti.manifoldMorseIndex_modelSpace`: comparison with `TauCeti.morseIndex` on a normed
   vector space.
+* `TauCeti.manifoldMorseIndex_eq_zero_of_isLocalMin`: the index vanishes at a local minimum
+  of a `C²` function on a boundaryless manifold.
 * `TauCeti.manifoldMorseIndex_transContinuousLinearEquiv`: invariance under an equivalent choice
   of model space.
 * `TauCeti.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank`: the complementary-index
@@ -105,6 +110,19 @@ theorem manifoldMorseIndex_modelSpace {V : Type*} [NormedAddCommGroup V] [Normed
 theorem manifoldMorseIndex_le_finrank [FiniteDimensional ℝ E] :
     manifoldMorseIndex I f x ≤ Module.finrank ℝ E :=
   morseIndex_le_finrank
+
+/-- At a local minimum of a `C²` function on a boundaryless manifold, the preferred-chart Morse
+index is zero. No nondegeneracy assumption is needed. -/
+theorem manifoldMorseIndex_eq_zero_of_isLocalMin [FiniteDimensional ℝ E] [I.Boundaryless]
+    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (hmin : IsLocalMin f x) :
+    manifoldMorseIndex I f x = 0 := by
+  have hmin' : IsLocalMin (f ∘ (extChartAt I x).symm) (extChartAt I x x) := by
+    have hm : IsLocalMin f ((extChartAt I x).symm (extChartAt I x x)) := by simpa using hmin
+    exact hm.comp_continuous (continuousAt_extChartAt_symm x)
+  rw [manifoldMorseIndex_def, morseIndex_def]
+  exact (QuadraticForm.forall_nonneg_iff_sigNeg_eq_zero _).mp fun v ↦ by
+    rw [hessianQuadraticForm_apply]
+    exact fderiv_fderiv_self_nonneg_of_isLocalMin hf.contDiffAt_comp_extChartAt_symm hmin' v
 
 /-- The manifold Morse index is unchanged when the manifold model is transported through a
 continuous linear equivalence, assuming `C²` regularity of the preferred-chart expression. -/

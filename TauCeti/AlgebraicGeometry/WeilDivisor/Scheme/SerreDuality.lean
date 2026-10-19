@@ -53,6 +53,9 @@ Under the same constant-field hypothesis, taking `D = 0` computes the genus:
   `SchemeWeilDivisor.cohomologyOneDualEquivCohomologyZero_symm_apply_repartitionToCohomologyOne`;
 * `SchemeWeilDivisor.finrank_cohomology_one_sheaf_eq_finrank_cohomology_zero_sheaf_sub`:
   `dim_k H¹(X, 𝒪_X(D)) = dim_k H⁰(X, 𝒪_X(K - D))` for every canonical divisor `K`;
+* `SchemeWeilDivisor.finrank_cohomology_zero_sheaf_zero_eq_one` and
+  `SchemeWeilDivisor.finrank_cohomology_zero_trivial_eq_one_of_isIntegrallyClosedIn`:
+  `H⁰(X, 𝒪_X)` is one-dimensional;
 * `SchemeWeilDivisor.genus_eq_genus_functionField`: the genus `dim_k H¹(X, 𝒪_X)` of `X` is the
   genus of its function field;
 * `SchemeWeilDivisor.relativeDegree_eq_two_mul_genus_sub_two`: a canonical divisor has degree
@@ -170,6 +173,24 @@ theorem finrank_cohomology_one_sheaf_zero_eq_genus :
   rw [← Subspace.dual_finrank_eq,
     (cohomologyOneDualEquivWeilDifferentialFiltration hex hdim hF 0).finrank_eq, map_zero,
     finrank_weilDifferentialFiltration_zero hF hk]
+
+include hex hdim hF hk in
+/-- When `k` is integrally closed in `k(X)`, the global sections of `𝒪_X(0)` are the constants:
+`H⁰(X, 𝒪_X(0))` is one-dimensional. No rational point is needed. -/
+theorem finrank_cohomology_zero_sheaf_zero_eq_one :
+    finrank k (Scheme.Modules.Cohomology (sheaf (0 : SchemeWeilDivisor X)) 0) = 1 := by
+  rw [finrank_cohomology_zero_sheaf_eq_dim hex hdim, map_zero,
+    Divisor.dim_zero_of_isIntegrallyClosedIn hF hk]
+
+include hex hdim hF hk in
+/-- **Only constant global functions.** When `k` is integrally closed in `k(X)`,
+`H⁰(X, 𝒪_X)` is one-dimensional over `k`. Unlike
+`TauCeti.AlgebraicGeometry.finrank_cohomology_zero_trivial_eq_one`, no
+rational point is needed. -/
+theorem finrank_cohomology_zero_trivial_eq_one_of_isIntegrallyClosedIn :
+    finrank k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 0) = 1 := by
+  rw [← Scheme.Modules.finrank_cohomology_congr k (sheafZeroIsoTrivial hdim) 0]
+  exact finrank_cohomology_zero_sheaf_zero_eq_one hex hdim hF hk
 
 include hex hdim hF hk in
 /-- **The genus of a curve is the genus of its function field when `k` is integrally closed in

@@ -6,9 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.NormDet
+public import Mathlib.Analysis.InnerProductSpace.ProdL2
+public import TauCeti.Analysis.Normed.Lp.GraphDomain
+import Mathlib.LinearAlgebra.Matrix.SchurComplement
+import TauCeti.Analysis.InnerProductSpace.Parseval
 
 /-!
-# Continuity of the Jacobian `normDet`
+# Continuity, one-dimensional values, and orthogonal extensions of the Jacobian `normDet`
 
 For finite-dimensional real inner product spaces `U` and `V`, the `m`-dimensional Jacobian
 `LinearMap.normDet` of a linear map `U →L[ℝ] V`, `m = dim U`, depends continuously on the map.
@@ -16,18 +20,46 @@ This follows from `normDet² = det (A† A)` (`ContinuousLinearMap.normDet_sq`).
 injective linear map the Jacobian is controlled up to any factor `τ > 1`, uniformly with the
 antilipschitz constant.
 
+Extending a linear map `T : U → V` to the Euclidean product `ℝ × U` by sending the new direction
+to a unit vector orthogonal to the range of `T` does not change the Jacobian. This is the linear
+algebra behind cones: for `t > 0`, the Jacobian of `(t, u) ↦ t • ψ u` for a parametrization `ψ`
+of a piece of the unit sphere is `tᵐ` times the Jacobian of `ψ`.
+
+The Jacobian of the linear normal graph `x ↦ (A x, x)` of a functional `A` is
+`sqrt (1 + ‖A‖²)`: its Gram matrix in an orthonormal basis is a rank-one perturbation of the
+identity.
+
 ## Main declarations
 
 * `ContinuousLinearMap.continuous_normDet`: the Jacobian `normDet` is continuous.
+* `LinearMap.normDet_eq_norm_apply_one`: for a map from `ℝ`, the Jacobian is the norm of the
+  image of `1`.
 * `ContinuousLinearMap.exists_ball_antilipschitzWith_normDet_le`: around an injective linear map
   there is a ball with a uniform antilipschitz constant on which `normDet` varies by a factor at
   most `τ`.
+* `LinearMap.normDet_toSpanSingleton_coprod`: an orthogonal unit extension of a linear map has the
+  same Jacobian.
+* `ContinuousLinearMap.normDet_normalGraphL`: the Jacobian of a linear normal graph.
 -/
 
 public section
 
 open Function Metric Set
 open scoped NNReal Topology
+
+namespace LinearMap
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+
+/-- The one-dimensional geometric Jacobian of a linear map is the norm of the image of `1`. -/
+theorem normDet_eq_norm_apply_one (A : ℝ →ₗ[ℝ] V) : A.normDet = ‖A 1‖ := by
+  have h := A.normDet_sq_eq_det_gram (OrthonormalBasis.singleton Unit ℝ)
+  rw [Matrix.det_unique] at h
+  simp only [OrthonormalBasis.singleton_apply, Matrix.gram_apply,
+    real_inner_self_eq_norm_sq, RCLike.ofReal_real_eq_id] at h
+  exact sq_eq_sq₀ A.normDet_nonneg (norm_nonneg (A 1)) |>.mp h
+
+end LinearMap
 
 variable {U V : Type*} [NormedAddCommGroup U] [InnerProductSpace ℝ U] [FiniteDimensional ℝ U]
   [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
@@ -82,3 +114,52 @@ theorem exists_ball_antilipschitzWith_normDet_le (B : U →L[ℝ] V)
     linarith
 
 end ContinuousLinearMap
+
+namespace LinearMap
+
+open scoped RealInnerProductSpace
+
+/-- Extending `T : U →ₗ[ℝ] V` to the Euclidean product `WithLp 2 (ℝ × U)` by a unit vector `e`
+orthogonal to the range of `T`, `(a, u) ↦ a • e + T u`, does not change the Jacobian `normDet`. -/
+theorem normDet_toSpanSingleton_coprod {e : V} (he : ‖e‖ = 1) {T : U →ₗ[ℝ] V}
+    (hT : ∀ u, ⟪e, T u⟫ = 0) :
+    ((toSpanSingleton ℝ V e).coprod T ∘ₗ (WithLp.linearEquiv 2 ℝ (ℝ × U)).toLinearMap).normDet =
+      T.normDet := by
+  set P := WithLp.linearEquiv 2 ℝ (ℝ × U)
+  set L := (toSpanSingleton ℝ V e).coprod T ∘ₗ P.toLinearMap
+  -- The Gram operator of `L` is block diagonal: `1` on `ℝ` and `T† T` on `U`.
+  have hL : L.adjoint ∘ₗ L = P.symm.conj ((LinearMap.id : ℝ →ₗ[ℝ] ℝ).prodMap (T.adjoint ∘ₗ T)) := by
+    refine LinearMap.ext fun x => ext_inner_right ℝ fun y => ?_
+    rw [LinearMap.comp_apply, LinearMap.adjoint_inner_left]
+    simp [L, P, LinearEquiv.conj_apply, WithLp.prod_inner_apply, inner_add_left, inner_add_right,
+      inner_smul_left, inner_smul_right, hT, he, LinearMap.adjoint_inner_left, real_inner_comm e]
+  have h₁ := L.normDet_sq
+  have h₂ := T.normDet_sq
+  simp only [RCLike.ofReal_real_eq_id, id_eq] at h₁ h₂
+  refine (sq_eq_sq₀ L.normDet_nonneg T.normDet_nonneg).1 ?_
+  rw [h₁, h₂, hL, LinearEquiv.conj_apply, LinearMap.comp_assoc, LinearMap.det_conj,
+    LinearMap.det_prodMap, LinearMap.det_id, one_mul]
+
+end LinearMap
+
+/-- The geometric Jacobian of the linear normal graph `x ↦ (A x, x)` is
+`sqrt (1 + ‖A‖²)`. -/
+theorem ContinuousLinearMap.normDet_normalGraphL (A : U →L[ℝ] ℝ) :
+    A.normalGraphL.normDet = Real.sqrt (1 + ‖A‖ ^ 2) := by
+  let b := stdOrthonormalBasis ℝ U
+  let u : Fin (Module.finrank ℝ U) → ℝ := fun i => A (b i)
+  have hgram : Matrix.gram ℝ (fun i => A.normalGraphL.toLinearMap (b i)) =
+      1 + Matrix.replicateCol Unit u * Matrix.replicateRow Unit u := by
+    ext i j
+    simp only [Matrix.gram_apply, ContinuousLinearMap.coe_coe, A.coe_normalGraphL,
+      WithLp.prod_inner_apply, WithLp.ofLp_fst, WithLp.ofLp_snd,
+      TauCeti.normalGraphEmbedding_fst, TauCeti.normalGraphEmbedding_snd,
+      orthonormal_iff_ite.mp b.orthonormal i j]
+    simp [Matrix.mul_apply, u, Matrix.one_apply, mul_comm, add_comm]
+  have hu : u ⬝ᵥ u = ‖A‖ ^ 2 := by
+    simpa [u, dotProduct, Real.norm_eq_abs, sq] using b.sum_sq_norm_apply_eq_norm_sq A
+  have hsq : A.normalGraphL.normDet ^ 2 = 1 + ‖A‖ ^ 2 := by
+    have h := A.normalGraphL.toLinearMap.normDet_sq_eq_det_gram b
+    simp only [RCLike.ofReal_real_eq_id, id_eq] at h
+    rw [h, hgram, Matrix.det_one_add_replicateCol_mul_replicateRow, hu]
+  rw [← Real.sqrt_sq A.normalGraphL.normDet_nonneg, hsq]
