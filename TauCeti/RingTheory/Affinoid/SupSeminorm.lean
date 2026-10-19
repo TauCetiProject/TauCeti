@@ -151,8 +151,8 @@ theorem pointNorm_mul (hA : IsAffinoidAlgebra K A) (x : MaximalSpectrum A) (f g 
     pointNorm K x (f * g) = pointNorm K x f * pointNorm K x g := by
   let := Ideal.Quotient.field x.asIdeal
   have := hA.isAlgebraic_quotient x
-  simp only [pointNorm, map_mul]
-  exact spectralAlgNorm_mul (K := K) _ _
+  -- The spectral norm is multiplicative as the bundled `spectralMulAlgNorm`.
+  simp only [pointNorm, map_mul, ← spectralMulAlgNorm_def]
 
 theorem pointNorm_pow (hA : IsAffinoidAlgebra K A) (x : MaximalSpectrum A) (f : A) (n : ℕ) :
     pointNorm K x (f ^ n) = pointNorm K x f ^ n := by
@@ -202,11 +202,12 @@ private theorem spectralNorm_le_norm {A : Type*} [NormedCommRing A] [NormedAlgeb
   exact contraction_of_isPowMul (β := L) isPowMul_spectralNorm hq f
 
 /-- **Point norms are bounded by complete algebra norms.** On an affinoid algebra with a complete
-ultrametric algebra norm, `|f(x)| ≤ ‖f‖` at every classical point `x`. The residue map is
-continuous by automatic continuity, and the spectral norm is power-multiplicative. -/
+ultrametric algebra norm, `|f(x)| ≤ ‖f‖` at every classical point `x`. -/
 theorem pointNorm_le_norm {A : Type*} [NormedCommRing A] [NormedAlgebra K A]
     [IsUltrametricDist A] [CompleteSpace A] (hA : IsAffinoidAlgebra K A) (x : MaximalSpectrum A)
     (f : A) : pointNorm K x f ≤ ‖f‖ := by
+  -- The residue map is continuous by automatic continuity, and the spectral norm is
+  -- power-multiplicative.
   let := Ideal.Quotient.field x.asIdeal
   have : FiniteDimensional K (A ⧸ x.asIdeal) := hA.finite_quotient_of_isMaximal x.asIdeal
   exact hA.spectralNorm_le_norm (Ideal.Quotient.mkₐ K x.asIdeal)
@@ -252,10 +253,10 @@ namespace IsAffinoidAlgebra
 variable [IsUltrametricDist K] [CompleteSpace K]
 
 /-- **Boundedness of point norms.** The absolute values of an element of an affinoid algebra at
-its classical points are bounded: for a Tate presentation `π`, those of `π t` are bounded by the
-Gauss norm of `t`. -/
+its classical points are bounded. -/
 theorem bddAbove_range_pointNorm (hA : IsAffinoidAlgebra K A) (f : A) :
     BddAbove (Set.range fun x : MaximalSpectrum A ↦ pointNorm K x f) := by
+  -- For a Tate presentation `π`, the point norms of `π t` are bounded by the Gauss norm of `t`.
   obtain ⟨n, π, hπ⟩ := (isAffinoidAlgebra_iff K A).mp hA
   obtain ⟨t, rfl⟩ := hπ f
   refine ⟨‖t‖, ?_⟩
@@ -311,6 +312,8 @@ theorem supSeminorm_pow (hA : IsAffinoidAlgebra K A) (f : A) {n : ℕ} (hn : n �
   simp only [supSeminorm, hA.pointNorm_pow,
     Real.iSup_pow_of_ne_zero (fun x ↦ pointNorm_nonneg x f) hn]
 
+/-- The supremum seminorm of an affinoid algebra is power-multiplicative:
+`|f ^ n|sup = |f|sup ^ n` for `n ≥ 1`. -/
 theorem isPowMul_supSeminorm (hA : IsAffinoidAlgebra K A) :
     IsPowMul (supSeminorm K : A → ℝ) :=
   fun f _ hn ↦ hA.supSeminorm_pow f (Nat.one_le_iff_ne_zero.mp hn)
@@ -333,11 +336,15 @@ theorem supSeminorm_eq_zero_iff (hA : IsAffinoidAlgebra K A) {f : A} :
     supSeminorm K f = 0 ↔ IsNilpotent f := by
   have := hA.isJacobsonRing
   rw [hA.supSeminorm_eq_zero_iff_forall_mem]
-  -- `nilradical A` is by definition the radical of `⊥`, which in a Jacobson ring is the Jacobson
-  -- radical, the intersection of the maximal ideals.
-  rw [← mem_nilradical, nilradical, Ideal.zero_eq_bot, Ideal.radical_eq_jacobson,
-    Ideal.jacobson_bot, Ring.jacobson_eq_sInf_isMaximal, Submodule.mem_sInf]
-  exact ⟨fun h m hm ↦ h ⟨m, hm⟩, fun h x ↦ h _ x.isMaximal⟩
+  refine ⟨fun h ↦ ?_, fun h x ↦ nilpotent_iff_mem_prime.mp h _ x.isMaximal.isPrime⟩
+  -- An element of every maximal ideal lies in the Jacobson radical `jacobson ⊥`, which in a
+  -- Jacobson ring is the radical of `⊥`.
+  have hf : f ∈ Ring.jacobson A := by
+    rw [Ring.jacobson_eq_sInf_isMaximal, Submodule.mem_sInf]
+    exact fun m hm ↦ h ⟨m, hm⟩
+  rw [← Ideal.jacobson_bot, ← Ideal.radical_eq_jacobson, Ideal.mem_radical_iff] at hf
+  obtain ⟨n, hn⟩ := hf
+  exact ⟨n, Ideal.mem_bot.mp hn⟩
 
 /-- An algebra homomorphism of affinoid algebras does not increase supremum seminorms. -/
 theorem supSeminorm_map_le (hA : IsAffinoidAlgebra K A) (hB : IsAffinoidAlgebra K B)
