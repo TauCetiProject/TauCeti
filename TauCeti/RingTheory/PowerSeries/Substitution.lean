@@ -135,10 +135,6 @@ theorem algHom_eq_substAlgHom {σ : R⟦X⟧ →ₐ[R] S⟦X⟧} (hσ : HasSubst
   simp only [map_add, map_mul, map_pow, substAlgHom_X, key, zero_add]
   exact congr(coeff n ($hpoly (trunc m f)))
 
-/-- A square-zero perturbation `X + h` of `X` can be substituted. -/
-theorem hasSubst_X_add_of_sq_eq_zero {h : S⟦X⟧} (hh : h ^ 2 = 0) : HasSubst (X + h) :=
-  HasSubst.X'.add <| IsNilpotent.map (⟨2, hh⟩ : IsNilpotent h) MvPowerSeries.constantCoeff
-
 /-- The first-order Taylor formula: substituting a square-zero perturbation `X + h` of `X` gives
 `f (X + h) = f + h f'`. -/
 theorem subst_X_add_of_sq_eq_zero {h : S⟦X⟧} (hh : h ^ 2 = 0) (f : S⟦X⟧) :
@@ -158,7 +154,7 @@ theorem subst_X_add_of_sq_eq_zero {h : S⟦X⟧} (hh : h ^ 2 = 0) (f : S⟦X⟧)
       commutes' r := by simp }
   have hT (g : S⟦X⟧) : T g = g + h * d⁄dX g := rfl
   have hTX : T X = X + h := by rw [hT, derivative_X, mul_one]
-  have hσ := congr($(algHom_eq_substAlgHom (σ := T) (hTX ▸ hasSubst_X_add_of_sq_eq_zero hh)) f)
+  have hσ := congr($(algHom_eq_substAlgHom (σ := T) (hTX ▸ HasSubst.X'.add (.map ⟨2, hh⟩ _))) f)
   rw [coe_substAlgHom, hTX, hT] at hσ
   exact hσ.symm
 

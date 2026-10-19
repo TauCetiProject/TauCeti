@@ -71,26 +71,35 @@ variable {S : Type*} [CommRing S] {e : S}
 private theorem sq_smul_eq_zero (he : e ^ 2 = 0) (a : S⟦X⟧) : (e • a) ^ 2 = 0 := by
   rw [smul_pow, he, zero_smul]
 
+private theorem hasSubst_X_add_smul (he : e ^ 2 = 0) (a : S⟦X⟧) : HasSubst (X + e • a) :=
+  HasSubst.X'.add (.map ⟨2, sq_smul_eq_zero he a⟩ _)
+
+/-- For a fixed square-zero `e`, the substitutions `X ↦ X + e a` compose by adding parameters. -/
+private theorem substAlgHom_X_add_smul_comp (he : e ^ 2 = 0) (a b : S⟦X⟧) :
+    (substAlgHom (hasSubst_X_add_smul he a)).comp (substAlgHom (hasSubst_X_add_smul he b)) =
+      substAlgHom (hasSubst_X_add_smul he (a + b)) := by
+  have hE : C e ^ 2 = 0 := by rw [← map_pow, he, map_zero]
+  refine AlgHom.ext fun f ↦ ?_
+  simp only [AlgHom.comp_apply, coe_substAlgHom, subst_X_add_of_sq_eq_zero (sq_smul_eq_zero he _),
+    smul_mul_assoc, map_add, Derivation.map_smul]
+  simp only [smul_eq_C_mul]
+  linear_combination (a * d⁄dX (b * d⁄dX f)) * hE
+
+private theorem substAlgHom_X_add_smul_comp_neg (he : e ^ 2 = 0) {a b : S⟦X⟧} (hab : a + b = 0) :
+    (substAlgHom (hasSubst_X_add_smul he a)).comp (substAlgHom (hasSubst_X_add_smul he b)) =
+      AlgHom.id S S⟦X⟧ := by
+  refine (substAlgHom_X_add_smul_comp he a b).trans (AlgHom.ext fun f ↦ ?_)
+  rw [coe_substAlgHom, subst_X_add_of_sq_eq_zero (sq_smul_eq_zero he _), hab]
+  simp
+
 /-- For `e` with `e ^ 2 = 0` and a power series `a`, the infinitesimal substitution
 `1 + e a D : f ↦ f + e a f'` of `S⟦X⟧`, which is the substitution `X ↦ X + e a`. Its inverse is
 `1 - e a D`. -/
 noncomputable def infinitesimalSubstAlgEquiv (e : S) (he : e ^ 2 = 0) (a : S⟦X⟧) :
     S⟦X⟧ ≃ₐ[S] S⟦X⟧ :=
-  have hE : C e ^ 2 = 0 := by rw [← map_pow, he, map_zero]
-  .ofAlgHom (substAlgHom (hasSubst_X_add_of_sq_eq_zero (sq_smul_eq_zero he a)))
-    (substAlgHom (hasSubst_X_add_of_sq_eq_zero (sq_smul_eq_zero he (-a))))
-    (AlgHom.ext fun f ↦ by
-      simp only [AlgHom.comp_apply, coe_substAlgHom, AlgHom.coe_id, id_eq,
-        subst_X_add_of_sq_eq_zero (sq_smul_eq_zero he _), smul_mul_assoc, map_add,
-        Derivation.map_smul]
-      simp only [smul_eq_C_mul]
-      linear_combination (a * d⁄dX (-a * d⁄dX f)) * hE)
-    (AlgHom.ext fun f ↦ by
-      simp only [AlgHom.comp_apply, coe_substAlgHom, AlgHom.coe_id, id_eq,
-        subst_X_add_of_sq_eq_zero (sq_smul_eq_zero he _), smul_mul_assoc, map_add,
-        Derivation.map_smul]
-      simp only [smul_eq_C_mul]
-      linear_combination (-a * d⁄dX (a * d⁄dX f)) * hE)
+  .ofAlgHom (substAlgHom (hasSubst_X_add_smul he a)) (substAlgHom (hasSubst_X_add_smul he (-a)))
+    (substAlgHom_X_add_smul_comp_neg he (add_neg_cancel a))
+    (substAlgHom_X_add_smul_comp_neg he (neg_add_cancel a))
 
 /-- `1 + e a D` acts by `f ↦ f + e a f'`. -/
 @[simp]
@@ -126,14 +135,8 @@ theorem infinitesimalSubstAlgEquiv_zero (he : e ^ 2 = 0) :
 `1 + e (a + b) D = (1 + e a D) (1 + e b D)`. -/
 theorem infinitesimalSubstAlgEquiv_add (he : e ^ 2 = 0) (a b : S⟦X⟧) :
     infinitesimalSubstAlgEquiv e he (a + b) =
-      infinitesimalSubstAlgEquiv e he a * infinitesimalSubstAlgEquiv e he b := by
-  refine AlgEquiv.ext fun f ↦ ?_
-  have hee : e * e = 0 := by rw [← sq, he]
-  rw [AlgEquiv.mul_apply, infinitesimalSubstAlgEquiv_apply he a, ← mul_smul_comm,
-    smul_derivative_infinitesimalSubstAlgEquiv hee, infinitesimalSubstAlgEquiv_apply,
-    infinitesimalSubstAlgEquiv_apply]
-  simp only [smul_eq_C_mul]
-  ring
+      infinitesimalSubstAlgEquiv e he a * infinitesimalSubstAlgEquiv e he b :=
+  AlgEquiv.ext fun f ↦ congr($(substAlgHom_X_add_smul_comp he a b) f).symm
 
 @[simp]
 theorem infinitesimalSubstAlgEquiv_symm (he : e ^ 2 = 0) (a : S⟦X⟧) :
@@ -178,6 +181,11 @@ open DualNumber
 
 variable (R : Type*) [CommRing R]
 
+private theorem snd_coeff_X_add_eps_smul (a : R⟦X⟧) (n : ℕ) :
+    (coeff n (X + (ε : DualNumber R) • map (algebraMap R (DualNumber R)) a)).snd = coeff n a := by
+  rw [map_add, coeff_X]
+  split_ifs <;> simp [TrivSqZeroExt.algebraMap_eq_inl]
+
 /-- A power series over `R[ε]` with reduction `X` modulo `ε` is `X + ε a` for the power series `a`
 of its `ε`-coefficients. -/
 private theorem eq_X_add_eps_smul {P : (DualNumber R)⟦X⟧}
@@ -187,14 +195,9 @@ private theorem eq_X_add_eps_smul {P : (DualNumber R)⟦X⟧}
   ext n : 1
   have hn : (coeff n P).fst = coeff n X := by simpa using congr(coeff n $hP)
   refine TrivSqZeroExt.ext ?_ ?_
-  · simp only [hn, map_add, coeff_X, LinearMap.map_smul_of_tower, coeff_map, coeff_mk,
-      TrivSqZeroExt.algebraMap_eq_inl, smul_eq_mul, TrivSqZeroExt.fst_add,
-      TrivSqZeroExt.fst_mul, fst_eps, zero_mul, add_zero]
-    split_ifs <;> simp
-  · simp only [map_add, coeff_X, LinearMap.map_smul_of_tower, coeff_map, coeff_mk,
-      TrivSqZeroExt.algebraMap_eq_inl, smul_eq_mul, TrivSqZeroExt.snd_add, DualNumber.snd_mul,
-      fst_eps, snd_eps, TrivSqZeroExt.fst_inl, TrivSqZeroExt.snd_inl]
-    split_ifs <;> simp
+  · simp only [hn, map_add, coeff_X]
+    split_ifs <;> simp [TrivSqZeroExt.algebraMap_eq_inl]
+  · rw [snd_coeff_X_add_eps_smul, coeff_mk]
 
 /-- An `R[ε]`-algebra automorphism of `R[ε]⟦X⟧` reducing to the identity modulo `ε` and sending
 `X` to a series of zero constant coefficient is `1 + ε a D`, where `a` is the `ε`-coefficient of
@@ -249,10 +252,15 @@ noncomputable def infinitesimalSubstitutions :
       infinitesimalSubstAlgEquiv_symm, ← map_neg]
     exact infinitesimalSubstAlgEquiv_map_mem R (by simp [h₂])
 
-private theorem snd_coeff_X_add_eps_smul (a : R⟦X⟧) (n : ℕ) :
-    (coeff n (X + (ε : DualNumber R) • map (algebraMap R (DualNumber R)) a)).snd = coeff n a := by
-  rw [map_add, coeff_X]
-  split_ifs <;> simp [TrivSqZeroExt.algebraMap_eq_inl]
+/-- An automorphism of `R[ε]⟦X⟧` is an infinitesimal substitution exactly when it reduces to the
+identity modulo `ε` and preserves the ideal `(X)`. -/
+theorem mem_infinitesimalSubstitutions
+    {σ : (DualNumber R)⟦X⟧ ≃ₐ[DualNumber R] (DualNumber R)⟦X⟧} :
+    σ ∈ infinitesimalSubstitutions R ↔
+      (∀ f, map (TrivSqZeroExt.fstHom R R R).toRingHom (σ f) =
+        map (TrivSqZeroExt.fstHom R R R).toRingHom f) ∧
+      ∀ f ∈ Ideal.span {(X : (DualNumber R)⟦X⟧)}, σ f ∈ Ideal.span {X} :=
+  Iff.rfl
 
 /-- An automorphism of `R[ε]⟦X⟧` is an infinitesimal substitution exactly when it is `1 + ε a D`
 for some `a ∈ X R⟦X⟧`. -/
@@ -260,9 +268,10 @@ theorem mem_infinitesimalSubstitutions_iff
     {σ : (DualNumber R)⟦X⟧ ≃ₐ[DualNumber R] (DualNumber R)⟦X⟧} :
     σ ∈ infinitesimalSubstitutions R ↔ ∃ a : R⟦X⟧, constantCoeff a = 0 ∧
       σ = infinitesimalSubstAlgEquiv ε eps_pow_two (map (algebraMap R (DualNumber R)) a) := by
-  refine ⟨fun hσ ↦ ?_, fun ⟨a, ha, hσ⟩ ↦ hσ ▸ infinitesimalSubstAlgEquiv_map_mem R ha⟩
-  have h₂ := constantCoeff_apply_X_eq_zero R hσ.2
-  exact ⟨_, by simp [h₂], eq_infinitesimalSubstAlgEquiv R hσ.1 h₂⟩
+  refine mem_infinitesimalSubstitutions R |>.trans
+    ⟨fun ⟨h₁, h₂⟩ ↦ ?_, fun ⟨a, ha, hσ⟩ ↦ hσ ▸ infinitesimalSubstAlgEquiv_map_mem R ha⟩
+  have h₂ := constantCoeff_apply_X_eq_zero R h₂
+  exact ⟨_, by simp [h₂], eq_infinitesimalSubstAlgEquiv R h₁ h₂⟩
 
 /-- The infinitesimal substitutions over `R[ε]` are parametrized by the additive group
 `X R⟦X⟧`, through `a ↦ 1 + ε a D`. The inverse reads off the `ε`-coefficient of the image of
