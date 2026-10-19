@@ -49,20 +49,20 @@ theorem cdf_atomMixture (μ : Measure ℝ) [IsProbabilityMeasure μ] (c : ℝ)
   · split_ifs <;> simp
   all_goals finiteness
 
-/-- The cdf at zero of a mixture with an atom at zero is the combined mass of the new atom and
-the base law's atom at zero, provided the base law is carried by the nonnegative half-line. -/
-theorem cdf_atomMixture_zero (μ : Measure ℝ) [IsProbabilityMeasure μ]
-    (hμ : μ (Iio 0) = 0) (w : unitInterval) :
-    cdf (μ.atomMixture 0 w) 0 =
-      (w : ℝ) + (1 - (w : ℝ)) * μ.real {0} := by
-  have hμreal : μ.real (Iio 0) = 0 := by simp [Measure.real, hμ]
-  have hIic : Iic (0 : ℝ) = Iio 0 ∪ {0} := by
+/-- The cdf at the added atom is the combined mass of the new atom and the base law's atom there,
+provided the base law has no mass below that point. -/
+theorem cdf_atomMixture_atom (μ : Measure ℝ) [IsProbabilityMeasure μ] (c : ℝ)
+    (hμ : μ (Iio c) = 0) (w : unitInterval) :
+    cdf (μ.atomMixture c w) c =
+      (w : ℝ) + (1 - (w : ℝ)) * μ.real {c} := by
+  have hμreal : μ.real (Iio c) = 0 := by simp [Measure.real, hμ]
+  have hIic : Iic c = Iio c ∪ {c} := by
     ext x
     simp only [mem_Iic, mem_union, mem_Iio, mem_singleton_iff]
     exact ⟨fun hx => hx.lt_or_eq, fun hx => hx.elim LT.lt.le Eq.le⟩
   rw [cdf_atomMixture, ite_eq_left le_rfl, mul_one, cdf_eq_real, hIic,
-    measureReal_union (s₁ := Iio 0) (s₂ := {0}) (by simp)
-      (measurableSet_singleton (0 : ℝ)),
+    measureReal_union (s₁ := Iio c) (s₂ := {c}) (by simp)
+      (measurableSet_singleton c),
     hμreal, zero_add]
 
 end TauCeti.Probability
