@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Smooth
+public import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 public import TauCeti.Analysis.Normed.Module.Alternating.Bilinear
 
 /-!
@@ -37,6 +38,28 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 abbrev SmoothTwoForm (I : ModelWithCorners ℝ E H) (M : Type*)
     [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] : Type _ :=
   SmoothForm I M ℝ 2
+
+/-- The migration equivalence from the former smooth two-form carrier to the generic degree-two
+smooth form.  `SmoothTwoForm` is now this generic carrier, so the equivalence is the identity; the
+named declaration records the migration boundary for code that checks the old interface. -/
+noncomputable def legacySmoothTwoFormEquiv [IsManifold I 1 M] :
+    TauCeti.SmoothTwoForm I M ≃ₗ[ℝ] SmoothForm I M ℝ 2 :=
+  LinearEquiv.refl ℝ _
+
+/-- The migration equivalence preserves evaluation on every ordered pair of tangent vectors. -/
+@[simp]
+theorem legacySmoothTwoFormEquiv_apply [IsManifold I 1 M]
+    (φ : TauCeti.SmoothTwoForm I M) (x : M) (v w : TangentSpace I x) :
+    (legacySmoothTwoFormEquiv φ : RoughForm I M ℝ 2) x ![v, w] = φ.eval₂ x v w := by
+  simp only [legacySmoothTwoFormEquiv, LinearEquiv.refl_apply, SmoothForm.eval₂_apply]
+
+/-- The migrated closedness predicate is exactly vanishing of the generic exterior derivative. -/
+theorem legacySmoothTwoFormEquiv_isClosed_iff [IsManifold I 1 M]
+    (φ : TauCeti.SmoothTwoForm I M) :
+    mextDeriv (legacySmoothTwoFormEquiv φ : RoughForm I M ℝ 2) = 0 ↔
+      SmoothForm.IsClosed φ := by
+  rw [SmoothForm.isClosed_def]
+  rfl
 
 namespace SmoothTwoForm
 
