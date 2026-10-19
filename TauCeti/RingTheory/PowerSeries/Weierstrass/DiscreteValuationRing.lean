@@ -171,14 +171,14 @@ theorem muInvariant_eq_zero_iff {f : O⟦X⟧} : f.muInvariant = 0 ↔ f.map (re
 
 /-- A unit has μ-invariant zero. -/
 @[simp]
-theorem muInvariant_of_isUnit {f : O⟦X⟧} (hf : IsUnit f) : f.muInvariant = 0 :=
+theorem muInvariant_eq_zero_of_isUnit {f : O⟦X⟧} (hf : IsUnit f) : f.muInvariant = 0 :=
   muInvariant_eq_zero_iff.2 (hf.map (map (residue O))).ne_zero
 
 /-- A unit has λ-invariant zero. -/
 @[simp]
-theorem lambdaInvariant_of_isUnit {f : O⟦X⟧} (hf : IsUnit f) : f.lambdaInvariant = 0 := by
+theorem lambdaInvariant_eq_zero_of_isUnit {f : O⟦X⟧} (hf : IsUnit f) : f.lambdaInvariant = 0 := by
   refine lambdaInvariant_eq_iff.2 ⟨?_, fun _ h ↦ absurd h (Nat.not_lt_zero _)⟩
-  rw [muInvariant_of_isUnit hf, addVal_eq_zero_iff, coeff_zero_eq_constantCoeff_apply]
+  rw [muInvariant_eq_zero_of_isUnit hf, addVal_eq_zero_iff, coeff_zero_eq_constantCoeff_apply]
   exact isUnit_iff_constantCoeff.1 hf
 
 /-- If `μ(f) = 0`, the reduction of `f` modulo the maximal ideal has order `λ(f)`. -/
