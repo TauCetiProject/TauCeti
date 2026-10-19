@@ -12,6 +12,7 @@ public import Mathlib.Probability.Moments.Variance
 public import TauCeti.Probability.GeneratingFunction
 
 import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
+import TauCeti.Data.Nat.Factorial.Basic
 import TauCeti.Probability.Cdf
 import TauCeti.Probability.Distributions.Poisson.Basic
 import TauCeti.Probability.Distributions.Poisson.Measurability
@@ -24,12 +25,12 @@ law obtained by first drawing a rate `Λ ∼ ρ` and then a Poisson count of tha
 `mixedPoissonMeasure ρ = ρ.bind poissonMeasure`. Gamma mixing, for instance, gives the
 negative-binomial laws (`TauCeti.Probability.mixedPoissonMeasure_map_toNNReal_gammaMeasure`).
 
-Every observable treated here is a nonnegative function of the count, so each identity is first
-proved for the lower Lebesgue integral, where `MeasureTheory.Measure.lintegral_bind` applies with
-no integrability side conditions, and only then passed to the Bochner integral. For a Poisson law
-of rate `x`, the observables used are the falling factorial `(k)ₙ = k.descFactorial n`, with
-mean `x ^ n` (`TauCeti.Probability.hasSum_descFactorial_poissonMeasure`), and the power `z ^ k`
-for `0 ≤ z`, with mean `exp ((z - 1) * x)` (`TauCeti.Probability.hasSum_pow_poissonMeasure`).
+The masses, the factorial moments `E[(N)ₙ] = E[Λ ^ n]` (with `(k)ₙ = k.descFactorial n`), the mean
+and the generating functions are stated for an arbitrary mixing measure and with no integrability
+hypothesis: the Bochner integrals on both sides are totalized to zero together when the moment is
+infinite, and companion `Integrable` equivalences say when it is finite. The cumulative masses and
+the second moment need a finite mixing measure, the second moment and the variance also a finite
+second moment of `Λ`, and the variance and the cdf a probability mixing measure.
 
 ## Main results
 
@@ -88,6 +89,12 @@ instance isProbabilityMeasure_mixedPoissonMeasure [IsProbabilityMeasure ρ] :
   isProbabilityMeasure_bind measurable_poissonMeasure.aemeasurable
     (ae_of_all _ fun _ ↦ inferInstance)
 
+/-- A mixed Poisson law with a finite mixing measure is a finite measure. -/
+instance isFiniteMeasure_mixedPoissonMeasure [IsFiniteMeasure ρ] :
+    IsFiniteMeasure (mixedPoissonMeasure ρ) :=
+  ⟨by simp [mixedPoissonMeasure_def,
+    Measure.bind_apply MeasurableSet.univ measurable_poissonMeasure.aemeasurable]⟩
+
 /-- Mixing against a point mass gives back the Poisson law of that rate. -/
 @[simp]
 theorem mixedPoissonMeasure_dirac (r : ℝ≥0) :
@@ -110,6 +117,12 @@ theorem mixedPoissonMeasure_singleton (ρ : Measure ℝ≥0) (k : ℕ) :
     poissonMeasure_singleton]
 
 /-! ### Transfer of nonnegative Poisson integrals -/
+
+-- Every observable treated here is a nonnegative function of the count, so each identity is first
+-- proved for the lower Lebesgue integral, where `MeasureTheory.Measure.lintegral_bind` applies with
+-- no integrability side conditions, and only then passed to the Bochner integral. The Poisson means
+-- of the observables used are `TauCeti.Probability.hasSum_descFactorial_poissonMeasure` and
+-- `TauCeti.Probability.hasSum_pow_poissonMeasure`.
 
 variable {f : ℕ → ℝ} {g : ℝ≥0 → ℝ}
 
@@ -150,7 +163,7 @@ theorem mixedPoissonMeasure_real_singleton (ρ : Measure ℝ≥0) (k : ℕ) :
     integral_eq_lintegral_of_nonneg_ae (ae_of_all _ fun _ ↦ by positivity) (by fun_prop)]
 
 /-- The cumulative masses of a mixed Poisson law: `P(N ≤ n) = ∑ k ≤ n, E[exp (-Λ) Λ ^ k / k!]`. -/
-theorem mixedPoissonMeasure_real_Iic (ρ : Measure ℝ≥0) [IsProbabilityMeasure ρ] (n : ℕ) :
+theorem mixedPoissonMeasure_real_Iic (ρ : Measure ℝ≥0) [IsFiniteMeasure ρ] (n : ℕ) :
     (mixedPoissonMeasure ρ).real (Iic n) =
       ∑ k ∈ Finset.range (n + 1), ∫ x, (exp (-(x : ℝ)) * (x : ℝ) ^ k / k !) ∂ρ := by
   have hrange : ((Finset.range (n + 1) : Finset ℕ) : Set ℕ) = Iic n := by
@@ -203,20 +216,13 @@ theorem integrable_natCast_mixedPoissonMeasure_iff :
   simpa only [Nat.descFactorial_one, pow_one] using
     integrable_descFactorial_mixedPoissonMeasure_iff (ρ := ρ) 1
 
-private lemma natCast_sq_eq (k : ℕ) : (k : ℝ) ^ 2 = (k.descFactorial 2 : ℝ) + k := by
-  rcases k with _ | k
-  · simp
-  · rw [Nat.succ_descFactorial_succ, Nat.descFactorial_one]
-    push_cast
-    ring
-
 /-- A mixed Poisson count has finite variance exactly when its mixing law does. -/
-theorem memLp_two_natCast_mixedPoissonMeasure_iff [IsProbabilityMeasure ρ] :
+theorem memLp_two_natCast_mixedPoissonMeasure_iff [IsFiniteMeasure ρ] :
     MemLp (fun k : ℕ ↦ (k : ℝ)) 2 (mixedPoissonMeasure ρ) ↔
       MemLp (fun x : ℝ≥0 ↦ (x : ℝ)) 2 ρ := by
   rw [memLp_two_iff_integrable_sq AEStronglyMeasurable.of_discrete,
     memLp_two_iff_integrable_sq (by fun_prop)]
-  simp_rw [natCast_sq_eq]
+  simp_rw [← Nat.cast_pow, Nat.sq_eq_descFactorial_two_add, Nat.cast_add]
   constructor
   · intro h
     refine (integrable_descFactorial_mixedPoissonMeasure_iff 2).mp ?_
@@ -229,12 +235,12 @@ theorem memLp_two_natCast_mixedPoissonMeasure_iff [IsProbabilityMeasure ρ] :
     exact ((memLp_two_iff_integrable_sq (by fun_prop)).mpr h).integrable one_le_two
 
 /-- The second moment of a mixed Poisson law: `E[N ^ 2] = E[Λ ^ 2] + E[Λ]`. -/
-theorem integral_natCast_sq_mixedPoissonMeasure [IsProbabilityMeasure ρ]
+theorem integral_natCast_sq_mixedPoissonMeasure [IsFiniteMeasure ρ]
     (hρ : MemLp (fun x : ℝ≥0 ↦ (x : ℝ)) 2 ρ) :
     ∫ k, (k : ℝ) ^ 2 ∂mixedPoissonMeasure ρ = ∫ x, (x : ℝ) ^ 2 ∂ρ + ∫ x, (x : ℝ) ∂ρ := by
   have h2 : Integrable (fun x : ℝ≥0 ↦ (x : ℝ) ^ 2) ρ :=
     (memLp_two_iff_integrable_sq (by fun_prop)).mp hρ
-  simp_rw [natCast_sq_eq]
+  simp_rw [← Nat.cast_pow, Nat.sq_eq_descFactorial_two_add, Nat.cast_add]
   rw [integral_add ((integrable_descFactorial_mixedPoissonMeasure_iff 2).mpr h2)
       (integrable_natCast_mixedPoissonMeasure_iff.mpr (hρ.integrable one_le_two)),
     integral_descFactorial_mixedPoissonMeasure, integral_natCast_mixedPoissonMeasure]
