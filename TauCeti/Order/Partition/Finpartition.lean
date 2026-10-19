@@ -7,7 +7,8 @@ module
 
 public import Mathlib.Order.Setoid.Partition
 public import Mathlib.Order.Partition.Finpartition
-public import Mathlib.Algebra.Order.Field.Basic
+public import Mathlib.Algebra.Field.Defs
+public import Mathlib.Algebra.Order.GroupWithZero.Basic
 import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 import Mathlib.Data.Set.Finite.Range
@@ -198,8 +199,9 @@ theorem sum_card_subtype {R : Type*} [AddCommMonoidWithOne R] (P : Finpartition 
   rw [Finset.sum_coe_sort P.parts fun A => (#A : R)]
   rw [← Nat.cast_sum, P.sum_card_parts]
 
-/-- The weights `|A||B| / |s|²` of the ordered pairs of parts sum to at most one. -/
-theorem sum_sum_weight_le_one {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+/-- The weights `|A||B| / |s|²` of the ordered pairs of parts sum to at most one.
+No compatibility between the preorder and arithmetic is needed beyond `0 ≤ 1`. -/
+theorem sum_sum_weight_le_one {K : Type*} [DivisionSemiring K] [Preorder K] [ZeroLEOneClass K]
     (P : Finpartition s) :
     ∑ A : P.parts, ∑ C : P.parts, (#A.1 * #C.1 / (#s : K) ^ 2) ≤ 1 := by
   simp_rw [← Finset.sum_div, ← Finset.sum_mul_sum, sum_card_subtype, ← sq]
