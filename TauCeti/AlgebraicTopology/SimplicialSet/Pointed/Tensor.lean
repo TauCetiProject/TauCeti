@@ -125,13 +125,14 @@ lemma homSimplicialCotensorEquiv_apply {K : SSet.{u}} {X Y : PointedSSet.{u}}
 
 /-!
 The naturality lemmas below are stated in `simp`-normal form, with `K₊ ∧ X` in place of
-`(simplicialTensor.obj K).obj X` and `Map_*(K₊, Y)` in place of the cotensor. Their sources
-differ from the stated domains of the equivalences only definitionally, which `rw` cannot see
-through. Each proof therefore starts from an explicitly typed instance of the `_apply`
-characterization, and the closing `rfl` identifies the two definitionally equal presentations.
-Only the lemmas whose left-hand side is an arbitrary composite are `simp`: the `simpNF` linter
-rejects the others, whose left-hand sides those two lemmas already rewrite.
+`(simplicialTensor.obj K).obj X` and `Map_*(K₊, Y)` in place of the cotensor.
 -/
+
+/- Their sources differ from the stated domains of the equivalences only definitionally, which
+`rw` cannot see through. Each proof therefore starts from an explicitly typed instance of the
+`_apply` characterization, and the closing `rfl` identifies the two definitionally equal
+presentations. Only the lemmas whose left-hand side is an arbitrary composite are `simp`: the
+`simpNF` linter rejects the others, whose left-hand sides those two lemmas already rewrite. -/
 
 /-- The tensor hom-set equivalence is natural in the simplicial set `K`. -/
 lemma simplicialTensorHomEquiv_whiskerRight_comp {K' K : SSet.{u}} (g : K' ⟶ K)
