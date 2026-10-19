@@ -20,8 +20,8 @@ algebra of a six-dimensional quadratic space with a product of two four-by-four 
 Its first factor gives an equivalence from the Spin group to `SL₄`, under which the even
 half-spin module is the standard representation. The odd half-spin module is its dual.
 
-This packages the group equivalence and both representation equivalences together, ensuring that
-all three use the same noncanonical choice of basis for the even half-spin module.
+This packages the group equivalence and both representation equivalences together, with both
+half-spin identifications taken along the same equivalence `f : spinGroup Q ≃* SL₄`.
 
 ## Main result
 
@@ -54,10 +54,10 @@ universe u v
 variable {K : Type u} [Field K] {V : Type v} [AddCommGroup V] [Module K V]
   {Q : QuadraticForm K V}
 
-/-- Over a field of characteristic different from two, a polarization of a six-dimensional
+/-- Over a field with `2 ≠ 0`, a polarization of a six-dimensional
 quadratic space identifies its Spin group with `SL₄` so that the even half-spin representation
-is standard and the odd half-spin representation is its dual. The group and representation
-equivalences use the same noncanonical basis choice. -/
+is standard and the odd half-spin representation is its dual, along the same equivalence
+`f : spinGroup Q ≃* SL₄`. -/
 theorem
     exists_spinGroupMulEquivSpecialLinearGroup_and_halfSpin_equiv_stdSLRep_and_dual
     [NeZero (2 : K)] (P : SpinPolarizationData Q) (hV : finrank K V = 6) :
@@ -87,9 +87,9 @@ theorem
   cases hh
   exact ⟨hline, φ, ⟨eplus⟩, ⟨eminus.trans eplus.dual⟩⟩
 
-/-- A nondegenerate six-dimensional quadratic space over a separably closed field of
-characteristic different from two admits a polarization and an equivalence from its Spin group to
-`SL₄` under which the half-spin representations are the standard module and its dual. -/
+/-- A nondegenerate six-dimensional quadratic space over a separably closed field with `2 ≠ 0`
+admits a polarization and an equivalence from its Spin group to `SL₄` under which the half-spin
+representations are the standard module and its dual. -/
 theorem
     exists_polarized_spinGroupMulEquivSpecialLinearGroup_and_halfSpin_equiv_stdSLRep_and_dual
     [NeZero (2 : K)] [IsSepClosed K] (hQ : Q.Nondegenerate) (hV : finrank K V = 6) :
