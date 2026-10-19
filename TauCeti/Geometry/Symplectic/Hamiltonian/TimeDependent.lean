@@ -108,12 +108,9 @@ theorem lipschitzWith_timeDependentHamiltonianSuspension_const (omega : Symplect
     simpa only [Function.comp_apply, mul_one] using
       (LipschitzWith.const (α := ℝ × V) (1 : ℝ)).prodMk
         (hX.comp LipschitzWith.prod_snd)
-  rw [show omega.timeDependentHamiltonianSuspension (fun _ ↦ H) =
-    (fun p : ℝ × V ↦ ((1 : ℝ), omega.hamiltonianVectorField H p.2)) by
-      funext p
-      rcases p with ⟨t, x⟩
-      simp]
-  exact h
+  convert h using 1
+  funext ⟨t, x⟩
+  simp
 
 /-- For an autonomous Hamiltonian, the time-dependent evolution is the ordinary Hamiltonian flow
 at the elapsed time `t - s`. -/

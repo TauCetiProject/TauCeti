@@ -29,6 +29,8 @@ law of an ordinary `Flow`.
   suspension is globally Lipschitz.
 * `TauCeti.hasDerivAt_timeDependentFlow`: the evolution solves `x' = v(t, x)`.
 * `TauCeti.timeDependentFlow_trans`: evolution through an intermediate time composes.
+* `TauCeti.timeDependentFlow_comp_swap`: evolving back to the initial time inverts evolution.
+* `TauCeti.timeDependentFlow_eq_integral`: the integral equation from time `s` to time `t`.
 * `TauCeti.eq_timeDependentFlow`: uniqueness for global solutions with prescribed initial time.
 
 The construction uses the global autonomous Picard--Lindelöf solution from
@@ -123,6 +125,39 @@ theorem timeDependentFlow_trans (v : ℝ → E → E) {K : ℝ≥0}
   rw [hsum, globalSolution_timeDependentSuspension v hv r t x] at h
   simpa only using (congrArg Prod.snd h).symm
 
+/-- Evolving from `s` to `t` and back to `s` returns the initial point.  This is not a `simp`
+lemma because `timeDependentFlow_trans` and `timeDependentFlow_self` already prove it. -/
+theorem timeDependentFlow_timeDependentFlow_swap (v : ℝ → E → E) {K : ℝ≥0}
+    (hv : LipschitzWith K (timeDependentSuspension v)) (s t : ℝ) (x : E) :
+    timeDependentFlow v hv t s (timeDependentFlow v hv s t x) = x := by
+  simp
+
+/-- The evolution from `t` back to `s` is inverse to the evolution from `s` to `t`. -/
+@[simp]
+theorem timeDependentFlow_comp_swap (v : ℝ → E → E) {K : ℝ≥0}
+    (hv : LipschitzWith K (timeDependentSuspension v)) (s t : ℝ) :
+    timeDependentFlow v hv t s ∘ timeDependentFlow v hv s t = id :=
+  funext <| timeDependentFlow_timeDependentFlow_swap v hv s t
+
+/-- The evolution from `t` back to `s` is a left inverse of the evolution from `s` to `t`. -/
+theorem leftInverse_timeDependentFlow (v : ℝ → E → E) {K : ℝ≥0}
+    (hv : LipschitzWith K (timeDependentSuspension v)) (s t : ℝ) :
+    LeftInverse (timeDependentFlow v hv t s) (timeDependentFlow v hv s t) :=
+  timeDependentFlow_timeDependentFlow_swap v hv s t
+
+/-- The evolution from `t` back to `s` is a right inverse of the evolution from `s` to `t`. -/
+theorem rightInverse_timeDependentFlow (v : ℝ → E → E) {K : ℝ≥0}
+    (hv : LipschitzWith K (timeDependentSuspension v)) (s t : ℝ) :
+    RightInverse (timeDependentFlow v hv t s) (timeDependentFlow v hv s t) :=
+  timeDependentFlow_timeDependentFlow_swap v hv t s
+
+/-- Each time map of the time-dependent flow is bijective. -/
+theorem bijective_timeDependentFlow (v : ℝ → E → E) {K : ℝ≥0}
+    (hv : LipschitzWith K (timeDependentSuspension v)) (s t : ℝ) :
+    Bijective (timeDependentFlow v hv s t) :=
+  ⟨(leftInverse_timeDependentFlow v hv s t).injective,
+    (rightInverse_timeDependentFlow v hv s t).surjective⟩
+
 /-- The time-dependent flow is jointly continuous in the initial time, final time, and point. -/
 theorem continuous_timeDependentFlow (v : ℝ → E → E) {K : ℝ≥0}
     (hv : LipschitzWith K (timeDependentSuspension v)) :
@@ -143,6 +178,21 @@ theorem timeDependentFlow_congr (v : ℝ → E → E) {K K' : ℝ≥0}
   funext s t x
   exact congrArg Prod.snd
     (congrFun (ODE.globalSolution_congr (timeDependentSuspension v) hv hv' (s, x)) (t - s))
+
+/-- **The integral equation of the time-dependent flow**:
+`φ(s, t) x = x + ∫ₛᵗ v(u, φ(s, u) x) du`. -/
+theorem timeDependentFlow_eq_integral (v : ℝ → E → E) {K : ℝ≥0}
+    (hv : LipschitzWith K (timeDependentSuspension v)) (s t : ℝ) (x : E) :
+    timeDependentFlow v hv s t x =
+      x + ∫ u in s..t, v u (timeDependentFlow v hv s u x) := by
+  have hcont : Continuous fun u ↦ v u (timeDependentFlow v hv s u x) := by
+    have hv' : Continuous fun p : ℝ × E ↦ v p.1 p.2 :=
+      continuous_snd.comp hv.continuous
+    exact hv'.comp (continuous_id.prodMk ((continuous_timeDependentFlow v hv).comp
+      (by fun_prop : Continuous fun u : ℝ ↦ ((s, u), x))))
+  rw [intervalIntegral.integral_eq_sub_of_hasDerivAt
+    (fun u _ ↦ hasDerivAt_timeDependentFlow v hv s u x) (hcont.intervalIntegrable s t)]
+  simp
 
 /-- **Uniqueness of the time-dependent flow.** A global solution of `y' = v(t, y)` is the
 time-dependent flow through its value at any chosen initial time. -/
