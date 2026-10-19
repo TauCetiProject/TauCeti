@@ -95,13 +95,9 @@ theorem contMDiff_projectiveSpaceHomeomorph (r : ℕ∞ω) :
       preimage_projectiveSpaceHomeomorph_affineOpen]
     exact ⟨_, hy'⟩
   rw [← (ComplexProjectiveSpace.affineChart k').left_inv hsource]
-  congr 1
-  funext j
-  have h := ratio_projectiveSpaceHomeomorph_analyticAffineChartι b hi k (P.symm y)
-    (k'.succAbove j)
-  rw [ComplexProjectiveSpace.affineChart_apply]
-  exact (congrArg (fun q ↦ ComplexProjectiveSpace.ratio k' (k'.succAbove j)
-    (projectiveSpaceHomeomorph b hi q)) hy').symm.trans h
+  exact congrArg _ ((congrArg (fun q ↦ ComplexProjectiveSpace.affineChart k'
+    (projectiveSpaceHomeomorph b hi q)) hy').symm.trans
+      (affineChart_projectiveSpaceHomeomorph_analyticAffineChartι b hi k (P.symm y)))
 
 /-- The inverse comparison from the sphere quotient to toric projective space is holomorphic. -/
 theorem contMDiff_projectiveSpaceHomeomorph_symm (r : ℕ∞ω) :
