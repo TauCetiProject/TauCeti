@@ -26,6 +26,8 @@ extension, the group-like elements, and their additive form are available throug
 `ScalarAut.instMulSemiringAction`, `ScalarAut.instGroupLikeDistribMulAction`, and
 `Additive.distribMulAction`; this module supplies the instance bridges needed for
 the opaque `Field.absoluteGaloisGroup` definition.
+It also identifies absolute Galois automorphisms with `k`-algebra automorphisms of
+`AlgebraicClosure k` and describes their actions on scalars and pure tensors.
 
 ## Main declarations
 
@@ -39,6 +41,10 @@ the opaque `Field.absoluteGaloisGroup` definition.
   induced action on geometric characters.
 * `TauCeti.CommHopfAlgCat.instAdditiveCharacterGroupGaloisAction`: an instance bridge for the
   transported additive action.
+* `Field.absoluteGaloisGroup.toAlgEquiv`: an absolute Galois automorphism viewed as a
+  `k`-algebra automorphism of `AlgebraicClosure k`.
+* `Field.absoluteGaloisGroup.smul_def`: the action on the algebraic closure is evaluation.
+* `Field.absoluteGaloisGroup.smul_tmul`: the action on a pure tensor acts on its scalar factor.
 
 ## References
 
