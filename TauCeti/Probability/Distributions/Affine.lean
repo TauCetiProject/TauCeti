@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Measure.WithDensity
+public import TauCeti.MeasureTheory.Measure.Support
 public import TauCeti.Probability.Density
 public import TauCeti.Probability.Quantile
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
@@ -107,19 +108,7 @@ theorem support_map_affine (hb : b ≠ 0) :
     funext x
     simp [e, smul_eq_mul]
   rw [← he]
-  apply Set.Subset.antisymm
-  · have hclosed : IsClosed (e '' μ.support) := e.isClosedMap _ Measure.isClosed_support
-    refine Measure.support_subset_of_isClosed hclosed ?_
-    change ∀ᵐ y ∂μ.map e, y ∈ e '' μ.support
-    apply (ae_map_iff e.measurable.aemeasurable hclosed.measurableSet).2
-    have hsupp : μ.support ∈ ae μ := Measure.support_mem_ae
-    filter_upwards [hsupp] with x hx
-    exact ⟨x, hx, rfl⟩
-  · rintro _ ⟨x, hx, rfl⟩
-    rw [Measure.support_eq_forall_isOpen] at hx ⊢
-    intro U hex hU
-    rw [Measure.map_apply e.measurable hU.measurableSet]
-    exact hx (e ⁻¹' U) hex (hU.preimage e.continuous)
+  exact μ.support_map_homeomorph e
 
 /-- Affine pushforward is jointly measurable in the probability law, intercept, and slope. -/
 @[fun_prop]

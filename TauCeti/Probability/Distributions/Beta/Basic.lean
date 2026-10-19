@@ -133,7 +133,7 @@ interval. -/
 theorem support_betaMeasure {α β : ℝ} (hα : 0 < α) (hβ : 0 < β) :
     (betaMeasure α β).support = Icc 0 1 := by
   rw [betaMeasure]
-  refine support_withDensity_volume_eq_Icc
+  refine support_withDensity_volume_eq_Icc zero_lt_one
     (measurable_betaPDFReal α β).ennreal_ofReal.aemeasurable ?_ ?_
   · intro x hx
     simpa only [betaPDF] using

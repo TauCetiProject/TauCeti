@@ -246,7 +246,7 @@ interval. -/
 theorem support_kumaraswamyMeasure (ha : 0 < a) (hb : 0 < b) :
     (kumaraswamyMeasure a b).support = Icc 0 1 := by
   rw [kumaraswamyMeasure_eq_withDensity]
-  refine support_withDensity_volume_eq_Icc
+  refine support_withDensity_volume_eq_Icc zero_lt_one
     (measurable_kumaraswamyPDF a b).aemeasurable ?_ ?_
   · intro x hx
     simpa [kumaraswamyPDF_eq_ofReal] using kumaraswamyPDFReal_pos ha hb hx
