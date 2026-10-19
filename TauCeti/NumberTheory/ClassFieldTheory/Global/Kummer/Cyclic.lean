@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.Kummer.Norm
-import Mathlib.NumberTheory.NumberField.Cyclotomic.Basic
 import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Relative
 import TauCeti.NumberTheory.NumberField.Kummer.SUnitRadical
