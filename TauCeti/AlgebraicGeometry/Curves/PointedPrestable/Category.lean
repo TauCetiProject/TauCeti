@@ -52,13 +52,25 @@ specified isomorphisms, not equalities of chosen pullbacks.
 * `TauCeti.AlgebraicGeometry.PointedPrestableFamily.mem_range_autToOver_iff`: an automorphism of
   the total space over `S` comes from the pointed family exactly when it fixes every marking.
 
+## Implementation notes
+
+The morphisms, the category instance and the isomorphism criterion follow the existing
+category API for models in `TauCeti.AlgebraicGeometry.Curves.StableReduction.Model.Basic` and
+`TauCeti.AlgebraicGeometry.Curves.StableReduction.Model.Isomorphism`. The functoriality of base
+change follows Mathlib's `CategoryTheory.Over.pullback` and uses its canonical isomorphism
+`CategoryTheory.Limits.pullbackLeftPullbackSndIso`.
+
+Only `toOver`, `isoMk`, `pullbackMap`, `pullbackFunctor` and `reindexFunctor` expose their
+bodies, so that their `simps` lemmas are definitional. The canonical isomorphisms and
+`autToOver` keep their bodies private and are used through their characteristic lemmas.
+
 ## References
 
 * F. F. Knudsen, *The projectivity of the moduli space of stable curves, II: The stacks
   `M_{g,n}`*, Math. Scand. 52 (1983), 161–199, Definition 1.1.
 -/
 
-@[expose] public section
+public section
 
 noncomputable section
 
@@ -111,7 +123,7 @@ theorem comp_hom (f : P ⟶ Q) (g : Q ⟶ R) : (f ≫ g).hom = f.hom ≫ g.hom :
 
 /-- The functor sending a pointed prestable family to its total space over `S`, forgetting the
 markings. -/
-@[simps]
+@[expose, simps]
 def toOver : PointedPrestableFamily S n ⥤ Over S where
   obj P := Over.mk P.toBase
   map f := Over.homMk f.hom f.hom_comp_toBase
@@ -121,7 +133,7 @@ instance : (toOver (S := S) (n := n)).Faithful where
 
 /-- An isomorphism of pointed prestable families from an isomorphism of total spaces over `S`
 carrying each marking to the corresponding marking. -/
-@[simps]
+@[expose, simps]
 def isoMk (e : P.total ≅ Q.total) (he : e.hom ≫ Q.toBase = P.toBase)
     (hm : ∀ i, P.marking i ≫ e.hom = Q.marking i) : P ≅ Q where
   hom := ⟨e.hom, he, hm⟩
@@ -150,7 +162,8 @@ def autToOver (P : PointedPrestableFamily S n) : Aut P →* Aut (Over.mk P.toBas
 
 @[simp]
 theorem autToOver_apply_asIso_hom_left (e : Aut P) :
-    (autToOver P e).asIso.hom.left = e.asIso.hom.hom :=
+    (autToOver P e).asIso.hom.left = e.asIso.hom.hom := by
+  unfold autToOver
   rfl
 
 /-- An automorphism of a pointed prestable family is determined by its automorphism of the total
@@ -174,7 +187,7 @@ space `(P.pullback g).total` is only definitionally, not reducibly, equal to
 `Limits.pullback P.toBase g`, so the pullback API does not apply to it before unfolding. -/
 
 /-- The base change along `g : T ⟶ S` of a morphism of pointed prestable families over `S`. -/
-@[simps]
+@[expose, simps]
 def pullbackMap (g : T ⟶ S) (f : P ⟶ Q) : P.pullback g ⟶ Q.pullback g where
   hom := pullback.map P.toBase g Q.toBase g f.hom (𝟙 T) (𝟙 S) (by simp) (by simp)
   hom_comp_toBase := by
@@ -186,7 +199,7 @@ def pullbackMap (g : T ⟶ S) (f : P ⟶ Q) : P.pullback g ⟶ Q.pullback g wher
 
 /-- Base change along `g : T ⟶ S` as a functor from pointed prestable families over `S` to
 pointed prestable families over `T`. -/
-@[simps]
+@[expose, simps]
 def pullbackFunctor (g : T ⟶ S) : PointedPrestableFamily S n ⥤ PointedPrestableFamily T n where
   obj P := P.pullback g
   map f := pullbackMap g f
@@ -215,12 +228,14 @@ def pullbackIdIso (P : PointedPrestableFamily S n) : P.pullback (𝟙 S) ≅ P :
 
 @[simp]
 theorem pullbackIdIso_hom_hom (P : PointedPrestableFamily S n) :
-    (pullbackIdIso P).hom.hom = pullback.fst P.toBase (𝟙 S) :=
-  (Category.comp_id _).symm.trans (IsPullback.id_horiz P.toBase).isoPullback_inv_fst
+    (pullbackIdIso P).hom.hom = pullback.fst P.toBase (𝟙 S) := by
+  unfold pullbackIdIso
+  exact (Category.comp_id _).symm.trans (IsPullback.id_horiz P.toBase).isoPullback_inv_fst
 
 @[simp]
 theorem pullbackIdIso_inv_hom (P : PointedPrestableFamily S n) :
-    (pullbackIdIso P).inv.hom = (IsPullback.id_horiz P.toBase).isoPullback.hom :=
+    (pullbackIdIso P).inv.hom = (IsPullback.id_horiz P.toBase).isoPullback.hom := by
+  unfold pullbackIdIso
   rfl
 
 /-- The canonical isomorphism `pullbackIdIso` is natural in the family. -/
@@ -238,7 +253,8 @@ def pullbackFunctorId : pullbackFunctor (𝟙 S) ≅ 𝟭 (PointedPrestableFamil
 
 @[simp]
 theorem pullbackFunctorId_app (P : PointedPrestableFamily S n) :
-    pullbackFunctorId.app P = pullbackIdIso P :=
+    pullbackFunctorId.app P = pullbackIdIso P := by
+  unfold pullbackFunctorId
   rfl
 
 /-- The canonical isomorphism from the iterated base change of a pointed prestable family along
@@ -256,12 +272,14 @@ def pullbackCompIso (P : PointedPrestableFamily S n) (g : T ⟶ S) (h : U ⟶ T)
 
 @[simp]
 theorem pullbackCompIso_hom_hom (P : PointedPrestableFamily S n) (g : T ⟶ S) (h : U ⟶ T) :
-    (pullbackCompIso P g h).hom.hom = (pullbackLeftPullbackSndIso P.toBase g h).hom :=
+    (pullbackCompIso P g h).hom.hom = (pullbackLeftPullbackSndIso P.toBase g h).hom := by
+  unfold pullbackCompIso
   rfl
 
 @[simp]
 theorem pullbackCompIso_inv_hom (P : PointedPrestableFamily S n) (g : T ⟶ S) (h : U ⟶ T) :
-    (pullbackCompIso P g h).inv.hom = (pullbackLeftPullbackSndIso P.toBase g h).inv :=
+    (pullbackCompIso P g h).inv.hom = (pullbackLeftPullbackSndIso P.toBase g h).inv := by
+  unfold pullbackCompIso
   rfl
 
 /-- The canonical isomorphism `pullbackCompIso` is natural in the family. -/
@@ -292,21 +310,17 @@ def pullbackFunctorComp (g : T ⟶ S) (h : U ⟶ T) :
 
 @[simp]
 theorem pullbackFunctorComp_app (g : T ⟶ S) (h : U ⟶ T) (P : PointedPrestableFamily S n) :
-    (pullbackFunctorComp g h).app P = (pullbackCompIso P g h).symm :=
+    (pullbackFunctorComp g h).app P = (pullbackCompIso P g h).symm := by
+  unfold pullbackFunctorComp
   rfl
 
 /-- Reindexing the markings along an injection `e : Fin m ↪ Fin n` as a functor; a morphism of
 pointed families preserves in particular the reindexed markings. -/
-@[simps]
+@[expose, simps]
 def reindexFunctor (e : Fin m ↪ Fin n) :
     PointedPrestableFamily S n ⥤ PointedPrestableFamily S m where
   obj P := P.reindex e
   map f := ⟨f.hom, f.hom_comp_toBase, fun i ↦ f.marking_comp_hom (e i)⟩
-
-/-- Reindexing the markings commutes with base change. -/
-theorem reindex_pullback (P : PointedPrestableFamily S n) (e : Fin m ↪ Fin n) (g : T ⟶ S) :
-    (P.reindex e).pullback g = (P.pullback g).reindex e :=
-  rfl
 
 end PointedPrestableFamily
 
