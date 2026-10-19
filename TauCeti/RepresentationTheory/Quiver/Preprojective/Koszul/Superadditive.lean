@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import TauCeti.Algebra.Order.BigOperators.WeightedGrowth
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.HilbertSeries.Basic
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Resolution
@@ -30,7 +31,7 @@ graph, a connected graph which is not a Dynkin diagram produces such a weight
 `Koszul/NonDynkin.lean`), so there the Koszul complexes are projective resolutions and the matrix
 Hilbert series of `Π` is `((1 + t²) I - t A)⁻¹`
 (`TauCeti.preprojectiveHilbertSeries_eq_inv_of_not_exists_dynkinType_iso`,
-`HilbertSeries/NonDynkin.lean` and `HilbertSeries/ZigzagCartan.lean`).
+`Koszul/NonDynkin.lean`).
 
 ## Main results
 
@@ -38,6 +39,10 @@ Hilbert series of `Π` is `((1 + t²) I - t A)⁻¹`
   complex of every vertex module is exact at its left end when `Q` carries a positive
   superadditive weight.**
 * `TauCeti.preprojectiveKoszulLeft_injective_of_two_mul_le_sum`: injectivity of the bundled map.
+* `TauCeti.mul_preprojectiveHilbertSeries_eq_one_of_two_mul_le_sum` and
+  `TauCeti.preprojectiveHilbertSeries_eq_inv_of_two_mul_le_sum`: for such a quiver, with `A` the
+  arrow-count matrix of the doubled quiver, `((1 + t²) I - t A) H = I` and `H = ((1 + t²) I -
+  t A)⁻¹` for the matrix Hilbert series `H` of `Π`, with no hypothesis on sinks.
 
 ## References
 
@@ -427,6 +432,42 @@ theorem preprojectiveKoszulLeft_injective_of_two_mul_le_sum {S : Type*} [CommRin
     (v : Q) : Function.Injective (preprojectiveKoszulLeft k v) :=
   (preprojectiveKoszulLeft_injective_iff k v).2 fun _ hy =>
     (forall_preprojectiveMk_ofArrow_reverse_mul_eq_zero_iff_of_two_mul_le_sum k hδ hδle v hy).1
+
+variable [DecidableEq Q]
+
+/-- **The Hilbert series identity for a quiver with a superadditive weight.** Let `δ` be a weight
+on the vertices of a finite quiver `Q` over a strictly ordered commutative ring, positive with
+
+```text
+2 δ_i ≤ ∑_j (#(i ⟶ j) + #(j ⟶ i)) δ_j
+```
+
+at every vertex. No hypothesis on the sinks of `Q` is needed: the matrix Hilbert series `H` of `Π`
+satisfies `((1 + X²) I - X A) H = I` for `A_{v,w} = #(w ⟶ v)` the arrow-count matrix of the doubled
+quiver. -/
+theorem mul_preprojectiveHilbertSeries_eq_one_of_two_mul_le_sum {S : Type*} [CommRing S]
+    [LinearOrder S] [IsStrictOrderedRing S] {δ : Q → S} (hδ : ∀ i, 0 < δ i)
+    (hδle : ∀ i, 2 * δ i ≤
+      ∑ j, ((Fintype.card (i ⟶ j) + Fintype.card (j ⟶ i) : ℕ) : S) * δ j) :
+    (((1 : PowerSeries ℤ) + PowerSeries.X ^ 2) • (1 : Matrix Q Q (PowerSeries ℤ)) -
+        (PowerSeries.X : PowerSeries ℤ) • Matrix.of fun v w : Q =>
+          (Fintype.card (Symmetrify.of.obj w ⟶ Symmetrify.of.obj v) : PowerSeries ℤ)) *
+      preprojectiveHilbertSeries k Q = 1 :=
+  (mul_preprojectiveHilbertSeries_eq_one_iff k Q).2 fun v _ hy =>
+    (forall_preprojectiveMk_ofArrow_reverse_mul_eq_zero_iff_of_two_mul_le_sum k hδ hδle v hy).1
+
+/-- **The Hilbert series of a preprojective algebra whose quiver carries a superadditive weight**
+is the inverse matrix `H = ((1 + X²) I - X A)⁻¹`, under the same hypothesis on `δ`. -/
+theorem preprojectiveHilbertSeries_eq_inv_of_two_mul_le_sum {S : Type*} [CommRing S]
+    [LinearOrder S] [IsStrictOrderedRing S] {δ : Q → S} (hδ : ∀ i, 0 < δ i)
+    (hδle : ∀ i, 2 * δ i ≤
+      ∑ j, ((Fintype.card (i ⟶ j) + Fintype.card (j ⟶ i) : ℕ) : S) * δ j) :
+    preprojectiveHilbertSeries k Q =
+      (((1 : PowerSeries ℤ) + PowerSeries.X ^ 2) • (1 : Matrix Q Q (PowerSeries ℤ)) -
+        (PowerSeries.X : PowerSeries ℤ) • Matrix.of fun v w : Q =>
+          (Fintype.card (Symmetrify.of.obj w ⟶ Symmetrify.of.obj v) : PowerSeries ℤ))⁻¹ :=
+  (Matrix.inv_eq_right_inv
+    (mul_preprojectiveHilbertSeries_eq_one_of_two_mul_le_sum k hδ hδle)).symm
 
 end Quiver
 end TauCeti

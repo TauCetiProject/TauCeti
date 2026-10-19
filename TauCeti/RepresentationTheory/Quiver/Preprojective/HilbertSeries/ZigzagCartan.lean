@@ -43,10 +43,11 @@ H_{Π(Q)}(t) = C_G(-t)⁻¹.
 
 It holds for every orientation of `G` at which every Koszul complex is a resolution. This file
 proves the identity unconditionally as soon as the oriented quiver carries a positive weight `δ`
-satisfying `2 δ_i ≤ ∑_j (#(i ⟶ j) + #(j ⟶ i)) δ_j` at every vertex, at quiver level as well as
-after reindexing by the vertices of `G`. Orientations without sinks already satisfied the condition
-for every graph; the theorem of Etingof and Eu supplies it for every orientation of a connected
-graph which is not a Dynkin diagram
+satisfying `2 δ_i ≤ ∑_j (#(i ⟶ j) + #(j ⟶ i)) δ_j` at every vertex of `G`. Orientations without
+sinks are covered separately
+(`TauCeti.preprojectiveHilbertSeries_eq_inv_zigzagGradedCartanMatrix_map_aeval_neg_X`); the
+theorem of Etingof and Eu supplies the weight for every orientation of a connected graph which is
+not a Dynkin diagram
 (`TauCeti.preprojectiveHilbertSeries_eq_inv_zigzagGradedCartanMatrix_of_not_exists_dynkinType_iso`,
 module `HilbertSeries/NonDynkin.lean`), so the non-Dynkin trees, such as `D~ₙ` and `E₆~`, `E₇~`,
 `E₈~`, are covered.
@@ -58,9 +59,6 @@ module `HilbertSeries/NonDynkin.lean`), so the non-Dynkin trees, such as `D~ₙ`
 * `TauCeti.mul_preprojectiveHilbertSeries_eq_one` and
   `TauCeti.preprojectiveHilbertSeries_eq_inv`: for a quiver without sinks,
   `H(t) = ((1 + t²) I - t A)⁻¹`.
-* `TauCeti.mul_preprojectiveHilbertSeries_eq_one_of_two_mul_le_sum` and
-  `TauCeti.preprojectiveHilbertSeries_eq_inv_of_two_mul_le_sum`: the same for any finite quiver
-  carrying a positive superadditive weight, with no hypothesis on sinks.
 * `TauCeti.zigzagGradedCartanMatrix_map_aeval_neg_X_mul_preprojectiveHilbertSeries_eq_one_iff`:
   for an orientation of a graph without isolated vertices, `C_G(-t) H(t) = I` exactly when every
   Koszul complex of the preprojective algebra is a resolution.
@@ -114,44 +112,6 @@ theorem sum_card_mul_finrank_preprojectiveCorner_eq (m : ℕ) (i : Symmetrify Q)
       exact preprojectiveMk_vertexIdempotent_mul_of_mem_preprojectiveCorner hy)).1
 
 variable [DecidableEq Q]
-
-omit hQ
-/-- **The Hilbert series identity for a quiver with a superadditive weight.** Let `δ` be a weight
-on the vertices of a finite quiver `Q` over a strictly ordered commutative ring, positive with
-
-```text
-2 δ_i ≤ ∑_j (#(i ⟶ j) + #(j ⟶ i)) δ_j
-```
-
-at every vertex. No hypothesis on the sinks of `Q` is needed; the Koszul complexes at every vertex
-are exact at their left end
-(`TauCeti.forall_preprojectiveMk_ofArrow_reverse_mul_eq_zero_iff_of_two_mul_le_sum`), so the
-matrix Hilbert series `H` of `Π` satisfies `((1 + X²) I - X A) H = I` for `A_{v,w} = #(w ⟶ v)` the
-arrow-count matrix of the doubled quiver. -/
-theorem mul_preprojectiveHilbertSeries_eq_one_of_two_mul_le_sum {S : Type*} [CommRing S]
-    [LinearOrder S] [IsStrictOrderedRing S] {δ : Q → S} (hδ : ∀ i, 0 < δ i)
-    (hδle : ∀ i, 2 * δ i ≤
-      ∑ j, ((Fintype.card (i ⟶ j) + Fintype.card (j ⟶ i) : ℕ) : S) * δ j) :
-    (((1 : ℤ⟦X⟧) + X ^ 2) • (1 : Matrix Q Q ℤ⟦X⟧) -
-        (X : ℤ⟦X⟧) • Matrix.of fun v w : Q =>
-          (Fintype.card (Symmetrify.of.obj w ⟶ Symmetrify.of.obj v) : ℤ⟦X⟧)) *
-      preprojectiveHilbertSeries k Q = 1 :=
-  (mul_preprojectiveHilbertSeries_eq_one_iff k Q).2 fun v _ hy =>
-    (forall_preprojectiveMk_ofArrow_reverse_mul_eq_zero_iff_of_two_mul_le_sum k hδ hδle v hy).1
-
-/-- **The Hilbert series of a preprojective algebra whose quiver carries a superadditive weight**
-is the inverse matrix `H = ((1 + X²) I - X A)⁻¹`, under the same hypothesis on `δ`. -/
-theorem preprojectiveHilbertSeries_eq_inv_of_two_mul_le_sum {S : Type*} [CommRing S]
-    [LinearOrder S] [IsStrictOrderedRing S] {δ : Q → S} (hδ : ∀ i, 0 < δ i)
-    (hδle : ∀ i, 2 * δ i ≤
-      ∑ j, ((Fintype.card (i ⟶ j) + Fintype.card (j ⟶ i) : ℕ) : S) * δ j) :
-    preprojectiveHilbertSeries k Q =
-      (((1 : ℤ⟦X⟧) + X ^ 2) • (1 : Matrix Q Q ℤ⟦X⟧) -
-        (X : ℤ⟦X⟧) • Matrix.of fun v w : Q =>
-          (Fintype.card (Symmetrify.of.obj w ⟶ Symmetrify.of.obj v) : ℤ⟦X⟧))⁻¹ :=
-  (Matrix.inv_eq_right_inv
-    (mul_preprojectiveHilbertSeries_eq_one_of_two_mul_le_sum k hδ hδle)).symm
-include hQ
 
 /-- **The Hilbert series identity for a quiver without sinks.** If every vertex of `Q` is the tail
 of an arrow and `A_{v,w} = #(w ⟶ v)` is the arrow-count matrix of the doubled quiver, then

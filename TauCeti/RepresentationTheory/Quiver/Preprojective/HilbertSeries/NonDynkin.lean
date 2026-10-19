@@ -13,11 +13,11 @@ public import TauCeti.RepresentationTheory.Quiver.Preprojective.Koszul.NonDynkin
 
 Let `G` be a connected finite simple graph which is not a Dynkin diagram, `o` any orientation of
 `G` and `H(t)` the matrix Hilbert series of the preprojective algebra `Π_k(Q)` of the oriented
-quiver over a field `k`, indexed by the vertices of `G`. By the theorem of Etingof and Eu
+quiver over a field `k`, indexed by the vertices of `G`. The oriented quiver carries a positive
+weight which is superadditive on its underlying multigraph
 (`TauCeti.exists_pos_two_mul_le_sum_orientedQuiver_of_not_exists_dynkinType_iso`, in
-`Koszul/NonDynkin.lean`), the oriented quiver carries a positive weight which is superadditive on
-its underlying multigraph, so the weighted inverse quantum Cartan comparison of
-`HilbertSeries/ZigzagCartan.lean` holds unconditionally:
+`Koszul/NonDynkin.lean`), so by the theorem of Etingof and Eu the weighted inverse quantum Cartan
+comparison of `HilbertSeries/ZigzagCartan.lean` holds unconditionally:
 
 ```text
 H_{Π(Q)}(t) = C_G(-t)⁻¹,

@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.FiniteDimensional
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.GradedResolution
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.HilbertSeries.Basic
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.HilbertSeries.FiniteDimensional
-public import TauCeti.RepresentationTheory.Quiver.Preprojective.HilbertSeries.ZigzagCartan
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.InfiniteDimensional
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Koszul.Superadditive
 
@@ -52,8 +52,7 @@ Etingof and Eu; for orientations of graphs which are not trees it is already
 * `TauCeti.mul_preprojectiveHilbertSeries_eq_one_of_not_exists_dynkinType_iso` and
   `TauCeti.preprojectiveHilbertSeries_eq_inv_of_not_exists_dynkinType_iso`: **the matrix Hilbert
   series of the preprojective algebra of a connected non-Dynkin graph in every orientation is
-  `((1 + t²) I - t A)⁻¹`**, derived from the superadditive-weight Hilbert series identity of
-  `HilbertSeries/ZigzagCartan.lean`.
+  `((1 + t²) I - t A)⁻¹`.**
 
 * `forall_preprojectiveKoszulLeft_injective_iff` and
   `forall_preprojectiveKoszulLeft_injective_iff_not_finiteDimensional`: **the Koszulity dichotomy
