@@ -77,10 +77,8 @@ theorem one_mem_closure_zero_of_spa_eq_empty (Aplus : Subring A)
     (RingHom.id A).codRestrict _ fun a ↦ hplus.le_powerBoundedSubring (hall_mem a)
   let nilIdeal : Ideal A := (topologicallyNilpotentIdeal A).comap toPowerBounded
   let P : PairOfDefinition A := Classical.choice IsHuberRing.nonempty_pairOfDefinition
-  have hopen : IsOpen (P.extendedIdealOfDefinition : Set A) :=
-    (P.isOpen_iff_exists_pow_le P.extendedIdealOfDefinition).mpr ⟨1, by simp⟩
   have htop : P.extendedIdealOfDefinition = ⊤ :=
-    eq_top_of_spa_eq_empty Aplus hopen hspa
+    eq_top_of_spa_eq_empty Aplus P.isOpen_extendedIdealOfDefinition hspa
   have hle : P.extendedIdealOfDefinition ≤ nilIdeal := by
     rw [P.extendedIdealOfDefinition_def]
     refine Ideal.map_le_iff_le_comap.mpr fun a ha ↦ ?_

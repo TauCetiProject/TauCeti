@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.Periodic.Acyclic
+public import TauCeti.Algebra.Homology.Periodic.QuasiIso
+public import Mathlib.Algebra.Homology.Localization
 public import Mathlib.CategoryTheory.Localization.Triangulated
 
 /-!
@@ -17,9 +19,11 @@ additive and triangulated structures, integral shifts, and localization universa
 The functor from complexes factors through homotopy classes, and sends acyclic complexes
 to zero. No finite-global-dimension hypothesis is needed for this construction.
 
-The presentation here is the Verdier quotient. Identifying the functor from complexes as
-a localization at quasi-isomorphisms requires the comparison with homology-based weak
-equivalences. A positive period gives a finite cyclic grading; period zero is also supported.
+The presentation here is the Verdier quotient. The mapping-cone characterization of periodic
+quasi-isomorphisms identifies its weak equivalences with the homology-based quasi-isomorphisms.
+Consequently the functor from periodic complexes is itself a localization at quasi-isomorphisms,
+and the resulting comparison with Mathlib's constructed localization is an equivalence. A
+positive period gives a finite cyclic grading; period zero is also supported.
 
 The construction follows Joël Riou's localization instances in
 `Mathlib.Algebra.Homology.DerivedCategory.Basic`, retaining the existing periodic shift.
@@ -35,10 +39,31 @@ universe v u
 
 namespace TauCeti.PeriodicComplex
 
-open CategoryTheory CategoryTheory.Limits CategoryTheory.Pretriangulated
+open CategoryTheory CategoryTheory.Limits CategoryTheory.Pretriangulated HomologicalComplex
 open scoped ZeroObject
 
 variable (C : Type u) [Category.{v} C] [Abelian C] (n : ℕ)
+
+/-- Quasi-isomorphisms in the periodic homotopy category are exactly the morphisms whose
+Verdier cone is acyclic. -/
+theorem quasiIso_eq_trW_subcategoryAcyclic :
+    HomotopyCategory.quasiIso C (ComplexShape.up (ZMod n)) =
+      (subcategoryAcyclic C n).trW := by
+  ext X Y f
+  obtain ⟨f, rfl⟩ := (HomotopyCategory.quotient C
+    (ComplexShape.up (ZMod n))).map_surjective f
+  have htr :
+      (subcategoryAcyclic C n).trW
+          ((HomotopyCategory.quotient C (ComplexShape.up (ZMod n))).map f) ↔
+        subcategoryAcyclic C n
+          ((HomotopyCategory.quotient C (ComplexShape.up (ZMod n))).obj
+            (homotopyCofiber f)) := by
+    simpa only [mappingConeTriangle_mor₁, mappingConeTriangle_obj₃] using
+      (subcategoryAcyclic C n).trW_iff_of_distinguished
+        (mappingConeTriangle f) (mappingCone_mem_distTriang f)
+  exact (HomotopyCategory.quotient_map_mem_quasiIso_iff f).trans
+    ((quasiIso_iff_acyclic_homotopyCofiber f).trans
+      ((quotient_obj_mem_subcategoryAcyclic_iff C n (homotopyCofiber f)).symm.trans htr.symm))
 
 /-- The Verdier quotient of the cyclic homotopy category by the acyclic objects. -/
 abbrev DerivedCategory := (subcategoryAcyclic C n).trW.Localization
@@ -51,6 +76,13 @@ noncomputable def Qh : HomotopyCategory C (ComplexShape.up (ZMod n)) ⥤ Derived
 
 instance : (Qh C n).IsLocalization (subcategoryAcyclic C n).trW := by
   dsimp [Qh]
+  infer_instance
+
+/-- The periodic Verdier functor is also a localization at the homology-based
+quasi-isomorphisms of the periodic homotopy category. -/
+instance : (Qh C n).IsLocalization
+    (HomotopyCategory.quasiIso C (ComplexShape.up (ZMod n))) := by
+  rw [quasiIso_eq_trW_subcategoryAcyclic]
   infer_instance
 
 noncomputable instance : Preadditive (DerivedCategory C n) :=
@@ -88,6 +120,52 @@ noncomputable def Q : CochainComplex C (ZMod n) ⥤ DerivedCategory C n :=
 /-- The functor from complexes factors through homotopy classes. -/
 theorem quotient_comp_Qh : HomotopyCategory.quotient C (ComplexShape.up (ZMod n)) ⋙ Qh C n =
     Q C n := (rfl)
+
+/-- Passage to the periodic derived category is a localization of periodic complexes at
+quasi-isomorphisms. -/
+instance : (Q C n).IsLocalization
+    (HomologicalComplex.quasiIso C (ComplexShape.up (ZMod n))) := by
+  dsimp only [Q]
+  let _ : (HomotopyCategory.quotient C
+      (ComplexShape.up (ZMod n))).IsLocalization
+      (HomologicalComplex.homotopyEquivalences C (ComplexShape.up (ZMod n))) :=
+    (ComplexShape.up (ZMod n)).quotient_isLocalization
+      (fun j ↦ ⟨j - 1, by simp⟩) C
+  refine Functor.IsLocalization.comp _ _
+    (HomologicalComplex.homotopyEquivalences C (ComplexShape.up (ZMod n)))
+    (HomotopyCategory.quasiIso C (ComplexShape.up (ZMod n)))
+    (HomologicalComplex.quasiIso C (ComplexShape.up (ZMod n))) ?_ ?_ ?_
+  · intro X Y f hf
+    exact Localization.inverts (Qh C n)
+      (HomotopyCategory.quasiIso C (ComplexShape.up (ZMod n))) _
+      ((HomotopyCategory.quotient_map_mem_quasiIso_iff f).2 hf)
+  · exact homotopyEquivalences_le_quasiIso C (ComplexShape.up (ZMod n))
+  · rw [HomotopyCategory.quasiIso_eq_quasiIso_map_quotient]
+
+/-- A periodic quasi-isomorphism becomes an isomorphism in the periodic derived category. -/
+instance {X Y : CochainComplex C (ZMod n)} (f : X ⟶ Y) [QuasiIso f] :
+    IsIso ((Q C n).map f) :=
+  Localization.inverts (Q C n)
+    (HomologicalComplex.quasiIso C (ComplexShape.up (ZMod n))) f
+      (inferInstanceAs (QuasiIso f))
+
+/-- The equivalence from Mathlib's constructed localization at periodic quasi-isomorphisms to
+the periodic Verdier quotient. -/
+noncomputable def quasiIsoLocalizationEquivalence :
+    (HomologicalComplex.quasiIso C
+      (ComplexShape.up (ZMod n))).Localization ≌ DerivedCategory C n :=
+  Localization.uniq
+    (HomologicalComplex.quasiIso C (ComplexShape.up (ZMod n))).Q (Q C n)
+      (HomologicalComplex.quasiIso C (ComplexShape.up (ZMod n)))
+
+/-- The localization through `quasiIsoLocalizationEquivalence` agrees with the periodic Verdier
+localization. -/
+noncomputable def quasiIsoLocalizationCompEquivalenceFunctorIso :
+    (HomologicalComplex.quasiIso C (ComplexShape.up (ZMod n))).Q ⋙
+      (quasiIsoLocalizationEquivalence C n).functor ≅ Q C n :=
+  Localization.compUniqFunctor
+    (HomologicalComplex.quasiIso C (ComplexShape.up (ZMod n))).Q (Q C n)
+      (HomologicalComplex.quasiIso C (ComplexShape.up (ZMod n)))
 
 instance : (Q C n).Additive := by
   dsimp [Q]
