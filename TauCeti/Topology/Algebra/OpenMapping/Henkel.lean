@@ -35,11 +35,10 @@ The last two steps do not depend on how the closure step was obtained, and are p
 ## Main results
 
 * `TauCeti.HasZeroSequenceOfUnits.isOpenMap`: Henkel's open mapping theorem.
+* `TauCeti.HasZeroSequenceOfUnits.isQuotientMap`: the surjective map in `isOpenMap` induces the
+  quotient topology on its target, so the target's topology is determined by the source's.
 * `TauCeti.HasZeroSequenceOfUnits.isStrictMap_of_isClosed_range`: closed-range linear maps
   into complete metrisable modules are strict.
-* `TauCeti.HasZeroSequenceOfUnits.isQuotientMap`: the same map induces the quotient topology on
-  its target — the form the strict-morphism material will consume, where what matters is not that
-  images are open but that the target's topology is determined by the source's.
 
 The other two implications of Wedhorn's Theorem 6.16, that an open linear map is surjective and that
 a continuous one has a complete target, are in `TauCeti.Topology.Algebra.OpenMapping.Converse`.

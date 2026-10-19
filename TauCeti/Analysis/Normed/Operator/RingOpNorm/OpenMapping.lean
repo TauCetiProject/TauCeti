@@ -50,13 +50,18 @@ itself serves as the ultrametric domain):
   `LinearMap.continuous_of_seq_closed_graph_of_isTate`,
   `ContinuousLinearMap.ofIsClosedGraphOfIsTate`, and
   `ContinuousLinearMap.ofSeqClosedGraphOfIsTate`).
-* **Finite-free operator bounds and quantitative spanning**: any linear map `(ι → R) →ₗ[R] N` on a
-  finite product satisfies coordinate bounds from the images of the standard basis vectors
-  (`LinearMap.norm_pi_apply_le_sum`, `LinearMap.norm_pi_apply_le_sup`,
-  `ContinuousLinearMap.ringOpNorm_pi_eq_sup`), and any finite spanning family `v : ι → N` of a
+* **Quantitative finite spanning**: any finite spanning family `v : ι → N` of a
   complete normed module over a complete ultrametric Tate ring admits a constant `C > 0`
   representing every `y : N` as `∑ i, c i • v i` with `‖c‖ ≤ C * ‖y‖`
   (`Submodule.exists_linearCombination_eq_and_norm_le`).
+
+The API and the bounded-inverse, range-equivalence, bijective-map, unit and closed-graph
+packaging are adapted from `Mathlib/Analysis/Normed/Operator/Banach.lean`, in particular
+`LinearEquiv.continuous_symm`, `LinearEquiv.toContinuousLinearEquivOfContinuous`,
+`ContinuousLinearMap.equivRange`,
+`ContinuousLinearMap.isClosed_range_iff_antilipschitz_of_injective`,
+`ContinuousLinearEquiv.ofBijective`, `ContinuousLinearMap.isUnit_iff_bijective`,
+`ContinuousLinearMap.ofIsClosedGraph` and `ContinuousLinearMap.ofSeqClosedGraph`.
 
 ## References
 
@@ -87,45 +92,24 @@ theorem exists_preimage_norm_le_of_ball_subset (ϖ : PseudoUniformizer R) (f : M
     {δ R₀ : ℝ} (k : ℤ) (hδ : ‖(ϖ.unit : R)‖ ^ k < δ)
     (hball : ball (0 : N) δ ⊆ f '' ball (0 : M) R₀) (y : N) :
     ∃ x : M, f x = y ∧ ‖x‖ ≤ R₀ * (‖(ϖ.unit : R)‖ ^ (k + 1))⁻¹ * ‖y‖ := by
-  set r := ‖(ϖ.unit : R)‖
-  have hr0 : 0 < r := ϖ.norm_pos
   rcases eq_or_ne y 0 with rfl | hy0
   · exact ⟨0, map_zero f, by simp⟩
-  have hynorm : ‖y‖ ≠ 0 := norm_ne_zero_iff.mpr hy0
-  obtain ⟨n, ⟨hn₁, hn₂⟩, -⟩ := ϖ.existsUnique_norm_zpow_smul_mem_Ioc hynorm
-  rw [ϖ.norm_zpow_smul] at hn₁ hn₂
-  have hpow : r ^ (n + k) = r ^ n * r ^ k := zpow_add₀ hr0.ne' n k
-  have hmem : ((ϖ.unit ^ (n + k) : Rˣ) : R) • y ∈ ball (0 : N) δ := by
-    rw [mem_ball_zero_iff, ϖ.norm_zpow_smul, hpow]
-    calc r ^ n * r ^ k * ‖y‖ = r ^ k * (r ^ n * ‖y‖) := by ring
-      _ ≤ r ^ k * 1 := by gcongr
-      _ < δ := by simpa using hδ
+  obtain ⟨n, hn, hscale⟩ := ϖ.exists_zpow_mul_norm_lt (norm_ne_zero_iff.mpr hy0) k hδ
+  have hmem : ((ϖ.unit ^ n : Rˣ) : R) • y ∈ ball (0 : N) δ := by
+    rwa [mem_ball_zero_iff, ϖ.norm_zpow_smul]
   obtain ⟨x₀, hx₀, hfx₀⟩ := hball hmem
   rw [mem_ball_zero_iff] at hx₀
   have hR₀ : 0 ≤ R₀ := (norm_nonneg x₀).trans hx₀.le
-  refine ⟨((ϖ.unit ^ (-(n + k)) : Rˣ) : R) • x₀, ?_, ?_⟩
+  refine ⟨((ϖ.unit ^ (-n) : Rˣ) : R) • x₀, ?_, ?_⟩
   · rw [map_smul, hfx₀, ← mul_smul, ← Units.val_mul, zpow_neg, inv_mul_cancel, Units.val_one,
       one_smul]
   · rw [ϖ.norm_zpow_smul, zpow_neg]
-    have hs : 0 < r ^ (n + k) := zpow_pos hr0 (n + k)
-    have hrk1 : 0 < r ^ (k + 1) := zpow_pos hr0 (k + 1)
-    have h1 : r ^ (n + k) * (r ^ (k + 1) * ((r ^ (n + k))⁻¹ * ‖x₀‖)) ≤
-        r ^ (n + k) * (R₀ * ‖y‖) := by
-      calc r ^ (n + k) * (r ^ (k + 1) * ((r ^ (n + k))⁻¹ * ‖x₀‖))
-          = r ^ (k + 1) * (r ^ (n + k) * ((r ^ (n + k))⁻¹ * ‖x₀‖)) := by ring
-        _ = r ^ (k + 1) * ‖x₀‖ := by rw [mul_inv_cancel_left₀ hs.ne']
-        _ = r ^ k * ‖x₀‖ * r := by rw [zpow_add_one₀ hr0.ne']; ring
-        _ ≤ r ^ k * R₀ * r := by gcongr
-        _ = r ^ k * (R₀ * r) := by ring
-        _ ≤ r ^ k * (R₀ * (r ^ n * ‖y‖)) := by gcongr
-        _ = r ^ (n + k) * (R₀ * ‖y‖) := by rw [hpow]; ring
-    have h2 : r ^ (k + 1) * ((r ^ (n + k))⁻¹ * ‖x₀‖) ≤ R₀ * ‖y‖ :=
-      le_of_mul_le_mul_left h1 hs
-    calc (r ^ (n + k))⁻¹ * ‖x₀‖
-        = (r ^ (k + 1))⁻¹ * (r ^ (k + 1) * ((r ^ (n + k))⁻¹ * ‖x₀‖)) := by
-          rw [inv_mul_cancel_left₀ hrk1.ne']
-      _ ≤ (r ^ (k + 1))⁻¹ * (R₀ * ‖y‖) := by gcongr
-      _ = R₀ * (r ^ (k + 1))⁻¹ * ‖y‖ := by ring
+    calc (‖(ϖ.unit : R)‖ ^ n)⁻¹ * ‖x₀‖
+        ≤ (‖(ϖ.unit : R)‖ ^ n)⁻¹ * R₀ :=
+          mul_le_mul_of_nonneg_left hx₀.le (inv_nonneg.mpr (zpow_nonneg ϖ.norm_pos.le _))
+      _ ≤ ((‖(ϖ.unit : R)‖ ^ (k + 1))⁻¹ * ‖y‖) * R₀ :=
+          mul_le_mul_of_nonneg_right hscale hR₀
+      _ = R₀ * (‖(ϖ.unit : R)‖ ^ (k + 1))⁻¹ * ‖y‖ := by ring
 
 end TauCeti.NormedRing.PseudoUniformizer
 
@@ -222,7 +206,7 @@ theorem coeFn_toContinuousLinearEquivOfContinuousOfIsTate (e : M ≃ₗ[R] N) (h
   (rfl)
 
 @[simp]
-theorem coeFn_symm_toContinuousLinearEquivOfContinuousOfIsTate (e : M ≃ₗ[R] N)
+theorem coeFn_toContinuousLinearEquivOfContinuousOfIsTate_symm (e : M ≃ₗ[R] N)
     (he : Continuous e) :
     ⇑(e.toContinuousLinearEquivOfContinuousOfIsTate he).symm = e.symm :=
   (rfl)
@@ -309,29 +293,25 @@ theorem exists_preimage_norm_le_of_isTate (f : M →L[R] N) (hsurj : Surjective 
     ∃ C > 0, ∀ y : N, ∃ x : M, f x = y ∧ ‖x‖ ≤ C * ‖y‖ :=
   f.toLinearMap.exists_preimage_norm_le_of_surjective f.continuous hsurj
 
-/-- A continuous linear map `f : M →L[R] N` with closed range is open onto its range. -/
-theorem isOpenMap_rangeRestrict_of_isClosed_range (f : M →L[R] N)
-    (hclosed : IsClosed (Set.range f)) :
-    IsOpenMap f.rangeRestrict :=
-  (LinearMap.isStrictMap_iff_isOpenQuotientMap_rangeRestrict.mp
-    (TauCeti.HasZeroSequenceOfUnits.isStrictMap_of_isClosed_range f.toLinearMap
-      f.continuous.continuousAt
-      (fun _ ↦ (continuous_id.smul continuous_const).continuousAt)
-      (by rwa [LinearMap.coe_range]))).isOpenMap
-
 /-- A continuous linear map `f : M →L[R] N` with closed range is a strict morphism
 (`Topology.IsStrictMap`). -/
-theorem isStrictMap_of_isClosed_range (f : M →L[R] N) (hclosed : IsClosed (Set.range f)) :
-    Topology.IsStrictMap f :=
+theorem isStrictMap_of_isClosed_range_of_isTate (f : M →L[R] N)
+    (hclosed : IsClosed (Set.range f)) : Topology.IsStrictMap f :=
   TauCeti.HasZeroSequenceOfUnits.isStrictMap_of_isClosed_range f.toLinearMap
     f.continuous.continuousAt
     (fun _ ↦ (continuous_id.smul continuous_const).continuousAt)
     (by rwa [LinearMap.coe_range])
 
+/-- A continuous linear map `f : M →L[R] N` with closed range is open onto its range. -/
+theorem isOpenMap_rangeRestrict_of_isClosed_range_of_isTate (f : M →L[R] N)
+    (hclosed : IsClosed (Set.range f)) : IsOpenMap f.rangeRestrict :=
+  (LinearMap.isStrictMap_iff_isOpenQuotientMap_rangeRestrict.mp
+    (f.isStrictMap_of_isClosed_range_of_isTate hclosed)).isOpenMap
+
 /-- **Quantitative preimage bound for closed-range operators**: if `f : M →L[R] N` has closed
 range, there exists `C > 0` such that every `y ∈ Set.range f` lifts to `x : M` with `f x = y` and
 `‖x‖ ≤ C * ‖y‖`. -/
-theorem exists_preimage_norm_le_of_isClosed_range (f : M →L[R] N)
+theorem exists_preimage_norm_le_of_isClosed_range_of_isTate (f : M →L[R] N)
     (hclosed : IsClosed (Set.range f)) :
     ∃ C > 0, ∀ y ∈ Set.range f, ∃ x : M, f x = y ∧ ‖x‖ ≤ C * ‖y‖ := by
   have hclosed' : IsClosed (f.range : Set N) := by rwa [LinearMap.coe_range]
@@ -344,10 +324,10 @@ theorem exists_preimage_norm_le_of_isClosed_range (f : M →L[R] N)
 
 /-- If `f : M →L[R] N` is injective and has closed range, then `‖x‖ ≤ C * ‖f x‖` for some
 `C > 0`. -/
-theorem exists_norm_le_of_injective_of_isClosed_range (f : M →L[R] N) (hinj : Injective f)
+theorem exists_norm_le_of_injective_of_isClosed_range_of_isTate (f : M →L[R] N) (hinj : Injective f)
     (hclosed : IsClosed (Set.range f)) :
     ∃ C > 0, ∀ x : M, ‖x‖ ≤ C * ‖f x‖ := by
-  obtain ⟨C, hC, hlift⟩ := f.exists_preimage_norm_le_of_isClosed_range hclosed
+  obtain ⟨C, hC, hlift⟩ := f.exists_preimage_norm_le_of_isClosed_range_of_isTate hclosed
   refine ⟨C, hC, fun x ↦ ?_⟩
   obtain ⟨x', hx', hnorm⟩ := hlift (f x) ⟨x, rfl⟩
   rwa [hinj hx'] at hnorm
@@ -357,7 +337,7 @@ some `K ≠ 0`. -/
 theorem antilipschitz_of_injective_of_isClosed_range_of_isTate (f : M →L[R] N)
     (hinj : Injective f) (hclosed : IsClosed (Set.range f)) :
     ∃ K : ℝ≥0, K ≠ 0 ∧ AntilipschitzWith K f := by
-  obtain ⟨C, hC, hbound⟩ := f.exists_norm_le_of_injective_of_isClosed_range hinj hclosed
+  obtain ⟨C, hC, hbound⟩ := f.exists_norm_le_of_injective_of_isClosed_range_of_isTate hinj hclosed
   refine ⟨⟨C, hC.le⟩, NNReal.coe_ne_zero.mp hC.ne', ?_⟩
   exact AddMonoidHomClass.antilipschitz_of_bound f hbound
 
@@ -415,7 +395,9 @@ theorem isUnit_iff_bijective_of_isTate [IsUltrametricDist N] (f : N →L[R] N) :
     IsUnit f ↔ Bijective f :=
   ⟨fun ⟨u, hu⟩ ↦ hu ▸ (ContinuousLinearEquiv.unitsEquiv R N u).bijective,
     fun hf ↦ ⟨(ContinuousLinearEquiv.unitsEquiv R N).symm
-      (ContinuousLinearEquiv.ofBijectiveOfIsTate f hf), rfl⟩⟩
+      (ContinuousLinearEquiv.ofBijectiveOfIsTate f hf),
+      show (ContinuousLinearEquiv.ofBijectiveOfIsTate f hf : N →L[R] N) = f from
+        ContinuousLinearEquiv.coe_ofBijectiveOfIsTate f hf⟩⟩
 
 end ContinuousLinearMap
 
@@ -529,78 +511,7 @@ theorem ofSeqClosedGraphOfIsTate_apply
 
 end ContinuousLinearMap
 
-/-! ### Finite-free operator bounds and quantitative spanning -/
-
-namespace LinearMap
-
-variable {R N ι : Type*} [Fintype ι] [DecidableEq ι] [SeminormedRing R]
-  [SeminormedAddCommGroup N] [Module R N] [IsBoundedSMul R N]
-
-/-- Any linear map `f : (ι → R) →ₗ[R] N` on a finite product satisfies the coordinate bound
-`‖f x‖ ≤ (∑ i, ‖f (Pi.single i 1)‖) * ‖x‖`. -/
-theorem norm_pi_apply_le_sum (f : (ι → R) →ₗ[R] N) (x : ι → R) :
-    ‖f x‖ ≤ (∑ i : ι, ‖f (Pi.single i 1)‖) * ‖x‖ := by
-  calc ‖f x‖ = ‖∑ i : ι, x i • f (Pi.single i 1)‖ := by
-         conv_lhs => rw [pi_eq_sum_univ' x, map_sum]
-         simp only [map_smul]
-    _ ≤ ∑ i : ι, ‖x i • f (Pi.single i 1)‖ := norm_sum_le _ _
-    _ ≤ ∑ i : ι, ‖x i‖ * ‖f (Pi.single i 1)‖ := by
-        gcongr with i
-        exact norm_smul_le _ _
-    _ ≤ ∑ i : ι, ‖x‖ * ‖f (Pi.single i 1)‖ := by
-        gcongr with i
-        exact norm_le_pi_norm x i
-    _ = (∑ i : ι, ‖f (Pi.single i 1)‖) * ‖x‖ := by
-        rw [← Finset.mul_sum, mul_comm]
-
-/-- When the target module `N` is ultrametric, any linear map `f : (ι → R) →ₗ[R] N` on a finite
-product is bounded by the supremum of the norms of the images of the standard basis vectors:
-`‖f x‖ ≤ (Finset.univ.sup fun i ↦ ‖f (Pi.single i 1)‖₊) * ‖x‖`. -/
-theorem norm_pi_apply_le_sup [IsUltrametricDist N] (f : (ι → R) →ₗ[R] N)
-    (x : ι → R) :
-    ‖f x‖ ≤ ↑(Finset.univ.sup fun i : ι ↦ ‖f (Pi.single i 1)‖₊) * ‖x‖ := by
-  conv_lhs => rw [pi_eq_sum_univ' x, map_sum]
-  refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (by positivity) fun i hi ↦ ?_
-  calc ‖f (x i • Pi.single i 1)‖
-      = ‖x i • f (Pi.single i 1)‖ := by rw [map_smul]
-    _ ≤ ‖x i‖ * ‖f (Pi.single i 1)‖ := norm_smul_le _ _
-    _ = ‖f (Pi.single i 1)‖ * ‖x i‖ := mul_comm _ _
-    _ ≤ ↑(Finset.univ.sup fun j : ι ↦ ‖f (Pi.single j 1)‖₊) * ‖x‖ := by
-        gcongr
-        · exact_mod_cast Finset.le_sup (f := fun j : ι ↦ ‖f (Pi.single j 1)‖₊) hi
-        · exact norm_le_pi_norm x i
-
-end LinearMap
-
-namespace ContinuousLinearMap
-
-variable {R N ι : Type*} [Fintype ι] [DecidableEq ι] [SeminormedRing R]
-  [SeminormedAddCommGroup N] [IsUltrametricDist N] [Module R N] [IsBoundedSMul R N]
-
-/-- The operator norm of `f : (ι → R) →L[R] N` into an ultrametric module is bounded by the
-supremum of the norms of the images of the standard basis vectors. -/
-theorem ringOpNorm_pi_le_sup (f : (ι → R) →L[R] N) :
-    ‖f‖ ≤ ↑(Finset.univ.sup fun i : ι ↦ ‖f (Pi.single i 1)‖₊) :=
-  f.ringOpNorm_le_bound (by positivity) f.toLinearMap.norm_pi_apply_le_sup
-
-/-- Over a Tate ring, the operator norm of `f : (ι → R) →L[R] N` into an ultrametric module is
-the supremum of the norms of the images of the standard basis vectors `Pi.single i 1`. -/
-theorem ringOpNorm_pi_eq_sup [TauCeti.NormedRing.IsTate R] (f : (ι → R) →L[R] N) :
-    ‖f‖ = ↑(Finset.univ.sup fun i : ι ↦ ‖f (Pi.single i 1)‖₊) := by
-  refine le_antisymm f.ringOpNorm_pi_le_sup ?_
-  have hsup : (Finset.univ.sup fun i : ι ↦ ‖f (Pi.single i 1)‖₊) ≤
-      Real.toNNReal ‖f‖ := by
-    refine Finset.sup_le fun i _ ↦ (Real.le_toNNReal_iff_coe_le f.ringOpNorm_nonneg).mpr ?_
-    have hsingle : ‖(Pi.single i 1 : ι → R)‖ ≤ 1 := by
-      refine (pi_norm_le_iff_of_nonneg zero_le_one).mpr fun j ↦ ?_
-      by_cases hji : j = i <;> simp [hji]
-    calc ‖f (Pi.single i 1)‖
-        ≤ ‖f‖ * ‖(Pi.single i 1 : ι → R)‖ := f.le_ringOpNorm _
-      _ ≤ ‖f‖ * 1 := by gcongr; exact f.ringOpNorm_nonneg
-      _ = ‖f‖ := mul_one _
-  exact (Real.le_toNNReal_iff_coe_le f.ringOpNorm_nonneg).mp hsup
-
-end ContinuousLinearMap
+/-! ### Quantitative finite spanning -/
 
 namespace Submodule
 

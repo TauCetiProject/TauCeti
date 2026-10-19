@@ -20,9 +20,6 @@ integer constant, and rescaling into that ball by powers of a multiplicative pse
 converts that local constant bound into a global operator-norm bound.
 
 This file establishes:
-* local-to-global operator-norm bounds (`ContinuousLinearMap.ringOpNorm_le_of_ball`,
-  `ContinuousLinearMap.ringOpNorm_le_of_nhds_zero`, and the quantitative bound from a constant
-  bound on a ball `TauCeti.NormedRing.PseudoUniformizer.ringOpNorm_le_of_forall_norm_lt`);
 * the **Banach–Steinhaus theorem** (`TauCeti.NormedRing.IsTate.banach_steinhaus`) for pointwise
   bounded families of continuous linear maps from a complete seminormed module over a Tate ring;
 * continuity and operator-norm bounds for pointwise limits of continuous linear maps along a
@@ -34,15 +31,17 @@ No commutativity or ultrametric hypothesis on the Tate ring is required in this 
 
 ## Main results
 
-* `ContinuousLinearMap.ringOpNorm_le_of_ball`, `ContinuousLinearMap.ringOpNorm_le_of_nhds_zero`:
-  if `‖f x‖ ≤ C * ‖x‖` holds near `0` over a Tate ring, then `‖f‖ ≤ C`.
-* `TauCeti.NormedRing.PseudoUniformizer.ringOpNorm_le_of_forall_norm_lt`: if `‖f x‖ ≤ B` on the
-  ball of radius `δ > ‖ϖ‖ ^ k`, then `‖f‖ ≤ B * (‖ϖ‖ ^ (k + 1))⁻¹`.
 * `TauCeti.NormedRing.IsTate.banach_steinhaus`: a pointwise bounded family of continuous linear
   maps from a complete seminormed module over a Tate ring is uniformly bounded in operator norm.
 * `ContinuousLinearMap.ofTendstoOfPointwiseBounded`, `ContinuousLinearMap.ofTendstoOfIsTate`:
   pointwise limits of continuous linear maps from a complete seminormed module over a Tate ring
   are continuous linear maps.
+
+The pointwise-limit constructors follow `continuousLinearMapOfTendsto` in
+`Mathlib/Analysis/LocallyConvex/Barrelled.lean` and
+`ContinuousLinearMap.ofTendstoOfBoundedRange` in
+`Mathlib/Analysis/Normed/Operator/Completeness.lean`, using `linearMapOfTendsto` and a
+uniform-boundedness continuity proof.
 
 ## References
 
@@ -57,61 +56,7 @@ public section
 open Filter Metric Set
 open scoped Topology TauCeti.RingOpNorm
 
-namespace ContinuousLinearMap
-
-variable {R E F : Type*} [SeminormedRing R] [TauCeti.NormedRing.IsTate R]
-  [SeminormedAddCommGroup E] [Module R E] [IsBoundedSMul R E]
-  [SeminormedAddCommGroup F] [Module R F] [IsBoundedSMul R F]
-
-/-- Over a Tate ring, a linear norm bound `‖f x‖ ≤ C * ‖x‖` on a ball around `0` extends to all of
-`E` and bounds the operator norm `‖f‖` by `C`. -/
-theorem ringOpNorm_le_of_ball (f : E →L[R] F) {ε C : ℝ} (hε : 0 < ε) (hC : 0 ≤ C)
-    (hf : ∀ x ∈ ball (0 : E) ε, ‖f x‖ ≤ C * ‖x‖) :
-    ‖f‖ ≤ C := by
-  obtain ⟨ϖ⟩ := TauCeti.NormedRing.IsTate.nonempty_pseudoUniformizer (R := R)
-  refine f.ringOpNorm_le_bound hC fun x ↦ ?_
-  obtain ⟨k, hk⟩ : ∃ k : ℕ, ‖(ϖ.unit : R)‖ ^ k * ‖x‖ < ε := by
-    rcases le_or_gt ‖x‖ 0 with hx | hx
-    · refine ⟨0, lt_of_le_of_lt ?_ hε⟩
-      simpa using hx
-    · obtain ⟨k, hk⟩ := exists_pow_lt_of_lt_one (div_pos hε hx) ϖ.norm_lt_one
-      exact ⟨k, (lt_div_iff₀ hx).mp hk⟩
-  have hmem : ((ϖ.unit ^ (k : ℤ) : Rˣ) : R) • x ∈ ball (0 : E) ε := by
-    rw [mem_ball_zero_iff, ϖ.norm_zpow_smul, zpow_natCast]
-    exact hk
-  have hfk := hf _ hmem
-  rw [map_smul, ϖ.norm_zpow_smul, ϖ.norm_zpow_smul, zpow_natCast] at hfk
-  have hrk : 0 < ‖(ϖ.unit : R)‖ ^ k := pow_pos ϖ.norm_pos k
-  exact le_of_mul_le_mul_left (by simpa [mul_left_comm] using hfk) hrk
-
-/-- Over a Tate ring, if `‖f x‖ ≤ C * ‖x‖` holds in a neighbourhood of `0`, then `‖f‖ ≤ C`. -/
-theorem ringOpNorm_le_of_nhds_zero (f : E →L[R] F) {C : ℝ} (hC : 0 ≤ C)
-    (hf : ∀ᶠ x in 𝓝 (0 : E), ‖f x‖ ≤ C * ‖x‖) :
-    ‖f‖ ≤ C := by
-  obtain ⟨ε, hε, hfε⟩ := Metric.eventually_nhds_iff_ball.mp hf
-  exact f.ringOpNorm_le_of_ball hε hC hfε
-
-end ContinuousLinearMap
-
 namespace TauCeti
-
-namespace NormedRing.PseudoUniformizer
-
-variable {R E F : Type*} [SeminormedRing R]
-  [SeminormedAddCommGroup E] [Module R E] [IsBoundedSMul R E]
-  [SeminormedAddCommGroup F] [Module R F] [IsBoundedSMul R F]
-
-/-- **Quantitative local-to-global operator-norm bound.** If `ϖ` is a multiplicative
-pseudo-uniformiser on `R`, `‖(ϖ.unit : R)‖ ^ k < δ`, and `‖f x‖ ≤ B` for every `x` of norm `< δ`,
-then `‖f‖ ≤ B * (‖(ϖ.unit : R)‖ ^ (k + 1))⁻¹`. -/
-theorem ringOpNorm_le_of_forall_norm_lt (ϖ : PseudoUniformizer R) (f : E →L[R] F)
-    {δ B : ℝ} (k : ℤ) (hδ : ‖(ϖ.unit : R)‖ ^ k < δ) (hB : 0 ≤ B)
-    (hf : ∀ x : E, ‖x‖ < δ → ‖f x‖ ≤ B) :
-    ‖f‖ ≤ B * (‖(ϖ.unit : R)‖ ^ (k + 1))⁻¹ := by
-  exact f.ringOpNorm_le_bound (by positivity)
-    (ϖ.bound_of_forall_norm_lt f k hδ hB hf)
-
-end NormedRing.PseudoUniformizer
 
 namespace NormedRing.IsTate
 
@@ -153,7 +98,7 @@ theorem banach_steinhaus [CompleteSpace E] {ι : Type*} (g : ι → E →L[R] F)
 /-- Pointwise form of `TauCeti.NormedRing.IsTate.banach_steinhaus`: a pointwise bounded family of
 continuous linear maps from a complete seminormed module over a Tate ring satisfies a uniform
 linear bound `‖g i x‖ ≤ C * ‖x‖` with `C > 0`. -/
-theorem banach_steinhaus_apply [CompleteSpace E] {ι : Type*} (g : ι → E →L[R] F)
+theorem banach_steinhaus_bound [CompleteSpace E] {ι : Type*} (g : ι → E →L[R] F)
     (h : ∀ x : E, ∃ C : ℝ, ∀ i : ι, ‖g i x‖ ≤ C) :
     ∃ C > 0, ∀ (i : ι) (x : E), ‖g i x‖ ≤ C * ‖x‖ := by
   obtain ⟨C, hC⟩ := banach_steinhaus g h
@@ -178,7 +123,7 @@ theorem continuous_of_tendsto_of_pointwise_bounded [CompleteSpace E] {α : Type*
     (hf : ∀ x : E, Tendsto (fun a ↦ g a x) l (𝓝 (f x)))
     (hb : ∀ x : E, ∃ C : ℝ, ∀ a : α, ‖g a x‖ ≤ C) :
     Continuous f := by
-  obtain ⟨C, -, hC⟩ := TauCeti.NormedRing.IsTate.banach_steinhaus_apply g hb
+  obtain ⟨C, -, hC⟩ := TauCeti.NormedRing.IsTate.banach_steinhaus_bound g hb
   refine AddMonoidHomClass.continuous_of_bound f C fun x ↦ ?_
   exact le_of_tendsto (hf x).norm (Eventually.of_forall fun a ↦ hC a x)
 

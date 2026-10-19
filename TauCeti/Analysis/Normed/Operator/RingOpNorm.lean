@@ -41,6 +41,12 @@ would duplicate Mathlib's instance.
 * `TauCeti.NormedRing.IsTate.bound_of_continuous`: over Tate scalars every continuous linear map
   between seminormed modules with contractive scalar actions has a uniform bound.
 * `ContinuousLinearMap.le_ringOpNorm`: `‖f x‖ ≤ ‖f‖ * ‖x‖` over Tate scalars.
+* `ContinuousLinearMap.ringOpNorm_le_of_ball`, `ContinuousLinearMap.ringOpNorm_le_of_nhds_zero`:
+  a linear bound near zero over Tate scalars bounds the operator norm.
+* `TauCeti.NormedRing.PseudoUniformizer.ringOpNorm_le_of_forall_norm_lt`: a constant bound on a
+  ball gives a quantitative global operator-norm bound by shell rescaling.
+* `LinearMap.norm_pi_apply_le_sum`, `LinearMap.norm_pi_apply_le_sup`,
+  `ContinuousLinearMap.ringOpNorm_pi_eq_sup`: finite-free coordinate bounds.
 * `ContinuousLinearMap.ringOpNorm_add_le`, `ContinuousLinearMap.ringOpNorm_add_le_max`,
   `ContinuousLinearMap.ringOpNorm_comp_le`, `ContinuousLinearMap.ringOpNorm_smul_le`: the norm laws.
 * `ContinuousLinearMap.ringOpNorm_toSpanSingleton`: right multiplication by `v` has norm `‖v‖`
@@ -59,7 +65,8 @@ The formula and API shape follow Mathlib's `Mathlib/Analysis/Normed/Operator/Bas
 
 public section
 
-open Set
+open Metric Set
+open scoped Topology
 
 namespace TauCeti
 
@@ -91,29 +98,11 @@ theorem bound_of_forall_norm_lt (ϖ : PseudoUniformizer R) (f : 𝓕)
       have hlim := (tendsto_pow_atTop_nhds_zero_of_lt_one hr0.le ϖ.norm_lt_one).mul_const B
       exact ge_of_tendsto (by simpa using hlim) (Filter.Eventually.of_forall hbound)
     simpa [hx] using hzero
-  obtain ⟨n, ⟨hn₁, hn₂⟩, -⟩ := ϖ.existsUnique_norm_zpow_smul_mem_Ioc hx
-  rw [ϖ.norm_zpow_smul] at hn₁ hn₂
-  have hpow : r ^ (n + k) = r ^ n * r ^ k := zpow_add₀ hr0.ne' n k
-  have hy : ‖((ϖ.unit ^ (n + k) : Rˣ) : R) • x‖ < δ := by
-    rw [ϖ.norm_zpow_smul, hpow]
-    calc r ^ n * r ^ k * ‖x‖ = r ^ k * (r ^ n * ‖x‖) := by ring
-      _ ≤ r ^ k * 1 := by gcongr
-      _ < δ := by simpa using hδ
-  have hfy : r ^ n * r ^ k * ‖f x‖ ≤ B := by
-    have hfy' := hf _ hy
-    rwa [map_smul, ϖ.norm_zpow_smul, hpow] at hfy'
-  have hrn : 0 < r ^ n := zpow_pos hr0 n
-  have hrk1 : 0 < r ^ (k + 1) := zpow_pos hr0 (k + 1)
-  have h1 : r ^ n * (r ^ (k + 1) * ‖f x‖) ≤ r ^ n * (B * ‖x‖) := by
-    calc r ^ n * (r ^ (k + 1) * ‖f x‖)
-        = (r ^ n * r ^ k * ‖f x‖) * r := by rw [zpow_add_one₀ hr0.ne']; ring
-      _ ≤ B * r := by gcongr
-      _ ≤ B * (r ^ n * ‖x‖) := by gcongr
-      _ = r ^ n * (B * ‖x‖) := by ring
-  have h2 : r ^ (k + 1) * ‖f x‖ ≤ B * ‖x‖ := le_of_mul_le_mul_left h1 hrn
-  calc ‖f x‖ = (r ^ (k + 1))⁻¹ * (r ^ (k + 1) * ‖f x‖) := by
-        rw [inv_mul_cancel_left₀ hrk1.ne']
-    _ ≤ (r ^ (k + 1))⁻¹ * (B * ‖x‖) := by gcongr
+  obtain ⟨n, hn, hscale⟩ := ϖ.exists_zpow_mul_norm_lt hx k hδ
+  have hfy := hf (((ϖ.unit ^ n : Rˣ) : R) • x) (by rwa [ϖ.norm_zpow_smul])
+  rw [map_smul, ϖ.norm_zpow_smul] at hfy
+  calc ‖f x‖ ≤ (r ^ n)⁻¹ * B := (le_inv_mul_iff₀ (zpow_pos hr0 n)).mpr hfy
+    _ ≤ ((r ^ (k + 1))⁻¹ * ‖x‖) * B := mul_le_mul_of_nonneg_right hscale hB
     _ = B * (r ^ (k + 1))⁻¹ * ‖x‖ := by ring
 
 end NormedRing.PseudoUniformizer
@@ -258,6 +247,69 @@ theorem ringOpNorm_comp_le_of_exists_bound (g : F →SL[τ] G) (f : E →SL[σ] 
 
 end Semiring
 
+section LocalBounds
+
+variable {R E F : Type*} [SeminormedRing R] [TauCeti.NormedRing.IsTate R]
+  [SeminormedAddCommGroup E] [Module R E] [IsBoundedSMul R E]
+  [SeminormedAddCommGroup F] [Module R F] [IsBoundedSMul R F]
+
+/-- Over a Tate ring, a linear norm bound `‖f x‖ ≤ C * ‖x‖` on a ball around `0` extends to all of
+`E` and bounds the operator norm `‖f‖` by `C`. -/
+theorem ringOpNorm_le_of_ball (f : E →L[R] F) {ε C : ℝ} (hε : 0 < ε) (hC : 0 ≤ C)
+    (hf : ∀ x ∈ ball (0 : E) ε, ‖f x‖ ≤ C * ‖x‖) :
+    ‖f‖ ≤ C := by
+  obtain ⟨ϖ⟩ := TauCeti.NormedRing.IsTate.nonempty_pseudoUniformizer (R := R)
+  refine f.ringOpNorm_le_bound hC fun x ↦ ?_
+  obtain ⟨k, hk⟩ : ∃ k : ℕ, ‖(ϖ.unit : R)‖ ^ k * ‖x‖ < ε := by
+    rcases le_or_gt ‖x‖ 0 with hx | hx
+    · refine ⟨0, lt_of_le_of_lt ?_ hε⟩
+      simpa using hx
+    · obtain ⟨k, hk⟩ := exists_pow_lt_of_lt_one (div_pos hε hx) ϖ.norm_lt_one
+      exact ⟨k, (lt_div_iff₀ hx).mp hk⟩
+  have hmem : ((ϖ.unit ^ (k : ℤ) : Rˣ) : R) • x ∈ ball (0 : E) ε := by
+    rw [mem_ball_zero_iff, ϖ.norm_zpow_smul, zpow_natCast]
+    exact hk
+  have hfk := hf _ hmem
+  rw [map_smul, ϖ.norm_zpow_smul, ϖ.norm_zpow_smul, zpow_natCast] at hfk
+  have hrk : 0 < ‖(ϖ.unit : R)‖ ^ k := pow_pos ϖ.norm_pos k
+  exact le_of_mul_le_mul_left (by simpa [mul_left_comm] using hfk) hrk
+
+/-- Over a Tate ring, if `‖f x‖ ≤ C * ‖x‖` holds in a neighbourhood of `0`, then `‖f‖ ≤ C`. -/
+theorem ringOpNorm_le_of_nhds_zero (f : E →L[R] F) {C : ℝ} (hC : 0 ≤ C)
+    (hf : ∀ᶠ x in 𝓝 (0 : E), ‖f x‖ ≤ C * ‖x‖) :
+    ‖f‖ ≤ C := by
+  obtain ⟨ε, hε, hfε⟩ := Metric.eventually_nhds_iff_ball.mp hf
+  exact f.ringOpNorm_le_of_ball hε hC hfε
+
+end LocalBounds
+
+end ContinuousLinearMap
+
+namespace TauCeti
+
+namespace NormedRing.PseudoUniformizer
+
+variable {R E F : Type*} [SeminormedRing R]
+  [SeminormedAddCommGroup E] [Module R E] [IsBoundedSMul R E]
+  [SeminormedAddCommGroup F] [Module R F] [IsBoundedSMul R F]
+
+/-- **Quantitative local-to-global operator-norm bound.** If `ϖ` is a multiplicative
+pseudo-uniformiser on `R`, `‖(ϖ.unit : R)‖ ^ k < δ`, and `‖f x‖ ≤ B` for every `x` of norm `< δ`,
+then `‖f‖ ≤ B * (‖(ϖ.unit : R)‖ ^ (k + 1))⁻¹`. -/
+theorem ringOpNorm_le_of_forall_norm_lt (ϖ : PseudoUniformizer R) (f : E →L[R] F)
+    {δ B : ℝ} (k : ℤ) (hδ : ‖(ϖ.unit : R)‖ ^ k < δ) (hB : 0 ≤ B)
+    (hf : ∀ x : E, ‖x‖ < δ → ‖f x‖ ≤ B) :
+    ‖f‖ ≤ B * (‖(ϖ.unit : R)‖ ^ (k + 1))⁻¹ := by
+  exact f.ringOpNorm_le_bound (by positivity)
+    (ϖ.bound_of_forall_norm_lt f k hδ hB hf)
+
+end NormedRing.PseudoUniformizer
+
+end TauCeti
+
+namespace ContinuousLinearMap
+
+
 section Ring
 
 variable {R S E F : Type*} [Ring R] [Ring S] {σ : R →+* S}
@@ -350,5 +402,78 @@ theorem ringOpNorm_eq_opNorm {K L E F : Type*} [NontriviallyNormedField K]
     [SeminormedAddCommGroup F] [NormedSpace L F] (f : E →SL[σ] F) :
     ringOpNorm f = opNorm f :=
   (rfl)
+
+end ContinuousLinearMap
+
+/-! ### Finite-free operator bounds -/
+
+namespace LinearMap
+
+variable {R N ι : Type*} [Fintype ι] [DecidableEq ι] [SeminormedRing R]
+  [SeminormedAddCommGroup N] [Module R N] [IsBoundedSMul R N]
+
+/-- Any linear map `f : (ι → R) →ₗ[R] N` on a finite product satisfies the coordinate bound
+`‖f x‖ ≤ (∑ i, ‖f (Pi.single i 1)‖) * ‖x‖`. -/
+theorem norm_pi_apply_le_sum (f : (ι → R) →ₗ[R] N) (x : ι → R) :
+    ‖f x‖ ≤ (∑ i : ι, ‖f (Pi.single i 1)‖) * ‖x‖ := by
+  calc ‖f x‖ = ‖∑ i : ι, x i • f (Pi.single i 1)‖ := by
+         conv_lhs => rw [pi_eq_sum_univ' x, map_sum]
+         simp only [map_smul]
+    _ ≤ ∑ i : ι, ‖x i • f (Pi.single i 1)‖ := norm_sum_le _ _
+    _ ≤ ∑ i : ι, ‖x i‖ * ‖f (Pi.single i 1)‖ := by
+        gcongr with i
+        exact norm_smul_le _ _
+    _ ≤ ∑ i : ι, ‖x‖ * ‖f (Pi.single i 1)‖ := by
+        gcongr with i
+        exact norm_le_pi_norm x i
+    _ = (∑ i : ι, ‖f (Pi.single i 1)‖) * ‖x‖ := by
+        rw [← Finset.mul_sum, mul_comm]
+
+/-- When the target module `N` is ultrametric, any linear map `f : (ι → R) →ₗ[R] N` on a finite
+product is bounded by the supremum of the norms of the images of the standard basis vectors:
+`‖f x‖ ≤ (Finset.univ.sup fun i ↦ ‖f (Pi.single i 1)‖₊) * ‖x‖`. -/
+theorem norm_pi_apply_le_sup [IsUltrametricDist N] (f : (ι → R) →ₗ[R] N)
+    (x : ι → R) :
+    ‖f x‖ ≤ ↑(Finset.univ.sup fun i : ι ↦ ‖f (Pi.single i 1)‖₊) * ‖x‖ := by
+  conv_lhs => rw [pi_eq_sum_univ' x, map_sum]
+  refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (by positivity) fun i hi ↦ ?_
+  calc ‖f (x i • Pi.single i 1)‖
+      = ‖x i • f (Pi.single i 1)‖ := by rw [map_smul]
+    _ ≤ ‖x i‖ * ‖f (Pi.single i 1)‖ := norm_smul_le _ _
+    _ = ‖f (Pi.single i 1)‖ * ‖x i‖ := mul_comm _ _
+    _ ≤ ↑(Finset.univ.sup fun j : ι ↦ ‖f (Pi.single j 1)‖₊) * ‖x‖ := by
+        gcongr
+        · exact_mod_cast Finset.le_sup (f := fun j : ι ↦ ‖f (Pi.single j 1)‖₊) hi
+        · exact norm_le_pi_norm x i
+
+end LinearMap
+
+namespace ContinuousLinearMap
+
+variable {R N ι : Type*} [Fintype ι] [DecidableEq ι] [SeminormedRing R]
+  [SeminormedAddCommGroup N] [IsUltrametricDist N] [Module R N] [IsBoundedSMul R N]
+
+/-- The operator norm of `f : (ι → R) →L[R] N` into an ultrametric module is bounded by the
+supremum of the norms of the images of the standard basis vectors. -/
+theorem ringOpNorm_pi_le_sup (f : (ι → R) →L[R] N) :
+    ‖f‖ ≤ ↑(Finset.univ.sup fun i : ι ↦ ‖f (Pi.single i 1)‖₊) :=
+  f.ringOpNorm_le_bound (by positivity) f.toLinearMap.norm_pi_apply_le_sup
+
+/-- Over a Tate ring, the operator norm of `f : (ι → R) →L[R] N` into an ultrametric module is
+the supremum of the norms of the images of the standard basis vectors `Pi.single i 1`. -/
+theorem ringOpNorm_pi_eq_sup [TauCeti.NormedRing.IsTate R] (f : (ι → R) →L[R] N) :
+    ‖f‖ = ↑(Finset.univ.sup fun i : ι ↦ ‖f (Pi.single i 1)‖₊) := by
+  refine le_antisymm f.ringOpNorm_pi_le_sup ?_
+  have hsup : (Finset.univ.sup fun i : ι ↦ ‖f (Pi.single i 1)‖₊) ≤
+      Real.toNNReal ‖f‖ := by
+    refine Finset.sup_le fun i _ ↦ (Real.le_toNNReal_iff_coe_le f.ringOpNorm_nonneg).mpr ?_
+    have hsingle : ‖(Pi.single i 1 : ι → R)‖ ≤ 1 := by
+      refine (pi_norm_le_iff_of_nonneg zero_le_one).mpr fun j ↦ ?_
+      by_cases hji : j = i <;> simp [hji]
+    calc ‖f (Pi.single i 1)‖
+        ≤ ‖f‖ * ‖(Pi.single i 1 : ι → R)‖ := f.le_ringOpNorm _
+      _ ≤ ‖f‖ * 1 := by gcongr; exact f.ringOpNorm_nonneg
+      _ = ‖f‖ := mul_one _
+  exact (Real.le_toNNReal_iff_coe_le f.ringOpNorm_nonneg).mp hsup
 
 end ContinuousLinearMap
