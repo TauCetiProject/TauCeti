@@ -9,32 +9,51 @@ public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Adjacent.Contract
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Commuting
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Inverse.Forward
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Inverse.Reverse
+public import TauCeti.Algebra.Category.GradedModuleCat.BimoduleTensor.Unit
 public import TauCeti.Algebra.Homology.Bifunctor.Homotopy
 
 /-!
-# Transfer of the zigzag braid relations through a supplied equivalence
+# A monoidal transfer principle for the Khovanov-Seidel braid relations
 
-The zigzag braid complexes satisfy the Khovanov-Seidel relations: the two one-sided
-inverse products are homotopy equivalent to the regular bimodule concentrated in
-cohomological degree zero, the nonadjacent factors commute, and the adjacent factors
-satisfy the braid relation. This file packages the relations for an arbitrary family of
-complexes with prescribed inverses and unit, and transfers them through a supplied
-additive functor on graded modules.
+The zigzag braid complexes satisfy the Khovanov-Seidel relations: the two one-sided inverse
+products are homotopy equivalent to the regular graded bimodule concentrated in cohomological
+degree zero, the nonadjacent factors commute up to chain homotopy, and the adjacent factors
+satisfy the braid relation up to chain homotopy.
 
-The transfer is driven by the pointwise homotopy-monoidal datum `η` of the prolongation
-`Φ` of the additive functor `H` to complexes of graded modules: for every pair of
-complexes `X` and `Y` the datum supplies a homotopy equivalence
-`η X Y : T (Φ X) (Φ Y) ≃ Φ (T X Y)` comparing the prolonged tensor product with the
-prolongation of the tensor product, together with the unit datum `ε : Φ Z₀ ≃ Z₀`
-comparing the prolonged unit complex with the unit complex. With supplied homotopy
-equivalences `a i : Φ (B i) ≃ C i` and `a' i : Φ (B' i) ≃ C' i`, these transfer the
-three Khovanov-Seidel relations to the family `C` with prescribed inverses `C'`.
+This file states those relations for an arbitrary family of complexes in a *graded bimodule
+setting* and proves a transfer principle between two such settings. A graded bimodule setting
+is a graded algebra `A` with an internal grading `Ξ`: its graded bimodules are the graded
+modules over the enveloping grading `Ξ.tensorProduct Ξ.opposite`, they are combined by the
+balanced bimodule tensor `GradedModuleCat.bimoduleTensor Ξ Ξ Ξ`, and the regular graded
+bimodule `GradedModuleCat.bimoduleUnit Ξ` is the unit of that tensor. The setting of the
+zigzag braid complexes is the setting of the zigzag algebra with its signed path-length
+grading; a second setting, over a second graded algebra, is what a transfer reaches.
 
-The pointwise datum `η` records the monoidality of the prolongation up to chain
-homotopy; the braid relation is obtained by applying it twice around the adjacent
-relation. Naturality of the transferred relations up to chain homotopy, which is needed
-to assemble an action of the Artin braid group on a conjugated category, is deliberately
-not claimed here; the action packaging is a separate roadmap layer.
+`KhovanovSeidelRelations` records the three relations for a family `C` of complexes with
+prescribed inverses `C'` in a graded bimodule setting with unit complex `U`.
+
+`KhovanovSeidelRelationsTransfer` is the transfer principle. A functor `H` from a source
+graded bimodule setting to a target graded bimodule setting, together with
+
+* a pointwise homotopy-monoidal datum `η`, a homotopy equivalence for every pair of source
+  complexes `X` and `Y` comparing the target tensor product of the prolonged complexes with
+  the prolongation of the source tensor product, and
+* a unit datum `ε`, a homotopy equivalence comparing the prolonged source unit complex with
+  the target unit complex,
+
+transports the three relations from the source setting to the target setting, provided the
+prolonged source complexes are identified with a target family by the homotopy equivalences
+`a` and `a'`. The two settings need not agree: the target is a second graded algebra, and
+`H` need not be an equivalence.
+
+The monoidal and unit data are hypotheses of this abstract principle, and they are exactly
+what a transfer theorem has to establish in an instantiation. A *Morita* or *derived* transfer,
+in which the target setting is reached through an equivalence of bimodule categories carried
+by a tilting bimodule complex, needs equivalence data between distinct graded algebras and a
+conjugation functor on bimodule complexes; neither exists in this repository yet, and the
+principle is stated so that such a functor can be plugged in once it does. Naturality of the
+transferred relations up to chain homotopy, the derived-Koszul comparison, spherical twists
+and graded-`K₀` statements are out of scope.
 
 ## References
 
@@ -50,51 +69,78 @@ namespace TauCeti
 
 open CategoryTheory CategoryTheory.Limits
 
-universe u w
+universe u w uA uB
 
 variable (k : Type w) [CommRing k] {V : Type u} (G : SimpleGraph V) [Finite V]
 
 attribute [local instance] zigzagAlgebraIntegerGradedAlgebra
 
+local notation "c" => ComplexShape.up ℤ
+
+/-- The category of graded bimodules over the graded algebra `A` with internal grading `Ξ`:
+the graded modules over the enveloping grading `Ξ.tensorProduct Ξ.opposite`. -/
+abbrev GradedBimoduleCat (k : Type w) [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
+    (Ξ : InternalGrading k A) :=
+  GradedModuleCat.{max uA w} (Ξ.tensorProduct Ξ.opposite).piece
+
+/-- The balanced bimodule tensor of the graded bimodule setting of `Ξ`. This is
+`GradedModuleCat.bimoduleTensor Ξ Ξ Ξ`: the tensor of two graded bimodules of the graded
+algebra `A`, balanced over `A` itself. -/
+abbrev GradedBimoduleTensor (k : Type w) [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
+    (Ξ : InternalGrading k A) [GradedAlgebra Ξ.piece] :
+    GradedBimoduleCat k Ξ ⥤ GradedBimoduleCat k Ξ ⥤ GradedBimoduleCat k Ξ :=
+  GradedModuleCat.bimoduleTensor Ξ Ξ Ξ
+
+/-- The unit complex of the graded bimodule setting of `Ξ`: the regular graded bimodule
+`GradedModuleCat.bimoduleUnit Ξ` placed in cohomological degree zero. -/
+noncomputable def GradedBimoduleUnitComplex (k : Type w) [CommRing k] {A : Type uA}
+    [Ring A] [Algebra k A] (Ξ : InternalGrading k A) [GradedAlgebra Ξ.piece] :
+    HomologicalComplex (GradedBimoduleCat k Ξ) c :=
+  (HomologicalComplex.single (GradedBimoduleCat k Ξ) c 0).obj
+    (GradedModuleCat.bimoduleUnit.{w} Ξ)
+
 /-- The regular graded zigzag bimodule concentrated in cohomological degree zero: the
 common target of the two one-sided inverse-product equivalences of the braid family. -/
 abbrev zigzagBraidUnitComplex :
-    HomologicalComplex (GradedModuleCat.{max u w} (zigzagEnvelopingGrading k G).piece)
-      (ComplexShape.up ℤ) :=
+    HomologicalComplex (GradedModuleCat.{max u w} (zigzagEnvelopingGrading k G).piece) c :=
   (HomologicalComplex.single (GradedModuleCat.{max u w} (zigzagEnvelopingGrading k G).piece)
-    (ComplexShape.up ℤ) 0).obj (zigzagGradedBimodule k G)
+    c 0).obj (zigzagGradedBimodule k G)
 
-local notation "F" => zigzagBimoduleTensor k G
-local notation "Z₀" => zigzagBraidUnitComplex k G
-local notation "c" => ComplexShape.up ℤ
-local notation "T" => fun X Y => HomologicalComplex.mapBifunctor X Y F c
-local notation "B" => zigzagBraidComplex k G
-local notation "B'" => zigzagBraidInverseComplex k G
-
-/-- The three Khovanov-Seidel relations for a family `C` of complexes of graded modules
-with prescribed inverses `C'`: both one-sided inverse products `C i ⊗ C' i` and
-`C' i ⊗ C i` are homotopy equivalent to the unit complex, the nonadjacent factors
-commute up to chain homotopy, and the adjacent factors satisfy the braid relation up to
-chain homotopy. -/
+/-- The three Khovanov-Seidel relations for a family `C` of complexes of graded bimodules in
+the graded bimodule setting of `Ξ`, with prescribed inverses `C'` and unit complex `U`: both
+one-sided inverse products `C i ⊗ C' i` and `C' i ⊗ C i` are homotopy equivalent to the unit,
+the nonadjacent factors commute up to chain homotopy, and the adjacent factors satisfy the
+braid relation up to chain homotopy. -/
 structure KhovanovSeidelRelations
-    (C C' : V → HomologicalComplex (GradedModuleCat.{max u w}
-      (zigzagEnvelopingGrading k G).piece) (ComplexShape.up ℤ)) where
+    {A : Type uA} [Ring A] [Algebra k A]
+    (Ξ : InternalGrading k A) [GradedAlgebra Ξ.piece]
+    (U : HomologicalComplex (GradedBimoduleCat k Ξ) c)
+    (C C' : V → HomologicalComplex (GradedBimoduleCat k Ξ) c) where
   /-- The forward inverse product `C i ⊗ C' i` is homotopy equivalent to the unit. -/
-  inverseForward (i : V) : HomotopyEquiv (T (C i) (C' i)) Z₀
+  inverseForward (i : V) : HomotopyEquiv
+    (HomologicalComplex.mapBifunctor (C i) (C' i) (GradedBimoduleTensor k Ξ) c) U
   /-- The reverse inverse product `C' i ⊗ C i` is homotopy equivalent to the unit. -/
-  inverseReverse (i : V) : HomotopyEquiv (T (C' i) (C i)) Z₀
+  inverseReverse (i : V) : HomotopyEquiv
+    (HomologicalComplex.mapBifunctor (C' i) (C i) (GradedBimoduleTensor k Ξ) c) U
   /-- Nonadjacent factors commute up to chain homotopy. -/
-  commute (i j : V) : i ≠ j → ¬ G.Adj i j →
-    HomotopyEquiv (T (C i) (C j)) (T (C j) (C i))
+  commute (i j : V) (hij : i ≠ j) (hadj : ¬ G.Adj i j) : HomotopyEquiv
+    (HomologicalComplex.mapBifunctor (C i) (C j) (GradedBimoduleTensor k Ξ) c)
+    (HomologicalComplex.mapBifunctor (C j) (C i) (GradedBimoduleTensor k Ξ) c)
   /-- Adjacent factors satisfy the braid relation up to chain homotopy. -/
-  braid {i j : V} : G.Adj j i →
-    HomotopyEquiv (T (T (C i) (C j)) (C i)) (T (T (C j) (C i)) (C j))
+  braid {i j : V} (h : G.Adj j i) : HomotopyEquiv
+    (HomologicalComplex.mapBifunctor
+      (HomologicalComplex.mapBifunctor (C i) (C j) (GradedBimoduleTensor k Ξ) c) (C i)
+      (GradedBimoduleTensor k Ξ) c)
+    (HomologicalComplex.mapBifunctor
+      (HomologicalComplex.mapBifunctor (C j) (C i) (GradedBimoduleTensor k Ξ) c) (C j)
+      (GradedBimoduleTensor k Ξ) c)
 
 /-- The zigzag braid complexes satisfy the Khovanov-Seidel relations, with the inverse
-complexes as prescribed inverses and the regular bimodule concentrated in cohomological
+complexes as prescribed inverses and the regular graded bimodule concentrated in cohomological
 degree zero as the unit. -/
 def zigzagBraidComplexRelations :
-    KhovanovSeidelRelations k G (zigzagBraidComplex k G) (zigzagBraidInverseComplex k G) where
+    KhovanovSeidelRelations k G (zigzagAlgebraInternalGrading k G) (zigzagBraidUnitComplex k G)
+      (zigzagBraidComplex k G) (zigzagBraidInverseComplex k G) where
   inverseForward i := zigzagBraidComplexTensorInverseHomotopyEquiv k G i
   inverseReverse i := zigzagBraidInverseTensorComplexHomotopyEquiv k G i
   commute := zigzagBraidComplexTensorCommHomotopyEquiv k G
@@ -102,186 +148,260 @@ def zigzagBraidComplexRelations :
 
 section Transfer
 
-variable (H : GradedModuleCat.{max u w} (zigzagEnvelopingGrading k G).piece ⥤
-  GradedModuleCat.{max u w} (zigzagEnvelopingGrading k G).piece) [H.Additive]
+variable {A₁ : Type uA} [Ring A₁] [Algebra k A₁]
+variable {A₂ : Type uB} [Ring A₂] [Algebra k A₂]
+variable (Ξ₁ : InternalGrading k A₁) [GradedAlgebra Ξ₁.piece]
+variable (Ξ₂ : InternalGrading k A₂) [GradedAlgebra Ξ₂.piece]
+variable (U₁ : HomologicalComplex (GradedBimoduleCat k Ξ₁) c)
+variable (U₂ : HomologicalComplex (GradedBimoduleCat k Ξ₂) c)
+variable (H : GradedBimoduleCat k Ξ₁ ⥤ GradedBimoduleCat k Ξ₂) [H.Additive]
 
-/-- The prolongation of the additive functor `H` on graded zigzag modules to the category
-of complexes of graded zigzag modules. -/
-abbrev zigzagBraidProlongation :
-    HomologicalComplex (GradedModuleCat.{max u w} (zigzagEnvelopingGrading k G).piece) c ⥤
-    HomologicalComplex (GradedModuleCat.{max u w} (zigzagEnvelopingGrading k G).piece) c :=
-  H.mapHomologicalComplex c
+/-- The complex prolonged from `X` by the prolongation of the functor `H` to the complexes of
+the target graded bimodule setting. -/
+abbrev GradedBimoduleProlongation (X : HomologicalComplex (GradedBimoduleCat k Ξ₁) c) :
+    HomologicalComplex (GradedBimoduleCat k Ξ₂) c :=
+  (H.mapHomologicalComplex c).obj X
 
-/-- The complex prolonged from `X` by the prolongation of the additive functor `H`. -/
-abbrev zigzagBraidProlonged (X : HomologicalComplex (GradedModuleCat.{max u w}
-    (zigzagEnvelopingGrading k G).piece) c) :
-    HomologicalComplex (GradedModuleCat.{max u w} (zigzagEnvelopingGrading k G).piece) c :=
-  (zigzagBraidProlongation k G H).obj X
+/-- The pointwise homotopy-monoidal datum of the functor `H` between the source and the target
+graded bimodule setting: for every pair of source complexes `X` and `Y`, a homotopy
+equivalence comparing the target tensor product of the prolonged complexes with the
+prolongation of the source tensor product. -/
+abbrev GradedBimoduleMonoidalDatum :=
+  ∀ (X Y : HomologicalComplex (GradedBimoduleCat k Ξ₁) c),
+    HomotopyEquiv
+      (HomologicalComplex.mapBifunctor (GradedBimoduleProlongation k Ξ₁ Ξ₂ H X)
+        (GradedBimoduleProlongation k Ξ₁ Ξ₂ H Y) (GradedBimoduleTensor k Ξ₂) c)
+      (GradedBimoduleProlongation k Ξ₁ Ξ₂ H
+        (HomologicalComplex.mapBifunctor X Y (GradedBimoduleTensor k Ξ₁) c))
 
-/-- The pointwise homotopy-monoidal datum of the prolongation of `H`: for every pair of
-complexes `X` and `Y` of graded zigzag modules, a homotopy equivalence
-`T (Φ X) (Φ Y) ≃ Φ (T X Y)` comparing the prolonged tensor product with the prolongation
-of the tensor product. -/
-abbrev zigzagBraidMonoidalDatum := ∀ (X Y : HomologicalComplex (GradedModuleCat.{max u w}
-    (zigzagEnvelopingGrading k G).piece) c),
-  [HomologicalComplex.HasMapBifunctor X Y F c] →
-  [HomologicalComplex.HasMapBifunctor (zigzagBraidProlonged k G H X)
-    (zigzagBraidProlonged k G H Y) F c] →
-  HomotopyEquiv (T (zigzagBraidProlonged k G H X) (zigzagBraidProlonged k G H Y))
-    (zigzagBraidProlonged k G H (T X Y))
-
-/-- Transfer of the forward inverse relation of the zigzag braid complexes through the
-supplied equivalences: the tensor product `C i ⊗ C' i` is homotopy equivalent to the
-unit complex. -/
-def zigzagBraidInverseForwardTransfer (i : V)
-    {C C' : V → HomologicalComplex (GradedModuleCat.{max u w}
-      (zigzagEnvelopingGrading k G).piece) c}
-    (η : zigzagBraidMonoidalDatum k G H)
-    (a : ∀ i, HomotopyEquiv (zigzagBraidProlonged k G H (B i)) (C i))
-    (a' : ∀ i, HomotopyEquiv (zigzagBraidProlonged k G H (B' i)) (C' i))
-    (ε : HomotopyEquiv (zigzagBraidProlonged k G H Z₀) Z₀) :
-    HomotopyEquiv (T (C i) (C' i)) Z₀ :=
-  (HomotopyEquiv.mapBifunctor F c (a i).symm (a' i).symm).trans
+/-- Transfer of the forward inverse relation of the source family to the target setting: the
+target tensor product `C i ⊗ C' i` is homotopy equivalent to the target unit complex. -/
+private def transferInverseForward (i : V)
+    {B B' : V → HomologicalComplex (GradedBimoduleCat k Ξ₁) c}
+    {C C' : V → HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
+    (η : GradedBimoduleMonoidalDatum k Ξ₁ Ξ₂ H)
+    (ε : HomotopyEquiv (GradedBimoduleProlongation k Ξ₁ Ξ₂ H U₁) U₂)
+    (rel : KhovanovSeidelRelations k G Ξ₁ U₁ B B')
+    (a : ∀ i, HomotopyEquiv (GradedBimoduleProlongation k Ξ₁ Ξ₂ H (B i)) (C i))
+    (a' : ∀ i, HomotopyEquiv (GradedBimoduleProlongation k Ξ₁ Ξ₂ H (B' i)) (C' i)) :
+    HomotopyEquiv
+      (HomologicalComplex.mapBifunctor (C i) (C' i) (GradedBimoduleTensor k Ξ₂) c) U₂ :=
+  (HomotopyEquiv.mapBifunctor (GradedBimoduleTensor k Ξ₂) c (a i).symm (a' i).symm).trans
     ((η (B i) (B' i)).trans
-      ((H.mapHomotopyEquiv (zigzagBraidComplexTensorInverseHomotopyEquiv k G i)).trans ε))
+      ((H.mapHomotopyEquiv (rel.inverseForward i)).trans ε))
 
-/-- Transfer of the reverse inverse relation of the zigzag braid complexes through the
-supplied equivalences: the tensor product `C' i ⊗ C i` is homotopy equivalent to the
-unit complex. -/
-def zigzagBraidInverseReverseTransfer (i : V)
-    {C C' : V → HomologicalComplex (GradedModuleCat.{max u w}
-      (zigzagEnvelopingGrading k G).piece) c}
-    (η : zigzagBraidMonoidalDatum k G H)
-    (a : ∀ i, HomotopyEquiv (zigzagBraidProlonged k G H (B i)) (C i))
-    (a' : ∀ i, HomotopyEquiv (zigzagBraidProlonged k G H (B' i)) (C' i))
-    (ε : HomotopyEquiv (zigzagBraidProlonged k G H Z₀) Z₀) :
-    HomotopyEquiv (T (C' i) (C i)) Z₀ :=
-  (HomotopyEquiv.mapBifunctor F c (a' i).symm (a i).symm).trans
+/-- Transfer of the reverse inverse relation of the source family to the target setting: the
+target tensor product `C' i ⊗ C i` is homotopy equivalent to the target unit complex. -/
+private def transferInverseReverse (i : V)
+    {B B' : V → HomologicalComplex (GradedBimoduleCat k Ξ₁) c}
+    {C C' : V → HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
+    (η : GradedBimoduleMonoidalDatum k Ξ₁ Ξ₂ H)
+    (ε : HomotopyEquiv (GradedBimoduleProlongation k Ξ₁ Ξ₂ H U₁) U₂)
+    (rel : KhovanovSeidelRelations k G Ξ₁ U₁ B B')
+    (a : ∀ i, HomotopyEquiv (GradedBimoduleProlongation k Ξ₁ Ξ₂ H (B i)) (C i))
+    (a' : ∀ i, HomotopyEquiv (GradedBimoduleProlongation k Ξ₁ Ξ₂ H (B' i)) (C' i)) :
+    HomotopyEquiv
+      (HomologicalComplex.mapBifunctor (C' i) (C i) (GradedBimoduleTensor k Ξ₂) c) U₂ :=
+  (HomotopyEquiv.mapBifunctor (GradedBimoduleTensor k Ξ₂) c (a' i).symm (a i).symm).trans
     ((η (B' i) (B i)).trans
-      ((H.mapHomotopyEquiv (zigzagBraidInverseTensorComplexHomotopyEquiv k G i)).trans ε))
+      ((H.mapHomotopyEquiv (rel.inverseReverse i)).trans ε))
 
-/-- Transfer of the commutation relation of the zigzag braid complexes through the
-supplied equivalences: the tensor products `C i ⊗ C j` and `C j ⊗ C i` are homotopy
-equivalent for nonadjacent vertices. -/
-def zigzagBraidCommuteTransfer (i j : V) (hij : i ≠ j) (hadj : ¬ G.Adj i j)
-    {C : V → HomologicalComplex (GradedModuleCat.{max u w}
-      (zigzagEnvelopingGrading k G).piece) c}
-    (η : zigzagBraidMonoidalDatum k G H)
-    (a : ∀ i, HomotopyEquiv (zigzagBraidProlonged k G H (B i)) (C i)) :
-    HomotopyEquiv (T (C i) (C j)) (T (C j) (C i)) :=
-  (HomotopyEquiv.mapBifunctor F c (a i).symm (a j).symm).trans
+/-- Transfer of the commutation relation of the source family to the target setting: the
+target tensor products `C i ⊗ C j` and `C j ⊗ C i` are homotopy equivalent for nonadjacent
+vertices. -/
+private def transferCommute (i j : V) (hij : i ≠ j) (hadj : ¬ G.Adj i j)
+    {B : V → HomologicalComplex (GradedBimoduleCat k Ξ₁) c}
+    {C : V → HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
+    (η : GradedBimoduleMonoidalDatum k Ξ₁ Ξ₂ H)
+    (rel : KhovanovSeidelRelations k G Ξ₁ U₁ B B')
+    (a : ∀ i, HomotopyEquiv (GradedBimoduleProlongation k Ξ₁ Ξ₂ H (B i)) (C i)) :
+    HomotopyEquiv
+      (HomologicalComplex.mapBifunctor (C i) (C j) (GradedBimoduleTensor k Ξ₂) c)
+      (HomologicalComplex.mapBifunctor (C j) (C i) (GradedBimoduleTensor k Ξ₂) c) :=
+  (HomotopyEquiv.mapBifunctor (GradedBimoduleTensor k Ξ₂) c (a i).symm (a j).symm).trans
     ((η (B i) (B j)).trans
-      ((H.mapHomotopyEquiv (zigzagBraidComplexTensorCommHomotopyEquiv k G i j hij hadj)).trans
+      ((H.mapHomotopyEquiv (rel.commute i j hij hadj)).trans
         (((η (B j) (B i)).symm).trans
-          (HomotopyEquiv.mapBifunctor F c (a j) (a i)))))
+          (HomotopyEquiv.mapBifunctor (GradedBimoduleTensor k Ξ₂) c (a j) (a i)))))
 
-/-- The first conjugation step of the transferred braid relation: the triple tensor
-product of the supplied family `C` is compared with the triple tensor product of the
-prolonged braid complexes. -/
-def zigzagBraidAdjacentLeftConj {i j : V}
-    {C : V → HomologicalComplex (GradedModuleCat.{max u w}
-      (zigzagEnvelopingGrading k G).piece) c}
-    (a : ∀ i, HomotopyEquiv (zigzagBraidProlonged k G H (B i)) (C i)) :
-    HomotopyEquiv (T (T (C i) (C j)) (C i))
-      (T (T (zigzagBraidProlonged k G H (B i)) (zigzagBraidProlonged k G H (B j)))
-        (zigzagBraidProlonged k G H (B i))) :=
-  HomotopyEquiv.mapBifunctor F c
-    (HomotopyEquiv.mapBifunctor F c (a i).symm (a j).symm) (a i).symm
-
-/-- The first bridge step of the transferred braid relation: the prolonged tensor
-product of two prolonged braid complexes is compared with the prolongation of the tensor
-product of the braid complexes. -/
-def zigzagBraidAdjacentBridgeLeft {i j : V}
-    (η : zigzagBraidMonoidalDatum k G H) :
+/-- The first conjugation step of the transferred braid relation: the triple tensor product of
+the target family is compared with the triple tensor product of the prolonged source
+complexes. -/
+private def transferAdjacentLeftConj {i j : V}
+    {B : V → HomologicalComplex (GradedBimoduleCat k Ξ₁) c}
+    {C : V → HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
+    (a : ∀ i, HomotopyEquiv (GradedBimoduleProlongation k Ξ₁ Ξ₂ H (B i)) (C i)) :
     HomotopyEquiv
-      (T (T (zigzagBraidProlonged k G H (B i)) (zigzagBraidProlonged k G H (B j)))
-        (zigzagBraidProlonged k G H (B i)))
-      (zigzagBraidProlonged k G H (T (T (B i) (B j)) (B i))) :=
-  (HomotopyEquiv.mapBifunctor F c (η (B i) (B j))
-    (HomotopyEquiv.refl (zigzagBraidProlonged k G H (B i)))).trans
-    (η (T (B i) (B j)) (B i))
+      (HomologicalComplex.mapBifunctor
+        (HomologicalComplex.mapBifunctor (C i) (C j) (GradedBimoduleTensor k Ξ₂) c) (C i)
+        (GradedBimoduleTensor k Ξ₂) c)
+      (HomologicalComplex.mapBifunctor
+        (HomologicalComplex.mapBifunctor (GradedBimoduleProlongation k Ξ₁ Ξ₂ H (B i))
+          (GradedBimoduleProlongation k Ξ₁ Ξ₂ H (B j)) (GradedBimoduleTensor k Ξ₂) c)
+        (GradedBimoduleProlongation k Ξ₁ Ξ₂ H (B i)) (GradedBimoduleTensor k Ξ₂) c) :=
+  HomotopyEquiv.mapBifunctor (GradedBimoduleTensor k Ξ₂) c
+    (HomotopyEquiv.mapBifunctor (GradedBimoduleTensor k Ξ₂) c (a i).symm (a j).symm)
+    (a i).symm
 
-/-- The middle step of the transferred braid relation: the prolonged adjacent braid
-relation of the zigzag braid complexes. -/
-def zigzagBraidAdjacentMiddle {i j : V} (h : G.Adj j i) :
-    HomotopyEquiv (zigzagBraidProlonged k G H (T (T (B i) (B j)) (B i)))
-      (zigzagBraidProlonged k G H (T (T (B j) (B i)) (B j))) :=
-  H.mapHomotopyEquiv
-    (zigzagBraidComplexAdjacentHomotopyEquiv (k := k) (G := G) (i := i) (j := j) h)
-
-/-- The second bridge step of the transferred braid relation: the prolongation of the
-tensor product of the braid complexes is compared with the tensor product of the
-prolonged braid complexes. -/
-def zigzagBraidAdjacentBridgeRight {i j : V}
-    (η : zigzagBraidMonoidalDatum k G H) :
-    HomotopyEquiv (zigzagBraidProlonged k G H (T (T (B j) (B i)) (B j)))
-      (T (T (zigzagBraidProlonged k G H (B j)) (zigzagBraidProlonged k G H (B i)))
-        (zigzagBraidProlonged k G H (B j))) :=
-  ((HomotopyEquiv.mapBifunctor F c (η (B j) (B i))
-    (HomotopyEquiv.refl (zigzagBraidProlonged k G H (B j)))).trans
-    (η (T (B j) (B i)) (B j))).symm
-
-/-- The last conjugation step of the transferred braid relation: the triple tensor
-product of the prolonged braid complexes is compared with the triple tensor product of
-the supplied family `C`. -/
-def zigzagBraidAdjacentRightConj {i j : V}
-    {C : V → HomologicalComplex (GradedModuleCat.{max u w}
-      (zigzagEnvelopingGrading k G).piece) c}
-    (a : ∀ i, HomotopyEquiv (zigzagBraidProlonged k G H (B i)) (C i)) :
+/-- The first bridge step of the transferred braid relation: the target tensor product of two
+prolonged source complexes is compared with the prolongation of the source tensor product. -/
+private def transferAdjacentBridgeLeft {i j : V}
+    {B : V → HomologicalComplex (GradedBimoduleCat k Ξ₁) c}
+    (η : GradedBimoduleMonoidalDatum k Ξ₁ Ξ₂ H) :
     HomotopyEquiv
-      (T (T (zigzagBraidProlonged k G H (B j)) (zigzagBraidProlonged k G H (B i)))
-        (zigzagBraidProlonged k G H (B j)))
-      (T (T (C j) (C i)) (C j)) :=
-  HomotopyEquiv.mapBifunctor F c
-    (HomotopyEquiv.mapBifunctor F c (a j) (a i)) (a j)
+      (HomologicalComplex.mapBifunctor
+        (HomologicalComplex.mapBifunctor (GradedBimoduleProlongation k Ξ₁ Ξ₂ H (B i))
+          (GradedBimoduleProlongation k Ξ₁ Ξ₂ H (B j)) (GradedBimoduleTensor k Ξ₂) c)
+        (GradedBimoduleProlongation k Ξ₁ Ξ₂ H (B i)) (GradedBimoduleTensor k Ξ₂) c)
+      (GradedBimoduleProlongation k Ξ₁ Ξ₂ H
+        (HomologicalComplex.mapBifunctor
+          (HomologicalComplex.mapBifunctor (B i) (B j) (GradedBimoduleTensor k Ξ₁) c) (B i)
+          (GradedBimoduleTensor k Ξ₁) c)) :=
+  (HomotopyEquiv.mapBifunctor (GradedBimoduleTensor k Ξ₂) c (η (B i) (B j))
+    (HomotopyEquiv.refl (GradedBimoduleProlongation k Ξ₁ Ξ₂ H (B i)))).trans
+    (η (HomologicalComplex.mapBifunctor (B i) (B j) (GradedBimoduleTensor k Ξ₁) c) (B i))
 
-/-- Transfer of the braid relation of the zigzag braid complexes through the supplied
-equivalences: the triple tensor products `C i ⊗ C j ⊗ C i` and `C j ⊗ C i ⊗ C j` are
-homotopy equivalent at adjacent vertices. -/
-def zigzagBraidAdjacentTransfer {i j : V} (h : G.Adj j i)
-    {C : V → HomologicalComplex (GradedModuleCat.{max u w}
-      (zigzagEnvelopingGrading k G).piece) c}
-    (η : zigzagBraidMonoidalDatum k G H)
-    (a : ∀ i, HomotopyEquiv (zigzagBraidProlonged k G H (B i)) (C i)) :
-    HomotopyEquiv (T (T (C i) (C j)) (C i)) (T (T (C j) (C i)) (C j)) :=
-  (zigzagBraidAdjacentLeftConj k G H a).trans
-    ((zigzagBraidAdjacentBridgeLeft k G H η).trans
-      ((zigzagBraidAdjacentMiddle k G H h).trans
-        ((zigzagBraidAdjacentBridgeRight k G H η).trans
-          (zigzagBraidAdjacentRightConj k G H a))))
+/-- The middle step of the transferred braid relation: the prolonged braid relation of the
+source family. -/
+private def transferAdjacentMiddle {i j : V} (h : G.Adj j i)
+    {B B' : V → HomologicalComplex (GradedBimoduleCat k Ξ₁) c}
+    (rel : KhovanovSeidelRelations k G Ξ₁ U₁ B B') :
+    HomotopyEquiv
+      (GradedBimoduleProlongation k Ξ₁ Ξ₂ H
+        (HomologicalComplex.mapBifunctor
+          (HomologicalComplex.mapBifunctor (B i) (B j) (GradedBimoduleTensor k Ξ₁) c) (B i)
+          (GradedBimoduleTensor k Ξ₁) c))
+      (GradedBimoduleProlongation k Ξ₁ Ξ₂ H
+        (HomologicalComplex.mapBifunctor
+          (HomologicalComplex.mapBifunctor (B j) (B i) (GradedBimoduleTensor k Ξ₁) c) (B j)
+          (GradedBimoduleTensor k Ξ₁) c)) :=
+  H.mapHomotopyEquiv (rel.braid h)
 
-/-- Transfer of the Khovanov-Seidel relations of the zigzag braid complexes through a
-supplied equivalence. For an additive functor `H` on graded zigzag modules whose
-prolongation `zigzagBraidProlongation k G H` carries the pointwise homotopy-monoidal
-datum `η` (homotopy equivalences `T (Φ X) (Φ Y) ≃ Φ (T X Y)`), the unit datum
-`ε : Φ Z₀ ≃ Z₀`, and supplied homotopy equivalences `a i : Φ (B i) ≃ C i` and
-`a' i : Φ (B' i) ≃ C' i`, the family `C` satisfies the Khovanov-Seidel relations with
-inverses `C'`. -/
-def zigzagBraidRelationsTransfer
-    (η : zigzagBraidMonoidalDatum k G H)
-    (ε : HomotopyEquiv (zigzagBraidProlonged k G H Z₀) Z₀)
-    {C C' : V → HomologicalComplex (GradedModuleCat.{max u w}
-      (zigzagEnvelopingGrading k G).piece) c}
-    (a : ∀ i, HomotopyEquiv (zigzagBraidProlonged k G H (B i)) (C i))
-    (a' : ∀ i, HomotopyEquiv (zigzagBraidProlonged k G H (B' i)) (C' i)) :
-    KhovanovSeidelRelations k G C C' where
-  inverseForward i := zigzagBraidInverseForwardTransfer k G H i η a a' ε
-  inverseReverse i := zigzagBraidInverseReverseTransfer k G H i η a a' ε
-  commute i j hij hadj := zigzagBraidCommuteTransfer k G H i j hij hadj η a
-  braid h := zigzagBraidAdjacentTransfer k G H h η a
+/-- The second bridge step of the transferred braid relation: the prolongation of the source
+tensor product is compared with the target tensor product of the prolonged source complexes. -/
+private def transferAdjacentBridgeRight {i j : V}
+    {B : V → HomologicalComplex (GradedBimoduleCat k Ξ₁) c}
+    (η : GradedBimoduleMonoidalDatum k Ξ₁ Ξ₂ H) :
+    HomotopyEquiv
+      (GradedBimoduleProlongation k Ξ₁ Ξ₂ H
+        (HomologicalComplex.mapBifunctor
+          (HomologicalComplex.mapBifunctor (B j) (B i) (GradedBimoduleTensor k Ξ₁) c) (B j)
+          (GradedBimoduleTensor k Ξ₁) c))
+      (HomologicalComplex.mapBifunctor
+        (HomologicalComplex.mapBifunctor (GradedBimoduleProlongation k Ξ₁ Ξ₂ H (B j))
+          (GradedBimoduleProlongation k Ξ₁ Ξ₂ H (B i)) (GradedBimoduleTensor k Ξ₂) c)
+        (GradedBimoduleProlongation k Ξ₁ Ξ₂ H (B j)) (GradedBimoduleTensor k Ξ₂) c) :=
+  ((HomotopyEquiv.mapBifunctor (GradedBimoduleTensor k Ξ₂) c (η (B j) (B i))
+    (HomotopyEquiv.refl (GradedBimoduleProlongation k Ξ₁ Ξ₂ H (B j)))).trans
+    (η (HomologicalComplex.mapBifunctor (B j) (B i) (GradedBimoduleTensor k Ξ₁) c) (B j))).symm
 
-/-- The prolongation images of the zigzag braid complexes satisfy the Khovanov-Seidel
-relations: the conjugated version of the transfer theorem, obtained with the identity
-supplied equivalences. -/
-def zigzagBraidComplexProlongationRelations
-    (η : zigzagBraidMonoidalDatum k G H)
-    (ε : HomotopyEquiv (zigzagBraidProlonged k G H Z₀) Z₀) :
-    KhovanovSeidelRelations k G
-      (fun i => zigzagBraidProlonged k G H (B i))
-      (fun i => zigzagBraidProlonged k G H (B' i)) :=
-  zigzagBraidRelationsTransfer k G H η ε (fun _ => HomotopyEquiv.refl _)
-    (fun _ => HomotopyEquiv.refl _)
+/-- The last conjugation step of the transferred braid relation: the triple tensor product of
+the prolonged source complexes is compared with the triple tensor product of the target
+family. -/
+private def transferAdjacentRightConj {i j : V}
+    {B : V → HomologicalComplex (GradedBimoduleCat k Ξ₁) c}
+    {C : V → HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
+    (a : ∀ i, HomotopyEquiv (GradedBimoduleProlongation k Ξ₁ Ξ₂ H (B i)) (C i)) :
+    HomotopyEquiv
+      (HomologicalComplex.mapBifunctor
+        (HomologicalComplex.mapBifunctor (GradedBimoduleProlongation k Ξ₁ Ξ₂ H (B j))
+          (GradedBimoduleProlongation k Ξ₁ Ξ₂ H (B i)) (GradedBimoduleTensor k Ξ₂) c)
+        (GradedBimoduleProlongation k Ξ₁ Ξ₂ H (B j)) (GradedBimoduleTensor k Ξ₂) c)
+      (HomologicalComplex.mapBifunctor
+        (HomologicalComplex.mapBifunctor (C j) (C i) (GradedBimoduleTensor k Ξ₂) c) (C j)
+        (GradedBimoduleTensor k Ξ₂) c) :=
+  HomotopyEquiv.mapBifunctor (GradedBimoduleTensor k Ξ₂) c
+    (HomotopyEquiv.mapBifunctor (GradedBimoduleTensor k Ξ₂) c (a j) (a i)) (a j)
+
+/-- Transfer of the braid relation of the source family to the target setting: the target
+triple tensor products `C i ⊗ C j ⊗ C i` and `C j ⊗ C i ⊗ C j` are homotopy equivalent at
+adjacent vertices. -/
+private def transferAdjacent {i j : V} (h : G.Adj j i)
+    {B B' : V → HomologicalComplex (GradedBimoduleCat k Ξ₁) c}
+    {C : V → HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
+    (η : GradedBimoduleMonoidalDatum k Ξ₁ Ξ₂ H)
+    (rel : KhovanovSeidelRelations k G Ξ₁ U₁ B B')
+    (a : ∀ i, HomotopyEquiv (GradedBimoduleProlongation k Ξ₁ Ξ₂ H (B i)) (C i)) :
+    HomotopyEquiv
+      (HomologicalComplex.mapBifunctor
+        (HomologicalComplex.mapBifunctor (C i) (C j) (GradedBimoduleTensor k Ξ₂) c) (C i)
+        (GradedBimoduleTensor k Ξ₂) c)
+      (HomologicalComplex.mapBifunctor
+        (HomologicalComplex.mapBifunctor (C j) (C i) (GradedBimoduleTensor k Ξ₂) c) (C j)
+        (GradedBimoduleTensor k Ξ₂) c) :=
+  (transferAdjacentLeftConj k Ξ₁ Ξ₂ H a).trans
+    ((transferAdjacentBridgeLeft k Ξ₁ Ξ₂ H η).trans
+      ((transferAdjacentMiddle k G Ξ₁ Ξ₂ U₁ H h rel).trans
+        ((transferAdjacentBridgeRight k Ξ₁ Ξ₂ H η).trans
+          (transferAdjacentRightConj k Ξ₁ Ξ₂ H a))))
+
+/-- Transfer of the Khovanov-Seidel relations of a source family to a target graded bimodule
+setting. Let `H` be an additive functor from the source setting of `Ξ₁` to the target setting
+of `Ξ₂`, let `η` be its pointwise homotopy-monoidal datum comparing the target tensor product
+of prolonged complexes with the prolongation of the source tensor product, and let `ε` compare
+the prolonged source unit complex with the target unit complex. If the source family `B` with
+its inverses `B'` satisfies the Khovanov-Seidel relations in the source setting, and the
+prolonged source complexes are identified with a target family `C` with inverses `C'` by the
+homotopy equivalences `a` and `a'`, then the target family satisfies the Khovanov-Seidel
+relations in the target setting. -/
+def KhovanovSeidelRelationsTransfer
+    (η : GradedBimoduleMonoidalDatum k Ξ₁ Ξ₂ H)
+    (ε : HomotopyEquiv (GradedBimoduleProlongation k Ξ₁ Ξ₂ H U₁) U₂)
+    {B B' : V → HomologicalComplex (GradedBimoduleCat k Ξ₁) c}
+    (rel : KhovanovSeidelRelations k G Ξ₁ U₁ B B')
+    {C C' : V → HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
+    (a : ∀ i, HomotopyEquiv (GradedBimoduleProlongation k Ξ₁ Ξ₂ H (B i)) (C i))
+    (a' : ∀ i, HomotopyEquiv (GradedBimoduleProlongation k Ξ₁ Ξ₂ H (B' i)) (C' i)) :
+    KhovanovSeidelRelations k G Ξ₂ U₂ C C' where
+  inverseForward i := transferInverseForward k G Ξ₁ Ξ₂ U₁ U₂ H i η ε rel a a'
+  inverseReverse i := transferInverseReverse k G Ξ₁ Ξ₂ U₁ U₂ H i η ε rel a a'
+  commute i j hij hadj := transferCommute k G Ξ₁ Ξ₂ U₁ H i j hij hadj η rel a
+  braid h := transferAdjacent k G Ξ₁ Ξ₂ U₁ H h η rel a
 
 end Transfer
+
+section ZigzagTransfer
+
+variable {A : Type uA} [Ring A] [Algebra k A]
+variable (Ξ : InternalGrading k A) [GradedAlgebra Ξ.piece]
+variable (U : HomologicalComplex (GradedBimoduleCat k Ξ) c)
+variable (H : GradedBimoduleCat k (zigzagAlgebraInternalGrading k G) ⥤ GradedBimoduleCat k Ξ)
+  [H.Additive]
+
+/-- Transfer of the Khovanov-Seidel relations of the zigzag braid complexes to a family of
+complexes in a second graded bimodule setting, the setting of the graded algebra `A` with
+internal grading `Ξ` and unit complex `U`. The functor `H` is an additive functor from the
+setting of the zigzag braid complexes to that second setting, `η` is its pointwise
+homotopy-monoidal datum, `ε` compares the prolonged zigzag unit complex with `U`, and `a` and
+`a'` identify the prolonged zigzag braid complexes with the target family. -/
+def zigzagBraidRelationsTransfer
+    (η : GradedBimoduleMonoidalDatum k (zigzagAlgebraInternalGrading k G) Ξ H)
+    (ε : HomotopyEquiv (GradedBimoduleProlongation k (zigzagAlgebraInternalGrading k G) Ξ H
+      (zigzagBraidUnitComplex k G)) U)
+    {C C' : V → HomologicalComplex (GradedBimoduleCat k Ξ) c}
+    (a : ∀ i, HomotopyEquiv (GradedBimoduleProlongation k (zigzagAlgebraInternalGrading k G)
+      Ξ H (zigzagBraidComplex k G i)) (C i))
+    (a' : ∀ i, HomotopyEquiv (GradedBimoduleProlongation k (zigzagAlgebraInternalGrading k G)
+      Ξ H (zigzagBraidInverseComplex k G i)) (C' i)) :
+    KhovanovSeidelRelations k G Ξ U C C' :=
+  KhovanovSeidelRelationsTransfer k G (zigzagAlgebraInternalGrading k G) Ξ
+    (zigzagBraidUnitComplex k G) U H η ε (zigzagBraidComplexRelations k G) a a'
+
+/-- The prolonged zigzag braid complexes satisfy the Khovanov-Seidel relations in the target
+graded bimodule setting: the conjugated version of the transfer theorem, obtained with the
+identity supplied equivalences. -/
+def zigzagBraidProlongedRelations
+    (η : GradedBimoduleMonoidalDatum k (zigzagAlgebraInternalGrading k G) Ξ H)
+    (ε : HomotopyEquiv (GradedBimoduleProlongation k (zigzagAlgebraInternalGrading k G) Ξ H
+      (zigzagBraidUnitComplex k G)) U) :
+    KhovanovSeidelRelations k G Ξ U
+      (fun i => GradedBimoduleProlongation k (zigzagAlgebraInternalGrading k G) Ξ H
+        (zigzagBraidComplex k G i))
+      (fun i => GradedBimoduleProlongation k (zigzagAlgebraInternalGrading k G) Ξ H
+        (zigzagBraidInverseComplex k G i)) :=
+  zigzagBraidRelationsTransfer k G Ξ U H η ε (fun _ => HomotopyEquiv.refl _)
+    (fun _ => HomotopyEquiv.refl _)
+
+end ZigzagTransfer
 
 end TauCeti
