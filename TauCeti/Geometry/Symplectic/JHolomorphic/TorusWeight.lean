@@ -36,9 +36,9 @@ regularity and gives no curve-count interpretation.
 
 * `TauCeti.torusWeightSeries σ i`: the local series `f_(σ, i)`, where `σ = true` stands for a
   positive determinant sign and `σ = false` for a negative one.
-* `TauCeti.torusWeight σ i m`: the local weight `w_(σ, i)(m) = [t ^ m] f_(σ, i)`, with
-  `TauCeti.torusWeight_zero` and the closed forms `TauCeti.torusWeight_true_two`, … restating the
-  coefficient results below for this accessor.
+* `TauCeti.torusWeight σ i m`: the local weight `w_(σ, i)(m) = [t ^ m] f_(σ, i)`. The simp
+  lemma `TauCeti.torusWeight_def` reduces it to the coefficient, so the closed forms below apply
+  to it directly.
 * `TauCeti.coeff_prod_torusWeightSeries`: the weight of a finite configuration of tori with total
   multiplicity `n` is the sum, over all distributions of `n` among the tori, of the products of
   the local weights.
@@ -90,6 +90,7 @@ noncomputable def torusWeight (σ : Bool) (i : Fin 4) (m : ℕ) : ℤ :=
   coeff m (torusWeightSeries σ i)
 
 /-- The local weight `w_(σ, i)(m)` is the `m`-th coefficient of the local series `f_(σ, i)`. -/
+@[simp]
 theorem torusWeight_def (σ : Bool) (i : Fin 4) (m : ℕ) :
     torusWeight σ i m = coeff m (torusWeightSeries σ i) := by
   rw [torusWeight]
@@ -111,7 +112,6 @@ theorem constantCoeff_torusWeightSeries (σ : Bool) (i : Fin 4) :
   cases σ <;> fin_cases i <;> simp [torusWeightSeries, positiveSeries, constantCoeff_invOfUnit]
 
 /-- The multiplicity-zero weight of every torus is `1`. -/
-@[simp]
 theorem torusWeight_zero (σ : Bool) (i : Fin 4) : torusWeight σ i 0 = 1 := by
   simp [torusWeight_def]
 
@@ -290,37 +290,5 @@ theorem coeff_torusWeightSeries_false_three (m : ℕ) :
     all_goals
       simp [pow_succ, pow_mul, coeff_X]
       omega
-
-/-! ### Closed forms for the local weights
-
-The closed forms above, stated for the accessor `torusWeight`. -/
-
-/-- The local weights `w_(+,2)(m)` are `1, 1, -1, -1, 1, 1, …`. -/
-@[simp]
-theorem torusWeight_true_two (m : ℕ) : torusWeight true 2 m = (-1) ^ (m / 2) :=
-  coeff_torusWeightSeries_true_two m
-
-/-- The local weights `w_(+,3)(m)` are `1, 1, -2, -2, 2, 2, …`. -/
-@[simp]
-theorem torusWeight_true_three (m : ℕ) :
-    torusWeight true 3 m = if m ≤ 1 then 1 else 2 * (-1) ^ (m / 2) :=
-  coeff_torusWeightSeries_true_three m
-
-/-- The local weights `w_(-,1)(m)` are `1, -1, 1, -1, …`. -/
-@[simp]
-theorem torusWeight_false_one (m : ℕ) : torusWeight false 1 m = (-1) ^ m :=
-  coeff_torusWeightSeries_false_one m
-
-/-- The local weights `w_(-,2)(m)` are `1, -1, 2, -2, 2, -2, …`. -/
-@[simp]
-theorem torusWeight_false_two (m : ℕ) :
-    torusWeight false 2 m = if m ≤ 1 then (-1) ^ m else 2 * (-1) ^ m :=
-  coeff_torusWeightSeries_false_two m
-
-/-- The local weights `w_(-,3)(m)` are `1, -1, 3, -3, 5, -5, …`. -/
-@[simp]
-theorem torusWeight_false_three (m : ℕ) :
-    torusWeight false 3 m = (-1) ^ m * (2 * ((m / 2 : ℕ) : ℤ) + 1) :=
-  coeff_torusWeightSeries_false_three m
 
 end TauCeti
