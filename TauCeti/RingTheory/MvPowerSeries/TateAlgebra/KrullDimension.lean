@@ -59,11 +59,8 @@ local notation "Tate " σ:max => IsRestricted.subring (R := K) (fun _ : σ ↦ 1
 
 /-- Without variables, the Tate algebra is the coefficient field, of Krull dimension zero. -/
 private theorem ringKrullDim_isRestricted_subring_pEmpty : ringKrullDim (Tate PEmpty) = 0 := by
-  have hsurj : Function.Surjective (algebraMap K (Tate PEmpty)) := fun g ↦ by
-    obtain ⟨r, hr⟩ := C_surjective (σ := PEmpty) (g : MvPowerSeries PEmpty K)
-    exact ⟨r, Subtype.ext (by simpa [coe_algebraMap_isRestrictedSubring] using hr)⟩
-  rw [← ringKrullDim_eq_of_ringEquiv
-    (RingEquiv.ofBijective _ ⟨(algebraMap K (Tate PEmpty)).injective, hsurj⟩)]
+  rw [← ringKrullDim_eq_of_ringEquiv (RingEquiv.ofBijective _
+    ⟨(algebraMap K (Tate PEmpty)).injective, algebraMap_isRestrictedSubring_surjective⟩)]
   exact ringKrullDim_eq_zero_of_field K
 
 variable [CompleteSpace K]
