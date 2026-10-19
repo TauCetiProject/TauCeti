@@ -16,7 +16,8 @@ spaces, it proves that taking the adjoint preserves the operator norm over `ℝ`
 this operation as a linear isometry between operator spaces, and proves the naturality of the
 canonical map into the bidual.
 
-The norm-preservation proof uses Mathlib's canonical bidual isometry
+For normed spaces over `ℝ` or `ℂ`, the adjoint of `T : E →L[𝕜] F`, with its arguments exchanged,
+is the composition of `T` with Mathlib's canonical bidual isometry
 `NormedSpace.inclusionInDoubleDualLi`.
 
 These are the standard functorial properties of the continuous dual; see Rudin,
