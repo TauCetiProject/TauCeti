@@ -180,10 +180,22 @@ instance : LocallyFiniteOrder (NoncrossingPartition s) :=
   letI := decidableLTOfDecidableLE (α := NoncrossingPartition s)
   Fintype.toLocallyFiniteOrder
 
+/-- A noncrossing partition of the empty set is the partition into no parts. -/
+theorem eq_bot_of_eq_empty (hs : s = ∅) (P : NoncrossingPartition s) : P = ⊥ := by
+  have hs : s = ⊥ := hs.trans Finset.bot_eq_empty.symm
+  exact Subtype.ext <| Finpartition.ext <| by
+    rw [Finpartition.parts_eq_empty_iff.2 hs, Finpartition.parts_eq_empty_iff.2 hs]
+
 /-- The partition of the empty set into no parts is its only noncrossing partition. -/
 instance : Unique (NoncrossingPartition (∅ : Finset α)) where
   default := ⊥
-  uniq _ := Subtype.ext <| Subsingleton.elim (α := Finpartition (⊥ : Finset α)) _ _
+  uniq := eq_bot_of_eq_empty rfl
+
+/-- Over an empty type of positions, such as `Fin 0`, the partition into no parts is the only
+noncrossing partition; in particular `NC(0)` has a single element. -/
+instance [IsEmpty α] : Unique (NoncrossingPartition s) where
+  default := ⊥
+  uniq := eq_bot_of_eq_empty s.eq_empty_of_isEmpty
 
 end NoncrossingPartition
 

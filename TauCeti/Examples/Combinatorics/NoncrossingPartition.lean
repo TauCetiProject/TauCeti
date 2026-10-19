@@ -21,6 +21,8 @@ function:
   `{{0}, {2}, {1, 3}}` are;
 * those two noncrossing partitions have the crossing partition `{{0, 2}, {1, 3}}` as a common
   coarsening, but their join among noncrossing partitions is the partition with one part.
+
+A final example checks that `NC(0)`, on the positions of `Fin 0`, has a single element.
 -/
 
 open Finset Finpartition TauCeti
@@ -50,15 +52,8 @@ example (P Q : NoncrossingPartition (univ : Finset (Fin 4))) (hP : 2 ∈ P.1.par
   suffices h : ∀ R : NoncrossingPartition (univ : Finset (Fin 4)), P ≤ R → Q ≤ R → ⊤ ≤ R from
     top_le_iff.1 (h _ le_sup_left le_sup_right)
   intro R hPR hQR
-  -- positions in one part of a finer partition share a part of `R`
-  have hpart {P' : NoncrossingPartition (univ : Finset (Fin 4))} (h : P' ≤ R) {a b : Fin 4}
-      (hab : b ∈ P'.1.part a) : b ∈ R.1.part a := by
-    obtain ⟨C, hC, hPC⟩ :=
-      le_def.1 (Subtype.coe_le_coe.2 h) _ (P'.1.part_mem.2 (mem_univ a))
-    rw [R.1.part_eq_of_mem hC (hPC (P'.1.mem_part_self.2 (mem_univ a)))]
-    exact hPC hab
-  have h02 : 2 ∈ R.1.part 0 := hpart hPR hP
-  have h13 : 3 ∈ R.1.part 1 := hpart hQR hQ
+  have h02 : 2 ∈ R.1.part 0 := part_mono (Subtype.coe_le_coe.2 hPR) 0 hP
+  have h13 : 3 ∈ R.1.part 1 := part_mono (Subtype.coe_le_coe.2 hQR) 1 hQ
   have h01 := isNoncrossing_iff_part.1 R.2 0 (mem_univ _) 1 (mem_univ _) 2 h02 3 h13
     (by decide) (by decide) (by decide)
   refine Subtype.coe_le_coe.1 <| le_def.2 fun B hB =>
@@ -71,3 +66,6 @@ example (P Q : NoncrossingPartition (univ : Finset (Fin 4))) (hP : 2 ∈ P.1.par
   · exact h01 ▸ R.1.mem_part_self.2 (mem_univ _)
   · exact h02
   · exact h01 ▸ h13
+
+-- `NC(0)` consists of the empty partition alone.
+example : Unique (NoncrossingPartition (univ : Finset (Fin 0))) := inferInstance

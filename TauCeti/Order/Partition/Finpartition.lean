@@ -20,7 +20,8 @@ of the top element into an element and its complement, the decidability of the r
 the single part of the coarsest partition of a non-bottom element, the partition of a type into the
 fibres of a map to a finite type, the associated indexed partition, cardinality bounds for common
 refinements, the refinement relations of `Finpartition.bind` and of a refining partition's parts,
-the behavior of intersections of parts under refinement, and the coarse parent
+the behavior of intersections of parts under refinement, the monotonicity of `Finpartition.part`
+under refinement, and the coarse parent
 `Finpartition.refinementParent` of a part of a finer partition, together with decomposition and
 summation formulas for the fine parts below a coarse part.
 -/
@@ -236,6 +237,14 @@ theorem sum_apply_part {M : Type*} [AddCommMonoid M] (P : Finpartition s) (f : F
   ext x
   simp only [Finset.mem_filter, P.part_eq_iff_mem hA, and_iff_right_iff_imp]
   exact fun hx => P.le hA hx
+
+/-- Refining a partition shrinks the part containing each point. -/
+theorem part_mono (h : P ≤ Q) (a : α) : P.part a ⊆ Q.part a := by
+  by_cases ha : a ∈ s
+  · obtain ⟨C, hC, hPC⟩ := h (P.part_mem.2 ha)
+    rw [Q.part_eq_of_mem hC (hPC (P.mem_part_self.2 ha))]
+    exact hPC
+  · simp [P.part_eq_empty.2 ha]
 
 /-- A coarse part is the disjoint union of the fine parts whose coarse parent it is. -/
 theorem biUnion_filter_refinementParent_eq (h : Q ≤ P) (A : P.parts) :
