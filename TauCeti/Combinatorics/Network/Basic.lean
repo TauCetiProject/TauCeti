@@ -59,17 +59,20 @@ abbrev Assignment {K : Type w} {V : Type u} [LE K] (N : Network K V) (R : Type*)
   lower_le_upper := hcapacity
 
 /-- The arrow family of an ordinary network is its supplied arrow family. -/
+@[simp]
 theorem ofCapacity_Hom {K : Type w} {V : Type u} [Zero K] [LE K]
     (Hom : V → V → Type v) (capacity : TauCeti.Assignment Hom K)
     (hcapacity : ∀ {x y} (e : Hom x y), 0 ≤ capacity e) :
     (ofCapacity Hom capacity hcapacity).Hom = Hom := rfl
 
+@[simp]
 theorem ofCapacity_lower {K : Type w} {V : Type u} [Zero K] [LE K]
     (Hom : V → V → Type v) (capacity : TauCeti.Assignment Hom K)
     (hcapacity : ∀ {x y} (e : Hom x y), 0 ≤ capacity e) {x y}
     (e : (ofCapacity Hom capacity hcapacity).Hom x y) :
     (ofCapacity Hom capacity hcapacity).lower e = 0 := rfl
 
+@[simp]
 theorem ofCapacity_upper {K : Type w} {V : Type u} [Zero K] [LE K]
     (Hom : V → V → Type v) (capacity : TauCeti.Assignment Hom K)
     (hcapacity : ∀ {x y} (e : Hom x y), 0 ≤ capacity e) {x y}
