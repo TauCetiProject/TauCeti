@@ -8,7 +8,6 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.LowRank.Six.SpecialLinear
 public import TauCeti.RepresentationTheory.Spin.HalfSpin.Standard
 import TauCeti.RepresentationTheory.Spin.Exceptional.Six.HalfSpinDual
-import TauCeti.RepresentationTheory.Intertwining
 
 /-!
 # The standard half-spin modules in dimension six
@@ -51,28 +50,6 @@ variable [NeZero (2 : K)]
 local instance hyperbolicSixStandardInvertibleTwo : Invertible (2 : K) :=
   invertibleOfNonzero (NeZero.ne (2 : K))
 
-private theorem exists_hyperbolicSix_spinPlus_equiv_stdSLRep :
-    Nonempty
-      ((spinPlusSubrep (splitEvenPolarization K 3)
-        (splitEvenPolarization_line K 3)).toRepresentation.Equiv
-          ((stdSLRep K 4).comp (hyperbolicSixSpinEquivSpecialLinear K).toMonoidHom)) := by
-  let P := splitEvenPolarization K 3
-  let hline := splitEvenPolarization_line K 3
-  let hW := splitEvenPolarization_W_ne_bot K (by norm_num : (3 : ℕ) ≠ 0)
-  let hV := finrank_splitEvenSpace K 3
-  let b := Module.finBasisOfFinrankEq K (spinPlus (splitEvenForm K 3) P)
-    (finrank_hyperbolicSixSpinPlus K)
-  let hWfin : finrank K P.W = 3 := by
-    simp [P]
-  have hmatrix := fun s ↦ coe_spinGroupEquivSpecialLinearGroupOfFinrankEqSix_apply P hline hWfin hW
-    (finrank_hyperbolicSixSpinPlus K) hV b rfl s
-  obtain ⟨eplus⟩ := nonempty_spinPlusSubrep_equiv_stdSLRep_of_matrix_action hline b
-    (hyperbolicSixSpinEquivSpecialLinear K).toMonoidHom (by exact hmatrix)
-  obtain ⟨eplus, _⟩ :=
-    nonempty_spinPlusSubrep_equiv_and_spinMinusSubrep_equiv_dual P hV hline
-      ((stdSLRep K 4).comp (hyperbolicSixSpinEquivSpecialLinear K).toMonoidHom) ⟨eplus⟩
-  exact eplus
-
 /-- For three hyperbolic planes, the even half-spin representation is the standard
 four-dimensional representation pulled back along `hyperbolicSixSpinEquivSpecialLinear`, and the
 odd half-spin representation is its dual. -/
@@ -88,11 +65,23 @@ theorem nonempty_hyperbolicSix_halfSpin_equiv_stdSLRep_and_dual :
             (Representation.dual
               ((stdSLRep K 4).comp
                 (hyperbolicSixSpinEquivSpecialLinear K).toMonoidHom))) := by
-  obtain ⟨eplus⟩ := exists_hyperbolicSix_spinPlus_equiv_stdSLRep K
-  exact nonempty_spinPlusSubrep_equiv_and_spinMinusSubrep_equiv_dual
-    (splitEvenPolarization K 3)
-    ((finrank_splitEvenSpace K 3).trans (by norm_num : (2 : ℕ) * 3 = 6))
-    (splitEvenPolarization_line K 3)
-    ((stdSLRep K 4).comp (hyperbolicSixSpinEquivSpecialLinear K).toMonoidHom) ⟨eplus⟩
+  let P := splitEvenPolarization K 3
+  let hline := splitEvenPolarization_line K 3
+  let hW := splitEvenPolarization_W_ne_bot K (by norm_num : (3 : ℕ) ≠ 0)
+  let hV := finrank_splitEvenSpace K 3
+  let b := Module.finBasisOfFinrankEq K (spinPlus (splitEvenForm K 3) P)
+    (finrank_hyperbolicSixSpinPlus K)
+  let hWfin : finrank K P.W = 3 := by simp [P]
+  have hmatrix := fun s ↦
+    coe_spinGroupEquivSpecialLinearGroupOfFinrankEqSix_apply P hline hWfin hW
+      (finrank_hyperbolicSixSpinPlus K) hV b rfl s
+  obtain ⟨eplus⟩ := nonempty_spinPlusSubrep_equiv_stdSLRep_of_matrix_action hline b
+    (hyperbolicSixSpinEquivSpecialLinear K).toMonoidHom (by exact hmatrix)
+  let heplus : Nonempty ((spinPlusSubrep P hline).toRepresentation.Equiv
+      ((stdSLRep K 4).comp (hyperbolicSixSpinEquivSpecialLinear K).toMonoidHom)) := ⟨eplus⟩
+  obtain ⟨eminus⟩ := nonempty_spinMinusSubrep_equiv_dual_of_spinPlusSubrep_equiv P
+    ((finrank_splitEvenSpace K 3).trans (by norm_num : (2 : ℕ) * 3 = 6)) hline
+    ((stdSLRep K 4).comp (hyperbolicSixSpinEquivSpecialLinear K).toMonoidHom) heplus
+  exact ⟨heplus, ⟨eminus⟩⟩
 
 end TauCeti

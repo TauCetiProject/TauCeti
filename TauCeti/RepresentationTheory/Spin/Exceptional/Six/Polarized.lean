@@ -8,7 +8,6 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.LowRank.Six.SpecialLinear
 public import TauCeti.RepresentationTheory.ClassicalGroups.Restriction
 public import TauCeti.RepresentationTheory.Spin.Exceptional.Six.HalfSpinDual
-import TauCeti.RepresentationTheory.Intertwining
 import TauCeti.RepresentationTheory.Spin.HalfSpin.Standard
 
 /-!
@@ -29,7 +28,7 @@ half-spin identifications taken along the same equivalence `f : spinGroup Q ≃*
   from two identifies its Spin group with `SL₄`, its even half-spin representation with the
   standard module, and its odd half-spin representation with the dual standard module.
 * The theorem
-  `exists_polarized_spinEquivSix_and_halfSpin_std_dual`
+  `exists_spinPolarizationData_and_spinGroupEquivSpecialLinear_and_halfSpin_equiv_stdSLRep_and_dual`
   says that over a separably closed field of characteristic different from two, a nondegenerate
   six-dimensional quadratic space admits such a polarization and comparison.
 
@@ -83,16 +82,17 @@ theorem
     nonempty_spinPlusSubrep_equiv_stdSLRep_of_matrix_action hline b φ.toMonoidHom
       (fun s ↦ coe_spinGroupEquivSpecialLinearGroupOfFinrankEqSix_apply P hline hWfin hW hplus hV b
         hb s)
-  obtain ⟨eplus, eminus⟩ :=
-    nonempty_spinPlusSubrep_equiv_and_spinMinusSubrep_equiv_dual P hV hline
-      ((stdSLRep K 4).comp φ.toMonoidHom) ⟨eplus⟩
-  exact ⟨hline, φ, eplus, eminus⟩
+  let heplus : Nonempty ((spinPlusSubrep P hline).toRepresentation.Equiv
+      ((stdSLRep K 4).comp φ.toMonoidHom)) := ⟨eplus⟩
+  obtain ⟨eminus⟩ := nonempty_spinMinusSubrep_equiv_dual_of_spinPlusSubrep_equiv P hV hline
+    ((stdSLRep K 4).comp φ.toMonoidHom) heplus
+  exact ⟨hline, φ, heplus, ⟨eminus⟩⟩
 
 /-- A nondegenerate six-dimensional quadratic space over a separably closed field with `2 ≠ 0`
 admits a polarization and an equivalence from its Spin group to `SL₄` under which the half-spin
 representations are the standard module and its dual. -/
 theorem
-    exists_polarized_spinEquivSix_and_halfSpin_std_dual
+    exists_spinPolarizationData_and_spinGroupEquivSpecialLinear_and_halfSpin_equiv_stdSLRep_and_dual
     [NeZero (2 : K)] [IsSepClosed K] (hQ : Q.Nondegenerate) (hV : finrank K V = 6) :
     ∃ P : SpinPolarizationData Q, ∃ hline : P.line = ⊥,
       ∃ f : spinGroup Q ≃* Matrix.SpecialLinearGroup (Fin 4) K,
