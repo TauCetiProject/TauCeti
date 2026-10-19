@@ -273,6 +273,7 @@ theorem ideleClassConductor_top :
   Modulus.eq_one_of_dvd_one (ideleClassConductor_dvd_iff.mpr le_top)
 
 /-- **The conductor of an intersection is the least common multiple of the conductors.** -/
+@[simp]
 theorem ideleClassConductor_inf (U V : OpenSubgroup (IdeleClassGroup (𝓞 K) K)) :
     (U ⊓ V).ideleClassConductor = U.ideleClassConductor.lcm V.ideleClassConductor :=
   Modulus.dvd_antisymm
