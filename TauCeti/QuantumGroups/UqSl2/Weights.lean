@@ -131,12 +131,7 @@ theorem exists_eq_zero_of_forall_mem_weightSpace {p : ℂ} (hp : IsGenericQuantu
   intro n m hnm
   have hp' : p ^ (2 * n) = p ^ (2 * m) := by
     simpa only [ev, ← pow_mul, mul_left_inj' hmu] using congrArg Subtype.val hnm
-  let u : ℂˣ := Units.mk0 p hp.ne_zero
-  have hu : ¬IsOfFinOrder u := by
-    rw [isOfFinOrder_iff_pow_eq_one]
-    rintro ⟨r, hr, hu⟩
-    exact hp.pow_ne_one hr (congrArg Units.val hu)
-  have := (injective_pow_iff_not_isOfFinOrder.mpr hu) (Units.ext hp' : u ^ (2 * n) = u ^ (2 * m))
+  have := hp.pow_injective hp'
   omega
 
 /-- At a generic parameter, the raising string through any weight vector terminates. -/

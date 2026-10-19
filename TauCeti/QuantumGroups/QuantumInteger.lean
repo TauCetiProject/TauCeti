@@ -84,6 +84,11 @@ theorem inv {q : K} (hq : IsGenericQuantumParameter q) : IsGenericQuantumParamet
 
 end IsGenericQuantumParameter
 
+/-- If `q - q⁻¹` is nonzero, then so is `q`. -/
+theorem ne_zero_of_sub_inv_ne_zero {q : K} (hq : q - q⁻¹ ≠ 0) : q ≠ 0 := by
+  rintro rfl
+  simp at hq
+
 /-- The symmetric quantum integer `[r]_q = (q^r - q⁻ʳ) / (q - q⁻¹)`. -/
 noncomputable def quantumInteger (q : K) (r : ℤ) : K :=
   (q ^ r - q ^ (-r)) / (q - q⁻¹)
@@ -121,10 +126,7 @@ theorem quantumInteger_def (q : K) (r : ℤ) :
 integers. -/
 theorem quantumInteger_natCast_succ {q : K} (hq : q - q⁻¹ ≠ 0) (n : ℕ) :
     quantumInteger q (n + 1) = q⁻¹ * quantumInteger q n + q ^ n := by
-  have hq0 : q ≠ 0 := by
-    intro h
-    subst q
-    simp at hq
+  have hq0 := ne_zero_of_sub_inv_ne_zero hq
   simp only [quantumInteger]
   rw [zpow_add₀ hq0]
   have hneg_succ : -((n : ℤ) + 1) = -(n : ℤ) + -1 := by omega
@@ -139,10 +141,7 @@ theorem quantumInteger_natCast_succ {q : K} (hq : q - q⁻¹ ≠ 0) (n : ℕ) :
 `[n]_q = q^(1-n) + q^(3-n) + ⋯ + q^(n-1)`. -/
 theorem quantumInteger_natCast_eq_sum {q : K} (hq : q - q⁻¹ ≠ 0) (n : ℕ) :
     quantumInteger q n = ∑ j ∈ Finset.range n, q ^ (2 * (j : ℤ) + 1 - (n : ℤ)) := by
-  have hq0 : q ≠ 0 := by
-    intro h
-    subst q
-    simp at hq
+  have hq0 := ne_zero_of_sub_inv_ne_zero hq
   have hterm : ∀ j ∈ Finset.range n,
       q ^ (2 * (j : ℤ) + 1 - (n : ℤ)) = q ^ j * q⁻¹ ^ (n - 1 - j) := by
     intro j hj
@@ -158,10 +157,7 @@ theorem quantumInteger_add_one (q : K) (r : ℤ) :
       (q + q⁻¹) * quantumInteger q r - quantumInteger q (r - 1) := by
   by_cases hq : q - q⁻¹ = 0
   · simp [quantumInteger, hq]
-  have hq0 : q ≠ 0 := by
-    intro h
-    subst q
-    simp at hq
+  have hq0 := ne_zero_of_sub_inv_ne_zero hq
   simp only [quantumInteger]
   rw [zpow_add₀ hq0, zpow_sub₀ hq0]
   have hneg_add_one : -(r + 1) = -r + -1 := by omega
@@ -180,9 +176,7 @@ theorem quantumInteger_sub (q : K) (a b : ℤ) :
         quantumInteger q (a + 1) * quantumInteger q b := by
   by_cases hq : q - q⁻¹ = 0
   · simp [quantumInteger, hq]
-  have hq0 : q ≠ 0 := by
-    rintro rfl
-    simp at hq
+  have hq0 := ne_zero_of_sub_inv_ne_zero hq
   have h2 : q ^ 2 - 1 ≠ 0 := by
     intro h
     apply hq

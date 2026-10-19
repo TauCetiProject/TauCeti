@@ -81,8 +81,10 @@ private theorem commute_k_casimir : Commute (k q) (casimir q) := by
         rw [← one_mul (e 0), ← kInv_mul_k, mul_assoc, k_mul_e]
         simp
       simp [he]
-    · rw [Commute, SemiconjBy, ← mul_assoc, k_mul_f, smul_mul_assoc, mul_assoc, k_mul_e,
-        mul_smul_comm, smul_smul, ← mul_pow, inv_mul_cancel₀ hq, one_pow, one_smul, mul_assoc]
+    · rw [Commute, SemiconjBy, ← mul_assoc]
+      simp only [k_mul_f, k_mul_e, smul_mul_assoc, mul_smul_comm, smul_smul, mul_assoc]
+      match_scalars
+      field_simp
   have hkInv : Commute (k q) (kInv q) := by
     rw [Commute, SemiconjBy, k_mul_kInv, kInv_mul_k]
   rw [casimir_def]
@@ -100,9 +102,7 @@ private theorem commute_e_casimir : Commute (e q) (casimir q) := by
   all_goals
     rcases eq_or_ne (q - q⁻¹) 0 with hd | hd
     · simp [hd]
-    · have hq : q ≠ 0 := by
-        rintro rfl
-        simp at hd
+    · have hq := ne_zero_of_sub_inv_ne_zero hd
       field_simp
       ring
 
@@ -119,43 +119,13 @@ private theorem commute_f_casimir : Commute (f q) (casimir q) := by
   all_goals
     rcases eq_or_ne (q - q⁻¹) 0 with hd | hd
     · simp [hd]
-    · have hq : q ≠ 0 := by
-        rintro rfl
-        simp at hd
+    · have hq := ne_zero_of_sub_inv_ne_zero hd
       field_simp
       ring
 
 /-- Every element of `UqSl2 q` commutes with the Casimir element. -/
-theorem commute_casimir (a : UqSl2 q) : Commute a (casimir q) := by
-  -- The centralizer `C` of `Ω` contains the four generators, so the universal property gives an
-  -- algebra map `UqSl2 q → C` which is a section of the inclusion.
-  let C := Subalgebra.centralizer ℂ {casimir q}
-  have mem {x : UqSl2 q} (hx : Commute x (casimir q)) : x ∈ C :=
-    (Subalgebra.mem_centralizer_iff ℂ).mpr fun _ hy => by rw [Set.mem_singleton_iff.mp hy, hx.eq]
-  have hkInv : Commute (kInv q) (casimir q) := by
-    simpa using (show Commute (kUnit q : UqSl2 q) (casimir q) by
-      simpa using commute_k_casimir).units_inv_left
-  let x : GeneratorTuple q C :=
-    { e := ⟨e q, mem commute_e_casimir⟩
-      f := ⟨f q, mem commute_f_casimir⟩
-      k := ⟨k q, mem commute_k_casimir⟩
-      kInv := ⟨kInv q, mem hkInv⟩
-      k_mul_kInv := Subtype.ext k_mul_kInv
-      kInv_mul_k := Subtype.ext kInv_mul_k
-      k_mul_e := Subtype.ext k_mul_e
-      k_mul_f := Subtype.ext k_mul_f
-      e_mul_f_sub_f_mul_e := Subtype.ext e_mul_f_sub_f_mul_e }
-  have hx : C.val.comp (lift x) = AlgHom.id ℂ (UqSl2 q) := by
-    have h := liftEquiv.apply_symm_apply x
-    rw [liftEquiv_symm_apply] at h
-    apply hom_ext
-    · simpa [x] using congrArg (fun y => (y.e : UqSl2 q)) h
-    · simpa [x] using congrArg (fun y => (y.f : UqSl2 q)) h
-    · simpa [x] using congrArg (fun y => (y.k : UqSl2 q)) h
-    · simpa [x] using congrArg (fun y => (y.kInv : UqSl2 q)) h
-  have ha : (lift x a : UqSl2 q) = a := congrArg (· a) hx
-  rw [← ha]
-  exact ((Subalgebra.mem_centralizer_iff ℂ).mp (lift x a).2 _ rfl).symm
+theorem commute_casimir (a : UqSl2 q) : Commute a (casimir q) :=
+  commute_of_commute_generators commute_e_casimir commute_f_casimir commute_k_casimir a
 
 /-- The Casimir element is central in `UqSl2 q`. -/
 theorem casimir_mem_center : casimir q ∈ Subalgebra.center ℂ (UqSl2 q) :=
