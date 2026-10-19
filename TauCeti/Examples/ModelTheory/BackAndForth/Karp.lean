@@ -19,7 +19,7 @@ sentence asserting a least element holds in the first and fails in the second.
 The converse holds at any common carrier, not only `M ⊕ N`: for countable structures the carrier
 `ℕ` gives Karp's theorem for `L_{ω₁ω}`, and for empty structures the empty carrier suffices. Two
 empty structures that differ on a nullary relation are separated by that relation, at every
-carrier.
+carrier in every universe.
 -/
 
 universe u
@@ -70,21 +70,27 @@ example {L : Language} [L.IsRelational] {M N : Type*} [L.Structure M] [L.Structu
     (IndexCoding.ofEquiv (Equiv.equivEmpty N))
 
 -- Two empty structures that differ on a nullary relation disagree on the sentence consisting of
--- that relation, at every carrier, so they are not potentially isomorphic.
-example (κ : Type) :
-    letI L : Language := ⟨fun _ => Empty, fun k => PLift (k = 0)⟩
-    letI : L.Structure Empty := ⟨fun f => Empty.elim f, fun _ _ => True⟩
-    letI : L.Structure (ULift.{0} Empty) := ⟨fun f => Empty.elim f, fun _ _ => False⟩
-    ¬ InfEquivAt (L := L) κ Empty (ULift.{0} Empty) ∧
-      ¬ InfEquivW (L := L) Empty (ULift.{0} Empty) := by
-  let L : Language := ⟨fun _ => Empty, fun k => PLift (k = 0)⟩
-  let _ : L.Structure Empty := ⟨fun f => Empty.elim f, fun _ _ => True⟩
-  let _ : L.Structure (ULift.{0} Empty) := ⟨fun f => Empty.elim f, fun _ _ => False⟩
-  have hsep (κ : Type) : ¬ InfEquivAt (L := L) κ Empty (ULift.{0} Empty) := fun h => by
-    have := (infEquivAt_iff.1 h) (.rel (⟨rfl⟩ : L.Relations 0) Fin.elim0)
-    simp only [SentenceInf.realize_def, FormulaInf.realize_def,
-      BoundedFormulaInf.realize_rel] at this
-    exact this.1 trivial
-  exact ⟨hsep κ, fun h => hsep _ (infEquivW_iff.1 h Empty)⟩
+-- that relation, at every carrier in every universe.
+example (κ : Type u) :
+    let L : Language := ⟨fun _ => Empty, fun k => PLift (k = 0)⟩
+    let _ : L.Structure Empty := ⟨fun f => Empty.elim f, fun _ _ => True⟩
+    let _ : L.Structure (ULift.{0} Empty) := ⟨fun f => Empty.elim f, fun _ _ => False⟩
+    ¬ InfEquivAt (L := L) κ Empty (ULift.{0} Empty) := by
+  intro L _ _ h
+  have := infEquivAt_iff_forall_realize.1 h (.rel (⟨rfl⟩ : L.Relations 0) Fin.elim0)
+  simp only [BoundedFormulaInf.realize_rel] at this
+  exact this.1 trivial
+
+-- Hence the same structures are not fully infinitarily equivalent, nor potentially isomorphic.
+example :
+    let L : Language := ⟨fun _ => Empty, fun k => PLift (k = 0)⟩
+    let _ : L.Structure Empty := ⟨fun f => Empty.elim f, fun _ _ => True⟩
+    let _ : L.Structure (ULift.{0} Empty) := ⟨fun f => Empty.elim f, fun _ _ => False⟩
+    ¬ InfEquivW (L := L) Empty (ULift.{0} Empty) := by
+  intro L _ _ h
+  have := infEquivAt_iff_forall_realize.1 (infEquivW_iff.1 h Empty)
+    (.rel (⟨rfl⟩ : L.Relations 0) Fin.elim0)
+  simp only [BoundedFormulaInf.realize_rel] at this
+  exact this.1 trivial
 
 end TauCeti
