@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import Mathlib.LinearAlgebra.Trace
 -- Private: the `changeForm`, constant-term, monomial and dimension lemmas below are used only
 -- inside proofs.
+import TauCeti.Algebra.CharP.Invertible
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
 import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 import TauCeti.LinearAlgebra.CliffordAlgebra.Monomials
@@ -138,27 +139,21 @@ theorem scalarTrace_reverse (x : CliffordAlgebra Q) :
   rw [scalarTrace_apply, equivExterior_reverse, ExteriorAlgebra.algebraMapInv_reverse,
     scalarTrace_apply]
 
-/-- In a ring in which `2` is invertible, an element equal to its own negative is zero. -/
-private theorem eq_zero_of_eq_neg {a : R} (h : a = -a) : a = 0 := by
-  have h2 : (2 : R) * a = 0 := by linear_combination h
-  have h' := congrArg (⅟2 * ·) h2
-  simpa only [invOf_mul_cancel_left, mul_zero] using h'
-
 /-- The scalar part of an odd element is zero. -/
 theorem scalarTrace_eq_zero_of_mem_evenOdd_one {x : CliffordAlgebra Q} (hx : x ∈ evenOdd Q 1) :
     scalarTrace Q x = 0 :=
-  eq_zero_of_eq_neg <| by rw [← map_neg, ← involute_eq_of_mem_odd hx, scalarTrace_involute]
+  TauCeti.eq_zero_of_eq_neg_of_invertible_two (R := R) <| by
+    rw [← map_neg, ← involute_eq_of_mem_odd hx, scalarTrace_involute]
 
 /-- A generator can be moved from the left to the right of `x` without changing the scalar part:
 both scalar parts are minus the constant term of contracting `equivExterior Q x` against
 `QuadraticMap.associated (-Q) m`, once from the left and once from the right. -/
 private theorem scalarTrace_ι_mul (m : M) (x : CliffordAlgebra Q) :
     scalarTrace Q (ι Q m * x) = scalarTrace Q (x * ι Q m) := by
-  have hflip : (QuadraticMap.associated (-Q)).flip m = QuadraticMap.associated (-Q) m :=
-    LinearMap.ext fun n => QuadraticMap.associated_isSymm R (-Q) n m
   simp only [scalarTrace_apply, equivExterior, changeFormEquiv_apply, changeForm_ι_mul,
-    changeForm_mul_ι, hflip, map_sub, map_mul, ExteriorAlgebra.algebraMapInv_ι, zero_mul,
-    mul_zero, ExteriorAlgebra.algebraMapInv_contractRight]
+    changeForm_mul_ι, QuadraticMap.associated_flip, map_sub, map_mul,
+    ExteriorAlgebra.algebraMapInv_ι, zero_mul, mul_zero,
+    ExteriorAlgebra.algebraMapInv_contractRight]
 
 /-- **Cyclicity of the scalar part**: `τ (x * y) = τ (y * x)`. -/
 theorem scalarTrace_mul_comm (x y : CliffordAlgebra Q) :
@@ -178,7 +173,7 @@ private theorem apply_ι_mul_prod_eq_zero (f : CliffordAlgebra Q →ₗ[R] R)
     (hmul : ∀ x y, f (x * y) = f (y * x)) (hinv : ∀ x, f (involute x) = f x)
     {a : M} {l : List M} (h : ∀ x ∈ l, Q.IsOrtho x a) :
     f (ι Q a * (l.map (ι Q)).prod) = 0 := by
-  refine eq_zero_of_eq_neg ?_
+  refine TauCeti.eq_zero_of_eq_neg_of_invertible_two (R := R) ?_
   rcases Nat.even_or_odd l.length with he | ho
   · have hprod := involute_prod_map_ι (Q := Q) (a :: l)
     rw [List.map_cons, List.prod_cons, List.length_cons, pow_succ, he.neg_one_pow, one_mul,

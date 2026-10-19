@@ -198,13 +198,13 @@ theorem changeForm_involute (x : CliffordAlgebra Q) :
 `QuadraticMap.associated (-Q)`. -/
 theorem changeForm_reverse (hB : B.IsSymm) (x : CliffordAlgebra Q) :
     changeForm h (reverse x) = reverse (changeForm h x) := by
-  have hflip : ∀ a : M, B.flip a = B a := fun a => LinearMap.ext fun n => hB.eq n a
   induction x using CliffordAlgebra.left_induction with
   | algebraMap r => simp
   | add x y hx hy => simp only [map_add, hx, hy]
   | ι_mul x a hx =>
     rw [reverse.map_mul, reverse_ι, changeForm_mul_ι, hx, changeForm_ι_mul, map_sub,
-      reverse.map_mul, reverse_ι, hflip, contractRight_eq, reverse_reverse]
+      reverse.map_mul, reverse_ι, (LinearMap.isSymm_iff_eq_flip.mp hB).symm,
+      contractRight_eq, reverse_reverse]
 
 end changeForm
 
