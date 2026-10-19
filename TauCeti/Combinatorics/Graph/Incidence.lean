@@ -262,35 +262,37 @@ theorem incidentEdges_mono {S T : Finset G.vertexSet} (hST : S ⊆ T) :
   rintro ⟨x, hx, hex⟩
   exact ⟨x, hST hx, hex⟩
 
-omit [Fintype G.edgeSet] in
-private theorem card_eq_ncard_of_image_val {s : Finset G.edgeSet} {A : Set β}
-    (hA : A ⊆ G.edgeSet) (h : ∀ e : G.edgeSet, e ∈ s ↔ e.1 ∈ A) :
-    s.card = A.ncard := by
-  rw [← Set.ncard_coe_finset,
-    ← Set.ncard_image_of_injective (↑s : Set G.edgeSet) Subtype.val_injective]
-  congr 1
-  ext e
-  constructor
-  · rintro ⟨e', he', rfl⟩
-    exact (h e').mp he'
-  · intro he
-    exact ⟨⟨e, hA he⟩, (h ⟨e, hA he⟩).mpr he, rfl⟩
-
 /-- The cardinality of the finite incident-edge set of a singleton is its incidence count. -/
 theorem card_incidentEdges_singleton (x : G.vertexSet) :
     (G.incidentEdges {x}).card = G.incidenceCount x.1 := by
   rw [incidenceCount]
-  apply G.card_eq_ncard_of_image_val (G.incidenceSet_subset_edgeSet x.1)
-  intro e
-  simp
+  rw [← Set.ncard_coe_finset]
+  calc
+    (↑(G.incidentEdges {x}) : Set G.edgeSet).ncard =
+        {e : G.edgeSet | e.1 ∈ G.incidenceSet x.1}.ncard := by
+      congr 1
+      ext e
+      simp
+    _ = (G.incidenceSet x.1 ∩ G.edgeSet).ncard :=
+      Set.ncard_subtype (fun e ↦ e ∈ G.edgeSet) (G.incidenceSet x.1)
+    _ = (G.incidenceSet x.1).ncard := by
+      rw [inter_eq_left.mpr (G.incidenceSet_subset_edgeSet x.1)]
 
 /-- The number of internal edges of a singleton is the number of loops at its vertex. -/
 theorem card_internalEdges_singleton (x : G.vertexSet) :
     (G.internalEdges {x}).card = (G.loopSet x.1).ncard := by
-  apply G.card_eq_ncard_of_image_val
-    ((G.loopSet_subset_incidenceSet x.1).trans (G.incidenceSet_subset_edgeSet x.1))
-  intro e
-  simp
+  rw [← Set.ncard_coe_finset]
+  calc
+    (↑(G.internalEdges {x}) : Set G.edgeSet).ncard =
+        {e : G.edgeSet | e.1 ∈ G.loopSet x.1}.ncard := by
+      congr 1
+      ext e
+      simp
+    _ = (G.loopSet x.1 ∩ G.edgeSet).ncard :=
+      Set.ncard_subtype (fun e ↦ e ∈ G.edgeSet) (G.loopSet x.1)
+    _ = (G.loopSet x.1).ncard := by
+      rw [inter_eq_left.mpr <|
+        (G.loopSet_subset_incidenceSet x.1).trans (G.incidenceSet_subset_edgeSet x.1)]
 
 end
 
