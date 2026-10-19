@@ -11,13 +11,13 @@ public import Mathlib.RingTheory.LocalProperties.IntegrallyClosed
 /-!
 # Integrally closed sections of affine opens
 
-If the ring of sections over a nonempty affine open `V` is a domain, it is integrally closed as
+If the ring of sections over an affine open `V` is a domain, it is integrally closed as
 soon as the local rings at the points of `V` are: its localizations at maximal ideals are local
 rings of the scheme at points of `V`.
 
 ## Main results
 
-* `AlgebraicGeometry.IsAffineOpen.isIntegrallyClosed`: a domain of sections over a nonempty affine
+* `AlgebraicGeometry.IsAffineOpen.isIntegrallyClosed`: a domain of sections over an affine
   open is integrally closed when its local rings are.
 * `TauCeti.AlgebraicGeometry.isDomain_and_isIntegrallyClosed_stalk_iff_of_isOpenImmersion`: open
   immersions preserve the domain and integral-closure conditions on stalks.
@@ -53,11 +53,11 @@ namespace AlgebraicGeometry
 
 variable {T : Scheme.{u}}
 
-/-- The domain of sections over a nonempty affine open `V` is integrally closed if the local rings
+/-- The domain of sections over an affine open `V` is integrally closed if the local rings
 at the points of `V` are: its localizations at maximal ideals are local rings of the scheme at
 points of `V`. -/
 theorem IsAffineOpen.isIntegrallyClosed {V : T.Opens} [IsDomain Γ(T, V)] (hV : IsAffineOpen V)
-    [Nonempty V] (hT : ∀ x ∈ V, IsIntegrallyClosed (T.presheaf.stalk x)) :
+    (hT : ∀ x ∈ V, IsIntegrallyClosed (T.presheaf.stalk x)) :
     IsIntegrallyClosed Γ(T, V) := by
   refine IsIntegrallyClosed.of_localization_maximal fun P _ _ ↦ ?_
   let y : PrimeSpectrum Γ(T, V) := ⟨P, inferInstance⟩
