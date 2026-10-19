@@ -103,9 +103,7 @@ pair, on relative cubical chains**, descended from `TauCeti.SubspaceCubeDeformat
 def relEndHomotopy : Homotopy (𝟙 _) (D.relEndChainMap R) :=
   Homotopy.descCokernel (D.endHomotopy R) ((normalizedCubicalChainComplex R).map P.map)
     (cokernel.π _) (cokernel.π _)
-    (fun m ↦ by
-      simpa only [HomologicalComplex.comp_f, HomologicalComplex.zero_f] using
-        congrArg (fun (φ : _ ⟶ P.cubicalChainComplex R) ↦ φ.f m) (cokernel.condition _))
+    (P.cubicalChainComplex_condition_f R)
     (fun m ↦ isColimitOfHasCokernelOfPreservesColimit
       (HomologicalComplex.eval (ModuleCat R) (ComplexShape.down ℕ) m) _)
     (D.map_comp_endHomotopy_hom_comp_π R) (by simp) (D.π_relEndChainMap R)
@@ -127,13 +125,10 @@ theorem relEndChainMap_f_eq_zero {m : ℕ} (hm : (m : ℕ∞) < n) : (D.relEndCh
     ← HomologicalComplex.comp_f, π_relEndChainMap, comp_zero]
   ext g
   obtain ⟨a, ha⟩ := D.endChain_mem_range_map R P.isEmbedding_map.isInducing hm g
-  have h₀ : ((normalizedCubicalChainComplex R).map P.map).f m ≫
-      (cokernel.π ((normalizedCubicalChainComplex R).map P.map)).f m = 0 := by
-    rw [← HomologicalComplex.comp_f, cokernel.condition, HomologicalComplex.zero_f]
   exact (congrArg
     (ModuleCat.Hom.hom ((cokernel.π ((normalizedCubicalChainComplex R).map P.map)).f m))
     ((D.endChainMap_f_apply R m g).trans ha.symm)).trans
-      (LinearMap.congr_fun (congrArg ModuleCat.Hom.hom h₀) a)
+      congr(ModuleCat.Hom.hom $(P.cubicalChainComplex_condition_f R m) a)
 
 include D in
 /-- **Relative cubical homology vanishes below the dimension bound of a deformation into the

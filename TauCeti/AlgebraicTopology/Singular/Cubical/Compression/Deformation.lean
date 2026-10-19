@@ -363,10 +363,11 @@ structure SubspaceCubeDeformation where
 attribute [simp] SubspaceCubeDeformation.homotopy_zero SubspaceCubeDeformation.homotopy_insertNth
   SubspaceCubeDeformation.homotopy_of_range_subset
 
-/-- **Every singular cube deforms into a compressible subspace.** If every singular cube of `X` of
-dimension less than `n` with boundary in `A` is homotopic, relative to the boundary of the cube, to
-a cube with values in `A`, then there is a deformation of the singular cubes of `X` into `A` below
-dimension `n`, compatible with faces and degeneracies and fixing the cubes with values in `A`. -/
+/-- **The singular cubes deform into a subspace compressible below dimension `n`.** If every
+singular cube of `X` of dimension less than `n` with boundary in `A` is homotopic, relative to the
+boundary of the cube, to a cube with values in `A`, then there is a deformation of the singular
+cubes of `X` into `A` below dimension `n`, compatible with faces and degeneracies and fixing the
+cubes with values in `A`. -/
 def subspaceCubeDeformation : SubspaceCubeDeformation A n where
   homotopy {m} c := (levels hA m).homotopy c
   homotopy_zero {m} c y := (levels hA m).homotopy_zero c y
