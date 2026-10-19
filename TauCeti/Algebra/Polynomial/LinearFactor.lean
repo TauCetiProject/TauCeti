@@ -112,13 +112,13 @@ theorem Monic.exists_eq_X_sub_C_pow_mul_of_nextCoeff_eq_zero {K : Type*} [Field 
     ((irreducible_X_sub_C a).coprime_iff_not_dvd.2 hdvd).pow_left, hgh⟩
   -- If `r = m`, then `g = (X - a) ^ m`, whose coefficient of `X ^ (m - 1)` is `-m * a`.
   by_contra hr
-  have hrm : g.natDegree = r := by
-    have := hh.natDegree_eq_zero.1 (by omega)
-    omega
-  rw [hh.natDegree_eq_zero.1 (by omega), mul_one] at hgh
+  have hrm : g.natDegree = r := by omega
+  have h1 : h = 1 := hh.natDegree_eq_zero.1 (by omega)
+  rw [h1, mul_one] at hgh
   have : (r : K) * a = 0 := by
-    rw [← neg_eq_zero, ← mul_neg, ← nsmul_eq_mul, ← nextCoeff_X_sub_C,
-      ← (monic_X_sub_C a).nextCoeff_pow, ← hgh, hnext]
+    have := (monic_X_sub_C a).nextCoeff_pow r
+    rw [← hgh, hnext, nextCoeff_X_sub_C, nsmul_eq_mul, mul_neg, eq_comm, neg_eq_zero] at this
+    exact this
   obtain rfl : a = 0 := (mul_eq_zero.1 this).resolve_left (hrm ▸ hm)
   exact hX (by rw [hrm, hgh, map_zero, sub_zero])
 

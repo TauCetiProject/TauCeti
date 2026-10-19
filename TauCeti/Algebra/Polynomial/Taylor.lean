@@ -101,8 +101,7 @@ theorem nextCoeff_taylor (p : R[X]) (r : R) :
     natDegree_taylor, taylor_coeff, eval_eq_sum_range' h2]
   simp only [Finset.sum_range_succ, Finset.sum_range_zero, hasseDeriv_coeff, zero_add, pow_zero,
     pow_one, Nat.choose_self, Nat.cast_one, one_mul, mul_one, leadingCoeff]
-  rw [show 1 + (p.natDegree - 1) = p.natDegree by omega,
-    Nat.choose_symm_of_eq_add (show p.natDegree = p.natDegree - 1 + 1 by omega),
+  rw [Nat.add_sub_of_le h, Nat.choose_symm_of_eq_add (Nat.sub_add_cancel h).symm,
     Nat.choose_one_right]
   ring
 

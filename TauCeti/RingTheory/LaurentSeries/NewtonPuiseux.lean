@@ -142,14 +142,15 @@ theorem exists_monic_map_eq_scaleRoots_map_expand {P : R⸨X⸩[X]} (hP : P.Moni
   set m := P.natDegree with hm
   obtain ⟨j₀, hj₀m, hj₀, hslope⟩ := exists_slope_le hP hX
   set q : ℕ+ := ⟨m - j₀, by omega⟩
-  have hq : ((q : ℕ) : ℤ) = ((m - j₀ : ℕ) : ℤ) := rfl
+  have hq : ((q : ℕ) : ℤ) = ((m - j₀ : ℕ) : ℤ) := congrArg _ (PNat.mk_coe _ _)
   set v := (P.coeff j₀).order
   -- The coefficients of the ramified and rescaled polynomial `T`.
   set T := (P.map (expand R q)).scaleRoots (single (-v) 1 : R⸨X⸩)
   have hT : ∀ j, T.coeff j = single (-((m - j : ℕ) * v)) 1 * expand R q (P.coeff j) := by
     intro j
     rw [coeff_scaleRoots, coeff_map, hP.natDegree_map, single_pow, one_pow, ← hm, nsmul_eq_mul,
-      mul_neg, mul_comm, RingHom.coe_coe]
+      mul_neg, RingHom.coe_coe]
+    exact mul_comm _ _
   have hlifts : T ∈ lifts (ofPowerSeries ℤ R) := by
     refine (lifts_iff_coeff_lifts T).2 fun j ↦ mem_range_ofPowerSeries_iff.2 fun n hn ↦ ?_
     rw [hT]
