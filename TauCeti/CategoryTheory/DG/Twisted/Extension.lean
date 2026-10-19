@@ -272,21 +272,25 @@ extension, the form in which it appears in the matrix entries of morphisms out o
 extension; `simp` does not see through this projection to the entry lemmas of
 `TauCeti.DGTwistedObject.extensionTwist`. -/
 
-private theorem dgHomEquiv_twist_extension_inl_inl (i j : P.obj.ι) :
+@[simp↓]
+theorem dgHomEquiv_twist_extension_inl_inl (i j : P.obj.ι) :
     matrixEquiv R _ _ 1 (extension P Q g hg).twist (.inl i) (.inl j) =
       matrixEquiv R _ _ 1 P.twist i j :=
   dgHomEquiv_extensionTwist_inl_inl R P Q g i j
 
-private theorem dgHomEquiv_twist_extension_inl_inr (i : P.obj.ι) (j : Q.obj.ι) :
+@[simp↓]
+theorem dgHomEquiv_twist_extension_inl_inr (i : P.obj.ι) (j : Q.obj.ι) :
     matrixEquiv R _ _ 1 (extension P Q g hg).twist (.inl i) (.inr j) = 0 :=
   dgHomEquiv_extensionTwist_inl_inr R P Q g i j
 
-private theorem dgHomEquiv_twist_extension_inr_inl (i : Q.obj.ι) (j : P.obj.ι) :
+@[simp↓]
+theorem dgHomEquiv_twist_extension_inr_inl (i : Q.obj.ι) (j : P.obj.ι) :
     matrixEquiv R _ _ 1 (extension P Q g hg).twist (.inr i) (.inl j) =
       matrixEquiv R _ _ 1 (dgHomEquiv R Q P 1 g) i j :=
   dgHomEquiv_extensionTwist_inr_inl R P Q g i j
 
-private theorem dgHomEquiv_twist_extension_inr_inr (i j : Q.obj.ι) :
+@[simp↓]
+theorem dgHomEquiv_twist_extension_inr_inr (i j : Q.obj.ι) :
     matrixEquiv R _ _ 1 (extension P Q g hg).twist (.inr i) (.inr j) =
       matrixEquiv R _ _ 1 Q.twist i j :=
   dgHomEquiv_extensionTwist_inr_inr R P Q g i j

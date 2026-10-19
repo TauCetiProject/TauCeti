@@ -118,19 +118,16 @@ theorem dgHomEquiv_twist_cone_inr_inl (u u' : PUnit) :
   exact dgHomEquiv_coneMorphism R f u u'
 
 /-- The block of the twisting matrix of the cone on `Y[0]` vanishes. -/
-@[simp↓]
 theorem dgHomEquiv_twist_cone_inl_inl (u u' : PUnit) :
     matrixEquiv R _ _ 1 (cone f hf).twist (.inl u) (.inl u') = 0 := by
   rw [dgHomEquiv_extensionTwist_inl_inl, map_zero, Pi.zero_apply, Pi.zero_apply]
 
 /-- The block of the twisting matrix of the cone from `Y[0]` to `X[1]` vanishes. -/
-@[simp↓]
 theorem dgHomEquiv_twist_cone_inl_inr (u u' : PUnit) :
     matrixEquiv R _ _ 1 (cone f hf).twist (.inl u) (.inr u') = 0 := by
   rw [dgHomEquiv_extensionTwist_inl_inr]
 
 /-- The block of the twisting matrix of the cone on `X[1]` vanishes. -/
-@[simp↓]
 theorem dgHomEquiv_twist_cone_inr_inr (u u' : PUnit) :
     matrixEquiv R _ _ 1 (cone f hf).twist (.inr u) (.inr u') = 0 := by
   rw [dgHomEquiv_extensionTwist_inr_inr, map_zero, Pi.zero_apply, Pi.zero_apply]
