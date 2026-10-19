@@ -5,8 +5,8 @@ Authors: Taylor Dupuy, Thomas Tucker, Zhuoran Wang
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant
 public import TauCeti.AlgebraicGeometry.Morphisms.CodimensionOne.Basic
-import Mathlib.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant
 import TauCeti.RingTheory.KrullDimension.FiniteType
 
 /-!
@@ -14,15 +14,18 @@ import TauCeti.RingTheory.KrullDimension.FiniteType
 
 A finite dominant morphism of integral schemes sends codimension-one points to
 codimension-one points when its target is locally of finite type over a field.
-More generally, it preserves the coheight of every point.
+More generally, a finite scheme-theoretically dominant morphism from an integral
+scheme preserves the coheight of every point when its target is locally of finite
+type over a field.
 No normality or global Noetherian hypothesis is required. The coheight-one
 specialization supplies the preservation hypothesis for mapping codimension-one
 points with `AlgebraicGeometry.Scheme.Hom.codimensionOneMap`.
 
 ## Main results
 
-* `AlgebraicGeometry.Scheme.Hom.coheight_apply_eq`: a finite dominant morphism of
-  integral schemes with target locally of finite type over a field preserves coheight.
+* `AlgebraicGeometry.Scheme.Hom.coheight_apply_eq`: a finite scheme-theoretically dominant
+  morphism from an integral scheme with target locally of finite type over a field
+  preserves coheight.
 * `AlgebraicGeometry.Scheme.Hom.coheight_apply_eq_one`: the image of a point of
   coheight one has coheight one. It supplies the preservation hypothesis of
   `AlgebraicGeometry.Scheme.Hom.codimensionOneMap`.
@@ -49,12 +52,12 @@ universe u
 
 namespace AlgebraicGeometry.Scheme.Hom
 
-/-- A finite dominant morphism of integral schemes whose target is locally of finite type over
-a field preserves the coheight of every point. -/
+/-- A finite scheme-theoretically dominant morphism from an integral scheme whose target is
+locally of finite type over a field preserves the coheight of every point. -/
 theorem coheight_apply_eq {X Y : Scheme.{u}} (morphism : X ⟶ Y)
     (field : Type u) [Field field]
     (structureMap : Y ⟶ Spec (.of field)) [LocallyOfFiniteType structureMap]
-    [IsFinite morphism] [IsDominant morphism] [IsIntegral X] [IsIntegral Y]
+    [IsFinite morphism] [IsSchemeTheoreticallyDominant morphism] [IsIntegral X]
     (point : X) : coheight (morphism point) = coheight point := by
   obtain ⟨_, ⟨targetOpen, htargetOpen, rfl⟩, htargetPoint, -⟩ :=
     Y.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ (morphism point)) isOpen_univ
@@ -73,8 +76,6 @@ theorem coheight_apply_eq {X Y : Scheme.{u}} (morphism : X ⟶ Y)
   algebraize [chartMap.hom, (morphism.app targetOpen).hom]
   have : Module.Finite Γ(Y, targetOpen) Γ(X, sourceOpen) :=
     morphism.finite_app targetOpen htargetOpen
-  have : IsSchemeTheoreticallyDominant morphism :=
-    IsSchemeTheoreticallyDominant.of_isDominant morphism
   have : FaithfulSMul Γ(Y, targetOpen) Γ(X, sourceOpen) :=
     (faithfulSMul_iff_algebraMap_injective _ _).mpr (morphism.app_injective targetOpen)
   let sourcePrime : Spec Γ(X, sourceOpen) :=
@@ -104,6 +105,8 @@ theorem coheight_apply_eq_one {X Y : Scheme.{u}} (morphism : X ⟶ Y)
     (structureMap : Y ⟶ Spec (.of field)) [LocallyOfFiniteType structureMap]
     [IsFinite morphism] [IsDominant morphism] [IsIntegral X] [IsIntegral Y]
     (point : X) (hpoint : coheight point = 1) : coheight (morphism point) = 1 := by
+  have : IsSchemeTheoreticallyDominant morphism :=
+    IsSchemeTheoreticallyDominant.of_isDominant morphism
   rw [morphism.coheight_apply_eq field structureMap, hpoint]
 
 end AlgebraicGeometry.Scheme.Hom
