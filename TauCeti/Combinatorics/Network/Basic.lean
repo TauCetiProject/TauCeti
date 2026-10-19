@@ -48,7 +48,9 @@ namespace Network
 abbrev Assignment {K : Type w} {V : Type u} [LE K] (N : Network K V) (R : Type*) :=
   TauCeti.Assignment N.Hom R
 
-/-- Construct an ordinary network with zero lower bounds from nonnegative capacities. -/
+/-- Construct an ordinary network with zero lower bounds from nonnegative capacities.
+
+This is exposed so that its dependent arrow family reduces in the exported projection lemmas. -/
 @[expose, reducible] def ofCapacity {K : Type w} {V : Type u} [Zero K] [LE K]
     (Hom : V → V → Type v)
     (capacity : TauCeti.Assignment Hom K)
