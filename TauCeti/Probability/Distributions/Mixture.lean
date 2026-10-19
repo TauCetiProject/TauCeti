@@ -16,11 +16,10 @@ public import TauCeti.Probability.Density
 /-!
 # Probability mixtures
 
-This file supplies distribution-level formulas for measures mixed through kernels.  Cumulative
-distribution functions, moment-generating functions, and characteristic functions are the
-corresponding integrals of the component quantities under their natural hypotheses.  It also
-connects a jointly measurable family of component densities to `HasPDF` and the Radon--Nikodym
-derivative of the mixed law.
+This file supplies distribution-level formulas for mixtures of measurable families of measures.
+Cumulative distribution functions, moment-generating functions, and characteristic functions are
+the corresponding integrals of the component quantities under their natural hypotheses.  It also
+connects a jointly measurable family of component densities to `HasPDF`.
 
 The density results allow the component presentation to hold only almost everywhere for the
 mixing measure.  This is useful for kernels whose values away from the valid parameter set are an
@@ -28,15 +27,16 @@ arbitrary measurable extension.
 
 ## Main results
 
-* `ProbabilityTheory.Kernel.cdf_comp` computes the cdf of a real-valued probability mixture.
+* `MeasureTheory.Measure.cdf_bind` computes the cdf of a real-valued probability mixture whose
+  components are probability measures almost everywhere.
 * `ProbabilityTheory.Kernel.mem_integrableExpSet_comp_iff` characterizes the exact exponential
   integrability domain by an iterated nonnegative integral.
 * `ProbabilityTheory.Kernel.mgf_comp`, `ProbabilityTheory.Kernel.cgf_comp`, and
   `ProbabilityTheory.Kernel.charFun_comp` express its transforms in terms of the components.
+* `MeasureTheory.Measure.charFun_bind` gives characteristic-function linearity under almost
+  everywhere component hypotheses.
 * `TauCeti.Probability.hasPDF_of_hasLaw_bind_withDensity` gives the density interface for a random
   variable whose law is a mixture of densities.
-* `MeasureTheory.Measure.rnDeriv_bind_withDensity` identifies the corresponding
-  Radon--Nikodym derivative.
 -/
 
 public section
@@ -47,6 +47,46 @@ open MeasureTheory ProbabilityTheory Set
 
 open scoped ENNReal
 
+namespace MeasureTheory.Measure
+
+variable {A : Type*} [MeasurableSpace A]
+
+/-- The cdf of a mixture of real probability laws is the integral of their cdfs. -/
+theorem cdf_bind (rho : Measure A) [IsProbabilityMeasure rho]
+    (K : A → Measure ℝ) (hK : AEMeasurable K rho)
+    (hprob : ∀ᵐ a ∂rho, IsProbabilityMeasure (K a)) (x : ℝ) :
+    cdf (rho.bind K) x = ∫ a, cdf (K a) x ∂rho := by
+  let _ : IsProbabilityMeasure (rho.bind K) := isProbabilityMeasure_bind hK hprob
+  rw [cdf_eq_real, measureReal_def, bind_apply measurableSet_Iic hK,
+    ← integral_toReal (f := fun a ↦ K a (Iic x))
+      ((Measure.measurable_coe measurableSet_Iic).comp_aemeasurable hK)
+      (hprob.mono fun a ha ↦ by
+        let _ := ha
+        exact measure_lt_top (K a) (Iic x))]
+  apply integral_congr_ae
+  filter_upwards [hprob] with a ha
+  let _ := ha
+  rw [← measureReal_def, cdf_eq_real]
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [MeasurableSpace E] [BorelSpace E]
+
+/-- The characteristic function of a probability mixture is the integral of the component
+characteristic functions when the components are probability measures almost everywhere. -/
+theorem charFun_bind (rho : Measure A) [IsProbabilityMeasure rho]
+    (K : A → Measure E) (hK : AEMeasurable K rho)
+    (hprob : ∀ᵐ a ∂rho, IsProbabilityMeasure (K a)) (t : E) :
+    charFun (rho.bind K) t = ∫ a, charFun (K a) t ∂rho := by
+  let _ : IsProbabilityMeasure (rho.bind K) := isProbabilityMeasure_bind hK hprob
+  have hInt : Integrable (fun x : E ↦ Complex.exp (inner ℝ x t * Complex.I)) (rho.bind K) :=
+    (integrable_const (1 : ℂ)).mono (by fun_prop) <| by
+      filter_upwards with x
+      simp
+  rw [charFun_apply, integral_bind rho hK hInt]
+  simp_rw [charFun_apply]
+
+end MeasureTheory.Measure
+
 namespace ProbabilityTheory.Kernel
 
 variable {A : Type*} [MeasurableSpace A]
@@ -55,11 +95,8 @@ variable {A : Type*} [MeasurableSpace A]
 theorem cdf_comp (kappa : Kernel A ℝ) [IsMarkovKernel kappa]
     (rho : Measure A) [IsProbabilityMeasure rho] (x : ℝ) :
     cdf (kappa ∘ₘ rho) x = ∫ a, cdf (kappa a) x ∂rho := by
-  rw [cdf_eq_real, measureReal_def,
-    Measure.bind_apply measurableSet_Iic kappa.aemeasurable,
-    ← integral_toReal (kappa.measurable_coe measurableSet_Iic).aemeasurable
-      (ae_of_all rho fun a ↦ measure_lt_top (kappa a) (Iic x))]
-  simp_rw [← measureReal_def, cdf_eq_real]
+  exact Measure.cdf_bind rho kappa kappa.aemeasurable
+    (ae_of_all rho fun _ ↦ inferInstance) x
 
 /-- Exponential integrability under a mixture is equivalent to finiteness of the iterated
 nonnegative exponential integral.  This formulation remains meaningful before passing to real
@@ -84,9 +121,7 @@ theorem mgf_comp (kappa : Kernel A ℝ) (rho : Measure A) (t : ℝ)
     (ht : t ∈ integrableExpSet id (kappa ∘ₘ rho)) :
     mgf id (kappa ∘ₘ rho) t = ∫ a, mgf id (kappa a) t ∂rho := by
   unfold ProbabilityTheory.mgf
-  rw [Measure.comp_eq_comp_const_apply] at ht ⊢
-  rw [integral_comp (κ := Kernel.const Unit rho) (η := kappa) (a := ()) ht,
-    Kernel.const_apply]
+  exact Measure.integral_bind rho kappa.aemeasurable ht
 
 /-- The cgf of a mixture is the logarithm of the integral of the component mgfs, rather than the
 integral of their cgfs. -/
@@ -95,37 +130,20 @@ theorem cgf_comp (kappa : Kernel A ℝ) (rho : Measure A) (t : ℝ)
     cgf id (kappa ∘ₘ rho) t = Real.log (∫ a, mgf id (kappa a) t ∂rho) := by
   rw [cgf, mgf_comp kappa rho t ht]
 
-/-- The characteristic function of a mixture is the integral of the component characteristic
-functions. -/
-theorem charFun_comp (kappa : Kernel A ℝ) [IsFiniteKernel kappa]
-    (rho : Measure A) [IsFiniteMeasure rho] (t : ℝ) :
+/-- The characteristic function of a finite mixture on a real inner product space is the integral
+of the component characteristic functions. -/
+theorem charFun_comp {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (kappa : Kernel A E) [IsFiniteKernel kappa]
+    (rho : Measure A) [IsFiniteMeasure rho] (t : E) :
     charFun (kappa ∘ₘ rho) t = ∫ a, charFun (kappa a) t ∂rho := by
-  have hInt : Integrable (fun x : ℝ ↦ Complex.exp (t * x * Complex.I)) (kappa ∘ₘ rho) :=
+  have hInt : Integrable (fun x : E ↦ Complex.exp (inner ℝ x t * Complex.I)) (kappa ∘ₘ rho) :=
     (integrable_const (1 : ℂ)).mono (by fun_prop) <| by
       filter_upwards with x
-      simp [← Complex.ofReal_mul]
-  rw [charFun_apply_real, Measure.comp_eq_comp_const_apply]
-  rw [Measure.comp_eq_comp_const_apply] at hInt
-  rw [integral_comp (κ := Kernel.const Unit rho) (η := kappa) (a := ()) hInt,
-    Kernel.const_apply]
-  simp_rw [charFun_apply_real]
+      simp
+  rw [charFun_apply, Measure.integral_bind rho kappa.aemeasurable hInt]
+  simp_rw [charFun_apply]
 
 end ProbabilityTheory.Kernel
-
-namespace MeasureTheory.Measure
-
-variable {A B : Type*} [MeasurableSpace A] [MeasurableSpace B]
-  {rho : Measure A} {nu : Measure B} {K : A → Measure B} {f : A → B → ℝ≥0∞}
-
-/-- The Radon--Nikodym derivative of a mixture of densities is the pointwise integral of the
-component densities. -/
-theorem rnDeriv_bind_withDensity [SFinite rho] [SigmaFinite nu]
-    (hf : Measurable f.uncurry) (hKf : K =ᵐ[rho] fun a ↦ nu.withDensity (f a)) :
-    (rho.bind K).rnDeriv nu =ᵐ[nu] fun b ↦ ∫⁻ a, f a b ∂rho := by
-  rw [bind_eq_withDensity_of_ae_eq rho nu hf hKf]
-  exact rnDeriv_withDensity nu hf.lintegral_prod_left
-
-end MeasureTheory.Measure
 
 namespace TauCeti.Probability
 
