@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Separation.Hausdorff
+public import TauCeti.Topology.Constructions
 
 /-!
 # Quotients gluing only finitely many points
@@ -30,7 +31,8 @@ the glued points it is an open copy of the complement of the flags.
 * `Setoid.t2Space_quotient`: the quotient is Hausdorff when `X` is.
 * `Setoid.isOpenEmbedding_domRestrict_quotient_mk`: the quotient map restricted to the complement of
   `t` is an open embedding when `X` is T₁, and `Setoid.image_quotient_mk_compl` identifies its
-  image with the complement of the image of `t`.
+  image with the complement of the image of `t`. This specializes
+  `Setoid.isOpenEmbedding_domRestrict_quotient_mk_of_isOpen` from `TauCeti.Topology.Constructions`.
 
 Compactness of the quotient of a compact space is Mathlib's `Quotient.compactSpace`.
 -/
@@ -82,23 +84,7 @@ theorem image_quotient_mk_compl (hst : ∀ ⦃x y⦄, s x y → x ≠ y → x �
   · intro h
     exact ⟨y, fun hy => h y hy (s.refl y), s.refl y⟩
 
-variable [TopologicalSpace X]
-
-/-- `Quotient.mk s` is a quotient map; `isQuotientMap_quotient_mk'` states this for the
-definitionally equal `Quotient.mk'`. -/
-private theorem isQuotientMap_mk : IsQuotientMap (Quotient.mk s) :=
-  isQuotientMap_quotient_mk'
-
-/-- The image in `Quotient s` of an open set closed under the relation `s` is open. -/
-theorem isOpen_image_quotient_mk {U : Set X} (hU : IsOpen U)
-    (hsat : ∀ ⦃x y⦄, x ∈ U → s x y → y ∈ U) : IsOpen (Quotient.mk s '' U) := by
-  have hsatU : Quotient.mk s ⁻¹' (Quotient.mk s '' U) = U := by
-    refine Subset.antisymm ?_ (subset_preimage_image _ _)
-    rintro y ⟨x, hx, hxy⟩
-    exact hsat hx (Quotient.exact hxy)
-  rwa [← (isQuotientMap_mk s).isOpen_preimage, hsatU]
-
-variable (ht : t.Finite) (hst : ∀ ⦃x y⦄, s x y → x ≠ y → x ∈ t)
+variable [TopologicalSpace X] (ht : t.Finite) (hst : ∀ ⦃x y⦄, s x y → x ≠ y → x ∈ t)
 include ht hst
 
 /-- If an equivalence relation on a Hausdorff space identifies only points of a finite set, then
@@ -122,7 +108,7 @@ theorem isClosed_setOf_rel [T2Space X] : IsClosed {p : X × X | s p.1 p.2} := by
 quotient map is closed. -/
 theorem isClosedMap_quotient_mk [T1Space X] : IsClosedMap (Quotient.mk s) := by
   intro C hC
-  rw [← (isQuotientMap_mk s).isClosed_preimage]
+  rw [← (isQuotientMap_quotient_mk s).isClosed_preimage]
   have hsub : Quotient.mk s ⁻¹' (Quotient.mk s '' C) = C ∪ {y ∈ t | ∃ x ∈ C, s x y} := by
     refine Subset.antisymm ?_ ?_
     · rintro y ⟨x, hx, hxy⟩
@@ -166,17 +152,9 @@ theorem t2Space_quotient [T2Space X] : T2Space (Quotient s) := by
 /-- If an equivalence relation on a T₁ space identifies only points of a finite set `t`, then the
 quotient map restricted to the complement of `t` is an open embedding. -/
 theorem isOpenEmbedding_domRestrict_quotient_mk [T1Space X] :
-    IsOpenEmbedding (tᶜ.domRestrict (Quotient.mk s)) := by
-  have hopen : IsOpen tᶜ := ht.isClosed.isOpen_compl
+    IsOpenEmbedding (tᶜ.domRestrict (Quotient.mk s)) :=
   -- Points outside `t` are related only to themselves.
-  have hfix : ∀ ⦃x y⦄, x ∈ tᶜ → s x y → x = y := fun x y hx hxy =>
-    by_contra fun hne => hx (hst hxy hne)
-  refine .of_continuous_injective_isOpenMap
-    (continuous_quotient_mk'.comp continuous_subtype_val) (fun x y hxy => ?_) fun W hW => ?_
-  · exact Subtype.ext (hfix x.2 (Quotient.exact hxy))
-  · rw [domRestrict_eq, image_comp]
-    refine isOpen_image_quotient_mk s (hopen.isOpenMap_subtype_val W hW) ?_
-    rintro _ y ⟨x, hx, rfl⟩ hxy
-    exact hfix x.2 hxy ▸ mem_image_of_mem _ hx
+  isOpenEmbedding_domRestrict_quotient_mk_of_isOpen s ht.isClosed.isOpen_compl
+    fun _ _ hx hxy => by_contra fun hne => hx (hst hxy hne)
 
 end Setoid
