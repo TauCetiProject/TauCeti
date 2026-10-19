@@ -49,7 +49,7 @@ private lemma nonneg_log_div_shape (hs : 0 < s) (hξ : ξ ≠ 0) (hx : 0 ≤ x)
     0 ≤ log (1 + ξ * x / s) / ξ := by
   rcases lt_or_gt_of_ne hξ with hξ | hξ
   · exact div_nonneg_of_nonpos
-      (log_nonpos (by positivity) (by
+      (log_nonpos hbase.le (by
         have : ξ * x / s ≤ 0 := div_nonpos_of_nonpos_of_nonneg
           (mul_nonpos_of_nonpos_of_nonneg hξ.le hx) hs.le
         linarith)) hξ.le
@@ -93,19 +93,11 @@ endpoint. -/
 theorem cdf_generalizedParetoMeasure_eq_one (hs : 0 < s) (hξ : ξ < 0)
     (hbase : 1 + ξ * x / s ≤ 0) :
     cdf (generalizedParetoMeasure s ξ) x = 1 := by
-  have hnum : s + ξ * x ≤ 0 := by
-    have hdiv : (s + ξ * x) / s ≤ 0 := by
-      calc
-        (s + ξ * x) / s = 1 + ξ * x / s := by field_simp
-        _ ≤ 0 := hbase
-    rcases div_nonpos_iff.mp hdiv with ⟨_, hs0⟩ | ⟨h, _⟩
-    · linarith
-    · exact h
   have hendpoint : -s / ξ ≤ x := by
     rw [div_le_iff_of_neg hξ]
-    nlinarith
-  have hx : 0 < x := by
-    exact (div_pos_of_neg_of_neg (neg_neg_of_pos hs) hξ).trans_le hendpoint
+    have hscaled := mul_le_mul_of_nonneg_left hbase hs.le
+    field_simp at hscaled
+    linarith
   have hpre : generalizedParetoMap s ξ ⁻¹' Iic x =ᵐ[expMeasure 1] Set.univ := by
     filter_upwards [ae_pos_expMeasure 1] with e he
     simp only [mem_preimage, mem_Iic, mem_univ]
