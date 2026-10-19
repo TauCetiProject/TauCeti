@@ -56,6 +56,7 @@ theorem coe_unitsTwoPowFive : (unitsTwoPowFive e : ZMod (2 ^ (e + 3))) = 5 := by
 
 /-- The unit `5` modulo `2 ^ (e + 3)` has order `2 ^ (e + 1)`; this is Mathlib's
 `ZMod.orderOf_five` read in the unit group. -/
+@[simp]
 theorem orderOf_unitsTwoPowFive : orderOf (unitsTwoPowFive e) = 2 ^ (e + 1) := by
   rw [← orderOf_units, coe_unitsTwoPowFive]
   exact ZMod.orderOf_five (e + 1)
@@ -69,6 +70,7 @@ theorem unitsMap_unitsTwoPowFive (h : 4 ∣ 2 ^ (e + 3)) : unitsMap h (unitsTwoP
   decide
 
 /-- The unit `-1` modulo `2 ^ (e + 3)` is not a power of `5`. -/
+@[simp]
 theorem neg_one_notMem_zpowers_unitsTwoPowFive :
     -1 ∉ Subgroup.zpowers (unitsTwoPowFive e) := by
   -- Reduction modulo `4` kills `5` but not `-1`.
