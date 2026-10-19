@@ -19,19 +19,17 @@ rings of the scheme at points of `V`.
 
 * `AlgebraicGeometry.IsAffineOpen.isIntegrallyClosed`: on an integral scheme with integrally
   closed local rings, the sections over a nonempty affine open are integrally closed.
-* `AlgebraicGeometry.isDomain_and_isIntegrallyClosed_stalk_iff_of_isOpenImmersion`: open
+* `TauCeti.AlgebraicGeometry.isDomain_and_isIntegrallyClosed_stalk_iff_of_isOpenImmersion`: open
   immersions preserve the domain and integral-closure conditions on stalks.
 -/
 
 public section
 
-open CategoryTheory
-
-namespace AlgebraicGeometry
+open CategoryTheory AlgebraicGeometry
 
 universe u
 
-variable {T : Scheme.{u}}
+namespace TauCeti.AlgebraicGeometry
 
 /-- An open immersion identifies the local rings at corresponding points, preserving the
 conjunction of domain and integral-closure properties. -/
@@ -48,6 +46,12 @@ theorem isDomain_and_isIntegrallyClosed_stalk_iff_of_isOpenImmersion {X Y : Sche
     · intro h
       obtain ⟨_, _⟩ := h
       exact ⟨e.toMulEquiv.isDomain _, .of_equiv e.symm⟩
+
+end TauCeti.AlgebraicGeometry
+
+namespace AlgebraicGeometry
+
+variable {T : Scheme.{u}}
 
 /-- On an integral scheme, the ring of sections over a nonempty affine open `V` is integrally
 closed if the local rings at the points of `V` are: its localizations at maximal ideals are local
