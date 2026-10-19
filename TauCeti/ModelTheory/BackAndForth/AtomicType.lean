@@ -129,6 +129,12 @@ theorem comp (h : SameAtomicType (L := L) a b) {m : ℕ} (g : Fin m → Fin n) :
 
 end SameAtomicType
 
+/-- An embedding preserves the atomic type of every tuple. -/
+theorem _root_.FirstOrder.Language.Embedding.sameAtomicType (f : M ↪[L] N) (a : Fin n → M) :
+    SameAtomicType (L := L) a (f ∘ a) :=
+  (sameAtomicType_iff _ _).mpr
+    ⟨fun _ _ => f.injective.eq_iff.symm, fun r g => (f.map_rel r (a ∘ g)).symm⟩
+
 /-- In a relational language without nullary relation symbols, the empty tuples of any two
 structures have the same atomic type. -/
 theorem sameAtomicType_elim0 [IsEmpty (L.Relations 0)] :

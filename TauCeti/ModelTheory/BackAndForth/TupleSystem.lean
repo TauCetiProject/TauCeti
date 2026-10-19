@@ -12,7 +12,8 @@ public import TauCeti.ModelTheory.BackAndForth.Equivalence
 
 A tuple back-and-forth system is a set of pairs of equally long finite tuples containing the
 empty pair, preserving atomic types, and admitting one-element extensions in both directions
-within the same set. Every pair in such a system is back-and-forth equivalent at every ordinal.
+within the same set. Every pair in such a system is back-and-forth equivalent at every ordinal,
+and every tuple of the second structure is matched in the system by a tuple of the first.
 These systems allow characteristic sentences to produce potential isomorphisms without
 requiring every finite partial isomorphism to extend.
 
@@ -68,6 +69,16 @@ theorem bfEquiv (h : IsTupleBFSystem (L := L) S) (α : Ordinal.{o})
       exact ⟨x, ih hx⟩
   | limit α hα ih =>
     exact (BFEquiv.limit hα a b).mpr fun β hβ => ih β hβ hab
+
+/-- Every tuple of the second structure is matched in the system by some tuple of the first. -/
+theorem exists_mem (h : IsTupleBFSystem (L := L) S) {n : ℕ} (b : Fin n → N) :
+    ∃ a : Fin n → M, ⟨n, a, b⟩ ∈ S := by
+  induction n with
+  | zero => exact ⟨Fin.elim0, Subsingleton.elim (Fin.elim0 : Fin 0 → N) b ▸ h.empty_mem⟩
+  | succ n ih =>
+    obtain ⟨a, ha⟩ := ih (init b)
+    obtain ⟨x, hx⟩ := h.back ha (b (last n))
+    exact ⟨snoc a x, by rwa [snoc_init_self] at hx⟩
 
 end IsTupleBFSystem
 

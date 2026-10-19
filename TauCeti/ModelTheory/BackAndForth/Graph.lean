@@ -13,9 +13,9 @@ public import Mathlib.Combinatorics.SimpleGraph.Maps
 # Simple graphs as relational structures
 
 A simple graph `G` is a structure in the language of graphs through Mathlib's `G.structure`.
-A graph isomorphism is then an isomorphism of these structures, and two tuples of vertices have
-the same atomic type exactly when they have the same pattern of equalities and the same pattern
-of adjacencies. These two facts reduce back-and-forth computations on concrete graphs to
+Graph isomorphisms are then the same as isomorphisms of these structures, and two tuples of
+vertices have the same atomic type exactly when they have the same pattern of equalities and the
+same pattern of adjacencies. These facts reduce back-and-forth computations on concrete graphs to
 statements about vertices and edges.
 -/
 
@@ -50,6 +50,21 @@ theorem Iso.toLanguageEquiv_apply (e : G ≃g H) (v : V) :
     letI := G.structure
     letI := H.structure
     e.toLanguageEquiv v = e v := (rfl)
+
+/-- An isomorphism of the structures in the language of graphs induced by two simple graphs, as
+a graph isomorphism. This is the inverse construction to `SimpleGraph.Iso.toLanguageEquiv`. -/
+def _root_.FirstOrder.Language.Equiv.toSimpleGraphIso
+    (e : letI := G.structure; letI := H.structure; V ≃[Language.graph] W) : G ≃g H :=
+  letI := G.structure
+  letI := H.structure
+  { toEquiv := e.toEquiv
+    map_rel_iff' := fun {a b} => e.map_rel Language.adj ![a, b] }
+
+/-- The graph isomorphism induced by an isomorphism of structures acts as that isomorphism. -/
+@[simp]
+theorem _root_.FirstOrder.Language.Equiv.toSimpleGraphIso_apply
+    (e : letI := G.structure; letI := H.structure; V ≃[Language.graph] W) (v : V) :
+    e.toSimpleGraphIso v = e v := (rfl)
 
 variable (G H) in
 /-- Two tuples of vertices have the same atomic type in the language of graphs exactly when they

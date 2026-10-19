@@ -39,13 +39,8 @@ variable {M : Type w} {N : Type w'} [L.Structure M] [L.Structure N]
 /-- A partial equivalence preserves the atomic type of each tuple in its domain. -/
 theorem _root_.FirstOrder.Language.PartialEquiv.sameAtomicType (f : M ≃ₚ[L] N)
     {n : ℕ} (a : Fin n → f.dom) :
-    SameAtomicType (L := L) (fun i => (a i : M)) (f.toEmbedding ∘ a) := by
-  rw [sameAtomicType_iff]
-  refine ⟨fun i j => ?_, fun r g => ?_⟩
-  · exact ⟨fun hij => congrArg f.toEmbedding (Subtype.ext hij),
-      fun hij => congrArg Subtype.val (f.toEmbedding.injective hij)⟩
-  · exact (f.dom.subtype.map_rel r (a ∘ g)).trans
-      (f.toEmbedding.map_rel r (a ∘ g)).symm
+    SameAtomicType (L := L) (fun i => (a i : M)) (f.toEmbedding ∘ a) :=
+  (f.dom.subtype.sameAtomicType a).symm.trans (f.toEmbedding.sameAtomicType a)
 
 /-- Tuples with matching atomic types induce a finitely generated partial equivalence whose
 whole domain is the range of the first tuple. Repeated entries are allowed. -/
