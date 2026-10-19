@@ -23,19 +23,20 @@ reflections.
 
 ## Main declarations
 
-* `TauCeti.transportTestFunction`: transport a test function along a continuous linear
-  equivalence, changing its domain.
-* `TauCeti.transportTestFunction_apply`: evaluation of a transported test function.
-* `TauCeti.fderiv_transportTestFunction`: the Fréchet derivative of a transported test function.
-* `TauCeti.divergenceCLM_postcompCLM_transportTestFunction`: the divergence of a transported test
-  vector field is the transported divergence.
+* `ContinuousLinearEquiv.transportTestFunction`: transport a test function along a continuous
+  linear equivalence, changing its domain.
+* `ContinuousLinearEquiv.transportTestFunction_apply`: evaluation of a transported test function.
+* `ContinuousLinearEquiv.fderiv_transportTestFunction`: the Fréchet derivative of a transported
+  test function.
+* `ContinuousLinearEquiv.divergenceCLM_postcompCLM_transportTestFunction`: the divergence of a
+  transported test vector field is the transported divergence.
 -/
 
 public section
 
 noncomputable section
 
-namespace TauCeti
+namespace ContinuousLinearEquiv
 
 open Set TestFunction TopologicalSpace
 open scoped Distributions
@@ -87,4 +88,4 @@ theorem divergenceCLM_postcompCLM_transportTestFunction [FiniteDimensional ℝ E
   ext v
   simp [e.comp_fderiv, LinearEquiv.conj_apply]
 
-end TauCeti
+end ContinuousLinearEquiv
