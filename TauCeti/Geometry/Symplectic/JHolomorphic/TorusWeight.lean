@@ -119,10 +119,12 @@ theorem torusWeightSeries_false_eq_iff (i : Fin 4) (φ : ℤ⟦X⟧) :
 
 /-! ### The rational-function identities -/
 
+/-- `f_(+,0)` is the geometric series `1 + X + X ^ 2 + ⋯`. -/
 @[simp]
 theorem torusWeightSeries_true_zero : torusWeightSeries true 0 = mk 1 := by
   simp [torusWeightSeries, positiveSeries]
 
+/-- `f_(+,1)` is the polynomial `1 + X`. -/
 @[simp]
 theorem torusWeightSeries_true_one : torusWeightSeries true 1 = 1 + X := by
   simp [torusWeightSeries, positiveSeries]
@@ -134,16 +136,14 @@ theorem torusWeightSeries_true_zero_mul : torusWeightSeries true 0 * (1 - X) = 1
 /-- `f_(+,2) = (1 + X) / (1 + X ^ 2)`. -/
 theorem torusWeightSeries_true_two_mul :
     torusWeightSeries true 2 * (1 + X ^ 2) = 1 + X := by
-  rw [show torusWeightSeries true 2 = (1 + X) * invOfUnit (1 + X ^ 2) 1 by
-      simp [torusWeightSeries, positiveSeries],
-    mul_assoc, invOfUnit_mul _ 1 (by simp), mul_one]
+  simp only [torusWeightSeries, positiveSeries, ite_true]
+  rw [mul_assoc, invOfUnit_mul _ 1 (by simp), mul_one]
 
 /-- `f_(+,3) = (1 + X) (1 - X ^ 2) / (1 + X ^ 2)`. -/
 theorem torusWeightSeries_true_three_mul :
     torusWeightSeries true 3 * (1 + X ^ 2) = (1 + X) * (1 - X ^ 2) := by
-  rw [show torusWeightSeries true 3 = (1 + X) * (1 - X ^ 2) * invOfUnit (1 + X ^ 2) 1 by
-      simp [torusWeightSeries, positiveSeries],
-    mul_assoc, invOfUnit_mul _ 1 (by simp), mul_one]
+  simp only [torusWeightSeries, positiveSeries, ite_true]
+  rw [mul_assoc, invOfUnit_mul _ 1 (by simp), mul_one]
 
 /-- `f_(-,0) = 1 - X`. -/
 @[simp]
@@ -171,18 +171,6 @@ theorem torusWeightSeries_false_three_mul :
 Each closed form is checked against the coefficient recurrence obtained by multiplying by the
 denominator of the corresponding rational function, which is a unit of `ℤ⟦X⟧`. -/
 
-private lemma coeff_succ_mul_one_add_X (φ : ℤ⟦X⟧) (n : ℕ) :
-    coeff (n + 1) (φ * (1 + X)) = coeff (n + 1) φ + coeff n φ := by
-  simp [mul_add]
-
-private lemma coeff_add_two_mul_one_add_X_sq (φ : ℤ⟦X⟧) (n : ℕ) :
-    coeff (n + 2) (φ * (1 + X ^ 2)) = coeff (n + 2) φ + coeff n φ := by
-  simp [mul_add, coeff_mul_X_pow]
-
-private lemma coeff_add_two_mul_one_sub_X_sq (φ : ℤ⟦X⟧) (n : ℕ) :
-    coeff (n + 2) (φ * (1 - X ^ 2)) = coeff (n + 2) φ - coeff n φ := by
-  simp [mul_sub, coeff_mul_X_pow]
-
 /-- The multiplicity weights of `f_(+,2) = (1 + X) / (1 + X ^ 2)` are
 `1, 1, -1, -1, 1, 1, …`. -/
 @[simp]
@@ -194,7 +182,8 @@ theorem coeff_torusWeightSeries_true_two (m : ℕ) :
   ext (_ | _ | n)
   · simp
   · simp [mul_add, coeff_mul_X_pow']
-  · rw [coeff_add_two_mul_one_add_X_sq]
+  · simp only [mul_add, map_add, mul_one]
+    rw [show n + 1 + 1 = n + 2 by omega, coeff_mul_X_pow]
     simp [coeff_X, Nat.add_div_right, pow_succ]
 
 /-- The multiplicity weights of `f_(+,3) = (1 + X) (1 - X ^ 2) / (1 + X ^ 2)` are
@@ -209,8 +198,15 @@ theorem coeff_torusWeightSeries_true_three (m : ℕ) :
   ext (_ | _ | _ | _ | n)
   · simp
   · simp [mul_add, mul_sub, coeff_mul_X_pow']
-  all_goals
-    rw [coeff_add_two_mul_one_add_X_sq]
+  · simp only [mul_add, map_add, mul_one]
+    rw [coeff_mul_X_pow']
+    simp [mul_sub, add_mul, coeff_X, pow_succ]
+  · simp only [mul_add, map_add, mul_one]
+    rw [coeff_mul_X_pow']
+    simp [mul_sub, add_mul, coeff_X, pow_succ]
+  · rw [show n + 1 + 1 + 1 + 1 = (n + 2) + 2 by omega]
+    simp only [mul_add, map_add, mul_one]
+    rw [coeff_mul_X_pow']
     simp [mul_sub, add_mul, coeff_X, Nat.add_div_right, pow_succ]
 
 /-- The multiplicity weights of `f_(-,1) = 1 / (1 + X)` are `1, -1, 1, -1, …`. -/
@@ -233,7 +229,8 @@ theorem coeff_torusWeightSeries_false_two (m : ℕ) :
   ext (_ | _ | n)
   · simp
   · simp [mul_add]
-  · rw [coeff_succ_mul_one_add_X]
+  · simp only [mul_add, map_add, mul_one]
+    rw [coeff_succ_mul_X]
     rcases n with _ | n <;> simp [coeff_X, pow_succ]
 
 /-- The multiplicity weights of `f_(-,3) = (1 + X ^ 2) / ((1 + X) (1 - X ^ 2))` are
@@ -249,10 +246,13 @@ theorem coeff_torusWeightSeries_false_three (m : ℕ) :
   ext (_ | _ | _ | n)
   · simp
   · simp [mul_add, mul_sub, ← mul_assoc, coeff_mul_X_pow']
-  · rw [← mul_assoc, coeff_add_two_mul_one_sub_X_sq, coeff_succ_mul_one_add_X]
+  · rw [← mul_assoc]
+    simp only [mul_sub, map_sub, mul_one, coeff_mul_X_pow', mul_add, map_add,
+      coeff_succ_mul_X]
     simp [coeff_X_pow]
-  · rw [← mul_assoc, coeff_add_two_mul_one_sub_X_sq, coeff_succ_mul_one_add_X,
-      coeff_succ_mul_one_add_X]
+  · rw [← mul_assoc]
+    simp only [mul_sub, map_sub, mul_one, coeff_mul_X_pow', mul_add, map_add,
+      coeff_succ_mul_X]
     obtain ⟨k, rfl | rfl⟩ := Nat.even_or_odd' n
     all_goals
       simp [pow_succ, pow_mul, coeff_X]
