@@ -125,16 +125,22 @@ private theorem ae_nonneg_prod_rpow_dirichletMeasure {a q : ι → ℝ}
   filter_upwards [ae_pos_dirichletMeasure ha] with x hx
   exact Finset.prod_nonneg fun i _ ↦ Real.rpow_nonneg (hx i).le _
 
+omit [Nonempty ι] in
 /-- A mixed real power is integrable under a Dirichlet law if each exponent added to its
-concentration parameter is positive. Negative exponents are allowed. -/
+concentration parameter is positive. Negative exponents are allowed. For invalid parameters or
+an empty coordinate type, the measure is zero. -/
 theorem integrable_prod_rpow_dirichletMeasure {a q : ι → ℝ}
-    (ha : ∀ i, 0 < a i) (hq : ∀ i, 0 < a i + q i) :
+    (hq : ∀ i, 0 < a i + q i) :
     Integrable (fun x ↦ ∏ i, x i ^ q i) (dirichletMeasure a) := by
-  have hm : Measurable fun x : EuclideanSpace ℝ ι ↦ ∏ i, x i ^ q i := by fun_prop
-  refine ⟨hm.aestronglyMeasurable,
-    (hasFiniteIntegral_iff_ofReal (ae_nonneg_prod_rpow_dirichletMeasure ha)).2 ?_⟩
-  rw [lintegral_prod_rpow_dirichletMeasure ha hq]
-  exact ENNReal.ofReal_lt_top
+  by_cases h : Nonempty ι ∧ ∀ i, 0 < a i
+  · let : Nonempty ι := h.1
+    have hm : Measurable fun x : EuclideanSpace ℝ ι ↦ ∏ i, x i ^ q i := by fun_prop
+    refine ⟨hm.aestronglyMeasurable,
+      (hasFiniteIntegral_iff_ofReal (ae_nonneg_prod_rpow_dirichletMeasure h.2)).2 ?_⟩
+    rw [lintegral_prod_rpow_dirichletMeasure h.2 hq]
+    exact ENNReal.ofReal_lt_top
+  · rw [dirichletMeasure_eq_zero_of_invalid h]
+    simp
 
 /-- The mixed real-power moment of a Dirichlet law is the ratio of the original and shifted
 normalizing constants. -/
@@ -144,15 +150,20 @@ theorem integral_prod_rpow_dirichletMeasure {a q : ι → ℝ}
       Real.Gamma (∑ i, a i) / Real.Gamma ((∑ i, a i) + ∑ i, q i) *
         ∏ i, Real.Gamma (a i + q i) / Real.Gamma (a i) := by
   rw [integral_eq_lintegral_of_nonneg_ae (ae_nonneg_prod_rpow_dirichletMeasure ha)
-    (integrable_prod_rpow_dirichletMeasure ha hq).aestronglyMeasurable,
+    (integrable_prod_rpow_dirichletMeasure hq).aestronglyMeasurable,
     lintegral_prod_rpow_dirichletMeasure ha hq,
     ENNReal.toReal_ofReal (dirichletMomentConst_nonneg ha hq), Finset.sum_add_distrib]
 
-/-- Every natural mixed moment of a Dirichlet law is integrable. -/
-theorem integrable_prod_pow_dirichletMeasure {a : ι → ℝ} (ha : ∀ i, 0 < a i)
+omit [Nonempty ι] in
+/-- Every natural mixed moment of a Dirichlet law is integrable, including for invalid parameters
+or an empty coordinate type, when the measure is zero. -/
+theorem integrable_prod_pow_dirichletMeasure (a : ι → ℝ)
     (k : ι → ℕ) : Integrable (fun x ↦ ∏ i, x i ^ k i) (dirichletMeasure a) := by
-  simpa only [Real.rpow_natCast] using integrable_prod_rpow_dirichletMeasure ha
-    (q := fun i ↦ (k i : ℝ)) (fun i ↦ add_pos_of_pos_of_nonneg (ha i) (Nat.cast_nonneg _))
+  by_cases h : Nonempty ι ∧ ∀ i, 0 < a i
+  · simpa only [Real.rpow_natCast] using integrable_prod_rpow_dirichletMeasure
+      (q := fun i ↦ (k i : ℝ)) (fun i ↦ add_pos_of_pos_of_nonneg (h.2 i) (Nat.cast_nonneg _))
+  · rw [dirichletMeasure_eq_zero_of_invalid h]
+    simp
 
 /-- Natural mixed moments of a Dirichlet law, including the zeroth moment. -/
 theorem integral_prod_pow_dirichletMeasure {a : ι → ℝ} (ha : ∀ i, 0 < a i) (k : ι → ℕ) :
@@ -165,12 +176,15 @@ theorem integral_prod_pow_dirichletMeasure {a : ι → ℝ} (ha : ∀ i, 0 < a i
 end
 
 /-- On a one-coordinate Dirichlet law every real mixed power is integrable, even when the
-shifted concentration parameter is nonpositive. -/
+shifted concentration parameter is nonpositive. For invalid parameters, the measure is zero. -/
 theorem integrable_prod_rpow_dirichletMeasure_of_card_eq_one {a : ι → ℝ}
-    (ha : ∀ i, 0 < a i) (hcard : Fintype.card ι = 1) (q : ι → ℝ) :
+    (hcard : Fintype.card ι = 1) (q : ι → ℝ) :
     Integrable (fun x ↦ ∏ i, x i ^ q i) (dirichletMeasure a) := by
-  rw [dirichletMeasure_eq_dirac_of_card_eq_one ha hcard]
-  exact integrable_dirac (by simp)
+  by_cases h : Nonempty ι ∧ ∀ i, 0 < a i
+  · rw [dirichletMeasure_eq_dirac_of_card_eq_one h.2 hcard]
+    exact integrable_dirac (by simp)
+  · rw [dirichletMeasure_eq_zero_of_invalid h]
+    simp
 
 /-- On a one-coordinate Dirichlet law every mixed real-power moment is one, with no
 restriction on the exponent. -/
