@@ -157,7 +157,7 @@ theorem tendsto_gaussNorm_charpolyRev_finiteCompression_sub_charPowerSeries [Com
       Polynomial.coeff_coe] using
       tendsto_coeff_charpolyRev_finiteCompression n (Matrix.summable_principalMinor hA hr n)
   simpa only [B, charPowerSeries_outputTruncation] using
-    tendsto_gaussNorm_charPowerSeries_of_common_majorant hB hA hr hcoeff hρ
+    tendsto_gaussNorm_charPowerSeries_sub_charPowerSeries_of_common_majorant hB hA hr hcoeff hρ
 
 end Ultrametric
 

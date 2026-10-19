@@ -38,13 +38,13 @@ variable {I R : Type*} [TopologicalSpace I] [DiscreteTopology I] [DecidableEq I]
 /-- The Fredholm series of a norm-convergent sequence of row-compact operators converge in
 Gauss norm at every positive radius. Unlike coefficientwise convergence of arbitrary entire
 series, operator-norm convergence supplies uniform control of the determinant tails. -/
-theorem tendsto_gaussNorm_charPowerSeries_of_tendsto_ringOpNorm [CompleteSpace R]
-    [NormOneClass R] (h : Tendsto (fun n ↦ ‖u - v n‖) atTop (𝓝 0))
+theorem tendsto_gaussNorm_charPowerSeries_sub_charPowerSeries_of_tendsto_ringOpNorm
+    [CompleteSpace R] [NormOneClass R] (h : Tendsto (fun n ↦ ‖u - v n‖) atTop (𝓝 0))
     (hv : ∀ n, (v n).IsRowCompact) {ρ : ℝ} (hρ : 0 < ρ) :
     Tendsto (fun n ↦ ((v n).matrixCoeff.charPowerSeries -
       u.matrixCoeff.charPowerSeries).gaussNorm norm ρ) atTop (𝓝 0) := by
   obtain ⟨r, _, hr, hu, hv⟩ := exists_common_row_majorant_of_tendsto_ringOpNorm h hv
-  refine tendsto_gaussNorm_charPowerSeries_of_tendstoUniformly hv hu hr ?_ hρ
+  refine tendsto_gaussNorm_charPowerSeries_sub_charPowerSeries_of_tendstoUniformly hv hu hr ?_ hρ
   rw [Metric.tendstoUniformly_iff]
   intro ε hε
   filter_upwards [h.eventually_lt_const hε] with n hn

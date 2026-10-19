@@ -36,7 +36,7 @@ variable {ι R α : Type*} [DecidableEq ι]
 /-- A common null row majorant upgrades convergence of each principal-minor coefficient to
 Gauss convergence at every positive radius. No completeness is needed once coefficient
 convergence is supplied. -/
-theorem tendsto_gaussNorm_charPowerSeries_of_common_majorant
+theorem tendsto_gaussNorm_charPowerSeries_sub_charPowerSeries_of_common_majorant
     (hA : ∀ a i j, ‖A a i j‖ ≤ r i) (hB : ∀ i j, ‖B i j‖ ≤ r i)
     (hr : Tendsto r cofinite (𝓝 0))
     (hcoeff : ∀ n, Tendsto (fun a ↦ (A a).charCoeff n) l (𝓝 (B.charCoeff n)))
@@ -64,7 +64,7 @@ theorem tendsto_gaussNorm_charPowerSeries_of_common_majorant
 /-- Uniform entrywise convergence, with a common null row majorant, implies convergence of
 principal-minor series in every positive-radius Gauss norm. Completeness ensures that the
 principal-minor families defining the coefficients are summable. -/
-theorem tendsto_gaussNorm_charPowerSeries_of_tendstoUniformly [CompleteSpace R]
+theorem tendsto_gaussNorm_charPowerSeries_sub_charPowerSeries_of_tendstoUniformly [CompleteSpace R]
     (hA : ∀ a i j, ‖A a i j‖ ≤ r i) (hB : ∀ i j, ‖B i j‖ ≤ r i)
     (hr : Tendsto r cofinite (𝓝 0))
     (hAB : TendstoUniformly (fun a (p : ι × ι) ↦ A a p.1 p.2)
@@ -72,7 +72,7 @@ theorem tendsto_gaussNorm_charPowerSeries_of_tendstoUniformly [CompleteSpace R]
     Tendsto (fun a ↦ ((A a).charPowerSeries - B.charPowerSeries).gaussNorm norm ρ)
       l (𝓝 0) := by
   obtain ⟨M, hM⟩ := hr.bddAbove_range_of_cofinite
-  exact tendsto_gaussNorm_charPowerSeries_of_common_majorant hA hB hr
+  exact tendsto_gaussNorm_charPowerSeries_sub_charPowerSeries_of_common_majorant hA hB hr
     (fun n ↦ tendsto_charCoeff_of_tendstoUniformly n
       (fun i j ↦ (hB i j).trans (hM ⟨i, rfl⟩))
       (Eventually.of_forall fun a ↦ Matrix.summable_principalMinor (hA a) hr n)
