@@ -26,6 +26,8 @@ prerequisite for Deliverable A, Layer 1 of the Lie-groups roadmap.
   bracket of vector fields on that space.
 * `TauCeti.mlieBracket_const_model_space`: constant model-space vector fields have zero
   manifold Lie bracket.
+* `mdifferentiableAt_mvfderiv_apply`: the directional derivative of a `C²` function along a
+  differentiable vector field is differentiable.
 * `mvfderiv_mlieBracket`: a differential sends the manifold bracket to the commutator of
   directional derivatives.
 * `TauCeti.eq_mlieBracket_of_mvfderiv_extChartAt`: tested against the extended chart at a point,
@@ -204,7 +206,10 @@ private theorem mdifferentiableAt_tangentMap_apply
     (eventuallyEq_tangentMapWithin_apply (U := U) ht_open ht hf hn).symm
 
 omit [CompleteSpace E] in
-private theorem mdifferentiableAt_mvfderiv_apply
+/-- Let `f` be a vector-valued function that is `C^n` at `x` with `n ≥ minSmoothness 𝕜 2` (so `C²`
+over `ℝ` or `ℂ`), and let `U` be a vector field differentiable at `x`. Then the directional
+derivative `y ↦ df_y (U y)` is differentiable at `x`. -/
+theorem mdifferentiableAt_mvfderiv_apply
     {f : M → F} {U : ∀ y : M, TangentSpace I y} {x : M}
     (hf : CMDiffAt n f x) (hn : minSmoothness 𝕜 2 ≤ n)
     (hU : MDiffAt (fun y ↦ (U y : TangentBundle I M)) x) :
