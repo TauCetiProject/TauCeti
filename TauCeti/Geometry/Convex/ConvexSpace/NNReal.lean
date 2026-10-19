@@ -5,16 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.MeasurableSpace.StdSimplex
-public import Mathlib.MeasureTheory.Constructions.BorelSpace.Real
+public import Mathlib.Geometry.Convex.ConvexSpace.Defs
+public import Mathlib.Topology.Instances.NNReal.Lemmas
 
 /-!
 # The finite simplex of nonnegative real weights
 
 The finite simplex `Convexity.StdSimplex ℝ≥0 ι` carries the topology induced by its weight
 vector. This makes continuity of probability vectors equivalent to continuity of their weights,
-including at zero weights. Its Borel structure agrees with the existing coordinate measurable
-structure, so continuous families of weights also give measurable parameters for finite laws.
+including at zero weights.
 
 This is the finite-coordinate construction of Mathlib's
 `Convexity.StdSimplex.topologicalSpaceInduced`. That construction requires a coefficient ring
@@ -23,7 +22,7 @@ and therefore does not apply to `ℝ≥0`.
 
 public section
 
-open MeasureTheory Topology
+open Topology
 open scoped NNReal
 
 namespace Convexity.StdSimplex
@@ -38,7 +37,7 @@ noncomputable instance instTopologicalSpaceNNReal (ι : Type*) [Finite ι] :
 /-- The finite nonnegative-real simplex embeds into its space of weight vectors. -/
 theorem isEmbedding_toFun_comp_weights_nnreal :
     IsEmbedding (fun p : StdSimplex ℝ≥0 ι ↦ (p.weights : ι → ℝ≥0)) where
-  eq_induced := rfl
+  eq_induced := by simp only [instTopologicalSpaceNNReal, Finsupp.equivFunOnFinite_apply]
   injective _ _ h := StdSimplex.ext (Finsupp.ext (congrFun h))
 
 /-- Continuity into the finite nonnegative-real simplex is continuity of the weight vector. -/
@@ -52,11 +51,5 @@ theorem continuous_iff_toFun_comp_weights_nnreal {X : Type*} [TopologicalSpace X
 theorem continuous_weights_apply_nnreal (i : ι) :
     Continuous (fun p : StdSimplex ℝ≥0 ι ↦ p.weights i) :=
   (continuous_apply i).comp isEmbedding_toFun_comp_weights_nnreal.continuous
-
-/-- The coordinate measurable structure of the finite nonnegative-real simplex is Borel. -/
-instance instBorelSpaceNNReal : BorelSpace (StdSimplex ℝ≥0 ι) where
-  measurable_eq := by
-    simp only [instMeasurableSpace, borel_comap, Finsupp.equivFunOnFinite_apply,
-      ← BorelSpace.measurable_eq (α := ι → ℝ≥0)]
 
 end Convexity.StdSimplex

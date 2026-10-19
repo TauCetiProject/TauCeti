@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.Multinomial.Basic
-public import TauCeti.Geometry.Convex.ConvexSpace.NNReal
+public import TauCeti.MeasureTheory.Constructions.BorelSpace.StdSimplex
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 
 /-!
