@@ -33,19 +33,18 @@ coefficients (`TopCat.singularKroneckerEquiv`), and `Hₙ(N; ℤ)` is freely gen
 
 ## Main definitions
 
-* `TauCeti.HomologicalOrientation.mapFundamentalClass`: the image `f_*[N] ∈ Hₙ(X; ℤ)` of the
-  fundamental class under a continuous map `f : N → X`.
 * `TauCeti.HomologicalOrientation.evalFundamentalClass`: the `ℤ`-linear evaluation
-  `c ↦ ⟨c, f_*[N]⟩` of `Hⁿ(X; M)` on that class.
+  `c ↦ ⟨c, f_*[N]⟩` of `Hⁿ(X; M)` on the image
+  `TauCeti.HomologicalOrientation.mapFundamentalClass` of the fundamental class under a
+  continuous map `f : N → X`.
 
 ## Main results
 
 * `TauCeti.HomologicalOrientation.evalFundamentalClass_id_singularCohomologyMap`:
   `⟨f^* c, [N]⟩ = ⟨c, f_*[N]⟩`.
 * `TauCeti.HomologicalOrientation.evalFundamentalClass_comp`: `⟨c, (g ∘ f)_*[N]⟩ = ⟨g^* c, f_*[N]⟩`.
-* `TauCeti.HomologicalOrientation.mapFundamentalClass_eq_of_homotopic` and
-  `TauCeti.HomologicalOrientation.evalFundamentalClass_eq_of_homotopic`: homotopic maps carry the
-  fundamental class to the same class, and so give the same pairing.
+* `TauCeti.HomologicalOrientation.evalFundamentalClass_eq_of_homotopic`: homotopic maps give the
+  same pairing.
 * `TauCeti.HomologicalOrientation.evalFundamentalClass_neg`: reversing the orientation negates the
   pairing.
 * `TauCeti.HomologicalOrientation.evalFundamentalClass_id_bijective`: for a compact connected
@@ -81,54 +80,6 @@ variable {N E : Type} [TopologicalSpace N] [T2Space N]
   [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [ChartedSpace E N]
   [CompactSpace N] {n : ℕ} (o : HomologicalOrientation N E n) (hn : finrank ℝ E = n)
   {X Y : Type} [TopologicalSpace X] [TopologicalSpace Y] (M : ModuleCat.{0} ℤ)
-
-/-- The image `f_*[N] ∈ Hₙ(X; ℤ)` of the fundamental class of a compact oriented manifold `N` under
-a continuous map `f : N → X`: the homology class carried by the singular manifold `f`. -/
-def mapFundamentalClass (f : C(N, X)) :
-    ((singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj (ModuleCat.of ℤ (ULift.{0} ℤ))).obj
-      (TopCat.of X) :=
-  (((singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj (ModuleCat.of ℤ (ULift.{0} ℤ))).map
-    (TopCat.ofHom f)).hom (o.fundamentalClass hn)
-
-theorem mapFundamentalClass_def (f : C(N, X)) :
-    o.mapFundamentalClass hn f =
-      (((singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj (ModuleCat.of ℤ (ULift.{0} ℤ))).map
-        (TopCat.ofHom f)).hom (o.fundamentalClass hn) :=
-  (rfl)
-
-/-- The image of the fundamental class under the identity is the fundamental class. -/
-@[simp]
-theorem mapFundamentalClass_id : o.mapFundamentalClass hn (ContinuousMap.id N) =
-    o.fundamentalClass hn := by
-  rw [mapFundamentalClass_def, TopCat.ofHom_id, CategoryTheory.Functor.map_id]
-  -- The identity morphism acts as the identity; its source is read as `SSet.homology`.
-  rfl
-
-/-- The image of the fundamental class under a composite `g ∘ f` is the image under `g` of its
-image under `f`. -/
-theorem mapFundamentalClass_comp (g : C(X, Y)) (f : C(N, X)) :
-    o.mapFundamentalClass hn (g.comp f) =
-      (((singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj (ModuleCat.of ℤ (ULift.{0} ℤ))).map
-        (TopCat.ofHom g)).hom (o.mapFundamentalClass hn f) := by
-  rw [mapFundamentalClass_def, mapFundamentalClass_def, TopCat.ofHom_comp,
-    CategoryTheory.Functor.map_comp]
-  -- The fundamental class lives in `SSet.homology`, which `rw` does not see through.
-  rfl
-
-/-- **Homotopy invariance**: homotopic maps carry the fundamental class to the same class. -/
-theorem mapFundamentalClass_eq_of_homotopic {f g : C(N, X)} (h : f.Homotopic g) :
-    o.mapFundamentalClass hn f = o.mapFundamentalClass hn g := by
-  rw [mapFundamentalClass_def, mapFundamentalClass_def]
-  congr 2
-  exact TopCat.Homotopy.congr_homologyMap_singularChainComplexFunctor (C := ModuleCat.{0} ℤ)
-    (f := TopCat.ofHom f) (g := TopCat.ofHom g) h.some _ n
-
-/-- Reversing the orientation negates the image of the fundamental class. -/
-@[simp]
-theorem mapFundamentalClass_neg (f : C(N, X)) :
-    (-o).mapFundamentalClass hn f = -o.mapFundamentalClass hn f := by
-  rw [mapFundamentalClass_def, mapFundamentalClass_def, fundamentalClass_neg]
-  exact map_neg _ _
 
 /-- **The evaluation of a cohomology class on the image of a fundamental class**: for a compact
 oriented `n`-manifold `N` and a continuous map `f : N → X`, the `ℤ`-linear map
@@ -199,25 +150,21 @@ theorem evalFundamentalClass_id_bijective [ConnectedSpace N] [CategoryTheory.Inj
       ((singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj (ModuleCat.of ℤ (ULift.{0} ℤ))).obj
         (TopCat.of N) :=
     o.fundamentalClassEquiv hn
-  have hcomp : Function.Bijective fun ψ :
-      ((singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj (ModuleCat.of ℤ (ULift.{0} ℤ))).obj
-        (TopCat.of N) →ₗ[ℤ] M ↦ ψ ∘ₗ e.toLinearMap :=
-    ⟨fun ψ ψ' h ↦ LinearMap.ext fun x ↦ by
-        simpa only [LinearMap.comp_apply, LinearEquiv.coe_coe, e.apply_symm_apply] using
-          LinearMap.congr_fun h (e.symm x),
-      fun χ ↦ ⟨χ ∘ₗ e.symm.toLinearMap, LinearMap.ext fun x ↦ by
-        simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, e.symm_apply_apply]⟩⟩
-  have heval : Function.Bijective fun χ : ℤ →ₗ[ℤ] M ↦ χ 1 :=
-    ⟨fun _ _ h ↦ LinearMap.ext_ring h,
-      fun m ↦ ⟨LinearMap.toSpanSingleton ℤ M m, LinearMap.toSpanSingleton_apply_one ℤ M m⟩⟩
-  convert heval.comp (hcomp.comp (ModuleCat.homEquiv.bijective.comp
-    ((TopCat.of N).singularKroneckerEquiv ℤ n).bijective)) using 1
-  ext c
-  have he : e 1 = o.fundamentalClass hn :=
-    (o.fundamentalClassEquiv_apply hn 1).trans (one_smul ℤ _)
-  simp [evalFundamentalClass_apply, he]
-  -- `ModuleCat.homEquiv` is `ModuleCat.Hom.hom`.
-  rfl
+  have he : e 1 = o.mapFundamentalClass hn (ContinuousMap.id N) :=
+    ((o.fundamentalClassEquiv_apply hn 1).trans (one_smul ℤ _)).trans
+      (o.mapFundamentalClass_id hn).symm
+  -- Evaluation at `1` is taken `ℕ`-linearly: `M` carries its own `ℤ`-module structure rather
+  -- than `zsmul`, so the commuting `ℤ`-actions that `ℤ`-linearity needs are not found.
+  have h : ⇑(o.evalFundamentalClass hn M (ContinuousMap.id N)) =
+      LinearMap.ringLmapEquivSelf ℤ ℕ M ∘ e.symm.arrowCongr (LinearEquiv.refl ℤ M) ∘
+        ModuleCat.Hom.hom ∘ (TopCat.of N).singularKroneckerEquiv ℤ n := by
+    ext c
+    simp only [Function.comp_apply, LinearMap.ringLmapEquivSelf_apply,
+      LinearEquiv.arrowCongr_apply, LinearEquiv.symm_symm, LinearEquiv.refl_apply, he,
+      TopCat.singularKroneckerEquiv_apply, evalFundamentalClass_apply]
+  rw [h]
+  exact (LinearEquiv.bijective _).comp ((LinearEquiv.bijective _).comp
+    (ModuleCat.hom_bijective.comp ((TopCat.of N).singularKroneckerEquiv ℤ n).bijective))
 
 end HomologicalOrientation
 
