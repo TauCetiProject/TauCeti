@@ -15,6 +15,7 @@ public import Mathlib.Combinatorics.SimpleGraph.Finite
 This file counts actual multigraph edge identities incident to vertices and vertex sets.  The two
 vertex counts differ only in their treatment of loops: `Graph.incidenceCount` counts a loop once,
 while `Graph.nonloopIncidenceCount` discards it.  Parallel edges are always counted separately.
+Both definitions use `Set.ncard`, so they return zero when the set being counted is infinite.
 
 For finite actual edge sets, `Graph.internalEdges` and `Graph.incidentEdges` provide the finite
 sets of edges internal to, or incident with, a finite set of actual vertices.  These are the
@@ -34,13 +35,13 @@ namespace Graph
 
 variable {α : Type u} {β : Type v} (G : Graph α β)
 
-/-- The number of nonloop edge identities incident to a vertex of a multigraph.
-Parallel edges are counted separately. -/
+/-- The `Set.ncard` of the nonloop edge identities incident to a vertex of a multigraph.
+Parallel edges are counted separately; the result is zero when this set is infinite. -/
 noncomputable def nonloopIncidenceCount (x : α) : ℕ :=
   (G.incidenceSet x \ G.loopSet x).ncard
 
-/-- The number of edge identities incident to a vertex of a multigraph, counting each
-loop once and counting parallel edges separately. -/
+/-- The `Set.ncard` of the edge identities incident to a vertex of a multigraph, counting each
+loop once and counting parallel edges separately. The result is zero when this set is infinite. -/
 noncomputable def incidenceCount (x : α) : ℕ :=
   (G.incidenceSet x).ncard
 
@@ -52,11 +53,11 @@ theorem finite_incidenceSet [Finite G.edgeSet] (x : α) : (G.incidenceSet x).Fin
 theorem finite_loopSet [Finite G.edgeSet] (x : α) : (G.loopSet x).Finite :=
   (G.finite_incidenceSet x).subset (G.loopSet_subset_incidenceSet x)
 
-/-- The incident edges split into the nonloop incident edges and the loops at the vertex. -/
-theorem nonloopIncidenceCount_add_ncard_loopSet [Finite G.edgeSet] (x : α) :
+/-- When the incidence set is finite, the incident edges split into the nonloop incident edges and
+the loops at the vertex. -/
+theorem nonloopIncidenceCount_add_ncard_loopSet (x : α) (hfin : (G.incidenceSet x).Finite) :
     G.nonloopIncidenceCount x + (G.loopSet x).ncard = G.incidenceCount x := by
-  exact Set.ncard_sdiff_add_ncard_of_subset (G.loopSet_subset_incidenceSet x)
-    (G.finite_incidenceSet x)
+  exact Set.ncard_sdiff_add_ncard_of_subset (G.loopSet_subset_incidenceSet x) hfin
 
 /-- A loopless multigraph has no loops at any vertex. -/
 @[simp]
@@ -91,16 +92,15 @@ theorem incidenceCount_deleteEdges (F : Set β) (x : α) :
   unfold incidenceCount
   rw [incidenceSet_deleteEdges]
 
-/-- For a finite actual edge set, the surviving and deleted incident-edge counts add to the
+/-- When the incidence set is finite, the surviving and deleted incident-edge counts add to the
 original incidence count. -/
-theorem incidenceCount_deleteEdges_add_ncard_inter [Finite G.edgeSet]
-    (F : Set β) (x : α) :
+theorem incidenceCount_deleteEdges_add_ncard_inter (F : Set β) (x : α)
+    (hfin : (G.incidenceSet x).Finite) :
     (G.deleteEdges F).incidenceCount x + (G.incidenceSet x ∩ F).ncard =
       G.incidenceCount x := by
   rw [incidenceCount_deleteEdges, incidenceCount]
   rw [add_comm]
-  exact Set.ncard_inter_add_ncard_sdiff_eq_ncard (G.incidenceSet x) F
-    (G.finite_incidenceSet x)
+  exact Set.ncard_inter_add_ncard_sdiff_eq_ncard (G.incidenceSet x) F hfin
 
 /-- Deleting edges removes precisely the deleted members of a vertex's nonloop incidence set. -/
 theorem nonloopIncidenceCount_deleteEdges (F : Set β) (x : α) :
@@ -156,14 +156,14 @@ theorem loopSet_banana_left (x y : α) (E : Set β) (hxy : x ≠ y) :
   simp [hxy]
 
 /-- Every edge identity of a banana graph is incident to its left endpoint, so the incidence
-count there is the number of actual edges. -/
+count there is `E.ncard`, which is zero when `E` is infinite. -/
 @[simp]
 theorem incidenceCount_banana_left (x y : α) (E : Set β) :
     (Graph.banana x y E).incidenceCount x = E.ncard := by
   simp [incidenceCount]
 
-/-- Every edge identity of a bouquet is a loop at its unique vertex, so its incidence count is the
-number of actual edges. -/
+/-- Every edge identity of a bouquet is a loop at its unique vertex, so its incidence count is
+`E.ncard`, which is zero when `E` is infinite. -/
 theorem incidenceCount_bouquet (x : α) (E : Set β) :
     (Graph.bouquet x E).incidenceCount x = E.ncard := by
   simp [incidenceCount]
@@ -174,8 +174,8 @@ theorem nonloopIncidenceCount_bouquet (x : α) (E : Set β) :
     (Graph.bouquet x E).nonloopIncidenceCount x = 0 := by
   simp [nonloopIncidenceCount]
 
-/-- When the endpoints of a banana graph are distinct, every edge is nonloop and is counted at
-the left endpoint. -/
+/-- When the endpoints of a banana graph are distinct, every edge is nonloop and the count at the
+left endpoint is `E.ncard`, which is zero when `E` is infinite. -/
 @[simp]
 theorem nonloopIncidenceCount_banana_left (x y : α) (E : Set β) (hxy : x ≠ y) :
     (Graph.banana x y E).nonloopIncidenceCount x = E.ncard := by
