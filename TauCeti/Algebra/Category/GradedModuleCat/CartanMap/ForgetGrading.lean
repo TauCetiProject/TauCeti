@@ -28,8 +28,8 @@ is defined by projectivity of the underlying module.
 
 If the algebra grading is a decomposition, an exhaustive graded simple family whose underlying
 modules are simple exhausts the ordinary simples as well
-(`isExhaustiveSimpleFamily_of_gradedSimpleFamily`). Every ordinary simple occurs in the regular
-module, and the regular module itself admits the algebra grading.
+(`isExhaustiveSimpleFamily_of_isExhaustiveGradedSimpleFamily`). Every ordinary simple occurs in
+the regular module, and the regular module itself admits the algebra grading.
 
 The construction uses `LaurentK0.forgetGrading` and the graded Cartan map. See Z. Dancso and
 A. Licata, "Koszul algebras and flow lattices", Section 2.2, for the specialization convention,
@@ -233,7 +233,7 @@ include hS in
 /-- An exhaustive graded simple family whose underlying modules are simple already
 exhausts the ordinary simples. Every ordinary simple occurs in the regular module, and the
 regular module has a grading; no grading of arbitrary ordinary modules is required. -/
-theorem isExhaustiveSimpleFamily_of_gradedSimpleFamily [GradedAlgebra 𝒜']
+theorem isExhaustiveSimpleFamily_of_isExhaustiveGradedSimpleFamily [GradedAlgebra 𝒜']
     (hforget : ∀ i, Nonempty ((gradedFiniteModulesForget 𝒜').obj (S i) ≅ T i)) :
     IsExhaustiveSimpleFamily T := by
   classical

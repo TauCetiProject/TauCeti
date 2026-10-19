@@ -59,7 +59,7 @@ theorem isExhaustiveSimpleFamily_gradedIdempotentHead : IsExhaustiveSimpleFamily
   classical
   let _ : ∀ i, IsSimpleModule A (T i) := fun i ↦
     isSimpleModule_gradedIdempotentHead hneg he.toOrthogonalIdempotents he₀ hspan i (hne i)
-  exact isExhaustiveSimpleFamily_of_gradedSimpleFamily S T
+  exact isExhaustiveSimpleFamily_of_isExhaustiveGradedSimpleFamily S T
     (isExhaustiveGradedSimpleFamily_gradedIdempotentHead (hcomplete := he) hneg he₀ hspan)
     (fun _ ↦ ⟨Iso.refl _⟩)
 
