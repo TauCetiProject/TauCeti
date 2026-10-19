@@ -11,6 +11,7 @@ public import Mathlib.Basic.Real.Basic
 public import Mathlib.Data.Fintype.Pi
 public import TauCeti.Order.Partition.Pi
 import Mathlib.Algebra.Order.BigOperators.Ring.Finset
+import TauCeti.Order.Partition.Finpartition
 
 /-!
 # Labelled induced three-vertex counts and their coarse prediction
@@ -49,10 +50,10 @@ parts have size at most `m`.
 ## References
 
 * Y. Zhao, *Graph Theory and Additive Combinatorics*, Cambridge University Press (2023),
-  Chapter 4 (the graph counting lemma).
+  Chapter 2 (the graph regularity method: the graph counting lemma and strong regularity).
 * A comparable repeated-cell bound, for real weights dominated by the volume of cell triples, is
   `sum_nontransversal_weight_le` in `RegularityLemmata/Relational/DiagonalGate.lean` of
-  `cameronfreer/regularity-lemmata`.
+  `cameronfreer/regularity-lemmata` at commit `315ef979f55f31cc43cd791302519d9a34cc2dc0`.
 -/
 
 public section
@@ -103,8 +104,8 @@ private theorem card_filter_injective_and_eq {P : Finpartition (univ : Finset V)
   congrArg card <| filter_congr fun _ hg ↦
     and_iff_right (P.injective_of_mem_piFinset_parts hφ hg)
 
-/-- The labelled induced copies of `J` whose three vertices lie in three distinct parts of `P`
-are counted part by part. -/
+/-- Summing, over the assignments `φ` of the vertices of `J` to three distinct parts of `P`, the
+induced copies of `J` in the box of `φ` gives at most `J.inducedGraphCount3 G`. -/
 theorem sum_card_induced_le_inducedGraphCount3 (P : Finpartition (univ : Finset V)) :
     ∑ φ : Fin 3 → P.parts with Injective φ,
         #{g ∈ Fintype.piFinset (fun i ↦ (φ i : Finset V)) | ∀ i j, J.Adj i j ↔ G.Adj (g i) (g j)} ≤

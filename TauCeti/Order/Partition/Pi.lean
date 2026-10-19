@@ -33,8 +33,6 @@ supplies both facts.
   non-injective cell assignment.
 * `Finpartition.sum_prod_card_of_not_injective_le`: the same bound for the total size of the boxes
   of non-injective cell assignments.
-* `Finpartition.sum_sq_card_parts_le`: `∑ A ∈ P.parts, #A ^ 2 ≤ m * #s` when all parts have size
-  at most `m`.
 -/
 
 public section
@@ -165,11 +163,5 @@ theorem sum_prod_card_of_not_injective_le :
   split_ifs with hφ
   · rw [filter_false_of_mem fun g hg ↦ by rwa [hpart hg, ← hinj, not_not], card_empty]
   · rw [filter_true_of_mem fun g hg ↦ by rwa [hpart hg, ← hinj], Fintype.card_piFinset]
-
-/-- If all parts of `P` have size at most `m`, then `∑ A ∈ P.parts, #A ^ 2 ≤ m * #s`. -/
-theorem sum_sq_card_parts_le {m : ℕ} (hm : ∀ A ∈ P.parts, #A ≤ m) :
-    ∑ A ∈ P.parts, #A ^ 2 ≤ m * #s := by
-  rw [← P.sum_card_parts, mul_sum]
-  exact sum_le_sum fun A hA ↦ by rw [sq]; exact Nat.mul_le_mul_right _ (hm A hA)
 
 end Finpartition
