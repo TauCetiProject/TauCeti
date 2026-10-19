@@ -392,20 +392,14 @@ section Bounded
 
 variable [HasFiniteCoproducts C] {X Y : CochainComplex.Bounded C} (f : X ⟶ Y)
 
-/-- On bounded cochain complexes, `compressionFunctor n` sends the bounded mapping cone of `f` to
-the compression of the ordinary mapping cone of `f.hom`. -/
-lemma compressionFunctor_obj_mappingCone :
-    (compressionFunctor n).obj (CochainComplex.Bounded.mappingCone f) =
-      compression n (mappingCone f.hom) :=
-  compressionFunctor_obj n (CochainComplex.Bounded.mappingCone f)
-
 /-- For a morphism `f : X ⟶ Y` of bounded cochain complexes, the compression of the bounded
 mapping cone of `f` is naturally isomorphic to the periodic mapping cone of the compressed
 morphism `compressionMap n f.hom`. -/
 noncomputable def compressionFunctorMappingConeIso :
     (compressionFunctor n).obj (CochainComplex.Bounded.mappingCone f) ≅
       homotopyCofiber (compressionMap n f.hom) :=
-  eqToIso (compressionFunctor_obj_mappingCone n f) ≪≫ compressionMappingConeIso n f.hom
+  eqToIso (compressionFunctor_obj n (CochainComplex.Bounded.mappingCone f)) ≪≫
+    compressionMappingConeIso n f.hom
 
 /-- Applying `compressionFunctor n` to the bounded mapping-cone triangle of `f` produces a
 triangle isomorphic to `compressionMappingConeTriangle n f.hom` via the canonical object
@@ -415,7 +409,7 @@ noncomputable def compressionFunctorMappingConeTriangleIso :
       compressionMappingConeTriangle n f.hom :=
   Triangle.isoMk _ _ (eqToIso (compressionFunctor_obj n X))
     (eqToIso (compressionFunctor_obj n Y))
-    (eqToIso (compressionFunctor_obj_mappingCone n f))
+    (eqToIso (compressionFunctor_obj n (CochainComplex.Bounded.mappingCone f)))
     (by dsimp [compressionMappingConeTriangle]; simp)
     (by dsimp [compressionMappingConeTriangle]; simp)
     (by
