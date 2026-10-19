@@ -105,6 +105,21 @@ theorem generalizedExtremeValuePDFReal_of_shape_ne_zero_of_not_pos (hξ : ξ ≠
     (hx : ¬0 < 1 + ξ * ((x - m) / s)) : generalizedExtremeValuePDFReal m s ξ x = 0 := by
   simp [generalizedExtremeValuePDFReal, hξ, hx]
 
+/-- On its open support, the nonzero-shape extended density has the classical formula. -/
+theorem generalizedExtremeValuePDF_of_shape_ne_zero (hξ : ξ ≠ 0) (hs : 0 < s)
+    (hx : 0 < 1 + ξ * ((x - m) / s)) :
+    generalizedExtremeValuePDF m s ξ x =
+      ENNReal.ofReal ((1 + ξ * ((x - m) / s)) ^ (-ξ⁻¹ - 1) *
+        Real.exp (-((1 + ξ * ((x - m) / s)) ^ (-ξ⁻¹))) / s) := by
+  rw [generalizedExtremeValuePDF_eq_ofReal,
+    generalizedExtremeValuePDFReal_of_shape_ne_zero hξ hs hx]
+
+/-- The extended density vanishes outside the open support at nonzero shape. -/
+theorem generalizedExtremeValuePDF_of_shape_ne_zero_of_not_pos (hξ : ξ ≠ 0)
+    (hx : ¬0 < 1 + ξ * ((x - m) / s)) : generalizedExtremeValuePDF m s ξ x = 0 := by
+  rw [generalizedExtremeValuePDF_eq_ofReal,
+    generalizedExtremeValuePDFReal_of_shape_ne_zero_of_not_pos hξ hx, ENNReal.ofReal_zero]
+
 /-- The real generalized extreme-value density is nonnegative for all parameters. -/
 theorem generalizedExtremeValuePDFReal_nonneg (m s ξ x : ℝ) :
     0 ≤ generalizedExtremeValuePDFReal m s ξ x := by
@@ -195,10 +210,9 @@ private theorem generalizedExtremeValueMap_eq_add_generalizedParetoMap (m s ξ e
     ring
   · rw [generalizedExtremeValueMap_of_shape_ne_zero hξ,
       generalizedParetoMap_of_shape_ne_zero hξ]
-    ring_nf
+    rw [neg_mul, ← mul_neg]
 
-private theorem one_add_mul_add_generalizedParetoMap_sub_div (hs : s ≠ 0) (_hξ : ξ ≠ 0)
-    (m y : ℝ) :
+private theorem one_add_mul_add_generalizedParetoMap_sub_div (hs : s ≠ 0) (m y : ℝ) :
     1 + ξ * ((m + generalizedParetoMap s ξ y - m) / s) = Real.exp (ξ * y) := by
   rw [add_sub_cancel_left]
   convert one_add_mul_generalizedParetoMap_div hs ξ y using 1
@@ -210,7 +224,7 @@ private theorem image_add_generalizedParetoMap_univ (hs : 0 < s) (hξ : ξ ≠ 0
   ext x
   constructor
   · rintro ⟨y, -, rfl⟩
-    rw [Set.mem_ofPred_eq, one_add_mul_add_generalizedParetoMap_sub_div hs.ne' hξ]
+    rw [Set.mem_ofPred_eq, one_add_mul_add_generalizedParetoMap_sub_div hs.ne']
     exact Real.exp_pos _
   · intro hx
     have hx' : 0 < 1 + ξ * ((x - m) / s) := hx
@@ -226,9 +240,8 @@ private theorem transform_weight (hs : 0 < s) (hξ : ξ ≠ 0) (m y : ℝ) :
     ENNReal.ofReal |s * Real.exp (ξ * y)| *
         generalizedExtremeValuePDF m s ξ (m + generalizedParetoMap s ξ y) =
       gumbelPDF 0 1 y := by
-  have ht := one_add_mul_add_generalizedParetoMap_sub_div hs.ne' hξ m y
-  rw [generalizedExtremeValuePDF_eq_ofReal,
-    generalizedExtremeValuePDFReal_of_shape_ne_zero hξ hs (ht ▸ Real.exp_pos _),
+  have ht := one_add_mul_add_generalizedParetoMap_sub_div (ξ := ξ) hs.ne' m y
+  rw [generalizedExtremeValuePDF_of_shape_ne_zero hξ hs (ht ▸ Real.exp_pos _),
     gumbelPDF_of_pos one_pos, sub_zero, div_one, abs_of_pos (mul_pos hs (Real.exp_pos _)),
     ← ENNReal.ofReal_mul (by positivity)]
   congr 1
@@ -255,6 +268,7 @@ theorem generalizedExtremeValueMeasure_eq_withDensity (m s ξ : ℝ) :
       rw [generalizedExtremeValueMeasure_zero, funext (generalizedExtremeValuePDF_zero m s),
         gumbelMeasure_eq_withDensity]
     · let φ : ℝ → ℝ := fun y ↦ m + generalizedParetoMap s ξ y
+      -- Transport the candidate density through the generalized Pareto change of variables.
       have hmap := TauCeti.MeasureTheory.map_withDensity_abs_deriv_mul
         (s := univ) (φ := φ) (φ' := fun y ↦ s * Real.exp (ξ * y))
         (f := generalizedExtremeValuePDF m s ξ) MeasurableSet.univ (by fun_prop)
@@ -267,10 +281,12 @@ theorem generalizedExtremeValueMeasure_eq_withDensity (m s ξ : ℝ) :
         exact transform_weight hs hξ m y
       rw [withDensity_congr_ae hw, image_add_generalizedParetoMap_univ hs hξ m,
         Measure.restrict_univ] at hmap
+      -- Decompose the GEV transformation as the standard Gumbel transformation followed by `φ`.
       have hgev : generalizedExtremeValueMap m s ξ =
           φ ∘ fun e : ℝ ↦ -Real.log e := by
         funext e
         exact generalizedExtremeValueMap_eq_add_generalizedParetoMap m s ξ e
+      -- Restate the standard Gumbel law as the pushforward of the exponential law.
       have hgumbel : gumbelMeasure 0 1 =
           (expMeasure 1).map (fun e : ℝ ↦ -Real.log e) := by
         simpa only [zero_sub, one_mul] using gumbelMeasure_of_pos one_pos 0
@@ -279,12 +295,12 @@ theorem generalizedExtremeValueMeasure_eq_withDensity (m s ξ : ℝ) :
           (by fun_prop : Measurable fun e : ℝ ↦ -Real.log e),
         ← hgumbel, gumbelMeasure_eq_withDensity, hmap,
         ← withDensity_indicator (by measurability)]
+      -- Remove the support indicator using the density's outside-support vanishing theorem.
       congr 1
       ext z
       by_cases hz : 0 < 1 + ξ * ((z - m) / s)
       · simp [hz]
-      · simp [hz, generalizedExtremeValuePDF,
-          generalizedExtremeValuePDFReal_of_shape_ne_zero_of_not_pos hξ hz]
+      · simp [hz, generalizedExtremeValuePDF_of_shape_ne_zero_of_not_pos hξ hz]
 
 /-- The extended generalized extreme-value density has total mass one at positive scale. -/
 theorem lintegral_generalizedExtremeValuePDF_eq_one (hs : 0 < s) (m ξ : ℝ) :
@@ -293,6 +309,56 @@ theorem lintegral_generalizedExtremeValuePDF_eq_one (hs : 0 < s) (m ξ : ℝ) :
   have h : generalizedExtremeValueMeasure m s ξ univ = 1 := measure_univ
   rwa [generalizedExtremeValueMeasure_eq_withDensity,
     withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ] at h
+
+/-- The real generalized extreme-value density has integral one at positive scale. -/
+theorem integral_generalizedExtremeValuePDFReal_eq_one (hs : 0 < s) (m ξ : ℝ) :
+    ∫ x, generalizedExtremeValuePDFReal m s ξ x = 1 := by
+  simp_rw [← toReal_generalizedExtremeValuePDF]
+  rw [integral_toReal (measurable_generalizedExtremeValuePDF m s ξ).aemeasurable
+      (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top),
+    lintegral_generalizedExtremeValuePDF_eq_one hs m ξ, ENNReal.toReal_one]
+
+/-- The real generalized extreme-value density is integrable for every parameter value. -/
+theorem integrable_generalizedExtremeValuePDFReal (m s ξ : ℝ) :
+    Integrable (generalizedExtremeValuePDFReal m s ξ) := by
+  rcases le_or_gt s 0 with hs | hs
+  · have hzero : generalizedExtremeValuePDFReal m s ξ = 0 :=
+      funext (generalizedExtremeValuePDFReal_of_scale_nonpos hs m ξ)
+    rw [hzero]
+    exact integrable_zero ℝ ℝ volume
+  · apply Integrable.of_integral_ne_zero
+    rw [integral_generalizedExtremeValuePDFReal_eq_one hs m ξ]
+    exact one_ne_zero
+
+/-! ### Transfer to the density -/
+
+section Transfer
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- Integrability against a generalized extreme-value law is equivalent to Lebesgue
+integrability of the density-weighted function, at every parameter value. -/
+theorem integrable_generalizedExtremeValueMeasure_iff (m s ξ : ℝ) {g : ℝ → E} :
+    Integrable g (generalizedExtremeValueMeasure m s ξ) ↔
+      Integrable fun y ↦ generalizedExtremeValuePDFReal m s ξ y • g y := by
+  rw [generalizedExtremeValueMeasure_eq_withDensity,
+    funext (generalizedExtremeValuePDF_eq_ofReal m s ξ)]
+  exact integrable_withDensity_ofReal_iff
+    (measurable_generalizedExtremeValuePDFReal m s ξ).aemeasurable
+    (ae_of_all _ (generalizedExtremeValuePDFReal_nonneg m s ξ))
+
+/-- An integral against a generalized extreme-value law equals the density-weighted Lebesgue
+integral, at every parameter value. -/
+theorem integral_generalizedExtremeValueMeasure_eq (m s ξ : ℝ) (g : ℝ → E) :
+    ∫ y, g y ∂generalizedExtremeValueMeasure m s ξ =
+      ∫ y, generalizedExtremeValuePDFReal m s ξ y • g y := by
+  rw [generalizedExtremeValueMeasure_eq_withDensity,
+    funext (generalizedExtremeValuePDF_eq_ofReal m s ξ)]
+  exact integral_withDensity_ofReal
+    (measurable_generalizedExtremeValuePDFReal m s ξ).aemeasurable
+    (ae_of_all _ (generalizedExtremeValuePDFReal_nonneg m s ξ)) g
+
+end Transfer
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ}
 
@@ -319,26 +385,25 @@ theorem rnDeriv_generalizedExtremeValueMeasure (m s ξ : ℝ) :
 
 /-! ### Topological support -/
 
+private theorem one_add_mul_sub_div_eq_mul_sub (hs : s ≠ 0) (hξ : ξ ≠ 0) (m x : ℝ) :
+    1 + ξ * ((x - m) / s) = (ξ / s) * (x - (m - s / ξ)) := by
+  field_simp [hs, hξ]
+  ring
+
 /-- At positive scale and positive shape, the open support begins at the finite lower endpoint. -/
 theorem setOf_generalizedExtremeValue_pos_eq_Ioi (hs : 0 < s) (hξ : 0 < ξ) :
     {x : ℝ | 0 < 1 + ξ * ((x - m) / s)} = Ioi (m - s / ξ) := by
-  have hfactor (x : ℝ) :
-      1 + ξ * ((x - m) / s) = (ξ / s) * (x - (m - s / ξ)) := by
-    field_simp [hs.ne', hξ.ne']
-    ring
   ext x
-  rw [Set.mem_ofPred_eq, mem_Ioi, hfactor,
+  rw [Set.mem_ofPred_eq, mem_Ioi,
+    one_add_mul_sub_div_eq_mul_sub hs.ne' hξ.ne' m x,
     mul_pos_iff_of_pos_left (div_pos hξ hs), sub_pos]
 
 /-- At positive scale and negative shape, the open support ends at the finite upper endpoint. -/
 theorem setOf_generalizedExtremeValue_neg_eq_Iio (hs : 0 < s) (hξ : ξ < 0) :
     {x : ℝ | 0 < 1 + ξ * ((x - m) / s)} = Iio (m - s / ξ) := by
-  have hfactor (x : ℝ) :
-      1 + ξ * ((x - m) / s) = (ξ / s) * (x - (m - s / ξ)) := by
-    field_simp [hs.ne', hξ.ne]
-    ring
   ext x
-  rw [Set.mem_ofPred_eq, mem_Iio, hfactor, mul_pos_iff]
+  rw [Set.mem_ofPred_eq, mem_Iio,
+    one_add_mul_sub_div_eq_mul_sub hs.ne' hξ.ne m x, mul_pos_iff]
   have hneg : ξ / s < 0 := div_neg_of_neg_of_pos hξ hs
   have hnot : ¬0 < ξ / s := not_lt.mpr (le_of_lt hneg)
   simp only [hnot, false_and, hneg, true_and, false_or, sub_neg]
@@ -356,8 +421,8 @@ theorem support_generalizedExtremeValuePDF (hs : 0 < s) (m ξ : ℝ) :
   · simp [hξ]
   · simp [hξ]
 
-/-- A positive-scale generalized extreme-value law has full support at shape zero, a closed
-lower half-line at positive shape, and a closed upper half-line at negative shape. -/
+/-- A positive-scale generalized extreme-value law has full support at shape zero,
+`[m - s / ξ, ∞)` at positive shape, and `(-∞, m - s / ξ]` at negative shape. -/
 theorem support_generalizedExtremeValueMeasure (hs : 0 < s) (m ξ : ℝ) :
     (generalizedExtremeValueMeasure m s ξ).support =
       if ξ = 0 then univ else if 0 < ξ then Ici (m - s / ξ) else Iic (m - s / ξ) := by
