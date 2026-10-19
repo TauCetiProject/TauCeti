@@ -141,7 +141,7 @@ theorem natCard_sq_sub_self_add_one_eq_zero_prime_pow (hp2 : p ≠ 2) (hp3 : p �
       (by norm_num) hp2
   rw [hsq, natCard_sqrts_prime_pow_eq_legendreSym_add_one hp2 hk ha, h3, add_comm]
 
-/-- **Primitive cube roots of unity modulo `N`.** The polynomial `x² - x + 1` has no roots modulo
+/-- **Roots of `x² - x + 1` modulo `N`.** The polynomial `x² - x + 1` has no roots modulo
 `N` if `9 ∣ N`, and otherwise `∏_{p ∣ N} (1 + (p | 3))` roots. The factor `1 + (p | 3)` is `0` at
 `p = 2`, `1` at `p = 3`, and `1 + (-3 | p)` at every other prime. -/
 theorem natCard_sq_sub_self_add_one_eq_zero (N : ℕ) :
