@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Module.ZMod
 public import TauCeti.GroupTheory.QuotientGroup.Basic
 public import TauCeti.Topology.Algebra.Group.LowerCentralSeries
+public import TauCeti.Topology.Separation.TypeTags
 
 /-!
 # The graded pieces of the lower `p`-series

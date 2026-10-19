@@ -8,7 +8,6 @@ module
 public import TauCeti.Topology.Algebra.Group.LowerCentralSeries.Graded.Continuous
 public import TauCeti.Topology.Algebra.Group.LowerCentralSeries.Closed
 import Mathlib.Topology.Algebra.ProperAction.Basic
-import TauCeti.Topology.Separation.TypeTags
 
 /-!
 # Generation of the graded pieces of the closed lower central series
