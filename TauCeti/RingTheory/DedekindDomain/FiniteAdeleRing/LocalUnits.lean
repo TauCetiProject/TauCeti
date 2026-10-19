@@ -222,7 +222,6 @@ theorem unitsOfAdicCompletion_mem_sIntegralUnits {S : Set (HeightOneSpectrum R)}
 
 /-- The finite idele concentrated at `v` is an everywhere-integral unit exactly when its
 coordinate at `v` is a local integral unit. -/
-@[simp]
 theorem unitsOfAdicCompletion_mem_integralUnits_iff {v : HeightOneSpectrum R}
     {u : (v.adicCompletion K)ˣ} :
     unitsOfAdicCompletion K v u ∈ integralUnits R K ↔ Valued.v (u : v.adicCompletion K) = 1 := by
