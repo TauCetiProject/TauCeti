@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Convex.Sequence.SlopeData.Basic
+public import TauCeti.Analysis.Convex.Sequence.FiniteSlopeMultiset
 public import Mathlib.Data.Finsupp.Multiset
 public import Mathlib.Data.Finset.Sort
 import Mathlib.Algebra.BigOperators.Fin
@@ -114,8 +114,9 @@ theorem expand_length : d.expand.length = d.lengths.sum (fun _ n => n) := by
 
 /-- Expansion repeats each slope exactly its stored number of times. -/
 @[simp]
-theorem multiset_expand_slope : (List.ofFn d.expand.slope : Multiset Γ) =
+theorem multiset_expand_slope : d.expand.slopeMultiset =
     d.lengths.toMultiset := by
+  rw [FiniteSlopeData.slopeMultiset_def]
   simp [expand, List.ofFn_get]
 
 end FiniteCompressedSlopeData
@@ -129,7 +130,7 @@ on their support. The anchor is unchanged. -/
 noncomputable def compress : FiniteCompressedSlopeData Γ where
   start := d.start
   initialHeight := d.initialHeight
-  lengths := (List.ofFn d.slope : Multiset Γ).toFinsupp
+  lengths := d.slopeMultiset.toFinsupp
 
 @[simp]
 theorem compress_start : d.compress.start = d.start := (rfl)
@@ -140,7 +141,7 @@ theorem compress_initialHeight : d.compress.initialHeight = d.initialHeight := (
 /-- A compressed length counts the unit edges of that slope. -/
 @[simp]
 theorem compress_lengths (m : Γ) :
-    d.compress.lengths m = (List.ofFn d.slope : Multiset Γ).count m := (rfl)
+    d.compress.lengths m = d.slopeMultiset.count m := (rfl)
 
 /-- Compressing and expanding recovers the original unit-slope presentation. -/
 @[simp]
@@ -205,7 +206,7 @@ theorem heights_start_add_length :
     d.heights (d.start + d.lengths.sum (fun _ k => k)) =
       ((d.initialHeight + d.lengths.sum (fun m k => k • m) : Γ) : WithTop Γ) := by
   have hsum := congrArg Multiset.sum d.multiset_expand_slope
-  rw [Multiset.sum_coe, List.sum_ofFn, Finsupp.sum_toMultiset] at hsum
+  rw [FiniteSlopeData.sum_slopeMultiset_eq_sum, Finsupp.sum_toMultiset] at hsum
   rw [heights_def, ← expand_length, ← expand_start, FiniteSlopeData.heights_start_add_length,
     expand_initialHeight, hsum]
 
