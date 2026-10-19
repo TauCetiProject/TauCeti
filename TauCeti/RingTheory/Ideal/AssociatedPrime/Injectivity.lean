@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.LocalizedModule.AtPrime
 public import Mathlib.RingTheory.Ideal.AssociatedPrime.Basic
+public import Mathlib.RingTheory.Localization.Module
 
 /-!
 # Detecting injectivity at associated primes
@@ -29,11 +29,9 @@ variable {R M N : Type*} [CommRing R] [IsNoetherianRing R]
 /-- A linear map is injective if, at every prime, its localization is injective or the prime
 is not associated to its domain. Neither module needs to be finitely generated. -/
 @[stacks 0AV7]
-theorem injective_of_forall_localization (map : M →ₗ[R] N)
+theorem injective_of_forall_associatedPrime_localization (map : M →ₗ[R] N)
     (local_injective : ∀ (prime : Ideal R) [prime.IsPrime],
-      Function.Injective (IsLocalizedModule.map prime.primeCompl
-        (LocalizedModule.mkLinearMap prime.primeCompl M)
-        (LocalizedModule.mkLinearMap prime.primeCompl N) map) ∨
+      Function.Injective (LocalizedModule.map prime.primeCompl map) ∨
       prime ∉ associatedPrimes R M) :
     Function.Injective map := by
   rw [← LinearMap.ker_eq_bot]
@@ -48,7 +46,8 @@ theorem injective_of_forall_localization (map : M →ₗ[R] N)
   have element_zero : map element.val = 0 := element.property
   have localized_zero : LocalizedModule.mkLinearMap prime.primeCompl M element.val = 0 := by
     apply injective
-    simp only [IsLocalizedModule.map_apply, element_zero, map_zero]
+    simp only [LocalizedModule.mkLinearMap_apply, LocalizedModule.map_mk, element_zero,
+      LocalizedModule.zero_mk, map_zero]
   obtain ⟨denominator, annihilates⟩ :=
     (IsLocalizedModule.eq_zero_iff prime.primeCompl
       (LocalizedModule.mkLinearMap prime.primeCompl M)).mp localized_zero
