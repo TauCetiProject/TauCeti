@@ -27,6 +27,8 @@ degrees.  Consequently the matrix identity alone is not asserted to imply linear
 
 * `TauCeti.cartan_poincare_of_bigradedExtPoincareMatrix_isDiagonal`: full bigraded
   diagonality implies the graded Cartan--Poincare identity.
+* `TauCeti.cartan_poincare_of_bigradedExtPoincareMatrix_isDiagonal_of_semisimple`: the same
+  implication over a semisimple degree-zero part, without chosen resolutions.
 
 ## References
 
@@ -96,6 +98,36 @@ theorem cartan_poincare_of_bigradedExtPoincareMatrix_isDiagonal
       S hS hconc h r hr hneg hb).2 hdiag
   exact gradedCartanMatrix_transpose_mul_diagonalExtPoincareMatrix_map_eq_one
     S he he₀ hI hne hself hS bP hbP h (fun i ↦ ⟨r i, hlin i⟩) hconc hb
+
+include hbP in
+/-- **The Cartan--Poincare identity over a semisimple degree-zero part.** If `A` is
+finite-dimensional and nonnegatively graded, its degree-zero part is semisimple, the chosen
+simples are concentrated in degree zero, and their full bigraded Ext Poincare matrix is diagonal,
+then `C^T * P(-q) = 1`.
+
+The semisimplicity hypothesis supplies minimal projective resolutions with finite-dimensional
+terms, so no resolutions or minimality witnesses occur in the public statement. -/
+theorem cartan_poincare_of_bigradedExtPoincareMatrix_isDiagonal_of_semisimple
+    [IsSemisimpleRing (𝒜 0)]
+    (h : IsGradedEulerAdmissibleOn.{uA} (k := k) (e := GradedModuleCat.shift 𝒜)
+      (gradedFiniteModules 𝒜) (gradedFiniteModules 𝒜))
+    (hneg : ∀ p < 0, 𝒜 p = ⊥)
+    (hconc : ∀ i p, p ≠ 0 → (S i).obj.grading.piece p = ⊥) {b : ℕ}
+    (hb : ∀ i j, IsGradedExtBoundedBy.{uA} (GradedModuleCat.shift 𝒜) (S i).obj (S j).obj b)
+    (hdiag : ∀ i j,
+      Bigraded.IsDiagonal
+        (bigradedExtPoincareMatrix (fun i ↦ (S i).obj)
+          (fun i j ↦ (h.isGradedEulerAdmissible (S i).property (S j).property).internallyFinite)
+          b i j)) :
+    (gradedCartanMatrix 𝒜 bP (gradedSimpleClassBasis S he he₀ hne hself hS))ᵀ *
+        (diagonalExtPoincareMatrix.{uA} k (fun i ↦ (S i).obj) b).map
+          (Polynomial.eval₂RingHom C (-T 1)) = 1 := by
+  classical
+  choose r hr hfinite using fun i ↦
+    GradedProjectiveResolution.exists_isMinimal_of_finite hneg (S i).obj
+  let _ (i : I) (n : ℕ) : Module.Finite k ((r i).X n) := hfinite i n
+  exact cartan_poincare_of_bigradedExtPoincareMatrix_isDiagonal
+    S he he₀ hI hne hself hS bP hbP h r hr hneg hconc hb hdiag
 
 end Cartan
 

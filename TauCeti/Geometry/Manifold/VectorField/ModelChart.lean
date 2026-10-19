@@ -36,7 +36,8 @@ of regular points.
 * `TauCeti.exists_mem_nhds_contMDiffOn_mvfderiv_eq_neg_one`: near a regular point of a smooth
   function, a rescaled constant chart field is a smooth direction of unit-speed decrease.
 * `TauCeti.exists_vectorField_mvfderiv_eq_neg_one`: a smooth vector field, vanishing outside a
-  compact set, with `df(X) = -1` on a neighbourhood of a compact set of regular points.
+  compact set, with `df(X) ≤ 0` everywhere and `df(X) = -1` on a neighbourhood of a compact set of
+  regular points.
 -/
 
 public section
@@ -213,11 +214,13 @@ variable [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [T2Space M]
 
 /-- **A unit-speed descending field near a compact set of regular points.** If a compact set `K`
 contains no critical point of the smooth function `f`, there is a smooth vector field `X`, vanishing
-outside a compact set, with `df(X) = -1` on an open neighbourhood of `K`. -/
+outside a compact set, along which `f` never increases, `df(X) ≤ 0`, and with `df(X) = -1` on an
+open neighbourhood of `K`. -/
 theorem exists_vectorField_mvfderiv_eq_neg_one (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ f) {K : Set M}
     (hK : IsCompact K) (hreg : ∀ x ∈ K, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x ≠ 0) :
     ∃ X : (x : M) → TangentSpace 𝓘(ℝ, E) x,
       ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E).tangent ∞ (fun x ↦ (⟨x, X x⟩ : TangentBundle 𝓘(ℝ, E) M)) ∧
+      (∀ x, mvfderiv 𝓘(ℝ, E) f x (X x) ≤ 0) ∧
       (∃ U, IsOpen U ∧ K ⊆ U ∧ ∀ x ∈ U, mvfderiv 𝓘(ℝ, E) f x (X x) = -1) ∧
       ∃ C, IsCompact C ∧ ∀ x ∉ C, X x = 0 := by
   -- Near each `x ∈ K` take a local field `s x` with `df(s x) = -1` on `V x`, and a bump function
@@ -236,12 +239,15 @@ theorem exists_vectorField_mvfderiv_eq_neg_one (hf : ContMDiff 𝓘(ℝ, E) 𝓘
   set d : M → ℝ := fun y ↦ g y + (1 - Real.smoothTransition (g y)) with hd
   set Y : (y : M) → TangentSpace 𝓘(ℝ, E) y := fun y ↦ ∑ i ∈ t, ((ρ i : M → ℝ) • s i) y with hY
   have hg0 : ∀ y, 0 ≤ g y := fun y ↦ Finset.sum_nonneg fun i _ ↦ (ρ i).nonneg
+  have hgd : ∀ y, g y ≤ d y := fun y ↦ by
+    have := Real.smoothTransition.le_one (g y)
+    simp only [hd]
+    linarith
   have hd0 : ∀ y, d y ≠ 0 := by
     intro y
-    have h1 := Real.smoothTransition.le_one (g y)
     rcases (hg0 y).eq_or_lt with h | h
     · simp [hd, ← h]
-    · exact (by linarith : 0 < d y).ne'
+    · exact (h.trans_le (hgd y)).ne'
   have hgC : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ g := ContMDiff.sum fun i _ ↦ (ρ i).contMDiff
   have hdC : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ d :=
     hgC.add (contMDiff_const.sub (Real.smoothTransition.contDiff.contMDiff.comp hgC))
@@ -256,9 +262,12 @@ theorem exists_vectorField_mvfderiv_eq_neg_one (hf : ContMDiff 𝓘(ℝ, E) 𝓘
     by_cases hy : ρ i y = 0
     · simp [hy]
     · rw [hsf i y (interior_subset ((hρ i).2 (subset_closure hy))), mul_neg_one]
-  refine ⟨fun y ↦ (d y)⁻¹ • Y y, ContMDiff.smul_section (hdC.inv₀ hd0) hYC,
+  refine ⟨fun y ↦ (d y)⁻¹ • Y y, ContMDiff.smul_section (hdC.inv₀ hd0) hYC, fun y ↦ ?_,
     ⟨⋃ i ∈ t, interior {y | ρ i y = 1}, isOpen_biUnion fun _ _ ↦ isOpen_interior, ht, ?_⟩,
     ⋃ i ∈ t, tsupport (ρ i), t.isCompact_biUnion fun i _ ↦ (ρ i).hasCompactSupport, ?_⟩
+  · rw [map_smul, hdfY, smul_eq_mul]
+    exact mul_nonpos_of_nonneg_of_nonpos (inv_nonneg.2 ((hg0 y).trans (hgd y)))
+      (neg_nonpos.2 (hg0 y))
   · intro y hy
     obtain ⟨i, hi, hyi⟩ := mem_iUnion₂.1 hy
     have h1 : 1 ≤ g y := by
