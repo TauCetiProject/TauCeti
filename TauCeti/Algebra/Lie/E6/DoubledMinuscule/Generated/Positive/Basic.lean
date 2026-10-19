@@ -5,12 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.E6.DoubledMinuscule.Generated.Basic
+public import TauCeti.Algebra.Lie.E6.DoubledMinuscule.Generated.Smooth
 public import TauCeti.Algebra.AlgebraicGroup.Connected.Generated
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.CommonKernel.GeometricallyReduced
 import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.CoordinateBaseChange
 import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.SmoothConnected
-import TauCeti.RingTheory.Smooth.GeometricallyReduced
 
 /-!
 # The positive subgroup of the generated doubled E₆ carrier
@@ -189,9 +187,8 @@ theorem smooth_coordinateHopfAlgebra :
     smoothCommHopfAlgProperty k (coordinateHopfAlgebra k) := by
   let : ∀ j, Algebra.IsGeometricallyReduced k (generatorCodomain k j) := by
     rintro (i | ⟨⟩)
-    · exact isGeometricallyReduced_of_smooth k _
-    · exact (DiagonalizableGroup.geometricallyReduced_coordinateRing k
-        (SplitTorus.characterGroup (Fin 6))).isGeometricallyReduced
+    · exact isGeometricallyReduced_generatorCoordinateAlgebra k (.inl (.inl i))
+    · exact isGeometricallyReduced_generatorCoordinateAlgebra k (.inr ())
   exact
     CommHopfAlgCat.smoothCommHopfAlgProperty_quotient_commonKernelHopfIdeal_of_geometricallyReduced
       (generator k)
