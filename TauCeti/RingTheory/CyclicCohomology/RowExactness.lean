@@ -13,7 +13,7 @@ import Mathlib.LinearAlgebra.Projection
 # Split exactness of the rows of the cyclic bicomplex
 
 In degree `n`, write `λ` for the signed cyclic operator and `N = 1 + λ + ⋯ + λⁿ`.
-When `n + 1` is invertible in the coefficient ring, averaging gives a projection
+When `n + 1` is invertible in the commutative coefficient semiring, averaging gives a projection
 `P = N / (n + 1)` onto the cyclic cochains. The operator
 `H = (∑ j ≤ n, ∑ k < j, λᵏ) / (n + 1)` satisfies
 `(1 - λ) H = H (1 - λ) = 1 - P`.
@@ -34,8 +34,8 @@ public section
 
 namespace TauCeti
 
-variable {R A M : Type*} [CommRing R] [AddCommMonoid A] [Module R A] [AddCommGroup M] [Module R M]
-  {n : ℕ} [Invertible (n + 1 : R)]
+variable {R A M : Type*} [CommSemiring R] [AddCommMonoid A] [Module R A] [AddCommGroup M]
+  [Module R M] {n : ℕ} [Invertible (n + 1 : R)]
 
 variable (R A M n) in
 /-- Averaging over cyclic rotations projects onto the cyclic cochains. -/
