@@ -16,7 +16,7 @@ public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 /-!
 # Smooth pullback of differential forms
 
-A `C^(n+1)` map pulls a `C^n` differential form back to a `C^n` form.
+A `C^(n+1)` map pulls a `C^n` fixed-coefficient differential form back to a `C^n` form.
 The relative theorem uses derivatives within the source set, so it applies at boundary and
 corner points. No invertibility, finite dimensionality, or completeness is required.
 
@@ -25,8 +25,8 @@ Its underlying rough form is the existing `TauCeti.mpullback`.
 
 In tangent coordinates, pullback precomposes the form's coordinates with those of Mathlib's
 `mfderivWithin`, via `ContinuousAlternatingMap.compContinuousLinearMap`. This expresses
-pullback regularity in terms of maps between fixed model fibres, including forms with values in
-a vector bundle.
+pullback regularity in terms of maps between fixed model fibres. For bundle-valued forms,
+the file provides the coordinate identity `inCoordinates_bundleMpullbackWithin`.
 
 ## References
 
@@ -69,13 +69,13 @@ theorem inCoordinates_bundleMpullbackWithin
   have h := ContinuousAlternatingMap.inCoordinates_compContinuousLinearMap
     (F₁ := E) (F₂ := E') (F₃ := F) (x₀ := x) (z₀ := f x)
     (ω (f y)) (mfderivWithin I I' f s y) hyT
-  ext v
-  simp only [ContinuousAlternatingMap.inCoordinates,
-    ContinuousLinearMap.inCoordinates, inTangentCoordinates,
-    ContinuousAlternatingMap.compContinuousLinearMap_apply,
-    ContinuousLinearMap.compContinuousAlternatingMap_coe, Function.comp_def,
-    ContinuousLinearMap.coe_comp, bundleMpullbackWithin_apply, id_eq]
-  simp only [Trivialization.symmL_continuousLinearMapAt _ hyT]
+  have hb : bundleMpullbackWithin I I' f s ω y =
+      (ω (f y)).compContinuousLinearMap (mfderivWithin I I' f s y) := by
+    ext v
+    simp only [bundleMpullbackWithin_apply, ContinuousAlternatingMap.compContinuousLinearMap_apply,
+      Function.comp_def]
+  rw [hb, inTangentCoordinates]
+  exact h
 
 namespace RoughForm
 
