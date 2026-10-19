@@ -35,7 +35,8 @@ the symmetric powers of a quasicoherent sheaf `F`.
 * `TauCeti.AlgebraicGeometry.gradedRelativeSpec`: relative Spec of the direct-sum algebra, with
   its grading;
 * `TauCeti.AlgebraicGeometry.gradedRelativeSpecEquiv`: graded relative Spec is an
-  anti-equivalence, with identity unit and with counit given by the relative-Spec counit;
+  anti-equivalence, with identity unit and with counit given on underlying schemes by relative
+  Spec of the grading isomorphism followed by the relative-Spec counit;
 * `TauCeti.AlgebraicGeometry.gradedRelativeSpecForgetIso`: forgetting the grading of
   `gradedRelativeSpec X` gives relative Spec of the direct-sum algebra.
 
@@ -70,7 +71,8 @@ abbrev GradedAffineSchemeOver : Type (u + 1) :=
 /-- Graded relative Spec is an anti-equivalence between graded quasicoherent algebras and graded
 affine schemes over `X`. The functor sends `A` to the relative spectrum of `⨁ₙ Aₙ`, graded through
 the relative-Spec unit `p_* 𝒪 ≅ ⨁ₙ Aₙ`, and the inverse reads off the grading. The unit is the
-identity and the counit is the relative-Spec counit on underlying schemes. -/
+identity, and the counit is, on underlying schemes, relative Spec of the grading isomorphism
+followed by the relative-Spec counit. -/
 -- Exposed, like `sndEquiv`, since the characteristic equation of the structural isomorphism is
 -- typed through the components of the image objects.
 @[expose]
