@@ -25,8 +25,10 @@ domination hypothesis.
 
 The dominated results use a measure invariant under translations and negation. Translations,
 negation and open sets are measurable. The continuity theorem needs a seminormed abelian
-domain and second-countability of either the domain or the kernel's codomain. The derivative
-statements use a second-countable real normed domain.
+domain, any nontrivially normed scalar field, and second-countability of either the domain or
+the kernel's codomain. The convolution codomain also carries the real normed-space structure
+needed for the Bochner integral. The derivative statements use a second-countable real normed
+domain.
 
 The iterated derivative of `f ⋆[L, μ] g` is a convolution against the iterated derivative of `g`,
 for the bilinear map `L_n` sending `(a, B)` to the multilinear map `m ↦ L a (B m)`
@@ -80,6 +82,31 @@ private theorem norm_convolution_integrand_le {C : ℝ} (hC : 0 ≤ C)
 
 end
 
+section
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedSpace ℝ F] [MeasurableSpace G] {μ : Measure G}
+  [SeminormedAddCommGroup G] [OpensMeasurableSpace G] [MeasurableAdd G] [MeasurableNeg G]
+  [SecondCountableTopologyEither G E'] [μ.IsAddLeftInvariant] [μ.IsNegInvariant]
+  (L : E →L[𝕜] E' →L[𝕜] F)
+
+/-- The convolution of an essentially bounded function with a continuous function that is
+dominated, uniformly on unit translates, by an integrable function is continuous. -/
+theorem continuous_convolution_right_of_dominated (hf : AEStronglyMeasurable f μ)
+    (hfM : ∀ᵐ t ∂μ, ‖f t‖ ≤ M) (hg : Continuous g) (hφ : Integrable φ μ)
+    (hgφ : ∀ z h, ‖h‖ ≤ 1 → ‖g (z + h)‖ ≤ φ z) : Continuous (f ⋆[L, μ] g) := by
+  refine continuous_iff_continuousAt.2 fun x₀ => continuousAt_of_dominated
+    (Eventually.of_forall fun x => L.aestronglyMeasurable_comp₂ hf
+      (hg.comp ((continuous_const (y := x)).sub continuous_id)).aestronglyMeasurable) ?_
+    ((hφ.comp_sub_left x₀).const_mul (‖L‖ * M)) (Eventually.of_forall fun t => ?_)
+  · filter_upwards [ball_mem_nhds x₀ one_pos] with x hx
+    filter_upwards [hfM] with t ht
+    exact norm_convolution_integrand_le (fun a b => L a b) (norm_nonneg L) L.le_opNorm₂ hgφ hx ht
+  · exact ((L (f t)).continuous.comp (hg.comp (continuous_id.sub continuous_const))).continuousAt
+
+end
+
 variable [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup E'] [NormedSpace ℝ E'] [NormedAddCommGroup F] [NormedSpace ℝ F]
   [MeasurableSpace G] {μ : Measure G} {N : ℕ∞} (L : E →L[ℝ] E' →L[ℝ] F)
@@ -107,27 +134,6 @@ private theorem iteratedFDeriv_dominated (hg : ContDiff ℝ N g)
   · simpa using hgφ₀ z 0 (by simp)
   · rw [norm_fderiv_iteratedFDeriv]
     exact hgφ₁ z h hh
-
-end
-
-section
-
-variable [SeminormedAddCommGroup G] [OpensMeasurableSpace G] [MeasurableAdd G] [MeasurableNeg G]
-  [SecondCountableTopologyEither G E'] [μ.IsAddLeftInvariant] [μ.IsNegInvariant]
-
-/-- The convolution of an essentially bounded function with a continuous function that is
-dominated, uniformly on unit translates, by an integrable function is continuous. -/
-theorem continuous_convolution_right_of_dominated (hf : AEStronglyMeasurable f μ)
-    (hfM : ∀ᵐ t ∂μ, ‖f t‖ ≤ M) (hg : Continuous g) (hφ : Integrable φ μ)
-    (hgφ : ∀ z h, ‖h‖ ≤ 1 → ‖g (z + h)‖ ≤ φ z) : Continuous (f ⋆[L, μ] g) := by
-  refine continuous_iff_continuousAt.2 fun x₀ => continuousAt_of_dominated
-    (Eventually.of_forall fun x => L.aestronglyMeasurable_comp₂ hf
-      (hg.comp ((continuous_const (y := x)).sub continuous_id)).aestronglyMeasurable) ?_
-    ((hφ.comp_sub_left x₀).const_mul (‖L‖ * M)) (Eventually.of_forall fun t => ?_)
-  · filter_upwards [ball_mem_nhds x₀ one_pos] with x hx
-    filter_upwards [hfM] with t ht
-    exact norm_convolution_integrand_le (fun a b => L a b) (norm_nonneg L) L.le_opNorm₂ hgφ hx ht
-  · exact ((L (f t)).continuous.comp (hg.comp (continuous_id.sub continuous_const))).continuousAt
 
 end
 
