@@ -150,8 +150,7 @@ both scalar parts are minus the constant term of contracting `equivExterior Q x`
 `QuadraticMap.associated (-Q) m`, once from the left and once from the right. -/
 private theorem scalarTrace_ι_mul (m : M) (x : CliffordAlgebra Q) :
     scalarTrace Q (ι Q m * x) = scalarTrace Q (x * ι Q m) := by
-  simp only [scalarTrace_apply, equivExterior, changeFormEquiv_apply, changeForm_ι_mul,
-    changeForm_mul_ι, QuadraticMap.associated_flip, map_sub, map_mul,
+  simp only [scalarTrace_apply, equivExterior_ι_mul, equivExterior_mul_ι, map_sub, map_mul,
     ExteriorAlgebra.algebraMapInv_ι, zero_mul, mul_zero,
     ExteriorAlgebra.algebraMapInv_contractRight]
 

@@ -56,6 +56,8 @@ involution, `changeForm` commutes with the grade involution for every bilinear f
   commutes with the grade involution, and with reversion for a symmetric form.
 * `CliffordAlgebra.equivExterior_involute` and `CliffordAlgebra.equivExterior_reverse`: the same
   for the isomorphism with the exterior algebra.
+* `CliffordAlgebra.equivExterior_ι_mul` and `CliffordAlgebra.equivExterior_mul_ι`: that
+  isomorphism on left and right vector factors.
 
 ## References
 
@@ -140,8 +142,7 @@ theorem contractLeft_mul_ι (d : Module.Dual R M) (x : CliffordAlgebra Q) (m : M
 `ι Q a * (x ⌊ d) + d a • involute x`. -/
 theorem contractRight_ι_mul (d : Module.Dual R M) (a : M) (x : CliffordAlgebra Q) :
     contractRight (ι Q a * x) d = ι Q a * contractRight x d + d a • involute x := by
-  rw [contractRight_eq, reverse.map_mul, reverse_ι, contractLeft_mul_ι, map_add, reverse.map_mul,
-    reverse_ι, map_smul, ← contractRight_eq, reverse_involute_commute.eq, reverse_reverse]
+  simp [contractRight_eq, contractLeft_mul_ι, reverse_involute_commute.eq]
 
 /-- **Left and right contraction commute**: `(d ⌋ x) ⌊ d' = d ⌋ (x ⌊ d')`. This is the statement
 left as a `TODO` after `CliffordAlgebra.contractRight_comm` in Mathlib. -/
@@ -151,9 +152,7 @@ theorem contractRight_contractLeft (d d' : Module.Dual R M) (x : CliffordAlgebra
   | algebraMap r => simp
   | add x y hx hy => simp only [map_add, LinearMap.add_apply, hx, hy]
   | ι_mul x a hx =>
-    rw [contractLeft_ι_mul, map_sub, map_smul, LinearMap.sub_apply, LinearMap.smul_apply,
-      contractRight_ι_mul, hx, contractRight_ι_mul, map_add, contractLeft_ι_mul, map_smul,
-      involute_contractLeft, smul_neg]
+    simp [contractLeft_ι_mul, contractRight_ι_mul, hx, involute_contractLeft]
     abel
 
 section changeForm
@@ -175,10 +174,8 @@ theorem changeForm_mul_ι (x : CliffordAlgebra Q) (m : M) :
     simp only [add_mul, map_add, hx, hy, LinearMap.add_apply]
     abel
   | ι_mul x a hx =>
-    rw [mul_assoc, changeForm_ι_mul, hx, changeForm_ι_mul, map_sub, map_sub, contractLeft_mul_ι,
-      LinearMap.sub_apply, contractRight_contractLeft, contractRight_ι_mul,
-      LinearMap.flip_apply]
-    simp only [mul_sub, sub_mul, mul_assoc]
+    simp [mul_assoc, changeForm_ι_mul, hx, contractLeft_mul_ι, contractRight_contractLeft,
+      contractRight_ι_mul, mul_sub, sub_mul]
     abel
 
 /-- **`changeForm` commutes with the grade involution**, for every bilinear form `B`. -/
@@ -189,8 +186,7 @@ theorem changeForm_involute (x : CliffordAlgebra Q) :
   | algebraMap r => simp
   | add x y hx hy => simp only [map_add, hx, hy]
   | ι_mul x a hx =>
-    rw [map_mul, involute_ι, neg_mul, map_neg, changeForm_ι_mul, hx, changeForm_ι_mul, map_sub,
-      map_mul, involute_ι, involute_contractLeft, neg_mul]
+    simp [changeForm_ι_mul, hx, involute_contractLeft]
     abel
 
 /-- **`changeForm` commutes with reversion** when the bilinear form `B` is symmetric. This covers
@@ -202,15 +198,35 @@ theorem changeForm_reverse (hB : B.IsSymm) (x : CliffordAlgebra Q) :
   | algebraMap r => simp
   | add x y hx hy => simp only [map_add, hx, hy]
   | ι_mul x a hx =>
-    rw [reverse.map_mul, reverse_ι, changeForm_mul_ι, hx, changeForm_ι_mul, map_sub,
-      reverse.map_mul, reverse_ι, (LinearMap.isSymm_iff_eq_flip.mp hB).symm,
-      contractRight_eq, reverse_reverse]
+    simp [changeForm_mul_ι, hx, changeForm_ι_mul, contractRight_eq,
+      ← LinearMap.isSymm_iff_eq_flip.mp hB]
 
 end changeForm
 
 section equivExterior
 
 variable [Invertible (2 : R)] (Q)
+
+/-- `CliffordAlgebra.equivExterior` on a left vector factor: the specialization of Mathlib's
+`CliffordAlgebra.changeForm_ι_mul` to the bilinear form `QuadraticMap.associated (-Q)`.
+
+Not a `simp` lemma, for the same reason as `CliffordAlgebra.equivExterior_involute`. -/
+theorem equivExterior_ι_mul (m : M) (x : CliffordAlgebra Q) :
+    equivExterior Q (ι Q m * x) =
+      ExteriorAlgebra.ι R m * equivExterior Q x -
+        contractLeft (QuadraticMap.associated (-Q) m) (equivExterior Q x) :=
+  changeForm_ι_mul changeForm.associated_neg_proof m x
+
+/-- `CliffordAlgebra.equivExterior` on a right vector factor: the specialization of
+`CliffordAlgebra.changeForm_mul_ι` to the symmetric bilinear form `QuadraticMap.associated (-Q)`.
+
+Not a `simp` lemma, for the same reason as `CliffordAlgebra.equivExterior_involute`. -/
+theorem equivExterior_mul_ι (x : CliffordAlgebra Q) (m : M) :
+    equivExterior Q (x * ι Q m) =
+      equivExterior Q x * ExteriorAlgebra.ι R m -
+        contractRight (equivExterior Q x) (QuadraticMap.associated (-Q) m) := by
+  rw [← QuadraticMap.associated_flip]
+  exact changeForm_mul_ι changeForm.associated_neg_proof x m
 
 /-- `CliffordAlgebra.equivExterior` intertwines the grade involutions.
 

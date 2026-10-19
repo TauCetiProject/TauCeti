@@ -44,8 +44,8 @@ variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
 
 /-- A generator of the exterior algebra has constant term zero. -/
 @[simp]
-theorem algebraMapInv_ι (m : M) : algebraMapInv (ι R m) = 0 :=
-  lift_ι_apply R _ _ m
+theorem algebraMapInv_ι (m : M) : algebraMapInv (ι R m) = 0 := by
+  simp [algebraMapInv]
 
 /-- The grade involution preserves the constant term. -/
 @[simp]
