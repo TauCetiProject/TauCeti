@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.RelativeSpec.Counit
 public import TauCeti.AlgebraicGeometry.RelativeSpec.Unit
+public import TauCeti.AlgebraicGeometry.Sites.SmallAffineZariski
 
 /-!
 # The universal property of relative Spec
@@ -110,30 +111,16 @@ private lemma liftChart_compat (φ : A ⟶ q.pushforwardStructureAlgebra)
         rw [hring, Spec.map_comp, Category.assoc]
     _ = (q ⁻¹ᵁ U.toOpens).toSpecΓ ≫ Spec.map ψU ≫ fU := by rw [hι]
 
-omit [A.X.IsQuasicoherent] in
-private lemma trans_pullbackRestrictIsoRestrict_hom {U V : X.AffineZariskiSite} (i : U ⟶ V)
-    (hUV : U.toOpens ≤ V.toOpens) (hle : q ⁻¹ᵁ U.toOpens ≤ q ⁻¹ᵁ V.toOpens) :
-    Scheme.Cover.trans ((directedCover X).pullback₁ q) i ≫
-        (pullbackRestrictIsoRestrict q V.toOpens).hom =
-      (pullbackRestrictIsoRestrict q U.toOpens).hom ≫ T.homOfLE hle := by
-  -- The transition maps of the pulled-back cover are indexed by its own index type; `change`
-  -- presents the transition as the underlying map of pullbacks so that rewriting is type-correct.
-  change pullback.map q U.toOpens.ι q V.toOpens.ι (𝟙 _) (X.homOfLE hUV) (𝟙 _)
-      (by simp) (by rw [Category.comp_id]; exact (Scheme.homOfLE_ι _ _).symm) ≫ _ = _
-  rw [← cancel_mono (q ⁻¹ᵁ V.toOpens).ι, Category.assoc, Category.assoc, Scheme.homOfLE_ι T hle,
-    pullbackRestrictIsoRestrict_hom_ι, pullbackRestrictIsoRestrict_hom_ι]
-  exact (pullback.lift_fst _ _ _).trans (Category.comp_id _)
-
+open TauCeti.AlgebraicGeometry.Scheme.AffineZariskiSite in
 private lemma glue_compat (φ : A ⟶ q.pushforwardStructureAlgebra)
     {U V : ((directedCover X).pullback₁ q).I₀} (i : U ⟶ V) :
     Scheme.Cover.trans ((directedCover X).pullback₁ q) i ≫
         (pullbackRestrictIsoRestrict q (toOpens V)).hom ≫ liftChart φ V =
       (pullbackRestrictIsoRestrict q (toOpens U)).hom ≫ liftChart φ U := by
-  have hUV : toOpens U ≤ toOpens V := ((toOpensFunctor X).map i).le
-  have hle := q.preimage_mono hUV
-  have h := trans_pullbackRestrictIsoRestrict_hom (q := q) (U := U) (V := V) i hUV hle
+  have hle := q.preimage_mono ((toOpensFunctor X).map i).le
   have hc := liftChart_compat φ (U := U) (V := V) i hle
-  exact ((reassoc_of% h) (liftChart φ V)).trans ((Category.assoc _ _ _).trans (congrArg _ hc))
+  exact (directedCover_pullback₁_trans_pullbackRestrictIsoRestrict_hom_assoc q i
+    (liftChart φ V)).trans ((Category.assoc _ _ _).trans (congrArg _ hc))
 
 /-- The morphism `T ⟶ Spec_X A` over `X` induced by a morphism of `𝒪_X`-algebras
 `φ : A ⟶ q_* 𝒪_T`. Over an affine open `U` of `X`, it maps `q⁻¹ U` to the chart `Spec Γ(A.X, U)`
