@@ -48,22 +48,6 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
 
-/-- An open set of times containing `[0, 1]` contains a closed ball around `1 / 2` of radius
-larger than `1 / 2`. -/
-private theorem exists_pos_closedBall_subset {T : Set ℝ} (hT : IsOpen T) (hTI : Icc 0 1 ⊆ T) :
-    ∃ ε > 0, closedBall (1 / 2 : ℝ) (1 / 2 + ε) ⊆ T := by
-  obtain ⟨ε₀, hε₀, h₀⟩ := Metric.isOpen_iff.1 hT 0 (hTI ⟨le_rfl, zero_le_one⟩)
-  obtain ⟨ε₁, hε₁, h₁⟩ := Metric.isOpen_iff.1 hT 1 (hTI ⟨zero_le_one, le_rfl⟩)
-  refine ⟨min ε₀ ε₁ / 2, by positivity, fun y hy ↦ ?_⟩
-  rw [Real.closedBall_eq_Icc] at hy
-  have h0 := min_le_left ε₀ ε₁
-  have h1 := min_le_right ε₀ ε₁
-  rcases lt_or_ge y 0 with hy0 | hy0
-  · exact h₀ (by rw [Real.ball_eq_Ioo]; constructor <;> linarith [hy.1])
-  rcases le_or_gt y 1 with hy1 | hy1
-  · exact hTI ⟨hy0, hy1⟩
-  · exact h₁ (by rw [Real.ball_eq_Ioo]; constructor <;> linarith [hy.2])
-
 /-- A time-dependent field which is `C^r` on `T × U`, with `T ⊇ [0, 1]` and `U ∋ x₀` open, agrees
 near `[0, 1] × {x₀}` with a compactly supported field which is `C^r` on all of `ℝ × E`. If the
 field vanishes at `x₀`, so does the cut-off field. -/
@@ -73,7 +57,10 @@ private theorem exists_contDiff_hasCompactSupport_eq {X : ℝ → E → E} {T : 
     ∃ (Y : ℝ → E → E) (O : Set (ℝ × E)), ContDiff ℝ r (fun p : ℝ × E ↦ Y p.1 p.2) ∧
       HasCompactSupport (fun p : ℝ × E ↦ Y p.1 p.2) ∧ (∀ t, Y t x₀ = 0) ∧ IsOpen O ∧
       Icc 0 1 ×ˢ {x₀} ⊆ O ∧ O ⊆ T ×ˢ U ∧ ∀ q ∈ O, Y q.1 q.2 = X q.1 q.2 := by
-  obtain ⟨ε, hε, hεT⟩ := exists_pos_closedBall_subset hT hTI
+  -- Some closed thickening `[-ε, 1 + ε]` of `[0, 1]` still lies in `T`.
+  obtain ⟨ε, hε, hεT⟩ := isCompact_Icc.exists_cthickening_subset_open hT hTI
+  rw [show Icc (0 : ℝ) 1 = closedBall (1 / 2) (1 / 2) by rw [Real.closedBall_eq_Icc]; norm_num,
+    cthickening_closedBall hε.le (by norm_num), add_comm] at hεT
   obtain ⟨ρ, hρ, hρU⟩ := Metric.isOpen_iff.1 hU x₀ hx₀
   let b₁ : ContDiffBump (1 / 2 : ℝ) := ⟨1 / 2 + ε / 2, 1 / 2 + ε, by positivity, by linarith⟩
   let b₂ : ContDiffBump x₀ := ⟨ρ / 4, ρ / 2, by positivity, by linarith⟩
