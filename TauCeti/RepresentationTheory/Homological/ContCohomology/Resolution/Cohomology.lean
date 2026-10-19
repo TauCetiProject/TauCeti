@@ -94,6 +94,7 @@ theorem d_mapInvariants_f_apply (f : J ⟶ J') {n : ℕ} (z : (J.X n).ρ.invaria
 
 /-- On the cohomology of invariants, a chain map `f : J ⟶ J'` carries the class of an invariant
 cocycle `z` to the class of `f z`. -/
+@[simp]
 theorem homologyMap_homologyπ_cyclesMkOfEq (f : J ⟶ J') {n : ℕ} (z : (J.X n).ρ.invariants)
     (hz : (J.d n (n + 1)).hom (z : (J.X n).V) = 0) :
     HomologicalComplex.homologyMap (((invariantsFunctor k G).mapHomologicalComplex _).map f) n
@@ -149,57 +150,55 @@ theorem d_mapInvariants_comparison_f {n : ℕ} (z : (J.X n).ρ.invariants)
 class of the homogeneous cocycle into which the comparison carries `z`. -/
 noncomputable def cohomologyClass {n : ℕ} (z : (J.X n).ρ.invariants)
     (hz : (J.d n (n + 1)).hom (z : (J.X n).V) = 0) : continuousCohomology n X :=
-  ContinuousCohomology.π X n <| (homogeneousCochains X).cyclesMkOfEq
-    ((c.comparison.f n).hom.mapInvariants z) (n + 1) (CochainComplex.next ℕ n)
-    (c.d_mapInvariants_comparison_f z hz)
+  X.cochainClass n ((c.comparison.f n).hom.mapInvariants z) (c.d_mapInvariants_comparison_f z hz)
 
 /-- The defining equation of `cohomologyClass`. -/
 theorem cohomologyClass_def {n : ℕ} (z : (J.X n).ρ.invariants)
     (hz : (J.d n (n + 1)).hom (z : (J.X n).V) = 0) :
-    c.cohomologyClass z hz = ContinuousCohomology.π X n ((homogeneousCochains X).cyclesMkOfEq
-      ((c.comparison.f n).hom.mapInvariants z) (n + 1) (CochainComplex.next ℕ n)
-      (c.d_mapInvariants_comparison_f z hz)) :=
+    c.cohomologyClass z hz =
+      X.cochainClass n ((c.comparison.f n).hom.mapInvariants z)
+        (c.d_mapInvariants_comparison_f z hz) :=
   (rfl)
 
 /-- **The class of an invariant cocycle is its image under the cohomology map**: `cohomologyMap`
 sends the class of `z` in `Hⁿ(Jᴳ)` to `c.cohomologyClass z`. -/
+@[simp]
 theorem cohomologyMap_homologyπ {n : ℕ} (z : (J.X n).ρ.invariants)
     (hz : (J.d n (n + 1)).hom (z : (J.X n).V) = 0) :
     c.cohomologyMap n ((((invariantsFunctor k G).mapHomologicalComplex _).obj J).homologyπ n
         ((((invariantsFunctor k G).mapHomologicalComplex _).obj J).cyclesMkOfEq z (n + 1)
           (CochainComplex.next ℕ n) (Subtype.ext hz))) =
       c.cohomologyClass z hz :=
-  homologyMap_homologyπ_cyclesMkOfEq c.comparison z hz
+  (homologyMap_homologyπ_cyclesMkOfEq c.comparison z hz).trans (cochainClass_def _ _ _ _).symm
 
 /-- The class of a sum of invariant cocycles is the sum of their classes. -/
+@[simp]
 theorem cohomologyClass_add {n : ℕ} (z z' : (J.X n).ρ.invariants)
     (hz : (J.d n (n + 1)).hom (z : (J.X n).V) = 0)
     (hz' : (J.d n (n + 1)).hom (z' : (J.X n).V) = 0) :
     c.cohomologyClass (z + z') (by rw [Submodule.coe_add, map_add, hz, hz', add_zero]) =
       c.cohomologyClass z hz + c.cohomologyClass z' hz' := by
-  rw [cohomologyClass_def, cohomologyClass_def, cohomologyClass_def, ← map_add]
+  rw [cohomologyClass_def, cohomologyClass_def, cohomologyClass_def, ← cochainClass_add]
   congr 1
-  apply HomologicalComplex.iCycles_injective
-  simp only [map_add, HomologicalComplex.iCycles_cyclesMkOfEq]
+  simp only [map_add]
 
 /-- The class of the zero cocycle is zero. -/
 @[simp]
 theorem cohomologyClass_zero {n : ℕ} :
     c.cohomologyClass (0 : (J.X n).ρ.invariants) (by rw [ZeroMemClass.coe_zero, map_zero]) = 0 := by
-  rw [cohomologyClass_def, ← map_zero (ConcreteCategory.hom (ContinuousCohomology.π X n))]
+  rw [cohomologyClass_def, ← cochainClass_zero]
   congr 1
-  apply HomologicalComplex.iCycles_injective
-  simp only [map_zero, HomologicalComplex.iCycles_cyclesMkOfEq]
+  simp only [map_zero]
 
 /-- The class of a scalar multiple of an invariant cocycle is the scalar multiple of its class. -/
+@[simp]
 theorem cohomologyClass_smul {n : ℕ} (r : k) (z : (J.X n).ρ.invariants)
     (hz : (J.d n (n + 1)).hom (z : (J.X n).V) = 0) :
     c.cohomologyClass (r • z) (by rw [Submodule.coe_smul, map_smul, hz, smul_zero]) =
       r • c.cohomologyClass z hz := by
-  rw [cohomologyClass_def, cohomologyClass_def, ← map_smul]
+  rw [cohomologyClass_def, cohomologyClass_def, ← cochainClass_smul]
   congr 1
-  apply HomologicalComplex.iCycles_injective
-  simp only [map_smul, HomologicalComplex.iCycles_cyclesMkOfEq]
+  simp only [map_smul]
 
 /-- **Cohomologous invariant cocycles have the same class**: if `z - z'` is the differential of
 an invariant element of `J`, then `z` and `z'` have the same class in `Hⁿ⁺¹(G, X)`. -/
@@ -208,13 +207,8 @@ theorem cohomologyClass_eq_of_sub_eq_d {n : ℕ} (z z' : (J.X (n + 1)).ρ.invari
     (hz' : (J.d (n + 1) (n + 2)).hom (z' : (J.X (n + 1)).V) = 0) (y : (J.X n).ρ.invariants)
     (hy : (z : (J.X (n + 1)).V) - z' = (J.d n (n + 1)).hom y) :
     c.cohomologyClass z hz = c.cohomologyClass z' hz' := by
-  rw [cohomologyClass_def, cohomologyClass_def, ← sub_eq_zero, ← map_sub]
-  refine (HomologicalComplex.homologyπ_eq_zero_iff _ _ (CochainComplex.prev_nat_succ n)).2
-    ⟨(c.comparison.f n).hom.mapInvariants y, ?_⟩
-  apply HomologicalComplex.iCycles_injective
-  simp only [HomologicalComplex.iCycles_toCycles_apply, map_sub,
-    HomologicalComplex.iCycles_cyclesMkOfEq]
-  apply Subtype.ext
+  refine cochainClass_eq_of_sub_eq_d rfl _ _ ((c.comparison.f n).hom.mapInvariants y)
+    (Subtype.ext ?_)
   rw [homogeneousCochains.d_apply, ContIntertwiningMap.mapInvariants_apply, d_comparison_f_apply,
     Submodule.coe_sub, ContIntertwiningMap.mapInvariants_apply,
     ContIntertwiningMap.mapInvariants_apply, ← map_sub, hy]
@@ -320,14 +314,13 @@ theorem cohomologyMap_resolutionContraction (n : ℕ) :
 
 /-- For the coinduced resolution contracted by evaluation at `1`, the class of an invariant
 cocycle is its class in continuous cohomology. -/
+@[simp]
 theorem cohomologyClass_resolutionContraction {n : ℕ}
     (z : ((resolution' X).X n).ρ.invariants)
     (hz : ((resolution' X).d n (n + 1)).hom (z : ((resolution' X).X n).V) = 0) :
-    (resolutionContraction X).cohomologyClass z hz = ContinuousCohomology.π X n
-      ((homogeneousCochains X).cyclesMkOfEq z (n + 1) (CochainComplex.next ℕ n)
-        (Subtype.ext hz)) := by
+    (resolutionContraction X).cohomologyClass z hz = X.cochainClass n z (Subtype.ext hz) := by
   rw [← ResolutionContraction.cohomologyMap_homologyπ _ z hz, cohomologyMap_resolutionContraction,
-    ConcreteCategory.id_apply]
+    ConcreteCategory.id_apply, cochainClass_def]
 
 end ResolutionContraction
 
