@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import TauCeti.Analysis.Calculus.Bilinear
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
+public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Conformal
 
 /-!
 # Pullback Riemannian metrics
@@ -33,6 +34,11 @@ the metric that a manifold with a geometric structure receives through its chart
   metric.
 * `Bundle.ContMDiffRiemannianMetric.pullback`: the `C^n` Riemannian metric obtained from an
   immersion by pulling back the target metric.
+* `Bundle.ContMDiffRiemannianMetric.pullback_rescale`: pulling back commutes with conformal
+  rescaling, `f^* (h g) = (h ∘ f) f^* g`.
+* `Bundle.ContMDiffRiemannianMetric.conformalClass_pullback`: along a map with a `C^n` left
+  inverse, such as a diffeomorphism, the conformal class of `f^* g` is the pullback of the
+  conformal class of `g`.
 
 ## References
 
@@ -170,6 +176,43 @@ theorem pullback_inner
     (g.pullback f hf hinj).inner x v w =
       g.inner (f x) (mfderiv I J f x v) (mfderiv I J f x w) :=
   (rfl)
+
+variable {g : ContMDiffRiemannianMetric J n F (fun y : N ↦ TangentSpace J y)} {f : M → N}
+  {hf : ContMDiff I J (n + 1) f} {hinj : ∀ x, Function.Injective (mfderiv I J f x)}
+
+/-- Pulling back commutes with conformal rescaling: the pullback of `h g` is `(h ∘ f)` times the
+pullback of `g`. -/
+@[simp]
+theorem pullback_rescale (h : N → ℝ) (hh : ContMDiff J 𝓘(ℝ) n h) (hh_pos : ∀ y, 0 < h y) :
+    (g.rescale h hh hh_pos).pullback f hf hinj =
+      (g.pullback f hf hinj).rescale (h ∘ f) (hh.comp (hf.of_le le_self_add))
+        (fun x ↦ hh_pos (f x)) := by
+  ext x v w
+  simp
+
+/-- The pullback of a metric conformal to `g` is conformal to the pullback of `g`. -/
+theorem pullback_mem_conformalClass_pullback
+    {g' : ContMDiffRiemannianMetric J n F (fun y : N ↦ TangentSpace J y)}
+    (h : g' ∈ g.conformalClass) :
+    g'.pullback f hf hinj ∈ (g.pullback f hf hinj).conformalClass := by
+  obtain ⟨h, hh, hh_pos, rfl⟩ := mem_conformalClass_iff.1 h
+  rw [pullback_rescale]
+  exact rescale_mem_conformalClass _
+
+/-- Along a map `f` with a `C^n` left inverse, for instance a `C^(n+1)` diffeomorphism, the
+conformal class of the pullback of `g` is the pullback of the conformal class of `g`. -/
+theorem conformalClass_pullback {f' : N → M} (hf' : ContMDiff J I n f')
+    (hff' : Function.LeftInverse f' f) :
+    (g.pullback f hf hinj).conformalClass = (·.pullback f hf hinj) '' g.conformalClass := by
+  refine Set.Subset.antisymm ?_ ?_
+  · intro _ hg
+    obtain ⟨h, hh, hh_pos, rfl⟩ := mem_conformalClass_iff.1 hg
+    refine ⟨g.rescale (h ∘ f') (hh.comp hf') (fun y ↦ hh_pos (f' y)),
+      rescale_mem_conformalClass g, ?_⟩
+    ext x v w
+    simp [hff' x]
+  · rintro _ ⟨g', hg', rfl⟩
+    exact pullback_mem_conformalClass_pullback hg'
 
 
 end ContMDiffRiemannianMetric
