@@ -26,10 +26,10 @@ Lindemann–Weierstrass theorem.
   consists of algebraic numbers; it is not injective for `L = ⊤`, since `exp (2πi) = exp 0`.
 * `galConj τ : K[K] ≃ₐ[F] K[K]` is the conjugation `∑ δ_γ [γ] ↦ ∑ τ(δ_γ) [τ γ]` by an
   automorphism `τ` of the `F`-algebra `K`, acting simultaneously on coefficients and exponents.
-  It is a group homomorphism in `τ`, and a sum is fixed by `galConj τ` exactly when `τ` permutes
-  its coefficient–exponent pairs (`forall_galConj_eq_iff`). Taking the product of all
-  conjugates produces fixed sums (`galConj_prod_galConj`), which is how the proof reduces the
-  general theorem to Galois-invariant exponential relations.
+  It is a group homomorphism in `τ`, and a sum is fixed by every `galConj τ` exactly when each
+  `τ` sends its coefficient at `γ` to its coefficient at `τ γ` (`forall_galConj_eq_iff`).
+  Taking the product of all conjugates produces fixed sums (`galConj_prod_galConj`), which is how
+  the proof reduces the general theorem to Galois-invariant exponential relations.
 
 The evaluation is not Galois-equivariant: `expEval` of `galConj τ x` is in general a different
 complex number from `expEval x`.
