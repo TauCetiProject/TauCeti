@@ -265,8 +265,8 @@ lemma cellularChainRepIsoFree_inv_hom_single (i : cell C n) (g : G) :
   exact basisEquiv_single C hG R s hs i g
 
 /-- The cellular basis vector of the lifted cell `g • s i` corresponds to the generator
-`single i (single g 1)` of the free representation. -/
-@[simp]
+`single i (single g 1)` of the free representation. This is not a `simp` lemma: `simp` unfolds
+`TauCeti.cellularChainBasis` by `TauCeti.cellularChainBasis_apply` first. -/
 lemma cellularChainRepIsoFree_hom_hom_cellularChainBasis (i : cell C n) (g : G) :
     letI := cwComplexPreimage C hG.isCoveringMap
     letI := cellPreimageMulAction C hG n
