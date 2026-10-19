@@ -110,9 +110,10 @@ theorem logUniformPDFReal_of_mem (ha : 0 < a) (hab : a < b) (hx : x ∈ Ioo a b)
 /-- The log-uniform density vanishes when the parameters or sample point are outside their valid
 range. -/
 @[simp]
-theorem logUniformPDFReal_of_not (h : ¬ (0 < a ∧ a < b ∧ x ∈ Ioo a b)) :
+theorem logUniformPDFReal_of_not (h : 0 < a → a < b → a < x → b ≤ x) :
     logUniformPDFReal a b x = 0 := by
-  rw [logUniformPDFReal, ite_eq_right h]
+  rw [logUniformPDFReal, ite_eq_right]
+  exact fun hvalid ↦ (not_lt_of_ge (h hvalid.1 hvalid.2.1 hvalid.2.2.1)) hvalid.2.2.2
 
 /-- The real log-uniform density is nonnegative. -/
 theorem logUniformPDFReal_nonneg (a b x : ℝ) : 0 ≤ logUniformPDFReal a b x := by
@@ -120,7 +121,8 @@ theorem logUniformPDFReal_nonneg (a b x : ℝ) : 0 ≤ logUniformPDFReal a b x :
   · rw [logUniformPDFReal_of_mem h.1 h.2.1 h.2.2]
     exact inv_nonneg.mpr (mul_nonneg (h.1.trans h.2.2.1).le
       (log_pos ((one_lt_div h.1).2 h.2.1)).le)
-  · rw [logUniformPDFReal_of_not h]
+  · rw [logUniformPDFReal_of_not]
+    simpa only [Set.mem_Ioo, not_and, not_lt] using h
 
 /-- The real log-uniform density is strictly positive on `(a, b)` for valid endpoints. -/
 theorem logUniformPDFReal_pos (ha : 0 < a) (hab : a < b) (hx : x ∈ Ioo a b) :
@@ -135,7 +137,8 @@ theorem logUniformPDFReal_pos_iff (ha : 0 < a) (hab : a < b) :
   constructor
   · intro hpos
     by_contra hx
-    rw [logUniformPDFReal_of_not (fun h ↦ hx h.2.2)] at hpos
+    rw [logUniformPDFReal_of_not (fun _ _ hax ↦
+      le_of_not_gt fun hxb ↦ hx ⟨hax, hxb⟩)] at hpos
     exact (lt_irrefl 0) hpos
   · exact logUniformPDFReal_pos ha hab
 
@@ -199,7 +202,8 @@ private theorem transform_logUniformPDF (ha : 0 < a) (hab : a < b) :
       intro h
       have hy' := (exp_mem_Ioo_iff ha hb y).1 h
       exact hmem ⟨hy'.1, hy'.2.le⟩
-    rw [logUniformPDFReal_of_not (fun h ↦ hnot h.2.2), uniformPDFReal_of_notMem hmem,
+    rw [logUniformPDFReal_of_not (fun _ _ hax ↦
+      le_of_not_gt fun hxb ↦ hnot ⟨hax, hxb⟩), uniformPDFReal_of_notMem hmem,
       ENNReal.ofReal_zero, mul_zero]
 
 /-- The log-uniform law is Lebesgue measure weighted by its classical density, including the
@@ -219,7 +223,7 @@ theorem logUniformMeasure_eq_withDensity (a b : ℝ) :
       · have hpdf : logUniformPDF a b x = 0 := by
           rw [logUniformPDF, logUniformPDFReal_of_not]
           · simp
-          · exact fun hx' ↦ hx (h.1.trans hx'.2.2.1)
+          · exact fun ha _ hax ↦ (hx (ha.trans hax)).elim
         simp [hx, hpdf]
     rw [logUniformMeasure_of_pos h.1 h.2, uniformMeasure_eq_withDensity, hmap,
       ← withDensity_indicator measurableSet_Ioi, hind]
@@ -227,7 +231,7 @@ theorem logUniformMeasure_eq_withDensity (a b : ℝ) :
       funext x
       rw [logUniformPDF, logUniformPDFReal_of_not]
       · simp
-      · exact fun hx ↦ h ⟨hx.1, hx.2.1⟩
+      · exact fun ha hab _ ↦ (h ⟨ha, hab⟩).elim
     rw [logUniformMeasure_of_not_pos h, hpdf, withDensity_zero]
 
 /-- The topological support of a valid log-uniform law is the closed interval `[a, b]`. -/
@@ -243,7 +247,8 @@ theorem support_logUniformMeasure (ha : 0 < a) (hab : a < b) :
     · intro h
       by_contra hx
       exact h (by
-        rw [logUniformPDF, logUniformPDFReal_of_not (fun hvalid ↦ hx hvalid.2.2),
+        rw [logUniformPDF, logUniformPDFReal_of_not (fun _ _ hax ↦
+          le_of_not_gt fun hxb ↦ hx ⟨hax, hxb⟩),
           ENNReal.ofReal_zero])
     · intro hx
       rw [logUniformPDF]
