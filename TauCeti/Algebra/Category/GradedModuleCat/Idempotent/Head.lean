@@ -414,12 +414,8 @@ include hneg he hspan in
 /-- The underlying vector space of the head of `A eᵢ` is one-dimensional. -/
 theorem finrank_gradedIdempotentHead (i : I) (hne : e i ≠ 0) :
     Module.finrank k (gradedPositiveMulQuotient 𝒜 (he₀ i)) = 1 := by
-  have htop : Submodule.span k {headGenerator e he₀ i} = ⊤ := by
-    apply top_unique
-    intro y _
-    obtain ⟨c, rfl⟩ := exists_eq_smul_headGenerator hneg he he₀ hspan i y
-    exact Submodule.smul_mem _ c (Submodule.mem_span_singleton_self _)
-  rw [← finrank_top, ← htop, finrank_span_singleton (headGenerator_ne_zero hneg he₀ i hne)]
+  exact finrank_eq_one (headGenerator e he₀ i) (headGenerator_ne_zero hneg he₀ i hne)
+    fun y ↦ (exists_eq_smul_headGenerator hneg he he₀ hspan i y).imp fun _ hc ↦ hc.symm
 
 include hneg he hspan in
 /-- Forgetting the grading of an idempotent head still gives a simple module. -/
