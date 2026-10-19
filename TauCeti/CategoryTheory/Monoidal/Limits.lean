@@ -18,7 +18,9 @@ This allows constructions that require tensoring to preserve coproducts to be us
 For the pointwise monoidal structure on a functor category `J ⥤ C`, colimits of shape `K` are
 computed pointwise when `C` has them, so tensoring with a functor `F` preserves them as soon as
 tensoring with each value `F.obj j` does in `C`. This is how colimit preservation passes from a
-monoidal category to its simplicial objects with the degreewise tensor product.
+monoidal category to its simplicial objects with the degreewise tensor product. The proofs adapt
+that of the corresponding instance for cartesian monoidal `C` in
+`Mathlib.CategoryTheory.Monoidal.Cartesian.FunctorCategory` to arbitrary monoidal `C`.
 -/
 
 public section

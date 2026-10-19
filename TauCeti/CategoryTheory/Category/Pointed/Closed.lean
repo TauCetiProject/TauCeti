@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Limits.Constructions.Over.Basic
-public import Mathlib.CategoryTheory.Limits.Over
 public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
 public import TauCeti.CategoryTheory.Category.Pointed.Smash
 
@@ -17,21 +15,20 @@ The pointed maps `X ⟶ Y`, pointed at the constant map to the basepoint of `Y`,
 type, and a pointed map `X ∧ Y ⟶ Z` is the same as a pointed map `Y ⟶ (X ⟶ Z)` by currying:
 `y` goes to the map `x ↦ f (x ∧ y)`. This makes the smash product monoidal structure on
 `Pointed` closed. Consequently tensoring with a fixed pointed type on either side preserves all
-colimits.
+colimits. Together with the limits and colimits of `Pointed` from
+`TauCeti.CategoryTheory.Category.Pointed.Limits`, this shows that the degreewise smash product of
+diagrams of pointed types, for instance of simplicial pointed types, preserves colimits in each
+variable.
 
-We also identify `Pointed` with the category of types under the one-point type, so that
-`Pointed` has all limits and colimits. Since colimits of diagrams of pointed types are then
-computed pointwise, closedness implies that the degreewise smash product of such diagrams, for
-instance of simplicial pointed types, preserves colimits in each variable.
+The construction of `Pointed.ihom`, `Pointed.tensorHomEquiv` and the `MonoidalClosed` instance
+via `Adjunction.mkOfHomEquiv` follows the corresponding declarations for `Rep` in
+`Mathlib.RepresentationTheory.Rep.Basic`.
 
 ## Main definitions
 
 * `Pointed.ihom X`: the functor `Y ↦ (X ⟶ Y)` of pointed maps out of `X`.
 * `Pointed.tensorHomEquiv X Y Z : (X ⊗ Y ⟶ Z) ≃ (Y ⟶ (Pointed.ihom X).obj Z)`, currying.
 * The instance `MonoidalClosed Pointed`.
-* `Pointed.equivUnderPUnit`: the equivalence of `Pointed` with types under `PUnit`.
-* The instances `HasLimitsOfSize.{w, w} Pointed.{u}` and `HasColimitsOfSize.{w, w} Pointed.{u}`
-  whenever `UnivLE.{w, u}`.
 
 ## References
 
@@ -41,7 +38,7 @@ instance of simplicial pointed types, preserves colimits in each variable.
 
 public section
 
-universe w u
+universe u
 
 open CategoryTheory Limits MonoidalCategory
 
@@ -112,19 +109,31 @@ lemma homEquiv_def (X Y Z : Pointed.{u}) :
     (ihom.adjunction X).homEquiv Y Z = tensorHomEquiv X Y Z :=
   congrFun (congrFun (Adjunction.mkOfHomEquiv_homEquiv _) _) _
 
+/-- The internal hom of the closed structure sends `Y` to `Pointed.ihom X` at `Y`. -/
+lemma ihom_obj_def (X Y : Pointed.{u}) : (ihom X).obj Y = (Pointed.ihom X).obj Y := (rfl)
+
+/-- The internal hom of the closed structure acts on maps as `Pointed.ihom X`. -/
+lemma ihom_map_def (g : Y ⟶ Y') : (ihom X).map g = (Pointed.ihom X).map g := (rfl)
+
 /-- The basepoint of `X ⟶ Y` is the constant map to the basepoint of `Y`. -/
 @[simp]
-lemma ihom_obj_point_apply (x : X) : ((ihom X).obj Y).point.toFun x = Y.point := (rfl)
+lemma ihom_obj_point_apply (x : X) : ((ihom X).obj Y).point.toFun x = Y.point :=
+  -- The statement only typechecks because `ihom_obj_def` holds definitionally, so rewriting
+  -- with it cannot form a motive; the proof is that same definitional unfolding.
+  (rfl)
 
 /-- The internal hom acts on pointed maps by postcomposition. -/
 @[simp]
 lemma ihom_map_apply_apply (g : Y ⟶ Y') (f : (ihom X).obj Y) (x : X) :
-    (((ihom X).map g).toFun f).toFun x = g.toFun (f.toFun x) := (rfl)
+    (((ihom X).map g).toFun f).toFun x = g.toFun (f.toFun x) := by
+  rw [ihom_map_def]
+  rfl
 
 @[simp]
 lemma curry_apply_apply (f : X ⊗ Y ⟶ Z) (y : Y) (x : X) :
-    ((MonoidalClosed.curry f).toFun y).toFun x = f.toFun (smash.mk x y) :=
-  (rfl)
+    ((MonoidalClosed.curry f).toFun y).toFun x = f.toFun (smash.mk x y) := by
+  rw [← MonoidalClosed.homEquiv_apply_eq, homEquiv_def]
+  exact tensorHomEquiv_apply_apply_apply f y x
 
 @[simp]
 lemma uncurry_mk (g : Y ⟶ (ihom X).obj Z) (x : X) (y : Y) :
@@ -136,33 +145,13 @@ lemma uncurry_mk (g : Y ⟶ (ihom X).obj Z) (x : X) (y : Y) :
 @[simp]
 lemma ihom_ev_app_mk (x : X) (f : (ihom X).obj Y) :
     ((ihom.ev X).app Y).toFun (smash.mk x f) = f.toFun x := by
-  rw [← MonoidalClosed.uncurry_id_eq_ev, uncurry_mk]
-  rfl
+  rw [← MonoidalClosed.uncurry_id_eq_ev, uncurry_mk, Hom.id_toFun', id_eq]
 
 /-- The coevaluation map `Y ⟶ (X ⟶ X ∧ Y)` sends `y` to `x ↦ x ∧ y`. -/
 @[simp]
 lemma ihom_coev_app_apply_apply (y : Y) (x : X) :
-    (((ihom.coev X).app Y).toFun y).toFun x = smash.mk x y :=
-  (rfl)
-
-/-- Pointed types are the same as types under the one-point type: a pointed type `X`
-corresponds to the map `PUnit → X` picking out its basepoint. -/
-def equivUnderPUnit : Pointed.{u} ≌ Under (PUnit.{u + 1} : Type u) where
-  functor :=
-    { obj X := Under.mk (TypeCat.ofHom fun _ ↦ X.point)
-      map f := Under.homMk (TypeCat.ofHom f.toFun) (by ext; exact f.map_point) }
-  inverse :=
-    { obj A := of (A.hom PUnit.unit)
-      map g := ⟨g.right, ConcreteCategory.congr_hom (Under.w g) PUnit.unit⟩ }
-  unitIso := NatIso.ofComponents fun X ↦ Iso.refl X
-  counitIso := NatIso.ofComponents fun A ↦
-    Under.isoMk (Iso.refl A.right) (by ext; rfl)
-
-instance [UnivLE.{w, u}] : HasColimitsOfSize.{w, w} Pointed.{u} :=
-  Adjunction.has_colimits_of_equivalence equivUnderPUnit.functor
-
-instance [UnivLE.{w, u}] : HasLimitsOfSize.{w, w} Pointed.{u} :=
-  have : HasLimitsOfSize.{w, w} (Under (PUnit.{u + 1} : Type u)) := ⟨fun _ _ ↦ inferInstance⟩
-  Adjunction.has_limits_of_equivalence equivUnderPUnit.functor
+    (((ihom.coev X).app Y).toFun y).toFun x = smash.mk x y := by
+  rw [ihom.coev, ← Adjunction.homEquiv_id, homEquiv_def]
+  exact tensorHomEquiv_apply_apply_apply (𝟙 _) y x
 
 end Pointed
