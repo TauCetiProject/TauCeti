@@ -292,7 +292,7 @@ theorem exists_notMem_nonsingularReduction_of_isTateTerminal_IVStar
   -- lift the root of the residue quadratic by Hensel's lemma
   obtain ⟨t, ht⟩ := hroot
   obtain ⟨t₀, rfl⟩ := residue_surjective t
-  obtain ⟨Y, hY, -, hu⟩ := HenselianLocalRing.exists_quadratic_root_of_isUnit_discriminant
+  obtain ⟨Y, hY, -, hu⟩ := TauCeti.HenselianLocalRing.exists_quadratic_root_of_isUnit_discriminant
     ((TauCeti.IsLocalRing.isUnit_iff_not_dvd hϖ).2 hb)
     ((residue_eq_zero_iff _).1 (by simpa using ht))
   have hY' : ¬ ϖ ∣ 2 * Y + A₃ := (TauCeti.IsLocalRing.isUnit_iff_not_dvd hϖ).1 hu

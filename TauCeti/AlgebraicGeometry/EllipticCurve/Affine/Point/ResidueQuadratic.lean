@@ -477,7 +477,8 @@ theorem exists_notMem_nonsingularReduction_of_isTateTerminal_IV
   obtain ⟨hm₃, hm₄, hm₆, hp, hD, -⟩ := isTateTerminal_IV_data v hϖ h h₃ h₄ h₆
   -- lift the root `t` to a root `Y` of `T² + A₃ T − A₆`
   obtain ⟨Y₀, rfl⟩ := residue_surjective t
-  obtain ⟨Y, hY', -, hu⟩ := HenselianLocalRing.exists_quadratic_root_of_isUnit_discriminant hD
+  obtain ⟨Y, hY', -, hu⟩ :=
+    TauCeti.HenselianLocalRing.exists_quadratic_root_of_isUnit_discriminant hD
     ((residue_eq_zero_iff _).1 (by simpa using ht))
   -- the point `(0, ϖ Y)`
   have hns : Wo.toAffine.Nonsingular 0 (ϖ * Y) := by

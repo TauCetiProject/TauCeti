@@ -217,7 +217,8 @@ private theorem exists_mem_farPoints_odd [HenselianLocalRing v.valuationSubring]
     exact hb₆ ⟨e, by rw [b₆, h₃, h₆]; linear_combination ϖ ^ (2 * k + 4) * he⟩
   -- lift the root `t` to a root `Y` of `T² + A₃ T − A₆`
   obtain ⟨Y₀, rfl⟩ := residue_surjective t
-  obtain ⟨Y, hY', -, hu⟩ := HenselianLocalRing.exists_quadratic_root_of_isUnit_discriminant hD
+  obtain ⟨Y, hY', -, hu⟩ :=
+    TauCeti.HenselianLocalRing.exists_quadratic_root_of_isUnit_discriminant hD
     ((residue_eq_zero_iff _).1 (by simpa using ht))
   -- the point `(0, ϖ^(k+2) Y)`
   have hns : Wo.toAffine.Nonsingular 0 (ϖ ^ (k + 2) * Y) := by
@@ -296,11 +297,12 @@ private theorem exists_mem_farPoints_even [HenselianLocalRing v.valuationSubring
   have hX₀ : ϖ ∣ A₂ * X₀ ^ 2 + A₄ * X₀ + A₆ := by
     rw [← mem_maximalIdeal_iff_dvd hϖ, ← residue_eq_zero_iff]
     simpa using ht
+  have hderUnit : IsUnit (f.derivative.eval X₀) := by
+    rw [hder]
+    exact isUnit_add_of_dvd hϖ (hsimple X₀ hX₀) (dvd_mul_right _ _)
   obtain ⟨X, hX, -⟩ := Polynomial.exists_isRoot_sub_mem f
     (a₀ := X₀) (by rw [heval, mem_maximalIdeal_iff_dvd hϖ]; exact dvd_add (dvd_mul_right _ _) hX₀)
-    ((show IsUnit (f.derivative.eval X₀) from by
-      rw [hder]
-      exact isUnit_add_of_dvd hϖ (hsimple X₀ hX₀) (dvd_mul_right _ _)).map _)
+    (hderUnit.map _)
   have hroot := hX.eq_zero
   rw [heval] at hroot
   have hu : IsUnit (2 * A₂ * X + A₄ + ϖ * (3 * ϖ ^ k * X ^ 2)) :=
@@ -621,15 +623,22 @@ private theorem relIndex_nearSubgroup_eq_two [HenselianLocalRing v.valuationSubr
 
 /-! ### The index at the symbol `Iₙ*` -/
 
+/-- The stage-one normal form of the `Iₙ*` subprocedure already forces
+`[E(F) : E₀(F)]` to divide `4`, without a terminal stopping condition. -/
+theorem index_nonsingularReduction_dvd_four_of_isTateOddStage_zero {ϖ : v.valuationSubring}
+    (hϖ : maximalIdeal v.valuationSubring = Ideal.span {ϖ})
+    (hst : IsTateOddStage ϖ 0 (integralModel v.valuationSubring W)) :
+    (W.nonsingularReduction v).index ∣ 4 := by
+  rw [← AddSubgroup.relIndex_mul_index (le_nearSubgroup v hϖ hst)]
+  exact mul_dvd_mul (relIndex_nearSubgroup_dvd_two v hϖ hst) (index_nearSubgroup_dvd_two v hϖ hst)
+
 /-- **At the symbol `Iₙ*`, `[E(F) : E₀(F)]` divides `4`.** Here `ϖ` generates the maximal ideal and
 Tate's algorithm stops at `Iₙ*` with `n ≥ 1` on the integral model. -/
 theorem index_nonsingularReduction_dvd_four_of_isTateTerminal_IStar {ϖ : v.valuationSubring}
     (hϖ : maximalIdeal v.valuationSubring = Ideal.span {ϖ}) {n : ℕ}
     (h : (integralModel v.valuationSubring W).IsTateTerminal ϖ (.IStar (n + 1))) :
-    (W.nonsingularReduction v).index ∣ 4 := by
-  have hst := h.isTateOddStage_zero_of_IStar
-  rw [← AddSubgroup.relIndex_mul_index (le_nearSubgroup v hϖ hst)]
-  exact mul_dvd_mul (relIndex_nearSubgroup_dvd_two v hϖ hst) (index_nearSubgroup_dvd_two v hϖ hst)
+    (W.nonsingularReduction v).index ∣ 4 :=
+  index_nonsingularReduction_dvd_four_of_isTateOddStage_zero v hϖ h.isTateOddStage_zero_of_IStar
 
 /-- **At the symbol `I*_{2k+1}` with no rational root of the residue quadratic,
 `[E(F) : E₀(F)]` divides `2`.** Here `ϖ` generates the maximal ideal, Tate's algorithm stops at

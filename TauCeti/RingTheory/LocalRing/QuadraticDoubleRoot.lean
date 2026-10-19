@@ -34,7 +34,8 @@ Conversely, over any local ring, if the discriminant `a² + 4 b` is a unit then 
   if `a² + 4 b ∈ 𝔪`, some `s` has `a + 2 s ∈ 𝔪` and `b − s a − s² ∈ 𝔪`.
 * `TauCeti.IsLocalRing.isUnit_two_mul_add_of_isUnit_sq_add_four_mul`: if `a² + 4 b` is a unit and
   `t² + a t − b ∈ 𝔪`, then `2 t + a` is a unit.
-* `HenselianLocalRing.exists_quadratic_root_of_isUnit_discriminant`: in a Henselian local ring,
+* `TauCeti.HenselianLocalRing.exists_quadratic_root_of_isUnit_discriminant`: in a Henselian local
+  ring,
   a root modulo the maximal ideal of a monic quadratic with unit discriminant lifts to a root
   with unit derivative.
 -/
@@ -81,9 +82,9 @@ theorem exists_add_two_mul_mem_maximalIdeal_and_sub_mul_sub_sq_mem_maximalIdeal 
 
 end TauCeti.IsLocalRing
 
-namespace HenselianLocalRing
+namespace TauCeti.HenselianLocalRing
 
-open IsLocalRing Polynomial
+open _root_.IsLocalRing Polynomial
 
 variable {R : Type*} [CommRing R] [HenselianLocalRing R]
 
@@ -100,9 +101,9 @@ theorem exists_quadratic_root_of_isUnit_discriminant {a b t : R}
   have hf₁ : IsUnit (f.derivative.eval t) := by
     simpa [f, one_add_one_eq_two] using
       TauCeti.IsLocalRing.isUnit_two_mul_add_of_isUnit_sq_add_four_mul hd ht
-  obtain ⟨s, hs, hst⟩ := is_henselian f hmon t hf₀ hf₁
+  obtain ⟨s, hs, hst⟩ := _root_.HenselianLocalRing.is_henselian f hmon t hf₀ hf₁
   have heq : s ^ 2 + a * s - b = 0 := by simpa [f] using hs.eq_zero
   exact ⟨s, heq, hst, TauCeti.IsLocalRing.isUnit_two_mul_add_of_isUnit_sq_add_four_mul hd
     (by rw [heq]; exact zero_mem _)⟩
 
-end HenselianLocalRing
+end TauCeti.HenselianLocalRing
