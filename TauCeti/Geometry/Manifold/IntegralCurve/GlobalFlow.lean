@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.Flow.Complete
 public import Mathlib.Dynamics.Flow
 public import Mathlib.Geometry.Manifold.Diffeomorph
+import TauCeti.Geometry.Manifold.MFDeriv.Curve
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # The flow of a complete vector field
@@ -21,6 +23,8 @@ boundaryless manifold is complete (`isCompleteVectorField_of_compactSpace`).
 
 * `TauCeti.globalFlow`: the flow of a complete `C¹` vector field.
 * `TauCeti.isMIntegralCurve_globalFlow`: its orbits are integral curves of the field.
+* `TauCeti.apply_globalFlow_eq_sub`: a function `f` with `df(v) = -1` on a band decreases at unit
+  speed along the flow while the flow stays in the band.
 * `TauCeti.globalFlow_eq_of_isMIntegralCurve`: every integral curve is an orbit.
 * `TauCeti.contMDiff_globalFlow_uncurry`: for a complete `C^n` field, the flow is jointly `C^n` in
   time and space.
@@ -34,7 +38,7 @@ boundaryless manifold is complete (`isCompleteVectorField_of_compactSpace`).
 
 public section
 
-open Function Set
+open Function Set Topology
 open scoped ContDiff Manifold
 
 namespace TauCeti
@@ -78,6 +82,44 @@ theorem isMIntegralCurve_globalFlow (x : M) :
   rw [isMIntegralCurve_iff_isMIntegralCurveOn,
     ← hcomplete.maximalIntegralCurveInterval_eq_univ x]
   exact isMIntegralCurveOn_maximalIntegralCurve hv
+
+/-- **Unit-speed descent along a flow.** Let `v` be a complete `C¹` vector field with
+`df(v) = -1` on an open set `U` containing the band `a ≤ f ≤ b`. If `f x ≤ b`, then `f` decreases
+at unit speed along the flow line of `x` until it reaches the level `a`. -/
+theorem apply_globalFlow_eq_sub {f : M → ℝ} {a b : ℝ} (hf : Continuous f) {U : Set M}
+    (hU : IsOpen U) (hvU : ∀ y ∈ U, mvfderiv I f y (v y) = -1)
+    (hband : ∀ y, a ≤ f y → f y ≤ b → y ∈ U)
+    {x : M} {t : ℝ} (ht : 0 ≤ t) (hxt : a ≤ f x - t) (hxb : f x ≤ b) :
+    f (globalFlow v hv hcomplete t x) = f x - t := by
+  set γ : ℝ → M := fun u ↦ globalFlow v hv hcomplete u x
+  have hγ : Continuous γ := (globalFlow v hv hcomplete).continuous continuous_id continuous_const
+  -- The set of times at which the unit-speed identity holds is closed and contains `0`; near any
+  -- such time before `t` the flow line stays in `U`, where `f ∘ γ + id` has zero derivative.
+  let S := {u : ℝ | f (γ u) = f x - u}
+  have hS : IsClosed S := isClosed_eq (hf.comp hγ) (continuous_const.sub continuous_id)
+  suffices Icc 0 t ⊆ S from this ⟨ht, le_rfl⟩
+  refine (hS.inter isClosed_Icc).Icc_subset_of_forall_mem_nhdsWithin ?_ ?_
+  · simp only [S, γ, mem_ofPred_eq, Flow.map_zero_apply, sub_zero]
+  rintro u ⟨hu, hu0, hut⟩
+  have hu' : f (γ u) = f x - u := hu
+  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.1 (hU.preimage hγ) u
+    (hband _ (by rw [hu']; linarith) (by rw [hu']; linarith))
+  have hderiv : ∀ s ∈ Metric.ball u ε, HasDerivAt (fun w ↦ f (γ w) + w) 0 s := by
+    intro s hs
+    have hsU : γ s ∈ U := hball hs
+    have hmd : MDifferentiableAt I 𝓘(ℝ) f (γ s) :=
+      mdifferentiableAt_of_mvfderiv_apply_ne_zero (by rw [hvU _ hsU]; norm_num)
+    have h := Manifold.hasDerivAt_comp_curve hmd (isMIntegralCurve_globalFlow hv hcomplete x s)
+    rw [hvU _ hsU] at h
+    have h' := h.add (hasDerivAt_id' s)
+    rwa [neg_add_cancel] at h'
+  have hconst : ∀ s ∈ Metric.ball u ε, f (γ s) + s = f (γ u) + u := fun s hs ↦
+    Metric.isOpen_ball.is_const_of_deriv_eq_zero (convex_ball u ε).isPreconnected
+      (fun w hw ↦ (hderiv w hw).differentiableAt.differentiableWithinAt)
+      (fun w hw ↦ (hderiv w hw).deriv) hs (Metric.mem_ball_self hε)
+  filter_upwards [nhdsWithin_le_nhds (Metric.ball_mem_nhds u hε)] with s hs
+  simp only [S, mem_ofPred_eq]
+  linarith [hconst s hs]
 
 /-- Every integral curve of the field is an orbit of the flow. -/
 theorem globalFlow_eq_of_isMIntegralCurve {γ : ℝ → M} (hγ : IsMIntegralCurve γ v) (t : ℝ) :

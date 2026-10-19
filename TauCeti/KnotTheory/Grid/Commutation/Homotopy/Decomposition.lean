@@ -171,6 +171,58 @@ theorem cutColumn_inl (P : GridHexagonBetween a s' s x y) :
 theorem cutColumn_inr (P : GridInitialHexagonBetween a s s' x y) :
     cutColumn (Sum.inr P : GridCommutationHexagonBetween a s s' x y) = finRotate n a := (rfl)
 
+/-- A commutation hexagon has the replaced grid line as a side. -/
+theorem left_eq_or_right_eq (P : GridCommutationHexagonBetween a s s' x y) :
+    P.toGridRectangleBetween.left = finRotate n a ∨
+      P.toGridRectangleBetween.right = finRotate n a := by
+  cases P with
+  | inl P => exact Or.inr P.right_eq
+  | inr P => exact Or.inl P.left_eq
+
+/-- Both intersection rows lie among the rows of a commutation hexagon. -/
+theorem pair_subset_cIco_bottom_top (P : GridCommutationHexagonBetween a s s' x y) :
+    {s, s'} ⊆ Grid.cIco P.toGridRectangleBetween.bottom P.toGridRectangleBetween.top := by
+  cases P with
+  | inl P =>
+    refine Finset.insert_subset ?_ (Finset.singleton_subset_iff.mpr P.lower_mem)
+    exact P.insert_cIco_subset_cIco_bottom_top (Finset.mem_insert_self _ _)
+  | inr P =>
+    refine Finset.insert_subset P.lower_mem (Finset.singleton_subset_iff.mpr ?_)
+    exact P.insert_cIco_subset_cIco_bottom_top (Finset.mem_insert_self _ _)
+
+/-- Away from the two columns next to the replaced line, a commutation hexagon covers the squares
+of its underlying rectangle. -/
+theorem mem_coveredSquares_iff_of_ne (P : GridCommutationHexagonBetween a s s' x y)
+    {p : Fin n × Fin n} (ha : p.1 ≠ a) (hb : p.1 ≠ finRotate n a) :
+    p ∈ P.coveredSquares ↔ p ∈ P.toGridRectangleBetween.toGridRectangle.coveredSquares := by
+  cases P with
+  | inl P => simp only [coveredSquares_inl, toGridRectangleBetween_inl, P.mem_coveredSquares,
+      ne_eq, ha, not_false_eq_true, true_and]
+  | inr P => simp only [coveredSquares_inr, toGridRectangleBetween_inr, P.mem_coveredSquares,
+      ne_eq, hb, not_false_eq_true, true_and]
+
+/-- A commutation hexagon covers no square of the column before the replaced line. -/
+theorem mk_notMem_coveredSquares_left_column (P : GridCommutationHexagonBetween a s s' x y)
+    (t : Fin n) : (a, t) ∉ P.coveredSquares := by
+  cases P with
+  | inl P => simp [P.mem_coveredSquares]
+  | inr P =>
+    have ha : a ∉ Grid.cIco (finRotate n a) P.right := by simp
+    simp only [coveredSquares_inr, P.mem_coveredSquares, GridRectangle.mem_coveredSquares,
+      GridRectangle.mem_coveredColumns, GridRectangleBetween.toGridRectangle_left,
+      GridRectangleBetween.toGridRectangle_right, P.left_eq, ha, false_and, and_false,
+      not_false_eq_true]
+
+/-- A commutation hexagon covers no square of the column after the replaced line. -/
+theorem mk_notMem_coveredSquares_right_column (P : GridCommutationHexagonBetween a s s' x y)
+    (t : Fin n) : (finRotate n a, t) ∉ P.coveredSquares := by
+  cases P with
+  | inl P =>
+    simp only [coveredSquares_inl, P.mem_coveredSquares, GridRectangle.mem_coveredSquares,
+      GridRectangle.mem_coveredColumns, GridRectangleBetween.toGridRectangle_right, P.right_eq,
+      Grid.right_notMem_cIco, false_and, and_false, not_false_eq_true]
+  | inr P => simp [P.mem_coveredSquares]
+
 end GridCommutationHexagonBetween
 
 /-- A commutation pentagon is either a pentagon turning on its terminal side or one turning on its

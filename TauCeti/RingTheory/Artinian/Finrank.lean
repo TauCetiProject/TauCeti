@@ -143,8 +143,9 @@ theorem finrank_quotient_add_finrank_quotient_of_forall {k A : Type*} [Field k] 
     .of_surjective (IsScalarTower.toAlgHom k A (Localization.AtPrime q.asIdeal)).toLinearMap
       (IsArtinianRing.localization_surjective q.asIdeal.primeCompl _)
   obtain ⟨a, ha, hb⟩ := h q
-  obtain ⟨ha, hb⟩ := Ideal.span_singleton_annihilator_of_algEquiv
-    (IsLocalization.algEquiv q.asIdeal.primeCompl (Localization.AtPrime q.asIdeal) (L q)) ha hb
+  obtain ⟨ha, hb⟩ :=
+    (IsLocalization.algEquiv q.asIdeal.primeCompl (Localization.AtPrime q.asIdeal)
+      (L q)).map_eq_span_singleton_and_annihilator ha hb
   rw [ha, hb, finrank_quotient_span_singleton_add_finrank_quotient_annihilator,
     ((TensorProduct.AlgebraTensorModule.rid A (Localization.AtPrime q.asIdeal)
       (Localization.AtPrime q.asIdeal)).restrictScalars k).finrank_eq]

@@ -21,7 +21,7 @@ the unipotent radical of their parabolics.
 
 * J. S. Milne, *Algebraic Groups* (2017), Chapters 13 and 19.
 * T. A. Springer, *Linear Algebraic Groups*, §§2.2 and 2.4.
-* Formal source: `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Reductive`.
+* Formal source: `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Reductive.Basic`.
 -/
 
 public section

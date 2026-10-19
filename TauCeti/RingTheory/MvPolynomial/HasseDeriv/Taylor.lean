@@ -25,6 +25,9 @@ rule for Hasse derivatives.
 * `MvPolynomial.eval_add_eq_finsum_hasseDeriv`: the finite Taylor expansion
   `P(a + y) = ∑_d (∂^d P)(a) y^d`.
 * `MvPolynomial.hasseDeriv_mul`: the Leibniz rule `∂^d (P Q) = ∑_{a + b = d} ∂^a P · ∂^b Q`.
+* `MvPolynomial.hasseDeriv_add_single_mul_toMvPolynomial`: the Leibniz rule for a product
+  `f · p(Xᵢ)` in separated variables, `∂^(d + l eᵢ) (f · p(Xᵢ)) = ∂^d f · (Dˡ p)(Xᵢ)` when
+  neither `f` nor `d` involves `Xᵢ`.
 
 ## References
 
@@ -66,6 +69,37 @@ theorem hasseDeriv_mul [DecidableEq σ] (d : σ →₀ ℕ) (P Q : MvPolynomial 
     hasseDeriv d (P * Q) =
       ∑ x ∈ Finset.antidiagonal d, hasseDeriv x.1 P * hasseDeriv x.2 Q := by
   simp only [← coeff_taylor_X_map_C, map_mul, coeff_mul]
+
+/-- The Leibniz rule for a product in separated variables: if `f` does not involve `Xᵢ` and `d`
+does not differentiate in `Xᵢ`, then `∂^(d + l eᵢ) (f · p(Xᵢ)) = ∂^d f · (Dˡ p)(Xᵢ)`, where `Dˡ` is
+the one-variable Hasse derivative. -/
+theorem hasseDeriv_add_single_mul_toMvPolynomial {d : σ →₀ ℕ} {i : σ} (hd : d i = 0)
+    {f : MvPolynomial σ R} (hf : i ∉ f.vars) (l : ℕ) (p : Polynomial R) :
+    hasseDeriv (d + Finsupp.single i l) (f * p.toMvPolynomial i) =
+      hasseDeriv d f * (Polynomial.hasseDeriv l p).toMvPolynomial i := by
+  classical
+  rw [hasseDeriv_mul, Finset.sum_eq_single_of_mem (d, Finsupp.single i l)
+    (Finset.mem_antidiagonal.2 rfl), hasseDeriv_single_toMvPolynomial]
+  rintro ⟨a, b⟩ hab hne
+  rw [Finset.mem_antidiagonal] at hab
+  -- A term with `aᵢ ≠ 0` differentiates `f` in `Xᵢ`, and a term with `bⱼ ≠ 0` for some `j ≠ i`
+  -- differentiates `p(Xᵢ)` in `Xⱼ`; the remaining term is `(d, l eᵢ)`.
+  by_cases ha : a i = 0
+  · by_cases hb : ∃ j, j ≠ i ∧ b j ≠ 0
+    · obtain ⟨j, hji, hbj⟩ := hb
+      rw [hasseDeriv_toMvPolynomial_eq_zero (Ne.symm hji) hbj, mul_zero]
+    · push Not at hb
+      refine absurd (Prod.ext (Finsupp.ext fun j ↦ ?_) (Finsupp.ext fun j ↦ ?_)) hne <;>
+      · have h := DFunLike.congr_fun hab j
+        simp only [Finsupp.add_apply, Finsupp.single_apply] at h ⊢
+        rcases eq_or_ne j i with rfl | hj
+        · simp only [ite_true] at h ⊢
+          omega
+        · simp only [Ne.symm hj, ite_false] at h ⊢
+          have := hb j hj
+          omega
+  · rw [mem_vars_iff_degreeOf_ne_zero, not_not] at hf
+    rw [hasseDeriv_eq_zero_of_degreeOf_lt (d := a) (P := f) (i := i) (by omega), zero_mul]
 
 /-- The finite Taylor expansion with Hasse derivatives: `P(a + y) = ∑_d (∂^d P)(a) y^d`. -/
 theorem eval_add_eq_finsum_hasseDeriv (P : MvPolynomial σ R) (a y : σ → R) :

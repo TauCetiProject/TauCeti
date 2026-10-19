@@ -14,13 +14,18 @@ Mathlib computes the argument of a quotient only modulo `2π` (`Complex.arg_div_
 of a product exactly when the sum of the arguments lies in `(-π, π]`
 (`Complex.arg_mul_eq_add_arg_iff`). This file records the analogue for quotients, and its most
 common instance: for two points of the open upper half-plane the arguments lie in `(0, π)`, so
-the argument of their quotient is the difference of their arguments.
+the argument of their quotient is the difference of their arguments. Finally, a sector
+`{|arg ((z - v) / b)| < α}` of half-opening `α ≤ π`, cut off by a punctured ball about its vertex,
+is the image of an open rectangle in polar coordinates.
 
 ## Main results
 
 * `Complex.arg_div_eq_sub_arg_iff`: `arg (x / y) = arg x - arg y` exactly when
   `arg x - arg y ∈ (-π, π]`.
 * `Complex.arg_div_of_im_pos`: if `0 < x.im` and `0 < y.im`, then `arg (x / y) = arg x - arg y`.
+* `TauCeti.image_polar_rectangle_eq`: in polar coordinates about `v`, rotated and scaled by `b`,
+  the punctured truncated sector `{|arg ((z - v) / b)| < α}`, `α ≤ π`, is the image of an open
+  rectangle.
 -/
 
 public section
@@ -46,3 +51,45 @@ theorem arg_div_of_im_pos {x y : ℂ} (hx : 0 < x.im) (hy : 0 < y.im) :
       by linarith [arg_nonneg_iff.2 hy.le, arg_le_pi x]⟩
 
 end Complex
+
+namespace TauCeti
+
+open Complex Metric Set
+
+/-- In polar coordinates about `v`, rotated and scaled by `b`, the open sector
+`{|arg ((z - v) / b)| < α}` of half-opening `α ≤ π`, cut off by the punctured ball of radius `δ`, is
+the image of an open rectangle. -/
+theorem image_polar_rectangle_eq {v b : ℂ} (hb : b ≠ 0) {δ α : ℝ} (hα : α ≤ Real.pi) :
+    (fun p : ℝ × ℝ => v + b * ((p.1 : ℂ) * (Complex.cos (p.2 : ℂ) + Complex.sin (p.2 : ℂ) * I))) ''
+        (Ioo 0 (δ / ‖b‖) ×ˢ Ioo (-α) α) =
+      {z | z ∈ ball v δ ∧ z ≠ v ∧ |((z - v) / b).arg| < α} := by
+  have hb' : 0 < ‖b‖ := norm_pos_iff.mpr hb
+  ext z
+  constructor
+  · rintro ⟨⟨r, θ⟩, ⟨⟨hr, hrδ⟩, hθ⟩, rfl⟩
+    have hdiv : (v + b * ((r : ℂ) * (Complex.cos (θ : ℂ) + Complex.sin (θ : ℂ) * I)) - v) / b =
+        (r : ℂ) * (Complex.cos (θ : ℂ) + Complex.sin (θ : ℂ) * I) := by
+      field_simp
+      ring
+    have hnorm : ‖v + b * ((r : ℂ) * (Complex.cos (θ : ℂ) + Complex.sin (θ : ℂ) * I)) - v‖ =
+        ‖b‖ * r := by
+      rw [add_sub_cancel_left, norm_mul, norm_mul, norm_real, norm_cos_add_sin_mul_I,
+        Real.norm_of_nonneg hr.le, mul_one]
+    refine ⟨?_, fun h => ?_, ?_⟩
+    · rw [mem_ball, dist_eq_norm, hnorm]
+      rwa [lt_div_iff₀' hb'] at hrδ
+    · beta_reduce at h
+      rw [h, sub_self, norm_zero] at hnorm
+      exact (mul_pos hb' hr).ne' hnorm.symm
+    · rw [hdiv, arg_mul_cos_add_sin_mul_I hr ⟨by linarith [hθ.1, hθ.2], by linarith [hθ.2]⟩]
+      exact abs_lt.mpr hθ
+  · rintro ⟨hzb, hzv, harg⟩
+    have hw : (z - v) / b ≠ 0 := div_ne_zero (sub_ne_zero.mpr hzv) hb
+    refine ⟨(‖(z - v) / b‖, ((z - v) / b).arg), ⟨⟨norm_pos_iff.mpr hw, ?_⟩, abs_lt.mp harg⟩, ?_⟩
+    · rw [norm_div, div_lt_div_iff_of_pos_right hb', ← dist_eq_norm]
+      exact mem_ball.mp hzb
+    · simp only [norm_mul_cos_add_sin_mul_I]
+      field_simp
+      ring
+
+end TauCeti

@@ -134,8 +134,8 @@ theorem smoothForms_wedgeWith_mem (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (φ 
     (ψ : SmoothForm I M F₂ l) :
     RoughForm.wedgeWith μ (φ : RoughForm I M F₁ k) (ψ : RoughForm I M F₂ l) ∈
       smoothForms I M F₃ (k + l) := by
-  have hφ := (isSmoothBundleForm_def ∞ _).mp (mem_smoothForms.mp φ.2)
-  have hψ := (isSmoothBundleForm_def ∞ _).mp (mem_smoothForms.mp ψ.2)
+  have hφ := φ.contMDiff
+  have hψ := ψ.contMDiff
   exact mem_smoothForms.mpr <| (isSmoothBundleForm_def ∞ _).mpr fun x ↦
     (hφ x).wedgeWith_form μ (hψ x)
 
@@ -179,6 +179,14 @@ theorem wedgeWith_apply (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (φ : SmoothFo
             (ψ.1 x (fun j ↦ v (σ (Fin.natAdd k j)))) := by
   rw [coe_wedgeWith, RoughForm.wedgeWith_apply]
 
+/-- Evaluation of the smooth paired wedge on two one-forms. -/
+theorem wedgeWith_apply_one_one (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+    (φ : SmoothForm I M F₁ 1) (ψ : SmoothForm I M F₂ 1) (x : M)
+    (v w : TangentSpace I x) :
+    (wedgeWith μ φ ψ).1 x ![v, w] =
+      μ (φ.1 x ![v]) (ψ.1 x ![w]) - μ (φ.1 x ![w]) (ψ.1 x ![v]) := by
+  rw [coe_wedgeWith, RoughForm.wedgeWith_apply_one_one]
+
 /-- The real wedge of smooth real-valued forms, as a bilinear map. -/
 def wedge : SmoothForm I M ℝ k →ₗ[ℝ] SmoothForm I M ℝ l →ₗ[ℝ] SmoothForm I M ℝ (k + l) :=
   wedgeWith (ContinuousLinearMap.mul ℝ ℝ)
@@ -204,6 +212,13 @@ theorem wedge_apply (φ : SmoothForm I M ℝ k) (ψ : SmoothForm I M ℝ l)
           (φ.1 x (fun i ↦ v (σ (Fin.castAdd l i))) *
             ψ.1 x (fun j ↦ v (σ (Fin.natAdd k j)))) := by
   rw [coe_wedge, RoughForm.wedge_apply]
+
+/-- The smooth real-valued wedge of two one-forms evaluates as a determinant. -/
+theorem wedge_apply_one_one (φ : SmoothForm I M ℝ 1) (ψ : SmoothForm I M ℝ 1) (x : M)
+    (v w : TangentSpace I x) :
+    (wedge φ ψ).1 x ![v, w] =
+      φ.1 x ![v] * ψ.1 x ![w] - φ.1 x ![w] * ψ.1 x ![v] := by
+  rw [coe_wedge, RoughForm.wedge_apply_one_one]
 
 /-- Swapping smooth paired forms flips the coefficient pairing and contributes the graded sign. -/
 theorem wedgeWith_flip (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)

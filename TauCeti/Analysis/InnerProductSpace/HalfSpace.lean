@@ -21,7 +21,7 @@ open scoped InnerProductSpace
 
 /-- Every translation parallel to the boundary of the half-space `{x | c < ⟪x, ν⟫}` maps it into
 itself. -/
-theorem mapsTo_add_smul_of_halfSpace {E : Type*} [NormedAddCommGroup E]
+theorem mapsTo_add_smul_of_halfSpace {E : Type*} [SeminormedAddCommGroup E]
     [InnerProductSpace ℝ E] {s : Set E} {ν τ : E} {c : ℝ}
     (hΩ : ∀ x, x ∈ s ↔ c < ⟪x, ν⟫_ℝ) (hτ : ⟪τ, ν⟫_ℝ = 0) (t : ℝ) :
     Set.MapsTo (· + t • τ) s s := fun x hx => by
