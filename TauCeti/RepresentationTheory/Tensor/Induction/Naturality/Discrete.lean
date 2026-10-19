@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.Index.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete.Restriction
 public import TauCeti.RepresentationTheory.Tensor.Induction.Naturality.Basic
 public import TauCeti.RepresentationTheory.Tensor.Induction.Smooth
@@ -145,8 +146,6 @@ tensor induction from `U` to `G` of coefficients inflated from the image of `U` 
 the inflation of tensor induction from that image to `G ⧸ N`. -/
 noncomputable def tensorInducedQuotientIso
     (A : DiscreteRep.{u, v, w} R (U.map (QuotientGroup.mk' N))) :
-    letI : (U.map (QuotientGroup.mk' N)).FiniteIndex :=
-      .map_of_surjective _ (QuotientGroup.mk'_surjective N)
     tensorInduced U hU s
         (res ((QuotientGroup.mk' N).subgroupMap U)
           (QuotientGroup.continuous_mk.subgroupHom (MonoidHom.subgroupMap_apply_coe _ U)) A) ≅
@@ -154,8 +153,6 @@ noncomputable def tensorInducedQuotientIso
         (tensorInduced (U.map (QuotientGroup.mk' N)) (QuotientGroup.isOpenMap_coe (N := N) U hU)
           (s.map (QuotientGroup.mk' N) (QuotientGroup.quotientEquivQuotientMapOfLE hNU)
             (QuotientGroup.quotientEquivQuotientMapOfLE_mk hNU)) A) :=
-  letI : (U.map (QuotientGroup.mk' N)).FiniteIndex :=
-    .map_of_surjective _ (QuotientGroup.mk'_surjective N)
   tensorInducedMapIso hU (QuotientGroup.isOpenMap_coe (N := N) U hU) QuotientGroup.continuous_mk
     (MonoidHom.subgroupMap_apply_coe _ U) (QuotientGroup.quotientEquivQuotientMapOfLE_mk hNU) s A
 
@@ -166,8 +163,6 @@ the quotient. -/
     (tensorInducedQuotientIso hU hNU s A).hom.toLinearMap (PiTensorProduct.tprod R m) =
       PiTensorProduct.tprod R fun y ↦
         m ((QuotientGroup.quotientEquivQuotientMapOfLE hNU).symm y) :=
-  letI : (U.map (QuotientGroup.mk' N)).FiniteIndex :=
-    .map_of_surjective _ (QuotientGroup.mk'_surjective N)
   tensorInducedMapIso_hom_apply_tprod hU (QuotientGroup.isOpenMap_coe (N := N) U hU)
     QuotientGroup.continuous_mk (MonoidHom.subgroupMap_apply_coe _ U)
     (QuotientGroup.quotientEquivQuotientMapOfLE_mk hNU) s A m
@@ -179,8 +174,6 @@ preimage coset in `G`. -/
     (m : (G ⧸ N) ⧸ U.map (QuotientGroup.mk' N) → A.V) :
     (tensorInducedQuotientIso hU hNU s A).inv.toLinearMap (PiTensorProduct.tprod R m) =
       PiTensorProduct.tprod R fun x ↦ m (QuotientGroup.quotientEquivQuotientMapOfLE hNU x) :=
-  letI : (U.map (QuotientGroup.mk' N)).FiniteIndex :=
-    .map_of_surjective _ (QuotientGroup.mk'_surjective N)
   tensorInducedMapIso_inv_apply_tprod hU (QuotientGroup.isOpenMap_coe (N := N) U hU)
     QuotientGroup.continuous_mk (MonoidHom.subgroupMap_apply_coe _ U)
     (QuotientGroup.quotientEquivQuotientMapOfLE_mk hNU) s A m
@@ -189,8 +182,6 @@ preimage coset in `G`. -/
 @[reassoc]
 theorem tensorInducedQuotientIso_hom_naturality
     {A B : DiscreteRep.{u, v, w} R (U.map (QuotientGroup.mk' N))} (f : A ⟶ B) :
-    letI : (U.map (QuotientGroup.mk' N)).FiniteIndex :=
-      .map_of_surjective _ (QuotientGroup.mk'_surjective N)
     (tensorInductionFunctor U hU s).map
           ((resFunctor ((QuotientGroup.mk' N).subgroupMap U)
             (QuotientGroup.continuous_mk.subgroupHom (MonoidHom.subgroupMap_apply_coe _ U))).map
@@ -202,8 +193,6 @@ theorem tensorInducedQuotientIso_hom_naturality
             (QuotientGroup.isOpenMap_coe (N := N) U hU)
             (s.map (QuotientGroup.mk' N) (QuotientGroup.quotientEquivQuotientMapOfLE hNU)
               (QuotientGroup.quotientEquivQuotientMapOfLE_mk hNU))).map f) :=
-  letI : (U.map (QuotientGroup.mk' N)).FiniteIndex :=
-    .map_of_surjective _ (QuotientGroup.mk'_surjective N)
   tensorInducedMapIso_hom_naturality hU (QuotientGroup.isOpenMap_coe (N := N) U hU)
     QuotientGroup.continuous_mk (MonoidHom.subgroupMap_apply_coe _ U)
     (QuotientGroup.quotientEquivQuotientMapOfLE_mk hNU) s f
@@ -299,8 +288,6 @@ The objects are written in the simp-normal form produced by `smoothTensorInducti
 and `smoothResFunctor_obj`. -/
 noncomputable def smoothTensorInducedQuotientIso
     (A : SmoothDiscreteTopRep.{u, v, w} R (U.map (QuotientGroup.mk' N))) :
-    letI : (U.map (QuotientGroup.mk' N)).FiniteIndex :=
-      .map_of_surjective _ (QuotientGroup.mk'_surjective N)
     (toSmoothDiscrete R G).obj
         (DiscreteRep.tensorInduced U hU s
           ((ofSmoothDiscrete R U).obj
@@ -348,8 +335,6 @@ preimage coset in `G`. -/
 @[reassoc]
 theorem smoothTensorInducedQuotientIso_hom_naturality
     {A B : SmoothDiscreteTopRep.{u, v, w} R (U.map (QuotientGroup.mk' N))} (f : A ⟶ B) :
-    letI : (U.map (QuotientGroup.mk' N)).FiniteIndex :=
-      .map_of_surjective _ (QuotientGroup.mk'_surjective N)
     (smoothTensorInductionFunctor R G U hU s).map
           ((smoothResFunctor R ((QuotientGroup.mk' N).subgroupMap U)
             (QuotientGroup.continuous_mk.subgroupHom (MonoidHom.subgroupMap_apply_coe _ U))).map
@@ -361,8 +346,6 @@ theorem smoothTensorInducedQuotientIso_hom_naturality
             (QuotientGroup.isOpenMap_coe (N := N) U hU)
             (s.map (QuotientGroup.mk' N) (QuotientGroup.quotientEquivQuotientMapOfLE hNU)
               (QuotientGroup.quotientEquivQuotientMapOfLE_mk hNU))).map f) :=
-  letI : (U.map (QuotientGroup.mk' N)).FiniteIndex :=
-    .map_of_surjective _ (QuotientGroup.mk'_surjective N)
   smoothTensorInducedMapIso_hom_naturality hU (QuotientGroup.isOpenMap_coe (N := N) U hU)
     QuotientGroup.continuous_mk (MonoidHom.subgroupMap_apply_coe _ U)
     (QuotientGroup.quotientEquivQuotientMapOfLE_mk hNU) s f
