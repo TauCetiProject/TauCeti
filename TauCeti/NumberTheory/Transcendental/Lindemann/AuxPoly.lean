@@ -59,6 +59,12 @@ product runs over the elements `γ' ≠ γ` of `S`. -/
 noncomputable def auxPoly (S : Finset K) (l p : ℕ) (γ : K) : K[X] :=
   C ((l : K) ^ (#S * p) / (p - 1)!) * (X - C γ) ^ (p - 1) * ∏ γ' ∈ S.erase γ, (X - C γ') ^ p
 
+/-- The defining formula of `auxPoly S l p γ`. -/
+theorem auxPoly_def (S : Finset K) (l p : ℕ) (γ : K) :
+    auxPoly S l p γ =
+      C ((l : K) ^ (#S * p) / (p - 1)!) * (X - C γ) ^ (p - 1) * ∏ γ' ∈ S.erase γ, (X - C γ') ^ p :=
+  (rfl)
+
 /-- Applying a field homomorphism to the coefficients of `auxPoly S l p γ` replaces `S` and `γ` by
 their images. -/
 @[simp]
@@ -131,9 +137,8 @@ theorem isIntegral_pow_card_mul_prod_sub {S : Finset K} {l : ℕ} {γ : K} (hγ 
   exact (hS γ hγ).sub (hS γ' (mem_of_mem_erase hγ'))
 
 /-- The key computation behind the integrality of the derivatives of `auxPoly S l p γ`: every
-derivative satisfies `(p - 1)! f⁽ʲ⁾(z) = j! y` for an algebraic integer `y`. This rescales `f` by
-`X ↦ l X`, which makes its coefficients algebraic integers, and uses that the `j`-th derivative of a
-polynomial with integral coefficients is `j!` times another one. -/
+derivative satisfies `(p - 1)! f⁽ʲ⁾(z) = j! y` for an algebraic integer `y`, provided that `l z` is
+an algebraic integer. -/
 private theorem exists_isIntegral_factorial_mul_eval_iterate_derivative_auxPoly [CharZero K]
     {S : Finset K} {l p : ℕ} {γ : K} (hγ : γ ∈ S) (hp : p ≠ 0)
     (hS : ∀ γ' ∈ S, IsIntegral ℤ ((l : K) * γ')) {z : K} (hz : IsIntegral ℤ ((l : K) * z))
@@ -142,7 +147,10 @@ private theorem exists_isIntegral_factorial_mul_eval_iterate_derivative_auxPoly 
   obtain ⟨p, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hp
   obtain ⟨t, ht⟩ : ∃ t, #S = t + 1 := ⟨_, (card_erase_add_one hγ).symm⟩
   set R := integralClosure ℤ K
-  -- `h` is `auxPoly` without its constant factor, and `q` is `h` rescaled by `X ↦ l X`.
+  -- Multiplying by `(p - 1)!` clears the denominator of `auxPoly`, leaving a power of `l` times the
+  -- denominator-free polynomial `h` below. The polynomial `q` with `q (l X) = l ^ _ * h` has
+  -- algebraic integer coefficients, and the `j`-th derivative of such a polynomial is `j!` times
+  -- another one.
   set h : K[X] := (X - C γ) ^ p * ∏ γ' ∈ S.erase γ, (X - C γ') ^ (p + 1) with hh
   set q : K[X] := (X - C ((l : K) * γ)) ^ p * ∏ γ' ∈ S.erase γ, (X - C ((l : K) * γ')) ^ (p + 1)
     with hq
