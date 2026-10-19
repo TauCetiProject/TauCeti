@@ -18,7 +18,7 @@ proves its basic properties: normality is local, so it can be checked on the rin
 over affine opens, whose localizations at primes are the local rings of the scheme (Stacks,
 Lemma 28.7.2 (033J)); open subschemes of normal schemes are normal; normal schemes are reduced
 (Stacks, Lemma 28.7.3 (033K)); the spectrum of a domain is normal exactly when the domain is
-integrally closed; on an integral normal scheme the sections over a nonempty affine open are
+integrally closed; on a normal scheme the domain of sections over a nonempty affine open is
 integrally closed; and on a locally Noetherian normal scheme the local ring at a point of
 coheight one is a discrete valuation ring (Stacks, Lemma 10.119.7 (00PD)).
 
@@ -44,8 +44,8 @@ use `IsNormalScheme (Spec R)` for it.
 * `TauCeti.AlgebraicGeometry.IsNormalScheme.isReduced`: normal schemes are reduced.
 * `TauCeti.AlgebraicGeometry.isNormalScheme_Spec_iff`: for a domain `R`, `Spec R` is normal iff
   `R` is integrally closed.
-* `TauCeti.AlgebraicGeometry.IsNormalScheme.isIntegrallyClosed_of_isAffineOpen`: on an integral
-  normal scheme, the sections over a nonempty affine open form an integrally closed domain.
+* `TauCeti.AlgebraicGeometry.IsNormalScheme.isIntegrallyClosed_of_isAffineOpen`: on a normal
+  scheme, a domain of sections over a nonempty affine open is integrally closed.
 * `TauCeti.AlgebraicGeometry.IsNormalScheme.isDiscreteValuationRing_stalk`: on a locally
   Noetherian normal scheme, the local ring at a point of coheight one is a discrete valuation
   ring, by the ring-level `IsDiscreteValuationRing.of_ringKrullDim_eq_one`.
@@ -190,10 +190,11 @@ instance isNormalScheme_Spec (R : CommRingCat.{u}) [IsDomain R] [IsIntegrallyClo
     IsNormalScheme (Spec R) :=
   (isNormalScheme_Spec_iff R).mpr ‹_›
 
-/-- On an integral normal scheme, the ring of sections over a nonempty affine open is integrally
-closed. -/
-theorem IsNormalScheme.isIntegrallyClosed_of_isAffineOpen [IsIntegral X] [IsNormalScheme X]
-    {U : X.Opens} (hU : IsAffineOpen U) [Nonempty U] : IsIntegrallyClosed Γ(X, U) :=
+/-- On a normal scheme, the domain of sections over a nonempty affine open is integrally closed.
+For an integral scheme, `IsIntegral.component_integral` supplies the domain instance. -/
+theorem IsNormalScheme.isIntegrallyClosed_of_isAffineOpen [IsNormalScheme X]
+    {U : X.Opens} [IsDomain Γ(X, U)] (hU : IsAffineOpen U) [Nonempty U] :
+    IsIntegrallyClosed Γ(X, U) :=
   hU.isIntegrallyClosed fun _ _ ↦ inferInstance
 
 /-- On a locally Noetherian normal scheme the local ring at a point of coheight one is a

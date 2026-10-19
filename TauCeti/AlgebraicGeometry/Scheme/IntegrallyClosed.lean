@@ -9,16 +9,16 @@ public import Mathlib.AlgebraicGeometry.Properties
 public import Mathlib.RingTheory.LocalProperties.IntegrallyClosed
 
 /-!
-# Integrally closed sections of integral schemes
+# Integrally closed sections of affine opens
 
-On an integral scheme, the ring of sections over a nonempty affine open `V` is integrally closed
-as soon as the local rings at the points of `V` are: its localizations at maximal ideals are local
+If the ring of sections over a nonempty affine open `V` is a domain, it is integrally closed as
+soon as the local rings at the points of `V` are: its localizations at maximal ideals are local
 rings of the scheme at points of `V`.
 
 ## Main results
 
-* `AlgebraicGeometry.IsAffineOpen.isIntegrallyClosed`: on an integral scheme with integrally
-  closed local rings, the sections over a nonempty affine open are integrally closed.
+* `AlgebraicGeometry.IsAffineOpen.isIntegrallyClosed`: a domain of sections over a nonempty affine
+  open is integrally closed when its local rings are.
 * `TauCeti.AlgebraicGeometry.isDomain_and_isIntegrallyClosed_stalk_iff_of_isOpenImmersion`: open
   immersions preserve the domain and integral-closure conditions on stalks.
 -/
@@ -53,10 +53,10 @@ namespace AlgebraicGeometry
 
 variable {T : Scheme.{u}}
 
-/-- On an integral scheme, the ring of sections over a nonempty affine open `V` is integrally
-closed if the local rings at the points of `V` are: its localizations at maximal ideals are local
-rings of the scheme at points of `V`. -/
-theorem IsAffineOpen.isIntegrallyClosed [IsIntegral T] {V : T.Opens} (hV : IsAffineOpen V)
+/-- The domain of sections over a nonempty affine open `V` is integrally closed if the local rings
+at the points of `V` are: its localizations at maximal ideals are local rings of the scheme at
+points of `V`. -/
+theorem IsAffineOpen.isIntegrallyClosed {V : T.Opens} [IsDomain Γ(T, V)] (hV : IsAffineOpen V)
     [Nonempty V] (hT : ∀ x ∈ V, IsIntegrallyClosed (T.presheaf.stalk x)) :
     IsIntegrallyClosed Γ(T, V) := by
   refine IsIntegrallyClosed.of_localization_maximal fun P _ _ ↦ ?_
