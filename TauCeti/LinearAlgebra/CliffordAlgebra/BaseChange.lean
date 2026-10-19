@@ -282,8 +282,7 @@ isomorphism. -/
 theorem baseChangeCongr_symm : (baseChangeCongr σ Q).symm = baseChangeCongr σ.symm Q := by
   ext x
   apply (baseChangeCongr σ Q).injective
-  rw [AlgEquiv.apply_symm_apply, ← AlgEquiv.trans_apply, baseChangeCongr_trans,
-    AlgEquiv.symm_trans_self, baseChangeCongr_refl, AlgEquiv.coe_refl, id_eq]
+  simp [← AlgEquiv.trans_apply]
 
 /-- `CliffordAlgebra.baseChangeCongr` commutes with the grade involution. -/
 @[simp]

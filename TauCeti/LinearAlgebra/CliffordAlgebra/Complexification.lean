@@ -112,8 +112,7 @@ theorem complexConj_unique
     (hι : ∀ v : V, f (ι (Q.baseChange ℂ) (1 ⊗ₜ v)) = ι (Q.baseChange ℂ) (1 ⊗ₜ v)) :
     f = (complexConj Q : CliffordAlgebra (Q.baseChange ℂ) →+* CliffordAlgebra (Q.baseChange ℂ)) :=
   baseChange_ringHom_ext Q
-    (fun z ↦ by rw [Algebra.algebraMap_eq_smul_one, hsmul, map_one, RingHom.coe_coe,
-      complexConj_smul, map_one])
+    (fun z ↦ by simp [Algebra.algebraMap_eq_smul_one, hsmul])
     (fun v ↦ by simp [hι])
 
 /-- `CliffordAlgebra.complexConj` is involutive. -/
@@ -123,8 +122,7 @@ theorem complexConj_complexConj (x : CliffordAlgebra (Q.baseChange ℂ)) :
   have h : Complex.conjAe.trans Complex.conjAe = AlgEquiv.refl := by
     ext z
     simp
-  rw [complexConj_apply, complexConj_apply, ← AlgEquiv.trans_apply, baseChangeCongr_trans, h,
-    baseChangeCongr_refl, AlgEquiv.coe_refl, id_eq]
+  simp [complexConj_apply, ← AlgEquiv.trans_apply, h]
 
 /-- `CliffordAlgebra.complexConj` is its own inverse. -/
 @[simp]
