@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Regular.RegularSequence
 import Mathlib.Algebra.Module.Submodule.Equiv
+import TauCeti.Algebra.Module.Projective.LinearMap
 
 /-!
 # Regular sequences on modules of linear maps
@@ -40,7 +41,7 @@ theorem IsSMulRegular.linearMap {R M N : Type*} [CommSemiring R]
 
 section LinearMap
 
-variable {R M N : Type*} [CommRing R] [AddCommMonoid M] [AddCommGroup N]
+variable {R M N : Type*} [CommRing R] [AddCommGroup M] [AddCommGroup N]
   [Module R M] [Module R N]
 
 /-- The second element of a regular sequence on the target remains regular after quotienting
@@ -57,15 +58,14 @@ theorem IsSMulRegular.quotSMulTop_linearMap {first second : R}
     apply mem_of_isSMulRegular_quotient_of_smul_mem quotientRegular
     exact (Submodule.mem_smul_pointwise_iff_exists _ _ _).2
       ⟨other element, Submodule.mem_top, congrArg (fun map ↦ map element) equality⟩
-  let multiplication : N →ₗ[R] N := LinearMap.lsmul R N first
-  have inRange (element : M) : linear element ∈ LinearMap.range multiplication := by
-    obtain ⟨value, -, equation⟩ :=
-      (Submodule.mem_smul_pointwise_iff_exists _ _ _).1 (pointwise element)
-    exact ⟨value, equation⟩
-  refine (Submodule.mem_smul_pointwise_iff_exists _ _ _).2
-    ⟨linear.codRestrictOfInjective multiplication regular inRange, Submodule.mem_top, ?_⟩
-  ext element
-  exact linear.codRestrictOfInjective_comp_apply multiplication regular inRange element
+  have inKernel : linear ∈ LinearMap.ker (LinearMap.compRight (M := M) R
+      (Ideal.span {algebraMap R R first} • (⊤ : Submodule R N)).mkQ) := by
+    rw [LinearMap.mem_ker]
+    ext element
+    exact (Submodule.Quotient.mk_eq_zero _).mpr (by
+      simpa only [Algebra.algebraMap_self_apply, Submodule.ideal_span_singleton_smul]
+        using pointwise element)
+  rwa [TauCeti.ker_compRight_mkQ_eq_smul_top M regular] at inKernel
 
 /-- A weakly regular sequence of length at most two on the target is weakly regular on the
 module of linear maps. -/

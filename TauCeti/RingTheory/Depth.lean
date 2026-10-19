@@ -33,8 +33,8 @@ The regular-sequence transfer lemmas for linear maps live in
 * `IsLocalRing.depth_linearMap_ge_of_le_two`: depth at least one or two passes from the target
   module to the module of linear maps (Stacks, Lemma 15.24.10 (0AV5)).
 
-Together with Mathlib's `Module.supportDim_add_length_eq_supportDim_of_isRegular`, which says the
-same for the dimension of the support, these are what make Cohen–Macaulayness stable under
+The two quotient-depth results, together with Mathlib's
+`Module.supportDim_add_length_eq_supportDim_of_isRegular`, make Cohen–Macaulayness stable under
 quotients by regular sequences.
 -/
 
@@ -146,15 +146,9 @@ theorem depth_linearMap_ge_of_le_two {R : Type u} [CommRing R] [IsLocalRing R] [
     obtain ⟨_, ⟨scalars, regular, membership, rfl⟩, strict⟩ := lt_sSup_iff.mp strict
     have length : predecessor + 1 ≤ scalars.length :=
       Nat.succ_le_of_lt (ENat.natCast_lt_natCast.mp strict)
-    have prefixRegular : IsWeaklyRegular N (scalars.take (predecessor + 1)) := by
-      constructor
-      intro index index_lt
-      have index_lt_length : index < scalars.length :=
-        lt_of_lt_of_le index_lt (List.length_take_le' _ _)
-      have index_le : index ≤ predecessor + 1 :=
-        le_of_lt (lt_of_lt_of_le index_lt (List.length_take_le _ _))
-      rw [List.getElem_take, List.take_take, Nat.min_eq_left index_le]
-      exact regular.regular_mod_prev index index_lt_length
+    have prefixRegular : IsWeaklyRegular N (scalars.take (predecessor + 1)) :=
+      ((isWeaklyRegular_append_iff N _ (scalars.drop (predecessor + 1))).1
+        (by simpa only [List.take_append_drop] using regular.toIsWeaklyRegular)).1
     have prefixMembership : ∀ scalar ∈ scalars.take (predecessor + 1),
         scalar ∈ maximalIdeal R :=
       fun scalar member ↦ membership scalar (List.mem_of_mem_take member)
