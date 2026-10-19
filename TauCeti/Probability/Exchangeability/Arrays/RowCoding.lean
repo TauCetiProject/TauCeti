@@ -13,6 +13,8 @@ public import TauCeti.Probability.Process.Array.RowCoding
 import TauCeti.Probability.DeFinetti.Coding
 -- Non-public: measurability of pushforward on probability measures is used in the symmetry proof.
 import TauCeti.MeasureTheory.Measure.Measurability
+-- Non-public: reindexing an infinite product along an injection is used for the row permutation.
+import Mathlib.Probability.Independence.InfinitePi
 
 /-!
 # Coupled row coding for separately exchangeable arrays
@@ -175,18 +177,8 @@ theorem map_pairReindex_arrayRowCodingLaw_eq_of_col_invariant
   have hrow (P : ProbabilityMeasure (ℕ → α)) :
       (Measure.infinitePi fun _ : ℕ ↦ (P : Measure (ℕ → α))).map
           (fun x i ↦ x (σ i)) =
-        Measure.infinitePi fun _ : ℕ ↦ (P : Measure (ℕ → α)) := by
-    have h := Measure.infinitePi_map_piCongrLeft
-      (fun _ : ℕ ↦ (P : Measure (ℕ → α))) σ.symm
-    have heq : (MeasurableEquiv.piCongrLeft (fun _ : ℕ ↦ (ℕ → α)) σ.symm :
-        (ℕ → (ℕ → α)) → (ℕ → (ℕ → α))) =
-        (fun x : ℕ → (ℕ → α) ↦ fun i : ℕ ↦ x (σ i)) := by
-      funext x i
-      have hi := MeasurableEquiv.piCongrLeft_apply_apply
-        (β := fun _ : ℕ ↦ (ℕ → α)) σ.symm x (σ i)
-      simpa using hi
-    rw [← heq]
-    exact h
+        Measure.infinitePi fun _ : ℕ ↦ (P : Measure (ℕ → α)) :=
+    Measure.map_infinitePi_infinitePi_of_inj σ.injective
   have hcol (P : ProbabilityMeasure (ℕ → α)) :
       (Measure.infinitePi fun _ : ℕ ↦ (P : Measure (ℕ → α))).map
           (fun x i ↦ permReindex τ (x i)) =
