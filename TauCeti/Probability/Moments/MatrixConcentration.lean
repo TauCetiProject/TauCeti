@@ -75,12 +75,12 @@ variable {Ω m n : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω} [Fintype 
 
 section Entrywise
 
-variable {E : Type*} [NormedAddCommGroup E] {S : Ω → Matrix m n E} {A : Matrix m n E} {v η : ℝ}
+variable {E : Type*} {S : Ω → Matrix m n E} {A : Matrix m n E} {v η : ℝ}
 
 /-- **Entrywise Chebyshev union bound.** If every entrywise deviation of a random matrix `S` from
 a fixed matrix `A` has second moment at most `v`, then the probability that some entry deviates by
 more than `η > 0` is at most `card m * card n * v / η²`. -/
-theorem measure_exists_lt_norm_sub_le
+theorem measure_exists_lt_norm_sub_le [Norm E] [Sub E]
     (hint : ∀ k l, Integrable (fun ω ↦ ‖S ω k l - A k l‖ ^ 2) μ)
     (hmoment : ∀ k l, ∫ ω, ‖S ω k l - A k l‖ ^ 2 ∂μ ≤ v) (hη : 0 < η) :
     μ {ω | ∃ k l, η < ‖S ω k l - A k l‖} ≤
@@ -101,8 +101,9 @@ theorem measure_exists_lt_norm_sub_le
 omit [Fintype m] [Fintype n] in
 /-- The event that some entry of a random matrix deviates from a fixed matrix by more than `η` is
 measurable when every entry is measurable. -/
-theorem measurableSet_exists_lt_norm_sub [Finite m] [Finite n] [MeasurableSpace E]
-    [OpensMeasurableSpace E] [MeasurableSub E] (hS : ∀ k l, Measurable fun ω ↦ S ω k l) (η : ℝ) :
+theorem measurableSet_exists_lt_norm_sub [NormedAddCommGroup E] [Finite m] [Finite n]
+    [MeasurableSpace E] [OpensMeasurableSpace E] [MeasurableSub E]
+    (hS : ∀ k l, Measurable fun ω ↦ S ω k l) (η : ℝ) :
     MeasurableSet {ω | ∃ k l, η < ‖S ω k l - A k l‖} := by
   simp only [Set.ofPred_exists]
   exact .iUnion fun k ↦ .iUnion fun l ↦
@@ -112,7 +113,7 @@ theorem measurableSet_exists_lt_norm_sub [Finite m] [Finite n] [MeasurableSpace 
 of a random matrix `S` from a fixed matrix `A` has second moment at most `v`, then any set `s`
 containing every outcome at which all entries of `S` are within `η > 0` of those of `A` has
 probability at least `1 - card m * card n * v / η²`. -/
-theorem one_sub_le_measure_of_entry_le [IsProbabilityMeasure μ] {s : Set Ω}
+theorem one_sub_le_measure_of_entry_le [Norm E] [Sub E] [IsProbabilityMeasure μ] {s : Set Ω}
     (hint : ∀ k l, Integrable (fun ω ↦ ‖S ω k l - A k l‖ ^ 2) μ)
     (hmoment : ∀ k l, ∫ ω, ‖S ω k l - A k l‖ ^ 2 ∂μ ≤ v) (hη : 0 < η)
     (hs : ∀ ω, (∀ k l, ‖S ω k l - A k l‖ ≤ η) → ω ∈ s) :
