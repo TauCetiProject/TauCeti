@@ -12,8 +12,7 @@ public import TauCeti.Analysis.Normed.Operator.RowCompact
 
 A norm-convergent sequence of row-compact maps between model spaces has a common nonnegative
 null row majorant, including its limit. This permits estimates depending on row decay to be
-applied uniformly to such sequences. Only finitely many early maps need individual tail
-estimates; the remaining maps are uniformly close to the limit.
+applied uniformly to such sequences.
 -/
 
 public section
@@ -38,14 +37,8 @@ theorem exists_common_row_majorant_of_tendsto_ringOpNorm
       (∀ n i j, ‖(v n).matrixCoeff i j‖ ≤ r i) := by
   have hu : u.IsRowCompact := isRowCompact_of_tendsto h (Eventually.of_forall hv)
   have hrow (n : ℕ) (i : I) : (v n).rowNorm i ≤ ‖u - v n‖ + u.rowNorm i := by
-    refine rowNorm_le_of_forall_le
-      (add_nonneg (ringOpNorm_nonneg _) (u.rowNorm_nonneg i)) fun j ↦ ?_
-    calc ‖(v n).matrixCoeff i j‖ = ‖u.matrixCoeff i j - (u - v n).matrixCoeff i j‖ := by
-          simp
-      _ ≤ u.rowNorm i + ‖u - v n‖ :=
-        (norm_sub_le _ _).trans (add_le_add (u.norm_matrixCoeff_le_rowNorm i j)
-          ((u - v n).norm_matrixCoeff_le i j))
-      _ = ‖u - v n‖ + u.rowNorm i := add_comm _ _
+    simpa only [← neg_sub u (v n), ringOpNorm_neg] using
+      (v n).rowNorm_le_ringOpNorm_sub_add u i
   obtain ⟨C, hC⟩ := h.bddAbove_range
   have hbdd (i : I) : BddAbove (Set.range fun n ↦ (v n).rowNorm i) :=
     ⟨C + ‖u‖, by

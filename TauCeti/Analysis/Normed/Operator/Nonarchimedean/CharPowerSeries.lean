@@ -11,13 +11,11 @@ public import TauCeti.Analysis.Normed.Operator.RowCompact.Sequence
 /-!
 # Continuity of Fredholm series in operator norm
 
-A norm-convergent sequence of row-compact operators on `C₀(I, R)` has a common null row
-majorant, including its limit. Consequently its principal-minor determinants converge in every
-positive-radius Gauss norm. The common majorant is proved from operator-norm convergence,
-not imposed as an additional hypothesis. Only finitely many early operators need individual
-tail estimates; the remaining operators are uniformly close to the limit.
+A norm-convergent sequence of row-compact operators on `C₀(I, R)` has determinants converging
+in every positive-radius Gauss norm. This continuity permits finite determinant identities to
+pass to limits of row-compact operators.
 
-The determinant used here is the existing matrix series `u.matrixCoeff.charPowerSeries`.
+The determinant is `u.matrixCoeff.charPowerSeries`.
 Scalars may be complete ultrametric norm-one Tate rings, not just fields.
 
 ## References
