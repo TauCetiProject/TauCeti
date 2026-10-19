@@ -35,8 +35,8 @@ small once `∑ δ_γ' exp γ' = 0`. This file proves these four properties.
   are algebraic integers and `γ ∈ S`, then `auxValue x l p γ` is `-δ_γ A ^ p` modulo `p` times the
   algebraic integers, where `A = l ^ t ∏_{γ' ∈ S, γ' ≠ γ} (γ - γ')`; in particular it is an
   algebraic integer.
-* `auxValue_ne_zero`: under the same hypotheses, over a number field, `auxValue x l p γ ≠ 0` for
-  every prime `p` with `|N(δ_γ A)| < p`.
+* `auxValue_ne_zero`: under the same hypotheses and `l ≠ 0`, over a number field,
+  `auxValue x l p γ ≠ 0` for every prime `p` with `|N(δ_γ A)| < p`.
 * `norm_auxValue_le`, `eventually_norm_auxValue_lt_one`: if `∑ δ_γ' exp γ' = 0`, then the
   auxiliary values are bounded by `C c ^ p / (p - 1)!`, so that they all have absolute value less
   than `1` for large `p`.
@@ -83,12 +83,11 @@ theorem auxValue_zero (l p : ℕ) (γ : K) : auxValue (0 : K[K]) l p γ = 0 := b
 theorem auxValue_galConj {F : Type*} [CommSemiring F] [Algebra F K] (τ : K ≃ₐ[F] K) (x : K[K])
     (l p : ℕ) (γ : K) : auxValue (galConj τ x) l p (τ γ) = τ (auxValue x l p γ) := by
   have hS : (galConj τ x).coeff.support = x.coeff.support.image (τ : K →+* K) := by
-    rw [support_galConj, map_eq_image]
-    rfl
+    rw [support_galConj, map_eq_image, Equiv.coe_toEmbedding, AlgEquiv.coe_toEquiv,
+      RingHom.coe_coe]
   have hf : auxPoly (x.coeff.support.image (τ : K →+* K)) l p (τ γ) =
       (auxPoly x.coeff.support l p γ).map (τ : K →+* K) := by
-    rw [auxPoly_map]
-    rfl
+    rw [auxPoly_map, RingHom.coe_coe]
   rw [auxValue, auxValue, hS, hf,
     sum_image (g := (τ : K →+* K)) fun _ _ _ _ h ↦ τ.injective h, map_neg, map_sum]
   congr 1
