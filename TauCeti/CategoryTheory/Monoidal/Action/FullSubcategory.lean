@@ -23,14 +23,16 @@ image of a left-linear functor is stable. If the action functors on a preadditiv
 are additive or `R`-linear, so are the restricted ones.
 
 The comparison functors of full subcategories are then equivariant, in the sense of Mathlib's
-`Functor.LeftLinear`, with identity lineators:
+`Functor.LeftLinear`:
 
-* the inclusion `P.ι : P.FullSubcategory ⥤ D`;
+* the inclusion `P.ι : P.FullSubcategory ⥤ D`, with identity lineators;
 * the inclusion `ObjectProperty.ιOfLE h : P.FullSubcategory ⥤ Q.FullSubcategory` for
-  `h : P ≤ Q`, which compares restricting to `P` directly with restricting first to `Q`;
+  `h : P ≤ Q`, with identity lineators; it compares restricting to `P` directly with
+  restricting first to `Q`;
 * the lift `P.lift F hF` of a (lax, oplax or strong) left-linear functor `F` whose values
-  satisfy `P`; its lineators are those of `F`. In particular the corestriction
-  `F.toEssImage` of a left-linear functor to its essential image is left-linear.
+  satisfy `P`, with the lineators of `F` (which need not be identities). In particular the
+  corestriction `F.toEssImage` of a left-linear functor to its essential image is left-linear,
+  again with the lineators of `F`.
 
 This follows Mathlib's construction of the monoidal structure on a full subcategory
 (`CategoryTheory.ObjectProperty.fullMonoidalSubcategory`).
@@ -43,7 +45,7 @@ This follows Mathlib's construction of the monoidal structure on a full subcateg
   `C` on `P.FullSubcategory`.
 -/
 
-@[expose] public section
+public section
 
 namespace CategoryTheory.ObjectProperty
 
@@ -186,6 +188,17 @@ instance leftLinearLift [F.LeftLinear C] : (P.lift F hF).LeftLinear C where
   μₗ_comp_δₗ c X := by ext; exact Functor.LeftLinear.μₗ_comp_δₗ F c X
   δₗ_comp_μₗ c X := by ext; exact Functor.LeftLinear.δₗ_comp_μₗ F c X
 
+end lift
+
+end CategoryTheory.ObjectProperty
+
+namespace CategoryTheory.Functor
+
+open MonoidalCategory MonoidalLeftAction Functor.LaxLeftLinear Functor.OplaxLeftLinear
+
+variable {C : Type*} [Category* C] [MonoidalCategory C] {D : Type*} [Category* D]
+  [MonoidalLeftAction C D] {E : Type*} [Category* E] [MonoidalLeftAction C E]
+
 /-- The corestriction `F.toEssImage` of a left-linear functor to its essential image is
 left-linear, with the lineators of `F`. -/
 instance leftLinearToEssImage (F : E ⥤ D) [F.LeftLinear C] : F.toEssImage.LeftLinear C :=
@@ -201,6 +214,4 @@ lemma toEssImage_δₗ_hom (F : E ⥤ D) [F.LeftLinear C] (c : C) (X : E) :
     (δₗ F.toEssImage c X).hom = δₗ F c X :=
   rfl
 
-end lift
-
-end CategoryTheory.ObjectProperty
+end CategoryTheory.Functor
