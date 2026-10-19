@@ -40,12 +40,12 @@ coefficient of the class of `M` is the sum of the weights of `M` and `-M`.
 * `TauCeti.PopaZagier.det_pos_of_weight_ne_zero`, `TauCeti.PopaZagier.abs_le_of_weight_ne_zero`:
   every matrix occurring in (15) has positive determinant `n` and entries at most `2n` in absolute
   value, so only finitely many occur for each `n` (Popa–Zagier, Lemma 4(a)).
-* `TauCeti.PopaZagier.abs_le_of_weight₁_ne_zero`, ...,
-  `TauCeti.PopaZagier.abs_le_of_weight₄_ne_zero`: the same bound for each of the four sums
-  `T₁`, ..., `T₄` separately.
+* `TauCeti.PopaZagier.abs_le_of_weightᵢ_ne_zero`: the same bound for a matrix of nonzero weight
+  in any one of the four sums `T₁`, ..., `T₄`.
 * `TauCeti.PopaZagier.weight_neg_eq_zero`: with Popa–Zagier's representatives, `c > 0` or
   `c = 0 < a`, the matrix `-M` has weight zero, so `simp` computes coefficients as `weight M / 12`.
 * `TauCeti.PopaZagier.weight₂_eq_weight₁`: `T₂ = T₁·U`, where `U = T S = (1 -1; 1 0)`.
+* `TauCeti.PopaZagier.weight_smul`: the weight of eq. (15) is invariant under positive scaling.
 * `TauCeti.TraceFormulaMatrixModule.abs_le_of_intCast_ne_zero`: the same bound for any integer
   weight dominated by Popa–Zagier's, cast to a ring, in the shape `ofWeight` takes.
 * `TauCeti.TraceFormulaMatrixModule.popaZagierElement_eq_inv_smul_ofWeight`: the element is `12⁻¹`
@@ -126,6 +126,59 @@ all three are equalities is not covered by the rule; it does not occur in (15). 
 `M U⁻¹ = (-b, a + b; -d, c + d)` in `T₁`, where `U = T S = (1 -1; 1 0)`. -/
 theorem weight₂_eq_weight₁ (a b c d : ℤ) : weight₂ a b c d = weight₁ (-b) (a + b) (-d) (c + d) := by
   grind [weight₁, weight₂, chainWeight₃]
+
+/-! ### Invariance under scaling -/
+
+section Scaling
+
+variable {r : ℤ}
+
+private theorem chainWeight₃_mul (hr : 0 < r) (x y z : ℤ) :
+    chainWeight₃ (r * x) (r * y) (r * z) = chainWeight₃ x y z := by
+  simp only [chainWeight₃, mul_lt_mul_iff_right₀ hr, mul_le_mul_iff_right₀ hr,
+    mul_right_inj' hr.ne']
+
+private theorem chainWeight₄_mul (hr : 0 < r) (w x y z : ℤ) :
+    chainWeight₄ (r * w) (r * x) (r * y) (r * z) = chainWeight₄ w x y z := by
+  simp only [chainWeight₄, mul_lt_mul_iff_right₀ hr, mul_le_mul_iff_right₀ hr,
+    mul_right_inj' hr.ne']
+
+private theorem chainWeight₄_zero_mul (hr : 0 < r) (x y z : ℤ) :
+    chainWeight₄ 0 (r * x) (r * y) (r * z) = chainWeight₄ 0 x y z := by
+  simpa using chainWeight₄_mul hr 0 x y z
+
+private theorem weight₁_mul (hr : 0 < r) (a b c d : ℤ) :
+    weight₁ (r * a) (r * b) (r * c) (r * d) = weight₁ a b c d := by
+  rw [weight₁, weight₁, ← mul_sub, ← mul_neg, chainWeight₃_mul hr]
+  simp only [mul_nonneg_iff_of_pos_left hr, mul_lt_mul_iff_right₀ hr]
+
+private theorem weight₂_mul (hr : 0 < r) (a b c d : ℤ) :
+    weight₂ (r * a) (r * b) (r * c) (r * d) = weight₂ a b c d := by
+  rw [weight₂, weight₂, ← mul_sub, ← mul_neg, chainWeight₃_mul hr]
+  simp only [mul_nonpos_iff_pos_imp_nonpos, hr, hr.le, true_implies, implies_true,
+    and_true, mul_lt_mul_iff_right₀ hr]
+
+/-- The weight of a matrix in `T₃` is invariant under scaling it by a positive integer. -/
+theorem weight₃_mul (hr : 0 < r) (a b c d : ℤ) :
+    weight₃ (r * a) (r * b) (r * c) (r * d) = weight₃ a b c d := by
+  rw [weight₃, weight₃, ← mul_sub, ← mul_neg, chainWeight₄_zero_mul hr]
+  simp only [mul_nonpos_iff_pos_imp_nonpos, hr, hr.le, true_implies, implies_true,
+    and_true, mul_pos_iff_of_pos_left hr]
+
+/-- The weight of a matrix in `T₄` is invariant under scaling it by a positive integer. -/
+theorem weight₄_mul (hr : 0 < r) (a b c d : ℤ) :
+    weight₄ (r * a) (r * b) (r * c) (r * d) = weight₄ a b c d := by
+  rw [weight₄, weight₄, ← mul_sub, ← mul_neg, chainWeight₄_zero_mul hr]
+  simp only [mul_nonpos_iff_pos_imp_nonpos, hr, hr.le, true_implies, implies_true,
+    and_true, mul_pos_iff_of_pos_left hr]
+
+/-- The coefficient `c(M)` of eq. (15) only depends on which of its linear inequalities hold and
+which of them are equalities, so it is invariant under scaling `M` by a positive integer. -/
+theorem weight_smul (hr : 0 < r) (M : Matrix (Fin 2) (Fin 2) ℤ) : weight (r • M) = weight M := by
+  simp only [weight, Matrix.smul_apply, smul_eq_mul, weight₁_mul hr, weight₂_mul hr,
+    weight₃_mul hr, weight₄_mul hr]
+
+end Scaling
 
 /-! ### Finiteness -/
 
@@ -239,8 +292,9 @@ private theorem weightᵢ_ne_zero_of_weight_ne_zero {M : Matrix (Fin 2) (Fin 2) 
   simp only [weight] at h
   omega
 
-/-- The entry bounds of `bounds_of_weightᵢ_ne_zero`, stated for the entries of a matrix. -/
-private theorem abs_le_of_weightᵢ_ne_zero {M : Matrix (Fin 2) (Fin 2) ℤ}
+/-- Every matrix of nonzero weight in one of the four sums `T₁`, ..., `T₄` of (15) has entries at
+most twice its determinant in absolute value. -/
+theorem abs_le_of_weightᵢ_ne_zero {M : Matrix (Fin 2) (Fin 2) ℤ}
     (h : weight₁ (M 0 0) (M 0 1) (M 1 0) (M 1 1) ≠ 0 ∨ weight₂ (M 0 0) (M 0 1) (M 1 0) (M 1 1) ≠ 0 ∨
       weight₃ (M 0 0) (M 0 1) (M 1 0) (M 1 1) ≠ 0 ∨ weight₄ (M 0 0) (M 0 1) (M 1 0) (M 1 1) ≠ 0)
     (i j : Fin 2) : |M i j| ≤ 2 * M.det := by
@@ -257,30 +311,6 @@ twice its determinant in absolute value. -/
 theorem abs_le_of_weight_ne_zero {M : Matrix (Fin 2) (Fin 2) ℤ} (h : weight M ≠ 0) (i j : Fin 2) :
     |M i j| ≤ 2 * M.det :=
   abs_le_of_weightᵢ_ne_zero (weightᵢ_ne_zero_of_weight_ne_zero h) i j
-
-/-- Every matrix of nonzero weight in `T₁` has entries at most twice its determinant in absolute
-value. -/
-theorem abs_le_of_weight₁_ne_zero {M : Matrix (Fin 2) (Fin 2) ℤ}
-    (h : weight₁ (M 0 0) (M 0 1) (M 1 0) (M 1 1) ≠ 0) (i j : Fin 2) : |M i j| ≤ 2 * M.det :=
-  abs_le_of_weightᵢ_ne_zero (.inl h) i j
-
-/-- Every matrix of nonzero weight in `T₂` has entries at most twice its determinant in absolute
-value. -/
-theorem abs_le_of_weight₂_ne_zero {M : Matrix (Fin 2) (Fin 2) ℤ}
-    (h : weight₂ (M 0 0) (M 0 1) (M 1 0) (M 1 1) ≠ 0) (i j : Fin 2) : |M i j| ≤ 2 * M.det :=
-  abs_le_of_weightᵢ_ne_zero (.inr (.inl h)) i j
-
-/-- Every matrix of nonzero weight in `T₃` has entries at most twice its determinant in absolute
-value. -/
-theorem abs_le_of_weight₃_ne_zero {M : Matrix (Fin 2) (Fin 2) ℤ}
-    (h : weight₃ (M 0 0) (M 0 1) (M 1 0) (M 1 1) ≠ 0) (i j : Fin 2) : |M i j| ≤ 2 * M.det :=
-  abs_le_of_weightᵢ_ne_zero (.inr (.inr (.inl h))) i j
-
-/-- Every matrix of nonzero weight in `T₄` has entries at most twice its determinant in absolute
-value. -/
-theorem abs_le_of_weight₄_ne_zero {M : Matrix (Fin 2) (Fin 2) ℤ}
-    (h : weight₄ (M 0 0) (M 0 1) (M 1 0) (M 1 1) ≠ 0) (i j : Fin 2) : |M i j| ≤ 2 * M.det :=
-  abs_le_of_weightᵢ_ne_zero (.inr (.inr (.inr h))) i j
 
 /-- Every matrix `M = (a b; c d)` of nonzero weight has `c > 0`, or `c = 0 < a`. -/
 theorem pos_or_eq_zero_and_pos_of_weight_ne_zero {M : Matrix (Fin 2) (Fin 2) ℤ} (h : weight M ≠ 0) :

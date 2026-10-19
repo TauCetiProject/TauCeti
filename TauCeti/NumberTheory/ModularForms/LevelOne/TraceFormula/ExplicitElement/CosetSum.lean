@@ -33,9 +33,6 @@ in eq. (15).
 
 ## Main results
 
-* `TauCeti.PopaZagier.weight_smul`: the weight of eq. (15) is invariant under positive scaling.
-* `TauCeti.TraceFormulaMatrixModule.mapDomain_orbitRel_mk_coeff_ofWeight`: the right coset sums
-  of the element given by a weight are the sums of the weight over the matrices in the coset.
 * `TauCeti.TraceFormulaMatrixModule.mapDomain_orbitRel_mk_coeff_popaZagierElement`:
   `⟨Tₙ, K⟩ = -1` for every right coset `K` of `ℳₙ`, `n > 0`.
 
@@ -54,57 +51,6 @@ open scoped MatrixGroups RightActions
 namespace TauCeti
 
 namespace PopaZagier
-
-/-! ### Invariance under scaling -/
-
-section Scaling
-
-variable {r : ℤ}
-
-private theorem chainWeight₃_mul (hr : 0 < r) (x y z : ℤ) :
-    chainWeight₃ (r * x) (r * y) (r * z) = chainWeight₃ x y z := by
-  simp only [chainWeight₃, mul_lt_mul_iff_right₀ hr, mul_le_mul_iff_right₀ hr,
-    mul_right_inj' hr.ne']
-
-private theorem chainWeight₄_mul (hr : 0 < r) (w x y z : ℤ) :
-    chainWeight₄ (r * w) (r * x) (r * y) (r * z) = chainWeight₄ w x y z := by
-  simp only [chainWeight₄, mul_lt_mul_iff_right₀ hr, mul_le_mul_iff_right₀ hr,
-    mul_right_inj' hr.ne']
-
-private theorem chainWeight₄_zero_mul (hr : 0 < r) (x y z : ℤ) :
-    chainWeight₄ 0 (r * x) (r * y) (r * z) = chainWeight₄ 0 x y z := by
-  simpa using chainWeight₄_mul hr 0 x y z
-
-private theorem weight₁_mul (hr : 0 < r) (a b c d : ℤ) :
-    weight₁ (r * a) (r * b) (r * c) (r * d) = weight₁ a b c d := by
-  rw [weight₁, weight₁, ← mul_sub, ← mul_neg, chainWeight₃_mul hr]
-  simp only [mul_nonneg_iff_of_pos_left hr, mul_lt_mul_iff_right₀ hr]
-
-private theorem weight₂_mul (hr : 0 < r) (a b c d : ℤ) :
-    weight₂ (r * a) (r * b) (r * c) (r * d) = weight₂ a b c d := by
-  rw [weight₂, weight₂, ← mul_sub, ← mul_neg, chainWeight₃_mul hr]
-  simp only [mul_nonpos_iff_pos_imp_nonpos, hr, hr.le, true_implies, implies_true,
-    and_true, mul_lt_mul_iff_right₀ hr]
-
-private theorem weight₃_mul (hr : 0 < r) (a b c d : ℤ) :
-    weight₃ (r * a) (r * b) (r * c) (r * d) = weight₃ a b c d := by
-  rw [weight₃, weight₃, ← mul_sub, ← mul_neg, chainWeight₄_zero_mul hr]
-  simp only [mul_nonpos_iff_pos_imp_nonpos, hr, hr.le, true_implies, implies_true,
-    and_true, mul_pos_iff_of_pos_left hr]
-
-private theorem weight₄_mul (hr : 0 < r) (a b c d : ℤ) :
-    weight₄ (r * a) (r * b) (r * c) (r * d) = weight₄ a b c d := by
-  rw [weight₄, weight₄, ← mul_sub, ← mul_neg, chainWeight₄_zero_mul hr]
-  simp only [mul_nonpos_iff_pos_imp_nonpos, hr, hr.le, true_implies, implies_true,
-    and_true, mul_pos_iff_of_pos_left hr]
-
-/-- The coefficient `c(M)` of eq. (15) only depends on which of its linear inequalities hold and
-which of them are equalities, so it is invariant under scaling `M` by a positive integer. -/
-theorem weight_smul (hr : 0 < r) (M : Matrix (Fin 2) (Fin 2) ℤ) : weight (r • M) = weight M := by
-  simp only [weight, Matrix.smul_apply, smul_eq_mul, weight₁_mul hr, weight₂_mul hr,
-    weight₃_mul hr, weight₄_mul hr]
-
-end Scaling
 
 /-! ### The sums `T₃` and `T₄` on the coset of `diag(1, m)` -/
 
@@ -189,11 +135,16 @@ private def cosetMatrices (d₀ d₁ : ℤ) : Set (Matrix (Fin 2) (Fin 2) ℤ) :
 private def weight₃₄ (M : Matrix (Fin 2) (Fin 2) ℤ) : ℤ :=
   weight₃ (M 0 0) (M 0 1) (M 1 0) (M 1 1) + weight₄ (M 0 0) (M 0 1) (M 1 0) (M 1 1)
 
+private theorem weight₃₄_of (a b c d : ℤ) :
+    weight₃₄ !![a, b; c, d] = weight₃ a b c d + weight₄ a b c d := by
+  simp [weight₃₄]
+
 private theorem mem_cosetT₃₄_of_weight₃₄_ne_zero {m : ℤ} (hm : 0 < m)
     {M : Matrix (Fin 2) (Fin 2) ℤ} (hM : M ∈ cosetMatrices 1 m) (h : weight₃₄ M ≠ 0) :
     M ∈ cosetT₃₄ m := by
   obtain ⟨hdet, -, -, hc, hd⟩ := hM
   rw [det_fin_two, one_mul] at hdet
+  rw [eta_fin_two M]
   have h₃₄ : weight₃ (M 0 0) (M 0 1) (M 1 0) (M 1 1) ≠ 0 ∨
       weight₄ (M 0 0) (M 0 1) (M 1 0) (M 1 1) ≠ 0 := by
     by_contra! h'
@@ -204,27 +155,13 @@ private theorem mem_cosetT₃₄_of_weight₃₄_ne_zero {m : ℤ} (hm : 0 < m)
     obtain ⟨hr, h₃⟩ := ite_ne_right_iff.mp h₃
     obtain ⟨h₀, h₁, h₂⟩ := le_of_chainWeight₄_ne_zero h₃
     obtain ⟨rfl, ha, hb, hc, hd⟩ := eq_of_mem_T₃ hm hdet hc hr.1 hr.2 h₀ h₁ h₂
-    rcases hd with hd | hd
-    · left
-      ext i j
-      fin_cases i <;> fin_cases j <;> simp [ha, hb, hc, hd]
-    · refine Or.inr (Or.inr ?_)
-      ext i j
-      fin_cases i <;> fin_cases j <;> simp [ha, hb, hc, hd]
+    rcases hd with hd | hd <;> simp [ha, hb, hc, hd]
   · simp only [weight₄] at h₄
     obtain ⟨hr, h₄⟩ := ite_ne_right_iff.mp h₄
     obtain ⟨h₀, h₁, h₂⟩ := le_of_chainWeight₄_ne_zero h₄
     obtain ⟨hb, hc, ⟨hd, ha | ha⟩ | ⟨rfl, ha, hd⟩⟩ :=
       eq_of_mem_T₄ hm hdet hc hd hr.1 hr.2 h₀ h₁ h₂
-    · left
-      ext i j
-      fin_cases i <;> fin_cases j <;> simp [ha, hb, hc, hd]
-    · refine Or.inr (Or.inl ?_)
-      ext i j
-      fin_cases i <;> fin_cases j <;> simp [ha, hb, hc, hd]
-    · refine Or.inr (Or.inr ?_)
-      ext i j
-      fin_cases i <;> fin_cases j <;> simp [ha, hb, hc, hd]
+    all_goals simp [ha, hb, hc, hd]
 
 private theorem cosetT₃₄_subset {m : ℤ} : (cosetT₃₄ m : Set _) ⊆ cosetMatrices 1 m := by
   intro M hM
@@ -246,16 +183,16 @@ private theorem finsum_weight₃₄_cosetMatrices_one {m : ℤ} (hm : 0 < m) :
   have h₃ : !![(1 : ℤ), -1; m, 0] ≠ !![0, -1; m, -m] := fun h ↦ by
     simpa using congrFun (congrFun h 0) 0
   have hA : weight₃₄ !![0, -1; m, 0] = 6 := by
-    simp only [weight₃₄, weight₃, weight₄, chainWeight₄, Matrix.of_apply, cons_val', cons_val_zero,
-      cons_val_one, empty_val', cons_val_fin_one]
+    rw [weight₃₄_of]
+    simp only [weight₃, weight₄, chainWeight₄]
     split_ifs <;> omega
   have hB : weight₃₄ !![1, -1; m, 0] = if m = 1 then 2 else 6 := by
-    simp only [weight₃₄, weight₃, weight₄, chainWeight₄, Matrix.of_apply, cons_val', cons_val_zero,
-      cons_val_one, empty_val', cons_val_fin_one]
+    rw [weight₃₄_of]
+    simp only [weight₃, weight₄, chainWeight₄]
     split_ifs <;> omega
   have hC : weight₃₄ !![0, -1; m, -m] = if m = 1 then 4 else 0 := by
-    simp only [weight₃₄, weight₃, weight₄, chainWeight₄, Matrix.of_apply, cons_val', cons_val_zero,
-      cons_val_one, empty_val', cons_val_fin_one]
+    rw [weight₃₄_of]
+    simp only [weight₃, weight₄, chainWeight₄]
     split_ifs <;> omega
   rw [cosetT₃₄, Finset.sum_insert (by simp only [Finset.mem_insert, Finset.mem_singleton]; tauto),
     Finset.sum_insert (by simp [h₃]), Finset.sum_singleton, hA, hB, hC]
@@ -360,12 +297,12 @@ private theorem finsum_weight_cosetMatrices {d₀ m : ℤ} (hd₀ : 0 < d₀) (h
   have hw : (s ∩ Function.support weight).Finite :=
     finite_cosetMatrices_inter_support fun M h ↦ abs_le_of_weight_ne_zero h
   have h₂ : (s ∩ Function.support w₂).Finite :=
-    finite_cosetMatrices_inter_support fun M h ↦ abs_le_of_weight₂_ne_zero h
+    finite_cosetMatrices_inter_support fun M h ↦ abs_le_of_weightᵢ_ne_zero (.inr (.inl h))
   have h₃₄ : (s ∩ Function.support weight₃₄).Finite :=
     finite_cosetMatrices_inter_support fun M h i j ↦ by
       by_cases h₃ : weight₃ (M 0 0) (M 0 1) (M 1 0) (M 1 1) = 0
-      · exact abs_le_of_weight₄_ne_zero (by simpa [weight₃₄, h₃] using h) i j
-      · exact abs_le_of_weight₃_ne_zero h₃ i j
+      · exact abs_le_of_weightᵢ_ne_zero (.inr (.inr (.inr (by simpa [weight₃₄, h₃] using h)))) i j
+      · exact abs_le_of_weightᵢ_ne_zero (.inr (.inr (.inl h₃))) i j
   have hw₂ : (s ∩ Function.support fun M ↦ weight M + w₂ M).Finite :=
     (hw.union h₂).subset fun M ⟨hM, h⟩ ↦ by
       by_contra! h'
@@ -387,51 +324,6 @@ namespace TraceFormulaMatrixModule
 variable {k : Type*} {n : ℤ}
 
 local notation "ℳ" => TraceFormulaMatrixModule
-
-/-- **The right coset sums of an element given by a weight**: for `n ≠ 0`, the sum of the
-coefficients of `ofWeight n w B hw` over the right coset `x Γ` is the sum of `w` over the
-determinant-`n` matrices whose class lies in `x Γ`. Each class `±A` contributes `w A + w (-A)`, so
-both representatives of a class are counted. -/
-theorem mapDomain_orbitRel_mk_coeff_ofWeight [Semiring k] (hn : n ≠ 0)
-    (w : Matrix (Fin 2) (Fin 2) ℤ → k) (B : ℤ)
-    (hw : ∀ A : TraceFormulaMatrix n, w A.1 ≠ 0 → ∀ i j, |A.1 i j| ≤ B) (x : ℳ n) :
-    (ofWeight n w B hw).coeff.mapDomain (Quotient.mk (orbitRel PSL(2, ℤ)ᵐᵒᵖ (ℳ n))) ⟦x⟧ =
-      ∑ᶠ A ∈ mk ⁻¹' orbit PSL(2, ℤ)ᵐᵒᵖ x, w A.1 := by
-  classical
-  set F := (FixedDetMatrices.finite_setOf_abs_le (m := Fin 2) n B).toFinset
-  have hF (A : TraceFormulaMatrix n) (h : w A.1 ≠ 0) : A ∈ F := by
-    simpa [F] using hw A h
-  -- the element is the sum of the matrices of `F`, each with its weight
-  have hcoeff : (ofWeight n w B hw).coeff = ∑ A ∈ F, Finsupp.single (mk A) (w A.1) := by
-    ext y
-    induction y using TraceFormulaMatrixModule.induction with | h C => ?_
-    have hC : C ≠ -C := fun h ↦ hn <| by
-      have h₀ : C.1 = 0 := by
-        have h₁ : C.1 = -C.1 := congrArg Subtype.val h
-        rw [eq_neg_iff_add_eq_zero, ← two_smul ℤ] at h₁
-        exact (smul_eq_zero.mp h₁).resolve_left two_ne_zero
-      rw [← C.2, h₀]
-      simp
-    rw [coeff_ofWeight_mk, Finsupp.finsetSum_apply, Finset.sum_eq_add C (-C) hC]
-    · simp
-    · intro A _ hA
-      have : ¬(A = C ∨ A = -C) := by tauto
-      simpa [Finsupp.single_apply, mk_eq_iff] using fun h ↦ (this h).elim
-    · intro hCF
-      by_contra h
-      exact hCF (hF C (by simpa using h))
-    · intro hCF
-      by_contra h
-      exact hCF (hF (-C) (by simpa using h))
-  have hq (y : ℳ n) : (Quotient.mk (orbitRel PSL(2, ℤ)ᵐᵒᵖ (ℳ n)) y = ⟦x⟧) ↔
-      y ∈ orbit PSL(2, ℤ)ᵐᵒᵖ x :=
-    Quotient.eq.trans orbitRel_apply
-  rw [hcoeff, Finsupp.mapDomain_finsetSum]
-  simp only [Finsupp.mapDomain_single, Finsupp.finsetSum_apply, Finsupp.single_apply, hq]
-  rw [← Finset.sum_filter]
-  refine (finsum_mem_eq_sum_of_subset _ (fun A hA ↦ ?_) fun A hA ↦ ?_).symm
-  · exact Finset.mem_filter.mpr ⟨hF A hA.2, hA.1⟩
-  · exact (Finset.mem_filter.mp hA).2
 
 /-- The right coset sum of the integer weight of eq. (15) at the coset of `diag(d₀, d₀ m)`. -/
 private theorem finsum_mem_orbit_mk_diagonal_weight [Ring k] {d₀ m : ℤ} (hd₀ : 0 < d₀)
