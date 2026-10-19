@@ -362,6 +362,12 @@ theorem arakelovLogHeight_comp_equiv {ι ι' : Type*} [Finite ι] [Finite ι'] (
     (y : ι' → K) : arakelovLogHeight (y ∘ e) = arakelovLogHeight y := by
   simp [arakelovLogHeight]
 
+/-- The logarithmic projective height is unchanged by changing the signs of some coordinates. -/
+theorem arakelovLogHeight_eq_of_forall_eq_or_eq_neg {ι : Type*} [Finite ι] {x y : ι → K}
+    (h : ∀ i, y i = x i ∨ y i = -x i) : arakelovLogHeight y = arakelovLogHeight x := by
+  rw [arakelovLogHeight_eq_log_arakelovMulHeight, arakelovLogHeight_eq_log_arakelovMulHeight,
+    arakelovMulHeight_eq_of_forall_eq_or_eq_neg h]
+
 /-- The affine multiplicative and logarithmic heights agree by definition. -/
 theorem arakelovLogHeightAff_eq_log_arakelovMulHeightAff {ι : Type*} [Finite ι] (x : ι → K) :
     arakelovLogHeightAff x = Real.log (arakelovMulHeightAff x) := (rfl)
