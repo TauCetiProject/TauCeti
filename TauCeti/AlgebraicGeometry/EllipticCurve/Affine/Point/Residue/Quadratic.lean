@@ -17,6 +17,8 @@ import TauCeti.GroupTheory.Index.Three
 -- Proof-only: a root of a quadratic with unit discriminant is simple.
 import TauCeti.RingTheory.LocalRing.QuadraticDoubleRoot
 -- Proof-only: membership in the maximal ideal `(ϖ)` is divisibility by `ϖ`.
+import TauCeti.RingTheory.LocalRing.Basic
+-- Proof-only: a multiple of `ϖ` in the valuation ring has value less than `1`.
 import TauCeti.RingTheory.Valuation.PrincipalMaximalIdeal
 
 /-!
@@ -145,7 +147,7 @@ private theorem isTateTerminal_IV_data {ϖ : v.valuationSubring}
   have hp : Prime ϖ :=
     (Ideal.span_singleton_prime hϖ0).mp (hϖ ▸ (maximalIdeal.isMaximal 𝒪).isPrime)
   have hunit (z : 𝒪) : IsUnit z ↔ ¬ ϖ ∣ z := by
-    rw [← v.mem_maximalIdeal_iff_dvd hϖ, mem_maximalIdeal, mem_nonunits_iff, not_not]
+    rw [← mem_maximalIdeal_iff_dvd hϖ, mem_maximalIdeal, mem_nonunits_iff, not_not]
   -- `b₆ = ϖ² (A₃² + 4 A₆)`
   have hD : IsUnit (A₃ ^ 2 + 4 * A₆) := by
     rw [hunit]
@@ -178,8 +180,8 @@ private theorem isTateTerminal_IV_data {ϖ : v.valuationSubring}
   have hs₁ : ϖ ∣ 2 * s + Wo.a₁ := hp.dvd_of_dvd_pow (n := 2) <| by
     obtain ⟨e, he⟩ := hs₂
     exact ⟨4 * e + d, by linear_combination 4 * he + hd⟩
-  refine ⟨(v.mem_maximalIdeal_iff_dvd hϖ).2 ⟨A₃, h₃⟩, (v.mem_maximalIdeal_iff_dvd hϖ).2 ⟨A₄, h₄⟩,
-    (v.mem_maximalIdeal_iff_dvd hϖ).2 ⟨ϖ * A₆, by rw [h₆]; ring⟩, hp, hD, s, hs₁, hs₂,
+  refine ⟨(mem_maximalIdeal_iff_dvd hϖ).2 ⟨A₃, h₃⟩, (mem_maximalIdeal_iff_dvd hϖ).2 ⟨A₄, h₄⟩,
+    (mem_maximalIdeal_iff_dvd hϖ).2 ⟨ϖ * A₆, by rw [h₆]; ring⟩, hp, hD, s, hs₁, hs₂,
     hp.dvd_of_dvd_pow (n := 2) ?_⟩
   -- `(A₄ − s A₃)² ≡ a₁ A₃ A₄ − a₂ A₃² + A₄²`
   obtain ⟨e₁, he₁⟩ := hs₁
@@ -263,7 +265,7 @@ private theorem dvd_sub_of_add_notMem {ϖ : v.valuationSubring}
   have hL : ϖ ∣ L - s := hp.dvd_of_dvd_pow (n := 2) <| by
     obtain ⟨c₁, hc₁⟩ := hs₁
     obtain ⟨c₂, hc₂⟩ := hs₂
-    obtain ⟨c, hc⟩ := (v.mem_maximalIdeal_iff_dvd hϖ).1 hm
+    obtain ⟨c, hc⟩ := (mem_maximalIdeal_iff_dvd hϖ).1 hm
     exact ⟨c - c₂ - c₁ * (L - s), by linear_combination hc - hc₂ - (L - s) * hc₁⟩
   rw [show Y₁ - s * X₁ - (Y₂ - s * X₂) = (L - s) * (X₁ - X₂) by linear_combination -hslope]
   exact hL.mul_right _
@@ -292,10 +294,10 @@ private theorem exists_slope_self_eq {ϖ : v.valuationSubring}
   set u := 2 * Y + (integralModel 𝒪 W).a₁ * X + A₃ with hu_def
   have hu : IsUnit u := by
     have ht :=
-      isUnit_two_mul_add_of_isUnit_sq_add_four_mul hD ((v.mem_maximalIdeal_iff_dvd hϖ).2 hq)
+      isUnit_two_mul_add_of_isUnit_sq_add_four_mul hD ((mem_maximalIdeal_iff_dvd hϖ).2 hq)
     rw [← residue_ne_zero_iff_isUnit] at ht ⊢
     have hs : (2 * s + (integralModel 𝒪 W).a₁) * X ∈ maximalIdeal 𝒪 :=
-      (v.mem_maximalIdeal_iff_dvd hϖ).2 (hs₁.mul_right X)
+      (mem_maximalIdeal_iff_dvd hϖ).2 (hs₁.mul_right X)
     rwa [show u = 2 * (Y - s * X) + A₃ + (2 * s + (integralModel 𝒪 W).a₁) * X by
       rw [hu_def]; ring, map_add, (residue_eq_zero_iff _).2 hs, add_zero]
   -- `y − (−y − a₁ x − a₃) = ϖ u ≠ 0`
@@ -389,7 +391,7 @@ theorem nonsingularReduction_eq_top_of_isTateTerminal_IV {ϖ : v.valuationSubrin
   have hq := (integralModel 𝒪 W).dvd_residueQuadratic_of_equation hp.ne_zero h₃ h₄ h₆ hs₁ hs₂
     hs₄ hE
   exact hroot (residue _ (Y - s * X))
-    (by simpa using (residue_eq_zero_iff _).2 ((v.mem_maximalIdeal_iff_dvd hϖ).2 hq))
+    (by simpa using (residue_eq_zero_iff _).2 ((mem_maximalIdeal_iff_dvd hϖ).2 hq))
 
 /-- At the symbol `IV`, if `P` has singular reduction then so does `2 • P`, and every point lies
 in `E₀(F)`, `P + E₀(F)` or `−P + E₀(F)`: a point with singular reduction reduces to one of the two
@@ -411,7 +413,7 @@ private theorem two_nsmul_notMem_and_cosets_of_isTateTerminal_IV {ϖ : v.valuati
   obtain ⟨X₀, Y₀, h₀, rfl⟩ := exists_eq_some_of_notMem v hϖ hm₃ hm₄ hm₆ hP
   have hne (hd : ϖ ∣ 2 * (Y₀ - s * X₀) + A₃) : False :=
     hp.not_isUnit (isUnit_of_dvd_unit hd (isUnit_two_mul_add_of_isUnit_sq_add_four_mul hD
-      ((v.mem_maximalIdeal_iff_dvd hϖ).2 (hroot h₀))))
+      ((mem_maximalIdeal_iff_dvd hϖ).2 (hroot h₀))))
   -- `−P = (ϖ X₀, ϖ Y₀')`, where `Y₀' − s X₀ ≡ −(Y₀ − s X₀) − A₃` is the other root
   set Y₀' := -Y₀ - (integralModel 𝒪 W).a₁ * X₀ - A₃ with hY₀'
   have hnegY : W.negY ((ϖ * X₀ : 𝒪) : F) ((ϖ * Y₀ : 𝒪) : F) = ((ϖ * Y₀' : 𝒪) : F) := by

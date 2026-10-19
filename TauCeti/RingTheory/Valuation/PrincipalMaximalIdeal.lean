@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Set.Card
 public import Mathlib.RingTheory.Valuation.ValuationSubring
+import TauCeti.RingTheory.LocalRing.Basic
 
 /-!
 # Values of a valuation whose maximal ideal is principal
@@ -17,7 +18,6 @@ exactly `n` such values. No discreteness of `v` is assumed: the value group may 
 
 ## Main results
 
-* `Valuation.mem_maximalIdeal_iff_dvd`: membership in the maximal ideal is divisibility by `ϖ`.
 * `Valuation.map_lt_one_of_maximalIdeal_eq_span_of_dvd`: a multiple of `ϖ` in the valuation ring
   has value less than `1`.
 * `Valuation.map_lt_one_of_maximalIdeal_eq_span`: the generator `ϖ` has `v ϖ < 1`.
@@ -36,17 +36,12 @@ namespace Valuation
 variable {F Γ₀ : Type*} [Field F] [LinearOrderedCommGroupWithZero Γ₀] (v : Valuation F Γ₀)
   {ϖ : v.valuationSubring}
 
-/-- Membership in the maximal ideal `(ϖ)` of the valuation ring is divisibility by `ϖ`. -/
-theorem mem_maximalIdeal_iff_dvd (hϖ : maximalIdeal v.valuationSubring = Ideal.span {ϖ})
-    {z : v.valuationSubring} : z ∈ maximalIdeal v.valuationSubring ↔ ϖ ∣ z := by
-  rw [hϖ, Ideal.mem_span_singleton]
-
 /-- An element of the valuation ring divisible by a generator `ϖ` of the maximal ideal has value
 less than `1`. -/
 theorem map_lt_one_of_maximalIdeal_eq_span_of_dvd
     (hϖ : maximalIdeal v.valuationSubring = Ideal.span {ϖ}) {z : v.valuationSubring}
     (hz : ϖ ∣ z) : v (z : F) < 1 :=
-  (Valuation.mem_maximalIdeal_iff (v := v)).1 ((v.mem_maximalIdeal_iff_dvd hϖ).2 hz)
+  (Valuation.mem_maximalIdeal_iff (v := v)).1 ((mem_maximalIdeal_iff_dvd hϖ).2 hz)
 
 /-- A generator of the maximal ideal of the valuation ring has value less than `1`. -/
 theorem map_lt_one_of_maximalIdeal_eq_span
