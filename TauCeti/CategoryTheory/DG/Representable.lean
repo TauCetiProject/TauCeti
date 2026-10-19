@@ -291,24 +291,15 @@ private theorem dgApp_dgYonedaNatTrans {x : (F.obj (op X)).X 0}
     (yonedaNatTrans X F hx).dgApp Y = yonedaApp X F hx Y :=
   DGNatTrans.dgApp_ofDGApp _ _ (yonedaApp_naturality X F hx) Y
 
-/-- A closed cochain of degree zero sends closed elements of degree zero to closed elements. -/
-private theorem cochain_v_apply_mem_ker {K L : CochainComplex (ModuleCat.{v} R) ℤ}
-    (z : Cochain K L 0) (hz : δ 0 1 z = 0) {a : K.X 0} (ha : (K.d 0 1).hom a = 0) :
-    (z.v 0 0 (add_zero 0)).hom a ∈ LinearMap.ker (L.d 0 1).hom := by
-  have key := congrArg (fun φ ↦ ModuleCat.Hom.hom φ a) (Cochain.congr_v hz 0 1 rfl)
-  simpa only [δ_zero_cochain_v, Cochain.zero_v, ModuleCat.hom_sub, ModuleCat.hom_comp,
-    LinearMap.sub_apply, LinearMap.comp_apply, ha, map_zero, sub_zero, ModuleCat.hom_zero,
-    LinearMap.zero_apply, LinearMap.mem_ker] using key
-
 /-- The value at the identity of the component at `X` of a DG natural transformation out of
 `Hom(-, X)` is closed. -/
 private theorem dgApp_v_dgId_mem_ker (α : DGNatTrans (dgRepresentable R X) F) :
     ((α.dgApp (op X) : Cochain ((dgRepresentable R X).obj (op X)) (F.obj (op X)) 0).v 0 0
         (add_zero 0)).hom (dgId R X) ∈ LinearMap.ker ((F.obj (op X)).d 0 1).hom :=
-  cochain_v_apply_mem_ker _
+  Cochain.v_apply_mem_ker_of_δ_eq_zero _
     ((dgDifferential_linearHomComplex R 0 _).symm.trans
       ((mem_dgCycles R).1 (α.dgApp_mem_dgCycles _)))
-    (dgDifferential_dgId R X)
+    rfl (dgDifferential_dgId R X)
 
 /-- **A DG natural transformation out of `Hom(-, X)` is determined by its value at the
 identity**: its component at `Y` sends `g` to `F(g)` applied to that value. -/
