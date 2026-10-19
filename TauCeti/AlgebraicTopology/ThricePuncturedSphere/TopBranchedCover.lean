@@ -658,13 +658,29 @@ def ofRestrict (h : X.π ⁻¹' range toOnePoint ≃ₜ Y.π ⁻¹' range toOneP
       continuous_invFun := (extend _ _).continuous }
   π_apply := π_extend_apply _ hπ
 
+variable (h : X.π ⁻¹' range toOnePoint ≃ₜ Y.π ⁻¹' range toOnePoint) (hπ : ∀ z, Y.π (h z) = X.π z)
+
+/-- On the unbranched part, the homeomorphism underlying
+`TauCeti.TopBranchedCover.Iso.ofRestrict h hπ` is `h`. -/
+@[simp]
+theorem ofRestrict_toHomeomorph_apply_val (z : X.π ⁻¹' range toOnePoint) :
+    (ofRestrict h hπ).toHomeomorph z = h z :=
+  extend_apply_val ⟨h, h.continuous⟩ hπ z
+
+/-- On the unbranched part, the inverse of the homeomorphism underlying
+`TauCeti.TopBranchedCover.Iso.ofRestrict h hπ` is `h.symm`. -/
+@[simp]
+theorem ofRestrict_toHomeomorph_symm_apply_val (z : Y.π ⁻¹' range toOnePoint) :
+    (ofRestrict h hπ).toHomeomorph.symm z = h.symm z :=
+  (ofRestrict h hπ).toHomeomorph.symm_apply_eq.2 <| by
+    rw [ofRestrict_toHomeomorph_apply_val, Homeomorph.apply_symm_apply]
+
 /-- On the unbranched part, the extension `TauCeti.TopBranchedCover.Iso.ofRestrict h hπ` is
 `h`. -/
 @[simp]
-theorem restrict_ofRestrict (h : X.π ⁻¹' range toOnePoint ≃ₜ Y.π ⁻¹' range toOnePoint)
-    (hπ : ∀ z, Y.π (h z) = X.π z) : (ofRestrict h hπ).restrict = h := by
+theorem restrict_ofRestrict : (ofRestrict h hπ).restrict = h := by
   ext z
-  exact extend_apply_val ⟨h, h.continuous⟩ hπ z
+  exact ofRestrict_toHomeomorph_apply_val h hπ z
 
 /-- An isomorphism of branched covers is determined by its restriction to the unbranched parts,
 which are dense. -/
