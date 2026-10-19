@@ -126,14 +126,14 @@ lemma pseudofunctor_mapComp_hom_toNatTrans_app {a b c : LocallyDiscrete (SingleO
     (g : a ⟶ b) (h : b ⟶ c) (X : C) :
     ((pseudofunctor M C).mapComp g h).hom.toNatTrans.app X =
       (αₗ (⟨h.as⟩ : Discrete M) ⟨g.as⟩ X).hom :=
-  rfl
+  actionLeftTensorIso_hom_app C _ _ X
 
 @[simp]
 lemma pseudofunctor_mapComp_inv_toNatTrans_app {a b c : LocallyDiscrete (SingleObj M)}
     (g : a ⟶ b) (h : b ⟶ c) (X : C) :
     ((pseudofunctor M C).mapComp g h).inv.toNatTrans.app X =
       (αₗ (⟨h.as⟩ : Discrete M) ⟨g.as⟩ X).inv :=
-  rfl
+  actionLeftTensorIso_inv_app C _ _ X
 
 end SingleObj
 
@@ -209,6 +209,9 @@ theorem monoidalLeftAction_pseudofunctor [inst : MonoidalLeftAction (Discrete M)
     (pseudofunctor M C).monoidalLeftAction = inst := by
   have hLeft {c c' : Discrete M} (f : c ⟶ c') (X : C) := actionHomLeft_eq_eqToHom f X
   have hHom {c c' : Discrete M} {X Y : C} (f : c ⟶ c') (g : X ⟶ Y) := actionHom_def f g
+  have hAssoc (c c' : Discrete M) (X : C) :=
+    pseudofunctor_mapComp_hom_toNatTrans_app (M := M) (C := C)
+      (a := ⟨SingleObj.star M⟩) (b := ⟨SingleObj.star M⟩) (c := ⟨SingleObj.star M⟩) c' c X
   cases inst with | @mk struct _ =>
   cases struct
   unfold Pseudofunctor.monoidalLeftAction
@@ -217,6 +220,9 @@ theorem monoidalLeftAction_pseudofunctor [inst : MonoidalLeftAction (Discrete M)
     exact (hLeft f X).symm
   · funext _ _ _ _ f g
     exact ((hHom f g).trans (congrArg (· ≫ _) (hLeft f _))).symm
+  · funext c c' X
+    apply Iso.ext
+    exact hAssoc c c' X
 
 end MonoidalCategory.MonoidalLeftAction
 

@@ -24,7 +24,7 @@ action functors `actionLeft D c : D ⥤ D` compose and invert.
   `eqToHom`.
 -/
 
-@[expose] public section
+public section
 
 namespace CategoryTheory.MonoidalCategory.MonoidalLeftAction
 
@@ -33,14 +33,30 @@ variable {C : Type*} [Category* C] [MonoidalCategory C] (D : Type*) [Category* D
 
 /-- The action functor of a tensor product is the composite of the action functors, in the
 order `c ⊗ c' ↦ actionLeft D c' ⋙ actionLeft D c`; its components are `αₗ c c' d`. -/
-@[simps!]
 def actionLeftTensorIso (c c' : C) :
     actionLeft D (c ⊗ c') ≅ actionLeft D c' ⋙ actionLeft D c :=
   ((actionAssocNatIso C D).app c).app c'
 
+private lemma actionLeftTensorIso_hom_app_aux (c c' : C) (d : D) :
+    (actionLeftTensorIso D c c').hom.app d = (αₗ c c' d).hom :=
+  rfl
+
+@[simp]
+lemma actionLeftTensorIso_hom_app (c c' : C) (d : D) :
+    (actionLeftTensorIso D c c').hom.app d = (αₗ c c' d).hom :=
+  actionLeftTensorIso_hom_app_aux D c c' d
+
+private lemma actionLeftTensorIso_inv_app_aux (c c' : C) (d : D) :
+    (actionLeftTensorIso D c c').inv.app d = (αₗ c c' d).inv :=
+  rfl
+
+@[simp]
+lemma actionLeftTensorIso_inv_app (c c' : C) (d : D) :
+    (actionLeftTensorIso D c c').inv.app d = (αₗ c c' d).inv :=
+  actionLeftTensorIso_inv_app_aux D c c' d
+
 /-- If `c' ⊗ c ≅ 𝟙_ C` and `c ⊗ c' ≅ 𝟙_ C`, then the action functor of `c` is an equivalence
 whose inverse is the action functor of `c'`. -/
-@[simps! functor inverse]
 def actionLeftEquivOfIso {c c' : C} (e : c' ⊗ c ≅ 𝟙_ C) (e' : c ⊗ c' ≅ 𝟙_ C) : D ≌ D :=
   .mk (actionLeft D c) (actionLeft D c')
     ((actionUnitNatIso C D).symm ≪≫ (curriedAction C D).mapIso e.symm ≪≫
@@ -48,13 +64,54 @@ def actionLeftEquivOfIso {c c' : C} (e : c' ⊗ c ≅ 𝟙_ C) (e' : c ⊗ c' �
     ((actionLeftTensorIso D c c').symm ≪≫ (curriedAction C D).mapIso e' ≪≫
       actionUnitNatIso C D)
 
+private lemma actionLeftEquivOfIso_functor_aux {c c' : C} (e : c' ⊗ c ≅ 𝟙_ C)
+    (e' : c ⊗ c' ≅ 𝟙_ C) :
+    (actionLeftEquivOfIso D e e').functor = actionLeft D c :=
+  rfl
+
+@[simp]
+lemma actionLeftEquivOfIso_functor {c c' : C} (e : c' ⊗ c ≅ 𝟙_ C) (e' : c ⊗ c' ≅ 𝟙_ C) :
+    (actionLeftEquivOfIso D e e').functor = actionLeft D c :=
+  actionLeftEquivOfIso_functor_aux D e e'
+
+private lemma actionLeftEquivOfIso_inverse_aux {c c' : C} (e : c' ⊗ c ≅ 𝟙_ C)
+    (e' : c ⊗ c' ≅ 𝟙_ C) :
+    (actionLeftEquivOfIso D e e').inverse = actionLeft D c' :=
+  rfl
+
+@[simp]
+lemma actionLeftEquivOfIso_inverse {c c' : C} (e : c' ⊗ c ≅ 𝟙_ C) (e' : c ⊗ c' ≅ 𝟙_ C) :
+    (actionLeftEquivOfIso D e e').inverse = actionLeft D c' :=
+  actionLeftEquivOfIso_inverse_aux D e e'
+
 /-- For a left action of a group `G`, the action functor of `g` is an equivalence whose inverse
 is the action functor of `g⁻¹`. -/
-@[simps! functor inverse]
 def actionLeftEquivalence {G : Type*} [Group G] [MonoidalLeftAction (Discrete G) D] (g : G) :
     D ≌ D :=
   actionLeftEquivOfIso D (c := Discrete.mk g) (c' := Discrete.mk g⁻¹)
     (Discrete.eqToIso (inv_mul_cancel g)) (Discrete.eqToIso (mul_inv_cancel g))
+
+private lemma actionLeftEquivalence_functor_aux {G : Type*} [Group G]
+    [MonoidalLeftAction (Discrete G) D] (g : G) :
+    (actionLeftEquivalence D g).functor = actionLeft D (Discrete.mk g) :=
+  rfl
+
+@[simp]
+lemma actionLeftEquivalence_functor {G : Type*} [Group G]
+    [MonoidalLeftAction (Discrete G) D] (g : G) :
+    (actionLeftEquivalence D g).functor = actionLeft D (Discrete.mk g) :=
+  actionLeftEquivalence_functor_aux D g
+
+private lemma actionLeftEquivalence_inverse_aux {G : Type*} [Group G]
+    [MonoidalLeftAction (Discrete G) D] (g : G) :
+    (actionLeftEquivalence D g).inverse = actionLeft D (Discrete.mk g⁻¹) :=
+  rfl
+
+@[simp]
+lemma actionLeftEquivalence_inverse {G : Type*} [Group G]
+    [MonoidalLeftAction (Discrete G) D] (g : G) :
+    (actionLeftEquivalence D g).inverse = actionLeft D (Discrete.mk g⁻¹) :=
+  actionLeftEquivalence_inverse_aux D g
 
 variable {D}
 
