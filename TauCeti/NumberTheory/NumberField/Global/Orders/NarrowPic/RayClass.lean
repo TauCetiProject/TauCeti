@@ -233,7 +233,7 @@ private theorem exists_narrowPicClass_eq_mkPrincipal (y : Kˣ) :
     ⟨fun v hv ↦ (hx1 v ((Modulus.mem_support_iff _ v).mpr hv)).le, by simp⟩
   -- Clear its denominator by a totally positive algebraic integer.
   obtain ⟨a, b, ha, -, hb0, hbpos, hab⟩ :=
-    hx.exists_sub_one_mem_and_algebraMap_eq_mul
+    hx.exists_sub_one_mem_and_ne_zero_and_isTotallyPositive_and_algebraMap_eq_mul
   have hb : (b : K) ≠ 0 := RingOfIntegers.coe_ne_zero_iff.mpr hb0
   have ha0 : (a : K) ≠ 0 := by
     rw [RingOfIntegers.coe_eq_algebraMap, hab]

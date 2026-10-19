@@ -44,9 +44,9 @@ class.
 * `TauCeti.GlobalNumberFields.isCongrOne_iff_residueHom_eq_one_of_finitePart_eq`: for two moduli
   with the same finite part, congruence to one modulo one of them is reduction to one modulo the
   other together with positivity at its real places.
-* `TauCeti.GlobalNumberFields.IsCongrOne.exists_sub_one_mem_and_algebraMap_eq_mul`: an element
-  congruent to one is a quotient of two algebraic integers congruent to one, the denominator
-  nonzero and totally positive.
+* `IsCongrOne.exists_sub_one_mem_and_ne_zero_and_isTotallyPositive_and_algebraMap_eq_mul`:
+  an element congruent to one is a quotient of two algebraic integers congruent to one, the
+  denominator nonzero and totally positive.
 * `TauCeti.GlobalNumberFields.residueHom_surjective`: every residue unit modulo the finite part is
   the reduction of an element of `Kˣ` that is a unit at that finite part.
 * `TauCeti.GlobalNumberFields.finiteUnitsMap_refl` and
@@ -146,8 +146,8 @@ theorem residueHom_eq_one_of_mem_congruenceSubgroup {𝔪 : Modulus K} {x : prim
 totally positive denominator.** If `IsCongrOne 𝔪 x`, then `x = a / b` with `a b : 𝓞 K` both
 congruent to one modulo `𝔪.finitePart` and `b` nonzero and totally positive. In particular `a` is
 nonzero and has the sign of `x` at every real place. -/
-theorem IsCongrOne.exists_sub_one_mem_and_algebraMap_eq_mul {𝔪 : Modulus K} {x : Kˣ}
-    (hx : IsCongrOne 𝔪 x) :
+theorem IsCongrOne.exists_sub_one_mem_and_ne_zero_and_isTotallyPositive_and_algebraMap_eq_mul
+    {𝔪 : Modulus K} {x : Kˣ} (hx : IsCongrOne 𝔪 x) :
     ∃ a b : 𝓞 K, a - 1 ∈ 𝔪.finitePart ∧ b - 1 ∈ 𝔪.finitePart ∧ b ≠ 0 ∧
       IsTotallyPositive (b : K) ∧ algebraMap (𝓞 K) K a = algebraMap (𝓞 K) K b * (x : K) := by
   have hxp : x ∈ primeToSubgroup 𝔪 :=
