@@ -17,11 +17,6 @@ internally stabilizing level has this property; the canonical Scott sentence cho
 least such level. The model and the original structure may inhabit different universes,
 and empty structures are included.
 
-The forward implication passes from a model of the sentence to a back-and-forth system and
-then uses the countable back-and-forth construction. The reverse implication uses invariance
-of infinitary satisfaction under isomorphisms. Internal stabilization supplies the level
-unconditionally, rather than as an extra hypothesis in `scott_isomorphism`.
-
 This is Dana Scott's *Logic with denumerably long formulas and finite strings of quantifiers*
 (1965), using the tuple-upgrade Scott sentences and potential-isomorphism comparison developed
 in `TauCeti.ModelTheory.Scott.Sentence` and `TauCeti.ModelTheory.Scott.PotentialIso`.
