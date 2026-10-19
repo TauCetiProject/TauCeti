@@ -39,16 +39,23 @@ namespace TauCeti
 
 open Module Module.End ComplexStarModule LinearMap
 
+/-- Passing a finite-dimensional operator to continuous linear maps preserves its adjoint. -/
+theorem toContinuousLinearMap_star {𝕜 E : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E] [CompleteSpace E]
+    (T : E →ₗ[𝕜] E) :
+    (star T).toContinuousLinearMap = star T.toContinuousLinearMap := by
+  rw [LinearMap.star_eq_adjoint, ContinuousLinearMap.star_eq_adjoint,
+    LinearMap.adjoint_toContinuousLinearMap]
+
 /-- A finite-dimensional linear operator remains normal when regarded as continuous. -/
 instance isStarNormal_toContinuousLinearMap {𝕜 E : Type*} [RCLike 𝕜]
     [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E] [CompleteSpace E]
     (T : E →ₗ[𝕜] E) [IsStarNormal T] :
     IsStarNormal T.toContinuousLinearMap where
   star_comm_self := by
+    rw [← toContinuousLinearMap_star]
     ext x
-    simpa [LinearMap.star_eq_adjoint, ContinuousLinearMap.star_eq_adjoint,
-      ← LinearMap.adjoint_toContinuousLinearMap] using
-      congrArg (fun f : E →ₗ[𝕜] E => f x) (star_comm_self (x := T)).eq
+    exact congrArg (fun f : E →ₗ[𝕜] E => f x) (star_comm_self (x := T)).eq
 
 variable {E ι : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E]
   [FiniteDimensional ℂ E]
@@ -75,10 +82,9 @@ theorem commute_star_right_of_isStarNormal {T S : E →ₗ[ℂ] E} [IsStarNormal
     ext x
     exact congrArg (fun f : E →ₗ[ℂ] E => f x) h.eq
   have hs := IsStarNormal.commute_star_right (a := S.toContinuousLinearMap) inferInstance hc
+  rw [← toContinuousLinearMap_star] at hs
   ext x
-  simpa [LinearMap.star_eq_adjoint, ContinuousLinearMap.star_eq_adjoint,
-    ← LinearMap.adjoint_toContinuousLinearMap] using
-    congrArg (fun f : E →L[ℂ] E => f x) hs.eq
+  exact congrArg (fun f : E →L[ℂ] E => f x) hs.eq
 
 /-- The real and imaginary parts of two commuting normal operators commute in all four
 combinations. -/

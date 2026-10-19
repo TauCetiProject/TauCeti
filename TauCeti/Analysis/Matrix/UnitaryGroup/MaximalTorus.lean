@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Torus
 public import TauCeti.Geometry.Lie.Subgroup.Torus
-import TauCeti.Analysis.Matrix.JointDiagonalization
 import TauCeti.Topology.Algebra.Group.ContinuousAut.Basic
 
 /-!
