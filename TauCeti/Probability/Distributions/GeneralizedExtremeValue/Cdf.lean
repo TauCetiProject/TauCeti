@@ -21,7 +21,8 @@ The strict increase of the cdf on its support interior is also recorded for quan
 
 ## Main results
 
-* `cdf_generalizedExtremeValueMeasure_eq_of_pos` gives the interior nonzero-shape formula.
+* `cdf_generalizedExtremeValueMeasure_eq_of_shape_ne_zero_of_pos_support` gives the interior
+  nonzero-shape formula.
 * `cdf_generalizedExtremeValueMeasure_eq` gives all shape and support-boundary branches.
 * `strictMonoOn_cdf_generalizedExtremeValueMeasure` proves strict increase on the support interior.
 
@@ -43,56 +44,66 @@ namespace TauCeti.Probability
 
 variable {m s ξ x : ℝ}
 
+private lemma generalizedExtremeValueSupport_eq (hs : s ≠ 0) :
+    1 + ξ * (x - m) / s = (s + ξ * (x - m)) / s := by
+  field_simp [hs]
+
+private lemma generalizedExtremeValueSupportNumerator_nonpos (hs : 0 < s)
+    (hx : 1 + ξ * (x - m) / s ≤ 0) : s + ξ * (x - m) ≤ 0 := by
+  rw [generalizedExtremeValueSupport_eq hs.ne'] at hx
+  simpa only [div_nonpos_iff, hs.le, not_le_of_gt hs, and_false, false_or, and_true] using hx
+
+private lemma generalizedExtremeValueMap_algebra_of_shape_neg {t : ℝ} (hs : 0 < s)
+    (hξ : ξ < 0) :
+    m + s * (t - 1) / ξ ≤ x ↔ 1 + ξ * (x - m) / s ≤ t := by
+  rw [generalizedExtremeValueSupport_eq hs.ne']
+  constructor
+  · intro h
+    have hd : s * (t - 1) / ξ ≤ x - m := by linarith
+    have h' := (div_le_iff_of_neg hξ).1 hd
+    apply (div_le_iff₀ hs).2
+    nlinarith
+  · intro h
+    have h' := (div_le_iff₀ hs).1 h
+    have hd : s * (t - 1) / ξ ≤ x - m :=
+      (div_le_iff_of_neg hξ).2 (by nlinarith)
+    linarith
+
+private lemma generalizedExtremeValueMap_algebra_of_shape_pos {t : ℝ} (hs : 0 < s)
+    (hξ : 0 < ξ) :
+    m + s * (t - 1) / ξ ≤ x ↔ t ≤ 1 + ξ * (x - m) / s := by
+  rw [generalizedExtremeValueSupport_eq hs.ne']
+  constructor
+  · intro h
+    have hd : s * (t - 1) / ξ ≤ x - m := by linarith
+    have h' := (div_le_iff₀ hξ).1 hd
+    apply (le_div_iff₀ hs).2
+    nlinarith
+  · intro h
+    have h' := (le_div_iff₀ hs).1 h
+    have hd : s * (t - 1) / ξ ≤ x - m :=
+      (div_le_iff₀ hξ).2 (by nlinarith)
+    linarith
+
 private lemma generalizedExtremeValueMap_le_iff {e : ℝ} (hs : 0 < s) (hξ : ξ ≠ 0)
     (he : 0 < e) (hx : 0 < 1 + ξ * (x - m) / s) :
     generalizedExtremeValueMap m s ξ e ≤ x ↔
       (1 + ξ * (x - m) / s) ^ (-1 / ξ) ≤ e := by
   rw [generalizedExtremeValueMap_eq_rpow he, ite_eq_right hξ]
-  have hz : 1 + ξ * (x - m) / s = (s + ξ * (x - m)) / s := by
-    field_simp [hs.ne']
+  have hinv : (-ξ)⁻¹ = -1 / ξ := by
+    simp [div_eq_mul_inv]
   rcases lt_or_gt_of_ne hξ with hξ | hξ
-  · have halgebra : m + s * (e ^ (-ξ) - 1) / ξ ≤ x ↔
-        1 + ξ * (x - m) / s ≤ e ^ (-ξ) := by
-      rw [hz]
-      constructor
-      · intro h
-        have hd : s * (e ^ (-ξ) - 1) / ξ ≤ x - m := by linarith
-        have h' := (div_le_iff_of_neg hξ).1 hd
-        apply (div_le_iff₀ hs).2
-        nlinarith
-      · intro h
-        have h' := (div_le_iff₀ hs).1 h
-        have hd : s * (e ^ (-ξ) - 1) / ξ ≤ x - m :=
-          (div_le_iff_of_neg hξ).2 (by nlinarith)
-        linarith
-    rw [halgebra]
-    have hinv : (-ξ)⁻¹ = -1 / ξ := by
-      simp [div_eq_mul_inv]
+  · rw [generalizedExtremeValueMap_algebra_of_shape_neg hs hξ]
     rw [← hinv]
     exact (Real.rpow_inv_le_iff_of_pos hx.le he.le (neg_pos.mpr hξ)).symm
-  · have halgebra : m + s * (e ^ (-ξ) - 1) / ξ ≤ x ↔
-        e ^ (-ξ) ≤ 1 + ξ * (x - m) / s := by
-      rw [hz]
-      constructor
-      · intro h
-        have hd : s * (e ^ (-ξ) - 1) / ξ ≤ x - m := by linarith
-        have h' := (div_le_iff₀ hξ).1 hd
-        apply (le_div_iff₀ hs).2
-        nlinarith
-      · intro h
-        have h' := (le_div_iff₀ hs).1 h
-        have hd : s * (e ^ (-ξ) - 1) / ξ ≤ x - m :=
-          (div_le_iff₀ hξ).2 (by nlinarith)
-        linarith
-    rw [halgebra]
-    have hinv : (-ξ)⁻¹ = -1 / ξ := by
-      simp [div_eq_mul_inv]
+  · rw [generalizedExtremeValueMap_algebra_of_shape_pos hs hξ]
     rw [← hinv]
     exact (Real.rpow_inv_le_iff_of_neg hx he (neg_neg_of_pos hξ)).symm
 
 /-- On the interior of its support, the cdf of a nonzero-shape generalized extreme-value law is
 `exp (-(1 + ξ * (x - m) / s) ^ (-1 / ξ))`. -/
-theorem cdf_generalizedExtremeValueMeasure_eq_of_pos (hs : 0 < s) (hξ : ξ ≠ 0)
+theorem cdf_generalizedExtremeValueMeasure_eq_of_shape_ne_zero_of_pos_support
+    (hs : 0 < s) (hξ : ξ ≠ 0)
     (hx : 0 < 1 + ξ * (x - m) / s) :
     cdf (generalizedExtremeValueMeasure m s ξ) x =
       Real.exp (-(1 + ξ * (x - m) / s) ^ (-1 / ξ)) := by
@@ -117,10 +128,7 @@ private lemma generalizedExtremeValueMap_gt_of_shape_pos_of_nonpos {e : ℝ} (hs
     x < generalizedExtremeValueMap m s ξ e := by
   rw [generalizedExtremeValueMap_eq_rpow he, ite_eq_right hξ.ne']
   have hpow : 0 < e ^ (-ξ) := Real.rpow_pos_of_pos he _
-  have hz : 1 + ξ * (x - m) / s = (s + ξ * (x - m)) / s := by
-    field_simp [hs.ne']
-  rw [hz] at hx
-  simp only [div_nonpos_iff, hs.le, not_le_of_gt hs, and_false, false_or, and_true] at hx
+  have hx := generalizedExtremeValueSupportNumerator_nonpos hs hx
   have hd : x - m < s * (e ^ (-ξ) - 1) / ξ :=
     (lt_div_iff₀ hξ).2 (by nlinarith [mul_pos hs hpow])
   linarith
@@ -145,10 +153,7 @@ private lemma generalizedExtremeValueMap_le_of_shape_neg_of_nonpos {e : ℝ} (hs
     generalizedExtremeValueMap m s ξ e ≤ x := by
   rw [generalizedExtremeValueMap_eq_rpow he, ite_eq_right hξ.ne]
   have hpow : 0 < e ^ (-ξ) := Real.rpow_pos_of_pos he _
-  have hz : 1 + ξ * (x - m) / s = (s + ξ * (x - m)) / s := by
-    field_simp [hs.ne']
-  rw [hz] at hx
-  simp only [div_nonpos_iff, hs.le, not_le_of_gt hs, and_false, false_or, and_true] at hx
+  have hx := generalizedExtremeValueSupportNumerator_nonpos hs hx
   have hd : s * (e ^ (-ξ) - 1) / ξ ≤ x - m :=
     (div_le_iff_of_neg hξ).2 (by nlinarith [mul_pos hs hpow])
   linarith
@@ -181,7 +186,8 @@ theorem cdf_generalizedExtremeValueMeasure_eq (hs : 0 < s) (m ξ x : ℝ) :
   · simp [hξ, cdf_gumbelMeasure_eq hs]
   · rw [ite_eq_right hξ]
     by_cases hx : 0 < 1 + ξ * (x - m) / s
-    · rw [ite_eq_left hx, cdf_generalizedExtremeValueMeasure_eq_of_pos hs hξ hx]
+    · rw [ite_eq_left hx,
+        cdf_generalizedExtremeValueMeasure_eq_of_shape_ne_zero_of_pos_support hs hξ hx]
     · rw [ite_eq_right hx]
       rcases lt_or_gt_of_ne hξ with hξ | hξ
       · rw [ite_eq_right (not_lt.mpr hξ.le), cdf_generalizedExtremeValueMeasure_eq_one hs hξ
@@ -194,8 +200,9 @@ theorem strictMonoOn_cdf_generalizedExtremeValueMeasure (hs : 0 < s) (hξ : ξ �
     StrictMonoOn (cdf (generalizedExtremeValueMeasure m s ξ))
       {x | 0 < 1 + ξ * (x - m) / s} := by
   intro x hx y hy hxy
-  rw [cdf_generalizedExtremeValueMeasure_eq_of_pos hs hξ hx,
-    cdf_generalizedExtremeValueMeasure_eq_of_pos hs hξ hy, Real.exp_lt_exp]
+  rw [cdf_generalizedExtremeValueMeasure_eq_of_shape_ne_zero_of_pos_support hs hξ hx,
+    cdf_generalizedExtremeValueMeasure_eq_of_shape_ne_zero_of_pos_support hs hξ hy,
+    Real.exp_lt_exp]
   apply neg_lt_neg
   rcases lt_or_gt_of_ne hξ with hξ | hξ
   · apply Real.rpow_lt_rpow hy.le

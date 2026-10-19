@@ -62,9 +62,9 @@ theorem quantile_generalizedExtremeValueMeasure_of_shape_ne_zero (hs : 0 < s) (h
     (generalizedExtremeValueMeasure m s ξ).quantile u =
       m + s * ((-Real.log u) ^ (-ξ) - 1) / ξ := by
   have hlog : 0 < -Real.log u := neg_pos.mpr (Real.log_neg hu.1 hu.2)
-  let q := m + s * ((-Real.log u) ^ (-ξ) - 1) / ξ
+  set q := m + s * ((-Real.log u) ^ (-ξ) - 1) / ξ with hq
   have hsupport_eq : 1 + ξ * (q - m) / s = (-Real.log u) ^ (-ξ) := by
-    dsimp only [q]
+    rw [hq]
     field_simp [hs.ne', hξ]
     ring
   have hsupport : 0 < 1 + ξ * (q - m) / s := by
@@ -75,13 +75,12 @@ theorem quantile_generalizedExtremeValueMeasure_of_shape_ne_zero (hs : 0 < s) (h
   have hpower : ((-Real.log u) ^ (-ξ)) ^ (-1 / ξ) = -Real.log u := by
     rw [← Real.rpow_mul hlog.le, hexponent, Real.rpow_one]
   have hcdf : cdf (generalizedExtremeValueMeasure m s ξ) q = u := by
-    rw [cdf_generalizedExtremeValueMeasure_eq_of_pos hs hξ hsupport, hsupport_eq,
-      hpower, neg_neg, Real.exp_log hu.1]
+    rw [cdf_generalizedExtremeValueMeasure_eq_of_shape_ne_zero_of_pos_support hs hξ hsupport,
+      hsupport_eq, hpower, neg_neg, Real.exp_log hu.1]
   have hstrict : StrictMonoOn (cdf (generalizedExtremeValueMeasure m s ξ))
       (cdf (generalizedExtremeValueMeasure m s ξ) ⁻¹' Ioo 0 1) :=
     (strictMonoOn_cdf_generalizedExtremeValueMeasure hs hξ m).mono
       (cdf_preimage_Ioo_subset_generalizedExtremeValueSupportInterior hs hξ m)
-  change (generalizedExtremeValueMeasure m s ξ).quantile u = q
   rw [← hcdf]
   exact Measure.quantile_cdf _ hstrict (by rw [hcdf]; exact hu)
 
