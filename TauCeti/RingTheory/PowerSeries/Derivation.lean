@@ -57,24 +57,29 @@ theorem derivation_coe (D : Derivation R R⟦X⟧ M) (p : Polynomial R) :
   simpa only [Polynomial.aeval_def, algebraMap_eq, Polynomial.eval₂_C_X_eq_coe] using
     D.map_aeval p X
 
+/-- A derivation `D` of `R⟦X⟧` into an `X`-adically Hausdorff module is determined by its value
+at `X`: `D f = f' • D X`. -/
+theorem _root_.Derivation.apply_eq_derivative_smul [IsHausdorff (Ideal.span {(X : R⟦X⟧)}) M]
+    (D : Derivation R R⟦X⟧ M) (f : R⟦X⟧) : D f = d⁄dX f • D X := by
+  rw [← sub_eq_zero]
+  refine IsHausdorff.haus (I := Ideal.span {(X : R⟦X⟧)}) inferInstance _ fun n ↦ ?_
+  have hmem : X ^ (n + 1) * mk (fun i ↦ coeff (i + (n + 1)) f) ∈
+      Ideal.span {(X : R⟦X⟧)} ^ (n + 1) := by
+    rw [Ideal.span_singleton_pow]
+    exact Ideal.mul_mem_right _ _ (Ideal.mem_span_singleton_self _)
+  -- the polynomial `trunc (n + 1) f` contributes nothing, by the chain rule for polynomials
+  rw [SModEq.zero, eq_X_pow_mul_shift_add_trunc (n + 1) f, map_add, map_add, add_smul,
+    derivation_coe, derivative_coe, add_sub_add_right_eq_sub]
+  refine sub_mem (D.apply_mem_pow_smul_top_of_mem_pow_succ hmem) (Submodule.smul_mem_smul ?_
+    Submodule.mem_top)
+  simpa using Derivation.apply_mem_pow_smul_top_of_mem_pow_succ d⁄dX hmem
+
 /-- Two derivations of `R⟦X⟧` into an `X`-adically Hausdorff module which agree at `X` are
 equal. -/
 @[ext]
 theorem derivation_ext [IsHausdorff (Ideal.span {(X : R⟦X⟧)}) M] {D₁ D₂ : Derivation R R⟦X⟧ M}
-    (h : D₁ X = D₂ X) : D₁ = D₂ := by
-  -- the difference `D₁ - D₂` vanishes at `X`; it suffices that such a derivation vanishes
-  suffices key : ∀ D : Derivation R R⟦X⟧ M, D X = 0 → ∀ f, D f = 0 by
-    ext f
-    simpa [sub_eq_zero] using key (D₁ - D₂) (by simp [h]) f
-  intro D hD f
-  refine IsHausdorff.haus (I := Ideal.span {(X : R⟦X⟧)}) inferInstance _ fun n ↦ ?_
-  rw [SModEq.zero, eq_X_pow_mul_shift_add_trunc (n + 1) f, map_add]
-  refine add_mem (D.apply_mem_pow_smul_top_of_mem_pow_succ ?_) ?_
-  · rw [Ideal.span_singleton_pow]
-    exact Ideal.mul_mem_right _ _ (Ideal.mem_span_singleton_self _)
-  · -- `D` vanishes on the polynomial `trunc (n + 1) f`, by the chain rule for polynomials
-    rw [derivation_coe, hD, smul_zero]
-    exact zero_mem _
+    (h : D₁ X = D₂ X) : D₁ = D₂ :=
+  Derivation.ext fun f ↦ by rw [D₁.apply_eq_derivative_smul, D₂.apply_eq_derivative_smul, h]
 
 variable [IsScalarTower R R⟦X⟧ M]
 
@@ -126,15 +131,7 @@ namespace Derivation
 
 open PowerSeries
 
-variable {R : Type*} [CommRing R] {M : Type*} [AddCommGroup M] [Module R⟦X⟧ M] [Module R M]
-  [IsScalarTower R R⟦X⟧ M]
-
-/-- A derivation `D` of `R⟦X⟧` into an `X`-adically Hausdorff module is determined by its value
-at `X`: `D f = f' • D X`. -/
-theorem apply_eq_derivative_smul [IsHausdorff (Ideal.span {(X : R⟦X⟧)}) M]
-    (D : Derivation R R⟦X⟧ M) (f : R⟦X⟧) : D f = d⁄dX f • D X :=
-  (DFunLike.congr_fun (derivation_ext (D₂ := mkDerivation R (D X)) (by simp)) f).trans
-    (mkDerivation_apply _ _)
+variable {R : Type*} [CommRing R]
 
 /-- Every derivation of `R⟦X⟧` is the multiple `D X • d⁄dX` of the formal derivative. -/
 theorem eq_smul_derivative (D : Derivation R R⟦X⟧ R⟦X⟧) : D = D X • d⁄dX :=
