@@ -165,6 +165,7 @@ theorem tarskiQuery_mem_Icc_natDegree (p q : R[X]) :
 theorem tarskiQuery_zero_left (q : R[X]) : tarskiQuery 0 q = 0 := by
   simp [tarskiQuery_eq_signSum]
 
+/-- A constant root polynomial has no roots in `Polynomial.roots`, so its Tarski query vanishes. -/
 @[simp, grind =]
 theorem tarskiQuery_C_left (a : R) (q : R[X]) : tarskiQuery (C a) q = 0 := by
   simp [tarskiQuery_eq_signSum]
