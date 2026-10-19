@@ -44,22 +44,6 @@ namespace TauCeti
 variable {X Y : Type w} [TopologicalSpace X] [T2Space X] [TopologicalSpace Y] [T2Space Y]
   {D : Set X} {E : Set Y} (C : Set X) [RelCWComplex C D] (C' : Set Y) [RelCWComplex C' E]
 
-/-- The summand of the cell `j` in `TauCeti.cellularChainGroupIso` is induced by the
-characteristic map of `j`, read on the Euclidean disk through the radial rescaling. -/
-private lemma coe_fst_sigmaι_comp_characteristicPairMap {n : ℕ} (j : cell C n)
-    (p : TopCat.disk.{w} n) :
-    (ConcreteCategory.hom (Y := TopCat.of (skeletonLT C (n + 1)))
-      (TopPair.Hom.fst (TopPair.sigmaι (fun _ : cell C n ↦ diskBoundaryPair.{w} n) j ≫
-        (sigmaDiskBoundaryPairIso (cell C n) n).hom ≫ characteristicPairMap C n)) p).1 =
-      map n j ((EuclideanSpace.equiv (Fin n) ℝ).unitBallHomeomorph
-        ((p : ULift.{w} (closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down :
-          EuclideanSpace ℝ (Fin n))) := by
-  -- The ambient space of the skeletal pair is `TopCat.of (skeletonLT C (n + 1))` only at default
-  -- transparency, so the composites are unfolded with `erw`.
-  erw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, characteristicPairMap_fst_apply,
-    sigmaDiskBoundaryPairIso_hom_fst_apply_fst, coe_sigmaDiskBoundaryPairIso_hom_fst_apply_snd]
-  rfl
-
 variable {f : TopCat.of C ⟶ TopCat.of C'} (hf : IsCellular C C' f)
   {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A] (R : A)
 
@@ -74,14 +58,15 @@ lemma ι_cellularChainGroupIso_inv_comp_cellularChainGroupMap {n : ℕ}
     Sigma.ι (fun _ : cell C n ↦ R) i ≫ (cellularChainGroupIso C R n).inv ≫
         cellularChainGroupMap C C' hf R n =
       Sigma.ι (fun _ : cell C' n ↦ R) i' ≫ (cellularChainGroupIso C' R n).inv := by
-  rw [ι_cellularChainGroupIso_inv_assoc, ι_cellularChainGroupIso_inv, cellularChainGroupMap_def,
+  rw [ι_cellularChainGroupIso_inv_eq_singularHomologyMap_characteristicCellPairMap_assoc,
+    ι_cellularChainGroupIso_inv_eq_singularHomologyMap_characteristicCellPairMap,
+    cellularChainGroupMap_def,
     ← TopPair.singularHomologyMap_comp]
   congr 2
   refine TopPair.hom_ext_of_fst _ (TopCat.hom_ext (ContinuousMap.ext fun p ↦ Subtype.ext ?_))
   -- Both sides send a point of the Euclidean disk to the characteristic map of the respective
   -- cell, evaluated at the radial rescaling of that point.
-  simp only [MorphismProperty.Comma.comp_right, TopCat.hom_comp, ContinuousMap.comp_apply,
-    skeletonPairMap_fst]
+  simp only [MorphismProperty.Comma.comp_right, skeletonPairMap_fst]
   have hs (q : skeletonObj C (n + 1)) : ((skeletonMap C C' hf (n + 1)) q).1 =
       (f ⟨q.1, (skeletonLT C _).subset_complex q.2⟩).1 :=
     congrArg Subtype.val (skeletonMap_apply C C' hf (n + 1) q)
@@ -95,8 +80,8 @@ lemma ι_cellularChainGroupIso_inv_comp_cellularChainGroupMap {n : ℕ}
   have key : ∀ (a b : X) (ha : a ∈ C) (hb : b ∈ C), a = b → (f ⟨a, ha⟩).1 = (f ⟨b, hb⟩).1 := by
     rintro a _ _ _ rfl
     rfl
-  exact (hs _).trans ((key _ _ _ hC (coe_fst_sigmaι_comp_characteristicPairMap C i p)).trans
-    ((hi _ hy hC).trans (coe_fst_sigmaι_comp_characteristicPairMap C' i' p).symm))
+  exact (hs _).trans ((key _ _ _ hC (coe_characteristicCellPairMap_fst_apply C i p)).trans
+    ((hi _ hy hC).trans (coe_characteristicCellPairMap_fst_apply C' i' p).symm))
 
 /-- **A map carrying the characteristic map of `i` onto that of `i'` sends the cellular basis
 vector of `i` to the cellular basis vector of `i'`**, with coefficients in a ring. -/
