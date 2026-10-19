@@ -14,6 +14,7 @@ public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.Index
 public import Mathlib.GroupTheory.Perm.Cycle.Type
 public import TauCeti.Algebra.Group.Conj
+public import TauCeti.Algebra.Group.Subgroup.Map
 public import TauCeti.Algebra.Group.Subgroup.Pointwise
 public import TauCeti.GroupTheory.QuotientGroup.Basic
 
@@ -64,6 +65,8 @@ Through the classification of permutation representations by fixed-point counts 
 * `Subgroup.natCard_stabilizer_mul_natCard_mem_carrier`: the `x` with `x⁻¹ g x ∈ H`, counted by
   the conjugate they produce; with `Subgroup.natCard_mul_natCard_fixedBy`, which counts them by
   their cosets, it gives `Subgroup.natCard_fixedBy_mul_natCard`, the fixed-coset identity above.
+* `Subgroup.natCard_eq_sum_natCard_mem_carrier`: the order of a subgroup of a finite group is the
+  sum over the conjugacy classes of the number of its elements in each.
 * `Subgroup.AlmostConjugate.natCard_eq` and `Subgroup.AlmostConjugate.index_eq`: almost-conjugate
   subgroups of a finite group have the same order and the same index.
 * `Subgroup.almostConjugate_iff_forall_natCard_fixedBy_eq`: almost-conjugacy is equality of the
@@ -188,14 +191,10 @@ theorem exists_map_conj_comap_eq_iff (e : G ≃* Γ) (H K : Subgroup Γ) :
       ∃ τ : Γ, H.map (MulAut.conj τ : Γ →* Γ) = K := by
   have key (σ : G) : (H.comap (e : G →* Γ)).map (MulAut.conj σ : G →* G) =
       (H.map (MulAut.conj (e σ) : Γ →* Γ)).comap (e : G →* Γ) := by
-    ext x
-    simp only [mem_map, mem_comap, MonoidHom.coe_ofClass, MulAut.conj_apply]
-    constructor
-    · rintro ⟨y, hy, rfl⟩
-      exact ⟨e y, hy, by simp⟩
-    · rintro ⟨y, hy, hyx⟩
-      refine ⟨e.symm y, by simpa using hy, e.injective ?_⟩
-      simpa using hyx
+    -- The commuting square of conjugation with `e.symm`, conjugating by `e.symm (e σ) = σ`.
+    rw [comap_equiv_eq_map_symm, comap_equiv_eq_map_symm]
+    simpa only [MulEquiv.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, MulEquiv.symm_apply_apply] using
+      (map_map_conj H (e.symm : Γ →* G) (e σ)).symm
   have hinj : Function.Injective (comap (e : G →* Γ)) := comap_injective e.surjective
   refine ⟨fun ⟨σ, hσ⟩ ↦ ⟨e σ, hinj (by rwa [← key])⟩, fun ⟨τ, hτ⟩ ↦ ⟨e.symm τ, ?_⟩⟩
   rw [key, MulEquiv.apply_symm_apply, hτ]
@@ -265,20 +264,23 @@ section Finite
 
 variable [Finite G]
 
-/-- **Almost-conjugate subgroups have the same order.** A subgroup is the disjoint union of its
-intersections with the conjugacy classes of `G`. -/
+/-- **The class equation of a subgroup.** A subgroup `H` of a finite group `G` is the disjoint union
+of its intersections with the conjugacy classes of `G`, so its order is the sum of the numbers of
+elements of `H` in each conjugacy class. -/
+theorem natCard_eq_sum_natCard_mem_carrier [Fintype (ConjClasses G)] (H : Subgroup G) :
+    Nat.card H = ∑ C : ConjClasses G, Nat.card {x : G // x ∈ C.carrier ∧ x ∈ H} := by
+  rw [← Nat.card_sigma]
+  -- Fibre `H` over the conjugacy classes; the fibre over `C` is the subtype of `G` cut out by
+  -- membership in `H` and in `C`.
+  refine Nat.card_congr <| (Equiv.sigmaFiberEquiv fun x : H ↦ ConjClasses.mk (x : G)).symm.trans
+    (Equiv.sigmaCongrRight fun C ↦ ?_)
+  exact (Equiv.subtypeSubtypeEquivSubtypeInter (· ∈ H) (ConjClasses.mk · = C)).trans <|
+    Equiv.subtypeEquivRight fun x ↦ by rw [and_comm, ConjClasses.mem_carrier_iff_mk_eq]
+
+/-- **Almost-conjugate subgroups have the same order.** -/
 theorem AlmostConjugate.natCard_eq (h : H.AlmostConjugate K) : Nat.card H = Nat.card K := by
-  classical
   have := Fintype.ofFinite (ConjClasses G)
-  have hsum (H : Subgroup G) :
-      Nat.card H = ∑ C : ConjClasses G, Nat.card {x : G // x ∈ C.carrier ∧ x ∈ H} := by
-    rw [← Nat.card_sigma]
-    refine Nat.card_congr <| (Equiv.sigmaFiberEquiv fun x : H ↦ ConjClasses.mk (x : G)).symm.trans
-      (Equiv.sigmaCongrRight fun C ↦ ?_)
-    exact
-      { toFun := fun x ↦ ⟨x.1, ConjClasses.mem_carrier_iff_mk_eq.mpr x.2, x.1.2⟩
-        invFun := fun x ↦ ⟨⟨x.1, x.2.2⟩, ConjClasses.mem_carrier_iff_mk_eq.mp x.2.1⟩ }
-  rw [hsum H, hsum K]
+  rw [natCard_eq_sum_natCard_mem_carrier H, natCard_eq_sum_natCard_mem_carrier K]
   exact Finset.sum_congr _root_.rfl fun C _ ↦ h C
 
 /-- **Almost-conjugate subgroups have the same index.** -/
