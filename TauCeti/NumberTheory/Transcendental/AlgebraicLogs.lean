@@ -20,11 +20,11 @@ These numbers form a `ℚ`-subspace `𝓛` of `ℂ`: it is closed under addition
 
 The space `𝓛` is the common carrier of the statements of transcendence theory about logarithms:
 Hermite–Lindemann (every nonzero `λ ∈ 𝓛` is transcendental), Gelfond–Schneider (two elements
-of `𝓛` that are linearly independent over `ℚ` are linearly independent over `ℚ̄`) and Baker's
-theorem. It contains every logarithm, principal or not, of every nonzero algebraic number, so
-it is strictly larger than the image of the algebraic numbers under the principal branch
-`Complex.log`; for instance `2πi ∈ 𝓛`, while `Complex.log` takes values with imaginary part
-in `(-π, π]`.
+of `𝓛` that are linearly independent over `ℚ` are linearly independent over the algebraic
+numbers) and Baker's theorem. It contains every logarithm, principal or not, of every nonzero
+algebraic number, so it is strictly larger than the image of the algebraic numbers under the
+principal branch `Complex.log`; for instance `2πi ∈ 𝓛`, while `Complex.log` takes values with
+imaginary part in `(-π, π]`.
 
 ## Main definitions
 
