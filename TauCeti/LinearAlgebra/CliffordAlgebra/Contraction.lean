@@ -10,8 +10,6 @@ public import Mathlib.LinearAlgebra.CliffordAlgebra.Grading
 -- Private: `CliffordAlgebra.exists_algebraMap_of_mem_range_ι_pow_zero` and
 -- `CliffordAlgebra.exists_ι_of_mem_range_ι_pow_one` are used only inside a proof.
 import TauCeti.LinearAlgebra.CliffordAlgebra.Grading
--- Private: `CliffordAlgebra.equivExterior_algebraMap` is used only inside a proof.
-import TauCeti.LinearAlgebra.CliffordAlgebra.Basic
 
 /-!
 # Contraction against the `ℤ/2`-grading, and the change of form on right factors
@@ -53,6 +51,8 @@ involution, `changeForm` commutes with the grade involution for every bilinear f
 * `CliffordAlgebra.contractLeft_mul_ι` and `CliffordAlgebra.contractRight_ι_mul`: the graded
   Leibniz rules for a vector factor on the far side.
 * `CliffordAlgebra.contractRight_contractLeft`: `(d ⌋ x) ⌊ d' = d ⌋ (x ⌊ d')`.
+* `CliffordAlgebra.contractLeft_prod_map_ι_eq_zero`: a contraction kills a product of vectors in
+  its kernel.
 * `CliffordAlgebra.changeForm_mul_ι`: `changeForm` on a right vector factor.
 * `CliffordAlgebra.changeForm_involute` and `CliffordAlgebra.changeForm_reverse`: `changeForm`
   commutes with the grade involution, and with reversion for a symmetric form.
@@ -60,10 +60,8 @@ involution, `changeForm` commutes with the grade involution for every bilinear f
   for the isomorphism with the exterior algebra.
 * `CliffordAlgebra.equivExterior_ι_mul` and `CliffordAlgebra.equivExterior_mul_ι`: that
   isomorphism on left and right vector factors.
-* `CliffordAlgebra.contractLeft_prod_map_ι_eq_zero`: a contraction kills a product of vectors
-  in its kernel.
-* `CliffordAlgebra.equivExterior_prod_map_ι`: that isomorphism sends an ordered product of
-  pairwise orthogonal vectors to their exterior product.
+* `CliffordAlgebra.equivExterior_prod_map_ι_of_pairwise_isOrtho`: that isomorphism sends a product
+  of pairwise orthogonal vectors to their exterior product.
 
 ## References
 
@@ -150,15 +148,6 @@ theorem contractRight_ι_mul (d : Module.Dual R M) (a : M) (x : CliffordAlgebra 
     contractRight (ι Q a * x) d = ι Q a * contractRight x d + d a • involute x := by
   simp [contractRight_eq, contractLeft_mul_ι, reverse_involute_commute.eq]
 
-/-- A contraction kills an ordered product of vectors on each of which the functional vanishes. -/
-theorem contractLeft_prod_map_ι_eq_zero {d : Module.Dual R M} {l : List M}
-    (h : ∀ m ∈ l, d m = 0) : contractLeft d (l.map (ι Q)).prod = 0 := by
-  induction l with
-  | nil => simp
-  | cons a l ih =>
-    rw [List.forall_mem_cons] at h
-    simp [contractLeft_ι_mul, h.1, ih h.2]
-
 /-- **Left and right contraction commute**: `(d ⌋ x) ⌊ d' = d ⌋ (x ⌊ d')`. This is the statement
 left as a `TODO` after `CliffordAlgebra.contractRight_comm` in Mathlib. -/
 theorem contractRight_contractLeft (d d' : Module.Dual R M) (x : CliffordAlgebra Q) :
@@ -169,6 +158,15 @@ theorem contractRight_contractLeft (d d' : Module.Dual R M) (x : CliffordAlgebra
   | ι_mul x a hx =>
     simp [contractLeft_ι_mul, contractRight_ι_mul, hx, involute_contractLeft]
     abel
+
+/-- Contraction against a functional `d` kills a product of vectors that `d` annihilates. -/
+theorem contractLeft_prod_map_ι_eq_zero (d : Module.Dual R M) {l : List M}
+    (h : ∀ m ∈ l, d m = 0) : contractLeft d (l.map (ι Q)).prod = 0 := by
+  induction l with
+  | nil => simp
+  | cons a l ih =>
+    rw [List.map_cons, List.prod_cons, contractLeft_ι_mul, h a List.mem_cons_self, zero_smul,
+      ih fun m hm ↦ h m (List.mem_cons_of_mem a hm), mul_zero, sub_zero]
 
 section changeForm
 
@@ -243,21 +241,6 @@ theorem equivExterior_mul_ι (x : CliffordAlgebra Q) (m : M) :
   rw [← QuadraticMap.associated_flip]
   exact changeForm_mul_ι changeForm.associated_neg_proof x m
 
-/-- `CliffordAlgebra.equivExterior` sends an ordered product of pairwise orthogonal vectors to their
-exterior product. -/
-theorem equivExterior_prod_map_ι {l : List M} (hl : l.Pairwise Q.IsOrtho) :
-    equivExterior Q (l.map (ι Q)).prod = (l.map (ExteriorAlgebra.ι R)).prod := by
-  induction l with
-  | nil =>
-    rw [List.map_nil, List.prod_nil, List.map_nil, List.prod_nil,
-      ← map_one (algebraMap R (CliffordAlgebra Q)), equivExterior_algebraMap, map_one]
-  | cons a l ih =>
-    -- Every contraction term of `CliffordAlgebra.equivExterior_ι_mul` vanishes.
-    rw [List.pairwise_cons] at hl
-    rw [List.map_cons, List.prod_cons, equivExterior_ι_mul, ih hl.2, List.map_cons, List.prod_cons,
-      contractLeft_prod_map_ι_eq_zero fun m hm => ?_, sub_zero]
-    simpa [QuadraticMap.associated_isOrtho] using hl.1 m hm
-
 /-- `CliffordAlgebra.equivExterior` intertwines the grade involutions.
 
 Not a `simp` lemma: `simp` unfolds `CliffordAlgebra.equivExterior` to the underlying
@@ -273,6 +256,21 @@ Not a `simp` lemma, for the same reason as `CliffordAlgebra.equivExterior_involu
 theorem equivExterior_reverse (x : CliffordAlgebra Q) :
     equivExterior Q (reverse x) = reverse (equivExterior Q x) :=
   changeForm_reverse changeForm.associated_neg_proof (QuadraticForm.associated_isSymm R (-Q)) x
+
+/-- **`CliffordAlgebra.equivExterior` sends a product of pairwise orthogonal vectors to their
+exterior product.** Each correction term of `CliffordAlgebra.equivExterior_ι_mul` contracts the
+later factors against the first, and vanishes by orthogonality. No hypothesis on `Q` is needed;
+in particular `Q` may be degenerate. -/
+theorem equivExterior_prod_map_ι_of_pairwise_isOrtho {l : List M} (hl : l.Pairwise Q.IsOrtho) :
+    equivExterior Q (l.map (ι Q)).prod = (l.map (ExteriorAlgebra.ι R)).prod := by
+  induction l with
+  | nil => simp
+  | cons a l ih =>
+    rw [List.pairwise_cons] at hl
+    rw [List.map_cons, List.prod_cons, equivExterior_ι_mul, ih hl.2,
+      contractLeft_prod_map_ι_eq_zero, sub_zero, List.map_cons, List.prod_cons]
+    intro m hm
+    simp [hl.1 m hm]
 
 end equivExterior
 

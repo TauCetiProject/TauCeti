@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Contraction
 public import Mathlib.LinearAlgebra.ExteriorAlgebra.Basis
 -- Private: `CliffordAlgebra.contractRight_ι_mul` and
--- `TauCeti.ExteriorAlgebra.basis_eq_prod_map_sort` are used only inside proofs.
+-- `Module.Basis.exteriorAlgebra_eq_prod_map_sort` are used only inside proofs.
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 
@@ -33,8 +33,8 @@ cyclic.
   involution and reversion preserve the constant term.
 * `ExteriorAlgebra.algebraMapInv_contractRight`: left and right contraction against the same
   functional have the same constant term.
-* `ExteriorAlgebra.algebraMapInv_basis`: among the vectors of the exterior basis
-  `Module.Basis.ExteriorAlgebra`, only the one indexed by `∅` has a nonzero constant term.
+* `Module.Basis.exteriorAlgebra_repr_empty`: the constant term is the coordinate at the empty index
+  set in the basis `Module.Basis.ExteriorAlgebra` attached to any basis of `M`.
 -/
 
 public section
@@ -82,15 +82,21 @@ theorem algebraMapInv_contractRight (d : Module.Dual R M) (x : ExteriorAlgebra R
     rw [contractRight_ι_mul, contractLeft_ι_mul]
     simp
 
-/-- The constant term of the exterior-basis vector indexed by `s` is `1` if `s` is empty and `0`
-otherwise. -/
+/-- **The constant term is the coordinate at the empty index set** in the exterior-algebra basis
+attached to any basis `b` of `M`: every other basis vector is a product of at least one generator,
+so has constant term zero. -/
 @[simp]
-theorem algebraMapInv_basis {I : Type*} [LinearOrder I] (b : Module.Basis I R M) (s : Finset I) :
-    algebraMapInv (b.ExteriorAlgebra s) = if s = ∅ then 1 else 0 := by
-  rw [TauCeti.ExteriorAlgebra.basis_eq_prod_map_sort, map_list_prod]
-  split_ifs with hs
-  · simp [hs]
-  · obtain ⟨i, hi⟩ := Finset.nonempty_iff_ne_empty.mpr hs
-    exact List.prod_eq_zero (by simpa using ⟨i, hi⟩)
+theorem _root_.Module.Basis.exteriorAlgebra_repr_empty {I : Type*} [LinearOrder I]
+    (b : Module.Basis I R M) (x : ExteriorAlgebra R M) :
+    b.ExteriorAlgebra.repr x ∅ = algebraMapInv x := by
+  refine LinearMap.congr_fun (b.ExteriorAlgebra.ext (f₁ := b.ExteriorAlgebra.coord ∅)
+    (f₂ := algebraMapInv.toLinearMap) fun s ↦ ?_) x
+  rw [Module.Basis.coord_apply, Module.Basis.repr_self, AlgHom.toLinearMap_apply,
+    Module.Basis.exteriorAlgebra_eq_prod_map_sort, map_list_prod, List.map_map, List.map_map]
+  rcases s.eq_empty_or_nonempty with rfl | hs
+  · simp
+  · rw [Finsupp.single_apply, ite_eq_right hs.ne_empty, eq_comm]
+    obtain ⟨i, hi⟩ := hs
+    exact List.prod_eq_zero (List.mem_map.mpr ⟨i, (Finset.mem_sort _).mpr hi, by simp⟩)
 
 end ExteriorAlgebra

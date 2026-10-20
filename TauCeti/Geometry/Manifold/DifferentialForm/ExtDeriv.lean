@@ -304,6 +304,15 @@ theorem mextDeriv_eq_extDeriv (φ : RoughForm 𝓘(ℝ, E) E F k) (x : E) :
   rw [← mextDerivWithin_univ, mextDerivWithin_eq_extDerivWithin]
   exact congrFun (extDerivWithin_univ (𝕜 := ℝ) (E := E) (F := F) φ) x
 
+/-- The manifold exterior derivative of a constant form on its self-model space vanishes. -/
+@[simp]
+theorem mextDeriv_const (ω : E [⋀^Fin k]→L[ℝ] F) :
+    mextDeriv (I := 𝓘(ℝ, E)) (M := E) (F := F) (k := k)
+        ((fun _ ↦ ω) : RoughForm (𝓘(ℝ, E)) E F k) = 0 := by
+  funext x
+  exact (mextDeriv_eq_extDeriv ((fun _ : E ↦ ω) : RoughForm (𝓘(ℝ, E)) E F k) x).trans
+    (ContinuousAlternatingMap.extDeriv_const ω x)
+
 /-! ### Functions -/
 
 /-- The coordinate expression of the `0`-form of a function is the `0`-form of the function

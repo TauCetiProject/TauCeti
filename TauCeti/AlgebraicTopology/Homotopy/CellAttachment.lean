@@ -175,23 +175,14 @@ open scoped Topology.Homotopy
 
 variable {X : TopCat.{u}} {ι : Type u} {n : ℕ} [NeZero n] {x : X}
 
-/-- **Attaching a cell along a generalized loop kills its class.** After attaching
-`(n + 1)`-cells along the generalized loops `p i`, the class of each `p i` maps to the identity
-of `πₙ`. -/
-theorem map_cellAttachmentIncl_mk_eq_one (p : ι → Ω^ (Fin n) X x) (i : ι) :
-    HomotopyGroup.map (cellAttachmentIncl fun j ↦ GenLoop.diskBoundaryMap (p j)).hom rfl
-      (⟦p i⟧ : HomotopyGroup (Fin n) X x) = 1 := by
-  rw [HomotopyGroup.map_mk]
-  refine (HomotopyGroup.mk_eq_one_iff_nullhomotopic_toSphere _).2 ?_
-  rw [GenLoop.toSphere_map]
-  -- the attaching map is `GenLoop.toSphere (p i)` precomposed with `ULift.down`, so
-  -- `GenLoop.toSphere (p i)` is the attaching map precomposed with `ULift.up`
-  have h : (GenLoop.toSphere (p i)) =
-      (GenLoop.diskBoundaryMap (p i)).hom.comp ⟨ULift.up, continuous_uliftUp⟩ := by
-    ext s
-    exact (GenLoop.diskBoundaryMap_apply (p i) ⟨s⟩).symm
-  rw [h, ← ContinuousMap.comp_assoc]
-  exact (cellAttachment_attachingMap_nullhomotopic _ i).comp_left _
+/-- **Attaching a cell along a generalized loop kills its class.** If the cell indexed by `i` is
+attached along the map `GenLoop.diskBoundaryMap p` of a generalized loop `p`, then the class of `p`
+maps to the identity of `πₙ` after attaching the cells. -/
+theorem map_cellAttachmentIncl_mk_eq_one (φ : ι → (TopCat.diskBoundary (n + 1) ⟶ X)) {i : ι}
+    {p : Ω^ (Fin n) X x} (h : φ i = GenLoop.diskBoundaryMap p) :
+    HomotopyGroup.map (cellAttachmentIncl φ).hom rfl (⟦p⟧ : HomotopyGroup (Fin n) X x) = 1 := by
+  rw [HomotopyGroup.map_mk_eq_one_iff_nullhomotopic_diskBoundaryMap_comp, ← h, TopCat.hom_comp]
+  exact cellAttachment_attachingMap_nullhomotopic φ i
 
 /-- **Attaching cells along generators kills `πₙ`** (Hatcher, Section 4.1). If the classes of
 the generalized loops `p i` generate `πₙ(X, x)` as a normal subgroup, with `n ≥ 1` and `X`
@@ -207,7 +198,7 @@ theorem subsingleton_homotopyGroup_cellAttachment [T2Space X] (p : ι → Ω^ (F
     rw [← hp]
     refine Subgroup.normalClosure_le_normal ?_
     rintro _ ⟨i, rfl⟩
-    exact map_cellAttachmentIncl_mk_eq_one p i
+    exact map_cellAttachmentIncl_mk_eq_one _ rfl
   refine subsingleton_of_forall_eq 1 fun b ↦ ?_
   obtain ⟨a, rfl⟩ := surjective_homotopyGroupMap_cellAttachmentIncl
     (fun i ↦ GenLoop.diskBoundaryMap (p i)) (N := Fin n) (by simp) x b

@@ -94,7 +94,7 @@ theorem prod_map_ι_ofFn_ne_zero {K : Type u} [Field K] [Module K M]
       rw [map_zero, contractLeft_ι_mul, hd_zero, one_smul] at hzero'
       have htail : contractLeft d (List.ofFn ((ι Q) ∘ w)).prod = 0 := by
         rw [← List.map_ofFn]
-        refine contractLeft_prod_map_ι_eq_zero fun x hx => ?_
+        refine contractLeft_prod_map_ι_eq_zero d fun x hx => ?_
         rw [List.mem_ofFn] at hx
         obtain ⟨i, rfl⟩ := hx
         exact hd_succ i

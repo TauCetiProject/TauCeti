@@ -9,10 +9,11 @@ public import Mathlib.LinearAlgebra.CliffordAlgebra.Contraction
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Grading
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import Mathlib.LinearAlgebra.Trace
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
--- Private: the `changeForm`, constant-term and monomial lemmas below are used only inside proofs.
+-- Private: the `changeForm`, constant-term, monomial and dimension lemmas below are used only
+-- inside proofs.
 import TauCeti.Algebra.CharP.Invertible
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
+import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 import TauCeti.LinearAlgebra.CliffordAlgebra.Monomials
 import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement
 import TauCeti.LinearAlgebra.ExteriorAlgebra.AlgebraMapInv
@@ -53,13 +54,9 @@ preserved by every algebra isomorphism between Clifford algebras of finite-dimen
   under the grade involution and under reversion.
 * `CliffordAlgebra.scalarTrace_eq_zero_of_mem_evenOdd_one`: the scalar part of an odd element is
   zero.
-* `CliffordAlgebra.scalarTrace_reverse_mul_comm`: symmetry,
-  `τ (reverse x * y) = τ (reverse y * x)`.
 * `CliffordAlgebra.scalarTrace_mul_comm`: cyclicity, `τ (x * y) = τ (y * x)`.
-* `CliffordAlgebra.scalarTrace_basis` and `CliffordAlgebra.basis_repr_empty`: the scalar parts of
-  the members of `CliffordAlgebra.basis Q b`; the coefficient of `1` in it is the scalar part.
-* `CliffordAlgebra.scalarTrace_ι_mul_prod_map_ι_eq_zero`: `τ` vanishes on `ι Q a * p` for `p` a
-  product of vectors orthogonal to `a`.
+* `CliffordAlgebra.scalarTrace_prod_map_ι_append_cons_eq_zero`: a product of vectors with a factor
+  orthogonal to all the others has scalar part zero.
 * `CliffordAlgebra.eq_smul_scalarTrace`: for `M` spanned by pairwise orthogonal vectors, every
   cyclic functional invariant under the grade involution is `f 1 • τ`.
 * `CliffordAlgebra.trace_mulLeft_eq_finrank_mul_scalarTrace`: the regular-trace formula for a
@@ -93,7 +90,7 @@ product is either odd or anticommutes with its first factor.
 
 public section
 
-universe u v w
+universe u v
 
 namespace CliffordAlgebra
 
@@ -145,11 +142,6 @@ theorem scalarTrace_reverse (x : CliffordAlgebra Q) :
   rw [scalarTrace_apply, equivExterior_reverse, ExteriorAlgebra.algebraMapInv_reverse,
     scalarTrace_apply]
 
-/-- **Symmetry of the reverse pairing**: `τ (reverse x * y) = τ (reverse y * x)`. -/
-theorem scalarTrace_reverse_mul_comm (x y : CliffordAlgebra Q) :
-    scalarTrace Q (reverse x * y) = scalarTrace Q (reverse y * x) := by
-  rw [← scalarTrace_reverse, reverse.map_mul, reverse_reverse]
-
 /-- The scalar part of an odd element is zero. -/
 theorem scalarTrace_eq_zero_of_mem_evenOdd_one {x : CliffordAlgebra Q} (hx : x ∈ evenOdd Q 1) :
     scalarTrace Q x = 0 :=
@@ -173,29 +165,6 @@ theorem scalarTrace_mul_comm (x y : CliffordAlgebra Q) :
   | add x x' hx hx' => rw [add_mul, mul_add, map_add, map_add, hx, hx']
   | ι_mul x m hx => rw [mul_assoc, scalarTrace_ι_mul, mul_assoc, hx, mul_assoc]
 
-section Basis
-
-open Module
-
-variable {I : Type w} [LinearOrder I] (b : Basis I R M)
-
-/-- The scalar part of the member of `CliffordAlgebra.basis Q b` at `s` is `1` if `s` is empty and
-`0` otherwise. -/
-@[simp]
-theorem scalarTrace_basis (s : Finset I) :
-    scalarTrace Q (basis Q b s) = if s = ∅ then 1 else 0 := by
-  rw [scalarTrace_apply, equivExterior_basis, ExteriorAlgebra.algebraMapInv_basis]
-
-/-- The coefficient of `1` in the basis `CliffordAlgebra.basis Q b` is the scalar part. -/
-@[simp]
-theorem basis_repr_empty (x : CliffordAlgebra Q) : (basis Q b).repr x ∅ = scalarTrace Q x := by
-  have h : (basis Q b).coord ∅ = scalarTrace Q :=
-    (basis Q b).ext fun s => by
-      rw [Basis.coord_apply, Basis.repr_self, Finsupp.single_apply, scalarTrace_basis]
-  exact LinearMap.congr_fun h x
-
-end Basis
-
 /-! ### Uniqueness and the regular trace -/
 
 /-- A cyclic functional invariant under the grade involution vanishes on `ι Q a * p`, for `p` a
@@ -216,11 +185,16 @@ private theorem apply_ι_mul_prod_eq_zero (f : CliffordAlgebra Q →ₗ[R] R)
   · nth_rewrite 1 [hmul]
     rw [prod_map_ι_mul_ι_of_forall_isOrtho h, ho.neg_one_pow, neg_one_smul, map_neg]
 
-/-- The scalar part vanishes on `ι Q a * p`, for `p` an ordered product of vectors orthogonal to
-`a`. -/
-theorem scalarTrace_ι_mul_prod_map_ι_eq_zero {a : M} {l : List M} (h : ∀ x ∈ l, Q.IsOrtho x a) :
-    scalarTrace Q (ι Q a * (l.map (ι Q)).prod) = 0 :=
-  apply_ι_mul_prod_eq_zero _ scalarTrace_mul_comm scalarTrace_involute h
+/-- **A product with a factor orthogonal to all the others has scalar part zero**: if the factor
+`a` of `l₁ ++ a :: l₂` is orthogonal to every other factor, then `τ` vanishes on the product.
+Cyclicity moves `l₁` behind the remaining factors, so that `a` comes first. -/
+theorem scalarTrace_prod_map_ι_append_cons_eq_zero {l₁ l₂ : List M} {a : M}
+    (h : ∀ x ∈ l₁ ++ l₂, Q.IsOrtho x a) :
+    scalarTrace Q ((l₁ ++ a :: l₂).map (ι Q)).prod = 0 := by
+  rw [List.map_append, List.prod_append, scalarTrace_mul_comm, List.map_cons, List.prod_cons,
+    mul_assoc, ← List.prod_append, ← List.map_append]
+  exact apply_ι_mul_prod_eq_zero _ scalarTrace_mul_comm scalarTrace_involute fun x hx ↦
+    h x (List.mem_append.mpr (List.mem_append.mp hx).symm)
 
 /-- **The scalar part is the unique normalized cyclic functional invariant under the grade
 involution**, as soon as `M` is spanned by a list of pairwise orthogonal vectors: every such
@@ -238,7 +212,8 @@ theorem eq_smul_scalarTrace {l : List M} (hl : l.Pairwise Q.IsOrtho)
     have horth : ∀ x ∈ t, Q.IsOrtho x a := fun x hx =>
       QuadraticMap.isOrtho_comm.mp (List.rel_of_pairwise_cons (hl.sublist ht) hx)
     simp only [List.map_cons, List.prod_cons, LinearMap.smul_apply, smul_eq_mul,
-      apply_ι_mul_prod_eq_zero f hmul hinv horth, scalarTrace_ι_mul_prod_map_ι_eq_zero horth,
+      apply_ι_mul_prod_eq_zero f hmul hinv horth,
+      apply_ι_mul_prod_eq_zero (scalarTrace Q) scalarTrace_mul_comm scalarTrace_involute horth,
       mul_zero]
 
 /-- **The scalar part is the normalized trace of the left regular representation**, for a finite

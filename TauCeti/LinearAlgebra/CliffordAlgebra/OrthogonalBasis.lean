@@ -7,232 +7,190 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 public import TauCeti.LinearAlgebra.CliffordAlgebra.ScalarTrace.Basic
-import Mathlib.Algebra.Order.BigOperators.Ring.Finset
+-- Private: the product, reversal and exterior-basis lemmas below are used only inside proofs.
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
+import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
+import TauCeti.LinearAlgebra.ExteriorAlgebra.AlgebraMapInv
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 
 /-!
-# The ordered-product basis of a Clifford algebra
+# The ordered-product basis of an orthogonal basis, and the trace pairing
 
 Let `b` be a basis of `M`, indexed by a linearly ordered type `I`, and let `Q` be a quadratic form
-on `M` over a ring in which `2` is invertible. The basis `CliffordAlgebra.basis Q b` of
-`CliffordAlgebra Q`, indexed by finite sets of indices, is transported from Mathlib's exterior basis
-`Module.Basis.ExteriorAlgebra` along the module isomorphism `CliffordAlgebra.equivExterior`. When
-`b` is orthogonal for `Q` its member at `s` is the ordered product
-`e_s = ι Q (b i₁) * ⋯ * ι Q (b iₖ)` over the elements `i₁ < ⋯ < iₖ` of `s`
-(`CliffordAlgebra.basis_eq_prod_map_sort`). The form may be degenerate.
+on `M` over a commutative ring in which `2` is invertible. The basis
+`CliffordAlgebra.basis Q b` of `CliffordAlgebra Q`, indexed by the finite subsets of `I`, is
+transported from the exterior-algebra basis along `CliffordAlgebra.equivExterior`, which corrects
+a product of generators by lower-order contractions. When `b` is orthogonal for `Q` these
+corrections all vanish, and the basis vector indexed by `s` is the ordered product
+`e_s = ι Q (b i₁) * ⋯ * ι Q (b iₖ)` for `s.sort = [i₁, …, iₖ]`. So the ordered products of an
+orthogonal basis form a basis of the Clifford algebra, for every `Q`, degenerate or not.
 
-For an orthogonal basis the scalar part `τ = CliffordAlgebra.scalarTrace Q` pairs these monomials
-diagonally:
+The scalar part `τ = CliffordAlgebra.scalarTrace Q` makes these basis vectors orthogonal for the
+pairing `(x, y) ↦ τ (reverse x * y)`:
 
   `τ (reverse e_s * e_t) = if s = t then ∏ i ∈ s, Q (b i) else 0`.
 
-So the coordinates of `x` in this basis are read off by `τ`, and the form
-`(x, y) ↦ τ (reverse x * y)` is diagonal in it, with weight `∏ i ∈ s, Q (b i)` at `s`. Over an
-ordered ring, if every `Q (b i)` is nonnegative then `τ (reverse x * x) ≥ 0`, and if every
+For `s = t` the product `reverse e_s * e_s` collapses to the scalar `∏ i ∈ s, Q (b i)`. For
+`s ≠ t` some index lies in exactly one of `s` and `t`, so its basis vector occurs exactly once in
+the product and is orthogonal to every other factor, and the scalar part of such a product
+vanishes. Expanding in the basis then computes the pairing of arbitrary elements coordinatewise,
+`τ (reverse x * y) = ∑ₛ xₛ * (∏ i ∈ s, Q (b i)) * yₛ`. Over an ordered ring this gives positivity
+of the pairing: if every `Q (b i)` is nonnegative then `τ (reverse x * x) ≥ 0`, and if every
 `Q (b i)` is positive then `τ (reverse x * x) = 0` only for `x = 0`.
 
 ## Main results
 
-* `CliffordAlgebra.basis_eq_prod_map_sort`: for an orthogonal basis, the members of
-  `CliffordAlgebra.basis Q b` are the ordered products of basis vectors.
-* `CliffordAlgebra.scalarTrace_reverse_prod_mul_prod`: the scalar part pairs the ordered products
-  of an orthogonal family diagonally, and `CliffordAlgebra.scalarTrace_reverse_basis_mul` is the
-  basis form.
-* `CliffordAlgebra.prod_mul_basis_repr`: `(∏ i ∈ s, Q (b i)) * xₛ = τ (reverse e_s * x)`.
-* `CliffordAlgebra.scalarTrace_reverse_mul_eq_sum_basis_repr`:
-  `τ (reverse x * y) = ∑ₛ (∏ i ∈ s, Q (b i)) * xₛ * yₛ`.
+* `CliffordAlgebra.basis_repr_empty`: for every basis, the coordinate at the empty index set is the
+  scalar part.
+* `CliffordAlgebra.basis_eq_prod_map_sort`: for an orthogonal basis, the basis vector indexed by
+  `s` is the product of the generators of `s` in increasing order.
+* `CliffordAlgebra.scalarTrace_reverse_basis_mul_basis`: the pairing of two basis vectors.
+* `CliffordAlgebra.scalarTrace_reverse_basis_mul`: pairing against a basis vector extracts a
+  coordinate, `τ (reverse e_s * x) = (∏ i ∈ s, Q (b i)) * xₛ`.
+* `CliffordAlgebra.scalarTrace_reverse_mul`: the pairing in coordinates.
 * `CliffordAlgebra.scalarTrace_reverse_mul_self_nonneg` and
-  `CliffordAlgebra.scalarTrace_reverse_mul_self_eq_zero_iff`: positivity and faithfulness.
+  `CliffordAlgebra.scalarTrace_reverse_mul_self_eq_zero_iff`: positivity and faithfulness of the
+  pairing over an ordered ring.
 
 ## References
 
 * H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I, §1.
-* C. Chevalley, *The Algebraic Theory of Spinors* (1954), Chapter II.
 -/
 
 public section
 
-universe u v w
-
 namespace CliffordAlgebra
 
-variable {R : Type u} {M : Type v} {I : Type w} [CommRing R] [AddCommGroup M] [Module R M]
-  [Invertible (2 : R)] {Q : QuadraticForm R M} {v : I → M}
+variable {R : Type*} {M : Type*} [CommRing R] [AddCommGroup M] [Module R M] [Invertible (2 : R)]
+  {Q : QuadraticForm R M} {I : Type*} [LinearOrder I]
 
-/-- The scalar part kills `ι Q (v i)` times the ordered product of `v` along a list of indices
-different from `i`. -/
-private theorem scalarTrace_ι_mul_prod_map_eq_zero
-    (hv : Pairwise fun i j => Q.IsOrtho (v i) (v j)) {i : I} {l : List I} (h : ∀ k ∈ l, k ≠ i) :
-    scalarTrace Q (ι Q (v i) * ((l.map v).map (ι Q)).prod) = 0 :=
-  scalarTrace_ι_mul_prod_map_ι_eq_zero fun x hx => by
-    obtain ⟨k, hk, rfl⟩ := List.mem_map.mp hx
-    exact hv (h k hk)
+/-- **The coordinate at the empty index set is the scalar part**, for the basis
+`CliffordAlgebra.basis Q b` attached to any basis `b` of `M`. -/
+@[simp]
+theorem basis_repr_empty (b : Module.Basis I R M) (x : CliffordAlgebra Q) :
+    (basis Q b).repr x ∅ = scalarTrace Q x := by
+  rw [basis, Module.Basis.map_repr, LinearEquiv.trans_apply, LinearEquiv.symm_symm,
+    Module.Basis.exteriorAlgebra_repr_empty, scalarTrace_apply]
 
-/-- The scalar part kills `reverse (v_i * v_{l₁}) * v_{l₂}`, for ordered products along lists of
-indices different from `i`. -/
-private theorem scalarTrace_reverse_cons_prod_mul_prod_eq_zero
-    (hv : Pairwise fun i j => Q.IsOrtho (v i) (v j)) {i : I} {l₁ l₂ : List I}
-    (h₁ : ∀ k ∈ l₁, k ≠ i) (h₂ : ∀ k ∈ l₂, k ≠ i) :
-    scalarTrace Q (reverse (((i :: l₁).map v).map (ι Q)).prod * ((l₂.map v).map (ι Q)).prod) =
-      0 := by
-  -- `ι Q (v i)` moves, by cyclicity, to the front of the product along `l₂ ++ l₁.reverse`.
-  have h : reverse (((i :: l₁).map v).map (ι Q)).prod * ((l₂.map v).map (ι Q)).prod =
-      ((l₁.reverse.map v).map (ι Q)).prod * (ι Q (v i) * ((l₂.map v).map (ι Q)).prod) := by
-    rw [reverse_prod_map_ι]
-    simp [mul_assoc]
-  have h' : ((l₂.map v).map (ι Q)).prod * ((l₁.reverse.map v).map (ι Q)).prod =
-      (((l₂ ++ l₁.reverse).map v).map (ι Q)).prod := by
-    simp
-  rw [h, scalarTrace_mul_comm, mul_assoc, h']
-  refine scalarTrace_ι_mul_prod_map_eq_zero hv fun k hk => ?_
-  rcases List.mem_append.mp hk with hk | hk
-  exacts [h₂ k hk, h₁ k (List.mem_reverse.mp hk)]
+variable {b : Module.Basis I R M}
 
-variable [LinearOrder I]
+/-- The generators of a finite set of indices of an orthogonal basis, listed in increasing order,
+are pairwise orthogonal. -/
+private theorem pairwise_isOrtho_map_sort (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
+    (s : Finset I) : (s.sort.map b).Pairwise Q.IsOrtho :=
+  List.pairwise_map.mpr <| (s.sort_nodup _).imp fun hij ↦
+    QuadraticMap.associated_isOrtho.mp (hb hij)
 
-/-- The scalar-part pairing of the ordered products of an orthogonal family along two strictly
-increasing lists of indices. The heads of the two lists are compared: equal heads cancel to
-`Q (v i)`, and otherwise the smaller head occurs in neither tail, so
-`scalarTrace_reverse_cons_prod_mul_prod_eq_zero` applies, after `scalarTrace_reverse_mul_comm`
-if the smaller head is on the right. -/
-private theorem scalarTrace_reverse_prod_mul_prod_of_pairwise_lt
-    (hv : Pairwise fun i j => Q.IsOrtho (v i) (v j)) :
-    ∀ {l₁ l₂ : List I}, l₁.Pairwise (· < ·) → l₂.Pairwise (· < ·) →
-      scalarTrace Q (reverse ((l₁.map v).map (ι Q)).prod * ((l₂.map v).map (ι Q)).prod) =
-        if l₁ = l₂ then (l₁.map (Q ∘ v)).prod else 0
-  | [], [], _, _ => by simp
-  | [], j :: l₂, _, h₂ => by
-    rw [scalarTrace_reverse_mul_comm, ite_eq_right (List.cons_ne_nil _ _).symm]
-    exact scalarTrace_reverse_cons_prod_mul_prod_eq_zero hv
-      (fun k hk => (List.rel_of_pairwise_cons h₂ hk).ne') (by simp)
-  | i :: l₁, [], h₁, _ => by
-    rw [ite_eq_right (List.cons_ne_nil _ _)]
-    exact scalarTrace_reverse_cons_prod_mul_prod_eq_zero hv
-      (fun k hk => (List.rel_of_pairwise_cons h₁ hk).ne') (by simp)
-  | i :: l₁, j :: l₂, h₁, h₂ => by
-    obtain ⟨hi, hl₁⟩ := List.pairwise_cons.mp h₁
-    obtain ⟨hj, hl₂⟩ := List.pairwise_cons.mp h₂
-    rcases lt_trichotomy i j with hij | rfl | hji
-    · rw [ite_eq_right fun h => hij.ne (List.cons.inj h).1]
-      refine scalarTrace_reverse_cons_prod_mul_prod_eq_zero hv (fun k hk => (hi k hk).ne') ?_
-      rintro k (_ | ⟨_, hk⟩)
-      exacts [hij.ne', (hij.trans (hj k hk)).ne']
-    · -- Equal heads cancel to the scalar `Q (v i)`.
-      have h : reverse (((i :: l₁).map v).map (ι Q)).prod * (((i :: l₂).map v).map (ι Q)).prod =
-          Q (v i) • (reverse ((l₁.map v).map (ι Q)).prod * ((l₂.map v).map (ι Q)).prod) := by
-        rw [reverse_prod_map_ι, reverse_prod_map_ι]
-        simp [mul_assoc, ← mul_assoc (ι Q (v i)), Algebra.smul_def, Algebra.commutes]
-      rw [h, map_smul, scalarTrace_reverse_prod_mul_prod_of_pairwise_lt hv hl₁ hl₂, smul_eq_mul]
-      simp only [List.cons.injEq, true_and, List.map_cons, List.prod_cons, Function.comp_apply]
-      split_ifs <;> simp
-    · rw [scalarTrace_reverse_mul_comm, ite_eq_right fun h => hji.ne' (List.cons.inj h).1]
-      refine scalarTrace_reverse_cons_prod_mul_prod_eq_zero hv (fun k hk => (hj k hk).ne') ?_
-      rintro k (_ | ⟨_, hk⟩)
-      exacts [hji.ne', (hji.trans (hi k hk)).ne']
-
-/-- **The scalar part pairs the ordered products of an orthogonal family diagonally.** For
-`v : I → M` pairwise orthogonal and finite sets `s` and `t` of indices, with products taken in
-increasing order of the indices, `τ (reverse v_s * v_t)` is `∏ i ∈ s, Q (v i)` if `s = t` and `0`
-otherwise. -/
-theorem scalarTrace_reverse_prod_mul_prod (hv : Pairwise fun i j => Q.IsOrtho (v i) (v j))
-    (s t : Finset I) :
-    scalarTrace Q (reverse ((s.sort.map v).map (ι Q)).prod * ((t.sort.map v).map (ι Q)).prod) =
-      if s = t then ∏ i ∈ s, Q (v i) else 0 := by
-  rw [scalarTrace_reverse_prod_mul_prod_of_pairwise_lt hv
-    (List.sortedLT_iff_pairwise.mp s.sortedLT_sort) (List.sortedLT_iff_pairwise.mp t.sortedLT_sort)]
-  by_cases hst : s = t
-  · subst hst
-    rw [ite_eq_left rfl, ite_eq_left rfl, ← s.prod_map_toList]
-    exact ((s.sort_perm_toList (· ≤ ·)).map _).prod_eq
-  · have hsort : s.sort ≠ t.sort := fun h => hst (by
-      rw [← s.sort_toFinset (· ≤ ·), h, t.sort_toFinset])
-    rw [ite_eq_right hsort, ite_eq_right hst]
-
-section Basis
-
-open Module
-
-variable (Q) (b : Basis I R M)
-
-/-- **The ordered-product basis.** For a basis orthogonal for `Q`, the member of
-`CliffordAlgebra.basis Q b` at `s` is the product of the generators `ι Q (b i)`, `i ∈ s`, in
-increasing order of the indices. -/
-theorem basis_eq_prod_map_sort (hb : Pairwise fun i j => Q.IsOrtho (b i) (b j)) (s : Finset I) :
+/-- **For an orthogonal basis `b`, the Clifford basis vector indexed by `s` is the ordered product**
+`ι Q (b i₁) * ⋯ * ι Q (b iₖ)` of the generators of `s.sort = [i₁, …, iₖ]`. No hypothesis on `Q`
+is needed beyond the orthogonality of `b`; in particular `Q` may be degenerate. -/
+theorem basis_eq_prod_map_sort (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (s : Finset I) :
     basis Q b s = ((s.sort.map b).map (ι Q)).prod := by
-  apply (equivExterior Q).injective
-  rw [equivExterior_basis, TauCeti.ExteriorAlgebra.basis_eq_prod_map_sort,
-    equivExterior_prod_map_ι]
-  exact List.pairwise_map.mpr ((List.sortedLT_iff_pairwise.mp s.sortedLT_sort).imp fun h =>
-    hb h.ne)
+  rw [basis_apply, LinearEquiv.symm_apply_eq,
+    equivExterior_prod_map_ι_of_pairwise_isOrtho Q (pairwise_isOrtho_map_sort hb s),
+    Module.Basis.exteriorAlgebra_eq_prod_map_sort]
 
-variable {Q b} (hb : Pairwise fun i j => Q.IsOrtho (b i) (b j))
-include hb
+/-- The scalar part of a product of generators of an orthogonal basis vanishes as soon as one index
+occurs exactly once. -/
+private theorem scalarTrace_prod_map_map_eq_zero (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
+    {l : List I} {k : I} (hk : l.count k = 1) :
+    scalarTrace Q ((l.map b).map (ι Q)).prod = 0 := by
+  have hkl : k ∈ l := List.count_pos_iff.mp (by rw [hk]; exact Nat.one_pos)
+  obtain ⟨l₁, l₂, rfl⟩ := List.append_of_mem hkl
+  have hnot : k ∉ l₁ ++ l₂ := by
+    rw [← List.count_eq_zero]
+    simp only [List.count_append, List.count_cons_self] at hk ⊢
+    omega
+  rw [List.map_append, List.map_cons]
+  refine scalarTrace_prod_map_ι_append_cons_eq_zero fun x hx ↦ ?_
+  rw [← List.map_append] at hx
+  obtain ⟨j, hj, rfl⟩ := List.mem_map.mp hx
+  exact QuadraticMap.associated_isOrtho.mp (hb (ne_of_mem_of_not_mem hj hnot))
 
-/-- **The scalar part pairs the ordered-product basis diagonally**:
-`τ (reverse e_s * e_t)` is `∏ i ∈ s, Q (b i)` if `s = t` and `0` otherwise. -/
-theorem scalarTrace_reverse_basis_mul (s t : Finset I) :
+/-- **The basis of an orthogonal basis is orthogonal for the trace pairing**
+`(x, y) ↦ τ (reverse x * y)`, and the basis vector indexed by `s` pairs with itself to
+`∏ i ∈ s, Q (b i)`. -/
+theorem scalarTrace_reverse_basis_mul_basis (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
+    (s t : Finset I) :
     scalarTrace Q (reverse (basis Q b s) * basis Q b t) =
       if s = t then ∏ i ∈ s, Q (b i) else 0 := by
-  rw [basis_eq_prod_map_sort Q b hb, basis_eq_prod_map_sort Q b hb,
-    scalarTrace_reverse_prod_mul_prod hb]
+  split_ifs with hst
+  · subst hst
+    rw [basis_eq_prod_map_sort hb, reverse_prod_map_ι_mul_prod_map_ι, scalarTrace_algebraMap,
+      List.map_map, ← List.prod_toFinset _ (s.sort_nodup _), Finset.sort_toFinset,
+      Function.comp_def]
+  · rw [basis_eq_prod_map_sort hb, basis_eq_prod_map_sort hb, reverse_prod_map_ι,
+      ← List.map_reverse, ← List.prod_append, ← List.map_append, ← List.map_reverse,
+      ← List.map_append]
+    -- Some index lies in exactly one of `s` and `t`, so it occurs once in the combined list.
+    have hcount (k : I) (hks : k ∈ s ↔ k ∉ t) : (s.sort.reverse ++ t.sort).count k = 1 := by
+      rw [List.count_append, List.count_reverse]
+      by_cases hk : k ∈ s
+      · rw [List.count_eq_one_of_mem (s.sort_nodup _) ((Finset.mem_sort _).mpr hk),
+          List.count_eq_zero_of_not_mem fun h ↦ hks.mp hk ((Finset.mem_sort _).mp h)]
+      · rw [List.count_eq_zero_of_not_mem fun h ↦ hk ((Finset.mem_sort _).mp h),
+          List.count_eq_one_of_mem (t.sort_nodup _)
+            ((Finset.mem_sort _).mpr (not_not.mp (mt hks.mpr hk)))]
+    by_cases hsub : s ⊆ t
+    · obtain ⟨k, hkt, hks⟩ := Finset.not_subset.mp fun h ↦ hst (hsub.antisymm h)
+      exact scalarTrace_prod_map_map_eq_zero hb (hcount k (iff_of_false hks (not_not.mpr hkt)))
+    · obtain ⟨k, hks, hkt⟩ := Finset.not_subset.mp hsub
+      exact scalarTrace_prod_map_map_eq_zero hb (hcount k (iff_of_true hks hkt))
 
-/-- **The scalar part reads off coordinates**: the coefficient of `x` at `s` in the ordered-product
-basis, weighted by `∏ i ∈ s, Q (b i)`, is `τ (reverse e_s * x)`. -/
-theorem prod_mul_basis_repr (s : Finset I) (x : CliffordAlgebra Q) :
-    (∏ i ∈ s, Q (b i)) * (basis Q b).repr x s = scalarTrace Q (reverse (basis Q b s) * x) := by
-  have h : (∏ i ∈ s, Q (b i)) • (basis Q b).coord s =
-      scalarTrace Q ∘ₗ LinearMap.mulLeft R (reverse (basis Q b s)) :=
-    (basis Q b).ext fun t => by
-      rw [LinearMap.smul_apply, Basis.coord_apply, Basis.repr_self, Finsupp.single_apply,
-        LinearMap.comp_apply, LinearMap.mulLeft_apply, scalarTrace_reverse_basis_mul hb,
-        smul_eq_mul]
-      by_cases hst : s = t
-      · simp [hst]
-      · simp [hst, Ne.symm hst]
-  exact LinearMap.congr_fun h x
+/-- **Pairing against a basis vector extracts a coordinate**: for an orthogonal basis,
+`τ (reverse e_s * x) = (∏ i ∈ s, Q (b i)) * xₛ`, where `xₛ` is the coordinate of `x` at `s`. -/
+theorem scalarTrace_reverse_basis_mul (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
+    (s : Finset I) (x : CliffordAlgebra Q) :
+    scalarTrace Q (reverse (basis Q b s) * x) = (∏ i ∈ s, Q (b i)) * (basis Q b).repr x s := by
+  refine LinearMap.congr_fun ((basis Q b).ext
+    (f₁ := scalarTrace Q ∘ₗ LinearMap.mulLeft R (reverse (basis Q b s)))
+    (f₂ := (∏ i ∈ s, Q (b i)) • (basis Q b).coord s) fun t ↦ ?_) x
+  simp only [LinearMap.comp_apply, LinearMap.mulLeft_apply, LinearMap.smul_apply,
+    Module.Basis.coord_apply, Module.Basis.repr_self, smul_eq_mul,
+    scalarTrace_reverse_basis_mul_basis hb, Finsupp.single_apply, mul_ite, mul_one, mul_zero,
+    eq_comm]
 
-/-- **The scalar-part pairing is diagonal in the ordered-product basis**:
-`τ (reverse x * y) = ∑ s, (∏ i ∈ s, Q (b i)) * xₛ * yₛ`. -/
-theorem scalarTrace_reverse_mul_eq_sum_basis_repr [Fintype I] (x y : CliffordAlgebra Q) :
+/-- **The trace pairing in coordinates**: for an orthogonal basis `b`,
+`τ (reverse x * y) = ∑ₛ xₛ * ((∏ i ∈ s, Q (b i)) * yₛ)`, the sum running over the support of the
+coordinates of `x`. -/
+theorem scalarTrace_reverse_mul (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
+    (x y : CliffordAlgebra Q) :
     scalarTrace Q (reverse x * y) =
-      ∑ s, (∏ i ∈ s, Q (b i)) * (basis Q b).repr x s * (basis Q b).repr y s := by
-  conv_lhs => rw [← (basis Q b).sum_repr y]
-  rw [Finset.mul_sum, map_sum]
-  refine Finset.sum_congr rfl fun s _ => ?_
-  rw [mul_smul_comm, map_smul, smul_eq_mul, scalarTrace_reverse_mul_comm,
-    ← prod_mul_basis_repr hb, mul_comm]
+      ((basis Q b).repr x).sum fun s c ↦ c * ((∏ i ∈ s, Q (b i)) * (basis Q b).repr y s) := by
+  conv_lhs => rw [← (basis Q b).linearCombination_repr x, Finsupp.linearCombination_apply]
+  simp only [map_finsuppSum, Finsupp.sum_mul, map_smul, smul_mul_assoc, smul_eq_mul,
+    scalarTrace_reverse_basis_mul hb]
 
 section Ordered
 
-variable [LinearOrder R] [Finite I]
+variable [LinearOrder R]
 
-/-- **Positivity of the scalar-part pairing**: if `Q` is nonnegative on an orthogonal basis, then
+/-- **Positivity of the trace pairing**: if `Q` is nonnegative on an orthogonal basis, then
 `τ (reverse x * x) ≥ 0` for every `x`. -/
-theorem scalarTrace_reverse_mul_self_nonneg [IsOrderedRing R] (hQ : ∀ i, 0 ≤ Q (b i))
-    (x : CliffordAlgebra Q) : 0 ≤ scalarTrace Q (reverse x * x) := by
-  cases nonempty_fintype I
-  rw [scalarTrace_reverse_mul_eq_sum_basis_repr hb]
-  exact Finset.sum_nonneg fun s _ => by
-    rw [mul_assoc]
-    exact mul_nonneg (Finset.prod_nonneg fun i _ => hQ i) (mul_self_nonneg _)
+theorem scalarTrace_reverse_mul_self_nonneg [IsOrderedRing R]
+    (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, 0 ≤ Q (b i)) (x : CliffordAlgebra Q) :
+    0 ≤ scalarTrace Q (reverse x * x) := by
+  rw [scalarTrace_reverse_mul hb, Finsupp.sum]
+  exact Finset.sum_nonneg fun s _ ↦ by
+    rw [mul_left_comm]
+    exact mul_nonneg (Finset.prod_nonneg fun i _ ↦ hQ i) (mul_self_nonneg _)
 
-/-- **Faithfulness of the scalar-part pairing**: if `Q` is positive on an orthogonal basis, then
+/-- **Faithfulness of the trace pairing**: if `Q` is positive on an orthogonal basis, then
 `τ (reverse x * x) = 0` only for `x = 0`. -/
-theorem scalarTrace_reverse_mul_self_eq_zero_iff [IsStrictOrderedRing R] (hQ : ∀ i, 0 < Q (b i))
+theorem scalarTrace_reverse_mul_self_eq_zero_iff [IsStrictOrderedRing R]
+    (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, 0 < Q (b i))
     {x : CliffordAlgebra Q} : scalarTrace Q (reverse x * x) = 0 ↔ x = 0 := by
-  refine ⟨fun h => ?_, fun h => by simp [h]⟩
-  cases nonempty_fintype I
-  have hpos (s : Finset I) : 0 < ∏ i ∈ s, Q (b i) := Finset.prod_pos fun i _ => hQ i
-  rw [scalarTrace_reverse_mul_eq_sum_basis_repr hb, Finset.sum_eq_zero_iff_of_nonneg fun s _ => by
-    rw [mul_assoc]; exact mul_nonneg (hpos s).le (mul_self_nonneg _)] at h
-  rw [← (basis Q b).repr.map_eq_zero_iff]
-  ext s
-  have hs := h s (Finset.mem_univ s)
-  rwa [mul_assoc, mul_eq_zero, or_iff_right (hpos s).ne', mul_self_eq_zero] at hs
+  refine ⟨fun h ↦ ?_, fun h ↦ by simp [h]⟩
+  have hpos (s : Finset I) : 0 < ∏ i ∈ s, Q (b i) := Finset.prod_pos fun i _ ↦ hQ i
+  rw [scalarTrace_reverse_mul hb, Finsupp.sum, Finset.sum_eq_zero_iff_of_nonneg fun s _ ↦ by
+    rw [mul_left_comm]; exact mul_nonneg (hpos s).le (mul_self_nonneg _)] at h
+  rw [← (basis Q b).repr.map_eq_zero_iff, ← Finsupp.support_eq_empty,
+    Finset.eq_empty_iff_forall_notMem]
+  intro s hs
+  have hs' := h s hs
+  rw [mul_left_comm, mul_eq_zero, or_iff_right (hpos s).ne', mul_self_eq_zero] at hs'
+  exact Finsupp.mem_support_iff.mp hs hs'
 
 end Ordered
-
-end Basis
 
 end CliffordAlgebra
