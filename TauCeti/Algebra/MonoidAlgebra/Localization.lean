@@ -23,8 +23,7 @@ coordinate ring of the affine chart of a face `σ ∩ m^⊥` of a cone `σ` is o
 coordinate ring of `σ` by inverting the monomial of `m`.
 
 Localizing the coefficient ring also localizes the monoid algebra, at the corresponding
-constant monomials. The coefficientwise construction uses Mathlib's localization of finitely
-supported modules, retaining arbitrary commutative monoids and coefficient semirings.
+constant monomials, for arbitrary commutative monoids and commutative coefficient semirings.
 
 ## Main declarations
 
@@ -35,6 +34,7 @@ supported modules, retaining arbitrary commutative monoids and coefficient semir
 
 ## References
 
+* Mathlib's localization of finitely supported modules.
 * W. Fulton, *Introduction to Toric Varieties*, §§1.2–1.3.
 * D. Cox, J. Little and H. Schenck, *Toric Varieties*, §1.3.
 -/
@@ -101,8 +101,6 @@ theorem MonoidAlgebra.isLocalization_coefficients {S : Type*} [CommSemiring S]
       (MonoidAlgebra S M) := by
   apply isLocalizedModule_iff_isLocalization.mp
   let f := Finsupp.mapRange.linearMap (α := M) (Algebra.linearMap R S)
-  have hf : IsLocalizedModule U f := inferInstance
-  have h := IsLocalizedModule.of_linearEquiv_right U f (coeffLinearEquiv R)
   have h' := IsLocalizedModule.of_linearEquiv U
     (f ∘ₗ (coeffLinearEquiv R).toLinearMap) (coeffLinearEquiv R).symm
   convert h' using 1

@@ -18,18 +18,19 @@ public import Mathlib.RingTheory.Jacobson.Semiprimary
 For a finite commutative monoid `M` and a coefficient ring `R` with fraction field `K`,
 `K[M]` is the total quotient ring of `R[M]`. In particular, rationalizing the coefficients
 computes the total quotient ring of an integral finite abelian group ring. The group ring
-need not be a domain: all its nonzerodivisors become units after rationalization because the
-rational algebra is Artinian.
+need not be a domain: all its nonzerodivisors become units after rationalization.
 
-For a finite abelian group in characteristic zero, the total quotient ring is a finite
-product of characteristic-zero fields. This uses Mathlib's Maschke theorem and the canonical
-maximal-ideal decomposition `IsArtinianRing.equivPi`; it does not choose a group splitting.
+For a finite abelian group whose order is nonzero in the coefficient fraction field, the
+total quotient ring is a finite product of finite-dimensional field extensions of that field.
+The decomposition respects coefficient scalars. In characteristic zero, all component fields
+have characteristic zero.
 
 The algebra structure on coefficient extension is Mathlib's scoped `AlgebraMonoidAlgebra`
 structure. No field structure on the group ring is assumed.
 
 ## References
 
+* Mathlib's Maschke theorem and maximal-ideal decomposition `IsArtinianRing.equivPi`.
 * V. Turaev, *Introduction to Combinatorial Torsions*, Chapter I, for total quotient
   coefficients of abelian group rings.
 -/
@@ -70,31 +71,65 @@ theorem MonoidAlgebra.isFractionRing_of_finite (R K M : Type*) [CommRing R] [Fie
 
 universe u v w q
 
-/-- Every total quotient ring of a finite abelian group algebra over a ring with a
-characteristic-zero fraction field is a finite product of characteristic-zero fields.
-The component fields are finite-dimensional over the coefficient fraction field. -/
-theorem AddMonoidAlgebra.exists_totalQuotient_ringEquiv_pi_field
+/-- If the order of a finite abelian group is nonzero in the coefficient fraction field,
+every total quotient ring of its group algebra admits a compatible coefficient-field algebra
+structure and is a finite product of finite-dimensional field extensions. Compatibility means
+that the coefficient-field action extends the original coefficient map from `R`. -/
+theorem AddMonoidAlgebra.exists_totalQuotient_algEquiv_pi_field
     (R : Type u) (K : Type v) (H : Type w) (Q : Type q)
-    [CommRing R] [Field K] [CharZero K] [Algebra R K] [IsFractionRing R K]
-    [AddCommGroup H] [Finite H] [CommRing Q] [Algebra (AddMonoidAlgebra R H) Q]
+    [CommRing R] [Field K] [Algebra R K] [IsFractionRing R K]
+    [AddCommGroup H] [Finite H] [NeZero (Nat.card H : K)]
+    [CommRing Q] [Algebra (AddMonoidAlgebra R H) Q]
     [IsFractionRing (AddMonoidAlgebra R H) Q] :
-    ∃ (ι : Type (max v w)) (_ : Finite ι) (F : ι → Type (max v w))
+    ∃ (_ : Algebra K Q)
+      (_ : ∀ r : R, algebraMap K Q (algebraMap R K r) =
+        algebraMap (AddMonoidAlgebra R H) Q (algebraMap R (AddMonoidAlgebra R H) r))
+      (ι : Type (max v w)) (_ : Finite ι) (F : ι → Type (max v w))
       (_ : ∀ i, Field (F i)) (_ : ∀ i, Algebra K (F i))
-      (_ : ∀ i, Module.Finite K (F i)) (_ : ∀ i, CharZero (F i)),
-      Nonempty (Q ≃+* ∀ i, F i) := by
+      (_ : ∀ i, Module.Finite K (F i)), Nonempty (Q ≃ₐ[K] ∀ i, F i) := by
   let A := AddMonoidAlgebra K H
-  have : NeZero (Nat.card H : K) := ⟨by simp [Nat.card_pos.ne']⟩
   have : Module.Finite K A := Module.Finite.of_basis (_root_.AddMonoidAlgebra.basis H K)
   have : IsArtinianRing A := isArtinian_of_tower K inferInstance
   have : IsFractionRing (AddMonoidAlgebra R H) A :=
     AddMonoidAlgebra.isFractionRing_of_finite R K H
+  let e := IsLocalization.algEquiv (nonZeroDivisors (AddMonoidAlgebra R H)) Q A
+  let : Algebra K Q := (e.symm.toRingHom.comp (algebraMap K A)).toAlgebra
   let F (I : MaximalSpectrum A) := A ⧸ I.asIdeal
   let (I : MaximalSpectrum A) : Field (F I) := Ideal.Quotient.field I.asIdeal
-  have (I : MaximalSpectrum A) : CharZero (F I) :=
-    charZero_of_injective_algebraMap (algebraMap K (F I)).injective
-  refine ⟨MaximalSpectrum A, inferInstance, F, inferInstance, inferInstance,
-    inferInstance, inferInstance, ?_⟩
-  exact ⟨(IsLocalization.algEquiv (nonZeroDivisors (AddMonoidAlgebra R H)) Q A).toRingEquiv.trans
-    (IsArtinianRing.equivPi A).toRingEquiv⟩
+  let eK : Q ≃ₐ[K] A :=
+    { e.toRingEquiv with commutes' := fun k ↦ e.apply_symm_apply (algebraMap K A k) }
+  refine ⟨inferInstance, ?_, MaximalSpectrum A, inferInstance, F,
+    inferInstance, inferInstance, inferInstance, ?_⟩
+  · intro r
+    exact (congrArg e.symm
+      ((IsScalarTower.algebraMap_apply R K A r).symm.trans
+        (IsScalarTower.algebraMap_apply R (AddMonoidAlgebra R H) A r))).trans
+      (e.symm.commutes _)
+  · exact ⟨eK.trans ((IsArtinianRing.equivPi A).restrictScalars K)⟩
+
+/-- In characteristic zero, every total quotient ring of a finite abelian group algebra is
+a finite product of characteristic-zero fields, finite-dimensional over the coefficient
+fraction field. The returned algebra structure extends the original coefficient map. -/
+theorem AddMonoidAlgebra.exists_totalQuotient_algEquiv_pi_field_charZero
+    (R : Type u) (K : Type v) (H : Type w) (Q : Type q)
+    [CommRing R] [Field K] [CharZero K] [Algebra R K] [IsFractionRing R K]
+    [AddCommGroup H] [Finite H] [CommRing Q] [Algebra (AddMonoidAlgebra R H) Q]
+    [IsFractionRing (AddMonoidAlgebra R H) Q] :
+    ∃ (_ : Algebra K Q)
+      (_ : ∀ r : R, algebraMap K Q (algebraMap R K r) =
+        algebraMap (AddMonoidAlgebra R H) Q (algebraMap R (AddMonoidAlgebra R H) r))
+      (ι : Type (max v w)) (_ : Finite ι) (F : ι → Type (max v w))
+      (_ : ∀ i, Field (F i)) (_ : ∀ i, Algebra K (F i))
+      (_ : ∀ i, Module.Finite K (F i)) (_ : ∀ i, CharZero (F i)),
+      Nonempty (Q ≃ₐ[K] ∀ i, F i) := by
+  have : NeZero (Nat.card H : K) := ⟨by simp [Nat.card_pos.ne']⟩
+  obtain ⟨a, ha, ι, hι, F, hF, hA, hfin, e⟩ :=
+    AddMonoidAlgebra.exists_totalQuotient_algEquiv_pi_field R K H Q
+  let := a
+  let := hF
+  let := hA
+  refine ⟨a, ha, ι, hι, F, hF, hA, hfin, ?_, e⟩
+  intro i
+  exact charZero_of_injective_algebraMap (algebraMap K (F i)).injective
 
 end TauCeti
