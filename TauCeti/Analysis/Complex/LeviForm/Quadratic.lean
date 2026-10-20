@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Analysis.Calculus.Bilinear
 public import TauCeti.Analysis.Complex.LeviForm
+public import TauCeti.Analysis.Complex.QuadraticLeviForm
 public import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 public import TauCeti.LinearAlgebra.QuadraticForm.Signature
 
@@ -22,9 +23,9 @@ real Morse index.
 
 * The Levi form of a real quadratic function `z ↦ B z z` is the Levi form of its polarization
   `B.flip + B`. For the squared norm of a complex inner product space it is the inner product
-  itself. Every positive definite Hermitian form on a finite-dimensional complex space is the
-  inner product of some inner product space structure, so this is the general positive Hermitian
-  quadratic function.
+  itself (`TauCeti.leviForm_norm_sq`). Every positive definite Hermitian form on a
+  finite-dimensional complex space is the inner product of some inner product space structure, so
+  this is the general positive Hermitian quadratic function.
 * The real part of a holomorphic quadratic form has vanishing Levi form, so by
   `TauCeti.morseIndex_eq_finrank_of_leviForm_eq_zero` its Morse index is exactly the complex
   dimension when it is nondegenerate.
@@ -37,7 +38,6 @@ real Morse index.
 ## Main results
 
 * `ContinuousLinearMap.leviForm_apply_self`: the Levi form of `z ↦ B z z`.
-* `TauCeti.leviForm_norm_sq`: the Levi form of `‖z‖²` is the inner product.
 * `TauCeti.leviForm_mul_norm_sq_add_re_mul_sum_inner_sq`,
   `TauCeti.morseIndex_mul_norm_sq_add_re_mul_sum_inner_sq`: the Levi form and the Morse index of
   `a ‖z‖² + Re (c ∑ⱼ ⟪b j, z⟫²)`.
@@ -66,20 +66,6 @@ namespace TauCeti
 section InnerProductSpace
 
 variable {E ι : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E] [Fintype ι]
-
-/-- **The Levi form of the squared norm** of a complex inner product space is the inner product,
-at every point. -/
-theorem leviForm_norm_sq (x : E) : leviForm (fun z : E ↦ ‖z‖ ^ 2) x = innerₛₗ ℂ := by
-  let _ : InnerProductSpace ℝ E := InnerProductSpace.complexToReal
-  have h : (fun z : E ↦ ‖z‖ ^ 2) = fun z ↦ innerSL ℝ z z := by
-    funext z
-    simp
-  rw [h, (innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ).leviForm_apply_self]
-  -- The real inner product of the complex space is the real part of the complex one.
-  have hinner (u u' : E) : innerSL ℝ u u' = (⟪u, u'⟫_ℂ).re := by
-    simp [real_inner_eq_re_inner ℂ]
-  ext v w
-  apply Complex.ext <;> simp [hinner, inner_smul_left, inner_smul_right] <;> ring
 
 private theorem re_inner_self (z : E) : (⟪z, z⟫_ℂ).re = ‖z‖ ^ 2 :=
   inner_self_eq_norm_sq (𝕜 := ℂ) z
@@ -177,7 +163,7 @@ theorem leviForm_mul_norm_sq_add_re_mul_sum_inner_sq (b : OrthonormalBasis ι �
     ((contDiff_norm_sq ℂ).const_smul a).contDiffAt
   have h₂ : ContDiffAt ℝ 2 (fun z ↦ (Q z z).re) x :=
     (reCLM.contDiff.comp (hQd.restrict_scalars ℝ)).contDiffAt
-  rw [hf, leviForm_add h₁ h₂, hQd.contDiffAt.leviForm_re_eq_zero, leviForm_smul,
+  rw [hf, leviForm_add h₁ h₂, leviForm_re_eq_zero hQd.contDiffAt, leviForm_smul,
     leviForm_norm_sq, add_zero]
 
 /-- **The Morse index of a Hermitian plus holomorphic quadratic function.** For an orthonormal

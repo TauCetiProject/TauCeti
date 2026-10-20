@@ -83,8 +83,6 @@ function.
   form is an open condition on continuous bilinear forms.
 * `TauCeti.exists_continuousOn_pos_forall_re_leviForm_pos`: strict Levi positivity is open in the
   fine `C²` topology, with a continuous positive tolerance function.
-* `ContDiffAt.leviForm_re_eq_zero`: the real part of a holomorphic function has vanishing Levi
-  form.
 * `TauCeti.morseIndex_neg_eq_of_leviForm_eq_zero`,
   `TauCeti.morseIndex_eq_finrank_of_leviForm_eq_zero`: if the Levi form vanishes, then
   multiplication by `I` exchanges the positive and negative directions of the Hessian, so a
@@ -397,25 +395,7 @@ theorem exists_continuousOn_pos_forall_re_leviForm_pos [FiniteDimensional ℂ V]
       ((dist_eq_norm (fderiv ℝ (fderiv ℝ g) x) (fderiv ℝ (fderiv ℝ f) x)).trans_lt hlt)
   exact not_not.1 (notMem_of_dist_lt_infDist hdist)
 
-end TauCeti
-
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] {f : V → ℝ} {x : V}
-
-/-- **The real part of a holomorphic function is Levi flat.** If `g` is complex `C²` at `x`, then
-the Levi form of `Re g` vanishes at `x`. -/
-theorem ContDiffAt.leviForm_re_eq_zero {g : V → ℂ} (hg : ContDiffAt ℂ 2 g x) :
-    TauCeti.leviForm (fun z ↦ (g z).re) x = 0 := by
-  -- `Re` is real linear, so its second derivative and hence its Levi form vanish everywhere.
-  have hre (y : ℂ) : TauCeti.leviForm Complex.re y = 0 := by
-    have h : fderiv ℝ Complex.re = fun _ ↦ reCLM := funext fun _ ↦ reCLM.fderiv
-    refine LinearMap.ext fun v ↦ LinearMap.ext fun w ↦ ?_
-    apply Complex.ext <;> simp [h]
-  refine LinearMap.ext fun v ↦ LinearMap.ext fun w ↦ ?_
-  have h := TauCeti.leviForm_comp_apply (f := Complex.re) reCLM.contDiff.contDiffAt hg v w
-  rw [hre] at h
-  exact h
-
-namespace TauCeti
+/-! ### Inertia of a Levi-flat function -/
 
 /-- **Inertia of a Levi-flat function.** If the Levi form of `f` vanishes at `x`, then
 multiplication by `I` exchanges the positive and negative directions of the Hessian, so `f` and
@@ -436,7 +416,7 @@ theorem morseIndex_neg_eq_of_leviForm_eq_zero (h : leviForm f x = 0) :
 
 /-- **The Morse index of a Levi-flat function.** If the Levi form of `f` vanishes at `x` and its
 Hessian there is nondegenerate, then the Morse index of `f` at `x` is the complex dimension. This
-applies to the real part of a holomorphic function, by `ContDiffAt.leviForm_re_eq_zero`. -/
+applies to the real part of a holomorphic function, by `TauCeti.leviForm_re_eq_zero`. -/
 theorem morseIndex_eq_finrank_of_leviForm_eq_zero [FiniteDimensional ℂ V]
     (h : leviForm f x = 0) (hnd : (hessianQuadraticForm f x).Nondegenerate) :
     morseIndex f x = Module.finrank ℂ V := by
