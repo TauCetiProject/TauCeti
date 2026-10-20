@@ -26,12 +26,23 @@ polynomials is weighted homogeneous for the weights `i + 1`. The coefficients of
 `∏ (X - C Ψ)` of linear factors with homogeneous constant terms of a common degree `m` supply
 such symmetric polynomials (`MvPolynomial.isHomogeneous_coeff_prod_X_sub_C`).
 
+More generally, evaluating a weighted homogeneous polynomial of weight `m` at elements of the
+graded pieces of weights `w i` of any graded algebra lands in its graded piece of weight `m`.
+Conversely, the weighted homogeneous components of a polynomial over `R` are read off from the
+substitution `X i ↦ X i * T ^ w i` into polynomials in an auxiliary variable `T`: the coefficient
+of `T ^ n` is the component of weight `n`. This detects homogeneity of an ideal from its stability
+under such substitutions, as for the ideal of relations of the Lazard ring.
+
 ## Main results
 
+* `MvPolynomial.IsWeightedHomogeneous.aeval_mem`: evaluation at elements of graded pieces of the
+  weights of the variables preserves weighted homogeneity.
 * `MvPolynomial.IsWeightedHomogeneous.aeval`: substituting polynomials that are weighted
   homogeneous of the weights of the variables preserves weighted homogeneity.
 * `MvPolynomial.isWeightedHomogeneous_of_isHomogeneous_aeval`: the converse of the homogeneous
   case, for an injective substitution.
+* `MvPolynomial.coeff_aeval_C_X_mul_X_pow`: the coefficient of `T ^ n` in the substitution
+  `X i ↦ X i * T ^ w i` is the weighted homogeneous component of weight `n`.
 -/
 
 public section
@@ -44,22 +55,49 @@ section CommSemiring
 
 variable [CommSemiring R]
 
+/-- Evaluating a polynomial that is weighted homogeneous of weight `m` at elements `g i` of the
+graded pieces `𝒜 (w i)` of a graded algebra gives an element of `𝒜 m`. -/
+theorem IsWeightedHomogeneous.aeval_mem {M A : Type*} [AddCommMonoid M] [CommSemiring A]
+    [Algebra R A] {𝒜 : M → Submodule R A} [SetLike.GradedMonoid 𝒜] {w : σ → M}
+    {φ : MvPolynomial σ R} {m : M} (hφ : φ.IsWeightedHomogeneous w m) {g : σ → A}
+    (hg : ∀ i, g i ∈ 𝒜 (w i)) : MvPolynomial.aeval g φ ∈ 𝒜 m := by
+  induction hφ using IsWeightedHomogeneous.induction_on with
+  | zero => simp
+  | add p q _ _ ihp ihq => simpa using add_mem ihp ihq
+  | monomial d r hr =>
+    rw [aeval_monomial, ← hr, Finsupp.weight_apply, Finsupp.sum, ← zero_add (∑ _ ∈ _, _)]
+    exact SetLike.mul_mem_graded (SetLike.algebraMap_mem_graded 𝒜 r)
+      (SetLike.prod_pow_mem_graded 𝒜 w g d fun i _ ↦ hg i)
+
 /-- Substituting, for each variable `i`, a polynomial that is weighted homogeneous of weight
 `w i` for the weights `v` into a polynomial that is weighted homogeneous of weight `m` for the
 weights `w` gives a polynomial that is weighted homogeneous of weight `m` for the weights `v`. -/
 theorem IsWeightedHomogeneous.aeval {M : Type*} [AddCommMonoid M] {w : σ → M} {v : τ → M}
     {φ : MvPolynomial σ R} {m : M} (hφ : φ.IsWeightedHomogeneous w m) {g : σ → MvPolynomial τ R}
     (hg : ∀ i, (g i).IsWeightedHomogeneous v (w i)) :
-    (MvPolynomial.aeval g φ).IsWeightedHomogeneous v m := by
-  induction hφ using IsWeightedHomogeneous.induction_on with
-  | zero => simpa using isWeightedHomogeneous_zero R v m
-  | add p q _ _ ihp ihq => simpa using ihp.add ihq
-  | monomial d r hr =>
-    rw [aeval_monomial, Finsupp.prod, algebraMap_eq]
-    have hprod := IsWeightedHomogeneous.prod d.support (fun i => g i ^ d i)
-      (fun i => d i • w i) fun i _ => (hg i).pow (d i)
-    convert (isWeightedHomogeneous_C v r).mul hprod using 1
-    rw [← hr, Finsupp.weight_apply, Finsupp.sum, zero_add]
+    (MvPolynomial.aeval g φ).IsWeightedHomogeneous v m :=
+  have := WeightedHomogeneousSubmodule.gradedMonoid (R := R) (w := v)
+  hφ.aeval_mem (𝒜 := weightedHomogeneousSubmodule R v) hg
+
+/-- **Weighted homogeneous components as coefficients.** Substituting `X i * T ^ w i` for each
+variable `X i` turns a polynomial into a polynomial in `T` whose coefficient of `Tⁿ` is its
+weighted homogeneous component of weight `n`. -/
+theorem coeff_aeval_C_X_mul_X_pow (w : σ → ℕ) (φ : MvPolynomial σ R) (n : ℕ) :
+    (MvPolynomial.aeval (fun i ↦ Polynomial.C (X i) * Polynomial.X ^ w i) φ).coeff n =
+      weightedHomogeneousComponent w n φ := by
+  classical
+  induction φ using MvPolynomial.induction_on' with
+  | monomial d r =>
+    have h : MvPolynomial.aeval (fun i ↦ Polynomial.C (X i) * Polynomial.X ^ w i) (monomial d r) =
+        Polynomial.C (monomial d r) * Polynomial.X ^ Finsupp.weight w d := by
+      rw [aeval_monomial, Finsupp.prod, Finsupp.weight_apply, Finsupp.sum, monomial_eq,
+        Finsupp.prod, map_mul, Polynomial.algebraMap_apply, algebraMap_eq, map_prod,
+        ← Finset.prod_pow_eq_pow_sum, mul_assoc, ← Finset.prod_mul_distrib]
+      congr 2 with i
+      rw [map_pow, mul_pow, ← pow_mul, smul_eq_mul, mul_comm (d i)]
+    rw [h, Polynomial.coeff_C_mul_X_pow, weightedHomogeneousComponent_of_mem
+      (isWeightedHomogeneous_monomial w d r rfl)]
+  | add p q hp hq => simp [hp, hq]
 
 /-- **Weighted homogeneity from homogeneity of a substitution.** If `g i` is homogeneous of
 degree `w i` for every variable `i` and substitution of the `g i` is injective, then a polynomial
