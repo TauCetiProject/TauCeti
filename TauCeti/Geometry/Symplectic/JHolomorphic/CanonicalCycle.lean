@@ -24,9 +24,12 @@ supplies four numerical facts about the classes `[C_i]` in the intersection latt
 * an image of negative square is an exceptional sphere, `C_i · C_i = κ · C_i = -1`;
 * the classes sum to the canonical class, `∑ m_i [C_i] = κ`.
 
-This file records these facts as `TauCeti.IsCanonicalCycle` on an arbitrary integral symmetric
-bilinear form and derives their purely algebraic consequences, following Taubes's analysis of
-canonical cycles:
+This file records these facts as `TauCeti.IsCanonicalCycle` on an arbitrary integral bilinear
+form `B` and derives their purely algebraic consequences, following Taubes's analysis of canonical
+cycles. Symmetry of `B`, as for the intersection form, is not part of the structure: it is an
+explicit hypothesis `B.IsSymm` of every theorem below except
+`TauCeti.IsCanonicalCycle.apply_canonical_eq_apply_self` and
+`TauCeti.IsCanonicalCycle.exists_eq_of_apply_canonical_neg`. The consequences are:
 
 * distinct images are homologically disjoint, `C_i · C_j = 0`;
 * every image has virtual dimension zero, `κ · C_i = C_i · C_i`, and moreover
@@ -49,7 +52,7 @@ square and comparing with `d(C_i) ≥ 0` forces `(m_i - 1) C_i · C_i` and every
 
 * `TauCeti.IsCanonicalCycle`: the numerical properties of a positive cycle of simple
   pseudoholomorphic images in the canonical class.
-* `TauCeti.IsCanonicalCycle.apply_eq_zero`: distinct images are homologically disjoint.
+* `TauCeti.IsCanonicalCycle.apply_eq_zero_of_ne`: distinct images are homologically disjoint.
 * `TauCeti.IsCanonicalCycle.apply_canonical_eq_apply_self`: every image has virtual dimension
   zero.
 * `TauCeti.IsCanonicalCycle.mult_eq_one_of_apply_self_neg`: exceptional spheres occur once.
@@ -85,13 +88,13 @@ structure IsCanonicalCycle (B : BilinForm ℤ H) (κ : H) (C : ι → H) (m : ι
   /-- Every image occurs with positive multiplicity. -/
   mult_pos : ∀ i, 0 < m i
   /-- Distinct images meet nonnegatively. -/
-  apply_nonneg : ∀ {i j}, i ≠ j → 0 ≤ B (C i) (C j)
+  apply_nonneg_of_ne : ∀ {i j}, i ≠ j → 0 ≤ B (C i) (C j)
   /-- Every image has nonnegative virtual dimension `C · C - κ · C`. -/
   apply_canonical_le_apply_self : ∀ i, B κ (C i) ≤ B (C i) (C i)
   /-- An image of negative square is an exceptional sphere: its square is `-1`. -/
-  apply_self_eq_neg_one : ∀ i, B (C i) (C i) < 0 → B (C i) (C i) = -1
+  apply_self_eq_neg_one_of_apply_self_neg : ∀ i, B (C i) (C i) < 0 → B (C i) (C i) = -1
   /-- An image of negative square is an exceptional sphere: it pairs with `κ` to `-1`. -/
-  apply_canonical_eq_neg_one : ∀ i, B (C i) (C i) < 0 → B κ (C i) = -1
+  apply_canonical_eq_neg_one_of_apply_self_neg : ∀ i, B (C i) (C i) < 0 → B κ (C i) = -1
   /-- The cycle represents the canonical class. -/
   sum_eq : ∑ i, m i • C i = κ
 
@@ -116,7 +119,7 @@ private theorem apply_canonical_eq_add_sum [DecidableEq ι] (h : IsCanonicalCycl
 private theorem sum_erase_nonneg [DecidableEq ι] (h : IsCanonicalCycle B κ C m) (i : ι) :
     0 ≤ ∑ j ∈ Finset.univ.erase i, (m j : ℤ) * B (C j) (C i) :=
   Finset.sum_nonneg fun _ hj ↦
-    mul_nonneg (Int.natCast_nonneg _) (h.apply_nonneg (Finset.ne_of_mem_erase hj))
+    mul_nonneg (Int.natCast_nonneg _) (h.apply_nonneg_of_ne (Finset.ne_of_mem_erase hj))
 
 /-- The local rigidity at an image of nonnegative square: no other image meets it, and its
 square vanishes unless its multiplicity is one. -/
@@ -132,7 +135,7 @@ private theorem rigid_of_apply_self_nonneg (h : IsCanonicalCycle B κ C m) {i : 
   have hsum : ∑ j ∈ Finset.univ.erase i, (m j : ℤ) * B (C j) (C i) = 0 := by nlinarith
   refine ⟨fun j hj ↦ ?_, by nlinarith⟩
   have hterm := (Finset.sum_eq_zero_iff_of_nonneg fun k hk ↦ mul_nonneg (Int.natCast_nonneg _)
-    (h.apply_nonneg (Finset.ne_of_mem_erase hk))).1 hsum j (Finset.mem_erase.2 ⟨hj, by simp⟩)
+    (h.apply_nonneg_of_ne (Finset.ne_of_mem_erase hk))).1 hsum j (Finset.mem_erase.2 ⟨hj, by simp⟩)
   have hmj : (0 : ℤ) < m j := by exact_mod_cast h.mult_pos j
   exact (mul_eq_zero.1 hterm).resolve_left hmj.ne'
 
@@ -146,23 +149,25 @@ private theorem apply_eq_zero_of_apply_self_neg (hB : B.IsSymm) (h : IsCanonical
   have bound : ∀ {a b : ι}, a ≠ b → B (C a) (C a) < 0 →
       (m b : ℤ) * B (C b) (C a) ≤ m a - 1 := fun {a b} hab ha ↦ by
     have hκ := h.apply_canonical_eq_add_sum a
-    rw [h.apply_canonical_eq_neg_one a ha, h.apply_self_eq_neg_one a ha] at hκ
+    rw [h.apply_canonical_eq_neg_one_of_apply_self_neg a ha,
+      h.apply_self_eq_neg_one_of_apply_self_neg a ha] at hκ
     have hle := Finset.single_le_sum (f := fun k ↦ (m k : ℤ) * B (C k) (C a))
-      (fun k hk ↦ mul_nonneg (Int.natCast_nonneg _) (h.apply_nonneg (Finset.ne_of_mem_erase hk)))
+      (fun k hk ↦ mul_nonneg (Int.natCast_nonneg _)
+        (h.apply_nonneg_of_ne (Finset.ne_of_mem_erase hk)))
       (Finset.mem_erase.2 ⟨hab.symm, Finset.mem_univ b⟩)
     linarith
   rw [hB.eq]
   have hij' := bound hij hi
   have hji := bound hij.symm hj
   rw [hB.eq] at hji
-  have hnn := h.apply_nonneg hij.symm
+  have hnn := h.apply_nonneg_of_ne hij.symm
   by_contra hne
   have h1 : 1 ≤ B (C j) (C i) := by omega
   linarith [mul_le_mul_of_nonneg_left h1 (Int.natCast_nonneg (m i)),
     mul_le_mul_of_nonneg_left h1 (Int.natCast_nonneg (m j))]
 
 /-- Distinct images of a canonical cycle are homologically disjoint. -/
-theorem apply_eq_zero (hB : B.IsSymm) (h : IsCanonicalCycle B κ C m) {i j : ι} (hij : i ≠ j) :
+theorem apply_eq_zero_of_ne (hB : B.IsSymm) (h : IsCanonicalCycle B κ C m) {i j : ι} (hij : i ≠ j) :
     B (C i) (C j) = 0 := by
   rcases le_or_gt 0 (B (C j) (C j)) with hj | hj
   · exact (h.rigid_of_apply_self_nonneg hj).1 i hij
@@ -177,14 +182,15 @@ theorem apply_canonical_eq_mul (hB : B.IsSymm) (h : IsCanonicalCycle B κ C m) (
     B κ (C i) = m i * B (C i) (C i) := by
   classical
   rw [h.apply_canonical_eq_add_sum, Finset.sum_eq_zero fun j hj ↦ by
-    rw [h.apply_eq_zero hB (Finset.ne_of_mem_erase hj), mul_zero], add_zero]
+    rw [h.apply_eq_zero_of_ne hB (Finset.ne_of_mem_erase hj), mul_zero], add_zero]
 
 /-- Every image of a canonical cycle has virtual dimension zero: `κ · C = C · C`. -/
 theorem apply_canonical_eq_apply_self (h : IsCanonicalCycle B κ C m) (i : ι) :
     B κ (C i) = B (C i) (C i) := by
   classical
   rcases lt_or_ge (B (C i) (C i)) 0 with hi | hi
-  · rw [h.apply_canonical_eq_neg_one i hi, h.apply_self_eq_neg_one i hi]
+  · rw [h.apply_canonical_eq_neg_one_of_apply_self_neg i hi,
+      h.apply_self_eq_neg_one_of_apply_self_neg i hi]
   · obtain ⟨hzero, hmul⟩ := h.rigid_of_apply_self_nonneg hi
     rw [h.apply_canonical_eq_add_sum, Finset.sum_eq_zero fun j hj ↦ by
       rw [hzero j (Finset.ne_of_mem_erase hj), mul_zero]]
@@ -194,7 +200,8 @@ theorem apply_canonical_eq_apply_self (h : IsCanonicalCycle B κ C m) (i : ι) :
 theorem mult_eq_one_of_apply_self_neg (hB : B.IsSymm) (h : IsCanonicalCycle B κ C m) {i : ι}
     (hi : B (C i) (C i) < 0) : m i = 1 := by
   have := h.apply_canonical_eq_mul hB i
-  rw [h.apply_canonical_eq_neg_one i hi, h.apply_self_eq_neg_one i hi] at this
+  rw [h.apply_canonical_eq_neg_one_of_apply_self_neg i hi,
+    h.apply_self_eq_neg_one_of_apply_self_neg i hi] at this
   omega
 
 /-- An image occurring with multiplicity at least two in a canonical cycle has square zero. -/
@@ -217,7 +224,7 @@ theorem apply_canonical_eq_zero_of_one_lt_mult (hB : B.IsSymm) (h : IsCanonicalC
 theorem apply_sum_eq_mul (hB : B.IsSymm) (h : IsCanonicalCycle B κ C m) (a : ι → ℕ) (i : ι) :
     B (∑ j, a j • C j) (C i) = a i * B (C i) (C i) := by
   simp only [map_sum, LinearMap.sum_apply, map_nsmul, LinearMap.smul_apply, nsmul_eq_mul]
-  rw [Finset.sum_eq_single i (fun j _ hj ↦ by rw [h.apply_eq_zero hB hj, mul_zero])
+  rw [Finset.sum_eq_single i (fun j _ hj ↦ by rw [h.apply_eq_zero_of_ne hB hj, mul_zero])
     (by simp)]
 
 /-- Every subcycle `e = ∑ a i • C i`, `a ≤ m`, of a canonical cycle has virtual dimension zero:
@@ -257,7 +264,7 @@ theorem apply_sum_eq_zero_or_eq_neg_one (hB : B.IsSymm) (h : IsCanonicalCycle B 
   obtain ⟨i, rfl⟩ := h.exists_eq_of_apply_canonical_neg hS hpos
   have hneg : B (C i) (C i) < 0 := by rwa [← h.apply_canonical_eq_apply_self]
   have hm := h.mult_eq_one_of_apply_self_neg hB hneg
-  rw [h.apply_sum_eq_mul hB, h.apply_self_eq_neg_one i hneg]
+  rw [h.apply_sum_eq_mul hB, h.apply_self_eq_neg_one_of_apply_self_neg i hneg]
   have : a i = 0 ∨ a i = 1 := by have := ha i; omega
   rcases this with ha0 | ha1
   · simp [ha0]
