@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Probability.Distributions.GeneralizedExtremeValue.Basic
+public import TauCeti.Probability.Distributions.GeneralizedGamma.Relations
 public import TauCeti.Probability.Distributions.GeneralizedGamma.Transforms
 public import TauCeti.Probability.Distributions.Gumbel.Transforms
 import TauCeti.Probability.Distributions.Affine
@@ -38,26 +38,10 @@ namespace TauCeti.Probability
 
 variable {m s ξ : ℝ}
 
-/-- At nonzero shape, a generalized extreme-value law is the affine image of a
-shape-one generalized gamma law with power parameter `(-ξ)⁻¹` and unit scale. -/
-theorem generalizedExtremeValueMeasure_eq_map_generalizedGammaMeasure
-    (hs : 0 < s) (hξ : ξ ≠ 0) (m : ℝ) :
-    generalizedExtremeValueMeasure m s ξ =
-      (generalizedGammaMeasure 1 (-ξ)⁻¹ 1).map
-        (fun x ↦ (m - s / ξ) + (s / ξ) * x) := by
-  rw [generalizedGammaMeasure_of_valid zero_lt_one
-      (inv_ne_zero (neg_ne_zero.mpr hξ)) zero_lt_one,
-    Measure.map_map (by fun_prop) (by fun_prop),
-    generalizedExtremeValueMeasure_of_shape_ne_zero hs hξ, expMeasure]
-  congr 1
-  funext x
-  simp only [Function.comp_apply, inv_inv, one_mul]
-  ring
-
 /-- Positive shape admits exactly the nonpositive exponential rates. In particular, the
 endpoint zero is included even when some positive polynomial moments diverge. -/
 @[simp]
-theorem integrableExpSet_id_generalizedExtremeValueMeasure_of_pos
+theorem integrableExpSet_id_generalizedExtremeValueMeasure_of_shape_pos
     (hs : 0 < s) (hξ : 0 < ξ) (m : ℝ) :
     integrableExpSet id (generalizedExtremeValueMeasure m s ξ) = Iic 0 := by
   rw [generalizedExtremeValueMeasure_eq_map_generalizedGammaMeasure hs hξ.ne',
@@ -121,6 +105,6 @@ theorem integrableExpSet_id_generalizedExtremeValueMeasure (hs : 0 < s) (m ξ : 
     · simp [integrableExpSet_id_generalizedExtremeValueMeasure_of_neg_one_lt hs hξ1 hξ,
         hξ.ne, not_lt.mpr hξ.le, hξ1]
   · simp [integrableExpSet_id_gumbelMeasure hs]
-  · simp [integrableExpSet_id_generalizedExtremeValueMeasure_of_pos hs hξ, hξ]
+  · simp [integrableExpSet_id_generalizedExtremeValueMeasure_of_shape_pos hs hξ, hξ]
 
 end TauCeti.Probability
