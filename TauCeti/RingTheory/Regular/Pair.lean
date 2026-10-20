@@ -89,6 +89,7 @@ theorem koszulPairLeft_apply (x y : R) (c : M) :
   simp only [koszulPairLeft, LinearMap.prod_apply, LinearMap.neg_apply,
     LinearMap.lsmul_apply, Function.prod_apply]
 
+/-- Consecutive differentials in the two-element Koszul complex compose to zero. -/
 @[simp]
 theorem koszulPairRight_comp_koszulPairLeft (x y : R) :
     (koszulPairRight (M := M) x y).comp (koszulPairLeft (M := M) x y) = 0 := by
@@ -179,6 +180,21 @@ theorem exact_koszulPair_of_isWeaklyRegular
   · rintro ⟨c, rfl⟩
     simpa only [LinearMap.comp_apply, LinearMap.zero_apply] using
       LinearMap.congr_fun (koszulPairRight_comp_koszulPairLeft (M := M) x y) c
+
+/-- The first Koszul differential is injective for a weakly regular pair. -/
+theorem koszulPairLeft_injective_of_isWeaklyRegular
+    {x y : R} (hreg : IsWeaklyRegular M [x, y]) :
+    Function.Injective (koszulPairLeft (M := M) x y) := by
+  have hx := ((isWeaklyRegular_cons_iff M x [y]).mp hreg).1
+  intro a b hab
+  apply hx
+  simpa only [koszulPairLeft_apply] using congrArg Prod.snd hab
+
+/-- The second Koszul differential is exact with the quotient by its two-generated ideal. -/
+theorem exact_koszulPairRight_quotient (x y : R) :
+    Function.Exact (koszulPairRight (M := R) x y)
+      (Submodule.mkQ (Ideal.span ({x, y} : Set R))) := by
+  rw [LinearMap.exact_iff, Submodule.ker_mkQ, range_koszulPairRight_eq_span]
 
 /-- Tensoring the two-element Koszul complex with `M` preserves exactness at
 the middle when the pair is weakly regular on `M`. -/

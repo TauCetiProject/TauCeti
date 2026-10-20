@@ -35,4 +35,12 @@ theorem prodScalarLeftEquiv_tmul (a b : R) (m : M) :
     _root_.TensorProduct.prodLeft_tmul, LinearEquiv.prodCongr_apply,
     _root_.TensorProduct.lid_tmul]
 
+@[simp]
+theorem prodScalarLeftEquiv_symm_apply (m n : M) :
+    prodScalarLeftEquiv.symm (m, n) =
+      (1, 0) ⊗ₜ[R] m + (0, 1) ⊗ₜ[R] n := by
+  apply (prodScalarLeftEquiv (R := R) (M := M)).injective
+  simp only [LinearEquiv.apply_symm_apply, map_add, prodScalarLeftEquiv_tmul,
+    one_smul, zero_smul, Prod.mk_add_mk, zero_add, add_zero]
+
 end TauCeti.TensorProduct
