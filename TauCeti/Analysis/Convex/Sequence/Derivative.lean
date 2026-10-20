@@ -15,8 +15,8 @@ public import Mathlib.Analysis.Calculus.Deriv.Mul
 At a finite face of a convex height sequence, the supporting value is affine on
 each side of the face slope in a sufficiently small interval. Its left derivative
 is minus the absolute left endpoint, and its right derivative is minus the absolute
-right endpoint. This identifies the slope multiplicity with the drop in derivative
-and relates supporting values to extremal coefficient indices.
+right endpoint. The supporting value is differentiable exactly when the face is a
+singleton.
 
 The statements allow unbounded finite domains. Finiteness of the face provides a
 strict gap to each adjacent finite slope; no conclusion is asserted at an infinite
@@ -45,12 +45,7 @@ theorem exists_pos_supportingValue_eq_left (hf : IsFiniteFace h σ l u)
     (hh : IsConvexSeq h) :
     ∃ ε > (0 : ℝ), ∀ τ ∈ Icc (σ - ε) σ,
       supportingValue h τ = (((h l).untop₀ - τ * l : ℝ) : EReal) := by
-  obtain ⟨c, hc, hface⟩ := hf.exists_intercept
-  have hl : h l = ((c + σ * l : ℝ) : WithTop ℝ) :=
-    mem_supportingFace.mp (hface.symm.subset ⟨le_rfl, hf.left_le_right⟩)
-  have hthrough : IsSupportingLine h σ ((h l).untop₀ - σ * l) := by
-    rw [hl, WithTop.untop₀_coe, add_sub_cancel_right]
-    exact hc
+  have hthrough := hf.isSupportingLine_untop₀_sub ⟨le_rfl, hf.left_le_right⟩
   have hbounds := (hh.isSupportingLine_iff_unitSlope hf.left_ne_top σ).mp hthrough
   have hgap : ∃ ε > (0 : ℝ), ∀ i, i + 1 = l → h i ≠ ⊤ →
       unitSlope h i ≤ σ - ε := by
@@ -78,12 +73,7 @@ theorem exists_pos_supportingValue_eq_right (hf : IsFiniteFace h σ l u)
     (hh : IsConvexSeq h) :
     ∃ ε > (0 : ℝ), ∀ τ ∈ Icc σ (σ + ε),
       supportingValue h τ = (((h u).untop₀ - τ * u : ℝ) : EReal) := by
-  obtain ⟨c, hc, hface⟩ := hf.exists_intercept
-  have hu : h u = ((c + σ * u : ℝ) : WithTop ℝ) :=
-    mem_supportingFace.mp (hface.symm.subset ⟨hf.left_le_right, le_rfl⟩)
-  have hthrough : IsSupportingLine h σ ((h u).untop₀ - σ * u) := by
-    rw [hu, WithTop.untop₀_coe, add_sub_cancel_right]
-    exact hc
+  have hthrough := hf.isSupportingLine_untop₀_sub ⟨hf.left_le_right, le_rfl⟩
   have hbounds := (hh.isSupportingLine_iff_unitSlope hf.right_ne_top σ).mp hthrough
   have hgap : ∃ ε > (0 : ℝ), h (u + 1) ≠ ⊤ → σ + ε ≤ unitSlope h u := by
     by_cases hn : h (u + 1) ≠ ⊤

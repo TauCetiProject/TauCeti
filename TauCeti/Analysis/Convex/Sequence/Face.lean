@@ -79,7 +79,7 @@ theorem IsConvexSeq.isSupportingLine_iff_unitSlope {h : ℕ → WithTop ℝ}
     · intro hn'
       have hb := hc (n + 1)
       rw [← WithTop.coe_untop₀_of_ne_top hn', WithTop.coe_le_coe] at hb
-      simp only [unitSlope_def, Nat.cast_add, Nat.cast_one] at *
+      simp only [unitSlope_def, Nat.cast_add, Nat.cast_one] at hb ⊢
       linarith
   · rintro ⟨hleft, hright⟩ k
     by_cases hk : h k = ⊤
@@ -178,6 +178,15 @@ interval. -/
 theorem exists_intercept (hf : IsFiniteFace h σ l u) :
     ∃ c : ℝ, IsSupportingLine h σ c ∧ supportingFace h σ c = Set.Icc l u :=
   hf.2
+
+/-- The line of the face slope through any point of a finite face supports the sequence. -/
+theorem isSupportingLine_untop₀_sub (hf : IsFiniteFace h σ l u) {n : ℕ}
+    (hn : n ∈ Set.Icc l u) : IsSupportingLine h σ ((h n).untop₀ - σ * n) := by
+  obtain ⟨c, hc, hface⟩ := hf.exists_intercept
+  have hn' : h n = ((c + σ * n : ℝ) : WithTop ℝ) :=
+    mem_supportingFace.mp (hface.symm.subset hn)
+  rw [hn', WithTop.untop₀_coe, add_sub_cancel_right]
+  exact hc
 
 /-- The intercept cutting out a finite face is unique. -/
 theorem existsUnique_intercept (hf : IsFiniteFace h σ l u) :
