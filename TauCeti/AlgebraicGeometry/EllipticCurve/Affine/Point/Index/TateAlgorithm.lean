@@ -8,6 +8,8 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.Two
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Valuation
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.LocalIndex
+-- Proof-only: centring a node, lifting its tangent directions, and `a₆` associated to `Δ` there.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Henselian
 -- Proof-only: the point-group index at the symbols `Iₙ*` with `n ≥ 1`.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.Four
 -- Proof-only: the point-group index at the symbol `IV*`.
@@ -22,8 +24,6 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.SplitReduction
 import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Reduction.Type
 -- Proof-only: a translation does not change the discriminant.
 import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic
--- Proof-only: the discriminant of an equation with `a₃ = a₄ = 0`.
-import TauCeti.AlgebraicGeometry.EllipticCurve.Weierstrass
 -- Proof-only: membership in the principal maximal ideal.
 import TauCeti.RingTheory.LocalRing.MaximalIdeal.Generator
 
@@ -59,10 +59,11 @@ index is computed by
 The translation does not change the index, because it is defined over the valuation ring
 (`WeierstrassCurve.Affine.index_nonsingularReduction_baseChange_smul`).
 
-For a discrete valuation with perfect residue field this gives the order of `E(F) / E₀(F)` at split
-multiplicative reduction intrinsically: on a minimal equation it is the valuation `v(Δ_min)` of the
-minimal discriminant (Silverman, *The Arithmetic of Elliptic Curves*, VII.6.1), since Tate's
-algorithm stops at `I_{v(Δ_min)}` after a change of variables over the valuation ring.
+For a Henselian discrete valuation ring with perfect residue field this gives the order of
+`E(F) / E₀(F)` at split multiplicative reduction intrinsically: on a minimal equation it is the
+valuation `v(Δ_min)` of the minimal discriminant (Silverman, *The Arithmetic of Elliptic Curves*,
+VII.6.1), since Tate's algorithm stops at `I_{v(Δ_min)}` after a change of variables over the
+valuation ring.
 
 ## Main results
 
@@ -74,8 +75,8 @@ algorithm stops at `I_{v(Δ_min)}` after a change of variables over the valuatio
   reported by Tate's algorithm.
 * `WeierstrassCurve.Affine.index_nonsingularReduction_eq_of_isTateTerminal_I_of_hasTateTangentRoot`:
   at `Iₙ` with `n ≥ 1` and split tangent quadratic, the point-group index is `n`.
-* `WeierstrassCurve.Affine.index_nonsingularReduction_of_hasSplitMultiplicativeReduction`: at split
-  multiplicative reduction, the index of `E₀` for a minimal equation is the valuation of the
+* `WeierstrassCurve.Affine.index_nonsingularReduction_eq_localMinimalDiscriminantValuation`: at
+  split multiplicative reduction, the index of `E₀` for a minimal equation is the valuation of the
   minimal discriminant.
 
 ## References
@@ -89,7 +90,7 @@ algorithm stops at `I_{v(Δ_min)}` after a change of variables over the valuatio
 public section
 
 open IsLocalRing
-open TauCeti.IsLocalRing (mem_maximalIdeal_iff_dvd)
+open TauCeti.IsLocalRing (isUnit_iff_not_dvd mem_maximalIdeal_iff_dvd)
 
 namespace WeierstrassCurve
 
@@ -105,20 +106,18 @@ private theorem exists_variableChange_of_isTateTerminal_I_of_hasTateTangentRoot 
       (∃ α : R, α ^ 2 + (C • W).a₁ * α - (C • W).a₂ = 0) ∧
       ∃ w : Rˣ, (C • W).a₆ = ϖ ^ (n + 1) * w := by
   obtain ⟨h₃, h₄, h₆, hb₂, ⟨c, hc⟩, hn⟩ := isTateTerminal_I_add_one.1 h
-  have hunit {z : R} (hz : ¬ ϖ ∣ z) : IsUnit z := by
-    by_contra hz'
-    exact hz ((mem_maximalIdeal_iff_dvd hϖ).1 ((mem_maximalIdeal z).2 hz'))
   have hres {z : R} (hz : ϖ ∣ z) : residue R z = 0 :=
     (residue_eq_zero_iff _).2 ((mem_maximalIdeal_iff_dvd hϖ).2 hz)
   -- move the node of the reduction to the origin
+  have hb₂' : IsUnit W.b₂ := (isUnit_iff_not_dvd hϖ).2 hb₂
   obtain ⟨r, t, hr, ht, e₃, e₄⟩ := W.exists_translate_a₃_eq_zero_and_a₄_eq_zero
-    ((mem_maximalIdeal_iff_dvd hϖ).2 h₃) ((mem_maximalIdeal_iff_dvd hϖ).2 h₄) (hunit hb₂)
+    ((mem_maximalIdeal_iff_dvd hϖ).2 h₃) ((mem_maximalIdeal_iff_dvd hϖ).2 h₄) hb₂'
   set V := VariableChange.mk 1 r 0 t • W
   have hr0 : residue R r = 0 := (residue_eq_zero_iff _).2 hr
   have ht0 : residue R t = 0 := (residue_eq_zero_iff _).2 ht
   have hVb₂ : IsUnit V.b₂ := by
     rw [← residue_ne_zero_iff_isUnit]
-    simpa [V, variableChange_b₂, hr0] using (residue_ne_zero_iff_isUnit _).2 (hunit hb₂)
+    simpa [V, variableChange_b₂, hr0] using (residue_ne_zero_iff_isUnit _).2 hb₂'
   have hV₆ : residue R V.a₆ = 0 := by
     simp [V, variableChange_a₆, hr0, ht0, hres h₃, hres h₄, hres h₆]
   -- the tangent quadratic keeps its root modulo `ϖ`, which lifts
@@ -129,16 +128,14 @@ private theorem exists_variableChange_of_isTateTerminal_I_of_hasTateTangentRoot 
     simp only [map_sub, map_add, map_mul, map_pow] at h0
     simp [V, variableChange_a₁, variableChange_a₂, hr0]
     linear_combination h0
-  -- `Δ = -a₆ (b₂³ + 432 a₆) = ϖ^(n+1) c`, with `b₂³ + 432 a₆` and `c` units
-  have hw : IsUnit (V.b₂ ^ 3 + 432 * V.a₆) := by
-    rw [← residue_ne_zero_iff_isUnit]
-    simpa [hV₆] using (residue_ne_zero_iff_isUnit _).2 hVb₂
-  have hc' : IsUnit c := hunit fun ⟨d, hd⟩ ↦ hn ⟨d, by rw [hc, hd]; ring⟩
-  have hΔ : -V.a₆ * (V.b₂ ^ 3 + 432 * V.a₆) = ϖ ^ (n + 1) * c :=
-    (Δ_eq_of_a₃_eq_zero_of_a₄_eq_zero e₃ e₄).symm.trans ((variableChange_translate_Δ ..).trans hc)
-  refine ⟨_, e₃, e₄, hVb₂, ⟨α, hα⟩, (hc'.mul hw.unit⁻¹.isUnit).neg.unit, ?_⟩
+  -- `a₆` is associated to `Δ = ϖ^(n+1) c`, with `c` a unit
+  have hc' : IsUnit c := (isUnit_iff_not_dvd hϖ).2 fun ⟨d, hd⟩ ↦ hn ⟨d, by rw [hc, hd]; ring⟩
+  obtain ⟨u, hu⟩ := associated_a₆_Δ_of_a₃_eq_zero_of_a₄_eq_zero e₃ e₄
+    ((residue_eq_zero_iff _).1 hV₆) hVb₂
+  have hΔ : V.a₆ * u = ϖ ^ (n + 1) * c := hu.trans ((variableChange_translate_Δ ..).trans hc)
+  refine ⟨_, e₃, e₄, hVb₂, ⟨α, hα⟩, (hc'.mul u⁻¹.isUnit).unit, ?_⟩
   rw [IsUnit.unit_spec]
-  linear_combination (-(↑hw.unit⁻¹ : R)) * hΔ - V.a₆ * hw.mul_val_inv
+  linear_combination (↑u⁻¹ : R) * hΔ - V.a₆ * u.mul_inv
 
 namespace Affine
 
@@ -268,7 +265,8 @@ theorem index_nonsingularReduction_eq_of_isTateTerminal_I_of_hasTateTangentRoot
   have : W.IsElliptic := ⟨by
     rw [← integralModel_Δ_eq v.valuationSubring, isUnit_iff_ne_zero, map_ne_zero_iff _
       (FaithfulSMul.algebraMap_injective _ F)]
-    exact fun h0 ↦ (isTateTerminal_I_add_one.1 h).2.2.2.2.2 (h0 ▸ dvd_zero _)⟩
+    obtain ⟨-, -, -, -, -, hΔ⟩ := isTateTerminal_I_add_one.1 h
+    exact fun h0 ↦ hΔ (h0 ▸ dvd_zero _)⟩
   refine index_nonsingularReduction_eq_of_tangentQuadratic_root (W := (C.baseChange F • W).toAffine)
     (α := α) ?_ ?_ ?_ ?_ hϖ n.succ_pos ?_
   · rw [← coe_integralModel_a₃ v, hW, e₃, ZeroMemClass.coe_zero]
@@ -288,7 +286,7 @@ with perfect residue field, and let `E` be an elliptic curve over `F` given by a
 with split multiplicative reduction. Then the subgroup `E₀(F)` of points with nonsingular reduction
 has index the valuation of the minimal discriminant. Perfectness of the residue field is used only
 to run Tate's algorithm (`WeierstrassCurve.exists_isTateTerminal`) on the minimal equation. -/
-theorem index_nonsingularReduction_of_hasSplitMultiplicativeReduction
+theorem index_nonsingularReduction_eq_localMinimalDiscriminantValuation
     [IsDiscreteValuationRing v.valuationSubring] [HenselianLocalRing v.valuationSubring]
     [PerfectField (ResidueField v.valuationSubring)] (E : WeierstrassCurve F) [E.IsElliptic]
     [E.HasSplitMultiplicativeReduction v.valuationSubring] :
