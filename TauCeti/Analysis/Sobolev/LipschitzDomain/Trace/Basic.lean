@@ -16,8 +16,8 @@ import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 A smooth cutoff supported inside a Lipschitz boundary chart lets a Sobolev function be
 transported to the whole epigraph of the chart's graph. Its epigraph trace is the localized
 boundary trace, parametrized by `y ↦ e.symm (φ y, y)` and measured using Lebesgue measure on
-the tangential space `E`. This is not yet a trace valued in Hausdorff surface measure on the
-frontier of the original domain.
+the tangential space `E`, not surface measure on the frontier of the original domain;
+`TauCeti.W1p.frontierTrace` glues these local traces into a trace for surface measure.
 
 `W1p.lipschitzChartLocalizeL` performs the cutoff, zero extension past the artificial chart
 boundary, and rigid coordinate change. It has norm at most `2 M`. Composing with the graph

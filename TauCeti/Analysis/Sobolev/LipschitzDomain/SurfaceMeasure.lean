@@ -31,6 +31,9 @@ traces in graph coordinates to traces on the boundary itself.
   with explicit dependence on the Lipschitz constant.
 * `Set.IsLipschitzChartWith.lintegral_frontier_inter_eq`: the weighted area formula in chart
   coordinates.
+* `Set.IsLipschitzChartWith.map_snd_euclideanHausdorffMeasure_frontier_inter_le`: the tangential
+  coordinate pushes surface measure on a frontier patch forward to a bounded multiple of
+  tangential volume.
 
 ## References
 
@@ -130,6 +133,28 @@ theorem euclideanHausdorffMeasure_frontier_inter_le
   rw [← image_image]
   rw [e.symm.isometry.euclideanHausdorffMeasure_image]
   exact h.lipschitzWith.euclideanHausdorffMeasure_normalGraphEmbedding_image_le _
+
+/-- Reading off the tangential coordinate pushes normalized surface measure on the frontier patch
+of a Lipschitz chart forward to at most `(L + 1) ^ dim E` times tangential Lebesgue measure. -/
+theorem map_snd_euclideanHausdorffMeasure_frontier_inter_le
+    (h : Omega.IsLipschitzChartWith L e phi a b) :
+    ((μHE[finrank ℝ E] : Measure F).restrict
+        (frontier Omega ∩ e ⁻¹' TauCeti.normalCylinder a b)).map (fun x ↦ (e x).snd) ≤
+      ((L + 1 : ℝ≥0) : ℝ≥0∞) ^ finrank ℝ E • volume := by
+  refine Measure.le_iff.2 fun S hS ↦ ?_
+  have hm : Measurable fun x : F ↦ (e x).snd :=
+    (WithLp.continuous_snd _ _ _ |>.comp e.continuous).measurable
+  rw [Measure.map_apply hm hS, Measure.restrict_apply (hm hS), Measure.smul_apply, smul_eq_mul]
+  calc
+    _ ≤ μHE[finrank ℝ E] ((fun y ↦ e.symm (TauCeti.normalGraphEmbedding phi y)) '' S) := by
+      refine measure_mono ?_
+      rintro x ⟨hxS, hx⟩
+      rw [← h.image_boundaryParametrization] at hx
+      obtain ⟨y, -, rfl⟩ := hx
+      exact ⟨y, by simpa using hxS, rfl⟩
+    _ ≤ _ := by
+      rw [← image_image, e.symm.isometry.euclideanHausdorffMeasure_image]
+      exact h.lipschitzWith.euclideanHausdorffMeasure_normalGraphEmbedding_image_le S
 
 /-- A set of tangential parameters is Lebesgue-null exactly when the corresponding part of the
 boundary chart is null for normalized surface measure. -/
