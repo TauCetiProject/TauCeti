@@ -264,9 +264,9 @@ theorem Module.free_of_weaklyRegular_pair_generates_maximalIdeal
   exact range_koszulPairRight_subtype_rTensor_injective_of_isWeaklyRegular hregR hregM
 
 /-- Freeness for a pair successively scalar-regular on the ring and module.
-These are the two `IsSMulRegular` conditions for each module, equivalent to
-`IsWeaklyRegular` on `[x, y]`; `IsRegular` additionally requires a nonzero final quotient. -/
-theorem Module.free_of_regular_pair_generates_maximalIdeal
+These hypotheses give `IsWeaklyRegular` on `[x, y]`, without requiring a nonzero final
+quotient. -/
+theorem Module.free_of_weaklyRegular_pair_generates_maximalIdeal_of_isSMulRegular
     [IsLocalRing R] [Module.FinitePresentation R M]
     {x y : R}
     (hspan : Ideal.span ({x, y} : Set R) = IsLocalRing.maximalIdeal R)
@@ -280,6 +280,18 @@ theorem Module.free_of_regular_pair_generates_maximalIdeal
   have hregM : IsWeaklyRegular M [x, y] :=
     IsWeaklyRegular.cons hxM ((isWeaklyRegular_singleton_iff (QuotSMulTop x M) y).mpr hyM)
   exact Module.free_of_weaklyRegular_pair_generates_maximalIdeal hspan hregR hregM
+
+/-- A finitely presented module over a local ring is free if a pair generating the
+maximal ideal is regular on both the ring and the module. -/
+theorem Module.free_of_regular_pair_generates_maximalIdeal
+    [IsLocalRing R] [Module.FinitePresentation R M]
+    {x y : R}
+    (hspan : Ideal.span ({x, y} : Set R) = IsLocalRing.maximalIdeal R)
+    (hregR : IsRegular R [x, y])
+    (hregM : IsRegular M [x, y]) :
+    Module.Free R M :=
+  Module.free_of_weaklyRegular_pair_generates_maximalIdeal hspan
+    hregR.toIsWeaklyRegular hregM.toIsWeaklyRegular
 
 end RegularPair
 
