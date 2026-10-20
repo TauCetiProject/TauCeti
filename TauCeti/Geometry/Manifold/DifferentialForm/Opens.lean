@@ -29,9 +29,10 @@ Hausdorff manifold, to every compactly supported form on `U`, whose extension va
 points outside `U` (`TauCeti.RoughForm.eventually_extendByZero_eq_zero`) and is again compactly
 supported (`TauCeti.RoughForm.isCompact_tsupport_extendByZero`).
 
-The exterior derivative is local, so it commutes with restriction to an open subset
-(`TauCeti.mpullback_inclusion_mextDeriv`) and with extension by zero
-(`TauCeti.RoughForm.mextDeriv_extendByZero`), without any regularity assumption.
+The exterior derivative is local, so, without any regularity assumption, it commutes with
+restriction to an open subset (`TauCeti.mpullback_inclusion_mextDeriv`) and with extension by zero
+whenever the extension vanishes near every point of `W` outside `U`
+(`TauCeti.RoughForm.mextDeriv_extendByZero`).
 
 These are the gluing and cut-off steps of the Mayer–Vietoris sequence of de Rham cohomology, and
 the extension step of its compactly supported variant.
@@ -155,6 +156,22 @@ theorem extendByZero_smul {U : Opens M} (W : Opens M) (c : ℝ) (ω : RoughForm 
   · rw [Pi.smul_apply, extendByZero_apply_of_notMem _ hx, extendByZero_apply_of_notMem _ hx,
       smul_zero]
 
+/-- Viewed as a function to the model fibre, the extension by zero is `Function.extend` along the
+inclusion, so Mathlib's support theory for `Function.extend` applies to it. -/
+private theorem extendByZero_eq_extend {U W : Opens M} (h : U ≤ W) (ω : RoughForm I U F k) :
+    (extendByZero W ω : W → E [⋀^Fin k]→L[ℝ] F) =
+      Function.extend (Opens.inclusion h) (ω : U → E [⋀^Fin k]→L[ℝ] F)
+        (0 : W → E [⋀^Fin k]→L[ℝ] F) := by
+  funext x
+  by_cases hx : (x : M) ∈ U
+  · exact (extendByZero_inclusion h ω ⟨x, hx⟩).trans
+      ((Set.inclusion_injective h).extend_apply _ (0 : W → E [⋀^Fin k]→L[ℝ] F) ⟨x, hx⟩).symm
+  · have hxr : ¬∃ y, Opens.inclusion h y = x := by
+      rintro ⟨y, rfl⟩
+      exact hx y.2
+    exact (extendByZero_apply_of_notMem ω hx).trans
+      (Function.extend_apply' (γ := E [⋀^Fin k]→L[ℝ] F) (f := Opens.inclusion h) ω 0 x hxr).symm
+
 section T2
 
 variable [T2Space M]
@@ -165,19 +182,16 @@ theorem tsupport_extendByZero_subset {U W : Opens M} (h : U ≤ W) {ω : RoughFo
     (hω : IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) ω)) :
     _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) (extendByZero W ω) ⊆
       Opens.inclusion h '' _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) ω := by
-  refine closure_minimal (fun x hx ↦ ?_) (hω.image (continuous_inclusion h)).isClosed
-  by_cases hxU : (x : M) ∈ U
-  · refine ⟨⟨x, hxU⟩, subset_tsupport (α := E [⋀^Fin k]→L[ℝ] F) _ fun h0 ↦ hx ?_, rfl⟩
-    exact (extendByZero_inclusion h ω ⟨x, hxU⟩).trans h0
-  · exact absurd (extendByZero_apply_of_notMem ω hxU) hx
+  rw [extendByZero_eq_extend h]
+  exact HasCompactSupport.tsupport_extend_zero_subset hω (continuous_inclusion h)
 
 /-- On a Hausdorff manifold, the extension by zero of a compactly supported form on an open subset
 `U ≤ W` is compactly supported. -/
 theorem isCompact_tsupport_extendByZero {U W : Opens M} (h : U ≤ W) {ω : RoughForm I U F k}
     (hω : IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) ω)) :
-    IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) (extendByZero W ω)) :=
-  (hω.image (continuous_inclusion h)).of_isClosed_subset
-    (_root_.isClosed_tsupport (α := E [⋀^Fin k]→L[ℝ] F) _) (tsupport_extendByZero_subset h hω)
+    IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) (extendByZero W ω)) := by
+  rw [extendByZero_eq_extend h]
+  exact HasCompactSupport.extend_zero hω (continuous_inclusion h)
 
 /-- On a Hausdorff manifold, the extension by zero of a compactly supported form on an open subset
 `U ≤ W` vanishes near every point of `W` outside `U`. -/
