@@ -26,6 +26,7 @@ follows from the affine criterion and the ring-level theorem
 * `TauCeti.AlgebraicGeometry.isRegular_iff_forall_stalk`: the stalkwise characterization.
 * `TauCeti.AlgebraicGeometry.IsRegular.of_isOpenImmersion`: open subschemes are regular.
 * `TauCeti.AlgebraicGeometry.IsRegular.of_smooth`: schemes smooth over a regular scheme are regular.
+* `TauCeti.AlgebraicGeometry.isRegular_iff_openCover`: regularity is local on an open cover.
 * `TauCeti.AlgebraicGeometry.isRegular_iff_forall_exists_affineOpens`:
   the affine-neighbourhood criterion.
 * `TauCeti.AlgebraicGeometry.isRegular_iff_forall_affineOpens`: the affine-open criterion.
@@ -83,6 +84,19 @@ theorem IsRegular.of_smooth {target : Scheme.{u}} (morphism : X ⟶ target) [Smo
 /-- Every open subscheme of a regular scheme is regular. -/
 instance IsRegular.opens [IsRegular X] (U : X.Opens) : IsRegular U :=
   .of_isOpenImmersion U.ι
+
+/-- A scheme is regular if and only if all members of an open cover are regular. -/
+theorem isRegular_iff_openCover (𝒰 : X.OpenCover) :
+    IsRegular X ↔ ∀ i, IsRegular (𝒰.X i) := by
+  refine ⟨fun _ i ↦ .of_isOpenImmersion (𝒰.f i), fun h ↦ ?_⟩
+  have : IsLocallyNoetherian X :=
+    (isLocallyNoetherian_iff_openCover 𝒰).mpr fun i ↦ (h i).toIsLocallyNoetherian
+  refine ⟨fun point ↦ ?_⟩
+  obtain ⟨source, hSource⟩ := 𝒰.covers point
+  have hSourceRegular :=
+    (isRegularLocalRing_stalk_iff_of_isOpenImmersion (𝒰.f (𝒰.idx point)) source).mpr
+      ((h (𝒰.idx point)).isRegularLocalRing_stalk source)
+  exact hSource ▸ hSourceRegular
 
 /-- The spectrum of a regular ring is regular. -/
 instance isRegular_Spec (R : CommRingCat.{u}) [IsRegularRing R] : IsRegular (Spec R) where
