@@ -18,12 +18,14 @@ import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 # Young's inequality and weighted `ℓ²` estimates for discrete convolution
 
 This file proves the basic `ℓᵖ` estimates for Mathlib's discrete convolution
-`DiscreteConvolution.addConvolution` on an additive group, and the resulting **algebra property
-of weighted `ℓ²` spaces**: for `s > 1 / 2`, the sequences `a : ℤ → E` with
-`∑ₙ ((1 + |n|) ^ s ‖a n‖)² < ∞` are closed under convolution through a continuous bilinear map,
-with an explicit bound. Through Fourier coefficients these are the Sobolev spaces `H^s` of the
-circle, and convolution of coefficients is multiplication of functions, so this is the coefficient
-form of the statement that `H^s` of the circle is an algebra for `s > 1 / 2`.
+`DiscreteConvolution.addConvolution` on an additive group, and the resulting **bilinear
+convolution estimate for weighted `ℓ²` spaces**: for `s > 1 / 2`, convolution through a continuous
+bilinear map `L : E →L E' →L F` sends a pair of sequences `a : ℤ → E`, `b : ℤ → E'` with
+`∑ₙ ((1 + |n|) ^ s ‖a n‖)² < ∞` and `∑ₙ ((1 + |n|) ^ s ‖b n‖)² < ∞` to a sequence `ℤ → F` with
+the same property, with an explicit bound. Through Fourier coefficients these are the Sobolev
+spaces `H^s` of the circle, and convolution of coefficients is multiplication of functions, so
+taking `E = E' = F` and `L` the multiplication gives the coefficient form of the statement that
+`H^s` of the circle is an algebra for `s > 1 / 2`.
 
 All estimates are first proved for unconditional sums in `ℝ≥0∞`, where they need no summability
 hypotheses, and then transferred to real sums.
@@ -40,11 +42,11 @@ hypotheses, and then transferred to real sums.
   `‖ω (f ⋆ g)‖₂² ≤ 2 c² (‖g‖₁² ‖ω f‖₂² + ‖f‖₁² ‖ω g‖₂²)` for a weight with
   `ω (x + y) ≤ c (ω x + ω y)`.
 * `DiscreteConvolution.tsum_sq_one_add_norm_rpow_mul_enorm_addConvolution_le`: the weighted `ℓ²`
-  algebra estimate with weights `(1 + ‖x‖) ^ s`, in `ℝ≥0∞`.
+  bilinear convolution estimate with weights `(1 + ‖x‖) ^ s`, in `ℝ≥0∞`.
 * `DiscreteConvolution.tsum_sq_one_add_abs_rpow_mul_norm_addConvolution_le` and
   `addConvolutionExists_and_summable_sq_one_add_abs_rpow_mul_norm_addConvolution`: for `s > 1 / 2`
-  and a complete target, the weighted `ℓ²` spaces on `ℤ` are closed under convolution: the
-  convolution `a ⋆ b` exists, and
+  and a complete target, convolution maps the weighted `ℓ²` spaces of `E` and `E'` on `ℤ` into
+  that of `F`: the convolution `a ⋆ b` exists, and
   `‖(1 + |n|) ^ s (a ⋆ b)‖₂² ≤ 4 ^ (s + 1) ‖L‖² (∑ₙ (1 + |n|) ^ (-2 s)) ‖(1 + |n|) ^ s a‖₂²
   ‖(1 + |n|) ^ s b‖₂²`.
 
@@ -198,12 +200,13 @@ theorem enorm_addConvolution_le (L : E →L[𝕜] E' →L[𝕜] F) {M : Type*} [
   rw [← mul_assoc]
   exact L.le_opENorm₂ _ _
 
-/-- **The weighted `ℓ²` algebra estimate.** For `s ≥ 0`, convolution through a continuous bilinear
-map `L` satisfies, with the weights `(1 + ‖x‖) ^ s`,
+/-- **The weighted `ℓ²` convolution estimate.** For `s ≥ 0`, convolution through a continuous
+bilinear map `L` satisfies, with the weights `(1 + ‖x‖) ^ s`,
 `‖(1 + ‖x‖) ^ s (a ⋆ b)‖₂² ≤ 4 ^ (s + 1) ‖L‖² (∑' x, (1 + ‖x‖) ^ (-2 s)) ‖(1 + ‖x‖) ^ s a‖₂²
 ‖(1 + ‖x‖) ^ s b‖₂²`.
-The sums are unconditional sums in `ℝ≥0∞`; the bound is finite when `s > 1 / 2` on `ℤ`
-(`TauCeti.summable_one_add_abs_int_rpow`). -/
+The sums are unconditional sums in `ℝ≥0∞`. On `ℤ`, the inverse-weight sum
+`∑' x, (1 + ‖x‖) ^ (-2 s)` is finite when `s > 1 / 2` (`TauCeti.summable_one_add_abs_int_rpow`),
+so the bound is finite whenever the weighted square sums of `a` and `b` are also finite. -/
 theorem tsum_sq_one_add_norm_rpow_mul_enorm_addConvolution_le {G : Type*}
     [SeminormedAddGroup G] (L : E →L[𝕜] E' →L[𝕜] F) {s : ℝ} (hs : 0 ≤ s) (a : G → E)
     (b : G → E') :
@@ -249,7 +252,7 @@ theorem tsum_sq_one_add_norm_rpow_mul_enorm_addConvolution_le {G : Type*}
         · exact TauCeti.sq_tsum_le_tsum_one_add_norm_rpow_mul s α
     _ = _ := by simp only [hω_def, hα, hβ]; rw [← hc]; ring
 
-/-- The weighted `ℓ²` algebra estimate on `ℤ`, as an inequality in `ℝ≥0∞` between real sums. -/
+/-- The weighted `ℓ²` convolution estimate on `ℤ`, as an inequality in `ℝ≥0∞` between real sums. -/
 private theorem ofReal_tsum_sq_one_add_abs_rpow_mul_norm_addConvolution_le
     (L : E →L[𝕜] E' →L[𝕜] F) {s : ℝ} (hs : 1 / 2 < s) {a : ℤ → E} {b : ℤ → E'}
     (ha : Summable fun n : ℤ ↦ ((1 + |(n : ℝ)|) ^ s * ‖a n‖) ^ 2)
@@ -307,7 +310,7 @@ private theorem addConvolutionExists_of_summable_sq_one_add_abs_rpow_mul_norm [C
         rw [ENNReal.tsum_prod (f := fun m n ↦ ‖L‖ₑ * ‖a m‖ₑ * ‖b n‖ₑ)]
         simp only [ENNReal.tsum_mul_left, ENNReal.tsum_mul_right, mul_assoc]
 
-/-- **Weighted `ℓ²` spaces on `ℤ` are algebras under convolution.** For `s > 1 / 2` and a
+/-- **Convolution of weighted `ℓ²` sequences on `ℤ` is weighted `ℓ²`.** For `s > 1 / 2` and a
 complete target, if `(1 + |n|) ^ s ‖a n‖` and `(1 + |n|) ^ s ‖b n‖` are square-summable, then the
 convolution `a ⋆ b` exists, so it is the pointwise convolution sum, and
 `(1 + |n|) ^ s ‖(a ⋆ b) n‖` is square-summable. -/
@@ -322,7 +325,7 @@ theorem addConvolutionExists_and_summable_sq_one_add_abs_rpow_mul_norm_addConvol
       (ofReal_tsum_sq_one_add_abs_rpow_mul_norm_addConvolution_le L hs ha hb))).congr
       fun _ ↦ ENNReal.toReal_ofReal (sq_nonneg _)⟩
 
-/-- **The weighted `ℓ²` algebra estimate on `ℤ`.** For `s > 1 / 2` and a complete target,
+/-- **The weighted `ℓ²` convolution estimate on `ℤ`.** For `s > 1 / 2` and a complete target,
 `∑ₙ ((1 + |n|) ^ s ‖(a ⋆ b) n‖)² ≤ 4 ^ (s + 1) ‖L‖² (∑ₙ (1 + |n|) ^ (-2 s))
 (∑ₙ ((1 + |n|) ^ s ‖a n‖)²) (∑ₙ ((1 + |n|) ^ s ‖b n‖)²)`. -/
 theorem tsum_sq_one_add_abs_rpow_mul_norm_addConvolution_le [CompleteSpace F]
