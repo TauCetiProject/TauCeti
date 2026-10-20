@@ -190,6 +190,32 @@ theorem pullback_id
   rw [pullback_inner]
   simp only [mfderiv_id, ContinuousLinearMap.id_apply, id_eq]
 
+variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+  {H'' : Type*} [TopologicalSpace H''] {K : ModelWithCorners ℝ G H''}
+  {P : Type*} [TopologicalSpace P] [ChartedSpace H'' P] [IsManifold K 1 P]
+
+/-- Pulling a metric back along a composite is the same as pulling it back successively. -/
+theorem pullback_comp
+    [FiniteDimensional ℝ F]
+    (g : ContMDiffRiemannianMetric K n G (fun z : P ↦ TangentSpace K z))
+    (h : N → P) (f : M → N)
+    (hh : ContMDiff J K (n + 1) h) (hf : ContMDiff I J (n + 1) f)
+    (hinjh : ∀ y, Function.Injective (mfderiv J K h y))
+    (hinjf : ∀ x, Function.Injective (mfderiv I J f x)) :
+    g.pullback (h ∘ f) (hh.comp hf) (fun x ↦ by
+      have hhx : MDiffAt h (f x) := (hh (f x)).mdifferentiableAt (by simp)
+      have hfx : MDiffAt f x := (hf x).mdifferentiableAt (by simp)
+      rw [mfderiv_comp x hhx hfx]
+      exact (hinjh (f x)).comp (hinjf x)) =
+      (g.pullback h hh hinjh).pullback f hf hinjf := by
+  apply ext
+  intro x v w
+  rw [pullback_inner, pullback_inner, pullback_inner]
+  have hhx : MDiffAt h (f x) := (hh (f x)).mdifferentiableAt (by simp)
+  have hfx : MDiffAt f x := (hf x).mdifferentiableAt (by simp)
+  rw [mfderiv_comp x hhx hfx]
+  rfl
+
 variable {g : ContMDiffRiemannianMetric J n F (fun y : N ↦ TangentSpace J y)} {f : M → N}
   {hf : ContMDiff I J (n + 1) f} {hinj : ∀ x, Function.Injective (mfderiv I J f x)}
 
