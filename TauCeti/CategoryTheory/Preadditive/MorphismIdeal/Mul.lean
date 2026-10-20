@@ -114,7 +114,8 @@ theorem mul_le_iff {I J K : MorphismIdeal C} :
   exact le_def.mpr fun X Y e he ↦ mul_hom_le_iff.mpr (fun Z g f hg hf ↦ h g f hg hf) he
 
 /-- The product is contained in its left factor: a composite `g ≫ f` with `f` in `I` lies in `I`,
-since `I` is closed under precomposition. In particular the powers of an ideal lie in it. -/
+since `I` is closed under precomposition. In particular every positive power of an ideal lies in
+it. -/
 theorem mul_le_left (I J : MorphismIdeal C) : I * J ≤ I :=
   mul_le_iff.mpr fun _ _ _ g _ _ hf ↦ I.comp_mem_left g hf
 
