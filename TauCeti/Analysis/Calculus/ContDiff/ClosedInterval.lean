@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Extend
-public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
+public import TauCeti.Analysis.Calculus.IteratedDerivWithin
 
 /-!
 # Continuous derivative jets on a closed interval
@@ -110,10 +110,8 @@ theorem contDiffOn_Icc_iff_exists_continuous_jet (hab : a < b) {n : ℕ} :
     · intro j hj
       exact hf.continuousOn_iteratedDerivWithin (by exact_mod_cast hj) (uniqueDiffOn_Icc hab)
     · intro j hj x hx
-      dsimp only
-      rw [iteratedDerivWithin_succ, derivWithin_of_mem_nhds (Icc_mem_nhds hx.1 hx.2)]
-      exact (hf.differentiableOn_iteratedDerivWithin (by exact_mod_cast hj)
-        (uniqueDiffOn_Icc hab)).hasDerivAt (Icc_mem_nhds hx.1 hx.2)
+      exact ContDiffOn.hasDerivAt_iteratedDerivWithin (hf.of_le (by exact_mod_cast hj))
+        (uniqueDiffOn_Icc hab) (Icc_mem_nhds hx.1 hx.2)
   · rintro ⟨J, hzero, hc, hd⟩
     exact contDiffOn_Icc_of_continuous_jet hab hzero hc hd
 
