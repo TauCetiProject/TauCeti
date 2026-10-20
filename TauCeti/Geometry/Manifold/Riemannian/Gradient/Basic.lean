@@ -36,6 +36,8 @@ of `df` on a chart-local frame are `C^n`, and so is the Riesz dual of such a fie
   differential does.
 * `TauCeti.Manifold.contMDiff_mgradient`: the gradient of a `C^{n+1}` function for a `C^n`
   metric is a `C^n` vector field.
+* `TauCeti.Manifold.mdifferentiable_mgradient`: a `C²` function has a differentiable Riemannian
+  gradient section.
 * `TauCeti.Manifold.contMDiff_neg_mgradient`: so is the negative gradient.
 -/
 
@@ -205,6 +207,17 @@ theorem contMDiff_mgradient {n : ℕ∞ω} [IsManifold I (n + 1) M]
   rw [TangentBundle.trivializationAt_baseSet] at hframe
   exact (hf.contMDiffOn.contMDiffOn_mvfderiv_apply hopen hframe le_rfl).contMDiffAt
     (hopen.mem_nhds (mem_chart_source H x))
+
+/-- A `C²` function has a differentiable Riemannian gradient section. -/
+theorem mdifferentiable_mgradient {f : M → ℝ} [IsManifold I 2 M]
+    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+    (hf : ContMDiff I 𝓘(ℝ) 2 f) :
+    MDifferentiable I I.tangent
+      (fun x ↦ (⟨x, mgradient I f x⟩ : TangentBundle I M)) := by
+  let _ : IsManifold I ((1 : ℕ∞ω) + 1) M := by
+    simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
+  exact (contMDiff_mgradient (I := I) (n := 1)
+    (by simpa only [one_add_one_eq_two] using hf)).mdifferentiable (by simp)
 
 /-- **The negative gradient is smooth.** For a `C^n` Riemannian metric, the negative gradient of a
 `C^{n+1}` function is a `C^n` vector field. -/

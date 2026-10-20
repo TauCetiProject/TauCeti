@@ -221,10 +221,7 @@ theorem laplaceBeltrami_rescale_const [IsManifold I 2 M]
     let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
     let _ : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
       IsContMDiffRiemannianBundle.of_le hn
-    let _ : IsManifold I ((1 : ℕ∞ω) + 1) M := by
-      simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
-    exact (TauCeti.Manifold.contMDiff_mgradient (n := 1)
-      (by simpa only [one_add_one_eq_two] using hf)).mdifferentiableAt (by simp)
+    exact TauCeti.Manifold.mdifferentiable_mgradient (I := I) hf x
   have hY' : MDiffAt (T% (c⁻¹ • (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
       ⟨g.toRiemannianMetric⟩; TauCeti.Manifold.mgradient I f))) x :=
     mdifferentiableAt_const.smul_section hY

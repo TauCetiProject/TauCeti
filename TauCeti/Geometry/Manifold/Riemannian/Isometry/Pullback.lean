@@ -105,7 +105,8 @@ theorem scalarCurvature_pullback
   let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
     ⟨(g.pullback Φ hf hinj).toRiemannianMetric⟩
   let _ : RiemannianBundle (fun y : N ↦ TangentSpace J y) := ⟨g.toRiemannianMetric⟩
-  have h := (g.pullbackRiemannianIsometry Φ hf hinj).scalarCurvature_map x
+  have h :=
+    (g.pullbackRiemannianIsometry Φ hf hinj).isLocalRiemannianIsometry.scalarCurvature_map x
   rw [coe_pullbackRiemannianIsometry] at h
   rw [scalarCurvature_def, scalarCurvature_def, h]
 

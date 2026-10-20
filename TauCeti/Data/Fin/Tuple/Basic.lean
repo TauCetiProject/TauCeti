@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Fin.Tuple.Basic
+import Mathlib.Data.Set.Insert
 
 /-!
 # Insertions and appends in tuples
@@ -14,7 +15,8 @@ The positions `k.castSucc` and `k.succ` of `Fin (m + 1)` are adjacent: each one 
 to land on `k` (`Fin.succAbove_castSucc_self`, `Fin.succAbove_succ_self`). This file reads off
 the entry of an insertion at one of them in the other position, and compares updating the two
 insertions there. It also shows how `Fin.snoc` interacts with reindexing along a map extended to
-send the last position to the last position.
+send the last position to the last position. The image of an initial segment under `Fin.cons`
+is obtained by inserting the first entry into the corresponding image for the tail.
 
 ## Main results
 
@@ -113,5 +115,14 @@ theorem init_contractNth_castSucc_last (a : Fin (n + 2) → α) :
   simp only [init, contractNth, val_castSucc, val_last, k.is_lt, ↓reduceIte]
 
 end ContractNth
+
+/-- The image of the first `n + 1` entries of a prepended tuple consists of its first entry
+and the image of the first `n` entries of its tail. -/
+@[simp]
+theorem image_cons_le_eq_insert {α : Type*} {n : ℕ} (x : α) (p : Fin m → α) :
+    Fin.cons x p '' {index | (index : ℕ) ≤ n} =
+      insert x (p '' {index | (index : ℕ) < n}) := by
+  ext element
+  simp [Set.mem_image, Fin.exists_fin_succ, eq_comm, Nat.add_one_le_iff]
 
 end Fin
