@@ -24,10 +24,11 @@ in order with repetitions. A directed *path* repeats no vertex, and a directed *
 walk of positive length that repeats no vertex other than its common endpoints. Since the target
 of each traversed arrow is a later vertex of the walk, neither repeats an arrow; this is what
 bounds the value a path or cycle places on a single arrow in flow augmentation. Every walk
-contains a path between the same endpoints that uses only arrows of the walk. The *bottleneck* of
-a walk for capacities `c` is the least capacity of an arrow it traverses, and a vertex is
-*positively reachable* from another when some walk joins them along arrows of positive capacity;
-for residual capacities these are augmenting walks.
+contains a path between the same endpoints that uses only arrows of the walk, and every closed
+walk of positive length contains a cycle at the same vertex that uses only arrows of the walk.
+The *bottleneck* of a walk for capacities `c` is the least capacity of an arrow it traverses, and
+a vertex is *positively reachable* from another when some walk joins them along arrows of positive
+capacity; for residual capacities these are augmenting walks.
 
 ## Main definitions
 
@@ -46,6 +47,8 @@ for residual capacities these are augmenting walks.
   cycles traverse every arrow at most once.
 * `TauCeti.ArrowWalk.exists_isPath_arrows_subset`: every walk contains a path with the same
   endpoints.
+* `TauCeti.ArrowWalk.exists_isCycle_arrows_subset`: every closed walk of positive length contains
+  a cycle.
 * `TauCeti.ArrowWalk.le_bottleneck_iff` and `TauCeti.ArrowWalk.exists_mem_bottleneck_eq`: the
   bottleneck is the minimum of the capacities along the walk.
 * `TauCeti.positiveReachable_iff_exists_isPath` and `TauCeti.positiveReachable_iff_reflTransGen`:
@@ -209,6 +212,28 @@ theorem exists_isPath_arrows_subset {s t : V} (p : ArrowWalk Q s t) :
         @Quiver.Path.vertices_cons V ⟨Q⟩ _ _ _ p' e
       refine ⟨p'.cons e, by rw [isPath_def, hv]; exact hp'.concat hy, ?_⟩
       rw [arrows_cons]
+      exact List.append_subset.2
+        ⟨List.subset_append_of_subset_left _ hsub, List.subset_append_right _ _⟩
+
+/-- **Cycle extraction.** Every closed walk of positive length contains a cycle at the same vertex
+that traverses only arrows of the walk. -/
+theorem exists_isCycle_arrows_subset {s : V} (c : ArrowWalk Q s s) (hc : 0 < c.length) :
+    ∃ c' : ArrowWalk Q s s, c'.IsCycle ∧ c'.arrows ⊆ c.arrows := by
+  cases c with
+  | nil => simp at hc
+  | @cons u _ p e =>
+    obtain ⟨p', hp', hsub⟩ := exists_isPath_arrows_subset (Q := Q) p
+    refine ⟨p'.cons e, ⟨by simp, ?_⟩, ?_⟩
+    · have hv : (p'.cons e).vertices = p'.vertices.concat s :=
+        @Quiver.Path.vertices_cons V ⟨Q⟩ _ _ _ p' e
+      have hne : p'.vertices ≠ [] := @Quiver.Path.vertices_ne_nil V ⟨Q⟩ _ _ p'
+      have hh : p'.vertices.head hne = s := @Quiver.Path.vertices_head_eq V ⟨Q⟩ _ _ p' hne
+      have hhead : p'.vertices = s :: p'.vertices.tail := by
+        conv_lhs => rw [← List.cons_head_tail hne, hh]
+      rw [isPath_def, hhead, List.nodup_cons] at hp'
+      rw [hv, List.concat_eq_append, List.tail_append_of_ne_nil hne]
+      exact hp'.2.append (List.nodup_singleton s) (List.disjoint_singleton.2 hp'.1)
+    · rw [arrows_cons, arrows_cons]
       exact List.append_subset.2
         ⟨List.subset_append_of_subset_left _ hsub, List.subset_append_right _ _⟩
 
