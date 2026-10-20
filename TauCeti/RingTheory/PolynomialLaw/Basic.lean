@@ -27,7 +27,8 @@ of degree one (see `TauCeti.RingTheory.PolynomialLaw.Homogeneous`).
 
 ## References
 
-* [N. Roby, *Lois polynômes et lois formelles en théorie des modules*][Roby-1963]
+* N. Roby, *Lois polynômes et lois formelles en théorie des modules*, Ann. Sci. École Norm.
+  Sup. (3) 80 (1963), 213-348
 -/
 
 public section

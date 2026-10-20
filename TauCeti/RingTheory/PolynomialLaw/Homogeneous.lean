@@ -37,12 +37,15 @@ Homogeneous laws of degree `d` are the objects represented by the degree-`d` div
   a law homogeneous of degree one is additive after every scalar extension.
 * `PolynomialLaw.IsHomogeneousOfDegree.toLinearMap`: the ground map of a law homogeneous of degree
   one, as a linear map, whose polynomial law is the original law.
+* `LinearMap.toLinearMap_isHomogeneousOfDegree_toPolynomialLaw`: conversely, the linear map
+  recovered from `u.toPolynomialLaw` is `u`.
 * `PolynomialLaw.isHomogeneousOfDegree_one_iff`: a law is homogeneous of degree one if and only
   if it is the polynomial law `u.toPolynomialLaw` of a linear map `u`.
 
 ## References
 
-* [N. Roby, *Lois polynômes et lois formelles en théorie des modules*][Roby-1963]
+* N. Roby, *Lois polynômes et lois formelles en théorie des modules*, Ann. Sci. École Norm.
+  Sup. (3) 80 (1963), 213-348
 * [G. Chenevier, *The p-adic analytic space of pseudocharacters of a profinite group and
   pseudorepresentations over arbitrary rings*, §1.1](https://arxiv.org/abs/0809.0415)
 -/
@@ -259,3 +262,11 @@ theorem isHomogeneousOfDegree_one_iff {f : M →ₚₗ[R] N} :
     fun ⟨u, hu⟩ ↦ hu ▸ u.isHomogeneousOfDegree_toPolynomialLaw⟩
 
 end PolynomialLaw
+
+/-- The linear map recovered from the polynomial law of a linear map `u` is `u`. -/
+@[simp]
+theorem LinearMap.toLinearMap_isHomogeneousOfDegree_toPolynomialLaw {R : Type u}
+    [CommSemiring R] {M N : Type*} [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+    (u : M →ₗ[R] N) : u.isHomogeneousOfDegree_toPolynomialLaw.toLinearMap = u := by
+  ext m
+  simp
