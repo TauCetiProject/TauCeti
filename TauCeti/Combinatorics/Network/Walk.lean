@@ -245,6 +245,11 @@ theorem lt_bottleneck_iff {x : K} :
   obtain ⟨a, ha, hb⟩ := exists_mem_bottleneck_eq (c := c) (hne := hne)
   exact hb ▸ h a ha
 
+/-- The bottleneck lies in every set that contains the capacities along the walk. -/
+theorem bottleneck_mem {A : Set K} (h : ∀ a ∈ p.arrows, c a.2.2 ∈ A) : p.bottleneck c hne ∈ A := by
+  obtain ⟨a, ha, hb⟩ := exists_mem_bottleneck_eq (c := c) (hne := hne)
+  exact hb ▸ h a ha
+
 end Bottleneck
 
 end ArrowWalk

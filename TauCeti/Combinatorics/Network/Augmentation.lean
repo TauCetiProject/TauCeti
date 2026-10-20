@@ -48,6 +48,8 @@ and upper bounds and preserves every excess: this is cycle augmentation of bound
   amount.
 * `TauCeti.Flow.val_lt_val_augmentBottleneck`: augmentation along an augmenting `s`–`t` path by its
   bottleneck strictly increases the value.
+* `TauCeti.Flow.augmentWalk_mem` and `TauCeti.Flow.augmentBottleneck_mem`: augmentation
+  preserves values in an additive subgroup that contains the capacities.
 * `TauCeti.residualUpdate_walkAssignment_mem_Icc` and
   `TauCeti.excessAt_residualUpdate_walkAssignment_self`: augmentation along a residual walk
   preserves feasibility, and along a closed walk it also preserves every excess.
@@ -280,6 +282,13 @@ augmenting amount. -/
 theorem val_augmentWalk (hst : s ≠ t) : (f.augmentWalk p hp hq hle).val = f.val + q := by
   rw [augmentWalk, toBoundedFlow_augment, BoundedFlow.val_update, val_walkFlow hst]
 
+/-- Augmenting a flow with values in an additive subgroup along a residual walk, by an amount in
+the subgroup, gives a flow with values in the subgroup. -/
+theorem augmentWalk_mem {H : AddSubgroup K} (hf : ∀ ⦃v w⦄ (e : Q v w), f.toFun e ∈ H)
+    (hqH : q ∈ H) {v w : V} (e : Q v w) : (f.augmentWalk p hp hq hle).toFun e ∈ H := by
+  rw [augmentWalk_toFun]
+  exact residualUpdate_mem H hf (fun _ _ ↦ walkAssignment_mem p hqH) e
+
 end Flow
 
 end PartialOrder
@@ -318,6 +327,16 @@ theorem val_augmentBottleneck (hst : s ≠ t) :
     (f.augmentBottleneck p hp hne).val =
       f.val + p.bottleneck (residualCapacity 0 cap f.toFun) hne :=
   val_augmentWalk hst
+
+/-- Augmenting by the bottleneck preserves values in an additive subgroup that contains the
+capacities. -/
+theorem augmentBottleneck_mem {H : AddSubgroup K} (hcap : ∀ ⦃v w⦄ (e : Q v w), cap e ∈ H)
+    (hf : ∀ ⦃v w⦄ (e : Q v w), f.toFun e ∈ H) {v w : V} (e : Q v w) :
+    (f.augmentBottleneck p hp hne).toFun e ∈ H := by
+  rw [augmentBottleneck_toFun]
+  refine residualUpdate_mem H hf (fun _ _ ↦ walkAssignment_mem p ?_) e
+  exact ArrowWalk.bottleneck_mem fun a _ ↦
+    residualCapacity_mem H (fun _ _ _ ↦ zero_mem H) hcap hf a.2.2
 
 /-- **Augmentation along an augmenting path.** If every arrow of a residual walk between distinct
 terminals has positive residual capacity, as on an augmenting path, then augmenting by the
