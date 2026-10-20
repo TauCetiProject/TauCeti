@@ -190,7 +190,7 @@ variable {R : Type*} [Semiring R]
 exponents strictly less than `N`. The lower bound on a Laurent series makes this a finite sum. -/
 noncomputable def trunc (N : ℤ) : R⸨X⸩ →ₗ[R] R[T;T⁻¹] where
   toFun f := AddMonoidAlgebra.ofCoeff <| Finsupp.ofSupportFinite
-    (HahnSeries.truncLT N f).coeff (TauCeti.support_truncLT_finite N f)
+    (HahnSeries.truncLT N f).coeff (TauCeti.finite_support_truncLT N f)
   map_add' f g := by
     ext n
     change (HahnSeries.truncLT N (f + g)).coeff n =

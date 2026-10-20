@@ -124,7 +124,7 @@ end TauCeti.LaurentSeries
 namespace TauCeti
 
 /-- Truncating a Laurent series below an integer cutoff gives finite support. -/
-theorem support_truncLT_finite {A : Type*} [Zero A] (a : ℤ) (f : A⸨X⸩) :
+theorem finite_support_truncLT {A : Type*} [Zero A] (a : ℤ) (f : A⸨X⸩) :
     (HahnSeries.truncLT a f).support.Finite := by
   apply (Set.finite_Ico f.order a).subset
   intro n hn
