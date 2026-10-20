@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.Dirichlet.Basic
+public import TauCeti.MeasureTheory.MeasurableSpace.StdSimplex
 import TauCeti.Probability.Distributions.Gamma.Measurability
 
 /-!
@@ -13,6 +14,8 @@ import TauCeti.Probability.Distributions.Gamma.Measurability
 
 The Dirichlet law depends measurably on its concentration vector.  Thus a measurable random
 concentration vector can be composed with `dirichletMeasure` to give a measure-valued kernel.
+The coordinate vector can also be read as a nonnegative simplex parameter almost surely,
+using a measurable extension of the inverse weight map for subsequent mixtures.
 
 The result covers the totalized family: the measure is zero when the coordinate type is empty or a
 concentration parameter is nonpositive, while on the valid region it is the normalized image of a
@@ -61,6 +64,27 @@ theorem measurable_dirichletMeasure :
     have hcoord : Measurable
         (fun q : (ι → ℝ) × (ι → ℝ) ↦ ((q.1 i, (1 : ℝ)), q.2 i)) := by fun_prop
     exact measurable_uncurry_gammaPDF.comp hcoord
+
+open scoped NNReal in
+/-- Reading a Dirichlet vector through a simplex-weight extension preserves its coordinates
+almost surely, independently of the chosen fallback point. -/
+theorem ae_extendWeights_dirichletMeasure [Nonempty ι] {a : ι → ℝ} (ha : ∀ i, 0 < a i)
+    (p : Convexity.StdSimplex ℝ≥0 ι) :
+    ∀ᵐ x ∂dirichletMeasure a, ∀ i,
+      ((p.extendWeights (fun j ↦ (x j).toNNReal)).weights i : ℝ) = x i := by
+  classical
+  filter_upwards [ae_pos_dirichletMeasure ha, ae_sum_eq_one_dirichletMeasure ha] with x hx hsum
+  let q : Convexity.StdSimplex ℝ≥0 ι := {
+    weights := Finsupp.equivFunOnFinite.symm (fun i ↦ (x i).toNNReal)
+    nonneg := fun _ ↦ bot_le
+    total := by
+      rw [Finsupp.sum_fintype _ _ (by simp)]
+      apply NNReal.coe_injective
+      simpa [Real.toNNReal_of_nonneg (hx _).le] using hsum }
+  have hp : p.extendWeights (fun i ↦ (x i).toNNReal) = q := p.extendWeights_weights q
+  intro i
+  rw [hp]
+  exact Real.coe_toNNReal _ (hx i).le
 
 end Probability
 
