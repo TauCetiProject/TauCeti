@@ -186,11 +186,6 @@ theorem fstPoint_ne_sndPoint (d : FlagPairData ι Flag X) (f g : Flag) :
   obtain ⟨_, hbt⟩ := Prod.ext_iff.mp (flagPoint_injective d h')
   simp at hbt
 
-/-- The second point of a flag pair is never the first point of a flag pair. -/
-theorem sndPoint_ne_fstPoint (d : FlagPairData ι Flag X) (f g : Flag) :
-    sndPoint d f ≠ fstPoint d g :=
-  fun h => fstPoint_ne_sndPoint d g f h.symm
-
 /-- A flag point belongs to a unique flag pair. -/
 theorem eq_of_flagPoint_mem (d : FlagPairData ι Flag X) {f g : Flag} {p : Σ i, X i}
     (hp : p = fstPoint d f ∨ p = sndPoint d f)
@@ -198,7 +193,7 @@ theorem eq_of_flagPoint_mem (d : FlagPairData ι Flag X) {f g : Flag} {p : Σ i,
   rcases hp with hp | hp <;> rcases hq with hq | hq
   · exact fstPoint_injective d (hp.symm.trans hq)
   · exact absurd (hp.symm.trans hq) (fstPoint_ne_sndPoint d f g)
-  · exact absurd (hp.symm.trans hq) (sndPoint_ne_fstPoint d f g)
+  · exact absurd (hp.symm.trans hq) (fun h => fstPoint_ne_sndPoint d g f h.symm)
   · exact sndPoint_injective d (hp.symm.trans hq)
 
 /-- The generating relation of the gluing: two points of the disjoint union are related when they
@@ -222,7 +217,7 @@ theorem eq_of_flagRel_of_flagRel (d : FlagPairData ι Flag X) {x y z : Σ i, X i
   obtain ⟨g, hg⟩ := h₂
   rcases hf with ⟨hxf, hyf⟩ | ⟨hxf, hyf⟩
   · rcases hg with ⟨hyg, hzg⟩ | ⟨hyg, hzg⟩
-    · exact absurd (hyf.symm.trans hyg) (sndPoint_ne_fstPoint d f g)
+    · exact absurd (hyf.symm.trans hyg) (fun h => fstPoint_ne_sndPoint d g f h.symm)
     · have hfg : f = g := eq_of_flagPoint_mem d (p := y) (Or.inr hyf) (Or.inr hyg)
       exact hxf.trans ((congrArg (fun f => fstPoint d f) hfg).trans hzg.symm)
   · rcases hg with ⟨hyg, hzg⟩ | ⟨hyg, hzg⟩
@@ -394,6 +389,17 @@ agrees with `g` on the image of a point of the disjoint union. -/
     GluedCurve.lift d g hg (Quotient.mk (gluedRelSetoid d) x) = g x := by
   unfold GluedCurve.lift
   exact Quotient.lift_mk g _ x
+
+/-- **The lift is unique.**  A map out of the glued curve that agrees with `g` on the images
+of the points of the disjoint union is the lift of `g`. -/
+theorem lift_unique (d : FlagPairData ι Flag X) {Y : Type*}
+    (g : (Σ i, X i) → Y) (hg : ∀ f, g (fstPoint d f) = g (sndPoint d f))
+    (h : GluedCurve d → Y) (hh : ∀ x, h (Quotient.mk (gluedRelSetoid d) x) = g x) :
+    h = GluedCurve.lift d g hg := by
+  funext q
+  refine Quotient.inductionOn q ?_
+  intro x
+  simpa using hh x
 
 /-- **A continuous map descends to a continuous map.**  The lift of a continuous map out of the
 disjoint union that is constant on the two points of every flag pair is continuous. -/
@@ -626,9 +632,14 @@ to the points of the disjoint union that are not flag points, is a homeomorphism
 the complement of the node set in the glued curve. -/
 def quotientMapOnComplNodeSetHomeomorph (d : FlagPairData ι Flag X)
     [∀ i, TopologicalSpace (X i)] [∀ i, T2Space (X i)] [Finite Flag] :
-    ↑((flagPointSet d)ᶜ) ≃ₜ ↑(complNodeSet d) :=
-  IsHomeomorph.homeomorph (quotientMapOnComplNodeSet d)
-    (isHomeomorph_quotientMapOnComplNodeSet d)
+    ↑((flagPointSet d)ᶜ) ≃ₜ ↑(complNodeSet d) where
+  toEquiv := Equiv.ofBijective (quotientMapOnComplNodeSet d)
+    (isHomeomorph_quotientMapOnComplNodeSet d).bijective
+  continuous_toFun := (isHomeomorph_quotientMapOnComplNodeSet d).continuous
+  continuous_invFun :=
+    (Equiv.ofBijective (quotientMapOnComplNodeSet d)
+      (isHomeomorph_quotientMapOnComplNodeSet d).bijective).continuous_symm_iff.2
+      (isHomeomorph_quotientMapOnComplNodeSet d).isOpenMap
 
 /-- The quotient map on the complement of the node set sends a point of the disjoint union to its
 image in the glued curve. -/
@@ -645,8 +656,8 @@ to its image in the glued curve. -/
     (x : ↑((flagPointSet d)ᶜ)) :
     ((quotientMapOnComplNodeSetHomeomorph d x).val : GluedCurve d) =
       Quotient.mk (gluedRelSetoid d) x.1 := by
-  unfold quotientMapOnComplNodeSetHomeomorph
-  rfl
+  change (quotientMapOnComplNodeSet d x).val = _
+  exact quotientMapOnComplNodeSet_apply d x
 
 end NodalGluing
 
