@@ -17,8 +17,8 @@ Let `V` be a finite additive subgroup of a field `K`, with additive polynomial
 splits in `L` into distinct linear factors. Hence `L / K` is Galois, every automorphism `σ`
 translates `y` by an element `σ y - y` of `V`, and this translation is an injective homomorphism
 `Gal(L/K) → V`. In particular `[L : K] ≤ |V|`, and when equality holds the Galois group is `V`.
-The splitting and translation results hold more generally in a domain `K`-algebra containing
-the root `y`.
+The splitting results hold in any commutative `K`-algebra containing the root `y`; the translation
+results require only a domain `K`-algebra.
 
 For `V` the prime field of a field of characteristic `p` this is the Artin–Schreier theory of
 `TauCeti/FieldTheory/ArtinSchreier/Basic.lean`. For larger `V` the Galois group is elementary
@@ -55,9 +55,9 @@ namespace AddSubgroup
 variable {K L : Type*} [Field K]
 variable (V : AddSubgroup K) [Fintype V] {u : K} {y : L}
 
-section Domain
+section CommRing
 
-variable [CommRing L] [IsDomain L] [Algebra K L]
+variable [CommRing L] [Algebra K L]
 variable (hy : aeval y V.additivePolynomial = algebraMap K L u)
 include hy
 
@@ -75,11 +75,19 @@ theorem map_additivePolynomial_sub_C_eq_prod :
   rw [IsScalarTower.algebraMap_apply K L L[X], algebraMap_eq, C_add]
   ring
 
-/-- `a_V - u` splits in any domain `K`-algebra containing one of its roots. -/
+/-- `a_V - u` splits in any commutative `K`-algebra containing one of its roots. -/
 theorem splits_additivePolynomial_sub_C :
     ((V.additivePolynomial - C u).map (algebraMap K L)).Splits := by
   rw [V.map_additivePolynomial_sub_C_eq_prod hy]
   exact Splits.prod fun c _ ↦ Splits.X_sub_C _
+
+end CommRing
+
+section Domain
+
+variable [CommRing L] [IsDomain L] [Algebra K L]
+variable (hy : aeval y V.additivePolynomial = algebraMap K L u)
+include hy
 
 /-- Every `K`-automorphism of `L` translates the root `y` by an element of `V`. -/
 theorem exists_mem_aut_apply_eq_add_of_aeval_additivePolynomial_eq (σ : Gal(L/K)) :

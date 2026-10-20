@@ -18,13 +18,14 @@ For a finite additive subgroup `V` of a commutative ring `R`, the monic polynomi
 is Lagrange's `nodal` polynomial at the nodes `V`; it has degree `|V|`. Since `V` is a subgroup,
 translating by an element of `V` permutes the factors, so `a_V (x + c) = a_V x` for `c ∈ V`.
 
-Over a field `K`, evaluation of `a_V` in any domain `A` is additive:
+Over a field `K`, evaluation of `a_V` in any commutative `K`-algebra `A` is additive:
 
 `a_V (x + y) = a_V x + a_V y`.
 
-For fixed `y`, the polynomial `a_V (X + y) - a_V X - a_V y` over `A` has degree less than `|V|`,
-since both `a_V (X + y)` and `a_V X` are monic of degree `|V|`, and it vanishes at the `|V|`
-distinct points of `V`. No characteristic hypothesis is needed; in characteristic zero the only
+In a domain, the polynomial `a_V (X + y) - a_V X - a_V y` has degree less than `|V|`, since both
+`a_V (X + y)` and `a_V X` are monic of degree `|V|`, and it vanishes at the `|V|` distinct points
+of `V`. This gives an identity in a polynomial domain, which evaluates to the identity in any
+commutative `K`-algebra. No characteristic hypothesis is needed; in characteristic zero the only
 finite additive subgroup is `0`. In characteristic `p`, a monic separable additive polynomial all
 of whose roots lie in `K` is `a_V` for its group of roots `V`.
 
@@ -136,47 +137,52 @@ end CommRing
 section Field
 
 variable {K : Type*} [Field K] (V : AddSubgroup K) [Fintype V]
-variable {A : Type*} [CommRing A] [IsDomain A] [Algebra K A]
+variable {A : Type*} [CommRing A] [Algebra K A]
 
 /-- The roots of `a_V` in a domain are exactly the elements of `V`. -/
-theorem aeval_additivePolynomial_eq_zero_iff {x : A} :
+theorem aeval_additivePolynomial_eq_zero_iff [IsDomain A] {x : A} :
     aeval x V.additivePolynomial = 0 ↔ ∃ c ∈ V, algebraMap K A c = x := by
   simp only [aeval_additivePolynomial, Finset.prod_eq_zero_iff, Finset.mem_univ, true_and,
     sub_eq_zero, Subtype.exists, exists_prop]
   exact exists_congr fun c ↦ and_congr_right fun _ ↦ eq_comm
 
 /-- **Additivity of `a_V`.** For a finite additive subgroup `V` of a field `K`, evaluation of
-`a_V` in any domain `A` that is a `K`-algebra is additive: `a_V (x + y) = a_V x + a_V y`. -/
+`a_V` in any commutative `K`-algebra is additive: `a_V (x + y) = a_V x + a_V y`. -/
 @[simp]
 theorem aeval_additivePolynomial_add (x y : A) :
     aeval (x + y) V.additivePolynomial =
       aeval x V.additivePolynomial + aeval y V.additivePolynomial := by
-  -- For fixed `y`, the polynomial `a_V (X + y) - a_V X - a_V y` has degree less than `|V|` and
-  -- vanishes on `V`, so it is zero.
-  set f := V.additivePolynomial.map (algebraMap K A)
-  have hf : f.degree = Fintype.card V := by
-    rw [degree_map, degree_additivePolynomial]
-  have hf0 : f ≠ 0 := (V.monic_additivePolynomial.map _).ne_zero
-  -- `taylor y f = f (X + y)` and `f` are monic of degree `|V|`, so their difference has smaller
-  -- degree, and so does `taylor y f - f - a_V y`.
-  have hlt : (taylor y f - f - C (aeval y V.additivePolynomial)).degree <
-      (Finset.univ : Finset V).card := by
-    rw [Finset.card_univ, ← hf]
-    refine lt_of_le_of_lt (degree_sub_le _ _) (max_lt ?_ (degree_C_le.trans_lt ?_))
-    · rw [← degree_taylor f y]
-      exact degree_sub_lt_left (degree_taylor f y) ((taylor_eq_zero y f).not.mpr hf0)
-        (leadingCoeff_taylor y f)
-    · rw [hf]
-      exact_mod_cast Fintype.card_pos
-  have hzero := eq_zero_of_degree_lt_of_eval_index_eq_zero (s := Finset.univ)
-    (v := fun c : V ↦ algebraMap K A c)
-    ((algebraMap K A).injective.comp Subtype.val_injective).injOn hlt fun c _ ↦ by
-      simp only [eval_sub, taylor_eval, eval_C, f, eval_map_algebraMap]
-      rw [add_comm, aeval_additivePolynomial_add_algebraMap _ _ c.2,
-        aeval_additivePolynomial_algebraMap _ c.2, sub_zero, sub_self]
-  have := congrArg (eval x) hzero
-  simp only [eval_sub, taylor_eval, eval_C, f, eval_map_algebraMap, eval_zero] at this
-  rw [← sub_eq_zero, ← sub_sub, this]
+  -- In a domain, the degree bound and the values on `V` force the difference to vanish.
+  have hadd (s t : K[X][X]) :
+      aeval (s + t) V.additivePolynomial =
+        aeval s V.additivePolynomial + aeval t V.additivePolynomial := by
+    set f := V.additivePolynomial.map (algebraMap K K[X][X])
+    have hf : f.degree = Fintype.card V := by
+      rw [degree_map, degree_additivePolynomial]
+    have hf0 : f ≠ 0 := (V.monic_additivePolynomial.map _).ne_zero
+    -- The equal leading terms of `taylor t f` and `f` cancel.
+    have hlt : (taylor t f - f - C (aeval t V.additivePolynomial)).degree <
+        (Finset.univ : Finset V).card := by
+      rw [Finset.card_univ, ← hf]
+      refine lt_of_le_of_lt (degree_sub_le _ _) (max_lt ?_ (degree_C_le.trans_lt ?_))
+      · rw [← degree_taylor f t]
+        exact degree_sub_lt_left (degree_taylor f t) ((taylor_eq_zero t f).not.mpr hf0)
+          (leadingCoeff_taylor t f)
+      · rw [hf]
+        exact_mod_cast Fintype.card_pos
+    have hzero := eq_zero_of_degree_lt_of_eval_index_eq_zero (s := Finset.univ)
+      (v := fun c : V ↦ algebraMap K K[X][X] c)
+      ((algebraMap K K[X][X]).injective.comp Subtype.val_injective).injOn hlt fun c _ ↦ by
+        simp only [eval_sub, taylor_eval, eval_C, f, eval_map_algebraMap]
+        rw [add_comm, aeval_additivePolynomial_add_algebraMap _ _ c.2,
+          aeval_additivePolynomial_algebraMap _ c.2, sub_zero, sub_self]
+    have := congrArg (eval s) hzero
+    simp only [eval_sub, taylor_eval, eval_C, f, eval_map_algebraMap, eval_zero] at this
+    rw [← sub_eq_zero, ← sub_sub, this]
+  -- Evaluate the universal identity at the two elements of the commutative algebra.
+  let φ : K[X][X] →ₐ[K] A := aevalTower (aeval y) x
+  have h := congrArg φ (hadd (X : K[X][X]) (C X))
+  simpa only [map_add, ← aeval_algHom_apply, φ, aevalTower_X, aevalTower_C, aeval_X] using h
 
 @[simp]
 theorem aeval_additivePolynomial_sub (x y : A) :
