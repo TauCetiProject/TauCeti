@@ -23,6 +23,9 @@ computed in any number field `K` containing `x` as `H_K(x) ^ (1 / [K : ℚ])`. E
 different characteristic-zero fields with the same rational minimal polynomial have the same
 absolute height; in particular the absolute height is invariant under field embeddings.
 
+For a nonzero tuple of algebraic integers the finite places contribute at most one to the height,
+so archimedean bounds on the coordinates bound the height.
+
 ## Main results
 
 * `NumberField.mulHeight_algebraMap`: `H_L(x) = H_K(x) ^ [L : K]`, together with the scalar and
@@ -37,6 +40,8 @@ absolute height; in particular the absolute height is invariant under field embe
   over `ℚ`.
 * `NumberField.absMulHeight₁_pow`: `H(x ^ n) = H(x) ^ n`.
 * `NumberField.absMulHeight₁_inv`: `H(x⁻¹) = H(x)`.
+* `NumberField.mulHeight_le_pow_finrank_of_forall_le`: a nonzero tuple of algebraic integers
+  whose coordinates are at most `c` at every infinite place has height at most `c ^ [K : ℚ]`.
 
 ## References
 
@@ -65,6 +70,37 @@ theorem mulHeight_mul_absNorm_span_range {y : ι → 𝓞 K} (hy : y ≠ 0) :
     exact congrFun hy i
   rw [mulHeight_eq hy', mul_assoc, mul_comm (∏ᶠ _, _), absNorm_mul_finprod_finitePlace_eq_one hy,
     mul_one]
+
+/-- For a nonzero tuple of algebraic integers, the finite part of the multiplicative height is at
+most one. -/
+theorem finprod_iSup_finitePlace_le_one {y : ι → 𝓞 K} (hy : y ≠ 0) :
+    ∏ᶠ v : FinitePlace K, ⨆ i, v (y i) ≤ 1 := by
+  have h := absNorm_mul_finprod_finitePlace_eq_one hy
+  have hN : (1 : ℝ) ≤ (span (Set.range y)).absNorm :=
+    Nat.one_le_cast.mpr <| Nat.one_le_iff_ne_zero.mpr fun h0 ↦ by simp [h0] at h
+  calc ∏ᶠ v : FinitePlace K, ⨆ i, v (y i)
+      ≤ (span (Set.range y)).absNorm * ∏ᶠ v : FinitePlace K, ⨆ i, v (y i) :=
+        le_mul_of_one_le_left
+          (finprod_nonneg fun v ↦ Real.iSup_nonneg_of_nonnegHomClass v _) hN
+    _ = 1 := h
+
+/-- A nonzero tuple of algebraic integers whose coordinates have absolute value at most `c` at
+every infinite place has multiplicative height at most `c ^ [K : ℚ]`. -/
+theorem mulHeight_le_pow_finrank_of_forall_le {y : ι → 𝓞 K} (hy : y ≠ 0) {c : ℝ}
+    (hc : ∀ i (w : InfinitePlace K), w (y i) ≤ c) :
+    mulHeight (fun i ↦ (y i : K)) ≤ c ^ finrank ℚ K := by
+  have hy' : (fun i ↦ (y i : K)) ≠ 0 := by
+    contrapose hy
+    ext i
+    exact congrFun hy i
+  obtain ⟨i₀, -⟩ := Function.ne_iff.mp hy
+  have : Nonempty ι := ⟨i₀⟩
+  rw [mulHeight_eq hy', ← InfinitePlace.sum_mult_eq, ← Finset.prod_pow_eq_pow_sum]
+  have hM (w : InfinitePlace K) : 0 ≤ ⨆ i, w (y i) := Real.iSup_nonneg_of_nonnegHomClass w _
+  refine (mul_le_of_le_one_right (Finset.prod_nonneg fun w _ ↦ pow_nonneg (hM w) _)
+    (finprod_iSup_finitePlace_le_one hy)).trans ?_
+  exact Finset.prod_le_prod₀ (fun w _ ↦ pow_nonneg (hM w) _)
+    fun w _ ↦ pow_le_pow_left₀ (hM w) (ciSup_le fun i ↦ hc i w) _
 
 /-- The degree formula for a tuple of algebraic integers. -/
 private theorem mulHeight_algebraMap_coe (y : ι → 𝓞 K) :
