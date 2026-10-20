@@ -21,15 +21,6 @@ length at most `2 e + 1` at most one block is collapsed, and `F` agrees there wi
 This is the length bound behind gauge transformations of `A∞` structures: such a transformation
 changes the Taylor map on short words only through one insertion of `φ`.
 
-The proof does not expand `coalgHom`.  It shows by induction along the conilpotence filtration
-first that `F - id` vanishes on the words of length at most `e`, and then that
-`F - id - coderiv φ` vanishes on the words of length at most `2 e + 1`.  The letter component of
-`F - id` is `φ`, which vanishes on the words of length at most `e`, while that of
-`F - id - coderiv φ` is zero.  The co-Leibniz rules of `F` and `coderiv φ` express the
-deconcatenation of a value through values on shorter words; in the second induction this leaves
-the term `(F - id) ⊗ (F - id)`, which vanishes since every cut of a word of length at most
-`2 e + 1` has a half of length at most `e`.
-
 ## Main results
 
 * `TauCeti.ReducedTensorWords.coalgHom_letter_add_apply_of_mem_filtration`: the coalgebra
@@ -78,58 +69,14 @@ private theorem letter_coalgHom_letter_add_apply (φ : ReducedTensorWords R M �
     letter R M (coalgHom R (letter R M + φ) z) = letter R M z + φ z := by
   rw [← LinearMap.comp_apply (letter R M), letter_comp_coalgHom, LinearMap.add_apply]
 
-/-- `F ⊗ F - id = (F - id) ⊗ id + F ⊗ (F - id)`, evaluated on a tensor. -/
-private theorem map_apply_sub_eq (F : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M)
-    (w : ReducedTensorWords R M ⊗[R] ReducedTensorWords R M) :
-    TensorProduct.map F F w - w =
-      TensorProduct.map (F - LinearMap.id) LinearMap.id w +
-        TensorProduct.map F (F - LinearMap.id) w := by
-  induction w using TensorProduct.inductionOn with
-  | tmul u v =>
-      simp only [TensorProduct.map_tmul, LinearMap.sub_apply, LinearMap.id_apply,
-        TensorProduct.sub_tmul, TensorProduct.tmul_sub]
-      abel
-  | add w₁ w₂ h₁ h₂ =>
-      calc TensorProduct.map F F (w₁ + w₂) - (w₁ + w₂)
-          = (TensorProduct.map F F w₁ - w₁) + (TensorProduct.map F F w₂ - w₂) := by
-            rw [map_add]
-            abel
-        _ = _ := by
-            rw [h₁, h₂, map_add, map_add]
-            abel
-
-/-- `F ⊗ F - id - (D ⊗ id + id ⊗ D) = (F - id - D) ⊗ id + id ⊗ (F - id - D) + (F - id) ⊗ (F - id)`,
-evaluated on a tensor. -/
-private theorem map_apply_sub_sub_eq (F D : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M)
-    (w : ReducedTensorWords R M ⊗[R] ReducedTensorWords R M) :
-    TensorProduct.map F F w - w -
-        (LinearMap.rTensor (ReducedTensorWords R M) D w +
-          LinearMap.lTensor (ReducedTensorWords R M) D w) =
-      TensorProduct.map (F - LinearMap.id - D) LinearMap.id w +
-        TensorProduct.map LinearMap.id (F - LinearMap.id - D) w +
-        TensorProduct.map (F - LinearMap.id) (F - LinearMap.id) w := by
-  induction w using TensorProduct.inductionOn with
-  | tmul u v =>
-      simp only [TensorProduct.map_tmul, LinearMap.sub_apply, LinearMap.id_apply,
-        LinearMap.rTensor_tmul, LinearMap.lTensor_tmul, TensorProduct.sub_tmul,
-        TensorProduct.tmul_sub]
-      abel
-  | add w₁ w₂ h₁ h₂ =>
-      calc TensorProduct.map F F (w₁ + w₂) - (w₁ + w₂) -
-            (LinearMap.rTensor (ReducedTensorWords R M) D (w₁ + w₂) +
-              LinearMap.lTensor (ReducedTensorWords R M) D (w₁ + w₂))
-          = (TensorProduct.map F F w₁ - w₁ -
-              (LinearMap.rTensor (ReducedTensorWords R M) D w₁ +
-                LinearMap.lTensor (ReducedTensorWords R M) D w₁)) +
-            (TensorProduct.map F F w₂ - w₂ -
-              (LinearMap.rTensor (ReducedTensorWords R M) D w₂ +
-                LinearMap.lTensor (ReducedTensorWords R M) D w₂)) := by
-            simp only [map_add]
-            abel
-        _ = _ := by
-            rw [h₁, h₂]
-            simp only [map_add]
-            abel
+/- The proofs below do not expand `coalgHom`.  They show by induction along the conilpotence
+filtration first that `F - id` vanishes on the words of length at most `e`, and then that
+`F - id - coderiv φ` vanishes on the words of length at most `2 e + 1`, where
+`F = coalgHom (letter + φ)`.  The letter component of `F - id` is `φ`, which vanishes on the words
+of length at most `e`, while that of `F - id - coderiv φ` is zero.  The co-Leibniz rules of `F`
+and `coderiv φ` express the deconcatenation of a value through values on shorter words; in the
+second induction this leaves the term `(F - id) ⊗ (F - id)`, which vanishes since every cut of a
+word of length at most `2 e + 1` has a half of length at most `e`. -/
 
 /-- The coalgebra morphism with Taylor components `letter + φ` is the identity on the words of
 length at most `e`, when `φ` vanishes on them. -/
@@ -142,13 +89,25 @@ private theorem coalgHom_letter_add_sub_id_apply_eq_zero {φ : ReducedTensorWord
   refine apply_eq_zero_of_mem_filtration_of_succ e fun k hk ih z hz ↦ ⟨?_, ?_⟩
   · rw [LinearMap.sub_apply, map_sub, letter_coalgHom_letter_add_apply, LinearMap.id_apply,
       add_sub_cancel_left, hφ z (filtration_monotone R M (by omega) hz)]
-  · -- Each cut of `z` has a half of length at most `k`, on which `F - id` vanishes.
-    have h := map_apply_sub_eq (coalgHom R (letter R M + φ)) (deconcatenation R M z)
+  · -- Expanding `F ⊗ F` with `F = id + (F - id)`, each remaining term vanishes on the cuts of
+    -- `z`, since each cut has a half of length at most `k`, on which `F - id` vanishes.
+    generalize coalgHom R (letter R M + φ) = F at hF ih ⊢
+    have h : TensorProduct.map F F (deconcatenation R M z) - deconcatenation R M z =
+        TensorProduct.map (F - LinearMap.id) LinearMap.id (deconcatenation R M z) +
+          TensorProduct.map LinearMap.id (F - LinearMap.id) (deconcatenation R M z) +
+          TensorProduct.map (F - LinearMap.id) (F - LinearMap.id) (deconcatenation R M z) := by
+      conv_lhs => rw [← add_sub_cancel LinearMap.id F]
+      rw [TensorProduct.map_add_left, TensorProduct.map_add_right, TensorProduct.map_add_right,
+        TensorProduct.map_id]
+      simp only [LinearMap.add_apply, LinearMap.id_apply]
+      abel
     rw [map_deconcatenation_eq_zero_of_mem_filtration R M ih
         (apply_eq_zero_of_mem_filtration_zero R M _) (by simpa using hz),
       map_deconcatenation_eq_zero_of_mem_filtration R M
-        (apply_eq_zero_of_mem_filtration_zero R M _) ih
-        (by simpa using hz), add_zero, ← hF.deconcatenation_apply] at h
+        (apply_eq_zero_of_mem_filtration_zero R M _) ih (by simpa using hz),
+      map_deconcatenation_eq_zero_of_mem_filtration R M ih ih
+        (filtration_monotone R M (by omega) hz), add_zero, add_zero,
+      ← hF.deconcatenation_apply] at h
     rw [LinearMap.sub_apply, map_sub, LinearMap.id_apply, h]
 
 /-- **A coalgebra morphism close to the identity.**  If `φ` vanishes on the words of length at most
@@ -175,8 +134,32 @@ theorem coalgHom_letter_add_apply_of_mem_filtration {φ : ReducedTensorWords R M
   · -- The terms `(F - id - D) ⊗ id` and `id ⊗ (F - id - D)` vanish on the cuts of `z` by
     -- induction, and `(F - id) ⊗ (F - id)` since every cut of a word of length at most `2 e + 1`
     -- has a half of length at most `e`.
-    have h := map_apply_sub_sub_eq (coalgHom R (letter R M + φ)) (coderiv R φ)
-      (deconcatenation R M z)
+    generalize coalgHom R (letter R M + φ) = F at hF hX ih ⊢
+    have hr : TensorProduct.map (F - LinearMap.id) (LinearMap.id (M := ReducedTensorWords R M)) =
+        TensorProduct.map (F - LinearMap.id - coderiv R φ) LinearMap.id +
+          TensorProduct.map (coderiv R φ) LinearMap.id := by
+      rw [← TensorProduct.map_add_left]
+      congr 1
+      abel
+    have hl : TensorProduct.map (LinearMap.id (M := ReducedTensorWords R M)) (F - LinearMap.id) =
+        TensorProduct.map LinearMap.id (F - LinearMap.id - coderiv R φ) +
+          TensorProduct.map LinearMap.id (coderiv R φ) := by
+      rw [← TensorProduct.map_add_right]
+      congr 1
+      abel
+    have h : TensorProduct.map F F (deconcatenation R M z) - deconcatenation R M z -
+          (LinearMap.rTensor _ (coderiv R φ) (deconcatenation R M z) +
+            LinearMap.lTensor _ (coderiv R φ) (deconcatenation R M z)) =
+        TensorProduct.map (F - LinearMap.id - coderiv R φ) LinearMap.id (deconcatenation R M z) +
+          TensorProduct.map LinearMap.id (F - LinearMap.id - coderiv R φ)
+            (deconcatenation R M z) +
+          TensorProduct.map (F - LinearMap.id) (F - LinearMap.id) (deconcatenation R M z) := by
+      conv_lhs => rw [← add_sub_cancel LinearMap.id F]
+      rw [TensorProduct.map_add_left, TensorProduct.map_add_right, TensorProduct.map_add_right,
+        TensorProduct.map_id, hr, hl]
+      simp only [LinearMap.add_apply, LinearMap.id_apply, LinearMap.rTensor_def,
+        LinearMap.lTensor_def]
+      abel
     rw [map_deconcatenation_eq_zero_of_mem_filtration R M ih
         (apply_eq_zero_of_mem_filtration_zero R M _) (by simpa using hz),
       map_deconcatenation_eq_zero_of_mem_filtration R M

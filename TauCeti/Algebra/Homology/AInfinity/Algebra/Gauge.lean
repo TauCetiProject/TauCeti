@@ -39,10 +39,6 @@ inductive step of Kadeishvili's obstruction theory: if the operations `m₃, …
 then the gauge transformation by `φ` keeps `m₃, …, mₙ₋₁` zero and kills `mₙ`, and it is
 `A∞` isomorphic to the original algebra through a morphism whose linear part is the identity.
 
-The proofs compare the coalgebra automorphism with `id + coderiv φ` on short words
-(`TauCeti.ReducedTensorWords.coalgHom_letter_add_apply_of_mem_filtration`) and bound the length of
-the words a brace sees (`TauCeti.ReducedTensorWords.brace_apply_eq_zero_of_mem_filtration`).
-
 ## Main definitions
 
 * `TauCeti.AInfinityAlgebra.comapBarEquiv`: the `A∞` structure pulled back along a degree-zero
@@ -57,6 +53,10 @@ the words a brace sees (`TauCeti.ReducedTensorWords.brace_apply_eq_zero_of_mem_f
 * `TauCeti.AInfinityAlgebra.isIso_comapBarEquivHom` and `TauCeti.AInfinityAlgebra.isIso_gaugeHom`:
   both morphisms are `A∞` isomorphisms.
 * `TauCeti.AInfinityAlgebra.taylor_gauge`: the recursive formula `m' = m ∘ F - φ{m'}`.
+* `TauCeti.AInfinityAlgebra.hochschildDifferential_apply_eq_zero_of_mem_filtration`: the
+  Hochschild differential of a cochain vanishing on the words of length at most `e` vanishes on
+  them; for a minimal algebra it vanishes on the words of length at most `e + 1`
+  (`IsMinimal.hochschildDifferential_apply_eq_zero_of_mem_filtration_add_one`).
 * `TauCeti.AInfinityAlgebra.taylor_gauge_apply_of_mem_filtration_two_mul` and
   `TauCeti.AInfinityAlgebra.taylor_gauge_apply_of_mem_filtration_two_mul_add_one`: the new Taylor
   map on short words.
@@ -272,23 +272,16 @@ theorem taylor_gauge :
 
 variable {𝒜 φ}
 
-/-- The Hochschild differential of a degree-zero cochain is `m{φ} - φ{m}`. -/
-private theorem hochschildDifferential_zero_eq :
-    𝒜.hochschildDifferential 0 φ =
-      brace (𝒜.grading.shift 1) 𝒜.taylor φ 0 - brace (𝒜.grading.shift 1) φ 𝒜.taylor 1 := by
-  rw [hochschildDifferential_def, gerstenhaberBracket_def, mul_zero, negOnePowCast_zero,
-    one_smul]
-
 /-- The Hochschild differential of a cochain vanishing on the words of length at most `e` vanishes
 on them. -/
-private theorem hochschildDifferential_zero_apply_eq_zero {e : ℕ}
+theorem hochschildDifferential_apply_eq_zero_of_mem_filtration (q : ℤ) {e : ℕ}
     (hφe : ∀ z ∈ filtration R A e, φ z = 0) {z : ReducedTensorWords R A}
-    (hz : z ∈ filtration R A e) : 𝒜.hochschildDifferential 0 φ z = 0 := by
-  rw [hochschildDifferential_zero_eq, LinearMap.sub_apply,
+    (hz : z ∈ filtration R A e) : 𝒜.hochschildDifferential q φ z = 0 := by
+  rw [hochschildDifferential_eq_brace_sub, LinearMap.sub_apply, LinearMap.smul_apply,
     brace_apply_eq_zero_of_mem_filtration _ _ (apply_eq_zero_of_mem_filtration_zero R A _) hφe
       (by rwa [zero_add]),
     brace_apply_eq_zero_of_mem_filtration _ _ hφe (apply_eq_zero_of_mem_filtration_zero R A _)
-      (by rwa [add_zero]), sub_zero]
+      (by rwa [add_zero]), smul_zero, sub_zero]
 
 /-- On the words of length at most `2 e + 1`, the difference `h = m' - m` of the Taylor maps
 satisfies `h = δφ - φ{h}`. -/
@@ -298,7 +291,7 @@ private theorem taylor_gauge_sub_apply {e : ℕ} (hφe : ∀ z ∈ filtration R 
       𝒜.hochschildDifferential 0 φ z -
         brace (𝒜.grading.shift 1) φ ((𝒜.gauge φ hφ hφ₁).taylor - 𝒜.taylor) 1 z := by
   conv_lhs => rw [taylor_gauge]
-  rw [hochschildDifferential_zero_eq]
+  rw [hochschildDifferential_eq_brace_sub, negOnePowCast_zero, one_smul]
   have hb : brace (𝒜.grading.shift 1) φ (𝒜.gauge φ hφ hφ₁).taylor 1 =
       brace (𝒜.grading.shift 1) φ 𝒜.taylor 1 +
         brace (𝒜.grading.shift 1) φ ((𝒜.gauge φ hφ hφ₁).taylor - 𝒜.taylor) 1 := by
@@ -314,7 +307,7 @@ private theorem taylor_gauge_apply_of_mem_filtration_self {e : ℕ}
     (hφe : ∀ z ∈ filtration R A e, φ z = 0) {z : ReducedTensorWords R A}
     (hz : z ∈ filtration R A e) : (𝒜.gauge φ hφ hφ₁).taylor z = 𝒜.taylor z := by
   have h := taylor_gauge_sub_apply hφ hφ₁ hφe (filtration_monotone R A (by omega) hz)
-  rw [hochschildDifferential_zero_apply_eq_zero hφe hz,
+  rw [hochschildDifferential_apply_eq_zero_of_mem_filtration 0 hφe hz,
     brace_apply_eq_zero_of_mem_filtration _ _ hφe (apply_eq_zero_of_mem_filtration_zero R A _)
       (by rwa [add_zero]), sub_zero, sub_eq_zero] at h
   exact h
@@ -381,20 +374,21 @@ theorem taylor_gauge_apply_of_mem_filtration_two_mul_add_one {e : ℕ}
 /-! ### Gauge transformations of minimal algebras -/
 
 /-- The Taylor map of a minimal `A∞` algebra vanishes on single letters. -/
-private theorem IsMinimal.taylor_apply_eq_zero_of_mem_filtration_one (h𝒜 : 𝒜.IsMinimal) :
+theorem IsMinimal.taylor_apply_eq_zero_of_mem_filtration_one (h𝒜 : 𝒜.IsMinimal) :
     ∀ z ∈ filtration R A 1, 𝒜.taylor z = 0 :=
   apply_eq_zero_of_mem_filtration_one R A (𝒜.taylor_comp_ofLetter.trans ((isMinimal_def 𝒜).1 h𝒜))
 
 /-- For a minimal `A∞` algebra, the Hochschild differential of a cochain vanishing on the words of
 length at most `e` vanishes on the words of length at most `e + 1`. -/
-private theorem IsMinimal.hochschildDifferential_zero_apply_eq_zero (h𝒜 : 𝒜.IsMinimal) {e : ℕ}
-    (hφe : ∀ z ∈ filtration R A e, φ z = 0) {z : ReducedTensorWords R A}
-    (hz : z ∈ filtration R A (e + 1)) : 𝒜.hochschildDifferential 0 φ z = 0 := by
-  rw [hochschildDifferential_zero_eq, LinearMap.sub_apply,
+theorem IsMinimal.hochschildDifferential_apply_eq_zero_of_mem_filtration_add_one
+    (h𝒜 : 𝒜.IsMinimal) (q : ℤ) {e : ℕ} (hφe : ∀ z ∈ filtration R A e, φ z = 0)
+    {z : ReducedTensorWords R A} (hz : z ∈ filtration R A (e + 1)) :
+    𝒜.hochschildDifferential q φ z = 0 := by
+  rw [hochschildDifferential_eq_brace_sub, LinearMap.sub_apply, LinearMap.smul_apply,
     brace_apply_eq_zero_of_mem_filtration _ _
       h𝒜.taylor_apply_eq_zero_of_mem_filtration_one hφe (by rwa [add_comm]),
     brace_apply_eq_zero_of_mem_filtration _ _ hφe
-      h𝒜.taylor_apply_eq_zero_of_mem_filtration_one hz, sub_zero]
+      h𝒜.taylor_apply_eq_zero_of_mem_filtration_one hz, smul_zero, sub_zero]
 
 /-- **The gauge transformation of a minimal algebra.**  If `𝒜` is minimal and `φ` vanishes on the
 words of length at most `e`, the gauge transformation adds the Hochschild differential
@@ -405,7 +399,7 @@ theorem IsMinimal.taylor_gauge_apply_of_mem_filtration (h𝒜 : 𝒜.IsMinimal) 
     (𝒜.gauge φ hφ hφ₁).taylor z = 𝒜.taylor z + 𝒜.hochschildDifferential 0 φ z := by
   rw [taylor_gauge_apply_of_mem_filtration_two_mul_add_one hφ hφ₁ hφe hz,
     brace_apply_eq_zero_of_mem_filtration _ _ hφe (k := e) (j := e + 1)
-      (fun w hw ↦ h𝒜.hochschildDifferential_zero_apply_eq_zero hφe hw)
+      (fun w hw ↦ h𝒜.hochschildDifferential_apply_eq_zero_of_mem_filtration_add_one 0 hφe hw)
       (by rwa [← add_assoc, ← two_mul]), sub_zero]
 
 /-- For a minimal `A∞` algebra, a gauge transformation by a cochain vanishing on the words of length
@@ -414,7 +408,7 @@ theorem IsMinimal.taylor_gauge_apply_of_mem_filtration_add_one (h𝒜 : 𝒜.IsM
     (hφe : ∀ z ∈ filtration R A e, φ z = 0) {z : ReducedTensorWords R A}
     (hz : z ∈ filtration R A (e + 1)) : (𝒜.gauge φ hφ hφ₁).taylor z = 𝒜.taylor z := by
   rw [h𝒜.taylor_gauge_apply_of_mem_filtration hφ hφ₁ hφe (filtration_monotone R A (by omega) hz),
-    h𝒜.hochschildDifferential_zero_apply_eq_zero hφe hz, add_zero]
+    h𝒜.hochschildDifferential_apply_eq_zero_of_mem_filtration_add_one 0 hφe hz, add_zero]
 
 /-- For a minimal `A∞` algebra, a gauge transformation by a cochain vanishing on the words of length
 at most `e` does not change the operations of arity at most `e + 1`. -/
