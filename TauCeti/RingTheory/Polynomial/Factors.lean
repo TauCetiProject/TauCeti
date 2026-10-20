@@ -39,6 +39,8 @@ for the Chinese Remainder decomposition of `K[X] ⧸ (f)` into the fields `K[X] 
 * `Polynomial.Factors.finite`: a nonzero polynomial has finitely many factors.
 * `Polynomial.Factors.normalizedFactors_eq_map_univ_val`: for a nonzero squarefree polynomial,
   its normalized factors are precisely the distinct monic irreducible factors.
+* `Polynomial.Factors.subsingleton_iff_exists_associated_pow`: a polynomial has at most one factor
+  exactly when it is a unit times a power of an irreducible polynomial.
 * `Polynomial.Factors.isCoprime`: distinct factors are coprime.
 * `Polynomial.Factors.span_eq_iInf_span`: for `f` nonzero and squarefree,
   `(f) = ⨅ p, (p)`.
@@ -111,6 +113,36 @@ lemma normalizedFactors_eq_map_univ_val [Fintype f.Factors] [DecidableEq K]
 lemma nonempty (hu : ¬ IsUnit f) : Nonempty f.Factors :=
   let ⟨p, hmonic, hirr, hdvd⟩ := f.exists_monic_irreducible_factor hu
   ⟨⟨p, hirr, hmonic, hdvd⟩⟩
+
+/-- A polynomial has at most one monic irreducible factor exactly when it is a unit times a power
+of one irreducible polynomial. -/
+lemma subsingleton_iff_exists_associated_pow :
+    Subsingleton f.Factors ↔ ∃ q : K[X], Irreducible q ∧ ∃ n : ℕ, Associated (q ^ n) f := by
+  classical
+  by_cases hf : f = 0
+  · subst f
+    constructor
+    · intro h
+      let x : (0 : K[X]).Factors := ⟨X, irreducible_X, monic_X, dvd_zero X⟩
+      let y : (0 : K[X]).Factors :=
+        ⟨X - C 1, irreducible_X_sub_C 1, monic_X_sub_C 1, dvd_zero (X - C 1)⟩
+      have hxy : (x : K[X]) = y := congrArg Subtype.val (h.elim x y)
+      have := congrArg (coeff · 0) hxy
+      simp [x, y] at this
+    · rintro ⟨q, hq, n, hq0⟩
+      exact ((pow_ne_zero n hq.ne_zero) (hq0.eq_zero_iff.mpr rfl)).elim
+  refine ⟨fun h ↦ ?_, fun ⟨q, hq, n, hqf⟩ ↦ ⟨fun a b ↦ Subtype.ext ?_⟩⟩
+  · by_cases hu : IsUnit f
+    · exact ⟨X, irreducible_X, 0, by rw [pow_zero]; exact (associated_one_iff_isUnit.mpr hu).symm⟩
+    obtain ⟨q⟩ := nonempty hu
+    refine ⟨q, q.irreducible, exists_associated_prime_pow_of_unique_normalized_factor
+      (fun {m} hm ↦ ?_) hf⟩
+    exact congrArg Subtype.val
+      (Subsingleton.elim (⟨m, (Polynomial.mem_normalizedFactors_iff hf).mp hm⟩ : f.Factors) q)
+  · -- Every factor divides `q ^ n`, hence `q`, so all of them are associated to `q`.
+    have key (r : f.Factors) : Associated (r : K[X]) q :=
+      r.irreducible.associated_of_dvd hq (r.prime.dvd_of_dvd_pow (r.dvd.trans hqf.symm.dvd))
+    exact eq_of_monic_of_associated a.monic b.monic ((key a).trans (key b).symm)
 
 /-- The monic linear factors of `f` correspond to the roots of `f`. -/
 noncomputable def linearEquivRoots :

@@ -5,8 +5,11 @@ Authors: Claude
 -/
 module
 
-public import Mathlib.Topology.Algebra.OpenSubgroup
+public import Mathlib.Topology.Algebra.ClopenNhdofOne
+public import Mathlib.Topology.UniformSpace.CompactConvergence
 public import TauCeti.Topology.LocallyConstant.Compact
+import Mathlib.Topology.Separation.Connected
+import Mathlib.Topology.Separation.DisjointCover
 
 /-!
 # Locally constant functions on topological groups
@@ -23,7 +26,12 @@ dependence disappears: there is a single open subgroup `V` with `f (x * v) = f x
 `TauCeti.isOpen_rightTranslationStabilizer`.
 
 Uniform local constancy is what makes the coinduced module of locally constant equivariant maps a
-*discrete* `G`-module, its right-translation stabilizers being open.
+*discrete* `G`-module, its right-translation stabilizers being open. Since an open subgroup of a
+compact group contains an open normal subgroup, the locally constant functions on a compact group
+are exactly those factoring through a finite quotient `G ⧸ U`
+(`TauCeti.isLocallyConstant_iff_exists_comp_quotientMk_eq`), and on a profinite group such
+cylinder functions are dense among all continuous functions
+(`TauCeti.dense_setOf_comp_quotientMk`).
 
 The uniformity statement itself needs only a compact *set* `K ⊆ G` and continuous multiplication:
 `IsLocallyConstant.exists_isOpen_forall_mem_mul_right_eq` is that statement, uniform in the point
@@ -140,5 +148,58 @@ theorem isOpen_rightTranslationStabilizer [TopologicalSpace G] [ContinuousMul G]
   refine Subgroup.isOpen_of_mem_nhds _ (Filter.mem_of_superset (hVopen.mem_nhds hV1)
     fun g hg x => ?_)
   simpa using hV g hg x
+
+end TauCeti
+
+namespace IsLocallyConstant
+
+variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
+  {A : Type*}
+
+/-- A locally constant function on a compact topological group factors through the quotient by
+an open normal subgroup. -/
+theorem exists_comp_quotientMk_eq {f : G → A} (hf : IsLocallyConstant f) :
+    ∃ (U : OpenNormalSubgroup G) (g : G ⧸ U.toSubgroup → A), g ∘ (↑) = f := by
+  -- The open stabilizer `S` of `f` under right translation contains an open normal subgroup.
+  let S : OpenSubgroup G :=
+    ⟨TauCeti.rightTranslationStabilizer f, TauCeti.isOpen_rightTranslationStabilizer hf⟩
+  obtain ⟨U, hU⟩ :=
+    IsTopologicalGroup.exist_openNormalSubgroup_sub_clopen_nhds_of_one S.isClopen S.one_mem
+  have hrel : ∀ x y : G, QuotientGroup.leftRel U.toSubgroup x y → f x = f y := fun x y hxy ↦ by
+    simpa using (TauCeti.mem_rightTranslationStabilizer.mp
+      (hU (QuotientGroup.leftRel_apply.mp hxy)) x).symm
+  exact ⟨U, fun q ↦ Quotient.liftOn' q f hrel, rfl⟩
+
+end IsLocallyConstant
+
+namespace TauCeti
+
+variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
+
+/-- A function on a compact topological group is locally constant exactly when it factors
+through the finite quotient by some open normal subgroup. -/
+theorem isLocallyConstant_iff_exists_comp_quotientMk_eq {A : Type*} {f : G → A} :
+    IsLocallyConstant f ↔ ∃ (U : OpenNormalSubgroup G) (g : G ⧸ U.toSubgroup → A), g ∘ (↑) = f := by
+  refine ⟨IsLocallyConstant.exists_comp_quotientMk_eq, ?_⟩
+  rintro ⟨U, g, rfl⟩
+  exact (IsLocallyConstant.of_discrete g).comp_continuous QuotientGroup.continuous_mk
+
+variable [TotallyDisconnectedSpace G]
+
+/-- **Density of cylinder functions.** On a profinite group, the continuous functions that factor
+through the quotient by some open normal subgroup are dense in `C(G, R)` for every uniform
+space `R`. -/
+theorem dense_setOf_comp_quotientMk (R : Type*) [UniformSpace R] :
+    Dense {F : C(G, R) |
+      ∃ (U : OpenNormalSubgroup G) (g : G ⧸ U.toSubgroup → R), g ∘ (↑) = F} := by
+  refine fun f ↦ (mem_closure_iff_nhds_basis
+    (nhds_basis_uniformity' ContinuousMap.hasBasis_compactConvergenceUniformity_of_compact)).mpr
+    fun V hV ↦ ?_
+  -- Approximate `f` within `V` by a function factoring through a finite discrete space.
+  obtain ⟨N, c, h, hc, hch⟩ := ContinuousMap.exists_finite_approximation_of_mem_nhds_diagonal f
+    (nhdsSet_diagonal_le_uniformity hV)
+  have hloc : IsLocallyConstant (h ∘ c) :=
+    (IsLocallyConstant.of_discrete h).comp_continuous hc
+  exact ⟨⟨h ∘ c, hloc.continuous⟩, hloc.exists_comp_quotientMk_eq, fun x ↦ hch x⟩
 
 end TauCeti

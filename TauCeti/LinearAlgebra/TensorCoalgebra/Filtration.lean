@@ -35,6 +35,11 @@ reduced tensor word.
   letter raises the length bound by one.
 * `TauCeti.ReducedTensorWords.map_deconcatenation_filtration_succ_le`: deconcatenating a word of
   length at most `n + 1` produces a sum of tensors of two words of length at most `n`.
+* `TauCeti.ReducedTensorWords.apply_eq_zero_of_mem_filtration_one`: a linear map vanishing on
+  single letters vanishes on the words of length at most one.
+* `TauCeti.ReducedTensorWords.map_deconcatenation_eq_zero_of_mem_filtration`: every cut of a word
+  of length at most `a + b + 1` has a left half of length at most `a` or a right half of length
+  at most `b`.
 
 ## References
 
@@ -79,6 +84,13 @@ theorem filtration_monotone : Monotone (filtration R M) := fun _ _ hmn ↦
 @[simp]
 theorem filtration_zero : filtration R M 0 = ⊥ :=
   le_antisymm (iSup_le fun k ↦ iSup_le fun hk ↦ absurd (k.2.trans_le hk) (lt_irrefl 0)) bot_le
+
+/-- Every linear map vanishes on the zero step of the filtration. -/
+theorem apply_eq_zero_of_mem_filtration_zero {N : Type*} [AddCommMonoid N] [Module R N]
+    (f : ReducedTensorWords R M →ₗ[R] N) : ∀ z ∈ filtration R M 0, f z = 0 := by
+  intro z hz
+  rw [filtration_zero, Submodule.mem_bot] at hz
+  rw [hz, map_zero]
 
 /-- The conilpotence filtration is exhaustive. -/
 theorem iSup_filtration_eq_top : ⨆ n : ℕ, filtration R M n = ⊤ := by
@@ -140,6 +152,22 @@ theorem ofLetter_mem_filtration (a : M) : ofLetter R M a ∈ filtration R M 1 :=
   have h := subword_mem_filtration R M (fun _ : Fin 1 ↦ a) 0 (le_refl 1)
   rwa [subword_one R M _ Nat.one_pos] at h
 
+/-- A linear map vanishing on single letters vanishes on the words of length at most one. -/
+theorem apply_eq_zero_of_mem_filtration_one {N : Type*} [AddCommMonoid N] [Module R N]
+    {f : ReducedTensorWords R M →ₗ[R] N} (hf : f ∘ₗ ofLetter R M = 0) :
+    ∀ z ∈ filtration R M 1, f z = 0 := by
+  have h : filtration R M 1 ≤ LinearMap.ker f := by
+    rw [filtration_le_iff]
+    intro k hk
+    obtain rfl : k = 1 := Subtype.ext (by have := k.2; omega : k.1 = 1)
+    rw [LinearMap.range_le_ker_iff]
+    refine PiTensorProduct.ext (MultilinearMap.ext fun x ↦ ?_)
+    have hx : x = fun _ ↦ x ⟨0, Nat.one_pos⟩ :=
+      funext fun i ↦ congrArg x (Fin.ext (Nat.lt_one_iff.mp i.isLt))
+    simp only [LinearMap.compMultilinearMap_apply, LinearMap.comp_apply, LinearMap.zero_apply]
+    rw [hx, ← ofLetter_eq_of_tprod, ← LinearMap.comp_apply f, hf, LinearMap.zero_apply]
+  exact fun z hz ↦ h hz
+
 /-- Prepending a letter to a word of length at most `n` gives a word of length at most `n + 1`. -/
 theorem prepend_mem_filtration (a : M) {n : ℕ} {z : ReducedTensorWords R M}
     (hz : z ∈ filtration R M n) : prepend R M a z ∈ filtration R M (n + 1) := by
@@ -177,6 +205,31 @@ theorem map_deconcatenation_filtration_succ_le (n : ℕ) :
   | add u v hu hv =>
       rw [map_add, map_add]
       exact Submodule.add_mem _ hu hv
+
+/-- Every cut of a word of length at most `a + b + 1` has a left half of length at most `a` or a
+right half of length at most `b`.  Hence mapping the two halves of the cuts by maps vanishing on
+the words of length at most `a` and at most `b` respectively annihilates the deconcatenation of
+such a word. -/
+theorem map_deconcatenation_eq_zero_of_mem_filtration {P Q : Type*} [AddCommMonoid P]
+    [Module R P] [AddCommMonoid Q] [Module R Q] {f : ReducedTensorWords R M →ₗ[R] P}
+    {g : ReducedTensorWords R M →ₗ[R] Q} {a b : ℕ} (hf : ∀ z ∈ filtration R M a, f z = 0)
+    (hg : ∀ z ∈ filtration R M b, g z = 0) {z : ReducedTensorWords R M}
+    (hz : z ∈ filtration R M (a + b + 1)) :
+    TensorProduct.map f g (deconcatenation R M z) = 0 := by
+  have h : filtration R M (a + b + 1) ≤
+      LinearMap.ker (TensorProduct.map f g ∘ₗ deconcatenation R M) := by
+    rw [filtration_le_iff]
+    intro k hk
+    rw [LinearMap.range_le_ker_iff]
+    refine PiTensorProduct.ext (MultilinearMap.ext fun x ↦ ?_)
+    simp only [LinearMap.compMultilinearMap_apply, LinearMap.comp_apply, LinearMap.zero_apply]
+    rw [of_tprod_eq_subword R k.2 x, map_deconcatenation_subword]
+    refine Finset.sum_eq_zero fun c hc ↦ ?_
+    rw [Finset.mem_range] at hc
+    by_cases hca : c ≤ a
+    · rw [hf _ (subword_mem_filtration R M x 0 hca), TensorProduct.zero_tmul]
+    · rw [hg _ (subword_mem_filtration R M x (0 + c) (by omega)), TensorProduct.tmul_zero]
+  exact h hz
 
 end ReducedTensorWords
 

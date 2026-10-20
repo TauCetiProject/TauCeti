@@ -51,7 +51,25 @@ perturbation lemma for complete filtered contractions, where the series need not
 
 public section
 
-variable {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
+variable {R M : Type*}
+
+namespace Module.End
+
+variable [Semiring R] [AddCommMonoid M] [Module R M] {F : ℕ → Submodule R M}
+  {T : Module.End R M}
+
+/-- A map raising a filtration by one step raises it by `k` steps after `k` iterations. -/
+theorem pow_apply_mem_of_map_le (hT : ∀ n, (F n).map T ≤ F (n + 1)) {m : ℕ} {y : M}
+    (hy : y ∈ F m) (k : ℕ) : (T ^ k) y ∈ F (m + k) := by
+  induction k with
+  | zero => simpa using hy
+  | succ k ih =>
+    rw [pow_succ', Module.End.mul_apply, ← add_assoc]
+    exact hT _ ⟨_, ih, rfl⟩
+
+end Module.End
+
+variable [Ring R] [AddCommGroup M] [Module R M]
 
 namespace TauCeti
 
@@ -74,39 +92,15 @@ namespace Module.End
 
 variable {F : ℕ → Submodule R M} {T : Module.End R M}
 
-/-- A map raising a filtration by one step raises it by `k` steps after `k` iterations. -/
-theorem pow_apply_mem_of_map_le (hT : ∀ n, (F n).map T ≤ F (n + 1)) {m : ℕ} {y : M}
-    (hy : y ∈ F m) (k : ℕ) : (T ^ k) y ∈ F (m + k) := by
-  induction k with
-  | zero => simpa using hy
-  | succ k ih =>
-    rw [pow_succ', Module.End.mul_apply, ← add_assoc]
-    exact hT _ ⟨_, ih, rfl⟩
-
 /-- If `T` raises a decreasing filtration with `F 0 = ⊤`, then `(1 + T) u ∈ F k` forces
 `u ∈ F k`.  No completeness is needed. -/
 theorem mem_of_one_add_apply_mem (hanti : Antitone F) (hF0 : F 0 = ⊤)
     (hT : ∀ n, (F n).map T ≤ F (n + 1)) {u : M} {k : ℕ} (hu : (1 + T) u ∈ F k) : u ∈ F k := by
-  -- Writing `u = (1 + T) u - T u`, membership of `u` in `F j` improves to `F (j + 1)` until it
-  -- reaches `F k`.
-  have key : ∀ j, u ∈ F (min k j) := by
-    intro j
-    induction j with
-    | zero => simp [hF0]
-    | succ j ih =>
-      have hTu : T u ∈ F (min k (j + 1)) :=
-        hanti (by omega) (hT _ ⟨u, ih, rfl⟩)
-      have hu' : (1 + T) u ∈ F (min k (j + 1)) := hanti (min_le_left _ _) hu
-      have h : u = (1 + T) u - T u := by
-        rw [LinearMap.add_apply, Module.End.one_apply, add_sub_cancel_right]
-      rw [h]
-      exact sub_mem hu' hTu
-  simpa using key k
-
-private theorem map_neg_le (hT : ∀ n, (F n).map T ≤ F (n + 1)) (n : ℕ) :
-    (F n).map (-T) ≤ F (n + 1) := by
-  rw [Submodule.map_neg]
-  exact hT n
+  induction k with
+  | zero => simp [hF0]
+  | succ k ih =>
+    have huk : u ∈ F k := ih (hanti (Nat.le_succ k) hu)
+    simpa using sub_mem hu (hT k ⟨u, huk, rfl⟩)
 
 /-- **The inverse of `1 + T` is the sum of the geometric series.**  If `T` raises a decreasing
 filtration with `F 0 = ⊤` and `1 + T` is invertible, then on `y ∈ F m` the inverse of `1 + T`
@@ -123,7 +117,7 @@ theorem ringInverse_one_add_apply_sub_sum_mem (hanti : Antitone F) (hF0 : F 0 = 
   rw [sub_neg_eq_add, Module.End.mul_apply, LinearMap.sub_apply, Module.End.one_apply,
     LinearMap.sum_apply] at hgeom
   rw [map_sub, hinv, hgeom, sub_sub_cancel]
-  exact pow_apply_mem_of_map_le (map_neg_le hT) hy n
+  exact pow_apply_mem_of_map_le (by simpa using hT) hy n
 
 /-- If `T` raises a decreasing filtration with `F 0 = ⊤` and `1 + T` is invertible, then the
 inverse of `1 + T` preserves the filtration. -/
@@ -150,7 +144,7 @@ theorem isUnit_one_add : IsUnit (1 + T) := by
       Module.End.mem_of_one_add_apply_mem hF.antitone hF0 hT (hu ▸ zero_mem (F n))
   · -- The partial geometric sums form a Cauchy sequence; its limit is a preimage of `y`.
     have hy : y ∈ F 0 := by simp [hF0]
-    have hpow := Module.End.pow_apply_mem_of_map_le (Module.End.map_neg_le hT) hy
+    have hpow := Module.End.pow_apply_mem_of_map_le (T := -T) (by simpa using hT) hy
     obtain ⟨L, hL⟩ := hF.exists_limit (fun n ↦ (∑ k ∈ Finset.range n, (-T) ^ k) y) fun n ↦ by
       simpa [Finset.sum_range_succ] using hpow n
     refine ⟨L, sub_eq_zero.mp (hF.eq_zero_of_forall_mem _ fun n ↦ ?_)⟩

@@ -38,6 +38,7 @@ inside the tensor power. That is the statement a Young symmetrizer of a one-row 
 
 ## Main results
 
+* `SymmetricPower.ext`: linear maps out of a symmetric power are determined by pure tensors.
 * `SymmetricPower.toTensorPower_tprod`: the symmetrization of a pure symmetric tensor is the sum
   of the pure tensors over all orderings of its factors.
 * `SymmetricPower.mk_comp_toTensorPower`: composing the symmetrization with the quotient map is
@@ -69,6 +70,15 @@ section CommSemiring
 
 variable [CommSemiring R]
 variable [AddCommMonoid M] [Module R M]
+
+/-- A linear map out of a symmetric power is determined by its values on pure symmetric
+tensors. -/
+@[ext]
+theorem ext {N : Type*} [AddCommMonoid N] [Module R N] {g h : Sym[R] ι M →ₗ[R] N}
+    (hgh : ∀ m : ι → M, g (⨂ₛ[R] i, m i) = h (⨂ₛ[R] i, m i)) : g = h := by
+  refine LinearMap.ext_on (span_tprod_eq_top R ι M) ?_
+  rintro _ ⟨m, rfl⟩
+  exact hgh m
 
 private theorem map_rel {N : Type*} [AddCommMonoid N] [Module R N] (f : M →ₗ[R] N) :
     addConGen (Rel R ι M) ≤
@@ -112,8 +122,7 @@ theorem map_tprod {N : Type*} [AddCommMonoid N] [Module R N] (f : M →ₗ[R] N)
 @[simp]
 theorem map_id :
     map (ι := ι) (LinearMap.id (R := R) (M := M)) = LinearMap.id := by
-  apply LinearMap.ext_on (span_tprod_eq_top (R := R) (ι := ι) (M := M))
-  rintro _ ⟨m, rfl⟩
+  ext m
   simp
 
 /-- Symmetric powers preserve composition of linear maps. -/
@@ -121,9 +130,14 @@ theorem map_id :
 theorem map_comp {N : Type*} {P : Type*}
     [AddCommMonoid N] [Module R N] [AddCommMonoid P] [Module R P] (f : M →ₗ[R] N) (g : N →ₗ[R] P) :
     map (ι := ι) (g.comp f) = (map (ι := ι) g).comp (map (ι := ι) f) := by
-  apply LinearMap.ext_on (span_tprod_eq_top (R := R) (ι := ι) (M := M))
-  rintro _ ⟨m, rfl⟩
+  ext m
   simp
+
+/-- A symmetric power indexed by a finite type is finitely generated when the underlying module
+is finitely generated. -/
+noncomputable instance finite [Finite ι] [Module.Finite R M] : Module.Finite R (Sym[R] ι M) :=
+  Module.Finite.of_surjective (mk R ι M)
+    (LinearMap.range_eq_top.mp (range_mk R ι M))
 
 end CommSemiring
 
@@ -207,13 +221,10 @@ theorem range_toTensorPower :
 theorem mk_comp_toTensorPower :
     (mk R ι M) ∘ₗ (toTensorPower R ι M) =
       (Fintype.card ι).factorial • LinearMap.id (R := R) (M := Sym[R] ι M) := by
-  refine LinearMap.ext_on (span_tprod_eq_top (R := R) (ι := ι) (M := M)) ?_
-  rintro _ ⟨m, rfl⟩
-  have h : ∀ σ : Equiv.Perm ι, mk R ι M (⨂ₜ[R] i, m (σ i)) = ⨂ₛ[R] i, m i :=
-    fun σ => tprod_equiv σ m
-  rw [LinearMap.coe_comp, Function.comp_apply, toTensorPower_tprod, map_sum,
-    Finset.sum_congr rfl fun σ (_ : σ ∈ Finset.univ) => h σ, Finset.sum_const, Finset.card_univ,
-    Fintype.card_perm, LinearMap.smul_apply, LinearMap.id_apply]
+  ext m
+  have h (σ : Equiv.Perm ι) : mk R ι M (⨂ₜ[R] i, m (σ i)) = ⨂ₛ[R] i, m i :=
+    tprod_equiv σ m
+  simp [h, Fintype.card_perm]
 
 /-- The symmetrization is injective as soon as `(card ι)!` is a unit in the base ring, for
 instance over a `ℚ`-algebra. -/
@@ -226,27 +237,12 @@ theorem toTensorPower_injective (h : IsUnit ((Fintype.card ι).factorial : R)) :
     u.inv_mul, one_smul]
 
 /-- The symmetrization is natural in the module. -/
-theorem toTensorPower_comp_map {N : Type v} [AddCommMonoid N] [Module R N] (f : M →ₗ[R] N) :
+theorem toTensorPower_comp_map {N : Type*} [AddCommMonoid N] [Module R N] (f : M →ₗ[R] N) :
     (toTensorPower R ι N) ∘ₗ (map (ι := ι) f) =
       (PiTensorProduct.map fun _ : ι => f) ∘ₗ (toTensorPower R ι M) := by
-  refine LinearMap.ext_on (span_tprod_eq_top (R := R) (ι := ι) (M := M)) ?_
-  rintro _ ⟨m, rfl⟩
+  ext m
   simp
 
 end Symmetrization
-
-section CommRing
-
-variable [CommRing R]
-variable [AddCommGroup M] [Module R M]
-variable [Finite ι] [Module.Finite R M]
-
-/-- A symmetric power indexed by a finite type is finitely generated when the underlying module
-is finitely generated. -/
-noncomputable instance finite : Module.Finite R (Sym[R] ι M) :=
-  Module.Finite.of_surjective (mk R ι M)
-    (LinearMap.range_eq_top.mp (range_mk R ι M))
-
-end CommRing
 
 end SymmetricPower

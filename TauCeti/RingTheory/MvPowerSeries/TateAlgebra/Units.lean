@@ -83,7 +83,7 @@ norm-preserving ring homomorphism. -/
 theorem isNormMulUnit_C {u : R} (hu : IsNormMulUnit u) :
     IsNormMulUnit (⟨C u, isRestricted_C c u⟩ : IsRestricted.subring (R := R) c) := by
   rw [← codRestrict_C_eq]
-  exact hu.map _ fun a ↦ by rw [codRestrict_C_eq, norm_C]
+  exact hu.map _ fun a ↦ norm_C a
 
 variable [CompleteSpace R]
 

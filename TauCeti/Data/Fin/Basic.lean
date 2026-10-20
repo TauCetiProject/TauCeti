@@ -86,6 +86,8 @@ range, so the value is a `dite` rather than a plain application.
   tuple indexed by `Fin ((k + 1) + (l + 1))` after inserting an entry into one of the two blocks.
 * `Fin.partialProd_last`: the final partial product is the product of all the entries.
 * `Fin.partialSum_last`: the final partial sum is the sum of all the entries.
+* `Fin.prod_contractNth_castSucc` and `Fin.sum_contractNth_castSucc`: multiplying (adding) two
+  adjacent entries of a tuple does not change the product (sum) of all its entries.
 * `TauCeti.add_one_ne_self`: adding one in `Fin n` is nontrivial when `2 ≤ n`.
 * `TauCeti.add_one_add_one_ne_self`: adding one twice in `Fin n` is nontrivial when `3 ≤ n`;
   `TauCeti.sub_one_ne_self` and `TauCeti.add_one_ne_sub_one` are the companions for subtraction.
@@ -159,6 +161,17 @@ theorem partialProd_last {M : Type*} [CommMonoid M] {n : ℕ} (f : Fin n → M) 
     Fin.partialProd f (Fin.last n) = ∏ i, f i := by
   rw [Fin.partialProd, Fin.val_last]
   rw [(List.take_eq_self_iff _).mpr (by simp), Fin.prod_ofFn]
+
+/-- Multiplying two adjacent entries of a tuple does not change the product of all its
+entries. -/
+@[to_additive (attr := simp)
+  /-- Adding two adjacent entries of a tuple does not change the sum of all its entries. -/]
+theorem prod_contractNth_castSucc {M : Type*} [CommMonoid M] {n : ℕ} (j : Fin (n + 1))
+    (g : Fin (n + 2) → M) : ∏ k, Fin.contractNth j.castSucc (· * ·) g k = ∏ k, g k := by
+  have hlast : j.castSucc.succ.succAbove (Fin.last (n + 1)) = Fin.last (n + 2) :=
+    Fin.succAbove_of_le_castSucc _ _ (by simp [Fin.le_def]; omega)
+  rw [← partialProd_last, ← partialProd_last, Fin.partialProd_contractNth, Function.comp_apply,
+    hlast]
 
 /-- A product over `Fin n` of a family equal to `1` beyond `i` is its product over the first
 `i` indices times its value at `i`. -/

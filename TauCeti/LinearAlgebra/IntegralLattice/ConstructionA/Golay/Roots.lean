@@ -34,17 +34,6 @@ namespace TauCeti.BinaryGolay
 
 open Finset Matrix
 
-private theorem golay_carrier :
-    constructionALattice.carrier = ConstructionA.lattice 2 code.toAddSubgroup :=
-  (congrArg IntegralLattice.carrier constructionALattice_eq_integralLattice).trans
-    (ConstructionA.integralLattice_carrier 2 code.toAddSubgroup
-      (TwoPowCode.isTypeII_one_iff.mpr isTypeII_code).le_euclideanDual)
-
-private theorem golay_form : constructionALattice.form = ConstructionA.form 2 :=
-  (congrArg IntegralLattice.form constructionALattice_eq_integralLattice).trans
-    (ConstructionA.integralLattice_form 2 code.toAddSubgroup
-      (TwoPowCode.isTypeII_one_iff.mpr isTypeII_code).le_euclideanDual)
-
 private theorem golay_norm_intCast (z : Fin 24 → ℤ) :
     constructionALattice.norm (fun i ↦ (z i : ℚ)) = ((∑ i, z i ^ 2 : ℤ) : ℚ) / 2 := by
   rw [constructionALattice_eq_integralLattice]
@@ -53,7 +42,7 @@ private theorem golay_norm_intCast (z : Fin 24 → ℤ) :
 /-- The positive coordinate root `2 eᵢ` of the Golay Construction A lattice. -/
 def coordinateRoot (i : Fin 24) : constructionALattice :=
   ⟨Pi.single i 2, by
-    rw [golay_carrier]
+    rw [constructionALattice_carrier]
     exact ConstructionA.single_mem_lattice 2 code.toAddSubgroup i⟩
 
 /-- The coordinates of a positive Golay lattice root. -/
@@ -67,7 +56,7 @@ orthogonal copies of the root system `A₁`. -/
 theorem form_coordinateRoot_coordinateRoot (i j : Fin 24) :
     constructionALattice.form (coordinateRoot i) (coordinateRoot j) =
       if i = j then 2 else 0 := by
-  rw [coe_coordinateRoot, coe_coordinateRoot, golay_form, ConstructionA.form_apply]
+  rw [coe_coordinateRoot, coe_coordinateRoot, constructionALattice_form, ConstructionA.form_apply]
   by_cases h : i = j <;> simp [h, dotProduct_single]
 
 /-- Every positive coordinate root has norm two. -/
@@ -91,7 +80,7 @@ theorem norm_eq_two_iff {x : Fin 24 → ℚ} (hx : x ∈ constructionALattice.ca
       ∃ i : Fin 24, x = Pi.single i 2 ∨ x = -Pi.single i 2 := by
   constructor
   · intro hnorm
-    have hx' : x ∈ ConstructionA.lattice 2 code.toAddSubgroup := golay_carrier ▸ hx
+    have hx' : x ∈ ConstructionA.lattice 2 code.toAddSubgroup := constructionALattice_carrier ▸ hx
     obtain ⟨z, hz, rfl⟩ := (ConstructionA.mem_lattice 2).mp hx'
     have hsum : ∑ i, z i ^ 2 = 4 := by
       rw [golay_norm_intCast] at hnorm
@@ -143,11 +132,11 @@ theorem span_vectorsOfNorm_two :
   · rintro _ ⟨x, hx, rfl⟩
     obtain ⟨i, rfl | rfl⟩ := (mem_vectorsOfNorm_two_iff x).mp hx
     · rw [ConstructionA.zeroLattice_carrier]
-      simpa only [SetLike.mem_coe, coe_coordinateRoot, PNat.val_ofNat, Nat.cast_ofNat] using
+      simpa only [SetLike.mem_coe, coe_coordinateRoot, Nat.cast_ofNat] using
         ConstructionA.single_mem_lattice 2 ⊥ i
     · rw [ConstructionA.zeroLattice_carrier]
       simpa only [SetLike.mem_coe, Submodule.coe_neg, coe_coordinateRoot,
-        PNat.val_ofNat, Nat.cast_ofNat] using
+        Nat.cast_ofNat] using
         Submodule.neg_mem _ (ConstructionA.single_mem_lattice 2 ⊥ i)
   · intro x hx
     obtain ⟨z, _, rfl⟩ := (ConstructionA.mem_lattice 2).mp
@@ -170,16 +159,16 @@ noncomputable def rootLatticeIsometry :
     IntegralLattice.Isometry (IntegralLattice.a1.coordinatePower (Fin 24))
       (ConstructionA.zeroLattice 2 (Fin 24)) := by
   -- The zero lattice's definition is opaque across modules; use its exported carrier and form.
-  have hzero : ConstructionA.integralLattice 2 (⊥ : AddSubgroup (Fin 24 → ZMod (2 : ℕ+)))
-      (by rw [(AddSubgroup.toZModSubmodule ((2 : ℕ+) : ℕ)).map_bot]; exact bot_le) =
+  have hzero : ConstructionA.integralLattice 2 (⊥ : AddSubgroup (Fin 24 → ZMod 2))
+      (by rw [(AddSubgroup.toZModSubmodule 2).map_bot]; exact bot_le) =
       ConstructionA.zeroLattice 2 (Fin 24) := by
     apply IntegralLattice.ext
     · rw [ConstructionA.integralLattice_carrier, ConstructionA.zeroLattice_carrier]
     · rw [ConstructionA.integralLattice_form, ConstructionA.zeroLattice_form]
-  -- Match the positive-natural modulus cast in the Construction A isometry's source.
+  -- Match the natural modulus cast in the Construction A isometry's source.
   have hpower : IntegralLattice.a1.coordinatePower (Fin 24) =
-      ((2 : ℕ+) : ℤ) • IntegralLattice.unitLattice (Fin 24) := by
-    simpa only [PNat.val_ofNat, Nat.cast_ofNat] using
+      ((2 : ℕ) : ℤ) • IntegralLattice.unitLattice (Fin 24) := by
+    simpa only [Nat.cast_ofNat] using
       IntegralLattice.coordinatePower_a1_eq_smul_unitLattice (Fin 24)
   exact (IntegralLattice.Isometry.ofEq hpower).trans
     ((ConstructionA.scaledStandardIsometry 2).trans (IntegralLattice.Isometry.ofEq hzero))

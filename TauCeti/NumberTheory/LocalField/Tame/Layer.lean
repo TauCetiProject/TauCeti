@@ -192,7 +192,7 @@ theorem isTamelyRamified_tameLayer (U : OpenNormalSubgroup (Field.absoluteGalois
     IsTamelyRamified K (tameLayer K U) := by
   apply (le_maximalTameExtension_iff (tameLayer K U)).mp
   rw [← InfiniteGalois.fixedField_fixingSubgroup (maximalTameExtension K (AlgebraicClosure K)),
-    IntermediateField.le_iff_le, fixingSubgroup_tameLayer,
+    IntermediateField.le_fixedField_iff_le_fixingSubgroup, fixingSubgroup_tameLayer,
     ← wildInertiaSubgroup_def]
   exact le_sup_left
 

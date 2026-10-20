@@ -33,6 +33,8 @@ Transporting a homotopy-group computation across a homeomorphism is the dimensio
 * `HomotopyGroup.homeomorphMulEquivOfEq`: the positive-dimensional group isomorphism
   `π_N(X, x) ≃* π_N(Y, y)`.
 * `HomotopyGroup.homeomorphMulEquiv`: `π_N(X, x) ≃* π_N(Y, e x)`.
+* `HomotopyGroup.map_eq_comp_of_isEmbedding`: the map induced by an embedding factors through
+  the homeomorphism of its source with its range.
 -/
 
 public section
@@ -125,5 +127,20 @@ theorem homeomorphMulEquiv_symm_apply [DecidableEq N] [Nonempty N] (e : X ≃ₜ
     (b : HomotopyGroup N Y (e x)) : (homeomorphMulEquiv e x).symm b =
       map ⟨e.symm, e.symm.continuous⟩ (e.symm_apply_apply x) b :=
   rfl
+
+/-- The map induced on homotopy groups by an embedding `f : X → Y` is the map induced by the
+inclusion of its range into `Y`, read through the homeomorphism of `X` with the range of `f`.
+The inclusion is stated as that of `range f` into `univ`, followed by `Homeomorph.Set.univ Y`,
+the form in which homotopy groups of subspaces of a space are compared. -/
+theorem map_eq_comp_of_isEmbedding {f : C(X, Y)} (hf : Topology.IsEmbedding f) (x : X) :
+    map (N := N) (x := x) f rfl =
+      homeomorphEquivOfEq (Homeomorph.Set.univ Y) rfl ∘
+        map (N := N) (x := hf.toHomeomorph x)
+          (ContinuousMap.inclusion (Set.subset_univ (Set.range f))) rfl ∘
+        homeomorphEquiv hf.toHomeomorph x := by
+  funext p
+  simp only [Function.comp_apply, homeomorphEquivOfEq_apply, homeomorphEquiv_apply,
+    map_comp_apply]
+  exact map_congr (ContinuousMap.ext fun _ ↦ rfl) _ _ _
 
 end HomotopyGroup

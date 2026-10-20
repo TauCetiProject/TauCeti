@@ -35,6 +35,7 @@ largest summand, so Mathlib's dominant-antidiagonal theorem applies.
 
 * `MvPowerSeries.norm_eq_gaussNorm`: the norm is the Gauss norm at the chosen polyradii.
 * `MvPowerSeries.norm_le_iff`: a norm bound is equivalent to bounds on every weighted coefficient.
+* `MvPowerSeries.norm_lt_iff`: since the norm is attained, the same holds for strict bounds.
 * `MvPowerSeries.IsRestricted.exists_achievesGaussNorm_max`: a nonzero restricted series has a
   largest norm-achieving exponent for any monomial order, and
   `MvPowerSeries.IsRestricted.norm_coeff_mul_norm_coeff_lt`: the product of the coefficients at
@@ -164,6 +165,15 @@ theorem exists_achievesGaussNorm (f : IsRestricted.subring (R := R) c) :
   have hM : ‖f‖ ≤ ε := (norm_le_iff hε0).mpr fun t ↦
     hε t ((norm_coeff_mul_prod_le f t).lt_of_ne (h t))
   exact hM.not_gt hεM
+
+/-- A strict bound on the norm is exactly a strict bound on every weighted coefficient norm,
+since the norm is attained. -/
+theorem norm_lt_iff {f : IsRestricted.subring (R := R) c} {r : ℝ} :
+    ‖f‖ < r ↔ ∀ t, ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·) < r := by
+  refine ⟨fun h t ↦ (norm_coeff_mul_prod_le f t).trans_lt h, fun h ↦ ?_⟩
+  obtain ⟨t, ht⟩ := exists_achievesGaussNorm f
+  rw [norm_eq_gaussNorm, ← ht]
+  exact h t
 
 /-- The norm of a restricted monomial is its weighted coefficient norm. -/
 @[simp]
@@ -456,6 +466,12 @@ noncomputable instance instAlgebraIsRestrictedSubring :
 @[simp]
 theorem coe_algebraMap_isRestrictedSubring (r : R) :
     (algebraMap R (IsRestricted.subring (R := R) c) r : MvPowerSeries σ R) = C r := (rfl)
+
+/-- Without variables every restricted series is a constant. -/
+theorem algebraMap_isRestrictedSubring_surjective [IsEmpty σ] :
+    Function.Surjective (algebraMap R (IsRestricted.subring (R := R) c)) := fun g ↦
+  let ⟨r, hr⟩ := C_surjective (g : MvPowerSeries σ R)
+  ⟨r, Subtype.ext hr⟩
 
 /-- A restricted monomial `r Xᵗ` is the constant `r` times the monomial `Xᵗ` in the variables. -/
 theorem mk_monomial_eq_algebraMap_mul_prod (t : σ →₀ ℕ) (r : R) :

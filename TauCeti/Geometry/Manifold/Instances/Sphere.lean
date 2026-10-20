@@ -25,7 +25,9 @@ stereographic projection, the preferred chart at `v` projecting from the antipod
 (`EuclideanSpace.instChartedSpaceSphere`). This file records the facts about these charts
 that computations in a chart at a chosen point use: which stereographic projection the preferred
 chart is, that the extended chart at `v` sends `v` to the origin of the model space, and that the
-inverse of a stereographic chart is a smooth embedding of the model space into the sphere.
+inverse of a stereographic chart is a smooth embedding of the model space into the sphere. Read in
+the ambient space, the inverse of stereographic projection has injective derivative, so it is a
+regular parametrization of the sphere minus a point.
 
 It then uses the charts to show that a linear isometry `ι : F →ₗᵢ[ℝ] E` restricts to a smooth
 embedding of unit spheres, `LinearIsometry.unitSphereMap`. Stereographic projection is defined
@@ -44,6 +46,10 @@ at least two omits a point, allowing the entire loop to be read in one stereogra
 
 ## Main results
 
+* `TauCeti.finrank_euclideanSpace_fin_succ_fact`: the dimension of `ℝⁿ⁺¹`, in the form the
+  stereographic charts of its unit sphere take it.
+* `TauCeti.injective_fderiv_stereoInvFunAux_comp_coe`: the inverse of stereographic projection
+  from `v`, as a map from `(ℝ ∙ v)ᗮ` to the ambient space, has injective derivative.
 * `TauCeti.chartAt_sphere`: the preferred chart at `v` is `stereographic' n (-v)`.
 * `TauCeti.extChartAt_sphere_apply_self`: the preferred extended chart at `v` sends `v` to `0`.
 * `TauCeti.isSmoothEmbedding_stereographic'_symm`: the inverse of a stereographic chart is a
@@ -67,6 +73,41 @@ open Function Manifold Metric Module Set
 open scoped Manifold InnerProductSpace ContDiff
 
 namespace TauCeti
+
+/-- The dimension of `ℝⁿ⁺¹`, in the form `Fact (finrank ℝ E = n + 1)` taken by the stereographic
+charts of the unit sphere of `E`. Installed with `attribute [local instance]`, it lets results
+stated for the unit sphere of a general `E` apply to the unit sphere of
+`EuclideanSpace ℝ (Fin (n + 1))`. -/
+theorem finrank_euclideanSpace_fin_succ_fact (n : ℕ) :
+    Fact (finrank ℝ (EuclideanSpace ℝ (Fin (n + 1))) = n + 1) :=
+  ⟨finrank_euclideanSpace_fin⟩
+
+section Stereographic
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+/-- The inverse of stereographic projection from a unit vector `v` has injective derivative at
+every point of the hyperplane `(ℝ ∙ v)ᗮ`. -/
+theorem injective_fderiv_stereoInvFunAux_comp_coe {v : E} (hv : ‖v‖ = 1) (w : (ℝ ∙ v)ᗮ) :
+    Injective (fderiv ℝ (stereoInvFunAux v ∘ ((↑) : (ℝ ∙ v)ᗮ → E)) w) := by
+  set ψ := stereoInvFunAux v ∘ ((↑) : (ℝ ∙ v)ᗮ → E)
+  have hd : DifferentiableAt ℝ ψ w :=
+    (contDiff_stereoInvFunAux.comp (ℝ ∙ v)ᗮ.subtypeL.contDiff).differentiable one_ne_zero w
+  -- Stereographic projection is a left inverse of `ψ`, differentiable near `ψ w ≠ v`.
+  have hnorm : ‖ψ w‖ = 1 := mem_sphere_zero_iff_norm.1 (stereoInvFunAux_mem hv w.2)
+  have hne : innerSL ℝ v (ψ w) ≠ 1 := by
+    rw [innerSL_apply_apply, Ne, inner_eq_one_iff_of_norm_eq_one hv hnorm]
+    exact fun h => stereoInvFun_ne_north_pole hv w (Subtype.ext h.symm)
+  have hst : DifferentiableAt ℝ (stereoToFun v) (ψ w) :=
+    ((contDiffOn_stereoToFun (n := 1)).differentiableOn one_ne_zero).differentiableAt
+      ((isOpen_ne_fun (innerSL ℝ v).continuous continuous_const).mem_nhds hne)
+  have hcomp : fderiv ℝ (stereoToFun v) (ψ w) ∘L fderiv ℝ ψ w = ContinuousLinearMap.id ℝ _ := by
+    rw [← fderiv_comp w hst hd, show stereoToFun v ∘ ψ = id from funext (stereo_right_inv hv),
+      fderiv_id]
+  exact Function.LeftInverse.injective (g := fderiv ℝ (stereoToFun v) (ψ w)) fun u => by
+    simpa using congrArg (fun L => L u) hcomp
+
+end Stereographic
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
   [Fact (finrank ℝ E = n + 1)]
