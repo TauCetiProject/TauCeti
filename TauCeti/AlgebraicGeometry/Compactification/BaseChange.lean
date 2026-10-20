@@ -35,37 +35,58 @@ namespace Compactification
 
 noncomputable section
 
-/-- Pull back a compactification along an arbitrary map of bases.
-The scheme and arrows remain available for dependent pullback constructions. -/
-abbrev baseChange (C : Compactification f) (g : T ⟶ S) :
-    Compactification (pullback.snd f g) := by
-  let j' : pullback f g ⟶ pullback C.p g :=
-    pullback.lift (pullback.fst f g ≫ C.j) (pullback.snd f g)
-      (by simp [← pullback.condition])
-  have sq : IsPullback (pullback.fst f g) j' C.j (pullback.fst C.p g) := by
-    apply IsPullback.of_bot (t := IsPullback.of_hasPullback C.p g)
-    · simpa [j'] using (IsPullback.of_hasPullback f g)
-    · simp [j']
-  have : IsOpenImmersion j' := by
-    exact MorphismProperty.of_isPullback sq
-      (inferInstance : IsOpenImmersion C.j)
-  have : QuasiCompact j' := by
-    exact MorphismProperty.of_isPullback sq
-      (inferInstance : QuasiCompact C.j)
-  exact ofHom j' (pullback.snd C.p g) (pullback.lift_snd _ _ _)
+/-- The open interior map induced on the pullbacks of a compactification. -/
+@[expose] def baseChangeJ (C : Compactification f) (g : T ⟶ S) :
+    pullback f g ⟶ pullback C.p g :=
+  pullback.lift (pullback.fst f g ≫ C.j) (pullback.snd f g)
+    (by simp [← pullback.condition])
 
 /-- The square relating the original and pulled-back interiors is cartesian. -/
 theorem isPullback_baseChange (C : Compactification f) (g : T ⟶ S) :
-    IsPullback (pullback.fst f g) (C.baseChange g).j C.j (pullback.fst C.p g) := by
+    IsPullback (pullback.fst f g) (baseChangeJ C g) C.j (pullback.fst C.p g) := by
   apply IsPullback.of_bot (t := IsPullback.of_hasPullback C.p g)
-  · simpa [baseChange] using (IsPullback.of_hasPullback f g)
-  · simp [baseChange]
+  · simpa [baseChangeJ] using (IsPullback.of_hasPullback f g)
+  · simp [baseChangeJ]
+
+instance (C : Compactification f) (g : T ⟶ S) :
+    IsOpenImmersion (baseChangeJ C g) :=
+  MorphismProperty.of_isPullback (isPullback_baseChange C g)
+    (inferInstance : IsOpenImmersion C.j)
+
+instance (C : Compactification f) (g : T ⟶ S) :
+    QuasiCompact (baseChangeJ C g) :=
+  MorphismProperty.of_isPullback (isPullback_baseChange C g)
+    (inferInstance : QuasiCompact C.j)
+
+/-- Pull back a compactification along an arbitrary map of bases.
+The compactification of `pullback.snd f g` has ambient scheme `pullback C.p g`,
+open immersion induced by `pullback.lift`, and proper map `pullback.snd C.p g`. -/
+-- Exposure and implicit reducibility keep dependent projection formulas usable across modules.
+@[expose, implicit_reducible] def baseChange (C : Compactification f) (g : T ⟶ S) :
+    Compactification (pullback.snd f g) :=
+  ofHom (baseChangeJ C g) (pullback.snd C.p g) (pullback.lift_snd _ _ _)
+
+@[simp]
+theorem baseChange_Xbar (C : Compactification f) (g : T ⟶ S) :
+    (C.baseChange g).Xbar = pullback C.p g :=
+  (rfl)
+
+@[simp]
+theorem baseChange_p (C : Compactification f) (g : T ⟶ S) :
+    (C.baseChange g).p = pullback.snd C.p g :=
+  (rfl)
 
 /-- The projection from the base-changed ambient scheme respects the interior. -/
 @[reassoc (attr := simp)]
 theorem baseChange_j_fst (C : Compactification f) (g : T ⟶ S) :
     (C.baseChange g).j ≫ pullback.fst C.p g = pullback.fst f g ≫ C.j :=
   pullback.lift_fst _ _ _
+
+/-- The base-changed interior lies over the new base. -/
+@[reassoc (attr := simp)]
+theorem baseChange_j_snd (C : Compactification f) (g : T ⟶ S) :
+    (C.baseChange g).j ≫ pullback.snd C.p g = pullback.snd f g :=
+  pullback.lift_snd _ _ _
 
 /-- Flat base change preserves scheme-theoretic density of the interior. -/
 instance baseChange_isSchemeTheoreticallyDominant (C : Compactification f)
@@ -74,7 +95,7 @@ instance baseChange_isSchemeTheoreticallyDominant (C : Compactification f)
   IsSchemeTheoreticallyDominant.of_isPullback (C.isPullback_baseChange g)
 
 /-- Pull back a morphism of compactifications. -/
-abbrev baseChangeMap {C D : Compactification f} (h : C ⟶ D) (g : T ⟶ S) :
+def baseChangeMap {C D : Compactification f} (h : C ⟶ D) (g : T ⟶ S) :
     C.baseChange g ⟶ D.baseChange g :=
   ObjectProperty.homMk
     { h := pullback.map C.p g D.p g h.hom.h (𝟙 T) (𝟙 S)
@@ -83,15 +104,24 @@ abbrev baseChangeMap {C D : Compactification f} (h : C ⟶ D) (g : T ⟶ S) :
         apply pullback.hom_ext <;> simp [Category.assoc]
       h_π := by simp }
 
+@[simp]
+theorem baseChangeMap_hom_h {C D : Compactification f} (h : C ⟶ D) (g : T ⟶ S) :
+    (baseChangeMap h g).hom.h =
+      pullback.map C.p g D.p g h.hom.h (𝟙 T) (𝟙 S) (by simp) (by simp) :=
+  (rfl)
+
 /-- Base change acts functorially on all compactifications of a fixed morphism. -/
-@[simps obj map]
-abbrev baseChangeFunctor (g : T ⟶ S) :
+-- The object equations must remain available when elaborating dependent morphism formulas.
+@[expose, implicit_reducible, simps obj map]
+def baseChangeFunctor (g : T ⟶ S) :
     Compactification f ⥤ Compactification (pullback.snd f g) where
   obj C := C.baseChange g
   map h := baseChangeMap h g
   map_id C := by
     apply ObjectProperty.hom_ext
     apply Factorisation.Hom.ext
+    -- Normalize the identity map's dependent endpoint before categorical simplification.
+    dsimp only [baseChange, ofHom]
     apply pullback.hom_ext <;> simp
   map_comp h k := by
     apply ObjectProperty.hom_ext
@@ -106,17 +136,23 @@ end Compactification
 namespace DenseCompactification
 
 /-- Flat base change on the full subcategories of dense compactifications. -/
-noncomputable def baseChangeFunctor (g : T ⟶ S) [Flat g] :
+-- The underlying morphism formula needs definitionally matching endpoints under `simp`.
+@[expose, implicit_reducible] noncomputable def baseChangeFunctor (g : T ⟶ S) [Flat g] :
     DenseCompactification f ⥤ DenseCompactification (pullback.snd f g) :=
   (denseCompactificationProperty (pullback.snd f g)).lift
     ((denseCompactificationProperty f).ι ⋙ Compactification.baseChangeFunctor g)
-    (fun C ↦ by
-      rw [Functor.comp_obj, ObjectProperty.ι_obj, Compactification.baseChangeFunctor_obj]
-      exact (denseCompactificationProperty_iff _ _).mpr inferInstance)
+    (fun C ↦ (denseCompactificationProperty_iff _ _).mpr
+      (Compactification.baseChange_isSchemeTheoreticallyDominant C.obj g))
 
 @[simp]
 theorem baseChangeFunctor_obj_obj (g : T ⟶ S) [Flat g] (C : DenseCompactification f) :
     ((baseChangeFunctor g).obj C).obj = C.obj.baseChange g :=
+  (rfl)
+
+@[simp]
+theorem baseChangeFunctor_map_hom (g : T ⟶ S) [Flat g]
+    {C D : DenseCompactification f} (h : C ⟶ D) :
+    ((baseChangeFunctor g).map h).hom = Compactification.baseChangeMap h.hom g :=
   (rfl)
 
 end DenseCompactification

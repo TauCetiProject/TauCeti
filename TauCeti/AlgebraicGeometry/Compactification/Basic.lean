@@ -82,8 +82,7 @@ abbrev Hom (C D : Compactification f) : Type _ := C ⟶ D
 
 namespace Hom
 
-/-- Every map of compactifications is proper, since its composite with the separated
-target structure map is proper. -/
+/-- Every morphism of compactifications is proper. -/
 instance proper {C D : Compactification f} (h : Hom C D) : IsProper h.hom.h := by
   have : IsProper (h.hom.h ≫ D.p) := by
     rw [h.hom.h_π]
@@ -117,8 +116,7 @@ abbrev identity [IsProper f] : Compactification f :=
 specified open immersion. -/
 noncomputable def isInitialIdentity [IsProper f] : Limits.IsInitial (identity f) := by
   apply Limits.IsInitial.isInitialOfObj (compactificationProperty f).ι
-  simpa [identity, ofHom, Factorisation.initial] using
-    (Factorisation.IsInitial_initial (f := f))
+  exact Factorisation.IsInitial_initial (f := f)
 
 end Compactification
 
@@ -144,7 +142,7 @@ instance (C : DenseCompactification f) : IsSchemeTheoreticallyDominant C.obj.j :
 @[simps obj]
 abbrev identity [IsProper f] : DenseCompactification f :=
   ⟨Compactification.identity f, (denseCompactificationProperty_iff f _).mpr
-    (by simpa using (inferInstance : IsSchemeTheoreticallyDominant (𝟙 X)))⟩
+    (inferInstanceAs (IsSchemeTheoreticallyDominant (𝟙 X)))⟩
 
 end DenseCompactification
 
