@@ -34,13 +34,13 @@ local notation "T" => GradedModuleCat.bimoduleTensorObj Γ Γ Γ
 carrier universe of the graded zigzag bimodule category. This is the generic tensor
 `GradedModuleCat.bimoduleTensor` of the zigzag grading, written with the enveloping grading
 so that the unifications with the carrier of the braid complexes stay syntactic. -/
-private noncomputable abbrev zigzagBimoduleTensor :
+private noncomputable abbrev zigzagGradedBimoduleTensor :
     GradedModuleCat.{max u w} (zigzagEnvelopingGrading k G).piece ⥤
       GradedModuleCat.{max u w} (zigzagEnvelopingGrading k G).piece ⥤
         GradedModuleCat.{max u w} (zigzagEnvelopingGrading k G).piece :=
   GradedModuleCat.bimoduleTensor (zigzagAlgebraInternalGrading k G)
     (zigzagAlgebraInternalGrading k G) (zigzagAlgebraInternalGrading k G)
-local notation "F" => zigzagBimoduleTensor k G
+local notation "F" => zigzagGradedBimoduleTensor k G
 local notation "B" => zigzagBraidComplex k G
 local notation "E" => zigzagBraidEvaluationHom k G
 local notation "L" => zigzagBraidTensorEvaluationLeft k G
