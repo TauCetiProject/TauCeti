@@ -85,6 +85,30 @@ end IsLocalizedModule
 
 section LocalizedModule
 
+variable {R M N : Type*} [CommSemiring R] [IsNoetherianRing R]
+  [AddCommGroup M] [Module R M] [AddCommMonoid N] [Module R N]
+
+/-- A linear map from an additive group over a commutative semiring is injective if its
+localization is injective at every associated prime of its domain. -/
+theorem injective_of_forall_localization_of_addCommGroup (map : M →ₗ[R] N)
+    (local_injective : ∀ (prime : Ideal R) [prime.IsPrime],
+      Function.Injective (LocalizedModule.map prime.primeCompl map) ∨
+      prime ∉ associatedPrimes R M) :
+    Function.Injective map := by
+  exact injective_of_isLocalized_associatedPrimes
+    map
+    (fun prime ↦ LocalizedModule prime.1.primeCompl M)
+    (fun prime ↦ LocalizedModule.mkLinearMap prime.1.primeCompl M)
+    (fun prime ↦ LocalizedModule prime.1.primeCompl N)
+    (fun prime ↦ LocalizedModule.mkLinearMap prime.1.primeCompl N)
+    (fun prime ↦ LocalizedModule.map prime.1.primeCompl map)
+    (fun prime ↦ by ext; simp)
+    (fun prime ↦ (local_injective prime.1).resolve_right (not_not.mpr prime.property))
+
+end LocalizedModule
+
+section LocalizedModule
+
 variable {R M N : Type*} [CommRing R] [IsNoetherianRing R]
   [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
 
@@ -97,15 +121,7 @@ theorem injective_of_forall_localization (map : M →ₗ[R] N)
       prime ∉ associatedPrimes R M) :
     Function.Injective map := by
   let : AddCommGroup M := Module.addCommMonoidToAddCommGroup R
-  exact injective_of_isLocalized_associatedPrimes
-    map
-    (fun prime ↦ LocalizedModule prime.1.primeCompl M)
-    (fun prime ↦ LocalizedModule.mkLinearMap prime.1.primeCompl M)
-    (fun prime ↦ LocalizedModule prime.1.primeCompl N)
-    (fun prime ↦ LocalizedModule.mkLinearMap prime.1.primeCompl N)
-    (fun prime ↦ LocalizedModule.map prime.1.primeCompl map)
-    (fun prime ↦ by ext; simp)
-    (fun prime ↦ (local_injective prime.1).resolve_right (not_not.mpr prime.property))
+  exact injective_of_forall_localization_of_addCommGroup map local_injective
 
 end LocalizedModule
 
