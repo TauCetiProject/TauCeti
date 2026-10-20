@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.DualGraph.Iso
+import TauCeti.Data.Fin.Rev
+import TauCeti.Logic.Equiv.Basic
 
 /-!
 # Stabilization of dual graphs is independent of the order of contractions
@@ -63,26 +65,10 @@ variable {ι : Type v} {G : DualGraph.{u} ι}
 
 /-! ### Auxiliary facts about half-edges -/
 
-/-- Removing the elements failing `p` and then those failing `q` leaves the same elements as
-removing them in the opposite order. -/
-private def subtypeSubtypeComm {E : Type*} {p q : E → Prop} {p' : Subtype q → Prop}
-    {q' : Subtype p → Prop} (hp : ∀ e he, p' ⟨e, he⟩ ↔ p e) (hq : ∀ e he, q' ⟨e, he⟩ ↔ q e) :
-    {e : Subtype p // q' e} ≃ {e : Subtype q // p' e} :=
-  (Equiv.subtypeSubtypeEquivSubtypeExists p q').trans <|
-    (Equiv.subtypeEquivRight fun e ↦
-      ⟨fun ⟨hpe, hqe⟩ ↦ ⟨(hq e hpe).mp hqe, (hp e _).mpr hpe⟩,
-        fun ⟨hqe, hpe⟩ ↦ ⟨(hp e hqe).mp hpe, (hq e _).mpr hqe⟩⟩).trans
-      (Equiv.subtypeSubtypeEquivSubtypeExists q p').symm
-
-/-- An index of `Fin 2` is either a given index or its reverse. -/
-private lemma fin_two_eq_or_eq_rev (i j : Fin 2) : j = i ∨ j = i.rev := by
-  revert i j
-  decide
-
 /-- An edge avoids `v` when neither of its branches lies there. -/
 private lemma forall_endpoint_ne_of {v : G.Vertex} {e : G.Edge} {i : Fin 2}
     (h : G.endpoint e i ≠ v) (h' : G.endpoint e i.rev ≠ v) (j : Fin 2) : G.endpoint e j ≠ v := by
-  rcases fin_two_eq_or_eq_rev i j with rfl | rfl <;> assumption
+  rcases Fin.fin_two_eq_or_eq_rev i j with rfl | rfl <;> assumption
 
 /-- The node of a vertex `u` of valence one avoids every vertex other than `u` and its
 attachment. -/
@@ -257,7 +243,7 @@ private lemma bridgeNeighbor_rev_ne_of_bridgeNeighbor_eq
     (hk : G.bridgeNeighbor hu k = w) : G.bridgeNeighbor hu k.rev ≠ w := by
   intro hk'
   have hnb (l : Fin 2) : G.bridgeNeighbor hu l = w := by
-    rcases fin_two_eq_or_eq_rev k l with rfl | rfl
+    rcases Fin.fin_two_eq_or_eq_rev k l with rfl | rfl
     exacts [hk, hk']
   have hlog {x : G.Vertex} (hgx : G.genus x = 0) (hx : G.valence x = 2)
       (hmx : ∀ i, G.marking i ≠ x) : G.logCanonicalDegree x ≤ 0 := by
@@ -286,9 +272,9 @@ private lemma bridgeNeighbor_rev_ne_of_bridgeNeighbor_eq
       exact halfEdgeOfValenceEqTwo_fst_ne hu hloopu (Prod.ext_iff.mp (hm₀.symm.trans hm₁)).1
     obtain ⟨l, hl⟩ : ∃ l, (e, i) = ((G.halfEdgeOfValenceEqTwo hu l).1.1,
         (G.halfEdgeOfValenceEqTwo hu l).1.2.rev) := by
-      rcases fin_two_eq_or_eq_rev m₀ m with rfl | rfl
+      rcases Fin.fin_two_eq_or_eq_rev m₀ m with rfl | rfl
       · exact ⟨0, hm.symm.trans hm₀⟩
-      · obtain rfl : m₁ = m₀.rev := (fin_two_eq_or_eq_rev m₀ m₁).resolve_left (Ne.symm h01)
+      · obtain rfl : m₁ = m₀.rev := (Fin.fin_two_eq_or_eq_rev m₀ m₁).resolve_left (Ne.symm h01)
         exact ⟨1, hm.symm.trans hm₁⟩
     obtain ⟨rfl, rfl⟩ := Prod.ext_iff.mp hl
     rw [Fin.rev_rev]
@@ -338,9 +324,11 @@ private lemma exists_iso_contractTail_contractTail
     .contractTail _ ((G.contractTail hv₂).isRationalTail_iff.mpr ⟨hg₁, hval₁⟩) hmark₁,
     ⟨Iso.ofInjective (fun w ↦ w.1.1) (fun w ↦ w.1.1)
       (Subtype.val_injective.comp Subtype.val_injective)
-      (subtypeSubtypeComm (fun _ _ ↦ by simp [Subtype.ext_iff]) fun _ _ ↦ by simp [Subtype.ext_iff])
+      (Equiv.subtypeSubtypeComm (fun _ _ ↦ by simp [Subtype.ext_iff])
+        fun _ _ ↦ by simp [Subtype.ext_iff])
       (fun _ ↦ rfl)
-      (subtypeSubtypeComm (fun _ _ ↦ by simp [Subtype.ext_iff]) fun _ _ ↦ by simp [Subtype.ext_iff])
+      (Equiv.subtypeSubtypeComm (fun _ _ ↦ by simp [Subtype.ext_iff])
+        fun _ _ ↦ by simp [Subtype.ext_iff])
       (fun _ ↦ by rw [ends_def, ends_def, Sym2.map_mk, Sym2.map_mk]; rfl) (fun _ ↦ rfl) fun i ↦ ?_⟩⟩
   by_cases h₁ : G.marking i = v₁ <;> by_cases h₂ : G.marking i = v₂ <;>
     simp [Subtype.ext_iff, h₁, h₂, hatt₁, hatt₂, ha₁, ha₂, hne,
@@ -386,7 +374,8 @@ private lemma exists_iso_contractTail_contractBridge_of_ne {v₁ v₂ : G.Vertex
     .contractTail _ ((G.contractBridge hv₂ hloop₂ hm₂).isRationalTail_iff.mpr ⟨hg₁, hval₁⟩) hmark₁,
     ⟨Iso.ofInjective (fun w ↦ w.1.1) (fun w ↦ w.1.1)
       (Subtype.val_injective.comp Subtype.val_injective)
-      (subtypeSubtypeComm (fun _ _ ↦ by simp [Subtype.ext_iff]) fun _ _ ↦ by simp [Subtype.ext_iff])
+      (Equiv.subtypeSubtypeComm (fun _ _ ↦ by simp [Subtype.ext_iff])
+        fun _ _ ↦ by simp [Subtype.ext_iff])
       (fun _ ↦ rfl)
       { toFun := fun
           | none => ⟨none, fun k h ↦ hnb k (congrArg Subtype.val h)⟩
@@ -461,7 +450,8 @@ private lemma exists_iso_contractTail_contractBridge_of_eq {v₁ v₂ : G.Vertex
     .contractTail _ ((G.contractBridge hv₂ hloop₂ hm₂).isRationalTail_iff.mpr ⟨hg₁, hval₁⟩) hmark₁,
     ⟨Iso.ofInjective (fun w ↦ w.1.1) (fun w ↦ w.1.1)
       (Subtype.val_injective.comp Subtype.val_injective)
-      (subtypeSubtypeComm (fun _ _ ↦ by simp [Subtype.ext_iff]) fun _ _ ↦ by simp [Subtype.ext_iff])
+      (Equiv.subtypeSubtypeComm (fun _ _ ↦ by simp [Subtype.ext_iff])
+        fun _ _ ↦ by simp [Subtype.ext_iff])
       (fun _ ↦ rfl)
       { toFun := fun e ↦ ⟨some ⟨e.1.1, fun i h ↦ e.2 i (Subtype.ext h)⟩,
           fun i h ↦ e.1.2 i (congrArg Subtype.val h)⟩
@@ -518,7 +508,8 @@ private lemma exists_iso_contractBridge_contractBridge_of_forall_ne {v₁ v₂ :
       ⟨hg₁, hval₁, hloop₁'⟩) hm₁',
     ⟨Iso.ofInjective (fun w ↦ w.1.1) (fun w ↦ w.1.1)
       (Subtype.val_injective.comp Subtype.val_injective)
-      (subtypeSubtypeComm (fun _ _ ↦ by simp [Subtype.ext_iff]) fun _ _ ↦ by simp [Subtype.ext_iff])
+      (Equiv.subtypeSubtypeComm (fun _ _ ↦ by simp [Subtype.ext_iff])
+        fun _ _ ↦ by simp [Subtype.ext_iff])
       (fun _ ↦ rfl)
       -- The node replacing either bridge is the node replacing it in the other order.
       { toFun := fun
@@ -596,7 +587,8 @@ private lemma exists_iso_contractBridge_contractBridge_of_eq
       ⟨hg₁, hval₁, hloop₁'⟩) hm₁',
     ⟨Iso.ofInjective (fun w ↦ w.1.1) (fun w ↦ w.1.1)
       (Subtype.val_injective.comp Subtype.val_injective)
-      (subtypeSubtypeComm (fun _ _ ↦ by simp [Subtype.ext_iff]) fun _ _ ↦ by simp [Subtype.ext_iff])
+      (Equiv.subtypeSubtypeComm (fun _ _ ↦ by simp [Subtype.ext_iff])
+        fun _ _ ↦ by simp [Subtype.ext_iff])
       (fun _ ↦ rfl)
       { toFun := fun
           | none => none

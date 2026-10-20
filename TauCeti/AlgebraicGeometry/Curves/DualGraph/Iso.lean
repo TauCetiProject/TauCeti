@@ -141,6 +141,11 @@ theorem mem_ends_edgeEquiv {v : G.Vertex} {e : G.Edge} :
   rw [ends_edgeEquiv, Sym2.mem_map]
   simp
 
+/-- An edge avoids a vertex exactly when its image avoids the image of the vertex. -/
+theorem forall_endpoint_edgeEquiv_ne_iff {v : G.Vertex} {e : G.Edge} :
+    (∀ i, H.endpoint (f.edgeEquiv e) i ≠ f.vertexEquiv v) ↔ ∀ i, G.endpoint e i ≠ v := by
+  rw [forall_endpoint_ne_iff, forall_endpoint_ne_iff, mem_ends_edgeEquiv]
+
 /-- Each branch of an edge is carried to a branch of its image, the other branch going to the
 other branch. -/
 theorem exists_endpoint_edgeEquiv (e : G.Edge) (i : Fin 2) :
@@ -259,8 +264,7 @@ noncomputable def contractTail {v : G.Vertex} (hv : G.valence v = 1)
     (G.contractTail hv).Iso (H.contractTail hv') :=
   ofInjective (fun w ↦ f.vertexEquiv w.1) Subtype.val Subtype.val_injective
     (f.vertexEquiv.subtypeEquiv fun _ ↦ f.vertexEquiv.injective.ne_iff.symm) (fun _ ↦ rfl)
-    (f.edgeEquiv.subtypeEquiv fun _ ↦ by
-      rw [forall_endpoint_ne_iff, forall_endpoint_ne_iff, mem_ends_edgeEquiv])
+    (f.edgeEquiv.subtypeEquiv fun _ ↦ f.forall_endpoint_edgeEquiv_ne_iff.symm)
     (fun e ↦ by simp only [ends_def, Sym2.map_mk]; exact f.mk_endpoint_edgeEquiv e.1)
     (fun _ ↦ by simp) fun i ↦ by
       by_cases h : G.marking i = v
@@ -273,6 +277,20 @@ noncomputable def contractTail {v : G.Vertex} (hv : G.valence v = 1)
         rw [marking_contractTail, marking_contractTail, dite_eq_right h, dite_eq_right h']
         exact (f.vertexEquiv_marking i).symm
 
+/-- The isomorphism of tail contractions acts on vertices as the original isomorphism. -/
+@[simp]
+theorem coe_contractTail_vertexEquiv_apply {v : G.Vertex} (hv : G.valence v = 1)
+    (hv' : H.valence (f.vertexEquiv v) = 1) (w : (G.contractTail hv).Vertex) :
+    ((f.contractTail hv hv').vertexEquiv w : H.Vertex) = f.vertexEquiv w := by
+  rfl
+
+/-- The isomorphism of tail contractions acts on edges as the original isomorphism. -/
+@[simp]
+theorem coe_contractTail_edgeEquiv_apply {v : G.Vertex} (hv : G.valence v = 1)
+    (hv' : H.valence (f.vertexEquiv v) = 1) (e : (G.contractTail hv).Edge) :
+    ((f.contractTail hv hv').edgeEquiv e : H.Edge) = f.edgeEquiv e := by
+  rfl
+
 /-- The isomorphism of bridge contractions induced by an isomorphism. -/
 noncomputable def contractBridge {v : G.Vertex} (hv : G.valence v = 2)
     (hloop : ∀ e, G.endpoint e 0 = v → G.endpoint e 1 ≠ v) (hm : ∀ i, G.marking i ≠ v)
@@ -282,8 +300,7 @@ noncomputable def contractBridge {v : G.Vertex} (hv : G.valence v = 2)
     (G.contractBridge hv hloop hm).Iso (H.contractBridge hv' hloop' hm') :=
   ofInjective (fun w ↦ f.vertexEquiv w.1) Subtype.val Subtype.val_injective
     (f.vertexEquiv.subtypeEquiv fun _ ↦ f.vertexEquiv.injective.ne_iff.symm) (fun _ ↦ rfl)
-    (Equiv.optionCongr (f.edgeEquiv.subtypeEquiv fun _ ↦ by
-      rw [forall_endpoint_ne_iff, forall_endpoint_ne_iff, mem_ends_edgeEquiv]))
+    (Equiv.optionCongr (f.edgeEquiv.subtypeEquiv fun _ ↦ f.forall_endpoint_edgeEquiv_ne_iff.symm))
     (fun e ↦ by
       cases e with
       | none =>
@@ -293,6 +310,35 @@ noncomputable def contractBridge {v : G.Vertex} (hv : G.valence v = 2)
         simp only [ends_def, Sym2.map_mk]
         exact f.mk_endpoint_edgeEquiv e.1)
     (fun _ ↦ by simp) fun i ↦ by simp
+
+section contractBridge
+
+variable {v : G.Vertex} (hv : G.valence v = 2)
+  (hloop : ∀ e, G.endpoint e 0 = v → G.endpoint e 1 ≠ v) (hm : ∀ i, G.marking i ≠ v)
+  (hv' : H.valence (f.vertexEquiv v) = 2)
+  (hloop' : ∀ e, H.endpoint e 0 = f.vertexEquiv v → H.endpoint e 1 ≠ f.vertexEquiv v)
+  (hm' : ∀ i, H.marking i ≠ f.vertexEquiv v)
+
+/-- The isomorphism of bridge contractions acts on vertices as the original isomorphism. -/
+@[simp]
+theorem coe_contractBridge_vertexEquiv_apply (w : (G.contractBridge hv hloop hm).Vertex) :
+    ((f.contractBridge hv hloop hm hv' hloop' hm').vertexEquiv w : H.Vertex) = f.vertexEquiv w := by
+  rfl
+
+/-- The isomorphism of bridge contractions carries the new node to the new node. -/
+@[simp]
+theorem contractBridge_edgeEquiv_none :
+    (f.contractBridge hv hloop hm hv' hloop' hm').edgeEquiv none = none := by
+  rfl
+
+/-- The isomorphism of bridge contractions acts on the old edges as the original isomorphism. -/
+@[simp]
+theorem contractBridge_edgeEquiv_some (e : {e // ∀ i, G.endpoint e i ≠ v}) :
+    (f.contractBridge hv hloop hm hv' hloop' hm').edgeEquiv (some e) =
+      some ⟨f.edgeEquiv e, f.forall_endpoint_edgeEquiv_ne_iff.mpr e.2⟩ := by
+  rfl
+
+end contractBridge
 
 end Iso
 
