@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.DrinfeldBasis.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.NaiveLevel
-import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
+import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.GeometricFiber
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.MulBy.Rank
 import TauCeti.AlgebraicGeometry.IdealSheaf.Product
 import TauCeti.AlgebraicGeometry.IdealSheaf.Rank
@@ -111,25 +111,12 @@ theorem IsDrinfeldBasis.left_apply_ne_zero
     (h : E.IsDrinfeldBasis N φ) {s : S} (hN : (N : S.residueField s) ≠ 0)
     {a : Multiplicative (ZMod N × ZMod N)} (ha : a ≠ 1) :
     (φ a).left s ≠ E.zero s := by
-  -- base change `E` to an algebraic closure `L` of the residue field at `s`
-  let L := AlgebraicClosure (S.residueField s)
-  let t : Spec (.of L) ⟶ S :=
-    Spec.map (CommRingCat.ofHom (algebraMap (S.residueField s) L)) ≫ S.fromSpecResidueField s
-  have hg := E.isPullback_baseChange t
-  have h0 : (E.baseChange t).zero ≫ (E.baseChangeIso t).hom ≫ pullback.fst _ _ = t ≫ E.zero := by
-    simp
-  have hNL : (N : L) ≠ 0 := by
-    rw [← map_natCast (algebraMap (S.residueField s) L)]
-    exact (map_ne_zero_iff _ (algebraMap (S.residueField s) L).injective).mpr hN
+  refine left_apply_ne_zero_of_forall_isAlgClosed (φ a) hN fun K _ _ t hNK ↦ ?_
   have h' : (E.baseChange t).IsFiberwiseInjective
-      ((EllipticCurveGeom.pointsPullback hg h0).comp φ) :=
-    ((E.baseChange t).isFiberwiseInjective_iff_range_eq_ker hNL _).mpr
-      (h.pointsPullback hg h0).range_eq_ker
-  obtain ⟨p⟩ : Nonempty (Spec (.of L)) := inferInstance
-  have htp : t p = s := Scheme.fromSpecResidueField_apply s _
-  intro hs
-  exact isFiberwiseInjective_iff.mp h' a ha p
-    ((pointsPullback_left_apply_eq_zero_iff hg h0 (φ a) p).mpr (htp.symm ▸ hs))
+      ((EllipticCurveGeom.pointsPullback (E.isPullback_baseChange t) (by simp)).comp φ) :=
+    ((E.baseChange t).isFiberwiseInjective_iff_range_eq_ker hNK _).mpr
+      (h.pointsPullback (E.isPullback_baseChange t) (by simp)).range_eq_ker
+  exact fun he ↦ ha ((injective_iff_map_eq_one _).mp h'.injective a he)
 
 /-- **Every Drinfeld basis is a naive `[Γ(N)]`-structure where `N` is invertible** (Katz–Mazur,
 §3.7): if `N` is invertible in every residue field of `S`, a Drinfeld basis `φ : (ℤ/Nℤ)² →* E(S)`

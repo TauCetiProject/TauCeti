@@ -115,26 +115,6 @@ theorem gamma_hom_ext {P : ModuliProblem B} {f g : P ⟶ gamma B N}
   homLevel_hom_ext h
 
 variable (B N) in
-/-- Precomposing Drinfeld bases with an automorphism of `(ℤ/Nℤ)²` is an endomorphism of the moduli
-problem `[Γ(N)]`. -/
-noncomputable def gammaMap
-    (σ : Multiplicative (ZMod N × ZMod N) ≃* Multiplicative (ZMod N × ZMod N)) :
-    gamma B N ⟶ gamma B N :=
-  homLevelMap (hp := EllObj.Hom.isDrinfeldBasis_pointsPullback)
-    (hp' := EllObj.Hom.isDrinfeldBasis_pointsPullback) B σ.toMonoidHom fun _ _ h ↦
-    (EllipticCurveGeom.isDrinfeldBasis_comp_mulEquiv_iff σ).mpr h
-
-/-- Precomposing a `[Γ(N)]`-structure with `σ` composes its underlying homomorphism with `σ`. -/
-@[simp]
-theorem gammaEquiv_gammaMap_app
-    (σ : Multiplicative (ZMod N × ZMod N) ≃* Multiplicative (ZMod N × ZMod N))
-    (X : EllObj B) (α : (gamma B N).obj (op X)) :
-    (gammaEquiv X ((gammaMap B N σ).app (op X) α)).1 = (gammaEquiv X α).1.comp σ.toMonoidHom :=
-  homLevelEquiv_homLevelMap_app (hp := EllObj.Hom.isDrinfeldBasis_pointsPullback)
-    (hp' := EllObj.Hom.isDrinfeldBasis_pointsPullback) σ.toMonoidHom
-    (fun _ _ h ↦ (EllipticCurveGeom.isDrinfeldBasis_comp_mulEquiv_iff σ).mpr h) X α
-
-variable (B N) in
 /-- **The right action of `GL₂(ℤ/Nℤ)` on the moduli problem `[Γ(N)]`** (Katz–Mazur, §3.1 and §7.1).
 An invertible matrix `g` acts on `(ℤ/Nℤ)²` by `TauCeti.zmodProdMulAutEquiv`, and precomposing a
 Drinfeld basis `φ : (ℤ/Nℤ)² →* E(S)` with `g` gives another Drinfeld basis
