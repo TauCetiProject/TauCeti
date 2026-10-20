@@ -74,9 +74,9 @@ theorem range_koszulPairRight_eq_span (x y : R) :
 
 end Right
 
-section RegularPair
+section Left
 
-variable [CommRing R] [AddCommGroup M] [Module R M]
+variable [CommSemiring R] [AddCommGroup M] [Module R M]
 
 /-- The first differential of the two-element Koszul complex, with sign convention
 `c ↦ (-y • c, x • c)`. -/
@@ -96,6 +96,12 @@ theorem koszulPairRight_comp_koszulPairLeft (x y : R) :
   simp only [LinearMap.comp_apply, koszulPairLeft_apply, koszulPairRight_apply,
     smul_neg, smul_smul, LinearMap.zero_apply]
   rw [mul_comm x y, neg_add_cancel]
+
+end Left
+
+section RegularPair
+
+variable [CommRing R] [AddCommGroup M] [Module R M]
 
 /-- The first Koszul differential commutes with tensoring by `M`. -/
 private theorem prodScalarLeftEquiv_comp_koszulPairLeft_rTensor (x y : R) :
@@ -125,18 +131,14 @@ private theorem lid_comp_koszulPairRight_rTensor (x y : R) :
     TensorProduct.lid_tmul, TauCeti.TensorProduct.prodScalarLeftEquiv_tmul]
   rw [add_smul, mul_smul, mul_smul, smul_comm x a m, smul_comm y b m]
 
-private theorem isWeaklyRegular_pair_iff (x y : R) :
-    IsWeaklyRegular M [x, y] ↔
-      IsSMulRegular M x ∧ IsSMulRegular (QuotSMulTop x M) y := by
-  rw [isWeaklyRegular_cons_iff, isWeaklyRegular_singleton_iff]
-
 /-- Every relation on a pair weakly regular on `M` is a Koszul relation. -/
 theorem exists_koszul_relation_of_isWeaklyRegular_pair
     {x y : R} {a b : M}
     (hreg : IsWeaklyRegular M [x, y])
     (h : x • a + y • b = 0) :
     ∃ c : M, a = -(y • c) ∧ b = x • c := by
-  obtain ⟨hx, hy⟩ := (isWeaklyRegular_pair_iff x y).mp hreg
+  obtain ⟨hx, hweak⟩ := (isWeaklyRegular_cons_iff M x [y]).mp hreg
+  have hy := (isWeaklyRegular_singleton_iff (QuotSMulTop x M) y).mp hweak
   let q : M →ₗ[R] QuotSMulTop x M := (x • (⊤ : Submodule R M)).mkQ
   have hxa : q (x • a) = 0 := by
     simp only [q, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
@@ -246,6 +248,22 @@ theorem Module.free_of_weaklyRegular_pair_generates_maximalIdeal
   apply Module.free_of_maximalIdeal_rTensor_injective
   rw [← hspan, ← range_koszulPairRight_eq_span x y]
   exact range_koszulPairRight_subtype_rTensor_injective_of_isWeaklyRegular hregR hregM
+
+/-- Freeness for a scalar-regular pair generating the maximal ideal. -/
+theorem Module.free_of_regular_pair_generates_maximalIdeal
+    [IsLocalRing R] [Module.FinitePresentation R M]
+    {x y : R}
+    (hspan : Ideal.span ({x, y} : Set R) = IsLocalRing.maximalIdeal R)
+    (hxR : IsSMulRegular R x)
+    (hyR : IsSMulRegular (QuotSMulTop x R) y)
+    (hxM : IsSMulRegular M x)
+    (hyM : IsSMulRegular (QuotSMulTop x M) y) :
+    Module.Free R M := by
+  have hregR : IsWeaklyRegular R [x, y] :=
+    IsWeaklyRegular.cons hxR ((isWeaklyRegular_singleton_iff (QuotSMulTop x R) y).mpr hyR)
+  have hregM : IsWeaklyRegular M [x, y] :=
+    IsWeaklyRegular.cons hxM ((isWeaklyRegular_singleton_iff (QuotSMulTop x M) y).mpr hyM)
+  exact Module.free_of_weaklyRegular_pair_generates_maximalIdeal hspan hregR hregM
 
 end RegularPair
 
