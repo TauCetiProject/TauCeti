@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Instances.CantorSet
-public import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
+public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 
 /-!
 # Lebesgue measure of the Cantor set
@@ -34,12 +34,13 @@ theorem volume_preCantorSet (n : ℕ) : volume (preCantorSet n) = (2 / 3 : ℝ�
   induction n with
   | zero => simp
   | succ n ih =>
-    -- Both maps building `preCantorSet (n + 1)` are affine with slope `3⁻¹`.
-    have hleft : (· / 3) '' preCantorSet n = (fun x ↦ 3⁻¹ * x + 0) '' preCantorSet n :=
-      image_congr fun x _ ↦ by ring
+    -- Both maps building `preCantorSet (n + 1)` are homotheties of ratio `3⁻¹`.
+    have hleft : (· / 3) '' preCantorSet n = AffineMap.homothety (0 : ℝ) (3⁻¹ : ℝ) ''
+        preCantorSet n :=
+      image_congr fun x _ ↦ by simp [AffineMap.homothety_apply]; ring
     have hright : (fun x ↦ (2 + x) / 3) '' preCantorSet n =
-        (fun x ↦ 3⁻¹ * x + 2 / 3) '' preCantorSet n :=
-      image_congr fun x _ ↦ by ring
+        AffineMap.homothety (1 : ℝ) (3⁻¹ : ℝ) '' preCantorSet n :=
+      image_congr fun x _ ↦ by simp [AffineMap.homothety_apply]; ring
     have hdisj : Disjoint ((· / 3) '' preCantorSet n)
         ((fun x ↦ (2 + x) / 3) '' preCantorSet n) := by
       refine Set.disjoint_left.mpr ?_
@@ -50,8 +51,8 @@ theorem volume_preCantorSet (n : ℕ) : volume (preCantorSet n) = (2 / 3 : ℝ�
     have hmeas : MeasurableSet ((fun x ↦ (2 + x) / 3) '' preCantorSet n) :=
       ((isCompact_Icc.of_isClosed_subset (isClosed_preCantorSet n)
         preCantorSet_subset_unitInterval).image (by fun_prop)).isClosed.measurableSet
-    rw [preCantorSet_succ, measure_union hdisj hmeas, hleft, hright, volume_image_mul_add,
-      volume_image_mul_add, ih, pow_succ, ← add_mul]
+    rw [preCantorSet_succ, measure_union hdisj hmeas, hleft, hright,
+      Measure.addHaar_image_homothety, Measure.addHaar_image_homothety, ih, pow_succ, ← add_mul]
     norm_num [ENNReal.ofReal_div_of_pos, ENNReal.div_eq_inv_mul]
     ring
 

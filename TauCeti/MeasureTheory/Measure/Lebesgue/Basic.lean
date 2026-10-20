@@ -8,10 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 
 /-!
-# Lebesgue measure on the real line
-
-An affine map `x ↦ a * x + c` of the real line scales Lebesgue measure by `|a|`; this holds for
-arbitrary sets, including `a = 0`, and gives the self-similarity of the pre-Cantor sets.
+# Lebesgue measure of centered interval differences
 
 Replacing two subsets of the real line by open centered intervals of the same respective
 volumes can only decrease the volume of their one-sided difference. The inequality uses
@@ -25,17 +22,6 @@ open MeasureTheory Set
 open scoped ENNReal
 
 namespace TauCeti
-
-/-- The affine map `x ↦ a * x + c` scales the Lebesgue measure of every set by `|a|`. -/
-theorem volume_image_mul_add (a c : ℝ) (s : Set ℝ) :
-    volume ((fun x ↦ a * x + c) '' s) = ENNReal.ofReal |a| * volume s := by
-  rcases eq_or_ne a 0 with rfl | ha
-  · simpa using measure_mono_null (image_subset_iff.2 fun x _ ↦ by simp)
-      (measure_singleton (μ := volume) c)
-  · rw [image_eq_preimage_of_inverse (f := fun x ↦ a * x + c) (g := fun y ↦ a⁻¹ * (y + -c))
-      (fun x ↦ by field_simp; ring) (fun y ↦ by field_simp; ring),
-      show (fun y ↦ a⁻¹ * (y + -c)) ⁻¹' s = (· + -c) ⁻¹' ((a⁻¹ * ·) ⁻¹' s) from rfl,
-      measure_preimage_add_right, Real.volume_preimage_mul_left (inv_ne_zero ha), inv_inv]
 
 /-- Centering intervals can only decrease the length of a one-sided difference. -/
 theorem volume_eball_sdiff_le (s u : Set ℝ) :
