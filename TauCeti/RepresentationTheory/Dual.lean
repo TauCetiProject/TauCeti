@@ -117,8 +117,7 @@ group does not change its value under a functional the action leaves unchanged. 
 theorem apply_averageMap_of_mem_invariants_dual [Fintype G] [Invertible (Fintype.card G : k)]
     {ρ : Representation k G V} {ψ : Module.Dual k V} (hψ : ψ ∈ ρ.dual.invariants) (u : V) :
     ψ (ρ.averageMap u) = ψ u := by
-  rw [Representation.averageMap_eq_invOf_card_smul_norm, LinearMap.smul_apply, map_smul,
-    Representation.norm, LinearMap.sum_apply, map_sum]
+  rw [Representation.averageMap_apply, map_smul, map_sum]
   simp only [apply_of_mem_invariants_dual hψ, Finset.sum_const, Finset.card_univ, smul_eq_mul,
     nsmul_eq_mul, ← mul_assoc, invOf_mul_self, one_mul]
 

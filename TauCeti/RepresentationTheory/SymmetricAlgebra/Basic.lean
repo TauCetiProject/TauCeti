@@ -209,7 +209,8 @@ representation on `Sym M`. -/
 @[simp]
 theorem toSubmodule_symmetricAlgebraInvariants :
     Subalgebra.toSubmodule ρ.symmetricAlgebraInvariants = ρ.symmetricAlgebra.invariants :=
-  (rfl)
+  Submodule.ext fun p ↦
+    (ρ.mem_symmetricAlgebraInvariants p).trans (ρ.symmetricAlgebra.mem_invariants p).symm
 
 /-- **Integrality over the invariants.** For a finite group, the symmetric algebra is integral
 over the invariant subalgebra: each `p` is a root of the monic orbit polynomial
