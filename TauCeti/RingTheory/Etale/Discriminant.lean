@@ -99,7 +99,7 @@ theorem Algebra.algebraMap_discr_ne_zero_iff_etale_baseChange {A B ι : Type*} [
   have : FiniteDimensional K (K ⊗[A] B) := Module.Finite.of_basis (Algebra.TensorProduct.basis K b)
   rw [Algebra.etale_iff_traceForm_nondegenerate,
     ← Algebra.discr_ne_zero_iff_traceForm_nondegenerate (Algebra.TensorProduct.basis K b),
-    Algebra.discr_baseChange]
+    Algebra.discr_basis_baseChange]
 
 /-- A finite free algebra whose basis has unit discriminant is étale. -/
 theorem Algebra.etale_of_isUnit_discr {A B ι : Type*} [CommRing A] [CommRing B] [Algebra A B]
@@ -137,7 +137,7 @@ theorem Algebra.isUnit_algebraMap_discr_iff_etale_baseChange {A B ι : Type*} [C
     (A' : Type*) [CommRing A'] [Algebra A A'] :
     IsUnit (algebraMap A A' (Algebra.discr A b)) ↔ Algebra.Etale A' (A' ⊗[A] B) := by
   rw [Algebra.etale_iff_isUnit_discr _ _ (Algebra.TensorProduct.basis A' b),
-    Algebra.discr_baseChange]
+    Algebra.discr_basis_baseChange]
 
 /-- The discriminant of a basis of a finite free algebra is a unit at a prime `𝔭` iff the base
 change to the localization `A_𝔭` is étale over `A_𝔭`. -/

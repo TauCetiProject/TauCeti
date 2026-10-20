@@ -11,17 +11,18 @@ public import TauCeti.RingTheory.NormTrace.BaseChange
 /-!
 # Discriminants under base change
 
-The trace matrix and the discriminant of a basis of a finite free algebra commute with scalar
-extension: for a basis `b` of `S` over `R` and an `R`-algebra `A`, the discriminant of the
-base-changed basis of `A ⊗[R] S` over `A` is the image of the discriminant of `b`. This lets
-statements about discriminants pass to residue fields and localizations of the base.
+The trace matrix and discriminant of a finite family in a finite free algebra commute with
+scalar extension. In particular, for a basis `b` of `S` over `R` and an `R`-algebra `A`, the
+discriminant of the base-changed basis of `A ⊗[R] S` over `A` is the image of the discriminant
+of `b`. This lets statements about discriminants pass to residue fields and localizations.
 
 ## Main results
 
-* `TauCeti.Algebra.traceMatrix_baseChange`: the trace matrix of the base-changed basis is the
-  image of the trace matrix of `b`.
-* `TauCeti.Algebra.discr_baseChange`: the discriminant of the base-changed basis is the image of
-  the discriminant of `b`.
+* `TauCeti.Algebra.traceMatrix_baseChange`: the trace matrix of a base-changed finite family is
+  the image of its original trace matrix.
+* `TauCeti.Algebra.discr_baseChange`: the discriminant of a base-changed finite family is the
+  image of its original discriminant.
+* `TauCeti.Algebra.discr_basis_baseChange`: the basis specialization.
 
 ## References
 
@@ -40,23 +41,35 @@ namespace TauCeti
 
 variable {R S A ι : Type*} [CommRing R] [CommRing S] [Algebra R S] [CommRing A] [Algebra R A]
 
-/-- The trace matrix of the base change of a basis of a finite free algebra is the image of the
-trace matrix of the basis. -/
+/-- The trace matrix of a base-changed finite family is the image of its original trace matrix. -/
 @[simp]
-theorem Algebra.traceMatrix_baseChange [Finite ι] (b : Module.Basis ι R S) :
-    Algebra.traceMatrix A (Algebra.TensorProduct.basis A b) =
+theorem Algebra.traceMatrix_baseChange [Module.Free R S] [Module.Finite R S] [Finite ι]
+    (b : ι → S) :
+    Algebra.traceMatrix A (fun i ↦ (1 : A) ⊗ₜ[R] b i) =
       (Algebra.traceMatrix R b).map (algebraMap R A) := by
-  have : Module.Free R S := Module.Free.of_basis b
-  have : Module.Finite R S := Module.Finite.of_basis b
   ext i j
   simp [Algebra.traceMatrix_apply, Algebra.trace_baseChange_tmul]
 
-/-- The discriminant of the base change of a basis of a finite free algebra is the image of the
-discriminant of the basis. -/
+/-- The discriminant of a base-changed finite family is the image of its original discriminant. -/
 @[simp]
-theorem Algebra.discr_baseChange [Fintype ι] [DecidableEq ι] (b : Module.Basis ι R S) :
-    Algebra.discr A (Algebra.TensorProduct.basis A b) = algebraMap R A (Algebra.discr R b) := by
+theorem Algebra.discr_baseChange [Module.Free R S] [Module.Finite R S] [Fintype ι]
+    [DecidableEq ι] (b : ι → S) :
+    Algebra.discr A (fun i ↦ (1 : A) ⊗ₜ[R] b i) = algebraMap R A (Algebra.discr R b) := by
   rw [Algebra.discr_def, Algebra.discr_def, Algebra.traceMatrix_baseChange, RingHom.map_det,
     RingHom.mapMatrix_apply]
+
+/-- The discriminant of a base-changed basis is the image of its original discriminant. -/
+@[simp]
+theorem Algebra.discr_basis_baseChange [Fintype ι] [DecidableEq ι]
+    (b : Module.Basis ι R S) :
+    Algebra.discr A (Algebra.TensorProduct.basis A b) = algebraMap R A (Algebra.discr R b) := by
+  have : Module.Free R S := Module.Free.of_basis b
+  have : Module.Finite R S := Module.Finite.of_basis b
+  have hb : (Algebra.TensorProduct.basis A b : ι → A ⊗[R] S) =
+      (fun i ↦ (1 : A) ⊗ₜ[R] b i) := by
+    funext i
+    simp [Algebra.TensorProduct.basis_apply]
+  rw [hb]
+  exact Algebra.discr_baseChange (R := R) (S := S) (A := A) (b := b)
 
 end TauCeti
