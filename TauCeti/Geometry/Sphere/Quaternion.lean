@@ -19,7 +19,7 @@ Let `E` be a real inner product space on which the quaternions act on the right,
 The quaternionic inner-product facts used here are developed in `TauCeti.Analysis.Quaternion`.
 For a unit vector `x`, the three vectors `x <• i`, `x <• j`, `x <• k` are orthonormal and
 orthogonal to `x`: they are three pointwise orthonormal tangent vector fields on the unit sphere of
-`E`, and they are restrictions of real-linear maps of `E`, hence smooth. For `E = ℍ^ι` these are
+`E`, and they are restrictions of real-linear maps of `E`, hence analytic. For `E = ℍ^ι` these are
 the classical vector fields on `S^{4k-1}` coming from quaternionic multiplication.
 
 Tangent vector fields on a sphere are represented, as usual in topology, by maps
@@ -30,7 +30,7 @@ Tangent vector fields on a sphere are represented, as usual in topology, by maps
 * `TauCeti.quaternionFrame`: the three vectors `x <• i`, `x <• j`, `x <• k`.
 * `TauCeti.orthonormal_quaternionFrame`, `TauCeti.inner_quaternionFrame_self`: the three
   vectors are orthogonal to `x`, and orthonormal when `x` is a unit vector.
-* `TauCeti.contDiff_quaternionFrame`, `TauCeti.contMDiff_quaternionFrame`: they are smooth on
+* `TauCeti.contDiff_quaternionFrame`, `TauCeti.contMDiff_quaternionFrame`: they are analytic on
   `E` and on the unit sphere.
 
 ## References
@@ -76,20 +76,20 @@ section Smooth
 
 variable [NormedAddCommGroup E] [DistribSMul ℍᵐᵒᵖ E] [ContinuousConstSMul ℍᵐᵒᵖ E]
 
-/-- Each vector field of the quaternionic frame extends to a smooth map of `E`. -/
-theorem contDiff_quaternionFrame [NormedSpace ℝ E] [SMulCommClass ℝ ℍᵐᵒᵖ E] (j : Fin 3) :
-    ContDiff ℝ ∞ fun x : E ↦ quaternionFrame x j := by
+/-- Each vector field of the quaternionic frame extends to an analytic map of `E`. -/
+theorem contDiff_quaternionFrame [NormedSpace ℝ E] [SMulCommClass ℝ ℍᵐᵒᵖ E] {m : ℕ∞ω}
+    (j : Fin 3) : ContDiff ℝ m fun x : E ↦ quaternionFrame x j := by
   fin_cases j <;> exact contDiff_const_smul _
 
-/-- Each vector field of the quaternionic frame is a smooth map on the unit sphere. -/
-theorem contMDiff_quaternionFrame [InnerProductSpace ℝ E] [SMulCommClass ℝ ℍᵐᵒᵖ E] {n : ℕ}
+/-- Each vector field of the quaternionic frame is an analytic map on the unit sphere. -/
+theorem contMDiff_quaternionFrame [InnerProductSpace ℝ E] [SMulCommClass ℝ ℍᵐᵒᵖ E] {m : ℕ∞ω} {n : ℕ}
     [Fact (finrank ℝ E = n + 1)] (j : Fin 3) :
-    ContMDiff (𝓡 n) 𝓘(ℝ, E) ∞ fun x : sphere (0 : E) 1 ↦ quaternionFrame (x : E) j :=
+    ContMDiff (𝓡 n) 𝓘(ℝ, E) m fun x : sphere (0 : E) 1 ↦ quaternionFrame (x : E) j :=
   (contDiff_quaternionFrame j).contMDiff.comp contMDiff_coe_sphere
 
 end Smooth
 
-variable [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Module ℍᵐᵒᵖ E] [NormSMulClass ℍᵐᵒᵖ E]
+variable [SeminormedAddCommGroup E] [InnerProductSpace ℝ E] [Module ℍᵐᵒᵖ E] [NormSMulClass ℍᵐᵒᵖ E]
 
 /-- Each vector of the quaternionic frame of `x` is orthogonal to `x`: on the unit sphere the
 frame consists of tangent vectors. -/
