@@ -19,10 +19,11 @@ of the radical of the category (`TauCeti.jacobsonRadicalIdeal_pow_eq_bot_of_jaco
 In particular the radical is nilpotent when `End G` is semiprimary, for instance Artinian
 (`TauCeti.exists_jacobsonRadicalIdeal_pow_eq_bot`).
 
-The proof sandwiches a morphism `f : X ⟶ Y` between maps `G ⟶ X` and `Y ⟶ G`. A radical
-morphism becomes an element of the Jacobson radical of `End G`, and a composite of `n` radical
-morphisms becomes an element of its `n`-th power, after inserting the decomposition of the
-identity at each intermediate object. A morphism all of whose sandwiches vanish is zero.
+The proof composes a morphism `f : X ⟶ Y` with maps `a : G ⟶ X` and `b : Y ⟶ G`. For a radical
+`f` the composite `a ≫ f ≫ b` lies in the Jacobson radical of `End G`, and for a composite of `n`
+radical morphisms it lies in the `n`-th power, after inserting the decomposition of the identity
+at each intermediate object (`TauCeti.comp_comp_mem_jacobson_pow`). A morphism `f` with
+`a ≫ f ≫ b = 0` for all such `a` and `b` is zero (`TauCeti.eq_zero_of_forall_comp_comp_eq_zero`).
 
 This is the form in which nilpotence of the radical is used for the module category of a
 representation-finite algebra, where `G` is the sum of the indecomposable modules.
@@ -43,10 +44,10 @@ universe v u
 
 variable {C : Type u} [Category.{v} C] [Preadditive C]
 
-/-- A morphism `f : X ⟶ Y` in the `n`-th power of the radical, sandwiched between maps `G ⟶ X`
+/-- A morphism `f : X ⟶ Y` in the `n`-th power of the radical, composed with maps `G ⟶ X`
 and `Y ⟶ G`, lies in the `n`-th power of the Jacobson radical of `End G`, provided every object
 is a direct summand of a finite sum of copies of `G`. -/
-theorem sandwich_mem_jacobson_pow (G : C)
+theorem comp_comp_mem_jacobson_pow (G : C)
     (hG : ∀ X : C, ∃ (n : ℕ) (a : Fin n → (X ⟶ G)) (b : Fin n → (G ⟶ X)),
       ∑ j, a j ≫ b j = 𝟙 X) :
     ∀ (n : ℕ) {X Y : C} {f : X ⟶ Y}, f ∈ (jacobsonRadicalIdeal C ^ n).hom X Y →
@@ -56,7 +57,7 @@ theorem sandwich_mem_jacobson_pow (G : C)
     exact Submodule.mem_top
   | n + 1, X, Y, f, hf, a, b => by
     rw [pow_succ] at hf
-    -- The sandwich `f ↦ a ≫ f ≫ b` is additive, so it suffices to treat one composite.
+    -- The map `f ↦ a ≫ f ≫ b` is additive, so it suffices to treat one composite.
     let φ : (X ⟶ Y) →+ End G :=
       AddMonoidHom.mk' (fun f ↦ End.of (a ≫ f ≫ b)) fun _ _ ↦ by ext; simp
     refine MorphismIdeal.mul_hom_le_iff
@@ -71,13 +72,13 @@ theorem sandwich_mem_jacobson_pow (G : C)
         rw [hab, Category.id_comp]
       simpa [φ, Preadditive.sum_comp, Preadditive.comp_sum] using h
     rw [AddSubgroup.mem_comap, Submodule.mem_toAddSubgroup, hsum, Submodule.pow_succ]
-    refine sum_mem fun j _ ↦ Ideal.mul_mem_mul (sandwich_mem_jacobson_pow G hG n hf (b' j) b) ?_
+    refine sum_mem fun j _ ↦ Ideal.mul_mem_mul (comp_comp_mem_jacobson_pow G hG n hf (b' j) b) ?_
     exact mem_jacobsonRadical_self_iff_mem_jacobson.mp
       (comp_mem_jacobsonRadical_left a (comp_mem_jacobsonRadical_right hg (a' j)))
 
 /-- If every object is a direct summand of a finite sum of copies of `G`, a morphism all of whose
-sandwiches `a ≫ f ≫ b` with `a : G ⟶ X` and `b : Y ⟶ G` vanish is zero. -/
-theorem eq_zero_of_forall_sandwich_eq_zero (G : C)
+composites `a ≫ f ≫ b` with `a : G ⟶ X` and `b : Y ⟶ G` vanish is zero. -/
+theorem eq_zero_of_forall_comp_comp_eq_zero (G : C)
     (hG : ∀ X : C, ∃ (n : ℕ) (a : Fin n → (X ⟶ G)) (b : Fin n → (G ⟶ X)),
       ∑ j, a j ≫ b j = 𝟙 X)
     {X Y : C} {f : X ⟶ Y} (hf : ∀ (a : G ⟶ X) (b : Y ⟶ G), a ≫ f ≫ b = 0) : f = 0 := by
@@ -99,8 +100,8 @@ theorem jacobsonRadicalIdeal_pow_eq_bot_of_jacobson_pow_eq_bot (G : C)
     {N : ℕ} (hN : Ring.jacobson (End G) ^ N = ⊥) : jacobsonRadicalIdeal C ^ N = ⊥ := by
   refine le_antisymm (MorphismIdeal.le_def.mpr fun X Y f hf ↦ ?_) bot_le
   rw [MorphismIdeal.mem_bot]
-  refine eq_zero_of_forall_sandwich_eq_zero G hG fun a b ↦ ?_
-  have h := sandwich_mem_jacobson_pow G hG N hf a b
+  refine eq_zero_of_forall_comp_comp_eq_zero G hG fun a b ↦ ?_
+  have h := comp_comp_mem_jacobson_pow G hG N hf a b
   rw [hN, Ideal.mem_bot] at h
   exact congrArg End.asHom h
 

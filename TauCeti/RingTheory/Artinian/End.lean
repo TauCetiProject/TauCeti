@@ -12,10 +12,11 @@ import TauCeti.Algebra.Module.LinearMap.Finite
 /-!
 # Endomorphism rings of modules over Artin algebras
 
-Let `A` be an algebra over a commutative Artinian ring `R` that is finitely generated as an
-`R`-module, an *Artin algebra*. A finite-dimensional algebra over a field is the basic example.
-The endomorphism ring of a finitely generated `A`-module is then again finitely generated over `R`,
-hence an Artinian ring (`Module.End.isArtinianRing`).
+Let `A` be an algebra over a commutative Artinian ring `R`, and `M` an `A`-module that is finitely
+generated over `R`. Then the endomorphism ring of `M` over `A` is again finitely generated over `R`,
+hence an Artinian ring (`Module.End.isArtinianRing`). This applies to a finitely generated module
+over an *Artin algebra*, an `R`-algebra that is finitely generated as an `R`-module; a
+finite-dimensional algebra over a field is the basic example.
 
 ## References
 
@@ -28,15 +29,13 @@ public section
 namespace Module.End
 
 variable (R : Type*) {A M : Type*} [CommRing R] [IsArtinianRing R] [Ring A] [Algebra R A]
-  [Module.Finite R A] [AddCommGroup M] [Module A M] [Module.Finite A M]
+  [AddCommGroup M] [Module A M] [Module R M] [IsScalarTower R A M] [Module.Finite R M]
 
 include R in
-/-- The endomorphism ring of a finitely generated module over an Artin algebra is Artinian. -/
+/-- The endomorphism ring of a module over an `R`-algebra that is finitely generated over a
+commutative Artinian ring `R` is Artinian. -/
 theorem isArtinianRing : IsArtinianRing (Module.End A M) := by
-  -- Let `R` act on `M` through `A`.
-  let : Module R M := Module.compHom M (algebraMap R A)
-  have : IsScalarTower R A M := .of_algebraMap_smul fun _ _ ↦ rfl
-  have : Module.Finite R M := .trans A M
+  have : Module.Finite A M := .of_restrictScalars_finite R A M
   have : Module.Finite R (Module.End A M) := .linearMap_of_isNoetherian
   exact IsArtinianRing.of_finite R (Module.End A M)
 
