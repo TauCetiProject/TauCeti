@@ -7,18 +7,14 @@ module
 
 public import TauCeti.Algebra.Module.ZLattice.Covolume
 public import TauCeti.Algebra.Module.ZLattice.Integral
-public import TauCeti.LinearAlgebra.Matrix.BilinearForm
 
 /-!
 # The determinant and the discriminant group of a lattice
 
 Let `L` be a full `ℤ`-lattice in a finite-dimensional real inner product space `E`, with the
-volume measure of the inner product. This file relates the covolume of `L` to its dual lattice
-`L^∨ = ZLattice.dual L`.
-
-The covolume of the dual is the inverse of the covolume (`ZLattice.covolume_dual`): in an
-`ℤ`-basis of `L` and the dual basis of `L^∨`, the Gram matrices are inverse to each other, and the
-square of the covolume is the Gram determinant (`ZLattice.covolume_sq_eq_det_gram`).
+volume measure of the inner product. This file defines the determinant and the discriminant
+group of `L`, using that the covolume of the dual lattice `L^∨ = ZLattice.dual L` is the inverse
+of the covolume of `L` (`ZLattice.covolume_dual`).
 
 The *determinant* of `L` is `ZLattice.det L = covolume L ^ 2`, the Gram determinant of any
 `ℤ`-basis of `L` (`ZLattice.det_eq_det_gram`). The *discriminant group* is the quotient
@@ -40,7 +36,6 @@ whether or not they are assumed integral (`ZLattice.IsUnimodular.covolume_eq_one
 
 ## Main statements
 
-* `ZLattice.covolume_dual`: `covolume L^∨ = (covolume L)⁻¹`.
 * `ZLattice.det_eq_det_gram`: `det L` is the Gram determinant of any `ℤ`-basis of `L`.
 * `ZLattice.det_dual`: `det L^∨ = (det L)⁻¹`.
 * `ZLattice.IsIntegral.det_eq_card_discriminantGroup`: for integral `L`, `det L = |L^∨ ⧸ L|`.
@@ -58,8 +53,6 @@ whether or not they are assumed integral (`ZLattice.IsUnimodular.covolume_eq_one
 public section
 
 open Module Submodule MeasureTheory
-open LinearMap (BilinForm)
-open scoped RealInnerProductSpace
 
 namespace ZLattice
 
@@ -123,6 +116,7 @@ order of the discriminant group (`IsIntegral.det_eq_card_discriminantGroup`). -/
 noncomputable def det (L : Submodule ℤ E) : ℝ :=
   covolume L ^ 2
 
+/-- The determinant of a lattice is the square of its covolume. -/
 theorem det_def (L : Submodule ℤ E) : det L = covolume L ^ 2 :=
   (rfl)
 
@@ -137,38 +131,6 @@ theorem det_pos : 0 < det L :=
 theorem det_eq_det_gram {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Basis ι ℤ L) :
     det L = (Matrix.gram ℝ fun i ↦ (b i : E)).det :=
   covolume_sq_eq_det_gram L b
-
-/-- The covolume of the dual of a full lattice is the inverse of the covolume of the lattice. -/
-theorem covolume_dual : covolume (dual L) = (covolume L)⁻¹ := by
-  classical
-  let b := Free.chooseBasis ℤ L
-  let B := b.ofZLatticeBasis ℝ L
-  let D := BilinForm.dualBasis (innerₗ E) TauCeti.nondegenerate_inner B
-  -- The dual lattice is the `ℤ`-span of the dual basis `D`, so `D` is a `ℤ`-basis of it.
-  have hdual : span ℤ (Set.range D) = dual L := by
-    conv_rhs => rw [← b.ofZLatticeBasis_span ℝ L]
-    rw [dual_span_basis]
-  let bD : Basis _ ℤ (dual L) :=
-    (Basis.span (D.linearIndependent.restrict_scalars' ℤ)).map (LinearEquiv.ofEq _ _ hdual)
-  have hbD (i) : (bD i : E) = D i := by simp [bD, Basis.span_apply]
-  -- The Gram matrix of `D` is the inverse of the Gram matrix of `B`, so the product of the Gram
-  -- determinants, which is the product of the squared covolumes, is one.
-  have hgram (v : Basis (Free.ChooseBasisIndex ℤ L) ℝ E) :
-      Matrix.gram ℝ ⇑v = BilinForm.toMatrix v (innerₗ E) := by
-    ext i j
-    simp [BilinForm.toMatrix_apply, Matrix.gram_apply]
-  have hB : (fun i ↦ (b i : E)) = ⇑B := funext fun i ↦ (b.ofZLatticeBasis_apply ℝ L i).symm
-  have hD : (fun i ↦ (bD i : E)) = ⇑D := funext hbD
-  have hne : (BilinForm.toMatrix B (innerₗ E)).det ≠ 0 := by
-    rw [← hgram, ← hB, ← det_eq_det_gram L b]
-    exact (det_pos L).ne'
-  have hdet : det (dual L) * det L = 1 := by
-    rw [det_eq_det_gram (dual L) bD, det_eq_det_gram L b, hB, hD, hgram, hgram,
-      BilinForm.toMatrix_dualBasis, Matrix.det_nonsing_inv, Matrix.det_transpose,
-      Ring.inverse_mul_cancel _ (isUnit_iff_ne_zero.mpr hne)]
-  have hpos := mul_pos (covolume_pos (dual L) volume) (covolume_pos L volume)
-  rw [det_def, det_def, ← mul_pow, pow_eq_one_iff_of_nonneg hpos.le two_ne_zero] at hdet
-  exact eq_inv_of_mul_eq_one_left hdet
 
 /-- The determinant of the dual of a full lattice is the inverse of its determinant. -/
 @[simp]
