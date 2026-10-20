@@ -176,7 +176,6 @@ def castDegree {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {n m : ℕ
   exact LinearEquiv.refl ℝ _
 
 /-- Evaluating a smooth form after transporting its degree across an equality. -/
-@[simp]
 theorem castDegree_apply {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     {n m : ℕ} (h : n = m) (α : SmoothForm I M F n) (x : M)
     (v : Fin m → TangentSpace I x) :
@@ -191,7 +190,6 @@ theorem castDegree_rfl {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   rfl
 
 /-- Transporting across a composite degree equality agrees with successive transports. -/
-@[simp]
 theorem castDegree_trans {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     {n m o : ℕ} (h : n = m) (h' : m = o)
     (α : SmoothForm I M F n) :
