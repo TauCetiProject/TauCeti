@@ -7,16 +7,18 @@ module
 
 public import Mathlib.Algebra.Colimit.Ring
 public import Mathlib.Algebra.Polynomial.Lifts
+public import Mathlib.RingTheory.FinitePresentation
 
 /-!
-# Ideals and monic polynomials over directed colimits of rings
+# Ideals, monic polynomials and finitely presented rings over directed colimits of rings
 
 Let `I i` be a compatible family of ideals in a directed system of commutative rings `G i`,
 indexed by a nonempty directed preorder: the transition maps `f i j` carry `I i` into `I j`. The
 colimit ideal of `Ring.DirectLimit G f` is `⨆ i, (I i).map (of G f i)`. This file shows that its
 elements are exactly the images of elements of the `I i`, and that membership in it, and being a
 unit modulo it, descend to a finite stage. It also shows that monic polynomials over the colimit
-come from monic polynomials over some stage.
+come from monic polynomials over some stage, and that ring homomorphisms from a finitely
+presented ring into the colimit factor through some stage.
 
 ## Main results
 
@@ -26,11 +28,13 @@ come from monic polynomials over some stage.
   ideal, and of units modulo it, to a finite stage.
 * `Ring.DirectLimit.Polynomial.exists_monic_of`: a monic polynomial over the colimit comes from a
   monic polynomial over some stage.
+* `Ring.DirectLimit.exists_of_comp_eq_of_finitePresentation`: a ring homomorphism from a
+  finitely presented ring into the colimit factors through some stage.
 -/
 
 public section
 
-open Polynomial
+open Polynomial MvPolynomial
 
 namespace Ring.DirectLimit
 
@@ -111,5 +115,47 @@ theorem Polynomial.exists_monic_of [Nonempty ι] [IsDirectedOrder ι]
   obtain ⟨i, p, hp⟩ := Ring.DirectLimit.Polynomial.exists_of P
   obtain ⟨q, hq, -, hqm⟩ := lifts_and_natDegree_eq_and_monic ((mem_lifts P).2 ⟨p, hp⟩) hP
   exact ⟨i, q, hqm, hq⟩
+
+/-- A ring homomorphism from a finitely presented ring into a directed colimit of rings factors
+through some stage. This is the surjectivity half of the statement that `Hom(A, -)` commutes
+with directed colimits for a finitely presented ring `A`. -/
+theorem exists_of_comp_eq_of_finitePresentation [Nonempty ι] [IsDirectedOrder ι]
+    [DirectedSystem G (f · · ·)] {A : Type*} [CommRing A] [Algebra.FinitePresentation ℤ A]
+    (g : A →+* DirectLimit G (f · · ·)) :
+    ∃ i, ∃ g' : A →+* G i, (of G (f · · ·) i).comp g' = g := by
+  classical
+  obtain ⟨n, π, hπ, s, hs⟩ := Algebra.FinitePresentation.out (R := ℤ) (A := A)
+  -- Lift the images of the generators to a common stage `i`.
+  choose j x hx using fun k : Fin n ↦ exists_of (g (π (X k)))
+  obtain ⟨i, hi⟩ := (Finset.univ.image j).exists_le
+  have hji (k : Fin n) : j k ≤ i := hi _ (Finset.mem_image_of_mem _ (Finset.mem_univ k))
+  let ψ : MvPolynomial (Fin n) ℤ →+* G i := eval₂Hom (Int.castRingHom _)
+    fun k ↦ f (j k) i (hji k) (x k)
+  have hψ (p : MvPolynomial (Fin n) ℤ) : of G (f · · ·) i (ψ p) = g (π p) := by
+    have : (of G (f · · ·) i).comp ψ = g.comp π.toRingHom := by
+      refine MvPolynomial.ringHom_ext (fun k ↦ by simp) fun k ↦ ?_
+      simp [ψ, hx]
+    exact congr($this p)
+  -- Each of the finitely many relations dies at some later stage `l`.
+  have hrel (r : s) : ∃ m, ∃ him : i ≤ m, f i m him (ψ r) = 0 := by
+    refine of.zero_exact ?_
+    have : π r = 0 := by
+      simpa using (hs ▸ Ideal.subset_span r.2 : (r : MvPolynomial (Fin n) ℤ) ∈ RingHom.ker π)
+    rw [hψ, this, map_zero]
+  choose m him hm using hrel
+  obtain ⟨l, hl⟩ := (insert i (Finset.univ.image m)).exists_le
+  have hil : i ≤ l := hl _ (Finset.mem_insert_self _ _)
+  have hml (r : s) : m r ≤ l :=
+    hl _ (Finset.mem_insert_of_mem (Finset.mem_image_of_mem _ (Finset.mem_univ r)))
+  have hker : RingHom.ker π.toRingHom ≤ RingHom.ker ((f i l hil).comp ψ) := by
+    rw [← hs, Ideal.span_le]
+    intro r hr
+    rw [SetLike.mem_coe, RingHom.mem_ker, RingHom.comp_apply,
+      ← DirectedSystem.map_map' f (him ⟨r, hr⟩) (hml ⟨r, hr⟩), hm, map_zero]
+  refine ⟨l, π.toRingHom.liftOfSurjective hπ ⟨_, hker⟩, RingHom.ext fun a ↦ ?_⟩
+  obtain ⟨p, rfl⟩ := hπ a
+  have := π.toRingHom.liftOfSurjective_comp_apply hπ ⟨_, hker⟩ p
+  calc _ = of G (f · · ·) l (((f i l hil).comp ψ) p) := congrArg _ this
+    _ = g (π p) := by simp [hψ]
 
 end Ring.DirectLimit
