@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Colimit.Ring
 public import Mathlib.Algebra.Polynomial.Lifts
 public import Mathlib.RingTheory.FinitePresentation
+import Mathlib.Data.Fintype.Order
 
 /-!
 # Ideals, monic polynomials and finitely presented rings over directed colimits of rings
@@ -118,7 +119,11 @@ theorem Polynomial.exists_monic_of [Nonempty ι] [IsDirectedOrder ι]
 
 /-- A ring homomorphism from a finitely presented ring into a directed colimit of rings factors
 through some stage. This is the surjectivity half of the statement that `Hom(A, -)` commutes
-with directed colimits for a finitely presented ring `A`. -/
+with directed colimits for a finitely presented ring `A`.
+
+The proof adapts Mathlib's `RingHom.EssFiniteType.exists_eq_comp_ι_app_of_isColimit`
+(`Mathlib/Algebra/Category/Ring/FinitePresentation.lean`), which is stated for `IsColimit` cocones
+in `CommRingCat`, to `Ring.DirectLimit`. -/
 theorem exists_of_comp_eq_of_finitePresentation [Nonempty ι] [IsDirectedOrder ι]
     [DirectedSystem G (f · · ·)] {A : Type*} [CommRing A] [Algebra.FinitePresentation ℤ A]
     (g : A →+* DirectLimit G (f · · ·)) :
@@ -127,8 +132,7 @@ theorem exists_of_comp_eq_of_finitePresentation [Nonempty ι] [IsDirectedOrder �
   obtain ⟨n, π, hπ, s, hs⟩ := Algebra.FinitePresentation.out (R := ℤ) (A := A)
   -- Lift the images of the generators to a common stage `i`.
   choose j x hx using fun k : Fin n ↦ exists_of (g (π (X k)))
-  obtain ⟨i, hi⟩ := (Finset.univ.image j).exists_le
-  have hji (k : Fin n) : j k ≤ i := hi _ (Finset.mem_image_of_mem _ (Finset.mem_univ k))
+  obtain ⟨i, hji⟩ := Finite.exists_le j
   let ψ : MvPolynomial (Fin n) ℤ →+* G i := eval₂Hom (Int.castRingHom _)
     fun k ↦ f (j k) i (hji k) (x k)
   have hψ (p : MvPolynomial (Fin n) ℤ) : of G (f · · ·) i (ψ p) = g (π p) := by
@@ -143,10 +147,9 @@ theorem exists_of_comp_eq_of_finitePresentation [Nonempty ι] [IsDirectedOrder �
       simpa using (hs ▸ Ideal.subset_span r.2 : (r : MvPolynomial (Fin n) ℤ) ∈ RingHom.ker π)
     rw [hψ, this, map_zero]
   choose m him hm using hrel
-  obtain ⟨l, hl⟩ := (insert i (Finset.univ.image m)).exists_le
-  have hil : i ≤ l := hl _ (Finset.mem_insert_self _ _)
-  have hml (r : s) : m r ≤ l :=
-    hl _ (Finset.mem_insert_of_mem (Finset.mem_image_of_mem _ (Finset.mem_univ r)))
+  obtain ⟨l₀, hl₀⟩ := Finite.exists_le m
+  obtain ⟨l, hil, hl₀l⟩ := exists_ge_ge i l₀
+  have hml (r : s) : m r ≤ l := (hl₀ r).trans hl₀l
   have hker : RingHom.ker π.toRingHom ≤ RingHom.ker ((f i l hil).comp ψ) := by
     rw [← hs, Ideal.span_le]
     intro r hr
