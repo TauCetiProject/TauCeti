@@ -22,8 +22,11 @@ stabilizer of `[m]`, in the sense that a rational point of `G` lies in `D` exact
 `[m]`, then the orbit `O` of `[m]` in the projective space `P(V)` satisfies
 
 ```text
-  dim O + dim (G ⧸ D) = dim G.
+  dim O + dim D = dim G,
 ```
+
+where `dim D` is the dimension of the closed subgroup cut out by `D`, whose coordinate ring is
+`H ⧸ D`.
 
 Only the rational points of the stabilizer are prescribed, so `D` may be any closed subgroup with
 the right rational points, reduced or not: the Krull dimension sees only the underlying space.
@@ -38,8 +41,8 @@ the identity. The three codimensions are identified as follows.
   points of `O`, and every point of `O` specializes to a closed point.
 * The fibre of the orbit map through the identity is the closed subset cut out by `D`, since both
   are closed and have the same rational points, which are dense because `G` is Jacobson. The
-  codimension of the identity in it is the height of the augmentation ideal of `G ⧸ D`, that is
-  `dim (G ⧸ D)`.
+  codimension of the identity in it is the height of the augmentation ideal of `H ⧸ D`, that is
+  `dim D`.
 
 This is the dimension count that relates the closed-orbit lemma, which concerns orbits of minimal
 dimension, to stabilizers of maximal dimension, as in the conjugacy of Borel subgroups.
@@ -132,7 +135,8 @@ variable [_root_.IsReduced H]
 
 /-- **The dimension of a projective orbit.** For a reduced affine group of finite type over an
 algebraically closed field, the orbit of a line `[m]` and a closed subgroup `D` whose rational
-points are exactly those fixing `[m]` satisfy `dim O + dim (G ⧸ D) = dim G`. -/
+points are exactly those fixing `[m]` satisfy `dim O + dim D = dim G`, where `dim D` is the Krull
+dimension of the coordinate ring `H ⧸ D` of that subgroup. -/
 theorem topologicalKrullDim_range_projectiveOrbitMap_add_ringKrullDim_eq
     (m : M) (hm : Module.IsUnimodular k m) (D : HopfIdeal k H)
     (hstab : ∀ a : WithConv (H →ₐ[k] k),
@@ -158,12 +162,12 @@ theorem topologicalKrullDim_range_projectiveOrbitMap_add_ringKrullDim_eq
     refine coheight_eq_topologicalKrullDim_of_mem_closedPoints m hm ?_
     rw [← range_toProjectiveOrbit_kernelPoint_eq_closedPoints m hm]
     exact ⟨toConv (Bialgebra.counitAlgHom k H), rfl⟩
-  -- Its codimension in the fibre, the closed subgroup cut out by `D`, is `dim (G ⧸ D)`: the
-  -- height of the augmentation ideal of `H ⧸ D`.
+  -- Its codimension in the fibre, the closed subgroup cut out by `D`, is `dim D`: the height of
+  -- the augmentation ideal of `H ⧸ D`.
   have hfib := preimage_toProjectiveOrbit_augmentationPoint m hm D hstab
   have h₃ : (coheight (⟨x₀, rfl⟩ : f ⁻¹' {f x₀}) : WithBot ℕ∞) =
       ringKrullDim (H ⧸ D.toIdeal) := by
-    have hx₀ : D.toIdeal ≤ x₀.asIdeal := hfib.subset (show x₀ ∈ f ⁻¹' {f x₀} from rfl)
+    have hx₀ : D.toIdeal ≤ x₀.asIdeal := hfib.subset rfl
     have hε : (Bialgebra.counitAlgHom k (H ⧸ D.toIdeal)).comp
         (Ideal.Quotient.mkₐ k D.toIdeal) = Bialgebra.counitAlgHom k H := by
       ext h

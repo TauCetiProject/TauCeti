@@ -74,7 +74,8 @@ theorem coheight_zeroLocus_eq_height_map {A : CommRingCat.{u}} (I : Ideal A) (x 
   let F : Spec (.of (A ⧸ I)) → {y : Spec A | I ≤ y.asIdeal} :=
     fun w ↦ ⟨π w, (hrange _).mp ⟨w, rfl⟩⟩
   refine (idealHeight_eq_coheight _ z).symm ▸ ?_
-  rw [show (⟨x, hx⟩ : {y : Spec A | I ≤ y.asIdeal}) = F z from Subtype.ext hπz.symm]
+  have hxz : (⟨x, hx⟩ : {y : Spec A | I ≤ y.asIdeal}) = F z := Subtype.ext hπz.symm
+  rw [hxz]
   refine (coheight_eq_of_strictMono F
     (fun _ _ h ↦ Subtype.coe_lt_coe.mp (hlt.mpr h))
     (fun w b h ↦ ?_) z).symm
@@ -125,13 +126,14 @@ theorem Scheme.Hom.coheight_eq_coheight_add_coheight_preimage [IsLocallyNoetheri
   congr 1
   -- The fibre of `Spec S → Spec R` over `q` lies in `V(I)` and contains its generizations there.
   let T : Set (Spec S) := {v | Spec.map φ v = Spec.map φ x'}
+  have hT {v : Spec S} (hv : v ∈ T) : Spec.map φ v = Spec.map φ x' := hv
   have hTI {v : Spec S} (hv : v ∈ T) : I ≤ v.asIdeal :=
     Ideal.map_le_iff_le_comap.mpr (congrArg PrimeSpectrum.asIdeal hv).ge
   have hTup {v v' : Spec S} (hv : v ∈ T) (hvv' : v ≤ v') (hv' : I ≤ v'.asIdeal) :
       v' ∈ T := by
     have hle : v'.asIdeal ≤ v.asIdeal := (PrimeSpectrum.le_iff_specializes _ _).mpr hvv'
     refine PrimeSpectrum.ext (le_antisymm ?_ (Ideal.map_le_iff_le_comap.mp hv'))
-    rw [← show Spec.map φ v = Spec.map φ x' from hv]
+    rw [← hT hv]
     exact Ideal.comap_mono hle
   have hx'T : x' ∈ T := rfl
   refine (TauCeti.AlgebraicGeometry.coheight_zeroLocus_eq_height_map I x' (hTI rfl)).symm.trans ?_
@@ -141,12 +143,12 @@ theorem Scheme.Hom.coheight_eq_coheight_add_coheight_preimage [IsLocallyNoetheri
   -- The chart identifies the fibre of `Spec S → Spec R` with an open part of the fibre of `f`,
   -- containing all generizations of its points.
   let F : T → f ⁻¹' {f x} := fun v ↦ ⟨hV.fromSpec v, by
-    rw [Set.mem_preimage, Set.mem_singleton_iff, ← hcomm_apply,
-      show Spec.map φ v = Spec.map φ x' from v.2, hcomm_apply, hx']⟩
+    rw [Set.mem_preimage, Set.mem_singleton_iff, ← hcomm_apply, hT v.2, hcomm_apply, hx']⟩
   have hι : IsInducing hV.fromSpec := hV.fromSpec.isOpenEmbedding.isInducing
   have hlt {a b : Spec S} : hV.fromSpec a < hV.fromSpec b ↔ a < b :=
     and_congr hι.specializes_iff (not_congr hι.specializes_iff)
-  rw [show (⟨x, rfl⟩ : f ⁻¹' {f x}) = F ⟨x', hx'T⟩ from Subtype.ext hx'.symm]
+  have hxF : (⟨x, rfl⟩ : f ⁻¹' {f x}) = F ⟨x', hx'T⟩ := Subtype.ext hx'.symm
+  rw [hxF]
   refine coheight_eq_of_strictMono F
     (fun _ _ h ↦ Subtype.coe_lt_coe.mp (hlt.mpr h)) (fun v b h ↦ ?_) _
   obtain ⟨v', hv'⟩ : (b : X) ∈ Set.range hV.fromSpec :=
