@@ -35,6 +35,8 @@ signed highest weight.
 
 * `TauCeti.UqSl2.casimir_mem_center`: `Ω` is central.
 * `TauCeti.UqSl2.casimir_smul_of_e_smul_eq_zero`: the action of `Ω` on a highest-weight vector.
+* `TauCeti.UqSl2.casimirScalar_eq_casimirScalar_iff`: two nonzero weights have the same Casimir
+  scalar exactly when they are equal or related by `μ ↦ q⁻² μ⁻¹`.
 * `TauCeti.UqSl2.casimirScalar_units_mul_pow_inj`: at a generic parameter, the scalars of the
   signed highest weights `ε q^m` determine `m` and `ε`.
 
@@ -179,57 +181,51 @@ theorem casimirScalar_units_mul_pow (ε : ℤˣ) (m : ℕ) :
   rw [casimirScalar_def, mul_inv, hε, inv_pow]
   ring
 
+/-- Two nonzero weights have the same Casimir scalar exactly when they are equal or related by
+the reflection `μ ↦ q⁻² μ⁻¹`. -/
+theorem casimirScalar_eq_casimirScalar_iff (hq : q - q⁻¹ ≠ 0) {μ ν : ℂ} (hμ : μ ≠ 0)
+    (hν : ν ≠ 0) : casimirScalar q μ = casimirScalar q ν ↔ μ = ν ∨ q ^ 2 * μ * ν = 1 := by
+  have hq0 := ne_zero_of_sub_inv_ne_zero hq
+  rw [casimirScalar_def, casimirScalar_def, div_left_inj' (pow_ne_zero 2 hq)]
+  -- Clearing denominators, the difference of the two sides factors as
+  -- `(μ - ν) (q² μ ν - 1) / (q μ ν)`.
+  have key : (q * μ + q⁻¹ * μ⁻¹) - (q * ν + q⁻¹ * ν⁻¹) =
+      (μ - ν) * (q ^ 2 * μ * ν - 1) / (q * μ * ν) := by
+    field_simp
+    ring
+  rw [← sub_eq_zero, key, div_eq_zero_iff, mul_eq_zero, mul_eq_zero, sub_eq_zero, sub_eq_zero]
+  simp [hq0, hμ, hν]
+
 /-- At a generic parameter, the Casimir scalars of the signed highest weights `ε q^m` are
 pairwise distinct: they determine both `m` and the sign `ε`. -/
 theorem casimirScalar_units_mul_pow_inj (hq : IsGenericQuantumParameter q) {m n : ℕ}
     {ε δ : ℤˣ} :
     casimirScalar q (ε * q ^ m) = casimirScalar q (δ * q ^ n) ↔ m = n ∧ ε = δ := by
   refine ⟨fun h => ?_, by rintro ⟨rfl, rfl⟩; rfl⟩
-  rw [casimirScalar_units_mul_pow, casimirScalar_units_mul_pow,
-    div_left_inj' (pow_ne_zero 2 hq.sub_inv_ne_zero), inv_pow, inv_pow] at h
-  -- Write `a = q^(m+1)` and `b = q^(n+1)`. Clearing denominators, the equality of scalars
-  -- factors as `(a - b) (a b - 1) = 0` for equal signs and as `(a + b) (a b + 1) = 0` for
-  -- opposite signs; `a b = q^(m+n+2)` is neither `1` nor `-1`.
-  set a := q ^ (m + 1) with ha_def
-  set b := q ^ (n + 1) with hb_def
-  have ha : a ≠ 0 := pow_ne_zero _ hq.ne_zero
-  have hb : b ≠ 0 := pow_ne_zero _ hq.ne_zero
-  have hab : a * b ≠ 1 ∧ a * b ≠ -1 := by
-    rw [ha_def, hb_def, ← pow_add]
-    refine ⟨hq.pow_ne_one (by omega), fun h => hq.pow_ne_one (n := 2 * (m + 1 + (n + 1)))
-      (by omega) ?_⟩
-    rw [pow_mul', h]
-    norm_num
-  have hmn (h : a ^ 2 = b ^ 2) : m = n := by
-    have h' : q ^ ((m + 1) * 2) = q ^ ((n + 1) * 2) := by
-      simpa only [ha_def, hb_def, ← pow_mul] using h
-    have := hq.pow_injective h'
-    omega
-  have hsame (h : a + a⁻¹ = b + b⁻¹) : m = n := by
-    have hf : (a - b) * (a * b - 1) = a * b * ((a + a⁻¹) - (b + b⁻¹)) := by
-      field_simp
-      ring
-    rw [h, sub_self, mul_zero] at hf
-    rcases mul_eq_zero.mp hf with h' | h'
-    · exact hmn (by rw [sub_eq_zero.mp h'])
-    · exact absurd (sub_eq_zero.mp h') hab.1
-  have hopp (h : a + a⁻¹ = -(b + b⁻¹)) : False := by
-    have hf : (a + b) * (a * b + 1) = a * b * ((a + a⁻¹) + (b + b⁻¹)) := by
-      field_simp
-      ring
-    rw [h, neg_add_cancel, mul_zero] at hf
-    rcases mul_eq_zero.mp hf with h' | h'
-    · have hm := hmn (by rw [eq_neg_of_add_eq_zero_left h', neg_sq])
-      have hab' : a = b := by rw [ha_def, hb_def, hm]
-      apply ha
-      linear_combination (h' + hab') / 2
-    · exact hab.2 (eq_neg_of_add_eq_zero_left h')
-  rcases Int.units_eq_one_or ε with rfl | rfl <;> rcases Int.units_eq_one_or δ with rfl | rfl
-    <;> simp only [Units.val_one, Units.val_neg, Int.cast_one, Int.cast_neg, one_mul,
-      neg_one_mul, and_true] at h ⊢
-  · exact hsame h
-  · exact (hopp h).elim
-  · exact (hopp (neg_eq_iff_eq_neg.mp h)).elim
-  · exact hsame (neg_inj.mp h)
+  have hunit (η : ℤˣ) : ((η : ℤ) : ℂ) ^ 2 = 1 := by
+    rcases Int.units_eq_one_or η with rfl | rfl <;> norm_num
+  have hne (η : ℤˣ) (r : ℕ) : (η : ℂ) * q ^ r ≠ 0 :=
+    mul_ne_zero (by rcases Int.units_eq_one_or η with rfl | rfl <;> norm_num)
+      (pow_ne_zero _ hq.ne_zero)
+  rcases (casimirScalar_eq_casimirScalar_iff hq.sub_inv_ne_zero (hne ε m) (hne δ n)).mp h with
+    h | h
+  · -- Equal weights have equal squares `q^(2m) = q^(2n)`, so `m = n`, and then `ε = δ`.
+    have hmn : m = n := by
+      have h2 : q ^ (2 * m) = q ^ (2 * n) := by
+        have := congrArg (· ^ 2) h
+        simp only [mul_pow, hunit, one_mul, ← pow_mul, mul_comm _ 2] at this
+        exact this
+      have := hq.pow_injective h2
+      omega
+    subst hmn
+    refine ⟨rfl, ?_⟩
+    have hεδ : ((ε : ℤ) : ℂ) = ((δ : ℤ) : ℂ) := mul_right_cancel₀ (pow_ne_zero _ hq.ne_zero) h
+    exact Units.val_injective (by exact_mod_cast hεδ)
+  · -- Otherwise `q^(2 (m + n + 2)) = (ε δ)² = 1`, which a generic parameter forbids.
+    refine (hq.pow_ne_one (n := 2 * (m + n + 2)) (by omega) ?_).elim
+    have := congrArg (· ^ 2) h
+    simp only [mul_pow, hunit, one_pow, one_mul] at this
+    rw [← this]
+    ring
 
 end TauCeti.UqSl2
