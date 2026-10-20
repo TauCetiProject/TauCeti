@@ -107,26 +107,14 @@ noncentral chi-squared law other than the double-zero Dirac law. -/
 theorem not_integrable_exp_mul_noncentralChiSquaredMeasure (hk : 0 ≤ k)
     (hne : k ≠ 0 ∨ l ≠ 0) (ht : 2⁻¹ ≤ t) :
     ¬ Integrable (fun x : ℝ ↦ exp (t * x)) (noncentralChiSquaredMeasure k l) := by
-  have hcomponent (n : ℕ) (hdeg : 0 < k + 2 * (n : ℝ))
-      (hw : poissonMeasure (l / 2) {n} ≠ 0) :
-      ¬ Integrable (fun x : ℝ ↦ exp (t * x)) (noncentralChiSquaredMeasure k l) := by
-    intro hi
-    have hle : poissonMeasure (l / 2) {n} • chiSquaredMeasure (k + 2 * n) ≤
-        noncentralChiSquaredMeasure k l := by
-      rw [noncentralChiSquaredMeasure_eq_sum hk]
-      exact Measure.le_sum (fun j : ℕ ↦
-        poissonMeasure (l / 2) {j} • chiSquaredMeasure (k + 2 * j)) n
-    have hc := (integrable_smul_measure hw (measure_ne_top _ _)).mp (hi.mono_measure hle)
-    have hmem : t ∈ integrableExpSet id (chiSquaredMeasure (k + 2 * n)) := hc
-    rw [integrableExpSet_id_chiSquaredMeasure hdeg] at hmem
-    exact (not_lt.mpr ht) (by simpa only [mem_Iio, one_div] using hmem)
-  rcases hne with hk' | hl
-  · apply hcomponent 0 (by simpa using lt_of_le_of_ne hk hk'.symm)
-    simp [poissonMeasure_singleton, exp_pos]
-  · apply hcomponent 1 (by positivity)
-    rw [poissonMeasure_singleton, ENNReal.ofReal_ne_zero_iff]
-    have : 0 < (l : ℝ) := NNReal.coe_pos.mpr (pos_iff_ne_zero.mpr hl)
-    positivity
+  obtain ⟨n, hdeg, hw, hle⟩ :=
+    exists_smul_chiSquaredMeasure_le_noncentralChiSquaredMeasure hk hne
+  intro hi
+  have hc := (integrable_smul_measure hw (measure_ne_top _ _)).mp (hi.mono_measure hle)
+  have hmem : t ∈ integrableExpSet id (chiSquaredMeasure (k + 2 * n)) := by
+    simpa only [integrableExpSet, mem_ofPred_eq, id_eq] using hc
+  rw [integrableExpSet_id_chiSquaredMeasure hdeg] at hmem
+  exact (not_lt.mpr ht) (by simpa only [mem_Iio, one_div] using hmem)
 
 /-- The exact exponential domain is all of `ℝ` at the double-zero boundary and `(-∞, 1/2)`
 at every other valid degree and noncentrality. -/
@@ -138,6 +126,7 @@ theorem integrableExpSet_id_noncentralChiSquaredMeasure (hk : 0 ≤ k) (l : ℝ�
   · rcases hzero with ⟨rfl, rfl⟩
     simp
   · ext t
+    simp only [integrableExpSet, mem_ofPred_eq, id_eq, mem_Iio]
     constructor
     · intro ht
       exact lt_of_not_ge fun ht' ↦
