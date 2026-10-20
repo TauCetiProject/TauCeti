@@ -103,13 +103,11 @@ theorem memLp_continuousLinearMap_compoundPoissonMeasure {p : ℝ≥0∞} (hp : 
     MemLp L p (compoundPoissonMeasure r μ) := by
   have hmap : MemLp id p (μ.map L) :=
     (memLp_map_measure_iff (by fun_prop) (by fun_prop)).2 (by simpa using hL)
-  have hpow (n : ℕ) : (μ.convolutionPower n).map L = (μ.map L).convolutionPower n :=
-    μ.map_convolutionPower L.toAddMonoidHom L.measurable n
   apply (memLp_map_measure_iff (g := id) (f := L) (by fun_prop) (by fun_prop)).1
-  simpa only [compoundPoissonMeasure_def, Measure.map_bind (f := μ.convolutionPower)
-    (m := poissonMeasure r) Measurable.of_discrete.aemeasurable L.measurable.aemeasurable,
-    hpow] using
-      memLp_id_compoundPoissonMeasure hp hp_top hmap r
+  have htransport := map_compoundPoissonMeasure r μ L.toAddMonoidHom L.measurable
+  simp only [LinearMap.toAddMonoidHom_coe, ContinuousLinearMap.coe_coe] at htransport
+  rw [htransport]
+  exact memLp_id_compoundPoissonMeasure hp hp_top hmap r
 
 /-- A finite first moment of a linear observable of the jump law gives a finite first
 moment of that observable under the compound Poisson law. -/
