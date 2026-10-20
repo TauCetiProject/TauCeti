@@ -38,7 +38,7 @@ open scoped ENNReal NNReal RealInnerProductSpace
 namespace TauCeti.Probability
 
 variable {E : Type*} [NormedAddCommGroup E]
-  [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E]
+  [MeasurableSpace E] [OpensMeasurableSpace E] [MeasurableAdd₂ E]
   {μ : Measure E} [IsProbabilityMeasure μ]
 
 /-- Compound Poisson laws preserve every finite jump moment of order `p ≥ 1`. -/
@@ -46,10 +46,15 @@ theorem memLp_id_compoundPoissonMeasure {p : ℝ} (hp : 1 ≤ p)
     (hμ : MemLp id (ENNReal.ofReal p) μ) (r : ℝ≥0) :
     MemLp id (ENNReal.ofReal p) (compoundPoissonMeasure r μ) := by
   have hp0 : 0 ≤ p := le_trans zero_le_one hp
-  rw [← integrable_norm_rpow_iff (by fun_prop) (by positivity) (by simp)]
+  have hmeas : AEStronglyMeasurable id (compoundPoissonMeasure r μ) := by
+    rw [compoundPoissonMeasure_eq_sum]
+    exact AEStronglyMeasurable.sum_measure fun n ↦
+      (μ.memLp_id_convolutionPower hμ n).aestronglyMeasurable.smul_measure _
+  rw [← integrable_norm_rpow_iff hmeas (by positivity) (by simp)]
   simp only [ENNReal.toReal_ofReal hp0, id_eq]
   rw [compoundPoissonMeasure_def, Measure.integrable_bind_iff Measurable.of_discrete
-    (by fun_prop)]
+    (by simpa only [compoundPoissonMeasure_def, ENNReal.toReal_ofReal hp0, id_eq] using
+      (hmeas.norm.aemeasurable.pow_const p).aestronglyMeasurable)]
   simp only [Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg _) _)]
   refine ⟨.of_forall fun n ↦ ?_, ?_⟩
   · simpa only [ENNReal.toReal_ofReal hp0, id_eq] using
@@ -173,7 +178,8 @@ variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → E} {r : 
 theorem integral_of_hasLaw_compoundPoissonMeasure [CompleteSpace E] (hμ : Integrable id μ)
     (hX : HasLaw X (compoundPoissonMeasure r μ) P) :
     ∫ ω, X ω ∂P = (r : ℝ) • ∫ x, x ∂μ := by
-  rw [hX.integral_eq, integral_id_compoundPoissonMeasure hμ]
+  simpa only [Function.id_comp, id_eq, integral_id_compoundPoissonMeasure hμ] using
+    hX.integral_comp (integrable_id_compoundPoissonMeasure hμ r).aestronglyMeasurable
 
 /-- Linear observables of a compound Poisson random variable have covariance given by the
 uncentered second jump moment. Only the two observed second moments need be finite. -/

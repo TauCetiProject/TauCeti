@@ -31,7 +31,7 @@ open scoped ENNReal
 namespace MeasureTheory.Measure
 
 variable {E : Type*} [NormedAddCommGroup E]
-  [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E]
+  [MeasurableSpace E] [OpensMeasurableSpace E] [MeasurableAdd₂ E]
   {μ : Measure E} [IsProbabilityMeasure μ]
 
 /-- Convolution powers preserve membership in every `Lᵖ` space. -/
@@ -43,7 +43,11 @@ theorem memLp_id_convolutionPower {p : ℝ≥0∞} (hμ : MemLp id p μ) (n : �
       hμ.comp_measurePreserving (measurePreserving_eval (fun _ : Fin n ↦ μ) i))
   rw [← hlaw.map_eq]
   simpa only [Function.id_comp] using
-    (memLp_map_measure_iff (g := id) (by fun_prop) hlaw.aemeasurable).2 hsum
+    (memLp_map_measure_iff (g := id) (by
+      obtain ⟨s, hs, hs_ae⟩ := hsum.aestronglyMeasurable.isSeparable_ae_range
+      apply aestronglyMeasurable_id_of_isSeparable hs.closure
+      refine (ae_map_iff hlaw.aemeasurable isClosed_closure.measurableSet).2 ?_
+      filter_upwards [hs_ae] with x hx using subset_closure hx) hlaw.aemeasurable).2 hsum
 
 /-- Convolution powers of a law with a finite first moment have finite first moments. -/
 theorem integrable_id_convolutionPower (hμ : Integrable id μ) (n : ℕ) :
@@ -55,9 +59,12 @@ theorem integrable_id_convolutionPower (hμ : Integrable id μ) (n : ℕ) :
 theorem integral_id_convolutionPower [NormedSpace ℝ E] (hμ : Integrable id μ) (n : ℕ) :
     ∫ x, x ∂μ.convolutionPower n = n • ∫ x, x ∂μ := by
   have hlaw := μ.hasLaw_sum_pi_convolutionPower n
-  rw [← hlaw.integral_eq]
+  rw [← hlaw.integral_comp (f := fun x : E ↦ x)
+    (integrable_id_convolutionPower hμ n).aestronglyMeasurable]
+  simp only [Function.comp_apply]
   rw [integral_finsetSum _ (fun i _ ↦ integrable_eval (i := i) (μ := fun _ : Fin n ↦ μ) hμ)]
-  simp [integral_eval]
+  simp [integral_comp_eval (μ := fun _ : Fin n ↦ μ) (f := fun x : E ↦ x)
+    hμ.aestronglyMeasurable]
 
 /-- The absolute moment of order `p ≥ 1` of a convolution power grows at most as `n ^ p`. -/
 theorem integral_norm_rpow_convolutionPower_le {p : ℝ} (hp : 1 ≤ p)
@@ -70,7 +77,9 @@ theorem integral_norm_rpow_convolutionPower_le {p : ℝ} (hp : 1 ≤ p)
   have hpow := memLp_id_convolutionPower hμ n
   have heval (i : Fin n) : Integrable (fun x : Fin n → E ↦ ‖x i‖ ^ p)
       (Measure.pi fun _ ↦ μ) := integrable_comp_eval (μ := fun _ : Fin n ↦ μ) hrpow
-  rw [← hlaw.integral_comp (f := fun x ↦ ‖x‖ ^ p) (by fun_prop)]
+  rw [← hlaw.integral_comp (f := fun x ↦ ‖x‖ ^ p) (by
+    simpa only [ENNReal.toReal_ofReal hp0, id_eq] using
+      hpow.integrable_norm_rpow'.aestronglyMeasurable)]
   simp only [Function.comp_apply]
   calc
     _ ≤ ∫ x : Fin n → E, (n : ℝ) ^ (p - 1) * ∑ i, ‖x i‖ ^ p
@@ -89,7 +98,7 @@ theorem integral_norm_rpow_convolutionPower_le {p : ℝ} (hp : 1 ≤ p)
     _ = _ := by
       rw [integral_const_mul, integral_finsetSum _ (fun i _ ↦ heval i)]
       simp_rw [integral_comp_eval (μ := fun _ : Fin n ↦ μ)
-        (f := fun x : E ↦ ‖x‖ ^ p) (by fun_prop)]
+        (f := fun x : E ↦ ‖x‖ ^ p) hrpow.aestronglyMeasurable]
       simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul,
         ← mul_assoc]
       congr 1
