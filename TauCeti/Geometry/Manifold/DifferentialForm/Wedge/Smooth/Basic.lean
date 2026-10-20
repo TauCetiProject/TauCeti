@@ -202,7 +202,9 @@ theorem castDegree_castDegree {F : Type*} [NormedAddCommGroup F] [NormedSpace �
 /-- Inverting a degree transport gives the transport along the inverse equality. -/
 @[simp]
 theorem castDegree_symm {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {n m : ℕ} (h : n = m) : (castDegree h).symm = castDegree h.symm := by
+    {n m : ℕ} (h : n = m) :
+    (castDegree (I := I) (M := M) (F := F) h).symm =
+      castDegree (I := I) (M := M) (F := F) h.symm := by
   cases h
   rfl
 
