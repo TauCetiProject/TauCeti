@@ -81,6 +81,14 @@ def IsTotallySplit : Prop :=
   ∃ (m : ℕ) (e : Fin m → R), (∀ j, IsIdempotentElem (e j)) ∧
     Nonempty (T ≃ₐ[R] ((j : Fin m) → R ⧸ Ideal.span {1 - e j}))
 
+variable {R T} in
+/-- Unfolding lemma for `IsTotallySplit`: it recovers the idempotents and the algebra isomorphism
+in modules where the body of the definition is not exposed. -/
+theorem isTotallySplit_iff : IsTotallySplit R T ↔
+    ∃ (m : ℕ) (e : Fin m → R), (∀ j, IsIdempotentElem (e j)) ∧
+      Nonempty (T ≃ₐ[R] ((j : Fin m) → R ⧸ Ideal.span {1 - e j})) :=
+  Iff.rfl
+
 namespace IsTotallySplit
 
 variable {R T}
