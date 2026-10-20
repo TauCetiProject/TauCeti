@@ -396,17 +396,13 @@ lemma coe_zeroEquiv_map (x : F.relativeH' i 0) :
 `TauCeti.CategoryTheory.isIso_relativeFreeYonedaSheafMap_iff`), the induced map on relative
 cohomology is an equivalence. -/
 noncomputable def mapAddEquiv [IsIso (relativeFreeYonedaSheafMap J i' i a b w)] (n : ℕ) :
-    F.relativeH' i n ≃+ F.relativeH' i' n where
-  toFun := map F i i' a b w n
-  invFun y := (Ext.mk₀ (inv (relativeFreeYonedaSheafMap J i' i a b w))).comp y (zero_add n)
-  left_inv x := by simp [map_apply]
-  right_inv y := by simp [map_apply]
-  map_add' := map_add _
+    F.relativeH' i n ≃+ F.relativeH' i' n :=
+  TauCeti.extAddEquivOfIso (asIso (relativeFreeYonedaSheafMap J i' i a b w)).symm (Iso.refl F) n
 
 @[simp]
 lemma mapAddEquiv_apply [IsIso (relativeFreeYonedaSheafMap J i' i a b w)] {n : ℕ}
-    (x : F.relativeH' i n) : mapAddEquiv F i i' a b w n x = map F i i' a b w n x :=
-  (rfl)
+    (x : F.relativeH' i n) : mapAddEquiv F i i' a b w n x = map F i i' a b w n x := by
+  simp [mapAddEquiv, map_apply]
 
 end map
 
