@@ -425,6 +425,12 @@ theorem contractLeft_mem_exteriorPower (d : Module.Dual R M) {n : ℕ}
       rw [_root_.ExteriorAlgebra.exteriorPower, pow_succ']
       exact Submodule.mul_mem_mul (LinearMap.mem_range_self _ v) ih
 
+end TauCeti.ExteriorAlgebra
+
+namespace ExteriorAlgebra
+
+variable {R : Type*} {M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+
 /-- **A vector graded-commutes with every multivector**: moving `ι R m` past `x` applies the grade
 involution to `x`. -/
 theorem ι_mul_eq_involute_mul (m : M) (x : ExteriorAlgebra R M) :
@@ -438,4 +444,4 @@ theorem ι_mul_eq_involute_mul (m : M) (x : ExteriorAlgebra R M) :
   | mul x y hx hy => rw [← mul_assoc, hx, mul_assoc, hy, map_mul, mul_assoc]
   | add x y hx hy => rw [mul_add, hx, hy, map_add, add_mul]
 
-end TauCeti.ExteriorAlgebra
+end ExteriorAlgebra

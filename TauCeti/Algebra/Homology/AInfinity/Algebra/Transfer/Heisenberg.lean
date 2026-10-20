@@ -219,8 +219,8 @@ theorem differential_monomial (s : Finset (Fin 3)) :
 /-- The product `a b` commutes with every element, being even. -/
 private theorem gen_mul_gen_mul_comm (x : ExteriorAlgebra R (Fin 3 → R)) :
     gen R 0 * gen R 1 * x = x * (gen R 0 * gen R 1) := by
-  rw [mul_assoc, gen, gen, ι_mul_eq_involute_mul (Pi.single 1 1), ← mul_assoc,
-    ι_mul_eq_involute_mul (Pi.single 0 1), involute_involute, mul_assoc]
+  rw [mul_assoc, gen, gen, ExteriorAlgebra.ι_mul_eq_involute_mul (Pi.single 1 1), ← mul_assoc,
+    ExteriorAlgebra.ι_mul_eq_involute_mul (Pi.single 0 1), involute_involute, mul_assoc]
 
 /-- **`(Λ_R(a, b, c), d)` is a differential graded algebra.** -/
 theorem isDGAlgebra : IsDGAlgebra (grading R) (differential R) where
