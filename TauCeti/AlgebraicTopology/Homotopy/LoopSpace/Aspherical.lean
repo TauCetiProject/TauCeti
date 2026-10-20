@@ -212,7 +212,7 @@ theorem pathConnectedSpace_loopSpace_and_forall_isZero_homology_singularChains_i
       (subsingleton_homotopyGroup_of_isZero_homology_singularChains (Path.refl x)
         fun n ↦ hH (n + 2) (Nat.succ_ne_zero _))
   · intro hX
-    exact ⟨(pathConnectedSpace_loopSpace_iff x).mpr (hX 0),
+    exact ⟨(pathConnectedSpace_loopSpace_iff_subsingleton_pi1 x).mpr (hX 0),
       fun _ hm0 ↦ isZero_homology_singularChains_loopSpace ℤ hX hm0⟩
 
 /-- The fixed-interval loop space `Ω X x` is path connected with vanishing positive-degree integral
@@ -315,7 +315,8 @@ theorem pathConnectedSpace_and_forall_isZero_homology_singularChains_iff (x : X)
       ∀ n : ℕ, Subsingleton (π_ (n + 1) X x) := by
   rw [← pathConnectedSpace_loopSpace_and_forall_isZero_homology_singularChains_iff x]
   refine and_congr
-    ((pathConnectedSpace_iff_subsingleton_pi1 x).trans (pathConnectedSpace_loopSpace_iff x).symm)
+    ((pathConnectedSpace_iff_subsingleton_pi1 x).trans
+      (pathConnectedSpace_loopSpace_iff_subsingleton_pi1 x).symm)
     (forall_congr' fun m ↦ imp_congr_right fun _ ↦ ?_)
   exact ⟨fun h ↦ h.of_iso ((homotopyEquivPath x).singularHomologyIso (ModuleCat.of ℤ ℤ) m).symm,
     fun h ↦ h.of_iso ((homotopyEquivPath x).singularHomologyIso (ModuleCat.of ℤ ℤ) m)⟩
