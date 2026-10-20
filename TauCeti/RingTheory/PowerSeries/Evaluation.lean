@@ -40,6 +40,8 @@ topologically nilpotent only in the zero ring.
 
 ## Main results
 
+* `PowerSeries.algHom_coe_eq_aeval`: any algebra map out of `A⟦X⟧`, continuous or not, restricts
+  on polynomials to the polynomial evaluation at the image of `X`.
 * `PowerSeries.aeval_X`, `PowerSeries.aeval_C`: the values of evaluation on the generators.
 * `PowerSeries.divXSubC`: the quotient of a power series on division by `X - C c`, with its
   coefficients `PowerSeries.coeff_divXSubC` and their series expansion
@@ -56,6 +58,20 @@ topologically nilpotent only in the zero ring.
 public section
 
 namespace PowerSeries
+
+section AlgHom
+
+variable {A B : Type*} [CommRing A] [Semiring B] [Algebra A B]
+
+/-- An `A`-algebra map out of `A⟦X⟧` restricts on polynomials to evaluation at the image of `X`.
+No continuity is assumed. -/
+theorem algHom_coe_eq_aeval (φ : A⟦X⟧ →ₐ[A] B) (f : Polynomial A) :
+    φ (f : A⟦X⟧) = Polynomial.aeval (φ X) f := by
+  have : φ.comp (Polynomial.coeToPowerSeries.algHom A) = Polynomial.aeval (φ X) :=
+    Polynomial.algHom_ext (by simp)
+  exact DFunLike.congr_fun this f
+
+end AlgHom
 
 section Aeval
 

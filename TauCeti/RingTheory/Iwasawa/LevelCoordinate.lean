@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Group.TypeTags.Finite
 public import Mathlib.RingTheory.PowerSeries.WeierstrassPreparation
 public import TauCeti.Algebra.MonoidAlgebra.Cyclic
+public import TauCeti.NumberTheory.Padics.QuotientTower
 
 import Mathlib.Algebra.CharP.Algebra
 import Mathlib.Algebra.CharP.Lemmas
@@ -15,7 +16,7 @@ import Mathlib.NumberTheory.Padics.PadicIntegers
 import Mathlib.RingTheory.Filtration
 import Mathlib.RingTheory.PowerSeries.Ideal
 import TauCeti.Data.ZMod.MonoidHomEquiv
-import TauCeti.NumberTheory.Padics.QuotientTower
+import TauCeti.RingTheory.PowerSeries.Weierstrass.AlgHom
 
 /-!
 # The level coordinates of the Iwasawa algebra `O⟦T⟧`
@@ -47,12 +48,21 @@ map out of `O⟦T⟧` that kills a distinguished polynomial is determined by the
 (`Polynomial.IsDistinguishedAt.algHom_ext`), because Weierstrass division writes every series as a
 multiple of that polynomial plus a polynomial.
 
-The hypothesis that `p` lies in the maximal ideal is essential: over `ℚ`, where `p` is a unit,
-`ω_n` generates the ideal `(T)` for every `n`, and for `n > 0` no ring map `ℚ⟦T⟧ → ℚ[ℤ/pⁿ]` sends
-`T` to `[1] - 1`, since `[1] - 1` is not nilpotent.
+The hypothesis that `p` lies in the maximal ideal is essential. Over `ℚ`, where `p` is a unit,
+`ω_n = T * u` with `u` a unit of `ℚ⟦T⟧` (its constant coefficient is `pⁿ`). A ring map
+`ℚ⟦T⟧ → ℚ[ℤ/pⁿ]` sending `T` to `[1] - 1` sends `1 + T` to `[1]` and so kills `ω_n`, as
+`[1] ^ pⁿ = 1`. Since it sends the unit `u` to a unit, it kills `T`. For `n > 0` this is
+impossible, since `[1] - 1 ≠ 0`.
+
+The construction works for any cyclic group `C` of order `pⁿ` with a generator `σ`
+(`TauCeti.Iwasawa.cyclicLevelEquiv`), and `O⟦T⟧ → O[ℤ/pⁿ]` is the case `C = ℤ/pⁿ`, `σ = [1]`.
+The same kernel computation gives the finite levels of the completed group algebra of a
+procyclic pro-`p` group (`TauCeti.completedGroupAlgebra.ker_proj_comp_aeval`).
 
 ## Main definitions
 
+* `TauCeti.Iwasawa.cyclicLevelEquiv hp hσ hC`: the `O`-algebra isomorphism
+  `O⟦T⟧ ⧸ ((1 + T) ^ pⁿ - 1) ≃ₐ[O] O[C]` for a generator `σ` of a cyclic group `C` of order `pⁿ`.
 * `TauCeti.Iwasawa.levelEquiv hp n`: the `O`-algebra isomorphism
   `O⟦T⟧ ⧸ ((1 + T) ^ pⁿ - 1) ≃ₐ[O] O[ℤ/pⁿ]` sending the class of `T` to `[1] - 1`.
 * `TauCeti.Iwasawa.levelCoordinate hp n`: the level map `O⟦T⟧ →ₐ[O] O[ℤ/pⁿ]`.
@@ -62,9 +72,9 @@ The hypothesis that `p` lies in the maximal ideal is essential: over `ℚ`, wher
 
 ## Main results
 
-* `PowerSeries.algHom_coe_eq_aeval`, `Polynomial.IsDistinguishedAt.algHom_ext`: an algebra map
-  out of `A⟦X⟧` is evaluation at the image of `X` on polynomials, and, over an `I`-adically
-  complete `A`, is determined by the image of `X` once it kills a polynomial distinguished at `I`.
+* `TauCeti.Iwasawa.eq_cyclicLevelEquiv_comp_mk`,
+  `TauCeti.Iwasawa.ker_eq_span_one_add_X_pow_sub_one`: an `O`-algebra map `O⟦T⟧ → O[C]` with
+  `T ↦ σ - 1` factors through `cyclicLevelEquiv`, and its kernel is `((1 + T) ^ pⁿ - 1)`.
 * `TauCeti.Iwasawa.levelCoordinate_X`, `TauCeti.Iwasawa.levelCoordinate_one_add_X_pow`: `T` maps
   to `[1] - 1` and `(1 + T) ^ k` to the group element `[k]`.
 * `TauCeti.Iwasawa.levelCoordinate_unique`: the level map is the only `O`-algebra map with
@@ -72,6 +82,9 @@ The hypothesis that `p` lies in the maximal ideal is essential: over `ℚ`, wher
 * `TauCeti.Iwasawa.levelCoordinate_surjective`, `TauCeti.Iwasawa.ker_levelCoordinate`,
   `TauCeti.Iwasawa.levelCoordinate_eq_zero_iff`: the level map is surjective with kernel
   `((1 + T) ^ pⁿ - 1)`.
+* `TauCeti.Iwasawa.levelTransition_single`, `TauCeti.Iwasawa.levelTransition_self`,
+  `TauCeti.Iwasawa.levelTransition_comp_levelTransition`: the projections act on group elements
+  by reduction and form an inverse system.
 * `TauCeti.Iwasawa.levelCoordinate_transition`: compatibility with `ℤ/pⁿ → ℤ/pᵐ` for `m ≤ n`.
 * `TauCeti.Iwasawa.levelCoordinate_zero`: at level zero the coordinate is the constant coefficient.
 * `TauCeti.Iwasawa.iInf_span_one_add_X_pow_sub_one_eq_bot`,
@@ -94,35 +107,6 @@ public section
 
 open IsLocalRing PowerSeries
 
-variable {A B : Type*} [CommRing A] [CommRing B] [Algebra A B]
-
-/-- An `A`-algebra map out of `A⟦X⟧` restricts on polynomials to evaluation at the image of `X`. -/
-theorem PowerSeries.algHom_coe_eq_aeval (φ : A⟦X⟧ →ₐ[A] B) (f : Polynomial A) :
-    φ (f : A⟦X⟧) = Polynomial.aeval (φ X) f := by
-  have : φ.comp (Polynomial.coeToPowerSeries.algHom A) = Polynomial.aeval (φ X) :=
-    Polynomial.algHom_ext (by simp)
-  exact DFunLike.congr_fun this f
-
-namespace Polynomial.IsDistinguishedAt
-
-variable {g : A[X]} {I : Ideal A}
-
-/-- **`A`-algebra maps out of `A⟦X⟧` killing a distinguished polynomial are determined by the
-image of `X`.** Let `A` be `I`-adically complete and `g` distinguished at `I`. If two `A`-algebra
-maps `A⟦X⟧ → B` agree on `X` and one of them kills `g`, they are equal. No continuity is
-assumed: Weierstrass division writes every series as a multiple of `g` plus a polynomial. -/
-theorem algHom_ext (H : g.IsDistinguishedAt I) [IsAdicComplete I A] {φ ψ : A⟦X⟧ →ₐ[A] B}
-    (hg : φ (g : A⟦X⟧) = 0) (hX : φ PowerSeries.X = ψ PowerSeries.X) : φ = ψ := by
-  have hg' : ψ (g : A⟦X⟧) = 0 := by
-    rwa [PowerSeries.algHom_coe_eq_aeval, ← hX, ← PowerSeries.algHom_coe_eq_aeval]
-  refine AlgHom.ext fun F ↦ ?_
-  -- Weierstrass division: `F = g * q + r` with `r` a polynomial.
-  obtain ⟨-, hF⟩ := H.isWeierstrassDivisorAt'.isWeierstrassDivisionAt_div_mod F
-  rw [hF]
-  simp only [map_add, map_mul, hg, hg', zero_mul, zero_add, PowerSeries.algHom_coe_eq_aeval, hX]
-
-end Polynomial.IsDistinguishedAt
-
 namespace TauCeti.Iwasawa
 
 variable {p : ℕ} [Fact p.Prime] {O : Type*} [CommRing O]
@@ -139,7 +123,105 @@ theorem one_add_X_pow_sub_one_eq_X_pow [CharP O p] (n : ℕ) :
 
 end CharP
 
+section Transition
+
+variable (p O)
+
+/-- The projection `O[ℤ/pⁿ] → O[ℤ/pᵐ]` induced by reduction `ℤ/pⁿ → ℤ/pᵐ`, for `m ≤ n`: the
+transition map of the congruence tower of `ℤ_p` (`TauCeti.FiniteQuotientTower.padicTower`). -/
+noncomputable def levelTransition {m n : ℕ} (h : m ≤ n) :
+    MonoidAlgebra O (Multiplicative (ZMod (p ^ n))) →ₐ[O]
+      MonoidAlgebra O (Multiplicative (ZMod (p ^ m))) :=
+  MonoidAlgebra.mapDomainAlgHom O O ((FiniteQuotientTower.padicTower p).t h)
+
+/-- The projection `O[ℤ/pⁿ] → O[ℤ/pᵐ]` sends `a · [g]` to `a` times the reduction of `g`. -/
+@[simp]
+theorem levelTransition_single {m n : ℕ} (h : m ≤ n) (g : Multiplicative (ZMod (p ^ n))) (a : O) :
+    levelTransition p O h (MonoidAlgebra.single g a) =
+      MonoidAlgebra.single ((FiniteQuotientTower.padicTower p).t h g) a := by
+  simp [levelTransition]
+
+/-- The projection `O[ℤ/pⁿ] → O[ℤ/pᵐ]` sends `a · [k]` to `a · [k]`, for a natural number `k`. -/
+theorem levelTransition_single_ofAdd_natCast {m n : ℕ} (h : m ≤ n) (k : ℕ) (a : O) :
+    levelTransition p O h (MonoidAlgebra.single (Multiplicative.ofAdd (k : ZMod (p ^ n))) a) =
+      MonoidAlgebra.single (Multiplicative.ofAdd (k : ZMod (p ^ m))) a := by
+  rw [levelTransition_single]
+  congr 1
+  apply Multiplicative.toAdd.injective
+  rw [FiniteQuotientTower.padicTower_t_apply, toAdd_ofAdd, toAdd_ofAdd,
+    ZMod.cast_natCast (pow_dvd_pow p h)]
+
+/-- The projection from a level to itself is the identity. -/
+@[simp]
+theorem levelTransition_self {n : ℕ} (h : n ≤ n) : levelTransition p O h = AlgHom.id O _ := by
+  rw [levelTransition, ← MonoidAlgebra.mapDomainAlgHom_id]
+  exact congrArg _ (MonoidHom.ext ((FiniteQuotientTower.padicTower p).t_self h))
+
+/-- The projections compose: projecting from level `n` to `m` and then to `k` is projecting from
+level `n` to `k`. -/
+@[simp]
+theorem levelTransition_comp_levelTransition {k m n : ℕ} (hkm : k ≤ m) (hmn : m ≤ n) :
+    (levelTransition p O hkm).comp (levelTransition p O hmn) =
+      levelTransition p O (hkm.trans hmn) := by
+  rw [levelTransition, levelTransition, levelTransition, ← MonoidAlgebra.mapDomainAlgHom_comp,
+    FiniteQuotientTower.t_comp_t]
+
+end Transition
+
 variable [IsLocalRing O] (hp : (p : O) ∈ maximalIdeal O) [IsAdicComplete (maximalIdeal O) O]
+
+section Cyclic
+
+variable {C : Type*} [Group C] [Finite C] {σ : C} (hσ : ∀ x, x ∈ Subgroup.zpowers σ) {n : ℕ}
+  (hC : Nat.card C = p ^ n)
+include hp hσ hC
+
+/-- **The group algebra of a cyclic `p`-group as a quotient of `O⟦T⟧`.** For a local ring `O`,
+complete for its maximal ideal, in which `p` is not a unit, and a generator `σ` of a cyclic group
+`C` of order `pⁿ`, the quotient of `O⟦T⟧` by `ω_n = (1 + T) ^ pⁿ - 1` is the group algebra `O[C]`,
+the class of `T` corresponding to `σ - 1`. -/
+noncomputable def cyclicLevelEquiv :
+    (O⟦X⟧ ⧸ Ideal.span {(1 + X : O⟦X⟧) ^ p ^ n - 1}) ≃ₐ[O] MonoidAlgebra O C :=
+  (Ideal.quotientEquivAlgOfEq O (by simp)).trans <|
+    (TauCeti.Polynomial.isDistinguishedAt_one_add_X_pow_sub_one Fact.out
+      hp n).algEquivQuotient.symm.trans <|
+      (Ideal.quotientEquivAlgOfEq O (by
+        rw [TauCeti.MonoidAlgebra.ker_aeval_of_sub_one hσ, hC])).trans <|
+        Ideal.quotientKerAlgEquivOfSurjective (TauCeti.MonoidAlgebra.aeval_of_sub_one_surjective hσ)
+
+/-- On classes of polynomials, `cyclicLevelEquiv` is evaluation at `σ - 1`. -/
+theorem cyclicLevelEquiv_mk_coe (f : Polynomial O) :
+    cyclicLevelEquiv hp hσ hC (Ideal.Quotient.mk _ (f : O⟦X⟧)) =
+      Polynomial.aeval (MonoidAlgebra.of O C σ - 1) f := by
+  have H := TauCeti.Polynomial.isDistinguishedAt_one_add_X_pow_sub_one Fact.out hp n
+  have hf : H.algEquivQuotient.symm (Ideal.Quotient.mk _ (f : O⟦X⟧)) = Ideal.Quotient.mk _ f := by
+    rw [AlgEquiv.symm_apply_eq, Polynomial.IsDistinguishedAt.algEquivQuotient_apply]
+    simp
+  simp [cyclicLevelEquiv, Ideal.quotientEquivAlgOfEq_mk, hf,
+    Ideal.quotientKerAlgEquivOfSurjective_mk]
+
+/-- **An `O`-algebra map `O⟦T⟧ → O[C]` is determined by `T ↦ σ - 1`.** Any such map factors
+through `cyclicLevelEquiv`; no continuity is assumed. -/
+theorem eq_cyclicLevelEquiv_comp_mk {φ : O⟦X⟧ →ₐ[O] MonoidAlgebra O C}
+    (hφ : φ X = MonoidAlgebra.of O C σ - 1) :
+    φ = (cyclicLevelEquiv hp hσ hC).toAlgHom.comp (Ideal.Quotient.mkₐ O _) := by
+  have H := TauCeti.Polynomial.isDistinguishedAt_one_add_X_pow_sub_one Fact.out hp n
+  refine H.algHom_ext ?_ ?_
+  · have h := TauCeti.MonoidAlgebra.aeval_of_sub_one_one_add_X_pow_card_sub_one_eq_zero (R := O) σ
+    rwa [hC, ← hφ, ← PowerSeries.algHom_coe_eq_aeval] at h
+  · simpa [hφ] using (cyclicLevelEquiv_mk_coe hp hσ hC Polynomial.X).symm
+
+/-- **The kernel of an `O`-algebra map `O⟦T⟧ → O[C]` with `T ↦ σ - 1`** is the principal ideal
+generated by `ω_n = (1 + T) ^ pⁿ - 1`, for a generator `σ` of a cyclic group `C` of order `pⁿ`. -/
+theorem ker_eq_span_one_add_X_pow_sub_one {φ : O⟦X⟧ →ₐ[O] MonoidAlgebra O C}
+    (hφ : φ X = MonoidAlgebra.of O C σ - 1) :
+    RingHom.ker φ = Ideal.span {(1 + X : O⟦X⟧) ^ p ^ n - 1} := by
+  ext F
+  rw [eq_cyclicLevelEquiv_comp_mk hp hσ hC hφ, RingHom.mem_ker, AlgHom.comp_apply,
+    AlgEquiv.coe_toAlgHom, map_eq_zero_iff _ (cyclicLevelEquiv hp hσ hC).injective,
+    Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq_zero_iff_mem]
+
+end Cyclic
 
 /-- **The finite levels of the Iwasawa algebra.** For a local ring `O`, complete for its maximal
 ideal, in which `p` is not a unit, the quotient of `O⟦T⟧` by `ω_n = (1 + T) ^ pⁿ - 1` is the
@@ -147,14 +229,8 @@ group algebra `O[ℤ/pⁿ]`, the class of `T` corresponding to `[1] - 1`. -/
 noncomputable def levelEquiv (n : ℕ) :
     (O⟦X⟧ ⧸ Ideal.span {(1 + X : O⟦X⟧) ^ p ^ n - 1}) ≃ₐ[O]
       MonoidAlgebra O (Multiplicative (ZMod (p ^ n))) :=
-  (Ideal.quotientEquivAlgOfEq O (by simp)).trans <|
-    (TauCeti.Polynomial.isDistinguishedAt_one_add_X_pow_sub_one Fact.out
-      hp n).algEquivQuotient.symm.trans <|
-      (Ideal.quotientEquivAlgOfEq O (by
-        rw [TauCeti.MonoidAlgebra.ker_aeval_of_sub_one Multiplicative.mem_zpowers_ofAdd_one,
-          Nat.card_congr Multiplicative.toAdd, Nat.card_zmod])).trans <|
-        Ideal.quotientKerAlgEquivOfSurjective
-          (TauCeti.MonoidAlgebra.aeval_of_sub_one_surjective Multiplicative.mem_zpowers_ofAdd_one)
+  cyclicLevelEquiv hp Multiplicative.mem_zpowers_ofAdd_one
+    (by rw [Nat.card_congr Multiplicative.toAdd, Nat.card_zmod])
 
 /-- **The level-`n` Iwasawa coordinate** `O⟦T⟧ →ₐ[O] O[ℤ/pⁿ]`, `T ↦ [1] - 1`: the quotient map
 by `ω_n = (1 + T) ^ pⁿ - 1` followed by `levelEquiv`. -/
@@ -171,12 +247,8 @@ theorem levelEquiv_mk (n : ℕ) (F : O⟦X⟧) :
 theorem levelCoordinate_coe (n : ℕ) (f : Polynomial O) :
     levelCoordinate hp n (f : O⟦X⟧) =
       Polynomial.aeval (MonoidAlgebra.single (Multiplicative.ofAdd 1) 1 - 1) f := by
-  have H := TauCeti.Polynomial.isDistinguishedAt_one_add_X_pow_sub_one Fact.out hp n
-  have hf : H.algEquivQuotient.symm (Ideal.Quotient.mk _ (f : O⟦X⟧)) = Ideal.Quotient.mk _ f := by
-    rw [AlgEquiv.symm_apply_eq, Polynomial.IsDistinguishedAt.algEquivQuotient_apply]
-    simp
-  simp [levelCoordinate, levelEquiv, Ideal.quotientEquivAlgOfEq_mk, hf,
-    Ideal.quotientKerAlgEquivOfSurjective_mk]
+  rw [← levelEquiv_mk, ← MonoidAlgebra.of_apply]
+  exact cyclicLevelEquiv_mk_coe hp Multiplicative.mem_zpowers_ofAdd_one _ f
 
 /-- The level coordinate sends `T` to `[1] - 1`. -/
 @[simp]
@@ -203,13 +275,9 @@ theorem levelCoordinate_one_add_X_pow (n k : ℕ) :
 theorem levelCoordinate_unique (n : ℕ)
     {φ : O⟦X⟧ →ₐ[O] MonoidAlgebra O (Multiplicative (ZMod (p ^ n)))}
     (hφ : φ X = MonoidAlgebra.single (Multiplicative.ofAdd 1) 1 - 1) :
-    φ = levelCoordinate hp n := by
-  have H := TauCeti.Polynomial.isDistinguishedAt_one_add_X_pow_sub_one Fact.out hp n
-  refine H.algHom_ext ?_ (by rw [hφ, levelCoordinate_X])
-  have h := TauCeti.MonoidAlgebra.aeval_of_sub_one_one_add_X_pow_card_sub_one_eq_zero (R := O)
-    (Multiplicative.ofAdd (1 : ZMod (p ^ n)))
-  rwa [Nat.card_congr Multiplicative.toAdd, Nat.card_zmod, MonoidAlgebra.of_apply, ← hφ,
-    ← PowerSeries.algHom_coe_eq_aeval] at h
+    φ = levelCoordinate hp n :=
+  eq_cyclicLevelEquiv_comp_mk hp Multiplicative.mem_zpowers_ofAdd_one _
+    (by rw [hφ, MonoidAlgebra.of_apply])
 
 /-- The level coordinate is surjective. -/
 theorem levelCoordinate_surjective (n : ℕ) : Function.Surjective (levelCoordinate hp n) :=
@@ -218,10 +286,10 @@ theorem levelCoordinate_surjective (n : ℕ) : Function.Surjective (levelCoordin
 /-- **The kernel of the level coordinate** is the principal ideal generated by
 `ω_n = (1 + T) ^ pⁿ - 1`. -/
 theorem ker_levelCoordinate (n : ℕ) :
-    RingHom.ker (levelCoordinate hp n) = Ideal.span {(1 + X : O⟦X⟧) ^ p ^ n - 1} := by
-  ext F
-  rw [RingHom.mem_ker, ← levelEquiv_mk, map_eq_zero_iff _ (levelEquiv hp n).injective,
-    Ideal.Quotient.eq_zero_iff_mem]
+    RingHom.ker (levelCoordinate hp n) = Ideal.span {(1 + X : O⟦X⟧) ^ p ^ n - 1} :=
+  ker_eq_span_one_add_X_pow_sub_one hp Multiplicative.mem_zpowers_ofAdd_one
+    (by rw [Nat.card_congr Multiplicative.toAdd, Nat.card_zmod])
+    (by rw [levelCoordinate_X, MonoidAlgebra.of_apply])
 
 /-- An element of `O⟦T⟧` maps to zero at level `n` exactly when `ω_n = (1 + T) ^ pⁿ - 1` divides
 it. -/
@@ -229,25 +297,14 @@ theorem levelCoordinate_eq_zero_iff (n : ℕ) (F : O⟦X⟧) :
     levelCoordinate hp n F = 0 ↔ (1 + X : O⟦X⟧) ^ p ^ n - 1 ∣ F := by
   rw [← RingHom.mem_ker, ker_levelCoordinate, Ideal.mem_span_singleton]
 
-variable (p O) in
-/-- The projection `O[ℤ/pⁿ] → O[ℤ/pᵐ]` induced by reduction `ℤ/pⁿ → ℤ/pᵐ`, for `m ≤ n`: the
-transition map of the congruence tower of `ℤ_p` (`TauCeti.FiniteQuotientTower.padicTower`). -/
-noncomputable def levelTransition {m n : ℕ} (h : m ≤ n) :
-    MonoidAlgebra O (Multiplicative (ZMod (p ^ n))) →ₐ[O]
-      MonoidAlgebra O (Multiplicative (ZMod (p ^ m))) :=
-  MonoidAlgebra.mapDomainAlgHom O O ((FiniteQuotientTower.padicTower p).t h)
-
 /-- **Compatibility of the level coordinates.** For `m ≤ n`, the level-`n` coordinate followed by
 the projection `O[ℤ/pⁿ] → O[ℤ/pᵐ]` is the level-`m` coordinate. -/
 theorem levelCoordinate_transition {m n : ℕ} (h : m ≤ n) :
     (levelTransition p O h).comp (levelCoordinate hp n) = levelCoordinate hp m :=
   levelCoordinate_unique hp m (by
-    have h1 : (FiniteQuotientTower.padicTower p).t h (.ofAdd 1) = .ofAdd 1 :=
-      Multiplicative.toAdd.injective (by
-        rw [FiniteQuotientTower.padicTower_t_apply, toAdd_ofAdd, toAdd_ofAdd,
-          ZMod.cast_one (pow_dvd_pow p h)])
-    rw [AlgHom.comp_apply, levelCoordinate_X, map_sub, map_one (levelTransition p O h)]
-    simp [levelTransition, h1])
+    rw [AlgHom.comp_apply, levelCoordinate_X, map_sub,
+      map_one (levelTransition p O h), ← Nat.cast_one (R := ZMod (p ^ n)),
+      levelTransition_single_ofAdd_natCast, Nat.cast_one])
 
 /-- At level zero the coordinate is the constant coefficient, as an element of
 `O[ℤ/1] = O[1]`. -/
