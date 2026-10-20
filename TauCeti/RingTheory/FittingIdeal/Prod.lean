@@ -67,52 +67,32 @@ private theorem prod_det_mem_span_mul {m n : ℕ} (bF : Basis (Fin m) R F) (bG :
   refine span_le.2 ?_ ((bF.prod bG).det.toMultilinearMap.map_mem_span_image_pi s hs)
   rintro _ ⟨w, hw, rfl⟩
   have hw' (i : Fin m ⊕ Fin n) : w i = inl R F G (u i).1 ∨ w i = inr R F G (u i).2 := hw i trivial
+  have hwKL (i : Fin m ⊕ Fin n) : w i ∈ K.prod L := by
+    rcases hw' i with h | h <;> simp [h, (mem_prod.1 (hu i)).1, (mem_prod.1 (hu i)).2]
   -- `P i` records that the `i`-th member of the expanded family lies in `F × 0`.
   let P : Fin m ⊕ Fin n → Prop := fun i ↦ w i = inl R F G (u i).1
   have hcard : (Finset.univ.filter P).card + (Finset.univ.filter (¬P ·)).card = m + n := by
     simp [Finset.card_filter_add_card_filter_not]
-  have hinl (x : F) : inl R F G x ∈ span R (Set.range (inl R F G ∘ bF)) := by
-    rw [Set.range_comp, span_image, bF.span_eq, map_top]
-    exact mem_range_self _ x
-  have hinr (y : G) : inr R F G y ∈ span R (Set.range (inr R F G ∘ bG)) := by
-    rw [Set.range_comp, span_image, bG.span_eq, map_top]
-    exact mem_range_self _ y
   rcases lt_trichotomy (Finset.univ.filter P).card m with hlt | heq | hgt
   · -- More than `n` members lie in `0 × G`, which is spanned by `n` vectors.
     rw [SetLike.mem_coe, AlternatingMap.coe_multilinearMap,
       (bF.prod bG).det.map_eq_zero_of_mem_span (t := Finset.univ.filter (¬P ·))
         (inr R F G ∘ bG) (by omega) fun i hi ↦ by
-        rw [(hw' i).resolve_left (Finset.mem_filter.1 hi).2]
-        exact hinr _]
+        rw [(hw' i).resolve_left (Finset.mem_filter.1 hi).2, Set.range_comp]
+        exact apply_mem_span_image_of_mem_span _ (bG.mem_span _)]
     exact zero_mem _
-  · -- Exactly `m` members lie in `F × 0`: permute them to the front.
-    let e₁ : Fin m ≃ {i // P i} :=
-      (Fintype.equivFinOfCardEq (by rw [Fintype.card_subtype, heq])).symm
-    let e₂ : Fin n ≃ {i // ¬P i} :=
-      (Fintype.equivFinOfCardEq (by rw [Fintype.card_subtype]; omega)).symm
-    let σ : Equiv.Perm (Fin m ⊕ Fin n) := (e₁.sumCongr e₂).trans (Equiv.sumCompl P)
-    have hσ : w ∘ σ = Sum.elim (inl R F G ∘ fun k ↦ (u (σ (.inl k))).1)
-        (inr R F G ∘ fun l ↦ (u (σ (.inr l))).2) := by
-      ext1 (k | l)
-      · simp only [σ, comp_apply, Equiv.trans_apply, Equiv.sumCongr_apply, Sum.map_inl,
-          Equiv.sumCompl_apply_inl, Sum.elim_inl]
-        exact (e₁ k).2
-      · simp only [σ, comp_apply, Equiv.trans_apply, Equiv.sumCongr_apply, Sum.map_inr,
-          Equiv.sumCompl_apply_inr, Sum.elim_inr]
-        exact (hw' _).resolve_left (e₂ l).2
-    have h := (bF.prod bG).det.map_perm w σ
-    rw [hσ, Basis.prod_det_sumElim] at h
-    have hdet : (bF.prod bG).det w = Equiv.Perm.sign σ •
-        (bF.det (fun k ↦ (u (σ (.inl k))).1) * bG.det (fun l ↦ (u (σ (.inr l))).2)) := by
-      rw [h, smul_smul, Int.units_mul_self, one_smul]
+  · -- Exactly `m` members lie in `F × 0`: up to sign, the determinant is a product.
+    obtain ⟨σ, hdet⟩ := bF.exists_prod_det_eq_sign_smul_mul bG w P
+      (by rw [Fintype.card_subtype, heq, Fintype.card_fin]) (fun i hi ↦ by rw [hi]; rfl)
+      fun i hi ↦ by rw [(hw' i).resolve_left hi]; rfl
     rw [SetLike.mem_coe, AlternatingMap.coe_multilinearMap, hdet, Units.smul_def]
     refine zsmul_mem (Ideal.subset_span (Set.mul_mem_mul ?_ ?_)) _
-    exacts [⟨_, fun k ↦ (mem_prod.1 (hu _)).1, rfl⟩, ⟨_, fun l ↦ (mem_prod.1 (hu _)).2, rfl⟩]
+    exacts [⟨_, fun k ↦ (mem_prod.1 (hwKL _)).1, rfl⟩, ⟨_, fun l ↦ (mem_prod.1 (hwKL _)).2, rfl⟩]
   · -- More than `m` members lie in `F × 0`, which is spanned by `m` vectors.
     rw [SetLike.mem_coe, AlternatingMap.coe_multilinearMap,
       (bF.prod bG).det.map_eq_zero_of_mem_span (inl R F G ∘ bF) hgt fun i hi ↦ by
-        rw [(Finset.mem_filter.1 hi).2]
-        exact hinl _]
+        rw [(Finset.mem_filter.1 hi).2, Set.range_comp]
+        exact apply_mem_span_image_of_mem_span _ (bF.mem_span _)]
     exact zero_mem _
 
 variable [Free R F] [Module.Finite R F] [Free R G] [Module.Finite R G]

@@ -40,11 +40,9 @@ alongside Mathlib's `Matrix.det_updateRow_add` and `Matrix.det_updateRow_smul`: 
 in row form, that rescaling one row entry by entry along a fixed vector of factors and summing the
 results over the rows multiplies the determinant by the total of the factors.
 
-It also records three facts used to compute ideals of maximal minors: the vanishing of an
-alternating map on a family with too many arguments in a small span (over a domain this is
-`AlternatingMap.map_linearDependent`, but here no cancellation is available), the determinant in
-a product basis of a block-diagonal family, and Cramer's rule for an endomorphism of a free module
-of finite rank.
+It also records facts used to compute ideals of maximal minors: the determinant in a product
+basis of a block-diagonal family, and of a family that becomes block diagonal after a permutation,
+and Cramer's rule for an endomorphism of a free module of finite rank.
 
 Finally, it records the Weinstein–Aronszajn identity `det (1 + X ∘ₗ Y) = det (1 + Y ∘ₗ X)` for
 linear maps `X` and `Y` between two free modules of finite rank, possibly of different ranks.
@@ -76,10 +74,10 @@ linear maps `X` and `Y` between two free modules of finite rank, possibly of dif
   `det (1 + X ∘ₗ Y) = det (1 + Y ∘ₗ X)` for linear maps between free modules of finite rank.
 * `LinearEquiv.det_ker_eq_bot_of_finrank_le_one`: the determinant kernel is trivial in
   dimension at most one.
-* `AlternatingMap.map_eq_zero_of_mem_span`: an alternating map vanishes when more than `k` of
-  its arguments lie in the span of `k` vectors, over any semiring.
 * `Module.Basis.prod_det_sumElim`: the determinant in a product basis of a family split between
   the two factors is the product of the two determinants.
+* `Module.Basis.exists_prod_det_eq_sign_smul_mul`: the same up to sign for a family with exactly
+  as many members in the first factor as the rank of the first factor.
 * `LinearMap.det_smul_mem_range`: Cramer's rule, `det φ • x ∈ range φ`.
 
 ## Implementation notes
@@ -159,36 +157,6 @@ theorem compLinearMap_eq_det_smul [Finite ι] (b : Basis ι R M) (ω : M [⋀^ι
 
 end AlternatingMap
 
-namespace AlternatingMap
-
-variable {ι R M N : Type*} [Semiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N]
-  [Module R N]
-
-/-- **An alternating map vanishes when too many arguments lie in a small span.** If more than `k`
-of the arguments lie in the span of `k` vectors, then the value is zero. Over a domain this
-follows from `AlternatingMap.map_linearDependent`; here the ring is arbitrary. -/
-theorem map_eq_zero_of_mem_span [Finite ι] (f : M [⋀^ι]→ₗ[R] N) {v : ι → M} {t : Finset ι}
-    {k : ℕ} (c : Fin k → M) (ht : k < t.card)
-    (hv : ∀ i ∈ t, v i ∈ Submodule.span R (Set.range c)) : f v = 0 := by
-  classical
-  cases nonempty_fintype ι
-  -- Expand the arguments indexed by `t` along `c`; the other arguments stay fixed.
-  let s : ι → Set M := fun i ↦ if i ∈ t then Set.range c else {v i}
-  have hs (i : ι) : v i ∈ Submodule.span R (s i) := by
-    by_cases hi : i ∈ t
-    · simpa [s, hi] using hv i hi
-    · simp [s, hi]
-  refine (Submodule.mem_bot R).1 <| Submodule.span_le.2 ?_ <|
-    f.toMultilinearMap.map_mem_span_image_pi s hs
-  rintro _ ⟨w, hw, rfl⟩
-  -- Each expanded family takes more than `k` values in `range c` on `t`, so two coincide.
-  have hwc (i : t) : w i ∈ Set.range c := by simpa [s, i.2] using hw i trivial
-  choose g hg using hwc
-  obtain ⟨i, j, hij, hgij⟩ := Fintype.exists_ne_map_eq_of_card_lt g (by simpa using ht)
-  simpa using f.map_eq_zero_of_eq w (by rw [← hg i, ← hg j, hgij]) (Subtype.coe_ne_coe.2 hij)
-
-end AlternatingMap
-
 namespace Module.Basis
 
 variable {ι ι' R M M' : Type*} [Fintype ι] [DecidableEq ι] [Fintype ι'] [DecidableEq ι']
@@ -203,6 +171,30 @@ theorem prod_det_sumElim (b : Basis ι R M) (b' : Basis ι' R M') (v : ι → M)
       (LinearMap.inr R M M' ∘ v')) = Matrix.fromBlocks (b.toMatrix v) 0 0 (b'.toMatrix v') := by
     ext (i | i) (j | j) <;> simp [Basis.toMatrix_apply]
   rw [det_apply, h, Matrix.det_fromBlocks_zero₂₁, det_apply, det_apply]
+
+/-- If the members of a family satisfying `P` lie in the first factor, the others lie in the
+second factor, and exactly `card ι` members satisfy `P`, then, after a permutation `σ` moving the
+former to the front, the determinant of the family in a product basis is, up to the sign of `σ`,
+the product of the determinants of the two blocks of components. -/
+theorem exists_prod_det_eq_sign_smul_mul (b : Basis ι R M) (b' : Basis ι' R M')
+    (w : ι ⊕ ι' → M × M') (P : ι ⊕ ι' → Prop) [DecidablePred P]
+    (hcard : Fintype.card {i // P i} = Fintype.card ι) (h₁ : ∀ i, P i → (w i).2 = 0)
+    (h₂ : ∀ i, ¬P i → (w i).1 = 0) :
+    ∃ σ : Equiv.Perm (ι ⊕ ι'), (b.prod b').det w = Equiv.Perm.sign σ •
+      (b.det (fun k ↦ (w (σ (.inl k))).1) * b'.det (fun l ↦ (w (σ (.inr l))).2)) := by
+  let e₁ : ι ≃ {i // P i} := (Fintype.equivOfCardEq hcard).symm
+  let e₂ : ι' ≃ {i // ¬P i} := (Fintype.equivOfCardEq (by
+    rw [Fintype.card_subtype_compl, hcard, Fintype.card_sum, Nat.add_sub_cancel_left])).symm
+  let σ : Equiv.Perm (ι ⊕ ι') := (e₁.sumCongr e₂).trans (Equiv.sumCompl P)
+  have hσ : w ∘ σ = Sum.elim (LinearMap.inl R M M' ∘ fun k ↦ (w (σ (.inl k))).1)
+      (LinearMap.inr R M M' ∘ fun l ↦ (w (σ (.inr l))).2) := by
+    ext1 (k | l)
+    · exact Prod.ext rfl (h₁ _ (by simpa [σ] using (e₁ k).2))
+    · exact Prod.ext (h₂ _ (by simpa [σ] using (e₂ l).2)) rfl
+  refine ⟨σ, ?_⟩
+  have h := (b.prod b').det.map_perm w σ
+  rw [hσ, prod_det_sumElim] at h
+  rw [h, smul_smul, Int.units_mul_self, one_smul]
 
 end Module.Basis
 
