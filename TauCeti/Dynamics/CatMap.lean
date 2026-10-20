@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.FinTwo
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Symplectic
+import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
 
 /-!
 # Arnold's cat map
@@ -56,10 +57,6 @@ theorem reindex_catMap_mem_symplecticGroup :
 theorem det_catMap : catMap.det = 1 := by
   decide
 
-/-- The Cayley–Hamilton relation `P ^ 2 = 3 P - 1` of the cat map. -/
-theorem catMap_sq : catMap ^ 2 = 3 • catMap - 1 := by
-  decide
-
 /-- The reversed characteristic polynomial of the cat map is `det (1 - t P) = 1 - 3 t + t ^ 2`. -/
 @[simp]
 theorem charpolyRev_catMap : catMap.charpolyRev = 1 - 3 * X + X ^ 2 := by
@@ -80,21 +77,10 @@ theorem det_one_sub_catMap_pow_neg {n : ℕ} (hn : n ≠ 0) : (1 - catMap ^ n).d
     simp only [neg_smul, one_smul, sub_neg_eq_add, neg_add_eq_sub] at h
     rw [h]
     ring
-  -- The traces `tₖ` of the iterates satisfy `tₖ₊₂ = 3 tₖ₊₁ - tₖ`, with `t₀ = 2` and `t₁ = 3`,
-  -- so they increase strictly and `det (1 - P ^ n) = 2 - tₙ < 0` for `n ≥ 1`.
-  have htr (k : ℕ) :
-      (catMap ^ (k + 2)).trace = 3 * (catMap ^ (k + 1)).trace - (catMap ^ k).trace := by
-    rw [pow_add, catMap_sq, Matrix.mul_sub, Matrix.mul_smul, mul_one, ← pow_succ, trace_sub,
-      trace_smul, nsmul_eq_mul, Nat.cast_ofNat]
-  have key (k : ℕ) : 2 ≤ (catMap ^ k).trace ∧ (catMap ^ k).trace < (catMap ^ (k + 1)).trace := by
-    induction k with
-    | zero => decide
-    | succ k ih => rw [htr]; omega
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hn
+  -- `det (1 - P ^ n) = 2 - tr (P ^ n)`, and `tr (P ^ n) > 2` since `det P = 1` and `tr P = 3 > 2`.
+  have := two_lt_trace_pow det_catMap (by decide) hn
   rw [hdet, det_pow, det_catMap, one_pow]
-  have := key k
-  have := key (k + 1)
-  omega
+  linarith
 
 /-- The coefficient of `t ^ n` in `det (1 - t P) / (1 - t) ^ 2` is `-n` for `n ≠ 0`. This is the
 genus-one case `det (1 - P) (n + 1 - g)` of
