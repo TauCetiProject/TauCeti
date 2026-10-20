@@ -78,7 +78,6 @@ variable [DecidableEq F]
 private theorem pointMap_ofIsogeny_add_of_isSeparable [IsSepClosed F] (φ : Isogeny W₁ W₂)
     [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField] (P Q : W₁.Point) :
     (ofIsogeny φ).pointMap (P + Q) = (ofIsogeny φ).pointMap P + (ofIsogeny φ).pointMap Q := by
-  have := W₂.isIntegrallyClosed_coordinateRing
   rw [pointMap_ofIsogeny_eq_toPointHom, _root_.map_add, ← pointMap_ofIsogeny_eq_toPointHom,
     ← pointMap_ofIsogeny_eq_toPointHom]
 
@@ -146,7 +145,6 @@ theorem pointMap_surjective [IsAlgClosed F] {f : Hom W₁ W₂} (hf : f ≠ 0) :
   -- `φ = χ ∘ F^r` with `χ` separable and `F^r` the `r`-fold relative Frobenius
   obtain ⟨r, χ, hχ, rfl⟩ :=
     exists_isSeparable_comp_iterateRelativeFrobeniusIsogeny_eq (ringExpChar F) φ
-  have := W₂.isIntegrallyClosed_coordinateRing
   intro Q
   obtain ⟨P, rfl⟩ := χ.toPointHom_surjective Q
   obtain ⟨P, rfl⟩ := Point.mapAlong_surjective _ (iterateFrobenius F (ringExpChar F) r).injective

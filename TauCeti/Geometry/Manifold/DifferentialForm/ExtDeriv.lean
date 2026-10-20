@@ -106,7 +106,7 @@ theorem inChartAt_sub (φ η : RoughForm I M F k) (x₀ : M) :
   rw [sub_eq_add_neg, inChartAt_add, inChartAt_neg, sub_eq_add_neg]
 
 /-- Scalar localization of a form multiplies its coordinate expression by the pulled-back scalar. -/
-theorem inChartAt_fun_smul (f : M → ℝ) (φ : RoughForm I M ℝ k) (α : M) (y : E) :
+theorem inChartAt_fun_smul (f : M → ℝ) (φ : RoughForm I M F k) (α : M) (y : E) :
     inChartAt (I := I) (fun x ↦ f x • φ x) α y =
       f ((extChartAt I α).symm y) • φ.inChartAt α y := by
   ext v
@@ -303,6 +303,15 @@ theorem mextDeriv_eq_extDeriv (φ : RoughForm 𝓘(ℝ, E) E F k) (x : E) :
     mextDeriv φ x = extDeriv (E := E) (F := F) φ x := by
   rw [← mextDerivWithin_univ, mextDerivWithin_eq_extDerivWithin]
   exact congrFun (extDerivWithin_univ (𝕜 := ℝ) (E := E) (F := F) φ) x
+
+/-- The manifold exterior derivative of a constant form on its self-model space vanishes. -/
+@[simp]
+theorem mextDeriv_const (ω : E [⋀^Fin k]→L[ℝ] F) :
+    mextDeriv (I := 𝓘(ℝ, E)) (M := E) (F := F) (k := k)
+        ((fun _ ↦ ω) : RoughForm (𝓘(ℝ, E)) E F k) = 0 := by
+  funext x
+  exact (mextDeriv_eq_extDeriv ((fun _ : E ↦ ω) : RoughForm (𝓘(ℝ, E)) E F k) x).trans
+    (ContinuousAlternatingMap.extDeriv_const ω x)
 
 /-! ### Functions -/
 

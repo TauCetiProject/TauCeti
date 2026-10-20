@@ -8,7 +8,10 @@ module
 public import Mathlib.Data.Finsupp.Order
 
 /-!
-# Splitting off the least index of a finitely supported function
+# Decompositions of finitely supported functions on linear orders
+
+A finitely supported function splits into its coordinates below a chosen index, its value at
+that index, and its coordinates above it.
 
 A natural-valued finitely supported function with an index below `l` in its support splits as
 `single i 1 + g`, where `i < l` and every index in the support of `g` is at least `i`.
@@ -21,6 +24,15 @@ public section
 namespace Finsupp
 
 variable {ι : Type*} [LinearOrder ι]
+
+/-- A finitely supported function splits into its values before `i`, at `i`, and after `i`. -/
+theorem filter_lt_add_single_add_filter_gt {M : Type*} [AddZeroClass M] (f : ι →₀ M) (i : ι) :
+    f.filter (· < i) + single i (f i) + f.filter (i < ·) = f := by
+  ext j
+  rcases lt_trichotomy j i with hj | rfl | hj
+  · simp [hj, hj.not_gt, single_eq_of_ne hj.ne]
+  · simp
+  · simp [hj, hj.not_gt, single_eq_of_ne hj.ne']
 
 /-- If the support of `f` is not bounded below by `l`, split off one occurrence of its least
 index `i < l`. Every index in the remaining support is at least `i`. -/

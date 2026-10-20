@@ -9,6 +9,7 @@ public import Mathlib.Algebra.CubicDiscriminant
 public import Mathlib.Algebra.Field.ZMod
 import Mathlib.Algebra.MvPolynomial.Basic
 public import Mathlib.Algebra.Order.BigOperators.Group.LocallyFinite
+public import Mathlib.Algebra.QuadraticDiscriminant
 import Mathlib.Data.Nat.Choose.Vandermonde
 import Mathlib.Tactic.NormDet
 import Mathlib.Tactic.NormNum.IsSquare
@@ -77,6 +78,8 @@ depressed specialization of that formula is used to compare a quartic with its c
   `Polynomial.Monic.separable_map_zmod_iff_not_dvd_discr`: the same criterion read along a ring
   homomorphism into a field, and its specialization to reduction of an integral polynomial modulo
   a prime not dividing the leading coefficient, in particular of a monic one.
+* `Polynomial.discr_eq_discrim_of_degree_eq_two`: the discriminant of a quadratic is Mathlib's
+  `discrim` of its coefficients, `b ^ 2 - 4ac`.
 * `Cubic.toPoly_discr`: the two discriminants of a cubic with nonzero leading coefficient agree,
   so that `Cubic.discr` and `Polynomial.discr` may be used interchangeably in degree three.
 * `Polynomial.Monic.discr_of_natDegree_eq_four`, `TauCeti.discr_depressedQuartic`: the
@@ -891,6 +894,21 @@ theorem not_separable_X_pow_two_sub_one : ¬ (X ^ 2 - 1 : ℤ[X]).Separable := b
   have := congrArg (eval 1) hab
   simp at this
   omega
+
+end Polynomial
+
+/-! ### Comparison with the discriminant of a quadratic -/
+
+namespace Polynomial
+
+variable {R : Type*} [CommRing R]
+
+/-- The discriminant of a quadratic `a X ^ 2 + b X + c` is `discrim a b c = b ^ 2 - 4ac`, with no
+normalization to monic and no sign. -/
+theorem discr_eq_discrim_of_degree_eq_two {f : R[X]} (hf : f.degree = 2) :
+    f.discr = discrim (f.coeff 2) (f.coeff 1) (f.coeff 0) := by
+  rw [discr_of_degree_eq_two hf, discrim]
+  ring
 
 end Polynomial
 

@@ -211,6 +211,26 @@ private def smulSimplicialMap (g : G) :
     have := map_toPerm_mem_indexedJoin g hσ
     rwa [Finset.map_eq_image] at this
 
+/-- Translation preserves the vertex order on each simplex of the countable join. -/
+private theorem smulSimplicialMap_strictMonoOn (g : G)
+    (c : (indexedJoin fun _ : ℕ => G).RealizationCell n) :
+    StrictMonoOn (smulSimplicialMap g) (↑c.1.1 : Set (Σ _ : ℕ, G)) := by
+  intro v hv w hw hvw
+  exact universalGSpaceVertexOrder_lt_of_fst_lt
+    ((universalGSpaceVertexOrder_lt_iff c.1.2 hv hw).mp hvw)
+
+/-- Translation of a cell agrees with its image under the translating simplicial map. -/
+private theorem smul_realizationCell_eq_map (g : G)
+    (c : (indexedJoin fun _ : ℕ => G).RealizationCell n) :
+    g • c = c.map (smulSimplicialMap g) (smulSimplicialMap_strictMonoOn g c).injOn := by
+  apply Subtype.ext
+  apply Subtype.ext
+  simp only [RealizationCell.map_face,
+    TauCeti.PreAbstractSimplicialComplex.SimplicialMap.coe_faceOrderHom_apply,
+    smul_realizationCell_face, Finset.map_eq_image]
+  -- Both faces are images under the same relabelling of vertices.
+  rfl
+
 /-- Translation of the countable join is the realization of the simplicial map relabelling the
 vertices. -/
 private theorem smul_eq_realizationMap (g : G) (x : universalGSpace G) :
@@ -227,20 +247,18 @@ countable join, translating its characteristic map by `g` gives the characterist
 theorem smul_characteristicMap_universalGSpace (g : G)
     (c : (indexedJoin fun _ : ℕ => G).RealizationCell n) (x : Fin n → ℝ) :
     g • c.characteristicMap x = (g • c).characteristicMap x := by
-  have hmono : StrictMonoOn (smulSimplicialMap g) (↑c.1.1 : Set (Σ _ : ℕ, G)) := by
-    intro v hv w hw hvw
-    rw [universalGSpaceVertexOrder_lt_iff c.1.2 hv hw] at hvw
-    exact universalGSpaceVertexOrder_lt_of_fst_lt hvw
   rw [smul_eq_realizationMap,
-    PreAbstractSimplicialComplex.SimplicialMap.realizationMap_characteristicMap _ c hmono]
-  congr 2
-  apply Subtype.ext
-  apply Subtype.ext
-  simp only [RealizationCell.map_face,
-    TauCeti.PreAbstractSimplicialComplex.SimplicialMap.coe_faceOrderHom_apply,
-    smul_realizationCell_face, Finset.map_eq_image]
-  -- Both faces are images under the same relabelling of vertices.
-  rfl
+    PreAbstractSimplicialComplex.SimplicialMap.realizationMap_characteristicMap _ c
+      (smulSimplicialMap_strictMonoOn g c), ← smul_realizationCell_eq_map]
+
+/-- Translation preserves the index-ordered enumeration of each simplex of the countable join. -/
+@[simp]
+theorem vertexEmbedding_smul_universalGSpace (g : G)
+    (c : (indexedJoin fun _ : ℕ => G).RealizationCell n) (j : Fin (n + 1)) :
+    (g • c).vertexEmbedding j = g • c.vertexEmbedding j := by
+  rw [smul_realizationCell_eq_map]
+  exact congrFun
+    (c.vertexEmbedding_map (smulSimplicialMap g) (smulSimplicialMap_strictMonoOn g c)) j
 
 end RealizationCell
 

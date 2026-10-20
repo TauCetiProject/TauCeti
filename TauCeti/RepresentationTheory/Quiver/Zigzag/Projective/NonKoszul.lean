@@ -18,10 +18,18 @@ the zigzag algebra. A linear projective resolution of every graded vertex simple
 these coefficients nonnegative. Hence at least one vertex simple has no linear graded projective
 resolution.
 
-Applied to a valid simply-laced Dynkin diagram with at least two vertices, this proves the
-non-Koszul half of the finite-ADE classification in the resolution-theoretic form: not every
-graded vertex simple is linearly resolved. The rank-one zigzag convention is deliberately
+Applied to any finite graph on at least two vertices isomorphic to a valid Dynkin diagram, this
+proves the non-Koszul half of the finite-ADE classification in the resolution-theoretic form: not
+every graded vertex simple is linearly resolved. The rank-one zigzag convention is deliberately
 excluded because its generator has degree two and it is not the quadratic presentation used here.
+
+## Main results
+
+* `TauCeti.exists_not_exists_isLinear_zigzagGradedSimple_of_finiteDimensional_preprojective`: a
+  finite-dimensional preprojective algebra obstructs linear resolutions of zigzag vertex simples.
+* `TauCeti.exists_not_exists_isLinear_zigzagGradedSimple_of_iso`: every finite graph on at least
+  two vertices isomorphic to a valid Dynkin diagram has a vertex simple without a linear graded
+  projective resolution.
 
 ## References
 
@@ -62,21 +70,20 @@ theorem exists_not_exists_isLinear_zigzagGradedSimple_of_finiteDimensional_prepr
     coeff_inv_zigzagGradedCartanMatrix_map_aeval_neg_X_nonneg hns v hlinear n u
   omega
 
-/-- **A finite ADE zigzag algebra has a vertex simple without a linear resolution.** More
-generally, this holds for every valid simply-laced Dynkin diagram with at least two vertices and
-every orientation of its diagram graph. -/
-theorem exists_not_exists_isLinear_zigzagGradedSimple_of_isSimplyLaced
-    (t : DynkinType) (ht : t.Valid) (hs : t.IsSimplyLaced) (hrank : 2 ≤ t.rank) :
-    ∃ v : Fin t.rank,
-      ¬ ∃ r : GradedProjectiveResolution.{w, max w, max w, max w}
-        (zigzagIntegerGrade k (diagramGraph t.cartanMatrix))
-        (zigzagGradedSimple k (diagramGraph t.cartanMatrix) v).grading, r.IsLinear := by
-  let _ : Nontrivial (Fin t.rank) := Fin.nontrivial_iff_two_le.mpr hrank
-  have hns (i : Fin t.rank) : ∃ j, (diagramGraph t.cartanMatrix).Adj i j :=
-    (DynkinType.connected_diagramGraph_cartanMatrix ht).preconnected.exists_adj_of_nontrivial i
-  let o := Orientation.ofLinearOrder (diagramGraph t.cartanMatrix)
-  let _ := finiteDimensional_preprojectiveAlgebra_of_isSimplyLaced k t hs o
-  exact exists_not_exists_isLinear_zigzagGradedSimple_of_finiteDimensional_preprojective
-    k hns o
+/-- **Every finite graph on at least two vertices isomorphic to a valid Dynkin diagram has a
+zigzag vertex simple without a linear resolution.** -/
+theorem exists_not_exists_isLinear_zigzagGradedSimple_of_iso {V : Type u} {G : SimpleGraph V}
+    [Finite V] [Nontrivial V] {t : DynkinType} (ht : t.Valid)
+    (e : G ≃g diagramGraph t.cartanMatrix) :
+    ∃ v : V, ¬ ∃ r : GradedProjectiveResolution.{w, max u w, max u w, max u w}
+      (zigzagIntegerGrade k G) (zigzagGradedSimple k G v).grading, r.IsLinear := by
+  classical
+  have hconn : G.Connected :=
+    e.connected_iff.mpr (DynkinType.connected_diagramGraph_cartanMatrix ht)
+  have hns (i : V) : ∃ j, G.Adj i j := hconn.preconnected.exists_adj_of_nontrivial i
+  let _ : LinearOrder V := (Finite.equivFin V).linearOrder
+  let o := Orientation.ofLinearOrder G
+  have _ := finiteDimensional_preprojectiveAlgebra_of_iso k e o
+  exact exists_not_exists_isLinear_zigzagGradedSimple_of_finiteDimensional_preprojective k hns o
 
 end TauCeti
