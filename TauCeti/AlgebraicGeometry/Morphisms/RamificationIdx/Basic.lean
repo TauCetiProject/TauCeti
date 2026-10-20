@@ -100,7 +100,9 @@ theorem ramificationIdxAt_comp_of_flat_stalkMap {Z : Scheme.{u}} (g : Y ⟶ Z) (
   let : Algebra sourceStalk targetStalk := compositeStalkMap.hom.toAlgebra
   have htransport :
       eqToHom (congrArg Z.presheaf.stalk (Scheme.Hom.comp_apply f g x).symm) =
-        𝟙 sourceStalk := eqToHom_refl _ _
+        𝟙 sourceStalk := by
+    cases Scheme.Hom.comp_apply f g x
+    rfl
   have hcomp : compositeStalkMap.hom =
       (f.stalkMap x).hom.comp (g.stalkMap (f x)).hom := by
     dsimp only [compositeStalkMap]

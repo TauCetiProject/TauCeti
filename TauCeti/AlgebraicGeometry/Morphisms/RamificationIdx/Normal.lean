@@ -32,6 +32,8 @@ rings (Stacks, Definition 15.113.1 (09E4)).
 * `AlgebraicGeometry.Scheme.Hom.map_maximalIdeal_eq_pow_ramificationIdxAt`: at a point of coheight
   one of a locally Noetherian normal integral scheme and for a dominant map to a reduced scheme
   with non-generic image point, `𝔪_{f(x)} 𝒪_{X,x} = 𝔪_x ^ e` with `e = ramificationIdxAt f x`.
+* `AlgebraicGeometry.Scheme.Hom.map_maximalIdeal_eq_pow_ramificationIdxAt_of_map_ne_bot`:
+  the same identity under the local condition that the mapped maximal ideal is nonzero.
 * `AlgebraicGeometry.Scheme.Hom.ramificationIdxAt_eq_of_map_maximalIdeal_eq_pow`: the index equals
   any exponent satisfying the maximal-ideal identity of Stacks, Definition 15.113.1 (09E4).
 
@@ -69,6 +71,21 @@ theorem ramificationIdxAt_comp_of_coheight_eq_one {Z : Scheme.{u}} (g : Y ⟶ Z)
     IsNormalScheme.isDiscreteValuationRing_stalk Y (f x) hfx
   exact f.ramificationIdxAt_comp_of_flat_stalkMap g x (f.flat_stalkMap_of_isDominant x)
 
+/-- The maximal-ideal power identity at a codimension-one point, assuming only that the mapped
+maximal ideal is nonzero. The source stalk is a discrete valuation ring. -/
+theorem map_maximalIdeal_eq_pow_ramificationIdxAt_of_map_ne_bot
+    [IsLocallyNoetherian X] [IsNormalScheme X] (x : X) (hx : coheight x = 1)
+    (hmap : (maximalIdeal (Y.presheaf.stalk (f x))).map (f.stalkMap x).hom ≠ ⊥) :
+    (maximalIdeal (Y.presheaf.stalk (f x))).map (f.stalkMap x).hom =
+      maximalIdeal (X.presheaf.stalk x) ^ ramificationIdxAt f x := by
+  let := (f.stalkMap x).hom.toAlgebra
+  have : IsLocalHom (algebraMap (Y.presheaf.stalk (f x)) (X.presheaf.stalk x)) :=
+    inferInstanceAs (IsLocalHom (f.stalkMap x).hom)
+  have : IsDiscreteValuationRing (X.presheaf.stalk x) :=
+    IsNormalScheme.isDiscreteValuationRing_stalk X x hx
+  rw [ramificationIdxAt_def]
+  exact IsDiscreteValuationRing.map_maximalIdeal_eq_pow_ramificationIdx hmap
+
 /-- **The ramification index at a codimension-one point.** At a point `x` of coheight one of a
 locally Noetherian normal integral scheme `X`, for a dominant `f : X ⟶ Y` to a reduced scheme with
 `f x` not of coheight zero, the local ring `𝒪_{X,x}` is a discrete valuation ring and
@@ -82,12 +99,6 @@ theorem map_maximalIdeal_eq_pow_ramificationIdxAt [IsDominant f] [IsIntegral X] 
     (maximalIdeal (Y.presheaf.stalk (f x))).map (f.stalkMap x).hom =
       maximalIdeal (X.presheaf.stalk x) ^ ramificationIdxAt f x := by
   let := (f.stalkMap x).hom.toAlgebra
-  have : IsLocalHom (algebraMap (Y.presheaf.stalk (f x)) (X.presheaf.stalk x)) :=
-    inferInstanceAs (IsLocalHom (f.stalkMap x).hom)
-  have : IsDiscreteValuationRing (X.presheaf.stalk x) :=
-    IsNormalScheme.isDiscreteValuationRing_stalk X x hx
-  -- The maximal ideal of `𝒪_{Y,f(x)}` is nonzero, as this local ring has positive dimension, and
-  -- the stalk map is injective.
   have hne : maximalIdeal (Y.presheaf.stalk (f x)) ≠ ⊥ := by
     intro hbot
     have hfield : IsField (Y.presheaf.stalk (f x)) :=
@@ -102,8 +113,7 @@ theorem map_maximalIdeal_eq_pow_ramificationIdxAt [IsDominant f] [IsIntegral X] 
       f.stalkMap_injective_of_isDominant x
     rw [Ne, Ideal.map_eq_bot_iff_le_ker, (RingHom.injective_iff_ker_eq_bot _).mp hinj, le_bot_iff]
     exact hne
-  rw [ramificationIdxAt_def]
-  exact IsDiscreteValuationRing.map_maximalIdeal_eq_pow_ramificationIdx hmap
+  exact f.map_maximalIdeal_eq_pow_ramificationIdxAt_of_map_ne_bot x hx hmap
 
 /-- The pointwise ramification index equals the DVR exponent characterized by the maximal-ideal
 identity in Stacks, Definition 15.113.1 (09E4).
