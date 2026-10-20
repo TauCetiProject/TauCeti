@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Localization.Module
 import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
 import Mathlib.RingTheory.PowerSeries.Ideal
 import TauCeti.Algebra.Module.LocalizedModule.Submodule
+import TauCeti.LinearAlgebra.Isomorphisms
 import TauCeti.NumberTheory.Padics.PowerSeriesIdeal
 import TauCeti.RingTheory.Finiteness.Finsupp
 import TauCeti.RingTheory.Localization.Module
@@ -169,6 +170,35 @@ theorem isPseudoIsomorphism_lsmul [IsNoetherianRing A] [Module.Finite A M] (a : 
   · have := Module.notMem_support_iff.mp hmem
     exact ⟨Function.injective_of_subsingleton _, Function.surjective_to_subsingleton _⟩
 
+/-- Prime avoidance for a pseudo-isomorphism `f : M → N` onto a finitely generated torsion module
+over a noetherian ring: some `γ` kills `ker f` and `coker f` and lies in no prime of height at most
+one in the support of `N`. -/
+theorem IsPseudoIsomorphism.exists_mem_annihilator_notMem [IsNoetherianRing A] [Module.Finite A N]
+    (hN : Module.IsTorsion A N) {f : M →ₗ[A] N} (hf : IsPseudoIsomorphism f) :
+    ∃ γ ∈ Module.annihilator A (LinearMap.ker f),
+      γ ∈ Module.annihilator A (N ⧸ LinearMap.range f) ∧
+        ∀ 𝔭 ∈ Module.support A N, 𝔭.asIdeal.height ≤ 1 → γ ∉ 𝔭.asIdeal := by
+  have := hf.isPseudoNull_ker.finite
+  have := hf.isPseudoNull_coker.finite
+  -- None of the finitely many primes of height at most one in the support of `N` contains either
+  -- annihilator, so none contains their intersection.
+  suffices ∃ γ ∈ Module.annihilator A (LinearMap.ker f) ⊓
+      Module.annihilator A (N ⧸ LinearMap.range f),
+      ∀ 𝔭 ∈ {𝔭 ∈ Module.support A N | 𝔭.asIdeal.height ≤ 1}, γ ∉ 𝔭.asIdeal by
+    obtain ⟨γ, hγJ, hγ⟩ := this
+    exact ⟨γ, (Submodule.mem_inf.mp hγJ).1, (Submodule.mem_inf.mp hγJ).2,
+      fun 𝔭 hmem h𝔭 ↦ hγ 𝔭 ⟨hmem, h𝔭⟩⟩
+  by_contra! h
+  obtain ⟨_, ⟨𝔭, ⟨-, hht⟩, rfl⟩, hJ⟩ :=
+    (Ideal.subset_union_prime_finite (f := id)
+      (hN.finite_setOf_mem_support_height_le_one.image PrimeSpectrum.asIdeal) ⊥ ⊥
+      fun _ ⟨𝔭, _, h⟩ _ _ ↦ h ▸ 𝔭.isPrime).mp fun x hx ↦ by simpa using h x hx
+  rcases 𝔭.isPrime.inf_le.mp hJ with hJ | hJ
+  · exact (hf.isPseudoNull_ker.one_lt_height
+      (Module.mem_support_iff_of_finite.mpr hJ)).not_ge hht
+  · exact (hf.isPseudoNull_coker.one_lt_height
+      (Module.mem_support_iff_of_finite.mpr hJ)).not_ge hht
+
 /-- Over a noetherian ring, a pseudo-isomorphism `M → N` onto a finitely generated torsion module
 can be reversed: there is a pseudo-isomorphism `N → M`. Without the torsion hypothesis the
 statement fails: the inclusion of the maximal ideal of `ℤ_p⟦T⟧` is a pseudo-isomorphism, but there
@@ -177,47 +207,14 @@ theorem IsPseudoIsomorphism.exists_reverse [IsNoetherianRing A] [Module.Finite A
     (hN : Module.IsTorsion A N) {f : M →ₗ[A] N} (hf : IsPseudoIsomorphism f) :
     ∃ g : N →ₗ[A] M, IsPseudoIsomorphism g := by
   have := hf.finite_iff.mpr ‹Module.Finite A N›
-  have := hf.isPseudoNull_ker.finite
-  have := hf.isPseudoNull_coker.finite
-  -- By prime avoidance, some `γ` killing `ker f` and `coker f` avoids the finitely many primes of
-  -- height at most one in the support of `N`: none of them contains either annihilator.
-  set Sig := {𝔭 ∈ Module.support A N | 𝔭.asIdeal.height ≤ 1}
-  set J : Ideal A := Module.annihilator A (LinearMap.ker f) ⊓
-    Module.annihilator A (N ⧸ LinearMap.range f)
-  obtain ⟨γ, hγJ, hγ⟩ : ∃ γ ∈ J, ∀ 𝔭 ∈ Sig, γ ∉ 𝔭.asIdeal := by
-    by_contra! h
-    obtain ⟨_, ⟨𝔭, ⟨-, hht⟩, rfl⟩, hJ⟩ :=
-      (Ideal.subset_union_prime_finite (f := id)
-        (hN.finite_setOf_mem_support_height_le_one.image PrimeSpectrum.asIdeal) ⊥ ⊥
-        fun _ ⟨𝔭, _, h⟩ _ _ ↦ h ▸ 𝔭.isPrime).mp fun x hx ↦ by simpa [Sig] using h x hx
-    rcases 𝔭.isPrime.inf_le.mp hJ with hJ | hJ
-    · exact (hf.isPseudoNull_ker.one_lt_height
-        (Module.mem_support_iff_of_finite.mpr hJ)).not_ge hht
-    · exact (hf.isPseudoNull_coker.one_lt_height
-        (Module.mem_support_iff_of_finite.mpr hJ)).not_ge hht
-  -- The reverse map `g n = γ • m`, where `f m = γ • n`.
-  have hcoker (n : N) : γ • n ∈ LinearMap.range f := by
-    rw [← Submodule.Quotient.mk_eq_zero, Submodule.Quotient.mk_smul]
-    exact Module.mem_annihilator.mp (Submodule.mem_inf.mp hγJ).2 _
-  have hker : LinearMap.ker f ≤ LinearMap.ker (γ • LinearMap.id : M →ₗ[A] M) := fun m hm ↦ by
-    simpa using Module.mem_annihilator.mp (Submodule.mem_inf.mp hγJ).1 ⟨m, hm⟩
-  let g : N →ₗ[A] M := (LinearMap.ker f).liftQ _ hker ∘ₗ
-    (f.quotKerEquivRange.symm : LinearMap.range f →ₗ[A] M ⧸ LinearMap.ker f) ∘ₗ
-      (γ • LinearMap.id : N →ₗ[A] N).codRestrict _ hcoker
-  have hgf : g ∘ₗ f = LinearMap.lsmul A M (γ * γ) := by
-    ext m
-    have : (γ • LinearMap.id : N →ₗ[A] N).codRestrict _ hcoker (f m) =
-        ⟨f (γ • m), LinearMap.mem_range_self f _⟩ :=
-      Subtype.ext (by simp)
-    simp only [g, LinearMap.comp_apply, LinearEquiv.coe_coe, this,
-      LinearMap.quotKerEquivRange_symm_apply_image]
-    simp [mul_smul]
+  obtain ⟨γ, hker, hcoker, hγ⟩ := hf.exists_mem_annihilator_notMem hN
+  obtain ⟨g, hgf⟩ := f.exists_comp_eq_lsmul_of_mem_annihilator hker hcoker
   refine ⟨g, .of_bijective_localizedModule_map fun 𝔭 h𝔭 ↦ ?_⟩
   have hfloc := hf.bijective_localizedModule_map 𝔭 h𝔭
   by_cases hmem : 𝔭 ∈ Module.support A N
   · -- Here `γ` is a unit, and `g` is `γ²` times the inverse of `f`.
     have hγ𝔭 : γ * γ ∈ 𝔭.asIdeal.primeCompl :=
-      Submonoid.mul_mem _ (hγ 𝔭 ⟨hmem, h𝔭⟩) (hγ 𝔭 ⟨hmem, h𝔭⟩)
+      Submonoid.mul_mem _ (hγ 𝔭 hmem h𝔭) (hγ 𝔭 hmem h𝔭)
     have := LocalizedModule.bijective_map_lsmul M hγ𝔭
     rw [← hgf, LocalizedModule.map_comp, LinearMap.coe_comp] at this
     exact (Function.Bijective.of_comp_iff _ hfloc).mp this
