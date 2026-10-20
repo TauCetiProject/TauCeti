@@ -241,6 +241,57 @@ theorem eq_of_hasSum (he : IsTOrthogonalBasis R t e) (ht : 0 < t) {a b : I → R
   exact sub_eq_zero.1 <| norm_eq_zero.1 <|
     (mul_eq_zero.1 this).resolve_right (norm_ne_zero_iff.2 (he.ne_zero i))
 
+/-- In a `t`-orthogonal basis with `t > 0`, the coefficient sequences of a Cauchy sequence of
+finite linear combinations are Cauchy. -/
+private theorem cauchySeq_apply_of_cauchySeq_linearCombination (he : IsTOrthogonalBasis R t e)
+    (ht : 0 < t) {c : ℕ → I →₀ R} (hc : CauchySeq fun n ↦ Finsupp.linearCombination R e (c n))
+    (i : I) : CauchySeq fun n ↦ c n i := by
+  have hei : 0 < (t : ℝ) * ‖e i‖ := mul_pos (by exact_mod_cast ht) (norm_pos_iff.2 (he.ne_zero i))
+  refine Metric.cauchySeq_iff'.2 fun ε hε ↦ ?_
+  obtain ⟨N, hN⟩ := Metric.cauchySeq_iff'.1 hc _ (mul_pos hε hei)
+  refine ⟨N, fun n hn ↦ ?_⟩
+  have h := he.isTOrthogonalFamily.mul_norm_smul_le_norm_linearCombination (c n - c N) i
+  simp only [map_sub, Finsupp.coe_sub, Pi.sub_apply, norm_smul] at h
+  have h' := hN n hn
+  rw [dist_eq_norm] at h' ⊢
+  have : ‖c n i - c N i‖ * (t * ‖e i‖) < ε * (t * ‖e i‖) := by linarith
+  exact lt_of_mul_lt_mul_right this hei.le
+
+omit [NormSMulClass R M] in
+/-- In an ultrametric module, if `x` lies in the closure of the finite linear combinations of `e`
+and, for some `t > 0`, `t * ‖(a i - d i) • e i‖ ≤ ‖x - Finsupp.linearCombination R e d‖` for
+every finitely supported `d`, then `x` is the unconditional sum of the `a i • e i`. -/
+private theorem hasSum_of_forall_mul_norm_sub_smul_le [IsUltrametricDist M] (ht : 0 < t)
+    {a : I → R} {x : M} (hx : x ∈ closure (Set.range (Finsupp.linearCombination R e)))
+    (h : ∀ (d : I →₀ R) (i : I),
+      t * ‖(a i - d i) • e i‖ ≤ ‖x - Finsupp.linearCombination R e d‖) :
+    HasSum (fun i ↦ a i • e i) x := by
+  classical
+  have ht' : (0 : ℝ) < t := by exact_mod_cast ht
+  rw [HasSum, SummationFilter.unconditional_filter, NormedAddCommGroup.tendsto_atTop]
+  intro ε hε
+  -- Choose a finite combination `L d` close to `x`; its support controls the partial sums.
+  obtain ⟨_, ⟨d, rfl⟩, hd⟩ := Metric.mem_closure_iff.1 hx _ (lt_min hε (mul_pos ht' hε))
+  rw [dist_eq_norm] at hd
+  refine ⟨d.support, fun s hs ↦ ?_⟩
+  have hLs : Finsupp.linearCombination R e d = ∑ i ∈ s, d i • e i := by
+    rw [Finsupp.linearCombination_apply]
+    exact Finsupp.sum_of_support_subset _ hs _ fun _ _ ↦ zero_smul R _
+  have hsplit : ∑ i ∈ s, a i • e i - x =
+      ∑ i ∈ s, (a i - d i) • e i + (Finsupp.linearCombination R e d - x) := by
+    rw [hLs]
+    simp only [sub_smul, Finset.sum_sub_distrib]
+    abel
+  rw [hsplit]
+  refine (IsUltrametricDist.norm_add_le_max _ _).trans_lt
+    (max_lt ?_ ((norm_sub_rev _ _).trans_lt (hd.trans_le (min_le_left _ _))))
+  refine (IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg
+    (C := ‖x - Finsupp.linearCombination R e d‖ / t) (by positivity) fun i _ ↦ ?_).trans_lt ?_
+  · rw [le_div_iff₀' ht']
+    exact h d i
+  · rw [div_lt_iff₀' ht']
+    exact hd.trans_le (min_le_right _ _)
+
 variable [CompleteSpace R] [IsUltrametricDist M]
 
 /-- **Existence of expansions in a `t`-orthogonal basis**: for `t > 0`, over a complete normed
@@ -248,62 +299,23 @@ ring acting norm-multiplicatively on an ultrametric module, every vector `x` is 
 sum of a family `a i • e i`. Completeness of the module is not needed. -/
 theorem exists_hasSum (he : IsTOrthogonalBasis R t e) (ht : 0 < t) (x : M) :
     ∃ a : I → R, HasSum (fun i ↦ a i • e i) x := by
-  classical
   set L := Finsupp.linearCombination R e
-  have ht' : (0 : ℝ) < t := by exact_mod_cast ht
   -- Approximate `x` by finite linear combinations `L (c n)`.
-  obtain ⟨y, hy_mem, hyx⟩ := mem_closure_iff_seq_limit.1 (he.dense_span x)
-  have hy_range (n : ℕ) : y n ∈ LinearMap.range L := by
-    rw [Finsupp.range_linearCombination]
-    exact hy_mem n
-  choose c hc using hy_range
-  -- `t`-orthogonality bounds each coefficient difference by the difference of combinations.
-  have hdiff (d d' : I →₀ R) (i : I) : t * ‖(d i - d' i) • e i‖ ≤ ‖L d - L d'‖ := by
-    simpa [L, map_sub] using he.isTOrthogonalFamily.mul_norm_smul_le_norm_linearCombination
-      (d - d') i
-  -- So each coefficient sequence is Cauchy, and has a limit `a i`.
-  have hcauchy (i : I) : CauchySeq fun n ↦ c n i := by
-    have hei : 0 < (t : ℝ) * ‖e i‖ := mul_pos ht' (norm_pos_iff.2 (he.ne_zero i))
-    refine Metric.cauchySeq_iff'.2 fun ε hε ↦ ?_
-    obtain ⟨N, hN⟩ := Metric.cauchySeq_iff'.1 hyx.cauchySeq _ (mul_pos hε hei)
-    refine ⟨N, fun n hn ↦ ?_⟩
-    have h := hdiff (c n) (c N) i
-    rw [norm_smul, hc, hc] at h
-    have h' := hN n hn
-    rw [dist_eq_norm] at h' ⊢
-    have : ‖c n i - c N i‖ * (t * ‖e i‖) < ε * (t * ‖e i‖) := by linarith
-    exact lt_of_mul_lt_mul_right this hei.le
-  choose a ha using fun i ↦ cauchySeq_tendsto_of_complete (hcauchy i)
+  have hx : x ∈ closure (Set.range L) := by
+    rw [← LinearMap.coe_range, Finsupp.range_linearCombination]
+    exact he.dense_span x
+  obtain ⟨y, hy_mem, hyx⟩ := mem_closure_iff_seq_limit.1 hx
+  choose c hc using hy_mem
+  -- Each coefficient sequence is Cauchy, and has a limit `a i`.
+  choose a ha using fun i ↦ cauchySeq_tendsto_of_complete <|
+    he.cauchySeq_apply_of_cauchySeq_linearCombination ht (c := c)
+      (by convert hyx.cauchySeq using 2 with n; exact hc n) i
   -- Passing to the limit, `t * ‖(a i - d i) • e i‖ ≤ ‖x - L d‖` for every finite combination.
-  have hlim (d : I →₀ R) (i : I) : t * ‖(a i - d i) • e i‖ ≤ ‖x - L d‖ := by
-    refine le_of_tendsto_of_tendsto' ((((ha i).sub_const (d i)).smul_const (e i)).norm.const_mul _)
-      (hyx.sub_const (L d)).norm fun n ↦ ?_
-    simpa [hc] using hdiff (c n) d i
-  refine ⟨a, ?_⟩
-  rw [HasSum, SummationFilter.unconditional_filter, NormedAddCommGroup.tendsto_atTop]
-  intro ε hε
-  -- Choose a finite combination `L (c N)` close to `x`; its support controls the partial sums.
-  obtain ⟨N, hN⟩ : ∃ N, ‖x - L (c N)‖ < min ε (t * ε) := by
-    have : Tendsto (fun n ↦ ‖x - L (c n)‖) atTop (𝓝 0) := by
-      simpa [hc, norm_sub_rev] using tendsto_iff_norm_sub_tendsto_zero.1 hyx
-    exact (this.eventually_lt_const (lt_min hε (mul_pos ht' hε))).exists
-  refine ⟨(c N).support, fun s hs ↦ ?_⟩
-  have hLs : L (c N) = ∑ i ∈ s, c N i • e i := by
-    simp only [L, Finsupp.linearCombination_apply]
-    exact Finsupp.sum_of_support_subset _ hs _ fun _ _ ↦ zero_smul R _
-  have hsplit : ∑ i ∈ s, a i • e i - x = ∑ i ∈ s, (a i - c N i) • e i + (L (c N) - x) := by
-    rw [hLs]
-    simp only [sub_smul, Finset.sum_sub_distrib]
-    abel
-  rw [hsplit]
-  refine (IsUltrametricDist.norm_add_le_max _ _).trans_lt
-    (max_lt ?_ ((norm_sub_rev _ _).trans_lt (hN.trans_le (min_le_left _ _))))
-  refine (IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (C := ‖x - L (c N)‖ / t)
-    (by positivity) fun i _ ↦ ?_).trans_lt ?_
-  · rw [le_div_iff₀' ht']
-    exact hlim (c N) i
-  · rw [div_lt_iff₀' ht']
-    exact hN.trans_le (min_le_right _ _)
+  refine ⟨a, hasSum_of_forall_mul_norm_sub_smul_le ht hx fun d i ↦ ?_⟩
+  refine le_of_tendsto_of_tendsto' ((((ha i).sub_const (d i)).smul_const (e i)).norm.const_mul _)
+    (hyx.sub_const (L d)).norm fun n ↦ ?_
+  simpa [L, hc, map_sub] using
+    he.isTOrthogonalFamily.mul_norm_smul_le_norm_linearCombination (c n - d) i
 
 /-- **Expansions in a `t`-orthogonal basis**: for `t > 0`, over a complete normed ring acting
 norm-multiplicatively on an ultrametric module, every vector is the unconditional sum of the
@@ -361,6 +373,11 @@ noncomputable def toUnconditionalSchauderBasis (he : IsTOrthogonalBasis K t e) (
     simp [he.coeffs_eq_of_hasSum ht h]
   expansion x := by simpa using he.hasSum_coeffs ht x
 
+/-- The coordinates of the Schauder basis attached to `e` are the expansion coefficients. -/
+private theorem coord_apply (he : IsTOrthogonalBasis K t e) (ht : 0 < t) (i : I) (x : M) :
+    (he.toUnconditionalSchauderBasis ht).coord i x = he.coeffs ht x i :=
+  rfl
+
 /-- The vectors of the Schauder basis attached to a `t`-orthogonal basis `e` are those of `e`. -/
 @[simp]
 theorem coe_toUnconditionalSchauderBasis (he : IsTOrthogonalBasis K t e) (ht : 0 < t) :
@@ -373,7 +390,7 @@ the coordinates of `x` in the Schauder basis attached to the `t`-orthogonal basi
 theorem coord_eq_of_hasSum (he : IsTOrthogonalBasis K t e)
     (ht : 0 < t) {a : I → K} {x : M} (h : HasSum (fun i ↦ a i • e i) x) (i : I) :
     (he.toUnconditionalSchauderBasis ht).coord i x = a i := by
-  simp [toUnconditionalSchauderBasis, he.coeffs_eq_of_hasSum ht h]
+  rw [coord_apply, he.coeffs_eq_of_hasSum ht h]
 
 /-- **Coordinate estimate**: the `i`-th coordinate of `x` in the Schauder basis attached to a
 `t`-orthogonal basis `e` satisfies `t * ‖coord i x‖ * ‖e i‖ ≤ ‖x‖`. -/
@@ -398,8 +415,8 @@ theorem tendsto_norm_coord_mul_norm (he : IsTOrthogonalBasis K t e) (ht : 0 < t)
     ((he.toUnconditionalSchauderBasis ht).expansion x).summable.tendsto_cofinite_zero.norm
 
 /-- **Every null family of coefficients occurs**: in a complete space, if `‖a i‖ * ‖e i‖ → 0`
-along the cofinite filter, then `∑' i, a i • e i` converges and its coordinates in the Schauder
-basis attached to the `t`-orthogonal basis `e` are the `a i`. -/
+along the cofinite filter, then the coordinates of `∑' i, a i • e i` in the Schauder basis
+attached to the `t`-orthogonal basis `e` are the `a i`. -/
 theorem coord_tsum [CompleteSpace M] (he : IsTOrthogonalBasis K t e)
     (ht : 0 < t) {a : I → K} (ha : Tendsto (fun i ↦ ‖a i‖ * ‖e i‖) cofinite (𝓝 0)) (i : I) :
     (he.toUnconditionalSchauderBasis ht).coord i (∑' j, a j • e j) = a i := by
