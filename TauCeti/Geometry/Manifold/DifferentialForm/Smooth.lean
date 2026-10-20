@@ -235,6 +235,13 @@ theorem IsSmoothForm.contMDiff [IsManifold I 1 M] {n : WithTop ℕ∞}
       (fun x ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) x (φ x)) :=
   (isSmoothForm_def n φ).mp hφ
 
+/-- A fixed-coefficient form of regularity `n` has every lower regularity `m`. -/
+theorem IsSmoothForm.of_le [IsManifold I 1 M] {m n : WithTop ℕ∞}
+    {φ : RoughForm I M F k} (hφ : IsSmoothForm I n φ) (hmn : m ≤ n) :
+    IsSmoothForm I m φ := by
+  rw [isSmoothForm_def] at hφ ⊢
+  exact hφ.of_le hmn
+
 /-- Addition preserves regularity of the actual fixed-coefficient bundle sections. -/
 theorem IsSmoothForm.add [IsManifold I 1 M] {n : WithTop ℕ∞}
     {φ ψ : RoughForm I M F k} (hφ : IsSmoothForm I n φ) (hψ : IsSmoothForm I n ψ) :

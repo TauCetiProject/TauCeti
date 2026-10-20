@@ -47,10 +47,7 @@ theorem isClosed_iff_forall_extDerivWithin_inChartAt_eq_zero [IsManifold I 2 M]
     (form : SmoothForm I M F k) :
     form.IsClosed ↔ ∀ x₀ z, z ∈ (extChartAt I x₀).target →
       extDerivWithin (form.1.inChartAt x₀) (Set.range I) z = 0 := by
-  have hform : IsSmoothForm I 1 form.1 := by
-    have hform' : IsSmoothForm I ∞ form.1 := form.isSmoothForm
-    rw [isSmoothForm_def] at hform' ⊢
-    exact hform'.of_le (by norm_num)
+  have hform : IsSmoothForm I 1 form.1 := form.isSmoothForm.of_le (by norm_num)
   constructor
   · intro h x₀ z hz
     rw [isClosed_def] at h
