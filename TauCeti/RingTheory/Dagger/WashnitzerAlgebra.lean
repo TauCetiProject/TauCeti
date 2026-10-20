@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Coefficients
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Radius
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Units
 
@@ -65,18 +66,20 @@ public section
 namespace TauCeti.Dagger
 
 open Filter Topology _root_.MvPowerSeries
-open TauCeti.MvPowerSeries (isRestricted_of_le denseRange_restrictedRadiusHom)
+open TauCeti.MvPowerSeries
+  (isRestricted_of_le isRestricted_const_iff denseRange_restrictedRadiusHom)
 
 section ConstantRadius
 
 variable {σ R : Type*} [NormedRing R]
 
-/-- Restrictedness at a constant radius: the weighted coefficient norms `‖aᵥ‖ ρ^|ν|` tend to
-zero. -/
-private theorem isRestricted_const_iff {f : MvPowerSeries σ R} {ρ : ℝ} :
-    IsRestricted (fun _ : σ ↦ ρ) f ↔
-      Tendsto (fun t : σ →₀ ℕ ↦ ‖coeff t f‖ * ρ ^ t.degree) cofinite (𝓝 0) := by
-  simp only [IsRestricted, Finsupp.prod, Finset.prod_pow_eq_pow_sum, Finsupp.degree_apply]
+/-- Series restricted at constant radii `ρ, ρ' > 1` are both restricted at `min ρ ρ' > 1`. -/
+private theorem isRestricted_min_of_one_lt {f g : MvPowerSeries σ R} {ρ ρ' : ℝ} (hρ : 1 < ρ)
+    (hρ' : 1 < ρ') (hf : IsRestricted (fun _ : σ ↦ ρ) f) (hg : IsRestricted (fun _ : σ ↦ ρ') g) :
+    IsRestricted (fun _ : σ ↦ min ρ ρ') f ∧ IsRestricted (fun _ : σ ↦ min ρ ρ') g := by
+  have h0 (_ : σ) : 0 ≤ min ρ ρ' := zero_le_one.trans (le_min hρ.le hρ'.le)
+  exact ⟨isRestricted_of_le hf h0 fun _ ↦ min_le_left _ _,
+    isRestricted_of_le hg h0 fun _ ↦ min_le_right _ _⟩
 
 end ConstantRadius
 
@@ -90,14 +93,12 @@ def washnitzerAlgebra : Subalgebra R (MvPowerSeries σ R) where
   carrier := {f | ∃ ρ > (1 : ℝ), IsRestricted (fun _ : σ ↦ ρ) f}
   mul_mem' := by
     rintro f g ⟨ρ, hρ, hf⟩ ⟨ρ', hρ', hg⟩
-    have h0 : 0 ≤ min ρ ρ' := zero_le_one.trans (le_min hρ.le hρ'.le)
-    exact ⟨min ρ ρ', lt_min hρ hρ', (isRestricted_of_le hf (fun _ ↦ h0) fun _ ↦ min_le_left _ _).mul
-      (isRestricted_of_le hg (fun _ ↦ h0) fun _ ↦ min_le_right _ _)⟩
+    obtain ⟨hf, hg⟩ := isRestricted_min_of_one_lt hρ hρ' hf hg
+    exact ⟨min ρ ρ', lt_min hρ hρ', hf.mul hg⟩
   add_mem' := by
     rintro f g ⟨ρ, hρ, hf⟩ ⟨ρ', hρ', hg⟩
-    have h0 : 0 ≤ min ρ ρ' := zero_le_one.trans (le_min hρ.le hρ'.le)
-    exact ⟨min ρ ρ', lt_min hρ hρ', (isRestricted_of_le hf (fun _ ↦ h0) fun _ ↦ min_le_left _ _).add
-      (isRestricted_of_le hg (fun _ ↦ h0) fun _ ↦ min_le_right _ _)⟩
+    obtain ⟨hf, hg⟩ := isRestricted_min_of_one_lt hρ hρ' hf hg
+    exact ⟨min ρ ρ', lt_min hρ hρ', hf.add hg⟩
   algebraMap_mem' a := ⟨2, one_lt_two, by
     simpa [MvPowerSeries.algebraMap_apply] using isRestricted_C _ a⟩
 
@@ -288,10 +289,10 @@ private theorem exists_isRestricted_one_notMem_washnitzerAlgebra [Nonempty σ] :
   let f : MvPowerSeries σ K := fun t ↦
     if t = Finsupp.single i (t i) then c ^ Nat.sqrt (t i) else 0
   have hcoeff (t : σ →₀ ℕ) :
-      coeff t f = if t = Finsupp.single i (t i) then c ^ Nat.sqrt (t i) else 0 := (rfl)
-  refine ⟨f, isRestricted_const_iff.2 ?_, ?_⟩
-  · simp only [one_pow, mul_one]
-    refine NormedAddGroup.tendsto_nhds_zero.2 fun ε hε ↦ ?_
+      coeff t f = if t = Finsupp.single i (t i) then c ^ Nat.sqrt (t i) else 0 :=
+    coeff_apply f t
+  refine ⟨f, isRestricted_one_iff.2 ?_, ?_⟩
+  · refine NormedAddGroup.tendsto_nhds_zero.2 fun ε hε ↦ ?_
     obtain ⟨n, hn⟩ := (tendsto_pow_atTop_nhds_zero_of_lt_one (norm_nonneg c) hc1).eventually
       (gt_mem_nhds hε) |>.exists
     -- The coefficients of norm at least `ε` sit at the exponents `k • eᵢ` with `k < n²`.
@@ -336,20 +337,6 @@ end NontriviallyNormedField
 
 section Units
 
-/-- The constant coefficient `a` of a series dominates the coefficients of `f - a` strictly iff it
-is nonzero and dominates all other coefficients of `f` strictly. -/
-private theorem forall_norm_coeff_sub_C_lt_iff {σ R : Type*} [NormedRing R]
-    (f : MvPowerSeries σ R) :
-    (∀ t, ‖coeff t (f - C (constantCoeff f))‖ < ‖constantCoeff f‖) ↔
-      constantCoeff f ≠ 0 ∧ ∀ t ≠ 0, ‖coeff t f‖ < ‖constantCoeff f‖ := by
-  classical
-  refine ⟨fun h ↦ ⟨norm_pos_iff.1 ((norm_nonneg _).trans_lt (h 0)), fun t ht ↦ ?_⟩,
-    fun ⟨h0, h⟩ t ↦ ?_⟩
-  · simpa [coeff_C, ht] using h t
-  · rcases eq_or_ne t 0 with rfl | ht
-    · simpa using norm_pos_iff.2 h0
-    · simpa [coeff_C, ht] using h t ht
-
 variable {σ K : Type*} [NormedField K] [IsUltrametricDist K]
 
 /-- The constant coefficient of a unit of the Tate algebra over an ultrametric normed field
@@ -384,14 +371,14 @@ theorem isUnit_washnitzerAlgebra_iff (f : washnitzerAlgebra σ K) :
   have hmem : (f : MvPowerSeries σ K) - C a ∈ washnitzerAlgebra σ K :=
     sub_mem f.2 (by simpa [MvPowerSeries.algebraMap_apply] using
       (washnitzerAlgebra σ K).algebraMap_mem a)
-  obtain ⟨ρ, hρ, -, hρt⟩ := exists_isRestricted_forall_norm_coeff_mul_pow_lt hmem hsub
+  obtain ⟨ρ, hρ, hsubρ, hρt⟩ := exists_isRestricted_forall_norm_coeff_mul_pow_lt hmem hsub
   obtain ⟨ρ', hρ', hf⟩ := f.2
   -- At the radius `min ρ ρ' > 1`, `f` is a unit of the restricted series by the Tate-algebra
   -- unit criterion, and its inverse there is again overconvergent.
   have hm1 : 1 < min ρ ρ' := lt_min hρ hρ'
   have : Fact (0 < min ρ ρ') := ⟨zero_lt_one.trans hm1⟩
   let g : IsRestricted.subring (R := K) (fun _ : σ ↦ min ρ ρ') :=
-    ⟨f, isRestricted_of_le hf (fun _ ↦ (zero_lt_one.trans hm1).le) fun _ ↦ min_le_right _ _⟩
+    ⟨f, (isRestricted_min_of_one_lt hρ hρ' hsubρ hf).2⟩
   have hg : IsUnit g := by
     refine (isUnit_iff_constantCoeff_ne_zero_and_norm_coeff_mul_prod_lt g).2
       ⟨h0, fun t ht ↦ ?_⟩

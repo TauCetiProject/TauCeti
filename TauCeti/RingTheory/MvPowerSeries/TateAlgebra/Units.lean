@@ -48,6 +48,9 @@ positive polyradii.
 * `MvPowerSeries.isUnit_iff_isUnit_constantCoeff_and_norm_coeff_mul_prod_lt` and, over a division
   ring, `MvPowerSeries.isUnit_iff_constantCoeff_ne_zero_and_norm_coeff_mul_prod_lt`: the units of
   `R{X/c}`.
+* `MvPowerSeries.forall_norm_coeff_sub_C_lt_iff`: the constant coefficient strictly dominates
+  every coefficient of `f - C (constantCoeff f)` iff it is nonzero and strictly dominates every
+  other coefficient of `f`.
 
 ## References
 
@@ -221,5 +224,24 @@ theorem isUnit_iff_constantCoeff_ne_zero_and_norm_coeff_mul_prod_lt
   rw [isUnit_iff_isUnit_constantCoeff_and_norm_coeff_mul_prod_lt, isUnit_iff_ne_zero]
 
 end NormedDivisionRing
+
+section Coefficients
+
+variable {σ R : Type*} [NormedRing R]
+
+/-- The constant coefficient `a` of a series dominates the coefficients of `f - a` strictly iff it
+is nonzero and dominates all other coefficients of `f` strictly. -/
+theorem forall_norm_coeff_sub_C_lt_iff (f : MvPowerSeries σ R) :
+    (∀ t, ‖coeff t (f - C (constantCoeff f))‖ < ‖constantCoeff f‖) ↔
+      constantCoeff f ≠ 0 ∧ ∀ t ≠ 0, ‖coeff t f‖ < ‖constantCoeff f‖ := by
+  classical
+  refine ⟨fun h ↦ ⟨norm_pos_iff.1 ((norm_nonneg _).trans_lt (h 0)), fun t ht ↦ ?_⟩,
+    fun ⟨h0, h⟩ t ↦ ?_⟩
+  · simpa [coeff_C, ht] using h t
+  · rcases eq_or_ne t 0 with rfl | ht
+    · simpa using norm_pos_iff.2 h0
+    · simpa [coeff_C, ht] using h t ht
+
+end Coefficients
 
 end MvPowerSeries
