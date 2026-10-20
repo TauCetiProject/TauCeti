@@ -10,7 +10,7 @@ public import Mathlib.Topology.JacobsonSpace
 public import Mathlib.Topology.NoetherianSpace
 
 /-!
-# Local closedness detected at closed points
+# Constructible sets detected at closed points of Jacobson spaces
 
 Constructible subsets of any Jacobson space are determined by their closed points:
 every nonempty constructible set contains a closed point, and inclusion or equality can
@@ -23,8 +23,9 @@ set can be checked just at its closed points. This permits arguments about ratio
 points of algebraic group orbits to control the whole topological image, including
 its nonclosed points.
 
-The argument uses `Topology.IsConstructible.dense_interior` in the closure of the set,
-and Mathlib's closed-point existence theorem for locally closed subsets of Jacobson spaces.
+The Noetherian local-closedness argument uses `Topology.IsConstructible.dense_interior` in the
+closure of the set, and Mathlib's closed-point existence theorem for locally closed subsets of
+Jacobson spaces.
 
 ## References
 

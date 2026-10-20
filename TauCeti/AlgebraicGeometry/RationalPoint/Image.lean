@@ -56,11 +56,11 @@ theorem exists_comp_eq_iff_mem_range (f : X ⟶ Y) (π : Y ⟶ Spec (.of k))
     exact ⟨q (IsLocalRing.closedPoint k), (q.comp_apply f _).symm⟩
   · intro h
     have hpc : IsClosed {p (IsLocalRing.closedPoint k)} :=
-      ((pointEquivClosedPoint π) ⟨p, hp⟩).property
+      mem_closedPoints_iff.mp ((pointEquivClosedPoint π) ⟨p, hp⟩).property
     obtain ⟨x, hxc, hx⟩ :=
       (f.image_closedPoints_eq_range_inter_closedPoints ▸ ⟨h, hpc⟩ :
         p (IsLocalRing.closedPoint k) ∈ f '' closedPoints X)
-    have hxc : IsClosed {x} := hxc
+    have hxc : IsClosed {x} := mem_closedPoints_iff.mp hxc
     refine ⟨pointOfClosedPoint (f ≫ π) x hxc, ?_⟩
     apply ext_of_apply_closedPoint_eq π
     · exact pointOfClosedPoint_comp (f ≫ π) x hxc
@@ -70,14 +70,15 @@ theorem exists_comp_eq_iff_mem_range (f : X ⟶ Y) (π : Y ⟶ Spec (.of k))
 
 /-- Inclusion between constructible subsets of a locally finite-type scheme over an
 algebraically closed field can be tested on rational points. -/
-theorem constructible_subset_iff_forall_rationalPoint (π : Y ⟶ Spec (.of k))
-    [LocallyOfFiniteType π] {s t : Set Y} (hs : IsConstructible s) (ht : IsConstructible t) :
+theorem _root_.Topology.IsConstructible.subset_iff_forall_rationalPoint
+    {s t : Set Y} (hs : IsConstructible s) (π : Y ⟶ Spec (.of k))
+    [LocallyOfFiniteType π] (ht : IsConstructible t) :
     s ⊆ t ↔ ∀ (p : Spec (.of k) ⟶ Y), p ≫ π = 𝟙 _ →
       p (IsLocalRing.closedPoint k) ∈ s → p (IsLocalRing.closedPoint k) ∈ t := by
   let : JacobsonSpace Y := LocallyOfFiniteType.jacobsonSpace π
   refine ⟨fun h _ _ hy ↦ h hy, fun h ↦ (hs.subset_iff_inter_closedPoints_subset ht).mpr ?_⟩
   rintro y ⟨hys, hyc⟩
-  have hyclosed : IsClosed {y} := hyc
+  have hyclosed : IsClosed {y} := mem_closedPoints_iff.mp hyc
   refine ⟨?_, hyc⟩
   have heval := pointOfClosedPoint_apply π y hyclosed (IsLocalRing.closedPoint k)
   exact heval ▸ h (pointOfClosedPoint π y hyclosed)
@@ -85,12 +86,13 @@ theorem constructible_subset_iff_forall_rationalPoint (π : Y ⟶ Spec (.of k))
 
 /-- Constructible subsets of a locally finite-type scheme over an algebraically closed
 field are equal exactly when they have the same rational points. -/
-theorem constructible_eq_iff_forall_rationalPoint (π : Y ⟶ Spec (.of k))
-    [LocallyOfFiniteType π] {s t : Set Y} (hs : IsConstructible s) (ht : IsConstructible t) :
+theorem _root_.Topology.IsConstructible.eq_iff_forall_rationalPoint
+    {s t : Set Y} (hs : IsConstructible s) (π : Y ⟶ Spec (.of k))
+    [LocallyOfFiniteType π] (ht : IsConstructible t) :
     s = t ↔ ∀ (p : Spec (.of k) ⟶ Y), p ≫ π = 𝟙 _ →
       (p (IsLocalRing.closedPoint k) ∈ s ↔ p (IsLocalRing.closedPoint k) ∈ t) := by
-  rw [Set.Subset.antisymm_iff, π.constructible_subset_iff_forall_rationalPoint hs ht,
-    π.constructible_subset_iff_forall_rationalPoint ht hs]
+  rw [Set.Subset.antisymm_iff, hs.subset_iff_forall_rationalPoint π ht,
+    ht.subset_iff_forall_rationalPoint π hs]
   exact ⟨fun h p hp ↦ ⟨h.1 p hp, h.2 p hp⟩,
     fun h ↦ ⟨fun p hp ↦ (h p hp).mp, fun p hp ↦ (h p hp).mpr⟩⟩
 
@@ -114,7 +116,7 @@ theorem range_subset_range_iff_forall_rationalPoint (g : Z ⟶ Y)
     simpa using f.isConstructible_image IsConstructible.univ
   have hg : IsConstructible (Set.range g) := by
     simpa using g.isConstructible_image IsConstructible.univ
-  rw [π.constructible_subset_iff_forall_rationalPoint hf hg]
+  rw [hf.subset_iff_forall_rationalPoint π hg]
   exact forall_congr' fun p ↦ forall_congr' fun hp ↦ by
     rw [f.exists_comp_eq_iff_mem_range π p hp, g.exists_comp_eq_iff_mem_range π p hp]
 
