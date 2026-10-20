@@ -179,18 +179,31 @@ noncomputable def casimirBlock (c : ℂ) : Submodule (UqSl2 q) V where
   smul_mem' a _ hv := Module.End.mapsTo_maxGenEigenspace_of_comm
     ((commute_casimir a).symm.map (Algebra.lsmul ℂ ℂ V)) c hv
 
+/-- As a complex subspace, the Casimir block for `c` is the native maximal generalized
+eigenspace of the action of the Casimir element. -/
+theorem restrictScalars_casimirBlock (c : ℂ) :
+    (casimirBlock q V c).restrictScalars ℂ = (Algebra.lsmul ℂ ℂ V (casimir q)).maxGenEigenspace c :=
+  (rfl)
+
 /-- A vector lies in the Casimir block for `c` exactly when some power of `Ω - c` kills it. -/
+@[simp]
 theorem mem_casimirBlock_iff {c : ℂ} :
     v ∈ casimirBlock q V c ↔ ∃ n : ℕ, (casimir q - algebraMap ℂ (UqSl2 q) c) ^ n • v = 0 := by
-  change v ∈ (Algebra.lsmul ℂ ℂ V (casimir q)).maxGenEigenspace c ↔ _
-  rw [Module.End.mem_maxGenEigenspace, ← Algebra.algebraMap_eq_smul_one,
+  rw [← Submodule.restrictScalars_mem ℂ, restrictScalars_casimirBlock,
+    Module.End.mem_maxGenEigenspace, ← Algebra.algebraMap_eq_smul_one,
     ← AlgHom.commutes (Algebra.lsmul ℂ ℂ V (A := UqSl2 q))]
   simp only [← map_sub, ← map_pow, Algebra.lsmul_coe]
+
+/-- Casimir blocks for distinct scalars are independent. -/
+theorem iSupIndep_casimirBlock : iSupIndep (casimirBlock q V) := fun c => by
+  rw [← Submodule.disjoint_restrictScalars_iff ℂ]
+  simpa only [Submodule.restrictScalars_iSup, restrictScalars_casimirBlock] using
+    Module.End.independent_maxGenEigenspace (Algebra.lsmul ℂ ℂ V (casimir q)) c
 
 /-- A finite-dimensional module is the sum of its Casimir blocks. -/
 theorem iSup_casimirBlock_eq_top [FiniteDimensional ℂ V] : ⨆ c, casimirBlock q V c = ⊤ := by
   rw [← Submodule.restrictScalars_eq_top_iff ℂ, Submodule.restrictScalars_iSup]
-  exact Module.End.iSup_maxGenEigenspace_eq_top _
+  simpa only [restrictScalars_casimirBlock] using Module.End.iSup_maxGenEigenspace_eq_top _
 
 end Module
 

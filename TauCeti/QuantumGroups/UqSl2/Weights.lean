@@ -314,6 +314,19 @@ theorem exists_highest_weight_vector (hq : IsGenericQuantumParameter q) [Nontriv
   · exact mul_ne_zero (pow_ne_zero _ (pow_ne_zero _ hq.ne_zero)) (weight_ne_zero hv hv0)
   · exact mem_weightSpace_iff.mp (e_pow_smul_mem_weightSpace hv n)
 
+/-- At a generic parameter, every nonzero generalized weight space of weight `ν` yields a nonzero
+vector of weight `(q²)ⁿ ν`, for some `n`, killed by `E`. -/
+theorem exists_highest_weight_vector_of_genWeightSpace_ne_bot
+    (hq : IsGenericQuantumParameter q) {ν : ℂ} (hν : genWeightSpace q V ν ≠ ⊥) :
+    ∃ (n : ℕ) (v : V), v ∈ weightSpace q V ((q ^ 2) ^ n * ν) ∧ v ≠ 0 ∧ e q • v = 0 := by
+  rw [genWeightSpace_def] at hν
+  have hev : (Algebra.lsmul ℂ ℂ V (k q)).HasEigenvalue ν :=
+    Module.End.HasUnifEigenvalue.lt zero_lt_one hν
+  obtain ⟨v, hv, hv0⟩ := hev.exists_hasEigenvector
+  replace hv : v ∈ weightSpace q V ν := by rwa [weightSpace_def]
+  obtain ⟨n, hn0, hn⟩ := exists_e_pow_smul_ne_zero_and_e_smul_eq_zero hq hv0
+  exact ⟨n, e q ^ n • v, e_pow_smul_mem_weightSpace hv n, hn0, hn⟩
+
 end FiniteDimensional
 
 end TauCeti.UqSl2
