@@ -116,13 +116,12 @@ theorem init_contractNth_castSucc_last (a : Fin (n + 2) → α) :
 
 end ContractNth
 
-/-- The image of the first `count + 1` entries of a prepended tuple consists of its first entry
-and the image of the first `count` entries of its tail. -/
+/-- The image of the first `n + 1` entries of a prepended tuple consists of its first entry
+and the image of the first `n` entries of its tail. -/
 @[simp]
-theorem image_cons_le {value : Type*} {size count : ℕ}
-    (parameter : value) (generators : Fin size → value) :
-    Fin.cons parameter generators '' {index | (index : ℕ) ≤ count} =
-      insert parameter (generators '' {index | (index : ℕ) < count}) := by
+theorem image_cons_le {α : Type*} {n : ℕ} (x : α) (p : Fin m → α) :
+    Fin.cons x p '' {index | (index : ℕ) ≤ n} =
+      insert x (p '' {index | (index : ℕ) < n}) := by
   ext element
   simp [Set.mem_image, Fin.exists_fin_succ, eq_comm, Nat.add_one_le_iff]
 

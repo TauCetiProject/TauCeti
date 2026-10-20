@@ -8,7 +8,7 @@ module
 public import TauCeti.RingTheory.RegularLocalRing.Basic
 import TauCeti.RingTheory.Ideal.Maps
 import TauCeti.Data.Fin.Tuple.Basic
-import Mathlib.Data.Fintype.EquivFin
+import TauCeti.Algebra.Module.SpanRank
 
 /-!
 # Regular systems of parameters adapted to a regular quotient
@@ -34,79 +34,69 @@ public section
 
 open IsLocalRing Ideal Pointwise IsRegularLocalRing
 
-universe universeLevel
+universe u
 
 namespace Ideal
 
-variable {ring : Type universeLevel} [CommRing ring] [IsRegularLocalRing ring]
+variable {R : Type u} [CommRing R] [IsRegularLocalRing R]
 
 /-- A nonzero ideal of a regular local ring with regular quotient contains a parameter. -/
-theorem exists_mem_notMem_maximalIdeal_sq_of_quotient (ideal : Ideal ring)
-    [IsRegularLocalRing (ring ⧸ ideal)] (hne : ideal ≠ ⊥) :
-    ∃ parameter ∈ ideal, parameter ∉ maximalIdeal ring ^ 2 := by
+theorem exists_mem_notMem_maximalIdeal_sq_of_quotient (I : Ideal R)
+    [IsRegularLocalRing (R ⧸ I)] (hne : I ≠ ⊥) :
+    ∃ parameter ∈ I, parameter ∉ maximalIdeal R ^ 2 := by
   by_contra! hall
   have hemb := TauCeti.IsLocalRing.spanFinrank_map_maximalIdeal_quotient_of_le_sq
-    (maximalIdeal ring).fg_of_isNoetherianRing hall
+    (maximalIdeal R).fg_of_isNoetherianRing hall
   rw [map_maximalIdeal_of_surjective _ Ideal.Quotient.mk_surjective] at hemb
   obtain ⟨element, hmem, hzero⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hne
-  have hle : span {element} ≤ ideal := (span_singleton_le_iff_mem _).mpr hmem
+  have hle : span {element} ≤ I := (span_singleton_le_iff_mem _).mpr hmem
   have hdim := ringKrullDim_le_of_surjective (Ideal.Quotient.factor hle)
     (Ideal.Quotient.factor_surjective hle)
   have hdrop := ringKrullDim_quotient_succ_le_of_nonZeroDivisor
     (mem_nonZeroDivisors_of_ne_zero hzero)
   have hbad := (add_le_add hdim (le_refl 1)).trans hdrop
-  rw [← spanFinrank_maximalIdeal (R := ring ⧸ ideal),
-    ← spanFinrank_maximalIdeal (R := ring), hemb] at hbad
+  rw [← spanFinrank_maximalIdeal (R := R ⧸ I),
+    ← spanFinrank_maximalIdeal (R := R), hemb] at hbad
   exact absurd hbad (by norm_cast; omega)
 
 private theorem exists_regularSystem_aux (dimension : ℕ) :
-    ∀ (ring : Type universeLevel) [CommRing ring] [IsRegularLocalRing ring],
-    (maximalIdeal ring).spanFinrank = dimension →
-    ∀ (ideal : Ideal ring) [IsRegularLocalRing (ring ⧸ ideal)],
-    ∃ size count : ℕ, ∃ generators : Fin size → ring,
-      count ≤ size ∧ span (Set.range generators) = maximalIdeal ring ∧
-      (maximalIdeal ring).spanFinrank = size ∧
-      ideal = span (generators '' {index | (index : ℕ) < count}) := by
+    ∀ (R : Type u) [CommRing R] [IsRegularLocalRing R],
+    (maximalIdeal R).spanFinrank = dimension →
+    ∀ (I : Ideal R) [IsRegularLocalRing (R ⧸ I)],
+    ∃ size count : ℕ, ∃ generators : Fin size → R,
+      count ≤ size ∧ span (Set.range generators) = maximalIdeal R ∧
+      (maximalIdeal R).spanFinrank = size ∧
+      I = span (generators '' {index | (index : ℕ) < count}) := by
   classical
   induction dimension using Nat.strong_induction_on with
   | h dimension induction =>
-    intro ring _ _ hdimension ideal _
-    by_cases hzero : ideal = ⊥
-    · obtain ⟨generators, hcard, hspan⟩ :=
-        Submodule.FG.exists_span_finset_card_eq_spanFinrank
-          (maximalIdeal ring).fg_of_isNoetherianRing
-      refine ⟨generators.card, 0, fun index ↦ (generators.equivFin.symm index).val,
-        Nat.zero_le _, ?_, hcard.symm, ?_⟩
-      · have hrange : Set.range (fun index ↦ (generators.equivFin.symm index).val) =
-            (generators : Set ring) := by
-          ext element
-          simp only [Set.mem_range, Finset.mem_coe]
-          exact ⟨fun ⟨index, heq⟩ ↦ heq ▸ (generators.equivFin.symm index).property,
-            fun hmem ↦ ⟨generators.equivFin ⟨element, hmem⟩, by simp⟩⟩
-        rw [hrange]
-        exact hspan
-      · simp [hzero]
-    obtain ⟨parameter, hmem, hsquare⟩ := exists_mem_notMem_maximalIdeal_sq_of_quotient ideal hzero
-    have hmax : parameter ∈ maximalIdeal ring :=
+    intro R _ _ hdimension I _
+    by_cases hzero : I = ⊥
+    · obtain ⟨generators, hspan⟩ :=
+        (Submodule.FG.spanFinrank_le_iff_exists_fin_generating_family
+          (maximalIdeal R).fg_of_isNoetherianRing _).mp le_rfl
+      exact ⟨_, 0, generators, Nat.zero_le _, hspan, rfl, by simp [hzero]⟩
+    obtain ⟨parameter, hmem, hsquare⟩ := exists_mem_notMem_maximalIdeal_sq_of_quotient I hzero
+    have hmax : parameter ∈ maximalIdeal R :=
       le_maximalIdeal (Ideal.Quotient.nontrivial_iff.mp inferInstance) hmem
     have hparameter : parameter ≠ 0 := fun heq ↦ hsquare (heq ▸ (zero_mem _))
-    let quotient := ring ⧸ span {parameter}
+    let quotient := R ⧸ span {parameter}
     let quotientMap := Ideal.Quotient.mk (span {parameter})
     have : IsRegularLocalRing quotient :=
       TauCeti.IsRegularLocalRing.quotient_span_singleton hmax hsquare
-    have hle : span {parameter} ≤ ideal := (span_singleton_le_iff_mem _).mpr hmem
-    have : IsRegularLocalRing (quotient ⧸ ideal.map quotientMap) :=
+    have hle : span {parameter} ≤ I := (span_singleton_le_iff_mem _).mpr hmem
+    have : IsRegularLocalRing (quotient ⧸ I.map quotientMap) :=
       .of_ringEquiv (DoubleQuot.quotQuotEquivQuotOfLE hle).symm
     have hdrop : (maximalIdeal quotient).spanFinrank + 1 =
-        (maximalIdeal ring).spanFinrank := by
+        (maximalIdeal R).spanFinrank := by
       have hdim := ringKrullDim_quotient_span_singleton_succ_eq_ringKrullDim_of_mem_nonZeroDivisors
         (mem_nonZeroDivisors_of_ne_zero hparameter) hmax
       rw [← spanFinrank_maximalIdeal (R := quotient),
-        ← spanFinrank_maximalIdeal (R := ring)] at hdim
+        ← spanFinrank_maximalIdeal (R := R)] at hdim
       exact_mod_cast hdim
     obtain ⟨size, count, generators, hcount, hspan, hsize, hideal⟩ :=
       induction (maximalIdeal quotient).spanFinrank (by omega) quotient rfl
-        (ideal.map quotientMap)
+        (I.map quotientMap)
     choose lifts hlifts using fun index ↦ Ideal.Quotient.mk_surjective (generators index)
     have hcomp : quotientMap ∘ lifts = generators := funext hlifts
     refine ⟨size + 1, count + 1, Fin.cons parameter lifts, Nat.add_le_add_right hcount 1,
@@ -124,12 +114,12 @@ private theorem exists_regularSystem_aux (dimension : ℕ) :
 The family has exactly the embedding dimension many entries and generates the maximal ideal.
 No dimension or generating-family hypothesis is imposed on the ideal. -/
 @[stacks 00NR]
-theorem exists_regularSystem_of_quotient (ideal : Ideal ring)
-    [IsRegularLocalRing (ring ⧸ ideal)] :
-    ∃ size count : ℕ, ∃ generators : Fin size → ring,
-      count ≤ size ∧ span (Set.range generators) = maximalIdeal ring ∧
-      (maximalIdeal ring).spanFinrank = size ∧
-      ideal = span (generators '' {index | (index : ℕ) < count}) :=
-  exists_regularSystem_aux _ ring rfl ideal
+theorem exists_regularSystem_of_quotient (I : Ideal R)
+    [IsRegularLocalRing (R ⧸ I)] :
+    ∃ size count : ℕ, ∃ generators : Fin size → R,
+      count ≤ size ∧ span (Set.range generators) = maximalIdeal R ∧
+      (maximalIdeal R).spanFinrank = size ∧
+      I = span (generators '' {index | (index : ℕ) < count}) :=
+  exists_regularSystem_aux _ R rfl I
 
 end Ideal

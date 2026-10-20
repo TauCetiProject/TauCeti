@@ -37,21 +37,18 @@ open IsLocalRing Ideal MvPolynomial
 
 namespace TauCeti.IsRegularLocalRing
 
-variable {field : Type*} [Field field]
+variable {k : Type*} [Field k]
 
 /-- At the origin of the affine plane, the parabola equation is a regular parameter and its
 quotient is regular, whereas the cusp quotient is not regular. -/
 theorem parabola_regular_and_cusp_not_regular :
-    let origin := (maximalIdeal field).comap (constantCoeff (σ := Fin 2))
+    let origin := (maximalIdeal k).comap (constantCoeff (σ := Fin 2))
     let localRing := Localization.AtPrime origin
-    let localize := algebraMap (MvPolynomial (Fin 2) field) localRing
+    let localize := algebraMap (MvPolynomial (Fin 2) k) localRing
     IsRegularLocalRing (localRing ⧸ span {localize (X 1 - X 0 ^ 2)}) ∧
       localize (X 1 - X 0 ^ 2) ∉ maximalIdeal localRing ^ 2 ∧
       ¬ IsRegularLocalRing (localRing ⧸ span {localize (X 1 ^ 2 - X 0 ^ 3)}) := by
-  dsimp only
-  let origin := (maximalIdeal field).comap (constantCoeff (σ := Fin 2))
-  let localRing := Localization.AtPrime origin
-  let localize := algebraMap (MvPolynomial (Fin 2) field) localRing
+  intro origin localRing localize
   have hvariable (index : Fin 2) : localize (X index) ∈ maximalIdeal localRing :=
     (IsLocalization.AtPrime.to_map_mem_maximal_iff localRing origin _).mpr (by simp [origin])
   have hparabola : localize (X 1 - X 0 ^ 2) ∈ maximalIdeal localRing := by
@@ -67,14 +64,13 @@ theorem parabola_regular_and_cusp_not_regular :
   have hnonzero : localize (X 1 ^ 2 - X 0 ^ 3) ≠ 0 := by
     rw [Ne, IsLocalization.to_map_eq_zero_iff localRing (primeCompl_le_nonZeroDivisors origin)]
     intro heq
-    have heval := congrArg (eval (fun index : Fin 2 ↦ if index = 1 then (1 : field) else 0)) heq
+    have heval := congrArg (eval (fun index : Fin 2 ↦ if index = 1 then (1 : k) else 0)) heq
     simp at heval
   rw [quotient_span_singleton_iff hcusp hnonzero, not_not]
   rw [map_sub, map_pow, map_pow]
   apply sub_mem
-  · rw [pow_two, pow_two]
-    exact mul_mem_mul (hvariable 1) (hvariable 1)
-  · rw [pow_succ (localize (X 0)) 2, pow_two, pow_two]
-    exact mul_mem_right _ _ (mul_mem_mul (hvariable 0) (hvariable 0))
+  · exact Ideal.pow_mem_pow (hvariable 1) 2
+  · rw [pow_succ (localize (X 0)) 2]
+    exact mul_mem_right _ _ (Ideal.pow_mem_pow (hvariable 0) 2)
 
 end TauCeti.IsRegularLocalRing
