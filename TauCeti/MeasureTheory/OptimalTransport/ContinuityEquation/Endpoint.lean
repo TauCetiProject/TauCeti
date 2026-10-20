@@ -49,6 +49,8 @@ formulations of transport costs are compared with the action of a velocity field
 * `TauCeti.IsContinuityEquation.intervalIntegral_integral_fderiv_eq_sub`: along a narrowly
   continuous curve of finite measures, the continuity equation integrated from `s` to `t` against
   such a `u` equals the difference of the boundary terms `∫ u (t, ·) dμₜ - ∫ u (s, ·) dμₛ`.
+* `TauCeti.IsContinuityEquation.measure_univ_eq`: along such a curve the total mass is
+  conserved.
 
 ## References
 
@@ -139,6 +141,23 @@ theorem intervalIntegral_integral_fderiv_eq_sub {ν : ℝ → FiniteMeasure E}
         nlinarith
   exact (h.hasWeakLineDerivOn_integral hu huM hDu).integral_eq_sub
     (h.integrableOn_integral_fderiv_of_norm_fderiv_le hDu) hcont EventuallyEq.rfl hs ht
+
+/-- **Conservation of mass.** Along a curve of finite measures, narrowly continuous on `[a, b]`,
+solving the continuity equation on `(a, b)`, the total mass is the same at all times of
+`[a, b]`. -/
+theorem measure_univ_eq {ν : ℝ → FiniteMeasure E}
+    (h : IsContinuityEquation (fun t ↦ (ν t : Measure E)) v a b) (hν : ContinuousOn ν (Icc a b))
+    {s t : ℝ} (hs : s ∈ Icc a b) (ht : t ∈ Icc a b) :
+    (ν t : Measure E) univ = (ν s : Measure E) univ := by
+  -- Test the equation against the constant function `1`.
+  have key := h.intervalIntegral_integral_fderiv_eq_sub hν (u := fun _ ↦ (1 : ℝ)) (M := 1)
+    (M' := 0) contDiff_const (fun _ ↦ by simp) (fun _ ↦ by simp) hs ht
+  simp only [fderiv_fun_const, Pi.zero_apply, zero_apply, integral_zero,
+    intervalIntegral.integral_zero, integral_const, smul_eq_mul, mul_one] at key
+  rw [← ENNReal.ofReal_toReal (measure_ne_top (ν t : Measure E) univ),
+    ← ENNReal.ofReal_toReal (measure_ne_top (ν s : Measure E) univ)]
+  rw [measureReal_def, measureReal_def] at key
+  rw [sub_eq_zero.1 key.symm]
 
 end IsContinuityEquation
 

@@ -34,8 +34,8 @@ and they inherit any uniform modulus of continuity that the sections of the cost
 
 * `TauCeti.IsOptimalCoupling.exists_isDualCertificate_of_continuous` — every optimal plan of a
   bounded continuous nonnegative cost between probability measures on spaces whose product is
-  hereditarily Lindelöf (for instance second countable) is certified by a pair of `c`-conjugate
-  integrable potentials;
+  hereditarily Lindelöf (for instance second countable) is certified by a pair of bounded
+  `c`-conjugate integrable potentials;
 * `TauCeti.exists_isDualCertificate_of_continuous` — on Polish spaces, an optimal plan together
   with such a certificate exists;
 * `TauCeti.isGreatest_kantorovichDualValue_integrable` — **strong duality with dual attainment**
@@ -68,14 +68,15 @@ nonnegative cost and `π` an optimal coupling of two probability measures, on sp
 is hereditarily Lindelöf with measurable open sets (for instance, two second-countable Borel
 spaces). Then there are integrable potentials `φ`, `ψ` forming an optimality certificate with
 `π`: they are dual feasible and `π` is concentrated on their contact set. The potentials are
-`c`-conjugate, each being the real infimal transform of the other. -/
+`c`-conjugate, each being the real infimal transform of the other, and bounded. -/
 theorem IsOptimalCoupling.exists_isDualCertificate_of_continuous [OpensMeasurableSpace X]
     [OpensMeasurableSpace Y] [OpensMeasurableSpace (X × Y)] [HereditarilyLindelofSpace (X × Y)]
     [IsProbabilityMeasure μ] {π : Measure (X × Y)}
     (hπ : IsOptimalCoupling (fun z ↦ ENNReal.ofReal (c z)) π μ ν) (hc : Continuous c)
     (hc0 : ∀ z, 0 ≤ c z) (hcb : BddAbove (range c)) :
     ∃ φ ψ, IsDualCertificate (fun z ↦ ENNReal.ofReal (c z)) π μ ν φ ψ ∧
-      (∀ x, φ x = ⨅ y, (c (x, y) - ψ y)) ∧ ∀ y, ψ y = ⨅ x, (c (x, y) - φ x) := by
+      (∀ x, φ x = ⨅ y, (c (x, y) - ψ y)) ∧ (∀ y, ψ y = ⨅ x, (c (x, y) - φ x)) ∧
+      Bornology.IsBounded (range φ) ∧ Bornology.IsBounded (range ψ) := by
   obtain ⟨M, hM⟩ := hcb
   have : IsProbabilityMeasure π := hπ.toIsCoupling.isProbabilityMeasure
   have : IsProbabilityMeasure ν := hπ.toIsCoupling.isProbabilityMeasure_right
@@ -111,7 +112,7 @@ theorem IsOptimalCoupling.exists_isDualCertificate_of_continuous [OpensMeasurabl
   refine ⟨f, g, ⟨hπ.toIsCoupling, (dualFeasible_ofReal_iff hc0 f g).2 fun x y ↦ ?_,
     .of_bound hfm.aestronglyMeasurable Cf (ae_of_all _ fun x ↦ hCf _ (mem_range_self x)),
     .of_bound hgm.aestronglyMeasurable Cg (ae_of_all _ fun y ↦ hCg _ (mem_range_self y)), ?_⟩,
-    hfg, hgf⟩
+    hfg, hgf, hfb, hgb⟩
   · -- Feasibility is the defining inequality of the transform.
     have h := add_cTransform_le c φ x y
     rw [hf, hg, ← EReal.coe_add] at h
@@ -128,11 +129,12 @@ variable [PolishSpace X] [BorelSpace X] [PolishSpace Y] [BorelSpace Y]
 
 /-- **Existence of a certified optimal plan on Polish spaces.** For a bounded continuous
 nonnegative cost and two probability measures on Polish spaces, there are an optimal coupling and
-a pair of `c`-conjugate integrable potentials certifying it. -/
+a pair of bounded `c`-conjugate integrable potentials certifying it. -/
 theorem exists_isDualCertificate_of_continuous (hc : Continuous c) (hc0 : ∀ z, 0 ≤ c z)
     (hcb : BddAbove (range c)) :
     ∃ π φ ψ, IsDualCertificate (fun z ↦ ENNReal.ofReal (c z)) π μ ν φ ψ ∧
-      (∀ x, φ x = ⨅ y, (c (x, y) - ψ y)) ∧ ∀ y, ψ y = ⨅ x, (c (x, y) - φ x) := by
+      (∀ x, φ x = ⨅ y, (c (x, y) - ψ y)) ∧ (∀ y, ψ y = ⨅ x, (c (x, y) - φ x)) ∧
+      Bornology.IsBounded (range φ) ∧ Bornology.IsBounded (range ψ) := by
   obtain ⟨π, hπ⟩ :=
     exists_isOptimalCoupling μ ν (ENNReal.continuous_ofReal.comp hc).lowerSemicontinuous
   obtain ⟨φ, ψ, h⟩ := hπ.exists_isDualCertificate_of_continuous hc hc0 hcb

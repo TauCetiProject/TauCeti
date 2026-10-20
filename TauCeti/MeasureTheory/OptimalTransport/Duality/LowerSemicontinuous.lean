@@ -38,6 +38,8 @@ with the supremum of the positive parts of the values of continuous dual-feasibl
   the same result as an equality with the supremum of the continuous dual values.
 * `TauCeti.isLUB_ofReal_kantorovichDualValue_integrable_of_lowerSemicontinuous` — strong
   Kantorovich duality on Polish spaces, with the supremum taken over integrable feasible pairs.
+* `TauCeti.isLUB_ofReal_kantorovichDualValue_upperSemicontinuous_of_lowerSemicontinuous` — the
+  same duality with the supremum taken over bounded upper semicontinuous feasible pairs.
 
 ## References
 
@@ -137,6 +139,64 @@ section Polish
 
 variable [PolishSpace X] [BorelSpace X] [PolishSpace Y] [BorelSpace Y]
 
+/-- **Kantorovich duality over bounded upper semicontinuous potentials.** For a nonnegative
+lower-semicontinuous cost on Polish spaces, the primal transport cost is the least upper bound, in
+`ℝ≥0∞`, of the positive parts of the values of the dual-feasible pairs of bounded upper
+semicontinuous potentials. Both the cost and the common value may be infinite.
+
+Restricting the dual problem to this class loses nothing because, for each bounded continuous
+approximation of the cost, the attained dual optimum is a pair of `c`-conjugate potentials, each an
+infimum of continuous functions. Bounded upper semicontinuous potentials are Borel and
+integrable against every probability measure, and their negatives are admissible initial data for
+semicontinuous constructions such as Hopf–Lax functions. -/
+theorem isLUB_ofReal_kantorovichDualValue_upperSemicontinuous_of_lowerSemicontinuous
+    (hc : LowerSemicontinuous c) :
+    IsLUB {r : ℝ≥0∞ | ∃ φ ψ, UpperSemicontinuous φ ∧ UpperSemicontinuous ψ ∧
+      Bornology.IsBounded (range φ) ∧ Bornology.IsBounded (range ψ) ∧
+      DualFeasible (fun z ↦ (c z : EReal)) φ ψ ∧
+      ENNReal.ofReal (kantorovichDualValue μ ν φ ψ) = r} (transportCost c μ ν) := by
+  let : PseudoMetricSpace X := TopologicalSpace.pseudoMetrizableSpacePseudoMetric X
+  let : PseudoMetricSpace Y := TopologicalSpace.pseudoMetrizableSpacePseudoMetric Y
+  constructor
+  · rintro r ⟨φ, ψ, hφ, hψ, hφb, hψb, hfeas, rfl⟩
+    obtain ⟨Cφ, hCφ⟩ := isBounded_iff_forall_norm_le.1 hφb
+    obtain ⟨Cψ, hCψ⟩ := isBounded_iff_forall_norm_le.1 hψb
+    exact hfeas.ofReal_kantorovichDualValue_le_transportCost
+      (.of_bound hφ.measurable.aestronglyMeasurable Cφ (ae_of_all _ fun x ↦ hCφ _ ⟨x, rfl⟩))
+      (.of_bound hψ.measurable.aestronglyMeasurable Cψ (ae_of_all _ fun y ↦ hCψ _ ⟨y, rfl⟩))
+  · intro b hb
+    rw [transportCost_eq_iSup_transportCost_lscApprox
+      isTightMeasureSet_singleton isTightMeasureSet_singleton hc]
+    refine iSup_le fun n ↦ ?_
+    let cn : X × Y → ℝ := lscApproxAux c n
+    have hcn_cont : Continuous cn := continuous_lscApproxAux c n
+    have hcn_nonneg : ∀ z, 0 ≤ cn z := lscApproxAux_nonneg c n
+    obtain ⟨π, φ, ψ, h, hφ, hψ, hφb, hψb⟩ :=
+      exists_isDualCertificate_of_continuous (μ := μ) (ν := ν) hcn_cont hcn_nonneg
+        ⟨n, forall_mem_range.2 (lscApproxAux_le_natCast c n)⟩
+    obtain ⟨Cφ, hCφ⟩ := isBounded_iff_forall_norm_le.1 hφb
+    obtain ⟨Cψ, hCψ⟩ := isBounded_iff_forall_norm_le.1 hψb
+    -- Each potential is an infimum of continuous functions, bounded below because the other
+    -- potential is bounded above.
+    have hφu : UpperSemicontinuous φ := by
+      rw [funext hφ]
+      exact upperSemicontinuous_ciInf (fun x ↦ ⟨-Cψ, forall_mem_range.2 fun y ↦ by
+          linarith [hcn_nonneg (x, y), (Real.le_norm_self _).trans (hCψ _ ⟨y, rfl⟩)]⟩)
+        fun y ↦ ((hcn_cont.comp (Continuous.prodMk_left y)).sub
+          continuous_const).upperSemicontinuous
+    have hψu : UpperSemicontinuous ψ := by
+      rw [funext hψ]
+      exact upperSemicontinuous_ciInf (fun y ↦ ⟨-Cφ, forall_mem_range.2 fun x ↦ by
+          linarith [hcn_nonneg (x, y), (Real.le_norm_self _).trans (hCφ _ ⟨x, rfl⟩)]⟩)
+        fun x ↦ ((hcn_cont.comp (Continuous.prodMk_right x)).sub
+          continuous_const).upperSemicontinuous
+    have hfeas : DualFeasible (fun z ↦ (c z : EReal)) φ ψ :=
+      h.dualFeasible.mono_cost fun z ↦
+        EReal.coe_ennreal_le_coe_ennreal_iff.2 (ofReal_lscApproxAux_le c n z)
+    have hle := hb ⟨φ, ψ, hφu, hψu, hφb, hψb, hfeas, rfl⟩
+    rw [← h.transportCost_eq] at hle
+    simpa only [cn, coe_lscApprox_apply] using hle
+
 /-- **Strong Kantorovich duality for nonnegative lower-semicontinuous costs on Polish spaces.**
 The primal transport cost is the least upper bound, in `ℝ≥0∞`, of the positive parts of the
 values of all integrable dual-feasible pairs. Both the cost and the common value may be infinite.
@@ -149,28 +209,18 @@ theorem isLUB_ofReal_kantorovichDualValue_integrable_of_lowerSemicontinuous
     IsLUB {r : ℝ≥0∞ | ∃ φ ψ, Integrable φ μ ∧ Integrable ψ ν ∧
       DualFeasible (fun z ↦ (c z : EReal)) φ ψ ∧
       ENNReal.ofReal (kantorovichDualValue μ ν φ ψ) = r} (transportCost c μ ν) := by
-  let : PseudoMetricSpace X := TopologicalSpace.pseudoMetrizableSpacePseudoMetric X
-  let : PseudoMetricSpace Y := TopologicalSpace.pseudoMetrizableSpacePseudoMetric Y
-  constructor
+  refine ⟨?_, fun b hb ↦
+    (isLUB_ofReal_kantorovichDualValue_upperSemicontinuous_of_lowerSemicontinuous hc).2 ?_⟩
   · rintro r ⟨φ, ψ, hφ, hψ, hfeas, rfl⟩
     exact hfeas.ofReal_kantorovichDualValue_le_transportCost hφ hψ
-  · intro b hb
-    rw [transportCost_eq_iSup_transportCost_lscApprox
-      isTightMeasureSet_singleton isTightMeasureSet_singleton hc]
-    refine iSup_le fun n ↦ ?_
-    let cn : X × Y → ℝ := lscApproxAux c n
-    have hcn_cont : Continuous cn := continuous_lscApproxAux c n
-    have hcn_nonneg : ∀ z, 0 ≤ cn z := lscApproxAux_nonneg c n
-    have hcn_bdd : BddAbove (range cn) :=
-      ⟨n, forall_mem_range.2 (lscApproxAux_le_natCast c n)⟩
-    obtain ⟨π, φ, ψ, h, -⟩ :=
-      exists_isDualCertificate_of_continuous (μ := μ) (ν := ν) hcn_cont hcn_nonneg hcn_bdd
-    have hfeas : DualFeasible (fun z ↦ (c z : EReal)) φ ψ :=
-      h.dualFeasible.mono_cost fun z ↦
-        EReal.coe_ennreal_le_coe_ennreal_iff.2 (ofReal_lscApproxAux_le c n z)
-    have hle := hb ⟨φ, ψ, h.integrable_left, h.integrable_right, hfeas, rfl⟩
-    rw [← h.transportCost_eq] at hle
-    simpa only [cn, coe_lscApprox_apply] using hle
+  · -- Bounded upper semicontinuous potentials are integrable.
+    rintro r ⟨φ, ψ, hφ, hψ, hφb, hψb, hfeas, rfl⟩
+    obtain ⟨Cφ, hCφ⟩ := isBounded_iff_forall_norm_le.1 hφb
+    obtain ⟨Cψ, hCψ⟩ := isBounded_iff_forall_norm_le.1 hψb
+    exact hb ⟨φ, ψ,
+      .of_bound hφ.measurable.aestronglyMeasurable Cφ (ae_of_all _ fun x ↦ hCφ _ ⟨x, rfl⟩),
+      .of_bound hψ.measurable.aestronglyMeasurable Cψ (ae_of_all _ fun y ↦ hCψ _ ⟨y, rfl⟩),
+      hfeas, rfl⟩
 
 /-- Polish lower-semicontinuous Kantorovich duality, written as equality with the supremum of the
 positive parts of all integrable dual values. -/
