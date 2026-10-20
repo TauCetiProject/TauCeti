@@ -6,9 +6,9 @@ Authors: Codex
 module
 
 public import TauCeti.Probability.Distributions.Gaussian.ChiSquared
+public import TauCeti.Probability.Distributions.Gaussian.Affine
 public import TauCeti.Probability.Distributions.NoncentralChiSquared.Transforms
 public import TauCeti.Probability.Moments.Determinacy
-public import Mathlib.Probability.Distributions.Gaussian.Multivariate
 
 /-!
 # Gaussian constructions of noncentral chi-squared laws
@@ -72,27 +72,21 @@ theorem map_sum_sq_pi_gaussianReal_noncentral (m : ι → ℝ) :
 /-- The squared norm of an identity-covariance Gaussian has noncentral chi-squared law with
 noncentrality the squared norm of its mean. Dimension zero is included. -/
 @[simp]
-theorem multivariateGaussian_map_norm_sq_noncentral [DecidableEq ι]
+theorem map_norm_sq_multivariateGaussian_noncentral [DecidableEq ι]
     (m : EuclideanSpace ℝ ι) :
     (multivariateGaussian m (1 : Matrix ι ι ℝ)).map (fun x ↦ ‖x‖ ^ 2) =
       noncentralChiSquaredMeasure (Fintype.card ι) (‖m‖₊ ^ 2) := by
-  have hshift : (Measure.pi fun _ : ι ↦ gaussianReal 0 1).map
-      (fun x i ↦ m i + x i) = Measure.pi fun i ↦ gaussianReal (m i) 1 := by
-    rw [Measure.pi_map_pi (fun _ ↦ by fun_prop)]
-    simp only [gaussianReal_map_const_add, zero_add]
   have hnorm : (‖m‖₊ ^ 2 : ℝ≥0) = ∑ i, ‖m i‖₊ ^ 2 := by
     apply NNReal.eq
     simpa only [NNReal.coe_pow, coe_nnnorm, NNReal.coe_sum, Real.norm_eq_abs, sq_abs] using
       EuclideanSpace.real_norm_sq_eq m
-  rw [hnorm, ← map_sum_sq_pi_gaussianReal_noncentral (fun i ↦ m i), ← hshift,
-    Measure.map_map (by fun_prop) (by fun_prop)]
-  simp only [multivariateGaussian, CFC.sqrt_one, map_one, one_apply_eq_self]
-  rw [← map_pi_eq_stdGaussian, Measure.map_map (by fun_prop) (by fun_prop),
-    Measure.map_map (by fun_prop) (by fun_prop)]
+  rw [multivariateGaussian_one_eq_map_pi,
+    Measure.map_map (by fun_prop) (by fun_prop), hnorm,
+    ← map_sum_sq_pi_gaussianReal_noncentral (fun i ↦ m i)]
   congr 1
   funext x
-  simpa only [Function.comp_apply, WithLp.ofLp_add, WithLp.ofLp_toLp, Pi.add_apply] using
-    EuclideanSpace.real_norm_sq_eq (m + WithLp.toLp 2 x)
+  simpa only [Function.comp_apply, WithLp.ofLp_toLp] using
+    EuclideanSpace.real_norm_sq_eq (WithLp.toLp 2 x)
 
 end TauCeti.Probability
 
@@ -121,6 +115,6 @@ theorem HasLaw.norm_sq_multivariateGaussian {ι : Type*} [Fintype ι] [Decidable
     (hX : HasLaw X (multivariateGaussian m (1 : Matrix ι ι ℝ)) P) :
     HasLaw (fun ω ↦ ‖X ω‖ ^ 2)
       (noncentralChiSquaredMeasure (Fintype.card ι) (‖m‖₊ ^ 2)) P :=
-  (HasLaw.mk (by fun_prop) (multivariateGaussian_map_norm_sq_noncentral m)).fun_comp hX
+  (HasLaw.mk (by fun_prop) (map_norm_sq_multivariateGaussian_noncentral m)).fun_comp hX
 
 end ProbabilityTheory
