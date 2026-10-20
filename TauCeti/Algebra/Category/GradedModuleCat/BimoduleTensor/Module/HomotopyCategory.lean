@@ -37,9 +37,9 @@ This file records the two structure isomorphisms of this action on homotopy cate
 
 Together with the invariance of the action under homotopy equivalences of complexes of bimodules,
 these isomorphisms let a complex of bimodules with a two-sided tensor inverse up to homotopy act by
-an autoequivalence of the homotopy category of graded modules
-(`TauCeti.GradedModuleCat.bimoduleModuleTensorHomotopyEquivalence`), as the braid complexes of a
-zigzag algebra do.
+an equivalence between homotopy categories of graded modules
+(`TauCeti.GradedModuleCat.bimoduleModuleTensorHomotopyEquivalence`); for instance, the braid
+complexes of a zigzag algebra act by autoequivalences.
 
 ## Main definitions
 
@@ -50,7 +50,7 @@ zigzag algebra do.
 * `TauCeti.GradedModuleCat.bimoduleModuleTensorHomotopyAssociator`: acting by a total tensor
   product of complexes of bimodules is acting by its two factors in turn.
 * `TauCeti.GradedModuleCat.bimoduleModuleTensorHomotopyEquivalence`: a complex of bimodules with a
-  two-sided tensor inverse up to homotopy acts by an autoequivalence.
+  two-sided tensor inverse up to homotopy acts by an equivalence.
 
 ## References
 
@@ -69,11 +69,11 @@ namespace TauCeti.GradedModuleCat
 
 universe w vM vN uk uA uB uC
 
-variable {k : Type uk} {A : Type uA} {B : Type uB} {C : Type uC}
-  [CommRing k] [Ring A] [Ring B] [Ring C] [Algebra k A] [Algebra k B] [Algebra k C]
+variable {k : Type uk} {A : Type uA} [CommRing k] [Ring A] [Algebra k A]
 
 section Action
 
+variable {B : Type uB} [Ring B] [Algebra k B]
 variable (Γ : InternalGrading k A) (Δ : InternalGrading k B)
   [GradedAlgebra Γ.piece] [GradedAlgebra Δ.piece]
 
@@ -107,6 +107,7 @@ end LeftUnitor
 
 section Associator
 
+variable {B : Type uB} {C : Type uC} [Ring B] [Ring C] [Algebra k B] [Algebra k C]
 variable (Γ : InternalGrading k A) (Δ : InternalGrading k B) (Θ : InternalGrading k C)
   [GradedAlgebra Γ.piece] [GradedAlgebra Δ.piece] [GradedAlgebra Θ.piece]
 
@@ -128,49 +129,55 @@ end Associator
 
 section Equivalence
 
-variable (Γ : InternalGrading k A) [GradedAlgebra Γ.piece]
-  (K K' : CochainComplex (GradedModuleCat.{max w uA} (Γ.tensorProduct Γ.opposite).piece) ℤ)
+-- `B` lives in the universe of `A`, so that the regular bimodules of `A` and of `B` both live in
+-- the universe of the complexes `K` and `K'`.
+variable {B : Type uA} [Ring B] [Algebra k B]
+variable (Γ : InternalGrading k A) (Δ : InternalGrading k B)
+  [GradedAlgebra Γ.piece] [GradedAlgebra Δ.piece]
+  (K : CochainComplex (GradedModuleCat.{max w uA} (Γ.tensorProduct Δ.opposite).piece) ℤ)
+  (K' : CochainComplex (GradedModuleCat.{max w uA} (Δ.tensorProduct Γ.opposite).piece) ℤ)
 
-/-- A complex `K` of graded `A`-bimodules whose tensor products with a complex `K'` in both orders
-are homotopy equivalent to the regular bimodule in degree zero acts by an autoequivalence of the
-homotopy category of graded `A`-modules, with inverse the action of `K'`. -/
+/-- A complex `K` of graded `(A, B)`-bimodules and a complex `K'` of graded `(B, A)`-bimodules whose
+tensor products `K ⊗_B K'` and `K' ⊗_A K` are homotopy equivalent to the regular bimodules `A` and
+`B` in degree zero give an equivalence between the homotopy categories of graded `B`-modules and of
+graded `A`-modules, acting by `K`, with inverse the action of `K'`. -/
 -- Exposed so that its functor and inverse are the two actions definitionally, as required to
--- compare composites of such autoequivalences.
+-- compare composites of such equivalences.
 @[expose]
 def bimoduleModuleTensorHomotopyEquivalence
-    (e : HomotopyEquiv (mapBifunctor K K' (bimoduleTensor Γ Γ Γ) (.up ℤ))
+    (e : HomotopyEquiv (mapBifunctor K K' (bimoduleTensor Γ Δ Γ) (.up ℤ))
       ((single _ (.up ℤ) 0).obj (bimoduleUnit.{w} Γ)))
-    (e' : HomotopyEquiv (mapBifunctor K' K (bimoduleTensor Γ Γ Γ) (.up ℤ))
-      ((single _ (.up ℤ) 0).obj (bimoduleUnit.{w} Γ))) :
-    HomotopyCategory (GradedModuleCat.{max w uA} Γ.piece) (.up ℤ) ≌
+    (e' : HomotopyEquiv (mapBifunctor K' K (bimoduleTensor Δ Γ Δ) (.up ℤ))
+      ((single _ (.up ℤ) 0).obj (bimoduleUnit.{w} Δ))) :
+    HomotopyCategory (GradedModuleCat.{max w uA} Δ.piece) (.up ℤ) ≌
       HomotopyCategory (GradedModuleCat.{max w uA} Γ.piece) (.up ℤ) :=
   CategoryTheory.Equivalence.mk
-    ((bimoduleModuleTensorHomotopy Γ Γ).obj ((HomotopyCategory.quotient _ _).obj K))
-    ((bimoduleModuleTensorHomotopy Γ Γ).obj ((HomotopyCategory.quotient _ _).obj K'))
-    ((bimoduleModuleTensorHomotopyLeftUnitor.{w} Γ).symm ≪≫
-      (bimoduleModuleTensorHomotopy Γ Γ).mapIso (HomotopyCategory.isoOfHomotopyEquiv e').symm ≪≫
-      bimoduleModuleTensorHomotopyAssociator Γ Γ Γ K' K)
-    ((bimoduleModuleTensorHomotopyAssociator Γ Γ Γ K K').symm ≪≫
+    ((bimoduleModuleTensorHomotopy Γ Δ).obj ((HomotopyCategory.quotient _ _).obj K))
+    ((bimoduleModuleTensorHomotopy Δ Γ).obj ((HomotopyCategory.quotient _ _).obj K'))
+    ((bimoduleModuleTensorHomotopyLeftUnitor.{w} Δ).symm ≪≫
+      (bimoduleModuleTensorHomotopy Δ Δ).mapIso (HomotopyCategory.isoOfHomotopyEquiv e').symm ≪≫
+      bimoduleModuleTensorHomotopyAssociator Δ Γ Δ K' K)
+    ((bimoduleModuleTensorHomotopyAssociator Γ Δ Γ K K').symm ≪≫
       (bimoduleModuleTensorHomotopy Γ Γ).mapIso (HomotopyCategory.isoOfHomotopyEquiv e) ≪≫
       bimoduleModuleTensorHomotopyLeftUnitor.{w} Γ)
 
-variable (e : HomotopyEquiv (mapBifunctor K K' (bimoduleTensor Γ Γ Γ) (.up ℤ))
+variable (e : HomotopyEquiv (mapBifunctor K K' (bimoduleTensor Γ Δ Γ) (.up ℤ))
       ((single _ (.up ℤ) 0).obj (bimoduleUnit.{w} Γ)))
-    (e' : HomotopyEquiv (mapBifunctor K' K (bimoduleTensor Γ Γ Γ) (.up ℤ))
-      ((single _ (.up ℤ) 0).obj (bimoduleUnit.{w} Γ)))
+    (e' : HomotopyEquiv (mapBifunctor K' K (bimoduleTensor Δ Γ Δ) (.up ℤ))
+      ((single _ (.up ℤ) 0).obj (bimoduleUnit.{w} Δ)))
 
-/-- The autoequivalence attached to `K` is the action of `K`. -/
+/-- The equivalence attached to `K` is the action of `K`. -/
 @[simp]
 lemma bimoduleModuleTensorHomotopyEquivalence_functor :
-    (bimoduleModuleTensorHomotopyEquivalence Γ K K' e e').functor =
-      (bimoduleModuleTensorHomotopy Γ Γ).obj ((HomotopyCategory.quotient _ _).obj K) :=
+    (bimoduleModuleTensorHomotopyEquivalence Γ Δ K K' e e').functor =
+      (bimoduleModuleTensorHomotopy Γ Δ).obj ((HomotopyCategory.quotient _ _).obj K) :=
   (rfl)
 
-/-- The inverse of the autoequivalence attached to `K` is the action of `K'`. -/
+/-- The inverse of the equivalence attached to `K` is the action of `K'`. -/
 @[simp]
 lemma bimoduleModuleTensorHomotopyEquivalence_inverse :
-    (bimoduleModuleTensorHomotopyEquivalence Γ K K' e e').inverse =
-      (bimoduleModuleTensorHomotopy Γ Γ).obj ((HomotopyCategory.quotient _ _).obj K') :=
+    (bimoduleModuleTensorHomotopyEquivalence Γ Δ K K' e e').inverse =
+      (bimoduleModuleTensorHomotopy Δ Γ).obj ((HomotopyCategory.quotient _ _).obj K') :=
   (rfl)
 
 end Equivalence

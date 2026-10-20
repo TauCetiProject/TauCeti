@@ -78,7 +78,7 @@ local notation "c" => ComplexShape.up ℤ
 def zigzagBraidAutoequivalence (i : V) :
     HomotopyCategory (GradedModuleCat.{max u w} (zigzagAlgebraInternalGrading k G).piece) c ≌
       HomotopyCategory (GradedModuleCat.{max u w} (zigzagAlgebraInternalGrading k G).piece) c :=
-  GradedModuleCat.bimoduleModuleTensorHomotopyEquivalence.{0} Γ
+  GradedModuleCat.bimoduleModuleTensorHomotopyEquivalence.{0} Γ Γ
     (zigzagBraidComplex k G i) (zigzagBraidInverseComplex k G i)
     ((zigzagBraidComplexTensorInverseHomotopyEquiv k G i).trans (HomotopyEquiv.ofIso
       ((HomologicalComplex.single _ c 0).mapIso (zigzagGradedBimoduleUnitIso k G).symm)))
