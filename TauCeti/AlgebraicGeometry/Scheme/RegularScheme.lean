@@ -136,10 +136,9 @@ This is the affine case of Stacks, Lemma 28.9.3 (02IU). -/
 theorem isRegular_Spec_iff (R : CommRingCat.{u}) :
     IsRegular (Spec R) ↔ IsRegularRing R := by
   refine ⟨fun h ↦ ?_, fun _ ↦ inferInstance⟩
-  have htop := (isRegular_iff_forall_affineOpens.mp h)
-    ⟨⊤, isAffineOpen_top (Spec R)⟩
-  let e := (Scheme.ΓSpecIso R).commRingCatIsoToRingEquiv
-  exact @IsRegularRing.of_ringEquiv Γ(Spec R, ⊤) _ R _ e htop
+  have hNoeth : IsNoetherianRing R := isLocallyNoetherian_Spec.mp h.toIsLocallyNoetherian
+  exact (@isRegularRing_iff_isRegularLocalRing_stalk_Spec R hNoeth).mpr
+    h.isRegularLocalRing_stalk
 
 /-- A regular scheme is normal. Stacks, Lemma 28.9.4 (0569). -/
 @[stacks 0569]
