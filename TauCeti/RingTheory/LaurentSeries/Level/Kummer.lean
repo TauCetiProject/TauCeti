@@ -7,9 +7,9 @@ module
 
 public import Mathlib.RingTheory.RootsOfUnity.EnoughRootsOfUnity
 public import TauCeti.FieldTheory.Kummer.Cyclic
+public import TauCeti.RingTheory.RootsOfUnity.Basic
 public import TauCeti.RingTheory.LaurentSeries.Level.Adjoin
 public import TauCeti.RingTheory.LaurentSeries.Substitution
-public import TauCeti.RingTheory.RootsOfUnity.PowOfDvd
 
 /-!
 # The Kummer action on ramified Laurent levels
@@ -51,9 +51,10 @@ algebraically closed of characteristic zero.
   Galois over `K⸨X⸩`.
 * `TauCeti.LaurentSeries.Level.galEquivRootsOfUnity_symm_apply`: the Galois automorphism attached
   to `η` is the Kummer automorphism attached to `η`.
-* `TauCeti.puiseuxField.levelKummer_parameter`, `TauCeti.puiseuxField.coeff_levelKummer`: on the
-  actual level, the Kummer automorphism attached to `η` sends `t ^ (1 / d)` to `η t ^ (1 / d)`
-  and multiplies the coefficient of `t ^ (k / d)` by `ηᵏ`.
+* `TauCeti.puiseuxField.levelKummer_levelParameter`: on the actual level, the Kummer automorphism
+  attached to `η` sends `t ^ (1 / d)` to `η t ^ (1 / d)`.
+* `TauCeti.puiseuxField.coeff_levelKummer`: on the actual level, the Kummer automorphism attached
+  to `η` multiplies the coefficient of `t ^ (k / d)` by `ηᵏ`.
 * `TauCeti.puiseuxField.levelKummer_inclusion`: restriction of Kummer automorphisms from level `m`
   to level `n`, for `n ∣ m`, along the power map `TauCeti.rootsOfUnityPowOfDvd`.
 -/
@@ -164,17 +165,16 @@ noncomputable def galEquivRootsOfUnity : Gal(Level K d/K⸨X⸩) ≃* rootsOfUni
         obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot K d
         exact ⟨ζ, (mem_primitiveRoots d.pos).mpr hζ⟩)).symm
 
-/-- The Galois automorphism attached to a root of unity `η` multiplies the level parameter
-by `η`: this is Mathlib's Kummer formula `autEquivRootsOfUnity_smul`, read through the
-identification of the roots of unity of `K` with those of `K⸨X⸩`. -/
-private theorem galEquivRootsOfUnity_symm_apply_parameter (η : rootsOfUnity d K) :
-    (galEquivRootsOfUnity K d).symm η (parameter K d) =
-      Algebra.algebraMap K⸨X⸩ (Level K d) (Algebra.algebraMap K K⸨X⸩ ((η : Kˣ) : K)) *
+/-- A Galois automorphism `σ` multiplies the level parameter `u` by its root of unity. -/
+private theorem apply_parameter (σ : Gal(Level K d/K⸨X⸩)) :
+    σ (parameter K d) =
+      Algebra.algebraMap K⸨X⸩ (Level K d)
+          (Algebra.algebraMap K K⸨X⸩ ((galEquivRootsOfUnity K d σ : Kˣ) : K)) *
         parameter K d := by
   rw [← autEquivRootsOfUnity_smul (primitiveRoots_nonempty K d)
-    (irreducible_X_pow_sub_C_single K d) _ (parameter_pow K d)]
-  simp [galEquivRootsOfUnity, Subgroup.smul_def, Units.smul_def, Algebra.smul_def,
-    val_rootsOfUnityEquivOfPrimitiveRoots_apply_coe]
+      (irreducible_X_pow_sub_C_single K d) _ (parameter_pow K d), Subgroup.smul_def,
+    Units.smul_def, Algebra.smul_def, galEquivRootsOfUnity, MulEquiv.trans_apply,
+    rootsOfUnityEquivOfPrimitiveRoots_symm_apply]
 
 /-- The Galois automorphism attached to a root of unity `η` is the Kummer automorphism
 `u ↦ η u`. -/
@@ -185,7 +185,7 @@ theorem galEquivRootsOfUnity_symm_apply (η : rootsOfUnity d K) :
   apply AlgEquiv.coe_toAlgHom_injective
   apply (powerBasis K d).algHom_ext
   rw [powerBasis_gen, AlgEquiv.coe_toAlgHom, AlgEquiv.coe_toAlgHom, kummer_parameter,
-    galEquivRootsOfUnity_symm_apply_parameter]
+    apply_parameter, MulEquiv.apply_symm_apply]
 
 /-- The root of unity attached to the Kummer automorphism `u ↦ η u` is `η`. -/
 @[simp]
@@ -221,14 +221,14 @@ theorem levelKummer_levelEquiv (η : rootsOfUnity d K) (f : Level K d) :
     levelKummer K d η (levelEquiv K d f) = levelEquiv K d (Level.kummer K d η f) := by
   simp [levelKummer, AlgEquiv.autCongr_apply]
 
-/-- The Kummer automorphism attached to `η` multiplies the actual level parameter
-`t ^ (1 / d)` by `η`. -/
-theorem levelKummer_parameter (η : rootsOfUnity d K) :
+/-- The Kummer automorphism attached to `η` multiplies the actual level parameter `t ^ (1 / d)` by
+`η`. This is not a simp lemma: `simp` already computes it through `levelPowerBasis_gen`,
+`levelKummer_levelEquiv` and `TauCeti.LaurentSeries.Level.kummer_parameter`. -/
+theorem levelKummer_levelParameter (η : rootsOfUnity d K) :
     levelKummer K d η (levelParameter K d) =
-      Algebra.algebraMap K⸨X⸩ (level K d) (Algebra.algebraMap K K⸨X⸩ ((η : Kˣ) : K)) *
-        levelParameter K d := by
-  rw [levelParameter, levelPowerBasis_gen, levelKummer_levelEquiv, Level.kummer_parameter,
-    map_mul, AlgEquiv.commutes]
+      algebraMap K⸨X⸩ (level K d) (algebraMap K K⸨X⸩ ((η : Kˣ) : K)) * levelParameter K d := by
+  rw [levelParameter, levelPowerBasis_gen, levelKummer_levelEquiv, Level.kummer_parameter, map_mul,
+    AlgEquiv.commutes]
 
 /-- If `x` is the level-`d` image of the Laurent series `f`, then its image under the Kummer
 automorphism attached to `η` is the level-`d` image of the rescaled series `f (η X)`. -/
@@ -252,12 +252,11 @@ theorem coeff_levelKummer (η : rootsOfUnity d K) (x : level K d) (k : ℤ) :
     coeff_ramifiedEmbedding_intCast_div, coeff_ramifiedEmbedding_intCast_div, coeff_rescale]
 
 /-- **Restriction of Kummer automorphisms.** For `n ∣ m`, the Kummer automorphism of level `m`
-attached to `η` restricts on level `n` to the Kummer automorphism attached to `η ^ (m / n)`, the
-image of `η` under the power map `TauCeti.rootsOfUnityPowOfDvd`. -/
+attached to `η` restricts on level `n` to the Kummer automorphism attached to `η ^ (m / n)`. -/
 theorem levelKummer_inclusion {n m : ℕ+} (h : n ∣ m) (η : rootsOfUnity m K) (x : level K n) :
     levelKummer K m η (IntermediateField.inclusion (level_le_level_of_dvd K h) x) =
       IntermediateField.inclusion (level_le_level_of_dvd K h)
-        (levelKummer K n (rootsOfUnityPowOfDvd K (PNat.dvd_iff.mp h) η) x) := by
+        (levelKummer K n (rootsOfUnityPowOfDvd (PNat.dvd_iff.mp h) η) x) := by
   obtain ⟨e, rfl⟩ := h
   have he : ((n * e : ℕ+) : ℕ) / n = e := by rw [PNat.mul_coe, Nat.mul_div_cancel_left _ n.pos]
   obtain ⟨f, hf⟩ : ∃ f, levelEmbedding K n f = x := (mem_level_iff K n x).mp x.2
@@ -266,7 +265,7 @@ theorem levelKummer_inclusion {n m : ℕ+} (h : n ∣ m) (η : rootsOfUnity m K)
   rw [IntermediateField.coe_inclusion, coe_levelKummer_of_coe_eq _ hf.symm,
     coe_levelKummer_of_coe_eq η (f := expand K e f)
       (by rw [IntermediateField.coe_inclusion, ← hf, levelEmbedding_expand]),
-    rescale_expand, coe_rootsOfUnityPowOfDvd, he, levelEmbedding_expand]
+    rescale_expand, coe_rootsOfUnityPowOfDvd_apply, he, levelEmbedding_expand]
 
 section Galois
 
