@@ -22,9 +22,9 @@ identity simplex of the model, with the coefficient `a` at the initial vertex of
 The decisive property is the compatibility with pushforwards from simply connected spaces
 (`TauCeti.LocalCoefficientSystem.twistedSingularToCubical_twistedPushforward`): the comparison
 carries the simplicial pushforward of a chain of a simply connected space `Z` to the cubical
-pushforward of its image.  Every chain with local coefficients is such a pushforward from a
-standard simplex, which reduces the verification of identities between natural constructions to the
-model, where they are the untwisted ones.  Here it gives the chain map property.  The analogous
+pushforward of its image.  Every simplex with a coefficient is such a pushforward from a standard
+simplex, so identities between natural maps reduce, generator by generator, to the model, where
+they are the untwisted ones.  Here this gives the chain map property.  The analogous
 compatibility of the comparison in the other direction is
 `TauCeti.LocalCoefficientSystem.normalizedTwistedCubicalToSingular_pushforward`.
 
@@ -40,8 +40,9 @@ compatibility of the comparison in the other direction is
 
 * `TauCeti.LocalCoefficientSystem.twistedSingularToCubical_twistedPushforward`: compatibility
   with pushforwards from simply connected spaces.
-* `TauCeti.LocalCoefficientSystem.twistedSingularToCubicalMap_coefficientMap_naturality`:
-  naturality in the local system.
+* `TauCeti.LocalCoefficientSystem.twistedSingularToCubicalMap_naturality`,
+  `TauCeti.LocalCoefficientSystem.twistedSingularToCubicalMap_coefficientMap_naturality`:
+  naturality in the space and in the local system.
 
 ## References
 
@@ -75,8 +76,7 @@ def twistedSingularToCubicalSummand {n : ℕ} (σ : (TopCat.toSSet.obj X) _⦋n�
     (SimplexCategory.toTopInitialVertex ⦋n⦌) n (singularToCubicalGen (ULift.{v} ℤ) n)
 
 /-- The comparison on the summand of a simplex is the cubical pushforward of the model generator
-along the simplex.  This is the defining equation of `twistedSingularToCubicalSummand`, whose
-definition is not unfolded outside this file. -/
+along the simplex.  This is the defining equation of `twistedSingularToCubicalSummand`. -/
 theorem twistedSingularToCubicalSummand_apply {n : ℕ} (σ : (TopCat.toSSet.obj X) _⦋n⦌)
     (a : L.obj (initialVertex σ)) :
     twistedSingularToCubicalSummand L σ a =
@@ -209,6 +209,32 @@ def twistedSingularToCubicalMap :
 theorem twistedSingularToCubicalMap_f (n : ℕ) :
     (twistedSingularToCubicalMap L).f n = twistedSingularToCubical L n :=
   (rfl)
+
+/-- **Naturality in the space** of the comparison chain map. -/
+theorem twistedSingularToCubicalMap_naturality {Y : TopCat.{v}} (f : X ⟶ Y)
+    (L : LocalCoefficientSystem.{u, v, v} R Y) :
+    twistedChainComplexMap f L ≫ twistedSingularToCubicalMap L =
+      twistedSingularToCubicalMap ((pullback f.hom).obj L) ≫
+        normalizedTwistedCubicalChainComplexMap f.hom L := by
+  refine HomologicalComplex.hom_ext _ _ fun n ↦ twistedChainComplex_hom_ext _ fun σ ↦ ?_
+  simp only [HomologicalComplex.comp_f, twistedSingularToCubicalMap_f,
+    normalizedTwistedCubicalChainComplexMap_f]
+  refine ModuleCat.hom_ext (LinearMap.ext fun a ↦ ?_)
+  -- Composites of `ModuleCat` morphisms are composites of linear maps by definition.
+  change (twistedSingularToCubical L n).hom ((twistedChainComplexMap f L).f n
+      (ιTwistedChainComplex ((pullback f.hom).obj L) n σ a)) =
+    NormalizedTwistedCubicalChain.map f.hom L n
+      ((twistedSingularToCubical ((pullback f.hom).obj L) n).hom
+        (ιTwistedChainComplex ((pullback f.hom).obj L) n σ a))
+  refine ((congrArg (twistedSingularToCubical L n).hom (ConcreteCategory.congr_hom
+    (ιTwistedChainComplex_twistedChainComplexMap_f f L n σ) a)).trans
+    (twistedSingularToCubical_ιTwistedChainComplex L _ _)).trans ?_
+  refine Eq.trans ?_ (congrArg (NormalizedTwistedCubicalChain.map f.hom L n)
+    (twistedSingularToCubical_ιTwistedChainComplex ((pullback f.hom).obj L) σ a)).symm
+  -- The pushed-forward simplex is `f ∘ σ`, whose map from the model is `σ.down ≫ f`.
+  exact (NormalizedTwistedCubicalChain.map_pushforward (Z := simplexModel.{v} n) f.hom L
+    (f := (simplexToHom σ).hom) (z₀ := SimplexCategory.toTopInitialVertex ⦋n⦌)
+    (singularToCubicalGen (ULift.{v} ℤ) n) a).symm
 
 /-- **Naturality in the local system** of the comparison chain map. -/
 theorem twistedSingularToCubicalMap_coefficientMap_naturality
