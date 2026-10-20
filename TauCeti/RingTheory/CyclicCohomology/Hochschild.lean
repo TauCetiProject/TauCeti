@@ -14,18 +14,23 @@ import TauCeti.Algebra.Homology.ModuleCat.Basic
 
 The `M`-valued multilinear cochains `Cⁿ(A; M)` of an algebra `A`, the maps `φ : Aⁿ⁺¹ → M`, form
 the Hochschild cochain complex `hochschildCochainComplex R A M` under the Hochschild coboundary
-`b`. For a unital algebra `A` its cohomology is the Hochschild cohomology `HHⁿ(A; M)`; for `M = R`
-it is the Hochschild cohomology `HHⁿ(A, A*)` of `A` with coefficients in its dual bimodule, in
-the cochain description of Connes.
+`b`. Here `M` is only an `R`-module, and a degree-`n` cochain takes `n + 1` arguments. Currying the
+first argument identifies these cochains with the `Hom_R(A, M)`-valued cochains in `n` arguments,
+and `b` with the Hochschild coboundary of the bimodule `Hom_R(A, M)`, whose actions are
+`(x f y)(a) = f (y a x)` (`TauCeti.multilinearCurryFirstEquiv_hochschildCoboundary`). So for a
+unital algebra `A` the cohomology of this complex is, in Connes' cochain description, the
+Hochschild cohomology `HHⁿ(A, Hom_R(A, M))` of `A` with coefficients in `Hom_R(A, M)`, and not the
+Hochschild cohomology with coefficients in `M`. For `M = R` it is `HHⁿ(A, A*)`, the Hochschild
+cohomology of `A` with coefficients in its dual bimodule.
 
 Connes' cyclic cochain complex is a subcomplex, and its inclusion
-`cyclicCochainComplexι R A M` induces `I : HCⁿ(A; M) → HHⁿ(A; M)`
+`cyclicCochainComplexι R A M` induces `I : HCⁿ(A; M) → HHⁿ(A, Hom_R(A, M))`
 (`cyclicCohomology.toHochschild`). In the other direction, Connes' operator
 `B : Cⁿ⁺¹ → Cⁿ` takes values in cyclic cochains and anticommutes with `b`, so it sends Hochschild
 cocycles to cyclic cocycles and Hochschild coboundaries to cyclic coboundaries; it therefore
-induces `B : HHⁿ⁺¹(A; M) → HCⁿ(A; M)` (`hochschildCohomology.connesB`). Since `B` vanishes on
-cyclic cochains, the composite `B ∘ I : HCⁿ⁺¹ → HHⁿ⁺¹ → HCⁿ` is zero. When `R` contains `ℚ`,
-these are the maps `I` and `B` of Connes' long exact sequence
+induces `B : HHⁿ⁺¹(A, Hom_R(A, M)) → HCⁿ(A; M)` (`hochschildCohomology.connesB`). Since `B`
+vanishes on cyclic cochains, the composite `B ∘ I : HCⁿ⁺¹ → HHⁿ⁺¹ → HCⁿ` is zero. When `R`
+contains `ℚ`, these are the maps `I` and `B` of Connes' long exact sequence
 `⋯ → HCⁿ → HHⁿ → HCⁿ⁻¹ → HCⁿ⁺¹ → HHⁿ⁺¹ → ⋯`,
 whose remaining map is the periodicity operator `S`. Over a general ground ring the cohomology of
 the cyclic cochains need not fit into such an exact sequence; the maps `I` and `B` and the
@@ -34,18 +39,19 @@ identity `B ∘ I = 0` are nevertheless constructed here for every commutative r
 As for cyclic cohomology, `hochschildCohomology.mk` sends a Hochschild cocycle to its class; it
 is surjective and its kernel consists exactly of the coboundaries. In degree zero there are no
 coboundaries, every cochain is cyclic and the cocycles are the traces, so
-`I : HC⁰(A; M) → HH⁰(A; M)` is an isomorphism.
+`I : HC⁰(A; M) → HH⁰(A, Hom_R(A, M))` is an isomorphism.
 
 ## Main definitions
 
 * `TauCeti.hochschildCochainComplex`: the Hochschild cochain complex.
 * `TauCeti.hochschildCocycles`, `TauCeti.hochschildCoboundaries`: Hochschild cocycles and
   coboundaries.
-* `TauCeti.hochschildCohomology`: the Hochschild cohomology `HHⁿ(A; M)` of a unital algebra.
+* `TauCeti.hochschildCohomology`: the Hochschild cohomology `HHⁿ(A, Hom_R(A, M))` of a unital
+  algebra.
 * `TauCeti.hochschildCohomology.mk`: the class of a Hochschild cocycle.
 * `TauCeti.cyclicCochainComplexι`: the inclusion of the cyclic cochain complex.
-* `TauCeti.cyclicCohomology.toHochschild`: the map `I : HCⁿ(A; M) → HHⁿ(A; M)`.
-* `TauCeti.hochschildCohomology.connesB`: the map `B : HHⁿ⁺¹(A; M) → HCⁿ(A; M)`.
+* `TauCeti.cyclicCohomology.toHochschild`: the map `I : HCⁿ(A; M) → HHⁿ(A, Hom_R(A, M))`.
+* `TauCeti.hochschildCohomology.connesB`: the map `B : HHⁿ⁺¹(A, Hom_R(A, M)) → HCⁿ(A; M)`.
 
 ## Main results
 
@@ -222,9 +228,10 @@ section Cohomology
 variable (R : Type*) (A : Type u) (M : Type*) [CommRing R] [Ring A] [Algebra R A] [AddCommGroup M]
   [Module R M]
 
-/-- The Hochschild cohomology `HHⁿ(A; M)` of a unital algebra `A` with `M`-valued cochains, the
-cohomology of the Hochschild cochain complex. For `M = R` this is the Hochschild cohomology
-`HHⁿ(A, A*)` of `A` with coefficients in its dual bimodule. -/
+/-- The cohomology of the Hochschild cochain complex of a unital algebra `A` with `M`-valued
+cochains in `n + 1` arguments. In Connes' cochain description this is the Hochschild cohomology
+`HHⁿ(A, Hom_R(A, M))` of `A` with coefficients in the bimodule `Hom_R(A, M)`, not with
+coefficients in `M`; for `M = R` it is `HHⁿ(A, A*)`, with coefficients in the dual bimodule. -/
 abbrev hochschildCohomology (n : ℕ) : ModuleCat R :=
   (hochschildCochainComplex R A M).homology n
 
@@ -394,8 +401,8 @@ private theorem toCycles_comp_connesBCycles (n : ℕ) :
   rw [ConcreteCategory.comp_apply] at h
   rw [coe_cyclesToCocycles, h, hochschildCochainComplex_d_apply]
 
-/-- The map `B : HHⁿ⁺¹(A; M) → HCⁿ(A; M)` induced by Connes' operator `B`; when `R` contains `ℚ`
-it is the map `B` of the SBI sequence. -/
+/-- The map `B : HHⁿ⁺¹(A, Hom_R(A, M)) → HCⁿ(A; M)` induced by Connes' operator `B`; when `R`
+contains `ℚ` it is the map `B` of the SBI sequence. -/
 def connesB (n : ℕ) : hochschildCohomology R A M (n + 1) ⟶ cyclicCohomology R A M n :=
   Cofork.IsColimit.desc ((hochschildCochainComplex R A M).homologyIsCokernel n (n + 1) (by simp))
     (connesBCycles R A M n) (by rw [toCycles_comp_connesBCycles, Limits.zero_comp])
@@ -421,8 +428,8 @@ end hochschildCohomology
 
 namespace cyclicCohomology
 
-/-- The map `I : HCⁿ(A; M) → HHⁿ(A; M)` induced by the inclusion of the cyclic cochain complex
-into the Hochschild cochain complex; when `R` contains `ℚ` it is the map `I` of the SBI
+/-- The map `I : HCⁿ(A; M) → HHⁿ(A, Hom_R(A, M))` induced by the inclusion of the cyclic cochain
+complex into the Hochschild cochain complex; when `R` contains `ℚ` it is the map `I` of the SBI
 sequence. -/
 def toHochschild (n : ℕ) : cyclicCohomology R A M n ⟶ hochschildCohomology R A M n :=
   HomologicalComplex.homologyMap (cyclicCochainComplexι R A M) n
@@ -468,7 +475,7 @@ theorem toHochschild_mk {n : ℕ} (φ : cyclicCocycles R A M n) :
       (by rw [HomologicalComplex.iCycles_moduleCatCyclesMk, Iso.inv_hom_id_apply])]
   exact key
 
-/-- The composite `B ∘ I : HCⁿ⁺¹(A; M) → HHⁿ⁺¹(A; M) → HCⁿ(A; M)` vanishes, since Connes'
+/-- The composite `B ∘ I : HCⁿ⁺¹(A; M) → HHⁿ⁺¹(A, Hom_R(A, M)) → HCⁿ(A; M)` vanishes, since Connes'
 operator `B` vanishes on cyclic cochains. This holds over every commutative ring `R`. -/
 @[reassoc (attr := simp)]
 theorem toHochschild_comp_connesB (n : ℕ) :
@@ -481,8 +488,8 @@ theorem toHochschild_comp_connesB (n : ℕ) :
   ext1
   exact connesB_eq_zero_of_mem_cyclicCochains φ.1.2
 
-/-- In degree zero the map `I : HC⁰(A; M) → HH⁰(A; M)` is an isomorphism: every `0`-cochain is
-cyclic and there are no coboundaries in degree zero. -/
+/-- In degree zero the map `I : HC⁰(A; M) → HH⁰(A, Hom_R(A, M))` is an isomorphism: every
+`0`-cochain is cyclic and there are no coboundaries in degree zero. -/
 instance isIso_toHochschild_zero : IsIso (toHochschild R A M 0) := by
   rw [ConcreteCategory.isIso_iff_bijective]
   refine ⟨fun x y hxy ↦ ?_, fun x ↦ ?_⟩
