@@ -65,6 +65,7 @@ private theorem sign_mul_pow_ne_zero (hq : q ≠ 0) (ε : ℤˣ) (m : ℕ) : (ε
 private theorem eq_of_casimir_smul_of_mem_casimirBlock {s c : ℂ} {v : V}
     (hs : casimir q • v = s • v) (hb : v ∈ casimirBlock q V c) (hv0 : v ≠ 0) : s = c := by
   by_contra hsc
+  rw [← Submodule.restrictScalars_mem ℂ, restrictScalars_casimirBlock] at hb
   refine hv0 ((Submodule.disjoint_def.mp
     (Module.End.disjoint_genEigenspace (Algebra.lsmul ℂ ℂ V (casimir q)) hsc 1 ⊤)) v ?_ hb)
   exact Module.End.mem_eigenspace_iff.mpr (by rw [Algebra.lsmul_coe]; exact hs)
@@ -202,6 +203,7 @@ theorem f_pow_smul_eq_zero_of_mem_casimirBlock (hq : IsGenericQuantumParameter q
 
 /-! ### The top weight space of a block -/
 
+omit [FiniteDimensional ℂ V] in
 /-- A vector of a submodule lies in one of its generalized weight spaces exactly when it lies in
 the corresponding generalized weight space of the ambient module. -/
 private theorem mem_genWeightSpace_submodule_iff {U : Submodule (UqSl2 q) V} {μ : ℂ} {w : U} :
@@ -223,7 +225,7 @@ theorem f_pow_smul_ne_zero_of_mem_casimirBlock (hq : IsGenericQuantumParameter q
     f q ^ m • w ≠ 0 := fun h =>
   hw0 (congrArg Subtype.val (eq_zero_of_f_pow_smul_eq_zero hq
     (forall_e_smul_eq_zero_casimirBlock hq) le_rfl
-    (mem_genWeightSpace_submodule_iff.mpr (w := ⟨w, hb⟩) hw) (Subtype.ext h)))
+    ((mem_genWeightSpace_submodule_iff (w := ⟨w, hb⟩)).mpr hw) (Subtype.ext h)))
 
 /-- At a generic parameter, `K` acts by the scalar `ε q^m` on the top generalized weight space
 `ε q^m` of the Casimir block for `ε q^m` of a finite-dimensional module: these generalized
@@ -235,7 +237,7 @@ theorem k_smul_eq_of_mem_casimirBlock (hq : IsGenericQuantumParameter q) {m : �
   have : FiniteDimensional ℂ (casimirBlock q V (casimirScalar q (ε * q ^ m))) :=
     Module.Finite.of_injective ((casimirBlock q V _).subtype.restrictScalars ℂ)
       Subtype.val_injective
-  have h := mem_genWeightSpace_submodule_iff.mpr (w := ⟨w, hb⟩) hw
+  have h := (mem_genWeightSpace_submodule_iff (w := ⟨w, hb⟩)).mpr hw
   rw [genWeightSpace_eq_weightSpace_of_forall_e_smul_eq_zero hq
     (forall_e_smul_eq_zero_casimirBlock hq)] at h
   exact congrArg Subtype.val (mem_weightSpace_iff.mp h)

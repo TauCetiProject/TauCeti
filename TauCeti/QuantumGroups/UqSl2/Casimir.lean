@@ -8,7 +8,6 @@ module
 public import TauCeti.QuantumGroups.UqSl2.Weights
 
 import TauCeti.Algebra.Ring.Int.Units
-
 import Mathlib.Tactic
 
 /-!
