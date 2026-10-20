@@ -379,7 +379,15 @@ variable {N : ℕ} [NeZero N] {k : ℤ} {χ : (ZMod N)ˣ →* ℂˣ}
 /-- The constant terms at the cusps `1/d` indexed by the divisors of `N`. -/
 def constantTermsAtDivisors :
     ModularForm ((Gamma0 N).map (mapGL ℝ)) k →ₗ[ℂ] (N.divisors → ℂ) :=
-  LinearMap.pi fun d ↦ _root_.ModularForm.constantTermAt ⟨!![1, 0; (d.val : ℤ), 1], by simp⟩
+  (LinearMap.funLeft ℂ ℂ fun d : N.divisors ↦
+    (⟨!![1, 0; (d.val : ℤ), 1], by simp⟩ : SL(2, ℤ))) ∘ₗ ModularForm.constantTerms
+
+/-- The divisor-indexed map is the restriction of the full constant-term map to `1/d`. -/
+theorem constantTermsAtDivisors_eq_comp :
+    constantTermsAtDivisors (N := N) (k := k) =
+      (LinearMap.funLeft ℂ ℂ fun d : N.divisors ↦
+        (⟨!![1, 0; (d.val : ℤ), 1], by simp⟩ : SL(2, ℤ))) ∘ₗ ModularForm.constantTerms :=
+  (rfl)
 
 /-- Evaluation of the divisor-indexed constant-term map. -/
 @[simp]
@@ -455,14 +463,10 @@ theorem mem_cuspFormSubmodule_iff_constantTermAtCuspTranslationOrbit_eq_zero
   rw [mem_cuspFormSubmodule_iff_constantTermAt_eq_zero]
   constructor
   · intro hf c
-    induction c using Quotient.inductionOn with
-    | h q =>
-      induction q using Quotient.inductionOn with
-      | h x =>
-        obtain ⟨γ, hγ⟩ := x.property
-        have hx : x = (mapGL ℝ).rangeRestrict γ := Subtype.ext hγ.symm
-        rw [hx, constantTermAtCuspTranslationOrbit_mk_mapGL]
-        exact hf γ⁻¹
+    induction c using CuspTranslationOrbit.induction_on with
+    | h γ =>
+      rw [constantTermAtCuspTranslationOrbit_mk_mapGL]
+      exact hf γ⁻¹
   · intro hf γ
     simpa only [constantTermAtCuspTranslationOrbit_mk_mapGL, inv_inv] using
       hf (⟦(QuotientGroup.mk ((mapGL ℝ).rangeRestrict γ⁻¹) :

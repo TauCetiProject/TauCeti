@@ -47,16 +47,16 @@ theorem constantTermAt_eq_of_gcd_eq_of_squarefree
     apply Nat.coprime_of_squarefree_mul
     rwa [Nat.mul_div_cancel' (Nat.dvd_of_mem_divisors g.property)]
   have hlabel : TauCeti.gamma0CuspLabel N γ = TauCeti.gamma0CuspLabel N γ' := by
-    apply Sigma.ext (Subtype.ext (by simpa using h))
+    have hfst : (TauCeti.gamma0CuspLabel N γ).1 = (TauCeti.gamma0CuspLabel N γ').1 :=
+      Subtype.ext (by simpa only [coe_gamma0CuspLabel_fst] using h)
+    apply Sigma.ext hfst
     -- Once the divisor is fixed, its residue label lives in the trivial unit group modulo one.
     generalize hγ : TauCeti.gamma0CuspLabel N γ = a
     generalize hγ' : TauCeti.gamma0CuspLabel N γ' = b
-    have hab : a.1 = b.1 := by
-      rw [← hγ, ← hγ']
-      exact Subtype.ext (by simpa using h)
+    rw [hγ, hγ'] at hfst
     obtain ⟨a, x⟩ := a
     obtain ⟨b, y⟩ := b
-    dsimp only at hab
+    dsimp only at hfst
     subst b
     have : Subsingleton (ZMod (Nat.gcd a.val (N / a.val)))ˣ := by
       rw [hmod a]
@@ -67,10 +67,7 @@ theorem constantTermAt_eq_of_gcd_eq_of_squarefree
   have hδ : δ ∈ Gamma0 N := by
     rw [mem_Gamma0_iff_dvd]
     convert hj using 1
-    simp only [δ, Matrix.SpecialLinearGroup.coe_mul, Matrix.SpecialLinearGroup.coe_inv,
-      adjugate_fin_two, coe_T_zpow, Matrix.mul_apply,
-      Fin.sum_univ_two, of_apply, cons_val', cons_val_zero, cons_val_one, empty_val',
-      cons_val_fin_one]
+    simp [δ, Matrix.mul_apply, Fin.sum_univ_two, coe_T_zpow, adjugate_fin_two]
     ring
   have hγ : γ = δ * γ' * T ^ j := by simp [δ, mul_assoc]
   rw [hγ, constantTermAt_mul_T_zpow,
@@ -114,14 +111,10 @@ theorem range_constantTermsAtDivisors_ne_top_of_squarefree (hN : Squarefree N) :
     rfl
   have horbit (c : TauCeti.ModularForm.CuspTranslationOrbit ((Gamma0 N).map (mapGL ℝ))) :
       TauCeti.ModularForm.constantTermAtCuspTranslationOrbit f c = 1 := by
-    induction c using Quotient.inductionOn with
-    | h q =>
-      induction q using Quotient.inductionOn with
-      | h x =>
-        obtain ⟨γ, hγ⟩ := x.property
-        have hx : x = (mapGL ℝ).rangeRestrict γ := Subtype.ext hγ.symm
-        rw [hx, TauCeti.ModularForm.constantTermAtCuspTranslationOrbit_mk_mapGL]
-        exact hall _
+    induction c using TauCeti.ModularForm.CuspTranslationOrbit.induction_on with
+    | h γ =>
+      rw [TauCeti.ModularForm.constantTermAtCuspTranslationOrbit_mk_mapGL]
+      exact hall _
   have hsum :=
     weight_two_sum_cuspTranslationOrbitWidth_mul_constantTermAtCuspTranslationOrbit_eq_zero f
   simp only [horbit, mul_one] at hsum

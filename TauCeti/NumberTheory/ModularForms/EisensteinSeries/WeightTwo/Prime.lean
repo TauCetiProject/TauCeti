@@ -7,7 +7,9 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.Cusps.Prime
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightTwo.ConstantTerm
+import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightTwo.Squarefree
 import TauCeti.NumberTheory.ModularForms.SturmBound
+import Mathlib.Data.Nat.Squarefree
 import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 
 /-!
@@ -80,11 +82,8 @@ than the cusp-form space. -/
 theorem finrank_weight_two_Gamma0_prime (p : ℕ) [Fact p.Prime] :
     Module.finrank ℂ (ModularForm ((Gamma0 p).map (mapGL ℝ)) 2) =
       Module.finrank ℂ (CuspForm ((Gamma0 p).map (mapGL ℝ)) 2) + 1 := by
-  have hdim := Submodule.finrank_add_eq_of_isCompl
-    (isCompl_span_correctedE2_cuspFormSubmodule (p := p)).symm
-  rw [finrank_span_singleton (by
-    exact (correctedE2_eq_zero_iff p).not.mpr (Nat.Prime.ne_one Fact.out)),
-    ← (CuspForm.equivCuspFormSubmodule ((Gamma0 p).map (mapGL ℝ)) 2).finrank_eq] at hdim
-  exact hdim.symm
+  simpa [Nat.Prime.divisors Fact.out, (Nat.Prime.ne_one Fact.out).symm] using
+    TauCeti.finrank_weight_two_Gamma0_of_squarefree
+      (Nat.Prime.prime (Fact.out : p.Prime)).squarefree
 
 end ModularForm
