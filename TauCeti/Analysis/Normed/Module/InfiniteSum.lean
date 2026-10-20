@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Group.Completion
 public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Analysis.Normed.Operator.ContinuousLinearMap
+public import Mathlib.LinearAlgebra.BilinearMap
 public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 public import Mathlib.Topology.Algebra.InfiniteSum.Module
 public import Mathlib.Topology.Algebra.InfiniteSum.GroupCompletion
@@ -59,7 +60,7 @@ variable [SeminormedAddGroup E] [SeminormedAddGroup F] [SeminormedAddGroup G]
 
 /-- A map bounded by a product of norms takes two cofinite-null families to a
 jointly cofinite-null family. No additivity or ultrametric hypothesis is needed. -/
-theorem tendsto_bilinear_cofinite_zero (B : E → F → G) {C : ℝ}
+theorem tendsto_bilinear_cofinite_nhds_zero (B : E → F → G) {C : ℝ}
     (hB : ∀ x y, ‖B x y‖ ≤ C * ‖x‖ * ‖y‖)
     {f : ι → E} {g : κ → F} (hf : Tendsto f cofinite (𝓝 0))
     (hg : Tendsto g cofinite (𝓝 0)) :
@@ -81,7 +82,7 @@ theorem summable_bilinear_of_nonarchimedean [CompleteSpace G]
     {f : ι → E} {g : κ → F} (hf : Summable f) (hg : Summable g) :
     Summable fun ij : ι × κ ↦ B (f ij.1) (g ij.2) :=
   NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero <|
-    tendsto_bilinear_cofinite_zero B hB hf.tendsto_cofinite_zero hg.tendsto_cofinite_zero
+    tendsto_bilinear_cofinite_nhds_zero B hB hf.tendsto_cofinite_zero hg.tendsto_cofinite_zero
 
 section Summability
 
@@ -197,7 +198,7 @@ theorem _root_.Filter.Tendsto.smul_cofinite_nhds_zero [SeminormedAddGroup R] [Se
     [SMulZeroClass R M] [IsBoundedSMul R M] {α β : Type*} {f : α → R} {g : β → M}
     (hf : Tendsto f cofinite (𝓝 0)) (hg : Tendsto g cofinite (𝓝 0)) :
     Tendsto (fun ij : α × β ↦ f ij.1 • g ij.2) cofinite (𝓝 0) :=
-  tendsto_bilinear_cofinite_zero (· • ·) (C := 1)
+  tendsto_bilinear_cofinite_nhds_zero (· • ·) (C := 1)
     (fun x y ↦ by simpa using norm_smul_le x y) hf hg
 
 variable [SeminormedAddCommGroup M] [IsUltrametricDist M]
@@ -238,23 +239,32 @@ section Module
 
 variable [SeminormedRing R] [Module R M] [IsBoundedSMul R M]
 
+private def smulBilinearMap : R →ₗ[ℤ] M →ₗ[ℤ] M :=
+  LinearMap.mk₂ ℤ (· • ·) add_smul smul_assoc smul_add (fun z r m ↦ smul_comm r z m)
+
+omit [IsUltrametricDist M] [IsBoundedSMul R M] in
+private theorem smulBilinearMap_apply (r : R) (m : M) :
+    smulBilinearMap r m = r • m := (LinearMap.mk₂_apply ..)
+
+omit [IsUltrametricDist M] in
+private theorem norm_smulBilinearMap_le (r : R) (m : M) :
+    ‖smulBilinearMap r m‖ ≤ 1 * ‖r‖ * ‖m‖ := by
+  simpa only [smulBilinearMap_apply, one_mul] using norm_smul_le r m
+
 /-- Scalar multiplication distributes over two infinite sums in an ultrametric normed module. -/
 theorem _root_.HasSum.smul_of_nonarchimedean {α β : Type*} {f : α → R} {g : β → M} {a : R}
     {b : M} (hf : HasSum f a) (hg : HasSum g b) :
     HasSum (fun ij : α × β ↦ f ij.1 • g ij.2) (a • b) := by
-  have hg' := (hasSum_iff_hasSum_compl g b).mpr hg
-  simp only [Function.comp_def, UniformSpace.Completion.toCompl_apply] at hg'
-  rw [← hasSum_iff_hasSum_compl]
-  simpa only [Function.comp_def, UniformSpace.Completion.toCompl_apply,
-    UniformSpace.Completion.coe_smul] using
-    hf.smul hg' (hf.summable.smul_of_nonarchimedean hg'.summable)
+  simpa only [smulBilinearMap_apply] using
+    hasSum_bilinear_of_nonarchimedean smulBilinearMap norm_smulBilinearMap_le hf hg
 
 /-- The scalar multiple of two infinite sums in a Hausdorff ultrametric normed module is their
 double sum. -/
 protected theorem _root_.Summable.tsum_smul_tsum_of_nonarchimedean [T0Space M] {α β : Type*}
     {f : α → R} {g : β → M} (hf : Summable f) (hg : Summable g) :
-    (∑' i, f i) • (∑' j, g j) = ∑' ij : α × β, f ij.1 • g ij.2 :=
-  (hf.hasSum.smul_of_nonarchimedean hg.hasSum).tsum_eq.symm
+    (∑' i, f i) • (∑' j, g j) = ∑' ij : α × β, f ij.1 • g ij.2 := by
+  simpa only [smulBilinearMap_apply] using
+    bilinear_tsum_tsum_of_nonarchimedean smulBilinearMap norm_smulBilinearMap_le hf hg
 
 section CauchyProduct
 
@@ -265,17 +275,19 @@ of the original two sums. -/
 theorem _root_.HasSum.sum_smul_antidiagonal_of_nonarchimedean {f : A → R} {g : A → M} {a : R}
     {b : M} (hf : HasSum f a) (hg : HasSum g b) :
     HasSum (fun n ↦ ∑ ij ∈ Finset.antidiagonal n, f ij.1 • g ij.2) (a • b) := by
-  have hsigma := Finset.HasAntidiagonal.sigmaAntidiagonalEquivProd.hasSum_iff.mpr
-    (hf.smul_of_nonarchimedean hg)
-  exact hsigma.sigma fun n ↦ Finset.hasSum (Finset.antidiagonal n) fun ij ↦ f ij.1 • g ij.2
+  simpa only [smulBilinearMap_apply] using
+    hasSum_sum_bilinear_antidiagonal_of_nonarchimedean
+      smulBilinearMap norm_smulBilinearMap_le hf hg
 
 /-- The Cauchy-product formula for the scalar multiple of two infinite sums, grouped over the
 antidiagonals of an additive index monoid, in a Hausdorff ultrametric normed module. -/
 protected theorem _root_.Summable.tsum_smul_tsum_eq_tsum_sum_antidiagonal_of_nonarchimedean
     [T0Space M] {f : A → R} {g : A → M} (hf : Summable f) (hg : Summable g) :
     (∑' n, f n) • (∑' n, g n) =
-      ∑' n, ∑ ij ∈ Finset.antidiagonal n, f ij.1 • g ij.2 :=
-  (hf.hasSum.sum_smul_antidiagonal_of_nonarchimedean hg.hasSum).tsum_eq.symm
+      ∑' n, ∑ ij ∈ Finset.antidiagonal n, f ij.1 • g ij.2 := by
+  simpa only [smulBilinearMap_apply] using
+    bilinear_tsum_tsum_eq_tsum_sum_antidiagonal_of_nonarchimedean
+      smulBilinearMap norm_smulBilinearMap_le hf hg
 
 end CauchyProduct
 
@@ -287,16 +299,18 @@ protected theorem _root_.Summable.tsum_smul_tsum_eq_tsum_sum_range_of_nonarchime
     [T0Space M] {f : ℕ → R} {g : ℕ → M} (hf : Summable f) (hg : Summable g) :
     (∑' n, f n) • (∑' n, g n) =
       ∑' n, ∑ k ∈ Finset.range (n + 1), f k • g (n - k) := by
-  simp_rw [← Finset.Nat.sum_antidiagonal_eq_sum_range_succ fun k l ↦ f k • g l]
-  exact hf.tsum_smul_tsum_eq_tsum_sum_antidiagonal_of_nonarchimedean hg
+  simpa only [smulBilinearMap_apply] using
+    bilinear_tsum_tsum_eq_tsum_sum_range_of_nonarchimedean
+      smulBilinearMap norm_smulBilinearMap_le hf hg
 
 /-- In an ultrametric normed module, the natural-number Cauchy product sums to the scalar multiple
 of the original two sums. -/
 theorem _root_.HasSum.sum_smul_range_of_nonarchimedean {f : ℕ → R} {g : ℕ → M}
     {a : R} {b : M} (hf : HasSum f a) (hg : HasSum g b) :
     HasSum (fun n ↦ ∑ k ∈ Finset.range (n + 1), f k • g (n - k)) (a • b) := by
-  simp_rw [← Finset.Nat.sum_antidiagonal_eq_sum_range_succ fun k l ↦ f k • g l]
-  exact hf.sum_smul_antidiagonal_of_nonarchimedean hg
+  simpa only [smulBilinearMap_apply] using
+    hasSum_sum_bilinear_range_of_nonarchimedean
+      smulBilinearMap norm_smulBilinearMap_le hf hg
 
 end Nat
 
