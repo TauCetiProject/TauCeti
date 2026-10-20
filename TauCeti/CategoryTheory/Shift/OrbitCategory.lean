@@ -54,8 +54,8 @@ categories with periodic derived categories.
   (2018), 199–236, Section 3.3.
 -/
 
--- Only the representation of morphisms is exposed: the hom groups `Hom`, the instances, `idHom`,
--- and `homOf`, so that downstream morphisms of `D/[n]` are visibly elements of the direct sums
+-- Only the representation of morphisms is exposed: the hom groups `Hom`, the instances, and
+-- `homOf`, so that downstream morphisms of `D/[n]` are visibly elements of the direct sums
 -- and additive functors out of `D/[n]` can be defined summand by summand. Composition and the
 -- shift isomorphisms are used through their characteristic lemmas.
 public section
@@ -85,75 +85,64 @@ variable {D : Type u} [Category.{v} D] [Preadditive D] [HasShift D ℤ]
 abbrev Hom (X Y : OrbitCategory D n) : Type v :=
   DirectSum ℤ fun j : ℤ ↦ ShiftedHom X.obj Y.obj (n * j)
 
-/-- Composition of homogeneous pieces of degrees `i` and `j`, placed in degree `i + j`. -/
-def compPiece (X Y Z : OrbitCategory D n) (i j : ℤ) :
-    ShiftedHom X.obj Y.obj (n * i) →+ ShiftedHom Y.obj Z.obj (n * j) →+ Hom X Z where
-  toFun f := (DirectSum.of (fun k : ℤ ↦ ShiftedHom X.obj Z.obj (n * k)) (i + j)).comp
-    { toFun g := f.comp g (by ring)
-      map_zero' := by simp
-      map_add' := by simp }
-  map_zero' := by ext; simp
-  map_add' _ _ := by ext; simp
-
-/-- Composition in the orbit category, as a biadditive map. -/
-def compHom (X Y Z : OrbitCategory D n) : Hom X Y →+ Hom Y Z →+ Hom X Z :=
-  DirectSum.toAddMonoid fun i ↦ AddMonoidHom.flip <|
-    DirectSum.toAddMonoid fun j ↦ (compPiece X Y Z i j).flip
-
-/-- The identity of `X` in the orbit category: the identity of `X.obj` placed in degree zero. -/
-@[expose] def idHom (X : OrbitCategory D n) : Hom X X :=
-  DirectSum.of (fun j : ℤ ↦ ShiftedHom X.obj X.obj (n * j)) 0
-    (ShiftedHom.mk₀ (n * 0) (by simp) (𝟙 X.obj))
-
-theorem compHom_of_of {X Y Z : OrbitCategory D n} {i j k : ℤ} (h : i + j = k)
-    (f : ShiftedHom X.obj Y.obj (n * i)) (g : ShiftedHom Y.obj Z.obj (n * j)) :
-    compHom X Y Z (DirectSum.of (fun j : ℤ ↦ ShiftedHom X.obj Y.obj (n * j)) i f)
-        (DirectSum.of (fun k : ℤ ↦ ShiftedHom Y.obj Z.obj (n * k)) j g) =
-      DirectSum.of (fun l : ℤ ↦ ShiftedHom X.obj Z.obj (n * l)) k
-        (f.comp g (by subst h; ring)) := by
-  subst h
-  simp [compHom, compPiece]
-
-instance : Category.{v} (OrbitCategory D n) where
+-- Composition places the composite of homogeneous pieces of degrees `i` and `j` in degree
+-- `i + j`, and is extended biadditively to the direct sums.
+instance : CategoryStruct.{v} (OrbitCategory D n) where
   Hom := Hom
-  id := idHom
-  comp f g := compHom _ _ _ f g
-  id_comp {X Y} f := by
-    induction f using DirectSum.induction_on with
-    | zero => simp
-    | of j g => simp [idHom, compHom_of_of (zero_add j)]
-    | add f₁ f₂ h₁ h₂ => simp only [map_add, h₁, h₂]
-  comp_id {X Y} f := by
-    induction f using DirectSum.induction_on with
-    | zero => simp
-    | of j g => simp [idHom, compHom_of_of (add_zero j)]
-    | add f₁ f₂ h₁ h₂ => simp only [map_add, AddMonoidHom.add_apply, h₁, h₂]
-  assoc {X Y Z T} f g h := by
-    induction f using DirectSum.induction_on with
-    | zero => simp
-    | add f₁ f₂ h₁ h₂ => simp only [map_add, AddMonoidHom.add_apply, h₁, h₂]
-    | of i f =>
-      induction g using DirectSum.induction_on with
-      | zero => simp
-      | add g₁ g₂ h₁ h₂ => simp only [map_add, AddMonoidHom.add_apply, h₁, h₂]
-      | of j g =>
-        induction h using DirectSum.induction_on with
-        | zero => simp
-        | add h₁ h₂ k₁ k₂ => simp only [map_add, k₁, k₂]
-        | of k h =>
-          rw [compHom_of_of (rfl : i + j = _), compHom_of_of (rfl : j + k = _),
-            compHom_of_of (add_assoc i j k).symm, compHom_of_of (rfl : i + j + k = _)]
-          congr 1
-          exact ShiftedHom.comp_assoc _ _ _ _ _ (by ring)
+  id X := DirectSum.of (fun j : ℤ ↦ ShiftedHom X.obj X.obj (n * j)) 0
+    (ShiftedHom.mk₀ (n * 0) (by simp) (𝟙 X.obj))
+  comp {X Y Z} f g := (DirectSum.toAddMonoid fun i ↦ AddMonoidHom.flip <|
+    DirectSum.toAddMonoid fun j ↦ AddMonoidHom.flip <| AddMonoidHom.mk'
+      (fun a : ShiftedHom X.obj Y.obj (n * i) ↦
+        (DirectSum.of (fun k : ℤ ↦ ShiftedHom X.obj Z.obj (n * k)) (i + j)).comp <|
+          AddMonoidHom.mk' (fun b : ShiftedHom Y.obj Z.obj (n * j) ↦ a.comp b (by ring))
+            fun _ _ ↦ by simp)
+      fun _ _ ↦ by ext; simp : Hom X Y →+ Hom Y Z →+ Hom X Z) f g
 
 instance (X Y : OrbitCategory D n) : AddCommGroup (X ⟶ Y) :=
   inferInstanceAs (AddCommGroup (Hom X Y))
 
--- `X ⟶ Y` is `Hom X Y` by definition; the ascriptions let `map_add` see the direct-sum addition.
+private theorem of_comp_of {X Y Z : OrbitCategory D n} {i j k : ℤ} (h : i + j = k)
+    (f : ShiftedHom X.obj Y.obj (n * i)) (g : ShiftedHom Y.obj Z.obj (n * j)) :
+    @Eq (X ⟶ Z) ((DirectSum.of (fun j : ℤ ↦ ShiftedHom X.obj Y.obj (n * j)) i f : X ⟶ Y) ≫
+        (DirectSum.of (fun k : ℤ ↦ ShiftedHom Y.obj Z.obj (n * k)) j g : Y ⟶ Z))
+      (DirectSum.of (fun l : ℤ ↦ ShiftedHom X.obj Z.obj (n * l)) k
+        (f.comp g (by subst h; ring))) := by
+  subst h
+  simp [CategoryStruct.comp]
+
+instance : Category.{v} (OrbitCategory D n) where
+  id_comp {X Y} f := by
+    induction f using DirectSum.induction_on with
+    | zero => simp [CategoryStruct.comp]
+    | of j g => simp [CategoryStruct.id, of_comp_of (zero_add j)]
+    | add f₁ f₂ h₁ h₂ => simp_all only [CategoryStruct.comp, map_add]
+  comp_id {X Y} f := by
+    induction f using DirectSum.induction_on with
+    | zero => simp [CategoryStruct.comp]
+    | of j g => simp [CategoryStruct.id, of_comp_of (add_zero j)]
+    | add f₁ f₂ h₁ h₂ => simp_all only [CategoryStruct.comp, map_add, AddMonoidHom.add_apply]
+  assoc {X Y Z T} f g h := by
+    induction f using DirectSum.induction_on with
+    | zero => simp [CategoryStruct.comp]
+    | add f₁ f₂ h₁ h₂ => simp_all only [CategoryStruct.comp, map_add, AddMonoidHom.add_apply]
+    | of i f =>
+      induction g using DirectSum.induction_on with
+      | zero => simp [CategoryStruct.comp]
+      | add g₁ g₂ h₁ h₂ => simp_all only [CategoryStruct.comp, map_add, AddMonoidHom.add_apply]
+      | of j g =>
+        induction h using DirectSum.induction_on with
+        | zero => simp [CategoryStruct.comp]
+        | add h₁ h₂ k₁ k₂ => simp_all only [CategoryStruct.comp, map_add]
+        | of k h =>
+          rw [of_comp_of (rfl : i + j = _), of_comp_of (rfl : j + k = _),
+            of_comp_of (add_assoc i j k).symm, of_comp_of (rfl : i + j + k = _)]
+          congr 1
+          exact ShiftedHom.comp_assoc _ _ _ _ _ (by ring)
+
 instance : Preadditive (OrbitCategory D n) where
-  add_comp X Y Z f f' g := by
-    exact (DFunLike.congr_fun (map_add (compHom X Y Z) (f : Hom X Y) f') g : _)
-  comp_add X Y Z f g g' := by exact (map_add (compHom X Y Z f) (g : Hom Y Z) g' : _)
+  add_comp _ _ _ f f' g := DFunLike.congr_fun (map_add _ f f') g
+  comp_add _ _ _ f g g' := map_add _ g g'
 
 /-- The inclusion of the homogeneous piece of degree `i`, the morphisms `X ⟶ Y⟦n * i⟧` of `D`,
 into the orbit hom group from `X` to `Y`. -/
@@ -176,7 +165,7 @@ theorem homOf_comp_homOf_eq {X Y Z : D} {i j k : ℤ} (h : i + j = k)
     (f : ShiftedHom X Y (n * i)) (g : ShiftedHom Y Z (n * j)) :
     (homOf i f ≫ homOf j g : (⟨X⟩ : OrbitCategory D n) ⟶ ⟨Z⟩) =
       homOf k (f.comp g (by subst h; ring)) :=
-  compHom_of_of (X := ⟨X⟩) (Y := ⟨Y⟩) (Z := ⟨Z⟩) h f g
+  of_comp_of (X := ⟨X⟩) (Y := ⟨Y⟩) (Z := ⟨Z⟩) h f g
 
 /-- Homogeneous pieces compose by the composition of shifted morphisms, adding degrees. This has
 low priority so that the degree-zero special cases below, which avoid indices `0 + j`, apply
