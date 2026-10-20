@@ -208,19 +208,18 @@ theorem IsCompactoidSet.isBounded {S : Set E} (hS : IsCompactoidSet K S) :
     _ ≤ ‖x - ∑ i, a i • v i‖ + ‖∑ i, a i • v i‖ := norm_add_le _ _
     _ ≤ 1 + ∑ i, ‖v i‖ := add_le_add hx.le hsum
 
-end NormedField
-
-section NontriviallyNormedField
-
-variable [NontriviallyNormedField K] [SeminormedAddCommGroup E] [NormedSpace K E]
-  [SeminormedAddCommGroup F] [NormedSpace K F]
-
 /-- The image of a compactoid set under a continuous linear map is compactoid. -/
 theorem IsCompactoidSet.image {S : Set E} (hS : IsCompactoidSet K S) (u : E →L[K] F) :
-    IsCompactoidSet K (u '' S) :=
-  hS.image_of_norm_le (u : E →ₗ[K] F) ‖u‖ u.le_opNorm
+    IsCompactoidSet K (u '' S) := by
+  rw [isCompactoidSet_iff_forall_mem_nhds] at hS ⊢
+  intro U hU
+  obtain ⟨n, v, hv⟩ := hS _ (u.continuous.tendsto' 0 0 (map_zero u) hU)
+  refine ⟨n, fun i ↦ u (v i), ?_⟩
+  rintro _ ⟨x, hx, rfl⟩
+  obtain ⟨a, ha, hx⟩ := hv x hx
+  exact ⟨a, ha, by simpa using hx⟩
 
-end NontriviallyNormedField
+end NormedField
 
 section TotallyBounded
 
