@@ -49,8 +49,6 @@ rules, subgroup, and normalizer-quotient bookkeeping built on it.
   conjugation by its class.
 * `FundamentalGroup.map_fundamentalGroupMulEquivOfPath`: induced maps commute with basepoint
   change.
-* `FundamentalGroupoidFunctor.homotopicMapsNatIso_app`: the component at `x` of the natural
-  isomorphism induced by a homotopy is the class of its trace at `x`.
 * `ContinuousMap.Homotopy.fundamentalGroupMulEquivOfPath_evalAt_map`: **freely homotopic maps
   induce the same map on fundamental groups, up to basepoint change along the trace of the
   homotopy.**
@@ -206,15 +204,6 @@ lemma map_fundamentalGroupMulEquivOfPath {X Y : Type*} [TopologicalSpace X] [Top
   rw [hα]
   -- Mathlib defines basepoint change as `Iso.conj` and `FundamentalGroup.map` as
   -- `Functor.mapEnd`, so the two sides now agree by unfolding these definitions.
-  rfl
-
-/-- The component at `x` of the natural isomorphism `homotopicMapsNatIso H` induced by a homotopy
-`H` is the class of the trace `H.evalAt x.as` of the homotopy at `x`. -/
-@[simp]
-lemma _root_.FundamentalGroupoidFunctor.homotopicMapsNatIso_app {X Y : Type*}
-    [TopologicalSpace X] [TopologicalSpace Y] {f₀ f₁ : C(X, Y)} (H : f₀.Homotopy f₁)
-    (x : FundamentalGroupoid X) :
-    (FundamentalGroupoidFunctor.homotopicMapsNatIso H).app x = ⟦H.evalAt x.as⟧ :=
   rfl
 
 open CategoryTheory in
