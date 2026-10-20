@@ -292,10 +292,72 @@ private theorem secondPage_square (pq pq' : ℤ × ℤ) (hpq' : pq' = (pq.1 + 2,
     (m.indexSpectralSequenceFirstPageXIsoOfEq_comp_indexClassicalD hM k pq pq' hpq' q i₁ hq hi₁
       hq' hn hn')
 
+/-- The short complex of the first page around `(a, b)` is isomorphic to the short complex of the
+classical complex around degree `b + 1`: the isomorphism is the identification of each first-page
+term with a product of cohomology groups, which intertwines the differentials
+(`secondPage_square`). -/
+noncomputable def indexSecondPageShortComplexIso (a b : ℤ) :
+    ((m.indexSpectralSequence dM hM).page 2).sc' (a - 2, b + 1) (a, b) (a + 2, b - 1) ≅
+      (m.indexClassicalComplex hM (a + 2 * b + 1)).sc' (b + 1 + 1) (b + 1) b :=
+  ShortComplex.isoMk
+    (m.indexSpectralSequenceFirstPageXIsoOfEq dM hM (a - 2, b + 1) (b + 1) (b + 1 + 1) rfl rfl
+      (a + 2 * b + 1 - (b + 1 + 1)) (by dsimp only; ring) ≪≫ indexGradedPieceHomologyIso hM ind _)
+    (m.indexSpectralSequenceFirstPageXIsoOfEq dM hM (a, b) b (b + 1) rfl rfl
+      (a + 2 * b + 1 - (b + 1)) (by dsimp only; ring) ≪≫ indexGradedPieceHomologyIso hM ind _)
+    (m.indexSpectralSequenceFirstPageXIsoOfEq dM hM (a + 2, b - 1) (b - 1) b rfl
+      (by dsimp only; ring) (a + 2 * b + 1 - b) (by dsimp only; ring) ≪≫
+        indexGradedPieceHomologyIso hM ind _)
+    (m.secondPage_square hM _ (a - 2, b + 1) (a, b)
+      (Prod.ext (by dsimp only; ring) (by dsimp only; ring)) (b + 1) b rfl rfl
+      (by dsimp only) (by dsimp only; ring) (by dsimp only; ring))
+    (m.secondPage_square hM _ (a, b) (a + 2, b - 1) rfl b (b - 1) rfl rfl
+      (by dsimp only; ring) (by dsimp only; ring) (by dsimp only; ring))
+
+/-- The first component of `indexSecondPageShortComplexIso`: the first-page term at
+`(a - 2, b + 1)` is identified with the product of cohomology groups of `ℳ` (the term of the
+classical complex being identified by `indexClassicalComplexXIso`). -/
+@[reassoc]
+theorem indexSecondPageShortComplexIso_hom_τ₁ (a b : ℤ) :
+    (m.indexSecondPageShortComplexIso hM a b).hom.τ₁ ≫
+        (m.indexClassicalComplexXIso hM (a + 2 * b + 1) (b + 1 + 1)).hom =
+      (m.indexSpectralSequenceFirstPageXIsoOfEq dM hM (a - 2, b + 1) (b + 1) (b + 1 + 1) rfl rfl
+        (a + 2 * b + 1 - (b + 1 + 1)) (by dsimp only; ring) ≪≫
+          indexGradedPieceHomologyIso hM ind _).hom := by
+  -- `indexClassicalComplexXIso` is the identity, and the component of `isoMk` is the given one.
+  exact Category.comp_id _
+
+/-- The second component of `indexSecondPageShortComplexIso`: the first-page term at `(a, b)` is
+identified with the product of cohomology groups of `ℳ` (the term of the classical complex being
+identified by `indexClassicalComplexXIso`). -/
+@[reassoc]
+theorem indexSecondPageShortComplexIso_hom_τ₂ (a b : ℤ) :
+    (m.indexSecondPageShortComplexIso hM a b).hom.τ₂ ≫
+        (m.indexClassicalComplexXIso hM (a + 2 * b + 1) (b + 1)).hom =
+      (m.indexSpectralSequenceFirstPageXIsoOfEq dM hM (a, b) b (b + 1) rfl rfl
+        (a + 2 * b + 1 - (b + 1)) (by dsimp only; ring) ≪≫
+          indexGradedPieceHomologyIso hM ind _).hom := by
+  -- `indexClassicalComplexXIso` is the identity, and the component of `isoMk` is the given one.
+  exact Category.comp_id _
+
+/-- The third component of `indexSecondPageShortComplexIso`: the first-page term at
+`(a + 2, b - 1)` is identified with the product of cohomology groups of `ℳ` (the term of the
+classical complex being identified by `indexClassicalComplexXIso`). -/
+@[reassoc]
+theorem indexSecondPageShortComplexIso_hom_τ₃ (a b : ℤ) :
+    (m.indexSecondPageShortComplexIso hM a b).hom.τ₃ ≫
+        (m.indexClassicalComplexXIso hM (a + 2 * b + 1) b).hom =
+      (m.indexSpectralSequenceFirstPageXIsoOfEq dM hM (a + 2, b - 1) (b - 1) b rfl
+        (by dsimp only; ring) (a + 2 * b + 1 - b) (by dsimp only; ring) ≪≫
+          indexGradedPieceHomologyIso hM ind _).hom := by
+  -- `indexClassicalComplexXIso` is the identity, and the component of `isoMk` is the given one.
+  exact Category.comp_id _
+
 /-- **The second page of the index spectral sequence is the cohomology of the classical complex**
 (BDHO, Definition 3.38 and Ch. 3 §4.2): the object at `(a, b)` of the page `3` of the index
 spectral sequence (the classical `E₂` page, in Mathlib's numbering of pages) is the homology in
-degree `b + 1` of the classical complex in coefficient degree `a + 2 * b + 1`. -/
+degree `b + 1` of the classical complex in coefficient degree `a + 2 * b + 1`. It is the
+homology of the first page at `(a, b)`, identified with the homology of the classical complex by
+`indexSecondPageShortComplexIso` (see `indexSpectralSequenceSecondPageXIso_eq`). -/
 noncomputable def indexSpectralSequenceSecondPageXIso (a b : ℤ) :
     ((m.indexSpectralSequence dM hM).page 3).X (a, b) ≅
       (m.indexClassicalComplex hM (a + 2 * b + 1)).homology (b + 1) :=
@@ -303,21 +365,24 @@ noncomputable def indexSpectralSequenceSecondPageXIso (a b : ℤ) :
     ((m.indexSpectralSequence dM hM).page 2).homologyIsoSc' (a - 2, b + 1) (a, b) (a + 2, b - 1)
       ((ComplexShape.up' _).prev_eq' (Prod.ext (by dsimp; omega) (by dsimp; omega)))
       ((ComplexShape.up' _).next_eq' (Prod.ext (by dsimp) (by dsimp; omega))) ≪≫
-    ShortComplex.homologyMapIso (ShortComplex.isoMk
-      (m.indexSpectralSequenceFirstPageXIsoOfEq dM hM (a - 2, b + 1) (b + 1) (b + 1 + 1) rfl rfl
-        (a + 2 * b + 1 - (b + 1 + 1)) (by dsimp only; ring) ≪≫ indexGradedPieceHomologyIso hM ind _)
-      (m.indexSpectralSequenceFirstPageXIsoOfEq dM hM (a, b) b (b + 1) rfl rfl
-        (a + 2 * b + 1 - (b + 1)) (by dsimp only; ring) ≪≫ indexGradedPieceHomologyIso hM ind _)
-      (m.indexSpectralSequenceFirstPageXIsoOfEq dM hM (a + 2, b - 1) (b - 1) b rfl
-        (by dsimp only; ring) (a + 2 * b + 1 - b) (by dsimp only; ring) ≪≫
-          indexGradedPieceHomologyIso hM ind _)
-      (m.secondPage_square hM _ (a - 2, b + 1) (a, b)
-        (Prod.ext (by dsimp only; ring) (by dsimp only; ring)) (b + 1) b rfl rfl
-        (by dsimp only) (by dsimp only; ring) (by dsimp only; ring))
-      (m.secondPage_square hM _ (a, b) (a + 2, b - 1) rfl b (b - 1) rfl rfl
-        (by dsimp only; ring) (by dsimp only; ring) (by dsimp only; ring))) ≪≫
+    ShortComplex.homologyMapIso (m.indexSecondPageShortComplexIso hM a b) ≪≫
     ((m.indexClassicalComplex hM (a + 2 * b + 1)).homologyIsoSc' (b + 1 + 1) (b + 1) b
       (by simp) (by simp)).symm
+
+/-- The second-page isomorphism is the inverse of the identification of the second page with the
+homology of the first page, followed by the homology isomorphism of
+`indexSecondPageShortComplexIso`. -/
+theorem indexSpectralSequenceSecondPageXIso_eq (a b : ℤ) :
+    m.indexSpectralSequenceSecondPageXIso hM a b =
+      ((m.indexSpectralSequence dM hM).iso 2 3 (a, b)).symm ≪≫
+        ((m.indexSpectralSequence dM hM).page 2).homologyIsoSc' (a - 2, b + 1) (a, b)
+          (a + 2, b - 1)
+          ((ComplexShape.up' _).prev_eq' (Prod.ext (by dsimp; omega) (by dsimp; omega)))
+          ((ComplexShape.up' _).next_eq' (Prod.ext (by dsimp) (by dsimp; omega))) ≪≫
+        ShortComplex.homologyMapIso (m.indexSecondPageShortComplexIso hM a b) ≪≫
+        ((m.indexClassicalComplex hM (a + 2 * b + 1)).homologyIsoSc' (b + 1 + 1) (b + 1) b
+          (by simp) (by simp)).symm :=
+  (rfl)
 
 end Page
 
