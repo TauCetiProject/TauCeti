@@ -8,7 +8,6 @@ module
 public import Mathlib.AlgebraicTopology.SimplicialSet.KanComplex
 public import Mathlib.Algebra.Category.Grp.Basic
 public import Mathlib.Algebra.Category.ModuleCat.Basic
-public import TauCeti.AlgebraicTopology.SimplicialSet.Basic
 
 /-!
 # Simplicial groups are Kan complexes
@@ -84,8 +83,9 @@ private lemma δ_mul_σ_inv_mul {n : ℕ} {a k : Fin (n + 3)} {b a' : Fin (n + 2
   simp [δ_mul hX, δ_inv hX, hσ, hv, σ_one hX]
 
 variable {m : ℕ} {i : Fin (m + 3)} {y : ∀ j : Fin (m + 3), j ≠ i → X _⦋m + 1⦌}
-  (hy : ∀ (j k : Fin (m + 3)) (hj : j ≠ i) (hk : k ≠ i) (p q : Fin (m + 2)), j.val < k.val →
-    p.val + 1 = k.val → q.val = j.val → X.δ p (y j hj) = X.δ q (y k hk))
+  (hy : ∀ (j k : Fin (m + 3)) (hj : j ≠ i) (hk : k ≠ i) (hjk : j < k),
+    X.δ (k.pred (Fin.ne_zero_of_lt hjk)) (y j hj) =
+      X.δ (j.castPred (Fin.ne_last_of_lt hjk)) (y k hk))
 
 include hy
 
@@ -97,12 +97,14 @@ private lemma exists_lower_step (b : Fin (m + 2)) (hbi : b.castSucc ≠ i)
   refine ⟨w * X.σ b ((X.δ b.castSucc w)⁻¹ * y b.castSucc hbi), fun j hj hjb => ?_⟩
   rcases lt_or_eq_of_le hjb with hjb | hjb
   · -- Below `b`, the correction is the degeneracy of a simplex with trivial `j`-th face.
-    have hb₁ : b.val - 1 + 1 < m + 2 := by omega
-    rw [δ_mul_σ_inv_mul hX (δ_comp_σ_of_val_lt_apply j b ⟨j.val, by omega⟩ ⟨b.val - 1, by omega⟩
-      hjb rfl (by simp; omega)) ?_, hw j hj hjb]
-    rw [δ_comp_δ_of_val_lt_apply j b.castSucc ⟨j.val, by omega⟩ ⟨b.val - 1, by omega⟩ hjb rfl
-      (by simp; omega), hw j hj hjb]
-    exact hy j b.castSucc hj hbi ⟨b.val - 1, by omega⟩ ⟨j.val, by omega⟩ hjb (by simp; omega) rfl
+    obtain ⟨j, rfl⟩ := Fin.exists_castSucc_eq.mpr (Fin.ne_of_val_ne (by simp; omega) : j ≠ _)
+    obtain ⟨b, rfl⟩ := Fin.exists_succ_eq.mpr
+      (Fin.ne_of_val_ne (by rw [Fin.val_zero]; simp at hjb; omega) : b ≠ 0)
+    have hjb' : j ≤ b.castSucc := Fin.le_def.mpr (by simp at hjb ⊢; omega)
+    rw [δ_mul_σ_inv_mul hX (δ_comp_σ_of_le_apply hjb') ?_, hw _ hj hjb]
+    refine (δ_comp_δ_apply hjb' w).trans ?_
+    rw [hw _ hj hjb]
+    simpa using hy _ _ hj hbi (Fin.lt_def.mpr (by simpa using hjb))
   · obtain rfl : j = b.castSucc := Fin.ext hjb
     rw [δ_mul hX, δ_comp_σ_self_apply, mul_inv_cancel_left]
 
@@ -115,20 +117,28 @@ private lemma exists_upper_step (b : Fin (m + 2)) (hbi : b.succ ≠ i) (hb : i.v
       ∀ (j : Fin (m + 3)) (hj : j ≠ i), b.val < j.val → X.δ j w' = y j hj := by
   refine ⟨w * X.σ b ((X.δ b.succ w)⁻¹ * y b.succ hbi), fun j hj hji => ?_, fun j hj hbj => ?_⟩
   · -- Below `i`, the correction is the degeneracy of a simplex with trivial `j`-th face.
-    have hjb : j.val < b.val := by omega
-    rw [δ_mul_σ_inv_mul hX (δ_comp_σ_of_val_lt_apply j b ⟨j.val, by omega⟩ ⟨b.val - 1, by omega⟩
-      hjb rfl (by simp; omega)) ?_, hlow j hj hji]
-    rw [δ_comp_δ_of_val_lt_apply j b.succ ⟨j.val, by omega⟩ b (by simp; omega) rfl (by simp),
-      hlow j hj hji]
-    exact hy j b.succ hj hbi b ⟨j.val, by omega⟩ (by simp; omega) (by simp) rfl
+    obtain ⟨j, rfl⟩ := Fin.exists_castSucc_eq.mpr (Fin.ne_of_val_ne (by simp; omega) : j ≠ _)
+    obtain ⟨b, rfl⟩ := Fin.exists_succ_eq.mpr
+      (Fin.ne_of_val_ne (by rw [Fin.val_zero]; simp at hji; omega) : b ≠ 0)
+    have hjb : j ≤ b.castSucc := Fin.le_def.mpr (by simp at hji hb ⊢; omega)
+    rw [δ_mul_σ_inv_mul hX (δ_comp_σ_of_le_apply hjb) ?_, hlow _ hj hji]
+    rw [δ_comp_δ_apply (Fin.le_def.mpr (by simp at hji hb ⊢; omega)), hlow _ hj hji]
+    simpa using hy _ _ hj hbi (Fin.lt_def.mpr (by simp at hji hb ⊢; omega))
   · rcases lt_or_eq_of_le (Nat.succ_le_of_lt hbj) with hbj | hbj
     · -- Above `b.succ`, the correction is the degeneracy of a simplex with trivial face.
-      rw [δ_mul_σ_inv_mul hX (δ_comp_σ_of_val_gt_apply j b ⟨j.val - 1, by omega⟩
-        ⟨b.val, by omega⟩ hbj (by simp; omega) rfl) ?_, hup j hj hbj]
-      rw [← δ_comp_δ_of_val_lt_apply b.succ j ⟨b.val + 1, by omega⟩ ⟨j.val - 1, by omega⟩
-        (by simpa using hbj) (by simp) (by simp; omega), hup j hj hbj]
-      exact (hy b.succ j hbi hj ⟨j.val - 1, by omega⟩ ⟨b.val + 1, by omega⟩
-        (by simpa using hbj) (by simp; omega) (by simp)).symm
+      obtain ⟨j, rfl⟩ := Fin.exists_succ_eq.mpr
+        (Fin.ne_of_val_ne (by rw [Fin.val_zero]; omega) : j ≠ 0)
+      obtain ⟨b, rfl⟩ := Fin.exists_castSucc_eq.mpr
+        (Fin.ne_of_val_ne (by rw [Fin.val_last]; simp at hbj; omega) : b ≠ _)
+      have hbj' : b.val < j.val := by simpa using hbj
+      rw [δ_mul_σ_inv_mul hX (δ_comp_σ_of_gt_apply (Fin.lt_def.mpr hbj')) ?_,
+        hup j.succ hj (by simp; omega)]
+      -- `δ_comp_δ_apply` names the face `b.castSucc.succ` as `b.succ.castSucc`.
+      have hδ := δ_comp_δ_apply (S := X) (i := b.succ) (j := j) (Fin.le_def.mpr (by simp; omega)) w
+      rw [← Fin.succ_castSucc] at hδ
+      rw [← hδ, hup j.succ hj (by simp; omega)]
+      convert (hy _ _ hbi hj (Fin.lt_def.mpr (by simp; omega))).symm using 3 <;>
+        simp [Fin.ext_iff]
     · obtain rfl : j = b.succ := Fin.ext (by simpa using hbj.symm)
       rw [δ_mul hX, δ_comp_σ_succ_apply, mul_inv_cancel_left]
 
@@ -194,11 +204,8 @@ theorem kanComplex_of_group : X.KanComplex := by
       · exact δ_comp_σ_self_apply 0 _
       · exact absurd rfl hj
   | succ m =>
-    refine exists_δ_eq_of_group hX (fun j k hj hk p q hjk hp hq => ?_)
-    obtain rfl : p = k.pred (Fin.ne_zero_of_lt (Fin.lt_def.mpr hjk)) :=
-      Fin.ext (by simp; omega)
-    obtain rfl : q = j.castPred (Fin.ne_last_of_lt (Fin.lt_def.mpr hjk)) := Fin.ext (by simpa)
-    have := congrArg yonedaEquiv (hf.δ_pred_comp j k hj hk (Fin.lt_def.mpr hjk))
+    refine exists_δ_eq_of_group hX (fun j k hj hk hjk => ?_)
+    have := congrArg yonedaEquiv (hf.δ_pred_comp j k hj hk hjk)
     rwa [stdSimplex.yonedaEquiv_δ_comp, stdSimplex.yonedaEquiv_δ_comp] at this
 
 end Group
