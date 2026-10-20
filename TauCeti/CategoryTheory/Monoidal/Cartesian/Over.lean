@@ -23,7 +23,7 @@ open CategoryTheory Limits MonoidalCategory CartesianMonoidalCategory MonObj
 
 attribute [local instance] Over.cartesianMonoidalCategory
 
-namespace TauCeti
+namespace TauCeti.CategoryTheory.Over
 
 variable {C : Type*} [Category* C] [HasPullbacks C] {S : C}
 
@@ -46,16 +46,8 @@ theorem pullback_map_comp_mul_left {D G : Over S} [MonObj G] (i : D ⟶ G)
   refine (Category.assoc _ _ _).symm.trans ?_
   conv_rhs => rw [← Category.assoc]
   apply congrArg (fun k ↦ k ≫ (μ[G]).left)
-  -- The two chosen pullback presentations are definitionally equal; `erw` sees through them.
   apply pullback.hom_ext
-  · simp only [pullback.map]
-    erw [Category.assoc, pullback.lift_fst, ← Category.assoc, pullback.lift_fst]
-    conv_rhs => erw [Category.assoc, pullback.lift_fst]
-    exact Category.assoc _ _ _
-  · simp only [pullback.map]
-    erw [Category.assoc, pullback.lift_snd, ← Category.assoc, pullback.lift_snd]
-    conv_rhs => erw [Category.assoc, pullback.lift_snd]
-    rw [hab]
-    exact Category.assoc _ _ _
+  · simp [pullback.map, Category.assoc]
+  · simp [pullback.map, Category.assoc, hab]
 
-end TauCeti
+end TauCeti.CategoryTheory.Over

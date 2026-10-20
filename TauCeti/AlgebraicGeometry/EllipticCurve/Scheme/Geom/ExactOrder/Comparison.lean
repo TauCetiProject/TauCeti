@@ -14,9 +14,8 @@ import TauCeti.Data.ZMod.MonoidHomEquiv
 # Comparison of naive and Drinfeld exact order
 
 Where the level is invertible, a point has Drinfeld exact order precisely when it has exact
-order in every geometric fibre. The converse uses scheme-theoretic equations: the disjoint
-sections of the cyclic subgroup cover their divisor by open immersions, and the group operations
-restrict on this cover. Thus the comparison holds over nonreduced bases as well.
+order in every geometric fibre. This comparison holds over arbitrary, possibly nonreduced base
+schemes and identifies the Drinfeld and naive moduli problems for points of exact order.
 
 ## References
 

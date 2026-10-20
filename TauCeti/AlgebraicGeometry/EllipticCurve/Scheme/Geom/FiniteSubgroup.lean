@@ -19,11 +19,8 @@ import Mathlib.AlgebraicGeometry.Morphisms.FlatMono
 
 A finite group embedded fibrewise into an elliptic curve by torsion sections defines a finite
 étale subgroup scheme when the torsion level is invertible. Its divisor is the union of its
-disjoint sections. The sections cover that divisor by open immersions, so multiplication and
-inversion restrict scheme-theoretically, including over nonreduced bases. This supplies the
-subgroup-divisor condition for naive points of exact order. The disjoint-divisor argument follows
-`IsFiberwiseInjective.isDrinfeldBasis`; the subgroup structure uses
-`GroupScheme.exists_grpObj_isMonHom_iff_ker_le`.
+disjoint sections. These results hold over arbitrary, possibly nonreduced bases and supply the
+subgroup-divisor condition for naive points of exact order.
 
 ## References
 
@@ -186,7 +183,7 @@ theorem IsFiberwiseInjective.exists_grpObj_pointsDivisor (hφ : E.IsFiberwiseInj
     have h : (Scheme.Pullback.openCoverOfLeftRight 𝒰 𝒰 D.hom D.hom).f (a, b) ≫
         ((i ⊗ₘ i) ≫ μ[Over.mk E.structureMap]).left =
         pullback.fst ((s a).left ≫ D.hom) ((s b).left ≫ D.hom) ≫ (φ (a * b)).left := by
-      have h := pullback_map_comp_mul_left i (s a) (s b)
+      have h := TauCeti.CategoryTheory.Over.pullback_map_comp_mul_left i (s a) (s b)
       erw [hs a, hs b, ← map_mul] at h
       exact h
     rw [h]

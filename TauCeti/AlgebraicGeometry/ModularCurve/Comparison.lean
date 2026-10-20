@@ -90,23 +90,17 @@ theorem naiveLevelEquiv_gammaOneToGammaOneNaive_app_apply (X : EllObj B)
       (gammaOneEquiv X α).1 ^ a.val := by
   simp [gammaOneToGammaOneNaive]
 
-/-- **Drinfeld `[Γ₁(N)]`-structures form a subproblem of the naive ones** where `N` is
-invertible: a `[Γ₁(N)]`-structure is determined by its naive `[Γ₁(N)]`-structure. -/
-instance mono_gammaOneToGammaOneNaive : Mono (gammaOneToGammaOneNaive B N hN) := by
-  have (X : (EllObj B)ᵒᵖ) : Mono ((gammaOneToGammaOneNaive B N hN).app X) := by
-    refine (mono_iff_injective _).mpr fun α β hαβ ↦ ?_
-    apply (gammaOneEquiv X.unop).injective
-    apply Subtype.ext
-    have := congrArg (fun γ ↦ (naiveLevelEquiv X.unop γ).1 (.ofAdd 1)) hαβ
-    simpa [gammaOneToGammaOneNaive, ← coe_zmodMonoidHomEquiv_apply] using this
-  exact NatTrans.mono_of_mono_app _
-
 /-- Where `N` is invertible, the comparison from Drinfeld to naive `[Γ₁(N)]` is an
 isomorphism of moduli problems. -/
 instance isIso_gammaOneToGammaOneNaive : IsIso (gammaOneToGammaOneNaive B N hN) := by
   have (X : (EllObj B)ᵒᵖ) : IsIso ((gammaOneToGammaOneNaive B N hN).app X) := by
     apply (isIso_iff_bijective _).mpr
-    refine ⟨(mono_iff_injective _).mp inferInstance, fun α ↦ ?_⟩
+    refine ⟨?_, fun α ↦ ?_⟩
+    · intro α β hαβ
+      apply (gammaOneEquiv X.unop).injective
+      apply Subtype.ext
+      have := congrArg (fun γ ↦ (naiveLevelEquiv X.unop γ).1 (.ofAdd 1)) hαβ
+      simpa [gammaOneToGammaOneNaive, ← coe_zmodMonoidHomEquiv_apply] using this
     let φ := (naiveLevelEquiv X.unop α).1
     have hφ := (naiveLevelEquiv X.unop α).2
     have hP := EllipticCurveGeom.isFiberwiseInjective_iff_isOfNaiveExactOrder.mp hφ
