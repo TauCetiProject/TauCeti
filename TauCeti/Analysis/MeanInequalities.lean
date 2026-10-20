@@ -108,8 +108,9 @@ theorem Lp_add_le_tsum {ι : Type*} (f g : ι → ℝ≥0∞) {p : ℝ} (hp : 1 
 /-- `(a + b) ^ 2 ≤ 2 * (a ^ 2 + b ^ 2)` in `ℝ≥0∞`. The general `add_sq_le` does not apply, since
 `ℝ≥0∞` is not a strictly ordered semiring. -/
 protected theorem add_sq_le (a b : ℝ≥0∞) : (a + b) ^ 2 ≤ 2 * (a ^ 2 + b ^ 2) := by
-  simpa [ENNReal.rpow_two, show (2 : ℝ) - 1 = 1 by norm_num] using
-    ENNReal.rpow_add_le_mul_rpow_add_rpow a b (p := 2) one_le_two
+  have h := ENNReal.rpow_add_le_mul_rpow_add_rpow a b (p := 2) one_le_two
+  norm_num [ENNReal.rpow_two] at h
+  exact h
 
 /-- **Hölder's inequality** for unconditional sums in `ℝ≥0∞`: for conjugate exponents `p` and `q`,
 `∑' i, f i * g i ≤ (∑' i, f i ^ p) ^ (1 / p) * (∑' i, g i ^ q) ^ (1 / q)`.
