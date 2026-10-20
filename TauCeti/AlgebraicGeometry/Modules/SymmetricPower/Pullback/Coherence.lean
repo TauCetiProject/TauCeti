@@ -177,10 +177,11 @@ theorem pullbackSymmetricPowerComparison_id (n : ℕ) (M : X.Modules) :
   let q : TwoSquare (Scheme.Modules.pushforward (𝟙 X)) W W (Scheme.Modules.pushforward (𝟙 X)) :=
     SheafOfModules.pushforwardSymmetricPowerComparison (S := X.sheaf) (R := X.sheaf)
       (𝟙 X : X ⟶ X).toRingCatSheafHom n
+  have hcq : mateEquiv adj adj c = q :=
+    Scheme.Modules.mateEquiv_pullbackSymmetricPowerComparison (𝟙 X) n
   -- The typed endofunctor `W` avoids repeatedly reconstructing the scheme's sheaf category.
   exact adj.app_comp_map_hom_app_of_mateEquiv (Scheme.Modules.pullbackId X)
-    (Scheme.Modules.pushforwardId X) (Scheme.Modules.conjugateEquiv_pullbackId_hom X) c q
-    (Scheme.Modules.mateEquiv_pullbackSymmetricPowerComparison (𝟙 X) n)
+    (Scheme.Modules.pushforwardId X) (Scheme.Modules.conjugateEquiv_pullbackId_hom X) c q hcq
     (pushforwardSymmetricPowerComparison_id n) M
 
 /-- The symmetric-power comparison for a composite agrees with the two successive comparisons,
@@ -216,12 +217,15 @@ theorem pullbackSymmetricPowerComparison_comp (f : X ⟶ Y) (g : Y ⟶ Z)
       (Scheme.Modules.pushforward (f ≫ g)) :=
     SheafOfModules.pushforwardSymmetricPowerComparison (S := Z.sheaf) (R := X.sheaf)
       (f ≫ g : X ⟶ Z).toRingCatSheafHom n
+  have h₁ : mateEquiv A A c₁ = q₁ :=
+    Scheme.Modules.mateEquiv_pullbackSymmetricPowerComparison g n
+  have h₂ : mateEquiv B B c₂ = q₂ :=
+    Scheme.Modules.mateEquiv_pullbackSymmetricPowerComparison f n
+  have h₃ : mateEquiv C C c₃ = q₃ :=
+    Scheme.Modules.mateEquiv_pullbackSymmetricPowerComparison (f ≫ g) n
   exact A.app_comp_map_inv_app_of_mateEquiv B C (Scheme.Modules.pullbackComp f g)
     (Scheme.Modules.pushforwardComp f g) (Scheme.Modules.conjugateEquiv_pullbackComp_inv f g)
-    c₁ c₂ c₃ q₁ q₂ q₃ (Scheme.Modules.mateEquiv_pullbackSymmetricPowerComparison g n)
-    (Scheme.Modules.mateEquiv_pullbackSymmetricPowerComparison f n)
-    (Scheme.Modules.mateEquiv_pullbackSymmetricPowerComparison (f ≫ g) n)
-    (pushforwardSymmetricPowerComparison_comp f g n) M
+    c₁ c₂ c₃ q₁ q₂ q₃ h₁ h₂ h₃ (pushforwardSymmetricPowerComparison_comp f g n) M
 
 end
 

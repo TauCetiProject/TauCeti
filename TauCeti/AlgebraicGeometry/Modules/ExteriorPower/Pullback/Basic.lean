@@ -139,8 +139,8 @@ theorem pullbackExteriorPowerComparison_eq (n : ℕ) :
         (pullbackPushforwardAdjunction f) n :=
   (rfl)
 
-/-- The mate of the scheme pullback comparison is the pushforward comparison along
-`f.toRingCatSheafHom`. -/
+/-- The mate of the scheme comparison under the pullback--pushforward adjunction is the
+pushforward comparison along `f.toRingCatSheafHom`. -/
 -- Not a simp lemma: `mateEquiv_apply` expands its left-hand side first.
 theorem mateEquiv_pullbackExteriorPowerComparison (n : ℕ) :
     mateEquiv (pullbackPushforwardAdjunction f) (pullbackPushforwardAdjunction f)
