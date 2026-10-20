@@ -78,9 +78,7 @@ theorem exists_fg_subalgebra_and_span_eq_top [Algebra.FiniteType R A] [Algebra.Q
     exact IsIntegral.of_mem_of_fg (B (P x)) (hB (P x)) y this
   -- `A'[1/y] → A[1/y]` is surjective, so `y ^ m * z ∈ A'` for some `m`.
   obtain ⟨b, m, hb⟩ := Localization.awayMap_surjective_iff.mp (hbij (P ⟨y, hy⟩)).2 z
-  have hb' : (b : A) = y ^ m * z :=
-    calc (b : A) = (r (P ⟨y, hy⟩) : A) ^ m * z := hb
-      _ = y ^ m * z := by rw [hP ⟨y, hy⟩]
+  have hb' : (b : A) = y ^ m * z := by simpa [hP ⟨y, hy⟩] using hb
   refine eventually_atTop.mpr ⟨m, fun n hn ↦ ?_⟩
   rw [← Nat.sub_add_cancel hn, pow_add, mul_assoc, ← hb']
   exact A'.mul_mem (A'.pow_mem (hsA' hy) _) (hle _ b.2)

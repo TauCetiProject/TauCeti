@@ -9,8 +9,8 @@ public import Mathlib.RingTheory.Artinian.Module
 public import Mathlib.RingTheory.Henselian
 public import TauCeti.RingTheory.Ideal.GoingUp
 public import TauCeti.RingTheory.Idempotents.Jacobson
-import Mathlib.LinearAlgebra.Matrix.Charpoly.LinearMap
 import Mathlib.RingTheory.Nakayama
+import TauCeti.LinearAlgebra.Matrix.Charpoly.LinearMap
 
 /-!
 # Idempotents and locality in Henselian rings
@@ -242,14 +242,7 @@ private theorem exists_monic_aeval_eq_zero_map_eq {J : Ideal S} (hjac : J ≤ Id
     abel
   refine ⟨A.charpoly, n, A.charpoly_monic, ?_, ?_⟩
   · -- Cayley–Hamilton, transported along the representation.
-    have hf : Matrix.isRepresentation.toEnd S b hb ⟨A, _, hrep⟩ = Algebra.lmul S T γ :=
-      Matrix.isRepresentation.eq_toEnd_of_represents S b hb ⟨A, _, hrep⟩ hrep
-    have h0 : aeval (Algebra.lmul S T γ) A.charpoly = 0 := by
-      rw [← hf, Polynomial.aeval_algHom_apply, ← map_zero (Matrix.isRepresentation.toEnd S b hb)]
-      congr 1
-      ext1
-      rw [Polynomial.aeval_subalgebra_coe, Matrix.aeval_self_charpoly, Subalgebra.coe_zero]
-    have := congr($h0 1)
+    have := congr($(hrep.aeval_charpoly_eq_zero hb) 1)
     rw [Polynomial.aeval_algHom_apply] at this
     simpa using this
   · have hA : A.map (Ideal.Quotient.mk J) = Matrix.diagonal fun i ↦ Ideal.Quotient.mk J (d i) := by

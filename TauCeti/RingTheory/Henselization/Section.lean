@@ -127,6 +127,20 @@ private theorem exists_sub_mem_and_mul_sub_smul_mem_of_span (C' : Subalgebra S C
       simp only [Algebra.smul_def, map_mul]
       ring
 
+/-- If `x - σ = ∑ aᵢ cᵢ` in `C` with all `aᵢ ∈ J`, and `y` moves every `cᵢ` into the subalgebra
+`C'`, then `y (x - σ) ∈ JC'`. -/
+private theorem mul_sub_algebraMap_mem_map (C' : Subalgebra S C) {x y : C'} {σ : S} {a : C →₀ S}
+    (ha : ∀ c, a c ∈ J) (hsum : (a.sum fun c t ↦ t • id c) = (x : C) - algebraMap S C σ)
+    (hy : ∀ c ∈ a.support, (y : C) * c ∈ C') :
+    y * (x - algebraMap S C' σ) ∈ J.map (algebraMap S C') := by
+  have : y * (x - algebraMap S C' σ) = ∑ c ∈ a.support.attach, a c • ⟨y * c, hy c c.2⟩ := by
+    ext
+    simp [← hsum, Finsupp.sum, Finset.mul_sum, Finset.sum_attach a.support fun c ↦ a c • (y * c)]
+  rw [this]
+  refine sum_mem fun c _ ↦ ?_
+  rw [Algebra.smul_def]
+  exact Ideal.mul_mem_right _ _ (Ideal.mem_map_of_mem _ (ha c))
+
 /-- The element produced by the global form of Zariski's main theorem: if `C` agrees with the
 module-finite subalgebra `C'` on the basic opens `D(r)`, `r ∈ s`, covering `Spec C`, and
 `S ⧸ J → C ⧸ JC` is surjective, there is `γ ∈ C'` with `γ ≡ 1 mod JC`, lying in the ideal of `C'`
@@ -162,18 +176,8 @@ private theorem exists_mul_sub_smul_mem (hC : Function.Surjective (reducedMap J 
   choose t ht using fun r : (s : Set C) ↦ hlift (w r)
   let r' (r : (s : Set C)) : C' := ⟨r, hsC' r.2⟩
   have hgen (r : (s : Set C)) (l : Fin k) :
-      r' r ^ N * (g l - algebraMap S C' (σ l)) ∈ J.map (algebraMap S C') := by
-    have : r' r ^ N * (g l - algebraMap S C' (σ l)) =
-        ∑ c : (a l).support, a l c • (⟨(r : C) ^ N * c, hN r r.2 l c c.2⟩ : C') := by
-      apply Subtype.ext
-      simp only [MulMemClass.coe_mul, SubmonoidClass.coe_pow, AddSubgroupClass.coe_sub,
-        Subalgebra.coe_algebraMap, AddSubmonoidClass.coe_finsetSum, Subalgebra.coe_smul, r',
-        ← hsum l, Finsupp.sum, id, Finset.mul_sum, mul_smul_comm]
-      exact (Finset.sum_attach _ fun c ↦ a l c • ((r : C) ^ N * c)).symm
-    rw [this]
-    refine sum_mem fun c _ ↦ ?_
-    rw [Algebra.smul_def]
-    exact Ideal.mul_mem_right _ _ (Ideal.mem_map_of_mem _ (ha l c))
+      r' r ^ N * (g l - algebraMap S C' (σ l)) ∈ J.map (algebraMap S C') :=
+    mul_sub_algebraMap_mem_map J C' (ha l) (hsum l) fun c hc ↦ by simpa [r'] using hN r r.2 l c hc
   refine ⟨∑ r, t r • r' r ^ N, ?_, ?_, fun x ↦ ?_⟩
   · have hcoe : ((∑ r, t r • r' r ^ N : C') : C) = ∑ r, algebraMap S C (t r) * (r : C) ^ N := by
       simp [r', Algebra.smul_def]
