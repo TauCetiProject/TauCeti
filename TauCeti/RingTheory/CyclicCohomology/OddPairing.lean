@@ -99,11 +99,15 @@ theorem hochschildCoboundary_apply_eq_zero_of_add_add_mul_eq_zero
     rw [finRotate_last] at hl
     -- By definition, the inner entries `fun k ↦ x k.castSucc.succ` are `Fin.init (Fin.tail x)`
     -- and `x (Fin.last (n + 1))` is `Fin.tail x (Fin.last n)`.
-    have hinit : (Fin.cons (x 0) fun k ↦ x k.castSucc.succ : Fin (n + 1) → A) = Fin.init x :=
-      Fin.cons_init_tail x
+    have hinit : (Fin.cons (x 0) fun k ↦ x k.castSucc.succ : Fin (n + 1) → A) = Fin.init x := by
+      rw [← Fin.cons_self_tail (Fin.init x), Fin.tail_init_eq_init_tail]
+      rfl
     have htail : (Fin.cons (x (Fin.last (n + 1))) fun k ↦ x k.castSucc.succ : Fin (n + 1) → A) =
-        Fin.tail x ∘ (finRotate (n + 1)).symm :=
-      Fin.cons_last_init_eq_comp_finRotate_symm (Fin.tail x)
+        Fin.tail x ∘ (finRotate (n + 1)).symm := by
+      rw [← Fin.snoc_init_self (Fin.tail x), Fin.snoc_eq_cons_rotate]
+      funext k
+      rw [Function.comp_apply, Equiv.apply_symm_apply]
+      rfl
     rw [← Fin.update_cons_zero (x (Fin.last (n + 1))), hsplit _ _ hl, Fin.update_cons_zero,
       Fin.update_cons_zero, hinit, htail, mem_cyclicCochains_iff.1 hψ]
     have hsign : (-1 : ℤ) ^ (n + 1) * (-1) ^ n = -1 := by
