@@ -35,6 +35,8 @@ along such maps.
   and composites.
 * `TauCeti.RiemannianIsometry.isLocalRiemannianIsometry`: a Riemannian isometry is a local
   Riemannian isometry.
+* `TauCeti.RiemannianIsometry.inner_mpullback`: in particular, pulling back vector fields along a
+  Riemannian isometry preserves their pointwise inner products.
 
 ## References
 
@@ -102,7 +104,7 @@ of tangent spaces. -/
 theorem exists_linearIsometryEquiv_eq_mfderiv (hf : IsLocalRiemannianIsometry I J f) (x : M) :
     ∃ e : TangentSpace I x ≃ₗᵢ[ℝ] TangentSpace J (f x), ∀ v, e v = mfderiv I J f x v := by
   obtain ⟨A, hA⟩ := hf.isInvertible_mfderiv x
-  have hAv : ∀ v, A v = mfderiv I J f x v := fun v ↦ by rw [← hA]; rfl
+  have hAv : ∀ v, A v = mfderiv I J f x v := fun v ↦ by rw [← hA, ContinuousLinearEquiv.coe_coe]
   refine ⟨LinearEquiv.isometryOfInner A.toLinearEquiv fun v w ↦ ?_, hAv⟩
   simpa only [ContinuousLinearEquiv.coe_toLinearEquiv, hAv] using hf.inner_mfderiv x v w
 
@@ -157,8 +159,7 @@ protected theorem id : IsLocalRiemannianIsometry I I (id : M → M) where
     rw [mfderiv_id]
     exact ⟨ContinuousLinearEquiv.refl ℝ _, rfl⟩
   inner_mfderiv x v w := by
-    rw [mfderiv_id]
-    rfl
+    simp only [mfderiv_id, ContinuousLinearMap.id_apply]
 
 variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
   {H'' : Type*} [TopologicalSpace H''] {K : ModelWithCorners ℝ G H''}
@@ -185,5 +186,13 @@ theorem RiemannianIsometry.isLocalRiemannianIsometry (Φ : RiemannianIsometry I 
   contMDiff := Φ.toDiffeomorph.contMDiff
   isInvertible_mfderiv _ := Φ.toDiffeomorph.isInvertible_mfderiv (by simp)
   inner_mfderiv := Φ.inner_mfderiv
+
+/-- Pulling back vector fields along a Riemannian isometry preserves their pointwise inner
+products. -/
+@[simp]
+theorem RiemannianIsometry.inner_mpullback (Φ : RiemannianIsometry I J M N)
+    (Y Z : Π y : N, TangentSpace J y) (x : M) :
+    inner ℝ (mpullback I J Φ Y x) (mpullback I J Φ Z x) = inner ℝ (Y (Φ x)) (Z (Φ x)) :=
+  Φ.isLocalRiemannianIsometry.inner_mpullback Y Z x
 
 end TauCeti

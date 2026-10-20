@@ -40,8 +40,7 @@ pulls back each of the three terms in `R(X, Y) Z = ∇_X ∇_Y Z - ∇_Y ∇_X Z
 
 ## Main results
 
-In the namespace `TauCeti.IsLocalRiemannianIsometry`, and with the same names for Riemannian
-isometries in the namespace `TauCeti.RiemannianIsometry`:
+In the namespace `TauCeti.IsLocalRiemannianIsometry`:
 
 * `mfderiv_curvatureOperator_mpullback`: the curvature operator of pulled-back smooth vector fields
   is the pullback of the curvature operator.
@@ -51,7 +50,9 @@ isometries in the namespace `TauCeti.RiemannianIsometry`:
 * `ricciTensor_mfderiv` and `scalarCurvature_map`: preservation of the Ricci tensor and of the
   scalar curvature.
 
-In the namespace `TauCeti.RiemannianIsometry`, `hasSectionalCurvatureAt_map_iff` and
+In the namespace `TauCeti.RiemannianIsometry`, `sectionalCurvature_mfderiv`, `ricciTensor_mfderiv`
+and `scalarCurvature_map` state the same for a Riemannian isometry `Φ`, which is a local
+Riemannian isometry (`Φ.isLocalRiemannianIsometry`). There, `hasSectionalCurvatureAt_map_iff` and
 `hasConstantSectionalCurvature_iff` use surjectivity: isometries preserve pointwise and constant
 sectional curvature.
 
@@ -192,39 +193,7 @@ end IsLocalRiemannianIsometry
 
 namespace RiemannianIsometry
 
-/-- **Naturality of the curvature operator under Riemannian isometries.** For smooth vector
-fields `X`, `Y`, `Z` on `N`, the curvature operator of `M` applied to their pullbacks along `Φ`
-is the pullback of the curvature operator of `N`:
-`dΦ_x (R(Φ^* X, Φ^* Y) (Φ^* Z) x) = R(X, Y) Z (Φ x)`. -/
-theorem mfderiv_curvatureOperator_mpullback (Φ : RiemannianIsometry I J M N)
-    {X Y Z : Π y : N, TangentSpace J y} (hX : CMDiff ∞ (T% X)) (hY : CMDiff ∞ (T% Y))
-    (hZ : CMDiff ∞ (T% Z)) (x : M) :
-    mfderiv I J Φ x ((leviCivitaConnection I M).curvatureOperator
-        (mpullback I J Φ X) (mpullback I J Φ Y) (mpullback I J Φ Z) x) =
-      (leviCivitaConnection J N).curvatureOperator X Y Z (Φ x) :=
-  Φ.isLocalRiemannianIsometry.mfderiv_curvatureOperator_mpullback hX hY hZ x
-
 variable [T2Space M] [T2Space N]
-
-/-- **Naturality of the Riemann curvature tensor under Riemannian isometries:**
-`dΦ_x (R(u, v) w) = R(dΦ_x u, dΦ_x v) (dΦ_x w)`. -/
-@[simp]
-theorem mfderiv_curvatureTensor (Φ : RiemannianIsometry I J M N) (x : M)
-    (u v w : TangentSpace I x) :
-    mfderiv I J Φ x ((leviCivitaConnection I M).curvatureTensor x u v w) =
-      (leviCivitaConnection J N).curvatureTensor (Φ x) (mfderiv I J Φ x u)
-        (mfderiv I J Φ x v) (mfderiv I J Φ x w) :=
-  Φ.isLocalRiemannianIsometry.mfderiv_curvatureTensor x u v w
-
-/-- A Riemannian isometry preserves the curvature tensor paired with the metric:
-`⟪R(dΦ_x u, dΦ_x v) (dΦ_x w), dΦ_x z⟫ = ⟪R(u, v) w, z⟫`. -/
-@[simp]
-theorem inner_curvatureTensor_mfderiv (Φ : RiemannianIsometry I J M N) (x : M)
-    (u v w z : TangentSpace I x) :
-    inner ℝ ((leviCivitaConnection J N).curvatureTensor (Φ x) (mfderiv I J Φ x u)
-        (mfderiv I J Φ x v) (mfderiv I J Φ x w)) (mfderiv I J Φ x z) =
-      inner ℝ ((leviCivitaConnection I M).curvatureTensor x u v w) z :=
-  Φ.isLocalRiemannianIsometry.inner_curvatureTensor_mfderiv x u v w z
 
 /-- A Riemannian isometry preserves sectional curvature: the plane spanned by `dΦ_x u` and
 `dΦ_x v` has the same sectional curvature as the plane spanned by `u` and `v`. -/

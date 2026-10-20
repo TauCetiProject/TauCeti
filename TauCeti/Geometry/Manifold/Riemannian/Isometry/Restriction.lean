@@ -68,25 +68,9 @@ theorem isLocalRiemannianIsometry_restrictOpenTangentSpace [IsManifold I 1 M] {n
       ⟨TauCeti.Manifold.tangentSpaceOpenEquiv (I := I) x,
         (TauCeti.Manifold.mfderiv_subtype_val x).symm⟩
     inner_mfderiv := fun x v w ↦ by
-      rw [TauCeti.Manifold.mfderiv_subtype_val]
-      exact (g.restrictOpenTangentSpace_inner U x v w).symm }
-
-/-- Two metrics that agree on an open set `U` have equal restrictions to `U`. -/
-theorem restrictOpenTangentSpace_eq_of_inner_eq [IsManifold I 1 M] {n : ℕ∞ω}
-    {g₁ g₂ : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)} (U : Opens M)
-    (h : ∀ x ∈ U, g₁.inner x = g₂.inner x) :
-    g₁.restrictOpenTangentSpace U = g₂.restrictOpenTangentSpace U := by
-  have hinner : (g₁.restrictOpenTangentSpace U).inner = (g₂.restrictOpenTangentSpace U).inner := by
-    funext x
-    ext v w
-    simp only [restrictOpenTangentSpace_inner, h x x.2]
-  -- A smooth Riemannian metric is determined by its `inner` field; the other fields are proofs.
-  generalize g₁.restrictOpenTangentSpace U = a at hinner
-  generalize g₂.restrictOpenTangentSpace U = b at hinner
-  cases a
-  cases b
-  cases hinner
-  rfl
+      have h := g.toRiemannianMetric.restrictOpenTangentSpace_inner_mfderiv_subtype_val U x v w
+      rw [← restrictOpenTangentSpace_toRiemannianMetric] at h
+      exact h.symm }
 
 variable [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M]
 

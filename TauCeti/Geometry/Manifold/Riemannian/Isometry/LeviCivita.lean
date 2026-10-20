@@ -28,8 +28,7 @@ exponential maps along Riemannian isometries.
 
 ## Main results
 
-In the namespace `TauCeti.IsLocalRiemannianIsometry`, and with the same names for Riemannian
-isometries in the namespace `TauCeti.RiemannianIsometry`:
+In the namespace `TauCeti.IsLocalRiemannianIsometry`:
 
 * `koszul_mpullback`: the Koszul expression is natural under local Riemannian isometries.
 * `mfderiv_apply_mpullback_of_isLeviCivitaConnection`: **naturality of Levi-Civita
@@ -38,6 +37,11 @@ isometries in the namespace `TauCeti.RiemannianIsometry`:
   `CovariantDerivative.leviCivitaConnection`.
 * `leviCivitaConnection_mpullback_apply_mpullback`: the vector-field form
   `∇ᴹ_{Φ^* Y} (Φ^* Z) = Φ^* (∇ᴺ_Y Z)`.
+
+A Riemannian isometry `Φ` is a local Riemannian isometry
+(`TauCeti.RiemannianIsometry.isLocalRiemannianIsometry`), so these apply to it through
+`Φ.isLocalRiemannianIsometry`; `TauCeti.RiemannianIsometry.mfderiv_leviCivitaConnection_mpullback`
+states the connection naturality directly for `Φ`.
 
 ## References
 
@@ -162,31 +166,8 @@ end IsLocalRiemannianIsometry
 
 namespace RiemannianIsometry
 
-/-- **Naturality of the Koszul expression.** The Koszul expression of the pullbacks of three
-vector fields along a Riemannian isometry `Φ` is the Koszul expression of the fields themselves,
-evaluated at the image point. -/
-@[simp]
-theorem koszul_mpullback [CompleteSpace E] (Φ : RiemannianIsometry I J M N)
-    {X Y Z : Π y : N, TangentSpace J y} {x : M} (hX : MDiffAt (T% X) (Φ x))
-    (hY : MDiffAt (T% Y) (Φ x)) (hZ : MDiffAt (T% Z) (Φ x)) :
-    koszul I (mpullback I J Φ X) (mpullback I J Φ Y) (mpullback I J Φ Z) x =
-      koszul J X Y Z (Φ x) :=
-  Φ.isLocalRiemannianIsometry.koszul_mpullback hX hY hZ
-
 variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ F]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
-
-/-- **Naturality of Levi-Civita connections under Riemannian isometries.** If `∇ᴹ` and `∇ᴺ` are
-Levi-Civita connections of `M` and `N` and `Φ : M → N` is a smooth Riemannian isometry, then
-`dΦ_x (∇ᴹ_v (Φ^* Y)) = ∇ᴺ_{dΦ_x v} Y` for every vector field `Y` on `N` differentiable at
-`Φ x`. -/
-theorem mfderiv_apply_mpullback_of_isLeviCivitaConnection (Φ : RiemannianIsometry I J M N)
-    {covM : CovariantDerivative I E (fun x : M ↦ TangentSpace I x)}
-    {covN : CovariantDerivative J F (fun y : N ↦ TangentSpace J y)}
-    (hM : covM.IsLeviCivitaConnection) (hN : covN.IsLeviCivitaConnection)
-    {Y : Π y : N, TangentSpace J y} {x : M} (hY : MDiffAt (T% Y) (Φ x)) (v : TangentSpace I x) :
-    mfderiv I J Φ x (covM (mpullback I J Φ Y) x v) = covN Y (Φ x) (mfderiv I J Φ x v) :=
-  Φ.isLocalRiemannianIsometry.mfderiv_apply_mpullback_of_isLeviCivitaConnection hM hN hY v
 
 /-- **Naturality of the Levi-Civita connection under Riemannian isometries**, for Mathlib's
 `CovariantDerivative.leviCivitaConnection`:
@@ -198,14 +179,6 @@ theorem mfderiv_leviCivitaConnection_mpullback (Φ : RiemannianIsometry I J M N)
     mfderiv I J Φ x (leviCivitaConnection I M (mpullback I J Φ Y) x v) =
       leviCivitaConnection J N Y (Φ x) (mfderiv I J Φ x v) :=
   Φ.isLocalRiemannianIsometry.mfderiv_leviCivitaConnection_mpullback hY v
-
-/-- The covariant derivative of a pulled-back vector field in a pulled-back direction is the
-pullback of the covariant derivative: `∇ᴹ_{Φ^* Y} (Φ^* Z) = Φ^* (∇ᴺ_Y Z)` at `x`. -/
-theorem leviCivitaConnection_mpullback_apply_mpullback (Φ : RiemannianIsometry I J M N)
-    {Y Z : Π y : N, TangentSpace J y} {x : M} (hZ : MDiffAt (T% Z) (Φ x)) :
-    leviCivitaConnection I M (mpullback I J Φ Z) x (mpullback I J Φ Y x) =
-      mpullback I J Φ (fun y ↦ leviCivitaConnection J N Z y (Y y)) x :=
-  Φ.isLocalRiemannianIsometry.leviCivitaConnection_mpullback_apply_mpullback hZ
 
 end RiemannianIsometry
 
