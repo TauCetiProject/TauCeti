@@ -63,8 +63,7 @@ theorem nextCoeff_taylor_neg_div_eq_zero {p : K[X]} (hp : (p.natDegree : K) ≠ 
 
 /-- A monic polynomial `p` with vanishing subleading coefficient that splits, whose degree is
 invertible, and which is not `X ^ p.natDegree`, factors as `p = g * h` with `g` and `h` monic,
-coprime and of positive degree. One may take `g = (X - a) ^ r` for a nonzero root `a` of `p` of
-multiplicity `r`. -/
+coprime and of positive degree. -/
 theorem Monic.exists_isCoprime_mul_eq_of_nextCoeff_eq_zero {p : K[X]} (hp : p.Monic)
     (hs : p.Splits) (hm : (p.natDegree : K) ≠ 0) (hnext : p.nextCoeff = 0)
     (hX : p ≠ X ^ p.natDegree) :
@@ -80,23 +79,21 @@ theorem Monic.exists_isCoprime_mul_eq_of_nextCoeff_eq_zero {p : K[X]} (hp : p.Mo
   have hgh := pow_mul_divByMonic_rootMultiplicity_eq p a
   set r := p.rootMultiplicity a
   have hX_sub := monic_X_sub_C a
+  have hdeg : ((X - C a) ^ r).natDegree = r := by simp
   have hg : ((X - C a) ^ r).Monic := hX_sub.pow r
   have hh : (p /ₘ (X - C a) ^ r).Monic := hg.of_mul_monic_left (by rwa [hgh])
   refine ⟨(X - C a) ^ r, p /ₘ (X - C a) ^ r, hg, hh, ?_, hgh, ?_, ?_⟩
   · refine IsCoprime.pow_left ((irreducible_X_sub_C a).coprime_iff_not_dvd.2 ?_)
     rw [dvd_iff_isRoot]
     exact eval_divByMonic_pow_rootMultiplicity_ne_zero a hp0
-  · rw [hX_sub.natDegree_pow, natDegree_X_sub_C, mul_one]
+  · rw [hdeg]
     exact (rootMultiplicity_pos hp0).2 (isRoot_of_mem_roots ha)
   · -- If the cofactor were constant, `p = (X - a) ^ r` would have subleading coefficient `-r a`.
     by_contra! h0
     rw [Nat.le_zero, hh.natDegree_eq_zero] at h0
     rw [h0, mul_one] at hgh
-    have hr : p.natDegree = r := by
-      conv_lhs => rw [← hgh]
-      rw [hX_sub.natDegree_pow, natDegree_X_sub_C, mul_one]
-    rw [← hgh, nextCoeff_pow hX_sub, nextCoeff_X_sub_C, nsmul_eq_mul, mul_neg, neg_eq_zero,
-      mul_eq_zero] at hnext
+    have hr : p.natDegree = r := by rw [← hgh, hdeg]
+    simp [← hgh, nextCoeff_pow hX_sub] at hnext
     exact hnext.elim (by rwa [← hr]) ha0
 
 end Polynomial
