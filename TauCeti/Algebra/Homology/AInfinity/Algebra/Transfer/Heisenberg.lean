@@ -160,13 +160,17 @@ private theorem contract_gen_mul (i j : Fin 3) (x : ExteriorAlgebra R (Fin 3 →
 /-! ### The grading -/
 
 /-- The cohomological grading of `Λ_R(a, b, c)` by exterior degree, the generators having
-degree one.  The body is exposed because the graded-algebra instance below is the one of the
-extension by zero of the exterior powers. -/
-@[expose] def grading : ℤ → Submodule R (ExteriorAlgebra R (Fin 3 → R)) :=
+degree one. -/
+def grading : ℤ → Submodule R (ExteriorAlgebra R (Fin 3 → R)) :=
   Graded.extendByZero fun n : ℕ ↦ ⋀[R]^n (Fin 3 → R)
 
-noncomputable instance : GradedAlgebra (grading R) :=
+/-- `Λ_R(a, b, c)` is an integer-graded algebra for `grading`, as the extension by zero of the
+exterior powers. -/
+@[instance_reducible]
+noncomputable def gradedAlgebra : GradedAlgebra (grading R) :=
   Graded.gradedAlgebraExtendByZero _
+
+attribute [instance] gradedAlgebra
 
 /-- In a nonnegative degree the grading is the exterior power. -/
 theorem grading_natCast (n : ℕ) : grading R n = ⋀[R]^n (Fin 3 → R) :=
