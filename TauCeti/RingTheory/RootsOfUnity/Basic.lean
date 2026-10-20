@@ -27,6 +27,8 @@ of unity.
 
 * `TauCeti.torsionByUnitsEquivRootsOfUnity`: the `n`-torsion of `Mˣ`, written additively, is
   `μₙ(M)`, written additively.
+* `TauCeti.rootsOfUnityPowOfDvd`: for `n ∣ m`, the power map `ζ ↦ ζ ^ (m / n)` from `μₘ(M)` to
+  `μₙ(M)`.
 
 ## Main results
 
@@ -166,5 +168,21 @@ theorem coe_torsionByUnitsEquivRootsOfUnity_symm_apply {M : Type*} [CommMonoid M
 instance finite_torsionBy_additive_units {M : Type*} [CommMonoid M] (n : ℕ)
     [Finite (rootsOfUnity n M)] : Finite (Submodule.torsionBy ℤ (Additive Mˣ) (n : ℤ)) :=
   .of_equiv _ ((torsionByUnitsEquivRootsOfUnity n).toEquiv.trans Additive.toMul).symm
+
+/-- For `n ∣ m`, the power map `ζ ↦ ζ ^ (m / n)` sends `m`-th roots of unity to `n`-th roots of
+unity. -/
+def rootsOfUnityPowOfDvd {M : Type*} [CommMonoid M] {n m : ℕ} (h : n ∣ m) :
+    rootsOfUnity m M →* rootsOfUnity n M :=
+  ((powMonoidHom (m / n)).comp (rootsOfUnity m M).subtype).codRestrict (rootsOfUnity n M)
+    fun ζ ↦ by
+      rw [MonoidHom.comp_apply, powMonoidHom_apply, mem_rootsOfUnity, ← pow_mul,
+        Nat.div_mul_cancel h]
+      exact (mem_rootsOfUnity m _).mp ζ.2
+
+/-- The power map `rootsOfUnityPowOfDvd h` raises a root of unity to the power `m / n`. -/
+@[simp]
+theorem coe_rootsOfUnityPowOfDvd_apply {M : Type*} [CommMonoid M] {n m : ℕ} (h : n ∣ m)
+    (ζ : rootsOfUnity m M) : (rootsOfUnityPowOfDvd h ζ : Mˣ) = (ζ : Mˣ) ^ (m / n) :=
+  (rfl)
 
 end TauCeti
