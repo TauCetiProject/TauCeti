@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.LocalField.MassFormula.Eisenstein
+public import TauCeti.NumberTheory.LocalField.MassFormula.Eisenstein.Basic
 import Mathlib.FieldTheory.IsSepClosed
 import TauCeti.Algebra.Polynomial.Degree.Operations
 import TauCeti.NumberTheory.LocalField.Different.Eisenstein
