@@ -58,6 +58,7 @@ attribute [instance] integerGradedAlgebra
 variable {R M}
 
 /-- In a nonnegative degree the integer grading is the exterior power. -/
+@[simp]
 theorem integerGrading_natCast (n : ℕ) : integerGrading R M n = ⋀[R]^n M :=
   Graded.extendByZero_natCast _ n
 

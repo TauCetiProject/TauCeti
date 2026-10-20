@@ -294,12 +294,17 @@ theorem isHomogeneous_homotopy :
 noncomputable def cycleProjection : Module.End R (ExteriorAlgebra R (Fin 3 → R)) :=
   LinearMap.id - (differential R ∘ₗ homotopy R + homotopy R ∘ₗ differential R)
 
+/-- The projection is `x ↦ x - (d h x + h d x)`. -/
+theorem cycleProjection_apply (x : ExteriorAlgebra R (Fin 3 → R)) :
+    cycleProjection R x =
+      x - (differential R (homotopy R x) + homotopy R (differential R x)) :=
+  (rfl)
+
 /-- The projection on the exterior basis. -/
 theorem cycleProjection_monomial (s : Finset (Fin 3)) :
     cycleProjection R (monomial R s) = if s = {2} ∨ s = {0, 1} then 0 else monomial R s := by
-  simp only [cycleProjection, LinearMap.sub_apply, LinearMap.id_apply, LinearMap.add_apply,
-    LinearMap.comp_apply, homotopy_monomial, differential_monomial, apply_ite (differential R),
-    apply_ite (homotopy R), map_zero]
+  simp only [cycleProjection_apply, homotopy_monomial, differential_monomial,
+    apply_ite (differential R), apply_ite (homotopy R), map_zero]
   split_ifs <;> simp_all +decide
 
 /-- Linear endomorphisms of `Λ_R(a, b, c)` agree once they agree on the exterior basis. -/
@@ -363,7 +368,7 @@ theorem cycleProjection_sub_mem_boundaries {x : ExteriorAlgebra R (Fin 3 → R)}
     cycleProjection R x - x ∈ (aInfinityAlgebra R).boundaries := by
   rw [mem_cycles_aInfinityAlgebra] at hx
   refine (aInfinityAlgebra R).mem_boundaries.2 ⟨-homotopy R x, ?_⟩
-  simp [cycleProjection, hx]
+  simp [cycleProjection_apply, hx]
 
 /-- The projection has degree zero. -/
 theorem isHomogeneous_cycleProjection :
@@ -447,8 +452,8 @@ noncomputable def contraction :
     refine LinearMap.ext fun x ↦ ?_
     rw [LinearMap.sub_apply, LinearMap.id_apply, LinearMap.comp_apply, projection_apply,
       inclusion_cohomologyClass, ← LinearMap.comp_apply (cycleProjection R),
-      cycleProjection_comp_cycleProjection, aInfinityAlgebra_differential, cycleProjection,
-      LinearMap.sub_apply, LinearMap.id_apply, sub_sub_cancel]
+      cycleProjection_comp_cycleProjection, aInfinityAlgebra_differential, cycleProjection_apply,
+      sub_sub_cancel, LinearMap.add_apply, LinearMap.comp_apply, LinearMap.comp_apply]
   homotopy_comp_incl := by
     refine Submodule.linearMap_qext _ (LinearMap.ext fun z ↦ ?_)
     simp only [LinearMap.comp_apply, Submodule.mkQ_apply, LinearMap.zero_comp,
@@ -521,11 +526,26 @@ noncomputable def minimalModel : AInfinityAlgebra R (aInfinityAlgebra R).Cohomol
   (aInfinityAlgebra R).transfer (contraction R) (isHomogeneous_contraction_homotopy R)
     (isHomogeneous_contraction_incl R) (isHomogeneous_contraction_proj R)
 
+/-- The minimal model is the transfer of `aInfinityAlgebra` along `contraction`. -/
+theorem minimalModel_def :
+    minimalModel R = (aInfinityAlgebra R).transfer (contraction R)
+      (isHomogeneous_contraction_homotopy R) (isHomogeneous_contraction_incl R)
+      (isHomogeneous_contraction_proj R) :=
+  (rfl)
+
 /-- The **extending `A∞` morphism** from the transferred minimal model to `(Λ_R(a, b, c), d)`,
 with linear part the inclusion of the contraction. -/
 noncomputable def minimalModelInclusion : AInfinityHom (minimalModel R) (aInfinityAlgebra R) :=
   (aInfinityAlgebra R).transferInclusion (contraction R) (isHomogeneous_contraction_homotopy R)
     (isHomogeneous_contraction_incl R) (isHomogeneous_contraction_proj R)
+
+/-- The components of the extending morphism are those of the transfer inclusion of
+`aInfinityAlgebra` along `contraction`. -/
+theorem component_minimalModelInclusion (n : ℕ) :
+    (minimalModelInclusion R).component n = ((aInfinityAlgebra R).transferInclusion (contraction R)
+      (isHomogeneous_contraction_homotopy R) (isHomogeneous_contraction_incl R)
+      (isHomogeneous_contraction_proj R)).component n :=
+  (rfl)
 
 /-- The transferred structure is minimal. -/
 theorem isMinimal_minimalModel : (minimalModel R).IsMinimal :=
@@ -549,7 +569,7 @@ theorem minimalModel_m_two (x y : (aInfinityAlgebra R).Cohomology) :
   obtain ⟨w, hw, rfl⟩ := (aInfinityAlgebra R).exists_cohomologyClass_eq y
   have hz' := cycleProjection_mem_cycles R z
   have hw' := cycleProjection_mem_cycles R w
-  rw [minimalModel, AInfinityAlgebra.mul_transfer, contraction_incl_cohomologyClass,
+  rw [minimalModel_def, AInfinityAlgebra.mul_transfer, contraction_incl_cohomologyClass,
     contraction_incl_cohomologyClass, AInfinityAlgebra.mul_apply,
     contraction_proj_of_mem_cycles R ((aInfinityAlgebra R).m_two_mem_cycles hz' hw'),
     ← cohomologyClass_cycleProjection R hz, ← cohomologyClass_cycleProjection R hw,
@@ -610,7 +630,7 @@ theorem minimalModel_m_three :
           (aInfinityAlgebra R).cohomologyClass (gen_mem_cycles R (i := 0) (by decide)),
           (aInfinityAlgebra R).cohomologyClass (gen_mem_cycles R (i := 1) (by decide))] =
       (aInfinityAlgebra R).cohomologyClass (gen_zero_mul_gen_two_mem_cycles R) := by
-  rw [minimalModel, AInfinityAlgebra.m_three_transfer,
+  rw [minimalModel_def, AInfinityAlgebra.m_three_transfer,
     koszulTwist_cohomologyClass_gen R (i := 0) (by decide)]
   simp [contraction_proj_of_mem_cycles R (gen_zero_mul_gen_two_mem_cycles R)]
 
@@ -639,8 +659,7 @@ theorem component_two_minimalModelInclusion :
         ![(aInfinityAlgebra R).cohomologyClass (gen_mem_cycles R (i := 0) (by decide)),
           (aInfinityAlgebra R).cohomologyClass (gen_mem_cycles R (i := 1) (by decide))] =
       -gen R 2 := by
-  unfold minimalModelInclusion minimalModel
-  rw [AInfinityAlgebra.component_two_transferInclusion]
+  rw [component_minimalModelInclusion, AInfinityAlgebra.component_two_transferInclusion]
   simp
 
 /-- **The transferred ternary operation selects an element of the triple Massey product**
