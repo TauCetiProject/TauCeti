@@ -203,6 +203,29 @@ theorem cechLocalizationRestriction_restriction {T S U : Finset ι} (hTS : T ⊆
       cechLocalizationRestriction M f (hTS.trans hSU) x :=
   restr_restr _ _ _ x
 
+/-- The restriction maps are compatible with the canonical maps from `M`. -/
+@[simp]
+theorem cechLocalizationRestriction_comp_mkLinearMap {T S : Finset ι} (h : T ⊆ S) :
+    cechLocalizationRestriction M f h ∘ₗ mkLinearMap _ M = mkLinearMap _ M :=
+  restr_comp_mkLinearMap _
+
+/-- The restriction `M_{f_T} → M_{f_S}` is the unique linear map extending the canonical map
+`M → M_{f_S}`. -/
+theorem eq_cechLocalizationRestriction {T S : Finset ι} (h : T ⊆ S)
+    {g : LocalizedModule (.powers (∏ i ∈ T, f i)) M →ₗ[R]
+      LocalizedModule (.powers (∏ i ∈ S, f i)) M}
+    (hg : g ∘ₗ mkLinearMap _ M = mkLinearMap _ M) : g = cechLocalizationRestriction M f h :=
+  restr_ext ((IsLocalizedModule.Away.isUnit_algebraMap (mkLinearMap _ M) _).algebraMap_of_dvd
+    (Finset.prod_dvd_prod_of_subset T S f h))
+    (hg.trans (cechLocalizationRestriction_comp_mkLinearMap M f h).symm)
+
+/-- Restriction along `S ⊆ S` is the identity. -/
+@[simp]
+theorem cechLocalizationRestriction_self {S : Finset ι} (h : S ⊆ S)
+    (x : LocalizedModule (.powers (∏ i ∈ S, f i)) M) :
+    cechLocalizationRestriction M f h x = x :=
+  restr_self _ x
+
 /-- The augmentation `M → ∏_{|S| = 1} M_{f_S}`, sending `m` to `m / 1` in every factor. -/
 noncomputable def cechLocalizationAugmentation : M →ₗ[R] cechLocalizationTerm M f 0 :=
   LinearMap.pi fun _ ↦ mkLinearMap _ M
