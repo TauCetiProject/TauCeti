@@ -175,11 +175,6 @@ theorem quantile_map_abs (μ : Measure ℝ) [IsProbabilityMeasure μ] [μ.IsNegI
 
 variable {t x : ℝ}
 
-/-- Below the level `1` some point has cumulative mass at least the level, because the cumulative
-distribution function tends to `1` at `+∞`. -/
-theorem nonempty_setOf_le_cdf (μ : Measure ℝ) (ht : t < 1) : {x : ℝ | t ≤ cdf μ x}.Nonempty :=
-  ((tendsto_cdf_atTop μ).eventually (eventually_gt_nhds ht)).exists.imp fun _ h ↦ h.le
-
 /-- Above the level `0` the points whose cumulative mass reaches the level are bounded below,
 because the cumulative distribution function tends to `0` at `-∞`. -/
 theorem bddBelow_setOf_le_cdf (μ : Measure ℝ) (ht : 0 < t) : BddBelow {x : ℝ | t ≤ cdf μ x} := by

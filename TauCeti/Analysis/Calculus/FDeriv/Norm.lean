@@ -10,9 +10,6 @@ public import Mathlib.Analysis.InnerProductSpace.Calculus
 /-!
 # Derivatives and norms
 
-A uniform upper bound on the norm of a real-valued function's Fréchet derivative is
-nonnegative. This supplies the sign condition used in estimates involving that bound.
-
 A map whose norm is locally constant has derivative orthogonal to its value. In particular, the
 derivative of a map into a sphere is tangent to the sphere.
 -/
@@ -25,22 +22,20 @@ open scoped Topology RealInnerProductSpace
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-
-/-- A uniform upper bound on the derivative norm is nonnegative. -/
-theorem nonneg_of_forall_norm_fderiv_le {γ : E → ℝ} {L : ℝ}
-    (hL : ∀ y, ‖fderiv ℝ γ y‖ ≤ L) : 0 ≤ L :=
-  (norm_nonneg _).trans (hL 0)
-
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
 
-/-- A differentiable map whose norm is constant near `w` has derivative at `w` orthogonal to its
-value. In particular, the derivative of a map into a sphere is tangent to the sphere. -/
+/-- A map whose norm is constant near `w` has Fréchet derivative at `w` orthogonal to its
+value. In particular, the derivative of a map into a sphere is tangent to the sphere.
+At nondifferentiable points, the Fréchet derivative is zero by definition. -/
 theorem inner_fderiv_eq_zero_of_eventually_norm_eq {ψ : E → F} {w : E}
-    (hψ : ∀ᶠ y in 𝓝 w, ‖ψ y‖ = ‖ψ w‖) (hd : DifferentiableAt ℝ ψ w) (u : E) :
+    (hψ : ∀ᶠ y in 𝓝 w, ‖ψ y‖ = ‖ψ w‖) (u : E) :
     ⟪ψ w, fderiv ℝ ψ w u⟫ = 0 := by
-  have h₁ := HasFDerivAt.norm_sq hd.hasFDerivAt
-  have h₂ : HasFDerivAt (fun y => ‖ψ y‖ ^ 2) (0 : E →L[ℝ] ℝ) w :=
-    (hasFDerivAt_const (‖ψ w‖ ^ 2) w).congr_of_eventuallyEq (hψ.mono fun y hy => by simp [hy])
-  simpa using congrArg (fun L : E →L[ℝ] ℝ => L u) (h₁.unique h₂)
+  by_cases hd : DifferentiableAt ℝ ψ w
+  · have h₁ := HasFDerivAt.norm_sq hd.hasFDerivAt
+    have h₂ : HasFDerivAt (fun y => ‖ψ y‖ ^ 2) (0 : E →L[ℝ] ℝ) w :=
+      (hasFDerivAt_const (‖ψ w‖ ^ 2) w).congr_of_eventuallyEq
+        (hψ.mono fun y hy => by simp [hy])
+    simpa using congrArg (fun L : E →L[ℝ] ℝ => L u) (h₁.unique h₂)
+  · simp [fderiv_zero_of_not_differentiableAt hd]
 
 end TauCeti

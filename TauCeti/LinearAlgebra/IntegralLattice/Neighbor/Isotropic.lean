@@ -374,8 +374,7 @@ theorem isNeighbor_neighbor {w : L} (hvw : IsCoprime (L.integralForm v w) p) :
     rw [L.carrier_inf_neighbor_carrier hv hvw]
     exact L.relIndex_neighborKernel_neighbor hv hvw
 
-omit [NeZero p] hv
-
+omit [NeZero p] hv in
 /-- **Lifting isotropic vectors from `p` to `p²`.** For odd `p`, if `p` divides the norm of `v`
 and `w` pairs with `v` coprimely to `p`, then some `v + p t w` has norm divisible by `p²`. -/
 theorem exists_dvd_integralNorm_add_smul (hp : Odd p) {v w : L}
@@ -389,6 +388,7 @@ theorem exists_dvd_integralNorm_add_smul (hp : Odd p) {v w : L}
   rw [integralNorm_add, integralNorm_zsmul, map_smul, smul_eq_mul, ha]
   linear_combination -((p : ℤ) * a) * hsr
 
+omit [NeZero p] hv in
 /-- **Kneser neighbors from isotropic vectors.** For odd `p`, if `p` divides the norm of `v` and
 some lattice vector `w` pairs with `v` coprimely to `p`, then `L` has a `p`-neighbor `M` meeting
 `L` in the vectors whose pairing with `v` is divisible by `p`. If `L` is even, so is `M`. -/
@@ -409,6 +409,7 @@ theorem exists_isNeighbor_of_dvd_integralNorm (hp : Odd p) {v w : L}
       ((L.even_integralNorm_iff v').mpr (hL.exists_norm_eq_two_mul v'))
     exact (Odd.isCoprime_two (by exact_mod_cast hp.natCast.pow)).symm.mul_dvd h2 ht
 
+omit [NeZero p] hv in
 /-- **Kneser neighbors at a prime not dividing the discriminant.** Let `p` be an odd prime not
 dividing the discriminant of a nondegenerate lattice `L`, and let `v ∈ L ∖ p L` be isotropic
 modulo `p`. Then `L` has a `p`-neighbor `M` meeting `L` in the vectors whose pairing with `v` is

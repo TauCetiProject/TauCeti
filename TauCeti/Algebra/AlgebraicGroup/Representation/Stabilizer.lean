@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Tangent
-public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction
+public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Differential
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Antipode
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Comul

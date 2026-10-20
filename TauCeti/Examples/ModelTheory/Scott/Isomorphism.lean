@@ -30,7 +30,7 @@ example :
     SentenceInf.Realize (scottSentence (L := Language.graph) (Fin 2)) Bool := by
   let : Language.graph.Structure (Fin 2) := { RelMap | .adj => fun x => x 0 ≠ x 1 }
   let : Language.graph.Structure Bool := { RelMap | .adj => fun x => x 0 ≠ x 1 }
-  apply (realize_scottSentence_iff (Fin 2)).mpr
+  apply (realize_scottSentence_iff (Fin 2) Bool).mpr
   refine ⟨{ toEquiv := finTwoEquiv, map_rel' := ?_ }⟩
   intro n r x
   cases r
@@ -67,7 +67,7 @@ variable [Language.empty.Structure (Fin 2)] [Language.empty.Structure Bool]
 -- Any countable internally stabilizing level works, not only the canonical choice.
 example : SentenceInf.Realize (scottSentenceAt (L := Language.empty) (Fin 2) 0) Bool := by
   apply (realize_scottSentenceAt_iff (Fin 2) (Ordinal.omega_pos 1)
-    (selfStabilizesCompletely_empty (Fin 2))).mpr
+    (selfStabilizesCompletely_empty (Fin 2)) Bool).mpr
   exact ⟨{ toEquiv := finTwoEquiv }⟩
 
 -- The theorem does not silently assume nonempty structures.

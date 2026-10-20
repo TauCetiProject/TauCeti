@@ -35,6 +35,11 @@ isomorphisms between left adjoints, such as the composition isomorphism of pullb
 shown to respect their oplax monoidal structures from the corresponding facts about the right
 adjoints.
 
+Along a monoidal adjunction `F ⊣ G`, transposition carries the oplax unit and tensor comparisons
+of `F` to the lax ones of `G` (`CategoryTheory.Adjunction.homEquiv_η_comp` and
+`CategoryTheory.Adjunction.homEquiv_δ_comp_tensorHom_comp`). These are the equations by which
+transposition preserves morphisms of monoid objects.
+
 **Doctrinal adjunction** for tensorators: if `F ⊣ G` is an adjunction between lax monoidal
 functors whose unit and counit are compatible with the tensorators, then the tensorator of the
 left adjoint `F` is invertible (`CategoryTheory.Adjunction.isIso_μ_of_unit_of_counit`), and its
@@ -238,6 +243,29 @@ theorem app_tensor_comp_δ_of_conjugateEquiv (h : conjugateEquiv adj₁ adj₂ �
   simp only [homEquiv_unit, Functor.map_comp, reassoc_of% hσ, ← τ.naturality,
     unit_app_tensor_comp_map_δ_assoc, NatTrans.IsMonoidal.tensor, ← μ_natural,
     tensorHom_comp_tensorHom_assoc, hσ]
+
+section Transpose
+
+variable {F : C ⥤ D} {G : D ⥤ C} (adj : F ⊣ G) [F.OplaxMonoidal] [G.LaxMonoidal]
+  [adj.IsMonoidal]
+
+/-- Along a monoidal adjunction, the transpose of a morphism out of `F (𝟙_ C)` that factors
+through the oplax unit `η F` factors through the lax unit `ε G`. -/
+theorem homEquiv_η_comp {N : D} (u : 𝟙_ D ⟶ N) :
+    adj.homEquiv _ _ (η F ≫ u) = ε G ≫ G.map u := by
+  simp [homEquiv_unit, unit_app_unit_comp_map_η_assoc]
+
+/-- Along a monoidal adjunction, the transpose of a morphism out of `F (M₁ ⊗ M₂)` that factors
+through the oplax tensor comparison `δ F` and a tensor product of morphisms is the tensor product
+of the transposes followed by the lax tensor comparison `μ G`. -/
+theorem homEquiv_δ_comp_tensorHom_comp {M₁ M₂ : C} {N₁ N₂ N : D} (φ₁ : F.obj M₁ ⟶ N₁)
+    (φ₂ : F.obj M₂ ⟶ N₂) (n : N₁ ⊗ N₂ ⟶ N) :
+    adj.homEquiv _ _ (δ F M₁ M₂ ≫ (φ₁ ⊗ₘ φ₂) ≫ n) =
+      (adj.homEquiv _ _ φ₁ ⊗ₘ adj.homEquiv _ _ φ₂) ≫ μ G N₁ N₂ ≫ G.map n := by
+  simp [homEquiv_unit, unit_app_tensor_comp_map_δ_assoc, ← μ_natural_assoc,
+    tensorHom_comp_tensorHom_assoc]
+
+end Transpose
 
 section Doctrinal
 

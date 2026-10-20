@@ -336,7 +336,7 @@ theorem proPFrattini_le_ker_of_exponent_dvd (hp : p.Prime) {A : Type*} [CommGrou
     proPFrattini p G ≤ f.ker := by
   rw [proPFrattini_eq_topologicalClosure hp]
   refine Subgroup.topologicalClosure_minimal _
-    (sup_le ((Subgroup.closure_le _).mpr ?_) (Abelianization.commutator_subset_ker f)) hf
+    (sup_le ((Subgroup.closure_le _).mpr ?_) (Abelianization.commutator_le_ker f)) hf
   rintro _ ⟨g, rfl⟩
   rw [SetLike.mem_coe, MonoidHom.mem_ker, map_pow]
   exact Monoid.exponent_dvd_iff_forall_pow_eq_one.mp hA _
