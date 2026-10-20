@@ -159,6 +159,17 @@ noncomputable def schemeHopfIdealLocus : (scheme R H k).IdealSheafData where
       ((scheme R H k).basicOpen_le f), hopfIdealLocus_map]
     rfl
 
+/-- Transporting `hopfIdealLocus` to global sections of `Spec` commutes with base change along an
+`R`-algebra map `φ : B → A`. -/
+private theorem map_appTop_map_hopfIdealLocus {A B : Type u} [CommRing A] [Algebra R A]
+    [CommRing B] [Algebra R B] (φ : B →ₐ[R] A) (P : G(k, B ⊗[R] H; B)) :
+    (P.hopfIdealLocus.map (Scheme.ΓSpecIso (.of B)).inv.hom).map
+        (Spec.map (CommRingCat.ofHom (φ : B →+* A))).appTop.hom =
+      (map φ P).hopfIdealLocus.map (Scheme.ΓSpecIso (.of A)).inv.hom := by
+  rw [Ideal.map_map, hopfIdealLocus_map, ← Ideal.map_coe φ, Ideal.map_map,
+    ← CommRingCat.hom_comp, ← Scheme.ΓSpecIso_inv_naturality]
+  rfl
+
 /-- The inverse image of the closed subscheme of Hopf ideals along a morphism landing in an affine
 open `U`, induced by an `R`-algebra map `φ : Γ(G(k, H), U) → A`. -/
 private theorem comap_specMap_comp_fromSpec {A : Type u} [CommRing A] [Algebra R A]
@@ -176,10 +187,7 @@ private theorem comap_specMap_comp_fromSpec {A : Type u} [CommRing A] [Algebra R
           (Scheme.ΓSpecIso Γ(scheme R H k, U)).inv.hom).map
             (Spec.map (CommRingCat.ofHom (φ : Γ(scheme R H k, U) →+* A))).appTop.hom) :=
         comap_ofIdealTop _ _
-    _ = _ := by
-      rw [Ideal.map_map, hopfIdealLocus_map, ← Ideal.map_coe φ, Ideal.map_map,
-        ← CommRingCat.hom_comp, ← Scheme.ΓSpecIso_inv_naturality]
-      rfl
+    _ = _ := congrArg ofIdealTop (map_appTop_map_hopfIdealLocus φ _)
 
 /-- The inverse image of the closed subscheme of Hopf ideals along the morphism classifying a
 point, when that morphism lands in an affine open. -/
@@ -242,10 +250,8 @@ theorem comap_toSchemeHom_schemeHopfIdealLocus {A : Type u} [CommRing A] [Algebr
   change (schemeHopfIdealLocus R H k).comap
       (Spec.map (CommRingCat.ofHom (algebraMap A (Localization.Away a.1))) ≫ toSchemeHom N) =
     (ofIdealTop _).comap (Spec.map (CommRingCat.ofHom (algebraMap A _)))
-  rw [hι, comap_toSchemeHom_of_range_subset _ hU (hι ▸ hNU), comap_ofIdealTop,
-    hopfIdealLocus_map, Ideal.map_map, ← Ideal.map_coe ι, Ideal.map_map,
-    ← CommRingCat.hom_comp, ← Scheme.ΓSpecIso_inv_naturality]
-  rfl
+  rw [hι, comap_toSchemeHom_of_range_subset _ hU (hι ▸ hNU), comap_ofIdealTop]
+  exact congrArg ofIdealTop (map_appTop_map_hopfIdealLocus ι N).symm
 
 /-- **The universal property of the closed subscheme of Hopf ideals.** For an `R`-algebra `A`, the
 morphism `Spec A ⟶ G(k, H)` classifying a point `N` of `G(k, A ⊗[R] H; A)` factors through the
