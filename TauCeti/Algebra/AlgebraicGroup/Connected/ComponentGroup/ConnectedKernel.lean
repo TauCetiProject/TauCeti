@@ -55,13 +55,7 @@ theorem mapComponentGroup_injective_of_connected_kernel (f : Q ⟶ G)
   obtain ⟨g, rfl⟩ := rationalComponentMap_surjective G C
   rw [mapComponentGroup_rationalComponentMap] at hC
   let h := BialgHom.mapDomain (A := k) f.hom.hom g
-  let zQ : PrimeSpectrum Q := Bialgebra.augmentationPoint k Q
   let zG : PrimeSpectrum G := Bialgebra.augmentationPoint k G
-  have hmem : rationalKernelPoint Q h ∈
-      connectedComponent zQ := by
-    apply ConnectedComponents.coe_eq_coe'.mp
-    exact (rationalComponentMap_apply Q h).symm.trans
-      (hC.trans (rationalKernelPoint_one_component Q).symm)
   -- Descend the source component idempotent and detect it on the target identity component.
   -- This follows the component-idempotent argument in
   -- TauCeti.Algebra.AlgebraicGroup.Connected.Extension, using
@@ -73,15 +67,9 @@ theorem mapComponentGroup_injective_of_connected_kernel (f : Q ⟶ G)
     simp only [AlgHom.comp_apply, BialgHom.coe_toAlgHom] at he
     rw [ha, AlgHom.map_connectedComponentIdempotent_kernelPoint_eq_one] at he
     exact he.symm
-  have hopen : IsClopen (PrimeSpectrum.basicOpen a : Set (PrimeSpectrum Q)) :=
-    PrimeSpectrum.isClopen_iff.mpr ⟨a, hidem, rfl⟩
-  have hidentity : (Bialgebra.augmentationPoint k Q : PrimeSpectrum Q) ∈
-      PrimeSpectrum.basicOpen a :=
-    (AlgHom.kernelPoint_mem_basicOpen_iff (Bialgebra.counitAlgHom k Q) a).mpr
-      (hε.trans_ne one_ne_zero)
   have hnonzero : h.ofConv a ≠ 0 :=
-    (AlgHom.kernelPoint_mem_basicOpen_iff h.ofConv a).mp
-      (hopen.connectedComponent_subset hidentity hmem)
+    ofConv_ne_zero_of_isIdempotentElem_of_rationalComponentMap_eq_one Q hidem
+      (hε.trans_ne one_ne_zero) h hC
   -- Pull back to the source to detect the kernel of the component homomorphism.
   have hsource : rationalKernelPoint G g ∈
       connectedComponent zG := by

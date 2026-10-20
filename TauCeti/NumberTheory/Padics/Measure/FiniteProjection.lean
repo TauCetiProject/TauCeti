@@ -16,7 +16,7 @@ import Mathlib.Topology.Separation.DisjointCover
 An abstract measure can be pushed to a finite discrete quotient by recording its values on the
 fibres.  This file constructs that linear projection, proves its functoriality under refinement,
 identifies measures on a finite discrete space with finitely supported coefficient functions, and
-proves that all finite projections together determine a measure on a profinite space.
+proves that binary projections already determine a measure on a profinite space.
 
 The construction follows the finite-coefficient description in Rodrigues Jacinto and Williams,
 *An introduction to p-adic L-functions*, Sections 3.2--3.3.
@@ -227,11 +227,22 @@ section Profinite
 
 variable [CompactSpace X] [T2Space X] [TotallyDisconnectedSpace X] [T2Space R]
 
-/-- A measure on a profinite space is determined by its projections to all finite discrete
+/-- A measure on a profinite space is determined by its projections to binary discrete
 quotients. -/
 theorem finiteProjection_ext (μ ν : D(X, R))
-    (h : ∀ (n : ℕ) (q : C(X, Fin n)), finiteProjection q μ = finiteProjection q ν) :
+    (h : ∀ q : C(X, Fin 2), finiteProjection q μ = finiteProjection q ν) :
     μ = ν := by
+  -- A binary quotient detects each fibre of an arbitrary finite quotient.
+  have hfinite (n : ℕ) (q : C(X, Fin n)) : finiteProjection q μ = finiteProjection q ν := by
+    classical
+    ext a
+    let t : C(Fin n, Fin 2) := ContinuousMap.equivFnOfDiscrete.symm
+      (fun b ↦ if b = a then 0 else 1)
+    have ha : fiberIndicator (R := R) (t.comp q) 0 = fiberIndicator q a := by
+      ext x
+      simp [t]
+    simpa only [finiteProjection_apply, ha] using
+      congrArg (fun c : Fin 2 →₀ R ↦ c 0) (h (t.comp q))
   -- The density argument only needs the canonical uniformity of the additive group of `R`.
   let := IsTopologicalAddGroup.rightUniformSpace R
   let S : Set C(X, R) := {f | ∃ (n : ℕ) (q : C(X, Fin n)) (g : Fin n → R),
@@ -250,7 +261,7 @@ theorem finiteProjection_ext (μ ν : D(X, R))
     exact ⟨f', ⟨n, q', g, rfl⟩, fun x ↦ hfg x⟩
   have hEqOn : Set.EqOn μ ν S := by
     rintro _ ⟨n, q, g, rfl⟩
-    rw [apply_comp_eq_sum_finiteProjection, apply_comp_eq_sum_finiteProjection, h n q]
+    rw [apply_comp_eq_sum_finiteProjection, apply_comp_eq_sum_finiteProjection, hfinite n q]
   apply AbstractMeasure.ext
   intro f
   exact congrFun (Continuous.ext_on hS μ.continuous ν.continuous hEqOn) f

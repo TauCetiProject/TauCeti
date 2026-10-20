@@ -13,12 +13,11 @@ public import TauCeti.RepresentationTheory.Quiver.Preprojective.Koszul.NonDynkin
 
 Let `G` be a connected finite simple graph which is not a Dynkin diagram, `o` any orientation of
 `G` and `H(t)` the matrix Hilbert series of the preprojective algebra `Π_k(Q)` of the oriented
-quiver over a field `k`, indexed by the vertices of `G`. By the theorem of Etingof and Eu
-(`TauCeti.forall_preprojectiveMk_ofArrow_reverse_mul_eq_zero_iff_of_not_exists_dynkinType_iso`)
-every vertex Koszul complex of `Π_k(Q)` is a projective resolution, and `G` has no isolated vertex
-(`SimpleGraph.exists_adj_of_not_exists_dynkinType_iso`). So the inverse quantum Cartan comparison of
-`TauCeti.zigzagGradedCartanMatrix_map_aeval_neg_X_mul_preprojectiveHilbertSeries_eq_one_iff`
-holds unconditionally:
+quiver over a field `k`, indexed by the vertices of `G`. The oriented quiver carries a positive
+weight which is superadditive on its underlying multigraph
+(`TauCeti.exists_pos_two_mul_le_sum_orientedQuiver_of_not_exists_dynkinType_iso`, in
+`Koszul/NonDynkin.lean`), so by the theorem of Etingof and Eu the weighted inverse quantum Cartan
+comparison of `HilbertSeries/ZigzagCartan.lean` holds unconditionally:
 
 ```text
 H_{Π(Q)}(t) = C_G(-t)⁻¹,
@@ -72,11 +71,12 @@ theorem
 zigzagGradedCartanMatrix_mul_preprojectiveHilbertSeries_eq_one_of_not_exists_dynkinType_iso :
     (zigzagGradedCartanMatrix k G).map (Polynomial.aeval (-X : ℤ⟦X⟧)) *
         (preprojectiveHilbertSeries k (OrientedQuiver G o)).submatrix
-          (OrientedQuiver.vertex G o) (OrientedQuiver.vertex G o) = 1 :=
-  (zigzagGradedCartanMatrix_map_aeval_neg_X_mul_preprojectiveHilbertSeries_eq_one_iff k o
-    (SimpleGraph.exists_adj_of_not_exists_dynkinType_iso hG hD)).2 fun v _ hy =>
-      (forall_preprojectiveMk_ofArrow_reverse_mul_eq_zero_iff_of_not_exists_dynkinType_iso
-        k hG hD o v hy).1
+          (OrientedQuiver.vertex G o) (OrientedQuiver.vertex G o) = 1 := by
+  obtain ⟨δ, hδ, hδle⟩ :=
+    exists_pos_two_mul_le_sum_orientedQuiver_of_not_exists_dynkinType_iso hG hD o
+  exact
+    zigzagGradedCartanMatrix_map_aeval_neg_X_mul_preprojectiveHilbertSeries_eq_one_of_two_mul_le_sum
+      k o hδ hδle
 
 /-- **The Hilbert series of the preprojective algebra of a connected non-Dynkin graph is the
 inverse zigzag Cartan matrix at `q = -X`.** For every orientation `o` of a connected finite simple
@@ -88,9 +88,11 @@ theorem
 preprojectiveHilbertSeries_eq_inv_zigzagGradedCartanMatrix_of_not_exists_dynkinType_iso :
     (preprojectiveHilbertSeries k (OrientedQuiver G o)).submatrix
         (OrientedQuiver.vertex G o) (OrientedQuiver.vertex G o) =
-      ((zigzagGradedCartanMatrix k G).map (Polynomial.aeval (-X : ℤ⟦X⟧)))⁻¹ :=
-  (Matrix.inv_eq_right_inv
-    (zigzagGradedCartanMatrix_mul_preprojectiveHilbertSeries_eq_one_of_not_exists_dynkinType_iso
-      k hG hD o)).symm
+      ((zigzagGradedCartanMatrix k G).map (Polynomial.aeval (-X : ℤ⟦X⟧)))⁻¹ := by
+  obtain ⟨δ, hδ, hδle⟩ :=
+    exists_pos_two_mul_le_sum_orientedQuiver_of_not_exists_dynkinType_iso hG hD o
+  exact
+    preprojectiveHilbertSeries_eq_inv_zigzagGradedCartanMatrix_map_aeval_neg_X_of_two_mul_le_sum
+      k o hδ hδle
 
 end TauCeti

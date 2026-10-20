@@ -79,7 +79,6 @@ theorem proPFrattini_quotient_pLowerCentralStep_eq_bot (hp : p.Prime) (R : Subgr
     (hR : IsClosed (R : Set F)) :
     proPFrattini p (R ⧸ (pLowerCentralStep p R).subgroupOf R) = ⊥ := by
   have : CompactSpace R := isCompact_iff_compactSpace.mp hR.isCompact
-  have hK := isClosed_pLowerCentralStep_subgroupOf (p := p) R
   exact (proPFrattini_eq_bot_iff hp).mpr
     ⟨inferInstance, exponent_quotient_pLowerCentralStep_subgroupOf_dvd R⟩
 

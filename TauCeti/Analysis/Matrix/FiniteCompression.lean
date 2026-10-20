@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Matrix.CharPowerSeries.Basic
-public import TauCeti.RingTheory.PowerSeries.GaussNorm
+public import TauCeti.Analysis.Matrix.CharPowerSeries.GaussContinuity
 public import Mathlib.RingTheory.PowerSeries.PiTopology
 
 /-!
@@ -137,27 +136,6 @@ section Ultrametric
 variable [NormedCommRing R] [NormOneClass R] [IsUltrametricDist R]
   {A : Matrix ι ι R} {r : ι → ℝ}
 
-/-- The uniform coefficient tail bound for a matrix also bounds every finite compression,
-with the same constants and exceptional coordinate set. -/
-theorem norm_coeff_charpolyRev_finiteCompression_mul_pow_le
-    (hA : ∀ i j, ‖A i j‖ ≤ r i) {ρ q B : ℝ} (hρ : 0 < ρ)
-    (hq₀ : 0 ≤ q) (hq₁ : q ≤ 1) (hB : 1 ≤ B) (T : Finset ι)
-    (hT : ∀ i ∉ T, ρ * r i ≤ q) (hrB : ∀ i, ρ * r i ≤ B)
-    (S : Finset ι) (n : ℕ) :
-    ‖(A.submatrix (Subtype.val : S → ι) Subtype.val).charpolyRev.coeff n‖ * ρ ^ n ≤
-      B ^ T.card * q ^ (n - T.card) := by
-  have hcard : (T.subtype (· ∈ S)).card ≤ T.card := by
-    rw [card_subtype]
-    exact card_filter_le _ _
-  have h := Matrix.norm_charCoeff_mul_pow_le
-    (A := A.submatrix (Subtype.val : S → ι) Subtype.val) (fun i j ↦ hA i j)
-    hρ hq₀ hq₁ hB (T.subtype (· ∈ S))
-    (fun i hi ↦ hT i (by simpa using hi)) (fun i ↦ hrB i) n
-  rw [Matrix.charCoeff_eq_coeff_charpolyRev] at h
-  refine h.trans (mul_le_mul ?_ ?_ (pow_nonneg hq₀ _) (pow_nonneg (by linarith) _))
-  · exact pow_le_pow_right₀ hB hcard
-  · exact pow_le_pow_of_le_one hq₀ hq₁ (by omega)
-
 /-- Finite coordinate determinants converge in every positive-radius Gauss norm to the
 principal-minor series of a matrix whose row bounds tend to zero. The finite sets are ordered
 by inclusion, so this limit does not depend on an enumeration of the index type. -/
@@ -167,33 +145,19 @@ theorem tendsto_gaussNorm_charpolyRev_finiteCompression_sub_charPowerSeries [Com
     Tendsto (fun S : Finset ι ↦
       (((A.submatrix (Subtype.val : S → ι) Subtype.val).charpolyRev : PowerSeries R) -
         A.charPowerSeries).gaussNorm norm ρ) atTop (𝓝 0) := by
-  -- Choose one geometric tail controlling every compression and the limit series.
-  obtain ⟨T, B, hB, hT, hrB, hlim⟩ :=
-    exists_geometric_bound_of_tendsto_cofinite hr hρ.le
-      (by norm_num : (0 : ℝ) < 1 / 2) (by norm_num)
-  let b := fun n : ℕ ↦ B ^ T.card * (1 / 2 : ℝ) ^ (n - T.card)
-  have hb (n : ℕ) : ‖A.charCoeff n‖ * ρ ^ n ≤ b n :=
-    Matrix.norm_charCoeff_mul_pow_le hA hρ (by norm_num) (by norm_num) hB T hT hrB n
-  have hbS (S : Finset ι) (n : ℕ) :
-      ‖(A.submatrix (Subtype.val : S → ι) Subtype.val).charpolyRev.coeff n‖ * ρ ^ n ≤ b n :=
-    norm_coeff_charpolyRev_finiteCompression_mul_pow_le hA hρ
-      (by norm_num) (by norm_num) hB T hT hrB S n
-  let F := fun S : Finset ι ↦
-    ((A.submatrix (Subtype.val : S → ι) Subtype.val).charpolyRev : PowerSeries R) -
-      A.charPowerSeries
-  have hbound (S : Finset ι) (n : ℕ) : ‖(F S).coeff n‖ * ρ ^ n ≤ 2 * b n := by
-    simp only [F, map_sub, Polynomial.coeff_coe, Matrix.coeff_charPowerSeries]
-    calc ‖(A.submatrix (Subtype.val : S → ι) Subtype.val).charpolyRev.coeff n -
-          A.charCoeff n‖ * ρ ^ n
-        ≤ (‖(A.submatrix (Subtype.val : S → ι) Subtype.val).charpolyRev.coeff n‖ +
-          ‖A.charCoeff n‖) * ρ ^ n :=
-            mul_le_mul_of_nonneg_right (norm_sub_le _ _) (pow_nonneg hρ.le _)
-      _ ≤ 2 * b n := by nlinarith [hb n, hbS S n]
-  refine PowerSeries.tendsto_gaussNorm_zero_of_coeff_bound (fun n ↦ ?_) hbound
-    (by simpa [b] using hlim.const_mul 2)
-  simpa [F] using
-    (tendsto_coeff_charpolyRev_finiteCompression n
-      (Matrix.summable_principalMinor hA hr n)).sub_const (A.charCoeff n)
+  let B : Finset ι → Matrix ι ι R := fun S ↦ Matrix.of fun i j ↦ if i ∈ S then A i j else 0
+  have hB (S : Finset ι) (i j : ι) : ‖B S i j‖ ≤ r i := by
+    dsimp [B]
+    split_ifs
+    · exact hA i j
+    · simpa only [norm_zero] using (norm_nonneg (A i i)).trans (hA i i)
+  have hcoeff (n : ℕ) :
+      Tendsto (fun S ↦ (B S).charCoeff n) atTop (𝓝 (A.charCoeff n)) := by
+    simpa only [← Matrix.coeff_charPowerSeries, B, charPowerSeries_outputTruncation,
+      Polynomial.coeff_coe] using
+      tendsto_coeff_charpolyRev_finiteCompression n (Matrix.summable_principalMinor hA hr n)
+  simpa only [B, charPowerSeries_outputTruncation] using
+    tendsto_gaussNorm_charPowerSeries_sub_charPowerSeries_of_common_majorant hB hA hr hcoeff hρ
 
 end Ultrametric
 

@@ -233,9 +233,9 @@ theorem contMDiffOn_leviCivitaConnection {u : Set M} (hu : IsOpen u) (hm : n + 2
         (leviCivitaConnection I M σ y (chartLocalFrame (I := I) x j y)))
       fun l ↦ (heval l).contMDiffAt (hsopen.mem_nhds hy)).contMDiffWithinAt
   -- Testing the hom-bundle section on the chart-local frame gives smoothness at `x`.
-  have hhom := contMDiffOn_hom_of_localFrame (I := I) (n := n)
+  have hhom := contMDiffOn_hom_of_localFrame (I := I) (n := n) (u := s)
     (e := trivializationAt E (TangentSpace I) x) (e' := trivializationAt E (TangentSpace I) x)
-    (finBasis ℝ E) hsopen
+    (finBasis ℝ E)
     (by rw [TangentBundle.trivializationAt_baseSet, inter_self]; exact hsub)
     (A := fun y ↦ leviCivitaConnection I M σ y)
     (fun j ↦ by simpa only [← chartLocalFrame_def] using hdir j)

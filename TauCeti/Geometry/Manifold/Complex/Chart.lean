@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Conformal.LocalDegree
 import Mathlib.Analysis.Calculus.InverseFunctionTheorem.Analytic
 public import Mathlib.Analysis.Complex.CauchyIntegral
+import Mathlib.Analysis.Complex.RemovableSingularity
 public import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 public import Mathlib.Geometry.Manifold.IsManifold.Basic
@@ -27,9 +28,10 @@ such as the elementary symmetric atlas of its symmetric powers or the local mult
 holomorphic map.
 
 The same argument shows that a map between complex curves that is holomorphic near a point has an
-analytic representative in any charts of the maximal atlases at the point and its image. It follows
-that a holomorphic map between complex curves is `C^n` for every `n`. The complex inverse function
-theorem also shows that the inverse of a holomorphic homeomorphism of complex curves is
+analytic representative in any charts of the maximal atlases at the point and its image. (That such
+a map is `C^n` for every `n` holds on complex manifolds of any finite dimension; see
+`MDifferentiable.contMDiff` in `TauCeti.Geometry.Manifold.Complex.Analytic`.) The complex inverse
+function theorem also shows that the inverse of a holomorphic homeomorphism of complex curves is
 holomorphic, and that a homeomorphism from an open subset of a complex curve onto an open subset of
 `ℂ` is a chart of the maximal atlas as soon as its inverse is holomorphic.
 
@@ -41,9 +43,12 @@ holomorphic, and that a homeomorphism from an open subset of a complex curve ont
 * `TauCeti.analyticAt_chart_comp_comp_symm`: a map holomorphic near `x` has an analytic
   representative in any charts of the maximal atlases at `x` and `f x`;
   `TauCeti.analyticAt_chartAt_comp_comp_chartAt_symm` is the case of the preferred charts.
-* `MDifferentiable.contMDiff`: a holomorphic map between complex curves is `C^n` for every `n`.
 * `IsHomeomorph.mdifferentiable_symm`: the inverse of a holomorphic homeomorphism between complex
   curves is holomorphic.
+* `TauCeti.mdifferentiableAt_of_continuousAt_of_eventually_nhdsNE`: Riemann's removable singularity
+  theorem on complex curves.
+* `TauCeti.mdifferentiableAt_of_comp_of_injOn`: a continuous lift through a locally injective
+  holomorphic map of a holomorphic map is holomorphic.
 * `OpenPartialHomeomorph.mem_maximalAtlas_of_contMDiffOn_symm`: a homeomorphism from an open subset
   of a complex curve onto an open subset of `ℂ` whose inverse is holomorphic is a holomorphic chart.
 -/
@@ -129,17 +134,6 @@ end PreferredCharts
 
 /-! ### Regularity consequences -/
 
-/-- A holomorphic map between complex curves is `C^n` for every `n`, including `n = ω`. -/
-theorem _root_.MDifferentiable.contMDiff [IsManifold 𝓘(ℂ) 1 X]
-    [IsManifold 𝓘(ℂ) 1 Y] {n : ℕ∞ω} (hf : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f) :
-    ContMDiff 𝓘(ℂ) 𝓘(ℂ) n f := by
-  intro x
-  rw [contMDiffAt_iff]
-  refine ⟨hf.continuous.continuousAt, ?_⟩
-  simpa only [mfld_simps, contDiffWithinAt_univ, Function.comp_def] using
-    (analyticAt_chartAt_comp_comp_chartAt_symm (x := x)
-      (.of_forall fun y ↦ hf y)).contDiffAt (n := n)
-
 /-- The inverse of a holomorphic homeomorphism between complex curves is holomorphic. -/
 theorem _root_.IsHomeomorph.mdifferentiable_symm [IsManifold 𝓘(ℂ) 1 X]
     [IsManifold 𝓘(ℂ) 1 Y] (hhomeo : IsHomeomorph f)
@@ -198,6 +192,111 @@ theorem _root_.IsHomeomorph.mdifferentiable_symm [IsManifold 𝓘(ℂ) 1 X]
       (c.open_source.mem_nhds hcx)] with y' hy' hgy'
   simp only [Function.comp_apply, G, c'.left_inv hy']
   exact (c.left_inv hgy').symm
+
+/-! ### Local criteria for holomorphy -/
+
+section LocalCriteria
+
+/-- A map continuous at `x` whose representative in the preferred charts at `x` and `f x` is
+complex differentiable at the coordinate of `x` is holomorphic at `x`. -/
+private theorem mdifferentiableAt_of_differentiableAt_chartAt (hc : ContinuousAt f x)
+    (hF : DifferentiableAt ℂ (fun z ↦ chartAt ℂ (f x) (f ((chartAt ℂ x).symm z)))
+      (chartAt ℂ x x)) :
+    MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f x := by
+  rw [mdifferentiableAt_iff]
+  refine ⟨hc, ?_⟩
+  simpa [writtenInExtChartAt, Function.comp_def, mfld_simps] using hF.differentiableWithinAt
+
+variable [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y]
+
+/-- **Riemann's removable singularity theorem on complex curves.** A map between complex curves
+that is continuous at `x` and holomorphic at every point of a punctured neighbourhood of `x` is
+holomorphic at `x`. This is Mathlib's
+`Complex.differentiableOn_compl_singleton_and_continuousAt_iff` read in charts. -/
+theorem mdifferentiableAt_of_continuousAt_of_eventually_nhdsNE (hc : ContinuousAt f x)
+    (hf : ∀ᶠ y in 𝓝[≠] x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f y) :
+    MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f x := by
+  set c := chartAt ℂ x
+  set c' := chartAt ℂ (f x)
+  have hcx : x ∈ c.source := mem_chart_source ℂ x
+  have hc'fx : f x ∈ c'.source := mem_chart_source ℂ (f x)
+  have hcont : Tendsto (fun z ↦ f (c.symm z)) (𝓝 (c x)) (𝓝 (f x)) :=
+    hc.tendsto.comp (c.tendsto_symm hcx)
+  obtain ⟨V, hV, hfV⟩ := (eventually_nhdsWithin_iff.1 hf).exists_mem
+  -- The coordinates near `c x` at which the representative is defined, and at which `f` is
+  -- holomorphic unless they are `c x` itself.
+  set s := c.target ∩ c.symm ⁻¹' V ∩ (fun z ↦ f (c.symm z)) ⁻¹' c'.source
+  have hs : s ∈ 𝓝 (c x) :=
+    inter_mem (inter_mem (c.open_target.mem_nhds (c.map_source hcx))
+      ((c.tendsto_symm hcx).eventually hV)) (hcont.eventually (c'.open_source.mem_nhds hc'fx))
+  refine mdifferentiableAt_of_differentiableAt_chartAt hc
+    (?_ : DifferentiableAt ℂ (fun z ↦ c' (f (c.symm z))) (c x))
+  refine ((Complex.differentiableOn_compl_singleton_and_continuousAt_iff hs).mp
+    ⟨fun z hz ↦ ?_, ?_⟩).differentiableAt hs
+  · obtain ⟨⟨⟨hzt, hzV⟩, hzs⟩, hzx⟩ := hz
+    have hne : c.symm z ≠ x := fun h ↦ hzx (by rw [← h, c.right_inv hzt, mem_singleton_iff])
+    have hd := ((mdifferentiableWithinAt_iff_of_mem_maximalAtlas (chart_mem_maximalAtlas x)
+      (chart_mem_maximalAtlas (f x)) (c.map_target hzt) hzs).1
+        (mdifferentiableWithinAt_univ.2 (hfV _ hzV hne))).2
+    simp only [mfld_simps, Function.comp_def] at hd
+    have hu : DifferentiableWithinAt ℂ (fun z ↦ c' (f (c.symm z))) univ z := by
+      convert hd using 1
+      exact (c.right_inv hzt).symm
+    exact hu.mono (subset_univ _)
+  · exact (c'.continuousAt hc'fx).comp_of_eq
+      (hc.comp_of_eq (c.continuousAt_symm (c.map_source hcx)) (c.left_inv hcx))
+      (by rw [c.left_inv hcx])
+
+/-- **A continuous lift of a holomorphic map through a local biholomorphism is holomorphic.** If
+`g` is holomorphic near `f x` and injective on a neighbourhood of `f x`, `g ∘ f` is holomorphic near
+`x`, and `f` is continuous at `x`, then `f` is holomorphic at `x`.
+
+Compared with `ContMDiffWithinAt.of_comp_isLocalDiffeomorph`, the hypothesis on `g` is
+local injectivity rather than a local diffeomorphism: on complex curves the analytic inverse
+function theorem, Mathlib's `AnalyticAt.analyticAt_localInverse`, supplies the local inverse. -/
+theorem mdifferentiableAt_of_comp_of_injOn {Z : Type*} [TopologicalSpace Z] [ChartedSpace ℂ Z]
+    [IsManifold 𝓘(ℂ) 1 Z] {g : Y → Z} (hc : ContinuousAt f x)
+    (hg : ∀ᶠ y in 𝓝 (f x), MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) g y) (hinj : ∃ U ∈ 𝓝 (f x), InjOn g U)
+    (hgf : ∀ᶠ y in 𝓝 x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) (g ∘ f) y) :
+    MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f x := by
+  set c := chartAt ℂ x
+  set c' := chartAt ℂ (f x)
+  set c'' := chartAt ℂ (g (f x))
+  have hcx : x ∈ c.source := mem_chart_source ℂ x
+  have hc'fx : f x ∈ c'.source := mem_chart_source ℂ (f x)
+  have hcont : Tendsto (fun z ↦ f (c.symm z)) (𝓝 (c x)) (𝓝 (f x)) :=
+    hc.tendsto.comp (c.tendsto_symm hcx)
+  -- The representative `G` of `g` is analytic and injective near `c' (f x)`, so it has an analytic
+  -- local inverse `r` there.
+  set G : ℂ → ℂ := fun w ↦ c'' (g (c'.symm w))
+  have hG : AnalyticAt ℂ G (c' (f x)) := analyticAt_chartAt_comp_comp_chartAt_symm hg
+  have hG' : deriv G (c' (f x)) ≠ 0 := by
+    obtain ⟨U, hU, hinj⟩ := hinj
+    refine (exists_injOn_nhds_iff_deriv_ne_zero hG).1 ⟨c'.target ∩ c'.symm ⁻¹' U ∩
+      (fun w ↦ g (c'.symm w)) ⁻¹' c''.source, inter_mem (inter_mem
+        (c'.open_target.mem_nhds (c'.map_source hc'fx)) ((c'.tendsto_symm hc'fx).eventually hU))
+        ((hg.self_of_nhds.continuousAt.tendsto.comp (c'.tendsto_symm hc'fx)).eventually
+          (c''.open_source.mem_nhds (mem_chart_source ℂ (g (f x))))),
+      fun w₁ hw₁ w₂ hw₂ h ↦ ?_⟩
+    exact c'.symm.injOn hw₁.1.1 hw₂.1.1 (hinj hw₁.1.2 hw₂.1.2 (c''.injOn hw₁.2 hw₂.2 h))
+  set r := hG.hasStrictDerivAt.localInverse _ _ _ hG'
+  have hr : AnalyticAt ℂ r (G (c' (f x))) := hG.analyticAt_localInverse hG'
+  -- The representative of `g ∘ f` is analytic, and the representative of `f` is `r` after it.
+  have hK : AnalyticAt ℂ (fun z ↦ c'' ((g ∘ f) (c.symm z))) (c x) :=
+    analyticAt_chart_comp_comp_symm (chart_mem_maximalAtlas x)
+      (chart_mem_maximalAtlas (g (f x))) hcx (mem_chart_source ℂ (g (f x))) hgf
+  have hKx : c'' ((g ∘ f) (c.symm (c x))) = G (c' (f x)) := by
+    simp only [Function.comp_apply, G, c.left_inv hcx, c'.left_inv hc'fx]
+  refine mdifferentiableAt_of_differentiableAt_chartAt hc
+    (?_ : AnalyticAt ℂ (fun z ↦ c' (f (c.symm z))) (c x)).differentiableAt
+  refine (hr.comp_of_eq hK hKx).congr ?_
+  have hF : Tendsto (fun z ↦ c' (f (c.symm z))) (𝓝 (c x)) (𝓝 (c' (f x))) :=
+    (c'.continuousAt hc'fx).tendsto.comp hcont
+  filter_upwards [hF.eventually (hG.hasStrictDerivAt.eventually_left_inverse hG'),
+    hcont.eventually (c'.open_source.mem_nhds hc'fx)] with z hz hz'
+  simpa only [Function.comp_apply, G, c'.left_inv hz'] using hz
+
+end LocalCriteria
 
 /-! ### Charts with holomorphic inverse -/
 
