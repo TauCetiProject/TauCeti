@@ -126,11 +126,11 @@ private theorem exists_slope_le {P : R⸨X⸩[X]} (hP : P.Monic) (hX : P ≠ X ^
 /-- Let `P` be a monic polynomial of degree `m` over `R⸨X⸩`, without term of degree `m - 1` and
 other than `Y ^ m`. After the ramification `X ↦ X ^ q` and the rescaling
 `P(Y) ↦ X ^ (-v * m) * P(X ^ v * Y)` along the smallest slope of `P`, it becomes the image of a
-monic polynomial `Q` over `R⟦X⟧`, whose reduction modulo `X` still has no term of degree `m - 1`
-and is not `Y ^ m`. -/
+monic polynomial `Q` of degree `m` over `R⟦X⟧`, whose reduction modulo `X` still has no term of
+degree `m - 1` and is not `Y ^ m`. -/
 theorem exists_monic_map_eq_scaleRoots_map_expand {P : R⸨X⸩[X]} (hP : P.Monic)
     (hnext : P.nextCoeff = 0) (hX : P ≠ X ^ P.natDegree) :
-    ∃ (q : ℕ+) (v : ℤ) (Q : R⟦X⟧[X]), Q.Monic ∧
+    ∃ (q : ℕ+) (v : ℤ) (Q : R⟦X⟧[X]), Q.Monic ∧ Q.natDegree = P.natDegree ∧
       Q.map (ofPowerSeries ℤ R) = (P.map (expand R q)).scaleRoots (single (-v) 1) ∧
       (Q.map PowerSeries.constantCoeff).nextCoeff = 0 ∧
       Q.map PowerSeries.constantCoeff ≠ X ^ P.natDegree := by
@@ -164,9 +164,9 @@ theorem exists_monic_map_eq_scaleRoots_map_expand {P : R⸨X⸩[X]} (hP : P.Moni
     intro j
     rw [coeff_map, ← hQT, coeff_map, ← PowerSeries.coeff_zero_eq_constantCoeff_apply,
       ← coeff_coe_powerSeries, Nat.cast_zero]
-  have hgm : (Q.map PowerSeries.constantCoeff).natDegree = m := by
-    rw [hQ.natDegree_map, hQm, natDegree_scaleRoots, hP.natDegree_map]
-  refine ⟨q, v, Q, hQ, hQT, ?_, fun h ↦ ?_⟩
+  have hQdeg : Q.natDegree = m := by rw [hQm, natDegree_scaleRoots, hP.natDegree_map]
+  have hgm : (Q.map PowerSeries.constantCoeff).natDegree = m := by rw [hQ.natDegree_map, hQdeg]
+  refine ⟨q, v, Q, hQ, hQdeg, hQT, ?_, fun h ↦ ?_⟩
   · rw [nextCoeff_of_natDegree_pos (by omega), hgm, hred, hT,
       ← nextCoeff_of_natDegree_pos (by omega), hnext]
     simp
@@ -249,11 +249,9 @@ private theorem exists_isRoot_map_expand_of_monic (m : ℕ) :
   · exact ⟨1, 0, by simp [hX, hm.ne']⟩
   -- Ramify and rescale to a monic polynomial over `K⟦X⟧` whose reduction is not `Y ^ m`, and
   -- split off a monic factor `G` of smaller positive degree.
-  obtain ⟨q, v, Q, hQ, hQT, hQnext, hQX⟩ :=
+  obtain ⟨q, v, Q, hQ, hQm, hQT, hQnext, hQX⟩ :=
     exists_monic_map_eq_scaleRoots_map_expand hP₁ hnext (hP₁m ▸ hX)
-  have hQm : Q.natDegree = m := by
-    rw [← natDegree_map_eq_of_injective (ofPowerSeries_injective (Γ := ℤ) (R := K)), hQT,
-      natDegree_scaleRoots, hP₁.natDegree_map, hP₁m]
+  rw [hP₁m] at hQm
   obtain ⟨G, H, hG, hGH, hG0, hGm⟩ := exists_monic_mul_eq_of_nextCoeff_map_eq_zero hQ
     (hQm ▸ hm) hQnext (by rwa [hQm, ← hP₁m])
   -- By induction, `G` has a root after a ramification `X ↦ X ^ n`, hence so does the rescaled
