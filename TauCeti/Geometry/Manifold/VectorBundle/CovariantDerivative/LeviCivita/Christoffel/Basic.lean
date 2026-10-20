@@ -148,8 +148,13 @@ section JetRegularity
 
 -- Cache the canonical bilinear-space instances locally: synthesizing the next operator-space
 -- layer directly fails, whereas synthesis succeeds once its target's instances are fixed.
-local instance : NormedAddCommGroup (E →L[ℝ] E →L[ℝ] ℝ) := inferInstance
-local instance : NormedSpace ℝ (E →L[ℝ] E →L[ℝ] ℝ) := inferInstance
+/-- The canonical normed additive group on metric bilinear forms, cached for jet regularity. -/
+local instance christoffelBilinearNormedAddCommGroup :
+    NormedAddCommGroup (E →L[ℝ] E →L[ℝ] ℝ) := inferInstance
+
+/-- The canonical real normed space on metric bilinear forms, cached for jet regularity. -/
+local instance christoffelBilinearNormedSpace :
+    NormedSpace ℝ (E →L[ℝ] E →L[ℝ] ℝ) := inferInstance
 
 /-- The Christoffel formula depends smoothly on the metric value and its first derivative
 wherever the musical map is invertible. -/
