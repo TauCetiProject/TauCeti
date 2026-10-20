@@ -226,41 +226,12 @@ cohomology of the Hochschild cochain complex. For `M = R` this is the Hochschild
 abbrev hochschildCohomology (n : ℕ) : ModuleCat R :=
   (hochschildCochainComplex R A M).homology n
 
-/-- A Hochschild cocycle, viewed as a cycle of the Hochschild cochain complex. -/
-private def toCycles (n : ℕ) :
-    ModuleCat.of R (hochschildCocycles R A M n) ⟶ (hochschildCochainComplex R A M).cycles n :=
-  (hochschildCochainComplex R A M).liftCycles
-    (ModuleCat.ofHom (hochschildCocycles R A M n).subtype ≫
-      (hochschildCochainComplexXIso R A M n).inv)
-    (n + 1) (by simp) (by
-      rw [← cancel_mono (hochschildCochainComplexXIso R A M (n + 1)).hom, Category.assoc,
-        Category.assoc, hochschildCochainComplex_d, Iso.inv_hom_id_assoc, Limits.zero_comp]
-      exact ModuleCat.hom_ext (LinearMap.ext fun φ ↦ φ.2))
-
-private theorem iCycles_toCycles (n : ℕ) (φ : hochschildCocycles R A M n) :
-    (hochschildCochainComplex R A M).iCycles n (toCycles R A M n φ) =
-      (hochschildCochainComplexXIso R A M n).inv φ.1 := by
-  rw [toCycles, ← ConcreteCategory.comp_apply, HomologicalComplex.liftCycles_i]
-  -- The composite of the inclusion of cocycles with `hochschildCochainComplexXIso` evaluates
-  -- to `φ`.
-  rfl
-
-/-- The underlying cochain of a cycle of the Hochschild cochain complex is a Hochschild cocycle. -/
-private theorem iCycles_mem_hochschildCocycles (n : ℕ)
-    (z : (hochschildCochainComplex R A M).cycles n) :
-    (hochschildCochainComplexXIso R A M n).hom ((hochschildCochainComplex R A M).iCycles n z) ∈
-      hochschildCocycles R A M n := by
-  have h : (hochschildCochainComplex R A M).d n (n + 1)
-      ((hochschildCochainComplex R A M).iCycles n z) = 0 := by
-    rw [← ConcreteCategory.comp_apply, HomologicalComplex.iCycles_d]
-    rfl
-  rw [mem_hochschildCocycles_iff, ← hochschildCochainComplex_d_apply, h, map_zero]
-
 namespace hochschildCohomology
 
 /-- The Hochschild cohomology class of a Hochschild cocycle. -/
 def mk (n : ℕ) : hochschildCocycles R A M n →ₗ[R] hochschildCohomology R A M n :=
-  (toCycles R A M n ≫ (hochschildCochainComplex R A M).homologyπ n).hom
+  (hochschildCochainComplex R A M).moduleCatCocycleClass (hochschildCochainComplexXIso R A M)
+    (hochschildCoboundary R A M) (hochschildCochainComplex_d R A M) n
 
 /-- The class of a Hochschild cocycle `φ` is the homology class of any cycle of the Hochschild
 cochain complex whose underlying cochain is `φ`. -/
@@ -268,17 +239,16 @@ theorem mk_eq_homologyπ {n : ℕ} (φ : hochschildCocycles R A M n)
     (z : (hochschildCochainComplex R A M).cycles n)
     (hz : (hochschildCochainComplexXIso R A M n).hom
       ((hochschildCochainComplex R A M).iCycles n z) = φ) :
-    mk R A M n φ = (hochschildCochainComplex R A M).homologyπ n z := by
-  rw [mk, ModuleCat.hom_comp, LinearMap.comp_apply]
-  congr 1
-  apply (hochschildCochainComplex R A M).moduleCat_iCycles_injective n
-  rw [iCycles_toCycles, ← hz, Iso.hom_inv_id_apply]
+    mk R A M n φ = (hochschildCochainComplex R A M).homologyπ n z :=
+  (hochschildCochainComplex R A M).moduleCatCocycleClass_eq_homologyπ
+    (hochschildCochainComplexXIso R A M) (hochschildCoboundary R A M)
+    (hochschildCochainComplex_d R A M) φ z hz
 
 /-- Every Hochschild cohomology class is the class of a Hochschild cocycle. -/
-theorem mk_surjective (n : ℕ) : Function.Surjective (mk R A M n) := by
-  intro x
-  obtain ⟨z, rfl⟩ := (hochschildCochainComplex R A M).moduleCat_homologyπ_surjective n x
-  exact ⟨⟨_, iCycles_mem_hochschildCocycles R A M n z⟩, mk_eq_homologyπ R A M _ z rfl⟩
+theorem mk_surjective (n : ℕ) : Function.Surjective (mk R A M n) :=
+  (hochschildCochainComplex R A M).moduleCatCocycleClass_surjective
+    (hochschildCochainComplexXIso R A M) (hochschildCoboundary R A M)
+    (hochschildCochainComplex_d R A M) n
 
 /-- A Hochschild cocycle has zero cohomology class exactly when it is a Hochschild
 coboundary. -/
@@ -286,32 +256,16 @@ coboundary. -/
 theorem mk_eq_zero_iff (n : ℕ) (φ : hochschildCocycles R A M n) :
     mk R A M n φ = 0 ↔
       (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) ∈ hochschildCoboundaries R A M n := by
-  let K := hochschildCochainComplex R A M
-  have key {m : ℕ} (hm : (ComplexShape.up ℕ).prev n = m) : mk R A M n φ = 0 ↔
-      ∃ y, K.d m n y = (hochschildCochainComplexXIso R A M n).inv φ.1 := by
-    rw [mk_eq_homologyπ R A M φ (toCycles R A M n φ)
-      (by rw [iCycles_toCycles, Iso.inv_hom_id_apply]), K.moduleCat_homologyπ_eq_zero_iff hm]
-    refine exists_congr fun y ↦ ?_
-    rw [← (K.moduleCat_iCycles_injective n).eq_iff, iCycles_toCycles, ← ConcreteCategory.comp_apply,
-      HomologicalComplex.toCycles_i]
   cases n with
   | zero =>
-    rw [key CochainComplex.prev_nat_zero, K.shape 0 0 (by simp), hochschildCoboundaries_zero,
-      Submodule.mem_bot]
-    refine ⟨fun ⟨y, hy⟩ ↦ ?_, fun h ↦ ⟨0, by rw [h, map_zero, map_zero]⟩⟩
-    rw [← Iso.inv_hom_id_apply (hochschildCochainComplexXIso R A M 0) φ.1, ← hy]
-    simp
+    rw [hochschildCoboundaries_zero, Submodule.mem_bot, ZeroMemClass.coe_eq_zero]
+    exact map_eq_zero_iff _ ((hochschildCochainComplex R A M).moduleCatCocycleClass_zero_injective
+      (hochschildCochainComplexXIso R A M) (hochschildCoboundary R A M)
+      (hochschildCochainComplex_d R A M))
   | succ n =>
-    rw [key (CochainComplex.prev_nat_succ n), mem_hochschildCoboundaries_succ_iff]
-    constructor
-    · rintro ⟨y, hy⟩
-      refine ⟨(hochschildCochainComplexXIso R A M n).hom y, ?_⟩
-      rw [← hochschildCochainComplex_d_apply, hy, Iso.inv_hom_id_apply]
-    · rintro ⟨ψ, hψ⟩
-      refine ⟨(hochschildCochainComplexXIso R A M n).inv ψ, ?_⟩
-      apply (ModuleCat.mono_iff_injective (hochschildCochainComplexXIso R A M (n + 1)).hom).1
-        inferInstance
-      rw [hochschildCochainComplex_d_apply, Iso.inv_hom_id_apply, Iso.inv_hom_id_apply, hψ]
+    exact (hochschildCochainComplex R A M).moduleCatCocycleClass_succ_eq_zero_iff
+      (hochschildCochainComplexXIso R A M) (hochschildCoboundary R A M)
+      (hochschildCochainComplex_d R A M) φ
 
 /-- Two Hochschild cocycles have the same class exactly when they differ by a Hochschild
 coboundary. -/
@@ -339,7 +293,9 @@ private def cyclesToCocycles (n : ℕ) :
   LinearMap.codRestrict _
     ((hochschildCochainComplexXIso R A M n).hom.hom ∘ₗ
       ((hochschildCochainComplex R A M).iCycles n).hom)
-    (iCycles_mem_hochschildCocycles R A M n)
+    fun z ↦ (hochschildCochainComplex R A M).hom_iCycles_mem_ker
+      (hochschildCochainComplexXIso R A M) (hochschildCoboundary R A M)
+      (hochschildCochainComplex_d R A M) z
 
 private theorem coe_cyclesToCocycles (n : ℕ) (z : (hochschildCochainComplex R A M).cycles n) :
     (cyclesToCocycles R A M n z : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) =
@@ -387,12 +343,13 @@ theorem connesB_mk {n : ℕ} (φ : hochschildCocycles R A M (n + 1)) :
       cyclicCohomology.mk R A M n
         ⟨⟨TauCeti.connesB R A M n φ, connesB_mem_cyclicCochains _⟩,
           connesB_mem_cyclicCocycles φ.2⟩ := by
-  rw [mk_eq_homologyπ R A M φ (toCycles R A M (n + 1) φ)
-      (by rw [iCycles_toCycles, Iso.inv_hom_id_apply]),
-    ← ConcreteCategory.comp_apply, homologyπ_comp_connesB, connesBCycles_apply,
-    ← coe_connesBCocycles]
+  obtain ⟨z, hz⟩ := (hochschildCochainComplex R A M).exists_hom_iCycles_eq_of_mem_ker
+    (hochschildCochainComplexXIso R A M) (hochschildCoboundary R A M)
+    (hochschildCochainComplex_d R A M) φ.2
+  rw [mk_eq_homologyπ R A M φ z hz, ← ConcreteCategory.comp_apply, homologyπ_comp_connesB,
+    connesBCycles_apply, ← coe_connesBCocycles]
   congr 2
-  rw [Subtype.ext_iff, coe_cyclesToCocycles, iCycles_toCycles, Iso.inv_hom_id_apply]
+  rw [Subtype.ext_iff, coe_cyclesToCocycles, hz]
 
 end hochschildCohomology
 
@@ -410,24 +367,18 @@ theorem toHochschild_mk {n : ℕ} (φ : cyclicCocycles R A M n) :
     toHochschild R A M n (mk R A M n φ) =
       hochschildCohomology.mk R A M n
         ⟨φ, mem_hochschildCocycles_of_mem_cyclicCocycles φ.2⟩ := by
-  let K := cyclicCochainComplex R A M
-  have hd : K.d n (n + 1) ((cyclicCochainComplexXIso R A M n).inv φ.1) = 0 := by
-    apply (ModuleCat.mono_iff_injective (cyclicCochainComplexXIso R A M (n + 1)).hom).1
-      inferInstance
-    rw [cyclicCochainComplex_d_apply, Iso.inv_hom_id_apply, map_zero,
-      ← Subtype.coe_inj, coe_cyclicHochschildCoboundary_apply, ZeroMemClass.coe_zero]
+  have hφ : (φ : cyclicCochains R A M n) ∈ LinearMap.ker (cyclicHochschildCoboundary R A M n) := by
+    rw [LinearMap.mem_ker, ← Subtype.coe_inj, coe_cyclicHochschildCoboundary_apply,
+      ZeroMemClass.coe_zero]
     exact (mem_cyclicCocycles_iff R A M).1 φ.2
-  let z := K.moduleCatCyclesMk _ (n + 1) (by simp) hd
-  have hz : K.iCycles n z = (cyclicCochainComplexXIso R A M n).inv φ.1 :=
-    K.iCycles_moduleCatCyclesMk n _ (n + 1) (by simp) hd
-  rw [mk_eq_homologyπ R A M φ z (by rw [hz, Iso.inv_hom_id_apply]), toHochschild,
-    ← ConcreteCategory.comp_apply, HomologicalComplex.homologyπ_naturality,
-    ConcreteCategory.comp_apply]
+  obtain ⟨z, hz⟩ := (cyclicCochainComplex R A M).exists_hom_iCycles_eq_of_mem_ker
+    (cyclicCochainComplexXIso R A M) (cyclicHochschildCoboundary R A M)
+    (cyclicCochainComplex_d R A M) hφ
+  rw [mk_eq_homologyπ R A M φ z hz, toHochschild, ← ConcreteCategory.comp_apply,
+    HomologicalComplex.homologyπ_naturality, ConcreteCategory.comp_apply]
   refine (hochschildCohomology.mk_eq_homologyπ R A M _ _ ?_).symm
-  have hι := ConcreteCategory.congr_hom
-    (HomologicalComplex.cyclesMap_i (cyclicCochainComplexι R A M) n) z
-  rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply] at hι
-  rw [hι, cyclicCochainComplexι_f_apply, hz, Iso.inv_hom_id_apply]
+  rw [← ConcreteCategory.comp_apply (HomologicalComplex.cyclesMap _ n),
+    HomologicalComplex.cyclesMap_i, ConcreteCategory.comp_apply, cyclicCochainComplexι_f_apply, hz]
 
 /-- The composite `B ∘ I : HCⁿ⁺¹(A; M) → HHⁿ⁺¹(A; M) → HCⁿ(A; M)` of the SBI sequence vanishes,
 since Connes' operator `B` vanishes on cyclic cochains. -/
