@@ -231,7 +231,7 @@ theorem periodicityZPow_add (φ : shiftFunctor C n ⋙ G ≅ G) (i j k : ℤ) (h
       periodicityZPow_succ φ i (i + 1) rfl, shiftComp_assoc]
     all_goals subst h; ring
   | pred i ih =>
-    rw [← shiftComp_left_cancel_iff φ (show n + n * k = n * (k + 1) by ring),
+    rw [← shiftComp_left_cancel_iff φ (by ring : n + n * k = n * (k + 1)),
       ← periodicityZPow_succ φ k (k + 1) rfl, ih (k + 1) (by omega),
       periodicityZPow_succ φ (-i - 1) (-i) (by omega), shiftComp_assoc]
     all_goals subst h; ring
@@ -245,6 +245,7 @@ theorem periodicityZPow_add_hom_app (φ : shiftFunctor C n ⋙ G ≅ G) (i j k :
   rw [periodicityZPow_add φ i j k h, shiftComp_hom_app]
 
 /-- The first power of a periodicity isomorphism is the isomorphism itself. -/
+@[simp]
 theorem periodicityZPow_one_hom_app (φ : shiftFunctor C n ⋙ G ≅ G) (X : C) :
     (φ.periodicityZPow 1).hom.app X = G.map (eqToHom (by rw [mul_one])) ≫ φ.hom.app X := by
   have key (z m : ℤ) (hz : z = 0) (h : n + z = m) :
@@ -268,7 +269,7 @@ theorem periodicityZPow_unique (φ : shiftFunctor C n ⋙ G ≅ G)
   | zero => rw [h₀, periodicityZPow_zero]
   | succ i ih => rw [hsucc i (i + 1) rfl, periodicityZPow_succ φ i (i + 1) rfl, ih]
   | pred i ih =>
-    rw [← shiftComp_left_cancel_iff φ (show n + n * (-i - 1) = n * (-i) by ring),
+    rw [← shiftComp_left_cancel_iff φ (by ring : n + n * (-i - 1) = n * (-i)),
       ← hsucc (-i - 1) (-i) (by omega), ← periodicityZPow_succ φ (-i - 1) (-i) (by omega), ih]
 
 end Periodicity

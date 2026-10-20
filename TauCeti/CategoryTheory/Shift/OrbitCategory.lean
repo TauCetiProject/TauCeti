@@ -356,9 +356,9 @@ theorem liftMap_homOf {X Y : D} (i : ℤ) (f : ShiftedHom X Y (n * i)) :
 def lift : OrbitCategory D n ⥤ E where
   obj X := G.obj X.obj
   map {X Y} := liftMap G φ X Y
-  map_id X := by
-    rw [show 𝟙 X = homOf 0 (ShiftedHom.mk₀ (n * 0) (by simp) (𝟙 X.obj)) from id_def X.obj,
-      liftMap_homOf]
+  map_id := by
+    rintro ⟨X⟩
+    rw [id_def, liftMap_homOf]
     simp [ShiftedHom.mk₀, Iso.periodicityZPow_zero]
   map_comp {X Y Z} f g := by
     induction f using hom_induction_on with
@@ -401,6 +401,16 @@ theorem lift_map_projection_map {X Y : D} (f : X ⟶ Y) :
     Functor.leftUnitor_hom_app, Category.comp_id, Category.assoc, Iso.inv_hom_id_app_map]
   -- The two sides agree up to unfolding the objects of `lift G φ`.
   rfl
+
+/-- The descent sends a degree-zero piece `f : X ⟶ Y` to `G.map f`. This is
+`lift_map_projection_map` in the form `simp` sees, since `simp` unfolds the reducible
+`projection.map f` to this piece. -/
+-- High priority so that it fires before the general `lift_map_homOf`.
+@[simp high]
+theorem lift_map_homOf_mk₀ {X Y : D} (f : X ⟶ Y) :
+    (lift G φ).map (homOf 0 (ShiftedHom.mk₀ (n * 0) (by simp) f) :
+      (⟨X⟩ : OrbitCategory D n) ⟶ ⟨Y⟩) = G.map f :=
+  lift_map_projection_map G φ f
 
 /-- The descent restricts to `G` along the projection. -/
 def projectionCompLift : projection ⋙ lift G φ ≅ G :=
@@ -465,9 +475,9 @@ private theorem conjShiftNatIso_eq
     have he' : F.map (shiftIso X n 1 (mul_one n)).hom ≫ e.hom.app X =
         e.hom.app (X⟦n⟧) ≫ φ.hom.app X := he X
     rw [conjShiftNatIso_hom_app, Iso.shiftComp_hom_app, conjShiftNatIso_hom_app,
-      shiftIso_hom_eq_comp X (mul_one n) rfl rfl (add_comm 1 i), F.map_comp, F.map_comp,
-      Category.assoc, Category.assoc, Category.assoc, Category.assoc, ← he',
-      ← Functor.comp_map, ← e.inv.naturality_assoc]
+      shiftIso_hom_eq_comp X (mul_one n) rfl rfl (add_comm 1 i), F.map_comp, F.map_comp]
+    simp only [Category.assoc]
+    rw [← he', ← projection_map, ← Functor.comp_map, ← e.inv.naturality_assoc]
     rfl
 
 /-- Uniqueness in Keller's universal property: an additive functor `F` out of the orbit
