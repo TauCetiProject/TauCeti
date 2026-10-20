@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import Mathlib.RingTheory.GradedAlgebra.Basic
+public import Mathlib.RingTheory.Finiteness.Basic
 
 /-!
 # The graded subalgebra of `B[X]` cut out by a graded family of coefficients
@@ -22,7 +23,7 @@ Two instances motivate the construction. For an ideal `I` of a commutative ring 
 `M n = Iⁿ` it is Mathlib's Rees algebra `reesAlgebra I`, whose grading in
 `TauCeti.RingTheory.ReesAlgebra.Grading` is the one constructed here. For a divisor `D` of an
 algebraic function field and `M n = L(nD)` it is the section ring `⨁ₙ L(nD)` of `D`
-(`TauCeti.FieldTheory.FunctionField.RiemannRoch.SectionRing`), the graded ring from which
+(`TauCeti.FieldTheory.FunctionField.RiemannRoch.SectionRing.Basic`), the graded ring from which
 projective models of a curve are built as `Proj`.
 
 ## Main definitions
@@ -117,6 +118,19 @@ variable (M) in
 noncomputable def grade (n : ℕ) : Submodule R (coeffSubalgebra M) :=
   Submodule.comap (coeffSubalgebra M).val.toLinearMap
     (Submodule.map ((Polynomial.monomial n).restrictScalars R) (M n))
+
+/-- A finitely generated coefficient space gives a finitely generated homogeneous piece. -/
+theorem fg_grade {n : ℕ} (hM : (M n).FG) : (grade M n).FG := by
+  apply Submodule.fg_of_fg_map_injective (coeffSubalgebra M).val.toLinearMap
+    Subtype.val_injective
+  have heq : (grade M n).map (coeffSubalgebra M).val.toLinearMap =
+      (M n).map ((Polynomial.monomial n).restrictScalars R) := by
+    rw [grade, Submodule.map_comap_eq]
+    apply inf_eq_right.mpr
+    rintro p ⟨b, hb, rfl⟩
+    exact ⟨monomial M n b hb, rfl⟩
+  rw [heq]
+  exact hM.map _
 
 /-- The elements of degree `n` of `coeffSubalgebra M` are the monomials `b Xⁿ` with `b ∈ M n`. -/
 theorem mem_grade_iff {n : ℕ} {f : coeffSubalgebra M} :

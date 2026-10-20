@@ -7,7 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.ProjectiveSpectrum.Basic
 public import TauCeti.AlgebraicGeometry.Curves.TwoChartModel.Basic
-public import TauCeti.FieldTheory.FunctionField.RiemannRoch.SectionRing
+public import TauCeti.FieldTheory.FunctionField.RiemannRoch.SectionRing.Basic
 
 import Mathlib.AlgebraicGeometry.Morphisms.IsIso
 import Mathlib.AlgebraicGeometry.Morphisms.OpenImmersion
