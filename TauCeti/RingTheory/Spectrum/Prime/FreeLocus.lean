@@ -11,6 +11,9 @@ public import Mathlib.RingTheory.LocalProperties.Reduced
 public import Mathlib.RingTheory.Flat.Localization
 public import TauCeti.LinearAlgebra.FreeModule.Filtration
 
+import Mathlib.RingTheory.Flat.Rank
+import Mathlib.RingTheory.Localization.Away.Lemmas
+
 /-!
 # The free locus over a reduced ring, and of a filtered module
 
@@ -25,6 +28,8 @@ that are not finitely generated over the base, as in the proof of generic freene
 
 The rank of `R^k` at every prime is `k`, with no nontriviality hypothesis on `R`: a ring with a
 prime ideal is nontrivial.
+The support of a finitely presented flat module `M` is the basic open set of an idempotent `e`,
+and `M × R ⧸ (e)` has positive rank at every prime.
 
 ## Main declarations
 
@@ -35,6 +40,8 @@ prime ideal is nontrivial.
 * `Module.rankAtStalk_fin_fun`: the free module `R^k` has rank `k` at every prime.
 * `Module.exists_isIdempotentElem_basicOpen_eq_support`: the support of a finitely presented flat
   module is the basic open set of an idempotent.
+* `Module.exists_rankAtStalk_prod_quotient_eq_max`: adding the complement of that support gives a
+  module of positive rank at every prime.
 
 ## References
 
@@ -132,6 +139,35 @@ theorem exists_isIdempotentElem_basicOpen_eq_support {R : Type*} (M : Type*) [Co
   let e := PrimeSpectrum.isIdempotentElemEquivClopens.symm U
   exact ⟨e.1, e.2,
     congrArg SetLike.coe (PrimeSpectrum.basicOpen_isIdempotentElemEquivClopens_symm U)⟩
+
+/-- Adding the complement `R ⧸ (e)` of the support of a finitely presented flat module `M` gives
+a module of rank `max 1 (rank M)` at every prime, hence one of positive rank everywhere. -/
+theorem exists_rankAtStalk_prod_quotient_eq_max {R : Type*} (M : Type*) [CommRing R]
+    [AddCommGroup M] [Module R M] [Module.FinitePresentation R M] [Module.Flat R M] :
+    ∃ e : R, IsIdempotentElem e ∧ ∀ p : PrimeSpectrum R,
+      rankAtStalk (R := R) (M × R ⧸ Ideal.span {e}) p = max 1 (rankAtStalk (R := R) M p) := by
+  obtain ⟨e, he, hsupp⟩ := exists_isIdempotentElem_basicOpen_eq_support (R := R) M
+  -- `R ⧸ (e)` is the localization away from `1 - e`, hence flat.
+  have : IsLocalization.Away (1 - e) (R ⧸ Ideal.span {e}) := by
+    have := IsLocalization.Away.quotient_of_isIdempotentElem he.one_sub
+    rwa [sub_sub_cancel] at this
+  have : Module.Flat R (R ⧸ Ideal.span {e}) := IsLocalization.flat _ (Submonoid.powers (1 - e))
+  refine ⟨e, he, fun p ↦ ?_⟩
+  have hU₁ : rankAtStalk (R := R) (R ⧸ Ideal.span {e}) p ≤ 1 :=
+    rankAtStalk_le_one_iff_surjective.mpr Ideal.Quotient.mk_surjective p
+  have hU₀ : 0 < rankAtStalk (R := R) (R ⧸ Ideal.span {e}) p ↔ e ∈ p.asIdeal := by
+    simp [PrimeSpectrum.rankAtStalk_pos_iff_mem_range_comap,
+      range_comap_of_surjective _ _ Ideal.Quotient.mk_surjective]
+  have hM : 0 < rankAtStalk (R := R) M p ↔ e ∉ p.asIdeal := by
+    rw [rankAtStalk_pos_iff_mem_support, ← hsupp, SetLike.mem_coe, PrimeSpectrum.mem_basicOpen]
+  rw [rankAtStalk_prod, Pi.add_apply]
+  by_cases hp : e ∈ p.asIdeal
+  · have := hU₀.mpr hp
+    have := hM.not.mpr (not_not.mpr hp)
+    omega
+  · have := hU₀.not.mpr hp
+    have := hM.mpr hp
+    omega
 
 end Module
 

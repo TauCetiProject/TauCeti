@@ -248,34 +248,6 @@ instance (priority := 100) IsFiniteEtaleSplit.of_subsingleton [Subsingleton R] :
     have : Subsingleton T := RingHom.codomain_trivial (algebraMap R T)
     .of_subsingleton R T
 
-/-- Adding the complement of its support to a finite étale algebra `T` gives an algebra of rank
-`max 1 (rank T)` at every prime, hence a faithfully flat one. -/
-private theorem exists_rankAtStalk_prod_quotient_eq_max (T : Type*) [CommRing T] [Algebra R T]
-    [Algebra.Etale R T] [Module.Finite R T] :
-    ∃ e₀ : R, IsIdempotentElem e₀ ∧ ∀ p : PrimeSpectrum R,
-      Module.rankAtStalk (R := R) (T × R ⧸ Ideal.span {e₀}) p =
-        max 1 (Module.rankAtStalk (R := R) T p) := by
-  have : Module.FinitePresentation R T := .of_finite_of_finitePresentation R T
-  obtain ⟨e₀, he₀, hsupp⟩ := Module.exists_isIdempotentElem_basicOpen_eq_support (R := R) T
-  have : Algebra.Etale R (R ⧸ Ideal.span {e₀}) := Algebra.Etale.quotient_span_singleton he₀
-  refine ⟨e₀, he₀, fun p ↦ ?_⟩
-  have hU₁ : Module.rankAtStalk (R := R) (R ⧸ Ideal.span {e₀}) p ≤ 1 :=
-    Module.rankAtStalk_le_one_iff_surjective.mpr Ideal.Quotient.mk_surjective p
-  have hU₀ : 0 < Module.rankAtStalk (R := R) (R ⧸ Ideal.span {e₀}) p ↔ e₀ ∈ p.asIdeal := by
-    simp [PrimeSpectrum.rankAtStalk_pos_iff_mem_range_comap,
-      range_comap_of_surjective _ _ Ideal.Quotient.mk_surjective]
-  have hT : 0 < Module.rankAtStalk (R := R) T p ↔ e₀ ∉ p.asIdeal := by
-    rw [Module.rankAtStalk_pos_iff_mem_support, ← hsupp, SetLike.mem_coe,
-      PrimeSpectrum.mem_basicOpen]
-  rw [Module.rankAtStalk_prod, Pi.add_apply]
-  by_cases hp : e₀ ∈ p.asIdeal
-  · have := hU₀.mpr hp
-    have := hT.not.mpr (not_not.mpr hp)
-    omega
-  · have := hU₀.not.mpr hp
-    have := hT.mpr hp
-    omega
-
 /-- If every faithfully flat finite étale `R`-algebra has a section, then every finite étale
 `R`-algebra of rank at most `N` is totally split. -/
 private theorem isTotallySplit_of_rankAtStalk_le
@@ -292,7 +264,8 @@ private theorem isTotallySplit_of_rankAtStalk_le
   | succ N ih =>
     intro T _ _ _ _ hT
     -- `T × R ⧸ (e₀)` is faithfully flat and its rank is still at most `N + 1`.
-    obtain ⟨e₀, he₀, hrank⟩ := exists_rankAtStalk_prod_quotient_eq_max (R := R) T
+    have : Module.FinitePresentation R T := .of_finite_of_finitePresentation R T
+    obtain ⟨e₀, he₀, hrank⟩ := Module.exists_rankAtStalk_prod_quotient_eq_max (R := R) T
     have : Algebra.Etale R (R ⧸ Ideal.span {e₀}) := Algebra.Etale.quotient_span_singleton he₀
     have : Module.FaithfullyFlat R (T × R ⧸ Ideal.span {e₀}) :=
       .of_comap_surjective (PrimeSpectrum.rankAtStalk_pos_iff_comap_surjective.mp
