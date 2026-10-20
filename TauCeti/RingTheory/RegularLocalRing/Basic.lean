@@ -177,11 +177,7 @@ theorem quotient_span_singleton_iff {x : R} (hxm : x ∈ maximalIdeal R) (hx0 : 
   refine ⟨fun _ hx ↦ ?_, quotient_span_singleton hxm⟩
   obtain ⟨parameter, hmem, hnot⟩ :=
     _root_.Ideal.exists_mem_notMem_maximalIdeal_sq_of_quotient (span {x})
-      (by
-        intro hbot
-        apply hx0
-        have : x ∈ (⊥ : Ideal R) := hbot ▸ mem_span_singleton_self x
-        simpa using this)
+      (span_singleton_eq_bot.not.mpr hx0)
   exact hnot (((span_singleton_le_iff_mem _).mpr hx) hmem)
 
 /-- **The curve a parameter cuts out is a domain, so its principal ideal is prime.** Let
