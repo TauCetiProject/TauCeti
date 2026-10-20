@@ -72,14 +72,12 @@ theorem det_one_sub_catMap : (1 - catMap).det = -1 := by
 /-- Every iterate of the cat map is nondegenerate: `det (1 - P ^ n)` is negative for `n ≠ 0`, so
 `1` is not an eigenvalue of `P ^ n`. -/
 theorem det_one_sub_catMap_pow_neg {n : ℕ} (hn : n ≠ 0) : (1 - catMap ^ n).det < 0 := by
-  have hdet (M : Matrix (Fin 2) (Fin 2) ℤ) : (1 - M).det = 1 - M.trace + M.det := by
-    have h := Matrix.det_smul_sub_smul_one_fin_two M (-1) (-1)
-    simp only [neg_smul, one_smul, sub_neg_eq_add, neg_add_eq_sub] at h
-    rw [h]
-    ring
-  -- `det (1 - P ^ n) = 2 - tr (P ^ n)`, and `tr (P ^ n) > 2` since `det P = 1` and `tr P = 3 > 2`.
+  -- `1 - P ^ n` is the pencil at `r = s = -1`, so `det (1 - P ^ n) = 2 - tr (P ^ n)`; and
+  -- `tr (P ^ n) > 2` since `det P = 1` and `tr P = 3 > 2`.
+  have h := Matrix.det_smul_sub_smul_one_fin_two (catMap ^ n) (-1) (-1)
+  simp only [neg_smul, one_smul, sub_neg_eq_add, neg_add_eq_sub, det_pow, det_catMap,
+    one_pow] at h
   have := two_lt_trace_pow det_catMap (by decide) hn
-  rw [hdet, det_pow, det_catMap, one_pow]
   linarith
 
 /-- The coefficient of `t ^ n` in `det (1 - t P) / (1 - t) ^ 2` is `-n` for `n ≠ 0`. This is the
