@@ -32,8 +32,8 @@ variable (R : Type*) {A M : Type*} [CommRing R] [IsArtinianRing R] [Ring A] [Alg
   [AddCommGroup M] [Module A M] [Module R M] [IsScalarTower R A M] [Module.Finite R M]
 
 include R in
-/-- The endomorphism ring of a module over an `R`-algebra that is finitely generated over a
-commutative Artinian ring `R` is Artinian. -/
+/-- Let `A` be an algebra over a commutative Artinian ring `R`, and `M` an `A`-module that is
+finitely generated over `R`. Then `Module.End A M` is an Artinian ring. -/
 theorem isArtinianRing : IsArtinianRing (Module.End A M) := by
   have : Module.Finite A M := .of_restrictScalars_finite R A M
   have : Module.Finite R (Module.End A M) := .linearMap_of_isNoetherian
