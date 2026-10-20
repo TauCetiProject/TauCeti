@@ -170,7 +170,10 @@ private lemma homotopy_identity_zero (σ : (TopCat.toSSet.obj X) _⦋0⦌)
   have hm := Homotopy.comm_zero_apply
     (singularToCubicalCompHomotopy (ULift.{v} ℤ) (simplexModel.{v} 0))
     (simplexChain (idSimplex 0) 1)
-  rw [ιTwistedChainComplex_eq_simplexPushforward, twistedSingularToCubical_simplexPushforward,
+  -- The coefficient lies in the fibre at the initial vertex of `σ`, which is the fibre at the
+  -- initial vertex of the model mapped by `σ` only by definition, so the first rewrite is `erw`.
+  erw [ιTwistedChainComplex_eq_twistedPushforward σ a, ← simplexPushforward_apply,
+    twistedSingularToCubical_simplexPushforward,
     normalizedTwistedCubicalToSingular_simplexCubicalPushforward,
     twistedSingularHomotopy_simplexPushforward, d_simplexPushforward, ← simplexPushforward_sub]
   exact congrArg (fun y ↦ simplexPushforward L σ 0 y a) (sub_eq_iff_eq_add.2 hm)
@@ -188,7 +191,10 @@ private lemma homotopy_identity_succ (n : ℕ) (σ : (TopCat.toSSet.obj X) _⦋n
   have hm := Homotopy.comm_succ_apply
     (singularToCubicalCompHomotopy (ULift.{v} ℤ) (simplexModel.{v} (n + 1))) n
     (simplexChain (idSimplex (n + 1)) 1)
-  rw [ιTwistedChainComplex_eq_simplexPushforward, twistedSingularToCubical_simplexPushforward,
+  -- The coefficient lies in the fibre at the initial vertex of `σ`, which is the fibre at the
+  -- initial vertex of the model mapped by `σ` only by definition, so the first rewrite is `erw`.
+  erw [ιTwistedChainComplex_eq_twistedPushforward σ a, ← simplexPushforward_apply,
+    twistedSingularToCubical_simplexPushforward,
     normalizedTwistedCubicalToSingular_simplexCubicalPushforward, d_simplexPushforward,
     twistedSingularHomotopy_simplexPushforward, twistedSingularHomotopy_simplexPushforward,
     d_simplexPushforward,
