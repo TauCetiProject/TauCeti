@@ -46,6 +46,8 @@ other.
   unramified at all infinite places of any extension.
 * `NumberField.InfinitePlace.nrComplexPlaces_eq_one_of_finrank_eq_two`: a totally complex
   field of degree `2` — an imaginary quadratic field — has exactly one complex place.
+* `NumberField.IsTotallyComplex.not_isTotallyReal`: a number field is not both totally complex
+  and totally real.
 * `NumberField.InfinitePlace.even_nrComplexPlaces_iff_zero_lt_discr`: Brill's theorem in parity
   form, the number of complex places is even exactly when the discriminant is positive; hence
   `nrComplexPlaces_eq_zero_of_zero_lt_discr` (degree less than `4`),
@@ -182,6 +184,12 @@ theorem InfinitePlace.nrComplexPlaces_eq_one_of_finrank_eq_two [IsTotallyComplex
     (hK : Module.finrank ℚ K = 2) : InfinitePlace.nrComplexPlaces K = 1 := by
   have := NumberField.IsTotallyComplex.finrank (K := K)
   omega
+
+/-- **A number field is not both totally complex and totally real.** It has at least one infinite
+place, which cannot be both complex and real. -/
+theorem IsTotallyComplex.not_isTotallyReal [IsTotallyComplex K] : ¬ IsTotallyReal K := fun _ => by
+  obtain ⟨w⟩ := (inferInstance : Nonempty (InfinitePlace K))
+  exact not_isReal_iff_isComplex.mpr (IsTotallyComplex.isComplex w) (IsTotallyReal.isReal w)
 
 variable (K) in
 /-- **Halving the degree less the real places counts the complex places.** The degree is
