@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.DirectSum.Basic
-public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
 public import Mathlib.CategoryTheory.Shift.ShiftedHom
 public import Mathlib.Tactic.Ring
 
@@ -30,9 +29,9 @@ identity of `X⟦n⟧`, read as a morphism `X⟦n⟧ ⟶ X` of degree `1`, with 
 More generally `X⟦n * i⟧ ≅ X` in `D/[n]` for every `i`.
 
 The orbit category is constructed rather than axiomatized: its hom groups are the displayed
-direct sums, so additive maps out of them are determined by their values on homogeneous pieces
-(`TauCeti.OrbitCategory.addMonoidHom_ext`). Keller and Stai use it to compare bounded derived
-categories with periodic derived categories.
+direct sums, so additive maps out of them are determined by their values on homogeneous
+pieces (`DirectSum.addHom_ext`, with `TauCeti.OrbitCategory.homOf_def`). Keller and Stai use it
+to compare bounded derived categories with periodic derived categories.
 
 ## Main definitions
 
@@ -54,10 +53,10 @@ categories with periodic derived categories.
   (2018), 199–236, Section 3.3.
 -/
 
--- Only the representation of morphisms is exposed: the hom groups `Hom`, the instances, and
--- `homOf`, so that downstream morphisms of `D/[n]` are visibly elements of the direct sums
--- and additive functors out of `D/[n]` can be defined summand by summand. Composition and the
--- shift isomorphisms are used through their characteristic lemmas.
+-- Only the representation of morphisms is exposed: the hom groups `Hom` and the instances, so
+-- that downstream morphisms of `D/[n]` are visibly elements of the direct sums and additive
+-- functors out of `D/[n]` can be defined summand by summand. The homogeneous inclusion `homOf`
+-- and the shift isomorphisms are used through their characteristic lemmas.
 public section
 
 noncomputable section
@@ -146,20 +145,22 @@ instance : Preadditive (OrbitCategory D n) where
 
 /-- The inclusion of the homogeneous piece of degree `i`, the morphisms `X ⟶ Y⟦n * i⟧` of `D`,
 into the orbit hom group from `X` to `Y`. -/
-@[expose] def homOf {X Y : D} (i : ℤ) :
+def homOf {X Y : D} (i : ℤ) :
     ShiftedHom X Y (n * i) →+ ((⟨X⟩ : OrbitCategory D n) ⟶ ⟨Y⟩) :=
   DirectSum.of (fun j : ℤ ↦ ShiftedHom X Y (n * j)) i
 
-theorem homOf_injective {X Y : D} (i : ℤ) :
-    Function.Injective (homOf (n := n) (X := X) (Y := Y) i) :=
-  DirectSum.of_injective (β := fun j : ℤ ↦ ShiftedHom X Y (n * j)) i
+/-- `homOf i` is the inclusion `DirectSum.of` of the summand of degree `i`. -/
+theorem homOf_def {X Y : D} (i : ℤ) :
+    homOf (n := n) (X := X) (Y := Y) i = DirectSum.of (fun j : ℤ ↦ ShiftedHom X Y (n * j)) i := by
+  rfl
 
-/-- Additive maps out of an orbit hom group agree when they agree on all homogeneous pieces. -/
-@[ext]
-theorem addMonoidHom_ext {X Y : D} {A : Type*} [AddZeroClass A]
-    {φ ψ : ((⟨X⟩ : OrbitCategory D n) ⟶ ⟨Y⟩) →+ A}
-    (h : ∀ i (f : ShiftedHom X Y (n * i)), φ (homOf i f) = ψ (homOf i f)) : φ = ψ :=
-  DirectSum.addHom_ext h
+/-- An additive map out of an orbit hom group defined summand by summand sends a homogeneous
+piece to the value of the corresponding summand. -/
+@[simp]
+theorem toAddMonoid_homOf {X Y : D} {A : Type*} [AddCommMonoid A]
+    (φ : ∀ j : ℤ, ShiftedHom X Y (n * j) →+ A) (i : ℤ) (f : ShiftedHom X Y (n * i)) :
+    DirectSum.toAddMonoid φ (homOf i f) = φ i f := by
+  rw [homOf_def, DirectSum.toAddMonoid_of]
 
 theorem homOf_comp_homOf_eq {X Y Z : D} {i j k : ℤ} (h : i + j = k)
     (f : ShiftedHom X Y (n * i)) (g : ShiftedHom Y Z (n * j)) :
@@ -178,7 +179,8 @@ theorem homOf_comp_homOf {X Y Z : D} {i j : ℤ}
   homOf_comp_homOf_eq rfl f g
 
 theorem id_def (X : D) :
-    𝟙 (⟨X⟩ : OrbitCategory D n) = homOf 0 (ShiftedHom.mk₀ (n * 0) (by simp) (𝟙 X)) := rfl
+    𝟙 (⟨X⟩ : OrbitCategory D n) = homOf 0 (ShiftedHom.mk₀ (n * 0) (by simp) (𝟙 X)) := by
+  rfl
 
 /-- Precomposition with a degree-zero piece is composition in `D`. -/
 @[simp]
@@ -201,7 +203,7 @@ morphisms. -/
 abbrev projection : D ⥤ OrbitCategory D n where
   obj X := ⟨X⟩
   map f := homOf 0 (ShiftedHom.mk₀ (n * 0) (by simp) f)
-  map_id _ := rfl
+  map_id X := (id_def X).symm
   map_comp f g := by rw [homOf_comp_homOf_eq (add_zero 0), ShiftedHom.mk₀_comp_mk₀]
 
 theorem projection_map {X Y : D} (f : X ⟶ Y) :
@@ -211,7 +213,8 @@ instance : (projection (D := D) (n := n)).Additive where
   map_add := by simp
 
 instance : (projection (D := D) (n := n)).Faithful where
-  map_injective h := (ShiftedHom.homEquiv _ (by simp)).injective (homOf_injective 0 h)
+  map_injective h := (ShiftedHom.homEquiv _ (by simp)).injective (DirectSum.of_injective
+    (β := fun j : ℤ ↦ ShiftedHom _ _ (n * j)) 0 (by simp only [homOf_def] at h; exact h))
 
 /-- For `m = n * i`, the objects `X⟦m⟧` and `X` are isomorphic in the orbit category: the
 identity of `X⟦m⟧` is a homogeneous morphism `X⟦m⟧ ⟶ X` of degree `i`. Its inverse has
