@@ -56,21 +56,12 @@ private theorem natCastValuation_two_padicTwo (h2 : (2 : ℚ_[2]) ≠ 0) :
     natCastValuation ℚ_[2] 2 h2 = 1 := by
   simp
 
-/-- The `2`-adic valuation of `2 ^ k m`, for an odd integer `m`, is `k`. -/
+/-- The `2`-adic valuation of `2 ^ k m`, for an odd integer `m`, is `k`: the case `p = 2` of
+`Padic.valuation_p_pow_mul_intCast`, with the literal `2` in place of the cast prime. -/
 private theorem valuation_two_pow_mul_intCast {k : ℕ} {m : ℤ} (hm : Odd m) :
     Padic.valuation ((2 : ℚ_[2]) ^ k * (m : ℚ_[2])) = k := by
-  have hm0 : (m : ℚ_[2]) ≠ 0 := Int.cast_ne_zero.mpr (by rintro rfl; simp at hm)
-  rw [Padic.valuation_mul (pow_ne_zero _ two_ne_zero) hm0, Padic.valuation_pow,
-    Padic.valuation_intCast,
-    padicValInt.eq_zero_of_not_dvd (by simpa [← even_iff_two_dvd] using hm)]
-  simp
-
-/-- The `2`-adic valuation of `2 ^ α u`, for `u` a unit of `ℤ_2`, is `α`. -/
-private theorem valuation_two_zpow_mul (α : ℤ) (u : ℤ_[2]ˣ) :
-    Padic.valuation ((2 : ℚ_[2]) ^ α * ((u : ℤ_[2]) : ℚ_[2])) = α := by
-  rw [Padic.valuation_mul (zpow_ne_zero _ two_ne_zero) (PadicInt.coe_ne_zero.mpr u.ne_zero),
-    Padic.valuation_zpow, PadicInt.valuation_coe, PadicInt.valuation_eq_zero_of_isUnit u.isUnit]
-  simp
+  exact_mod_cast Padic.valuation_p_pow_mul_intCast (p := 2) k
+    (by simpa [← even_iff_two_dvd] using hm)
 
 /-- An element `1 + x` of `ℚ_2` with `v(x) = 1` has defect exponent `1`. -/
 private theorem defectExponent_padicTwo_of_eq_one_add {a x : ℚ_[2]ˣ}
@@ -82,7 +73,10 @@ private theorem defectExponent_padicTwo_of_eq_one_add {a x : ℚ_[2]ˣ}
   obtain ⟨ϖ, hϖ, hϖx⟩ := (isUniformizer_iff_exists_irreducible ℚ_[2] x).mp hxu
   have h := defectExponent_one_add_pow_odd h2 hϖ (k := 0)
     (by rw [natCastValuation_two_padicTwo]; exact one_pos)
-  rw [show Units.mk0 _ _ = a from Units.ext (by simp [ha, hϖx])] at h
+  -- `1 + ϖ ^ (2 * 0 + 1) = 1 + x = a`, whatever the nonvanishing proof carried by `Units.mk0`.
+  have hϖa : ∀ h, Units.mk0 (1 + (ϖ : ℚ_[2]) ^ (2 * 0 + 1)) h = a := fun _ ↦
+    Units.ext (by simp [ha, hϖx])
+  rw [hϖa] at h
   exact_mod_cast h
 
 /-- The defect exponent of `-1` over `ℚ_2` is `1`: `-1 = 1 + (-2)`. -/
@@ -154,7 +148,8 @@ theorem defectExponent_padicTwo {a : ℚ_[2]ˣ} {α : ℤ} {u : ℤ_[2]ˣ}
     defectExponent a = if Odd α then (α : WithTop ℤ) else
       if serreEps u = 1 then (α + 1 : ℤ) else if serreOmega u = 1 then (α + 2 : ℤ) else ⊤ := by
   have hv : (normalizedValuation ℚ_[2] a).toAdd = α := by
-    rw [Padic.toAdd_normalizedValuation_eq_valuation, ha, valuation_two_zpow_mul]
+    rw [Padic.toAdd_normalizedValuation_eq_valuation, ha]
+    exact_mod_cast Padic.valuation_p_zpow_mul_unit (p := 2) α u
   by_cases hα : Odd α
   · simp only [hα, ↓reduceIte]
     rw [defectExponent_of_odd (hv ▸ hα), hv]
@@ -240,10 +235,11 @@ theorem quadraticDefect_neg_one_mul_five_ne_padicTwo :
   have h28 := (toAdd_normalizedValuation_le_iff_valuation_le
     (Units.mk0 (8 : ℚ_[2]) (by norm_num)) (Units.mk0 2 two_ne_zero)).mpr
     (spanSingleton_le_spanSingleton_iff_valuation_le.mp h.le)
+  have h2 : (2 : ℚ_[2]) = 2 ^ 1 * ((1 : ℤ) : ℚ_[2]) := by norm_num
+  have h8 : (8 : ℚ_[2]) = 2 ^ 3 * ((1 : ℤ) : ℚ_[2]) := by norm_num
   rw [Padic.toAdd_normalizedValuation_eq_valuation, Padic.toAdd_normalizedValuation_eq_valuation,
-    Units.val_mk0, Units.val_mk0, show (2 : ℚ_[2]) = 2 ^ 1 * ((1 : ℤ) : ℚ_[2]) by norm_num,
-    show (8 : ℚ_[2]) = 2 ^ 3 * ((1 : ℤ) : ℚ_[2]) by norm_num,
-    valuation_two_pow_mul_intCast odd_one, valuation_two_pow_mul_intCast odd_one] at h28
+    Units.val_mk0, Units.val_mk0, h2, h8, valuation_two_pow_mul_intCast odd_one,
+    valuation_two_pow_mul_intCast odd_one] at h28
   norm_num at h28
 
 end TauCeti

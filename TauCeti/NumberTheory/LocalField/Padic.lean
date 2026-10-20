@@ -17,6 +17,7 @@ import Mathlib.NumberTheory.LegendreSymbol.Basic
 import Mathlib.NumberTheory.Padics.RingHoms
 import TauCeti.Algebra.Group.Units.Basic
 import TauCeti.NumberTheory.LocalField.PowerSubgroup.Basic
+import TauCeti.NumberTheory.Padics.RingHoms
 
 /-!
 # Normalization of the p-adic absolute value
@@ -28,6 +29,8 @@ concrete p-adic norm and valuation APIs.
 
 * `Padic.toAdd_normalizedValuation_eq_valuation` identifies the additive normalized
   valuation with `Padic.valuation`.
+* `Padic.valuation_p_pow_mul_intCast` and `Padic.valuation_p_zpow_mul_unit` compute the
+  valuation of a power of `p` times an integer prime to `p` or a unit of `ℤ_[p]`.
 * `Padic.uniformSpace_eq_rightUniformSpace` identifies the metric uniformity on `ℚ_[p]` with
   the additive-group uniformity, so completeness arguments can use the canonical group structure.
 * `Padic.integerRingEquiv` identifies the ring of integers of `ℚ_[p]` with `ℤ_[p]`, and
@@ -91,6 +94,26 @@ theorem toAdd_normalizedValuation_eq_valuation (x : ℚ_[p]ˣ) :
     rw [WithZero.exp_eq_coe_ofAdd, ofAdd_toAdd]
   rw [hcoe, Padic.mulValuation_toFun, ite_eq_right x.ne_zero, ← WithZero.exp_neg, neg_neg] at h
   exact WithZero.exp_injective h
+
+variable {p} in
+/-- The `p`-adic valuation of `p ^ k m`, for an integer `m` prime to `p`, is `k`. -/
+theorem valuation_p_pow_mul_intCast (k : ℕ) {m : ℤ} (hm : ¬(p : ℤ) ∣ m) :
+    ((p : ℚ_[p]) ^ k * (m : ℚ_[p])).valuation = k := by
+  have hm0 : (m : ℚ_[p]) ≠ 0 := Int.cast_ne_zero.mpr (by rintro rfl; simp at hm)
+  rw [Padic.valuation_mul (pow_ne_zero _ (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero))
+      hm0, Padic.valuation_pow, Padic.valuation_p, Padic.valuation_intCast,
+    padicValInt.eq_zero_of_not_dvd hm]
+  simp
+
+variable {p} in
+/-- The `p`-adic valuation of `p ^ α u`, for a unit `u` of `ℤ_[p]`, is `α`. -/
+theorem valuation_p_zpow_mul_unit (α : ℤ) (u : ℤ_[p]ˣ) :
+    ((p : ℚ_[p]) ^ α * ((u : ℤ_[p]) : ℚ_[p])).valuation = α := by
+  rw [Padic.valuation_mul (zpow_ne_zero _ (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero))
+      (PadicInt.coe_ne_zero.mpr u.ne_zero),
+    Padic.valuation_zpow, Padic.valuation_p, PadicInt.valuation_coe,
+    PadicInt.valuation_eq_zero_of_isUnit u.isUnit]
+  simp
 
 /-- The ring of integers of `ℚ_[p]` for its valuative relation is Mathlib's subring of elements
 of norm at most `1`. -/
