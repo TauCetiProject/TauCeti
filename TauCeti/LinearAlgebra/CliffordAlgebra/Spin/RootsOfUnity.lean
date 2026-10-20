@@ -36,9 +36,11 @@ and hence the Spin group, is trivial.
   nondegenerate form, its image is the kernel of `spinToSpecialOrthogonal`.
 * `CliffordAlgebra.mulExact_rootsOfUnityToSpin_spinToSpecialOrthogonal`: the sequence
   `μ₂(K) → Spin(Q) → SO(Q)` is exact at `Spin(Q)`.
-* `QuadraticMap.Isometry.spinGroupMap_comp_rootsOfUnityToSpin` and
-  `CliffordAlgebra.spinGroupBaseChange_comp_rootsOfUnityToSpin`: naturality along isometries and
-  along extension of scalars.
+* `QuadraticMap.Isometry.spinGroupMap_comp_rootsOfUnityToSpin`,
+  `CliffordAlgebra.spinGroupBaseChange_comp_rootsOfUnityToSpin` and their pointwise forms
+  `QuadraticMap.Isometry.spinGroupMap_rootsOfUnityToSpin` and
+  `CliffordAlgebra.spinGroupBaseChange_rootsOfUnityToSpin`: naturality along isometries and along
+  extension of scalars.
 
 ## References
 
@@ -150,14 +152,22 @@ variable [AddCommGroup M] [Module R M] [Invertible (2 : R)]
 theorem spinGroupBaseChange_comp_rootsOfUnityToSpin (Q : QuadraticForm R M)
     (hQ : ∃ v, IsUnit (Q v)) :
     (spinGroupBaseChange (A := A) Q).comp (rootsOfUnityToSpin Q hQ) =
-      (rootsOfUnityToSpin (Q.baseChange A) (hQ.imp' (1 ⊗ₜ ·) fun _ hv ↦ by
-          simpa [QuadraticForm.baseChange_tmul, Algebra.smul_def] using
-            hv.map (algebraMap R A))).comp
+      (rootsOfUnityToSpin (Q.baseChange A) (QuadraticForm.exists_isUnit_baseChange hQ)).comp
         (restrictRootsOfUnity (algebraMap R A) 2) := by
   ext ζ
   simp only [MonoidHom.comp_apply, coe_spinGroupBaseChange_apply, coe_rootsOfUnityToSpin_apply,
     AlgHom.commutes, restrictRootsOfUnity_coe_apply,
     IsScalarTower.algebraMap_apply R A (CliffordAlgebra (Q.baseChange A))]
+
+/-- Extension of scalars of Spin groups sends the image of a square root of unity to the image of
+its image in `μ₂(A)`. -/
+@[simp]
+theorem spinGroupBaseChange_rootsOfUnityToSpin (Q : QuadraticForm R M) (hQ : ∃ v, IsUnit (Q v))
+    (ζ : rootsOfUnity 2 R) :
+    spinGroupBaseChange (A := A) Q (rootsOfUnityToSpin Q hQ ζ) =
+      rootsOfUnityToSpin (Q.baseChange A) (QuadraticForm.exists_isUnit_baseChange hQ)
+        (restrictRootsOfUnity (algebraMap R A) 2 ζ) :=
+  DFunLike.congr_fun (spinGroupBaseChange_comp_rootsOfUnityToSpin Q hQ) ζ
 
 end BaseChange
 
