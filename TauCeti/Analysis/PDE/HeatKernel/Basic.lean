@@ -38,6 +38,8 @@ a heat kernel assumes `0 < t`.
 * `TauCeti.heatKernel_le`: the pointwise bound by `(4πt)^(-n/2)`.
 * `TauCeti.heatKernel_eq_mul_heatKernel_one_smul`: the parabolic scaling
   `K_t(x) = (√t)⁻¹ ^ n K_1((√t)⁻¹ • x)`.
+* `TauCeti.heatKernel_mul_eq_mul_heatKernel_smul`: the same scaling between two positive times,
+  `K_{ts}(x) = (√t)⁻¹ ^ n K_s((√t)⁻¹ • x)`.
 * `TauCeti.contDiff_heatKernel`: `K_t` is smooth.
 * `TauCeti.integral_heatKernel`: `∫ K_t = 1` for `t > 0`.
 * `TauCeti.eLpNorm_heatKernel_le`: an explicit `Lᵠ` bound for `1 ≤ q ≤ ∞`.
@@ -107,6 +109,14 @@ theorem heatKernel_eq_mul_heatKernel_one_smul {t : ℝ} (ht : 0 < t) (x : E) :
     ring
   rw [heatKernel_apply, heatKernel_apply, hnorm, hpow, mul_one, mul_rpow (by positivity) ht.le]
   field_simp
+
+/-- **Parabolic scaling of the heat kernel between two times.** For `t, s > 0`,
+`K_{ts}(x) = (√t)⁻¹ ^ n K_s((√t)⁻¹ • x)` with `n = dim E`. -/
+theorem heatKernel_mul_eq_mul_heatKernel_smul {t s : ℝ} (ht : 0 < t) (hs : 0 < s) (x : E) :
+    heatKernel (t * s) x = (√t)⁻¹ ^ Module.finrank ℝ E * heatKernel s ((√t)⁻¹ • x) := by
+  rw [heatKernel_eq_mul_heatKernel_one_smul (mul_pos ht hs),
+    heatKernel_eq_mul_heatKernel_one_smul hs, smul_smul, sqrt_mul ht.le, mul_inv,
+    mul_comm (√s)⁻¹ (√t)⁻¹, mul_pow, mul_assoc]
 
 /-- The heat kernel `K_t` is smooth in the space variable (for every `t`). -/
 theorem contDiff_heatKernel (t : ℝ) {k : WithTop ℕ∞} : ContDiff ℝ k (heatKernel t : E → ℝ) :=
