@@ -143,8 +143,8 @@ theorem freeVarSupport_mapBound {m : ℕ} (f : Fin m → Fin n)
   classical
   induction φ generalizing n with
   | falsum => simp
-  | equal t₁ t₂ => simp [varFinsetLeft_relabel]
-  | rel R ts => simp [varFinsetLeft_relabel]
+  | equal t₁ t₂ => simp
+  | rel R ts => simp
   | imp φ ψ ihφ ihψ => simp [ihφ, ihψ]
   | all φ ih => simp [ih]
   | iSup φs ih => simp [ih]
@@ -198,6 +198,12 @@ theorem freeVarSupport_reindex {κ : Type uκ} (c : IndexCoding ι κ)
   | all φ ih => simp [ih]
   | iSup φs ih => simp [ih]
   | iInf φs ih => simp [ih]
+
+/-- Recoding into `L_{ω₁ω}` preserves syntactic free-variable support. -/
+@[simp]
+theorem freeVarSupport_toOmega [Encodable ι] (φ : L.BoundedFormulaInf ι α n) :
+    freeVarSupport (FirstOrder.Language.BoundedFormulaInf.toOmega φ) = freeVarSupport φ := by
+  rw [FirstOrder.Language.BoundedFormulaInf.toOmega_def, freeVarSupport_reindex]
 
 /-- Changing the free valuation away from syntactic support does not affect realization.
 The bound-variable valuation is arbitrary and is held fixed. -/

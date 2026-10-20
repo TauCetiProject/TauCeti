@@ -40,6 +40,7 @@ theorem realize_congr_varFinsetLeft [DecidableEq α] {β : Type*} {M : Type w} [
   rw [hv]
 
 /-- Relabelling right variables preserves a term's finite left-variable support. -/
+@[simp]
 theorem varFinsetLeft_relabel [DecidableEq α] {β γ : Type*}
     (t : L.Term (α ⊕ β)) (f : β → γ) :
     (t.relabel (Sum.map id f)).varFinsetLeft = t.varFinsetLeft := by
