@@ -43,7 +43,8 @@ input: geometric conclusions about `lowerConvexEnvelope a` assume `IsAdmissible 
 * `lowerConvexEnvelope_eq_of_forall_lt` and `lowerConvexEnvelope_eq_of_forall_gt`: the
   envelope passes through the first point and, when there is one, the last point.
 * `lowerConvexEnvelope_add_affine`: adding a real affine function to the sequence adds it
-  to the envelope; `lowerConvexEnvelope_const_add` allows an infinite constant.
+  to the envelope; `lowerConvexEnvelope_const_add` allows an infinite constant, and
+  `lowerConvexEnvelope_add_nsmul` states the shear by a finite slope.
 * `lowerConvexEnvelope_shift`: shifting the sequence to the right, with infinite heights
   at the vacated indices, shifts the envelope in the same way.
 
@@ -393,7 +394,6 @@ theorem lowerConvexEnvelope_add_affine (a : ℕ → WithTop ℝ) (c m : ℝ) :
     funext n
     simp
 
-
 /-- Adding a constant height, possibly infinite, to a sequence adds it to the envelope. An
 infinite constant gives the empty polygon on both sides. -/
 theorem lowerConvexEnvelope_const_add (t : WithTop ℝ) (a : ℕ → WithTop ℝ) :
@@ -404,6 +404,17 @@ theorem lowerConvexEnvelope_const_add (t : WithTop ℝ) (a : ℕ → WithTop ℝ
     exact lowerConvexEnvelope_top
   | coe r =>
     simpa [add_comm] using lowerConvexEnvelope_add_affine a r 0
+
+/-- Adding the shear `n ↦ n • t` of a finite slope `t` to a sequence adds it to the envelope.
+The finiteness hypothesis is needed: `n • ⊤` is `0` at `n = 0` and `⊤` elsewhere, which is
+not affine. -/
+theorem lowerConvexEnvelope_add_nsmul (a : ℕ → WithTop ℝ) {t : WithTop ℝ} (ht : t ≠ ⊤) :
+    lowerConvexEnvelope (fun n => a n + n • t) = fun n => lowerConvexEnvelope a n + n • t := by
+  lift t to ℝ using ht with m
+  have key (n : ℕ) : n • (m : WithTop ℝ) = ((0 + m * n : ℝ) : WithTop ℝ) := by
+    rw [← WithTop.coe_nsmul, nsmul_eq_mul, zero_add, mul_comm]
+  simp only [key]
+  exact lowerConvexEnvelope_add_affine a 0 m
 
 /-! ### Translation of indices -/
 

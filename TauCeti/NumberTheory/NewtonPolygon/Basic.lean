@@ -156,12 +156,9 @@ that valuation is finite. -/
 theorem newtonPolygon_rescale {R : Type*} [CommRing R] (f : R⟦X⟧)
     (v : AddValuation R (WithTop ℝ)) {c : R} (hc : v c ≠ ⊤) :
     (rescale c f).newtonPolygon v = fun n => f.newtonPolygon v n + n • v c := by
-  lift v c to ℝ using hc with m hm
-  have key (u : WithTop ℝ) (n : ℕ) : u + n • (m : WithTop ℝ) = u + ((0 + m * n : ℝ) : _) := by
-    rw [← WithTop.coe_nsmul, nsmul_eq_mul, zero_add, mul_comm]
   simp only [newtonPolygon_def, coeff_rescale, AddValuation.map_mul, AddValuation.map_pow,
-    ← hm, add_comm (_ • _), key]
-  exact lowerConvexEnvelope_add_affine _ 0 m
+    add_comm (_ • _)]
+  exact lowerConvexEnvelope_add_nsmul _ hc
 
 /-- Mapping the coefficients along a ring homomorphism compatible with the valuations
 preserves the Newton polygon. -/
@@ -250,12 +247,8 @@ theorem newtonPolygon_X_pow_mul (k : ℕ) :
 that valuation is finite. -/
 theorem newtonPolygon_comp_C_mul_X {c : R} (hc : v c ≠ ⊤) :
     (f.comp (C c * X)).newtonPolygon v = fun n => f.newtonPolygon v n + n • v c := by
-  lift v c to ℝ using hc with m hm
-  have key (u : WithTop ℝ) (n : ℕ) : u + n • (m : WithTop ℝ) = u + ((0 + m * n : ℝ) : _) := by
-    rw [← WithTop.coe_nsmul, nsmul_eq_mul, zero_add, mul_comm]
-  simp only [newtonPolygon_def, comp_C_mul_X_coeff, AddValuation.map_mul, AddValuation.map_pow,
-    ← hm, key]
-  exact lowerConvexEnvelope_add_affine _ 0 m
+  simp only [newtonPolygon_def, comp_C_mul_X_coeff, AddValuation.map_mul, AddValuation.map_pow]
+  exact lowerConvexEnvelope_add_nsmul _ hc
 
 /-- Mapping the coefficients along a ring homomorphism compatible with the valuations
 preserves the Newton polygon. -/
