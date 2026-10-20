@@ -40,11 +40,16 @@ invariance, the long exact sequence of a pair, excision) are transported to cubi
 * `TauCeti.singularToCubical_app_f_simplexChain` and `TauCeti.cubicalToSingular_app_f_ofCube`: the
   comparison maps send a simplex, respectively a cube, to the image of the model generator under
   it, regarded as a map from the model.
+* `TauCeti.singularToCubicalCompHomotopy_hom_simplexChain` and
+  `TauCeti.cubicalToSingularCompHomotopy_hom_ofCube`: the natural homotopies, on a simplex or a
+  cube, are the images of their values on the model generators.
 * `TauCeti.cubicalAugment_singularToCubical` and `TauCeti.singularAugment_cubicalToSingular`: the
   comparison maps are compatible with the augmentations.
 * `TauCeti.singularToCubical_app_f_zero_simplexChain` and
   `TauCeti.cubicalToSingular_app_f_zero_ofCube`: in degree zero the comparison maps send a point
   to the same point.
+* `TauCeti.cubicalToSingularGen_zero` and `TauCeti.singularToCubicalGen_zero`: in degree zero the
+  model generators are the point simplex and the point cube.
 * `TauCeti.TopCat.isIso_singularHomologyMap_of_quasiIso`: a map inducing a quasi-isomorphism of
   normalized cubical chains induces isomorphisms on singular homology.
 
@@ -238,6 +243,14 @@ theorem cubicalToSingular_app_f_ofCube {X : TopCat.{u}} {n : ℕ} (c : SingularC
   rw [cubeToHom_hom_comp_upCube] at h
   exact h.symm
 
+/-- In degree zero, the model generator of the comparison to simplicial chains is the `0`-simplex
+at the unique point of the `0`-cube. -/
+@[simp]
+theorem cubicalToSingularGen_zero :
+    cubicalToSingularGen k 0 =
+      simplexChain (TopCat.toSSetObj₀Equiv.symm ((upCube.{u} 0) fun i ↦ i.elim0)) 1 :=
+  cubicalToSingular_app_f_zero_ofZeroCube (upCube 0)
+
 /-- The image of the identity cube is the image of its subcube along the identity. -/
 theorem cubicalToSingularSubcube_id (n : ℕ) :
     cubicalToSingularSubcube k n (ContinuousMap.id (Fin n → unitInterval)) =
@@ -305,6 +318,48 @@ theorem singularToCubical_app_f_simplexChain {X : TopCat.{u}} {n : ℕ}
   unfold singularToCubicalGen
   -- Composites of `ModuleCat` morphisms are composites of linear maps by definition.
   exact h
+
+/-- The chain homotopy `singularToCubicalCompHomotopy` evaluated on a simplex is the image of its
+value on the identity simplex of the model under the simplex, regarded as a map from the model. -/
+theorem singularToCubicalCompHomotopy_hom_simplexChain {X : TopCat.{u}} {n : ℕ}
+    (σ : (TopCat.toSSet.obj X) _⦋n⦌) :
+    ((singularToCubicalCompHomotopy k X).hom n (n + 1)) (simplexChain σ 1) =
+      ((singularChains k).map σ.down).f (n + 1)
+        ((singularToCubicalCompHomotopy k (simplexModel.{u} n)).hom n (n + 1)
+          (simplexChain (idSimplex n) 1)) := by
+  have h := congrArg (fun φ ↦ φ (simplexChain (idSimplex n) (1 : k)))
+    (congrArg ModuleCat.Hom.hom (singularToCubicalCompHomotopy_hom_naturality k σ.down n (n + 1)))
+  simp only [ModuleCat.hom_comp, LinearMap.coe_comp, Function.comp_apply] at h
+  have e : ((singularChains k).map σ.down).f n (simplexChain (idSimplex n) (1 : k)) =
+      simplexChain σ 1 := by
+    rw [singularChains_map_f_simplexChain, toSSet_map_down_idSimplex]
+  exact (congrArg ((singularToCubicalCompHomotopy k X).hom n (n + 1)).hom e.symm).trans h
+
+/-- The chain homotopy `cubicalToSingularCompHomotopy` evaluated on a cube is the image of its
+value on the identity cube of the model under the cube, regarded as a map from the model. -/
+theorem cubicalToSingularCompHomotopy_hom_ofCube {X : TopCat.{u}} {n : ℕ} (c : SingularCube X n) :
+    ((cubicalToSingularCompHomotopy k X).hom n (n + 1)) (NormalizedCubicalChain.ofCube X k c) =
+      ((normalizedCubicalChainComplex k).map (cubeToHom c)).f (n + 1)
+        ((cubicalToSingularCompHomotopy k (cubeModel.{u} n)).hom n (n + 1)
+          (NormalizedCubicalChain.ofCube (cubeModel.{u} n) k (upCube n))) := by
+  have h := congrArg (fun φ ↦ φ (NormalizedCubicalChain.ofCube (cubeModel.{u} n) k (upCube n)))
+    (congrArg ModuleCat.Hom.hom (cubicalToSingularCompHomotopy_hom_naturality k (cubeToHom c) n
+      (n + 1)))
+  simp only [ModuleCat.hom_comp, LinearMap.coe_comp] at h
+  have e : ((normalizedCubicalChainComplex k).map (cubeToHom c)).f n
+      (NormalizedCubicalChain.ofCube (cubeModel.{u} n) k (upCube n)) =
+      NormalizedCubicalChain.ofCube X k c :=
+    (normalizedCubicalChainComplex_map_f_apply (cubeToHom c) n _).trans
+      (by rw [NormalizedCubicalChain.map_ofCube, cubeToHom_hom_comp_upCube])
+  exact (congrArg ((cubicalToSingularCompHomotopy k X).hom n (n + 1)).hom e.symm).trans h
+
+/-- In degree zero, the model generator of the comparison to cubical chains is the point cube at the
+vertex of the `0`-simplex. -/
+@[simp]
+theorem singularToCubicalGen_zero :
+    singularToCubicalGen k 0 = NormalizedCubicalChain.ofCube (simplexModel.{u} 0) k
+      (SingularCube.point (TopCat.toSSetObj₀Equiv (idSimplex.{u} 0))) :=
+  singularToCubical_app_f_zero_simplexChain (idSimplex 0)
 
 end ModelChains
 

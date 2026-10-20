@@ -9,7 +9,10 @@ public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 
 /-!
-# Translation of ball integrals
+# Integration on groups
+
+Integrating against an inverse measure is equivalent to precomposing the integrand with
+inversion. This transports integrals between left and right Haar measures.
 
 For a measure invariant under addition, an integral over a ball can be translated to a ball
 about the origin. Only measurability of translations is needed; the measure need not be an
@@ -26,6 +29,15 @@ public section
 open MeasureTheory Metric
 
 namespace TauCeti
+
+/-- An integral against `μ.inv` is an integral against `μ` with the argument inverted.
+This orientation removes the inverse measure and needs no integrability assumption. -/
+theorem integral_inv_measure {G E : Type*} [MeasurableSpace G] [InvolutiveInv G]
+    [MeasurableInv G] [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (f : G → E) (μ : Measure G) :
+    ∫ x, f x ∂μ.inv = ∫ x, f x⁻¹ ∂μ := by
+  rw [Measure.inv_def]
+  exact integral_map_equiv (MeasurableEquiv.inv G) f
 
 /-- For a measure invariant under right addition, the integral over `ball x₀ R` is the integral
 over `ball 0 R` of the translate `y ↦ f (y + x₀)`. No integrability hypothesis is needed. -/

@@ -76,11 +76,7 @@ theorem exists_isPiecewiseAffineOn_closedStarHomeomorphClosedBall
     rw [Function.comp_apply, Function.comp_apply, starToCone_of_lt x hx,
       coneMap_smul F _ (sub_pos.mpr hx).ne']
     simp [π, hF]
-  · have hv : x.1.1 v = 1 := le_antisymm (Realization.le_one K x.1 v) (not_lt.mp hx)
-    have he : x = starApex K v := by
-      apply Subtype.ext
-      simpa only [starApex_val] using (Realization.eq_vertex_iff K x.1 v).mpr hv
-    rw [he]
+  · rw [eq_starApex_of_not_lt K v hx]
     rw [Function.comp_apply, Function.comp_apply,
       starToCone_of_not_lt (starApex K v) (by simp), coneMap_zero,
       closedStarHomeomorphClosedBall_starApex hK e]
@@ -114,11 +110,7 @@ theorem exists_isPLOn_closedStarHomeomorphClosedBall_of_isPLOn
       IsPLOn G (range (fun x : closedStarRealization K {v} => (x.1.1 : ι → ℝ))) ∧
       ∀ x : closedStarRealization K {v},
         G (x.1.1 : ι → ℝ) = (closedStarHomeomorphClosedBall hK e x : E) := by
-  have hlink : IsCompact (range (fun y : geometricLink K v => (y.1.1 : ι → ℝ))) := by
-    have hcompact := K.isCompact_geometricLink v hK
-    let : CompactSpace (geometricLink K v) := isCompact_iff_compactSpace.mp hcompact
-    exact isCompact_range ((continuous_realization_coe K).comp continuous_subtype_val)
   simpa only [hK] using exists_isPLOn_closedStarHomeomorphClosedBall hK e F hF
-    (hf.isPiecewiseAffineOn_of_isCompact hlink)
+    (hf.isPiecewiseAffineOn_of_isCompact (K.isCompact_range_geometricLink v hK))
 
 end AbstractSimplicialComplex
