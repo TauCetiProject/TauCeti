@@ -69,7 +69,6 @@ theorem generalizedGammaMeasure_one_shape_eq_weibullMeasure (hc : 0 < c) :
 
 /-- Power parameter `-1` recovers the inverse-gamma law, with generalized gamma
 scale equal to the rate of the Gamma variable before inversion, including invalid parameters. -/
-@[simp]
 theorem generalizedGammaMeasure_neg_one_eq_inverseGammaMeasure (a s : ℝ) :
     generalizedGammaMeasure a (-1) s = inverseGammaMeasure a s := by
   by_cases h : 0 < a ∧ 0 < s
@@ -132,7 +131,7 @@ theorem nakagamiMeasure_eq_generalizedGammaMeasure (m Ω : ℝ) :
 /-- The Fréchet law of shape `c` and scale `s` is both generalized gamma with
 parameters `(1, -c, s)` and GEV with location `s`, scale `s / c`, and shape `c⁻¹`.
 The equality includes the zero laws at nonpositive scale. -/
-theorem generalizedGammaMeasure_one_neg_eq_generalizedExtremeValueMeasure
+theorem generalizedGammaMeasure_one_shape_neg_eq_generalizedExtremeValueMeasure
     (hc : 0 < c) :
     generalizedGammaMeasure 1 (-c) s =
       generalizedExtremeValueMeasure s (s / c) c⁻¹ := by
@@ -155,7 +154,7 @@ theorem generalizedGammaMeasure_one_neg_eq_generalizedExtremeValueMeasure
 theorem cdf_generalizedExtremeValueMeasure_frechet (hc : 0 < c) (hs : 0 < s) (x : ℝ) :
     cdf (generalizedExtremeValueMeasure s (s / c) c⁻¹) x =
       if x ≤ 0 then 0 else exp (-(x / s) ^ (-c)) := by
-  rw [← generalizedGammaMeasure_one_neg_eq_generalizedExtremeValueMeasure hc,
+  rw [← generalizedGammaMeasure_one_shape_neg_eq_generalizedExtremeValueMeasure hc,
     cdf_generalizedGammaMeasure_eq zero_lt_one (neg_ne_zero.mpr hc.ne') hs,
     ite_eq_right (by linarith : ¬ 0 < -c)]
   split_ifs with hx
