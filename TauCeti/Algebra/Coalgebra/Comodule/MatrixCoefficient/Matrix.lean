@@ -21,7 +21,8 @@ under the counit.
 
 When `C` is a Hopf algebra, the antipode identities say that the entrywise antipode transform is a
 two-sided inverse of the coefficient matrix; over a commutative Hopf algebra its determinant is
-therefore a unit.
+therefore a unit. Over a commutative bialgebra the determinant is group-like, so it is a
+character of the represented group: the determinant character of the comodule.
 
 ## Main declarations
 
@@ -35,6 +36,8 @@ therefore a unit.
 * `TauCeti.Comodule.coefficientMatrix_mul_map_antipode` and
   `TauCeti.Comodule.map_antipode_mul_coefficientMatrix`: the two inverse-matrix identities.
 * `TauCeti.Comodule.isUnit_det_coefficientMatrix`: the determinant is a unit.
+* `TauCeti.Comodule.isGroupLikeElem_det_coefficientMatrix`: over a commutative bialgebra, the
+  determinant is group-like, the determinant character of the comodule.
 
 ## References
 
@@ -192,5 +195,36 @@ theorem isUnit_det_coefficientMatrix (b : Basis ι R M) :
 end CommRing
 
 end
+
+section CommBialgebra
+
+variable {R : Type u} {C : Type v} {M : Type w} {ι : Type x}
+variable [CommRing R] [CommRing C] [Bialgebra R C]
+variable [AddCommMonoid M] [Module R M] [Comodule R C M] [Fintype ι] [DecidableEq ι]
+
+/-- **The determinant of a finite free comodule is a character.** The determinant of its
+coefficient matrix is group-like. -/
+theorem isGroupLikeElem_det_coefficientMatrix (b : Basis ι R M) :
+    IsGroupLikeElem R (Matrix.det (coefficientMatrix (C := C) b)) := by
+  constructor
+  · have hmap : (coefficientMatrix (C := C) b).map (Bialgebra.counitAlgHom R C) = 1 := by
+      ext i j
+      simp [Matrix.one_apply]
+    rw [← Bialgebra.counitAlgHom_apply, AlgHom.map_det, AlgHom.mapMatrix_apply, hmap,
+      Matrix.det_one]
+  · have hmap : (coefficientMatrix (C := C) b).map (Bialgebra.comulAlgHom R C) =
+        (coefficientMatrix (C := C) b).map
+            (Algebra.TensorProduct.includeLeft : C →ₐ[R] C ⊗[R] C) *
+          (coefficientMatrix (C := C) b).map
+            (Algebra.TensorProduct.includeRight : C →ₐ[R] C ⊗[R] C) := by
+      ext i j
+      simp [Matrix.mul_apply, Algebra.TensorProduct.tmul_mul_tmul]
+    have hdet (f : C →ₐ[R] C ⊗[R] C) :
+        ((coefficientMatrix (C := C) b).map f).det = f (coefficientMatrix (C := C) b).det :=
+      (f.map_det _).symm
+    simpa [hdet, Matrix.det_mul, Algebra.TensorProduct.tmul_mul_tmul] using
+      congrArg Matrix.det hmap
+
+end CommBialgebra
 
 end TauCeti.Comodule

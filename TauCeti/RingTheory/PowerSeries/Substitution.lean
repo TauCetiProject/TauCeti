@@ -8,11 +8,11 @@ module
 public import Mathlib.RingTheory.PowerSeries.Binomial
 public import Mathlib.RingTheory.PowerSeries.Derivative
 public import Mathlib.RingTheory.PowerSeries.Substitution
+public import Mathlib.RingTheory.PowerSeries.Trunc
 import Mathlib.RingTheory.PowerSeries.Inverse
-import Mathlib.RingTheory.PowerSeries.Trunc
 
 /-!
-# Substitution of power series: orders, linear coefficients, algebra maps, and the binomial series
+# Power series substitution: nilpotent series, orders, algebra maps, and the binomial series
 
 Mathlib substitutes a power series `b` with nilpotent constant coefficient into a power series
 `f` through `PowerSeries.subst b f`, and records the side condition on `b` as
@@ -27,6 +27,11 @@ Substitution of series of zero constant coefficient is compatible with congruenc
 powers of `X`, in both the substituted series and the series substituted into. This makes
 truncation modulo `X ^ n` compatible with composition of formal coordinates.
 
+Substitution at a nilpotent series depends on only finitely many coefficients. The substituted
+series may be multivariate, with coefficients in an algebra over the coefficient ring. At a
+nilpotent constant it is the constant series obtained by evaluating a finite polynomial truncation.
+This connects formal identities with polynomial maps on nilpotent elements.
+
 An algebra map on power series whose value at `X` has nilpotent constant coefficient is the
 corresponding substitution, without any continuity hypothesis. Over a field, every algebra
 endomorphism of the power series ring has this form. In particular, a perturbation `X + h` of `X`
@@ -39,6 +44,12 @@ of a completed group algebra attached to two topological generators.
 
 ## Main results
 
+* `PowerSeries.HasSubst.C`: a nilpotent constant can be substituted.
+* `PowerSeries.subst_one`: substitution preserves the constant series one.
+* `PowerSeries.subst_eq_aeval_trunc_of_pow_eq_zero`: substitution at a series with a vanishing
+  power is evaluation of a finite truncation.
+* `PowerSeries.subst_C_eq_C_aeval_trunc`: substitution at a nilpotent constant is the constant
+  series obtained by evaluating a finite truncation.
 * `PowerSeries.order_subst`: `ord (f (φ)) = ord φ * ord f` when `φ` has zero constant
   coefficient.
 * `PowerSeries.subst_eq_zero_iff`: substitution of a nonzero `φ` of zero constant coefficient
@@ -59,6 +70,42 @@ of a completed group algebra attached to two topological generators.
 public section
 
 namespace PowerSeries
+
+/-- A nilpotent constant can be substituted into a power series. -/
+theorem HasSubst.C {R : Type*} [CommRing R] {x : R} (hx : IsNilpotent x) :
+    HasSubst (C x) := by
+  simpa only [HasSubst, ← constantCoeff_eq, constantCoeff_C] using hx
+
+/-- Substitution preserves the constant series one. -/
+@[simp]
+theorem subst_one {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
+    {τ : Type*} {a : MvPowerSeries τ S} (ha : HasSubst a) :
+    (1 : R⟦X⟧).subst a = 1 := by
+  rw [← coe_substAlgHom ha, map_one]
+
+section Nilpotent
+
+variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
+
+/-- Substituting a possibly multivariate series over an `R`-algebra whose `n`th power vanishes
+uses only the coefficients below `n`. -/
+theorem subst_eq_aeval_trunc_of_pow_eq_zero {τ : Type*} {a : MvPowerSeries τ S} {n : ℕ}
+    (hn : a ^ n = 0) (f : R⟦X⟧) :
+    f.subst a = Polynomial.aeval a (trunc n f) := by
+  have ha : HasSubst a := IsNilpotent.map ⟨n, hn⟩ MvPowerSeries.constantCoeff
+  conv_lhs => rw [eq_X_pow_mul_shift_add_trunc n f]
+  rw [subst_add ha, subst_mul ha, subst_pow ha, subst_X ha, hn, zero_mul, zero_add,
+    subst_coe ha]
+
+/-- A nilpotent constant in an `R`-algebra substitutes by algebra evaluation of a finite
+truncation. -/
+theorem subst_C_eq_C_aeval_trunc {x : S} {n : ℕ} (hn : x ^ n = 0) (f : R⟦X⟧) :
+    f.subst (C x) = C (Polynomial.aeval x (trunc n f)) := by
+  rw [subst_eq_aeval_trunc_of_pow_eq_zero (n := n) (by rw [← map_pow, hn, map_zero])]
+  simpa only [IsScalarTower.toAlgHom_apply, algebraMap_eq] using
+    Polynomial.aeval_algHom_apply (IsScalarTower.toAlgHom R S S⟦X⟧) x (trunc n f)
+
+end Nilpotent
 
 /-- A nonzero power series of zero constant coefficient has positive integer order, so it
 multiplies orders under substitution by a positive integer. -/

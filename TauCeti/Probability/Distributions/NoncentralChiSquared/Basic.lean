@@ -190,6 +190,26 @@ theorem noncentralChiSquaredMeasure_singleton_of_ne_zero (hx : x ≠ 0) (k : ℝ
         mul_zero]
   · simp [noncentralChiSquaredMeasure_of_neg (lt_of_not_ge hk)]
 
+/-- Every valid law other than the double-zero Dirac law dominates a positive-weight
+central chi-squared component of positive degree. -/
+theorem exists_smul_chiSquaredMeasure_le_noncentralChiSquaredMeasure (hk : 0 ≤ k)
+    (hne : k ≠ 0 ∨ l ≠ 0) :
+    ∃ n : ℕ, 0 < k + 2 * n ∧ poissonMeasure (l / 2) {n} ≠ 0 ∧
+      poissonMeasure (l / 2) {n} • chiSquaredMeasure (k + 2 * n) ≤
+        noncentralChiSquaredMeasure k l := by
+  have hle (n : ℕ) : poissonMeasure (l / 2) {n} • chiSquaredMeasure (k + 2 * n) ≤
+      noncentralChiSquaredMeasure k l := by
+    rw [noncentralChiSquaredMeasure_eq_sum hk]
+    exact Measure.le_sum (fun j : ℕ ↦
+      poissonMeasure (l / 2) {j} • chiSquaredMeasure (k + 2 * j)) n
+  rcases hne with hk' | hl
+  · refine ⟨0, by simpa using lt_of_le_of_ne hk hk'.symm, ?_, hle 0⟩
+    simp [poissonMeasure_singleton, exp_pos]
+  · refine ⟨1, by positivity, ?_, hle 1⟩
+    rw [poissonMeasure_singleton, ENNReal.ofReal_ne_zero_iff]
+    have : 0 < (l : ℝ) := NNReal.coe_pos.mpr (pos_iff_ne_zero.mpr hl)
+    positivity
+
 /-- The support is empty for negative degree, the singleton zero at zero degree and
 noncentrality, and `[0, ∞)` in every other valid case. -/
 @[simp]
@@ -209,23 +229,10 @@ theorem support_noncentralChiSquaredMeasure (k : ℝ) (l : ℝ≥0) :
   apply Set.Subset.antisymm
   · exact Measure.support_subset_of_isClosed isClosed_Ici
       (ae_nonneg_noncentralChiSquaredMeasure k l)
-  · have hcomponent (n : ℕ) (hdeg : 0 < k + 2 * n)
-        (hw : poissonMeasure (l / 2) {n} ≠ 0) :
-        Ici (0 : ℝ) ⊆ (noncentralChiSquaredMeasure k l).support := by
-      have hle : poissonMeasure (l / 2) {n} • chiSquaredMeasure (k + 2 * n) ≤
-          noncentralChiSquaredMeasure k l := by
-        rw [noncentralChiSquaredMeasure_eq_sum hk]
-        exact Measure.le_sum (fun j : ℕ ↦
-          poissonMeasure (l / 2) {j} • chiSquaredMeasure (k + 2 * j)) n
-      have hac := (Measure.absolutelyContinuous_smul hw).trans hle.absolutelyContinuous
-      simpa only [support_chiSquaredMeasure, ite_eq_right hdeg.ne', ite_eq_left hdeg] using
-        hac.support_mono
-    rcases hne with hk' | hl
-    · apply hcomponent 0 (by simpa using lt_of_le_of_ne hk hk'.symm)
-      simp [poissonMeasure_singleton, exp_pos]
-    · apply hcomponent 1 (by positivity)
-      rw [poissonMeasure_singleton, ENNReal.ofReal_ne_zero_iff]
-      have : 0 < (l : ℝ) := NNReal.coe_pos.mpr (pos_iff_ne_zero.mpr hl)
-      positivity
+  · obtain ⟨n, hdeg, hw, hle⟩ :=
+      exists_smul_chiSquaredMeasure_le_noncentralChiSquaredMeasure hk hne
+    have hac := (Measure.absolutelyContinuous_smul hw).trans hle.absolutelyContinuous
+    simpa only [support_chiSquaredMeasure, ite_eq_right hdeg.ne', ite_eq_left hdeg] using
+      hac.support_mono
 
 end TauCeti.Probability
