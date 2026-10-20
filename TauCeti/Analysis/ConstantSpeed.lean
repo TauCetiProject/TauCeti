@@ -64,6 +64,14 @@ theorem variationOnFromTo.ediam_image_le {α E : Type*} [LinearOrder α] [Topolo
     ← ENNReal.ofReal_toReal hf]
   exact ENNReal.ofReal_le_ofReal (variationOnFromTo.abs_le_eVariationOn hf)
 
+/-- The natural parameterization of a curve of locally bounded variation on `s` recovers the
+curve at the cumulative variation of each point of `s`. -/
+theorem LocallyBoundedVariationOn.naturalParameterization_variationOnFromTo {α E : Type*}
+    [LinearOrder α] [EMetricSpace E] {f : α → E} {s : Set α}
+    (hf : LocallyBoundedVariationOn f s) {a b : α} (ha : a ∈ s) (hb : b ∈ s) :
+    naturalParameterization f s a (variationOnFromTo f s a b) = f b :=
+  edist_eq_zero.mp (edist_naturalParameterization_eq_zero hf ha hb)
+
 /-- A curve of locally bounded variation on `s` factors, on `s`, through its natural
 parameterization restricted to the set of cumulative variations from a base point. -/
 theorem LocallyBoundedVariationOn.image_subset_image_naturalParameterization {α E : Type*}
@@ -72,7 +80,7 @@ theorem LocallyBoundedVariationOn.image_subset_image_naturalParameterization {α
     f '' s ⊆ naturalParameterization f s a '' (variationOnFromTo f s a '' s) := by
   rintro _ ⟨x, hx, rfl⟩
   exact ⟨variationOnFromTo f s a x, ⟨x, hx, rfl⟩,
-    edist_eq_zero.mp (edist_naturalParameterization_eq_zero hf ha hx)⟩
+    hf.naturalParameterization_variationOnFromTo ha hx⟩
 
 /-- The image of a curve of locally bounded variation has Hausdorff dimension at most one,
 because its natural parameterization is Lipschitz on a subset of the real line. -/

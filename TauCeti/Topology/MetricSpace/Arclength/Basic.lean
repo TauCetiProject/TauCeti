@@ -40,6 +40,17 @@ namespace BoundedVariationOn
 
 variable {X : Type*} [MetricSpace X] {γ : ℝ → X} {a b : ℝ}
 
+/-- Cumulative variation maps the parameter interval of a continuous rectifiable curve onto its
+length interval. -/
+theorem image_variationOnFromTo_Icc (hγ : BoundedVariationOn γ (Icc a b))
+    (hcont : ContinuousOn γ (Icc a b)) (hab : a ≤ b) :
+    variationOnFromTo γ (Icc a b) a '' Icc a b = Icc 0 (eVariationOn γ (Icc a b)).toReal := by
+  have ha : a ∈ Icc a b := left_mem_Icc.mpr hab
+  rw [ContinuousOn.image_Icc_of_monotoneOn hab
+      (fun t ht ↦ (hγ.continuousWithinAt_variationOnFromTo_iff ha ht).mpr (hcont t ht))
+      (variationOnFromTo.monotoneOn hγ.locallyBoundedVariationOn ha),
+    variationOnFromTo.self, variationOnFromTo.eq_of_le _ _ hab, inter_self]
+
 /-- A continuous rectifiable curve factors through a 1-Lipschitz curve on its length interval.
 The factor has exactly the parameter difference as variation on every subinterval, including
 when the original curve has pauses or zero length. Values of the factor outside its length
@@ -59,11 +70,7 @@ theorem exists_arclength_factorization (hγ : BoundedVariationOn γ (Icc a b))
     (hγ.continuousWithinAt_variationOnFromTo_iff ha ht).mpr (hcont t ht)
   have hm : MonotoneOn s (Icc a b) :=
     variationOnFromTo.monotoneOn hγ.locallyBoundedVariationOn ha
-  have hsa : s a = 0 := variationOnFromTo.self _ _ _
-  have hsb : s b = L := by
-    simp only [s, variationOnFromTo.eq_of_le _ _ hab, inter_self, L]
-  have himage : s '' Icc a b = Icc 0 L := by
-    rw [hs.image_Icc_of_monotoneOn hab hm, hsa, hsb]
+  have himage : s '' Icc a b = Icc 0 L := hγ.image_variationOnFromTo_Icc hcont hab
   -- The general variation factorization collapses each constant fibre.
   obtain ⟨g, hg, hfactor⟩ :=
     hγ.locallyBoundedVariationOn.exists_lipschitzOnWith_comp_variationOnFromTo_eqOn ha
@@ -106,15 +113,9 @@ theorem exists_arclength_homeomorph (hγ : BoundedVariationOn γ (Icc a b))
   let s := variationOnFromTo γ (Icc a b) a
   let L := (eVariationOn γ (Icc a b)).toReal
   have ha : a ∈ Icc a b := left_mem_Icc.mpr hab
-  have hs : ContinuousOn s (Icc a b) := fun t ht ↦
-    (hγ.continuousWithinAt_variationOnFromTo_iff ha ht).mpr (hcont t ht)
   have hm : StrictMonoOn s (Icc a b) :=
     hγ.locallyBoundedVariationOn.strictMonoOn_variationOnFromTo_of_injOn_Ioo ha hinj
-  have hsa : s a = 0 := variationOnFromTo.self _ _ _
-  have hsb : s b = L := by
-    simp only [s, variationOnFromTo.eq_of_le _ _ hab, inter_self, L]
-  have himage : s '' Icc a b = Icc 0 L := by
-    rw [hs.image_Icc_of_monotoneOn hab hm.monotoneOn, hsa, hsb]
+  have himage : s '' Icc a b = Icc 0 L := hγ.image_variationOnFromTo_Icc hcont hab
   let S : Icc a b → Icc 0 L := fun t ↦ ⟨s t, himage ▸ mem_image_of_mem s t.property⟩
   have hS : StrictMono S := fun t u htu ↦ hm t.property u.property htu
   have hsurj : Function.Surjective S := by
