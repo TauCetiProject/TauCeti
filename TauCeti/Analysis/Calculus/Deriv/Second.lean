@@ -1,0 +1,109 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Analysis.Calculus.Deriv.CompMul
+public import Mathlib.Analysis.SpecialFunctions.Sqrt
+import Mathlib.Analysis.Calculus.Deriv.Add
+import Mathlib.Analysis.Calculus.Deriv.Inv
+import Mathlib.Analysis.Calculus.Deriv.Mul
+import Mathlib.Analysis.Calculus.Deriv.Pow
+
+/-!
+# Second derivatives of functions of one variable
+
+Three computations of the second derivative `deriv (deriv f)` of a function of one variable.
+
+The second derivative of `fun x ↦ f (c * x)` is `c ^ 2` times the second derivative of `f`
+at `c * x`. As for `deriv_comp_mul_left`, no differentiability of `f` is needed, since Mathlib's
+derivative is `0` wherever it is undefined. Mathlib's `iteratedDeriv_comp_const_smul` states the
+corresponding formula for higher iterated derivatives under a `ContDiff` hypothesis.
+
+The second derivative of a quadratic polynomial `a + b s + c s ^ 2` is the constant `2 c`.
+
+The second derivative of the square root of a quadratic polynomial `Q s = a + b s + c s ^ 2` is
+computed where `Q` is positive. Since `2 Q Q'' - Q' ^ 2` is the constant `4 a c - b ^ 2`, it is
+`(4 a c - b ^ 2) / (4 Q √Q)`.
+
+## Main results
+
+* `deriv_deriv_comp_mul_left`: the second derivative of `fun x ↦ f (c * x)`.
+* `deriv_deriv_quadratic`: the second derivative of `s ↦ a + b s + c s ^ 2`.
+* `Real.deriv_deriv_sqrt_quadratic`: the second derivative of `s ↦ √(a + b s + c s ^ 2)`.
+-/
+
+public section
+
+open Filter Topology
+
+section CompMul
+
+variable {𝕜 F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- The second derivative of `fun x ↦ f (c * x)` at `x` is `c ^ 2 • deriv (deriv f) (c * x)`,
+with no differentiability assumption on `f`. -/
+theorem deriv_deriv_comp_mul_left (c : 𝕜) (f : 𝕜 → F) (x : 𝕜) :
+    deriv (deriv (f <| c * ·)) x = c ^ 2 • deriv (deriv f) (c * x) := by
+  have h : deriv (f <| c * ·) = fun y ↦ c • deriv f (c * y) :=
+    funext fun y ↦ deriv_comp_mul_left c f y
+  rw [h, deriv_fun_const_smul_field, deriv_comp_mul_left, smul_smul, sq]
+
+end CompMul
+
+section Quadratic
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+
+/-- The derivative of a quadratic polynomial `a + b * s + c * s ^ 2` at `t` is `b + 2 * c * t`. -/
+theorem hasDerivAt_quadratic (a b c t : 𝕜) :
+    HasDerivAt (fun s ↦ a + b * s + c * s ^ 2) (b + 2 * c * t) t := by
+  have h := HasDerivAt.add (HasDerivAt.const_add a (HasDerivAt.const_mul b (hasDerivAt_id t)))
+    (HasDerivAt.const_mul c (hasDerivAt_pow 2 t))
+  convert h using 1
+  · ext u
+    simp only [id, Pi.add_apply]
+  · simp
+    ring
+
+/-- The second derivative of a quadratic polynomial `a + b * s + c * s ^ 2` is `2 * c`. -/
+theorem deriv_deriv_quadratic (a b c t : 𝕜) :
+    deriv (deriv fun s ↦ a + b * s + c * s ^ 2) t = 2 * c := by
+  have h : deriv (fun s ↦ a + b * s + c * s ^ 2) = fun s ↦ b + 2 * c * s :=
+    funext fun s ↦ (hasDerivAt_quadratic a b c s).deriv
+  rw [h]
+  simp
+
+end Quadratic
+
+namespace Real
+
+/-- The second derivative of a quadratic polynomial `a + b s + c s ^ 2` is the constant `2 c`.
+
+The second derivative of the square root of a quadratic polynomial
+`Q s = a + b * s + c * s ^ 2` at a point `t` where `Q` is positive is
+`(4 * a * c - b ^ 2) / (4 * Q t * √(Q t))`. -/
+theorem deriv_deriv_sqrt_quadratic {a b c t : ℝ} (ht : 0 < a + b * t + c * t ^ 2) :
+    deriv (deriv fun s ↦ √(a + b * s + c * s ^ 2)) t =
+      (4 * a * c - b ^ 2) / (4 * (a + b * t + c * t ^ 2) * √(a + b * t + c * t ^ 2)) := by
+  have hQ (s : ℝ) := hasDerivAt_quadratic a b c s
+  have hpos : ∀ᶠ s in 𝓝 t, 0 < a + b * s + c * s ^ 2 :=
+    continuousAt_const.eventually_lt (HasDerivAt.continuousAt (hQ t)) ht
+  have hderiv : deriv (fun s ↦ √(a + b * s + c * s ^ 2)) =ᶠ[𝓝 t]
+      fun s ↦ (b + 2 * c * s) / (2 * √(a + b * s + c * s ^ 2)) :=
+    hpos.mono fun s hs ↦ (HasDerivAt.sqrt (hQ s) hs.ne').deriv
+  have hnum : HasDerivAt (fun s ↦ b + 2 * c * s) (2 * c) t := by
+    simpa using HasDerivAt.const_add b (HasDerivAt.const_mul (2 * c) (hasDerivAt_id t))
+  have hsqrt := Real.sqrt_pos.2 ht
+  have hden : HasDerivAt (fun s ↦ 2 * √(a + b * s + c * s ^ 2))
+      (2 * ((b + 2 * c * t) / (2 * √(a + b * t + c * t ^ 2)))) t :=
+    HasDerivAt.const_mul 2 (HasDerivAt.sqrt (hQ t) ht.ne')
+  rw [hderiv.deriv_eq, (HasDerivAt.fun_div hnum hden (by positivity)).deriv]
+  have hsq := Real.sq_sqrt ht.le
+  field_simp
+  rw [hsq]
+  ring
+
+end Real
