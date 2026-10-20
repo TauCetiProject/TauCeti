@@ -42,13 +42,15 @@ forces `X` to reduce to a root of the residue cubic. From the normal form of Ste
 
 ## Main results
 
-* `WeierstrassCurve.exists_dvd_cubic_of_equation` and
-  `WeierstrassCurve.pow_six_dvd_a₆_of_equation`: over a domain with a prime `ϖ`, a solution with
-  both coordinates divisible by `ϖ` on the normal forms of Steps 6 and 10 of Tate's algorithm
-  gives a root of the residue cubic modulo `ϖ`, and `ϖ⁶ ∣ a₆`, respectively. On the normal form of
-  Step 8 such a solution gives a root of the residue quadratic modulo `ϖ`
-  (`WeierstrassCurve.exists_eq_sq_mul_of_equation`), and on the normal form of Tate's algorithm
-  at `III*` it has `ϖ² ∣ x` and `ϖ³ ∣ y` (`WeierstrassCurve.sq_dvd_and_pow_three_dvd_of_equation`).
+* `WeierstrassCurve.sq_dvd_and_dvd_cubic_of_equation`: over a domain with a prime `ϖ`, on the
+  normal form of Step 6 of Tate's algorithm, a solution `(ϖ X, y)` with `ϖ ∣ y` has `ϖ² ∣ y`, and
+  `X` is a root of the residue cubic modulo `ϖ`.
+* `WeierstrassCurve.pow_six_dvd_a₆_of_equation`: over a domain with a prime `ϖ`, a solution with
+  both coordinates divisible by `ϖ` on the normal form of Step 10 of Tate's algorithm gives
+  `ϖ⁶ ∣ a₆`. On the normal form of Step 8 such a solution gives a root of the residue quadratic
+  modulo `ϖ` (`WeierstrassCurve.exists_eq_sq_mul_of_equation`), and on the normal form of Tate's
+  algorithm at `III*` it has `ϖ² ∣ x` and `ϖ³ ∣ y`
+  (`WeierstrassCurve.sq_dvd_and_pow_three_dvd_of_equation`).
 * `WeierstrassCurve.dvd_quadratic_of_equation_odd`: on the normal form of an odd stage `k` of the
   `Iₙ*` subprocedure of Step 7, a solution `(ϖ^(k+2) X, ϖ^(k+2) Y)` makes `Y` a root of the residue
   quadratic modulo `ϖ`. `WeierstrassCurve.dvd_quadratic_of_equation_even` is the analogue at an
@@ -165,17 +167,16 @@ theorem pow_dvd_and_pow_dvd_of_equation (hπ : Prime π) {k : ℕ} (h₁ : π �
 
 end IStarPointDivisibility
 
-/-- **On the normal form of Step 6 of Tate's algorithm, a solution divisible by `ϖ` reduces to a
-root of the residue cubic.** Over a domain with a prime `ϖ`, suppose that `ϖ ∣ a₁`, `ϖ² ∣ a₃`,
-`a₂ = ϖ A₂`, `a₄ = ϖ² A₄` and `a₆ = ϖ³ A₆`. If `(x, y)` is a solution with `ϖ ∣ x` and `ϖ ∣ y`, then
-the cubic `T³ + A₂ T² + A₄ T + A₆` has a root modulo `ϖ`. -/
-theorem exists_dvd_cubic_of_equation (hϖ : Prime ϖ) (h₁ : ϖ ∣ W.a₁) {A₂ A₄ A₆ : R}
+/-- **On the normal form of Step 6 of Tate's algorithm, a solution `(ϖ X, y)` with `ϖ ∣ y` has
+`ϖ² ∣ y`, and `X` is a root of the residue cubic modulo `ϖ`.** Over a domain with a prime `ϖ`,
+suppose that `ϖ ∣ a₁`, `ϖ² ∣ a₃`, `a₂ = ϖ A₂`, `a₄ = ϖ² A₄` and `a₆ = ϖ³ A₆`; the residue cubic is
+`T³ + A₂ T² + A₄ T + A₆`. -/
+theorem sq_dvd_and_dvd_cubic_of_equation (hϖ : Prime ϖ) (h₁ : ϖ ∣ W.a₁) {A₂ A₄ A₆ : R}
     (h₂ : W.a₂ = ϖ * A₂) (h₃ : ϖ ^ 2 ∣ W.a₃) (h₄ : W.a₄ = ϖ ^ 2 * A₄) (h₆ : W.a₆ = ϖ ^ 3 * A₆)
-    {x y : R} (h : W.toAffine.Equation x y) (hx : ϖ ∣ x) (hy : ϖ ∣ y) :
-    ∃ t, ϖ ∣ t ^ 3 + A₂ * t ^ 2 + A₄ * t + A₆ := by
+    {X y : R} (h : W.toAffine.Equation (ϖ * X) y) (hy : ϖ ∣ y) :
+    ϖ ^ 2 ∣ y ∧ ϖ ∣ X ^ 3 + A₂ * X ^ 2 + A₄ * X + A₆ := by
   obtain ⟨A₁, hA₁⟩ := h₁
   obtain ⟨A₃, hA₃⟩ := h₃
-  obtain ⟨X, rfl⟩ := hx
   obtain ⟨Y, rfl⟩ := hy
   rw [Affine.equation_iff, hA₁, h₂, hA₃, h₄, h₆] at h
   -- `ϖ² Y² ≡ 0` modulo `ϖ³`
@@ -183,7 +184,7 @@ theorem exists_dvd_cubic_of_equation (hϖ : Prime ϖ) (h₁ : ϖ ∣ W.a₁) {A�
     (mul_dvd_mul_iff_left (pow_ne_zero 2 hϖ.ne_zero)).mp
       ⟨X ^ 3 + A₂ * X ^ 2 + A₄ * X + A₆ - A₁ * X * Y - A₃ * Y, by linear_combination h⟩
   -- `ϖ³ (X³ + A₂ X² + A₄ X + A₆) ≡ 0` modulo `ϖ⁴`
-  exact ⟨X, (mul_dvd_mul_iff_left (pow_ne_zero 3 hϖ.ne_zero)).mp
+  exact ⟨⟨Y, by ring⟩, (mul_dvd_mul_iff_left (pow_ne_zero 3 hϖ.ne_zero)).mp
     ⟨Y ^ 2 + A₁ * X * Y + A₃ * Y, by linear_combination -h⟩⟩
 
 /-- **On the normal form of an odd stage of the `Iₙ*` subprocedure of Step 7 of Tate's algorithm,
@@ -331,7 +332,8 @@ theorem nonsingularReduction_eq_top_of_isTateTerminal_IStar_zero {ϖ : v.valuati
   obtain ⟨h₁, -, h₃, -, -, hd⟩ := isTateTerminal_IStar_zero.1 h
   refine nonsingularReduction_eq_top_of_isTateTerminal v hϖ h (by simp)
     fun hp x y hx hy hE ↦ ?_
-  obtain ⟨t, ht⟩ := exists_dvd_cubic_of_equation _ hp h₁ h₂ h₃ h₄ h₆ hE hx hy
+  obtain ⟨t, rfl⟩ := hx
+  have ht := (sq_dvd_and_dvd_cubic_of_equation _ hp h₁ h₂ h₃ h₄ h₆ hE hy).2
   have ht' : _ ∈ maximalIdeal v.valuationSubring := hϖ ▸ Ideal.mem_span_singleton.mpr ht
   exact hroot (residue _ t) (by simpa using (residue_eq_zero_iff _).mpr ht')
 

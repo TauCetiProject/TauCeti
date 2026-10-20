@@ -60,6 +60,8 @@ pole (`HomotopyGroup.mk_eq_one_iff_nullhomotopic_toSphere`).
   (`GenLoop.map_toSphere_sphereGenLoop`).
 * `GenLoop.diskBoundaryMap`: the map `GenLoop.toSphere p` with its source written as
   Mathlib's sphere `TopCat.diskBoundary (n + 1)`, the attaching map of a cell killing `⟦p⟧`.
+* `GenLoop.diskMap`: a generalized loop `γ` of dimension `n` read on the disk `𝔻 n`, the map onto
+  `γ` of a sphere formed by attaching an `n`-cell along a constant map.
 * `GenLoop.homotopic_iff_toSphere` and `HomotopyGroup.sphereEquiv`: homotopy relative to the
   boundary of the cube is homotopy relative to the north pole, and `πₙ(X, x)` is the set of pointed
   homotopy classes of maps `Sⁿ → X`, the classes of `TauCeti.pointedHomotopySetoid`.
@@ -545,6 +547,34 @@ theorem diskBoundaryMap_map {Y : TopCat.{u}} (f : X ⟶ Y) {y : Y} (hf : f x = y
     (p : Ω^ (Fin n) X x) : diskBoundaryMap (GenLoop.map f.hom hf p) = diskBoundaryMap p ≫ f := by
   ext s
   simp
+
+end GenLoop
+
+namespace GenLoop
+
+open TauCeti
+
+variable {n : ℕ} {X : TopCat.{u}} {x : X}
+
+/-- A generalized loop `γ` of dimension `n`, read on the disk `𝔻 n` through
+`TauCeti.diskHomeomorphCube`. When `TopCat.diskBoundary n` is attached at `x` along a constant
+map, this is the map onto `γ` of the resulting sphere. -/
+def diskMap (γ : Ω^ (Fin n) X x) : TopCat.disk.{u} n ⟶ X :=
+  TopCat.ofHom (γ.1.comp (diskHomeomorphCube n : C(TopCat.disk.{u} n, I^(Fin n))))
+
+@[simp]
+theorem diskMap_apply (γ : Ω^ (Fin n) X x) (s : TopCat.disk.{u} n) :
+    diskMap γ s = γ (diskHomeomorphCube n s) :=
+  (rfl)
+
+open CategoryTheory in
+/-- A generalized loop at `x`, read on the disk, is constant at `x` on the boundary sphere. -/
+@[reassoc (attr := simp)]
+theorem diskBoundaryInclusion_comp_diskMap (γ : Ω^ (Fin n) X x) :
+    TopCat.diskBoundaryInclusion n ≫ diskMap γ = TopCat.ofHom (ContinuousMap.const _ x) := by
+  ext s
+  -- The boundary sphere of the disk goes to the boundary of the cube, where `γ` is `x`.
+  exact γ.2 _ ((diskHomeomorphCube_mem_boundary_iff _).2 ⟨s, rfl⟩)
 
 end GenLoop
 
