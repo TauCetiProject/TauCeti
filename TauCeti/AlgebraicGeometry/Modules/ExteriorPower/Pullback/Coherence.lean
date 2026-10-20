@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Modules.ExteriorPower.Pullback.Basic
-public import TauCeti.CategoryTheory.Adjunction.Mates.Coherence
+public import TauCeti.CategoryTheory.Adjunction.Mates
 
 /-!
 # Coherence of exterior powers under pullback
@@ -17,8 +17,8 @@ not a separately chosen isomorphism. They require no quasicoherence or finitenes
 
 The pushforward equations are checked on sheafified wedges of local sections; the pullback
 equations follow from Mathlib's conjugacy of the canonical pullback and pushforward comparisons
-by `CategoryTheory.TwoSquare.coherence_id_of_mateEquiv` and
-`CategoryTheory.TwoSquare.coherence_comp_of_mateEquiv`.
+by `CategoryTheory.Adjunction.app_comp_map_hom_app_of_mateEquiv` and
+`CategoryTheory.Adjunction.app_comp_map_inv_app_of_mateEquiv`.
 
 ## References
 
@@ -123,7 +123,7 @@ theorem pullbackExteriorPowerComparison_id (n : ℕ) (M : X.Modules) :
     exact SheafOfModules.mateEquiv_pullbackExteriorPowerComparison (S := X.sheaf) (R := X.sheaf)
       (φ := (𝟙 X : X ⟶ X).toRingCatSheafHom) adj n
   -- The typed endofunctor `W` avoids repeatedly reconstructing the scheme's sheaf category.
-  exact TwoSquare.coherence_id_of_mateEquiv adj (Scheme.Modules.pullbackId X)
+  exact adj.app_comp_map_hom_app_of_mateEquiv (Scheme.Modules.pullbackId X)
     (Scheme.Modules.pushforwardId X) (Scheme.Modules.conjugateEquiv_pullbackId_hom X) c q hcq
     (pushforwardExteriorPowerComparison_id n) M
 
@@ -175,7 +175,7 @@ theorem pullbackExteriorPowerComparison_comp (f : X ⟶ Y) (g : Y ⟶ Z)
     rw [Scheme.Modules.pullbackExteriorPowerComparison_eq]
     exact SheafOfModules.mateEquiv_pullbackExteriorPowerComparison
       (S := Z.sheaf) (R := X.sheaf) (φ := (f ≫ g : X ⟶ Z).toRingCatSheafHom) C n
-  exact TwoSquare.coherence_comp_of_mateEquiv A B C (Scheme.Modules.pullbackComp f g)
+  exact A.app_comp_map_inv_app_of_mateEquiv B C (Scheme.Modules.pullbackComp f g)
     (Scheme.Modules.pushforwardComp f g) (Scheme.Modules.conjugateEquiv_pullbackComp_inv f g)
     c₁ c₂ c₃ q₁ q₂ q₃ h₁ h₂ h₃ (pushforwardExteriorPowerComparison_comp f g n) M
 
