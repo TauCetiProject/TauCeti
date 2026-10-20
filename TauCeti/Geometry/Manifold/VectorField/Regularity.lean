@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import Mathlib.Geometry.Manifold.VectorField.Pullback
+public import TauCeti.Geometry.Manifold.ContMDiff.Defs
 public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 
@@ -39,10 +40,8 @@ manifold differential of a function to tangent vectors whose base point varies.
   differentiability of these coordinate expressions without a completeness assumption.
 * `TauCeti.fderivWithin_chart_apply_mpullbackWithin`: the chain rule identifies coordinate
   directional derivatives with manifold directional derivatives.
-* `TauCeti.eventuallyEq_chart_directionalDerivative`: this identification holds near the chart
-  centre within the model range.
-* `TauCeti.eventually_mdifferentiableAt_of_contMDiffAt`: regularity of at least
-  `minSmoothness 𝕜 2` at a point implies differentiability throughout a neighbourhood.
+* `TauCeti.eventuallyEq_fderivWithin_chart_apply_mpullbackWithin`: this identification holds near
+  the chart centre within the model range.
 * `TauCeti.mdifferentiableWithinAt_vectorSpace_iff_differentiableWithinAt` and its `At` and `On`
   forms: a vector field on a normed space is differentiable in the manifold sense exactly when it
   is differentiable as a map of the space.
@@ -120,6 +119,8 @@ theorem ContMDiffAt.contMDiffAt_mvfderiv_apply {f : M → F} {p : TangentBundle 
       (fun q : TangentBundle I M ↦ mvfderiv I f q.1 q.2) p := by
   have h := (contMDiff_snd_tangentBundle_modelSpace F 𝓘(𝕜, F) (n := m)).contMDiffAt.comp p
     (hf.contMDiffAt_tangentMap hmn)
+  -- `NormedSpace.fromTangentSpace` is definitionally the identity on `F`, identifying
+  -- `TangentSpace 𝓘(𝕜, F) (f q.1)` with `F` in the equality below.
   exact h.congr_of_eventuallyEq (Filter.Eventually.of_forall fun q ↦
     (mvfderiv_apply_eq_mfderiv_apply f q.1 q.2).trans tangentMap_snd.symm)
 
@@ -314,27 +315,19 @@ omit [IsManifold I 1 M]
 
 variable [IsManifold I (minSmoothness 𝕜 2) M]
 
-/-- A function of regularity at least `minSmoothness 𝕜 2` at a point is differentiable
-throughout a neighborhood of that point. -/
-theorem eventually_mdifferentiableAt_of_contMDiffAt
-    {f : M → F} {x : M} (hf : CMDiffAt n f x) (hn : minSmoothness 𝕜 2 ≤ n) :
-    ∀ᶠ y in 𝓝 x, MDiffAt f y := by
-  have h2n : (2 : ℕ∞ω) ≤ n :=
-    (le_minSmoothness (𝕜 := 𝕜) (n := (2 : ℕ∞ω))).trans hn
-  filter_upwards [(contMDiffAt_iff_contMDiffAt_nhds (n := 2) (by norm_num)).1
-    (hf.of_le h2n)] with y hy
-  exact hy.mdifferentiableAt (by norm_num)
-
 /-- Near the chart centre within the model range, the coordinate directional derivative
 agrees with the manifold directional derivative composed with the inverse chart. -/
-theorem eventuallyEq_chart_directionalDerivative
+theorem eventuallyEq_fderivWithin_chart_apply_mpullbackWithin
     {f : M → F} {U : ∀ y : M, TangentSpace I y} {x : M}
     (hf : CMDiffAt n f x) (hn : minSmoothness 𝕜 2 ≤ n) :
     (fun z ↦ (fderivWithin 𝕜 (f ∘ (extChartAt I x).symm) (Set.range I) z)
       (mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x).symm U (Set.range I) z)) =ᶠ[
       𝓝[Set.range I] (extChartAt I x x)]
     (fun y ↦ mvfderiv I f y (U y)) ∘ (extChartAt I x).symm := by
-  have hf_eventually := eventually_mdifferentiableAt_of_contMDiffAt hf hn
+  have h1n : (1 : ℕ∞ω) ≤ n :=
+    (by norm_num : (1 : ℕ∞ω) ≤ 2).trans
+      ((le_minSmoothness (𝕜 := 𝕜) (n := (2 : ℕ∞ω))).trans hn)
+  have hf_eventually := ContMDiffAt.eventually_mdifferentiableAt hf h1n
   have hsymm_tendsto : Tendsto (extChartAt I x).symm
       (𝓝[Set.range I] (extChartAt I x x)) (𝓝 x) := by
     simpa only [extChartAt_to_inv] using

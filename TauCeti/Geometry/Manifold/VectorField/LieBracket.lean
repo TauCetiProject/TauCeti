@@ -161,13 +161,13 @@ theorem mvfderiv_mlieBracket {f : M → F} {V W : ∀ x : M, TangentSpace I x} {
     simpa only [extChartAt_to_inv] using hf'
   have hVf := TauCeti.mdifferentiableAt_mvfderiv_apply hf hn hV
   have hWf := TauCeti.mdifferentiableAt_mvfderiv_apply hf hn hW
-  have hcoordW := (TauCeti.eventuallyEq_chart_directionalDerivative
+  have hcoordW := (TauCeti.eventuallyEq_fderivWithin_chart_apply_mpullbackWithin
     (I := I) (U := W) hf hn).fderivWithin_eq
     (𝕜 := 𝕜) (by
       simpa only [Function.comp_apply, extChartAt_to_inv] using
         TauCeti.fderivWithin_chart_apply_mpullbackWithin
           (I := I) (U := W) (mem_extChartAt_target x) hf_chart)
-  have hcoordV := (TauCeti.eventuallyEq_chart_directionalDerivative
+  have hcoordV := (TauCeti.eventuallyEq_fderivWithin_chart_apply_mpullbackWithin
     (I := I) (U := V) hf hn).fderivWithin_eq
     (𝕜 := 𝕜) (by
       simpa only [Function.comp_apply, extChartAt_to_inv] using
