@@ -30,10 +30,9 @@ realization theorem. It is also realized by an explicit regular global form, `�
 discriminant is the class of `θ²`. Since `θ` has norm `-1`, it is positive at one real place and
 negative at the other, which gives the two positive indices. Its Hasse sign at a finite place `v`
 is `(θ, θ)_v = (θ, -1)_v`. Away from `(2)` both entries are units at an odd place, so the symbol is
-`1`. At `(2)` the sign comes from Hilbert's product formula for the rational radicand `-1`: the
-two real symbols multiply to `-1`, so the remaining finite symbol at `(2)` is `-1`. The global
-form is written down directly rather than produced by the existence theorem for admissible
-systems.
+`1`. At `(2)` the sign comes from Hilbert's product formula for `θ` and `-1`: the two real symbols
+multiply to `-1`, so the remaining finite symbol at `(2)` is `-1`. The global form is written down
+directly rather than produced by the existence theorem for admissible systems.
 
 ## Main results
 
@@ -96,14 +95,13 @@ private theorem hilbertSymbol_thetaUnit_neg_one_of_ne (hmin : minpoly ℤ θ = X
 
 open scoped Classical in
 /-- At the prime `(2)` the symbol `(θ, -1)_2` is `-1`. This is read off from Hilbert's product
-formula for the rational radicand `-1`: the symbol is trivial at every other finite place, and of
+formula: the symbol is trivial at every other finite place, and of
 the two real symbols exactly one is `-1`, because `θ` is negative at exactly one real place. -/
 private theorem hilbertSymbol_thetaUnit_neg_one_of_eq (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) {v₂ : HeightOneSpectrum (𝓞 K)}
     (hv₂ : v₂.asIdeal = Ideal.span {(2 : 𝓞 K)}) :
     hilbertSymbol (v₂.unitAtFinitePlace (thetaUnit hmin)) (v₂.unitAtFinitePlace (-1)) = -1 := by
-  have hpf := finprod_hilbertSymbol_mul_prod_hilbertSymbol_eq_one_of_coe_eq_ratCast
-    (thetaUnit hmin) (-1) (q := -1) (by push_cast; simp)
+  have hpf := hilbertSymbol_productFormula (thetaUnit hmin) (-1)
   rw [finprod_eq_single _ v₂ fun v hv =>
     hilbertSymbol_thetaUnit_neg_one_of_ne hmin hgen (hv₂ ▸ fun h => hv (HeightOneSpectrum.ext h))]
     at hpf

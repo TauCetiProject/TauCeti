@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Lie.Tangent.LieEquiv
 public import TauCeti.Geometry.Lie.Exponential.Basic
 public import TauCeti.Geometry.Manifold.Algebra.Monoid
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 
 /-!
 # The Lie functor on smooth homomorphisms
@@ -18,12 +19,8 @@ proof in `ContMDiffMonoidMorphism`; identity and composition complete that bundl
 The resulting Lie map preserves identities and composition and is natural with respect to the
 Lie-group exponential.
 
-This advances Layer 3 of the Lie-groups roadmap.
-
 ## References
 
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 3, "The functor on morphisms".
 * The exponential-naturality proof generalizes the integral-curve argument in
   `TauCeti.Lie.conj_mulInvariantIntegralCurve` and `TauCeti.Lie.conj_mulInvariantExp`.
 
@@ -33,12 +30,16 @@ This advances Layer 3 of the Lie-groups roadmap.
 * `lieMap_id`, `lieMap_comp`: the identity and composition laws.
 * `map_lieExp`: naturality with respect to the Lie-group exponential.
 * `continuous_lieMap`: the Lie map is continuous.
-* `TauCeti.Lie.lieMap_injective_of_mfderiv_injective`: injectivity of the identity differential
-  implies injectivity of the Lie map.
+* `ContMDiffMonoidMorphism.lieMap_injective_of_mfderiv_injective`: injectivity of the identity
+  differential implies injectivity of the Lie map.
 * `TauCeti.Lie.lieEquivOfIsLocalDiffeomorphAt`: the Lie-algebra equivalence induced by a smooth
   homomorphism that is a local diffeomorphism at the identity.
-* `TauCeti.Lie.lieMap_bijective_of_isLocalDiffeomorphAt`: the Lie map of a homomorphism that is a
-  local diffeomorphism at the identity is bijective.
+* `ContMDiffMonoidMorphism.lieMap_bijective_of_isLocalDiffeomorphAt`: the Lie map of a
+  homomorphism that is a local diffeomorphism at the identity is bijective.
+* `ContMDiffMonoidMorphism.isLocalDiffeomorphAt_of_lieMap_bijective`: a smooth homomorphism with
+  bijective Lie map is a local diffeomorphism at the identity.
+* `ContMDiffMonoidMorphism.isLocalDiffeomorphAt_iff_lieMap_bijective`: the corresponding
+  characterization.
 -/
 
 public section
@@ -336,7 +337,7 @@ theorem continuous_lieMap [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] [
     finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
   exact (lieMap φ).toLinearMap.continuous_of_finiteDimensional
 
-namespace TauCeti.Lie
+namespace ContMDiffMonoidMorphism
 
 /-- A smooth homomorphism whose differential at the identity is injective induces an injective
 Lie-algebra homomorphism. -/
@@ -371,13 +372,53 @@ theorem lieMap_bijective_of_isLocalDiffeomorphAt [FiniteDimensional ℝ E] [Fini
     (h D₂)))), fun D' ↦ ⟨e.symm (L.symm (e' D')), e'.injective ((h _).trans
       (by simp only [LieEquiv.apply_symm_apply]; exact L.apply_symm_apply _))⟩⟩
 
+/-- A smooth homomorphism with bijective Lie map is a local diffeomorphism at the identity. -/
+theorem isLocalDiffeomorphAt_of_lieMap_bijective
+    [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
+    (φ : ContMDiffMonoidMorphism I I' ∞ G G') (hφ : Bijective (lieMap φ)) :
+    IsLocalDiffeomorphAt I I' ∞ φ 1 := by
+  let e := leftInvariantDerivationLieEquivGroupLieAlgebra
+    (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))
+  let e' := leftInvariantDerivationLieEquivGroupLieAlgebra
+    (ContMDiffMul.isInteriorPoint (I := I') (n := ∞) (by simp) (1 : G'))
+  let L : LieEquiv ℝ (LeftInvariantDerivation I G) (LeftInvariantDerivation I' G') :=
+    LieEquiv.ofBijective (lieMap φ) hφ
+  let T : TangentSpace I (1 : G) ≃ₗ[ℝ] TangentSpace I' (φ 1) := by
+    rw [map_one]
+    exact e.symm.toLinearEquiv.trans (L.toLinearEquiv.trans e'.toLinearEquiv)
+  apply TauCeti.isLocalDiffeomorphAt_of_mfderiv_eq
+      (s := Set.univ) (e := T.toContinuousLinearEquiv)
+      φ.contMDiff_toFun.contMDiffOn isOpen_univ (Set.mem_univ 1)
+      BoundarylessManifold.isInteriorPoint (by simp)
+  apply ContinuousLinearMap.ext
+  intro X
+  let D := e.symm X
+  have h := leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap φ D
+  -- Normalize the tangent equivalences in `T` to the evaluation-at-one coordinates of `h`.
+  change e' (lieMap φ (e.symm X)) = mfderiv I I' φ 1 X
+  simpa only [D, e, e', LieEquiv.apply_symm_apply] using h
+
+/-- A smooth homomorphism of finite-dimensional Lie groups is a local diffeomorphism at the
+identity if and only if its Lie map is bijective. -/
+theorem isLocalDiffeomorphAt_iff_lieMap_bijective
+    [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
+    (φ : ContMDiffMonoidMorphism I I' ∞ G G') :
+  IsLocalDiffeomorphAt I I' ∞ φ 1 ↔ Bijective (lieMap φ) :=
+  ⟨lieMap_bijective_of_isLocalDiffeomorphAt φ,
+    isLocalDiffeomorphAt_of_lieMap_bijective φ⟩
+
+end ContMDiffMonoidMorphism
+
+namespace TauCeti.Lie
+
 /-- A smooth homomorphism that is a local diffeomorphism at the identity induces an equivalence of
 Lie algebras. -/
 noncomputable def lieEquivOfIsLocalDiffeomorphAt
     [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
     (φ : ContMDiffMonoidMorphism I I' ∞ G G') (hφ : IsLocalDiffeomorphAt I I' ∞ φ 1) :
     LeftInvariantDerivation I G ≃ₗ⁅ℝ⁆ LeftInvariantDerivation I' G' :=
-  LieEquiv.ofBijective (lieMap φ) (lieMap_bijective_of_isLocalDiffeomorphAt φ hφ)
+  LieEquiv.ofBijective (lieMap φ)
+    (ContMDiffMonoidMorphism.lieMap_bijective_of_isLocalDiffeomorphAt φ hφ)
 
 /-- The Lie-algebra equivalence induced by a local diffeomorphism acts by the Lie functor. -/
 @[simp]

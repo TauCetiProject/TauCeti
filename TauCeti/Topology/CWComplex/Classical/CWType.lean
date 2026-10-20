@@ -67,7 +67,8 @@ theorem Homeomorph.cwType {X Y : Type u} [TopologicalSpace X] [TopologicalSpace 
     [TauCeti.CWType Y] (e : X ≃ₜ Y) : TauCeti.CWType X :=
   e.toHomotopyEquiv.cwType
 
-/-- Every discrete space has CW type, with its points as zero-cells. -/
-instance TauCeti.CWType.of_discreteTopology (X : Type u) [TopologicalSpace X]
-    [DiscreteTopology X] : TauCeti.CWType X :=
+/-- A Hausdorff space with a CW structure on the whole space has CW type. This covers every
+discrete space, with its points as zero-cells. -/
+instance TauCeti.CWType.of_cwComplex_univ (X : Type u) [TopologicalSpace X] [T2Space X]
+    [CWComplex (univ : Set X)] : TauCeti.CWType X :=
   (Homeomorph.Set.univ X).symm.cwType

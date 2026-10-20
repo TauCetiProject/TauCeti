@@ -115,15 +115,12 @@ private def evenOddSquareEntry (n k m : ℤ) : K.X n ⟶ K.X k :=
   K.d n m ≫ H.hom m k + H.hom n m ≫ K.d m k
 
 variable (hH : ∀ i j k, H.hom i j ≫ H.hom j k = 0)
-include hH
-
+include hH in
 private lemma evenOddEntry_comp_evenOddEntry (n m k : ℤ) :
     evenOddEntry H n m ≫ evenOddEntry H m k = evenOddSquareEntry H n k m := by
   simp only [evenOddEntry, evenOddSquareEntry, Preadditive.add_comp, Preadditive.comp_add,
     d_comp_d, hH, zero_add, add_zero]
   exact add_comm _ _
-
-omit hH
 
 private lemma evenOddSquareEntry_eq_zero_of_ne {n k : ℤ} (hnk : n ≠ k) (m : ℤ) :
     evenOddSquareEntry H n k m = 0 := by
@@ -173,8 +170,7 @@ private lemma sum_evenOddSquareEntry_self (n : ℤ) (T : Finset ℤ)
     H.zero n (n + 1) (by simp only [ComplexShape.up_Rel]; omega), zero_comp, zero_comp, zero_add,
     add_zero, add_comm]
 
-include hH
-
+include hH in
 /-- The matrix `d + h` from the terms of `K` in the degrees `E` to those in the degrees `O`,
 composed with the same matrix back, is the identity, provided that every degree adjacent to a
 degree of `E` either lies in `O` or carries a zero term. -/
@@ -193,8 +189,6 @@ private lemma matrix_comp_matrix [HasFiniteBiproducts C] (E O : Finset ℤ)
   · rw [biproduct.ι_π_ne _ hnk]
     exact Finset.sum_eq_zero fun m _ =>
       evenOddSquareEntry_eq_zero_of_ne H (fun h => hnk (Subtype.ext h)) m
-
-omit hH
 
 variable [HasFiniteBiproducts C]
 
