@@ -46,8 +46,9 @@ extra rewrites in those proofs (`map_C`, `coe_mapRingHom`) only move that `C` pa
 `polyEval_cusp_ψ` is where the three transport lemmas above earn their keep. `Cusp.lean` collapses
 `ψ₂`, `Ψ₃` and `preΨ₄` on `cusp R` to `2Y`, `3X⁴` and `2X⁶`; rewriting the transports backwards
 turns `polyEval (cusp ℤ) 1 1 (curve.ψ n)` into those three evaluated at `(1, 1)`, which are `2`,
-`3` and `2` — so the sequence is `normEDS 2 3 2`, and the identity of #3364 finishes it. That is
-the only reason this file imports `Cusp.lean`.
+`3` and `2` — so the sequence is `normEDS 2 3 2`, and `normEDS_two_three_two_eq_intCast`
+(`NumberTheory/EllipticDivisibilitySequence/NormEDS.lean`) finishes it. That is the only reason
+this file imports `Cusp.lean`.
 
 **`polyEval_cusp_φ` does not port as written, and the reason is the module system rather than a
 missing prerequisite.** The source closes it with `simp_rw [φ, map_sub, …, polyEval]`, unfolding
