@@ -216,9 +216,7 @@ theorem comp_reindex_apply_eq_of_measurable_invariants_of_eventually_add {m C : 
     (MeasurableSpace.comp_eq_of_measurable_invariants hw) hφ x
 
 /-- **An eventually-translating reindexing preserves the law restricted to an invariant event**,
-whenever it preserves the law itself: the invariant event is its own preimage
-(`preimage_reindex_eq_of_measurableSet_invariants_of_eventually_add`), so Mathlib's
-`MeasurePreserving.restrict_preimage` applies. Consumers needing the Koopman operator on
+whenever it preserves the law itself. Consumers needing the Koopman operator on
 `Lp (ρ.restrict A)`, or a Bochner integral, get a `MeasurePreserving` rather than only an `ℝ≥0∞`
 identity.
 
@@ -230,6 +228,7 @@ theorem measurePreserving_restrict_reindex_of_measurableSet_invariants_of_eventu
     (hφ_add : ∀ n, m ≤ n → φ n = n + C)
     {A : Set (ℕ → α)} (hA : MeasurableSet[MeasurableSpace.invariants (shift α)] A) :
     MeasurePreserving (fun x : ℕ → α => fun k => x (φ k)) (ρ.restrict A) (ρ.restrict A) := by
+  -- The invariant event is its own preimage, so `MeasurePreserving.restrict_preimage` applies.
   have h := hmp.restrict_preimage (MeasurableSpace.measurableSet_invariants.1 hA).1
   rwa [preimage_reindex_eq_of_measurableSet_invariants_of_eventually_add hA hφ_add] at h
 
