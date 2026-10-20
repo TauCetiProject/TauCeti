@@ -18,8 +18,8 @@ public import Mathlib.Topology.Algebra.Polynomial
 
 A nonconstant complex polynomial `p` of degree `d` extends to the Riemann sphere `OnePoint ℂ` by
 sending `∞` to `∞`; this extension is Mathlib's `OnePoint.map`. In the affine chart it is
-`z ↦ p(z)`. In the inverted chart at `∞` it is `w ↦ w ^ d / p̃(w)`, where `p̃ = p.reverse` is the
-reversed polynomial, `p̃(w) = w ^ d p(w⁻¹)`, whose value at `0` is the leading coefficient of `p`.
+`z ↦ p(z)`. In the inverted chart at `∞` it is `w ↦ w ^ d / q(w)`, where `q = p.reverse` is the
+reversed polynomial, `q(w) = w ^ d p(w⁻¹)`, whose value at `0` is the leading coefficient of `p`.
 So the extension is holomorphic, and its local multiplicity is `d` at `∞`. At a finite point `z`
 the local multiplicity is the multiplicity of `z` as a root of `p - p(z)`, and it exceeds `1`
 exactly when `z` is a critical point of `p`, a root of the derivative.
@@ -91,7 +91,7 @@ private theorem sub_C_eval_ne_zero (hp : 0 < p.natDegree) (z : ℂ) : p - C (p.e
   exact lt_irrefl 0 hp
 
 /-- In the inverted chart at `∞`, the extension of a nonconstant polynomial `p` to the Riemann
-sphere is `w ↦ w ^ d / p̃(w)`, where `d` is the degree of `p` and `p̃ = p.reverse`. -/
+sphere is `w ↦ w ^ d / p.reverse.eval w`, where `d` is the degree of `p`. -/
 theorem invChart_onePointMap_eval_invChart_symm (hp : 0 < p.natDegree) (w : ℂ) :
     invChart (OnePoint.map (fun z : ℂ ↦ p.eval z) (invChart.symm w)) =
       w ^ p.natDegree / p.reverse.eval w := by
@@ -111,7 +111,7 @@ theorem continuous_onePointMap_eval (hp : 0 < p.natDegree) :
   exact p.tendsto_norm_atTop (natDegree_pos_iff_degree_pos.1 hp) tendsto_norm_cobounded_atTop
 
 /-- Near `∞`, the extension of a nonconstant polynomial to the Riemann sphere is
-`w ↦ w ^ d / p̃(w)` read in the inverted chart. -/
+`w ↦ w ^ d / p.reverse.eval w` read in the inverted chart. -/
 private theorem onePointMap_eval_eventuallyEq_infty (hp : 0 < p.natDegree) :
     (OnePoint.map fun z : ℂ ↦ p.eval z) =ᶠ[𝓝 (∞ : OnePoint ℂ)]
       ((invChart : OpenPartialHomeomorph (OnePoint ℂ) ℂ).symm ∘
@@ -126,7 +126,7 @@ private theorem onePointMap_eval_eventuallyEq_infty (hp : 0 < p.natDegree) :
   rw [comp_apply, comp_apply, ← invChart_onePointMap_eval_invChart_symm hp, invChart.left_inv hx,
     invChart.left_inv hfx]
 
-/-- The chart expression `w ↦ w ^ d / p̃(w)` at `∞` is analytic at `0`. -/
+/-- The chart expression `w ↦ w ^ d / p.reverse.eval w` at `∞` is analytic at `0`. -/
 private theorem analyticAt_pow_div_eval_reverse (hp : 0 < p.natDegree) :
     AnalyticAt ℂ (fun w : ℂ ↦ w ^ p.natDegree / p.reverse.eval w) 0 :=
   ((analyticAt_id (𝕜 := ℂ)).pow _).div ((AnalyticOnNhd.eval_polynomial _) 0 (mem_univ _))
@@ -187,7 +187,7 @@ theorem localMultiplicity_onePointMap_eval_coe_of_not_isRoot (hp : 0 < p.natDegr
   omega
 
 /-- The extension of a nonconstant polynomial `p` to the Riemann sphere has local multiplicity
-the degree of `p` at `∞`, where it is `w ↦ w ^ d / p̃(w)` in the inverted chart. -/
+the degree of `p` at `∞`, where it is `w ↦ w ^ d / p.reverse.eval w` in the inverted chart. -/
 @[simp]
 theorem localMultiplicity_onePointMap_eval_infty (hp : 0 < p.natDegree) :
     localMultiplicity (OnePoint.map fun z : ℂ ↦ p.eval z) (∞ : OnePoint ℂ) = p.natDegree := by
