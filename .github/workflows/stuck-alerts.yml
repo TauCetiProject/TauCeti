@@ -47,10 +47,10 @@ jobs:
         with:
           sparse-checkout: scripts/pr_status
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@970da34361efb9036d37baafdd887096e94caa01
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@5d8bd99dabfbf0730e301825f378bbb0b93db25b
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 970da34361efb9036d37baafdd887096e94caa01
+          tools-ref: 5d8bd99dabfbf0730e301825f378bbb0b93db25b
           project-directory: .
       - name: Reconcile stuck-automation alerts
         # No continue-on-error: a broken Zulip integration must go red here too.
