@@ -24,9 +24,9 @@ They use Mathlib's `Hom.mulAction` and the existing group-object `TauCeti.leftTr
 
 public section
 
-open CategoryTheory MonoidalCategory CartesianMonoidalCategory MonObj
+open CategoryTheory MonoidalCategory CartesianMonoidalCategory MonObj ModObj
 
-namespace CategoryTheory.ModObj
+namespace TauCeti
 
 universe u v
 
@@ -114,4 +114,4 @@ theorem orbitMap_smul (g : 𝟙_ C ⟶ G) (x : 𝟙_ C ⟶ X) :
     orbitMap G (g • x) = (TauCeti.rightTranslation g).hom ≫ orbitMap G x := by
   simp [orbitMap, TauCeti.rightTranslation_hom, comp_smul, SemigroupAction.mul_smul]
 
-end CategoryTheory.ModObj
+end TauCeti
