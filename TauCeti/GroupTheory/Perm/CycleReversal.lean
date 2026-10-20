@@ -48,7 +48,7 @@ theorem semiconj_mul (hf : Function.Involutive f) (hg : Function.Involutive g) :
 
 /-- For involutions `f` and `g`, applying `g` to two points does not change whether they lie in one
 cycle of `f * g`: `g` carries each cycle onto a cycle traversed backwards. -/
-theorem sameCycle_mul_apply_apply_iff (hf : Function.Involutive f) (hg : Function.Involutive g)
+theorem sameCycle_apply_apply_iff (hf : Function.Involutive f) (hg : Function.Involutive g)
     {x y : α} : (f * g).SameCycle (g x) (g y) ↔ (f * g).SameCycle x y := by
   refine ⟨fun h ↦ ?_, fun h ↦ sameCycle_inv.mp (h.map (hf.semiconj_mul hg))⟩
   simpa only [hg _] using sameCycle_inv.mp (h.map (hf.semiconj_mul hg))
@@ -72,14 +72,14 @@ theorem eqvGen_iff_sameCycle (hf : Function.Involutive f) (hg : Function.Involut
       rcases ih with h | h
       · exact Or.inl h.symm
       · right
-        simpa only [hg a] using ((hf.sameCycle_mul_apply_apply_iff hg).mpr h).symm
+        simpa only [hg a] using ((hf.sameCycle_apply_apply_iff hg).mpr h).symm
     | trans a b c _ _ ihab ihbc =>
       rcases ihab with h | h <;> rcases ihbc with h' | h'
       · exact Or.inl (h.trans h')
-      · exact Or.inr (((hf.sameCycle_mul_apply_apply_iff hg).mpr h).trans h')
+      · exact Or.inr (((hf.sameCycle_apply_apply_iff hg).mpr h).trans h')
       · exact Or.inr (h.trans h')
       · left
-        simpa only [hg a] using ((hf.sameCycle_mul_apply_apply_iff hg).mpr h).trans h'
+        simpa only [hg a] using ((hf.sameCycle_apply_apply_iff hg).mpr h).trans h'
   · -- One step of `f * g` is a `g`-step followed by an `f`-step.
     have hstep (a : α) : Relation.EqvGen (fun a b ↦ b = g a ∨ b = f a) a ((f * g) a) :=
       .trans _ _ _ (.rel _ _ (Or.inl rfl)) (.rel _ _ (Or.inr rfl))
@@ -95,7 +95,7 @@ second factor `g` carries each cycle of `f * g` onto a cycle traversed backwards
 the cycles. -/
 def cycleReversal (hf : Function.Involutive f) (hg : Function.Involutive g) :
     Equiv.Perm (Quotient (SameCycle.setoid (f * g))) :=
-  Quotient.congr g fun _ _ ↦ (hf.sameCycle_mul_apply_apply_iff hg).symm
+  Quotient.congr g fun _ _ ↦ (hf.sameCycle_apply_apply_iff hg).symm
 
 /-- Reversal sends the cycle of `x` to the cycle of `g x`. -/
 @[simp]
@@ -122,7 +122,7 @@ theorem sameCycle_cycleReversal_mk_mk_iff (hf : Function.Involutive f)
   rw [show (hf.cycleReversal_involutive hg).toPerm _ = hf.cycleReversal hg from
     Equiv.ext fun _ ↦ rfl] at h
   rw [h, cycleReversal_mk, Quotient.eq, Quotient.eq]
-  have h' := hf.sameCycle_mul_apply_apply_iff hg (x := x) (y := g y)
+  have h' := hf.sameCycle_apply_apply_iff hg (x := x) (y := g y)
   rw [hg y] at h'
   exact or_congr Iff.rfl h'.symm
 
