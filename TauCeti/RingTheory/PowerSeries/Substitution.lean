@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.PowerSeries.Binomial
+public import Mathlib.RingTheory.PowerSeries.Derivative
 public import Mathlib.RingTheory.PowerSeries.Substitution
 import Mathlib.RingTheory.PowerSeries.Inverse
 import Mathlib.RingTheory.PowerSeries.Trunc
@@ -28,7 +29,9 @@ truncation modulo `X ^ n` compatible with composition of formal coordinates.
 
 An algebra map on power series whose value at `X` has nilpotent constant coefficient is the
 corresponding substitution, without any continuity hypothesis. Over a field, every algebra
-endomorphism of the power series ring has this form.
+endomorphism of the power series ring has this form. In particular, a perturbation `X + h` of `X`
+with `h ^ 2 = 0` substitutes by the first-order Taylor formula `f (X + h) = f + h f'`, since the
+right-hand side is multiplicative in `f` by the Leibniz rule.
 
 This file also records that the substitution `X ↦ (1 + X) ^ u - 1`, for a binomial series
 `(1 + X) ^ u`, is legitimate: it is the change of variable relating the power-series coordinates
@@ -47,6 +50,7 @@ of a completed group algebra attached to two topological generators.
   the substituted series.
 * `PowerSeries.algHom_eq_substAlgHom`: an algebra map `R⟦X⟧ → S⟦X⟧` sending `X` to a
   substitutable series is a substitution.
+* `PowerSeries.subst_X_add_of_sq_eq_zero`: `f (X + h) = f + h f'` when `h ^ 2 = 0`.
 * `AlgHom.apply_eq_subst`: over a field, every algebra endomorphism of `K⟦X⟧` is substitution by
   its value at `X`.
 * `TauCeti.hasSubst_binomialSeries_sub_one`: `(1 + X) ^ u - 1` can be substituted.
@@ -130,6 +134,29 @@ theorem algHom_eq_substAlgHom {σ : R⟦X⟧ →ₐ[R] S⟦X⟧} (hσ : HasSubst
   rw [eq_X_pow_mul_shift_add_trunc m f]
   simp only [map_add, map_mul, map_pow, substAlgHom_X, key, zero_add]
   exact congr(coeff n ($hpoly (trunc m f)))
+
+/-- The first-order Taylor formula: substituting a square-zero perturbation `X + h` of `X` gives
+`f (X + h) = f + h f'`. -/
+theorem subst_X_add_of_sq_eq_zero {h : S⟦X⟧} (hh : h ^ 2 = 0) (f : S⟦X⟧) :
+    f.subst (X + h) = f + h * d⁄dX f := by
+  -- `f ↦ f + h f'` is an algebra map, multiplicative by the Leibniz rule and `h ^ 2 = 0`, and it
+  -- sends `X` to `X + h`, so it is the substitution of `X + h`.
+  let T : S⟦X⟧ →ₐ[S] S⟦X⟧ :=
+    { toFun g := g + h * d⁄dX g
+      map_one' := by simp
+      map_mul' g₁ g₂ := by
+        simp only [Derivation.leibniz, smul_eq_mul]
+        linear_combination (-(d⁄dX g₁ * d⁄dX g₂)) * hh
+      map_zero' := by simp
+      map_add' g₁ g₂ := by
+        simp only [map_add]
+        ring
+      commutes' r := by simp }
+  have hT (g : S⟦X⟧) : T g = g + h * d⁄dX g := rfl
+  have hTX : T X = X + h := by rw [hT, derivative_X, mul_one]
+  have hσ := congr($(algHom_eq_substAlgHom (σ := T) (hTX ▸ HasSubst.X'.add (.map ⟨2, hh⟩ _))) f)
+  rw [coe_substAlgHom, hTX, hT] at hσ
+  exact hσ.symm
 
 /-- Substituting a series of zero constant coefficient preserves divisibility by `X ^ n`. -/
 theorem X_pow_dvd_subst {a : S⟦X⟧} (ha : constantCoeff a = 0) {n : ℕ} {f : R⟦X⟧}

@@ -192,16 +192,17 @@ theorem mem_holomorphyRing_iff_exists_mul_pow_mem_riemannRochSpace (hF : IsFunct
 
 /-- Evaluation at `X = 1`, `∑ fₙ Xⁿ ↦ ∑ fₙ`, on the section ring. It sends a homogeneous element
 `f Xⁿ` to `f`. -/
-private noncomputable def evalOne (D : Divisor k F) : sectionRing D →ₐ[k] F :=
+noncomputable def evalOne (D : Divisor k F) : sectionRing D →ₐ[k] F :=
   ((Polynomial.aeval (R := F) (1 : F)).restrictScalars k).comp (sectionRing D).val
 
-private theorem evalOne_apply (D : Divisor k F) (f : sectionRing D) :
+/-- Evaluation at `X = 1` on the section ring is polynomial evaluation at `1`. -/
+theorem evalOne_apply (D : Divisor k F) (f : sectionRing D) :
     evalOne D f = (f : F[X]).eval 1 := by
   rw [evalOne, AlgHom.comp_apply, Subalgebra.coe_val, AlgHom.restrictScalars_apply,
     coe_aeval_eq_eval]
 
 /-- On a homogeneous element of degree `n`, evaluation at `X = 1` is the `n`-th coefficient. -/
-private theorem evalOne_of_mem {D : Divisor k F} {n : ℕ} {f : sectionRing D}
+theorem evalOne_of_mem {D : Divisor k F} {n : ℕ} {f : sectionRing D}
     (hf : f ∈ sectionRingGrade D n) : evalOne D f = (f : F[X]).coeff n := by
   rw [evalOne_apply, coeffSubalgebra.eval_one_of_mem_grade hf]
 

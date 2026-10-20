@@ -54,8 +54,10 @@ pole (`HomotopyGroup.mk_eq_one_iff_nullhomotopic_toSphere`).
   (`TauCeti.isQuotientMap_cubeToSphere`) collapsing exactly the boundary
   (`TauCeti.cubeToSphere_eq_cubeToSphere_iff`, `TauCeti.cubeToSphere_eq_sphereNorthPole_iff`).
 * `TauCeti.cubeQuotientHomeomorphSphere`: the pointed homeomorphism `Iⁿ / ∂Iⁿ ≃ₜ Sⁿ`.
+* `TauCeti.sphereGenLoop`: `TauCeti.cubeToSphere` as a generalized loop of the sphere.
 * `GenLoop.toSphere` and `GenLoop.sphereEquiv`: generalized loops are pointed maps out of the
-  sphere.
+  sphere; `p` is the image of `TauCeti.sphereGenLoop` under `GenLoop.toSphere p`
+  (`GenLoop.map_toSphere_sphereGenLoop`).
 * `GenLoop.diskBoundaryMap`: the map `GenLoop.toSphere p` with its source written as
   Mathlib's sphere `TopCat.diskBoundary (n + 1)`, the attaching map of a cell killing `⟦p⟧`.
 * `GenLoop.homotopic_iff_toSphere` and `HomotopyGroup.sphereEquiv`: homotopy relative to the
@@ -324,6 +326,19 @@ theorem cubeToSphere_eq_cubeToSphere_iff {y z : I^(Fin n)} :
     ⟨fun h ↦ (diskHomeomorphCube.{0} n).symm.injective (ULift.ext h), fun h ↦ h ▸ rfl⟩
 
 variable (n) in
+/-- **The tautological generalized loop of the sphere**: `TauCeti.cubeToSphere`, which sends the
+boundary of the cube to the north pole, as a generalized loop at the north pole. Every generalized
+loop `p` is its image under the pointed map `GenLoop.toSphere p`
+(`GenLoop.map_toSphere_sphereGenLoop`). -/
+def sphereGenLoop :
+    Ω^ (Fin n) (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) (sphereNorthPole n) :=
+  ⟨cubeToSphere n, fun _ hy ↦ cubeToSphere_eq_sphereNorthPole_iff.2 hy⟩
+
+@[simp]
+lemma sphereGenLoop_apply (y : I^(Fin n)) : sphereGenLoop n y = cubeToSphere n y :=
+  (rfl)
+
+variable (n) in
 /-- `TauCeti.cubeToSphere` is surjective in positive dimension. -/
 theorem cubeToSphere_surjective [NeZero n] : Function.Surjective (cubeToSphere n) :=
   (closedBallToSphere_surjective).comp <|
@@ -409,6 +424,14 @@ theorem toSphere_map (f : C(X, Y)) (hf : f x = y) (p : Ω^ (Fin n) X x) :
     toSphere (GenLoop.map f hf p) = f.comp (toSphere p) := by
   ext s
   obtain ⟨z, rfl⟩ := cubeToSphere_surjective n s
+  simp
+
+/-- **Every generalized loop is an image of the tautological loop**: `p` is the image of
+`TauCeti.sphereGenLoop n` under the pointed map `GenLoop.toSphere p` out of the sphere. -/
+@[simp]
+theorem map_toSphere_sphereGenLoop (p : Ω^ (Fin n) X x) :
+    GenLoop.map (toSphere p) (toSphere_sphereNorthPole p) (sphereGenLoop n) = p := by
+  ext z
   simp
 
 /-- The constant generalized loop corresponds to the constant map out of the sphere. -/
