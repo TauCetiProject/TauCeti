@@ -117,14 +117,10 @@ theorem pullbackExteriorPowerComparison_id (n : ℕ) (M : X.Modules) :
   let q : TwoSquare (Scheme.Modules.pushforward (𝟙 X)) W W (Scheme.Modules.pushforward (𝟙 X)) :=
     SheafOfModules.pushforwardExteriorPowerComparison (S := X.sheaf) (R := X.sheaf)
       (𝟙 X : X ⟶ X).toRingCatSheafHom n
-  have hcq : mateEquiv adj adj c = q := by
-    dsimp only [c, q, adj]
-    rw [Scheme.Modules.pullbackExteriorPowerComparison_eq]
-    exact SheafOfModules.mateEquiv_pullbackExteriorPowerComparison (S := X.sheaf) (R := X.sheaf)
-      (φ := (𝟙 X : X ⟶ X).toRingCatSheafHom) adj n
   -- The typed endofunctor `W` avoids repeatedly reconstructing the scheme's sheaf category.
   exact adj.app_comp_map_hom_app_of_mateEquiv (Scheme.Modules.pullbackId X)
-    (Scheme.Modules.pushforwardId X) (Scheme.Modules.conjugateEquiv_pullbackId_hom X) c q hcq
+    (Scheme.Modules.pushforwardId X) (Scheme.Modules.conjugateEquiv_pullbackId_hom X) c q
+    (Scheme.Modules.mateEquiv_pullbackExteriorPowerComparison (𝟙 X) n)
     (pushforwardExteriorPowerComparison_id n) M
 
 /-- The exterior-power comparison for a composite agrees with the two successive comparisons,
@@ -160,24 +156,12 @@ theorem pullbackExteriorPowerComparison_comp (f : X ⟶ Y) (g : Y ⟶ Z)
       (Scheme.Modules.pushforward (f ≫ g)) :=
     SheafOfModules.pushforwardExteriorPowerComparison (S := Z.sheaf) (R := X.sheaf)
       (f ≫ g : X ⟶ Z).toRingCatSheafHom n
-  have h₁ : mateEquiv A A c₁ = q₁ := by
-    dsimp only [c₁, q₁, A]
-    rw [Scheme.Modules.pullbackExteriorPowerComparison_eq]
-    exact SheafOfModules.mateEquiv_pullbackExteriorPowerComparison
-      (S := Z.sheaf) (R := Y.sheaf) (φ := g.toRingCatSheafHom) A n
-  have h₂ : mateEquiv B B c₂ = q₂ := by
-    dsimp only [c₂, q₂, B]
-    rw [Scheme.Modules.pullbackExteriorPowerComparison_eq]
-    exact SheafOfModules.mateEquiv_pullbackExteriorPowerComparison
-      (S := Y.sheaf) (R := X.sheaf) (φ := f.toRingCatSheafHom) B n
-  have h₃ : mateEquiv C C c₃ = q₃ := by
-    dsimp only [c₃, q₃, C]
-    rw [Scheme.Modules.pullbackExteriorPowerComparison_eq]
-    exact SheafOfModules.mateEquiv_pullbackExteriorPowerComparison
-      (S := Z.sheaf) (R := X.sheaf) (φ := (f ≫ g : X ⟶ Z).toRingCatSheafHom) C n
   exact A.app_comp_map_inv_app_of_mateEquiv B C (Scheme.Modules.pullbackComp f g)
     (Scheme.Modules.pushforwardComp f g) (Scheme.Modules.conjugateEquiv_pullbackComp_inv f g)
-    c₁ c₂ c₃ q₁ q₂ q₃ h₁ h₂ h₃ (pushforwardExteriorPowerComparison_comp f g n) M
+    c₁ c₂ c₃ q₁ q₂ q₃ (Scheme.Modules.mateEquiv_pullbackExteriorPowerComparison g n)
+    (Scheme.Modules.mateEquiv_pullbackExteriorPowerComparison f n)
+    (Scheme.Modules.mateEquiv_pullbackExteriorPowerComparison (f ≫ g) n)
+    (pushforwardExteriorPowerComparison_comp f g n) M
 
 end
 
