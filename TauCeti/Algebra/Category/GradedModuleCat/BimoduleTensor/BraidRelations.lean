@@ -52,13 +52,13 @@ The two settings need not agree: the target is a second graded algebra, and `Φ`
 equivalence.
 
 `KhovanovSeidelRelations.transferDegreewise` is the degreewise specialisation of the
-principle: it is the transfer at the functor `H.mapHomologicalComplex` of an additive functor
-`H` of graded bimodule categories. This is the shape of a Morita-type equivalence realised by a
-single bimodule: such an equivalence is an equivalence of bimodule categories, and its action
-on a complex of bimodules is the degreewise action of that equivalence.
+principle: the transfer at the functor `H.mapHomologicalComplex c` of an additive functor `H`
+of graded bimodule categories. The functors it covers include the Morita-type equivalences
+realised by a single bimodule, whose action on a complex of bimodules is the degreewise action
+of that equivalence.
 
 The four field values of the transferred relations are the public declarations
-`transferInverseForward`, `transferInverseReverse`, `transferCommute` and `transferAdjacent`,
+`transferInverseForward`, `transferInverseReverse`, `transferCommute` and `transferBraid`,
 and the four projection lemmas `transfer_inverseForward`, `transfer_inverseReverse`,
 `transfer_commute` and `transfer_braid` read those values off the transferred relations; the
 four projection lemmas `transferDegreewise_inverseForward` and its three siblings read them off
@@ -70,14 +70,11 @@ equivalences and the tensor maps.
 ## Scope
 
 The principle is stated for a functor `Φ` on complexes of graded bimodules, with the datum `hΦ`
-that it carries homotopy equivalences to homotopy equivalences. That is the shape a *derived*
-transfer needs: conjugation of bimodules with a tilting bimodule complex is a functor on
-complexes of bimodules and not an additive functor on bimodules, so it is not an instance of
-the degreewise specialisation `transferDegreewise`, but it is an instance of `Φ`.
-
-No derived case is instantiated in this file: `η` and `ε` — the monoidal and unit
-compatibility that a transfer has to establish — remain hypotheses of the principle, to be
-discharged at each instantiation.
+that it carries homotopy equivalences to homotopy equivalences. Conjugation of bimodules with a
+tilting bimodule complex is a functor on complexes of bimodules and not an additive functor on
+bimodules, so it is not an instance of the degreewise specialisation `transferDegreewise`, but
+it is an instance of `Φ`. The monoidal and unit compatibilities `η` and `ε` are hypotheses of
+the principle, supplied by each instantiation.
 
 Naturality of the transferred relations up to chain homotopy, the derived-Koszul comparison,
 spherical twists and graded-`K₀` statements are out of scope.
@@ -146,7 +143,7 @@ namespace KhovanovSeidelRelations
 
 /-- The first conjugation step of the transferred braid relation: the triple tensor product of
 the target family is compared with the triple tensor product of the image complexes. -/
-private def transferAdjacentLeftConj {i j : V}
+private def transferBraidLeftConj {i j : V}
     {B : V → HomologicalComplex (GradedBimoduleCat k Ξ₁) c}
     {C : V → HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
     (a : ∀ i, HomotopyEquiv (Φ.obj (B i)) (C i)) :
@@ -165,7 +162,7 @@ private def transferAdjacentLeftConj {i j : V}
 
 /-- The first bridge step of the transferred braid relation: the target tensor product of two
 image complexes is compared with the image of the source tensor product. -/
-private def transferAdjacentBridgeLeft {i j : V}
+private def transferBraidBridgeLeft {i j : V}
     {B : V → HomologicalComplex (GradedBimoduleCat k Ξ₁) c}
     (η : GradedBimoduleMonoidalDatum k Ξ₁ Ξ₂ Φ) :
     HomotopyEquiv
@@ -184,7 +181,7 @@ private def transferAdjacentBridgeLeft {i j : V}
 
 /-- The middle step of the transferred braid relation: the image of the braid relation of the
 source family. -/
-private def transferAdjacentMiddle {i j : V} (h : G.Adj j i)
+private def transferBraidMiddle {i j : V} (h : G.Adj j i)
     {B B' : V → HomologicalComplex (GradedBimoduleCat k Ξ₁) c}
     (rel : KhovanovSeidelRelations k G Ξ₁ B B') :
     HomotopyEquiv
@@ -201,7 +198,7 @@ private def transferAdjacentMiddle {i j : V} (h : G.Adj j i)
 /-- The second bridge step of the transferred braid relation: the image of the source tensor
 product is compared with the target tensor product of the image complexes. It is the reversed
 first bridge step at the swapped vertices. -/
-private def transferAdjacentBridgeRight {i j : V}
+private def transferBraidBridgeRight {i j : V}
     {B : V → HomologicalComplex (GradedBimoduleCat k Ξ₁) c}
     (η : GradedBimoduleMonoidalDatum k Ξ₁ Ξ₂ Φ) :
     HomotopyEquiv
@@ -213,12 +210,12 @@ private def transferAdjacentBridgeRight {i j : V}
         (HomologicalComplex.mapBifunctor (Φ.obj (B j)) (Φ.obj (B i))
           (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c)
         (Φ.obj (B j)) (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c) :=
-  (transferAdjacentBridgeLeft k Ξ₁ Ξ₂ Φ (i := j) (j := i) η).symm
+  (transferBraidBridgeLeft k Ξ₁ Ξ₂ Φ (i := j) (j := i) η).symm
 
 /-- The last conjugation step of the transferred braid relation: the triple tensor product of
 the image complexes is compared with the triple tensor product of the target family. It is the
 reversed first conjugation step at the swapped vertices. -/
-private def transferAdjacentRightConj {i j : V}
+private def transferBraidRightConj {i j : V}
     {B : V → HomologicalComplex (GradedBimoduleCat k Ξ₁) c}
     {C : V → HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
     (a : ∀ i, HomotopyEquiv (Φ.obj (B i)) (C i)) :
@@ -231,7 +228,7 @@ private def transferAdjacentRightConj {i j : V}
         (HomologicalComplex.mapBifunctor (C j) (C i)
           (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c) (C j)
         (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c) :=
-  (transferAdjacentLeftConj k Ξ₁ Ξ₂ Φ (i := j) (j := i) a).symm
+  (transferBraidLeftConj k Ξ₁ Ξ₂ Φ (i := j) (j := i) a).symm
 
 /-- Transfer of the forward inverse relation of the source family to the target setting: the
 target tensor product `C i ⊗ C' i` is homotopy equivalent to the target unit complex. -/
@@ -314,7 +311,7 @@ def transferCommute {k : Type w} [CommRing k] {V : Type u} {G : SimpleGraph V}
 /-- Transfer of the braid relation of the source family to the target setting: the target
 triple tensor products `C i ⊗ C j ⊗ C i` and `C j ⊗ C i ⊗ C j` are homotopy equivalent at
 adjacent vertices. -/
-def transferAdjacent {k : Type w} [CommRing k] {V : Type u} {G : SimpleGraph V}
+def transferBraid {k : Type w} [CommRing k] {V : Type u} {G : SimpleGraph V}
     {A₁ : Type uA} [Ring A₁] [Algebra k A₁] {A₂ : Type uB} [Ring A₂] [Algebra k A₂]
     {Ξ₁ : InternalGrading k A₁} [GradedAlgebra Ξ₁.piece]
     {Ξ₂ : InternalGrading k A₂} [GradedAlgebra Ξ₂.piece]
@@ -336,11 +333,11 @@ def transferAdjacent {k : Type w} [CommRing k] {V : Type u} {G : SimpleGraph V}
         (HomologicalComplex.mapBifunctor (C j) (C i)
           (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c) (C j)
         (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c) :=
-  (transferAdjacentLeftConj k Ξ₁ Ξ₂ Φ a).trans
-    ((transferAdjacentBridgeLeft k Ξ₁ Ξ₂ Φ η).trans
-      ((transferAdjacentMiddle k G Ξ₁ Ξ₂ Φ hΦ h rel).trans
-        ((transferAdjacentBridgeRight k Ξ₁ Ξ₂ Φ η).trans
-          (transferAdjacentRightConj k Ξ₁ Ξ₂ Φ a))))
+  (transferBraidLeftConj k Ξ₁ Ξ₂ Φ a).trans
+    ((transferBraidBridgeLeft k Ξ₁ Ξ₂ Φ η).trans
+      ((transferBraidMiddle k G Ξ₁ Ξ₂ Φ hΦ h rel).trans
+        ((transferBraidBridgeRight k Ξ₁ Ξ₂ Φ η).trans
+          (transferBraidRightConj k Ξ₁ Ξ₂ Φ a))))
 
 -- The `hom` and the `inv` of the four transferred equivalences are characterised below, in
 -- terms of the supplied data only: the identifications `a` and `a'`, the monoidal datum `η`,
@@ -514,7 +511,7 @@ induced by the identifications `a i` and `a j`. -/
   unfold transferCommute
   simp only [HomotopyEquiv.trans_inv, HomotopyEquiv.mapBifunctor_inv, HomotopyEquiv.symm_inv]
 
-/-- The `hom` of the adjacent transfer is the composite of the tensor map of the inverses of
+/-- The `hom` of the braid transfer is the composite of the tensor map of the inverses of
 the identifications `a i` and `a j` with the inverse of `a i`, the tensor map of the `hom` of
 the monoidal datum `η (B i) (B j)` with the identity of `Φ.obj (B i)`, the `hom` of the
 monoidal datum `η (mapBifunctor (B i) (B j) …) (B i)`, the `hom` of the image
@@ -522,7 +519,7 @@ monoidal datum `η (mapBifunctor (B i) (B j) …) (B i)`, the `hom` of the image
 `η (mapBifunctor (B j) (B i) …) (B j)`, the tensor map of the `inv` of the monoidal datum
 `η (B j) (B i)` with the identity of `Φ.obj (B j)`, and the tensor map of the identifications
 `a j` and `a i` with `a j`. -/
-@[simp] theorem transferAdjacent_hom {k : Type w} [CommRing k] {V : Type u}
+@[simp] theorem transferBraid_hom {k : Type w} [CommRing k] {V : Type u}
     {G : SimpleGraph V} {A₁ : Type uA} [Ring A₁] [Algebra k A₁] {A₂ : Type uB} [Ring A₂]
     [Algebra k A₂] {Ξ₁ : InternalGrading k A₁} [GradedAlgebra Ξ₁.piece]
     {Ξ₂ : InternalGrading k A₂} [GradedAlgebra Ξ₂.piece]
@@ -535,7 +532,7 @@ monoidal datum `η (mapBifunctor (B i) (B j) …) (B i)`, the `hom` of the image
     (η : GradedBimoduleMonoidalDatum k Ξ₁ Ξ₂ Φ)
     (rel : KhovanovSeidelRelations k G Ξ₁ B B')
     (a : ∀ i, HomotopyEquiv (Φ.obj (B i)) (C i)) :
-    (transferAdjacent h hΦ η rel a).hom
+    (transferBraid h hΦ η rel a).hom
       = (HomologicalComplex.mapBifunctorMap
           (HomologicalComplex.mapBifunctorMap (a i).inv (a j).inv
             (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c) (a i).inv
@@ -553,13 +550,13 @@ monoidal datum `η (mapBifunctor (B i) (B j) …) (B i)`, the `hom` of the image
             (HomologicalComplex.mapBifunctorMap (a j).hom (a i).hom
               (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c) (a j).hom
             (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c) := by
-  unfold transferAdjacent transferAdjacentRightConj transferAdjacentBridgeRight
-    transferAdjacentMiddle transferAdjacentBridgeLeft transferAdjacentLeftConj
+  unfold transferBraid transferBraidRightConj transferBraidBridgeRight
+    transferBraidMiddle transferBraidBridgeLeft transferBraidLeftConj
   simp only [HomotopyEquiv.trans_hom, HomotopyEquiv.trans_inv, HomotopyEquiv.mapBifunctor_hom,
     HomotopyEquiv.mapBifunctor_inv, HomotopyEquiv.symm_hom, HomotopyEquiv.symm_inv,
     HomotopyEquiv.refl_hom, HomotopyEquiv.refl_inv]
 
-/-- The `inv` of the adjacent transfer is the composite of the tensor map of the inverses of
+/-- The `inv` of the braid transfer is the composite of the tensor map of the inverses of
 the identifications `a j` and `a i` with the inverse of `a j`, the tensor map of the `hom` of
 the monoidal datum `η (B j) (B i)` with the identity of `Φ.obj (B j)`, the `hom` of the
 monoidal datum `η (mapBifunctor (B j) (B i) …) (B j)`, the `inv` of the image
@@ -567,7 +564,7 @@ monoidal datum `η (mapBifunctor (B j) (B i) …) (B j)`, the `inv` of the image
 `η (mapBifunctor (B i) (B j) …) (B i)`, the tensor map of the `inv` of the monoidal datum
 `η (B i) (B j)` with the identity of `Φ.obj (B i)`, and the tensor map of the identifications
 `a i` and `a j` with `a i`. -/
-@[simp] theorem transferAdjacent_inv {k : Type w} [CommRing k] {V : Type u}
+@[simp] theorem transferBraid_inv {k : Type w} [CommRing k] {V : Type u}
     {G : SimpleGraph V} {A₁ : Type uA} [Ring A₁] [Algebra k A₁] {A₂ : Type uB} [Ring A₂]
     [Algebra k A₂] {Ξ₁ : InternalGrading k A₁} [GradedAlgebra Ξ₁.piece]
     {Ξ₂ : InternalGrading k A₂} [GradedAlgebra Ξ₂.piece]
@@ -580,7 +577,7 @@ monoidal datum `η (mapBifunctor (B j) (B i) …) (B j)`, the `inv` of the image
     (η : GradedBimoduleMonoidalDatum k Ξ₁ Ξ₂ Φ)
     (rel : KhovanovSeidelRelations k G Ξ₁ B B')
     (a : ∀ i, HomotopyEquiv (Φ.obj (B i)) (C i)) :
-    (transferAdjacent h hΦ η rel a).inv
+    (transferBraid h hΦ η rel a).inv
       = ((((HomologicalComplex.mapBifunctorMap
                 (HomologicalComplex.mapBifunctorMap (a j).inv (a i).inv
                   (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c) (a j).inv
@@ -598,8 +595,8 @@ monoidal datum `η (mapBifunctor (B j) (B i) …) (B j)`, the `inv` of the image
             (HomologicalComplex.mapBifunctorMap (a i).hom (a j).hom
               (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c) (a i).hom
             (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c)) := by
-  unfold transferAdjacent transferAdjacentRightConj transferAdjacentBridgeRight
-    transferAdjacentMiddle transferAdjacentBridgeLeft transferAdjacentLeftConj
+  unfold transferBraid transferBraidRightConj transferBraidBridgeRight
+    transferBraidMiddle transferBraidBridgeLeft transferBraidLeftConj
   simp only [HomotopyEquiv.trans_hom, HomotopyEquiv.trans_inv, HomotopyEquiv.mapBifunctor_hom,
     HomotopyEquiv.mapBifunctor_inv, HomotopyEquiv.symm_hom, HomotopyEquiv.symm_inv,
     HomotopyEquiv.refl_hom, HomotopyEquiv.refl_inv]
@@ -616,7 +613,7 @@ with inverses `C'` by the homotopy equivalences `a` and `a'`, then the target fa
 the Khovanov-Seidel relations in the target setting. -/
 -- The body is not exposed: the four field values of the transferred relations are the
 -- public declarations `transferInverseForward`, `transferInverseReverse`, `transferCommute`
--- and `transferAdjacent`, which state them without unfolding this definition; the four
+-- and `transferBraid`, which state them without unfolding this definition; the four
 -- projection lemmas `transfer_inverseForward` and its three siblings read them off the
 -- transferred relations.
 def transfer {k : Type w} [CommRing k] {V : Type u} {G : SimpleGraph V}
@@ -638,16 +635,16 @@ def transfer {k : Type w} [CommRing k] {V : Type u} {G : SimpleGraph V}
   inverseForward i := transferInverseForward i hΦ η ε rel a a'
   inverseReverse i := transferInverseReverse i hΦ η ε rel a a'
   commute i j hij hadj := transferCommute i j hij hadj hΦ η rel a
-  braid h := transferAdjacent h hΦ η rel a
+  braid h := transferBraid h hΦ η rel a
 
 /-- The degreewise specialisation of the transfer principle: the transfer at the functor
-`H.mapHomologicalComplex` of an additive functor `H` of graded bimodule categories, whose
-homotopy equivalences are carried along by `H.mapHomotopyEquiv`. This is the transfer through
-a Morita-type equivalence realised by a single bimodule, whose action on a complex of
+`H.mapHomologicalComplex c` of an additive functor `H` of graded bimodule categories, whose
+homotopy equivalences are carried along by `H.mapHomotopyEquiv`. It applies in particular to
+the Morita-type equivalences realised by a single bimodule, whose action on a complex of
 bimodules is the degreewise action of that equivalence. -/
 -- The body is not exposed, as for `transfer`: the four field values of the degreewise
 -- transferred relations are the public declarations `transferInverseForward`,
--- `transferInverseReverse`, `transferCommute` and `transferAdjacent` at the degreewise
+-- `transferInverseReverse`, `transferCommute` and `transferBraid` at the degreewise
 -- instance, and the four projection lemmas `transferDegreewise_inverseForward` and its three
 -- siblings read them off.
 def transferDegreewise {k : Type w} [CommRing k] {V : Type u} {G : SimpleGraph V}
@@ -664,12 +661,8 @@ def transferDegreewise {k : Type w} [CommRing k] {V : Type u} {G : SimpleGraph V
       (gradedBimoduleUnitComplex k Ξ₂))
     (a : ∀ i, HomotopyEquiv ((H.mapHomologicalComplex c).obj (B i)) (C i))
     (a' : ∀ i, HomotopyEquiv ((H.mapHomologicalComplex c).obj (B' i)) (C' i)) :
-    KhovanovSeidelRelations k G Ξ₂ C C'
-where
-  inverseForward i := transferInverseForward i H.mapHomotopyEquiv η ε rel a a'
-  inverseReverse i := transferInverseReverse i H.mapHomotopyEquiv η ε rel a a'
-  commute i j hij hadj := transferCommute i j hij hadj H.mapHomotopyEquiv η rel a
-  braid h := transferAdjacent h H.mapHomotopyEquiv η rel a
+    KhovanovSeidelRelations k G Ξ₂ C C' :=
+  rel.transfer H.mapHomotopyEquiv η ε a a'
 
 -- The four field values of `transfer` are read off by the four projection lemmas below.
 -- Their proofs are written `(rfl)` and not `rfl`: a theorem whose proof is syntactically `rfl`
@@ -738,7 +731,7 @@ where
     (rel.transfer hΦ η ε a a').commute i j hij hadj
       = transferCommute i j hij hadj hΦ η rel a := (rfl)
 
-/-- The braid relation of the transferred relations is the adjacent transfer `transferAdjacent`. -/
+/-- The braid relation of the transferred relations is the braid transfer `transferBraid`. -/
 @[simp] theorem transfer_braid {k : Type w} [CommRing k] {V : Type u}
     {G : SimpleGraph V} {A₁ : Type uA} [Ring A₁] [Algebra k A₁] {A₂ : Type uB} [Ring A₂]
     [Algebra k A₂] {Ξ₁ : InternalGrading k A₁} [GradedAlgebra Ξ₁.piece]
@@ -756,7 +749,7 @@ where
     (a' : ∀ i, HomotopyEquiv (Φ.obj (B' i)) (C' i))
     {i j : V} (h : G.Adj j i) :
     (rel.transfer hΦ η ε a a').braid h
-      = transferAdjacent h hΦ η rel a := (rfl)
+      = transferBraid h hΦ η rel a := (rfl)
 
 -- The four field values of `transferDegreewise` are read off by the four projection lemmas
 -- below. Their proofs are written `(rfl)` and not `rfl`, as above.
@@ -821,8 +814,8 @@ transfer `transferCommute`. -/
     (rel.transferDegreewise η ε a a').commute i j hij hadj
       = transferCommute i j hij hadj H.mapHomotopyEquiv η rel a := (rfl)
 
-/-- The braid relation of the degreewise transferred relations is the adjacent transfer
-`transferAdjacent`. -/
+/-- The braid relation of the degreewise transferred relations is the braid transfer
+`transferBraid`. -/
 @[simp] theorem transferDegreewise_braid {k : Type w} [CommRing k] {V : Type u}
     {G : SimpleGraph V} {A₁ : Type uA} [Ring A₁] [Algebra k A₁] {A₂ : Type uB} [Ring A₂]
     [Algebra k A₂] {Ξ₁ : InternalGrading k A₁} [GradedAlgebra Ξ₁.piece]
@@ -839,7 +832,7 @@ transfer `transferCommute`. -/
     (a' : ∀ i, HomotopyEquiv ((H.mapHomologicalComplex c).obj (B' i)) (C' i))
     {i j : V} (h : G.Adj j i) :
     (rel.transferDegreewise η ε a a').braid h
-      = transferAdjacent h H.mapHomotopyEquiv η rel a := (rfl)
+      = transferBraid h H.mapHomotopyEquiv η rel a := (rfl)
 
 end KhovanovSeidelRelations
 
