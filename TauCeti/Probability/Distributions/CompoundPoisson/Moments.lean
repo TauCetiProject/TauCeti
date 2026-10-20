@@ -163,7 +163,7 @@ second-moment bilinear form of the jump law. -/
 @[simp]
 theorem covarianceBilin_compoundPoissonMeasure {F : Type*} [NormedAddCommGroup F]
     [InnerProductSpace ℝ F] [CompleteSpace F] [MeasurableSpace F] [BorelSpace F]
-    [SecondCountableTopology F] {ν : Measure F} [IsProbabilityMeasure ν]
+    [MeasurableAdd₂ F] {ν : Measure F} [IsProbabilityMeasure ν]
     (hν : MemLp id 2 ν) (r : ℝ≥0) (x y : F) :
     covarianceBilin (compoundPoissonMeasure r ν) x y =
       (r : ℝ) * ∫ z, ⟪x, z⟫ * ⟪y, z⟫ ∂ν := by
