@@ -240,23 +240,9 @@ private theorem circleEval_circleX {q u : Kˣ} (hq : ‖(q : K)‖ < 1) (hu : �
   simp_rw [← aeval_sum_divisors_X_mul_div_pow hu₀] at hP
   rw [circleX, map_add, map_mul, circleEval_C, circleEval_C, circleEval_mk, hP.tsum_eq,
     ← divisorSumAt_def]
-  -- split the bilateral series into its central term and two one-sided tails
-  have hs := summable_tateUniformizationX q hq u
-  rw [tateUniformizationX_def, tsum_int_eq_zero_add_tsum_pnat hs,
-    tsum_pnat_eq_tsum_succ
-      (f := fun n : ℕ ↦ (q : K) ^ (n : ℤ) * u / (1 - (q : K) ^ (n : ℤ) * u) ^ 2),
-    tsum_pnat_eq_tsum_succ
-      (f := fun n : ℕ ↦ (q : K) ^ (-(n : ℤ)) * u / (1 - (q : K) ^ (-(n : ℤ)) * u) ^ 2)]
   have h₁ : (1 : K) - u ≠ 0 := sub_ne_zero.mpr (Ne.symm hu₁)
-  have e₁ (c : ℕ) :
-      (q : K) ^ (((c + 1 : ℕ) : ℤ)) * u / (1 - (q : K) ^ (((c + 1 : ℕ) : ℤ)) * u) ^ 2 =
-        (q : K) ^ (c + 1) * u / (1 - (q : K) ^ (c + 1) * u) ^ 2 := by
-    rw [zpow_natCast]
-  have e₂ (c : ℕ) :
-      (q : K) ^ (-((c + 1 : ℕ) : ℤ)) * u / (1 - (q : K) ^ (-((c + 1 : ℕ) : ℤ)) * u) ^ 2 =
-        (q : K) ^ (c + 1) * (u : K)⁻¹ / (1 - (q : K) ^ (c + 1) * (u : K)⁻¹) ^ 2 := by
-    rw [← inv_div_one_sub_inv_sq, zpow_neg, zpow_natCast, mul_inv, inv_inv]
-  simp only [e₁, e₂, Polynomial.aeval_X, map_pow, map_sub, map_one, zpow_zero, one_mul]
+  rw [tateUniformizationX_eq_tsum_nat q hq u]
+  simp only [Polynomial.aeval_X, map_pow, map_sub, map_one]
   field_simp
   ring
 
@@ -279,23 +265,9 @@ private theorem circleEval_circleY {q u : Kˣ} (hq : ‖(q : K)‖ < 1) (hu : �
   simp_rw [← aeval_sum_divisors_Y_mul_div_pow hu₀] at hP
   rw [circleY, map_add, map_mul, circleEval_C, circleEval_C, circleEval_mk, hP.tsum_eq,
     ← divisorSumAt_def]
-  -- split the bilateral series into its central term and two one-sided tails
-  have hs := summable_tateUniformizationY q hq u
-  rw [tateUniformizationY_def, tsum_int_eq_zero_add_tsum_pnat hs,
-    tsum_pnat_eq_tsum_succ
-      (f := fun n : ℕ ↦ ((q : K) ^ (n : ℤ) * u) ^ 2 / (1 - (q : K) ^ (n : ℤ) * u) ^ 3),
-    tsum_pnat_eq_tsum_succ
-      (f := fun n : ℕ ↦ ((q : K) ^ (-(n : ℤ)) * u) ^ 2 / (1 - (q : K) ^ (-(n : ℤ)) * u) ^ 3)]
   have h₁ : (1 : K) - u ≠ 0 := sub_ne_zero.mpr (Ne.symm hu₁)
-  have e₁ (c : ℕ) :
-      ((q : K) ^ (((c + 1 : ℕ) : ℤ)) * u) ^ 2 / (1 - (q : K) ^ (((c + 1 : ℕ) : ℤ)) * u) ^ 3 =
-        ((q : K) ^ (c + 1) * u) ^ 2 / (1 - (q : K) ^ (c + 1) * u) ^ 3 := by
-    rw [zpow_natCast]
-  have e₂ (c : ℕ) :
-      ((q : K) ^ (-((c + 1 : ℕ) : ℤ)) * u) ^ 2 / (1 - (q : K) ^ (-((c + 1 : ℕ) : ℤ)) * u) ^ 3 =
-        -((q : K) ^ (c + 1) * (u : K)⁻¹) / (1 - (q : K) ^ (c + 1) * (u : K)⁻¹) ^ 3 := by
-    rw [← inv_sq_div_one_sub_inv_cube, zpow_neg, zpow_natCast, mul_inv, inv_inv]
-  simp only [e₁, e₂, Polynomial.aeval_X, map_pow, map_sub, map_one, zpow_zero, one_mul]
+  rw [tateUniformizationY_eq_tsum_nat q hq u]
+  simp only [Polynomial.aeval_X, map_pow, map_sub, map_one]
   field_simp
   ring
 
