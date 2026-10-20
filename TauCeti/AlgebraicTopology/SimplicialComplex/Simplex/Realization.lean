@@ -241,15 +241,19 @@ theorem realizationTopHomeomorphStdSimplex_symm_apply_val (x : Convexity.StdSimp
     (faceInclusion_val (⊤ : AbstractSimplicialComplex ι)
       (topFace (ι := ι)) _)
 
-omit [Fintype ι] in
+omit [Fintype ι] [Nonempty ι] in
 /-- The coordinate vectors of the realization of the full complex on a finite type are the weight
 vectors of the standard simplex. -/
 theorem range_coe_realization_top [Finite ι] :
     range (fun x : Realization (⊤ : AbstractSimplicialComplex ι) => (x.1 : ι → ℝ)) =
       range fun t : Convexity.StdSimplex ℝ ι => ⇑t.weights := by
   have := Fintype.ofFinite ι
-  rw [← realizationTopHomeomorphStdSimplex.surjective.range_comp]
-  rfl
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · ext z
+    rw [mem_range_coe_realization_iff, Convexity.StdSimplex.range_toFun_comp_weights]
+    simp
+  · rw [← realizationTopHomeomorphStdSimplex.surjective.range_comp]
+    rfl
 
 /-- The realization of the standard one-simplex is homeomorphic to the unit interval. The zeroth
 vertex maps to `0` and the first vertex maps to `1`; see the two endpoint lemmas below. -/

@@ -233,14 +233,16 @@ theorem exists_homeomorph_closedStarRealization_convexJoin
     obtain ⟨_, ⟨y, rfl⟩, b', hb', α, β, hα, hβ, hαβ, rfl⟩ := mem_convexJoin.mp hz
     rw [mem_singleton_iff] at hb'
     subst b'
-    rcases (show β ≤ 1 by linarith).lt_or_eq with hβ1 | rfl
+    have hβle : β ≤ 1 := by linarith
+    rcases hβle.lt_or_eq with hβ1 | rfl
     · let r := starRay K v y ⟨β, hβ, hβ1⟩
       have hrv : r.1.1 v = β := by simp [r]
       have hr := ((mem_puncturedClosedStar K v _).mp r.2).1
       refine ⟨⟨r.1, hr⟩, Subtype.ext ?_⟩
       simp only [f]
-      rw [joinFormula_of_lt F b ⟨r.1, hr⟩ (hrv ▸ hβ1),
-        show starLinkProjection K v ⟨r.1, _⟩ = y from starLinkProjection_starRay K v y _]
+      -- The punctured-star point rebuilt from `r` is `r` itself, whose projection is `y`.
+      rw [joinFormula_of_lt F b ⟨r.1, hr⟩ (hrv ▸ hβ1), Subtype.coe_eta,
+        starLinkProjection_starRay]
       simp only [hrv]
       congr 2
       linarith
