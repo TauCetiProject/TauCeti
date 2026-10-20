@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.ModelTransport.Boundaryless
 public import TauCeti.Geometry.Manifold.RegularValue
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Manifold
 
-import TauCeti.Geometry.Manifold.MFDeriv.Chart
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
 
 /-!
@@ -192,7 +191,7 @@ kernel component of `extChartAt I x w - extChartAt I x x` for the derivative of 
 preferred extended chart at `x` (`TauCeti.scalarRegularLevelChartAt_apply`). -/
 noncomputable def scalarRegularLevelChartAt (x : {x : M // f x = c}) :
     OpenPartialHomeomorph {x : M // f x = c} (Fin (finrank ℝ E - 1) → ℝ) :=
-  (zeroHomeomorph I f c).symm.toOpenPartialHomeomorph.trans
+  (zeroHomeomorph I f c).symm.transOpenPartialHomeomorph
     (sectionZeroChartAt (hasStrictFDerivAt_coord hf) isFredholm_linearization
       (surjective_linearization hreg) (index_linearization hreg) ((zeroHomeomorph I f c).symm x))
 
@@ -201,7 +200,7 @@ section-zero chart at `z`, transported along the level homeomorphism. -/
 private theorem scalarRegularLevelChartAt_zeroHomeomorph
     (z : ↥{y : BoundarylessModel I M | sec I f c y = 0}) :
     scalarRegularLevelChartAt hf hreg (zeroHomeomorph I f c z) =
-      (zeroHomeomorph I f c).symm.toOpenPartialHomeomorph.trans
+      (zeroHomeomorph I f c).symm.transOpenPartialHomeomorph
         (sectionZeroChartAt (hasStrictFDerivAt_coord hf) isFredholm_linearization
           (surjective_linearization hreg) (index_linearization hreg) z) := by
   rw [scalarRegularLevelChartAt, Homeomorph.symm_apply_apply]
@@ -209,9 +208,9 @@ private theorem scalarRegularLevelChartAt_zeroHomeomorph
 /-- Every point of the level lies in the source of its preferred chart. -/
 theorem mem_scalarRegularLevelChartAt_source (x : {x : M // f x = c}) :
     x ∈ (scalarRegularLevelChartAt hf hreg x).source := by
-  rw [scalarRegularLevelChartAt, OpenPartialHomeomorph.trans_source]
-  exact ⟨trivial, mem_sectionZeroChartAt_source _ _ _ _ (fun _ ↦ continuousAt_const)
-    (fun z ↦ mem_baseSet_trivializationAt ℝ (Bundle.Trivial ℝ ℝ) _) _⟩
+  rw [scalarRegularLevelChartAt, Homeomorph.transOpenPartialHomeomorph_source]
+  exact mem_sectionZeroChartAt_source _ _ _ _ (fun _ ↦ continuousAt_const)
+    (fun z ↦ mem_baseSet_trivializationAt ℝ (Bundle.Trivial ℝ ℝ) _) _
 
 /-- The atlas of a regular scalar level `f⁻¹(c)`: the section-zero atlas of `f - c`, with
 preferred charts `TauCeti.scalarRegularLevelChartAt`. It is modelled on `Fin (dim E - 1) → ℝ`. -/
@@ -250,9 +249,9 @@ theorem scalarRegularLevelChartAt_apply (x w : {x : M // f x = c}) :
         (Classical.choose D.isFredholm_of_finiteDimensional.closedComplemented_ker
           (extChartAt I (x : M) w - extChartAt I (x : M) x)) := by
   obtain ⟨z, rfl⟩ := (zeroHomeomorph I f c).surjective x
-  rw [scalarRegularLevelChartAt_zeroHomeomorph, OpenPartialHomeomorph.trans_apply,
-    Homeomorph.toOpenPartialHomeomorph_apply, sectionZeroChartAt_apply, chartAt_self, chartAt_apply,
-    coe_zeroHomeomorph_symm, Homeomorph.symm_apply_apply, ← coe_zeroHomeomorph]
+  simp only [scalarRegularLevelChartAt_zeroHomeomorph, Homeomorph.transOpenPartialHomeomorph_apply,
+    comp_apply, Homeomorph.symm_apply_apply, sectionZeroChartAt_apply, chartAt_apply,
+    coe_zeroHomeomorph_symm, ← coe_zeroHomeomorph]
 
 /-- A preferred chart is centred at its point. -/
 @[simp]
@@ -294,12 +293,12 @@ theorem scalarRegularLevelChartAt_source (x : {x : M // f x = c}) :
   obtain ⟨z, rfl⟩ := (zeroHomeomorph I f c).surjective x
   obtain ⟨hΦ, hsrc⟩ := implicit_coord_eq hf hreg z
   dsimp only
-  rw [scalarRegularLevelChartAt_zeroHomeomorph, OpenPartialHomeomorph.trans_source,
-    Homeomorph.toOpenPartialHomeomorph_source, univ_inter, sectionZeroChartAt_source, hΦ, hsrc]
+  rw [scalarRegularLevelChartAt_zeroHomeomorph, Homeomorph.transOpenPartialHomeomorph_source,
+    sectionZeroChartAt_source, hΦ, hsrc]
   ext w
   obtain ⟨w, rfl⟩ := (zeroHomeomorph I f c).surjective w
-  simp only [mem_preimage, mem_inter_iff, mem_ofPred_eq, Homeomorph.toOpenPartialHomeomorph_apply,
-    Homeomorph.symm_apply_apply, mem_chartAt_source_iff, chartAt_apply, ← coe_zeroHomeomorph,
+  simp only [mem_preimage, mem_inter_iff, mem_ofPred_eq, Homeomorph.symm_apply_apply,
+    mem_chartAt_source_iff, chartAt_apply, ← coe_zeroHomeomorph,
     Bundle.Trivial.fiberBundle_trivializationAt', Bundle.Trivial.trivialization_baseSet,
     preimage_univ, interior_univ, mem_univ, and_true]
 
@@ -324,9 +323,8 @@ theorem mem_scalarRegularLevelChartAt_target_iff (x : {x : M // f x = c})
   obtain ⟨z, rfl⟩ := (zeroHomeomorph I f c).surjective x
   obtain ⟨hΦ, hsrc⟩ := implicit_coord_eq hf hreg z
   dsimp only
-  rw [scalarRegularLevelChartAt_zeroHomeomorph, OpenPartialHomeomorph.trans_target]
-  simp only [Homeomorph.toOpenPartialHomeomorph_target, preimage_univ, inter_univ]
-  rw [mem_sectionZeroChartAt_target_iff]
+  rw [scalarRegularLevelChartAt_zeroHomeomorph, Homeomorph.transOpenPartialHomeomorph_target,
+    mem_sectionZeroChartAt_target_iff]
   dsimp only
   rw [hΦ, hsrc]
   simp only [BoundarylessModel.chartAt_eq, BoundarylessModel.chart_target, extChartAt_target,
@@ -352,13 +350,11 @@ theorem coe_scalarRegularLevelChartAt_symm_apply (x : {x : M // f x = c})
         ((hD.implicitToOpenPartialHomeomorphOfComplemented _ D hD' hker).symm (0, K.symm k)) := by
   obtain ⟨z, rfl⟩ := (zeroHomeomorph I f c).surjective x
   obtain ⟨hΦ, -⟩ := implicit_coord_eq hf hreg z
-  rw [scalarRegularLevelChartAt_zeroHomeomorph, OpenPartialHomeomorph.trans_target] at hk
-  simp only [scalarRegularLevelChartAt_zeroHomeomorph, OpenPartialHomeomorph.coe_trans_symm,
-    ← Homeomorph.symm_toOpenPartialHomeomorph, Homeomorph.symm_symm,
-    Homeomorph.toOpenPartialHomeomorph_apply, Function.comp_apply]
-  rw [coe_zeroHomeomorph, coe_sectionZeroChartAt_symm_apply _ _ _ _ _ hk.1, hΦ]
-  rw [BoundarylessModel.chartAt_eq, BoundarylessModel.chart_symm_apply,
-    Homeomorph.symm_apply_apply, ← coe_zeroHomeomorph]
+  rw [scalarRegularLevelChartAt_zeroHomeomorph, Homeomorph.transOpenPartialHomeomorph_target] at hk
+  rw [scalarRegularLevelChartAt_zeroHomeomorph, Homeomorph.transOpenPartialHomeomorph_symm_apply,
+    comp_apply, Homeomorph.symm_symm, coe_zeroHomeomorph,
+    coe_sectionZeroChartAt_symm_apply _ _ _ _ _ hk, hΦ, BoundarylessModel.chartAt_eq,
+    BoundarylessModel.chart_symm_apply, Homeomorph.symm_apply_apply, ← coe_zeroHomeomorph]
   -- `(extChartAt I x).symm` is `(chartAt H x).symm ∘ I.symm`, and `linearization z` abbreviates
   -- the preferred-chart derivative at `x`.
   rfl
@@ -400,8 +396,6 @@ theorem isManifold_scalarRegularLevel {m : ℕ∞ω} [IsManifold I m M] (hm : 1 
     Set.inter_univ, Set.preimage_id, Function.comp_id, Function.id_comp]
   -- The transport along the level homeomorphism cancels in each chart transition.
   rwa [scalarRegularLevelChartAt, scalarRegularLevelChartAt,
-    OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm, OpenPartialHomeomorph.trans_assoc,
-    ← OpenPartialHomeomorph.trans_assoc _ (zeroHomeomorph I f c).symm.toOpenPartialHomeomorph,
-    Homeomorph.toOpenPartialHomeomorph_symm_trans_self, OpenPartialHomeomorph.refl_trans]
+    Homeomorph.transOpenPartialHomeomorph_symm_trans]
 
 end TauCeti
