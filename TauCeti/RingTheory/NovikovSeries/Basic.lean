@@ -30,7 +30,8 @@ Neither injectivity nor discreteness of `N` is assumed: finitely many nonzero co
 share a period value, and the periods of an infinite support tend to `+∞`.
 
 This file sets up the carrier and its additive structure, and the finiteness facts on which the
-convolution product rests.
+convolution product rests. The design of the additive API follows that of Mathlib's `HahnSeries`
+in `Mathlib/RingTheory/HahnSeries/Addition.lean`; no code is copied from there.
 
 ## Main definitions
 
@@ -59,7 +60,7 @@ convolution product rests.
 * A. Pajitnov, *Circle-valued Morse Theory*, de Gruyter 2006, Chapter 3.
 -/
 
-@[expose] public section
+public section
 
 noncomputable section
 
@@ -304,14 +305,19 @@ instance [AddCommGroup R] : AddCommGroup (NovikovSeries R H N) :=
     (fun _ _ => coeff_smul' _ _) fun _ _ => coeff_smul' _ _
 
 /-- The coefficient function of Novikov series, as an additive monoid homomorphism. -/
-@[simps]
 def coeffAddMonoidHom [AddMonoid R] : NovikovSeries R H N →+ (H → R) where
   toFun := coeff
   map_zero' := rfl
   map_add' _ _ := rfl
 
+@[simp]
+theorem coeffAddMonoidHom_apply [AddMonoid R] (a : NovikovSeries R H N) :
+    coeffAddMonoidHom a = a.coeff := by
+  rfl
+
 instance [Semiring S] [AddCommMonoid R] [Module S R] : Module S (NovikovSeries R H N) :=
-  coeff_injective.module S coeffAddMonoidHom fun _ _ => rfl
+  (funext (coeffAddMonoidHom_apply (R := R) (N := N)) ▸ coeff_injective).module S coeffAddMonoidHom
+    fun _ _ => by simp
 
 end Additive
 
@@ -328,7 +334,7 @@ def ofFinsupp : (H →₀ R) →+ NovikovSeries R H N where
     simp
 
 @[simp]
-theorem coeff_ofFinsupp (f : H →₀ R) : (ofFinsupp (N := N) f).coeff = f :=
+theorem coeff_ofFinsupp (f : H →₀ R) : (ofFinsupp (N := N) f).coeff = f := by
   rfl
 
 @[simp]
