@@ -108,6 +108,12 @@ theorem TripleNeighbourhood.toNeighbourhood_toTriple (triple : TripleNeighbourho
       ext element
       exact DFunLike.congr_fun (eq_of_heq (Neighbourhood.toTriple_point R Ω point)) element
 
+/-- Triples agree when their associated pointed étale neighbourhoods agree. -/
+@[ext]
+theorem TripleNeighbourhood.ext {first second : TripleNeighbourhood R Ω}
+    (equality : first.toNeighbourhood R Ω = second.toNeighbourhood R Ω) : first = second :=
+  (tripleNeighbourhoodEquiv R Ω).injective equality
+
 /-- The forward object equivalence uses the pointed algebra of a triple. -/
 @[simp]
 theorem tripleNeighbourhoodEquiv_apply (triple : TripleNeighbourhood R Ω) :
