@@ -175,7 +175,8 @@ theorem conformalLaplacian_rescale_const
       conformalLaplacian I u x) := by
   simp only [conformalLaplacian_def]
   rw [g.laplaceBeltrami_rescale_const (by simp) hc hu x,
-    g.scalarCurvature_leviCivitaConnection_rescale_const hc x]
+    ← (g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).scalarCurvature_def x,
+    ← g.scalarCurvature_def x, g.scalarCurvature_rescale_const hc x]
   ring
 
 end Rescale

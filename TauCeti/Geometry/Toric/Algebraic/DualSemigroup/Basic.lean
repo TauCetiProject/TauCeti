@@ -88,6 +88,27 @@ theorem dualSemigroup_bot (hi : IsIntegralLattice i) :
   ext m
   simp
 
+/-- The dual semigroup of the whole space is trivial: the dual cone of the whole space is zero
+(`PointedCone.dual_univ`), and real extension of integral characters is injective. -/
+@[simp]
+theorem dualSemigroup_top (hi : IsIntegralLattice i) :
+    dualSemigroup hi (⊤ : PointedCone ℝ V) = ⊥ := by
+  refine eq_bot_iff.2 fun m hm ↦ AddSubmonoid.mem_bot.2 <| hi.realCharacter_injective ?_
+  have h : hi.realCharacter m ∈ PointedCone.dual (Module.Dual.eval ℝ V) Set.univ := hm
+  rwa [PointedCone.dual_univ (p := Module.Dual.eval ℝ V) fun f g hfg ↦
+    LinearMap.ext fun x ↦ LinearMap.congr_fun hfg x, Submodule.zero_eq_bot,
+    Submodule.mem_bot, ← map_zero hi.realCharacter] at h
+
+/-- The dual semigroup of the whole space has a single element, so the complex monoid algebra
+of the corresponding affine toric chart is `ℂ` (`MonoidAlgebra.uniqueAlgEquiv`), and the chart
+is a point. -/
+instance subsingleton_dualSemigroup_top (hi : IsIntegralLattice i) :
+    Subsingleton (dualSemigroup hi (⊤ : PointedCone ℝ V)) :=
+  ⟨fun a b ↦ Subtype.ext <| by
+    have ha : (a : N →+ ℤ) = 0 := by simpa using a.2
+    have hb : (b : N →+ ℤ) = 0 := by simpa using b.2
+    rw [ha, hb]⟩
+
 /-- The dual semigroup of a join is the intersection of the two dual semigroups. -/
 @[simp]
 theorem dualSemigroup_sup (hi : IsIntegralLattice i) (σ τ : PointedCone ℝ V) :

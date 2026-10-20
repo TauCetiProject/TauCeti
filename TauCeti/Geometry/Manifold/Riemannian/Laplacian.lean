@@ -298,6 +298,33 @@ theorem divergence_smul (c : ℝ) (X : (x : M) → TangentSpace I x) (x : M)
     (CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv.smul_const c hX,
     ContinuousLinearMap.toLinearMap_smul]
 
+/-- Product rule for the divergence at a point where `f` and `X` are differentiable:
+`divergence I (f • X) x = f x * divergence I X x + mvfderiv I f x (X x)`.
+This is the pointwise input for integrating the Laplace--Beltrami operator by parts. -/
+theorem divergence_smul_function (f : M → ℝ) (X : (x : M) → TangentSpace I x) (x : M)
+    (hf : MDifferentiableAt I 𝓘(ℝ) f x)
+    (hX : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, X y⟩ : TangentBundle I M)) x) :
+    divergence I (f • X) x = f x * divergence I X x + mvfderiv I f x (X x) := by
+  have h := (CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv.leibniz
+    hX hf
+  rw [divergence, h]
+  rw [ContinuousLinearMap.toLinearMap_add, ContinuousLinearMap.toLinearMap_smul, map_add,
+    map_smul]
+  -- Name the projection from the continuous rank-one constructor before applying the trace rule.
+  have h_smulRight :
+      ((d% f x).smulRight (X x)).toLinearMap = (d% f x).toLinearMap.smulRight (X x) := by
+    ext v
+    simp only [ContinuousLinearMap.smulRight_apply, LinearMap.smulRight_apply,
+      ContinuousLinearMap.coe_coe]
+  -- The `d%` notation is `mvfderiv`; use its named coercion fact at the final application.
+  have h_trace :
+      LinearMap.trace ℝ (TangentSpace I x) ((d% f x).smulRight (X x)).toLinearMap =
+        mvfderiv I f x (X x) := by
+    rw [h_smulRight, LinearMap.trace_smulRight]
+    exact congrFun (ContinuousLinearMap.coe_coe (d% f x)) (X x)
+  rw [h_trace]
+  simp only [smul_eq_mul, divergence]
+
 /-- The Hessian of a constant function is zero. -/
 @[simp]
 theorem hessian_const (c : ℝ) (x : M) (v w : TangentSpace I x) :

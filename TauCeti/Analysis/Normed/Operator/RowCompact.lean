@@ -191,6 +191,16 @@ theorem norm_matrixCoeff_le_rowNorm (u : C₀(J, R) →L[R] C₀(I, R)) (i : I) 
     ‖u.matrixCoeff i j‖ ≤ u.rowNorm i :=
   norm_matrixCoeff_le_rowNorm_of_le (u.norm_matrixCoeff_le i) j
 
+/-- A row norm is bounded by the operator-norm distance to another map plus its row norm. -/
+theorem rowNorm_le_ringOpNorm_sub_add (u v : C₀(J, R) →L[R] C₀(I, R)) (i : I) :
+    u.rowNorm i ≤ ‖u - v‖ + v.rowNorm i := by
+  refine rowNorm_le_of_forall_le
+    (add_nonneg (ringOpNorm_nonneg _) (v.rowNorm_nonneg i)) fun j ↦ ?_
+  calc ‖u.matrixCoeff i j‖ = ‖(u - v).matrixCoeff i j + v.matrixCoeff i j‖ := by simp
+    _ ≤ ‖u - v‖ + v.rowNorm i :=
+      (norm_add_le _ _).trans (add_le_add ((u - v).norm_matrixCoeff_le i j)
+        (v.norm_matrixCoeff_le_rowNorm i j))
+
 /-- Over Tate scalars, a row norm is at most `C ≥ 0` exactly when every entry of the row is. -/
 theorem rowNorm_le_iff {u : C₀(J, R) →L[R] C₀(I, R)} {i : I} {C : ℝ} (hC : 0 ≤ C) :
     u.rowNorm i ≤ C ↔ ∀ j, ‖u.matrixCoeff i j‖ ≤ C :=
@@ -217,12 +227,8 @@ theorem isRowCompact_of_tendsto {ι : Type*} {l : Filter ι} [l.NeBot]
     fun i ↦ ha.trans_le (u.rowNorm_nonneg i), fun ε hε ↦ ?_⟩)
   obtain ⟨n, hvn, hn⟩ := (hv.and (h.eventually_lt_const (half_pos hε))).exists
   filter_upwards [hvn.tendsto_rowNorm.eventually_lt_const (half_pos hε)] with i hi
-  refine lt_of_le_of_lt (rowNorm_le_of_forall_le (add_nonneg (ringOpNorm_nonneg _)
-    ((v n).rowNorm_nonneg i)) fun j ↦ ?_) (add_halves ε ▸ add_lt_add hn hi)
-  calc ‖u.matrixCoeff i j‖ = ‖(u - v n).matrixCoeff i j + (v n).matrixCoeff i j‖ := by simp
-    _ ≤ ‖u - v n‖ + (v n).rowNorm i :=
-      (norm_add_le _ _).trans (add_le_add ((u - v n).norm_matrixCoeff_le i j)
-        ((v n).norm_matrixCoeff_le_rowNorm i j))
+  exact lt_of_le_of_lt (u.rowNorm_le_ringOpNorm_sub_add (v n) i)
+    (add_halves ε ▸ add_lt_add hn hi)
 
 end Tate
 
@@ -285,6 +291,14 @@ theorem sub_indicatorCLM_comp (S : Set I) (u : C₀(J, R) →L[R] C₀(I, R)) :
     u - (indicatorCLM R S).comp u = (indicatorCLM R Sᶜ).comp u := by
   ext x i
   by_cases hi : i ∈ S <;> simp [hi]
+
+/-- Over Tate scalars, the output truncation `π_S ∘ u` to a finite set `S` is row compact: its
+rows outside `S` vanish. -/
+theorem isRowCompact_indicatorCLM_comp [TauCeti.NormedRing.IsTate R] (S : Finset I)
+    (u : C₀(J, R) →L[R] C₀(I, R)) : ((indicatorCLM R (S : Set I)).comp u).IsRowCompact := by
+  refine isRowCompact_iff_tendsto_rowNorm.2 (tendsto_const_nhds.congr' ?_)
+  filter_upwards [S.eventually_cofinite_notMem] with i hi
+  simp [hi]
 
 end SeminormedRing
 
