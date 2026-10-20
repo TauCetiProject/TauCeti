@@ -179,10 +179,10 @@ jobs:
             exit 1
           fi
 
-      # Option overrides and heartbeat instrumentation are forbidden in library code.
+      # Option overrides, heartbeat instrumentation, and explicit metaprogramming are forbidden.
       # This cheap scan ignores comments without double quotes, conservatively includes
       # strings and names, and never elaborates code.
-      - name: Reject option overrides and heartbeat instrumentation
+      - name: Reject option overrides and metaprogramming (allow local macros)
         run: |
           python3 scripts/check_source_options.py TauCeti/ TauCeti.lean
 
