@@ -38,6 +38,8 @@ derivative are only real-linear.
 * `quadraticEnd_smul`, `quadraticEnd_smul_of_norm_eq_one`: `Q₀(c ψ) = |c|² Q₀(ψ)`; in particular
   `Q₀` is invariant under unit phases.
 * `quadraticEnd_add`: `Q₀(ψ + φ) = Q₀(ψ) + Q₀(φ) + B(ψ, φ)`.
+* `trace_quadraticEndPolar`, `isSelfAdjoint_quadraticEndPolar`: like `Q₀(ψ)`, every `B(ψ, φ)` is
+  trace free in complex dimension two and self-adjoint.
 * `norm_quadraticEnd_apply`, `norm_quadraticEnd`: `Q₀(ψ)` is `‖ψ‖² / 2` times an isometry, so
   its operator norm is `‖ψ‖² / 2`; in particular `Q₀(ψ) = 0` only for `ψ = 0`.
 * `norm_quadraticEndPolar_le`, `norm_quadraticEnd_sub_le`: `‖B(ψ, φ)‖ ≤ ‖ψ‖ ‖φ‖` and
@@ -114,10 +116,7 @@ theorem quadraticEnd_neg (ψ : E) : quadraticEnd (-ψ) = quadraticEnd ψ := by
 /-- In complex dimension two, `Q₀(ψ)` is trace free. -/
 theorem trace_quadraticEnd [FiniteDimensional ℂ E] (h₂ : Module.finrank ℂ E = 2) (ψ : E) :
     LinearMap.trace ℂ E (quadraticEnd ψ) = 0 := by
-  rw [quadraticEnd, toLinearMap_sub, toLinearMap_smul, coe_id, map_sub, map_smul, trace_rankOne,
-    LinearMap.trace_id, h₂, inner_self_eq_norm_sq_to_K, RCLike.ofReal_eq_complex_ofReal]
-  simp only [Nat.cast_ofNat, smul_eq_mul]
-  ring
+  simp [quadraticEnd_def, trace_rankOne, h₂, inner_self_eq_norm_sq_to_K]
 
 /-- `Q₀(ψ)` is self-adjoint. -/
 theorem isSelfAdjoint_quadraticEnd [CompleteSpace E] (ψ : E) :
@@ -228,6 +227,18 @@ theorem quadraticEnd_add (ψ φ : E) :
     RCLike.re_to_complex]
   push_cast
   module
+
+/-- In complex dimension two, the polarization `B(ψ, φ)` of `Q₀` is trace free. -/
+theorem trace_quadraticEndPolar [FiniteDimensional ℂ E] (h₂ : Module.finrank ℂ E = 2)
+    (ψ φ : E) : LinearMap.trace ℂ E (quadraticEndPolar ψ φ) = 0 := by
+  simp [eq_sub_of_add_eq' (quadraticEnd_add ψ φ).symm, trace_quadraticEnd h₂]
+
+/-- The polarization `B(ψ, φ)` of `Q₀` is self-adjoint. -/
+theorem isSelfAdjoint_quadraticEndPolar [CompleteSpace E] (ψ φ : E) :
+    IsSelfAdjoint (quadraticEndPolar ψ φ) := by
+  rw [eq_sub_of_add_eq' (quadraticEnd_add ψ φ).symm]
+  exact (isSelfAdjoint_quadraticEnd _).sub
+    ((isSelfAdjoint_quadraticEnd _).add (isSelfAdjoint_quadraticEnd _))
 
 /-- `B(ψ, i ψ) = 0`: the derivative of `Q₀` vanishes along the infinitesimal phase direction
 `i ψ`. -/
