@@ -24,8 +24,7 @@ of degree one (see `TauCeti.RingTheory.PolynomialLaw.Homogeneous`).
   `u.toPolynomialLaw` is `u`, so a linear map is determined by its polynomial law.
 * `LinearMap.toPolynomialLaw_id`, `LinearMap.toPolynomialLaw_comp`: compatibility with identities
   and composition.
-* `LinearMap.toPolynomialLawₗ`: `LinearMap.toPolynomialLaw` as an `R`-linear map
-  `(M →ₗ[R] N) →ₗ[R] (M →ₚₗ[R] N)`.
+* `LinearMap.toPolynomialLawₗ`: `LinearMap.toPolynomialLaw` as an `R`-linear map.
 
 ## References
 
@@ -121,7 +120,7 @@ theorem toPolynomialLaw_smul (r : R) (u : M →ₗ[R] N) :
   simp [baseChange_smul]
 
 variable (R M N) in
-/-- `LinearMap.toPolynomialLaw` as an `R`-linear map `(M →ₗ[R] N) →ₗ[R] (M →ₚₗ[R] N)`. -/
+/-- `LinearMap.toPolynomialLaw`, bundled as an `R`-linear map. -/
 def toPolynomialLawₗ : (M →ₗ[R] N) →ₗ[R] M →ₚₗ[R] N where
   toFun := toPolynomialLaw
   map_add' := toPolynomialLaw_add
