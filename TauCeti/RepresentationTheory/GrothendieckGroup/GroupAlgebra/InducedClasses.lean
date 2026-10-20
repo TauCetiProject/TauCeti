@@ -140,15 +140,15 @@ theorem mem_indClassesK0_iff {P : Subgroup G → Prop}
     exact indK0_mem_indClassesK0 k hC y
 
 /-- **The induced classes grow with the family.** -/
-theorem indClassesK0_le_indClassesK0 {P Q : Subgroup G → Prop} (h : ∀ C, P C → Q C) :
+theorem indClassesK0_mono {P Q : Subgroup G → Prop} (h : ∀ C, P C → Q C) :
     indClassesK0 k G P ≤ indClassesK0 k G Q :=
   (indClassesK0_le_iff k).2 fun C hC y ↦ indK0_mem_indClassesK0 k (h C hC) y
 
 /-- Logically equivalent families induce the same classes. -/
 theorem indClassesK0_congr {P Q : Subgroup G → Prop} (h : ∀ C, P C ↔ Q C) :
     indClassesK0 k G P = indClassesK0 k G Q :=
-  le_antisymm (indClassesK0_le_indClassesK0 k fun C hC ↦ (h C).1 hC)
-    (indClassesK0_le_indClassesK0 k fun C hC ↦ (h C).2 hC)
+  le_antisymm (indClassesK0_mono k fun C hC ↦ (h C).1 hC)
+    (indClassesK0_mono k fun C hC ↦ (h C).2 hC)
 
 /-- **The coset permutation class of a member of the family is induced from it**: the class
 `[k[G ⧸ C]]` is the class induced from `C` of the trivial line (`TauCeti.indK0_of_trivial`). -/
@@ -228,7 +228,7 @@ noncomputable abbrev indCyclicCoprimeK0 (ℓ : ℕ) :
 subgroups. -/
 theorem indCyclicCoprimeK0_le_indCyclicK0 (ℓ : ℕ) :
     indCyclicCoprimeK0 k G ℓ ≤ indCyclicK0 k G :=
-  indClassesK0_le_indClassesK0 k fun _ hC ↦ hC.1
+  indClassesK0_mono k fun _ hC ↦ hC.1
 
 /-- **For a cyclic group every class is induced from a cyclic subgroup**, the whole group being
 one. Artin's theorem is vacuous here: no multiplier is needed. -/
