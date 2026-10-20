@@ -14,6 +14,7 @@ public import TauCeti.NumberTheory.Transcendental.Lindemann.HermiteIntegral
 import Mathlib.NumberTheory.NumberField.Norm
 import Mathlib.RingTheory.Int.Basic
 import Mathlib.Topology.Algebra.Order.Floor
+import TauCeti.RingTheory.IntegralClosure.IsIntegral.Basic
 
 /-!
 # The auxiliary values of the Lindemann–Weierstrass theorem
@@ -126,7 +127,7 @@ theorem isIntegral_auxValue {x : K[K]} {l p : ℕ} {γ : K} (hγ : γ ∈ x.coef
     simpa [auxValue, auxPoly_def, h1] using (IsIntegral.sum _ fun γ' _ ↦ hx γ').neg
   obtain ⟨w, hw, h⟩ := exists_auxValue_eq hγ hp hx hl
   rw [h]
-  exact ((hx γ).mul ((isIntegral_pow_card_mul_prod_sub hγ hl).pow p)).add
+  exact ((hx γ).mul ((isIntegral_pow_card_mul_prod_sub hγ (isIntegral_natCast l) hl).pow p)).add
     ((isIntegral_natCast p).mul hw) |>.neg
 
 /-- **Nonvanishing of the auxiliary values**. Let `K` be a number field, let the coefficients of
@@ -144,7 +145,7 @@ theorem auxValue_ne_zero [NumberField K] {x : K[K]} {l p : ℕ} {γ : K}
   intro h0
   -- In the ring of integers, `δ_γ A ^ p = -p w`; taking norms, `p` divides `N(δ_γ) N(A) ^ p`.
   let δ' : 𝓞 K := ⟨x.coeff γ, hx γ⟩
-  let A' : 𝓞 K := ⟨A, isIntegral_pow_card_mul_prod_sub hγ hl⟩
+  let A' : 𝓞 K := ⟨A, isIntegral_pow_card_mul_prod_sub hγ (isIntegral_natCast l) hl⟩
   let w' : 𝓞 K := ⟨w, hw⟩
   have heq : δ' * A' ^ p = algebraMap ℤ (𝓞 K) (-p) * w' := by
     apply RingOfIntegers.coe_injective
