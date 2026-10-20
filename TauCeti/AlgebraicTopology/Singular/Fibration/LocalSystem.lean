@@ -28,8 +28,8 @@ homology, so the action factors through the fundamental groupoid and is functori
 
 ## Main results
 
-* `TauCeti.fibreLocalSystem_obj`, `TauCeti.fibreLocalSystem_map_mk`: the value of the local system
-  on an object and on the class of a path.
+* `TauCeti.fibreLocalSystemObjIso`, `TauCeti.fibreLocalSystem_map_mk`: the value of the local
+  system on an object and on the class of a path.
 
 ## References
 
@@ -52,10 +52,6 @@ variable {E B : TopCat.{u}} {p : E ⟶ B} (Λ : LiftingFunction p.hom)
 def fibreTransport {b₀ b₁ : B} (γ : Path b₀ b₁) : p.fiber b₀ ⟶ p.fiber b₁ :=
   TopCat.ofHom (Λ.transport γ)
 
-theorem fibreTransport_apply_coe {b₀ b₁ : B} (γ : Path b₀ b₁) (x : p.fiber b₀) :
-    (fibreTransport Λ γ x).1 = (Λ.transport γ x).1 :=
-  (rfl)
-
 variable (k : Type u) [Ring k]
 
 /-- Homotopic paths have the same induced map on the homology of the fibres. -/
@@ -69,7 +65,7 @@ theorem homologyMap_fibreTransport_congr {b₀ b₁ : B} {γ γ' : Path b₀ b�
 
 /-- The **local system of fibre homology** `b ↦ H_t(p⁻¹ b; k)` of a Hurewicz fibration with
 lifting function `Λ`, with normalized cubical chains. -/
-@[expose] def fibreLocalSystem (t : ℕ) : LocalCoefficientSystem.{u, u, u} k B where
+def fibreLocalSystem (t : ℕ) : LocalCoefficientSystem.{u, u, u} k B where
   obj b := ((normalizedCubicalChainComplex k).obj (p.fiber b.as)).homology t
   map {b₀ b₁} := Quotient.lift
     (fun γ ↦ HomologicalComplex.homologyMap
@@ -87,16 +83,22 @@ lifting function `Λ`, with normalized cubical chains. -/
       (g := fibreTransport Λ γ ≫ fibreTransport Λ δ) H t).trans
       (by rw [Functor.map_comp, HomologicalComplex.homologyMap_comp]; rfl)
 
-theorem fibreLocalSystem_obj (t : ℕ) (b : FundamentalGroupoid B) :
-    (fibreLocalSystem Λ k t).obj b =
+/-- The value of the local system at a point is the homology of the fibre over it. -/
+def fibreLocalSystemObjIso (t : ℕ) (b : FundamentalGroupoid B) :
+    (fibreLocalSystem Λ k t).obj b ≅
       ((normalizedCubicalChainComplex k).obj (p.fiber b.as)).homology t :=
-  (rfl)
+  Iso.refl _
 
+/-- The local system sends the class of a path to the map induced on homology by the transport
+along the path. -/
 theorem fibreLocalSystem_map_mk (t : ℕ) {b₀ b₁ : FundamentalGroupoid B}
     (γ : Path b₀.as b₁.as) :
     (fibreLocalSystem Λ k t).map (Path.Homotopic.Quotient.mk γ) =
-      HomologicalComplex.homologyMap
-        ((normalizedCubicalChainComplex k).map (fibreTransport Λ γ)) t :=
-  (rfl)
+      (fibreLocalSystemObjIso Λ k t b₀).hom ≫
+        HomologicalComplex.homologyMap
+          ((normalizedCubicalChainComplex k).map (fibreTransport Λ γ)) t ≫
+        (fibreLocalSystemObjIso Λ k t b₁).inv := by
+  simp [fibreLocalSystemObjIso]
+  rfl
 
 end TauCeti

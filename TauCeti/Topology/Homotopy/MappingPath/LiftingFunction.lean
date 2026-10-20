@@ -38,6 +38,8 @@ target.
 
 ## Main results
 
+* `TauCeti.LiftingFunction.liftFamily`: the lifts of a continuous family of paths, as a continuous
+  map, with `liftFamily_apply`, `liftFamily_zero` and `apply_liftFamily`.
 * `TauCeti.LiftingFunction.isHurewiczFibration`: a map with a lifting function is a Hurewicz
   fibration for test spaces in every universe.
 * `TauCeti.isHurewiczFibration_iff_nonempty_liftingFunction`: a map `p : C(E, B)` is a Hurewicz
@@ -93,9 +95,9 @@ theorem lift_def (e : E) (γ : C(I, B)) (h : γ 0 = p e) :
     Λ.lift e γ h = Λ.toContinuousMap ⟨(e, γ), h⟩ :=
   (rfl)
 
-theorem lift_congr (e : E) {γ γ' : C(I, B)} (hγ : γ = γ') (h : γ 0 = p e) (h' : γ' 0 = p e) :
-    Λ.lift e γ h = Λ.lift e γ' h' := by
-  subst hγ
+theorem lift_congr {e e' : E} (he : e = e') {γ γ' : C(I, B)} (hγ : γ = γ') (h : γ 0 = p e)
+    (h' : γ' 0 = p e') : Λ.lift e γ h = Λ.lift e' γ' h' := by
+  subst he hγ
   rfl
 
 @[simp]
@@ -117,6 +119,30 @@ theorem continuous_lift {Y : Type*} [TopologicalSpace Y] {f : Y → E} {g : Y �
     (hf : Continuous f) (hg : Continuous g) (h : ∀ y, g y 0 = p (f y)) :
     Continuous fun y ↦ Λ.lift (f y) (g y) (h y) :=
   Λ.toContinuousMap.continuous.comp ((hf.prodMk hg).subtype_mk h)
+
+/-- The lifts, starting at the points `f y`, of a family `γ` of paths in `B` with
+`γ (y, 0) = p (f y)`, as a continuous map on `Y × I`. -/
+def liftFamily {Y : Type*} [TopologicalSpace Y] (f : C(Y, E)) (γ : C(Y × I, B))
+    (h : ∀ y, γ (y, 0) = p (f y)) : C(Y × I, E) :=
+  ⟨fun z ↦ Λ.lift (f z.1) (γ.curry z.1) (h z.1) z.2,
+    continuous_eval.comp
+      (((Λ.continuous_lift (f.continuous.comp continuous_fst)
+        (γ.curry.continuous.comp continuous_fst) fun z ↦ h z.1)).prodMk continuous_snd)⟩
+
+theorem liftFamily_apply {Y : Type*} [TopologicalSpace Y] (f : C(Y, E)) (γ : C(Y × I, B))
+    (h : ∀ y, γ (y, 0) = p (f y)) (y : Y) (t : I) :
+    Λ.liftFamily f γ h (y, t) = Λ.lift (f y) (γ.curry y) (h y) t :=
+  (rfl)
+
+@[simp]
+theorem liftFamily_zero {Y : Type*} [TopologicalSpace Y] (f : C(Y, E)) (γ : C(Y × I, B))
+    (h : ∀ y, γ (y, 0) = p (f y)) (y : Y) : Λ.liftFamily f γ h (y, 0) = f y :=
+  Λ.lift_zero _ _ _
+
+@[simp]
+theorem apply_liftFamily {Y : Type*} [TopologicalSpace Y] (f : C(Y, E)) (γ : C(Y × I, B))
+    (h : ∀ y, γ (y, 0) = p (f y)) (y : Y) (t : I) : p (Λ.liftFamily f γ h (y, t)) = γ (y, t) :=
+  Λ.apply_lift _ _ _ t
 
 /-- A map with a lifting function is a Hurewicz fibration, for test spaces in every universe. -/
 theorem isHurewiczFibration (Λ : LiftingFunction p) : IsHurewiczFibration.{w} p := by
