@@ -88,19 +88,33 @@ theorem memLp_two_id_compoundPoissonMeasure (hμ : MemLp id 2 μ) (r : ℝ≥0) 
 
 variable [NormedSpace ℝ E]
 
+/-- Compound Poisson laws preserve every finite moment of order `p ≥ 1` of a linear
+observable. -/
+theorem memLp_continuousLinearMap_compoundPoissonMeasure {p : ℝ} (hp : 1 ≤ p)
+    (L : E →L[ℝ] ℝ) (hL : MemLp L (ENNReal.ofReal p) μ) (r : ℝ≥0) :
+    MemLp L (ENNReal.ofReal p) (compoundPoissonMeasure r μ) := by
+  have hmap : MemLp id (ENNReal.ofReal p) (μ.map L) :=
+    (memLp_map_measure_iff (by fun_prop) (by fun_prop)).2 (by simpa using hL)
+  have hpow (n : ℕ) : (μ.convolutionPower n).map L = (μ.map L).convolutionPower n :=
+    μ.map_convolutionPower L.toAddMonoidHom L.measurable n
+  apply (memLp_map_measure_iff (g := id) (f := L) (by fun_prop) (by fun_prop)).1
+  simpa only [compoundPoissonMeasure_def, Measure.map_bind (f := μ.convolutionPower)
+    (m := poissonMeasure r) Measurable.of_discrete.aemeasurable L.measurable.aemeasurable,
+    hpow] using
+      memLp_id_compoundPoissonMeasure hp hmap r
+
 /-- The covariance of two linear observables of a compound Poisson sum is the rate times
-their uncentered jump cross moment. -/
+their uncentered jump cross moment. Only the two observed second moments need be finite. -/
 @[simp]
-theorem covariance_compoundPoissonMeasure (hμ : MemLp id 2 μ)
-    (L M : E →L[ℝ] ℝ) (r : ℝ≥0) :
+theorem covariance_compoundPoissonMeasure (L M : E →L[ℝ] ℝ)
+    (hL : MemLp L 2 μ) (hM : MemLp M 2 μ) (r : ℝ≥0) :
     covariance L M (compoundPoissonMeasure r μ) = (r : ℝ) * ∫ x, L x * M x ∂μ := by
-  have hL : MemLp L 2 μ := by simpa only [id_eq] using hμ.continuousLinearMap_comp L
-  have hM : MemLp M 2 μ := by simpa only [id_eq] using hμ.continuousLinearMap_comp M
-  have hcp := memLp_two_id_compoundPoissonMeasure hμ r
   have hLcp : MemLp L 2 (compoundPoissonMeasure r μ) := by
-    simpa only [id_eq] using hcp.continuousLinearMap_comp L
+    simpa using memLp_continuousLinearMap_compoundPoissonMeasure (p := 2) (by norm_num)
+      L (by simpa using hL) r
   have hMcp : MemLp M 2 (compoundPoissonMeasure r μ) := by
-    simpa only [id_eq] using hcp.continuousLinearMap_comp M
+    simpa using memLp_continuousLinearMap_compoundPoissonMeasure (p := 2) (by norm_num)
+      M (by simpa using hM) r
   rw [compoundPoissonMeasure_def] at hLcp hMcp ⊢
   rw [covariance_bind Measurable.of_discrete (.of_forall fun n ↦ inferInstance) hLcp hMcp]
   simp_rw [μ.covariance_convolutionPower L M hL hM,
@@ -118,8 +132,8 @@ theorem covariance_compoundPoissonMeasure (hμ : MemLp id 2 μ)
 theorem variance_id_compoundPoissonMeasure {ν : Measure ℝ} [IsProbabilityMeasure ν]
     (hν : MemLp id 2 ν) (r : ℝ≥0) :
     variance id (compoundPoissonMeasure r ν) = (r : ℝ) * ∫ x, x ^ 2 ∂ν := by
-  have h := covariance_compoundPoissonMeasure hν (ContinuousLinearMap.id ℝ ℝ)
-    (ContinuousLinearMap.id ℝ ℝ) r
+  have h := covariance_compoundPoissonMeasure (ContinuousLinearMap.id ℝ ℝ)
+    (ContinuousLinearMap.id ℝ ℝ) hν hν r
   simpa only [ContinuousLinearMap.coe_id', covariance_self aemeasurable_id, id_eq, pow_two]
     using h
 
@@ -133,7 +147,11 @@ theorem covMatrix_compoundPoissonMeasure {ι : Type*} [Fintype ι]
       (r : ℝ) • (fun i j ↦ ∫ x, x i * x j ∂ν) := by
   ext i j
   simpa only [covMatrix_apply, Pi.smul_apply, smul_eq_mul, EuclideanSpace.coe_proj] using
-    covariance_compoundPoissonMeasure hν (EuclideanSpace.proj i) (EuclideanSpace.proj j) r
+    covariance_compoundPoissonMeasure (EuclideanSpace.proj i) (EuclideanSpace.proj j)
+      (by simpa only [id_eq] using
+        hν.continuousLinearMap_comp (EuclideanSpace.proj (𝕜 := ℝ) i))
+      (by simpa only [id_eq] using
+        hν.continuousLinearMap_comp (EuclideanSpace.proj (𝕜 := ℝ) j)) r
 
 /-- The covariance bilinear form of a compound Poisson law is the rate times the uncentered
 second-moment bilinear form of the jump law. -/
@@ -145,7 +163,9 @@ theorem covarianceBilin_compoundPoissonMeasure {F : Type*} [NormedAddCommGroup F
     covarianceBilin (compoundPoissonMeasure r ν) x y =
       (r : ℝ) * ∫ z, ⟪x, z⟫ * ⟪y, z⟫ ∂ν := by
   rw [covarianceBilin_apply_eq_cov (memLp_two_id_compoundPoissonMeasure hν r)]
-  exact covariance_compoundPoissonMeasure hν (innerSL ℝ x) (innerSL ℝ y) r
+  exact covariance_compoundPoissonMeasure (innerSL ℝ x) (innerSL ℝ y)
+    (by simpa only [id_eq] using hν.continuousLinearMap_comp (innerSL ℝ x))
+    (by simpa only [id_eq] using hν.continuousLinearMap_comp (innerSL ℝ y)) r
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → E} {r : ℝ≥0}
 
@@ -156,13 +176,14 @@ theorem integral_of_hasLaw_compoundPoissonMeasure [CompleteSpace E] (hμ : Integ
   rw [hX.integral_eq, integral_id_compoundPoissonMeasure hμ]
 
 /-- Linear observables of a compound Poisson random variable have covariance given by the
-uncentered second jump moment. -/
-theorem covariance_of_hasLaw_compoundPoissonMeasure (hμ : MemLp id 2 μ)
-    (hX : HasLaw X (compoundPoissonMeasure r μ) P) (L M : E →L[ℝ] ℝ) :
+uncentered second jump moment. Only the two observed second moments need be finite. -/
+theorem covariance_of_hasLaw_compoundPoissonMeasure
+    (hX : HasLaw X (compoundPoissonMeasure r μ) P) (L M : E →L[ℝ] ℝ)
+    (hL : MemLp L 2 μ) (hM : MemLp M 2 μ) :
     covariance (fun ω ↦ L (X ω)) (fun ω ↦ M (X ω)) P =
       (r : ℝ) * ∫ x, L x * M x ∂μ := by
   rw [hX.covariance_fun_comp (f := L) (g := M) (by fun_prop) (by fun_prop),
-    covariance_compoundPoissonMeasure hμ]
+    covariance_compoundPoissonMeasure L M hL hM]
 
 /-- The variance of a real compound Poisson random variable is the rate times the second
 raw jump moment. -/
