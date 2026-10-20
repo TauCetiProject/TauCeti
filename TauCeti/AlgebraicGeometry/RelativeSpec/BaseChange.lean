@@ -269,21 +269,45 @@ def relativeSpecBaseChangeIso :
         (relativeSpecPullbackIso A'.unop f).hom.left =
       (relativeSpecPullbackIso A.unop f).hom.left ≫
         ((baseChangeAffineSchemeOver f).map ((relativeSpec X).map b)).left
-    -- For the same reason the projection equations are composed as terms rather than by `simp`.
+    -- Both chains pass through `isoPullback.hom`, the underlying morphism of
+    -- `relativeSpecPullbackIso`: its source is `Spec_Y (f^* A)` itself rather than the `.left` of
+    -- an affine scheme over `Y`, so every intermediate composite has the same hom type. The steps
+    -- are terms because `rw` meets the same `IsAffineHom` unfolding as above.
     apply pullback.hom_ext
-    · exact ((Category.assoc _ _ _).trans
-        (congrArg (_ ≫ ·) (relativeSpecPullbackIso_hom_left_fst A'.unop f))).trans
-          ((relativeSpecMap_pullback_map_relativeSpecPullbackFst A.unop f b.unop).trans
-            ((((congrArg (· ≫ _) (relativeSpecPullbackIso_hom_left_fst A.unop f).symm).trans
-              (Category.assoc _ _ _)).trans (congrArg (_ ≫ ·)
-                (baseChangeAffineSchemeOver_map_left_fst f ((relativeSpec X).map b)).symm)).trans
-                  (Category.assoc _ _ _).symm))
-    · exact ((Category.assoc _ _ _).trans
-        (congrArg (_ ≫ ·) (relativeSpecPullbackIso_hom_left_snd A'.unop f))).trans
-          ((CommMon.relativeSpecMap_relativeSpecToBase _).trans
-            (((relativeSpecPullbackIso_hom_left_snd A.unop f).symm.trans (congrArg (_ ≫ ·)
-              (baseChangeAffineSchemeOver_map_left_snd f ((relativeSpec X).map b)).symm)).trans
-                (Category.assoc _ _ _).symm))
+    · calc _ = CommMon.relativeSpecMap ((QuasicoherentAlgebra.pullback f).map b.unop).hom ≫
+              (relativeSpecPullbackIso A'.unop f).hom.left ≫
+                pullback.fst A'.unop.obj.relativeSpecToBase f := Category.assoc _ _ _
+        _ = CommMon.relativeSpecMap ((QuasicoherentAlgebra.pullback f).map b.unop).hom ≫
+              relativeSpecPullbackFst A'.unop f :=
+            congrArg (_ ≫ ·) (relativeSpecPullbackIso_hom_left_fst A'.unop f)
+        _ = relativeSpecPullbackFst A.unop f ≫ CommMon.relativeSpecMap b.unop.hom :=
+            relativeSpecMap_pullback_map_relativeSpecPullbackFst A.unop f b.unop
+        _ = (isPullback_relativeSpecPullbackFst A.unop f).isoPullback.hom ≫
+              pullback.fst A.unop.obj.relativeSpecToBase f ≫ CommMon.relativeSpecMap b.unop.hom :=
+            (IsPullback.isoPullback_hom_fst_assoc _ _).symm
+        _ = (isPullback_relativeSpecPullbackFst A.unop f).isoPullback.hom ≫
+              ((baseChangeAffineSchemeOver f).map ((relativeSpec X).map b)).left ≫
+                pullback.fst A'.unop.obj.relativeSpecToBase f :=
+            congrArg (_ ≫ ·)
+              (baseChangeAffineSchemeOver_map_left_fst f ((relativeSpec X).map b)).symm
+        _ = _ := (Category.assoc _ _ _).symm
+    · calc _ = CommMon.relativeSpecMap ((QuasicoherentAlgebra.pullback f).map b.unop).hom ≫
+              (relativeSpecPullbackIso A'.unop f).hom.left ≫
+                pullback.snd A'.unop.obj.relativeSpecToBase f := Category.assoc _ _ _
+        _ = CommMon.relativeSpecMap ((QuasicoherentAlgebra.pullback f).map b.unop).hom ≫
+              ((QuasicoherentAlgebra.pullback f).obj A'.unop).obj.relativeSpecToBase :=
+            congrArg (_ ≫ ·) (relativeSpecPullbackIso_hom_left_snd A'.unop f)
+        _ = ((QuasicoherentAlgebra.pullback f).obj A.unop).obj.relativeSpecToBase :=
+            CommMon.relativeSpecMap_relativeSpecToBase _
+        _ = (isPullback_relativeSpecPullbackFst A.unop f).isoPullback.hom ≫
+              pullback.snd A.unop.obj.relativeSpecToBase f :=
+            (IsPullback.isoPullback_hom_snd _).symm
+        _ = (isPullback_relativeSpecPullbackFst A.unop f).isoPullback.hom ≫
+              ((baseChangeAffineSchemeOver f).map ((relativeSpec X).map b)).left ≫
+                pullback.snd A'.unop.obj.relativeSpecToBase f :=
+            congrArg (_ ≫ ·)
+              (baseChangeAffineSchemeOver_map_left_snd f ((relativeSpec X).map b)).symm
+        _ = _ := (Category.assoc _ _ _).symm
 
 /-- The components of `relativeSpecBaseChangeIso` are `relativeSpecPullbackIso`. -/
 @[simp]
