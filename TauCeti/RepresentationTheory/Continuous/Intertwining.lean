@@ -11,9 +11,10 @@ public import Mathlib.Topology.Algebra.Module.FiniteDimension
 /-!
 # Continuous and algebraic intertwiners
 
-For finite-dimensional Hausdorff topological vector spaces, automatic continuity identifies
-continuous intertwiners and equivalences with their algebraic counterparts. The object and
-character side is already supplied by the universe-polymorphic `FDRep.ofShrink`,
+For finite-dimensional Hausdorff topological vector spaces over a complete nontrivially normed
+field, automatic continuity identifies continuous intertwiners and equivalences with their
+algebraic counterparts. The object and character side is already supplied by the
+universe-polymorphic `FDRep.ofShrink`,
 `FDRep.ofShrinkEquiv`, and `FDRep.character_ofShrink`; this file adds only the missing intertwiner
 side.
 
@@ -25,14 +26,25 @@ side.
   algebraic intertwiners.
 * `ContRepresentation.nonempty_equiv_iff`: continuous and algebraic representation equivalence
   agree.
-
-## References
-
-* [Representations of compact groups and the Peter-Weyl theorem](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md),
-  continuous-representation-to-`FDRep` correspondence.
 -/
 
 public section
+
+namespace ContIntertwiningMap
+
+variable {R G V W : Type*} [Ring R] [Monoid G]
+  [AddCommGroup V] [Module R V] [TopologicalSpace V] [IsTopologicalAddGroup V]
+  [AddCommGroup W] [Module R W] [TopologicalSpace W] [IsTopologicalAddGroup W]
+  {π : ContRepresentation R G V} {ρ : ContRepresentation R G W}
+
+/-- Evaluation of the algebraic intertwining map underlying a continuous one: forgetting
+continuity does not change the map. -/
+@[simp]
+theorem toIntertwiningMap_apply (f : ContIntertwiningMap π ρ) (v : V) :
+    f.toIntertwiningMap v = f v :=
+  (rfl)
+
+end ContIntertwiningMap
 
 namespace ContRepresentation
 
@@ -50,15 +62,6 @@ variable {𝕜 : Type u} {G : Type v} [NontriviallyNormedField 𝕜] [CompleteSp
   [ContinuousSMul 𝕜 U]
   {π : ContRepresentation 𝕜 G V} {ρ : ContRepresentation 𝕜 G W}
   {τ : ContRepresentation 𝕜 G U}
-
-omit [CompleteSpace 𝕜] [T2Space V] [FiniteDimensional 𝕜 V] [ContinuousSMul 𝕜 V]
-  [ContinuousSMul 𝕜 W] in
-/-- Evaluation of the algebraic intertwining map underlying a continuous one: forgetting
-continuity does not change the map. -/
-@[simp]
-theorem _root_.ContIntertwiningMap.toIntertwiningMap_apply (f : ContIntertwiningMap π ρ) (v : V) :
-    f.toIntertwiningMap v = f v :=
-  (rfl)
 
 /-- In finite dimensions, forgetting continuity identifies continuous intertwining maps with
 algebraic intertwining maps. The inverse equips the underlying linear map with its automatic

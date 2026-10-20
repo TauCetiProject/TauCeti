@@ -428,7 +428,8 @@ private theorem setIntegral_ball_max_sub_sq_succ_le {q : ℝ≥0∞} (hq : 2 ≤
   have hlhs : ∫ x in Metric.ball x₀ r₁, max (W1p.value u x - l) 0 ^ 2 ∂mu ≤
       ∫ x in Omega, ψ x ^ 2 * max (W1p.value u x - l) 0 ^ 2 ∂mu :=
     MeasureTheory.setIntegral_le_setIntegral_sq_mul_of_eqOn (hint l (hk0.trans hkl.le))
-      (fun x => hnn l x) hψ.continuous.aestronglyMeasurable hψ01 measurableSet_ball
+      (ae_of_all _ fun x => hnn l x) hψ.continuous.aestronglyMeasurable
+      (ae_of_all _ fun x => hψ01 (mem_range_self x)) measurableSet_ball
       (hψ1.mono Metric.ball_subset_closedBall)
       ((Metric.ball_subset_ball (hr₁ρ.trans hρr₀).le).trans
         ((Metric.ball_subset_ball hr₀R).trans hball))
@@ -599,7 +600,7 @@ private theorem exists_ae_value_le_add_mul_rpow_mul_rpow_mul_rpow_mul_sqrt_setIn
       ∃ ψ : EuclideanSpace ℝ ι → ℝ, ContDiff ℝ ∞ ψ ∧ range ψ ⊆ Icc 0 1 ∧
         EqOn ψ 1 (Metric.closedBall x₀ r) ∧ tsupport ψ ⊆ Metric.closedBall x₀ R ∧
           ∀ x, ‖∇ ψ x‖ ≤ (c + 1) / (R - r) := fun x₀ r R hr hrR => by
-    obtain ⟨ψ, h1, h2, h3, h4, h5⟩ := hc x₀ hr hrR
+    obtain ⟨ψ, h1, h2, h3, h4, h5, -⟩ := hc x₀ hr.le hrR
     exact ⟨ψ, h1, h2, h3, h4, fun x =>
       (h5 x).trans (div_le_div_of_nonneg_right (by linarith) (sub_pos.2 hrR).le)⟩
   set F : ℝ := 2 * (64 * (c + 1) ^ 2) * 4 ^ α

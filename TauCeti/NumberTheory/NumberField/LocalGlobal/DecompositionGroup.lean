@@ -316,8 +316,8 @@ theorem stabilizer_eq_bot_of_adjoin_eq_top {s : Set L} (hs : IntermediateField.a
     (h : ∀ x ∈ s, algebraMap L (w.adicCompletion L) x ∈
       (algebraMap (v.adicCompletion K) (w.adicCompletion L)).range) :
     MulAction.stabilizer (L ≃ₐ[K] L) w.asIdeal = ⊥ := by
-  rw [eq_bot_iff, ← IntermediateField.fixingSubgroup_top, ← hs, ← IntermediateField.le_iff_le,
-    IntermediateField.adjoin_le_iff]
+  rw [eq_bot_iff, ← IntermediateField.fixingSubgroup_top, ← hs,
+    ← IntermediateField.le_fixedField_iff_le_fixingSubgroup, IntermediateField.adjoin_le_iff]
   exact fun x hx τ ↦ apply_eq_self_of_algebraMap_mem_range τ (h x hx)
 
 /-! ### The decomposition group is the local Galois group -/

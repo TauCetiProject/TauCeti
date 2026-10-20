@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import Mathlib.MeasureTheory.Measure.Haar.Unique
 public import TauCeti.Analysis.InnerProductSpace.PiL2
+public import TauCeti.Analysis.Normed.Lp.PiLp
 
 /-!
 # Additive Haar measures on Euclidean space and Lebesgue measure on `ι → ℝ`
@@ -92,7 +93,7 @@ theorem measure_preimage_ofLp_closedBall_le [Nonempty ι] (μ : Measure (Euclide
   have hs : 0 < √(Fintype.card ι : ℝ) := sqrt_card_pos
   -- The ball contains the cube of half-side `r / √n`.
   have hsub : ofLp ⁻¹' ball (ofLp x) (r / √(Fintype.card ι)) ⊆ ball x r := by
-    convert preimage_ofLp_ball_subset_ball x (r / √(Fintype.card ι)) using 2
+    convert PiLp.preimage_ofLp_ball_subset_ball x (r / √(Fintype.card ι)) using 2
     field_simp
   refine le_trans (le_of_eq ?_) (mul_le_mul_right (measure_mono hsub) _)
   rw [measure_preimage_ofLp_closedBall he _ hr.le, measure_preimage_ofLp_ball he _ (by positivity),

@@ -96,8 +96,7 @@ theorem hilbertSymbol_unitAtRealPlace_eq_hilbertSign (w : {w : InfinitePlace K /
     charZero_of_injective_algebraMap (algebraMap K _).injective
   let : Invertible (2 : w.1.Completion) := invertibleOfNonzero two_ne_zero
   rw [ClassFieldTheory.infiniteHilbertInvariantAt_of_isReal K w.2,
-    ← units_map_ringEquivRealOfIsReal_algebraMap w a,
-    ← units_map_ringEquivRealOfIsReal_algebraMap w b, hilbertSymbol_units_map_ringEquiv]
+    ← hilbertSymbol_completion_eq_unitAtRealPlace]
   -- The invariant reads the Kummer-cup class over `K_w` through the injective map
   -- `Br K_w ≃ Br ℝ ≃ ZMod 2`.
   exact hilbertSymbol_eq_hilbertSign_kummerBrauerClass _

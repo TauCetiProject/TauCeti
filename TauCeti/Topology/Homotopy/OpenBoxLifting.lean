@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Homotopy.HurewiczFibration
+public import TauCeti.Topology.Homotopy.HurewiczFibration.Basic
 
 /-!
 # Relative homotopy lifting for the open box

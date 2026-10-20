@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.GaloisAction
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.FiniteAdele
 public import TauCeti.RepresentationTheory.Pi
+public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.ClassGroup
 
 /-!
 # The finite `S`-ideles as a product of semi-local factors
@@ -42,6 +43,8 @@ computed one place at a time, through Shapiro's lemma for each semi-local factor
 
 ## Main results
 
+* `TauCeti.finiteSIdeles_eq_sIntegralUnits`: the finite `S`-ideles are the `S`-integral finite
+  ideles of `L` (`IsDedekindDomain.FiniteAdeleRing.sIntegralUnits`) for the places above `S`.
 * `TauCeti.mem_finiteSIdeles_iff_valued_eq_one`: a finite idele is an `S`-idele exactly when its
   components at the places not above `S` have valuation one.
 * `TauCeti.toFiniteIdele_mem_finiteSIdeles_iff`: an idele is an `S`-idele exactly when its finite
@@ -78,10 +81,25 @@ variable (S : Finset (HeightOneSpectrum (𝒪 K)))
 `L` whose semi-local component at every finite place `v ∉ S` of `K` is integral, that is, whose
 component at every place of `L` not above `S` is a unit of `𝒪_w`. -/
 def finiteSIdeles : Subgroup (FiniteAdeleRing (𝒪 L) L)ˣ :=
-  ⨅ (v : HeightOneSpectrum (𝒪 K)) (_ : v ∉ S),
-    (semilocalIntegralUnits L v).comap (finiteIdeleSemilocalHom L v)
+  FiniteAdeleRing.sIntegralUnits (𝒪 L) L {w | w.under (𝒪 K) ∈ S}
+
+omit [NumberField K] in
+/-- The finite `S`-ideles of `L` are the `S'`-integral finite ideles of `L`, for `S'` the set of
+places of `L` above `S`. -/
+theorem finiteSIdeles_eq_sIntegralUnits :
+    finiteSIdeles L S = FiniteAdeleRing.sIntegralUnits (𝒪 L) L {w | w.under (𝒪 K) ∈ S} :=
+  (rfl)
 
 variable {L S}
+
+omit [NumberField K] in
+/-- A finite idele is an `S`-idele exactly when its component at every place of `L` not above
+`S` has valuation one. -/
+theorem mem_finiteSIdeles_iff_valued_eq_one {a : (FiniteAdeleRing (𝒪 L) L)ˣ} :
+    a ∈ finiteSIdeles L S ↔
+      ∀ w : HeightOneSpectrum (𝒪 L), w.under (𝒪 K) ∉ S →
+        Valued.v ((a : FiniteAdeleRing (𝒪 L) L) w) = 1 :=
+  FiniteAdeleRing.mem_sIntegralUnits_iff
 
 /-- A finite idele is an `S`-idele exactly when its semi-local components outside `S` are
 integral. -/
@@ -89,19 +107,12 @@ integral. -/
 theorem mem_finiteSIdeles_iff {a : (FiniteAdeleRing (𝒪 L) L)ˣ} :
     a ∈ finiteSIdeles L S ↔
       ∀ v ∉ S, finiteIdeleSemilocalHom L v a ∈ semilocalIntegralUnits L v := by
-  simp [finiteSIdeles]
-
-/-- A finite idele is an `S`-idele exactly when its component at every place of `L` not above
-`S` has valuation one. -/
-theorem mem_finiteSIdeles_iff_valued_eq_one {a : (FiniteAdeleRing (𝒪 L) L)ˣ} :
-    a ∈ finiteSIdeles L S ↔
-      ∀ w : HeightOneSpectrum (𝒪 L), w.under (𝒪 K) ∉ S →
-        Valued.v ((a : FiniteAdeleRing (𝒪 L) L) w) = 1 := by
-  simp only [mem_finiteSIdeles_iff, mem_semilocalIntegralUnits_iff,
+  simp only [mem_finiteSIdeles_iff_valued_eq_one, mem_semilocalIntegralUnits_iff,
     semilocalEquiv_finiteIdeleSemilocalHom]
-  refine ⟨fun h w hw ↦ h _ hw ⟨w, inferInstance⟩, fun h v hv w ↦ h w.1 ?_⟩
+  refine ⟨fun h v hv w ↦ h w.1 ?_, fun h w hw ↦ h _ hw ⟨w, inferInstance⟩⟩
   rwa [under_eq_of_liesOver w.2]
 
+omit [NumberField K] in
 /-- **An idele is an `S`-idele exactly when its finite part is a finite `S`-idele.** -/
 theorem toFiniteIdele_mem_finiteSIdeles_iff {x : NumberField.IdeleGroup (𝒪 L) L} :
     NumberField.IdeleGroup.toFiniteIdele (𝒪 L) L x ∈ finiteSIdeles L S ↔
