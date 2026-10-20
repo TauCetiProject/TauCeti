@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Group.Seminorm
 public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.Analysis.Normed.MulAction
-public import Mathlib.Analysis.SpecialFunctions.Log.Base
+public import TauCeti.Analysis.SpecialFunctions.Log.Base
 
 /-!
 # Rounding norms up to the powers of a constant
@@ -110,20 +110,16 @@ section BaseLtOne
 variable (hc₀ : 0 < c) (hc₁ : c < 1)
 include hc₀ hc₁
 
-/-- The exponent `⌊logb c x⌋` is the largest integer `n` with `x ≤ c ^ n`. -/
-private theorem le_floor_logb_iff (hx : 0 < x) (n : ℤ) : n ≤ ⌊logb c x⌋ ↔ x ≤ c ^ n := by
-  rw [Int.le_floor, le_logb_iff_rpow_le_of_base_lt_one hc₀ hc₁ hx, rpow_intCast]
-
 /-- **Rounding up dominates**: `x ≤ zpowCeil c x`. -/
 theorem le_zpowCeil (x : ℝ) : x ≤ zpowCeil c x := by
   rcases le_or_gt x 0 with hx | hx
   · rwa [zpowCeil_of_nonpos hx]
-  · rw [zpowCeil_of_pos hx, ← le_floor_logb_iff hc₀ hc₁ hx]
+  · rw [zpowCeil_of_pos hx, ← le_floor_logb_iff_zpow_le_of_base_lt_one hc₀ hc₁ hx]
 
 /-- **Rounding up loses less than the factor `c`**: `c * zpowCeil c x < x` for `x > 0`. -/
 theorem mul_zpowCeil_lt (hx : 0 < x) : c * zpowCeil c x < x := by
   rw [zpowCeil_of_pos hx, ← zpow_one_add₀ hc₀.ne', add_comm, ← not_le,
-    ← le_floor_logb_iff hc₀ hc₁ hx]
+    ← le_floor_logb_iff_zpow_le_of_base_lt_one hc₀ hc₁ hx]
   omega
 
 /-- The non-strict form of `mul_zpowCeil_lt`, valid for every `x ≥ 0`. -/
@@ -143,8 +139,8 @@ theorem zpowCeil_eq_zpow_iff (n : ℤ) : zpowCeil c x = c ^ n ↔ c ^ (n + 1) < 
   · have hx : 0 < x := (zpow_pos hc₀ _).trans hlt
     rw [zpowCeil_of_pos hx]
     congr 1
-    have h₁ := (le_floor_logb_iff hc₀ hc₁ hx n).mpr hle
-    have h₂ := mt (le_floor_logb_iff hc₀ hc₁ hx (n + 1)).mp hlt.not_ge
+    have h₁ := (le_floor_logb_iff_zpow_le_of_base_lt_one hc₀ hc₁ hx n).mpr hle
+    have h₂ := mt (le_floor_logb_iff_zpow_le_of_base_lt_one hc₀ hc₁ hx (n + 1)).mp hlt.not_ge
     omega
 
 /-- An integer power of `c` is its own rounding. -/
@@ -171,8 +167,8 @@ theorem monotone_zpowCeil : Monotone (zpowCeil c) := by
     exact zpowCeil_nonneg hc₀.le y
   · have hy := hx.trans_le hxy
     rw [zpowCeil_of_pos hx, zpowCeil_of_pos hy, zpow_le_zpow_iff_right_of_lt_one₀ hc₀ hc₁,
-      le_floor_logb_iff hc₀ hc₁ hx]
-    exact hxy.trans ((le_floor_logb_iff hc₀ hc₁ hy _).mp le_rfl)
+      le_floor_logb_iff_zpow_le_of_base_lt_one hc₀ hc₁ hx]
+    exact hxy.trans ((le_floor_logb_iff_zpow_le_of_base_lt_one hc₀ hc₁ hy _).mp le_rfl)
 
 /-- Rounding up is idempotent. -/
 @[simp]
@@ -205,7 +201,7 @@ theorem zpowCeil_lt_zpow_iff (n : ℤ) : zpowCeil c x < c ^ n ↔ x ≤ c ^ (n +
   · rcases le_or_gt x 0 with hx | hx
     · exact hx.trans (zpow_pos hc₀ _).le
     · rw [zpowCeil_of_pos hx, zpow_lt_zpow_iff_right_of_lt_one₀ hc₀ hc₁] at h
-      rw [← le_floor_logb_iff hc₀ hc₁ hx]
+      rw [← le_floor_logb_iff_zpow_le_of_base_lt_one hc₀ hc₁ hx]
       omega
   · exact ((zpowCeil_le_iff hc₀ hc₁ (zpowCeil_zpow hc₀ hc₁ _)).mpr h).trans_lt
       (zpow_lt_zpow_right_of_lt_one₀ hc₀ hc₁ (Int.lt_succ n))
