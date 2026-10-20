@@ -127,6 +127,10 @@ theorem apply_ne (D : PerfectMatching α) (x : α) : D.val x ≠ x := D.prop.2 x
 theorem apply_eq_of_apply_eq (D : PerfectMatching α) {x y : α} (h : D.val x = y) :
     D.val y = x := by rw [← h, D.apply_apply]
 
+/-- The arc joining `x` to `y` joins `y` to `x`. -/
+theorem apply_eq_comm (D : PerfectMatching α) {x y : α} : D.val x = y ↔ D.val y = x :=
+  ⟨D.apply_eq_of_apply_eq, D.apply_eq_of_apply_eq⟩
+
 /-- Two perfect matchings are equal as soon as they agree on a set `s` containing the partner, under
 the first matching, of every point outside `s`. For instance `s` may be the set of half-edges
 pointing away from their crossing in an oriented diagram, since every arc has one end there. -/

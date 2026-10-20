@@ -22,16 +22,20 @@ admit finite open chart covers whose coordinate images lie in compact subsets of
 even without Hausdorffness.
 
 Coordinate changes transport images of subsets of chart overlaps and are injective there,
-without differentiability assumptions.
+without differentiability assumptions. On an open subset, extended charts are restrictions of the
+ambient ones, so near a chart point the inverse charts of nested open subsets differ only by the
+inclusion.
 
 ## Main results
 
 * `TauCeti.measurableEmbedding_extChartAt_restrict`: an extended chart restricted to its source is
   a measurable embedding.
-* `TauCeti.MeasurableSet.image_extChartAt`: the image of a measurable subset of a chart source is
+* `MeasurableSet.image_extChartAt`: the image of a measurable subset of a chart source is
   measurable in the model space.
 * `TauCeti.IsChartMeasurable`: chartwise measurability without a measurable structure on the
   manifold.
+* `TauCeti.IsChartMeasurable.measurableSet_inter_preimage`: measurable parameter pieces for maps
+  continuous only on their measurable domain.
 * `TauCeti.exists_finite_precompact_chart_cover`: finite open chart covers with compact
   coordinate bounds for compact subsets of manifolds modelled on a locally compact space.
 -/
@@ -68,6 +72,25 @@ theorem injOn_extChartAt_coordChange (α β : M) {s : Set M}
   rw [PartialEquiv.trans_source, PartialEquiv.symm_source, Set.mem_inter_iff,
     Set.mem_preimage, (extChartAt I α).left_inv (hsub hx).1]
   exact ⟨(extChartAt I α).map_source (hsub hx).1, (hsub hx).2⟩
+
+/-- The extended chart of an open subset at a point sends that point to the same coordinates as
+the extended chart of a larger open subset at its image under the inclusion. -/
+theorem extChartAt_inclusion_self {U V : TopologicalSpace.Opens M} (h : U ≤ V) (x : U) :
+    extChartAt I (TopologicalSpace.Opens.inclusion h x) (TopologicalSpace.Opens.inclusion h x) =
+      extChartAt I x x := by
+  simp [extChartAt, TopologicalSpace.Opens.chartAt_eq]
+
+/-- Near the chart image of a point of an open subset, the inverse extended chart of a larger
+open subset is the inclusion composed with the inverse extended chart of the smaller one. -/
+theorem extChartAt_inclusion_symm_eventuallyEq {U V : TopologicalSpace.Opens M} (h : U ≤ V)
+    (x : U) :
+    (extChartAt I (TopologicalSpace.Opens.inclusion h x)).symm =ᶠ[nhds (extChartAt I x x)]
+      TopologicalSpace.Opens.inclusion h ∘ (extChartAt I x).symm := by
+  have hc : Filter.Tendsto I.symm (nhds (extChartAt I x x))
+      (nhds (chartAt H (TopologicalSpace.Opens.inclusion h x) (Set.inclusion h x))) := by
+    simpa [extChartAt, TopologicalSpace.Opens.chartAt_eq] using
+      I.continuous_symm.tendsto (extChartAt I x x)
+  exact (TopologicalSpace.Opens.chartAt_inclusion_symm_eventuallyEq h).comp_tendsto hc
 
 /-- An extended chart target is measurable in the model space. -/
 theorem measurableSet_extChartAt_target [MeasurableSpace E] [OpensMeasurableSpace E]
@@ -166,6 +189,37 @@ theorem IsChartMeasurable.image_extChartAt [MeasurableSpace E] {s : Set M}
     MeasurableSet ((extChartAt I x) '' s) := by
   rw [(extChartAt I x).image_eq_target_inter_inv_preimage hsub]
   exact hs x
+
+/-- Pulling a chart-measurable subset of one chart back along a map continuous on a
+measurable parameter domain gives a measurable subset of that domain. No measurable structure on
+the manifold or continuity outside the parameter domain is required. The parameter space only needs
+open sets to be measurable. -/
+theorem IsChartMeasurable.measurableSet_inter_preimage [MeasurableSpace E] [BorelSpace E]
+    {X : Type*} [TopologicalSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
+    {Q : X → M} {D : Set X} {s : Set M} (hs : IsChartMeasurable I s) (hQ : ContinuousOn Q D)
+    (hD : MeasurableSet D) (α : M) (hsource : s ⊆ (extChartAt I α).source) :
+    MeasurableSet (D ∩ Q ⁻¹' s) := by
+  classical
+  let q : D → M := fun x ↦ Q x
+  have hq : Continuous q := continuousOn_iff_continuous_domRestrict.mp hQ
+  let U := q ⁻¹' (extChartAt I α).source
+  let Ψ := extChartAt I α ∘ q
+  have hU : IsOpen U := (isOpen_extChartAt_source α).preimage hq
+  have hΨ : ContinuousOn Ψ U :=
+    (continuousOn_extChartAt α).comp hq.continuousOn (fun _ hx ↦ hx)
+  have hm : Measurable (U.piecewise Ψ (fun _ ↦ 0)) :=
+    hΨ.measurable_piecewise continuousOn_const hU.measurableSet
+  have heq : Set.EqOn (U.piecewise Ψ (fun _ ↦ 0)) Ψ U :=
+    fun _ hx ↦ Set.piecewise_eq_of_mem U _ _ hx
+  have he : U ∩ (U.piecewise Ψ (fun _ ↦ 0)) ⁻¹' ((extChartAt I α) '' s) = q ⁻¹' s := by
+    rw [heq.inter_preimage_eq]
+    simpa only [U, Ψ, Set.preimage_comp, Set.preimage_inter, Set.inter_comm] using
+      congrArg (Set.preimage q) ((extChartAt I α).injOn.preimage_image_inter hsource)
+  have hpre : MeasurableSet (q ⁻¹' s) := by
+    rw [← he]
+    exact hU.measurableSet.inter ((hs.image_extChartAt α hsource).preimage hm)
+  rw [← Subtype.image_preimage_coe D (Q ⁻¹' s)]
+  exact hD.subtype_image hpre
 
 /-- Every point has an open neighborhood whose extended-chart image is contained in a compact
 subset of the chart target. The manifold need not be Hausdorff. -/

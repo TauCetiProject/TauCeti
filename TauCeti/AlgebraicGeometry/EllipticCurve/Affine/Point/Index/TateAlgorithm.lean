@@ -1,0 +1,176 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.Two
+public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.LocalIndex
+-- Proof-only: the point-group index at the symbols `Iₙ*` with `n ≥ 1`.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.Four
+-- Proof-only: the point-group index at the symbol `IV*`.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.Three
+-- Proof-only: the point-group index at the symbol `IV`.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Residue.Quadratic
+-- Proof-only: every point has nonsingular reduction at the symbol `II*`.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.StarredReduction
+-- Proof-only: membership in the principal maximal ideal.
+import TauCeti.RingTheory.LocalRing.MaximalIdeal.Generator
+
+/-!
+# The point-group index reported by Tate's algorithm
+
+Let `v` be a valuation on a field `F`, let `O` be its valuation ring with maximal ideal generated
+by `ϖ`, and let `W` be an integral Weierstrass equation over `F`. The points with nonsingular
+reduction form the subgroup `E₀(F)` of `W(F)`. When Tate's algorithm stops on the integral model,
+its local index is supposed to equal `[W(F) : E₀(F)]`.
+
+This file proves that equality for the six additive symbols outside the family `Iₙ*`. At `II` and
+`II*`, every point has nonsingular reduction. At `III` and `III*`, the index is `2`. At `IV` and
+`IV*`, both indices are `3` precisely when the relevant residue quadratic has a root and are `1`
+otherwise. The comparison in the last two cases uses
+`WeierstrassCurve.hasTateYRoot_iff_exists_residue_root` to identify the root test in the definition
+of `WeierstrassCurve.tateLocalIndex` with the one used in the point-index theorems.
+
+It also proves the equality at the symbols `Iₙ*` with `n ≥ 1`, where both indices are `4` when
+the quadratic at which Step 7 of the algorithm stops has a root in the residue field and `2`
+otherwise; the root tests are compared through
+`WeierstrassCurve.hasTateYRoot_iff_exists_residue_root` and
+`WeierstrassCurve.hasTateXRoot_iff_exists_residue_root`. The remaining additive case is the symbol
+`I₀*`; it requires the corresponding point-group index calculation for the residue cubic.
+
+## Main results
+
+* `WeierstrassCurve.Affine.index_nonsingularReduction_eq_tateLocalIndex_of_ne_I_of_ne_IStar`:
+  at every additive symbol outside `Iₙ*`, the point-group index is the local index reported by
+  Tate's algorithm.
+* `index_nonsingularReduction_eq_tateLocalIndex_of_isTateTerminal_IStar_add_one`, in the namespace
+  `WeierstrassCurve.Affine`: at `Iₙ*` with `n ≥ 1`, the point-group index is the local index
+  reported by Tate's algorithm.
+
+## References
+
+* J. H. Silverman, *Advanced Topics in the Arithmetic of Elliptic Curves*, GTM 151, IV.9.
+* J. Tate, *Algorithm for determining the type of a singular fibre in an elliptic pencil*, in
+  *Modular Functions of One Variable IV*, LNM 476 (1975), 33–52.
+-/
+
+public section
+
+open IsLocalRing
+open TauCeti.IsLocalRing (mem_maximalIdeal_iff_dvd)
+
+namespace WeierstrassCurve
+
+namespace Affine
+
+variable {F Γ₀ : Type*} [Field F] [LinearOrderedCommGroupWithZero Γ₀] (v : Valuation F Γ₀)
+  {W : Affine F} [IsIntegral v.valuationSubring W] [DecidableEq F]
+
+/-- **At every additive symbol outside `Iₙ*`, Tate's local index is the point-group index.**
+Suppose that `ϖ` generates the maximal ideal of the Henselian valuation ring, its residue field is
+perfect, and Tate's algorithm stops on the integral model at a symbol other than `Iₙ` or `Iₙ*`.
+Then the reported local index equals `[W(F) : E₀(F)]`.
+
+The perfectness assumption is used at the symbol `III`, to lift the double tangent direction; the
+other five symbols are already covered without it by their individual point-index theorems. -/
+theorem index_nonsingularReduction_eq_tateLocalIndex_of_ne_I_of_ne_IStar
+    [HenselianLocalRing v.valuationSubring] [PerfectField (ResidueField v.valuationSubring)]
+    {ϖ : v.valuationSubring} (hϖ : maximalIdeal v.valuationSubring = Ideal.span {ϖ})
+    {s : TauCeti.ReductionSymbol} (h : (integralModel v.valuationSubring W).IsTateTerminal ϖ s)
+    (hsI : ∀ n, s ≠ .I n) (hsIStar : ∀ n, s ≠ .IStar n) :
+    (W.nonsingularReduction v).index =
+      (integralModel v.valuationSubring W).tateLocalIndex ϖ s := by
+  classical
+  let Wo := integralModel v.valuationSubring W
+  rcases s with (_ | n) | _ | _ | _ | (_ | n) | _ | _ | _
+  · exact absurd rfl (hsI 0)
+  · exact absurd rfl (hsI (n + 1))
+  · obtain ⟨-, h₃, h₄, h₆, h₆'⟩ := isTateTerminal_II.1 h
+    have hm₂ (z : v.valuationSubring) : z ∈ maximalIdeal v.valuationSubring ^ 2 ↔ ϖ ^ 2 ∣ z := by
+      rw [hϖ, Ideal.span_singleton_pow, Ideal.mem_span_singleton]
+    rw [nonsingularReduction_eq_top_of_a₆_notMem v ((mem_maximalIdeal_iff_dvd hϖ).2 h₃)
+      ((mem_maximalIdeal_iff_dvd hϖ).2 h₄) ((mem_maximalIdeal_iff_dvd hϖ).2 h₆)
+      (fun ha₆ ↦ h₆' ((hm₂ _).1 ha₆)), AddSubgroup.index_top]
+    exact tateLocalIndex_II.symm
+  · rw [index_nonsingularReduction_eq_two_of_isTateTerminal_III v hϖ h]
+    exact tateLocalIndex_III.symm
+  · obtain ⟨-, ⟨A₃, h₃⟩, -, ⟨A₆, h₆⟩, -, -⟩ := isTateTerminal_IV.1 h
+    have hϖ0 : ϖ ≠ 0 := h.ne_zero (by simp)
+    have hroot := hasTateYRoot_iff_exists_residue_root (W := Wo) (m := 1) hϖ hϖ0
+      (by simpa [Wo] using h₃) (by simpa [Wo] using h₆)
+    by_cases hr : Wo.HasTateYRoot ϖ 1
+    · obtain ⟨t, ht⟩ := hroot.mp hr
+      rw [index_nonsingularReduction_eq_three_of_isTateTerminal_IV v hϖ h h₃ h₆ ht]
+      exact (tateLocalIndex_IV_of_hasTateYRoot hr).symm
+    · have hnroot (t : ResidueField v.valuationSubring) :
+          t ^ 2 + residue _ A₃ * t - residue _ A₆ ≠ 0 := by
+        intro ht
+        exact hr (hroot.mpr ⟨t, ht⟩)
+      rw [nonsingularReduction_eq_top_of_isTateTerminal_IV v hϖ h h₃ h₆ hnroot,
+        AddSubgroup.index_top]
+      exact (tateLocalIndex_IV_of_not_hasTateYRoot hr).symm
+  · exact absurd rfl (hsIStar 0)
+  · exact absurd rfl (hsIStar (n + 1))
+  · obtain ⟨-, -, ⟨A₃, h₃⟩, -, ⟨A₆, h₆⟩, -⟩ := isTateTerminal_IVStar.1 h
+    have hϖ0 : ϖ ≠ 0 := h.ne_zero (by simp)
+    have hroot := hasTateYRoot_iff_exists_residue_root (W := Wo) (m := 2) hϖ hϖ0
+      (by simpa [Wo] using h₃) (by norm_num [Wo]; exact h₆)
+    by_cases hr : Wo.HasTateYRoot ϖ 2
+    · rw [index_nonsingularReduction_eq_three_of_isTateTerminal_IVStar v hϖ h h₃ h₆
+        (hroot.mp hr)]
+      exact (tateLocalIndex_IVStar_of_hasTateYRoot hr).symm
+    · have hnroot (t : ResidueField v.valuationSubring) :
+          t ^ 2 + residue _ A₃ * t - residue _ A₆ ≠ 0 := by
+        intro ht
+        exact hr (hroot.mpr ⟨t, ht⟩)
+      rw [nonsingularReduction_eq_top_of_isTateTerminal_IVStar v hϖ h h₃ h₆ hnroot,
+        AddSubgroup.index_top]
+      exact (tateLocalIndex_IVStar_of_not_hasTateYRoot hr).symm
+  · rw [index_nonsingularReduction_eq_two_of_isTateTerminal_IIIStar v hϖ h]
+    exact tateLocalIndex_IIIStar.symm
+  · rw [nonsingularReduction_eq_top_of_isTateTerminal_IIStar v hϖ h,
+      AddSubgroup.index_top]
+    exact tateLocalIndex_IIStar.symm
+
+/-- **At the reduction symbol `Iₙ*` with `n ≥ 1`, Tate's local index is the point-group index.**
+Suppose that `ϖ` generates the maximal ideal of the Henselian valuation ring, and that Tate's
+algorithm, run on the integral model with uniformiser `ϖ`, stops with the symbol `Iₙ*` for some
+`n ≥ 1`. Then `[W(F) : E₀(F)]` is the local index that the algorithm reports: `4` if the quadratic
+at which the subprocedure of Step 7 stops has a root in the residue field, and `2` otherwise. -/
+theorem index_nonsingularReduction_eq_tateLocalIndex_of_isTateTerminal_IStar_add_one
+    [HenselianLocalRing v.valuationSubring] {ϖ : v.valuationSubring}
+    (hϖ : maximalIdeal v.valuationSubring = Ideal.span {ϖ}) {n : ℕ}
+    (h : (integralModel v.valuationSubring W).IsTateTerminal ϖ (.IStar (n + 1))) :
+    (W.nonsingularReduction v).index =
+      (integralModel v.valuationSubring W).tateLocalIndex ϖ (.IStar (n + 1)) := by
+  classical
+  have hϖ0 : ϖ ≠ 0 := h.ne_zero (by simp)
+  rcases isTateTerminal_IStar_add_one.1 h with ⟨k, rfl, hk, -⟩ | ⟨k, rfl, hk, -⟩
+  · obtain ⟨-, -, -, ⟨A₃, h₃⟩, -, ⟨A₆, h₆⟩⟩ := isTateOddStage_iff.1 hk
+    have hroot := hasTateYRoot_iff_exists_residue_root (m := k + 2) (b₆ := A₆) hϖ hϖ0 h₃
+      (by rw [h₆]; ring)
+    rw [tateLocalIndex_IStar_odd]
+    split_ifs with hr
+    · obtain ⟨t, ht⟩ := hroot.1 hr
+      exact index_nonsingularReduction_eq_four_of_isTateTerminal_IStar_two_mul_add_one v hϖ h h₃
+        h₆ ht
+    · exact index_nonsingularReduction_eq_two_of_isTateTerminal_IStar_two_mul_add_one v hϖ h h₃
+        h₆ fun t ht ↦ hr (hroot.2 ⟨t, ht⟩)
+  · obtain ⟨-, ⟨A₂, h₂⟩, -, -, ⟨A₄, h₄⟩, ⟨A₆, h₆⟩⟩ := isTateEvenStage_iff.1 hk
+    have hroot := hasTateXRoot_iff_exists_residue_root (m := k + 2) (b₆ := A₆) hϖ hϖ0 h₂ h₄
+      (by rw [h₆]; ring)
+    rw [tateLocalIndex_IStar_even]
+    split_ifs with hr
+    · obtain ⟨t, ht⟩ := hroot.1 hr
+      exact index_nonsingularReduction_eq_four_of_isTateTerminal_IStar_two_mul_add_two v hϖ h h₂
+        h₄ h₆ ht
+    · exact index_nonsingularReduction_eq_two_of_isTateTerminal_IStar_two_mul_add_two v hϖ h h₂
+        h₄ h₆ fun t ht ↦ hr (hroot.2 ⟨t, ht⟩)
+
+end Affine
+
+end WeierstrassCurve
+
+end

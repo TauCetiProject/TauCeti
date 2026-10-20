@@ -8,14 +8,15 @@ module
 public import TauCeti.FieldTheory.FunctionField.GeometricDegree
 public import TauCeti.FieldTheory.FunctionField.ConstantField
 public import Mathlib.FieldTheory.Normal.Basic
+public import Mathlib.FieldTheory.PurelyInseparable.PerfectClosure
 
 /-!
 # Finite extensions of the constant field
 
 A finite extension of constants yields a finite compositum over the original field, and a
-separable extension of constants produces a separable compositum.  Exactness of the original
-constant field is needed for neither.  The function-field theorem for arbitrary algebraic
-extensions of constants is in `ConstantExtension.Algebraic`.
+separable or purely inseparable extension of constants produces a compositum of the same kind.
+Exactness of the original constant field is needed for none of these statements. The function-field
+theorem for arbitrary algebraic extensions of constants is in `ConstantExtension.Algebraic`.
 
 Under the hypotheses that make constant field extensions well behaved — the original constant
 field `k` is exact in `F` and `k' / k` is separable — the compositum acquires no new separable
@@ -40,6 +41,8 @@ carried out after a finite constant field extension.
   separable `k' / k`, a compositum finite over the original field has finite constants.
 * `TauCeti.isSeparable_of_constantCompositum_eq_top`: the compositum of a separable constant
   field extension is separable over the original field.
+* `TauCeti.isPurelyInseparable_of_constantCompositum_eq_top`: the compositum of a purely
+  inseparable constant field extension is purely inseparable over the original field.
 * `TauCeti.separableClosure_eq_bot_of_constantCompositum_eq_top`: for a separable constant field
   extension of an exact constant field, `k'` is separably closed in `F · k'`.
 * `TauCeti.adjoin_image_eq_top_of_constantCompositum_eq_top`: generators of `F` over `k` generate
@@ -112,6 +115,21 @@ theorem isSeparable_of_constantCompositum_eq_top [Algebra.IsSeparable k k']
   exact IsSeparable.tower_top F <|
     (Algebra.IsSeparable.isSeparable k c).map (IsScalarTower.toAlgHom k k' F')
       (algebraMap k' F').injective
+
+/-- Adjoining purely inseparable constants produces a purely inseparable extension of the
+original field, whether or not the constant extension is finite. -/
+theorem isPurelyInseparable_of_constantCompositum_eq_top [IsPurelyInseparable k k']
+    (h : constantCompositum F k' F' = ⊤) : IsPurelyInseparable F F' := by
+  obtain ⟨q, _⟩ := ExpChar.exists k
+  have := expChar_of_injective_algebraMap (algebraMap k F).injective q
+  rw [isPurelyInseparable_iff_perfectClosure_eq_top]
+  apply top_le_iff.mp
+  rw [← h, constantCompositum_def]
+  refine IntermediateField.adjoin_le_iff.mpr ?_
+  rintro _ ⟨c, rfl⟩
+  obtain ⟨n, a, ha⟩ := IsPurelyInseparable.pow_mem k q c
+  exact (mem_perfectClosure_iff_pow_mem q).mpr ⟨n, algebraMap k F a, by
+    rw [← map_pow, ← ha, ← IsScalarTower.algebraMap_apply, ← IsScalarTower.algebraMap_apply]⟩
 
 /-! ### The constant field of the compositum -/
 

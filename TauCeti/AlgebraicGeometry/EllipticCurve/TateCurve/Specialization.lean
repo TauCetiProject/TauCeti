@@ -72,6 +72,11 @@ norm less than one. The unit parameter will also support its integer powers in u
 noncomputable def tateCurveAt (q : Kˣ) (hq : ‖(q : K)‖ < 1) : WeierstrassCurve K :=
   tateCurve.map (evalIntSeries (q : K) hq)
 
+/-- The specialized Tate curve is obtained by applying integral-series evaluation to its
+formal coefficients. -/
+theorem tateCurveAt_def (q : Kˣ) (hq : ‖(q : K)‖ < 1) :
+    tateCurveAt q hq = tateCurve.map (evalIntSeries (q : K) hq) := (rfl)
+
 @[simp] theorem tateCurveAt_a₁ (q : Kˣ) (hq : ‖(q : K)‖ < 1) :
     (tateCurveAt q hq).a₁ = 1 := by
   simp [tateCurveAt, WeierstrassCurve.map, tateCurve_a₁]

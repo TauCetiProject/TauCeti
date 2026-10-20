@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Measure.ProductKernel
-import TauCeti.MeasureTheory.Measure.GiryMonad
 import TauCeti.Probability.Moments.CompactDeterminacy
 import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Ext
 

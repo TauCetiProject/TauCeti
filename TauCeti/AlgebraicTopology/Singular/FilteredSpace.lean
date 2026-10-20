@@ -347,13 +347,14 @@ private lemma extendMap_π_comp_innerToTotal :
       (extendMap_comp _ _ _)
 
 private lemma extendMap_π_comp_totalToOuter :
-    extendMap ((TopPair.ofInclusion (hX (by lia : q - 1 ≤ q + 1))).singularChainComplexπ R)
+    extendMap ((TopTriple.totalPair.obj (filtrationTriple hX q)).singularChainComplexπ R)
         ComplexShape.embeddingDownNat ≫
       extendMap (TopPair.singularChainComplexMap
         (TopTriple.totalToOuter.app (filtrationTriple hX q)) R) ComplexShape.embeddingDownNat =
-    extendMap ((TopPair.ofInclusion (hX (by lia : q ≤ q + 1))).singularChainComplexπ R)
-      ComplexShape.embeddingDownNat :=
-  (extendMap_comp _ _ _).symm.trans <| congrArg (extendMap · _)
+    extendMap ((TopTriple.outerPair.obj (filtrationTriple hX q)).singularChainComplexπ R)
+      ComplexShape.embeddingDownNat := by
+  rw [← extendMap_comp]
+  exact congrArg (fun f ↦ extendMap f ComplexShape.embeddingDownNat)
     ((filtrationTriple hX q).singularChainComplexπ_comp_totalToOuter R)
 
 /-- The identification of the sequence of graded pieces with the reindexed relative singular

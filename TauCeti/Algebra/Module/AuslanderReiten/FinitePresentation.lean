@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Module.AuslanderReiten.Transpose
+public import TauCeti.Algebra.Module.AuslanderReiten.Translate
 public import TauCeti.LinearAlgebra.Dual.FiniteProjective
 public import Mathlib.Algebra.Module.FinitePresentation
 
@@ -16,6 +16,9 @@ The transpose of an arrow `P₁ → P₀` between finite projective left `A`-mod
 presented left `Aᵐᵒᵖ`-module. Thus transposing a finite projective presentation stays within
 finitely presented modules even when the ring is not Noetherian. Finite generation of the
 transpose needs only finite projectivity of `P₁`.
+
+Over a finite-dimensional field algebra, the translate is finite-dimensional over the field
+and finitely generated over the algebra.
 
 These instances complement the presentation comparison in
 `TauCeti.Algebra.Module.AuslanderReiten.StableTranspose`: the dual summands in that comparison
@@ -54,5 +57,24 @@ instance finitePresentation [Module.Finite A P₀] [Module.Projective A P₀]
   exact Submodule.fg_range _
 
 end AuslanderReitenTranspose
+
+namespace AuslanderReitenTranslate
+
+variable {k A P₀ P₁ : Type*} [Field k] [Ring A] [Algebra k A] [Module.Finite k A]
+  [AddCommMonoid P₀] [Module A P₀] [AddCommMonoid P₁] [Module A P₁]
+  [Module.Finite A P₁] [Module.Projective A P₁]
+
+/-- The translate of an arrow with finite projective source over a finite-dimensional
+field algebra is finite-dimensional over the field. -/
+instance finite_base (f : P₁ →ₗ[A] P₀) : Module.Finite k (AuslanderReitenTranslate k f) := by
+  have : Module.Finite k (AuslanderReitenTranspose f) := Module.Finite.trans Aᵐᵒᵖ _
+  infer_instance
+
+/-- The translate of an arrow with finite projective source over a finite-dimensional
+field algebra is finitely generated over the algebra. -/
+instance finite (f : P₁ →ₗ[A] P₀) : Module.Finite A (AuslanderReitenTranslate k f) :=
+  Module.Finite.of_restrictScalars_finite k A _
+
+end AuslanderReitenTranslate
 
 end TauCeti

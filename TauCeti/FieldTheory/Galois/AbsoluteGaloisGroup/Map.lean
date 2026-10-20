@@ -50,7 +50,8 @@ groups transport between isomorphic fields.
 
 * `TauCeti.absoluteGaloisGroupMap_commutes`: `τ (absoluteGaloisGroupMap τ g x) = g (τ x)`.
 * `TauCeti.absoluteGaloisGroupMap_comp`: changing `τ` by an automorphism `h` of `Kˢ` conjugates
-  the map by `h`.
+  the map by `h`, so a character of `G_K` takes the same values along every `τ`
+  (`AddMonoidHom.map_ofMul_absoluteGaloisGroupMap_eq`).
 * `TauCeti.absoluteGaloisGroupMap_absoluteGaloisGroupMap`: the maps are compatible with
   composition of extensions, and `TauCeti.absoluteGaloisGroupMap_compSeparableClosure` for the
   composite embedding.
@@ -120,6 +121,17 @@ theorem absoluteGaloisGroupMap_comp (h : AbsoluteGaloisGroup K) (g : AbsoluteGal
     absoluteGaloisGroupMap (τ.comp (h : SeparableClosure K →ₐ[K] SeparableClosure K)) g =
       h⁻¹ * absoluteGaloisGroupMap τ g * h :=
   τ.restrictNormalHom_comp h _
+
+/-- **A character does not see the choice of embedding**: a homomorphism from `G_K` to a
+commutative group, written additively, takes the same value on the images of `g ∈ G_L` along any
+two embeddings `τ, τ' : Kˢ →ₐ[K] Lˢ`, because the two maps differ by conjugation. -/
+theorem _root_.AddMonoidHom.map_ofMul_absoluteGaloisGroupMap_eq {A : Type*} [AddCommGroup A]
+    (f : Additive (AbsoluteGaloisGroup K) →+ A) (τ τ' : SeparableClosure K →ₐ[K] SeparableClosure L)
+    (g : AbsoluteGaloisGroup L) :
+    f (.ofMul (absoluteGaloisGroupMap τ' g)) = f (.ofMul (absoluteGaloisGroupMap τ g)) := by
+  obtain ⟨h, rfl⟩ := τ.exists_comp_eq_of_normal τ'
+  simp only [absoluteGaloisGroupMap_comp, ofMul_mul, ofMul_inv, map_add, map_neg]
+  abel
 
 /-- **The maps are compatible with composition of extensions** `K → L → M`: if `τ'' : Kˢ → Mˢ`
 is the composite of `τ : Kˢ → Lˢ` and `τ' : Lˢ → Mˢ`, the map `G_M → G_K` along `τ''` is the
@@ -215,10 +227,7 @@ theorem bijective_absoluteGaloisGroup_mapOfAlgebra (h : Function.Bijective (alge
 
 end MapOfAlgebra
 
-section Isomorphism
-
-omit [Algebra K L]
-
+omit [Algebra K L] in
 /-- **Along a bijective ring homomorphism the map of absolute Galois groups is bijective**, for
 any choice of embedding of algebraic closures made by `Field.absoluteGaloisGroup.map`. -/
 theorem bijective_absoluteGaloisGroup_map {f : K →+* L} (hf : Function.Bijective f) :
@@ -228,6 +237,7 @@ theorem bijective_absoluteGaloisGroup_map {f : K →+* L} (hf : Function.Bijecti
     (IsAlgClosed.lift : AlgebraicClosure K →ₐ[K] AlgebraicClosure L).toAlgebra
   bijective_absoluteGaloisGroup_mapOfAlgebra hf
 
+omit [Algebra K L] in
 /-- **The isomorphism of absolute Galois groups induced by an isomorphism of fields**
 `e : K ≃+* L`: Mathlib's continuous map `Field.absoluteGaloisGroup.map e : G_L → G_K`, which is
 bijective (`bijective_absoluteGaloisGroup_map`) and hence a homeomorphism, as `G_L` is compact
@@ -244,12 +254,11 @@ def absoluteGaloisGroupMapEquiv (e : K ≃+* L) :
       (bijective_absoluteGaloisGroup_map e.bijective)).toEquiv)
     (Field.absoluteGaloisGroup.map e.toRingHom).continuous
 
+omit [Algebra K L] in
 /-- `absoluteGaloisGroupMapEquiv e` is Mathlib's map `Field.absoluteGaloisGroup.map e`. -/
 @[simp]
 theorem absoluteGaloisGroupMapEquiv_apply (e : K ≃+* L) (g : Field.absoluteGaloisGroup L) :
     absoluteGaloisGroupMapEquiv e g = Field.absoluteGaloisGroup.map e.toRingHom g :=
   (rfl)
-
-end Isomorphism
 
 end TauCeti

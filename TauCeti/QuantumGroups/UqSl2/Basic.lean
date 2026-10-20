@@ -24,10 +24,14 @@ nonzero.  The presentation-level identities below hold for every `q`; when `q = 
 relations force `E = F = 0`.
 
 The quotient construction supplies a universal property for tuples satisfying these relations.
-We also package `K` as a unit and derive the commutation rules with `K⁻¹`; these are the
-basic presentation-level identities used when putting words into triangular order.  Establishing
-a PBW basis, and hence nontriviality of this presentation, requires additional Ore-extension
-arguments and is not part of the presentation API.
+Since the generators generate the algebra, a complex-linear map between `UqSl2 q`-modules that
+commutes with `E`, `F` and `K` is `UqSl2 q`-linear, and an element of `UqSl2 q` that commutes
+with `E`, `F` and `K` is central. We also package `K` as a unit and derive the
+commutation rules with `K⁻¹`; these are the basic presentation-level identities used when putting
+words into triangular order.  Establishing a PBW basis, and hence nontriviality of this
+presentation, requires additional Ore-extension arguments and is not part of the presentation
+API: `TauCeti.QuantumGroups.UqSl2.OreTower` identifies `UqSl2 q`, for nonzero `q`, with an
+iterated Ore extension of `ℂ[K, K⁻¹]`.
 
 ## Main definitions
 
@@ -236,6 +240,18 @@ def toFun (x : GeneratorTuple q A) : Generator → A
   | .k => x.k
   | .kInv => x.kInv
 
+/-- The function underlying a tuple takes the raising label to its raising element. -/
+@[simp] theorem toFun_e (x : GeneratorTuple q A) : x.toFun .e = x.e := (rfl)
+
+/-- The function underlying a tuple takes the lowering label to its lowering element. -/
+@[simp] theorem toFun_f (x : GeneratorTuple q A) : x.toFun .f = x.f := (rfl)
+
+/-- The function underlying a tuple takes the weight label to its weight element. -/
+@[simp] theorem toFun_k (x : GeneratorTuple q A) : x.toFun .k = x.k := (rfl)
+
+/-- The function underlying a tuple takes the inverse-weight label to its inverse-weight element. -/
+@[simp] theorem toFun_kInv (x : GeneratorTuple q A) : x.toFun .kInv = x.kInv := (rfl)
+
 end GeneratorTuple
 
 /-- The universal property of the presentation: a tuple satisfying the defining relations extends
@@ -271,6 +287,73 @@ theorem hom_ext {F G : UqSl2 q →ₐ[ℂ] A}
   apply FreeAlgebra.hom_ext
   funext g
   cases g <;> assumption
+
+/-- The four presentation generators generate the entire algebra. -/
+theorem adjoin_range_generator (q : ℂ) :
+    Algebra.adjoin ℂ (Set.range (generator q)) = ⊤ := by
+  rw [Algebra.adjoin_range_eq_range_freeAlgebra_lift]
+  have h : FreeAlgebra.lift ℂ (generator q) = mkAlgHom q := by
+    apply FreeAlgebra.hom_ext
+    funext g
+    simp
+  rw [h, AlgHom.range_eq_top]
+  exact RingQuot.mkAlgHom_surjective ℂ (Rel q)
+
+/-- A complex-linear map between `UqSl2 q`-modules that commutes with `E`, `F` and `K` commutes
+with every element of `UqSl2 q`; commuting with `K⁻¹` is automatic. -/
+theorem _root_.LinearMap.map_smul_of_commute_uqSl2 {V W : Type*} [AddCommGroup V] [Module ℂ V]
+    [Module (UqSl2 q) V] [IsScalarTower ℂ (UqSl2 q) V] [AddCommGroup W] [Module ℂ W]
+    [Module (UqSl2 q) W] [IsScalarTower ℂ (UqSl2 q) W] (φ : V →ₗ[ℂ] W)
+    (he : ∀ x, φ (e q • x) = e q • φ x) (hf : ∀ x, φ (f q • x) = f q • φ x)
+    (hk : ∀ x, φ (k q • x) = k q • φ x) (a : UqSl2 q) (x : V) : φ (a • x) = a • φ x := by
+  have hkInv (x : V) : φ (kInv q • x) = kInv q • φ x := by
+    calc φ (kInv q • x) = (kInv q * k q) • φ (kInv q • x) := by rw [kInv_mul_k, one_smul]
+      _ = kInv q • φ ((k q * kInv q) • x) := by rw [mul_smul, ← hk, ← mul_smul]
+      _ = kInv q • φ x := by rw [k_mul_kInv, one_smul]
+  have ha : a ∈ Algebra.adjoin ℂ (Set.range (generator q)) := by
+    rw [adjoin_range_generator]
+    exact Algebra.mem_top
+  induction ha using Algebra.adjoin_induction generalizing x with
+  | mem a ha =>
+    obtain ⟨g, rfl⟩ := ha
+    cases g
+    exacts [he x, hf x, hk x, hkInv x]
+  | algebraMap c => rw [algebraMap_smul, algebraMap_smul, map_smul]
+  | add a b _ _ ha hb => rw [add_smul, add_smul, map_add, ha, hb]
+  | mul a b _ _ ha hb => rw [mul_smul, mul_smul, ha, hb]
+
+/-- An element of `UqSl2 q` that commutes with `E`, `F` and `K` commutes with every element of
+`UqSl2 q`; commuting with `K⁻¹` is automatic. -/
+theorem commute_of_commute_generators {z : UqSl2 q} (he : Commute (e q) z)
+    (hf : Commute (f q) z) (hk : Commute (k q) z) (a : UqSl2 q) : Commute a z := by
+  have hkInv : Commute (kInv q) z := by
+    rw [← kUnit_inv]
+    exact Commute.units_inv_left (by rwa [kUnit_val])
+  refine (Algebra.commute_of_mem_adjoin_of_forall_mem_commute (R := ℂ)
+    (s := Set.range (generator q)) ?_ ?_).symm
+  · rw [adjoin_range_generator]
+    exact Algebra.mem_top
+  · rintro _ ⟨g, rfl⟩
+    cases g
+    exacts [he.symm, hf.symm, hk.symm, hkInv.symm]
+
+/-- A complex subspace of a `UqSl2 q`-module that is stable under `E`, `F`, `K` and `K⁻¹` is
+stable under every element of `UqSl2 q`. -/
+theorem _root_.Submodule.smul_mem_of_uqSl2_generators {V : Type*} [AddCommGroup V] [Module ℂ V]
+    [Module (UqSl2 q) V] [IsScalarTower ℂ (UqSl2 q) V] (W : Submodule ℂ V)
+    (he : ∀ x ∈ W, e q • x ∈ W) (hf : ∀ x ∈ W, f q • x ∈ W) (hk : ∀ x ∈ W, k q • x ∈ W)
+    (hkInv : ∀ x ∈ W, kInv q • x ∈ W) (a : UqSl2 q) {x : V} (hx : x ∈ W) : a • x ∈ W := by
+  have ha : a ∈ Algebra.adjoin ℂ (Set.range (generator q)) := by
+    rw [adjoin_range_generator]
+    exact Algebra.mem_top
+  induction ha using Algebra.adjoin_induction generalizing x with
+  | mem a ha =>
+    obtain ⟨g, rfl⟩ := ha
+    cases g
+    exacts [he x hx, hf x hx, hk x hx, hkInv x hx]
+  | algebraMap c => rw [algebraMap_smul]; exact W.smul_mem c hx
+  | add a b _ _ ha hb => rw [add_smul]; exact W.add_mem (ha hx) (hb hx)
+  | mul a b _ _ ha hb => rw [mul_smul]; exact ha (hb hx)
 
 /-- Algebra maps from `UqSl2 q` are equivalent to tuples satisfying its defining relations. -/
 def liftEquiv : (UqSl2 q →ₐ[ℂ] A) ≃ GeneratorTuple q A where

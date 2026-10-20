@@ -76,7 +76,7 @@ result into an operator. The operator-valued map `g ↦ π g` need not be strong
 operator norm: for the regular representation of `ℝ` on `L²(ℝ)`, distinct translations are at
 operator distance `2`, so the map is not almost everywhere separably valued, and `π(f)` cannot be
 written as a Bochner integral in `E →L E`. This is also why
-`TauCeti.ContRepresentation.integratedOperator`, which averages a *norm*-continuous representation
+`ContRepresentation.integratedOperator`, which averages a *norm*-continuous representation
 of a compact group against a continuous weight, does not apply here. The strong continuity and the
 uniform bound are hypotheses of the definition: they are exactly what makes the integrand
 integrable, and they hold for the unitary representations that are the main application.

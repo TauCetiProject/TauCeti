@@ -139,8 +139,9 @@ theorem exists_translate_a₃_eq_zero_and_a₄_eq_zero {R : Type*} [CommRing R]
   simp only [variableChange_a₃, variableChange_a₄, inv_one, Units.val_one, one_pow, one_mul]
   -- `a₁` times the first condition plus `2` times the second is `6 r² + b₂ r + b₄ = 0`
   have hb₄ : W.b₄ ∈ maximalIdeal R := (residue_eq_zero_iff _).1 (by simp [b₄, h0 h₃, h0 h₄])
-  obtain ⟨r, hr, hr𝔪⟩ := TauCeti.HenselianLocalRing.exists_isRoot_sub_mem_maximalIdeal
-    (C 6 * X ^ 2 + C W.b₂ * X + C W.b₄) (a₀ := 0) (by simpa using hb₄) (by simpa using hb₂)
+  obtain ⟨r, hr, hr𝔪⟩ := Polynomial.exists_isRoot_sub_mem (J := maximalIdeal R)
+    (C 6 * X ^ 2 + C W.b₂ * X + C W.b₄) (a₀ := 0) (by simpa using hb₄)
+    (by simpa using hb₂.map (Ideal.Quotient.mk (maximalIdeal R)))
   have hr' : 6 * r ^ 2 + W.b₂ * r + W.b₄ = 0 := by simpa using hr.eq_zero
   rw [b₂, b₄] at hr'
   rw [sub_zero] at hr𝔪
@@ -211,7 +212,7 @@ theorem exists_equation_mem_maximalIdeal_of_a₃_eq_zero_of_a₄_eq_zero {R : Ty
   rw [QuadraticAlgebra.algebraNorm_eq_norm, QuadraticAlgebra.norm_def] at hq
   obtain ⟨X₀, hX₀⟩ := residue_surjective q.im
   obtain ⟨Y₀, hY₀⟩ := residue_surjective q.re
-  obtain ⟨X, Y, hXY⟩ := TauCeti.HenselianLocalRing.exists_conic_eq
+  obtain ⟨X, Y, hXY, -, -⟩ := TauCeti.HenselianLocalRing.exists_conic_eq
     (A := A) (X₀ := X₀) (Y₀ := Y₀) (by rwa [← b₂]) hz
     (u.isUnit.mul hw.unit⁻¹.isUnit).neg (by
       refine (residue_eq_zero_iff _).1 ?_

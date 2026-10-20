@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Data.Matrix.Scaling.Basic
 public import TauCeti.InformationTheory.KullbackLeibler.Variational
 public import TauCeti.MeasureTheory.OptimalTransport.Entropic.SchroedingerSystem
 
@@ -38,6 +39,9 @@ additive constant.
 
 * `TauCeti.entropicGibbsFactor c ε φ ψ`: the Gibbs factor `exp ((φ(x) + ψ(y) - c(x, y)) / ε)`,
   read as `0` where the cost is infinite.
+* `TauCeti.entropicGibbsKernel c ε`: the Gibbs kernel `exp (-c(x, y) / ε)`, read as `0` where
+  the cost is infinite; every Gibbs factor is this kernel multiplied by the exponentials of the
+  two potentials.
 * `TauCeti.entropicDualValue c ε μ ν φ ψ`: the value of the dual problem at the potentials `φ`
   and `ψ`.
 
@@ -115,6 +119,50 @@ theorem entropicGibbsFactor_of_ne_top {z : X × Y} (hz : c z ≠ ∞) :
     entropicGibbsFactor c ε φ ψ z = Real.exp ((φ z.1 + ψ z.2 - (c z).toReal) / ε) :=
   Set.indicator_of_mem hz _
 
+end TauCeti
+
+namespace Matrix
+
+variable {X Y : Type*}
+
+/-- At a nonnegative entry of a real-valued matrix cost, the generic Gibbs factor splits into its
+row potential, Gibbs kernel, and column potential factors. -/
+theorem entropicGibbsFactor_ofReal_eq_mul_exp_mul_exp (C : Matrix X Y ℝ) (ε : ℝ≥0)
+    (φ : X → ℝ) (ψ : Y → ℝ) (i : X) (j : Y) (hC : 0 ≤ C i j) :
+    TauCeti.entropicGibbsFactor (fun q ↦ ENNReal.ofReal (C q.1 q.2)) ε φ ψ (i, j) =
+      Real.exp (φ i / ε) * Real.exp (-C i j / ε) * Real.exp (ψ j / ε) := by
+  rw [TauCeti.entropicGibbsFactor_of_ne_top ENNReal.ofReal_ne_top,
+    ENNReal.toReal_ofReal hC, ← Real.exp_add, ← Real.exp_add]
+  congr 1
+  ring
+
+/-- For a pointwise nonnegative real cost, a matrix is a diagonal scaling of the product-weighted
+Gibbs kernel exactly when its entries are the product of the row and column weights multiplied by
+the generic Gibbs factor. -/
+theorem isDiagonalScaling_gibbs_iff (P C : Matrix X Y ℝ) (a : X → ℝ) (b : Y → ℝ)
+    (ε : ℝ≥0) (φ : X → ℝ) (ψ : Y → ℝ) (hC : ∀ i j, 0 ≤ C i j) :
+    IsDiagonalScaling P
+        (of fun i j ↦ a i * b j * Real.exp (-C i j / ε))
+        (fun i ↦ Real.exp (φ i / ε)) (fun j ↦ Real.exp (ψ j / ε)) ↔
+      ∀ i j, P i j = a i * b j *
+        TauCeti.entropicGibbsFactor (fun q ↦ ENNReal.ofReal (C q.1 q.2)) ε φ ψ (i, j) := by
+  rw [isDiagonalScaling_def]
+  constructor <;> intro h i j
+  · rw [h i j, of_apply,
+      entropicGibbsFactor_ofReal_eq_mul_exp_mul_exp C ε φ ψ i j (hC i j)]
+    ring
+  · rw [h i j, of_apply,
+      entropicGibbsFactor_ofReal_eq_mul_exp_mul_exp C ε φ ψ i j (hC i j)]
+    ring
+
+end Matrix
+
+namespace TauCeti
+
+variable {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y]
+  {c : X × Y → ℝ≥0∞} {ε : ℝ≥0} {π : Measure (X × Y)} {μ : Measure X} {ν : Measure Y}
+  {φ φ' : X → ℝ} {ψ ψ' : Y → ℝ}
+
 omit [MeasurableSpace X] [MeasurableSpace Y] in
 /-- Where the cost is infinite, the Gibbs factor vanishes. -/
 @[simp]
@@ -140,15 +188,25 @@ theorem entropicGibbsFactor_add_const_sub_const (a : ℝ) :
     entropicGibbsFactor c ε (fun x ↦ φ x + a) (fun y ↦ ψ y - a) = entropicGibbsFactor c ε φ ψ := by
   simp only [entropicGibbsFactor_def, add_add_sub_cancel]
 
-/-- For an s-finite second marginal, replacing the potentials by `μ`- and `ν`-almost everywhere
-equal ones changes the Gibbs factor only on a `μ ⊗ ν`-null set. -/
-theorem entropicGibbsFactor_congr_ae [SFinite ν] (hφ : φ =ᵐ[μ] φ') (hψ : ψ =ᵐ[ν] ψ') :
+/-- Replacing the potentials by `μ`- and `ν`-almost everywhere equal ones changes the Gibbs
+factor only on a `μ ⊗ ν`-null set. -/
+theorem entropicGibbsFactor_congr_ae (hφ : φ =ᵐ[μ] φ') (hψ : ψ =ᵐ[ν] ψ') :
     entropicGibbsFactor c ε φ ψ =ᵐ[μ.prod ν] entropicGibbsFactor c ε φ' ψ' := by
   filter_upwards [Measure.quasiMeasurePreserving_fst.ae hφ,
     Measure.quasiMeasurePreserving_snd.ae hψ] with z h₁ h₂
   by_cases hz : c z = ∞
   · simp only [entropicGibbsFactor_of_eq_top hz]
   · simp only [entropicGibbsFactor_of_ne_top hz, h₁, h₂]
+
+omit [MeasurableSpace X] [MeasurableSpace Y] in
+/-- Exchanging the factors exchanges the two Gibbs potentials. -/
+@[simp]
+theorem entropicGibbsFactor_comp_swap :
+    entropicGibbsFactor (c ∘ Prod.swap) ε ψ φ =
+      (entropicGibbsFactor c ε φ ψ) ∘ Prod.swap := by
+  funext z
+  by_cases hz : c z.swap = ∞ <;>
+    simp [entropicGibbsFactor_def, Function.comp_def, hz, add_comm]
 
 /-- The Gibbs factor of measurable potentials for a measurable cost is measurable. -/
 theorem measurable_entropicGibbsFactor (hc : Measurable c) (hφ : Measurable φ)
@@ -172,6 +230,74 @@ theorem integrable_entropicGibbsFactor_of_le [IsFiniteMeasure μ] [IsFiniteMeasu
   refine div_le_div_of_nonneg_right ?_ ε.coe_nonneg
   linarith [hφC z.1, hψC z.2, (c z).toReal_nonneg]
 
+/-! ### The Gibbs kernel -/
+
+/-- The Gibbs kernel `exp (-c(x, y) / ε)` of the cost `c` at temperature `ε`, read with
+`exp (-∞) = 0`: it is `0` where the cost is infinite. It is the Gibbs factor of the zero
+potentials, and every Gibbs factor is the Gibbs kernel multiplied by the exponentials of the two
+potentials (`TauCeti.entropicGibbsFactor_apply`). -/
+def entropicGibbsKernel (c : X × Y → ℝ≥0∞) (ε : ℝ≥0) (x : X) (y : Y) : ℝ :=
+  entropicGibbsFactor c ε 0 0 (x, y)
+
+omit [MeasurableSpace X] [MeasurableSpace Y] in
+/-- The Gibbs kernel is the Gibbs factor of the zero potentials. The definition's body is not
+exposed, so this is the lemma downstream modules should rewrite with. -/
+theorem entropicGibbsKernel_def (x : X) (y : Y) :
+    entropicGibbsKernel c ε x y = entropicGibbsFactor c ε 0 0 (x, y) :=
+  (rfl)
+
+omit [MeasurableSpace X] [MeasurableSpace Y] in
+/-- Where the cost is finite, the Gibbs kernel is `exp (-c(x, y) / ε)`. -/
+@[simp]
+theorem entropicGibbsKernel_of_ne_top {x : X} {y : Y} (hz : c (x, y) ≠ ∞) :
+    entropicGibbsKernel c ε x y = Real.exp (-(c (x, y)).toReal / ε) := by
+  rw [entropicGibbsKernel_def, entropicGibbsFactor_of_ne_top hz, Pi.zero_apply, Pi.zero_apply,
+    zero_add, zero_sub]
+
+omit [MeasurableSpace X] [MeasurableSpace Y] in
+/-- Where the cost is infinite, the Gibbs kernel vanishes. -/
+@[simp]
+theorem entropicGibbsKernel_of_eq_top {x : X} {y : Y} (hz : c (x, y) = ∞) :
+    entropicGibbsKernel c ε x y = 0 :=
+  entropicGibbsFactor_of_eq_top hz
+
+omit [MeasurableSpace X] [MeasurableSpace Y] in
+/-- The Gibbs kernel is nonnegative. -/
+theorem entropicGibbsKernel_nonneg (x : X) (y : Y) : 0 ≤ entropicGibbsKernel c ε x y :=
+  entropicGibbsFactor_nonneg _
+
+omit [MeasurableSpace X] [MeasurableSpace Y] in
+/-- The Gibbs factor of the potentials `φ` and `ψ` is the Gibbs kernel multiplied by
+`exp (φ(x) / ε)` and `exp (ψ(y) / ε)`. -/
+theorem entropicGibbsFactor_apply (φ : X → ℝ) (ψ : Y → ℝ) (x : X) (y : Y) :
+    entropicGibbsFactor c ε φ ψ (x, y) =
+      Real.exp (φ x / ε) * entropicGibbsKernel c ε x y * Real.exp (ψ y / ε) := by
+  by_cases hz : c (x, y) = ∞
+  · simp [hz]
+  rw [entropicGibbsFactor_of_ne_top hz, entropicGibbsKernel_of_ne_top hz, ← Real.exp_add,
+    ← Real.exp_add]
+  congr 1
+  ring
+
+/-- The Gibbs kernel of a measurable cost is jointly measurable. -/
+theorem measurable_entropicGibbsKernel (hc : Measurable c) :
+    Measurable (Function.uncurry (entropicGibbsKernel c ε)) := by
+  have h : Function.uncurry (entropicGibbsKernel c ε) = entropicGibbsFactor c ε 0 0 :=
+    funext fun z ↦ entropicGibbsKernel_def z.1 z.2
+  rw [h]
+  exact measurable_entropicGibbsFactor hc measurable_const measurable_const
+
+omit [MeasurableSpace X] [MeasurableSpace Y] in
+/-- The Gibbs kernel of a continuous finite cost is jointly continuous. -/
+theorem continuous_entropicGibbsKernel [TopologicalSpace X] [TopologicalSpace Y]
+    (hc : Continuous c) (hfin : ∀ z, c z ≠ ∞) :
+    Continuous (Function.uncurry (entropicGibbsKernel c ε)) := by
+  have h : Function.uncurry (entropicGibbsKernel c ε) =
+      fun z ↦ Real.exp (-(c z).toReal / ε) :=
+    funext fun z ↦ entropicGibbsKernel_of_ne_top (hfin z)
+  rw [h]
+  exact ((ENNReal.continuousOn_toReal.comp_continuous hc hfin).neg.div_const _).rexp
+
 /-! ### The dual value -/
 
 /-- The value of the dual problem of entropic optimal transport at the potentials `φ` and `ψ`:
@@ -190,9 +316,9 @@ theorem entropicDualValue_def :
       kantorovichDualValue μ ν φ ψ - ε * ∫ z, (entropicGibbsFactor c ε φ ψ z - 1) ∂μ.prod ν :=
   (rfl)
 
-/-- For an s-finite second marginal, the entropic dual value only depends on the `μ`- and
-`ν`-almost everywhere classes of the potentials. -/
-theorem entropicDualValue_congr_ae [SFinite ν] (hφ : φ =ᵐ[μ] φ') (hψ : ψ =ᵐ[ν] ψ') :
+/-- The entropic dual value only depends on the `μ`- and `ν`-almost everywhere classes of the
+potentials. -/
+theorem entropicDualValue_congr_ae (hφ : φ =ᵐ[μ] φ') (hψ : ψ =ᵐ[ν] ψ') :
     entropicDualValue c ε μ ν φ ψ = entropicDualValue c ε μ ν φ' ψ' := by
   rw [entropicDualValue_def, entropicDualValue_def, kantorovichDualValue_def,
     kantorovichDualValue_def, integral_congr_ae hφ, integral_congr_ae hψ,
@@ -207,6 +333,46 @@ theorem entropicDualValue_add_const_sub_const [IsFiniteMeasure μ] (hφ : Integr
       entropicDualValue c ε μ ν φ ψ := by
   simp only [entropicDualValue_def, kantorovichDualValue_add_const_sub_const hφ hψ hmass,
     entropicGibbsFactor_add_const_sub_const]
+
+/-- Exchanging the marginals, cost coordinates and potentials preserves the entropic dual value.
+No integrability assumptions are needed for this symmetry of the defining integrals. -/
+@[simp]
+theorem entropicDualValue_comp_swap [SFinite μ] [SFinite ν] :
+    entropicDualValue (c ∘ Prod.swap) ε ν μ ψ φ = entropicDualValue c ε μ ν φ ψ := by
+  simp only [entropicDualValue_def, kantorovichDualValue_def, entropicGibbsFactor_comp_swap,
+    Function.comp_apply]
+  rw [integral_prod_swap (fun z ↦ entropicGibbsFactor c ε φ ψ z - 1)]
+  ring
+
+/-- The Gibbs factor of a Gibbs coupling of probability laws is a probability density against
+`μ ⊗ ν`: its integral is `1`. -/
+theorem IsCoupling.integral_entropicGibbsFactor_eq_one [IsProbabilityMeasure μ]
+    (hπ : IsCoupling π μ ν)
+    (hπeq : π = (μ.prod ν).withDensity fun z ↦
+      ENNReal.ofReal (entropicGibbsFactor c ε φ ψ z))
+    (hexp : Integrable (entropicGibbsFactor c ε φ ψ) (μ.prod ν)) :
+    ∫ z, entropicGibbsFactor c ε φ ψ z ∂μ.prod ν = 1 := by
+  have := hπ.isProbabilityMeasure
+  have hmass : ∫⁻ z, ENNReal.ofReal (entropicGibbsFactor c ε φ ψ z) ∂μ.prod ν = 1 := by
+    rw [← setLIntegral_univ, ← withDensity_apply _ MeasurableSet.univ, ← hπeq]
+    exact measure_univ
+  rw [integral_eq_lintegral_of_nonneg_ae
+    (ae_of_all _ entropicGibbsFactor_nonneg) hexp.aestronglyMeasurable, hmass]
+  simp
+
+/-- For a Gibbs coupling of probability laws, the exponential penalty in the entropic dual
+value vanishes. Its dual value is therefore just the sum of the two marginal integrals. -/
+theorem IsCoupling.entropicDualValue_eq_of_eq_withDensity [IsProbabilityMeasure μ]
+    (hπ : IsCoupling π μ ν)
+    (hπeq : π = (μ.prod ν).withDensity fun z ↦
+      ENNReal.ofReal (entropicGibbsFactor c ε φ ψ z))
+    (hexp : Integrable (entropicGibbsFactor c ε φ ψ) (μ.prod ν)) :
+    entropicDualValue c ε μ ν φ ψ = kantorovichDualValue μ ν φ ψ := by
+  have := hπ.isProbabilityMeasure
+  have : IsProbabilityMeasure ν := hπ.snd_eq ▸ inferInstance
+  rw [entropicDualValue_def, integral_sub hexp (integrable_const _),
+    hπ.integral_entropicGibbsFactor_eq_one hπeq hexp]
+  simp
 
 /-! ### Weak duality and complementary slackness -/
 

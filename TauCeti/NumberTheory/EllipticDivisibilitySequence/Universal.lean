@@ -87,13 +87,10 @@ complements but not for `preNormEDS`, although Mathlib's `map_preNormEDS` makes 
 one-line proof and consumers reaching for the pre-normalised sequence would otherwise have to
 redo it.
 
-`universalNormEDS_ne_zero` is **not** here, and the reason is the import direction rather than a
-gap. It rests on `normEDS 2 3 2 = id`, which is `normEDS_two_three_two_eq_id`; that in turn needs
-`normEDS` to be an elliptic sequence, `isEllipticSequence_normEDS`, which is proved in
-`NormEDS.lean` — downstream of this file, since `NormEDS.lean` imports it and not the other way
-round. So the nonvanishing lemma is stated there, beside the identity it is one line from. (The
-identity also uses `IsEllipticSequence.ext` from `Ext.lean`, but that file imports neither this one
-nor `NormEDS.lean`, so it is not what fixes the direction.)
+`universalNormEDS_ne_zero` lives in `NormEDS.lean`: it rests on
+`normEDS_two_three_two_eq_id`, proved there using Mathlib's `IsEllipticSequence.normEDS` and
+`IsEllipticSequence.ext` from `Ext.lean`. That proof specialises the universal parameters, so
+`NormEDS.lean` imports this file and the nonvanishing lemma follows the same import direction.
 -/
 
 public section
