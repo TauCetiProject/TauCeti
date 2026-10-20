@@ -18,7 +18,8 @@ ring `R` and let `s ∈ R`. Multiplying the coefficient of every monomial of tot
 
   `F^s(X, Y) = X + Y + ∑_{i, j ≥ 1} s ^ (i + j - 1) aᵢⱼ Xⁱ Yʲ`,
 
-characterised by `s • F^s(X, Y) = F(s X, s Y)`. When `s` is a unit, `F^s(X, Y) = s⁻¹ F(s X, s Y)`
+which satisfies `s • F^s(X, Y) = F(s X, s Y)`; when `s` is a nonzerodivisor, this identity
+characterises `F^s`. When `s` is a unit, `F^s(X, Y) = s⁻¹ F(s X, s Y)`
 is the transport of `F` along the coordinate change `X ↦ s X`. For every `s`, unit or not, `F^s`
 is again a formal group law, `FormalGroup.rescale F s`, and it is commutative when `F` is.
 
@@ -103,11 +104,10 @@ private theorem assoc_of_smul_eq_rescale (F : FormalGroup R) {g : MvPowerSeries 
   have hreg : IsSMulRegular (MvPowerSeries (Fin 3) R) s := .pi fun _ ↦ hs.isSMulRegular
   refine hreg (?_ : s • _ = s • _)
   rw [smul_subst_of_smul_eq_rescale h (HasSubst.cons_subst_zero_left (0 : Fin 3) 1 2 hg),
-    smul_subst_of_smul_eq_rescale h (HasSubst.cons_subst_zero_right (0 : Fin 3) 1 2 hg),
-    Matrix.smul_cons, Matrix.smul_cons, Matrix.smul_empty, Matrix.smul_cons, Matrix.smul_cons,
-    Matrix.smul_empty, smul_subst_of_smul_eq_rescale h HasSubst.X_X,
-    smul_subst_of_smul_eq_rescale h HasSubst.X_X, Matrix.smul_cons, Matrix.smul_cons,
-    Matrix.smul_empty, Matrix.smul_cons, Matrix.smul_cons, Matrix.smul_empty]
+    smul_subst_of_smul_eq_rescale h (HasSubst.cons_subst_zero_right (0 : Fin 3) 1 2 hg)]
+  simp only [Matrix.smul_cons, Matrix.smul_empty]
+  rw [smul_subst_of_smul_eq_rescale h HasSubst.X_X, smul_subst_of_smul_eq_rescale h HasSubst.X_X]
+  simp only [Matrix.smul_cons, Matrix.smul_empty]
   exact F.assoc' (hX 0) (hX 1) (hX 2)
 
 /-- Commutativity transfers from `f` to `g` along `s • g = f(s X, s Y)` when `s` is a
@@ -119,11 +119,12 @@ private theorem comm_of_smul_eq_rescale (F : FormalGroup R) [F.IsComm]
     PowerSeries.HasSubst.of_constantCoeff_zero (by simp)
   have hreg : IsSMulRegular (MvPowerSeries (Fin 2) R) s := .pi fun _ ↦ hs.isSMulRegular
   refine hreg (?_ : s • _ = s • _)
-  rw [smul_subst_of_smul_eq_rescale h HasSubst.X_X, h, rescale_eq_subst, Matrix.smul_cons,
-    Matrix.smul_cons, Matrix.smul_empty, F.comm' (hX 1) (hX 0)]
+  rw [smul_subst_of_smul_eq_rescale h HasSubst.X_X, h, rescale_eq_subst]
+  simp only [Matrix.smul_cons, Matrix.smul_empty]
+  rw [F.comm' (hX 1) (hX 0)]
   congr 1
   funext i
-  fin_cases i <;> rfl
+  fin_cases i <;> simp
 
 /-- The rescaling of `F` by the polynomial variable, over `R[s]`. -/
 private def rescaleGeneric (F : FormalGroup R) : FormalGroup (Polynomial R) where
@@ -167,7 +168,8 @@ theorem coeff_rescale (d : Fin 2 →₀ ℕ) :
     coeff d (F.rescale s).toPowerSeries = s ^ (d.degree - 1) * coeff d F.toPowerSeries :=
   coeff_rescaleSeries _ _ _
 
-/-- The characteristic identity of the rescaling: `s • F^s(X, Y) = F(s X, s Y)`. -/
+/-- The rescaling satisfies `s • F^s(X, Y) = F(s X, s Y)`. This identity characterises `F^s`
+when `s` is a nonzerodivisor, but not in general: for `s = 0` every series satisfies it. -/
 theorem smul_rescale :
     s • (F.rescale s).toPowerSeries = MvPowerSeries.rescale (fun _ ↦ s) F.toPowerSeries :=
   smul_rescaleSeries F.zero_constantCoeff s

@@ -57,16 +57,18 @@ variable [CommSemiring R]
 
 /-- Evaluating a polynomial that is weighted homogeneous of weight `m` at elements `g i` of the
 graded pieces `𝒜 (w i)` of a graded algebra gives an element of `𝒜 m`. -/
-theorem IsWeightedHomogeneous.aeval_mem {M A : Type*} [AddCommMonoid M] [CommSemiring A]
-    [Algebra R A] {𝒜 : M → Submodule R A} [SetLike.GradedMonoid 𝒜] {w : σ → M}
-    {φ : MvPolynomial σ R} {m : M} (hφ : φ.IsWeightedHomogeneous w m) {g : σ → A}
-    (hg : ∀ i, g i ∈ 𝒜 (w i)) : MvPolynomial.aeval g φ ∈ 𝒜 m := by
+theorem IsWeightedHomogeneous.aeval_mem {M A S : Type*} [AddCommMonoid M] [CommSemiring A]
+    [Algebra R A] [SetLike S A] [AddSubmonoidClass S A] [SMulMemClass S R A] {𝒜 : M → S}
+    [SetLike.GradedMonoid 𝒜] {w : σ → M} {φ : MvPolynomial σ R} {m : M}
+    (hφ : φ.IsWeightedHomogeneous w m) {g : σ → A} (hg : ∀ i, g i ∈ 𝒜 (w i)) :
+    MvPolynomial.aeval g φ ∈ 𝒜 m := by
   induction hφ using IsWeightedHomogeneous.induction_on with
   | zero => simp
   | add p q _ _ ihp ihq => simpa using add_mem ihp ihq
   | monomial d r hr =>
-    rw [aeval_monomial, ← hr, Finsupp.weight_apply, Finsupp.sum, ← zero_add (∑ _ ∈ _, _)]
-    exact SetLike.mul_mem_graded (SetLike.algebraMap_mem_graded 𝒜 r)
+    rw [aeval_monomial, ← hr, Finsupp.weight_apply, Finsupp.sum, ← zero_add (∑ _ ∈ _, _),
+      Algebra.algebraMap_eq_smul_one]
+    exact SetLike.mul_mem_graded (SMulMemClass.smul_mem r SetLike.GradedOne.one_mem)
       (SetLike.prod_pow_mem_graded 𝒜 w g d fun i _ ↦ hg i)
 
 /-- Substituting, for each variable `i`, a polynomial that is weighted homogeneous of weight
@@ -88,13 +90,14 @@ theorem coeff_aeval_C_X_mul_X_pow (w : σ → ℕ) (φ : MvPolynomial σ R) (n :
   classical
   induction φ using MvPolynomial.induction_on' with
   | monomial d r =>
+    -- Each factor `(X i * T ^ w i) ^ d i` contributes `T ^ (d i * w i)`.
     have h : MvPolynomial.aeval (fun i ↦ Polynomial.C (X i) * Polynomial.X ^ w i) (monomial d r) =
         Polynomial.C (monomial d r) * Polynomial.X ^ Finsupp.weight w d := by
-      rw [aeval_monomial, Finsupp.prod, Finsupp.weight_apply, Finsupp.sum, monomial_eq,
-        Finsupp.prod, map_mul, Polynomial.algebraMap_apply, algebraMap_eq, map_prod,
-        ← Finset.prod_pow_eq_pow_sum, mul_assoc, ← Finset.prod_mul_distrib]
-      congr 2 with i
-      rw [map_pow, mul_pow, ← pow_mul, smul_eq_mul, mul_comm (d i)]
+      rw [aeval_monomial, monomial_eq]
+      simp only [Finsupp.prod, Finsupp.weight_apply, Finsupp.sum, mul_pow, Finset.prod_mul_distrib,
+        ← pow_mul', Finset.prod_pow_eq_pow_sum, map_mul, map_prod, map_pow,
+        Polynomial.algebraMap_apply, algebraMap_eq, smul_eq_mul]
+      ring
     rw [h, Polynomial.coeff_C_mul_X_pow, weightedHomogeneousComponent_of_mem
       (isWeightedHomogeneous_monomial w d r rfl)]
   | add p q hp hq => simp [hp, hq]

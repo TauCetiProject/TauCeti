@@ -82,7 +82,8 @@ classifying a commutative formal group law over `A` is graded exactly when the c
 * `TauCeti.LazardRing.coeff_formalGroup_mem_grading`: the coefficient of `Xⁱ Yʲ` in the universal
   formal group law has degree `2 (i + j - 1)`.
 * `TauCeti.LazardRing.lift_mem_iff`: the homomorphism classifying `F` is graded exactly when the
-  coefficients of `F` are homogeneous of the matching degrees.
+  coefficients of `F` are homogeneous of the matching degrees, for a target graded over any
+  commutative monoid receiving the degrees of `L`, such as `ℤ`.
 
 ## References
 
@@ -436,17 +437,20 @@ theorem coeff_formalGroup_mem_grading (d : Fin 2 →₀ ℕ) :
     exact SetLike.GradedOne.one_mem (A := grading)
   · exact zero_mem _
 
-variable {𝒜 : ℕ → Submodule ℤ A} [SetLike.GradedMonoid 𝒜]
+variable {σ : Type*} [SetLike σ A] [AddSubgroupClass σ A]
 
-/-- **The graded universal property of the Lazard ring**, pointwise: the homomorphism
-`L →+* A` classifying a commutative formal group law `F` over a graded ring `A` maps each `Lₙ`
-into `𝒜 n` exactly when the coefficient of every monomial `X^(d 0) Y^(d 1)` in `F` lies in
-`𝒜 (2 (d 0 + d 1 - 1))`. Since the coefficients of `X` and `Y` are `1` and those of the other
+/-- **The graded universal property of the Lazard ring**, pointwise: let `A` be graded by `𝒜`
+over a commutative monoid `ι` receiving the degrees of `L` along `e : ℕ →+ ι` (for instance
+`ι = ℕ` with `e = id`, or `ι = ℤ` with `e` the inclusion or its negative). The homomorphism
+`L →+* A` classifying a commutative formal group law `F` over `A` maps each `Lₙ` into `𝒜 (e n)`
+exactly when the coefficient of every monomial `X^(d 0) Y^(d 1)` in `F` lies in
+`𝒜 (e (2 (d 0 + d 1 - 1)))`. Since the coefficients of `X` and `Y` are `1` and those of the other
 monomials `Xⁿ` and `Yⁿ` vanish, this says that the coefficient `aᵢⱼ` of `F` lies in
-`𝒜 (2 (i + j - 1))` for all `i, j ≥ 1`. -/
-theorem lift_mem_iff (F : {F : FormalGroup A // F.IsComm}) :
-    (∀ ⦃n : ℕ⦄ ⦃x : LazardRing⦄, x ∈ grading n → lift F x ∈ 𝒜 n) ↔
-      ∀ d : Fin 2 →₀ ℕ, coeff d F.1.toPowerSeries ∈ 𝒜 (2 * (d.degree - 1)) := by
+`𝒜 (e (2 (i + j - 1)))` for all `i, j ≥ 1`. -/
+theorem lift_mem_iff {ι : Type*} [AddCommMonoid ι] {𝒜 : ι → σ} [SetLike.GradedMonoid 𝒜]
+    (e : ℕ →+ ι) (F : {F : FormalGroup A // F.IsComm}) :
+    (∀ ⦃n : ℕ⦄ ⦃x : LazardRing⦄, x ∈ grading n → lift F x ∈ 𝒜 (e n)) ↔
+      ∀ d : Fin 2 →₀ ℕ, coeff d F.1.toPowerSeries ∈ 𝒜 (e (2 * (d.degree - 1))) := by
   refine ⟨fun h d ↦ ?_, fun h n x hx ↦ ?_⟩
   · rw [← map_lift F, FormalGroup.map_toPowerSeries, coeff_map]
     exact h (coeff_formalGroup_mem_grading d)
@@ -454,10 +458,16 @@ theorem lift_mem_iff (F : {F : FormalGroup A // F.IsComm}) :
     have hlift : (lift F).comp mk = (MvPolynomial.aeval fun ij : ℕ+ × ℕ+ ↦
         coeff (single 0 (ij.1 : ℕ) + single 1 (ij.2 : ℕ)) F.1.toPowerSeries).toRingHom :=
       MvPolynomial.ringHom_ext (fun r ↦ by simp) fun ij ↦ by simp
+    -- Pushing the degrees forward along `e` preserves weighted homogeneity.
+    have hpe : p.IsWeightedHomogeneous (e ∘ degree) (e n) := fun d hd ↦ by
+      simp only [← hp hd, Finsupp.weight_apply, map_finsuppSum, map_nsmul, Function.comp_apply]
+    have := AddSubgroupClass.zsmulMemClass (S := σ) (M := A)
     rw [← RingHom.comp_apply, hlift]
-    refine hp.aeval_mem fun ⟨i, j⟩ ↦ ?_
+    refine hpe.aeval_mem fun ⟨i, j⟩ ↦ ?_
     have hd := h (single 0 (i : ℕ) + single 1 (j : ℕ))
     rwa [map_add, Finsupp.degree_single, Finsupp.degree_single, ← degree_apply] at hd
+
+variable {𝒜 : ℕ → σ} [SetLike.GradedMonoid 𝒜]
 
 /-- **The graded universal property of the Lazard ring**: for a commutative ring `A` graded by
 `𝒜`, graded ring homomorphisms `L →+*ᵍ A` correspond to commutative formal group laws over `A`
@@ -469,9 +479,9 @@ def gradedLift :
       coeff d F.toPowerSeries ∈ 𝒜 (2 * (d.degree - 1))} ≃ (grading →+*ᵍ 𝒜) where
   toFun F :=
     { toRingHom := lift ⟨F.1, F.2.1⟩
-      map_mem := fun hx ↦ (lift_mem_iff ⟨F.1, F.2.1⟩).2 F.2.2 hx }
+      map_mem := fun hx ↦ (lift_mem_iff (.id ℕ) ⟨F.1, F.2.1⟩).2 F.2.2 hx }
   invFun φ := ⟨formalGroup.map φ.toRingHom, inferInstance,
-    (lift_mem_iff (lift.symm φ.toRingHom)).1 (by simpa using fun _ _ ↦ φ.map_mem)⟩
+    (lift_mem_iff (.id ℕ) (lift.symm φ.toRingHom)).1 (by simpa using fun _ _ ↦ φ.map_mem)⟩
   left_inv F := Subtype.ext <| by simp
   right_inv φ := GradedRingHom.ext fun x ↦
     DFunLike.congr_fun (lift.apply_symm_apply φ.toRingHom) x
