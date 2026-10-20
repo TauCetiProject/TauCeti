@@ -38,7 +38,7 @@ above becomes the bijection `S ≃ HeightOneSpectrum 𝒪_S`.
   and residue identification over a model with no shared constant-field algebra requirement.
 * `TauCeti.Place.residueHom`: evaluation of the elements of the model at a place finite on it, a
   `k`-algebra map `R → F_P` whose kernel is the centre of the place
-  (`TauCeti.Place.ker_residueHom`).
+  (`TauCeti.Place.ker_residueRingHom`).
 * `TauCeti.Place.heightOneSpectrumEquiv`: the bijection between the places finite on a model and
   the height one primes of the model.
 * `TauCeti.holomorphyRingHeightOneSpectrumEquiv`: that bijection for the model `𝒪_S`, whose
@@ -201,6 +201,8 @@ variable [Algebra k R] [IsScalarTower k R F]
 Its underlying ring map is `TauCeti.Place.residueRingHom`. -/
 noncomputable def residueHom : R →ₐ[k] P.ResidueField :=
   { P.residueRingHom hR with
+    -- The structure update presents evaluation through `toFun`; restate it as application
+    -- of the bundled ring map so `residueRingHom_apply` can rewrite the argument.
     commutes' := fun c ↦ show
       P.residueRingHom hR (algebraMap k R c) = algebraMap k P.ResidueField c from by
         rw [residueRingHom_apply, IsScalarTower.algebraMap_apply k P.integers P.ResidueField,
@@ -213,22 +215,14 @@ omit [IsFractionRing R F] [IsDedekindDomain R] in
 theorem residueHom_apply (r : R) :
     P.residueHom hR r = IsLocalRing.residue P.integers ⟨algebraMap R F r, hR r⟩ := (rfl)
 
-omit [IsDedekindDomain R] in
-/-- The kernel of evaluation at `P` is its centre on the model. -/
-@[simp]
-theorem ker_residueHom : RingHom.ker (P.residueHom hR) = (P.center hR).asIdeal :=
-  P.ker_residueRingHom hR
-
-/-- Every residue at a place finite on a Dedekind model is the residue of a model element. -/
-theorem residueHom_surjective : Function.Surjective (P.residueHom hR) :=
-  P.residueRingHom_surjective hR
-
 /-- **The residue field of a place finite on the model is the model modulo its centre**,
 as `k`-algebras. Its underlying ring equivalence is
 `TauCeti.Place.quotientRingEquivResidueField`. -/
 noncomputable def quotientAlgEquivResidueField :
     (R ⧸ (P.center hR).asIdeal) ≃ₐ[k] P.ResidueField :=
   { P.quotientRingEquivResidueField hR with
+    -- The structure update exposes the equivalence's `toFun` projection. Restating it as
+    -- bundled application lets `quotientRingEquivResidueField_mk` rewrite the residue.
     commutes' := fun c ↦ show
       P.quotientRingEquivResidueField hR (algebraMap k _ c) = algebraMap k P.ResidueField c from by
         rw [← Ideal.Quotient.mk_comp_algebraMap, RingHom.comp_apply,
