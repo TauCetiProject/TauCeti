@@ -290,13 +290,10 @@ complex whose underlying cochain is `φ`. -/
 theorem mk_eq_homologyπ {n : ℕ} (φ : cyclicCocycles R A M n)
     (z : (cyclicCochainComplex R A M).cycles n)
     (hz : (cyclicCochainComplexXIso R A M n).hom ((cyclicCochainComplex R A M).iCycles n z) = φ) :
-    mk R A M n φ = (cyclicCochainComplex R A M).homologyπ n z := by
-  rw [mk_apply]
-  congr 1
-  apply (cyclicCochainComplex R A M).moduleCat_iCycles_injective n
-  rw [iCycles_toCycles, ← hz]
-  -- `cyclicCochainComplexXIso` is the identity.
-  rfl
+    mk R A M n φ = (cyclicCochainComplex R A M).homologyπ n z :=
+  (cyclicCochainComplex R A M).moduleCatCohomologyClassOfIso_eq_homologyπ
+    (fun n ↦ cyclicCochains R A M n) (cyclicCocycles R A M)
+    (cyclicCochainComplexXIso R A M) (mem_cyclicCocycles_iff_complex R A M) φ z hz
 
 /-- Every cyclic cohomology class is the class of a cyclic cocycle. -/
 theorem mk_surjective (n : ℕ) : Function.Surjective (mk R A M n) := by

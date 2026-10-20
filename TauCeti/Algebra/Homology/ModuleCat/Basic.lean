@@ -196,6 +196,16 @@ lemma moduleCatCohomologyClassOfIso_apply (n : ℕ) (z : Z n) :
         ((hZ n z.1).1 z.2)) :=
   (rfl)
 
+/-- The class of a cocycle `z` is the homology class of any cycle whose underlying element
+corresponds to `z` under the identification of the term. -/
+lemma moduleCatCohomologyClassOfIso_eq_homologyπ {n : ℕ} (z : Z n) (y : K.cycles n)
+    (hy : (e n).hom (K.iCycles n y) = z.1) :
+    K.moduleCatCohomologyClassOfIso V Z e hZ n z = K.homologyπ n y := by
+  rw [moduleCatCohomologyClassOfIso_apply]
+  congr 1
+  apply K.moduleCat_iCycles_injective n
+  rw [iCycles_moduleCatCyclesMk, ← hy, Iso.hom_inv_id_apply]
+
 /-- Every cohomology class of a cochain complex of modules is represented by a cocycle. -/
 lemma moduleCatCohomologyClassOfIso_surjective (n : ℕ) :
     Function.Surjective (K.moduleCatCohomologyClassOfIso V Z e hZ n) :=

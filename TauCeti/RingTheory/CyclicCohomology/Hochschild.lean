@@ -312,11 +312,10 @@ theorem mk_eq_homologyπ {n : ℕ} (φ : hochschildCocycles R A M n)
     (z : (hochschildCochainComplex R A M).cycles n)
     (hz : (hochschildCochainComplexXIso R A M n).hom
       ((hochschildCochainComplex R A M).iCycles n z) = φ) :
-    mk R A M n φ = (hochschildCochainComplex R A M).homologyπ n z := by
-  rw [mk_apply]
-  congr 1
-  apply (hochschildCochainComplex R A M).moduleCat_iCycles_injective n
-  rw [hochschild_iCycles_toCycles, ← hz, Iso.hom_inv_id_apply]
+    mk R A M n φ = (hochschildCochainComplex R A M).homologyπ n z :=
+  (hochschildCochainComplex R A M).moduleCatCohomologyClassOfIso_eq_homologyπ
+    (fun n ↦ MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) (hochschildCocycles R A M)
+    (hochschildCochainComplexXIso R A M) (mem_hochschildCocycles_iff_complex R A M) φ z hz
 
 /-- Every Hochschild cohomology class is the class of a Hochschild cocycle. -/
 theorem mk_surjective (n : ℕ) : Function.Surjective (mk R A M n) :=
