@@ -74,11 +74,8 @@ This includes the empty product. -/
 theorem map_sum_pi_uniformMeasure_zero_one {ι : Type*} [Fintype ι] :
     (Measure.pi fun _ : ι ↦ uniformMeasure 0 1).map (fun x ↦ ∑ i, x i) =
       irwinHallMeasure (Fintype.card ι) := by
-  have hindep := iIndepFun_pi (μ := fun _ : ι ↦ uniformMeasure 0 1)
-    (X := fun _ ↦ (id : ℝ → ℝ)) (fun _ ↦ aemeasurable_id)
-  simpa only [Finset.sum_fn, id_eq, irwinHallMeasure_def] using
-    (hindep.hasLaw_sum_convolutionPower fun i ↦
-      (measurePreserving_eval (fun _ : ι ↦ uniformMeasure 0 1) i).hasLaw).map_eq
+  simpa only [irwinHallMeasure_def] using
+    Measure.map_sum_pi_eq_convolutionPower (ι := ι) (uniformMeasure 0 1)
 
 /-- An Irwin–Hall variable of order `n` lies in `[0, n]` almost surely. -/
 theorem ae_mem_Icc_irwinHallMeasure (n : ℕ) :
@@ -96,18 +93,18 @@ theorem ae_mem_Icc_irwinHallMeasure (n : ℕ) :
 
 /-- Positive-order Irwin–Hall laws are absolutely continuous with respect to Lebesgue measure.
 Order zero is a Dirac measure instead. -/
-theorem absolutelyContinuous_irwinHallMeasure {n : ℕ} (hn : 0 < n) :
+theorem irwinHallMeasure_absolutelyContinuous {n : ℕ} (hn : 0 < n) :
     irwinHallMeasure n ≪ volume := by
   obtain ⟨n, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn.ne'
-  rw [irwinHallMeasure_succ]
-  apply Measure.conv_absolutelyContinuous
+  rw [irwinHallMeasure_def]
+  apply Measure.convolutionPower_succ_absolutelyContinuous
   rw [uniformMeasure_eq_withDensity]
   exact withDensity_absolutelyContinuous _ _
 
 /-- Positive-order Irwin–Hall laws have no atoms. -/
 instance nullSingletonClass_irwinHallMeasure (n : ℕ) [NeZero n] :
     NullSingletonClass (irwinHallMeasure n) :=
-  ⟨fun x ↦ absolutelyContinuous_irwinHallMeasure (Nat.pos_of_ne_zero (NeZero.ne n))
+  ⟨fun x ↦ irwinHallMeasure_absolutelyContinuous (Nat.pos_of_ne_zero (NeZero.ne n))
     (measure_singleton x)⟩
 
 end TauCeti.Probability
