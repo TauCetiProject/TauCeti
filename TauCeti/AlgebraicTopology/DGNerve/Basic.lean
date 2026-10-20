@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.CompStruct
 public import TauCeti.CategoryTheory.DG.HomotopyCategory
+import TauCeti.Data.Finset.Basic
 
 /-!
 # The differential graded nerve
@@ -109,16 +110,6 @@ private lemma card_erase_deg {S : Finset (Fin (n + 1))} {t : Fin (n + 1)} (ht : 
   have := card_erase_add_one ht
   omega
 
-private lemma card_filter_lt_add_card_filter_gt {S : Finset (Fin (n + 1))} {t : Fin (n + 1)}
-    (ht : t ∈ S) : #{s ∈ S | s < t} + #{s ∈ S | t < s} + 1 = #S := by
-  rw [← card_erase_add_one ht,
-    ← card_filter_add_card_filter_not (s := S.erase t) (p := fun s ↦ s < t)]
-  have h₁ : {s ∈ S | s < t} = {s ∈ S.erase t | s < t} := by
-    ext s; simp only [mem_filter, mem_erase]; grind
-  have h₂ : {s ∈ S | t < s} = {s ∈ S.erase t | ¬ s < t} := by
-    ext s; simp only [mem_filter, mem_erase]; grind
-  rw [h₁, h₂]
-
 private lemma deg_split {S : Finset (Fin (n + 1))} {t : Fin (n + 1)} (ht : t ∈ S) {d : ℤ}
     (hd : d + #S = 0) : -(#{s ∈ S | s < t} : ℤ) + -(#{s ∈ S | t < s} : ℤ) = d + 1 := by
   have := card_filter_lt_add_card_filter_gt ht
@@ -131,18 +122,6 @@ private lemma le_of_mem_left {i j t : Fin (n + 1)} {S : Finset (Fin (n + 1))}
 private lemma le_of_mem_right {i j t : Fin (n + 1)} {S : Finset (Fin (n + 1))}
     (hS : S ⊆ Ioo i j) (ht : t ∈ S) : t ≤ j :=
   (mem_Ioo.1 (hS ht)).2.le
-
-private lemma filter_lt_subset_Ioo {i j t : Fin (n + 1)} {S : Finset (Fin (n + 1))}
-    (hS : S ⊆ Ioo i j) : {s ∈ S | s < t} ⊆ Ioo i t := by
-  intro s hs
-  rw [mem_filter] at hs
-  exact mem_Ioo.2 ⟨(mem_Ioo.1 (hS hs.1)).1, hs.2⟩
-
-private lemma filter_gt_subset_Ioo {i j t : Fin (n + 1)} {S : Finset (Fin (n + 1))}
-    (hS : S ⊆ Ioo i j) : {s ∈ S | t < s} ⊆ Ioo t j := by
-  intro s hs
-  rw [mem_filter] at hs
-  exact mem_Ioo.2 ⟨hs.2, (mem_Ioo.1 (hS hs.1)).2⟩
 
 private lemma eq_empty_of_subset_Ioo_of_eq {i t : Fin (n + 1)} {S : Finset (Fin (n + 1))}
     (h : i = t) (hS : S ⊆ Ioo i t) : S = ∅ := by

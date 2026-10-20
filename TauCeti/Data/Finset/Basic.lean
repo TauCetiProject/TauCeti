@@ -43,6 +43,9 @@ import TauCeti.Data.Set.PowersetCard
   `Finset.neg_one_pow_card_filter_lt_mul_erase` show that inserting a new element and deleting an
   existing element of an ordered finset in either order, or deleting two distinct elements in
   either order, gives opposite Koszul signs.
+* `Finset.card_filter_lt_add_card_filter_gt` splits a finset of a linear order at one of its
+  elements, and `Finset.filter_lt_subset_Ioo` and `Finset.filter_gt_subset_Ioo` place the two
+  halves of a finset inside an open interval between the split point and an endpoint.
 * `Finset.card_symmDiff_add_two_mul_card_inter` and `Finset.even_card_symmDiff_iff` compare the
   cardinality of a symmetric difference with the cardinalities of its two arguments: exactly, and
   modulo two.
@@ -458,6 +461,32 @@ theorem neg_one_pow_card_filter_lt_mul_erase {α R : Type*} [LinearOrder α] [Mo
     have hj' : j ∈ {k ∈ s | k < i} := mem_filter.2 ⟨hj, hji⟩
     simp only [filter_erase, erase_eq_of_notMem hi', ← card_erase_add_one hj', pow_succ]
     simp [← pow_add, add_comm]
+
+/-- Splitting a finset of a linear order at one of its elements: the elements below it and the
+elements above it account for all the others. -/
+theorem card_filter_lt_add_card_filter_gt {α : Type*} [LinearOrder α] {s : Finset α} {t : α}
+    (ht : t ∈ s) : #{x ∈ s | x < t} + #{x ∈ s | t < x} + 1 = #s := by
+  rw [← card_erase_add_one ht,
+    ← card_filter_add_card_filter_not (s := s.erase t) (p := fun x ↦ x < t)]
+  have h₁ : {x ∈ s | x < t} = {x ∈ s.erase t | x < t} := by
+    ext x; simp only [mem_filter, mem_erase]; grind
+  have h₂ : {x ∈ s | t < x} = {x ∈ s.erase t | ¬ x < t} := by
+    ext x; simp only [mem_filter, mem_erase]; grind
+  rw [h₁, h₂]
+
+/-- The elements of a finset inside `Ioo a b` that lie below `t` lie in `Ioo a t`. -/
+theorem filter_lt_subset_Ioo {α : Type*} [Preorder α] [LocallyFiniteOrder α] {a b t : α}
+    {s : Finset α} [DecidablePred (· < t)] (hs : s ⊆ Ioo a b) : {x ∈ s | x < t} ⊆ Ioo a t :=
+  fun _ hx ↦ by
+    rw [mem_filter] at hx
+    exact mem_Ioo.2 ⟨(mem_Ioo.1 (hs hx.1)).1, hx.2⟩
+
+/-- The elements of a finset inside `Ioo a b` that lie above `t` lie in `Ioo t b`. -/
+theorem filter_gt_subset_Ioo {α : Type*} [Preorder α] [LocallyFiniteOrder α] {a b t : α}
+    {s : Finset α} [DecidablePred (t < ·)] (hs : s ⊆ Ioo a b) : {x ∈ s | t < x} ⊆ Ioo t b :=
+  fun _ hx ↦ by
+    rw [mem_filter] at hx
+    exact mem_Ioo.2 ⟨hx.2, (mem_Ioo.1 (hs hx.1)).2⟩
 
 /-- The sum over a finite type of a function that vanishes away from two distinct points is the sum
 of its values at those two points. -/
