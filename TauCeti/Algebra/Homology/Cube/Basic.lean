@@ -312,6 +312,31 @@ lemma ι_cubeComplexMap_f (α : F ⟶ G) {r : ℤ} (S : {S : Finset ι // (#S : 
     F.cubeComplexι S ≫ (cubeComplexMap α).f r = α.app S.1 ≫ G.cubeComplexι S :=
   F.ι_cubeComplexDesc _ S
 
+/-- The cochain map induced by `α` followed by the projection onto the vertex `G(S)` is the
+projection onto `F(S)` followed by `α`. -/
+@[reassoc (attr := simp)]
+lemma cubeComplexMap_f_π (α : F ⟶ G) {r : ℤ} (S : {S : Finset ι // (#S : ℤ) = r}) :
+    (cubeComplexMap α).f r ≫ G.cubeComplexπ S = F.cubeComplexπ S ≫ α.app S.1 := by
+  ext T
+  by_cases h : T = S
+  · subst h
+    simp
+  · simp [h]
+
+/-- The identification of the degree `0` term with the initial vertex is natural in the cube. -/
+@[reassoc]
+lemma cubeComplexMap_f_zero_comp_cubeComplexXZeroIso_hom (α : F ⟶ G) :
+    (cubeComplexMap α).f 0 ≫ G.cubeComplexXZeroIso.hom =
+      F.cubeComplexXZeroIso.hom ≫ α.app ∅ := by
+  simp
+
+/-- The identification of the initial vertex with the degree `0` term is natural in the cube. -/
+@[reassoc]
+lemma cubeComplexXZeroIso_inv_comp_cubeComplexMap_f_zero (α : F ⟶ G) :
+    F.cubeComplexXZeroIso.inv ≫ (cubeComplexMap α).f 0 =
+      α.app ∅ ≫ G.cubeComplexXZeroIso.inv := by
+  simp
+
 @[simp]
 lemma cubeComplexMap_id (F : Finset ι ⥤ C) : cubeComplexMap (𝟙 F) = 𝟙 F.cubeComplex := by
   ext r S
