@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.LocalIndex
 -- Proof-only: the point-group index at the symbol `IV*`.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.Three
 -- Proof-only: the point-group index at the symbol `IV`.
-import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.ResidueQuadratic
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Residue.Quadratic
 -- Proof-only: every point has nonsingular reduction at the symbol `II*`.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.StarredReduction
 -- Proof-only: membership in the principal maximal ideal.
