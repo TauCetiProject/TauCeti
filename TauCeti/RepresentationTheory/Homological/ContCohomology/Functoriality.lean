@@ -39,6 +39,8 @@ transformations `resNatTrans` and `inflNatTrans`, matching the shape of Mathlib'
   larger subgroup.
 * `TauCeti.ContinuousCohomology.continuousCohomologyFunctor`: `Hⁿ(G, -)` as a functor.
 * `TauCeti.ContinuousCohomology.resNatTrans`, `TauCeti.ContinuousCohomology.inflNatTrans`.
+* `TauCeti.ContinuousCohomology.shiftedResolutionMap`: the chain map of shifted coinduced
+  resolutions induced by a coefficient morphism.
 
 ## Main results
 
@@ -64,6 +66,8 @@ transformations `resNatTrans` and `inflNatTrans`, matching the shape of Mathlib'
 * `TauCeti.ContinuousCohomology.map_comp_coeffMap`: the map of a compatible pair is natural in
   the coefficients, under simultaneous change of group and coefficients.
 * `TauCeti.ContinuousCohomology.map_congr`: two compatible pairs that agree induce the same map.
+* `TauCeti.ContinuousCohomology.homologyMap_shiftedResolutionMap`: coefficient maps are induced
+  by `shiftedResolutionMap` on the cohomology of invariants.
 * `TauCeti.ContinuousCohomology.iCycles_cocyclesMap_one_apply` and
   `TauCeti.ContinuousCohomology.iCycles_cocyclesMap_two_apply`: evaluation of mapped homogeneous
   cocycles in degrees one and two.
@@ -113,6 +117,35 @@ theorem resolutionMap_ρ_apply (f : X ⟶ Y) (n : ℕ) (g : G)
     (_root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f n) g x
   simpa only [res, ContRepresentation.restrict_apply_apply,
     MonoidHom.coe_ofClass, ContinuousMonoidHom.coe_id, id_eq] using h
+
+/-- The chain map of shifted coinduced resolutions `TopRep.resolution' X ⟶ TopRep.resolution' Y`
+induced by a coefficient morphism, `F ↦ f ∘ F` in every degree. Taking invariants gives the map
+`ContinuousCohomology.cochainsMap` at the identity of `G`
+(`TauCeti.ContinuousCohomology.mapHomologicalComplex_map_shiftedResolutionMap`). -/
+noncomputable def shiftedResolutionMap (f : X ⟶ Y) : resolution' X ⟶ resolution' Y where
+  f n := _root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f (n + 1)
+  comm' i j hij := by
+    obtain rfl : i + 1 = j := hij
+    simp only [CochainComplex.of_d, resolution'd_eq]
+    exact _root_.ContinuousCohomology.resolutionMap_comp_d (ContinuousMonoidHom.id G) f (i + 1)
+
+/-- The degree-`n` component of `shiftedResolutionMap f` is the coefficient map on the
+`(n + 1)`-st term of the coinduced resolution. -/
+@[simp]
+theorem shiftedResolutionMap_f (f : X ⟶ Y) (n : ℕ) :
+    (shiftedResolutionMap f).f n =
+      _root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f (n + 1) :=
+  (rfl)
+
+/-- On invariants, the chain map of shifted coinduced resolutions induced by a coefficient
+morphism is the map of homogeneous cochains of Mathlib's `ContinuousCohomology.cochainsMap`. -/
+theorem mapHomologicalComplex_map_shiftedResolutionMap (f : X ⟶ Y) :
+    ((invariantsFunctor R G).mapHomologicalComplex _).map (shiftedResolutionMap f) =
+      cochainsMap (ContinuousMonoidHom.id G) f := by
+  ext n x : 4
+  -- Both sides restrict `resolutionMap (ContinuousMonoidHom.id G) f (n + 1)` to invariant elements:
+  -- `invariantsResMap` at the identity of `G` is `mapInvariants`.
+  rfl
 
 end ResolutionMaps
 
@@ -218,6 +251,14 @@ noncomputable def coeffMap {X Y : TopRep R G} (f : X ⟶ Y) (n : ℕ) :
 theorem coeffMap_def {X Y : TopRep R G} (f : X ⟶ Y) (n : ℕ) :
     coeffMap f n = _root_.ContinuousCohomology.map (X := X) (ContinuousMonoidHom.id G) f n :=
   (rfl)
+
+/-- The coefficient map of `f` is induced on the cohomology of invariants by the chain map
+`shiftedResolutionMap f` of shifted coinduced resolutions. -/
+theorem homologyMap_shiftedResolutionMap {X Y : TopRep.{max v w} R G} (f : X ⟶ Y) (n : ℕ) :
+    HomologicalComplex.homologyMap
+        (((TopRep.invariantsFunctor R G).mapHomologicalComplex _).map
+          (shiftedResolutionMap f)) n = coeffMap f n := by
+  rw [mapHomologicalComplex_map_shiftedResolutionMap, coeffMap_def]
 
 /-- Coefficient maps preserve identities. -/
 @[simp]

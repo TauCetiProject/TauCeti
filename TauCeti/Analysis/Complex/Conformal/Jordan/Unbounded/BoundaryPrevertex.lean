@@ -59,6 +59,21 @@ namespace TauCeti
 
 variable {f g : ℂ → ℂ} {q : ℂ}
 
+/-- On the upper half-plane the map is recovered from its inverted coordinate. -/
+theorem eq_add_inv_of_inverted_coordinate
+    (hgf : EqOn g (fun z => (f z - q)⁻¹) upperHalfPlaneSet) {z : ℂ}
+    (hz : z ∈ upperHalfPlaneSet) : f z = q + (g z)⁻¹ := by
+  rw [hgf hz, inv_inv, add_sub_cancel]
+
+/-- A nonvanishing holomorphic inverted coordinate recovers a holomorphic original map. -/
+theorem differentiableOn_of_inverted_coordinate
+    (hgd : DifferentiableOn ℂ g upperHalfPlaneSet)
+    (hgf : EqOn g (fun z => (f z - q)⁻¹) upperHalfPlaneSet)
+    (hgne : ∀ z ∈ upperHalfPlaneSet, g z ≠ 0) :
+    DifferentiableOn ℂ f upperHalfPlaneSet :=
+  ((differentiableOn_const q).add (hgd.inv hgne)).congr fun _ hz =>
+    eq_add_inv_of_inverted_coordinate hgf hz
+
 /-- If the continuous inverted coordinate `g = (f - q)⁻¹` has a nonzero value at a real
 boundary parameter, then `f` tends there to the corresponding finite point `q + (g x)⁻¹`. -/
 theorem tendsto_nhds_of_inverted_boundary_ne_zero {x : ℝ}

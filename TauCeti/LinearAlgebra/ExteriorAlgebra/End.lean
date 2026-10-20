@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
+-- Private: `CliffordAlgebra.contractLeft_prod_map_ι_eq_zero` is used only inside a proof.
+import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
 
 /-!
 # Exterior creation and contraction generate all endomorphisms
@@ -212,19 +214,14 @@ private theorem contractLeft_listProd_eq_zero_of_not_mem {n : ℕ}
     (b : Module.Basis (Fin n) K W) (i : Fin n) (xs : List (Fin n)) (hi : i ∉ xs) :
     CliffordAlgebra.contractLeft (Q := (0 : QuadraticForm K W)) (b.coord i)
       (xs.map fun j ↦ ExteriorAlgebra.ι K (b j)).prod = 0 := by
-  induction xs with
-  | nil => exact CliffordAlgebra.contractLeft_one (Q := (0 : QuadraticForm K W)) (b.coord i)
-  | cons j xs ih =>
-      rw [List.map_cons, List.prod_cons, CliffordAlgebra.contractLeft_ι_mul]
-      have hij : i ≠ j := by
-        intro h
-        exact hi (by simp [h])
-      have hit : i ∉ xs := by
-        intro h
-        exact hi (by simp [h])
-      simp only [Module.Basis.coord_apply, Module.Basis.repr_self, Finsupp.single_apply]
-      simp only [ite_eq_right hij.symm]
-      rw [zero_smul, ih hit, mul_zero, sub_zero]
+  have h := CliffordAlgebra.contractLeft_prod_map_ι_eq_zero (Q := 0) (b.coord i) (l := xs.map b)
+    fun m hm ↦ by
+      obtain ⟨j, hj, rfl⟩ := List.mem_map.mp hm
+      rw [Module.Basis.coord_apply, Module.Basis.repr_self, Finsupp.single_apply,
+        ite_eq_right_iff]
+      rintro rfl
+      exact absurd hj hi
+  rwa [List.map_map] at h
 
 private theorem annihilate_listProd_self {n : ℕ}
     (b : Module.Basis (Fin n) K W) (xs : List (Fin n)) (hxs : xs.Nodup) :

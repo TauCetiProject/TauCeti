@@ -7,8 +7,11 @@ module
 
 public import Mathlib.RingTheory.FormalGroup.Basic
 public import Mathlib.RingTheory.PowerSeries.Inverse
+public import Mathlib.RingTheory.PowerSeries.Log
 public import TauCeti.RingTheory.MvPowerSeries.Derivative
 public import TauCeti.RingTheory.FormalGroup.Hom
+
+import Mathlib.RingTheory.PowerSeries.WellKnown
 
 /-!
 # The invariant differential and the logarithm of a formal group law
@@ -30,6 +33,11 @@ The logarithm has linear coefficient `1`, so it has a compositional inverse, the
 exponential** `exp_F`, and `F(X, Y) = exp_F(log_F(X) + log_F(Y))`: over a `ℚ`-algebra every
 formal group law is strictly isomorphic to the additive one. Up to a scalar, `log_F` is the only
 power series that is additive along `F`.
+
+For the additive formal group law `X + Y` the invariant differential is `dT` and both `log` and
+`exp` are `T`. For the multiplicative formal group law `X + Y + XY` the invariant differential is
+`dT / (1 + T)`, and `log` and `exp` are Mathlib's `PowerSeries.log`, the series of `log(1 + T)`,
+and `e^T - 1`.
 
 ## Main definitions
 
@@ -54,6 +62,11 @@ power series that is additive along `F`.
 * `FormalGroup.logIso`: the strict isomorphism from `F` to the additive formal group, with
   forward homomorphism `FormalGroup.logHom` and inverse `FormalGroup.expHom`.
 * `FormalGroup.eq_logIso`: this is the unique strict isomorphism to the additive formal group.
+* `FormalGroup.invariantDifferential_𝔾ₐ`, `FormalGroup.log_𝔾ₐ`, `FormalGroup.exp_𝔾ₐ`: the additive
+  formal group law has invariant differential `dT`, and logarithm and exponential `T`.
+* `FormalGroup.invariantDifferential_𝔾ₘ`, `FormalGroup.log_𝔾ₘ`, `FormalGroup.exp_𝔾ₘ`: the
+  multiplicative formal group law has invariant differential `dT / (1 + T)`, logarithm
+  `log(1 + T)` and exponential `e^T - 1`.
 
 ## References
 
@@ -193,6 +206,29 @@ theorem subst_invariantDifferential_mul_pderiv_one [F.IsComm] :
     F.subst_invariantDifferential_mul_pderiv
   rwa [subst_mul hsw, subst_powerSeriesSubst hsw hF, ← hc, ← hY,
     subst_powerSeriesSubst hsw (PowerSeries.HasSubst.X 0), subst_X hsw] at this
+
+/-! ### The additive and multiplicative formal group laws -/
+
+/-- The invariant differential of the additive formal group law `X + Y` is `dT`. -/
+@[simp]
+theorem invariantDifferential_𝔾ₐ : (𝔾ₐ (R := R)).invariantDifferential = 1 := by
+  have ha : HasSubst (![0, PowerSeries.X] : Fin 2 → PowerSeries R) := HasSubst.zero_X
+  have hD : pderiv 0 (𝔾ₐ (R := R)).toPowerSeries = 1 := by simp [pderiv_X_of_ne]
+  have h := (𝔾ₐ (R := R)).invariantDifferential_mul_subst_pderiv
+  rwa [hD, ← coe_substAlgHom ha, map_one, mul_one] at h
+
+/-- The invariant differential of the multiplicative formal group law `X + Y + XY` is
+`dT / (1 + T) = (1 - T + T² - ⋯) dT`. -/
+@[simp]
+theorem invariantDifferential_𝔾ₘ :
+    (𝔾ₘ (R := R)).invariantDifferential = PowerSeries.mk fun n ↦ (-1) ^ n := by
+  have ha : HasSubst (![0, PowerSeries.X] : Fin 2 → PowerSeries R) := HasSubst.zero_X
+  have hD : pderiv 0 (𝔾ₘ (R := R)).toPowerSeries = 1 + X 1 := by simp [pderiv_X_of_ne]
+  have h := (𝔾ₘ (R := R)).invariantDifferential_mul_subst_pderiv
+  rw [hD, ← coe_substAlgHom ha, map_add, map_one, coe_substAlgHom, subst_X ha] at h
+  -- `P(T) · (1 + T) = 1`, and `1 - T + T² - ⋯` is the inverse of `1 + T`
+  refine left_inv_eq_right_inv (by simpa using h) ?_
+  rw [mul_comm, PowerSeries.mk_neg_one_pow_mul_one_add_eq_one]
 
 /-! ### The logarithm -/
 
@@ -449,5 +485,34 @@ theorem eq_logIso (f : TauCeti.FormalGroupIso F (𝔾ₐ (R := R))) [f.IsStrict]
     f = F.logIso := by
   apply TauCeti.FormalGroupIso.ext
   exact F.eq_logHom_of_coeff_one f.toHom (TauCeti.FormalGroupIso.IsStrict.coeff_one (f := f))
+
+/-! ### The logarithms of the additive and multiplicative formal group laws -/
+
+/-- The logarithm of the additive formal group law is `log_{𝔾ₐ}(T) = T`. -/
+@[simp]
+theorem log_𝔾ₐ : (𝔾ₐ (R := R)).log = PowerSeries.X := by
+  have : HasUniqueDiv R := .of_isTorsionFree ℚ R
+  exact PowerSeries.derivative.ext (by simp) (by simp)
+
+/-- The exponential of the additive formal group law is `exp_{𝔾ₐ}(T) = T`. -/
+@[simp]
+theorem exp_𝔾ₐ : (𝔾ₐ (R := R)).exp = PowerSeries.X := by
+  simpa [PowerSeries.X_subst] using (𝔾ₐ (R := R)).subst_log_exp
+
+/-- The logarithm of the multiplicative formal group law is the logarithm series
+`log_{𝔾ₘ}(T) = log(1 + T) = T - T² / 2 + T³ / 3 - ⋯`. -/
+@[simp]
+theorem log_𝔾ₘ : (𝔾ₘ (R := R)).log = PowerSeries.log R := by
+  have : HasUniqueDiv R := .of_isTorsionFree ℚ R
+  exact PowerSeries.derivative.ext (by simp [PowerSeries.derivative_log]) (by simp)
+
+/-- The exponential of the multiplicative formal group law is `exp_{𝔾ₘ}(T) = e^T - 1`. -/
+@[simp]
+theorem exp_𝔾ₘ : (𝔾ₘ (R := R)).exp = PowerSeries.exp R - 1 := by
+  have hlog {Q : PowerSeries R} := (PowerSeries.log R).eq_substInvOfIsUnit_of_subst_eq_X (Q := Q)
+    PowerSeries.constantCoeff_log (by simp)
+  rw [hlog (PowerSeries.HasSubst.of_constantCoeff_zero' (𝔾ₘ (R := R)).constantCoeff_exp)
+    (by rw [← log_𝔾ₘ, subst_exp_log]), hlog PowerSeries.HasSubst.exp_sub_one
+    (PowerSeries.subst_log_exp_sub_one R)]
 
 end FormalGroup

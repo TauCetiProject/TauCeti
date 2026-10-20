@@ -5,11 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 public import TauCeti.Analysis.Sobolev.Wkp.Zero
 public import TauCeti.MeasureTheory.Function.Lp.Translation
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 import TauCeti.Analysis.Sobolev.Wkp.Classical
 import TauCeti.Analysis.Sobolev.Wkp.Density
+import TauCeti.Analysis.Sobolev.Wkp.Leibniz
+import TauCeti.Analysis.Sobolev.Wkp.MeyersSerrin
+import TauCeti.Analysis.Sobolev.Wkp.Restriction
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # The interpolation inequality for the gradient
@@ -35,6 +41,9 @@ derivatives falling on `ζ` produce the terms `‖∇u‖_p` that this inequalit
 * `TauCeti.Wkp.norm_iteratedGradient_lowerOrder_le_of_mem_wkp0Submodule`: the inequality for
   `u ∈ W^{2,p}_0(Ω)`, on any open `Ω`, with the weak gradient and the weak Hessian.
 * `TauCeti.Wkp.norm_iteratedGradient_lowerOrder_le`: the inequality on all of `W^{2,p}(E)`.
+* `TauCeti.Wkp.exists_lpNorm_gradient_ball_le`: the local form between concentric balls
+  `B_s ⊆ B_t ⊆ Ω` for `u ∈ W^{2,p}(Ω)`, with the extra terms `(t - s)⁻¹ ‖∇u‖` and
+  `(t - s)⁻² ‖u‖` on `B_t` produced by a cutoff.
 
 ## The argument
 
@@ -47,7 +56,8 @@ the dyadic steps `2ε / 2ᵏ` gives `‖δ_{2ε/2ᵏ} u‖_p ≤ ε ‖h‖² �
 The difference quotients converge pointwise to `Du · h`, so Fatou's lemma bounds `‖Du · h‖_p` in
 the same way. Summing over an orthonormal basis, `‖Du‖ ≤ ∑ᵢ |Du · eᵢ|` gives the gradient bound.
 For `W^{2,p}_0(Ω)` both sides are continuous in the Sobolev norm, and the test functions are
-dense.
+dense. Between concentric balls, the `W^{2,p}_0` inequality is applied to the product of `u` with a
+cutoff that is one on `B_s` and supported in `B_t`.
 
 ## References
 
@@ -325,6 +335,125 @@ theorem Wkp.norm_iteratedGradient_lowerOrder_le (hp : p ≠ ∞) (u : Wkp mu ⊤
       ε * ‖Wkp.iteratedGradient 1 u‖ + (finrank ℝ E) ^ 2 / ε * ‖Wkp.value 2 u‖ :=
   Wkp.norm_iteratedGradient_lowerOrder_le_of_mem_wkp0Submodule hp
     (by rw [wkp0Submodule_top_eq_top hp]; trivial) hε
+
+open Metric in
+/-- **Interpolation between concentric balls.** There is a universal constant `c` such that, for
+`1 ≤ p < ∞`, every `u ∈ W^{2,p}(Ω)`, every pair of radii `0 < s < t` with `B(x₀, t) ⊆ Ω`, and every
+`ε > 0`,
+
+`‖∇u‖_{Lᵖ(B_s)} ≤ ε (‖D²u‖_{Lᵖ(B_t)} + c (t - s)⁻¹ ‖∇u‖_{Lᵖ(B_t)} + c (t - s)⁻² ‖u‖_{Lᵖ(B_t)})
+  + (n² / ε) ‖u‖_{Lᵖ(B_t)}`, `n = dim E`.
+
+This is `TauCeti.Wkp.norm_iteratedGradient_lowerOrder_le_of_mem_wkp0Submodule` applied to a cutoff
+of `u` between the two balls; the terms with `c` come from the derivatives of the cutoff. -/
+theorem Wkp.exists_lpNorm_gradient_ball_le (hp_top : p ≠ ⊤) :
+    ∃ c : ℝ, 0 ≤ c ∧ ∀ {Omega : Opens E} (u : Wkp mu Omega p 2) {x₀ : E} {s t : ℝ}, 0 < s →
+      s < t → ball x₀ t ⊆ Omega → ∀ {ε : ℝ}, 0 < ε →
+        lpNorm (Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u)) p (mu.restrict (ball x₀ s)) ≤
+          ε * (lpNorm (Wkp.iteratedGradient 1 u) p (mu.restrict (ball x₀ t)) +
+            c / (t - s) *
+              lpNorm (Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u)) p (mu.restrict (ball x₀ t)) +
+            c / (t - s) ^ 2 * lpNorm (Wkp.value 2 u) p (mu.restrict (ball x₀ t))) +
+          finrank ℝ E ^ 2 / ε * lpNorm (Wkp.value 2 u) p (mu.restrict (ball x₀ t)) := by
+  obtain ⟨c, hc0, hcut⟩ := exists_forall_contDiff_cutoff_closedBall (E := E)
+  refine ⟨4 * c, by positivity, fun {Omega} u x₀ s t hs hst ht ε hε => ?_⟩
+  set m := (s + t) / 2 with hm
+  obtain ⟨η, hη, hηr, hη1, hηts, hηg, hηh⟩ := hcut x₀ hs.le (show s < m by linarith)
+  set U : Opens E := ⟨ball x₀ t, isOpen_ball⟩
+  have hU : U ≤ Omega := fun x hx => ht hx
+  have hsU : ball x₀ s ⊆ U := ball_subset_ball hst.le
+  set v := Wkp.restrictL hU 2 u with hv
+  have hcpt : HasCompactSupport η :=
+    (isCompact_closedBall x₀ m).of_isClosed_subset (isClosed_tsupport η) hηts
+  have hηU : tsupport η ⊆ U := hηts.trans (closedBall_subset_ball (by linarith))
+  obtain ⟨w, hw0, hwv⟩ := Wkp.exists_mem_wkp0Submodule_value_ae_eq_mul hp_top hη hcpt hηU 2 v
+  have hint := Wkp.norm_iteratedGradient_lowerOrder_le_of_mem_wkp0Submodule hp_top hw0 hε
+  have hηabs : ∀ x, |η x| ≤ 1 := fun x =>
+    abs_le.2 ⟨by linarith [(hηr ⟨x, rfl⟩).1], (hηr ⟨x, rfl⟩).2⟩
+  -- The restriction `v` of `u` to `B_t` has the same value and weak derivatives there.
+  have hvg : (Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 v) : E → E) =ᵐ[mu.restrict U]
+      Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u) := by
+    rw [hv, Wkp.lowerOrder_restrictL]
+    exact Wkp.iteratedGradient_restrictL_ae hU 0 (Wkp.lowerOrder 1 u)
+  have hnv : ‖Wkp.value 2 v‖ = lpNorm (Wkp.value 2 u) p (mu.restrict (ball x₀ t)) := by
+    rw [Lp.norm_def, eLpNorm_congr_ae (Wkp.value_restrictL_ae hU 2 u), toReal_eLpNorm]
+    rfl
+  have hngv : ‖Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 v)‖ =
+      lpNorm (Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u)) p (mu.restrict (ball x₀ t)) := by
+    rw [Lp.norm_def, eLpNorm_congr_ae hvg, toReal_eLpNorm]
+    rfl
+  have hnHv : ‖Wkp.iteratedGradient 1 v‖ =
+      lpNorm (Wkp.iteratedGradient 1 u) p (mu.restrict (ball x₀ t)) := by
+    rw [Lp.norm_def, eLpNorm_congr_ae (Wkp.iteratedGradient_restrictL_ae hU 1 u), toReal_eLpNorm]
+    rfl
+  -- On `B_s` the cutoff is one, so `∇w = ∇u` there.
+  have hwg := Wkp.iteratedGradient_zero_ae_eq_of_value_ae_eq_mul (u := Wkp.lowerOrder 1 v)
+    (w := Wkp.lowerOrder 1 w) hη (by simpa only [Wkp.value_succ] using hwv)
+  have hgs : (Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u) : E → E) =ᵐ[mu.restrict (ball x₀ s)]
+      Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 w) := by
+    filter_upwards [ae_restrict_of_ae_restrict_of_subset hsU hvg,
+      ae_restrict_of_ae_restrict_of_subset hsU hwg, ae_restrict_mem measurableSet_ball]
+      with x h1 h2 hx
+    have hev : η =ᶠ[nhds x] fun _ => 1 :=
+      Filter.eventually_of_mem (isOpen_ball.mem_nhds hx) fun y hy =>
+        hη1 (ball_subset_closedBall hy)
+    rw [h2, hη1 (ball_subset_closedBall hx), hev.gradient_eq, gradient_fun_const, h1]
+    simp
+  have hstep1 : lpNorm (Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u)) p (mu.restrict (ball x₀ s)) ≤
+      ‖Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 w)‖ := by
+    rw [← toReal_eLpNorm, eLpNorm_congr_ae hgs, Lp.norm_def]
+    exact ENNReal.toReal_mono (Lp.eLpNorm_ne_top _)
+      (eLpNorm_mono_measure _ (Measure.restrict_mono hsU le_rfl))
+  -- The weak Hessian of `w = η v` is `η D²v` plus the Leibniz remainder.
+  set M₁ := c / (m - s)
+  set M₂ := c / (m - s) ^ 2
+  have hM₁0 : 0 ≤ M₁ := div_nonneg hc0 (by linarith)
+  have hM₂0 : 0 ≤ M₂ := div_nonneg hc0 (by positivity)
+  have hD := Wkp.iteratedGradient_one_ae_eq_of_value_ae_eq_mul hη hwv
+  have hηH : MemLp (fun x => η x • Wkp.iteratedGradient 1 v x) p (mu.restrict U) :=
+    (hη.continuous.memLp_top_of_hasCompactSupport hcpt (mu.restrict U)).smul (Lp.memLp _)
+  set TL := Wkp.iteratedGradient 1 w - hηH.toLp _ with hTL_def
+  have hTL : ‖TL‖ ≤ 2 * M₁ * ‖Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 v)‖ +
+      M₂ * ‖Wkp.value 2 v‖ := by
+    refine TauCeti.Lp.norm_le_add_of_ae_norm_le (by positivity) hM₂0 ?_
+    filter_upwards [Lp.coeFn_sub (Wkp.iteratedGradient 1 w) (hηH.toLp _), hD,
+      hηH.coeFn_toLp] with x h1 h2 h3
+    rw [h1, Pi.sub_apply, h2, h3, add_assoc, add_assoc, add_sub_cancel_left, ← add_assoc]
+    refine (norm_leibnizRemainder_le η _ _ x).trans ?_
+    gcongr
+    · exact hηg x
+    · exact hηh x
+  have hηHn : ‖hηH.toLp _‖ ≤ ‖Wkp.iteratedGradient 1 v‖ := by
+    refine Lp.norm_le_norm_of_ae_le ?_
+    filter_upwards [hηH.coeFn_toLp] with x hx
+    rw [hx, norm_smul, Real.norm_eq_abs]
+    exact mul_le_of_le_one_left (norm_nonneg _) (hηabs x)
+  have hstep2 : ‖Wkp.iteratedGradient 1 w‖ ≤ ‖Wkp.iteratedGradient 1 v‖ +
+      (2 * M₁ * ‖Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 v)‖ + M₂ * ‖Wkp.value 2 v‖) := by
+    rw [show Wkp.iteratedGradient 1 w = hηH.toLp _ + TL by rw [hTL_def, add_sub_cancel]]
+    exact (norm_add_le _ _).trans (add_le_add hηHn hTL)
+  have hstep3 : ‖Wkp.value 2 w‖ ≤ ‖Wkp.value 2 v‖ := by
+    refine Lp.norm_le_norm_of_ae_le ?_
+    filter_upwards [hwv] with x hx
+    rw [hx, norm_mul, Real.norm_eq_abs]
+    exact mul_le_of_le_one_left (norm_nonneg _) (hηabs x)
+  have hms : m - s = (t - s) / 2 := by rw [hm]; ring
+  have hts : t - s ≠ 0 := sub_ne_zero.2 hst.ne'
+  have hm1 : 2 * M₁ = 4 * c / (t - s) := by
+    simp only [M₁, hms]
+    field_simp
+    ring
+  have hm2 : M₂ = 4 * c / (t - s) ^ 2 := by
+    simp only [M₂, hms]
+    field_simp
+    ring
+  rw [hm1, hm2, hngv, hnv, hnHv] at hstep2
+  rw [hnv] at hstep3
+  calc _ ≤ _ := hstep1
+    _ ≤ _ := hint
+    _ ≤ _ := by
+        gcongr
+        linarith
 
 end Sobolev
 
