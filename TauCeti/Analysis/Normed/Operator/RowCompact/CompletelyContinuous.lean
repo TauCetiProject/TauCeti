@@ -29,7 +29,7 @@ so the quantitative open mapping theorem over Tate rings
 (`TauCeti.exists_linearCombination_eq_and_norm_le`) writes each of its vectors in terms of a
 finite generating family with coefficients bounded linearly by the norm of the vector. Hence maps
 with range in a closed finitely generated submodule are row compact
-(`ContinuousLinearMap.isRowCompact_of_range_le_of_fg_of_isClosed`), and closedness of row
+(`ContinuousLinearMap.isRowCompact_of_fg_of_isClosed_of_range_le`), and closedness of row
 compactness under operator-norm limits gives the criterion.
 
 Over a general coefficient ring, closedness of finitely generated submodules is a genuine
@@ -38,7 +38,7 @@ theory itself, and the implication from row compactness to complete continuity, 
 
 ## Main results
 
-* `ContinuousLinearMap.isRowCompact_of_range_le_of_fg_of_isClosed`: a continuous map whose range
+* `ContinuousLinearMap.isRowCompact_of_fg_of_isClosed_of_range_le`: a continuous map whose range
   lies in a closed finitely generated submodule of `C₀(I, R)` is row compact.
 * `ContinuousLinearMap.IsCompletelyContinuous.isRowCompact_of_forall_fg_isClosed`,
   `ContinuousLinearMap.isRowCompact_iff_isCompletelyContinuous_of_forall_fg_isClosed`: if
@@ -74,7 +74,7 @@ variable [NormedRing R] [IsUltrametricDist R] [CompleteSpace R] [TauCeti.NormedR
 /-- **Maps with range in a closed finitely generated submodule are row compact** over a complete
 ultrametric Tate ring. In particular, a map of finite rank is row compact as soon as some finitely
 generated submodule containing its range is closed. -/
-theorem isRowCompact_of_range_le_of_fg_of_isClosed {L : Submodule R C₀(I, R)} (hL : L.FG)
+theorem isRowCompact_of_fg_of_isClosed_of_range_le {L : Submodule R C₀(I, R)} (hL : L.FG)
     (hLc : IsClosed (L : Set C₀(I, R))) {u : C₀(J, R) →L[R] C₀(I, R)}
     (hu : (u : C₀(J, R) →ₗ[R] C₀(I, R)).range ≤ L) : u.IsRowCompact := by
   obtain ⟨s, rfl⟩ := hL
@@ -110,7 +110,7 @@ theorem IsCompletelyContinuous.isRowCompact_of_forall_fg_isClosed
     (squeeze_zero (fun n ↦ ringOpNorm_nonneg _) (fun n ↦ (huv n).le)
       tendsto_one_div_add_atTop_nhds_zero_nat) (Eventually.of_forall fun n ↦ ?_)
   obtain ⟨L, hL, hrange⟩ := LinearMap.isFiniteRank_iff.1 (hv n)
-  exact isRowCompact_of_range_le_of_fg_of_isClosed hL (hclosed L hL) hrange
+  exact isRowCompact_of_fg_of_isClosed_of_range_le hL (hclosed L hL) hrange
 
 /-- If the finitely generated submodules of the target model space are closed, a map between
 model spaces over a complete ultrametric Tate ring is row compact exactly when it is completely
