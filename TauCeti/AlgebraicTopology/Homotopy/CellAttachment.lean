@@ -191,8 +191,7 @@ theorem mk_mem_range_homotopyGroupMap_of_cellAttachmentCell_comp
     (φ : ι → (TopCat.diskBoundary (n + 1) ⟶ X)) {i : ι}
     (hi : φ i = TopCat.ofHom (ContinuousMap.const _ x)) (g : cellAttachment φ ⟶ Y)
     (hg : g (cellAttachmentIncl φ x) = y) (γ : Ω^ (Fin (n + 1)) Y y)
-    (hγ : cellAttachmentCell φ i ≫ g = TopCat.ofHom
-      (γ.1.comp (diskHomeomorphCube (n + 1) : C(TopCat.disk (n + 1), I^(Fin (n + 1)))))) :
+    (hγ : cellAttachmentCell φ i ≫ g = GenLoop.diskMap γ) :
     (⟦γ⟧ : HomotopyGroup (Fin (n + 1)) Y y) ∈ Set.range (HomotopyGroup.map g.hom hg) := by
   let c := cellAttachmentCell φ i
   -- The characteristic map of the cell, read on the cube, is a generalized loop: the boundary of

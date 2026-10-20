@@ -84,23 +84,6 @@ once for every loop of `X` at the image of `y` under `g`. -/
     Ω^ (Fin 1) X (g y) → (TopCat.diskBoundary.{u} 1 ⟶ Y) :=
   fun _ ↦ TopCat.ofHom (ContinuousMap.const _ y)
 
-/-- The map to `X` of the circle attached for a loop `γ`: the loop `γ`, read on the disk through
-`TauCeti.diskHomeomorphCube`. -/
-@[expose] def cwApproximationCircleCellMap {Y : TopCat.{u}} (g : Y ⟶ X) (y : Y)
-    (γ : Ω^ (Fin 1) X (g y)) : TopCat.disk.{u} 1 ⟶ X :=
-  TopCat.ofHom (γ.1.comp (diskHomeomorphCube 1 : C(TopCat.disk.{u} 1, I^(Fin 1))))
-
-/-- The map of the circle attached for a loop `γ` restricts on the boundary of the disk to the
-attaching map followed by `g`. -/
-theorem cwApproximationCircleAttachingMap_comp_eq {Y : TopCat.{u}} (g : Y ⟶ X) (y : Y)
-    (γ : Ω^ (Fin 1) X (g y)) :
-    cwApproximationCircleAttachingMap X g y γ ≫ g =
-      TopCat.diskBoundaryInclusion 1 ≫ cwApproximationCircleCellMap X g y γ := by
-  ext s
-  simp only [cwApproximationCircleAttachingMap, cwApproximationCircleCellMap]
-  -- The boundary sphere of the disk goes to the boundary of the cube, where `γ` is `g y`.
-  exact (γ.2 _ ((diskHomeomorphCube_mem_boundary_iff _).2 ⟨s, rfl⟩)).symm
-
 /-- The stages of the tower of the CW approximation of `X` built from `x`, each with a base point
 and a map to `X`. `cwApproximationStage X x m` is stage `m + 1` of the tower, which starts with the
 empty space:
@@ -121,8 +104,8 @@ The body is exposed so that each stage is a cell attachment to the previous one 
     let s := cwApproximationStage 0
     ⟨cellAttachment (cwApproximationCircleAttachingMap X s.2.2 s.2.1),
       cellAttachmentIncl _ s.2.1,
-      cellAttachmentLift _ s.2.2 (cwApproximationCircleCellMap X s.2.2 s.2.1)
-        (cwApproximationCircleAttachingMap_comp_eq X s.2.2 s.2.1)⟩
+      cellAttachmentLift _ s.2.2 GenLoop.diskMap
+        fun γ ↦ (GenLoop.diskBoundaryInclusion_comp_diskMap γ).symm⟩
   | k + 2 =>
     let s := cwApproximationStage (k + 1)
     ⟨cwApproximationStep s.2.2 s.2.1 (k + 1), cwApproximationStepIncl _ _ _ s.2.1,
