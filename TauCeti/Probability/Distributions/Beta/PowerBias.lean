@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Probability.Distributions.Beta
 public import TauCeti.MeasureTheory.Measure.PowerBias
-import TauCeti.Probability.Distributions.Beta.Basic
+public import TauCeti.Probability.Distributions.Beta.Basic
 
 /-!
 # Power-biased beta laws

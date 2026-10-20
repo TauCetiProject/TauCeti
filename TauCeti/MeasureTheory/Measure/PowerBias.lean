@@ -142,6 +142,18 @@ theorem powerBias_eq_smul_withDensity (μ : Measure ℝ) (q : ℝ) :
       (∫⁻ x, ENNReal.ofReal (x ^ q) ∂μ)⁻¹ • μ.withDensity fun x => ENNReal.ofReal (x ^ q) := by
   simp_rw [powerBias_def, weighted_def, ENNReal.ofNNReal_toNNReal]
 
+/-- The mass assigned by a power-biased measure to a measurable set. -/
+theorem powerBias_apply (μ : Measure ℝ) (q : ℝ) {s : Set ℝ} (hs : MeasurableSet s) :
+    μ.powerBias q s =
+      (∫⁻ x, ENNReal.ofReal (x ^ q) ∂μ)⁻¹ * ∫⁻ x in s, ENNReal.ofReal (x ^ q) ∂μ := by
+  rw [powerBias_eq_smul_withDensity, smul_apply, smul_eq_mul, withDensity_apply _ hs]
+
+/-- The Radon-Nikodym derivative of a power-biased measure is its normalized power weight. -/
+theorem rnDeriv_powerBias (μ : Measure ℝ) [SigmaFinite μ] (q : ℝ) :
+    (μ.powerBias q).rnDeriv μ =ᵐ[μ] fun x =>
+      (∫⁻ y, ENNReal.ofReal (y ^ q) ∂μ)⁻¹ * ENNReal.ofReal (x ^ q) :=
+  rnDeriv_weighted μ (measurable_powerBiasWeight q).aemeasurable
+
 /-- A power-biased measure is absolutely continuous with respect to the original measure. -/
 theorem powerBias_absolutelyContinuous (μ : Measure ℝ) (q : ℝ) : μ.powerBias q ≪ μ :=
   weighted_absolutelyContinuous
@@ -179,11 +191,8 @@ theorem absolutelyContinuous_powerBias {μ : Measure ℝ} {q : ℝ} (hpos : ∀�
 then `ν` is the power-biased law of `μ`. -/
 theorem powerBias_eq_of_withDensity_eq_smul {μ ν : Measure ℝ} [IsProbabilityMeasure ν] {q : ℝ}
     {c : ℝ≥0∞} (hc0 : c ≠ 0) (hc : c ≠ ∞)
-    (h : (μ.withDensity fun x => ENNReal.ofReal (x ^ q)) = c • ν) : μ.powerBias q = ν := by
-  have hZ : ∫⁻ x, ENNReal.ofReal (x ^ q) ∂μ = c := by
-    rw [← setLIntegral_univ, ← withDensity_apply _ MeasurableSet.univ, h, smul_apply,
-      measure_univ, smul_eq_mul, mul_one]
-  rw [powerBias_eq_smul_withDensity, hZ, h, smul_smul, ENNReal.inv_mul_cancel hc0 hc, one_smul]
+    (h : (μ.withDensity fun x => ENNReal.ofReal (x ^ q)) = c • ν) : μ.powerBias q = ν :=
+  weighted_eq_of_withDensity_eq_smul hc0 hc h
 
 /-- **Power biasing a law with a density.** Let `ρ.withDensity f` be a law with a nonnegative
 density `f`, and suppose `f x * x ^ q = c * g x` almost everywhere for a constant `c > 0` and a

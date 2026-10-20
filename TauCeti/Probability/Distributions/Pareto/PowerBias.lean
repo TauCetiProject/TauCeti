@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Probability.Distributions.Pareto
 public import TauCeti.MeasureTheory.Measure.PowerBias
-import TauCeti.Probability.Distributions.Pareto.Basic
+public import TauCeti.Probability.Distributions.Pareto.Basic
 
 /-!
 # Power-biased Pareto laws
