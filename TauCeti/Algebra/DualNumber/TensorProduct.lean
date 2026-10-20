@@ -14,6 +14,10 @@ public import Mathlib.RingTheory.TensorProduct.Maps
 For a commutative `R`-algebra `S`, the dual numbers commute with base change:
 `S ⊗[R] R[ε] ≃ₐ[S] S[ε]`, sending `s ⊗ (a + b ε)` to `s • (a + b ε)` with `a` and `b`
 mapped into `S`.
+
+The statement and naming are modelled on Mathlib's `MvPolynomial.algebraTensorAlgEquiv`
+(in `Mathlib/RingTheory/TensorProduct/MvPolynomial.lean`); the construction here instead
+assembles the two directions from `Algebra.TensorProduct.lift` and `DualNumber.lift`.
 -/
 
 public section
