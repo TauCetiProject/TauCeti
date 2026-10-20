@@ -12,9 +12,10 @@ import TauCeti.RingTheory.AdjoinRoot.Separable
 /-!
 # Tests for rings without nonsplit finite étale covers
 
-Separably closed fields, such as `ℂ_[p]`, and the zero ring have no nonsplit finite étale covers;
-`ℚ` has one, `ℚ[X] ⧸ (X ^ 2 - 2)`. Over a nonzero ring the zero algebra is totally split but has
-no section, so the section criterion must be restricted to faithfully flat algebras.
+Separably closed fields, such as `ℂ_[p]`, their finite products, and the zero ring have no
+nonsplit finite étale covers; `ℚ` has one, `ℚ[X] ⧸ (X ^ 2 - 2)`. Over a nonzero ring the zero
+algebra is totally split but has no section, so the section criterion must be restricted to
+faithfully flat algebras.
 -/
 
 open Polynomial
@@ -31,6 +32,12 @@ example (p : ℕ) [Fact p.Prime] : IsFiniteEtaleSplit ℂ_[p] :=
 
 /-- *test_zero*: the zero ring has no nonsplit finite étale covers. -/
 example : IsFiniteEtaleSplit (ZMod 1) :=
+  inferInstance
+
+/-- *test_pi*: a product of separably closed fields has no nonsplit finite étale covers, although
+its finite étale algebras may have different ranks over the two factors. -/
+example (K₁ K₂ : Type) [Field K₁] [Field K₂] [IsSepClosed K₁] [IsSepClosed K₂] :
+    IsFiniteEtaleSplit (K₁ × K₂) :=
   inferInstance
 
 /-- *test_not_rat*: `X ^ 2 - 2` is separable over `ℚ` without a rational root. -/

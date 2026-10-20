@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Probability.Independence.ConvolutionPower
+public import TauCeti.Probability.Moments.Basic
 public import Mathlib.MeasureTheory.Integral.Pi
 public import Mathlib.Probability.Moments.Covariance
 import Mathlib.Analysis.MeanInequalities
@@ -18,7 +19,11 @@ observables add, and their absolute moments of order `p ≥ 1` admit bounds of o
 in the number `n` of summands. These bounds permit integration over a random number of summands,
 without requiring exponential moments of the jump law.
 
-The proofs use the independent coordinate variables on a finite product probability space.
+The moment-generating function of a measurable additive real observable under an `n`-fold
+convolution power of an s-finite measure is the `n`th power of its moment-generating function
+under the original measure. This identity also holds for totalized divergent integrals.
+
+The moment and covariance proofs use independent coordinates on a finite product probability space.
 -/
 
 public section
@@ -26,9 +31,23 @@ public section
 noncomputable section
 
 open MeasureTheory ProbabilityTheory
-open scoped ENNReal
+open scoped ENNReal MeasureTheory
 
 namespace MeasureTheory.Measure
+
+variable {α : Type*} [MeasurableSpace α] [AddMonoid α] [MeasurableAdd₂ α]
+
+/-- The mgf of an additive real observable under a convolution power is the corresponding
+power of its mgf. -/
+@[simp]
+theorem mgf_addMonoidHom_convolutionPower (μ : Measure α) [SFinite μ]
+    (f : α →+ ℝ) (hf : Measurable f) (n : ℕ) (t : ℝ) :
+    mgf f (μ.convolutionPower n) t = mgf f μ t ^ n := by
+  rw [← mgf_id_map hf.aemeasurable, Measure.map_convolutionPower μ f hf,
+    ← mgf_id_map hf.aemeasurable]
+  induction n with
+  | zero => simp [mgf]
+  | succ n ih => simp [TauCeti.mgf_id_conv, ih, pow_succ]
 
 variable {E : Type*} [NormedAddCommGroup E]
   [MeasurableSpace E] [OpensMeasurableSpace E] [MeasurableAdd₂ E]
