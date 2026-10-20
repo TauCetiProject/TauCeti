@@ -35,7 +35,9 @@ with `x + t` a root of `f`, so `x ↦ x + t` is a bijection between the two root
 `f(X + t)` is separable exactly when `f` is.
 
 Fifth, if every root of a nonzero polynomial is among a family of points `θ i`, then its roots
-are exactly the `θ i` in which it has positive multiplicity.
+are exactly the `θ i` in which it has positive multiplicity. Over a domain, a nonzero polynomial
+has at least `k` roots, counted with multiplicity, exactly when it is divisible by a product of
+`k` linear factors `X - x j`.
 
 Finally, the roots of a polynomial gcd form the multiset intersection of the roots of its
 inputs. In characteristic zero this identifies the degree lost to the gcd with the derivative as
@@ -61,6 +63,8 @@ the number of distinct roots.
 * `Polynomial.separable_comp_X_add_C_iff`: `f(X + t)` is separable exactly when `f` is.
 * `Polynomial.isRoot_iff_of_rootMultiplicity`: if every root of a nonzero polynomial is among
   the `θ i`, then its roots are the `θ i` in which it has positive multiplicity.
+* `Polynomial.le_card_roots_iff_exists_prod_X_sub_C_dvd`: a nonzero polynomial over a domain has
+  at least `k` roots exactly when it is divisible by a product of `k` linear factors.
 * `Polynomial.rootMultiplicity_gcd`: a root's multiplicity in a gcd is the minimum of its
   multiplicities in the two inputs.
 * `Polynomial.natDegree_sub_natDegree_gcd_derivative_eq_card_roots_toFinset`: over an
@@ -217,6 +221,33 @@ theorem _root_.Polynomial.isRoot_iff_of_rootMultiplicity {ι : Type*} {p : F[X]}
     exact ⟨i, rfl, hm i ▸ (rootMultiplicity_pos hp).2 ht⟩
   · rw [← hi, ← rootMultiplicity_pos hp, hm i]
     exact hpos
+
+/-- A nonzero polynomial over a domain has at least `k` roots, counted with multiplicity, exactly
+when it is divisible by `∏ j, (X - x j)` for some `x : Fin k → R`. This is
+`Multiset.prod_X_sub_C_dvd_iff_le_roots` with the submultiset of roots listed by `Fin k`. -/
+theorem _root_.Polynomial.le_card_roots_iff_exists_prod_X_sub_C_dvd {R : Type*} [CommRing R]
+    [IsDomain R] {p : R[X]} (hp : p ≠ 0) {k : ℕ} :
+    k ≤ p.roots.card ↔ ∃ x : Fin k → R, (∏ j, (X - C (x j))) ∣ p := by
+  have key (x : Fin k → R) :
+      ∏ j, (X - C (x j)) = ((univ.val.map x).map fun a ↦ X - C a).prod := by
+    rw [prod_eq_multiset_prod, Multiset.map_map, Function.comp_def]
+  constructor
+  · -- List the first `k` roots.
+    intro h
+    set l := p.roots.toList
+    have hl : k ≤ l.length := by simpa [l] using h
+    refine ⟨fun j ↦ l[j.1], ?_⟩
+    rw [key, Multiset.prod_X_sub_C_dvd_iff_le_roots hp, Fin.univ_val_map]
+    conv_rhs => rw [← Multiset.coe_toList p.roots]
+    have : List.ofFn (fun j : Fin k ↦ l[j.1]) = l.take k :=
+      List.ext_getElem (by simp; omega) fun i _ _ ↦ by simp
+    rw [this]
+    exact Multiset.coe_le.2 (List.take_sublist k l).subperm
+  · rintro ⟨x, hx⟩
+    rw [key] at hx
+    have := Polynomial.roots.le_of_dvd hp hx
+    rw [roots_multiset_prod_X_sub_C] at this
+    simpa using Multiset.card_le_card this
 
 section GCD
 

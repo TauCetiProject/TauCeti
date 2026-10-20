@@ -46,6 +46,8 @@ product structure on the measure is used.
 
 ## Main results
 
+* `TauCeti.eisensteinSet_subset_integerBox`: the coefficients of an Eisenstein polynomial are
+  integral.
 * `TauCeti.mem_eisensteinSet_iff_exists_isEisensteinAt`: a coefficient vector lies in the
   Eisenstein region exactly when it is the coefficient vector of a polynomial over `𝒪[K]` that is
   Eisenstein at `𝓂[K]`.
@@ -97,6 +99,10 @@ theorem mem_eisensteinSet {n : ℕ} {a : Fin n → K} :
     a ∈ eisensteinSet K n ↔ (∀ i, valuation K (a i) < 1) ∧
       ∀ y : K, valuation K y < 1 → valuation K y ≤ valuation K ((monicOfCoeff a).coeff 0) :=
   Iff.rfl
+
+/-- The Eisenstein region lies in the integer box: its coefficients are integral. -/
+theorem eisensteinSet_subset_integerBox (n : ℕ) : eisensteinSet K n ⊆ integerBox K (Fin n) :=
+  fun _ ha ↦ mem_integerBox.2 fun i ↦ (Valuation.mem_integer_iff _ _).2 (ha.1 i).le
 
 end CoefficientSpace
 

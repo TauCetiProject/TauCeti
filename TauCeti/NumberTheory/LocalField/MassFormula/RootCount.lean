@@ -8,6 +8,8 @@ module
 public import Mathlib.Topology.Instances.ENNReal.Lemmas
 public import TauCeti.NumberTheory.LocalField.MassFormula.Eisenstein.Basic
 public import TauCeti.FieldTheory.IntermediateField.RootCount
+public import TauCeti.NumberTheory.LocalField.MassFormula.Eisenstein.Region
+import TauCeti.NumberTheory.LocalField.RootCount.Measurable
 
 /-!
 # Root counts of Eisenstein polynomials in the counted extensions
@@ -29,10 +31,16 @@ polynomial. When `f` is separable it has `n` roots in the separable closure. Sep
 needed: an inseparable Eisenstein polynomial, which exists in equal characteristic, is irreducible
 and so has no root at all in the separable closure.
 
+For the integration itself, each root count is almost everywhere measurable on the Eisenstein
+region, for any measure on coefficient space. This holds because the Eisenstein region lies in the
+integer box, where root counts are measurable (`IntermediateField.aemeasurable_rootCount`).
+
 ## Main results
 
 * `TauCeti.tsum_rootCount_eq_of_separable`: at a separable Eisenstein polynomial of degree `n`,
   the root counts over `σ_K(n)` sum to `n`.
+* `TauCeti.aemeasurable_rootCount_restrict_eisensteinSet`: for `L ∈ σ_K(n)`, the root count in `L`
+  is almost everywhere measurable on the Eisenstein region.
 
 ## References
 
@@ -43,7 +51,7 @@ and so has no root at all in the separable closure.
 public section
 noncomputable section
 
-open ValuativeRel Polynomial
+open ValuativeRel Polynomial MeasureTheory
 open scoped IntermediateField ENNReal
 
 namespace TauCeti
@@ -111,5 +119,16 @@ theorem tsum_rootCount_eq_of_separable {n : ℕ} {a : Fin n → K} {f : 𝒪[K][
       tsum_eq_sum fun L hL ↦ by simpa using hL
     _ = n := by
       rw [← Nat.cast_sum, Multiset.toFinset_sum_count_eq, Multiset.card_map, hcard]
+
+/-- **The root counts are measurable on the Eisenstein region.** For `L ∈ σ_K(n)` and any measure
+`μ` on the coefficient space `Fin n → K`, the root count `a ↦ L.rootCount a` is almost everywhere
+measurable for `μ` restricted to the Eisenstein region `TauCeti.eisensteinSet K n`. -/
+theorem aemeasurable_rootCount_restrict_eisensteinSet {n : ℕ} [MeasurableSpace (Fin n → K)]
+    [OpensMeasurableSpace (Fin n → K)] (μ : Measure (Fin n → K))
+    {L : IntermediateField K (SeparableClosure K)} (hL : L ∈ totallyRamifiedOfDegree K n) :
+    AEMeasurable (fun a ↦ (L.rootCount a : ℝ≥0∞)) (μ.restrict (eisensteinSet K n)) := by
+  have := (mem_totallyRamifiedOfDegree_iff.mp hL).2.finite
+  exact measurable_from_nat.comp_aemeasurable (L.aemeasurable_rootCount
+    (ae_restrict_of_forall_mem measurableSet_eisensteinSet (eisensteinSet_subset_integerBox n)))
 
 end TauCeti
