@@ -20,7 +20,8 @@ with the cancellation of the derivatives:
 * `D^m K_t(x) = (√t)⁻¹ ^ (n + m) • D^m K_1((√t)⁻¹ • x)`;
 * `‖D^m K_t(x)‖ ≤ C t^(-m/2) K_{2t}(x)`, equivalently
   `‖D^m K_t(x)‖ ≤ C t^(-(n+m)/2) exp(-‖x‖² / (8t))`, for all `t > 0` and all `x`;
-* `‖x‖^α K_t(x) ≤ C t^(α/2) K_{2t}(x)` for `α ≥ 0`;
+* `‖x‖^α K_t(x) ≤ C t^(α/2) K_{2t}(x)` and `‖D^m K_t(x)‖ ‖x‖^α ≤ C t^((α - m)/2) K_{4t}(x)`
+  for `α ≥ 0`;
 * `∫ ‖D^m K_t‖ ≤ C t^(-m/2)` and `∫ ‖D^m K_t(x)‖ ‖x‖^α dx ≤ C t^((α - m)/2)` for all `t > 0`;
 * `∫ D^m K_t = 0` for `m ≥ 1`.
 
@@ -39,6 +40,10 @@ differentiated kernel to act on differences `f(y) - f(x)` in such estimates.
 * `TauCeti.exists_norm_iteratedFDeriv_heatKernel_le_mul_rpow_mul_exp`: the bound by
   `C t^(-(n+m)/2) exp(-‖x‖² / (8t))`.
 * `TauCeti.exists_norm_rpow_mul_heatKernel_le`: absorbing the weight `‖x‖^α` into `K_{2t}`.
+* `TauCeti.exists_norm_iteratedFDeriv_heatKernel_mul_rpow_le`: the weighted bound by
+  `C t^((α - m)/2) K_{4t}(x)`.
+* `TauCeti.integrable_norm_iteratedFDeriv_heatKernel_mul_rpow`: integrability of the weighted
+  derivatives.
 * `TauCeti.exists_integral_norm_iteratedFDeriv_heatKernel_le`: the `L¹` bound.
 * `TauCeti.exists_integral_norm_iteratedFDeriv_heatKernel_mul_rpow_le`: the weighted `L¹` bound.
 * `TauCeti.integral_iteratedFDeriv_heatKernel_eq_zero`: the cancellation.
@@ -103,10 +108,10 @@ theorem exists_norm_iteratedFDeriv_heatKernel_le_mul_rpow_mul_exp (m : ℕ) :
       C * t ^ (-((finrank ℝ E : ℝ) + m) / 2) * exp (-‖x‖ ^ 2 / (8 * t)) := by
   obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_heatKernel_le_mul_rpow_mul_heatKernel (E := E) m
   refine ⟨C * (8 * π) ^ (-(finrank ℝ E : ℝ) / 2), fun t ht x => (hC t ht x).trans_eq ?_⟩
-  rw [heatKernel_apply, show 4 * π * (2 * t) = 8 * π * t by ring,
-    show 4 * (2 * t) = 8 * t by ring, mul_rpow (by positivity) ht.le,
-    show -((finrank ℝ E : ℝ) + m) / 2 = -(m : ℝ) / 2 + -(finrank ℝ E : ℝ) / 2 by ring,
-    rpow_add ht]
+  have hπ : 4 * π * (2 * t) = 8 * π * t := by ring
+  have h8 : 4 * (2 * t) = 8 * t := by ring
+  have hexp : -((finrank ℝ E : ℝ) + m) / 2 = -(m : ℝ) / 2 + -(finrank ℝ E : ℝ) / 2 := by ring
+  rw [heatKernel_apply, hπ, h8, mul_rpow (by positivity) ht.le, hexp, rpow_add ht]
   ring
 
 /-- **Scale-invariant polynomial weights.** For `α ≥ 0` there is a constant `C`, independent of
@@ -132,16 +137,56 @@ theorem exists_norm_rpow_mul_heatKernel_le {α : ℝ} (hα : 0 ≤ α) :
   rw [heatKernel_eq_mul_heatKernel_one_smul ht, mul_comm 2 t,
     heatKernel_mul_eq_mul_heatKernel_smul ht two_pos, hxα]
   calc t ^ (α / 2) * ‖y‖ ^ α * ((√t)⁻¹ ^ finrank ℝ E * heatKernel 1 y)
-      ≤ t ^ (α / 2) * (√t)⁻¹ ^ finrank ℝ E * ((1 + ‖y‖) ^ ⌈α⌉₊ * heatKernel 1 y) := by
-        rw [show t ^ (α / 2) * ‖y‖ ^ α * ((√t)⁻¹ ^ finrank ℝ E * heatKernel 1 y) =
-          t ^ (α / 2) * (√t)⁻¹ ^ finrank ℝ E * (‖y‖ ^ α * heatKernel 1 y) by ring]
+      = t ^ (α / 2) * (√t)⁻¹ ^ finrank ℝ E * (‖y‖ ^ α * heatKernel 1 y) := by ring
+    _ ≤ t ^ (α / 2) * (√t)⁻¹ ^ finrank ℝ E * ((1 + ‖y‖) ^ ⌈α⌉₊ * heatKernel 1 y) := by
         gcongr
         exact (heatKernel_pos one_pos y).le
     _ ≤ t ^ (α / 2) * (√t)⁻¹ ^ finrank ℝ E * (C * heatKernel 2 y) :=
         mul_le_mul_of_nonneg_left (hC y) (by positivity)
     _ = C * t ^ (α / 2) * ((√t)⁻¹ ^ finrank ℝ E * heatKernel 2 y) := by ring
 
+/-- **Scale-invariant weighted Gaussian bounds on the derivatives of the heat kernel.** For every
+order `m` and every `α ≥ 0` there is a constant `C`, independent of the time, with
+`‖D^m K_t(x)‖ ‖x‖^α ≤ C t^((α - m)/2) K_{4t}(x)` for all `t > 0` and all `x`. -/
+theorem exists_norm_iteratedFDeriv_heatKernel_mul_rpow_le (m : ℕ) {α : ℝ} (hα : 0 ≤ α) :
+    ∃ C, ∀ t, 0 < t → ∀ x : E, ‖iteratedFDeriv ℝ m (heatKernel t) x‖ * ‖x‖ ^ α ≤
+      C * t ^ ((α - m) / 2) * heatKernel (4 * t) x := by
+  obtain ⟨C₁, hC₁⟩ := exists_norm_iteratedFDeriv_heatKernel_le_mul_rpow_mul_heatKernel (E := E) m
+  obtain ⟨C₂, hC₂⟩ := exists_norm_rpow_mul_heatKernel_le (E := E) hα
+  have hC₁0 : 0 ≤ C₁ := by
+    have h := (norm_nonneg _).trans (hC₁ 1 one_pos 0)
+    rw [one_rpow, mul_one] at h
+    exact (mul_nonneg_iff_of_pos_right (heatKernel_pos (by norm_num) 0)).1 h
+  refine ⟨C₁ * C₂ * 2 ^ (α / 2), fun t ht x => ?_⟩
+  have h4 : 2 * (2 * t) = 4 * t := by ring
+  have hpow : t ^ (-(m : ℝ) / 2) * (2 * t) ^ (α / 2) = 2 ^ (α / 2) * t ^ ((α - m) / 2) := by
+    rw [mul_rpow (by norm_num) ht.le, mul_left_comm, ← rpow_add ht]
+    ring_nf
+  calc ‖iteratedFDeriv ℝ m (heatKernel t) x‖ * ‖x‖ ^ α
+      ≤ C₁ * t ^ (-(m : ℝ) / 2) * heatKernel (2 * t) x * ‖x‖ ^ α := by
+        gcongr
+        exact hC₁ t ht x
+    _ = C₁ * t ^ (-(m : ℝ) / 2) * (‖x‖ ^ α * heatKernel (2 * t) x) := by ring
+    _ ≤ C₁ * t ^ (-(m : ℝ) / 2) * (C₂ * (2 * t) ^ (α / 2) * heatKernel (2 * (2 * t)) x) :=
+        mul_le_mul_of_nonneg_left (hC₂ (2 * t) (by positivity) x) (by positivity)
+    _ = C₁ * C₂ * (t ^ (-(m : ℝ) / 2) * (2 * t) ^ (α / 2)) * heatKernel (2 * (2 * t)) x := by
+        ring
+    _ = _ := by rw [hpow, h4]; ring
+
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+
+/-- For `t > 0` and `α ≥ 0`, the weighted derivative `x ↦ ‖D^m K_t(x)‖ ‖x‖^α` of the heat kernel
+is integrable. -/
+theorem integrable_norm_iteratedFDeriv_heatKernel_mul_rpow {t : ℝ} (ht : 0 < t) (m : ℕ) {α : ℝ}
+    (hα : 0 ≤ α) :
+    Integrable fun x : E => ‖iteratedFDeriv ℝ m (heatKernel t : E → ℝ) x‖ * ‖x‖ ^ α := by
+  obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_heatKernel_mul_rpow_le (E := E) m hα
+  refine ((integrable_heatKernel (by positivity : 0 < 4 * t)).const_mul
+    (C * t ^ ((α - m) / 2))).mono' ?_ (ae_of_all _ fun x => ?_)
+  · exact (((contDiff_heatKernel (k := ⊤) t).continuous_iteratedFDeriv le_top).norm.mul
+      (continuous_norm.rpow_const fun _ => Or.inr hα)).aestronglyMeasurable
+  · rw [norm_of_nonneg (by positivity)]
+    exact hC t ht x
 
 /-- **Weighted `L¹` bounds on the derivatives of the heat kernel.** For every order `m` and every
 `α ≥ 0` there is a constant `C`, independent of the time, with
@@ -150,34 +195,14 @@ variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 theorem exists_integral_norm_iteratedFDeriv_heatKernel_mul_rpow_le (m : ℕ) {α : ℝ} (hα : 0 ≤ α) :
     ∃ C, ∀ t, 0 < t →
       ∫ x, ‖iteratedFDeriv ℝ m (heatKernel t : E → ℝ) x‖ * ‖x‖ ^ α ≤ C * t ^ ((α - m) / 2) := by
-  obtain ⟨C₁, hC₁⟩ := exists_norm_iteratedFDeriv_heatKernel_le_mul_rpow_mul_heatKernel (E := E) m
-  obtain ⟨C₂, hC₂⟩ := exists_norm_rpow_mul_heatKernel_le (E := E) hα
-  have hC₁0 : 0 ≤ C₁ := by
-    have h := (norm_nonneg _).trans (hC₁ 1 one_pos 0)
-    rw [one_rpow, mul_one] at h
-    exact (mul_nonneg_iff_of_pos_right (heatKernel_pos (by norm_num) 0)).1 h
-  refine ⟨C₁ * C₂ * 2 ^ (α / 2), fun t ht => ?_⟩
-  have h4t : 0 < 2 * (2 * t) := by positivity
-  have hpow : t ^ (-(m : ℝ) / 2) * (2 * t) ^ (α / 2) = 2 ^ (α / 2) * t ^ ((α - m) / 2) := by
-    rw [mul_rpow (by norm_num) ht.le, mul_left_comm, ← rpow_add ht]
-    ring_nf
+  obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_heatKernel_mul_rpow_le (E := E) m hα
+  refine ⟨C, fun t ht => ?_⟩
+  have h4t : 0 < 4 * t := by positivity
   calc ∫ x, ‖iteratedFDeriv ℝ m (heatKernel t : E → ℝ) x‖ * ‖x‖ ^ α
-      ≤ ∫ x, C₁ * C₂ * 2 ^ (α / 2) * t ^ ((α - m) / 2) * heatKernel (2 * (2 * t)) x := by
-        refine integral_mono_of_nonneg (Filter.Eventually.of_forall fun x => by positivity)
-          ((integrable_heatKernel h4t).const_mul _) (Filter.Eventually.of_forall fun x => ?_)
-        calc ‖iteratedFDeriv ℝ m (heatKernel t : E → ℝ) x‖ * ‖x‖ ^ α
-            ≤ C₁ * t ^ (-(m : ℝ) / 2) * heatKernel (2 * t) x * ‖x‖ ^ α := by
-              gcongr
-              exact hC₁ t ht x
-          _ = C₁ * t ^ (-(m : ℝ) / 2) * (‖x‖ ^ α * heatKernel (2 * t) x) := by ring
-          _ ≤ C₁ * t ^ (-(m : ℝ) / 2) *
-                (C₂ * (2 * t) ^ (α / 2) * heatKernel (2 * (2 * t)) x) :=
-              mul_le_mul_of_nonneg_left (hC₂ (2 * t) (by positivity) x) (by positivity)
-          _ = C₁ * C₂ * (t ^ (-(m : ℝ) / 2) * (2 * t) ^ (α / 2)) *
-                heatKernel (2 * (2 * t)) x := by ring
-          _ = _ := by rw [hpow]; ring
-    _ = C₁ * C₂ * 2 ^ (α / 2) * t ^ ((α - m) / 2) := by
-        rw [integral_const_mul, integral_heatKernel h4t, mul_one]
+      ≤ ∫ x, C * t ^ ((α - m) / 2) * heatKernel (4 * t) x :=
+        integral_mono_of_nonneg (ae_of_all _ fun x => by positivity)
+          ((integrable_heatKernel h4t).const_mul _) (ae_of_all _ (hC t ht))
+    _ = C * t ^ ((α - m) / 2) := by rw [integral_const_mul, integral_heatKernel h4t, mul_one]
 
 /-- **`L¹` bounds on the derivatives of the heat kernel.** For every order `m` there is a constant
 `C`, independent of the time, with `∫ ‖D^m K_t‖ ≤ C t^(-m/2)` for all `t > 0`. -/
