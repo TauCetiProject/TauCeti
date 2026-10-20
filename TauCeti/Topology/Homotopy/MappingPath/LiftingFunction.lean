@@ -33,13 +33,13 @@ target.
 
 * `TauCeti.LiftingFunction p`: lifting functions for `p : C(E, B)`, with
   `TauCeti.LiftingFunction.lift`.
+* `TauCeti.LiftingFunction.liftFamily`: the lifts of a continuous family of paths, as a continuous
+  map, with `liftFamily_apply`, `liftFamily_zero` and `apply_liftFamily`.
 * `TauCeti.MappingPathSpace.endpointLiftingFunction f`: the path-concatenation lifting function
   of the endpoint map of `MappingPathSpace f`.
 
 ## Main results
 
-* `TauCeti.LiftingFunction.liftFamily`: the lifts of a continuous family of paths, as a continuous
-  map, with `liftFamily_apply`, `liftFamily_zero` and `apply_liftFamily`.
 * `TauCeti.LiftingFunction.isHurewiczFibration`: a map with a lifting function is a Hurewicz
   fibration for test spaces in every universe.
 * `TauCeti.isHurewiczFibration_iff_nonempty_liftingFunction`: a map `p : C(E, B)` is a Hurewicz
@@ -148,11 +148,9 @@ theorem apply_liftFamily {Y : Type*} [TopologicalSpace Y] (f : C(Y, E)) (γ : C(
 theorem isHurewiczFibration (Λ : LiftingFunction p) : IsHurewiczFibration.{w} p := by
   refine isHurewiczFibration_iff.2 ⟨p.continuous, fun A _ f H hH ↦ ?_⟩
   -- The homotopy at `a` is a path starting at `p (f a)`; lift these paths from `f a`.
-  let γ : C(A, C(I, B)) := (H.comp ContinuousMap.prodSwap).curry
-  have h₀ : ∀ a, γ a 0 = p (f a) := fun a ↦ by simpa [γ] using hH a
-  refine ⟨⟨fun x ↦ Λ.lift (f x.2) (γ x.2) (h₀ x.2) x.1, ?_⟩, funext fun x ↦ ?_, fun a ↦ ?_⟩
-  · exact (Λ.continuous_lift (f.continuous.comp continuous_snd)
-      (γ.continuous.comp continuous_snd) fun x ↦ h₀ x.2).eval continuous_fst
+  let γ : C(A × I, B) := H.comp ContinuousMap.prodSwap
+  have h₀ : ∀ a, γ (a, 0) = p (f a) := fun a ↦ by simpa [γ] using hH a
+  refine ⟨(Λ.liftFamily f γ h₀).comp ContinuousMap.prodSwap, funext fun x ↦ ?_, fun a ↦ ?_⟩
   · simp [γ]
   · simp
 

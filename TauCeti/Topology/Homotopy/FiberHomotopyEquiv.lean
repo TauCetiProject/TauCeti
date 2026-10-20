@@ -22,6 +22,9 @@ equivalence restricts to a homotopy equivalence of the fibres over each point
 * `TauCeti.FiberHomotopyEquiv p q`: fibre homotopy equivalences from `p` to `q`.
 * `TauCeti.fiberMap`: the map of fibres induced by a map over `B`.
 * `TauCeti.FiberHomotopyEquiv.fiber`: the homotopy equivalence of the fibres over a point.
+
+## Main results
+
 * `ContinuousMap.homotopic_of_fiber`: a homotopy of maps to the total space staying over one point
   is a homotopy of maps into the fiber.
 -/

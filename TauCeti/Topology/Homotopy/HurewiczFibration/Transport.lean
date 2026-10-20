@@ -16,10 +16,9 @@ Let `p : E → B` be a Hurewicz fibration with a lifting function `Λ`.  Lifting
 `b₀` to `b₁` starting at each point of the fiber over `b₀` and taking the end point gives the
 **transport** `Λ.transport γ : p⁻¹ b₀ → p⁻¹ b₁`, a continuous map between the fibers.  The
 transport depends on the path only up to homotopy, and is compatible with the identity and with
-concatenation, up to homotopy of maps between the fibers.  Hence it induces a functor from the
-fundamental groupoid of `B` to the homotopy category of spaces, and the homology of the fibers
-forms a local coefficient system (`TauCeti.LocalCoefficientSystem`, see
-`TauCeti.AlgebraicTopology.Singular.Fibration.LocalSystem`).
+concatenation, up to homotopy of maps between the fibers.  The homology of the fibers is
+therefore a local coefficient system
+(`TauCeti.AlgebraicTopology.Singular.Fibration.LocalSystem`).
 
 ## Main definitions
 
@@ -27,9 +26,6 @@ forms a local coefficient system (`TauCeti.LocalCoefficientSystem`, see
 
 ## Main results
 
-* `TauCeti.IsHurewiczFibration.exists_homotopy_endpoints` (in
-  `TauCeti.Topology.Homotopy.OpenBoxLifting`): two lifts of the same path from the same starting
-  point have homotopic end points, through points of one fiber.
 * `TauCeti.LiftingFunction.transport_homotopic`: homotopic paths have homotopic transports.
 * `TauCeti.LiftingFunction.transport_refl_homotopic`,
   `TauCeti.LiftingFunction.transport_trans_homotopic`: transport along the constant path is
@@ -73,19 +69,12 @@ theorem transport_apply_coe (γ : Path b₀ b₁) (x : p ⁻¹' {b₀}) :
     (Λ.transport γ x).1 = Λ.lift x.1 γ.toContinuousMap (γ.source.trans (x.2 : p x.1 = b₀).symm) 1 :=
   (rfl)
 
-/-- The family of the constant-in-`Y` paths `γ`, as a map on `Y × I`. -/
-private def constFamily {Y : Type*} [TopologicalSpace Y] (γ : Path b₀ b₁) : C(Y × I, B) :=
-  ⟨fun z ↦ γ z.2, by fun_prop⟩
-
-private theorem constFamily_apply {Y : Type*} [TopologicalSpace Y] (γ : Path b₀ b₁) (z : Y × I) :
-    constFamily γ z = γ z.2 :=
-  (rfl)
-
-/-- The end point of the lift of the constant family `γ` from the points `f y` is the transport of
-any point `x` with `f y = x`. -/
-private theorem liftFamily_constFamily_one {Y : Type*} [TopologicalSpace Y] (f : C(Y, E))
-    (γ : Path b₀ b₁) (h : ∀ y, constFamily γ (y, 0) = p (f y)) (y : Y) (x : p ⁻¹' {b₀})
-    (hx : f y = x.1) : Λ.liftFamily f (constFamily γ) h (y, 1) = (Λ.transport γ x).1 := by
+/-- The end point of the lift of the family `γ ∘ snd`, constant in `Y`, from the points `f y` is
+the transport of any point `x` with `f y = x`. -/
+private theorem liftFamily_comp_snd_one {Y : Type*} [TopologicalSpace Y] (f : C(Y, E))
+    (γ : Path b₀ b₁) (h : ∀ y, (γ.toContinuousMap.comp ContinuousMap.snd) (y, 0) = p (f y))
+    (y : Y) (x : p ⁻¹' {b₀}) (hx : f y = x.1) :
+    Λ.liftFamily f (γ.toContinuousMap.comp ContinuousMap.snd) h (y, 1) = (Λ.transport γ x).1 := by
   rw [Λ.liftFamily_apply, Λ.transport_apply_coe]
   exact congrArg (fun e ↦ e 1) (Λ.lift_congr hx rfl _ _)
 
@@ -93,13 +82,13 @@ private theorem liftFamily_constFamily_one {Y : Type*} [TopologicalSpace Y] (f :
 theorem transport_refl_homotopic (b : B) :
     (Λ.transport (Path.refl b)).Homotopic (ContinuousMap.id _) := by
   let f : C(p ⁻¹' {b}, E) := ⟨Subtype.val, continuous_subtype_val⟩
-  have h : ∀ y, (constFamily (Path.refl b) : C(p ⁻¹' {b} × I, B)) (y, 0) = p (f y) :=
-    fun y ↦ (y.2 : p y.1 = b).symm
+  let Γ : C(p ⁻¹' {b} × I, B) := (Path.refl b).toContinuousMap.comp ContinuousMap.snd
+  have h : ∀ y, Γ (y, 0) = p (f y) := fun y ↦ (y.2 : p y.1 = b).symm
   obtain ⟨K, hK₀, hK₁, hK⟩ := Λ.isHurewiczFibration.{u}.exists_homotopy_endpoints
-    (constFamily (Path.refl b)) (Λ.liftFamily f _ h) ⟨fun z ↦ z.1.1, by fun_prop⟩
+    Γ (Λ.liftFamily f _ h) ⟨fun z ↦ z.1.1, by fun_prop⟩
     (Λ.apply_liftFamily f _ h) (fun y t ↦ (y.2 : p y.1 = b)) (fun y ↦ Λ.liftFamily_zero f _ h y)
   exact ContinuousMap.homotopic_of_fiber _ _ K
-    (fun y ↦ (hK₀ y).trans (Λ.liftFamily_constFamily_one f _ h y y rfl)) hK₁ hK
+    (fun y ↦ (hK₀ y).trans (Λ.liftFamily_comp_snd_one f _ h y y rfl)) hK₁ hK
 
 /-- Homotopic paths have homotopic transports. -/
 theorem transport_homotopic {γ γ' : Path b₀ b₁} (h : γ.Homotopic γ') :
@@ -132,14 +121,20 @@ theorem transport_homotopic {γ γ' : Path b₀ b₁} (h : γ.Homotopic γ') :
 theorem transport_trans_homotopic (γ : Path b₀ b₁) (δ : Path b₁ b₂) :
     (Λ.transport (γ.trans δ)).Homotopic ((Λ.transport δ).comp (Λ.transport γ)) := by
   let f : C(p ⁻¹' {b₀}, E) := ⟨Subtype.val, continuous_subtype_val⟩
-  have hγ : ∀ y, (constFamily γ : C(p ⁻¹' {b₀} × I, B)) (y, 0) = p (f y) :=
-    fun y ↦ γ.source.trans (y.2 : p y.1 = b₀).symm
+  -- The constant-in-`y` families of paths `γ`, `δ` and `γ.trans δ` over the fiber.
+  let Γγ : C(p ⁻¹' {b₀} × I, B) := γ.toContinuousMap.comp ContinuousMap.snd
+  let Γδ : C(p ⁻¹' {b₀} × I, B) := δ.toContinuousMap.comp ContinuousMap.snd
+  let Γ : C(p ⁻¹' {b₀} × I, B) := (γ.trans δ).toContinuousMap.comp ContinuousMap.snd
+  have Γγ_apply : ∀ z, Γγ z = γ z.2 := fun _ ↦ (rfl) -- the definition of `Γγ`
+  have Γδ_apply : ∀ z, Γδ z = δ z.2 := fun _ ↦ (rfl) -- the definition of `Γδ`
+  have Γ_apply : ∀ z, Γ z = (γ.trans δ) z.2 := fun _ ↦ (rfl) -- the definition of `Γ`
+  have hγ : ∀ y, Γγ (y, 0) = p (f y) := fun y ↦ γ.source.trans (y.2 : p y.1 = b₀).symm
   -- The lift of `γ`, and then the lift of `δ` from its end point.
   let A := Λ.liftFamily f _ hγ
   let f' : C(p ⁻¹' {b₀}, E) := ⟨fun y ↦ A (y, 1), by fun_prop⟩
   have f'_apply : ∀ y, f' y = A (y, 1) := fun _ ↦ (rfl) -- the definition of `f'`
-  have hδ : ∀ y, (constFamily δ : C(p ⁻¹' {b₀} × I, B)) (y, 0) = p (f' y) := fun y ↦ by
-    rw [f'_apply, Λ.apply_liftFamily, constFamily_apply, constFamily_apply]
+  have hδ : ∀ y, Γδ (y, 0) = p (f' y) := fun y ↦ by
+    rw [f'_apply, Λ.apply_liftFamily]
     exact δ.source.trans γ.target.symm
   let D := Λ.liftFamily f' _ hδ
   -- The two lifts as paths, which are concatenated.
@@ -158,28 +153,27 @@ theorem transport_trans_homotopic (γ : Path b₀ b₁) (δ : Path b₁ b₂) :
       (Path.trans_continuous_family pa hpa pd hpd).comp continuous_id⟩
   have C₂_apply : ∀ z, C₂ z = ((pa z.1).trans (pd z.1)) z.2 :=
     fun _ ↦ (rfl) -- the definition of `C₂`
-  have hC : ∀ y t, p (C₂ (y, t)) = constFamily (γ.trans δ) (y, t) := by
+  have hC : ∀ y t, p (C₂ (y, t)) = Γ (y, t) := by
     intro y t
-    rw [constFamily_apply, Path.trans_apply, C₂_apply, Path.trans_apply]
+    rw [Γ_apply, Path.trans_apply, C₂_apply, Path.trans_apply]
     by_cases ht : (t : ℝ) ≤ 1 / 2
     · simp only [ht, ↓reduceDIte]
-      exact (Λ.apply_liftFamily f _ hγ y _).trans (constFamily_apply γ _)
+      exact (Λ.apply_liftFamily f _ hγ y _).trans (Γγ_apply _)
     · simp only [ht, ↓reduceDIte]
-      exact (Λ.apply_liftFamily f' _ hδ y _).trans (constFamily_apply δ _)
-  have hz : ∀ y, (constFamily (γ.trans δ) : C(p ⁻¹' {b₀} × I, B)) (y, 0) = p (f y) :=
-    fun y ↦ (γ.trans δ).source.trans (y.2 : p y.1 = b₀).symm
+      exact (Λ.apply_liftFamily f' _ hδ y _).trans (Γδ_apply _)
+  have hz : ∀ y, Γ (y, 0) = p (f y) := fun y ↦ (γ.trans δ).source.trans (y.2 : p y.1 = b₀).symm
   have h0 : ∀ y, Λ.liftFamily f _ hz (y, 0) = C₂ (y, 0) := fun y ↦
     (Λ.liftFamily_zero f _ hz y).trans ((Path.source _).symm.trans (C₂_apply (y, 0)).symm)
   obtain ⟨K, hK₀, hK₁, hK⟩ := Λ.isHurewiczFibration.{u}.exists_homotopy_endpoints
-    (constFamily (γ.trans δ)) (Λ.liftFamily f _ hz) C₂ (Λ.apply_liftFamily f _ hz) hC h0
+    Γ (Λ.liftFamily f _ hz) C₂ (Λ.apply_liftFamily f _ hz) hC h0
   refine ContinuousMap.homotopic_of_fiber _ _ K
-    (fun y ↦ (hK₀ y).trans (Λ.liftFamily_constFamily_one f _ hz y y rfl))
+    (fun y ↦ (hK₀ y).trans (Λ.liftFamily_comp_snd_one f _ hz y y rfl))
     (fun y ↦ (hK₁ y).trans ?_) fun y s ↦ (hK y s).trans (γ.trans δ).target
   -- At time `1` the concatenation is at the end of the second path, the lift of `δ` from the end
   -- point of the lift of `γ`.
   rw [C₂_apply, Path.target]
-  exact Λ.liftFamily_constFamily_one f' δ hδ y (Λ.transport γ y)
-    (Λ.liftFamily_constFamily_one f γ hγ y y rfl)
+  exact Λ.liftFamily_comp_snd_one f' δ hδ y (Λ.transport γ y)
+    (Λ.liftFamily_comp_snd_one f γ hγ y y rfl)
 
 end Transport
 

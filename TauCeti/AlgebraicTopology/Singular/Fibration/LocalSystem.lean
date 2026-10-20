@@ -21,11 +21,12 @@ transport `p⁻¹ b₀ → p⁻¹ b₁` along `γ` (`TauCeti.LiftingFunction.tra
 
 * `TauCeti.fiberTransport Λ γ`: the transport along `γ` as a map of fibers in `TopCat`.
 * `TauCeti.fiberLocalSystem Λ k t`: the local system `b ↦ H_t(p⁻¹ b; k)`.
+* `TauCeti.fiberLocalSystemObjIso`: its value at a point is the homology of the fiber.
 
 ## Main results
 
-* `TauCeti.fiberLocalSystemObjIso`, `TauCeti.fiberLocalSystem_map_mk`: the value of the local
-  system on an object and on the class of a path.
+* `TauCeti.fiberLocalSystem_map_mk`: the local system sends the class of a path to the map induced
+  by the transport along it.
 
 ## References
 
@@ -65,6 +66,37 @@ theorem homologyMap_fiberTransport_congr {b₀ b₁ : B} {γ γ' : Path b₀ b�
   obtain ⟨H⟩ := Λ.transport_homotopic h
   exact TopCat.Homotopy.congr_homologyMap_normalizedCubicalChainComplex (k := k) H t
 
+/-- Transport along a constant path induces the identity on the homology of the fiber. -/
+theorem homologyMap_fiberTransport_refl (b : B) (t : ℕ) :
+    HomologicalComplex.homologyMap
+      ((normalizedCubicalChainComplex k).map (fiberTransport Λ (Path.refl b))) t = 𝟙 _ := by
+  have h : (fiberTransport Λ (Path.refl b)).hom.Homotopic (TopCat.Hom.hom (𝟙 (p.fiber b))) := by
+    rw [fiberTransport_hom, TopCat.hom_id]
+    exact Λ.transport_refl_homotopic b
+  obtain ⟨H⟩ := h
+  -- `TopCat.Homotopy` is by definition a homotopy of the underlying continuous maps.
+  rw [TopCat.Homotopy.congr_homologyMap_normalizedCubicalChainComplex (k := k) (g := 𝟙 _) H t,
+    CategoryTheory.Functor.map_id, HomologicalComplex.homologyMap_id]
+
+/-- Transport along a concatenation induces the composite on the homology of the fibers. -/
+theorem homologyMap_fiberTransport_trans {b₀ b₁ b₂ : B} (γ : Path b₀ b₁) (δ : Path b₁ b₂)
+    (t : ℕ) :
+    HomologicalComplex.homologyMap
+        ((normalizedCubicalChainComplex k).map (fiberTransport Λ (γ.trans δ))) t =
+      HomologicalComplex.homologyMap
+          ((normalizedCubicalChainComplex k).map (fiberTransport Λ γ)) t ≫
+        HomologicalComplex.homologyMap
+          ((normalizedCubicalChainComplex k).map (fiberTransport Λ δ)) t := by
+  have h : (fiberTransport Λ (γ.trans δ)).hom.Homotopic
+      (fiberTransport Λ γ ≫ fiberTransport Λ δ).hom := by
+    rw [TopCat.hom_comp, fiberTransport_hom, fiberTransport_hom, fiberTransport_hom]
+    exact Λ.transport_trans_homotopic γ δ
+  obtain ⟨H⟩ := h
+  -- `TopCat.Homotopy` is by definition a homotopy of the underlying continuous maps.
+  rw [TopCat.Homotopy.congr_homologyMap_normalizedCubicalChainComplex (k := k)
+    (g := fiberTransport Λ γ ≫ fiberTransport Λ δ) H t, CategoryTheory.Functor.map_comp,
+    HomologicalComplex.homologyMap_comp]
+
 /-- The **local system of fiber homology** `b ↦ H_t(p⁻¹ b; k)` of a Hurewicz fibration with
 lifting function `Λ`, with normalized cubical chains. -/
 def fiberLocalSystem (t : ℕ) : LocalCoefficientSystem.{u, u, u} k B where
@@ -73,17 +105,15 @@ def fiberLocalSystem (t : ℕ) : LocalCoefficientSystem.{u, u, u} k B where
     (fun γ ↦ HomologicalComplex.homologyMap
       ((normalizedCubicalChainComplex k).map (fiberTransport Λ γ)) t)
     (fun _ _ h ↦ homologyMap_fiberTransport_congr Λ k h t)
-  map_id b := by
-    obtain ⟨H⟩ := Λ.transport_refl_homotopic b.as
-    exact (TopCat.Homotopy.congr_homologyMap_normalizedCubicalChainComplex (k := k)
-      (g := 𝟙 _) H t).trans (by simp)
+  -- The identity of the fundamental groupoid is the class of the constant path
+  -- (`FundamentalGroupoid.id_eq_path_refl`).
+  map_id b := homologyMap_fiberTransport_refl Λ k b.as t
+  -- Composition in the fundamental groupoid is the class of the concatenation
+  -- (`FundamentalGroupoid.comp_eq`), on which `Quotient.lift` evaluates by definition.
   map_comp f g := by
     induction f using Path.Homotopic.Quotient.ind with | mk γ =>
     induction g using Path.Homotopic.Quotient.ind with | mk δ =>
-    obtain ⟨H⟩ := Λ.transport_trans_homotopic γ δ
-    exact (TopCat.Homotopy.congr_homologyMap_normalizedCubicalChainComplex (k := k)
-      (g := fiberTransport Λ γ ≫ fiberTransport Λ δ) H t).trans
-      (by rw [Functor.map_comp, HomologicalComplex.homologyMap_comp]; rfl)
+    exact homologyMap_fiberTransport_trans Λ k γ δ t
 
 /-- The value of the local system at a point is the homology of the fiber over it. -/
 def fiberLocalSystemObjIso (t : ℕ) (b : FundamentalGroupoid B) :
@@ -100,7 +130,8 @@ theorem fiberLocalSystem_map_mk (t : ℕ) {b₀ b₁ : FundamentalGroupoid B}
         HomologicalComplex.homologyMap
           ((normalizedCubicalChainComplex k).map (fiberTransport Λ γ)) t ≫
         (fiberLocalSystemObjIso Λ k t b₁).inv := by
-  simp [fiberLocalSystemObjIso]
+  simp only [fiberLocalSystemObjIso, Iso.refl_hom, Iso.refl_inv]
+  -- `Quotient.lift` evaluates on the class of a path by definition.
   rfl
 
 end TauCeti
