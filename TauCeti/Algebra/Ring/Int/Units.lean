@@ -37,6 +37,7 @@ theorem _root_.Int.units_eq_iff_eq_of_mul_eq_mul {u v u' v' : ℤˣ} (h : u * v 
   rw [Int.units_eq_iff_mul_eq_one u v, Int.units_eq_iff_mul_eq_one u' v', h]
 
 /-- The square of a sign `u : ℤˣ`, cast to any ring, is `1`. -/
+@[simp]
 theorem _root_.Int.cast_units_sq {R : Type*} [Ring R] (u : ℤˣ) : ((u : ℤ) : R) ^ 2 = 1 := by
   rcases Int.units_eq_one_or u with rfl | rfl <;> simp
 
