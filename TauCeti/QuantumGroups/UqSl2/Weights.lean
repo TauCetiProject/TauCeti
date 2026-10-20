@@ -246,24 +246,31 @@ theorem exists_f_pow_smul_eq_zero (hq : IsGenericQuantumParameter q) (v : V) :
   exists_pow_smul_eq_zero_of_genWeightSpace (fun _ _ hv =>
     exists_eq_zero_of_forall_mem_genWeightSpace hq.inv (f_pow_smul_mem_genWeightSpace hv)) v
 
-/-- Every nonzero finite-dimensional module at a generic parameter has a highest-weight
-vector. No diagonalizability of `K` is assumed. -/
-theorem exists_highest_weight_vector (hq : IsGenericQuantumParameter q) [Nontrivial V] :
-    ∃ (μ : ℂ) (v : V), μ ≠ 0 ∧ v ≠ 0 ∧ k q • v = μ • v ∧ e q • v = 0 := by
+/-- At a generic parameter, the raising string through a nonzero vector of a finite-dimensional
+module ends in a nonzero vector `Eⁿ v` killed by `E`. When `v` has weight `μ`, this is a
+highest-weight vector of weight `(q²)ⁿ μ`. -/
+theorem exists_e_pow_smul_ne_zero_and_e_smul_eq_zero (hq : IsGenericQuantumParameter q) {v : V}
+    (hv0 : v ≠ 0) : ∃ n : ℕ, e q ^ n • v ≠ 0 ∧ e q • e q ^ n • v = 0 := by
   classical
-  obtain ⟨μ, hμ⟩ := (Algebra.lsmul ℂ ℂ V (k q)).exists_eigenvalue
-  obtain ⟨v, hv, hv0⟩ := hμ.exists_hasEigenvector
   have ht := exists_e_pow_smul_eq_zero hq v
   let n := Nat.find ht
   have hn : 0 < n := by
     by_contra! hn
     have hz : e q ^ n • v = 0 := Nat.find_spec ht
     exact hv0 (by simpa [Nat.eq_zero_of_le_zero hn] using hz)
-  refine ⟨(q ^ 2) ^ (n - 1) * μ, e q ^ (n - 1) • v, ?_, ?_, ?_, ?_⟩
+  refine ⟨n - 1, Nat.find_min ht (by omega), ?_⟩
+  simpa [← mul_smul, ← pow_succ', Nat.sub_add_cancel hn] using Nat.find_spec ht
+
+/-- Every nonzero finite-dimensional module at a generic parameter has a highest-weight
+vector. No diagonalizability of `K` is assumed. -/
+theorem exists_highest_weight_vector (hq : IsGenericQuantumParameter q) [Nontrivial V] :
+    ∃ (μ : ℂ) (v : V), μ ≠ 0 ∧ v ≠ 0 ∧ k q • v = μ • v ∧ e q • v = 0 := by
+  obtain ⟨μ, hμ⟩ := (Algebra.lsmul ℂ ℂ V (k q)).exists_eigenvalue
+  obtain ⟨v, hv, hv0⟩ := hμ.exists_hasEigenvector
+  obtain ⟨n, hn0, hn⟩ := exists_e_pow_smul_ne_zero_and_e_smul_eq_zero hq hv0
+  refine ⟨(q ^ 2) ^ n * μ, e q ^ n • v, ?_, hn0, ?_, hn⟩
   · exact mul_ne_zero (pow_ne_zero _ (pow_ne_zero _ hq.ne_zero)) (weight_ne_zero hv hv0)
-  · exact Nat.find_min ht (by omega)
-  · exact mem_weightSpace_iff.mp (e_pow_smul_mem_weightSpace hv (n - 1))
-  · simpa [← mul_smul, ← pow_succ', Nat.sub_add_cancel hn] using Nat.find_spec ht
+  · exact mem_weightSpace_iff.mp (e_pow_smul_mem_weightSpace hv n)
 
 end FiniteDimensional
 
