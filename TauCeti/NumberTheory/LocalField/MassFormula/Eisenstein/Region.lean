@@ -47,7 +47,8 @@ product structure on the measure is used.
 * `TauCeti.eisensteinSet_eq_sdiff`: for `0 < n`, the Eisenstein region is the box `𝓂[K] ^ n` minus
   the box whose constant coordinate lies in `𝓂[K] ^ 2`.
 * `TauCeti.measurableSet_eisensteinSet`: the Eisenstein region is measurable.
-* `TauCeti.measure_eisensteinSet`: the Eisenstein region has volume `q ^ (-n) (1 - q⁻¹)`.
+* `TauCeti.measure_eisensteinSet`: for `0 < n`, the Eisenstein region has volume
+  `q ^ (-n) (1 - q⁻¹)`.
 
 ## Implementation notes
 
@@ -178,8 +179,8 @@ theorem measurableSet_eisensteinSet {n : ℕ} [MeasurableSpace (Fin n → K)]
     exact h₁.diff (measurableSet_univ_pi_image_maximalIdeal_pow _)
 
 /-- **The volume of the Eisenstein region**: for a left-invariant measure on `Fin n → K`
-normalized on the integer box, the Eisenstein region has volume `q ^ (-n) (1 - q⁻¹)`, where
-`q = Nat.card 𝓀[K]`. -/
+normalized on the integer box, the Eisenstein region has volume `q ^ (-n) (1 - q⁻¹)` for
+`0 < n`, where `q = Nat.card 𝓀[K]`. -/
 theorem measure_eisensteinSet {n : ℕ} (hn : 0 < n) [MeasurableSpace (Fin n → K)]
     [BorelSpace (Fin n → K)] (μ : Measure (Fin n → K)) [μ.IsAddLeftInvariant]
     (hμ : μ (integerBox K (Fin n)) = 1) :

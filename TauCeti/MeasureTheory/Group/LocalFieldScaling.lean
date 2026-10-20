@@ -51,10 +51,10 @@ integers of an extension of `K` in an integral basis and `k` is the valuation of
 
 * `MeasureTheory.Measure.measure_image_mulVec_integerBox`: for a left-invariant `μ`,
   the image of the integer box has measure `q ^ (-k)` times that of the box.
-* `MeasureTheory.Measure.measure_univ_pi_image_maximalIdeal_pow`: for a left-invariant `μ`
-  normalized on the integer box, the box with factors `𝓂[K] ^ e i` has volume `q ^ (-∑ i, e i)`.
 * `MeasureTheory.Measure.measure_image_mulVec_vadd_smul_integerBox`: the same for every
   ball `x +ᵥ c • ∏ i, 𝒪[K]` with `c ≠ 0`.
+* `MeasureTheory.Measure.measure_univ_pi_image_maximalIdeal_pow`: for a left-invariant `μ`
+  normalized on the integer box, the box with factors `𝓂[K] ^ e i` has volume `q ^ (-∑ i, e i)`.
 * `MeasureTheory.Measure.addHaar_image_mulVec`: for a regular Haar measure `μ`,
   `μ (A '' s) = q ^ (-k) * μ s` for every set `s`.
 
