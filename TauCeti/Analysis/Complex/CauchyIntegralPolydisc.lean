@@ -8,11 +8,11 @@ module
 public import Mathlib.Analysis.Complex.CauchyIntegral
 public import Mathlib.MeasureTheory.Integral.TorusIntegral
 import Mathlib.Analysis.Analytic.Constructions
-import Mathlib.Analysis.Calculus.FDeriv.Pi
 import Mathlib.Analysis.Calculus.FDeriv.Prod
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Topology.ContinuousMap.Compact
 import Mathlib.Topology.ContinuousMap.Units
+import TauCeti.Analysis.Calculus.FDeriv.Pi
 import TauCeti.Topology.Compactness.Normed
 
 /-!
@@ -193,15 +193,9 @@ theorem _root_.DifferentiableOn.torusIntegral_prod_sub_inv_smul [CompleteSpace E
     (hw : w ∈ univ.pi fun i => ball (c i) (R i)) :
     (∯ z in T(c, R), (∏ i, (z i - w i))⁻¹ • f z) = (2 * π * I) ^ n • f w := by
   refine hd.continuousOn.torusIntegral_prod_sub_inv_smul (fun z hz i hzi => ?_) hw
-  have hmaps : MapsTo (update z i) (closedBall (c i) (R i))
-      (univ.pi fun i => closedBall (c i) (R i)) := fun x hx =>
-    (Set.update_mem_pi_iff_of_mem hz).2 fun _ => hx
-  have h : DifferentiableWithinAt ℂ (fun x => f (update z i x)) (closedBall (c i) (R i)) (z i) := by
-    refine DifferentiableWithinAt.comp (z i) ?_
-      (hasFDerivAt_update z (z i)).differentiableAt.differentiableWithinAt hmaps
-    rw [update_eq_self]
-    exact hd z hz
-  exact h.differentiableAt (closedBall_mem_nhds_of_mem hzi)
+  exact ((hd z hz).comp_update i (t := closedBall (c i) (R i)) fun x hx =>
+    (Set.update_mem_pi_iff_of_mem hz).2 fun _ => hx).differentiableAt
+    (closedBall_mem_nhds_of_mem hzi)
 
 end CauchyFormula
 
@@ -314,23 +308,17 @@ theorem _root_.ContinuousOn.analyticAt_of_differentiableAt_update (hc : Continuo
     AnalyticAt ℂ f z := by
   -- Transport to `Fin n → ℂ` along an enumeration `e` of `ι`.
   let e := Fintype.equivFin ι
-  let M : (Fin (Fintype.card ι) → ℂ) →L[ℂ] ι → ℂ :=
-    ContinuousLinearMap.pi fun i => ContinuousLinearMap.proj (e i)
-  let N : (ι → ℂ) →L[ℂ] Fin (Fintype.card ι) → ℂ :=
-    ContinuousLinearMap.pi fun j => ContinuousLinearMap.proj (e.symm j)
-  have hMN : ∀ x, M (N x) = x := fun x => funext fun i => by simp [M, N]
-  have hMupdate : ∀ y j (x : ℂ), M (update y j x) = update (M y) (e.symm j) x :=
-    fun y j x => funext fun i => by
-      simp [M, update_apply, ← Equiv.eq_symm_apply]
+  let M := ContinuousLinearEquiv.piCongrLeft ℂ (fun _ : Fin (Fintype.card ι) => ℂ) e
+  have hM : ∀ y, M.symm y = y ∘ e := fun y => funext (Equiv.piCongrLeft_symm_apply _ e y)
   obtain ⟨R, hR, hRs⟩ := nhds_basis_closedBall.mem_iff.1
-    (M.continuous.continuousAt.preimage_mem_nhds (hMN z ▸ hs))
-  have h : AnalyticAt ℂ (f ∘ M) (N z) := by
+    (M.symm.continuous.continuousAt.preimage_mem_nhds (by rwa [M.symm_apply_apply]))
+  have h : AnalyticAt ℂ (f ∘ M.symm) (M z) := by
     refine analyticAt_of_continuousOn_closedBall_pi hR
-      (hc.comp M.continuous.continuousOn fun y hy => hRs hy) fun y hy j _ => ?_
-    have hMy : M y (e.symm j) = y j := by simp [M]
-    simpa [hMupdate, hMy] using hd (M y) (hRs hy) (e.symm j)
-  have hfMN : (f ∘ M) ∘ N = f := funext fun x => by simp [hMN]
-  exact hfMN ▸ h.comp (N.analyticAt z)
+      (hc.comp M.symm.continuous.continuousOn fun y hy => hRs hy) fun y hy j _ => ?_
+    simpa only [Function.comp_apply, hM, update_comp_equiv, Equiv.apply_symm_apply] using
+      hd (M.symm y) (hRs hy) (e.symm j)
+  have hf : (f ∘ M.symm) ∘ M = f := funext fun x => congrArg f (M.symm_apply_apply x)
+  exact hf ▸ h.comp (M.analyticAt z)
 
 /-- **Osgood's lemma.** A function of finitely many complex variables which is continuous on an
 open set and complex differentiable in each variable separately on it is analytic on it. -/
@@ -343,12 +331,9 @@ theorem _root_.ContinuousOn.analyticOnNhd_of_differentiableAt_update (hc : Conti
 differentiable in each variable separately. -/
 theorem analyticOnNhd_iff_continuousOn_and_differentiableAt_update (hs : IsOpen s) :
     AnalyticOnNhd ℂ f s ↔ ContinuousOn f s ∧
-      ∀ y ∈ s, ∀ i, DifferentiableAt ℂ (fun x => f (update y i x)) (y i) := by
-  refine ⟨fun h => ⟨h.continuousOn, fun y hy i => ?_⟩,
+      ∀ y ∈ s, ∀ i, DifferentiableAt ℂ (fun x => f (update y i x)) (y i) :=
+  ⟨fun h => ⟨h.continuousOn, fun y hy i => (h y hy).differentiableAt.comp_update i⟩,
     fun h => h.1.analyticOnNhd_of_differentiableAt_update hs h.2⟩
-  refine DifferentiableAt.comp (y i) ?_ (hasFDerivAt_update y (y i)).differentiableAt
-  rw [update_eq_self]
-  exact (h y hy).differentiableAt
 
 end Osgood
 
@@ -368,11 +353,7 @@ theorem _root_.DifferentiableOn.analyticAt_of_finiteDimensional (hd : Differenti
   have h : AnalyticAt ℂ (f ∘ e.symm) (e z) :=
     hde.continuousOn.analyticAt_of_differentiableAt_update
       (interior_mem_nhds.2 (e.symm.continuous.continuousAt.preimage_mem_nhds (by simpa using hs)))
-      fun y hy i => by
-        refine DifferentiableAt.comp (g := f ∘ e.symm) (y i) ?_
-          (hasFDerivAt_update y (y i)).differentiableAt
-        rw [update_eq_self]
-        exact hde.differentiableAt (isOpen_interior.mem_nhds hy)
+      fun y hy i => (hde.differentiableAt (isOpen_interior.mem_nhds hy)).comp_update i
   have hfe : (f ∘ e.symm) ∘ e = f := by
     ext x
     simp
