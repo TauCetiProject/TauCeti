@@ -91,7 +91,7 @@ lemma zigzagBraidAutoequivalence_functor (i : V) :
     (zigzagBraidAutoequivalence k G i).functor =
       (GradedModuleCat.bimoduleModuleTensorHomotopy.{max u w, max u w} Γ Γ).obj
         ((HomotopyCategory.quotient _ c).obj (zigzagBraidComplex k G i)) :=
-  (rfl)
+  GradedModuleCat.bimoduleModuleTensorHomotopyEquivalence_functor _ _ _ _ _ _
 
 /-- The inverse of `σᵢ` is tensoring with the inverse braid complex `Bᵢ'`. -/
 @[simp]
@@ -99,21 +99,33 @@ lemma zigzagBraidAutoequivalence_inverse (i : V) :
     (zigzagBraidAutoequivalence k G i).inverse =
       (GradedModuleCat.bimoduleModuleTensorHomotopy.{max u w, max u w} Γ Γ).obj
         ((HomotopyCategory.quotient _ c).obj (zigzagBraidInverseComplex k G i)) :=
-  (rfl)
+  GradedModuleCat.bimoduleModuleTensorHomotopyEquivalence_inverse _ _ _ _ _ _
+
+/-- The functor of `σᵢ` is isomorphic to tensoring with `Bᵢ`, via
+`zigzagBraidAutoequivalence_functor`. -/
+private def zigzagBraidAutoequivalenceFunctorIso (i : V) :
+    (zigzagBraidAutoequivalence k G i).functor ≅
+      (GradedModuleCat.bimoduleModuleTensorHomotopy.{max u w, max u w} Γ Γ).obj
+        ((HomotopyCategory.quotient _ c).obj (zigzagBraidComplex k G i)) :=
+  eqToIso (zigzagBraidAutoequivalence_functor k G i)
 
 /-- For distinct nonadjacent vertices the braid autoequivalences commute up to natural
 isomorphism: applying `σᵢ` and then `σⱼ` is isomorphic to applying `σⱼ` and then `σᵢ`. -/
 def zigzagBraidAutoequivalenceCommIso {i j : V} (hij : i ≠ j) (hadj : ¬ G.Adj i j) :
     ((zigzagBraidAutoequivalence k G i).trans (zigzagBraidAutoequivalence k G j)).functor ≅
       ((zigzagBraidAutoequivalence k G j).trans (zigzagBraidAutoequivalence k G i)).functor :=
-  (GradedModuleCat.bimoduleModuleTensorHomotopyAssociator Γ Γ Γ
+  NatIso.hcomp (zigzagBraidAutoequivalenceFunctorIso k G i)
+      (zigzagBraidAutoequivalenceFunctorIso k G j) ≪≫
+    (GradedModuleCat.bimoduleModuleTensorHomotopyAssociator Γ Γ Γ
       (zigzagBraidComplex k G j) (zigzagBraidComplex k G i)).symm ≪≫
     (GradedModuleCat.bimoduleModuleTensorHomotopy.{max u w, max u w} Γ Γ).mapIso
       (HomotopyCategory.isoOfHomotopyEquiv
         (zigzagBraidComplexTensorCommHomotopyEquiv k G j i hij.symm
           (fun h ↦ hadj h.symm))) ≪≫
     GradedModuleCat.bimoduleModuleTensorHomotopyAssociator Γ Γ Γ
-      (zigzagBraidComplex k G i) (zigzagBraidComplex k G j)
+      (zigzagBraidComplex k G i) (zigzagBraidComplex k G j) ≪≫
+    (NatIso.hcomp (zigzagBraidAutoequivalenceFunctorIso k G j)
+      (zigzagBraidAutoequivalenceFunctorIso k G i)).symm
 
 /-- For adjacent vertices the braid autoequivalences satisfy the braid relation up to natural
 isomorphism: applying `σᵢ`, `σⱼ`, `σᵢ` in turn is isomorphic to applying `σⱼ`, `σᵢ`, `σⱼ` in
@@ -123,7 +135,12 @@ def zigzagBraidAutoequivalenceBraidIso {i j : V} (h : G.Adj i j) :
         ((zigzagBraidAutoequivalence k G j).trans (zigzagBraidAutoequivalence k G i))).functor ≅
       ((zigzagBraidAutoequivalence k G j).trans
         ((zigzagBraidAutoequivalence k G i).trans (zigzagBraidAutoequivalence k G j))).functor :=
-  Functor.isoWhiskerLeft (zigzagBraidAutoequivalence k G i).functor
+  NatIso.hcomp (zigzagBraidAutoequivalenceFunctorIso k G i)
+      (NatIso.hcomp (zigzagBraidAutoequivalenceFunctorIso k G j)
+        (zigzagBraidAutoequivalenceFunctorIso k G i)) ≪≫
+    Functor.isoWhiskerLeft
+      ((GradedModuleCat.bimoduleModuleTensorHomotopy.{max u w, max u w} Γ Γ).obj
+        ((HomotopyCategory.quotient _ c).obj (zigzagBraidComplex k G i)))
       (GradedModuleCat.bimoduleModuleTensorHomotopyAssociator Γ Γ Γ
         (zigzagBraidComplex k G i) (zigzagBraidComplex k G j)).symm ≪≫
     (GradedModuleCat.bimoduleModuleTensorHomotopyAssociator Γ Γ Γ
@@ -133,9 +150,14 @@ def zigzagBraidAutoequivalenceBraidIso {i j : V} (h : G.Adj i j) :
         (zigzagBraidComplexAdjacentHomotopyEquiv k G h.symm)) ≪≫
     GradedModuleCat.bimoduleModuleTensorHomotopyAssociator Γ Γ Γ
       (zigzagBraidComplexTensor k G j i) (zigzagBraidComplex k G j) ≪≫
-    Functor.isoWhiskerLeft (zigzagBraidAutoequivalence k G j).functor
+    Functor.isoWhiskerLeft
+      ((GradedModuleCat.bimoduleModuleTensorHomotopy.{max u w, max u w} Γ Γ).obj
+        ((HomotopyCategory.quotient _ c).obj (zigzagBraidComplex k G j)))
       (GradedModuleCat.bimoduleModuleTensorHomotopyAssociator Γ Γ Γ
-        (zigzagBraidComplex k G j) (zigzagBraidComplex k G i))
+        (zigzagBraidComplex k G j) (zigzagBraidComplex k G i)) ≪≫
+    (NatIso.hcomp (zigzagBraidAutoequivalenceFunctorIso k G j)
+      (NatIso.hcomp (zigzagBraidAutoequivalenceFunctorIso k G i)
+        (zigzagBraidAutoequivalenceFunctorIso k G j))).symm
 
 /-- **The braid group action of a zigzag algebra.** The Artin group of the graph `G` acts on the
 homotopy category of graded `Z`-modules, by sending the standard generator at a vertex `i` to the

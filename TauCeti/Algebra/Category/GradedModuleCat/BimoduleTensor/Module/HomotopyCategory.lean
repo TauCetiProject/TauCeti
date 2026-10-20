@@ -141,9 +141,6 @@ variable (Γ : InternalGrading k A) (Δ : InternalGrading k B)
 tensor products `K ⊗_B K'` and `K' ⊗_A K` are homotopy equivalent to the regular bimodules `A` and
 `B` in degree zero give an equivalence between the homotopy categories of graded `B`-modules and of
 graded `A`-modules, acting by `K`, with inverse the action of `K'`. -/
--- Exposed so that its functor and inverse are the two actions definitionally, as required to
--- compare composites of such equivalences.
-@[expose]
 def bimoduleModuleTensorHomotopyEquivalence
     (e : HomotopyEquiv (mapBifunctor K K' (bimoduleTensor Γ Δ Γ) (.up ℤ))
       ((single _ (.up ℤ) 0).obj (bimoduleUnit.{w} Γ)))
