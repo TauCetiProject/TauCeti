@@ -88,6 +88,9 @@ The group law on points of `E` is written multiplicatively, following `EllipticC
   `[Γ₁(N)]` condition, as `kP` missing the zero section for `0 < k < N`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isFiberwiseInjective_zmod_prod_iff`: the naive
   `[Γ(N)]` condition, as `aP + bQ` missing the zero section for `(a, b) ≠ 0`.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isFiberwiseInjective_zmod_three_prod_iff`: the naive
+  `[Γ(3)]` condition, as `P` and `Q` missing the zero section and `Q` differing from `±P` at every
+  point.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isFiberwiseInjective_iff_range_eq_ker`: over a
   separably closed field in which `N` is invertible, the naive `[Γ(N)]`-structures are the bases of
   `E[N](K)`.
@@ -381,6 +384,48 @@ theorem isFiberwiseInjective_zmod_prod_iff {N : ℕ} [NeZero N]
     simp
   simp only [hφ, isFiberwiseInjective_iff, ne_eq, ← ofAdd_eq_one]
   exact ⟨fun h a b ↦ h _, fun h z ↦ h z.toAdd.1 z.toAdd.2⟩
+
+/-- **The naive `[Γ(3)]` condition.** A homomorphism `φ : (ℤ/3ℤ)² →* E(S)`, given by the pair of
+`S`-points `P = φ (1, 0)` and `Q = φ (0, 1)` of `E[3]`, is injective on every fibre exactly when
+`P` and `Q` miss the zero section and `Q` is neither `P` nor `-P` over every point of `S`: every
+nonzero element of `(ℤ/3ℤ)²` is, up to sign, one of `(1, 0)`, `(0, 1)`, `(1, 1)` and `(-1, 1)`. -/
+theorem isFiberwiseInjective_zmod_three_prod_iff
+    {φ : Multiplicative (ZMod 3 × ZMod 3) →* (𝟙_ (Over S) ⟶ Over.mk E.structureMap)} :
+    E.IsFiberwiseInjective φ ↔
+      (∀ s, (φ (.ofAdd (1, 0))).left s ≠ E.zero s) ∧ (∀ s, (φ (.ofAdd (0, 1))).left s ≠ E.zero s) ∧
+        ∀ s, (φ (.ofAdd (0, 1))).left s ≠ (φ (.ofAdd (1, 0))).left s ∧
+          (φ (.ofAdd (0, 1))).left s ≠ ((φ (.ofAdd (1, 0))).left ≫ E.neg) s := by
+  -- a homomorphism `ψ` from `(ℤ/3ℤ)²` is injective once `(1, 0)`, `(0, 1)`, `(1, 1)` and
+  -- `(-1, 1)` are not in its kernel, since these represent all nonzero elements up to sign
+  have hinj {G : Type u} [Group G] (ψ : Multiplicative (ZMod 3 × ZMod 3) →* G) :
+      Function.Injective ψ ↔ ψ (.ofAdd (1, 0)) ≠ ψ 1 ∧ ψ (.ofAdd (0, 1)) ≠ ψ 1 ∧
+        ψ (.ofAdd (0, 1)) ≠ ψ (.ofAdd (1, 0)) ∧ ψ (.ofAdd (0, 1)) ≠ ψ (.ofAdd (1, 0))⁻¹ := by
+    refine ⟨fun h ↦ ⟨h.ne (by decide), h.ne (by decide), h.ne (by decide), h.ne (by decide)⟩,
+      fun ⟨h₁, h₂, h₃, h₄⟩ ↦ (injective_iff_map_eq_one ψ).mpr fun z hz ↦ ?_⟩
+    have hz : ∀ z : Multiplicative (ZMod 3 × ZMod 3), z = 1 ∨ z = .ofAdd (1, 0) ∨
+        z = (.ofAdd (1, 0))⁻¹ ∨ z = .ofAdd (0, 1) ∨ z = (.ofAdd (0, 1))⁻¹ ∨
+        z = .ofAdd (0, 1) * .ofAdd (1, 0) ∨ z = (.ofAdd (0, 1) * .ofAdd (1, 0))⁻¹ ∨
+        z = .ofAdd (0, 1) * (.ofAdd (1, 0))⁻¹ ∨ z = (.ofAdd (0, 1) * (.ofAdd (1, 0))⁻¹)⁻¹ := by
+      decide
+    rcases hz z with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+      simp_all [mul_eq_one_iff_eq_inv]
+  rw [isFiberwiseInjective_iff_forall_residueField]
+  simp only [← forall_and]
+  refine forall_congr' fun s ↦ ?_
+  obtain ⟨p⟩ : Nonempty (Spec (S.residueField s)) := inferInstance
+  have key (a b : Multiplicative (ZMod 3 × ZMod 3)) :
+      ((pointsPullback (E.isPullback_baseChange (S.fromSpecResidueField s)) (by simp)).comp φ) a =
+          ((pointsPullback (E.isPullback_baseChange (S.fromSpecResidueField s)) (by simp)).comp
+            φ) b ↔ (φ a).left s = (φ b).left s := by
+    rw [MonoidHom.comp_apply, MonoidHom.comp_apply, eq_comm, eq_pointsPullback_iff,
+      pointsPullback_left_comp, eq_comm]
+    refine (comp_eq_comp_iff_of_section (left_comp_structureMap _) (left_comp_structureMap _) _
+      p).trans ?_
+    have hp : S.fromSpecResidueField s p = s := Scheme.fromSpecResidueField_apply s p
+    exact ⟨fun h ↦ (congrArg (φ a).left hp).symm.trans (h.trans (congrArg (φ b).left hp)),
+      fun h ↦ (congrArg (φ a).left hp).trans (h.trans (congrArg (φ b).left hp).symm)⟩
+  simp only [hinj, ne_eq, key]
+  simp [hom_inv_left]
 
 /-! ### Naive `[Γ(N)]`-structures over a separably closed field -/
 
