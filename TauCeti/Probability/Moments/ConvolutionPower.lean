@@ -17,13 +17,11 @@ import Mathlib.Analysis.MeanInequalities
 Finite convolution powers preserve finite moments. Their means and covariances of linear
 observables add, and their absolute moments of order `p ≥ 1` admit bounds of order `n ^ p`
 in the number `n` of summands. These bounds permit integration over a random number of summands,
-without requiring exponential moments of the jump law.
+without requiring exponential moments of the base measure.
 
 The moment-generating function of a measurable additive real observable under an `n`-fold
 convolution power of an s-finite measure is the `n`th power of its moment-generating function
 under the original measure. This identity also holds for totalized divergent integrals.
-
-The moment and covariance proofs use independent coordinates on a finite product probability space.
 -/
 
 public section
@@ -73,7 +71,7 @@ theorem integrable_id_convolutionPower (hμ : Integrable id μ) (n : ℕ) :
     Integrable id (μ.convolutionPower n) :=
   memLp_one_iff_integrable.1 (memLp_id_convolutionPower (memLp_one_iff_integrable.2 hμ) n)
 
-/-- The mean of a convolution power is the number of summands times the jump mean. -/
+/-- The mean of a convolution power is the number of summands times the mean of `μ`. -/
 @[simp]
 theorem integral_id_convolutionPower [NormedSpace ℝ E] (hμ : Integrable id μ) (n : ℕ) :
     ∫ x, x ∂μ.convolutionPower n = n • ∫ x, x ∂μ := by
@@ -127,7 +125,7 @@ theorem integral_norm_rpow_convolutionPower_le {p : ℝ} (hp : 1 ≤ p)
 variable [NormedSpace ℝ E]
 
 /-- The mean of a linear observable under a convolution power is the number of summands
-times its jump mean. Only the observed first moment needs to be finite. -/
+times its mean under `μ`. Only the observed first moment needs to be finite. -/
 @[simp]
 theorem integral_continuousLinearMap_convolutionPower (μ : Measure E) [IsProbabilityMeasure μ]
     (L : E →L[ℝ] ℝ) (hL : Integrable L μ) (n : ℕ) :
