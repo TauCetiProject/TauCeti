@@ -75,6 +75,7 @@ theorem ground_toPolynomialLaw (u : M →ₗ[R] N) : u.toPolynomialLaw.ground = 
   ext m
   simp [PolynomialLaw.ground_apply]
 
+/-- A linear map is determined by its polynomial law. -/
 theorem toPolynomialLaw_injective :
     Function.Injective (toPolynomialLaw : (M →ₗ[R] N) → M →ₚₗ[R] N) := fun u v huv ↦ by
   ext m
@@ -84,12 +85,14 @@ theorem toPolynomialLaw_injective :
 theorem toPolynomialLaw_inj {u v : M →ₗ[R] N} : u.toPolynomialLaw = v.toPolynomialLaw ↔ u = v :=
   toPolynomialLaw_injective.eq_iff
 
+/-- The identity linear map induces the identity polynomial law. -/
 @[simp]
 theorem toPolynomialLaw_id : (LinearMap.id : M →ₗ[R] M).toPolynomialLaw = PolynomialLaw.id := by
   ext S _ _ x
   simp only [toPolynomialLaw_toFun', PolynomialLaw.id_apply', baseChange_id, LinearMap.id_apply,
     id_eq]
 
+/-- The polynomial law of `v ∘ₗ u` is the composite of the polynomial laws of `v` and `u`. -/
 theorem toPolynomialLaw_comp (v : N →ₗ[R] P) (u : M →ₗ[R] N) :
     (v ∘ₗ u).toPolynomialLaw = v.toPolynomialLaw.comp u.toPolynomialLaw := by
   ext S _ _ x

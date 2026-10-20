@@ -33,6 +33,10 @@ Homogeneous laws of degree `d` are the objects represented by the degree-`d` div
   in particular the zero law is homogeneous of every degree.
 * `PolynomialLaw.IsHomogeneousOfDegree.comp`: composing laws of degrees `p` and `q` gives a law
   of degree `p * q`.
+* `PolynomialLaw.IsHomogeneousOfDegree.toFun'_add`, `PolynomialLaw.IsHomogeneousOfDegree.toFun_add`:
+  a law homogeneous of degree one is additive after every scalar extension.
+* `PolynomialLaw.IsHomogeneousOfDegree.toLinearMap`: the ground map of a law homogeneous of degree
+  one, as a linear map, whose polynomial law is the original law.
 * `PolynomialLaw.isHomogeneousOfDegree_one_iff`: a law is homogeneous of degree one if and only
   if it is the polynomial law `u.toPolynomialLaw` of a linear map `u`.
 
@@ -89,9 +93,7 @@ theorem toFun_smul (hf : f.IsHomogeneousOfDegree n) {S : Type*} [CommSemiring S]
 /-- The ground map of a law homogeneous of degree `n` is homogeneous of degree `n`. -/
 theorem ground_smul (hf : f.IsHomogeneousOfDegree n) (r : R) (m : M) :
     f.ground (r • m) = r ^ n • f.ground m := by
-  have hm : (1 : R) ⊗ₜ[R] (r • m) = r • (1 ⊗ₜ[R] m) := by
-    rw [tmul_smul]
-  rw [ground_apply, ground_apply, hm, hf.toFun'_smul, map_smul]
+  rw [ground_apply, ground_apply, tmul_smul, hf.toFun'_smul, map_smul]
 
 theorem add {g : M →ₚₗ[R] N} (hf : f.IsHomogeneousOfDegree n) (hg : g.IsHomogeneousOfDegree n) :
     (f + g).IsHomogeneousOfDegree n := fun S _ _ s x ↦ by
@@ -166,9 +168,12 @@ private theorem coeff_one_aeval_mul_X (S : Type*) [CommSemiring S] (a : Fin 2 �
     Polynomial.coeff_zero_eq_eval_zero, ← Polynomial.coe_evalRingHom]
   exact congr($hconst p * a i)
 
+namespace IsHomogeneousOfDegree
+
+variable {f : M →ₚₗ[R] N}
+
 /-- A polynomial law homogeneous of degree one is additive after every scalar extension. -/
-private theorem IsHomogeneousOfDegree.toFun'_add {f : M →ₚₗ[R] N}
-    (hf : f.IsHomogeneousOfDegree 1) (S : Type u) [CommSemiring S] [Algebra R S]
+theorem toFun'_add (hf : f.IsHomogeneousOfDegree 1) (S : Type u) [CommSemiring S] [Algebra R S]
     (x y : S ⊗[R] M) : f.toFun' S (x + y) = f.toFun' S x + f.toFun' S y := by
   -- Over `S[T₀, T₁]` put `w = f (T₀ • x + T₁ • y)`. For `a : Fin 2 → S`, substituting
   -- `Tᵢ ↦ aᵢ X` and taking the coefficient of `X` sends `w` to `f (a₀ • x + a₁ • y)`, by
@@ -210,22 +215,47 @@ private theorem IsHomogeneousOfDegree.toFun'_add {f : M →ₚₗ[R] N}
   rw [hsum, LinearMap.rTensor_add, LinearMap.add_apply, key, key] at h
   simpa using h.symm
 
+/-- A polynomial law homogeneous of degree one sends `s ⊗ₜ m` to `s ⊗ₜ f.ground m`. -/
+theorem toFun'_tmul (hf : f.IsHomogeneousOfDegree 1) {S : Type u} [CommSemiring S]
+    [Algebra R S] (s : S) (m : M) : f.toFun' S (s ⊗ₜ[R] m) = s ⊗ₜ[R] f.ground m := by
+  have h := hf.toFun'_smul s ((1 : S) ⊗ₜ[R] m)
+  rwa [smul_tmul', smul_eq_mul, mul_one, pow_one, ← one_tmul_ground_apply', smul_tmul',
+    smul_eq_mul, mul_one] at h
+
+/-- The ground map of a polynomial law homogeneous of degree one, as a linear map. -/
+def toLinearMap (hf : f.IsHomogeneousOfDegree 1) : M →ₗ[R] N where
+  toFun := f.ground
+  map_add' m m' := by
+    rw [ground_apply, ground_apply, ground_apply, tmul_add, hf.toFun'_add, map_add]
+  map_smul' r m := by simpa using hf.ground_smul r m
+
+@[simp]
+theorem coe_toLinearMap (hf : f.IsHomogeneousOfDegree 1) : ⇑hf.toLinearMap = f.ground :=
+  (rfl)
+
+/-- A polynomial law homogeneous of degree one is the polynomial law of its ground map. -/
+@[simp]
+theorem toPolynomialLaw_toLinearMap (hf : f.IsHomogeneousOfDegree 1) :
+    hf.toLinearMap.toPolynomialLaw = f := by
+  ext S _ _ x
+  rw [LinearMap.toPolynomialLaw_toFun']
+  induction x using TensorProduct.inductionOn with
+  | tmul s m => rw [LinearMap.baseChange_tmul, hf.toFun'_tmul, coe_toLinearMap]
+  | add x y hx hy => rw [map_add, hx, hy, hf.toFun'_add]
+
+/-- A polynomial law homogeneous of degree one is additive after scalar extension to a
+commutative `R`-algebra in an arbitrary universe. -/
+theorem toFun_add (hf : f.IsHomogeneousOfDegree 1) (S : Type*) [CommSemiring S] [Algebra R S]
+    (x y : S ⊗[R] M) : f.toFun S (x + y) = f.toFun S x + f.toFun S y := by
+  rw [← hf.toPolynomialLaw_toLinearMap, LinearMap.toPolynomialLaw_toFun, map_add]
+
+end IsHomogeneousOfDegree
+
 /-- A polynomial law is homogeneous of degree one if and only if it is the polynomial law of a
-linear map, namely of its ground map. -/
+linear map, namely of its ground map `IsHomogeneousOfDegree.toLinearMap`. -/
 theorem isHomogeneousOfDegree_one_iff {f : M →ₚₗ[R] N} :
-    f.IsHomogeneousOfDegree 1 ↔ ∃ u : M →ₗ[R] N, u.toPolynomialLaw = f := by
-  refine ⟨fun hf ↦ ?_, fun ⟨u, hu⟩ ↦ hu ▸ u.isHomogeneousOfDegree_toPolynomialLaw⟩
-  refine ⟨{ toFun := f.ground, map_add' := fun m m' ↦ ?_, map_smul' := fun r m ↦ ?_ }, ?_⟩
-  · rw [ground_apply, ground_apply, ground_apply, tmul_add, hf.toFun'_add, map_add]
-  · simpa using hf.ground_smul r m
-  · ext S _ _ x
-    rw [LinearMap.toPolynomialLaw_toFun']
-    induction x using TensorProduct.inductionOn with
-    | tmul s m =>
-      have hsm : s ⊗ₜ[R] m = s • (1 : S) ⊗ₜ[R] m := by rw [smul_tmul', smul_eq_mul, mul_one]
-      rw [LinearMap.baseChange_tmul, hsm, hf.toFun'_smul, ← one_tmul_ground_apply', pow_one,
-        smul_tmul', smul_eq_mul, mul_one]
-      simp only [LinearMap.coe_mk, AddHom.coe_mk]
-    | add x y hx hy => rw [map_add, hx, hy, hf.toFun'_add]
+    f.IsHomogeneousOfDegree 1 ↔ ∃ u : M →ₗ[R] N, u.toPolynomialLaw = f :=
+  ⟨fun hf ↦ ⟨hf.toLinearMap, hf.toPolynomialLaw_toLinearMap⟩,
+    fun ⟨u, hu⟩ ↦ hu ▸ u.isHomogeneousOfDegree_toPolynomialLaw⟩
 
 end PolynomialLaw
