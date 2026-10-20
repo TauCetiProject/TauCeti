@@ -91,6 +91,13 @@ theorem _root_.Submodule.inf_iInf_eigenspace_of_forall_mapsTo {ι : Type*}
 
 end BridgeScalars
 
+/-! ### Eigenvalues of a joint eigenvector
+
+Group actions have nonzero joint eigenvalues over any commutative ring. Over a commutative
+ring with cancellation acting torsion-freely, a nonzero vector cancels, so the eigenvalue
+function also assembles into a homomorphism.
+-/
+
 section GroupScalars
 
 variable [CommRing K] [Module K V] [Group G]
@@ -107,12 +114,6 @@ lemma _root_.MonoidHom.eigenvalue_ne_zero_of_jointEigenvector
   simpa [hχ] using Module.End.mem_eigenspace_iff.mp (hv_mem g)
 
 end GroupScalars
-
-/-! ### Eigenvalues of a joint eigenvector
-
-Over a commutative ring with cancellation acting torsion-freely, so that a nonzero vector
-cancels.
--/
 
 section CancelScalars
 
