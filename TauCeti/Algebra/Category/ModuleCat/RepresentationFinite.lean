@@ -50,6 +50,7 @@ def IsRepresentationFinite : Prop :=
     fun M : ModuleCat.{w} A ↦ Module.Finite A M ∧ Indecomposable M))
 
 /-- Unfolding `TauCeti.IsRepresentationFinite` in modules where its body is not exposed. -/
+@[simp]
 theorem isRepresentationFinite_iff :
     IsRepresentationFinite.{w} A ↔ Finite (Skeleton (ObjectProperty.FullSubcategory
       fun M : ModuleCat.{w} A ↦ Module.Finite A M ∧ Indecomposable M)) :=
