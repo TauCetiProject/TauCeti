@@ -119,9 +119,9 @@ theorem transport_homotopic {γ γ' : Path b₀ b₁} (h : γ.Homotopic γ') :
   · rw [K_apply]
     exact (Λ.apply_liftFamily f G hG (y, s) 1).trans ((G_apply _).trans (F.target s))
 
-/-- **Lifting a concatenation of paths.**  For paths `γ` and `δ`, the family of the lifts of
-`γ.trans δ` obtained by lifting `γ` from each point `y` of the fiber and then `δ` from the end
-point has the transport of `y` along `γ` followed by `δ` as end point. -/
+/-- **Lifting a concatenation of paths.**  For paths `γ` and `δ`, there is a family of lifts of
+`γ.trans δ`, starting at each point `y` of the fiber over `b₀`, that ends at the transport of `y`
+along `γ` followed by the transport along `δ`. -/
 theorem exists_lift_trans (γ : Path b₀ b₁) (δ : Path b₁ b₂) :
     ∃ C : C(p ⁻¹' {b₀} × I, E), (∀ y, C (y, 0) = y.1) ∧
       (∀ y, C (y, 1) = (Λ.transport δ (Λ.transport γ y)).1) ∧

@@ -260,8 +260,7 @@ private noncomputable def openBoxDatum (α α' : C(Y × I, E)) (h₀ : ∀ y, α
     (α.comp ⟨fun x ↦ (x.1, leftTime x.2), by fun_prop⟩)
     (α'.comp ⟨fun x ↦ (x.1, rightTime x.2), by fun_prop⟩)
     (fun x hx ↦ by
-      -- Evaluate the two composites with the bundled maps on the agreement locus.
-      change α (x.1, leftTime x.2) = α' (x.1, rightTime x.2)
+      simp only [ContinuousMap.comp_apply, ContinuousMap.coe_mk]
       rw [leftTime_half x.2 hx, rightTime_half x.2 hx]
       exact h₀ x.1)
 
