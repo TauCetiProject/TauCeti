@@ -104,7 +104,7 @@ def leviCivitaConnection : CovariantDerivative I E (fun x : M ↦ TangentSpace I
   isCovariantDerivativeOnUniv := g.isCovariantDerivativeOn_connection
 
 /-- The Levi-Civita connection vanishes on a vector field not differentiable at the point. -/
-@[simp] theorem leviCivitaConnection_of_not_mdifferentiableAt (hY : ¬ MDiffAt (T% Y) x) :
+@[simp] theorem leviCivitaConnection_eq_zero_of_not_mdifferentiableAt (hY : ¬ MDiffAt (T% Y) x) :
     g.leviCivitaConnection Y x = 0 := by
   simp only [leviCivitaConnection, connection, dite_eq_right hY]
 
