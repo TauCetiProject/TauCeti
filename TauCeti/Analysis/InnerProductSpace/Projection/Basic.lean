@@ -244,6 +244,7 @@ variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSp
   [AddCommMonoid F] [Module 𝕜 F]
 
 /-- A linear map does not see the component of a vector in its kernel. -/
+@[simp]
 theorem apply_starProjection_orthogonal_ker (u : E →ₗ[𝕜] F) [u.ker.HasOrthogonalProjection]
     (x : E) : u (u.kerᗮ.starProjection x) = u x := by
   have hx : x - u.kerᗮ.starProjection x ∈ u.ker :=
