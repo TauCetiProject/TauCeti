@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.TsumDivisorsAntidiagonal
+import TauCeti.Analysis.Normed.Ring.Basic
 import Mathlib.Analysis.RCLike.Basic
 import Mathlib.Topology.Algebra.InfiniteSum.NatInt
 
@@ -55,16 +56,6 @@ theorem HasSum.sum_divisorsAntidiagonal {f : ℕ → ℕ → α} {a : α}
 namespace TauCeti
 
 variable {K : Type*} [NormedCommRing K] [NormOneClass K] [CompleteSpace K]
-
-omit [CompleteSpace K] in
-/-- Multiplying a parameter in the open unit ball by further powers of `q` keeps it there. -/
-theorem norm_pow_pnat_mul_lt_one {q v : K} (hq : ‖q‖ < 1) (hqv : ‖q * v‖ < 1)
-    (n : ℕ+) : ‖q ^ (n : ℕ) * v‖ < 1 := by
-  have hn : (n : ℕ) = ((n : ℕ) - 1) + 1 := (Nat.sub_add_cancel n.pos).symm
-  rw [hn, pow_succ, mul_assoc]
-  exact (norm_mul_le _ _).trans_lt <| lt_of_le_of_lt
-    (mul_le_of_le_one_left (norm_nonneg _)
-      ((norm_pow_le _ _).trans (pow_le_one₀ (norm_nonneg _) hq.le))) hqv
 
 omit [CompleteSpace K] in
 /-- A Lambert-series family with weights of polynomial growth is absolutely summable when
@@ -170,16 +161,6 @@ theorem summable_apply_pow_pnat_mul_of_tsum_eq (a : ℕ → K) {C : ℝ} {k : �
 section NormedField
 
 variable {K : Type*} [NormedField K] [CompleteSpace K]
-
-omit [CompleteSpace K] in
-/-- If multiplying by both a unit and its inverse has norm less than one, the original
-element has norm less than one. -/
-theorem norm_lt_one_of_norm_mul_lt_one_of_norm_mul_inv_lt_one {q : K} (u : Kˣ)
-    (hqu : ‖q * (u : K)‖ < 1) (hqui : ‖q * (u : K)⁻¹‖ < 1) : ‖q‖ < 1 := by
-  have h := (mul_le_of_le_one_right (norm_nonneg _) hqui.le).trans_lt hqu
-  rw [← norm_mul, mul_mul_mul_comm, mul_inv_cancel₀ u.ne_zero, mul_one,
-    ← pow_two, norm_pow] at h
-  exact (sq_lt_one_iff₀ (norm_nonneg _)).mp h
 
 /-- If a summand and its reciprocal have geometric expansions with polynomially bounded
 weights, their bilateral series, minus the index-zero term, has a
