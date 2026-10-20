@@ -21,15 +21,16 @@ open Set
 
 namespace TauCeti
 
-/-- An injective linear map preserves and reflects extreme points when membership in the target
-pulls back to the source set, the source maps into a face, and that face lies in the map's range. -/
+/-- A point `x` is extreme if and only if its image under an injective linear map is extreme,
+when membership in the target pulls back to the source set, the source maps into a face, and
+that face lies in the map's range. -/
 theorem mem_extremePoints_iff_linearMap_mem_extremePoints
     {𝕜 E F : Type*} [Semiring 𝕜] [PartialOrder 𝕜]
     [AddCommMonoid E] [Module 𝕜 E] [AddCommMonoid F] [Module 𝕜 F]
-    {C : Set E} {D D' : Set F} (hface : _root_.IsExtreme 𝕜 D D')
+    {C : Set E} {D D' : Set F} (x : E) (hface : _root_.IsExtreme 𝕜 D D')
     (f : E →ₗ[𝕜] F) (hf : Function.Injective f)
     (hmem : ∀ x, f x ∈ D ↔ x ∈ C) (hmaps : MapsTo f C D')
-    (hsurj : D' ⊆ range f) {x : E} :
+    (hsurj : D' ⊆ range f) :
     x ∈ extremePoints 𝕜 C ↔ f x ∈ extremePoints 𝕜 D := by
   simp only [mem_extremePoints_iff_left]
   constructor

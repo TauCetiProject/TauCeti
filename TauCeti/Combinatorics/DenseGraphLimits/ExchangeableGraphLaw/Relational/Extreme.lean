@@ -85,7 +85,7 @@ theorem mem_extremePoints_iff_map_toRelationalConfiguration_mem_extremePoints
       Measure.map (SimpleGraph.toRelationalConfiguration (V := ℕ)) :=
     funext (Measure.mapₗ_apply_of_measurable SimpleGraph.measurable_toRelationalConfiguration)
   have h := TauCeti.mem_extremePoints_iff_linearMap_mem_extremePoints
-    (C := exchangeableGraphProbabilityMeasures)
+    (C := exchangeableGraphProbabilityMeasures) μ
     (TauCeti.MeasureTheory.isExtreme_setOf_measure_eq_zero
       (exchangeableRelationalProbabilityMeasures Language.graph) {c | IsSimpleGraph c}ᶜ)
     (Measure.mapₗ SimpleGraph.toRelationalConfiguration)

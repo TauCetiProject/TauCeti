@@ -117,7 +117,7 @@ theorem mem_extremePoints_iff_arrayLaw_mem_extremePoints {μ : Measure (SimpleGr
       map_add' := arrayLaw_add
       map_smul' := arrayLaw_smul }
   apply TauCeti.mem_extremePoints_iff_linearMap_mem_extremePoints
-    (IsExtreme.refl ℝ≥0∞ _) f
+    μ (IsExtreme.refl ℝ≥0∞ _) f
     (Function.LeftInverse.injective graphLawOfArray_arrayLaw)
     (fun _ => arrayLaw_mem_iff) (fun _ hμ => arrayLaw_mem_iff.2 hμ)
   intro ρ hρ
