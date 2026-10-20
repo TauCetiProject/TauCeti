@@ -7,9 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Inverse.Maps
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.InverseEndpoints
-public import TauCeti.Algebra.Category.GradedModuleCat.BimoduleTensor.Basic
 public import TauCeti.Algebra.Homology.Contraction.ThreeTerm
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Unit
 
 /-!
 # The graded braid complex followed by its inverse

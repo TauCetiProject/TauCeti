@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.SimpleGraph.Basic
-public import TauCeti.Algebra.Category.GradedModuleCat.BimoduleTensor.Basic
 public import TauCeti.Algebra.Category.GradedModuleCat.BimoduleTensor.Unit
 public import TauCeti.Algebra.Category.GradedModuleCat.Coproducts.Basic
 public import TauCeti.Algebra.Homology.Bifunctor.Homotopy
@@ -72,11 +71,9 @@ transfer needs: conjugation of bimodules with a tilting bimodule complex is a fu
 complexes of bimodules and not an additive functor on bimodules, so it is not an instance of
 the degreewise specialisation `transferDegreewise`, but it is an instance of `Φ`.
 
-**No derived case is instantiated here.** The repository has no tilting bimodule complex, no
-Morita equivalence between two graded algebras and no conjugation datum, so the derived half of
-the roadmap target is not claimed here, and `η` and `ε` — the monoidal and unit compatibility
-that a transfer has to establish — remain hypotheses of the principle, to be discharged at
-each instantiation.
+No derived case is instantiated in this file: `η` and `ε` — the monoidal and unit
+compatibility that a transfer has to establish — remain hypotheses of the principle, to be
+discharged at each instantiation.
 
 Naturality of the transferred relations up to chain homotopy, the derived-Koszul comparison,
 spherical twists and graded-`K₀` statements are out of scope.

@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Inverse.Maps
-public import TauCeti.Algebra.Category.GradedModuleCat.BimoduleTensor.Basic
 public import TauCeti.Algebra.Homology.Contraction.ThreeTerm
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Unit
 
 /-!
 # The inverse graded braid complex followed by the braid complex

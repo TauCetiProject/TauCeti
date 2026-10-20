@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.GradedModuleCat.BimoduleTensor.Basic
 public import TauCeti.Algebra.Category.GradedModuleCat.BimoduleTensor.Unit
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Tensor
 public import Mathlib.Algebra.Homology.Homotopy
-public import Mathlib.Algebra.Homology.Single
 
 /-!
 # Unit identifications for the actual graded zigzag bimodule

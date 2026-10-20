@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.SelfTensor
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Unit
-public import TauCeti.Algebra.Category.GradedModuleCat.BimoduleTensor.Basic
 public import TauCeti.Algebra.Category.GradedModuleCat.BimoduleTensor.Shift
 
 /-!

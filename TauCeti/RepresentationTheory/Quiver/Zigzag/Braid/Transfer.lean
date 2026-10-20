@@ -10,7 +10,6 @@ public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Adjacent.Contract
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Commuting
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Inverse.Forward
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Inverse.Reverse
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Unit
 
 /-!
 # The zigzag braid complexes as a family of Khovanov-Seidel relations
@@ -55,9 +54,7 @@ complex of bimodules is the degreewise action of that equivalence.
 
 A *derived* transfer, in which the target setting is reached by conjugating bimodules with a
 tilting bimodule complex, is **not** instantiated here: conjugation by a tilting complex is not
-an additive functor on bimodules, so it is not an instance of `H`, and the repository has no
-tilting bimodule complex and no Morita equivalence between two graded algebras to instantiate
-the general principle with.
+an additive functor on bimodules, so it is not an instance of `H`.
 
 Naturality of the transferred relations up to chain homotopy, the derived-Koszul comparison,
 spherical twists and graded-`K₀` statements are out of scope.
