@@ -150,8 +150,8 @@ exponent dividing `p ^ m`. -/
 theorem padicCompletionUnitsNormResidue_pow_smul [Fact p.Prime] (m : ℕ)
     (y : Additive ↑(padicCompletionUnits p K)) :
     padicCompletionUnitsNormResidue p K L m ((p : ℤ_[p]) ^ m • y) = 0 := by
-  rw [← Nat.cast_pow, padicCompletionUnits_natCast_smul, map_nsmul]
-  exact Additive.toMul.injective (by simp)
+  rw [← Nat.cast_pow, padicCompletionUnits_natCast_smul, map_nsmul, ← ofMul_toMul (_ • _)]
+  simp
 
 /-- If `p ^ m` contains the full power of `p` dividing `#Gal(L/K)^ab`, then every
 `p ^ m`-multiple in `A(K)` is a completed norm. -/
@@ -203,11 +203,9 @@ theorem ker_padicCompletionUnitsNormResidue [Fact p.Prime] (hpK : (p : K) ≠ 0)
       simp [hg]
     obtain ⟨v, hv⟩ := mem_normGroup_iff_exists_normUnits.1 hnorm
     rw [eq_mul_inv_iff_mul_eq] at hv
-    convert add_mem (LinearMap.mem_range_self _ (Additive.ofMul (padicCompletionUnitsOf p L v)))
-      (pow_smul_mem_range_padicCompletionUnitsNorm p K L hpK hm
-        (Additive.ofMul (padicCompletionUnitsOf p K w) + y)) using 1
-    simp only [← hv, padicCompletionUnitsNorm_of, map_mul, map_pow, ofMul_mul, ofMul_pow]
-    module
+    rw [← hv, map_mul, ofMul_mul, map_pow, ofMul_pow, ← padicCompletionUnits_natCast_smul]
+    refine add_mem (add_mem ⟨Additive.ofMul (padicCompletionUnitsOf p L v), by simp⟩ ?_) ?_ <;>
+      exact_mod_cast pow_smul_mem_range_padicCompletionUnitsNorm p K L hpK hm _
   · rintro ⟨y, rfl⟩
     -- The level-`m` coordinate of a completed norm is the class of a norm.
     obtain ⟨v, hv⟩ := QuotientGroup.mk_surjective (y.toMul.1 m)
