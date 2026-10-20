@@ -38,7 +38,7 @@ theorem injective_of_isLocalized_associatedPrimes
     [∀ prime, AddCommMonoid (Mₚ prime)]
     [∀ prime, Module R (Mₚ prime)]
     (f : ∀ prime, M →ₗ[R] Mₚ prime)
-    [localized : ∀ prime, IsLocalizedModule prime.1.primeCompl (f prime)]
+    [∀ prime, IsLocalizedModule prime.1.primeCompl (f prime)]
     (Nₚ : associatedPrimes R M → Type*)
     [∀ prime, AddCommMonoid (Nₚ prime)]
     [∀ prime, Module R (Nₚ prime)]
@@ -49,9 +49,12 @@ theorem injective_of_isLocalized_associatedPrimes
     Function.Injective map := by
   refine (injective_iff_map_eq_zero map).mpr fun element element_zero ↦ ?_
   by_contra element_ne_zero
-  obtain ⟨prime, associated, annihilator_le⟩ :=
-    exists_le_isAssociatedPrime_of_isNoetherianRing R element element_ne_zero
-  let associated_prime : associatedPrimes R M := ⟨prime, associated⟩
+  obtain ⟨associated_prime, annihilator_le⟩ :
+      ∃ associated_prime : associatedPrimes R M,
+        (⊥ : Submodule R M).colon {element} ≤ associated_prime.1 := by
+    obtain ⟨prime, associated, annihilator_le⟩ :=
+      exists_le_isAssociatedPrime_of_isNoetherianRing R element element_ne_zero
+    exact ⟨⟨prime, associated⟩, annihilator_le⟩
   have injective := local_injective associated_prime
   have localized_zero : f associated_prime element = 0 := by
     apply injective
@@ -63,10 +66,8 @@ theorem injective_of_isLocalized_associatedPrimes
         _ = 0 := by rw [element_zero, map_zero]
     simpa only [map_zero] using mapped_zero
   obtain ⟨denominator, annihilates⟩ :=
-    (@IsLocalizedModule.eq_zero_iff R _
-      (@Ideal.primeCompl R _ prime associated.isPrime)
-      M (Mₚ associated_prime) _ _ _ _ (f associated_prime)
-      (localized associated_prime) element).mp localized_zero
+    (IsLocalizedModule.eq_zero_iff associated_prime.1.primeCompl (f associated_prime)).mp
+      localized_zero
   apply denominator.property
   apply annihilator_le
   rw [Submodule.mem_colon_singleton, Submodule.mem_bot]
