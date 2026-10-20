@@ -45,10 +45,14 @@ theorem integrable_exp_mul_id_generalizedGammaMeasure_of_nonpos
   integrable_exp_mul_of_ge t 0 ht measurable_id.aemeasurable
     ((ae_pos_generalizedGammaMeasure a c s).mono fun _ hx ↦ hx.le)
 
-/-- Above power parameter one, every exponential rate is integrable. -/
+/-- Above power parameter one, every exponential rate is integrable, for any shape and scale. -/
 theorem integrable_exp_mul_id_generalizedGammaMeasure_of_one_lt
-    (ha : 0 < a) (hc : 1 < c) (hs : 0 < s) (t : ℝ) :
+    (hc : 1 < c) (a s t : ℝ) :
     Integrable (fun x : ℝ ↦ exp (t * x)) (generalizedGammaMeasure a c s) := by
+  by_cases h : 0 < a ∧ c ≠ 0 ∧ 0 < s
+  swap
+  · simp [generalizedGammaMeasure_of_not_valid h]
+  obtain ⟨ha, hc0, hs⟩ := h
   by_cases ht : t ≤ 0
   · exact integrable_exp_mul_id_generalizedGammaMeasure_of_nonpos a c s ht
   have ht : 0 < t := lt_of_not_ge ht
@@ -58,7 +62,7 @@ theorem integrable_exp_mul_id_generalizedGammaMeasure_of_one_lt
     have hlim := (tendsto_rpow_neg_atTop (sub_pos.mpr hp1)).const_mul (t * s)
     simpa only [neg_sub, mul_zero] using (tendsto_order.1 hlim).2 (1 / 2) (by norm_num)
   obtain ⟨A, hA⟩ := eventually_atTop.1 hsmall
-  rw [generalizedGammaMeasure_of_valid ha (by linarith) hs,
+  rw [generalizedGammaMeasure_of_valid ha hc0 hs,
     integrable_map_measure (by fun_prop) (by fun_prop)]
   let _ := isProbabilityMeasure_gammaMeasure ha zero_lt_one
   have hdom := (integrable_const (exp (t * s * A ^ c⁻¹))).add
@@ -124,13 +128,14 @@ theorem not_integrable_exp_mul_id_generalizedGammaMeasure_of_lt_one
   · exact not_integrable_exp_mul_id_generalizedGammaMeasure_of_pos_lt_one
       ha hcpos hc1 hs ht
 
-/-- Above power parameter one, the exponential-integrability domain is all of `ℝ`. -/
+/-- Above power parameter one, the exponential-integrability domain is all of `ℝ`,
+including for invalid zero laws. -/
 @[simp]
 theorem integrableExpSet_id_generalizedGammaMeasure_of_one_lt
-    (ha : 0 < a) (hc : 1 < c) (hs : 0 < s) :
+    (hc : 1 < c) (a s : ℝ) :
     integrableExpSet id (generalizedGammaMeasure a c s) = univ := by
   ext t
-  simp [integrableExpSet, integrable_exp_mul_id_generalizedGammaMeasure_of_one_lt ha hc hs]
+  simp [integrableExpSet, integrable_exp_mul_id_generalizedGammaMeasure_of_one_lt hc a s]
 
 /-- Below power parameter one, exponential integrability is equivalent to a nonpositive rate. -/
 @[simp]
@@ -176,6 +181,6 @@ theorem integrableExpSet_id_generalizedGammaMeasure
   · simpa only [lt_self_iff_false, ↓reduceIte] using
       integrableExpSet_id_generalizedGammaMeasure_one ha hs
   · simpa only [hc1, ↓reduceIte] using
-      integrableExpSet_id_generalizedGammaMeasure_of_one_lt ha hc1 hs
+      integrableExpSet_id_generalizedGammaMeasure_of_one_lt hc1 a s
 
 end TauCeti.Probability
