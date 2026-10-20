@@ -34,8 +34,9 @@ namespace Pointed
 corresponds to the map `PUnit → X` picking out its basepoint.
 
 The body is exposed so that the generated `simps` lemmas, which identify the underlying types
-and basepoints on both sides, can be stated and proved by `rfl`. -/
-@[expose, simps! functor_obj_left_as functor_obj_right functor_obj_hom_hom_apply inverse_obj_X
+and basepoints on both sides, can be stated and proved by `rfl`, and so that the statement of
+`equivUnderPUnit_functor_map_right_hom_apply` typechecks. -/
+@[expose, simps! functor_obj_right functor_obj_hom_hom_apply inverse_obj_X
   inverse_obj_point inverse_map_toFun unitIso_hom_app_toFun unitIso_inv_app_toFun
   counitIso_hom_app_right_hom_apply counitIso_inv_app_right_hom_apply]
 def equivUnderPUnit : Pointed.{u} ≌ Under (PUnit.{u + 1} : Type u) where

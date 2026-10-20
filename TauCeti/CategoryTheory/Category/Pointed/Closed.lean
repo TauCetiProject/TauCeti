@@ -115,6 +115,12 @@ lemma ihom_obj_def (X Y : Pointed.{u}) : (ihom X).obj Y = (Pointed.ihom X).obj Y
 /-- The internal hom of the closed structure acts on maps as `Pointed.ihom X`. -/
 lemma ihom_map_def (g : Y ⟶ Y') : (ihom X).map g = (Pointed.ihom X).map g := (rfl)
 
+/-- Elements of the internal hom are pointed maps, so they are equal when they agree at every
+point. -/
+@[ext]
+lemma ihom_obj_ext {f g : (ihom X).obj Y} (h : ∀ x, f.toFun x = g.toFun x) : f = g :=
+  Hom.ext (funext h)
+
 /-- The basepoint of `X ⟶ Y` is the constant map to the basepoint of `Y`. -/
 @[simp]
 lemma ihom_obj_point_apply (x : X) : ((ihom X).obj Y).point.toFun x = Y.point :=
