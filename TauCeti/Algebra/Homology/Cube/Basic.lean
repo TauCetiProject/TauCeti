@@ -228,6 +228,7 @@ lemma cubeComplex_hom_ext {r : ℤ} {A : C} {f g : F.cubeComplex.X r ⟶ A}
 
 /-- Morphisms into a term of the cube complex agree when their projections to every vertex
 agree. -/
+@[ext 1001]
 lemma cubeComplex_hom_ext' {r : ℤ} {A : C} {f g : A ⟶ F.cubeComplex.X r}
     (h : ∀ S, f ≫ F.cubeComplexπ S = g ≫ F.cubeComplexπ S) : f = g :=
   biproduct.hom_ext _ _ h
@@ -299,7 +300,7 @@ def cubeComplexMap (α : F ⟶ G) : F.cubeComplex ⟶ G.cubeComplex where
   f r := F.cubeComplexDesc fun S ↦ α.app S.1 ≫ G.cubeComplexι S
   comm' := by
     rintro r _ rfl
-    ext S
+    refine F.cubeComplex_hom_ext fun S ↦ ?_
     rw [Functor.ι_cubeComplexDesc_assoc, Category.assoc, Functor.ι_cubeComplex_d,
       Functor.ι_cubeComplex_d_assoc, Preadditive.comp_sum, Preadditive.sum_comp]
     refine Finset.sum_congr rfl fun a _ ↦ ?_
