@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.MaximalProP
+import TauCeti.GroupTheory.QuotientGroup.Map
 
 /-!
 # Subgroups containing the pro-`p` kernel
@@ -30,9 +31,8 @@ topological embedding `f : H → G`, which is how such subgroups arise in practi
 * `TauCeti.proPKernel_eq_subgroupOf`: the same for a subgroup containing the pro-`p` kernel.
 * `TauCeti.maximalProPQuotient.map_injective_of_le_range`: such an embedding induces an injective
   map of maximal pro-`p` quotients.
-* `TauCeti.maximalProPQuotient.range_map`,
-  `TauCeti.maximalProPQuotient.index_range_map_of_le_range`: its image is the image of `f` in
-  `G(p)`, of the same index as the image of `f` in `G`.
+* `TauCeti.maximalProPQuotient.index_range_map_of_le_range`: its image has the same index in `G(p)`
+  as the image of `f` in `G`.
 -/
 
 public section
@@ -43,34 +43,6 @@ universe u v
 
 variable {p : ℕ} {G : Type u} [Group G] [TopologicalSpace G]
 variable {H : Type v} [Group H] [TopologicalSpace H]
-
-/-! ### The image of the maximal pro-`p` quotient -/
-
-/-- The image of the map `H(p) → G(p)` induced by `f : H → G` is the image in `G(p)` of the image
-of `f`. -/
-theorem maximalProPQuotient.range_map (f : H →* G) (hf : Continuous f) :
-    (maximalProPQuotient.map (p := p) f hf).range = f.range.map (maximalProPQuotient.mk p G) := by
-  ext y
-  constructor
-  · rintro ⟨x, rfl⟩
-    induction x using QuotientGroup.induction_on with
-    | H x => exact ⟨f x, ⟨x, rfl⟩, (maximalProPQuotient.map_mk f hf x).symm⟩
-  · rintro ⟨_, ⟨x, rfl⟩, rfl⟩
-    exact ⟨maximalProPQuotient.mk p H x, maximalProPQuotient.map_mk f hf x⟩
-
-/-- The image of the map of maximal pro-`p` quotients induced by `f : H → G` has index dividing the
-index of the image of `f`. -/
-theorem maximalProPQuotient.index_range_map_dvd (f : H →* G) (hf : Continuous f) :
-    (maximalProPQuotient.map (p := p) f hf).range.index ∣ f.range.index := by
-  rw [maximalProPQuotient.range_map]
-  exact Subgroup.index_map_dvd _ (maximalProPQuotient.mk_surjective p G)
-
-/-- If `f : H → G` has open image, so does the induced map of maximal pro-`p` quotients. -/
-theorem maximalProPQuotient.isOpen_range_map [IsTopologicalGroup G] (f : H →* G)
-    (hf : Continuous f) (ho : IsOpen (f.range : Set G)) :
-    IsOpen ((maximalProPQuotient.map (p := p) f hf).range : Set (maximalProPQuotient p G)) := by
-  rw [maximalProPQuotient.range_map, Subgroup.coe_map]
-  exact QuotientGroup.isOpenMap_coe _ ho
 
 /-- **The index of a subgroup containing the pro-`p` kernel.** If the image of `f : H → G`
 contains the pro-`p` kernel of `G`, the image of the induced map `H(p) → G(p)` has the same index
@@ -120,12 +92,12 @@ contains the pro-`p` kernel of `G`, the induced map `H(p) → G(p)` is injective
 theorem maximalProPQuotient.map_injective_of_le_range (f : H →* G) (hf : Topology.IsEmbedding f)
     (hle : proPKernel p G ≤ f.range) :
     Function.Injective (maximalProPQuotient.map (p := p) f hf.continuous) := by
-  refine (injective_iff_map_eq_one _).mpr fun x hx ↦ ?_
-  induction x using QuotientGroup.induction_on with
-  | H x =>
-    rw [maximalProPQuotient.map_mk, maximalProPQuotient.mk_apply,
-      QuotientGroup.eq_one_iff] at hx
-    rw [QuotientGroup.eq_one_iff, proPKernel_eq_comap_of_le_range f hf hle]
-    exact hx
+  have hker := proPKernel_eq_comap_of_le_range f hf hle
+  -- The induced map is `QuotientGroup.map` for the kernels, as both agree on classes.
+  have hmap : maximalProPQuotient.map (p := p) f hf.continuous =
+      QuotientGroup.map _ _ f hker.le :=
+    QuotientGroup.monoidHom_ext _ <| MonoidHom.ext <| maximalProPQuotient.map_mk f hf.continuous
+  rw [hmap]
+  exact QuotientGroup.map_injective_of_eq_comap f (proPKernel p G) hker
 
 end TauCeti
