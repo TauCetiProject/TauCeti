@@ -23,16 +23,11 @@ The group `Aut (LaxMonoidalFunctor.of (𝟭 C))` of monoidal natural automorphis
 functor of a monoidal category, often written `Aut_⊗(𝟭_C)`, is commutative, like Mathlib's
 centre `CategoryTheory.CatCenter C` of all natural endomorphisms of `𝟭 C`. It is the group
 acting on the pivotal structures of a rigid monoidal category.
-
-Precomposition by a monoidal equivalence also identifies the categories of lax monoidal
-functors and therefore their tensor-automorphism groups. The construction
-`CategoryTheory.Equivalence.precomposeLaxMonoidalEquivalence` refines Mathlib’s
-`CategoryTheory.Equivalence.congrLeft` to monoidal natural transformations.
 -/
 
 public section
 
-universe v₁ v₂ v₃ u₁ u₂ u₃
+universe v₁ v₂ u₁ u₂
 
 namespace CategoryTheory.LaxMonoidalFunctor
 
@@ -83,115 +78,3 @@ instance : IsMulCommutative (Aut (LaxMonoidalFunctor.of (𝟭 C))) :=
   .of_comm fun u v ↦ Aut.ext (Iso.ext (hom_ext (NatTrans.id_comm v.asIso.hom.hom u.asIso.hom.hom)))
 
 end CategoryTheory.LaxMonoidalFunctor
-
-namespace CategoryTheory
-
-open CategoryTheory.Functor
-
-variable {C : Type u₁} [Category.{v₁} C] [MonoidalCategory C]
-  {D : Type u₂} [Category.{v₂} D] [MonoidalCategory D]
-  {E : Type u₃} [Category.{v₃} E] [MonoidalCategory E]
-
-/-- Precomposition by a lax monoidal functor, on bundled lax monoidal functors and
-monoidal natural transformations. -/
-def Functor.precomposeLaxMonoidal (F : C ⥤ D) [F.LaxMonoidal] :
-    LaxMonoidalFunctor D E ⥤ LaxMonoidalFunctor C E where
-  obj G := .of (F ⋙ G.toFunctor)
-  map α := ⟨Functor.whiskerLeft F α.hom, NatTrans.IsMonoidal.whiskerLeft α.hom⟩
-
-/-- Precomposition leaves the underlying functor equal to the ordinary composite. -/
-@[simp]
-theorem Functor.precomposeLaxMonoidal_obj_toFunctor (F : C ⥤ D) [F.LaxMonoidal]
-    (G : LaxMonoidalFunctor D E) :
-    ((F.precomposeLaxMonoidal).obj G).toFunctor = F ⋙ G.toFunctor :=
-  (rfl)
-
-open MonoidalCategory Functor.LaxMonoidal in
-/-- Precomposition composes the tensor comparisons. Its underlying functor objects are
-propositionally identified with those of the composite functor. -/
-theorem Functor.precomposeLaxMonoidal_obj_μ (F : C ⥤ D) [F.LaxMonoidal]
-    (G : LaxMonoidalFunctor D E) (X Y : C) :
-    HEq (μ ((F.precomposeLaxMonoidal).obj G).toFunctor X Y)
-      (μ G.toFunctor (F.obj X) (F.obj Y) ≫ G.map (μ F X Y)) :=
-  (HEq.rfl)
-
-open MonoidalCategory Functor.LaxMonoidal in
-/-- Precomposition composes the unit comparisons. Its underlying functor object is
-propositionally identified with that of the composite functor. -/
-theorem Functor.precomposeLaxMonoidal_obj_ε (F : C ⥤ D) [F.LaxMonoidal]
-    (G : LaxMonoidalFunctor D E) :
-    HEq (ε ((F.precomposeLaxMonoidal).obj G).toFunctor)
-      (ε G.toFunctor ≫ G.map (ε F)) :=
-  (HEq.rfl)
-
-/-- Precomposition acts on a monoidal natural transformation by ordinary left whiskering.
-The two transformations are typed through propositionally identified functor objects. -/
-@[simp]
-theorem Functor.precomposeLaxMonoidal_map_hom_app (F : C ⥤ D) [F.LaxMonoidal]
-    {G G' : LaxMonoidalFunctor D E} (α : G ⟶ G') (X : C) :
-    HEq (((F.precomposeLaxMonoidal).map α).hom.app X) (α.hom.app (F.obj X)) :=
-  (HEq.rfl)
-
-/-- A monoidal equivalence identifies a lax monoidal functor with its round-trip
-precomposition. This is the monoidal version of the inverse of `Equivalence.invFunIdAssoc`. -/
-noncomputable def Equivalence.laxMonoidalRoundTripIso (e : C ≌ D)
-    [e.functor.Monoidal] [e.inverse.Monoidal] [e.IsMonoidal]
-    (F : LaxMonoidalFunctor D E) :
-    F ≅ LaxMonoidalFunctor.of (e.inverse ⋙ (e.functor ⋙ F.toFunctor)) := by
-  let i : F.toFunctor ≅ e.inverse ⋙ (e.functor ⋙ F.toFunctor) :=
-    F.toFunctor.leftUnitor.symm ≪≫
-      isoWhiskerRight e.counitIso.symm F.toFunctor ≪≫
-      Functor.associator e.inverse e.functor F.toFunctor
-  have : NatTrans.IsMonoidal e.counitIso.hom := inferInstanceAs (NatTrans.IsMonoidal e.counit)
-  have : NatTrans.IsMonoidal e.counitIso.inv := inferInstance
-  have : NatTrans.IsMonoidal i.hom := by
-    dsimp only [i, Iso.trans_hom, Iso.symm_hom]
-    have : NatTrans.IsMonoidal (isoWhiskerRight e.counitIso.symm F.toFunctor).hom := by
-      rw [isoWhiskerRight_hom, Iso.symm_hom]
-      infer_instance
-    infer_instance
-  exact @LaxMonoidalFunctor.isoMk _ _ _ _ _ _ _ _ i ‹NatTrans.IsMonoidal i.hom›
-
-/-- The round-trip comparison is induced by the inverse counit of the equivalence. -/
-@[simp]
-theorem Equivalence.laxMonoidalRoundTripIso_hom_app (e : C ≌ D)
-    [e.functor.Monoidal] [e.inverse.Monoidal] [e.IsMonoidal]
-    (F : LaxMonoidalFunctor D E) (X : D) :
-    (e.laxMonoidalRoundTripIso F).hom.hom.app X = F.map (e.counitIso.inv.app X) := by
-  dsimp [Equivalence.laxMonoidalRoundTripIso, LaxMonoidalFunctor.of,
-    LaxMonoidalFunctor.isoMk, LaxMonoidalFunctor.homMk]
-  simp
-
-/-- Precomposition by a monoidal equivalence is an equivalence on lax monoidal functors.
-The inverse precomposes by the inverse equivalence. -/
-noncomputable def Equivalence.precomposeLaxMonoidalEquivalence (e : C ≌ D)
-    [e.functor.Monoidal] [e.inverse.Monoidal] [e.IsMonoidal] :
-    LaxMonoidalFunctor D E ≌ LaxMonoidalFunctor C E :=
-  Equivalence.mk e.functor.precomposeLaxMonoidal e.inverse.precomposeLaxMonoidal
-    (NatIso.ofComponents (fun F ↦ e.laxMonoidalRoundTripIso F)
-      (fun f ↦ by
-        ext X
-        -- Unfold the bundled precomposition and its structural isomorphisms together:
-        -- the underlying functor of `of` is only definitionally the original functor.
-        dsimp [Functor.precomposeLaxMonoidal, Equivalence.laxMonoidalRoundTripIso,
-          LaxMonoidalFunctor.of, LaxMonoidalFunctor.isoMk, LaxMonoidalFunctor.homMk]
-        simpa only [Category.id_comp, Category.comp_id, Functor.id_obj, Functor.comp_obj] using
-          (f.hom.naturality (e.counitIso.inv.app X)).symm))
-    (NatIso.ofComponents (fun F ↦ (e.symm.laxMonoidalRoundTripIso F).symm)
-      (fun f ↦ by
-        ext X
-        -- As for the unit, expose the bundled composite before applying naturality.
-        dsimp [Functor.precomposeLaxMonoidal, Equivalence.laxMonoidalRoundTripIso,
-          LaxMonoidalFunctor.of, LaxMonoidalFunctor.isoMk, LaxMonoidalFunctor.homMk]
-        simpa only [Category.id_comp, Category.comp_id, Functor.id_obj, Functor.comp_obj] using
-          (f.hom.naturality (e.unitIso.inv.app X)).symm))
-
-/-- The forward functor of monoidal precomposition is precomposition by the given functor. -/
-@[simp]
-theorem Equivalence.precomposeLaxMonoidalEquivalence_functor (e : C ≌ D)
-    [e.functor.Monoidal] [e.inverse.Monoidal] [e.IsMonoidal] :
-    (e.precomposeLaxMonoidalEquivalence (E := E)).functor =
-      e.functor.precomposeLaxMonoidal :=
-  (rfl)
-
-end CategoryTheory
