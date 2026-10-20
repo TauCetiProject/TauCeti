@@ -56,7 +56,7 @@ theorem even_sum_sum_erase {α M : Type*} [DecidableEq α] [AddCommMonoid M] {f 
 /-- **The off-diagonal sum of an antisymmetric function vanishes.** The ordered pairs of distinct
 elements of `s` come in transposed couples contributing opposite terms, so `f` need only be
 antisymmetric off the diagonal of `s`. -/
-theorem sum_sum_erase_eq_zero {α M : Type*} [DecidableEq α] [AddCommGroup M] {f : α → α → M}
+theorem sum_sum_erase_eq_zero {α M : Type*} [DecidableEq α] [AddCommMonoid M] {f : α → α → M}
     (s : Finset α) (hf : ∀ i ∈ s, ∀ j ∈ s, i ≠ j → f i j + f j i = 0) :
     ∑ i ∈ s, ∑ j ∈ s.erase i, f i j = 0 := by
   rw [Finset.sum_sigma']
