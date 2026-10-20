@@ -60,6 +60,16 @@ end ProbabilityTheory
 
 namespace MeasureTheory.Measure
 
+/-- The sum of the coordinates of a finite product law has the corresponding convolution law. -/
+theorem hasLaw_sum_pi_convolutionPower {α : Type*} [MeasurableSpace α] [AddCommMonoid α]
+    [MeasurableAdd₂ α] (μ : Measure α) [IsProbabilityMeasure μ] (n : ℕ) :
+    ProbabilityTheory.HasLaw (fun x : Fin n → α ↦ ∑ i, x i) (μ.convolutionPower n)
+      (Measure.pi fun _ ↦ μ) := by
+  simpa only [Finset.sum_fn, id_eq, Fintype.card_fin] using
+    (ProbabilityTheory.iIndepFun_pi
+      (fun _ : Fin n ↦ measurable_id.aemeasurable)).hasLaw_sum_convolutionPower
+        (fun i ↦ (measurePreserving_eval (fun _ : Fin n ↦ μ) i).hasLaw)
+
 variable {α : Type*} [MeasurableSpace α] [AddCommMonoid α] [MeasurableAdd₂ α]
 
 /-- Summing an independent sequence up to a separately drawn natural-valued count gives the
