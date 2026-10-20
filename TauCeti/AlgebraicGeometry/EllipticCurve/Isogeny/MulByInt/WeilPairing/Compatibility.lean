@@ -77,9 +77,6 @@ private theorem divisorPullback_mulByIntIsogeny_divisorPullback_mulByIntIsogeny 
 variable [DecidableEq F] [IsSepClosed F] {N m : ℕ} [NeZero N] [NeZero m] (hN : (N : F) ≠ 0)
   (hm : (m : F) ≠ 0)
 
-local instance : IsIntegrallyClosed W.toAffine.CoordinateRing :=
-  W.toAffine.isIntegrallyClosed_coordinateRing
-
 /- The proof is Silverman's. Let `g` be a function with divisor `[m]^* (T) - [m]^* (O)`, the
 function from which `e_m(·, T)` is built. Since `[m] ∘ [k] = [N]`, its pullback `[k]^* g` has
 divisor `[N]^* (T) - [N]^* (O)`, so it computes `e_N(·, T)`. Translation by `S` moves `[k]^* g`

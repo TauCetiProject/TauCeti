@@ -169,12 +169,12 @@ theorem of_injective
 /-- A degreewise surjective map out of a finitely Laurent-supported family shows finite Laurent
 support of the target. -/
 theorem of_surjective
-    {W : ℤ → Type v'} [∀ j, AddCommGroup (W j)] [∀ j, Module k (W j)]
-    (hV : HasFiniteLaurentSupport k V) (f : ∀ j, V j →ₗ[k] W j)
-    (hf : ∀ j, Function.Surjective (f j)) : HasFiniteLaurentSupport k W := by
-  obtain ⟨s, hs⟩ := hV.exists_finset
+    {U : ℤ → Type v'} [∀ j, AddCommGroup (U j)] [∀ j, Module k (U j)]
+    (hU : HasFiniteLaurentSupport k U) (f : ∀ j, U j →ₗ[k] V j)
+    (hf : ∀ j, Function.Surjective (f j)) : HasFiniteLaurentSupport k V := by
+  obtain ⟨s, hs⟩ := hU.exists_finset
   refine of_finset (fun j => ?_) s fun j hj => ?_
-  · let _ := hV.finiteDimensional j
+  · let _ := hU.finiteDimensional j
     exact Module.Finite.of_surjective (f j) (hf j)
   · let _ := hs j hj
     exact (hf j).subsingleton

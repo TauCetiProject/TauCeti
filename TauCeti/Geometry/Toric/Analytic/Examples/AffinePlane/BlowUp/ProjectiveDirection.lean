@@ -60,7 +60,7 @@ theorem affinePlaneBlowUpDirectionMap_upperChart (z : ℂ × ℂ) :
   erw [← projectiveLinePositiveChartMap_apply_single, FanHom.analyticChartMap_apply,
     AffineSemigroupComplexPoint.comap_apply_single,
     affinePlaneBlowUpUpperPointHomeomorph_symm_apply_single]
-  simp [dualSemigroupMap_apply]
+  simp
 
 /-- In the lower blow-up chart, the projective direction has negative coordinate `s`. -/
 @[simp]
@@ -75,7 +75,7 @@ theorem affinePlaneBlowUpDirectionMap_lowerChart (z : ℂ × ℂ) :
   erw [← projectiveLineNegativeChartMap_apply_single, FanHom.analyticChartMap_apply,
     AffineSemigroupComplexPoint.comap_apply_single,
     affinePlaneBlowUpLowerPointHomeomorph_symm_apply_single]
-  simp [dualSemigroupMap_apply]
+  simp
 
 /-- The direction map is holomorphic on the whole blow-up, not just off the exceptional fibre. -/
 theorem contMDiff_affinePlaneBlowUpDirectionMap (n : ℕ∞ω) :

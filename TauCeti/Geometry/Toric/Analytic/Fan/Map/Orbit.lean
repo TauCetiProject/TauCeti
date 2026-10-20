@@ -57,17 +57,13 @@ theorem analyticChartMap_distinguishedPoint {σ : Φ.cones} {τ : Ψ.cones}
   refine AffineSemigroupComplexPoint.ext fun m ↦ ?_
   rw [AffineSemigroupComplexPoint.comap_apply_single,
     distinguishedPoint_apply_single, distinguishedPoint_apply_single]
-  have hchar : (dualSemigroupMap Φ.lattice Ψ.lattice f.latticeMap f.realMap
-      f.map_lattice h m : N →+ ℤ) = (m : N' →+ ℤ).comp f.latticeMap := by
-    ext n
-    simp
   have hleast : f.leastCone σ.2 ≤ τ.1 :=
     f.leastCone_le σ.2 τ.2 (by rintro _ ⟨x, hx, rfl⟩; exact h hx)
   have hleast' : (⟨f.leastCone σ.2, f.leastCone_mem σ.2⟩ : Ψ.cones) ≤ τ :=
     Subtype.coe_le_coe.1 hleast
   have hvanish := f.realCharacter_eq_zero_on_leastCone_iff σ.2
     (dualSemigroup_anti Ψ.lattice hleast m.2)
-  simp only [hchar]
+  simp only [coe_dualSemigroupMap]
   have htop (x : V) : x ∈ (⊤ : σ.1.Face) ↔ x ∈ σ.1 := Iff.rfl
   have horbit (y : V') : y ∈ Ψ.orbitFace hleast' ↔ y ∈ f.leastCone σ.2 :=
     SetLike.ext_iff.mp (Ψ.coe_orbitFace hleast') y
