@@ -13,6 +13,8 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.Three
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.ResidueQuadratic
 -- Proof-only: every point has nonsingular reduction at the symbol `II*`.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.StarredReduction
+-- Proof-only: membership in the principal maximal ideal.
+import TauCeti.RingTheory.LocalRing.MaximalIdeal.Generator
 
 /-!
 # The point-group index reported by Tate's algorithm
@@ -48,6 +50,7 @@ index calculation for the residue cubic at `I₀*` and the alternating quadratic
 public section
 
 open IsLocalRing
+open TauCeti.IsLocalRing (mem_maximalIdeal_iff_dvd)
 
 namespace WeierstrassCurve
 
@@ -76,12 +79,11 @@ theorem index_nonsingularReduction_eq_tateLocalIndex_of_ne_I_of_ne_IStar
   · exact absurd rfl (hsI 0)
   · exact absurd rfl (hsI (n + 1))
   · obtain ⟨-, h₃, h₄, h₆, h₆'⟩ := isTateTerminal_II.1 h
-    have hm (z : v.valuationSubring) : z ∈ maximalIdeal v.valuationSubring ↔ ϖ ∣ z := by
-      rw [hϖ, Ideal.mem_span_singleton]
     have hm₂ (z : v.valuationSubring) : z ∈ maximalIdeal v.valuationSubring ^ 2 ↔ ϖ ^ 2 ∣ z := by
       rw [hϖ, Ideal.span_singleton_pow, Ideal.mem_span_singleton]
-    rw [nonsingularReduction_eq_top_of_a₆_notMem v ((hm _).2 h₃) ((hm _).2 h₄)
-      ((hm _).2 h₆) (fun ha₆ ↦ h₆' ((hm₂ _).1 ha₆)), AddSubgroup.index_top]
+    rw [nonsingularReduction_eq_top_of_a₆_notMem v ((mem_maximalIdeal_iff_dvd hϖ).2 h₃)
+      ((mem_maximalIdeal_iff_dvd hϖ).2 h₄) ((mem_maximalIdeal_iff_dvd hϖ).2 h₆)
+      (fun ha₆ ↦ h₆' ((hm₂ _).1 ha₆)), AddSubgroup.index_top]
     exact tateLocalIndex_II.symm
   · rw [index_nonsingularReduction_eq_two_of_isTateTerminal_III v hϖ h]
     exact tateLocalIndex_III.symm
