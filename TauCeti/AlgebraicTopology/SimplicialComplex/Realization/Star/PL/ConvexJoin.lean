@@ -193,11 +193,12 @@ private theorem isPLOn_joinInverseFormula (hK : IsCompact (closedStarRealization
 coordinate formula for the geometric link of `v`, with a piecewise-linear inverse `G` on its
 image `T`, and let `b` be a centre with a piecewise-linear height function `h` that reads off
 `t` along every segment from `T` to `b`. Then the closed star of `v` is homeomorphic to the
-convex join of `T` and `b`: the apex goes to `b`, the apex coordinate is the height, and the
-homeomorphism and its inverse have piecewise-linear ambient coordinate formulas.
+convex join of `T` and `b`: the apex goes to `b`, the apex coordinate is the height, every other
+point `x` goes to `(1 - t) • F y + t • b`, where `t` is its apex coordinate and `y` its radial
+projection to the link, and the homeomorphism and its inverse have piecewise-linear ambient
+coordinate formulas.
 
-On a ray, the homeomorphism sends `(1 - t) • y + t • v` to `(1 - t) • F y + t • b`. The height
-condition says exactly that these segments meet only at `b`. -/
+The height condition says exactly that these segments meet only at `b`. -/
 theorem exists_homeomorph_closedStarRealization_convexJoin
     (hK : IsCompact (closedStarRealization K {v})) (hne : (geometricLink K v).Nonempty)
     (hF : IsPLOn F (range fun y : geometricLink K v => (y.1.1 : ι → ℝ)))
@@ -209,6 +210,8 @@ theorem exists_homeomorph_closedStarRealization_convexJoin
     ∃ φ : closedStarRealization K {v} ≃ₜ
         convexJoin ℝ (range fun y : geometricLink K v => F (y.1.1 : ι → ℝ)) {b},
       (φ (starApex K v) : κ → ℝ) = b ∧ (∀ x, h (φ x) = x.1.1 v) ∧
+      (∀ x (hx : x.1.1 v < 1), (φ x : κ → ℝ) = (1 - x.1.1 v) • F ((starLinkProjection K v
+        ⟨x.1, (mem_puncturedClosedStar K v _).mpr ⟨x.2, hx⟩⟩).1.1 : ι → ℝ) + x.1.1 v • b) ∧
       ∃ F' : (ι → ℝ) → (κ → ℝ), ∃ G' : (κ → ℝ) → (ι → ℝ),
         IsPLOn F' (range fun x : closedStarRealization K {v} => (x.1.1 : ι → ℝ)) ∧
         IsPLOn G' (convexJoin ℝ (range fun y : geometricLink K v => F (y.1.1 : ι → ℝ)) {b}) ∧
@@ -249,8 +252,8 @@ theorem exists_homeomorph_closedStarRealization_convexJoin
   have : CompactSpace (closedStarRealization K {v}) := isCompact_iff_compactSpace.mp hK
   let φ : closedStarRealization K {v} ≃ₜ S :=
     hcont.homeoOfEquivCompactToT2 (f := Equiv.ofBijective f ⟨hinj, hsurj⟩)
-  refine ⟨φ, joinFormula_starApex F b, h_joinFormula hne hhF, joinFormula F b v,
-    joinInverseFormula G h b v, hFPL, isPLOn_joinInverseFormula hK hF hG hh hhF,
+  refine ⟨φ, joinFormula_starApex F b, h_joinFormula hne hhF, joinFormula_of_lt F b,
+    joinFormula F b v, joinInverseFormula G h b v, hFPL, isPLOn_joinInverseFormula hK hF hG hh hhF,
     fun x => (rfl), joinInverseFormula_joinFormula hne hGF hhF⟩
 
 end AbstractSimplicialComplex

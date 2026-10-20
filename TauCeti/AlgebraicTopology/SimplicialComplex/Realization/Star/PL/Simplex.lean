@@ -131,7 +131,7 @@ theorem IsCombinatorialSphere.exists_homeomorph_closedStarRealization_top
       range fun y : Realization (⊤ : AbstractSimplicialComplex (Fin (n + 2))) =>
         (y.1 : Fin (n + 2) → ℝ) := by
     rw [hT, convexJoin_boundary_stdSimplex_barycenter, range_coe_realization_top]
-  obtain ⟨φ, hapex, hheight, F, G, hF, hG, hFφ, hGφ⟩ :=
+  obtain ⟨φ, hapex, hheight, -, F, G, hF, hG, hFφ, hGφ⟩ :=
     exists_homeomorph_closedStarRealization_convexJoin hK hne hf hg hgf
       (hh.mono (subset_univ _)) hhF
   -- Identify the join with the realization of the full complex through its coordinates.
