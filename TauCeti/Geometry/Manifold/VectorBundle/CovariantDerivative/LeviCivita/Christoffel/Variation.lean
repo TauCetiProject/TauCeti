@@ -67,18 +67,6 @@ namespace TauCeti.Manifold
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {g : ℝ → E → E →L[ℝ] E →L[ℝ] ℝ} {t : ℝ} {x : E}
 
-/-- At a point where `c` is differentiable, the Christoffel symbols of the first kind of `c`, with
-the last term written as the derivative of the scalar function `y ↦ c y u v`. -/
-private theorem christoffelFirstKind_eq_of_differentiableAt {c : E → E →L[ℝ] E →L[ℝ] ℝ}
-    (hc : DifferentiableAt ℝ c x) (u v : E) :
-    christoffelFirstKind c x u v =
-      (2⁻¹ : ℝ) • (fderiv ℝ c x u v + fderiv ℝ c x v u - fderiv ℝ (fun y ↦ c y u v) x) := by
-  ext w
-  rw [christoffelFirstKind_apply, smul_apply, sub_apply, add_apply,
-    fderiv_clm_apply_const_apply (hc.clm_apply (differentiableAt_const u)),
-    fderiv_clm_apply_const_apply hc, smul_eq_mul]
-  ring
-
 /-- **The variation of the Christoffel symbols of the first kind.** For a jointly `C²` family of
 fields of bilinear forms `g_t`, the parameter derivative of the Christoffel symbols of the first
 kind of `g_t` is the Christoffel symbols of the first kind of the parameter derivative
@@ -117,12 +105,8 @@ theorem hasDerivAt_christoffelFirstKind_family (hg : ContDiffAt ℝ 2 (Function.
     rw [hy, timeFDeriv_apply, timeFDeriv_apply, ← fderiv_clm_apply_const_apply hdy u,
       ← fderiv_clm_apply_const_apply (hdy.clm_apply (differentiableAt_const u)) v]
   -- The parameter derivative `h` of `g` is differentiable in the base point.
-  have hh : DifferentiableAt ℝ (fun y ↦ deriv (fun s ↦ g s y) t) x := by
-    refine DifferentiableAt.congr_of_eventuallyEq ?_ htime
-    rw [timeFDeriv_eq]
-    exact ((hg.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero).comp x
-      (differentiableAt_const t |>.prodMk differentiableAt_id) |>.clm_apply
-        (differentiableAt_const (1, 0))
+  have hh : DifferentiableAt ℝ (fun y ↦ deriv (fun s ↦ g s y) t) x :=
+    hg.differentiableAt_timeFDeriv.congr_of_eventuallyEq htime
   rw [christoffelFirstKind_eq_of_differentiableAt hh, htime.fderiv_eq, hGtime.fderiv_eq]
   have hD := hasDerivAt_spatialFDeriv (by simpa using hg : ContDiffAt ℝ (minSmoothness ℝ 2) F _)
   have hDG := hasDerivAt_spatialFDeriv (by simpa using hG : ContDiffAt ℝ (minSmoothness ℝ 2) G _)
@@ -193,14 +177,8 @@ theorem two_mul_apply_deriv_christoffelSecondKind_family
   -- The variation `h(x)` of a family of symmetric forms is symmetric.
   have hsymm_h (a b : E) :
       timeFDeriv (Function.uncurry g) t x a b = timeFDeriv (Function.uncurry g) t x b a := by
-    have hev : ∀ᶠ s in 𝓝 t, (g s x).toBilinForm.IsSymm :=
-      (continuousAt_id.prodMk continuousAt_const).eventually hsymm
-    have hab := (hgx.clm_apply (hasDerivAt_const t a)).clm_apply (hasDerivAt_const t b)
-    have hba := (hgx.clm_apply (hasDerivAt_const t b)).clm_apply (hasDerivAt_const t a)
-    simp only [map_zero, add_zero] at hab hba
-    refine hab.unique (hba.congr_of_eventuallyEq ?_)
-    filter_upwards [hev] with s hs
-    exact (isSymm_toBilinForm_iff.1 hs b a).symm
+    rw [timeFDeriv_apply]
+    exact fderiv_apply_apply_comm (hsymm.mono fun _ hp ↦ isSymm_toBilinForm_iff.1 hp) (1, 0) a b
   -- The Christoffel symbols of the symmetric metric `g_t` are symmetric.
   have hΓ (a b : E) : christoffelSecondKind (g t) x a b = christoffelSecondKind (g t) x b a :=
     christoffelSecondKind_comm ((continuousAt_const.prodMk continuousAt_id).eventually hsymm) a b
