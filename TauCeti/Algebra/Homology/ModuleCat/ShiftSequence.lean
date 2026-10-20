@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
-public import Mathlib.Algebra.Homology.HomotopyCategory.ShiftSequence
+public import TauCeti.Algebra.Homology.HomotopyCategory.ShiftSequence
 
 /-!
 # Maps in cohomology of shifted morphisms of complexes of modules, on classes
@@ -54,15 +54,10 @@ theorem shiftMap_homologyπ_moduleCatCyclesMk {K L : CochainComplex (ModuleCat R
   rw [ShortComplex.homologyπ_naturality, ModuleCat.hom_comp]
   refine congrArg (ModuleCat.Hom.hom (L.homologyπ a')) ?_
   apply L.moduleCat_iCycles_injective a'
-  -- Restate the left side as a composite of module maps, so that `cyclesMap_i` applies.
-  change ((ShortComplex.cyclesMap _ ≫ (L.sc a').iCycles).hom _) = _
-  rw [ShortComplex.cyclesMap_i, ModuleCat.hom_comp]
-  refine Eq.trans (congrArg
-    (ModuleCat.Hom.hom ((shiftShortComplexFunctorIso (ModuleCat R) n a a' h).hom.app L).τ₂)
-    (HomologicalComplex.iCycles_moduleCatCyclesMk _ _ _ _ _ _)) ?_
-  rw [HomologicalComplex.iCycles_moduleCatCyclesMk, hy]
-  -- The `τ₂` component of the shift isomorphism of short complexes is `shiftFunctorObjXIso` by
-  -- definition, which is how `y` is related to `f x` in the hypothesis `hy`.
-  rfl
+  rw [← CochainComplex.shiftCyclesIso_hom]
+  refine (congrArg (fun φ ↦ ModuleCat.Hom.hom φ _)
+    (CochainComplex.shiftCyclesIso_hom_iCycles (K := L) n a a' h)).trans ?_
+  rw [ModuleCat.comp_apply, HomologicalComplex.iCycles_moduleCatCyclesMk,
+    HomologicalComplex.iCycles_moduleCatCyclesMk, hy]
 
 end CochainComplex

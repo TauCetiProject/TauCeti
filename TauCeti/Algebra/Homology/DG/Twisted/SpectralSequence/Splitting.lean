@@ -126,23 +126,15 @@ theorem shiftedModuleComplex_homologyπ_eq_zero (p n : ℤ)
     ((shiftedModuleComplex.{uR, uA, uM, uP} hM p).homologyπ n).hom
       ((shiftedModuleComplex.{uR, uA, uM, uP} hM p).moduleCatCyclesMk α (n + 1) (by simp) hα) =
       0 := by
-  have h0 : ((shiftedModuleComplex.{uR, uA, uM, uP} hM p).d n (n + 1)).hom 0 = 0 := map_zero _
-  have := HomologicalComplex.moduleCat_homologyπ_eq_of_iCycles_sub_eq_d
-    (z := (shiftedModuleComplex.{uR, uA, uM, uP} hM p).moduleCatCyclesMk α (n + 1) (by simp) hα)
-    (w := (shiftedModuleComplex.{uR, uA, uM, uP} hM p).moduleCatCyclesMk 0 (n + 1) (by simp) h0)
-    _ b (by
-      rw [HomologicalComplex.iCycles_moduleCatCyclesMk,
-        HomologicalComplex.iCycles_moduleCatCyclesMk, sub_zero]
-      refine (shiftedModuleComplexXEquiv hM p n).injective (Subtype.ext ?_)
-      have hd := shiftedModuleComplexXEquiv_d hM p (n - 1) b
-      rw [sub_add_cancel] at hd
-      rw [hb]
-      exact hd.symm)
-  refine this.trans ?_
-  have hz : (shiftedModuleComplex.{uR, uA, uM, uP} hM p).moduleCatCyclesMk 0 (n + 1) (by simp)
-      h0 = 0 := (shiftedModuleComplex.{uR, uA, uM, uP} hM p).moduleCat_iCycles_injective n (by
-    rw [HomologicalComplex.iCycles_moduleCatCyclesMk, map_zero])
-  rw [hz, map_zero]
+  refine ((shiftedModuleComplex.{uR, uA, uM, uP} hM p).moduleCat_homologyπ_eq_zero_iff (n := n)
+    (m := n - 1) (by simp) _).2 ⟨b, ?_⟩
+  refine (shiftedModuleComplex.{uR, uA, uM, uP} hM p).moduleCat_iCycles_injective n ?_
+  rw [← ModuleCat.comp_apply, HomologicalComplex.toCycles_i,
+    HomologicalComplex.iCycles_moduleCatCyclesMk]
+  refine (shiftedModuleComplexXEquiv hM p n).injective (Subtype.ext ?_)
+  have hd := shiftedModuleComplexXEquiv_d hM p (n - 1) b
+  rw [sub_add_cancel] at hd
+  rw [hd, hb]
 
 variable (ind : P → ℤ) (p : ℤ)
 
