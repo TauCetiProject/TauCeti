@@ -29,8 +29,9 @@ The coefficient space `ι → K` carries the additive Haar measure normalized so
 `TauCeti.integerBox K ι = 𝒪[K] ^ ι` has volume `1`. For such a measure, writing `q` for the
 cardinality of the residue field, the box whose `i`-th factor is `𝓂[K] ^ e i` has volume
 `q ^ (-∑ i, e i)`, since it is the image of the integer box under the diagonal matrix with entries
-`ϖ ^ e i` for a uniformizer `ϖ`. The Eisenstein region is the difference of two such boxes, so its
-volume is `q ^ (-n) (1 - q⁻¹)` (`TauCeti.eisensteinSet_eq_sdiff`).
+`ϖ ^ e i` for a uniformizer `ϖ`. For `0 < n` the Eisenstein region is the difference of two such
+boxes (`TauCeti.eisensteinSet_eq_sdiff`), so its volume is `q ^ (-n) (1 - q⁻¹)`
+(`TauCeti.measure_eisensteinSet`).
 
 The measure statements assume only left invariance of the measure and the normalization; no
 product structure on the measure is used.
