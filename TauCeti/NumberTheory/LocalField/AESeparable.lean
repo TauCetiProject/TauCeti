@@ -41,7 +41,8 @@ inseparable `f + C t` shares a root `β` with `f'` in an algebraic closure, whic
 
 ## Main results
 
-* `TauCeti.ae_separable_monicOfCoeff`: almost every monic polynomial over `K` is separable.
+* `MeasureTheory.Measure.ae_separable_monicOfCoeff`: almost every monic polynomial over `K` is
+  separable.
 
 ## References
 
@@ -96,6 +97,10 @@ private theorem encard_setOf_not_separable_le (x : Fin (n + 2) → K) (hx : x 1 
 
 end Field
 
+end TauCeti
+
+namespace MeasureTheory.Measure
+
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] {n : ℕ} [MeasurableSpace (Fin n → K)] [BorelSpace (Fin n → K)]
 
@@ -120,7 +125,7 @@ theorem ae_separable_monicOfCoeff (μ : Measure (Fin n → K)) [μ.IsAddLeftInva
   let r (a : Fin (m + 2) → K) : K :=
     resultant (monicOfCoeff a) (derivative (monicOfCoeff a)) (m + 2) (m + 2 - 1)
   have hr : Continuous r := continuous_iff_continuousAt.2 fun a ↦ by
-    simpa [r] using continuousAt_subresultantCoeff
+    simpa [r] using TauCeti.continuousAt_subresultantCoeff
       (fun i _ ↦ (continuous_coeff_monicOfCoeff i).continuousAt)
       (fun i _ ↦ by
         simp only [coeff_derivative]
@@ -148,7 +153,7 @@ theorem ae_separable_monicOfCoeff (μ : Measure (Fin n → K)) [μ.IsAddLeftInva
     have h1 (t : K) : (x + t • Pi.single 0 1 : Fin (m + 2) → K) 1 = x 1 := by simp
     by_cases hx : x 1 = 0
     · simp [h1, hx]
-    · refine le_trans (encard_le_encard fun t ht ↦ ?_) (encard_setOf_not_separable_le x hx)
+    · refine le_trans (encard_le_encard fun t ht ↦ ?_) (TauCeti.encard_setOf_not_separable_le x hx)
       exact (hr0 _).mp ht.1
   rw [ae_iff]
   refine measure_mono_null (fun a ha ↦ ?_) (measure_union_null h₁ h₂)
@@ -156,4 +161,4 @@ theorem ae_separable_monicOfCoeff (μ : Measure (Fin n → K)) [μ.IsAddLeftInva
   · exact Or.inl ha1
   · exact Or.inr ⟨(hr0 a).mpr ha, ha1⟩
 
-end TauCeti
+end MeasureTheory.Measure

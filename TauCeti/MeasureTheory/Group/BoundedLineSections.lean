@@ -100,8 +100,10 @@ theorem measure_eq_zero_of_encard_setOf_add_smul_mem_le (μ : Measure (ι → K)
     (isCompact_scaledIntegerBox hϖ0 k).measure_lt_top.ne
     (w := fun t : 𝒪[K] ↦ ((ϖ : K) ^ k₀ * t) • v) (fun t ↦ ?_) (D := D) fun x ↦ ?_
   · refine mem_scaledIntegerBox.mpr fun i ↦ ?_
-    rw [Pi.smul_apply, smul_eq_mul, show (ϖ : K) ^ k * ((ϖ : K) ^ k₀ * t * v i) =
-      (ϖ ^ k * t : 𝒪[K]) * ((ϖ : K) ^ k₀ * v i) by push_cast; ring]
+    have h : (ϖ : K) ^ k * ((ϖ : K) ^ k₀ * t * v i) =
+        (ϖ ^ k * t : 𝒪[K]) * ((ϖ : K) ^ k₀ * v i) := by
+      push_cast; ring
+    rw [Pi.smul_apply, smul_eq_mul, h]
     exact mul_mem (SetLike.coe_mem _) (mem_scaledIntegerBox.mp hk₀ i)
   · refine le_trans ?_ (hD x)
     rw [← (?_ : InjOn (fun t : 𝒪[K] ↦ (ϖ : K) ^ k₀ * t) _).encard_image]
