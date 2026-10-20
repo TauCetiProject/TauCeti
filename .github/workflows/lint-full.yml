@@ -53,6 +53,12 @@ jobs:
           # Harmless (just a slightly deeper fetch) when the cache is off.
           fetch-depth: 100
 
+      - name: Prepare pinned shared tools
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@38690d9addbc153e679580ae777d2c3fe40cbcca
+        with:
+          tools-repository: TauCetiProject/TauCetiTools
+          tools-ref: 38690d9addbc153e679580ae777d2c3fe40cbcca
+          project-directory: .
       - name: Infrastructure policy unit tests
         run: |
           python3 scripts/test_cancel_bors_candidate.py

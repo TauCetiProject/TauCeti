@@ -71,6 +71,12 @@ jobs:
           # The tool re-fetches origin/main before auditing, because the wait below can run
           # for over an hour and this checkout is a snapshot from before it.
 
+      - name: Prepare pinned shared tools
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@38690d9addbc153e679580ae777d2c3fe40cbcca
+        with:
+          tools-repository: TauCetiProject/TauCetiTools
+          tools-ref: 38690d9addbc153e679580ae777d2c3fe40cbcca
+          project-directory: .
       - name: Wait for CI, then report to Zulip if anything changed
         env:
           GH_TOKEN: ${{ github.token }}

@@ -155,6 +155,12 @@ jobs:
           persist-credentials: false
           fetch-depth: 1
 
+      - name: Prepare pinned shared tools
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@38690d9addbc153e679580ae777d2c3fe40cbcca
+        with:
+          tools-repository: TauCetiProject/TauCetiTools
+          tools-ref: 38690d9addbc153e679580ae777d2c3fe40cbcca
+          project-directory: gate
       - name: Resolve PR head
         id: pr
         env:
@@ -1552,5 +1558,11 @@ jobs:
           sparse-checkout-cone-mode: false
           persist-credentials: false
 
+      - name: Prepare pinned shared tools
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@38690d9addbc153e679580ae777d2c3fe40cbcca
+        with:
+          tools-repository: TauCetiProject/TauCetiTools
+          tools-ref: 38690d9addbc153e679580ae777d2c3fe40cbcca
+          project-directory: .
       - name: Post the terminal merge-group build status
         run: python3 scripts/finalize_batch.py

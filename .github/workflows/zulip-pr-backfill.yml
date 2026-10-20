@@ -47,6 +47,12 @@ jobs:
       - uses: actions/checkout@v4
         with:
           sparse-checkout: scripts/pr_status
+      - name: Prepare pinned shared tools
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@38690d9addbc153e679580ae777d2c3fe40cbcca
+        with:
+          tools-repository: TauCetiProject/TauCetiTools
+          tools-ref: 38690d9addbc153e679580ae777d2c3fe40cbcca
+          project-directory: .
       - name: Reconcile all existing PR posts
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}

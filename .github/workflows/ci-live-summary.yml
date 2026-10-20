@@ -18,6 +18,12 @@ jobs:
           ref: ${{ github.workflow_sha }}
           persist-credentials: false
           sparse-checkout: scripts/ci_live_summary.py
+      - name: Prepare pinned shared tools
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@38690d9addbc153e679580ae777d2c3fe40cbcca
+        with:
+          tools-repository: TauCetiProject/TauCetiTools
+          tools-ref: 38690d9addbc153e679580ae777d2c3fe40cbcca
+          project-directory: .
       - name: Publish bounded data-only summary
         env:
           GH_TOKEN: ${{ github.token }}

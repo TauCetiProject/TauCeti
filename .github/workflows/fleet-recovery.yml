@@ -24,6 +24,12 @@ jobs:
           sparse-checkout: scripts/fleet_recovery.py
           sparse-checkout-cone-mode: false
           persist-credentials: false
+      - name: Prepare pinned shared tools
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@38690d9addbc153e679580ae777d2c3fe40cbcca
+        with:
+          tools-repository: TauCetiProject/TauCetiTools
+          tools-ref: 38690d9addbc153e679580ae777d2c3fe40cbcca
+          project-directory: .
       - name: Recover an unacquired dedicated runner on Namespace
         env:
           GH_TOKEN: ${{ github.token }}
