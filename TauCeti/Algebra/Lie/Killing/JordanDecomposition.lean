@@ -11,9 +11,11 @@ public import TauCeti.Algebra.Lie.Derivation.JordanChevalley
 /-!
 # Abstract Jordan decomposition in Killing Lie algebras
 
-Let `L` be a finite-dimensional Lie algebra with nondegenerate Killing form. Every element
-`x : L` decomposes as `x = n + s` with `⁅n, s⁆ = 0`, `ad n` nilpotent and `ad s` semisimple,
-and these parts are unique. This is the abstract (or internal) Jordan decomposition: the
+Let `L` be a finite-dimensional Lie algebra with nondegenerate Killing form over a perfect
+field `K`. Every element `x : L` whose adjoint action `ad x` is split (its generalized
+eigenspaces span `L`, which is automatic when `K` is algebraically closed) decomposes as
+`x = n + s` with `⁅n, s⁆ = 0`, `ad n` nilpotent and `ad s` semisimple, and these parts are
+unique. This is the abstract (or internal) Jordan decomposition: the
 Jordan–Chevalley decomposition of the endomorphism `ad x` does not a priori have its parts
 in the image of `ad`, and the decomposition here reconstructs them inside `L`.
 
