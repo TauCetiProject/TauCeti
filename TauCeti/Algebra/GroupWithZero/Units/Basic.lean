@@ -37,8 +37,8 @@ A local ring homomorphism reflects units, and it carries the natural number `n` 
 invertible in the source as soon as it is invertible in the target. For an algebra map of fields
 `K → L` this is how invertibility of `n` travels from `L` down to `K`.
 
-Finally, the units of an infinite group with zero are nontrivial: deleting zero leaves at least two
-elements, both of which define units.
+Finally, the units of an infinite group with zero are infinite: deleting zero leaves infinitely
+many elements, each of which defines a unit. In particular, its unit group is nontrivial.
 
 ## Main results
 
@@ -47,28 +47,20 @@ elements, both of which define units.
   trivial unit group.
 * `TauCeti.isUnit_natCast_of_isUnit_natCast`: a natural number invertible in the target of a
   local ring homomorphism is invertible in its source.
-* `TauCeti.instNontrivialUnitsOfInfiniteGroupWithZero`: the units of an infinite group with zero
-  are nontrivial.
+* `TauCeti.instInfiniteUnitsOfInfiniteGroupWithZero`: the units of an infinite group with zero
+  are infinite.
 -/
 
 public section
 
 namespace TauCeti
 
-/-- The units of an infinite group with zero form a nontrivial group. -/
-instance instNontrivialUnitsOfInfiniteGroupWithZero {G₀ : Type*} [GroupWithZero G₀] [Infinite G₀] :
-    Nontrivial G₀ˣ := by
-  let U := {x : G₀ // x ∈ ({0} : Set G₀)ᶜ}
-  let _ : Infinite U := (Set.toFinite ({0} : Set G₀)).infinite_compl.to_subtype
-  obtain ⟨x, y, hxy⟩ := exists_pair_ne U
-  refine ⟨Units.mk0 x (by
-      simpa only [Set.mem_compl_iff, Set.mem_singleton_iff] using x.property),
-    Units.mk0 y (by
-      simpa only [Set.mem_compl_iff, Set.mem_singleton_iff] using y.property), ?_⟩
-  intro h
-  apply hxy
-  apply Subtype.ext
-  exact congrArg Units.val h
+/-- The units of an infinite group with zero form an infinite group. -/
+instance instInfiniteUnitsOfInfiniteGroupWithZero {G₀ : Type*} [GroupWithZero G₀] [Infinite G₀] :
+    Infinite G₀ˣ := by
+  have : Infinite {x : G₀ // x ≠ 0} :=
+    (Set.finite_singleton (0 : G₀)).infinite_compl.to_subtype
+  exact unitsEquivNeZero.infinite_iff.mpr this
 
 /-- **A power of `a` times a power of `a⁻¹` is an integer power of `a`**: for `i ≤ n`, the
 exponents `i` and `n - i` combine to `i - (n - i) = 2 * i - n`. -/

@@ -296,6 +296,7 @@ def apply_label(api: GitHub, repo: str, pr: int, target: str, areas: set[str], c
     have = {item["name"] for item in current}
     stale = sorted(n for n in have if n.startswith("roadmap/") and n != target)
     if target in have and not stale:
+        api.skip_write("roadmap-label")
         return  # No label creation, presentation update, or mutation for an unchanged PR.
     if target not in have:
         color, desc = _label_meta(target, areas)
