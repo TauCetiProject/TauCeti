@@ -124,20 +124,13 @@ theorem isTame_iff :
           0 :=
   Iff.rfl
 
-/-- **Tameness read on residue fields**: a place `P'` of `F' / k` is tame over `F` exactly when
+/-- **Tameness read on residue fields**: a place `P'` of `F' / k'` is tame over `F` exactly when
 the residue extension `F'_{P'} / F_P` of the two places is separable and `e(P' ∣ P)` is nonzero in
 `F_P`. -/
-theorem isTame_iff_isSeparable_residueField (P' : Place k F') :
+theorem isTame_iff_isSeparable_residueField :
     IsTame k F P' ↔ Algebra.IsSeparable (P'.restrict k F).ResidueField P'.ResidueField ∧
       ((ramificationIdx F P' : ℕ) : (P'.restrict k F).ResidueField) ≠ 0 := by
   have hS := algebraMap_mem_integers_of_mem_integralClosure k F P'
-  have hconstants : ∀ c : k, algebraMap k F' c ∈
-      integralClosure (P'.restrict k F).integers F' := fun c ↦
-    isIntegral_integers_algebraMap (F' := F') (P'.restrict k F) c
-  let _ : Algebra k (integralClosure (P'.restrict k F).integers F') :=
-    ((algebraMap k F').codRestrict _ hconstants).toAlgebra
-  let _ : IsScalarTower k (integralClosure (P'.restrict k F).integers F') F' :=
-    .of_algebraMap_eq fun _ ↦ rfl
   have : (centerIntegralClosure k F P').asIdeal.IsMaximal :=
     (centerIntegralClosure k F P').isPrime.isMaximal (centerIntegralClosure k F P').ne_bot
   let _ : Field ((P'.restrict k F).integers ⧸
@@ -147,18 +140,39 @@ theorem isTame_iff_isSeparable_residueField (P' : Place k F') :
   -- The residue ring of `𝒪_P` is by definition the residue field of `P`.
   let e₀ : ((P'.restrict k F).integers ⧸ IsLocalRing.maximalIdeal (P'.restrict k F).integers) ≃+*
       (P'.restrict k F).ResidueField := RingEquiv.refl _
+  let S := integralClosure (P'.restrict k F).integers F'
+  let f : S →+* P'.ResidueField :=
+    (IsLocalRing.residue P'.integers).comp
+      ((algebraMap S F').codRestrict P'.integers hS)
+  have hker : RingHom.ker f = (P'.center hS).asIdeal := by
+    ext r
+    rw [RingHom.mem_ker]
+    change IsLocalRing.residue P'.integers _ = 0 ↔ _
+    rw [P'.residue_eq_zero_iff_valuation_lt_one, P'.mem_center_asIdeal hS]
+    rfl
+  have hsurj : Function.Surjective f := by
+    intro y
+    obtain ⟨a, rfl⟩ := IsLocalRing.residue_surjective y
+    obtain ⟨c, hc⟩ := HeightOneSpectrum.exists_valuation_sub_lt_of_integer (P'.center hS)
+      (by rw [P'.valuation_center hS]; exact P'.mem_integers_iff.mp a.2) 1
+    rw [Units.val_one, P'.valuation_center hS] at hc
+    refine ⟨c, ?_⟩
+    change IsLocalRing.residue P'.integers _ = _
+    rw [← sub_eq_zero, ← map_sub, P'.residue_eq_zero_iff_valuation_lt_one]
+    push_cast
+    exact hc
   let e : (integralClosure (P'.restrict k F).integers F' ⧸
       (centerIntegralClosure k F P').asIdeal) ≃+* P'.ResidueField :=
-    (Ideal.quotEquivOfEq (by rw [centerIntegralClosure_def])).trans
-      (P'.quotientAlgEquivResidueField hS).toRingEquiv
+    (Ideal.quotEquivOfEq (by rw [centerIntegralClosure_def, hker])).trans
+      (RingHom.quotientKerEquivOfSurjective hsurj)
   have he : (algebraMap (P'.restrict k F).ResidueField P'.ResidueField).comp e₀.toRingHom =
       e.toRingHom.comp (algebraMap ((P'.restrict k F).integers ⧸
         IsLocalRing.maximalIdeal (P'.restrict k F).integers) _) := by
     refine Ideal.Quotient.ringHom_ext (RingHom.ext fun r ↦ ?_)
-    simp only [RingHom.coe_comp, Function.comp_apply, Ideal.Quotient.algebraMap_mk_of_liesOver,
+    simp only [Ideal.Quotient.algebraMap_mk_of_liesOver,
       e, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe, RingEquiv.trans_apply,
-      Ideal.quotEquivOfEq_mk, AlgEquiv.coe_toRingEquiv, quotientAlgEquivResidueField_mk,
-      residueHom_apply]
+      Ideal.quotEquivOfEq_mk, RingHom.quotientKerEquivOfSurjective_apply_mk, f,
+      RingHom.comp_apply]
     -- `e₀` is the identity and `Ideal.Quotient.mk` of the maximal ideal is the residue map, but
     -- only after unfolding `IsLocalRing.ResidueField` to the quotient: `e₀` expects an argument
     -- of the quotient type, so rewriting with `IsLocalRing.residue_def` under it gives an
@@ -287,10 +301,10 @@ theorem ramificationIdx_eq_differentExponent_add_one_iff :
 
 /-- **Unramified places are those with unramified local model**: a place `P'` has ramification
 index one and separable residue extension exactly when the local model `𝒪'_P` is unramified at
-the centre of `P'`, in Mathlib's `Algebra.IsUnramifiedAt` sense. Both conditions are read off the
-vanishing of the different exponent (Stichtenoth, Theorem 3.5.1), via
-`TauCeti.Place.differentExponent_eq_zero_iff`. -/
-theorem ramificationIdx_eq_one_and_isSeparable_iff_isUnramifiedAt (P' : Place k F') :
+the centre of `P'`, in Mathlib's `Algebra.IsUnramifiedAt` sense. Equivalently, the different
+exponent vanishes (Stichtenoth, Corollary 3.5.5; see
+`TauCeti.Place.differentExponent_eq_zero_iff`). -/
+theorem ramificationIdx_eq_one_and_isSeparable_iff_isUnramifiedAt :
     (ramificationIdx F P' = 1 ∧
       Algebra.IsSeparable (P'.restrict k F).ResidueField P'.ResidueField) ↔
       Algebra.IsUnramifiedAt ((P'.restrict k F).integers)
