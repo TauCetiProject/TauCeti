@@ -27,6 +27,9 @@ results apply to path algebras independently of any relations.
 * `TauCeti.PathAlgebra.mem_pathsBetween_iff`: membership in that degree-`n` corner.
 * `TauCeti.PathAlgebra.finrank_pathsBetween`: the dimension of that corner is the number of
   paths of the prescribed length between the vertices.
+* `TauCeti.PathAlgebra.card_pathBetween_zero` and
+  `TauCeti.PathAlgebra.card_pathBetween_mul_card_arrow_eq`: the last-arrow recursion for the
+  number of paths of a given length between two vertices.
 * `TauCeti.PathAlgebra.mul_mem_pathsInto`: multiplication adds path lengths.
 * `TauCeti.PathAlgebra.exists_eq_sum_ofArrow_mul` and
   `TauCeti.PathAlgebra.sum_ofArrow_mul_eq_zero_iff`: existence and uniqueness of the last-arrow
@@ -111,6 +114,41 @@ theorem card_arrow_mul_card_pathInto_eq [Fintype R] [∀ a b : R, Fintype (a ⟶
         rw [Nat.card_sigma]
         simp [Nat.card_prod, Nat.card_eq_fintype_card]
     _ = Nat.card (PathInto R (n + 1) j) := Nat.card_congr (Equiv.ofBijective g ⟨hg, hs⟩)
+
+/-- The only path of length zero is the trivial path at a vertex. -/
+theorem card_pathBetween_zero [DecidableEq R] (i j : R) :
+    Nat.card (PathBetween R 0 i j) = if i = j then 1 else 0 := by
+  split_ifs with h
+  · subst h
+    refine Nat.card_eq_one_iff_unique.mpr ⟨⟨fun p q => Subtype.ext ?_⟩, ⟨⟨Path.nil, rfl⟩⟩⟩
+    rw [Path.eq_nil_of_length_zero p.1 p.2, Path.eq_nil_of_length_zero q.1 q.2]
+  · have : IsEmpty (PathBetween R 0 i j) := ⟨fun p => h (Path.eq_of_length_zero p.1 p.2)⟩
+    exact Nat.card_of_isEmpty
+
+/-- Every path of length `n + 1` from `i` to `j` is a unique path of length `n` from `i` to some
+`l`, followed by an arrow `l ⟶ j`. -/
+theorem card_pathBetween_mul_card_arrow_eq [Fintype R] [∀ a b : R, Finite (a ⟶ b)]
+    (n : ℕ) (i j : R) :
+    ∑ l : R, Nat.card (PathBetween R n i l) * Nat.card (l ⟶ j) =
+      Nat.card (PathBetween R (n + 1) i j) := by
+  let g : (Σ l : R, PathBetween R n i l × (l ⟶ j)) → PathBetween R (n + 1) i j :=
+    fun x => ⟨x.2.1.1.cons x.2.2, by simp [x.2.1.2]⟩
+  have hg : Function.Bijective g := by
+    refine ⟨?_, ?_⟩
+    · rintro ⟨l, ⟨p, hp⟩, b⟩ ⟨l', ⟨p', hp'⟩, b'⟩ h
+      have h' : p.cons b = p'.cons b' := congrArg Subtype.val h
+      obtain rfl := Path.obj_eq_of_cons_eq_cons h'
+      obtain rfl := eq_of_heq (Path.heq_of_cons_eq_cons h')
+      obtain rfl := eq_of_heq (Path.hom_heq_of_cons_eq_cons h')
+      rfl
+    · rintro ⟨p, hp⟩
+      cases p with
+      | nil => simp at hp
+      | cons q b =>
+        simp only [Path.length_cons, Nat.add_right_cancel_iff] at hp
+        exact ⟨⟨_, ⟨q, hp⟩, b⟩, rfl⟩
+  rw [← Nat.card_congr (Equiv.ofBijective g hg), Nat.card_sigma]
+  exact Finset.sum_congr rfl fun l _ => (Nat.card_prod _ _).symm
 
 variable (k : Type w)
 
