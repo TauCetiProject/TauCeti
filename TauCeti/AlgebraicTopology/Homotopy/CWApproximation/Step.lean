@@ -190,30 +190,10 @@ theorem homotopyGroupMap_cwApproximationStepMap_comp_homotopyGroupMap {N : Type 
 representative. -/
 theorem surjective_homotopyGroupMap_cwApproximationStepMap_succ :
     Function.Surjective (HomotopyGroup.map (N := Fin (n + 1)) (cwApproximationStepMap f z n).hom
-      (cwApproximationStepMap_cwApproximationStepIncl_apply f z n z)) := by
-  refine Quotient.ind fun γ ↦ ?_
-  let c := cellAttachmentCell (cwApproximationAttachingMap f z n) (.inr γ)
-  -- The characteristic map of the cell attached for `γ`, read on the cube, is a generalized loop:
-  -- the boundary of the cube goes to the boundary sphere of the disk, attached at `z`.
-  let q : Ω^ (Fin (n + 1)) (cwApproximationStep f z n) (cwApproximationStepIncl f z n z) :=
-    ⟨c.hom.comp ((diskHomeomorphCube (n + 1)).symm : C(I^(Fin (n + 1)), TopCat.disk (n + 1))),
-      fun y hy ↦ by
-        obtain ⟨s, hs⟩ := (diskHomeomorphCube_mem_boundary_iff _).1
-          (((diskHomeomorphCube (n + 1)).apply_symm_apply y).symm ▸ hy)
-        have h := ConcreteCategory.congr_hom
-          (cellAttachment_boundary (cwApproximationAttachingMap f z n) (.inr γ)) s
-        rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, hs] at h
-        -- `h` evaluates the constant attaching map at `s` and the composite at `y`, both by
-        -- definition.
-        exact h.symm⟩
-  refine ⟨⟦q⟧, ?_⟩
-  rw [HomotopyGroup.map_mk]
-  congr 1
-  ext y
-  rw [GenLoop.map_apply]
-  refine (ConcreteCategory.congr_hom (cellAttachmentCell_inr_comp_cwApproximationStepMap f z n γ)
-    ((diskHomeomorphCube (n + 1)).symm y)).trans ?_
-  simp
+      (cwApproximationStepMap_cwApproximationStepIncl_apply f z n z)) :=
+  Quotient.ind fun γ ↦ mk_mem_range_homotopyGroupMap_of_cellAttachmentCell_comp _
+    (cwApproximationAttachingMap_inr f z n γ) _ _ γ
+    (cellAttachmentCell_inr_comp_cwApproximationStepMap f z n γ)
 
 variable [T2Space Z]
 
