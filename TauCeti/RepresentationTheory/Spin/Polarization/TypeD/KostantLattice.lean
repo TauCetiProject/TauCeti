@@ -216,10 +216,7 @@ theorem typeDSpinRep_serreE_exteriorBasis_empty {i : Fin n}
   rw [P.typeDSpinRep_serreE_eq_spinAction b hn,
     P.typeDSimpleRootBivector_def b, dite_eq_right hlast, map_mul, Module.End.mul_apply,
     TauCeti.spinAction_ι_wedge, TauCeti.spinAction_ι_wedge]
-  have hEmpty : b.ExteriorAlgebra (∅ : Finset (Fin n)) = 1 := by
-    rw [ExteriorAlgebra.basis_apply]
-    simp
-  rw [hEmpty, mul_one]
+  rw [TauCeti.ExteriorAlgebra.basis_empty, mul_one]
   rw [← TauCeti.ExteriorAlgebra.basis_singleton,
     ← TauCeti.ExteriorAlgebra.basis_singleton]
   have h := TauCeti.ExteriorAlgebra.basis_singleton_mul_basis_erase b

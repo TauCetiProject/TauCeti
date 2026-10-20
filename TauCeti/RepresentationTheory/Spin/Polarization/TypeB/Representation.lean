@@ -164,11 +164,8 @@ theorem typeBSpinRep_simpleRootGenerator_last_exteriorBasis_empty
   rw [typeBSimpleRootGeneratorFamily_inl, typeBSimpleRootGenerator_last,
     P.typeBSpinRep_shortRootGenerator_apply b z hz, hcoord,
     TauCeti.ExteriorAlgebra.involute_basis]
-  have hEmpty : b.ExteriorAlgebra (∅ : Finset (Fin (n + 1))) = 1 := by
-    rw [ExteriorAlgebra.basis_apply]
-    simp
   simp only [Finset.card_empty, pow_zero, one_smul]
-  rw [hEmpty, mul_one, TauCeti.ExteriorAlgebra.basis_singleton]
+  rw [TauCeti.ExteriorAlgebra.basis_empty, mul_one, TauCeti.ExteriorAlgebra.basis_singleton]
 
 /-- The terminal negative short-root operator annihilates the final exterior coordinate to the
 vacuum when the distinguished remainder vector has coordinate one. -/
