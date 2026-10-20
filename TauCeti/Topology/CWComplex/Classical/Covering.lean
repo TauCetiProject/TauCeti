@@ -46,7 +46,10 @@ When `p` is the quotient covering map of a free action of a group `G` on `E`
 (`TauCeti.cellPreimageMulAction`), translating characteristic maps
 (`TauCeti.map_smul_cellPreimage`). The action is free (`TauCeti.isCancelSMul_cellPreimage`), and
 there is exactly one orbit over each cell of `C` (`TauCeti.exists_cellPreimageEquiv_fst_eq` and
-`TauCeti.exists_smul_eq_iff_cellPreimageEquiv_fst_eq`).
+`TauCeti.exists_smul_eq_iff_cellPreimageEquiv_fst_eq`): for a choice `s` of lifts of the cells
+of `C`, the lifted cells are the translates `g • s i`, each exactly once
+(`TauCeti.sigmaSMulLiftEquiv`). Translation by `g`, restricted to `p ⁻¹' C`
+(`TauCeti.preimageSMul`), is cellular (`TauCeti.isCellular_preimageSMul`).
 
 For a finite CW complex and a cover with finite fibres the lift is finite
 (`TauCeti.finite_cwComplexPreimage`). Counting cells, if `C` has finitely many cells in each
@@ -535,6 +538,20 @@ orbits are exactly the sets of lifts of one cell of `C`. -/
 
 variable [T2Space B] (C) {G : Type*} [Group G] [MulAction G E] (hG : IsQuotientCoveringMap p G)
 
+omit [T2Space B] [CWComplex C] in
+/-- Translation by `g`, restricted to the preimage `p ⁻¹' C`, which it preserves because `p` is
+invariant under the action. -/
+def preimageSMul (g : G) : TopCat.of (p ⁻¹' C) ⟶ TopCat.of (p ⁻¹' C) :=
+  haveI := hG.toContinuousConstSMul
+  TopCat.ofHom ⟨fun x ↦ ⟨g • x.1, by simpa only [mem_preimage, hG.map_smul] using x.2⟩,
+    by fun_prop⟩
+
+omit [T2Space B] [CWComplex C] in
+@[simp]
+theorem coe_preimageSMul_apply (g : G) (x : p ⁻¹' C) :
+    (preimageSMul C hG g x : E) = g • (x : E) :=
+  (rfl)
+
 /-- The action of `G` on the `n`-cells of the lift of `C` along a quotient covering map, by its
 action on the points over the centres of the cells of `C`. -/
 @[implicit_reducible]
@@ -630,6 +647,51 @@ theorem exists_smul_eq_iff_cellPreimageEquiv_fst_eq
   obtain rfl : i = i' := h
   obtain ⟨g, hg⟩ := hG.apply_eq_iff_mem_orbit.1 (e'.2.trans e.2.symm)
   exact ⟨g, Sigma.ext rfl (heq_of_eq (Subtype.ext hg))⟩
+
+/-- **Translation by a group element is cellular** for the lifted CW structure. -/
+theorem isCellular_preimageSMul (g : G) :
+    letI := cwComplexPreimage C hG.isCoveringMap
+    haveI := hG.isCoveringMap.t2Space
+    IsCellular (p ⁻¹' C) (p ⁻¹' C) (preimageSMul C hG g) := by
+  let := cwComplexPreimage C hG.isCoveringMap
+  let := cellPreimageMulAction C hG
+  have := hG.isCoveringMap.t2Space
+  exact isCellular_of_map_eq _ _ (fun _ h ↦ h.elim) fun n c ↦
+    ⟨g • c, fun x _ _ ↦ (map_smul_cellPreimage C hG g c x).symm⟩
+
+section Lifts
+
+variable (s : cell C n → letI := cwComplexPreimage C hG.isCoveringMap; cell (p ⁻¹' C) n)
+  (hs : ∀ i, (cellPreimageEquiv C hG.isCoveringMap n (s i)).1 = i)
+
+/-- Given a lift `s i` of each `n`-cell `i` of `C`, the lifted `n`-cells are the translates
+`g • s i`, each exactly once. -/
+def sigmaSMulLiftEquiv :
+    letI := cwComplexPreimage C hG.isCoveringMap
+    (Σ _ : cell C n, G) ≃ cell (p ⁻¹' C) n :=
+  letI := cwComplexPreimage C hG.isCoveringMap
+  letI := cellPreimageMulAction C hG n
+  haveI := isCancelSMul_cellPreimage C hG (n := n)
+  Equiv.ofBijective (fun x ↦ x.2 • s x.1) <| by
+    refine ⟨fun ⟨i, g⟩ ⟨i', g'⟩ h ↦ ?_, fun c ↦ ?_⟩
+    · obtain rfl : i = i' := by
+        simpa only [cellPreimageEquiv_smul_fst, hs] using
+          congrArg (fun c ↦ (cellPreimageEquiv C hG.isCoveringMap n c).1) h
+      obtain rfl : g = g' := IsCancelSMul.right_cancel g g' (s i) h
+      rfl
+    · obtain ⟨g, hg⟩ := (exists_smul_eq_iff_cellPreimageEquiv_fst_eq C hG
+        (s (cellPreimageEquiv C hG.isCoveringMap n c).1) c).2 (hs _)
+      exact ⟨⟨_, g⟩, hg⟩
+
+/-- The lifted cell indexed by `⟨i, g⟩` is the translate `g • s i`. -/
+@[simp]
+theorem sigmaSMulLiftEquiv_apply (x : Σ _ : cell C n, G) :
+    letI := cwComplexPreimage C hG.isCoveringMap
+    letI := cellPreimageMulAction C hG n
+    sigmaSMulLiftEquiv C hG s hs x = x.2 • s x.1 :=
+  (rfl)
+
+end Lifts
 
 end Deck
 

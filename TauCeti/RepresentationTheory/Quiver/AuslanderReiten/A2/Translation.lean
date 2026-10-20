@@ -25,7 +25,7 @@ minimal projective presentations and scalar duality, computed on actual isomorph
 
 public section
 
-namespace TauCeti.irreducibleMorphismQuiver
+namespace TauCeti.IrreducibleMorphismQuiver
 
 open CategoryTheory Quiver.Kronecker
 
@@ -67,4 +67,4 @@ theorem translate_a2VertexEquiv (i : Fin 3) :
       translate_of_eq_none_iff]
     infer_instance
 
-end TauCeti.irreducibleMorphismQuiver
+end TauCeti.IrreducibleMorphismQuiver

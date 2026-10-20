@@ -77,7 +77,7 @@ theorem exists_nonempty_iso_arTranslate
   rw [← quiverRepEquivalence_inverse] at f
   exact f ≪≫ E.inverse.mapIso e.toModuleIso ≪≫ (E.unitIso.app N).symm
 
-namespace irreducibleMorphismQuiver
+namespace IrreducibleMorphismQuiver
 
 variable {k Q}
 
@@ -85,17 +85,17 @@ variable {k Q}
 when it is non-injective. Thus translation bijects non-projective and non-injective classes. -/
 @[simp]
 theorem existsUnique_translate_eq_some_iff
-    (b : irreducibleMorphismQuiver.{u, v, w, max u v w t} k Q) :
+    (b : IrreducibleMorphismQuiver k (IsFinDim.{u, v, w, max u v w t} k Q)) :
     (∃! a, translate.{u, v, w, t} a = some b) ↔ ¬ Injective b.representative := by
   refine ⟨fun ⟨a, ha, _⟩ ↦ not_injective_of_translate_eq_some ha, fun hb ↦ ?_⟩
   obtain ⟨M, hM, hiM, hpM, e⟩ := exists_nonempty_iso_arTranslate.{u, v, w, t} k Q
     b.representative b.representative_property.1 b.representative_property.2 hb
-  have ha : translate.{u, v, w, t} (of hM hiM) = some b := by
+  have ha : translate.{u, v, w, t} (of k hM hiM) = some b := by
     simpa only [of_representative] using
       (translate_of_eq_some_of_iff.{u, v, w, t} hM hiM
         b.representative_property.1 b.representative_property.2).mpr ⟨hpM, e⟩
-  exact ⟨of hM hiM, ha, fun a h ↦ eq_of_translate_eq_some h ha⟩
+  exact ⟨of k hM hiM, ha, fun a h ↦ eq_of_translate_eq_some h ha⟩
 
-end irreducibleMorphismQuiver
+end IrreducibleMorphismQuiver
 
 end TauCeti
