@@ -72,6 +72,18 @@ theorem hasLaw_sum_pi_convolutionPower {α : Type*} [MeasurableSpace α] [AddCom
 
 variable {α : Type*} [MeasurableSpace α] [AddCommMonoid α] [MeasurableAdd₂ α]
 
+/-- Summing the coordinates of a finite product of a probability measure gives its convolution
+power indexed by the cardinality of the product. This includes the empty product. -/
+theorem map_sum_pi_eq_convolutionPower {ι : Type*} [Fintype ι] (μ : Measure α)
+    [IsProbabilityMeasure μ] :
+    (Measure.pi fun _ : ι ↦ μ).map (fun x ↦ ∑ i, x i) =
+      μ.convolutionPower (Fintype.card ι) := by
+  have hindep := ProbabilityTheory.iIndepFun_pi (μ := fun _ : ι ↦ μ)
+    (X := fun _ ↦ (id : α → α)) (fun _ ↦ aemeasurable_id)
+  simpa only [Finset.sum_fn, id_eq] using
+    (hindep.hasLaw_sum_convolutionPower fun i ↦
+      (measurePreserving_eval (fun _ : ι ↦ μ) i).hasLaw).map_eq
+
 /-- Summing an independent sequence up to a separately drawn natural-valued count gives the
 mixture of convolution powers against the count law. No finiteness assumption on that law
 or moment assumption on the jumps is required. -/
