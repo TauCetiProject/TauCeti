@@ -111,8 +111,7 @@ theorem isEven_span_singleton_iff {v : E} :
   refine ⟨fun h ↦ h v (mem_span_singleton_self v), fun ⟨m, hm⟩ x hx ↦ ?_⟩
   obtain ⟨n, rfl⟩ := mem_span_singleton.mp hx
   refine ⟨n ^ 2 * m, ?_⟩
-  rw [← Int.cast_smul_eq_zsmul ℝ, norm_smul, mul_pow, Real.norm_eq_abs, sq_abs, hm]
-  push_cast
+  simp [← Int.cast_smul_eq_zsmul ℝ, norm_smul, mul_pow, hm]
   ring
 
 /-- The lattice `√2 ℤ ⊆ ℝ` is even. -/
@@ -165,15 +164,15 @@ variable (L : Submodule ℤ E) (e : F ≃ₗᵢ[ℝ] E)
 theorem isIntegral_comap_iff :
     IsIntegral (ZLattice.comap ℝ L e.toLinearEquiv.toLinearMap) ↔ IsIntegral L := by
   rw [isIntegral_iff_le_dual, isIntegral_iff_le_dual, dual_comap]
-  exact comap_le_comap_iff_of_surjective (f := e.toLinearEquiv.toLinearMap.restrictScalars ℤ)
-    e.surjective
+  simp only [IsConcreteLE.le_iff, mem_comap, LinearEquiv.coe_coe,
+    LinearIsometryEquiv.coe_toLinearEquiv]
+  exact (e.surjective.forall (p := fun y ↦ y ∈ L → y ∈ dual L)).symm
 
 /-- Evenness is invariant under linear isometry equivalences. -/
 @[simp]
 theorem isEven_comap_iff :
     IsEven (ZLattice.comap ℝ L e.toLinearEquiv.toLinearMap) ↔ IsEven L := by
-  simp only [isEven_iff, ZLattice.comap, mem_comap, LinearMap.coe_restrictScalars,
-    LinearEquiv.coe_coe, LinearIsometryEquiv.coe_toLinearEquiv]
+  simp only [isEven_iff, mem_comap, LinearEquiv.coe_coe, LinearIsometryEquiv.coe_toLinearEquiv]
   refine ⟨fun h y hy ↦ ?_, fun h x hx ↦ e.norm_map x ▸ h _ hx⟩
   simpa using h (e.symm y) (by rwa [e.apply_symm_apply])
 
@@ -182,7 +181,8 @@ theorem isEven_comap_iff :
 theorem isUnimodular_comap_iff :
     IsUnimodular (ZLattice.comap ℝ L e.toLinearEquiv.toLinearMap) ↔ IsUnimodular L := by
   rw [isUnimodular_iff_eq_dual, isUnimodular_iff_eq_dual, dual_comap]
-  exact (comap_injective_of_surjective (f := e.toLinearEquiv.toLinearMap.restrictScalars ℤ)
-    e.surjective).eq_iff
+  simp only [SetLike.ext_iff, mem_comap, LinearEquiv.coe_coe,
+    LinearIsometryEquiv.coe_toLinearEquiv]
+  exact (e.surjective.forall (p := fun y ↦ y ∈ L ↔ y ∈ dual L)).symm
 
 end ZLattice

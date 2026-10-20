@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.ZLattice.Basic
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.LinearAlgebra.BilinearForm.DualLattice
+public import TauCeti.Algebra.Module.ZLattice.Basic
+public import TauCeti.Analysis.InnerProductSpace.Nondegenerate
 
 /-!
 # The dual lattice in a real inner product space
@@ -39,6 +40,10 @@ defined from it.
 
 * `ZLattice.dual L`: the dual of `L : Submodule ℤ E` with respect to the inner product.
 
+## Notation
+
+* `L^∨`: the dual lattice `ZLattice.dual L`, scoped in `ZLattice`.
+
 ## Main statements
 
 * `ZLattice.mem_dual`: `x ∈ dual L` if and only if `⟪x, y⟫` is an integer for every `y ∈ L`.
@@ -55,16 +60,6 @@ open Module Submodule
 open LinearMap (BilinForm)
 open scoped RealInnerProductSpace
 
-namespace TauCeti
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-
-/-- The real inner product is a nondegenerate bilinear form. -/
-theorem nondegenerate_inner : (innerₗ E).Nondegenerate :=
-  ⟨fun x hx ↦ inner_self_eq_zero.mp (hx x), fun y hy ↦ inner_self_eq_zero.mp (hy y)⟩
-
-end TauCeti
-
 universe u
 
 namespace ZLattice
@@ -77,11 +72,14 @@ variable {E : Type u} {F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ 
 noncomputable def dual (L : Submodule ℤ E) : Submodule ℤ E :=
   BilinForm.dualSubmodule (innerₗ E) L
 
+@[inherit_doc] scoped notation:max L "^∨" => ZLattice.dual L
+
 theorem dual_def (L : Submodule ℤ E) : dual L = BilinForm.dualSubmodule (innerₗ E) L :=
   (rfl)
 
 /-- A vector lies in the dual lattice exactly when its inner product with every vector of `L` is
 an integer. -/
+@[simp]
 theorem mem_dual {L : Submodule ℤ E} {x : E} : x ∈ dual L ↔ ∀ y ∈ L, ∃ m : ℤ, ⟪x, y⟫ = m := by
   simp only [dual_def, BilinForm.mem_dualSubmodule, Submodule.mem_one, innerₗ_apply_apply,
     algebraMap_int_eq, eq_intCast, eq_comm]
@@ -93,9 +91,8 @@ theorem dual_anti {L M : Submodule ℤ E} (h : L ≤ M) : dual M ≤ dual L :=
 /-- `L` lies in the dual of `M` if and only if `M` lies in the dual of `L`: both say that `L` and
 `M` pair integrally. -/
 theorem le_dual_comm {L M : Submodule ℤ E} : L ≤ dual M ↔ M ≤ dual L := by
-  simp only [IsConcreteLE.le_iff, mem_dual]
-  exact ⟨fun h y hy x hx ↦ real_inner_comm y x ▸ h hx y hy,
-    fun h x hx y hy ↦ real_inner_comm x y ▸ h hy x hx⟩
+  have h : BilinForm.flip (innerₗ E) = innerₗ E := flip_innerₗ E
+  rw [dual_def, dual_def, ← BilinForm.le_flip_dualSubmodule, h]
 
 /-- Every lattice is contained in the dual of its dual. Equality holds for a full lattice in a
 finite-dimensional space, `dual_dual`. -/
@@ -128,8 +125,7 @@ theorem dual_comap (L : Submodule ℤ E) (e : F ≃ₗᵢ[ℝ] E) :
     dual (ZLattice.comap ℝ L e.toLinearEquiv.toLinearMap) =
       ZLattice.comap ℝ (dual L) e.toLinearEquiv.toLinearMap := by
   ext x
-  simp only [ZLattice.comap, Submodule.mem_comap, mem_dual, LinearMap.coe_restrictScalars,
-    LinearEquiv.coe_coe, LinearIsometryEquiv.coe_toLinearEquiv]
+  simp only [mem_comap, mem_dual, LinearEquiv.coe_coe, LinearIsometryEquiv.coe_toLinearEquiv]
   refine ⟨fun h z hz ↦ ?_, fun h y hy ↦ e.inner_map_map x y ▸ h _ hy⟩
   obtain ⟨m, hm⟩ := h (e.symm z) (by rwa [e.apply_symm_apply])
   exact ⟨m, by rwa [← e.inner_map_map, e.apply_symm_apply] at hm⟩
@@ -138,28 +134,21 @@ section FiniteDimensional
 
 variable [FiniteDimensional ℝ E] (L : Submodule ℤ E) [DiscreteTopology L] [IsZLattice ℝ L]
 
-/-- A full lattice is the `ℤ`-span of an `ℝ`-basis of `E`, indexed by a finite type. -/
-private theorem exists_basis_eq_span :
-    ∃ (ι : Type u) (_ : Fintype ι) (_ : DecidableEq ι) (b : Basis ι ℝ E),
-      span ℤ (Set.range b) = L :=
-  ⟨_, inferInstance, Classical.decEq _, (Module.Free.chooseBasis ℤ L).ofZLatticeBasis ℝ L,
-    (Module.Free.chooseBasis ℤ L).ofZLatticeBasis_span ℝ L⟩
-
 instance : DiscreteTopology (dual L) := by
-  obtain ⟨ι, _, _, b, rfl⟩ := exists_basis_eq_span L
+  obtain ⟨ι, _, _, b, rfl⟩ := exists_basis_span_eq ℝ L
   rw [dual_span_basis]
   infer_instance
 
 instance : IsZLattice ℝ (dual L) where
   span_top := by
-    obtain ⟨ι, _, _, b, rfl⟩ := exists_basis_eq_span L
+    obtain ⟨ι, _, _, b, rfl⟩ := exists_basis_span_eq ℝ L
     rw [dual_span_basis]
     exact ZSpan.span_top _
 
 /-- The dual of the dual of a full lattice in a finite-dimensional space is the lattice. -/
 @[simp]
 theorem dual_dual : dual (dual L) = L := by
-  obtain ⟨ι, _, _, b, rfl⟩ := exists_basis_eq_span L
+  obtain ⟨ι, _, _, b, rfl⟩ := exists_basis_span_eq ℝ L
   exact BilinForm.dualSubmodule_dualSubmodule_of_basis (innerₗ E)
     TauCeti.nondegenerate_inner (BilinForm.isSymm_iff.mpr isSymm_inner) b
 
