@@ -92,13 +92,18 @@ section Regular
 
 variable {G Γ : Type*} [Group G] [Group Γ]
 
+/-- The regular representation of `G`, read in `Equiv.Perm α` through `e : G ≃ α`, is
+faithful. -/
+theorem permCongrHom_comp_toPermHom_injective (e : G ≃ α) :
+    Function.Injective (e.permCongrHom.toMonoidHom.comp (toPermHom G G)) :=
+  e.permCongrHom.injective.comp (toPerm_injective (α := G) (β := G))
+
 /-- The regular representation of `G`, read in `Equiv.Perm α` through `e : G ≃ α`, has as many
 elements as `G`. -/
 theorem natCard_map_range_toPermHom (e : G ≃ α) :
-    Nat.card ((toPermHom G G).range.map e.permCongrHom.toMonoidHom) = Nat.card G := by
-  rw [MonoidHom.map_range]
-  exact Nat.card_congr (MonoidHom.ofInjective
-    (e.permCongrHom.injective.comp (toPerm_injective (α := G) (β := G)))).toEquiv.symm
+    Nat.card ((toPermHom G G).range.map e.permCongrHom.toMonoidHom) = Nat.card G :=
+  (Subgroup.card_map_of_injective e.permCongrHom.injective).trans
+    (Nat.card_congr (MonoidHom.ofInjective (toPerm_injective (α := G) (β := G))).toEquiv.symm)
 
 /-- **Regular representations of a commutative and a non-commutative group are not conjugate.** A
 conjugate of the commutative regular image of `G` is commutative, while the regular image of `Γ`
@@ -112,12 +117,9 @@ theorem not_exists_map_conj_map_range_toPermHom_eq [IsMulCommutative G] (e : G �
     rw [← hσ]
     infer_instance
   rw [MonoidHom.map_range] at hK
-  set φ : Γ →* Perm α := f.permCongrHom.toMonoidHom.comp (toPermHom Γ Γ)
-  have hφinj : Function.Injective φ :=
-    f.permCongrHom.injective.comp (toPerm_injective (α := Γ) (β := Γ))
-  refine hΓ (isMulCommutative_iff.mpr fun a b ↦ hφinj ?_)
+  refine hΓ (isMulCommutative_iff.mpr fun a b ↦ f.permCongrHom_comp_toPermHom_injective ?_)
   simpa only [map_mul, Subgroup.coe_mul] using congrArg Subtype.val
-    (isMulCommutative_iff.mp hK ⟨φ a, a, rfl⟩ ⟨φ b, b, rfl⟩)
+    (isMulCommutative_iff.mp hK ⟨_, a, rfl⟩ ⟨_, b, rfl⟩)
 
 end Regular
 

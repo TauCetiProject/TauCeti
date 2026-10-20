@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.AlmostConjugate
 import TauCeti.GroupTheory.GroupAction.Orbit.CycleType
+import TauCeti.GroupTheory.Perm.PermCongr
 
 /-!
 # Almost-conjugate regular representations
@@ -59,8 +60,6 @@ theorem natCard_cycleType_eq_and_mem_map_range_toPermHom [Fintype α] [Decidable
   classical
   have : Fintype G := Fintype.ofEquiv α e.symm
   set φ : G →* Equiv.Perm α := e.permCongrHom.toMonoidHom.comp (toPermHom G G) with hφ
-  have hφinj : Function.Injective φ :=
-    e.permCongrHom.injective.comp (toPerm_injective (α := G) (β := G))
   have hcyc (g : G) : (φ g).cycleType =
       (Multiset.replicate (Nat.card α / orderOf g) (orderOf g)).filter (2 ≤ ·) := by
     rw [← Perm.filter_fullCycleType_eq_cycleType]
@@ -70,7 +69,7 @@ theorem natCard_cycleType_eq_and_mem_map_range_toPermHom [Fintype α] [Decidable
     rw [Perm.fullCycleType_permCongr, fullCycleType_toPerm_eq_replicate, Nat.card_congr e]
   rw [MonoidHom.map_range, ← hφ]
   refine (Nat.card_congr ?_).symm
-  exact ((Equiv.ofInjective φ hφinj).subtypeEquiv fun g ↦ by
+  exact ((Equiv.ofInjective φ e.permCongrHom_comp_toPermHom_injective).subtypeEquiv fun g ↦ by
       rw [Equiv.ofInjective_apply, hcyc]).trans <|
     (Equiv.subtypeSubtypeEquivSubtypeInter (· ∈ φ.range) (·.cycleType = m)).trans <|
       Equiv.subtypeEquivRight fun _ ↦ and_comm
