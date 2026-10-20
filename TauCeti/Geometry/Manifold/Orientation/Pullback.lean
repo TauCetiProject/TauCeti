@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Orientation.Preserving
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
+public import TauCeti.Geometry.Manifold.MFDeriv.IsInvertible
 
 /-!
 # Pulling back orientations
@@ -227,22 +228,11 @@ theorem pullback_id (o : Orientation I M ι) (hf : ContMDiff I I 1 (id : M → M
     o.pullback hf hdf hι = o :=
   ((eq_pullback_iff o hf hdf hι).mpr (isOrientationPreservingAt_id o)).symm
 
-omit [IsManifold I 1 M] [IsManifold I' 1 M'] [IsManifold I'' 1 M''] [FiniteDimensional ℝ E]
-  [FiniteDimensional ℝ E'] [FiniteDimensional ℝ E''] in
-include hf hdf in
-/-- The composite of two `C¹` maps with everywhere invertible derivatives has everywhere invertible
-derivative. -/
-theorem isInvertible_mfderiv_comp {g : M' → M''} (hg : ContMDiff I' I'' 1 g)
-    (hdg : ∀ y, (mfderiv I' I'' g y).IsInvertible) (x : M) :
-    (mfderiv I I'' (g ∘ f) x).IsInvertible := by
-  rw [mfderiv_comp x (hg.mdifferentiableAt one_ne_zero) (hf.mdifferentiableAt one_ne_zero)]
-  exact (hdg (f x)).comp (hdf x)
-
 /-- Pulling back along a composite is pulling back successively. -/
 theorem pullback_comp (o'' : Orientation I'' M'' ι) {g : M' → M''} (hg : ContMDiff I' I'' 1 g)
     (hdg : ∀ y, (mfderiv I' I'' g y).IsInvertible) (hι' : Fintype.card ι = finrank ℝ E') :
     (o''.pullback hg hdg hι').pullback hf hdf hι =
-      o''.pullback (hg.comp hf) (isInvertible_mfderiv_comp hf hdf hg hdg) hι :=
+      o''.pullback (hg.comp hf) (fun x ↦ isInvertible_mfderiv_comp (hdg (f x)) (hdf x)) hι :=
   (eq_pullback_iff o'' (hg.comp hf) _ hι).mpr fun x ↦
     (isOrientationPreservingAt_pullback o'' hg hdg hι' (f x)).comp
       (isOrientationPreservingAt_pullback _ hf hdf hι x)

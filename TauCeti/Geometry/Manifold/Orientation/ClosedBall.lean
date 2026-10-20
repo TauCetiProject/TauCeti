@@ -25,13 +25,6 @@ namespace TauCeti.Manifold.Orientation
 variable {n : ℕ} [NeZero n] {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   [Fact (Module.finrank ℝ V = n)]
 
-/-- The ambient space of a positive-dimensional closed unit ball is finite-dimensional. -/
-private theorem finiteDimensional_of_fact_finrank (n : ℕ) [NeZero n]
-    [Fact (Module.finrank ℝ V = n)] : FiniteDimensional ℝ V :=
-  Module.finite_of_finrank_pos (by
-    rw [(Fact.out : Module.finrank ℝ V = n)]
-    exact Nat.pos_of_neZero n)
-
 /-- The inclusion tangent equivalence is the manifold derivative of the inclusion, read in the
 tangent space of the normed space `V`. -/
 private theorem coe_subtypeValClosedBallTangentEquiv (x : Metric.closedBall (0 : V) 1) :
@@ -45,7 +38,8 @@ private theorem coe_subtypeValClosedBallTangentEquiv (x : Metric.closedBall (0 :
 /-- The closed unit ball's orientation induced by its inclusion derivative. -/
 def closedBall (o : _root_.Orientation ℝ V (Fin n)) :
     Orientation (𝓡∂ n) (Metric.closedBall (0 : V) 1) (Fin n) :=
-  have := finiteDimensional_of_fact_finrank (V := V) n
+  have : FiniteDimensional ℝ V :=
+    Module.finite_of_finrank_pos ((Fact.out : Module.finrank ℝ V = n) ▸ Nat.pos_of_neZero n)
   (model (I := 𝓘(ℝ, V)) o (by simp [(Fact.out : Module.finrank ℝ V = n)])).pullback
     (contMDiff_subtypeVal_closedBall (n := n) (k := 1))
     (fun x ↦ ⟨_, coe_subtypeValClosedBallTangentEquiv (n := n) x⟩) (by simp)
@@ -58,7 +52,8 @@ theorem map_orientationAt_closedBall (o : _root_.Orientation ℝ V (Fin n))
     _root_.Orientation.map (Fin n)
       (subtypeValClosedBallTangentEquiv (n := n) x).toLinearEquiv
       ((closedBall o).orientationAt x) = o := by
-  have := finiteDimensional_of_fact_finrank (V := V) n
+  have : FiniteDimensional ℝ V :=
+    Module.finite_of_finrank_pos ((Fact.out : Module.finrank ℝ V = n) ▸ Nat.pos_of_neZero n)
   exact (map_orientationAt_pullback _ _ _ _ x _
     (coe_subtypeValClosedBallTangentEquiv (n := n) x)).trans (orientationAt_model o _ (x : V))
 
@@ -72,7 +67,7 @@ variable {n : ℕ} [NeZero n] {V : Type*} [NormedAddCommGroup V] [InnerProductSp
 /-- Every positive-dimensional closed unit ball is orientable, including dimension one. -/
 theorem orientable_closedBall : Orientable (𝓡∂ n) (Metric.closedBall (0 : V) 1) := by
   have hV : Module.finrank ℝ V = n := Fact.out
-  have := Manifold.Orientation.finiteDimensional_of_fact_finrank (V := V) n
+  have : FiniteDimensional ℝ V := Module.finite_of_finrank_pos (hV ▸ Nat.pos_of_neZero n)
   let o := ((Module.finBasis ℝ V).reindex (finCongr hV)).orientation
   constructor
   rw [finrank_euclideanSpace_fin]
