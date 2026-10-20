@@ -26,7 +26,8 @@ acting group that do not change the action, and that `EquidecomposableLE G` is a
 result is the Schröder–Bernstein theorem for equidecompositions (`EquidecomposableLE.antisymm`):
 if each of `A` and `B` is equidecomposable with a subset of the other, then `A` and `B` are
 equidecomposable. Banach's proof splits `A` along a fixed point of a monotone map on `Set X`, so the
-resulting equidecomposition still uses only the finitely many group elements of the two given ones.
+resulting equidecomposition uses only the finitely many group elements of the first given
+equidecomposition together with the inverses of those of the second.
 These are the basic tools for paradoxical decompositions, for instance in Tarski's characterization
 of amenable groups.
 
@@ -125,8 +126,9 @@ def Equidecomposable (A B : Set X) : Prop :=
   ∃ f : Equidecomp X G, f.source = A ∧ f.target = B
 
 variable (G) in
-/-- A set `A` is *equidecomposable with a subset of* `B` using `G`. This is the preorder whose
-induced equivalence relation is `Equidecomposable G` (`equidecomposable_iff_equidecomposableLE`). -/
+/-- A set `A` is *equidecomposable with a subset of* `B` using `G`. For a monoid action this is a
+preorder, and for a group action its induced equivalence relation is `Equidecomposable G`
+(`equidecomposable_iff_equidecomposableLE`). -/
 def EquidecomposableLE (A B : Set X) : Prop :=
   ∃ B' ⊆ B, Equidecomposable G A B'
 
@@ -172,7 +174,7 @@ theorem Equidecomposable.equidecomposableLE_of_subset (h : Equidecomposable G A 
   let ⟨B', hB', h', _⟩ := h.exists_subset_and_sdiff hA'
   ⟨B', hB', h'⟩
 
-/-- Equidecomposable sets are equidecomposable with a subset of each other. -/
+/-- If `A` is equidecomposable with `B`, then `A` is equidecomposable with a subset of `B`. -/
 theorem Equidecomposable.equidecomposableLE (h : Equidecomposable G A B) :
     EquidecomposableLE G A B :=
   ⟨B, subset_rfl, h⟩
