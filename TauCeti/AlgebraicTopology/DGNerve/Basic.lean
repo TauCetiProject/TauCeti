@@ -35,10 +35,7 @@ followed by `g`; the two are related by the Koszul sign, `g ∘ f = (-1) ^ (|f| 
 under which the Leibniz rules agree. Including the coherences `f i ∅ i` as identities lets
 degenerate edges be treated uniformly with the others.
 
-The main work is that the action of a monotone map preserves the defining equation. When `α` is
-injective on the interior vertices the equation is a reindexing of the original one. Otherwise
-`α` collapses two adjacent vertices of the string, and the terms of the right-hand side cancel in
-pairs, either two face terms or a face term against a composite with an identity.
+The main result is that the action of a monotone map preserves the defining equation.
 
 ## Main definitions
 
@@ -312,15 +309,15 @@ theorem mapCoh_erase_eq_mapCoh_erase {i j u v : Fin (m + 1)} {S : Finset (Fin (m
     rw [x.mapCoh_eq_zero α hc, x.mapCoh_eq_zero α hc']
 
 /-- The pullback of a simplex satisfies the dg nerve equation on interior vertices where `α` is
-injective with image strictly between the endpoints: the equation is the reindexing of the one
-for the original simplex. -/
+injective with image strictly between the endpoints. -/
 private lemma dgDifferential_mapCoh_eq_coh {a b : Fin (m + 1)} {T : Finset (Fin (m + 1))}
     {d : ℤ} (hab : a ≤ b) (hT : T ⊆ Ioo a b) (hd : d + #T = 0)
     (h : #(T.image α) = #T ∧ T.image α ⊆ Ioo (α a) (α b)) :
     dgDifferential R d (x.mapCoh α a b T d hab hT hd) =
       boundary R (x.mapCoh α) a b T d hab hT hd := by
-  -- The terms are matched by `t ↦ α t`. Since `α` is strictly monotone on `T`, it carries erasing
-  -- `t` and the vertices before, after and from `t` to the corresponding operations on the image.
+  -- The equation is the reindexing of the one for the original simplex: the terms are matched
+  -- by `t ↦ α t`. Since `α` is strictly monotone on `T`, it carries erasing `t` and the vertices
+  -- before, after and from `t` to the corresponding operations on the image.
   have hinj : Set.InjOn α T := card_image_iff.1 h.1
   have hmono : StrictMonoOn α T := (α.monotone.monotoneOn _).strictMonoOn_of_injOn hinj
   rw [x.mapCoh_eq_coh α h, x.dgDifferential_coh, boundary, boundary]
@@ -418,16 +415,17 @@ private lemma dgComp_mapCoh_eq_zero_of_collapse {a b u v t : Fin (m + 1)}
     · exact Or.inl hu
     · exact Or.inr (mem_filter.2 ⟨hu, huv.trans hvt⟩)
 
-/-- When `α` collapses two vertices of `a < T < b`, the terms of the dg nerve equation for the
-pullback cancel in pairs, so the right-hand side vanishes, as does the pulled-back coherence. -/
+/-- When `α` collapses two vertices of `a < T < b`, the right-hand side of the dg nerve equation
+for the pullback vanishes. -/
 private lemma boundary_mapCoh_eq_zero {a b : Fin (m + 1)} {T : Finset (Fin (m + 1))} {d : ℤ}
     (hab : a ≤ b) (hT : T ⊆ Ioo a b) (hd : d + #T = 0)
     (h : ¬ (#(T.image α) = #T ∧ T.image α ⊆ Ioo (α a) (α b))) :
     boundary R (x.mapCoh α) a b T d hab hT hd = 0 := by
-  -- Pick adjacent collapsed vertices `u < v`. All terms away from `u` and `v` vanish. If `u = a`,
-  -- the face and composite parts of the term at `v` cancel, the composite being with an identity;
-  -- symmetrically if `v = b`. If both are interior, the two face terms at `u` and `v` are equal
-  -- with opposite signs, and their composite parts vanish.
+  -- The terms of the right-hand side cancel in pairs. Pick adjacent collapsed vertices `u < v`.
+  -- All terms away from `u` and `v` vanish. If `u = a`, the face and composite parts of the term
+  -- at `v` cancel, the composite being with an identity; symmetrically if `v = b`. If both are
+  -- interior, the two face terms at `u` and `v` are equal with opposite signs, and their composite
+  -- parts vanish.
   obtain ⟨u, v, huv, hu, hv, huvT, hα, hcons⟩ :=
     exists_adjacent_eq_of_not_card_image_and_image_subset_Ioo α.monotone hT h
   have hTa : ∀ s ∈ T, a < s := fun s hs ↦ (mem_Ioo.1 (hT hs)).1
@@ -510,6 +508,10 @@ private lemma boundary_mapCoh_eq_zero {a b : Fin (m + 1)} {T : Finset (Fin (m + 
       rw [hA t ht htu htv, hB t ht htu htv, smul_zero, sub_zero, smul_zero]
 
 /-- The pulled-back coherences satisfy the dg nerve equation. -/
+-- When `α` is injective on the interior vertices the equation is a reindexing of the original
+-- one. Otherwise `α` collapses two adjacent vertices of the string, and the terms of the
+-- right-hand side cancel in pairs, either two face terms or a face term against a composite with
+-- an identity.
 theorem dgDifferential_mapCoh {a b : Fin (m + 1)} {T : Finset (Fin (m + 1))} {d : ℤ}
     (hab : a ≤ b) (hT : T ⊆ Ioo a b) (hd : d + #T = 0) :
     dgDifferential R d (x.mapCoh α a b T d hab hT hd) =
