@@ -45,7 +45,6 @@ Noetherian results above are the special cases where `A₀`, respectively `R`, i
   is Noetherian.
 * `TauCeti.Huber.PairOfDefinition.isNoetherianRing_completion`: the completion of a Noetherian ring
   of definition is a Noetherian ring of definition of the completion.
-* `TauCeti.Huber.PairOfDefinition.isAdicComplete_completionIdeal`: `Â₀` is `Î`-adically complete.
 * `TauCeti.Huber.PairOfDefinition.quotientPowEquivCompletion`: the isomorphism
   `A₀ ⧸ Iⁿ ≃+* Â₀ ⧸ Îⁿ` induced by the completion map.
 * `TauCeti.Huber.PairOfDefinition.isNoetherianRing_completionRingOfDefinition_of_quotient`: `Â₀` is
@@ -77,6 +76,15 @@ namespace IsAdic
 variable {I : Ideal R}
 
 open TauCeti.Huber.PairOfDefinition in
+/-- For the adic pair, whose ring of definition is all of `R`, the ring of definition `Â₀` of the
+completion is all of `R̂`, since `R` is dense in `R̂`. -/
+private theorem adic_completionRingOfDefinition (hI : IsAdic I) (hfg : I.FG) :
+    (adic I hI hfg).completionRingOfDefinition = ⊤ := by
+  ext x
+  simp [mem_completionRingOfDefinition_iff, adic_ringOfDefinition,
+    Completion.denseRange_coe.closure_range]
+
+open TauCeti.Huber.PairOfDefinition in
 /-- **The completion of an adic ring is adic for the extended ideal** (Stacks, Tag 05GG). If the
 topology of `R` is `I`-adic for a finitely generated ideal `I`, the topology of its Hausdorff
 completion `R̂` is the `I·R̂`-adic topology. -/
@@ -85,7 +93,7 @@ theorem map_coeRingHom (hI : IsAdic I) (hfg : I.FG) :
   let P := adic I hI hfg
   -- The ring of definition of `P` is all of `R`, so `Â₀ = R̂`.
   have htop (t : Completion R) : t ∈ P.completionRingOfDefinition := by
-    simp [P, adic_ringOfDefinition, Completion.denseRange_coe.closure_range]
+    simp [P, adic_completionRingOfDefinition hI hfg]
   -- The `n`-th power of `I·R̂` is the closure of the image of `Iⁿ`.
   have hpow (n : ℕ) : ((I.map (Completion.coeRingHom : R →+* Completion R) ^ n : Ideal _) :
       Set (Completion R)) = P.completionIdealImage n := by
@@ -123,18 +131,6 @@ namespace TauCeti.Huber
 namespace PairOfDefinition
 
 variable (P : PairOfDefinition R)
-
-/-- **`Â₀` is `Î`-adically complete.** The ring of definition of the completion is closed in the
-complete space `Â`, and its topology is the `Î`-adic one (Wedhorn, Remark 6.8). -/
-instance isAdicComplete_completionIdeal :
-    IsAdicComplete P.completionIdeal P.completionRingOfDefinition := by
-  have : IsUniformAddGroup P.completionRingOfDefinition :=
-    P.completionRingOfDefinition.toAddSubgroup.isUniformAddGroup
-  have hclosed : IsClosed (P.completionRingOfDefinition : Set (Completion R)) := by
-    rw [coe_completionRingOfDefinition]
-    exact isClosed_closure
-  have : CompleteSpace P.completionRingOfDefinition := hclosed.completeSpace_coe
-  exact P.isAdic_completionIdeal.isAdicComplete_iff.mpr ⟨inferInstance, inferInstance⟩
 
 /-- The completion map `A₀ → Â₀ ⧸ Îⁿ` is surjective: every point of `Â₀` is congruent modulo the
 open ideal `Îⁿ` to the image of a point of `A₀`. -/
@@ -225,19 +221,15 @@ theorem isNoetherianRing_completion_of_quotient (hI : IsAdic I) (hfg : I.FG)
   -- Both rings of definition of the adic pair, `A₀ = R` and `Â₀ = R̂`, are everything.
   let e : P.ringOfDefinition ≃+* R :=
     (RingEquiv.subringCongr (adic_ringOfDefinition I hI hfg)).trans Subring.topEquiv
-  have htop : P.completionRingOfDefinition = ⊤ := by
-    ext x
-    simp [P, mem_completionRingOfDefinition_iff, adic_ringOfDefinition,
-      Completion.denseRange_coe.closure_range]
+  -- `e` is the inclusion `A₀ → R`, so the extension of `P.idealOfDefinition` along it is `I`.
   have hI' : I = P.idealOfDefinition.map e := by
-    ext y
-    rw [Ideal.mem_map_of_equiv]
-    exact ⟨fun hy ↦ ⟨e.symm y, (mem_adic_idealOfDefinition I hI hfg).mpr hy, e.apply_symm_apply y⟩,
-      fun ⟨x, hx, hxy⟩ ↦ hxy ▸ (mem_adic_idealOfDefinition I hI hfg).mp hx⟩
+    rw [← adic_extendedIdealOfDefinition I hI hfg, extendedIdealOfDefinition_def]
+    rfl
   have : IsNoetherianRing (P.ringOfDefinition ⧸ P.idealOfDefinition) :=
     isNoetherianRing_of_ringEquiv _ (Ideal.quotientEquiv _ _ e hI').symm
   have := P.isNoetherianRing_completionRingOfDefinition_of_quotient
-  exact isNoetherianRing_of_ringEquiv _ ((RingEquiv.subringCongr htop).trans Subring.topEquiv)
+  exact isNoetherianRing_of_ringEquiv _
+    ((RingEquiv.subringCongr (adic_completionRingOfDefinition hI hfg)).trans Subring.topEquiv)
 
 /-- **The completion of a Noetherian ring for an adic topology is Noetherian** (EGA I, Ch. 0,
 (7.3.1)). If the topology of a Noetherian ring `R` is `I`-adic for some ideal `I`, its Hausdorff
