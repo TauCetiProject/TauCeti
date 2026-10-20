@@ -105,9 +105,11 @@ theorem linearIndependent_row_iff_exists_det_submatrix_ne_zero [CommRing R] [IsD
     {A : Matrix m n R} :
     LinearIndependent R A.row ↔ ∃ e : m ↪ n, (A.submatrix id e).det ≠ 0 := by
   let K := FractionRing R
-  rw [← linearIndependent_algebraMap_comp_iff (S := K),
-    show (fun i ↦ algebraMap R K ∘ A.row i) = (A.map (algebraMap R K)).row from
-      funext fun i ↦ (row_map A _ i).symm,
+  -- `linearIndependent_algebraMap_comp_iff` maps each row entrywise; these are the rows of the
+  -- matrix `A.map (algebraMap R K)`, to which the field case applies.
+  have hrow : (fun i ↦ algebraMap R K ∘ A.row i) = (A.map (algebraMap R K)).row :=
+    funext fun i ↦ (row_map A _ i).symm
+  rw [← linearIndependent_algebraMap_comp_iff (S := K), hrow,
     linearIndependent_row_iff_exists_det_submatrix_ne_zero_of_field]
   simp only [submatrix_map, ← RingHom.mapMatrix_apply, ← RingHom.map_det,
     map_ne_zero_iff _ (IsFractionRing.injective R K)]
@@ -116,8 +118,9 @@ omit [Fintype m] [DecidableEq m] in
 /-- The rows of an integer matrix are linearly independent over `ℚ` exactly when they are linearly
 independent over `ℤ`. -/
 theorem linearIndependent_rat_row_iff {A : Matrix m n ℤ} :
-    LinearIndependent ℚ (fun i j ↦ (A i j : ℚ)) ↔ LinearIndependent ℤ A.row :=
-  linearIndependent_algebraMap_comp_iff (R := ℤ) (S := ℚ) (v := A.row)
+    LinearIndependent ℚ (fun i j ↦ (A i j : ℚ)) ↔ LinearIndependent ℤ A.row := by
+  rw [← linearIndependent_algebraMap_comp_iff (R := ℤ) (S := ℚ) (v := A.row)]
+  simp only [Function.comp_def, eq_intCast, row_apply]
 
 end LinearIndependent
 
