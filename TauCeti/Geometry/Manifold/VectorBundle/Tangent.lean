@@ -73,6 +73,9 @@ inverse tangent-bundle trivializations act componentwise.
   the tangent space of a product and the product of the tangent spaces.
 * `TauCeti.Manifold.mfderiv_prodMap_apply`: differentials of product maps act componentwise
   under this equivalence.
+* `TauCeti.Manifold.tangentSpaceProdEquiv_mfderiv_prodMap_id` and
+  `TauCeti.Manifold.isInvertible_mfderiv_prodMap_id`: the differential of `(x, t) ↦ (x, φ t)` on
+  `M × 𝕜` multiplies the `𝕜`-component by `φ' t`, so it is invertible where `φ' t ≠ 0`.
 * `TauCeti.Manifold.tangentCoordChange_prod`: the tangent coordinate change of a product is the
   product of the tangent coordinate changes of the factors.
 * `TauCeti.Manifold.tangentSpaceProdEquiv_symmL_trivializationAt`: the inverse tangent-bundle
@@ -737,6 +740,40 @@ theorem mfderiv_prodMap_apply
         (mfderiv I I' f p.1 v.1, mfderiv J J' g p.2 v.2) := by
   rw [mfderiv_prodMap hf hg]
   rfl
+
+/-- The differential of `(x, t) ↦ (x, φ t)` on `M × 𝕜` fixes the `M`-component and multiplies the
+`𝕜`-component by `φ' t`. -/
+theorem tangentSpaceProdEquiv_mfderiv_prodMap_id {φ : 𝕜 → 𝕜} {p : M × 𝕜}
+    (hφ : DifferentiableAt 𝕜 φ p.2) (v : TangentSpace (I.prod 𝓘(𝕜)) p) :
+    tangentSpaceProdEquiv (p.1, φ p.2)
+        (mfderiv (I.prod 𝓘(𝕜)) (I.prod 𝓘(𝕜)) (Prod.map id φ) p v) =
+      ((tangentSpaceProdEquiv p v).1, (NormedSpace.fromTangentSpace (φ p.2)).symm
+        (deriv φ p.2 * NormedSpace.fromTangentSpace p.2 (tangentSpaceProdEquiv p v).2)) := by
+  rw [mfderiv_prodMap mdifferentiableAt_id hφ.mdifferentiableAt, mfderiv_id, mfderiv_eq_fderiv,
+    tangentSpaceProdEquiv_apply p v]
+  -- Both sides now live in the product of the model spaces; the remaining identifications
+  -- `tangentSpaceProdEquiv` and `NormedSpace.fromTangentSpace` are the identity on elements.
+  exact (tangentSpaceProdEquiv_apply _ _).trans (Prod.ext rfl
+    (congrArg (NormedSpace.fromTangentSpace (φ p.2)).symm
+      ((fderiv_eq_smul_deriv _).trans (mul_comm _ _))))
+
+/-- If `φ' t ≠ 0`, the differential of `(x, t) ↦ (x, φ t)` on `M × 𝕜` at `(x, t)` is
+invertible. -/
+theorem isInvertible_mfderiv_prodMap_id {φ : 𝕜 → 𝕜} {p : M × 𝕜}
+    (hφ : DifferentiableAt 𝕜 φ p.2) (hφ' : deriv φ p.2 ≠ 0) :
+    (mfderiv (I.prod 𝓘(𝕜)) (I.prod 𝓘(𝕜)) (Prod.map id φ) p).IsInvertible := by
+  refine ⟨(tangentSpaceProdEquiv p).trans
+    (((ContinuousLinearEquiv.refl 𝕜 (TangentSpace I p.1)).prodCongr
+      ((NormedSpace.fromTangentSpace p.2).trans
+        ((ContinuousLinearEquiv.unitsEquivAut 𝕜 (Units.mk0 _ hφ')).trans
+          (NormedSpace.fromTangentSpace (φ p.2)).symm))).trans
+      (tangentSpaceProdEquiv (p.1, φ p.2)).symm),
+    ContinuousLinearMap.ext fun v ↦ (tangentSpaceProdEquiv (p.1, φ p.2)).injective ?_⟩
+  rw [tangentSpaceProdEquiv_mfderiv_prodMap_id hφ]
+  simp only [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.trans_apply,
+    ContinuousLinearEquiv.apply_symm_apply, ContinuousLinearEquiv.prodCongr_apply,
+    ContinuousLinearEquiv.refl_apply, ContinuousLinearEquiv.unitsEquivAut_apply, Units.val_mk0,
+    Prod.map, mul_comm]
 
 /-- On the common domain of two product charts, the tangent coordinate change of a product
 manifold is the product of the tangent coordinate changes of the factors. -/
