@@ -26,13 +26,15 @@ restrictions inside `W` are surjective, and the two sections glue to an extensio
 `O ∪ (V ∩ W)`. Maximality forces `x ∈ O`, hence `O = V`.
 
 The argument is carried out for presheaves of types satisfying the sheaf condition, and is then
-transported to sheaves valued in a concrete category whose forgetful functor preserves limits and
-reflects isomorphisms, such as sheaves of modules or of abelian groups. For such sheaves the
-conclusion is expressed by Mathlib's `TopCat.Sheaf.IsFlasque`, and flasqueness is shown to be
-equivalent to flasqueness of the restrictions to the members of some open cover.
+transported to sheaves valued in a concrete category whose forgetful functor preserves limits, such
+as sheaves of modules or of abelian groups. For such sheaves the conclusion is expressed by
+Mathlib's `TopCat.Sheaf.IsFlasque`, and flasqueness is shown to be equivalent to flasqueness of
+the restrictions to the members of some open cover.
 
 ## Main declarations
 
+* `TopCat.Presheaf.isCompatible_of_directed` and `TopCat.Presheaf.IsSheaf.exists_gluing_sup`: the
+  two gluing steps of the Zorn argument;
 * `TopCat.Presheaf.IsSheaf.map_surjective_of_locally_flasque`: the locality statement for
   sheaves of types;
 * `TopCat.Sheaf.map_surjective_of_locally_flasque`: the same statement for sheaves valued in a
@@ -60,6 +62,29 @@ variable {X : TopCat.{u}}
 
 namespace Presheaf
 
+/-- A family of sections over a directed family of opens is compatible as soon as any two of its
+sections are restrictions of a common section in the family. -/
+theorem isCompatible_of_directed {C : Type*} [Category* C] {FC : C → C → Type*} {CC : C → Type*}
+    [∀ X Y, FunLike (FC X Y) (CC X) (CC Y)] [ConcreteCategory C FC] {F : Presheaf C X}
+    {ι : Type*} {U : ι → Opens X} {sf : ∀ i, ToType (F.obj (op (U i)))}
+    (h : ∀ i j, ∃ k, ∃ (hik : U i ≤ U k) (hjk : U j ≤ U k),
+      F.map (homOfLE hik).op (sf k) = sf i ∧ F.map (homOfLE hjk).op (sf k) = sf j) :
+    IsCompatible F U sf := by
+  intro i j
+  obtain ⟨k, hik, hjk, hi, hj⟩ := h i j
+  rw [← hi, ← hj, ← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply, ← F.map_comp,
+    ← F.map_comp]
+  rfl
+
+/-- Two sections of a sheaf of types over `U` and `V` that agree on `U ⊓ V` glue to a section over
+`U ⊔ V`. -/
+theorem IsSheaf.exists_gluing_sup {F : Presheaf (Type w) X} (hF : F.IsSheaf) {U V : Opens X}
+    (a : F.obj (op U)) (b : F.obj (op V))
+    (h : F.map (homOfLE inf_le_left).op a = F.map (homOfLE inf_le_right).op b) :
+    ∃ s : F.obj (op (U ⊔ V)),
+      F.map (homOfLE le_sup_left).op s = a ∧ F.map (homOfLE le_sup_right).op s = b :=
+  Types.exists_of_isPullback (.of_isLimit (Sheaf.isLimitPullbackCone ⟨F, hF⟩ U V)) a b h
+
 /-- If every restriction map of a sheaf of types inside some neighbourhood of each point is
 surjective, then every restriction map is surjective. -/
 theorem IsSheaf.map_surjective_of_locally_flasque {F : Presheaf (Type w) X} (hF : F.IsSheaf)
@@ -82,18 +107,12 @@ theorem IsSheaf.map_surjective_of_locally_flasque {F : Presheaf (Type w) X} (hF 
   have hbound (c : Set E) (hc : IsChain r c) (hne : c.Nonempty) : ∃ ub, ∀ p ∈ c, r p ub := by
     obtain ⟨p₀, hp₀⟩ := hne
     have hcompat : IsCompatible F (fun p : c ↦ p.1.1.1) (fun p ↦ p.1.1.2) := by
-      intro p q
-      -- Comparable extensions agree on every open inside both domains.
-      have key {p q : c} (hpq : r p q) (Z : Opens X) (hp : Z ≤ p.1.1.1) (hq : Z ≤ q.1.1.1) :
-          F.map (homOfLE hp).op p.1.1.2 = F.map (homOfLE hq).op q.1.1.2 := by
-        obtain ⟨hle, hq'⟩ := hpq
-        rw [← hq', ← Functor.map_comp_apply]
-        rfl
+      refine isCompatible_of_directed fun p q ↦ ?_
       rcases eq_or_ne p q with rfl | hne
-      · rfl
-      rcases hc p.2 q.2 (Subtype.coe_injective.ne hne) with hpq | hqp
-      · exact key hpq _ inf_le_left inf_le_right
-      · exact (key hqp _ inf_le_right inf_le_left).symm
+      · exact ⟨p, le_rfl, le_rfl, by simp, by simp⟩
+      rcases hc p.2 q.2 (Subtype.coe_injective.ne hne) with ⟨hpq, hq⟩ | ⟨hqp, hp⟩
+      · exact ⟨q, hpq, le_rfl, hq, by simp⟩
+      · exact ⟨p, le_rfl, hqp, by simp, hp⟩
     obtain ⟨g, hg, -⟩ := hF.isSheafUniqueGluing_types _ hcompat
     have hle (p : c) : p.1.1.1 ≤ iSup fun p : c ↦ p.1.1.1 := le_iSup (fun p : c ↦ p.1.1.1) p
     refine ⟨⟨⟨_, g⟩, (p₀.2.1).trans (hle ⟨p₀, hp₀⟩),
@@ -106,31 +125,15 @@ theorem IsSheaf.map_surjective_of_locally_flasque {F : Presheaf (Type w) X} (hF 
   have hVO : V ≤ O := by
     intro x hx
     obtain ⟨W, hxW, hW⟩ := h x
-    -- Extend `t` from `O ∩ (V ∩ W)` to `V ∩ W`.
+    -- Extend `t` from `O ∩ (V ∩ W)` to `V ∩ W`, then glue to a section over `O ∪ (V ∩ W)`.
     obtain ⟨u, hu⟩ := hW (U := O ⊓ (V ⊓ W)) inf_le_right inf_le_right
       (F.map (homOfLE inf_le_left).op t)
-    -- Glue `t` and `u` to a section over `O ∪ (V ∩ W)`.
-    let D : Bool → Opens X := fun b ↦ bif b then O else V ⊓ W
-    let sf : ∀ b, F.obj (op (D b)) := fun b ↦ b.rec u t
-    -- `t` and `u` agree on every open inside `O ∩ (V ∩ W)`.
-    have key (Z : Opens X) (hZ : Z ≤ O ⊓ (V ⊓ W)) : F.map (homOfLE (hZ.trans inf_le_right)).op u =
-        F.map (homOfLE (hZ.trans inf_le_left)).op t := by
-      have := congrArg (F.map (homOfLE hZ).op) hu
-      rwa [← Functor.map_comp_apply, ← Functor.map_comp_apply] at this
-    have hcompat : IsCompatible F D sf := by
-      rintro (_ | _) (_ | _)
-      · rfl
-      · exact key _ (le_inf inf_le_right inf_le_left)
-      · exact (key _ le_rfl).symm
-      · rfl
-    obtain ⟨g, hg, -⟩ := hF.isSheafUniqueGluing_types _ hcompat
-    have hOD : O ≤ iSup D := le_iSup D true
-    have hgs := congrArg (F.map (homOfLE hUO).op) (hg true)
+    obtain ⟨g, hgt, -⟩ := hF.exists_gluing_sup t u hu.symm
+    have hgs := congrArg (F.map (homOfLE hUO).op) hgt
     rw [← Functor.map_comp_apply] at hgs
-    let q : E := ⟨⟨_, g⟩, hUO.trans hOD, iSup_le (Bool.forall_bool.mpr ⟨inf_le_left, hOV⟩),
-      hgs.trans ht⟩
-    obtain ⟨hDO, -⟩ := hmax q ⟨hOD, hg true⟩
-    exact hDO (le_iSup D false ⟨hx, hxW⟩)
+    let q : E := ⟨⟨_, g⟩, hUO.trans le_sup_left, sup_le hOV inf_le_left, hgs.trans ht⟩
+    obtain ⟨hqO, -⟩ := hmax q ⟨le_sup_left, hgt⟩
+    exact hqO (le_sup_right (a := O) ⟨hx, hxW⟩)
   exact ⟨F.map (homOfLE hVO).op t, Eq.trans (by rw [← Functor.map_comp_apply]; rfl) ht⟩
 
 end Presheaf
@@ -141,7 +144,6 @@ section Locality
 
 variable {C : Type*} [Category* C] {FC : C → C → Type*} {CC : C → Type*}
   [∀ X Y, FunLike (FC X Y) (CC X) (CC Y)] [ConcreteCategory C FC]
-  [HasLimitsOfSize.{u, u} C] [(CategoryTheory.forget C).ReflectsIsomorphisms]
   [PreservesLimitsOfSize.{u, u} (CategoryTheory.forget C)]
 
 /-- If every restriction map of a sheaf inside some neighbourhood of each point is surjective, then
@@ -150,8 +152,9 @@ theorem map_surjective_of_locally_flasque (F : Sheaf C X)
     (h : ∀ x : X, ∃ W : Opens X, x ∈ W ∧ ∀ ⦃U V : Opens X⦄ (hUV : U ≤ V), V ≤ W →
       Function.Surjective (F.obj.map (homOfLE hUV).op))
     {U V : Opens X} (hUV : U ≤ V) : Function.Surjective (F.obj.map (homOfLE hUV).op) :=
-  ((Presheaf.isSheaf_iff_isSheaf_comp' (CategoryTheory.forget C) F.obj).mp
-    F.property).map_surjective_of_locally_flasque h hUV
+  have hF : Presheaf.IsSheaf (F.obj ⋙ CategoryTheory.forget C) :=
+    CategoryTheory.Presheaf.isSheaf_comp_of_isSheaf _ _ _ F.property
+  hF.map_surjective_of_locally_flasque h hUV
 
 /-- A sheaf is flasque as soon as every point has an open neighbourhood inside which all
 restriction maps are surjective. -/
@@ -167,16 +170,24 @@ section Restriction
 
 variable {C : Type*} [Category.{u} C]
 
+/-- The restriction maps of the restriction of a sheaf along an open embedding are restriction maps
+of the original sheaf between the image opens. -/
+theorem _root_.Topology.IsOpenEmbedding.sheafPullback_obj_obj_map {Y : TopCat.{u}} {f : Y ⟶ X}
+    (hf : IsOpenEmbedding f) (F : Sheaf C X) {U V : (Opens Y)ᵒᵖ} (i : U ⟶ V) :
+    ((hf.sheafPullback C).obj F).obj.map i = F.obj.map (hf.functor.map i.unop).op :=
+  rfl
+
 /-- The restriction of a flasque sheaf along an open embedding is flasque. -/
 instance isFlasque_sheafPullback_obj {Y : TopCat.{u}} {f : Y ⟶ X} (hf : IsOpenEmbedding f)
     (F : Sheaf C X) [F.IsFlasque] : ((hf.sheafPullback C).obj F).IsFlasque where
-  epi i := Presheaf.IsFlasque.epi (F := F.obj) (hf.functor.map i.unop).op
+  epi i := by
+    rw [hf.sheafPullback_obj_obj_map]
+    exact Presheaf.IsFlasque.epi (F := F.obj) _
 
 /-- Flasqueness of a sheaf is local: a sheaf is flasque if and only if every point has an open
 neighbourhood `W` such that the restriction of the sheaf to `W` is flasque. -/
 theorem isFlasque_iff_locally_isFlasque {FC : C → C → Type*} {CC : C → Type*}
-    [∀ X Y, FunLike (FC X Y) (CC X) (CC Y)] [ConcreteCategory C FC] [HasLimitsOfSize.{u, u} C]
-    [(CategoryTheory.forget C).ReflectsIsomorphisms]
+    [∀ X Y, FunLike (FC X Y) (CC X) (CC Y)] [ConcreteCategory C FC]
     [PreservesLimitsOfSize.{u, u} (CategoryTheory.forget C)]
     [(CategoryTheory.forget C).PreservesEpimorphisms] (F : Sheaf C X) :
     F.IsFlasque ↔
@@ -196,7 +207,9 @@ theorem isFlasque_iff_locally_isFlasque {FC : C → C → Type*} {CC : C → Typ
   have hUV' : U' ≤ V' := by
     simpa only [Opens.map_functor_eq' _ W.isOpenEmbedding] using
       (Opens.map W.inclusion').monotone hUV
-  have : Epi (F.obj.map (homOfLE hUV).op) := hW.epi (homOfLE hUV').op
+  have : Epi (F.obj.map (homOfLE hUV).op) := by
+    have := hW.epi (homOfLE hUV').op
+    rwa [IsOpenEmbedding.sheafPullback_obj_obj_map] at this
   exact (CategoryTheory.epi_iff_surjective ((CategoryTheory.forget C).map _)).mp inferInstance
 
 end Restriction
