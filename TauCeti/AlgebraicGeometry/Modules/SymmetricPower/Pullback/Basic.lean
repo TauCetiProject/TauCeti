@@ -56,6 +56,15 @@ theorem pullbackSymmetricPowerComparison_eq (n : ℕ) :
         (pullbackPushforwardAdjunction f) n :=
   (rfl)
 
+/-- The mate of the scheme comparison under the pullback--pushforward adjunction is the
+pushforward comparison along `f.toRingCatSheafHom`. -/
+theorem mateEquiv_pullbackSymmetricPowerComparison (n : ℕ) :
+    mateEquiv (pullbackPushforwardAdjunction f) (pullbackPushforwardAdjunction f)
+        (pullbackSymmetricPowerComparison f n) =
+      TauCeti.SheafOfModules.pushforwardSymmetricPowerComparison f.toRingCatSheafHom n :=
+  TauCeti.SheafOfModules.mateEquiv_pullbackSymmetricPowerComparison
+    (pullbackPushforwardAdjunction f) n
+
 /-- The adjunction equation characterizing the pullback comparison for modules on schemes. -/
 theorem unit_comp_pushforward_map_pullbackSymmetricPowerComparison_app
     (n : ℕ) (M : Y.Modules) :
