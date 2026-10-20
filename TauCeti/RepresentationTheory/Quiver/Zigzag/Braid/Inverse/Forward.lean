@@ -44,7 +44,8 @@ variable (k : Type w) [CommRing k] {V : Type u} (G : SimpleGraph V) [Finite V]
 
 local notation "Γ" => zigzagAlgebraInternalGrading k G
 local notation "U" => zigzagGradedBraidBimodule k G
-local notation "F" => gradedBimoduleTensor k Γ
+local notation "F" => (GradedModuleCat.bimoduleTensor Γ Γ Γ :
+  GradedBimoduleCat k Γ ⥤ GradedBimoduleCat k Γ ⥤ GradedBimoduleCat k Γ)
 local notation "T" => zigzagBraidInverseComplexTensor k G
 
 attribute [local instance] zigzagAlgebraIntegerGradedAlgebra

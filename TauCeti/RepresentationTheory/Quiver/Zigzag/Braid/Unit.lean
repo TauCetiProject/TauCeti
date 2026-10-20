@@ -43,6 +43,8 @@ variable (k : Type w) [CommRing k] {V : Type u} (G : SimpleGraph V) [Finite V]
 local notation "Z" => AlgCat.carrier (zigzagAlgebra k G)
 local notation "c" => ComplexShape.up ℤ
 local notation "Γ" => zigzagAlgebraInternalGrading k G
+local notation "F" => (GradedModuleCat.bimoduleTensor Γ Γ Γ :
+  GradedBimoduleCat k Γ ⥤ GradedBimoduleCat k Γ ⥤ GradedBimoduleCat k Γ)
 
 attribute [local instance] zigzagAlgebraIntegerGradedAlgebra
 
@@ -84,18 +86,33 @@ def zigzagBraidUnitComplexHomotopyEquiv :
     ((HomologicalComplex.single (GradedModuleCat.{max u w} (zigzagEnvelopingGrading k G).piece)
       c 0).mapIso (zigzagGradedBimoduleUnitIso k G).symm)
 
+-- The characterising lemma below is written `(rfl)` and not `rfl`: a theorem whose proof is
+-- syntactically `rfl` is tagged `@[defeq]`, and the module system refuses to export a
+-- `@[defeq]` theorem whose proof needs the body of a definition that is not exposed.
+
+/-- The unit-complex homotopy equivalence of the zigzag setting is the transport of the
+unit isomorphism to the single-degree complex. This is the characterisation that lets a
+consumer compute the `hom` and `inv` of the unit comparison. -/
+@[simp] theorem zigzagBraidUnitComplexHomotopyEquiv_eq :
+    zigzagBraidUnitComplexHomotopyEquiv k G
+      = HomotopyEquiv.ofIso
+          ((HomologicalComplex.single
+              (GradedModuleCat.{max u w} (zigzagEnvelopingGrading k G).piece) c 0).mapIso
+            (zigzagGradedBimoduleUnitIso k G).symm) := (rfl)
+
 variable (M : GradedModuleCat.{max u w} (zigzagEnvelopingGrading k G).piece)
 
 /-- Tensoring the actual regular zigzag bimodule on the left preserves a graded bimodule. -/
 def zigzagBimoduleLeftUnitor :
     GradedModuleCat.bimoduleTensorObj Γ Γ Γ (zigzagGradedBimodule k G) M ≅ M :=
-  ((gradedBimoduleTensor k Γ).flip.obj M).mapIso (zigzagGradedBimoduleUnitIso k G).symm ≪≫
+  ((F).flip.obj M).mapIso
+      (zigzagGradedBimoduleUnitIso k G).symm ≪≫
     GradedModuleCat.bimoduleTensorLeftUnitor.{w} Γ Γ M
 
 /-- Tensoring the actual regular zigzag bimodule on the right preserves a graded bimodule. -/
 def zigzagBimoduleRightUnitor :
     GradedModuleCat.bimoduleTensorObj Γ Γ Γ M (zigzagGradedBimodule k G) ≅ M :=
-  ((gradedBimoduleTensor k Γ).obj M).mapIso (zigzagGradedBimoduleUnitIso k G).symm ≪≫
+  ((F).obj M).mapIso (zigzagGradedBimoduleUnitIso k G).symm ≪≫
     GradedModuleCat.bimoduleTensorRightUnitor.{w} Γ Γ M
 
 @[simp]

@@ -36,8 +36,8 @@ an `(A,B)`-bimodule tensored over `B` with a left `B`-module is a left `A`-modul
 Both constructions are linear in each variable.
 
 `GradedBimoduleCat` is the category of graded bimodules of a graded algebra with an
-internal grading, and `gradedBimoduleTensor` is the balanced bimodule tensor of that
-setting.
+internal grading, and `GradedModuleCat.bimoduleTensor` is the balanced bimodule tensor of
+that setting.
 
 ## References
 
@@ -975,14 +975,5 @@ the graded modules over the enveloping grading `Ξ.tensorProduct Ξ.opposite`. -
 abbrev GradedBimoduleCat (k : Type w) [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
     (Ξ : InternalGrading k A) :=
   GradedModuleCat.{max uA w} (Ξ.tensorProduct Ξ.opposite).piece
-
-/-- The balanced bimodule tensor of the graded bimodule setting of `Ξ`. This is
-`GradedModuleCat.bimoduleTensor Ξ Ξ Ξ`, the tensor of two graded bimodules of the graded
-algebra `A`, balanced over `A` itself. The carrier universe is pinned to the universe of the
-graded bimodule category, so that the tensor is a bifunctor on that single category. -/
-noncomputable abbrev gradedBimoduleTensor {A : Type uA} [Ring A] [Algebra k A]
-    (Ξ : InternalGrading k A) [GradedAlgebra Ξ.piece] :
-    GradedBimoduleCat k Ξ ⥤ GradedBimoduleCat k Ξ ⥤ GradedBimoduleCat k Ξ :=
-  GradedModuleCat.bimoduleTensor Ξ Ξ Ξ
 
 end TauCeti

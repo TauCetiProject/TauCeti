@@ -34,13 +34,11 @@ The four field values of the zigzag braid relations are the public declarations
 the four projection lemmas `zigzagBraidComplexRelations_inverseForward` and its three siblings
 read those values off the relations.
 
-`zigzagBraidRelationsTransfer` transports those relations to a second graded bimodule setting,
-the setting of a graded algebra `A` with internal grading `Ξ`, and
 `zigzagBraidMapHomologicalComplexRelations` records the relations for the image complexes
-`H(zigzagBraidComplex i)` themselves. The two characterising lemmas
-`zigzagBraidRelationsTransfer_eq` and `zigzagBraidMapHomologicalComplexRelations_eq` identify
-both with the transfer of the zigzag braid relations, so that the projection lemmas
-`transfer_inverseForward` and its three siblings apply to them.
+`H(zigzagBraidComplex i)` themselves: it is the transfer of the zigzag braid relations along
+the given data with identity homotopy equivalences, and the characterising lemma
+`zigzagBraidMapHomologicalComplexRelations_eq` identifies it with that transfer, so that the
+projection lemmas `transfer_inverseForward` and its three siblings apply to it.
 
 ## Scope
 
@@ -138,55 +136,11 @@ variable (Ξ : InternalGrading k A) [GradedAlgebra Ξ.piece]
 variable (H : GradedBimoduleCat k (zigzagAlgebraInternalGrading k G) ⥤ GradedBimoduleCat k Ξ)
   [H.Additive]
 
-/-- Transfer of the Khovanov-Seidel relations of the zigzag braid complexes to a family of
-complexes in a second graded bimodule setting, the setting of the graded algebra `A` with
-internal grading `Ξ`. The functor `H` is an additive functor from the setting of the zigzag
-braid complexes to that second setting, `η` is its pointwise homotopy-monoidal datum, `ε`
-compares the image of the unit complex of the zigzag setting with the unit complex of the
-target setting, and `a` and `a'` identify the image of the zigzag braid complexes with the
-target family. -/
-def zigzagBraidRelationsTransfer
-    (η : GradedBimoduleMonoidalDatum k (zigzagAlgebraInternalGrading k G) Ξ H)
-    (ε : HomotopyEquiv
-      ((H.mapHomologicalComplex c).obj
-        (gradedBimoduleUnitComplex k (zigzagAlgebraInternalGrading k G)))
-      (gradedBimoduleUnitComplex k Ξ))
-    {C C' : V → HomologicalComplex (GradedBimoduleCat k Ξ) c}
-    (a : ∀ i, HomotopyEquiv ((H.mapHomologicalComplex c).obj (zigzagBraidComplex k G i))
-      (C i))
-    (a' : ∀ i, HomotopyEquiv ((H.mapHomologicalComplex c).obj
-      (zigzagBraidInverseComplex k G i)) (C' i)) :
-    KhovanovSeidelRelations k G Ξ C C' :=
-  (zigzagBraidComplexRelations k G).transfer η ε a a'
-
--- The two declarations below are the transfer of the zigzag braid relations, spelled out for
--- the zigzag instances. Their characterising lemmas are written `(rfl)` and not `rfl`: a
--- theorem whose proof is syntactically `rfl` is tagged `@[defeq]`, and the module system
--- refuses to export a `@[defeq]` theorem whose proof needs the body of a definition that is
--- not exposed.
-
-/-- The transferred relations of the zigzag braid complexes are the transfer of the zigzag
-braid relations along the given data. This is the characterisation that lets the projection
-lemmas `transfer_inverseForward` and its three siblings apply to them. -/
-@[simp] theorem zigzagBraidRelationsTransfer_eq
-    (η : GradedBimoduleMonoidalDatum k (zigzagAlgebraInternalGrading k G) Ξ H)
-    (ε : HomotopyEquiv
-      ((H.mapHomologicalComplex c).obj
-        (gradedBimoduleUnitComplex k (zigzagAlgebraInternalGrading k G)))
-      (gradedBimoduleUnitComplex k Ξ))
-    {C C' : V → HomologicalComplex (GradedBimoduleCat k Ξ) c}
-    (a : ∀ i, HomotopyEquiv ((H.mapHomologicalComplex c).obj (zigzagBraidComplex k G i))
-      (C i))
-    (a' : ∀ i, HomotopyEquiv ((H.mapHomologicalComplex c).obj
-      (zigzagBraidInverseComplex k G i)) (C' i)) :
-    zigzagBraidRelationsTransfer k G Ξ H η ε a a'
-      = (zigzagBraidComplexRelations k G).transfer η ε a a' := (rfl)
-
 /-- The complexes `H(zigzagBraidComplex i)` and their inverses
 `H(zigzagBraidInverseComplex i)`, the images of the zigzag braid complexes under
 `H.mapHomologicalComplex`, satisfy the Khovanov-Seidel relations in the target graded
-bimodule setting: this is `zigzagBraidRelationsTransfer` with identity homotopy equivalences
-for `a` and `a'`. -/
+bimodule setting: this is the transfer of the zigzag braid relations with identity homotopy
+equivalences for the source family and its inverse. -/
 def zigzagBraidMapHomologicalComplexRelations
     (η : GradedBimoduleMonoidalDatum k (zigzagAlgebraInternalGrading k G) Ξ H)
     (ε : HomotopyEquiv
@@ -196,8 +150,12 @@ def zigzagBraidMapHomologicalComplexRelations
     KhovanovSeidelRelations k G Ξ
       (fun i => (H.mapHomologicalComplex c).obj (zigzagBraidComplex k G i))
       (fun i => (H.mapHomologicalComplex c).obj (zigzagBraidInverseComplex k G i)) :=
-  zigzagBraidRelationsTransfer k G Ξ H η ε (fun _ => HomotopyEquiv.refl _)
-    (fun _ => HomotopyEquiv.refl _)
+  (zigzagBraidComplexRelations k G).transfer η ε
+    (fun _ => HomotopyEquiv.refl _) (fun _ => HomotopyEquiv.refl _)
+
+-- The characterising lemma below is written `(rfl)` and not `rfl`: a theorem whose proof is
+-- syntactically `rfl` is tagged `@[defeq]`, and the module system refuses to export a
+-- `@[defeq]` theorem whose proof needs the body of a definition that is not exposed.
 
 /-- The relations of the image complexes are the transfer of the zigzag braid relations along
 the given data with identity homotopy equivalences. This is the characterisation that lets

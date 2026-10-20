@@ -20,11 +20,12 @@ the setting, the nonadjacent factors commute up to chain homotopy, and the adjac
 satisfy the braid relation up to chain homotopy. A graded bimodule setting is a graded algebra
 `A` with an internal grading `Ξ`: its graded bimodules are the graded modules over the
 enveloping grading `Ξ.tensorProduct Ξ.opposite`, they are combined by the balanced bimodule
-tensor `gradedBimoduleTensor`, and the unit complex of the setting is
+tensor `GradedModuleCat.bimoduleTensor Ξ Ξ Ξ`, and the unit complex of the setting is
 `gradedBimoduleUnitComplex k Ξ`, the regular graded bimodule
 `GradedModuleCat.bimoduleUnit Ξ` placed in cohomological degree zero. The category
-`GradedBimoduleCat` and the tensor `gradedBimoduleTensor` of such a setting are defined in
-`TauCeti.Algebra.Category.GradedModuleCat.BimoduleTensor.Basic`, and the unit complex
+`GradedBimoduleCat` of such a setting is defined in
+`TauCeti.Algebra.Category.GradedModuleCat.BimoduleTensor.Basic`, next to
+`GradedModuleCat.bimoduleTensor`, and the unit complex
 `gradedBimoduleUnitComplex` in `TauCeti.Algebra.Category.GradedModuleCat.BimoduleTensor.Unit`,
 next to `GradedModuleCat.bimoduleUnit`.
 
@@ -101,24 +102,24 @@ structure KhovanovSeidelRelations
     (C C' : V → HomologicalComplex (GradedBimoduleCat k Ξ) c) where
   /-- The forward inverse product `C i ⊗ C' i` is homotopy equivalent to the unit. -/
   inverseForward (i : V) : HomotopyEquiv
-    (HomologicalComplex.mapBifunctor (C i) (C' i) (gradedBimoduleTensor k Ξ) c)
+    (HomologicalComplex.mapBifunctor (C i) (C' i) (GradedModuleCat.bimoduleTensor Ξ Ξ Ξ) c)
     (gradedBimoduleUnitComplex k Ξ)
   /-- The reverse inverse product `C' i ⊗ C i` is homotopy equivalent to the unit. -/
   inverseReverse (i : V) : HomotopyEquiv
-    (HomologicalComplex.mapBifunctor (C' i) (C i) (gradedBimoduleTensor k Ξ) c)
+    (HomologicalComplex.mapBifunctor (C' i) (C i) (GradedModuleCat.bimoduleTensor Ξ Ξ Ξ) c)
     (gradedBimoduleUnitComplex k Ξ)
   /-- Nonadjacent factors commute up to chain homotopy. -/
   commute (i j : V) (hij : i ≠ j) (hadj : ¬ G.Adj i j) : HomotopyEquiv
-    (HomologicalComplex.mapBifunctor (C i) (C j) (gradedBimoduleTensor k Ξ) c)
-    (HomologicalComplex.mapBifunctor (C j) (C i) (gradedBimoduleTensor k Ξ) c)
+    (HomologicalComplex.mapBifunctor (C i) (C j) (GradedModuleCat.bimoduleTensor Ξ Ξ Ξ) c)
+    (HomologicalComplex.mapBifunctor (C j) (C i) (GradedModuleCat.bimoduleTensor Ξ Ξ Ξ) c)
   /-- Adjacent factors satisfy the braid relation up to chain homotopy. -/
   braid {i j : V} (h : G.Adj j i) : HomotopyEquiv
     (HomologicalComplex.mapBifunctor
-      (HomologicalComplex.mapBifunctor (C i) (C j) (gradedBimoduleTensor k Ξ) c) (C i)
-      (gradedBimoduleTensor k Ξ) c)
+      (HomologicalComplex.mapBifunctor (C i) (C j) (GradedModuleCat.bimoduleTensor Ξ Ξ Ξ) c) (C i)
+      (GradedModuleCat.bimoduleTensor Ξ Ξ Ξ) c)
     (HomologicalComplex.mapBifunctor
-      (HomologicalComplex.mapBifunctor (C j) (C i) (gradedBimoduleTensor k Ξ) c) (C j)
-      (gradedBimoduleTensor k Ξ) c)
+      (HomologicalComplex.mapBifunctor (C j) (C i) (GradedModuleCat.bimoduleTensor Ξ Ξ Ξ) c) (C j)
+      (GradedModuleCat.bimoduleTensor Ξ Ξ Ξ) c)
 
 section Transfer
 
@@ -136,9 +137,9 @@ abbrev GradedBimoduleMonoidalDatum :=
   ∀ (X Y : HomologicalComplex (GradedBimoduleCat k Ξ₁) c),
     HomotopyEquiv
       (HomologicalComplex.mapBifunctor ((H.mapHomologicalComplex c).obj X)
-        ((H.mapHomologicalComplex c).obj Y) (gradedBimoduleTensor k Ξ₂) c)
+        ((H.mapHomologicalComplex c).obj Y) (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c)
       ((H.mapHomologicalComplex c).obj
-        (HomologicalComplex.mapBifunctor X Y (gradedBimoduleTensor k Ξ₁) c))
+        (HomologicalComplex.mapBifunctor X Y (GradedModuleCat.bimoduleTensor Ξ₁ Ξ₁ Ξ₁) c))
 
 namespace KhovanovSeidelRelations
 
@@ -150,14 +151,15 @@ private def transferAdjacentLeftConj {i j : V}
     (a : ∀ i, HomotopyEquiv ((H.mapHomologicalComplex c).obj (B i)) (C i)) :
     HomotopyEquiv
       (HomologicalComplex.mapBifunctor
-        (HomologicalComplex.mapBifunctor (C i) (C j) (gradedBimoduleTensor k Ξ₂) c) (C i)
-        (gradedBimoduleTensor k Ξ₂) c)
+        (HomologicalComplex.mapBifunctor (C i) (C j)
+          (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c) (C i)
+        (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c)
       (HomologicalComplex.mapBifunctor
         (HomologicalComplex.mapBifunctor ((H.mapHomologicalComplex c).obj (B i))
-          ((H.mapHomologicalComplex c).obj (B j)) (gradedBimoduleTensor k Ξ₂) c)
-        ((H.mapHomologicalComplex c).obj (B i)) (gradedBimoduleTensor k Ξ₂) c) :=
-  HomotopyEquiv.mapBifunctor (gradedBimoduleTensor k Ξ₂) c
-    (HomotopyEquiv.mapBifunctor (gradedBimoduleTensor k Ξ₂) c (a i).symm (a j).symm)
+          ((H.mapHomologicalComplex c).obj (B j)) (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c)
+        ((H.mapHomologicalComplex c).obj (B i)) (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c) :=
+  HomotopyEquiv.mapBifunctor (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c
+    (HomotopyEquiv.mapBifunctor (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c (a i).symm (a j).symm)
     (a i).symm
 
 /-- The first bridge step of the transferred braid relation: the target tensor product of two
@@ -168,15 +170,17 @@ private def transferAdjacentBridgeLeft {i j : V}
     HomotopyEquiv
       (HomologicalComplex.mapBifunctor
         (HomologicalComplex.mapBifunctor ((H.mapHomologicalComplex c).obj (B i))
-          ((H.mapHomologicalComplex c).obj (B j)) (gradedBimoduleTensor k Ξ₂) c)
-        ((H.mapHomologicalComplex c).obj (B i)) (gradedBimoduleTensor k Ξ₂) c)
+          ((H.mapHomologicalComplex c).obj (B j)) (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c)
+        ((H.mapHomologicalComplex c).obj (B i)) (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c)
       ((H.mapHomologicalComplex c).obj
         (HomologicalComplex.mapBifunctor
-          (HomologicalComplex.mapBifunctor (B i) (B j) (gradedBimoduleTensor k Ξ₁) c) (B i)
-          (gradedBimoduleTensor k Ξ₁) c)) :=
-  (HomotopyEquiv.mapBifunctor (gradedBimoduleTensor k Ξ₂) c (η (B i) (B j))
+          (HomologicalComplex.mapBifunctor (B i) (B j)
+            (GradedModuleCat.bimoduleTensor Ξ₁ Ξ₁ Ξ₁) c) (B i)
+          (GradedModuleCat.bimoduleTensor Ξ₁ Ξ₁ Ξ₁) c)) :=
+  (HomotopyEquiv.mapBifunctor (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c (η (B i) (B j))
     (HomotopyEquiv.refl ((H.mapHomologicalComplex c).obj (B i)))).trans
-    (η (HomologicalComplex.mapBifunctor (B i) (B j) (gradedBimoduleTensor k Ξ₁) c) (B i))
+    (η (HomologicalComplex.mapBifunctor (B i) (B j)
+      (GradedModuleCat.bimoduleTensor Ξ₁ Ξ₁ Ξ₁) c) (B i))
 
 /-- The middle step of the transferred braid relation: the image of the braid relation of the
 source family. -/
@@ -186,12 +190,14 @@ private def transferAdjacentMiddle {i j : V} (h : G.Adj j i)
     HomotopyEquiv
       ((H.mapHomologicalComplex c).obj
         (HomologicalComplex.mapBifunctor
-          (HomologicalComplex.mapBifunctor (B i) (B j) (gradedBimoduleTensor k Ξ₁) c) (B i)
-          (gradedBimoduleTensor k Ξ₁) c))
+          (HomologicalComplex.mapBifunctor (B i) (B j)
+            (GradedModuleCat.bimoduleTensor Ξ₁ Ξ₁ Ξ₁) c) (B i)
+          (GradedModuleCat.bimoduleTensor Ξ₁ Ξ₁ Ξ₁) c))
       ((H.mapHomologicalComplex c).obj
         (HomologicalComplex.mapBifunctor
-          (HomologicalComplex.mapBifunctor (B j) (B i) (gradedBimoduleTensor k Ξ₁) c) (B j)
-          (gradedBimoduleTensor k Ξ₁) c)) :=
+          (HomologicalComplex.mapBifunctor (B j) (B i)
+            (GradedModuleCat.bimoduleTensor Ξ₁ Ξ₁ Ξ₁) c) (B j)
+          (GradedModuleCat.bimoduleTensor Ξ₁ Ξ₁ Ξ₁) c)) :=
   H.mapHomotopyEquiv (rel.braid h)
 
 /-- The second bridge step of the transferred braid relation: the image of the source tensor
@@ -203,12 +209,13 @@ private def transferAdjacentBridgeRight {i j : V}
     HomotopyEquiv
       ((H.mapHomologicalComplex c).obj
         (HomologicalComplex.mapBifunctor
-          (HomologicalComplex.mapBifunctor (B j) (B i) (gradedBimoduleTensor k Ξ₁) c) (B j)
-          (gradedBimoduleTensor k Ξ₁) c))
+          (HomologicalComplex.mapBifunctor (B j) (B i)
+            (GradedModuleCat.bimoduleTensor Ξ₁ Ξ₁ Ξ₁) c) (B j)
+          (GradedModuleCat.bimoduleTensor Ξ₁ Ξ₁ Ξ₁) c))
       (HomologicalComplex.mapBifunctor
         (HomologicalComplex.mapBifunctor ((H.mapHomologicalComplex c).obj (B j))
-          ((H.mapHomologicalComplex c).obj (B i)) (gradedBimoduleTensor k Ξ₂) c)
-        ((H.mapHomologicalComplex c).obj (B j)) (gradedBimoduleTensor k Ξ₂) c) :=
+          ((H.mapHomologicalComplex c).obj (B i)) (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c)
+        ((H.mapHomologicalComplex c).obj (B j)) (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c) :=
   (transferAdjacentBridgeLeft k Ξ₁ Ξ₂ H (i := j) (j := i) η).symm
 
 /-- The last conjugation step of the transferred braid relation: the triple tensor product of
@@ -221,16 +228,22 @@ private def transferAdjacentRightConj {i j : V}
     HomotopyEquiv
       (HomologicalComplex.mapBifunctor
         (HomologicalComplex.mapBifunctor ((H.mapHomologicalComplex c).obj (B j))
-          ((H.mapHomologicalComplex c).obj (B i)) (gradedBimoduleTensor k Ξ₂) c)
-        ((H.mapHomologicalComplex c).obj (B j)) (gradedBimoduleTensor k Ξ₂) c)
+          ((H.mapHomologicalComplex c).obj (B i)) (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c)
+        ((H.mapHomologicalComplex c).obj (B j)) (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c)
       (HomologicalComplex.mapBifunctor
-        (HomologicalComplex.mapBifunctor (C j) (C i) (gradedBimoduleTensor k Ξ₂) c) (C j)
-        (gradedBimoduleTensor k Ξ₂) c) :=
+        (HomologicalComplex.mapBifunctor (C j) (C i)
+          (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c) (C j)
+        (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c) :=
   (transferAdjacentLeftConj k Ξ₁ Ξ₂ H (i := j) (j := i) a).symm
 
 /-- Transfer of the forward inverse relation of the source family to the target setting: the
 target tensor product `C i ⊗ C' i` is homotopy equivalent to the target unit complex. -/
-def transferInverseForward (i : V)
+def transferInverseForward {k : Type w} [CommRing k] {V : Type u} {G : SimpleGraph V}
+    {A₁ : Type uA} [Ring A₁] [Algebra k A₁] {A₂ : Type uB} [Ring A₂] [Algebra k A₂]
+    {Ξ₁ : InternalGrading k A₁} [GradedAlgebra Ξ₁.piece]
+    {Ξ₂ : InternalGrading k A₂} [GradedAlgebra Ξ₂.piece]
+    {H : GradedBimoduleCat k Ξ₁ ⥤ GradedBimoduleCat k Ξ₂} [H.Additive]
+    (i : V)
     {B B' : V → HomologicalComplex (GradedBimoduleCat k Ξ₁) c}
     {C C' : V → HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
     (η : GradedBimoduleMonoidalDatum k Ξ₁ Ξ₂ H)
@@ -241,15 +254,21 @@ def transferInverseForward (i : V)
     (a : ∀ i, HomotopyEquiv ((H.mapHomologicalComplex c).obj (B i)) (C i))
     (a' : ∀ i, HomotopyEquiv ((H.mapHomologicalComplex c).obj (B' i)) (C' i)) :
     HomotopyEquiv
-      (HomologicalComplex.mapBifunctor (C i) (C' i) (gradedBimoduleTensor k Ξ₂) c)
+      (HomologicalComplex.mapBifunctor (C i) (C' i) (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c)
       (gradedBimoduleUnitComplex k Ξ₂) :=
-  (HomotopyEquiv.mapBifunctor (gradedBimoduleTensor k Ξ₂) c (a i).symm (a' i).symm).trans
+  (HomotopyEquiv.mapBifunctor (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c
+    (a i).symm (a' i).symm).trans
     ((η (B i) (B' i)).trans
       ((H.mapHomotopyEquiv (rel.inverseForward i)).trans ε))
 
 /-- Transfer of the reverse inverse relation of the source family to the target setting: the
 target tensor product `C' i ⊗ C i` is homotopy equivalent to the target unit complex. -/
-def transferInverseReverse (i : V)
+def transferInverseReverse {k : Type w} [CommRing k] {V : Type u} {G : SimpleGraph V}
+    {A₁ : Type uA} [Ring A₁] [Algebra k A₁] {A₂ : Type uB} [Ring A₂] [Algebra k A₂]
+    {Ξ₁ : InternalGrading k A₁} [GradedAlgebra Ξ₁.piece]
+    {Ξ₂ : InternalGrading k A₂} [GradedAlgebra Ξ₂.piece]
+    {H : GradedBimoduleCat k Ξ₁ ⥤ GradedBimoduleCat k Ξ₂} [H.Additive]
+    (i : V)
     {B B' : V → HomologicalComplex (GradedBimoduleCat k Ξ₁) c}
     {C C' : V → HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
     (η : GradedBimoduleMonoidalDatum k Ξ₁ Ξ₂ H)
@@ -260,34 +279,46 @@ def transferInverseReverse (i : V)
     (a : ∀ i, HomotopyEquiv ((H.mapHomologicalComplex c).obj (B i)) (C i))
     (a' : ∀ i, HomotopyEquiv ((H.mapHomologicalComplex c).obj (B' i)) (C' i)) :
     HomotopyEquiv
-      (HomologicalComplex.mapBifunctor (C' i) (C i) (gradedBimoduleTensor k Ξ₂) c)
+      (HomologicalComplex.mapBifunctor (C' i) (C i) (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c)
       (gradedBimoduleUnitComplex k Ξ₂) :=
-  (HomotopyEquiv.mapBifunctor (gradedBimoduleTensor k Ξ₂) c (a' i).symm (a i).symm).trans
+  (HomotopyEquiv.mapBifunctor (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c
+    (a' i).symm (a i).symm).trans
     ((η (B' i) (B i)).trans
       ((H.mapHomotopyEquiv (rel.inverseReverse i)).trans ε))
 
 /-- Transfer of the commutation relation of the source family to the target setting: the
 target tensor products `C i ⊗ C j` and `C j ⊗ C i` are homotopy equivalent for nonadjacent
 vertices. -/
-def transferCommute (i j : V) (hij : i ≠ j) (hadj : ¬ G.Adj i j)
+def transferCommute {k : Type w} [CommRing k] {V : Type u} {G : SimpleGraph V}
+    {A₁ : Type uA} [Ring A₁] [Algebra k A₁] {A₂ : Type uB} [Ring A₂] [Algebra k A₂]
+    {Ξ₁ : InternalGrading k A₁} [GradedAlgebra Ξ₁.piece]
+    {Ξ₂ : InternalGrading k A₂} [GradedAlgebra Ξ₂.piece]
+    {H : GradedBimoduleCat k Ξ₁ ⥤ GradedBimoduleCat k Ξ₂} [H.Additive]
+    (i j : V) (hij : i ≠ j) (hadj : ¬ G.Adj i j)
     {B B' : V → HomologicalComplex (GradedBimoduleCat k Ξ₁) c}
     {C : V → HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
     (η : GradedBimoduleMonoidalDatum k Ξ₁ Ξ₂ H)
     (rel : KhovanovSeidelRelations k G Ξ₁ B B')
     (a : ∀ i, HomotopyEquiv ((H.mapHomologicalComplex c).obj (B i)) (C i)) :
     HomotopyEquiv
-      (HomologicalComplex.mapBifunctor (C i) (C j) (gradedBimoduleTensor k Ξ₂) c)
-      (HomologicalComplex.mapBifunctor (C j) (C i) (gradedBimoduleTensor k Ξ₂) c) :=
-  (HomotopyEquiv.mapBifunctor (gradedBimoduleTensor k Ξ₂) c (a i).symm (a j).symm).trans
+      (HomologicalComplex.mapBifunctor (C i) (C j) (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c)
+      (HomologicalComplex.mapBifunctor (C j) (C i) (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c) :=
+  (HomotopyEquiv.mapBifunctor (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c
+    (a i).symm (a j).symm).trans
     ((η (B i) (B j)).trans
       ((H.mapHomotopyEquiv (rel.commute i j hij hadj)).trans
         (((η (B j) (B i)).symm).trans
-          (HomotopyEquiv.mapBifunctor (gradedBimoduleTensor k Ξ₂) c (a j) (a i)))))
+          (HomotopyEquiv.mapBifunctor (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c (a j) (a i)))))
 
 /-- Transfer of the braid relation of the source family to the target setting: the target
 triple tensor products `C i ⊗ C j ⊗ C i` and `C j ⊗ C i ⊗ C j` are homotopy equivalent at
 adjacent vertices. -/
-def transferAdjacent {i j : V} (h : G.Adj j i)
+def transferAdjacent {k : Type w} [CommRing k] {V : Type u} {G : SimpleGraph V}
+    {A₁ : Type uA} [Ring A₁] [Algebra k A₁] {A₂ : Type uB} [Ring A₂] [Algebra k A₂]
+    {Ξ₁ : InternalGrading k A₁} [GradedAlgebra Ξ₁.piece]
+    {Ξ₂ : InternalGrading k A₂} [GradedAlgebra Ξ₂.piece]
+    {H : GradedBimoduleCat k Ξ₁ ⥤ GradedBimoduleCat k Ξ₂} [H.Additive]
+    {i j : V} (h : G.Adj j i)
     {B B' : V → HomologicalComplex (GradedBimoduleCat k Ξ₁) c}
     {C : V → HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
     (η : GradedBimoduleMonoidalDatum k Ξ₁ Ξ₂ H)
@@ -295,11 +326,13 @@ def transferAdjacent {i j : V} (h : G.Adj j i)
     (a : ∀ i, HomotopyEquiv ((H.mapHomologicalComplex c).obj (B i)) (C i)) :
     HomotopyEquiv
       (HomologicalComplex.mapBifunctor
-        (HomologicalComplex.mapBifunctor (C i) (C j) (gradedBimoduleTensor k Ξ₂) c) (C i)
-        (gradedBimoduleTensor k Ξ₂) c)
+        (HomologicalComplex.mapBifunctor (C i) (C j)
+          (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c) (C i)
+        (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c)
       (HomologicalComplex.mapBifunctor
-        (HomologicalComplex.mapBifunctor (C j) (C i) (gradedBimoduleTensor k Ξ₂) c) (C j)
-        (gradedBimoduleTensor k Ξ₂) c) :=
+        (HomologicalComplex.mapBifunctor (C j) (C i)
+          (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c) (C j)
+        (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c) :=
   (transferAdjacentLeftConj k Ξ₁ Ξ₂ H a).trans
     ((transferAdjacentBridgeLeft k Ξ₁ Ξ₂ H η).trans
       ((transferAdjacentMiddle k G Ξ₁ Ξ₂ H h rel).trans
@@ -335,10 +368,10 @@ def transfer {k : Type w} [CommRing k] {V : Type u} {G : SimpleGraph V}
     (a : ∀ i, HomotopyEquiv ((H.mapHomologicalComplex c).obj (B i)) (C i))
     (a' : ∀ i, HomotopyEquiv ((H.mapHomologicalComplex c).obj (B' i)) (C' i)) :
     KhovanovSeidelRelations k G Ξ₂ C C' where
-  inverseForward i := transferInverseForward k G Ξ₁ Ξ₂ H i η ε rel a a'
-  inverseReverse i := transferInverseReverse k G Ξ₁ Ξ₂ H i η ε rel a a'
-  commute i j hij hadj := transferCommute k G Ξ₁ Ξ₂ H i j hij hadj η rel a
-  braid h := transferAdjacent k G Ξ₁ Ξ₂ H h η rel a
+  inverseForward i := transferInverseForward i η ε rel a a'
+  inverseReverse i := transferInverseReverse i η ε rel a a'
+  commute i j hij hadj := transferCommute i j hij hadj η rel a
+  braid h := transferAdjacent h η rel a
 
 -- The four field values of `transfer` are read off by the four projection lemmas below.
 -- Their proofs are written `(rfl)` and not `rfl`: a theorem whose proof is syntactically `rfl`
@@ -362,7 +395,7 @@ def transfer {k : Type w} [CommRing k] {V : Type u} {G : SimpleGraph V}
     (a' : ∀ i, HomotopyEquiv ((H.mapHomologicalComplex c).obj (B' i)) (C' i))
     (i : V) :
     (rel.transfer η ε a a').inverseForward i
-      = transferInverseForward k G Ξ₁ Ξ₂ H i η ε rel a a' := (rfl)
+      = transferInverseForward i η ε rel a a' := (rfl)
 
 /-- The reverse inverse relation of the transferred relations is the reverse inverse transfer
 `transferInverseReverse`. -/
@@ -382,7 +415,7 @@ def transfer {k : Type w} [CommRing k] {V : Type u} {G : SimpleGraph V}
     (a' : ∀ i, HomotopyEquiv ((H.mapHomologicalComplex c).obj (B' i)) (C' i))
     (i : V) :
     (rel.transfer η ε a a').inverseReverse i
-      = transferInverseReverse k G Ξ₁ Ξ₂ H i η ε rel a a' := (rfl)
+      = transferInverseReverse i η ε rel a a' := (rfl)
 
 /-- The commutation relation of the transferred relations is the commutation transfer
 `transferCommute`. -/
@@ -402,7 +435,7 @@ def transfer {k : Type w} [CommRing k] {V : Type u} {G : SimpleGraph V}
     (a' : ∀ i, HomotopyEquiv ((H.mapHomologicalComplex c).obj (B' i)) (C' i))
     (i j : V) (hij : i ≠ j) (hadj : ¬ G.Adj i j) :
     (rel.transfer η ε a a').commute i j hij hadj
-      = transferCommute k G Ξ₁ Ξ₂ H i j hij hadj η rel a := (rfl)
+      = transferCommute i j hij hadj η rel a := (rfl)
 
 /-- The braid relation of the transferred relations is the adjacent transfer `transferAdjacent`. -/
 @[simp] theorem transfer_braid {k : Type w} [CommRing k] {V : Type u}
@@ -421,7 +454,7 @@ def transfer {k : Type w} [CommRing k] {V : Type u} {G : SimpleGraph V}
     (a' : ∀ i, HomotopyEquiv ((H.mapHomologicalComplex c).obj (B' i)) (C' i))
     {i j : V} (h : G.Adj j i) :
     (rel.transfer η ε a a').braid h
-      = transferAdjacent k G Ξ₁ Ξ₂ H h η rel a := (rfl)
+      = transferAdjacent h η rel a := (rfl)
 
 end KhovanovSeidelRelations
 
