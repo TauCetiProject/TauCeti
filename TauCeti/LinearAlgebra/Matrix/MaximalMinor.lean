@@ -10,15 +10,14 @@ public import Mathlib.Data.Fintype.CardEmbedding
 public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 import Mathlib.Algebra.GCDMonoid.Nat
-import Mathlib.Algebra.Order.Star.Real
-import Mathlib.Analysis.Matrix.PosDef
 import Mathlib.LinearAlgebra.LinearIndependent.BaseChange
 import Mathlib.LinearAlgebra.Matrix.Notation
 import Mathlib.LinearAlgebra.Matrix.Rank
 import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
+import TauCeti.LinearAlgebra.Matrix.Gram
 
 /-!
-# Maximal minors, their gcd, and the Gram determinant
+# Maximal minors and their gcd
 
 A *maximal minor* of a matrix `A` with rows indexed by `m` and columns indexed by `n` is the
 determinant `det (A.submatrix id e)` of the square submatrix on all the rows and on the columns
@@ -35,6 +34,10 @@ multiplied by `det B` and the Gram determinant `det (A * Aᵀ)` by `det B ^ 2`. 
 quotient is invariant under `GL_m(ℤ)`, unlike Siegel's bound in terms of the entries of `A`. The
 examples at the end of the file check this on the row `[2, 2]` and on a unimodular shear.
 
+The Gram determinant itself is treated elsewhere: its behaviour under `A ↦ B * A` and its
+independence criterion are in `TauCeti.LinearAlgebra.Matrix.Gram`, and its positivity, a
+consequence of the Cauchy–Binet formula, is in `TauCeti.LinearAlgebra.ExteriorPower.Plucker`.
+
 ## Main definitions
 
 * `Matrix.minorGcd`: the normalized gcd of the maximal minors.
@@ -47,15 +50,9 @@ examples at the end of the file check this on the row `[2, 2]` and on a unimodul
   independent.
 * `Matrix.minorGcd_mul_left` and `Matrix.minorGcd_unit_mul`: left multiplication by `B`
   multiplies the minor gcd by `normalize (det B)`, and leaves it unchanged for `B` invertible.
-* `Matrix.det_mul_transpose_mul_left`: the Gram determinant of `B * A` is `det B ^ 2` times that
-  of `A`.
-* `Matrix.det_mul_transpose_ne_zero_iff`: over a linearly ordered commutative ring, the Gram
-  determinant `det (A * Aᵀ)` is nonzero exactly when the rows are linearly independent.
-* `Matrix.det_mul_transpose_nonneg` and `Matrix.det_mul_transpose_pos_iff`: over `ℤ` the Gram
-  determinant is nonnegative, and positive exactly when the rows are linearly independent.
 * `Matrix.linearIndependent_rat_row_iff`: the rows of an integer matrix are linearly independent
-  over `ℚ` exactly when they are over `ℤ`; `Matrix.det_mul_transpose_pos` and
-  `Matrix.one_le_minorGcd` take independence over `ℚ` as their hypothesis.
+  over `ℚ` exactly when they are over `ℤ`; `Matrix.one_le_minorGcd` takes independence over `ℚ`
+  as its hypothesis.
 * `Matrix.sqrt_det_div_minorGcd_mul_left` and `Matrix.sqrt_det_div_minorGcd_unit_mul`: the
   quotient `√det (A * Aᵀ) / minorGcd A` is unchanged by `A ↦ B * A` for `det B ≠ 0`, in
   particular for `B ∈ GL_m(ℤ)`.
@@ -131,12 +128,6 @@ theorem det_submatrix_mul_left [CommRing R] (B : Matrix m m R) (A : Matrix m n R
 
 variable [Fintype n]
 
-/-- The Gram determinant of the rows of `B * A` is `det B ^ 2` times that of `A`. -/
-theorem det_mul_transpose_mul_left [CommRing R] (B : Matrix m m R) (A : Matrix m n R) :
-    (B * A * (B * A)ᵀ).det = B.det ^ 2 * (A * Aᵀ).det := by
-  rw [transpose_mul, Matrix.mul_assoc, ← Matrix.mul_assoc A, det_mul, det_mul, det_transpose]
-  ring
-
 section Gcd
 
 section NormalizedGCDMonoid
@@ -192,26 +183,6 @@ theorem minorGcd_mul_left [CommRing R] [StrongNormalizedGCDMonoid R] (B : Matrix
 
 end Gcd
 
-section Gram
-
-variable [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
-
-/-- Over a linearly ordered commutative ring, the Gram determinant `det (A * Aᵀ)` of the rows of
-`A` is nonzero exactly when the rows are linearly independent. -/
-theorem det_mul_transpose_ne_zero_iff {A : Matrix m n R} :
-    (A * Aᵀ).det ≠ 0 ↔ LinearIndependent R A.row := by
-  have key (v : m → R) : v ᵥ* (A * Aᵀ) = 0 ↔ v ᵥ* A = 0 := by
-    refine ⟨fun h ↦ ?_, fun h ↦ by rw [← vecMul_vecMul, h, zero_vecMul]⟩
-    have := congr($h ⬝ᵥ v)
-    rw [← vecMul_vecMul, ← dotProduct_mulVec, mulVec_transpose] at this
-    simpa using this
-  rw [← vecMul_injective_iff, Ne, ← exists_vecMul_eq_zero_iff, ← coe_vecMulLinear,
-    injective_iff_map_eq_zero]
-  simp only [key, vecMulLinear_apply]
-  grind
-
-end Gram
-
 section Int
 
 theorem minorGcd_nonneg (A : Matrix m n ℤ) : 0 ≤ A.minorGcd :=
@@ -221,25 +192,6 @@ theorem minorGcd_nonneg (A : Matrix m n ℤ) : 0 ≤ A.minorGcd :=
 independent. -/
 theorem minorGcd_pos_iff {A : Matrix m n ℤ} : 0 < A.minorGcd ↔ LinearIndependent ℤ A.row := by
   rw [← minorGcd_ne_zero_iff, (minorGcd_nonneg A).lt_iff_ne', ne_eq]
-
-/-- The Gram determinant of the rows of an integer matrix is nonnegative. -/
-theorem det_mul_transpose_nonneg (A : Matrix m n ℤ) : 0 ≤ (A * Aᵀ).det := by
-  rw [← Int.cast_nonneg_iff (R := ℝ), Int.cast_det]
-  convert (posSemidef_self_mul_conjTranspose (A.map (Int.castRingHom ℝ))).det_nonneg using 2
-  ext
-  simp [mul_apply]
-
-/-- The Gram determinant of the rows of an integer matrix is positive exactly when the rows are
-linearly independent. -/
-theorem det_mul_transpose_pos_iff {A : Matrix m n ℤ} :
-    0 < (A * Aᵀ).det ↔ LinearIndependent ℤ A.row := by
-  rw [← det_mul_transpose_ne_zero_iff, (det_mul_transpose_nonneg A).lt_iff_ne', ne_eq]
-
-/-- The Gram determinant of an integer matrix whose rows are linearly independent over `ℚ` is
-positive. -/
-theorem det_mul_transpose_pos {A : Matrix m n ℤ} (hA : LinearIndependent ℚ fun i j ↦ (A i j : ℚ)) :
-    0 < (A * Aᵀ).det :=
-  det_mul_transpose_pos_iff.2 (linearIndependent_rat_row_iff.1 hA)
 
 /-- The minor gcd of an integer matrix whose rows are linearly independent over `ℚ` is at
 least `1`. -/

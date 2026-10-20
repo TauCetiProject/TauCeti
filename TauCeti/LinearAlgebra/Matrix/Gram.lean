@@ -7,13 +7,19 @@ module
 
 -- `Matrix.IsSymm` occurs in the statements below.
 public import Mathlib.LinearAlgebra.Matrix.Symmetric
+public import Mathlib.Algebra.Order.Ring.Defs
+public import Mathlib.LinearAlgebra.LinearIndependent.Defs
+public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
+import Mathlib.LinearAlgebra.Matrix.DotProduct
+import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 import Mathlib.Tactic.Ring
 
 /-!
-# Gram forms and matrix reflection
+# Gram forms, matrix reflection and Gram determinants
 
 This file records the basic symmetry and quadratic-form preservation identities for the bilinear
-and quadratic forms attached to a symmetric matrix.
+and quadratic forms attached to a symmetric matrix, and the basic facts about the Gram
+determinant `det (A * Aᵀ)` of the rows of a matrix `A`.
 
 ## Main results
 
@@ -21,6 +27,10 @@ and quadratic forms attached to a symmetric matrix.
   `M` is symmetric.
 * `TauCeti.reflect_vecMul_dotProduct_self`: reflection in a vector of norm two preserves the value
   `(v ᵥ* M) ⬝ᵥ v` of the form at every vector.
+* `Matrix.det_mul_transpose_mul_left`: the Gram determinant of `B * A` is `det B ^ 2` times that
+  of `A`.
+* `Matrix.det_mul_transpose_ne_zero_iff`: over a linearly ordered commutative ring, the Gram
+  determinant `det (A * Aᵀ)` is nonzero exactly when the rows of `A` are linearly independent.
 -/
 
 public section
@@ -51,3 +61,29 @@ theorem reflect_vecMul_dotProduct_self (hM : M.IsSymm) {u : n → R} (hu : (u �
   ring
 
 end TauCeti
+
+namespace Matrix
+
+variable {m n R : Type*} [Fintype m] [DecidableEq m] [Fintype n]
+
+/-- The Gram determinant of the rows of `B * A` is `det B ^ 2` times that of `A`. -/
+theorem det_mul_transpose_mul_left [CommRing R] (B : Matrix m m R) (A : Matrix m n R) :
+    (B * A * (B * A)ᵀ).det = B.det ^ 2 * (A * Aᵀ).det := by
+  rw [transpose_mul, Matrix.mul_assoc, ← Matrix.mul_assoc A, det_mul, det_mul, det_transpose]
+  ring
+
+/-- Over a linearly ordered commutative ring, the Gram determinant `det (A * Aᵀ)` of the rows of
+`A` is nonzero exactly when the rows are linearly independent. -/
+theorem det_mul_transpose_ne_zero_iff [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
+    {A : Matrix m n R} : (A * Aᵀ).det ≠ 0 ↔ LinearIndependent R A.row := by
+  have key (v : m → R) : v ᵥ* (A * Aᵀ) = 0 ↔ v ᵥ* A = 0 := by
+    refine ⟨fun h ↦ ?_, fun h ↦ by rw [← vecMul_vecMul, h, zero_vecMul]⟩
+    have := congr($h ⬝ᵥ v)
+    rw [← vecMul_vecMul, ← dotProduct_mulVec, mulVec_transpose] at this
+    simpa using this
+  rw [← vecMul_injective_iff, Ne, ← exists_vecMul_eq_zero_iff, ← coe_vecMulLinear,
+    injective_iff_map_eq_zero]
+  simp only [key, vecMulLinear_apply]
+  grind
+
+end Matrix

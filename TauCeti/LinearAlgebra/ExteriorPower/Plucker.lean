@@ -11,6 +11,7 @@ public import TauCeti.LinearAlgebra.ExteriorPower.Basic
 import Mathlib.Algebra.Field.ZMod
 import Mathlib.LinearAlgebra.Matrix.Rank
 import TauCeti.LinearAlgebra.Matrix.Determinant.SumElim
+import TauCeti.LinearAlgebra.Matrix.Gram
 
 /-!
 # Plücker coordinates
@@ -56,6 +57,10 @@ Plücker coordinate, equal to `1`, and a family of more than `#ι` vectors has n
   multiplies the Plücker coordinates by the determinant of that matrix.
 * `TauCeti.det_mul_transpose_eq_sum_plucker_mul`: the Cauchy–Binet formula.
 * `Matrix.det_mul_transpose_eq_sum_plucker_sq`: its Gram-determinant form for a matrix.
+* `Matrix.det_mul_transpose_nonneg` and `Matrix.det_mul_transpose_pos_iff`: over a linearly
+  ordered commutative ring, the Gram determinant of a matrix is nonnegative, and positive exactly
+  when the rows are linearly independent; `Matrix.det_mul_transpose_pos` is the integer case
+  under independence over `ℚ`.
 * `TauCeti.det_mul_conjTranspose_eq_sum_plucker_mul_star`: its Hermitian form.
 * `TauCeti.plucker_ne_zero_iff`: over a field, the Plücker coordinates of a family are not all
   zero exactly when the family is linearly independent.
@@ -184,6 +189,39 @@ the squares of the maximal minors of `A`, the Plücker coordinates of its rows. 
 theorem _root_.Matrix.det_mul_transpose_eq_sum_plucker_sq [Fintype ι] (A : Matrix (Fin p) ι R) :
     (A * A.transpose).det = ∑ s, plucker A.row s ^ 2 := by
   simpa [sq, Matrix.row_eq_self] using det_mul_transpose_eq_sum_plucker_mul A.row A.row
+
+/-- Over a linearly ordered commutative ring, the Gram determinant `det (A * Aᵀ)` of the rows of a
+matrix is nonnegative: by the Cauchy–Binet formula it is a sum of squares. -/
+theorem _root_.Matrix.det_mul_transpose_nonneg {R m n : Type*} [CommRing R] [LinearOrder R]
+    [IsStrictOrderedRing R] [Fintype m] [DecidableEq m] [Fintype n] (A : Matrix m n R) :
+    0 ≤ (A * A.transpose).det := by
+  -- Reindex the rows and columns by `Fin`, where the Cauchy–Binet formula applies.
+  set e := Fintype.equivFin m
+  set f := Fintype.equivFin n
+  set B := A.submatrix e.symm f.symm
+  have h : A * A.transpose = (B * B.transpose).submatrix e e := by
+    simp [B, Matrix.transpose_submatrix]
+  rw [h, Matrix.det_submatrix_equiv_self, Matrix.det_mul_transpose_eq_sum_plucker_sq]
+  exact Finset.sum_nonneg fun _ _ ↦ sq_nonneg _
+
+/-- Over a linearly ordered commutative ring, the Gram determinant `det (A * Aᵀ)` of the rows of a
+matrix is positive exactly when the rows are linearly independent. -/
+theorem _root_.Matrix.det_mul_transpose_pos_iff {R m n : Type*} [CommRing R] [LinearOrder R]
+    [IsStrictOrderedRing R] [Fintype m] [DecidableEq m] [Fintype n] {A : Matrix m n R} :
+    0 < (A * A.transpose).det ↔ LinearIndependent R A.row := by
+  rw [← Matrix.det_mul_transpose_ne_zero_iff, (Matrix.det_mul_transpose_nonneg A).lt_iff_ne',
+    ne_eq]
+
+/-- The Gram determinant of an integer matrix whose rows are linearly independent over `ℚ` is
+positive. -/
+theorem _root_.Matrix.det_mul_transpose_pos {m n : Type*} [Fintype m] [DecidableEq m] [Fintype n]
+    {A : Matrix m n ℤ} (hA : LinearIndependent ℚ fun i j ↦ (A i j : ℚ)) :
+    0 < (A * A.transpose).det := by
+  rw [← Int.cast_pos (R := ℚ), Int.cast_det, ← Int.coe_castRingHom, Matrix.map_mul,
+    Matrix.transpose_map, Matrix.det_mul_transpose_pos_iff]
+  convert hA using 1
+  ext
+  simp
 
 /-- **The Cauchy–Binet formula, Hermitian form.** Over a commutative star ring, the determinant
 of the Hermitian Gram matrix `∑ₖ x i k * star (x j k)` of a family is the sum of the products of
