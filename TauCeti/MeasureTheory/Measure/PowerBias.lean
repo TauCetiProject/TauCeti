@@ -156,10 +156,6 @@ theorem rnDeriv_powerBias (μ : Measure ℝ) [SigmaFinite μ] (q : ℝ) :
       (∫⁻ y, ENNReal.ofReal (y ^ q) ∂μ)⁻¹ * ENNReal.ofReal (x ^ q) :=
   rnDeriv_weighted μ (measurable_powerBiasWeight q).aemeasurable
 
-/-- A power-biased measure is absolutely continuous with respect to the original measure. -/
-theorem powerBias_absolutelyContinuous (μ : Measure ℝ) (q : ℝ) : μ.powerBias q ≪ μ :=
-  weighted_absolutelyContinuous
-
 /-- For a law carried by `[0, ∞)` under which `x ^ q` is not integrable, the normalizing power
 moment is infinite, so the totalized power bias is the zero measure. -/
 theorem powerBias_eq_zero_of_not_integrable {μ : Measure ℝ} {q : ℝ} (hμ : 0 ≤ᵐ[μ] id)
@@ -199,13 +195,6 @@ theorem absolutelyContinuous_powerBias {μ : Measure ℝ} {q : ℝ} (hpos : ∀�
   rw [powerBias_eq_tilted hpos]
   exact absolutelyContinuous_tilted (hq.congr (rpow_eventuallyEq_exp_mul_log hpos q))
 
-/-- If reweighting `μ` by `x ^ q` gives a positive finite multiple of a probability measure `ν`,
-then `ν` is the power-biased law of `μ`. -/
-theorem powerBias_eq_of_withDensity_eq_smul {μ ν : Measure ℝ} [IsProbabilityMeasure ν] {q : ℝ}
-    {c : ℝ≥0∞} (hc0 : c ≠ 0) (hc : c ≠ ∞)
-    (h : (μ.withDensity fun x => ENNReal.ofReal (x ^ q)) = c • ν) : μ.powerBias q = ν :=
-  weighted_eq_of_withDensity_eq_smul hc0 hc h
-
 /-- **Power biasing a law with a density.** Let `ρ.withDensity f` be a law with a nonnegative
 density `f`, and suppose `f x * x ^ q = c * g x` almost everywhere for a constant `c > 0` and a
 function `g` such that `ρ.withDensity g` is a probability measure. Then the power-biased law is
@@ -216,8 +205,10 @@ theorem powerBias_withDensity_ofReal {ρ : Measure ℝ} {f g : ℝ → ℝ} {q c
     (hfg : ∀ᵐ x ∂ρ, f x * x ^ q = c * g x) :
     (ρ.withDensity fun x => ENNReal.ofReal (f x)).powerBias q =
       ρ.withDensity fun x => ENNReal.ofReal (g x) := by
-  refine powerBias_eq_of_withDensity_eq_smul (c := ENNReal.ofReal c)
+  rw [powerBias_def]
+  refine weighted_eq_of_withDensity_eq_smul (c := ENNReal.ofReal c)
     (ENNReal.ofReal_pos.2 hc).ne' ENNReal.ofReal_ne_top ?_
+  simp_rw [ENNReal.ofNNReal_toNNReal]
   rw [← withDensity_mul₀ hf.ennreal_ofReal (by fun_prop),
     ← withDensity_smul' _ _ ENNReal.ofReal_ne_top]
   refine withDensity_congr_ae ?_
