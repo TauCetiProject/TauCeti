@@ -149,7 +149,6 @@ theorem weightSpace_le_genWeightSpace (μ : ℂ) : weightSpace q V μ ≤ genWei
 
 /-- A vector of a submodule lies in one of its generalized weight spaces exactly when it lies in
 the corresponding generalized weight space of the ambient module. -/
-@[simp]
 theorem mem_genWeightSpace_submodule_iff {U : Submodule (UqSl2 q) V} {μ : ℂ} {w : U} :
     w ∈ genWeightSpace q U μ ↔ (w : V) ∈ genWeightSpace q V μ := by
   simp only [mem_genWeightSpace_iff, ← Submodule.coe_eq_zero, Submodule.coe_smul]
