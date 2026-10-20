@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Haar.OfBasis
+public import Mathlib.MeasureTheory.Group.IntegralConvolution
 public import Mathlib.MeasureTheory.Measure.Support
 public import Mathlib.MeasureTheory.Measure.Stieltjes
 public import Mathlib.Probability.CDF
@@ -15,7 +16,7 @@ public import Mathlib.Topology.Order.LeftRightLim
 # Cumulative distribution functions
 
 This file records basic properties of cumulative distribution functions. In particular, the cdf
-of an atomless real probability measure is continuous.
+of an atomless real probability measure is continuous, and convolution averages translated cdfs.
 
 A probability measure `μ` on `ℕ` becomes a real law by pushing it forward along the cast
 `ℕ → ℝ`. The resulting cumulative distribution function is determined by the cumulative masses of
@@ -25,6 +26,7 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
 
 ## Main results
 
+* `MeasureTheory.Measure.cdf_conv` computes the cdf of a convolution;
 * `MeasureTheory.Measure.continuous_cdf_of_noAtoms` proves continuity for atomless real laws;
 * `MeasureTheory.Measure.cdf_eq_zero_of_measure_Iio_eq_zero` shows that an atomless law with no
   mass below a point has cdf zero there;
@@ -74,6 +76,19 @@ public section
 open Filter Function MeasureTheory ProbabilityTheory Set Topology
 
 namespace MeasureTheory.Measure
+
+/-- The cdf of a convolution is the average of the translated cdfs of its second factor. -/
+theorem cdf_conv (μ ν : Measure ℝ) [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
+    (x : ℝ) : cdf (μ ∗ ν) x = ∫ y, cdf ν (x - y) ∂μ := by
+  rw [cdf_eq_real, ← integral_indicator_one measurableSet_Iic]
+  rw [integral_conv (f := (Iic x).indicator (1 : ℝ → ℝ))
+    ((integrable_const (1 : ℝ)).indicator measurableSet_Iic)]
+  apply integral_congr_ae
+  filter_upwards [] with y
+  rw [cdf_eq_real, ← integral_indicator_one measurableSet_Iic]
+  apply integral_congr_ae
+  filter_upwards [] with z
+  simp only [indicator_apply, Pi.one_apply, mem_Iic, le_sub_iff_add_le, add_comm y z]
 
 /-- Below the level `1` some point has cumulative mass at least the level, because the cumulative
 distribution function tends to `1` at `+∞`. -/
