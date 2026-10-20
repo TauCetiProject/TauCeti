@@ -20,8 +20,8 @@ A domain `R` with fraction field `K` is *N-1* if its integral closure in `K` is 
 `K` is a finite `R`-module, inseparable extensions included (Stacks, Definition 10.161.1 (032F)).
 These finiteness conditions are the input of finite normalization: they are what makes the
 normalization of an integral scheme in a finite extension of its function field a finite
-morphism, and Nagata rings, the rings all of whose prime quotients are Japanese, are defined
-from them.
+morphism, and Nagata rings, the Noetherian rings all of whose prime quotients are Japanese, are
+defined from them.
 
 For a Noetherian integrally closed domain, finiteness of the integral closure in a *separable*
 extension is classical (Mathlib's `IsIntegralClosure.finite`, by the trace form). Inseparable
