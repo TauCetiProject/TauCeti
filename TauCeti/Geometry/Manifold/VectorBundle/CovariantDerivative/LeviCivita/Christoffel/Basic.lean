@@ -146,21 +146,10 @@ theorem christoffelSecondKind_eq_christoffelSecondKindOfJet
 
 section JetRegularity
 
--- Default synthesis on this nested operator space fails to match the semilinear-map instances
--- `ContinuousLinearMap.toNormedAddCommGroup` and `ContinuousLinearMap.toNormedSpace`.
--- Fixing both scalar fields and the identity homomorphism makes the match explicit. These
--- canonical instances are scoped to `TauCeti.Manifold` so first-jet consumers can reuse them.
--- They are needed when elaborating the public jet-regularity statement, before its proof,
--- and are definitionally equal to the Mathlib instances rather than new normed structures.
-/-- The canonical normed additive group on metric derivatives, with explicit real scalars. -/
-scoped instance instNormedAddCommGroupTrilinearForm :
-    NormedAddCommGroup (E →L[ℝ] E →L[ℝ] E →L[ℝ] ℝ) :=
-  ContinuousLinearMap.toNormedAddCommGroup (𝕜 := ℝ) (𝕜₂ := ℝ) (E := E)
-    (F := E →L[ℝ] E →L[ℝ] ℝ) (σ₁₂ := RingHom.id ℝ)
-/-- The canonical real normed space on metric derivatives. -/
-scoped instance instNormedSpaceTrilinearForm : NormedSpace ℝ (E →L[ℝ] E →L[ℝ] E →L[ℝ] ℝ) :=
-  ContinuousLinearMap.toNormedSpace (𝕜 := ℝ) (𝕜₂ := ℝ) (E := E)
-    (F := E →L[ℝ] E →L[ℝ] ℝ) (σ₁₂ := RingHom.id ℝ)
+-- Cache the canonical bilinear-space instances locally: synthesizing the next operator-space
+-- layer directly fails, whereas synthesis succeeds once its target's instances are fixed.
+local instance : NormedAddCommGroup (E →L[ℝ] E →L[ℝ] ℝ) := inferInstance
+local instance : NormedSpace ℝ (E →L[ℝ] E →L[ℝ] ℝ) := inferInstance
 
 /-- The Christoffel formula depends smoothly on the metric value and its first derivative
 wherever the musical map is invertible. -/

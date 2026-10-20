@@ -61,6 +61,9 @@ theorem contMDiffAt_christoffelSecondKind_family
     (hnm : n + 1 ≤ m) (hnd : (g z.1 z.2).toBilinForm.Nondegenerate) :
     ContMDiffAt (J.prod 𝓘(ℝ, E)) 𝓘(ℝ, E →L[ℝ] E →L[ℝ] E) n
       (fun q : P × E ↦ christoffelSecondKind (g q.1) q.2) z := by
+  -- Fix the canonical target-space instances before synthesizing the derivative-space layer.
+  let : NormedAddCommGroup (E →L[ℝ] E →L[ℝ] ℝ) := inferInstance
+  let : NormedSpace ℝ (E →L[ℝ] E →L[ℝ] ℝ) := inferInstance
   simpa only [christoffelSecondKind_eq_christoffelSecondKindOfJet, Function.comp_def] using
     (contDiffAt_christoffelSecondKindOfJet (j := (g z.1 z.2, fderiv ℝ (g z.1) z.2))
       (isInvertible_of_separatingLeft hnd.1)).comp_contMDiffAt
