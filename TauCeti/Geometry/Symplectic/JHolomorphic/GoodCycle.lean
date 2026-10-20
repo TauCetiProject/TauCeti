@@ -86,14 +86,14 @@ private theorem apply_eq_sum (he : ∑ j, m j • C j = e) (x : H) :
 
 /-- The pairing of `e = ∑ m j • C j` with an image `C i`, split into the contribution of `C i`
 itself and those of the other images. -/
-private theorem apply_eq_add_sum [DecidableEq ι] (he : ∑ j, m j • C j = e) (i : ι) :
+theorem apply_eq_add_sum [DecidableEq ι] (he : ∑ j, m j • C j = e) (i : ι) :
     B e (C i) = m i * B (C i) (C i) + ∑ j ∈ Finset.univ.erase i, (m j : ℤ) * B (C j) (C i) := by
   rw [apply_eq_sum he]
   exact (Finset.add_sum_erase _ _ (Finset.mem_univ i)).symm
 
 /-- The virtual dimension of `e = ∑ m i • C i` splits into the virtual dimensions of the images
 and their excess intersections `e · C i - C i · C i` with the cycle. -/
-private theorem apply_sub_apply_canonical_eq_sum (he : ∑ i, m i • C i = e) :
+theorem apply_sub_apply_canonical_eq_sum (he : ∑ i, m i • C i = e) :
     B e e - B κ e = ∑ i, (m i : ℤ) * (B (C i) (C i) - B κ (C i)) +
       ∑ i, (m i : ℤ) * (B e (C i) - B (C i) (C i)) := by
   have hee : B e e = ∑ i, (m i : ℤ) * B e (C i) := by
@@ -104,6 +104,18 @@ private theorem apply_sub_apply_canonical_eq_sum (he : ∑ i, m i • C i = e) :
     simp [map_sum, map_nsmul]
   rw [hee, hκe, ← Finset.sum_sub_distrib, ← Finset.sum_add_distrib]
   exact Finset.sum_congr rfl fun i _ ↦ by ring
+
+/-- An image other than `C i`, counted with its multiplicity, meets `C i` nonnegatively. -/
+private theorem mul_apply_nonneg_of_mem_erase [DecidableEq ι]
+    (hpos : ∀ {i j}, i ≠ j → 0 ≤ B (C i) (C j)) {i j : ι} (hj : j ∈ Finset.univ.erase i) :
+    0 ≤ (m j : ℤ) * B (C j) (C i) :=
+  mul_nonneg (Int.natCast_nonneg _) (hpos (Finset.ne_of_mem_erase hj))
+
+/-- The images other than `C i`, counted with multiplicity, meet `C i` nonnegatively. -/
+private theorem sum_erase_mul_apply_nonneg [DecidableEq ι]
+    (hpos : ∀ {i j}, i ≠ j → 0 ≤ B (C i) (C j)) (i : ι) :
+    0 ≤ ∑ j ∈ Finset.univ.erase i, (m j : ℤ) * B (C j) (C i) :=
+  Finset.sum_nonneg fun _ hj ↦ mul_apply_nonneg_of_mem_erase hpos hj
 
 /-- Each image contributes a nonnegative excess intersection `m i (e · C i - C i · C i)` to the
 virtual dimension of `e = ∑ m j • C j`, provided distinct images meet nonnegatively and `e` is
@@ -118,9 +130,7 @@ private theorem mul_apply_sub_apply_self_nonneg (he : ∑ j, m j • C j = e)
   refine mul_nonneg (Int.natCast_nonneg _) ?_
   rcases lt_or_ge (B (C i) (C i)) 0 with hi | hi
   · linarith [hgood i hi]
-  have hs : 0 ≤ ∑ j ∈ Finset.univ.erase i, (m j : ℤ) * B (C j) (C i) :=
-    Finset.sum_nonneg fun j hj ↦
-      mul_nonneg (Int.natCast_nonneg _) (hpos (Finset.ne_of_mem_erase hj))
+  have hs := sum_erase_mul_apply_nonneg (m := m) hpos i
   have hm' : (1 : ℤ) ≤ m i := by exact_mod_cast hm
   rw [apply_eq_add_sum he]
   nlinarith
@@ -180,15 +190,22 @@ private theorem card_le_sum_card (h : IsGoodCycle B κ e C m δ pts) :
           Finset.card_univ]
     _ ≤ ∑ i, (pts i).card := Finset.card_biUnion_le
 
-/-- The equality case of the chain of inequalities `d(e) = 2 k ≤ ∑ 2 k_i ≤ ∑ d(C i) ≤ d(e)`:
-every excess intersection vanishes, an image with multiplicity at least two has virtual
-dimension zero, every image is embedded and contains half its virtual dimension of the points,
-and the image point counts add up to the number of points. -/
-private theorem rigid (h : IsGoodCycle B κ e C m δ pts) :
-    (∀ i, (m i : ℤ) * (B e (C i) - B (C i) (C i)) = 0) ∧
-      (∀ i, ((m i : ℤ) - 1) * (B (C i) (C i) - B κ (C i)) = 0) ∧
-      (∀ i, B (C i) (C i) - B κ (C i) = 2 * (pts i).card) ∧ (∀ i, δ i = 0) ∧
-      ∑ i, (pts i).card = Fintype.card P := by
+/-- The equality case of the chain of inequalities `d(e) = 2 k ≤ ∑ 2 k_i ≤ ∑ d(C i) ≤ d(e)`. -/
+private structure Rigid (B : BilinForm ℤ H) (κ e : H) (C : ι → H) (m δ : ι → ℕ)
+    (pts : ι → Finset P) : Prop where
+  /-- Every excess intersection vanishes. -/
+  mul_apply_sub_apply_self_eq_zero : ∀ i, (m i : ℤ) * (B e (C i) - B (C i) (C i)) = 0
+  /-- An image with multiplicity at least two has virtual dimension zero. -/
+  mult_sub_one_mul_eq_zero : ∀ i, ((m i : ℤ) - 1) * (B (C i) (C i) - B κ (C i)) = 0
+  /-- Every image contains half its virtual dimension of the points. -/
+  apply_self_sub_apply_canonical_eq : ∀ i, B (C i) (C i) - B κ (C i) = 2 * (pts i).card
+  /-- Every image is embedded. -/
+  singularity_eq_zero : ∀ i, δ i = 0
+  /-- The image point counts add up to the number of points. -/
+  sum_card_eq : ∑ i, (pts i).card = Fintype.card P
+
+/-- A good cycle realises the equality case of `d(e) = 2 k ≤ ∑ 2 k_i ≤ ∑ d(C i) ≤ d(e)`. -/
+private theorem rigid (h : IsGoodCycle B κ e C m δ pts) : Rigid B κ e C m δ pts := by
   have hex := mul_apply_sub_apply_self_nonneg h.sum_eq h.apply_nonneg h.neg_one_le_apply
   have hmul : ∀ i, 0 ≤ ((m i : ℤ) - 1) * (B (C i) (C i) - B κ (C i)) := fun i ↦
     mul_nonneg (by linarith [(by exact_mod_cast h.mult_pos i : (1 : ℤ) ≤ m i)])
@@ -222,19 +239,19 @@ private theorem rigid (h : IsGoodCycle B κ e C m δ pts) :
 
 /-- Every image is embedded: its singularity number vanishes. -/
 theorem singularity_eq_zero (h : IsGoodCycle B κ e C m δ pts) (i : ι) : δ i = 0 :=
-  h.rigid.2.2.2.1 i
+  h.rigid.singularity_eq_zero i
 
 /-- Every image contains exactly half its virtual dimension of the points. -/
 theorem apply_self_sub_apply_canonical_eq (h : IsGoodCycle B κ e C m δ pts) (i : ι) :
     B (C i) (C i) - B κ (C i) = 2 * (pts i).card :=
-  h.rigid.2.2.1 i
+  h.rigid.apply_self_sub_apply_canonical_eq i
 
 /-- The virtual dimension of `e` is the sum of the virtual dimensions of the images. -/
 theorem apply_self_sub_apply_canonical_eq_sum (h : IsGoodCycle B κ e C m δ pts) :
     B e e - B κ e = ∑ i, (B (C i) (C i) - B κ (C i)) := by
   simp only [h.apply_self_sub_apply_canonical, h.apply_self_sub_apply_canonical_eq,
     ← Finset.mul_sum]
-  exact_mod_cast congrArg (2 * ·) h.rigid.2.2.2.2.symm
+  exact_mod_cast congrArg (2 * ·) h.rigid.sum_card_eq.symm
 
 /-- Every point lies on exactly one image. -/
 theorem existsUnique_mem (h : IsGoodCycle B κ e C m δ pts) (p : P) : ∃! i, p ∈ pts i := by
@@ -249,7 +266,7 @@ theorem existsUnique_mem (h : IsGoodCycle B κ e C m δ pts) (p : P) : ∃! i, p
   have hle : ∀ q ∈ Finset.univ, 1 ≤ (Finset.univ.filter fun i ↦ q ∈ pts i).card := fun q _ ↦
     Finset.card_pos.2 <| by simpa [Finset.Nonempty] using h.exists_mem q
   have heq := (Finset.sum_eq_sum_iff_of_le hle).1 (by
-    rw [← hswap, h.rigid.2.2.2.2, Finset.sum_const, smul_eq_mul, mul_one, Finset.card_univ])
+    rw [← hswap, h.rigid.sum_card_eq, Finset.sum_const, smul_eq_mul, mul_one, Finset.card_univ])
   obtain ⟨i, hi⟩ := Finset.card_eq_one.1 (heq p (Finset.mem_univ p)).symm
   refine ⟨i, by simpa using hi.ge (Finset.mem_singleton_self i), fun j hj ↦ ?_⟩
   simpa using hi.le (Finset.mem_filter.2 ⟨Finset.mem_univ j, hj⟩)
@@ -260,7 +277,7 @@ Equivalently, the images other than `C i`, counted with multiplicity, together w
 theorem apply_eq_apply_self (h : IsGoodCycle B κ e C m δ pts) (i : ι) :
     B e (C i) = B (C i) (C i) := by
   have hm : (0 : ℤ) < m i := by exact_mod_cast h.mult_pos i
-  linarith [(mul_eq_zero.1 (h.rigid.1 i)).resolve_left hm.ne']
+  linarith [(mul_eq_zero.1 (h.rigid.mul_apply_sub_apply_self_eq_zero i)).resolve_left hm.ne']
 
 /-- No other image meets an image of nonnegative square, and the square of such an image
 vanishes unless its multiplicity is one. -/
@@ -270,15 +287,13 @@ private theorem rigid_of_apply_self_nonneg (h : IsGoodCycle B κ e C m δ pts) {
   classical
   have hm : (1 : ℤ) ≤ m i := by exact_mod_cast h.mult_pos i
   have hexp := apply_eq_add_sum (B := B) h.sum_eq i
-  have hs : 0 ≤ ∑ j ∈ Finset.univ.erase i, (m j : ℤ) * B (C j) (C i) :=
-    Finset.sum_nonneg fun j hj ↦
-      mul_nonneg (Int.natCast_nonneg _) (h.apply_nonneg (Finset.ne_of_mem_erase hj))
+  have hs := sum_erase_mul_apply_nonneg (m := m) h.apply_nonneg i
   have he := h.apply_eq_apply_self i
   have hsq : 0 ≤ ((m i : ℤ) - 1) * B (C i) (C i) := mul_nonneg (by linarith) hi
   have hsum : ∑ j ∈ Finset.univ.erase i, (m j : ℤ) * B (C j) (C i) = 0 := by linarith
   refine ⟨fun j hj ↦ ?_, by linarith⟩
-  have hterm := (Finset.sum_eq_zero_iff_of_nonneg fun k hk ↦ mul_nonneg (Int.natCast_nonneg _)
-    (h.apply_nonneg (Finset.ne_of_mem_erase hk))).1 hsum j (Finset.mem_erase.2 ⟨hj, by simp⟩)
+  have hterm := (Finset.sum_eq_zero_iff_of_nonneg fun _ hk ↦
+    mul_apply_nonneg_of_mem_erase h.apply_nonneg hk).1 hsum j (Finset.mem_erase.2 ⟨hj, by simp⟩)
   have hmj : (0 : ℤ) < m j := by exact_mod_cast h.mult_pos j
   exact (mul_eq_zero.1 hterm).resolve_left hmj.ne'
 
@@ -291,7 +306,7 @@ private theorem mul_apply_le_of_apply_self_neg (h : IsGoodCycle B κ e C m δ pt
   have hexp := apply_eq_add_sum (B := B) h.sum_eq a
   rw [he, h.apply_self_eq_neg_one a ha] at hexp
   have hle := Finset.single_le_sum (f := fun k ↦ (m k : ℤ) * B (C k) (C a))
-    (fun k hk ↦ mul_nonneg (Int.natCast_nonneg _) (h.apply_nonneg (Finset.ne_of_mem_erase hk)))
+    (fun _ hk ↦ mul_apply_nonneg_of_mem_erase h.apply_nonneg hk)
     (Finset.mem_erase.2 ⟨hab.symm, Finset.mem_univ b⟩)
   linarith
 
@@ -337,7 +352,7 @@ theorem apply_self_sub_apply_canonical_eq_zero_of_one_lt_mult
     (h : IsGoodCycle B κ e C m δ pts) {i : ι} (hi : 1 < m i) :
     B (C i) (C i) - B κ (C i) = 0 := by
   have hm : (1 : ℤ) < m i := by exact_mod_cast hi
-  exact (mul_eq_zero.1 (h.rigid.2.1 i)).resolve_left (by linarith)
+  exact (mul_eq_zero.1 (h.rigid.mult_sub_one_mul_eq_zero i)).resolve_left (by linarith)
 
 /-- An image occurring with multiplicity at least two is orthogonal to the canonical class. -/
 theorem apply_canonical_eq_zero_of_one_lt_mult (hB : B.IsSymm) (h : IsGoodCycle B κ e C m δ pts)
