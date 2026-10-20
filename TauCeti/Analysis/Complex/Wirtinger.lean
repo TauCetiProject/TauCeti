@@ -141,6 +141,7 @@ theorem coe_conjWirtingerDeriv_eq_complexAntilinearPart :
 
 /-- For complex differentiable `g`, the conjugate Wirtinger derivative vanishes: this is the
 Cauchy–Riemann equation `\bar∂g = 0`. -/
+@[simp]
 theorem _root_.DifferentiableAt.conjWirtingerDeriv_eq_zero {g : V → ℂ} {x : V}
     (hg : DifferentiableAt ℂ g x) : conjWirtingerDeriv g x = 0 := by
   ext v
@@ -148,6 +149,7 @@ theorem _root_.DifferentiableAt.conjWirtingerDeriv_eq_zero {g : V → ℂ} {x : 
   simp [← mul_assoc]
 
 /-- For complex differentiable `g`, the Wirtinger derivative is the complex derivative. -/
+@[simp]
 theorem _root_.DifferentiableAt.wirtingerDeriv_eq_fderiv {g : V → ℂ} {x : V}
     (hg : DifferentiableAt ℂ g x) : wirtingerDeriv g x = fderiv ℂ g x := by
   ext v
@@ -163,7 +165,9 @@ variable {f : V → ℝ} {x : V}
 
 /-- Composing a real function with the inclusion `ℝ → ℂ` does not change its real derivative.
 No differentiability is assumed: both sides vanish when `f` is not differentiable at `x`. -/
-theorem fderiv_ofReal_comp_apply (f : V → ℝ) (x v : V) :
+@[simp]
+theorem fderiv_ofReal_comp_apply {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (f : E → ℝ) (x v : E) :
     fderiv ℝ (fun y ↦ (f y : ℂ)) x v = fderiv ℝ f x v := by
   by_cases hf : DifferentiableAt ℝ f x
   · have h : HasFDerivAt (fun y ↦ (f y : ℂ)) (ofRealCLM.comp (fderiv ℝ f x)) x :=
@@ -171,7 +175,7 @@ theorem fderiv_ofReal_comp_apply (f : V → ℝ) (x v : V) :
     simp [h.fderiv]
   · have hf' : ¬DifferentiableAt ℝ (fun y ↦ (f y : ℂ)) x := fun h ↦ by
       have hre := reCLM.differentiableAt.comp x h
-      exact hf (by rwa [show (reCLM ∘ fun y ↦ (f y : ℂ)) = f from funext fun y ↦ by simp] at hre)
+      exact hf (by simpa [Function.comp_def] using hre)
     simp [fderiv_zero_of_not_differentiableAt hf, fderiv_zero_of_not_differentiableAt hf']
 
 /-- For a real function, the conjugate Wirtinger derivative is the complex conjugate of the
