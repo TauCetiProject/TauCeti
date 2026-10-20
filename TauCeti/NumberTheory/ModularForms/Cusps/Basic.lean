@@ -32,9 +32,9 @@ its slash action gives the weight-parity sign under translation.
 * `TauCeti.Subgroup.exists_pos_nat_integerCuspWidth_eq_mul_strictWidthInfty`: the integer cusp
   width is a positive integer multiple of the strict width at `∞`.
 * `TauCeti.ModularForm.slash_T_zpow_apply`: slashing by a power of `T` is an integer shift.
-* `Subgroup.neg_upperRightHom_widthInfty_mem_of_not_isRegularAtInfty`: the negative shift
+* `TauCeti.Subgroup.neg_upperRightHom_widthInfty_mem_of_not_isRegularAtInfty`: the negative shift
   belonging to the group at an irregular cusp.
-* `SlashInvariantFormClass.vadd_eq_neg_one_zpow_mul_of_neg_upperRightHom_mem`: a negative
+* `TauCeti.SlashInvariantForm.vadd_apply_of_neg_upperRightHom_mem`: a negative
   shift in the group gives translation by the weight-parity sign.
 
 ## References
@@ -96,6 +96,20 @@ lemma ModularForm.slash_T_zpow_apply (k j : ℤ) (g : ℍ → ℂ) (τ : ℍ) :
     ModularGroup.mapGL_T_zpow_eq_upperRightHom, ModularForm.slash_upperRightHom_apply]
 
 
+/-- A negative translation in the group gives the weight-parity transformation
+law under translation by `h`. -/
+theorem SlashInvariantForm.vadd_apply_of_neg_upperRightHom_mem
+    {F : Type*} [FunLike F ℍ ℂ] {Γ : Subgroup (GL (Fin 2) ℝ)} {k : ℤ} {h : ℝ}
+    [SlashInvariantFormClass F Γ k] (f : F)
+    (hΓ : -Matrix.GeneralLinearGroup.upperRightHom h ∈ Γ) (z : ℍ) :
+    f (h +ᵥ z) = (-1 : ℂ) ^ k * f z := by
+  have hs := congrFun (SlashInvariantFormClass.slash_action_eq f _ hΓ) z
+  rw [← mul_neg_one (Matrix.GeneralLinearGroup.upperRightHom h),
+    SlashAction.slash_mul, ModularForm.slash_neg_one] at hs
+  simp only [Pi.smul_apply, smul_eq_mul, TauCeti.ModularForm.slash_upperRightHom_apply] at hs
+  simpa only [← inv_zpow, inv_neg_one] using
+    (eq_inv_mul_iff_mul_eq₀ (zpow_ne_zero k (by norm_num : (-1 : ℂ) ≠ 0))).mpr hs
+
 section IntegerCuspWidth
 
 variable {𝒢 : Subgroup (GL (Fin 2) ℝ)}
@@ -108,23 +122,6 @@ private def quotientTAction :
     MulAction 𝒮ℒ (𝒮ℒ ⧸ (𝒢.subgroupOf 𝒮ℒ)) :=
   letI : MulAction 𝒮ℒ 𝒮ℒ := Monoid.toMulAction _
   .quotient ..
-
-/-- A negative translation in the group gives the weight-parity transformation
-law under translation by `h`. -/
-theorem _root_.SlashInvariantFormClass.vadd_eq_neg_one_zpow_mul_of_neg_upperRightHom_mem
-    {F : Type*} [FunLike F ℍ ℂ] {Γ : Subgroup (GL (Fin 2) ℝ)} {k : ℤ} {h : ℝ}
-    [SlashInvariantFormClass F Γ k] (f : F)
-    (hΓ : -Matrix.GeneralLinearGroup.upperRightHom h ∈ Γ) (z : ℍ) :
-    f (h +ᵥ z) = (-1 : ℂ) ^ k * f z := by
-  have hs := congrFun (SlashInvariantFormClass.slash_action_eq f _ hΓ) z
-  rw [← mul_neg_one (Matrix.GeneralLinearGroup.upperRightHom h),
-    SlashAction.slash_mul, ModularForm.slash_neg_one] at hs
-  simp only [Pi.smul_apply, smul_eq_mul, TauCeti.ModularForm.slash_upperRightHom_apply] at hs
-  have hsq : (-1 : ℂ) ^ k * (-1 : ℂ) ^ k = 1 := by
-    rw [← mul_zpow]
-    norm_num
-  have H := congrArg (fun a : ℂ ↦ (-1 : ℂ) ^ k * a) hs
-  simpa only [← mul_assoc, hsq, one_mul] using H
 
 /-- The coset of a power of `T` is the base coset exactly when the exponent is a strict
 period of `𝒢`: the bridge between the coset space and the strict periods, stated without
@@ -264,7 +261,7 @@ end IntegerCuspWidth
 
 /-- At an irregular cusp the negative translation by the projective width belongs
 to the group. -/
-theorem _root_.Subgroup.neg_upperRightHom_widthInfty_mem_of_not_isRegularAtInfty
+theorem Subgroup.neg_upperRightHom_widthInfty_mem_of_not_isRegularAtInfty
     (Γ : Subgroup (GL (Fin 2) ℝ)) [DiscreteTopology Γ.periods]
     (hΓ : ¬Γ.IsRegularAtInfty) :
     -Matrix.GeneralLinearGroup.upperRightHom Γ.widthInfty ∈ Γ := by

@@ -39,116 +39,128 @@ public noncomputable section
 open Matrix.GeneralLinearGroup UpperHalfPlane
 open scoped MatrixGroups ModularForm
 
-namespace ModularForm
+namespace TauCeti.ModularForm
 
 variable {Γ : Subgroup (GL (Fin 2) ℝ)} {k : ℤ} {h : ℝ}
+variable {F : Type*} [FunLike F ℍ ℂ] [ModularFormClass F Γ k]
 
 /-- A negative translation forces the `q₂ₕ` coefficients to transform by the
 same sign as the weight. -/
-theorem neg_one_pow_mul_qExpansion_coeff (f : ModularForm Γ k) (hh : 0 < h)
+theorem neg_one_pow_mul_qExpansion_coeff_eq_neg_one_zpow_mul (f : F) (hh : 0 < h)
     (hΓ : -upperRightHom h ∈ Γ) (n : ℕ) :
     (-1 : ℂ) ^ n * (qExpansion (2 * h) f).coeff n =
       (-1 : ℂ) ^ k * (qExpansion (2 * h) f).coeff n := by
   have hperiod : 2 * h ∈ Γ.strictPeriods := by
     rw [Subgroup.mem_strictPeriods_iff]
-    simpa [-upperRightHom_apply, ← AddChar.map_nsmul_eq_pow] using Γ.pow_mem hΓ 2
+    -- Squaring the negative translation gives the positive translation by twice the width.
+    have hs := Γ.pow_mem hΓ 2
+    rw [neg_sq, ← AddChar.map_nsmul_eq_pow, two_nsmul, ← two_mul] at hs
+    exact hs
   have : Fact (IsCusp OnePoint.infty Γ) := ⟨Γ.isCusp_of_mem_strictPeriods (by positivity) hperiod⟩
   have hq (z : ℍ) : Function.Periodic.qParam (2 * h) (h +ᵥ z : ℍ) =
       -Function.Periodic.qParam (2 * h) z := by
-    simpa only [coe_vadd, Complex.ofReal_mul, Complex.ofReal_ofNat, mul_div_cancel_left₀,
-      mul_div_cancel_left₀ (h : ℂ) (by norm_num : (2 : ℂ) ≠ 0),
-      add_comm] using TauCeti.Periodic.qParam_add_half (h := 2 * h) (by positivity) (z : ℂ)
-  have hsq : (-1 : ℂ) ^ k * (-1 : ℂ) ^ k = 1 := by
-    rw [← mul_zpow]
-    norm_num
+    have hhalf : ((2 * h : ℝ) : ℂ) / 2 = (h : ℂ) := by push_cast; ring
+    have H := TauCeti.Periodic.qParam_add_half (h := 2 * h) (by positivity) (z : ℂ)
+    rw [hhalf, add_comm] at H
+    simpa only [coe_vadd] using H
+  have hsign : (-1 : ℂ) ^ k ≠ 0 := zpow_ne_zero k (by norm_num)
   have hsum (z : ℍ) : HasSum (fun m : ℕ ↦
-      ((-1 : ℂ) ^ k * (-1 : ℂ) ^ m * (qExpansion (2 * h) f).coeff m) •
+      (((-1 : ℂ) ^ k)⁻¹ * ((-1 : ℂ) ^ m * (qExpansion (2 * h) f).coeff m)) •
         Function.Periodic.qParam (2 * h) z ^ m) (f z) := by
-    have H := (ModularForm.hasSum_qExpansion f (by positivity : 0 < 2 * h)
-      hperiod (h +ᵥ z)).mul_left ((-1 : ℂ) ^ k)
-    rw [SlashInvariantFormClass.vadd_eq_neg_one_zpow_mul_of_neg_upperRightHom_mem f hΓ, hq] at H
-    simp only [← mul_assoc, hsq, one_mul] at H
+    have H := (_root_.ModularForm.hasSum_qExpansion f (by positivity : 0 < 2 * h)
+      hperiod (h +ᵥ z)).mul_left (((-1 : ℂ) ^ k)⁻¹)
+    rw [SlashInvariantForm.vadd_apply_of_neg_upperRightHom_mem f hΓ, hq,
+      inv_mul_cancel_left₀ hsign] at H
     refine H.congr_fun fun m ↦ ?_
     simp only [smul_eq_mul]
     rw [neg_pow (Function.Periodic.qParam (2 * h) z)]
     ring
-  have hc := ModularFormClass.qExpansion_coeff_unique (f := f)
-    (by positivity : 0 < 2 * h) hperiod hsum n
-  have H := congrArg (fun a : ℂ ↦ (-1 : ℂ) ^ k * a) hc
-  simpa only [← mul_assoc, hsq, one_mul] using H
+  exact (inv_mul_eq_iff_eq_mul₀ hsign).mp
+    (ModularFormClass.qExpansion_coeff_unique (f := f)
+      (by positivity : 0 < 2 * h) hperiod hsum n)
 
 /-- Nonzero `q₂ₕ` coefficients have the same parity as the weight when a negative
 translation by `h` belongs to the group. -/
-theorem even_qExpansion_index_iff_even_weight (f : ModularForm Γ k) (hh : 0 < h)
+theorem even_qExpansion_index_iff_even_weight (f : F) (hh : 0 < h)
     (hΓ : -upperRightHom h ∈ Γ) {n : ℕ} (hn : (qExpansion (2 * h) f).coeff n ≠ 0) :
     Even n ↔ Even k := by
-  have hs := mul_right_cancel₀ hn (f.neg_one_pow_mul_qExpansion_coeff hh hΓ n)
+  have hs := mul_right_cancel₀ hn
+    (neg_one_pow_mul_qExpansion_coeff_eq_neg_one_zpow_mul f hh hΓ n)
   rw [← neg_one_pow_eq_one_iff_even (by norm_num : (-1 : ℂ) ≠ 1), hs,
     neg_one_zpow_eq_ite]
   by_cases hk : Even k <;> norm_num [hk]
 
 /-- Coefficients whose parity differs from the weight vanish in the doubled-period
 expansion at a negative translation. -/
-theorem qExpansion_coeff_eq_zero_of_parity_ne (f : ModularForm Γ k) (hh : 0 < h)
+theorem qExpansion_coeff_eq_zero_of_parity_ne (f : F) (hh : 0 < h)
     (hΓ : -upperRightHom h ∈ Γ) {n : ℕ} (hn : ¬(Even n ↔ Even k)) :
     (qExpansion (2 * h) f).coeff n = 0 := by
   by_contra hc
-  exact hn (f.even_qExpansion_index_iff_even_weight hh hΓ hc)
+  exact hn (even_qExpansion_index_iff_even_weight f hh hΓ hc)
 
 /-- Every odd-weight modular form vanishes at an irregular cusp, including the
 zero form. -/
 theorem isZeroAtImInfty_of_odd_of_not_isRegularAtInfty [Γ.IsArithmetic]
-    (f : ModularForm Γ k) (hk : Odd k) (hΓ : ¬Γ.IsRegularAtInfty) :
+    (f : F) (hk : Odd k) (hΓ : ¬Γ.IsRegularAtInfty) :
     IsZeroAtImInfty f := by
   have hzero : (qExpansion (2 * Γ.widthInfty) f).coeff 0 = 0 :=
-    f.qExpansion_coeff_eq_zero_of_parity_ne Γ.widthInfty_pos
-      (Γ.neg_upperRightHom_widthInfty_mem_of_not_isRegularAtInfty hΓ)
+    qExpansion_coeff_eq_zero_of_parity_ne f Γ.widthInfty_pos
+      (Subgroup.neg_upperRightHom_widthInfty_mem_of_not_isRegularAtInfty Γ hΓ)
       (by simpa using Int.not_even_iff_odd.mpr hk)
   simpa only [IsZeroAtImInfty, Filter.ZeroAtFilter, hzero] using
     ModularFormClass.tendsto_atImInfty f
     (mul_pos (by norm_num) Γ.widthInfty_pos) Γ.two_mul_widthInfty_mem_strictPeriods
 
+/-- The nonzero leading coefficient at an irregular cusp has the parity of the weight. -/
+theorem even_qExpansion_order_toNat_iff_even_weight [Γ.IsArithmetic]
+    (f : F) (hf : (f : ℍ → ℂ) ≠ 0) (hΓ : ¬Γ.IsRegularAtInfty) :
+    Even (qExpansion (2 * Γ.widthInfty) f).order.toNat ↔ Even k := by
+  have : Fact (IsCusp OnePoint.infty Γ) := ⟨Γ.isCusp_of_mem_strictPeriods
+    (mul_pos (by norm_num) Γ.widthInfty_pos) Γ.two_mul_widthInfty_mem_strictPeriods⟩
+  have hq : qExpansion (2 * Γ.widthInfty) f ≠ 0 :=
+    (UpperHalfPlane.qExpansion_eq_zero_iff (mul_pos (by norm_num) Γ.widthInfty_pos)
+      (SlashInvariantFormClass.periodic_comp_ofComplex f Γ.two_mul_widthInfty_mem_strictPeriods)
+      (ModularFormClass.holo f) (ModularFormClass.bdd_at_infty f)).not.mpr hf
+  exact even_qExpansion_index_iff_even_weight f Γ.widthInfty_pos
+    (Subgroup.neg_upperRightHom_widthInfty_mem_of_not_isRegularAtInfty Γ hΓ)
+    (PowerSeries.coeff_order hq)
+
 /-- A nonzero odd-weight form at an irregular cusp has odd leading degree in
 the expansion of period twice the projective width. -/
 theorem odd_qExpansion_order_of_not_isRegularAtInfty [Γ.IsArithmetic]
-    (f : ModularForm Γ k) (hf : f ≠ 0) (hk : Odd k) (hΓ : ¬Γ.IsRegularAtInfty) :
+    (f : F) (hf : (f : ℍ → ℂ) ≠ 0) (hk : Odd k) (hΓ : ¬Γ.IsRegularAtInfty) :
     Odd (qExpansion (2 * Γ.widthInfty) f).order.toNat := by
-  have hq : qExpansion (2 * Γ.widthInfty) f ≠ 0 :=
-    (ModularForm.qExpansion_eq_zero_iff (mul_pos (by norm_num) Γ.widthInfty_pos)
-      Γ.two_mul_widthInfty_mem_strictPeriods f).not.mpr hf
-  have hp := f.even_qExpansion_index_iff_even_weight Γ.widthInfty_pos
-    (Γ.neg_upperRightHom_widthInfty_mem_of_not_isRegularAtInfty hΓ) (PowerSeries.coeff_order hq)
-  exact Nat.not_even_iff_odd.mp (fun he ↦ (Int.not_even_iff_odd.mpr hk) (hp.mp he))
+  exact Nat.not_even_iff_odd.mp fun he ↦ (Int.not_even_iff_odd.mpr hk)
+    ((even_qExpansion_order_toNat_iff_even_weight f hf hΓ).mp he)
 
 /-- The order of a nonzero odd-weight form at an irregular cusp is a strictly
 half-integral nonnegative number, with the doubled-width convention. -/
-theorem orderAtCusp_eq_nat_add_half_of_not_isRegularAtInfty [Γ.IsArithmetic]
-    (f : ModularForm Γ k) (hf : f ≠ 0) (hk : Odd k) (hΓ : ¬Γ.IsRegularAtInfty) :
+theorem exists_orderAtCusp_eq_natCast_add_half_of_odd_of_not_isRegularAtInfty [Γ.IsArithmetic]
+    (f : F) (hf : (f : ℍ → ℂ) ≠ 0) (hk : Odd k) (hΓ : ¬Γ.IsRegularAtInfty) :
     ∃ m : ℕ, TauCeti.orderAtCusp Γ.widthInfty f = (m : ℚ) + 1 / 2 := by
-  obtain ⟨m, hm⟩ := f.odd_qExpansion_order_of_not_isRegularAtInfty hf hk hΓ
+  obtain ⟨m, hm⟩ := odd_qExpansion_order_of_not_isRegularAtInfty f hf hk hΓ
   refine ⟨m, ?_⟩
   rw [TauCeti.orderAtCusp_def, TauCeti.qExpansionOrderAtCusp_def, hm]
   push_cast
   ring
 
-/-- In even weight the order at an irregular cusp is integral, although it is
-still read using the doubled-width expansion. -/
-theorem orderAtCusp_eq_nat_of_even_of_not_isRegularAtInfty [Γ.IsArithmetic]
-    (f : ModularForm Γ k) (hk : Even k) (hΓ : ¬Γ.IsRegularAtInfty) :
+/-- In even weight the cusp order is integral at every cusp, using its projective width. -/
+theorem exists_orderAtCusp_eq_natCast_of_even [Γ.IsArithmetic]
+    (f : F) (hk : Even k) :
     ∃ m : ℕ, TauCeti.orderAtCusp Γ.widthInfty f = m := by
-  by_cases hf : f = 0
-  · subst f
-    exact ⟨0, by simp [TauCeti.orderAtCusp_def, TauCeti.qExpansionOrderAtCusp_def,
-      UpperHalfPlane.qExpansion_zero]⟩
-  have hq : qExpansion (2 * Γ.widthInfty) f ≠ 0 :=
-    (ModularForm.qExpansion_eq_zero_iff (mul_pos (by norm_num) Γ.widthInfty_pos)
-      Γ.two_mul_widthInfty_mem_strictPeriods f).not.mpr hf
-  have hp := f.even_qExpansion_index_iff_even_weight Γ.widthInfty_pos
-    (Γ.neg_upperRightHom_widthInfty_mem_of_not_isRegularAtInfty hΓ) (PowerSeries.coeff_order hq)
-  obtain ⟨m, hm⟩ := hp.mpr hk
-  refine ⟨m, ?_⟩
-  rw [TauCeti.orderAtCusp_def, TauCeti.qExpansionOrderAtCusp_def, hm]
-  push_cast
-  ring
+  have hper : Function.Periodic (f ∘ ofComplex) Γ.widthInfty := by
+    by_cases hΓ : Γ.IsRegularAtInfty
+    · exact SlashInvariantFormClass.periodic_comp_ofComplex f (Γ.isRegularAtInfty_iff.mp hΓ)
+    · apply UpperHalfPlane.periodic_comp_ofComplex
+      intro z
+      rw [SlashInvariantForm.vadd_apply_of_neg_upperRightHom_mem f
+        (Subgroup.neg_upperRightHom_widthInfty_mem_of_not_isRegularAtInfty Γ hΓ),
+        hk.neg_one_zpow, one_mul]
+  have : Fact (IsCusp OnePoint.infty Γ) := ⟨Γ.isCusp_of_mem_strictPeriods
+    (mul_pos (by norm_num) Γ.widthInfty_pos) Γ.two_mul_widthInfty_mem_strictPeriods⟩
+  refine ⟨(qExpansion Γ.widthInfty f).order.toNat, ?_⟩
+  simpa only [TauCeti.qExpansionOrderAtCusp_def, Int.cast_natCast] using
+    TauCeti.orderAtCusp_eq_qExpansionOrderAtCusp Γ.widthInfty_pos hper
+      (ModularFormClass.bdd_at_infty f) (ModularFormClass.holo f)
 
-end ModularForm
+end TauCeti.ModularForm
