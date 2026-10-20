@@ -207,6 +207,12 @@ noncomputable abbrev simplexModel (n : ℕ) : TopCat.{u} := SimplexCategory.toTo
 noncomputable def idSimplex (n : ℕ) : (TopCat.toSSet.obj (simplexModel.{u} n)) _⦋n⦌ :=
   ULift.up (𝟙 _)
 
+/-- The identity simplex of the topological simplex is the identity map. -/
+@[simp]
+theorem simplexMap_idSimplex (n : ℕ) (x : SimplexCategory.toTop.{u}.obj ⦋n⦌) :
+    TopCat.simplexMap (idSimplex.{u} n) x = x :=
+  (rfl)
+
 /-- A singular simplex is the push-forward of the identity simplex along itself. -/
 theorem toSSet_map_down_idSimplex {X : TopCat.{u}} {n : ℕ} (σ : (TopCat.toSSet.obj X) _⦋n⦌) :
     (TopCat.toSSet.map σ.down).app _ (idSimplex n) = σ := by

@@ -434,6 +434,22 @@ lemma twistedChainComplex_hom_ext {k : ℕ} {A : ModuleCat.{max v w} R}
     (h : ∀ σ, ιTwistedChainComplex L k σ ≫ f = ιTwistedChainComplex L k σ ≫ g) : f = g :=
   twistedChains_hom_ext L h
 
+/-- The map out of the degree-`k` term of the twisted chain complex given by a map out of the
+coefficient module of each singular `k`-simplex. -/
+def twistedChainComplexDesc {k : ℕ} {A : ModuleCat.{max v w} R}
+    (φ : ∀ σ : (TopCat.toSSet.obj X) _⦋k⦌, L.obj (initialVertex σ) ⟶ A) :
+    (twistedChainComplex L).X k ⟶ A :=
+  twistedChainsDesc L φ
+
+/-- The map out of twisted chains given by a family of maps restricts to each member of the
+family on the summand of the corresponding simplex. -/
+@[reassoc (attr := simp)]
+lemma ιTwistedChainComplex_twistedChainComplexDesc {k : ℕ} {A : ModuleCat.{max v w} R}
+    (φ : ∀ σ : (TopCat.toSSet.obj X) _⦋k⦌, L.obj (initialVertex σ) ⟶ A)
+    (σ : (TopCat.toSSet.obj X) _⦋k⦌) :
+    ιTwistedChainComplex L k σ ≫ twistedChainComplexDesc L φ = φ σ :=
+  ιTwistedChains_twistedChainsDesc L φ σ
+
 /-- The boundary of the twisted chain complex sends the summand of a singular `(k + 1)`-simplex
 `σ` to the alternating sum of the summands of the faces of `σ`, the coefficients being transported
 from the initial vertex of `σ` to the initial vertex of each face. -/

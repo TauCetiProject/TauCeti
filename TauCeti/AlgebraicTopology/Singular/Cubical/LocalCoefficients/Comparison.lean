@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Basic
 public import TauCeti.AlgebraicTopology.Singular.Cubical.LocalCoefficients.ChainComplex
+public import TauCeti.AlgebraicTopology.Singular.Cubical.LocalCoefficients.Pushforward
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Pushforward
 
 /-!
@@ -44,6 +45,8 @@ system.
 ## Main results
 
 * `TauCeti.LocalCoefficientSystem.twistedCubicalToSingular_ofSubcube`: the image of a subcube.
+* `TauCeti.LocalCoefficientSystem.normalizedTwistedCubicalToSingular_pushforward`: compatibility
+  with the pushforwards from simply connected spaces.
 * `TauCeti.LocalCoefficientSystem.twistedCubicalToSingularMap_naturality`,
   `TauCeti.LocalCoefficientSystem.twistedCubicalToSingularMap_coefficientMap_naturality`:
   naturality in the space and in the local system.
@@ -105,6 +108,16 @@ theorem twistedCubePushforward_simplexChain {n m : ℕ} (c : SingularCube X n)
         (L.map ((cubeToHom c).hom.pathClass (cubeModelOrigin n)
           (TopCat.simplexMap t (SimplexCategory.toTopInitialVertex _))) a) :=
   twistedPushforward_simplexChain (L := L) (f := cubeToHom c) (z₀ := cubeModelOrigin n) t r a
+
+/-- The pushforward along a cube is the twisted pushforward along the cube regarded as a map from
+the model, from the origin of the model.  This is the defining equation of
+`twistedCubePushforward`, whose definition is not unfolded outside this file. -/
+theorem twistedCubePushforward_apply {n : ℕ} (c : SingularCube X n) (m : ℕ)
+    (y : ((singularChains (ULift.{v} ℤ)).obj (cubeModel.{v} n)).X m)
+    (a : L.obj (FundamentalGroupoid.mk (c 0))) :
+    twistedCubePushforward L c m y a =
+      twistedPushforward L (cubeToHom c) (cubeModelOrigin n) m y a :=
+  (rfl)
 
 /-- The pushforward along a cube commutes with the boundaries. -/
 theorem twistedCubePushforward_d {n : ℕ} (c : SingularCube X n) (m : ℕ)
@@ -309,6 +322,39 @@ theorem twistedCubicalToSingularMap_coefficientMap_naturality
     normalizedTwistedCubicalToSingular_ofCube, normalizedTwistedCubicalToSingular_ofCube]
   exact (twistedChainComplexCoefficientMap_twistedPushforward (f := cubeToHom c)
     (z₀ := cubeModelOrigin n) η (cubicalToSingularGen (ULift.{v} ℤ) n) a).symm
+
+/-- **Compatibility with pushforwards.** The comparison carries the cubical pushforward of a
+chain of a simply connected space `Z` to the simplicial pushforward of the image of the chain. -/
+theorem normalizedTwistedCubicalToSingular_pushforward {Z : TopCat.{v}} [SimplyConnectedSpace Z]
+    (f : Z ⟶ X) (z₀ : Z) {n : ℕ} (y : NormalizedCubicalChain Z (ULift.{v} ℤ) n)
+    (a : L.obj (FundamentalGroupoid.mk (f z₀))) :
+    normalizedTwistedCubicalToSingular L n
+        (NormalizedTwistedCubicalChain.pushforward L f.hom z₀ n y a) =
+      twistedPushforward L f z₀ n (((cubicalToSingular (ULift.{v} ℤ)).app Z).f n y) a := by
+  have h := NormalizedCubicalChain.linearMap_ext (R := ULift.{v} ℤ)
+    (f := ((normalizedTwistedCubicalToSingular L n).toAddMonoidHom.toIntLinearMap
+      |>.restrictScalars (ULift.{v} ℤ)) ∘ₗ
+      ((LinearMap.applyₗ' ℤ a).restrictScalars (ULift.{v} ℤ)) ∘ₗ
+      NormalizedTwistedCubicalChain.pushforward L f.hom z₀ n)
+    (g := ((LinearMap.applyₗ' ℤ a).restrictScalars (ULift.{v} ℤ)) ∘ₗ
+      twistedPushforward L f z₀ n ∘ₗ
+      (((cubicalToSingular (ULift.{v} ℤ)).app Z).f n).hom) fun d ↦ ?_
+  · exact congrArg (fun φ ↦ φ y) h
+  simp only [LinearMap.comp_apply, LinearMap.restrictScalars_apply, AddMonoidHom.coe_toIntLinearMap,
+    LinearMap.applyₗ'_apply_apply, LinearMap.toAddMonoidHom_coe]
+  -- Composites of `ModuleCat` morphisms are composites of linear maps by definition.
+  change normalizedTwistedCubicalToSingular L n
+      (NormalizedTwistedCubicalChain.pushforward L f.hom z₀ n
+        (NormalizedCubicalChain.ofCube Z (ULift.{v} ℤ) d) a) =
+    twistedPushforward L f z₀ n (((cubicalToSingular (ULift.{v} ℤ)).app Z).f n
+      (NormalizedCubicalChain.ofCube Z (ULift.{v} ℤ) d)) a
+  rw [NormalizedTwistedCubicalChain.pushforward_ofCube, cubicalToSingular_app_f_ofCube,
+    twistedPushforward_map (L := L) (f := f) (z₀ := z₀) (cubeToHom d) (cubeModelOrigin n),
+    TwistedCubicalChain.pushCube_apply, ← NormalizedTwistedCubicalChain.ofCube_apply,
+    normalizedTwistedCubicalToSingular_ofCube]
+  -- The pushforward along the cube `f ∘ d` is the pushforward along `cubeToHom d ≫ f`, by the
+  -- definition of `cubeToHom`.
+  rfl
 
 end LocalCoefficientSystem
 
