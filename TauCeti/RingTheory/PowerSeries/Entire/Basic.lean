@@ -48,6 +48,9 @@ restricted at a fixed radius.
 * `PowerSeries.IsEntire.hasseDeriv`, `PowerSeries.IsEntire.derivative`,
   `PowerSeries.IsEntire.rescale` and `PowerSeries.IsEntire.map`: entireness is preserved by Hasse
   derivatives, rescaling and bounded coefficient maps.
+* `PowerSeries.IsEntire.summable_norm_coeff_mul_pow`: `∑ ‖aₙ‖ tⁿ` converges for every real `t`.
+* `PowerSeries.IsEntire.mk_coeff_succ`: dropping the constant term and dividing by `X` keeps a
+  series entire.
 
 ## References
 
@@ -282,6 +285,29 @@ theorem IsEntire.hasseDeriv (hf : f.IsEntire) (k : ℕ) :
       gcongr
       exact_mod_cast Nat.choose_le_pow (n + k) k
     _ = ((n + k : ℝ) ^ k * ρ ^ n) * (q⁻¹ ^ k * A) := by ring
+
+/-- For an entire series `f = ∑ aₙ Xⁿ`, the series `∑ ‖aₙ‖ tⁿ` converges for every real `t`. -/
+theorem IsEntire.summable_norm_coeff_mul_pow (hf : f.IsEntire) (t : ℝ) :
+    Summable fun n ↦ ‖coeff n f‖ * t ^ n := by
+  -- restrictedness at the radius `2 |t|` bounds the terms by a multiple of `2⁻ⁿ`
+  obtain ⟨B, hB⟩ := ((isRestricted_iff' (2 * |t|) f).mp (hf.isRestricted _)).bddAbove_range
+  refine Summable.of_norm_bounded (summable_geometric_two.mul_left B) fun n ↦ ?_
+  have hn : ‖coeff n f‖ * (2 * |t|) ^ n ≤ B := hB ⟨n, rfl⟩
+  calc ‖‖coeff n f‖ * t ^ n‖ = ‖coeff n f‖ * (2 * |t|) ^ n * (1 / 2) ^ n := by
+        simp [mul_pow]
+        field_simp
+    _ ≤ B * (1 / 2) ^ n := by gcongr
+
+/-- The series `∑ aₙ₊₁ Xⁿ` obtained from an entire series by dropping the constant term and
+dividing by `X` is entire. -/
+theorem IsEntire.mk_coeff_succ (hf : f.IsEntire) : (mk fun n ↦ coeff (n + 1) f).IsEntire := by
+  refine isEntire_iff_forall_pos.mpr fun r hr ↦ (isRestricted_iff' r _).mpr ?_
+  have h := ((tendsto_add_atTop_iff_nat 1).mpr
+    ((isRestricted_iff' r f).mp (hf.isRestricted r))).mul_const r⁻¹
+  rw [zero_mul] at h
+  refine h.congr fun n ↦ ?_
+  rw [coeff_mk, pow_succ]
+  field_simp
 
 variable (R) in
 /-- The entire power series form a subring. -/

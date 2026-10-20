@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.Lifts
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
+public import Mathlib.Order.Filter.AtTopBot.Archimedean
 public import TauCeti.RingTheory.LaurentSeries.Ramified
 
 /-!
@@ -26,11 +27,14 @@ field `K⸨X⸩` acts on it through the level-one embedding `X ↦ t`, and every
 compatible with this action after the expansion `X ↦ X ^ n`. In characteristic zero with `K`
 algebraically closed the Puiseux field is an algebraic closure of `K⸨X⸩` (the Newton–Puiseux
 theorem); the common-level lift of polynomial coefficients is what reduces root finding over the
-Puiseux field to a single level.
+Puiseux field to a single level. Finally, the series `∑ j, t ^ ((j + 1) + 1 / (j + 2))`, whose
+exponents have unbounded denominators, shows that the Puiseux field is a proper subfield of
+`HahnSeries ℚ K`.
 
 ## Main definitions
 
 * `TauCeti.puiseuxField K`: the Puiseux series field, as an `IntermediateField K (HahnSeries ℚ K)`.
+* `TauCeti.puiseuxField.single K q a`: the monomial `a t ^ q` as a Puiseux series.
 * `TauCeti.puiseuxField.levelEmbedding K n`: the level-`n` embedding `K⸨X⸩ →ₐ[K] puiseuxField K`,
   `X ↦ t ^ (1 / n)`.
 * The `K⸨X⸩`-algebra structure on `puiseuxField K` given by `levelEmbedding K 1`, with
@@ -49,6 +53,7 @@ Puiseux field to a single level.
   the image of a polynomial over `K⸨X⸩` under a single level embedding.
 * `TauCeti.puiseuxField.levelEmbedding_expand_self`: the level-`n` embedding restricted along
   `X ↦ X ^ n` is the `K⸨X⸩`-algebra map.
+* `TauCeti.puiseuxField_lt_top`: the Puiseux field is a proper subfield of `HahnSeries ℚ K`.
 -/
 
 public section
@@ -104,6 +109,25 @@ theorem single_mem_puiseuxField (q : ℚ) (a : K) : single q a ∈ puiseuxField 
   refine mem_puiseuxField_iff_exists_den_dvd.mpr ⟨⟨q.den, q.den_pos⟩, fun r hr ↦ ?_⟩
   rw [Set.eq_of_mem_singleton (support_single_subset hr)]
   rfl
+
+namespace puiseuxField
+
+variable (K) in
+/-- The monomial `a t ^ q` as a Puiseux series. -/
+noncomputable def single (q : ℚ) (a : K) : puiseuxField K :=
+  ⟨HahnSeries.single q a, single_mem_puiseuxField q a⟩
+
+/-- As a Hahn series, the monomial `single K q a` is `HahnSeries.single q a`. -/
+@[simp]
+theorem coe_single (q : ℚ) (a : K) : (single K q a : HahnSeries ℚ K) = HahnSeries.single q a :=
+  (rfl)
+
+/-- The monomial `a t ^ q` vanishes exactly when `a = 0`. -/
+@[simp]
+theorem single_eq_zero_iff {q : ℚ} {a : K} : single K q a = 0 ↔ a = 0 := by
+  rw [← Subtype.coe_inj, coe_single, ZeroMemClass.coe_zero, HahnSeries.single_eq_zero_iff]
+
+end puiseuxField
 
 /-- Each level `K⸨t ^ (1 / n)⸩` is contained in the Puiseux field. -/
 theorem fieldRange_ramifiedEmbedding_le_puiseuxField (n : ℕ+) :
@@ -220,6 +244,56 @@ theorem levelEmbedding_expand_self (n : ℕ+) (f : K⸨X⸩) :
     levelEmbedding K n (expand K n f) = algebraMap K⸨X⸩ (puiseuxField K) f := by
   rw [algebraMap_laurentSeries_apply, ← levelEmbedding_expand 1 n, one_mul]
 
+/-! ### A series with exponents of unbounded denominator -/
+
+/-- The exponents `(j + 1) + 1 / (j + 2)` of the series `∑ j, t ^ ((j + 1) + 1 / (j + 2))`, whose
+denominators `j + 2` are unbounded. -/
+def unboundedDenExponent (j : ℕ) : ℚ := (j + 1 : ℕ) + 1 / (j + 2 : ℕ)
+
+private theorem den_unboundedDenExponent (j : ℕ) : (unboundedDenExponent j).den = j + 2 := by
+  rw [unboundedDenExponent, Rat.natCast_add_den, one_div, Rat.inv_natCast_den_of_pos (by omega)]
+
+/-- The exponents `(j + 1) + 1 / (j + 2)` are strictly increasing. -/
+theorem strictMono_unboundedDenExponent : StrictMono unboundedDenExponent := by
+  refine strictMono_nat_of_lt_succ fun j ↦ ?_
+  simp only [unboundedDenExponent]
+  push_cast
+  have h₁ : (1 : ℚ) / (j + 2) ≤ 1 := by
+    rw [div_le_one (by positivity)]
+    linarith [(j.cast_nonneg : (0 : ℚ) ≤ j)]
+  have h₂ : (0 : ℚ) < 1 / (j + 1 + 2) := by positivity
+  linarith
+
+/-- The exponents `(j + 1) + 1 / (j + 2)` tend to infinity. -/
+theorem tendsto_unboundedDenExponent : Filter.Tendsto unboundedDenExponent .atTop .atTop :=
+  Filter.tendsto_atTop_mono (fun j ↦ by
+    simp only [unboundedDenExponent]
+    push_cast
+    have : (0 : ℚ) ≤ 1 / (j + 2) := by positivity
+    linarith) tendsto_natCast_atTop_atTop
+
+/-- The denominator `n + 2` of the exponent `(n + 1) + 1 / (n + 2)` does not divide `n`. -/
+theorem not_den_unboundedDenExponent_dvd (n : ℕ+) :
+    ¬ (unboundedDenExponent n).den ∣ n := by
+  rw [den_unboundedDenExponent]
+  exact fun h ↦ absurd (Nat.le_of_dvd n.pos h) (by omega)
+
 end puiseuxField
+
+variable (K) in
+/-- **The Puiseux field is a proper subfield of `HahnSeries ℚ K`**: the rational Hahn series
+`∑ j, t ^ ((j + 1) + 1 / (j + 2))` has exponents of unbounded denominator. -/
+theorem puiseuxField_lt_top : puiseuxField K < ⊤ := by
+  refine lt_top_iff_ne_top.mpr fun h ↦ ?_
+  let x : HahnSeries ℚ K := embDomain
+    (OrderEmbedding.ofStrictMono _ puiseuxField.strictMono_unboundedDenExponent)
+    (toPowerSeries.symm (PowerSeries.mk fun _ ↦ 1))
+  obtain ⟨n, hn⟩ := mem_puiseuxField_iff_exists_den_dvd.mp (h ▸ IntermediateField.mem_top : x ∈ _)
+  refine puiseuxField.not_den_unboundedDenExponent_dvd n (hn _ ?_)
+  rw [mem_support]
+  have hcoeff : x.coeff (puiseuxField.unboundedDenExponent n) = 1 := by
+    rw [← OrderEmbedding.coe_ofStrictMono puiseuxField.strictMono_unboundedDenExponent,
+      embDomain_coeff, coeff_toPowerSeries_symm, PowerSeries.coeff_mk]
+  exact hcoeff ▸ one_ne_zero
 
 end TauCeti

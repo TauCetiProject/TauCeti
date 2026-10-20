@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Pullback
+public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Restriction
 public import TauCeti.Geometry.Manifold.Riemannian.Scaling
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Prod
 
@@ -17,8 +18,9 @@ scalar curvature `Bundle.ContMDiffRiemannianMetric.scalarCurvature`, that of the
 connection of `g`, is positive at every point. Since scalar curvature is a smooth function of
 the point, on a compact manifold such a metric has scalar curvature bounded below by a positive
 constant. Scalar curvature is invariant under diffeomorphisms, so pulling a metric back along a
-diffeomorphism preserves and reflects positive scalar curvature. No assumption on the
-boundary is made.
+diffeomorphism preserves and reflects positive scalar curvature. Scalar curvature is also local,
+so the restriction of a metric of positive scalar curvature to an open submanifold has positive
+scalar curvature. No assumption on the boundary is made.
 
 Since `Scal(c g) = c⁻¹ Scal(g)` for a constant `c > 0`, rescaling by a positive constant preserves
 and reflects positive scalar curvature. The scalar curvature of a product metric `g₁ × g₂` is the
@@ -39,6 +41,9 @@ On a compact manifold the scalar curvature of every smooth metric is bounded bel
   manifold, positive scalar curvature is equivalent to a uniform positive lower bound.
 * `Bundle.ContMDiffRiemannianMetric.hasPositiveScalarCurvature_pullback_iff`: the pullback of a
   metric along a diffeomorphism has positive scalar curvature exactly when the metric does.
+* `Bundle.ContMDiffRiemannianMetric.HasPositiveScalarCurvature.restrictOpenTangentSpace`: the
+  restriction of a metric of positive scalar curvature to an open submanifold has positive scalar
+  curvature.
 * `Bundle.ContMDiffRiemannianMetric.hasPositiveScalarCurvature_rescale_const_iff`: rescaling a
   metric by a positive constant preserves and reflects positive scalar curvature.
 * `Bundle.ContMDiffRiemannianMetric.HasPositiveScalarCurvature.prodTangentSpace_of_nonneg`: the
@@ -126,6 +131,15 @@ theorem HasPositiveScalarCurvature.pullback (h : g.HasPositiveScalarCurvature)
   (hasPositiveScalarCurvature_pullback_iff g Φ hf hinj).2 h
 
 end Pullback
+
+variable {g} in
+/-- The restriction of a metric of positive scalar curvature to an open submanifold has positive
+scalar curvature. -/
+theorem HasPositiveScalarCurvature.restrictOpenTangentSpace (h : g.HasPositiveScalarCurvature)
+    (U : TopologicalSpace.Opens M) : (g.restrictOpenTangentSpace U).HasPositiveScalarCurvature :=
+  fun x ↦ by
+    rw [scalarCurvature_restrictOpenTangentSpace]
+    exact h x
 
 section Rescale
 
