@@ -228,6 +228,27 @@ lemma moduleCatCohomologyClassOfIso_eq_iff (n : ℕ) (z w : Z n) :
 end CochainPresentation
 
 variable {n} in
+/-- Every degree-`n` homology class of a complex of modules is the class of an element killed by
+the differential out of degree `n`. -/
+lemma exists_homologyπ_moduleCatCyclesMk_eq (m : ι) (hm : c.next n = m) (z : K.homology n) :
+    ∃ (x : K.X n) (hx : K.d n m x = 0), K.homologyπ n (K.moduleCatCyclesMk x m hm hx) = z := by
+  obtain ⟨z, rfl⟩ := K.moduleCat_homologyπ_surjective n z
+  have hz : K.d n m (K.iCycles n z) = 0 := by
+    rw [← ModuleCat.comp_apply, iCycles_d]
+    rfl
+  exact ⟨_, hz,
+    congrArg _ (K.moduleCat_iCycles_injective n (iCycles_moduleCatCyclesMk _ _ _ _ _ _))⟩
+
+variable {n} in
+/-- A finite sum of cycles built by `moduleCatCyclesMk` is the cycle built from the sum. -/
+lemma sum_moduleCatCyclesMk {κ : Type*} (s : Finset κ) (x : κ → K.X n) (m : ι)
+    (hm : c.next n = m) (hx : ∀ i, K.d n m (x i) = 0) :
+    ∑ i ∈ s, K.moduleCatCyclesMk (x i) m hm (hx i) =
+      K.moduleCatCyclesMk (∑ i ∈ s, x i) m hm
+        (by rw [map_sum]; exact Finset.sum_eq_zero fun i _ ↦ hx i) :=
+  K.moduleCat_iCycles_injective n (by simp only [map_sum, iCycles_moduleCatCyclesMk])
+
+variable {n} in
 /-- Two degree-`n` cycles of a complex of modules whose difference is a boundary have the same
 homology class. -/
 lemma moduleCat_homologyπ_eq_of_iCycles_sub_eq_d {z w : K.cycles n} {m : ι} (b : K.X m)

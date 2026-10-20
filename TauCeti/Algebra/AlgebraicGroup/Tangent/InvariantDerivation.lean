@@ -44,6 +44,8 @@ tangent space as the ambient group. This is the infinitesimal input to Cartier's
 * `TauCeti.Bialgebra.comul_leftInvariantDerivation`: its invariance under left translations.
 * `TauCeti.Bialgebra.eq_leftInvariantDerivation`: a left-invariant derivation is determined
   by its value at the identity.
+* `BialgHom.map_leftInvariantDerivation`: invariant derivations intertwine a
+  bialgebra morphism and its tangent map.
 * `Derivation.apply_eq_zero_of_isNilpotent`: in characteristic zero, tangent vectors at the
   identity vanish on nilpotent functions.
 * `TauCeti.Bialgebra.nilradical_le_augmentationIdeal_sq`: over a field of characteristic zero,
@@ -160,6 +162,30 @@ theorem eq_leftInvariantDerivation (D : Derivation R H H)
   simpa [LinearMap.tensorComponent_def] using hc
 
 end TauCeti.Bialgebra
+
+namespace BialgHom
+
+open TauCeti TauCeti.Bialgebra
+
+variable {R H : Type*} [CommRing R] [CommRing H] [Bialgebra R H]
+
+/-- Invariant derivations intertwine a bialgebra morphism and its tangent map. Geometrically,
+the invariant vector fields attached to related tangent vectors are related by the group
+morphism. No smoothness or antipode is needed. -/
+@[simp]
+theorem map_leftInvariantDerivation {K : Type*} [CommRing K] [_root_.Bialgebra R K]
+    (f : H →ₐc[R] K) (d : Derivation R K (CounitAlgebra R K R)) (h : H) :
+    f (leftInvariantDerivation (derivationComp f d) h) =
+      leftInvariantDerivation d (f h) := by
+  rw [← Derivation.coeFn_coe, ← Derivation.coeFn_coe,
+    toLinearMap_leftInvariantDerivation, toLinearMap_leftInvariantDerivation]
+  have hcore := Comodule.differential_corestrict H f d h
+  let : Comodule R K H := Comodule.Corestrict f.toCoalgHom
+  rw [← hcore]
+  simpa only [CoalgHom.toComoduleHom_apply, BialgHom.toCoalgHom_apply] using
+    f.toCoalgHom.toComoduleHom.map_differential d h
+
+end BialgHom
 
 namespace Derivation
 

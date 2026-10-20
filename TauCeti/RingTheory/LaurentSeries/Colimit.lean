@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.CommAlgCat.Basic
-public import TauCeti.RingTheory.LaurentSeries.Puiseux
+public import TauCeti.RingTheory.LaurentSeries.Puiseux.Basic
 public import TauCeti.RingTheory.LaurentSeries.RamificationIndex
 
 /-!
