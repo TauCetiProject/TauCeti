@@ -38,6 +38,12 @@ jobs:
           ref: main
           persist-credentials: false
 
+      - name: Prepare pinned shared tools
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@02db6ea51c27553cb6271e605612a56169ae72f6
+        with:
+          tools-repository: TauCetiProject/TauCetiTools
+          tools-ref: 02db6ea51c27553cb6271e605612a56169ae72f6
+          project-directory: .
       - uses: actions/checkout@v4
         with:
           repository: TauCetiProject/TauCetiRoadmap
