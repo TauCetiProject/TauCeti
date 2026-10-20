@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Field.Basic
-public import TauCeti.RingTheory.Jacobson.MulOpposite
+public import TauCeti.RingTheory.Jacobson.Basic
 public import TauCeti.RingTheory.LocalRing.Basic
 
 /-!
@@ -22,9 +22,10 @@ one-sided inverse is a unit (`TauCeti.IsLocalRing.isUnit_of_mul_eq_one_left` and
 
 The residue division ring is what counts the arrows of an Auslander-Reiten quiver: the space of
 irreducible morphisms `rad(X, Y) / rad²(X, Y)` between two objects with local endomorphism rings is
-a bimodule over `End X ⧸ rad(End X)` and `End Y ⧸ rad(End Y)`, and it is the dimensions over those
-division rings, not over an ambient base ring, that are the arrow multiplicities. The bimodule is
-built in `TauCeti/CategoryTheory/Preadditive/Radical/Bimodule.lean`.
+a bimodule over `End X ⧸ rad(End X)` and `End Y ⧸ rad(End Y)`, and it is the dimension over one of
+those division rings — the target's, by the convention used there — not over an ambient base ring,
+that is the arrow multiplicity. The bimodule is built in
+`TauCeti/CategoryTheory/Preadditive/Radical/Bimodule.lean`.
 
 ## Main results
 
@@ -99,12 +100,6 @@ theorem mem_jacobson_iff_not_isUnit {x : R} : x ∈ Ring.jacobson R ↔ ¬ IsUni
       refine absurd (isUnit_of_mul_eq_one_left (a := -((↑u⁻¹ : R) * y)) ?_) hx
       have hstep : -((↑u⁻¹ : R) * y) * x = (↑u⁻¹ : R) * -(y * x) := by noncomm_ring
       rw [hstep, ← hu, u.inv_mul]
-
-variable (R) in
-/-- The residue ring of a local ring is nontrivial, the Jacobson radical of a nontrivial ring
-being proper by `Ring.jacobson_lt_top`. -/
-instance instNontrivialQuotientJacobson : Nontrivial (R ⧸ Ring.jacobson R) :=
-  Ideal.Quotient.nontrivial_iff.mpr (Ring.jacobson_lt_top R).ne
 
 /-- **A residue class modulo the Jacobson radical vanishes exactly on the non-units.** -/
 @[simp]

@@ -7,9 +7,11 @@ module
 
 public import TauCeti.CategoryTheory.Preadditive.Radical.Quotient
 public import TauCeti.RingTheory.LocalRing.Residue
--- Non-public: the dimension theory of a module over a division ring is used only inside the
--- proof of the final statement, whose own wording mentions only `Module.rank`.
-import Mathlib.LinearAlgebra.Dimension.Basic
+-- Non-public: the dimension theory of a module over a division ring, and the left-right symmetry
+-- of the Jacobson radical, are used only inside proofs; the statements below mention only
+-- `Module.rank` and Mathlib's `Ring.jacobson` of an opposite ring.
+import Mathlib.LinearAlgebra.Dimension.Finite
+import TauCeti.RingTheory.Jacobson.MulOpposite
 
 /-!
 # The irreducible morphisms as a bimodule over the residue rings
@@ -22,11 +24,13 @@ an endomorphism lying in `rad(End X)` or `rad(End Y)` pushes a radical morphism 
 two actions descend to the residue rings `End X ⧸ rad(End X)` and `End Y ⧸ rad(End Y)`, and this
 file builds them.
 
-That is the structure an **arrow of the Auslander-Reiten quiver** is counted by. An arrow `X → Y`
-is a basis vector of `rad(X, Y) / rad²(X, Y)` over the residue **division** rings, which is what
-the two endomorphism rings being local makes them
-(`TauCeti.IsLocalRing.instDivisionRingQuotientJacobson`); the `k`-dimension computed in
-`TauCeti/CategoryTheory/Preadditive/Radical/Quotient.lean` agrees with that count only when the
+That is the structure an **arrow of the Auslander-Reiten quiver** is counted by. The convention
+taken here is the target-side one: an arrow `X → Y` is a basis vector of `rad(X, Y) / rad²(X, Y)`
+over the residue **division** ring of the *target*, which is what `End Y` being local makes it
+(`TauCeti.IsLocalRing.instDivisionRingQuotientJacobson`). The rank of the same space over the
+residue division ring of the *source* is a second dimension of it, equal to the arrow multiplicity
+only when the two residue division rings agree, and the `k`-dimension computed in
+`TauCeti/CategoryTheory/Preadditive/Radical/Quotient.lean` agrees with either one only when the
 residue division rings are `k` itself. The closing statement here is the one an arrow set is read
 off from: the rank over the residue division ring of the target is positive exactly when an
 irreducible morphism exists.
@@ -57,11 +61,13 @@ again a division ring because the opposite of a local ring is local
   morphisms is a genuine bimodule; `TauCeti.instSMulCommClassResiduePostcomp` and
   `TauCeti.instSMulCommClassResiduePrecomp` record that each of them commutes with the base
   scalars.
-* `TauCeti.rank_irreducibleMorphismSpace_pos_iff` and
-  `TauCeti.rank_irreducibleMorphismSpace_op_pos_iff`: **the arrow multiplicity is positive exactly
+* `TauCeti.rank_irreducibleMorphismSpace_pos_iff`: **the arrow multiplicity is positive exactly
   when an irreducible morphism exists** — the rank of the space of irreducible morphisms over the
   residue division ring of the target is positive exactly when there is an irreducible morphism
   `X ⟶ Y`.
+* `TauCeti.rank_irreducibleMorphismSpace_op_pos_iff`: the same criterion for the source-side rank.
+  The two theorems record the same positivity condition on two ranks that need not be equal, not
+  an equality of ranks.
 
 ## References
 
@@ -260,6 +266,13 @@ def irreducibleMorphismResiduePostcompHom :
   Ideal.Quotient.lift _ (irreducibleMorphismPostcompHom k X Y) fun _ hg =>
     irreducibleMorphismPostcomp_eq_zero_of_mem_jacobson k X Y hg
 
+/-- **Postcomposition by a residue class** is postcomposition by any representative of it. -/
+@[simp]
+theorem irreducibleMorphismResiduePostcompHom_mk (g : End Y) :
+    irreducibleMorphismResiduePostcompHom k X Y (Ideal.Quotient.mk (Ring.jacobson (End Y)) g) =
+      irreducibleMorphismPostcomp k X Y g :=
+  (rfl)
+
 /-- **Precomposition, descended to the residue ring of the source**, which is the opposite
 endomorphism ring because the action is antimultiplicative. -/
 def irreducibleMorphismResiduePrecompHom :
@@ -268,6 +281,14 @@ def irreducibleMorphismResiduePrecompHom :
   Ideal.Quotient.lift _ (irreducibleMorphismPrecompHom k X Y) fun _ ha =>
     irreducibleMorphismPrecomp_eq_zero_of_mem_jacobson k X Y
       (Ring.mem_jacobson_mulOpposite_iff.mp ha)
+
+/-- **Precomposition by a residue class** is precomposition by any representative of it. -/
+@[simp]
+theorem irreducibleMorphismResiduePrecompHom_mk (a : (End X)ᵐᵒᵖ) :
+    irreducibleMorphismResiduePrecompHom k X Y
+        (Ideal.Quotient.mk (Ring.jacobson (End X)ᵐᵒᵖ) a) =
+      irreducibleMorphismPrecomp k X Y a.unop :=
+  (rfl)
 
 /-- The space of irreducible morphisms is a module over the residue ring of the target. -/
 instance instModuleResiduePostcomp :
@@ -337,18 +358,20 @@ variable {X Y : C} [IsLocalRing (End X)] [IsLocalRing (End Y)]
 /-- **The arrow multiplicity is positive exactly when an irreducible morphism exists.**
 
 The residue ring of a local endomorphism ring is a division ring, so the space of irreducible
-morphisms is a vector space over it and has a rank; that rank is the number of arrows `X → Y` of
-the Auslander-Reiten quiver, and it is positive exactly when there is an irreducible morphism
-`X ⟶ Y`. -/
+morphisms is a vector space over the residue ring of the target and has a rank there; that rank is
+the number of arrows `X → Y` of the Auslander-Reiten quiver, and it is positive exactly when there
+is an irreducible morphism `X ⟶ Y`. -/
 theorem rank_irreducibleMorphismSpace_pos_iff :
     0 < Module.rank (End Y ⧸ Ring.jacobson (End Y)) (irreducibleMorphismSpace k X Y) ↔
       ∃ f : X ⟶ Y, IsIrreducibleMorphism f := by
   rw [rank_pos_iff_nontrivial]
   exact nontrivial_irreducibleMorphismSpace_iff
 
-/-- **The arrow multiplicity read on the source side.** The residue ring of the opposite of a local
-endomorphism ring is again a division ring, and the rank over it is positive under exactly the same
-condition as the rank over the residue ring of the target. -/
+/-- **The source-side rank of the space of irreducible morphisms.** The residue ring of the
+opposite of a local endomorphism ring is again a division ring, so the space of irreducible
+morphisms has a rank over it too. That rank is a different invariant from the arrow multiplicity
+of `TauCeti.rank_irreducibleMorphismSpace_pos_iff` — the two residue division rings need not
+agree — but it is positive under exactly the same condition. -/
 theorem rank_irreducibleMorphismSpace_op_pos_iff :
     0 < Module.rank ((End X)ᵐᵒᵖ ⧸ Ring.jacobson (End X)ᵐᵒᵖ)
         (irreducibleMorphismSpace k X Y) ↔
