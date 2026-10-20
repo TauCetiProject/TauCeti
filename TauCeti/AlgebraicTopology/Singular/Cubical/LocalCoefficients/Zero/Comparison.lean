@@ -23,10 +23,6 @@ comparison maps, and the comparison is the identity of the colimit.
 
 ## Main statements
 
-* `TauCeti.LocalCoefficientSystem.normalizedTwistedCubicalToSingular_ofCube_const`: on a point
-  cube the comparison to simplicial chains is the inclusion of the point simplex.
-* `TauCeti.LocalCoefficientSystem.twistedSingularToCubical_ιTwistedChainComplex_const`: on a point
-  simplex the comparison to cubical chains is the point cube.
 * `ιNormalizedTwistedCubicalHomology₀_comp_homologyMap_twistedCubicalToSingularMap` and
   `ιTwistedHomology₀_comp_homologyMap_twistedSingularToCubicalMap` (in the namespace
   `TauCeti.LocalCoefficientSystem`): the comparison maps send fibre classes to fibre classes.
@@ -58,50 +54,6 @@ universe u v
 namespace TauCeti.LocalCoefficientSystem
 
 variable {R : Type u} [Ring R] {X : TopCat.{v}} (L : LocalCoefficientSystem.{u, v, v} R X)
-
-/-- On a point cube, the comparison to simplicial chains is the inclusion of the summand of the
-point simplex. -/
-theorem normalizedTwistedCubicalToSingular_ofCube_const (x : X)
-    (a : L.obj (FundamentalGroupoid.mk x)) :
-    normalizedTwistedCubicalToSingular L 0
-        (NormalizedTwistedCubicalChain.ofCube L (ContinuousMap.const _ x) a) =
-      ιTwistedChainComplex L 0 (ULift.up (TopCat.ofHom (ContinuousMap.const _ x))) a := by
-  -- The coefficient `a` lies in the fibre at `x`, which is the fibre at the origin of the point
-  -- cube only by definition, so the steps are composed as terms rather than rewritten.
-  refine (normalizedTwistedCubicalToSingular_ofCube (L := L) (ContinuousMap.const _ x) a).trans
-    ((twistedCubePushforward_apply (L := L) (ContinuousMap.const _ x) 0 _ a).trans
-      ((congrArg (fun y ↦ twistedPushforward L (cubeToHom (ContinuousMap.const _ x))
-        (cubeModelOrigin 0) 0 y a) (cubicalToSingularGen_zero (k := ULift.{v} ℤ))).trans ?_))
-  rw [twistedPushforward_simplexChain_one (Z := cubeModel.{v} 0)]
-  -- The simplex pushed forward along the point cube is the point simplex, and the transport
-  -- from the origin of the model to itself is trivial.
-  exact ιTwistedChainComplex_congr L
-    ((TopCat.toSSet_map_app_toSSetObj₀Equiv_symm _ _).trans (TopCat.toSSetObj₀Equiv_symm_apply _))
-    (map_pathClass_heq (L := L) (cubeToHom (ContinuousMap.const _ x)).hom
-      (z := cubeModelOrigin 0) (Subsingleton.elim _ _) a)
-
-/-- On a point simplex, the comparison to cubical chains is the class of the point cube. -/
-theorem twistedSingularToCubical_ιTwistedChainComplex_const (x : X)
-    (a : L.obj (FundamentalGroupoid.mk x)) :
-    (twistedSingularToCubical L 0).hom
-        (ιTwistedChainComplex L 0 (ULift.up (TopCat.ofHom (ContinuousMap.const _ x))) a) =
-      NormalizedTwistedCubicalChain.ofCube L (ContinuousMap.const _ x) a := by
-  -- The point simplex is named so that the fibres of its summand and of the pushforward agree.
-  set σ : (TopCat.toSSet.obj X) _⦋0⦌ := ULift.up (TopCat.ofHom (ContinuousMap.const _ x))
-  -- Unfold the summand to the pushforward of the point cube of the model.
-  refine (twistedSingularToCubical_ιTwistedChainComplex L σ a).trans
-    ((twistedSingularToCubicalSummand_apply L σ a).trans
-      ((congrArg (fun y ↦ NormalizedTwistedCubicalChain.pushforward
-        (Z := simplexModel.{v} 0) L (simplexToHom σ).hom
-        (SimplexCategory.toTopInitialVertex ⦋0⦌) 0 y a)
-        (singularToCubicalGen_zero (k := ULift.{v} ℤ))).trans
-        ((NormalizedTwistedCubicalChain.pushforward_ofCube (L := L)
-          (f := (simplexToHom σ).hom) (z₀ := SimplexCategory.toTopInitialVertex ⦋0⦌) _ a).trans
-          ?_)))
-  -- The pushed cube is the point cube at `x`, and the transport of `a` is trivial.
-  exact NormalizedTwistedCubicalChain.ofCube_congr (L := L) (ContinuousMap.ext fun _ ↦ rfl)
-    (map_pathClass_heq (L := L) (simplexToHom σ).hom
-      (z := SimplexCategory.toTopInitialVertex ⦋0⦌) (Subsingleton.elim _ _) a)
 
 /-- The comparison to simplicial chains sends the class of a coefficient in the fibre at `x` in
 zeroth cubical homology to the class of the same coefficient in zeroth simplicial homology. -/
