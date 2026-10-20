@@ -105,18 +105,6 @@ end LipschitzOnWith
 
 namespace ContinuousOn
 
-/-- If `γ = g ∘ s` on `[a, b]` with `s` monotone, then the values of `γ` on the intervals where
-`s` is constant form a countable set: each such interval contains a rational parameter. -/
-private theorem countable_setOf_eq_comp_of_monotoneOn {X : Type*} {γ g : ℝ → X} {s : ℝ → ℝ}
-    {a b : ℝ} (hm : MonotoneOn s (Icc a b)) (hfac : EqOn (g ∘ s) γ (Icc a b)) :
-    {y | ∃ t ∈ Icc a b, ∃ t' ∈ Icc a b, t < t' ∧ s t = s t' ∧ γ t = y}.Countable := by
-  refine (countable_range fun q : ℚ ↦ γ q).mono ?_
-  rintro _ ⟨t, ht, t', ht', htt', hst, rfl⟩
-  obtain ⟨q, hq, hq'⟩ := exists_rat_btwn htt'
-  have hqI : (q : ℝ) ∈ Icc a b := ⟨ht.1.trans hq.le, hq'.le.trans ht'.2⟩
-  have hsq : s q = s t := le_antisymm (hst ▸ hm hqI ht' hq'.le) (hm ht hqI hq.le)
-  exact ⟨q, (hfac hqI).symm.trans ((congrArg g hsq).trans (hfac ht))⟩
-
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   [MeasurableSpace V] [BorelSpace V] {γ : ℝ → V} {a b : ℝ}
 
@@ -156,7 +144,7 @@ theorem eVariationOn_eq_lintegral_encard (hγ : ContinuousOn γ (Icc a b)) :
   have hPnull : μHE[1] P = 0 := by
     rw [Measure.euclideanHausdorffMeasure_one]
     have := Measure.nullSingletonClass_hausdorff V (show (0 : ℝ) < 1 by norm_num)
-    exact (countable_setOf_eq_comp_of_monotoneOn hm hfac).measure_zero _
+    exact (hm.countable_setOf_eq_comp hfac).measure_zero _
   have hfib : ∀ᵐ y ∂μHE[1], ((Icc a b ∩ γ ⁻¹' {y}).encard : ℝ≥0∞) ≤
       ((Icc 0 L ∩ g ⁻¹' {y}).encard : ℝ≥0∞) := by
     filter_upwards [measure_eq_zero_iff_ae_notMem.mp hPnull] with y hy

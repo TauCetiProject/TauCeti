@@ -70,10 +70,23 @@ theorem encard_Icc_zero_four_pi_inter_preimage_circleMap (c : ℂ) {R θ : ℝ} 
       · exact ⟨⟨by linarith [pi_pos, hθ.1], by linarith [hθ.2]⟩, 1, by push_cast; ring⟩
   rw [hfiber, encard_pair (by linarith [pi_pos])]
 
-/-- A single traversal of a nondegenerate circle has length equal to the one-dimensional
-Hausdorff measure of the circle. -/
-theorem eVariationOn_circleMap_Icc_zero_two_pi (c : ℂ) {R : ℝ} (hR : R ≠ 0) :
+/-- A circle of radius zero is a point, so its one-dimensional Hausdorff measure vanishes. -/
+private theorem hausdorffMeasure_sphere_zero (c : ℂ) : μHE[1] (sphere c |(0 : ℝ)|) = 0 := by
+  rw [abs_zero, sphere_zero, Measure.euclideanHausdorffMeasure_one]
+  have := Measure.nullSingletonClass_hausdorff ℂ (show (0 : ℝ) < 1 by norm_num)
+  exact measure_singleton c
+
+/-- The parametrization of a circle of radius zero is constant, so it has zero variation. -/
+private theorem eVariationOn_circleMap_zero (c : ℂ) (s : Set ℝ) :
+    eVariationOn (circleMap c 0) s = 0 :=
+  eVariationOn.constant_on (by simp [subsingleton_singleton.anti])
+
+/-- A single traversal of a circle has length equal to the one-dimensional Hausdorff measure of
+the circle. For `R = 0` both sides vanish. -/
+theorem eVariationOn_circleMap_Icc_zero_two_pi (c : ℂ) (R : ℝ) :
     eVariationOn (circleMap c R) (Icc 0 (2 * π)) = μHE[1] (sphere c |R|) := by
+  rcases eq_or_ne R 0 with rfl | hR
+  · exact (eVariationOn_circleMap_zero c _).trans (hausdorffMeasure_sphere_zero c).symm
   have himage : circleMap c R '' Icc 0 (2 * π) = sphere c |R| :=
     Subset.antisymm ((image_subset_range _ _).trans_eq (range_circleMap c R))
       ((image_circleMap_Ioc c R).symm.subset.trans (image_mono Ioc_subset_Icc_self))
@@ -81,11 +94,13 @@ theorem eVariationOn_circleMap_Icc_zero_two_pi (c : ℂ) {R : ℝ} (hR : R ≠ 0
   exact (continuous_circleMap c R).continuousOn.eVariationOn_eq_euclideanHausdorffMeasure_image
     ((injOn_circleMap_of_abs_sub_le' hR (by simp)).mono Ioo_subset_Ico_self)
 
-/-- A double traversal of a nondegenerate circle has twice the length of a single traversal:
-its length is twice the one-dimensional Hausdorff measure of the circle, which is also its
-trace. -/
-theorem eVariationOn_circleMap_Icc_zero_four_pi (c : ℂ) {R : ℝ} (hR : R ≠ 0) :
+/-- A double traversal of a circle has twice the length of a single traversal: its length is
+twice the one-dimensional Hausdorff measure of the circle, which is also its trace. For `R = 0`
+both sides vanish. -/
+theorem eVariationOn_circleMap_Icc_zero_four_pi (c : ℂ) (R : ℝ) :
     eVariationOn (circleMap c R) (Icc 0 (4 * π)) = 2 * μHE[1] (sphere c |R|) := by
+  rcases eq_or_ne R 0 with rfl | hR
+  · rw [eVariationOn_circleMap_zero, hausdorffMeasure_sphere_zero, mul_zero]
   rw [(continuous_circleMap c R).continuousOn.eVariationOn_eq_lintegral_encard,
     Measure.euclideanHausdorffMeasure_one]
   have := Measure.nullSingletonClass_hausdorff ℂ (show (0 : ℝ) < 1 by norm_num)
