@@ -11,6 +11,7 @@ public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 
 import TauCeti.Analysis.Complex.Conformal.Jordan.Unbounded.BoundaryPrevertex
 import TauCeti.Analysis.Complex.Conformal.Jordan.Unbounded.InvertedCoordinate
+import TauCeti.Analysis.Complex.Conformal.Jordan.Unbounded.ModelEnd
 import TauCeti.Analysis.Complex.Conformal.ImageSimplyConnected
 import TauCeti.Analysis.Complex.Conformal.LocalFrontier
 import TauCeti.Analysis.Complex.Conformal.Reflection.Principle
@@ -43,9 +44,10 @@ zero.  Instead the argument is topological.  Near `x` the nonzero real boundary 
 `q + g⁻¹` lie on the two bounding rays of the half-strip.  Between two zeros of `g` there would be
 a zero-free real interval, on which `q + g⁻¹` would run injectively along one ray and tend to
 infinity at both ends, which is impossible.  The description of the far image then follows
-because the far part of the exterior of a half-strip is preconnected
-(`TauCeti.isPreconnected_far_halfStripExterior`), while the bounded image of a semicircle about `x`
-separates the image of the half-disc from the image of the rest of the upper half-plane.
+because the exterior of a half-strip is preconnected at infinity
+(`TauCeti.isPreconnectedAtInfinityIn_halfStripExterior`), while the bounded image of a semicircle
+about `x` separates the image of the half-disc from the image of the rest of the upper
+half-plane.
 
 ## Main results
 
@@ -114,36 +116,6 @@ private theorem false_of_injOn_rays_of_tendsto {φ : ℝ → ℂ} {a b : ℝ} (h
 
 variable {f g : ℂ → ℂ} {q : ℂ}
 
-/-- A function continuous on the closed upper half-plane, holomorphic and nonzero in its
-interior, does not vanish on a whole real interval. -/
-private theorem exists_mem_Ioo_ne_zero_of_upperHalfPlane
-    (hgc : ContinuousOn g {z : ℂ | 0 ≤ z.im}) (hgd : DifferentiableOn ℂ g upperHalfPlaneSet)
-    (hgne : ∀ z ∈ upperHalfPlaneSet, g z ≠ 0) {u v : ℝ} (huv : u < v) :
-    ∃ t ∈ Ioo u v, g t ≠ 0 := by
-  by_contra! hzero
-  set m := (u + v) / 2 with hm
-  have hδ : 0 < (v - u) / 2 := by linarith
-  have hmem {t : ℝ} (ht : dist t m < (v - u) / 2) : t ∈ Ioo u v := by
-    rw [Real.dist_eq, abs_lt] at ht
-    exact ⟨by linarith, by linarith⟩
-  -- reflection across the diameter, on which `g` vanishes, makes the zero at `m` isolated
-  have hiso := eventually_ne_zero_of_real_on_axis (f := g) (x := m) hδ (hgc.mono inter_subset_right)
-    (hgd.mono inter_subset_right) (fun z hz hz0 => ?_) fun z _ hzH => hgne z hzH
-  · obtain ⟨ε, hε, hball⟩ := Metric.mem_nhdsWithin_iff.mp hiso
-    set t : ℝ := m + min ε ((v - u) / 2) / 2 with ht
-    have hpos : 0 < min ε ((v - u) / 2) := lt_min hε hδ
-    have hdist : dist t m < min ε ((v - u) / 2) := by
-      rw [Real.dist_eq, show t - m = min ε ((v - u) / 2) / 2 by ring, abs_of_pos (by positivity)]
-      linarith
-    refine hball ⟨?_, by simp, fun h => ?_⟩ (hzero t (hmem (hdist.trans_le (min_le_right _ _))))
-    · rw [mem_ball, isometry_ofReal.dist_eq]
-      exact hdist.trans_le (min_le_left _ _)
-    · have : t = m := ofReal_injective h
-      linarith [ht]
-  · have hz' : z = (z.re : ℂ) := Complex.ext (by simp) (by simp [hz0])
-    rw [hz', mem_ball, isometry_ofReal.dist_eq] at hz
-    rw [hz', hzero z.re (hmem hz), zero_im]
-
 /-- Near a zero of the inverted coordinate whose end is the far part
 `E = {ρ < ‖w - c‖, re ((w - c) / b) < 0 ∨ im ((w - c) / b) ∉ [0, π]}` of the exterior of a
 half-strip, a nonzero real boundary value `w = q + g⁻¹` far from `c` lies on one of the two
@@ -174,18 +146,10 @@ private theorem re_nonneg_and_im_eq_zero_or_eq_pi_of_inverted_coordinate
         fun y (hy : y ∈ ball (x : ℂ) r ∩ upperHalfPlaneSet) => mem_ofPred.mpr (le_of_lt hy.2)
     refine closure_mono ?_ (hFc.mem_closure_image hzcl)
     rintro _ ⟨y, hy, rfl⟩
-    have hFy : q + (g y)⁻¹ = f y := by rw [hgf hy.2, inv_inv, add_sub_cancel]
-    simpa only [hFy] using hfS y hy
+    simpa only [eq_add_inv_of_inverted_coordinate hgf hy.2] using hfS y hy
   -- but not a value of `f` at an interior point, since `g` is injective off its zeros
-  have hwE : w ∉ E := by
-    intro hw
-    obtain ⟨y, hy, hyw⟩ := hS hw
-    have hgy : g y = g z := by
-      rw [hgf hy]
-      dsimp only
-      rw [hyw, add_sub_cancel_left, inv_inv]
-    have hyz := hgi ⟨le_of_lt hy, hgy ▸ hgz⟩ ⟨hz0.ge, hgz⟩ hgy
-    exact absurd (hyz ▸ hy : 0 < z.im) (by simp [hz0])
+  have hwE : w ∉ E := fun hw =>
+    add_inv_notMem_image_of_inverted_coordinate hgf hgi hz0 hgz (hS hw)
   have hζ : Continuous fun y : ℂ => (y - c) / b := by fun_prop
   have hC : IsClosed {y : ℂ | ((y - c) / b).re ≤ 0 ∨ ((y - c) / b).im ≤ 0 ∨
       Real.pi ≤ ((y - c) / b).im} :=
@@ -225,7 +189,12 @@ private theorem false_of_inverted_coordinate_eq_zero_of_rays
   have hgR : Continuous fun s : ℝ => g s :=
     hgc.comp_continuous continuous_ofReal fun s => by simp
   have hZ : IsClosed {s : ℝ | g s = 0} := isClosed_eq hgR continuous_const
-  obtain ⟨t, ht, hgt⟩ := exists_mem_Ioo_ne_zero_of_upperHalfPlane hgc hgd hgne huv
+  obtain ⟨t, ht, hgt⟩ : ∃ t ∈ Ioo u v, g t ≠ 0 := by
+    have h := exists_mem_Ioo_ne_zero_of_ne_zero (f := g) (x := (u + v) / 2) (r := (v - u) / 2)
+      (by linarith) (hgc.mono inter_subset_right) (hgd.mono inter_subset_right)
+      fun z _ hzH => hgne z hzH
+    rwa [show (u + v) / 2 - (v - u) / 2 = u by ring, show (u + v) / 2 + (v - u) / 2 = v by ring]
+      at h
   -- the zeros of `g` nearest to `t` on either side
   set A := Icc u t ∩ {s : ℝ | g s = 0}
   set B := Icc t v ∩ {s : ℝ | g s = 0}
@@ -248,8 +217,7 @@ private theorem false_of_inverted_coordinate_eq_zero_of_rays
   -- ends, which is impossible
   have hlim (l : Filter ℝ) (hl : Tendsto (fun s : ℝ => g s) l (𝓝[≠] 0)) :
       Tendsto (fun s : ℝ => ‖(q + (g s)⁻¹ - c) / b‖) l atTop :=
-    tendsto_norm_cobounded_atTop.comp (tendsto_sub_div_of_tendsto_cobounded hb
-      ((tendsto_const_add_cobounded q).comp (tendsto_inv₀_nhdsNE_zero.comp hl)))
+    tendsto_norm_cobounded_atTop.comp (tendsto_cobounded_div_of_tendsto_nhdsNE_zero hb hl)
   refine false_of_injOn_rays_of_tendsto (φ := fun s : ℝ => (q + (g s)⁻¹ - c) / b)
     (hat.trans hta) ?_ ?_ (fun s hs => hray s (hball s hs) (by simp) (hgap s hs)) (hlim _ ?_)
     (hlim _ ?_)
@@ -305,10 +273,10 @@ private theorem exists_ball_eq_of_inverted_coordinate_eq_zero
 
 /-- Far from `c`, the end `E` lies in the image under `F = q + g⁻¹` of an upper half-disc
 `A` about `x`, provided `f` maps `A` into `E` and `F` is bounded on the bounding semicircle.
-Indeed the far part of `E` is preconnected, lies in the image of the upper half-plane, meets
-`F '' A`, and avoids the image of the semicircle, which separates `F '' A` from the image of the
-rest of the upper half-plane. -/
-private theorem mem_image_ball_of_halfStripExterior
+Indeed far out `E` lies in a preconnected subset of `E` avoiding the image of the semicircle,
+which meets `F '' A`, lies in the image of the upper half-plane, and is therefore not separated by
+the semicircle from `F '' A`. -/
+private theorem exists_lt_norm_mem_image_ball_of_halfStripExterior
     (hgc : ContinuousOn g {z : ℂ | 0 ≤ z.im}) (hgd : DifferentiableOn ℂ g upperHalfPlaneSet)
     (hgf : EqOn g (fun z => (f z - q)⁻¹) upperHalfPlaneSet)
     (hgne : ∀ z ∈ upperHalfPlaneSet, g z ≠ 0)
@@ -318,19 +286,17 @@ private theorem mem_image_ball_of_halfStripExterior
       f '' upperHalfPlaneSet)
     (hfS : ∀ z ∈ ball (x : ℂ) r ∩ upperHalfPlaneSet, f z ∈
       {w : ℂ | ρ < ‖w - c‖ ∧ (((w - c) / b).re < 0 ∨ ((w - c) / b).im ∉ Icc 0 Real.pi)})
-    (hM : ∀ z ∈ sphere (x : ℂ) r ∩ upperHalfPlaneSet, ‖q + (g z)⁻¹ - c‖ ≤ M)
-    {w : ℂ} (hw : max ρ M < ‖w - c‖)
-    (hX : ((w - c) / b).re < 0 ∨ ((w - c) / b).im ∉ Icc 0 Real.pi) :
-    w ∈ (fun z => q + (g z)⁻¹) '' (ball (x : ℂ) r ∩ upperHalfPlaneSet) := by
+    (hM : ∀ z ∈ sphere (x : ℂ) r ∩ upperHalfPlaneSet, ‖q + (g z)⁻¹ - c‖ ≤ M) :
+    ∃ R : ℝ, ∀ w : ℂ, R < ‖w - c‖ →
+      (((w - c) / b).re < 0 ∨ ((w - c) / b).im ∉ Icc 0 Real.pi) →
+      w ∈ (fun z => q + (g z)⁻¹) '' (ball (x : ℂ) r ∩ upperHalfPlaneSet) := by
   set F : ℂ → ℂ := fun z => q + (g z)⁻¹
-  have hFf {z : ℂ} (hz : z ∈ upperHalfPlaneSet) : F z = f z := by
-    simp only [F, hgf hz, inv_inv, add_sub_cancel]
   set A := ball (x : ℂ) r ∩ upperHalfPlaneSet
   set B := upperHalfPlaneSet \ closedBall (x : ℂ) r
   have hFd : DifferentiableOn ℂ F upperHalfPlaneSet :=
     (differentiableOn_const q).add (hgd.inv hgne)
-  have hFi : InjOn F upperHalfPlaneSet := fun z hz w hw h =>
-    hgi ⟨le_of_lt hz, hgne z hz⟩ ⟨le_of_lt hw, hgne w hw⟩ (inv_injective (add_left_cancel h))
+  have hFi : InjOn F upperHalfPlaneSet := ((add_right_injective q).comp inv_injective).comp_injOn
+    (hgi.mono fun z (hz : 0 < z.im) => by exact ⟨hz.le, hgne z hz⟩)
   have hAo : IsOpen (F '' A) := isOpen_image_of_differentiableOn_of_injOn
     (isOpen_ball.inter isOpen_upperHalfPlaneSet) (hFd.mono inter_subset_right)
     (hFi.mono inter_subset_right)
@@ -341,30 +307,33 @@ private theorem mem_image_ball_of_halfStripExterior
     rw [disjoint_left]
     rintro _ ⟨z, hz, rfl⟩ ⟨y, hy, hyz⟩
     exact hy.2 (hFi hy.1 hz.2 hyz ▸ ball_subset_closedBall hz.1)
-  have hsub : {w : ℂ | max ρ M < ‖w - c‖ ∧
-      (((w - c) / b).re < 0 ∨ ((w - c) / b).im ∉ Icc 0 Real.pi)} ⊆ F '' A ∪ F '' B := by
-    rintro _ ⟨hw', hX'⟩
-    obtain ⟨z, hz, hzw⟩ := hS ⟨(le_max_left _ _).trans_lt hw', hX'⟩
-    rw [← hzw, ← hFf hz] at hw' ⊢
+  -- far out, `E` lies in a preconnected subset `C` of `E` avoiding the image of the semicircle
+  obtain ⟨C, hCE, hCc, hCM, hEC⟩ := isPreconnectedAtInfinityIn_iff.1
+    (isPreconnectedAtInfinityIn_halfStripExterior ρ (c := c) hb) (closedBall c M)
+    isBounded_closedBall
+  have hsub : C ⊆ F '' A ∪ F '' B := by
+    intro w hw
+    obtain ⟨z, hz, hzw⟩ := hS (hCE hw)
+    rw [eq_add_inv_of_inverted_coordinate hgf hz] at hzw
     rcases lt_trichotomy (dist z x) r with h | h | h
-    · exact Or.inl ⟨z, ⟨h, hz⟩, rfl⟩
-    · exact absurd (hM z ⟨h, hz⟩) (not_le.mpr ((le_max_right _ _).trans_lt hw'))
-    · exact Or.inr ⟨z, ⟨hz, not_le.mpr h⟩, rfl⟩
-  -- points of the half-disc near `x` are mapped far into the end
-  have hmeet : ({w : ℂ | max ρ M < ‖w - c‖ ∧
-      (((w - c) / b).re < 0 ∨ ((w - c) / b).im ∉ Icc 0 Real.pi)} ∩ F '' A).Nonempty := by
+    · exact Or.inl ⟨z, ⟨h, hz⟩, hzw⟩
+    · refine absurd (hM z ⟨h, hz⟩) fun hzM => disjoint_left.mp hCM hw ?_
+      rwa [mem_closedBall, dist_eq_norm, ← hzw]
+    · exact Or.inr ⟨z, ⟨hz, not_le.mpr h⟩, hzw⟩
+  -- points of the half-disc near `x` are mapped far into the end, hence into `C`
+  have hmeet : (C ∩ F '' A).Nonempty := by
     have := Real.nhdsWithin_upperHalfPlaneSet_neBot x
-    have hfar : Tendsto (fun z => ‖f z - c‖) (𝓝[upperHalfPlaneSet] (x : ℂ)) atTop :=
-      tendsto_norm_cobounded_atTop.comp ((tendsto_sub_const_cobounded c).comp
-        (tendsto_cobounded_of_inverted_boundary_eq_zero (hgc _ (by simp)) hgf hgne hx))
-    obtain ⟨z, hzr, hzfar, hzH⟩ := ((eventually_mem_set.mpr
+    obtain ⟨z, hzr, hzC, hzH⟩ := ((eventually_mem_set.mpr
       (mem_nhdsWithin_of_mem_nhds (ball_mem_nhds (x : ℂ) hr))).and
-        ((hfar.eventually_gt_atTop (max ρ M)).and self_mem_nhdsWithin)).exists
-    refine ⟨F z, ?_, z, ⟨hzr, hzH⟩, rfl⟩
-    rw [hFf hzH]
-    exact ⟨hzfar, (hfS z ⟨hzr, hzH⟩).2⟩
-  exact (isPreconnected_far_halfStripExterior (max ρ M) hb).subset_left_of_subset_union hAo hBo
-    hAB hsub hmeet ⟨hw, hX⟩
+        (((tendsto_cobounded_of_inverted_boundary_eq_zero (hgc _ (by simp)) hgf hgne
+          hx).eventually hEC).and self_mem_nhdsWithin)).exists
+    exact ⟨f z, hzC (hfS z ⟨hzr, hzH⟩), z, ⟨hzr, hzH⟩,
+      (eq_add_inv_of_inverted_coordinate hgf hzH).symm⟩
+  have hCA := hCc.subset_left_of_subset_union hAo hBo hAB hsub hmeet
+  obtain ⟨R, -, hR⟩ := (Metric.hasBasis_cobounded_compl_closedBall c).eventually_iff.mp hEC
+  refine ⟨max ρ R, fun w hw hX => hCA (hR ?_ ⟨(le_max_left _ _).trans_lt hw, hX⟩)⟩
+  rw [mem_compl_iff, mem_closedBall, dist_eq_norm, not_le]
+  exact (le_max_right _ _).trans_lt hw
 
 /-- **The end condition at a half-strip-exterior end.**  Let `g = (f - q)⁻¹` be the inverted
 coordinate of a map `f` of the upper half-plane: `g` is continuous on the closed upper
@@ -423,12 +392,11 @@ theorem exists_ball_halfStripExterior_end_of_inverted_coordinate
           rw [← mem_sphere.mp hz.1, mem_singleton_iff.mp h, dist_self])⟩).sub continuousOn_const)
   have hfS'' (z : ℂ) (hz : z ∈ ball (x : ℂ) r ∩ upperHalfPlaneSet) :=
     hfS' z ⟨(ball_subset_closedBall.trans hrr₀) hz.1, hz.2⟩
-  refine ⟨r, hr, max ρ M, hFc, fun z hz w hw h => hgi ⟨hz.1.2, hgP z hz⟩ ⟨hw.1.2, hgP w hw⟩
-    (inv_injective (add_left_cancel h)), hFt, fun w hw => ⟨?_, fun hX =>
-      mem_image_ball_of_halfStripExterior hgc hgd hgf hgne hgi hx hb hr hS hfS''
-        (fun z hz => hM z ⟨hz.1, le_of_lt hz.2⟩) hw hX⟩⟩
+  obtain ⟨R, hR⟩ := exists_lt_norm_mem_image_ball_of_halfStripExterior hgc hgd hgf hgne hgi hx hb
+    hr hS hfS'' fun z hz => hM z ⟨hz.1, le_of_lt hz.2⟩
+  refine ⟨r, hr, R, hFc, ((add_right_injective q).comp inv_injective).comp_injOn
+    (hgi.mono fun z hz => by exact ⟨hz.1.2, hgP z hz⟩), hFt, fun w hw => ⟨?_, hR w hw⟩⟩
   rintro ⟨z, hz, rfl⟩
-  have hFz : q + (g z)⁻¹ = f z := by rw [hgf hz.2, inv_inv, add_sub_cancel]
-  simpa only [hFz] using (hfS'' z hz).2
+  simpa only [eq_add_inv_of_inverted_coordinate hgf hz.2] using (hfS'' z hz).2
 
 end TauCeti

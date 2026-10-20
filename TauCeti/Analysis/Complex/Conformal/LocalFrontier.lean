@@ -22,8 +22,7 @@ an open half-strip, its frontier far out lies on the two bounding rays, and agai
 outside its closure; the same holds when far out it misses an open half-strip. The exponential
 coordinate `exp (π * I - ζ)` is injective on the closed strip `0 ≤ im ζ ≤ π`, real on its bounding
 lines and in the upper half-plane inside it, and on the closed half-strip it tends to `0` at
-infinity. The far part of the exterior of a closed half-strip is preconnected. These facts supply
-the boundary conditions for polygonal conformal maps.
+infinity. These facts supply the boundary conditions for polygonal conformal maps.
 -/
 
 public section
@@ -347,109 +346,6 @@ theorem exists_notMem_closure_of_forall_mem_notMem_halfStrip {c b : ℂ} {ρ : �
     (continuous_im.comp hζc).continuousAt.eventually (isOpen_Ioo.mem_nhds him)]
     with z hzρ hzre hzim hzU
   exact hU z hzρ hzU ⟨hzre, hzim⟩
-
-/-- In the normalized coordinate, the far part of the exterior of the closed half-strip
-`{0 ≤ re ζ, 0 ≤ im ζ ≤ π}` is preconnected: every point is joined to the far left by a
-horizontal or vertical ray followed by far-out half-planes. -/
-private theorem isPreconnected_far_halfStripExterior_aux (s : ℝ) :
-    IsPreconnected {ζ : ℂ | s < ‖ζ‖ ∧ (ζ.re < 0 ∨ ζ.im ∉ Icc 0 Real.pi)} := by
-  set T := {ζ : ℂ | s < ‖ζ‖ ∧ (ζ.re < 0 ∨ ζ.im ∉ Icc 0 Real.pi)}
-  set K := |s| + Real.pi
-  have hKπ : Real.pi ≤ K := le_add_of_nonneg_left (abs_nonneg s)
-  -- moving away from the origin along a coordinate direction increases the norm
-  have hnorm {y ζ : ℂ} (hre : y.re ^ 2 ≤ ζ.re ^ 2) (him : y.im ^ 2 ≤ ζ.im ^ 2) :
-      ‖y‖ ≤ ‖ζ‖ := by
-    rw [← sq_le_sq₀ (norm_nonneg _) (norm_nonneg _), Complex.sq_norm, Complex.sq_norm, normSq_apply,
-      normSq_apply]
-    nlinarith
-  have hfar {ζ : ℂ} (h : K < |ζ.re| ∨ K < |ζ.im|) : s < ‖ζ‖ := by
-    refine (le_abs_self s).trans_lt ?_
-    rcases h with h | h
-    · linarith [abs_re_le_norm ζ, Real.pi_pos]
-    · linarith [abs_im_le_norm ζ, Real.pi_pos]
-  set L := {ζ : ℂ | ζ.re < -K}
-  have hLT : L ⊆ T := fun ζ (h : ζ.re < -K) =>
-    ⟨hfar (Or.inl (by rw [abs_of_neg (by linarith [Real.pi_pos])]; linarith)),
-      Or.inl (by linarith [Real.pi_pos])⟩
-  have hx₀ : ((-(K + 1) : ℝ) : ℂ) ∈ L := by simp [L]
-  refine isPreconnected_of_forall ((-(K + 1) : ℝ) : ℂ) fun y hy => ?_
-  obtain ⟨hys, hy⟩ := hy
-  rw [mem_Icc, not_and_or, not_le, not_le] at hy
-  rcases hy with hy | hy | hy
-  · -- a point left of the axis: the horizontal ray to the left
-    set R := (fun t : ℝ => y - t) '' Ici 0
-    have hRT : R ⊆ T := by
-      rintro _ ⟨t, ht, rfl⟩
-      refine ⟨hys.trans_le (hnorm ?_ (by simp)), Or.inl (by simp; linarith [mem_Ici.mp ht])⟩
-      simp only [sub_re, ofReal_re]
-      nlinarith [mem_Ici.mp ht]
-    refine ⟨L ∪ R, union_subset hLT hRT, Or.inl hx₀, Or.inr ⟨0, self_mem_Ici, by simp⟩, ?_⟩
-    refine (convex_halfSpace_re_lt _).isPreconnected.union (y - (|y.re| + K + 1 : ℝ))
-      (by simp [L]; linarith [neg_abs_le y.re]) ⟨_, mem_Ici.mpr (by positivity), rfl⟩
-      (isPreconnected_Ici.image _ (by fun_prop))
-  · -- a point below the half-strip: the vertical ray downwards, then the far lower half-plane
-    set R := (fun t : ℝ => y - t * Complex.I) '' Ici 0
-    have hRT : R ⊆ T := by
-      rintro _ ⟨t, ht, rfl⟩
-      refine ⟨hys.trans_le (hnorm (by simp) ?_), Or.inr fun h => ?_⟩
-      · simp only [sub_im, mul_im, ofReal_re, Complex.I_im, ofReal_im, Complex.I_re]
-        nlinarith [mem_Ici.mp ht]
-      · simp at h
-        linarith [mem_Ici.mp ht, h.1]
-    set D := {ζ : ℂ | ζ.im < -K}
-    have hDT : D ⊆ T := fun ζ (h : ζ.im < -K) =>
-      ⟨hfar (Or.inr (by rw [abs_of_neg (by linarith [Real.pi_pos])]; linarith)),
-        Or.inr fun h' => by linarith [h'.1, Real.pi_pos]⟩
-    refine ⟨L ∪ (D ∪ R), union_subset hLT (union_subset hDT hRT), Or.inl hx₀,
-      Or.inr (Or.inr ⟨0, self_mem_Ici, by simp⟩), ?_⟩
-    refine (convex_halfSpace_re_lt _).isPreconnected.union
-      ((-(K + 1) : ℝ) - (K + 1 : ℝ) * Complex.I)
-      (by simp [L]) (Or.inl (by simp [D])) ?_
-    refine (convex_halfSpace_im_lt _).isPreconnected.union (y - (|y.im| + K + 1 : ℝ) * Complex.I)
-      (by simp [D]; linarith [neg_abs_le y.im]) ⟨_, mem_Ici.mpr (by positivity), rfl⟩
-      (isPreconnected_Ici.image _ (by fun_prop))
-  · -- a point above the half-strip: the vertical ray upwards, then the far upper half-plane
-    set R := (fun t : ℝ => y + t * Complex.I) '' Ici 0
-    have hRT : R ⊆ T := by
-      rintro _ ⟨t, ht, rfl⟩
-      refine ⟨hys.trans_le (hnorm (by simp) ?_), Or.inr fun h => ?_⟩
-      · simp only [add_im, mul_im, ofReal_re, Complex.I_im, ofReal_im, Complex.I_re]
-        nlinarith [mem_Ici.mp ht, Real.pi_pos]
-      · simp at h
-        linarith [mem_Ici.mp ht, h.2]
-    set U := {ζ : ℂ | K < ζ.im}
-    have hUT : U ⊆ T := fun ζ (h : K < ζ.im) =>
-      ⟨hfar (Or.inr (by rw [abs_of_pos (by linarith [Real.pi_pos])]; linarith)),
-        Or.inr fun h' => by linarith [h'.2]⟩
-    refine ⟨L ∪ (U ∪ R), union_subset hLT (union_subset hUT hRT), Or.inl hx₀,
-      Or.inr (Or.inr ⟨0, self_mem_Ici, by simp⟩), ?_⟩
-    refine (convex_halfSpace_re_lt _).isPreconnected.union
-      ((-(K + 1) : ℝ) + (K + 1 : ℝ) * Complex.I)
-      (by simp [L]) (Or.inl (by simp [U])) ?_
-    refine (convex_halfSpace_im_gt _).isPreconnected.union (y + (|y.im| + K + 1 : ℝ) * Complex.I)
-      (by simp [U]; linarith [neg_abs_le y.im]) ⟨_, mem_Ici.mpr (by positivity), rfl⟩
-      (isPreconnected_Ici.image _ (by fun_prop))
-
-/-- **The far part of a half-strip exterior is preconnected.**  Far from `c`, the exterior of the
-closed half-strip `{0 ≤ re ((w - c) / b), 0 ≤ im ((w - c) / b) ≤ π}` is preconnected.  This is
-the shape far out of a polygonal domain at an end of opening `2 * π`, between two parallel sides
-pointing the same way. -/
-theorem isPreconnected_far_halfStripExterior (ρ : ℝ) {c b : ℂ} (hb : b ≠ 0) :
-    IsPreconnected {w : ℂ | ρ < ‖w - c‖ ∧
-      (((w - c) / b).re < 0 ∨ ((w - c) / b).im ∉ Icc 0 Real.pi)} := by
-  have hb' : 0 < ‖b‖ := norm_pos_iff.mpr hb
-  convert (isPreconnected_far_halfStripExterior_aux (ρ / ‖b‖)).image (fun ζ => c + b * ζ)
-    (by fun_prop) using 1
-  ext w
-  constructor
-  · rintro ⟨hw, hX⟩
-    refine ⟨(w - c) / b, ⟨?_, hX⟩, by field_simp; ring⟩
-    rwa [norm_div, div_lt_div_iff_of_pos_right hb']
-  · rintro ⟨ζ, ⟨hζ, hX⟩, rfl⟩
-    have hζ' : (c + b * ζ - c) / b = ζ := by rw [add_sub_cancel_left, mul_div_cancel_left₀ _ hb]
-    refine ⟨?_, by rwa [hζ']⟩
-    rw [add_sub_cancel_left, norm_mul, mul_comm]
-    exact (div_lt_iff₀ hb').mp hζ
 
 end TauCeti
 
