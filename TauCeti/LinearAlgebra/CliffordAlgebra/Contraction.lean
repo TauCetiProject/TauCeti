@@ -10,6 +10,8 @@ public import Mathlib.LinearAlgebra.CliffordAlgebra.Grading
 -- Private: `CliffordAlgebra.exists_algebraMap_of_mem_range_ι_pow_zero` and
 -- `CliffordAlgebra.exists_ι_of_mem_range_ι_pow_one` are used only inside a proof.
 import TauCeti.LinearAlgebra.CliffordAlgebra.Grading
+-- Private: `CliffordAlgebra.equivExterior_algebraMap` is used only inside a proof.
+import TauCeti.LinearAlgebra.CliffordAlgebra.Basic
 
 /-!
 # Contraction against the `ℤ/2`-grading, and the change of form on right factors
@@ -246,7 +248,9 @@ exterior product. -/
 theorem equivExterior_prod_map_ι {l : List M} (hl : l.Pairwise Q.IsOrtho) :
     equivExterior Q (l.map (ι Q)).prod = (l.map (ExteriorAlgebra.ι R)).prod := by
   induction l with
-  | nil => simp [equivExterior]
+  | nil =>
+    rw [List.map_nil, List.prod_nil, List.map_nil, List.prod_nil,
+      ← map_one (algebraMap R (CliffordAlgebra Q)), equivExterior_algebraMap, map_one]
   | cons a l ih =>
     -- Every contraction term of `CliffordAlgebra.equivExterior_ι_mul` vanishes.
     rw [List.pairwise_cons] at hl

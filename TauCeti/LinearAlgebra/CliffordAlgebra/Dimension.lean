@@ -14,6 +14,11 @@ import TauCeti.LinearAlgebra.CliffordAlgebra.ParitySwap
 -- Private: the exterior-basis product formulas are used only inside the proofs of
 -- `CliffordAlgebra.basis_empty` and `CliffordAlgebra.basis_singleton`.
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
+-- Private: `CliffordAlgebra.equivExterior_algebraMap` and `CliffordAlgebra.equivExterior_ι` are
+-- used only inside the proofs of `CliffordAlgebra.basis_empty` and
+-- `CliffordAlgebra.basis_singleton`.
+import TauCeti.LinearAlgebra.CliffordAlgebra.Basic
+import TauCeti.LinearAlgebra.CliffordAlgebra.Vectors
 
 /-!
 # Freeness and dimension of a Clifford algebra
@@ -56,10 +61,11 @@ are not by definition the products `ι Q (b i₁) * ⋯ * ι Q (b iₖ)` of gene
 built from `CliffordAlgebra.changeForm`, which corrects a product of generators by lower-order
 terms. For a basis `b` orthogonal for `Q` the corrections vanish and the elements are the ordered
 products (`CliffordAlgebra.basis_eq_prod_map_sort` in
-`TauCeti.LinearAlgebra.CliffordAlgebra.OrthogonalBasis`). Nothing below needs the products, only
-their number. Identifying the two families is the
-Clifford analogue of a Poincaré-Birkhoff-Witt theorem, and is the content of the associated-graded
-isomorphism `gr (CliffordAlgebra Q) ≅ ExteriorAlgebra R M` for the degree filtration of
+`TauCeti.LinearAlgebra.CliffordAlgebra.OrthogonalBasis`). Apart from the members at `∅` and `{i}`
+(`CliffordAlgebra.basis_empty`, `CliffordAlgebra.basis_singleton`), nothing below needs the
+products, only their number. Identifying the two families is the Clifford analogue of a
+Poincaré-Birkhoff-Witt theorem, and is the content of the associated-graded isomorphism
+`gr (CliffordAlgebra Q) ≅ ExteriorAlgebra R M` for the degree filtration of
 `TauCeti/LinearAlgebra/CliffordAlgebra/Filtration.lean`; that isomorphism is
 `CliffordAlgebra.associatedGradedEquivExterior` in `TauCeti.LinearAlgebra.CliffordAlgebra.PBW`.
 
@@ -149,15 +155,15 @@ theorem equivExterior_basis {I : Type w} [LinearOrder I] (b : Basis I R M) (s : 
 theorem basis_empty {I : Type w} [LinearOrder I] (b : Basis I R M) : basis Q b ∅ = 1 := by
   apply (equivExterior Q).injective
   rw [equivExterior_basis, TauCeti.ExteriorAlgebra.basis_eq_prod_map_sort]
-  simp [equivExterior]
+  rw [← map_one (algebraMap R (CliffordAlgebra Q)), equivExterior_algebraMap, map_one]
+  simp
 
 /-- The member of `CliffordAlgebra.basis Q b` at `{i}` is the generator `ι Q (b i)`. -/
 @[simp]
 theorem basis_singleton {I : Type w} [LinearOrder I] (b : Basis I R M) (i : I) :
     basis Q b {i} = ι Q (b i) := by
   apply (equivExterior Q).injective
-  rw [equivExterior_basis, TauCeti.ExteriorAlgebra.basis_singleton]
-  simp [equivExterior]
+  rw [equivExterior_basis, TauCeti.ExteriorAlgebra.basis_singleton, equivExterior_ι]
 
 /-- The Clifford algebra of a free module is a free module, over a ring in which `2` is
 invertible. -/
