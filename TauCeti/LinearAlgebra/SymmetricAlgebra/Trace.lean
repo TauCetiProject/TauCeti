@@ -16,7 +16,6 @@ import Mathlib.LinearAlgebra.Charpoly.ToMatrix
 import Mathlib.LinearAlgebra.Eigenspace.Semisimple
 import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
-import TauCeti.Algebra.MvPolynomial.Monomial
 import TauCeti.LinearAlgebra.Matrix.Charpoly.Reverse
 import TauCeti.LinearAlgebra.Matrix.Diagonal
 import TauCeti.RingTheory.MvPolynomial.Symmetric.Complete
@@ -39,8 +38,6 @@ term-by-term content of Molien's formula for the Hilbert series of the invariant
 
 ## Main results
 
-* `Module.Basis.coe_symmetricAlgebraHomogeneous_apply`: the monomial basis vector indexed by a
-  multiset of basis indices is the product of the corresponding generators.
 * `Module.Basis.homogeneousSubmoduleMapₛₗ_symmetricAlgebraHomogeneous_of_apply`: an endomorphism
   diagonal in a basis is diagonal in the induced monomial basis of `Symⁿ M`.
 * `Module.Basis.trace_homogeneousSubmoduleMapₛₗ_of_apply`: its trace on `Symⁿ M` is the sum of
@@ -71,18 +68,6 @@ section CommSemiring
 
 variable [CommSemiring R] [AddCommMonoid M] [Module R M]
 
-/-- The monomial basis vector of `Symⁿ M` indexed by a degree-`n` multiset `s` of basis indices
-is the product of the generators `ι (b i)` for `i ∈ s`, counted with multiplicity. -/
-theorem _root_.Module.Basis.coe_symmetricAlgebraHomogeneous_apply (b : Basis κ R M) (n : ℕ)
-    (s : Sym κ n) :
-    (b.symmetricAlgebraHomogeneous n s : _root_.SymmetricAlgebra R M) =
-      ((s : Multiset κ).map fun i ↦ _root_.SymmetricAlgebra.ι R M (b i)).prod := by
-  classical
-  apply (_root_.SymmetricAlgebra.equivMvPolynomial b).injective
-  rw [equivMvPolynomial_symmetricAlgebraHomogeneous_apply, map_multiset_prod, Multiset.map_map]
-  simp only [Function.comp_def, _root_.SymmetricAlgebra.equivMvPolynomial_ι_apply]
-  rw [TauCeti.prod_map_X_eq_monomial, Sym.coe_equivFinsuppDegree_apply]
-
 /-- **An endomorphism diagonal in a basis is diagonal in the monomial basis of `Symⁿ M`**: the
 monomial indexed by `s` is an eigenvector of the induced map, with eigenvalue the product of the
 eigenvalues listed by `s`. -/
@@ -92,12 +77,8 @@ theorem _root_.Module.Basis.homogeneousSubmoduleMapₛₗ_symmetricAlgebraHomoge
     homogeneousSubmoduleMapₛₗ f n (b.symmetricAlgebraHomogeneous n s) =
       ((s : Multiset κ).map a).prod • b.symmetricAlgebraHomogeneous n s := by
   apply Subtype.ext
-  rw [coe_homogeneousSubmoduleMapₛₗ_apply, Submodule.coe_smul,
-    b.coe_symmetricAlgebraHomogeneous_apply, map_multiset_prod, Multiset.map_map,
-    Algebra.smul_def, map_multiset_prod, Multiset.map_map, ← Multiset.prod_map_mul]
-  congr 1
-  refine Multiset.map_congr rfl fun i _ ↦ ?_
-  simp [hf, Algebra.smul_def]
+  simp [b.coe_symmetricAlgebraHomogeneous_apply, map_multiset_prod, hf, Algebra.smul_def,
+    ← Multiset.prod_map_mul]
 
 /-- **The trace on `Symⁿ M` of an endomorphism diagonal in a finite basis** is the sum, over the
 degree-`n` multisets of basis indices, of the product of the corresponding eigenvalues: the
@@ -129,21 +110,26 @@ theorem _root_.Module.Basis.mk_trace_homogeneousSubmoduleMapₛₗ_mul_reverse_c
   classical
   nontriviality R
   have : Fintype κ := have := Module.Finite.finite_basis b; Fintype.ofFinite κ
-  have hrev : f.charpoly.reverse = ∏ i, (1 - Polynomial.C (a i) * Polynomial.X) := by
+  have hrev : (f.charpoly.reverse : PowerSeries R) =
+      ∏ i, (1 - PowerSeries.C (a i) * PowerSeries.X) := by
     rw [← LinearMap.charpoly_toMatrix f b, Matrix.reverse_charpoly,
-      (b.toMatrix_eq_diagonal_iff b f a).2 hf, Matrix.charpolyRev_diagonal]
+      (b.toMatrix_eq_diagonal_iff b f a).2 hf, Matrix.charpolyRev_diagonal,
+      ← Polynomial.coeToPowerSeries.ringHom_apply, map_prod]
+    simp [Polynomial.coeToPowerSeries.ringHom_apply]
   have hmk : PowerSeries.mk (fun n ↦
       LinearMap.trace R (homogeneousSubmodule R M n) (homogeneousSubmoduleMapₛₗ f n)) =
-      PowerSeries.map (MvPolynomial.eval a) (PowerSeries.mk fun n ↦ MvPolynomial.hsymm κ R n) := by
-    ext n
-    simp [b.trace_homogeneousSubmoduleMapₛₗ_of_apply f a hf, TauCeti.eval_hsymm]
-  rw [hmk, TauCeti.mk_hsymm_eq_prod_mk_pow, map_prod, hrev,
-    ← Polynomial.coeToPowerSeries.ringHom_apply, map_prod, ← Finset.prod_mul_distrib]
-  refine Finset.prod_eq_one fun i _ ↦ ?_
-  convert TauCeti.powerSeries_mk_pow_mul_one_sub_C_mul_X_eq_one (a i) using 2
-  · ext n
-    simp
-  · simp [Polynomial.coeToPowerSeries.ringHom_apply]
+      ∏ i, PowerSeries.mk fun n ↦ a i ^ n :=
+    calc _ = PowerSeries.map (MvPolynomial.eval a)
+          (PowerSeries.mk fun n ↦ MvPolynomial.hsymm κ R n) := by
+          ext n
+          simp [b.trace_homogeneousSubmoduleMapₛₗ_of_apply f a hf, TauCeti.eval_hsymm]
+      _ = _ := by
+          rw [TauCeti.mk_hsymm_eq_prod_mk_pow, map_prod]
+          congr! 1 with i
+          ext n
+          simp
+  rw [hmk, hrev, ← Finset.prod_mul_distrib]
+  exact Finset.prod_eq_one fun i _ ↦ TauCeti.powerSeries_mk_pow_mul_one_sub_C_mul_X_eq_one (a i)
 
 end CommRing
 
@@ -160,7 +146,8 @@ theorem _root_.Module.End.IsSemisimple.mk_trace_homogeneousSubmoduleMapₛₗ_mu
         LinearMap.trace K (homogeneousSubmodule K V n) (homogeneousSubmoduleMapₛₗ f n)) *
       (f.charpoly.reverse : PowerSeries K) = 1 := by
   classical
-  -- An eigenbasis, collected from the decomposition of `V` into eigenspaces of `f`.
+  -- An eigenbasis, collected from the decomposition of `V` into eigenspaces of `f`, following the
+  -- construction in Mathlib's `Mathlib/Algebra/Lie/CartanCriterion.lean`.
   have hint := DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top
     f.eigenspaces_iSupIndep hf.iSup_eigenspace_eq_top
   exact (hint.collectedBasis fun μ ↦ finBasis K (f.eigenspace μ))
