@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic
+import TauCeti.GroupTheory.OrderOfElement.Basic
 
 /-!
 # The `d`-th power criterion in a finite cyclic group
@@ -21,9 +22,11 @@ This is the group theory behind the `n`-th power residue criteria: applied to th
 of a finite field it decides which elements are `n`-th powers, and the kernel of the `d`-th power
 map (of order `g`, Mathlib's `IsCyclic.card_powMonoidHom_ker`) counts their roots.
 
+The inclusion of the image in the kernel holds in any group of order `N`; it is
+`TauCeti.pow_pow_card_div_gcd_eq_one` in `TauCeti.GroupTheory.OrderOfElement.Basic`.
+
 ## Main results
 
-* `TauCeti.pow_pow_card_div_gcd_eq_one`: in any group of order `N`, `(x ^ d) ^ (N / gcd(N, d)) = 1`.
 * `IsCyclic.range_powMonoidHom_eq_ker`: in a finite cyclic group the image of the `d`-th power
   map is the kernel of the `(N / gcd(N, d))`-th power map.
 * `IsCyclic.range_powMonoidHom_gcd`: the `d`-th powers are the `gcd(N, d)`-th powers.
@@ -32,7 +35,7 @@ map (of order `g`, Mathlib's `IsCyclic.card_powMonoidHom_ker`) counts their root
   `N / gcd(N, d)`.
 
 Each result has an additive version, stated for `nsmulAddMonoidHom` in an additive cyclic group
-(`TauCeti.nsmul_nsmul_card_div_gcd_eq_zero`, `IsAddCyclic.mem_range_nsmulAddMonoidHom_iff`, ...).
+(`IsAddCyclic.mem_range_nsmulAddMonoidHom_iff`, ...).
 
 ## References
 
@@ -43,21 +46,6 @@ Each result has an additive version, stated for `nsmulAddMonoidHom` in an additi
 public section
 
 variable {G : Type*}
-
-namespace TauCeti
-
-/-- In a group of order `N`, every `d`-th power is killed by the `(N / gcd(N, d))`-th power map:
-`(x ^ d) ^ (N / gcd(N, d)) = 1`. For an infinite group `N = 0` and the exponent is `0`. -/
-@[to_additive nsmul_nsmul_card_div_gcd_eq_zero
-/-- In an additive group of order `N`, every `d`-th multiple is killed by multiplication by
-`N / gcd(N, d)`: `(N / gcd(N, d)) • d • x = 0`. For an infinite group `N = 0`. -/]
-theorem pow_pow_card_div_gcd_eq_one [Group G] (x : G) (d : ℕ) :
-    (x ^ d) ^ (Nat.card G / (Nat.card G).gcd d) = 1 := by
-  -- `d * (N / g) = N * (d / g)` with `g = gcd(N, d)` dividing both `N` and `d`.
-  rw [← pow_mul, ← Nat.mul_div_assoc _ (Nat.gcd_dvd_left _ _), mul_comm d,
-    Nat.mul_div_assoc _ (Nat.gcd_dvd_right _ _), pow_mul, pow_card_eq_one', one_pow]
-
-end TauCeti
 
 namespace IsCyclic
 
