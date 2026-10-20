@@ -101,9 +101,10 @@ theorem isRowCompact_of_fg_of_isClosed_of_range_le {L : Submodule R C₀(I, R)} 
 /-- **Serre's criterion**: if the finitely generated submodules of the target model space are
 closed, every completely continuous map between model spaces over a complete ultrametric Tate
 ring is row compact. -/
-theorem IsCompletelyContinuous.isRowCompact_of_forall_fg_isClosed
-    (hclosed : ∀ L : Submodule R C₀(I, R), L.FG → IsClosed (L : Set C₀(I, R)))
-    {u : C₀(J, R) →L[R] C₀(I, R)} (hu : u.IsCompletelyContinuous) : u.IsRowCompact := by
+theorem IsCompletelyContinuous.isRowCompact_of_forall_fg_isClosed {u : C₀(J, R) →L[R] C₀(I, R)}
+    (hu : u.IsCompletelyContinuous)
+    (hclosed : ∀ L : Submodule R C₀(I, R), L.FG → IsClosed (L : Set C₀(I, R))) :
+    u.IsRowCompact := by
   choose v hv huv using fun n : ℕ ↦
     isCompletelyContinuous_iff_ringOpNorm.1 hu (1 / (n + 1)) Nat.one_div_pos_of_nat
   refine isRowCompact_of_tendsto
@@ -118,8 +119,7 @@ continuous. -/
 theorem isRowCompact_iff_isCompletelyContinuous_of_forall_fg_isClosed
     (hclosed : ∀ L : Submodule R C₀(I, R), L.FG → IsClosed (L : Set C₀(I, R)))
     {u : C₀(J, R) →L[R] C₀(I, R)} : u.IsRowCompact ↔ u.IsCompletelyContinuous :=
-  ⟨IsRowCompact.isCompletelyContinuous,
-    IsCompletelyContinuous.isRowCompact_of_forall_fg_isClosed hclosed⟩
+  ⟨IsRowCompact.isCompletelyContinuous, fun hu ↦ hu.isRowCompact_of_forall_fg_isClosed hclosed⟩
 
 end Tate
 
