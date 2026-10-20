@@ -24,15 +24,14 @@ concentrated at zero. These facts are the measure-theoretic foundation for later
 transform calculations.
 
 The main results are that compound Poisson laws with a common jump law convolve by adding their
-rates, and that on a finite-dimensional real inner product space the characteristic function is
-`exp (r * (φ_μ t - 1))`. The rate-additivity proof works on an arbitrary measurable additive
-monoid: the convolution powers satisfy `μ^{∗(m + n)} = μ^{∗m} ∗ μ^{∗n}`, so mixing them commutes
-with convolution of the mixing laws on `ℕ`, and the Poisson laws on `ℕ` add their rates.
+rates, and that on a second-countable real inner product space with its Borel σ-algebra the
+characteristic function is `exp (r * (φ_μ t - 1))`. The rate-additivity proof works on an
+arbitrary measurable additive monoid: the convolution powers satisfy
+`μ^{∗(m + n)} = μ^{∗m} ∗ μ^{∗n}`, so mixing them commutes with convolution of the mixing laws on
+`ℕ`, and the Poisson laws on `ℕ` add their rates.
 
 ## Main results
 
-* `MeasureTheory.Measure.charFun_convolutionPower` — the characteristic function of `μ^{∗n}` is
-  the `n`-th power of that of `μ`;
 * `TauCeti.Probability.compoundPoissonMeasure_conv_compoundPoissonMeasure` — rates add under
   convolution at a fixed jump law;
 * `TauCeti.Probability.charFun_compoundPoissonMeasure` — the characteristic function
@@ -50,58 +49,6 @@ noncomputable section
 
 open MeasureTheory ProbabilityTheory Real Set
 open scoped ENNReal NNReal Nat MeasureTheory
-
-namespace MeasureTheory.Measure
-
-section AddMonoid
-
-variable {E : Type*} [AddMonoid E] [MeasurableSpace E] [MeasurableAdd₂ E]
-
-/-- Mixing a family of measures indexed by `ℕ` that turns addition into convolution commutes
-with convolution: `(ρ.bind K) ∗ (σ.bind K) = (ρ ∗ σ).bind K` when
-`K (m + n) = K m ∗ K n`. -/
-theorem bind_conv_bind {K : ℕ → Measure E} [∀ n, SFinite (K n)]
-    (hK : ∀ m n, K (m + n) = K m ∗ K n) (ρ σ : Measure ℕ) [SFinite σ] [SFinite (σ.bind K)] :
-    ρ.bind K ∗ σ.bind K = (ρ ∗ σ).bind K := by
-  have hKm : Measurable K := measurable_of_countable K
-  refine ext_of_lintegral _ fun f hf => ?_
-  have hfx (x : E) : Measurable fun y => f (x + y) := hf.comp (measurable_const_add x)
-  have hint : Measurable fun x => ∫⁻ y, f (x + y) ∂σ.bind K :=
-    (hf.comp measurable_add).lintegral_prod_right'
-  rw [lintegral_conv hf, lintegral_bind hKm.aemeasurable hint.aemeasurable,
-    lintegral_bind hKm.aemeasurable hf.aemeasurable, lintegral_conv (by fun_prop)]
-  refine lintegral_congr fun m => ?_
-  calc ∫⁻ x, ∫⁻ y, f (x + y) ∂σ.bind K ∂K m
-      = ∫⁻ x, ∫⁻ n, ∫⁻ y, f (x + y) ∂K n ∂σ ∂K m := by
-        refine lintegral_congr fun x => ?_
-        rw [lintegral_bind hKm.aemeasurable (hfx x).aemeasurable]
-    _ = ∫⁻ n, ∫⁻ x, ∫⁻ y, f (x + y) ∂K n ∂K m ∂σ := by
-        refine lintegral_lintegral_swap (Measurable.aemeasurable ?_)
-        exact measurable_from_prod_countable_left fun n =>
-          (hf.comp measurable_add).lintegral_prod_right' (ν := K n)
-    _ = ∫⁻ n, ∫⁻ z, f z ∂K (m + n) ∂σ := by
-        refine lintegral_congr fun n => ?_
-        rw [hK, lintegral_conv hf]
-
-end AddMonoid
-
-section InnerProductSpace
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [MeasurableSpace E]
-  [BorelSpace E] [SecondCountableTopology E]
-
-/-- The characteristic function of the `n`-th convolution power of a finite measure is the
-`n`-th power of its characteristic function. -/
-@[simp]
-theorem charFun_convolutionPower (μ : Measure E) [IsFiniteMeasure μ] (n : ℕ) (t : E) :
-    charFun (μ.convolutionPower n) t = charFun μ t ^ n := by
-  induction n with
-  | zero => simp
-  | succ n ih => rw [convolutionPower_succ, charFun_conv, ih, pow_succ]
-
-end InnerProductSpace
-
-end MeasureTheory.Measure
 
 namespace TauCeti.Probability
 
@@ -217,8 +164,6 @@ theorem compoundPoissonMeasure_dirac [MeasurableAdd₂ α] (r : ℝ≥0) (x : α
 theorem compoundPoissonMeasure_conv_compoundPoissonMeasure [MeasurableAdd₂ α] (r s : ℝ≥0)
     (μ : Measure α) [SFinite μ] :
     compoundPoissonMeasure r μ ∗ compoundPoissonMeasure s μ = compoundPoissonMeasure (r + s) μ := by
-  have : SFinite ((poissonMeasure s).bind μ.convolutionPower) :=
-    inferInstanceAs (SFinite (compoundPoissonMeasure s μ))
   simp only [compoundPoissonMeasure_def]
   rw [Measure.bind_conv_bind (Measure.convolutionPower_add μ), poissonMeasure_conv_poissonMeasure]
 
@@ -246,7 +191,10 @@ theorem _root_.ProbabilityTheory.IndepFun.hasLaw_add_compoundPoissonMeasure {Ω 
   exact hXY.hasLaw_add hX hY
 
 /-- The characteristic function of the compound Poisson law with rate `r` and jump law `μ` is
-`t ↦ exp (r * (φ_μ t - 1))`, where `φ_μ` is the characteristic function of `μ`. -/
+`t ↦ exp (r * (φ_μ t - 1))`, where `φ_μ` is the characteristic function of `μ`.
+
+The series computation follows the proof of `ProbabilityTheory.charFun_map_cast_poissonMeasure`
+in Mathlib. -/
 theorem charFun_compoundPoissonMeasure {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
     [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E] (r : ℝ≥0) (μ : Measure E)
     [IsProbabilityMeasure μ] (t : E) :
