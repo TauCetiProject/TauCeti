@@ -21,7 +21,7 @@ open Set
 namespace TauCeti
 
 variable {α : Type*} [LinearOrder α] [TopologicalSpace α] [OrderClosedTopology α]
-  [SecondCountableTopology α] [MeasurableSpace α] [BorelSpace α] {n : ℕ}
+  [SecondCountableTopology α] [MeasurableSpace α] [OpensMeasurableSpace α] {n : ℕ}
 
 /-- Strictly increasing finite tuples form a measurable set. -/
 theorem measurableSet_setOf_strictMono :
