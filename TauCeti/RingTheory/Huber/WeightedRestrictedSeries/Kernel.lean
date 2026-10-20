@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Basic
+import Mathlib.RingTheory.MvPowerSeries.Ideal
 
 /-!
 # Kernels of coefficientwise maps of weighted restricted series
@@ -54,12 +55,11 @@ variable {k : ℕ} {A : Type*} [CommRing A] [TopologicalSpace A] [Nonarchimedean
 theorem coeff_mem_of_mem_map_weightedC {T : Fin k → Set A} {hT : IsWeightFamily T}
     {J : Ideal A} {f : weightedRestrictedSubring T hT} (hf : f ∈ J.map (weightedC T hT))
     (ν : Fin k →₀ ℕ) : MvPowerSeries.coeff ν (f : MvPowerSeries (Fin k) A) ∈ J := by
-  have hle : J.map (weightedC T hT) ≤ (RingHom.ker
-      (MvPowerSeries.map (Quotient.mk J))).comap (weightedRestrictedSubring T hT).subtype :=
-    map_le_iff_le_comap.mpr fun a ha ↦ by
-      simp [RingHom.mem_ker, Quotient.eq_zero_iff_mem.mpr ha]
-  simpa [Quotient.eq_zero_iff_mem] using
-    congrArg (MvPowerSeries.coeff ν) (RingHom.mem_ker.mp (hle hf))
+  have hC : (weightedRestrictedSubring T hT).subtype.comp (weightedC T hT) = MvPowerSeries.C :=
+    RingHom.ext coe_weightedC
+  have hf' := mem_map_of_mem (weightedRestrictedSubring T hT).subtype hf
+  rw [map_map, hC] at hf'
+  exact MvPowerSeries.coeff_mem_of_mem_map_C hf' ν
 
 end Ideal
 
