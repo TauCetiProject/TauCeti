@@ -50,6 +50,7 @@ lemma exists_rep_apply_eq_one (x : Projectivization K (ι → K)) :
 
 /-- The line of the image of a projective point under an injective semilinear map is the image
 of its line. -/
+@[simp]
 theorem submodule_map {D E V W : Type*} [DivisionRing D] [DivisionRing E] [AddCommGroup V]
     [Module D V] [AddCommGroup W] [Module E W] {σ : D →+* E} [RingHomSurjective σ]
     (f : V →ₛₗ[σ] W) (hf : Function.Injective f) (x : Projectivization D V) :

@@ -104,8 +104,8 @@ homogeneous family cuts out the zero locus of its dehomogenizations: the class o
 coordinate ratios `v (i.succAbove j) / v i`. -/
 theorem complexProjectiveZeroLocus_mk_iff_dehomogenize {n : ℕ}
     {p : ι → MvPolynomial (Fin (n + 1)) ℂ} {d : ι → ℕ} (hp : ∀ k, (p k).IsHomogeneous (d k))
-    (v : Fin (n + 1) → ℂ) (hv : v ≠ 0) {i : Fin (n + 1)} (hi : v i ≠ 0) :
-    Projectivization.mk ℂ v hv ∈ complexProjectiveZeroLocus p ↔
+    (v : Fin (n + 1) → ℂ) {i : Fin (n + 1)} (hi : v i ≠ 0) :
+    Projectivization.mk ℂ v (Function.ne_iff.mpr ⟨i, hi⟩) ∈ complexProjectiveZeroLocus p ↔
       ∀ k, eval (fun j ↦ v (i.succAbove j) / v i) (dehomogenize i (p k)) = 0 := by
   rw [complexProjectiveZeroLocus_mk_iff hp]
   refine forall_congr' fun k ↦ ?_
@@ -117,8 +117,9 @@ coordinate `i`, lies in the zero locus of a homogeneous family exactly when `z` 
 the dehomogenizations `dehomogenize i (p k)`. -/
 theorem complexProjectiveZeroLocus_mk_insertNth_iff {n : ℕ}
     {p : ι → MvPolynomial (Fin (n + 1)) ℂ} {d : ι → ℕ} (hp : ∀ k, (p k).IsHomogeneous (d k))
-    (i : Fin (n + 1)) (z : Fin n → ℂ) (hz : (i.insertNth 1 z : Fin (n + 1) → ℂ) ≠ 0) :
-    Projectivization.mk ℂ (i.insertNth 1 z) hz ∈ complexProjectiveZeroLocus p ↔
+    (i : Fin (n + 1)) (z : Fin n → ℂ) :
+    Projectivization.mk ℂ (i.insertNth 1 z) (Function.ne_iff.mpr ⟨i, by simp⟩) ∈
+      complexProjectiveZeroLocus p ↔
       ∀ k, eval z (dehomogenize i (p k)) = 0 := by
   simp [complexProjectiveZeroLocus_mk_iff hp]
 
