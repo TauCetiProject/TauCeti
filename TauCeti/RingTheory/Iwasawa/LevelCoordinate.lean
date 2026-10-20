@@ -10,12 +10,9 @@ public import Mathlib.RingTheory.PowerSeries.WeierstrassPreparation
 public import TauCeti.Algebra.MonoidAlgebra.Cyclic
 public import TauCeti.NumberTheory.Padics.QuotientTower
 
-import Mathlib.Algebra.CharP.Algebra
-import Mathlib.Algebra.CharP.Lemmas
 import Mathlib.NumberTheory.Padics.PadicIntegers
-import Mathlib.RingTheory.Filtration
-import Mathlib.RingTheory.PowerSeries.Ideal
 import TauCeti.Data.ZMod.MonoidHomEquiv
+import TauCeti.RingTheory.PowerSeries.OneAddXPow
 import TauCeti.RingTheory.PowerSeries.Weierstrass.AlgHom
 
 /-!
@@ -85,12 +82,12 @@ procyclic pro-`p` group (`TauCeti.completedGroupAlgebra.ker_proj_comp_aeval`).
 * `TauCeti.Iwasawa.levelTransition_single`, `TauCeti.Iwasawa.levelTransition_self`,
   `TauCeti.Iwasawa.levelTransition_comp_levelTransition`: the projections act on group elements
   by reduction and form an inverse system.
-* `TauCeti.Iwasawa.levelCoordinate_transition`: compatibility with `ℤ/pⁿ → ℤ/pᵐ` for `m ≤ n`.
+* `TauCeti.Iwasawa.levelCoordinate_transition`, `TauCeti.Iwasawa.levelTransition_levelCoordinate`:
+  compatibility with `ℤ/pⁿ → ℤ/pᵐ` for `m ≤ n`.
 * `TauCeti.Iwasawa.levelCoordinate_zero`: at level zero the coordinate is the constant coefficient.
-* `TauCeti.Iwasawa.iInf_span_one_add_X_pow_sub_one_eq_bot`,
-  `TauCeti.Iwasawa.iwasawaCoordinate_injective`: over a noetherian `O`, `⋂ₙ (ω_n) = 0`, so the
-  product of the level maps is injective.
-* `TauCeti.Iwasawa.one_add_X_pow_sub_one_eq_X_pow`: in characteristic `p`, `ω_n = T ^ pⁿ`.
+* `TauCeti.Iwasawa.iwasawaCoordinate_injective`: over a noetherian `O`, `⋂ₙ (ω_n) = 0`
+  (`PowerSeries.iInf_span_one_add_X_pow_sub_one_eq_bot`), so the product of the level maps is
+  injective.
 
 The examples at the end of the file check the construction over `O = ℤ_p`: `ω_n` maps to zero at
 level `n`, while for `p = 2` and `n = 1` the image `t = [1] - 1` of `T` satisfies `t² = -2t ≠ 0`,
@@ -110,18 +107,6 @@ open IsLocalRing PowerSeries
 namespace TauCeti.Iwasawa
 
 variable {p : ℕ} [Fact p.Prime] {O : Type*} [CommRing O]
-
-section CharP
-
-variable (p O) in
-/-- **`ω_n = T ^ pⁿ` in characteristic `p`.** Over a ring of characteristic `p` the cyclotomic
-series `(1 + T) ^ pⁿ - 1` is the monomial `T ^ pⁿ`, by the Frobenius identity. -/
-theorem one_add_X_pow_sub_one_eq_X_pow [CharP O p] (n : ℕ) :
-    (1 + X : O⟦X⟧) ^ p ^ n - 1 = X ^ p ^ n := by
-  have : CharP O⟦X⟧ p := charP_of_injective_ringHom C_injective p
-  rw [add_pow_char_pow, one_pow, add_sub_cancel_left]
-
-end CharP
 
 section Transition
 
@@ -306,6 +291,13 @@ theorem levelCoordinate_transition {m n : ℕ} (h : m ≤ n) :
       map_one (levelTransition p O h), ← Nat.cast_one (R := ZMod (p ^ n)),
       levelTransition_single_ofAdd_natCast, Nat.cast_one])
 
+/-- **Compatibility of the level coordinates**, applied form: for `m ≤ n`, projecting the level-`n`
+coordinate of `F` to level `m` gives the level-`m` coordinate of `F`. -/
+@[simp]
+theorem levelTransition_levelCoordinate {m n : ℕ} (h : m ≤ n) (F : O⟦X⟧) :
+    levelTransition p O h (levelCoordinate hp n F) = levelCoordinate hp m F :=
+  DFunLike.congr_fun (levelCoordinate_transition hp h) F
+
 /-- At level zero the coordinate is the constant coefficient, as an element of
 `O[ℤ/1] = O[1]`. -/
 theorem levelCoordinate_zero (F : O⟦X⟧) :
@@ -331,38 +323,7 @@ theorem iwasawaCoordinate_apply (F : O⟦X⟧) (n : ℕ) :
 `O[ℤ/pⁿ] → O[ℤ/pᵐ]`. -/
 theorem levelTransition_iwasawaCoordinate {m n : ℕ} (h : m ≤ n) (F : O⟦X⟧) :
     levelTransition p O h (iwasawaCoordinate hp F n) = iwasawaCoordinate hp F m := by
-  simpa using DFunLike.congr_fun (levelCoordinate_transition hp h) F
-
-include hp in
-omit [Fact p.Prime] [IsAdicComplete (maximalIdeal O) O] in
-/-- The series `ω_n = (1 + T) ^ pⁿ - 1` lies in the `(n + 1)`-st power of the maximal ideal of
-`O⟦T⟧`: `ω_0 = T`, and `ω_{n+1} = ω_n · ∑_{i < p} (1 + T) ^ (i pⁿ)`, whose second factor has
-constant coefficient `p`. -/
-theorem one_add_X_pow_sub_one_mem_maximalIdeal_pow (n : ℕ) :
-    (1 + X : O⟦X⟧) ^ p ^ n - 1 ∈ maximalIdeal O⟦X⟧ ^ (n + 1) := by
-  have hmem (F : O⟦X⟧) (hF : constantCoeff F ∈ maximalIdeal O) : F ∈ maximalIdeal O⟦X⟧ := by
-    rw [mem_maximalIdeal, mem_nonunits_iff, isUnit_iff_constantCoeff]
-    exact hF
-  induction n with
-  | zero => simpa using hmem X (by simp)
-  | succ n ih =>
-    rw [pow_succ p n, pow_mul, ← geom_sum_mul, pow_succ' (maximalIdeal O⟦X⟧)]
-    refine Ideal.mul_mem_mul (hmem _ ?_) ih
-    simpa using hp
-
-include hp in
-omit [Fact p.Prime] [IsAdicComplete (maximalIdeal O) O] in
-/-- **The ideals `(ω_n)` meet in zero.** Over a noetherian local ring `O` in which `p` is not a
-unit, no nonzero element of `O⟦T⟧` is divisible by every
-`ω_n = (1 + T) ^ pⁿ - 1`, since `ω_n` lies in the `(n + 1)`-st power of the maximal ideal of the
-noetherian local ring `O⟦T⟧`. -/
-theorem iInf_span_one_add_X_pow_sub_one_eq_bot [IsNoetherianRing O] :
-    ⨅ n : ℕ, Ideal.span {(1 + X : O⟦X⟧) ^ p ^ n - 1} = ⊥ := by
-  refine eq_bot_iff.mpr <| (le_iInf fun n ↦ ?_).trans
-    (Ideal.iInf_pow_eq_bot_of_isLocalRing (maximalIdeal O⟦X⟧) (maximalIdeal.isMaximal _).ne_top).le
-  refine (iInf_le _ n).trans ?_
-  rw [Ideal.span_singleton_le_iff_mem]
-  exact Ideal.pow_le_pow_right n.le_succ (one_add_X_pow_sub_one_mem_maximalIdeal_pow hp n)
+  simp
 
 /-- **The level coordinates separate points**: over a noetherian `O`, the product
 `O⟦T⟧ → ∏ₙ O[ℤ/pⁿ]` of the level maps is injective. -/
@@ -372,7 +333,7 @@ theorem iwasawaCoordinate_injective [IsNoetherianRing O] :
   have : F ∈ ⨅ n : ℕ, Ideal.span {(1 + X : O⟦X⟧) ^ p ^ n - 1} :=
     Ideal.mem_iInf.mpr fun n ↦ by
       rw [← ker_levelCoordinate hp, RingHom.mem_ker, ← iwasawaCoordinate_apply, hF, Pi.zero_apply]
-  rwa [iInf_span_one_add_X_pow_sub_one_eq_bot, Ideal.mem_bot] at this
+  rwa [iInf_span_one_add_X_pow_sub_one_eq_bot hp, Ideal.mem_bot] at this
 
 /-! ### Checks over `ℤ_p` -/
 

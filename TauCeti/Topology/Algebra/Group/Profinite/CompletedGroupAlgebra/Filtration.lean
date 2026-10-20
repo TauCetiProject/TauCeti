@@ -118,28 +118,21 @@ theorem proj_aeval_eq_zero_iff (ψ : PowerSeries ℤ_[p]) :
       (1 + PowerSeries.X) ^ Nat.card (Γ ⧸ U.toSubgroup) - 1 ∣ ψ := by
   rw [← AlgHom.comp_apply, ← RingHom.mem_ker, ker_proj_comp_aeval hΓ hσ, Ideal.mem_span_singleton]
 
-/-- Evaluation at `γ - 1` followed by projection to the level `U` is a surjection
-`ℤ_p⟦X⟧ → ℤ_p[Γ ⧸ U]`, for an element `γ ∈ Γ` whose class generates `Γ ⧸ U`. -/
-theorem proj_comp_aeval_surjective :
-    Function.Surjective ((proj ℤ_[p] Γ U).comp
-      (PowerSeries.aeval (R := ℤ_[p]) (isTopologicallyNilpotent_of_sub_one hΓ γ))) := by
-  intro x
-  obtain ⟨f, rfl⟩ := TauCeti.MonoidAlgebra.aeval_of_sub_one_surjective hσ x
-  refine ⟨(f : PowerSeries ℤ_[p]), ?_⟩
-  rw [AlgHom.comp_apply, PowerSeries.aeval_coe, ← Polynomial.aeval_algHom_apply, map_sub, map_one,
-    proj_of, MonoidAlgebra.of_apply]
-
 /-- **A finite level of `ℤ_p[[Γ]]` as a quotient of the power-series ring.** For an open normal
 subgroup `U` of the commutative pro-`p` group `Γ` and an element `γ ∈ Γ` whose class generates
 `Γ ⧸ U`, evaluation at `γ - 1` followed by projection to the level `U` induces an isomorphism of
 `ℤ_p`-algebras `ℤ_p⟦X⟧ ⧸ ((1 + X) ^ |Γ ⧸ U| - 1) ≃ₐ[ℤ_p] ℤ_p[Γ ⧸ U]`, sending the class of
-`1 + X` to the class of `γ`. -/
+`1 + X` to the class of `γ`. This is `TauCeti.Iwasawa.cyclicLevelEquiv` over `ℤ_p`, for the
+cyclic `p`-group `Γ ⧸ U`. -/
 noncomputable def powerSeriesLevelEquiv :
     (PowerSeries ℤ_[p] ⧸
       Ideal.span {((1 + PowerSeries.X) ^ Nat.card (Γ ⧸ U.toSubgroup) - 1 : PowerSeries ℤ_[p])})
         ≃ₐ[ℤ_[p]] MonoidAlgebra ℤ_[p] (Γ ⧸ U.toSubgroup) :=
-  (Ideal.quotientEquivAlgOfEq ℤ_[p] (ker_proj_comp_aeval hΓ hσ).symm).trans
-    (Ideal.quotientKerAlgEquivOfSurjective (proj_comp_aeval_surjective hΓ hσ))
+  have hn : Nat.card (Γ ⧸ U.toSubgroup) = p ^ Nat.log p (Nat.card (Γ ⧸ U.toSubgroup)) := by
+    obtain ⟨n, hn⟩ := IsPGroup.iff_card.mp ((isProP_iff.mp hΓ) U)
+    rw [hn, Nat.log_pow (Fact.out : p.Prime).one_lt]
+  (Ideal.quotientEquivAlgOfEq ℤ_[p] (by rw [← hn])).trans
+    (Iwasawa.cyclicLevelEquiv PadicInt.p_nonunit hσ hn)
 
 /-- The level isomorphism sends the class of a power series to the projection of its value at
 `γ - 1`. -/
@@ -147,8 +140,21 @@ noncomputable def powerSeriesLevelEquiv :
 theorem powerSeriesLevelEquiv_mk (ψ : PowerSeries ℤ_[p]) :
     powerSeriesLevelEquiv hΓ hσ (Ideal.Quotient.mk _ ψ) =
       proj ℤ_[p] Γ U (PowerSeries.aeval (isTopologicallyNilpotent_of_sub_one hΓ γ) ψ) := by
-  rw [powerSeriesLevelEquiv, AlgEquiv.trans_apply, Ideal.quotientEquivAlgOfEq_mk,
-    Ideal.quotientKerAlgEquivOfSurjective_mk, AlgHom.comp_apply]
+  rw [powerSeriesLevelEquiv, AlgEquiv.trans_apply, Ideal.quotientEquivAlgOfEq_mk]
+  refine (DFunLike.congr_fun (Iwasawa.eq_cyclicLevelEquiv_comp_mk PadicInt.p_nonunit hσ _
+    (φ := (proj ℤ_[p] Γ U).comp (PowerSeries.aeval (isTopologicallyNilpotent_of_sub_one hΓ γ)))
+    ?_) ψ).symm
+  rw [AlgHom.comp_apply, PowerSeries.aeval_X, map_sub, map_one, proj_of, MonoidAlgebra.of_apply]
+
+/-- Evaluation at `γ - 1` followed by projection to the level `U` is a surjection
+`ℤ_p⟦X⟧ → ℤ_p[Γ ⧸ U]`, for an element `γ ∈ Γ` whose class generates `Γ ⧸ U`. -/
+theorem proj_comp_aeval_surjective :
+    Function.Surjective ((proj ℤ_[p] Γ U).comp
+      (PowerSeries.aeval (R := ℤ_[p]) (isTopologicallyNilpotent_of_sub_one hΓ γ))) := by
+  intro x
+  obtain ⟨y, rfl⟩ := (powerSeriesLevelEquiv hΓ hσ).surjective x
+  obtain ⟨ψ, rfl⟩ := Ideal.Quotient.mk_surjective y
+  exact ⟨ψ, (powerSeriesLevelEquiv_mk hΓ hσ ψ).symm⟩
 
 /-- The level isomorphism sends the class of `1 + X` to the class of `γ` in `ℤ_p[Γ ⧸ U]`. -/
 theorem powerSeriesLevelEquiv_mk_one_add_X :
