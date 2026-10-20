@@ -84,23 +84,25 @@ theorem coe_inj {a b : A} : (a : 𝓜(𝕜, A)) = b ↔ a = b :=
 
 end ProperStar
 
-section StarAddMonoid
+section InvolutiveStar
 
 variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [NonUnitalNormedRing A] [NormedSpace 𝕜 A]
-  [SMulCommClass 𝕜 A A] [IsScalarTower 𝕜 A A] [StarAddMonoid A] [IsProperStar A]
+  [SMulCommClass 𝕜 A A] [IsScalarTower 𝕜 A A] [InvolutiveStar A] [IsProperStar A]
 
 /-- The right centralizer of a multiplier commutes with left multiplication. -/
 theorem snd_mul (m : 𝓜(𝕜, A)) (a b : A) : m.snd (a * b) = a * m.snd b := by
   have h : ∀ y : A, (m.snd (a * b) - a * m.snd b) * y = 0 := fun y => by
     simp [sub_mul, mul_assoc, m.central]
-  exact sub_eq_zero.mp (mul_star_self_eq_zero.mp (h _))
+  have hs : star (m.snd (a * b) - a * m.snd b) = 0 :=
+    star_mul_self_eq_zero.mp (by simpa only [star_star] using h (star _))
+  exact sub_eq_zero.mp (star_mul_self_eq_zero.mp (by rw [hs, zero_mul]))
 
 /-- An element of `A` times a multiplier is the element obtained from the right centralizer. -/
 @[simp]
 theorem coe_mul_eq_coe_snd (a : A) (m : 𝓜(𝕜, A)) : (a : 𝓜(𝕜, A)) * m = (m.snd a : 𝓜(𝕜, A)) :=
   ext_fst_snd (fun _ => by simp [m.central]) (fun _ => by simp [snd_mul])
 
-end StarAddMonoid
+end InvolutiveStar
 
 section RegularNormedAlgebra
 
