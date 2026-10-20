@@ -75,8 +75,7 @@ omit [FiniteDimensional ℝ E'] in
 orientation of the tangent space of `M'` at `f x`, locally constant near `a` when read in the
 preferred trivialization at `f a`. Then the orientations of the tangent spaces of `M` obtained by
 transporting `ω x` back along `D x` are locally constant near `a` when read in the preferred
-trivialization at `a`: in these two trivializations the derivative varies continuously, so the
-sign of its determinant relative to its value at `a` is locally constant. -/
+trivialization at `a`. -/
 theorem eventually_mapOrientation_map_symm_eq {f : M → M'} (hf : ContMDiff I I' 1 f)
     (D : ∀ x, TangentSpace I x ≃L[ℝ] TangentSpace I' (f x))
     (hD : ∀ x, (D x : TangentSpace I x →L[ℝ] TangentSpace I' (f x)) = mfderiv I I' f x)
@@ -117,7 +116,8 @@ theorem eventually_mapOrientation_map_symm_eq {f : M → M'} (hf : ContMDiff I I
     rw [ContinuousLinearMap.inCoordinates_eq hx hfx]
     ext v
     simp [T, ← hD x, e, e']
-  -- Relative to its value at `a`, the derivative in coordinates has positive determinant near `a`.
+  -- In the two trivializations the derivative varies continuously, so relative to its value at
+  -- `a` it has positive determinant near `a`.
   let K : M → E →L[ℝ] E := fun x ↦ ((T a ha hfa).symm : E' →L[ℝ] E).comp (c x)
   have hKa : K a = ContinuousLinearMap.id ℝ E := by
     ext v
@@ -190,6 +190,7 @@ theorem map_orientationAt_pullback (x : M) (D : TangentSpace I x ≃L[ℝ] Tange
     Equiv.apply_symm_apply]
 
 /-- A map preserves orientation at every point from the pullback orientation. -/
+@[simp]
 theorem isOrientationPreservingAt_pullback (x : M) :
     IsOrientationPreservingAt (o'.pullback hf hdf hι) o' f x :=
   (isOrientationPreservingAt_iff_of_coe_eq _ o' f x (hdf x).choose (hdf x).choose_spec).mpr
@@ -226,12 +227,23 @@ theorem pullback_id (o : Orientation I M ι) (hf : ContMDiff I I 1 (id : M → M
     o.pullback hf hdf hι = o :=
   ((eq_pullback_iff o hf hdf hι).mpr (isOrientationPreservingAt_id o)).symm
 
+omit [IsManifold I 1 M] [IsManifold I' 1 M'] [IsManifold I'' 1 M''] [FiniteDimensional ℝ E]
+  [FiniteDimensional ℝ E'] [FiniteDimensional ℝ E''] in
+include hf hdf in
+/-- The composite of two `C¹` maps with everywhere invertible derivatives has everywhere invertible
+derivative. -/
+theorem isInvertible_mfderiv_comp {g : M' → M''} (hg : ContMDiff I' I'' 1 g)
+    (hdg : ∀ y, (mfderiv I' I'' g y).IsInvertible) (x : M) :
+    (mfderiv I I'' (g ∘ f) x).IsInvertible := by
+  rw [mfderiv_comp x (hg.mdifferentiableAt one_ne_zero) (hf.mdifferentiableAt one_ne_zero)]
+  exact (hdg (f x)).comp (hdf x)
+
 /-- Pulling back along a composite is pulling back successively. -/
 theorem pullback_comp (o'' : Orientation I'' M'' ι) {g : M' → M''} (hg : ContMDiff I' I'' 1 g)
-    (hdg : ∀ y, (mfderiv I' I'' g y).IsInvertible) (hι' : Fintype.card ι = finrank ℝ E')
-    (hgf : ∀ x, (mfderiv I I'' (g ∘ f) x).IsInvertible) :
-    (o''.pullback hg hdg hι').pullback hf hdf hι = o''.pullback (hg.comp hf) hgf hι :=
-  (eq_pullback_iff o'' (hg.comp hf) hgf hι).mpr fun x ↦
+    (hdg : ∀ y, (mfderiv I' I'' g y).IsInvertible) (hι' : Fintype.card ι = finrank ℝ E') :
+    (o''.pullback hg hdg hι').pullback hf hdf hι =
+      o''.pullback (hg.comp hf) (isInvertible_mfderiv_comp hf hdf hg hdg) hι :=
+  (eq_pullback_iff o'' (hg.comp hf) _ hι).mpr fun x ↦
     (isOrientationPreservingAt_pullback o'' hg hdg hι' (f x)).comp
       (isOrientationPreservingAt_pullback _ hf hdf hι x)
 
