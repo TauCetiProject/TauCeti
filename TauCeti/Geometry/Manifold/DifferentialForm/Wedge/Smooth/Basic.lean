@@ -169,14 +169,35 @@ theorem coe_wedgeWith (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (φ : SmoothForm
       RoughForm.wedgeWith μ (φ : RoughForm I M F₁ k) (ψ : RoughForm I M F₂ l) := by
   rw [wedgeWith, LinearMap.mk₂_apply]
 
+/-- Transporting a smooth form across an equality of degrees. -/
+def castDegree {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {n m : ℕ} (h : n = m) :
+    SmoothForm I M F n ≃ₗ[ℝ] SmoothForm I M F m := by
+  subst m
+  exact LinearEquiv.refl ℝ _
+
 /-- Evaluating a smooth form after transporting its degree across an equality. -/
 @[simp]
-theorem cast_apply {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+theorem castDegree_apply {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     {n m : ℕ} (h : n = m) (α : SmoothForm I M F n) (x : M)
     (v : Fin m → TangentSpace I x) :
-    ((cast (congrArg (fun q ↦ SmoothForm I M F q) h) α : SmoothForm I M F m) :
-      RoughForm I M F m) x v = α.1 x (v ∘ Fin.cast h) := by
+    (castDegree h α : RoughForm I M F m) x v = α.1 x (v ∘ Fin.cast h) := by
   cases h
+  rfl
+
+/-- Transporting across reflexivity leaves a smooth form unchanged. -/
+@[simp]
+theorem castDegree_rfl {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {n : ℕ} (α : SmoothForm I M F n) : castDegree rfl α = α := by
+  rfl
+
+/-- Transporting across a composite degree equality agrees with successive transports. -/
+@[simp]
+theorem castDegree_trans {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {n m o : ℕ} (h : n = m) (h' : m = o)
+    (α : SmoothForm I M F n) :
+    castDegree (h.trans h') α = castDegree h' (castDegree h α) := by
+  cases h
+  cases h'
   rfl
 
 /-- Evaluation of the smooth fixed-coefficient paired wedge. -/
