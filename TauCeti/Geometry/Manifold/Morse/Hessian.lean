@@ -528,7 +528,7 @@ theorem manifoldMorseIndex_eq_morseIndex_of_mem_maximalAtlas (hf : ContMDiffAt I
 omit hx in
 /-- At a nondegenerate critical point in a chart's target, the coordinate Morse index equals
 the manifold Morse index at its inverse image. -/
-theorem manifoldMorseIndex_symm_of_mem_maximalAtlas
+theorem manifoldMorseIndex_symm_eq_morseIndex_of_mem_maximalAtlas
     {v : E} (hv : v ∈ (e.extend I).target)
     (h : IsNondegenerateCriticalPoint (f ∘ (e.extend I).symm) v) :
     manifoldMorseIndex I f ((e.extend I).symm v) =

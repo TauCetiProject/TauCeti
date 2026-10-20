@@ -96,7 +96,7 @@ private theorem exists_criticalPoint_continuation_self
     filter_upwards [hnd, hindex, htarget] with q hq hi ht
     have hchart : manifoldMorseIndex 𝓘(ℝ, E) (fun y ↦ F (q, y)) (ψ q) =
         morseIndex (fun v ↦ G (q, v)) (η q) :=
-      manifoldMorseIndex_symm_of_mem_maximalAtlas he ht hq
+      manifoldMorseIndex_symm_eq_morseIndex_of_mem_maximalAtlas he ht hq
     rw [hchart, manifoldMorseIndex_def]
     exact hi
   -- Pull the joint uniqueness neighbourhood back through the coordinate map.
