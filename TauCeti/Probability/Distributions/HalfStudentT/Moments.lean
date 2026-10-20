@@ -90,7 +90,6 @@ theorem integrable_pow_halfStudentTMeasure_iff (hν : 0 < ν) (hs : 0 < s) (n : 
     integrable_rpow_halfStudentTMeasure_iff hν hs (n : ℝ)
 
 /-- Natural moments, including order zero, on their finite range. -/
-@[simp]
 theorem integral_pow_halfStudentTMeasure (hν : 0 < ν) (hs : 0 < s) (n : ℕ)
     (hn : (n : ℝ) < ν) :
     ∫ x, x ^ n ∂halfStudentTMeasure ν s =
@@ -105,6 +104,11 @@ theorem integrable_id_halfStudentTMeasure_iff (hν : 0 < ν) (hs : 0 < s) :
     Integrable id (halfStudentTMeasure ν s) ↔ 1 < ν := by
   simpa only [pow_one, Nat.cast_one, Function.id_def] using
     integrable_pow_halfStudentTMeasure_iff hν hs 1
+
+/-- The half-Cauchy law at positive scale has no finite mean. -/
+theorem not_integrable_id_halfCauchyMeasure (hs : 0 < s) :
+    ¬ Integrable id (halfCauchyMeasure s) := by
+  simp [halfCauchyMeasure, integrable_id_halfStudentTMeasure_iff one_pos hs]
 
 /-- The mean of a half-Student t law when its degree exceeds one. -/
 @[simp]
