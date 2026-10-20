@@ -62,16 +62,11 @@ theorem MonoidAlgebra.isFractionRing_of_finite (R K M : Type*) [CommRing R] [Fie
   have : Module.Finite K (MonoidAlgebra K M) :=
     Module.Finite.of_basis (_root_.MonoidAlgebra.basis M K)
   have : IsArtinianRing (MonoidAlgebra K M) := isArtinian_of_tower K inferInstance
-  refine ⟨?_, ?_, ?_⟩
-  · intro x
-    exact IsArtinianRing.isUnit_of_mem_nonZeroDivisors
-      (a := algebraMap (MonoidAlgebra R M) (MonoidAlgebra K M) x)
-      (IsLocalization.nonZeroDivisors_le_comap U (MonoidAlgebra K M) x.property)
-  · intro z
-    obtain ⟨⟨a, s⟩, hs⟩ := IsLocalization.surj U z
-    exact ⟨(a, ⟨s, hU s.property⟩), hs⟩
-  · intro x y h
-    exact ⟨1, by simpa using hinj h⟩
+  refine IsLocalization.of_le U (nonZeroDivisors (MonoidAlgebra R M)) hU ?_
+  intro x hx
+  exact IsArtinianRing.isUnit_of_mem_nonZeroDivisors
+    (a := algebraMap (MonoidAlgebra R M) (MonoidAlgebra K M) x)
+    (IsLocalization.nonZeroDivisors_le_comap U (MonoidAlgebra K M) hx)
 
 universe u v w q
 
