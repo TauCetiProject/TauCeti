@@ -38,13 +38,15 @@ variable (n : ℕ) [NeZero n]
 
 /-- **The standard pairing on `ℤ/n`**, `(a, b) ↦ e(a b / n)`: Mathlib's `AddChar.zmodHom` written
 multiplicatively, as a monoid homomorphism in each variable. -/
-@[expose] noncomputable def zmodPairing :
+noncomputable def zmodPairing :
     Multiplicative (ZMod n) →* Multiplicative (ZMod n) →* Circle :=
   toMonoidHomMulEquiv.toMonoidHom.comp (zmodHom (n := n)).toMonoidHom
 
--- `AddChar.zmod n a` is defined as `b ↦ ZMod.toCircle (a * b)`.
+-- `AddChar.zmod n a` is defined as `b ↦ ZMod.toCircle (a * b)`. A tactic proof, unlike a term
+-- `rfl`, does not require the body of `zmodPairing` to be exposed.
 theorem zmodPairing_apply (a b : Multiplicative (ZMod n)) :
-    zmodPairing n a b = ZMod.toCircle (a.toAdd * b.toAdd) := rfl
+    zmodPairing n a b = ZMod.toCircle (a.toAdd * b.toAdd) := by
+  rfl
 
 /-- The standard pairing on `ℤ/n` is symmetric. -/
 theorem zmodPairing_comm (a b : Multiplicative (ZMod n)) :
