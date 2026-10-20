@@ -51,7 +51,8 @@ module of a shape with more than `n` rows vanishes
   Weyl module occurs in it and dominates every weight that does.
 * `TauCeti.nonempty_equiv_rationalWeylRep_iff`: **two rational Weyl modules are equivalent exactly
   when their dominant weights agree.**
-* `TauCeti.nonempty_iso_weylFDRepOfShape_iff`: the same for the polynomial Weyl modules of Young
+* `TauCeti.nonempty_equiv_weylRepOfShape_iff` and
+  `TauCeti.nonempty_iso_weylFDRepOfShape_iff`: the same for the polynomial Weyl modules of Young
   diagrams with at most `n` rows, hence for `TauCeti.schurFunctor`, which is
   `TauCeti.weylFDRepOfShape` over `ℂ`.
 * `TauCeti.toSkeleton_rationalWeylFDRep_injective`: **`λ ↦ V_λ` is injective on isomorphism
@@ -71,31 +72,13 @@ namespace TauCeti
 
 universe u
 
-variable (k : Type u) [Field k] [CharZero k] {n : ℕ}
-
-/-- A sequence indexed by `Fin n` is determined by its sums over the initial segments
-`{j | j < m}`: the inclusive partial sums of the difference of two such sequences all vanish, so
-`TauCeti.eq_zero_of_forall_sum_Iic_eq_zero` applies. -/
-private theorem eq_of_forall_sum_filter_lt_eq {l l' : Fin n → ℤ}
-    (h : ∀ m : ℕ, ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, l j =
-      ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, l' j) :
-    l = l' := by
-  obtain _ | n := n
-  · exact funext fun i => i.elim0
-  have hIic : ∀ k : Fin (n + 1), ∑ j ∈ Finset.Iic k, (l - l') j = 0 := by
-    intro k
-    have hfilter : Finset.Iic k =
-        Finset.univ.filter fun j : Fin (n + 1) => (j : ℕ) < (k : ℕ) + 1 := by
-      ext j
-      simp only [Finset.mem_Iic, Finset.mem_filter, Finset.mem_univ, true_and, Fin.le_def]
-      omega
-    rw [hfilter]
-    simp only [Pi.sub_apply, Finset.sum_sub_distrib, h ((k : ℕ) + 1), sub_self]
-  funext i
-  have hi := congrFun (eq_zero_of_forall_sum_Iic_eq_zero n hIic) i
-  simpa only [Pi.sub_apply, Pi.zero_apply, sub_eq_zero] using hi
+variable {n : ℕ}
 
 /-! ## The dominant weight of a rational Weyl module -/
+
+section CommRing
+
+variable (k : Type u) [CommRing k] [Algebra ℚ k] [Nontrivial k]
 
 /-- **The dominant weight of a rational Weyl module occurs in it**: the weight space of
 `TauCeti.rationalWeylRep k n λ` at `λ` is nonzero.  Under the determinant twist `λ` corresponds to
@@ -110,6 +93,12 @@ theorem weightSpace_rationalWeylRep_self_ne_bot (l : DominantWeight n) :
     simp [DominantWeight.shift_apply, sub_eq_add_neg]
   rw [he]
   exact weightSpace_weylRepOfShape_weightOfShape_ne_bot l.colLen_zero_detShiftShape_le
+
+end CommRing
+
+section Field
+
+variable (k : Type u) [Field k] [CharZero k]
 
 /-- **The dominant weight of a rational Weyl module dominates every weight occurring in it**: the
 partial sums of such a weight are bounded by those of `λ`.  This is the determinant twist of the
@@ -128,18 +117,6 @@ theorem sum_le_sum_of_weightSpace_rationalWeylRep_ne_bot {l : DominantWeight n} 
 
 /-! ## Distinctness -/
 
-/-- The weight-space transfer of `Representation.Equiv.weightSpace_eq_bot_iff` with the carriers
-of two rational Weyl modules named, as their additive-monoid structure requires. -/
-private theorem weightSpace_rationalWeylRep_eq_bot_iff_of_equiv {l l' : DominantWeight n}
-    (φ : (rationalWeylRep k n l).Equiv (rationalWeylRep k n l')) (a : Fin n → ℤ) :
-    weightSpace (W := (weylModuleOfShape k n l'.detShiftShape).toSubmodule)
-        (rationalWeylRep k n l') a = ⊥ ↔
-      weightSpace (W := (weylModuleOfShape k n l.detShiftShape).toSubmodule)
-        (rationalWeylRep k n l) a = ⊥ :=
-  Representation.Equiv.weightSpace_eq_bot_iff
-    (V := (weylModuleOfShape k n l.detShiftShape).toSubmodule)
-    (W := (weylModuleOfShape k n l'.detShiftShape).toSubmodule) φ a
-
 /-- **Equivalent rational Weyl modules have equal dominant weights.**  Each of the two weights
 occurs in the other module, so each dominates the other, and a sequence is determined by its
 partial sums. -/
@@ -148,11 +125,15 @@ theorem eq_of_nonempty_equiv_rationalWeylRep {l l' : DominantWeight n}
   obtain ⟨φ⟩ := h
   have hl : weightSpace (W := (weylModuleOfShape k n l'.detShiftShape).toSubmodule)
       (rationalWeylRep k n l') (l : Fin n → ℤ) ≠ ⊥ := by
-    rw [Ne, weightSpace_rationalWeylRep_eq_bot_iff_of_equiv k φ]
+    rw [Ne, Representation.Equiv.weightSpace_eq_bot_iff
+      (V := (weylModuleOfShape k n l.detShiftShape).toSubmodule)
+      (W := (weylModuleOfShape k n l'.detShiftShape).toSubmodule) φ]
     exact weightSpace_rationalWeylRep_self_ne_bot k l
   have hl' : weightSpace (W := (weylModuleOfShape k n l.detShiftShape).toSubmodule)
       (rationalWeylRep k n l) (l' : Fin n → ℤ) ≠ ⊥ := by
-    rw [Ne, weightSpace_rationalWeylRep_eq_bot_iff_of_equiv k φ.symm]
+    rw [Ne, Representation.Equiv.weightSpace_eq_bot_iff
+      (V := (weylModuleOfShape k n l'.detShiftShape).toSubmodule)
+      (W := (weylModuleOfShape k n l.detShiftShape).toSubmodule) φ.symm]
     exact weightSpace_rationalWeylRep_self_ne_bot k l'
   exact Subtype.ext (eq_of_forall_sum_filter_lt_eq fun m => le_antisymm
     (sum_le_sum_of_weightSpace_rationalWeylRep_ne_bot k hl m)
@@ -160,12 +141,14 @@ theorem eq_of_nonempty_equiv_rationalWeylRep {l l' : DominantWeight n}
 
 /-- **The rational Weyl modules of `GL n k` are equivalent exactly when their dominant weights
 agree**, so the dominant weight is a complete invariant of the equivalence class. -/
+@[simp]
 theorem nonempty_equiv_rationalWeylRep_iff (l l' : DominantWeight n) :
     Nonempty ((rationalWeylRep k n l).Equiv (rationalWeylRep k n l')) ↔ l = l' :=
   ⟨eq_of_nonempty_equiv_rationalWeylRep k, fun hl => hl ▸ ⟨Representation.Equiv.refl _⟩⟩
 
 /-- The bundled form: two rational Weyl modules are isomorphic in `FDRep k (GL n k)` exactly when
 their dominant weights agree. -/
+@[simp]
 theorem nonempty_iso_rationalWeylFDRep_iff (l l' : DominantWeight n) :
     Nonempty (rationalWeylFDRep k n l ≅ rationalWeylFDRep k n l') ↔ l = l' := by
   rw [nonempty_fdRepIso_iff]
@@ -182,16 +165,6 @@ theorem toSkeleton_rationalWeylFDRep_injective :
 
 /-! ## The polynomial case -/
 
-/-- The weight-space transfer of `Representation.Equiv.weightSpace_eq_bot_iff` with the carriers
-of two Weyl modules of shapes named, as their additive-monoid structure requires. -/
-private theorem weightSpace_weylRepOfShape_eq_bot_iff_of_equiv {μ ν : YoungDiagram}
-    (φ : (weylRepOfShape k n μ).Equiv (weylRepOfShape k n ν)) (a : Fin n → ℤ) :
-    weightSpace (W := (weylModuleOfShape k n ν).toSubmodule) (weylRepOfShape k n ν) a = ⊥ ↔
-      weightSpace (W := (weylModuleOfShape k n μ).toSubmodule) (weylRepOfShape k n μ) a = ⊥ :=
-  Representation.Equiv.weightSpace_eq_bot_iff
-    (V := (weylModuleOfShape k n μ).toSubmodule)
-    (W := (weylModuleOfShape k n ν).toSubmodule) φ a
-
 /-- **Equivalent Weyl modules of Young diagrams with at most `n` rows have equal shapes.**  The
 row bounds cannot be dropped: taller diagrams have vanishing Weyl modules, which are all
 isomorphic. -/
@@ -201,11 +174,15 @@ theorem eq_of_nonempty_equiv_weylRepOfShape {μ ν : YoungDiagram} (hμ : μ.col
   obtain ⟨φ⟩ := h
   have hμν : weightSpace (W := (weylModuleOfShape k n ν).toSubmodule)
       (weylRepOfShape k n ν) (weightOfShape n μ).1 ≠ ⊥ := by
-    rw [Ne, weightSpace_weylRepOfShape_eq_bot_iff_of_equiv k φ]
+    rw [Ne, Representation.Equiv.weightSpace_eq_bot_iff
+      (V := (weylModuleOfShape k n μ).toSubmodule)
+      (W := (weylModuleOfShape k n ν).toSubmodule) φ]
     exact weightSpace_weylRepOfShape_weightOfShape_ne_bot hμ
   have hνμ : weightSpace (W := (weylModuleOfShape k n μ).toSubmodule)
       (weylRepOfShape k n μ) (weightOfShape n ν).1 ≠ ⊥ := by
-    rw [Ne, weightSpace_weylRepOfShape_eq_bot_iff_of_equiv k φ.symm]
+    rw [Ne, Representation.Equiv.weightSpace_eq_bot_iff
+      (V := (weylModuleOfShape k n ν).toSubmodule)
+      (W := (weylModuleOfShape k n μ).toSubmodule) φ.symm]
     exact weightSpace_weylRepOfShape_weightOfShape_ne_bot hν
   have hw : weightOfShape n μ = weightOfShape n ν :=
     Subtype.ext (eq_of_forall_sum_filter_lt_eq fun m => le_antisymm
@@ -213,15 +190,26 @@ theorem eq_of_nonempty_equiv_weylRepOfShape {μ ν : YoungDiagram} (hμ : μ.col
       (sum_le_sum_weightOfShape_of_weightSpace_weylRepOfShape_ne_bot (k := k) hνμ m))
   rw [← shape_weightOfShape hμ, ← shape_weightOfShape hν, hw]
 
-/-- **The Weyl modules of Young diagrams with at most `n` rows are isomorphic exactly when the
-diagrams agree.**  Over `ℂ` this separates the Schur functors `𝕊^μ(ℂⁿ)`, which are the bundled
-Weyl modules `TauCeti.weylFDRepOfShape` there. -/
+/-- **The Weyl modules of Young diagrams with at most `n` rows are equivalent exactly when the
+diagrams agree**, so for such diagrams the shape is a complete invariant of the equivalence
+class. -/
+@[simp]
+theorem nonempty_equiv_weylRepOfShape_iff {μ ν : YoungDiagram} (hμ : μ.colLen 0 ≤ n)
+    (hν : ν.colLen 0 ≤ n) :
+    Nonempty ((weylRepOfShape k n μ).Equiv (weylRepOfShape k n ν)) ↔ μ = ν :=
+  ⟨eq_of_nonempty_equiv_weylRepOfShape k hμ hν,
+    fun hμν => hμν ▸ ⟨Representation.Equiv.refl _⟩⟩
+
+/-- The bundled form: the Weyl modules of Young diagrams with at most `n` rows are isomorphic in
+`FDRep k (GL n k)` exactly when the diagrams agree.  Over `ℂ` this separates the Schur functors
+`𝕊^μ(ℂⁿ)`, which are the bundled Weyl modules `TauCeti.weylFDRepOfShape` there. -/
+@[simp]
 theorem nonempty_iso_weylFDRepOfShape_iff {μ ν : YoungDiagram} (hμ : μ.colLen 0 ≤ n)
     (hν : ν.colLen 0 ≤ n) :
     Nonempty (weylFDRepOfShape k n μ ≅ weylFDRepOfShape k n ν) ↔ μ = ν := by
   rw [nonempty_fdRepIso_iff]
-  refine ⟨fun h => eq_of_nonempty_equiv_weylRepOfShape k hμ hν ?_, fun hμν => hμν ▸ ?_⟩
-  · simpa only [FDRep.of_ρ'] using h
-  · exact ⟨Representation.Equiv.refl _⟩
+  simpa only [FDRep.of_ρ'] using nonempty_equiv_weylRepOfShape_iff k hμ hν
+
+end Field
 
 end TauCeti

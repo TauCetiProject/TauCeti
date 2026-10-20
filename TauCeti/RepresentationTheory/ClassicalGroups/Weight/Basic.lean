@@ -64,6 +64,11 @@ The definitions themselves need only a commutative ring, and are stated there.
 * `TauCeti.map_weightSpace_le_of_commute`: **an operator commuting with the torus action preserves
   every weight space**, so when the ambient representation is the internal direct sum of its weight
   spaces, a subrepresentation the operator cuts out inherits that decomposition.
+* `Representation.IntertwiningMap.apply_mem_weightSpace` and
+  `Representation.IntertwiningMap.map_weightSpace_le`: **an equivariant map carries each weight
+  space into the weight space of the same weight**, whence
+  `Representation.IntertwiningMap.iSup_weightSpace_eq_top_of_surjective`: weight spaces spanning a
+  representation also span any equivariant quotient.
 * `Subrepresentation.weightSpace_toRepresentation`: **the weight spaces of a
   subrepresentation are the traces of the ambient ones**, with
   `Subrepresentation.weightSpace_toRepresentation_eq_bot_iff` giving the criterion for a weight
@@ -190,24 +195,36 @@ namespace Representation.IntertwiningMap
 
 open TauCeti
 
+variable {k : Type u} [CommRing k] {n : ℕ}
+variable {V W : Type*} [AddCommGroup V] [Module k V] [AddCommGroup W] [Module k W]
+variable {ρ : Representation k (GL (Fin n) k) V} {σ : Representation k (GL (Fin n) k) W}
+
+/-- **An equivariant map preserves weight spaces.**  A weight vector is an eigenvector of every
+`ρ (diagGL t)`, and an equivariant map sends it to an eigenvector of `σ (diagGL t)` for the same
+eigenvalue. -/
+theorem apply_mem_weightSpace (f : IntertwiningMap ρ σ) {l : Fin n → ℤ} {v : V}
+    (hv : v ∈ weightSpace ρ l) : f v ∈ weightSpace σ l := by
+  rw [mem_weightSpace_iff]
+  intro t
+  rw [← f.isIntertwining, apply_of_mem_weightSpace hv, map_smul]
+
+/-- **An equivariant map carries each weight space into the weight space of the same weight.** -/
+theorem map_weightSpace_le (f : IntertwiningMap ρ σ) (l : Fin n → ℤ) :
+    (weightSpace ρ l).map f.toLinearMap ≤ weightSpace σ l := by
+  rintro _ ⟨v, hv, rfl⟩
+  rw [f.toLinearMap_apply]
+  exact f.apply_mem_weightSpace hv
+
 /-- Integer weight spaces spanning a representation also span any equivariant quotient. -/
-theorem iSup_weightSpace_eq_top_of_surjective {k : Type u} [CommRing k] {n : ℕ}
-    {V W : Type*} [AddCommGroup V] [Module k V] [AddCommGroup W] [Module k W]
-    {ρ : Representation k (GL (Fin n) k) V} {σ : Representation k (GL (Fin n) k) W}
-    (f : IntertwiningMap ρ σ) (hf : Function.Surjective f)
-    (hρ : ⨆ l : Fin n → ℤ, weightSpace ρ l = ⊤) :
+theorem iSup_weightSpace_eq_top_of_surjective (f : IntertwiningMap ρ σ)
+    (hf : Function.Surjective f) (hρ : ⨆ l : Fin n → ℤ, weightSpace ρ l = ⊤) :
     ⨆ l : Fin n → ℤ, weightSpace σ l = ⊤ := by
-  have hmap (l : Fin n → ℤ) : (weightSpace ρ l).map f.toLinearMap ≤ weightSpace σ l := by
-    rintro _ ⟨v, hv, rfl⟩
-    rw [mem_weightSpace_iff]
-    intro t
-    rw [f.toLinearMap_apply, ← f.isIntertwining, apply_of_mem_weightSpace hv, map_smul]
   apply top_le_iff.mp
   calc
     ⊤ = (⨆ l : Fin n → ℤ, weightSpace ρ l).map f.toLinearMap := by
       rw [hρ, Submodule.map_top, LinearMap.range_eq_top.mpr hf]
     _ = ⨆ l : Fin n → ℤ, (weightSpace ρ l).map f.toLinearMap := Submodule.map_iSup _ _
-    _ ≤ ⨆ l : Fin n → ℤ, weightSpace σ l := iSup_mono hmap
+    _ ≤ ⨆ l : Fin n → ℤ, weightSpace σ l := iSup_mono f.map_weightSpace_le
 
 end Representation.IntertwiningMap
 

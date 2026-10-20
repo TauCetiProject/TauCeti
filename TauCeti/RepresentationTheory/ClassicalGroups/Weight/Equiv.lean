@@ -12,20 +12,21 @@ public import TauCeti.RepresentationTheory.ClassicalGroups.Weight.Basic
 # Weight spaces are invariants of a representation of `GL n k`
 
 An equivalence of representations of `GL n k` carries the weight space of each weight
-`l : Fin n → ℤ` onto the weight space of the same weight, because a weight space is a joint
-eigenspace of the diagonal torus and an equivariant map takes an eigenvector of `ρ (diagGL t)` to
-an eigenvector of `σ (diagGL t)` with the same eigenvalue.
+`l : Fin n → ℤ` onto the weight space of the same weight.  One inclusion holds for any equivariant
+map and is `Representation.IntertwiningMap.apply_mem_weightSpace`, because a weight space is a
+joint eigenspace of the diagonal torus and an equivariant map takes an eigenvector of
+`ρ (diagGL t)` to an eigenvector of `σ (diagGL t)` with the same eigenvalue; an equivalence has an
+inverse, so for it the inclusion is an equality.
 
 Consequently a weight occurring in one of two equivalent representations occurs in the other,
 which is what makes the set of weights — and so the highest weight — an invariant of the
 equivalence class rather than of the chosen carrier.  The Lie-theoretic counterpart is
-`LieModule.map_weightSpace_eq`.
+`LieModule.map_genWeightSpace_eq`.
 
 ## Main results
 
-* `Representation.Equiv.apply_mem_weightSpace` and
-  `Representation.Equiv.apply_mem_weightSpace_iff`: an equivalence of representations preserves
-  and reflects membership in a weight space.
+* `Representation.Equiv.apply_mem_weightSpace_iff`: an equivalence of representations reflects
+  membership in a weight space.
 * `Representation.Equiv.map_weightSpace`: it maps the weight space of `l` **onto** that of `l`.
 * `Representation.Equiv.weightSpace_eq_bot_iff`: hence a weight occurs in one representation
   exactly when it occurs in the other.
@@ -59,35 +60,26 @@ variable {ρ : Representation k (GL (Fin n) k) V} {σ : Representation k (GL (Fi
 
 namespace Equiv
 
-/-- **An equivalence of representations of `GL n k` preserves weight spaces.** A weight vector is
-an eigenvector of every `ρ (diagGL t)`, and an equivariant map sends it to an eigenvector of
-`σ (diagGL t)` for the same eigenvalue. -/
-theorem apply_mem_weightSpace (φ : ρ.Equiv σ) {l : Fin n → ℤ} {v : V}
-    (hv : v ∈ weightSpace ρ l) : φ v ∈ weightSpace σ l := by
-  rw [mem_weightSpace_iff]
-  intro t
-  have h := LinearMap.congr_fun (φ.isIntertwining' (diagGL t)) v
-  simp only [LinearMap.coe_comp, Function.comp_apply, Equiv.coe_toLinearMap] at h
-  rw [← h, apply_of_mem_weightSpace hv t, map_smul]
-
 /-- **An equivalence of representations of `GL n k` reflects weight spaces**: a vector lies in the
-weight space of `l` exactly when its image does. -/
+weight space of `l` exactly when its image does.  Preservation is
+`Representation.IntertwiningMap.apply_mem_weightSpace`, applied to the equivalence and to its
+inverse. -/
 theorem apply_mem_weightSpace_iff (φ : ρ.Equiv σ) (l : Fin n → ℤ) (v : V) :
     φ v ∈ weightSpace σ l ↔ v ∈ weightSpace ρ l := by
-  refine ⟨fun h ↦ ?_, fun h ↦ φ.apply_mem_weightSpace h⟩
-  simpa only [Equiv.symm_apply_apply] using φ.symm.apply_mem_weightSpace h
+  refine ⟨fun h ↦ ?_, fun h ↦ φ.toIntertwiningMap.apply_mem_weightSpace h⟩
+  simpa only [coe_toIntertwiningMap, symm_apply_apply] using
+    φ.symm.toIntertwiningMap.apply_mem_weightSpace h
 
 /-- **An equivalence of representations of `GL n k` maps each weight space onto the weight space
 of the same weight.** -/
+@[simp]
 theorem map_weightSpace (φ : ρ.Equiv σ) (l : Fin n → ℤ) :
     (weightSpace ρ l).map φ.toLinearMap = weightSpace σ l := by
-  refine le_antisymm ?_ fun w hw ↦ ?_
-  · rintro w ⟨v, hv, rfl⟩
-    exact φ.apply_mem_weightSpace hv
-  · have hsymm : φ.symm w ∈ weightSpace ρ l := by
-      rw [← φ.apply_mem_weightSpace_iff l (φ.symm w)]
-      simpa only [Equiv.apply_symm_apply] using hw
-    exact Submodule.mem_map.mpr ⟨φ.symm w, hsymm, by simp⟩
+  refine le_antisymm (φ.toIntertwiningMap.map_weightSpace_le l) fun w hw ↦ ?_
+  have hsymm : φ.symm w ∈ weightSpace ρ l := by
+    rw [← φ.apply_mem_weightSpace_iff l (φ.symm w)]
+    simpa only [apply_symm_apply] using hw
+  exact Submodule.mem_map.mpr ⟨φ.symm w, hsymm, by simp⟩
 
 /-- **A weight occurs in one of two equivalent representations of `GL n k` exactly when it occurs
 in the other.** -/
