@@ -311,7 +311,6 @@ private theorem exists_submodule_hessianQuadraticForm_eq (b : OrthonormalBasis �
 /-- **The Levi form of a Hermitian plus holomorphic quadratic function.** For an orthonormal
 basis `b`, the Levi form of `a ‖z‖² + Re (c ∑ⱼ ⟪b j, z⟫²)` is `a ⟪·, ·⟫` at every point: the
 holomorphic part does not contribute. -/
-@[simp]
 theorem leviForm_mul_norm_sq_add_re_mul_sum_inner_sq (b : OrthonormalBasis ι ℂ E) (a : ℝ)
     (c : ℂ) (x : E) :
     leviForm (fun z ↦ a * ‖z‖ ^ 2 + (c * ∑ j, ⟪b j, z⟫_ℂ ^ 2).re) x = (a : ℂ) • innerₛₗ ℂ := by
