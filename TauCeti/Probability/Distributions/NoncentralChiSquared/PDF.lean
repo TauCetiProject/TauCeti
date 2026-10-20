@@ -106,11 +106,6 @@ theorem noncentralChiSquaredPDFReal_zero_noncentrality (k x : ℝ) :
       simp [poissonMeasure_real_singleton, hn]
   · rfl
 
-/-- The double-zero Dirac law has zero continuous density. -/
-@[simp high]
-theorem noncentralChiSquaredPDFReal_zero_zero (x : ℝ) : noncentralChiSquaredPDFReal 0 0 x = 0 := by
-  simp
-
 /-- At zero noncentrality the extended density is the central density on the positive
 half-line, with the declared zero values elsewhere. -/
 @[simp]
@@ -118,13 +113,7 @@ theorem noncentralChiSquaredPDF_zero_noncentrality (k x : ℝ) :
     noncentralChiSquaredPDF k 0 x =
       if 0 ≤ k ∧ 0 < x then chiSquaredPDF k x else 0 := by
   rw [noncentralChiSquaredPDF_eq_ofReal, noncentralChiSquaredPDFReal_zero_noncentrality]
-  split_ifs <;> simp only [chiSquaredPDF_eq_gammaPDF, chiSquaredPDFReal_eq_gammaPDFReal,
-    gammaPDF, ENNReal.ofReal_zero]
-
-/-- The double-zero Dirac law has zero extended continuous density. -/
-@[simp high]
-theorem noncentralChiSquaredPDF_zero_zero (x : ℝ) : noncentralChiSquaredPDF 0 0 x = 0 := by
-  simp [noncentralChiSquaredPDF]
+  split_ifs <;> simp only [chiSquaredPDF_eq_ofReal, ENNReal.ofReal_zero]
 
 /-- The chosen extended density vanishes at and below zero. -/
 @[simp]
@@ -210,8 +199,7 @@ theorem noncentralChiSquaredPDF_of_pos (hk : 0 ≤ k) (hx : 0 < x) :
   congr 1
   funext n
   rw [ENNReal.ofReal_mul measureReal_nonneg, measureReal_def,
-    ENNReal.ofReal_toReal (measure_ne_top _ _), chiSquaredPDF_eq_gammaPDF,
-    chiSquaredPDFReal_eq_gammaPDFReal, gammaPDF]
+    ENNReal.ofReal_toReal (measure_ne_top _ _), chiSquaredPDF_eq_ofReal]
 
 /-- The density series agrees with the chosen density almost everywhere, including the
 nonpositive half-line. The value chosen at zero has no effect on the measure. -/

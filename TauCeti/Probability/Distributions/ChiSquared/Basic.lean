@@ -121,6 +121,10 @@ def chiSquaredPDFReal (k x : ℝ) : ℝ :=
 `0 < k`. -/
 def chiSquaredPDF (k x : ℝ) : ℝ≥0∞ := ENNReal.ofReal (chiSquaredPDFReal k x)
 
+/-- The extended candidate density is obtained from its real companion. -/
+theorem chiSquaredPDF_eq_ofReal (k x : ℝ) :
+    chiSquaredPDF k x = ENNReal.ofReal (chiSquaredPDFReal k x) := (rfl)
+
 /-- On the nonnegative half-line, the candidate real-valued chi-squared density is given by its
 textbook formula. -/
 @[simp]
