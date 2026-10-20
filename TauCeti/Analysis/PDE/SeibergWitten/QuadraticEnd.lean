@@ -143,16 +143,18 @@ theorem norm_quadraticEnd_le (ψ : E) : ‖quadraticEnd ψ‖ ≤ ‖ψ‖ ^ 2 /
   opNorm_le_bound _ (by positivity) fun v ↦ (norm_quadraticEnd_apply ψ v).le
 
 /-- The operator norm of `Q₀(ψ)` is `‖ψ‖² / 2`. -/
-theorem norm_quadraticEnd [Nontrivial E] (ψ : E) : ‖quadraticEnd ψ‖ = ‖ψ‖ ^ 2 / 2 := by
+theorem norm_quadraticEnd (ψ : E) : ‖quadraticEnd ψ‖ = ‖ψ‖ ^ 2 / 2 := by
   refine le_antisymm (norm_quadraticEnd_le ψ) ?_
-  obtain ⟨v, hv⟩ := exists_ne (0 : E)
-  have := (quadraticEnd ψ).le_opNorm v
+  rcases eq_or_ne ψ 0 with rfl | hψ
+  · simp
+  -- Test the operator norm against `ψ` itself.
+  have := (quadraticEnd ψ).le_opNorm ψ
   rw [norm_quadraticEnd_apply] at this
-  exact le_of_mul_le_mul_right this (norm_pos_iff.2 hv)
+  exact le_of_mul_le_mul_right this (norm_pos_iff.2 hψ)
 
-/-- On a nonzero space, `Q₀(ψ)` vanishes exactly when `ψ` does. -/
+/-- `Q₀(ψ)` vanishes exactly when `ψ` does. -/
 @[simp]
-theorem quadraticEnd_eq_zero_iff [Nontrivial E] {ψ : E} : quadraticEnd ψ = 0 ↔ ψ = 0 := by
+theorem quadraticEnd_eq_zero_iff {ψ : E} : quadraticEnd ψ = 0 ↔ ψ = 0 := by
   rw [← norm_eq_zero, norm_quadraticEnd]
   simp
 
