@@ -195,28 +195,31 @@ variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
   {P : Type*} [TopologicalSpace P] [ChartedSpace H'' P] [IsManifold K 1 P]
 
 omit [IsManifold I 1 M] [IsManifold J 1 N] [FiniteDimensional ℝ E] [IsManifold K 1 P] in
-private theorem mfderiv_comp_of_injective
+/-- The manifold derivative of a composite is the composition of the derivatives when both are
+injective at the relevant points. -/
+theorem mfderiv_comp_of_injective
     (h : N → P) (f : M → N)
-    (hinjh : ∀ y, Function.Injective (mfderiv J K h y))
-    (hinjf : ∀ x, Function.Injective (mfderiv I J f x)) :
-    ∀ x, mfderiv I K (h ∘ f) x =
+    (x : M)
+    (hinjh : Function.Injective (mfderiv J K h (f x)))
+    (hinjf : Function.Injective (mfderiv I J f x)) :
+    mfderiv I K (h ∘ f) x =
       (mfderiv J K h (f x)).comp (mfderiv I J f x) := by
-  intro x
   have hhx : MDiffAt h (f x) :=
-    mdifferentiableAt_of_mfderiv_injective (hinjh (f x))
+    mdifferentiableAt_of_mfderiv_injective hinjh
   have hfx : MDiffAt f x :=
-    mdifferentiableAt_of_mfderiv_injective (hinjf x)
+    mdifferentiableAt_of_mfderiv_injective hinjf
   exact mfderiv_comp x hhx hfx
 
 omit [IsManifold I 1 M] [IsManifold J 1 N] [FiniteDimensional ℝ E] [IsManifold K 1 P] in
+/-- The manifold derivative of a composite is injective when both component derivatives are. -/
 theorem injective_mfderiv_comp
     (h : N → P) (f : M → N)
-    (hinjh : ∀ y, Function.Injective (mfderiv J K h y))
-    (hinjf : ∀ x, Function.Injective (mfderiv I J f x)) :
-    ∀ x, Function.Injective (mfderiv I K (h ∘ f) x) := by
-  intro x
-  rw [mfderiv_comp_of_injective h f hinjh hinjf x]
-  exact (hinjh (f x)).comp (hinjf x)
+    (x : M)
+    (hinjh : Function.Injective (mfderiv J K h (f x)))
+    (hinjf : Function.Injective (mfderiv I J f x)) :
+    Function.Injective (mfderiv I K (h ∘ f) x) := by
+  rw [mfderiv_comp_of_injective h f x hinjh hinjf]
+  exact hinjh.comp hinjf
 
 /-- Pulling a metric back along a composite is the same as pulling it back successively. -/
 theorem pullback_comp
@@ -226,12 +229,13 @@ theorem pullback_comp
     (hh : ContMDiff J K (n + 1) h) (hf : ContMDiff I J (n + 1) f)
     (hinjh : ∀ y, Function.Injective (mfderiv J K h y))
     (hinjf : ∀ x, Function.Injective (mfderiv I J f x)) :
-    g.pullback (h ∘ f) (hh.comp hf) (injective_mfderiv_comp h f hinjh hinjf) =
+    g.pullback (h ∘ f) (hh.comp hf)
+        (fun x ↦ injective_mfderiv_comp h f x (hinjh (f x)) (hinjf x)) =
       (g.pullback h hh hinjh).pullback f hf hinjf := by
   apply ext
   intro x v w
   rw [pullback_inner, pullback_inner, pullback_inner]
-  rw [mfderiv_comp_of_injective h f hinjh hinjf x]
+  rw [mfderiv_comp_of_injective h f x (hinjh (f x)) (hinjf x)]
   simp only [ContinuousLinearMap.comp_apply]
   rw [Function.comp_apply]
 
