@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Group.Defs
 public import Mathlib.NumberTheory.LocalField.Basic
 public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
+import TauCeti.Analysis.Polynomial.GCD
 import TauCeti.MeasureTheory.Group.BoundedLineSections
 import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 import TauCeti.Topology.Algebra.Polynomial.Basic
@@ -75,8 +76,9 @@ private theorem encard_setOf_not_separable_le (x : Fin (n + 2) → K) (hx : x 1 
   have hsub : algebraMap K L '' {t : K | ¬ (monicOfCoeff (x + t • Pi.single 0 1)).Separable} ⊆
       (fun β ↦ -aeval β f) '' (derivative f).rootSet L := by
     rintro _ ⟨t, ht, rfl⟩
-    rw [mem_ofPred_eq, ← Pi.single_smul', smul_eq_mul, mul_one, monicOfCoeff_add_single_zero,
-      Separable, isCoprime_iff_aeval_ne_zero_of_isAlgClosed K L] at ht
+    simp only [mem_ofPred_eq, ← Pi.single_smul', smul_eq_mul, mul_one,
+      monicOfCoeff_add_single_zero] at ht
+    rw [Separable, isCoprime_iff_aeval_ne_zero_of_isAlgClosed K L] at ht
     push Not at ht
     obtain ⟨β, h1, h2⟩ := ht
     refine ⟨β, (mem_rootSet_of_ne hf').mpr (by simpa using h2), ?_⟩
@@ -117,10 +119,13 @@ theorem ae_separable_monicOfCoeff (μ : Measure (Fin n → K)) [μ.IsAddLeftInva
   -- line in a fixed direction in boundedly many points.
   let r (a : Fin (m + 2) → K) : K :=
     resultant (monicOfCoeff a) (derivative (monicOfCoeff a)) (m + 2) (m + 2 - 1)
-  have hr : Continuous r := continuous_resultant continuous_coeff_monicOfCoeff
-    (fun j ↦ by
-      simp only [coeff_derivative]
-      exact (continuous_coeff_monicOfCoeff (j + 1)).mul continuous_const) _ _
+  have hr : Continuous r := continuous_iff_continuousAt.2 fun a ↦ by
+    simpa [r] using continuousAt_subresultantCoeff
+      (fun i _ ↦ (continuous_coeff_monicOfCoeff i).continuousAt)
+      (fun i _ ↦ by
+        simp only [coeff_derivative]
+        exact ((continuous_coeff_monicOfCoeff (i + 1)).mul continuous_const).continuousAt)
+      (x₀ := a) (m := m + 2) (n := m + 2 - 1) 0 0
   have hr0 (a : Fin (m + 2) → K) : r a = 0 ↔ ¬ (monicOfCoeff a).Separable := by
     have h := (monic_monicOfCoeff a).resultant_deriv
     rw [natDegree_monicOfCoeff] at h

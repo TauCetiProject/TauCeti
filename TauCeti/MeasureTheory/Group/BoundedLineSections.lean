@@ -8,9 +8,9 @@ module
 public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.NumberTheory.LocalField.Basic
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
-import Mathlib.RingTheory.IntegralDomain
-import Mathlib.RingTheory.Localization.Integer
 import TauCeti.MeasureTheory.Group.Measure
+import TauCeti.RingTheory.DiscreteValuationRing.Basic
+import TauCeti.RingTheory.DiscreteValuationRing.FractionRing
 
 /-!
 # Sets with bounded line sections over a local field are null
@@ -43,9 +43,45 @@ open scoped ENNReal
 
 namespace MeasureTheory.Measure
 
-variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
-  [IsNonarchimedeanLocalField K] {ι : Type*} [Finite ι]
-  [MeasurableSpace (ι → K)] [BorelSpace (ι → K)]
+variable {K : Type*} [Field K] [ValuativeRel K] {ι : Type*}
+
+/-- The scaled integer box `{x | ϖ ^ k • x ∈ 𝒪[K] ^ ι}`, an additive subgroup of `ι → K`. -/
+private noncomputable def scaledIntegerBox (ϖ : K) (k : ℕ) : AddSubgroup (ι → K) :=
+  (AddSubgroup.pi univ fun _ ↦ (𝒪[K]).toAddSubgroup).comap
+    (DistribSMul.toAddMonoidHom (ι → K) (ϖ ^ k))
+
+/-- Membership in a scaled integer box, coordinate by coordinate. -/
+private theorem mem_scaledIntegerBox {ϖ : K} {k : ℕ} {x : ι → K} :
+    x ∈ scaledIntegerBox ϖ k ↔ ∀ i, ϖ ^ k * x i ∈ 𝒪[K] := by
+  simp [scaledIntegerBox, AddSubgroup.mem_pi]
+
+variable [TopologicalSpace K] [IsNonarchimedeanLocalField K]
+
+/-- A scaled integer box is compact: it is the preimage of `𝒪[K] ^ ι` under a homeomorphism. -/
+private theorem isCompact_scaledIntegerBox {ϖ : K} (hϖ : ϖ ≠ 0) (k : ℕ) :
+    IsCompact (scaledIntegerBox (ι := ι) ϖ k : Set (ι → K)) := by
+  have : (scaledIntegerBox (ι := ι) ϖ k : Set (ι → K)) =
+      Homeomorph.smulOfNeZero (ϖ ^ k) (pow_ne_zero k hϖ) ⁻¹' univ.pi fun _ ↦ (𝒪[K] : Set K) := by
+    ext x
+    simp [mem_scaledIntegerBox]
+  rw [this, Homeomorph.isCompact_preimage]
+  exact isCompact_univ_pi fun _ ↦
+    isCompact_iff_compactSpace.mpr (inferInstanceAs (CompactSpace 𝒪[K]))
+
+/-- For a uniformizer `ϖ` and a finite type `ι`, the scaled integer boxes exhaust `ι → K`: a power
+of `ϖ` clears the denominators of the coordinates of `x`, since `K` is the localization of `𝒪[K]`
+away from `ϖ`. -/
+private theorem exists_mem_scaledIntegerBox [Finite ι] {ϖ : 𝒪[K]} (hϖ : Irreducible ϖ)
+    (x : ι → K) : ∃ k, x ∈ scaledIntegerBox (ϖ : K) k := by
+  have := TauCeti.isLocalizationAway_fractionRing (K := K) hϖ
+  have h (i : ι) : ∀ᶠ k in Filter.atTop, (ϖ : K) ^ k * x i ∈ 𝒪[K] := by
+    obtain ⟨n, a, ha⟩ := IsLocalization.Away.surj ϖ (x i)
+    refine Filter.eventually_atTop.2 ⟨n, fun k hk ↦ ?_⟩
+    rw [← Nat.sub_add_cancel hk, pow_add, mul_assoc, mul_comm _ (x i)]
+    exact mul_mem (pow_mem ϖ.2 _) (ha ▸ a.2)
+  exact (Filter.eventually_all.2 h).exists.imp fun _ ↦ mem_scaledIntegerBox.2
+
+variable [Finite ι] [MeasurableSpace (ι → K)] [BorelSpace (ι → K)]
 
 /-- **Sets with bounded line sections are null.** Let `Z ⊆ ι → K` be measurable, and suppose that
 for some direction `v` and bound `D`, every line `t ↦ x + t • v` meets `Z` in at most `D` points.
@@ -56,49 +92,17 @@ theorem measure_eq_zero_of_encard_setOf_add_smul_mem_le (μ : Measure (ι → K)
     (v : ι → K) {D : ℕ} (hD : ∀ x, {t : K | x + t • v ∈ Z}.encard ≤ D) : μ Z = 0 := by
   obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
   have hϖ0 : (ϖ : K) ≠ 0 := by simpa using hϖ.ne_zero
-  -- The scaled integer boxes `{x | ϖ ^ k • x ∈ 𝒪[K] ^ ι}` are compact subgroups of `ι → K`.
-  let H (k : ℕ) : AddSubgroup (ι → K) :=
-    (AddSubgroup.pi univ fun _ ↦ (𝒪[K]).toAddSubgroup).comap
-      (DistribSMul.toAddMonoidHom (ι → K) ((ϖ : K) ^ k))
-  have hmemH {k : ℕ} {x : ι → K} : x ∈ H k ↔ ∀ i, (ϖ : K) ^ k * x i ∈ 𝒪[K] := by
-    simp [H, AddSubgroup.mem_pi]
-  have hcompact (k : ℕ) : IsCompact (H k : Set (ι → K)) := by
-    have : (H k : Set (ι → K)) =
-        Homeomorph.smulOfNeZero ((ϖ : K) ^ k) (pow_ne_zero k hϖ0) ⁻¹'
-          univ.pi fun _ ↦ (𝒪[K] : Set K) := by
-      ext x
-      simp [hmemH]
-    rw [this, Homeomorph.isCompact_preimage]
-    exact isCompact_univ_pi fun _ ↦
-      isCompact_iff_compactSpace.mpr (inferInstanceAs (CompactSpace 𝒪[K]))
-  -- They exhaust `ι → K`: a power of `ϖ` clears the denominators of the coordinates of `x`.
-  have hcover (x : ι → K) : ∃ k, x ∈ H k := by
-    obtain ⟨⟨b, hb⟩, hbx⟩ :=
-      IsLocalization.exist_integer_multiples_of_finite (nonZeroDivisors 𝒪[K]) x
-    obtain ⟨k, u, rfl⟩ :=
-      IsDiscreteValuationRing.eq_unit_mul_pow_irreducible (nonZeroDivisors.ne_zero hb) hϖ
-    refine ⟨k, hmemH.mpr fun i ↦ ?_⟩
-    obtain ⟨r, hr⟩ := hbx i
-    have hu : ((↑u⁻¹ : 𝒪[K]) : K) * (u : 𝒪[K]) = 1 := by
-      rw [← Subring.coe_mul, Units.inv_mul, Subring.coe_one]
-    convert SetLike.coe_mem (↑u⁻¹ * r : 𝒪[K]) using 1
-    simp only [← Algebra.algebraMap_ofSubsemiring_apply, hr, Algebra.smul_def, map_mul, map_pow]
-    simp only [Algebra.algebraMap_ofSubsemiring_apply]
-    linear_combination (-(ϖ : K) ^ k * x i) * hu
-  -- Rescale `v` into the integer box, so that `(ϖ ^ k₀ * t) • v` lies in every `H k`.
-  obtain ⟨k₀, hk₀⟩ := hcover v
-  have : Infinite 𝒪[K] := by
-    by_contra h
-    have := not_infinite_iff_finite.mp h
-    exact IsDiscreteValuationRing.not_isField 𝒪[K] (Finite.isField_of_domain 𝒪[K])
-  rw [← inter_univ Z, ← iUnion_eq_univ_iff.mpr hcover, inter_iUnion]
+  -- Rescale `v` into the integer box, so that `(ϖ ^ k₀ * t) • v` lies in every scaled box.
+  obtain ⟨k₀, hk₀⟩ := exists_mem_scaledIntegerBox hϖ v
+  rw [← inter_univ Z, ← iUnion_eq_univ_iff.mpr (exists_mem_scaledIntegerBox hϖ), inter_iUnion]
   refine measure_iUnion_null fun k ↦ μ.measure_inter_addSubgroup_eq_zero_of_encard_le hZ
-    (hcompact k).isClosed.measurableSet (hcompact k).measure_lt_top.ne
+    (isCompact_scaledIntegerBox hϖ0 k).isClosed.measurableSet
+    (isCompact_scaledIntegerBox hϖ0 k).measure_lt_top.ne
     (w := fun t : 𝒪[K] ↦ ((ϖ : K) ^ k₀ * t) • v) (fun t ↦ ?_) (D := D) fun x ↦ ?_
-  · refine hmemH.mpr fun i ↦ ?_
+  · refine mem_scaledIntegerBox.mpr fun i ↦ ?_
     rw [Pi.smul_apply, smul_eq_mul, show (ϖ : K) ^ k * ((ϖ : K) ^ k₀ * t * v i) =
       (ϖ ^ k * t : 𝒪[K]) * ((ϖ : K) ^ k₀ * v i) by push_cast; ring]
-    exact mul_mem (SetLike.coe_mem _) (hmemH.mp hk₀ i)
+    exact mul_mem (SetLike.coe_mem _) (mem_scaledIntegerBox.mp hk₀ i)
   · refine le_trans ?_ (hD x)
     rw [← (?_ : InjOn (fun t : 𝒪[K] ↦ (ϖ : K) ^ k₀ * t) _).encard_image]
     · exact encard_le_encard (by rintro _ ⟨t, ht, rfl⟩; exact ht)

@@ -105,6 +105,7 @@ theorem map_monicOfCoeff {S : Type*} [CommSemiring S] (φ : R →+* S) (c : Fin 
   simp [monicOfCoeff, Polynomial.map_sum]
 
 /-- Adding `t` to the constant coefficient of the tuple adds the constant polynomial `t`. -/
+@[simp]
 theorem monicOfCoeff_add_single_zero (c : Fin (n + 1) → R) (t : R) :
     monicOfCoeff (c + Pi.single 0 t) = monicOfCoeff c + C t := by
   have h : ∑ i : Fin (n + 1), monomial (i : ℕ) ((Pi.single 0 t : Fin (n + 1) → R) i) = C t := by

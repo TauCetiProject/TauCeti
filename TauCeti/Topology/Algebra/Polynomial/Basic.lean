@@ -10,8 +10,6 @@ public import Mathlib.Algebra.Polynomial.Bivariate
 public import Mathlib.Algebra.Polynomial.Eval.Degree
 public import Mathlib.Topology.Algebra.Polynomial
 public import Mathlib.Topology.Algebra.Ring.Basic
-public import Mathlib.Topology.Instances.Matrix
-public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
 
 /-!
@@ -25,10 +23,9 @@ as a single polynomial family.
 
 If the degrees of the family are bounded and its coefficients are continuous, then the evaluation
 `(x, t) ↦ (f x).eval t` is jointly continuous, since it is a finite sum of products of
-coefficients with powers of `t`. Likewise the resultant of two families with continuous
-coefficients, taken at fixed degree bounds, is continuous, being the determinant of a matrix of
-coefficients. The basic example of a family with continuous coefficients is the monic polynomial
-`TauCeti.Polynomial.monicOfCoeff a` as a function of its coefficient tuple `a`.
+coefficients with powers of `t`. The basic example of a family with continuous coefficients is
+the monic polynomial `TauCeti.Polynomial.monicOfCoeff a` as a function of its coefficient tuple
+`a`.
 
 ## Main results
 
@@ -39,8 +36,6 @@ coefficients. The basic example of a family with continuous coefficients is the 
 * `Polynomial.continuous_eval_of_continuous_coeff`: joint continuity of the evaluation of a family
   of bounded degree.
 * `Polynomial.continuous_evalEval`: joint continuity of bivariate polynomial evaluation.
-* `Polynomial.continuous_resultant`: continuity of the resultant of two families at fixed degree
-  bounds.
 * `TauCeti.Polynomial.continuous_coeff_monicOfCoeff`: the coefficients of `monicOfCoeff a` are
   continuous in `a`.
 -/
@@ -123,18 +118,6 @@ theorem continuous_eval_of_continuous_coeff [Semiring R] [IsTopologicalSemiring 
   refine continuous_iff_continuousAt.2 fun z ↦ ?_
   exact continuousAt_eval (fun i hi ↦ ((hf i hi).comp continuous_fst).continuousAt)
     (.of_forall fun y ↦ hd y.1) continuous_snd.continuousAt
-
-/-- The resultant of two polynomial families with continuous coefficients, taken at fixed degree
-bounds `m` and `n`, is continuous: it is the determinant of the Sylvester matrix, whose entries are
-coefficients of the two families or zero. -/
-theorem continuous_resultant {X R : Type*} [TopologicalSpace X] [CommRing R] [TopologicalSpace R]
-    [IsTopologicalRing R] {f g : X → R[X]} (hf : ∀ i, Continuous fun x ↦ (f x).coeff i)
-    (hg : ∀ i, Continuous fun x ↦ (g x).coeff i) (m n : ℕ) :
-    Continuous fun x ↦ resultant (f x) (g x) m n := by
-  refine Continuous.matrix_det (continuous_pi fun i ↦ continuous_pi fun j ↦ ?_)
-  induction j using Fin.addCases with
-  | left j => simpa [sylvester] using continuous_if_const _ (fun _ ↦ hg _) fun _ ↦ continuous_const
-  | right j => simpa [sylvester] using continuous_if_const _ (fun _ ↦ hf _) fun _ ↦ continuous_const
 
 end Polynomial
 
