@@ -74,18 +74,14 @@ theorem Neighbourhood.toTriple_point (point : Neighbourhood R Ω) :
       (Equiv.apply_symm_apply (pointDataEquiv : PointData R point.obj.left Ω ≃ _)
         (ULift.algEquiv.toAlgHom.comp point.obj.hom.hom))
 
-/-- Extracting residue-field data from the point of a triple recovers that triple.
-
-The carrier and its ring and algebra instances are preserved definitionally. We identify these
-dependent indices first: the public point equations compare maps, so they do not identify the
-indices of the enclosing triple records. The remaining map equality is cancellation of an algebra
-equivalence with its inverse.
--/
+/-- Converting a triple to a pointed neighbourhood and back recovers the triple. -/
 @[simp]
 theorem TripleNeighbourhood.toNeighbourhood_toTriple (triple : TripleNeighbourhood R Ω) :
     (triple.toNeighbourhood R Ω).toTriple R Ω = triple := by
   cases triple with
   | mk carrier data =>
+    -- The carrier and its ring and algebra instances are preserved definitionally. Identify these
+    -- dependent indices first: public point equations compare maps, not enclosing triple records.
     change TripleNeighbourhood.mk carrier
       ((pointDataEquiv : PointData R carrier Ω ≃ _).symm
         (ULift.algEquiv.toAlgHom.comp (ULift.algEquiv.symm.toAlgHom.comp data.toAlgHom))) =
