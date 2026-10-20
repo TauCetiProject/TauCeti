@@ -8,15 +8,16 @@ module
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 
 /-!
-# Shear automorphisms of a product of topological groups
+# Shear automorphisms of a product
 
-A continuous homomorphism `φ : A →* B` into a commutative topological group shears the product
-`A × B`: the map `(a, b) ↦ (a, φ a * b)` is an automorphism of topological groups, with inverse
-`(a, b) ↦ (a, (φ a)⁻¹ * b)`; this is a topological-group version of Mathlib's
+Let `A` be a monoid with a topology and `B` a commutative topological group. A continuous
+homomorphism `φ : A →* B` shears the product `A × B`: the map `(a, b) ↦ (a, φ a * b)` is a
+continuous multiplicative automorphism (a `ContinuousMulEquiv`), with inverse
+`(a, b) ↦ (a, (φ a)⁻¹ * b)`; this is a continuous multiplicative version of Mathlib's
 `Equiv.prodShear`. Shears are the automorphisms of `A × B` that fix the first coordinate and act on
-the second by translation, so they measure how two splittings `G ≃ₜ* A × B` with the same
-projection to `A` differ; for instance, the splittings of the multiplicative group of a local
-field attached to two uniformizers differ by a shear.
+each fiber over `A` by a translation of `B`, so they describe how two splittings `G ≃ₜ* A × B`
+differ when their transition has this fiberwise-translation form; for instance, the splittings of
+the multiplicative group of a local field attached to two uniformizers differ by a shear.
 
 ## Main definitions
 
@@ -39,8 +40,8 @@ variable {A B : Type*} [Monoid A] [TopologicalSpace A] [CommGroup B] [Topologica
   [IsTopologicalGroup B]
 
 /-- The **shear** of `A × B` by a continuous homomorphism `φ : A →* B` into a commutative
-topological group: the automorphism of topological groups `(a, b) ↦ (a, φ a * b)`, with inverse
-`(a, b) ↦ (a, (φ a)⁻¹ * b)`. Its underlying function is that of `Equiv.prodShear`. -/
+topological group: the continuous multiplicative automorphism `(a, b) ↦ (a, φ a * b)`, with
+inverse `(a, b) ↦ (a, (φ a)⁻¹ * b)`. Its underlying function is that of `Equiv.prodShear`. -/
 def prodShear (φ : A →* B) (hφ : Continuous φ) : A × B ≃ₜ* A × B where
   toFun p := (p.1, φ p.1 * p.2)
   invFun p := (p.1, (φ p.1)⁻¹ * p.2)
