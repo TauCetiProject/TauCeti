@@ -14,10 +14,11 @@ public import TauCeti.CategoryTheory.ObjectProperty.Kernels
 
 Let a monoidal category `C` act on the left on categories `D'` and `D`, and let `F : D' ⥤ D` be
 left-linear (equivariant), so that `actionLeft D' c ⋙ F ≅ F ⋙ actionLeft D c`. If `F` preserves
-and reflects the limits of a diagram and the action functor `actionLeft D c` preserves the
-transported limit, then `actionLeft D' c` preserves the limit. We record this for single
-diagrams, for limits of a given shape and for finite limits, and dually for colimits. The
-functor `F` can be the inclusion of a full subcategory or an equivalence.
+the limit of a diagram `K`, reflects the limit of `K ⋙ actionLeft D' c`, and the action functor
+`actionLeft D c` preserves the limit of `K ⋙ F`, then `actionLeft D' c` preserves the limit of
+`K`. We record this for single diagrams, and for limits of a given shape and finite limits when
+`F` preserves and reflects all such limits, and dually for colimits. The functor `F` can be the
+inclusion of a full subcategory or an equivalence.
 
 The main application is to a property `P : ObjectProperty D` stable under the action, through the
 equivariant inclusion `P.ι` (`TauCeti.CategoryTheory.Monoidal.Action.FullSubcategory`):
@@ -48,18 +49,18 @@ variable {C : Type*} [Category* C] [MonoidalCategory C] {D' D : Type*} [Category
   [Category* D] [MonoidalLeftAction C D'] [MonoidalLeftAction C D] (c : C) (F : D' ⥤ D)
   [F.LeftLinear C] {J : Type*} [Category* J]
 
-/-- If a left-linear functor `F` preserves and reflects the limit of `K` and the action of `c`
-on the target preserves the limit of `K ⋙ F`, then the action of `c` on the source preserves the
-limit of `K`. -/
+/-- If a left-linear functor `F` preserves the limit of `K` and reflects the limit of
+`K ⋙ actionLeft D' c`, and the action of `c` on the target preserves the limit of `K ⋙ F`, then
+the action of `c` on the source preserves the limit of `K`. -/
 lemma preservesLimit_actionLeft_of_leftLinear (K : J ⥤ D') [PreservesLimit K F]
     [ReflectsLimit (K ⋙ actionLeft D' c) F] [PreservesLimit (K ⋙ F) (actionLeft D c)] :
     PreservesLimit K (actionLeft D' c) :=
   have := preservesLimit_of_natIso K (F.commActionLeftIso c).symm
   preservesLimit_of_reflects_of_preserves (actionLeft D' c) F
 
-/-- If a left-linear functor `F` preserves and reflects the colimit of `K` and the action of `c`
-on the target preserves the colimit of `K ⋙ F`, then the action of `c` on the source preserves
-the colimit of `K`. -/
+/-- If a left-linear functor `F` preserves the colimit of `K` and reflects the colimit of
+`K ⋙ actionLeft D' c`, and the action of `c` on the target preserves the colimit of `K ⋙ F`,
+then the action of `c` on the source preserves the colimit of `K`. -/
 lemma preservesColimit_actionLeft_of_leftLinear (K : J ⥤ D') [PreservesColimit K F]
     [ReflectsColimit (K ⋙ actionLeft D' c) F] [PreservesColimit (K ⋙ F) (actionLeft D c)] :
     PreservesColimit K (actionLeft D' c) :=
