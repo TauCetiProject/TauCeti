@@ -165,15 +165,21 @@ section Ordered
 
 variable [LinearOrder R]
 
+omit [Invertible (2 : R)] [LinearOrder I] in
+/-- A summand `c * ((∏ i ∈ s, Q (b i)) * c)` of the coordinate formula for `τ (reverse x * x)` is
+nonnegative when `Q` is nonnegative on `b`. -/
+private lemma mul_prod_mul_self_nonneg [IsOrderedRing R] (hQ : ∀ i, 0 ≤ Q (b i)) (s : Finset I)
+    (c : R) : 0 ≤ c * ((∏ i ∈ s, Q (b i)) * c) := by
+  rw [mul_left_comm]
+  exact mul_nonneg (Finset.prod_nonneg fun i _ ↦ hQ i) (mul_self_nonneg _)
+
 /-- **Positivity of the trace pairing**: if `Q` is nonnegative on an orthogonal basis, then
 `τ (reverse x * x) ≥ 0` for every `x`. -/
 theorem scalarTrace_reverse_mul_self_nonneg [IsOrderedRing R]
     (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, 0 ≤ Q (b i)) (x : CliffordAlgebra Q) :
     0 ≤ scalarTrace Q (reverse x * x) := by
   rw [scalarTrace_reverse_mul hb, Finsupp.sum]
-  exact Finset.sum_nonneg fun s _ ↦ by
-    rw [mul_left_comm]
-    exact mul_nonneg (Finset.prod_nonneg fun i _ ↦ hQ i) (mul_self_nonneg _)
+  exact Finset.sum_nonneg fun s _ ↦ mul_prod_mul_self_nonneg hQ s _
 
 /-- **Faithfulness of the trace pairing**: if `Q` is positive on an orthogonal basis, then
 `τ (reverse x * x) = 0` only for `x = 0`. -/
@@ -182,8 +188,8 @@ theorem scalarTrace_reverse_mul_self_eq_zero_iff [IsStrictOrderedRing R]
     {x : CliffordAlgebra Q} : scalarTrace Q (reverse x * x) = 0 ↔ x = 0 := by
   refine ⟨fun h ↦ ?_, fun h ↦ by simp [h]⟩
   have hpos (s : Finset I) : 0 < ∏ i ∈ s, Q (b i) := Finset.prod_pos fun i _ ↦ hQ i
-  rw [scalarTrace_reverse_mul hb, Finsupp.sum, Finset.sum_eq_zero_iff_of_nonneg fun s _ ↦ by
-    rw [mul_left_comm]; exact mul_nonneg (hpos s).le (mul_self_nonneg _)] at h
+  rw [scalarTrace_reverse_mul hb, Finsupp.sum, Finset.sum_eq_zero_iff_of_nonneg
+    fun s _ ↦ mul_prod_mul_self_nonneg (fun i ↦ (hQ i).le) s _] at h
   rw [← (basis Q b).repr.map_eq_zero_iff, ← Finsupp.support_eq_empty,
     Finset.eq_empty_iff_forall_notMem]
   intro s hs
