@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.DedekindDomain.IntegralClosure
 import Mathlib.Algebra.Algebra.Shrink
 import Mathlib.Algebra.Field.Shrink
 import Mathlib.RingTheory.Finiteness.Small
+import TauCeti.RingTheory.IntegralClosure.Transfer
 
 /-!
 # N-1 and Japanese domains
@@ -82,14 +83,15 @@ variable {R : Type u} [CommRing R]
 
 namespace IsN1
 
-/-- The integral closure of an N-1 domain in any model of its fraction field is finite. -/
-instance finite_integralClosure [IsN1 R] (K : Type v) [Field K] [Algebra R K]
+/-- The integral closure of an N-1 ring in any model of its total ring of fractions is finite. -/
+instance finite_integralClosure [IsN1 R] (K : Type v) [CommRing K] [Algebra R K]
     [IsFractionRing R K] : Module.Finite R (integralClosure R K) :=
   have := finite_integralClosure_fractionRing (R := R)
   .equiv (FractionRing.algEquiv R K).mapIntegralClosure.toLinearEquiv
 
-/-- A domain whose integral closure in some model of its fraction field is finite is N-1. -/
-theorem of_finite_integralClosure (K : Type v) [Field K] [Algebra R K] [IsFractionRing R K]
+/-- A ring whose integral closure in some model of its total ring of fractions is finite is
+N-1. -/
+theorem of_finite_integralClosure (K : Type v) [CommRing K] [Algebra R K] [IsFractionRing R K]
     [Module.Finite R (integralClosure R K)] : IsN1 R :=
   ⟨.equiv (FractionRing.algEquiv R K).symm.mapIntegralClosure.toLinearEquiv⟩
 
@@ -192,10 +194,9 @@ theorem isJapanese_iff_isN1 [IsDomain R] [IsNoetherianRing R] [PerfectField (Fra
   have : Module.Finite R' (integralClosure R' L) :=
     IsIntegralClosure.finite R' K L (integralClosure R' L)
   have : Module.Finite R (integralClosure R' L) := .trans R' _
-  refine .of_surjective (M := integralClosure R' L)
-    (((integralClosure R' L).val.toLinearMap.restrictScalars R).codRestrict
-      (integralClosure R L).toSubmodule fun x ↦ isIntegral_trans (A := R') _ x.2) ?_
-  rintro ⟨x, hx⟩
-  exact ⟨⟨x, hx.tower_top⟩, rfl⟩
+  have : IsIntegralClosure (integralClosure R' L) R L :=
+    TauCeti.IsIntegralClosure.tower_bot (A := R')
+  exact .equiv (IsIntegralClosure.equiv R (integralClosure R' L) L
+    (integralClosure R L)).toLinearEquiv
 
 end TauCeti.Ring
