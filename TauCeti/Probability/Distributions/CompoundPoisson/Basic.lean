@@ -11,6 +11,7 @@ public import Mathlib.Probability.Independence.Basic
 public import TauCeti.Probability.Distributions.Poisson.Basic
 public import TauCeti.Probability.Distributions.Poisson.Measurability
 public import TauCeti.MeasureTheory.Group.ConvolutionPower
+import TauCeti.Topology.Algebra.InfiniteSum.ENNReal
 
 /-!
 # Compound Poisson distributions
@@ -21,7 +22,8 @@ independent jumps with law `μ`.
 
 The core API records the Poisson mixture formula and the two degenerate cases: rate zero and jumps
 concentrated at zero. These facts are the measure-theoretic foundation for later moment and
-transform calculations.
+transform calculations. The real-valued measurable-set series converges absolutely and gives
+singleton masses and a lower bound for the atom at zero.
 
 The main results are that compound Poisson laws with a common jump law convolve by adding their
 rates, and that on a second-countable real inner product space with its Borel σ-algebra the
@@ -120,6 +122,37 @@ theorem compoundPoissonMeasure_apply_eq_tsum (r : ℝ≥0) (μ : Measure α) {s 
       ∑' n, ENNReal.ofReal (exp (-r) * r ^ n / n !) * μ.convolutionPower n s := by
   rw [compoundPoissonMeasure_eq_sum, Measure.sum_apply _ hs]
   simp_rw [Measure.smul_apply, smul_eq_mul]
+
+/-- The Poisson-weighted series of convolution-power probabilities converges to the compound
+probability of every measurable set. Its nonnegative terms also give absolute convergence. -/
+theorem hasSum_compoundPoissonMeasure_real_apply (r : ℝ≥0) (μ : Measure α)
+    [IsProbabilityMeasure μ] {s : Set α} (hs : MeasurableSet s) :
+    HasSum (fun n : ℕ => (exp (-(r : ℝ)) * (r : ℝ) ^ n / n !) *
+      (μ.convolutionPower n).real s) ((compoundPoissonMeasure r μ).real s) := by
+  have hsum := (ENNReal.summable.hasSum_iff.mpr
+    (compoundPoissonMeasure_apply_eq_tsum r μ hs).symm).toReal (measure_ne_top _ _)
+  rw [← measureReal_def] at hsum
+  convert hsum using 1
+  funext n
+  rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal (by positivity), ← measureReal_def]
+
+/-- Native singleton masses are the absolutely convergent Poisson-weighted series of the
+singleton masses of the convolution powers. This applies in particular to `ℕ` and `ℤ` jumps. -/
+theorem compoundPoissonMeasure_real_singleton [MeasurableSingletonClass α]
+    (r : ℝ≥0) (μ : Measure α) [IsProbabilityMeasure μ] (k : α) :
+    (compoundPoissonMeasure r μ).real {k} =
+      ∑' n : ℕ, (exp (-(r : ℝ)) * (r : ℝ) ^ n / n !) *
+        (μ.convolutionPower n).real {k} :=
+  (hasSum_compoundPoissonMeasure_real_apply r μ (measurableSet_singleton k)).tsum_eq.symm
+
+/-- The probability of no jumps gives a lower bound for the atom at zero. Nonempty sums can
+also vanish, so equality need not hold for a general jump law. -/
+theorem exp_neg_le_compoundPoissonMeasure_real_singleton_zero [MeasurableSingletonClass α]
+    (r : ℝ≥0) (μ : Measure α) [IsProbabilityMeasure μ] :
+    exp (-(r : ℝ)) ≤ (compoundPoissonMeasure r μ).real {0} := by
+  have hsum := hasSum_compoundPoissonMeasure_real_apply r μ (measurableSet_singleton 0)
+  rw [← hsum.tsum_eq]
+  simpa using hsum.summable.le_tsum 0 (fun _ _ => by positivity)
 
 /-- The compound Poisson law is jointly measurable in its rate and probability jump law. -/
 @[fun_prop]
