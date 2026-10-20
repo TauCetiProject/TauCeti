@@ -132,6 +132,16 @@ theorem exists_intCast_of_mem_lattice {x : EuclideanSpace ℝ (Fin 5)} (hx : x �
     obtain ⟨a, ha⟩ := hxz j
     exact ⟨c * a, by simp [ha]; ring⟩
 
+/-- A point lies in `L` exactly when its last coordinate is in `½ℤ` and all its coordinates differ
+from the last one by integers. -/
+theorem mem_lattice_iff {x : EuclideanSpace ℝ (Fin 5)} :
+    x ∈ lattice ↔ (∃ m : ℤ, (m : ℝ) = 2 * x 4) ∧ ∀ j, ∃ z : ℤ, (z : ℝ) = x j - x 4 := by
+  refine ⟨exists_intCast_of_mem_lattice, fun ⟨⟨m, hm⟩, hz⟩ ↦ ?_⟩
+  have hstd : x - m • half ∈ stdLattice := mem_stdLattice_iff.2 fun j ↦ by
+    obtain ⟨z, hz⟩ := hz j
+    exact ⟨z, by simp [half, hz, hm]; ring⟩
+  simpa using add_mem (stdLattice_le_lattice hstd) (zsmul_mem half_mem_lattice m)
+
 /-- **The first minimum of `L` is `1`.** Every nonzero vector of `L` has norm at least `1`. -/
 theorem one_le_norm_of_mem_lattice {x : EuclideanSpace ℝ (Fin 5)} (hx : x ∈ lattice)
     (h0 : x ≠ 0) : 1 ≤ ‖x‖ := by
