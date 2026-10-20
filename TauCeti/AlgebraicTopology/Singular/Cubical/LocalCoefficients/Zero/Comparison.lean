@@ -76,7 +76,7 @@ theorem normalizedTwistedCubicalToSingular_ofCube_const (x : X)
   -- The simplex pushed forward along the point cube is the point simplex, and the transport
   -- from the origin of the model to itself is trivial.
   exact ιTwistedChainComplex_congr L
-    ((TopCat.toSSet_map_app_toSSetObj₀Equiv_symm _ _).trans (TopCat.toSSetObj₀Equiv_symm_eq _))
+    ((TopCat.toSSet_map_app_toSSetObj₀Equiv_symm _ _).trans (TopCat.toSSetObj₀Equiv_symm_apply _))
     (map_pathClass_heq (L := L) (cubeToHom (ContinuousMap.const _ x)).hom
       (z := cubeModelOrigin 0) (Subsingleton.elim _ _) a)
 

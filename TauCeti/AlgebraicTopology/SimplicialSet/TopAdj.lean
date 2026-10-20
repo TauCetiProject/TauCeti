@@ -40,10 +40,6 @@ universe u
 
 namespace TauCeti.TopCat
 
-/-- The singular `0`-simplex at a point is the constant map from the topological `0`-simplex. -/
-lemma toSSetObj₀Equiv_symm_eq {X : TopCat.{u}} (x : X) :
-    TopCat.toSSetObj₀Equiv.symm x = ULift.up (TopCat.ofHom (ContinuousMap.const _ x)) := rfl
-
 /-- Mapping the singular vertex of a point gives the singular vertex of its image. -/
 @[simp]
 lemma toSSet_map_app_toSSetObj₀Equiv_symm {X Y : TopCat.{u}} (f : X ⟶ Y) (x : X) :
