@@ -20,9 +20,8 @@ This file makes that algebra contravariantly functorial in schemes over `X`: a m
 The morphism of algebras is the pushforward along `q` of the unit `𝒪_W ⟶ g_* 𝒪_V` of the
 function algebra of `g`, transported along the identification `q_* g_* ≅ (g ≫ q)_* = p_*` of lax
 monoidal functors, using Mathlib's `Functor.mapCommMon` and `Functor.mapCommMonNatTrans`. The
-same identification, applied to the function algebra of `q : T ⟶ Y` and pushed along
-`f : Y ⟶ X`, compares function algebras over the two bases; relative spectra over `Y` and over
-`X` are related through it under base change.
+comparison `f_* (q_* 𝒪_T) ≅ (q ≫ f)_* 𝒪_T` of function algebras over two bases, through which
+relative spectra over `Y` and over `X` are related under base change, is natural in `T`.
 
 ## Main declarations
 
@@ -32,8 +31,8 @@ same identification, applied to the function algebra of `q : T ⟶ Y` and pushed
   sections over `U`, it is the map `Γ(W, q⁻¹ U) ⟶ Γ(V, p⁻¹ U)` induced by `g`;
 * `AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraMap_id` and
   `AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraMap_comp`: functoriality;
-* `AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraCompIso q f`: the function algebra
-  of a composite, `f_* (q_* 𝒪_T) ≅ (q ≫ f)_* 𝒪_T`, natural in `T`;
+* `AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraCompIso_hom_naturality`: the
+  comparison `f_* (q_* 𝒪_T) ≅ (q ≫ f)_* 𝒪_T` of function algebras is natural in `T`;
 * `TauCeti.AlgebraicGeometry.overFunctions X`: the function-algebra functor `q ↦ q_* 𝒪_T` on all
   schemes over `X`.
 
@@ -124,35 +123,6 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraMap_comp (g
   rw [← CommRingCat.comp_apply, Scheme.Hom.appLE_comp_appLE]
 
 variable {Y T T' : Scheme.{u}}
-
-/-- The function algebra of a composite is the pushforward of the function algebra:
-`f_* (q_* 𝒪_T) ≅ (q ≫ f)_* 𝒪_T` as `𝒪_X`-algebras, for `q : T ⟶ Y` and `f : Y ⟶ X`. It is
-the identification `f_* q_* ≅ (q ≫ f)_*` of lax monoidal functors, applied to the tensor-unit
-algebra of `T`. -/
-def _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraCompIso (q : T ⟶ Y)
-    (f : Y ⟶ X) :
-    (Scheme.Modules.pushforward f).mapCommMon.obj q.pushforwardStructureAlgebra ≅
-      (q ≫ f).pushforwardStructureAlgebra :=
-  Functor.mapCommMonCompIso.symm.app (CommMon.trivial T.Modules) ≪≫
-    (Functor.mapCommMonNatIso (Scheme.Modules.pushforwardComp q f)).app _
-
-/-- As a morphism of modules, the comparison `f_* (q_* 𝒪_T) ⟶ (q ≫ f)_* 𝒪_T` is the
-identification `f_* q_* ≅ (q ≫ f)_*` of pushforwards. -/
-@[simp]
-lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraCompIso_hom_hom_hom
-    (q : T ⟶ Y) (f : Y ⟶ X) :
-    (q.pushforwardStructureAlgebraCompIso f).hom.hom.hom =
-      (Scheme.Modules.pushforwardComp q f).hom.app _ :=
-  (rfl)
-
-/-- As a morphism of modules, the comparison `(q ≫ f)_* 𝒪_T ⟶ f_* (q_* 𝒪_T)` is the inverse
-identification of pushforwards. -/
-@[simp]
-lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraCompIso_inv_hom_hom
-    (q : T ⟶ Y) (f : Y ⟶ X) :
-    (q.pushforwardStructureAlgebraCompIso f).inv.hom.hom =
-      (Scheme.Modules.pushforwardComp q f).inv.app _ :=
-  (rfl)
 
 /-- The comparison `f_* (q_* 𝒪_T) ≅ (q ≫ f)_* 𝒪_T` is natural in the scheme `T` over `Y`: it
 intertwines the pushforward along `f` of pullback of regular functions along `g : T' ⟶ T` with
