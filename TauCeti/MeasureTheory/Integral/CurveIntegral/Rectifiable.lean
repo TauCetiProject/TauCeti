@@ -28,6 +28,13 @@ curve `γ` on `[a, b]` is instead computed along Mathlib's natural parameterizat
 is 1-Lipschitz, hence absolutely continuous, and it traces the same points with the same
 multiplicity: `γ` factors as the natural parameterization composed with cumulative variation.
 
+The integral is meaningful when `E` is finite-dimensional, where a Lipschitz curve is
+differentiable almost everywhere and is the integral of its derivative. In an
+infinite-dimensional space a Lipschitz curve can be nowhere differentiable (for instance
+`t ↦ fun x ↦ |t - x|` in `C([0, 1], ℝ)`), and the formula then gives a junk value. The
+comparison theorems below therefore assume `[FiniteDimensional ℝ E]`; the invariance theorems
+are identities of the formula and hold in every normed space.
+
 The main results are:
 
 * `BoundedVariationOn.eqOn_naturalParameterization`: the arclength factor is unique on the
@@ -95,8 +102,9 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddComm
 /-- The geometric integral of a 1-form `ω` along a curve `γ` on `[a, b]`: the integral
 `∫ u in 0..L, ω (η u) (deriv η u)` along the natural parameterization `η` of `γ` on its length
 interval, where `L` is the total variation of `γ` on `[a, b]`. It is meaningful for continuous
-curves of bounded variation with `a ≤ b`; it then counts the trace with its traversal multiplicity
-and orientation. -/
+curves of bounded variation with `a ≤ b` in a finite-dimensional space `E`; it then counts the
+trace with its traversal multiplicity and orientation. In infinite dimensions the natural
+parameterization need not be differentiable, and the value is junk. -/
 noncomputable def rectifiableCurveIntegral (ω : E → E →L[ℝ] F) (γ : ℝ → E) (a b : ℝ) : F :=
   ∫ u in 0..(eVariationOn γ (Icc a b)).toReal,
     ω (naturalParameterization γ (Icc a b) a u) (deriv (naturalParameterization γ (Icc a b) a) u)
