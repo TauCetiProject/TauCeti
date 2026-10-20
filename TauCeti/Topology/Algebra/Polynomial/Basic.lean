@@ -134,9 +134,7 @@ theorem continuous_coeff_monicOfCoeff {R : Type*} [CommSemiring R] [TopologicalS
   rcases lt_trichotomy j n with hj | rfl | hj
   · rw [funext fun a ↦ coeff_monicOfCoeff a ⟨j, hj⟩]
     exact continuous_apply _
-  · have h (a : Fin j → R) : (monicOfCoeff a).coeff j = 1 := by
-      simpa using (monic_monicOfCoeff a).coeff_natDegree
-    rw [funext h]
+  · rw [funext (coeff_monicOfCoeff_self (R := R))]
     exact continuous_const
   · rw [funext fun a ↦ coeff_eq_zero_of_natDegree_lt ((natDegree_monicOfCoeff a).trans_lt hj)]
     exact continuous_const
