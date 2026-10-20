@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.FundamentalGroup
 import Mathlib.AlgebraicTopology.FundamentalGroupoid.InducedMaps
+import TauCeti.AlgebraicTopology.FundamentalGroup.BasepointChange
 public import Mathlib.RepresentationTheory.Rep.Basic
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Basic
 public import Mathlib.CategoryTheory.Monoidal.FunctorCategory
@@ -246,11 +247,8 @@ theorem pullbackHomotopyIso_hom_app_app (H : f.Homotopy g)
     ((pullbackHomotopyIso (R := R) H).hom.app L).app x =
       L.map ⟦H.evalAt x.as⟧ := by
   -- As in `pullbackCompIso_hom_app_app`, `(pullback f).obj L` is only definitionally a
-  -- whiskered functor, so the whiskered component is exposed with `change`.  Mathlib states no
-  -- `app` lemma for `homotopicMapsNatIso`, so its component is read off from the definition.
-  change L.map ((FundamentalGroupoidFunctor.homotopicMapsNatIso H).app x) = _
-  unfold FundamentalGroupoidFunctor.homotopicMapsNatIso
-  rfl
+  -- whiskered functor, so the whiskered component is matched up to definitional unfolding.
+  exact congrArg L.map (FundamentalGroupoidFunctor.homotopicMapsNatIso_app H x)
 
 /-- At a point, the inverse pullback comparison acts by the local system on the reversed path
 traced by the homotopy. -/

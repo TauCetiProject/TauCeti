@@ -11,8 +11,6 @@ import TauCeti.AlgebraicTopology.ClassifyingSpace.Cellular
 import TauCeti.AlgebraicTopology.ClassifyingSpace.CWComplex
 import TauCeti.AlgebraicTopology.EilenbergMacLane.WeakHomotopyEquivalence
 import TauCeti.AlgebraicTopology.FundamentalGroup.BasepointChange
-import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
-import TauCeti.AlgebraicTopology.FundamentalGroup.Homeomorph
 import TauCeti.AlgebraicTopology.Homotopy.Whitehead
 
 /-!
@@ -38,7 +36,8 @@ the spaces are aspherical. Since `X` has CW type, the identity of `X` lifts thro
 homotopy to a map `s` from `X` to the cellular classifying space, and `g ∘ s` is a weak homotopy
 equivalence between spaces of CW type, hence a homotopy equivalence by Whitehead's theorem. The
 homotopy from `f ∘ s` to the identity moves the base point, which is why the realization of `φ`
-involves a change of base point.
+involves a change of base point
+(`ContinuousMap.Homotopy.exists_path_fundamentalGroupMulEquivOfPath_map_comp`).
 
 The hypothesis of CW type on both spaces cannot be dropped: a point and the Warsaw circle are both
 path connected with trivial homotopy groups, but they are not homotopy equivalent.
@@ -71,46 +70,6 @@ open FundamentalGroup
 universe u v
 
 namespace TauCeti
-
-/-- If `s` is a right inverse of `f` up to the homotopy `H`, then `g ∘ s` induces on fundamental
-groups any homomorphism `φ` with `φ ∘ f_* = g_*`, up to a change of base point in the target. The
-path changing the base point combines the image under `g` of a path from `w` to `s x` with a loop
-at `y` correcting by an inner automorphism. -/
-private theorem exists_path_fundamentalGroupMulEquivOfPath_map_comp {W X Y : Type*}
-    [TopologicalSpace W] [TopologicalSpace X] [TopologicalSpace Y] [PathConnectedSpace W]
-    {f : C(W, X)} {g : C(W, Y)} {s : C(X, W)}
-    (H : (f.comp s).Homotopy (ContinuousMap.id X)) {w : W} {x : X} {y : Y} (hf : f w = x)
-    (hg : g w = y) (φ : FundamentalGroup X x →* FundamentalGroup Y y)
-    (hφ : φ.comp (mapOfEq f hf) = mapOfEq g hg) :
-    ∃ γ : Path (g (s x)) y,
-      ∀ a, fundamentalGroupMulEquivOfPath γ (map (g.comp s) x a) = φ a := by
-  subst hf hg
-  rw [FundamentalGroup.mapOfEq_rfl, FundamentalGroup.mapOfEq_rfl] at hφ
-  let α : Path w (s (f w)) := PathConnectedSpace.somePath _ _
-  -- The trace of `H` at `f w`, read as a path ending at `f w` rather than at `id (f w)`.
-  let δ : Path (f (s (f w))) (f w) := H.evalAt (f w)
-  let c : FundamentalGroup X (f w) :=
-    fromPath (Path.Homotopic.Quotient.mk ((α.map f.continuous).trans δ))
-  let ℓ : Path (g w) (g w) := Quotient.out (toPath (φ c))
-  have hℓ : fromPath (Path.Homotopic.Quotient.mk ℓ) = φ c :=
-    congrArg CategoryTheory.End.of (Quotient.out_eq _)
-  refine ⟨(α.map g.continuous).symm.trans ℓ, fun a ↦ ?_⟩
-  obtain ⟨b, hb⟩ := (fundamentalGroupMulEquivOfPath α).surjective (map s (f w) a)
-  -- Moving `s_* a` back to `w` along `α` gives `b` with `f_* b = c⁻¹ a c`, by the trace formula.
-  have h₁ : a = c * map f w b * c⁻¹ := by
-    have h : fundamentalGroupMulEquivOfPath δ (map (f.comp s) (f w) a) = a :=
-      (H.fundamentalGroupMulEquivOfPath_evalAt_map (f w) a).trans
-        (DFunLike.congr_fun (map_id (f w)) a)
-    rw [map_comp, MonoidHom.comp_apply, ← hb, map_fundamentalGroupMulEquivOfPath,
-      ← MulEquiv.trans_apply, ← fundamentalGroupMulEquivOfPath_trans,
-      fundamentalGroupMulEquivOfPath_eq_conj] at h
-    exact h.symm
-  -- Hence `(g ∘ s)_* a`, moved back to `y` along `g ∘ α`, is `g_* b = φ (c⁻¹ a c)`.
-  rw [map_comp, MonoidHom.comp_apply, ← hb, map_fundamentalGroupMulEquivOfPath,
-    fundamentalGroupMulEquivOfPath_trans, MulEquiv.trans_apply, fundamentalGroupMulEquivOfPath_symm,
-    MulEquiv.symm_apply_apply, fundamentalGroupMulEquivOfPath_eq_conj, hℓ, MulAut.conj_apply,
-    ← hφ, h₁]
-  simp
 
 /-- **Uniqueness of aspherical spaces of CW type.** Two aspherical spaces of CW type are homotopy
 equivalent by a homotopy equivalence realizing any prescribed isomorphism `φ` of their fundamental
@@ -146,7 +105,7 @@ theorem IsAspherical.exists_homotopyEquiv {X Y : Type u} [TopologicalSpace X]
     hgw.comp (hfw.of_postcomp (ContinuousMap.IsWeakHomotopyEquivalence.id.of_homotopic ⟨H.symm⟩))
   refine ⟨hgs.homotopyEquiv, ?_⟩
   rw [hgs.homotopyEquiv_toFun]
-  refine exists_path_fundamentalGroupMulEquivOfPath_map_comp H hf hg φ.toMonoidHom ?_
+  refine H.exists_path_fundamentalGroupMulEquivOfPath_map_comp hf hg φ.toMonoidHom ?_
   rw [hfψ, hgψ]
   exact (MulEquiv.toMonoidHom_trans ψ φ).symm
 
