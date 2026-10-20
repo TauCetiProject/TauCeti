@@ -20,22 +20,26 @@ two weight vectors.
 
 In regularity arguments this upgrades a discrepancy bound on rectangles `s' × t'` to one for
 tests `f i * g j` with values in `[0, 1]`, as needed for counting lemmas. Summing such a bound
-over a further index then uses the crude estimate `|∑ i ∈ s, f i| ≤ #s * B` for terms bounded
+over a further index then uses the crude estimate `|∑ i ∈ s, f i| ≤ #s • B` for terms bounded
 by `B` in absolute value.
 
 ## Main results
 
 * `Finset.abs_sum_mul_le_of_forall_subset`: weighted sums are controlled by subset sums.
 * `Finset.abs_sum_sum_mul_mul_le_of_forall_subset`: the two-variable version.
-* `Finset.abs_sum_le_card_mul_of_forall_abs_le`: a sum of `#s` terms bounded by `B` in absolute
-  value is bounded by `#s * B`.
+* `Finset.abs_sum_le_card_nsmul`: a sum of `#s` terms bounded by `B` in absolute value is
+  bounded by `#s • B`.
 -/
 
 public section
 
 namespace Finset
 
-variable {ι κ R : Type*} [Ring R] [LinearOrder R] [IsOrderedRing R]
+variable {ι κ R : Type*}
+
+section Ring
+
+variable [Ring R] [LinearOrder R] [IsOrderedRing R]
 
 /-- If every subset sum of `c` over `s` has absolute value at most `M`, then so has every sum
 `∑ i ∈ s, f i * c i` with weights `0 ≤ f i ≤ 1`. -/
@@ -72,9 +76,11 @@ theorem abs_sum_sum_mul_mul_le_of_forall_subset {s : Finset ι} {t : Finset κ} 
   rw [sum_comm]
   exact h s' hs' t' ht'
 
-/-- A sum of terms with absolute value at most `B` has absolute value at most `#s * B`. -/
-theorem abs_sum_le_card_mul_of_forall_abs_le {s : Finset ι} {f : ι → R} {B : R}
-    (h : ∀ i ∈ s, |f i| ≤ B) : |∑ i ∈ s, f i| ≤ #s * B :=
-  (abs_sum_le_sum_abs _ _).trans <| by simpa using sum_le_card_nsmul s _ B h
+end Ring
+
+/-- A sum of terms with absolute value at most `B` has absolute value at most `#s • B`. -/
+theorem abs_sum_le_card_nsmul [AddCommGroup R] [LinearOrder R] [IsOrderedAddMonoid R]
+    {s : Finset ι} {f : ι → R} {B : R} (h : ∀ i ∈ s, |f i| ≤ B) : |∑ i ∈ s, f i| ≤ #s • B :=
+  (abs_sum_le_sum_abs _ _).trans <| sum_le_card_nsmul s _ B h
 
 end Finset
