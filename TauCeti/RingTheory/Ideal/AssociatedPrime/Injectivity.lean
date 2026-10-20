@@ -26,12 +26,12 @@ namespace LinearMap
 section IsLocalizedModule
 
 variable {R M N : Type*} [CommSemiring R] [IsNoetherianRing R]
-  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+  [AddCommGroup M] [Module R M] [AddCommMonoid N] [Module R N]
 
 /-- A linear map is injective if, at every associated prime of its domain, a compatible map
 from a localization of the domain is injective. Neither module needs to be finitely generated,
 and the target of the compatible map need not itself be a localization. The base may be a
-commutative semiring when the original modules have additive groups. -/
+commutative semiring when the source module has an additive group. -/
 theorem injective_of_forall_isLocalizedModule
     (map : M →ₗ[R] N)
     (Mₚ : ∀ (prime : Ideal R) [prime.IsPrime], Type*)
@@ -77,7 +77,11 @@ theorem injective_of_forall_isLocalizedModule
   intro first second equal
   apply sub_eq_zero.mp
   apply zero_kernel
-  rw [map_sub, equal, sub_self]
+  calc
+    map (first - second) = map first + map (-second) := by rw [sub_eq_add_neg, map_add]
+    _ = map second + map (-second) := by rw [equal]
+    _ = map (second - second) := by rw [sub_eq_add_neg, map_add]
+    _ = 0 := by rw [sub_self, map_zero]
 
 end IsLocalizedModule
 
@@ -95,7 +99,6 @@ theorem injective_of_forall_localization (map : M →ₗ[R] N)
       prime ∉ associatedPrimes R M) :
     Function.Injective map := by
   let : AddCommGroup M := Module.addCommMonoidToAddCommGroup R
-  let : AddCommGroup N := Module.addCommMonoidToAddCommGroup R
   exact injective_of_forall_isLocalizedModule
     map
     (fun prime _ ↦ LocalizedModule prime.primeCompl M)
