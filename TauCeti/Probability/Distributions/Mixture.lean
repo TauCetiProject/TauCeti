@@ -95,7 +95,7 @@ theorem mgf_bind (rho : Measure A) {K : A → Measure B} (hK : AEMeasurable K rh
     (X : B → ℝ) (t : ℝ) (ht : t ∈ integrableExpSet X (rho.bind K)) :
     mgf X (rho.bind K) t = ∫ a, mgf X (K a) t ∂rho := by
   unfold ProbabilityTheory.mgf
-  exact integral_bind rho hK (integrable_of_mem_integrableExpSet ht)
+  exact integral_bind hK (integrable_of_mem_integrableExpSet ht)
 
 /-- The cgf of a mixture is the logarithm of the integral of the component mgfs, rather than the
 integral of their cgfs. -/
@@ -116,7 +116,7 @@ theorem charFun_bind (rho : Measure A) {K : A → Measure E} (hK : AEMeasurable 
     (integrable_const (1 : ℂ)).mono (by fun_prop) <| by
       filter_upwards with x
       simp
-  rw [charFun_apply, integral_bind rho hK hInt]
+  rw [charFun_apply, integral_bind hK hInt]
   simp_rw [charFun_apply]
 
 end MeasureTheory.Measure
