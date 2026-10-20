@@ -16,7 +16,10 @@ type, and a pointed map `X ∧ Y ⟶ Z` is the same as a pointed map `Y ⟶ (X �
 `y` goes to the map `x ↦ f (x ∧ y)`. This makes the smash product monoidal structure on
 `Pointed` closed. Consequently tensoring with a fixed pointed type on either side preserves all
 colimits. Together with the limits and colimits of `Pointed` from
-`TauCeti.CategoryTheory.Category.Pointed.Limits`, this shows that the degreewise smash product of
+`TauCeti.CategoryTheory.Category.Pointed.Limits` and the instances
+`TauCeti.preservesColimitsOfShape_functor_tensorLeft` and
+`TauCeti.preservesColimitsOfShape_functor_tensorRight` from
+`TauCeti.CategoryTheory.Monoidal.FunctorCategory`, this shows that the degreewise smash product of
 diagrams of pointed types, for instance of simplicial pointed types, preserves colimits in each
 variable.
 
