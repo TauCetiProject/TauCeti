@@ -191,9 +191,11 @@ theorem measure_univ_pi_image_maximalIdeal_pow (μ : Measure (ι → K)) [μ.IsA
     (A := Matrix.diagonal fun i ↦ ϖ ^ e i) (by rw [Matrix.det_diagonal, Finset.prod_pow_eq_pow_sum])
   rw [hμ, mul_one, Matrix.diagonal_map (map_zero _)] at h
   refine Eq.trans (congrArg μ ?_) h
-  rw [show (Matrix.diagonal fun i ↦ algebraMap 𝒪[K] K (ϖ ^ e i)).mulVec =
-      Pi.map fun i y ↦ algebraMap 𝒪[K] K (ϖ ^ e i) * y from
-    funext fun _ ↦ funext fun _ ↦ Matrix.mulVec_diagonal .., integerBox_def, piMap_image_univ_pi]
+  -- A diagonal matrix acts coordinatewise, so its image of a box is again a box.
+  have hdiag : (Matrix.diagonal fun i ↦ algebraMap 𝒪[K] K (ϖ ^ e i)).mulVec =
+      Pi.map fun i y ↦ algebraMap 𝒪[K] K (ϖ ^ e i) * y :=
+    funext fun _ ↦ funext fun _ ↦ Matrix.mulVec_diagonal ..
+  rw [hdiag, integerBox_def, piMap_image_univ_pi]
   refine pi_congr rfl fun i _ ↦ ?_
   rw [image_maximalIdeal_pow_eq_smul hϖ, ← image_smul, Algebra.algebraMap_ofSubsemiring_apply,
     SubmonoidClass.coe_pow]

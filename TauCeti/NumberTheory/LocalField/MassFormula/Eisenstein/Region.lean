@@ -21,9 +21,13 @@ Serre's mass formula is proved by integrating over the space of Eisenstein polyn
 polynomial of degree `n` over a nonarchimedean local field `K` is identified with its coefficient
 vector `a : Fin n → K`, through `TauCeti.Polynomial.monicOfCoeff a = X ^ n + ∑ i, a i * X ^ i`,
 and the *Eisenstein region* `TauCeti.eisensteinSet K n` is the set of coefficient vectors all of
-whose entries lie in the open unit ball, the constant term having the largest valuation below `1`,
-that of a uniformizer. By `TauCeti.mem_eisensteinSet_iff_exists_isEisensteinAt` these are exactly
-the coefficient vectors of the polynomials over `𝒪[K]` that are Eisenstein at `𝓂[K]`.
+whose entries lie in the open unit ball and whose polynomial has constant term of valuation at least
+that of every element of valuation below `1`. For `0 < n` the constant term is the entry `a 0`, so
+this says it has the valuation of a uniformizer; for `n = 0` the constant term is `1` and the region
+is all of the one-point space `Fin 0 → K`. Whenever `𝒪[K]` is a discrete valuation ring, as for a
+nonarchimedean local field, `TauCeti.mem_eisensteinSet_iff_exists_isEisensteinAt` identifies these
+with the coefficient vectors of the polynomials over `𝒪[K]` that are Eisenstein at `𝓂[K]` (for
+`n = 0`, only the constant polynomial `1`, which Mathlib's predicate counts as Eisenstein).
 
 The coefficient space `ι → K` carries the additive Haar measure normalized so that the integer box
 `TauCeti.integerBox K ι = 𝒪[K] ^ ι` has volume `1`. For such a measure, writing `q` for the
@@ -78,10 +82,12 @@ section CoefficientSpace
 
 variable (K) in
 /-- The Eisenstein region in the space `Fin n → K` of coefficient vectors of monic polynomials of
-degree `n`: every coefficient has valuation below `1`, and the constant term has the largest
-valuation below `1`, that of a uniformizer. By
-`TauCeti.mem_eisensteinSet_iff_exists_isEisensteinAt` these are the coefficient vectors of the
-Eisenstein polynomials over `𝒪[K]`. -/
+degree `n`: every coefficient has valuation below `1`, and the constant term of `monicOfCoeff a`
+has valuation at least that of every element of valuation below `1`. For `0 < n` the constant term
+is `a 0`, which then has the valuation of a uniformizer; for `n = 0` it is `1`, and the region is
+the whole one-point space. When `𝒪[K]` is a discrete valuation ring,
+`TauCeti.mem_eisensteinSet_iff_exists_isEisensteinAt` identifies these with the coefficient vectors
+of the polynomials over `𝒪[K]` that are Eisenstein at `𝓂[K]`. -/
 def eisensteinSet (n : ℕ) : Set (Fin n → K) :=
   {a | (∀ i, valuation K (a i) < 1) ∧
     ∀ y : K, valuation K y < 1 → valuation K y ≤ valuation K ((monicOfCoeff a).coeff 0)}
@@ -94,9 +100,9 @@ theorem mem_eisensteinSet {n : ℕ} {a : Fin n → K} :
 
 end CoefficientSpace
 
-variable [TopologicalSpace K] [IsNonarchimedeanLocalField K]
-
 section EisensteinPolynomial
+
+variable [IsDiscreteValuationRing 𝒪[K]]
 
 /-- **The Eisenstein region is the set of Eisenstein polynomials**: a coefficient vector lies in
 `eisensteinSet K n` exactly when it is the coefficient vector of a polynomial over `𝒪[K]` that is
@@ -120,7 +126,7 @@ theorem mem_eisensteinSet_iff_exists_isEisensteinAt {n : ℕ} {a : Fin n → K} 
         exact fun h ↦ h1 (Ideal.pow_le_self two_ne_zero h)
       · rw [coeff_monicOfCoeff c ⟨0, hn⟩]
         rw [coeff_monicOfCoeff a ⟨0, hn⟩] at h0
-        exact (forall_valuation_le_iff_notMem_maximalIdeal_sq (hc _)).1 h0
+        exact forall_valuation_le_iff_notMem_maximalIdeal_sq.1 h0
   · rintro ⟨f, hf, hE⟩
     have hdeg : f.natDegree = n := by
       rw [← natDegree_map_eq_of_injective (FaithfulSMul.algebraMap_injective 𝒪[K] K) f, hf,
@@ -130,12 +136,8 @@ theorem mem_eisensteinSet_iff_exists_isEisensteinAt {n : ℕ} {a : Fin n → K} 
     refine ⟨fun i ↦ ?_, ?_⟩
     · rw [← coeff_monicOfCoeff a i, hcoeff]
       exact (valuation K).mem_maximalIdeal_iff.1 (hE.mem (hdeg ▸ i.isLt))
-    · rcases n.eq_zero_or_pos with rfl | hn
-      · intro y hy
-        rw [coeff_monicOfCoeff_self a, map_one]
-        exact hy.le
-      · rw [hcoeff]
-        exact (forall_valuation_le_iff_notMem_maximalIdeal_sq (hE.mem (hdeg ▸ hn))).2 hE.notMem
+    · rw [hcoeff]
+      exact forall_valuation_le_iff_notMem_maximalIdeal_sq.2 hE.notMem
 
 /-- **The Eisenstein region as a difference of boxes**: for `0 < n`, it is the box `𝓂[K] ^ n`
 minus the box whose constant coordinate lies in `𝓂[K] ^ 2` and whose other coordinates lie in
@@ -152,9 +154,8 @@ theorem eisensteinSet_eq_sdiff {n : ℕ} (hn : 0 < n) :
   simp only [Set.mem_sdiff, Set.mem_univ_pi, ← valuation_lt_one_iff_mem_image_maximalIdeal,
     mem_eisensteinSet, coeff_monicOfCoeff a ⟨0, hn⟩]
   refine and_congr_right fun ha ↦ ?_
-  have hc : (⟨a i₀, (Valuation.mem_integer_iff _ _).2 (ha i₀).le⟩ : 𝒪[K]) ∈ 𝓂[K] :=
-    (valuation K).mem_maximalIdeal_iff.2 (ha i₀)
-  refine (forall_valuation_le_iff_notMem_maximalIdeal_sq hc).trans
+  refine (forall_valuation_le_iff_notMem_maximalIdeal_sq
+    (c := ⟨a i₀, (Valuation.mem_integer_iff _ _).2 (ha i₀).le⟩)).trans
     (not_congr ⟨fun h i ↦ ?_, fun h ↦ ?_⟩)
   · rcases eq_or_ne i i₀ with rfl | hi
     · rw [he₀]
@@ -163,11 +164,14 @@ theorem eisensteinSet_eq_sdiff {n : ℕ} (hn : 0 < n) :
       exact ha i
   · obtain ⟨c, hc, hca⟩ := h i₀
     rw [he₀] at hc
-    rwa [show (⟨a i₀, _⟩ : 𝒪[K]) = c from Subtype.ext hca.symm]
+    obtain rfl : c = ⟨a i₀, (Valuation.mem_integer_iff _ _).2 (ha i₀).le⟩ := Subtype.ext hca
+    exact hc
 
 end EisensteinPolynomial
 
 section Measure
+
+variable [TopologicalSpace K] [IsNonarchimedeanLocalField K]
 
 /-- The Eisenstein region is measurable. -/
 theorem measurableSet_eisensteinSet {n : ℕ} [MeasurableSpace (Fin n → K)]

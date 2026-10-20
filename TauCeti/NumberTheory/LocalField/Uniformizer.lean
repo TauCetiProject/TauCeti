@@ -16,12 +16,12 @@ on `Kˣ`, where the normalized valuation is defined.  The characterization below
 the irreducible elements of the ring of integers, the convention used by the local-fields
 infrastructure.
 
-It also recognises uniformizers inside the maximal ideal `𝓂[K]` without choosing one: an element of
-`𝓂[K]` has the largest valuation below `1` exactly when it does not lie in `𝓂[K] ^ 2`
-(`TauCeti.forall_valuation_le_iff_notMem_maximalIdeal_sq`).
-
-For an irreducible `ϖ`, the image in `K` of `𝓂[K] ^ k` is the scaled copy `ϖ ^ k • 𝒪[K]`
-(`TauCeti.image_maximalIdeal_pow_eq_smul`).
+The last two results only need `𝒪[K]` to be a discrete valuation ring. They recognise
+uniformizers without choosing one: an element of `𝒪[K]` has valuation at least that of every
+element of valuation below `1` exactly when it does not lie in `𝓂[K] ^ 2`
+(`TauCeti.forall_valuation_le_iff_notMem_maximalIdeal_sq`); for an element of `𝓂[K]` this says it
+has the valuation of a uniformizer. For an irreducible `ϖ`, the image in `K` of `𝓂[K] ^ k` is the
+scaled copy `ϖ ^ k • 𝒪[K]` (`TauCeti.image_maximalIdeal_pow_eq_smul`).
 -/
 
 public section
@@ -33,8 +33,11 @@ open ValuativeRel IsNonarchimedeanLocalField
 
 namespace TauCeti
 
-variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
-  [IsNonarchimedeanLocalField K]
+variable {K : Type*} [Field K] [ValuativeRel K]
+
+section LocalField
+
+variable [TopologicalSpace K] [IsNonarchimedeanLocalField K]
 
 variable (K) in
 /-- A uniformizer is a nonzero field element whose normalized valuation is one. -/
@@ -91,9 +94,16 @@ theorem exists_isUniformizer : ∃ π : Kˣ, IsUniformizer (K := K) π := by
   refine ⟨Units.mk0 (ϖ : K) (fun h => hϖ.ne_zero (Subtype.ext h)), ?_⟩
   exact (isUniformizer_iff_exists_irreducible K _).2 ⟨ϖ, hϖ, rfl⟩
 
-/-- An element `c` of the maximal ideal of `𝒪[K]` has the largest valuation below `1`, that of a
-uniformizer, exactly when it does not lie in the square of the maximal ideal. -/
-theorem forall_valuation_le_iff_notMem_maximalIdeal_sq {c : 𝒪[K]} (hc : c ∈ 𝓂[K]) :
+end LocalField
+
+section DiscreteValuationRing
+
+variable [IsDiscreteValuationRing 𝒪[K]]
+
+/-- An element `c` of `𝒪[K]` has valuation at least that of every element of valuation below `1`
+exactly when it does not lie in the square of the maximal ideal. For `c ∈ 𝓂[K]` this says that `c`
+has the largest valuation below `1`, that of a uniformizer. -/
+theorem forall_valuation_le_iff_notMem_maximalIdeal_sq {c : 𝒪[K]} :
     (∀ y : K, valuation K y < 1 → valuation K y ≤ valuation K c) ↔ c ∉ 𝓂[K] ^ 2 := by
   constructor
   · -- If `c = ϖ ^ 2 * d`, then `c` has valuation below that of the uniformizer `ϖ`.
@@ -101,11 +111,8 @@ theorem forall_valuation_le_iff_notMem_maximalIdeal_sq {c : 𝒪[K]} (hc : c ∈
     obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
     rw [hϖ.maximalIdeal_eq, Ideal.span_singleton_pow, Ideal.mem_span_singleton] at hc2
     obtain ⟨d, rfl⟩ := hc2
-    have hϖ1 : valuation K ϖ < 1 :=
-      (valuation K).mem_maximalIdeal_iff.1 ((IsLocalRing.mem_maximalIdeal _).2 hϖ.not_isUnit)
-    have hϖ0 : 0 < valuation K ϖ := by
-      rw [zero_lt_iff, Ne, map_eq_zero, ZeroMemClass.coe_eq_zero]
-      exact hϖ.ne_zero
+    have hϖ1 : valuation K ϖ < 1 := Valuation.integer.v_irreducible_lt_one hϖ
+    have hϖ0 : 0 < valuation K ϖ := Valuation.integer.v_irreducible_pos hϖ
     have hd : valuation K d ≤ 1 := (Valuation.mem_integer_iff _ _).1 d.2
     have hle := h ϖ hϖ1
     rw [MulMemClass.coe_mul, map_mul, SubmonoidClass.coe_pow, map_pow] at hle
@@ -134,5 +141,7 @@ theorem image_maximalIdeal_pow_eq_smul {ϖ : 𝒪[K]} (hϖ : Irreducible ϖ) (k 
     Subtype.range_coe, inter_eq_left]
   rintro _ ⟨y, hy, rfl⟩
   exact mul_mem (pow_mem ϖ.2 k) hy
+
+end DiscreteValuationRing
 
 end TauCeti
