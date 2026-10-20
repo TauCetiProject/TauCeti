@@ -338,7 +338,7 @@ lemma normalizedTwistedCubicalHomology₀IsoColimit_hom_naturality
   apply normalizedTwistedCubicalHomology₀_hom_ext
   intro x
   rw [ιNormalizedTwistedCubicalHomology₀_coefficientMap_assoc]
-  erw [ιNormalizedTwistedCubicalHomology₀_isoColimit_hom K (FundamentalGroupoid.mk x),
+  rw [ιNormalizedTwistedCubicalHomology₀_isoColimit_hom K (FundamentalGroupoid.mk x),
     ιNormalizedTwistedCubicalHomology₀_isoColimit_hom_assoc L (FundamentalGroupoid.mk x)]
   simp
 
