@@ -44,7 +44,7 @@ open CategoryTheory Finsupp AbstractSimplicialComplex
 
 namespace TauCeti
 
-universe u
+universe u v
 
 variable {G : Type u}
 
@@ -80,7 +80,7 @@ theorem universalGSpaceCellLabels_smul [Group G] {n : ℕ} (g : G)
 
 section Semiring
 
-variable (k : Type u) [Semiring k]
+variable (k : Type v) [Semiring k]
 
 /-- The degreewise comparison from join chains to standard chains: forget the indices of
 vertices, retaining their increasing-index order and the coefficient of each simplex. -/
@@ -143,6 +143,9 @@ def universalGSpaceToStandardComplex [Monoid G] :
     apply (cancel_epi (eqToHom (orderedSimplicialChainComplex_X
       (K := indexedJoin fun _ : ℕ => G) k (j + 1)))).2
     apply ModuleCat.hom_ext
+    -- The forgotten complex uses the representation differential, and xIso is Iso.refl.
+    -- Expose these to apply d_eq, which is stated before forgetting to modules and does
+    -- not include the xIso transports.
     dsimp [Rep.standardComplex.forget₂ToModuleCat, Rep.standardComplex.xIso]
     rw [Rep.standardComplex.d_eq]
     exact (universalGSpaceToStandard_boundary (G := G) k j).symm
