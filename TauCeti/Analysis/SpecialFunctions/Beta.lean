@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Distributions.Beta
+import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import TauCeti.Analysis.Calculus.RealCharts
 import TauCeti.Analysis.Real.Sqrt
@@ -49,6 +50,9 @@ and `TauCeti/Probability/Distributions/StudentT/Basic.lean` normalizes its densi
   `TauCeti.integral_rpow_mul_one_add_rpow` — Euler's second beta integral and its sharp
   integrability criterion,
   `∫ x in Ioi 0, x ^ (a - 1) * (1 + x) ^ (-(a + b)) = Β(a, b)`;
+* `TauCeti.integral_rpow_mul_one_add_sq_rpow` — the radial form
+  `∫ y in Ioi 0, y ^ (s - 1) * (1 + y ^ 2) ^ (-r / 2) = Β(s / 2, (r - s) / 2) / 2` of the second
+  integral, obtained by substituting `u = y ^ 2`;
 * `TauCeti.abs_deriv_smul_one_add_rpow` — the change-of-variables identity relating the first and
   second beta-integral kernels under the chart `u ↦ u / (1 - u)`;
 * `TauCeti.integrable_one_add_sq_rpow`, `TauCeti.integral_one_add_sq_rpow`,
@@ -57,7 +61,8 @@ and `TauCeti/Probability/Distributions/StudentT/Basic.lean` normalizes its densi
   `1 / 2 < s`, with total mass `√ν * Β(1 / 2, s - 1 / 2)`;
 * `ProbabilityTheory.beta_comm` — symmetry of `Β`;
 * `ProbabilityTheory.beta_one_right` — the value `Β(a, 1) = 1 / a`;
-* `ProbabilityTheory.beta_add_one_left` — the unit step `Β(a + 1, b) = a / (a + b) * Β(a, b)`.
+* `ProbabilityTheory.beta_add_one_left` — the unit step `Β(a + 1, b) = a / (a + b) * Β(a, b)`;
+* `ProbabilityTheory.beta_three_halves_three_halves` — the value `Β(3/2, 3/2) = π / 8`.
 
 ## Implementation notes
 
@@ -458,6 +463,26 @@ theorem integral_one_add_sq_div_rpow {ν s : ℝ} (hν : 0 < ν) (hs : 1 / 2 < s
   simp only [Real.inv_sqrt_mul_sq hν.le, abs_of_nonneg (Real.sqrt_nonneg ν), smul_eq_mul] at h
   rw [h, integral_one_add_sq_rpow hs]
 
+/-- **Euler's second beta integral in radial form.** For `0 < s < r`, the substitution `u = y ^ 2`
+gives `∫ y in Ioi 0, y ^ (s - 1) * (1 + y ^ 2) ^ (-r / 2) = Β(s / 2, (r - s) / 2) / 2`. This is
+the radial integral of the Japanese bracket power `(1 + ‖x‖ ^ 2) ^ (-r / 2)`. -/
+theorem integral_rpow_mul_one_add_sq_rpow {r : ℝ} (hs : 0 < s) (hsr : s < r) :
+    ∫ y in Ioi (0 : ℝ), y ^ (s - 1) * (1 + y ^ 2) ^ (-r / 2) =
+      beta (s / 2) ((r - s) / 2) / 2 := by
+  have h := integral_comp_rpow_Ioi
+    (fun u : ℝ ↦ u ^ (s / 2 - 1) * (1 + u) ^ (-(s / 2 + (r - s) / 2))) two_ne_zero
+  rw [integral_rpow_mul_one_add_rpow (by positivity) (by linarith)] at h
+  rw [← h, ← integral_div]
+  refine setIntegral_congr_fun measurableSet_Ioi fun y (hy : 0 < y) ↦ ?_
+  have hpow : (y ^ (2 : ℝ)) ^ (s / 2 - 1) * y = y ^ (s - 1) := by
+    rw [← Real.rpow_mul hy.le, ← Real.rpow_add_one hy.ne']
+    congr 1
+    ring
+  have hexp : -(s / 2 + (r - s) / 2) = -r / 2 := by ring
+  rw [← hpow, Real.rpow_two, hexp, abs_two, show (2 : ℝ) - 1 = 1 by norm_num, Real.rpow_one,
+    smul_eq_mul]
+  ring
+
 end SecondIntegral
 
 end TauCeti
@@ -483,5 +508,14 @@ theorem beta_add_one_left (ha : a ≠ 0) (hab : a + b ≠ 0) :
   rw [ProbabilityTheory.beta, ProbabilityTheory.beta, hshift, Real.Gamma_add_one ha,
     Real.Gamma_add_one hab]
   field_simp
+
+/-- Euler's beta function at the symmetric shape parameters `3 / 2`. -/
+@[simp]
+theorem beta_three_halves_three_halves : beta (3 / 2) (3 / 2) = Real.pi / 8 := by
+  have hg := Real.Gamma_nat_add_one_add_half 0
+  norm_num at hg
+  rw [beta, hg]
+  norm_num
+  nlinarith [Real.sq_sqrt Real.pi_pos.le]
 
 end ProbabilityTheory

@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import Mathlib.Geometry.Manifold.Algebra.Structures
 public import TauCeti.Geometry.Manifold.ContMDiff.RPow
+public import TauCeti.Geometry.Manifold.Riemannian.Basic
 
 /-!
 # Conformal rescaling of Riemannian metrics
@@ -40,7 +41,6 @@ conformal Laplacian of `g` applied to `u`.
 
 ## Main results
 
-* `Bundle.ContMDiffRiemannianMetric.ext`: a metric is determined by its inner products.
 * `Bundle.ContMDiffRiemannianMetric.rescale_one`,
   `Bundle.ContMDiffRiemannianMetric.rescale_rescale`,
   `Bundle.ContMDiffRiemannianMetric.rescale_inv_rescale`: the action laws of rescaling.
@@ -111,16 +111,6 @@ theorem rescale_inner (g : ContMDiffRiemannianMetric IB n F E) (f : B → ℝ)
     (hf : ContMDiff IB 𝓘(ℝ) n f) (hf_pos : ∀ b, 0 < f b) (b : B) (v w : E b) :
     (g.rescale f hf hf_pos).inner b v w = f b * g.inner b v w :=
   (rfl)
-
-omit [∀ b, ContinuousConstSMul ℝ (E b)] in
-/-- Two `C^n` Riemannian metrics are equal as soon as their inner products agree on every fibre. -/
-@[ext]
-theorem ext {g g' : ContMDiffRiemannianMetric IB n F E} (h : ∀ b, g.inner b = g'.inner b) :
-    g = g' := by
-  obtain ⟨i, _, _, _, _⟩ := g
-  obtain ⟨i', _, _, _, _⟩ := g'
-  obtain rfl : i = i' := funext h
-  rfl
 
 variable (g : ContMDiffRiemannianMetric IB n F E)
   {f : B → ℝ} {hf : ContMDiff IB 𝓘(ℝ) n f} {hf_pos : ∀ b, 0 < f b}

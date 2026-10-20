@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
 public import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
+public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 
 /-!
 # Smooth pullback of differential forms
@@ -24,7 +25,8 @@ Its underlying rough form is the existing `TauCeti.mpullback`.
 
 In tangent coordinates, pullback precomposes the form's coordinates with those of Mathlib's
 `mfderivWithin`, via `ContinuousAlternatingMap.compContinuousLinearMap`. This expresses
-pullback regularity in terms of maps between fixed model fibres.
+pullback regularity in terms of maps between fixed model fibres. For bundle-valued forms,
+the file provides the coordinate identity `inCoordinates_bundleMpullbackWithin`.
 
 ## References
 
@@ -50,6 +52,31 @@ variable {E H M E' H' M' F : Type*}
   {k : ℕ} {m n : WithTop ℕ∞} {f : M → M'} {s : Set M} {t : Set M'} {x : M}
   {ω : RoughForm I' M' F k}
 
+/-- Read with the coefficient trivialization of `V'` at `f x` and the tangent trivializations at
+`x` and `f x`, a bundle-valued pullback is the form's coordinates precomposed with the
+coordinates of `mfderivWithin`. The target tangent trivialization must be valid at `f y`. -/
+theorem inCoordinates_bundleMpullbackWithin
+    {V' : M' → Type*} [∀ y, AddCommGroup (V' y)] [∀ y, Module ℝ (V' y)]
+    [∀ y, TopologicalSpace (V' y)] [TopologicalSpace (TotalSpace F V')]
+    [FiberBundle F V'] [VectorBundle ℝ F V']
+    (ω : RoughBundleForm I' M' V' k) (f : M → M') (s : Set M) (x y : M)
+    (hyT : f y ∈ (trivializationAt E' (TangentSpace I') (f x)).baseSet) :
+    ContinuousAlternatingMap.inCoordinates E F x y (f x) (f y)
+      (bundleMpullbackWithin I I' f s ω y) =
+      (ContinuousAlternatingMap.inCoordinates E' F (f x) (f y) (f x) (f y)
+        (ω (f y))).compContinuousLinearMap
+        (inTangentCoordinates I I' id f (mfderivWithin I I' f s) x y) := by
+  have h := ContinuousAlternatingMap.inCoordinates_compContinuousLinearMap
+    (F₁ := E) (F₂ := E') (F₃ := F) (x₀ := x) (z₀ := f x)
+    (ω (f y)) (mfderivWithin I I' f s y) hyT
+  have hb : bundleMpullbackWithin I I' f s ω y =
+      (ω (f y)).compContinuousLinearMap (mfderivWithin I I' f s y) := by
+    ext v
+    simp only [bundleMpullbackWithin_apply, ContinuousAlternatingMap.compContinuousLinearMap_apply,
+      Function.comp_def]
+  rw [hb, inTangentCoordinates]
+  exact h
+
 namespace RoughForm
 
 /-- In fibre coordinates, pullback precomposes the form's coordinates with the derivative's
@@ -61,20 +88,17 @@ theorem inCoordinates_mpullbackWithin (ω : RoughForm I' M' F k) (f : M → M')
       (ContinuousAlternatingMap.inCoordinates E' F (f x) (f y) (f x) (f y)
         (ω (f y))).compContinuousLinearMap
           (inTangentCoordinates I I' id f (mfderivWithin I I' f s) x y) := by
-  have h := ContinuousAlternatingMap.inCoordinates_compContinuousLinearMap
-    (F₁ := E) (F₂ := E') (F₃ := F) (x₀ := x) (z₀ := f x)
-    (ω (f y)) (mfderivWithin I I' f s y) hy
+  have h := inCoordinates_bundleMpullbackWithin (I := I) (I' := I') (F := F)
+    (V' := Trivial M' F) ω f s x y hy
   ext v
-  -- Both coefficient bundles are trivial: their coordinate maps are identities, even though
-  -- their base spaces differ. Evaluate first so the rough pullback's application law applies.
   simpa only [ContinuousAlternatingMap.inCoordinates,
     Bundle.Trivial.eq_trivialization M F (trivializationAt F (Trivial M F) x),
     Bundle.Trivial.eq_trivialization M' F (trivializationAt F (Trivial M' F) (f x)),
     Bundle.Trivial.continuousLinearMapAt_trivialization,
     ContinuousAlternatingMap.compContinuousLinearMap_apply,
     ContinuousLinearMap.compContinuousAlternatingMap_coe, Function.comp_def,
-    ContinuousLinearMap.id_apply, inTangentCoordinates, id_eq, mpullbackWithin_apply] using
-    congrArg (fun a ↦ a v) h
+    ContinuousLinearMap.id_apply, inTangentCoordinates, id_eq, mpullbackWithin_apply,
+    bundleMpullbackWithin_apply] using congrArg (fun a ↦ a v) h
 
 end RoughForm
 

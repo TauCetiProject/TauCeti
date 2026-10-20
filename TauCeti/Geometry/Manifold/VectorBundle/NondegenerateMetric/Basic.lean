@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
-public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
+public import TauCeti.Geometry.Manifold.Riemannian.Basic
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.Topology.VectorBundle.FiniteDimensional
 
@@ -33,6 +33,8 @@ Levi-Civita connection for an indefinite metric.
   for a finite-dimensional model space.
 * `TauCeti.Manifold.ContMDiffNondegenerateMetric.sharp`: the inverse musical equivalence, for a
   finite-dimensional model space.
+* `TauCeti.Manifold.ContMDiffNondegenerateMetric.ofRiemannianBundle`: the metric of a smooth
+  Riemannian bundle instance on the tangent bundle, as a smooth nondegenerate metric.
 * `Bundle.ContMDiffRiemannianMetric.toNondegenerateMetric`: the positive-definite specialization.
 
 ## References
@@ -207,3 +209,33 @@ theorem toNondegenerateMetric_apply
   (rfl)
 
 end Bundle.ContMDiffRiemannianMetric
+
+namespace TauCeti.Manifold.ContMDiffNondegenerateMetric
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+
+section RiemannianBundle
+
+variable (I M) [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+
+/-- The metric of a smooth Riemannian bundle structure on the tangent bundle, viewed as a smooth
+symmetric nondegenerate metric. -/
+def ofRiemannianBundle : ContMDiffNondegenerateMetric (I := I) (M := M) :=
+  (Bundle.ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle
+    (IB := I) (n := ∞) (F := E) (V := fun x : M ↦ TangentSpace I x)).toNondegenerateMetric
+
+/-- The metric of a Riemannian bundle structure pairs tangent vectors by their inner product. -/
+@[simp]
+theorem ofRiemannianBundle_apply (x : M) (v w : TangentSpace I x) :
+    ofRiemannianBundle I M x v w = inner ℝ v w := by
+  simp only [ofRiemannianBundle,
+    Bundle.ContMDiffRiemannianMetric.toNondegenerateMetric_apply,
+    Bundle.ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle_inner]
+  rfl
+
+end RiemannianBundle
+
+end TauCeti.Manifold.ContMDiffNondegenerateMetric

@@ -15,13 +15,21 @@ class Element {
   append(...nodes) {
     this.children.push(...nodes);
   }
+  get textContent() {
+    return this.text + this.children.map((node) => node.textContent).join("");
+  }
+  set textContent(value) {
+    this.text = String(value);
+    this.children = [];
+  }
   replaceChildren() {
+    this.text = "";
     this.children = [];
   }
 }
-async function browser(responses, images = [], failImage = false) {
+async function browser(responses, images = [], failImage = false, date = Date) {
   const elements = Object.fromEntries(
-    ["status", "counts", "builds", "freshness"].map((n) => [
+    ["status", "counts", "backlog"].map((n) => [
       "[data-ci-" + n + "]",
       new Element(),
     ]),
@@ -47,7 +55,7 @@ async function browser(responses, images = [], failImage = false) {
         else this.onload();
       }
     },
-    Date,
+    Date: date,
     Set,
     Promise,
     AbortSignal,
@@ -102,9 +110,69 @@ test("failed refresh retains the successful snapshot and labels its age", async 
   assert.match(b.elements["[data-ci-counts]"].textContent, /2 running/);
   assert.match(
     b.elements["[data-ci-status]"].textContent,
-    /Last successful snapshot/,
+    /Updates paused.*last updated/,
   );
   assert.equal(b.requests[1].opts.headers["If-None-Match"], "revision");
+});
+test("current activity presents runner counts without exposing raw run records", async () => {
+  const manifest = {
+    schema: "tauceti-ci.manifest/v1",
+    mode: "live",
+    current: {
+      computed_at: new Date().toISOString(),
+      as_of: new Date(Date.now() - 20 * 60 * 1000).toISOString(),
+      running: { github: 12, namespace: 9, "self-hosted": 1 },
+      queued: { github: 2 },
+      builds: [{ repo: "TauCetiProject/TauCeti", run: "39201955793", attempt: 1, status: "in_progress" }],
+      ready_to_merge: { count: 4, complete: true, at: new Date().toISOString() },
+    },
+  };
+  const b = await browser([Response.json(manifest)]);
+  const cells = b.elements["[data-ci-counts]"].children;
+  assert.deepEqual(cells.map((cell) => cell.dataset.runner), ["github", "namespace", "self-hosted"]);
+  assert.match(cells[0].textContent, /GitHub-hosted12 running 2 waiting/);
+  assert.match(cells[1].textContent, /Namespace9 running 0 waiting/);
+  assert.match(b.elements["[data-ci-status]"].textContent, /^Updated just now$/);
+  assert.equal(b.root.dataset.stale, "false");
+  assert.equal(b.elements["[data-ci-backlog]"].textContent, "4 pull requests ready to merge.");
+  assert.doesNotMatch(cells.map((cell) => cell.textContent).join(""), /39201955793|attempt|in_progress/);
+  assert.ok(b.requests.every((request) => request.url.startsWith("https://ci-data.taucetiproject.org/")));
+});
+test("fresh publication does not conceal incomplete inventory or stale merge counts", async () => {
+  const b = await browser([Response.json({
+    schema: "tauceti-ci.manifest/v1", mode: "live",
+    current: {
+      computed_at: new Date().toISOString(),
+      as_of: new Date(Date.now() - 31 * 60 * 1000).toISOString(),
+      running: { github: 1 },
+      ready_to_merge: { count: 4, complete: true, at: new Date(Date.now() - 31 * 60 * 1000).toISOString() },
+    },
+  })]);
+  assert.match(b.elements["[data-ci-status]"].textContent, /Counts may be incomplete/);
+  assert.equal(b.root.dataset.stale, "true");
+  assert.equal(b.elements["[data-ci-backlog]"].hidden, true);
+});
+test("unchanged charts keep readable age labels current without marking fleet bins as daily data", async () => {
+  let clock = Date.now();
+  class Clock extends Date { static now() { return clock; } }
+  const figure = new Element();
+  figure.querySelector = () => figure.children.find((node) => node.dataset.ciChartAge !== undefined);
+  const image = { src: "https://ci-data.taucetiproject.org/v1/ci/assets/abcdef/ci-fleet-72h.svg", closest: () => figure };
+  const timestamp = new Date(clock).toISOString();
+  const b = await browser([
+    Response.json({
+      schema: "tauceti-ci.manifest/v1", mode: "live",
+      current: { computed_at: timestamp, as_of: timestamp },
+      groups: { fleet: { status: "updated", published_at: timestamp } },
+      assets: { "ci-fleet-72h.svg": { url: "/v1/ci/assets/abcdef/ci-fleet-72h.svg" } },
+    }),
+    new Response(null, { status: 304 }),
+  ], [image], false, Clock);
+  assert.equal(figure.children[0].textContent, "Updated just now.");
+  clock += 2 * 60 * 1000;
+  b.timers[0]();
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(figure.children[0].textContent, "Updated 2 minutes ago.");
 });
 test("a failed chart download retains its previous image", async () => {
   const image = {

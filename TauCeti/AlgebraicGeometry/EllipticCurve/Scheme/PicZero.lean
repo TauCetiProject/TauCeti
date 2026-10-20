@@ -71,11 +71,6 @@ attribute [local instance high] Scheme.functionFieldBaseAlgebra
 
 variable [W.IsElliptic]
 
-/-- The coordinate ring of an elliptic curve is a Dedekind domain. -/
-local instance : IsDedekindDomain W.toAffine.CoordinateRing :=
-  have := WeierstrassCurve.Affine.isIntegrallyClosed_coordinateRing W.toAffine
-  W.toAffine.isDedekindDomain_coordinateRing_of_isIntegrallyClosed
-
 /-- The first cohomology of the structure sheaf of the projective model of an elliptic curve is
 finite-dimensional. -/
 instance finiteDimensional_cohomology_one_projModel :

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Probability.Process.PathLaw.FiniteMarginals
 public import TauCeti.MeasureTheory.Measure.ProductKernel
-import TauCeti.MeasureTheory.Measure.GiryMonad
 import TauCeti.MeasureTheory.Measure.Measurability
 
 /-!
@@ -79,9 +78,9 @@ theorem iidMixtureLaw_map_fst (hP : Measurable P) :
   have hfst : ∀ t : T,
       ((Measure.dirac t).prod (Measure.infinitePi fun _ : ℕ => (P t : Measure α))).map Prod.fst
         = Measure.dirac t := fun _ => Measure.fst_prod
-  rw [iidMixtureLaw_def, TauCeti.MeasureTheory.map_bind
+  rw [iidMixtureLaw_def, Measure.map_bind
     (TauCeti.MeasureTheory.measurable_dirac_prod_infinitePi_const P hP).aemeasurable
-    measurable_fst]
+    measurable_fst.aemeasurable]
   simp_rw [hfst]
   exact Measure.bind_dirac
 
@@ -128,11 +127,11 @@ The parameter is integrated out, leaving the mixture of the prescribed i.i.d. la
 theorem pathLaw_iidMixtureLaw (hP : Measurable P) :
     pathLaw (iidMixtureLaw π P) (fun n ω => ω.2 n)
       = (π.map P).bind fun Q => Measure.infinitePi fun _ : ℕ => (Q : Measure α) := by
-  rw [pathLaw_def, iidMixtureLaw_def, TauCeti.MeasureTheory.map_bind
+  rw [pathLaw_def, iidMixtureLaw_def, Measure.map_bind
     (TauCeti.MeasureTheory.measurable_dirac_prod_infinitePi_const P hP).aemeasurable
-    measurable_snd]
+    measurable_snd.aemeasurable]
   simp only [Measure.map_snd_prod, measure_univ, one_smul]
-  exact (TauCeti.MeasureTheory.bind_map hP.aemeasurable
+  exact (Measure.bind_map hP.aemeasurable
     TauCeti.MeasureTheory.measurable_infinitePi_const.aemeasurable).symm
 
 /-- **The prefix pushforward of the canonical mixture law.** Projecting `δ_t ⊗ (P t)^{⊗ℕ}` onto the
@@ -158,7 +157,7 @@ theorem map_prefixProjPair_iidMixtureLaw {T : Type*} [MeasurableSpace T] {π : M
       Measure.map_map (measurable_prefixProjPair T α n) measurable_prodMk_left, hcomp]
     exact TauCeti.MeasureTheory.map_infinitePi_pair_block t (P t) Fin.val_injective
   rw [iidMixtureLaw_def,
-    TauCeti.MeasureTheory.map_bind hker.aemeasurable (measurable_prefixProjPair T α n)]
+    Measure.map_bind hker.aemeasurable (measurable_prefixProjPair T α n).aemeasurable]
   simp_rw [hstep]
 
 end Probability

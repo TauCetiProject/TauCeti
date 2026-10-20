@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import TauCeti.Analysis.Calculus.Bilinear
+public import TauCeti.Geometry.Manifold.Riemannian.Basic
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Conformal
 
@@ -176,6 +177,18 @@ theorem pullback_inner
     (g.pullback f hf hinj).inner x v w =
       g.inner (f x) (mfderiv I J f x v) (mfderiv I J f x w) :=
   (rfl)
+
+/-- Pulling a Riemannian metric back along the identity leaves it unchanged. -/
+@[simp]
+theorem pullback_id
+    (g : ContMDiffRiemannianMetric I n E (fun y : M ↦ TangentSpace I y))
+    (hf : ContMDiff I I (n + 1) id)
+    (hinj : ∀ x, Function.Injective (mfderiv I I id x)) :
+    g.pullback id hf hinj = g := by
+  apply ext
+  intro x v w
+  rw [pullback_inner]
+  simp only [mfderiv_id, ContinuousLinearMap.id_apply, id_eq]
 
 variable {g : ContMDiffRiemannianMetric J n F (fun y : N ↦ TangentSpace J y)} {f : M → N}
   {hf : ContMDiff I J (n + 1) f} {hinj : ∀ x, Function.Injective (mfderiv I J f x)}
