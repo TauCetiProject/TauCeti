@@ -29,7 +29,7 @@ variable {R M N : Type*} [CommRing R] [IsNoetherianRing R]
 /-- A linear map is injective if, at every associated prime of its domain, a compatible map
 from a localization of the domain is injective. Neither module needs to be finitely generated,
 and the target of the compatible map need not itself be a localization. -/
-theorem injective_of_forall_isLocalized
+theorem injective_of_forall_isLocalizedModule
     (Mₚ : ∀ (prime : Ideal R) [prime.IsPrime], Type*)
     [∀ (prime : Ideal R) [prime.IsPrime], AddCommMonoid (Mₚ prime)]
     [∀ (prime : Ideal R) [prime.IsPrime], Module R (Mₚ prime)]
@@ -82,7 +82,7 @@ theorem injective_of_forall_localization (map : M →ₗ[R] N)
       Function.Injective (LocalizedModule.map prime.primeCompl map) ∨
       prime ∉ associatedPrimes R M) :
     Function.Injective map :=
-  injective_of_forall_isLocalized
+  injective_of_forall_isLocalizedModule
     (fun prime _ ↦ LocalizedModule prime.primeCompl M)
     (fun prime _ ↦ LocalizedModule.mkLinearMap prime.primeCompl M)
     (fun prime _ ↦ LocalizedModule prime.primeCompl N)
