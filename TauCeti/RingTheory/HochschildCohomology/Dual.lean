@@ -127,7 +127,7 @@ theorem hochschildBimoduleCoface_multilinearCurryFirstEquiv (i : Fin (n + 2))
       rw [Fin.succ_last, hochschildBimoduleCoface_last_apply, op_smul_linearMap_apply, unop_op,
         multilinearCurryFirstEquiv_apply_apply, hochschildFace_last, ← Fin.succ_last,
         Fin.cons_succ, Fin.cons_zero]
-      rfl
+      simp only [Fin.init_def, Fin.cons_succ]
     | cast j =>
       rw [hochschildBimoduleCoface_castSucc_succ_apply, multilinearCurryFirstEquiv_apply_apply,
         Fin.succ_castSucc, hochschildFace_castSucc, ← Fin.succ_castSucc,

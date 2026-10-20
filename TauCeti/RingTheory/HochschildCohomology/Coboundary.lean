@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Algebra.Tower
 public import Mathlib.LinearAlgebra.BilinearMap
 public import TauCeti.LinearAlgebra.Multilinear.Curry
 public import TauCeti.RingTheory.CyclicCohomology.Cochain
+public import TauCeti.RingTheory.Derivation.Bimodule
 import Mathlib.Algebra.BigOperators.Fin
 import TauCeti.Algebra.BigOperators.AlternatingSum
 import TauCeti.Data.Fin.Tuple.Basic
@@ -52,6 +53,8 @@ the cochains with coefficients in the dual bimodule, see
   are the central elements.
 * `TauCeti.hochschildBimoduleCoboundary_ofSubsingleton_eq_zero_iff`: the degree-one cocycles
   are the derivations.
+* `TauCeti.BimoduleDerivation.hochschildBimoduleCoboundary_ofSubsingleton_eq_zero`: a
+  `TauCeti.BimoduleDerivation` is a degree-one cocycle.
 
 ## References
 
@@ -126,6 +129,14 @@ theorem hochschildBimoduleCoface_castSucc_succ_apply (j : Fin n)
   | zero => exact j.elim0
   | succ n => simp [hochschildBimoduleCoface, innerCoface]
 
+/-- The inner cofaces multiply two adjacent entries, with the index written as `j.succ.castSucc`
+rather than `j.castSucc.succ`. -/
+theorem hochschildBimoduleCoface_succ_castSucc_apply (j : Fin n)
+    (ψ : MultilinearMap R (fun _ : Fin n ↦ A) M) (a : Fin (n + 1) → A) :
+    hochschildBimoduleCoface R A M j.succ.castSucc ψ a =
+      ψ (Fin.contractNth j.castSucc (· * ·) a) := by
+  rw [← Fin.succ_castSucc, hochschildBimoduleCoface_castSucc_succ_apply]
+
 /-- The cosimplicial identity `∂_{j+1} ∘ ∂ᵢ = ∂ᵢ ∘ ∂_j` for `i ≤ j`. -/
 theorem hochschildBimoduleCoface_hochschildBimoduleCoface [SMulCommClass A Aᵐᵒᵖ M]
     {i j : Fin (n + 2)} (hij : i ≤ j) (ψ : MultilinearMap R (fun _ : Fin n ↦ A) M) :
@@ -133,8 +144,8 @@ theorem hochschildBimoduleCoface_hochschildBimoduleCoface [SMulCommClass A Aᵐ�
       hochschildBimoduleCoface R A M i.castSucc (hochschildBimoduleCoface R A M j ψ) := by
   -- Each of `i` and `j` is the left coface `0`, an inner coface `k.castSucc.succ` or the right
   -- coface `Fin.last`; the six cases with `i ≤ j` reduce to identities between tuples. The
-  -- `show _ = _ from rfl` steps only rewrite an index into the shape `k.castSucc.succ` of
-  -- `hochschildBimoduleCoface_castSucc_succ_apply`.
+  -- `show _ = _ from rfl` steps either rewrite an index into the shape `k.castSucc.succ` of
+  -- `hochschildBimoduleCoface_castSucc_succ_apply` or unfold `Fin.init a k` to `a k.castSucc`.
   ext a
   induction i using Fin.cases with
   | zero =>
@@ -144,8 +155,8 @@ theorem hochschildBimoduleCoface_hochschildBimoduleCoface [SMulCommClass A Aᵐ�
       rw [show (0 : Fin (n + 2)).succ = (0 : Fin (n + 1)).castSucc.succ from rfl,
         hochschildBimoduleCoface_castSucc_succ_apply]
       simp only [Fin.castSucc_zero, hochschildBimoduleCoface_zero_apply]
-      rw [Fin.contractNth_apply_of_eq _ _ _ _ rfl, mul_smul]
-      congr 2
+      rw [← Fin.cons_self_tail a, Fin.contractNth_zero_cons]
+      simp only [Fin.cons_zero, Fin.tail_cons, mul_smul]
     | succ j =>
       induction j using Fin.lastCases with
       | last =>
@@ -156,13 +167,11 @@ theorem hochschildBimoduleCoface_hochschildBimoduleCoface [SMulCommClass A Aᵐ�
         exact (smul_comm _ _ _).symm
       | cast j =>
         -- an inner contraction commutes with dropping the first entry
-        rw [show j.castSucc.succ.succ = j.succ.castSucc.succ from rfl,
-          hochschildBimoduleCoface_castSucc_succ_apply]
+        rw [Fin.succ_castSucc, hochschildBimoduleCoface_castSucc_succ_apply]
         simp only [Fin.castSucc_zero, hochschildBimoduleCoface_zero_apply,
-          hochschildBimoduleCoface_castSucc_succ_apply]
-        rw [Fin.contractNth_apply_of_lt _ _ _ _ (Nat.succ_pos _), ← Fin.succ_castSucc,
-          Fin.tail_contractNth_succ]
-        rfl
+          hochschildBimoduleCoface_succ_castSucc_apply]
+        rw [Fin.contractNth_apply_of_lt _ _ _ _ (Nat.succ_pos _), Fin.castSucc_zero,
+          ← Fin.succ_castSucc, Fin.tail_contractNth_succ]
   | succ i =>
     induction i using Fin.lastCases with
     | last =>
@@ -173,8 +182,7 @@ theorem hochschildBimoduleCoface_hochschildBimoduleCoface [SMulCommClass A Aᵐ�
         hochschildBimoduleCoface_castSucc_succ_apply]
       simp only [hochschildBimoduleCoface_last_apply]
       rw [Fin.contractNth_apply_of_eq _ _ _ _ rfl, Fin.init_contractNth_castSucc_last, op_mul,
-        mul_smul]
-      rfl
+        mul_smul, Fin.succ_last, show Fin.init a (Fin.last n) = a (Fin.last n).castSucc from rfl]
     | cast i =>
       induction j using Fin.cases with
       | zero => exact absurd hij (not_le.2 (Fin.succ_pos _))
@@ -182,17 +190,16 @@ theorem hochschildBimoduleCoface_hochschildBimoduleCoface [SMulCommClass A Aᵐ�
         induction j using Fin.lastCases with
         | last =>
           -- an inner contraction commutes with dropping the last entry
-          rw [Fin.succ_last, Fin.succ_last, show i.castSucc.succ.castSucc =
-            i.castSucc.castSucc.succ from rfl, hochschildBimoduleCoface_castSucc_succ_apply]
+          rw [Fin.succ_last, Fin.succ_last, hochschildBimoduleCoface_succ_castSucc_apply]
           simp only [hochschildBimoduleCoface_last_apply,
             hochschildBimoduleCoface_castSucc_succ_apply]
-          rw [Fin.contractNth_apply_of_gt _ _ _ _ i.2, Fin.init_contractNth_castSucc]
-          rfl
+          rw [Fin.contractNth_apply_of_gt _ _ _ _ i.2, Fin.init_contractNth_castSucc,
+            Fin.succ_last]
         | cast j =>
           -- two inner contractions: the simplicial identity of `hochschildFace`
-          rw [show j.castSucc.succ.succ = j.succ.castSucc.succ from rfl,
-            show i.castSucc.succ.castSucc = i.castSucc.castSucc.succ from rfl]
-          simp only [hochschildBimoduleCoface_castSucc_succ_apply]
+          rw [Fin.succ_castSucc j]
+          simp only [hochschildBimoduleCoface_castSucc_succ_apply,
+            hochschildBimoduleCoface_succ_castSucc_apply]
           cases n with
           | zero => exact i.elim0
           | succ n =>
@@ -220,6 +227,7 @@ def hochschildBimoduleCoboundary (n : ℕ) :
 variable {R A M} {n : ℕ}
 
 /-- The coboundary evaluates as the alternating sum of the cofaces. -/
+@[simp]
 theorem hochschildBimoduleCoboundary_apply (ψ : MultilinearMap R (fun _ : Fin n ↦ A) M)
     (a : Fin (n + 1) → A) :
     hochschildBimoduleCoboundary R A M n ψ a =
@@ -263,7 +271,8 @@ theorem hochschildBimoduleCoboundary_comp_hochschildBimoduleCoboundary [SMulComm
 theorem hochschildBimoduleCoboundary_constOfIsEmpty (m : M) (a : Fin 1 → A) :
     hochschildBimoduleCoboundary R A M 0 (MultilinearMap.constOfIsEmpty R _ m) a =
       a 0 • m - op (a 0) • m := by
-  simp [hochschildBimoduleCoboundary_apply_eq_add_sum_add, sub_eq_add_neg]
+  rw [hochschildBimoduleCoboundary_apply_eq_add_sum_add]
+  simp [sub_eq_add_neg]
 
 /-- A degree-zero cochain is a cocycle exactly when its value lies in the centre of the
 bimodule. -/
@@ -282,8 +291,10 @@ theorem hochschildBimoduleCoboundary_constOfIsEmpty_eq_zero_iff (m : M) :
 theorem hochschildBimoduleCoboundary_ofSubsingleton (f : A →ₗ[R] M) (a : Fin 2 → A) :
     hochschildBimoduleCoboundary R A M 1 (MultilinearMap.ofSubsingleton R A M 0 f) a =
       a 0 • f (a 1) - f (a 0 * a 1) + op (a 1) • f (a 0) := by
-  simp [hochschildBimoduleCoboundary_apply_eq_add_sum_add, sub_eq_add_neg, Fin.contractNth,
-    Fin.tail, Fin.init]
+  rw [hochschildBimoduleCoboundary_apply_eq_add_sum_add, Fin.sum_univ_one]
+  simp only [MultilinearMap.ofSubsingleton_apply_apply, Fin.tail_def, Fin.init_def,
+    Fin.castSucc_zero, Fin.contractNth_apply_of_eq (0 : Fin 2) (· * ·) a 0 rfl]
+  simp [sub_eq_add_neg]
 
 /-- A degree-one cochain is a cocycle exactly when it satisfies the Leibniz rule
 `f (x y) = x • f y + f x • y`, i.e. when it is a derivation into the bimodule in the sense of
@@ -300,6 +311,12 @@ theorem hochschildBimoduleCoboundary_ofSubsingleton_eq_zero_iff (f : A →ₗ[R]
   · ext a
     rw [hochschildBimoduleCoboundary_ofSubsingleton, h, zero_apply]
     abel
+
+/-- A derivation into the bimodule is a degree-one Hochschild cocycle. -/
+theorem BimoduleDerivation.hochschildBimoduleCoboundary_ofSubsingleton_eq_zero
+    [SMulCommClass A Aᵐᵒᵖ M] (D : BimoduleDerivation R A M) :
+    hochschildBimoduleCoboundary R A M 1 (MultilinearMap.ofSubsingleton R A M 0 D) = 0 :=
+  (hochschildBimoduleCoboundary_ofSubsingleton_eq_zero_iff _).2 D.leibniz
 
 end Coboundary
 

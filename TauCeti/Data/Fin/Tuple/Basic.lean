@@ -103,8 +103,8 @@ theorem contractNth_zero_cons (x : α) (a : Fin (n + 1) → α) :
 /-- Contracting two entries of `Fin.cons x a` other than the first contracts `a`. -/
 theorem contractNth_succ_cons (j : Fin (n + 1)) (x : α) (a : Fin (n + 1) → α) :
     contractNth j.succ op (cons x a) = cons x (contractNth j op a) := by
-  rw [← cons_self_tail (contractNth j.succ op (cons x a)), tail_contractNth_succ, tail_cons]
-  rfl
+  rw [← cons_self_tail (contractNth j.succ op (cons x a)), tail_contractNth_succ, tail_cons,
+    contractNth_apply_of_lt _ _ _ _ (Nat.succ_pos _), castSucc_zero, cons_zero]
 
 /-- Contracting the last two entries and dropping the last one drops the last two entries. -/
 theorem init_contractNth_castSucc_last (a : Fin (n + 2) → α) :
