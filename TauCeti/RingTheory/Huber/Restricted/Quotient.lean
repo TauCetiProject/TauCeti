@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Huber.Basic
+public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Kernel
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.OpenQuotient
 public import TauCeti.Topology.Algebra.Nonarchimedean.Quotient
 import TauCeti.RingTheory.Huber.OpenMapping
