@@ -43,6 +43,8 @@ definition `(ℤ, (1))` is complete and of noetherian type, but its zero ideal i
 * `TauCeti.Huber.IsNoetherianType.isClosed_ideal`: every ideal of a complete Hausdorff Huber ring
   of noetherian type is closed.
 * `TauCeti.Huber.IsNoetherianType.t2Space_quotient`: hence the quotient by any ideal is Hausdorff.
+* `TauCeti.Huber.IsNoetherianType.completeSpace_quotient`: the quotient by any ideal is complete
+  and Hausdorff.
 * `TauCeti.Huber.IsNoetherianType.quotient`: the quotient of a complete Hausdorff Huber ring of
   noetherian type by any ideal is of noetherian type.
 
@@ -115,16 +117,25 @@ instance IsNoetherianType.t2Space_quotient [IsNoetherianType A] (J : Ideal A) :
   have : T1Space (A ⧸ J) := (Ideal.Quotient.t1Space_iff J).mpr (isClosed_ideal J)
   inferInstance
 
+/-- **The quotient of a complete Hausdorff Huber ring of noetherian type by any ideal is complete
+and Hausdorff**, for the uniform structure of the quotient topology. Completeness holds because `A`
+is complete and first countable (`QuotientAddGroup.completeSpace_right`), and Hausdorffness
+because the ideal is closed (`IsNoetherianType.t2Space_quotient`). -/
+theorem IsNoetherianType.completeSpace_quotient [IsNoetherianType A] (J : Ideal A) :
+    @CompleteSpace (A ⧸ J) (IsTopologicalAddGroup.rightUniformSpace _) ∧ T2Space (A ⧸ J) :=
+  ⟨QuotientAddGroup.completeSpace_right _ J.toAddSubgroup, inferInstance⟩
+
 /-- **The quotient of a complete Hausdorff Huber ring of noetherian type by any ideal is of
-noetherian type.** The quotient is Hausdorff because the ideal is closed, and complete because `A`
-is complete and first countable, so `IsNoetherianType.of_isOpenQuotientMap` applies to the
-quotient map. -/
+noetherian type.** A noetherian ring of definition maps onto one of the quotient, and a strongly
+noetherian Tate ring has strongly noetherian quotients by closed ideals
+(`IsStronglyNoetherian.quotient`), which applies since every ideal is closed. -/
 instance IsNoetherianType.quotient [IsNoetherianType A] (J : Ideal A) :
-    IsNoetherianType (A ⧸ J) :=
-  let _ : UniformSpace (A ⧸ J) := IsTopologicalAddGroup.rightUniformSpace _
-  have _ : IsUniformAddGroup (A ⧸ J) := isUniformAddGroup_of_addCommGroup
-  have _ : CompleteSpace (A ⧸ J) := QuotientAddGroup.completeSpace_right _ J.toAddSubgroup
-  of_isOpenQuotientMap (QuotientRing.isOpenQuotientMap_mk J)
+    IsNoetherianType (A ⧸ J) := by
+  refine IsNoetherianType.elim ‹_› (fun P _ ↦ .of_pairOfDefinition
+    (P.map _ (QuotientRing.isOpenQuotientMap_mk J)) inferInstance) fun _ _ ↦ ?_
+  have := IsTateRing.of_continuous (QuotientRing.isOpenQuotientMap_mk J).continuous
+  have := IsStronglyNoetherian.quotient J (isClosed_ideal J)
+  infer_instance
 
 end Complete
 
