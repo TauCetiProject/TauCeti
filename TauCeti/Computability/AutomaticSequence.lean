@@ -10,6 +10,7 @@ public import Mathlib.Data.Fintype.Defs
 public import TauCeti.Computability.DFAO
 import Mathlib.Data.Fintype.Prod
 import Mathlib.Data.ZMod.Basic
+import TauCeti.Data.Nat.Periodic
 
 /-!
 # Automatic sequences
@@ -19,8 +20,9 @@ output (`TauCeti.DFAO`) with finitely many states and input alphabet `Fin k` com
 the base-`k` digits of `n`. The digits are Mathlib's `Nat.digits k n`, read least significant
 digit first and without padding zeros. This is the reverse reading of Bridy and the lecture
 inverse of Christol, Kamae, Mendès France and Rauzy. Automatic sequences are the subject of
-Christol's theorem, which identifies them in prime base `p` with the coefficient sequences of the
-power series over `𝔽_p` algebraic over `𝔽_p(X)`, and of Cobham's theorem, which identifies the
+Christol's theorem, which identifies the `p`-automatic sequences with values in `𝔽_p`, for a
+prime `p`, with the coefficient sequences of the power series over `𝔽_p` algebraic over
+`𝔽_p(X)`, and of Cobham's theorem, which identifies the
 sequences automatic in two multiplicatively independent bases with the eventually periodic ones.
 
 The output alphabet is arbitrary; automaticity forces the range of the sequence to be finite. The
@@ -111,21 +113,6 @@ section EventuallyPeriodic
 
 variable {N p : ℕ}
 
-/-- Beyond the preperiod `N`, an eventually periodic sequence takes at `n` its value at the
-representative of `n` modulo `p` in `[N, N + p)`. -/
-private theorem apply_eq_apply_add_mod (h : ∀ n, N ≤ n → a (n + p) = a n) {n : ℕ} (hn : N ≤ n) :
-    a n = a (N + (n - N) % p) := by
-  have key : ∀ j m, N ≤ m → a (m + p * j) = a m := by
-    intro j
-    induction j with
-    | zero => simp
-    | succ j ih =>
-      intro m hm
-      rw [Nat.mul_succ, ← Nat.add_assoc, h _ (by omega), ih m hm]
-  have hdiv := Nat.mod_add_div (n - N) p
-  calc a n = a (N + (n - N) % p + p * ((n - N) / p)) := by congr 1; omega
-    _ = a (N + (n - N) % p) := key _ _ (by omega)
-
 /-- The truncation `min n N` and the residue of `n` modulo `p`, the finite data from which the
 value at `n` of a sequence with preperiod `N` and period `p` is read off. -/
 private def trunc (N p n : ℕ) : Fin (N + 1) × ZMod p :=
@@ -170,7 +157,7 @@ private theorem truncOut_trunc (h : ∀ n, N ≤ n → a (n + p) = a n) (n : ℕ
   · have hmin : min n N = N := min_eq_right (by omega)
     simp only [truncOut, trunc, hmin, lt_irrefl, ite_false]
     rw [← Nat.cast_sub (by omega), ZMod.val_natCast]
-    exact (apply_eq_apply_add_mod h (by omega)).symm
+    exact (Nat.apply_eq_apply_add_sub_mod h (by omega)).symm
 
 /-- For `2 ≤ k`, the automaton reading base-`k` digits that keeps the truncations of the value
 read so far and of the current place value. -/
@@ -192,7 +179,7 @@ private theorem evalFrom_periodicDFAO (L : List ℕ) (hL : ∀ d ∈ L, d < k) (
     have hstep : (periodicDFAO k a N p).step (trunc N p v, trunc N p P) (Fin.ofNat k d) =
         (trunc N p (v + d * P), trunc N p (k * P)) := by
       simp only [periodicDFAO_step, hd, trunc_add, trunc_mul]
-    rw [List.map_cons, DFAO.evalFrom_cons, hstep,
+    simp only [List.map_cons, DFAO.evalFrom_cons, hstep,
       ih (fun e he ↦ hL e (List.mem_cons_of_mem d he)), Nat.ofDigits_cons, List.length_cons,
       pow_succ]
     congr 2 <;> ring
@@ -212,7 +199,9 @@ private theorem evalFrom_unaryPeriodicDFAO (m v : ℕ) (d : Fin 1) :
     rw [List.replicate_succ, DFAO.evalFrom_cons]
     have hstep : (unaryPeriodicDFAO a N p).step (trunc N p v) d = trunc N p (v + 1) := by
       simp only [unaryPeriodicDFAO_step, trunc_add]
-    rw [hstep, ih, Nat.add_assoc, Nat.add_comm 1 m]
+    rw [hstep, ih]
+    congr 1
+    omega
 
 /-- **Eventually periodic sequences are automatic.** A sequence `a` with `a (n + p) = a n` for all
 `n ≥ N`, for some period `p > 0`, is `k`-automatic in every base `k`. -/
@@ -223,12 +212,10 @@ theorem isAutomatic_of_eventually_periodic (hp : 0 < p) (h : ∀ n, N ≤ n → 
     have := NeZero.ne k
     omega
   · convert (unaryPeriodicDFAO a N p).isAutomatic with n
-    rw [Nat.digits_one, List.map_replicate, DFAO.eval_eq_evalFrom, unaryPeriodicDFAO_start,
-      evalFrom_unaryPeriodicDFAO, Nat.zero_add, unaryPeriodicDFAO_output, truncOut_trunc h]
+    simp [DFAO.eval_eq_evalFrom, Nat.digits_one, evalFrom_unaryPeriodicDFAO, truncOut_trunc h]
   · convert (periodicDFAO k a N p).isAutomatic with n
-    rw [DFAO.eval_eq_evalFrom, periodicDFAO_start,
-      evalFrom_periodicDFAO _ (fun d hd ↦ Nat.digits_lt_base hk hd), Nat.zero_add, Nat.one_mul,
-      Nat.ofDigits_digits, periodicDFAO_output, truncOut_trunc h]
+    simp [DFAO.eval_eq_evalFrom, evalFrom_periodicDFAO _ (fun d hd ↦ Nat.digits_lt_base hk hd),
+      Nat.ofDigits_digits, truncOut_trunc h]
 
 end EventuallyPeriodic
 

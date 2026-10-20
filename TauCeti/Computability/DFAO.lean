@@ -41,13 +41,14 @@ require finitely many states; finiteness is imposed where it is used.
 
 public section
 
-universe u v w x y
+universe u v w x y z
 
 namespace TauCeti
 
 /-- A **deterministic automaton with output** (DFAO) with input alphabet `α`, states `σ` and
 output alphabet `Δ`: a transition function, an initial state and an output function. No
 finiteness is assumed. -/
+@[ext]
 structure DFAO (α : Type u) (σ : Type v) (Δ : Type w) where
   /-- The transition from a state on one input letter. -/
   step : σ → α → σ
@@ -168,11 +169,20 @@ theorem evalFrom_mapOutput {Δ' : Type x} (f : Δ → Δ') (s : σ) (x : List α
     (M.mapOutput f).evalFrom s x = M.evalFrom s x :=
   (rfl)
 
-/-- Changing the output does not change the state reached, so the output on a word becomes `f`
-applied to the original output. -/
+/-- Changing the output does not change the state reached; with
+`TauCeti.DFAO.mapOutput_output`, the output on a word is `f` applied to the original output. -/
 @[simp]
 theorem eval_mapOutput {Δ' : Type x} (f : Δ → Δ') (x : List α) :
     (M.mapOutput f).eval x = M.eval x :=
+  (rfl)
+
+@[simp]
+theorem mapOutput_id : M.mapOutput id = M :=
+  (rfl)
+
+@[simp]
+theorem mapOutput_mapOutput {Δ' : Type x} {Δ'' : Type z} (f : Δ → Δ') (g : Δ' → Δ'') :
+    (M.mapOutput f).mapOutput g = M.mapOutput (g ∘ f) :=
   (rfl)
 
 /-- The product automaton, running `M` and `N` in parallel on the same input and outputting the
