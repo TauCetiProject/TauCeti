@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Basic.Finite.Prod
-public import Mathlib.Data.Fintype.Defs
-public import Mathlib.Data.List.Chain
 public import Mathlib.Data.Quot
 public import Mathlib.Logic.Relation
 public import Mathlib.Order.Setoid.Basic
@@ -37,14 +35,24 @@ The model is the following.
 * `NodalCurve` is the gluing data: finitely many normalization components `X i` (indexed by the
   finite type `ι`) together with finitely many flag pairs `f : Flag`.  A flag pair names the two
   components `fst f`, `snd f` and the points `fstPt f`, `sndPt f` of them that are identified.
+  The data carry one hypothesis: the flag points are pairwise distinct
+  (`flagPoints_injective`).  The two points of one flag pair are different, and no point of the
+  disjoint union occurs in two different flag pairs.  This is what makes the data the data of a
+  *nodal* curve and not of an arbitrary gluing of curves along points: every singularity of the
+  glued curve is then a plain node, at which exactly two branches meet.
 * `Sigma X` is the disjoint union of the normalization components, with the coproduct topology.
 * `flagRel` is the generating relation: the two points of one flag pair are related.
-* `gluedRel` is the equivalence relation *generated* by the flag pairs, i.e. the transitive
-  closure of `flagRel` (`gluedRel_iff_eqvGen`).  Two points of the disjoint union are glued
-  together exactly when they are the points of two flag pairs belonging to the same node.  It is
-  symmetric and transitive (`gluedRel_symm`, `gluedRel_trans`), hence an equivalence relation
-  (`gluedRel_equivalence`), and it relates two points only when they are equal or when both of
-  them are flag points (`gluedRel_flagPoints`).
+* `flagAdjacent` and `sameNode` relate two flag pairs that are glued at the same node, the second
+  through a chain of the first.  Because the flag points are pairwise distinct, two flag pairs
+  share a point only when they are the same flag pair, so both relations are simply equality
+  (`flagAdjacent_iff`, `sameNode_iff`).
+* `gluedRel` is the equivalence relation *generated* by the flag pairs.  Because the flag points
+  are pairwise distinct, a chain of flag pairs has at most one step, so the generated relation is
+  simply "the two points are equal, or they are the two points of one flag pair"
+  (`gluedRel_iff`).  It is symmetric and transitive (`gluedRel_symm`, `gluedRel_trans`), hence an
+  equivalence relation (`gluedRel_equivalence`), and it relates two points only when they are
+  equal or when both of them are flag points (`gluedRel_flagPoints`).  It is also exactly the
+  equivalence closure `Relation.EqvGen` of the generating relation (`gluedRel_iff_eqvGen`).
 * `gluedCurve` is the quotient of the disjoint union by that relation: the underlying space of
   the nodal curve.  It is the `Quotient` of the disjoint union by the setoid `gluedRelSetoid`,
   with the quotient topology: `isOpen_iff_preimage` states that a subset of the glued curve is
@@ -56,9 +64,8 @@ The model is the following.
 * `nodeSet` is the image of the flag points in the glued curve: the singular locus of the curve.
   It is the image of the flag pairs (`mem_nodeSet`, `nodeSet_eq_image_nodeOfFlag`), it is finite
   (`nodeSet_finite`) and it is closed (`isClosed_nodeSet`).  The map `nodeOfFlag` sends a flag
-  pair to its node; two flag pairs have the same node exactly when they are glued at the same
-  node (`nodeOfFlag_eq_iff`), and the map is injective when no two distinct flag pairs are glued
-  at the same node (`nodeOfFlag_injective`).
+  pair to its node; two flag pairs have the same node exactly when they are the same flag pair
+  (`nodeOfFlag_eq_iff`), so `nodeOfFlag` is injective (`nodeOfFlag_injective`).
 * The complement of the node set is the *smooth locus* `smoothLocus`, which is open
   (`isOpen_smoothLocus`).  The quotient map restricts to a homeomorphism from the disjoint union
   of the normalization components minus their flag points onto the smooth locus
@@ -74,23 +81,25 @@ is proved is:
   continuous; and the glued space is compact when the normalization components are;
 * the generated relation is closed (`gluedRel_isClosed`);
 * the node set, the image of the flag pairs, is closed, and the quotient map identifies the
-  disjoint union minus the flag points homeomorphically with the complement of the node set.
+  disjoint union minus the flag points homeomorphically with the complement of the node set;
+* the nodes of the glued curve are in bijection with the flag pairs: `nodeOfFlag` is injective
+  (`nodeOfFlag_injective`), its image is the node set (`nodeSet_eq_image_nodeOfFlag`), and every
+  node is the node of a flag pair (`exists_flag_of_mem_nodeSet`).
 
 What is **not** proved here:
 
 * the **Hausdorff** part of the quoted sentence: the glued space is not shown to be Hausdorff.
   Its equivalence classes are finite -- the class of a point that is not a flag point is a
-  singleton, and the class of a flag point is contained in the finite set of flag points
-  (`gluedRel_flagPoints`) -- but the passage from finiteness of the classes, closedness of the
+  singleton, and the class of a flag point is the pair of points of its flag pair
+  (`gluedRel_iff`) -- but the passage from finiteness of the classes, closedness of the
   quotient map and normality of the disjoint union to the Hausdorff property of the quotient is
   not carried out here.
 * the **biholomorphic** refinement of "the complement maps locally biholomorphic": the glued
   space carries no complex structure on its smooth locus, so there is nothing for a biholomorphism
   to be a morphism between.
-* the **dual graph** of the nodal curve: the file identifies the edges of the dual graph with
-  the nodes of the glued curve, i.e. with the classes of flag pairs that are glued at the same
-  node (`nodeOfFlag_eq_iff` describes the fibres of the flag-pair map), but it does not build
-  the graph itself and does not count its edges.
+* the **dual graph** of the nodal curve: the flag pairs are the edges of the dual graph of a nodal
+  curve, and the nodes of the glued curve are in bijection with the flag pairs, but the graph
+  itself, with its vertices and its incidence relations, is not built in this file.
 
 ## References
 
@@ -108,9 +117,17 @@ namespace TauCeti.ComplexCurveModuli
 
 variable {ι : Type*} {Flag : Type*} {X : ι → Type*}
 
+/-- The disjoint union of the normalization components of a nodal curve. -/
+abbrev ComponentUnion {ι : Type*} (X : ι → Type*) := Sigma X
+
 /-- The gluing data of a nodal curve: the finitely many flag pairs at which the normalization
 components are glued.  A flag pair `f` names the two components `fst f` and `snd f` together with
-the points `fstPt f` and `sndPt f` of those components that are identified. -/
+the points `fstPt f` and `sndPt f` of those components that are identified.
+
+The field `flagPoints_injective` says that the flag points are pairwise distinct: the two points
+of one flag pair are different, and no point of the disjoint union occurs in two different flag
+pairs.  This is the hypothesis that makes the data the data of a nodal curve rather than of an
+arbitrary gluing of curves along points. -/
 structure NodalCurve (ι : Type*) (Flag : Type*) (X : ι → Type*) where
   /-- The first component glued at a flag pair. -/
   fst : Flag → ι
@@ -120,11 +137,13 @@ structure NodalCurve (ι : Type*) (Flag : Type*) (X : ι → Type*) where
   fstPt : ∀ f : Flag, X (fst f)
   /-- The point of the second component at a flag pair. -/
   sndPt : ∀ f : Flag, X (snd f)
+  /-- The flag points are pairwise distinct: the two points of one flag pair are different, and
+  no point of the disjoint union occurs in two different flag pairs. -/
+  flagPoints_injective : Function.Injective (fun p : Flag × Bool =>
+    if p.2 then (⟨snd p.1, sndPt p.1⟩ : ComponentUnion X)
+    else (⟨fst p.1, fstPt p.1⟩ : ComponentUnion X))
 
 variable (d : NodalCurve ι Flag X)
-
-/-- The disjoint union of the normalization components of a nodal curve. -/
-abbrev ComponentUnion {ι : Type*} (X : ι → Type*) := Sigma X
 
 /-- The first point of a flag pair, as a point of the disjoint union of the components. -/
 def fstPoint (d : NodalCurve ι Flag X) (f : Flag) : ComponentUnion X := ⟨d.fst f, d.fstPt f⟩
@@ -132,10 +151,77 @@ def fstPoint (d : NodalCurve ι Flag X) (f : Flag) : ComponentUnion X := ⟨d.fs
 /-- The second point of a flag pair, as a point of the disjoint union of the components. -/
 def sndPoint (d : NodalCurve ι Flag X) (f : Flag) : ComponentUnion X := ⟨d.snd f, d.sndPt f⟩
 
+/-- The two points of a flag pair, selected by a boolean: `false` selects the first point of the
+flag pair, `true` the second. -/
+def flagPoint (d : NodalCurve ι Flag X) (p : Flag × Bool) : ComponentUnion X :=
+  if p.2 then sndPoint d p.1 else fstPoint d p.1
+
+/-- **The flag points are pairwise distinct.**  The points of the disjoint union that are glued --
+the flag points -- are pairwise distinct: the two points of one flag pair are different, and no
+point occurs in two different flag pairs. -/
+theorem flagPoint_injective (d : NodalCurve ι Flag X) : Function.Injective (flagPoint d) :=
+  d.flagPoints_injective
+
+/-- The first point of a flag pair, as a flag point. -/
+theorem fstPoint_eq_flagPoint (d : NodalCurve ι Flag X) (f : Flag) :
+    fstPoint d f = flagPoint d (f, false) := by
+  simp [flagPoint]
+
+/-- The second point of a flag pair, as a flag point. -/
+theorem sndPoint_eq_flagPoint (d : NodalCurve ι Flag X) (f : Flag) :
+    sndPoint d f = flagPoint d (f, true) := by
+  simp [flagPoint]
+
+/-- Two flag pairs with the same first point are the same flag pair. -/
+theorem fstPoint_injective (d : NodalCurve ι Flag X) (f g : Flag)
+    (h : fstPoint d f = fstPoint d g) : f = g := by
+  have h' : flagPoint d (f, false) = flagPoint d (g, false) :=
+    (fstPoint_eq_flagPoint d f).symm.trans (h.trans (fstPoint_eq_flagPoint d g))
+  exact (Prod.ext_iff.mp (flagPoint_injective d h')).1
+
+/-- Two flag pairs with the same second point are the same flag pair. -/
+theorem sndPoint_injective (d : NodalCurve ι Flag X) (f g : Flag)
+    (h : sndPoint d f = sndPoint d g) : f = g := by
+  have h' : flagPoint d (f, true) = flagPoint d (g, true) :=
+    (sndPoint_eq_flagPoint d f).symm.trans (h.trans (sndPoint_eq_flagPoint d g))
+  exact (Prod.ext_iff.mp (flagPoint_injective d h')).1
+
+/-- The first point of a flag pair is never the second point of a flag pair: a flag pair never
+pairs a point with itself. -/
+theorem fstPoint_ne_sndPoint (d : NodalCurve ι Flag X) (f g : Flag) :
+    fstPoint d f ≠ sndPoint d g := by
+  intro h
+  have h' : flagPoint d (f, false) = flagPoint d (g, true) :=
+    (fstPoint_eq_flagPoint d f).symm.trans (h.trans (sndPoint_eq_flagPoint d g))
+  obtain ⟨_, hbt⟩ := Prod.ext_iff.mp (flagPoint_injective d h')
+  simp at hbt
+
+/-- The second point of a flag pair is never the first point of a flag pair. -/
+theorem sndPoint_ne_fstPoint (d : NodalCurve ι Flag X) (f g : Flag) :
+    sndPoint d f ≠ fstPoint d g :=
+  fun h => fstPoint_ne_sndPoint d g f h.symm
+
+/-- A flag point belongs to a unique flag pair. -/
+theorem eq_of_flagPoint_mem (d : NodalCurve ι Flag X) {f g : Flag} {p : ComponentUnion X}
+    (hp : p = fstPoint d f ∨ p = sndPoint d f)
+    (hq : p = fstPoint d g ∨ p = sndPoint d g) : f = g := by
+  rcases hp with hp | hp <;> rcases hq with hq | hq
+  · exact fstPoint_injective d f g (hp.symm.trans hq)
+  · exact absurd (hp.symm.trans hq) (fstPoint_ne_sndPoint d f g)
+  · exact absurd (hp.symm.trans hq) (sndPoint_ne_fstPoint d f g)
+  · exact sndPoint_injective d f g (hp.symm.trans hq)
+
 /-- The generating relation of the gluing: two points of the disjoint union are related when they
 are the two points of one flag pair. -/
 def flagRel (d : NodalCurve ι Flag X) (x y : ComponentUnion X) : Prop :=
   ∃ f : Flag, (x = fstPoint d f ∧ y = sndPoint d f) ∨ (x = sndPoint d f ∧ y = fstPoint d f)
+
+/-- The generating relation is symmetric. -/
+theorem flagRel_symm (d : NodalCurve ι Flag X) {x y : ComponentUnion X} (h : flagRel d x y) :
+    flagRel d y x := by
+  rcases h with ⟨f, (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩)⟩
+  · exact ⟨f, Or.inr ⟨rfl, rfl⟩⟩
+  · exact ⟨f, Or.inl ⟨rfl, rfl⟩⟩
 
 /-- Two flag pairs are *adjacent* when they share a point of the disjoint union: the point at
 which one of them is glued is the point at which the other one is glued. -/
@@ -143,65 +229,130 @@ def flagAdjacent (d : NodalCurve ι Flag X) (f g : Flag) : Prop :=
   ∃ z : ComponentUnion X,
     (z = fstPoint d f ∨ z = sndPoint d f) ∧ (z = fstPoint d g ∨ z = sndPoint d g)
 
-/-- Adjacency of flag pairs is symmetric. -/
-theorem flagAdjacent_symm {f g : Flag} (h : flagAdjacent d f g) : flagAdjacent d g f := by
-  rcases h with ⟨z, hz₁, hz₂⟩
-  exact ⟨z, hz₂, hz₁⟩
-
-/-- The flag pairs of `d` are adjacent. -/
-instance instStdSymmFlagAdjacent : Std.Symm (flagAdjacent d) where
-  symm _ _ h := flagAdjacent_symm d h
+/-- **Adjacency is equality.**  The flag points are pairwise distinct, so two flag pairs share a
+point of the disjoint union only when they are the same flag pair. -/
+theorem flagAdjacent_iff (d : NodalCurve ι Flag X) (f g : Flag) :
+    flagAdjacent d f g ↔ f = g := by
+  constructor
+  · intro h
+    obtain ⟨z, hz₁, hz₂⟩ := h
+    rcases hz₁ with hz₁ | hz₁ <;> rcases hz₂ with hz₂ | hz₂
+    · exact fstPoint_injective d f g (hz₁.symm.trans hz₂)
+    · exact absurd (hz₁.symm.trans hz₂) (fstPoint_ne_sndPoint d f g)
+    · exact absurd (hz₁.symm.trans hz₂) (sndPoint_ne_fstPoint d f g)
+    · exact sndPoint_injective d f g (hz₁.symm.trans hz₂)
+  · intro h
+    subst h
+    exact ⟨fstPoint d f, Or.inl rfl, Or.inl rfl⟩
 
 /-- Two flag pairs are glued at the *same node* when they are joined by a chain of adjacent flag
 pairs.  This is the reflexive transitive closure of `flagAdjacent`. -/
 def sameNode (d : NodalCurve ι Flag X) (f g : Flag) : Prop :=
   Relation.ReflTransGen (flagAdjacent d) f g
 
-/-- Two flag pairs glued at the same node are related symmetrically. -/
-theorem sameNode_symm {f g : Flag} (h : sameNode d f g) : sameNode d g f := by
-  induction h with
-  | refl => exact Relation.ReflTransGen.refl
-  | tail _ hbc ih => exact Relation.ReflTransGen.head (flagAdjacent_symm d hbc) ih
+/-- **Same node is equality.**  The flag points are pairwise distinct, so a chain of adjacent flag
+pairs has length at most one: two flag pairs are glued at the same node exactly when they are the
+same flag pair. -/
+theorem sameNode_iff (d : NodalCurve ι Flag X) (f g : Flag) : sameNode d f g ↔ f = g := by
+  constructor
+  · intro h
+    induction h with
+    | refl => rfl
+    | tail _ hbc ih => exact ih.trans ((flagAdjacent_iff d _ _).mp hbc)
+  · intro h
+    subst h
+    exact Relation.ReflTransGen.refl
 
-/-- A flag pair is glued at the same node as itself. -/
-theorem sameNode_refl (f : Flag) : sameNode d f f := Relation.ReflTransGen.refl
+/-- **The flag pairs form a matching.**  Two flag relations that meet in a point glue the same two
+points: the flag points being pairwise distinct forces the two flag pairs to be equal, so a chain
+of flag pairs has length at most one. -/
+theorem flagRel_chain (d : NodalCurve ι Flag X) {x y z : ComponentUnion X}
+    (h₁ : flagRel d x y) (h₂ : flagRel d y z) : x = z := by
+  obtain ⟨f, hf⟩ := h₁
+  obtain ⟨g, hg⟩ := h₂
+  rcases hf with hf | hf <;> rcases hg with hg | hg
+  · obtain ⟨hxf, hys⟩ := hf
+    obtain ⟨hyg, hzs⟩ := hg
+    exact absurd (hys.symm.trans hyg) (sndPoint_ne_fstPoint d f g)
+  · obtain ⟨hxf, hys⟩ := hf
+    obtain ⟨hys', hzg⟩ := hg
+    have hfg : f = g := sndPoint_injective d f g (hys.symm.trans hys')
+    subst hfg
+    exact hxf.trans hzg.symm
+  · obtain ⟨hxs, hyf⟩ := hf
+    obtain ⟨hyg, hzs⟩ := hg
+    have hfg : f = g := fstPoint_injective d f g (hyf.symm.trans hyg)
+    subst hfg
+    exact hxs.trans hzs.symm
+  · obtain ⟨hxs, hyf⟩ := hf
+    obtain ⟨hys', hzg⟩ := hg
+    exact absurd (hyf.symm.trans hys') (fstPoint_ne_sndPoint d f g)
 
-/-- Flag pairs glued at the same node are transitive. -/
-theorem sameNode_trans {f g h : Flag} (hfg : sameNode d f g) (hgh : sameNode d g h) :
-    sameNode d f h := Relation.ReflTransGen.trans hfg hgh
-
-/-- The equivalence relation generated by the flag pairs on the disjoint union of the
-normalization components: two points are glued together when they are equal, or when they are
-the points of two flag pairs that are glued at the same node. -/
+/-- **The equivalence relation generated by the flag pairs.**  Two points of the disjoint union are
+glued together when they are equal, or when they are the two points of one flag pair.  Because the
+flag points are pairwise distinct, no chain of flag pairs has more than one step, so this is
+exactly the relation generated by the flag pairs. -/
 def gluedRel (d : NodalCurve ι Flag X) (x y : ComponentUnion X) : Prop :=
-  x = y ∨ ∃ f g : Flag,
-    (x = fstPoint d f ∨ x = sndPoint d f) ∧
-      (y = fstPoint d g ∨ y = sndPoint d g) ∧ sameNode d f g
+  x = y ∨ flagRel d x y
 
 /-- The glued relation is symmetric. -/
-theorem gluedRel_symm {x y : ComponentUnion X} (h : gluedRel d x y) : gluedRel d y x := by
-  rcases h with h | ⟨f, g, hx, hy, hfg⟩
+theorem gluedRel_symm (d : NodalCurve ι Flag X) {x y : ComponentUnion X} (h : gluedRel d x y) :
+    gluedRel d y x := by
+  rcases h with h | h
   · exact Or.inl h.symm
-  · exact Or.inr ⟨g, f, hy, hx, sameNode_symm d hfg⟩
+  · exact Or.inr (flagRel_symm d h)
 
 /-- The glued relation is transitive. -/
-theorem gluedRel_trans {x y z : ComponentUnion X} (h₁ : gluedRel d x y) (h₂ : gluedRel d y z) :
-    gluedRel d x z := by
-  rcases h₁ with h₁ | ⟨f, g, hx, hy, hfg⟩
-  · rcases h₂ with h₂ | ⟨g', h, hy', hz, hgh⟩
+theorem gluedRel_trans (d : NodalCurve ι Flag X) {x y z : ComponentUnion X}
+    (h₁ : gluedRel d x y) (h₂ : gluedRel d y z) : gluedRel d x z := by
+  rcases h₁ with h₁ | h₁
+  · rcases h₂ with h₂ | h₂
     · exact Or.inl (h₁.trans h₂)
-    · exact Or.inr ⟨g', h, h₁ ▸ hy', hz, hgh⟩
-  · rcases h₂ with h₂ | ⟨g', h, hy', hz, hgh⟩
-    · exact Or.inr ⟨f, g, hx, h₂ ▸ hy, hfg⟩
-    · rcases hy with hy | hy <;> rcases hy' with hy' | hy'
-      · exact Or.inr ⟨f, h, hx, hz, sameNode_trans d hfg (sameNode_trans d
-          (Relation.ReflTransGen.single ⟨y, Or.inl hy, Or.inl hy'⟩) hgh)⟩
-      · exact Or.inr ⟨f, h, hx, hz, sameNode_trans d hfg (sameNode_trans d
-          (Relation.ReflTransGen.single ⟨y, Or.inl hy, Or.inr hy'⟩) hgh)⟩
-      · exact Or.inr ⟨f, h, hx, hz, sameNode_trans d hfg (sameNode_trans d
-          (Relation.ReflTransGen.single ⟨y, Or.inr hy, Or.inl hy'⟩) hgh)⟩
-      · exact Or.inr ⟨f, h, hx, hz, sameNode_trans d hfg (sameNode_trans d
-          (Relation.ReflTransGen.single ⟨y, Or.inr hy, Or.inr hy'⟩) hgh)⟩
+    · exact Or.inr (h₁.symm ▸ h₂)
+  · rcases h₂ with h₂ | h₂
+    · exact Or.inr (h₂ ▸ h₁)
+    · exact Or.inl (flagRel_chain d h₁ h₂)
+
+/-- The generating relation is contained in the glued relation. -/
+theorem flagRel_le_gluedRel (d : NodalCurve ι Flag X) {x y : ComponentUnion X}
+    (h : flagRel d x y) : gluedRel d x y :=
+  Or.inr h
+
+/-- **The generated relation.**  Two points of the disjoint union are glued together exactly when
+they are equal or when they are the two points of one flag pair. -/
+theorem gluedRel_iff (d : NodalCurve ι Flag X) (x y : ComponentUnion X) :
+    gluedRel d x y ↔ x = y ∨ ∃ f : Flag,
+      (x = fstPoint d f ∧ y = sndPoint d f) ∨ (x = sndPoint d f ∧ y = fstPoint d f) := by
+  rw [gluedRel, flagRel]
+
+/-- **The relation between two flag points.**  Two flag points of the glued curve are identified
+exactly when they belong to the same flag pair. -/
+theorem gluedRel_of_flagPoints (d : NodalCurve ι Flag X) {f g : Flag} {p q : ComponentUnion X}
+    (hp : p = fstPoint d f ∨ p = sndPoint d f)
+    (hq : q = fstPoint d g ∨ q = sndPoint d g) :
+    gluedRel d p q ↔ f = g := by
+  constructor
+  · intro h
+    rcases h with h | ⟨c, hc⟩
+    · have hpg : p = fstPoint d g ∨ p = sndPoint d g := by
+        rcases hq with hq | hq
+        · exact Or.inl (h.trans hq)
+        · exact Or.inr (h.trans hq)
+      exact eq_of_flagPoint_mem d hp hpg
+    · rcases hc with ⟨hpc, hqc⟩ | ⟨hpc, hqc⟩
+      · have hp' : p = fstPoint d c ∨ p = sndPoint d c := Or.inl hpc
+        have hq' : q = fstPoint d c ∨ q = sndPoint d c := Or.inr hqc
+        exact (eq_of_flagPoint_mem d hp hp').trans (eq_of_flagPoint_mem d hq' hq)
+      · have hp' : p = fstPoint d c ∨ p = sndPoint d c := Or.inr hpc
+        have hq' : q = fstPoint d c ∨ q = sndPoint d c := Or.inl hqc
+        exact (eq_of_flagPoint_mem d hp hp').trans (eq_of_flagPoint_mem d hq' hq)
+  · intro h
+    subst h
+    rcases hp with hp | hp <;> rcases hq with hq | hq
+    · exact Or.inl (hp.trans hq.symm)
+    · exact Or.inr ⟨f, Or.inl ⟨hp, hq⟩⟩
+    · exact Or.inr ⟨f, Or.inr ⟨hp, hq⟩⟩
+    · exact Or.inl (hp.trans hq.symm)
 
 /-- The glued relation is an equivalence relation. -/
 instance instIsEquivGluedRel : IsEquiv (ComponentUnion X) (gluedRel d) where
@@ -213,154 +364,24 @@ instance instIsEquivGluedRel : IsEquiv (ComponentUnion X) (gluedRel d) where
     intro x y z h₁ h₂
     exact gluedRel_trans d h₁ h₂
 
-/-- The two points of a flag pair are identified by the generated relation. -/
-theorem eqvGen_flagRel_of_flagPoints (f : Flag) {x z : ComponentUnion X}
-    (hx : x = fstPoint d f ∨ x = sndPoint d f)
-    (hz : z = fstPoint d f ∨ z = sndPoint d f) :
-    Relation.EqvGen (flagRel d) x z := by
-  rcases hx with hx | hx <;> rcases hz with hz | hz
-  · subst hx; subst hz; exact Relation.EqvGen.refl _
-  · subst hx; subst hz; exact Relation.EqvGen.rel _ _ ⟨f, Or.inl ⟨rfl, rfl⟩⟩
-  · subst hx; subst hz; exact Relation.EqvGen.rel _ _ ⟨f, Or.inr ⟨rfl, rfl⟩⟩
-  · subst hx; subst hz; exact Relation.EqvGen.refl _
-
-/-- Adjacent flag pairs are glued together: all of their points are identified. -/
-theorem eqvGen_flagRel_of_flagAdjacent {f g : Flag} (h : flagAdjacent d f g)
-    {p : ComponentUnion X} (hp : p = fstPoint d f ∨ p = sndPoint d f)
-    {q : ComponentUnion X} (hq : q = fstPoint d g ∨ q = sndPoint d g) :
-    Relation.EqvGen (flagRel d) p q := by
-  rcases h with ⟨w, hw₁, hw₂⟩
-  exact Relation.EqvGen.trans p w q (eqvGen_flagRel_of_flagPoints d f hp hw₁)
-    (eqvGen_flagRel_of_flagPoints d g hw₂ hq)
-
-/-- Flag pairs glued at the same node have all their points identified. -/
-theorem eqvGen_flagRel_of_sameNode {f g : Flag} (h : sameNode d f g)
-    {p : ComponentUnion X} (hp : p = fstPoint d f ∨ p = sndPoint d f)
-    {q : ComponentUnion X} (hq : q = fstPoint d g ∨ q = sndPoint d g) :
-    Relation.EqvGen (flagRel d) p q := by
-  induction h generalizing p q with
-  | refl => exact eqvGen_flagRel_of_flagPoints d _ hp hq
-  | tail h₁ hbc ih =>
-    rcases hbc with ⟨w, hw₁, hw₂⟩
-    have h₁ : Relation.EqvGen (flagRel d) p w := ih hp hw₁
-    have h₂ : Relation.EqvGen (flagRel d) w q := eqvGen_flagRel_of_flagPoints d _ hw₂ hq
-    exact Relation.EqvGen.trans p w q h₁ h₂
-
-/-- The generating relation is contained in the glued relation. -/
-theorem flagRel_le_gluedRel {x y : ComponentUnion X} (h : flagRel d x y) : gluedRel d x y := by
-  rcases h with ⟨f, (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩)⟩
-  · exact Or.inr ⟨f, f, Or.inl rfl, Or.inr rfl, sameNode_refl d f⟩
-  · exact Or.inr ⟨f, f, Or.inr rfl, Or.inl rfl, sameNode_refl d f⟩
-
-/-- **The generated relation is the transitive closure of the generating relation.**  The
+/-- **The generated relation is the equivalence closure of the generating relation.**  The
 equivalence relation `gluedRel` generated by the flag pairs is exactly `Relation.EqvGen` of the
-generating relation `flagRel`: two points of the disjoint union are glued together precisely
-when a chain of flag pairs joins them. -/
-theorem gluedRel_iff_eqvGen (x y : ComponentUnion X) :
+generating relation `flagRel`: two points of the disjoint union are glued together precisely when
+the generating relation relates them, or when they are equal. -/
+theorem gluedRel_iff_eqvGen (d : NodalCurve ι Flag X) (x y : ComponentUnion X) :
     gluedRel d x y ↔ Relation.EqvGen (flagRel d) x y := by
   constructor
   · intro h
-    rcases h with h | ⟨f, g, hx, hy, hfg⟩
-    · subst h; exact Relation.EqvGen.refl _
-    · exact eqvGen_flagRel_of_sameNode d hfg hx hy
+    rcases h with h | h
+    · subst h
+      exact Relation.EqvGen.refl _
+    · exact Relation.EqvGen.rel _ _ h
   · intro h
-    exact (Relation.EqvGen.eqvGen_le (r := flagRel d) (r' := gluedRel d)
-      fun _ _ h' => flagRel_le_gluedRel d h') x y h
-
-/-- The flag pair `f` is joined to the flag pair `g` by a chain of at most `n` adjacent flag
-pairs. -/
-def flagReached (d : NodalCurve ι Flag X) (g : Flag) : Nat → Flag → Prop
-  | 0, f => f = g
-  | n + 1, f => flagReached d g n f ∨ ∃ h, flagReached d g n h ∧ flagAdjacent d f h
-
-/-- The flag pairs joined to `g` by one more adjacent step are still joined to `g`. -/
-theorem flagReached_succ {g : Flag} {n : Nat} {f : Flag} (h : flagReached d g n f) :
-    flagReached d g (n + 1) f := Or.inl h
-
-/-- The flag pairs joined to `g` by at most `m` steps are joined to `g` by at most `n` steps
-whenever `m ≤ n`. -/
-theorem flagReached_mono {g : Flag} {f : Flag} {m n : Nat} (h : m ≤ n)
-    (hr : flagReached d g m f) : flagReached d g n f := by
-  obtain ⟨k, hk⟩ := Nat.exists_eq_add_of_le h
-  rw [hk]
-  clear h hk
-  induction k with
-  | zero =>
-    rw [Nat.add_zero]
-    exact hr
-  | succ k ih =>
-    rw [Nat.add_succ]
-    exact flagReached_succ d ih
-
-/-- Two flag pairs glued at the same node are joined by a finite chain of adjacent flag pairs. -/
-theorem exists_flagReached {f g : Flag} (h : sameNode d f g) :
-    ∃ n, flagReached d g n f := by
-  induction h using Relation.ReflTransGen.head_induction_on with
-  | refl => exact ⟨0, rfl⟩
-  | head hxy _ ih =>
-    rcases ih with ⟨n, hn⟩
-    exact ⟨n + 1, Or.inr ⟨_, hn, hxy⟩⟩
-
-/-- A flag pair joined to `g` is joined to it by a chain of adjacent flag pairs whose entries are
-pairwise distinct. -/
-theorem exists_flagChain_minimal {g : Flag} :
-    ∀ (n : Nat) (f : Flag), flagReached d g n f → (∀ m < n, ¬ flagReached d g m f) →
-      ∃ l : List Flag, l.IsChain (flagAdjacent d) ∧ l.Nodup ∧ l.head? = some f ∧
-        g ∈ l ∧ ∀ x ∈ l, flagReached d g n x := by
-  intro n
-  induction n with
-  | zero =>
-    intro f hf _
-    have hfg : f = g := by simpa [flagReached] using hf
-    refine ⟨[g], List.isChain_singleton g, ?_, ?_, ?_, ?_⟩
-    · simp
-    · simp [hfg]
-    · simp
-    · simp [flagReached]
-  | succ n ih =>
-    intro f hf hmin
-    rw [flagReached] at hf
-    rcases hf with hf | ⟨h, hmem, hadj⟩
-    · exact absurd hf (hmin n (Nat.lt_succ_self n))
-    · have hfnot : ¬ flagReached d g n f := hmin n (Nat.lt_succ_self n)
-      have hmin' : ∀ m < n, ¬ flagReached d g m h := by
-        intro m hm hh
-        have hstep : flagReached d g (m + 1) f := by
-          rw [flagReached]; exact Or.inr ⟨h, hh, hadj⟩
-        exact hfnot (flagReached_mono d (Nat.succ_le_of_lt hm) hstep)
-      rcases ih h hmem hmin' with ⟨l, hl, hnodup, hhead, hgin, hmem'⟩
-      refine ⟨f :: l, ?_, ?_, ?_, ?_, ?_⟩
-      · refine hl.cons ?_
-        intro y hy
-        rw [hhead] at hy
-        have hy' : h = y := by simpa using hy
-        subst hy'
-        exact hadj
-      · refine hnodup.cons ?_
-        intro hx
-        exact hfnot (hmem' f hx)
-      · simp
-      · simp [hgin]
-      · intro x hx
-        rcases List.mem_cons.mp hx with hxf | hxl
-        · subst hxf
-          exact Or.inr ⟨h, hmem, hadj⟩
-        · exact Or.inl (hmem' x hxl)
-
-/-- **The chain-length bound.**  Two flag pairs that are glued at the same node are joined by a
-chain of adjacent flag pairs whose entries are pairwise distinct.  Since the flag pairs form a
-finite type, such a chain has length at most the number of flag pairs: the chain of flag pairs
-that realises a node never needs to repeat a flag pair. -/
-theorem exists_flagChain [Fintype Flag] {f g : Flag} (h : sameNode d f g) :
-    ∃ l : List Flag, l.IsChain (flagAdjacent d) ∧ l.Nodup ∧ l.head? = some f ∧
-      g ∈ l ∧ l.length ≤ Fintype.card Flag := by
-  classical
-  have hex : ∃ n, flagReached d g n f := exists_flagReached d h
-  have hmin : ∀ m < Nat.find hex, ¬ flagReached d g m f := fun m hm => Nat.find_min hex hm
-  have hn : flagReached d g (Nat.find hex) f := Nat.find_spec hex
-  rcases exists_flagChain_minimal d (Nat.find hex) f hn hmin with
-    ⟨l, hl, hnodup, hhead, hgin, _⟩
-  exact ⟨l, hl, hnodup, hhead, hgin, List.Nodup.length_le_card hnodup⟩
+    induction h with
+    | rel a b hr => exact Or.inr hr
+    | refl => exact Or.inl rfl
+    | symm a b _ ih => exact gluedRel_symm d ih
+    | trans a b c _ _ ih₁ ih₂ => exact gluedRel_trans d ih₁ ih₂
 
 /-- The disjoint union of Hausdorff spaces is Hausdorff. -/
 instance instT2SpaceComponentUnion [∀ i, TopologicalSpace (X i)] [∀ i, T2Space (X i)] :
@@ -435,13 +456,10 @@ instance instCompactSpaceComponentUnion [∀ i, TopologicalSpace (X i)] [Finite 
     simp
   rw [hunion]
   exact isCompact_iUnion fun i => isCompact_univ.image continuous_sigmaMk
+
 /-- The points of the disjoint union that occur in a flag pair. -/
 def flagPointSet (d : NodalCurve ι Flag X) : Set (ComponentUnion X) :=
   ⋃ f : Flag, {fstPoint d f, sndPoint d f}
-
-/-- The two points of a flag pair, selected by a boolean. -/
-def flagPoint (d : NodalCurve ι Flag X) (p : Flag × Bool) : ComponentUnion X :=
-  if p.2 then sndPoint d p.1 else fstPoint d p.1
 
 /-- A point of the disjoint union is a flag point when it occurs in a flag pair. -/
 theorem mem_flagPointSet (d : NodalCurve ι Flag X) (x : ComponentUnion X) :
@@ -487,7 +505,8 @@ theorem flagPointSet_prod_finite [Finite Flag] :
 closed subset of the product of the disjoint union of the normalization components with itself.
 Indeed, away from the finitely many flag points the relation is the diagonal, and on the flag
 points it is a finite set. -/
-theorem gluedRel_isClosed [∀ i, TopologicalSpace (X i)] [∀ i, T2Space (X i)] [Finite Flag] :
+theorem gluedRel_isClosed (d : NodalCurve ι Flag X) [∀ i, TopologicalSpace (X i)]
+    [∀ i, T2Space (X i)] [Finite Flag] :
     IsClosed {p : ComponentUnion X × ComponentUnion X | gluedRel d p.1 p.2} := by
   set R : Set (ComponentUnion X × ComponentUnion X) := {p | gluedRel d p.1 p.2}
   have hsplit : R = (R ∩ (flagPointSet d ×ˢ flagPointSet d))
@@ -500,12 +519,18 @@ theorem gluedRel_isClosed [∀ i, TopologicalSpace (X i)] [∀ i, T2Space (X i)]
       · exact Or.inr hxy
       · left
         refine ⟨hz, ?_, ?_⟩
-        · rcases (show gluedRel d z.1 z.2 from hz) with h | ⟨f, g, hx, hy, hfg⟩
+        · have hz' : gluedRel d z.1 z.2 := hz
+          rcases hz' with h | ⟨f, hf⟩
           · exact absurd h hxy
-          · exact (mem_flagPointSet d z.1).mpr ⟨f, hx⟩
-        · rcases (show gluedRel d z.1 z.2 from hz) with h | ⟨f, g, hx, hy, hfg⟩
+          · rcases hf with ⟨h1, _⟩ | ⟨h1, _⟩
+            · exact (mem_flagPointSet d z.1).mpr ⟨f, Or.inl h1⟩
+            · exact (mem_flagPointSet d z.1).mpr ⟨f, Or.inr h1⟩
+        · have hz' : gluedRel d z.1 z.2 := hz
+          rcases hz' with h | ⟨f, hf⟩
           · exact absurd h hxy
-          · exact (mem_flagPointSet d z.2).mpr ⟨g, hy⟩
+          · rcases hf with ⟨_, h2⟩ | ⟨_, h2⟩
+            · exact (mem_flagPointSet d z.2).mpr ⟨f, Or.inr h2⟩
+            · exact (mem_flagPointSet d z.2).mpr ⟨f, Or.inl h2⟩
     · intro hz
       rcases hz with h | h
       · exact h.1
@@ -516,7 +541,7 @@ theorem gluedRel_isClosed [∀ i, TopologicalSpace (X i)] [∀ i, T2Space (X i)]
   exact hR1.isClosed.union isClosed_diagonal
 
 /-- The glued relation, as an equivalence relation. -/
-theorem gluedRel_equivalence : Equivalence (gluedRel d) where
+theorem gluedRel_equivalence (d : NodalCurve ι Flag X) : Equivalence (gluedRel d) where
   refl := fun _ => Or.inl rfl
   symm := fun h => gluedRel_symm d h
   trans := fun h₁ h₂ => gluedRel_trans d h₁ h₂
@@ -557,15 +582,19 @@ instance instCompactSpaceGluedCurve (d : NodalCurve ι Flag X) [∀ i, Topologic
 
 /-- The generated relation relates two points of the disjoint union only when they are equal or
 when both of them are flag points. -/
-theorem gluedRel_flagPoints {a b : ComponentUnion X} (h : gluedRel d a b) :
-    a = b ∨ (a ∈ flagPointSet d ∧ b ∈ flagPointSet d) := by
-  rcases h with h | ⟨f, g, ha, hb, _⟩
+theorem gluedRel_flagPoints (d : NodalCurve ι Flag X) {a b : ComponentUnion X}
+    (h : gluedRel d a b) : a = b ∨ (a ∈ flagPointSet d ∧ b ∈ flagPointSet d) := by
+  rcases h with h | ⟨f, hf⟩
   · exact Or.inl h
-  · exact Or.inr ⟨(mem_flagPointSet d a).mpr ⟨f, ha⟩, (mem_flagPointSet d b).mpr ⟨g, hb⟩⟩
+  · rcases hf with ⟨ha, hb⟩ | ⟨ha, hb⟩
+    · exact Or.inr ⟨(mem_flagPointSet d a).mpr ⟨f, Or.inl ha⟩,
+        (mem_flagPointSet d b).mpr ⟨f, Or.inr hb⟩⟩
+    · exact Or.inr ⟨(mem_flagPointSet d a).mpr ⟨f, Or.inr ha⟩,
+        (mem_flagPointSet d b).mpr ⟨f, Or.inl hb⟩⟩
 
 /-- The quotient map identifies two points of the disjoint union exactly when the generated
 relation relates them. -/
-theorem gluedRel_iff_quotientMk_eq {a b : ComponentUnion X} :
+theorem gluedRel_iff_quotientMk_eq (d : NodalCurve ι Flag X) {a b : ComponentUnion X} :
     gluedCurveQuotientMap d a = gluedCurveQuotientMap d b ↔ gluedRel d a b := by
   constructor
   · intro h
@@ -580,7 +609,7 @@ def nodeSet (d : NodalCurve ι Flag X) : Set (gluedCurve d) :=
 
 /-- The node set is the image of the flag pairs: a point of the glued curve is a node exactly when
 it is the image of one of the two points of a flag pair. -/
-theorem mem_nodeSet {q : gluedCurve d} :
+theorem mem_nodeSet (d : NodalCurve ι Flag X) {q : gluedCurve d} :
     q ∈ nodeSet d ↔ ∃ f : Flag,
       q = gluedCurveQuotientMap d (fstPoint d f) ∨
         q = gluedCurveQuotientMap d (sndPoint d f) := by
@@ -599,46 +628,28 @@ theorem mem_nodeSet {q : gluedCurve d} :
 def nodeOfFlag (d : NodalCurve ι Flag X) (f : Flag) : gluedCurve d :=
   gluedCurveQuotientMap d (fstPoint d f)
 
-/-- The generated relation relates two flag points exactly when the flag pairs are glued at the
-same node. -/
-theorem gluedRel_of_flagPoints {f g : Flag} {p q : ComponentUnion X}
-    (hp : p = fstPoint d f ∨ p = sndPoint d f)
-    (hq : q = fstPoint d g ∨ q = sndPoint d g) :
-    gluedRel d p q ↔ sameNode d f g := by
-  constructor
-  · intro h
-    rcases h with h | ⟨f', g', hp', hq', hfg⟩
-    · exact Relation.ReflTransGen.single ⟨p, hp, h.symm ▸ hq⟩
-    · exact Relation.ReflTransGen.head ⟨p, hp, hp'⟩
-        (Relation.ReflTransGen.trans hfg (Relation.ReflTransGen.single ⟨q, hq', hq⟩))
-  · intro h
-    exact Or.inr ⟨f, g, hp, hq, h⟩
-
 /-- **The fibres of the flag-pair map.**  Two flag pairs determine the same node of the glued
-curve exactly when they are glued at the same node; in particular the fibre of `nodeOfFlag` over
-the node of `f` is the set of the flag pairs glued at the same node as `f`. -/
-theorem nodeOfFlag_eq_iff (f g : Flag) :
-    nodeOfFlag d f = nodeOfFlag d g ↔ f = g ∨ sameNode d f g := by
+curve exactly when they are the same flag pair, so every fibre of `nodeOfFlag` is a singleton. -/
+theorem nodeOfFlag_eq_iff (d : NodalCurve ι Flag X) (f g : Flag) :
+    nodeOfFlag d f = nodeOfFlag d g ↔ f = g := by
   constructor
   · intro h
     have h' : gluedRel d (fstPoint d f) (fstPoint d g) :=
       (gluedRel_iff_quotientMk_eq d).mp h
-    exact Or.inr ((gluedRel_of_flagPoints d (f := f) (g := g) (Or.inl rfl) (Or.inl rfl)).mp h')
-  · rintro (rfl | hfg)
-    · rfl
-    · exact (gluedRel_iff_quotientMk_eq d).mpr
-        ((gluedRel_of_flagPoints d (f := f) (g := g) (Or.inl rfl) (Or.inl rfl)).mpr hfg)
+    rcases h' with h' | ⟨c, hc⟩
+    · exact fstPoint_injective d f g h'
+    · rcases hc with ⟨h1, h2⟩ | ⟨h1, h2⟩
+      · exact absurd h2 (fstPoint_ne_sndPoint d g c)
+      · exact absurd h1 (fstPoint_ne_sndPoint d f c)
+  · intro h
+    subst h
+    rfl
 
-/-- The flag-pair map to the node set is injective when the flag pairs are pairwise distinct
-nodes, that is, when no two distinct flag pairs are glued at the same node. -/
-theorem nodeOfFlag_injective (hdiff : ∀ f g : Flag, f ≠ g → ¬ sameNode d f g) :
-    Function.Injective (nodeOfFlag d) := by
-  intro f g hfg
-  by_cases hne : f = g
-  · exact hne
-  · rcases (nodeOfFlag_eq_iff d f g).mp hfg with h | h
-    · exact absurd h hne
-    · exact absurd h (hdiff f g hne)
+/-- **The flag-pair map to the node set is injective.**  Distinct flag pairs give distinct nodes,
+because the flag points are pairwise distinct. -/
+theorem nodeOfFlag_injective (d : NodalCurve ι Flag X) : Function.Injective (nodeOfFlag d) := by
+  intro f g h
+  exact (nodeOfFlag_eq_iff d f g).mp h
 
 /-- **The node set is the image of the flag pairs.**  The node set of the glued curve is the image
 of the flag pairs under the quotient map: the two points of a flag pair are glued together, so the
@@ -653,17 +664,37 @@ theorem nodeSet_eq_image_nodeOfFlag (d : NodalCurve ι Flag X) :
     obtain ⟨f, hxf⟩ := (mem_flagPointSet d x).mp hx
     refine ⟨f, Set.mem_univ _, ?_⟩
     have hglue : gluedRel d (fstPoint d f) (sndPoint d f) :=
-      (gluedRel_of_flagPoints d (f := f) (g := f) (Or.inl rfl) (Or.inr rfl)).mpr
-        (sameNode_refl d f)
+      (gluedRel_of_flagPoints d (f := f) (g := f) (Or.inl rfl) (Or.inr rfl)).mpr rfl
     rcases hxf with hxf | hxf
-    · exact (hxf ▸ hqx.symm).symm
-    · exact ((hxf ▸ hqx.symm).trans
-        ((gluedRel_iff_quotientMk_eq d).mpr (gluedRel_symm d hglue))).symm
+    · change gluedCurveQuotientMap d (fstPoint d f) = q
+      rw [← hxf]
+      exact hqx
+    · change gluedCurveQuotientMap d (fstPoint d f) = q
+      rw [← ((gluedRel_iff_quotientMk_eq d).mpr (gluedRel_symm d hglue))]
+      rw [← hxf]
+      exact hqx
   · intro hq
     obtain ⟨f, _, hqf⟩ := hq
     rw [nodeSet]
     exact (Set.mem_image _ _ _).mpr
       ⟨fstPoint d f, (mem_flagPointSet d _).mpr ⟨f, Or.inl rfl⟩, hqf⟩
+
+/-- **Every node of the glued curve is the node of a flag pair.**  Together with the injectivity of
+`nodeOfFlag` and the description of the node set as the image of the flag pairs, this says that
+the nodes of the glued curve are in bijection with the flag pairs, which are the edges of the
+dual graph of the nodal curve. -/
+theorem exists_flag_of_mem_nodeSet (d : NodalCurve ι Flag X) {q : gluedCurve d}
+    (hq : q ∈ nodeSet d) : ∃ f : Flag, nodeOfFlag d f = q := by
+  have hq' : q ∈ nodeOfFlag d '' (Set.univ : Set Flag) :=
+    (nodeSet_eq_image_nodeOfFlag d) ▸ hq
+  obtain ⟨f, _, hqf⟩ := (Set.mem_image _ _ _).mp hq'
+  exact ⟨f, hqf⟩
+
+/-- The node of a flag pair is a node of the glued curve. -/
+theorem mem_nodeSet_of_nodeOfFlag (d : NodalCurve ι Flag X) (f : Flag) :
+    nodeOfFlag d f ∈ nodeSet d := by
+  rw [nodeSet_eq_image_nodeOfFlag]
+  exact (Set.mem_image _ _ _).mpr ⟨f, Set.mem_univ _, rfl⟩
 
 /-- The node set of the glued curve is finite: it is the image of the finite set of flag points. -/
 theorem nodeSet_finite [Finite Flag] : (nodeSet d).Finite :=
