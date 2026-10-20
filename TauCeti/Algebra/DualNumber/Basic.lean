@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.DualNumber
 public import Mathlib.Algebra.Exact.Basic
+public import Mathlib.LinearAlgebra.Basis.Fin
 public import Mathlib.RingTheory.Artinian.Module
 
 /-!
@@ -92,37 +93,34 @@ variable (R : Type*) [Semiring R]
 
 /-- The basis `1, ε` of the dual numbers `R[ε]` as a free `R`-module of rank two. -/
 noncomputable def dualNumberBasis : Module.Basis (Fin 2) R (DualNumber R) :=
-  .ofEquivFun
-    { toFun x := ![x.fst, x.snd]
-      invFun f := inl (f 0) + inr (f 1)
-      map_add' x y := by ext i; fin_cases i <;> simp
-      map_smul' r x := by ext i; fin_cases i <;> simp
-      left_inv x := by ext <;> simp
-      right_inv f := by ext i; fin_cases i <;> simp }
+  Module.Basis.finTwoProd R
+
+/- `DualNumber R` is `R × R` with the product module structure, `1 = (1, 0)` and `ε = (0, 1)`,
+so the `Module.Basis.finTwoProd` lemmas below apply definitionally. -/
 
 /-- The first basis vector of `TauCeti.dualNumberBasis` is `1`. -/
 @[simp]
-theorem dualNumberBasis_zero : dualNumberBasis R 0 = 1 := by
-  ext <;> simp [dualNumberBasis]
+theorem dualNumberBasis_zero : dualNumberBasis R 0 = 1 :=
+  Module.Basis.finTwoProd_zero R
 
 /-- The second basis vector of `TauCeti.dualNumberBasis` is `ε`. -/
 @[simp]
-theorem dualNumberBasis_one : dualNumberBasis R 1 = eps := by
-  ext <;> simp [dualNumberBasis]
+theorem dualNumberBasis_one : dualNumberBasis R 1 = eps :=
+  Module.Basis.finTwoProd_one R
 
 variable {R}
 
 /-- The coordinate of `x` along `1` is its scalar part. -/
 @[simp]
 theorem dualNumberBasis_repr_zero (x : DualNumber R) :
-    (dualNumberBasis R).repr x 0 = x.fst := by
-  simp [dualNumberBasis]
+    (dualNumberBasis R).repr x 0 = x.fst :=
+  congrFun (Module.Basis.coe_finTwoProd_repr x) 0
 
 /-- The coordinate of `x` along `ε` is its infinitesimal part. -/
 @[simp]
 theorem dualNumberBasis_repr_one (x : DualNumber R) :
-    (dualNumberBasis R).repr x 1 = x.snd := by
-  simp [dualNumberBasis]
+    (dualNumberBasis R).repr x 1 = x.snd :=
+  congrFun (Module.Basis.coe_finTwoProd_repr x) 1
 
 /-- A linear map out of the dual numbers is determined by its values on `1` and `ε`. -/
 theorem dualNumber_linearMap_ext {M : Type*} [AddCommMonoid M] [Module R M]
