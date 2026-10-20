@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent
 
 /-!
 # The cotangent bundle of a manifold
@@ -122,13 +123,8 @@ theorem extChartAt_extChartAt_symm (z₀ z₁ : CotangentBundle I M) {q : E} (p 
   ext v
   dsimp only
   simp only [ContinuousLinearMap.comp_apply]
-  rw [TangentBundle.continuousLinearMapAt_trivializationAt_eq_core hx₀,
-    TangentBundle.symmL_trivializationAt_eq_core hx₁, Function.comp_apply, ← tangentCoordChange_def]
-  congr 1
-  -- The coordinate changes through the chart at the base point compose to the coordinate change
-  -- from the chart at `z₁` to the chart at `z₀`.
-  exact tangentCoordChange_comp (I := I) (w := z₁.proj) (z := (extChartAt I z₀.proj).symm q)
-    (by simpa only [extChartAt_source] using ⟨⟨hx₁, mem_chart_source H _⟩, hx₀⟩)
+  rw [Manifold.continuousLinearMapAt_symmL_coordChange hx₁ hx₀, tangentCoordChange_def,
+    Function.comp_apply]
 
 /-- A change of charts of the cotangent bundle preserves the pairing of covectors with tangent
 vectors: the new covector, evaluated on the image of `v` under the derivative of the change of base
