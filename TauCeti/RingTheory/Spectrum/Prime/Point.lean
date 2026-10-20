@@ -152,11 +152,6 @@ theorem pointDataEquiv_symm_apply (point : S →ₐ[R] Ω) :
   simp only [Equiv.apply_symm_apply, pointDataEquiv_apply, PointData.toAlgHom,
     AlgHom.residueEmbedding_comp]
 
-/-- The inverse correspondence is characterized by its induced point. -/
-theorem pointDataEquiv_symm_apply_toAlgHom (data : PointData R S Ω) :
-    pointDataEquiv.symm data.toAlgHom = data := by
-  exact Equiv.symm_apply_apply pointDataEquiv data
-
 /-- Morphisms of field-valued points are precisely morphisms of the corresponding triples. -/
 theorem PointData.toAlgHom_comp_iff {T : Type*} [CommRing T] [Algebra R T]
     (source : PointData R S Ω) (target : PointData R T Ω) (morphism : S →ₐ[R] T) :

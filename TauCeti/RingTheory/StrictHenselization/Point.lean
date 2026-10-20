@@ -74,7 +74,13 @@ theorem Neighbourhood.toTriple_point (point : Neighbourhood R Ω) :
       (Equiv.apply_symm_apply (pointDataEquiv : PointData R point.obj.left Ω ≃ _)
         (ULift.algEquiv.toAlgHom.comp point.obj.hom.hom))
 
-/-- Extracting residue-field data from the point of a triple recovers that triple. -/
+/-- Extracting residue-field data from the point of a triple recovers that triple.
+
+The carrier and its ring and algebra instances are preserved definitionally. We identify these
+dependent indices first: the public point equations compare maps, so they do not identify the
+indices of the enclosing triple records. The remaining map equality is cancellation of an algebra
+equivalence with its inverse.
+-/
 @[simp]
 theorem TripleNeighbourhood.toNeighbourhood_toTriple (triple : TripleNeighbourhood R Ω) :
     (triple.toNeighbourhood R Ω).toTriple R Ω = triple := by
@@ -84,12 +90,13 @@ theorem TripleNeighbourhood.toNeighbourhood_toTriple (triple : TripleNeighbourho
       ((pointDataEquiv : PointData R carrier Ω ≃ _).symm
         (ULift.algEquiv.toAlgHom.comp (ULift.algEquiv.symm.toAlgHom.comp data.toAlgHom))) =
       TripleNeighbourhood.mk carrier data
-    have hpoint : ULift.algEquiv.toAlgHom.comp
+    have hpoint : (ULift.algEquiv : ULift.{u} Ω ≃ₐ[R] Ω).toAlgHom.comp
         (ULift.algEquiv.symm.toAlgHom.comp data.toAlgHom) = data.toAlgHom := by
-      ext element
-      rfl
+      rw [← AlgHom.comp_assoc, AlgEquiv.comp_symm, AlgHom.id_comp]
     rw [hpoint]
-    exact congrArg (TripleNeighbourhood.mk carrier) (pointDataEquiv_symm_apply_toAlgHom data)
+    apply congrArg (TripleNeighbourhood.mk carrier)
+    simpa only [pointDataEquiv_apply] using
+      Equiv.symm_apply_apply (pointDataEquiv : PointData R carrier Ω ≃ _) data
 
 /-- Triples and pointed étale neighbourhoods are equivalent as objects. -/
 @[expose] noncomputable def tripleNeighbourhoodEquiv :
