@@ -34,6 +34,9 @@ nonzero vector of `U` is orthogonal to `V`.
 Compressing the square of the difference `P_U - P_V` to `U`, from either side, gives
 `P_U - P_U P_V P_U`.
 
+A linear map agrees with its composition with the orthogonal projection onto the orthogonal
+complement of its kernel whenever the kernel admits an orthogonal projection.
+
 ## Main results
 
 * `Submodule.norm_starProjection_comp_starProjection_comm`: `‖P_U P_V‖ = ‖P_V P_U‖`.
@@ -53,6 +56,8 @@ Compressing the square of the difference `P_U - P_V` to `U`, from either side, g
 * `Submodule.starProjection_sub_starProjection_sq_mul_starProjection`,
   `Submodule.starProjection_mul_starProjection_sub_starProjection_sq`:
   `(P_U - P_V)² P_U = P_U (P_U - P_V)² = P_U - P_U P_V P_U`.
+* `LinearMap.apply_starProjection_orthogonal_ker`,
+  `ContinuousLinearMap.comp_starProjection_orthogonal_ker`: maps ignore their kernel component.
 -/
 
 public section
@@ -232,3 +237,33 @@ theorem starProjection_mul_starProjection_sub_starProjection_sq :
   abel
 
 end Submodule
+
+namespace LinearMap
+
+variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [AddCommMonoid F] [Module 𝕜 F]
+
+/-- A linear map does not see the component of a vector in its kernel. -/
+theorem apply_starProjection_orthogonal_ker (u : E →ₗ[𝕜] F) [u.ker.HasOrthogonalProjection]
+    (x : E) : u (u.kerᗮ.starProjection x) = u x := by
+  have hx : x - u.kerᗮ.starProjection x ∈ u.ker :=
+    (Submodule.orthogonal_orthogonal u.ker).le (Submodule.sub_starProjection_mem_orthogonal x)
+  rw [mem_ker] at hx
+  simpa only [map_add, hx, zero_add] using
+    congrArg u (sub_add_cancel x (u.kerᗮ.starProjection x))
+
+end LinearMap
+
+namespace ContinuousLinearMap
+
+variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [AddCommMonoid F] [Module 𝕜 F] [TopologicalSpace F]
+
+/-- Composing a continuous linear map with the orthogonal projection onto the orthogonal
+complement of its kernel does not change it. -/
+@[simp]
+theorem comp_starProjection_orthogonal_ker (u : E →L[𝕜] F) [u.ker.HasOrthogonalProjection] :
+    u ∘L u.kerᗮ.starProjection = u :=
+  ext (u.toLinearMap.apply_starProjection_orthogonal_ker)
+
+end ContinuousLinearMap
