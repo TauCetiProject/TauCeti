@@ -169,6 +169,14 @@ theorem scalarCurvature_reparamTime [T2Space M] (hφ : ContDiff ℝ ∞ φ) (hφ
     (contMDiff_id.prodMap (hφ.contMDiff.of_le (by simp)))
     (fun p ↦ isInvertible_mfderiv_prodMap_id (hφ.differentiable (by simp) p.2) (hφ' p.2)) p
 
+/-- Reparametrising the `ℝ`-coordinate preserves positive scalar curvature. -/
+theorem HasPositiveScalarCurvature.reparamTime [T2Space M] (h : G.HasPositiveScalarCurvature)
+    (hφ : ContDiff ℝ ∞ φ) (hφ' : ∀ t, deriv φ t ≠ 0) :
+    (G.reparamTime hφ hφ').HasPositiveScalarCurvature :=
+  (hasPositiveScalarCurvature_iff _).2 fun p ↦ by
+    rw [scalarCurvature_reparamTime]
+    exact (hasPositiveScalarCurvature_iff _).1 h _
+
 /-- A reparametrisation of the `ℝ`-coordinate with `|φ' t| = 1` leaves the cylinder metric
 `g + dt²` unchanged at `(x, t)`. -/
 theorem cylinder_reparamTime_inner
@@ -183,6 +191,15 @@ theorem cylinder_reparamTime_inner
   simp only [ContinuousLinearEquiv.apply_symm_apply]
   linear_combination (NormedSpace.fromTangentSpace p.2 (tangentSpaceProdEquiv p v).2 *
     NormedSpace.fromTangentSpace p.2 (tangentSpaceProdEquiv p w).2) * h₁
+
+/-- A reparametrisation of the `ℝ`-coordinate with `|φ' t| = 1` of a metric which is the cylinder
+metric `g + dt²` at `(x, φ t)` is the cylinder metric `g + dt²` at `(x, t)`. -/
+theorem reparamTime_inner_eq_cylinder_inner
+    {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)} (hφ : ContDiff ℝ ∞ φ)
+    (hφ' : ∀ t, deriv φ t ≠ 0) {p : M × ℝ}
+    (h : G.inner (p.1, φ p.2) = g.cylinder.inner (p.1, φ p.2)) (hd : |deriv φ p.2| = 1) :
+    (G.reparamTime hφ hφ').inner p = g.cylinder.inner p :=
+  (reparamTime_inner_congr hφ hφ' h).trans (cylinder_reparamTime_inner g hφ hφ' hd)
 
 end ReparamTime
 
@@ -251,13 +268,11 @@ theorem IsConcordance.reparamTime_one_sub (h : IsConcordance G g₀ g₁) :
     IsConcordance (G.reparamTime (φ := fun t ↦ 1 - t) (contDiff_const.sub contDiff_id)
       (fun t ↦ by simp)) g₁ g₀ := by
   have hd (t : ℝ) : |deriv (fun t : ℝ ↦ 1 - t) t| = 1 := by simp
-  refine ⟨(hasPositiveScalarCurvature_iff _).2 fun p ↦ ?_, fun p hp ↦ ?_, fun p hp ↦ ?_⟩
-  · rw [scalarCurvature_reparamTime]
-    exact (hasPositiveScalarCurvature_iff _).1 h.hasPositiveScalarCurvature _
-  · rw [reparamTime_inner_congr _ _ (h.inner_of_one_le _ (by simp; linarith)),
-      cylinder_reparamTime_inner _ _ _ (hd p.2)]
-  · rw [reparamTime_inner_congr _ _ (h.inner_of_nonpos _ (by simp; linarith)),
-      cylinder_reparamTime_inner _ _ _ (hd p.2)]
+  refine ⟨h.hasPositiveScalarCurvature.reparamTime _ _, fun p hp ↦ ?_, fun p hp ↦ ?_⟩
+  · exact reparamTime_inner_eq_cylinder_inner _ _ (h.inner_of_one_le _ (by simp; linarith))
+      (hd p.2)
+  · exact reparamTime_inner_eq_cylinder_inner _ _ (h.inner_of_nonpos _ (by simp; linarith))
+      (hd p.2)
 
 /-- Concordance is symmetric. -/
 theorem Concordant.symm (h : Concordant g₀ g₁) : Concordant g₁ g₀ :=
@@ -307,21 +322,17 @@ private theorem concordant_of_window_three (hG : G.HasPositiveScalarCurvature)
     (h₀ : ∀ p : M × ℝ, p.2 ≤ 0 → G.inner p = g₀.cylinder.inner p)
     (h₃ : ∀ p : M × ℝ, 3 ≤ p.2 → G.inner p = g₂.cylinder.inner p) : Concordant g₀ g₂ := by
   refine ⟨G.reparamTime contDiff_stretch deriv_stretch_ne_zero,
-    (hasPositiveScalarCurvature_iff _).2 fun p ↦ ?_, fun p hp ↦ ?_, fun p hp ↦ ?_⟩
-  · rw [scalarCurvature_reparamTime]
-    exact (hasPositiveScalarCurvature_iff _).1 hG _
+    hG.reparamTime _ _, fun p hp ↦ ?_, fun p hp ↦ ?_⟩
   · -- Near `t ≤ 0`, `stretch` is the identity.
     have hψ := stretch_eventuallyEq_of_lt (show p.2 < 1 / 3 by linarith)
-    rw [reparamTime_inner_congr (G' := g₀.cylinder) _ _, cylinder_reparamTime_inner]
-    · simp [hψ.deriv_eq]
-    · rw [hψ.eq_of_nhds]
-      exact h₀ p hp
+    refine reparamTime_inner_eq_cylinder_inner _ _ ?_ (by simp [hψ.deriv_eq])
+    rw [hψ.eq_of_nhds]
+    exact h₀ p hp
   · -- Near `t ≥ 1`, `stretch` is the translation by `2`.
     have hψ := stretch_eventuallyEq_of_gt (show 2 / 3 < p.2 by linarith)
-    rw [reparamTime_inner_congr (G' := g₂.cylinder) _ _, cylinder_reparamTime_inner]
-    · simp [hψ.deriv_eq]
-    · rw [hψ.eq_of_nhds]
-      exact h₃ _ (by simp; linarith)
+    refine reparamTime_inner_eq_cylinder_inner _ _ ?_ (by simp [hψ.deriv_eq])
+    rw [hψ.eq_of_nhds]
+    exact h₃ _ (by simp; linarith)
 
 /-- **Concatenation of concordances**: concordance is transitive. Translate a concordance from
 `g₁` to `g₂` to the window `[2, 3]`, glue it to a concordance from `g₀` to `g₁` along `1 < t < 2`,
@@ -333,12 +344,10 @@ theorem Concordant.trans (h₁ : Concordant g₀ g₁) (h₂ : Concordant g₁ g
   -- `G₂` translated to the window `[2, 3]`.
   let G₂' := G₂.reparamTime (φ := fun t ↦ t - 2) (contDiff_id.sub contDiff_const)
     (fun t ↦ by simp)
-  have hG₂'₁ (p : M × ℝ) (hp : p.2 ≤ 2) : G₂'.inner p = g₁.cylinder.inner p := by
-    rw [reparamTime_inner_congr _ _ (h₂.inner_of_nonpos _ (by simpa using hp)),
-      cylinder_reparamTime_inner _ _ _ (hd p.2)]
-  have hG₂'₂ (p : M × ℝ) (hp : 3 ≤ p.2) : G₂'.inner p = g₂.cylinder.inner p := by
-    rw [reparamTime_inner_congr _ _ (h₂.inner_of_one_le _ (by simp; linarith)),
-      cylinder_reparamTime_inner _ _ _ (hd p.2)]
+  have hG₂'₁ (p : M × ℝ) (hp : p.2 ≤ 2) : G₂'.inner p = g₁.cylinder.inner p :=
+    reparamTime_inner_eq_cylinder_inner _ _ (h₂.inner_of_nonpos _ (by simpa using hp)) (hd p.2)
+  have hG₂'₂ (p : M × ℝ) (hp : 3 ≤ p.2) : G₂'.inner p = g₂.cylinder.inner p :=
+    reparamTime_inner_eq_cylinder_inner _ _ (h₂.inner_of_one_le _ (by simp; linarith)) (hd p.2)
   -- Glue `G₁` on `t < 2` to the translate of `G₂` on `t > 1`.
   have hU : IsOpen {p : M × ℝ | p.2 < 2} := isOpen_lt continuous_snd continuous_const
   have hV : IsOpen {p : M × ℝ | 1 < p.2} := isOpen_lt continuous_const continuous_snd
@@ -354,8 +363,8 @@ theorem Concordant.trans (h₁ : Concordant g₀ g₁) (h₂ : Concordant g₁ g
   · rw [eqOn_scalarCurvature hU (fun q hq ↦ piecewise_inner_of_mem_left hq) hp]
     exact (hasPositiveScalarCurvature_iff _).1 h₁.hasPositiveScalarCurvature p
   · rw [eqOn_scalarCurvature hV (fun q hq ↦ piecewise_inner_of_mem_right hq)
-      (show 1 < p.2 by linarith), scalarCurvature_reparamTime]
-    exact (hasPositiveScalarCurvature_iff _).1 h₂.hasPositiveScalarCurvature _
+      (show 1 < p.2 by linarith)]
+    exact (hasPositiveScalarCurvature_iff _).1 (h₂.hasPositiveScalarCurvature.reparamTime _ _) p
 
 /-- Concordance is an equivalence relation on the metrics of positive scalar curvature on `M`. -/
 theorem equivalence_concordant :
