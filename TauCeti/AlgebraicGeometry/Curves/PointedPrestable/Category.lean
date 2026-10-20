@@ -60,9 +60,10 @@ category API for models in `TauCeti.AlgebraicGeometry.Curves.StableReduction.Mod
 change follows Mathlib's `CategoryTheory.Over.pullback` and uses its canonical isomorphism
 `CategoryTheory.Limits.pullbackLeftPullbackSndIso`.
 
-Only `toOver`, `isoMk`, `pullbackMap`, `pullbackFunctor` and `reindexFunctor` expose their
-bodies, so that their `simps` lemmas are definitional. The canonical isomorphisms and
-`autToOver` keep their bodies private and are used through their characteristic lemmas.
+Only the functors `toOver`, `pullbackFunctor` and `reindexFunctor` expose their bodies, so that
+their `simps` lemmas are definitional and the statements about `pullbackFunctor` typecheck.
+`isoMk`, `pullbackMap`, the canonical isomorphisms and `autToOver` keep their bodies private
+and are used through their characteristic lemmas.
 
 ## References
 
@@ -133,11 +134,20 @@ instance : (toOver (S := S) (n := n)).Faithful where
 
 /-- An isomorphism of pointed prestable families from an isomorphism of total spaces over `S`
 carrying each marking to the corresponding marking. -/
-@[expose, simps]
 def isoMk (e : P.total ≅ Q.total) (he : e.hom ≫ Q.toBase = P.toBase)
     (hm : ∀ i, P.marking i ≫ e.hom = Q.marking i) : P ≅ Q where
   hom := ⟨e.hom, he, hm⟩
   inv := ⟨e.inv, by rw [Iso.inv_comp_eq, he], fun i ↦ by rw [Iso.comp_inv_eq, hm]⟩
+
+@[simp]
+theorem isoMk_hom_hom (e : P.total ≅ Q.total) (he : e.hom ≫ Q.toBase = P.toBase)
+    (hm : ∀ i, P.marking i ≫ e.hom = Q.marking i) : (isoMk e he hm).hom.hom = e.hom :=
+  (rfl)
+
+@[simp]
+theorem isoMk_inv_hom (e : P.total ≅ Q.total) (he : e.hom ≫ Q.toBase = P.toBase)
+    (hm : ∀ i, P.marking i ≫ e.hom = Q.marking i) : (isoMk e he hm).inv.hom = e.inv :=
+  (rfl)
 
 /-- A morphism of pointed prestable families is an isomorphism exactly when its map of total
 spaces is an isomorphism. -/
@@ -187,7 +197,6 @@ space `(P.pullback g).total` is only definitionally, not reducibly, equal to
 `Limits.pullback P.toBase g`, so the pullback API does not apply to it before unfolding. -/
 
 /-- The base change along `g : T ⟶ S` of a morphism of pointed prestable families over `S`. -/
-@[expose, simps]
 def pullbackMap (g : T ⟶ S) (f : P ⟶ Q) : P.pullback g ⟶ Q.pullback g where
   hom := pullback.map P.toBase g Q.toBase g f.hom (𝟙 T) (𝟙 S) (by simp) (by simp)
   hom_comp_toBase := by
@@ -196,6 +205,12 @@ def pullbackMap (g : T ⟶ S) (f : P ⟶ Q) : P.pullback g ⟶ Q.pullback g wher
   marking_comp_hom i := by
     dsimp only [pullback]
     ext <;> simp
+
+@[simp]
+theorem pullbackMap_hom (g : T ⟶ S) (f : P ⟶ Q) :
+    (pullbackMap g f).hom = pullback.map P.toBase g Q.toBase g f.hom (𝟙 T) (𝟙 S)
+      (by simp) (by simp) :=
+  (rfl)
 
 /-- Base change along `g : T ⟶ S` as a functor from pointed prestable families over `S` to
 pointed prestable families over `T`. -/
