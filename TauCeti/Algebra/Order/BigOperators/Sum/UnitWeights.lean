@@ -19,12 +19,16 @@ this once in each variable gives the corresponding statement for a matrix `w` te
 two weight vectors.
 
 In regularity arguments this upgrades a discrepancy bound on rectangles `s' × t'` to one for
-tests `f i * g j` with values in `[0, 1]`, as needed for counting lemmas.
+tests `f i * g j` with values in `[0, 1]`, as needed for counting lemmas. Summing such a bound
+over a further index then uses the crude estimate `|∑ i ∈ s, f i| ≤ #s * B` for terms bounded
+by `B` in absolute value.
 
 ## Main results
 
 * `Finset.abs_sum_mul_le_of_forall_subset`: weighted sums are controlled by subset sums.
 * `Finset.abs_sum_sum_mul_mul_le_of_forall_subset`: the two-variable version.
+* `Finset.abs_sum_le_card_mul_of_forall_abs_le`: a sum of `#s` terms bounded by `B` in absolute
+  value is bounded by `#s * B`.
 -/
 
 public section
@@ -67,5 +71,10 @@ theorem abs_sum_sum_mul_mul_le_of_forall_subset {s : Finset ι} {t : Finset κ} 
   refine abs_sum_mul_le_of_forall_subset hg₀ hg₁ fun t' ht' ↦ ?_
   rw [sum_comm]
   exact h s' hs' t' ht'
+
+/-- A sum of terms with absolute value at most `B` has absolute value at most `#s * B`. -/
+theorem abs_sum_le_card_mul_of_forall_abs_le {s : Finset ι} {f : ι → R} {B : R}
+    (h : ∀ i ∈ s, |f i| ≤ B) : |∑ i ∈ s, f i| ≤ #s * B :=
+  (abs_sum_le_sum_abs _ _).trans <| by simpa using sum_le_card_nsmul s _ B h
 
 end Finset

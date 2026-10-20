@@ -181,9 +181,6 @@ private lemma abs_sum_patternWeight_sub_le (e₀₁ e₀₂ e₁₂ : Prop) [Dec
   have ha₁ := patternWeight_le_one (G := G) (𝕜 := 𝕜) e₀₁
   have hb₁ := patternWeight_le_one (G := G) (𝕜 := 𝕜) e₀₂
   have hc₁ := patternWeight_le_one (G := G) (𝕜 := 𝕜) e₁₂
-  have abs_sum_le_card_mul {u : Finset α} {F : α → 𝕜} {B : 𝕜} (h : ∀ i ∈ u, |F i| ≤ B) :
-      |∑ i ∈ u, F i| ≤ #u * B :=
-    (abs_sum_le_sum_abs _ _).trans <| by simpa using sum_le_card_nsmul u _ B h
   -- Replace the three indicators by their densities one at a time: each difference is a test of
   -- one pair against functions with values in `[0, 1]`, summed over the remaining vertex.
   have hsplit : ∑ x ∈ s₀, ∑ y ∈ s₁, ∑ z ∈ s₂, a x y * b x z * c y z -
@@ -205,23 +202,23 @@ private lemma abs_sum_patternWeight_sub_le (e₀₁ e₀₂ e₁₂ : Prop) [Dec
     ring
   have h₁ : |∑ z ∈ s₂, ∑ x ∈ s₀, ∑ y ∈ s₁, b x z * c y z * (a x y - p)| ≤
       ε * (#s₀ * #s₁ * #s₂) :=
-    (abs_sum_le_card_mul fun z _ ↦ h₀₁.abs_sum_sum_mul_patternWeight_sub_le e₀₁
-      (fun x _ ↦ hb₀ x z) (fun x _ ↦ hb₁ x z) (fun y _ ↦ hc₀ y z) (fun y _ ↦ hc₁ y z)).trans_eq
-      (by ring)
+    (abs_sum_le_card_mul_of_forall_abs_le fun z _ ↦
+      h₀₁.abs_sum_sum_mul_patternWeight_sub_le e₀₁ (fun x _ ↦ hb₀ x z) (fun x _ ↦ hb₁ x z)
+        (fun y _ ↦ hc₀ y z) (fun y _ ↦ hc₁ y z)).trans_eq (by ring)
   have h₂ : |p * ∑ y ∈ s₁, ∑ x ∈ s₀, ∑ z ∈ s₂, 1 * c y z * (b x z - q)| ≤
       ε * (#s₀ * #s₁ * #s₂) := by
     rw [abs_mul, abs_of_nonneg hp₀]
     refine (mul_le_of_le_one_left (abs_nonneg _) hp₁).trans <|
-      (abs_sum_le_card_mul fun y _ ↦ h₀₂.abs_sum_sum_mul_patternWeight_sub_le e₀₂
-        (fun _ _ ↦ zero_le_one) (fun _ _ ↦ le_rfl) (fun z _ ↦ hc₀ y z)
-        (fun z _ ↦ hc₁ y z)).trans_eq (by ring)
+      (abs_sum_le_card_mul_of_forall_abs_le fun y _ ↦
+        h₀₂.abs_sum_sum_mul_patternWeight_sub_le e₀₂ (fun _ _ ↦ zero_le_one) (fun _ _ ↦ le_rfl)
+          (fun z _ ↦ hc₀ y z) (fun z _ ↦ hc₁ y z)).trans_eq (by ring)
   have h₃ : |p * q * ∑ x ∈ s₀, ∑ y ∈ s₁, ∑ z ∈ s₂, 1 * 1 * (c y z - r)| ≤
       ε * (#s₀ * #s₁ * #s₂) := by
     rw [abs_mul, abs_of_nonneg hpq₀]
     refine (mul_le_of_le_one_left (abs_nonneg _) hpq₁).trans <|
-      (abs_sum_le_card_mul fun x _ ↦ h₁₂.abs_sum_sum_mul_patternWeight_sub_le e₁₂
-        (fun _ _ ↦ zero_le_one) (fun _ _ ↦ le_rfl) (fun _ _ ↦ zero_le_one)
-        (fun _ _ ↦ le_rfl)).trans_eq (by ring)
+      (abs_sum_le_card_mul_of_forall_abs_le fun x _ ↦
+        h₁₂.abs_sum_sum_mul_patternWeight_sub_le e₁₂ (fun _ _ ↦ zero_le_one) (fun _ _ ↦ le_rfl)
+          (fun _ _ ↦ zero_le_one) (fun _ _ ↦ le_rfl)).trans_eq (by ring)
   rw [hsplit]
   refine ((abs_add_le _ _).trans (add_le_add (abs_add_le _ _) le_rfl)).trans ?_
   linarith
