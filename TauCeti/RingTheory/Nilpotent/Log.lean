@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Nilpotent.Exp
 public import Mathlib.RingTheory.PowerSeries.Log
 public import TauCeti.RingTheory.PowerSeries.Substitution
 import Mathlib.RingTheory.Adjoin.Singleton
+import TauCeti.RingTheory.Nilpotent.Exp
 
 /-!
 # Finite logarithms of unipotent elements
@@ -54,9 +55,7 @@ theorem log_eq_sum {a : A} {n : ℕ} (hn : (a - 1) ^ n = 0) :
     log a = ∑ i ∈ range n, ((-1 : ℚ) ^ (i + 1) / i) • (a - 1) ^ i := by
   classical
   rw [log_def]
-  -- The nilpotency class is the infimum of the exponents with vanishing power, so `hn`
-  -- is membership in the defining set and bounds that infimum above by `n`.
-  apply sum_subset (range_mono (csInf_le' hn))
+  apply sum_subset (range_mono (TauCeti.nilpotencyClass_le_of_pow_eq_zero hn))
   intro i hi hni
   rw [mem_range, not_lt] at hni
   rw [pow_eq_zero_of_le hni (pow_nilpotencyClass ⟨n, hn⟩), smul_zero]
