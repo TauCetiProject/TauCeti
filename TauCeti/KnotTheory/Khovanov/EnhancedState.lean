@@ -25,8 +25,9 @@ ranks of its chain groups. Since the enhanced states of bidegree `(i, j)` index 
 Khovanov chain group in that bidegree, it is the signed sum
 `TauCeti.OrientedPDCode.enhancedStateSum` of `(-1) ^ i q ^ j` over all enhanced states; here the
 generator `T` of `ℤ[T;T⁻¹]` plays the role of `q`.
-This file proves that this sum is the Jones polynomial in Khovanov's normalization: with the
-substitution `t ^ (1/2) ↦ -q`, it is `(q + q⁻¹)` times `TauCeti.OrientedPDCode.jonesPolynomial`
+This file proves that, for a nonempty diagram, this sum is the Jones polynomial in Khovanov's
+normalization: with the substitution `t ^ (1/2) ↦ -q`, it is `(q + q⁻¹)` times
+`TauCeti.OrientedPDCode.jonesPolynomial`
 (`TauCeti.OrientedPDCode.enhancedStateSum_eq_mul_eval₂_jonesPolynomial`).
 
 The proof is a state-by-state comparison. Summing over the labels of the `k` circles of a state
