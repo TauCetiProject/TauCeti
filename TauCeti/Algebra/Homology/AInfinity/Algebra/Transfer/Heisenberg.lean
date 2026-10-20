@@ -99,6 +99,15 @@ noncomputable abbrev monomial (s : Finset (Fin 3)) : ExteriorAlgebra R (Fin 3 �
 noncomputable def gen (i : Fin 3) : ExteriorAlgebra R (Fin 3 → R) :=
   ExteriorAlgebra.ι R (Pi.single i 1)
 
+/-- The `i`-th generator is the image under `ι` of the `i`-th standard basis vector. -/
+theorem gen_def (i : Fin 3) : gen R i = ExteriorAlgebra.ι R (Pi.single i 1) := by
+  rw [gen]
+
+/-- A generator squares to zero. -/
+@[simp]
+theorem gen_mul_self (i : Fin 3) : gen R i * gen R i = 0 :=
+  ExteriorAlgebra.ι_sq_zero _
+
 /-- Contraction against the coordinate of the `i`-th generator. -/
 private noncomputable def contract (i : Fin 3) : Module.End R (ExteriorAlgebra R (Fin 3 → R)) :=
   contractLeft (Q := (0 : QuadraticForm R (Fin 3 → R))) ((Pi.basisFun R (Fin 3)).coord i)
@@ -169,9 +178,20 @@ theorem grading_of_neg {p : ℤ} (hp : p < 0) : grading R p = ⊥ :=
 
 /-- The generators have degree one. -/
 theorem gen_mem_grading (i : Fin 3) : gen R i ∈ grading R 1 := by
-  rw [show (1 : ℤ) = ((1 : ℕ) : ℤ) from rfl, grading_natCast, ExteriorAlgebra.exteriorPower,
+  rw [← Nat.cast_one, grading_natCast, ExteriorAlgebra.exteriorPower,
     pow_one]
   exact LinearMap.mem_range_self _ _
+
+/-- The grade involution acts on the piece of degree `p` by `(-1) ^ p`. -/
+theorem involute_of_mem_grading {p : ℤ} {x : ExteriorAlgebra R (Fin 3 → R)}
+    (hx : x ∈ grading R p) : involute x = p.negOnePow • x := by
+  rcases lt_or_ge p 0 with hp | hp
+  · rw [grading_of_neg R hp, Submodule.mem_bot] at hx
+    simp [hx]
+  obtain ⟨n, rfl⟩ := Int.eq_ofNat_of_zero_le hp
+  rw [grading_natCast] at hx
+  rw [involute_of_mem_exteriorPower hx]
+  simp [Int.negOnePow_def, Units.smul_def, ← Int.cast_smul_eq_zsmul R]
 
 /-- Contraction lowers the degree by one. -/
 private theorem contract_mem_grading (i : Fin 3) {p : ℤ} {x : ExteriorAlgebra R (Fin 3 → R)}
@@ -234,16 +254,8 @@ theorem isDGAlgebra : IsDGAlgebra (grading R) (differential R) where
     rw [differential_apply, differential_apply, contract_mul, h01, contract_contract]
     simp
   leibniz {p x} hx y := by
-    rcases lt_or_ge p 0 with hp | hp
-    · rw [grading_of_neg R hp, Submodule.mem_bot] at hx
-      simp [hx]
-    obtain ⟨n, rfl⟩ := Int.eq_ofNat_of_zero_le hp
-    rw [grading_natCast] at hx
-    rw [differential_apply, differential_apply, differential_apply, contract_mul,
-      involute_of_mem_exteriorPower hx, mul_add, ← mul_assoc, smul_mul_assoc, mul_smul_comm,
-      ← mul_assoc (gen R 0 * gen R 1) x, gen_mul_gen_mul_comm R x, mul_assoc x]
-    congr 1
-    simp [Int.negOnePow_def, Units.smul_def, ← Int.cast_smul_eq_zsmul R]
+    simp only [differential_apply, contract_mul, involute_of_mem_grading R hx, mul_add,
+      smul_mul_assoc, mul_smul_comm, ← mul_assoc, gen_mul_gen_mul_comm R x]
 
 /-! ### The `A∞` algebra -/
 
@@ -599,25 +611,25 @@ theorem minimalModel_m_two (x y : (aInfinityAlgebra R).Cohomology) :
 /-! ### The ternary operation on `([a], [a], [b])` -/
 
 /-- The differential sends `c` to `a b`. -/
+@[simp]
 theorem differential_gen_two : differential R (gen R 2) = gen R 0 * gen R 1 := by
   rw [← monomial_singleton, differential_monomial, monomial_pair R (show (0 : Fin 3) < 1 by decide)]
   simp
 
 /-- The homotopy sends `a b` to `c`. -/
+@[simp]
 theorem homotopy_gen_zero_mul_gen_one : homotopy R (gen R 0 * gen R 1) = gen R 2 := by
   rw [← monomial_pair R (show (0 : Fin 3) < 1 by decide), homotopy_monomial, monomial_singleton]
   simp
 
-/-- A generator squares to zero. -/
-private theorem gen_mul_self (i : Fin 3) : gen R i * gen R i = 0 :=
-  ExteriorAlgebra.ι_sq_zero _
-
 /-- The projection fixes the representatives `a` and `b`. -/
+@[simp]
 theorem cycleProjection_gen {i : Fin 3} (hi : i ≠ 2) : cycleProjection R (gen R i) = gen R i := by
   rw [← monomial_singleton, cycleProjection_monomial,
     ite_eq_right_iff.2 fun h ↦ absurd h (by revert i; decide)]
 
 /-- The projection fixes the representative `a c`. -/
+@[simp]
 theorem cycleProjection_gen_zero_mul_gen_two :
     cycleProjection R (gen R 0 * gen R 2) = gen R 0 * gen R 2 := by
   rw [← monomial_pair R (show (0 : Fin 3) < 2 by decide), cycleProjection_monomial]
@@ -640,9 +652,10 @@ private theorem koszulTwist_cohomologyClass_gen {i : Fin 3} (hi : i ≠ 2) :
       (by rw [aInfinityAlgebra_grading_piece]; exact gen_mem_grading R i))]
   simp
 
-/-- **The transferred ternary operation is nonzero**: `m₃^H ([a], [a], [b]) = [a c]`.  Of the
-Kontsevich--Soibelman/Merkulov tree sum only the term `-p m₂ (i (τ [a]), h m₂ (i [a], i [b]))`
-survives, with `h (a b) = c` and the Koszul twist `τ [a] = -[a]`. -/
+/-- **The transferred ternary operation on `([a], [a], [b])`**: `m₃^H ([a], [a], [b]) = [a c]`.
+Of the Kontsevich--Soibelman/Merkulov tree sum only the term
+`-p m₂ (i (τ [a]), h m₂ (i [a], i [b]))` survives, with `h (a b) = c` and the Koszul twist
+`τ [a] = -[a]`. -/
 theorem minimalModel_m_three :
     (minimalModel R).m 3
         ![(aInfinityAlgebra R).cohomologyClass (gen_mem_cycles R (i := 0) (by decide)),
@@ -651,9 +664,7 @@ theorem minimalModel_m_three :
       (aInfinityAlgebra R).cohomologyClass (gen_zero_mul_gen_two_mem_cycles R) := by
   rw [minimalModel, AInfinityAlgebra.m_three_transfer,
     koszulTwist_cohomologyClass_gen R (i := 0) (by decide)]
-  simp [cycleProjection_gen R (i := 0) (by decide), cycleProjection_gen R (i := 1) (by decide),
-    gen_mul_self, homotopy_gen_zero_mul_gen_one,
-    contraction_proj_of_mem_cycles R (gen_zero_mul_gen_two_mem_cycles R)]
+  simp [contraction_proj_of_mem_cycles R (gen_zero_mul_gen_two_mem_cycles R)]
 
 /-- The class `[a c]` is nonzero over a nontrivial ring: the inclusion of the contraction sends
 it to the basis vector `a c`. -/
@@ -682,8 +693,7 @@ theorem component_two_minimalModelInclusion :
       -gen R 2 := by
   unfold minimalModelInclusion minimalModel
   rw [AInfinityAlgebra.component_two_transferInclusion]
-  simp [cycleProjection_gen R (i := 0) (by decide), cycleProjection_gen R (i := 1) (by decide),
-    homotopy_gen_zero_mul_gen_one]
+  simp
 
 /-- **The transferred ternary operation selects an element of the triple Massey product**
 `⟨[a], [a], [b]⟩`: `[a c]` is the value of the defining system `(a, a, b, 0, c)`, since `a a = 0`
