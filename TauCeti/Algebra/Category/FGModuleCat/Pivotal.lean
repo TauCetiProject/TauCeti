@@ -56,8 +56,15 @@ theorem drinfeldIso_hom_hom_hom (V : FGModuleCat.{u} K) :
   refine LinearMap.ext fun (ξ : Dual K V) => ?_
   have h := congrArg (fun g : V ⊗ Vᘁ ⟶ 𝟙_ (FGModuleCat K) => g.hom.hom (x ⊗ₜ ξ))
     (drinfeldIso_hom_comp_evaluation V)
-  simp only [hom_hom_comp, evaluation_hom_hom, braiding_hom_hom_hom] at h
-  -- Evaluating the contractions on `x ⊗ₜ ξ`, `h` says `(drinfeldIso V).hom x ξ = ξ x`.
+  simp only [hom_hom_comp, LinearMap.comp_apply] at h
+  simp only [evaluation_hom_hom, braiding_hom_hom_hom, whiskerRight_hom_hom] at h
+  -- Now `h` reads `contractLeft K Vᘁ (rTensor Vᘁ d (x ⊗ₜ ξ)) = contractLeft K V (comm (x ⊗ₜ ξ))`
+  -- with `d = (drinfeldIso V).hom.hom.hom`, while the goal `d x ξ = Dual.eval K V x ξ` is
+  -- `d x ξ = ξ x` by `Dual.eval_apply`. Evaluating `h` on the pure tensor takes
+  -- `LinearMap.rTensor_tmul`, `TensorProduct.comm_tmul` and `contractLeft_apply`. Neither `simp`
+  -- nor `rw` can apply these here: `x ⊗ₜ ξ` lives in the carrier of the tensor product in
+  -- `FGModuleCat K` rather than in `V ⊗[K] Dual K V`, and the double dual is written `↑Vᘁᘁ` rather
+  -- than `Dual K (Dual K V)`. All four lemmas hold by `rfl`, and after them `h` is the goal.
   exact h
 
 /-- The categorical trace of an endomorphism of a finite-dimensional vector space is its linear
@@ -70,8 +77,12 @@ theorem trace_eq_smul {V : FGModuleCat.{u} K} (f : V ⟶ V) :
     ObjectProperty.FullSubcategory.id_hom, ModuleCat.hom_smul, ModuleCat.hom_id,
     LinearMap.smul_apply, LinearMap.id_coe, id_eq, smul_eq_mul, mul_one]
   rw [trace_eq_braiding, LinearMap.trace_eq_contractLeft_comm_rTensor_coevaluation]
-  simp only [hom_hom_comp, coevaluation_hom_hom, braiding_hom_hom_hom, evaluation_hom_hom]
-  -- Both sides are the same composite of linear maps applied to `1`.
+  simp only [hom_hom_comp, LinearMap.comp_apply]
+  simp only [coevaluation_hom_hom, braiding_hom_hom_hom, evaluation_hom_hom,
+    whiskerRight_hom_hom]
+  -- The two sides are now the same linear maps applied to `1`, except that the left writes the
+  -- carrier of the dual object `Vᘁ` as `↑Vᘁ` and the right as `Module.Dual K V`. These agree by
+  -- definition, since Mathlib's `Vᘁ` is `FGModuleCat.FGModuleCatDual K V`, built on `Dual K V`.
   rfl
 
 /-- The quantum dimension of a finite-dimensional vector space is its dimension, acting on the
