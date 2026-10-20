@@ -8,6 +8,7 @@ module
 public import Mathlib.Probability.Distributions.Poisson.Basic
 
 import TauCeti.MeasureTheory.Measure.Measurability
+import TauCeti.MeasureTheory.Measure.ProductKernel
 /-!
 # Parameter measurability for the Poisson distribution
 
@@ -26,4 +27,14 @@ family as a kernel. -/
 @[fun_prop] theorem measurable_poissonMeasure : Measurable fun r : ℝ≥0 => poissonMeasure r := by
   simp only [poissonMeasure]
   exact TauCeti.MeasureTheory.measurable_sum_smul_dirac fun n => by fun_prop
+
+/-- A finite product of Poisson laws is measurable jointly in its rate vector. -/
+@[fun_prop]
+theorem measurable_pi_poissonMeasure {ι : Type*} [Fintype ι] :
+    Measurable fun r : ι → ℝ≥0 => Measure.pi (fun i => poissonMeasure (r i)) := by
+  let ν (i : ι) (r : ι → ℝ≥0) : ProbabilityMeasure ℕ :=
+    ⟨poissonMeasure (r i), inferInstance⟩
+  have hν (i : ι) : Measurable (ν i) :=
+    (measurable_poissonMeasure.comp (measurable_pi_apply i)).subtype_mk
+  exact TauCeti.MeasureTheory.measurable_probabilityMeasure_pi_toMeasure ν hν
 end TauCeti.Probability
