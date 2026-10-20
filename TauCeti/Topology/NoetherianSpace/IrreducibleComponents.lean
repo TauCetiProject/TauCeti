@@ -9,6 +9,7 @@ public import Mathlib.Topology.NoetherianSpace
 public import Mathlib.Topology.JacobsonSpace
 public import Mathlib.Topology.Homeomorph.Lemmas
 public import Mathlib.Topology.KrullDimension
+public import TauCeti.Topology.ConnectedComponents
 
 /-!
 # Irreducible components of spaces homogeneous on closed points
@@ -41,7 +42,7 @@ variable {X : Type*} [TopologicalSpace X]
 
 /-- An irreducible component meeting an open subset supported on another component equals
 that component. -/
-theorem irreducibleComponent_eq_of_nonempty_inter_open {C D U : Set X}
+theorem eq_of_mem_irreducibleComponents_of_nonempty_inter_open {C D U : Set X}
     (hC : C ∈ irreducibleComponents X) (hD : D ∈ irreducibleComponents X)
     (hU : IsOpen U) (hUC : U ⊆ C) (hne : (D ∩ U).Nonempty) : D = C := by
   have hDC : D ⊆ C :=
@@ -50,7 +51,29 @@ theorem irreducibleComponent_eq_of_nonempty_inter_open {C D U : Set X}
         (isClosed_of_mem_irreducibleComponents C hC))
   exact hDC.antisymm (hD.2 hC.1 hDC)
 
+/-- Pairwise disjoint irreducible components of a Noetherian space are clopen. -/
+theorem isClopen_of_mem_irreducibleComponents_of_pairwiseDisjoint [NoetherianSpace X]
+    (hdisj : (irreducibleComponents X).PairwiseDisjoint id) {C : Set X}
+    (hC : C ∈ irreducibleComponents X) : IsClopen C := by
+  have : Finite (irreducibleComponents X) :=
+    NoetherianSpace.finite_irreducibleComponents.to_subtype
+  exact isClopen_of_finite_pairwiseDisjoint_closed_cover
+    (fun D : irreducibleComponents X ↦ isClosed_of_mem_irreducibleComponents D.1 D.2)
+    hdisj.subtype (sUnion_eq_iUnion ▸ sUnion_irreducibleComponents (X := X)) ⟨C, hC⟩
+
 variable [NoetherianSpace X] [JacobsonSpace X] {ι : Type*}
+
+private lemma exists_closedPoint_preimage_eq {C : Set X}
+    (hC : C ∈ irreducibleComponents X) :
+    ∃ x ∈ closedPoints X ∩ C, ∀ (f : X ≃ₜ X) (Z : Set X),
+      Z ∈ irreducibleComponents X → f x ∈ Z → f ⁻¹' Z = C := by
+  obtain ⟨U, hU, hUne, hUC⟩ :=
+    NoetherianSpace.exists_isOpen_nonempty_subset_irreducibleComponent C hC
+  obtain ⟨x, hxU, hxc⟩ := nonempty_inter_closedPoints hUne hU.isLocallyClosed
+  refine ⟨x, ⟨hxc, hUC hxU⟩, fun f Z hZ hxZ ↦ ?_⟩
+  exact eq_of_mem_irreducibleComponents_of_nonempty_inter_open hC
+    (preimage_mem_irreducibleComponents hZ f.isOpenEmbedding
+      (by simpa using hZ.1.nonempty)) hU hUC ⟨x, hxZ, hxU⟩
 
 /-- If a family of homeomorphisms is transitive on closed points, any two irreducible components
 are carried to one another by a member of that family. -/
@@ -59,40 +82,27 @@ theorem exists_image_eq_of_mem_irreducibleComponents_of_closedPoints_transitive
     (htrans : ∀ x ∈ closedPoints X, ∀ y ∈ closedPoints X, ∃ i, e i x = y) {C D : Set X}
     (hC : C ∈ irreducibleComponents X) (hD : D ∈ irreducibleComponents X) :
     ∃ i, e i '' C = D := by
-  obtain ⟨U, hU, hUne, hUC⟩ :=
-    NoetherianSpace.exists_isOpen_nonempty_subset_irreducibleComponent C hC
-  obtain ⟨x, hxU, hxc⟩ := nonempty_inter_closedPoints hUne hU.isLocallyClosed
+  obtain ⟨x, hx, hpre⟩ := exists_closedPoint_preimage_eq hC
   obtain ⟨y, hyD, hyc⟩ := nonempty_inter_closedPoints hD.1.nonempty
     (isClosed_of_mem_irreducibleComponents D hD).isLocallyClosed
-  obtain ⟨i, he⟩ := htrans x hxc y hyc
-  have hpre : e i ⁻¹' D ∈ irreducibleComponents X :=
-    preimage_mem_irreducibleComponents hD (e i).isOpenEmbedding
-      (by simpa using hD.1.nonempty)
-  have hEq : e i ⁻¹' D = C :=
-    irreducibleComponent_eq_of_nonempty_inter_open hC hpre hU hUC
-      ⟨x, by simpa only [mem_preimage, he] using hyD, hxU⟩
+  obtain ⟨i, he⟩ := htrans x hx.1 y hyc
+  have hEq := hpre (e i) D hD (he.symm ▸ hyD)
   exact ⟨i, by rw [← hEq, (e i).image_preimage]⟩
 
 /-- The irreducible components of a Noetherian Jacobson space homogeneous on closed points
 are pairwise disjoint. This includes all points, rather than only closed points. -/
-theorem pairwiseDisjoint_irreducibleComponents_of_closedPoints_homogeneous
+theorem pairwiseDisjoint_irreducibleComponents_of_closedPoints_transitive
     (e : ι → X ≃ₜ X)
     (htrans : ∀ x ∈ closedPoints X, ∀ y ∈ closedPoints X, ∃ i, e i x = y) :
     (irreducibleComponents X).PairwiseDisjoint id := by
   have heq {C D : Set X} (hC : C ∈ irreducibleComponents X)
       (hD : D ∈ irreducibleComponents X) {y : X} (hy : y ∈ closedPoints X)
       (hyC : y ∈ C) (hyD : y ∈ D) : C = D := by
-    obtain ⟨U, hU, hUne, hUC⟩ :=
-      NoetherianSpace.exists_isOpen_nonempty_subset_irreducibleComponent C hC
-    obtain ⟨x, hxU, hxc⟩ := nonempty_inter_closedPoints hUne hU.isLocallyClosed
-    obtain ⟨i, he⟩ := htrans x hxc y hy
-    have hpre (Z : Set X) (hZ : Z ∈ irreducibleComponents X) (hyZ : y ∈ Z) :
-        e i ⁻¹' Z = C := by
-      apply irreducibleComponent_eq_of_nonempty_inter_open hC
-        (preimage_mem_irreducibleComponents hZ (e i).isOpenEmbedding
-          (by simpa using hZ.1.nonempty)) hU hUC
-      exact ⟨x, by simpa only [mem_preimage, he] using hyZ, hxU⟩
-    exact (e i).surjective.preimage_injective ((hpre C hC hyC).trans (hpre D hD hyD).symm)
+    obtain ⟨x, hx, hpre⟩ := exists_closedPoint_preimage_eq hC
+    obtain ⟨i, he⟩ := htrans x hx.1 y hy
+    exact (e i).surjective.preimage_injective
+      ((hpre (e i) C hC (he.symm ▸ hyC)).trans
+        (hpre (e i) D hD (he.symm ▸ hyD)).symm)
   intro C hC D hD hne
   rw [Function.onFun, disjoint_iff_inter_eq_empty]
   by_contra hbad
@@ -103,28 +113,17 @@ theorem pairwiseDisjoint_irreducibleComponents_of_closedPoints_homogeneous
 
 /-- Each irreducible component of a Noetherian Jacobson space homogeneous on closed points
 is both open and closed. -/
-theorem isClopen_irreducibleComponent_of_closedPoints_homogeneous
+theorem isClopen_of_mem_irreducibleComponents_of_closedPoints_transitive
     (e : ι → X ≃ₜ X)
     (htrans : ∀ x ∈ closedPoints X, ∀ y ∈ closedPoints X, ∃ i, e i x = y) {C : Set X}
     (hC : C ∈ irreducibleComponents X) :
-    IsClopen C := by
-  have hdisj := pairwiseDisjoint_irreducibleComponents_of_closedPoints_homogeneous e htrans
-  have hcompl : Cᶜ = ⋃₀ (irreducibleComponents X \ {C}) := by
-    ext x
-    constructor
-    · intro hx
-      obtain ⟨D, hD, hxD⟩ := sUnion_irreducibleComponents (X := X) ▸ mem_univ x
-      exact mem_sUnion.mpr ⟨D, ⟨hD, by rintro rfl; exact hx hxD⟩, hxD⟩
-    · rintro ⟨D, ⟨hD, hDC⟩, hxD⟩ hxC
-      exact Set.disjoint_left.mp (hdisj hC hD (by simpa using Ne.symm hDC)) hxC hxD
-  refine ⟨isClosed_of_mem_irreducibleComponents C hC, ?_⟩
-  rw [← isClosed_compl_iff, hcompl, sUnion_eq_biUnion]
-  exact NoetherianSpace.finite_irreducibleComponents.sdiff.isClosed_biUnion
-    fun D hD ↦ isClosed_of_mem_irreducibleComponents D hD.1
+    IsClopen C :=
+  isClopen_of_mem_irreducibleComponents_of_pairwiseDisjoint
+    (pairwiseDisjoint_irreducibleComponents_of_closedPoints_transitive e htrans) hC
 
 /-- Irreducible components of a Noetherian Jacobson space homogeneous on closed points
 have equal topological Krull dimension, even when that dimension is infinite. -/
-theorem topologicalKrullDim_eq_of_mem_irreducibleComponents_of_closedPoints_homogeneous
+theorem topologicalKrullDim_eq_of_mem_irreducibleComponents_of_closedPoints_transitive
     (e : ι → X ≃ₜ X)
     (htrans : ∀ x ∈ closedPoints X, ∀ y ∈ closedPoints X, ∃ i, e i x = y) {C D : Set X}
     (hC : C ∈ irreducibleComponents X) (hD : D ∈ irreducibleComponents X) :
