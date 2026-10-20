@@ -10,8 +10,10 @@ public import Mathlib.MeasureTheory.Covering.Besicovitch
 /-!
 # Density points of null-measurable sets
 
-For a null-measurable set `s`, the proportion of the complement `sᶜ` in a set of positive
-finite measure is one minus the proportion of `s`. Consequently, if the proportion of `s` along
+The proportion `μ (s ∩ t) / μ t` of a set `s` in a set `t` is at most one
+(`MeasureTheory.measure_inter_div_le_one`). For a null-measurable set `s`, the proportion of the
+complement `sᶜ` in a set of positive finite measure is one minus the proportion of `s`.
+Consequently, if the proportion of `s` along
 a family of such sets tends to `d`, that of `sᶜ` tends to `1 - d`; in particular `s` has density
 one along the family exactly when `sᶜ` has density zero along it. This lets density arguments
 estimate the complement, where measures add, and return to density-one points.
@@ -29,7 +31,14 @@ public section
 open Filter Metric Set Topology
 open scoped ENNReal
 
-namespace MeasureTheory.NullMeasurableSet
+namespace MeasureTheory
+
+/-- The proportion `μ (s ∩ t) / μ t` of a set `s` in a set `t` is at most one. -/
+theorem measure_inter_div_le_one {α : Type*} [MeasurableSpace α] {μ : Measure α}
+    (s t : Set α) : μ (s ∩ t) / μ t ≤ 1 :=
+  ENNReal.div_le_of_le_mul (by rw [one_mul]; exact measure_mono inter_subset_right)
+
+namespace NullMeasurableSet
 
 variable {α ι : Type*} [MeasurableSpace α] {μ : Measure α} {s : Set α}
 
@@ -86,4 +95,6 @@ theorem ae_eq_setOf_tendsto_measure_inter_div (hs : NullMeasurableSet s μ) :
   · simp only [indicator_of_notMem hxs] at hx
     exact iff_of_false hxs fun h => zero_ne_one (tendsto_nhds_unique hx h)
 
-end MeasureTheory.NullMeasurableSet
+end NullMeasurableSet
+
+end MeasureTheory

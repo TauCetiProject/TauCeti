@@ -24,7 +24,9 @@ frontier. They are nevertheless comparable to them: for a locally finite measure
 every open set, `interior s ⊆ essentialInterior μ s ⊆ closure s` and
 `essentialBoundary μ s ⊆ frontier s`. For a null-measurable set, complements exchange the
 essential interior and exterior, so the essential boundary of `sᶜ` is that of `s`. The essential
-boundary of a union or an intersection lies in the union of the essential boundaries.
+boundary of a union of any two sets lies in the union of their essential boundaries; the same
+holds for an intersection of two null-measurable sets, for a locally finite measure that charges
+every open set.
 
 On a space with the Besicovitch covering property, such as a finite-dimensional real normed
 space, Lebesgue's density theorem shows that the essential interior of a null-measurable set `s`
@@ -72,11 +74,6 @@ theorem hasDensityAt_iff : HasDensityAt μ s x d ↔
     Tendsto (fun r => μ (s ∩ closedBall x r) / μ (closedBall x r)) (𝓝[>] 0) (𝓝 d) :=
   Iff.rfl
 
-/-- The proportion of a set in a ball is at most one. -/
-private theorem measure_inter_closedBall_div_le_one (s : Set α) (x : α) (r : ℝ) :
-    μ (s ∩ closedBall x r) / μ (closedBall x r) ≤ 1 :=
-  ENNReal.div_le_of_le_mul (by rw [one_mul]; exact measure_mono inter_subset_right)
-
 namespace HasDensityAt
 
 /-- A density is unique. -/
@@ -85,7 +82,7 @@ theorem unique (h : HasDensityAt μ s x d) (h' : HasDensityAt μ s x d') : d = d
 
 /-- A density is at most one. -/
 theorem le_one (h : HasDensityAt μ s x d) : d ≤ 1 :=
-  le_of_tendsto' h fun r => measure_inter_closedBall_div_le_one s x r
+  le_of_tendsto' h fun r => measure_inter_div_le_one s (closedBall x r)
 
 /-- Densities only depend on the set up to `μ`-null sets. -/
 theorem congr_ae (h : HasDensityAt μ s x d) (hst : s =ᵐ[μ] t) : HasDensityAt μ t x d := by
@@ -94,10 +91,13 @@ theorem congr_ae (h : HasDensityAt μ s x d) (hst : s =ᵐ[μ] t) : HasDensityAt
   simpa only [HasDensityAt, hm] using h
 
 /-- **Complements.** If a null-measurable set `s` has density `d` at `x`, then `sᶜ` has density
-`1 - d` there, for a locally finite measure that charges every open set. -/
-theorem compl [IsLocallyFiniteMeasure μ] [μ.IsOpenPosMeasure] (hs : NullMeasurableSet s μ)
+`1 - d` there, provided closed balls of small positive radius around `x` have positive finite
+measure. This holds at every point for a locally finite measure that charges every open set
+(`Metric.eventually_measure_closedBall_ne_zero_ne_top`). -/
+theorem compl (hs : NullMeasurableSet s μ)
+    (hx : ∀ᶠ r in 𝓝[>] 0, μ (closedBall x r) ≠ 0 ∧ μ (closedBall x r) ≠ ∞)
     (h : HasDensityAt μ s x d) : HasDensityAt μ sᶜ x (1 - d) :=
-  hs.tendsto_measure_compl_inter_div (eventually_measure_closedBall_ne_zero_ne_top μ x) h
+  hs.tendsto_measure_compl_inter_div hx h
 
 end HasDensityAt
 
@@ -146,10 +146,12 @@ theorem disjoint_essentialInterior_essentialExterior :
   disjoint_left.2 fun _ h₁ h₀ =>
     one_ne_zero ((mem_essentialInterior.1 h₁).unique (mem_essentialExterior.1 h₀))
 
+/-- The essential interior is invariant under modification of the set by null sets. -/
 theorem essentialInterior_congr_ae (h : s =ᵐ[μ] t) :
     essentialInterior μ s = essentialInterior μ t :=
   ext fun _ => hasDensityAt_congr_ae h
 
+/-- The essential exterior is invariant under modification of the set by null sets. -/
 theorem essentialExterior_congr_ae (h : s =ᵐ[μ] t) :
     essentialExterior μ s = essentialExterior μ t :=
   ext fun _ => hasDensityAt_congr_ae h
@@ -168,7 +170,7 @@ theorem essentialInterior_mono_ae (h : s ≤ᵐ[μ] t) :
   rw [mem_essentialInterior, hasDensityAt_iff] at hx ⊢
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le hx tendsto_const_nhds
     (fun _ => ENNReal.div_le_div_right (measure_mono_ae (h.inter EventuallyLE.rfl)) _)
-    fun r => measure_inter_closedBall_div_le_one t x r
+    fun r => measure_inter_div_le_one t (closedBall x r)
 
 /-- The essential interior is monotone. -/
 theorem essentialInterior_mono (h : s ⊆ t) : essentialInterior μ s ⊆ essentialInterior μ t :=
@@ -223,7 +225,9 @@ theorem essentialInterior_compl (hs : NullMeasurableSet s μ) :
   ext x
   refine ⟨fun hx => ?_, fun hx => ?_⟩
   · simpa using (mem_essentialInterior.1 hx).compl hs.compl
+      (eventually_measure_closedBall_ne_zero_ne_top μ x)
   · simpa using (mem_essentialExterior.1 hx).compl hs
+      (eventually_measure_closedBall_ne_zero_ne_top μ x)
 
 /-- The essential exterior of the complement of a null-measurable set is its essential
 interior. -/
@@ -321,15 +325,8 @@ theorem ae_hasDensityAt_indicator (hs : NullMeasurableSet s μ) :
 
 /-- **Lebesgue's density theorem.** A null-measurable set agrees almost everywhere with its
 essential interior. -/
-theorem essentialInterior_ae_eq (hs : NullMeasurableSet s μ) : essentialInterior μ s =ᵐ[μ] s := by
-  refine eventuallyEqSet_iff.2 ?_
-  filter_upwards [ae_hasDensityAt_indicator hs] with x hx
-  rw [mem_essentialInterior]
-  by_cases hxs : x ∈ s
-  · simp only [indicator_of_mem hxs, Pi.one_apply] at hx
-    exact iff_of_true hx hxs
-  · simp only [indicator_of_notMem hxs] at hx
-    exact iff_of_false (fun h => zero_ne_one (hx.unique h)) hxs
+theorem essentialInterior_ae_eq (hs : NullMeasurableSet s μ) : essentialInterior μ s =ᵐ[μ] s :=
+  hs.ae_eq_setOf_tendsto_measure_inter_div.symm
 
 /-- **Lebesgue's density theorem.** The essential exterior of a null-measurable set agrees almost
 everywhere with its complement. -/
