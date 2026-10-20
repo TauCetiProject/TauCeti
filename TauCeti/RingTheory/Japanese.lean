@@ -42,7 +42,7 @@ in characteristic zero, there are none, and the two notions agree for Noetherian
   of a number field) is Japanese.
 * `TauCeti.Ring.IsJapanese.of_finite`: a domain that is a finite extension of a Japanese domain
   is Japanese (Stacks, Lemma 10.161.5 (032I), finite case); in particular being Japanese is
-  invariant under ring isomorphisms (`TauCeti.Ring.IsJapanese.of_ringEquiv`).
+  invariant under ring isomorphisms (`RingEquiv.isJapanese`).
 * `TauCeti.Ring.isJapanese_iff_isN1`: a Noetherian domain with perfect fraction field is Japanese
   if and only if it is N-1 (Stacks, Lemma 10.161.11 (032M), in characteristic zero).
 
@@ -204,8 +204,8 @@ theorem of_finite (S : Type v) [CommRing S] [IsDomain S] [Algebra R S] [Faithful
   exact .of_restrictScalars_finite R S _
 
 /-- Being Japanese is invariant under ring isomorphisms. -/
-theorem of_ringEquiv {S : Type v} [CommRing S] [IsDomain S] [IsJapanese R] (e : R ≃+* S) :
-    IsJapanese S :=
+theorem _root_.RingEquiv.isJapanese {S : Type v} [CommRing S] [IsDomain S] [IsJapanese R]
+    (e : R ≃+* S) : IsJapanese S :=
   let : Algebra R S := e.toRingHom.toAlgebra
   have : FaithfulSMul R S := (faithfulSMul_iff_algebraMap_injective R S).mpr e.injective
   have : Module.Finite R S := RingHom.Finite.of_surjective _ e.surjective

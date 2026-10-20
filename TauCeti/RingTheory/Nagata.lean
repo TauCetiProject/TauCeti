@@ -79,14 +79,15 @@ instance quotient [IsNagata R] (I : Ideal R) : IsNagata (R ⧸ I) :=
   of_finite R (R ⧸ I)
 
 /-- Being Nagata is invariant under ring isomorphisms. -/
-theorem of_ringEquiv {S : Type v} [CommRing S] [IsNagata R] (e : R ≃+* S) : IsNagata S :=
+theorem _root_.RingEquiv.isNagata {S : Type v} [CommRing S] [IsNagata R] (e : R ≃+* S) :
+    IsNagata S :=
   let : Algebra R S := e.toRingHom.toAlgebra
   have : Module.Finite R S := RingHom.Finite.of_surjective _ e.surjective
   of_finite R S
 
 /-- A Nagata domain is Japanese. -/
 instance (priority := 100) isJapanese [IsDomain R] [IsNagata R] : IsJapanese R :=
-  .of_ringEquiv (RingEquiv.quotientBot R)
+  (RingEquiv.quotientBot R).isJapanese
 
 /-- A Noetherian ring of Krull dimension zero, for instance an Artinian ring or the zero ring, is
 Nagata. -/
@@ -106,7 +107,7 @@ theorem of_isJapanese [IsDomain R] [IsNoetherianRing R] [Ring.KrullDimLE 1 R] [I
   -- The quotient by the zero ideal is `R` itself, and the quotients by nonzero primes are fields.
   isJapanese_quotient p _ := by
     rcases eq_or_ne p ⊥ with rfl | hp
-    · exact .of_ringEquiv (RingEquiv.quotientBot R).symm
+    · exact (RingEquiv.quotientBot R).symm.isJapanese
     · have := Ideal.IsPrime.isMaximal_of_ne_bot ‹_› hp
       let : Field (R ⧸ p) := Ideal.Quotient.field p
       infer_instance
