@@ -56,7 +56,7 @@ are.
   frontier statement `TauCeti.isJordanCurve_frontier_of_convex` that generalises the circle.
 * `TauCeti.isJordanDomain_ball` — its special case at a disc of positive radius, the basic example
   and the one Carathéodory's theorem compares every other Jordan domain to.
-* `TauCeti.IsJordanCurve.isJordanDomain_filledHull_sdiff` — the inside of a Jordan curve is a
+* `TauCeti.IsJordanCurve.isJordanDomain_filledHull_sdiff`: the inside of a Jordan curve is a
   Jordan domain.
 * `TauCeti.IsJordanDomain.isSimplyConnected` — a Jordan domain is simply connected, its frontier
   being connected; so it satisfies the hypotheses of the Riemann mapping theorem.

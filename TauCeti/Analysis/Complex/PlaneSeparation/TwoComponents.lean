@@ -29,16 +29,16 @@ with the unbounded one, would give three path components in the sphere.
 
 ## Main results
 
-* `TauCeti.IsJordanCurve.mem_connectedComponentIn_of_mem_filledHull_sdiff` — two points inside a
+* `TauCeti.IsJordanCurve.mem_connectedComponentIn_of_mem_filledHull_sdiff`: two points inside a
   Jordan curve lie in the same complementary component.
-* `TauCeti.IsJordanCurve.filledHull_sdiff_eq_connectedComponentIn` — the inside of a Jordan curve is
+* `TauCeti.IsJordanCurve.filledHull_sdiff_eq_connectedComponentIn`: the inside of a Jordan curve is
   the complementary component of any of its points.
-* `TauCeti.IsJordanCurve.isConnected_filledHull_sdiff` — the inside is connected. The outside is
+* `TauCeti.IsJordanCurve.isConnected_filledHull_sdiff`: the inside is connected. The outside is
   connected for any bounded set, by `TauCeti.isConnected_compl_filledHull`.
-* `TauCeti.IsJordanCurve.frontier_filledHull_sdiff` — the frontier of the inside is the curve.
-* `TauCeti.IsJordanCurve.connectedComponentIn_eq_filledHull_sdiff_or_compl` — every complementary
+* `TauCeti.IsJordanCurve.frontier_filledHull_sdiff`: the frontier of the inside is the curve.
+* `TauCeti.IsJordanCurve.connectedComponentIn_eq_filledHull_sdiff_or_compl`: every complementary
   component is the inside or the outside.
-* `TauCeti.IsJordanCurve.natCard_connectedComponents_compl_eq_two` — **the Jordan curve
+* `TauCeti.IsJordanCurve.natCard_connectedComponents_compl_eq_two`: **the Jordan curve
   theorem**: the complement of a Jordan curve has exactly two connected components.
 
 ## References

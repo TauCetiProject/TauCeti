@@ -56,8 +56,8 @@ regularity assumptions on `K`. The related frontier bound in
 * `TauCeti.mem_filledHull_or_mem_filledHull_of_notMem_connectedComponentIn` — of two points in
   different complementary components, at least one lies in the filled hull, in dimension at
   least two.
-* `TauCeti.compl_filledHull_eq_connectedComponentIn` and `TauCeti.isConnected_compl_filledHull`
-  — outside its filled hull, the complement of a bounded set is a single component, in dimension at
+* `TauCeti.compl_filledHull_eq_connectedComponentIn` and `TauCeti.isConnected_compl_filledHull`:
+  outside its filled hull, the complement of a bounded set is a single component, in dimension at
   least two.
 -/
 
