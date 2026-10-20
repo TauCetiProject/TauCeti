@@ -22,7 +22,8 @@ structure: `φ_X` is the right mate of the comparison `Xᘁ ≅ ᘁX`.
 The same observation shows that a pivotal structure needs only right duals to make sense. If `C`
 is merely right rigid, an isomorphism `X ≅ Xᘁᘁ` for every `X` makes `Xᘁ` a left dual of `X`, so `C`
 is rigid; when the isomorphisms form a monoidal natural isomorphism `𝟭 C ≅ doubleRightDualFunctor C`
-they are a pivotal structure for that rigid structure, whose left duals are the right duals.
+they are a pivotal structure for that rigid structure (`TauCeti.pivotalCategoryOfRightRigid`),
+whose left duals are the right duals, and the comparison `ᘁX ≅ Xᘁ` for it is the identity.
 
 ## Main declarations
 
@@ -34,11 +35,9 @@ they are a pivotal structure for that rigid structure, whose left duals are the 
   `TauCeti.leftDualIsoRightDual_tensor_inv`;
 * `TauCeti.dualFunctorIso`: the natural isomorphism `leftDualFunctor C ≅ rightDualFunctor C`,
   monoidal by `TauCeti.dualFunctorIso_isMonoidal`;
-* `TauCeti.pivotalCategoryOfRightRigid`: a monoidal trivialization of the double right dual
-  functor of a right rigid category is a pivotal structure for the rigid structure
-  `TauCeti.rigidCategoryOfIsoDoubleRightDual` whose left duals are the right duals, for which
-  `TauCeti.leftDualIsoRightDual_pivotalCategoryOfRightRigid` identifies left and right duals by
-  the identity.
+* `TauCeti.leftDualIsoRightDual_pivotalCategoryOfRightRigid`: for the pivotal structure
+  `TauCeti.pivotalCategoryOfRightRigid` built from a monoidal trivialization of the double right
+  dual functor of a right rigid category, left and right duals are identified by the identity.
 
 ## References
 
@@ -211,24 +210,6 @@ end Pivotal
 section RightRigid
 
 variable [RightRigidCategory C]
-
-/-- A monoidal trivialization `φ : 𝟭 C ≅ doubleRightDualFunctor C` of the double right dual
-functor of a right rigid category is a pivotal structure, for the rigid structure whose left
-duals are the right duals, paired with `X` through `φ`. -/
-@[instance_reducible]
-noncomputable def pivotalCategoryOfRightRigid (φ : 𝟭 C ≅ doubleRightDualFunctor C)
-    [NatTrans.IsMonoidal φ.hom] :
-    @PivotalCategory C _ _ (rigidCategoryOfIsoDoubleRightDual φ.app) :=
-  @PivotalCategory.mk C _ _ (rigidCategoryOfIsoDoubleRightDual φ.app) φ ‹_›
-
-/-- The components of the pivotal structure built from a monoidal trivialization `φ` of the double
-right dual are the components of `φ`. -/
-theorem pivotalIsoApp_pivotalCategoryOfRightRigid (φ : 𝟭 C ≅ doubleRightDualFunctor C)
-    [NatTrans.IsMonoidal φ.hom] (X : C) :
-    @pivotalIsoApp C _ _ (rigidCategoryOfIsoDoubleRightDual φ.app)
-      (pivotalCategoryOfRightRigid φ) X = φ.app X :=
-  Iso.ext (@pivotalIso_hom_app C _ _ (rigidCategoryOfIsoDoubleRightDual φ.app)
-    (pivotalCategoryOfRightRigid φ) X).symm
 
 /-- For the pivotal structure built from a monoidal trivialization of the double right dual, the
 left duals are the right duals, and `leftDualIsoRightDual` is the identity. -/
