@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.MeanInequalities
-import Mathlib.Analysis.MeanInequalitiesPow
 
 /-!
 # Mean inequalities
@@ -41,7 +40,6 @@ same way, extending `ENNReal.inner_le_Lp_mul_Lq` and `NNReal.inner_le_Lp_mul_Lq_
 * `Real.prod_rpow_add_prod_rpow_le_prod_add_rpow`: the weighted geometric mean is superadditive.
 * `ENNReal.Lp_add_le_tsum`: Minkowski's inequality for unconditional sums in `ℝ≥0∞`.
 * `ENNReal.inner_le_Lp_mul_Lq_tsum`: Hölder's inequality for unconditional sums in `ℝ≥0∞`.
-* `ENNReal.add_sq_le`: `(a + b) ^ 2 ≤ 2 * (a ^ 2 + b ^ 2)` in `ℝ≥0∞`.
 
 ## References
 
@@ -104,13 +102,6 @@ theorem Lp_add_le_tsum {ι : Type*} (f g : ι → ℝ≥0∞) {p : ℝ} (hp : 1 
   refine iSup_le fun s ↦ ?_
   rw [← rpow_inv_le_iff hp0, ← one_div]
   grw [Lp_add_le s f g hp, ENNReal.sum_le_tsum s, ENNReal.sum_le_tsum (f := fun i ↦ g i ^ p) s]
-
-/-- `(a + b) ^ 2 ≤ 2 * (a ^ 2 + b ^ 2)` in `ℝ≥0∞`. The general `add_sq_le` does not apply, since
-`ℝ≥0∞` is not a strictly ordered semiring. -/
-protected theorem add_sq_le (a b : ℝ≥0∞) : (a + b) ^ 2 ≤ 2 * (a ^ 2 + b ^ 2) := by
-  have h := ENNReal.rpow_add_le_mul_rpow_add_rpow a b (p := 2) one_le_two
-  norm_num [ENNReal.rpow_two] at h
-  exact h
 
 /-- **Hölder's inequality** for unconditional sums in `ℝ≥0∞`: for conjugate exponents `p` and `q`,
 `∑' i, f i * g i ≤ (∑' i, f i ^ p) ^ (1 / p) * (∑' i, g i ^ q) ^ (1 / q)`.

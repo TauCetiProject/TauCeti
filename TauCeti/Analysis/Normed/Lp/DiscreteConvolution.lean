@@ -7,10 +7,12 @@ module
 
 public import Mathlib.Analysis.Normed.Lp.lpSpace
 public import Mathlib.Analysis.Normed.Operator.Bilinear
-public import Mathlib.Topology.Algebra.InfiniteSum.DiscreteConvolution
+public import TauCeti.Topology.Algebra.InfiniteSum.DiscreteConvolution
+import Mathlib.Analysis.MeanInequalitiesPow
 import TauCeti.Analysis.MeanInequalities
+import TauCeti.Analysis.Normed.Lp.WeightedSum
 import TauCeti.Analysis.PSeries
-import TauCeti.Topology.Algebra.InfiniteSum.DiscreteConvolution
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
 # Young's inequality and weighted `ℓ²` estimates for discrete convolution
@@ -31,8 +33,9 @@ hypotheses, and then transferred to real sums.
 * `DiscreteConvolution.addConvolutionExists_of_memℓp`: the convolution of a bounded family with a
   summable one exists.
 * `DiscreteConvolution.enorm_addConvolution_le`: `‖(f ⋆ g) x‖ₑ ≤ ‖L‖ₑ (‖f‖ₑ ⋆ ‖g‖ₑ) x`.
-* `DiscreteConvolution.tsum_addRingConvolution_sq_le`: **Young's inequality**
-  `‖f ⋆ g‖₂ ≤ ‖g‖₁ ‖f‖₂` for `ℝ≥0∞`-valued families, in squared form.
+* `DiscreteConvolution.tsum_addRingConvolution_sq_le` and
+  `DiscreteConvolution.tsum_addRingConvolution_sq_le'`: **Young's inequality**
+  `‖f ⋆ g‖₂ ≤ ‖g‖₁ ‖f‖₂` and `‖f ⋆ g‖₂ ≤ ‖f‖₁ ‖g‖₂` for `ℝ≥0∞`-valued families, in squared form.
 * `DiscreteConvolution.tsum_sq_mul_addRingConvolution_le`: the weighted (tame) estimate
   `‖ω (f ⋆ g)‖₂² ≤ 2 c² (‖g‖₁² ‖ω f‖₂² + ‖f‖₁² ‖ω g‖₂²)` for a weight with
   `ω (x + y) ≤ c (ω x + ω y)`.
@@ -56,61 +59,6 @@ hypotheses, and then transferred to real sums.
 public section
 
 open scoped ENNReal DiscreteConvolution
-
-private theorem rpow_one_div_two_mul_self (a : ℝ≥0∞) :
-    a ^ (1 / 2 : ℝ) * a ^ (1 / 2 : ℝ) = a := by
-  rw [← ENNReal.rpow_add_of_nonneg _ _ (by norm_num) (by norm_num)]
-  norm_num
-
-namespace TauCeti
-
-/-- The weight `(1 + ‖x‖) ^ s` is subadditive up to a constant: for `s ≥ 0`,
-`(1 + ‖x + y‖) ^ s ≤ 2 ^ s ((1 + ‖x‖) ^ s + (1 + ‖y‖) ^ s)`. -/
-theorem one_add_norm_add_rpow_le {E : Type*} [SeminormedAddGroup E] {s : ℝ} (hs : 0 ≤ s)
-    (x y : E) :
-    (1 + ‖x + y‖) ^ s ≤ 2 ^ s * ((1 + ‖x‖) ^ s + (1 + ‖y‖) ^ s) := by
-  have hx : 0 ≤ 1 + ‖x‖ := by positivity
-  have hy : 0 ≤ 1 + ‖y‖ := by positivity
-  calc (1 + ‖x + y‖) ^ s ≤ (2 * max (1 + ‖x‖) (1 + ‖y‖)) ^ s := by
-        gcongr
-        linarith [norm_add_le x y, le_max_left (1 + ‖x‖) (1 + ‖y‖),
-          le_max_right (1 + ‖x‖) (1 + ‖y‖)]
-    _ = 2 ^ s * max (1 + ‖x‖) (1 + ‖y‖) ^ s :=
-        Real.mul_rpow zero_le_two (hx.trans (le_max_left _ _))
-    _ ≤ 2 ^ s * ((1 + ‖x‖) ^ s + (1 + ‖y‖) ^ s) := by
-        gcongr
-        rcases le_total (1 + ‖x‖) (1 + ‖y‖) with h | h
-        · rw [max_eq_right h]
-          exact le_add_of_nonneg_left (Real.rpow_nonneg hx s)
-        · rw [max_eq_left h]
-          exact le_add_of_nonneg_right (Real.rpow_nonneg hy s)
-
-/-- **Weighted `ℓ²` bounds `ℓ¹`.** By the Cauchy–Schwarz inequality,
-`(∑' x, h x) ^ 2 ≤ (∑' x, (1 + ‖x‖) ^ (-2 s)) * ∑' x, ((1 + ‖x‖) ^ s * h x) ^ 2`
-for every family `h` in `ℝ≥0∞`. On `ℤ` the first factor is finite for `s > 1 / 2`
-(`TauCeti.summable_one_add_abs_int_rpow`). -/
-theorem sq_tsum_le_tsum_one_add_norm_rpow_mul {G : Type*} [SeminormedAddGroup G] (s : ℝ)
-    (h : G → ℝ≥0∞) :
-    (∑' x, h x) ^ 2 ≤ (∑' x : G, ENNReal.ofReal ((1 + ‖x‖) ^ (-2 * s))) *
-      ∑' x, (ENNReal.ofReal ((1 + ‖x‖) ^ s) * h x) ^ 2 := by
-  have hw (x : G) : 0 < 1 + ‖x‖ := by positivity
-  -- Write `h x = (1 + ‖x‖) ^ (-s) * ((1 + ‖x‖) ^ s * h x)` and apply Cauchy–Schwarz.
-  have hsplit (x : G) : h x =
-      ENNReal.ofReal ((1 + ‖x‖) ^ (-s)) * (ENNReal.ofReal ((1 + ‖x‖) ^ s) * h x) := by
-    rw [← mul_assoc, ← ENNReal.ofReal_mul (by positivity), ← Real.rpow_add (hw x),
-      neg_add_cancel, Real.rpow_zero, ENNReal.ofReal_one, one_mul]
-  have hsq (x : G) : ENNReal.ofReal ((1 + ‖x‖) ^ (-s)) ^ (2 : ℝ) =
-      ENNReal.ofReal ((1 + ‖x‖) ^ (-2 * s)) := by
-    rw [ENNReal.ofReal_rpow_of_nonneg (by positivity) zero_le_two, ← Real.rpow_mul (hw x).le,
-      mul_comm (-s), neg_mul, mul_neg]
-  have hCS := ENNReal.inner_le_Lp_mul_Lq_tsum (fun x ↦ ENNReal.ofReal ((1 + ‖x‖) ^ (-s)))
-    (fun x ↦ ENNReal.ofReal ((1 + ‖x‖) ^ s) * h x) Real.HolderConjugate.two_two
-  simp only [hsq, ENNReal.rpow_two, ← hsplit] at hCS
-  calc (∑' x, h x) ^ 2 ≤ ((∑' x, ENNReal.ofReal ((1 + ‖x‖) ^ (-2 * s))) ^ (1 / 2 : ℝ) *
-        (∑' x, (ENNReal.ofReal ((1 + ‖x‖) ^ s) * h x) ^ 2) ^ (1 / 2 : ℝ)) ^ 2 := by gcongr
-    _ = _ := by rw [mul_pow, sq, sq, rpow_one_div_two_mul_self, rpow_one_div_two_mul_self]
-
-end TauCeti
 
 namespace DiscreteConvolution
 
@@ -160,7 +108,9 @@ theorem tsum_addRingConvolution_sq_le [AddGroup G] (f g : G → ℝ≥0∞) :
     calc ∑' x, f (x - y) * f (x - z)
         ≤ (∑' x, f (x - y) ^ (2 : ℝ)) ^ (1 / 2 : ℝ) * (∑' x, f (x - z) ^ (2 : ℝ)) ^ (1 / 2 : ℝ) :=
           ENNReal.inner_le_Lp_mul_Lq_tsum _ _ Real.HolderConjugate.two_two
-      _ = ∑' x, f x ^ 2 := by rw [hshift, hshift, rpow_one_div_two_mul_self]
+      _ = ∑' x, f x ^ 2 := by
+          rw [hshift, hshift, ← sq, ← ENNReal.rpow_mul_natCast]
+          norm_num
   -- Expand the square and sum over `x` first.
   calc ∑' x, (f ⋆ᵣ₊ g) x ^ 2
       = ∑' y, ∑' z, g y * g z * ∑' x, f (x - y) * f (x - z) := by
@@ -175,10 +125,31 @@ theorem tsum_addRingConvolution_sq_le [AddGroup G] (f g : G → ℝ≥0∞) :
     _ = (∑' x, g x) ^ 2 * ∑' x, f x ^ 2 := by
         simp only [ENNReal.tsum_mul_right, ENNReal.tsum_mul_left, sq]
 
+/-- **Young's inequality** in the other orientation, `‖f ⋆ g‖₂ ≤ ‖f‖₁ ‖g‖₂`, for families in
+`ℝ≥0∞` on an additive group, in squared form. On a noncommutative group it does not follow from
+`tsum_addRingConvolution_sq_le` by commutativity; it is that inequality on the opposite group. -/
+theorem tsum_addRingConvolution_sq_le' [AddGroup G] (f g : G → ℝ≥0∞) :
+    ∑' x, (f ⋆ᵣ₊ g) x ^ 2 ≤ (∑' x, f x) ^ 2 * ∑' x, g x ^ 2 := by
+  -- Convolution on `G` is convolution in the opposite order on `Gᵃᵒᵖ`.
+  have hop (x : G) : (f ⋆ᵣ₊ g) x =
+      ((g ∘ AddOpposite.unop) ⋆ᵣ₊ (f ∘ AddOpposite.unop)) (AddOpposite.op x) := by
+    rw [addRingConvolution_eq_tsum_neg_add, addRingConvolution_eq_tsum_sub,
+      ← (AddOpposite.opEquiv (α := G)).tsum_eq]
+    exact tsum_congr fun y ↦ mul_comm _ _
+  calc ∑' x, (f ⋆ᵣ₊ g) x ^ 2
+      = ∑' x : Gᵃᵒᵖ, ((g ∘ AddOpposite.unop) ⋆ᵣ₊ (f ∘ AddOpposite.unop)) x ^ 2 := by
+        simp only [hop]
+        exact AddOpposite.opEquiv.tsum_eq fun x ↦
+          ((g ∘ AddOpposite.unop) ⋆ᵣ₊ (f ∘ AddOpposite.unop)) x ^ 2
+    _ ≤ _ := tsum_addRingConvolution_sq_le _ _
+    _ = (∑' x, f x) ^ 2 * ∑' x, g x ^ 2 := by
+        rw [← AddOpposite.opEquiv.symm.tsum_eq f, ← AddOpposite.opEquiv.symm.tsum_eq (g · ^ 2)]
+        simp only [AddOpposite.opEquiv_symm_apply, Function.comp_apply]
+
 /-- **The weighted (tame) convolution estimate.** If the weight `ω` satisfies
 `ω (x + y) ≤ c (ω x + ω y)`, then
 `‖ω (f ⋆ g)‖₂² ≤ 2 c² (‖g‖₁² ‖ω f‖₂² + ‖f‖₁² ‖ω g‖₂²)`. -/
-theorem tsum_sq_mul_addRingConvolution_le [AddCommGroup G] {ω : G → ℝ≥0∞} {c : ℝ≥0∞}
+theorem tsum_sq_mul_addRingConvolution_le [AddGroup G] {ω : G → ℝ≥0∞} {c : ℝ≥0∞}
     (hω : ∀ x y, ω (x + y) ≤ c * (ω x + ω y)) (f g : G → ℝ≥0∞) :
     ∑' x, (ω x * (f ⋆ᵣ₊ g) x) ^ 2 ≤
       2 * c ^ 2 * ((∑' x, g x) ^ 2 * (∑' x, (ω x * f x) ^ 2) +
@@ -192,19 +163,23 @@ theorem tsum_sq_mul_addRingConvolution_le [AddCommGroup G] {ω : G → ℝ≥0�
           gcongr
           simpa using hω (x - y) y
       _ = c * (ω (x - y) * f (x - y) * g y + f (x - y) * (ω y * g y)) := by ring
+  -- `(a + b) ^ 2 ≤ 2 (a ^ 2 + b ^ 2)`, the power mean inequality with exponent `2`.
+  have hsq (a b : ℝ≥0∞) : (a + b) ^ 2 ≤ 2 * (a ^ 2 + b ^ 2) := by
+    have h := ENNReal.rpow_add_le_mul_rpow_add_rpow a b one_le_two
+    norm_num [ENNReal.rpow_two] at h
+    exact h
   calc ∑' x, (ω x * (f ⋆ᵣ₊ g) x) ^ 2
       ≤ ∑' x, 2 * c ^ 2 * (((fun y ↦ ω y * f y) ⋆ᵣ₊ g) x ^ 2 +
           (f ⋆ᵣ₊ fun y ↦ ω y * g y) x ^ 2) := by
         refine ENNReal.tsum_le_tsum fun x ↦ ?_
-        grw [hpt x, mul_pow, ENNReal.add_sq_le]
+        grw [hpt x, mul_pow, hsq]
         exact le_of_eq (by ring)
     _ ≤ 2 * c ^ 2 * ((∑' x, g x) ^ 2 * (∑' x, (ω x * f x) ^ 2) +
           (∑' x, f x) ^ 2 * ∑' x, (ω x * g x) ^ 2) := by
         rw [ENNReal.tsum_mul_left, ENNReal.tsum_add]
         gcongr
         · exact tsum_addRingConvolution_sq_le _ _
-        · rw [addRingConvolution_comm]
-          exact tsum_addRingConvolution_sq_le _ _
+        · exact tsum_addRingConvolution_sq_le' _ _
 
 end ENNReal
 
@@ -230,7 +205,7 @@ map `L` satisfies, with the weights `(1 + ‖x‖) ^ s`,
 The sums are unconditional sums in `ℝ≥0∞`; the bound is finite when `s > 1 / 2` on `ℤ`
 (`TauCeti.summable_one_add_abs_int_rpow`). -/
 theorem tsum_sq_one_add_norm_rpow_mul_enorm_addConvolution_le {G : Type*}
-    [SeminormedAddCommGroup G] (L : E →L[𝕜] E' →L[𝕜] F) {s : ℝ} (hs : 0 ≤ s) (a : G → E)
+    [SeminormedAddGroup G] (L : E →L[𝕜] E' →L[𝕜] F) {s : ℝ} (hs : 0 ≤ s) (a : G → E)
     (b : G → E') :
     ∑' x, (ENNReal.ofReal ((1 + ‖x‖) ^ s) * ‖(a ⋆₊[L.toLinearMap₁₂] b) x‖ₑ) ^ 2 ≤
       ENNReal.ofReal (4 ^ (s + 1)) * ‖L‖ₑ ^ 2 *
@@ -274,13 +249,6 @@ theorem tsum_sq_one_add_norm_rpow_mul_enorm_addConvolution_le {G : Type*}
         · exact TauCeti.sq_tsum_le_tsum_one_add_norm_rpow_mul s α
     _ = _ := by simp only [hω_def, hα, hβ]; rw [← hc]; ring
 
-private theorem ofReal_sq_one_add_abs_rpow_mul_norm {X : Type*} [SeminormedAddGroup X] (s : ℝ)
-    (n : ℤ) (v : X) :
-    ENNReal.ofReal (((1 + |(n : ℝ)|) ^ s * ‖v‖) ^ 2) =
-      (ENNReal.ofReal ((1 + ‖n‖) ^ s) * ‖v‖ₑ) ^ 2 := by
-  rw [Int.norm_eq_abs, ENNReal.ofReal_pow (by positivity), ENNReal.ofReal_mul (by positivity),
-    ofReal_norm]
-
 /-- The weighted `ℓ²` algebra estimate on `ℤ`, as an inequality in `ℝ≥0∞` between real sums. -/
 private theorem ofReal_tsum_sq_one_add_abs_rpow_mul_norm_addConvolution_le
     (L : E →L[𝕜] E' →L[𝕜] F) {s : ℝ} (hs : 1 / 2 < s) {a : ℤ → E} {b : ℤ → E'}
@@ -297,7 +265,7 @@ private theorem ofReal_tsum_sq_one_add_abs_rpow_mul_norm_addConvolution_le
     ENNReal.ofReal_tsum_of_nonneg (fun _ ↦ by positivity) hK,
     ENNReal.ofReal_tsum_of_nonneg (fun _ ↦ by positivity) ha,
     ENNReal.ofReal_tsum_of_nonneg (fun _ ↦ by positivity) hb]
-  simp only [ofReal_sq_one_add_abs_rpow_mul_norm]
+  simp only [TauCeti.ofReal_sq_one_add_abs_rpow_mul_norm]
   simp only [← Int.norm_eq_abs]
   exact tsum_sq_one_add_norm_rpow_mul_enorm_addConvolution_le L (by linarith) a b
 
@@ -318,11 +286,11 @@ private theorem addConvolutionExists_of_summable_sq_one_add_abs_rpow_mul_norm [C
       ∑' n, h n ≠ ∞ := fun htop ↦ ENNReal.mul_ne_top hK hh <| top_le_iff.1 <| by
     simpa [htop] using TauCeti.sq_tsum_le_tsum_one_add_norm_rpow_mul s h
   have ha' : ∑' n, ‖a n‖ₑ ≠ ∞ := hl1 _ <| by
-    simp only [← ofReal_sq_one_add_abs_rpow_mul_norm]
+    simp only [← TauCeti.ofReal_sq_one_add_abs_rpow_mul_norm]
     rw [← ENNReal.ofReal_tsum_of_nonneg (fun _ ↦ by positivity) ha]
     exact ENNReal.ofReal_ne_top
   have hb' : ∑' n, ‖b n‖ₑ ≠ ∞ := hl1 _ <| by
-    simp only [← ofReal_sq_one_add_abs_rpow_mul_norm]
+    simp only [← TauCeti.ofReal_sq_one_add_abs_rpow_mul_norm]
     rw [← ENNReal.ofReal_tsum_of_nonneg (fun _ ↦ by positivity) hb]
     exact ENNReal.ofReal_ne_top
   intro x
