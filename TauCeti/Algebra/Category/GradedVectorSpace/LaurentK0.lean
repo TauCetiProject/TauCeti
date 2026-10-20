@@ -86,13 +86,16 @@ def finite : ObjectProperty (GradedVectorSpace k) :=
 variable {k} in
 /-- Characterization of `TauCeti.GradedVectorSpace.finite`, for importing modules, to which the
 body of the definition is not exposed. -/
+@[simp]
 theorem finite_iff (V : GradedVectorSpace k) :
     finite k V ↔ HasFiniteLaurentSupport k fun j ↦ (V j : Type u) :=
   Iff.rfl
 
+/-- Finiteness of a graded vector space is invariant under graded isomorphism. -/
 instance : (finite k).IsClosedUnderIsomorphisms where
   of_iso e hV := HasFiniteLaurentSupport.of_equiv hV fun j ↦ (Pi.isoApp e j).toLinearEquiv
 
+/-- The zero graded vector space is finite. -/
 instance : (finite k).ContainsZero where
   exists_zero := by
     let Z : GradedVectorSpace k := fun _ ↦ ModuleCat.of k PUnit
@@ -111,6 +114,7 @@ theorem isExtensionClosed_finite :
     exact HasFiniteLaurentSupport.of_exact h₁ h₃ (fun j ↦ (S.f j).hom) (fun j ↦ (S.g j).hom)
       fun j ↦ (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1 (hS' j).exact
 
+/-- Finite graded vector spaces are closed under binary products (direct sums). -/
 instance : (finite k).IsClosedUnderBinaryProducts :=
   (isExtensionClosed_finite k).isClosedUnderBinaryProducts
 
@@ -129,6 +133,8 @@ every finite graded vector space up to isomorphism. -/
 private def model (d : ℤ → ℕ) : GradedVectorSpace k :=
   fun j ↦ ModuleCat.of k (Fin (d j) → k)
 
+/-- Finite graded vector spaces are essentially small: up to isomorphism, each one is a
+family of coordinate spaces `Fin (dim Vⱼ) → k`, indexed by the dimensions of its pieces. -/
 instance : ObjectProperty.EssentiallySmall.{u} (finite k) where
   exists_small_le' := by
     refine ⟨.ofObj (model k), inferInstance, fun V hV ↦ ?_⟩
@@ -143,6 +149,7 @@ noncomputable def finiteExactStructure : GradedExactStructure (finite k).FullSub
     (by simpa using isExtensionClosed_finite k) (by simpa using finite_shift k)
 
 /-- The conflations of finite graded vector spaces are the short exact sequences. -/
+@[simp]
 theorem finiteExactStructure_conflation_iff (S : ShortComplex (finite k).FullSubcategory) :
     (finiteExactStructure k).Conflation S ↔ (S.map (finite k).ι).ShortExact := by
   rw [finiteExactStructure, GradedExactStructure.fullSubcategory_conflation_iff,
