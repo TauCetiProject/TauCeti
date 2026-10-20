@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Complex.RiemannSurface.PowerMap
 public import TauCeti.Combinatorics.PermutationTriple.IsoClass
 
 import TauCeti.AlgebraicTopology.ThricePuncturedSphere.RestrictOver
+import TauCeti.Geometry.Manifold.Complex.Analytic
 import TauCeti.GroupTheory.GroupAction.Free
 
 /-!

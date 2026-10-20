@@ -7,6 +7,8 @@ module
 
 public import TauCeti.QuantumGroups.UqSl2.Weights
 
+import TauCeti.Algebra.Ring.Int.Units
+
 import Mathlib.Tactic
 
 /-!
@@ -30,6 +32,7 @@ signed highest weight.
 
 * `TauCeti.UqSl2.casimir`: the Casimir element `Ω`.
 * `TauCeti.UqSl2.casimirScalar`: the scalar by which `Ω` acts on a highest-weight vector.
+* `TauCeti.UqSl2.casimirBlock`: the generalized eigenspace of `Ω` for a scalar, as a submodule.
 
 ## Main results
 
@@ -37,8 +40,11 @@ signed highest weight.
 * `TauCeti.UqSl2.casimir_smul_of_e_smul_eq_zero`: the action of `Ω` on a highest-weight vector.
 * `TauCeti.UqSl2.casimirScalar_eq_casimirScalar_iff`: two nonzero weights have the same Casimir
   scalar exactly when they are equal or related by `μ ↦ q⁻² μ⁻¹`.
+* `TauCeti.UqSl2.map_casimirBlock_le`: module maps send Casimir blocks into Casimir blocks.
 * `TauCeti.UqSl2.casimirScalar_units_mul_pow_inj`: at a generic parameter, the scalars of the
   signed highest weights `ε q^m` determine `m` and `ε`.
+* `TauCeti.UqSl2.iSup_casimirBlock_eq_top`: a finite-dimensional module is the sum of its
+  Casimir blocks.
 
 ## References
 
@@ -170,6 +176,55 @@ theorem casimir_smul_smul_of_e_smul_eq_zero (hv : v ∈ weightSpace q V μ) (he 
   rw [← mul_smul, ← (commute_casimir a).eq, mul_smul, casimir_smul_of_e_smul_eq_zero hv he,
     smul_comm]
 
+variable (q V) in
+/-- The Casimir block of `V` for a scalar `c`: the maximal generalized eigenspace of the action
+of the Casimir element for the eigenvalue `c`. It is a submodule since `Ω` is central. -/
+noncomputable def casimirBlock (c : ℂ) : Submodule (UqSl2 q) V where
+  toAddSubmonoid := ((Algebra.lsmul ℂ ℂ V (casimir q)).maxGenEigenspace c).toAddSubmonoid
+  smul_mem' a _ hv := Module.End.mapsTo_maxGenEigenspace_of_comm
+    ((commute_casimir a).symm.map (Algebra.lsmul ℂ ℂ V)) c hv
+
+/-- As a complex subspace, the Casimir block for `c` is the native maximal generalized
+eigenspace of the action of the Casimir element. -/
+theorem restrictScalars_casimirBlock (c : ℂ) :
+    (casimirBlock q V c).restrictScalars ℂ = (Algebra.lsmul ℂ ℂ V (casimir q)).maxGenEigenspace c :=
+  (rfl)
+
+/-- A vector lies in the Casimir block for `c` exactly when some power of `Ω - c` kills it. -/
+@[simp]
+theorem mem_casimirBlock_iff {c : ℂ} :
+    v ∈ casimirBlock q V c ↔ ∃ n : ℕ, (casimir q - algebraMap ℂ (UqSl2 q) c) ^ n • v = 0 := by
+  rw [← Submodule.restrictScalars_mem ℂ, restrictScalars_casimirBlock,
+    Module.End.mem_maxGenEigenspace, ← Algebra.algebraMap_eq_smul_one,
+    ← AlgHom.commutes (Algebra.lsmul ℂ ℂ V (A := UqSl2 q))]
+  simp only [← map_sub, ← map_pow, Algebra.lsmul_coe]
+
+/-- A module map sends the Casimir block for `c` into the Casimir block for `c`. -/
+theorem map_casimirBlock_le {W : Type*} [AddCommGroup W] [Module ℂ W] [Module (UqSl2 q) W]
+    [IsScalarTower ℂ (UqSl2 q) W] (φ : V →ₗ[UqSl2 q] W) (c : ℂ) :
+    (casimirBlock q V c).map φ ≤ casimirBlock q W c := by
+  rintro _ ⟨v, hv, rfl⟩
+  obtain ⟨n, hn⟩ := mem_casimirBlock_iff.mp hv
+  exact mem_casimirBlock_iff.mpr ⟨n, by rw [← map_smul, hn, map_zero]⟩
+
+/-- The Casimir block for `c`, viewed as a module itself, is its own Casimir block for `c`. -/
+theorem casimirBlock_casimirBlock_eq_top (c : ℂ) :
+    casimirBlock q (casimirBlock q V c) c = ⊤ := by
+  refine Submodule.eq_top_iff'.mpr fun v => ?_
+  obtain ⟨n, hn⟩ := mem_casimirBlock_iff.mp v.2
+  exact mem_casimirBlock_iff.mpr ⟨n, Subtype.ext hn⟩
+
+/-- Casimir blocks for distinct scalars are independent. -/
+theorem iSupIndep_casimirBlock : iSupIndep (casimirBlock q V) := fun c => by
+  rw [← Submodule.disjoint_restrictScalars_iff ℂ]
+  simpa only [Submodule.restrictScalars_iSup, restrictScalars_casimirBlock] using
+    Module.End.independent_maxGenEigenspace (Algebra.lsmul ℂ ℂ V (casimir q)) c
+
+/-- A finite-dimensional module is the sum of its Casimir blocks. -/
+theorem iSup_casimirBlock_eq_top [FiniteDimensional ℂ V] : ⨆ c, casimirBlock q V c = ⊤ := by
+  rw [← Submodule.restrictScalars_eq_top_iff ℂ, Submodule.restrictScalars_iSup]
+  simpa only [restrictScalars_casimirBlock] using Module.End.iSup_maxGenEigenspace_eq_top _
+
 end Module
 
 /-- The Casimir scalar of the signed highest weight `ε q^m` is
@@ -202,8 +257,6 @@ theorem casimirScalar_units_mul_pow_inj (hq : IsGenericQuantumParameter q) {m n 
     {ε δ : ℤˣ} :
     casimirScalar q (ε * q ^ m) = casimirScalar q (δ * q ^ n) ↔ m = n ∧ ε = δ := by
   refine ⟨fun h => ?_, by rintro ⟨rfl, rfl⟩; rfl⟩
-  have hunit (η : ℤˣ) : ((η : ℤ) : ℂ) ^ 2 = 1 := by
-    rcases Int.units_eq_one_or η with rfl | rfl <;> norm_num
   have hne (η : ℤˣ) (r : ℕ) : (η : ℂ) * q ^ r ≠ 0 :=
     mul_ne_zero (by rcases Int.units_eq_one_or η with rfl | rfl <;> norm_num)
       (pow_ne_zero _ hq.ne_zero)
@@ -213,7 +266,7 @@ theorem casimirScalar_units_mul_pow_inj (hq : IsGenericQuantumParameter q) {m n 
     have hmn : m = n := by
       have h2 : q ^ (2 * m) = q ^ (2 * n) := by
         have := congrArg (· ^ 2) h
-        simp only [mul_pow, hunit, one_mul, ← pow_mul, mul_comm _ 2] at this
+        simp only [mul_pow, Int.cast_units_sq, one_mul, ← pow_mul, mul_comm _ 2] at this
         exact this
       have := hq.pow_injective h2
       omega
@@ -224,7 +277,7 @@ theorem casimirScalar_units_mul_pow_inj (hq : IsGenericQuantumParameter q) {m n 
   · -- Otherwise `q^(2 (m + n + 2)) = (ε δ)² = 1`, which a generic parameter forbids.
     refine (hq.pow_ne_one (n := 2 * (m + n + 2)) (by omega) ?_).elim
     have := congrArg (· ^ 2) h
-    simp only [mul_pow, hunit, one_pow, one_mul] at this
+    simp only [mul_pow, Int.cast_units_sq, one_pow, one_mul] at this
     rw [← this]
     ring
 

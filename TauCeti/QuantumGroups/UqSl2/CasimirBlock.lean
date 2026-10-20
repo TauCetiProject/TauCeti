@@ -6,17 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.QuantumGroups.UqSl2.Casimir
-public import TauCeti.QuantumGroups.UqSl2.HighestWeight
+public import TauCeti.QuantumGroups.UqSl2.CompleteReducibility
 
+import TauCeti.Algebra.Ring.Int.Units
 import Mathlib.Tactic
 
 /-!
 # Casimir blocks of `U_q(sl₂)`-modules
 
-The Casimir block of a `UqSl2 q`-module `V` for a scalar `c` is the maximal generalized
-eigenspace of the action of the Casimir element `Ω` with eigenvalue `c`. Since `Ω` is central,
-each block is a `UqSl2 q`-submodule. The blocks are independent, and a finite-dimensional module
-is their sum.
+The Casimir block `TauCeti.UqSl2.casimirBlock` of a `UqSl2 q`-module `V` for a scalar `c` is
+the maximal generalized eigenspace of the action of the Casimir element `Ω` with eigenvalue `c`.
+This file locates the blocks of a finite-dimensional module and their weights.
 
 At a generic parameter, a finite-dimensional module has nonzero blocks only for the Casimir
 scalars of the signed highest weights `ε q^m`, so it is the sum of the blocks for these scalars.
@@ -24,18 +24,12 @@ Inside the block for `ε q^m` every highest-weight vector has weight `ε q^m` an
 lowest-weight vector has weight `ε q^(-m)`. Consequently every generalized weight of the block
 is `q^(-2j) ε q^m` for some `0 ≤ j ≤ m`, exactly the weights of the ladder module `L_m^ε`.
 On the top generalized weight space `W` of the block, for the weight `ε q^m`, the generator `E`
-and the power `F^(m+1)` act by zero while `F^m` is injective; commuting `E` past `F^(m+1)` then
-shows that `K` acts on `W` by the scalar `ε q^m`. These are the first steps of the
-complete-reducibility argument for finite-dimensional modules, which splits a module into its
-Casimir blocks and then decomposes each block into the lowering strings of `W`.
-
-## Main definitions
-
-* `TauCeti.UqSl2.casimirBlock`: the Casimir block of a module for a scalar `c`.
+and the power `F^(m+1)` act by zero while `F^m` is injective, and `K` acts on `W` by the scalar
+`ε q^m`. The last two facts follow by applying the results of
+`TauCeti.QuantumGroups.UqSl2.CompleteReducibility` to the block viewed as a module itself.
 
 ## Main results
 
-* `TauCeti.UqSl2.iSupIndep_casimirBlock`: the Casimir blocks are independent.
 * `TauCeti.UqSl2.iSup_casimirBlock_casimirScalar_eq_top`: a finite-dimensional module at a
   generic parameter is the sum of the blocks for the signed highest weights `ε q^m`.
 * `TauCeti.UqSl2.exists_eq_of_mem_genWeightSpace_of_mem_casimirBlock`: every generalized weight
@@ -60,50 +54,9 @@ namespace TauCeti.UqSl2
 variable {q : ℂ} {V : Type*} [AddCommGroup V] [Module ℂ V]
   [Module (UqSl2 q) V] [IsScalarTower ℂ (UqSl2 q) V]
 
-/-- The square of a sign is one. -/
-private theorem sign_sq (ε : ℤˣ) : ((ε : ℤ) : ℂ) ^ 2 = 1 := by
-  rw [← Int.cast_pow, ← Units.val_pow_eq_pow_val, Int.units_sq, Units.val_one, Int.cast_one]
-
 /-- A signed power of a nonzero parameter is nonzero. -/
 private theorem sign_mul_pow_ne_zero (hq : q ≠ 0) (ε : ℤˣ) (m : ℕ) : (ε : ℂ) * q ^ m ≠ 0 :=
   mul_ne_zero (Int.cast_ne_zero.mpr ε.ne_zero) (pow_ne_zero _ hq)
-
-/-- The Casimir block of `V` for the scalar `c`: the maximal generalized eigenspace of the action
-of the Casimir element with eigenvalue `c`. It is a `UqSl2 q`-submodule because the Casimir
-element is central. -/
-noncomputable def casimirBlock (q : ℂ) (V : Type*) [AddCommGroup V] [Module ℂ V]
-    [Module (UqSl2 q) V] [IsScalarTower ℂ (UqSl2 q) V] (c : ℂ) : Submodule (UqSl2 q) V where
-  __ := (Algebra.lsmul ℂ ℂ V (casimir q)).maxGenEigenspace c
-  smul_mem' a _ hv := Module.End.mapsTo_maxGenEigenspace_of_comm
-    ((commute_casimir a).symm.map (Algebra.lsmul ℂ ℂ V)) c hv
-
-/-- As a complex subspace, the Casimir block is the native maximal generalized eigenspace of the
-action of the Casimir element. -/
-theorem restrictScalars_casimirBlock (c : ℂ) :
-    (casimirBlock q V c).restrictScalars ℂ =
-      (Algebra.lsmul ℂ ℂ V (casimir q)).maxGenEigenspace c := (rfl)
-
-/-- Membership in a Casimir block means that some power of `Ω - c` kills the vector. -/
-@[simp]
-theorem mem_casimirBlock_iff {c : ℂ} {v : V} :
-    v ∈ casimirBlock q V c ↔ ∃ n : ℕ, (casimir q - algebraMap ℂ (UqSl2 q) c) ^ n • v = 0 := by
-  rw [← Submodule.restrictScalars_mem ℂ, restrictScalars_casimirBlock,
-    Module.End.mem_maxGenEigenspace, ← Algebra.algebraMap_eq_smul_one,
-    ← AlgHom.commutes (Algebra.lsmul ℂ ℂ V (A := UqSl2 q))]
-  simp only [← map_sub, ← map_pow, Algebra.lsmul_coe]
-
-/-- The Casimir blocks for distinct scalars are independent. -/
-theorem iSupIndep_casimirBlock : iSupIndep (casimirBlock q V) := fun c => by
-  rw [disjoint_iff, ← Submodule.restrictScalars_eq_bot_iff ℂ, Submodule.restrictScalars_inf,
-    Submodule.restrictScalars_iSup]
-  simp only [Submodule.restrictScalars_iSup, restrictScalars_casimirBlock]
-  exact (Module.End.independent_maxGenEigenspace _ c).eq_bot
-
-/-- A finite-dimensional module is the sum of its Casimir blocks. -/
-theorem iSup_casimirBlock_eq_top [FiniteDimensional ℂ V] : ⨆ c, casimirBlock q V c = ⊤ := by
-  rw [← Submodule.restrictScalars_eq_top_iff ℂ, Submodule.restrictScalars_iSup]
-  simp only [restrictScalars_casimirBlock]
-  exact Module.End.iSup_maxGenEigenspace_eq_top _
 
 /-! ### The Casimir scalar on highest- and lowest-weight vectors of a block -/
 
@@ -128,61 +81,6 @@ theorem casimirScalar_inv_eq_of_mem_casimirBlock {μ c : ℂ} {v : V} (hv : v �
     (hf : f q • v = 0) (hb : v ∈ casimirBlock q V c) (hv0 : v ≠ 0) :
     casimirScalar q μ⁻¹ = c :=
   eq_of_casimir_smul_of_mem_casimirBlock (casimir_smul_of_f_smul_eq_zero hv hf) hb hv0
-
-/-! ### Commutator consequences on weight vectors -/
-
-/-- A generalized weight vector of weight `μ` on which `K²` acts by a scalar `c ≠ μ²`
-vanishes. -/
-private theorem eq_zero_of_k_sq_smul_eq {μ c : ℂ} {w : V} (hw : w ∈ genWeightSpace q V μ)
-    (hc : k q ^ 2 • w = c • w) (hne : c ≠ μ ^ 2) : w = 0 := by
-  by_contra hw0
-  obtain ⟨r, hr0, hrw⟩ := exists_pow_smul_mem_weightSpace hw hw0
-  set u := (k q - algebraMap ℂ (UqSl2 q) μ) ^ r • w
-  have hcomm : Commute (k q ^ 2) ((k q - algebraMap ℂ (UqSl2 q) μ) ^ r) :=
-    ((Commute.refl (k q)).sub_right (Algebra.commute_algebraMap_right μ (k q))).pow_pow 2 r
-  have h1 : k q ^ 2 • u = c • u := by
-    rw [← mul_smul, hcomm.eq, mul_smul, hc, smul_comm]
-  have h2 : k q ^ 2 • u = μ ^ 2 • u := by
-    rw [pow_two, mul_smul, mem_weightSpace_iff.mp hrw, smul_comm (k q) μ,
-      mem_weightSpace_iff.mp hrw, smul_smul, ← pow_two]
-  have h3 : (c - μ ^ 2) • u = 0 := by rw [sub_smul, ← h1, ← h2, sub_self]
-  exact hr0 ((smul_eq_zero.mp h3).resolve_left (sub_ne_zero.mpr hne))
-
-/-- The element `q^(-r) K - q^r K⁻¹` commutes with `K`, so it preserves generalized weight
-spaces. -/
-private theorem k_sub_kInv_smul_mem_genWeightSpace (r : ℕ) {μ : ℂ} {w : V}
-    (hw : w ∈ genWeightSpace q V μ) :
-    (q⁻¹ ^ r • k q - q ^ r • kInv q) • w ∈ genWeightSpace q V μ := by
-  have h : k q * (q⁻¹ ^ r • k q - q ^ r • kInv q) =
-      (1 : ℂ) • ((q⁻¹ ^ r • k q - q ^ r • kInv q) * k q) := by
-    rw [one_smul, mul_sub, sub_mul, mul_smul_comm, smul_mul_assoc, mul_smul_comm, smul_mul_assoc,
-      k_mul_kInv, kInv_mul_k]
-  simpa using smul_mem_genWeightSpace_of_k_mul h hw
-
-/-- If `E` and `F^(r+1)` kill `w`, then `F^r` kills `(q^(-r) K - q^r K⁻¹) w`: this is the
-commutator formula for `E F^(r+1)` applied to `w`. -/
-private theorem f_pow_smul_k_sub_kInv_smul_eq_zero (hq : IsGenericQuantumParameter q) {r : ℕ}
-    {w : V} (he : e q • w = 0) (hf : f q ^ (r + 1) • w = 0) :
-    f q ^ r • (q⁻¹ ^ r • k q - q ^ r • kInv q) • w = 0 := by
-  have h := congrArg (· • w) (e_mul_f_pow hq.sub_inv_ne_zero (r + 1))
-  simp only [mul_smul, hf, he, smul_zero, add_smul, zero_add, Nat.add_sub_cancel,
-    smul_assoc] at h
-  have hc : quantumInteger q ((r + 1 : ℕ) : ℤ) * (q - q⁻¹)⁻¹ ≠ 0 :=
-    mul_ne_zero (quantumInteger_ne_zero hq (by omega)) (inv_ne_zero hq.sub_inv_ne_zero)
-  rw [smul_smul] at h
-  exact (smul_eq_zero.mp h.symm).resolve_left hc
-
-/-- If `q^(-r) K - q^r K⁻¹` kills `w`, then `K²` acts on `w` by `q^(2r)`. -/
-private theorem k_sq_smul_eq_of_k_sub_kInv_smul_eq_zero (hq : q ≠ 0) {r : ℕ} {w : V}
-    (h : (q⁻¹ ^ r • k q - q ^ r • kInv q) • w = 0) : k q ^ 2 • w = q ^ (2 * r) • w := by
-  have hX : (q ^ r • k q) * (q⁻¹ ^ r • k q - q ^ r • kInv q) = k q ^ 2 - q ^ (2 * r) • 1 := by
-    rw [mul_sub, smul_mul_smul_comm, smul_mul_smul_comm, k_mul_kInv, pow_two (k q)]
-    match_scalars
-    · rw [← mul_pow, mul_inv_cancel₀ hq, one_pow]
-    · ring
-  have h' := congrArg ((q ^ r • k q) • ·) h
-  rw [smul_zero, ← mul_smul, hX, sub_smul, smul_assoc, one_smul] at h'
-  exact sub_eq_zero.mp h'
 
 /-! ### The nonzero blocks of a finite-dimensional module -/
 
@@ -257,7 +155,7 @@ theorem exists_eq_of_mem_genWeightSpace_of_mem_casimirBlock (hq : IsGenericQuant
   have hlow := casimirScalar_inv_eq_of_mem_casimirBlock hbw hfb
     ((casimirBlock q V _).smul_mem b hb) hb0
   set s : ℂ := ((ε' : ℤ) : ℂ)
-  have hs : s ^ 2 = 1 := sign_sq ε'
+  have hs : s ^ 2 = 1 := Int.cast_units_sq ε'
   have hs0 : s ≠ 0 := Int.cast_ne_zero.mpr ε'.ne_zero
   have hsi : s * s⁻¹ = 1 := mul_inv_cancel₀ hs0
   have hqq (N : ℕ) : (q * q⁻¹) ^ N = 1 := by rw [mul_inv_cancel₀ hq0, one_pow]
@@ -304,33 +202,28 @@ theorem f_pow_smul_eq_zero_of_mem_casimirBlock (hq : IsGenericQuantumParameter q
 
 /-! ### The top weight space of a block -/
 
-/-- At a generic parameter, `F^r` with `r ≤ m` is injective on the top generalized weight space
-`ε q^m` of the Casimir block for `ε q^m` of a finite-dimensional module. -/
-private theorem eq_zero_of_f_pow_smul_eq_zero (hq : IsGenericQuantumParameter q) {m : ℕ}
-    {ε : ℤˣ} {r : ℕ} (hr : r ≤ m) {w : V} (hw : w ∈ genWeightSpace q V (ε * q ^ m))
-    (hb : w ∈ casimirBlock q V (casimirScalar q (ε * q ^ m))) (h : f q ^ r • w = 0) :
-    w = 0 := by
-  induction r generalizing w with
-  | zero => simpa using h
-  | succ r ih =>
-    -- The commutator sends `w` into the kernel of `F^r`, where the induction hypothesis
-    -- applies; on the top weight space this forces `K² = q^(2r)`, contradicting `r < m`.
-    have hX := ih (by omega) (k_sub_kInv_smul_mem_genWeightSpace r hw)
-      ((casimirBlock q V _).smul_mem _ hb)
-      (f_pow_smul_k_sub_kInv_smul_eq_zero hq (e_smul_eq_zero_of_mem_casimirBlock hq hw hb) h)
-    refine eq_zero_of_k_sq_smul_eq hw (k_sq_smul_eq_of_k_sub_kInv_smul_eq_zero hq.ne_zero hX) ?_
-    rw [mul_pow, sign_sq, one_mul, ← pow_mul, mul_comm m 2]
-    intro h2
-    have := hq.pow_injective h2
-    omega
+/-- A vector of a submodule lies in one of its generalized weight spaces exactly when it lies in
+the corresponding generalized weight space of the ambient module. -/
+private theorem mem_genWeightSpace_submodule_iff {U : Submodule (UqSl2 q) V} {μ : ℂ} {w : U} :
+    w ∈ genWeightSpace q U μ ↔ (w : V) ∈ genWeightSpace q V μ := by
+  simp only [mem_genWeightSpace_iff, ← Submodule.coe_eq_zero, Submodule.coe_smul]
+
+/-- At a generic parameter, `E` kills the top generalized weight space `ε q^m` of the Casimir
+block for `ε q^m`, viewed as a module itself. -/
+private theorem forall_e_smul_eq_zero_casimirBlock (hq : IsGenericQuantumParameter q) {m : ℕ}
+    {ε : ℤˣ} (w : casimirBlock q V (casimirScalar q (ε * q ^ m)))
+    (hw : w ∈ genWeightSpace q _ (ε * q ^ m)) : e q • w = 0 :=
+  Subtype.ext (e_smul_eq_zero_of_mem_casimirBlock hq (mem_genWeightSpace_submodule_iff.mp hw) w.2)
 
 /-- At a generic parameter, `F^m` is injective on the top generalized weight space `ε q^m` of
 the Casimir block for `ε q^m` of a finite-dimensional module. -/
 theorem f_pow_smul_ne_zero_of_mem_casimirBlock (hq : IsGenericQuantumParameter q) {m : ℕ}
     {ε : ℤˣ} {w : V} (hw : w ∈ genWeightSpace q V (ε * q ^ m))
     (hb : w ∈ casimirBlock q V (casimirScalar q (ε * q ^ m))) (hw0 : w ≠ 0) :
-    f q ^ m • w ≠ 0 :=
-  fun h => hw0 (eq_zero_of_f_pow_smul_eq_zero hq le_rfl hw hb h)
+    f q ^ m • w ≠ 0 := fun h =>
+  hw0 (congrArg Subtype.val (eq_zero_of_f_pow_smul_eq_zero hq
+    (forall_e_smul_eq_zero_casimirBlock hq) le_rfl
+    (mem_genWeightSpace_submodule_iff.mpr (w := ⟨w, hb⟩) hw) (Subtype.ext h)))
 
 /-- At a generic parameter, `K` acts by the scalar `ε q^m` on the top generalized weight space
 `ε q^m` of the Casimir block for `ε q^m` of a finite-dimensional module: these generalized
@@ -339,28 +232,12 @@ theorem k_smul_eq_of_mem_casimirBlock (hq : IsGenericQuantumParameter q) {m : �
     {w : V} (hw : w ∈ genWeightSpace q V (ε * q ^ m))
     (hb : w ∈ casimirBlock q V (casimirScalar q (ε * q ^ m))) :
     k q • w = (ε * q ^ m : ℂ) • w := by
-  -- Applying the commutator to `E F^(m+1) w = 0` and the injectivity of `F^m` gives
-  -- `K² w = q^(2m) w`.
-  have hX := eq_zero_of_f_pow_smul_eq_zero hq le_rfl (k_sub_kInv_smul_mem_genWeightSpace m hw)
-    ((casimirBlock q V _).smul_mem _ hb)
-    (f_pow_smul_k_sub_kInv_smul_eq_zero hq (e_smul_eq_zero_of_mem_casimirBlock hq hw hb)
-      (f_pow_smul_eq_zero_of_mem_casimirBlock hq hw hb))
-  have hk2 := k_sq_smul_eq_of_k_sub_kInv_smul_eq_zero hq.ne_zero hX
-  -- Hence `K w - ε q^m w` has generalized weight `ε q^m` and weight `-ε q^m`, so it vanishes.
-  set μ : ℂ := ε * q ^ m with hμ
-  have hμ0 : μ ≠ 0 := sign_mul_pow_ne_zero hq.ne_zero ε m
-  have hμ2 : μ ^ 2 = q ^ (2 * m) := by rw [hμ, mul_pow, sign_sq, one_mul, ← pow_mul, mul_comm]
-  have hu : k q • w - μ • w ∈ genWeightSpace q V μ := by
-    have hk : k q * k q = (1 : ℂ) • (k q * k q) := (one_smul _ _).symm
-    exact sub_mem (by simpa using smul_mem_genWeightSpace_of_k_mul hk hw)
-      (Submodule.smul_mem _ μ hw)
-  have hu' : k q • w - μ • w ∈ weightSpace q V (-μ) := by
-    rw [mem_weightSpace_iff, smul_sub, ← mul_smul, ← pow_two, hk2, smul_comm (k q) μ w, ← hμ2]
-    generalize k q • w = x
-    module
-  have hne : μ ≠ -μ := fun h => hμ0 (by linear_combination h / 2)
-  exact sub_eq_zero.mp (Submodule.disjoint_def.mp
-    ((iSupIndep_genWeightSpace (q := q) (V := V)).pairwiseDisjoint hne) _ hu
-    (weightSpace_le_genWeightSpace _ hu'))
+  have : FiniteDimensional ℂ (casimirBlock q V (casimirScalar q (ε * q ^ m))) :=
+    Module.Finite.of_injective ((casimirBlock q V _).subtype.restrictScalars ℂ)
+      Subtype.val_injective
+  have h := mem_genWeightSpace_submodule_iff.mpr (w := ⟨w, hb⟩) hw
+  rw [genWeightSpace_eq_weightSpace_of_forall_e_smul_eq_zero hq
+    (forall_e_smul_eq_zero_casimirBlock hq)] at h
+  exact congrArg Subtype.val (mem_weightSpace_iff.mp h)
 
 end TauCeti.UqSl2
