@@ -11,7 +11,6 @@ public import Mathlib.RingTheory.DedekindDomain.IntegralClosure
 import Mathlib.Algebra.Algebra.Shrink
 import Mathlib.Algebra.Field.Shrink
 import Mathlib.RingTheory.Finiteness.Small
-import Mathlib.RingTheory.Localization.Finiteness
 import TauCeti.RingTheory.IntegralClosure.Transfer
 import TauCeti.RingTheory.Localization.FractionRing
 import TauCeti.RingTheory.Localization.Integral
@@ -216,41 +215,12 @@ theorem isJapanese_iff_isN1 [IsDomain R] [IsNoetherianRing R] [PerfectField (Fra
   ⟨fun _ ↦ inferInstance, fun _ ↦ ⟨fun L _ _ _ _ _ ↦
     IsN1.finite_integralClosure_of_isSeparable (FractionRing R) L⟩⟩
 
-/-- If `S` is a localization of `R` at a submonoid `M` and the integral closure of `R` in an
-`S`-algebra `L` is a finite `R`-module, then the integral closure of `S` in `L` is a finite
-`S`-module: it is the localization at `M` of the integral closure of `R`. -/
-private theorem finite_integralClosure_of_isLocalization (M : Submonoid R) (S L : Type*)
-    [CommRing S] [Algebra R S] [IsLocalization M S] [CommRing L] [Algebra R L] [Algebra S L]
-    [IsScalarTower R S L] [Module.Finite R (integralClosure R L)] :
-    Module.Finite S (integralClosure S L) := by
-  -- an element of `L` integral over `R` is integral over `S`
-  let : Algebra (integralClosure R L) (integralClosure S L) :=
-    RingHom.toAlgebra
-      { toFun x := ⟨x, x.2.tower_top⟩
-        map_one' := rfl
-        map_mul' _ _ := rfl
-        map_zero' := rfl
-        map_add' _ _ := rfl }
-  have : IsScalarTower (integralClosure R L) (integralClosure S L) L :=
-    .of_algebraMap_eq fun _ ↦ rfl
-  have : IsScalarTower R (integralClosure R L) (integralClosure S L) :=
-    .of_algebraMap_eq fun _ ↦ Subtype.ext <| by simp [RingHom.algebraMap_toAlgebra]
-  have := TauCeti.isLocalization_algebraMapSubmonoid_of_isIntegralClosure (M := M) (Rₘ := S)
-    (L := L) (S := integralClosure R L) (Sₘ := integralClosure S L)
-  exact .of_isLocalization R (integralClosure R L) M
-
-/-- A submonoid of a domain `R` along which `R` localizes to a domain contains no zero. -/
-private theorem le_nonZeroDivisors_of_isLocalization [IsDomain R] (M : Submonoid R) (S : Type*)
-    [CommRing S] [IsDomain S] [Algebra R S] [IsLocalization M S] : M ≤ nonZeroDivisors R :=
-  le_nonZeroDivisors_of_noZeroDivisors fun h ↦
-    not_isUnit_zero (M₀ := S) (by simpa using IsLocalization.map_units S (⟨0, h⟩ : M))
-
 /-- **A localization of an N-1 domain is N-1.** Stacks, Lemma 10.161.3 (032G). -/
 theorem isN1_of_isLocalization [IsDomain R] [IsN1 R] (M : Submonoid R) (S : Type*)
     [CommRing S] [IsDomain S] [Algebra R S] [IsLocalization M S] : IsN1 S where
   finite_integralClosure_fractionRing := by
     have : IsFractionRing R (FractionRing S) := IsFractionRing.of_isLocalization_of_isFractionRing
-      M S _ (le_nonZeroDivisors_of_isLocalization M S)
+      M S _ (IsLocalization.le_nonZeroDivisors_of_nontrivial M S)
     exact finite_integralClosure_of_isLocalization M S (FractionRing S)
 
 /-- **A localization of a Japanese domain is Japanese.** Stacks, Lemma 10.161.3 (032G). -/
@@ -262,7 +232,7 @@ theorem isJapanese_of_isLocalization [IsDomain R] [IsJapanese R] (M : Submonoid 
     have : IsScalarTower R (FractionRing S) L := .of_algebraMap_eq fun x ↦
       (IsScalarTower.algebraMap_apply R S L x).trans (IsScalarTower.algebraMap_apply S _ L _)
     have : IsFractionRing R (FractionRing S) := IsFractionRing.of_isLocalization_of_isFractionRing
-      M S _ (le_nonZeroDivisors_of_isLocalization M S)
+      M S _ (IsLocalization.le_nonZeroDivisors_of_nontrivial M S)
     have := IsJapanese.finite_integralClosure (R := R) (FractionRing S) L
     exact finite_integralClosure_of_isLocalization M S L
 

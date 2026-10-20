@@ -16,10 +16,23 @@ of fractions `T` of `S` is then a total ring of fractions of `R`
 direction, from a fraction ring of `R` to one of `S`, as
 `IsFractionRing.isFractionRing_of_isLocalization`.
 This lets a statement about the fraction field of a localization of a domain be reduced to the
-fraction field of the domain itself.
+fraction field of the domain itself. The non-zero-divisor hypothesis holds whenever a domain is
+localized to a nontrivial ring (`TauCeti.IsLocalization.le_nonZeroDivisors_of_nontrivial`).
 -/
 
 public section
+
+namespace TauCeti.IsLocalization
+
+/-- A submonoid of a ring without zero divisors along which the ring localizes to a nontrivial
+ring consists of non-zero-divisors. -/
+theorem le_nonZeroDivisors_of_nontrivial {R : Type*} [CommRing R] [NoZeroDivisors R]
+    (M : Submonoid R) (S : Type*) [CommRing S] [Nontrivial S] [Algebra R S] [IsLocalization M S] :
+    M ≤ nonZeroDivisors R :=
+  le_nonZeroDivisors_of_noZeroDivisors fun h ↦
+    not_subsingleton S (_root_.IsLocalization.subsingleton h)
+
+end TauCeti.IsLocalization
 
 namespace TauCeti.IsFractionRing
 
