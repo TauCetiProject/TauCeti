@@ -269,6 +269,22 @@ theorem exactCompactlySupportedForms_le_exactForms (k : ℕ) :
       rw [exactCompactlySupportedForms_succ, exactForms_succ]
       exact LinearMap.map_le_range
 
+/-- A compactly supported exact form is compactly supported and closed. -/
+theorem exactCompactlySupportedForms_le_compactlySupportedClosedForms (k : ℕ) :
+    exactCompactlySupportedForms I M k ≤ compactlySupportedClosedForms I M k := by
+  intro φ hφ
+  refine (mem_compactlySupportedClosedForms I).mpr
+    ⟨?_, exactForms_le_closedForms I k (exactCompactlySupportedForms_le_exactForms I k hφ)⟩
+  cases k with
+  | zero =>
+      rw [exactCompactlySupportedForms_zero, Submodule.mem_bot] at hφ
+      exact hφ ▸ zero_mem _
+  | succ k =>
+      rw [exactCompactlySupportedForms_succ, Submodule.mem_map] at hφ
+      obtain ⟨ψ, hψ, rfl⟩ := hφ
+      have h := (compactlySupportedForms.mextDerivₗ I M k ⟨ψ, hψ⟩).2
+      rwa [compactlySupportedForms.coe_mextDerivₗ] at h
+
 namespace compactlySupportedDeRhamCohomology
 
 /-- The compactly supported cohomology class of a compactly supported closed form. -/
@@ -340,6 +356,12 @@ theorem ker_mk (k : ℕ) :
       (exactCompactlySupportedForms I M k).comap (compactlySupportedClosedForms I M k).subtype := by
   ext φ
   exact mk_eq_zero_iff I k φ
+
+/-- Two compactly supported closed forms have the same class precisely when they differ by a
+compactly supported exact form. -/
+theorem mk_eq_mk_iff (k : ℕ) (φ ψ : compactlySupportedClosedForms I M k) :
+    mk I k φ = mk I k ψ ↔ φ.1 - ψ.1 ∈ exactCompactlySupportedForms I M k := by
+  rw [← sub_eq_zero, ← map_sub, mk_eq_zero_iff, Submodule.coe_sub]
 
 variable (M) in
 /-- The comparison map from compactly supported to ordinary de Rham cohomology, induced on
