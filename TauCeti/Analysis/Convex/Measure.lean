@@ -130,7 +130,7 @@ theorem Convex.ofReal_dist_mul_pow_mul_addHaar_ball_le [Nontrivial E] (hs : Conv
 open Bornology
 open scoped ENNReal
 
-namespace TauCeti
+namespace MeasureTheory.Measure
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [IsAddHaarMeasure μ] {s : Set E}
@@ -177,4 +177,4 @@ theorem exists_isCompact_convex_ae_eq (hpos : 0 < μ s) (hfin : μ s ≠ ∞)
     hi.mono (interior_mono subset_closure),
     heq.trans (closure_ae_eq_of_null_frontier (hC.addHaar_frontier μ)).symm⟩
 
-end TauCeti
+end MeasureTheory.Measure
