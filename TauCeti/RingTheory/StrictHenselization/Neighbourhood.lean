@@ -19,6 +19,10 @@ public import Mathlib.RingTheory.Localization.Away.Basic
 Étale algebras with a map to a fixed commutative algebra form the indexing category for strict
 henselization.
 
+For `R : Type u` and `Ω : Type v`, source algebras live in `Type (max u v)`.
+The target is lifted to this universe, so the base algebra and tensor-product refinements belong
+to the same category even when the base and target have different universes.
+
 ## References
 
 * Stacks Project, Tag 04GW.
@@ -30,14 +34,14 @@ public section
 
 open CategoryTheory TensorProduct
 
-universe u
+universe u v
 
 namespace TauCeti.StrictHenselization
 
-variable (R Ω : Type u) [CommRing R] [CommRing Ω] [Algebra R Ω]
+variable (R : Type u) (Ω : Type v) [CommRing R] [CommRing Ω] [Algebra R Ω]
 
-/-- An étale algebra equipped with a point valued in `Ω`. -/
-def IsPointedNeighbourhood : ObjectProperty (Over (CommAlgCat.of R Ω)) :=
+/-- An étale algebra equipped with a point valued in the universe lift of `Ω`. -/
+def IsPointedNeighbourhood : ObjectProperty (Over (CommAlgCat.of R (ULift.{u} Ω))) :=
   fun point ↦ Algebra.Etale R point.left
 
 /-- The category of pointed étale neighbourhoods. -/
@@ -45,7 +49,7 @@ abbrev Neighbourhood := (IsPointedNeighbourhood R Ω).FullSubcategory
 
 /-- The defining property of a pointed neighbourhood. -/
 @[simp]
-theorem isPointedNeighbourhood_iff (point : Over (CommAlgCat.of R Ω)) :
+theorem isPointedNeighbourhood_iff (point : Over (CommAlgCat.of R (ULift.{u} Ω))) :
     IsPointedNeighbourhood R Ω point ↔ Algebra.Etale R point.left :=
   Iff.rfl
 
@@ -72,7 +76,9 @@ theorem Neighbourhood.ext (first second : Neighbourhood R Ω)
 
 /-- The base algebra with its given point is a pointed étale neighbourhood. -/
 private def base : Neighbourhood R Ω :=
-  ⟨Over.mk (CommAlgCat.ofHom (Algebra.ofId R Ω)), inferInstanceAs (Algebra.Etale R R)⟩
+  ⟨Over.mk (CommAlgCat.ofHom
+    ((Algebra.ofId R (ULift.{u} Ω)).comp ULift.algEquiv.toAlgHom)),
+    Algebra.Etale.of_equiv (ULift.algEquiv (R := R) (A := R)).symm⟩
 
 /-- Tensor products provide common targets of pointed étale neighbourhoods. -/
 private theorem exists_common_target (first second : Neighbourhood R Ω) :
@@ -121,15 +127,18 @@ private theorem parallel_equalization {first second : Neighbourhood R Ω}
     rw [map_sub, map_one, hzero, sub_zero]
     exact isUnit_one
   let localized := Localization.Away (1 - diagonal idem)
-  let lifted : localized →ₐ[R] Ω := IsLocalization.Away.liftAlgHom (1 - diagonal idem) hunit
+  let lifted : localized →ₐ[R] ULift.{u} Ω :=
+    IsLocalization.Away.liftAlgHom (1 - diagonal idem) hunit
   let target : Neighbourhood R Ω :=
     ⟨Over.mk (CommAlgCat.ofHom lifted), inferInstanceAs (Algebra.Etale R localized)⟩
   let refinementMap : second.obj.left →ₐ[R] localized :=
     IsScalarTower.toAlgHom R second.obj.left localized
   have hrefines : CommAlgCat.ofHom refinementMap ≫ CommAlgCat.ofHom lifted =
       second.obj.hom := by
-    ext element
-    exact IsLocalization.Away.lift_eq _ hunit element
+    apply CommAlgCat.hom_ext
+    apply AlgHom.ext
+    intro element
+    exact IsLocalization.Away.lift_eq (S := localized) _ hunit element
   refine ⟨target, ObjectProperty.homMk (Over.homMk
     (CommAlgCat.ofHom refinementMap) hrefines), ?_⟩
   apply ObjectProperty.hom_ext

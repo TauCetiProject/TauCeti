@@ -58,6 +58,7 @@ variable {R S Ω : Type*} [CommRing R] [CommRing S] [CommRing Ω]
   [Algebra R S] [Algebra R Ω]
 
 /-- A residue-field embedding recovers the prime through its kernel. -/
+@[simp]
 theorem ker_residueEmbedding_comp (prime : Ideal S) [prime.IsPrime]
     [Nontrivial Ω] (embedding : prime.ResidueField →ₐ[R] Ω) :
     RingHom.ker (embedding.comp (IsScalarTower.toAlgHom R S prime.ResidueField)) = prime := by
@@ -143,6 +144,7 @@ theorem pointDataEquiv_apply (data : PointData R S Ω) :
   exact Equiv.ofBijective_apply _ _ _
 
 /-- The inverse correspondence assigns a point its kernel and residue-field embedding. -/
+@[simp]
 theorem pointDataEquiv_symm_apply (point : S →ₐ[R] Ω) :
     pointDataEquiv.symm point =
       ⟨⟨RingHom.ker point, inferInstance⟩, point.residueEmbedding⟩ := by
@@ -151,7 +153,6 @@ theorem pointDataEquiv_symm_apply (point : S →ₐ[R] Ω) :
     AlgHom.residueEmbedding_comp]
 
 /-- The inverse correspondence is characterized by its induced point. -/
-@[simp]
 theorem pointDataEquiv_symm_apply_toAlgHom (data : PointData R S Ω) :
     pointDataEquiv.symm data.toAlgHom = data := by
   exact Equiv.symm_apply_apply pointDataEquiv data

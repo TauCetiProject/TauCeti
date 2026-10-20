@@ -20,20 +20,20 @@ public section
 
 open CategoryTheory
 
-universe u
+universe u v
 
 namespace TauCeti.StrictHenselization
 
-variable (R Ω : Type u) [CommRing R] [CommRing Ω] [Algebra R Ω]
+variable (R : Type u) (Ω : Type v) [CommRing R] [CommRing Ω] [Algebra R Ω]
 
 /-- A pointed étale algebra is a pointed finite-type algebra. -/
 private def toPointedFiniteType : Neighbourhood R Ω ⥤
     CostructuredArrow
       (ObjectProperty.ι (fun algebra : CommAlgCat R ↦ Algebra.FiniteType R algebra))
-      (CommAlgCat.of R Ω) where
+      (CommAlgCat.of R (ULift.{u} Ω)) where
   obj point := by
     let : Algebra.Etale R point.obj.left := (isPointedNeighbourhood_iff R Ω _).mp point.property
-    let algebra : FGAlgCat.{u} R := ⟨point.obj.left, inferInstance⟩
+    let algebra : FGAlgCat.{max u v} R := ⟨point.obj.left, inferInstance⟩
     exact CostructuredArrow.mk (Y := algebra) point.obj.hom
   map morphism := CostructuredArrow.homMk (ObjectProperty.homMk morphism.hom.left) morphism.hom.w
 
@@ -53,7 +53,10 @@ private instance : (toPointedFiniteType R Ω).Full where
     rfl
 
 /-- Pointed étale neighbourhoods have a small model. -/
-instance neighbourhood_essentiallySmall : EssentiallySmall.{u} (Neighbourhood R Ω) :=
-  essentiallySmall_of_fully_faithful (toPointedFiniteType R Ω)
+instance neighbourhood_essentiallySmall : EssentiallySmall.{max u v} (Neighbourhood R Ω) := by
+  let : EssentiallySmall.{max u v} (FGAlgCat.{max u v} R) := by
+    rw [essentiallySmall_iff]
+    exact ⟨small_lift.{_, v, u} (Skeleton (FGAlgCat.{max u v} R)), inferInstance⟩
+  exact essentiallySmall_of_fully_faithful (toPointedFiniteType R Ω)
 
 end TauCeti.StrictHenselization
