@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Modules.SymmetricPower.Pullback.Basic
+public import TauCeti.CategoryTheory.Adjunction.Mates.Coherence
 
 /-!
 # Coherence of symmetric powers under pullback
@@ -17,7 +18,8 @@ finiteness hypotheses.
 
 The pushforward equations are checked on sheafified sectionwise symmetric tensors; the pullback
 equations then follow from Mathlib's conjugacy of the canonical pullback and pushforward
-comparisons, exactly as for exterior powers in
+comparisons by `CategoryTheory.TwoSquare.coherence_id_of_mateEquiv` and
+`CategoryTheory.TwoSquare.coherence_comp_of_mateEquiv`, exactly as for exterior powers in
 `TauCeti.AlgebraicGeometry.Modules.ExteriorPower.Pullback.Coherence`.
 
 ## Main results
@@ -62,19 +64,20 @@ theorem pushforwardSymmetricPowerComparison_id (n : ℕ) (M : X.Modules) :
         ((Scheme.Modules.pushforwardId X).hom.app M) := by
   apply SheafOfModules.symmetricPower_hom_ext n ((Scheme.Modules.pushforward (𝟙 X)).obj M)
   intro U x
-  erw [_root_.SheafOfModules.comp_val, PresheafOfModules.comp_app, ModuleCat.comp_apply]
+  -- Display evaluation of the composite: the identification of identity pushforward is the
+  -- identity on sections, whereas rewriting its projection searches through the scheme-module
+  -- wrappers.
+  change ((SheafOfModules.pushforwardSymmetricPowerComparison (S := X.sheaf) (R := X.sheaf)
+      (𝟙 X : X ⟶ X).toRingCatSheafHom n).app M).val.app U _ = _
   rw [_root_.SheafOfModules.symmetricPower_map_val_app_unit (R := X.sheaf) n
     ((Scheme.Modules.pushforwardId X).hom.app M) U x]
-  -- Identity pushforward and its identification act identically on sections, so it remains to
-  -- compare the two induced maps of symmetric tensors.
-  refine (congrArg (fun y ↦ ((Scheme.Modules.pushforwardId X).hom.app
-      ((_root_.SheafOfModules.symmetricPower X.sheaf n).obj M)).val.app U y)
-    (SheafOfModules.pushforwardSymmetricPowerComparison_app_val_app_unit
-      (S := X.sheaf) (R := X.sheaf) (𝟙 X : X ⟶ X).toRingCatSheafHom n M U x)).trans ?_
-  refine congrArg (fun y ↦ (_root_.SheafOfModules.symmetricPowerIso n M).inv.val.app U
-    (((PresheafOfModules.sheafificationAdjunction
-      (𝟙 (SheafOfModules.ringCatSheaf X.sheaf).obj)).unit.app
-        ((PresheafOfModulesOfCommRing.symmetricPower n).obj M.val)).app U y)) (Subtype.ext ?_)
+  -- `erw`: the evaluation lemma is stated for `SheafOfModules.pushforward`, which
+  -- `Scheme.Modules.pushforward` wraps.
+  erw [SheafOfModules.pushforwardSymmetricPowerComparison_app_val_app_unit
+      (S := X.sheaf) (R := X.sheaf) (𝟙 X : X ⟶ X).toRingCatSheafHom n M U x]
+  -- Both sides sheafify a symmetric tensor of the same sections; it remains to compare them.
+  congr 2
+  apply Subtype.ext
   -- Both maps are the identity on scalars and on sections.
   refine (TauCeti.SymmetricAlgebra.coe_homogeneousSubmoduleMapₛₗ_apply _ n x).trans ?_
   refine (DFunLike.congr_fun (_root_.SymmetricAlgebra.mapₛₗ_eq_id (fun _ ↦ rfl)
@@ -169,48 +172,20 @@ theorem pullbackSymmetricPowerComparison_id (n : ℕ) (M : X.Modules) :
       (Scheme.Modules.pullbackId X).hom.app
         ((_root_.SheafOfModules.symmetricPower X.sheaf n).obj M) := by
   let W : X.Modules ⥤ X.Modules := _root_.SheafOfModules.symmetricPower X.sheaf n
-  let P := Scheme.Modules.pullback (𝟙 X)
-  let Q := Scheme.Modules.pushforward (𝟙 X)
   let adj := Scheme.Modules.pullbackPushforwardAdjunction (𝟙 X)
-  let a := Scheme.Modules.pullbackId X
-  let b := Scheme.Modules.pushforwardId X
-  let c : W ⋙ P ⟶ P ⋙ W := Scheme.Modules.pullbackSymmetricPowerComparison (𝟙 X) n
-  let q : Q ⋙ W ⟶ W ⋙ Q :=
+  let c : TwoSquare W _ _ W := Scheme.Modules.pullbackSymmetricPowerComparison (𝟙 X) n
+  let q : TwoSquare (Scheme.Modules.pushforward (𝟙 X)) W W (Scheme.Modules.pushforward (𝟙 X)) :=
     SheafOfModules.pushforwardSymmetricPowerComparison (S := X.sheaf) (R := X.sheaf)
       (𝟙 X : X ⟶ X).toRingCatSheafHom n
-  have hu (N : X.Modules) : adj.unit.app N ≫ Q.map (a.hom.app N) = b.inv.app N := by
-    simpa only [adj, a, b, Q, Scheme.Modules.conjugateEquiv_pullbackId_hom,
-      Adjunction.id_unit, NatTrans.id_app, Category.id_comp, Functor.id_obj] using
-      (unit_conjugateEquiv Adjunction.id adj a.hom N).symm
-  have hc : adj.unit.app (W.obj M) ≫ Q.map (c.app M) =
-      W.map (adj.unit.app M) ≫ q.app (P.obj M) :=
-    Scheme.Modules.unit_comp_pushforward_map_pullbackSymmetricPowerComparison_app (𝟙 X) n M
-  have hq : q.app M ≫ b.hom.app (W.obj M) = W.map (b.hom.app M) :=
-    pushforwardSymmetricPowerComparison_id n M
-  have hn := q.naturality (a.hom.app M)
-  dsimp only [Functor.comp_map] at hn
+  have hcq : mateEquiv adj adj c = q := by
+    dsimp only [c, q, adj]
+    rw [Scheme.Modules.pullbackSymmetricPowerComparison_eq]
+    exact SheafOfModules.mateEquiv_pullbackSymmetricPowerComparison (S := X.sheaf) (R := X.sheaf)
+      (φ := (𝟙 X : X ⟶ X).toRingCatSheafHom) adj n
   -- The typed endofunctor `W` avoids repeatedly reconstructing the scheme's sheaf category.
-  change c.app M ≫ W.map (a.hom.app M) = a.hom.app (W.obj M)
-  apply (adj.homEquiv _ _).injective
-  simp only [Adjunction.homEquiv_unit]
-  -- Take the adjoint transpose, use naturality, then cancel the identity comparison.
-  calc
-    _ = (W.map (adj.unit.app M) ≫ q.app (P.obj M)) ≫
-        Q.map (W.map (a.hom.app M)) := by
-      simpa only [Functor.map_comp, Category.assoc] using
-        congrArg (fun k ↦ k ≫ Q.map (W.map (a.hom.app M))) hc
-    _ = W.map (adj.unit.app M) ≫ W.map (Q.map (a.hom.app M)) ≫ q.app M := by
-      rw [Category.assoc, ← hn]
-      simp only [Functor.id_obj]
-    _ = W.map (b.inv.app M) ≫ q.app M := by
-      rw [← W.map_comp_assoc, hu M]
-    _ = W.map (b.inv.app M) ≫ W.map (b.hom.app M) ≫ b.inv.app (W.obj M) := by
-      rw [(Iso.eq_comp_inv (b.app (W.obj M))).mpr hq]
-      simp only [Iso.app_inv]
-    _ = b.inv.app (W.obj M) := by
-      simp only [← W.map_comp_assoc, Iso.inv_hom_id_app, Functor.id_obj, W.map_id,
-        Category.id_comp]
-    _ = _ := (hu (W.obj M)).symm
+  exact TwoSquare.coherence_id_of_mateEquiv adj (Scheme.Modules.pullbackId X)
+    (Scheme.Modules.pushforwardId X) (Scheme.Modules.conjugateEquiv_pullbackId_hom X) c q hcq
+    (pushforwardSymmetricPowerComparison_id n) M
 
 /-- The symmetric-power comparison for a composite agrees with the two successive comparisons,
 using the canonical composition isomorphism of module pullback. -/
@@ -260,23 +235,9 @@ theorem pullbackSymmetricPowerComparison_comp (f : X ⟶ Y) (g : Y ⟶ Z)
     rw [Scheme.Modules.pullbackSymmetricPowerComparison_eq]
     exact SheafOfModules.mateEquiv_pullbackSymmetricPowerComparison
       (S := Z.sheaf) (R := X.sheaf) (φ := (f ≫ g : X ⟶ Z).toRingCatSheafHom) C n
-  have h : c₃.whiskerLeft (Scheme.Modules.pullbackComp f g).inv =
-      (TwoSquare.vComp c₁ c₂).whiskerRight (Scheme.Modules.pullbackComp f g).inv := by
-    apply (mateEquiv (A.comp B) C).injective
-    rw [conjugateEquiv_mateEquiv_vcomp, mateEquiv_conjugateEquiv_vcomp,
-      mateEquiv_hcomp, h₁, h₂, h₃, Scheme.Modules.conjugateEquiv_pullbackComp_inv]
-    apply NatTrans.ext
-    funext N
-    -- Normalize square composition before crossing the scheme-module wrappers.
-    simp only [TwoSquare.whiskerTop, TwoSquare.whiskerBottom, TwoSquare.hComp,
-      NatTrans.comp_app, Functor.whiskerRight_app, Functor.whiskerLeft_app,
-      Functor.associator_hom_app, Functor.associator_inv_app,
-      Category.id_comp, Category.assoc]
-    exact (pushforwardSymmetricPowerComparison_comp f g n N).symm
-  -- Components of the square operations are the two routes in the asserted diagram.
-  simpa only [TwoSquare.whiskerLeft_app, TwoSquare.whiskerRight_app, TwoSquare.vComp_app,
-    Functor.associator_hom_app, Functor.associator_inv_app,
-    Category.id_comp, Category.comp_id, Category.assoc] using congr_app h M
+  exact TwoSquare.coherence_comp_of_mateEquiv A B C (Scheme.Modules.pullbackComp f g)
+    (Scheme.Modules.pushforwardComp f g) (Scheme.Modules.conjugateEquiv_pullbackComp_inv f g)
+    c₁ c₂ c₃ q₁ q₂ q₃ h₁ h₂ h₃ (pushforwardSymmetricPowerComparison_comp f g n) M
 
 end
 
