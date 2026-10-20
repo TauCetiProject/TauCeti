@@ -98,14 +98,17 @@ theorem det_one_sub_catMap_pow_neg {n : ℕ} (hn : n ≠ 0) : (1 - catMap ^ n).d
 
 /-- The coefficient of `t ^ n` in `det (1 - t P) / (1 - t) ^ 2` is `-n` for `n ≠ 0`. This is the
 genus-one case `det (1 - P) (n + 1 - g)` of
-`Matrix.coeff_coe_charpolyRev_mul_mk_one_sq_of_mem_symplecticGroup`. -/
+`Matrix.SymplecticGroup.coeff_coe_charpolyRev_mul_mk_one_sq`. -/
 theorem coeff_coe_charpolyRev_catMap_mul_mk_one_sq {n : ℕ} (hn : n ≠ 0) :
     PowerSeries.coeff n ((catMap.charpolyRev : PowerSeries ℤ) * PowerSeries.mk 1 ^ 2) =
       -(n : ℤ) := by
-  have h := coeff_coe_charpolyRev_mul_mk_one_sq_of_mem_symplecticGroup
+  have h := SymplecticGroup.coeff_coe_charpolyRev_mul_mk_one_sq
     reindex_catMap_mem_symplecticGroup (a := n) (by simp; omega)
+  have hdet (e : Fin 2 ≃ Fin 1 ⊕ Fin 1) : (1 - reindex e e catMap).det = (1 - catMap).det := by
+    rw [← det_reindex_self e (1 - catMap)]
+    simp [submatrix_sub]
   rw [charpolyRev_reindex] at h
-  rw [h, ← eval_one_charpolyRev, charpolyRev_reindex, eval_one_charpolyRev, det_one_sub_catMap]
+  rw [h, hdet, det_one_sub_catMap]
   simp
 
 /-- `det (1 - t P) / (1 - t) ^ 2 = (1 - 3 t + t ^ 2) / (1 - t) ^ 2 = 1 - t - 2 t ^ 2 - 3 t ^ 3 - ⋯`
