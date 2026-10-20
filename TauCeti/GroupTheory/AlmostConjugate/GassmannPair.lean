@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.SpecificGroups.Quaternion
 public import TauCeti.GroupTheory.AlmostConjugate.Regular
+import TauCeti.GroupTheory.Perm.PermCongr
 
 /-!
 # A Gassmann pair in `S₁₆`
@@ -16,8 +17,8 @@ The groups `C₄ × C₄ = Multiplicative (ZMod 4) × Multiplicative (ZMod 4)` a
 of order `2` and twelve of order `4`. Their regular actions have the full cycle types `1^16`,
 `2^8` and `4^4`, with multiplicities `1`, `3` and `12`. (Mathlib's `Equiv.Perm.cycleType` omits
 the fixed points, so it records these as the empty multiset, `2^8` and `4^4`.) The first group is
-commutative and the second is not, so by `Subgroup.almostConjugate_map_range_toPermHom` and
-`Subgroup.not_exists_map_conj_map_range_toPermHom_eq` their regular images are two non-conjugate
+commutative and the second is not, so by `Equiv.almostConjugate_map_range_toPermHom` and
+`Equiv.not_exists_map_conj_map_range_toPermHom_eq` their regular images are two non-conjugate
 almost-conjugate subgroups of `Equiv.Perm (Fin 16)`.
 
 ## Main statements
@@ -49,17 +50,10 @@ theorem natCard_orderOf_zmod_four_prod_eq_quaternionGroup_prod (n : ℕ) :
       Nat.card {a : M // orderOf a = n} = Multiset.count n ((Finset.univ : Finset M).val.map
         fun a ↦ if a = 1 then 1 else if a ^ 2 = 1 then 2 else 4) := by
     have hord (a : M) : orderOf a = if a = 1 then 1 else if a ^ 2 = 1 then 2 else 4 := by
-      have h4 : orderOf a ∣ 4 := orderOf_dvd_of_pow_eq_one (h a)
-      have hpos : 0 < orderOf a :=
-        orderOf_pos_iff.mpr (isOfFinOrder_iff_pow_eq_one.mpr ⟨4, by norm_num, h a⟩)
-      have hle := Nat.le_of_dvd (by norm_num) h4
       split_ifs with h1 h2
       · rw [h1, orderOf_one]
-      · have h2' : orderOf a ∣ 2 := orderOf_dvd_of_pow_eq_one h2
-        have h1' : orderOf a ≠ 1 := orderOf_eq_one_iff.not.mpr h1
-        interval_cases h : orderOf a <;> simp_all
-      · have h2' : ¬ orderOf a ∣ 2 := orderOf_dvd_iff_pow_eq_one.not.mpr h2
-        interval_cases h : orderOf a <;> simp_all
+      · exact orderOf_eq_prime h2 h1
+      · simpa using orderOf_eq_prime_pow (p := 2) (n := 1) h2 (h a)
     rw [Multiset.count_map, Nat.card_eq_fintype_card, Fintype.card_subtype]
     simp only [hord, eq_comm (a := n), ← Finset.filter_val, Finset.card_val]
   rw [key _ (by decide), key _ (by decide)]
@@ -76,12 +70,12 @@ theorem exists_S16_gassmann_pair :
     Fintype.equivFinOfCardEq (by decide)
   let f : QuaternionGroup 2 × Multiplicative (ZMod 2) ≃ Fin 16 :=
     Fintype.equivFinOfCardEq (by decide)
-  refine ⟨_, _, ?_, ?_, Subgroup.almostConjugate_map_range_toPermHom e f
+  refine ⟨_, _, ?_, ?_, e.almostConjugate_map_range_toPermHom f
       natCard_orderOf_zmod_four_prod_eq_quaternionGroup_prod,
-    Subgroup.not_exists_map_conj_map_range_toPermHom_eq ?_ e f⟩
-  · rw [Subgroup.natCard_map_range_toPermHom, Nat.card_eq_fintype_card]
+    e.not_exists_map_conj_map_range_toPermHom_eq f ?_⟩
+  · rw [e.natCard_map_range_toPermHom, Nat.card_eq_fintype_card]
     decide
-  · rw [Subgroup.natCard_map_range_toPermHom, Nat.card_eq_fintype_card]
+  · rw [f.natCard_map_range_toPermHom, Nat.card_eq_fintype_card]
     decide
   · rw [isMulCommutative_iff]
     decide

@@ -36,6 +36,10 @@ the acting group: an action of `G` on `α` and the action of the subgroup
   transitivity of the even part of a subgroup.
 * `Equiv.isPreprimitive_map_permCongrHom_iff`: transport preserves primitivity.
 * `Equiv.image_fullCycleType_map_permCongrHom`: transport preserves the full cycle-type set.
+* `Equiv.natCard_map_range_toPermHom`: the regular representation of `G`, transported to
+  `Equiv.Perm α` along `e : G ≃ α`, has as many elements as `G`.
+* `Equiv.not_exists_map_conj_map_range_toPermHom_eq`: the transported regular representations of
+  a commutative and a non-commutative group are not conjugate.
 * `MulAction.isPretransitive_range_toPermHom_iff`, `MulAction.isPreprimitive_range_toPermHom_iff`:
   a group action and its image in the permutations are transitive, respectively primitive,
   together.
@@ -83,6 +87,39 @@ theorem map_permCongrHom_eq_map_conj (e e' : α ≃ β) (G : Subgroup (Perm α))
   congr 1
   ext σ x
   simp [Equiv.permCongrHom_coe]
+
+section Regular
+
+variable {G Γ : Type*} [Group G] [Group Γ]
+
+/-- The regular representation of `G`, read in `Equiv.Perm α` through `e : G ≃ α`, has as many
+elements as `G`. -/
+theorem natCard_map_range_toPermHom (e : G ≃ α) :
+    Nat.card ((toPermHom G G).range.map e.permCongrHom.toMonoidHom) = Nat.card G := by
+  rw [MonoidHom.map_range]
+  exact Nat.card_congr (MonoidHom.ofInjective
+    (e.permCongrHom.injective.comp (toPerm_injective (α := G) (β := G)))).toEquiv.symm
+
+/-- **Regular representations of a commutative and a non-commutative group are not conjugate.** A
+conjugate of the commutative regular image of `G` is commutative, while the regular image of `Γ`
+is isomorphic to `Γ`. -/
+theorem not_exists_map_conj_map_range_toPermHom_eq [IsMulCommutative G] (e : G ≃ α) (f : Γ ≃ α)
+    (hΓ : ¬ IsMulCommutative Γ) :
+    ¬ ∃ σ : Perm α, ((toPermHom G G).range.map e.permCongrHom.toMonoidHom).map
+        (MulAut.conj σ) = (toPermHom Γ Γ).range.map f.permCongrHom.toMonoidHom := by
+  rintro ⟨σ, hσ⟩
+  have hK : IsMulCommutative ((toPermHom Γ Γ).range.map f.permCongrHom.toMonoidHom) := by
+    rw [← hσ]
+    infer_instance
+  rw [MonoidHom.map_range] at hK
+  set φ : Γ →* Perm α := f.permCongrHom.toMonoidHom.comp (toPermHom Γ Γ)
+  have hφinj : Function.Injective φ :=
+    f.permCongrHom.injective.comp (toPerm_injective (α := Γ) (β := Γ))
+  refine hΓ (isMulCommutative_iff.mpr fun a b ↦ hφinj ?_)
+  simpa only [map_mul, Subgroup.coe_mul] using congrArg Subtype.val
+    (isMulCommutative_iff.mp hK ⟨φ a, a, rfl⟩ ⟨φ b, b, rfl⟩)
+
+end Regular
 
 variable [Fintype α] [DecidableEq α] [Fintype β] [DecidableEq β]
 

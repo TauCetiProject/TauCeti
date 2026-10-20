@@ -72,8 +72,12 @@ theorem fullCycleType_toPerm_eq_replicate {G X : Type*} [Group G] [MulAction G X
       forall_apply_eq_imp_iff]
     intro ω
     induction ω using Quotient.inductionOn with | h x => ?_
-    rw [orbitRel.Quotient.orbit_mk, Nat.card_congr (orbitEquivQuotientStabilizer _ x),
-      ← Subgroup.index, IsCancelSMul.stabilizer_eq_bot, Subgroup.index_bot, Nat.card_zpowers]
+    rw [orbitRel.Quotient.orbit_mk]
+    calc Nat.card (orbit (Subgroup.zpowers g) x)
+        = (stabilizer (Subgroup.zpowers g) x).index :=
+          Nat.card_congr (orbitEquivQuotientStabilizer _ x)
+      _ = orderOf g := by
+          rw [IsCancelSMul.stabilizer_eq_bot, Subgroup.index_bot, Nat.card_zpowers]
   -- The number of parts is then forced by the parts summing to `Nat.card X`.
   refine Multiset.eq_replicate.mpr ⟨?_, hmem⟩
   have hsum := Equiv.Perm.sum_fullCycleType (toPerm g : Equiv.Perm X)
