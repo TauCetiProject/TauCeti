@@ -33,6 +33,8 @@ prime ideal is nontrivial.
 * `Module.iInter_freeLocus_subquotient_subset_freeLocus`: a filtered module is free wherever all
   subquotients of the filtration are.
 * `Module.rankAtStalk_fin_fun`: the free module `R^k` has rank `k` at every prime.
+* `Module.exists_isIdempotentElem_basicOpen_eq_support`: the support of a finitely presented flat
+  module is the basic open set of an idempotent.
 
 ## References
 
@@ -114,6 +116,22 @@ theorem rankAtStalk_fin_fun {R : Type*} [CommRing R] (k : ℕ) (p : PrimeSpectru
     rankAtStalk (R := R) (Fin k → R) p = k := by
   have : Nontrivial R := PrimeSpectrum.nonempty_iff_nontrivial.mp ⟨p⟩
   simp
+
+/-- The support of a finitely presented flat module is cut out by an idempotent: it is the locus
+where the locally constant rank function is positive, hence clopen. -/
+theorem exists_isIdempotentElem_basicOpen_eq_support {R : Type*} (M : Type*) [CommRing R]
+    [AddCommGroup M] [Module R M] [Module.FinitePresentation R M] [Module.Flat R M] :
+    ∃ e : R, IsIdempotentElem e ∧
+      (PrimeSpectrum.basicOpen e : Set (PrimeSpectrum R)) = Module.support R M := by
+  have hloc := isLocallyConstant_rankAtStalk (R := R) (M := M)
+  have hsupp : Module.support R M = rankAtStalk (R := R) M ⁻¹' {n | 0 < n} := by
+    ext p
+    exact (rankAtStalk_pos_iff_mem_support p).symm
+  let U : TopologicalSpace.Clopens (PrimeSpectrum R) :=
+    ⟨Module.support R M, hsupp ▸ ⟨isOpen_compl_iff.mp (hloc {n | 0 < n}ᶜ), hloc _⟩⟩
+  let e := PrimeSpectrum.isIdempotentElemEquivClopens.symm U
+  exact ⟨e.1, e.2,
+    congrArg SetLike.coe (PrimeSpectrum.basicOpen_isIdempotentElemEquivClopens_symm U)⟩
 
 end Module
 
