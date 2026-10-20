@@ -55,6 +55,8 @@ involution, `changeForm` commutes with the grade involution for every bilinear f
 * `CliffordAlgebra.contractLeft_mul_ι` and `CliffordAlgebra.contractRight_ι_mul`: the graded
   Leibniz rules for a vector factor on the far side.
 * `CliffordAlgebra.contractRight_contractLeft`: `(d ⌋ x) ⌊ d' = d ⌋ (x ⌊ d')`.
+* `CliffordAlgebra.contractLeft_prod_map_ι_eq_zero`: a contraction kills a product of vectors in
+  its kernel.
 * `CliffordAlgebra.changeForm_mul_ι`: `changeForm` on a right vector factor.
 * `CliffordAlgebra.changeForm_involute` and `CliffordAlgebra.changeForm_reverse`: `changeForm`
   commutes with the grade involution, and with reversion for a symmetric form.
@@ -62,6 +64,8 @@ involution, `changeForm` commutes with the grade involution for every bilinear f
   for the isomorphism with the exterior algebra.
 * `CliffordAlgebra.equivExterior_ι_mul` and `CliffordAlgebra.equivExterior_mul_ι`: that
   isomorphism on left and right vector factors.
+* `CliffordAlgebra.equivExterior_prod_map_ι_of_pairwise_isOrtho`: that isomorphism sends a product
+  of pairwise orthogonal vectors to their exterior product.
 
 ## References
 
@@ -167,6 +171,15 @@ theorem contractRight_contractLeft (d d' : Module.Dual R M) (x : CliffordAlgebra
     simp [contractLeft_ι_mul, contractRight_ι_mul, hx, involute_contractLeft]
     abel
 
+/-- Contraction against a functional `d` kills a product of vectors that `d` annihilates. -/
+theorem contractLeft_prod_map_ι_eq_zero (d : Module.Dual R M) {l : List M}
+    (h : ∀ m ∈ l, d m = 0) : contractLeft d (l.map (ι Q)).prod = 0 := by
+  induction l with
+  | nil => simp
+  | cons a l ih =>
+    rw [List.map_cons, List.prod_cons, contractLeft_ι_mul, h a List.mem_cons_self, zero_smul,
+      ih fun m hm ↦ h m (List.mem_cons_of_mem a hm), mul_zero, sub_zero]
+
 section changeForm
 
 variable {Q' : QuadraticForm R M} {B : LinearMap.BilinForm R M}
@@ -255,6 +268,21 @@ Not a `simp` lemma, for the same reason as `CliffordAlgebra.equivExterior_involu
 theorem equivExterior_reverse (x : CliffordAlgebra Q) :
     equivExterior Q (reverse x) = reverse (equivExterior Q x) :=
   changeForm_reverse changeForm.associated_neg_proof (QuadraticForm.associated_isSymm R (-Q)) x
+
+/-- **`CliffordAlgebra.equivExterior` sends a product of pairwise orthogonal vectors to their
+exterior product.** Each correction term of `CliffordAlgebra.equivExterior_ι_mul` contracts the
+later factors against the first, and vanishes by orthogonality. No hypothesis on `Q` is needed;
+in particular `Q` may be degenerate. -/
+theorem equivExterior_prod_map_ι_of_pairwise_isOrtho {l : List M} (hl : l.Pairwise Q.IsOrtho) :
+    equivExterior Q (l.map (ι Q)).prod = (l.map (ExteriorAlgebra.ι R)).prod := by
+  induction l with
+  | nil => simp
+  | cons a l ih =>
+    rw [List.pairwise_cons] at hl
+    rw [List.map_cons, List.prod_cons, equivExterior_ι_mul, ih hl.2,
+      contractLeft_prod_map_ι_eq_zero, sub_zero, List.map_cons, List.prod_cons]
+    intro m hm
+    simp [hl.1 m hm]
 
 end equivExterior
 
