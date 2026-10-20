@@ -25,9 +25,9 @@ fibres of a map to a finite type, the associated indexed partition, the sizes of
 subset on the parts, cardinality bounds for common refinements, a bound on the sum of the squared
 part sizes, the refinement relations of `Finpartition.bind` and of a refining partition's parts,
 the behavior of intersections of parts under refinement, the monotonicity of `Finpartition.part`
-under refinement, and the coarse parent `Finpartition.refinementParent` of a part of a finer
+under refinement, the coarse parent `Finpartition.refinementParent` of a part of a finer
 partition, together with decomposition and summation formulas for the fine parts below a coarse
-part.
+part, and the position of the parts of `Finpartition.atomise` relative to the sets it cuts along.
 -/
 
 public section
@@ -277,12 +277,39 @@ theorem biUnion_filter_refinementParent_eq (h : Q ≤ P) (A : P.parts) :
       simp [Subtype.exists, and_assoc, and_left_comm]
     _ = _ := biUnion_filter_subset_eq_of_le h A.2
 
+/-- The traces on `X` of the fine parts with a given coarse parent add up to the trace of `X` on
+that parent. -/
+theorem sum_card_inter_filter_refinementParent_eq (h : Q ≤ P) (A : P.parts) (X : Finset α) :
+    ∑ B with refinementParent h B = A, #(X ∩ B.1) = #(X ∩ A.1) := by
+  conv_rhs => rw [← biUnion_filter_refinementParent_eq h A, Finset.inter_biUnion]
+  rw [Finset.card_biUnion fun B _ D _ hBD ↦
+    (Q.pairwiseDisjoint_subtype_val _ (Set.mem_univ B) (Set.mem_univ D) hBD).mono
+      Finset.inter_subset_right Finset.inter_subset_right]
+
 /-- The sizes of the fine parts with a given coarse parent add up to the size of that parent. -/
 theorem sum_card_filter_refinementParent_eq (h : Q ≤ P) (A : P.parts) :
     ∑ B with refinementParent h B = A, #B.1 = #A.1 := by
-  conv_rhs => rw [← biUnion_filter_refinementParent_eq h A]
-  rw [Finset.card_biUnion (Q.pairwiseDisjoint_subtype_val _)]
+  calc ∑ B with refinementParent h B = A, #B.1
+      = ∑ B with refinementParent h B = A, #(s ∩ B.1) :=
+        Finset.sum_congr rfl fun B _ ↦ by rw [Finset.inter_eq_right.2 (Q.le B.2)]
+    _ = #A.1 := by
+        rw [sum_card_inter_filter_refinementParent_eq, Finset.inter_eq_right.2 (P.le A.2)]
 
 end FinsetRefinement
+
+section Atomise
+
+variable {α : Type*} [DecidableEq α] {s : Finset α}
+
+/-- Each part of `atomise s F` lies inside or outside each member of `F`. -/
+theorem subset_or_disjoint_of_mem_atomise {F : Finset (Finset α)} {t u : Finset α}
+    (ht : t ∈ (atomise s F).parts) (hu : u ∈ F) : t ⊆ u ∨ Disjoint t u := by
+  obtain ⟨-, R, -, rfl⟩ := mem_atomise.1 ht
+  by_cases huR : u ∈ R
+  · exact Or.inl fun i hi ↦ ((Finset.mem_filter.1 hi).2 u hu).1 huR
+  · exact Or.inr <| Finset.disjoint_left.2 fun i hi hiu ↦
+      huR (((Finset.mem_filter.1 hi).2 u hu).2 hiu)
+
+end Atomise
 
 end Finpartition
