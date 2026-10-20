@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Action.Monoidal
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Basic
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Drinfeld
+public import TauCeti.CategoryTheory.Monoidal.Rigid.OfEquivalence
 
 /-!
 # Duals of actions on underlying objects
@@ -35,31 +36,6 @@ isomorphism of an action is that of its underlying object.
 public section
 
 open CategoryTheory MonoidalCategory TauCeti Functor.LaxMonoidal Functor.OplaxMonoidal
-
-section OfEquivalence
-
-variable {C D : Type*} [Category* C] [Category* D] [MonoidalCategory C] [MonoidalCategory D]
-  {F : C ⥤ D} [F.Monoidal] {G : D ⥤ C} (adj : F ⊣ G) [F.IsEquivalence]
-
-/-- The evaluation of a right dual pulled back along a monoidal equivalence `F` is, by definition,
-the preimage under `F` of the evaluation of the right dual of `F.obj X` transported across the
-counit. -/
-private theorem map_evaluation_hasRightDualOfEquivalence (X : C) [HasRightDual (F.obj X)] :
-    F.map (@ExactPairing.evaluation _ _ _ X _ (hasRightDualOfEquivalence adj X).exact) =
-      δ F _ _ ≫ ((adj.toEquivalence.counitIso.app (F.obj X)ᘁ).hom ▷ F.obj X ≫
-        ε_ (F.obj X) (F.obj X)ᘁ) ≫ ε F :=
-  F.map_preimage _
-
-/-- The coevaluation of a right dual pulled back along a monoidal equivalence `F` is, by
-definition, the preimage under `F` of the coevaluation of the right dual of `F.obj X` transported
-across the counit. -/
-private theorem map_coevaluation_hasRightDualOfEquivalence (X : C) [HasRightDual (F.obj X)] :
-    F.map (@ExactPairing.coevaluation _ _ _ X _ (hasRightDualOfEquivalence adj X).exact) =
-      η F ≫ (η_ (F.obj X) (F.obj X)ᘁ ≫
-        F.obj X ◁ (adj.toEquivalence.counitIso.app (F.obj X)ᘁ).inv) ≫ μ F _ _ :=
-  F.map_preimage _
-
-end OfEquivalence
 
 namespace Action
 
