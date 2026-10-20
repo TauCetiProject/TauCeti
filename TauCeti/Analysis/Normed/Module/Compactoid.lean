@@ -23,8 +23,8 @@ Compactoid sets replace relatively compact sets in nonarchimedean functional ana
 field such as `ℂ_p`, which is not locally compact, a bounded subset of a line need not be totally
 bounded, yet it is compactoid. Operators mapping the closed unit ball to a compactoid set are the
 compact operators of nonarchimedean Banach space theory. Every totally bounded set is compactoid,
-and over a locally compact field the two notions agree
-(`TauCeti.isCompactoidSet_iff_totallyBounded`).
+and over a field whose closed balls are compact, such as a nontrivially normed locally compact
+field, the two notions agree (`TauCeti.isCompactoidSet_iff_totallyBounded`).
 
 ## Main definitions
 
@@ -226,8 +226,8 @@ section TotallyBounded
 
 variable [NormedField K] [SeminormedAddCommGroup E] [NormedSpace K E]
 
-/-- Over a field whose closed balls are compact, for instance a locally compact field such as
-`ℚ_p`, every compactoid set is totally bounded. -/
+/-- Over a field whose closed balls are compact, for instance a nontrivially normed locally
+compact field such as `ℚ_p`, every compactoid set is totally bounded. -/
 theorem IsCompactoidSet.totallyBounded [ProperSpace K] {S : Set E}
     (hS : IsCompactoidSet K S) : TotallyBounded S := by
   refine Metric.totallyBounded_iff.2 fun ε hε ↦ ?_
