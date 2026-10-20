@@ -96,7 +96,7 @@ theorem classifyingSpaceFundamentalGroupMulEquiv_mapOfEq_circleToClassifyingSpac
   -- The loop wrapped around is a representative of the class sent to the generator.
   refine (congrArg (classifyingSpaceFundamentalGroupMulEquiv _)
     ((Circle.mapOfEq_toCircle_expLoop _).trans
-      (congrArg CategoryTheory.End.of (Quotient.out_eq _)))).trans ?_
+      (FundamentalGroup.fromPath_mk_out _))).trans ?_
   exact MulEquiv.apply_symm_apply _ _
 
 /-- **The map from the circle to the classifying space of `ℤ` is a weak homotopy equivalence.**

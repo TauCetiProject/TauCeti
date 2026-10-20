@@ -69,7 +69,10 @@ localization along `τ`, the local carry class `τ' b ∪ δχ`, so the sum of t
 group `U ⧸ V` is cyclic of order `n` and the decomposition subgroup `H` maps onto it, a character
 sending the image of a generator to `1 / n` gives a class of the layer with sum of local
 invariants `1 / n` (`exists_ideleSumLocalInv_eq_one_div_degree_of_isCyclic`). This is the class of
-invariant `1 / n` that `NormalLayer.map_eq_zero_of_natCard_H2_dvd_degree` takes as input.
+invariant `1 / n` that `NormalLayer.map_eq_zero_of_natCard_H2_dvd_degree` takes as input. Every
+layer of prime degree has such a place
+(`NormalLayer.exists_surjective_absoluteGaloisGroupMap_of_degree_prime`), so it carries a class of
+invariant `1 / [U : V]` (`exists_ideleSumLocalInv_eq_one_div_degree_of_prime`).
 
 ## Main results
 
@@ -90,7 +93,7 @@ invariant `1 / n` that `NormalLayer.map_eq_zero_of_natCard_H2_dvd_degree` takes 
   `V ◁ U` onto whose Galois group some decomposition subgroup maps carries a class whose local
   invariants sum to `1 / [U : V]`.
 * `TauCeti.ClassFieldTheory.exists_ideleSumLocalInv_eq_one_div_degree_of_prime`: every layer
-  `V ◁ G_K` of prime degree carries such a class.
+  `V ◁ U` of prime degree carries such a class.
 
 ## References
 
@@ -980,31 +983,15 @@ theorem exists_ideleSumLocalInv_eq_one_div_degree_of_isCyclic
   -- not rewrite the goal, which is stated for the bundled homomorphism; it applies by `exact`.
   exact hχ'.trans (by rw [addOrderOf_ofMul_eq_orderOf, hof])
 
-/-- **A prime-degree layer over `K` carries a class of invariant `1 / [L : K]`.** The layer has a
-finite place of full local degree, and its Galois group is cyclic, so the prescribed-invariant
-construction applies at that place. -/
+/-- **A prime-degree layer carries a class of invariant `1 / [U : V]`.** A layer `V ◁ U` of prime
+degree has a finite place whose decomposition map onto `U ⧸ V` is surjective, and its Galois group
+is cyclic, so the prescribed-invariant construction applies at that place. -/
 theorem exists_ideleSumLocalInv_eq_one_div_degree_of_prime
-    (V : OpenNormalSubgroup (AbsoluteGaloisGroup K))
-    (hV : (NormalLayer.ofOpenNormal V).degree.Prime) :
-    ∃ y : (NormalLayer.ofOpenNormal V).H (ideleFormation K) 2,
-      ideleSumLocalInv K (NormalLayer.ofOpenNormal V) y =
-        ((1 / (NormalLayer.ofOpenNormal V).degree : ℚ) : AddCircle (1 : ℚ)) := by
-  let _ : IsCyclic (NormalLayer.ofOpenNormal V).Gal :=
-    NormalLayer.isCyclic_gal_of_prime_degree hV
-  obtain ⟨v, τ, hτ⟩ :=
-    OpenNormalSubgroup.exists_surjective_quotient_absoluteGaloisGroupMap_of_degree_prime V hV
-  refine exists_ideleSumLocalInv_eq_one_div_degree_of_isCyclic _ τ fun γ ↦ ?_
-  -- The ground of the layer is all of `G_K`, so every element of `G_{K_v}` lies in `φ_τ⁻¹(U)`.
-  obtain ⟨g, hg⟩ := hτ (NormalLayer.galOfOpenNormalEquiv V γ)
-  have hmem : g ∈ (NormalLayer.ofOpenNormal V).ground.toSubgroup.comap
-      (absoluteGaloisGroupMap τ : AbsoluteGaloisGroup (v.adicCompletion K) →*
-        AbsoluteGaloisGroup K) := by
-    simp [NormalLayer.ground_ofOpenNormal]
-  refine ⟨⟨g, hmem⟩, ?_⟩
-  have h := NormalLayer.galOfOpenNormalEquiv_symm_mk V
-    ((absoluteGaloisGroupMap τ).subgroupComap _ ⟨g, hmem⟩)
-  rw [ContinuousMonoidHom.subgroupComap_apply_coe] at h
-  refine h.symm.trans ?_
-  rw [← (NormalLayer.galOfOpenNormalEquiv V).symm_apply_apply γ, ← hg]
+    (L : NormalLayer (AbsoluteGaloisGroup K)) (hL : L.degree.Prime) :
+    ∃ y : L.H (ideleFormation K) 2,
+      ideleSumLocalInv K L y = ((1 / L.degree : ℚ) : AddCircle (1 : ℚ)) := by
+  have := NormalLayer.isCyclic_gal_of_prime_degree hL
+  obtain ⟨v, τ, hτ⟩ := L.exists_surjective_absoluteGaloisGroupMap_of_degree_prime hL
+  exact exists_ideleSumLocalInv_eq_one_div_degree_of_isCyclic L τ hτ
 
 end TauCeti.ClassFieldTheory

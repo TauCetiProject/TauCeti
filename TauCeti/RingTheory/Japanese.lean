@@ -12,6 +12,8 @@ import Mathlib.Algebra.Algebra.Shrink
 import Mathlib.Algebra.Field.Shrink
 import Mathlib.RingTheory.Finiteness.Small
 import TauCeti.RingTheory.IntegralClosure.Transfer
+import TauCeti.RingTheory.Localization.FractionRing
+import TauCeti.RingTheory.Localization.Integral
 
 /-!
 # N-1 and Japanese domains
@@ -43,6 +45,12 @@ in characteristic zero, there are none, and the two notions agree for Noetherian
 * `TauCeti.Ring.IsJapanese.of_finite`: a domain that is a finite extension of a Japanese domain
   is Japanese (Stacks, Lemma 10.161.5 (032I), finite case); in particular being Japanese is
   invariant under ring isomorphisms (`RingEquiv.isJapanese`).
+* `TauCeti.Ring.isN1_of_isLocalization`, `TauCeti.Ring.isJapanese_of_isLocalization`: a
+  localization of an N-1, respectively Japanese, domain is N-1, respectively Japanese (Stacks,
+  Lemma 10.161.3 (032G)).
+* `TauCeti.Ring.IsN1.finite_integralClosure_of_isSeparable`: for a Noetherian N-1 domain, the
+  integral closure in every finite separable extension of the fraction field is finite (Stacks,
+  Lemma 10.161.8 (032L), applied to the normalization).
 * `TauCeti.Ring.isJapanese_iff_isN1`: a Noetherian domain with perfect fraction field is Japanese
   if and only if it is N-1 (Stacks, Lemma 10.161.11 (032M), in characteristic zero).
 
@@ -213,18 +221,18 @@ theorem _root_.RingEquiv.isJapanese {S : Type v} [CommRing S] [IsDomain S] [IsJa
 
 end IsJapanese
 
-/-- A Noetherian domain whose fraction field is perfect, for instance of characteristic zero, is
-Japanese if and only if it is N-1. Stacks, Lemma 10.161.11 (032M), stated there in characteristic
-zero. -/
-theorem isJapanese_iff_isN1 [IsDomain R] [IsNoetherianRing R] [PerfectField (FractionRing R)] :
-    IsJapanese R ↔ IsN1 R := by
-  refine ⟨fun _ ↦ inferInstance, fun _ ↦ ⟨fun L _ _ _ _ _ ↦ ?_⟩⟩
-  -- The integral closure `R'` of `R` in its fraction field `K` is finite over `R`, hence a
-  -- Noetherian integrally closed domain with fraction field `K`, and the integral closure of `R`
-  -- in `L` is that of `R'`, which is finite over `R'` since `L / K` is separable.
-  let K := FractionRing R
+/-- **Finiteness of the integral closure in a separable extension.** If `R` is a Noetherian N-1
+domain with fraction field `K` and `L` is a finite separable extension of `K`, then the integral
+closure of `R` in `L` is a finite `R`-module. Stacks, Lemma 10.161.8 (032L) for normal `R`,
+applied to the integral closure of `R` in `K`. -/
+theorem IsN1.finite_integralClosure_of_isSeparable [IsDomain R] [IsNoetherianRing R] [IsN1 R]
+    (K L : Type*) [Field K] [Algebra R K] [IsFractionRing R K] [Field L] [Algebra K L]
+    [Algebra R L] [IsScalarTower R K L] [FiniteDimensional K L] [Algebra.IsSeparable K L] :
+    Module.Finite R (integralClosure R L) := by
+  -- The integral closure `R'` of `R` in `K` is finite over `R`, hence a Noetherian integrally
+  -- closed domain with fraction field `K`, and the integral closure of `R` in `L` is that of
+  -- `R'`, which is finite over `R'` since `L / K` is separable.
   let R' := integralClosure R K
-  have : Module.Finite R R' := IsN1.finite_integralClosure_fractionRing
   have : IsNoetherianRing R' := isNoetherian_of_tower R inferInstance
   have : IsFractionRing R' K := integralClosure.isFractionRing_of_finite_extension K K
   have : IsIntegrallyClosed R' := integralClosure.isIntegrallyClosedOfFiniteExtension K
@@ -235,5 +243,44 @@ theorem isJapanese_iff_isN1 [IsDomain R] [IsNoetherianRing R] [PerfectField (Fra
     TauCeti.IsIntegralClosure.tower_bot (A := R')
   exact .equiv (IsIntegralClosure.equiv R (integralClosure R' L) L
     (integralClosure R L)).toLinearEquiv
+
+/-- A Noetherian domain whose fraction field is perfect, for instance of characteristic zero, is
+Japanese if and only if it is N-1. Stacks, Lemma 10.161.11 (032M), stated there in characteristic
+zero. -/
+theorem isJapanese_iff_isN1 [IsDomain R] [IsNoetherianRing R] [PerfectField (FractionRing R)] :
+    IsJapanese R ↔ IsN1 R :=
+  ⟨fun _ ↦ inferInstance, fun _ ↦ ⟨fun L _ _ _ _ _ ↦
+    IsN1.finite_integralClosure_of_isSeparable (FractionRing R) L⟩⟩
+
+/-- **A localization of an N-1 domain is N-1.** Stacks, Lemma 10.161.3 (032G). -/
+theorem isN1_of_isLocalization [IsDomain R] [IsN1 R] (M : Submonoid R) (S : Type*)
+    [CommRing S] [IsDomain S] [Algebra R S] [IsLocalization M S] : IsN1 S where
+  finite_integralClosure_fractionRing := by
+    have : IsFractionRing R (FractionRing S) := IsFractionRing.of_isLocalization_of_isFractionRing
+      M S _ (IsLocalization.le_nonZeroDivisors_of_nontrivial M S)
+    exact finite_integralClosure_of_isLocalization M S (FractionRing S)
+
+/-- **A localization of a Japanese domain is Japanese.** Stacks, Lemma 10.161.3 (032G). -/
+theorem isJapanese_of_isLocalization [IsDomain R] [IsJapanese R] (M : Submonoid R) (S : Type*)
+    [CommRing S] [IsDomain S] [Algebra R S] [IsLocalization M S] : IsJapanese S where
+  finite_integralClosure_fractionRing L _ _ _ _ _ := by
+    let : Algebra R L := ((algebraMap S L).comp (algebraMap R S)).toAlgebra
+    have : IsScalarTower R S L := .of_algebraMap_eq fun _ ↦ rfl
+    have : IsScalarTower R (FractionRing S) L := .of_algebraMap_eq fun x ↦
+      (IsScalarTower.algebraMap_apply R S L x).trans (IsScalarTower.algebraMap_apply S _ L _)
+    have : IsFractionRing R (FractionRing S) := IsFractionRing.of_isLocalization_of_isFractionRing
+      M S _ (IsLocalization.le_nonZeroDivisors_of_nontrivial M S)
+    have := IsJapanese.finite_integralClosure (R := R) (FractionRing S) L
+    exact finite_integralClosure_of_isLocalization M S L
+
+/-- The localization of an N-1 domain at a prime is N-1. -/
+instance IsN1.localization_atPrime [IsDomain R] [IsN1 R] (p : Ideal R) [p.IsPrime] :
+    IsN1 (Localization.AtPrime p) :=
+  isN1_of_isLocalization p.primeCompl _
+
+/-- The localization of a Japanese domain at a prime is Japanese. -/
+instance IsJapanese.localization_atPrime [IsDomain R] [IsJapanese R] (p : Ideal R) [p.IsPrime] :
+    IsJapanese (Localization.AtPrime p) :=
+  isJapanese_of_isLocalization p.primeCompl _
 
 end TauCeti.Ring
