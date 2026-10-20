@@ -11,14 +11,15 @@ public import TauCeti.RingTheory.NormTrace.BaseChange
 /-!
 # Discriminants under base change
 
-The trace matrix and discriminant of a finite family in a finite free algebra commute with
-scalar extension. In particular, for a basis `b` of `S` over `R` and an `R`-algebra `A`, the
-discriminant of the base-changed basis of `A ⊗[R] S` over `A` is the image of the discriminant
-of `b`. This lets statements about discriminants pass to residue fields and localizations.
+The trace matrix of an arbitrary family, and the discriminant of a finite family, in a finite
+free algebra commute with scalar extension. In particular, for a basis `b` of `S` over `R` and
+an `R`-algebra `A`, the discriminant of the base-changed basis of `A ⊗[R] S` over `A` is the
+image of the discriminant of `b`. This lets statements about discriminants pass to residue
+fields and localizations.
 
 ## Main results
 
-* `TauCeti.Algebra.traceMatrix_baseChange`: the trace matrix of a base-changed finite family is
+* `TauCeti.Algebra.traceMatrix_baseChange`: the trace matrix of a base-changed family is
   the image of its original trace matrix.
 * `TauCeti.Algebra.discr_baseChange`: the discriminant of a base-changed finite family is the
   image of its original discriminant.
@@ -41,7 +42,7 @@ namespace TauCeti
 
 variable {R S A ι : Type*} [CommRing R] [CommRing S] [Algebra R S] [CommRing A] [Algebra R A]
 
-/-- The trace matrix of a base-changed finite family is the image of its original trace matrix. -/
+/-- The trace matrix of a base-changed family is the image of its original trace matrix. -/
 @[simp]
 theorem Algebra.traceMatrix_baseChange [Module.Free R S] [Module.Finite R S]
     (b : ι → S) :
