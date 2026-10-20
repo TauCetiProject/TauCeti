@@ -11,6 +11,7 @@ public import Mathlib.Probability.Moments.Basic
 public import Mathlib.Probability.Moments.IntegrableExpMul
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
+public import TauCeti.MeasureTheory.Integral.Bind
 public import TauCeti.MeasureTheory.Measure.Mixture.Basic
 public import TauCeti.Probability.Density
 
@@ -34,7 +35,6 @@ arbitrary measurable extension.
   integrability domain by an iterated nonnegative integral.
 * `MeasureTheory.Measure.mgf_bind`, `MeasureTheory.Measure.cgf_bind`, and
   `MeasureTheory.Measure.charFun_bind` express transforms of mixtures in terms of their components.
-* The corresponding results in `ProbabilityTheory.Kernel` give the kernel-composition forms.
 * `TauCeti.Probability.hasPDF_of_hasLaw_bind_withDensity` gives the density interface for a random
   variable whose law is a mixture of densities.
 -/
@@ -121,48 +121,6 @@ theorem charFun_bind (rho : Measure A) {K : A → Measure E} (hK : AEMeasurable 
 
 end MeasureTheory.Measure
 
-namespace ProbabilityTheory.Kernel
-
-variable {A : Type*} [MeasurableSpace A]
-
-/-- The cdf of a mixture of real probability laws is the integral of their cdfs. -/
-theorem cdf_comp (kappa : Kernel A ℝ) [IsMarkovKernel kappa]
-    (rho : Measure A) [IsProbabilityMeasure rho] (x : ℝ) :
-    cdf (kappa ∘ₘ rho) x = ∫ a, cdf (kappa a) x ∂rho := by
-  exact Measure.cdf_bind rho kappa kappa.aemeasurable
-    (ae_of_all rho fun _ ↦ inferInstance) x
-
-/-- Exponential integrability under a mixture is equivalent to finiteness of the iterated
-nonnegative exponential integral.  This formulation remains meaningful before passing to real
-mgfs and records the exact integrability domain without relying on totalized real integration. -/
-theorem mem_integrableExpSet_comp_iff (kappa : Kernel A ℝ) (rho : Measure A) (t : ℝ) :
-    t ∈ integrableExpSet id (kappa ∘ₘ rho) ↔
-      (∫⁻ a, ∫⁻ x, ENNReal.ofReal (Real.exp (t * x)) ∂kappa a ∂rho) < ∞ := by
-  simpa only [id_eq] using
-    Measure.mem_integrableExpSet_bind_iff rho kappa.aemeasurable measurable_id t
-
-/-- On its integrability domain, the mgf of a mixture is the integral of the component mgfs. -/
-theorem mgf_comp (kappa : Kernel A ℝ) (rho : Measure A) (t : ℝ)
-    (ht : t ∈ integrableExpSet id (kappa ∘ₘ rho)) :
-    mgf id (kappa ∘ₘ rho) t = ∫ a, mgf id (kappa a) t ∂rho := by
-  exact Measure.mgf_bind rho kappa.aemeasurable id t ht
-
-/-- The cgf of a mixture is the logarithm of the integral of the component mgfs, rather than the
-integral of their cgfs. -/
-theorem cgf_comp (kappa : Kernel A ℝ) (rho : Measure A) (t : ℝ)
-    (ht : t ∈ integrableExpSet id (kappa ∘ₘ rho)) :
-    cgf id (kappa ∘ₘ rho) t = Real.log (∫ a, mgf id (kappa a) t ∂rho) := by
-  exact Measure.cgf_bind rho kappa.aemeasurable id t ht
-
-/-- The characteristic function of the composition of a finite kernel with a finite mixing
-measure is the integral of the component characteristic functions. -/
-theorem charFun_comp {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-    [MeasurableSpace E] [BorelSpace E] (kappa : Kernel A E) [IsFiniteKernel kappa]
-    (rho : Measure A) [IsFiniteMeasure rho] (t : E) :
-    charFun (kappa ∘ₘ rho) t = ∫ a, charFun (kappa a) t ∂rho := by
-  exact Measure.charFun_bind rho kappa.aemeasurable t
-
-end ProbabilityTheory.Kernel
 
 namespace TauCeti.Probability
 

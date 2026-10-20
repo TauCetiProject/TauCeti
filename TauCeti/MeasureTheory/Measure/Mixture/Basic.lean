@@ -9,7 +9,6 @@ public import Mathlib.MeasureTheory.Measure.Decomposition.Lebesgue
 public import Mathlib.MeasureTheory.Measure.GiryMonad
 public import Mathlib.MeasureTheory.Measure.Prod
 public import Mathlib.MeasureTheory.Measure.WithDensity
-public import TauCeti.MeasureTheory.Integral.Bind
 
 /-!
 # Mixtures of measures
@@ -17,9 +16,6 @@ public import TauCeti.MeasureTheory.Integral.Bind
 This file identifies a mixture of jointly measurable densities with the measure whose density
 is their pointwise integral. The result allows s-finite mixing and reference measures, so it
 applies to probability mixtures and unnormalised integral representations.
-
-The iterated Bochner integral identity is provided by
-`MeasureTheory.Measure.integral_bind` from `TauCeti.MeasureTheory.Integral.Bind`.
 
 ## Main results
 
@@ -35,7 +31,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory ProbabilityTheory
+open MeasureTheory
 
 open scoped ENNReal
 
