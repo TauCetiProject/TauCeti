@@ -115,15 +115,6 @@ theorem exchangeableLaw_iff_forall_measurePreserving_permReindex {ρ : Measure (
   · intro hρ π
     exact (hρ π).map_eq
 
-/-- The first-`n` prefix marginal of a path-space measure reindexed by `φ : ℕ → ℕ` is its
-finite coordinate marginal along `i ↦ φ i`. This only uses coordinate reindexing, so it holds
-for an arbitrary function `φ`, not just a permutation. -/
-theorem map_reindex_prefixProj (ρ : Measure (ℕ → α)) (φ : ℕ → ℕ) (n : ℕ) :
-    (ρ.map (fun x : ℕ → α => fun k => x (φ k))).map (prefixProj α n) =
-      ρ.map (fun x : ℕ → α => fun i : Fin n => x (φ i.val)) := by
-  rw [Measure.map_map (measurable_prefixProj n) (measurable_reindex φ)]
-  rfl
-
 /-- The finite marginal of an exchangeable path law along any injective selection
 `k : Fin n → ℕ` equals its first-`n` prefix marginal: an exchangeable law has the same
 finite-dimensional distribution along every injective finite selection of coordinates. -/
