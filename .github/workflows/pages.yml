@@ -45,6 +45,7 @@ on:
       - 'scripts/roadmap_progress.py'
       - 'scripts/roadmap_coverage.json'
       - 'scripts/roadmap_links.json'
+      - 'scripts/docs_facts.py'
       - '.github/workflows/pages.yml'
   schedule:
     - cron: "23 */3 * * *"   # Every three hours (UTC): refresh the charts and pick up the latest API docs
@@ -662,6 +663,12 @@ jobs:
           fi
           rm -rf _out/docs
           cp -a ../docbuild/.lake/build/doc _out/docs
+          # The documentation facts generation api-docs.yml exported into the tree is published to
+          # object storage by publish-docs-facts below, not served from Pages. Hand it over here,
+          # where it is known to come from the tree being deployed.
+          if [ -e _out/docs/FACTS_V1 ] || [ -L _out/docs/FACTS_V1 ]; then
+            mv _out/docs/FACTS_V1 "$RUNNER_TEMP/docs-facts"
+          fi
           if [ ! -s _out/docs/index.html ]; then
             echo "::error title=API docs are empty::the doc tree has no index.html, so /docs would deploy unusable"
             exit 1
@@ -723,6 +730,18 @@ jobs:
         with:
           name: github-pages-primary
           path: web/_out
+
+      # Absent when the tree predates the exporter or its export failed; publish-docs-facts reports
+      # that. Never allowed to fail this job, which would hand an already uploaded site to the
+      # fallback path.
+      - name: Hand the documentation facts to the publisher
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: docs-facts
+          path: ${{ runner.temp }}/docs-facts
+          if-no-files-found: ignore
+          retention-days: 7
 
   # Publish the freshly generated DATA even when the site itself will not compile.
   #
@@ -857,7 +876,7 @@ jobs:
   # published copy aged past twenty-four hours while each of those runs reported only a warning. The
   # remedies differ -- a broken generator versus a broken publish path -- so they are separate errors.
   report-data-freshness:
-    needs: [build-data, build-site, fallback-site, deploy]
+    needs: [build-data, build-site, fallback-site, deploy, publish-docs-facts]
     # ALWAYS, unconditionally. The previous `always() && ...data-failures != ''` reads like "always"
     # but is not: it decided whether to run by asking only whether a generator had failed, so the
     # case above -- generators all green, nothing published -- skipped this job every time. Whether
@@ -874,8 +893,15 @@ jobs:
           FALLBACK_RESULT: ${{ needs.fallback-site.result }}
           RESTORED_KEY: ${{ needs.fallback-site.outputs.restored-key }}
           DEPLOY_RESULT: ${{ needs.deploy.result }}
+          FACTS_RESULT: ${{ needs.publish-docs-facts.result }}
         run: |
           stale=0
+          # Isolated from the deploy, which has already happened, and safe to retry: until a
+          # generation is complete and read back, v1/current.json keeps naming the last good one.
+          if [ "$FACTS_RESULT" = "failure" ]; then
+            echo "::error title=Documentation facts not published::the publish-docs-facts job failed, so v1/current.json still names the last good generation; the next scheduled Pages run retries"
+            stale=1
+          fi
           if [ "$DATA_RESULT" != "success" ]; then
             echo "::error title=Data generation did not finish::the build-data job ended '${DATA_RESULT}', so nothing was regenerated this run"
             stale=1
@@ -1018,3 +1044,52 @@ jobs:
 
           gh api --method PATCH "$endpoint" -f sha="$CANDIDATE" -F force="$force" > /dev/null
           echo "docgen moved $current -> $CANDIDATE (force=$force)"
+
+  # Publish the deployed tree's documentation facts generation (scripts/docs-facts.md) to object
+  # storage, for progress reporting to pin. After `advance-docgen-ref`, because readers require the
+  # generation's commit to be reachable from `docgen`; and only from the tree `build-site` deployed,
+  # whose SOURCE_SHA it must match, so a reused cached tree publishes the commit it documents.
+  #
+  # Nothing waits on this job, so a failure costs neither the site nor the docs: the immutable
+  # objects of a partial attempt are harmless, the pointer moves only after both are read back,
+  # and report-data-freshness turns the failure red. Unconfigured, it does nothing.
+  publish-docs-facts:
+    needs: [build-site, advance-docgen-ref]
+    if: ${{ !cancelled() && needs.advance-docgen-ref.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: scripts/docs_facts.py
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
+      - name: Receive the deployed tree's facts generation
+        id: artifact
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: docs-facts
+          path: ${{ runner.temp }}/docs-facts
+
+      - name: Publish the facts generation and advance v1/current.json
+        env:
+          DOCS_FACTS_ENDPOINT: ${{ vars.DOCS_FACTS_ENDPOINT }}
+          DOCS_FACTS_BASE_PUBLIC: ${{ vars.DOCS_FACTS_BASE_PUBLIC }}
+          DOCS_FACTS_KEY: ${{ secrets.DOCS_FACTS_KEY || secrets.LAKE_CACHE_KEY }}
+          SOURCE_SHA: ${{ needs.build-site.outputs.docs-source-sha }}
+          ARTIFACT: ${{ steps.artifact.outcome }}
+        run: |
+          set -euo pipefail
+          if [ -z "$DOCS_FACTS_ENDPOINT" ] || [ -z "$DOCS_FACTS_BASE_PUBLIC" ] || [ -z "${DOCS_FACTS_KEY//[[:space:]]/}" ]; then
+            echo "::notice::documentation facts publication is not configured; see scripts/docs-facts.md"
+            exit 0
+          fi
+          if [ "$ARTIFACT" != "success" ] || [ ! -d "$RUNNER_TEMP/docs-facts" ]; then
+            echo "::error title=No documentation facts::the deployed docs (${SOURCE_SHA}) carry no facts generation; v1/current.json keeps its last good generation, and the next api-docs.yml run exports one for the next Pages run"
+            exit 1
+          fi
+          python3 scripts/docs_facts.py publish "$RUNNER_TEMP/docs-facts" --source-commit "$SOURCE_SHA"
