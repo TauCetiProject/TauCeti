@@ -196,7 +196,6 @@ variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
 
 omit [IsManifold I 1 M] [IsManifold J 1 N] [FiniteDimensional ℝ E] [IsManifold K 1 P] in
 theorem injective_mfderiv_comp
-    [FiniteDimensional ℝ F]
     (h : N → P) (f : M → N)
     (hinjh : ∀ y, Function.Injective (mfderiv J K h y))
     (hinjf : ∀ x, Function.Injective (mfderiv I J f x)) :
