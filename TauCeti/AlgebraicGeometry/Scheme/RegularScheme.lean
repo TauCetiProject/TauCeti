@@ -25,6 +25,7 @@ follows from the affine criterion and the ring-level theorem
 * `TauCeti.AlgebraicGeometry.isRegular_iff_forall_stalk`: the stalkwise characterization.
 * `TauCeti.AlgebraicGeometry.IsRegular.of_isOpenImmersion`: open subschemes are regular.
 * `TauCeti.AlgebraicGeometry.isRegular_iff_forall_affineOpens`: the affine-open criterion.
+* `TauCeti.AlgebraicGeometry.IsRegular.component_regular`: regular affine-open section rings.
 * `TauCeti.AlgebraicGeometry.isRegular_Spec_iff`: regularity of an affine scheme.
 * `TauCeti.AlgebraicGeometry.IsNormalScheme.of_isRegular`: regular schemes are normal.
 
@@ -92,6 +93,11 @@ theorem isRegular_iff_forall_affineOpens :
     have : IsRegularRing Γ(X, V) := h V
     exact isRegularLocalRing_stalk_of_isRegularRing hU hxU
 
+/-- The section ring of an affine open in a regular scheme is regular. -/
+instance IsRegular.component_regular [IsRegular X] (U : X.affineOpens) :
+    IsRegularRing Γ(X, U) :=
+  (isRegular_iff_forall_affineOpens.mp inferInstance) U
+
 /-- The spectrum of a ring is regular exactly when the ring is regular.
 This is the affine case of Stacks, Lemma 28.9.3 (02IU). -/
 @[stacks 02IU "affine case"]
@@ -107,9 +113,7 @@ theorem isRegular_Spec_iff (R : CommRingCat.{u}) :
 @[stacks 0569]
 instance IsNormalScheme.of_isRegular [IsRegular X] : IsNormalScheme X := by
   refine isNormalScheme_iff_forall_affineOpens.mpr fun U ↦ ?_
-  have := IsLocallyNoetherian.component_noetherian U
-  have : IsRegularRing Γ(X, U) :=
-    (isRegularRing_iff_isRegularLocalRing_stalk U.2).mpr fun _ _ ↦ inferInstance
+  have : IsRegularRing Γ(X, U) := IsRegular.component_regular U
   exact (isNormalScheme_Spec_iff_forall_localization Γ(X, U)).mpr fun _ _ ↦
     ⟨inferInstance, inferInstance⟩
 
