@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.ContinuousMap.GlueHalves
 public import TauCeti.Topology.Homotopy.HurewiczFibration.Basic
 
 /-!
@@ -25,6 +26,8 @@ prescribed lifts, for instance the constant lifts at a base point for loops
 
 * `TauCeti.IsHurewiczFibration.exists_lift_openBox`: relative homotopy lifting for the pair
   `(A × I × I, A × J)`.
+* `TauCeti.IsHurewiczFibration.exists_homotopy_endpoints`: two lifts of the same family of paths
+  from the same starting points have end points homotopic through one fiber.
 
 ## References
 
@@ -208,5 +211,72 @@ theorem IsHurewiczFibration.exists_lift_openBox (hp : IsHurewiczFibration.{w} p)
       simp only [τ, ContinuousMap.coe_mk, time_eq_zero_of_isBox hx]
       exact projIcc_left zero_le_one
     simp only [ContinuousMap.coe_mk, hτ, hL₀, f₀, deform_zero_of_isBox hx]
+
+/-- **Uniqueness of lifts up to homotopy in the fiber.**  Two families of paths `α` and `α'` in
+`E`, parametrized by a space `Y`, with the same starting points, over the same family of paths `γ`
+in `B`, have homotopic end points through a homotopy `K` taking values in the fiber over the end
+point of `γ`. -/
+theorem IsHurewiczFibration.exists_homotopy_endpoints {Y : Type w} [TopologicalSpace Y]
+    (hp : IsHurewiczFibration.{w} p) (γ : C(Y × I, B)) (α α' : C(Y × I, E))
+    (hα : ∀ y t, p (α (y, t)) = γ (y, t))
+    (hα' : ∀ y t, p (α' (y, t)) = γ (y, t)) (h₀ : ∀ y, α (y, 0) = α' (y, 0)) :
+    ∃ K : C(Y × I, E), (∀ y, K (y, 0) = α (y, 1)) ∧ (∀ y, K (y, 1) = α' (y, 1)) ∧
+      ∀ y s, p (K (y, s)) = γ (y, 1) := by
+  -- Reparametrizations of the paths by `t * (1 - 2 u)` and `t * (2 u - 1)`, clipped to `I`.
+  let c₁ : C(Y × (I × I), I) := ⟨fun x ↦ projIcc 0 1 zero_le_one
+    ((x.2.2 : ℝ) * (1 - 2 * x.2.1)), continuous_projIcc.comp (by fun_prop)⟩
+  let c₂ : C(Y × (I × I), I) := ⟨fun x ↦ projIcc 0 1 zero_le_one
+    ((x.2.2 : ℝ) * (2 * x.2.1 - 1)), continuous_projIcc.comp (by fun_prop)⟩
+  have c₁_apply : ∀ x, c₁ x = projIcc 0 1 zero_le_one ((x.2.2 : ℝ) * (1 - 2 * x.2.1)) :=
+    fun _ ↦ (rfl) -- the definition of the bundled map `c₁`
+  have c₂_apply : ∀ x, c₂ x = projIcc 0 1 zero_le_one ((x.2.2 : ℝ) * (2 * x.2.1 - 1)) :=
+    fun _ ↦ (rfl) -- the definition of the bundled map `c₂`
+  have c₁_zero_right : ∀ y u, c₁ (y, (u, 0)) = 0 := fun y u ↦ by simp [c₁_apply]
+  have c₂_zero_right : ∀ y u, c₂ (y, (u, 0)) = 0 := fun y u ↦ by simp [c₂_apply]
+  have c₁_zero_left : ∀ y t, c₁ (y, (0, t)) = t := fun y t ↦ by simp [c₁_apply]
+  have c₂_one_left : ∀ y t, c₂ (y, (1, t)) = t := fun y t ↦ by simp [c₂_apply]; norm_num
+  let a₁ : C(Y × (I × I), E) := α.comp ⟨fun x ↦ (x.1, c₁ x), by fun_prop⟩
+  let a₂ : C(Y × (I × I), E) := α'.comp ⟨fun x ↦ (x.1, c₂ x), by fun_prop⟩
+  let u : C(Y × (I × I), I) := ⟨fun x ↦ x.2.1, by fun_prop⟩
+  have a₁_apply : ∀ x, a₁ x = α (x.1, c₁ x) := fun _ ↦ (rfl) -- the definition of `a₁`
+  have a₂_apply : ∀ x, a₂ x = α' (x.1, c₂ x) := fun _ ↦ (rfl) -- the definition of `a₂`
+  have u_apply : ∀ x, u x = x.2.1 := fun _ ↦ (rfl) -- the definition of `u`
+  -- At `u = 1/2` both reparametrizations are constant at the starting point.
+  have hagree : ∀ x, (u x : ℝ) = 2⁻¹ → a₁ x = a₂ x := fun x hx ↦ by
+    have h1 : c₁ x = 0 := by rw [c₁_apply]; rw [u_apply] at hx; simp [hx]
+    have h2 : c₂ x = 0 := by rw [c₂_apply]; rw [u_apply] at hx; simp [hx]
+    rw [a₁_apply, a₂_apply, h1, h2]
+    exact h₀ x.1
+  -- The lift on the open box: `α` on the side `u = 0`, `α'` on the side `u = 1`, constant on the
+  -- bottom.
+  let g := ContinuousMap.glueHalves u a₁ a₂ hagree
+  let H : C(Y × (I × I), B) := ⟨fun x ↦ γ (x.1, x.2.2), by fun_prop⟩
+  have H_apply : ∀ x, H x = γ (x.1, x.2.2) := fun _ ↦ (rfl) -- the definition of `H`
+  obtain ⟨G, hG, hGJ⟩ := hp.exists_lift_openBox g H (by
+    rintro y ⟨u', t⟩ (h | h | h)
+    · obtain rfl : t = 0 := h
+      by_cases hu : (u' : ℝ) ≤ 2⁻¹
+      · rw [ContinuousMap.glueHalves_of_le u a₁ a₂ hagree (z := (y, (u', 0))) hu, a₁_apply,
+          c₁_zero_right, hα, H_apply]
+      · rw [ContinuousMap.glueHalves_of_not_le u a₁ a₂ hagree (z := (y, (u', 0))) hu, a₂_apply,
+          c₂_zero_right, hα', H_apply]
+    · obtain rfl : u' = 0 := h
+      rw [ContinuousMap.glueHalves_of_le u a₁ a₂ hagree (z := (y, (0, t))) (by simp [u_apply]),
+        a₁_apply, c₁_zero_left, hα, H_apply]
+    · obtain rfl : u' = 1 := h
+      rw [ContinuousMap.glueHalves_of_not_le u a₁ a₂ hagree (z := (y, (1, t)))
+        (by simp [u_apply]; norm_num), a₂_apply, c₂_one_left, hα', H_apply])
+  -- The homotopy is the lift on the top edge `t = 1`.
+  let K : C(Y × I, E) := ⟨fun z ↦ G (z.1, (z.2, 1)), by fun_prop⟩
+  have K_apply : ∀ y s, K (y, s) = G (y, (s, 1)) := fun _ _ ↦ (rfl) -- the definition of `K`
+  refine ⟨K, fun y ↦ ?_, fun y ↦ ?_, fun y s ↦ ?_⟩
+  · rw [K_apply, hGJ y (0, 1) (Or.inr (Or.inl rfl)),
+      ContinuousMap.glueHalves_of_le u a₁ a₂ hagree (z := (y, (0, 1))) (by simp [u_apply]),
+      a₁_apply, c₁_zero_left]
+  · rw [K_apply, hGJ y (1, 1) (Or.inr (Or.inr rfl)),
+      ContinuousMap.glueHalves_of_not_le u a₁ a₂ hagree (z := (y, (1, 1)))
+        (by simp [u_apply]; norm_num), a₂_apply, c₂_one_left]
+  · rw [K_apply, ← H_apply (y, (s, 1))]
+    exact congr_fun hG (y, (s, 1))
 
 end TauCeti

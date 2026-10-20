@@ -29,18 +29,20 @@ namespace ContinuousMap
 /-- Glue two maps along the two halves `s ≤ 1/2` and `1/2 ≤ s` of the parameter `s`, assuming
 that they agree where `s = 1/2`. -/
 noncomputable def glueHalves {Z X : Type*} [TopologicalSpace Z] [TopologicalSpace X] (s : C(Z, I))
-    (a a' : C(Z, X)) (h : ∀ z, (s z : ℝ) = 1 / 2 → a z = a' z) : C(Z, X) :=
-  ⟨fun z ↦ if (s z : ℝ) ≤ 1 / 2 then a z else a' z,
+    (a a' : C(Z, X)) (h : ∀ z, (s z : ℝ) = 2⁻¹ → a z = a' z) : C(Z, X) :=
+  ⟨fun z ↦ if (s z : ℝ) ≤ 2⁻¹ then a z else a' z,
     Continuous.if_le a.continuous a'.continuous (continuous_subtype_val.comp s.continuous)
       continuous_const h⟩
 
 variable {Z X : Type*} [TopologicalSpace Z] [TopologicalSpace X] (s : C(Z, I))
-  (a a' : C(Z, X)) (h : ∀ z, (s z : ℝ) = 1 / 2 → a z = a' z) {z : Z}
+  (a a' : C(Z, X)) (h : ∀ z, (s z : ℝ) = 2⁻¹ → a z = a' z) {z : Z}
 
-theorem glueHalves_of_le (hz : (s z : ℝ) ≤ 1 / 2) : glueHalves s a a' h z = a z :=
+@[simp]
+theorem glueHalves_of_le (hz : (s z : ℝ) ≤ 2⁻¹) : glueHalves s a a' h z = a z :=
   by simp only [glueHalves, ContinuousMap.coe_mk, hz, ↓reduceIte]
 
-theorem glueHalves_of_not_le (hz : ¬ (s z : ℝ) ≤ 1 / 2) : glueHalves s a a' h z = a' z :=
+@[simp]
+theorem glueHalves_of_not_le (hz : ¬ (s z : ℝ) ≤ 2⁻¹) : glueHalves s a a' h z = a' z :=
   by simp only [glueHalves, ContinuousMap.coe_mk, hz, ↓reduceIte]
 
 end ContinuousMap
