@@ -28,8 +28,8 @@ The restriction to changes of variables over `ℤ` matters: the scaling `(x, y) 
 `W` corresponds to `(X / u², Y / u³)`.
 
 Both restrictions are load-bearing. On `y² + ½y = x³` the point `(0, 0)` has integral coordinates
-while its negative `(0, -½)` does not (`exists_not_hasIntegralCoordinates_neg`), so the equation
-must be integral for stability under negation. On `y² = x³ + 3` the change of variables
+while its negative `(0, -½)` does not (`exists_not_hasIntegralCoordinates_neg`), so stability under
+negation is not guaranteed on an arbitrary rational model. On `y² = x³ + 3` the change of variables
 `(x, y) ↦ (4x, 8y)`, that is `u = 2` with `r = s = t = 0`, identifies the integral point `(1, 2)`
 with `(1/4, 1/4)`, which is not integral
 (`exists_variableChange_not_surjective_on_integralCoordinates`).
@@ -309,6 +309,38 @@ end Point
 
 end WeierstrassCurve.Affine
 
+namespace WeierstrassCurve
+
+variable (W : WeierstrassCurve ℤ) [(W.baseChange ℚ).IsElliptic]
+
+omit [(W.baseChange ℚ).IsElliptic] in
+private theorem equation_baseChange_iff {x y : ℤ} :
+    (W.baseChange ℚ).toAffine.Equation (x : ℚ) (y : ℚ) ↔ W.toAffine.Equation x y := by
+  rw [W.integral_toAffine_baseChange]
+  exact Affine.map_equation W.toAffine (f := Int.castRingHom ℚ) Int.cast_injective x y
+
+/-- On an integral model the coordinate predicate is exactly membership in `integralPoints`. -/
+@[simp]
+theorem hasIntegralCoordinates_iff_mem_integralPoints
+    (P : (W.baseChange ℚ).toAffine.Point) :
+    P.HasIntegralCoordinates ↔ P ∈ W.integralPoints := by
+  rw [mem_integralPoints_iff]
+  constructor
+  · rintro ⟨x, y, hP, rfl⟩
+    have hEq : (W.baseChange ℚ).toAffine.Equation (x : ℚ) (y : ℚ) :=
+      ((Affine.nonsingular_iff' (W := (W.baseChange ℚ).toAffine) (x : ℚ) (y : ℚ)).mp hP).1
+    refine ⟨x, y, W.equation_baseChange_iff.mp hEq, ?_⟩
+    unfold pointOfIntegralSolution Affine.Point.mk
+    rw [Affine.Point.some.injEq]
+    exact ⟨rfl, rfl⟩
+  · rintro ⟨x, y, h, rfl⟩
+    refine ⟨x, y, Affine.equation_iff_nonsingular.mp (W.integral_equation_baseChange x y h), ?_⟩
+    unfold pointOfIntegralSolution Affine.Point.mk
+    rw [Affine.Point.some.injEq]
+    exact ⟨rfl, rfl⟩
+
+end WeierstrassCurve
+
 namespace TauCeti
 
 /-! ### An integral equation is needed for negation stability -/
@@ -359,7 +391,7 @@ theorem not_hasIntegralCoordinates_neg_halfYCurvePointZero :
     exact_mod_cast h
   omega
 
-/-- **Integrality of the equation is needed for negation stability**: there is a Weierstrass curve
+/-- **Stability under negation fails on a general rational model**: there is a Weierstrass curve
 over `ℚ` with a point whose two coordinates are integers and whose negative does not have integral
 coordinates. On an equation over `ℤ` this cannot happen (`neg_mem_integralPoints`). -/
 theorem exists_not_hasIntegralCoordinates_neg :
