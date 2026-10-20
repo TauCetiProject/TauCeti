@@ -7,6 +7,7 @@ module
 
 import TauCeti.RingTheory.Etale.FiniteEtaleSplit
 import Mathlib.NumberTheory.Padics.Complex
+import TauCeti.RingTheory.AdjoinRoot.Separable
 
 /-!
 # Tests for rings without nonsplit finite étale covers

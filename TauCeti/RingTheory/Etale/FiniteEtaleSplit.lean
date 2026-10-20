@@ -17,6 +17,7 @@ import Mathlib.RingTheory.Finiteness.Prod
 import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 import Mathlib.RingTheory.Flat.Rank
 import Mathlib.Tactic.LinearCombination
+import TauCeti.RingTheory.AdjoinRoot.Separable
 import TauCeti.RingTheory.Ideal.Quotient.Pi
 
 /-!

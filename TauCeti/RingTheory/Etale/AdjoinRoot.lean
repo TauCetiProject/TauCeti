@@ -15,8 +15,7 @@ Let `f` be a monic polynomial over a commutative ring `R` which is separable, th
 its derivative. Then `R[X]/(f)` is a standard étale `R`-algebra, hence étale over `R`
 (`Polynomial.Monic.isStandardEtale_adjoinRoot`). This is the presentation `R[X][1/g]/(f)` of
 Mathlib's `StandardEtalePair` with `g = 1`: the derivative of `f` is already invertible modulo
-`f`. Conversely, separability says exactly that the derivative of `f` is a unit modulo `f`
-(`Polynomial.separable_iff_isUnit_mk_derivative`).
+`f`.
 
 Typical examples are `X ^ n - 1`, and its factors such as the cyclotomic polynomial `Φ_n`, over a
 ring in which `n` is invertible.
@@ -66,17 +65,5 @@ theorem Monic.isStandardEtale_adjoinRoot (hf : f.Monic) (hs : f.Separable) :
     P.hom_ext (by rw [AlgHom.comp_apply, P.lift_X, hψ, AlgHom.id_apply])
   have : Algebra.IsStandardEtale R P.Ring := inferInstance
   exact this.of_equiv (AlgEquiv.ofAlgHom φ ψ hφψ hψφ)
-
-/-- A polynomial is separable if and only if its derivative is a unit modulo it. -/
-theorem separable_iff_isUnit_mk_derivative :
-    f.Separable ↔ IsUnit (AdjoinRoot.mk f (derivative f)) := by
-  rw [isUnit_iff_exists_inv]
-  refine ⟨fun ⟨a, b, hab⟩ ↦ ⟨AdjoinRoot.mk f b, ?_⟩, fun ⟨b, hb⟩ ↦ ?_⟩
-  · rw [← map_mul, mul_comm, ← map_one (AdjoinRoot.mk f), ← hab]
-    simp
-  · obtain ⟨b, rfl⟩ := AdjoinRoot.mk_surjective b
-    rw [← map_mul, ← map_one (AdjoinRoot.mk f), AdjoinRoot.mk_eq_mk] at hb
-    obtain ⟨c, hc⟩ := hb
-    exact ⟨-c, b, by linear_combination hc⟩
 
 end Polynomial
