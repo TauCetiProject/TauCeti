@@ -36,6 +36,7 @@ is obtained by inserting the first entry into the corresponding image for the ta
   is deleting entry `j + 1` and then overwriting entry `j` by the contraction.
 * `Fin.update_removeNth_succ_eq_removeNth_castSucc`: deleting entry `j + 1` and then overwriting
   entry `j` by the deleted entry is deleting entry `j`.
+* `Fin.cons_init_tail`: prepending the first entry to the inner entries drops the last entry.
 -/
 
 public section
@@ -147,6 +148,13 @@ theorem update_removeNth_succ_eq_removeNth_castSucc {n : ℕ} (j : Fin (n + 1))
   · rw [Function.update_of_ne hkj.ne', removeNth_apply, removeNth_apply,
       succAbove_of_lt_succ _ _ (by simpa using hkj),
       succAbove_of_le_castSucc _ _ (by simpa using hkj.le)]
+
+/-- Prepending the first entry of a tuple to its inner entries drops the last entry. -/
+theorem cons_init_tail {n : ℕ} (a : Fin (n + 2) → α) : cons (a 0) (init (tail a)) = init a := by
+  funext k
+  cases k using Fin.cases with
+  | zero => rw [cons_zero, init, castSucc_zero]
+  | succ k => rw [cons_succ, init, init, tail, succ_castSucc]
 
 /-- The image of the first `n + 1` entries of a prepended tuple consists of its first entry
 and the image of the first `n` entries of its tail. -/

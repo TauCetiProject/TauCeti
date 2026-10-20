@@ -71,6 +71,9 @@ range, so the value is a `dite` rather than a plain application.
 * `Fin.finRotate_succ_eq_succ_succAbove` and `Fin.finRotate_succ_succAbove_of_ne`: the cyclic
   successor of `Fin (n + 1)` against the embeddings `Fin.succ` and `i.succ.succAbove` of `Fin n`,
   as used when a new entry is inserted into a cyclic sequence.
+* `Fin.finRotate_castSucc`: the cyclic successor of a non-last index `i.castSucc` is `i.succ`.
+* `Fin.cons_last_init_eq_comp_finRotate_symm`: rotating a tuple one step to the right moves its
+  last entry to the front.
 * `Fin.succAbove_adjacent_cases`: the positions `p` of `Fin (n + 1)` cyclically adjacent to
   `p.succAbove i`.
 * `Fin.swap_castSucc_succ_succAbove`: the transposition of `k.castSucc` and `k.succ` exchanges the
@@ -297,6 +300,20 @@ theorem finRotate_succ_succAbove_of_ne {n : ℕ} {i k : Fin n} (hk : k ≠ i) :
   simp only [succAbove]
   split_ifs <;> simp only [lt_def, val_castSucc, val_succ, coe_finRotate, Fin.ext_iff,
     val_last] at * <;> split_ifs at * <;> omega
+
+/-- The cyclic successor of a non-last index `i.castSucc` of `Fin (n + 1)` is `i.succ`. -/
+theorem finRotate_castSucc {n : ℕ} (i : Fin n) : finRotate (n + 1) i.castSucc = i.succ :=
+  finRotate_of_lt i.isLt
+
+/-- Rotating a tuple one step to the right moves its last entry to the front. -/
+theorem cons_last_init_eq_comp_finRotate_symm {n : ℕ} {α : Sort*} (b : Fin (n + 1) → α) :
+    cons (b (last n)) (init b) = b ∘ (finRotate (n + 1)).symm := by
+  funext k
+  cases k using Fin.cases with
+  | zero => rw [cons_zero, Function.comp_apply, (Equiv.symm_apply_eq _).2 finRotate_last.symm]
+  | succ k =>
+    rw [cons_succ, Function.comp_apply, (Equiv.symm_apply_eq _).2 (finRotate_castSucc k).symm,
+      init]
 
 /-- A position `p` of `Fin (n + 1)` cyclically adjacent to `p.succAbove i` is `i.castSucc` or
 `i.succ`, or wraps around: `p` is last and `p.succAbove i` is `0`, or `p` is `0` and

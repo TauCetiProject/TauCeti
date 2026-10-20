@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 public import TauCeti.RingTheory.CyclicCohomology.Matrix
 
+import TauCeti.Data.Fin.Basic
 import TauCeti.Data.Fin.Tuple.Basic
 
 /-!
@@ -83,7 +84,7 @@ theorem hochschildCoboundary_apply_eq_zero_of_add_add_mul_eq_zero
   have hinner (j : Fin (n + 1)) : (-1 : ℤ) ^ (j : ℕ) • ψ (Fin.contractNth j.castSucc (· * ·) x) =
       g j.succ - g j.castSucc := by
     have hj := hx j.castSucc
-    rw [show finRotate (n + 2) j.castSucc = j.succ from finRotate_of_lt j.isLt] at hj
+    rw [Fin.finRotate_castSucc] at hj
     rw [Fin.contractNth_castSucc_eq_update_removeNth_succ, hsplit _ _ hj,
       Fin.update_removeNth_succ_eq_removeNth_castSucc,
       Function.update_eq_self_iff.2 (by simp [Fin.removeNth_apply])]
@@ -96,22 +97,13 @@ theorem hochschildCoboundary_apply_eq_zero_of_add_add_mul_eq_zero
         g 0 - g (Fin.last (n + 1)) := by
     have hl := hx (Fin.last (n + 1))
     rw [finRotate_last] at hl
-    have hinit : (Fin.cons (x 0) fun k ↦ x k.castSucc.succ : Fin (n + 1) → A) = Fin.init x := by
-      funext k
-      cases k using Fin.cases with
-      | zero => rw [Fin.cons_zero, Fin.init, Fin.castSucc_zero]
-      | succ k => rw [Fin.cons_succ, Fin.init, Fin.succ_castSucc]
+    -- By definition, the inner entries `fun k ↦ x k.castSucc.succ` are `Fin.init (Fin.tail x)`
+    -- and `x (Fin.last (n + 1))` is `Fin.tail x (Fin.last n)`.
+    have hinit : (Fin.cons (x 0) fun k ↦ x k.castSucc.succ : Fin (n + 1) → A) = Fin.init x :=
+      Fin.cons_init_tail x
     have htail : (Fin.cons (x (Fin.last (n + 1))) fun k ↦ x k.castSucc.succ : Fin (n + 1) → A) =
-        Fin.tail x ∘ (finRotate (n + 1)).symm := by
-      funext k
-      cases k using Fin.cases with
-      | zero =>
-        rw [Function.comp_apply, (Equiv.symm_apply_eq _).2 finRotate_last.symm]
-        simp [Fin.tail]
-      | succ k =>
-        rw [Function.comp_apply, (Equiv.symm_apply_eq _).2 (show
-          finRotate (n + 1) k.castSucc = k.succ from finRotate_of_lt k.isLt).symm]
-        simp [Fin.tail]
+        Fin.tail x ∘ (finRotate (n + 1)).symm :=
+      Fin.cons_last_init_eq_comp_finRotate_symm (Fin.tail x)
     rw [← Fin.update_cons_zero (x (Fin.last (n + 1))), hsplit _ _ hl, Fin.update_cons_zero,
       Fin.update_cons_zero, hinit, htail, mem_cyclicCochains_iff.1 hψ]
     have hsign : (-1 : ℤ) ^ (n + 1) * (-1) ^ n = -1 := by
@@ -170,7 +162,7 @@ private theorem add_add_mul_eq_zero_of_units (u : Aˣ) {m : ℕ} {x : Fin (2 * m
     have hodd : ¬Even (2 * m + 1) := by simp
     simpa [finRotate_last, hodd] using h₂
   | cast j =>
-    rw [show finRotate (2 * m + 2) j.castSucc = j.succ from finRotate_of_lt j.isLt]
+    rw [Fin.finRotate_castSucc]
     by_cases hj : Even (j : ℕ)
     · simpa [hj, Nat.even_add_one] using h₁
     · simpa [hj, Nat.even_add_one] using h₂
