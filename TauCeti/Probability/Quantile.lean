@@ -328,22 +328,6 @@ theorem quantile_lt_iff (μ : Measure ℝ) (hμ : Continuous (cdf μ))
     · exact h1.trans_le hx1
   · exact (hq ▸ monotone_cdf μ hx).not_gt h
 
-/-- For a law whose cumulative distribution function is continuous, and strictly increasing where
-its values lie strictly between `0` and `1`, the quantile function is continuous on the levels
-strictly between `0` and `1`. -/
-theorem continuousOn_quantile (μ : Measure ℝ) (hμ : Continuous (cdf μ))
-    (hmono : StrictMonoOn (cdf μ) (cdf μ ⁻¹' Ioo 0 1)) :
-    ContinuousOn μ.quantile (Ioo 0 1) := fun t ht => by
-  -- A monotone function whose image of a neighbourhood is a neighbourhood is continuous; here the
-  -- image of `Ioo 0 1` is the open set where the cumulative distribution function lies in
-  -- `Ioo 0 1`.
-  have hmem : μ.quantile t ∈ cdf μ ⁻¹' Ioo 0 1 := by
-    rw [mem_preimage, cdf_quantile μ hμ ht.1 ht.2]
-    exact ht
-  exact (continuousAt_of_monotoneOn_of_image_mem_nhds (monotoneOn_quantile μ)
-    (isOpen_Ioo.mem_nhds ht) (mem_of_superset ((isOpen_Ioo.preimage hμ).mem_nhds hmem)
-      fun y hy => ⟨cdf μ y, hy, quantile_cdf μ hmono hy⟩)).continuousWithinAt
-
 /-- If the cdf is strictly increasing on an interval containing all interior quantiles,
 the quantile is continuous on the interior levels, even when the law has atoms. -/
 theorem continuousOn_quantile_of_strictMonoOn (μ : Measure ℝ) {s : Set ℝ}
@@ -365,6 +349,18 @@ theorem continuousOn_quantile_of_strictMonoOn (μ : Measure ℝ) {s : Set ℝ}
     filter_upwards [self_mem_nhdsWithin,
       eventually_nhdsWithin_of_eventually_nhds (eventually_lt_nhds hc)] with w hw hwc
     exact ((quantile_le_iff μ hw.1 hw.2).2 hwc.le).trans_lt hcb
+
+/-- For a law whose cumulative distribution function is continuous, and strictly increasing where
+its values lie strictly between `0` and `1`, the quantile function is continuous on the levels
+strictly between `0` and `1`. -/
+theorem continuousOn_quantile (μ : Measure ℝ) (hμ : Continuous (cdf μ))
+    (hmono : StrictMonoOn (cdf μ) (cdf μ ⁻¹' Ioo 0 1)) :
+    ContinuousOn μ.quantile (Ioo 0 1) := by
+  refine continuousOn_quantile_of_strictMonoOn μ
+    (ordConnected_Ioo.preimage_mono (monotone_cdf μ)) hmono ?_
+  intro t ht
+  rw [mem_preimage, cdf_quantile μ hμ ht.1 ht.2]
+  exact ht
 
 /-- The quantile function is left continuous at every level strictly between `0` and `1`. -/
 theorem continuousWithinAt_Iio_quantile (μ : Measure ℝ) (h0 : 0 < t) (h1 : t < 1) :

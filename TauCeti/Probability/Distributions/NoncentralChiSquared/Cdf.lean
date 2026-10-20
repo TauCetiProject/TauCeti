@@ -144,16 +144,16 @@ theorem cdf_noncentralChiSquaredMeasure_pos (hk : 0 ≤ k) (l : ℝ≥0) (hx : 0
   · exact (cdf_nonneg _ 0).trans_lt
       (strictMonoOn_cdf_noncentralChiSquaredMeasure hk (not_and_or.mp h) (by simp) hx.le hx)
 
-/-- The cdf is continuous at every positive point, also for the mixed degree-zero law. -/
+/-- The cdf is continuous away from zero, also for the mixed degree-zero law. -/
 theorem continuousOn_cdf_noncentralChiSquaredMeasure (hk : 0 ≤ k) (l : ℝ≥0) :
-    ContinuousOn (cdf (noncentralChiSquaredMeasure k l)) (Ioi 0) := by
+    ContinuousOn (cdf (noncentralChiSquaredMeasure k l)) {0}ᶜ := by
   have := isProbabilityMeasure_noncentralChiSquaredMeasure hk l
   intro x hx
   apply ContinuousAt.continuousWithinAt
   rw [(cdf _).mono.continuousAt_iff_leftLim_eq_rightLim,
     ((cdf _).right_continuous x).rightLim_eq, Measure.leftLim_cdf,
     measureReal_congr (Iio_ae_eq_Iic'
-      (noncentralChiSquaredMeasure_singleton_of_ne_zero hx.ne' k l)), ← cdf_eq_real]
+      (noncentralChiSquaredMeasure_singleton_of_ne_zero hx k l)), ← cdf_eq_real]
 
 /-- At positive degree there is no atom at zero, so the cdf is continuous everywhere. -/
 theorem continuous_cdf_noncentralChiSquaredMeasure (hk : 0 < k) (l : ℝ≥0) :
