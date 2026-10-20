@@ -45,7 +45,7 @@ theorem integrableExpSet_id_hypoexponentialMeasure (hr : ∀ i, 0 < r i) :
     simp only [integrableExpSet, mem_ofPred_eq, id_eq]
     rw [hypoexponentialMeasure_eq_map hr,
       integrable_map_measure (by fun_prop) (by fun_prop)]
-    rfl
+    simp only [Function.comp_def]
   have hpi := integrableExpSet_sum_pi (μ := fun i ↦ expMeasure (r i)) (fun _ ↦ id)
   simp only [id_eq, integrableExpSet_id_expMeasure (hr _)] at hpi
   rw [hmap, hpi]
@@ -109,7 +109,7 @@ theorem integrable_pow_hypoexponentialMeasure (r : ι → ℝ) (n : ℕ) :
   by_cases hr : ∀ i, 0 < r i
   · exact integrable_pow_of_mem_interior_integrableExpSet
       (zero_mem_interior_integrableExpSet hr) n
-  · simp [hypoexponentialMeasure_eq_zero hr]
+  · simp [hypoexponentialMeasure_eq_zero_of_invalid hr]
 
 /-- The mean of a hypoexponential law is the sum of the reciprocal rates. -/
 @[simp]

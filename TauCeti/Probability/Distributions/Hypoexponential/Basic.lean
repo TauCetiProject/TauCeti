@@ -49,7 +49,7 @@ theorem hypoexponentialMeasure_eq_map {r : ι → ℝ} (hr : ∀ i, 0 < r i) :
 
 /-- A family containing a nonpositive rate defines the zero law. -/
 @[simp]
-theorem hypoexponentialMeasure_eq_zero {r : ι → ℝ} (hr : ¬ ∀ i, 0 < r i) :
+theorem hypoexponentialMeasure_eq_zero_of_invalid {r : ι → ℝ} (hr : ¬ ∀ i, 0 < r i) :
     hypoexponentialMeasure r = 0 := by
   rw [hypoexponentialMeasure, ite_eq_right hr]
 
@@ -77,7 +77,7 @@ theorem ae_pos_hypoexponentialMeasure [Nonempty ι] (r : ι → ℝ) :
   · rw [hypoexponentialMeasure_eq_map hr]
     apply (ae_map_iff (by fun_prop) (by measurability)).2
     simpa only [expMeasure] using ae_pos_sum_pi_gammaMeasure (fun _ ↦ 1) r
-  · simp [hypoexponentialMeasure_eq_zero hr]
+  · simp [hypoexponentialMeasure_eq_zero_of_invalid hr]
 
 /-- At a common positive rate, a nonempty hypoexponential law is the Erlang law with shape
 equal to the number of summands. -/
@@ -86,6 +86,17 @@ theorem hypoexponentialMeasure_const [Nonempty ι] {r : ℝ} (hr : 0 < r) :
   rw [hypoexponentialMeasure_eq_map (fun _ ↦ hr)]
   simpa only [expMeasure, Finset.sum_const, Finset.card_univ, nsmul_eq_mul, mul_one] using
     map_sum_pi_gammaMeasure (a := fun _ : ι ↦ (1 : ℝ)) (fun _ ↦ one_pos) hr
+
+/-- A single positive-rate hypoexponential summand has the exponential law. -/
+@[simp]
+theorem hypoexponentialMeasure_of_unique [Unique ι] (r : ι → ℝ) (hr : 0 < r default) :
+    hypoexponentialMeasure r = expMeasure (r default) := by
+  calc
+    hypoexponentialMeasure r = hypoexponentialMeasure (fun _ : ι ↦ r default) :=
+      congrArg hypoexponentialMeasure (funext fun i ↦ congrArg r (Unique.eq_default i))
+    _ = expMeasure (r default) := by
+      simpa only [Fintype.card_unique, Nat.cast_one, expMeasure] using
+        (hypoexponentialMeasure_const (ι := ι) hr)
 
 /-- The hypoexponential family is jointly measurable in all rates, including its invalid
 zero-measure branch. -/
