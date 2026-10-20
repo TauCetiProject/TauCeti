@@ -150,8 +150,7 @@ exponent dividing `p ^ m`. -/
 theorem padicCompletionUnitsNormResidue_pow_smul [Fact p.Prime] (m : ℕ)
     (y : Additive ↑(padicCompletionUnits p K)) :
     padicCompletionUnitsNormResidue p K L m ((p : ℤ_[p]) ^ m • y) = 0 := by
-  rw [← Nat.cast_pow, padicCompletionUnits_natCast_smul, map_nsmul, ← ofMul_toMul (_ • _)]
-  simp
+  simp [← Nat.cast_pow, ← toMul_eq_one]
 
 /-- If `p ^ m` contains the full power of `p` dividing `#Gal(L/K)^ab`, then every
 `p ^ m`-multiple in `A(K)` is a completed norm. -/
@@ -190,12 +189,9 @@ theorem ker_padicCompletionUnitsNormResidue [Fact p.Prime] (hpK : (p : K) ≠ 0)
   constructor
   · intro hx
     obtain ⟨u, y, rfl⟩ := exists_eq_padicCompletionUnitsOf_add_pow_smul p K m x
-    simp only [map_add, padicCompletionUnitsNormResidue_pow_smul, add_zero,
-      padicCompletionUnitsNormResidue_of, ofMul_eq_zero, QuotientGroup.eq_one_iff,
-      mem_powerSubgroup_iff] at hx
     -- The norm residue symbol of `u` is a `p ^ m`-th power, so `u` is a norm times a
     -- `p ^ m`-th power.
-    obtain ⟨g, hg⟩ := hx
+    obtain ⟨g, hg⟩ : ∃ g, g ^ p ^ m = normResidue K L u := by simpa using hx
     obtain ⟨c, rfl⟩ := (normResidue K L).surjective g
     obtain ⟨w, rfl⟩ := QuotientGroup.mk_surjective c
     have hnorm : u * (w ^ p ^ m)⁻¹ ∈ normGroup K L := by
@@ -203,9 +199,10 @@ theorem ker_padicCompletionUnitsNormResidue [Fact p.Prime] (hpK : (p : K) ≠ 0)
       simp [hg]
     obtain ⟨v, hv⟩ := mem_normGroup_iff_exists_normUnits.1 hnorm
     rw [eq_mul_inv_iff_mul_eq] at hv
-    rw [← hv, map_mul, ofMul_mul, map_pow, ofMul_pow, ← padicCompletionUnits_natCast_smul]
-    refine add_mem (add_mem ⟨Additive.ofMul (padicCompletionUnitsOf p L v), by simp⟩ ?_) ?_ <;>
-      exact_mod_cast pow_smul_mem_range_padicCompletionUnitsNorm p K L hpK hm _
+    simp only [← hv, map_mul, ofMul_mul, map_pow, ofMul_pow, ← padicCompletionUnits_natCast_smul,
+      Nat.cast_pow, add_assoc, ← smul_add]
+    refine add_mem ⟨Additive.ofMul (padicCompletionUnitsOf p L v), by simp⟩ ?_
+    exact pow_smul_mem_range_padicCompletionUnitsNorm p K L hpK hm _
   · rintro ⟨y, rfl⟩
     -- The level-`m` coordinate of a completed norm is the class of a norm.
     obtain ⟨v, hv⟩ := QuotientGroup.mk_surjective (y.toMul.1 m)
