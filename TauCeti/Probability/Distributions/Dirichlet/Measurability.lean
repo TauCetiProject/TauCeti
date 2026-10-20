@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.Dirichlet.Basic
-public import TauCeti.MeasureTheory.MeasurableSpace.StdSimplex
+public import TauCeti.MeasureTheory.Constructions.BorelSpace.StdSimplex
 import TauCeti.Probability.Distributions.Gamma.Measurability
 
 /-!
@@ -74,15 +74,14 @@ theorem ae_extendWeights_dirichletMeasure [Nonempty ι] {a : ι → ℝ} (ha : �
       ((p.extendWeights (fun j ↦ (x j).toNNReal)).weights i : ℝ) = x i := by
   classical
   filter_upwards [ae_pos_dirichletMeasure ha, ae_sum_eq_one_dirichletMeasure ha] with x hx hsum
-  let q : Convexity.StdSimplex ℝ≥0 ι := {
-    weights := Finsupp.equivFunOnFinite.symm (fun i ↦ (x i).toNNReal)
-    nonneg := fun _ ↦ bot_le
-    total := by
-      rw [Finsupp.sum_fintype _ _ (by simp)]
-      apply NNReal.coe_injective
-      simpa [Real.toNNReal_of_nonneg (hx _).le] using hsum }
-  have hp : p.extendWeights (fun i ↦ (x i).toNNReal) = q := p.extendWeights_weights q
+  have hw : (fun i ↦ (x i).toNNReal) ∈
+      Set.range (fun q : Convexity.StdSimplex ℝ≥0 ι ↦ (q.weights : ι → ℝ≥0)) := by
+    rw [Convexity.StdSimplex.range_toFun_comp_weights]
+    refine ⟨by simp, ?_⟩
+    apply NNReal.coe_injective
+    simpa [Real.toNNReal_of_nonneg (hx _).le] using hsum
   intro i
+  have hp := congrFun (p.weights_extendWeights_of_mem_range hw) i
   rw [hp]
   exact Real.coe_toNNReal _ (hx i).le
 

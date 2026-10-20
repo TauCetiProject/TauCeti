@@ -8,7 +8,8 @@ module
 public import TauCeti.Probability.Distributions.Dirichlet.MixedMoments
 public import TauCeti.Probability.Distributions.Multinomial.Measurability
 public import TauCeti.Probability.Distributions.Dirichlet.Measurability
-import Mathlib.Probability.Kernel.Composition.IntegralCompProd
+import TauCeti.MeasureTheory.Integral.Bind
+import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 
 /-!
 # The Dirichlet-multinomial distribution
@@ -56,19 +57,22 @@ private theorem measurable_dirichletMultinomialComponent (n : ℕ) :
 
 /-- Any simplex parameter map whose weights agree almost surely with the Dirichlet
 vector gives the same mixture. Thus choices away from the simplex do not affect the law. -/
-theorem dirichletMultinomialMeasure_eq_bind {a : ι → ℝ} (ha : ∀ i, 0 < a i) (n : ℕ)
+theorem dirichletMultinomialMeasure_eq_bind {a : ι → ℝ} (n : ℕ)
     (p : EuclideanSpace ℝ ι → StdSimplex ℝ≥0 ι)
     (hp : ∀ᵐ x ∂dirichletMeasure a, ∀ i, ((p x).weights i : ℝ) = x i) :
     dirichletMultinomialMeasure n a =
       (dirichletMeasure a).bind (fun x ↦ multinomialMeasure n (p x)) := by
   rw [dirichletMultinomialMeasure]
-  apply Measure.bind_congr_right
-  filter_upwards [ae_extendWeights_dirichletMeasure ha
-    (StdSimplex.single (Classical.arbitrary ι)), hp] with x hx hpx
-  congr 1
-  apply StdSimplex.ext
-  ext i
-  exact (hx i).trans (hpx i).symm
+  by_cases ha : ∀ i, 0 < a i
+  · apply Measure.bind_congr_right
+    filter_upwards [ae_extendWeights_dirichletMeasure ha
+      (StdSimplex.single (Classical.arbitrary ι)), hp] with x hx hpx
+    congr 1
+    apply StdSimplex.ext
+    ext i
+    exact (hx i).trans (hpx i).symm
+  · rw [dirichletMeasure_eq_zero_of_invalid (by simpa using ha)]
+    simp
 
 /-- Invalid concentration parameters give the zero Dirichlet-multinomial measure. -/
 @[simp]
@@ -81,13 +85,8 @@ theorem dirichletMultinomialMeasure_eq_zero_of_invalid {a : ι → ℝ}
 theorem isProbabilityMeasure_dirichletMultinomialMeasure {a : ι → ℝ}
     (ha : ∀ i, 0 < a i) (n : ℕ) : IsProbabilityMeasure (dirichletMultinomialMeasure n a) := by
   let _ := isProbabilityMeasure_dirichletMeasure ha
-  rw [dirichletMultinomialMeasure, isProbabilityMeasure_iff,
-    Measure.bind_apply MeasurableSet.univ (measurable_dirichletMultinomialComponent n).aemeasurable]
-  have hprob (p : StdSimplex ℝ≥0 ι) : multinomialMeasure n p univ = 1 := by
-    have := isProbabilityMeasure_multinomialMeasure n p
-    exact measure_univ
-  simp_rw [hprob]
-  simp
+  exact isProbabilityMeasure_bind (measurable_dirichletMultinomialComponent n).aemeasurable
+    (.of_forall fun _ ↦ isProbabilityMeasure_multinomialMeasure n _)
 
 /-- The classical Dirichlet-multinomial mass: a factorial coefficient times a ratio of
 Dirichlet normalizers, and zero outside the count antidiagonal. -/
@@ -106,7 +105,7 @@ theorem dirichletMultinomialMeasure_real_singleton {a : ι → ℝ}
       (fun i ↦ (x i).toNNReal)
   have hp := ae_extendWeights_dirichletMeasure ha
     (StdSimplex.single (Classical.arbitrary ι))
-  rw [dirichletMultinomialMeasure_eq_bind ha n p hp, measureReal_def,
+  rw [dirichletMultinomialMeasure_eq_bind n p hp, measureReal_def,
     Measure.bind_apply (measurableSet_singleton k)
       (measurable_dirichletMultinomialComponent n).aemeasurable]
   have hm : AEMeasurable (fun x ↦ multinomialMeasure n (p x) {k}) (dirichletMeasure a) :=
@@ -224,44 +223,40 @@ theorem integrable_dirichletMultinomialMeasure {E : Type*} [SeminormedAddGroup E
 
 open Classical in
 /-- Integrate a count observable by a finite sum of its values against the singleton masses.
-The masses simplify to the Gamma-ratio formula. -/
+For valid concentrations, the masses simplify to the Gamma-ratio formula; otherwise both
+sides vanish. -/
 theorem integral_dirichletMultinomialMeasure {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] [CompleteSpace E] (f : (ι → ℕ) → E) {a : ι → ℝ}
-    (ha : ∀ i, 0 < a i) (n : ℕ) :
+    (n : ℕ) :
     ∫ k, f k ∂dirichletMultinomialMeasure n a =
       ∑ k ∈ Finset.piAntidiag Finset.univ n,
         (dirichletMultinomialMeasure n a).real {k} • f k := by
   classical
-  conv_lhs => rw [dirichletMultinomialMeasure_eq_sum_dirac ha]
-  rw [integral_finsetSum_measure]
-  · apply Finset.sum_congr rfl
-    intro k hk
-    have hsum : ∑ i, k i = n := (Finset.mem_piAntidiag.mp hk).1
-    simp only [integral_smul_measure, integral_dirac, measureReal_def,
-      dirichletMultinomialMeasure_singleton ha, ite_eq_left hsum]
-  · intro k _
-    exact (integrable_dirac (by simp)).smul_measure (by simp)
+  by_cases ha : ∀ i, 0 < a i
+  · conv_lhs => rw [dirichletMultinomialMeasure_eq_sum_dirac ha]
+    rw [integral_finsetSum_measure]
+    · apply Finset.sum_congr rfl
+      intro k hk
+      have hsum : ∑ i, k i = n := (Finset.mem_piAntidiag.mp hk).1
+      simp only [integral_smul_measure, integral_dirac, measureReal_def,
+        dirichletMultinomialMeasure_singleton ha, ite_eq_left hsum]
+    · intro k _
+      exact (integrable_dirac (by simp)).smul_measure (by simp)
+  · simp [dirichletMultinomialMeasure_eq_zero_of_invalid ha]
 
 /-- Integrate a count observable by first taking its multinomial expectation, then its
 Dirichlet expectation. Any measurable choice of simplex parameters with the correct
 almost-sure weights may be used. -/
 theorem integral_dirichletMultinomialMeasure_eq_integral {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] (f : (ι → ℕ) → E) {a : ι → ℝ} (ha : ∀ i, 0 < a i) (n : ℕ)
+    [NormedSpace ℝ E] (f : (ι → ℕ) → E) {a : ι → ℝ} (n : ℕ)
     (p : EuclideanSpace ℝ ι → StdSimplex ℝ≥0 ι) (hp : Measurable p)
     (hweights : ∀ᵐ x ∂dirichletMeasure a, ∀ i, ((p x).weights i : ℝ) = x i) :
     ∫ k, f k ∂dirichletMultinomialMeasure n a =
       ∫ x, ∫ k, f k ∂multinomialMeasure n (p x) ∂dirichletMeasure a := by
-  let κ : Kernel (EuclideanSpace ℝ ι) (ι → ℕ) :=
-    ⟨fun x ↦ multinomialMeasure n (p x),
-      measurable_multinomialMeasure.comp (measurable_const.prodMk hp)⟩
-  have hcomp : κ ∘ₘ dirichletMeasure a = dirichletMultinomialMeasure n a :=
-    (dirichletMultinomialMeasure_eq_bind ha n p hweights).symm
-  have hf : Integrable f ((κ ∘ₖ Kernel.const Unit (dirichletMeasure a)) ()) := by
-    rw [← Measure.comp_eq_comp_const_apply, hcomp]
-    exact integrable_dirichletMultinomialMeasure f n a
-  have hi := Kernel.integral_comp hf
-  rw [← Measure.comp_eq_comp_const_apply, hcomp, Kernel.const_apply] at hi
-  exact hi
+  have hf := integrable_dirichletMultinomialMeasure f n a
+  rw [dirichletMultinomialMeasure_eq_bind n p hweights] at hf ⊢
+  exact Measure.integral_bind
+    (measurable_multinomialMeasure.comp (measurable_const.prodMk hp)).aemeasurable hf
 
 /-- The Dirichlet-multinomial family is jointly measurable in the trial count and every
 concentration coordinate, including invalid parameters. -/
