@@ -157,11 +157,6 @@ theorem map_cycleForm (hd : IsDGAlgebra 𝒜 d) (a : Fin (n + 1) → A) :
   rw [cycleForm_apply, hd.toIsNonUnitalDGAlgebra.leibniz_of_map_eq_zero _ hcycle,
     List.ofFn_succ, List.prod_cons]
 
-/-- The Leibniz rule for the differential of a product of two elements of `ρ(A)`. -/
-private theorem map_map_mul (hd : IsDGAlgebra 𝒜 d) (hρ : ∀ a, ρ a ∈ 𝒜 0) (x y : A) :
-    d (ρ x * ρ y) = d (ρ x) * ρ y + ρ x * d (ρ y) := by
-  simpa using hd.leibniz (hρ x) (ρ y)
-
 variable [IsScalarTower R A A] [SMulCommClass R A A]
 
 /-- The bar coboundary of `ρ(a₀) dρ(a₁) ⋯ dρ(aₙ)` telescopes to
@@ -178,7 +173,8 @@ theorem barCoboundary_cycleForm (hd : IsDGAlgebra 𝒜 d) (hρ : ∀ a, ρ a ∈
     simp only [cycleForm_succ_apply, Fin.init_contractNth_castSucc, Fin.contractNth_last,
       Fin.contractNth_castSucc_castSucc_apply_last, Fin.contractNth_castSucc_last_apply_last,
       Fin.val_castSucc, Fin.val_last, ← smul_mul_assoc, ← Finset.sum_mul]
-    rw [← barCoboundary_apply, ih, map_mul, map_map_mul hd hρ]
+    rw [← barCoboundary_apply, ih, map_mul,
+      hd.toIsNonUnitalDGAlgebra.leibniz_of_mem_zero (hρ _)]
     simp only [pow_succ, mul_neg_one, neg_smul, neg_mul, smul_mul_assoc, mul_add, mul_assoc,
       Fin.init]
     abel
