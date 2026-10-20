@@ -56,6 +56,7 @@ theorem mem_nonUnitalJacobsonSubmodule {a : A} :
   simp [nonUnitalJacobsonSubmodule, Submodule.mem_comap]
 
 /-- The two carriers of the radical have exactly the same elements. -/
+@[simp]
 theorem coe_nonUnitalJacobsonSubmodule :
     (nonUnitalJacobsonSubmodule R A : Set A) = nonUnitalJacobson R A := by
   ext a
@@ -69,9 +70,9 @@ theorem smul_mem_nonUnitalJacobson (r : R) {a : A} (ha : a ∈ nonUnitalJacobson
       (mem_nonUnitalJacobsonSubmodule R A).mpr ha
 
 /-- Membership in the nonunital radical is equivalent to quasiregularity of all
-scalar-plus-left multiples. The scalar term is necessary because the test multipliers
-belong to the external unitization, not just to the original algebra. -/
-theorem mem_nonUnitalJacobson_iff {a : A} :
+scalar-plus-left multiples. The scalar term comes from reading left multiplication
+in the external unitization. -/
+theorem mem_nonUnitalJacobson_iff_isQuasiregular_smul_add_mul {a : A} :
     a ∈ nonUnitalJacobson R A ↔ ∀ (r : R) (b : A), IsQuasiregular (r • a + b * a) := by
   rw [mem_nonUnitalJacobson, Ring.mem_jacobson_iff_isUnit_one_add_mul_left]
   constructor
@@ -92,10 +93,10 @@ variable (B : Type*) [Ring B] [Algebra R B]
 recovers its ordinary Jacobson radical. The external unitization itself is not identified
 with the original algebra. -/
 @[simp]
-theorem nonUnitalJacobson_eq :
+theorem nonUnitalJacobson_eq_toTwoSided_jacobson :
     nonUnitalJacobson R B = (Ring.jacobson B).toTwoSided := by
   ext a
-  rw [Ideal.mem_toTwoSided, mem_nonUnitalJacobson_iff,
+  rw [Ideal.mem_toTwoSided, mem_nonUnitalJacobson_iff_isQuasiregular_smul_add_mul,
     Ring.mem_jacobson_iff_isUnit_one_add_mul_left]
   constructor
   · intro h b

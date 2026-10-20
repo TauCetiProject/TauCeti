@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Algebra.UnitizationL1
+public import TauCeti.Analysis.Normed.Ring.Units
 public import TauCeti.RingTheory.Jacobson.NonUnital
-
-import Mathlib.Analysis.Normed.Ring.Units
 
 /-!
 # Closedness of Jacobson radicals
@@ -32,14 +31,6 @@ possible. No normalization of the norm of the identity is assumed.
 public section
 
 namespace TauCeti
-
-/-- The Jacobson radical of a normed ring with summable geometric series is closed. -/
-theorem isClosed_jacobson (A : Type*) [NormedRing A] [HasSummableGeomSeries A] :
-    IsClosed (Ring.jacobson A : Set A) := by
-  rw [Ring.jacobson_eq_sInf_isMaximal, Submodule.coe_sInf]
-  exact isClosed_biInter fun I hI => by
-    have : Ideal.IsMaximal I := hI
-    exact Ideal.IsMaximal.isClosed
 
 variable (𝕜 A : Type*) [NormedField 𝕜] [NonUnitalNormedRing A] [NormedSpace 𝕜 A]
   [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A]
@@ -68,7 +59,7 @@ theorem isClosed_nonUnitalJacobson : IsClosed (nonUnitalJacobson 𝕜 A : Set A)
     ext a
     exact mem_nonUnitalJacobson_iff_mem_unitizationL1 𝕜 A
   rw [hset]
-  exact (isClosed_jacobson _).preimage WithLp.unitization_isometry_inr.continuous
+  exact (Ring.isClosed_jacobson _).preimage WithLp.unitization_isometry_inr.continuous
 
 /-- The scalar submodule underlying the nonunital radical is closed. -/
 theorem isClosed_nonUnitalJacobsonSubmodule :
