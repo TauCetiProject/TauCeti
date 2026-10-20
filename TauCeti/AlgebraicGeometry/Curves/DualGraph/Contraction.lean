@@ -170,11 +170,32 @@ branches of its two nodes. For a rational bridge, these are the two components t
 noncomputable def bridgeNeighbor {v : G.Vertex} (hv : G.valence v = 2) (k : Fin 2) : G.Vertex :=
   G.endpoint (G.halfEdgeOfValenceEqTwo hv k).1.1 (G.halfEdgeOfValenceEqTwo hv k).1.2.rev
 
+/-- The `k`th neighbour carries the other branch of the `k`th half-edge. -/
+lemma endpoint_halfEdgeOfValenceEqTwo_rev {v : G.Vertex} (hv : G.valence v = 2) (k : Fin 2) :
+    G.endpoint (G.halfEdgeOfValenceEqTwo hv k).1.1 (G.halfEdgeOfValenceEqTwo hv k).1.2.rev =
+      G.bridgeNeighbor hv k := by
+  rw [bridgeNeighbor]
+
 /-- The neighbours of a loopless vertex are distinct from it. -/
 lemma bridgeNeighbor_ne {v : G.Vertex} (hv : G.valence v = 2)
     (hloop : ∀ e, G.endpoint e 0 = v → G.endpoint e 1 ≠ v) (k : Fin 2) :
     G.bridgeNeighbor hv k ≠ v :=
   endpoint_rev_ne hloop (G.halfEdgeOfValenceEqTwo hv k).2
+
+/-- The unordered pair of neighbours of a vertex of valence two does not depend on the enumeration
+of its half-edges: it is formed by the other branches of any two distinct half-edges there. -/
+lemma sym2_bridgeNeighbor_eq {v : G.Vertex} (hv : G.valence v = 2) {h h' : G.Edge × Fin 2}
+    (hh : G.endpoint h.1 h.2 = v) (hh' : G.endpoint h'.1 h'.2 = v) (hne : h ≠ h') :
+    s(G.bridgeNeighbor hv 0, G.bridgeNeighbor hv 1) =
+      s(G.endpoint h.1 h.2.rev, G.endpoint h'.1 h'.2.rev) := by
+  obtain ⟨k, rfl⟩ := exists_eq_halfEdgeOfValenceEqTwo hv hh
+  obtain ⟨k', rfl⟩ := exists_eq_halfEdgeOfValenceEqTwo hv hh'
+  have hk : k ≠ k' := fun hk ↦ hne (hk ▸ rfl)
+  fin_cases k <;> fin_cases k'
+  · exact absurd rfl hk
+  · rfl
+  · exact Sym2.eq_swap
+  · exact absurd rfl hk
 
 /-! ### Edges and half-edges away from a vertex -/
 
