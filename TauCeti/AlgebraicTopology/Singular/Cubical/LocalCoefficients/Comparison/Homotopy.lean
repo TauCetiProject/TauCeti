@@ -7,7 +7,8 @@ module
 
 public import Mathlib.Algebra.Homology.Homotopy
 public import TauCeti.Algebra.Homology.Homotopy
-public import TauCeti.AlgebraicTopology.Singular.Cubical.LocalCoefficients.SingularToCubical
+public import
+  TauCeti.AlgebraicTopology.Singular.Cubical.LocalCoefficients.Comparison.SingularToCubical
 
 /-!
 # The comparison of cubical and simplicial chains with local coefficients
@@ -240,24 +241,11 @@ theorem twistedSingularToCubicalCompHomotopy_hom (n : ℕ) :
 
 /-! ### The homotopy on cubical chains -/
 
-/-- The cubical pushforward along a cube `c` from the origin of the model, with the coefficient at
-the origin of `c`. -/
-private def cpushC {n : ℕ} (c : SingularCube X n) (m : ℕ)
-    (y : ((normalizedCubicalChainComplex (ULift.{v} ℤ)).obj (cubeModel.{v} n)).X m)
-    (a : L.obj (FundamentalGroupoid.mk (c 0))) : L.NormalizedTwistedCubicalChain m :=
-  NormalizedTwistedCubicalChain.pushforward (Z := cubeModel.{v} n) L (cubeToHom c).hom
-    (cubeModelOrigin n) m y a
-
-/-- The identity cube of the model, as a normalized cubical chain. -/
-private def cubeGen (n : ℕ) :
-    ((normalizedCubicalChainComplex (ULift.{v} ℤ)).obj (cubeModel.{v} n)).X n :=
-  NormalizedCubicalChain.ofCube (cubeModel.{v} n) (ULift.{v} ℤ) (upCube n)
-
 /-- The value on the identity cube of the model of the homotopy on cubical chains. -/
 private def cubicalHomotopyGen (n : ℕ) :
     ((normalizedCubicalChainComplex (ULift.{v} ℤ)).obj (cubeModel.{v} n)).X (n + 1) :=
   ((cubicalToSingularCompHomotopy (ULift.{v} ℤ) (cubeModel.{v} n)).hom n (n + 1)).hom
-    (cubeGen n)
+    (NormalizedCubicalChain.ofCube (cubeModel.{v} n) (ULift.{v} ℤ) (upCube n))
 
 /-- The value of the untwisted homotopy on the model generator vanishes under the projection of
 the model forgetting a coordinate: the projection carries the identity cube to a degenerate
@@ -275,7 +263,8 @@ private lemma map_forgetCoordinate_cubicalHomotopyGen {m : ℕ} (i : Fin (m + 1)
       (g.hom.comp (upCube.{v} (m + 1))) = 0 :=
     NormalizedCubicalChain.ofCube_eq_zero (R := ULift.{v} ℤ) hdeg
   -- Naturality of the untwisted homotopy moves the projection past it, onto the generator.
-  have hn := congrArg (fun φ ↦ φ (cubeGen.{v} (m + 1)))
+  have hn := congrArg (fun φ ↦ φ (NormalizedCubicalChain.ofCube (cubeModel.{v} (m + 1))
+    (ULift.{v} ℤ) (upCube (m + 1))))
     (congrArg ModuleCat.Hom.hom (cubicalToSingularCompHomotopy_hom_naturality
       (ULift.{v} ℤ) g (m + 1) (m + 1 + 1)))
   refine hn.symm.trans ?_
@@ -283,17 +272,17 @@ private lemma map_forgetCoordinate_cubicalHomotopyGen {m : ℕ} (i : Fin (m + 1)
   -- which `rw` cannot see through the dependent chain-complex terms.
   change ((cubicalToSingularCompHomotopy (ULift.{v} ℤ) (cubeModel.{v} m)).hom (m + 1)
     (m + 1 + 1)).hom (((normalizedCubicalChainComplex (ULift.{v} ℤ)).map g).f (m + 1)
-      (cubeGen.{v} (m + 1))) = 0
-  rw [cubeGen, normalizedCubicalChainComplex_map_f_apply, NormalizedCubicalChain.map_ofCube, hup]
+      (NormalizedCubicalChain.ofCube (cubeModel.{v} (m + 1)) (ULift.{v} ℤ) (upCube (m + 1)))) = 0
+  rw [normalizedCubicalChainComplex_map_f_apply, NormalizedCubicalChain.map_ofCube, hup]
   exact map_zero _
 
 /-- A degenerate cube gives zero: its pushforward of the value of the homotopy on the model
 generator vanishes.  The cube is a degeneracy `s ∘ π`, the pushforward along it factors through
 the pushforward along `s` of the image of the generator under the projection `π`, and the
 latter vanishes by `map_forgetCoordinate_cubicalHomotopyGen`. -/
-private lemma cpushC_cubicalHomotopyGen_eq_zero {n : ℕ} {c : SingularCube X n}
+private lemma cubeCubicalPushforward_cubicalHomotopyGen_eq_zero {n : ℕ} {c : SingularCube X n}
     (hc : SingularCube.IsDegenerate c) (a : L.obj (FundamentalGroupoid.mk (c 0))) :
-    cpushC L c (n + 1) (cubicalHomotopyGen n) a = 0 := by
+    cubeCubicalPushforward L c (n + 1) (cubicalHomotopyGen n) a = 0 := by
   cases n with
   | zero => exact (SingularCube.not_isDegenerate_zero c hc).elim
   | succ m =>
@@ -321,7 +310,7 @@ private lemma cpushC_cubicalHomotopyGen_eq_zero {n : ℕ} {c : SingularCube X n}
         (cubicalHomotopyGen (m + 1)) (L.map ((cubeToHom s).hom.pathClass (cubeModelOrigin m)
           (g.hom (cubeModelOrigin (m + 1)))) a) = 0 := key.symm
     rw [e] at key2
-    exact key2
+    exact (cubeCubicalPushforward_apply L _ _ _ _).trans key2
 
 /-- The homotopy on cubical chains with coefficients, before normalization. -/
 private def cubicalHomotopyUnnormalized (n : ℕ) :
@@ -337,7 +326,8 @@ def normalizedTwistedCubicalHomotopy (n : ℕ) :
   Submodule.liftQ _ (cubicalHomotopyUnnormalized L n)
     (TwistedCubicalChain.degenerate_le fun c hc a ↦
       (TwistedCubicalChain.desc_ofCube _ c a).trans
-        (cpushC_cubicalHomotopyGen_eq_zero L hc a))
+        ((cubeCubicalPushforward_apply L c _ _ a).symm.trans
+          (cubeCubicalPushforward_cubicalHomotopyGen_eq_zero L hc a)))
 
 /-- The homotopy on a cube with a coefficient: the pushforward along the cube of the value of the
 untwisted homotopy on the identity cube of the model. -/
@@ -394,79 +384,17 @@ theorem normalizedTwistedCubicalHomotopy_pushforward {Z : TopCat.{v}} [SimplyCon
   exact (NormalizedTwistedCubicalChain.pushforward_map (L := L) (f := f.hom) (z₀ := z₀)
     (Z' := cubeModel.{v} n) (cubeToHom d).hom (cubeModelOrigin n) (cubicalHomotopyGen n) a).symm
 
-private lemma cpushC_add {n m : ℕ} (c : SingularCube X n)
-    (y y' : ((normalizedCubicalChainComplex (ULift.{v} ℤ)).obj (cubeModel.{v} n)).X m)
-    (a : L.obj (FundamentalGroupoid.mk (c 0))) :
-    cpushC L c m (y + y') a = cpushC L c m y a + cpushC L c m y' a :=
-  -- Evaluating a sum of linear maps is the sum of the evaluations by definition.
-  congrArg (fun φ ↦ φ a) (map_add (NormalizedTwistedCubicalChain.pushforward
-    (Z := cubeModel.{v} n) L (cubeToHom c).hom (cubeModelOrigin n) m) y y')
-
-private lemma cpushC_sub {n m : ℕ} (c : SingularCube X n)
-    (y y' : ((normalizedCubicalChainComplex (ULift.{v} ℤ)).obj (cubeModel.{v} n)).X m)
-    (a : L.obj (FundamentalGroupoid.mk (c 0))) :
-    cpushC L c m (y - y') a = cpushC L c m y a - cpushC L c m y' a :=
-  -- Evaluating a difference of linear maps is the difference of the evaluations by definition.
-  congrArg (fun φ ↦ φ a) (map_sub (NormalizedTwistedCubicalChain.pushforward
-    (Z := cubeModel.{v} n) L (cubeToHom c).hom (cubeModelOrigin n) m) y y')
-
-/-- A cube with a coefficient is the pushforward along itself of the identity cube of the model. -/
-private lemma ofCube_eq_cpushC {n : ℕ} (c : SingularCube X n)
-    (a : L.obj (FundamentalGroupoid.mk (c 0))) :
-    NormalizedTwistedCubicalChain.ofCube L c a =
-      cpushC L c n (cubeGen n) a := by
-  refine Eq.symm ((NormalizedTwistedCubicalChain.pushforward_ofCube (L := L)
-    (f := (cubeToHom c).hom) (z₀ := cubeModelOrigin n) (upCube n) a).trans ?_)
-  refine (congrArg Submodule.Quotient.mk (TwistedCubicalChain.pushCube_apply (L := L)
-    (f := (cubeToHom c).hom) (z₀ := cubeModelOrigin n) (upCube n) a)).trans
-    ((NormalizedTwistedCubicalChain.ofCube_apply _ _).symm.trans ?_)
-  -- The path class from the origin of the model to itself is the identity.
-  exact congrArg (NormalizedTwistedCubicalChain.ofCube L c)
-    (map_pathClass_self_apply (cubeToHom c).hom (cubeModelOrigin n) a)
-
-private lemma boundary_cpushC {n m : ℕ} (c : SingularCube X n)
-    (y : ((normalizedCubicalChainComplex (ULift.{v} ℤ)).obj (cubeModel.{v} n)).X (m + 1))
-    (a : L.obj (FundamentalGroupoid.mk (c 0))) :
-    NormalizedTwistedCubicalChain.boundary L m (cpushC L c (m + 1) y a) =
-      cpushC L c m (((normalizedCubicalChainComplex (ULift.{v} ℤ)).obj (cubeModel.{v} n)).d
-        (m + 1) m y) a :=
-  (NormalizedTwistedCubicalChain.boundary_pushforward (L := L) (f := (cubeToHom c).hom)
-    (z₀ := cubeModelOrigin n) y a).trans
-    (congrArg (fun z ↦ NormalizedTwistedCubicalChain.pushforward L (cubeToHom c).hom
-      (cubeModelOrigin n) m z a) (normalizedCubicalChainComplex_obj_d_apply _ m y).symm)
-
-private lemma d_cpushC {n m : ℕ} (c : SingularCube X n)
-    (y : ((normalizedCubicalChainComplex (ULift.{v} ℤ)).obj (cubeModel.{v} n)).X (m + 1))
-    (a : L.obj (FundamentalGroupoid.mk (c 0))) :
-    L.normalizedTwistedCubicalChainComplex.d (m + 1) m (cpushC L c (m + 1) y a) =
-      cpushC L c m (((normalizedCubicalChainComplex (ULift.{v} ℤ)).obj (cubeModel.{v} n)).d
-        (m + 1) m y) a :=
-  (normalizedTwistedCubicalChainComplex_d_apply L m _).trans (boundary_cpushC L c y a)
-
-private lemma homotopy_cpushC {n m : ℕ} (c : SingularCube X n)
+/-- The homotopy on cubical chains carries the cubical pushforward along a cube to the pushforward
+of the image under the untwisted homotopy. -/
+lemma normalizedTwistedCubicalHomotopy_cubeCubicalPushforward {n m : ℕ} (c : SingularCube X n)
     (y : ((normalizedCubicalChainComplex (ULift.{v} ℤ)).obj (cubeModel.{v} n)).X m)
     (a : L.obj (FundamentalGroupoid.mk (c 0))) :
-    normalizedTwistedCubicalHomotopy L m (cpushC L c m y a) =
-      cpushC L c (m + 1) (((cubicalToSingularCompHomotopy (ULift.{v} ℤ)
+    normalizedTwistedCubicalHomotopy L m (cubeCubicalPushforward L c m y a) =
+      cubeCubicalPushforward L c (m + 1) (((cubicalToSingularCompHomotopy (ULift.{v} ℤ)
         (cubeModel.{v} n)).hom m (m + 1)).hom y) a :=
-  normalizedTwistedCubicalHomotopy_pushforward L (cubeToHom c) (cubeModelOrigin n) y a
-
-private lemma from_twistedCubePushforward {n m : ℕ} (c : SingularCube X n)
-    (y : ((singularChains (ULift.{v} ℤ)).obj (cubeModel.{v} n)).X m)
-    (a : L.obj (FundamentalGroupoid.mk (c 0))) :
-    (twistedSingularToCubical L m).hom (twistedCubePushforward L c m y a) =
-      cpushC L c m (((singularToCubical (ULift.{v} ℤ)).app (cubeModel.{v} n)).f m y) a :=
-  (congrArg (twistedSingularToCubical L m).hom (twistedCubePushforward_apply c m y a)).trans
-    (twistedSingularToCubical_twistedPushforward L (cubeToHom c) _ y a)
-
-private lemma to_cpushC {n m : ℕ} (c : SingularCube X n)
-    (y : ((normalizedCubicalChainComplex (ULift.{v} ℤ)).obj (cubeModel.{v} n)).X m)
-    (a : L.obj (FundamentalGroupoid.mk (c 0))) :
-    normalizedTwistedCubicalToSingular L m (cpushC L c m y a) =
-      twistedCubePushforward L c m
-        (((cubicalToSingular (ULift.{v} ℤ)).app (cubeModel.{v} n)).f m y) a :=
-  (normalizedTwistedCubicalToSingular_pushforward (L := L) (cubeToHom c) _ y a).trans
-    (twistedCubePushforward_apply c m _ a).symm
+  (congrArg (normalizedTwistedCubicalHomotopy L m) (cubeCubicalPushforward_apply L c m y a)).trans
+    ((normalizedTwistedCubicalHomotopy_pushforward L (cubeToHom c) (cubeModelOrigin n) y a).trans
+      (cubeCubicalPushforward_apply L c (m + 1) _ a).symm)
 
 /-- The homotopy identity of the composite on cubical chains in degree zero, on a cube. -/
 private lemma cubical_identity_zero (c : SingularCube X 0)
@@ -478,10 +406,13 @@ private lemma cubical_identity_zero (c : SingularCube X 0)
         (normalizedTwistedCubicalHomotopy L 0 (NormalizedTwistedCubicalChain.ofCube L c a)) := by
   have hm := Homotopy.comm_zero_apply
     (cubicalToSingularCompHomotopy (ULift.{v} ℤ) (cubeModel.{v} 0))
-    (cubeGen.{v} 0)
-  rw [ofCube_eq_cpushC, to_cpushC, from_twistedCubePushforward, homotopy_cpushC, d_cpushC,
-    ← cpushC_sub]
-  exact congrArg (fun y ↦ cpushC L c 0 y a) (sub_eq_iff_eq_add.2 hm)
+    (cubeGen (ULift.{v} ℤ) 0)
+  rw [ofCube_eq_cubeCubicalPushforward,
+    normalizedTwistedCubicalToSingular_cubeCubicalPushforward,
+    twistedSingularToCubical_twistedCubePushforward,
+    normalizedTwistedCubicalHomotopy_cubeCubicalPushforward, d_cubeCubicalPushforward,
+    ← cubeCubicalPushforward_sub]
+  exact congrArg (fun y ↦ cubeCubicalPushforward L c 0 y a) (sub_eq_iff_eq_add.2 hm)
 
 /-- The homotopy identity of the composite on cubical chains in positive degrees, on a cube. -/
 private lemma cubical_identity_succ (n : ℕ) (c : SingularCube X (n + 1))
@@ -496,10 +427,14 @@ private lemma cubical_identity_succ (n : ℕ) (c : SingularCube X (n + 1))
           (NormalizedTwistedCubicalChain.ofCube L c a)) := by
   have hm := Homotopy.comm_succ_apply
     (cubicalToSingularCompHomotopy (ULift.{v} ℤ) (cubeModel.{v} (n + 1))) n
-    (cubeGen.{v} (n + 1))
-  rw [ofCube_eq_cpushC, to_cpushC, from_twistedCubePushforward, boundary_cpushC, homotopy_cpushC,
-    homotopy_cpushC, boundary_cpushC, ← cpushC_sub, ← cpushC_add]
-  exact congrArg (fun y ↦ cpushC L c (n + 1) y a) (sub_eq_iff_eq_add.2 hm)
+    (cubeGen (ULift.{v} ℤ) (n + 1))
+  rw [ofCube_eq_cubeCubicalPushforward,
+    normalizedTwistedCubicalToSingular_cubeCubicalPushforward,
+    twistedSingularToCubical_twistedCubePushforward, boundary_cubeCubicalPushforward,
+    normalizedTwistedCubicalHomotopy_cubeCubicalPushforward,
+    normalizedTwistedCubicalHomotopy_cubeCubicalPushforward, boundary_cubeCubicalPushforward,
+    ← cubeCubicalPushforward_sub, ← cubeCubicalPushforward_add]
+  exact congrArg (fun y ↦ cubeCubicalPushforward L c (n + 1) y a) (sub_eq_iff_eq_add.2 hm)
 
 /-- The composite of the comparison maps on normalized cubical chains is homotopic to the
 identity. -/
