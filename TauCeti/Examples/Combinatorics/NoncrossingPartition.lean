@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.Combinatorics.NoncrossingPartition.Basic
-import Mathlib.Order.Setoid.Basic
 import Mathlib.Data.Fin.VecNotation
 import Mathlib.Tactic.FinCases
 
