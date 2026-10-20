@@ -9,6 +9,7 @@ public import Mathlib.Analysis.LocallyConvex.SeparatingDual
 public import Mathlib.Analysis.Normed.Module.HahnBanach
 public import Mathlib.LinearAlgebra.SesquilinearForm.Orthogonal
 public import TauCeti.Analysis.Normed.Operator.Banach
+import TauCeti.Analysis.Normed.Module.Dual.Basic
 
 /-!
 # Kernels and ranges of adjoints, and the closed-range theorem
@@ -173,30 +174,13 @@ theorem mem_closure_image_closedBall_of_norm_le_norm_comp (S : E →L[𝕜] F) {
     have hconv : Convex ℝ (S '' closedBall (0 : E) r) :=
       (convex_closedBall 0 r).linear_image ((S : E →ₗ[𝕜] F).restrictScalars ℝ)
     exact RCLike.geometric_hahn_banach_closed_point hconv.closure isClosed_closure hy
-  -- The separated set is balanced, so the real-part bound is a bound on the modulus.
-  have hball : ∀ x ∈ closedBall (0 : E) r, ‖f (S x)‖ ≤ u := by
-    intro x hx
-    have hre : ∀ c : 𝕜, ‖c‖ = 1 → RCLike.re (c * f (S x)) ≤ u := fun c hc ↦ by
-      have hcx : c • x ∈ closedBall (0 : E) r := by simpa [norm_smul, hc] using hx
-      simpa using (hfK _ (subset_closure ⟨c • x, hcx, rfl⟩)).le
-    obtain ⟨c, hc, heq⟩ := RCLike.exists_norm_eq_mul_self (f (S x))
-    simpa only [← heq, RCLike.ofReal_re] using hre c hc
-  have hu : 0 ≤ u := by simpa using hball 0 (by simpa using hr)
-  have hfS : ‖f.comp S‖ * r ≤ u := by
-    rcases hr.eq_or_lt with h | h
-    · rw [← h, mul_zero]
-      exact hu
-    · refine (le_div_iff₀ h).mp (opNorm_le_of_unit_norm (div_nonneg hu h.le) fun x hx ↦ ?_)
-      have hmem : (r : 𝕜) • x ∈ closedBall (0 : E) r := by
-        simp [norm_smul, hx, abs_of_pos h]
-      have hrx := hball _ hmem
-      rw [map_smul, map_smul, norm_smul, RCLike.norm_ofReal, abs_of_pos h] at hrx
-      rw [le_div_iff₀ h, comp_apply, mul_comm]
-      exact hrx
+  have hfS := StrongDual.re_apply_add_mul_norm_le (f := f.comp S) (x := 0) hr fun x hx ↦
+    (hfK _ (subset_closure ⟨x, hx, rfl⟩)).le
+  rw [map_zero, map_zero, zero_add] at hfS
   have hfy' := (RCLike.re_le_norm (f y)).trans (f.le_opNorm y)
-  have : ‖f‖ * ‖y‖ ≤ ‖f.comp S‖ * r :=
+  have : ‖f‖ * ‖y‖ ≤ r * ‖f.comp S‖ :=
     calc ‖f‖ * ‖y‖ ≤ K * ‖f.comp S‖ * ‖y‖ := by gcongr; exact hK f
-      _ = ‖f.comp S‖ * r := by rw [hr_def]; ring
+      _ = r * ‖f.comp S‖ := by rw [hr_def]; ring
   linarith
 
 section Complete

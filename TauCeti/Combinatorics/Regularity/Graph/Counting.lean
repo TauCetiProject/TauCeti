@@ -71,7 +71,10 @@ theorem IsUniform.abs_card_interedges_sub_le (h : G.IsUniform ε s t) (hs' : s' 
   have hs : (#s' : 𝕜) ≤ #s := by exact_mod_cast card_le_card hs'
   have ht : (#t' : 𝕜) ≤ #t := by exact_mod_cast card_le_card ht'
   by_cases hbig : (#s : 𝕜) * ε ≤ #s' ∧ (#t : 𝕜) * ε ≤ #t'
-  · rw [card_interedges_eq_edgeDensity_mul, mul_assoc (G.edgeDensity s t : 𝕜), ← sub_mul,
+  · have hcard : (#(G.interedges s' t') : 𝕜) = G.edgeDensity s' t' * (#s' * #t') := by
+      rw [mul_comm]
+      exact_mod_cast (G.card_mul_card_mul_edgeDensity s' t').symm
+    rw [hcard, mul_assoc (G.edgeDensity s t : 𝕜), ← sub_mul,
       abs_mul, abs_of_nonneg (a := (#s' : 𝕜) * #t') (by positivity), mul_assoc]
     exact mul_le_mul (h hs' ht' hbig.1 hbig.2).le (mul_le_mul hs ht (by positivity)
       (by positivity)) (by positivity) hε.le

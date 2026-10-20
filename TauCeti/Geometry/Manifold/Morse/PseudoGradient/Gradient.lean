@@ -90,7 +90,8 @@ theorem IsEuclidean.neg_mgradient_eq_field (hφ : φ.IsEuclidean) {y : M}
       -- `mvfderiv` composes `mfderiv` with `NormedSpace.fromTangentSpace`, which is the identity
       -- on the underlying type `ℝ` of `TangentSpace 𝓘(ℝ) (f y)` and has no Mathlib `simp` lemma.
       rw [mvfderiv, ContinuousLinearMap.comp_apply,
-        mfderiv_eq_fderiv_comp_of_eqOn φ.mem_maximalAtlas φ.eqOn_quadratic hy
+        mfderiv_eq_fderiv_comp_of_eqOn
+          (IsManifold.maximalAtlas_subset_of_le (by simp) φ.mem_maximalAtlas) φ.eqOn_quadratic hy
           (φ.differentiableAt_quadratic _)]
       exact φ.fderiv_quadratic_apply _ _
     have hX : φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (-φ.field y)) =
@@ -119,8 +120,7 @@ theorem isAdaptedPseudoGradient_neg_mgradient
     IsAdaptedPseudoGradient f fun y ↦ -mgradient 𝓘(ℝ, E) f y where
   contMDiff := by
     have : IsManifold 𝓘(ℝ, E) (∞ + 1) M := IsManifold.of_le (n := ∞) (by simp)
-    have h := contMDiff_mgradient (I := 𝓘(ℝ, E)) (n := ∞) (f := -f) hf.neg
-    simpa only [mgradient_neg] using h
+    exact contMDiff_neg_mgradient (n := ∞) hf
   mvfderiv_apply_lt_zero y hy := by
     have hg : mgradient 𝓘(ℝ, E) f y ≠ 0 := by
       rwa [ne_eq, mgradient_eq_zero_iff, mvfderiv_eq_zero_iff]

@@ -65,8 +65,7 @@ theorem diagonalPermMulEquivWeylGroup_indexEquiv_apply
     ((diagonalRootDatumEquiv.{u} r).weylGroupToPerm_weylGroupEquiv
       ((DynkinType.typeAWeylGroupEquiv r).symm e))
   rw [← DynkinType.typeARootPermHom_typeAWeylGroupEquiv, MulEquiv.apply_symm_apply] at h
-  simp only [RootPairing.weylGroupToPerm, MonoidHom.domRestrict_apply,
-    RootPairing.Equiv.indexHom_apply] at h
+  simp only [RootPairing.weylGroupToPerm_apply] at h
   rw [diagonalPermMulEquivWeylGroup, MulEquiv.trans_apply, h]
   apply Subtype.ext
   simpa only [diagonalRootDatumEquiv_indexEquiv, Equiv.permCongr_apply,
