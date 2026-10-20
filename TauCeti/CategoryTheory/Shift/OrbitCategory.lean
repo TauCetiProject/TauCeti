@@ -50,6 +50,7 @@ to compare bounded derived categories with periodic derived categories.
 * `TauCeti.OrbitCategory.periodicity`: the periodicity isomorphism `[n] ⋙ π ≅ π`.
 * `TauCeti.OrbitCategory.lift`: the descent of an additive functor with a periodicity
   isomorphism.
+* `TauCeti.OrbitCategory.liftMap`: the additive action of the descent on orbit hom groups.
 * `TauCeti.OrbitCategory.projectionCompLift`: the descent restricts to the original functor.
 * `TauCeti.OrbitCategory.isoLift`: any additive functor restricting to `G` compatibly with the
   periodicity isomorphisms is isomorphic to the descent.
@@ -332,20 +333,32 @@ section Lift
 variable {E : Type u'} [Category.{v'} E] [Preadditive E] (G : D ⥤ E) [G.Additive]
   (φ : shiftFunctor D n ⋙ G ≅ G)
 
-/-- Keller's descent of an additive functor `G` with a periodicity isomorphism
-`φ : [n] ⋙ G ≅ G` to the orbit category `D/[n]`. It is `G` on objects, and sends a homogeneous
+/-- The action on morphisms of the descent `lift G φ`: the additive map sending a homogeneous
 piece `f : X ⟶ Y⟦n * i⟧` of degree `i` to `G.map f` followed by the `i`-th power
 `φ.periodicityZPow i` of the periodicity isomorphism at `Y`. -/
+def liftMap (X Y : OrbitCategory D n) : (X ⟶ Y) →+ (G.obj X.obj ⟶ G.obj Y.obj) :=
+  DirectSum.toAddMonoid fun i ↦ AddMonoidHom.mk'
+    (fun f ↦ G.map f ≫ (φ.periodicityZPow i).hom.app Y.obj) (by simp)
+
+/-- The additive map `liftMap G φ` on a homogeneous piece. -/
+@[simp]
+theorem liftMap_homOf {X Y : D} (i : ℤ) (f : ShiftedHom X Y (n * i)) :
+    liftMap G φ ⟨X⟩ ⟨Y⟩ (homOf i f) = G.map f ≫ (φ.periodicityZPow i).hom.app Y :=
+  toAddMonoid_homOf _ i f
+
+/-- Keller's descent of an additive functor `G` with a periodicity isomorphism
+`φ : [n] ⋙ G ≅ G` to the orbit category `D/[n]`. It is `G` on objects, and acts on morphisms by
+`liftMap G φ`. -/
 -- Exposed so that `(lift G φ).obj X` is visibly `G.obj X.obj`: the statements comparing the
--- descent with `G` (`projectionCompLift`, `lift_map_homOf`) need this to typecheck.
+-- descent with `G` (`projectionCompLift`, `lift_map_homOf`) need this to typecheck. The
+-- direct-sum implementation of the action on morphisms stays behind the unexposed `liftMap`.
 @[expose]
 def lift : OrbitCategory D n ⥤ E where
   obj X := G.obj X.obj
-  map {X Y} := DirectSum.toAddMonoid fun i ↦ AddMonoidHom.mk'
-    (fun f ↦ G.map f ≫ (φ.periodicityZPow i).hom.app Y.obj) (by simp)
+  map {X Y} := liftMap G φ X Y
   map_id X := by
     rw [show 𝟙 X = homOf 0 (ShiftedHom.mk₀ (n * 0) (by simp) (𝟙 X.obj)) from id_def X.obj,
-      toAddMonoid_homOf]
+      liftMap_homOf]
     simp [ShiftedHom.mk₀, Iso.periodicityZPow_zero]
   map_comp {X Y Z} f g := by
     induction f using hom_induction_on with
@@ -359,8 +372,8 @@ def lift : OrbitCategory D n ⥤ E where
       | homOf j g =>
         have hg := (φ.periodicityZPow i).hom.naturality g
         simp only [Functor.comp_map] at hg
-        simp only [homOf_comp_homOf, toAddMonoid_homOf, AddMonoidHom.mk'_apply,
-          ShiftedHom.comp, Functor.map_comp, Category.assoc,
+        rw [homOf_comp_homOf, liftMap_homOf, liftMap_homOf, liftMap_homOf]
+        simp only [ShiftedHom.comp, Functor.map_comp, Category.assoc,
           Iso.periodicityZPow_add_hom_app φ j i (i + j) (add_comm j i) Z.obj]
         simp [← Functor.map_comp_assoc, reassoc_of% hg]
 
@@ -373,14 +386,11 @@ theorem lift_obj (X : OrbitCategory D n) : (lift G φ).obj X = G.obj X.obj := by
 @[simp]
 theorem lift_map_homOf {X Y : D} (i : ℤ) (f : ShiftedHom X Y (n * i)) :
     (lift G φ).map (homOf i f : (⟨X⟩ : OrbitCategory D n) ⟶ ⟨Y⟩) =
-      G.map f ≫ (φ.periodicityZPow i).hom.app Y := by
-  exact toAddMonoid_homOf _ i f
+      G.map f ≫ (φ.periodicityZPow i).hom.app Y :=
+  liftMap_homOf G φ i f
 
 instance : (lift G φ).Additive where
-  map_add {X Y f g} := by
-    -- `(lift G φ).map` is by definition the additive map `DirectSum.toAddMonoid _`.
-    change DirectSum.toAddMonoid _ (f + g) = DirectSum.toAddMonoid _ f + DirectSum.toAddMonoid _ g
-    exact map_add _ f g
+  map_add {X Y f g} := map_add (liftMap G φ X Y) f g
 
 /-- The descent sends the projection of a morphism `f` of `D` to `G.map f`. -/
 theorem lift_map_projection_map {X Y : D} (f : X ⟶ Y) :

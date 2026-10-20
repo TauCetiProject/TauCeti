@@ -212,9 +212,8 @@ theorem periodicityZPow_succ (φ : shiftFunctor C n ⋙ G ≅ G) (i j : ℤ) (h 
     exact (shiftComp_shiftInv φ _ (mul_zero n)).symm
   | Int.negSucc (k + 1) =>
     obtain rfl : j = Int.negSucc k := by omega
-    change periodicityNegPow φ k =
-      φ.shiftComp ((φ.shiftInv (-n) (neg_add_cancel n)).shiftComp (periodicityNegPow φ k) _) _
-    rw [← shiftComp_assoc (ab := 0) (bc := n * Int.negSucc (k + 1))
+    rw [periodicityZPow.eq_2, periodicityZPow.eq_2, periodicityNegPow.eq_2,
+      ← shiftComp_assoc (ab := 0) (bc := n * Int.negSucc (k + 1))
       (abc := n * Int.negSucc k) _ _ _ (add_neg_cancel n),
       shiftComp_shiftInv φ (add_neg_cancel n) rfl, shiftComp_zero_left]
     ring
