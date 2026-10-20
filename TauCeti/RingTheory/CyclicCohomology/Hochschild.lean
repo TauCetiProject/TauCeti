@@ -357,7 +357,10 @@ private def cyclesToCocycles (n : ℕ) :
     ((hochschildCochainComplexXIso R A M n).hom.hom ∘ₗ
       ((hochschildCochainComplex R A M).iCycles n).hom)
     fun z ↦ (mem_hochschildCocycles_iff_complex R A M n _).2 <| by
-      rw [Iso.hom_inv_id_apply, ← ConcreteCategory.comp_apply, HomologicalComplex.iCycles_d]
+      -- `hochschildCochainComplexXIso` is the identity.
+      change (hochschildCochainComplex R A M).d n (n + 1)
+        ((hochschildCochainComplex R A M).iCycles n z) = 0
+      rw [← ConcreteCategory.comp_apply, HomologicalComplex.iCycles_d]
       rfl
 
 private theorem coe_cyclesToCocycles (n : ℕ) (z : (hochschildCochainComplex R A M).cycles n) :
@@ -432,8 +435,9 @@ theorem toHochschild_mk {n : ℕ} (φ : cyclicCocycles R A M n) :
       0 := by
     apply (ModuleCat.mono_iff_injective (cyclicCochainComplexXIso R A M (n + 1)).hom).1
       inferInstance
-    rw [cyclicCochainComplex_d_apply, Iso.inv_hom_id_apply, map_zero]
-    exact φ.2
+    rw [cyclicCochainComplex_d_apply, Iso.inv_hom_id_apply, map_zero, ← Subtype.coe_inj,
+      coe_cyclicHochschildCoboundary_apply, ZeroMemClass.coe_zero]
+    exact (mem_cyclicCocycles_iff R A M).1 φ.2
   let z := (cyclicCochainComplex R A M).moduleCatCyclesMk _ (n + 1) (CochainComplex.next ℕ n) hφ
   have hz : (cyclicCochainComplexXIso R A M n).hom ((cyclicCochainComplex R A M).iCycles n z) =
       φ := by
