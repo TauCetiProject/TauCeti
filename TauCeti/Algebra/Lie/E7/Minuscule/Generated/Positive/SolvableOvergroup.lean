@@ -31,8 +31,8 @@ adjoint weight spaces. No maximality or integral specialization comparison is as
 
 The stable flag is supplied by
 `Comodule.exists_basis_coefficientMatrix_isUpperTriangular_of_geometricallySolvable`.
-`HopfIdeal.mem_adjointWeightSpace_iff_of_weightTorus` identifies adjoint weight spaces with
-the vanishing of tangent-matrix entries outside the specified character.
+`HopfIdeal.mem_adjointWeightSpace_iff_of_weightTorusCoordinateBialgHom` identifies adjoint
+weight spaces with the vanishing of tangent-matrix entries outside the specified character.
 -/
 
 public section
@@ -160,84 +160,6 @@ private theorem single_mem_of_raising_path
   | refl => exact id
   | tail h hstep ih => exact fun ha ↦ single_mem_of_raising_step J hJ N hstep (ih ha)
 
--- Relabelling the integral characters lets the categorical adjoint criterion use the
--- field universe without restricting the original torus or its characters.
-private def liftedCharacterEquiv : Multiplicative (Fin 7 →₀ ℤ) ≃*
-    Multiplicative (ULift.{u} (Fin 7) →₀ ℤ) :=
-  AddEquiv.toMultiplicative (Finsupp.domCongr Equiv.ulift.symm)
-
-private abbrev liftedCharacterAlgebraEquiv (k : Type u) [Field k] :
-    MonoidAlgebra k (Multiplicative (Fin 7 →₀ ℤ)) ≃ₐc[k]
-      MonoidAlgebra k (Multiplicative (ULift.{u} (Fin 7) →₀ ℤ)) :=
-  MonoidAlgebra.domCongrBialgEquiv k k liftedCharacterEquiv
-
-private theorem liftedCharacterAlgebraEquiv_single
-    (α : Multiplicative (Fin 7 →₀ ℤ)) :
-    liftedCharacterAlgebraEquiv k (MonoidAlgebra.single α 1) =
-      MonoidAlgebra.single (liftedCharacterEquiv α) 1 := by
-  simp only [liftedCharacterAlgebraEquiv, MonoidAlgebra.domCongrBialgEquiv,
-    BialgEquiv.ofAlgEquiv_apply]
-  exact MonoidAlgebra.domCongr_single (R := k) (A := k) liftedCharacterEquiv α 1
-
-private theorem liftedCharacterEquiv_weightCharacter (w : Fin 7 → ℤ) :
-    liftedCharacterEquiv (SplitTorus.weightCharacter w) =
-      SplitTorus.weightCharacter (fun i : ULift.{u} (Fin 7) ↦ w i.down) := by
-  apply Multiplicative.toAdd.injective
-  ext i
-  simp [liftedCharacterEquiv, Finsupp.domCongr]
-
-private theorem lifted_weightTorusCoordinateMap :
-    (liftedCharacterAlgebraEquiv k).toBialgHom.comp
-        (GeneralLinear.weightTorusCoordinateBialgHom (S := k) μ) =
-      (GeneralLinear.weightTorusCoordinateMap
-        (fun a (i : ULift.{u} (Fin 7)) ↦ μ a i.down)).hom := by
-  apply GeneralLinear.coordinateHopfAlgebra_bialgHom_ext k 56
-  intro a b
-  rw [BialgHom.comp_apply, GeneralLinear.weightTorusCoordinateBialgHom_X,
-    GeneralLinear.weightTorusCoordinateMap_X]
-  split_ifs with hab
-  · -- The direct torus map uses the finitely supported representative of its character;
-    -- the bialgebra equivalence acts through the same underlying function.
-    change liftedCharacterAlgebraEquiv k (MonoidAlgebra.single
-        (Multiplicative.ofAdd (Finsupp.equivFunOnFinite.symm (μ a))) 1) = _
-    rw [liftedCharacterAlgebraEquiv_single]
-    congr 1
-    rw [← SplitTorus.weightCharacter_coe, ← SplitTorus.weightCharacter_coe,
-      Finsupp.coe_equivFunOnFinite_symm, Finsupp.coe_equivFunOnFinite_symm]
-    exact liftedCharacterEquiv_weightCharacter (μ a)
-  · exact map_zero _
-
-private theorem mem_adjointWeightSpace_iff_directWeightTorus
-    (J : HopfIdeal k (GeneralLinear.coordinateHopfAlgebra k 56))
-    [Module.Finite k (Bialgebra.CotangentSpace k
-      (GeneralLinear.coordinateHopfAlgebra k 56 ⧸ J.toIdeal))]
-    [Module.Projective k (Bialgebra.CotangentSpace k
-      (GeneralLinear.coordinateHopfAlgebra k 56 ⧸ J.toIdeal))]
-    (π : (GeneralLinear.coordinateHopfAlgebra k 56 ⧸ J.toIdeal) →ₐc[k]
-      MonoidAlgebra k (Multiplicative (Fin 7 →₀ ℤ)))
-    (hπ : π.comp (Bialgebra.Quotient.mkBialgHom (R := k) J.toIdeal) =
-      GeneralLinear.weightTorusCoordinateBialgHom (S := k) μ)
-    (α : Multiplicative (Fin 7 →₀ ℤ))
-    (x : Module.Dual k (Bialgebra.CotangentSpace k
-      (GeneralLinear.coordinateHopfAlgebra k 56 ⧸ J.toIdeal))) :
-    x ∈ Derivation.adjointWeightSpace π α ↔
-      ∀ a b, SplitTorus.weightCharacter (μ a - μ b) ≠ α →
-        GeneralLinear.tangentMatrix 56
-          (HopfIdeal.quotientLieHom J (Derivation.cotangentLinearEquiv (B := k) x)) a b = 0 := by
-  let π' := (liftedCharacterAlgebraEquiv k).toBialgHom.comp π
-  have hπ' : π'.comp (Bialgebra.Quotient.mkBialgHom (R := k) J.toIdeal) =
-      (GeneralLinear.weightTorusCoordinateMap
-        (fun a (i : ULift.{u} (Fin 7)) ↦ μ a i.down)).hom := by
-    rw [BialgHom.comp_assoc, hπ, lifted_weightTorusCoordinateMap]
-  rw [← Derivation.adjointWeightSpace_domCongr liftedCharacterEquiv π α]
-  rw [HopfIdeal.mem_adjointWeightSpace_iff_of_weightTorus J _ π' hπ']
-  have hchar (a b : Fin 56) :
-      SplitTorus.weightCharacter
-          ((fun i : ULift.{u} (Fin 7) ↦ μ a i.down) - fun i ↦ μ b i.down) =
-        liftedCharacterEquiv (SplitTorus.weightCharacter (μ a - μ b)) :=
-    (liftedCharacterEquiv_weightCharacter (μ a - μ b)).symm
-  simp only [hchar, ne_eq, liftedCharacterEquiv.injective.eq_iff]
-
 variable [IsAlgClosed k]
 
 /-- Every nonzero positive-cone difference forces a universal matrix-entry equation in a
@@ -317,7 +239,7 @@ theorem adjointWeightSpace_neg_eq_bot_of_posRootCone
   classical
   apply (Submodule.eq_bot_iff _).mpr
   intro x hx
-  have hentry := (mem_adjointWeightSpace_iff_directWeightTorus J π hπ
+  have hentry := (HopfIdeal.mem_adjointWeightSpace_iff_of_weightTorusCoordinateBialgHom J μ π hπ
     (SplitTorus.weightCharacter (-δ)) x).mp hx
   apply (Derivation.cotangentLinearEquiv (B := k)).injective
   apply (HopfIdeal.quotientLieHom_injective J)
@@ -473,7 +395,7 @@ theorem carrierQuotient_adjointWeightSpace_neg_eq_bot_of_posRootCone
   apply (Submodule.eq_bot_iff _).mpr
   intro x hx
   have hmem := (Derivation.dualCotangentMap_mem_adjointWeightSpace_iff_of_characterEquiv
-    liftedCharacterEquiv (_root_.CommHopfAlgCat.ofIso e).toBialgHom
+    MulEquiv.ulift.symm (_root_.CommHopfAlgCat.ofIso e).toBialgHom
     (_root_.CommHopfAlgCat.ofIso e).surjective π (SplitTorus.weightCharacter (-δ)) x).mpr hx
   rw [BialgEquiv.toBialgHom_eq_coe, CommHopfAlgCat.coe_ofIso] at hmem
   have hxzero : Derivation.dualCotangentMap e.hom.hom x = 0 := by

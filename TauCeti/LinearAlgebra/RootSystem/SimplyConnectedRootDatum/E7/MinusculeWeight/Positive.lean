@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.RootSystem.Finite.Nondegenerate
 public import TauCeti.LinearAlgebra.RootSystem.Positive
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.E7.MinusculeWeight
+import TauCeti.LinearAlgebra.RootSystem.InvariantForm.Basic
 
 /-!
 # Raising paths in the E7 minuscule weight diagram
@@ -16,9 +17,11 @@ A raising step adds a numbered simple root to a minuscule weight. A path of such
 exactly when the difference of its endpoints lies in the integral positive root cone. The
 empty path accounts for equal endpoints.
 
-The proof uses the reflection-invariant root form and the existing weight table. Positivity
-is used only on a nonzero difference in the root lattice; the roots need not span the full
-fundamental-weight lattice over the integers.
+The proof uses the reflection-invariant root form and the existing weight table: all minuscule
+weights have the same length, so
+`RootPairing.InvariantForm.exists_pos_and_coroot'_neg_of_apply_self_eq` provides a raising step.
+Positivity is used only on a nonzero difference in the root lattice; the roots need not span the
+full fundamental-weight lattice over the integers.
 -/
 
 public section
@@ -90,22 +93,6 @@ private theorem rootForm_minuscule_eq (a b : Fin 56) :
     rw [List.foldl_append]
     simpa only [List.foldl_cons, List.foldl_nil, rootForm_minuscule_reflection] using ih
 
-private theorem two_mul_rootForm_simple (x : Fin 7 → ℤ) (i : Fin 7) :
-    2 * B x (α i) = x i * B (α i) (α i) := by
-  have h := congrArg (e7SimplyConnectedRootDatum.toLinearMap x)
-    (e7SimplyConnectedRootDatum.rootForm_self_smul_coroot (e7SimpleIndex i))
-  rw [map_smul, LinearMap.map_smul_of_tower,
-    e7SimplyConnectedRootDatum.toLinearMap_apply_apply_Polarization] at h
-  have hpair :
-      e7SimplyConnectedRootDatum.toLinearMap x
-        (e7SimplyConnectedRootDatum.coroot (e7SimpleIndex i)) = x i := by
-    simp
-  rw [hpair] at h
-  have hsym : B (α i) x = B x (α i) := by
-    simpa using e7SimplyConnectedRootDatum.rootForm_symmetric.eq (α i) x
-  simpa only [e7SimplyConnectedRootDatum_root, smul_eq_mul, nsmul_eq_mul,
-    Nat.cast_ofNat, hsym, mul_comm] using h.symm
-
 private theorem exists_raising_step_of_sum {a b : Fin 56} (hab : a ≠ b)
     (c : Fin 7 → ℕ) (hc : μ b - μ a = ∑ i, c i • α i) :
     ∃ i, 0 < c i ∧ μ a i = -1 := by
@@ -120,37 +107,16 @@ private theorem exists_raising_step_of_sum {a b : Fin 56} (hab : a ≠ b)
       (e7SimplyConnectedRootDatum.rootSpanMem ℤ (e7SimpleIndex i)).property
     simpa only [e7SimplyConnectedRootDatum_root] using
       (e7SimplyConnectedRootDatum.rootSpan ℤ).smul_of_tower_mem (c i) hroot
-  have hpos := e7SimplyConnectedRootDatum.rootForm_pos_of_ne_zero hspan hne
-  have heq := rootForm_minuscule_eq a b
-  have hsym : B (μ a) (μ b) = B (μ b) (μ a) := by
-    simpa using e7SimplyConnectedRootDatum.rootForm_symmetric.eq (μ a) (μ b)
-  have hnegative : 2 * B (μ a) (μ b - μ a) < 0 := by
-    simp only [map_sub, LinearMap.sub_apply] at hpos ⊢
-    linarith
-  have hsum : 2 * B (μ a) (μ b - μ a) =
-      ∑ i, (c i : ℤ) * (μ a i * B (α i) (α i)) := by
-    rw [hc, map_sum, Finset.mul_sum]
-    apply Finset.sum_congr rfl
-    intro i _
-    rw [map_nsmul, nsmul_eq_mul]
-    calc
-      2 * ((c i : ℤ) * B (μ a) (α i)) =
-          (c i : ℤ) * (2 * B (μ a) (α i)) := by ring
-      _ = _ := by rw [two_mul_rootForm_simple]
-  rw [hsum] at hnegative
-  by_contra! h
-  have hnonneg : 0 ≤ ∑ i, (c i : ℤ) * (μ a i * B (α i) (α i)) := by
-    refine Finset.sum_nonneg fun i _ ↦ ?_
-    by_cases hci : c i = 0
-    · simp [hci]
-    have hcoord : 0 ≤ μ a i := by
-      rcases e7MinusculeWeight_apply_eq_neg_one_or_eq_zero_or_eq_one a i with hi | hi | hi
-      · exact False.elim (h i (Nat.pos_of_ne_zero hci) hi)
-      · simp [hi]
-      · simp [hi]
-    exact mul_nonneg (Nat.cast_nonneg _)
-      (mul_nonneg hcoord (e7SimplyConnectedRootDatum.zero_le_rootForm _))
-  exact hnegative.not_ge hnonneg
+  obtain ⟨i, -, hci, hi⟩ :=
+    e7SimplyConnectedRootDatum.toInvariantForm.exists_pos_and_coroot'_neg_of_apply_self_eq
+      (fun _ ↦ e7SimplyConnectedRootDatum.zero_le_rootForm _) (rootForm_minuscule_eq a b)
+      (e7SimplyConnectedRootDatum.rootForm_pos_of_ne_zero hspan hne) (f := e7SimpleIndex)
+      (by simpa only [e7SimplyConnectedRootDatum_root] using hc)
+  refine ⟨i, hci, ?_⟩
+  have hpair : e7SimplyConnectedRootDatum.coroot' (e7SimpleIndex i) (μ a) = μ a i := by
+    simp
+  rw [hpair] at hi
+  rcases e7MinusculeWeight_apply_eq_neg_one_or_eq_zero_or_eq_one a i with h | h | h <;> omega
 
 private theorem raisingPath_of_sum (a : Fin 56) :
     ∀ b : Fin 56, (∃ c : Fin 7 → ℕ, μ b - μ a = ∑ i, c i • α i) →

@@ -24,6 +24,11 @@ The argument factors the matrix computations of
 criterion through the injective closed-subgroup differential. This supplies the common
 entrywise criterion used in classical pinnings.
 
+The comodule criterion needs the torus coordinates indexed in the universe of the base ring.
+`mem_adjointWeightSpace_iff_of_weightTorusCoordinateBialgHom` states it for coordinates indexed
+by `Fin r` over a base ring in any universe, as for the weight tori of the explicit Chevalley
+carriers.
+
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), §§21.1 and 24.6.
@@ -197,5 +202,97 @@ theorem mem_adjointWeightSpace_iff_of_weightTorus
     adDerivation_universalWeightTorus_eq_iff I w π hπ]
 
 end
+
+section SmallWeights
+
+/-! ### Torus coordinates indexed by `Fin r`
+
+The criterion above indexes the torus coordinates by a type in the universe of the base ring,
+which the universal torus point requires. For coordinates indexed by `Fin r`, relabelling along
+`ULift (Fin r)` moves the characters into that universe without changing them. -/
+
+noncomputable section
+
+variable {R : Type u} [CommRing R] {n r : ℕ}
+variable (I : HopfIdeal R (GeneralLinear.coordinateHopfAlgebra R n))
+
+/-- Relabelling `Fin r` along `ULift` identifies the two character lattices. -/
+private def liftedCharacterEquiv (r : ℕ) :
+    Multiplicative (Fin r →₀ ℤ) ≃* Multiplicative (ULift.{u} (Fin r) →₀ ℤ) :=
+  AddEquiv.toMultiplicative (Finsupp.domCongr Equiv.ulift.symm)
+
+private theorem liftedCharacterEquiv_single (α : Multiplicative (Fin r →₀ ℤ)) :
+    MonoidAlgebra.domCongrBialgEquiv R R (liftedCharacterEquiv.{u} r)
+        (MonoidAlgebra.single α 1) =
+      MonoidAlgebra.single (liftedCharacterEquiv r α) 1 := by
+  simp only [MonoidAlgebra.domCongrBialgEquiv, BialgEquiv.ofAlgEquiv_apply]
+  exact MonoidAlgebra.domCongr_single (R := R) (A := R) (liftedCharacterEquiv r) α 1
+
+private theorem liftedCharacterEquiv_weightCharacter (v : Fin r → ℤ) :
+    liftedCharacterEquiv.{u} r (SplitTorus.weightCharacter v) =
+      SplitTorus.weightCharacter (fun i : ULift.{u} (Fin r) ↦ v i.down) := by
+  apply Multiplicative.toAdd.injective
+  ext i
+  simp [liftedCharacterEquiv, Finsupp.domCongr]
+
+private theorem lifted_weightTorusCoordinateBialgHom (w : Fin n → Fin r → ℤ) :
+    (MonoidAlgebra.domCongrBialgEquiv R R (liftedCharacterEquiv.{u} r)).toBialgHom.comp
+        (GeneralLinear.weightTorusCoordinateBialgHom (S := R) w) =
+      (GeneralLinear.weightTorusCoordinateMap
+        (fun a (i : ULift.{u} (Fin r)) ↦ w a i.down)).hom := by
+  apply GeneralLinear.coordinateHopfAlgebra_bialgHom_ext R n
+  intro a b
+  rw [BialgHom.comp_apply, GeneralLinear.weightTorusCoordinateBialgHom_X,
+    GeneralLinear.weightTorusCoordinateMap_X]
+  split_ifs with hab
+  · -- The direct torus map uses the finitely supported representative of its character;
+    -- the bialgebra equivalence acts through the same underlying function.
+    change MonoidAlgebra.domCongrBialgEquiv R R (liftedCharacterEquiv.{u} r)
+        (MonoidAlgebra.single
+          (Multiplicative.ofAdd (Finsupp.equivFunOnFinite.symm (w a))) 1) = _
+    rw [liftedCharacterEquiv_single]
+    congr 1
+    rw [← SplitTorus.weightCharacter_coe, ← SplitTorus.weightCharacter_coe,
+      Finsupp.coe_equivFunOnFinite_symm, Finsupp.coe_equivFunOnFinite_symm]
+    exact liftedCharacterEquiv_weightCharacter (w a)
+  · exact map_zero _
+
+variable [Module.Finite R
+  (Bialgebra.CotangentSpace R (GeneralLinear.coordinateHopfAlgebra R n ⧸ I.toIdeal))]
+variable [Module.Projective R
+  (Bialgebra.CotangentSpace R (GeneralLinear.coordinateHopfAlgebra R n ⧸ I.toIdeal))]
+
+/-- `mem_adjointWeightSpace_iff_of_weightTorus` for a weight torus with coordinates indexed by
+`Fin r`, over a base ring in any universe: membership in the adjoint weight space of `α` is
+equivalent to vanishing of every tangent-matrix entry whose weight difference is not `α`. -/
+theorem mem_adjointWeightSpace_iff_of_weightTorusCoordinateBialgHom (w : Fin n → Fin r → ℤ)
+    (π : (GeneralLinear.coordinateHopfAlgebra R n ⧸ I.toIdeal) →ₐc[R]
+      MonoidAlgebra R (Multiplicative (Fin r →₀ ℤ)))
+    (hπ : π.comp (Bialgebra.Quotient.mkBialgHom I.toIdeal) =
+      GeneralLinear.weightTorusCoordinateBialgHom (S := R) w)
+    (α : Multiplicative (Fin r →₀ ℤ))
+    (x : Module.Dual R
+      (Bialgebra.CotangentSpace R (GeneralLinear.coordinateHopfAlgebra R n ⧸ I.toIdeal))) :
+    x ∈ Derivation.adjointWeightSpace π α ↔
+      ∀ i j : Fin n, SplitTorus.weightCharacter (w i - w j) ≠ α →
+        GeneralLinear.tangentMatrix n
+          (quotientLieHom I (Derivation.cotangentLinearEquiv (B := R) x)) i j = 0 := by
+  let π' := (MonoidAlgebra.domCongrBialgEquiv R R (liftedCharacterEquiv.{u} r)).toBialgHom.comp π
+  have hπ' : π'.comp (Bialgebra.Quotient.mkBialgHom I.toIdeal) =
+      (GeneralLinear.weightTorusCoordinateMap
+        (fun a (i : ULift.{u} (Fin r)) ↦ w a i.down)).hom := by
+    rw [BialgHom.comp_assoc, hπ, lifted_weightTorusCoordinateBialgHom]
+  rw [← Derivation.adjointWeightSpace_domCongr (liftedCharacterEquiv r) π α,
+    mem_adjointWeightSpace_iff_of_weightTorus I _ π' hπ']
+  have hchar (a b : Fin n) :
+      SplitTorus.weightCharacter
+          ((fun i : ULift.{u} (Fin r) ↦ w a i.down) - fun i ↦ w b i.down) =
+        liftedCharacterEquiv r (SplitTorus.weightCharacter (w a - w b)) :=
+    (liftedCharacterEquiv_weightCharacter (w a - w b)).symm
+  simp only [hchar, ne_eq, (liftedCharacterEquiv r).injective.eq_iff]
+
+end
+
+end SmallWeights
 
 end TauCeti.HopfIdeal

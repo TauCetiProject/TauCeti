@@ -164,6 +164,20 @@ theorem points_mulVec_mem
     ← GeneralLinear.pointsMulEquiv_apply, MulEquiv.apply_symm_apply] at h
   exact h
 
+/-- Subtracting a basis vector from its positive simple root translate at parameter one
+leaves the reflected basis vector when its simple weight is minus one. -/
+theorem positiveRoot_mulVec_single_sub (k : Type*) [CommRing k] (i : Fin 6) (a : Fin 27)
+    (ha : DynkinType.e6MinusculeWeight a i = -1) :
+    (((rootSubgroupPoints (.inl i) k (Multiplicative.ofAdd 1) :
+        Matrix.GeneralLinearGroup (Fin 27) k) : Matrix (Fin 27) (Fin 27) k) *ᵥ
+          Pi.single a 1) - Pi.single a 1 =
+      Pi.single (DynkinType.e6MinusculeReflection i a) 1 := by
+  rw [coe_rootSubgroupPoints_inl, Matrix.add_mulVec, Matrix.one_mulVec,
+    Matrix.smul_mulVec]
+  simp only [toAdd_ofAdd, one_smul]
+  rw [Matrix.mulVec_single_one, weightTable.raisingMatrix_map_col]
+  simp only [weightTable_weight, weightTable_reflection, ha, ite_true, add_sub_cancel_left]
+
 /-! ## Simplicity over a field -/
 
 section Simple
@@ -205,18 +219,6 @@ theorem minusculeCharacter_injective : Function.Injective minusculeCharacter := 
   funext i
   simpa only [minusculeCharacter, SplitTorus.toAdd_weightCharacter] using
     congrArg (fun χ : Multiplicative (Fin 6 →₀ ℤ) ↦ Multiplicative.toAdd χ i) h
-
-private theorem positiveRoot_mulVec_single_sub (i : Fin 6) (a : Fin 27)
-    (ha : DynkinType.e6MinusculeWeight a i = -1) :
-    (((rootSubgroupPoints (.inl i) k (Multiplicative.ofAdd 1) :
-        Matrix.GeneralLinearGroup (Fin 27) k) : Matrix (Fin 27) (Fin 27) k) *ᵥ
-          Pi.single a 1) - Pi.single a 1 =
-      Pi.single (DynkinType.e6MinusculeReflection i a) 1 := by
-  rw [coe_rootSubgroupPoints_inl, Matrix.add_mulVec, Matrix.one_mulVec,
-    Matrix.smul_mulVec]
-  simp only [toAdd_ofAdd, one_smul]
-  rw [Matrix.mulVec_single_one, weightTable.raisingMatrix_map_col]
-  simp only [weightTable_weight, weightTable_reflection, ha, ite_true, add_sub_cancel_left]
 
 private theorem negativeRoot_mulVec_single_sub (i : Fin 6) (a : Fin 27)
     (ha : DynkinType.e6MinusculeWeight a i = 1) :
