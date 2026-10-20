@@ -98,6 +98,7 @@ variable {R : Type*} [CommSemiring R]
 
 /-- Translating the variable by `r` adds `n * r` times the leading coefficient to the coefficient
 of `X ^ (n - 1)`, where `n` is the degree. -/
+@[simp]
 theorem nextCoeff_taylor (p : R[X]) (r : R) :
     (taylor r p).nextCoeff = p.nextCoeff + p.natDegree * r * p.leadingCoeff := by
   rcases Nat.eq_zero_or_pos p.natDegree with h | h
