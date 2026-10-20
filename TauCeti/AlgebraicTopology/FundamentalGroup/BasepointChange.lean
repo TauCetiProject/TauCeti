@@ -512,6 +512,8 @@ lemma map_fundamentalGroupMulEquivOfPath
       fundamentalGroupMulEquivOfPath (p.map f.continuous) (FundamentalGroup.map f x g) := by
   apply CategoryTheory.End.ext
   simp only [fundamentalGroupMulEquivOfPath_apply]
+  -- On underlying endomorphisms, `FundamentalGroup.map` reduces to the groupoid functor's
+  -- map, so naturality of conjugation applies directly to the goal.
   exact (FundamentalGroupoid.map f).map_conj
     ((CategoryTheory.Groupoid.isoEquivHom _ _).symm (Path.Homotopic.Quotient.mk p)) g
 
