@@ -7,11 +7,11 @@ module
 
 public import Mathlib.Algebra.GCDMonoid.Finset
 public import TauCeti.LinearAlgebra.ExteriorPower.Basic
-public import TauCeti.LinearAlgebra.Submodule.Primitive
 
 import Mathlib.LinearAlgebra.Matrix.Rank
 import TauCeti.LinearAlgebra.Matrix.Determinant.SumElim
 import TauCeti.LinearAlgebra.Matrix.Gram
+import TauCeti.LinearAlgebra.Submodule.Primitive
 
 /-!
 # Plücker coordinates
@@ -79,12 +79,12 @@ has a single Plücker coordinate, equal to `1`, and a family of more than `#ι` 
 
 The proofs use Mathlib's exterior-power basis `Module.Basis.exteriorPower` and its coordinate
 formula `exteriorPower.ιMultiDual_apply_ιMulti`, by Sophie Morel and Daniel Morrison. The
-integral case of `TauCeti.gcd_plucker_eq_one` follows Ralf Stephan's
+statement of `TauCeti.gcd_plucker_eq_one` is adapted from Ralf Stephan's
 `Submodule.gcd_plucker_eq_one` in `ArithmeticHeights/RationalLattice.lean` of
 [`rwst/Subspace-Theorems`](https://github.com/rwst/Subspace-Theorems/blob/9894a1c4baf805296b249e95575f0e16e8e1afa3/ArithmeticHeights/RationalLattice.lean),
-commit `9894a1c4baf805296b249e95575f0e16e8e1afa3` (Apache 2.0). Here the proof uses a projection
-onto the saturated submodule and the Cauchy–Binet formula, so it works over any principal ideal
-domain with a normalized gcd.
+commit `9894a1c4baf805296b249e95575f0e16e8e1afa3` (Apache 2.0); the proof here instead uses a
+projection onto the saturated submodule and the Cauchy–Binet formula, so it works over any
+principal ideal domain with a normalized gcd.
 -/
 
 public section
@@ -350,16 +350,8 @@ theorem gcd_plucker_eq_one [IsDomain R] [IsPrincipalIdealRing R] [NormalizedGCDM
     (hN : ∀ (c : R) (z : ι → R), c ≠ 0 → c • z ∈ N → z ∈ N) (b : Module.Basis (Fin p) R N) :
     Finset.univ.gcd (plucker fun i ↦ (b i : ι → R)) = 1 := by
   classical
-  have : Module.IsTorsionFree R ((ι → R) ⧸ N) :=
-    .of_smul_eq_zero fun c z hz ↦ by
-      obtain ⟨z, rfl⟩ := N.mkQ_surjective z
-      by_cases hc : c = 0
-      · exact .inl hc
-      right
-      rw [← map_smul, ← LinearMap.mem_ker, N.ker_mkQ] at hz
-      rw [← LinearMap.mem_ker, N.ker_mkQ]
-      exact hN c z hc hz
-  -- Saturation makes the finite quotient torsion-free, hence free over the PID.
+  -- Saturation makes the finitely generated quotient torsion-free, hence free over the PID.
+  have : Module.IsTorsionFree R ((ι → R) ⧸ N) := N.isTorsionFree_quotient_of_smul_mem hN
   obtain ⟨P, hP⟩ := N.exists_isCompl_iff_isTorsionFree_quotient.mpr inferInstance
   let π := b.repr.toLinearMap ∘ₗ N.projectionOnto P hP
   let y : Fin p → ι → R := fun i j ↦ π (Pi.single j 1) i
