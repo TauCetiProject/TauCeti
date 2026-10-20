@@ -125,6 +125,7 @@ theorem isSelfAdjoint_quadraticEnd [CompleteSpace E] (ψ : E) :
 
 /-- `Q₀(ψ)` scales the norm of every vector by exactly `‖ψ‖² / 2`: for `ψ ≠ 0` it is `‖ψ‖² / 2`
 times the reflection fixing `ψ` and negating its orthogonal complement. -/
+@[simp]
 theorem norm_quadraticEnd_apply (ψ v : E) :
     ‖quadraticEnd ψ v‖ = ‖ψ‖ ^ 2 / 2 * ‖v‖ := by
   -- Write `Q₀(ψ) v = x - r v` with `x = ⟪ψ, v⟫ ψ` and `r = ‖ψ‖² / 2`. Since
@@ -143,6 +144,7 @@ theorem norm_quadraticEnd_le (ψ : E) : ‖quadraticEnd ψ‖ ≤ ‖ψ‖ ^ 2 /
   opNorm_le_bound _ (by positivity) fun v ↦ (norm_quadraticEnd_apply ψ v).le
 
 /-- The operator norm of `Q₀(ψ)` is `‖ψ‖² / 2`. -/
+@[simp]
 theorem norm_quadraticEnd (ψ : E) : ‖quadraticEnd ψ‖ = ‖ψ‖ ^ 2 / 2 := by
   refine le_antisymm (norm_quadraticEnd_le ψ) ?_
   rcases eq_or_ne ψ 0 with rfl | hψ
