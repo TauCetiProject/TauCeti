@@ -7,10 +7,9 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.PiL2
-public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 public import TauCeti.Analysis.Calculus.Bilinear
 public import TauCeti.Analysis.Complex.LeviForm
-public import TauCeti.LinearAlgebra.Complex.Finrank
+public import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 public import TauCeti.LinearAlgebra.QuadraticForm.Signature
 
 /-!
@@ -26,11 +25,9 @@ real Morse index.
   itself. Every positive definite Hermitian form on a finite-dimensional complex space is the
   inner product of some inner product space structure, so this is the general positive Hermitian
   quadratic function.
-* The real part of a holomorphic function has vanishing Levi form. A function with vanishing Levi
-  form at `x` has a Hessian which changes sign under multiplication by `I`, so its Morse index
-  equals that of its negation. If its Hessian is nondegenerate, its Morse index is therefore
-  exactly the complex dimension. This applies to the real part of a nondegenerate holomorphic
-  quadratic form.
+* The real part of a holomorphic quadratic form has vanishing Levi form, so by
+  `TauCeti.morseIndex_eq_finrank_of_leviForm_eq_zero` its Morse index is exactly the complex
+  dimension when it is nondegenerate.
 * For an orthonormal basis `b` of a finite-dimensional complex inner product space of complex
   dimension `n`, the function `a ‖z‖² + Re (c ∑ⱼ ⟪b j, z⟫²)` has Levi form `a ⟪·, ·⟫` and Morse
   index `n [a < ‖c‖] + n [a < -‖c‖]`. In coordinates it is
@@ -41,11 +38,6 @@ real Morse index.
 
 * `ContinuousLinearMap.leviForm_apply_self`: the Levi form of `z ↦ B z z`.
 * `TauCeti.leviForm_norm_sq`: the Levi form of `‖z‖²` is the inner product.
-* `ContDiffAt.leviForm_re_eq_zero`: the real part of a holomorphic function has vanishing Levi
-  form.
-* `TauCeti.morseIndex_neg_eq_of_leviForm_eq_zero`,
-  `TauCeti.morseIndex_eq_finrank_of_leviForm_eq_zero`: the inertia of a function with vanishing
-  Levi form.
 * `TauCeti.leviForm_mul_norm_sq_add_re_mul_sum_inner_sq`,
   `TauCeti.morseIndex_mul_norm_sq_add_re_mul_sum_inner_sq`: the Levi form and the Morse index of
   `a ‖z‖² + Re (c ∑ⱼ ⟪b j, z⟫²)`.
@@ -61,7 +53,7 @@ public section
 open Complex ComplexConjugate ContinuousLinearMap Module
 open scoped InnerProductSpace
 
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] {f : V → ℝ} {x : V}
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
 
 /-- The Levi form of the real quadratic function `z ↦ B z z` is the Levi form of the
 polarization `B.flip + B`, at every point. -/
@@ -69,50 +61,7 @@ theorem ContinuousLinearMap.leviForm_apply_self (B : V →L[ℝ] V →L[ℝ] ℝ
     TauCeti.leviForm (fun z ↦ B z z) x = (B.flip + B).toBilinForm.leviForm := by
   rw [TauCeti.leviForm_def, fderiv_fderiv_apply_self]
 
-/-- **The real part of a holomorphic function is Levi flat.** If `g` is complex `C²` at `x`, then
-the Levi form of `Re g` vanishes at `x`. -/
-theorem ContDiffAt.leviForm_re_eq_zero {g : V → ℂ} (hg : ContDiffAt ℂ 2 g x) :
-    TauCeti.leviForm (fun z ↦ (g z).re) x = 0 := by
-  -- `Re` is real linear, so its second derivative and hence its Levi form vanish everywhere.
-  have hre (y : ℂ) : TauCeti.leviForm Complex.re y = 0 := by
-    have h : fderiv ℝ Complex.re = fun _ ↦ reCLM := funext fun _ ↦ reCLM.fderiv
-    refine LinearMap.ext fun v ↦ LinearMap.ext fun w ↦ ?_
-    apply Complex.ext <;> simp [h]
-  refine LinearMap.ext fun v ↦ LinearMap.ext fun w ↦ ?_
-  have h := TauCeti.leviForm_comp_apply (f := Complex.re) reCLM.contDiff.contDiffAt hg v w
-  rw [hre] at h
-  exact h
-
 namespace TauCeti
-
-/-- **Inertia of a Levi-flat function.** If the Levi form of `f` vanishes at `x`, then
-multiplication by `I` exchanges the positive and negative directions of the Hessian, so `f` and
-`-f` have the same Morse index at `x`. -/
-theorem morseIndex_neg_eq_of_leviForm_eq_zero (h : leviForm f x = 0) :
-    morseIndex (-f) x = morseIndex f x := by
-  have hI (v : V) : hessianQuadraticForm f x (I • v) = -hessianQuadraticForm f x v := by
-    have hv := congrArg Complex.re (LinearMap.congr_fun₂ h v v)
-    simp only [re_leviForm_apply, LinearMap.zero_apply, zero_re] at hv
-    simp only [hessianQuadraticForm_apply]
-    linarith
-  let e : V ≃ₗ[ℝ] V := (LinearEquiv.smulOfNeZero ℂ V I I_ne_zero).restrictScalars ℝ
-  have hcomp : (hessianQuadraticForm f x).comp (e : V →ₗ[ℝ] V) =
-      hessianQuadraticForm (-f) x := by
-    ext v
-    simp [e, hessianQuadraticForm_neg, hI]
-  rw [morseIndex_def, morseIndex_def, ← hcomp]
-  exact (QuadraticMap.Equivalent.sigNeg_eq
-    ⟨(hessianQuadraticForm f x).isometryEquivOfCompLinearEquiv e⟩).symm
-
-/-- **The Morse index of a Levi-flat function.** If the Levi form of `f` vanishes at `x` and its
-Hessian there is nondegenerate, then the Morse index of `f` at `x` is the complex dimension. This
-applies to the real part of a holomorphic function, by `ContDiffAt.leviForm_re_eq_zero`. -/
-theorem morseIndex_eq_finrank_of_leviForm_eq_zero [FiniteDimensional ℂ V]
-    (h : leviForm f x = 0) (hnd : (hessianQuadraticForm f x).Nondegenerate) :
-    morseIndex f x = finrank ℂ V := by
-  have hsum := morseIndex_neg_add_morseIndex_eq_finrank hnd
-  rw [morseIndex_neg_eq_of_leviForm_eq_zero h, finrank_real_eq_two_mul_finrank_complex] at hsum
-  omega
 
 section InnerProductSpace
 
@@ -127,7 +76,8 @@ theorem leviForm_norm_sq (x : E) : leviForm (fun z : E ↦ ‖z‖ ^ 2) x = inne
     simp
   rw [h, (innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ).leviForm_apply_self]
   -- The real inner product of the complex space is the real part of the complex one.
-  have hinner (u u' : E) : innerSL ℝ u u' = (⟪u, u'⟫_ℂ).re := rfl
+  have hinner (u u' : E) : innerSL ℝ u u' = (⟪u, u'⟫_ℂ).re := by
+    simp [real_inner_eq_re_inner ℂ]
   ext v w
   apply Complex.ext <;> simp [hinner, inner_smul_left, inner_smul_right] <;> ring
 
@@ -149,8 +99,7 @@ private theorem exists_bilinear_apply_self_eq (b : OrthonormalBasis ι ℂ E) (a
   · simp [Q, sq]
   · simp only [J, add_apply, smul_apply, comp_apply, compL_apply,
       bilinearRestrictScalars_apply_apply, reCLM_apply, smul_eq_mul]
-    -- The real inner product of the complex space is the real part of the complex one.
-    rfl
+    rw [innerSL_apply_apply, real_inner_eq_re_inner ℂ, RCLike.re_to_complex]
 
 private theorem hessianQuadraticForm_mul_norm_sq_add_re_mul_sum_inner_sq
     (b : OrthonormalBasis ι ℂ E) (a : ℝ) (c : ℂ) (x v : E) :
@@ -212,22 +161,6 @@ private theorem exists_submodule_hessianQuadraticForm_eq (b : OrthonormalBasis �
     ← mul_assoc, re_mul_ofReal]
   ring
 
-/-- Every complex number `c` is rotated onto the nonpositive real axis by the square of a unit:
-`c ω² = -‖c‖`. -/
-private theorem exists_norm_eq_one_mul_sq_eq_neg_norm (c : ℂ) :
-    ∃ ω : ℂ, ‖ω‖ = 1 ∧ c * ω ^ 2 = -‖c‖ := by
-  refine ⟨exp (((Real.pi - arg c) / 2 : ℝ) * I), norm_exp_ofReal_mul_I _, ?_⟩
-  have h : (arg c : ℂ) * I + 2 * (((Real.pi - arg c) / 2 : ℝ) * I) = Real.pi * I := by
-    push_cast
-    ring
-  calc c * exp (((Real.pi - arg c) / 2 : ℝ) * I) ^ 2
-      = ‖c‖ * exp ((arg c : ℂ) * I + 2 * (((Real.pi - arg c) / 2 : ℝ) * I)) := by
-        rw [exp_add, ← mul_assoc, norm_mul_exp_arg_mul_I, ← exp_nat_mul]
-        norm_num
-    _ = -‖c‖ := by
-        rw [h, exp_pi_mul_I]
-        ring
-
 /-- **The Levi form of a Hermitian plus holomorphic quadratic function.** For an orthonormal
 basis `b`, the Levi form of `a ‖z‖² + Re (c ∑ⱼ ⟪b j, z⟫²)` is `a ⟪·, ·⟫` at every point: the
 holomorphic part does not contribute. -/
@@ -265,7 +198,7 @@ theorem morseIndex_mul_norm_sq_add_re_mul_sum_inner_sq [FiniteDimensional ℂ E]
   set H := hessianQuadraticForm (fun z ↦ a * ‖z‖ ^ 2 + (c * ∑ j, ⟪b j, z⟫_ℂ ^ 2).re) x
   have hH (v : E) : H v = 2 * (a * ‖v‖ ^ 2 + (c * ∑ j, ⟪b j, v⟫_ℂ ^ 2).re) :=
     hessianQuadraticForm_mul_norm_sq_add_re_mul_sum_inner_sq b a c x v
-  obtain ⟨ω, hω, hcω⟩ := exists_norm_eq_one_mul_sq_eq_neg_norm c
+  obtain ⟨ω, hω, hcω⟩ := Complex.exists_norm_eq_one_mul_sq_eq_neg_norm c
   have hdim := finrank_real_eq_two_mul_finrank_complex (V := E)
   have hc := norm_nonneg c
   have hlow : a < ‖c‖ → finrank ℂ E ≤ sigNeg H := by
