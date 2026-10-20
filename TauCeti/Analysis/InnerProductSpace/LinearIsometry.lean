@@ -293,4 +293,10 @@ theorem norm_add_smul_sq (e : E) (he : ‖e‖ = 1) (y : (ℝ ∙ e)ᗮ) (t : �
     (orthogonalLineIsometry e he).norm_map, WithLp.prod_norm_sq_eq_of_L2]
   simp
 
+/-- A point `y + t • e` in orthogonal line coordinates lies at height `t` along `e`. -/
+theorem inner_add_smul (e : E) (he : ‖e‖ = 1) (y : (ℝ ∙ e)ᗮ) (t : ℝ) :
+    ⟪e, (y : E) + t • e⟫ = t := by
+  rw [← orthogonalLineEquiv_apply e he, ← orthogonalLineEquiv_symm_snd e he,
+    ContinuousLinearEquiv.symm_apply_apply]
+
 end TauCeti

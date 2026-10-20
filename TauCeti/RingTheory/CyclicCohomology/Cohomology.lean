@@ -23,7 +23,8 @@ cyclic bicomplex, which is not treated here.
 
 The cyclic cocycles and coboundaries are also described concretely, as submodules of the cyclic
 cochains, and `cyclicCohomology.mk` sends a cocycle to its class: it is surjective, and its kernel
-consists exactly of the coboundaries. In degree zero there are no coboundaries and the cocycles are
+consists exactly of the coboundaries, so linear maps out of cyclic cohomology are described by
+`cyclicCohomology.desc`. In degree zero there are no coboundaries and the cocycles are
 the traces, so `HC⁰(A; M)` is the module of `M`-valued traces on `A`.
 
 A homomorphism of nonunital algebras `f : A →ₙₐ[R] B` pulls cyclic cochains back along `f`,
@@ -41,6 +42,8 @@ its forced unitization, and in general differs from the cohomology of this compl
 * `TauCeti.cyclicCocycles`, `TauCeti.cyclicCoboundaries`: cyclic cocycles and coboundaries.
 * `TauCeti.cyclicCohomology`: the cyclic cohomology `HCⁿ(A; M)`.
 * `TauCeti.cyclicCohomology.mk`: the class of a cyclic cocycle.
+* `TauCeti.cyclicCohomology.desc`: the linear map out of cyclic cohomology induced by a linear map
+  on cyclic cocycles vanishing on cyclic coboundaries.
 * `TauCeti.cyclicCochainComplexMap`, `TauCeti.cyclicCohomology.map`: pullback along a
   homomorphism of nonunital algebras, induced by `TauCeti.cyclicCochainsMap`.
 
@@ -215,52 +218,115 @@ cohomology of the cyclic cochain complex. For `M = R` this is Connes' cyclic coh
 abbrev cyclicCohomology (n : ℕ) : ModuleCat R :=
   (cyclicCochainComplex R A M).homology n
 
+private theorem mem_cyclicCocycles_iff_complex (n : ℕ) (φ : cyclicCochains R A M n) :
+    φ ∈ cyclicCocycles R A M n ↔
+      (cyclicCochainComplex R A M).d n (n + 1)
+        ((cyclicCochainComplexXIso R A M n).inv φ) = 0 := by
+  rw [cyclicCocycles, LinearMap.mem_ker]
+  constructor
+  · intro hφ
+    apply (ModuleCat.mono_iff_injective (cyclicCochainComplexXIso R A M (n + 1)).hom).1
+      inferInstance
+    rw [cyclicCochainComplex_d_apply, Iso.inv_hom_id_apply, hφ, map_zero]
+  · intro hφ
+    have h := congrArg (cyclicCochainComplexXIso R A M (n + 1)).hom hφ
+    rw [cyclicCochainComplex_d_apply, Iso.inv_hom_id_apply, map_zero] at h
+    exact h
+
+private theorem mem_cyclicCoboundaries_iff_complex (n : ℕ) (φ : cyclicCochains R A M n) :
+    φ ∈ cyclicCoboundaries R A M n ↔
+      ∃ y : (cyclicCochainComplex R A M).X ((ComplexShape.up ℕ).prev n),
+        (cyclicCochainComplex R A M).d ((ComplexShape.up ℕ).prev n) n y =
+          (cyclicCochainComplexXIso R A M n).inv φ := by
+  cases n with
+  | zero =>
+    rw [cyclicCoboundaries_zero, Submodule.mem_bot, CochainComplex.prev_nat_zero]
+    rw [(cyclicCochainComplex R A M).shape 0 0 (by simp)]
+    constructor
+    · rintro rfl
+      exact ⟨0, by rw [map_zero, map_zero]⟩
+    · rintro ⟨y, hy⟩
+      apply (ModuleCat.mono_iff_injective (cyclicCochainComplexXIso R A M 0).inv).1 inferInstance
+      rw [← hy]
+      simp only [ModuleCat.hom_zero, LinearMap.zero_apply, map_zero]
+  | succ n =>
+    rw [cyclicCoboundaries_succ, LinearMap.mem_range, CochainComplex.prev_nat_succ]
+    constructor
+    · rintro ⟨ψ, hψ⟩
+      refine ⟨(cyclicCochainComplexXIso R A M n).inv ψ, ?_⟩
+      apply (ModuleCat.mono_iff_injective (cyclicCochainComplexXIso R A M (n + 1)).hom).1
+        inferInstance
+      rw [cyclicCochainComplex_d_apply, Iso.inv_hom_id_apply, hψ,
+        Iso.inv_hom_id_apply]
+    · rintro ⟨ψ, hψ⟩
+      refine ⟨(cyclicCochainComplexXIso R A M n).hom ψ, ?_⟩
+      rw [← cyclicCochainComplex_d_apply, hψ, Iso.inv_hom_id_apply]
+
+private abbrev toCycles (n : ℕ) (φ : cyclicCocycles R A M n) :=
+  (cyclicCochainComplex R A M).moduleCatCyclesMk ((cyclicCochainComplexXIso R A M n).inv φ.1)
+    (n + 1) (CochainComplex.next ℕ n) ((mem_cyclicCocycles_iff_complex R A M n φ.1).1 φ.2)
+
+private theorem iCycles_toCycles (n : ℕ) (φ : cyclicCocycles R A M n) :
+    (cyclicCochainComplex R A M).iCycles n (toCycles R A M n φ) = φ.1 :=
+  (cyclicCochainComplex R A M).iCycles_moduleCatCyclesMk _ _ _ _ _
+
 namespace cyclicCohomology
 
 /-- The cyclic cohomology class of a cyclic cocycle. -/
 def mk (n : ℕ) : cyclicCocycles R A M n →ₗ[R] cyclicCohomology R A M n :=
-  (cyclicCochainComplex R A M).moduleCatCocycleClass (cyclicCochainComplexXIso R A M)
-    (cyclicHochschildCoboundary R A M) (cyclicCochainComplex_d R A M) n
+  (cyclicCochainComplex R A M).moduleCatCohomologyClassOfIso
+    (fun n ↦ cyclicCochains R A M n) (cyclicCocycles R A M)
+    (cyclicCochainComplexXIso R A M) (mem_cyclicCocycles_iff_complex R A M) n
+
+/-- The class of a cyclic cocycle is the homology class of the corresponding cycle. -/
+private theorem mk_apply (n : ℕ) (φ : cyclicCocycles R A M n) :
+    mk R A M n φ = (cyclicCochainComplex R A M).homologyπ n (toCycles R A M n φ) :=
+  (cyclicCochainComplex R A M).moduleCatCohomologyClassOfIso_apply
+    (fun n ↦ cyclicCochains R A M n) (cyclicCocycles R A M)
+    (cyclicCochainComplexXIso R A M) (mem_cyclicCocycles_iff_complex R A M) n φ
 
 /-- The class of a cyclic cocycle `φ` is the homology class of any cycle of the cyclic cochain
 complex whose underlying cochain is `φ`. -/
 theorem mk_eq_homologyπ {n : ℕ} (φ : cyclicCocycles R A M n)
     (z : (cyclicCochainComplex R A M).cycles n)
     (hz : (cyclicCochainComplexXIso R A M n).hom ((cyclicCochainComplex R A M).iCycles n z) = φ) :
-    mk R A M n φ = (cyclicCochainComplex R A M).homologyπ n z :=
-  (cyclicCochainComplex R A M).moduleCatCocycleClass_eq_homologyπ (cyclicCochainComplexXIso R A M)
-    (cyclicHochschildCoboundary R A M) (cyclicCochainComplex_d R A M) φ z hz
+    mk R A M n φ = (cyclicCochainComplex R A M).homologyπ n z := by
+  rw [mk_apply]
+  congr 1
+  apply (cyclicCochainComplex R A M).moduleCat_iCycles_injective n
+  rw [iCycles_toCycles, ← hz]
+  -- `cyclicCochainComplexXIso` is the identity.
+  rfl
 
 /-- Every cyclic cohomology class is the class of a cyclic cocycle. -/
-theorem mk_surjective (n : ℕ) : Function.Surjective (mk R A M n) :=
-  (cyclicCochainComplex R A M).moduleCatCocycleClass_surjective (cyclicCochainComplexXIso R A M)
-    (cyclicHochschildCoboundary R A M) (cyclicCochainComplex_d R A M) n
+theorem mk_surjective (n : ℕ) : Function.Surjective (mk R A M n) := by
+  exact (cyclicCochainComplex R A M).moduleCatCohomologyClassOfIso_surjective
+    (fun n ↦ cyclicCochains R A M n) (cyclicCocycles R A M)
+    (cyclicCochainComplexXIso R A M) (mem_cyclicCocycles_iff_complex R A M) n
 
 /-- A cyclic cocycle has zero cohomology class exactly when it is a cyclic coboundary. -/
 @[simp]
 theorem mk_eq_zero_iff (n : ℕ) (φ : cyclicCocycles R A M n) :
     mk R A M n φ = 0 ↔ (φ : cyclicCochains R A M n) ∈ cyclicCoboundaries R A M n := by
-  cases n with
-  | zero =>
-    rw [cyclicCoboundaries_zero, Submodule.mem_bot, ZeroMemClass.coe_eq_zero]
-    exact map_eq_zero_iff _ ((cyclicCochainComplex R A M).moduleCatCocycleClass_zero_injective
-      (cyclicCochainComplexXIso R A M) (cyclicHochschildCoboundary R A M)
-      (cyclicCochainComplex_d R A M))
-  | succ n =>
-    exact (cyclicCochainComplex R A M).moduleCatCocycleClass_succ_eq_zero_iff
-      (cyclicCochainComplexXIso R A M) (cyclicHochschildCoboundary R A M)
-      (cyclicCochainComplex_d R A M) φ
+  exact (cyclicCochainComplex R A M).moduleCatCohomologyClassOfIso_eq_zero_iff
+    (fun n ↦ cyclicCochains R A M n) (cyclicCocycles R A M) (cyclicCoboundaries R A M)
+    (cyclicCochainComplexXIso R A M) (mem_cyclicCocycles_iff_complex R A M)
+    (mem_cyclicCoboundaries_iff_complex R A M) n φ
 
 /-- Two cyclic cocycles have the same class exactly when they differ by a cyclic coboundary. -/
 theorem mk_eq_mk_iff (n : ℕ) (φ ψ : cyclicCocycles R A M n) :
     mk R A M n φ = mk R A M n ψ ↔
       (φ : cyclicCochains R A M n) - ψ ∈ cyclicCoboundaries R A M n := by
-  rw [← sub_eq_zero, ← map_sub, mk_eq_zero_iff, Submodule.coe_sub]
+  exact (cyclicCochainComplex R A M).moduleCatCohomologyClassOfIso_eq_iff
+    (fun n ↦ cyclicCochains R A M n) (cyclicCocycles R A M) (cyclicCoboundaries R A M)
+    (cyclicCochainComplexXIso R A M) (mem_cyclicCocycles_iff_complex R A M)
+    (mem_cyclicCoboundaries_iff_complex R A M) n φ ψ
 
 /-- In degree zero the class map is injective: there are no nonzero cyclic coboundaries. -/
-theorem mk_zero_injective : Function.Injective (mk R A M 0) :=
-  (cyclicCochainComplex R A M).moduleCatCocycleClass_zero_injective (cyclicCochainComplexXIso R A M)
-    (cyclicHochschildCoboundary R A M) (cyclicCochainComplex_d R A M)
+theorem mk_zero_injective : Function.Injective (mk R A M 0) := by
+  refine (injective_iff_map_eq_zero _).2 fun φ hφ ↦ ?_
+  rw [mk_eq_zero_iff, cyclicCoboundaries_zero, Submodule.mem_bot] at hφ
+  exact Subtype.ext hφ
 
 /-- `HC⁰(A; M)` is the module of cyclic `0`-cocycles. Every `0`-cochain is cyclic
 (`cyclicCochains_zero`) and the `0`-cocycles are the traces (`mem_cyclicCocycles_zero_iff`), so this
@@ -272,6 +338,47 @@ def zeroEquiv : cyclicCocycles R A M 0 ≃ₗ[R] cyclicCohomology R A M 0 :=
 @[simp]
 theorem zeroEquiv_apply (φ : cyclicCocycles R A M 0) : zeroEquiv R A M φ = mk R A M 0 φ :=
   (rfl)
+
+section Desc
+
+variable {R A M} {N : Type*} [AddCommGroup N] [Module R N]
+
+/-- Two linear maps out of cyclic cohomology agree once they agree on classes of cocycles. -/
+@[ext]
+theorem linearMap_ext {n : ℕ} {f g : cyclicCohomology R A M n →ₗ[R] N}
+    (h : f ∘ₗ mk R A M n = g ∘ₗ mk R A M n) : f = g :=
+  LinearMap.ext fun z ↦ by
+    obtain ⟨φ, rfl⟩ := mk_surjective R A M n z
+    exact LinearMap.congr_fun h φ
+
+/-- A linear map on cyclic cocycles that vanishes on cyclic coboundaries descends to cyclic
+cohomology. -/
+def desc (n : ℕ) (f : cyclicCocycles R A M n →ₗ[R] N)
+    (hf : ∀ φ : cyclicCocycles R A M n,
+      (φ : cyclicCochains R A M n) ∈ cyclicCoboundaries R A M n → f φ = 0) :
+    cyclicCohomology R A M n →ₗ[R] N :=
+  (mk R A M n).liftOfSurjective (mk_surjective R A M n)
+    ⟨f, fun φ hφ ↦
+      LinearMap.mem_ker.2 (hf φ ((mk_eq_zero_iff R A M n φ).1 (LinearMap.mem_ker.1 hφ)))⟩
+
+/-- The descended map sends the class of a cocycle to the value of the original map. -/
+@[simp]
+theorem desc_mk (n : ℕ) (f : cyclicCocycles R A M n →ₗ[R] N)
+    (hf : ∀ φ : cyclicCocycles R A M n,
+      (φ : cyclicCochains R A M n) ∈ cyclicCoboundaries R A M n → f φ = 0)
+    (φ : cyclicCocycles R A M n) :
+    desc n f hf (mk R A M n φ) = f φ :=
+  LinearMap.equivOfSurjective_apply _ _
+
+/-- The descended map composed with the class map is the original map. -/
+@[simp]
+theorem desc_comp_mk (n : ℕ) (f : cyclicCocycles R A M n →ₗ[R] N)
+    (hf : ∀ φ : cyclicCocycles R A M n,
+      (φ : cyclicCochains R A M n) ∈ cyclicCoboundaries R A M n → f φ = 0) :
+    desc n f hf ∘ₗ mk R A M n = f :=
+  LinearMap.ext (desc_mk n f hf)
+
+end Desc
 
 section Map
 
@@ -289,15 +396,14 @@ theorem map_mk (f : A →ₙₐ[R] B) {n : ℕ} (φ : cyclicCocycles R B M n) :
     map M f n (mk R B M n φ) =
       mk R A M n
         ⟨cyclicCochainsMap M (f : A →ₗ[R] B) n φ, cyclicCochainsMap_mem_cyclicCocycles f φ.2⟩ := by
-  obtain ⟨z, hz⟩ := (cyclicCochainComplex R B M).exists_hom_iCycles_eq_of_mem_ker
-    (cyclicCochainComplexXIso R B M) (cyclicHochschildCoboundary R B M)
-    (cyclicCochainComplex_d R B M) φ.2
-  rw [mk_eq_homologyπ R B M φ z hz, map, ← ConcreteCategory.comp_apply,
+  rw [map, mk_apply, mk_apply, ← ConcreteCategory.comp_apply,
     HomologicalComplex.homologyπ_naturality, ConcreteCategory.comp_apply]
-  refine (mk_eq_homologyπ R A M _ _ ?_).symm
-  rw [← ConcreteCategory.comp_apply (HomologicalComplex.cyclesMap _ n),
-    HomologicalComplex.cyclesMap_i, ConcreteCategory.comp_apply, cyclicCochainComplexMap_f_apply,
-    hz]
+  congr 1
+  apply (cyclicCochainComplex R A M).moduleCat_iCycles_injective n
+  rw [← ConcreteCategory.comp_apply, HomologicalComplex.cyclesMap_i, ConcreteCategory.comp_apply,
+    iCycles_toCycles, iCycles_toCycles]
+  -- Both sides are the pullback of `φ`, as `cyclicCochainComplexXIso` is the identity.
+  rfl
 
 /-- The identity homomorphism induces the identity on cyclic cohomology. -/
 @[simp]

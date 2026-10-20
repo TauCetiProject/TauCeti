@@ -252,6 +252,14 @@ theorem module_finite_quiverRepEquivalenceFunctorObj_of_isFinDim
   exact Module.Finite.equiv
     ((quiverRepEquivalenceFunctorObjShrinkIso k Q M).toLinearEquiv.restrictScalars k).symm
 
+/-- The path-algebra module of a pointwise finite-dimensional representation is finitely
+generated over the path algebra, being finite-dimensional over the ground field. -/
+theorem module_finite_pathAlgebra_quiverRepEquivalenceFunctorObj_of_isFinDim
+    (M : QuiverRep.{u, v, w, t} k Q) (hM : IsFinDim k Q M) :
+    Module.Finite (pathAlgebra k Q) ((quiverRepEquivalence.{u, v, w, t} k Q).functor.obj M) :=
+  have := module_finite_quiverRepEquivalenceFunctorObj_of_isFinDim k Q M hM
+  Module.Finite.of_restrictScalars_finite k (pathAlgebra k Q) _
+
 /-- Pointwise finite-dimensional representations of a finite quiver form an essentially small
 category, via their finitely generated modules over the path algebra. -/
 instance : EssentiallySmall.{max (max u v) w}
