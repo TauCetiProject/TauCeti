@@ -38,8 +38,8 @@ Over an ultrametric seminormed commutative ring, a product majorant
 * if `ρ * r i ≤ q ≤ 1` off a finite set `T` and `ρ * r i ≤ B` everywhere, with `ρ > 0`,
   `0 ≤ q` and `1 ≤ B`, then `‖A.charCoeff n‖ * ρ ^ n ≤ B ^ #T * q ^ (n - #T)`
   (`Matrix.norm_charCoeff_mul_pow_le_of_le_prod`);
-* if `r` tends to zero along the cofinite filter, the series is restricted at every radius,
-  that is, entire (`Matrix.isRestricted_charPowerSeries_of_le_prod`).
+* if `r` tends to zero along the cofinite filter and the ring is normed, the series is
+  restricted at every radius, that is, entire (`Matrix.isRestricted_charPowerSeries_of_le_prod`).
 
 Only summability requires completeness; none of these estimates requires `‖1‖ = 1`.
 Over an ultrametric normed commutative ring with `‖1‖ = 1`, row bounds `‖A i j‖ ≤ r i`
@@ -119,6 +119,11 @@ theorem exists_geometric_bound_of_tendsto_cofinite {ι : Type*}
   · exact (mul_le_mul_of_nonneg_left (hM ⟨i, rfl⟩) hρ).trans (le_max_right _ _)
   · simpa using ((tendsto_pow_atTop_nhds_zero_of_lt_one hq₀.le hq₁).comp
       (tendsto_sub_atTop_nat T.card)).const_mul (B ^ T.card)
+
+private theorem nonneg_of_norm_principalMinor_le_prod {ι R : Type*} [DecidableEq ι]
+    [SeminormedCommRing R] {A : Matrix ι ι R} {r : ι → ℝ}
+    (hA : ∀ s : Finset ι, ‖A.principalMinor s‖ ≤ ∏ i ∈ s, r i) (i : ι) : 0 ≤ r i := by
+  simpa only [prod_singleton] using (norm_nonneg _).trans (hA {i})
 
 end TauCeti
 
@@ -324,8 +329,7 @@ theorem summable_principalMinor_of_le_prod [CompleteSpace R] {A : Matrix ι ι R
   refine NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero ?_
   rw [tendsto_zero_iff_norm_tendsto_zero]
   refine squeeze_zero (fun _ ↦ norm_nonneg _) (fun s ↦ hA s) ?_
-  have hr₀ (i : ι) : 0 ≤ r i := by
-    simpa only [prod_singleton] using (norm_nonneg _).trans (hA {i})
+  have hr₀ := TauCeti.nonneg_of_norm_principalMinor_le_prod hA
   obtain ⟨M, hM⟩ := hr.bddAbove_range_of_cofinite
   set M' := max 1 M
   have hM' : 1 ≤ M' := le_max_left _ _
@@ -369,7 +373,7 @@ theorem norm_charCoeff_mul_pow_le_of_le_prod {A : Matrix ι ι R} {r : ι → �
     (hT : ∀ i ∉ T, ρ * r i ≤ q) (hrB : ∀ i, ρ * r i ≤ B) (n : ℕ) :
     ‖A.charCoeff n‖ * ρ ^ n ≤ B ^ T.card * q ^ (n - T.card) := by
   have hr₀ (i : ι) : 0 ≤ ρ * r i :=
-    mul_nonneg hρ.le (by simpa only [prod_singleton] using (norm_nonneg _).trans (hA {i}))
+    mul_nonneg hρ.le (TauCeti.nonneg_of_norm_principalMinor_le_prod hA i)
   have hρn : 0 < ρ ^ n := pow_pos hρ n
   rw [← le_div_iff₀ hρn]
   refine norm_charCoeff_le_of_principalMinor_le (div_nonneg (mul_nonneg (pow_nonneg (by linarith) _)

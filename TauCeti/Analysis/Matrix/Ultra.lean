@@ -142,14 +142,14 @@ theorem norm_coeff_charpolyRev_le_zpow {A : Matrix ι ι R} {σ : ℝ} (hσ₀ :
     {w w' : ι → ℤ} (h : ∀ i j, ‖A i j‖ ≤ σ ^ (w i - w' j)) {k : ℕ} {m : ℤ}
     (hm : ∀ s : Finset ι, s.card = k → m ≤ ∑ i ∈ s, (w i - w' i)) :
     ‖A.charpolyRev.coeff k‖ ≤ σ ^ m := by
-  refine norm_coeff_charpolyRev_le (c := fun i ↦ σ ^ w i) (d := fun j ↦ σ ^ (-w' j))
-    (fun i j ↦ ?_) (zpow_nonneg hσ₀.le m) fun s hs ↦ ?_
-  · rw [← zpow_add₀ hσ₀.ne', ← sub_eq_add_neg]
-    exact h i j
-  · rw [prod_zpow_eq_zpow_sum₀ s hσ₀.ne', prod_zpow_eq_zpow_sum₀ s hσ₀.ne', ← zpow_add₀ hσ₀.ne',
-      ← sum_add_distrib]
-    simp_rw [← sub_eq_add_neg]
-    exact zpow_le_zpow_right_of_le_one₀ hσ₀ hσ₁ (hm s hs)
+  rw [coeff_charpolyRev]
+  have hsum : ‖∑ s ∈ univ.powersetCard k,
+      (A.submatrix (Subtype.val : s → ι) Subtype.val).det‖ ≤ σ ^ m := by
+    refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (zpow_nonneg hσ₀.le m)
+      fun s hs ↦ ?_
+    simpa only [principalMinor_def] using (norm_principalMinor_le_zpow hσ₀ h s).trans
+      (zpow_le_zpow_right_of_le_one₀ hσ₀ hσ₁ (hm s (mem_powersetCard.mp hs).2))
+  rcases neg_one_pow_eq_or R k with hk | hk <;> simpa [hk] using hsum
 
 end Matrix
 

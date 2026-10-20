@@ -40,14 +40,19 @@ open Filter Finset Topology
 
 namespace TauCeti
 
-private theorem tendsto_zpow_mul_cofinite {ι : Type*} {σ : ℝ}
+private theorem exists_two_sided_bounds_of_zpow {ι R : Type*} [SeminormedAddCommGroup R]
+    {A : Matrix ι ι R} {σ : ℝ}
     (hσ₀ : 0 < σ) (hσ₁ : σ < 1) {w w' : ι → ℤ}
+    (hA : ∀ i j, ‖A i j‖ ≤ σ ^ (w i - w' j))
     (hw : Tendsto (fun i ↦ w i - w' i) cofinite atTop) :
-    Tendsto (fun i ↦ σ ^ w i * σ ^ (-w' i)) cofinite (𝓝 0) := by
-  simpa only [← zpow_add₀ hσ₀.ne', ← sub_eq_add_neg, Function.comp_def,
-    Real.rpow_intCast] using
-    (tendsto_rpow_atTop_of_base_lt_one σ (by linarith) hσ₁).comp
-      (tendsto_intCast_atTop_atTop.comp hw)
+    ∃ c d : ι → ℝ, (∀ i j, ‖A i j‖ ≤ c i * d j) ∧
+      Tendsto (fun i ↦ c i * d i) cofinite (𝓝 0) := by
+  refine ⟨(fun i ↦ σ ^ w i), (fun j ↦ σ ^ (-w' j)), ?_, ?_⟩
+  · simpa only [← zpow_add₀ hσ₀.ne', ← sub_eq_add_neg] using hA
+  · simpa only [← zpow_add₀ hσ₀.ne', ← sub_eq_add_neg, Function.comp_def,
+      Real.rpow_intCast] using
+      (tendsto_rpow_atTop_of_base_lt_one σ (by linarith) hσ₁).comp
+        (tendsto_intCast_atTop_atTop.comp hw)
 
 end TauCeti
 
@@ -88,10 +93,9 @@ theorem summable_principalMinor_of_zpow [CompleteSpace R] {A : Matrix ι ι R} {
     (hσ₀ : 0 < σ) (hσ₁ : σ < 1) {w w' : ι → ℤ}
     (hA : ∀ i j, ‖A i j‖ ≤ σ ^ (w i - w' j))
     (hw : Tendsto (fun i ↦ w i - w' i) cofinite atTop) (n : ℕ) :
-    Summable fun s : {s : Finset ι // s.card = n} ↦ A.principalMinor s :=
-  summable_principalMinor_of_two_sided (c := fun i ↦ σ ^ w i) (d := fun j ↦ σ ^ (-w' j))
-    (by simpa only [← zpow_add₀ hσ₀.ne', ← sub_eq_add_neg] using hA)
-    (TauCeti.tendsto_zpow_mul_cofinite hσ₀ hσ₁ hw) n
+    Summable fun s : {s : Finset ι // s.card = n} ↦ A.principalMinor s := by
+  obtain ⟨c, d, hA, hcd⟩ := TauCeti.exists_two_sided_bounds_of_zpow hσ₀ hσ₁ hA hw
+  exact summable_principalMinor_of_two_sided hA hcd n
 
 /-- Cofinite growth of the diagonal weight differences gives an entire matrix minor
 series. This applies to two-sided bounds independently of any operator realization. -/
@@ -99,9 +103,8 @@ theorem isRestricted_charPowerSeries_of_zpow {A : Matrix ι ι R} {σ : ℝ}
     (hσ₀ : 0 < σ) (hσ₁ : σ < 1) {w w' : ι → ℤ}
     (hA : ∀ i j, ‖A i j‖ ≤ σ ^ (w i - w' j))
     (hw : Tendsto (fun i ↦ w i - w' i) cofinite atTop) (ρ : ℝ) :
-    A.charPowerSeries.IsRestricted ρ :=
-  isRestricted_charPowerSeries_of_two_sided (c := fun i ↦ σ ^ w i) (d := fun j ↦ σ ^ (-w' j))
-    (by simpa only [← zpow_add₀ hσ₀.ne', ← sub_eq_add_neg] using hA)
-    (TauCeti.tendsto_zpow_mul_cofinite hσ₀ hσ₁ hw) ρ
+    A.charPowerSeries.IsRestricted ρ := by
+  obtain ⟨c, d, hA, hcd⟩ := TauCeti.exists_two_sided_bounds_of_zpow hσ₀ hσ₁ hA hw
+  exact isRestricted_charPowerSeries_of_two_sided hA hcd ρ
 
 end Matrix
