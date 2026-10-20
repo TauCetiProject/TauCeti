@@ -61,25 +61,33 @@ theorem PairOfDefinition.henselianRing (P : PairOfDefinition A)
   have := P.isAdicComplete_span_singleton ϖ hϖ
   infer_instance
 
+/-- A pseudouniformizer in an open subring of the power-bounded elements of a complete
+Hausdorff Tate ring belongs to the Jacobson radical of that subring. -/
+theorem mem_jacobson_bot_of_isOpen_subring {B : Subring A}
+    (hopen : IsOpen (B : Set A)) (hle : B ≤ powerBoundedSubring A)
+    (ϖ : B) (hϖ : IsPseudoUniformizer (ϖ : A)) :
+    ϖ ∈ Ideal.jacobson (⊥ : Ideal B) := by
+  classical
+  rw [Ideal.mem_jacobson_bot]
+  intro y
+  obtain ⟨P, hPB, hs⟩ := exists_pairOfDefinition_finset_subset hopen hle {ϖ, y}
+  let π : P.ringOfDefinition := ⟨ϖ, hs ϖ (by simp)⟩
+  let y₀ : P.ringOfDefinition := ⟨y, hs y (by simp)⟩
+  have := P.henselianRing π hϖ
+  have hπ : π ∈ Ideal.jacobson (⊥ : Ideal P.ringOfDefinition) :=
+    HenselianRing.jac (Ideal.mem_span_singleton_self π)
+  exact (Ideal.mem_jacobson_bot.mp hπ y₀).map (Subring.inclusion hPB)
+
 /-- An open subring of the power-bounded subring of a complete Hausdorff Tate ring is
 henselian along any pseudouniformizer it contains. No boundedness of the whole subring, or
 adic separatedness of that subring, is required. -/
-theorem henselianRing_of_isOpen_subring (B : Subring A)
+theorem henselianRing_of_isOpen_subring {B : Subring A}
     (hopen : IsOpen (B : Set A)) (hle : B ≤ powerBoundedSubring A)
     (ϖ : B) (hϖ : IsPseudoUniformizer (ϖ : A)) :
     HenselianRing B (Ideal.span {ϖ}) := by
   classical
-  have hjac : Ideal.span {ϖ} ≤ Ideal.jacobson (⊥ : Ideal B) := by
-    rw [Ideal.span_singleton_le_iff_mem, Ideal.mem_jacobson_bot]
-    intro y
-    obtain ⟨P, hPB, hs⟩ := exists_pairOfDefinition_finset_subset hopen hle {ϖ, y}
-    let π : P.ringOfDefinition := ⟨ϖ, hs ϖ (by simp)⟩
-    let y₀ : P.ringOfDefinition := ⟨y, hs y (by simp)⟩
-    have := P.henselianRing π hϖ
-    have hπ : π ∈ Ideal.jacobson (⊥ : Ideal P.ringOfDefinition) :=
-      HenselianRing.jac (Ideal.mem_span_singleton_self π)
-    exact (Ideal.mem_jacobson_bot.mp hπ y₀).map (Subring.inclusion hPB)
-  refine ⟨hjac, fun f hf a hfa hu ↦ ?_⟩
+  refine ⟨(Ideal.span_singleton_le_iff_mem _).mpr
+    (mem_jacobson_bot_of_isOpen_subring hopen hle ϖ hϖ), fun f hf a hfa hu ↦ ?_⟩
   -- Record all the finite witnesses before choosing a ring of definition.
   obtain ⟨d, hd⟩ := Ideal.mem_span_singleton.mp hfa
   obtain ⟨b, hb⟩ := isUnit_iff_exists_inv.mp hu
@@ -88,6 +96,7 @@ theorem henselianRing_of_isOpen_subring (B : Subring A)
     apply Ideal.Quotient.eq_zero_iff_mem.mp
     simpa using sub_eq_zero.mpr hb
   obtain ⟨c, hc⟩ := Ideal.mem_span_singleton.mp hbc
+  -- Put the approximate root, inverse, divisibility witnesses and coefficients in one ring.
   let s : Finset B := {ϖ, a, b, c, d} ∪ f.coeffs
   obtain ⟨P, hPB, hs⟩ := exists_pairOfDefinition_finset_subset hopen hle s
   let ι := Subring.inclusion hPB
@@ -99,6 +108,7 @@ theorem henselianRing_of_isOpen_subring (B : Subring A)
   obtain ⟨b₀, hb₀⟩ := hrange b (by simp [s])
   obtain ⟨c₀, hc₀⟩ := hrange c (by simp [s])
   obtain ⟨d₀, hd₀⟩ := hrange d (by simp [s])
+  -- Lift the monic polynomial and identify evaluation and derivative under the inclusion.
   have hlift : f ∈ Polynomial.lifts ι := by
     rw [lifts_iff_coeffs_subset_range]
     exact fun x hx ↦ hrange x (Finset.mem_union_right _ hx)
@@ -112,6 +122,7 @@ theorem henselianRing_of_isOpen_subring (B : Subring A)
     have heq : (π : A) = (ϖ : A) := congrArg (fun x : B ↦ (x : A)) hπ
     rwa [heq]
   have := P.henselianRing π hnil
+  -- Injectivity descends the two simple-root conditions using the chosen witnesses.
   have hga : g.eval a₀ ∈ Ideal.span {π} := by
     rw [Ideal.mem_span_singleton]
     refine ⟨d₀, hinj ?_⟩
@@ -123,6 +134,7 @@ theorem henselianRing_of_isOpen_subring (B : Subring A)
     rw [Ideal.mem_span_singleton]
     refine ⟨c₀, hinj ?_⟩
     simpa only [map_mul, map_sub, map_one, hπ, hc₀, hb₀, hderiv] using hc
+  -- Henselianity gives a root in the ring of definition; map it and its congruence back to B.
   obtain ⟨x, hx, hxa⟩ := HenselianRing.is_henselian g hgmonic a₀ hga hunit
   refine ⟨ι x, ?_, ?_⟩
   · simpa only [hg] using hx.map ι
@@ -136,6 +148,6 @@ pseudouniformizer, even when they are not adically separated. -/
 theorem henselianRing_powerBoundedSubring (ϖ : powerBoundedSubring A)
     (hϖ : IsPseudoUniformizer (ϖ : A)) :
     HenselianRing (powerBoundedSubring A) (Ideal.span {ϖ}) :=
-  henselianRing_of_isOpen_subring _ (isOpen_powerBoundedSubring A) le_rfl ϖ hϖ
+  henselianRing_of_isOpen_subring (isOpen_powerBoundedSubring A) le_rfl ϖ hϖ
 
 end TauCeti.Huber
