@@ -44,6 +44,10 @@ hypotheses, and then transferred to real sums.
   the weighted `ℓ²` spaces on `ℤ` are closed under convolution, with
   `‖(1 + |n|) ^ s (a ⋆ b)‖₂² ≤ 4 ^ (s + 1) ‖L‖² (∑ₙ (1 + |n|) ^ (-2 s)) ‖(1 + |n|) ^ s a‖₂²
   ‖(1 + |n|) ^ s b‖₂²`.
+* `DiscreteConvolution.addConvolutionExists_of_summable_sq_one_add_abs_rpow_mul_norm`: for
+  `s > 1 / 2` and a complete target, the convolution of two such sequences exists, so `a ⋆ b` is
+  the pointwise convolution sum. The estimates themselves need no completeness: they bound
+  `‖(a ⋆ b) n‖`, whatever value the sum takes.
 
 ## References
 
@@ -344,7 +348,8 @@ private theorem ofReal_tsum_sq_one_add_abs_rpow_mul_norm_addConvolution_le
 
 /-- **Weighted `ℓ²` spaces on `ℤ` are algebras under convolution.** For `s > 1 / 2`, if
 `(1 + |n|) ^ s ‖a n‖` and `(1 + |n|) ^ s ‖b n‖` are square-summable, so is
-`(1 + |n|) ^ s ‖(a ⋆ b) n‖`. -/
+`(1 + |n|) ^ s ‖(a ⋆ b) n‖`. For a complete target the convolution exists
+(`DiscreteConvolution.addConvolutionExists_of_summable_sq_one_add_abs_rpow_mul_norm`). -/
 theorem summable_sq_one_add_abs_rpow_mul_norm_addConvolution (L : E →L[𝕜] E' →L[𝕜] F) {s : ℝ}
     (hs : 1 / 2 < s) {a : ℤ → E} {b : ℤ → E'}
     (ha : Summable fun n : ℤ ↦ ((1 + |(n : ℝ)|) ^ s * ‖a n‖) ^ 2)
@@ -368,6 +373,44 @@ theorem tsum_sq_one_add_abs_rpow_mul_norm_addConvolution_le (L : E →L[𝕜] E'
   rw [← ENNReal.ofReal_le_ofReal_iff (by positivity), ENNReal.ofReal_tsum_of_nonneg
     (fun _ ↦ sq_nonneg _) (summable_sq_one_add_abs_rpow_mul_norm_addConvolution L hs ha hb)]
   exact ofReal_tsum_sq_one_add_abs_rpow_mul_norm_addConvolution_le L hs ha hb
+
+/-- For `s > 1 / 2` and a complete target, the convolution of two weighted `ℓ²` sequences on `ℤ`
+exists, so `a ⋆ b` in the two estimates above is the pointwise convolution sum. -/
+theorem addConvolutionExists_of_summable_sq_one_add_abs_rpow_mul_norm [CompleteSpace F]
+    (L : E →L[𝕜] E' →L[𝕜] F) {s : ℝ} (hs : 1 / 2 < s) {a : ℤ → E} {b : ℤ → E'}
+    (ha : Summable fun n : ℤ ↦ ((1 + |(n : ℝ)|) ^ s * ‖a n‖) ^ 2)
+    (hb : Summable fun n : ℤ ↦ ((1 + |(n : ℝ)|) ^ s * ‖b n‖) ^ 2) :
+    AddConvolutionExists L.toLinearMap₁₂ a b := by
+  have hK : ∑' n : ℤ, ENNReal.ofReal ((1 + ‖n‖) ^ (-2 * s)) ≠ ∞ := by
+    simp only [Int.norm_eq_abs]
+    rw [← ENNReal.ofReal_tsum_of_nonneg (fun _ ↦ by positivity)
+      (TauCeti.summable_one_add_abs_int_rpow (r := -2 * s) (by linarith))]
+    exact ENNReal.ofReal_ne_top
+  -- Weighted `ℓ²` sequences on `ℤ` are summable.
+  have hl1 (h : ℤ → ℝ≥0∞) (hh : ∑' n, (ENNReal.ofReal ((1 + ‖n‖) ^ s) * h n) ^ 2 ≠ ∞) :
+      ∑' n, h n ≠ ∞ := fun htop ↦ ENNReal.mul_ne_top hK hh <| top_le_iff.1 <| by
+    simpa [htop] using TauCeti.sq_tsum_le_tsum_one_add_norm_rpow_mul s h
+  have ha' : ∑' n, ‖a n‖ₑ ≠ ∞ := hl1 _ <| by
+    simp only [← ofReal_sq_one_add_abs_rpow_mul_norm]
+    rw [← ENNReal.ofReal_tsum_of_nonneg (fun _ ↦ by positivity) ha]
+    exact ENNReal.ofReal_ne_top
+  have hb' : ∑' n, ‖b n‖ₑ ≠ ∞ := hl1 _ <| by
+    simp only [← ofReal_sq_one_add_abs_rpow_mul_norm]
+    rw [← ENNReal.ofReal_tsum_of_nonneg (fun _ ↦ by positivity) hb]
+    exact ENNReal.ofReal_ne_top
+  intro x
+  unfold AddConvolutionExistsAt
+  refine Summable.of_norm <| tsum_enorm_ne_top_iff_summable_norm.1 <| ne_top_of_le_ne_top
+    (ENNReal.mul_ne_top (enorm_ne_top (x := L)) (ENNReal.mul_ne_top ha' hb')) ?_
+  calc ∑' ab : addFiber x, ‖L.toLinearMap₁₂ (a ab.1.1) (b ab.1.2)‖ₑ
+      ≤ ∑' p : ℤ × ℤ, ‖L.toLinearMap₁₂ (a p.1) (b p.2)‖ₑ :=
+        ENNReal.tsum_comp_le_tsum_of_injective Subtype.val_injective
+          fun p : ℤ × ℤ ↦ ‖L.toLinearMap₁₂ (a p.1) (b p.2)‖ₑ
+    _ ≤ ∑' p : ℤ × ℤ, ‖L‖ₑ * ‖a p.1‖ₑ * ‖b p.2‖ₑ :=
+        ENNReal.tsum_le_tsum fun p ↦ L.le_opENorm₂ _ _
+    _ = ‖L‖ₑ * ((∑' n, ‖a n‖ₑ) * ∑' n, ‖b n‖ₑ) := by
+        rw [ENNReal.tsum_prod (f := fun m n ↦ ‖L‖ₑ * ‖a m‖ₑ * ‖b n‖ₑ)]
+        simp only [ENNReal.tsum_mul_left, ENNReal.tsum_mul_right, mul_assoc]
 
 end Seminormed
 
