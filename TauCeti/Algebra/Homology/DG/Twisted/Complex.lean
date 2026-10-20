@@ -209,16 +209,20 @@ end AddCommMonoid
 variable [AddCommGroup M] [Module R M] [Module Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M]
   (m : P → P → A) {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ] (dM : M →ₗ[R] M)
 
+/-- The Koszul twist of parameter one acts on a homogeneous element of degree `q` by the sign
+`(-1) ^ q`. -/
+theorem koszulTwist_one_eq_negOnePow_smul {q : ℤ} {α : M} (hα : α ∈ ℳ q) :
+    (InternalGrading.ofDecomposition ℳ).koszulTwist 1 α = q.negOnePow • α := by
+  have hα' : α ∈ (InternalGrading.ofDecomposition ℳ).piece q := by
+    rwa [InternalGrading.ofDecomposition_piece]
+  rw [InternalGrading.koszulTwist_one_apply_of_mem _ hα',
+    negOnePow_smul_eq_negOnePowCast_smul (R := R), negOnePowCast_eq_intCast]
+
 /-- Evaluation on a homogeneous elementary tensor `α ⊗ x`, with `α` of degree `q`. -/
 theorem twistedDifferential_single [DecidableEq P] (x : P) {q : ℤ} {α : M} (hα : α ∈ ℳ q) :
     twistedDifferential m ℳ dM (Pi.single x α) =
       Pi.single x (dM α) + ∑ y, Pi.single y (q.negOnePow • (op (m x y) • α)) := by
-  -- The Koszul twist of parameter one acts on `α` by the `ℤˣ`-scalar `q.negOnePow`.
-  have hα' : α ∈ (InternalGrading.ofDecomposition ℳ).piece q := by
-    rwa [InternalGrading.ofDecomposition_piece]
-  have hε : (InternalGrading.ofDecomposition ℳ).koszulTwist 1 α = q.negOnePow • α := by
-    rw [InternalGrading.koszulTwist_one_apply_of_mem _ hα',
-      negOnePow_smul_eq_negOnePowCast_smul (R := R), negOnePowCast_eq_intCast]
+  have hε := koszulTwist_one_eq_negOnePow_smul (R := R) hα
   funext y'
   simp only [twistedDifferential_apply, Pi.add_apply, Finset.sum_apply, Pi.single_apply]
   rw [Finset.sum_eq_single x (fun x' _ hx' ↦ by simp [hx']) (by simp)]
