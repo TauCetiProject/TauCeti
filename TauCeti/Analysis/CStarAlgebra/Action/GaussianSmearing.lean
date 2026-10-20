@@ -31,7 +31,7 @@ invariant under the action. This is the density statement used to reduce identit
 KMS condition to entire analytic elements.
 
 Neither unitality of `A` nor any countability assumption is needed. For each `c`, smearing is
-complex linear.
+complex linear and commutes with `star`.
 
 ## Main definitions
 
@@ -44,6 +44,7 @@ complex linear.
 * `TauCeti.CStarAction.isEntireAnalytic_gaussianSmear`: Gaussian smearings are entire analytic.
 * `TauCeti.CStarAction.gaussianSmear_add`, `TauCeti.CStarAction.gaussianSmear_smul`: smearing is
   complex linear.
+* `TauCeti.CStarAction.gaussianSmear_star`: smearing commutes with `star`.
 * `TauCeti.CStarAction.apply_gaussianSmear`, `TauCeti.CStarAction.norm_gaussianSmear_le`:
   smearing commutes with the action and is contractive.
 * `TauCeti.CStarAction.tendsto_gaussianSmear`: `α.gaussianSmear c a → a` as `c → ∞`.
@@ -227,6 +228,15 @@ private theorem gaussianSmear_eq_integral_gaussianDensity_smul (c : ℝ) (a : A)
   rw [gaussianDensity_def, ← Complex.coe_smul]
   push_cast
   ring_nf
+
+/-- The Gaussian smearing commutes with the star operation, since the Gaussian density is real
+and the action preserves `star`. -/
+@[simp]
+theorem gaussianSmear_star (c : ℝ) (a : A) :
+    α.gaussianSmear c (star a) = star (α.gaussianSmear c a) := by
+  simpa [gaussianSmear_eq_integral_gaussianDensity_smul, map_star] using
+    ((starL' ℝ : A ≃L[ℝ] A).integral_comp_comm (μ := volume)
+      fun t : ℝ => gaussianDensity c t • α (Multiplicative.ofAdd t) a)
 
 /-- The Gaussian smearing is a contraction: `‖α.gaussianSmear c a‖ ≤ ‖a‖`. -/
 theorem norm_gaussianSmear_le (c : ℝ) (a : A) : ‖α.gaussianSmear c a‖ ≤ ‖a‖ := by
