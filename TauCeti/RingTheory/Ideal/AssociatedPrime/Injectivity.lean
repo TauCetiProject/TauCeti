@@ -32,7 +32,7 @@ variable {R M N : Type*} [CommSemiring R] [IsNoetherianRing R]
 from a localization of the domain is injective. Neither module needs to be finitely generated,
 and the target of the compatible map need not itself be a localization. The base may be a
 commutative semiring when the source module has an additive group. -/
-theorem injective_of_forall_isLocalizedModule
+theorem injective_of_isLocalized_associatedPrimes
     (map : M →ₗ[R] N)
     (Mₚ : associatedPrimes R M → Type*)
     [∀ prime, AddCommMonoid (Mₚ prime)]
@@ -47,42 +47,39 @@ theorem injective_of_forall_isLocalizedModule
     (commutes : ∀ prime, F prime ∘ₗ f prime = g prime ∘ₗ map)
     (local_injective : ∀ prime, Function.Injective (F prime)) :
     Function.Injective map := by
-  have kernel_bot : LinearMap.ker map = ⊥ := by
-    by_contra kernel_ne_bot
-    have : Nontrivial (LinearMap.ker map) := Submodule.nontrivial_iff_ne_bot.mpr kernel_ne_bot
-    obtain ⟨prime, associated⟩ := associatedPrimes.nonempty R (LinearMap.ker map)
-    have associated_domain := associated.map_of_injective
-      (LinearMap.ker map).subtype (Submodule.injective_subtype _)
-    let associated_prime : associatedPrimes R M := ⟨prime, associated_domain⟩
-    have injective := local_injective associated_prime
-    obtain ⟨_, element, annihilator⟩ := isAssociatedPrime_iff.mp associated
-    have element_zero : map element.val = 0 := LinearMap.mem_ker.mp element.property
-    have localized_zero : f associated_prime element.val = 0 := by
-      apply injective
-      have mapped_zero : F associated_prime (f associated_prime element.val) = 0 := by
-        calc
-          F associated_prime (f associated_prime element.val) =
-              g associated_prime (map element.val) :=
-            LinearMap.congr_fun (commutes associated_prime) element.val
-          _ = 0 := by rw [element_zero, map_zero]
-      simpa only [map_zero] using mapped_zero
-    obtain ⟨denominator, annihilates⟩ :=
-      (IsLocalizedModule.eq_zero_iff associated_prime.1.primeCompl (f associated_prime)).mp
-        localized_zero
-    apply denominator.property
-    apply annihilator.ge
-    rw [Submodule.mem_colon_singleton, Submodule.mem_bot]
-    apply Subtype.ext
-    simpa only [Submodule.coe_smul, Submodule.coe_zero, Submonoid.smul_def] using annihilates
-  have zero_kernel := LinearMap.ker_eq_bot'.mp kernel_bot
-  intro first second equal
-  apply sub_eq_zero.mp
-  apply zero_kernel
-  calc
-    map (first - second) = map first + map (-second) := by rw [sub_eq_add_neg, map_add]
-    _ = map second + map (-second) := by rw [equal]
-    _ = map (second - second) := by rw [sub_eq_add_neg, map_add]
-    _ = 0 := by rw [sub_self, map_zero]
+  refine (injective_iff_map_eq_zero map).mpr fun element element_zero ↦ ?_
+  by_contra element_ne_zero
+  have kernel_element_ne_zero :
+      (⟨element, LinearMap.mem_ker.mpr element_zero⟩ : LinearMap.ker map) ≠ 0 := by
+    simpa using element_ne_zero
+  have : Nontrivial (LinearMap.ker map) :=
+    (nontrivial_iff_exists_ne (0 : LinearMap.ker map)).mpr
+      ⟨⟨element, LinearMap.mem_ker.mpr element_zero⟩, kernel_element_ne_zero⟩
+  obtain ⟨prime, associated⟩ := associatedPrimes.nonempty R (LinearMap.ker map)
+  have associated_domain := associated.map_of_injective
+    (LinearMap.ker map).subtype (Submodule.injective_subtype _)
+  let associated_prime : associatedPrimes R M := ⟨prime, associated_domain⟩
+  have injective := local_injective associated_prime
+  obtain ⟨_, kernel_element, annihilator⟩ := isAssociatedPrime_iff.mp associated
+  have kernel_element_zero : map kernel_element.val = 0 :=
+    LinearMap.mem_ker.mp kernel_element.property
+  have localized_zero : f associated_prime kernel_element.val = 0 := by
+    apply injective
+    have mapped_zero : F associated_prime (f associated_prime kernel_element.val) = 0 := by
+      calc
+        F associated_prime (f associated_prime kernel_element.val) =
+            g associated_prime (map kernel_element.val) :=
+          LinearMap.congr_fun (commutes associated_prime) kernel_element.val
+        _ = 0 := by rw [kernel_element_zero, map_zero]
+    simpa only [map_zero] using mapped_zero
+  obtain ⟨denominator, annihilates⟩ :=
+    (IsLocalizedModule.eq_zero_iff associated_prime.1.primeCompl (f associated_prime)).mp
+      localized_zero
+  apply denominator.property
+  apply annihilator.ge
+  rw [Submodule.mem_colon_singleton, Submodule.mem_bot]
+  apply Subtype.ext
+  simpa only [Submodule.coe_smul, Submodule.coe_zero, Submonoid.smul_def] using annihilates
 
 end IsLocalizedModule
 
@@ -100,7 +97,7 @@ theorem injective_of_forall_localization (map : M →ₗ[R] N)
       prime ∉ associatedPrimes R M) :
     Function.Injective map := by
   let : AddCommGroup M := Module.addCommMonoidToAddCommGroup R
-  exact injective_of_forall_isLocalizedModule
+  exact injective_of_isLocalized_associatedPrimes
     map
     (fun prime ↦ LocalizedModule prime.1.primeCompl M)
     (fun prime ↦ LocalizedModule.mkLinearMap prime.1.primeCompl M)
