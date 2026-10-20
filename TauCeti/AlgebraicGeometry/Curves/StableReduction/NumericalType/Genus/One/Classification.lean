@@ -376,11 +376,11 @@ theorem IsMinimal.isGenusOneMinimalShape (hT : T.IsMinimal) (hg : T.arithmeticGe
         have hf_bij : Function.Bijective f :=
           (Fintype.bijective_iff_injective_and_card f).mpr ⟨hf_inj, by simpa using hcard.symm⟩
         let e : Fin 5 ≃ T.Component := Equiv.ofBijective f hf_bij
-        have he0 : e 0 = c 0 := rfl
-        have he1 : e 1 = c 1 := rfl
-        have he2 : e 2 = c 2 := rfl
-        have he3 : e 3 = c 3 := rfl
-        have he4 : e 4 = b := rfl
+        have he0 : e 0 = c 0 := by simp [e, Equiv.ofBijective_apply, f]
+        have he1 : e 1 = c 1 := by simp [e, Equiv.ofBijective_apply, f]
+        have he2 : e 2 = c 2 := by simp [e, Equiv.ofBijective_apply, f]
+        have he3 : e 3 = c 3 := by simp [e, Equiv.ofBijective_apply, f]
+        have he4 : e 4 = b := by simp [e, Equiv.ofBijective_apply, f]
         have hz02 : T.intersection (e 0) (e 2) = 0 := by
           rw [he0, he2]
           exact hf.intersection_eq_zero (by omega) (p := 0) (q := 2)

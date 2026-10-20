@@ -366,12 +366,16 @@ lemma IsSelfIntersectionMinusTwoFork.eq_or_eq_or_exists_lt_eq_of_card_eq {t : �
     (hcard : Fintype.card T.Component = t + 2) (v : T.Component) :
     v = left ∨ v = right ∨ ∃ i < t, c i = v := by
   classical
+  -- The reversed fork is indexed by `t - 1 - i`; normalize these indices to apply its lemmas
+  -- to the original chain and to the branching vertex at index `1`.
   have hleft_ne (i : ℕ) (hi : i < t) : left ≠ c i := by
-    simpa only [show t - 1 - (t - 1 - i) = i by omega] using hl.branch_ne (t - 1 - i) (by omega)
+    have hreverse : t - 1 - (t - 1 - i) = i := by omega
+    simpa only [hreverse] using hl.branch_ne (t - 1 - i) (by omega)
   have hlr : left ≠ right := by
     rintro rfl
     have hpos : 0 < T.intersection (c 1) left := by
-      simpa only [show t - 1 - (t - 2) = 1 by omega] using hl.branch_intersection_pos
+      have hbranch : t - 1 - (t - 2) = 1 := by omega
+      simpa only [hbranch] using hl.branch_intersection_pos
     rw [hr.branch_intersection_eq_zero (by omega) (by omega)] at hpos
     exact lt_irrefl 0 hpos
   have hr_notMem : right ∉ (range t).image c := by
