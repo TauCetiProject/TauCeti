@@ -24,8 +24,8 @@ the reversal `GenLoop.symmAt i f`, and reads Mathlib's `HomotopyGroup.mul_spec`,
 * `GenLoop.transAt_apply_of_le`: on the first half, `transAt i f g` runs `f` at double speed.
 * `GenLoop.transAt_apply_of_lt`: on the second half, `transAt i f g` runs `g` at double speed.
 * `GenLoop.symmAt_apply`: `symmAt i f` runs `f` backwards in the `i`-th direction.
-* `HomotopyGroup.ofMul_transAt`, `HomotopyGroup.ofMul_symmAt` and `HomotopyGroup.ofMul_const`:
-  concatenation, reversal and the constant loop in `Additive (HomotopyGroup N X x)`.
+* `HomotopyGroup.ofMul_transAt` and `HomotopyGroup.ofMul_symmAt`: concatenation and reversal
+  in `Additive (HomotopyGroup N X x)`.
 -/
 
 public section
@@ -84,12 +84,6 @@ theorem ofMul_symmAt (i : N) (p : Ω^ N X x) :
     Additive.ofMul (α := HomotopyGroup N X x) ⟦GenLoop.symmAt i p⟧ =
       -Additive.ofMul (α := HomotopyGroup N X x) ⟦p⟧ := by
   rw [← inv_spec]
-  rfl
-
-/-- The class of the constant loop is zero in `Additive (HomotopyGroup N X x)`. -/
-@[simp]
-theorem ofMul_const : Additive.ofMul (α := HomotopyGroup N X x) ⟦GenLoop.const⟧ = 0 := by
-  rw [← one_def]
   rfl
 
 end HomotopyGroup

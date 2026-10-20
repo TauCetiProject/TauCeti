@@ -107,11 +107,11 @@ theorem isBorelOverAlgClosed_iff_exists_eq_conjugate_of_isClosed_projectiveOrbit
       exists_conjugate_le_of_isClosed_projectiveOrbit
         (H := FiniteTypeCommHopfAlgCat.of k H) D I m hm hclosed hstab
 
-/-- An irreducible affine group of finite type over an algebraically closed field whose
+/-- An affine group of finite type over an algebraically closed field whose
 rational points do not form a solvable group has a proper closed subgroup containing a conjugate
 of every Borel candidate, in particular of every Borel subgroup. -/
 theorem exists_ne_bot_forall_isBorelCandidate_exists_conjugate_le_of_not_isSolvable
-    [IrreducibleSpace (PrimeSpectrum H)] (hH : ¬ Group.IsSolvable (WithConv (H →ₐ[k] k))) :
+    (hH : ¬ Group.IsSolvable (WithConv (H →ₐ[k] k))) :
     ∃ D : HopfIdeal k H, D ≠ ⊥ ∧ ∀ J : HopfIdeal k H,
       IsBorelCandidate k (FiniteTypeCommHopfAlgCat.of k H) J →
         ∃ g : WithConv (H →ₐ[k] k), D.conjugate g ≤ J := by

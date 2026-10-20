@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.Singular.Cubical.Based.Deformation
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Normalized
 public import TauCeti.Data.Fin.Tuple.Basic
 public import TauCeti.Topology.Homotopy.HomotopyGroup.TransAt
+import TauCeti.Topology.Homotopy.HomotopyGroup.Map
 
 /-!
 # Homotopy classes of based cubes and the face relation
@@ -379,15 +380,16 @@ private lemma sum_faceTerm_comp_capMap {c : SingularCube X (n + 3)} (hc : FacesB
     Fintype.sum_eq_add k.castSucc k.succ Fin.castSucc_lt_succ.ne]
   · simp only [faceTerm, face_castSucc_zero_comp_capMap hc, face_castSucc_one_comp_capMap hc,
       face_succ_zero_comp_capMap, face_succ_one_comp_capMap hc, basedClass_coe,
-      HomotopyGroup.ofMul_transAt, basedClass_const, HomotopyGroup.ofMul_const, Fin.val_succ,
-      Fin.val_castSucc, pow_succ]
+      HomotopyGroup.ofMul_transAt, basedClass_const, HomotopyGroup.mk_const_eq_one, ofMul_one,
+      Fin.val_succ, Fin.val_castSucc, pow_succ]
     simp only [hc.basedClass_face, or_true, true_or]
     module
   · rintro j ⟨hja, hjb⟩
     obtain ⟨l, hl⟩ := Fin.exists_succAbove_eq hjb.symm
     simp only [faceTerm, face_comp_capMap_of_ne hc k hl hja (.inl rfl),
       face_comp_capMap_of_ne hc k hl hja (.inr rfl), basedClass_coe, HomotopyGroup.ofMul_transAt,
-      HomotopyGroup.ofMul_const, zero_add, hc.basedClass_face, or_true, true_or, sub_self]
+      HomotopyGroup.mk_const_eq_one, ofMul_one, zero_add, hc.basedClass_face, or_true, true_or,
+      sub_self]
 
 /-- Reflecting a coordinate negates the alternating sum of the classes of the faces. -/
 private lemma sum_faceTerm_comp_reflectMap {c : SingularCube X (n + 3)} (hc : FacesBased x c)
@@ -494,7 +496,7 @@ theorem basedClassHom_ofCube_of_isBased {n : ℕ} {c : SingularCube X (n + 2)}
 /-- A cube that is not `(n + 2)`-based is sent to zero. -/
 theorem basedClassHom_ofCube_of_not_isBased {n : ℕ} {c : SingularCube X (n + 2)}
     (hc : ¬ c.IsBased (n + 2) x) : basedClassHom x n (ofCube X ℤ c) = 0 := by
-  rw [basedClassHom_ofCube, basedClass_of_not_isBased hc, HomotopyGroup.ofMul_const]
+  rw [basedClassHom_ofCube, basedClass_of_not_isBased hc, HomotopyGroup.mk_const_eq_one, ofMul_one]
 
 /-- **Boundaries of based cubes have trivial class**: the boundary of an `(n + 2)`-based
 `(n + 3)`-cube is sent to zero in `π_{n+2}(X, x)`. Equivalently, the alternating sum of the classes
