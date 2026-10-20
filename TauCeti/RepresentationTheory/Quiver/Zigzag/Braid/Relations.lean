@@ -35,26 +35,17 @@ read those values off the relations.
 
 The relations of the image complexes `H(zigzagBraidComplex i)` under the degreewise action of
 an additive functor `H` of graded bimodule categories are the degreewise transfer
-`KhovanovSeidelRelations.transferDegreewise` of the zigzag braid relations, applied with the
-identity homotopy equivalences for the source family and its inverse. That transfer is not
-restated here: a caller writes it as
+`KhovanovSeidelRelations.transferDegreewise` of the zigzag braid relations,
 `(zigzagBraidComplexRelations k G).transferDegreewise η ε (fun _ => .refl _) (fun _ => .refl _)`,
-and the projection lemmas `transferDegreewise_inverseForward` and its three siblings read its
-four field values off.
+applied with the identity homotopy equivalences for the source family and its inverse; the
+projection lemmas `transferDegreewise_inverseForward` and its three siblings read its four
+field values off.
 
 ## Scope
 
-The transfer principle of the general module is stated for a functor `Φ` on *complexes* of
-graded bimodules that carries homotopy equivalences to homotopy equivalences; the
-instantiation used for the zigzag family is its degreewise specialisation
-`transferDegreewise`, at the functor `H.mapHomologicalComplex` of an additive functor `H` of
-graded bimodule categories. This is the shape of a Morita-type equivalence realised by a single
-bimodule: such an equivalence is an equivalence of bimodule categories, and its action on a
-complex of bimodules is the degreewise action of that equivalence.
-
-A *derived* transfer, in which the target setting is reached by conjugating bimodules with a
-tilting bimodule complex, is **not** instantiated here: conjugation by a tilting complex is not
-an additive functor on bimodules, so it is not an instance of `H`.
+The relations `zigzagBraidComplexRelations` can be fed to `KhovanovSeidelRelations.transfer`
+and `KhovanovSeidelRelations.transferDegreewise`, which transport them to a target graded
+bimodule setting.
 
 Naturality of the transferred relations up to chain homotopy, the derived-Koszul comparison,
 spherical twists and graded-`K₀` statements are out of scope.

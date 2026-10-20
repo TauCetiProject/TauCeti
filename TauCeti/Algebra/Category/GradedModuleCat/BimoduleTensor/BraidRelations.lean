@@ -30,7 +30,7 @@ next to `GradedModuleCat.bimoduleUnit`.
 
 `KhovanovSeidelRelations` records the three relations for a family `C` of complexes with
 prescribed inverses `C'` in a graded bimodule setting. The unit of the relations is the unit
-complex *of that setting*; it is not a free parameter, so the two inverse relations are
+complex `gradedBimoduleUnitComplex k Ξ` of that setting, so the two inverse relations are
 statements about the actual unit of the tensor.
 
 `KhovanovSeidelRelations.transfer` is the transfer principle. It is stated for a functor `Φ`
