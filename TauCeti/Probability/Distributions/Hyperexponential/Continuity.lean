@@ -16,9 +16,9 @@ A finite exponential mixture depends jointly weakly continuously on its simplex 
 and rates whenever every active rate is positive. Inactive rates may be arbitrary,
 including zero or negative, and components may appear or disappear as their weights vary.
 
-At nonzero frequency the characteristic-function denominators never vanish, even at
-inactive zero rates. At zero frequency every probability characteristic function is one.
-Mathlib's Lévy convergence theorem therefore handles the whole valid domain at once.
+For valid parameter families converging to a valid limit, this gives weak convergence of
+the mixture laws, including limits where some weights vanish and the number of active
+components decreases.
 -/
 
 public section
@@ -45,6 +45,7 @@ theorem continuous_hyperexponentialMeasure :
   have hparam := (continuous_subtype_val.tendsto a).comp hq
   let _ (n : ℕ) := isProbabilityMeasure_hyperexponentialMeasure (q n).2
   let _ := isProbabilityMeasure_hyperexponentialMeasure a.2
+  -- Mathlib's Lévy convergence theorem.
   apply ProbabilityMeasure.tendsto_of_tendsto_charFun
     (μ := fun n ↦ ⟨hyperexponentialMeasure (q n).1.1 (q n).1.2,
       isProbabilityMeasure_hyperexponentialMeasure (q n).2⟩)

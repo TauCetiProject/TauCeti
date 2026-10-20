@@ -16,8 +16,8 @@ For a fixed finite index type, the sum of independent exponential variables depe
 weakly continuously on its positive rates. Coincident rates are included, and the empty
 family is the constant Dirac law at zero.
 
-The finite-product characteristic function and Mathlib's Lévy convergence theorem give
-continuity without a density formula or distinct-rate hypotheses.
+Convergent positive rate families with positive limiting rates therefore give weakly
+convergent sum laws, including when distinct rates approach a common positive value.
 -/
 
 public section
@@ -37,6 +37,7 @@ theorem continuous_hypoexponentialMeasure :
           isProbabilityMeasure_hypoexponentialMeasure r.2⟩ : ProbabilityMeasure ℝ)) := by
   apply continuous_iff_seqContinuous.2
   intro r a hr
+  -- Mathlib's Lévy convergence theorem.
   apply ProbabilityMeasure.tendsto_of_tendsto_charFun
     (μ := fun n ↦ ⟨hypoexponentialMeasure (r n).1,
       isProbabilityMeasure_hypoexponentialMeasure (r n).2⟩)
