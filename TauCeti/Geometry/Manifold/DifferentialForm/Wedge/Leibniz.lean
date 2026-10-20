@@ -168,6 +168,16 @@ theorem mextDeriv_wedge_apply (φ : SmoothForm I M ℝ k) (ψ : SmoothForm I M �
   simpa only [RoughForm.wedge_def] using
     mextDeriv_wedgeWith_apply (ContinuousLinearMap.mul ℝ ℝ) φ ψ x v
 
+/-- The exterior derivative commutes with transport across an equality of degrees. -/
+@[simp]
+theorem mextDerivₗ_castDegree [IsManifold I 2 M]
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {n m : ℕ} (h : n = m) (α : SmoothForm I M F n) :
+    mextDerivₗ I m (SmoothForm.castDegree h α) =
+      SmoothForm.castDegree (congrArg (fun q : ℕ ↦ q + 1) h) (mextDerivₗ I n α) := by
+  cases h
+  simp
+
 /-- The bundled exterior derivative of a paired wedge of smooth forms. The two terms on the
 right are transported across the degree associativity equalities. -/
 theorem mextDeriv_wedgeWith [IsManifold I 2 M] (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
