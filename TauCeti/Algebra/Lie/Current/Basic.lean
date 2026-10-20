@@ -220,16 +220,16 @@ variable [LieRing L] [LieAlgebra R L]
 theorem lie_mem_orderSubmodule {M N : ℤ} {u v : currentAlgebra R L}
     (hu : u ∈ orderSubmodule R L M) (hv : v ∈ orderSubmodule R L N) :
     ⁅u, v⁆ ∈ orderSubmodule R L (M + N) := by
+  -- `LieAlgebra.ad` needs a Lie ring on endomorphisms; instance search cannot find it
+  -- because Mathlib registers `LieRing.ofAssociativeRing` only as a local instance.
   let : LieRing (Module.End R (currentAlgebra R L)) := LieRing.ofAssociativeRing
   refine LinearMap.BilinMap.apply_apply_mem_of_mem_span
     (orderSubmodule R L (M + N)) _ _ (LieAlgebra.ad R (currentAlgebra R L)).toLinearMap
     ?_ u v hu hv
   rintro _ ⟨f, x, hf, rfl⟩ _ ⟨g, y, hg, rfl⟩
   rw [LieHom.coe_toLinearMap, LieAlgebra.ad_apply, LieAlgebra.ExtendScalars.bracket_tmul]
-  apply tmul_mem_orderSubmodule
-  have hMN : ((M + N : ℤ) : WithTop ℤ) ≤ f.orderTop + g.orderTop := by
-    simpa using add_le_add hf hg
-  exact hMN.trans HahnSeries.orderTop_add_le_mul
+  simpa only [TensorProduct.smul_tmul', smul_eq_mul] using
+    smul_mem_orderSubmodule R L hf (tmul_mem_orderSubmodule R L N hg ⁅x, y⁆)
 
 /-- The inclusion of polynomial currents into formal currents. -/
 def ofLoop : LieAlgebra.loopAlgebra R ℤ L →ₗ⁅R⁆ currentAlgebra R L :=
