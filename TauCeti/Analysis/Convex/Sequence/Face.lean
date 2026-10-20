@@ -23,7 +23,9 @@ and consists of every integer between them.
 The predicate `IsFiniteFace h σ l u` records these endpoints while leaving the supporting
 intercept implicit. The intercept is nevertheless unique, and equals the supporting value at
 `σ`. In particular, every nonempty convex height sequence with bounded finite domain has a
-finite face at every real slope. A finite edge whose slope is strictly greater than `σ`
+finite face at every real slope. Without convexity, a nonempty sequence with only finitely
+many finite heights still touches a supporting line of every real slope, so its supporting
+values are never `⊥`. A finite edge whose slope is strictly greater than `σ`
 also guarantees a finite face of slope `σ`, with both endpoints at or before that edge.
 Thus unbounded finite edge slopes guarantee finite faces at every real slope, even on an
 unbounded domain. Finite unit slopes before a finite face are strictly less than its slope,
@@ -122,6 +124,29 @@ theorem supportingValue_eq_coe_of_mem_supportingFace {h : ℕ → WithTop ℝ} {
     congr 1
     ring
   · exact isSupportingLine_iff.mp hc
+
+/-- A nonempty height sequence with only finitely many finite heights touches a supporting
+line of every real slope. Convexity is not needed, so this applies directly to the
+coefficient heights of a polynomial. -/
+theorem exists_isSupportingLine_and_mem_supportingFace {h : ℕ → WithTop ℝ}
+    (hfin : {n | h n ≠ ⊤}.Finite) (hne : h ≠ ⊤) (σ : ℝ) :
+    ∃ c n, IsSupportingLine h σ c ∧ n ∈ supportingFace h σ c := by
+  obtain ⟨n, hn, hmin⟩ := Set.exists_min_image _ (fun n => (h n).untop₀ - σ * n) hfin
+    (Function.ne_iff.mp hne)
+  refine ⟨(h n).untop₀ - σ * n, n, isSupportingLine_iff_forall.mpr fun k => ?_, ?_⟩
+  · by_cases hk : h k = ⊤
+    · simp [hk]
+    rw [← WithTop.coe_untop₀_of_ne_top hk, WithTop.coe_le_coe]
+    linarith [hmin k hk]
+  · rw [mem_supportingFace, sub_add_cancel, WithTop.coe_untop₀_of_ne_top hn]
+
+/-- A height sequence with only finitely many finite heights has no supporting value `⊥`. -/
+theorem supportingValue_ne_bot_of_finite {h : ℕ → WithTop ℝ} (hfin : {n | h n ≠ ⊤}.Finite)
+    (σ : ℝ) : supportingValue h σ ≠ ⊥ := by
+  obtain rfl | hne := eq_or_ne h ⊤
+  · simp
+  obtain ⟨c, -, hc, -⟩ := exists_isSupportingLine_and_mem_supportingFace hfin hne σ
+  exact ne_bot_of_le_ne_bot (EReal.coe_ne_bot c) (isSupportingLine_iff.mp hc)
 
 /-- The contact indices of a supporting line on a convex height sequence are order connected. -/
 theorem IsConvexSeq.ordConnected_supportingFace {h : ℕ → WithTop ℝ}
