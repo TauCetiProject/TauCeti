@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.IsManifold.Basic
+public import Mathlib.Geometry.Manifold.ContMDiff.Defs
 public import TauCeti.Analysis.Fredholm.LevelSet.Smooth
 
 /-!
@@ -41,6 +41,8 @@ sense.
   `C^m`.
 * `TauCeti.isManifold_levelSet`: a regular level set of a `C^m` Fredholm map, of constant index
   `n`, is a `C^m` manifold modelled on `Fin n → 𝕜`.
+* `TauCeti.contMDiff_coe_levelSet`: for this atlas, the inclusion of the level set into the
+  ambient Banach space is `C^m`.
 
 ## References
 
@@ -53,7 +55,7 @@ public section
 namespace TauCeti
 
 open Set
-open scoped ContDiff Topology
+open scoped ContDiff Manifold Topology
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
@@ -155,6 +157,29 @@ theorem isManifold_levelSet
   simpa only [modelWithCornersSelf_coe, modelWithCornersSelf_coe_symm, Set.range_id,
     Set.inter_univ, Set.preimage_id, Function.comp_id, Function.id_comp] using
     contDiffOn_levelSetChartAt_trans hf hFred hsurj hindex hsmooth z w
+
+/-- **The inclusion of a regular level set is smooth.** For the atlas of
+`TauCeti.levelSetChartedSpace`, the inclusion of the level set `{x | f x = c}` into the ambient
+Banach space is as smooth as the equation is along the level set. -/
+theorem contMDiff_coe_levelSet
+    (hf : ∀ x ∈ {x | f x = c}, HasStrictFDerivAt f (D x) x)
+    (hFred : ∀ x ∈ {x | f x = c}, ContinuousLinearMap.IsFredholm (D x))
+    (hsurj : ∀ x ∈ {x | f x = c}, Function.Surjective (D x))
+    (hindex : ∀ x ∈ {x | f x = c}, ContinuousLinearMap.index (D x) = n)
+    (hsmooth : ∀ x ∈ {x | f x = c}, ContDiffAt 𝕜 m f x) :
+    letI := levelSetChartedSpace hf hFred hsurj hindex
+    ContMDiff 𝓘(𝕜, Fin n → 𝕜) 𝓘(𝕜, E) m (Subtype.val : ↥{x | f x = c} → E) := by
+  let _i := levelSetChartedSpace hf hFred hsurj hindex
+  refine fun z ↦ contMDiffAt_iff.2 ⟨continuous_subtype_val.continuousAt, ?_⟩
+  have hz := (levelSetChartAt hf hFred hsurj hindex z).map_source
+    (mem_levelSetChartAt_source hf hFred hsurj hindex z)
+  have h := (contDiffOn_coe_levelSetChartAt_symm hf hFred hsurj hindex hsmooth z).contDiffAt
+    ((levelSetChartAt hf hFred hsurj hindex z).open_target.mem_nhds hz)
+  -- In the model space the extended charts are the preferred chart at `z` and the identity.
+  have e : chartAt (Fin n → 𝕜) z = levelSetChartAt hf hFred hsurj hindex z :=
+    levelSetChartedSpace_chartAt hf hFred hsurj hindex z
+  simpa [extChartAt, e, Function.comp_def,
+    levelSetChartAt_apply_self hf hFred hsurj hindex z] using h.contDiffWithinAt
 
 end TauCeti
 
