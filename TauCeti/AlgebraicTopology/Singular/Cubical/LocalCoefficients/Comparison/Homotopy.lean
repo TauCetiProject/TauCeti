@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.Homotopy
 public import TauCeti.Algebra.Homology.Homotopy
 public import
   TauCeti.AlgebraicTopology.Singular.Cubical.LocalCoefficients.Comparison.SingularToCubical
@@ -160,20 +159,6 @@ lemma twistedSingularHomotopy_simplexPushforward {n m : ℕ} (σ : (TopCat.toSSe
   (congrArg (twistedSingularHomotopy L m).hom (simplexPushforward_apply L σ m y a)).trans
     ((twistedSingularHomotopy_twistedPushforward L (simplexToHom σ) _ y a).trans
       (simplexPushforward_apply L σ (m + 1) _ a).symm)
-
-/-- The comparison to simplicial chains carries the cubical pushforward along a simplex to the
-simplicial pushforward of the image under the untwisted comparison. -/
-lemma normalizedTwistedCubicalToSingular_simplexCubicalPushforward {n m : ℕ}
-    (σ : (TopCat.toSSet.obj X) _⦋n⦌)
-    (y : ((normalizedCubicalChainComplex (ULift.{v} ℤ)).obj (simplexModel.{v} n)).X m)
-    (a : L.obj (initialVertex σ)) :
-    normalizedTwistedCubicalToSingular L m (simplexCubicalPushforward L σ m y a) =
-      simplexPushforward L σ m
-        (((cubicalToSingular (ULift.{v} ℤ)).app (simplexModel.{v} n)).f m y) a :=
-  (congrArg (normalizedTwistedCubicalToSingular L m)
-    (simplexCubicalPushforward_apply L σ m y a)).trans
-    ((normalizedTwistedCubicalToSingular_pushforward (L := L) (simplexToHom σ) _ y a).trans
-      (simplexPushforward_apply L σ m _ a).symm)
 
 /-- The homotopy identity of the composite on simplicial chains in degree zero, on a summand. -/
 private lemma homotopy_identity_zero (σ : (TopCat.toSSet.obj X) _⦋0⦌)

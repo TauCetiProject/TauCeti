@@ -223,6 +223,20 @@ lemma twistedSingularToCubical_simplexPushforward {n m : ℕ} (σ : (TopCat.toSS
         (((singularToCubical (ULift.{v} ℤ)).app (simplexModel.{v} n)).f m y) a :=
   twistedSingularToCubical_twistedPushforward L (simplexToHom σ) _ y a
 
+/-- The comparison to simplicial chains carries the cubical pushforward along a simplex to the
+simplicial pushforward of the image under the untwisted comparison. -/
+lemma normalizedTwistedCubicalToSingular_simplexCubicalPushforward {n m : ℕ}
+    (σ : (TopCat.toSSet.obj X) _⦋n⦌)
+    (y : ((normalizedCubicalChainComplex (ULift.{v} ℤ)).obj (simplexModel.{v} n)).X m)
+    (a : L.obj (initialVertex σ)) :
+    normalizedTwistedCubicalToSingular L m (simplexCubicalPushforward L σ m y a) =
+      simplexPushforward L σ m
+        (((cubicalToSingular (ULift.{v} ℤ)).app (simplexModel.{v} n)).f m y) a :=
+  (congrArg (normalizedTwistedCubicalToSingular L m)
+    (simplexCubicalPushforward_apply L σ m y a)).trans
+    ((normalizedTwistedCubicalToSingular_pushforward (L := L) (simplexToHom σ) _ y a).trans
+      (simplexPushforward_apply L σ m _ a).symm)
+
 /-- The cubical pushforward along a simplex commutes with the boundaries. -/
 lemma boundary_simplexCubicalPushforward {n m : ℕ} (σ : (TopCat.toSSet.obj X) _⦋n⦌)
     (y : ((normalizedCubicalChainComplex (ULift.{v} ℤ)).obj (simplexModel.{v} n)).X (m + 1))
