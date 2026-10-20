@@ -45,6 +45,8 @@ extends to every Laurent series: a substitution `X ↦ φ` preserves the residue
 
 * `TauCeti.LaurentSeries.coeff_algebraMap_mul`: multiplication by a constant of the algebra
   structure acts coefficientwise.
+* `TauCeti.LaurentSeries.mem_range_ofPowerSeries_iff`: the Laurent series coming from power series
+  are those with no negative exponents.
 * `TauCeti.laurentSeries_algebraMap_mul_eq_smul`: the algebra action agrees with the
   coefficientwise scalar action, and `TauCeti.laurentSeries_isScalarTower_algebra` transfers
   scalar towers from the coefficientwise action to the algebra action.
@@ -81,6 +83,19 @@ theorem coeff_algebraMap_mul (c : R) (f : R⸨X⸩) (n : ℤ) :
     (algebraMap R R⸨X⸩ c * f).coeff n = c * f.coeff n := by
   rw [HahnSeries.algebraMap_apply', PowerSeries.algebraMap_eq, HahnSeries.ofPowerSeries_C,
     HahnSeries.C_mul_eq_smul, HahnSeries.coeff_smul, smul_eq_mul]
+
+/-- A Laurent series is the image of a power series exactly when its coefficients at negative
+exponents vanish. -/
+theorem mem_range_ofPowerSeries_iff {f : R⸨X⸩} :
+    f ∈ Set.range (HahnSeries.ofPowerSeries ℤ R) ↔ ∀ n < 0, f.coeff n = 0 := by
+  refine ⟨?_, fun hf ↦ ⟨PowerSeries.mk fun n ↦ f.coeff n, ?_⟩⟩
+  · rintro ⟨g, rfl⟩ n hn
+    simp [PowerSeries.coeff_coe, hn]
+  ext n
+  rw [PowerSeries.coeff_coe]
+  split_ifs with hn
+  · exact (hf n hn).symm
+  · rw [PowerSeries.coeff_mk, Int.natCast_natAbs, abs_of_nonneg (not_lt.mp hn)]
 
 section Valuation
 
