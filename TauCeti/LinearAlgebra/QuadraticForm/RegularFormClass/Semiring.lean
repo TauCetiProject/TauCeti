@@ -116,4 +116,11 @@ def RegularFormClass.rankHom : RegularFormClass K →+* ℕ where
 theorem RegularFormClass.rankHom_apply (x : RegularFormClass K) :
     RegularFormClass.rankHom x = x.rank := (rfl)
 
+-- Not `@[simp]`: `nsmul_eq_mul` rewrites the left-hand side in the semiring
+-- `RegularFormClass K`, so this declaration would fail `simpNF`.
+/-- The orthogonal sum of `n` copies of a class has `n` times its rank. -/
+theorem RegularFormClass.rank_nsmul (n : ℕ) (x : RegularFormClass K) :
+    (n • x).rank = n * x.rank :=
+  map_nsmul RegularFormClass.rankHom n x
+
 end TauCeti

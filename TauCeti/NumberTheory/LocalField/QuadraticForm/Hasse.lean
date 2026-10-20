@@ -210,20 +210,19 @@ theorem localHasse_add (x y : RegularFormClass K) :
     | h q =>
       simpa only [discr_mk, hilbertSymbolOnSquareClasses_squareClass] using localHasse_add_mk p q
 
-/-- **The local Hasse invariant of `m` hyperbolic planes** is `(-1, -1)_K^{m(m-1)/2}`. Adding a
-plane to `m` planes multiplies the invariant by the symbol `(-1, (-1)^m)_K = (-1, -1)_K^m` of the
-two discriminants. -/
+/-- **The local Hasse invariant of `m` hyperbolic planes** is `(-1, -1)_K^{m(m-1)/2}`. -/
 theorem localHasse_nsmul_hyperbolicClass (m : ℕ) :
     localHasse (m • hyperbolicClass K) = hilbertSymbol (-1 : Kˣ) (-1) ^ m.choose 2 := by
   have hpow (n : ℕ) : hilbertSymbol ((-1 : Kˣ) ^ n) (-1) = hilbertSymbol (-1 : Kˣ) (-1) ^ n := by
-    induction n with
-    | zero => simp
-    | succ n ih => rw [pow_succ, hilbertSymbol_mul_left (Invertible.ne_zero 2), ih, pow_succ]
+    simpa only [zpow_natCast] using
+      hilbertSymbol_zpow_left (Invertible.ne_zero (2 : K)) (-1) (-1) (n : ℤ)
   induction m with
   | zero => simp
   | succ m ih =>
-    rw [succ_nsmul, localHasse_add, ih, localHasse_hyperbolicClass, ← discrHom_apply (m • _),
-      map_nsmul, discrHom_apply, discr_hyperbolicClass, ← squareClass_pow,
+    -- Adding a plane to `m` planes multiplies the invariant by the symbol
+    -- `(-1, (-1)^m)_K = (-1, -1)_K^m` of the two discriminants.
+    rw [succ_nsmul, localHasse_add, ih, localHasse_hyperbolicClass, discr_nsmul,
+      discr_hyperbolicClass, ← squareClass_pow,
       hilbertSymbolOnSquareClasses_squareClass, hpow, Nat.choose_succ_succ',
       Nat.choose_one_right, mul_one, pow_add, mul_comm]
 

@@ -120,18 +120,17 @@ theorem WittRing.equivInt_apply (x : WittRing K) : equivInt x = signature x :=
   RingEquiv.ofBijective_apply _ _ x
 
 /-- **Sylvester's law of inertia for isometry classes.** Over an ordered real closed field, two
-regular-form classes are equal exactly when they have the same rank and the same signature. Equal
-signatures give equal Witt classes, which differ by hyperbolic planes; equal ranks force the same
-number of planes on both sides, and Witt cancellation removes them. -/
+regular-form classes are equal exactly when they have the same rank and the same signature. -/
 theorem RegularFormClass.eq_iff_rank_eq_and_signature_eq {x y : RegularFormClass K} :
     x = y ↔ x.rank = y.rank ∧ signature x = signature y := by
   refine ⟨fun h => h ▸ ⟨rfl, rfl⟩, fun ⟨hr, hs⟩ => ?_⟩
+  -- Equal signatures give equal Witt classes, which differ by hyperbolic planes; equal ranks force
+  -- the same number of planes on both sides, and Witt cancellation removes them.
   obtain ⟨a, b, h⟩ := wittClass_eq_iff_exists_nsmul.mp
     (WittRing.equivInt.injective (by simpa using hs) : wittClass x = wittClass y)
   have hab : a = b := by
     have := congrArg rank h
-    rw [rank_add, rank_add, ← rankHom_apply (a • _), ← rankHom_apply (b • _), map_nsmul,
-      map_nsmul, rankHom_apply, hr, rank_hyperbolicClass, smul_eq_mul, smul_eq_mul] at this
+    simp only [rank_add, rank_nsmul, hr, rank_hyperbolicClass] at this
     omega
   subst hab
   exact add_left_cancel h

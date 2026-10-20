@@ -154,8 +154,7 @@ theorem eq_nsmul_hyperbolicClass_iff {x : RegularFormClass K} {m : ℕ} :
     x = m • hyperbolicClass K ↔ x.rank = 2 * m ∧ discr x = m • squareClass (-1 : Kˣ) ∧
       localHasse x = hilbertSymbol (-1 : Kˣ) (-1) ^ m.choose 2 := by
   rw [eq_iff_rank_eq_and_discr_eq_and_localHasse_eq, localHasse_nsmul_hyperbolicClass,
-    ← rankHom_apply (m • _), map_nsmul, rankHom_apply, rank_hyperbolicClass, smul_eq_mul,
-    mul_comm m, ← discrHom_apply (m • _), map_nsmul, discrHom_apply, discr_hyperbolicClass]
+    rank_nsmul, rank_hyperbolicClass, mul_comm m, discr_nsmul, discr_hyperbolicClass]
 
 /-- **At most two classes of each rank and discriminant.** Distinct classes with the same rank
 and plain discriminant have opposite local Hasse invariants. -/

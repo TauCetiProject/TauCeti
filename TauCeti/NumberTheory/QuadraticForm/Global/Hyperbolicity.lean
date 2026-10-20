@@ -69,12 +69,27 @@ theorem formClass_atRealPlace_eq_nsmul_hyperbolicClass_iff {Q : _root_.Quadratic
       Module.finrank K V = 2 * m ∧ Q.realPositiveIndex w = m := by
   have hpq := realPositiveIndex_add_realNegativeIndex_eq_finrank hQ w
   rw [RegularFormClass.eq_iff_rank_eq_and_signature_eq, rank_formClass, finrank_atRealPlace,
-    signature_formClass, ← RegularFormClass.signatureHom_apply (m • _), map_nsmul,
-    RegularFormClass.signatureHom_apply, RegularFormClass.signature_hyperbolicClass, smul_zero,
-    ← realPositiveIndex_eq_sigPos, ← realNegativeIndex_eq_sigNeg,
-    ← RegularFormClass.rankHom_apply (m • _), map_nsmul, RegularFormClass.rankHom_apply,
-    rank_hyperbolicClass, smul_eq_mul]
+    signature_formClass, RegularFormClass.signature_nsmul,
+    RegularFormClass.signature_hyperbolicClass, smul_zero, ← realPositiveIndex_eq_sigPos,
+    ← realNegativeIndex_eq_sigNeg, RegularFormClass.rank_nsmul, rank_hyperbolicClass]
   omega
+
+/-- A regular form that is the sum of `m` hyperbolic planes over `K` is the sum of `m` hyperbolic
+planes at every real place. -/
+theorem formClass_atRealPlace_eq_nsmul_hyperbolicClass [Invertible (2 : K)]
+    {Q : _root_.QuadraticForm K V} {hQ : Q.Nondegenerate} {m : ℕ}
+    (h : formClass Q hQ = m • hyperbolicClass K) (w : {w : InfinitePlace K // w.IsReal}) :
+    formClass (Q.atRealPlace w) (Nondegenerate.atRealPlace hQ w) = m • hyperbolicClass ℝ := by
+  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+  have hb := formClass_baseChange (L := ℝ) Q hQ
+  rw [h, RegularFormClass.baseChange_nsmul, RegularFormClass.baseChange_hyperbolicClass] at hb
+  -- `hb` is about the base change along the real embedding, which is the localization by
+  -- `atRealPlace_def`. The localization, `hb` and the goal may carry different `Invertible 2`
+  -- instances, equal because `Invertible 2` is a subsingleton.
+  convert hb using 2
+  · convert atRealPlace_def Q w
+    exact Subsingleton.elim _ _
+  · exact congrArg _ (Subsingleton.elim _ _)
 
 end RealPlace
 
@@ -136,21 +151,5 @@ theorem formClass_atFinitePlace_eq_nsmul_hyperbolicClass {Q : _root_.QuadraticFo
   -- from `K`, while the goal uses the canonical instance of `K_v`; the two are equal because
   -- `Invertible 2` is a subsingleton.
   exact hb.trans (by congr 2; exact Subsingleton.elim _ _)
-
-/-- A regular form that is the sum of `m` hyperbolic planes over `K` is the sum of `m` hyperbolic
-planes at every real place. -/
-theorem formClass_atRealPlace_eq_nsmul_hyperbolicClass {Q : _root_.QuadraticForm K V}
-    {hQ : Q.Nondegenerate} {m : ℕ} (h : formClass Q hQ = m • hyperbolicClass K)
-    (w : {w : InfinitePlace K // w.IsReal}) :
-    formClass (Q.atRealPlace w) (Nondegenerate.atRealPlace hQ w) = m • hyperbolicClass ℝ := by
-  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-  have hb := formClass_baseChange (L := ℝ) Q hQ
-  rw [h, RegularFormClass.baseChange_nsmul, RegularFormClass.baseChange_hyperbolicClass] at hb
-  -- `hb` is about the base change along the real embedding, which is the localization by
-  -- `atRealPlace_def`; the two sides of the goal also carry different `Invertible 2` instances,
-  -- equal because `Invertible 2` is a subsingleton.
-  convert hb using 2
-  · exact atRealPlace_def Q w
-  · exact congrArg _ (Subsingleton.elim _ _)
 
 end QuadraticForm
