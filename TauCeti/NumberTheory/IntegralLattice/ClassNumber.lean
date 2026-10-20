@@ -6,15 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.IntegralLattice.Genus
+public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Class
 public import Mathlib.SetTheory.Cardinal.Finite
 import TauCeti.LinearAlgebra.IntegralLattice.PosDef.Classes
 
 /-!
 # Class sets and class numbers of integral lattices
 
-The isometry classes of integral lattices in a rational vector space `V` form the quotient
-`IsometryClass V` of `IntegralLattice V` by isometry. The classes in the genus of `L` form the
-subset `L.genusClasses`, and the class number `h(L)` is its cardinality.
+The classes in the genus of `L` form the subset `L.genusClasses` of the isometry classes
+`IsometryClass V` of integral lattices in the ambient space `V` of `L`, and the class number
+`h(L)` is its cardinality.
 
 All lattices in one genus have the same rank, so they all live, up to isometry, in the ambient
 space of `L`: every lattice in the genus of `L`, in any rational space, is isometric to one in
@@ -28,15 +29,11 @@ different kinds of lattices. This file proves it for definite lattices: for posi
 ones it is a consequence of reduction theory
 (`TauCeti.IntegralLattice.finite_of_pairwise_isEmpty_isometry`), and the negative definite case
 follows by negating the form. It also computes the class set directly in rank at most one, where
-the class number is `1`.
+the class number is `1` by the determinant classification
+`TauCeti.IntegralLattice.nonempty_isometry_of_finrank_le_one`.
 
 ## Main definitions
 
-* `TauCeti.IntegralLattice.isometrySetoid`: isometry of integral lattices in `V`.
-* `TauCeti.IntegralLattice.IsometryClass`: the isometry classes of integral lattices in `V`.
-* `TauCeti.IntegralLattice.isometryClass`: the class `cls L` of a lattice.
-* `TauCeti.IntegralLattice.isometryClassEquiv`: transport of classes along an ambient linear
-  equivalence.
 * `TauCeti.IntegralLattice.genusClasses`: the classes in the genus of `L`.
 * `TauCeti.IntegralLattice.classNumber`: the class number `h(L)`.
 
@@ -67,79 +64,6 @@ namespace TauCeti.IntegralLattice
 universe u v
 
 variable {V : Type u} {W : Type v} [AddCommGroup V] [Module ℚ V] [AddCommGroup W] [Module ℚ W]
-
-section IsometryClass
-
-variable (V) in
-/-- Isometry of integral lattices in a fixed rational space, as an equivalence relation. -/
-def isometrySetoid : Setoid (IntegralLattice V) where
-  r L M := Nonempty (Isometry L M)
-  iseqv := ⟨fun L ↦ ⟨Isometry.refl L⟩, fun ⟨e⟩ ↦ ⟨e.symm⟩, fun ⟨e⟩ ⟨f⟩ ↦ ⟨e.trans f⟩⟩
-
-/-- Two lattices are related by `isometrySetoid` exactly when they are isometric. -/
-theorem isometrySetoid_apply {L M : IntegralLattice V} :
-    isometrySetoid V L M ↔ Nonempty (Isometry L M) :=
-  Iff.rfl
-
-variable (V) in
-/-- The isometry classes of integral lattices in a rational space `V`. -/
-abbrev IsometryClass : Type u := Quotient (isometrySetoid V)
-
-/-- The isometry class `cls L` of an integral lattice. -/
-def isometryClass (L : IntegralLattice V) : IsometryClass V :=
-  Quotient.mk _ L
-
-/-- Two lattices have the same isometry class exactly when they are isometric. -/
-@[simp]
-theorem isometryClass_eq_isometryClass_iff {L M : IntegralLattice V} :
-    L.isometryClass = M.isometryClass ↔ Nonempty (Isometry L M) :=
-  Quotient.eq
-
-/-- Isometric lattices have the same isometry class. -/
-theorem Isometry.isometryClass_eq {L M : IntegralLattice V} (e : Isometry L M) :
-    L.isometryClass = M.isometryClass :=
-  isometryClass_eq_isometryClass_iff.mpr ⟨e⟩
-
-/-- Every isometry class is the class of a lattice. -/
-theorem isometryClass_surjective :
-    Function.Surjective (isometryClass : IntegralLattice V → IsometryClass V) :=
-  Quotient.mk_surjective
-
-/-- A chosen representative of an isometry class has that class. -/
-@[simp]
-theorem isometryClass_out (c : IsometryClass V) : c.out.isometryClass = c :=
-  Quotient.out_eq c
-
-/-- Transport along a rational linear equivalence `V ≃ W` identifies the isometry classes of
-integral lattices in `V` with those in `W`. -/
-noncomputable def isometryClassEquiv (f : V ≃ₗ[ℚ] W) : IsometryClass V ≃ IsometryClass W where
-  toFun := Quotient.map (·.transport f) fun M N ⟨e⟩ ↦
-    ⟨((M.transportIsometry f).symm.trans e).trans (N.transportIsometry f)⟩
-  invFun := Quotient.map (·.transport f.symm) fun M N ⟨e⟩ ↦
-    ⟨((M.transportIsometry f.symm).symm.trans e).trans (N.transportIsometry f.symm)⟩
-  left_inv c := by
-    obtain ⟨M, rfl⟩ := isometryClass_surjective c
-    exact (((M.transportIsometry f).trans
-      ((M.transport f).transportIsometry f.symm)).isometryClass_eq).symm
-  right_inv c := by
-    obtain ⟨M, rfl⟩ := isometryClass_surjective c
-    exact (((M.transportIsometry f.symm).trans
-      ((M.transport f.symm).transportIsometry f)).isometryClass_eq).symm
-
-/-- `isometryClassEquiv f` sends the class of `M` to the class of its transport along `f`. -/
-@[simp]
-theorem isometryClassEquiv_isometryClass (f : V ≃ₗ[ℚ] W) (M : IntegralLattice V) :
-    isometryClassEquiv f M.isometryClass = (M.transport f).isometryClass :=
-  (rfl)
-
-/-- The inverse of `isometryClassEquiv f` sends the class of `M` to the class of its transport
-along `f.symm`. -/
-@[simp]
-theorem isometryClassEquiv_symm_isometryClass (f : V ≃ₗ[ℚ] W) (M : IntegralLattice W) :
-    (isometryClassEquiv f).symm M.isometryClass = (M.transport f.symm).isometryClass :=
-  (rfl)
-
-end IsometryClass
 
 section GenusClasses
 
@@ -198,14 +122,6 @@ theorem isometryClassEquiv_mem_genusClasses_iff (f : V ≃ₗ[ℚ] W) {L : Integ
   simp only [isometryClassEquiv_isometryClass, isometryClass_mem_genusClasses_iff]
   have hM : M.SameGenus (M.transport f) := (M.transportIsometry f).sameGenus
   exact ⟨fun h' ↦ (h.trans h').trans hM.symm, fun h' ↦ (h.symm.trans h').trans hM⟩
-
-/-- Lattices of the same genus have ambient spaces of the same dimension. -/
-private theorem SameGenus.nonempty_linearEquiv {L : IntegralLattice V} {M : IntegralLattice W}
-    (h : L.SameGenus M) : Nonempty (V ≃ₗ[ℚ] W) := by
-  have := L.finiteDimensional
-  have := M.finiteDimensional
-  refine FiniteDimensional.nonempty_linearEquiv_of_finrank_eq ?_
-  rw [← L.finrank_carrier, ← M.finrank_carrier, h.finrank_eq]
 
 /-- Every lattice of the same genus as `L`, in any rational space, is isometric to a lattice in
 the ambient space of `L` of that genus. So `L.genusClasses` accounts for every class in the genus
@@ -291,23 +207,6 @@ end ClassNumber
 
 section RankLeOne
 
-/-- **Lattices of rank at most one are classified by their determinant.** Two integral lattices of
-equal rank at most one and equal determinant are isometric: in rank one the Gram matrix of any
-basis is the `1 × 1` matrix of the determinant. -/
-theorem nonempty_isometry_of_finrank_le_one {L : IntegralLattice V} {M : IntegralLattice W}
-    (hrank : finrank ℤ L = finrank ℤ M) (hle : finrank ℤ L ≤ 1)
-    (hdet : L.determinant = M.determinant) : Nonempty (Isometry L M) := by
-  classical
-  let b := finBasisOfFinrankEq ℤ L rfl
-  let b' := finBasisOfFinrankEq ℤ M hrank.symm
-  refine ⟨Isometry.ofGramMatrixEq b b' (Matrix.ext fun i j ↦ ?_)⟩
-  let _ : Unique (Fin (finrank ℤ L)) := ⟨⟨i⟩, fun k ↦ Fin.ext (by omega)⟩
-  obtain rfl : i = j := Subsingleton.elim i j
-  have hL := L.determinant_eq_gramDet b
-  have hM := M.determinant_eq_gramDet b'
-  rw [gramDet_def, Matrix.det_unique] at hL hM
-  exact hL.symm.trans (hdet.trans hM)
-
 /-- In rank at most one the genus of `L` is the single class of `L`. -/
 theorem genusClasses_eq_singleton_of_finrank_le_one {L : IntegralLattice V}
     (hle : finrank ℤ L ≤ 1) : L.genusClasses = {L.isometryClass} := by
@@ -319,7 +218,8 @@ theorem genusClasses_eq_singleton_of_finrank_le_one {L : IntegralLattice V}
   obtain ⟨e⟩ := nonempty_isometry_of_finrank_le_one h.finrank_eq hle h.determinant_eq
   exact ⟨e.symm⟩
 
-/-- In rank at most one the class number is `1`. -/
+/-- In rank at most one the class number is `1` by the determinant classification
+`TauCeti.IntegralLattice.nonempty_isometry_of_finrank_le_one`. -/
 theorem classNumber_eq_one_of_finrank_le_one {L : IntegralLattice V}
     (hle : finrank ℤ L ≤ 1) : L.classNumber = 1 := by
   rw [classNumber_def, genusClasses_eq_singleton_of_finrank_le_one hle, Nat.card_unique]
