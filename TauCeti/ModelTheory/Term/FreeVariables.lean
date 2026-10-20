@@ -26,7 +26,7 @@ variable {L : FirstOrder.Language.{u, v}} {α : Type uα}
 
 /-- Term realization depends only on the free valuation on its finite left-variable support;
 the valuation of the right variables is held fixed. -/
-theorem term_realize_congr_varFinsetLeft [DecidableEq α] {β : Type*} {M : Type w} [L.Structure M]
+theorem realize_congr_varFinsetLeft [DecidableEq α] {β : Type*} {M : Type w} [L.Structure M]
     (t : L.Term (α ⊕ β)) {v₁ v₂ : α → M} (ys : β → M)
     (h : Set.EqOn v₁ v₂ ↑t.varFinsetLeft) :
     t.realize (Sum.elim v₁ ys) = t.realize (Sum.elim v₂ ys) := by
@@ -37,7 +37,7 @@ theorem term_realize_congr_varFinsetLeft [DecidableEq α] {β : Type*} {M : Type
   rw [hv]
 
 /-- Relabelling right variables preserves a term's finite left-variable support. -/
-theorem term_varFinsetLeft_relabel [DecidableEq α] {β γ : Type*}
+theorem varFinsetLeft_relabel [DecidableEq α] {β γ : Type*}
     (t : L.Term (α ⊕ β)) (f : β → γ) :
     (t.relabel (Sum.map id f)).varFinsetLeft = t.varFinsetLeft := by
   induction t with

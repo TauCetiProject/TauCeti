@@ -139,8 +139,8 @@ theorem freeVarSupport_mapBound {m : ℕ} (f : Fin m → Fin n)
   classical
   induction φ generalizing n with
   | falsum => simp
-  | equal t₁ t₂ => simp [term_varFinsetLeft_relabel]
-  | rel R ts => simp [term_varFinsetLeft_relabel]
+  | equal t₁ t₂ => simp [varFinsetLeft_relabel]
+  | rel R ts => simp [varFinsetLeft_relabel]
   | imp φ ψ ihφ ihψ => simp [ihφ, ihψ]
   | all φ ih => simp [ih]
   | iSup φs ih => simp [ih]
@@ -206,12 +206,12 @@ theorem realize_congr_freeVarSupport {M : Type w} [L.Structure M]
   | equal t₁ t₂ =>
     simp only [freeVarSupport_equal] at h
     simp only [FirstOrder.Language.BoundedFormulaInf.realize_equal,
-      term_realize_congr_varFinsetLeft t₁ xs (h.mono Set.subset_union_left),
-      term_realize_congr_varFinsetLeft t₂ xs (h.mono Set.subset_union_right)]
+      realize_congr_varFinsetLeft t₁ xs (h.mono Set.subset_union_left),
+      realize_congr_varFinsetLeft t₂ xs (h.mono Set.subset_union_right)]
   | rel R ts =>
     rw [freeVarSupport_rel] at h
     simp only [FirstOrder.Language.BoundedFormulaInf.realize_rel]
-    have ht (i) := term_realize_congr_varFinsetLeft (ts i) xs
+    have ht (i) := realize_congr_varFinsetLeft (ts i) xs
       (h.mono (Set.subset_iUnion (fun i => ((ts i).varFinsetLeft : Set α)) i))
     simp only [ht]
   | imp φ ψ ihφ ihψ =>
