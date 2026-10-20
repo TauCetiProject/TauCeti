@@ -38,7 +38,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E
 
 /-- Integration by parts for the cumulative function of a vector measure of finite variation.
 The measure may have atoms or a singular continuous part. -/
-theorem _root_.MeasureTheory.VectorMeasure.integral_deriv_smul_Iic
+theorem _root_.MeasureTheory.VectorMeasure.integral_deriv_smul_apply_Iic_eq_neg_integral
     (ν : VectorMeasure ℝ E) [IsFiniteMeasure ν.variation] {φ : ℝ → ℝ}
     (hφ : ContDiff ℝ 1 φ) (hcφ : HasCompactSupport φ) :
     ∫ x, deriv φ x • ν (Iic x) = -∫ᵛ x, φ x ∂•ν := by

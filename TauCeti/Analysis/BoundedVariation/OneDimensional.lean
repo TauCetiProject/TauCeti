@@ -64,7 +64,7 @@ theorem _root_.BoundedVariationOn.integral_deriv_smul_eq_neg_vectorMeasure
     rw [hf.vectorMeasure_Iic, hx.continuousWithinAt.rightLim_eq, smul_sub]
   have hprod : Integrable (fun x ↦ deriv φ x • f x) := by
     simpa only [Pi.smul_def'] using hdφ.smul_of_top_left hf.memLp_top
-  have h := hf.vectorMeasure.integral_deriv_smul_Iic hφ hcφ
+  have h := hf.vectorMeasure.integral_deriv_smul_apply_Iic_eq_neg_integral hφ hcφ
   rw [integral_congr_ae heq,
     integral_sub hprod (hdφ.smul_const _),
     integral_smul_const, hzero, zero_smul, sub_zero] at h
@@ -78,7 +78,7 @@ theorem _root_.BoundedVariationOn.totalVariationOn_le_variation_vectorMeasure
   refine totalVariationOn_le_iff.mpr fun φ hφ ↦ ?_
   have hpair : ∫ x, TestFunction.divergenceCLM φ x * f x =
       -∫ᵛ x, φ x ∂•hf.vectorMeasure := by
-    simp_rw [TestFunction.divergenceCLM_apply_real]
+    simp_rw [TestFunction.divergenceCLM_apply_eq_deriv]
     exact hf.integral_deriv_smul_eq_neg_vectorMeasure
       (φ.contDiff.of_le (by simp)) φ.hasCompactSupport
   have hloc : ∫ᵛ x in Ω, φ x ∂•hf.vectorMeasure = ∫ᵛ x, φ x ∂•hf.vectorMeasure :=
