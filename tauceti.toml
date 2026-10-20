@@ -25,15 +25,6 @@ completed_dir = "Completed"
 
 # Select full commit SHAs before installing the core workflows.
 # Discover a version with: gh api repos/TauCetiProject/TauCetiTools/commits/main --jq .sha
-# [tools.tools]
-# repo = "TauCetiProject/TauCetiTools"
-# ref = "FULL_COMMIT_SHA"
-# [tools.review]
-# repo = "TauCetiProject/TauCetiReview"
-# ref = "FULL_COMMIT_SHA"
-# [tools.progress]
-# repo = "TauCetiProject/TauCetiProgress"
-# ref = "FULL_COMMIT_SHA"
 
 [merge]
 backend = "bors"
@@ -61,15 +52,12 @@ security_audit = true
 [services.github_state]
 mode = "hosted"
 url = "https://github-state.taucetiproject.org" # off | hosted | custom
-# url = "https://github-state.example.org"
 
 [services.bors]
 mode = "hosted"
 url = "https://bors.taucetiproject.org"
 repository_id = 1 # hosted supplies Neon only; YOU operate the runtime
-deployment = "docker" # docker | cloudflare
-# url = "https://bors.example.org"
-# image = "ghcr.io/taucetiproject/bors-ng@sha256:SELECT_RELEASE_DIGEST"
+deployment = "cloudflare"
 
 [services.cache]
 mode = "hosted"
@@ -77,9 +65,6 @@ name = "tauceti-public"
 domain = "cache.taucetiproject.org"
 artifact_url = "https://cache.taucetiproject.org/artifacts"
 revision_url = "https://cache.taucetiproject.org/revisions"
-# name = "tauceti-public"
-# artifact_url = "https://cache.example.org/artifacts"
-# revision_url = "https://cache.example.org/revisions"
 
 artifact_write_url = "https://ec2169bdf033f56b009956d4b64ba8ef.r2.cloudflarestorage.com/tauceti-cache/artifacts"
 
@@ -93,7 +78,7 @@ zulip_topic = "Progress logs"
 
 [tools.tools]
 repo="TauCetiProject/TauCetiTools"
-ref="4c54de2c219ff88229741c02faba876b8fa2b094"
+ref="4c7381d3a47fd9b9f7aa786dd2a28c375e36fee6"
 [tools.review]
 repo="TauCetiProject/TauCetiReview"
 ref="dff64733b34e4e4e69d768242f198dd79411d9a8"

@@ -156,10 +156,10 @@ jobs:
           fetch-depth: 1
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@4c54de2c219ff88229741c02faba876b8fa2b094
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@4c7381d3a47fd9b9f7aa786dd2a28c375e36fee6
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 4c54de2c219ff88229741c02faba876b8fa2b094
+          tools-ref: 4c7381d3a47fd9b9f7aa786dd2a28c375e36fee6
           project-directory: gate
       - name: Resolve PR head
         id: pr
@@ -1552,6 +1552,7 @@ jobs:
         with:
           ref: ${{ github.workflow_sha }}
           sparse-checkout: |
+            tauceti.toml
             scripts/finalize_batch.py
             scripts/bors_observation.py
             scripts/bors_train_identity.py
@@ -1559,10 +1560,10 @@ jobs:
           persist-credentials: false
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@4c54de2c219ff88229741c02faba876b8fa2b094
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@4c7381d3a47fd9b9f7aa786dd2a28c375e36fee6
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 4c54de2c219ff88229741c02faba876b8fa2b094
+          tools-ref: 4c7381d3a47fd9b9f7aa786dd2a28c375e36fee6
           project-directory: .
       - name: Post the terminal merge-group build status
         run: python3 scripts/finalize_batch.py

@@ -71,24 +71,26 @@ jobs:
           sparse-checkout-cone-mode: false
           persist-credentials: false
 
-      - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@4c54de2c219ff88229741c02faba876b8fa2b094
-        with:
-          tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 4c54de2c219ff88229741c02faba876b8fa2b094
-          project-directory: .
       - name: Check out workflow-pinned publication planning tools
         uses: actions/checkout@v4
         with:
           ref: ${{ github.workflow_sha }}
           path: publisher-tools
           sparse-checkout: |
+            tauceti.toml
             scripts/lake_cache_publish.py
             scripts/ci_publication_observation.py
             scripts/lake_cache_probe.py
             scripts/lake_cache_reuse.py
           sparse-checkout-cone-mode: false
           persist-credentials: false
+
+      - name: Prepare pinned shared tools
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@4c7381d3a47fd9b9f7aa786dd2a28c375e36fee6
+        with:
+          tools-repository: TauCetiProject/TauCetiTools
+          tools-ref: 4c7381d3a47fd9b9f7aa786dd2a28c375e36fee6
+          project-directory: publisher-tools
 
       - name: Download the staged oleans
         uses: actions/download-artifact@v4

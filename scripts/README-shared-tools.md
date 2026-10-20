@@ -6,7 +6,7 @@ pinned setup action before invoking scripts. Local Python callers need `tauceti-
 shell entrypoints resolve the same immutable version through uvx. To prepare all helpers locally:
 
 ```sh
-uv tool install git+https://github.com/TauCetiProject/TauCetiTools@4c54de2c219ff88229741c02faba876b8fa2b094
+uv tool install git+https://github.com/TauCetiProject/TauCetiTools@4c7381d3a47fd9b9f7aa786dd2a28c375e36fee6
 tauceti-tools materialize scripts --conf tauceti.toml --policy-dir scripts
 ```
 
