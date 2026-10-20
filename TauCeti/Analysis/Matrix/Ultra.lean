@@ -194,20 +194,18 @@ theorem norm_sum_coeff_charpolyRev_smul_pow_apply_le {A : Matrix ι ι R} {r : �
     ‖(∑ k ∈ range (m + 1), A.charpolyRev.coeff k • A ^ (m - k)) i j‖ ≤ c := by
   rw [← coeff_adjugate_one_sub_X_smul_apply, adjugate_apply]
   -- Row `j` of the matrix is constant, and every other row `k` is `δ k - X A k`.
+  have hM : ∀ k l, updateRow (1 - (X : R[X]) • A.map C) j (Pi.single i 1) k l =
+      if k = j then (if l = i then 1 else 0) else (if k = l then 1 else 0) - X * C (A k l) := by
+    intro k l
+    rcases eq_or_ne k j with rfl | hk
+    · rw [updateRow_self, Pi.single_apply, ite_eq_left rfl]
+    · rw [updateRow_ne hk, sub_apply, one_apply, smul_apply, map_apply, smul_eq_mul,
+        ite_eq_right hk]
   refine norm_coeff_det_le_of_natDegree_le_one (r := r) (fun k l ↦ ?_) (fun k l ↦ ?_)
-    (fun k l ↦ ?_) hc hs <;> rcases eq_or_ne k j with rfl | hk
-  · rw [updateRow_self, Pi.single_apply]
-    split_ifs <;> simp
-  · rw [updateRow_ne hk, sub_apply, one_apply, smul_apply, map_apply, smul_eq_mul]
-    split_ifs <;> compute_degree
-  · rw [updateRow_self, Pi.single_apply]
-    split_ifs <;> simp
-  · rw [updateRow_ne hk, sub_apply, one_apply, smul_apply, map_apply, smul_eq_mul]
-    split_ifs <;> simp
-  · rw [updateRow_self, Pi.single_apply]
-    split_ifs <;> simpa [coeff_one] using (norm_nonneg _).trans (hA k k)
-  · rw [updateRow_ne hk, sub_apply, one_apply, smul_apply, map_apply, smul_eq_mul]
-    split_ifs <;> simpa [coeff_one] using hA k l
+    (fun k l ↦ ?_) hc hs <;> rw [hM]
+  · split_ifs <;> compute_degree!
+  · split_ifs <;> simp
+  · split_ifs <;> simp [coeff_one, (norm_nonneg _).trans (hA k l), hA k l]
 
 end Matrix
 
