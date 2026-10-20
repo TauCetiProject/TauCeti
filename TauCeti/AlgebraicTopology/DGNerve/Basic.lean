@@ -166,6 +166,7 @@ structure Simplex (n : ℕ) : Type (max u v) where
     (hS : S ⊆ Ioo i j) (hd : d + #S = 0) :
     dgDifferential R d (coh i j S d hij hS hd) = boundary R coh i j S d hij hS hd
 
+attribute [simp] Simplex.coh_self
 
 namespace Simplex
 
@@ -416,6 +417,34 @@ private lemma dgComp_mapCoh_eq_zero_of_collapse {a b u v t : Fin (m + 1)}
     · exact Or.inl hu
     · exact Or.inr (mem_filter.2 ⟨hu, huv.trans hvt⟩)
 
+/-- If `α` identifies an interior vertex `t` with an endpoint and no interior vertex lies between
+them, the face and composite parts of the term at `t` of the dg nerve equation for the pullback
+cancel. -/
+private lemma mapCoh_erase_sub_dgComp_eq_zero {a b t : Fin (m + 1)} {T : Finset (Fin (m + 1))}
+    {d : ℤ} (hab : a ≤ b) (hT : T ⊆ Ioo a b) (hd : d + #T = 0) (ht : t ∈ T)
+    (h : ({s ∈ T | s < t} = ∅ ∧ α a = α t) ∨ ({s ∈ T | t < s} = ∅ ∧ α t = α b)) :
+    x.mapCoh α a b (T.erase t) (d + 1) hab ((erase_subset _ _).trans hT)
+        (add_one_add_card_erase_eq_zero ht hd) -
+      (#{s ∈ T | s < t} * #{s ∈ T | t < s} : ℤ).negOnePow •
+        dgComp R
+          (x.mapCoh α a t {s ∈ T | s < t} _ (mem_Ioo.1 (hT ht)).1.le (filter_lt_subset_Ioo hT)
+            (neg_add_cancel _))
+          (x.mapCoh α t b {s ∈ T | t < s} _ (mem_Ioo.1 (hT ht)).2.le (filter_gt_subset_Ioo hT)
+            (neg_add_cancel _))
+          (neg_card_filter_lt_add_neg_card_filter_gt ht hd) = 0 := by
+  have hκ : (#{s ∈ T | s < t} * #{s ∈ T | t < s} : ℤ).negOnePow = 1 := by
+    rcases h with ⟨h, -⟩ | ⟨h, -⟩ <;> simp [h]
+  have hsplit : T.erase t = {s ∈ T | s < t} ∪ {s ∈ T | t < s} := by
+    ext s
+    simp only [mem_erase, mem_union, mem_filter, ne_iff_lt_or_gt]
+    tauto
+  rw [hκ, one_smul, sub_eq_zero]
+  rcases h with ⟨hlt, hα⟩ | ⟨hgt, hα⟩
+  · rw [x.dgComp_mapCoh_of_eq_left α hα hlt]
+    exact Coherences.congr _ (by rw [hsplit, hlt, empty_union])
+  · rw [x.dgComp_mapCoh_of_eq_right α hα hgt]
+    exact Coherences.congr _ (by rw [hsplit, hgt, union_empty])
+
 /-- When `α` collapses two vertices of `a < T < b`, the right-hand side of the dg nerve equation
 for the pullback vanishes. -/
 private lemma boundary_mapCoh_eq_zero {a b : Fin (m + 1)} {T : Finset (Fin (m + 1))} {d : ℤ}
@@ -438,24 +467,14 @@ private lemma boundary_mapCoh_eq_zero {a b : Fin (m + 1)} {T : Finset (Fin (m + 
     x.dgComp_mapCoh_eq_zero_of_collapse α hT hd ht hu hv huv hα hcons htu htv
   rcases hu with hua | huT
   · -- `α a = α v` with `v` the first interior vertex: the two parts of its term cancel.
-    have hvT : v ∈ T := huvT.resolve_left (by rintro huT; exact (hTa u huT).ne' hua)
     refine sum_eq_zero ?_
     rintro ⟨t, ht⟩ -
     dsimp only
     by_cases htv : t = v
     · subst htv
-      have hlt : {s ∈ T | s < t} = ∅ :=
-        filter_eq_empty_iff.2 fun s hs hst ↦ hcons s hs ⟨hua ▸ hTa s hs, hst⟩
-      have hgt : T.erase t = {s ∈ T | t < s} := by
-        ext s
-        simp only [mem_erase, mem_filter]
-        refine ⟨fun ⟨hst, hs⟩ ↦ ⟨hs, lt_of_le_of_ne ?_ (Ne.symm hst)⟩, fun ⟨hs, hts⟩ ↦
-          ⟨hts.ne', hs⟩⟩
-        exact not_lt.1 fun hst' ↦ hcons s hs ⟨hua ▸ hTa s hs, hst'⟩
       refine (congrArg _ ?_).trans (smul_zero _)
-      have hκ : (#{s ∈ T | s < t} * #{s ∈ T | t < s} : ℤ).negOnePow = 1 := by simp [hlt]
-      rw [x.dgComp_mapCoh_of_eq_left α (hua ▸ hα) hlt, hκ, one_smul, sub_eq_zero]
-      exact Coherences.congr _ hgt
+      exact x.mapCoh_erase_sub_dgComp_eq_zero α hab hT hd ht (Or.inl
+        ⟨filter_eq_empty_iff.2 fun s hs hst ↦ hcons s hs ⟨hua ▸ hTa s hs, hst⟩, hua ▸ hα⟩)
     · have htu : t ≠ u := by rintro rfl; exact (hTa t ht).ne' hua
       rw [hA t ht htu htv, hB t ht htu htv, smul_zero, sub_zero, smul_zero]
   rcases hv with hvb | hvT
@@ -465,17 +484,9 @@ private lemma boundary_mapCoh_eq_zero {a b : Fin (m + 1)} {T : Finset (Fin (m + 
     dsimp only
     by_cases htu : t = u
     · subst htu
-      have hgt : {s ∈ T | t < s} = ∅ :=
-        filter_eq_empty_iff.2 fun s hs hts ↦ hcons s hs ⟨hts, hvb ▸ hTb s hs⟩
-      have hlt : T.erase t = {s ∈ T | s < t} := by
-        ext s
-        simp only [mem_erase, mem_filter]
-        refine ⟨fun ⟨hst, hs⟩ ↦ ⟨hs, lt_of_le_of_ne ?_ hst⟩, fun ⟨hs, hst⟩ ↦ ⟨hst.ne, hs⟩⟩
-        exact not_lt.1 fun hts ↦ hcons s hs ⟨hts, hvb ▸ hTb s hs⟩
       refine (congrArg _ ?_).trans (smul_zero _)
-      have hκ : (#{s ∈ T | s < t} * #{s ∈ T | t < s} : ℤ).negOnePow = 1 := by simp [hgt]
-      rw [x.dgComp_mapCoh_of_eq_right α (hvb ▸ hα) hgt, hκ, one_smul, sub_eq_zero]
-      exact Coherences.congr _ hlt
+      exact x.mapCoh_erase_sub_dgComp_eq_zero α hab hT hd ht (Or.inr
+        ⟨filter_eq_empty_iff.2 fun s hs hts ↦ hcons s hs ⟨hts, hvb ▸ hTb s hs⟩, hvb ▸ hα⟩)
     · have htv : t ≠ v := by rintro rfl; exact (hTb t ht).ne hvb
       rw [hA t ht htu htv, hB t ht htu htv, smul_zero, sub_zero, smul_zero]
   · -- `u < v` are adjacent interior vertices: the terms for `u` and `v` cancel.
@@ -622,7 +633,8 @@ theorem dgDifferential_coh_two (x : Simplex R C 2) :
   have hκ : ((#{s ∈ ({1} : Finset (Fin 3)) | s < 1} : ℕ) *
       (#{s ∈ ({1} : Finset (Fin 3)) | 1 < s} : ℕ) : ℤ).negOnePow = 1 := by decide
   rw [hσ, hκ, one_smul, Units.neg_smul, one_smul, neg_sub]
-  congr 1
+  exact congrArg₂ (· - ·) (Coherences.dgComp_congr _ (by decide) (by decide) (by simp) (by simp))
+    (Coherences.congr _ (by decide))
 
 /-- The edge of the differential graded nerve given by a closed degree-zero morphism
 `f : X ⟶ Y`. -/
@@ -799,7 +811,10 @@ zero. -/
 theorem coh_σ_vertex (X : C) :
     ((dgNerve R C).σ 0 (Simplex.vertex X : Simplex R C 0)).coh 0 1 ∅ 0 (by decide)
       (empty_subset _) (by simp) = dgId R X := by
-  -- `σ 0` acts on the nerve through `dgNerve.map`, i.e. by `Simplex.map`.
+  -- `σ 0` acts on the nerve through `dgNerve.map`, i.e. by `Simplex.map`. Rewriting with
+  -- `SimplicialObject.σ_def` and `dgNerve_map_apply` fails (motive is not type correct): the
+  -- right-hand side `dgId R X` has type `DGHom R 0 X X`, whose objects agree with the endpoints of
+  -- the coherence only definitionally, so the simplex is replaced by `change` instead.
   change (Simplex.map (Simplex.vertex X) (SimplexCategory.σ 0).toOrderHom).coh 0 1 ∅ 0 _ _ _ = _
   rw [Simplex.map_coh, Simplex.mapCoh_eq_coh _ _ (by simp)]
   exact castDeg_self R rfl _
