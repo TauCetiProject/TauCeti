@@ -27,6 +27,7 @@ coefficients in degrees `2 ^ k`, with coefficient one in degree one.
 
 * `subst_add_eq_iff_choose_mul_coeff`: the coefficient criterion over an arbitrary ring.
 * `subst_add_eq_iff_coeff_eq_zero`: the prime-characteristic support criterion.
+* `eq_frobeniusSeries_of_subst_add`: the canonical Frobenius expansion of an additive series.
 * `subst_add_eq_iff_existsUnique_frobeniusSeries`: the unique Frobenius expansion.
 
 ## References
@@ -138,7 +139,7 @@ theorem coeff_frobeniusSeries (p : ℕ) (a : ℕ → R) (n : ℕ) :
 
 /-- The coefficient in degree `p ^ k` is the prescribed `k`th coefficient. -/
 @[simp]
-theorem coeff_pow_frobeniusSeries {p : ℕ} (hp : 1 < p) (a : ℕ → R) (k : ℕ) :
+theorem coeff_frobeniusSeries_pow {p : ℕ} (hp : 1 < p) (a : ℕ → R) (k : ℕ) :
     (frobeniusSeries p a).coeff (p ^ k) = a k := by
   simp [coeff_frobeniusSeries, Nat.log_pow hp]
 
@@ -165,7 +166,7 @@ theorem frobeniusSeries_injective {p : ℕ} (hp : 1 < p) :
     Function.Injective (frobeniusSeries (R := R) p) := by
   intro a b h
   funext k
-  simpa [coeff_pow_frobeniusSeries hp] using congrArg (PowerSeries.coeff (p ^ k)) h
+  simpa [coeff_frobeniusSeries_pow hp] using congrArg (PowerSeries.coeff (p ^ k)) h
 
 /-- Changing coefficients commutes with a Frobenius expansion. -/
 @[simp]
@@ -188,26 +189,33 @@ theorem subst_add_frobeniusSeries {p : ℕ} (hp : p.Prime) (hR : (p : R) = 0) (a
   exact (subst_add_eq_iff_coeff_eq_zero _ hp hR).mpr fun _ hn =>
     coeff_frobeniusSeries_eq_zero a hn
 
-/-- A series is additive if and only if it has a unique Frobenius expansion. -/
+/-- Over a commutative ring killed by a prime `p`, an additive series equals the
+Frobenius expansion of its coefficients in degrees `p ^ k`. -/
+theorem eq_frobeniusSeries_of_subst_add (f : PowerSeries R) {p : ℕ}
+    (hp : p.Prime) (hR : (p : R) = 0)
+    (h : f.subst (X₀ + X₁) = f.subst X₀ + f.subst X₁) :
+    f = frobeniusSeries p (fun k => f.coeff (p ^ k)) := by
+  have hcoeff := (subst_add_eq_iff_coeff_eq_zero f hp hR).mp h
+  ext n
+  rw [coeff_frobeniusSeries]
+  split_ifs with hn
+  · rw [← hn]
+  · exact hcoeff n (by rintro ⟨k, rfl⟩; exact hn (by rw [Nat.log_pow hp.one_lt]))
+
+/-- Over a commutative ring killed by a prime `p`, a series is additive if and only if
+it has a unique Frobenius expansion. -/
 theorem subst_add_eq_iff_existsUnique_frobeniusSeries (f : PowerSeries R) {p : ℕ}
     (hp : p.Prime) (hR : (p : R) = 0) :
     f.subst (X₀ + X₁) = f.subst X₀ + f.subst X₁ ↔
       ∃! a : ℕ → R, f = frobeniusSeries p a := by
-  rw [subst_add_eq_iff_coeff_eq_zero f hp hR]
   constructor
   · intro h
-    refine ⟨fun k => f.coeff (p ^ k), ?_, ?_⟩
-    · ext n
-      rw [coeff_frobeniusSeries]
-      split_ifs with hn
-      · rw [← hn]
-      · exact h n (by rintro ⟨k, rfl⟩; exact hn (by rw [Nat.log_pow hp.one_lt]))
-    · intro a ha
-      funext k
-      simpa [coeff_pow_frobeniusSeries hp.one_lt] using
-        congrArg (PowerSeries.coeff (p ^ k)) ha.symm
-  · rintro ⟨a, rfl, _⟩ n hn
-    exact coeff_frobeniusSeries_eq_zero a hn
+    have hf := eq_frobeniusSeries_of_subst_add f hp hR h
+    refine ⟨fun k => f.coeff (p ^ k), hf, ?_⟩
+    intro a ha
+    exact frobeniusSeries_injective hp.one_lt (ha.symm.trans hf)
+  · rintro ⟨a, rfl, _⟩
+    exact subst_add_frobeniusSeries hp hR a
 
 end CommRing
 
