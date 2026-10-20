@@ -49,6 +49,8 @@ the connections are compared directly on `M`.
   the tensor of a nowhere vanishing `C^(n + 1)` function is a `C^n` vector field.
 * `TauCeti.Manifold.conformalConnectionTensor_rpow`: the tensor of `u ^ p` is `p` times the
   tensor of `u`.
+* `TauCeti.Manifold.conformalConnectionTensor_exp_two_mul`: the tensor of `e^(2u)` is
+  `du(w) v + du(v) w - ⟪v, w⟫ grad u`.
 * `Bundle.ContMDiffRiemannianMetric.isLeviCivitaConnection_rescale_addOneForm`: adding the tensor
   of `f` to a Levi-Civita connection of `g` gives a Levi-Civita connection of `f g`.
 * `Bundle.ContMDiffRiemannianMetric.leviCivitaConnection_rescale_apply`: the Levi-Civita
@@ -149,6 +151,24 @@ theorem conformalConnectionTensor_rpow {u : M → ℝ} {x : M} (hu : MDiffAt u x
     rw [← inner_mgradient, hgrad, real_inner_smul_left, inner_mgradient]
   ext v w
   simp only [conformalConnectionTensor_apply, smul_apply, hd, hgrad, Real.rpow_sub_one hux.ne']
+  match_scalars <;> field_simp
+
+/-- The conformal connection tensor of `e^(2u)` is
+`A(v, w) = du(w) v + du(v) w - ⟪v, w⟫ grad u`, the classical form of the difference of the
+Levi-Civita connections of `g` and `e^(2u) g`. -/
+theorem conformalConnectionTensor_exp_two_mul {u : M → ℝ} {x : M} (hu : MDiffAt u x)
+    (v w : TangentSpace I x) :
+    conformalConnectionTensor I (fun y ↦ Real.exp (2 * u y)) x v w =
+      mvfderiv I u x w • v + mvfderiv I u x v • w - inner ℝ v w • mgradient I u x := by
+  have hd : HasDerivAt (fun t ↦ Real.exp (2 * t)) (Real.exp (2 * u x) * 2) (u x) :=
+    ((hasDerivAt_id (u x)).const_mul 2).exp.congr_deriv (by simp)
+  have hgrad : mgradient I (fun y ↦ Real.exp (2 * u y)) x =
+      (Real.exp (2 * u x) * 2) • mgradient I u x :=
+    mgradient_comp_hasDerivAt (f := u) hd hu
+  have hdf (v : TangentSpace I x) : mvfderiv I (fun y ↦ Real.exp (2 * u y)) x v =
+      Real.exp (2 * u x) * 2 * mvfderiv I u x v := by
+    rw [← inner_mgradient, hgrad, real_inner_smul_left, inner_mgradient]
+  simp only [conformalConnectionTensor_apply, hdf, hgrad]
   match_scalars <;> field_simp
 
 end TauCeti.Manifold
