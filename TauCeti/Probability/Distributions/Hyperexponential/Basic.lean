@@ -351,12 +351,23 @@ theorem hyperexponentialMeasure_congr {s : ι → ℝ}
   · rw [hyperexponentialMeasure_of_not_pos hr,
       hyperexponentialMeasure_of_not_pos (mt hvalid.mpr hr)]
 
-/-- Equal positive rates recover the exponential law, for arbitrary simplex weights. -/
+/-- Equal rates recover the exponential law, for arbitrary simplex weights, including the
+zero law at nonpositive rates. -/
 @[simp]
-theorem hyperexponentialMeasure_const (p : StdSimplex ℝ≥0 ι) {a : ℝ} (ha : 0 < a) :
+theorem hyperexponentialMeasure_const (p : StdSimplex ℝ≥0 ι) (a : ℝ) :
     hyperexponentialMeasure p (fun _ ↦ a) = expMeasure a := by
-  rw [hyperexponentialMeasure_of_pos (fun _ _ ↦ ha), ← Finset.sum_smul]
-  have hw : ∑ i, (p.weights i : ℝ≥0∞) = 1 := by exact_mod_cast p.total_of_fintype
-  rw [hw, one_smul]
+  by_cases ha : 0 < a
+  · rw [hyperexponentialMeasure_of_pos (fun _ _ ↦ ha), ← Finset.sum_smul]
+    have hw : ∑ i, (p.weights i : ℝ≥0∞) = 1 := by exact_mod_cast p.total_of_fintype
+    rw [hw, one_smul]
+  · have hpdf : exponentialPDF a = 0 := by
+      funext x
+      rw [exponentialPDF_eq, Pi.zero_apply, ENNReal.ofReal_eq_zero]
+      split_ifs
+      · exact mul_nonpos_of_nonpos_of_nonneg (le_of_not_gt ha) (exp_nonneg _)
+      · exact le_rfl
+    have hmeasure : expMeasure a = 0 := by
+      rw [expMeasure_eq_withDensity, hpdf, withDensity_zero]
+    simp [hyperexponentialMeasure, hmeasure]
 
 end TauCeti.Probability
