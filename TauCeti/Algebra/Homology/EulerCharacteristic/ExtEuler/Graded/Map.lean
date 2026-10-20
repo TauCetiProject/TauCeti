@@ -14,7 +14,7 @@ Let `C` and `D` be `k`-linear abelian categories with grading shifts `e` and `e'
 `F : C ⥤ D` be an exact `k`-linear functor together with an isomorphism
 `σ : e ⋙ F ≅ F ⋙ e'` commuting it with the shifts. Then `F` commutes with every internal shift,
 `F(Y{j}) ≅ (F Y){j}` (`CategoryTheory.Equivalence.powCommIso`), so it induces `k`-linear maps of
-bigraded `Ext` groups
+bigraded `Ext` groups (`CategoryTheory.Functor.mapGradedExtLinearMap`)
 
 ```text
 Ext^{n,j}(X, Y) = Extⁿ(X, Y{j}) ⟶ Extⁿ(F X, F(Y{j})) ≅ Extⁿ(F X, (F Y){j}) = Ext^{n,j}(F X, F Y).
@@ -46,6 +46,10 @@ objects it is Mathlib's `CategoryTheory.Functor.mapExt_bijective_of_preservesPro
 
 ## Main results
 
+* `CategoryTheory.Functor.mapGradedExtLinearMap`: the map `Ext^{n,j}(X, Y) → Ext^{n,j}(F X, F Y)`,
+  injective, respectively surjective, exactly when `F.mapExtAddHom` is
+  (`CategoryTheory.Functor.mapGradedExtLinearMap_injective_iff`,
+  `CategoryTheory.Functor.mapGradedExtLinearMap_surjective_iff`).
 * `TauCeti.IsGradedEulerAdmissible.map` and `TauCeti.IsGradedEulerAdmissible.of_map`: graded
   Euler-admissibility is carried along `F`, respectively reflected by it, under surjectivity,
   respectively injectivity, of the maps on `Ext`; `TauCeti.IsGradedEulerAdmissibleOn.of_map` is the
@@ -79,12 +83,23 @@ variable {C : Type u} [Category.{v} C] [Abelian C] {D : Type u'} [Category.{v'} 
   (F : C ⥤ D) [F.Additive] [F.Linear k] [PreservesFiniteLimits F] [PreservesFiniteColimits F]
   (σ : e.functor ⋙ F ≅ F ⋙ e'.functor) {X Y : C}
 
-/-- The `k`-linear map `Ext^{n,j}(X, Y) → Ext^{n,j}(F X, F Y)`: apply `F`, then identify
-`F(Y{j})` with `(F Y){j}` through the powers of `σ`. -/
-private noncomputable def gradedExtMap (X Y : C) (n : ℕ) (j : ℤ) :
+variable (k) in
+/-- **The map of bigraded `Ext` induced by a shift-compatible exact functor.** The `k`-linear map
+`Ext^{n,j}(X, Y) → Ext^{n,j}(F X, F Y)`: apply `F`, then identify `F(Y{j})` with `(F Y){j}`
+through the powers of `σ`. -/
+noncomputable def _root_.CategoryTheory.Functor.mapGradedExtLinearMap (X Y : C) (n : ℕ) (j : ℤ) :
     GradedExt.{w} e X Y n j →ₗ[k] GradedExt.{w'} e' (F.obj X) (F.obj Y) n j :=
   (extLinearEquivOfIso k (Iso.refl _) ((e.powCommIso σ j).app Y) n).toLinearMap ∘ₗ
     F.mapExtLinearMap k X ((e ^ j).functor.obj Y) n
+
+/-- `F.mapGradedExtLinearMap k σ` applies `F` to a class, then composes with the component at `Y`
+of the `j`-th power of `σ`. -/
+@[simp]
+theorem _root_.CategoryTheory.Functor.mapGradedExtLinearMap_apply (n : ℕ) (j : ℤ)
+    (α : GradedExt.{w} e X Y n j) :
+    F.mapGradedExtLinearMap k σ X Y n j α =
+      extAddEquivOfIso (Iso.refl _) ((e.powCommIso σ j).app Y) n (α.mapExactFunctor F) := by
+  simp [Functor.mapGradedExtLinearMap, extLinearEquivOfIso_apply, Functor.mapExtLinearMap_apply]
 
 /-- The additive identification `Extⁿ(F X, F(Y{j})) ≃ Ext^{n,j}(F X, F Y)` through the powers of
 `σ`. -/
@@ -93,25 +108,29 @@ private noncomputable def shiftCommExtEquiv (X Y : C) (n : ℕ) (j : ℤ) :
       GradedExt.{w'} e' (F.obj X) (F.obj Y) n j :=
   extAddEquivOfIso (Iso.refl _) ((e.powCommIso σ j).app Y) n
 
-/-- `gradedExtMap` is `F.mapExtAddHom` followed by the identification `shiftCommExtEquiv`. -/
-private theorem coe_gradedExtMap (n : ℕ) (j : ℤ) :
-    ⇑(gradedExtMap (k := k) F σ X Y n j) =
+/-- `F.mapGradedExtLinearMap k σ` is `F.mapExtAddHom` followed by the identification
+`shiftCommExtEquiv`. -/
+private theorem coe_mapGradedExtLinearMap (n : ℕ) (j : ℤ) :
+    ⇑(F.mapGradedExtLinearMap k σ X Y n j) =
       shiftCommExtEquiv F σ X Y n j ∘ F.mapExtAddHom.{w, w'} X ((e ^ j).functor.obj Y) n := by
   ext
-  simp [gradedExtMap, shiftCommExtEquiv, extLinearEquivOfIso_apply, extAddEquivOfIso_apply,
-    Functor.mapExtLinearMap_apply]
+  simp [shiftCommExtEquiv]
 
-private theorem gradedExtMap_injective {n : ℕ} {j : ℤ}
-    (hF : Function.Injective (F.mapExtAddHom.{w, w'} X ((e ^ j).functor.obj Y) n)) :
-    Function.Injective (gradedExtMap (k := k) F σ X Y n j) := by
-  rw [coe_gradedExtMap]
-  exact (EquivLike.comp_injective _ _).2 hF
+/-- The map of bigraded `Ext` induced by `F` is injective exactly when `F` is injective on the
+underlying `Ext` group. -/
+theorem _root_.CategoryTheory.Functor.mapGradedExtLinearMap_injective_iff {n : ℕ} {j : ℤ} :
+    Function.Injective (F.mapGradedExtLinearMap k σ X Y n j) ↔
+      Function.Injective (F.mapExtAddHom.{w, w'} X ((e ^ j).functor.obj Y) n) := by
+  rw [coe_mapGradedExtLinearMap]
+  exact EquivLike.comp_injective _ _
 
-private theorem gradedExtMap_surjective {n : ℕ} {j : ℤ}
-    (hF : Function.Surjective (F.mapExtAddHom.{w, w'} X ((e ^ j).functor.obj Y) n)) :
-    Function.Surjective (gradedExtMap (k := k) F σ X Y n j) := by
-  rw [coe_gradedExtMap]
-  exact (EquivLike.comp_surjective _ _).2 hF
+/-- The map of bigraded `Ext` induced by `F` is surjective exactly when `F` is surjective on the
+underlying `Ext` group. -/
+theorem _root_.CategoryTheory.Functor.mapGradedExtLinearMap_surjective_iff {n : ℕ} {j : ℤ} :
+    Function.Surjective (F.mapGradedExtLinearMap k σ X Y n j) ↔
+      Function.Surjective (F.mapExtAddHom.{w, w'} X ((e ^ j).functor.obj Y) n) := by
+  rw [coe_mapGradedExtLinearMap]
+  exact EquivLike.comp_surjective _ _
 
 /-! ### Transporting the finiteness conditions -/
 
@@ -126,8 +145,8 @@ theorem IsGradedExtInternallyFinite.of_map
     (hF : ∀ n (j : ℤ),
       Function.Injective (F.mapExtAddHom.{w, w'} X ((e ^ j).functor.obj Y) n)) :
     IsGradedExtInternallyFinite.{w} k e X Y :=
-  ⟨fun n ↦ (h.finiteLaurentSupport n).of_injective (gradedExtMap F σ X Y n)
-    fun j ↦ gradedExtMap_injective F σ (hF n j)⟩
+  ⟨fun n ↦ (h.finiteLaurentSupport n).of_injective (F.mapGradedExtLinearMap k σ X Y n)
+    fun j ↦ (F.mapGradedExtLinearMap_injective_iff σ).2 (hF n j)⟩
 
 /-- Finite internal support of bigraded `Ext` is carried along a shift-compatible exact functor
 which is surjective on `Ext`. -/
@@ -135,8 +154,8 @@ theorem IsGradedExtInternallyFinite.map (h : IsGradedExtInternallyFinite.{w} k e
     (hF : ∀ n (j : ℤ),
       Function.Surjective (F.mapExtAddHom.{w, w'} X ((e ^ j).functor.obj Y) n)) :
     IsGradedExtInternallyFinite.{w'} k e' (F.obj X) (F.obj Y) :=
-  ⟨fun n ↦ (h.finiteLaurentSupport n).of_surjective (gradedExtMap F σ X Y n)
-    fun j ↦ gradedExtMap_surjective F σ (hF n j)⟩
+  ⟨fun n ↦ (h.finiteLaurentSupport n).of_surjective (F.mapGradedExtLinearMap k σ X Y n)
+    fun j ↦ (F.mapGradedExtLinearMap_surjective_iff σ).2 (hF n j)⟩
 
 /-- A cohomological vanishing bound for bigraded `Ext` is reflected by a shift-compatible exact
 functor which is injective on `Ext` from that degree on. -/
@@ -220,8 +239,9 @@ theorem gradedExtEuler_map
       Function.Bijective (F.mapExtAddHom.{w, w'} X ((e ^ j).functor.obj Y) n))
     (h : IsGradedEulerAdmissible.{w} k e X Y) :
     gradedExtEuler k e' (h.map F σ fun n j ↦ (hF n j).2) = gradedExtEuler k e h :=
-  gradedExtEuler_congr k (fun n j ↦ LinearEquiv.ofBijective (gradedExtMap F σ X Y n j)
-    ⟨gradedExtMap_injective F σ (hF n j).1, gradedExtMap_surjective F σ (hF n j).2⟩) h
+  gradedExtEuler_congr k (fun n j ↦ LinearEquiv.ofBijective (F.mapGradedExtLinearMap k σ X Y n j)
+    ⟨(F.mapGradedExtLinearMap_injective_iff σ).2 (hF n j).1,
+      (F.mapGradedExtLinearMap_surjective_iff σ).2 (hF n j).2⟩) h
 
 omit [F.Additive] [F.Linear k] [PreservesFiniteLimits F] [PreservesFiniteColimits F] in
 /-- **Invariance of the q-Euler characteristic under graded equivalences**: a `k`-linear
