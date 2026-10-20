@@ -361,10 +361,9 @@ theorem natCard_tateCubicRoots_eq [IsLocalRing R] (hϖ : maximalIdeal R = Ideal.
       t ^ 3 + residue R b₂ * t ^ 2 + residue R b₄ * t + residue R b₆ = 0} := by
   refine Nat.card_congr ((Ideal.quotEquivOfEq hϖ.symm).toEquiv.subtypeEquiv fun t ↦ ?_)
   obtain ⟨t, rfl⟩ := Ideal.Quotient.mk_surjective t
-  -- the equivalence `R ⧸ (ϖ) ≃ R ⧸ 𝔪` sends the class of `t` to its residue
-  change _ ↔ residue R t ^ 3 + residue R b₂ * residue R t ^ 2 + residue R b₄ * residue R t +
-    residue R b₆ = 0
-  rw [mk_mem_tateCubicRoots_iff hϖ0 h₂ h₄ h₆, ← Ideal.mem_span_singleton, ← hϖ,
+  -- the equivalence `R ⧸ (ϖ) ≃ R ⧸ 𝔪` sends the class of `t` to its residue (`residue_def`)
+  rw [RingEquiv.toEquiv_eq_coe, EquivLike.coe_coe, Ideal.quotEquivOfEq_mk, ← residue_def,
+    mk_mem_tateCubicRoots_iff hϖ0 h₂ h₄ h₆, Set.mem_ofPred_eq, ← Ideal.mem_span_singleton, ← hϖ,
     ← residue_eq_zero_iff]
   simp
 
