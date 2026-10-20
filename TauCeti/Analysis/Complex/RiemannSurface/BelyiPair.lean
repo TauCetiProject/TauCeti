@@ -7,8 +7,8 @@ module
 
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.MonodromyTriple
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.TopBranchedCover
+public import TauCeti.Analysis.Complex.RiemannSurface.ChebyshevMap
 public import TauCeti.Analysis.Complex.RiemannSurface.LocalNormalForm
-public import TauCeti.Analysis.Complex.RiemannSurface.Polynomial
 public import TauCeti.Analysis.Complex.RiemannSurface.PowerMap
 public import TauCeti.Combinatorics.PermutationTriple.IsoClass
 
@@ -114,7 +114,7 @@ are `[1, 1]`, `[2]` and `[2]` (`TauCeti.AnalyticBelyiPair.chebyshev`).
   (`TauCeti.AnalyticBelyiPair.degree_β_chebyshev`), with branch values `1` and `∞`
   (`TauCeti.AnalyticBelyiPair.branchValues_β_chebyshev`); its fibres and local multiplicities
   over `0`, `1` and `∞` are `TauCeti.RiemannSurface.preimage_onePointMap_four_mul_mul_one_sub_zero`
-  and its companions in `TauCeti.Analysis.Complex.RiemannSurface.Polynomial`.
+  and its companions in `TauCeti.Analysis.Complex.RiemannSurface.ChebyshevMap`.
 
 ## References
 
