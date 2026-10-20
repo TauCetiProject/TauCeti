@@ -21,7 +21,7 @@ The law and its densities are zero if an active rate is nonpositive.
 
 This file provides the construction, normalization, density and Radon--Nikodym interfaces,
 parameter measurability, cdf, and exact topological support. The mixture is almost surely
-positive, while zero belongs to its topological support.
+positive, while zero belongs to its topological support when every active rate is positive.
 
 ## References
 
