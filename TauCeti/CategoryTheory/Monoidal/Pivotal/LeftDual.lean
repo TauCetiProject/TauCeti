@@ -217,6 +217,10 @@ theorem leftDualIsoRightDual_pivotalCategoryOfRightRigid (φ : 𝟭 C ≅ double
     [NatTrans.IsMonoidal φ.hom] (X : C) :
     @leftDualIsoRightDual C _ _ (rigidCategoryOfIsoDoubleRightDual φ.app)
       (pivotalCategoryOfRightRigid φ) X = Iso.refl _ := by
+  let := rigidCategoryOfIsoDoubleRightDual φ.app
+  let := pivotalCategoryOfRightRigid φ
+  rw [leftDualIsoRightDual, pivotalExactPairing_def,
+    pivotalIsoApp_pivotalCategoryOfRightRigid]
   exact leftDualIso_id (C := C) _
 
 end RightRigid

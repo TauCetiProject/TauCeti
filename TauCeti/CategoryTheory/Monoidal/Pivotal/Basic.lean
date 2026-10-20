@@ -186,6 +186,12 @@ theorem pivotalIsoApp_rightDual_inv (X : C) :
 noncomputable def pivotalExactPairing (X : C) : ExactPairing Xᘁ X :=
   exactPairingCongrRight (pivotalIsoApp X)
 
+/-- The pivotal pairing is the right transport of the chosen pairing along the pivotal
+isomorphism. -/
+theorem pivotalExactPairing_def (X : C) :
+    pivotalExactPairing X = exactPairingCongrRight (pivotalIsoApp X) :=
+  (rfl)
+
 /-- The evaluation `X ⊗ Xᘁ ⟶ 𝟙_ C` of `pivotalExactPairing X`. -/
 theorem pivotalExactPairing_evaluation (X : C) :
     @ExactPairing.evaluation C _ _ Xᘁ X (pivotalExactPairing X) =
