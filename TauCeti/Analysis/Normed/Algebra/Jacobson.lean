@@ -10,13 +10,12 @@ public import TauCeti.Analysis.Normed.Ring.Units
 public import TauCeti.RingTheory.Jacobson.NonUnital
 
 /-!
-# Closedness of Jacobson radicals
+# Closedness of nonunital Jacobson radicals
 
-The Jacobson radical of a Banach algebra is closed, including for nonunital algebras.
-In the unital case it is an intersection of closed maximal left ideals. In the nonunital
-case we use the external unitization with its ℓ¹ norm, not the regular-representation
-norm, which need not be available. The underlying scalar submodule is consequently
-complete when the original algebra is complete.
+We compare membership in the nonunital Jacobson radical with membership in the
+Jacobson radical of the external unitization with its ℓ¹ norm. Pulling back
+`TauCeti.Ring.isClosed_jacobson` from `TauCeti.Analysis.Normed.Ring.Units` then proves
+closedness of the nonunital radical and its underlying scalar submodule.
 
 The statements use summability of geometric series instead of completeness wherever
 possible. No normalization of the norm of the identity is assumed.
@@ -24,7 +23,7 @@ possible. No normalization of the norm of the identity is assumed.
 ## References
 
 * Dales, *Banach Algebras and Automatic Continuity*, §§1.3–1.5.
-* We use Mathlib's `Ideal.IsMaximal.isClosed`, `WithLp.unitizationAlgEquiv`, and
+* We use Mathlib's `WithLp.unitizationAlgEquiv` and
   `Module.comap_jacobson_of_bijective`.
 -/
 
@@ -37,7 +36,7 @@ variable (𝕜 A : Type*) [NormedField 𝕜] [NonUnitalNormedRing A] [NormedSpac
 
 /-- The radical defined with the algebraic unitization can equally be tested in its
 ℓ¹-normed version. -/
-theorem mem_nonUnitalJacobson_iff_mem_unitizationL1 {a : A} :
+theorem mem_nonUnitalJacobson_iff_toLp_mem_jacobson {a : A} :
     a ∈ nonUnitalJacobson 𝕜 A ↔
       WithLp.toLp 1 (a : Unitization 𝕜 A) ∈
         Ring.jacobson (WithLp 1 (Unitization 𝕜 A)) := by
@@ -57,7 +56,7 @@ theorem isClosed_nonUnitalJacobson : IsClosed (nonUnitalJacobson 𝕜 A : Set A)
       (fun a : A => WithLp.toLp 1 (a : Unitization 𝕜 A)) ⁻¹'
         (Ring.jacobson (WithLp 1 (Unitization 𝕜 A)) : Set _) := by
     ext a
-    exact mem_nonUnitalJacobson_iff_mem_unitizationL1 𝕜 A
+    exact mem_nonUnitalJacobson_iff_toLp_mem_jacobson 𝕜 A
   rw [hset]
   exact (Ring.isClosed_jacobson _).preimage WithLp.unitization_isometry_inr.continuous
 
