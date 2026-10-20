@@ -25,11 +25,12 @@ combinatorial shadow on the dual graph:
 
 This file constructs both graph operations, `TauCeti.DualGraph.contractTail` and
 `TauCeti.DualGraph.contractBridge`, and computes how they change the numerical invariants. They
-preserve the arithmetic genus and the markings and remove one vertex. Contracting a bridge
-changes no log-canonical degree. Contracting a tail changes only the log-canonical degree of the
-neighbouring component, which drops by one when the tail is unmarked. So a component of positive
-log-canonical degree can become unstable once its tails are removed, and stabilization has to be
-iterated, recomputing degrees after each step.
+keep the markings and remove one vertex. They lower the arithmetic genus by the genus of the
+contracted vertex, so they preserve it when that vertex is rational, as in a stabilization step.
+Contracting a bridge changes no log-canonical degree. Contracting a tail changes only the
+log-canonical degree of the neighbouring component, which drops by one when the tail is unmarked.
+So a component of positive log-canonical degree can become unstable once its tails are removed,
+and stabilization has to be iterated, recomputing degrees after each step.
 
 `TauCeti.DualGraph.StabilizationStep G H` says that `H` arises from `G` by one such contraction.
 In the stable range `2g - 2 + n > 0`, a graph admits a stabilization step exactly when it is not
@@ -278,6 +279,7 @@ lemma genus_contractTail (w : (G.contractTail hv).Vertex) :
   rfl
 
 /-- The markings on the tail move to its attachment; the other markings stay in place. -/
+@[simp]
 lemma marking_contractTail (i : ι) :
     (G.contractTail hv).marking i = if h : G.marking i = v then
       ⟨G.attachment hv, attachment_ne hv⟩ else ⟨G.marking i, h⟩ :=
@@ -335,6 +337,7 @@ section Markings
 variable [Fintype ι]
 
 /-- Contracting a tail moves its markings to its attachment. -/
+@[simp]
 theorem numMarkings_contractTail (u : G.Vertex) (hu : u ≠ v) :
     (G.contractTail hv).numMarkings ⟨u, hu⟩ =
       G.numMarkings u + if G.attachment hv = u then G.numMarkings v else 0 := by
@@ -355,6 +358,7 @@ theorem numMarkings_contractTail (u : G.Vertex) (hu : u ≠ v) :
 
 /-- Contracting a tail changes only the log-canonical degree of its attachment, which changes by
 the number of markings on the tail minus one. -/
+@[simp]
 theorem logCanonicalDegree_contractTail (u : G.Vertex) (hu : u ≠ v) :
     (G.contractTail hv).logCanonicalDegree ⟨u, hu⟩ =
       G.logCanonicalDegree u + if G.attachment hv = u then (G.numMarkings v : ℤ) - 1 else 0 := by
