@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Fourier.FiniteAbelian.PontryaginDuality
-public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 public import Mathlib.NumberTheory.DirichletCharacter.Orthogonality
+public import TauCeti.Analysis.Fourier.FiniteAbelian.PontryaginDuality
 public import TauCeti.Data.ZMod.Divisibility
 import TauCeti.Data.ZMod.OrderOf
 import TauCeti.RingTheory.ZMod.UnitsTwoPow
@@ -64,6 +63,8 @@ a character `χ` is `(conreyCharacter N).symm χ`.
 public section
 
 open Multiplicative Complex
+
+open AddChar (zmodPairing zmodPairing_apply zmodPairing_comm zmodPairing_eq_one_iff)
 
 open scoped Real
 
@@ -125,25 +126,6 @@ private theorem coprime_conreyGenerator {p : ℕ} (hp : p.Prime) (hp2 : p ≠ 2)
     (ZMod.isUnit_of_orderOf_eq_totient (orderOf_conreyGenerator hp hp2 e))
 
 /-! ### The prime-power pairings -/
-
-/-- Mathlib's pairing `AddChar.zmod n`, `(a, b) ↦ e(a b / n)` on `ℤ/n`, written
-multiplicatively. -/
-private noncomputable def zmodPairing (n : ℕ) [NeZero n] :
-    Multiplicative (ZMod n) →* Multiplicative (ZMod n) →* Circle :=
-  AddChar.toMonoidHomMulEquiv.toMonoidHom.comp (AddChar.zmodHom (n := n)).toMonoidHom
-
--- `AddChar.zmod n a` is defined as `b ↦ ZMod.toCircle (a * b)`.
-private theorem zmodPairing_apply (n : ℕ) [NeZero n] (a b : Multiplicative (ZMod n)) :
-    zmodPairing n a b = ZMod.toCircle (a.toAdd * b.toAdd) := rfl
-
-private theorem zmodPairing_eq_one_iff (n : ℕ) [NeZero n] (a : Multiplicative (ZMod n)) :
-    zmodPairing n a (ofAdd 1) = 1 ↔ a = 1 := by
-  rw [zmodPairing_apply, toAdd_ofAdd, mul_one, ← AddChar.map_zero_eq_one (ZMod.toCircle (N := n)),
-    (ZMod.injective_toCircle (N := n)).eq_iff, toAdd_eq_zero]
-
-private theorem zmodPairing_comm (n : ℕ) [NeZero n] (a b : Multiplicative (ZMod n)) :
-    zmodPairing n a b = zmodPairing n b a := by
-  rw [zmodPairing_apply, zmodPairing_apply, mul_comm]
 
 /-- The pairing `(m, n) ↦ p(L m, L n)` transported along `L`. -/
 private noncomputable abbrev transportPairing {G H : Type*} [Group G] [CommGroup H]
