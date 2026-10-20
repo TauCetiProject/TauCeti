@@ -35,6 +35,8 @@ morphism of value algebras; the two are compatible in
 ## Main declarations
 
 * `TauCeti.rTensor_algHom_smul`: the comparison map is semilinear over `f`.
+* `TauCeti.rTensor_lcoeff_one_X_smul`: extracting the coefficient of `X` inverts multiplying
+  the comparison map `A ⊗[R] M → A[X] ⊗[R] M` by `X`.
 * `Module.End.mapValue`: the transported endomorphism.
 * `Module.End.mapValue_comp_rTensor`: the defining transport square.
 * `Module.End.eq_mapValue`: the transport square characterizes the transport.
@@ -72,6 +74,15 @@ theorem rTensor_algHom_smul (f : A →ₐ[R] B) (a : A) (z : A ⊗[R] M) :
 end Semiring
 
 variable [CommSemiring A] [Algebra R A] [CommSemiring B] [Algebra R B]
+
+open Polynomial in
+/-- The coefficient of `X` in `X • t`, for `t` in `A ⊗[R] M` viewed in `A[X] ⊗[R] M`, is `t`. -/
+theorem rTensor_lcoeff_one_X_smul (t : A ⊗[R] M) :
+    ((lcoeff A 1).restrictScalars R).rTensor M
+      ((X : A[X]) • (IsScalarTower.toAlgHom R A A[X]).toLinearMap.rTensor M t) = t := by
+  induction t using TensorProduct.inductionOn with
+  | tmul a m => simp [TensorProduct.smul_tmul']
+  | add x y hx hy => simp_all [smul_add]
 
 /-- On pure tensors, the comparison maps of scalar extensions intertwine the tensor comparisons
 `(A ⊗ M) ⊗[A] (A ⊗ N) ≃ A ⊗ (M ⊗ N)` for the two value algebras. -/

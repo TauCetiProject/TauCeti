@@ -24,6 +24,7 @@ of degree one (see `TauCeti.RingTheory.PolynomialLaw.Homogeneous`).
   `u.toPolynomialLaw` is `u`, so a linear map is determined by its polynomial law.
 * `LinearMap.toPolynomialLaw_id`, `LinearMap.toPolynomialLaw_comp`: compatibility with identities
   and composition.
+* `LinearMap.toPolynomialLawₗ`: `LinearMap.toPolynomialLaw` as an `R`-linear map.
 
 ## References
 
@@ -94,6 +95,7 @@ theorem toPolynomialLaw_id : (LinearMap.id : M →ₗ[R] M).toPolynomialLaw = Po
     id_eq]
 
 /-- The polynomial law of `v ∘ₗ u` is the composite of the polynomial laws of `v` and `u`. -/
+@[simp]
 theorem toPolynomialLaw_comp (v : N →ₗ[R] P) (u : M →ₗ[R] N) :
     (v ∘ₗ u).toPolynomialLaw = v.toPolynomialLaw.comp u.toPolynomialLaw := by
   ext S _ _ x
@@ -116,5 +118,16 @@ theorem toPolynomialLaw_smul (r : R) (u : M →ₗ[R] N) :
     (r • u).toPolynomialLaw = r • u.toPolynomialLaw := by
   ext S _ _ x
   simp [baseChange_smul]
+
+variable (R M N) in
+/-- `LinearMap.toPolynomialLaw`, bundled as an `R`-linear map. -/
+def toPolynomialLawₗ : (M →ₗ[R] N) →ₗ[R] M →ₚₗ[R] N where
+  toFun := toPolynomialLaw
+  map_add' := toPolynomialLaw_add
+  map_smul' := toPolynomialLaw_smul
+
+@[simp]
+theorem toPolynomialLawₗ_apply (u : M →ₗ[R] N) : toPolynomialLawₗ R M N u = u.toPolynomialLaw :=
+  (rfl)
 
 end LinearMap
