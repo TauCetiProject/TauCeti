@@ -60,7 +60,7 @@ public section
 
 noncomputable section
 
-open Complex MeasureTheory Filter Topology Real TauCeti.Real
+open Complex MeasureTheory Filter Topology Real
 
 namespace TauCeti.CStarAction
 

@@ -23,18 +23,18 @@ uniform for `z` in a ball, and the complex derivative in `z`.
 
 ## Main definitions
 
-* `TauCeti.Real.gaussianDensity`: the function `t ↦ c exp (-(c t)²) / √π`.
+* `Real.gaussianDensity`: the function `t ↦ c exp (-(c t)²) / √π`.
 
 ## Main statements
 
-* `TauCeti.Real.gaussianDensity_eq_gaussianPDFReal`: for `c > 0` it is Mathlib's Gaussian
+* `Real.gaussianDensity_eq_gaussianPDFReal`: for `c > 0` it is Mathlib's Gaussian
   density `ProbabilityTheory.gaussianPDFReal` with mean `0` and variance `(2 c²)⁻¹`.
-* `TauCeti.Real.integral_gaussianDensity`: for `c > 0` it has total mass one.
-* `TauCeti.Real.tendsto_integral_gaussianDensity_smul`: the densities concentrate at `0` as
+* `Real.integral_gaussianDensity`: for `c > 0` it has total mass one.
+* `Real.tendsto_integral_gaussianDensity_smul`: the densities concentrate at `0` as
   `c → ∞`.
-* `TauCeti.Complex.norm_cexp_neg_mul_sub_sq_le`: the Gaussian bound
+* `Complex.norm_cexp_neg_mul_sub_sq_le`: the Gaussian bound
   `‖exp (-(c (t - z))²)‖ ≤ exp (c² D²) exp (-(c² / 2) t²)` for `‖z‖ ≤ D`.
-* `TauCeti.Complex.hasDerivAt_cexp_neg_mul_sub_sq`: the complex derivative of
+* `Complex.hasDerivAt_cexp_neg_mul_sub_sq`: the complex derivative of
   `z ↦ exp (-(c (t - z))²)`.
 -/
 
@@ -43,8 +43,6 @@ public section
 noncomputable section
 
 open Complex MeasureTheory Filter Topology Real
-
-namespace TauCeti
 
 namespace Real
 
@@ -116,5 +114,3 @@ theorem hasDerivAt_cexp_neg_mul_sub_sq (c t : ℝ) (z : ℂ) :
   ring
 
 end Complex
-
-end TauCeti
