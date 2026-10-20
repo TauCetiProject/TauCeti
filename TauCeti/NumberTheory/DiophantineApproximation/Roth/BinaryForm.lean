@@ -230,8 +230,7 @@ theorem _root_.MvPolynomial.IsHomogeneous.exists_pos_mul_max_abs_rpow_le_abs_eva
 /-- **Thue's theorem for square-free binary forms** (Evertse, Corollary 6.4, square-free case).
 Let `F ∈ ℤ[X₀, X₁]` be a binary form of degree `d ≥ 3` with no squared linear factor over `ℂ`,
 and let `m ≠ 0`. Then the Thue equation `F(x, y) = m` has only finitely many integer solutions.
-The Thue–Roth inequality with `κ = 5/2 < d` bounds `max(|x|, |y|)` on the solutions. Like
-Roth's theorem, the proof is ineffective. -/
+Like Roth's theorem, the proof is ineffective. -/
 theorem _root_.MvPolynomial.IsHomogeneous.finite_setOf_eval_eq
     {F : MvPolynomial (Fin 2) ℤ} {d : ℕ} (hF : F.IsHomogeneous d)
     (hsq : ∀ a b : ℂ, (a, b) ≠ (0, 0) →
@@ -239,6 +238,7 @@ theorem _root_.MvPolynomial.IsHomogeneous.finite_setOf_eval_eq
         F.map (Int.castRingHom ℂ))
     (hd : 3 ≤ d) {m : ℤ} (hm : m ≠ 0) :
     {p : ℤ × ℤ | MvPolynomial.eval ![p.1, p.2] F = m}.Finite := by
+  -- The Thue–Roth inequality with `κ = 5/2 < d` bounds `max (|x|, |y|)` on the solutions.
   obtain ⟨c, hc, h⟩ := hF.exists_pos_mul_max_abs_rpow_le_abs_eval hsq (κ := 5 / 2) (by norm_num)
   have he : 0 < (d : ℝ) - 5 / 2 := by
     have : (3 : ℝ) ≤ d := by exact_mod_cast hd
