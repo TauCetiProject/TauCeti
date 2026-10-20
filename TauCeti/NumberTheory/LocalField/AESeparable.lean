@@ -9,6 +9,7 @@ public import Mathlib.FieldTheory.Separable
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.MeasureTheory.Group.Defs
 public import Mathlib.NumberTheory.LocalField.Basic
+public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import TauCeti.Analysis.Polynomial.GCD
@@ -43,6 +44,10 @@ inseparable `f + C t` shares a root `β` with `f'` in an algebraic closure, whic
 
 * `MeasureTheory.Measure.ae_separable_monicOfCoeff`: almost every monic polynomial over `K` is
   separable.
+* `TauCeti.Polynomial.continuous_resultant_derivative_monicOfCoeff` and
+  `TauCeti.Polynomial.resultant_derivative_monicOfCoeff_eq_zero_iff`: the resultant of
+  `monicOfCoeff a` and its derivative is continuous in `a` and vanishes exactly on the inseparable
+  locus.
 
 ## References
 
@@ -55,6 +60,36 @@ public section
 open Polynomial MeasureTheory Set
 open TauCeti.Polynomial (monicOfCoeff monic_monicOfCoeff natDegree_monicOfCoeff
   coeff_monicOfCoeff monicOfCoeff_add_single_zero continuous_coeff_monicOfCoeff)
+
+namespace TauCeti.Polynomial
+
+/-- The resultant of `monicOfCoeff a` and its derivative, taken with the formal degrees `n` and
+`n - 1`, is a continuous function of the coefficient tuple `a`. It is the subresultant coefficient
+of index `0 0`, a determinant of the Sylvester matrix. -/
+theorem continuous_resultant_derivative_monicOfCoeff {R : Type*} [CommRing R]
+    [TopologicalSpace R] [IsTopologicalRing R] {n : ℕ} :
+    Continuous fun a : Fin n → R ↦
+      resultant (monicOfCoeff a) (derivative (monicOfCoeff a)) n (n - 1) :=
+  continuous_iff_continuousAt.2 fun a ↦ by
+    simpa only [subresultantCoeff_self, psc_zero] using TauCeti.continuousAt_subresultantCoeff
+      (fun i _ ↦ (continuous_coeff_monicOfCoeff i).continuousAt)
+      (fun i _ ↦ by
+        simp only [coeff_derivative]
+        exact ((continuous_coeff_monicOfCoeff (i + 1)).mul continuous_const).continuousAt)
+      (x₀ := a) (m := n) (n := n - 1) 0 0
+
+/-- Over a field, the resultant of `monicOfCoeff a` and its derivative, taken with the formal
+degrees `n` and `n - 1`, vanishes exactly when `monicOfCoeff a` is not separable. -/
+theorem resultant_derivative_monicOfCoeff_eq_zero_iff {K : Type*} [Field K] {n : ℕ}
+    (a : Fin n → K) :
+    resultant (monicOfCoeff a) (derivative (monicOfCoeff a)) n (n - 1) = 0 ↔
+      ¬ (monicOfCoeff a).Separable := by
+  have h := (monic_monicOfCoeff a).resultant_deriv
+  rw [natDegree_monicOfCoeff] at h
+  rw [← (monic_monicOfCoeff a).discr_ne_zero_iff, not_not, h]
+  simp
+
+end TauCeti.Polynomial
 
 namespace TauCeti
 
@@ -99,6 +134,9 @@ end Field
 
 end TauCeti
 
+open TauCeti.Polynomial (continuous_resultant_derivative_monicOfCoeff
+  resultant_derivative_monicOfCoeff_eq_zero_iff)
+
 namespace MeasureTheory.Measure
 
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
@@ -124,19 +162,9 @@ theorem ae_separable_monicOfCoeff (μ : Measure (Fin n → K)) [μ.IsAddLeftInva
   -- line in a fixed direction in boundedly many points.
   let r (a : Fin (m + 2) → K) : K :=
     resultant (monicOfCoeff a) (derivative (monicOfCoeff a)) (m + 2) (m + 2 - 1)
-  have hr : Continuous r := continuous_iff_continuousAt.2 fun a ↦ by
-    simpa [r] using TauCeti.continuousAt_subresultantCoeff
-      (fun i _ ↦ (continuous_coeff_monicOfCoeff i).continuousAt)
-      (fun i _ ↦ by
-        simp only [coeff_derivative]
-        exact ((continuous_coeff_monicOfCoeff (i + 1)).mul continuous_const).continuousAt)
-      (x₀ := a) (m := m + 2) (n := m + 2 - 1) 0 0
-  have hr0 (a : Fin (m + 2) → K) : r a = 0 ↔ ¬ (monicOfCoeff a).Separable := by
-    have h := (monic_monicOfCoeff a).resultant_deriv
-    rw [natDegree_monicOfCoeff] at h
-    rw [← (monic_monicOfCoeff a).discr_ne_zero_iff, not_not]
-    simp only [r, h]
-    simp
+  have hr : Continuous r := continuous_resultant_derivative_monicOfCoeff
+  have hr0 (a : Fin (m + 2) → K) : r a = 0 ↔ ¬ (monicOfCoeff a).Separable :=
+    resultant_derivative_monicOfCoeff_eq_zero_iff a
   have h₁ : μ {a | a 1 = 0} = 0 := by
     refine μ.measure_eq_zero_of_encard_setOf_add_smul_mem_le
       (isClosed_eq (continuous_apply 1) continuous_const).measurableSet (Pi.single 1 1) (D := 1)
