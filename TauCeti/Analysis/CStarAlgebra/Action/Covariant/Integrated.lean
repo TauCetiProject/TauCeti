@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.CStarAlgebra.Action.Convolution
 public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Basic
 public import TauCeti.RepresentationTheory.Continuous.Integrated.Basic
 public import Mathlib.MeasureTheory.Integral.CompactlySupported
@@ -23,8 +24,10 @@ the action twist. For scalar multiples of a fixed coefficient, the construction 
 `ContRepresentation.integratedOperatorL1`, after pulling the group representation back along
 `MulEquiv.multiplicativeAdditive`.
 
-This is the compact-support integrated form; extension to coefficient-valued L¹ and the
-convolution and involution identities require additional arguments.
+For a left-invariant measure the integrated form is multiplicative for twisted convolution,
+`(π ⋊ U) (f ⋆ g) = (π ⋊ U) f * (π ⋊ U) g`. The order of integration is exchanged by Fubini's
+theorem for compactly supported continuous functions, so σ-finiteness is still not needed.
+Extension to coefficient-valued L¹ and the involution identity require additional arguments.
 
 The conventions follow Dana Williams, *Crossed Products of C*-Algebras*, Chapter 2.
 -/
@@ -123,6 +126,52 @@ theorem integratedOperator_coefficient_apply (f : C_c(G, A)) (a : A) (v : H) :
       ∫ g, P.coefficient (f g * α g a) (P.group g v) ∂μ := by
   rw [integratedOperator_apply]
   simp_rw [P.covariance, map_mul, mul_apply_eq_comp]
+
+section Convolution
+
+variable [IsTopologicalGroup G] [MeasurableMul G] [μ.IsMulLeftInvariant]
+
+/-- The integrated form of a covariant pair is multiplicative for twisted convolution with respect
+to a left-invariant measure: `(π ⋊ U) (f ⋆ g) = (π ⋊ U) f * (π ⋊ U) g`. -/
+@[simp]
+theorem integratedOperator_convolution (f g : C_c(G, A)) :
+    P.integratedOperator μ (α.convolution μ f g) =
+      P.integratedOperator μ f * P.integratedOperator μ g := by
+  ext v
+  -- The integrand on `G × G` obtained by expanding the twisted convolution.
+  set Ψ : G → G → H := fun s r => P.coefficient (f r * α r (g (r⁻¹ * s))) (P.group s v)
+  have hcont : Continuous (Function.uncurry Ψ) := by
+    rw [Function.uncurry_def]
+    exact ((map_continuous P.coefficient).comp (by fun_prop)).clm_apply
+      ((P.continuous_orbit v).comp continuous_fst)
+  have hsupp : HasCompactSupport (Function.uncurry Ψ) :=
+    hasCompactSupport_uncurry_of_inv_mul_mem f.hasCompactSupport g.hasCompactSupport
+      fun s r h => ⟨subset_tsupport _ fun hf => h (by simp [Ψ, hf]),
+        subset_tsupport _ fun hg => h (by simp [Ψ, hg])⟩
+  calc P.integratedOperator μ (α.convolution μ f g) v
+      = ∫ s, ∫ r, Ψ s r ∂μ ∂μ := by
+        rw [integratedOperator_apply]
+        congr 1 with s
+        have hint : Integrable (fun r => f r * α r (g (r⁻¹ * s))) μ :=
+          (Continuous.integrable_of_hasCompactSupport (by fun_prop) f.hasCompactSupport.mul_right)
+        -- Evaluation of the coefficient representation at `U s v` is a continuous linear map,
+        -- whose application unfolds to `a ↦ π a (U s v)`.
+        let L : A →L[ℂ] H := (ContinuousLinearMap.apply ℂ H (P.group s v)).comp
+          { toLinearMap := (P.coefficient : A →ₗ[ℂ] (H →L[ℂ] H)), cont := map_continuous _ }
+        rw [convolution_apply]
+        exact (L.integral_comp_comm hint).symm
+    _ = ∫ r, ∫ s, Ψ s r ∂μ ∂μ := integral_integral_swap_of_hasCompactSupport hcont hsupp
+    _ = ∫ r, (P.coefficient (f r) * P.group r) (P.integratedOperator μ g v) ∂μ := by
+        congr 1 with r
+        -- Substitute `s ↦ r * s`, then use covariance to pull `π (f r) * U r` out of the integral.
+        rw [← integral_mul_left_eq_self (Ψ · r) r, integratedOperator_apply,
+          ← ContinuousLinearMap.integral_comp_comm _ (P.integrable_integrand μ g v)]
+        congr 1 with t
+        simp [Ψ, map_mul, P.covariance]
+    _ = (P.integratedOperator μ f * P.integratedOperator μ g) v := by
+        simp [integratedOperator_apply]
+
+end Convolution
 
 section ScalarComparison
 
