@@ -115,39 +115,22 @@ theorem gradedExtEulerSpecialized_one_eq_extEulerPairing
         (extEulerPairing hP' hQ' h' (ExactK0.of (FP.obj X))).toIntLinearMap.comp
           (LaurentK0.forgetGrading hFQ commQ) := by
     ext Y
-    rw [(hc X Y).gradedExtEulerSpecialized_one_mk_of_mk_of, LinearMap.comp_apply,
-      LaurentK0.forgetGrading_mk_of, AddMonoidHom.coe_toIntLinearMap, extEulerPairing_of_of]
+    simp [(hc X Y).gradedExtEulerSpecialized_one_mk_of_mk_of, LaurentK0.forgetGrading_mk_of]
   -- Then compare the two sides as linear maps in the first argument.
   have key : (gradedExtEulerSpecialized hP hQ hPshift hQshift h 1).flip y =
       ((extEulerPairing hP' hQ' h').flip
         (LaurentK0.forgetGrading hFQ commQ y)).toIntLinearMap.comp
-          (LaurentK0.forgetGrading hFP commP) := by
-    refine LaurentK0.hom_ext_laurentSpecialization 1 fun X => ?_
-    rw [LinearMap.flip_apply, hX, LinearMap.comp_apply, LinearMap.comp_apply,
-      LaurentK0.forgetGrading_mk_of, AddMonoidHom.coe_toIntLinearMap,
-      AddMonoidHom.coe_toIntLinearMap, AddMonoidHom.flip_apply]
-  have hxy := LinearMap.congr_fun key x
-  rwa [LinearMap.flip_apply, LinearMap.comp_apply, AddMonoidHom.coe_toIntLinearMap,
-    AddMonoidHom.flip_apply] at hxy
+          (LaurentK0.forgetGrading hFP commP) :=
+    LaurentK0.hom_ext_laurentSpecialization 1 fun X => by
+      simp [hX, LaurentK0.forgetGrading_mk_of]
+  simpa using LinearMap.congr_fun key x
 
 end General
 
 section GradedModule
 
 variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A] (𝒜 : ℤ → Submodule k A)
-
-/-- Forgetting the grading of finitely generated graded modules is conflation-exact into the
-finitely generated modules with the exact structure induced from all modules. -/
-private theorem isConflationExact_gradedFiniteModulesForget_fullSubcategory :
-    (gradedFiniteModulesExactStructure 𝒜).toExactStructure.IsConflationExact
-      ((ExactStructure.abelian (ModuleCat.{uA} A)).fullSubcategory _
-        (isExtensionClosed_finiteModules A)) (gradedFiniteModulesForget 𝒜) where
-  map_conflation hS := by
-    have := (isConflationExact_gradedFiniteModulesForget 𝒜).map_conflation hS
-    rw [finiteModulesExactStructure_conflation_iff] at this
-    rwa [ExactStructure.fullSubcategory_conflation_iff, ExactStructure.abelian_conflation]
-
-variable [GradedAlgebra 𝒜] [IsNoetherianRing A]
+  [GradedAlgebra 𝒜] [IsNoetherianRing A]
   [HasExt.{uA} (GradedModuleCat.{uA} 𝒜)] [HasExt.{uA} (ModuleCat.{uA} A)]
 
 /-- **The q-Euler form of finitely generated graded modules at `q = 1` is the ordinary Ext-Euler
@@ -167,18 +150,7 @@ theorem gradedExtEulerSpecialized_one_eq_extEulerPairing_gradedFiniteModules
       extEulerPairing (isExtensionClosed_finiteModules A) (isExtensionClosed_finiteModules A) h'
         (finiteModulesExactK0Equiv A (gradedFiniteModulesForgetK0 𝒜 x))
         (finiteModulesExactK0Equiv A (gradedFiniteModulesForgetK0 𝒜 y)) := by
-  -- Forgetting into either exact structure on finitely generated modules gives the same classes.
-  have hforget : (finiteModulesExactK0Equiv A).toAddMonoidHom.toIntLinearMap.comp
-      (gradedFiniteModulesForgetK0 𝒜) = LaurentK0.forgetGrading.{uA, uA}
-        (isConflationExact_gradedFiniteModulesForget_fullSubcategory 𝒜)
-        (gradedFiniteModulesForgetShiftIso 𝒜) := by
-    ext M
-    rw [LinearMap.comp_apply, gradedFiniteModulesForgetK0_mk_of, LaurentK0.forgetGrading_mk_of,
-      AddMonoidHom.coe_toIntLinearMap, AddEquiv.coe_toAddMonoidHom, finiteModulesExactK0Equiv_of]
-  have hx := LinearMap.congr_fun hforget x
-  have hy := LinearMap.congr_fun hforget y
-  rw [LinearMap.comp_apply, AddMonoidHom.coe_toIntLinearMap, AddEquiv.coe_toAddMonoidHom] at hx hy
-  rw [hx, hy]
+  simp only [finiteModulesExactK0Equiv_gradedFiniteModulesForgetK0]
   refine gradedExtEulerSpecialized_one_eq_extEulerPairing _ _ _ _ h _ _ h' _ _ _ _
     (fun X Y => ?_) x y
   have : Module.Finite A X.obj := gradedFiniteModules_iff.mp X.property

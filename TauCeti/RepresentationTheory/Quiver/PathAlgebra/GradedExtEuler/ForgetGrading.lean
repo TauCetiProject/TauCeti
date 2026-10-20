@@ -8,6 +8,7 @@ module
 public import TauCeti.RepresentationTheory.GrothendieckGroup.Quiver.ForgetGrading
 public import TauCeti.RepresentationTheory.GrothendieckGroup.Quiver.ExtEuler
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.GradedExtEuler.Pairing
+public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.ForgetGrading.Pairing
 
 /-!
 # The graded quiver q-Euler form at `q = 1`
@@ -21,15 +22,17 @@ Ext-Euler pairing pulled back along the isomorphism
 The isomorphism and the vertex-dimension comparison are supplied by
 `TauCeti.RepresentationTheory.GrothendieckGroup.Quiver.ForgetGrading`.
 
-Both sides are computed by Ringel formulas, so no comparison of graded and ungraded `Ext` groups
-is used. The graded formula `TauCeti.PathAlgebra.gradedExtEuler_eq_sum_smulGradedDimension` has
-the idempotent graded dimensions `gdim(eᵢ • X)` as coordinates. At `q = 1` these become the
+On objects, both sides are computed by Ringel formulas, so no comparison of graded and ungraded
+`Ext` groups is used. The graded formula
+`TauCeti.PathAlgebra.gradedExtEuler_eq_sum_smulGradedDimension` has the idempotent graded
+dimensions `gdim(eᵢ • X)` as coordinates. At `q = 1` these become the
 vertex dimensions `dim_k(eᵢ X)` of the underlying module, and the factor `q⁻¹` on each arrow
 becomes `1`. The result is the ungraded formula `TauCeti.extEuler_eq_eulerForm_dimVector`.
 
 The graded/ungraded `Ext` comparison hypothesis `TauCeti.IsGradedExtComparison` gives the same
-numerical identity in general. Here the identity is proved directly from the two Ringel
-formulas.
+numerical identity in general. The identity on Grothendieck groups is the path-algebra case of
+`TauCeti.gradedExtEulerSpecialized_one_eq_extEulerPairing_gradedFiniteModules`, since a
+finite-dimensional path algebra is Noetherian.
 
 ## Main results
 
@@ -102,28 +105,21 @@ theorem laurentSpecialize_gradedExtEulerForm_eq_extEulerPairing
           (gradedFiniteModulesForgetK0 (integerGrade k Q) x))
         (finiteModulesExactK0Equiv (pathAlgebra k Q)
           (gradedFiniteModulesForgetK0 (integerGrade k Q) y)) := by
-  obtain ⟨x, rfl⟩ := LaurentSpecialization.mk_surjective 1 x
-  obtain ⟨y, rfl⟩ := LaurentSpecialization.mk_surjective 1 y
-  obtain ⟨x, rfl⟩ := (LaurentK0.ofExactK0 _).surjective x
-  obtain ⟨y, rfl⟩ := (LaurentK0.ofExactK0 _).surjective y
-  induction x using ExactK0.induction_on with
-  | zero => simp
-  | add a b ha hb =>
-    simp only [map_add, LinearMap.add_apply, AddMonoidHom.add_apply, ha, hb]
-  | neg a ha => simp only [map_neg, LinearMap.neg_apply, AddMonoidHom.neg_apply, ha]
-  | of X =>
-    induction y using ExactK0.induction_on with
-    | zero => simp
-    | add a b ha hb => simp only [map_add, ha, hb]
-    | neg a ha => simp only [map_neg, ha]
-    | of Y =>
-      simp only [LaurentK0.ofExactK0_exactK0_of, LinearMap.laurentSpecialize_mk_mk,
-        gradedExtEulerForm_of_of, gradedFiniteModulesForgetK0_mk_of, finiteModulesExactK0Equiv_of,
-        extEulerPairing_of_of]
-      have : Module.Finite (pathAlgebra k Q) X.obj := gradedFiniteModules_iff.mp X.property
-      have : Module.Finite (pathAlgebra k Q) Y.obj := gradedFiniteModules_iff.mp Y.property
-      have : Module.Finite k X.obj := Module.Finite.trans (pathAlgebra k Q) X.obj
-      have : Module.Finite k Y.obj := Module.Finite.trans (pathAlgebra k Q) Y.obj
-      exact laurentEval_one_gradedExtEuler_eq_extEuler k Q X.obj Y.obj _ _
+  let _ := integerGradedAlgebra k Q
+  have : IsNoetherianRing (pathAlgebra k Q) := isNoetherian_of_tower k inferInstance
+  -- Both forms are the specialized q-Euler form; compare them on object classes.
+  have hform : (gradedExtEulerForm k Q).laurentSpecialize inv_one =
+      gradedExtEulerSpecialized isExtensionClosed_gradedFiniteModules_gradedAbelian
+        isExtensionClosed_gradedFiniteModules_gradedAbelian
+        gradedFiniteModules_gradedAbelian_shift gradedFiniteModules_gradedAbelian_shift
+        (isGradedEulerAdmissibleOn_gradedFiniteModules k Q) 1 := by
+    refine LaurentK0.hom_ext_laurentSpecialization 1 fun X =>
+      LaurentK0.hom_ext_laurentSpecialization 1 fun Y => ?_
+    rw [LinearMap.laurentSpecialize_mk_mk, gradedExtEulerForm_of_of]
+    exact (gradedExtEulerSpecialized_mk_of_mk_of _ _ _ _ _ 1 X Y).symm
+  rw [hform]
+  exact gradedExtEulerSpecialized_one_eq_extEulerPairing_gradedFiniteModules (integerGrade k Q)
+    (isGradedEulerAdmissibleOn_gradedFiniteModules k Q) (isEulerAdmissibleOn_isFG_pathAlgebra k Q)
+    x y
 
 end TauCeti.PathAlgebra
