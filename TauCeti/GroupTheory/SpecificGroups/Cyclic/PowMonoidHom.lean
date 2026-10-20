@@ -31,6 +31,9 @@ map (of order `g`, Mathlib's `IsCyclic.card_powMonoidHom_ker`) counts their root
 * `IsCyclic.eq_range_powMonoidHom_iff`: the `d`-th powers form the unique subgroup of order
   `N / gcd(N, d)`.
 
+Each result has an additive version, stated for `nsmulAddMonoidHom` in an additive cyclic group
+(`TauCeti.nsmul_nsmul_card_div_gcd_eq_zero`, `IsAddCyclic.mem_range_nsmulAddMonoidHom_iff`, ...).
+
 ## References
 
 * Victor Shoup, *A Computational Introduction to Number Theory and Algebra* (2nd ed.),
@@ -45,6 +48,9 @@ namespace TauCeti
 
 /-- In a group of order `N`, every `d`-th power is killed by the `(N / gcd(N, d))`-th power map:
 `(x ^ d) ^ (N / gcd(N, d)) = 1`. For an infinite group `N = 0` and the exponent is `0`. -/
+@[to_additive nsmul_nsmul_card_div_gcd_eq_zero
+/-- In an additive group of order `N`, every `d`-th multiple is killed by multiplication by
+`N / gcd(N, d)`: `(N / gcd(N, d)) • d • x = 0`. For an infinite group `N = 0`. -/]
 theorem pow_pow_card_div_gcd_eq_one [Group G] (x : G) (d : ℕ) :
     (x ^ d) ^ (Nat.card G / (Nat.card G).gcd d) = 1 := by
   -- `d * (N / g) = N * (d / g)` with `g = gcd(N, d)` dividing both `N` and `d`.
@@ -60,6 +66,10 @@ variable [CommGroup G] [IsCyclic G] [Finite G]
 /-- **The `d`-th power criterion in a finite cyclic group**, as an equality of subgroups: the image
 of the `d`-th power map of a finite cyclic group of order `N` is the kernel of the
 `(N / gcd(N, d))`-th power map. -/
+@[to_additive
+/-- **The `d`-th multiple criterion in a finite additive cyclic group**, as an equality of
+subgroups: the image of multiplication by `d` on a finite additive cyclic group of order `N` is
+the kernel of multiplication by `N / gcd(N, d)`. -/]
 theorem range_powMonoidHom_eq_ker (d : ℕ) :
     (powMonoidHom d : G →* G).range =
       (powMonoidHom (Nat.card G / (Nat.card G).gcd d) : G →* G).ker := by
@@ -72,6 +82,9 @@ theorem range_powMonoidHom_eq_ker (d : ℕ) :
 
 /-- In a finite cyclic group of order `N`, the `d`-th powers are exactly the `gcd(N, d)`-th
 powers. -/
+@[to_additive
+/-- In a finite additive cyclic group of order `N`, the `d`-th multiples are exactly the
+`gcd(N, d)`-th multiples. -/]
 theorem range_powMonoidHom_gcd (d : ℕ) :
     (powMonoidHom ((Nat.card G).gcd d) : G →* G).range = (powMonoidHom d : G →* G).range := by
   rw [range_powMonoidHom_eq_ker, range_powMonoidHom_eq_ker, Nat.gcd_gcd_self_right_left]
@@ -80,12 +93,19 @@ theorem range_powMonoidHom_gcd (d : ℕ) :
 `N`, an element `x` is a `d`-th power exactly when `x ^ (N / gcd(N, d)) = 1`. The natural number
 `d` is arbitrary: when `d ∣ N` the exponent is `N / d`, and when `d = 0` the criterion reads
 `x = 1`. -/
+@[to_additive
+/-- **The `d`-th multiple criterion in a finite additive cyclic group.** In a finite additive
+cyclic group of order `N`, an element `x` is a `d`-th multiple exactly when
+`(N / gcd(N, d)) • x = 0`. -/]
 theorem mem_range_powMonoidHom_iff (d : ℕ) (x : G) :
     x ∈ (powMonoidHom d : G →* G).range ↔ x ^ (Nat.card G / (Nat.card G).gcd d) = 1 := by
   rw [range_powMonoidHom_eq_ker, MonoidHom.mem_ker, powMonoidHom_apply]
 
 /-- In a finite cyclic group of order `N`, the `d`-th powers form the unique subgroup of order
 `N / gcd(N, d)`. -/
+@[to_additive
+/-- In a finite additive cyclic group of order `N`, the `d`-th multiples form the unique
+subgroup of order `N / gcd(N, d)`. -/]
 theorem eq_range_powMonoidHom_iff (H : Subgroup G) (d : ℕ) :
     H = (powMonoidHom d : G →* G).range ↔ Nat.card H = Nat.card G / (Nat.card G).gcd d := by
   rw [subgroup_eq_iff_card_eq, card_powMonoidHom_range]
