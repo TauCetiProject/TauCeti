@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Chart
 public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 public import TauCeti.Geometry.Manifold.ExtChartAt
@@ -24,7 +25,9 @@ on `W` is `C^n` as soon as its restrictions to the members of an open cover of `
 (`TauCeti.IsSmoothForm.of_mpullback_inclusion`). Conversely, a form on `U` extends by zero to `W`
 (`TauCeti.RoughForm.extendByZero`), and the extension is `C^n` when it vanishes near every point
 of `W` outside `U` (`TauCeti.IsSmoothForm.extendByZero`); this applies in particular to the
-product of a form with a cut-off function (`TauCeti.IsSmoothForm.extendByZero_smul`).
+product of a form with a cut-off function (`TauCeti.IsSmoothForm.extendByZero_smul`). The exterior
+derivative of such an extension is the extension of the exterior derivative
+(`TauCeti.mextDeriv_extendByZero`).
 
 These are the gluing and cut-off steps of the Mayer–Vietoris sequence of de Rham cohomology.
 
@@ -83,6 +86,27 @@ theorem mpullback_inclusion_extendByZero {U W : Opens M} (h : U ≤ W) (ω : Rou
   funext x
   rw [mpullback_inclusion_apply, extendByZero_inclusion]
 
+/-- Restricting the extension by zero to an open subset `V ≤ W` is the extension by zero to `V`. -/
+theorem mpullback_inclusion_extendByZero_eq_extendByZero {U V W : Opens M} (h : V ≤ W)
+    (ω : RoughForm I U F k) :
+    mpullback I I (Opens.inclusion h) (extendByZero W ω) = extendByZero V ω := by
+  funext x
+  rw [mpullback_inclusion_apply]
+  -- Both sides test membership of the same underlying point of `M` in `U`.
+  rfl
+
+/-- The extension by zero of the product of a form on `U ≤ W` with a function on `W` vanishes near
+every point of `W` outside `U` near which the function vanishes. -/
+theorem eventually_extendByZero_smul_eq_zero {U W : Opens M} (h : U ≤ W) (ω : RoughForm I U F k)
+    {g : W → ℝ} {x : W} (hx : ∀ᶠ y in 𝓝 x, g y = 0) :
+    ∀ᶠ y in 𝓝 x, extendByZero W (fun y : U ↦ g (Opens.inclusion h y) • ω y) y = 0 := by
+  filter_upwards [hx] with y hy
+  by_cases hyU : (y : M) ∈ U
+  · obtain ⟨y, rfl⟩ : ∃ y' : U, Opens.inclusion h y' = y := ⟨⟨y, hyU⟩, Subtype.ext rfl⟩
+    rw [extendByZero_inclusion]
+    exact (congrArg (· • ω y) hy).trans (zero_smul ℝ _)
+  · exact extendByZero_apply_of_notMem _ hyU
+
 end RoughForm
 
 variable [IsManifold I 1 M]
@@ -131,7 +155,7 @@ subsets of `W` covering it are `C^n`. -/
 theorem IsSmoothForm.of_mpullback_inclusion {W : Opens M} {ι : Type*} {U : ι → Opens M}
     (hU : ∀ i, U i ≤ W) (hcover : ∀ x : W, ∃ i, (x : M) ∈ U i) {n : WithTop ℕ∞}
     {γ : RoughForm I W F k}
-    (hγ : ∀ i, IsSmoothForm I n (mpullback I I (Opens.inclusion (hU i)) γ)) :
+    (hγ : ∀ i, IsSmoothForm I n (TauCeti.mpullback I I (Opens.inclusion (hU i)) γ)) :
     IsSmoothForm I n γ := by
   rw [isSmoothForm_def]
   intro x
@@ -163,13 +187,28 @@ theorem IsSmoothForm.extendByZero_smul {U W : Opens M} (h : U ≤ W) {n : WithTo
     {ω : RoughForm I U F k} (hω : IsSmoothForm I n ω) {g : W → ℝ}
     (hg : ContMDiff I 𝓘(ℝ) n g) (hzero : ∀ x : W, (x : M) ∉ U → ∀ᶠ y in 𝓝 x, g y = 0) :
     IsSmoothForm I n
-      (RoughForm.extendByZero W fun y : U ↦ g (Opens.inclusion h y) • ω y) := by
-  refine (hω.fun_smul (hg.comp (contMDiff_inclusion h))).extendByZero h fun x hx ↦ ?_
-  filter_upwards [hzero x hx] with y hy
-  by_cases hyU : (y : M) ∈ U
-  · obtain ⟨y, rfl⟩ : ∃ y' : U, Opens.inclusion h y' = y := ⟨⟨y, hyU⟩, Subtype.ext rfl⟩
+      (RoughForm.extendByZero W fun y : U ↦ g (Opens.inclusion h y) • ω y) :=
+  (hω.fun_smul (hg.comp (contMDiff_inclusion h))).extendByZero h fun x hx ↦
+    RoughForm.eventually_extendByZero_smul_eq_zero h ω (hzero x hx)
+
+/-- The exterior derivative of the extension by zero of a `C¹` form on an open subset `U ≤ W` is
+the extension by zero of its exterior derivative, provided the extension vanishes near every point
+of `W` outside `U`. -/
+theorem mextDeriv_extendByZero [IsManifold I 2 M] {U W : Opens M} (h : U ≤ W)
+    {ω : RoughForm I U F k} (hω : IsSmoothForm I 1 ω)
+    (hzero : ∀ x : W, (x : M) ∉ U → ∀ᶠ y in 𝓝 x, RoughForm.extendByZero W ω y = 0) :
+    mextDeriv (RoughForm.extendByZero W ω) = RoughForm.extendByZero W (mextDeriv ω) := by
+  funext x
+  by_cases hx : (x : M) ∈ U
+  · -- On `U`, the exterior derivative commutes with restriction along the inclusion.
+    obtain ⟨x, rfl⟩ : ∃ x' : U, Opens.inclusion h x' = x := ⟨⟨x, hx⟩, Subtype.ext rfl⟩
+    have hpull := mpullback_mextDeriv_at (contMDiff_inclusion h).contMDiffAt
+      ((hω.extendByZero h hzero).contMDiff (Opens.inclusion h x))
+    rw [RoughForm.mpullback_inclusion_extendByZero, mpullback_inclusion_apply] at hpull
     rw [RoughForm.extendByZero_inclusion]
-    exact (congrArg (· • ω y) hy).trans (zero_smul ℝ _)
-  · exact RoughForm.extendByZero_apply_of_notMem _ hyU
+    exact hpull
+  · -- Outside `U`, the extension vanishes near `x`, hence so does its exterior derivative.
+    rw [RoughForm.extendByZero_apply_of_notMem _ hx]
+    exact (mextDeriv_congr_of_eventuallyEq (hzero x hx)).trans (congrFun mextDeriv_zero x)
 
 end TauCeti
