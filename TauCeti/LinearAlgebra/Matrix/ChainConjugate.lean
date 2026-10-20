@@ -7,7 +7,10 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 import Mathlib.RingTheory.LocalProperties.Basic
+import TauCeti.Data.Fin.Basic
 import TauCeti.LinearAlgebra.Matrix.CornerMinor
+import TauCeti.LinearAlgebra.Matrix.Divisibility
+import TauCeti.LinearAlgebra.Unimodular
 
 /-!
 # Diagonal conjugates in products of two divisibility chains
@@ -53,37 +56,6 @@ namespace Matrix
 
 variable {R : Type*} [CommRing R]
 
-/-- `a i ∣ v i j * a j` for all `i`, `j` says that `diagonal a⁻¹ * v * diagonal a` is integral:
-it is `diagonal a * W = v * diagonal a` for a matrix `W`. -/
-private lemma exists_diagonal_mul_eq_mul_diagonal {m : Type*} [Fintype m] [DecidableEq m]
-    {a : m → R} {v : Matrix m m R} (h : ∀ i j, a i ∣ v i j * a j) :
-    ∃ W : Matrix m m R, diagonal a * W = v * diagonal a := by
-  choose W hW using h
-  exact ⟨Matrix.of W, by ext i j; simp [hW]⟩
-
-/-- The converse of `exists_diagonal_mul_eq_mul_diagonal`. -/
-private lemma dvd_apply_mul_of_diagonal_mul_eq {m : Type*} [Fintype m] [DecidableEq m]
-    {a : m → R} {v W : Matrix m m R} (h : diagonal a * W = v * diagonal a) (i j : m) :
-    a i ∣ v i j * a j :=
-  ⟨W i j, by simpa using (congrFun (congrFun h i) j).symm⟩
-
-/-- A common divisor of the entries of `r ᵥ* τ`, for an invertible `τ`, divides every entry
-of `r`. -/
-private lemma dvd_of_forall_dvd_vecMul {m : Type*} [Fintype m] [DecidableEq m]
-    {τ : Matrix m m R} (hτ : IsUnit τ.det) {c : R} {r : m → R} (h : ∀ j, c ∣ (r ᵥ* τ) j)
-    (k : m) : c ∣ r k := by
-  have hr : r = (r ᵥ* τ) ᵥ* τ⁻¹ := by rw [vecMul_vecMul, mul_nonsing_inv _ hτ, vecMul_one]
-  rw [hr]
-  exact Finset.dvd_sum fun j _ ↦ (h j).mul_right _
-
-/-- Every row of an invertible matrix over a local ring has a unit entry. -/
-private lemma exists_isUnit_apply [IsLocalRing R] {m : Type*} [Fintype m] [DecidableEq m]
-    {σ : Matrix m m R} (hσ : IsUnit σ.det) (l : m) : ∃ k, IsUnit (σ l k) := by
-  have hone : (σ * σ⁻¹) l l = 1 := by rw [mul_nonsing_inv _ hσ, one_apply_eq]
-  rw [mul_apply] at hone
-  obtain ⟨k, -, hk⟩ := IsLocalRing.exists_of_isUnit_sum (hone ▸ isUnit_one)
-  exact ⟨k, isUnit_of_mul_isUnit_left hk⟩
-
 /-- **The bottom row of `σ A τ B`.** If `b j ∣ b l` for every `j` and `a l * b l` divides every
 entry in row `l` of `σ * diagonal a * τ * diagonal b`, with `τ` invertible, then
 `a l ∣ σ l k * a k` for every `k`. -/
@@ -100,14 +72,6 @@ private lemma dvd_apply_mul_of_dvd_row [IsDomain R] {m : Type*} [Fintype m] [Dec
     simp only [mul_diagonal, vecMul, dotProduct]
   rw [hrow, he, ← mul_assoc, mul_right_comm] at hj
   exact (dvd_mul_right _ e).trans ((mul_dvd_mul_iff_right (hb₀ j)).1 hj)
-
-/-- A `Fin.succAbove` lies weakly above the corresponding `Fin.castSucc`. -/
-private lemma castSucc_le_succAbove {n : ℕ} (k : Fin (n + 1)) (j : Fin n) :
-    j.castSucc ≤ k.succAbove j := by
-  rw [Fin.succAbove]
-  split_ifs
-  · exact le_rfl
-  · exact Fin.castSucc_le_succ j
 
 /-- **Completing a row with a unit entry.** Let `a` be a divisibility chain and let `s` have a
 unit entry and satisfy `a (last n) ∣ s k * a k` for all `k`. Then `s` is the last row of an
@@ -141,7 +105,7 @@ private lemma exists_isUnit_det_apply_last_eq {n : ℕ} {a : Fin (n + 1) → R}
       rw [hv_castSucc, Pi.single_apply]
       split_ifs with hj
       · subst hj
-        exact (ha _ _ (castSucc_le_succAbove k₀ i)).trans (by rw [one_mul])
+        exact (ha _ _ (Fin.castSucc_le_succAbove k₀ i)).trans (by rw [one_mul])
       · simp
 
 /-- Two products agree in the last row when the left factors do. -/
@@ -169,28 +133,7 @@ private lemma submatrix_castSucc_hyp {n : ℕ} {a b : Fin (n + 1) → R}
   rw [hblock]
   exact h _ _
 
-/-- The determinant of a matrix whose last row is that of the identity is the determinant of its
-upper-left block. -/
-private lemma det_submatrix_castSucc_of_apply_last {n : ℕ}
-    {σ : Matrix (Fin (n + 1)) (Fin (n + 1)) R}
-    (hσl : σ (Fin.last n) = (1 : Matrix (Fin (n + 1)) (Fin (n + 1)) R) (Fin.last n)) :
-    σ.det = (σ.submatrix Fin.castSucc Fin.castSucc).det := by
-  rw [det_eq_mul_det_submatrix_castSucc_of_row σ fun j hj ↦ by
-      rw [hσl, one_apply_ne' hj], hσl, one_apply_eq, one_mul]
-
 variable [IsDomain R]
-
-/-- `det (diagonal a) * det W = det v * det (diagonal a)` and `det (diagonal a) ≠ 0` give
-`IsUnit (det W)` from `IsUnit (det v)`. -/
-private lemma isUnit_det_of_diagonal_mul_eq {m : Type*} [Fintype m] [DecidableEq m]
-    {a : m → R} (ha₀ : ∀ i, a i ≠ 0) {v W : Matrix m m R} (hv : IsUnit v.det)
-    (h : diagonal a * W = v * diagonal a) : IsUnit W.det := by
-  have hdet := congrArg det h
-  rw [det_mul, det_mul, mul_comm v.det] at hdet
-  have hne : (diagonal a).det ≠ 0 := by
-    rw [det_diagonal]
-    exact Finset.prod_ne_zero_iff.2 fun i _ ↦ ha₀ i
-  rwa [mul_left_cancel₀ hne hdet]
 
 /-- **Clearing the last row of `σ`.** Over a local domain, the pair `(σ, τ)` can be replaced by a
 pair `(σ', τ')` with the same product `σ * diagonal a * τ`, still invertible, in which the last
@@ -204,25 +147,26 @@ private lemma exists_apply_last_eq_one_apply_last [IsLocalRing R] {n : ℕ}
       σ' (Fin.last n) = (1 : Matrix (Fin (n + 1)) (Fin (n + 1)) R) (Fin.last n) ∧
       σ' * diagonal a * τ' = σ * diagonal a * τ ∧
       ((∀ i j, a i ∣ σ' i j * a j) → ∀ i j, a i ∣ σ i j * a j) := by
-  obtain ⟨k₀, hk₀⟩ := exists_isUnit_apply hσ (Fin.last n)
+  obtain ⟨k₀, hk₀⟩ := TauCeti.Module.isUnimodular_iff_exists_isUnit.1
+    (isUnimodular_apply_of_isUnit_det hσ (Fin.last n))
   have hrow := dvd_apply_mul_of_dvd_row hτ hb₀ (fun j ↦ hb _ _ (Fin.le_last j))
     (h (Fin.last n))
   obtain ⟨v, hv, hvl, hva⟩ := exists_isUnit_det_apply_last_eq ha hk₀ hrow
-  obtain ⟨W, hW⟩ := exists_diagonal_mul_eq_mul_diagonal hva
+  obtain ⟨W, hW⟩ := exists_diagonal_mul_eq_mul_diagonal_iff.2 hva
   have hvv : v⁻¹ * v = 1 := nonsing_inv_mul v hv
   refine ⟨σ * v⁻¹, W * τ, ?_, ?_, ?_, ?_, fun h' ↦ ?_⟩
   · rw [det_mul]
     exact hσ.mul (isUnit_nonsing_inv_det v hv)
   · rw [det_mul]
-    exact (isUnit_det_of_diagonal_mul_eq ha₀ hv hW).mul hτ
+    exact (isUnit_det_of_diagonal_mul_eq_mul_diagonal ha₀ hv hW).mul hτ
   · rw [mul_apply_last_of_apply_last_eq (hvl.symm ▸ rfl : σ (Fin.last n) = v (Fin.last n)),
       mul_nonsing_inv v hv]
   · calc σ * v⁻¹ * diagonal a * (W * τ) = σ * v⁻¹ * (diagonal a * W) * τ := by
           simp only [Matrix.mul_assoc]
       _ = σ * (v⁻¹ * v) * diagonal a * τ := by rw [hW]; simp only [Matrix.mul_assoc]
       _ = σ * diagonal a * τ := by rw [hvv, Matrix.mul_one]
-  · obtain ⟨W', hW'⟩ := exists_diagonal_mul_eq_mul_diagonal h'
-    refine dvd_apply_mul_of_diagonal_mul_eq (W := W' * W) ?_
+  · obtain ⟨W', hW'⟩ := exists_diagonal_mul_eq_mul_diagonal_iff.2 h'
+    refine exists_diagonal_mul_eq_mul_diagonal_iff.1 ⟨W' * W, ?_⟩
     calc diagonal a * (W' * W) = σ * v⁻¹ * (diagonal a * W) := by
           rw [← Matrix.mul_assoc, hW', Matrix.mul_assoc]
       _ = σ * diagonal a := by rw [hW, ← Matrix.mul_assoc, Matrix.mul_assoc σ, hvv,
@@ -247,10 +191,11 @@ private lemma exists_apply_last_eq_one_apply_last_right [IsLocalRing R] {n : ℕ
       rw [mul_diagonal, mul_apply]
       simp [mul_diagonal, hσl, one_apply, mul_assoc]
     rwa [hlast, mul_dvd_mul_iff_left (ha₀ _)] at hj
-  obtain ⟨k₀, hk₀⟩ := exists_isUnit_apply hτ (Fin.last n)
+  obtain ⟨k₀, hk₀⟩ := TauCeti.Module.isUnimodular_iff_exists_isUnit.1
+    (isUnimodular_apply_of_isUnit_det hτ (Fin.last n))
   obtain ⟨v, hv, hvl, hvb⟩ := exists_isUnit_det_apply_last_eq hb hk₀ hrow
-  obtain ⟨W, hW⟩ := exists_diagonal_mul_eq_mul_diagonal hvb
-  have hWu := isUnit_det_of_diagonal_mul_eq hb₀ hv hW
+  obtain ⟨W, hW⟩ := exists_diagonal_mul_eq_mul_diagonal_iff.2 hvb
+  have hWu := isUnit_det_of_diagonal_mul_eq_mul_diagonal hb₀ hv hW
   -- `v⁻¹ B = B W⁻¹`
   have hinv : v⁻¹ * diagonal b = diagonal b * W⁻¹ := by
     calc v⁻¹ * diagonal b = v⁻¹ * (diagonal b * W) * W⁻¹ := by
@@ -288,8 +233,8 @@ private theorem dvd_apply_mul_of_isLocalRing [IsLocalRing R] :
       (b := fun k : Fin n ↦ b k.castSucc)
       (fun i j hij ↦ ha _ _ (Fin.castSucc_le_castSucc_iff.2 hij))
       (fun i j hij ↦ hb _ _ (Fin.castSucc_le_castSucc_iff.2 hij)) (fun i ↦ ha₀ _)
-      (fun i ↦ hb₀ _) (det_submatrix_castSucc_of_apply_last hσ'l ▸ hσ')
-      (det_submatrix_castSucc_of_apply_last hτ''l ▸ hτ'') (submatrix_castSucc_hyp hτ''l h'')
+      (fun i ↦ hb₀ _) (det_eq_det_submatrix_castSucc_of_apply_last hσ'l ▸ hσ')
+      (det_eq_det_submatrix_castSucc_of_apply_last hτ''l ▸ hτ'') (submatrix_castSucc_hyp hτ''l h'')
     induction i using Fin.lastCases with
     | last =>
       rw [hσ'l, one_apply]
