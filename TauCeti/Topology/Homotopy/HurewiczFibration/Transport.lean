@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.ContinuousMap.GlueHalves
+public import TauCeti.Topology.Homotopy.FiberHomotopyEquiv
 public import TauCeti.Topology.Homotopy.MappingPath.LiftingFunction
 public import TauCeti.Topology.Homotopy.OpenBoxLifting
 
@@ -29,13 +31,10 @@ direction, from the open box formed by the start and the two lifts
 
 ## Main definitions
 
-* `ContinuousMap.glueHalves s a a'`: glue two maps along the halves `s ≤ 1/2` and `1/2 ≤ s`.
 * `TauCeti.LiftingFunction.transport Λ γ`: the transport of the fibres along a path `γ`.
 
 ## Main results
 
-* `ContinuousMap.homotopic_of_fibre`: a homotopy over a fixed point of the base is a homotopy of
-  maps into the fibre.
 * `TauCeti.LiftingFunction.exists_homotopy_endpoints`: lifts of one path with one starting point
   have homotopic end points.
 * `TauCeti.LiftingFunction.transport_homotopic`: homotopic paths have homotopic transports.
@@ -54,38 +53,6 @@ public section
 open Set unitInterval
 
 universe w u v
-
-namespace ContinuousMap
-
-/-- Glue two maps along the two halves `s ≤ 1/2` and `1/2 ≤ s` of the parameter `s`, assuming
-that they agree where `s = 1/2`. -/
-noncomputable def glueHalves {Z X : Type*} [TopologicalSpace Z] [TopologicalSpace X] (s : C(Z, I))
-    (a a' : C(Z, X)) (h : ∀ z, (s z : ℝ) = 1 / 2 → a z = a' z) : C(Z, X) :=
-  ⟨fun z ↦ if (s z : ℝ) ≤ 1 / 2 then a z else a' z,
-    Continuous.if_le a.continuous a'.continuous (continuous_subtype_val.comp s.continuous)
-      continuous_const h⟩
-
-variable {Z X : Type*} [TopologicalSpace Z] [TopologicalSpace X] (s : C(Z, I))
-  (a a' : C(Z, X)) (h : ∀ z, (s z : ℝ) = 1 / 2 → a z = a' z) {z : Z}
-
-theorem glueHalves_of_le (hz : (s z : ℝ) ≤ 1 / 2) : glueHalves s a a' h z = a z :=
-  by simp only [glueHalves, ContinuousMap.coe_mk, hz, ↓reduceIte]
-
-theorem glueHalves_of_not_le (hz : ¬ (s z : ℝ) ≤ 1 / 2) : glueHalves s a a' h z = a' z :=
-  by simp only [glueHalves, ContinuousMap.coe_mk, hz, ↓reduceIte]
-
-/-- A homotopy of maps to the total space of a map `p`, staying over a fixed point `b`, gives a
-homotopy of maps into the fibre over `b`. -/
-theorem homotopic_of_fibre {E B Y : Type*} [TopologicalSpace E] [TopologicalSpace B]
-    [TopologicalSpace Y] {p : C(E, B)} {b : B} (f g : C(Y, p ⁻¹' {b}))
-    (K : C(Y × I, E)) (h₀ : ∀ y, K (y, 0) = f y) (h₁ : ∀ y, K (y, 1) = g y)
-    (hK : ∀ y s, p (K (y, s)) = b) : f.Homotopic g :=
-  ⟨{ toFun := fun z ↦ ⟨K (z.2, z.1), hK z.2 z.1⟩
-     continuous_toFun := by fun_prop
-     map_zero_left := fun y ↦ Subtype.ext (h₀ y)
-     map_one_left := fun y ↦ Subtype.ext (h₁ y) }⟩
-
-end ContinuousMap
 
 namespace TauCeti
 
