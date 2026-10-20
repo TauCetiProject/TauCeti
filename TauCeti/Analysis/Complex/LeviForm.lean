@@ -36,10 +36,11 @@ with a function of one real variable, and invariance under holomorphic maps.
 
 It also shows that strict positivity of the Levi form survives small `C²` perturbations. The
 real part of the Levi diagonal moves by at most `‖D²g(y) - D²f(x)‖ ‖v‖² / 2` when `(f, x)` is
-replaced by `(g, y)`. On a finite-dimensional space a Levi form which is positive definite at
-every point of a compact set has a uniform lower bound `c ‖v‖²` there, and the set of continuous
-bilinear forms with positive definite Levi form is open. Consequently strict Levi positivity
-on a set `U` is open in the fine (Whitney) `C²` topology: it survives every perturbation whose
+replaced by `(g, y)`. On a finite-dimensional space a Levi form which depends continuously on
+the point and is positive definite at every point of a compact set has a uniform lower bound
+`c ‖v‖²` there, and the set of continuous bilinear forms with positive definite Levi form is open.
+Consequently, for `f` whose second derivative is continuous on a set `U`, strict Levi positivity
+of `f` on `U` is open in the fine (Whitney) `C²` topology: it survives every perturbation whose
 second derivative stays within a continuous positive tolerance `ε(x)` of that of `f`.
 
 ## Main definitions
@@ -65,9 +66,10 @@ second derivative stays within a continuous positive tolerance `ε(x)` of that o
   derivative, with constant `‖v‖² / 2`.
 * `IsCompact.exists_pos_mul_sq_norm_le_re_leviForm`: a continuous family of bilinear forms whose
   Levi forms are positive definite on a compact set has a uniform lower bound `c ‖v‖²` there.
-* `IsCompact.exists_pos_forall_sub_mul_sq_norm_le_re_leviForm`: a Levi form positive definite on a
-  compact set has a uniform lower bound `c ‖v‖²` there, which a perturbation lowers by at most half
-  the change of the second derivative.
+* `IsCompact.exists_pos_forall_sub_mul_sq_norm_le_re_leviForm`: for `f` with second derivative
+  continuous on a compact set `K` and Levi form positive definite there, the Levi form has a
+  uniform lower bound `c ‖v‖²` on `K`, which a perturbation lowers by at most half the change of
+  the second derivative.
 * `TauCeti.isOpen_setOf_forall_re_leviForm_toBilinForm_pos`: positive definiteness of the Levi
   form is an open condition on continuous bilinear forms.
 * `TauCeti.exists_continuousOn_pos_forall_re_leviForm_pos`: strict Levi positivity is open in the
@@ -242,12 +244,6 @@ private theorem sub_mul_sq_norm_le_re_leviForm_toBilinForm_apply_self
   rw [← re_leviForm_toBilinForm_apply_self_sub] at h₂
   linarith
 
--- The metric on continuous bilinear forms is the operator norm metric. This is stated as a term
--- because the nested operator-norm instances are not reducibly equal, so rewriting with the
--- generic group lemmas fails.
-private theorem dist_eq_norm_sub_bilin (B B' : V →L[ℝ] V →L[ℝ] ℝ) : dist B B' = ‖B - B'‖ :=
-  dist_eq_norm B B'
-
 /-- **The Levi diagonal is Lipschitz in the second derivative.** Replacing `f` at `x` by `g` at
 `y` changes the real part of the Levi diagonal by at most `‖D²g(y) - D²f(x)‖ ‖v‖² / 2`. -/
 theorem abs_re_leviForm_apply_self_sub_le (f g : V → ℝ) (x y v : V) :
@@ -323,7 +319,7 @@ theorem isOpen_setOf_forall_re_leviForm_toBilinForm_pos [FiniteDimensional ℂ V
   obtain ⟨c, hc, hle⟩ := isCompact_singleton.exists_pos_mul_sq_norm_le_re_leviForm
     continuousOn_id fun B hB ↦ by rw [mem_singleton_iff.1 hB]; exact hB₀
   refine ⟨2 * c, by positivity, fun B hB v hv ↦ ?_⟩
-  have hB' : ‖B - B₀‖ < 2 * c := (dist_eq_norm_sub_bilin B B₀).symm.trans_lt hB
+  have hB' : ‖B - B₀‖ < 2 * c := (dist_eq_norm B B₀).symm.trans_lt hB
   have h := sub_mul_sq_norm_le_re_leviForm_toBilinForm_apply_self (B := B) (B₀ := B₀) (hle B₀ rfl v)
   have : 0 < (c - ‖B - B₀‖ / 2) * ‖v‖ ^ 2 := mul_pos (by linarith) (by positivity)
   linarith
@@ -356,7 +352,8 @@ theorem exists_continuousOn_pos_forall_re_leviForm_pos [FiniteDimensional ℂ V]
     fun g x _ hlt ↦ ?_⟩
   have hdist : dist (fderiv ℝ (fderiv ℝ f) x) (fderiv ℝ (fderiv ℝ g) x) <
       infDist (fderiv ℝ (fderiv ℝ f) x) Sᶜ :=
-    (dist_comm _ _).trans_lt ((dist_eq_norm_sub_bilin _ _).trans_lt hlt)
+    (dist_comm _ _).trans_lt
+      ((dist_eq_norm (fderiv ℝ (fderiv ℝ g) x) (fderiv ℝ (fderiv ℝ f) x)).trans_lt hlt)
   exact not_not.1 (notMem_of_dist_lt_infDist hdist)
 
 end TauCeti
