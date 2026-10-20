@@ -66,10 +66,13 @@ theorem gaussianDensity_eq_gaussianPDFReal {c : ℝ} (hc : 0 < c) :
     gaussianDensity c = ProbabilityTheory.gaussianPDFReal 0 (2 * c ^ 2)⁻¹.toNNReal := by
   ext t
   have hv : (0 : ℝ) ≤ (2 * c ^ 2)⁻¹ := by positivity
-  rw [gaussianDensity, ProbabilityTheory.gaussianPDFReal, Real.coe_toNNReal _ hv, sub_zero,
-    show 2 * π * (2 * c ^ 2)⁻¹ = π / c ^ 2 by field_simp,
-    Real.sqrt_div' _ (sq_nonneg c), Real.sqrt_sq hc.le,
-    show -t ^ 2 / (2 * (2 * c ^ 2)⁻¹) = -(c * t) ^ 2 by field_simp]
+  -- Normalize the variance factor before simplifying its square root.
+  have hvariance : 2 * π * (2 * c ^ 2)⁻¹ = π / c ^ 2 := by field_simp
+  -- Express the Gaussian exponent in terms of the scaled variable.
+  have hexponent : -t ^ 2 / (2 * (2 * c ^ 2)⁻¹) = -(c * t) ^ 2 := by field_simp
+  rw [gaussianDensity, ProbabilityTheory.gaussianPDFReal, Real.coe_toNNReal _ hv, sub_zero]
+  rw [hvariance, Real.sqrt_div' _ (sq_nonneg c), Real.sqrt_sq hc.le]
+  rw [hexponent]
   field_simp
 
 /-- For `c > 0`, the Gaussian density of width `c⁻¹` has total mass one. -/
