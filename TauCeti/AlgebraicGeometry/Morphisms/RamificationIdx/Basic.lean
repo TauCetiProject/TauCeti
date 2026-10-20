@@ -87,20 +87,27 @@ theorem ramificationIdxAt_pos {x : X} (hx : f.QuasiFiniteAt x) : 0 < ramificatio
 /-- Ramification indices multiply along a composite at any point where the first stalk map is
 flat. No finiteness, normality, or codimension assumptions are required.
 
-The tower uses the definitional equality `(f ≫ g) x = g (f x)` to identify the two descriptions
-of the source stalk of the composite stalk map. -/
+The composite stalk map is transported along `Scheme.Hom.comp_apply` before forming the tower.
+The named stalk-composition formula then gives the scalar-tower compatibility. -/
 theorem ramificationIdxAt_comp_of_flat_stalkMap {Z : Scheme.{u}} (g : Y ⟶ Z) (x : X)
     (hflat : (f.stalkMap x).hom.Flat) :
     ramificationIdxAt (f ≫ g) x = ramificationIdxAt f x * ramificationIdxAt g (f x) := by
   let sourceStalk := Z.presheaf.stalk (g (f x))
   let middleStalk := Y.presheaf.stalk (f x)
   let targetStalk := X.presheaf.stalk x
+  let compositeStalkMap : sourceStalk ⟶ targetStalk :=
+    eqToHom (congrArg Z.presheaf.stalk (Scheme.Hom.comp_apply f g x).symm) ≫
+      (f ≫ g).stalkMap x
   let : Algebra sourceStalk middleStalk := (g.stalkMap (f x)).hom.toAlgebra
   let : Algebra middleStalk targetStalk := (f.stalkMap x).hom.toAlgebra
-  let : Algebra sourceStalk targetStalk := ((f ≫ g).stalkMap x).hom.toAlgebra
-  have hcomp : ((f ≫ g).stalkMap x).hom = (f.stalkMap x).hom.comp (g.stalkMap (f x)).hom := by
-    rw [Scheme.Hom.stalkMap_comp]
-    exact CommRingCat.hom_comp _ _
+  let : Algebra sourceStalk targetStalk := compositeStalkMap.hom.toAlgebra
+  have htransport :
+      eqToHom (congrArg Z.presheaf.stalk (Scheme.Hom.comp_apply f g x).symm) =
+        𝟙 sourceStalk := eqToHom_refl _ _
+  have hcomp : compositeStalkMap.hom =
+      (f.stalkMap x).hom.comp (g.stalkMap (f x)).hom := by
+    dsimp only [compositeStalkMap]
+    erw [htransport, Category.id_comp, Scheme.Hom.stalkMap_comp, CommRingCat.hom_comp]
   have : IsScalarTower sourceStalk middleStalk targetStalk := .of_algebraMap_eq' hcomp
   have : IsLocalHom (algebraMap middleStalk targetStalk) :=
     inferInstanceAs (IsLocalHom (f.stalkMap x).hom)
