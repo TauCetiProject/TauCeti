@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Singular.Cubical.LocalCoefficients.Comparison
+public import TauCeti.AlgebraicTopology.Singular.Cubical.LocalCoefficients.Comparison.Basic
 
 /-!
 # From simplicial to cubical chains with local coefficients
@@ -138,7 +138,7 @@ theorem twistedSingularToCubical_twistedPushforward {Z : TopCat.{v}} [SimplyConn
 
 /-- The simplicial pushforward along a simplex `σ` from the initial vertex of the model, with the
 coefficient at the initial vertex of `σ`. -/
-private def spush {n : ℕ} (σ : (TopCat.toSSet.obj X) _⦋n⦌) (m : ℕ)
+def simplexPushforward {n : ℕ} (σ : (TopCat.toSSet.obj X) _⦋n⦌) (m : ℕ)
     (y : ((singularChains (ULift.{v} ℤ)).obj (simplexModel.{v} n)).X m)
     (a : L.obj (initialVertex σ)) : (twistedChainComplex L).X m :=
   twistedPushforward (Z := simplexModel.{v} n) L (simplexToHom σ)
@@ -146,39 +146,90 @@ private def spush {n : ℕ} (σ : (TopCat.toSSet.obj X) _⦋n⦌) (m : ℕ)
 
 /-- The cubical pushforward along a simplex `σ` from the initial vertex of the model, with the
 coefficient at the initial vertex of `σ`. -/
-private def cpush {n : ℕ} (σ : (TopCat.toSSet.obj X) _⦋n⦌) (m : ℕ)
+def simplexCubicalPushforward {n : ℕ} (σ : (TopCat.toSSet.obj X) _⦋n⦌) (m : ℕ)
     (y : ((normalizedCubicalChainComplex (ULift.{v} ℤ)).obj (simplexModel.{v} n)).X m)
     (a : L.obj (initialVertex σ)) : L.NormalizedTwistedCubicalChain m :=
   NormalizedTwistedCubicalChain.pushforward (Z := simplexModel.{v} n) L (simplexToHom σ).hom
     (SimplexCategory.toTopInitialVertex ⦋n⦌) m y a
 
-private lemma ι_eq_spush {n : ℕ} (σ : (TopCat.toSSet.obj X) _⦋n⦌) (a : L.obj (initialVertex σ)) :
-    ιTwistedChainComplex L n σ a = spush L σ n (simplexChain (idSimplex n) 1) a :=
-  ιTwistedChainComplex_eq_twistedPushforward σ a
-
-private lemma d_spush {n m : ℕ} (σ : (TopCat.toSSet.obj X) _⦋n⦌)
-    (y : ((singularChains (ULift.{v} ℤ)).obj (simplexModel.{v} n)).X (m + 1))
-    (a : L.obj (initialVertex σ)) :
-    (twistedChainComplex L).d (m + 1) m (spush L σ (m + 1) y a) =
-      spush L σ m (((singularChains (ULift.{v} ℤ)).obj (simplexModel.{v} n)).d (m + 1) m y) a :=
-  twistedPushforward_d (Z := simplexModel.{v} n) y a
-
-private lemma from_spush {n m : ℕ} (σ : (TopCat.toSSet.obj X) _⦋n⦌)
+/-- The simplicial pushforward along a simplex is the twisted pushforward along the simplex
+regarded as a map from the model. -/
+theorem simplexPushforward_apply {n : ℕ} (σ : (TopCat.toSSet.obj X) _⦋n⦌) (m : ℕ)
     (y : ((singularChains (ULift.{v} ℤ)).obj (simplexModel.{v} n)).X m)
     (a : L.obj (initialVertex σ)) :
-    (twistedSingularToCubical L m).hom (spush L σ m y a) =
-      cpush L σ m (((singularToCubical (ULift.{v} ℤ)).app (simplexModel.{v} n)).f m y) a :=
+    simplexPushforward L σ m y a =
+      twistedPushforward (Z := simplexModel.{v} n) L (simplexToHom σ)
+        (SimplexCategory.toTopInitialVertex ⦋n⦌) m y a :=
+  (rfl)
+
+/-- The cubical pushforward along a simplex is the cubical pushforward along the simplex regarded
+as a map from the model. -/
+theorem simplexCubicalPushforward_apply {n : ℕ} (σ : (TopCat.toSSet.obj X) _⦋n⦌) (m : ℕ)
+    (y : ((normalizedCubicalChainComplex (ULift.{v} ℤ)).obj (simplexModel.{v} n)).X m)
+    (a : L.obj (initialVertex σ)) :
+    simplexCubicalPushforward L σ m y a =
+      NormalizedTwistedCubicalChain.pushforward (Z := simplexModel.{v} n) L (simplexToHom σ).hom
+        (SimplexCategory.toTopInitialVertex ⦋n⦌) m y a :=
+  (rfl)
+
+/-- A simplex with a coefficient is the simplicial pushforward along it of the identity simplex of
+the model. -/
+lemma ιTwistedChainComplex_eq_simplexPushforward {n : ℕ} (σ : (TopCat.toSSet.obj X) _⦋n⦌)
+    (a : L.obj (initialVertex σ)) :
+    ιTwistedChainComplex L n σ a = simplexPushforward L σ n (simplexChain (idSimplex n) 1) a :=
+  ιTwistedChainComplex_eq_twistedPushforward σ a
+
+/-- The simplicial pushforward along a simplex is additive in the chain. -/
+lemma simplexPushforward_add {n m : ℕ} (σ : (TopCat.toSSet.obj X) _⦋n⦌)
+    (y y' : ((singularChains (ULift.{v} ℤ)).obj (simplexModel.{v} n)).X m)
+    (a : L.obj (initialVertex σ)) :
+    simplexPushforward L σ m (y + y') a =
+      simplexPushforward L σ m y a + simplexPushforward L σ m y' a :=
+  -- Evaluating a sum of linear maps is the sum of the evaluations.
+  congrArg (fun φ ↦ φ a) (map_add (twistedPushforward (Z := simplexModel.{v} n) L
+    (simplexToHom σ) (SimplexCategory.toTopInitialVertex ⦋n⦌) m) y y')
+
+/-- The simplicial pushforward along a simplex is compatible with differences of chains. -/
+lemma simplexPushforward_sub {n m : ℕ} (σ : (TopCat.toSSet.obj X) _⦋n⦌)
+    (y y' : ((singularChains (ULift.{v} ℤ)).obj (simplexModel.{v} n)).X m)
+    (a : L.obj (initialVertex σ)) :
+    simplexPushforward L σ m (y - y') a =
+      simplexPushforward L σ m y a - simplexPushforward L σ m y' a :=
+  -- Evaluating a difference of linear maps is the difference of the evaluations.
+  congrArg (fun φ ↦ φ a) (map_sub (twistedPushforward (Z := simplexModel.{v} n) L
+    (simplexToHom σ) (SimplexCategory.toTopInitialVertex ⦋n⦌) m) y y')
+
+/-- The simplicial pushforward along a simplex commutes with the boundaries. -/
+lemma d_simplexPushforward {n m : ℕ} (σ : (TopCat.toSSet.obj X) _⦋n⦌)
+    (y : ((singularChains (ULift.{v} ℤ)).obj (simplexModel.{v} n)).X (m + 1))
+    (a : L.obj (initialVertex σ)) :
+    (twistedChainComplex L).d (m + 1) m (simplexPushforward L σ (m + 1) y a) =
+      simplexPushforward L σ m
+        (((singularChains (ULift.{v} ℤ)).obj (simplexModel.{v} n)).d (m + 1) m y) a :=
+  twistedPushforward_d (Z := simplexModel.{v} n) y a
+
+/-- The comparison carries the simplicial pushforward along a simplex to the cubical pushforward
+of the image under the comparison without coefficients. -/
+lemma twistedSingularToCubical_simplexPushforward {n m : ℕ} (σ : (TopCat.toSSet.obj X) _⦋n⦌)
+    (y : ((singularChains (ULift.{v} ℤ)).obj (simplexModel.{v} n)).X m)
+    (a : L.obj (initialVertex σ)) :
+    (twistedSingularToCubical L m).hom (simplexPushforward L σ m y a) =
+      simplexCubicalPushforward L σ m
+        (((singularToCubical (ULift.{v} ℤ)).app (simplexModel.{v} n)).f m y) a :=
   twistedSingularToCubical_twistedPushforward L (simplexToHom σ) _ y a
 
-private lemma boundary_cpush {n m : ℕ} (σ : (TopCat.toSSet.obj X) _⦋n⦌)
+/-- The cubical pushforward along a simplex commutes with the boundaries. -/
+lemma boundary_simplexCubicalPushforward {n m : ℕ} (σ : (TopCat.toSSet.obj X) _⦋n⦌)
     (y : ((normalizedCubicalChainComplex (ULift.{v} ℤ)).obj (simplexModel.{v} n)).X (m + 1))
     (a : L.obj (initialVertex σ)) :
-    NormalizedTwistedCubicalChain.boundary L m (cpush L σ (m + 1) y a) =
-      cpush L σ m (((normalizedCubicalChainComplex (ULift.{v} ℤ)).obj (simplexModel.{v} n)).d
-        (m + 1) m y) a :=
+    NormalizedTwistedCubicalChain.boundary L m (simplexCubicalPushforward L σ (m + 1) y a) =
+      simplexCubicalPushforward L σ m
+        (((normalizedCubicalChainComplex (ULift.{v} ℤ)).obj (simplexModel.{v} n)).d
+          (m + 1) m y) a :=
   (NormalizedTwistedCubicalChain.boundary_pushforward (L := L) (f := (simplexToHom σ).hom)
     (z₀ := SimplexCategory.toTopInitialVertex _) y a).trans
-    (congrArg (fun z ↦ cpush L σ m z a) (normalizedCubicalChainComplex_obj_d_apply _ m y).symm)
+    (congrArg (fun z ↦ simplexCubicalPushforward L σ m z a)
+      (normalizedCubicalChainComplex_obj_d_apply _ m y).symm)
 
 /-- The comparison from simplicial to cubical chains commutes with the boundaries. -/
 theorem twistedSingularToCubical_comm (n : ℕ) :
@@ -190,9 +241,10 @@ theorem twistedSingularToCubical_comm (n : ℕ) :
       ((twistedChainComplex L).d (n + 1) n (ιTwistedChainComplex L (n + 1) σ a)) =
     L.normalizedTwistedCubicalChainComplex.d (n + 1) n
       ((twistedSingularToCubical L (n + 1)).hom (ιTwistedChainComplex L (n + 1) σ a))
-  rw [ι_eq_spush, d_spush, from_spush, from_spush, normalizedTwistedCubicalChainComplex_d_apply,
-    boundary_cpush]
-  exact congrArg (fun y ↦ cpush L σ n y a)
+  rw [ιTwistedChainComplex_eq_simplexPushforward, d_simplexPushforward,
+    twistedSingularToCubical_simplexPushforward, twistedSingularToCubical_simplexPushforward,
+    normalizedTwistedCubicalChainComplex_d_apply, boundary_simplexCubicalPushforward]
+  exact congrArg (fun y ↦ simplexCubicalPushforward L σ n y a)
     (HomologicalComplex.Hom.comm_apply ((singularToCubical (ULift.{v} ℤ)).app _) (n + 1) n _).symm
 
 /-- The **comparison chain map** from the simplicial chain complex with coefficients in `L` to the

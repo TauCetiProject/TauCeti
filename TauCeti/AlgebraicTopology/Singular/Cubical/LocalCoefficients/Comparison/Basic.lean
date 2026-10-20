@@ -166,10 +166,6 @@ theorem twistedCubicalToSingular_ofSubcube {n m : ℕ} (c : SingularCube X n)
       (cubicalToSingularGen (ULift.{v} ℤ) m)
       (L.map p a)) hp).trans key.symm
 
-/-- The projection of the cube `Iᵐ⁺¹` forgetting the `i`-th coordinate. -/
-private abbrev forgetCoordinate {m : ℕ} (i : Fin (m + 1)) : C(Fin (m + 1) → I, Fin m → I) :=
-  ContinuousMap.precomp (X := fun _ : Fin (m + 1) ↦ I) i.succAbove
-
 /-- The image of a cube which is a degeneracy `s ∘ π` is zero. -/
 private theorem twistedCubePushforward_gen_eq_zero_of_eq_comp {m : ℕ} (s : SingularCube X m)
     (i : Fin (m + 1)) {c : SingularCube X (m + 1)} (hc : c = s.comp (forgetCoordinate i))
@@ -179,10 +175,9 @@ private theorem twistedCubePushforward_gen_eq_zero_of_eq_comp {m : ℕ} (s : Sin
   -- the origin of `Iᵐ⁺¹` goes to the origin of `Iᵐ`, so `a` is a coefficient at `s 0`
   have h := twistedCubicalToSingular_ofSubcube (L := L) s (forgetCoordinate i)
     (a : L.obj (FundamentalGroupoid.mk (s 0)))
-  have hu : (upCube.{v} m).comp (forgetCoordinate i) = degeneracy (upCube.{v} m) i :=
-    ContinuousMap.ext fun x ↦ by rw [degeneracy_apply]; rfl
   have h0 : cubicalToSingularSubcube (ULift.{v} ℤ) m (forgetCoordinate i) = 0 :=
-    cubicalToSingularSubcube_eq_zero _ (hu ▸ isDegenerate_degeneracy _ _)
+    cubicalToSingularSubcube_eq_zero _
+      ((degeneracy_eq_comp (upCube.{v} m) i) ▸ isDegenerate_degeneracy _ _)
   -- The origin goes to the origin, so the transport inside `s` is the identity.
   have hp : pathClass s 0 (forgetCoordinate i 0) = 𝟙 (FundamentalGroupoid.mk (s 0)) :=
     pathClass_self s 0
@@ -207,7 +202,7 @@ theorem twistedCubePushforward_gen_eq_zero_of_isDegenerate {n : ℕ} {c : Singul
   | succ m =>
     obtain ⟨i, s, hs⟩ := isDegenerate_iff_exists_eq_degeneracy.1 hc
     exact twistedCubePushforward_gen_eq_zero_of_eq_comp s i
-      (hs.trans (ContinuousMap.ext fun x ↦ by rw [degeneracy_apply]; rfl)) a
+      (hs.trans (degeneracy_eq_comp s i)) a
 
 /-- The comparison commutes with the boundaries. -/
 theorem twistedCubicalToSingular_boundary (n : ℕ) (x : L.TwistedCubicalChain (n + 1)) :
