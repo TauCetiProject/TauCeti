@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.Analysis.Normed.Module.RCLike.Real
+import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Coordinates
 
 public import Mathlib.Analysis.Convex.StdSimplex
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Basic
@@ -42,6 +43,8 @@ the elementary equivalence between its two points and `Fin 2`.
 * `AbstractSimplicialComplex.instLocallyPathConnectedSpaceStandardSimplex`: every closed
   coordinate simplex is locally path-connected.
 * `realizationTopHomeomorphStdSimplex`: the full complex realizes to Mathlib's standard simplex.
+* `range_coe_realization_top`, `range_coe_realization_standardSuccSimplexBoundary`: the coordinate
+  vectors of the realizations of the full complex and of the boundary of a standard simplex.
 * `realizationOneSimplexHomeomorphUnitInterval`: the standard one-simplex realizes to `[0, 1]`.
 * `realizationOneSimplexBoundaryHomeomorphSphereZero`: its boundary realizes to `S⁰`.
 -/
@@ -162,6 +165,32 @@ noncomputable def simplexRealizationHomeomorph (K : AbstractSimplicialComplex ι
   have h := congrArg (fun y => y.1.1)
     ((K.simplexRealizationHomeomorph V hV).apply_symm_apply x)
   simpa only [simplexRealizationHomeomorph_val] using h
+
+/-- The coordinate vectors of the realization of the full complex on a finite type are the points
+of the standard simplex. -/
+theorem range_coe_realization_top [Fintype ι] :
+    range (fun x : Realization (⊤ : AbstractSimplicialComplex ι) => (x.1 : ι → ℝ)) =
+      {z | (∀ i, 0 ≤ z i) ∧ ∑ i, z i = 1} := by
+  ext z
+  rw [mem_range_coe_realization_iff, TauCeti.AbstractSimplicialComplex.mem_top_iff,
+    Finsupp.support_nonempty_iff]
+  refine ⟨fun h => ⟨h.1, h.2.1⟩, fun h => ⟨h.1, h.2, fun hz => ?_⟩⟩
+  have : z = 0 := by simpa using congrArg (⇑) hz
+  simp [this] at h
+
+/-- The coordinate vectors of the realization of the boundary of a standard simplex are the points
+of the standard simplex with some vanishing coordinate. -/
+theorem range_coe_realization_standardSuccSimplexBoundary (n : ℕ) :
+    range (fun x : Realization (standardSuccSimplexBoundary n) => (x.1 : Fin (n + 2) → ℝ)) =
+      {z | (∀ i, 0 ≤ z i) ∧ ∑ i, z i = 1 ∧ ∃ i, z i = 0} := by
+  ext z
+  rw [mem_range_coe_realization_iff, mem_standardSuccSimplexBoundary_iff,
+    Finsupp.support_nonempty_iff, Finset.ssubset_univ_iff]
+  simp only [ne_eq, Finset.eq_univ_iff_forall, Finsupp.mem_support_iff,
+    Finsupp.coe_equivFunOnFinite_symm, not_forall, not_not, mem_ofPred_eq]
+  refine ⟨fun h => ⟨h.1, h.2.1, h.2.2.2⟩, fun h => ⟨h.1, h.2.1, fun hz => ?_, h.2.2⟩⟩
+  have : z = 0 := by simpa using congrArg (⇑) hz
+  simp [this] at h
 
 variable [Fintype ι] [Nonempty ι]
 
