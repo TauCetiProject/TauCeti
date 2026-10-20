@@ -48,8 +48,8 @@ theorem powerBias_betaMeasure {a b q : ℝ} (ha : 0 < a) (hb : 0 < b) (hq : -a <
     (ae_of_all _ (betaPDFReal_nonneg ha hb))
     (div_pos (beta_pos haq hb) (beta_pos ha hb)) (ae_of_all _ fun x => ?_)
   by_cases hx : 0 < x ∧ x < 1
-  · rw [betaPDFReal, ite_eq_left hx, betaPDFReal, ite_eq_left hx,
-      show a + q - 1 = a - 1 + q by ring, rpow_add hx.1]
+  · have hexp : a + q - 1 = a - 1 + q := by ring
+    rw [betaPDFReal, ite_eq_left hx, betaPDFReal, ite_eq_left hx, hexp, rpow_add hx.1]
     have := (beta_pos ha hb).ne'
     have := (beta_pos haq hb).ne'
     field_simp

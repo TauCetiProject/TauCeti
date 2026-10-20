@@ -38,8 +38,9 @@ theorem powerBias_gammaMeasure {a r q : ℝ} (ha : 0 < a) (hr : 0 < r) (hq : -a 
   filter_upwards [(volume : Measure ℝ).ae_ne 0] with x hx
   rcases lt_or_gt_of_ne hx with hxneg | hxpos
   · simp [gammaPDFReal, not_le.2 hxneg]
-  · rw [gammaPDFReal_of_nonneg hxpos.le, gammaPDFReal_of_nonneg hxpos.le,
-      show a + q - 1 = (a - 1) + q by ring, rpow_add hxpos, rpow_add hr]
+  · have hexp : a + q - 1 = (a - 1) + q := by ring
+    rw [gammaPDFReal_of_nonneg hxpos.le, gammaPDFReal_of_nonneg hxpos.le, hexp, rpow_add hxpos,
+      rpow_add hr]
     have := (Real.Gamma_pos_of_pos ha).ne'
     have := (Real.Gamma_pos_of_pos haq).ne'
     have := (rpow_pos_of_pos hr q).ne'

@@ -51,8 +51,9 @@ theorem powerBias_paretoMeasure {t r q : ℝ} (ht : 0 < t) (hr : 0 < r) (hq : q 
     (div_pos (mul_pos hr (rpow_pos_of_pos ht q)) hrq) (ae_of_all _ fun x => ?_)
   by_cases hx : t ≤ x
   · have htr : t ^ r = t ^ q * t ^ (r - q) := by rw [← rpow_add ht, add_sub_cancel]
+    have hexp : -(r + 1) + q = -(r - q + 1) := by ring
     rw [paretoPDFReal, ite_eq_left hx, paretoPDFReal, ite_eq_left hx, mul_assoc,
-      ← rpow_add (ht.trans_le hx), show -(r + 1) + q = -(r - q + 1) by ring, htr]
+      ← rpow_add (ht.trans_le hx), hexp, htr]
     field_simp
   · simp [paretoPDFReal, hx]
 
