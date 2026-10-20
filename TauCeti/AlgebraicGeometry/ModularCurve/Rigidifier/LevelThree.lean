@@ -41,6 +41,9 @@ representable, affine, rigid moduli problem is representable (KM 4.7.0).
 
 ## Main definitions
 
+* `TauCeti.AlgebraicGeometry.UniversalLevelThree.curveGeomStructure`: the universal naive
+  `[Γ(3)]`-structure over `Spec ℤ[1/3, ζ₃][μ, 1/(μ³ - 1)]`, given by the universal basis; it is
+  injective on every fibre (`UniversalLevelThree.isFiberwiseInjective_curveGeomStructure`).
 * `TauCeti.AlgebraicGeometry.EllObj.universalLevelThree B`: the universal level-three normal form
   over `B`, as an object of `Ell/B`.
 * `TauCeti.AlgebraicGeometry.ModuliProblem.gammaNaiveThreeRepresentableBy B`: the naive moduli
@@ -70,6 +73,50 @@ open CategoryTheory Limits MonoidalCategory Opposite AlgebraicGeometry MonObj
 namespace TauCeti.AlgebraicGeometry
 
 open WeierstrassCurve UniversalLevelThree
+
+namespace UniversalLevelThree
+
+/-! ### The universal naive `[Γ(3)]`-structure over `Spec ℤ[1/3, ζ₃][μ, 1/(μ³ - 1)]` -/
+
+/-- **The universal naive `[Γ(3)]`-structure.** The homomorphism `(ℤ/3ℤ)² →* curveGeom(M)`, for
+`M = Spec ℤ[1/3, ζ₃][μ, 1/(μ³ - 1)]`, sending `(1, 0)` and `(0, 1)` to the basis points `(0, 0)`
+and `(-(μ² + μ + 1), (μ² + μ + 1)(μ - ζ))` of the `3`-torsion. -/
+noncomputable def curveGeomStructure :
+    Multiplicative (ZMod 3 × ZMod 3) →*
+      (𝟙_ (Over (Spec (.of (ULift.{u} UniversalLevelThree.Ring)))) ⟶
+        Over.mk curveGeom.structureMap) :=
+  (zmodProdMonoidHomEquiv 3 _).symm
+    (⟨firstPointHom, by
+        rw [← zpow_ofNat, curveGeom.zpow_eq_one_iff_left_comp_mulBy_left]
+        exact firstPointHom_left_comp_mulBy_three_left⟩,
+      ⟨secondPointHom, by
+        rw [← zpow_ofNat, curveGeom.zpow_eq_one_iff_left_comp_mulBy_left]
+        exact secondPointHom_left_comp_mulBy_three_left⟩)
+
+/-- The universal naive `[Γ(3)]`-structure sends `(1, 0)` to the point `(0, 0)`. -/
+@[simp]
+theorem curveGeomStructure_ofAdd_one_zero :
+    curveGeomStructure.{u} (.ofAdd (1, 0)) = firstPointHom := by
+  rw [← coe_zmodProdMonoidHomEquiv_apply_fst, curveGeomStructure, Equiv.apply_symm_apply]
+
+/-- The universal naive `[Γ(3)]`-structure sends `(0, 1)` to the point
+`(-(μ² + μ + 1), (μ² + μ + 1)(μ - ζ))`. -/
+@[simp]
+theorem curveGeomStructure_ofAdd_zero_one :
+    curveGeomStructure.{u} (.ofAdd (0, 1)) = secondPointHom := by
+  rw [← coe_zmodProdMonoidHomEquiv_apply_snd, curveGeomStructure, Equiv.apply_symm_apply]
+
+/-- The universal naive `[Γ(3)]`-structure is injective on every fibre: the universal basis is a
+naive `[Γ(3)]`-structure on `curveGeom`. -/
+theorem isFiberwiseInjective_curveGeomStructure :
+    curveGeom.IsFiberwiseInjective curveGeomStructure.{u} := by
+  refine EllipticCurveGeom.isFiberwiseInjective_zmod_three_prod_iff.mpr ?_
+  rw [curveGeomStructure_ofAdd_one_zero, curveGeomStructure_ofAdd_zero_one]
+  exact ⟨firstPointHom_left_ne_zero, secondPointHom_left_ne_zero,
+    fun s ↦ ⟨secondPointHom_left_ne_firstPointHom_left s,
+      secondPointHom_left_ne_firstPointHom_left_neg s⟩⟩
+
+end UniversalLevelThree
 
 namespace EllObj
 
@@ -125,51 +172,6 @@ namespace ModuliProblem
 open EllObj
 
 /-! ### Representability of the naive moduli problem `[Γ(3)]` -/
-
--- The basis of the `3`-torsion of the universal level-three normal form over
--- `Spec ℤ[1/3, ζ₃][μ, 1/(μ³ - 1)]` satisfies the conditions of the level-three normal form, as the
--- basis it is carried to by the identity.
-private theorem conditions_curveGeom :
-    (∀ s, firstPointHom.{u}.left s ≠ curveGeom.zero s) ∧
-      (∀ s, secondPointHom.{u}.left s ≠ curveGeom.zero s) ∧
-      firstPointHom.{u}.left ≫ (curveGeom.mulBy 3).left = curveGeom.zero ∧
-      secondPointHom.{u}.left ≫ (curveGeom.mulBy 3).left = curveGeom.zero ∧
-      ∀ s, secondPointHom.{u}.left s ≠ firstPointHom.left s ∧
-        secondPointHom.{u}.left s ≠ (firstPointHom.left ≫ curveGeom.neg) s :=
-  (curveGeom.exists_levelThreeNormalForm_iff (EllipticCurveGeom.left_comp_structureMap _)
-    (EllipticCurveGeom.left_comp_structureMap _)).mp
-    ⟨𝟙 _, (toEllipticCurveGeomIso curveULift).hom,
-      IsPullback.of_horiz_isIso
-        ⟨by rw [toEllipticCurveGeomIso_hom_projModelOver, Category.comp_id]⟩,
-      by rw [zero_toEllipticCurveGeomIso_hom, Category.id_comp], by simp, by simp⟩
-
--- The naive `[Γ(3)]`-structure of the universal basis over `Spec ℤ[1/3, ζ₃][μ, 1/(μ³ - 1)]`.
-private noncomputable def curveGeomStructure :
-    Multiplicative (ZMod 3 × ZMod 3) →*
-      (𝟙_ (Over (Spec (.of (ULift.{u} UniversalLevelThree.Ring)))) ⟶
-        Over.mk curveGeom.structureMap) :=
-  (zmodProdMonoidHomEquiv 3 _).symm
-    (⟨firstPointHom, by
-        rw [← zpow_ofNat, curveGeom.zpow_eq_one_iff_left_comp_mulBy_left]
-        exact conditions_curveGeom.2.2.1⟩,
-      ⟨secondPointHom, by
-        rw [← zpow_ofNat, curveGeom.zpow_eq_one_iff_left_comp_mulBy_left]
-        exact conditions_curveGeom.2.2.2.1⟩)
-
-private theorem curveGeomStructure_ofAdd_one_zero :
-    curveGeomStructure.{u} (.ofAdd (1, 0)) = firstPointHom := by
-  rw [← coe_zmodProdMonoidHomEquiv_apply_fst, curveGeomStructure, Equiv.apply_symm_apply]
-
-private theorem curveGeomStructure_ofAdd_zero_one :
-    curveGeomStructure.{u} (.ofAdd (0, 1)) = secondPointHom := by
-  rw [← coe_zmodProdMonoidHomEquiv_apply_snd, curveGeomStructure, Equiv.apply_symm_apply]
-
-private theorem isFiberwiseInjective_curveGeomStructure :
-    curveGeom.IsFiberwiseInjective curveGeomStructure.{u} := by
-  obtain ⟨h₁, h₂, -, -, h₃⟩ := conditions_curveGeom.{u}
-  refine EllipticCurveGeom.isFiberwiseInjective_zmod_three_prod_iff.mpr ?_
-  rw [curveGeomStructure_ofAdd_one_zero, curveGeomStructure_ofAdd_zero_one]
-  exact ⟨h₁, h₂, h₃⟩
 
 variable (B : Scheme.{u})
 

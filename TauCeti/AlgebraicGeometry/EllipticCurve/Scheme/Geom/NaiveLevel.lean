@@ -7,6 +7,7 @@ module
 
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Torsion.Equalizer
 import TauCeti.AlgebraicGeometry.RationalPoint.Basic
+import TauCeti.Data.ZMod.MonoidHomEquiv
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.FieldPoints
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.Points
@@ -335,6 +336,19 @@ theorem IsFiberwiseInjective.disjoint_range (h : E.IsFiberwiseInjective φ) {a b
   subst t
   exact hab (h.left_apply_injective s ht.symm)
 
+/-- **Points agree on the fibre over a point exactly when they agree there.** Two `S`-points `P`
+and `Q` of `E` have the same base change to the fibre `E_{κ(s)}` of `E` over the residue field
+`κ(s)` of a point `s` of `S` exactly when `P` and `Q` take the same value at `s`. -/
+theorem pointsPullback_fromSpecResidueField_eq_iff (P Q : 𝟙_ (Over S) ⟶ Over.mk E.structureMap)
+    (s : S) :
+    pointsPullback (E.isPullback_baseChange (S.fromSpecResidueField s)) (by simp) P =
+        pointsPullback (E.isPullback_baseChange (S.fromSpecResidueField s)) (by simp) Q ↔
+      P.left s = Q.left s := by
+  obtain ⟨p⟩ : Nonempty (Spec (S.residueField s)) := inferInstance
+  rw [eq_comm, eq_pointsPullback_iff, pointsPullback_left_comp, eq_comm]
+  conv_rhs => rw [← Scheme.fromSpecResidueField_apply s p]
+  exact comp_eq_comp_iff_of_section (left_comp_structureMap _) (left_comp_structureMap _) _ p
+
 /-- **Injectivity on fibres is checked on residue fields.** A homomorphism `φ : A →* E(S)` is
 injective on every fibre exactly when, for every point `s` of `S`, `φ` followed by restriction to
 the fibre `E_{κ(s)}` of `E` over the residue field `κ(s)` is injective. -/
@@ -395,37 +409,23 @@ theorem isFiberwiseInjective_zmod_three_prod_iff
       (∀ s, (φ (.ofAdd (1, 0))).left s ≠ E.zero s) ∧ (∀ s, (φ (.ofAdd (0, 1))).left s ≠ E.zero s) ∧
         ∀ s, (φ (.ofAdd (0, 1))).left s ≠ (φ (.ofAdd (1, 0))).left s ∧
           (φ (.ofAdd (0, 1))).left s ≠ ((φ (.ofAdd (1, 0))).left ≫ E.neg) s := by
-  -- a homomorphism `ψ` from `(ℤ/3ℤ)²` is injective once `(1, 0)`, `(0, 1)`, `(1, 1)` and
-  -- `(-1, 1)` are not in its kernel, since these represent all nonzero elements up to sign
-  have hinj {G : Type u} [Group G] (ψ : Multiplicative (ZMod 3 × ZMod 3) →* G) :
-      Function.Injective ψ ↔ ψ (.ofAdd (1, 0)) ≠ ψ 1 ∧ ψ (.ofAdd (0, 1)) ≠ ψ 1 ∧
-        ψ (.ofAdd (0, 1)) ≠ ψ (.ofAdd (1, 0)) ∧ ψ (.ofAdd (0, 1)) ≠ ψ (.ofAdd (1, 0))⁻¹ := by
-    refine ⟨fun h ↦ ⟨h.ne (by decide), h.ne (by decide), h.ne (by decide), h.ne (by decide)⟩,
-      fun ⟨h₁, h₂, h₃, h₄⟩ ↦ (injective_iff_map_eq_one ψ).mpr fun z hz ↦ ?_⟩
-    have hz : ∀ z : Multiplicative (ZMod 3 × ZMod 3), z = 1 ∨ z = .ofAdd (1, 0) ∨
-        z = (.ofAdd (1, 0))⁻¹ ∨ z = .ofAdd (0, 1) ∨ z = (.ofAdd (0, 1))⁻¹ ∨
-        z = .ofAdd (0, 1) * .ofAdd (1, 0) ∨ z = (.ofAdd (0, 1) * .ofAdd (1, 0))⁻¹ ∨
-        z = .ofAdd (0, 1) * (.ofAdd (1, 0))⁻¹ ∨ z = (.ofAdd (0, 1) * (.ofAdd (1, 0))⁻¹)⁻¹ := by
-      decide
-    rcases hz z with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-      simp_all [mul_eq_one_iff_eq_inv]
   rw [isFiberwiseInjective_iff_forall_residueField]
   simp only [← forall_and]
   refine forall_congr' fun s ↦ ?_
-  obtain ⟨p⟩ : Nonempty (Spec (S.residueField s)) := inferInstance
-  have key (a b : Multiplicative (ZMod 3 × ZMod 3)) :
-      ((pointsPullback (E.isPullback_baseChange (S.fromSpecResidueField s)) (by simp)).comp φ) a =
-          ((pointsPullback (E.isPullback_baseChange (S.fromSpecResidueField s)) (by simp)).comp
-            φ) b ↔ (φ a).left s = (φ b).left s := by
-    rw [MonoidHom.comp_apply, MonoidHom.comp_apply, eq_comm, eq_pointsPullback_iff,
-      pointsPullback_left_comp, eq_comm]
-    refine (comp_eq_comp_iff_of_section (left_comp_structureMap _) (left_comp_structureMap _) _
-      p).trans ?_
-    have hp : S.fromSpecResidueField s p = s := Scheme.fromSpecResidueField_apply s p
-    exact ⟨fun h ↦ (congrArg (φ a).left hp).symm.trans (h.trans (congrArg (φ b).left hp)),
-      fun h ↦ (congrArg (φ a).left hp).trans (h.trans (congrArg (φ b).left hp).symm)⟩
-  simp only [hinj, ne_eq, key]
-  simp [hom_inv_left]
+  set ψ := (pointsPullback (E.isPullback_baseChange (S.fromSpecResidueField s)) (by simp)).comp φ
+  -- `(1, 1)` and `(-1, 1)` are `(0, 1) - (-1, 0)` and `(0, 1) - (1, 0)`
+  have hadd : (.ofAdd (1, 1) : Multiplicative (ZMod 3 × ZMod 3)) =
+      .ofAdd (0, 1) / (.ofAdd (1, 0))⁻¹ := by
+    decide
+  have hsub : (.ofAdd (-1, 1) : Multiplicative (ZMod 3 × ZMod 3)) =
+      .ofAdd (0, 1) / .ofAdd (1, 0) := by
+    decide
+  have hψ (a b) : ψ a = ψ b ↔ (φ a).left s = (φ b).left s :=
+    pointsPullback_fromSpecResidueField_eq_iff _ _ s
+  rw [injective_zmod_three_prod_iff, hadd, hsub, map_div, map_div, ne_eq, ne_eq, ne_eq, ne_eq,
+    div_eq_one, div_eq_one, ← map_one ψ, hψ, hψ, hψ, hψ]
+  simp only [map_one, map_inv, hom_inv_left]
+  exact and_congr_right fun _ ↦ and_congr_right fun _ ↦ and_comm
 
 /-! ### Naive `[Γ(N)]`-structures over a separably closed field -/
 
