@@ -35,6 +35,8 @@ the metric that a manifold with a geometric structure receives through its chart
   metric.
 * `Bundle.ContMDiffRiemannianMetric.pullback`: the `C^n` Riemannian metric obtained from an
   immersion by pulling back the target metric.
+* `Bundle.ContMDiffRiemannianMetric.pullback_id` and
+  `Bundle.ContMDiffRiemannianMetric.pullback_comp`: the functoriality laws for pullback metrics.
 * `Bundle.ContMDiffRiemannianMetric.pullback_rescale`: pulling back commutes with conformal
   rescaling, `f^* (h g) = (h ∘ f) f^* g`.
 * `Bundle.ContMDiffRiemannianMetric.conformalClass_pullback`: along a map with a `C^n` left
@@ -197,7 +199,7 @@ variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
 omit [IsManifold I 1 M] [IsManifold J 1 N] [FiniteDimensional ℝ E] [IsManifold K 1 P] in
 /-- The manifold derivative of a composite is the composition of the derivatives when both are
 injective at the relevant points. -/
-theorem mfderiv_comp_of_injective
+private theorem mfderiv_comp_of_injective
     (h : N → P) (f : M → N)
     (x : M)
     (hinjh : Function.Injective (mfderiv J K h (f x)))
@@ -210,17 +212,6 @@ theorem mfderiv_comp_of_injective
     mdifferentiableAt_of_mfderiv_injective hinjf
   exact mfderiv_comp x hhx hfx
 
-omit [IsManifold I 1 M] [IsManifold J 1 N] [FiniteDimensional ℝ E] [IsManifold K 1 P] in
-/-- The manifold derivative of a composite is injective when both component derivatives are. -/
-theorem injective_mfderiv_comp
-    (h : N → P) (f : M → N)
-    (x : M)
-    (hinjh : Function.Injective (mfderiv J K h (f x)))
-    (hinjf : Function.Injective (mfderiv I J f x)) :
-    Function.Injective (mfderiv I K (h ∘ f) x) := by
-  rw [mfderiv_comp_of_injective h f x hinjh hinjf]
-  exact hinjh.comp hinjf
-
 /-- Pulling a metric back along a composite is the same as pulling it back successively. -/
 theorem pullback_comp
     [FiniteDimensional ℝ F]
@@ -230,7 +221,9 @@ theorem pullback_comp
     (hinjh : ∀ y, Function.Injective (mfderiv J K h y))
     (hinjf : ∀ x, Function.Injective (mfderiv I J f x)) :
     g.pullback (h ∘ f) (hh.comp hf)
-        (fun x ↦ injective_mfderiv_comp h f x (hinjh (f x)) (hinjf x)) =
+        (fun x ↦ by
+          rw [mfderiv_comp_of_injective h f x (hinjh (f x)) (hinjf x)]
+          exact (hinjh (f x)).comp (hinjf x)) =
       (g.pullback h hh hinjh).pullback f hf hinjf := by
   apply ext
   intro x v w
