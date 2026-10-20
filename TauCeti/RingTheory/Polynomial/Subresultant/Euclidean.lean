@@ -261,55 +261,6 @@ theorem _root_.Polynomial.signedPsc_eq_zero_of_natDegree_mod_lt {p q : K[X]} {m 
   rw [signedPsc_of_le p q (le_min hjm hjq.le), psc_eq_zero_of_natDegree_mod_lt hp hrj hjq hjm,
     mul_zero]
 
-/-- Division with remainder in the right input preserves coefficient minors at the actual left
-degree and original right bound. -/
-theorem _root_.Polynomial.subresultantCoeff_mod_right {p q : K[X]} {n j : ℕ}
-    (hq : q.natDegree ≤ n) (k : ℕ) :
-    subresultantCoeff p (q % p) p.natDegree n j k =
-      subresultantCoeff p q p.natDegree n j k := by
-  rw [subresultantCoeff_comm, subresultantCoeff_mod_left hq, ← subresultantCoeff_comm]
-
-/-- Division with remainder in the right input preserves principal coefficients before the right
-bound drops. -/
-theorem _root_.Polynomial.psc_mod_right {p q : K[X]} {n j : ℕ}
-    (hq : q.natDegree ≤ n) :
-    psc p (q % p) p.natDegree n j = psc p q p.natDegree n j := by
-  simpa only [subresultantCoeff_self] using subresultantCoeff_mod_right (j := j) hq j
-
-/-- Division with remainder in the right input preserves signed principal coefficients within the
-subresultant range before the right bound drops. -/
-theorem _root_.Polynomial.signedPsc_mod_right {p q : K[X]} {n j : ℕ}
-    (hq : q.natDegree ≤ n) (hj : j ≤ min p.natDegree n) :
-    signedPsc p (q % p) p.natDegree n j = signedPsc p q p.natDegree n j := by
-  rw [signedPsc_of_le _ _ hj, signedPsc_of_le _ _ hj, psc_mod_right hq]
-
-/-- Reducing the right input modulo the left input and lowering the right bound from `n` to `r`
-multiplies the signed principal coefficients by `p.leadingCoeff ^ (n - r)`, with no sign change. -/
-theorem _root_.Polynomial.signedPsc_eq_leadingCoeff_pow_mul_signedPsc_mod {p q : K[X]} {n r j : ℕ}
-    (hq : q.natDegree ≤ n) (hr : (q % p).natDegree ≤ r) (hrn : r ≤ n)
-    (hjr : j ≤ r) (hjp : j ≤ p.natDegree) :
-    signedPsc p q p.natDegree n j =
-      p.leadingCoeff ^ (n - r) * signedPsc p (q % p) p.natDegree r j := by
-  rw [← signedPsc_mod_right hq (le_min hjp (hjr.trans hrn)),
-    signedPsc_eq_coeff_pow_mul_of_right_degree_drop le_rfl hr hrn hjp hjr, coeff_natDegree]
-
-/-- Principal coefficients vanish at the indices strictly between the degree of the right
-remainder `q % p` and the degree of `p`. -/
-theorem _root_.Polynomial.psc_eq_zero_of_natDegree_mod_right_lt {p q : K[X]} {n j : ℕ}
-    (hq : q.natDegree ≤ n) (hrj : (q % p).natDegree < j) (hjp : j < p.natDegree)
-    (hjn : j ≤ n) :
-    psc p q p.natDegree n j = 0 := by
-  rw [psc_comm, psc_eq_zero_of_natDegree_mod_lt hq hrj hjp hjn, mul_zero]
-
-/-- The signed principal coefficients vanish at the indices strictly between the degree of the
-right remainder `q % p` and the degree of `p`. -/
-theorem _root_.Polynomial.signedPsc_eq_zero_of_natDegree_mod_right_lt {p q : K[X]} {n j : ℕ}
-    (hq : q.natDegree ≤ n) (hrj : (q % p).natDegree < j) (hjp : j < p.natDegree)
-    (hjn : j ≤ n) :
-    signedPsc p q p.natDegree n j = 0 := by
-  rw [signedPsc_of_le p q (le_min hjp.le hjn),
-    psc_eq_zero_of_natDegree_mod_right_lt hq hrj hjp hjn, mul_zero]
-
 end Field
 
 end TauCeti

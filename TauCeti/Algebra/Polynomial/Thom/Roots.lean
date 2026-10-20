@@ -25,11 +25,11 @@ set of encodings realized by roots.
   they differ. It is decidable and refers to no point of `R`. The order of two points with
   distinct encodings is this comparison of their encodings (`Polynomial.lt_iff_thomLT`), so the
   order of the roots of `p` is recovered from their encodings alone
-  (`Polynomial.thomEncodingEquiv_lt_iff`, `Polynomial.card_roots_lt_eq_card_thomEncodings_thomLT`).
-  Including the zeroth derivative compares any point with a root
-  (`Polynomial.lt_iff_thomLT_cons_of_eval_eq_zero_right`,
-  `Polynomial.lt_iff_thomLT_cons_of_eval_eq_zero_left`), and the same comparisons hold at any
-  upper bound `d ≥ p.natDegree`.
+  (`Polynomial.thomEncodingEquiv_lt_iff`). Including the zeroth derivative compares any point
+  with a root (`Polynomial.lt_iff_thomLT_cons_derivativeSign_of_eval_eq_zero_right`,
+  `Polynomial.lt_iff_thomLT_cons_derivativeSign_of_eval_eq_zero_left`). The degree-bounded
+  comparisons and `Polynomial.card_roots_lt_eq_card_filter_thomLT_of_natDegree_le` use sign words
+  of a fixed length across specializations whose degrees may drop.
 
 ## References
 
@@ -145,14 +145,6 @@ theorem cons_zero_derivativeSign_succ_eq {R : Type*} [Semiring R] [LinearOrder R
   ext i
   refine Fin.cases ?_ (fun _ => ?_) i <;> simp [hx]
 
-/-- Prepending `0` to the Thom encoding of a root gives its derivative signs of orders
-`0, …, p.natDegree`. -/
-theorem cons_zero_thomEncoding_eq {R : Type*} [Semiring R] [LinearOrder R] {p : R[X]} {x : R}
-    (hx : p.eval x = 0) :
-    (Fin.cons 0 (thomEncoding p x) : Fin (p.natDegree + 1) → SignType) =
-      fun i => derivativeSign p x i.val := by
-  simpa only [← thomEncoding_apply] using cons_zero_derivativeSign_succ_eq p.natDegree hx
-
 variable {R : Type*} [CommRing R] [IsDomain R] [LinearOrder R]
 
 /-- The finite set of Thom encodings of the distinct roots of `p`. The zero polynomial has no
@@ -245,15 +237,6 @@ theorem thomEncoding_thomEncodingEquiv_symm (hrolle : PolynomialRolle R) (p : R[
   simpa only [coe_thomEncodingEquiv_apply] using
     congrArg Subtype.val ((thomEncodingEquiv hrolle p).apply_symm_apply σ)
 
-/-- **Comparison.** Two points with different Thom encodings are ordered as their encodings are
-by `ThomLT`. -/
-theorem lt_iff_thomLT (p : R[X]) (hrolle : PolynomialRolle R) {a b : R}
-    (hne : thomEncoding p a ≠ thomEncoding p b) :
-    a < b ↔ ThomLT (thomEncoding p a) (thomEncoding p b) := by
-  obtain ⟨i, hi, ht⟩ := exists_thomEncoding_ne p hne
-  rw [lt_iff_thomEncoding p hrolle i hi ht, thomLT_iff_of_ne hi ht]
-  exact ⟨fun h ↦ ⟨_, h⟩, fun ⟨_, h⟩ ↦ h⟩
-
 /-- Roots of a nonzero polynomial with the same derivative signs of orders `1, …, d`
 (where `p.natDegree ≤ d`) are equal. -/
 theorem eq_of_derivativeSign_succ_eq_of_natDegree_le {p : R[X]} {d : ℕ} (hd : p.natDegree ≤ d)
@@ -285,15 +268,6 @@ theorem lt_iff_thomLT_derivativeSign_of_natDegree_le {p : R[X]} {d : ℕ} (hd : 
   rw [lt_iff_derivativeSign p hrolle hi htail]
   exact ⟨fun h => ⟨hdeg, h⟩, fun ⟨_, h⟩ => h⟩
 
-/-- **Extended comparison at the degree.** Any two points whose derivative signs of orders
-`0, …, p.natDegree` differ are ordered as those sign words are by `ThomLT`. -/
-theorem lt_iff_thomLT_derivativeSign (p : R[X]) (hrolle : PolynomialRolle R) {a b : R}
-    (hne : (fun i : Fin (p.natDegree + 1) => derivativeSign p a i.val) ≠
-      fun i => derivativeSign p b i.val) :
-    a < b ↔ ThomLT (fun i : Fin (p.natDegree + 1) => derivativeSign p a i.val)
-      (fun i => derivativeSign p b i.val) :=
-  lt_iff_thomLT_derivativeSign_of_natDegree_le le_rfl hrolle hne
-
 /-- Any two points whose derivative signs of orders `1, …, d` (with `p.natDegree ≤ d`) differ are
 ordered as those sign words are by `ThomLT`. -/
 theorem lt_iff_thomLT_derivativeSign_succ_of_natDegree_le {p : R[X]} {d : ℕ}
@@ -311,6 +285,15 @@ theorem lt_iff_thomLT_derivativeSign_succ_of_natDegree_le {p : R[X]} {d : ℕ}
     simpa only [derivativeSign_derivative] using
       lt_iff_thomLT_derivativeSign_of_natDegree_le hd' hrolle
         (by simpa only [derivativeSign_derivative] using hne)
+
+/-- **Comparison.** Two points with different Thom encodings are ordered as their encodings are
+by `ThomLT`. -/
+theorem lt_iff_thomLT (p : R[X]) (hrolle : PolynomialRolle R) {a b : R}
+    (hne : thomEncoding p a ≠ thomEncoding p b) :
+    a < b ↔ ThomLT (thomEncoding p a) (thomEncoding p b) := by
+  simpa only [← thomEncoding_apply] using
+    lt_iff_thomLT_derivativeSign_succ_of_natDegree_le le_rfl hrolle
+      (by simpa only [← thomEncoding_apply] using hne)
 
 /-- Two roots of a nonzero polynomial are ordered as their derivative signs of orders `1, …, d`
 (with `p.natDegree ≤ d`) are by `ThomLT`. -/
@@ -357,26 +340,6 @@ theorem lt_iff_thomLT_cons_derivativeSign_of_eval_eq_zero_left {p : R[X]} {d : �
     by_cases hkd : k ≤ d
     · exact congrFun h ⟨k, by omega⟩
     · simp [derivativeSign_eq_zero p _ (by omega : p.natDegree < k)]
-
-/-- For a root `b` of a nonzero polynomial `p` and any point `a`, `a < b` holds exactly when the
-derivative signs of `p` at `a` of orders `0, …, p.natDegree` precede `Fin.cons 0 (thomEncoding p b)`
-under `ThomLT`. -/
-theorem lt_iff_thomLT_cons_of_eval_eq_zero_right (hrolle : PolynomialRolle R) {p : R[X]}
-    (hp : p ≠ 0) {a b : R} (hb : p.eval b = 0) :
-    a < b ↔ ThomLT (fun i : Fin (p.natDegree + 1) => derivativeSign p a i.val)
-      (Fin.cons 0 (thomEncoding p b)) := by
-  simpa only [← thomEncoding_apply] using
-    lt_iff_thomLT_cons_derivativeSign_of_eval_eq_zero_right le_rfl hrolle hp hb (a := a)
-
-/-- For a root `a` of a nonzero polynomial `p` and any point `b`, `a < b` holds exactly when
-`Fin.cons 0 (thomEncoding p a)` precedes the derivative signs of `p` at `b` of orders
-`0, …, p.natDegree` under `ThomLT`. -/
-theorem lt_iff_thomLT_cons_of_eval_eq_zero_left (hrolle : PolynomialRolle R) {p : R[X]}
-    (hp : p ≠ 0) {a b : R} (ha : p.eval a = 0) :
-    a < b ↔ ThomLT (Fin.cons 0 (thomEncoding p a))
-      (fun i : Fin (p.natDegree + 1) => derivativeSign p b i.val) := by
-  simpa only [← thomEncoding_apply] using
-    lt_iff_thomLT_cons_derivativeSign_of_eval_eq_zero_left le_rfl hrolle hp ha (b := b)
 
 /-- Two roots of a nonzero polynomial are ordered as their Thom encodings are by `ThomLT`. -/
 theorem lt_iff_thomLT_of_eval_eq_zero (hrolle : PolynomialRolle R) {p : R[X]} (hp : p ≠ 0)
@@ -429,20 +392,6 @@ theorem card_roots_lt_eq_card_filter_thomLT_of_natDegree_le {p : R[X]} {d : ℕ}
     have hx0 : p.eval x = 0 := isRoot_of_mem_roots (Multiset.mem_toFinset.mp hx)
     rw [← hτ, ← lt_iff_thomLT_derivativeSign_succ_of_eval_eq_zero hd hrolle hp hx0 hr] at hlt
     exact ⟨x, Finset.mem_filter.mpr ⟨hx, hlt⟩, rfl⟩
-
-/-- For any root `r` of `p`, the number of distinct roots of `p` strictly below `r` is the number
-of realized Thom encodings of `p` that precede `thomEncoding p r` under `ThomLT`. -/
-theorem card_roots_lt_eq_card_thomEncodings_thomLT (hrolle : PolynomialRolle R) (p : R[X])
-    {r : R} (hr : p.eval r = 0) :
-    {x ∈ p.roots.toFinset | x < r}.card =
-      {σ ∈ p.thomEncodings | ThomLT σ (thomEncoding p r)}.card := by
-  classical
-  rw [card_roots_lt_eq_card_filter_thomLT_of_natDegree_le le_rfl hrolle hr rfl]
-  congr 1
-  ext σ
-  simp only [Finset.mem_filter, Finset.mem_univ, true_and, thomEncodings,
-    Finset.mem_image, ← thomEncoding_apply]
-  exact and_comm
 
 /-- Distinct realized Thom encodings are comparable by `ThomLT`. -/
 theorem thomLT_or_thomLT_of_mem_thomEncodings (hrolle : PolynomialRolle R) {p : R[X]}

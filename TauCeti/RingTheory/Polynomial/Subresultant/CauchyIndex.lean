@@ -37,8 +37,6 @@ leading pair.
 * `Polynomial.tarskiQuery_eq_permanencesMinusVariations_signedPsc`,
   `Polynomial.card_roots_toFinset_eq_permanencesMinusVariations_signedPsc`: Tarski queries and
   the number of distinct roots from principal coefficients.
-* `Polynomial.tarskiQuery_eq_permanencesMinusVariations_signedPsc_C_leadingCoeff_mul`: Tarski
-  queries from principal coefficients at an upper bound `n`, without polynomial division.
 
 ## References
 
@@ -262,82 +260,5 @@ theorem _root_.Polynomial.card_roots_toFinset_eq_permanencesMinusVariations_sign
   rw [← cauchyIndex_univ_eq_permanencesMinusVariations_signedPsc
     (natDegree_derivative_lt hp), cauchyIndex_derivative]
   simp
-
-/-- When the left polynomial has a positive leading coefficient and both degrees are bounded by `n`,
-the signed principal subresultant coefficients of `(p, q)` at bounds `(p.natDegree, n)` have the
-same signs at all indices up to `p.natDegree` as those of `(p, q % p)` at their actual degrees. -/
-theorem _root_.Polynomial.sign_signedPsc_eq_sign_signedPsc_mod {K : Type*} [Field K]
-    [LinearOrder K] [IsStrictOrderedRing K] {p q : K[X]} {n j : ℕ}
-    (hpos : 0 < p.leadingCoeff) (hp : p.natDegree ≤ n) (hq : q.natDegree ≤ n)
-    (hj : j ≤ p.natDegree) :
-    sign (signedPsc p q p.natDegree n j) =
-      sign (signedPsc p (q % p) p.natDegree (q % p).natDegree j) := by
-  rcases eq_or_lt_of_le hj with rfl | hjp
-  · rw [signedPsc_left_bound, signedPsc_left_bound]
-    split_ifs <;> simp [sign_pos hpos, sign_pos (pow_pos hpos _)]
-  · have hrp : (q % p).natDegree < p.natDegree := natDegree_mod_lt q (by omega)
-    rcases le_or_gt j (q % p).natDegree with hjr | hrj
-    · rw [signedPsc_eq_leadingCoeff_pow_mul_signedPsc_mod hq le_rfl (hrp.le.trans hp) hjr hjp.le,
-        sign_mul, sign_pos (pow_pos hpos _), one_mul]
-    · rw [signedPsc_eq_zero_of_natDegree_mod_right_lt hq hrj hjp (hjp.le.trans hp),
-        signedPsc_of_lt p (q % p) (by omega)]
-      simp [hjp.ne, hrj.ne']
-
-/-- When the left polynomial has a positive leading coefficient and both degrees are bounded by `n`,
-the signed principal subresultant coefficients of `(p, q)` at bounds `(p.natDegree, n)` and of
-`(p, q % p)` at their actual degrees have the same permanences minus variations. -/
-theorem _root_.Polynomial.permanencesMinusVariations_signedPsc_eq_mod {K : Type*} [Field K]
-    [LinearOrder K] [IsStrictOrderedRing K] {p q : K[X]} {n : ℕ}
-    (hpos : 0 < p.leadingCoeff) (hp : p.natDegree ≤ n) (hq : q.natDegree ≤ n) :
-    ((List.range (p.natDegree + 1)).reverse.map
-        (signedPsc p q p.natDegree n)).permanencesMinusVariations =
-      ((List.range (p.natDegree + 1)).reverse.map
-        (signedPsc p (q % p) p.natDegree (q % p).natDegree)).permanencesMinusVariations := by
-  apply List.permanencesMinusVariations_congr
-  simp only [List.map_map]
-  refine List.map_congr_left fun j hj => ?_
-  rw [List.mem_reverse, List.mem_range] at hj
-  exact sign_signedPsc_eq_sign_signedPsc_mod hpos hp hq (by omega)
-
-/-- **Cauchy index without polynomial division, positive leading coefficient.** When `p` has a
-positive leading coefficient and `p.natDegree ≤ n`, `q.natDegree ≤ n`, the whole-line Cauchy index
-of `q / p` is the permanences minus variations of the signed principal subresultant coefficients of
-`p` and `q` at bounds `(p.natDegree, n)`. -/
-theorem
-    _root_.Polynomial.cauchyIndex_univ_eq_permanencesMinusVariations_signedPsc_of_leadingCoeff_pos
-    {p q : R[X]} {n : ℕ} (hpos : 0 < p.leadingCoeff) (hp : p.natDegree ≤ n)
-    (hq : q.natDegree ≤ n) :
-    cauchyIndex p q univ =
-      ((List.range (p.natDegree + 1)).reverse.map
-        (signedPsc p q p.natDegree n)).permanencesMinusVariations := by
-  rw [cauchyIndex_univ_eq_permanencesMinusVariations_signedPsc_mod,
-    permanencesMinusVariations_signedPsc_eq_mod hpos hp hq]
-
-/-- **Tarski query without polynomial division.** For any polynomials `p` and `q` with
-`p.natDegree ≤ n` and `(derivative p * q).natDegree ≤ n`, the Tarski query of `q` at the roots of
-`p` is the permanences minus variations of the signed principal subresultant coefficients of
-`C p.leadingCoeff * p` and `C p.leadingCoeff * (derivative p * q)` at bounds `(p.natDegree, n)`.
-Multiplying both inputs by `C p.leadingCoeff` makes the left leading coefficient positive without
-changing the roots of `p`. For constant `p` both sides vanish. -/
-theorem _root_.Polynomial.tarskiQuery_eq_permanencesMinusVariations_signedPsc_C_leadingCoeff_mul
-    {p q : R[X]} {n : ℕ} (hp : p.natDegree ≤ n) (hq : (derivative p * q).natDegree ≤ n) :
-    tarskiQuery p q =
-      ((List.range (p.natDegree + 1)).reverse.map
-        (signedPsc (C p.leadingCoeff * p) (C p.leadingCoeff * (derivative p * q))
-          p.natDegree n)).permanencesMinusVariations := by
-  rcases eq_or_ne p.natDegree 0 with hp0 | hp0
-  · rw [tarskiQuery_of_natDegree_eq_zero hp0, hp0]
-    simp
-  have hlc : p.leadingCoeff ≠ 0 := leadingCoeff_ne_zero.mpr fun h => hp0 (by simp [h])
-  have hdeg : (C p.leadingCoeff * p).natDegree = p.natDegree := natDegree_C_mul hlc
-  have hpos : 0 < (C p.leadingCoeff * p).leadingCoeff := by
-    rw [← coeff_natDegree, hdeg, coeff_C_mul, coeff_natDegree]
-    exact mul_self_pos.mpr hlc
-  have hder : derivative (C p.leadingCoeff * p) * q = C p.leadingCoeff * (derivative p * q) := by
-    rw [derivative_C_mul, mul_assoc]
-  rw [← tarskiQuery_C_mul_left hlc, ← cauchyIndex_derivative_mul_univ, hder,
-    cauchyIndex_univ_eq_permanencesMinusVariations_signedPsc_of_leadingCoeff_pos hpos
-      (hdeg.le.trans hp) ((natDegree_C_mul_le _ _).trans hq),
-    hdeg]
 
 end TauCeti

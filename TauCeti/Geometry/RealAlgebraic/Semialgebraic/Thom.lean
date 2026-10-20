@@ -305,19 +305,14 @@ private theorem fullInverse_mulVec_tarskiQuery_derivative_eq_one_iff
         ∀ j : Fin P.natDegree,
           SignType.sign (((derivative^[j.val + 1] P).map
             (MvPolynomial.eval x)).eval r) = τ j := by
-  have hQ (e : Fin P.natDegree → Fin 3) :
-      (∏ j : Fin P.natDegree, (derivative^[j.val + 1] P) ^ (e j).val).map
-        (MvPolynomial.eval x) =
-      ∏ j : Fin P.natDegree,
-        ((derivative^[j.val + 1] P).map (MvPolynomial.eval x)) ^ (e j).val := by
-    simp [Polynomial.map_prod]
-  simp only [hQ, Polynomial.fullInverse_mulVec_tarskiQuery]
-  rw [Finset.signCount_eq_occCount, Function.occCount_of_injective]
-  · simp only [Subtype.exists, exists_prop, funext_iff, Nat.cast_ite, Nat.cast_one,
-      Nat.cast_zero, ite_eq_left_iff, zero_ne_one, imp_false, not_not]
-  · intro a b hab
-    exact Subtype.ext (eq_of_mem_roots_derivative_signs_eq a.property b.property
-      (congrFun hab) (fun _ => rfl))
+  classical
+  by_cases hp : P.map (MvPolynomial.eval x) = 0
+  · simp [hp, ← Pi.zero_def, Matrix.mulVec_zero]
+  · simp only [Polynomial.map_prod, Polynomial.map_pow, ← iterate_derivative_map,
+      fullInverse_mulVec_iterate_derivative_of_natDegree_le _
+        RealClosure.polynomialRolle_of_isRealClosed hp natDegree_map_le,
+      Multiset.mem_toFinset, Polynomial.mem_roots hp, IsRoot.def]
+    simp
 
 /-- **Uniform Thom-encoding realization.** For a prescribed sign word `τ`, the parameters at which
 the specialized polynomial is nonzero and has a root with consecutive derivative signs `τ` form a
@@ -328,13 +323,16 @@ theorem isSemialgebraic_setOf_mem_roots_derivative_signs_eq
       ∀ j : Fin P.natDegree,
         SignType.sign (((derivative^[j.val + 1] P).map
           (MvPolynomial.eval x)).eval r) = τ j} := by
-  let Q : (Fin P.natDegree → Fin 3) → (MvPolynomial σ R)[X] := fun e =>
-    ∏ j : Fin P.natDegree, (derivative^[j.val + 1] P) ^ (e j).val
-  convert isSemialgebraic_setOf_tarskiQuery_map_eval P Q
-    (fun v => (SignDetermination.fullInverse (Fin P.natDegree) *ᵥ
-      fun e => (v e : ℚ)) τ = 1) using 1
+  convert (isSemialgebraic_setOf_map_eval_eq_zero P).compl.inter
+    (isSemialgebraic_setOf_exists_root_derivative_signs_eq P τ) using 1
   ext x
-  exact (fullInverse_mulVec_tarskiQuery_derivative_eq_one_iff P x τ).symm
+  simp only [mem_ofPred_eq, mem_inter_iff, mem_compl_iff, Multiset.mem_toFinset,
+    Polynomial.mem_roots']
+  constructor
+  · rintro ⟨r, ⟨hp, hr⟩, hτ⟩
+    exact ⟨hp, r, hr, hτ⟩
+  · rintro ⟨hp, r, hr, hτ⟩
+    exact ⟨r, ⟨hp, hr⟩, hτ⟩
 
 omit [IsStrictOrderedRing R] [IsRealClosed R] in
 /-- **Equality with a Thom-encoded root.** For a polynomial `T` and sign word `τ`, the parameters

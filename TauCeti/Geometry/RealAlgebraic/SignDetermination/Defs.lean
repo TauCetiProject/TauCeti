@@ -165,22 +165,6 @@ theorem tarskiQuery_mem_Icc_natDegree (p q : R[X]) :
 theorem tarskiQuery_zero_left (q : R[X]) : tarskiQuery 0 q = 0 := by
   simp [tarskiQuery_eq_signSum]
 
-/-- A constant root polynomial has no roots in `Polynomial.roots`, so its Tarski query vanishes. -/
-@[simp, grind =]
-theorem tarskiQuery_C_left (a : R) (q : R[X]) : tarskiQuery (C a) q = 0 := by
-  simp [tarskiQuery_eq_signSum]
-
-/-- A polynomial of degree zero has no roots, so any Tarski query at its roots vanishes. -/
-theorem tarskiQuery_of_natDegree_eq_zero {p : R[X]} (hp : p.natDegree = 0) (q : R[X]) :
-    tarskiQuery p q = 0 := by
-  rw [eq_C_of_natDegree_eq_zero hp, tarskiQuery_C_left]
-
-/-- Scaling the root polynomial by a nonzero constant does not change its distinct roots or any
-Tarski query at them. -/
-theorem tarskiQuery_C_mul_left {a : R} (ha : a ≠ 0) (p q : R[X]) :
-    tarskiQuery (C a * p) q = tarskiQuery p q := by
-  simp [tarskiQuery_eq_signSum, roots_C_mul p ha]
-
 @[simp, grind =]
 theorem tarskiQuery_zero_right (p : R[X]) : tarskiQuery p 0 = 0 := by
   simp [tarskiQuery_eq_signSum]
