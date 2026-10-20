@@ -86,7 +86,7 @@ abbrev Coherences (X : Fin (n + 1) → C) : Type v :=
 variable {R}
 
 /-- Coherences indexed by equal sets of interior vertices agree. -/
-private lemma Coherences.congr {X : Fin (n + 1) → C} (f : Coherences R X) {i j : Fin (n + 1)}
+theorem Coherences.congr {X : Fin (n + 1) → C} (f : Coherences R X) {i j : Fin (n + 1)}
     {S S' : Finset (Fin (n + 1))} {d : ℤ} (h : S = S') {hij : i ≤ j} {hS : S ⊆ Ioo i j}
     {hS' : S' ⊆ Ioo i j} {hd : d + #S = 0} {hd' : d + #S' = 0} :
     f i j S d hij hS hd = f i j S' d hij hS' hd' := by
@@ -94,7 +94,7 @@ private lemma Coherences.congr {X : Fin (n + 1) → C} (f : Coherences R X) {i j
   rfl
 
 /-- Composites of coherences indexed by equal sets of interior vertices agree. -/
-private lemma Coherences.dgComp_congr {X : Fin (n + 1) → C} (f : Coherences R X)
+theorem Coherences.dgComp_congr {X : Fin (n + 1) → C} (f : Coherences R X)
     {i t j : Fin (n + 1)} {S₁ S₁' S₂ S₂' : Finset (Fin (n + 1))} {p p' q q' r : ℤ}
     (h₁ : S₁ = S₁') (h₂ : S₂ = S₂') (hp : p = p') (hq : q = q') {hit : i ≤ t} {htj : t ≤ j}
     {hS₁ : S₁ ⊆ Ioo i t} {hS₁' : S₁' ⊆ Ioo i t} {hS₂ : S₂ ⊆ Ioo t j} {hS₂' : S₂' ⊆ Ioo t j}
@@ -549,12 +549,14 @@ theorem ext {x y : Simplex R C n} (hobj : x.obj = y.obj)
   exact eq_of_heq (hcoh i j S d hij hS hd)
 
 /-- Pulling back along the identity does nothing. -/
+@[simp]
 theorem map_id : x.map OrderHom.id = x := by
   refine ext rfl fun i j S d hij hS hd ↦ heq_of_eq ?_
   rw [map_coh, x.mapCoh_eq_coh _ (by simpa using hS)]
   exact Coherences.congr _ (by simp)
 
 /-- Pulling back along `α` and then along `β` is pulling back along `α ∘ β`. -/
+@[simp]
 theorem map_map {k : ℕ} (β : Fin (k + 1) →o Fin (m + 1)) :
     (x.map α).map β = x.map (α.comp β) := by
   refine ext rfl fun i j S d hij hS hd ↦ heq_of_eq ?_
@@ -771,6 +773,23 @@ noncomputable def edgeEquiv (X Y : C) :
 @[simp]
 theorem edgeEquiv_apply {X Y : C} (f : dgCycles R X Y) : edgeEquiv R C X Y f = edgeMk R C f :=
   (rfl)
+
+/-- The inverse of the edge equivalence recovers a closed morphism from its edge. -/
+@[simp]
+theorem edgeEquiv_symm_edgeMk {X Y : C} (f : dgCycles R X Y) :
+    (edgeEquiv R C X Y).symm (edgeMk R C f) = f :=
+  (edgeEquiv R C X Y).symm_apply_apply f
+
+/-- The inverse of the edge equivalence reads the closed morphism off the coherence of the
+underlying `1`-simplex. The two sides are heterogeneously equal because the endpoints of that
+coherence are `X` and `Y` only propositionally. -/
+theorem edgeEquiv_symm_apply_heq {X Y : C}
+    (e : (dgNerve R C).Edge ((dgNerveEquiv R C).symm X) ((dgNerveEquiv R C).symm Y)) :
+    ((edgeEquiv R C X Y).symm e).1 ≍
+      Simplex.coh (R := R) e.edge 0 1 ∅ 0 (by decide) (empty_subset _) (by simp) := by
+  obtain ⟨f, rfl⟩ := (edgeEquiv R C X Y).surjective e
+  rw [Equiv.symm_apply_apply, edgeEquiv_apply, edgeMk_edge, Simplex.edge_coh_zero_one]
+  exact HEq.rfl
 
 /-- **Degeneracy of a vertex**: the degenerate edge at an object `X` is the identity of `X`, not
 zero. -/
