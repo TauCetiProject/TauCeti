@@ -36,12 +36,12 @@ there only through sections of faithfully flat covers and roots of separable pol
 
 * `TauCeti.Algebra.IsTotallySplit.quotient_span_singleton`: a quotient of a totally split algebra
   by an idempotent is totally split.
-* `TauCeti.Algebra.IsTotallySplit.nonempty_algHom_of_faithfullyFlat`: a faithfully flat totally
-  split algebra has a section.
+* `TauCeti.Algebra.IsTotallySplit.nonempty_algHom_of_faithfulSMul`: a totally split algebra with
+  injective structure map, for example a faithfully flat one, has a section.
 * `TauCeti.isFiniteEtaleSplit_iff_exists_section`: `R` has no nonsplit finite étale covers if and
   only if every faithfully flat finite étale `R`-algebra admits an `R`-algebra map to `R`.
-* `TauCeti.IsFiniteEtaleSplit.exists_root`: over such a ring, every separable monic polynomial of
-  positive degree has a root.
+* `TauCeti.IsFiniteEtaleSplit.exists_root`: over such a ring, every monic polynomial of positive
+  degree whose derivative is a unit modulo it has a root.
 * `TauCeti.isFiniteEtaleSplit_iff_isSepClosed`: a field has no nonsplit finite étale covers if
   and only if it is separably closed.
 
@@ -99,12 +99,8 @@ theorem of_algEquiv {T' : Type*} [CommRing T'] [Algebra R T'] (h : IsTotallySpli
 /-- An algebra of constant split rank is totally split, with every idempotent equal to `1`. -/
 theorem of_isFiniteSplit [Algebra.IsFiniteSplit R T] : IsTotallySplit R T := by
   obtain ⟨n, ⟨φ⟩⟩ := Algebra.IsFiniteSplit.nonempty_algEquiv_fun R T
-  have hbot : Ideal.span {(1 : R) - 1} = RingHom.ker (AlgHom.id R R) := by
-    rw [sub_self, Set.singleton_zero, Ideal.span_zero,
-      (RingHom.injective_iff_ker_eq_bot (AlgHom.id R R)).mp Function.injective_id]
   let q : (R ⧸ Ideal.span {(1 : R) - 1}) ≃ₐ[R] R :=
-    (Ideal.quotientEquivAlgOfEq R hbot).trans
-      (Ideal.quotientKerAlgEquivOfSurjective Function.surjective_id)
+    (Ideal.quotientEquivAlgOfEq R (by simp)).trans (AlgEquiv.quotientBot R R)
   exact ⟨n, fun _ ↦ 1, fun _ ↦ .one, ⟨φ.trans (AlgEquiv.piCongrRight fun _ ↦ q.symm)⟩⟩
 
 variable (R T) in
@@ -133,6 +129,21 @@ theorem prod {A B : Type*} [CommRing A] [CommRing B] [Algebra R A] [Algebra R B]
   exact of_algEquiv_pi (Sum.elim e f) (Sum.rec he hf)
     ((φ.prodCongr ψ).trans (AlgEquiv.ofBijective χ hχ).symm)
 
+/-- The componentwise quotient map `∏ j, R ⧸ I j → ∏ j, R ⧸ J j` for ideals `I j ≤ J j`. -/
+private def piFactorₐ {ι : Type*} {I J : ι → Ideal R} (hle : ∀ j, I j ≤ J j) :
+    ((j : ι) → R ⧸ I j) →ₐ[R] ((j : ι) → R ⧸ J j) :=
+  AlgHom.pi fun j ↦ (Ideal.Quotient.factorₐ R (hle j)).comp (Pi.evalAlgHom R _ j)
+
+private theorem piFactorₐ_apply {ι : Type*} {I J : ι → Ideal R} (hle : ∀ j, I j ≤ J j)
+    (x : (j : ι) → R ⧸ I j) (j : ι) :
+    piFactorₐ hle x j = Ideal.Quotient.factor (hle j) (x j) :=
+  rfl
+
+private theorem piFactorₐ_surjective {ι : Type*} {I J : ι → Ideal R} (hle : ∀ j, I j ≤ J j) :
+    Function.Surjective (piFactorₐ hle) := fun y ↦
+  ⟨fun j ↦ (Ideal.Quotient.factor_surjective (hle j) (y j)).choose,
+    funext fun j ↦ (Ideal.Quotient.factor_surjective (hle j) (y j)).choose_spec⟩
+
 /-- A quotient of a totally split algebra by an idempotent, that is, a direct factor of it, is
 totally split. -/
 theorem quotient_span_singleton (h : IsTotallySplit R T) {ε : T} (hε : IsIdempotentElem ε) :
@@ -159,23 +170,16 @@ theorem quotient_span_singleton (h : IsTotallySplit R T) {ε : T} (hε : IsIdemp
   have hle (j : Fin m) : Ideal.span {1 - e j} ≤ Ideal.span {1 - e' j} :=
     Ideal.span_singleton_le_span_singleton.mpr
       ⟨1 - e j, by linear_combination (a j - 1) * (he j).eq⟩
-  let Φ : ((j : Fin m) → R ⧸ Ideal.span {1 - e j}) →ₐ[R]
-      ((j : Fin m) → R ⧸ Ideal.span {1 - e' j}) :=
-    AlgHom.pi fun j ↦ (Ideal.Quotient.factorₐ R (hle j)).comp (Pi.evalAlgHom R _ j)
-  have hΦ : Function.Surjective Φ := fun y ↦
-    ⟨fun j ↦ (Ideal.Quotient.factor_surjective (hle j) (y j)).choose,
-      funext fun j ↦ (Ideal.Quotient.factor_surjective (hle j) (y j)).choose_spec⟩
-  have hker : RingHom.ker Φ = Ideal.span {ε'} := by
+  have hker : RingHom.ker (piFactorₐ hle) = Ideal.span {ε'} := by
     rw [← Ideal.pi_span]
     ext x
-    simp only [RingHom.mem_ker, Ideal.mem_pi, funext_iff, Pi.zero_apply, Φ, AlgHom.pi_apply,
-      AlgHom.comp_apply, Pi.evalAlgHom_apply, Ideal.Quotient.factorₐ_apply]
+    simp only [RingHom.mem_ker, Ideal.mem_pi, funext_iff, Pi.zero_apply, piFactorₐ_apply]
     refine forall_congr' fun j ↦ ?_
-    rw [← RingHom.mem_ker, Ideal.Quotient.factor_ker, Ideal.map_span, Set.image_singleton,
-      map_sub, map_one, map_mul, map_sub, map_one, hmk, ha, one_mul, sub_sub_cancel]
+    rw [← RingHom.mem_ker, Ideal.Quotient.factor_ker, Ideal.map_span, Set.image_singleton]
+    simp [e', hmk, ha]
   exact ⟨m, e', he', ⟨(Ideal.quotientEquivAlg _ (Ideal.span {ε'}) φ
-    (by rw [Ideal.map_span, Set.image_singleton]; rfl)).trans
-    ((Ideal.quotientEquivAlgOfEq R hker.symm).trans (Ideal.quotientKerAlgEquivOfSurjective hΦ))⟩⟩
+    (by simp [ε', Ideal.map_span])).trans ((Ideal.quotientEquivAlgOfEq R hker.symm).trans
+      (Ideal.quotientKerAlgEquivOfSurjective (piFactorₐ_surjective hle)))⟩⟩
 
 /-- A factor of a totally split product is totally split: `A` is the quotient of `A × B` by the
 idempotent `(0, 1)`. -/
@@ -190,10 +194,10 @@ theorem of_prod_fst {A B : Type*} [CommRing A] [CommRing B] [Algebra R A] [Algeb
     ((Ideal.quotientEquivAlgOfEq R hfst.symm).trans
       (Ideal.quotientKerAlgEquivOfSurjective (f := AlgHom.fst R A B) Prod.fst_surjective))
 
-/-- A faithfully flat totally split algebra has a section: faithful flatness says that the
-components `D(e j)` cover `Spec R`, and a section is assembled from an orthogonal refinement of
-this cover. -/
-theorem nonempty_algHom_of_faithfullyFlat (h : IsTotallySplit R T) [Module.FaithfullyFlat R T] :
+/-- A totally split algebra with injective structure map, for example a faithfully flat one, has
+a section: injectivity says that the components `D(e j)` cover `Spec R`, and a section is
+assembled from an orthogonal refinement of this cover. -/
+theorem nonempty_algHom_of_faithfulSMul (h : IsTotallySplit R T) [FaithfulSMul R T] :
     Nonempty (T →ₐ[R] R) := by
   obtain ⟨m, e, he, ⟨φ⟩⟩ := h
   have hcover : ∏ j, (1 - e j) = 0 := by
@@ -207,12 +211,9 @@ theorem nonempty_algHom_of_faithfullyFlat (h : IsTotallySplit R T) [Module.Faith
   obtain ⟨f, hf, hfe⟩ := exists_completeOrthogonalIdempotents_of_prod_one_sub_eq_zero e he hcover
   have hle (j : Fin m) : Ideal.span {1 - e j} ≤ Ideal.span {1 - f j} :=
     Ideal.span_singleton_le_span_singleton.mpr ⟨1 - e j, by linear_combination -(hfe j)⟩
-  let Φ : ((j : Fin m) → R ⧸ Ideal.span {1 - e j}) →ₐ[R]
-      ((j : Fin m) → R ⧸ Ideal.span {1 - f j}) :=
-    AlgHom.pi fun j ↦ (Ideal.Quotient.factorₐ R (hle j)).comp (Pi.evalAlgHom R _ j)
   let ι : R ≃ₐ[R] ((j : Fin m) → R ⧸ Ideal.span {1 - f j}) :=
     AlgEquiv.ofBijective (Algebra.ofId R _) hf.bijective_pi
-  exact ⟨ι.symm.toAlgHom.comp (Φ.comp φ.toAlgHom)⟩
+  exact ⟨ι.symm.toAlgHom.comp ((piFactorₐ hle).comp φ.toAlgHom)⟩
 
 /-- A totally split algebra is étale. -/
 theorem etale (h : IsTotallySplit R T) : Algebra.Etale R T := by
@@ -262,8 +263,8 @@ private theorem exists_rankAtStalk_prod_quotient_eq_max (T : Type*) [CommRing T]
     Module.rankAtStalk_le_one_iff_surjective.mpr Ideal.Quotient.mk_surjective p
   have hU₀ : 0 < Module.rankAtStalk (R := R) (R ⧸ Ideal.span {e₀}) p ↔ e₀ ∈ p.asIdeal := by
     rw [PrimeSpectrum.rankAtStalk_pos_iff_mem_range_comap, Ideal.Quotient.algebraMap_eq,
-      range_comap_of_surjective _ _ Ideal.Quotient.mk_surjective, Ideal.mk_ker,
-      PrimeSpectrum.mem_zeroLocus, SetLike.coe_subset_coe, Ideal.span_singleton_le_iff_mem]
+      range_comap_of_surjective _ _ Ideal.Quotient.mk_surjective]
+    simp
   have hT : 0 < Module.rankAtStalk (R := R) T p ↔ e₀ ∉ p.asIdeal := by
     rw [Module.rankAtStalk_pos_iff_mem_support, ← hsupp, SetLike.mem_coe,
       PrimeSpectrum.mem_basicOpen]
@@ -319,19 +320,22 @@ algebra is finite étale and totally split, but has no section. -/
 theorem isFiniteEtaleSplit_iff_exists_section :
     IsFiniteEtaleSplit R ↔ ∀ (T : Type u) [CommRing T] [Algebra R T] [Algebra.Etale R T]
       [Module.Finite R T] [Module.FaithfullyFlat R T], Nonempty (T →ₐ[R] R) := by
-  refine ⟨fun h T _ _ _ _ _ ↦ (h.isTotallySplit T).nonempty_algHom_of_faithfullyFlat,
+  refine ⟨fun h T _ _ _ _ _ ↦ (h.isTotallySplit T).nonempty_algHom_of_faithfulSMul,
     fun H ↦ ⟨fun T _ _ _ _ ↦ ?_⟩⟩
   have : Module.FinitePresentation R T := .of_finite_of_finitePresentation R T
   obtain ⟨N, hN⟩ := (Module.isLocallyConstant_rankAtStalk (R := R) (M := T)).range_finite.bddAbove
   exact isTotallySplit_of_rankAtStalk_le H N T fun p ↦ hN ⟨p, rfl⟩
 
-/-- Over a ring without nonsplit finite étale covers, every separable monic polynomial of positive
-degree has a root: `R[X] ⧸ (P)` is finite étale and free of positive rank, so it has a section. -/
+/-- Over a ring without nonsplit finite étale covers, every monic polynomial of positive degree
+whose derivative is a unit modulo it, that is, every separable one
+(`Polynomial.separable_iff_isUnit_mk_derivative`), has a root: `R[X] ⧸ (P)` is finite étale and
+free of positive rank, so it has a section. -/
 theorem IsFiniteEtaleSplit.exists_root [IsFiniteEtaleSplit R] {P : R[X]} (hP : P.Monic)
-    (hd : 0 < P.natDegree) (hs : P.Separable) : ∃ r : R, P.IsRoot r := by
+    (hd : 0 < P.natDegree) (hu : IsUnit (AdjoinRoot.mk P (derivative P))) :
+    ∃ r : R, P.IsRoot r := by
   cases subsingleton_or_nontrivial R
   · exact ⟨0, Subsingleton.elim _ _⟩
-  have := hP.isStandardEtale_adjoinRoot hs
+  have := hP.isStandardEtale_adjoinRoot (separable_iff_isUnit_mk_derivative.mpr hu)
   let pb := AdjoinRoot.powerBasis' hP
   have : Module.Finite R (AdjoinRoot P) := pb.finite
   have : Module.Free R (AdjoinRoot P) := .of_basis pb.basis
@@ -347,6 +351,7 @@ theorem isFiniteEtaleSplit_iff_isSepClosed (K : Type u) [Field K] :
     IsFiniteEtaleSplit K ↔ IsSepClosed K := by
   refine ⟨fun _ ↦ IsSepClosed.of_exists_root K fun p hp hirr hsep ↦ ?_,
     fun _ ↦ ⟨fun T _ _ _ _ ↦ .of_isFiniteSplit⟩⟩
-  exact IsFiniteEtaleSplit.exists_root hp hirr.natDegree_pos hsep
+  exact IsFiniteEtaleSplit.exists_root hp hirr.natDegree_pos
+    (separable_iff_isUnit_mk_derivative.mp hsep)
 
 end TauCeti

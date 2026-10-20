@@ -37,7 +37,7 @@ example : ¬ IsFiniteEtaleSplit ℚ := by
   intro _
   have hs : (X ^ 2 - C (2 : ℚ)).Separable := separable_X_pow_sub_C _ (by norm_num) (by norm_num)
   obtain ⟨r, hr⟩ := IsFiniteEtaleSplit.exists_root (monic_X_pow_sub_C _ (by norm_num))
-    (by rw [natDegree_X_pow_sub_C]; norm_num) hs
+    (by rw [natDegree_X_pow_sub_C]; norm_num) (separable_iff_isUnit_mk_derivative.mp hs)
   have hr' : r ^ 2 - 2 = 0 := by simpa using hr
   have h2 : IsSquare ((2 : ℕ) : ℚ) := ⟨r, by push_cast; linear_combination -hr'⟩
   exact Nat.prime_two.not_isSquare (Rat.isSquare_natCast_iff.mp h2)
@@ -49,9 +49,10 @@ example (R : Type) [CommRing R] [Nontrivial R] :
   ⟨.of_subsingleton R _, ⟨fun σ ↦ one_ne_zero <|
     (map_one σ).symm.trans ((congrArg σ (Subsingleton.elim 1 0)).trans (map_zero σ))⟩⟩
 
-/-- *test_exists_root*: a separable monic polynomial of positive degree has a root. -/
+/-- *test_exists_root*: a monic polynomial of positive degree whose derivative is a unit modulo it
+has a root. -/
 example (R : Type) [CommRing R] [IsFiniteEtaleSplit R] (P : R[X]) (hP : P.Monic)
-    (hd : 0 < P.natDegree) (hs : P.Separable) : ∃ r, P.IsRoot r :=
-  IsFiniteEtaleSplit.exists_root hP hd hs
+    (hd : 0 < P.natDegree) (hu : IsUnit (AdjoinRoot.mk P (derivative P))) : ∃ r, P.IsRoot r :=
+  IsFiniteEtaleSplit.exists_root hP hd hu
 
 end TauCeti
