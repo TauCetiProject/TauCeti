@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.CStarAlgebra.Action.Analytic
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
-import TauCeti.Analysis.CStarAlgebra.Action.Convolution
 import Mathlib.Analysis.SpecialFunctions.Gaussian.PoissonSummation
 import Mathlib.MeasureTheory.Integral.PeakFunction
 
@@ -32,9 +31,8 @@ so `α.gaussianSmear c a → a`. Hence the entire analytic elements form a dense
 invariant under the action. This is the density statement used to reduce identities such as the
 KMS condition to entire analytic elements.
 
-Neither unitality of `A` nor any countability assumption is needed. Convergence uses Mathlib's
-peak-function theorem `tendsto_integral_comp_smul_smul_of_integrable`, applied to the orbit
-truncated to `[-1, 1]`; the remainder is controlled by the Gaussian mass outside `[-1, 1]`.
+Neither unitality of `A` nor any countability assumption is needed. For each `c`, smearing is
+complex linear.
 
 ## Main definitions
 
@@ -45,6 +43,8 @@ truncated to `[-1, 1]`; the remainder is controlled by the Gaussian mass outside
 * `TauCeti.CStarAction.entireExtension_gaussianSmear`: the complex-time extension of a Gaussian
   smearing.
 * `TauCeti.CStarAction.isEntireAnalytic_gaussianSmear`: Gaussian smearings are entire analytic.
+* `TauCeti.CStarAction.gaussianSmear_add`, `TauCeti.CStarAction.gaussianSmear_smul`: smearing is
+  complex linear.
 * `TauCeti.CStarAction.apply_gaussianSmear`, `TauCeti.CStarAction.norm_gaussianSmear_le`:
   smearing commutes with the action and is contractive.
 * `TauCeti.CStarAction.tendsto_gaussianSmear`: `α.gaussianSmear c a → a` as `c → ∞`.
@@ -76,6 +76,39 @@ theorem gaussianSmear_def (c : ℝ) (a : A) :
     α.gaussianSmear c a =
       ∫ t : ℝ, ((c : ℂ) / √π * cexp (-(c * t) ^ 2)) • α (Multiplicative.ofAdd t) a := by
   rw [gaussianSmear]
+
+/-- The integrand of the Gaussian smearing is integrable. -/
+private theorem integrable_gaussianIntegrand (c : ℝ) (a : A) :
+    Integrable fun t : ℝ =>
+      ((c : ℂ) / √π * cexp (-(c * t) ^ 2)) • α (Multiplicative.ofAdd t) a := by
+  rcases eq_or_ne c 0 with rfl | hc
+  · simp
+  have hk : Integrable fun t : ℝ => (c : ℂ) / √π * cexp (-(c * t) ^ 2) := by
+    refine ((integrable_cexp_neg_mul_sq (b := (c : ℂ) ^ 2) ?_).const_mul ((c : ℂ) / √π)).congr
+      (ae_of_all _ fun t => ?_)
+    · rw [← ofReal_pow, ofReal_re]
+      positivity
+    · simp only [mul_pow, neg_mul]
+  exact hk.smul_bdd ‖a‖ (α.continuous_apply continuous_ofAdd continuous_const).aestronglyMeasurable
+    (ae_of_all _ fun t => (StarAlgEquiv.norm_map _ _).le)
+
+/-- The Gaussian smearing of `0` is `0`. -/
+@[simp]
+theorem gaussianSmear_zero (c : ℝ) : α.gaussianSmear c 0 = 0 := by
+  simp [gaussianSmear_def]
+
+/-- The Gaussian smearing is additive. -/
+@[simp]
+theorem gaussianSmear_add (c : ℝ) (a b : A) :
+    α.gaussianSmear c (a + b) = α.gaussianSmear c a + α.gaussianSmear c b := by
+  simp only [gaussianSmear_def, map_add, smul_add]
+  exact integral_add (α.integrable_gaussianIntegrand c a) (α.integrable_gaussianIntegrand c b)
+
+/-- The Gaussian smearing commutes with complex scalars. -/
+@[simp]
+theorem gaussianSmear_smul (c : ℝ) (r : ℂ) (a : A) :
+    α.gaussianSmear c (r • a) = r • α.gaussianSmear c a := by
+  simp only [gaussianSmear_def, map_smul, smul_comm _ r, integral_smul]
 
 /-! ### The complex-time extension -/
 
