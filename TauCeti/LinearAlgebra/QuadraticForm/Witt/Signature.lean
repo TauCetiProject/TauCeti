@@ -21,6 +21,7 @@ The signature extends first to the Witt-Grothendieck ring and then descends thro
 hyperbolic ideal. For an ordered real closed field, the resulting ring equivalence has integer cast
 as its inverse.
 In particular, two regular forms over such a field have the same Witt class exactly when their
+integer signatures agree, and two regular forms of the same rank are isometric exactly when their
 integer signatures agree. Taking `K = ℝ` gives the real Witt ring; the real closed instance is
 available in `TauCeti.FieldTheory.IsRealClosed.Real`.
 
@@ -31,6 +32,8 @@ available in `TauCeti.FieldTheory.IsRealClosed.Real`.
 * `WittRing.equivInt`: the signature isomorphism `W(K) ≃+* ℤ` for ordered real closed fields.
 * `WittRing.signature_wittClass`: computes the signature from a regular-form class.
 * `WittRing.intCast_signature`: reconstructs a Witt class from its signature.
+* `RegularFormClass.eq_iff_rank_eq_and_signature_eq`: Sylvester's law of inertia for isometry
+  classes over ordered real closed fields.
 
 ## References
 
@@ -115,5 +118,22 @@ noncomputable def WittRing.equivInt : WittRing K ≃+* ℤ :=
 @[simp]
 theorem WittRing.equivInt_apply (x : WittRing K) : equivInt x = signature x :=
   RingEquiv.ofBijective_apply _ _ x
+
+/-- **Sylvester's law of inertia for isometry classes.** Over an ordered real closed field, two
+regular-form classes are equal exactly when they have the same rank and the same signature. Equal
+signatures give equal Witt classes, which differ by hyperbolic planes; equal ranks force the same
+number of planes on both sides, and Witt cancellation removes them. -/
+theorem RegularFormClass.eq_iff_rank_eq_and_signature_eq {x y : RegularFormClass K} :
+    x = y ↔ x.rank = y.rank ∧ signature x = signature y := by
+  refine ⟨fun h => h ▸ ⟨rfl, rfl⟩, fun ⟨hr, hs⟩ => ?_⟩
+  obtain ⟨a, b, h⟩ := wittClass_eq_iff_exists_nsmul.mp
+    (WittRing.equivInt.injective (by simpa using hs) : wittClass x = wittClass y)
+  have hab : a = b := by
+    have := congrArg rank h
+    rw [rank_add, rank_add, ← rankHom_apply (a • _), ← rankHom_apply (b • _), map_nsmul,
+      map_nsmul, rankHom_apply, hr, rank_hyperbolicClass, smul_eq_mul, smul_eq_mul] at this
+    omega
+  subst hab
+  exact add_left_cancel h
 
 end TauCeti
