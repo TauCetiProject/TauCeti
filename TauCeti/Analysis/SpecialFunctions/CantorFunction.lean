@@ -160,10 +160,12 @@ theorem cantorFunction_one : cantorFunction 1 = 1 := by
     ofDigits_const_last_eq_one] at h
 
 /-- The Cantor function vanishes on `(-∞, 0]`. -/
+@[simp]
 theorem cantorFunction_of_nonpos {x : ℝ} (hx : x ≤ 0) : cantorFunction x = 0 :=
   le_antisymm (cantorFunction_zero ▸ monotone_cantorFunction hx) (cantorFunction_nonneg x)
 
 /-- The Cantor function equals `1` on `[1, ∞)`. -/
+@[simp]
 theorem cantorFunction_of_one_le {x : ℝ} (hx : 1 ≤ x) : cantorFunction x = 1 :=
   le_antisymm (cantorFunction_le_one x) (cantorFunction_one ▸ monotone_cantorFunction hx)
 

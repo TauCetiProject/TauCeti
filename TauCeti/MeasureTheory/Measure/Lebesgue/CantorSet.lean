@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import Mathlib.Topology.Instances.CantorSet
+public import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
 
 /-!
 # Lebesgue measure of the Cantor set
@@ -29,24 +29,17 @@ open scoped ENNReal
 
 namespace TauCeti
 
-/-- Each of the two affine maps `x ↦ x / 3` and `x ↦ (2 + x) / 3` building the pre-Cantor sets
-scales Lebesgue measure by `1 / 3`. -/
-private lemma volume_image_add_div_three (c : ℝ) (s : Set ℝ) :
-    volume ((fun x ↦ (c + x) / 3) '' s) = 3⁻¹ * volume s := by
-  have h : (fun x : ℝ ↦ (c + x) / 3) = AffineMap.homothety (c / 2) (3⁻¹ : ℝ) := by
-    ext x
-    simp only [AffineMap.homothety_apply, vsub_eq_sub, smul_eq_mul, vadd_eq_add]
-    ring
-  rw [h, Measure.addHaar_image_homothety]
-  norm_num [ENNReal.ofReal_div_of_pos, one_div]
-
 /-- The `n`-th pre-Cantor set has Lebesgue measure `(2 / 3) ^ n`. -/
 theorem volume_preCantorSet (n : ℕ) : volume (preCantorSet n) = (2 / 3 : ℝ≥0∞) ^ n := by
   induction n with
   | zero => simp
   | succ n ih =>
-    have hleft : (· / 3) '' preCantorSet n = (fun x ↦ (0 + x) / 3) '' preCantorSet n := by
-      simp
+    -- Both maps building `preCantorSet (n + 1)` are affine with slope `3⁻¹`.
+    have hleft : (· / 3) '' preCantorSet n = (fun x ↦ 3⁻¹ * x + 0) '' preCantorSet n :=
+      image_congr fun x _ ↦ by ring
+    have hright : (fun x ↦ (2 + x) / 3) '' preCantorSet n =
+        (fun x ↦ 3⁻¹ * x + 2 / 3) '' preCantorSet n :=
+      image_congr fun x _ ↦ by ring
     have hdisj : Disjoint ((· / 3) '' preCantorSet n)
         ((fun x ↦ (2 + x) / 3) '' preCantorSet n) := by
       refine Set.disjoint_left.mpr ?_
@@ -57,8 +50,9 @@ theorem volume_preCantorSet (n : ℕ) : volume (preCantorSet n) = (2 / 3 : ℝ�
     have hmeas : MeasurableSet ((fun x ↦ (2 + x) / 3) '' preCantorSet n) :=
       ((isCompact_Icc.of_isClosed_subset (isClosed_preCantorSet n)
         preCantorSet_subset_unitInterval).image (by fun_prop)).isClosed.measurableSet
-    rw [preCantorSet_succ, measure_union hdisj hmeas, hleft, volume_image_add_div_three,
-      volume_image_add_div_three, ih, pow_succ, ← add_mul, ENNReal.div_eq_inv_mul]
+    rw [preCantorSet_succ, measure_union hdisj hmeas, hleft, hright, volume_image_mul_add,
+      volume_image_mul_add, ih, pow_succ, ← add_mul]
+    norm_num [ENNReal.ofReal_div_of_pos, ENNReal.div_eq_inv_mul]
     ring
 
 /-- The ternary Cantor set is Lebesgue-null. -/
