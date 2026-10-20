@@ -15,8 +15,8 @@ public import TauCeti.Combinatorics.DenseGraphLimits.StepGraphon.FiniteGraph.Bas
 For a graph `G` on `Fin m` with `0 < m`, the graphon `finiteGraphGraphon G` takes the adjacency
 value of `G` on the products of the `m` equal cells of the unit interval. A partition `P` of the
 vertices lifts to the partition `cellPartition P` of the unit interval whose parts are the unions
-of the cells over each part of `P`. Over the cells of two nonempty vertex sets `A` and `B`, the
-graphon averages to the edge density `d_G(A, B)`, so the block-average step graphon of `G` over
+of the cells over each part of `P`. Over the cells of two vertex sets `A` and `B`, the graphon
+averages to the edge density `d_G(A, B)`, so the block-average step graphon of `G` over
 `cellPartition P` takes the value `d_G(P.part i, P.part j)` on the cells of `i` and `j`. Its
 `L²` norm squared is therefore the size-weighted finite energy, diagonal blocks included.
 
@@ -51,28 +51,32 @@ noncomputable def cellPartition (P : Finpartition (univ : Finset (Fin m))) :
     Finpartition (Set.univ : Set I) :=
   Finpartition.ofFibers fun x => P.part (cellFin m x)
 
+/-- The part of `P` containing the cell of a point depends measurably on the point. -/
 theorem measurable_part_cellFin (P : Finpartition (univ : Finset (Fin m))) :
     Measurable fun x : I => P.part (cellFin m x) :=
   (measurable_from_top (f := fun i : Fin m => P.part i)).comp measurable_cellFin
 
+/-- The parts of `cellPartition P` are measurable. -/
 theorem measurableSet_of_mem_cellPartition (P : Finpartition (univ : Finset (Fin m))) :
     ∀ p ∈ (cellPartition P).parts, MeasurableSet p :=
   fun _ hp => Finpartition.measurableSet_of_mem_ofFibers (measurable_part_cellFin P) hp
 
-/-- The cells of a vertex set have total volume the proportion of vertices it contains. -/
-theorem volume_real_preimage_cellFin (A : Finset (Fin m)) :
-    volume.real (cellFin m ⁻¹' (A : Set (Fin m))) = #A / m := by
-  rw [measureReal_def, measurePreserving_cellFin.measure_preimage
-    (A.measurableSet).nullMeasurableSet, ProbabilityTheory.uniformOn_univ]
-  simp [ENNReal.toReal_div]
-
-/-- **Block averages of the graphon of a finite graph.** Over the cells of two nonempty vertex
-sets `A` and `B`, the graphon of `G` averages to the edge density `d_G(A, B)`. -/
+/-- **Block averages of the graphon of a finite graph.** Over the cells of two vertex sets `A`
+and `B`, the graphon of `G` averages to the edge density `d_G(A, B)`. When either set is empty,
+both sides are `0`. -/
 theorem setAverage_finiteGraphGraphon_preimage (G : SimpleGraph (Fin m)) [DecidableRel G.Adj]
-    {A B : Finset (Fin m)}
-    (hA : A.Nonempty) (hB : B.Nonempty) :
+    (A B : Finset (Fin m)) :
     ⨍ z in (cellFin m ⁻¹' (A : Set (Fin m))) ×ˢ (cellFin m ⁻¹' (B : Set (Fin m))),
         finiteGraphGraphon G z.1 z.2 ∂(volume.prod volume) = (G.edgeDensity A B : ℝ) := by
+  rcases A.eq_empty_or_nonempty with rfl | hA
+  · simp
+  rcases B.eq_empty_or_nonempty with rfl | hB
+  · simp
+  -- the cells of a vertex set have total volume the proportion of vertices it contains
+  have hcell (C : Finset (Fin m)) : volume.real (cellFin m ⁻¹' (C : Set (Fin m))) = #C / m := by
+    rw [measureReal_def, measurePreserving_cellFin.measure_preimage
+      C.measurableSet.nullMeasurableSet, ProbabilityTheory.uniformOn_univ]
+    simp [ENNReal.toReal_div]
   have hint : ∫ z in (cellFin m ⁻¹' (A : Set (Fin m))) ×ˢ (cellFin m ⁻¹' (B : Set (Fin m))),
       finiteGraphGraphon G z.1 z.2 ∂(volume.prod volume) =
         (∑ i ∈ A, ∑ j ∈ B, if G.Adj i j then (1 : ℝ) else 0) / (m : ℝ) ^ 2 := by
@@ -87,7 +91,7 @@ theorem setAverage_finiteGraphGraphon_preimage (G : SimpleGraph (Fin m)) [Decida
       ((cellFin m ⁻¹' (A : Set (Fin m))) ×ˢ (cellFin m ⁻¹' (B : Set (Fin m)))) =
         #A / m * (#B / m) := by
     rw [measureReal_def, Measure.prod_prod, ENNReal.toReal_mul, ← measureReal_def,
-      ← measureReal_def, volume_real_preimage_cellFin, volume_real_preimage_cellFin]
+      ← measureReal_def, hcell, hcell]
   have hcount : (∑ i ∈ A, ∑ j ∈ B, if G.Adj i j then (1 : ℝ) else 0) = #(G.interedges A B) := by
     rw [SimpleGraph.interedges_def, card_filter, sum_product]
     push_cast
@@ -123,8 +127,7 @@ theorem graphonPartitionEnergy_finiteGraphGraphon (G : SimpleGraph (Fin m)) [Dec
     rw [stepGraphonAvg_apply (cellPartition P) (measurableSet_of_mem_cellPartition P) _
       (p := ⟨_, preimage_part_cellFin_mem P x⟩) (q := ⟨_, preimage_part_cellFin_mem P y⟩)
       (P.mem_part (mem_univ _)) (P.mem_part (mem_univ _))]
-    exact setAverage_finiteGraphGraphon_preimage G
-      ⟨_, P.mem_part (mem_univ _)⟩ ⟨_, P.mem_part (mem_univ _)⟩
+    exact setAverage_finiteGraphGraphon_preimage G _ _
   -- Its mean square over `I × I` is the mean square over pairs of vertices.
   let h : Fin m × Fin m → ℝ := fun ij => (G.edgeDensity (P.part ij.1) (P.part ij.2) : ℝ) ^ 2
   have hmp := (measurePreserving_cellFin (m := m)).prod (measurePreserving_cellFin (m := m))
