@@ -52,13 +52,15 @@ for `S = Set.univ` this would say that the units topology of the finite ideles i
 topology. -/
 theorem isEmbedding_coe_sIntegralUnits {S : Set (HeightOneSpectrum R)} (hS : S.Finite) :
     Topology.IsEmbedding fun x : sIntegralUnits R K S ↦ ⇑(unitsContinuousMulEquiv R K x) := by
-  refine TauCeti.isEmbedding_restrictedProduct_coe_comp hS
+  refine TauCeti.isEmbedding_restrictedProduct_coe_comp
+    (Filter.le_principal_iff.mpr hS.compl_mem_cofinite)
     ((unitsContinuousMulEquiv R K).toHomeomorph.isEmbedding.comp
       Topology.IsEmbedding.subtypeVal) fun x v hv ↦ ?_
-  -- an `S`-integral finite idele and its inverse are integral at every place outside `S`
-  rw [SetLike.mem_coe, Submonoid.mem_units_iff, coe_unitsContinuousMulEquiv_apply,
-    ← RestrictedProduct.inv_apply, ← map_inv, coe_unitsContinuousMulEquiv_apply]
-  have hx := mem_sIntegralUnits_iff_mem_sIntegralAdeles.mp x.2
-  exact ⟨mem_sIntegralAdeles.mp hx.1 v hv, mem_sIntegralAdeles.mp hx.2 v hv⟩
+  -- outside `S` the component of an `S`-integral finite idele has valuation one, so it and its
+  -- inverse are local integers
+  have h : Valued.v (((x : 𝔸ᶠ[R, K]ˣ) : 𝔸ᶠ[R, K]) v) = 1 := mem_sIntegralUnits_iff.mp x.2 v hv
+  simp only [SetLike.mem_coe, Submonoid.mem_units_iff, Units.val_inv_eq_inv_val,
+    coe_unitsContinuousMulEquiv_apply]
+  simp [Submonoid.ofClass, mem_adicCompletionIntegers, h]
 
 end IsDedekindDomain.FiniteAdeleRing

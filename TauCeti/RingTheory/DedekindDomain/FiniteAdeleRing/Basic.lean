@@ -305,7 +305,8 @@ full product `∏_v K_v`. Finiteness of `S` cannot be dropped in general: for `S
 would say that the whole finite adele ring carries the product topology. -/
 theorem isEmbedding_coe_sIntegralAdeles {S : Set (HeightOneSpectrum R)} (hS : S.Finite) :
     Topology.IsEmbedding fun a : sIntegralAdeles R K S ↦ ⇑(a : FiniteAdeleRing R K) :=
-  TauCeti.isEmbedding_restrictedProduct_coe_comp hS Topology.IsEmbedding.subtypeVal fun a ↦ a.2
+  TauCeti.isEmbedding_restrictedProduct_coe_comp
+    (Filter.le_principal_iff.mpr hS.compl_mem_cofinite) Topology.IsEmbedding.subtypeVal fun a ↦ a.2
 
 /-- The diagonal image of an element of `K` in the finite adele ring is `S`-integral exactly when
 the element is an `S`-integer: the `S`-integral finite adeles meet `K` in `S.integer K`. It takes
