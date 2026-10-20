@@ -44,10 +44,12 @@ here.
 ## Implementation notes
 
 For general `n`, `PolynomialRing/LeadingExponent.lean` proves that the leading
-elementary-divisor vector recovers the generator exponents. The remaining step is to establish
-the triangular expansion of products, including the coefficient-one leading term; the
-dimension-two proof below handles that expansion by direct calculation. Only the `n = 1` and
-`n = 2` polynomial presentations are proved here.
+elementary-divisor vector recovers the generator exponents, and for a product of two diagonal
+cosets `GLn/LeadingCoefficient.lean` and `GLn/ProductSupport.lean` give the coefficient-one
+leading term and the dominance of the rest of the support. The remaining step is to extend
+that triangular expansion to monomials in the generators; the dimension-two proof below handles
+that expansion by direct calculation. Only the `n = 1` and `n = 2` polynomial presentations are
+proved here.
 
 Ported from the AINTLIB `LeanModularForms` project
 ([`LeanModularForms/HeckeRIngs/GLn/PolynomialRing.lean`](https://github.com/CBirkbeck/AINTLIB),
