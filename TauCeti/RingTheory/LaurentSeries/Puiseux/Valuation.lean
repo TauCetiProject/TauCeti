@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Order.Filter.AtTopBot.Archimedean
 public import Mathlib.Topology.Algebra.InfiniteSum.Group
 public import Mathlib.Topology.Algebra.Valued.ValuationTopology
 public import TauCeti.RingTheory.HahnSeries.Valuation
@@ -130,7 +129,7 @@ theorem valuation_levelEmbedding (n : ℕ+) {f : K⸨X⸩} (hf : f ≠ 0) :
     apply WithTop.coe_injective
     rw [order_eq_orderTop_of_ne_zero hι, orderTop_ramifiedEmbedding,
       ← order_eq_orderTop_of_ne_zero hf, WithTop.map_coe]
-  rw [valuation_apply, coe_levelEmbedding, valuation_of_ne_zero hι, hord]
+  rw [valuation_apply, coe_levelEmbedding, valuation_eq_exp_neg_order hι, hord]
 
 /-- On level `n`, the order bound `k / n ≤ ord` in the Puiseux field is the integer order bound
 `k ≤ ord` in `K⸨X⸩`. -/
@@ -238,13 +237,6 @@ theorem not_tendsto_sum_single {e : ℕ → ℚ} (he : Function.Injective e)
   obtain ⟨j, hj⟩ := hden n
   exact hj (hn (e j) (by rw [mem_support, hcoeff j]; exact hc j))
 
-private theorem tendsto_unboundedDenExponent : Tendsto unboundedDenExponent atTop atTop :=
-  tendsto_atTop_mono (fun j ↦ by
-    simp only [unboundedDenExponent]
-    push_cast
-    have : (0 : ℚ) ≤ 1 / (j + 2) := by positivity
-    linarith) tendsto_natCast_atTop_atTop
-
 variable (K) in
 /-- **The Puiseux field is not complete.** The partial sums of `∑ j, t ^ ((j + 1) + 1 / (j + 2))`
 form a Cauchy sequence without a limit. -/
@@ -253,7 +245,7 @@ theorem not_completeSpace : ¬ CompleteSpace (puiseuxField K) := by
   obtain ⟨x, hx⟩ := cauchySeq_tendsto_of_complete
     (cauchySeq_sum_single (K := K) tendsto_unboundedDenExponent fun _ ↦ 1)
   exact not_tendsto_sum_single strictMono_unboundedDenExponent.injective
-    (fun n ↦ ⟨n, not_den_dvd_unboundedDenExponent n⟩) (fun _ ↦ one_ne_zero) x hx
+    (fun n ↦ ⟨n, not_den_unboundedDenExponent_dvd n⟩) (fun _ ↦ one_ne_zero) x hx
 
 end puiseuxField
 

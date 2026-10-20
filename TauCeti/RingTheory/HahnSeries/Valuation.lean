@@ -32,7 +32,7 @@ the valuation topology are described by orders.
 
 ## Main results
 
-* `HahnSeries.valuation_of_ne_zero`: a nonzero series of order `g` has valuation `exp (-g)`.
+* `HahnSeries.valuation_eq_exp_neg_order`: a nonzero series of order `g` has valuation `exp (-g)`.
 * `HahnSeries.valuation_lt_exp_neg_iff`, `HahnSeries.valuation_le_exp_neg_iff`: valuation balls
   are order conditions.
 * `HahnSeries.valuation_le_valuation_iff`: the valuation reverses the order of `ord`.
@@ -74,7 +74,7 @@ noncomputable def valuation : Valuation R⟦Γ⟧ Γᵐ⁰ where
 variable {x y : R⟦Γ⟧}
 
 /-- A nonzero Hahn series of order `g` has valuation `exp (-g)`. -/
-theorem valuation_of_ne_zero (hx : x ≠ 0) : valuation Γ R x = exp (-x.order) := by
+theorem valuation_eq_exp_neg_order (hx : x ≠ 0) : valuation Γ R x = exp (-x.order) := by
   simp [valuation, hx]
 
 /-- The valuation of `x` vanishes exactly when `x = 0`. -/
@@ -82,20 +82,20 @@ theorem valuation_of_ne_zero (hx : x ≠ 0) : valuation Γ R x = exp (-x.order) 
 theorem valuation_eq_zero_iff : valuation Γ R x = 0 ↔ x = 0 := by
   by_cases hx : x = 0
   · simp [hx]
-  simp [valuation_of_ne_zero hx, hx]
+  simp [valuation_eq_exp_neg_order hx, hx]
 
 /-- The monomial `r t ^ g`, for `r ≠ 0`, has valuation `exp (-g)`. -/
 @[simp]
 theorem valuation_single (g : Γ) {r : R} (hr : r ≠ 0) :
     valuation Γ R (single g r) = exp (-g) := by
-  rw [valuation_of_ne_zero (single_ne_zero hr), order_single hr]
+  rw [valuation_eq_exp_neg_order (single_ne_zero hr), order_single hr]
 
 /-- The valuation of `x` is below `exp (-g)` exactly when the order of `x` exceeds `g`. -/
 theorem valuation_lt_exp_neg_iff (g : Γ) :
     valuation Γ R x < exp (-g) ↔ (g : WithTop Γ) < x.orderTop := by
   by_cases hx : x = 0
   · simp [hx]
-  rw [valuation_of_ne_zero hx, ← order_eq_orderTop_of_ne_zero hx, exp_lt_exp, neg_lt_neg_iff,
+  rw [valuation_eq_exp_neg_order hx, ← order_eq_orderTop_of_ne_zero hx, exp_lt_exp, neg_lt_neg_iff,
     WithTop.coe_lt_coe]
 
 /-- The valuation of `x` is at most `exp (-g)` exactly when the order of `x` is at least `g`. -/
@@ -103,7 +103,7 @@ theorem valuation_le_exp_neg_iff (g : Γ) :
     valuation Γ R x ≤ exp (-g) ↔ (g : WithTop Γ) ≤ x.orderTop := by
   by_cases hx : x = 0
   · simp [hx]
-  rw [valuation_of_ne_zero hx, ← order_eq_orderTop_of_ne_zero hx, exp_le_exp, neg_le_neg_iff,
+  rw [valuation_eq_exp_neg_order hx, ← order_eq_orderTop_of_ne_zero hx, exp_le_exp, neg_le_neg_iff,
     WithTop.coe_le_coe]
 
 /-- The valuation reverses the order: `v x ≤ v y` exactly when `ord y ≤ ord x`. -/
@@ -111,6 +111,6 @@ theorem valuation_le_valuation_iff :
     valuation Γ R x ≤ valuation Γ R y ↔ y.orderTop ≤ x.orderTop := by
   by_cases hy : y = 0
   · simp [hy]
-  rw [valuation_of_ne_zero hy, valuation_le_exp_neg_iff, order_eq_orderTop_of_ne_zero hy]
+  rw [valuation_eq_exp_neg_order hy, valuation_le_exp_neg_iff, order_eq_orderTop_of_ne_zero hy]
 
 end HahnSeries

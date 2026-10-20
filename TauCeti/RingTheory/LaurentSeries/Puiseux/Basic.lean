@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.Lifts
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
+public import Mathlib.Order.Filter.AtTopBot.Archimedean
 public import TauCeti.RingTheory.LaurentSeries.Ramified
 
 /-!
@@ -247,7 +248,7 @@ theorem levelEmbedding_expand_self (n : ℕ+) (f : K⸨X⸩) :
 
 /-- The exponents `(j + 1) + 1 / (j + 2)` of the series `∑ j, t ^ ((j + 1) + 1 / (j + 2))`, whose
 denominators `j + 2` are unbounded. -/
-@[expose] def unboundedDenExponent (j : ℕ) : ℚ := (j + 1 : ℕ) + 1 / (j + 2 : ℕ)
+def unboundedDenExponent (j : ℕ) : ℚ := (j + 1 : ℕ) + 1 / (j + 2 : ℕ)
 
 private theorem den_unboundedDenExponent (j : ℕ) : (unboundedDenExponent j).den = j + 2 := by
   rw [unboundedDenExponent, Rat.natCast_add_den, one_div, Rat.inv_natCast_den_of_pos (by omega)]
@@ -263,8 +264,16 @@ theorem strictMono_unboundedDenExponent : StrictMono unboundedDenExponent := by
   have h₂ : (0 : ℚ) < 1 / (j + 1 + 2) := by positivity
   linarith
 
+/-- The exponents `(j + 1) + 1 / (j + 2)` tend to infinity. -/
+theorem tendsto_unboundedDenExponent : Filter.Tendsto unboundedDenExponent .atTop .atTop :=
+  Filter.tendsto_atTop_mono (fun j ↦ by
+    simp only [unboundedDenExponent]
+    push_cast
+    have : (0 : ℚ) ≤ 1 / (j + 2) := by positivity
+    linarith) tendsto_natCast_atTop_atTop
+
 /-- The denominator `n + 2` of the exponent `(n + 1) + 1 / (n + 2)` does not divide `n`. -/
-theorem not_den_dvd_unboundedDenExponent (n : ℕ+) :
+theorem not_den_unboundedDenExponent_dvd (n : ℕ+) :
     ¬ (unboundedDenExponent n).den ∣ n := by
   rw [den_unboundedDenExponent]
   exact fun h ↦ absurd (Nat.le_of_dvd n.pos h) (by omega)
@@ -280,7 +289,7 @@ theorem puiseuxField_lt_top : puiseuxField K < ⊤ := by
     (OrderEmbedding.ofStrictMono _ puiseuxField.strictMono_unboundedDenExponent)
     (toPowerSeries.symm (PowerSeries.mk fun _ ↦ 1))
   obtain ⟨n, hn⟩ := mem_puiseuxField_iff_exists_den_dvd.mp (h ▸ IntermediateField.mem_top : x ∈ _)
-  refine puiseuxField.not_den_dvd_unboundedDenExponent n (hn _ ?_)
+  refine puiseuxField.not_den_unboundedDenExponent_dvd n (hn _ ?_)
   rw [mem_support]
   have hcoeff : x.coeff (puiseuxField.unboundedDenExponent n) = 1 := by
     rw [← OrderEmbedding.coe_ofStrictMono puiseuxField.strictMono_unboundedDenExponent,
