@@ -366,7 +366,7 @@ end Inner
 
 /-- The weighted coefficients of the Fourier monomial `x e^{inθ}` form the `ℓ²` monomial
 `(1 + |n|) ^ s • x` at `n`. -/
-theorem weight_smul_piSingle (n m : ℤ) (x : E) :
+private theorem weight_smul_piSingle (n m : ℤ) (x : E) :
     weight s m • Pi.single (M := fun _ : ℤ ↦ E) n x m =
       lp.single (E := fun _ : ℤ ↦ E) 2 n (weight s n • x) m := by
   rcases eq_or_ne m n with rfl | hm
