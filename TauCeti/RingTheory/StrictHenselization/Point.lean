@@ -135,6 +135,16 @@ abbrev TripleCategory :=
 noncomputable def tripleCategoryEquivalence : TripleCategory R Ω ≌ Neighbourhood R Ω :=
   Equivalence.induced (tripleNeighbourhoodEquiv R Ω)
 
+/-- Triple morphisms agree when their underlying algebra maps agree. -/
+@[ext]
+theorem TripleCategory.hom_ext {first second : TripleCategory R Ω}
+    {left right : first ⟶ second}
+    (equality : left.hom.hom.left.hom = right.hom.hom.left.hom) : left = right := by
+  apply InducedCategory.hom_ext
+  apply ObjectProperty.hom_ext
+  apply Over.OverMorphism.ext
+  exact CommAlgCat.hom_ext equality
+
 /-- A triple-category morphism commutes with the induced field-valued points. -/
 @[simp]
 theorem TripleCategory.hom_point {first second : TripleCategory R Ω}
