@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.Eigenspace.Transport
 public import TauCeti.QuantumGroups.UqSl2.Basic
 public import TauCeti.QuantumGroups.QuantumInteger
 public import Mathlib.LinearAlgebra.Eigenspace.Triangularizable
 public import Mathlib.LinearAlgebra.Eigenspace.Minpoly
 public import Mathlib.Analysis.Complex.Polynomial.Basic
+import Mathlib.Tactic.Module
 
 /-!
 # Weights and highest vectors for U_q(sl₂)
@@ -23,7 +25,8 @@ module therefore eventually kills it: otherwise the finite spectrum of `K` would
 infinite geometric progression. Consequently every nonzero finite-dimensional module has a
 highest-weight vector. This is the starting point for classifying finite-dimensional simple
 modules, and the generalized weight decomposition is the setting of the finite-dimensional
-complete-reducibility argument.
+complete-reducibility argument. Taking generalized weight spaces of finite-dimensional modules is
+exact: a surjective module map carries generalized weight spaces onto those of its target.
 
 The action conventions are those of A. Virelizier, *Quantum groups*, Sections 2.3--2.4.
 -/
@@ -193,6 +196,34 @@ theorem f_pow_smul_mem_genWeightSpace {μ : ℂ} {v : V} (hv : v ∈ genWeightSp
 theorem iSupIndep_genWeightSpace : iSupIndep (genWeightSpace q V) :=
   Module.End.independent_maxGenEigenspace _
 
+/-- `K` preserves every generalized weight space. -/
+theorem k_smul_mem_genWeightSpace {μ : ℂ} {v : V} (hv : v ∈ genWeightSpace q V μ) :
+    k q • v ∈ genWeightSpace q V μ := by
+  simpa using smul_mem_genWeightSpace_of_k_mul (a := k q) (c := 1) (by rw [one_smul]) hv
+
+/-- `K⁻¹` preserves every generalized weight space. -/
+theorem kInv_smul_mem_genWeightSpace {μ : ℂ} {v : V} (hv : v ∈ genWeightSpace q V μ) :
+    kInv q • v ∈ genWeightSpace q V μ := by
+  simpa using smul_mem_genWeightSpace_of_k_mul (a := kInv q) (c := 1)
+    (by rw [one_smul, k_mul_kInv, kInv_mul_k]) hv
+
+/-- A vector of weight `α` in the generalized weight space of a different weight vanishes. -/
+theorem eq_zero_of_mem_weightSpace_of_mem_genWeightSpace {α ν : ℂ} (h : α ≠ ν) {v : V}
+    (hα : v ∈ weightSpace q V α) (hν : v ∈ genWeightSpace q V ν) : v = 0 :=
+  Submodule.disjoint_def.mp ((iSupIndep_genWeightSpace (q := q) (V := V)).pairwiseDisjoint h)
+    v (weightSpace_le_genWeightSpace α hα) hν
+
+/-- If `K² v = ρ² v` for a generalized weight vector `v` of weight `ν ≠ -ρ`, then `K v = ρ v`. -/
+theorem k_smul_eq_of_k_sq_smul_eq {ν ρ : ℂ} (h : -ρ ≠ ν) {v : V}
+    (hv : v ∈ genWeightSpace q V ν) (hk : k q ^ 2 • v = ρ ^ 2 • v) : k q • v = ρ • v := by
+  -- The vector `K v - ρ v` has weight `-ρ`, so it vanishes.
+  have hw : k q • v - ρ • v ∈ weightSpace q V (-ρ) := by
+    rw [mem_weightSpace_iff, smul_sub, smul_comm (k q) ρ v, ← mul_smul, ← sq, hk]
+    generalize k q • v = x
+    module
+  exact sub_eq_zero.mp (eq_zero_of_mem_weightSpace_of_mem_genWeightSpace h hw
+    (sub_mem (k_smul_mem_genWeightSpace hv) (Submodule.smul_mem _ ρ hv)))
+
 section FiniteDimensional
 
 variable [FiniteDimensional ℂ V]
@@ -200,6 +231,17 @@ variable [FiniteDimensional ℂ V]
 /-- A finite-dimensional module is the sum of its generalized weight spaces. -/
 theorem iSup_genWeightSpace_eq_top : ⨆ μ, genWeightSpace q V μ = ⊤ :=
   Module.End.iSup_maxGenEigenspace_eq_top _
+
+/-- A surjective module map carries the generalized weight spaces of a finite-dimensional module
+onto the generalized weight spaces of its target. In particular, taking generalized weight
+spaces is exact on quotient modules. -/
+theorem map_genWeightSpace_eq_of_surjective {V' : Type*} [AddCommGroup V'] [Module ℂ V']
+    [Module (UqSl2 q) V'] [IsScalarTower ℂ (UqSl2 q) V'] {φ : V →ₗ[UqSl2 q] V'}
+    (hφ : Function.Surjective φ) (μ : ℂ) :
+    (genWeightSpace q V μ).map (φ.restrictScalars ℂ) = genWeightSpace q V' μ := by
+  rw [genWeightSpace_def, genWeightSpace_def]
+  exact map_maxGenEigenspace_eq_of_intertwine hφ (fun x => φ.map_smul (k q) x)
+    (by simpa only [genWeightSpace_def] using iSup_genWeightSpace_eq_top (q := q) (V := V)) μ
 
 /-- At a generic parameter `p`, a sequence of vectors whose `n`-th term has generalized weight
 `(p²)ⁿ μ` eventually vanishes: otherwise the finite spectrum of `K` would contain an infinite
