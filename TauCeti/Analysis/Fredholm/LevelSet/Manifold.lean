@@ -178,8 +178,10 @@ theorem contMDiff_coe_levelSet
   -- In the model space the extended charts are the preferred chart at `z` and the identity.
   have e : chartAt (Fin n → 𝕜) z = levelSetChartAt hf hFred hsurj hindex z :=
     levelSetChartedSpace_chartAt hf hFred hsurj hindex z
-  simpa [extChartAt, e, Function.comp_def,
-    levelSetChartAt_apply_self hf hFred hsurj hindex z] using h.contDiffWithinAt
+  rw [extChartAt_model_space_eq_id, PartialEquiv.refl_coe, Function.id_comp, extChartAt_coe_symm,
+    modelWithCornersSelf_coe_symm, Function.comp_id, extChartAt_coe, modelWithCornersSelf_coe,
+    Set.range_id, Function.id_comp, e]
+  exact h.contDiffWithinAt
 
 end TauCeti
 

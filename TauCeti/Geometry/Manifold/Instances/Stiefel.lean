@@ -156,6 +156,7 @@ The body is exposed so that the subtype is, by definition, the level set on whic
 variable {E k}
 
 /-- The points of the Stiefel manifold are the orthonormal families. -/
+@[simp]
 theorem mem_stiefel_iff {v : Fin k → E} : v ∈ stiefel E k ↔ Orthonormal ℝ v := by
   classical
   rw [orthonormal_iff_ite, stiefel, mem_ofPred_eq, funext_iff, Sym2.forall]
