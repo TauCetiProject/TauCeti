@@ -131,30 +131,14 @@ namespace SmoothForm
 
 /-- Smooth `F`-valued one-forms are smooth sections of the bundle of linear maps
 `TangentSpace I x →L[ℝ] F`, through `ContinuousAlternatingMap.ofSubsingleton` on each fibre. For
-`F = ℝ` these are the smooth sections of `TauCeti.CotangentBundle I M`. -/
+`F = ℝ` these are the smooth sections of `TauCeti.CotangentBundle I M`. This is
+`SmoothBundleForm.degreeOneEquiv` for the trivial bundle `Bundle.Trivial M F`. -/
 def degreeOneEquiv :
     SmoothForm I M F 1 ≃ₗ[ℝ]
-      ContMDiffSection I (E →L[ℝ] F) ∞ (fun x : M ↦ TangentSpace I x →L[ℝ] F) where
-  toFun φ :=
-    ⟨fun x ↦ (ContinuousAlternatingMap.ofSubsingleton ℝ (TangentSpace I x) F 0).symm (φ.1 x),
-      isSmoothForm_ofSubsingleton_iff.mp (by simpa using φ.isSmoothForm)⟩
-  invFun s :=
-    ⟨fun x ↦ ContinuousAlternatingMap.ofSubsingleton ℝ (TangentSpace I x) F 0 (s x),
-      mem_smoothForms.mpr <| (isSmoothBundleForm_def ∞ _).mpr <| (isSmoothForm_def ∞ _).mp <|
-        isSmoothForm_ofSubsingleton_iff.mpr s.contMDiff⟩
-  map_add' φ ψ := by
-    ext x v
-    simp
-  map_smul' c φ := by
-    ext x v
-    simp
-  left_inv φ := by
-    apply Subtype.ext
-    ext x v
-    simp
-  right_inv s := by
-    ext x v
-    simp
+      ContMDiffSection I (E →L[ℝ] F) ∞ (fun x : M ↦ TangentSpace I x →L[ℝ] F) :=
+  (LinearEquiv.ofEq _ _ <| Submodule.ext fun _ ↦
+    mem_smoothForms.trans mem_smoothBundleForms.symm).trans
+    (SmoothBundleForm.degreeOneEquiv (V := Bundle.Trivial M F))
 
 /-- The section of a smooth one-form evaluates a tangent vector as the form does. -/
 @[simp]
