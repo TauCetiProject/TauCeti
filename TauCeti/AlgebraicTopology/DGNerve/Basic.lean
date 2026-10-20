@@ -510,9 +510,10 @@ private lemma boundary_mapCoh_eq_zero {a b : Fin (m + 1)} {T : Finset (Fin (m + 
         · rintro (rfl | ⟨hs, hvs⟩)
           · exact ⟨huT, le_rfl⟩
           · exact ⟨hs, huv.le.trans hvs⟩
-      rw [hσ, card_insert_of_notMem (fun hu ↦ (mem_filter.1 hu).2.not_gt huv), Nat.cast_succ,
-        Int.negOnePow_succ, Units.neg_smul, neg_add_eq_zero]
-      exact congrArg _ (x.mapCoh_erase_eq_mapCoh_erase α huT hvT hα)
+      rw [hσ, card_insert_of_notMem (fun hu ↦ (mem_filter.1 hu).2.not_gt huv),
+        x.mapCoh_erase_eq_mapCoh_erase α huT hvT hα (hSv := (erase_subset _ _).trans hT)
+          (hdv := add_one_add_card_erase_eq_zero hvT hd)]
+      simp [Int.negOnePow_succ]
     · rintro ⟨t, ht⟩ - hne
       have htu : t ≠ u := fun h ↦ hne.1 (Subtype.ext h)
       have htv : t ≠ v := fun h ↦ hne.2 (Subtype.ext h)
@@ -581,12 +582,16 @@ theorem map_map {k : ℕ} (β : Fin (k + 1) →o Fin (m + 1)) :
     by_cases hα : #((S.image β).image α) = #(S.image β) ∧
         (S.image β).image α ⊆ Ioo (α (β i)) (α (β j))
     · rw [x.mapCoh_eq_coh α hα, x.mapCoh_eq_coh (α.comp β) (hc.2 ⟨hβ, hα⟩)]
-      exact Coherences.congr _ (by rw [image_image]; rfl)
+      exact Coherences.congr _ (by rw [image_image, OrderHom.comp_coe])
     · rw [x.mapCoh_eq_zero α hα,
         x.mapCoh_eq_zero (α.comp β) fun h ↦ hα (hc.1 h).2]
+      -- The two zeros live in hom-modules between `(x.map α).obj (β i)` and
+      -- `x.obj (α.comp β i)` (and likewise at `j`), which agree by `map_obj` and
+      -- `OrderHom.comp_coe`, both of which hold by `rfl`.
       rfl
   · rw [(x.map α).mapCoh_eq_zero β hβ,
       x.mapCoh_eq_zero (α.comp β) fun h ↦ hβ (hc.1 h).1]
+    -- As above, the two zeros agree because `map_obj` and `OrderHom.comp_coe` hold by `rfl`.
     rfl
 
 /-! ### Vertices and low-dimensional simplices -/
