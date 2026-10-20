@@ -153,6 +153,16 @@ theorem _root_.AlgebraicGeometry.Scheme.IdealSheafData.comap_ofIdealTop (I : Ide
       pullback.condition]
     exact J.ker_subschemeι.ge.trans (Scheme.Hom.le_ker_comp _ _)
 
+/-- Pulling back the ideal sheaf associated to an ideal `I` of `R` along `Spec S ⟶ Spec R`
+gives the ideal sheaf associated to the extended ideal in `S`, via the canonical global-section
+isomorphisms. -/
+theorem comap_ofIdealTop_map_ΓSpecIso_inv {R S : CommRingCat.{u}}
+    (f : R ⟶ S) (I : Ideal R) :
+    (Scheme.IdealSheafData.ofIdealTop (I.map (Scheme.ΓSpecIso R).inv.hom)).comap (Spec.map f) =
+      Scheme.IdealSheafData.ofIdealTop ((I.map f.hom).map (Scheme.ΓSpecIso S).inv.hom) := by
+  simp only [Scheme.IdealSheafData.comap_ofIdealTop, Ideal.map_map, ← CommRingCat.hom_comp,
+    ← Scheme.ΓSpecIso_inv_naturality]
+
 /-- **Base change of a closed subscheme of an affine scheme.** For a ring map `R ⟶ S` whose
 induced morphism `Spec S ⟶ Spec R` is a closed immersion, for instance a surjective ring map, the
 base change of this closed immersion along `f : X ⟶ Spec R` is the zero scheme of the ideal of
