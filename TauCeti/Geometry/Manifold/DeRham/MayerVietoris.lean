@@ -36,7 +36,8 @@ Its connecting map `TauCeti.deRhamCohomology.mayerVietorisδ : H^k(U ⊓ V) → 
 class of a closed form `φ = α - β` on `U ⊓ V`, with `α` on `U` and `β` on `V`, to the class of the
 form on `U ⊔ V` that restricts to `dα` on `U` and to `dβ` on `V`
 (`TauCeti.deRhamCohomology.mayerVietorisδ_mk`). For a smooth function `ρ` on `U ⊔ V` supported in
-`V` with `1 - ρ` supported in `U`, this form is the extension by zero of `d(ρ φ)`
+`V` with `1 - ρ` supported in `U`, the cut-off choices `α = ρ φ` and `β = (ρ - 1) φ`, extended by
+zero, make this form the extension by zero of `d(ρ φ)`, so that form also represents the class
 (`TauCeti.deRhamCohomology.mayerVietorisδ_mk_eq_mk_extendByZero`).
 
 ## Main definitions and results

@@ -87,6 +87,7 @@ theorem mpullback_inclusion_extendByZero {U W : Opens M} (h : U ≤ W) (ω : Rou
   rw [mpullback_inclusion_apply, extendByZero_inclusion]
 
 /-- Restricting the extension by zero to an open subset `V ≤ W` is the extension by zero to `V`. -/
+@[simp]
 theorem mpullback_inclusion_extendByZero_eq_extendByZero {U V W : Opens M} (h : V ≤ W)
     (ω : RoughForm I U F k) :
     mpullback I I (Opens.inclusion h) (extendByZero W ω) = extendByZero V ω := by
