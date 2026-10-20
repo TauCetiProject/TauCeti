@@ -11,8 +11,7 @@ public import Mathlib.Topology.UnitInterval
 # Gluing two maps along the halves of a parameter
 
 Given a continuous parameter `s : C(Z, I)` and two maps `a, a' : C(Z, X)` that agree where
-`s = 1/2`, `ContinuousMap.glueHalves s a a'` is `a` on `s ≤ 1/2` and `a'` on `1/2 ≤ s`.  This is the
-construction behind concatenation of paths, for families of paths.
+`s = 1/2`, `ContinuousMap.glueHalves s a a'` is `a` on `s ≤ 1/2` and `a'` on `1/2 ≤ s`.
 
 ## Main definitions
 
