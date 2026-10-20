@@ -106,8 +106,9 @@ theorem proj_aeval_eq_zero_iff (ψ : PowerSeries ℤ_[p]) :
   obtain ⟨n, hn⟩ := IsPGroup.iff_card.mp ((isProP_iff.mp hΓ) U)
   have hdist : ((1 + Polynomial.X) ^ Nat.card (Γ ⧸ U.toSubgroup) - 1 :
       Polynomial ℤ_[p]).IsDistinguishedAt (IsLocalRing.maximalIdeal ℤ_[p]) := by
-    rw [hn, PadicInt.maximalIdeal_eq_span_p]
-    exact TauCeti.Polynomial.isDistinguishedAt_one_add_X_pow_sub_one Fact.out n
+    rw [hn]
+    exact TauCeti.Polynomial.isDistinguishedAt_one_add_X_pow_sub_one Fact.out
+      PadicInt.p_nonunit n
   have hcoe : (((1 + Polynomial.X) ^ Nat.card (Γ ⧸ U.toSubgroup) - 1 : Polynomial ℤ_[p]) :
       PowerSeries ℤ_[p]) = (1 + PowerSeries.X) ^ Nat.card (Γ ⧸ U.toSubgroup) - 1 := by
     simp [Polynomial.coe_sub, Polynomial.coe_pow, Polynomial.coe_add]
