@@ -234,7 +234,7 @@ theorem norm_sum_coeff_charpolyRev_smul_pow_apply_le {A : Matrix ι ι R} {r : �
     (hA : ∀ i j, ‖A i j‖ ≤ r i) {m : ℕ} {c : ℝ} (hc : 0 ≤ c)
     (hs : ∀ s : Finset ι, s.card = m → ∏ i ∈ s, r i ≤ c) (i j : ι) :
     ‖(∑ k ∈ range (m + 1), A.charpolyRev.coeff k • A ^ (m - k)) i j‖ ≤ c := by
-  rw [← coeff_adjugate_one_sub_X_smul, adjugate_apply]
+  rw [← coeff_adjugate_one_sub_X_smul_apply, adjugate_apply]
   -- Row `j` of the matrix is constant, and every other row `k` is `δ k - X A k`.
   refine norm_coeff_det_le_of_natDegree_le_one (r := r) (fun k l ↦ ?_) (fun k l ↦ ?_)
     (fun k l ↦ ?_) hc hs <;> rcases eq_or_ne k j with rfl | hk

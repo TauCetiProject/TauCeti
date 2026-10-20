@@ -27,7 +27,7 @@ satisfies
 
 (`ContinuousLinearMap.one_sub_C_mul_X_mul_resolventSeries`,
 `ContinuousLinearMap.resolventSeries_mul_one_sub_C_mul_X`). For a finite matrix `A` it is the
-adjugate of `1 - T A` (`Matrix.coeff_adjugate_one_sub_X_smul`). The definition and these
+adjugate of `1 - T A` (`Matrix.coeff_adjugate_one_sub_X_smul_apply`). The definition and these
 identities are algebraic and hold over any seminormed commutative ring.
 
 The analytic content is that `V` is entire in operator norm when `u` is row compact, even
@@ -107,23 +107,27 @@ noncomputable def resolventSeries (u : C₀(I, R) →L[R] C₀(I, R)) :
     PowerSeries (C₀(I, R) →L[R] C₀(I, R)) :=
   PowerSeries.mk u.resolventCoeff
 
+theorem resolventSeries_def (u : C₀(I, R) →L[R] C₀(I, R)) :
+    u.resolventSeries = PowerSeries.mk u.resolventCoeff :=
+  (rfl)
+
 @[simp]
 theorem coeff_resolventSeries (u : C₀(I, R) →L[R] C₀(I, R)) (m : ℕ) :
     PowerSeries.coeff m u.resolventSeries = u.resolventCoeff m := by
-  rw [resolventSeries, PowerSeries.coeff_mk]
+  rw [resolventSeries_def, PowerSeries.coeff_mk]
 
 /-- **The resolvent identity** `(1 - T u) V(T) = det (1 - T u) • 1`. -/
 theorem one_sub_C_mul_X_mul_resolventSeries (u : C₀(I, R) →L[R] C₀(I, R)) :
     (1 - PowerSeries.C u * PowerSeries.X) * u.resolventSeries =
       PowerSeries.map (algebraMap R _) u.matrixCoeff.charPowerSeries := by
-  rw [Matrix.charPowerSeries_def, resolventSeries]
+  rw [Matrix.charPowerSeries_def, resolventSeries_def]
   exact TauCeti.powerSeries_one_sub_C_mul_X_mul_mk_sum_smul_pow u.matrixCoeff.charCoeff u
 
 /-- **The resolvent identity** `V(T) (1 - T u) = det (1 - T u) • 1`. -/
 theorem resolventSeries_mul_one_sub_C_mul_X (u : C₀(I, R) →L[R] C₀(I, R)) :
     u.resolventSeries * (1 - PowerSeries.C u * PowerSeries.X) =
       PowerSeries.map (algebraMap R _) u.matrixCoeff.charPowerSeries := by
-  rw [Matrix.charPowerSeries_def, resolventSeries]
+  rw [Matrix.charPowerSeries_def, resolventSeries_def]
   exact TauCeti.powerSeries_mk_sum_smul_pow_mul_one_sub_C_mul_X u.matrixCoeff.charCoeff u
 
 end Algebraic

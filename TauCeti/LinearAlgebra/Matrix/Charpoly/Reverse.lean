@@ -37,8 +37,9 @@ the dimension.
   `Matrix.charpolyRev_diagonal` as special cases.
 * `Matrix.charpolyRev_blockDiagonal'`: multiplicativity for a finite dependent family of
   diagonal blocks.
-* `Matrix.coeff_adjugate_one_sub_X_smul`: the `m`-th coefficient of the adjugate of `1 - X A` is
-  `∑ k ∈ range (m + 1), c k • A ^ (m - k)`, where `c k` are the coefficients of `det (1 - X A)`.
+* `Matrix.coeff_adjugate_one_sub_X_smul_apply`: the `m`-th coefficient of the adjugate of
+  `1 - X A` is `∑ k ∈ range (m + 1), c k • A ^ (m - k)`, where `c k` are the coefficients of
+  `det (1 - X A)`.
   Thus `adjugate (1 - X A) = det (1 - X A) • (1 - X A)⁻¹` is the finite-dimensional *Fredholm
   resolvent*, whose coefficients are these polynomials in `A`.
 * `Matrix.charpolyRev_mul_comm`: `det (1 - X A B) = det (1 - X B A)` for rectangular matrices `A`
@@ -110,7 +111,7 @@ theorem eval_one_charpolyRev (A : Matrix ι ι R) : A.charpolyRev.eval 1 = (1 - 
 /-- **The Fredholm resolvent of a matrix.** The `m`-th coefficient of the adjugate of `1 - X A`
 is `∑ k ∈ range (m + 1), c k • A ^ (m - k)`, where `c k` is the `k`-th coefficient of
 `det (1 - X A)`. -/
-theorem coeff_adjugate_one_sub_X_smul (A : Matrix ι ι R) (m : ℕ) (i j : ι) :
+theorem coeff_adjugate_one_sub_X_smul_apply (A : Matrix ι ι R) (m : ℕ) (i j : ι) :
     ((1 - (X : R[X]) • A.map C).adjugate i j).coeff m =
       (∑ k ∈ Finset.range (m + 1), A.charpolyRev.coeff k • A ^ (m - k)) i j := by
   -- Read `(1 - X A) * adjugate (1 - X A) = det (1 - X A) • 1` as an identity of polynomials
