@@ -26,11 +26,12 @@ follows from the affine criterion and the ring-level theorem
 * `TauCeti.AlgebraicGeometry.isRegular_iff_forall_stalk`: the stalkwise characterization.
 * `TauCeti.AlgebraicGeometry.IsRegular.of_isOpenImmersion`: open subschemes are regular.
 * `TauCeti.AlgebraicGeometry.IsRegular.of_smooth`: schemes smooth over a regular scheme are regular.
-* `TauCeti.AlgebraicGeometry.isRegular_iff_exists_affineOpen`: the affine-neighbourhood criterion.
+* `TauCeti.AlgebraicGeometry.isRegular_iff_forall_exists_affineOpens`:
+  the affine-neighbourhood criterion.
 * `TauCeti.AlgebraicGeometry.isRegular_iff_forall_affineOpens`: the affine-open criterion.
 * `TauCeti.AlgebraicGeometry.IsRegular.component_regular`: regular affine-open section rings.
 * `TauCeti.AlgebraicGeometry.isRegular_Spec_iff`: regularity of an affine scheme.
-* `TauCeti.AlgebraicGeometry.IsNormalScheme.of_isRegular`: regular schemes are normal.
+* `TauCeti.AlgebraicGeometry.IsRegular.isNormal`: regular schemes are normal.
 
 ## References
 
@@ -90,7 +91,7 @@ instance isRegular_Spec (R : CommRingCat.{u}) [IsRegularRing R] : IsRegular (Spe
 /-- A scheme is regular exactly when each point has an affine open neighbourhood with a
 regular ring of sections. This is Stacks, Definition 28.9.1 (02IS). -/
 @[stacks 02IS]
-theorem isRegular_iff_exists_affineOpen :
+theorem isRegular_iff_forall_exists_affineOpens :
     IsRegular X ↔ ∀ point : X, ∃ openSet : X.affineOpens,
       point ∈ (openSet : X.Opens) ∧ IsRegularRing Γ(X, openSet) := by
   refine ⟨fun _ point ↦ ?_, fun hRegular ↦ ?_⟩
@@ -118,7 +119,7 @@ theorem isRegular_iff_forall_affineOpens :
   refine ⟨fun _ U ↦ ?_, fun hRegular ↦ ?_⟩
   · have := IsLocallyNoetherian.component_noetherian U
     exact (isRegularRing_iff_isRegularLocalRing_stalk U.2).mpr fun _ _ ↦ inferInstance
-  · apply isRegular_iff_exists_affineOpen.mpr
+  · apply isRegular_iff_forall_exists_affineOpens.mpr
     intro point
     obtain ⟨openSet, hAffine, hMem, -⟩ :=
       exists_isAffineOpen_mem_and_subset (TopologicalSpace.Opens.mem_top point)
@@ -142,7 +143,7 @@ theorem isRegular_Spec_iff (R : CommRingCat.{u}) :
 
 /-- A regular scheme is normal. Stacks, Lemma 28.9.4 (0569). -/
 @[stacks 0569]
-instance IsNormalScheme.of_isRegular [IsRegular X] : IsNormalScheme X := by
+instance IsRegular.isNormal [IsRegular X] : IsNormalScheme X := by
   refine isNormalScheme_iff_forall_affineOpens.mpr fun U ↦ ?_
   have : IsRegularRing Γ(X, U) := IsRegular.component_regular U
   exact (isNormalScheme_Spec_iff_forall_localization Γ(X, U)).mpr fun _ _ ↦
