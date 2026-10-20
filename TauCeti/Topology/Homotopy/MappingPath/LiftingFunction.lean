@@ -93,6 +93,11 @@ theorem lift_def (e : E) (γ : C(I, B)) (h : γ 0 = p e) :
     Λ.lift e γ h = Λ.toContinuousMap ⟨(e, γ), h⟩ :=
   (rfl)
 
+theorem lift_congr (e : E) {γ γ' : C(I, B)} (hγ : γ = γ') (h : γ 0 = p e) (h' : γ' 0 = p e) :
+    Λ.lift e γ h = Λ.lift e γ' h' := by
+  subst hγ
+  rfl
+
 @[simp]
 theorem lift_zero (e : E) (γ : C(I, B)) (h : γ 0 = p e) : Λ.lift e γ h 0 = e :=
   Λ.apply_zero' _
