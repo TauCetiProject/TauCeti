@@ -63,6 +63,12 @@ private theorem arPresentation_isMinimal (M : ModuleCat.{max u v w} A) [Module.F
   let : IsArtinianRing A := IsArtinianRing.of_finite k A
   exact FiniteProjectivePresentation.isMinimal_minimal
 
+include k in
+private theorem isFiniteLength_of_finite (M : ModuleCat.{max u v w} A) [Module.Finite A M] :
+    IsFiniteLength A M :=
+  let : IsArtinianRing A := IsArtinianRing.of_finite k A
+  isFiniteLength_iff_isNoetherian_isArtinian.mpr ⟨inferInstance, inferInstance⟩
+
 /-- The Auslander–Reiten translate `τ M = D Tr M` of a finitely generated module, formed from a
 chosen finite minimal projective presentation. -/
 noncomputable def arTranslate (M : ModuleCat.{max u v w} A) [Module.Finite A M] :
@@ -112,10 +118,8 @@ theorem indecomposable_arTranslate_iff (M : ModuleCat.{max u v w} A) [Module.Fin
   · intro h hp
     exact h.1 ((isZero_arTranslate_iff k M).mpr hp)
   · intro hp
-    let : IsArtinianRing A := IsArtinianRing.of_finite k A
     let P := arPresentation k M
-    have hlength : IsFiniteLength A M :=
-      ((IsArtinianRing.tfae A M).out 1 4).mp ‹_›
+    have hlength := isFiniteLength_of_finite k M
     have htr := (P.isIndecomposableModule_auslanderReitenTranspose_iff
       (arPresentation_isMinimal k M) hlength
       ((indecomposable_iff_isIndecomposableModule M).mp hiM)).mpr
@@ -140,13 +144,12 @@ theorem nonempty_iso_arTranslate_iff {M N : ModuleCat.{max u v w} A} [Module.Fin
     (hpM : ¬ Projective M) :
     Nonempty (arTranslate k M ≅ arTranslate k N) ↔ Nonempty (M ≅ N) := by
   refine ⟨fun ⟨e⟩ ↦ ?_, fun ⟨e⟩ ↦ nonempty_iso_arTranslate_of_iso k e⟩
-  let : IsArtinianRing A := IsArtinianRing.of_finite k A
   let P := arPresentation k M
   let R := arPresentation k N
   have : Module.Finite k (AuslanderReitenTranspose P.p) := Module.Finite.trans Aᵐᵒᵖ _
   have : Module.Finite k (AuslanderReitenTranspose R.p) := Module.Finite.trans Aᵐᵒᵖ _
-  have hlenM : IsFiniteLength A M := ((IsArtinianRing.tfae A M).out 1 4).mp ‹_›
-  have hlenN : IsFiniteLength A N := ((IsArtinianRing.tfae A N).out 1 4).mp ‹_›
+  have hlenM := isFiniteLength_of_finite k M
+  have hlenN := isFiniteLength_of_finite k N
   have hpM' : ¬ Module.Projective A M := fun h ↦
     hpM ((IsProjective.iff_projective (R := A) M).mp h)
   obtain ⟨f⟩ := P.nonempty_linearEquiv_of_auslanderReitenTranslate R hlenM hlenN
