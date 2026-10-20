@@ -151,8 +151,7 @@ private theorem torsionBracket_reindex {p' q' : ℕ} (hp : p = p') (hq : q = q')
     torsionBracket c h (b₁.reindex (finCongr hp)) (b₀.reindex (finCongr hq))
       (s ∘ Fin.cast hq.symm) (fun k ↦ by simp [hs]) = torsionBracket c h b₁ b₀ s hs := by
   subst hp hq
-  simp only [finCongr_refl, Basis.reindex_refl]
-  rfl
+  simp only [finCongr_refl, Basis.reindex_refl, Fin.cast_refl, Function.comp_id]
 
 /-- A bracket is nonzero. -/
 theorem torsionBracket_ne_zero : torsionBracket c h b₁ b₀ s hs ≠ 0 :=
@@ -423,31 +422,15 @@ section Iso
 
 variable {C} {D : ChainComplex (ModuleCat F) ℤ} (e : C ≅ D)
 
-private theorem d_hom_isoApp_apply {i j : ℤ} (x : C.X i) :
-    (D.d i j).hom ((Hom.isoApp e i).toLinearEquiv x) =
-      (Hom.isoApp e j).toLinearEquiv ((C.d i j).hom x) :=
-  congr($(e.hom.comm i j).hom x)
-
-/-- An isomorphism `e : C ≅ D` maps the boundaries `Bⱼ` of `C` isomorphically onto those of `D`. -/
-private def boundariesEquiv (j : ℤ) :
-    LinearMap.range (C.d (j + 1) j).hom ≃ₗ[F] LinearMap.range (D.d (j + 1) j).hom :=
-  (Hom.isoApp e j).toLinearEquiv.ofSubmodules _ _ <| by
-    rw [← LinearMap.range_comp, ← LinearEquiv.range_comp (Hom.isoApp e (j + 1)).toLinearEquiv]
-    exact congrArg LinearMap.range (LinearMap.ext fun x ↦ (d_hom_isoApp_apply e x).symm)
-
-private theorem coe_boundariesEquiv_apply (j : ℤ) (x : LinearMap.range (C.d (j + 1) j).hom) :
-    (boundariesEquiv e j x : D.X j) = (Hom.isoApp e j).toLinearEquiv x :=
-  rfl
-
 /-- Lifts `s` of a basis `b₀` of the boundaries `Bⱼ` of `C`, mapped by `e`, are lifts of the
 basis of the boundaries of `D` transported from `b₀`. -/
 private theorem d_hom_isoApp_comp_apply {j : ℤ} {q : ℕ}
     (b₀ : Basis (Fin q) F (LinearMap.range (C.d (j + 1) j).hom)) (s : Fin q → C.X (j + 1))
     (hs : ∀ k, (C.d (j + 1) j).hom (s k) = b₀ k) (k : Fin q) :
     (D.d (j + 1) j).hom (((Hom.isoApp e (j + 1)).toLinearEquiv ∘ s) k) =
-      b₀.map (boundariesEquiv e j) k := by
-  simp only [Function.comp_apply, d_hom_isoApp_apply, hs, Basis.map_apply,
-    coe_boundariesEquiv_apply]
+      b₀.map (rangeDEquiv e (j + 1) j) k := by
+  rw [Basis.map_apply, coe_rangeDEquiv_apply, ← hs]
+  exact Hom.comm_apply e.hom _ _ _
 
 /-- Transporting a bracket along an isomorphism `e : C ≅ D`, by mapping the chain bases, the
 boundary bases and the lifts by `e`, does not change it. -/
@@ -456,16 +439,16 @@ private theorem torsionBracket_map {j : ℤ} (hC : C.ExactAt (j + 1)) (hD : D.Ex
     (b₀ : Basis (Fin q) F (LinearMap.range (C.d (j + 1) j).hom))
     (s : Fin q → C.X (j + 1)) (hs : ∀ k, (C.d (j + 1) j).hom (s k) = b₀ k) :
     torsionBracket (fun i ↦ (c i).map (Hom.isoApp e i).toLinearEquiv) hD
-        (b₁.map (boundariesEquiv e (j + 1))) (b₀.map (boundariesEquiv e j))
+        (b₁.map (rangeDEquiv e (j + 1 + 1) (j + 1))) (b₀.map (rangeDEquiv e (j + 1) j))
         ((Hom.isoApp e (j + 1)).toLinearEquiv ∘ s) (d_hom_isoApp_comp_apply e b₀ s hs) =
       torsionBracket c hC b₁ b₀ s hs := by
-  have hB : bracketBasis hD (b₁.map (boundariesEquiv e (j + 1))) (b₀.map (boundariesEquiv e j))
+  have hB : bracketBasis hD (b₁.map (rangeDEquiv e (j + 1 + 1) (j + 1)))
+      (b₀.map (rangeDEquiv e (j + 1) j))
       ((Hom.isoApp e (j + 1)).toLinearEquiv ∘ s) (d_hom_isoApp_comp_apply e b₀ s hs) =
         (bracketBasis hC b₁ b₀ s hs).map (Hom.isoApp e (j + 1)).toLinearEquiv :=
     Basis.eq_of_apply_eq <| by
       rintro (k | k) <;>
-        simp [bracketBasis, Basis.ofExactLift_inl, Basis.ofExactLift_inr,
-          coe_boundariesEquiv_apply]
+        simp [bracketBasis, Basis.ofExactLift_inl, Basis.ofExactLift_inr]
   simp only [torsionBracket, hB, Basis.det_reindex, Basis.det_map]
   congr 1
   ext k
@@ -491,7 +474,7 @@ theorem reidemeisterTorsion_map :
   rw [reidemeisterTorsion_eq_finprod hn h (chosenBasis C c) (chosenLift C c)
       (chosenLift_spec C c),
     reidemeisterTorsion_eq_finprod hn (hacyclic.2 h)
-      (fun j ↦ (chosenBasis C c j).map (boundariesEquiv e j))
+      (fun j ↦ (chosenBasis C c j).map (rangeDEquiv e (j + 1) j))
       (fun j ↦ (Hom.isoApp e (j + 1)).toLinearEquiv ∘ chosenLift C c j)
       (fun j ↦ d_hom_isoApp_comp_apply e _ _ (chosenLift_spec C c j))]
   exact finprod_congr fun j ↦ by rw [torsionBracket_map]

@@ -35,6 +35,8 @@ Given concrete cocycle and coboundary submodules identified with the terms of a 
 with its surjectivity and its kernel described by the coboundaries.  At a degree where the complex
 is exact, the image of the incoming differential, the term and the image of the outgoing
 differential form a short exact sequence (`HomologicalComplex.exact_subtype_rangeRestrict`).
+An isomorphism of complexes of modules restricts to linear isomorphisms between the images of
+their differentials (`HomologicalComplex.rangeDEquiv`).
 -/
 
 public section
@@ -75,6 +77,22 @@ theorem exact_subtype_rangeRestrict {i j k : ι} (hi : c.prev j = i) (hk : c.nex
   rw [LinearMap.exact_iff, LinearMap.ker_rangeRestrict, Submodule.range_subtype]
   exact ((ShortComplex.moduleCat_exact_iff_range_eq_ker _).1
     ((K.exactAt_iff' i j k hi hk).1 h)).symm
+
+variable {K} in
+/-- An isomorphism `e : K ≅ L` of complexes of modules maps the image of the differential
+`K.d i j` isomorphically onto the image of `L.d i j`. -/
+def rangeDEquiv {L : HomologicalComplex (ModuleCat R) c} (e : K ≅ L) (i j : ι) :
+    LinearMap.range (K.d i j).hom ≃ₗ[R] LinearMap.range (L.d i j).hom :=
+  (Hom.isoApp e j).toLinearEquiv.ofSubmodules _ _ <| by
+    rw [← LinearMap.range_comp, ← LinearEquiv.range_comp (Hom.isoApp e i).toLinearEquiv]
+    exact congrArg LinearMap.range (LinearMap.ext fun x ↦ (Hom.comm_apply e.hom i j x).symm)
+
+variable {K} in
+/-- The isomorphism `rangeDEquiv e i j` is the restriction of `e.hom.f j`. -/
+@[simp]
+lemma coe_rangeDEquiv_apply {L : HomologicalComplex (ModuleCat R) c} (e : K ≅ L) (i j : ι)
+    (x : LinearMap.range (K.d i j).hom) : (rangeDEquiv e i j x : L.X j) = (e.hom.f j).hom x :=
+  (rfl)
 
 /-- The inclusion of the degree-`n` cycles of a homological complex of modules into its degree-`n`
 term is injective. -/
