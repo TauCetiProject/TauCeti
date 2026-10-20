@@ -112,11 +112,12 @@ theorem coe_tildeToIdeal (t : S.tilde) : (S.tildeToIdeal t : V) = S.tildeMul t :
   -- `Submodule.mulMap'` and `LinearEquiv.ofEq` only restrict the codomain of `Submodule.mulMap`.
   (rfl)
 
+@[simp]
 theorem tildeToIdeal_tmul (x y : S.ideal) :
     S.tildeToIdeal (x ⊗ₜ y) = ⟨x * y, S.ideal.mul_mem_left _ y.2⟩ :=
   Subtype.ext (by simp)
 
-theorem surjective_tildeToIdeal : Function.Surjective S.tildeToIdeal := by
+theorem tildeToIdeal_surjective : Function.Surjective S.tildeToIdeal := by
   rw [tildeToIdeal, LinearMap.coe_comp]
   exact (LinearEquiv.surjective _).comp (Submodule.mulMap'_surjective S.ideal S.ideal)
 
@@ -143,11 +144,13 @@ theorem IsAlmostZero.smul_eq_zero {M : Type*} [AddCommGroup M] [Module V M]
     (h : S.IsAlmostZero M) {ε : V} (hε : ε ∈ S.ideal) (x : M) : ε • x = 0 :=
   isAlmostZero_iff.mp h ε hε x
 
-theorem isAlmostZero_of_subsingleton (M : Type*) [AddCommGroup M] [Module V M]
+@[simp]
+theorem isAlmostZero_of_subsingleton {M : Type*} [AddCommGroup M] [Module V M]
     [Subsingleton M] : S.IsAlmostZero M :=
   isAlmostZero_iff.mpr fun _ _ _ ↦ Subsingleton.elim _ _
 
 /-- The quotient `V ⧸ m` is almost zero. -/
+@[simp]
 theorem isAlmostZero_quotient : S.IsAlmostZero (V ⧸ S.ideal) :=
   (Module.isTorsionBySet_quotient_iff _ _).mpr fun _ _ hε ↦ S.ideal.mul_mem_right _ hε
 
@@ -173,8 +176,8 @@ private theorem subsingleton_ideal_tensor_of_isAlmostZero (N : Type*) [AddCommGr
       rw [LinearMap.rTensor_tmul, hab, ← smul_tmul', h.smul_eq_zero a.2, LinearMap.zero_apply]
     | add t t' ht ht' => simp_all [add_tmul]
   refine ⟨fun y y' ↦ ?_⟩
-  obtain ⟨y, rfl⟩ := LinearMap.rTensor_surjective N S.surjective_tildeToIdeal y
-  obtain ⟨y', rfl⟩ := LinearMap.rTensor_surjective N S.surjective_tildeToIdeal y'
+  obtain ⟨y, rfl⟩ := LinearMap.rTensor_surjective N S.tildeToIdeal_surjective y
+  obtain ⟨y', rfl⟩ := LinearMap.rTensor_surjective N S.tildeToIdeal_surjective y'
   rw [hzero, LinearMap.zero_apply, LinearMap.zero_apply]
 
 /-- A module `M` is almost zero iff `m ⊗[V] M = 0` (Gabber–Ramero Remark 2.1.4(i)). -/
@@ -225,15 +228,16 @@ theorem isAlmostIso_of_bijective {f : M →ₗ[V] N} (hf : Function.Bijective f)
     rw [Submodule.subsingleton_iff_eq_bot]; exact LinearMap.ker_eq_bot.mpr hf.1
   have : Subsingleton (N ⧸ LinearMap.range f) := by
     rw [Submodule.Quotient.subsingleton_iff]; exact LinearMap.range_eq_top.mpr hf.2
-  exact ⟨S.isAlmostZero_of_subsingleton _, S.isAlmostZero_of_subsingleton _⟩
+  exact ⟨S.isAlmostZero_of_subsingleton, S.isAlmostZero_of_subsingleton⟩
 
 /-- The inclusion `m → V` is an almost isomorphism, although it is not surjective unless
 `m = V`. -/
+@[simp]
 theorem isAlmostIso_subtype : S.IsAlmostIso S.ideal.subtype := by
   have : Subsingleton (LinearMap.ker S.ideal.subtype) := by
     rw [Submodule.ker_subtype]; infer_instance
   rw [isAlmostIso_iff, Submodule.range_subtype]
-  exact ⟨S.isAlmostZero_of_subsingleton _, S.isAlmostZero_quotient⟩
+  exact ⟨S.isAlmostZero_of_subsingleton, S.isAlmostZero_quotient⟩
 
 end IsAlmostIso
 
@@ -268,16 +272,27 @@ def zero : BasicSetup V where
 theorem zero_ideal : (zero V).ideal = ⊥ :=
   (rfl)
 
+/-- The ideal of the zero setup is zero; hence `(zero V).tilde` is zero as well. -/
+instance : Subsingleton (zero V).ideal :=
+  Submodule.subsingleton_iff_eq_bot.mpr zero_ideal
+
+/-- For the zero setup, `m~ = 0`, so the multiplication map `m~ → V` is zero. -/
+@[simp]
+theorem zero_tildeMul : (zero V).tildeMul = 0 :=
+  Subsingleton.elim _ _
+
 section ClassicalZero
 
 variable {M N : Type*} [AddCommGroup M] [Module V M] [AddCommGroup N] [Module V N]
 
 /-- For the classical setup, almost zero means zero. -/
+@[simp]
 theorem isAlmostZero_classical_iff : (classical V).IsAlmostZero M ↔ Subsingleton M := by
-  refine ⟨fun h ↦ ⟨fun x y ↦ ?_⟩, fun _ ↦ isAlmostZero_of_subsingleton _ M⟩
+  refine ⟨fun h ↦ ⟨fun x y ↦ ?_⟩, fun _ ↦ isAlmostZero_of_subsingleton _⟩
   rw [← one_smul V x, ← one_smul V y, h.smul_eq_zero (by simp), h.smul_eq_zero (by simp)]
 
 /-- For the classical setup, an almost isomorphism is a bijective linear map. -/
+@[simp]
 theorem isAlmostIso_classical_iff {f : M →ₗ[V] N} :
     (classical V).IsAlmostIso f ↔ Function.Bijective f := by
   rw [isAlmostIso_iff, isAlmostZero_classical_iff, isAlmostZero_classical_iff,
@@ -285,12 +300,14 @@ theorem isAlmostIso_classical_iff {f : M →ₗ[V] N} :
     LinearMap.range_eq_top, Function.Bijective]
 
 /-- For the zero setup, every module is almost zero. -/
+@[simp]
 theorem isAlmostZero_zero : (zero V).IsAlmostZero M :=
   isAlmostZero_iff.mpr fun ε hε x ↦ by
     rw [zero_ideal, Ideal.mem_bot] at hε
     rw [hε, zero_smul]
 
 /-- For the zero setup, every linear map is an almost isomorphism. -/
+@[simp]
 theorem isAlmostIso_zero (f : M →ₗ[V] N) : (zero V).IsAlmostIso f :=
   ⟨isAlmostZero_zero, isAlmostZero_zero⟩
 

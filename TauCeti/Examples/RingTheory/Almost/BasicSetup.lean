@@ -53,17 +53,15 @@ example : (classical V).tildeMul ((⟨1, by simp⟩ : (classical V).ideal) ⊗�
 
 -- For the zero setup, `m~ = 0 ⊗ 0` vanishes, so the multiplication map `m~ → V` is zero.
 example : Subsingleton (zero V).tilde :=
-  have : Subsingleton (zero V).ideal := Submodule.subsingleton_iff_eq_bot.mpr zero_ideal
   inferInstance
 
-example : (zero V).tildeMul = 0 :=
-  have : Subsingleton (zero V).ideal := Submodule.subsingleton_iff_eq_bot.mpr zero_ideal
-  Subsingleton.elim _ _
+example : (zero V).tildeMul = 0 := by
+  simp
 
 -- Multiplication `m~ → m` is bijective for the classical setup: it is the identification
 -- `V ⊗[V] V ≅ V`.
 example : Function.Bijective (classical V).tildeToIdeal := by
-  refine ⟨fun s t hst ↦ ?_, (classical V).surjective_tildeToIdeal⟩
+  refine ⟨fun s t hst ↦ ?_, (classical V).tildeToIdeal_surjective⟩
   let e : (classical V).ideal ≃ₗ[V] V := (LinearEquiv.ofEq _ _ classical_ideal).trans
     Submodule.topEquiv
   have he : (classical V).tildeMul = ((TensorProduct.congr e e).trans (TensorProduct.lid V V)) :=
@@ -75,7 +73,6 @@ example : Function.Bijective (classical V).tildeToIdeal := by
 
 -- Multiplication `m~ → m` is bijective for the zero setup, both sides being zero.
 example : Function.Bijective (zero V).tildeToIdeal :=
-  have : Subsingleton (zero V).ideal := Submodule.subsingleton_iff_eq_bot.mpr zero_ideal
   ⟨fun _ _ _ ↦ Subsingleton.elim _ _, fun _ ↦ ⟨0, Subsingleton.elim _ _⟩⟩
 
 /-! ### Almost zero modules -/
@@ -85,7 +82,7 @@ example (S : BasicSetup V) : S.almostZero (ModuleCat.of V (V ⧸ S.ideal)) :=
   (S.almostZero_iff _).mpr S.isAlmostZero_quotient
 
 example (S : BasicSetup V) : S.almostZero (ModuleCat.of V PUnit) :=
-  (S.almostZero_iff _).mpr (S.isAlmostZero_of_subsingleton _)
+  (S.almostZero_iff _).mpr S.isAlmostZero_of_subsingleton
 
 -- `ℤ` is not almost zero for the classical setup `(ℤ, ℤ)`.
 example : ¬ (classical ℤ).IsAlmostZero ℤ := by
