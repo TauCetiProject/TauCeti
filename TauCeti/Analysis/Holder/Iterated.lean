@@ -35,7 +35,7 @@ conditions are closed under uniform convergence, which gives completeness.
 * `TauCeti.CkHolderSpace k α E F`: bounded `C^k` maps with bounded derivatives through order `k`
   and globally `α`-Hölder `k`-th derivative.
 * `TauCeti.CkHolderSpace.iteratedFDeriv`: the bounded continuous `i`-th derivative field for
-  `i ≤ k`; `TauCeti.CkHolderSpace.iteratedFDeriv_eq` identifies it with Mathlib's
+  `i ≤ k`; `TauCeti.CkHolderSpace.coe_iteratedFDeriv` identifies it with Mathlib's
   `iteratedFDeriv`.
 * `TauCeti.CkHolderSpace.contDiff` and `TauCeti.CkHolderSpace.memHolder_iteratedFDeriv`: the
   regularity of an element; `TauCeti.CkHolderSpace.ofContDiff` is the converse constructor.
@@ -159,11 +159,21 @@ private theorem curryLeftL_apply (j : ℕ) (g : E [×j + 1]→L[ℝ] F) :
   ext x v
   simp [curryLeftL]
 
+/-- Elements are the jets satisfying the derivative identities, stated through `fieldL` and
+`curryLeftL`. This is the identity map: the carrier of `CkHolderSpace` states the identities
+through its local `field`, which is `fieldL`, and through `continuousMultilinearCurryLeftEquiv`,
+whose underlying continuous linear map is `curryLeftL`. It is the only place where the
+declarations below unfold the carrier. -/
+private def equivSubtype : CkHolderSpace k α E F ≃ {J : Jet k α E F // ∀ (j : Fin k) (x : E),
+    HasFDerivAt (fieldL j.castSucc J : E → E [×j]→L[ℝ] F)
+      (curryLeftL E F j (fieldL j.succ J x)) x} :=
+  Equiv.refl _
+
 /-- An element from a jet satisfying the derivative identities. -/
 private def mk (J : Jet k α E F) (hJ : ∀ (j : Fin k) (x : E),
     HasFDerivAt (fieldL j.castSucc J : E → E [×j]→L[ℝ] F)
       (curryLeftL E F j (fieldL j.succ J x)) x) : CkHolderSpace k α E F :=
-  ⟨J, hJ⟩
+  equivSubtype.symm ⟨J, hJ⟩
 
 private theorem toJet_mk (J : Jet k α E F) (hJ) : toJet (mk J hJ) = J :=
   rfl
@@ -171,7 +181,7 @@ private theorem toJet_mk (J : Jet k α E F) (hJ) : toJet (mk J hJ) = J :=
 private theorem hasFDerivAt_fieldL (f : CkHolderSpace k α E F) (j : Fin k) (x : E) :
     HasFDerivAt (fieldL j.castSucc (toJet f) : E → E [×j]→L[ℝ] F)
       (curryLeftL E F j (fieldL j.succ (toJet f) x)) x :=
-  f.2 j x
+  (equivSubtype f).2 j x
 
 instance instNormedAddCommGroup : NormedAddCommGroup (CkHolderSpace k α E F) := by
   unfold CkHolderSpace
@@ -268,34 +278,43 @@ theorem ext {f g : CkHolderSpace k α E F} (h : ∀ x, f x = g x) : f = g :=
 
 /-- The recorded derivative fields are the iterated Fréchet derivatives of the underlying
 function. -/
-@[simp]
 theorem iteratedFDeriv_eq (f : CkHolderSpace k α E F) (i : Fin (k + 1)) (x : E) :
     _root_.iteratedFDeriv ℝ i f x = f.iteratedFDeriv i x :=
   iteratedFDeriv_toFun f i x
+
+/-- The `i`-th derivative field is Mathlib's `iteratedFDeriv` of the underlying function. -/
+@[simp]
+theorem coe_iteratedFDeriv (f : CkHolderSpace k α E F) (i : Fin (k + 1)) :
+    ⇑(f.iteratedFDeriv i) = _root_.iteratedFDeriv ℝ i f :=
+  funext fun x ↦ (iteratedFDeriv_eq f i x).symm
 
 /-- A bounded `C^{k,α}` map is `k` times continuously differentiable. -/
 theorem contDiff (f : CkHolderSpace k α E F) : ContDiff ℝ k f :=
   (hasFTaylorSeriesUpTo f).contDiff
 
-/-- The Hölder field records the `k`-th iterated Fréchet derivative. -/
+/-- The Hölder field, as a bounded continuous field, is the derivative field of order `k`. -/
 @[simp]
+theorem toBoundedContinuousFunction_iteratedFDerivHolder (f : CkHolderSpace k α E F) :
+    f.iteratedFDerivHolder.toBoundedContinuousFunction = f.iteratedFDeriv (Fin.last k) := by
+  rw [iteratedFDeriv, fieldL_last, iteratedFDerivHolder]
+
+/-- The Hölder field records the `k`-th iterated Fréchet derivative. -/
 theorem iteratedFDerivHolder_apply (f : CkHolderSpace k α E F) (x : E) :
     f.iteratedFDerivHolder x = _root_.iteratedFDeriv ℝ k f x := by
-  have hlast : f.iteratedFDeriv (Fin.last k) x = f.iteratedFDerivHolder x := by
-    rw [iteratedFDeriv, fieldL_last, HolderSpace.toBoundedContinuousFunction_apply]
-    rfl
-  exact ((iteratedFDeriv_eq f (Fin.last k) x).trans hlast).symm
+  rw [← HolderSpace.toBoundedContinuousFunction_apply,
+    toBoundedContinuousFunction_iteratedFDerivHolder]
+  exact (iteratedFDeriv_eq f (Fin.last k) x).symm
 
-private theorem coe_iteratedFDerivHolder (f : CkHolderSpace k α E F) :
-    (f.iteratedFDerivHolder.toBoundedContinuousFunction : E → E [×k]→L[ℝ] F) =
-      _root_.iteratedFDeriv ℝ k f :=
-  funext fun x ↦ (HolderSpace.toBoundedContinuousFunction_apply _ x).trans
-    (iteratedFDerivHolder_apply f x)
+/-- The Hölder field is Mathlib's `k`-th `iteratedFDeriv` of the underlying function. -/
+@[simp]
+theorem coe_iteratedFDerivHolder (f : CkHolderSpace k α E F) :
+    (f.iteratedFDerivHolder : E → E [×k]→L[ℝ] F) = _root_.iteratedFDeriv ℝ k f :=
+  funext (iteratedFDerivHolder_apply f)
 
 /-- The `k`-th iterated Fréchet derivative of a bounded `C^{k,α}` map is globally `α`-Hölder. -/
 theorem memHolder_iteratedFDeriv (f : CkHolderSpace k α E F) :
     MemHolder α (_root_.iteratedFDeriv ℝ k f) := by
-  rw [← coe_iteratedFDerivHolder]
+  rw [← coe_iteratedFDerivHolder, ← HolderSpace.coe_toBoundedContinuousFunction]
   exact f.iteratedFDerivHolder.memHolder
 
 /-- The `C^{k,α}` norm is the sum of the supremum norms of the iterated derivatives through
@@ -304,9 +323,10 @@ theorem norm_eq (f : CkHolderSpace k α E F) :
     ‖f‖ = ∑ i : Fin (k + 1), ‖f.iteratedFDeriv i‖ +
       nnHolderNorm α (_root_.iteratedFDeriv ℝ k f) := by
   rw [← norm_toJet, WithLp.prod_norm_eq_of_L1, PiLp.norm_eq_of_L1, Fin.sum_univ_castSucc,
-    HolderSpace.norm_def, ← coe_iteratedFDerivHolder, add_assoc]
-  simp only [iteratedFDeriv, fieldL_castSucc, fieldL_last]
-  rfl
+    HolderSpace.norm_def, ← coe_iteratedFDerivHolder, ← HolderSpace.coe_toBoundedContinuousFunction,
+    add_assoc]
+  simp only [iteratedFDeriv, fieldL_castSucc, fieldL_last, iteratedFDerivHolder,
+    WithLp.ofLp_fst, WithLp.ofLp_snd]
 
 /-- The supremum norm of each iterated derivative field is controlled by the `C^{k,α}` norm. -/
 theorem norm_iteratedFDeriv_le (f : CkHolderSpace k α E F) (i : Fin (k + 1)) :
@@ -391,25 +411,44 @@ theorem iteratedFDeriv_smul (c : ℝ) (f : CkHolderSpace k α E F) (i : Fin (k +
   simpa only [iteratedFDerivL_apply] using (iteratedFDerivL i).map_smul c f
 
 @[simp]
+theorem iteratedFDerivHolder_zero : (0 : CkHolderSpace k α E F).iteratedFDerivHolder = 0 := by
+  simpa only [iteratedFDerivHolderL_apply] using
+    (iteratedFDerivHolderL (k := k) (α := α) (E := E) (F := F)).map_zero
+
+@[simp]
+theorem iteratedFDerivHolder_add (f g : CkHolderSpace k α E F) :
+    (f + g).iteratedFDerivHolder = f.iteratedFDerivHolder + g.iteratedFDerivHolder := by
+  simpa only [iteratedFDerivHolderL_apply] using iteratedFDerivHolderL.map_add f g
+
+@[simp]
+theorem iteratedFDerivHolder_smul (c : ℝ) (f : CkHolderSpace k α E F) :
+    (c • f).iteratedFDerivHolder = c • f.iteratedFDerivHolder := by
+  simpa only [iteratedFDerivHolderL_apply] using iteratedFDerivHolderL.map_smul c f
+
+@[simp]
 theorem coe_zero : ⇑(0 : CkHolderSpace k α E F) = 0 := by
   ext x
-  rw [← toFun_eq_coe, toFun, iteratedFDeriv_zero, BoundedContinuousFunction.coe_zero,
-    Pi.zero_apply, Pi.zero_apply, ContinuousMultilinearMap.curry0_apply, _root_.zero_apply]
+  -- The bounded continuous field lemma is applied by `rw`: `simp` does not see through the
+  -- shortcut instance `instNormedAddCommGroupBoundedContinuousFunction`.
+  simp only [← toFun_eq_coe, toFun, iteratedFDeriv_zero, Pi.zero_apply]
+  rw [BoundedContinuousFunction.coe_zero]
+  simp
 
 @[simp]
 theorem coe_add (f g : CkHolderSpace k α E F) : ⇑(f + g) = f + g := by
   ext x
-  rw [← toFun_eq_coe, ← toFun_eq_coe, ← toFun_eq_coe, Pi.add_apply, toFun, toFun, toFun,
-    iteratedFDeriv_add, BoundedContinuousFunction.add_apply, ContinuousMultilinearMap.curry0_apply,
-    _root_.add_apply, ContinuousMultilinearMap.curry0_apply,
-    ContinuousMultilinearMap.curry0_apply]
+  -- As in `coe_zero`, the bounded continuous field lemma is applied by `rw`.
+  simp only [← toFun_eq_coe, toFun, iteratedFDeriv_add, Pi.add_apply]
+  rw [BoundedContinuousFunction.add_apply]
+  simp
 
 @[simp]
 theorem coe_smul (c : ℝ) (f : CkHolderSpace k α E F) : ⇑(c • f) = c • ⇑f := by
   ext x
-  rw [← toFun_eq_coe, ← toFun_eq_coe, Pi.smul_apply, toFun, toFun, iteratedFDeriv_smul,
-    BoundedContinuousFunction.smul_apply, ContinuousMultilinearMap.curry0_apply,
-    _root_.smul_apply, ContinuousMultilinearMap.curry0_apply]
+  -- As in `coe_zero`, the bounded continuous field lemma is applied by `rw`.
+  simp only [← toFun_eq_coe, toFun, iteratedFDeriv_smul, Pi.smul_apply]
+  rw [BoundedContinuousFunction.smul_apply]
+  simp
 
 /-- A bounded continuous field built from a continuous function with a uniform bound. -/
 private def bcfOf {G : Type*} [NormedAddCommGroup G] (g : E → G) (hg : Continuous g)
@@ -438,7 +477,7 @@ private theorem fieldL_jetOf (f : E → F) (hf : ContDiff ℝ k f)
     simp [jetOf, bcfOf]
   | cast j =>
     rw [fieldL_castSucc]
-    rfl
+    simp [jetOf, bcfOf]
 
 /-- Build a bounded `C^{k,α}` map from a `C^k` function whose iterated derivatives through order
 `k` are bounded and whose `k`-th iterated derivative is globally `α`-Hölder. -/
