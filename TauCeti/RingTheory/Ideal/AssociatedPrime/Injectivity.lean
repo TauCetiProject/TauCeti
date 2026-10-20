@@ -38,7 +38,7 @@ theorem injective_of_isLocalized_associatedPrimes
     [∀ prime, AddCommMonoid (Mₚ prime)]
     [∀ prime, Module R (Mₚ prime)]
     (f : ∀ prime, M →ₗ[R] Mₚ prime)
-    [∀ prime, IsLocalizedModule prime.1.primeCompl (f prime)]
+    [localized : ∀ prime, IsLocalizedModule prime.1.primeCompl (f prime)]
     (Nₚ : associatedPrimes R M → Type*)
     [∀ prime, AddCommMonoid (Nₚ prime)]
     [∀ prime, Module R (Nₚ prime)]
@@ -49,37 +49,30 @@ theorem injective_of_isLocalized_associatedPrimes
     Function.Injective map := by
   refine (injective_iff_map_eq_zero map).mpr fun element element_zero ↦ ?_
   by_contra element_ne_zero
-  have kernel_element_ne_zero :
-      (⟨element, LinearMap.mem_ker.mpr element_zero⟩ : LinearMap.ker map) ≠ 0 := by
-    simpa using element_ne_zero
-  have : Nontrivial (LinearMap.ker map) :=
-    (nontrivial_iff_exists_ne (0 : LinearMap.ker map)).mpr
-      ⟨⟨element, LinearMap.mem_ker.mpr element_zero⟩, kernel_element_ne_zero⟩
-  obtain ⟨prime, associated⟩ := associatedPrimes.nonempty R (LinearMap.ker map)
-  have associated_domain := associated.map_of_injective
-    (LinearMap.ker map).subtype (Submodule.injective_subtype _)
-  let associated_prime : associatedPrimes R M := ⟨prime, associated_domain⟩
+  obtain ⟨prime, associated, annihilator_le⟩ :=
+    exists_le_isAssociatedPrime_of_isNoetherianRing R element element_ne_zero
+  let associated_prime : associatedPrimes R M := ⟨prime, associated⟩
   have injective := local_injective associated_prime
-  obtain ⟨_, kernel_element, annihilator⟩ := isAssociatedPrime_iff.mp associated
-  have kernel_element_zero : map kernel_element.val = 0 :=
-    LinearMap.mem_ker.mp kernel_element.property
-  have localized_zero : f associated_prime kernel_element.val = 0 := by
+  have localized_zero : f associated_prime element = 0 := by
     apply injective
-    have mapped_zero : F associated_prime (f associated_prime kernel_element.val) = 0 := by
+    have mapped_zero : F associated_prime (f associated_prime element) = 0 := by
       calc
-        F associated_prime (f associated_prime kernel_element.val) =
-            g associated_prime (map kernel_element.val) :=
-          LinearMap.congr_fun (commutes associated_prime) kernel_element.val
-        _ = 0 := by rw [kernel_element_zero, map_zero]
+        F associated_prime (f associated_prime element) =
+            g associated_prime (map element) :=
+          LinearMap.congr_fun (commutes associated_prime) element
+        _ = 0 := by rw [element_zero, map_zero]
     simpa only [map_zero] using mapped_zero
   obtain ⟨denominator, annihilates⟩ :=
-    (IsLocalizedModule.eq_zero_iff associated_prime.1.primeCompl (f associated_prime)).mp
-      localized_zero
+    (@IsLocalizedModule.eq_zero_iff R _
+      (@Ideal.primeCompl R _ prime associated.isPrime)
+      M (Mₚ associated_prime) _ _ _ _ (f associated_prime)
+      (localized associated_prime) element).mp localized_zero
   apply denominator.property
-  apply annihilator.ge
+  apply annihilator_le
   rw [Submodule.mem_colon_singleton, Submodule.mem_bot]
-  apply Subtype.ext
-  simpa only [Submodule.coe_smul, Submodule.coe_zero, Submonoid.smul_def] using annihilates
+  have denominator_annihilates : (denominator : R) • element = 0 := by
+    simpa only [Submonoid.smul_def] using annihilates
+  exact denominator_annihilates
 
 end IsLocalizedModule
 
