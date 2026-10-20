@@ -75,7 +75,7 @@ its rational form remains positive definite after an ordered field extension. -/
 theorem isPosDef_iff_posDef_baseChange {K : Type*} [Field K] [LinearOrder K]
     [IsStrictOrderedRing K] : L.IsPosDef ↔ (L.form.baseChange K).toQuadraticMap.PosDef :=
   have := L.finiteDimensional
-  (LinearMap.BilinForm.posDef_toQuadraticMap_baseChange_iff (K := K) L.isSymm).symm
+  (L.form.posDef_toQuadraticMap_baseChange_iff (K := K)).symm
 
 variable {K : Type*} [Field K] [LinearOrder K] [StarRing K] [TrivialStar K] [StarOrderedRing K]
 

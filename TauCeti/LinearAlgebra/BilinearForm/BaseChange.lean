@@ -39,9 +39,10 @@ In particular, this applies to arbitrary extensions of fields, even in infinite 
 Injective localizations also preserve separation and nondegeneracy without any condition on the
 module carrying the form.
 
-Over ordered fields, base change along an order-preserving structure map also preserves and
-reflects positive definiteness of a symmetric form on a finite-dimensional space; this is how a
-rational form is compared with its real extension.
+Over an ordered field, base change into a linearly ordered commutative ring along an
+order-preserving structure map also preserves and reflects positive definiteness of the quadratic
+map associated to a bilinear form on a finite-dimensional space; this is how a rational form is
+compared with its real extension.
 
 ## Main declarations
 
@@ -71,9 +72,9 @@ rational form is compared with its real extension.
   base-changes to an isometric equivalence of their base changes.
 * `TauCeti.bilinFormBaseChangeProdIsometry`: base change commutes with products of
   bilinear forms, via the canonical tensor-product equivalence.
-* `LinearMap.BilinForm.posDef_toQuadraticMap_baseChange_iff`: along an order-preserving extension
-  of ordered fields, base change preserves and reflects positive definiteness of a symmetric form
-  on a finite-dimensional space.
+* `LinearMap.BilinForm.posDef_toQuadraticMap_baseChange_iff`: along an order-preserving
+  structure map from an ordered field to a linearly ordered commutative ring, base change preserves
+  and reflects positive definiteness of the quadratic map of any finite-dimensional bilinear form.
 -/
 
 public section
@@ -479,16 +480,26 @@ namespace LinearMap.BilinForm
 section PosDef
 
 variable {F K V : Type*} [Field F] [LinearOrder F] [IsStrictOrderedRing F]
-  [Field K] [LinearOrder K] [IsStrictOrderedRing K] [Algebra F K] [SMulPosStrictMono F K]
+  [CommRing K] [LinearOrder K] [IsStrictOrderedRing K] [Algebra F K] [SMulPosStrictMono F K]
   [AddCommGroup V] [Module F V] [FiniteDimensional F V]
 
-/-- **Positive definiteness is preserved and reflected by an ordered field extension.** For a
-symmetric bilinear form on a finite-dimensional space over an ordered field `F`, and an ordered
-field `K` whose structure map from `F` is strictly monotone, the base change of `B` to `K` is
-positive definite exactly when `B` is. In particular a rational symmetric form is positive
-definite exactly when its real extension is. -/
-theorem posDef_toQuadraticMap_baseChange_iff {B : LinearMap.BilinForm F V} (hB : B.IsSymm) :
+/-- **Positive definiteness is preserved and reflected by an ordered scalar extension.** For a
+bilinear form on a finite-dimensional space over an ordered field `F`, and a linearly ordered
+commutative ring `K` whose structure map from `F` is strictly monotone, the quadratic map of the
+base change of `B` to `K` is positive definite exactly when that of `B` is. No symmetry assumption
+is needed. In particular a rational form is positive definite exactly when its real extension is. -/
+theorem posDef_toQuadraticMap_baseChange_iff (B : LinearMap.BilinForm F V) :
     (B.baseChange K).toQuadraticMap.PosDef ↔ B.toQuadraticMap.PosDef := by
+  wlog hB : B.IsSymm generalizing B
+  · -- Symmetrization doubles every diagonal value, before and after base change.
+    have hsym : (B + B.flip).IsSymm := by
+      constructor
+      intro x y
+      simp [add_comm]
+    have hbase : (B + B.flip).baseChange K = B.baseChange K + (B.baseChange K).flip := by
+      ext
+      simp [add_smul]
+    simpa [QuadraticMap.PosDef, hbase] using this (B + B.flip) hsym
   have hmap {a : F} : 0 < algebraMap F K a ↔ 0 < a := by
     simpa using (algebraMap_strictMono (α := F) K).lt_iff_lt (a := 0) (b := a)
   constructor
