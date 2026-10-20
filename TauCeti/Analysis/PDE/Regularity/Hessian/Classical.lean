@@ -50,7 +50,7 @@ set whose positive thickening lies in a relatively compact subdomain. Hölder co
 the data is needed only on this thickening, rather than throughout the original domain.
 The auxiliary subdomain `V` supplies a compactness margin; no Hölder control is required
 outside the thickening. For data locally Hölder throughout the original domain, use
-`exists_contDiffOn_two_ae_eq_of_locally_holderOnWith`. -/
+`exists_contDiffOn_two_ae_eq_and_neg_laplacian_eq_of_locally_holderOnWith`. -/
 theorem exists_contDiffOn_two_ae_eq_on_of_holderOnWith
     {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1)
     {u : W1p volume Omega 2} {f : EuclideanSpace ℝ (Fin (n + 1)) → ℝ}
@@ -91,17 +91,8 @@ theorem exists_contDiffOn_two_ae_eq_on_of_holderOnWith
     exact ⟨gi, hgi, (hd.mono hSV').congr_ae_deriv hdgi⟩
   choose g hg hdg using hfirst
   -- Assemble the first derivatives into a `C¹` derivative field, then recover `u` itself.
-  let D : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] ℝ :=
-    fun x => ∑ i, g i x • innerSL ℝ (b i)
-  have hD : ContDiffOn ℝ 1 D S :=
-    ContDiffOn.sum fun i _ => (hg i).smul contDiffOn_const
-  have hDb : ∀ i x, D x (b i) = g i x := by
-    intro i x
-    simp [D, b.inner_eq_ite]
-  have huD : HasWeakFDerivOn volume S (W1p.value u) D :=
-    b.toBasis.hasWeakFDerivOn_of_forall
-      ((W1p.hasWeakFDerivOn u).locallyIntegrableOn.mono_set hSO)
-      (fun i => by simpa only [OrthonormalBasis.coe_toBasis, hDb] using hdg i)
+  obtain ⟨hD, huD⟩ := contDiffOn_sum_innerSL_and_hasWeakFDerivOn hg
+    ((W1p.hasWeakFDerivOn u).locallyIntegrableOn.mono_set hSO) hdg
   obtain ⟨g, hg, hug, -⟩ := huD.exists_contDiffOn_succ_ae_eq (n := 1) hD
   exact ⟨g, by exact_mod_cast hg, hug⟩
 
@@ -111,7 +102,7 @@ Let `0 < α < 1`. A weak `H¹(Ω)` solution of `-Δu = f`, with `f ∈ L²(Ω)` 
 at every point of `Ω`. The Hölder constants and neighbourhoods may vary with the point.
 No boundary condition or boundary regularity is assumed. This does not assert a quantitative
 Schauder norm estimate. -/
-theorem exists_contDiffOn_two_ae_eq_of_locally_holderOnWith
+theorem exists_contDiffOn_two_ae_eq_and_neg_laplacian_eq_of_locally_holderOnWith
     {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1)
     {u : W1p volume Omega 2} {f : EuclideanSpace ℝ (Fin (n + 1)) → ℝ}
     (hf : MemLp f 2 (volume.restrict Omega))
