@@ -243,6 +243,7 @@ theorem hessianQuadraticForm_re {g : V → ℂ} (hg : ContDiffAt ℂ 2 g x) (v :
   rw [hessianQuadraticForm_apply, fderiv_fderiv_re_apply hg]
 
 /-- **The real part of a holomorphic function is pluriharmonic**: its Levi form vanishes. -/
+@[simp]
 theorem leviForm_re_eq_zero {g : V → ℂ} (hg : ContDiffAt ℂ 2 g x) :
     leviForm (fun z ↦ (g z).re) x = 0 := by
   rw [leviForm_def, LinearMap.BilinForm.leviForm_eq_zero_iff]
