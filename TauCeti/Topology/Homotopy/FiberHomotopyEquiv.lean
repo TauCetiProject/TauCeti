@@ -127,8 +127,8 @@ namespace ContinuousMap
 
 /-- A homotopy of maps to the total space of a map `p`, staying over a fixed point `b`, gives a
 homotopy of maps into the fiber over `b`. -/
-theorem homotopic_of_fiber {E B Y : Type*} [TopologicalSpace E] [TopologicalSpace B]
-    [TopologicalSpace Y] {p : C(E, B)} {b : B} (f g : C(Y, p ⁻¹' {b}))
+theorem homotopic_of_fiber {E B Y : Type*} [TopologicalSpace E]
+    [TopologicalSpace Y] {p : E → B} {b : B} (f g : C(Y, p ⁻¹' {b}))
     (K : C(Y × I, E)) (h₀ : ∀ y, K (y, 0) = f y) (h₁ : ∀ y, K (y, 1) = g y)
     (hK : ∀ y s, p (K (y, s)) = b) : f.Homotopic g :=
   ⟨{ toFun := fun z ↦ ⟨K (z.2, z.1), hK z.2 z.1⟩
