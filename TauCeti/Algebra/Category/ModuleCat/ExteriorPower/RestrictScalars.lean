@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.ExteriorPower
-public import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
-public import Mathlib.Algebra.Category.ModuleCat.EpiMono
+public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 
 /-!
 # Exterior powers and restriction of scalars
@@ -108,90 +107,45 @@ private lemma restrictScalarsExteriorPowerInvAux_mk (e : S ≃+* R) (n : ℕ)
       ModuleCat.exteriorPower.mk (M := (ModuleCat.restrictScalars e.toRingHom).obj M) m :=
   ModuleCat.exteriorPower.desc_mk _ m
 
-private def restrictScalarsExteriorPowerInv (e : S ≃+* R) (n : ℕ)
-    (M : ModuleCat.{max u v w} R) :
-    (ModuleCat.restrictScalars e.toRingHom).obj (M.exteriorPower n) ⟶
-      ((ModuleCat.restrictScalars e.toRingHom).obj M).exteriorPower n :=
-  (ModuleCat.restrictScalars e.toRingHom).map (restrictScalarsExteriorPowerInvAux e n M) ≫
-    (ModuleCat.restrictScalarsEquivalenceOfRingEquiv e).counitIso.hom.app _
-
-private lemma restrictScalarsExteriorPowerInv_mk (e : S ≃+* R) (n : ℕ)
-    (M : ModuleCat.{max u v w} R) (m : Fin n → M) :
-    restrictScalarsExteriorPowerInv e n M (ModuleCat.exteriorPower.mk m) =
-      ModuleCat.exteriorPower.mk (M := (ModuleCat.restrictScalars e.toRingHom).obj M) m := by
-  -- `erw` matches the equivalence functors with their scalar-restriction definitions.
-  erw [restrictScalarsExteriorPowerInv, ModuleCat.comp_apply,
-    ModuleCat.restrictScalarsEquivalenceOfRingEquiv_counitIso_hom_app_apply,
-    ModuleCat.restrictScalars.map_apply, restrictScalarsExteriorPowerInvAux_mk]
-
-private lemma restrictScalarsExteriorPowerComparison_comp_inv
-    (e : S ≃+* R) (n : ℕ) (M : ModuleCat.{max u v w} R) :
-    (restrictScalarsExteriorPowerComparison e.toRingHom n).app M ≫
-      restrictScalarsExteriorPowerInv e n M = 𝟙 _ := by
-  apply ModuleCat.hom_ext
-  apply _root_.exteriorPower.linearMap_ext
-  apply _root_.AlternatingMap.ext
-  intro m
-  exact (congrArg (restrictScalarsExteriorPowerInv e n M)
-    (restrictScalarsExteriorPowerComparison_app_mk e.toRingHom n M m)).trans
-      (restrictScalarsExteriorPowerInv_mk e n M m)
-
-private lemma restrictScalarsExteriorPowerComparison_inv_apply
-    (e : S ≃+* R) (n : ℕ) (M : ModuleCat.{max u v w} R) (x : M.exteriorPower n) :
-    ((restrictScalarsExteriorPowerComparison e.toRingHom n).app M)
-      (restrictScalarsExteriorPowerInvAux e n M x) = x := by
-  let N := (ModuleCat.restrictScalars e.toRingHom).obj M
-  let P := (ModuleCat.restrictScalars e.symm.toRingHom).obj (N.exteriorPower n)
-  let h : M.exteriorPower n ⟶ P := restrictScalarsExteriorPowerInvAux e n M
-  have hh (m : Fin n → M) : h (ModuleCat.exteriorPower.mk m) =
-      ModuleCat.exteriorPower.mk (M := N) m := restrictScalarsExteriorPowerInvAux_mk e n M m
-  let c : N.exteriorPower n ⟶ (ModuleCat.restrictScalars e.toRingHom).obj (M.exteriorPower n) :=
-    (restrictScalarsExteriorPowerComparison e.toRingHom n).app M
-  let c' : P ⟶ M.exteriorPower n :=
-    (ModuleCat.restrictScalars e.symm.toRingHom).map c ≫
-      (ModuleCat.restrictScalarsEquivalenceOfRingEquiv e).unitIso.inv.app _
-  have hc (m : Fin n → M) : c (ModuleCat.exteriorPower.mk (M := N) m) =
-      ModuleCat.exteriorPower.mk (M := M) m :=
-    restrictScalarsExteriorPowerComparison_app_mk e.toRingHom n M m
-  have hc' (x : P) : c' x = c x := by
-    -- The inverse unit for `e` is the counit for `e.symm`; `erw` exposes these wrappers.
-    dsimp only [c']
-    erw [ModuleCat.comp_apply,
-      ModuleCat.restrictScalarsEquivalenceOfRingEquiv_counitIso_hom_app_apply e.symm,
-      ModuleCat.restrictScalars.map_apply]
-  have hright : h ≫ c' = 𝟙 _ := by
-    apply ModuleCat.hom_ext
-    apply _root_.exteriorPower.linearMap_ext
-    apply _root_.AlternatingMap.ext
-    intro m
-    exact (congrArg c' (hh m)).trans
-      ((hc' (ModuleCat.exteriorPower.mk (M := N) m)).trans (hc m))
-  exact (hc' (h x)).symm.trans (ConcreteCategory.congr_hom hright x)
-
-private lemma restrictScalarsExteriorPowerComparison_injective
-    (e : S ≃+* R) (n : ℕ) (M : ModuleCat.{max u v w} R) :
-    Function.Injective ((restrictScalarsExteriorPowerComparison e.toRingHom n).app M) := by
-  let N := (ModuleCat.restrictScalars e.toRingHom).obj M
-  let c : N.exteriorPower n ⟶ (ModuleCat.restrictScalars e.toRingHom).obj (M.exteriorPower n) :=
-    (restrictScalarsExteriorPowerComparison e.toRingHom n).app M
-  have hleft : c ≫ restrictScalarsExteriorPowerInv e n M = 𝟙 (N.exteriorPower n) :=
-    restrictScalarsExteriorPowerComparison_comp_inv e n M
-  have : Mono c := mono_of_mono_fac hleft
-  exact (ModuleCat.mono_iff_injective c).mp inferInstance
-
-private lemma restrictScalarsExteriorPowerComparison_surjective
-    (e : S ≃+* R) (n : ℕ) (M : ModuleCat.{max u v w} R) :
-    Function.Surjective ((restrictScalarsExteriorPowerComparison e.toRingHom n).app M) :=
-  fun x ↦ ⟨restrictScalarsExteriorPowerInvAux e n M x,
-    restrictScalarsExteriorPowerComparison_inv_apply e n M x⟩
-
 /-- Restriction along an isomorphism of coefficient rings preserves exterior powers. -/
 theorem isIso_restrictScalarsExteriorPowerComparison_app_of_bijective
     (hf : Function.Bijective f) (n : ℕ) (M : ModuleCat.{max u v w} R) :
-    IsIso ((restrictScalarsExteriorPowerComparison f n).app M) :=
-  (ConcreteCategory.isIso_iff_bijective _).mpr
-    ⟨restrictScalarsExteriorPowerComparison_injective (RingEquiv.ofBijective f hf) n M,
-      restrictScalarsExteriorPowerComparison_surjective (RingEquiv.ofBijective f hf) n M⟩
+    IsIso ((restrictScalarsExteriorPowerComparison f n).app M) := by
+  let e := RingEquiv.ofBijective f hf
+  let : RingHomInvPair e.toRingHom e.symm.toRingHom := RingHomInvPair.of_ringEquiv e
+  let N := (ModuleCat.restrictScalars e.toRingHom).obj M
+  -- Opposite coefficient changes make both composites linear over their source rings.
+  let c : N.exteriorPower n →ₛₗ[e.toRingHom] M.exteriorPower n :=
+    (ModuleCat.semilinearMapAddEquiv e.toRingHom _ _).symm
+      ((restrictScalarsExteriorPowerComparison e.toRingHom n).app M)
+  let h : M.exteriorPower n →ₛₗ[e.symm.toRingHom] N.exteriorPower n :=
+    (ModuleCat.semilinearMapAddEquiv e.symm.toRingHom _ _).symm
+      (restrictScalarsExteriorPowerInvAux e n M)
+  -- `using!` identifies the unchanged carriers of scalar-restricted modules.
+  have hc (m : Fin n → N) :
+      c (ModuleCat.exteriorPower.mk m) = ModuleCat.exteriorPower.mk (M := M) m := by
+    simpa only [c, ModuleCat.semilinearMapAddEquiv_symm_apply_apply] using!
+      restrictScalarsExteriorPowerComparison_app_mk e.toRingHom n M m
+  have hh (m : Fin n → M) :
+      h (ModuleCat.exteriorPower.mk m) = ModuleCat.exteriorPower.mk (M := N) m := by
+    simpa only [h, ModuleCat.semilinearMapAddEquiv_symm_apply_apply] using!
+      restrictScalarsExteriorPowerInvAux_mk e n M m
+  have hleft : Function.LeftInverse h c := by
+    have heq : (h.comp c : N.exteriorPower n →ₗ[S] N.exteriorPower n) = LinearMap.id := by
+      apply _root_.exteriorPower.linearMap_ext
+      apply _root_.AlternatingMap.ext
+      intro m
+      exact (congrArg h (hc m)).trans (hh m)
+    exact fun x ↦ DFunLike.congr_fun heq x
+  have hright : Function.RightInverse h c := by
+    have heq : (c.comp h : M.exteriorPower n →ₗ[R] M.exteriorPower n) = LinearMap.id := by
+      apply _root_.exteriorPower.linearMap_ext
+      apply _root_.AlternatingMap.ext
+      intro m
+      exact (congrArg c (hh m)).trans (hc m)
+    exact fun x ↦ DFunLike.congr_fun heq x
+  exact (ConcreteCategory.isIso_iff_bijective _).mpr
+    ⟨hleft.injective, hright.surjective⟩
 
 end
 
