@@ -21,6 +21,10 @@ nonarchimedean, the ultrametric inequality removes the count. Iterating gives bo
 finite products, and through the Leibniz expansion for determinants of matrices of polynomials:
 an `m × m` determinant has at most `m!` terms, each a product of `m` entries.
 
+The product estimates allow semiring-valued absolute values. Finite products use a commutative
+domain as the value semiring so that `v 1 = 1`; the nonarchimedean estimates use a linear order,
+while the other product estimates need only a partial order.
+
 A polynomial whose partial degrees are `d j` has at most `∏ j, (d j + 1) ≤ 2 ^ ∑ j, d j`
 monomials, which turns the support counts into powers of two.
 
@@ -81,12 +85,12 @@ end Support
 
 section AbsoluteValue
 
-variable {σ R S : Type*} [CommSemiring R] [CommRing S] [LinearOrder S] [IsStrictOrderedRing S]
-  {v : AbsoluteValue R S}
+variable {σ R S : Type*} [CommSemiring R]
 
 /-- If the coefficients of `p` and `q` are bounded by `r` and `s` under an absolute value `v`,
 then each coefficient of `p * q` is bounded by `#p.support * (r * s)`. -/
-theorem abv_coeff_mul_le (p q : MvPolynomial σ R) {r s : S} (hp : ∀ a, v (p.coeff a) ≤ r)
+theorem abv_coeff_mul_le [Semiring S] [PartialOrder S] [IsOrderedRing S] {v : AbsoluteValue R S}
+    (p q : MvPolynomial σ R) {r s : S} (hp : ∀ a, v (p.coeff a) ≤ r)
     (hq : ∀ a, v (q.coeff a) ≤ s) (t : σ →₀ ℕ) :
     v ((p * q).coeff t) ≤ #p.support * (r * s) := by
   classical
@@ -107,7 +111,8 @@ theorem abv_coeff_mul_le (p q : MvPolynomial σ R) {r s : S} (hp : ∀ a, v (p.c
 
 /-- If `v` is nonarchimedean and the coefficients of `p` and `q` are bounded by `r` and `s`,
 then the coefficients of `p * q` are bounded by `r * s`. -/
-theorem abv_coeff_mul_le_of_isNonarchimedean (p q : MvPolynomial σ R) (hv : IsNonarchimedean v)
+theorem abv_coeff_mul_le_of_isNonarchimedean [Semiring S] [LinearOrder S] [PosMulMono S]
+    [MulPosMono S] {v : AbsoluteValue R S} (p q : MvPolynomial σ R) (hv : IsNonarchimedean v)
     {r s : S} (hp : ∀ a, v (p.coeff a) ≤ r) (hq : ∀ a, v (q.coeff a) ≤ s) (t : σ →₀ ℕ) :
     v ((p * q).coeff t) ≤ r * s := by
   classical
@@ -121,7 +126,8 @@ variable [Nontrivial R]
 
 /-- If the coefficients of each `f k` are bounded by `C k` under an absolute value `v`, then each
 coefficient of `∏ k ∈ s, f k` is bounded by `∏ k ∈ s, #(f k).support * C k`. -/
-theorem abv_coeff_prod_le {ι : Type*} {s : Finset ι} (f : ι → MvPolynomial σ R) {C : ι → S}
+theorem abv_coeff_prod_le [CommSemiring S] [PartialOrder S] [IsOrderedRing S] [IsDomain S]
+    {v : AbsoluteValue R S} {ι : Type*} {s : Finset ι} (f : ι → MvPolynomial σ R) {C : ι → S}
     (hf : ∀ k ∈ s, ∀ a, v ((f k).coeff a) ≤ C k) (t : σ →₀ ℕ) :
     v ((∏ k ∈ s, f k).coeff t) ≤ ∏ k ∈ s, (#(f k).support * C k) := by
   classical
@@ -136,7 +142,8 @@ theorem abv_coeff_prod_le {ι : Type*} {s : Finset ι} (f : ι → MvPolynomial 
 
 /-- If `v` is nonarchimedean and the coefficients of each `f k` are bounded by `C k`, then the
 coefficients of `∏ k ∈ s, f k` are bounded by `∏ k ∈ s, C k`. -/
-theorem abv_coeff_prod_le_of_isNonarchimedean {ι : Type*} {s : Finset ι}
+theorem abv_coeff_prod_le_of_isNonarchimedean [CommSemiring S] [LinearOrder S] [IsOrderedRing S]
+    [IsDomain S] {v : AbsoluteValue R S} {ι : Type*} {s : Finset ι}
     (f : ι → MvPolynomial σ R) (hv : IsNonarchimedean v) {C : ι → S}
     (hf : ∀ k ∈ s, ∀ a, v ((f k).coeff a) ≤ C k) (t : σ →₀ ℕ) :
     v ((∏ k ∈ s, f k).coeff t) ≤ ∏ k ∈ s, C k := by
@@ -153,7 +160,8 @@ theorem abv_coeff_prod_le_of_isNonarchimedean {ι : Type*} {s : Finset ι}
 /-- If `R` has no zero divisors and the coefficients of each `f k` are bounded by `C k` under an
 absolute value `v`, then each coefficient of `∏ k ∈ s, f k` is bounded by
 `2 ^ (∑ j, (∏ k ∈ s, f k).degreeOf j) * ∏ k ∈ s, C k`. -/
-theorem abv_coeff_prod_le_two_pow [Fintype σ] [NoZeroDivisors R] {ι : Type*} {s : Finset ι}
+theorem abv_coeff_prod_le_two_pow [CommSemiring S] [PartialOrder S] [IsOrderedRing S] [IsDomain S]
+    {v : AbsoluteValue R S} [Fintype σ] [NoZeroDivisors R] {ι : Type*} {s : Finset ι}
     (f : ι → MvPolynomial σ R) {C : ι → S} (hf : ∀ k ∈ s, ∀ a, v ((f k).coeff a) ≤ C k)
     (t : σ →₀ ℕ) :
     v ((∏ k ∈ s, f k).coeff t) ≤ 2 ^ (∑ j, (∏ k ∈ s, f k).degreeOf j) * ∏ k ∈ s, C k := by
@@ -164,24 +172,16 @@ theorem abv_coeff_prod_le_two_pow [Fintype σ] [NoZeroDivisors R] {ι : Type*} {
     rw [prod_eq_zero hk hk0]
     simpa using prod_nonneg hC
   push Not at h0
-  -- Without zero divisors the partial degrees of a product of nonzero factors add up.
-  have hdeg (j : σ) : (∏ k ∈ s, f k).degreeOf j = ∑ k ∈ s, (f k).degreeOf j := by
-    induction s using Finset.induction_on with
-    | empty => simp
-    | insert a s ha ih =>
-      rw [prod_insert ha, sum_insert ha,
-        degreeOf_mul_eq (h0 a (mem_insert_self a s))
-          (prod_ne_zero_iff.mpr fun k hk ↦ h0 k (mem_insert_of_mem hk)),
-        ih (fun k hk ↦ hf k (mem_insert_of_mem hk)) (fun k hk ↦ hC k (mem_insert_of_mem hk))
-          fun k hk ↦ h0 k (mem_insert_of_mem hk)]
   calc v ((∏ k ∈ s, f k).coeff t) ≤ ∏ k ∈ s, (#(f k).support * C k) := abv_coeff_prod_le f hf t
     _ ≤ ∏ k ∈ s, ((2 : S) ^ (∑ j, (f k).degreeOf j) * C k) := by
       refine prod_le_prod₀ (fun k hk ↦ mul_nonneg (Nat.cast_nonneg _) (hC k hk)) fun k hk ↦ ?_
       refine mul_le_mul_of_nonneg_right ?_ (hC k hk)
-      exact_mod_cast card_support_le_two_pow (f k)
+      simpa only [Nat.cast_pow, Nat.cast_ofNat] using
+        (Nat.mono_cast (card_support_le_two_pow (f k)) :
+          (#(f k).support : S) ≤ (2 ^ ∑ j, (f k).degreeOf j : ℕ))
     _ = 2 ^ (∑ j, (∏ k ∈ s, f k).degreeOf j) * ∏ k ∈ s, C k := by
       rw [prod_mul_distrib, prod_pow_eq_pow_sum, sum_comm]
-      simp only [hdeg]
+      simp only [degreeOf_prod_eq s f h0]
 
 end AbsoluteValue
 

@@ -34,8 +34,8 @@ lemma shared by the higher-order constructions.
 * `TauCeti.C1HolderSpace.valueL`: the continuous linear map forgetting the derivative.
 * `TauCeti.C1HolderSpace.fderivL`: the continuous linear map returning the Hölder derivative.
 * `TauCeti.C1HolderSpace.instCompleteSpace`: the Banach-space structure.
-* `TauCeti.isClosed_setOf_hasFDerivAt`: closedness of the bounded-continuous
-  derivative graph.
+* `TauCeti.isClosed_setOf_hasFDerivAt` and `TauCeti.isClosed_setOf_hasFDerivAt_comp`: closedness
+  of the bounded-continuous derivative graph.
 
 ## References
 
@@ -58,25 +58,36 @@ variable (α : ℝ≥0) (E : Type u) (F : Type v)
   [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
 
+/-- The set of bounded continuous fields satisfying a Fréchet derivative identity, with the
+derivative read off the second field through a continuous linear map, is closed. -/
+theorem isClosed_setOf_hasFDerivAt_comp {𝕜 : Type*} {E : Type u} {Y Z : Type*}
+    [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] [NormedAddCommGroup Z] [NormedSpace 𝕜 Z]
+    (L : Z →L[𝕜] E →L[𝕜] Y) :
+    IsClosed {J : (E →ᵇ Y) × (E →ᵇ Z) | ∀ x, HasFDerivAt (J.1 : E → Y) (L (J.2 x)) x} := by
+  rw [← isSeqClosed_iff_isClosed]
+  intro J j hJ hjlim x
+  apply hasFDerivAt_of_tendstoUniformly
+      (f := fun n ↦ (J n).1) (f' := fun n y ↦ L ((J n).2 y))
+      (g := j.1) (g' := fun y ↦ L (j.2 y)) (l := atTop)
+  · exact L.uniformContinuous.comp_tendstoUniformly
+      (BoundedContinuousFunction.tendsto_iff_tendstoUniformly.mp
+        ((continuous_snd.tendsto j).comp hjlim))
+  · intro n y
+    exact hJ n y
+  · intro y
+    exact ((BoundedContinuousFunction.evalCLM 𝕜 y).continuous.tendsto j.1).comp
+      (continuous_fst.tendsto j |>.comp hjlim)
+
 /-- The set of bounded continuous fields satisfying the Fréchet derivative identity is closed. -/
 theorem isClosed_setOf_hasFDerivAt {𝕜 : Type*} {E : Type u} {Y : Type v}
     [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜]
     [NormedAddCommGroup E] [NormedSpace 𝕜 E]
     [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] :
     IsClosed {J : (E →ᵇ Y) × (E →ᵇ (E →L[𝕜] Y)) |
-      ∀ x, HasFDerivAt (J.1 : E → Y) (J.2 x) x} := by
-  rw [← isSeqClosed_iff_isClosed]
-  intro J j hJ hjlim x
-  apply hasFDerivAt_of_tendstoUniformly
-      (f := fun n ↦ (J n).1) (f' := fun n y ↦ (J n).2 y)
-      (g := j.1) (g' := fun y ↦ j.2 y) (l := atTop)
-  · exact BoundedContinuousFunction.tendsto_iff_tendstoUniformly.mp
-      ((continuous_snd.tendsto j).comp hjlim)
-  · intro n y
-    exact hJ n y
-  · intro y
-    exact ((BoundedContinuousFunction.evalCLM 𝕜 y).continuous.tendsto j.1).comp
-      (continuous_fst.tendsto j |>.comp hjlim)
+      ∀ x, HasFDerivAt (J.1 : E → Y) (J.2 x) x} :=
+  isClosed_setOf_hasFDerivAt_comp (ContinuousLinearMap.id 𝕜 (E →L[𝕜] Y))
 
 namespace C1HolderSpace
 

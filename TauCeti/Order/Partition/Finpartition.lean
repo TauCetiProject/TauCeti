@@ -7,9 +7,12 @@ module
 
 public import Mathlib.Order.Setoid.Partition
 public import Mathlib.Order.Partition.Finpartition
-public import Mathlib.Algebra.Order.Field.Basic
+public import Mathlib.Algebra.Field.Defs
+public import Mathlib.Algebra.Order.GroupWithZero.Basic
 import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
+import Mathlib.Algebra.BigOperators.Ring.Finset
+import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Data.Set.Finite.Range
 
 /-!
@@ -17,11 +20,12 @@ import Mathlib.Data.Set.Finite.Range
 
 This file contains general-purpose constructions and facts about finite partitions: the partition
 of the top element into an element and its complement, the partition of a type into the fibres of
-a map to a finite type, the associated indexed partition, cardinality bounds for common
-refinements, the refinement relations of `Finpartition.bind` and of a refining partition's parts,
-the behavior of intersections of parts under refinement, and the coarse parent
-`Finpartition.refinementParent` of a part of a finer partition, together with decomposition and
-summation formulas for the fine parts below a coarse part.
+a map to a finite type, the associated indexed partition, the sizes of the traces of a subset on
+the parts, cardinality bounds for common refinements, a bound on the sum of the squared part sizes,
+the refinement relations of `Finpartition.bind` and of a refining partition's parts, the behavior
+of intersections of parts under refinement, and the coarse parent `Finpartition.refinementParent`
+of a part of a finer partition, together with decomposition and summation formulas for the fine
+parts below a coarse part.
 -/
 
 public section
@@ -62,6 +66,14 @@ theorem card_parts_inf_le_mul {α : Type*} [DistribLattice α] [OrderBot α] [De
   exact Finset.card_erase_le.trans
     (Finset.card_image_le.trans_eq (Finset.card_product _ _))
 
+/-- The traces of a subset of `s` on the parts of a finite partition of `s` partition it, so their
+sizes sum to its size. -/
+theorem sum_card_inter_parts {ι : Type*} [DecidableEq ι] {s X : Finset ι} (P : Finpartition s)
+    (hX : X ⊆ s) : ∑ C ∈ P.parts, (X ∩ C).card = X.card := by
+  have h := P.sum_restrict hX (fun C ↦ C.card) (by simp)
+  rw [Finpartition.sum_card_parts] at h
+  simp_rw [h, Finset.inf_eq_inter, Finset.inter_comm]
+
 /-- Juxtaposing finite partitions of the parts of `P` refines `P`. -/
 theorem bind_le {α : Type*} [Lattice α] [OrderBot α] [IsModularLattice α] [DecidableEq α]
     {a : α} (P : Finpartition a) (Q : ∀ i ∈ P.parts, Finpartition i) : P.bind Q ≤ P := by
@@ -79,6 +91,13 @@ theorem biUnion_filter_subset_eq_of_le {ι : Type*} [DecidableEq ι] {s B : Fins
   obtain ⟨B', hB', hCB'⟩ := hQP hC
   obtain rfl := P.eq_of_mem_parts hB' hB (hCB' hxC) hx
   exact Finset.mem_biUnion.2 ⟨C, Finset.mem_filter.2 ⟨hC, hCB'⟩, hxC⟩
+
+/-- If all parts of `P` have size at most `m`, then `∑ A ∈ P.parts, A.card ^ 2 ≤ m * s.card`. -/
+theorem sum_sq_card_parts_le {ι : Type*} [DecidableEq ι] {s : Finset ι} (P : Finpartition s)
+    {m : ℕ} (hm : ∀ A ∈ P.parts, A.card ≤ m) :
+    ∑ A ∈ P.parts, A.card ^ 2 ≤ m * s.card := by
+  rw [← P.sum_card_parts, Finset.mul_sum]
+  exact Finset.sum_le_sum fun A hA ↦ by rw [sq]; exact Nat.mul_le_mul_right _ (hm A hA)
 
 variable {Ω : Type*} {u : Set Ω}
 
@@ -198,8 +217,9 @@ theorem sum_card_subtype {R : Type*} [AddCommMonoidWithOne R] (P : Finpartition 
   rw [Finset.sum_coe_sort P.parts fun A => (#A : R)]
   rw [← Nat.cast_sum, P.sum_card_parts]
 
-/-- The weights `|A||B| / |s|²` of the ordered pairs of parts sum to at most one. -/
-theorem sum_sum_weight_le_one {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+/-- The weights `|A||B| / |s|²` of the ordered pairs of parts sum to at most one.
+No compatibility between the preorder and arithmetic is needed beyond `0 ≤ 1`. -/
+theorem sum_sum_weight_le_one {K : Type*} [DivisionSemiring K] [Preorder K] [ZeroLEOneClass K]
     (P : Finpartition s) :
     ∑ A : P.parts, ∑ C : P.parts, (#A.1 * #C.1 / (#s : K) ^ 2) ≤ 1 := by
   simp_rw [← Finset.sum_div, ← Finset.sum_mul_sum, sum_card_subtype, ← sq]

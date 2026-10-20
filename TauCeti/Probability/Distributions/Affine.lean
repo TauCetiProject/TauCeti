@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Measure.WithDensity
+public import TauCeti.MeasureTheory.Measure.Support
 public import TauCeti.Probability.Density
 public import TauCeti.Probability.Quantile
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
@@ -46,6 +47,8 @@ Mathlib's `ProbabilityTheory.variance_id_map`, `ProbabilityTheory.variance_const
 ## Main results
 
 * `TauCeti.Probability.map_affine_map_affine` — affine pushforwards compose;
+* `TauCeti.Probability.support_map_affine` — a nonconstant affine pushforward transports the
+  topological support;
 * `TauCeti.Probability.measurable_map_affine` — affine pushforward is jointly measurable in the
   probability law, intercept, and slope;
 * `TauCeti.Probability.affineDensity`,
@@ -95,6 +98,17 @@ theorem map_affine_map_affine (a b c d : ℝ) :
   ext x
   simp only [Function.comp_apply]
   ring
+
+/-- **Support of an affine image.** A nonconstant affine pushforward has support equal to the
+affine image of the original support. -/
+theorem support_map_affine (hb : b ≠ 0) :
+    (μ.map fun x ↦ a + b * x).support = (fun x ↦ a + b * x) '' μ.support := by
+  let e : ℝ ≃ₜ ℝ := (Homeomorph.smulOfNeZero b hb).trans (Homeomorph.addLeft a)
+  have he : (e : ℝ → ℝ) = fun x ↦ a + b * x := by
+    funext x
+    simp [e, smul_eq_mul]
+  rw [← he]
+  exact μ.support_map_homeomorph e
 
 /-- Affine pushforward is jointly measurable in the probability law, intercept, and slope. -/
 @[fun_prop]
