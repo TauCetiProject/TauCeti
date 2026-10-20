@@ -20,6 +20,8 @@ public bridge `SimpleGraph.graphonPartitionEnergy_finiteGraphGraphon`.
   `1 / 2`, since edge densities count ordered pairs over `|A|²`.
 * `K₃` over the parts `{0}` and `{1, 2}` has energy `5 / 9`, which tests the size weights
   `|A||B| / m²` on unequal parts.
+* The part of the lifted partition containing a point, selected by its canonical index, is the
+  union of the cells over the part of `P` containing that point's cell.
 -/
 
 open Finset MeasureTheory
@@ -69,5 +71,15 @@ example :
     show #((⊤ : SimpleGraph (Fin 3)).interedges {1, 2} {1, 2}) = 2 by decide,
     show #({0} : Finset (Fin 3)) = 1 by decide, show #({1, 2} : Finset (Fin 3)) = 2 by decide]
   norm_num
+
+-- The part of the lifted partition containing a point, selected by the canonical index, is the
+-- union of the cells over the part of `P` containing that point's cell.
+example {m : ℕ} [NeZero m] (P : Finpartition (univ : Finset (Fin m))) (x : unitInterval) :
+    (P.cellPartition.indexedPartition.index x : Set unitInterval) =
+      TauCeti.unitInterval.cellFin m ⁻¹'
+        (P.part (TauCeti.unitInterval.cellFin m x) : Set (Fin m)) :=
+  congrArg Subtype.val (P.cellPartition.indexedPartition.mem_iff_index_eq.1
+    (show x ∈ ((⟨_, P.preimage_part_cellFin_mem x⟩ : P.cellPartition.parts) : Set unitInterval)
+      from P.mem_part (mem_univ _)))
 
 end TauCeti.DenseGraphLimits
