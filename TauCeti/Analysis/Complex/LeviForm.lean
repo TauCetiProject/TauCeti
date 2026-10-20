@@ -32,7 +32,8 @@ is strict plurisubharmonicity.
 
 This file gives the calculus of the Levi form: its value on the diagonal in terms of the Hessian
 quadratic form, Hermitian symmetry, the sum rule, the product rule, the rule for post-composition
-with a function of one real variable, and invariance under holomorphic maps.
+with a function of one real variable, invariance under holomorphic maps, and the vanishing of the
+Levi form of the real part of a holomorphic function.
 
 It also shows that strict positivity of the Levi form survives small `C²` perturbations. The
 real part of the Levi diagonal moves by at most `‖D²g(y) - D²f(x)‖ ‖v‖² / 2` when `(f, x)` is
@@ -62,6 +63,9 @@ second derivative stays within a continuous positive tolerance `ε(x)` of that o
 * `TauCeti.leviForm_comp_apply`: invariance under holomorphic maps,
   `L(f ∘ g)(v, w) = L f(Dg v, Dg w)`; in particular the Levi form transforms as a Hermitian form
   under holomorphic changes of coordinates.
+* `TauCeti.hessianQuadraticForm_re`, `TauCeti.leviForm_re_eq_zero`: the real Hessian of the real
+  part of a holomorphic function is the real part of its complex Hessian, and its Levi form
+  vanishes (it is pluriharmonic).
 * `TauCeti.abs_re_leviForm_apply_self_sub_le`: the Levi diagonal is Lipschitz in the second
   derivative, with constant `‖v‖² / 2`.
 * `IsCompact.exists_pos_mul_sq_norm_le_re_leviForm`: a continuous family of bilinear forms whose
@@ -209,6 +213,21 @@ theorem leviForm_comp_apply {g : W → V} {b : W} (hf : ContDiffAt ℝ 2 f (g b)
   apply Complex.ext <;>
   simp [fderiv_fderiv_comp_apply hf (hg.restrict_scalars ℝ), h1, h2, smul_smul]
   ring
+
+/-! ### The real part of a holomorphic function -/
+
+/-- The Hessian quadratic form of the real part of a holomorphic function is the real part of its
+complex Hessian. -/
+theorem hessianQuadraticForm_re {g : V → ℂ} (hg : ContDiffAt ℂ 2 g x) (v : V) :
+    hessianQuadraticForm (fun z ↦ (g z).re) x v = (fderiv ℂ (fderiv ℂ g) x v v).re := by
+  rw [hessianQuadraticForm_apply, fderiv_fderiv_re_apply hg]
+
+/-- **The real part of a holomorphic function is pluriharmonic**: its Levi form vanishes. -/
+theorem leviForm_re_eq_zero {g : V → ℂ} (hg : ContDiffAt ℂ 2 g x) :
+    leviForm (fun z ↦ (g z).re) x = 0 := by
+  rw [leviForm_def, LinearMap.BilinForm.leviForm_eq_zero_iff]
+  intro v w
+  simp [fderiv_fderiv_re_apply hg]
 
 /-! ### Perturbations of the Levi form -/
 
