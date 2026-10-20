@@ -8,7 +8,10 @@ module
 public import Mathlib.Topology.CWComplex.Abstract.Basic
 public import Mathlib.Topology.CWComplex.Classical.Basic
 public import TauCeti.AlgebraicTopology.Disk
+public import TauCeti.Topology.CWComplex.Abstract.Hausdorff
+public import TauCeti.Topology.CWComplex.Classical.CWType
 import TauCeti.Topology.CWComplex.Abstract.ClosureFinite
+import TauCeti.Topology.CWComplex.Classical.Skeleton.Basic
 import TauCeti.Topology.Category.TopCat.RelativeCellComplex
 
 /-!
@@ -27,6 +30,10 @@ open and closed cells with the original inclusions, so the classical CW theory a
 constructed by categorical cell attachment. The stage formula in terms of closed cells needs no
 separation assumption; identification with Mathlib's named `skeletonLT` requires a Hausdorff target,
 as that classical subcomplex construction itself has this hypothesis.
+
+For an absolute categorical CW complex `c : TopCat.CWComplex X` the base is empty, so `c` gives a
+classical CW structure on `Set.univ` (`TopCat.CWComplex.toCWComplex`), and `X` has CW type
+(`TopCat.CWComplex.cwType`).
 
 ## References
 
@@ -287,4 +294,42 @@ lemma range_incl_app_eq_toRelCWComplex_skeletonLT [T2Space Y] (n : ℕ) :
     Topology.RelCWComplex.coe_skeletonLT]
   simp only [ENat.natCast_lt_natCast]
 
+/-- Below the dimension of its lowest cells, the classical skeleton is the base: if no cells of
+dimension less than `n` are attached, then `skeletonLT univ n` is the range of `f`. -/
+lemma skeletonLT_toRelCWComplex_eq_range [T2Space Y] {n : ℕ}
+    (hc : ∀ m < n, IsEmpty (c.attachCells m (not_isMax m)).ι) :
+    letI := c.toRelCWComplex
+    (Topology.RelCWComplex.skeletonLT (univ : Set Y) n : Set Y) = range f :=
+  letI := c.toRelCWComplex
+  TauCeti.skeletonLT_eq_base_of_isEmpty_cell (univ : Set Y) n fun m hm ↦
+    (c.toRelCWComplexCellEquiv m).isEmpty_congr.2 (hc m hm)
+
 end TopCat.RelativeCWComplex
+
+namespace TopCat.CWComplex
+
+variable {X : TopCat.{u}}
+
+/-- The classical CW structure on a space with a categorical CW structure: the cells and
+characteristic maps of the classical relative structure `c.toRelCWComplex`, whose base, the range
+of the map out of the empty space, is empty. -/
+@[instance_reducible] def toCWComplex (c : CWComplex X) : Topology.CWComplex (univ : Set X) :=
+  letI := RelativeCWComplex.toRelCWComplex c
+  have hD : range (initial.to X) = ∅ := range_eq_empty _
+  { cell := Topology.RelCWComplex.cell (univ : Set X)
+    map := Topology.RelCWComplex.map
+    source_eq := Topology.RelCWComplex.source_eq
+    continuousOn := Topology.RelCWComplex.continuousOn
+    continuousOn_symm := Topology.RelCWComplex.continuousOn_symm
+    pairwiseDisjoint' := Topology.RelCWComplex.pairwiseDisjoint'
+    mapsTo' n i := by simpa [hD] using Topology.RelCWComplex.mapsTo (C := (univ : Set X)) n i
+    closed' A hA h := Topology.RelCWComplex.closed' A hA ⟨h, by simp [hD]⟩
+    union' := by simpa [hD] using Topology.RelCWComplex.union' (C := (univ : Set X)) }
+
+/-- **A space with a categorical CW structure has CW type.** -/
+theorem cwType (c : CWComplex X) : TauCeti.CWType X :=
+  have := c.t2Space
+  letI := c.toCWComplex
+  TauCeti.CWType.of_cwComplex_univ X
+
+end TopCat.CWComplex

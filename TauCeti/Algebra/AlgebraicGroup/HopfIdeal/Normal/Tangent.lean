@@ -73,11 +73,8 @@ theorem IsNormal.lie_mem_lieSubalgebra (hI : I.IsNormal)
     ⁅d, e⁆ ∈ I.lieSubalgebra (B := B) := by
   let C := Bialgebra.CounitAlgebra R H B
   let φ := (inlAlgHom R C C).comp (Bialgebra.CounitAlgebra.algEquivSelf R H B).symm.toAlgHom
-  have he' : Derivation.mapValue φ e ∈ I.lieSubalgebra (B := DualNumber C) := by
-    rw [mem_lieSubalgebra_iff] at he ⊢
-    intro x hx
-    rw [Derivation.mapValue_apply, he x hx]
-    exact map_zero φ
+  have he' : Derivation.mapValue φ e ∈ I.lieSubalgebra (B := DualNumber C) :=
+    I.mapValue_mem_lieSubalgebra φ he
   let g := (Bialgebra.CounitAlgebra.pointsMulEquiv R H (DualNumber C)).symm
     (derivationMulEquivTangentKer R H B (Multiplicative.ofAdd d)).val
   have ha := hI.adDerivation_mem_lieSubalgebra g he'

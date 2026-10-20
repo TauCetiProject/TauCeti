@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.SubspaceStabilizer
-public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction
+public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Basic
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.TopSubspace
 public import TauCeti.Algebra.Coalgebra.Comodule.ExteriorAlgebra.BaseChange
 

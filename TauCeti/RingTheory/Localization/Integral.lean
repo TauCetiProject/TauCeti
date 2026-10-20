@@ -7,6 +7,8 @@ module
 
 public import Mathlib.RingTheory.Localization.Integral
 
+import Mathlib.RingTheory.Localization.Finiteness
+
 /-!
 # Integral closures of localizations
 
@@ -21,6 +23,8 @@ Mathlib's `IsLocalization.integralClosure` states this for the literal subalgebr
 
 * `TauCeti.isLocalization_algebraMapSubmonoid_of_isIntegralClosure`: an integral closure of a
   localization is the corresponding localization of an integral closure.
+* `TauCeti.finite_integralClosure_of_isLocalization`: finiteness of the integral closure passes
+  to localizations.
 -/
 
 public section
@@ -28,6 +32,8 @@ public section
 namespace TauCeti
 
 universe uR uRm uS uSm uL
+
+section IsIntegralClosure
 
 variable {R : Type uR} {Rₘ : Type uRm} {S : Type uS} {Sₘ : Type uSm} {L : Type uL}
 variable [CommRing R] [CommRing Rₘ] [CommSemiring S] [CommSemiring Sₘ] [CommRing L]
@@ -76,6 +82,31 @@ theorem isLocalization_algebraMapSubmonoid_of_isIntegralClosure :
     apply IsIntegralClosure.algebraMap_injective S R L
     have h := congrArg (algebraMap Sₘ L) hxy
     simpa only [IsScalarTower.algebraMap_apply S Sₘ L] using h
+
+end IsIntegralClosure
+
+/-- If `S` is a localization of `R` at a submonoid `M` and the integral closure of `R` in an
+`S`-algebra `L` is a finite `R`-module, then the integral closure of `S` in `L` is a finite
+`S`-module: it is the localization at `M` of the integral closure of `R`. -/
+theorem finite_integralClosure_of_isLocalization {R : Type*} [CommRing R] (M : Submonoid R)
+    (S L : Type*) [CommRing S] [Algebra R S] [IsLocalization M S] [CommRing L] [Algebra R L]
+    [Algebra S L] [IsScalarTower R S L] [Module.Finite R (integralClosure R L)] :
+    Module.Finite S (integralClosure S L) := by
+  -- an element of `L` integral over `R` is integral over `S`
+  let : Algebra (integralClosure R L) (integralClosure S L) :=
+    RingHom.toAlgebra
+      { toFun x := ⟨x, x.2.tower_top⟩
+        map_one' := rfl
+        map_mul' _ _ := rfl
+        map_zero' := rfl
+        map_add' _ _ := rfl }
+  have : IsScalarTower (integralClosure R L) (integralClosure S L) L :=
+    .of_algebraMap_eq fun _ ↦ rfl
+  have : IsScalarTower R (integralClosure R L) (integralClosure S L) :=
+    .of_algebraMap_eq fun _ ↦ Subtype.ext <| by simp [RingHom.algebraMap_toAlgebra]
+  have := isLocalization_algebraMapSubmonoid_of_isIntegralClosure (M := M) (Rₘ := S)
+    (L := L) (S := integralClosure R L) (Sₘ := integralClosure S L)
+  exact .of_isLocalization R (integralClosure R L) M
 
 end TauCeti
 

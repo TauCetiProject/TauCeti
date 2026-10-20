@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Combinatorics.SimpleGraph.Coloring.Vertex
 public import TauCeti.Combinatorics.Quiver.Reorient
+public import TauCeti.Combinatorics.SimpleGraph.AdditiveFunction
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Basic
 public import TauCeti.RepresentationTheory.Quiver.Acyclic.Basic
 public import TauCeti.RepresentationTheory.Quiver.Symmetrify
@@ -39,6 +40,10 @@ one convenient witness that every graph admits an orientation.
   the linear-order orientation.
 * `TauCeti.DoubledQuiver.OrientedQuiver.card_symmetrify_hom`: symmetrifying an orientation
   recovers the adjacency counts of the graph.
+* `TauCeti.DoubledQuiver.OrientedQuiver.sum_card_hom_add_card_hom_mul`: a vertex weight summed
+  against the arrow counts of an orientation in both directions is its neighbour sum, via which a
+  positive superadditive weight on the oriented quiver excludes isolated vertices
+  (`TauCeti.DoubledQuiver.OrientedQuiver.exists_adj_of_pos_two_mul_le_sum`).
 * `TauCeti.DoubledQuiver.symmetrifyMap`: the canonical prefunctor from the symmetrification of an
   oriented graph to its doubled quiver.
 * `TauCeti.DoubledQuiver.unsymmetrifyMap`: its inverse prefunctor.
@@ -280,6 +285,46 @@ theorem card_symmetrify_hom [DecidableRel G.Adj] (i j : V) :
       if G.Adj i j then 1 else 0 := by
   rw [TauCeti.card_symmetrify_hom, Fintype.card_eq_nat_card, Fintype.card_eq_nat_card,
     card_hom_add_card_hom G o i j]
+
+/-- **A weight on a graph read on an orientation**: for every vertex `i`, the multigraph sum
+`∑_j (#(i ⟶ j) + #(j ⟶ i)) δ_j` over the vertices of the oriented quiver is the neighbour sum
+`∑_{j ∼ i} δ_j`, since an orientation has exactly one arrow over each edge. -/
+theorem sum_card_hom_add_card_hom_mul [Fintype V] [DecidableRel G.Adj] {S : Type*} [Semiring S]
+    (δ : V → S) (i : V) :
+    ∑ j : OrientedQuiver G o, ((Fintype.card (vertex G o i ⟶ j) +
+        Fintype.card (j ⟶ vertex G o i) : ℕ) : S) * δ ((vertexEquiv G o).symm j) =
+      ∑ j ∈ G.neighborFinset i, δ j := by
+  have hc (j : V) :
+      ((Fintype.card (vertex G o i ⟶ vertex G o j) + Fintype.card (vertex G o j ⟶ vertex G o i) :
+        ℕ) : S) = if G.Adj i j then 1 else 0 := by
+    rw [Fintype.card_eq_nat_card, Fintype.card_eq_nat_card, card_hom_add_card_hom G o i j]
+    split_ifs <;> simp
+  have hsum :
+      ∑ j ∈ G.neighborFinset i, δ j = ∑ j : V, (if G.Adj i j then (1 : S) else 0) * δ j := by
+    simp only [ite_mul, one_mul, zero_mul]
+    rw [← Finset.sum_filter]
+    exact Finset.sum_congr (by ext j; simp) fun _ _ => rfl
+  refine (hsum.trans (Fintype.sum_equiv (vertexEquiv G o) _ _ fun j => ?_)).symm
+  simp only [vertexEquiv_apply, vertexEquiv_symm_vertex, hc j]
+
+/-- **A positive superadditive weight on an oriented graph excludes isolated vertices.** Let `δ`
+be a weight on the vertices of an orientation of a finite simple graph over a strictly ordered
+commutative ring, positive at every vertex, with `2 δ_i ≤ ∑_j (#(i ⟶ j) + #(j ⟶ i)) δ_j` at every
+vertex of the oriented quiver. Then every vertex of the graph has a neighbour. -/
+theorem exists_adj_of_pos_two_mul_le_sum [Finite V]
+    {S : Type*} [CommRing S] [LinearOrder S] [IsStrictOrderedRing S]
+    (δ : OrientedQuiver G o → S) (hδ : ∀ i, 0 < δ i)
+    (hδle : ∀ i, 2 * δ i ≤
+      ∑ j, ((Fintype.card (i ⟶ j) + Fintype.card (j ⟶ i) : ℕ) : S) * δ j)
+    (i : V) : ∃ j, G.Adj i j := by
+  classical
+  have : Fintype V := Fintype.ofFinite V
+  -- The multigraph sum in the superadditivity condition is the neighbour sum.
+  have hδle' : ∀ j : V, 2 * δ (vertex G o j) ≤ ∑ j' ∈ G.neighborFinset j, δ (vertex G o j') :=
+    fun j => (hδle (vertex G o j)).trans
+      (sum_card_hom_add_card_hom_mul G o (fun j => δ (vertex G o j)) j).le
+  exact SimpleGraph.exists_adj_of_pos_two_mul_le_sum
+    (fun j => δ (vertex G o j)) (fun j => hδ (vertex G o j)) hδle' i
 
 /-- Forgetting the choice of orientation includes the oriented quiver into the doubled quiver. -/
 def forget : OrientedQuiver G o ⥤q DoubledQuiver G where

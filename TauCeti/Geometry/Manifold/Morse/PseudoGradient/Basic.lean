@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
 public import TauCeti.Geometry.Manifold.Morse.Lemma
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
+import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
@@ -103,7 +104,8 @@ theorem eq_zero_of_mfderiv_eq_zero (hX : IsAdaptedPseudoGradient f X) {x : M}
   rw [φ.apply_self, map_zero] at h
   simp only [Pi.zero_apply, mul_zero, neg_zero] at h
   have h0 : mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart x (X x) = 0 := φ.coord.map_eq_zero_iff.1 h
-  have hinv := isInvertible_mfderiv_chart φ.mem_maximalAtlas φ.mem_source
+  have hinv := isInvertible_mfderiv_chart
+    (IsManifold.maximalAtlas_subset_of_le (by simp) φ.mem_maximalAtlas) φ.mem_source
   rw [← hinv.inverse_apply_self (X x), h0, map_zero]
 
 /-- **The zeros of an adapted pseudo-gradient are the critical points of `f`.** -/
@@ -116,8 +118,7 @@ differentiable. -/
 theorem antitone_comp (hX : IsAdaptedPseudoGradient f X)
     (hf : ∀ t, MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ) f (γ t)) (hγ : IsMIntegralCurve γ X) :
     Antitone (f ∘ γ) :=
-  antitone_of_hasDerivAt_nonpos (fun t ↦ Manifold.hasDerivAt_comp_curve (hf t) (hγ t))
-    fun t ↦ hX.mvfderiv_apply_nonpos (γ t)
+  hγ.antitone_comp hf fun t ↦ hX.mvfderiv_apply_nonpos (γ t)
 
 /-- **`f` is strictly antitone along an integral curve of an adapted pseudo-gradient** along which
 `f` is differentiable and that never meets a critical point. -/

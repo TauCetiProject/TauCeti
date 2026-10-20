@@ -9,9 +9,14 @@ public import Mathlib.MeasureTheory.Integral.Pi
 public import Mathlib.Probability.Moments.Basic
 public import Mathlib.Probability.Moments.IntegrableExpMul
 public import Mathlib.Probability.Moments.Variance
+public import Mathlib.Data.Nat.Choose.Multinomial
 
 /-!
-# Moment-generating functions of sums of coordinates under a product measure
+# Moments and moment-generating functions of sums under a product measure
+
+The multinomial expansion and finite-product integration express every natural moment of a sum
+of coordinate statistics in terms of their individual moments. The finite index set
+`Finset.piAntidiag Finset.univ n` consists exactly of the exponent vectors with total degree `n`.
 
 A statistic of the form `x ↦ ∑ j, f j (x j)` under a finite product measure `Measure.pi μ` has
 exponential `∏ j, exp (t * f j (x j))`, so Fubini's theorem turns its moment-generating function
@@ -32,6 +37,7 @@ mean by at least `t` with probability at most `Var[f] / (n t²)`.
 
 ## Main results
 
+* `TauCeti.integral_pow_sum_pi` — the multinomial formula for natural moments of coordinate sums;
 * `TauCeti.mgf_sum_pi` — the moment-generating function of a sum of coordinate
   statistics factors over the coordinates, for every argument;
 * `TauCeti.integrableExpSet_sum_pi` — for a product of probability measures, its
@@ -48,6 +54,35 @@ namespace TauCeti
 
 variable {ι : Type*} [Fintype ι] {E : ι → Type*} [∀ i, MeasurableSpace (E i)]
   {μ : ∀ i, Measure (E i)}
+
+/-- The natural moment of a sum of coordinate statistics under a finite product measure is the
+multinomial sum of products of their moments. Integrability of the coordinate powers through
+order `n` suffices; the measures need not be probability measures. -/
+theorem integral_pow_sum_pi [DecidableEq ι] {𝕜 : Type*} [RCLike 𝕜]
+    (f : ∀ i, E i → 𝕜) (n : ℕ)
+    (hf : ∀ i m, m ≤ n → Integrable (fun x ↦ f i x ^ m) (μ i)) :
+    ∫ x, (∑ i, f i (x i)) ^ n ∂Measure.pi μ =
+      ∑ k ∈ Finset.piAntidiag Finset.univ n,
+        (Nat.multinomial Finset.univ k : 𝕜) * ∏ i, ∫ x, f i x ^ k i ∂μ i := by
+  classical
+  -- The zeroth powers ensure finiteness of the component measures, so Fubini applies.
+  have (i : ι) : IsFiniteMeasure (μ i) :=
+    (integrable_const_iff_isFiniteMeasure (one_ne_zero : (1 : 𝕜) ≠ 0)).mp
+      (by simpa using hf i 0 (Nat.zero_le n))
+  have hterm (k : ι → ℕ) (hk : k ∈ Finset.piAntidiag Finset.univ n) :
+      Integrable (fun x ↦ (Nat.multinomial Finset.univ k : 𝕜) * ∏ i, f i (x i) ^ k i)
+        (Measure.pi μ) := by
+    apply Integrable.const_mul
+    apply Integrable.fintype_prod_dep (f := fun i x ↦ f i x ^ k i)
+    intro i
+    apply hf i (k i)
+    rw [← (Finset.mem_piAntidiag.mp hk).1]
+    exact Finset.single_le_sum (fun j _ ↦ Nat.zero_le (k j)) (Finset.mem_univ i)
+  simp_rw [Finset.sum_pow_eq_sum_piAntidiag]
+  rw [integral_finsetSum _ hterm]
+  apply Finset.sum_congr rfl
+  intro k hk
+  rw [integral_const_mul, integral_fintype_prod_eq_prod (fun i x ↦ f i x ^ k i)]
 
 /-- Under a product measure the exponential of a sum of coordinate statistics factors over the
 coordinates, so Fubini's theorem turns its integral into a product of one-dimensional

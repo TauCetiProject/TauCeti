@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Tangent
+public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Differential
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Antipode
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Comul
@@ -27,7 +28,7 @@ coefficients `c(ψ ∘ q, w)` pairing vectors `w ∈ W` with functionals vanishi
 This file constructs that Hopf ideal and characterizes it in four ways.
 
 * Its points with values in any commutative `k`-algebra `A` are the points whose action carries
-  `A ⊗ W` onto itself.
+  `A ⊗ W` onto itself. Its rational points are those carrying `W` itself onto `W`.
 * It is the smallest Hopf ideal containing the coefficients `c(ψ ∘ q, w)`.
 * It is zero, so the stabilizer is all of `G`, exactly when `W` is a subcomodule.
 * Its Lie algebra consists of the tangent vectors whose differentiated action preserves `W`.
@@ -40,6 +41,8 @@ The last statement is the infinitesimal input to the comparison of `G`-stable an
 * `Submodule.stabilizerHopfIdeal`: the Hopf ideal of the stabilizer of `W`.
 * `Submodule.stabilizerHopfIdeal_le_ker_iff`: its points are the points carrying `A ⊗ W` onto
   itself.
+* `Submodule.mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff`: its rational points are the
+  rational points carrying `W` onto itself.
 * `Submodule.stabilizerHopfIdeal_le_iff`: its universal property among Hopf ideals.
 * `Submodule.stabilizerHopfIdeal_eq_bot_iff`: it vanishes exactly when `W` is a subcomodule.
 * `Submodule.mem_lieSubalgebra_stabilizerHopfIdeal_iff`: its Lie algebra is the stabilizer of
@@ -304,6 +307,34 @@ theorem stabilizerHopfIdeal_le_ker_iff (W : Submodule k M) {A : Type*} [CommRing
     · exact (mapsTo_endOfPoint_baseChange_iff W g.ofConv).mp hg ψ w w.2
     · rw [SetLike.mem_coe, RingHom.mem_ker, ← hinv]
       exact (mapsTo_endOfPoint_baseChange_iff W (g⁻¹).ofConv).mp hginv ψ w w.2
+
+/-- A rational point lies in the stabilizer of `W` exactly when its action carries `W` onto
+itself. -/
+theorem mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff (W : Submodule k M)
+    (g : WithConv (H →ₐ[k] k)) :
+    g ∈ CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of k H)
+        (W.stabilizerHopfIdeal H) (CommAlgCat.of k k) ↔
+      W.map (Comodule.basePointsRepresentation M g) = W := by
+  -- Identify `k ⊗[k] M` with `M`, so that `k ⊗ W` becomes `W` and the scalar-extended action
+  -- becomes the action on `M`.
+  let e : M →ₗ[k] k ⊗[k] M := (TensorProduct.lid k M).symm.toLinearMap
+  have hbc : W.baseChange k = W.map e := by
+    have he : TensorProduct.mk k k M 1 = e := by
+      ext m
+      simp [e]
+    rw [baseChange_eq_span, he, span_eq]
+  have hcomp : Comodule.endOfPoint M g.ofConv ∘ₗ e =
+      e ∘ₗ Comodule.basePointsRepresentation M g := by
+    ext m
+    simp only [e, LinearMap.comp_apply, LinearEquiv.coe_coe, TensorProduct.lid_symm_apply]
+    rw [Comodule.endOfPoint_tmul, one_smul,
+      Comodule.endOfPoint_one_tmul_eq_one_tmul_basePointsRepresentation]
+  have hker : (∀ h ∈ W.stabilizerHopfIdeal H, g.ofConv h = 0) ↔
+      (W.stabilizerHopfIdeal H).toIdeal ≤ RingHom.ker g.ofConv :=
+    ⟨fun h _ hx ↦ h _ hx, fun h _ hx ↦ h hx⟩
+  rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff, hker,
+    W.stabilizerHopfIdeal_le_ker_iff g, hbc, ← map_comp, hcomp, map_comp]
+  exact (map_injective_of_injective (TensorProduct.lid k M).symm.injective).eq_iff
 
 end Hopf
 

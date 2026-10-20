@@ -35,7 +35,7 @@ abbrev UnitGradedNatTrans (F G : EnrichedFunctor V C' D') :=
 
 /-- Graded naturality at the monoidal unit is equivalent to the ordinary whiskering square.
 The two sides differ by precomposition with the left unitor and the unit braiding. -/
-private theorem unitNatSquare_iff
+theorem unitGradedNaturality_iff
     (F G : EnrichedFunctor V C' D') (X Y : C')
     (aX : 𝟙_ V ⟶ F.obj X ⟶[V] G.obj X)
     (aY : 𝟙_ V ⟶ F.obj Y ⟶[V] G.obj Y) :
@@ -113,7 +113,7 @@ private theorem unitGradedNaturality
       eComp V (F.obj X) (F.obj Y) (G.obj Y) =
     (λ_ (𝟙_ V)).inv ≫ (aX ⊗ₘ (f ≫ G.map X Y)) ≫
       eComp V (F.obj X) (G.obj X) (G.obj Y) := by
-  have hs := (unitNatSquare_iff F G X Y aX aY).mp h
+  have hs := (unitGradedNaturality_iff F G X Y aX aY).mp h
   have hs' := congrArg (fun q => f ≫ q) hs
   -- A morphism in `ForgetEnrichment` is a unit-shaped enriched morphism; expand its whiskers.
   change f ≫ F.map X Y ≫ (ρ_ (F.obj X ⟶[V] F.obj Y)).inv ≫
@@ -213,10 +213,10 @@ noncomputable def unitComp {F G H : EnrichedFunctor V C' D'}
   app X := eHomEquiv V
     (ForgetEnrichment.homOf V (α.app X) ≫ ForgetEnrichment.homOf V (γ.app X))
   naturality X Y := by
-    have hα := (unitNatSquare_iff F G X Y (α.app X) (α.app Y)).mp (α.naturality X Y)
-    have hγ := (unitNatSquare_iff G H X Y (γ.app X) (γ.app Y)).mp (γ.naturality X Y)
+    have hα := (unitGradedNaturality_iff F G X Y (α.app X) (α.app Y)).mp (α.naturality X Y)
+    have hγ := (unitGradedNaturality_iff G H X Y (γ.app X) (γ.app Y)).mp (γ.naturality X Y)
     dsimp [Center.ofBraided, Center.ofBraidedObj] at hα hγ ⊢
-    apply (unitNatSquare_iff F H X Y _ _).mpr
+    apply (unitGradedNaturality_iff F H X Y _ _).mpr
     let aX := ForgetEnrichment.homOf V (α.app X)
     let aY := ForgetEnrichment.homOf V (α.app Y)
     let bX := ForgetEnrichment.homOf V (γ.app X)
