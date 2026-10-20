@@ -94,8 +94,9 @@ theorem norm_twistedInvolution_apply (α : CStarAction G A) (f : C_c(G, A)) (s :
 theorem twistedInvolution_apply_eq_zero_iff (α : CStarAction G A) (f : C_c(G, A)) (s : G) :
     α.twistedInvolution f s = 0 ↔ f s⁻¹ = 0 := by
   rw [← norm_eq_zero, norm_twistedInvolution_apply]
-  have hc : (Measure.modularCharacter s : ℝ) ≠ 0 :=
-    NNReal.coe_ne_zero.mpr (Measure.modularCharacterFun_pos s).ne'
+  have hc : (Measure.modularCharacter s : ℝ) ≠ 0 := by
+    rw [modularCharacter_apply]
+    exact NNReal.coe_ne_zero.mpr (Measure.modularCharacterFun_pos s).ne'
   simp [hc]
 
 /-- The support of the twisted involution is the inverse support. -/
