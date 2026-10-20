@@ -27,6 +27,8 @@ largest `s 0 + s 1` over its support.  These are the forms in which a plane curv
 ## Main results
 
 * `MvPolynomial.aeval_fin_two_eq_sum`: `φ(a, b) = ∑ₛ cₛ a ^ s 0 b ^ s 1`.
+* `MvPolynomial.aeval_monomial_fin_two`: the monomial `c X₀ ^ s 0 X₁ ^ s 1` evaluates at `(a, b)`
+  to `c a ^ s 0 b ^ s 1`.
 * `MvPolynomial.add_le_totalDegree_of_mem_support`: every monomial of `φ` has degree at most the
   total degree of `φ`.
 * `MvPolynomial.exists_mem_support_add_eq_totalDegree`: a nonzero `φ` has a monomial of degree
@@ -87,6 +89,13 @@ theorem aeval_fin_two_eq_sum {A : Type*} [CommSemiring A] [Algebra R A]
     aeval ![a, b] φ = ∑ s ∈ φ.support, algebraMap R A (φ.coeff s) * (a ^ s 0 * b ^ s 1) := by
   rw [aeval_def, eval₂_eq']
   simp [Fin.prod_univ_two]
+
+/-- Evaluating the monomial `c X₀ ^ s 0 X₁ ^ s 1` at `(a, b)` gives `c a ^ s 0 b ^ s 1`. -/
+theorem aeval_monomial_fin_two {A : Type*} [CommSemiring A] [Algebra R A] (a b : A)
+    (s : Fin 2 →₀ ℕ) (c : R) :
+    aeval ![a, b] (monomial s c) = algebraMap R A c * (a ^ s 0 * b ^ s 1) := by
+  rw [aeval_monomial, Finsupp.prod_fintype _ _ fun _ => pow_zero _, Fin.prod_univ_two,
+    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_zero]
 
 /-- Every monomial of a polynomial in two variables has degree at most its total degree. -/
 theorem add_le_totalDegree_of_mem_support {φ : MvPolynomial (Fin 2) R} {s : Fin 2 →₀ ℕ}
