@@ -191,6 +191,7 @@ theorem coe_infiniteComponent_ofDirichletCharacter_neg_one (ψ : DirichletCharac
 /-- **Parity is the real parity.**  The infinity type of the Hecke character attached to a
 Dirichlet character has parity zero at the real place exactly when the Dirichlet character is
 even. -/
+@[simp]
 theorem realParity_infinityType_ofDirichletCharacter_eq_zero_iff (ψ : DirichletCharacter ℂ n)
     (w : {w : InfinitePlace ℚ // w.IsReal}) :
     (ofDirichletCharacter n hn ψ).infinityType.realParity w = 0 ↔ ψ.Even := by
@@ -225,22 +226,13 @@ theorem isAlgebraic_ofDirichletCharacter (ψ : DirichletCharacter ℂ n) :
 
 /-- **An odd character has no integer infinity type.**  The infinity type of the Hecke character
 attached to an odd Dirichlet character is not the continuous infinity type of any integer
-exponents: such a type with modulus exponent zero at the real place has parity zero there. -/
+exponents (`FiniteOrderInfinityType.toContinuous_ne_algebraicInfinityType_toContinuous`). -/
 theorem infinityType_ofDirichletCharacter_ne_toContinuous {ψ : DirichletCharacter ℂ n}
     (hψ : ψ.Odd) (t : AlgebraicInfinityType ℚ) :
     (ofDirichletCharacter n hn ψ).infinityType ≠ AlgebraicInfinityType.toContinuous t := by
-  intro h
-  rw [infinityType_ofDirichletCharacter_of_odd hψ] at h
-  let w : {w : InfinitePlace ℚ // w.IsReal} := ⟨Rat.infinitePlace, Rat.isReal_infinitePlace⟩
-  have hexp := congrArg (fun t : ContinuousInfinityType ℚ ↦ t.realExponent w) h
-  have hpar := congrArg (fun t : ContinuousInfinityType ℚ ↦ t.realParity w) h
-  simp only [FiniteOrderInfinityType.toContinuous_realExponent,
-    AlgebraicInfinityType.toContinuous_realExponent, Pi.one_apply,
-    FiniteOrderInfinityType.toContinuous_realParity,
-    AlgebraicInfinityType.toContinuous_realParity] at hexp hpar
-  have h0 : t w.1.embedding = 0 := by exact_mod_cast hexp.symm
-  rw [h0, Int.cast_zero] at hpar
-  exact one_ne_zero hpar
+  rw [infinityType_ofDirichletCharacter_of_odd hψ]
+  exact FiniteOrderInfinityType.toContinuous_ne_algebraicInfinityType_toContinuous
+    (w := ⟨Rat.infinitePlace, Rat.isReal_infinitePlace⟩) one_ne_zero t
 
 /-- **Algebraicity does not see real signs.**  Some algebraic Hecke character of `ℚ` has an
 infinity type that is not the continuous infinity type of any integer exponents: the character

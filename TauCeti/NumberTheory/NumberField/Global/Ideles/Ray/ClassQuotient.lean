@@ -363,12 +363,8 @@ theorem rayClassQuotient_ofCompletion_neg_one (𝔪 : Modulus K) [DecidableEq �
   have hz : z ∈ ideleCongrOneSubgroup 𝔪 := by
     refine mem_ideleCongrOneSubgroup_iff.mpr ⟨fun v hv ↦ ?_, fun w' hw' ↦ ?_⟩
     · -- At a finite divisor of `𝔪` the coordinate of `z` is that of `x`, which is congruent to one.
-      rw [hz_def, map_mul, ideleFiniteCoord_ofCompletion, mul_one, ideleFiniteCoord_unitEmbedding,
-        Units.coe_map]
-      simp only [MonoidHom.coe_ofClass, RingHom.toMonoidHom_eq_coe]
-      rw [← map_one (algebraMap K (v.adicCompletion K)), ← map_sub,
-        HeightOneSpectrum.algebraMap_adicCompletion, Function.comp_apply,
-        Algebra.algebraMap_self_apply, valuedAdicCompletion_eq_valuation']
+      rw [hz_def, map_mul, ideleFiniteCoord_ofCompletion, mul_one,
+        valued_ideleFiniteCoord_unitEmbedding_sub_one]
       exact (residue_eq_one_iff x).mp hres v hv
     · -- At a real place of `𝔪` the sign of `x` cancels the sign of the archimedean component.
       have hs := hsign ⟨w', hw'⟩
