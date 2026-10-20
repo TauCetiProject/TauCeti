@@ -19,7 +19,9 @@ This file collects general `Ext` API that Mathlib does not state in this form:
   `TauCeti.extAddEquivOfIso` and `R`-linearly as `TauCeti.extLinearEquivOfIso`;
 * the vanishing of `Extⁿ(X, Y)` when either of the two objects is a zero object;
 * short exact cokernel sequences, the cokernel sequence of the chosen embedding into an injective
-  object, and a dimension-shift criterion for vanishing of the next `Ext` group;
+  object with the morphisms of such sequences extending a given morphism
+  (`TauCeti.injectiveCokernelSequenceMap`), and a dimension-shift criterion for vanishing of the
+  next `Ext` group;
 * Mathlib's long exact `Ext` sequences of a short exact sequence `S`, repackaged as
   `Function.Exact` statements about the composition maps: `TauCeti.exact_postcomp` and
   `TauCeti.exact_precomp` for `CategoryTheory.Abelian.Ext.postcomp` and
@@ -123,15 +125,55 @@ lemma subsingleton_ext_succ_of_comp_extClass_eq_zero {S : ShortComplex C}
 
 variable [EnoughInjectives C]
 
-/-- The cokernel sequence of the chosen embedding of an object into an injective object. -/
+/-- The cokernel sequence `Y ⟶ Injective.under Y ⟶ cokernel (Injective.ι Y)` of the chosen
+embedding of an object into an injective object. It is written with `ShortComplex.mk`, so that
+its three objects are reducibly `Y`, `Injective.under Y` and `cokernel (Injective.ι Y)`. -/
 noncomputable abbrev injectiveCokernelSequence (Y : C) : ShortComplex C :=
-  ShortComplex.cokernelSequence (Injective.ι Y)
+  ShortComplex.mk (Injective.ι Y) (cokernel.π (Injective.ι Y)) (cokernel.condition _)
 
 omit [HasExt C] in
 /-- The cokernel sequence of the chosen embedding into an injective object is short exact. -/
 lemma injectiveCokernelSequence_shortExact (Y : C) :
     (injectiveCokernelSequence Y).ShortExact :=
   cokernelSequence_shortExact _
+
+omit [HasExt C] in
+/-- A morphism `f : Y ⟶ Y'` extends to a morphism between the cokernel sequences of the chosen
+embeddings of `Y` and `Y'` into injective objects. Its middle component is a factorization of
+`f` followed by the embedding of `Y'` through the embedding of `Y`, which exists because the
+target is injective; its last component is the induced map of cokernels. The extension is a
+choice, not unique. -/
+noncomputable def injectiveCokernelSequenceMap {Y Y' : C} (f : Y ⟶ Y') :
+    injectiveCokernelSequence Y ⟶ injectiveCokernelSequence Y' where
+  τ₁ := f
+  τ₂ := Injective.factorThru (f ≫ Injective.ι Y') (Injective.ι Y)
+  τ₃ := cokernel.map (Injective.ι Y) (Injective.ι Y') f
+    (Injective.factorThru (f ≫ Injective.ι Y') (Injective.ι Y))
+    (Injective.comp_factorThru _ _)
+  comm₁₂ := (Injective.comp_factorThru _ _).symm
+  comm₂₃ := (cokernel.π_desc _ _ _).symm
+
+omit [HasExt C] in
+@[simp]
+lemma injectiveCokernelSequenceMap_τ₁ {Y Y' : C} (f : Y ⟶ Y') :
+    (injectiveCokernelSequenceMap f).τ₁ = f :=
+  (rfl)
+
+omit [HasExt C] in
+@[simp]
+lemma injectiveCokernelSequenceMap_τ₂ {Y Y' : C} (f : Y ⟶ Y') :
+    (injectiveCokernelSequenceMap f).τ₂ =
+      Injective.factorThru (f ≫ Injective.ι Y') (Injective.ι Y) :=
+  (rfl)
+
+omit [HasExt C] in
+@[simp]
+lemma injectiveCokernelSequenceMap_τ₃ {Y Y' : C} (f : Y ⟶ Y') :
+    (injectiveCokernelSequenceMap f).τ₃ =
+      cokernel.map (Injective.ι Y) (Injective.ι Y') f
+        (Injective.factorThru (f ≫ Injective.ι Y') (Injective.ι Y))
+        (Injective.comp_factorThru _ _) :=
+  (rfl)
 
 /-- The dimension-shift criterion specialised to the chosen embedding into an injective object. -/
 lemma subsingleton_ext_succ_of_injectiveCokernelSequence (X Y : C) (n : ℕ)
