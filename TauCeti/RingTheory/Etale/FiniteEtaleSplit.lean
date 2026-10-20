@@ -182,6 +182,12 @@ theorem of_prod_fst {A B : Type*} [CommRing A] [CommRing B] [Algebra R A] [Algeb
     ((Ideal.quotientEquivAlgOfEq R hfst.symm).trans
       (Ideal.quotientKerAlgEquivOfSurjective (f := AlgHom.fst R A B) Prod.fst_surjective))
 
+/-- The second factor of a totally split product is totally split: swap the factors and apply
+`of_prod_fst`. -/
+theorem of_prod_snd {A B : Type*} [CommRing A] [CommRing B] [Algebra R A] [Algebra R B]
+    (h : IsTotallySplit R (A × B)) : IsTotallySplit R B :=
+  (h.of_algEquiv (AlgEquiv.ofRingEquiv (f := RingEquiv.prodComm) fun _ ↦ by simp)).of_prod_fst
+
 /-- A totally split algebra with injective structure map, for example a faithfully flat one, has
 a section: injectivity says that the components `D(e j)` cover `Spec R`, and a section is
 assembled from an orthogonal refinement of this cover. -/

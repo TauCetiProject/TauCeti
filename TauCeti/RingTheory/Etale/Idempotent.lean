@@ -50,6 +50,9 @@ private instance [Algebra.Etale R A] [Algebra.Etale R B] (b : Bool) :
 /-- The binary product of two étale algebras in the same universe is étale. -/
 private theorem prod_of_univ [Algebra.Etale R A] [Algebra.Etale R B] :
     Algebra.Etale R (A × B) := by
+  -- `boolFamily A B true` and `boolFamily A B false` unfold by `Bool.rec` to `A` and `B`, and the
+  -- instances above to those of `A` and `B`. This definitional equality lets `Pi.evalAlgHom` land
+  -- in `A` and `B`, and closes the surjectivity goal by `rfl`; it is used nowhere else.
   let φ : (Π b, boolFamily A B b) →ₐ[R] A × B :=
     (Pi.evalAlgHom R (boolFamily A B) true).prod (Pi.evalAlgHom R (boolFamily A B) false)
   have hφ : Function.Bijective φ := by

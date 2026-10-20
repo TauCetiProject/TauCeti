@@ -31,7 +31,6 @@ variable (R₁ : Type*) {A : Type*} [CommSemiring R₁] [Ring A] [Algebra R₁ A
   {I J : ι → Ideal A} [∀ j, (I j).IsTwoSided] [∀ j, (J j).IsTwoSided]
 
 /-- The componentwise quotient map `∏ j, A ⧸ I j → ∏ j, A ⧸ J j` for ideals `I j ≤ J j`. -/
-@[expose]
 def piFactorₐ (hle : ∀ j, I j ≤ J j) : ((j : ι) → A ⧸ I j) →ₐ[R₁] ((j : ι) → A ⧸ J j) :=
   AlgHom.pi fun j ↦ (Ideal.Quotient.factorₐ R₁ (hle j)).comp (Pi.evalAlgHom R₁ _ j)
 
@@ -39,7 +38,7 @@ def piFactorₐ (hle : ∀ j, I j ≤ J j) : ((j : ι) → A ⧸ I j) →ₐ[R�
 @[simp]
 theorem piFactorₐ_apply (hle : ∀ j, I j ≤ J j) (x : (j : ι) → A ⧸ I j) (j : ι) :
     piFactorₐ R₁ hle x j = Ideal.Quotient.factor (hle j) (x j) :=
-  rfl
+  (rfl)
 
 /-- The componentwise quotient map is surjective. -/
 theorem piFactorₐ_surjective (hle : ∀ j, I j ≤ J j) :

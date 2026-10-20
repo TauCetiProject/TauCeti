@@ -62,13 +62,13 @@ private theorem exists_orthogonalIdempotents_sum_eq_one_sub_prod_fin :
     · cases i using Fin.cases with
       | zero => simpa only [Fin.cons_zero] using he₀.eq
       | succ i =>
-        have hfi : f i * e i.succ = f i := hfe i
+        have hfi : f i * e i.succ = f i := by simpa only [Fin.tail_def] using hfe i
         simp only [Fin.cons_succ]
         linear_combination (1 - e 0) * hfi
     · rw [Fin.sum_univ_succ, Fin.prod_univ_succ]
       simp only [Fin.cons_zero, Fin.cons_succ]
       rw [← Finset.mul_sum, hsum]
-      simp only [Fin.tail]
+      simp only [Fin.tail_def]
       ring
 
 /-- Finitely many idempotents `e i` of a commutative ring can be refined to orthogonal idempotents
@@ -82,7 +82,9 @@ theorem exists_orthogonalIdempotents_sum_eq_one_sub_prod {ι : Type*} [Fintype �
     exists_orthogonalIdempotents_sum_eq_one_sub_prod_fin (e ∘ σ.symm) fun i ↦ he _
   refine ⟨f ∘ σ, hf.embedding σ.toEmbedding, fun i ↦ by simpa using hfe (σ i), ?_⟩
   calc ∑ i, f (σ i) = ∑ i, f i := σ.sum_comp f
-    _ = 1 - ∏ i, (1 - e i) := by rw [hsum, ← σ.symm.prod_comp fun i ↦ 1 - e i]; rfl
+    _ = 1 - ∏ i, (1 - e i) := by
+      rw [hsum, ← σ.symm.prod_comp fun i ↦ 1 - e i]
+      simp only [Function.comp_apply]
 
 /-- Idempotents `e i` whose components cover the spectrum, `∏ i, (1 - e i) = 0`, can be refined to
 a complete orthogonal family `f i` with `f i * e i = f i`. -/
