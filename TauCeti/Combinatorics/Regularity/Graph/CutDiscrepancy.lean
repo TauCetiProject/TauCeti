@@ -11,6 +11,7 @@ import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
+import TauCeti.Combinatorics.SimpleGraph.Density
 import TauCeti.Order.Partition.Finpartition
 
 /-!
@@ -106,26 +107,12 @@ theorem steppedCount_le_card_mul_card (A B : Finset V) : G.steppedCount P A B �
         rw [← sum_mul_sum, ← Nat.cast_sum, ← Nat.cast_sum, P.sum_card_inter_parts (subset_univ A),
           P.sum_card_inter_parts (subset_univ B)]
 
-/-- The number of edges from `A` to `B` splits along the traces of the parts of `P` on `A` and
-on `B`. -/
-theorem card_interedges_eq_sum_parts (A B : Finset V) :
-    #(G.interedges A B) = ∑ C ∈ P.parts, ∑ D ∈ P.parts, #(G.interedges (A ∩ C) (B ∩ D)) := by
-  -- `G.interedges` is `Rel.interedges G.Adj`, as in Mathlib's own `SimpleGraph` density API.
-  have h : #(G.interedges A B) = ∑ X ∈ (P.restrict (subset_univ A)).parts,
-      ∑ Y ∈ (P.restrict (subset_univ B)).parts, #(G.interedges X Y) :=
-    (Rel.card_interedges_finpartition G.Adj _ _).trans (sum_product _ _ _)
-  rw [h, P.sum_restrict _ (fun X ↦ ∑ Y ∈ (P.restrict (subset_univ B)).parts,
-      #(G.interedges X Y)) (by simp)]
-  refine sum_congr rfl fun C _ ↦ ?_
-  rw [P.sum_restrict _ (fun Y ↦ #(G.interedges (C ⊓ A) Y)) (by simp [interedges_def])]
-  simp_rw [Finset.inf_eq_inter, inter_comm]
-
 /-- If `A` and `B` are unions of parts of `P`, the stepped prediction on `(A, B)` is the true
 number of edges from `A` to `B`. -/
 theorem steppedCount_eq_card_interedges {A B : Finset V}
     (hA : ∀ C ∈ P.parts, C ⊆ A ∨ Disjoint C A) (hB : ∀ D ∈ P.parts, D ⊆ B ∨ Disjoint D B) :
     G.steppedCount P A B = #(G.interedges A B) := by
-  rw [G.card_interedges_eq_sum_parts P, steppedCount_def]
+  rw [G.card_interedges_eq_sum_parts P P (subset_univ A) (subset_univ B), steppedCount_def]
   push_cast
   refine sum_congr rfl fun C hC ↦ sum_congr rfl fun D hD ↦ ?_
   -- Each trace is either empty or the whole part, and a pair of whole parts is exact.
