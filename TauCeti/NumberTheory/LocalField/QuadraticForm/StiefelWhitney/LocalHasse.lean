@@ -6,28 +6,23 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.QuadraticForm.StiefelWhitney.Hasse
-public import TauCeti.NumberTheory.LocalField.QuadraticForm.AnisotropicQuaternary
 public import TauCeti.NumberTheory.LocalField.QuadraticForm.Brauer
 
 /-!
 # The second Stiefel–Whitney class and the local Hasse invariant
 
 Let `K` be a nonarchimedean local field in which `2` is invertible, for instance a finite
-extension of `ℚ₂`. A Kummer cup `(a) ∪ (b) ∈ H²(G_K, 𝔽₂)` is determined by the Hilbert symbol
-`(a, b)_K`, and the second Stiefel–Whitney class of a regular form is determined by its local
-Hasse invariant `∏_{i<j} (aᵢ, aⱼ)_K`. So every identity between second Stiefel–Whitney classes
-or Kummer cups over `K` is an identity between signs, which can be evaluated with the Hilbert
-symbol.
+extension of `ℚ₂`. The second Stiefel–Whitney class of a regular form over `K` is determined by
+its local Hasse invariant `∏_{i<j} (aᵢ, aⱼ)_K`. So every identity between second Stiefel–Whitney
+classes over `K` is an identity between signs, which can be evaluated with the Hilbert symbol.
 
-Both statements combine the comparison of `w₂` with the Brauer-valued Hasse invariant
+The proofs combine the comparison of `w₂` with the Brauer-valued Hasse invariant
 (`TauCeti.sw2Class_eq_iff_hasseInvariant_eq`) with the local classification of quaternion
 algebras by their Hilbert symbols, through which the Brauer-valued Hasse invariant becomes the
 local one (`TauCeti.RegularFormClass.quaternionSubgroupSignEquiv_apply_hasseInvariant`).
 
 ## Main results
 
-* `TauCeti.cup_kummerClass_eq_cup_kummerClass_iff_hilbertSymbol_eq`:
-  `(a) ∪ (b) = (c) ∪ (d)` if and only if `(a, b)_K = (c, d)_K`.
 * `TauCeti.sw2Class_eq_iff_localHasse_eq`: two regular form classes have the same `w₂` exactly
   when their local Hasse invariants agree.
 * `TauCeti.sw2Class_eq_cup_kummerClass_iff_localHasse_eq`: `w₂(q) = (a) ∪ (b)` if and only if
@@ -48,15 +43,6 @@ open _root_.ContinuousCohomology RegularFormClass
 
 variable {K : Type} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Invertible (2 : K)]
-
-/-- **Kummer cups over a local field are read off Hilbert symbols**: `(a) ∪ (b) = (c) ∪ (d)` in
-`H²(G_K, 𝔽₂)` if and only if `(a, b)_K = (c, d)_K`. -/
-theorem cup_kummerClass_eq_cup_kummerClass_iff_hilbertSymbol_eq (a b c d : Kˣ) :
-    (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1 (kummerClass a) (kummerClass b) =
-        (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1 (kummerClass c) (kummerClass d) ↔
-      hilbertSymbol a b = hilbertSymbol c d :=
-  (cup_kummerClass_eq_cup_kummerClass_iff_quaternionClass_eq a b c d).trans
-    (BrauerGroup.quaternionClass_eq_iff_hilbertSymbol_eq a b c d)
 
 /-- **The second Stiefel–Whitney class over a local field is the local Hasse invariant**: two
 regular form classes over `K` have the same `w₂` exactly when their local Hasse invariants agree.
