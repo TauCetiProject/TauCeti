@@ -18,6 +18,10 @@ are derived from `SmoothForm`.
 
 The degree-two specialization supplies the bilinear view used by the symplectic modules while
 retaining the generic form's alternating-map and smooth-section structure.
+
+The module also provides the identity linear equivalence `legacySmoothTwoFormEquiv` from
+`SmoothTwoForm` to `SmoothForm I M ℝ 2`, its forward and inverse simp laws, and its ordered-pair
+evaluation law via `SmoothForm.eval₂`.
 -/
 
 public section
@@ -38,9 +42,9 @@ abbrev SmoothTwoForm (I : ModelWithCorners ℝ E H) (M : Type*)
     [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] : Type _ :=
   SmoothForm I M ℝ 2
 
-/-- The identity linear equivalence on degree-two real smooth forms, viewed through
-`SmoothTwoForm`. Since `SmoothTwoForm` is definitionally the generic carrier, this records the
-comparison with the former chartwise two-form representation required by the migration check. -/
+/-- The identity linear equivalence from `SmoothTwoForm I M` to the generic carrier
+`SmoothForm I M ℝ 2`. The chartwise closedness description is given by
+`legacySmoothTwoFormEquiv_isClosed_iff`. -/
 noncomputable def legacySmoothTwoFormEquiv :
     TauCeti.SmoothTwoForm I M ≃ₗ[ℝ] SmoothForm I M ℝ 2 :=
   LinearEquiv.refl ℝ _
