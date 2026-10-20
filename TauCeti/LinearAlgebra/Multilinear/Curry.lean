@@ -39,11 +39,8 @@ def multilinearCurryFirstEquiv :
   toFun f := MultilinearMap.mk'
     (fun m ↦
       { toFun x := f (Fin.cons x m)
-        map_add' x y := by
-          simp only [← MultilinearMap.curryLeft_apply, map_add, add_apply]
-        map_smul' r x := by
-          simp only [← MultilinearMap.curryLeft_apply, map_smul, smul_apply,
-            RingHom.id_apply] })
+        map_add' x y := f.cons_add m x y
+        map_smul' r x := f.cons_smul m r x })
     (fun m i x y ↦ LinearMap.ext fun z ↦ by
       simp only [LinearMap.coe_mk, AddHom.coe_mk, LinearMap.add_apply, Fin.cons_update,
         MultilinearMap.map_update_add])

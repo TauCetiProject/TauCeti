@@ -143,17 +143,16 @@ theorem hochschildBimoduleCoface_hochschildBimoduleCoface [SMulCommClass A Aᵐ�
     hochschildBimoduleCoface R A M j.succ (hochschildBimoduleCoface R A M i ψ) =
       hochschildBimoduleCoface R A M i.castSucc (hochschildBimoduleCoface R A M j ψ) := by
   -- Each of `i` and `j` is the left coface `0`, an inner coface `k.castSucc.succ` or the right
-  -- coface `Fin.last`; the six cases with `i ≤ j` reduce to identities between tuples. The
-  -- `show _ = _ from rfl` steps either rewrite an index into the shape `k.castSucc.succ` of
-  -- `hochschildBimoduleCoface_castSucc_succ_apply` or unfold `Fin.init a k` to `a k.castSucc`.
+  -- coface `Fin.last`; the six cases with `i ≤ j` reduce to identities between tuples, after
+  -- rewriting each inner index into the shape `k.castSucc.succ` of
+  -- `hochschildBimoduleCoface_castSucc_succ_apply`.
   ext a
   induction i using Fin.cases with
   | zero =>
     induction j using Fin.cases with
     | zero =>
       -- `(a₀ a₁) • ψ(a₂, …) = a₀ • a₁ • ψ(a₂, …)`
-      rw [show (0 : Fin (n + 2)).succ = (0 : Fin (n + 1)).castSucc.succ from rfl,
-        hochschildBimoduleCoface_castSucc_succ_apply]
+      rw [← Fin.castSucc_zero (n := n + 1), hochschildBimoduleCoface_castSucc_succ_apply]
       simp only [Fin.castSucc_zero, hochschildBimoduleCoface_zero_apply]
       rw [← Fin.cons_self_tail a, Fin.contractNth_zero_cons]
       simp only [Fin.cons_zero, Fin.tail_cons, mul_smul]
@@ -178,11 +177,11 @@ theorem hochschildBimoduleCoface_hochschildBimoduleCoface [SMulCommClass A Aᵐ�
       -- `ψ(…) • (aₙ aₙ₊₁) = (ψ(…) • aₙ) • aₙ₊₁`
       rw [Fin.succ_last] at hij ⊢
       obtain rfl : j = Fin.last (n + 1) := le_antisymm (Fin.le_last _) hij
-      rw [Fin.succ_last, show (Fin.last (n + 1)).castSucc = (Fin.last n).castSucc.succ from rfl,
-        hochschildBimoduleCoface_castSucc_succ_apply]
+      rw [Fin.succ_last, show (Fin.last (n + 1)).castSucc = (Fin.last n).castSucc.succ by
+        rw [Fin.succ_castSucc, Fin.succ_last], hochschildBimoduleCoface_castSucc_succ_apply]
       simp only [hochschildBimoduleCoface_last_apply]
       rw [Fin.contractNth_apply_of_eq _ _ _ _ rfl, Fin.init_contractNth_castSucc_last, op_mul,
-        mul_smul, Fin.succ_last, show Fin.init a (Fin.last n) = a (Fin.last n).castSucc from rfl]
+        mul_smul, Fin.succ_last, Fin.init_def]
     | cast i =>
       induction j using Fin.cases with
       | zero => exact absurd hij (not_le.2 (Fin.succ_pos _))

@@ -119,8 +119,8 @@ theorem hochschildBimoduleCoface_multilinearCurryFirstEquiv (i : Fin (n + 2))
   | zero =>
     rw [hochschildBimoduleCoface_zero_apply, smul_linearMap_apply,
       multilinearCurryFirstEquiv_apply_apply,
-      show (0 : Fin (n + 2)) = (0 : Fin (n + 1)).castSucc from rfl, hochschildFace_castSucc,
-      Fin.castSucc_zero (n := n + 1), Fin.contractNth_zero_cons]
+      ← Fin.castSucc_zero (n := n + 1), hochschildFace_castSucc, Fin.castSucc_zero (n := n + 1),
+      Fin.contractNth_zero_cons]
   | succ i =>
     induction i using Fin.lastCases with
     | last =>
