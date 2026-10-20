@@ -205,9 +205,8 @@ theorem differentExponent_map_restrictScalars [FiniteDimensional F₀ F₂] [Alg
   have : IsScalarTower k₀ F₁ F₂ := .of_algebraMap_eq fun c ↦ by
     rw [IsScalarTower.algebraMap_apply k₀ F₀ F₁, IsScalarTower.algebraMap_apply k₀ F₀ F₂]
     exact (e.commutes (algebraMap k₀ F₀ c)).symm
-  have hfin1 : Module.finrank F₁ F₂ = 1 := by
-    rw [← (LinearEquiv.ofBijective (Algebra.linearMap F₁ F₂) e.bijective).finrank_eq,
-      Module.finrank_self]
+  have hfin1 : Module.finrank F₁ F₂ = 1 :=
+    Module.finrank_of_bijective_algebraMap e.bijective
   let _ : FiniteDimensional F₁ F₂ := FiniteDimensional.right F₀ F₁ F₂
   let _ : Algebra.IsSeparable F₁ F₂ := Algebra.isSeparable_tower_top_of_isSeparable F₀ F₁ F₂
   have hres : (P₁.map (e.restrictScalars k₀)).restrict k₀ F₁ = P₁ := by

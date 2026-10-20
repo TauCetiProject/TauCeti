@@ -75,9 +75,8 @@ theorem differentExponent_ratFunc_eq_differentExponent_adjoin (hF : IsFunctionFi
   have : IsScalarTower (RatFunc k) k⟮x⟯ F :=
     .of_algebraMap_eq fun r ↦ algebraMap_ratFuncAlgebraOfTranscendental_apply hx r
   have : IsScalarTower k (RatFunc k) k⟮x⟯ := .of_algebraMap_eq fun c ↦ (e.commutes c).symm
-  have hfin1 : Module.finrank (RatFunc k) k⟮x⟯ = 1 := by
-    rw [← (LinearEquiv.ofBijective (Algebra.linearMap (RatFunc k) k⟮x⟯) e.bijective).finrank_eq,
-      Module.finrank_self]
+  have hfin1 : Module.finrank (RatFunc k) k⟮x⟯ = 1 :=
+    Module.finrank_of_bijective_algebraMap e.bijective
   let _ : FiniteDimensional (RatFunc k) k⟮x⟯ := FiniteDimensional.left (RatFunc k) k⟮x⟯ F
   let _ : Algebra.IsSeparable (RatFunc k) k⟮x⟯ :=
     Algebra.isSeparable_tower_bot_of_isSeparable (RatFunc k) k⟮x⟯ F
