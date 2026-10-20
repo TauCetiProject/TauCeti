@@ -53,6 +53,8 @@ trace has absolute value greater than `2`, fixes two distinct ideal points and s
   ideal points are the endpoints of a geodesic line.
 * `TauCeti.UpperHalfPlane.exists_geodesicLine_zero_eq_and_smul_infty_eq`: a geodesic line from any
   point of `ℍ` to any ideal point.
+* `TauCeti.UpperHalfPlane.exists_ne_smul_eq_self_of_two_lt_abs_trace`: a hyperbolic element fixes
+  two distinct ideal points.
 * `TauCeti.UpperHalfPlane.exists_eq_conj_dilation_of_two_lt_abs_trace`: the hyperbolic normal form,
   every hyperbolic element of `PSL(2, ℝ)` is conjugate to a nontrivial dilation.
 * `TauCeti.UpperHalfPlane.strictMono_re_geodesicLine`: along a semicircle from `e₀` to `e₁ > e₀`,
@@ -409,7 +411,7 @@ theorem exists_eq_conj_dilation_of_smul_eq_self {k g : PSL(2, ℝ)}
 
 /-- The two fixed ideal points of the class of a matrix of `SL(2, ℝ)` whose trace has absolute
 value greater than `2`: the roots of its fixed-point polynomial. -/
-private theorem exists_ne_smul_eq_self_of_two_lt_abs_trace {A : SL(2, ℝ)}
+theorem exists_ne_smul_eq_self_of_two_lt_abs_trace {A : SL(2, ℝ)}
     (h : 2 < |(A : Matrix (Fin 2) (Fin 2) ℝ).trace|) :
     ∃ ξ η : OnePoint ℝ, ξ ≠ η ∧ (A : PSL(2, ℝ)) • ξ = ξ ∧ (A : PSL(2, ℝ)) • η = η := by
   have hdet := det_mk A
