@@ -320,51 +320,6 @@ theorem mapCoh_erase_eq_mapCoh_erase {i j u v : Fin (m + 1)} {S : Finset (Fin (m
         (S.erase v).image α ⊆ Ioo (α i) (α j)) := by rwa [← himage, ← hcard]
     rw [x.mapCoh_eq_zero α hc, x.mapCoh_eq_zero α hc']
 
-/-- If `α` is not injective on the interior vertices `T`, or does not map them strictly between
-`α a` and `α b`, then it collapses two consecutive vertices `u < v` of `a < T < b`, at least one
-of which is interior. -/
-private lemma exists_collapse {a b : Fin (m + 1)} {T : Finset (Fin (m + 1))} (hT : T ⊆ Ioo a b)
-    (h : ¬ (#(T.image α) = #T ∧ T.image α ⊆ Ioo (α a) (α b))) :
-    ∃ u v, u < v ∧ (u = a ∨ u ∈ T) ∧ (v = b ∨ v ∈ T) ∧ (u ∈ T ∨ v ∈ T) ∧ α u = α v ∧
-      ∀ s ∈ T, ¬ (u < s ∧ s < v) := by
-  obtain ⟨u, v', huv', hu, hv', huv'T, hα'⟩ : ∃ u v', u < v' ∧ (u = a ∨ u ∈ T) ∧
-      (v' = b ∨ v' ∈ T) ∧ (u ∈ T ∨ v' ∈ T) ∧ α u = α v' := by
-    rw [not_and_or] at h
-    rcases h with h | h
-    · rw [card_image_iff, Set.InjOn] at h
-      push Not at h
-      obtain ⟨s, hs, s', hs', hα, hne⟩ := h
-      rcases lt_or_gt_of_ne hne with hlt | hlt
-      · exact ⟨s, s', hlt, Or.inr hs, Or.inr hs', Or.inl hs, hα⟩
-      · exact ⟨s', s, hlt, Or.inr hs', Or.inr hs, Or.inl hs', hα.symm⟩
-    · obtain ⟨y, hy, hy'⟩ := not_subset.1 h
-      obtain ⟨s, hs, rfl⟩ := mem_image.1 hy
-      have hs' := mem_Ioo.1 (hT hs)
-      rw [mem_Ioo, not_and_or, not_lt, not_lt] at hy'
-      rcases hy' with hy' | hy'
-      · exact ⟨a, s, hs'.1, Or.inl rfl, Or.inr hs, Or.inr hs,
-          le_antisymm (α.monotone hs'.1.le) hy'⟩
-      · exact ⟨s, b, hs'.2, Or.inr hs, Or.inl rfl, Or.inl hs,
-          le_antisymm (α.monotone hs'.2.le) hy'⟩
-  -- Replace `v'` by the successor of `u` among `T ∪ {b}`.
-  set V := {y ∈ insert b T | u < y}
-  have hV : v' ∈ V := mem_filter.2 ⟨by rcases hv' with rfl | hv' <;> simp [*], huv'⟩
-  have hvV := V.min'_mem ⟨v', hV⟩
-  have hvv' : V.min' ⟨v', hV⟩ ≤ v' := V.min'_le v' hV
-  rw [mem_filter, mem_insert] at hvV
-  refine ⟨u, V.min' ⟨v', hV⟩, hvV.2, hu, hvV.1, ?_,
-    le_antisymm (α.monotone hvV.2.le) ((α.monotone hvv').trans hα'.symm.le), ?_⟩
-  · rcases hu with rfl | hu
-    · rcases hvV.1 with hvb | hvT
-      · exfalso
-        rcases huv'T with h | h
-        · exact lt_irrefl _ (mem_Ioo.1 (hT h)).1
-        · exact not_le.2 (mem_Ioo.1 (hT h)).2 (hvb ▸ hvv')
-      · exact Or.inr hvT
-    · exact Or.inl hu
-  · rintro s hs ⟨hus, hsv⟩
-    exact not_le.2 hsv (V.min'_le s (mem_filter.2 ⟨mem_insert_of_mem hs, hus⟩))
-
 /-- The pullback of a simplex satisfies the dg nerve equation on interior vertices where `α` is
 injective with image strictly between the endpoints: the equation is the reindexing of the one
 for the original simplex. -/
@@ -487,7 +442,8 @@ private lemma boundary_mapCoh_eq_zero {a b : Fin (m + 1)} {T : Finset (Fin (m + 
   -- the face and composite parts of the term at `v` cancel, the composite being with an identity;
   -- symmetrically if `v = b`. If both are interior, the two face terms at `u` and `v` are equal
   -- with opposite signs, and their composite parts vanish.
-  obtain ⟨u, v, huv, hu, hv, huvT, hα, hcons⟩ := exists_collapse α hT h
+  obtain ⟨u, v, huv, hu, hv, huvT, hα, hcons⟩ :=
+    exists_adjacent_eq_of_not_card_image_and_image_subset_Ioo α.monotone hT h
   have hTa : ∀ s ∈ T, a < s := fun s hs ↦ (mem_Ioo.1 (hT hs)).1
   have hTb : ∀ s ∈ T, s < b := fun s hs ↦ (mem_Ioo.1 (hT hs)).2
   -- Away from `u` and `v`, both parts of each term vanish.
@@ -594,35 +550,6 @@ theorem map_obj : (x.map α).obj = x.obj ∘ α := rfl
 /-- The coherences of the pullback of a simplex. -/
 theorem map_coh : (x.map α).coh = x.mapCoh α := rfl
 
-/-- `α ∘ β` is injective on `S` with image strictly between the images of the endpoints exactly
-when `β` is, and `α` is on the image of `S` under `β`. -/
-private lemma cond_comp_iff {k : ℕ} (β : Fin (k + 1) →o Fin (m + 1)) {i j : Fin (k + 1)}
-    {S : Finset (Fin (k + 1))} (hS : S ⊆ Ioo i j) :
-    (#(S.image (α.comp β)) = #S ∧ S.image (α.comp β) ⊆ Ioo (α (β i)) (α (β j))) ↔
-      (#(S.image β) = #S ∧ S.image β ⊆ Ioo (β i) (β j)) ∧
-        (#((S.image β).image α) = #(S.image β) ∧
-          (S.image β).image α ⊆ Ioo (α (β i)) (α (β j))) := by
-  have himg : S.image (α.comp β) = (S.image β).image α := by
-    rw [image_image]
-    rfl
-  rw [himg]
-  constructor
-  · rintro ⟨hc, hsub⟩
-    have h₁ := card_image_le (s := S.image β) (f := α)
-    have h₂ := card_image_le (s := S) (f := β)
-    refine ⟨⟨by omega, fun y hy ↦ ?_⟩, by omega, hsub⟩
-    obtain ⟨s, hs, rfl⟩ := mem_image.1 hy
-    have hs' := mem_Ioo.1 (hS hs)
-    have hα := mem_Ioo.1 (hsub (mem_image_of_mem α hy))
-    refine mem_Ioo.2 ⟨lt_of_le_of_ne (β.monotone hs'.1.le) fun he ↦ ?_,
-      lt_of_le_of_ne (β.monotone hs'.2.le) fun he ↦ ?_⟩
-    · rw [← he] at hα
-      exact lt_irrefl _ hα.1
-    · rw [he] at hα
-      exact lt_irrefl _ hα.2
-  · rintro ⟨⟨hcβ, -⟩, hcα, hsub⟩
-    exact ⟨hcα.trans hcβ, hsub⟩
-
 /-- Two simplices with the same objects and the same coherences are equal. -/
 theorem ext {x y : Simplex R C n} (hobj : x.obj = y.obj)
     (hcoh : ∀ i j S d hij hS hd, x.coh i j S d hij hS hd ≍ y.coh i j S d hij hS hd) :
@@ -646,17 +573,18 @@ theorem map_map {k : ℕ} (β : Fin (k + 1) →o Fin (m + 1)) :
     (x.map α).map β = x.map (α.comp β) := by
   refine ext rfl fun i j S d hij hS hd ↦ heq_of_eq ?_
   rw [map_coh, map_coh]
+  have hc := card_image_comp_eq_and_image_comp_subset_Ioo_iff α β.monotone hS
   by_cases hβ : #(S.image β) = #S ∧ S.image β ⊆ Ioo (β i) (β j)
   · rw [(x.map α).mapCoh_eq_coh β hβ, map_coh]
     by_cases hα : #((S.image β).image α) = #(S.image β) ∧
         (S.image β).image α ⊆ Ioo (α (β i)) (α (β j))
-    · rw [x.mapCoh_eq_coh α hα, x.mapCoh_eq_coh (α.comp β) ((cond_comp_iff α β hS).2 ⟨hβ, hα⟩)]
+    · rw [x.mapCoh_eq_coh α hα, x.mapCoh_eq_coh (α.comp β) (hc.2 ⟨hβ, hα⟩)]
       exact Coherences.congr _ (by rw [image_image]; rfl)
     · rw [x.mapCoh_eq_zero α hα,
-        x.mapCoh_eq_zero (α.comp β) fun h ↦ hα ((cond_comp_iff α β hS).1 h).2]
+        x.mapCoh_eq_zero (α.comp β) fun h ↦ hα (hc.1 h).2]
       rfl
   · rw [(x.map α).mapCoh_eq_zero β hβ,
-      x.mapCoh_eq_zero (α.comp β) fun h ↦ hβ ((cond_comp_iff α β hS).1 h).1]
+      x.mapCoh_eq_zero (α.comp β) fun h ↦ hβ (hc.1 h).1]
     rfl
 
 /-! ### Vertices and low-dimensional simplices -/
