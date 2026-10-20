@@ -14,8 +14,8 @@ import Mathlib.NumberTheory.Padics.RingHoms
 These examples test the basic setups of almost mathematics on their degenerate members, the
 classical setup `(V, V)` and the zero setup `(V, 0)`, and on concrete computations over `ℤ`:
 
-* the multiplication maps `m̃ → V` and `m̃ → m` are computed on explicit tensors, and are
-  bijective onto `m` for the classical and the zero setups, while `m̃` vanishes for the zero setup;
+* the multiplication maps `m~ → V` and `m~ → m` are computed on explicit tensors, and are
+  bijective onto `m` for the classical and the zero setups, while `m~` vanishes for the zero setup;
 * the residue module `V ⧸ m` is almost zero for every setup, while `ℤ` is not almost zero for the
   classical setup;
 * the inclusion `m → V` is always an almost isomorphism, every map is one for the zero setup, and
@@ -32,7 +32,7 @@ open TensorProduct TauCeti.Almost TauCeti.Almost.BasicSetup
 
 variable {V : Type*} [CommRing V]
 
-/-! ### The module `m̃` and its multiplication maps -/
+/-! ### The module `m~` and its multiplication maps -/
 
 -- Over the classical setup `(ℤ, ℤ)`, `2 ⊗ 3 + 5 ⊗ 7 ↦ 2 * 3 + 5 * 7 = 41`.
 example : (classical ℤ).tildeMul
@@ -51,7 +51,7 @@ example : ((classical ℤ).tildeToIdeal
 example : (classical V).tildeMul ((⟨1, by simp⟩ : (classical V).ideal) ⊗ₜ ⟨1, by simp⟩) = 1 := by
   simp
 
--- For the zero setup, `m̃ = 0 ⊗ 0` vanishes, so the multiplication map `m̃ → V` is zero.
+-- For the zero setup, `m~ = 0 ⊗ 0` vanishes, so the multiplication map `m~ → V` is zero.
 example : Subsingleton (zero V).tilde :=
   have : Subsingleton (zero V).ideal := Submodule.subsingleton_iff_eq_bot.mpr zero_ideal
   inferInstance
@@ -60,7 +60,7 @@ example : (zero V).tildeMul = 0 :=
   have : Subsingleton (zero V).ideal := Submodule.subsingleton_iff_eq_bot.mpr zero_ideal
   Subsingleton.elim _ _
 
--- Multiplication `m̃ → m` is bijective for the classical setup: it is the identification
+-- Multiplication `m~ → m` is bijective for the classical setup: it is the identification
 -- `V ⊗[V] V ≅ V`.
 example : Function.Bijective (classical V).tildeToIdeal := by
   refine ⟨fun s t hst ↦ ?_, (classical V).surjective_tildeToIdeal⟩
@@ -73,7 +73,7 @@ example : Function.Bijective (classical V).tildeToIdeal := by
   rw [he] at hst'
   exact LinearEquiv.injective _ hst'
 
--- Multiplication `m̃ → m` is bijective for the zero setup, both sides being zero.
+-- Multiplication `m~ → m` is bijective for the zero setup, both sides being zero.
 example : Function.Bijective (zero V).tildeToIdeal :=
   have : Subsingleton (zero V).ideal := Submodule.subsingleton_iff_eq_bot.mpr zero_ideal
   ⟨fun _ _ _ ↦ Subsingleton.elim _ _, fun _ ↦ ⟨0, Subsingleton.elim _ _⟩⟩

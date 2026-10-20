@@ -16,10 +16,10 @@ public import Mathlib.RingTheory.Flat.Basic
 
 Almost mathematics in the sense of Gabber–Ramero is developed relative to a *basic setup*
 `(V, m)`: a commutative ring `V` with an ideal `m` such that `m * m = m` and such that
-`m̃ := m ⊗[V] m` is a flat `V`-module. A `V`-module is *almost zero* if it is killed by `m`, and a
+`m~ := m ⊗[V] m` is a flat `V`-module. A `V`-module is *almost zero* if it is killed by `m`, and a
 linear map is an *almost isomorphism* if its kernel and cokernel are almost zero. Idempotence of
-`m` is what makes almost zero modules stable under extensions, and flatness of `m̃` is what makes
-the left adjoint `M ↦ M_! = m̃ ⊗[V] M` of the functor of almost elements exact. A basic setup is
+`m` is what makes almost zero modules stable under extensions, and flatness of `m~` is what makes
+the left adjoint `M ↦ M_! = m~ ⊗[V] M` of the functor of almost elements exact. A basic setup is
 data rather than a type class, because one ring carries several setups: for a perfectoid Tate
 ring `R` one uses both `(R°, R°°)` and the ideal of compatible `p`-power roots of a
 pseudouniformiser.
@@ -27,8 +27,8 @@ pseudouniformiser.
 ## Main definitions
 
 * `TauCeti.Almost.BasicSetup`: a basic setup `(V, m)`.
-* `TauCeti.Almost.BasicSetup.tilde`: the flat `V`-module `m̃ = m ⊗[V] m`, with the multiplication
-  maps `tildeMul : m̃ → V` and `tildeToIdeal : m̃ → m`.
+* `TauCeti.Almost.BasicSetup.tilde`: the flat `V`-module `m~ = m ⊗[V] m`, with the multiplication
+  maps `tildeMul : m~ → V` and `tildeToIdeal : m~ → m`.
 * `TauCeti.Almost.BasicSetup.IsAlmostZero`: a module killed by `m`, and the corresponding object
   property `TauCeti.Almost.BasicSetup.almostZero` of `ModuleCat V`.
 * `TauCeti.Almost.BasicSetup.IsAlmostIso`: a linear map with almost zero kernel and cokernel.
@@ -43,7 +43,7 @@ pseudouniformiser.
 
 * `TauCeti.Almost.BasicSetup.isAlmostZero_iff_subsingleton_ideal_tensor` and
   `TauCeti.Almost.BasicSetup.isAlmostZero_iff_subsingleton_tilde_tensor`: `M` is almost zero iff
-  `m ⊗[V] M = 0` iff `m̃ ⊗[V] M = 0`.
+  `m ⊗[V] M = 0` iff `m~ ⊗[V] M = 0`.
 * `TauCeti.Almost.BasicSetup.isAlmostZero_classical_iff` and
   `TauCeti.Almost.BasicSetup.isAlmostIso_classical_iff`: in the classical setup, almost zero means
   zero and an almost isomorphism is a bijective linear map.
@@ -69,7 +69,7 @@ namespace TauCeti.Almost
 universe u v
 
 /-- A *basic setup* `(V, m)` for almost mathematics: an ideal `m` of the commutative ring `V`
-with `m * m = m` such that `m̃ = m ⊗[V] m` is a flat `V`-module (Gabber–Ramero (2.1.1) and the
+with `m * m = m` such that `m~ = m ⊗[V] m` is a flat `V`-module (Gabber–Ramero (2.1.1) and the
 standing assumption of (2.5.14)). It is data, not a class: one ring carries several setups. -/
 @[ext]
 structure BasicSetup (V : Type u) [CommRing V] where
@@ -77,33 +77,33 @@ structure BasicSetup (V : Type u) [CommRing V] where
   ideal : Ideal V
   /-- The ideal is idempotent: `m * m = m` in the semiring `Ideal V`. -/
   isIdempotentElem : IsIdempotentElem ideal
-  /-- The `V`-module `m̃ = m ⊗[V] m` is flat. -/
+  /-- The `V`-module `m~ = m ⊗[V] m` is flat. -/
   flat_tilde : Module.Flat V (ideal ⊗[V] ideal)
 
 namespace BasicSetup
 
 variable {V : Type u} [CommRing V] (S : BasicSetup V)
 
-/-! ### The module `m̃` -/
+/-! ### The module `m~` -/
 
-/-- The `V`-module `m̃ = m ⊗[V] m` of a basic setup (Gabber–Ramero (2.1.1)). -/
+/-- The `V`-module `m~ = m ⊗[V] m` of a basic setup (Gabber–Ramero (2.1.1)). -/
 abbrev tilde : Type u := S.ideal ⊗[V] S.ideal
 
 instance : Module.Flat V S.tilde := S.flat_tilde
 
-/-- The multiplication map `m̃ → V`, `x ⊗ y ↦ x * y`. -/
+/-- The multiplication map `m~ → V`, `x ⊗ y ↦ x * y`. -/
 noncomputable def tildeMul : S.tilde →ₗ[V] V := Submodule.mulMap S.ideal S.ideal
 
 @[simp]
 theorem tildeMul_tmul (x y : S.ideal) : S.tildeMul (x ⊗ₜ y) = x * y :=
   Submodule.mulMap_tmul _ _ x y
 
-/-- The image of the multiplication map `m̃ → V` is `m`, because `m * m = m`. -/
+/-- The image of the multiplication map `m~ → V` is `m`, because `m * m = m`. -/
 @[simp]
 theorem range_tildeMul : LinearMap.range S.tildeMul = S.ideal :=
   (Submodule.mulMap_range S.ideal S.ideal).trans S.isIdempotentElem.eq
 
-/-- The multiplication map `m̃ → m`, `x ⊗ y ↦ x * y`, which is surjective because `m * m = m`. -/
+/-- The multiplication map `m~ → m`, `x ⊗ y ↦ x * y`, which is surjective because `m * m = m`. -/
 noncomputable def tildeToIdeal : S.tilde →ₗ[V] S.ideal :=
   (LinearEquiv.ofEq _ _ S.isIdempotentElem.eq).toLinearMap ∘ₗ Submodule.mulMap' S.ideal S.ideal
 
@@ -186,7 +186,7 @@ theorem isAlmostZero_iff_subsingleton_ideal_tensor (M : Type*) [AddCommGroup M] 
     (Subsingleton.elim ((⟨ε, hε⟩ : S.ideal) ⊗ₜ[V] x) 0)
   simpa using this
 
-/-- A module `M` is almost zero iff `m̃ ⊗[V] M = 0` (Gabber–Ramero Remark 2.1.4(i)). -/
+/-- A module `M` is almost zero iff `m~ ⊗[V] M = 0` (Gabber–Ramero Remark 2.1.4(i)). -/
 theorem isAlmostZero_iff_subsingleton_tilde_tensor (M : Type*) [AddCommGroup M] [Module V M] :
     S.IsAlmostZero M ↔ Subsingleton (S.tilde ⊗[V] M) := by
   rw [(TensorProduct.assoc V S.ideal S.ideal M).toEquiv.subsingleton_congr,
@@ -239,7 +239,7 @@ end IsAlmostIso
 
 /-! ### The classical and the zero setups -/
 
-/-- For `m = V`, the module `m̃ = V ⊗[V] V` is flat. -/
+/-- For `m = V`, the module `m~ = V ⊗[V] V` is flat. -/
 theorem flat_tilde_top : Module.Flat V ((⊤ : Ideal V) ⊗[V] (⊤ : Ideal V)) :=
   .of_linearEquiv ((TensorProduct.congr Submodule.topEquiv Submodule.topEquiv).trans
     (TensorProduct.lid V V))
@@ -257,7 +257,7 @@ theorem classical_ideal : (classical V).ideal = ⊤ :=
   (rfl)
 
 variable (V) in
-/-- The zero setup `(V, 0)`: the zero ideal is idempotent and `m̃ = 0` is flat. Every module is
+/-- The zero setup `(V, 0)`: the zero ideal is idempotent and `m~ = 0` is flat. Every module is
 almost zero for it. -/
 def zero : BasicSetup V where
   ideal := ⊥
