@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.CyclicAutomorphism
+public import TauCeti.RepresentationTheory.Cyclic.Automorphism
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.FiniteCyclic
 import Mathlib.Tactic.Abel
 
@@ -35,7 +35,7 @@ the cyclic representation of `A` these quotient maps read as follows.
 Every class arises in each case (`Rep.FiniteCyclicGroup.groupCohomologyπOdd_surjective`,
 `Rep.FiniteCyclicGroup.groupCohomologyπEven_surjective`).
 
-The representation itself is constructed in `TauCeti.RepresentationTheory.CyclicAutomorphism`.
+The representation itself is constructed in `TauCeti.RepresentationTheory.Cyclic.Automorphism`.
 
 ## Main results
 
