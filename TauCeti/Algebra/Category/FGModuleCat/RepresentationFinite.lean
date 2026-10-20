@@ -11,6 +11,7 @@ public import TauCeti.CategoryTheory.Preadditive.Radical.Nilpotent
 public import Mathlib.RingTheory.Artinian.Defs
 import TauCeti.Algebra.Category.FGModuleCat.KrullSchmidt
 import TauCeti.RingTheory.Artinian.End
+import TauCeti.CategoryTheory.Functor.RingEquivEnd
 
 /-!
 # The radical of a representation-finite Artin algebra is nilpotent
@@ -70,9 +71,7 @@ theorem IsRepresentationFinite.exists_jacobsonRadicalIdeal_pow_eq_bot
   let G : FGModuleCat.{w} A := ⟨⨁ P, (ModuleCat.isFG_iff _).mpr inferInstance⟩
   -- `End G` is the endomorphism ring of a finitely generated module, hence Artinian.
   let eG : End G ≃+* Module.End A (⨁ P : ModuleCat.{w} A) :=
-    ({ (ObjectProperty.fullyFaithfulι _).mulEquivEnd G with
-        map_add' := fun _ _ ↦ End.ext ((ObjectProperty.ι _).map_add) } :
-      End G ≃+* End (⨁ P : ModuleCat.{w} A)).trans (ModuleCat.endRingEquiv _)
+    ((ObjectProperty.fullyFaithfulι _).ringEquivEnd G).trans (ModuleCat.endRingEquiv _)
   -- Let `R` act on `G` through `A`; then `G` is finitely generated over `R`.
   let : Module R (⨁ P : ModuleCat.{w} A) := Module.compHom _ (algebraMap R A)
   have : IsScalarTower R A (⨁ P : ModuleCat.{w} A) := .of_algebraMap_smul fun _ _ ↦ rfl
