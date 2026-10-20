@@ -149,15 +149,6 @@ section NormSq
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E]
 
-/-- The real second derivative of the squared norm of a complex inner product space is
-`2 * Re ⟪v, w⟫_ℂ`. -/
-theorem fderiv_fderiv_norm_sq_apply_complex (x v w : E) :
-    fderiv ℝ (fderiv ℝ fun z : E ↦ ‖z‖ ^ 2) x v w = 2 * (inner ℂ v w).re := by
-  -- The real inner product of the underlying real inner product space is `Re ⟪v, w⟫_ℂ` by
-  -- definition (`real_inner_eq_re_inner`); it is not a global instance, to avoid diamonds.
-  let := InnerProductSpace.complexToReal (G := E)
-  exact fderiv_fderiv_norm_sq_apply x v w
-
 /-- **The Levi form of the squared norm** of a complex inner product space is the inner product.
 In particular the squared norm is strictly plurisubharmonic. -/
 @[simp]

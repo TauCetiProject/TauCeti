@@ -63,7 +63,7 @@ second derivative stays within a continuous positive tolerance `ε(x)` of that o
 * `TauCeti.leviForm_comp_apply`: invariance under holomorphic maps,
   `L(f ∘ g)(v, w) = L f(Dg v, Dg w)`; in particular the Levi form transforms as a Hermitian form
   under holomorphic changes of coordinates.
-* `TauCeti.fderiv_fderiv_re_apply`, `TauCeti.leviForm_re_eq_zero`: the real Hessian of the real
+* `TauCeti.hessianQuadraticForm_re`, `TauCeti.leviForm_re_eq_zero`: the real Hessian of the real
   part of a holomorphic function is the real part of its complex Hessian, and its Levi form
   vanishes (it is pluriharmonic).
 * `TauCeti.abs_re_leviForm_apply_self_sub_le`: the Levi diagonal is Lipschitz in the second
@@ -215,17 +215,6 @@ theorem leviForm_comp_apply {g : W → V} {b : W} (hf : ContDiffAt ℝ 2 f (g b)
   ring
 
 /-! ### The real part of a holomorphic function -/
-
-/-- The real second derivative of the real part of a holomorphic function is the real part of its
-complex second derivative. -/
-theorem fderiv_fderiv_re_apply {g : V → ℂ} (hg : ContDiffAt ℂ 2 g x) (v w : V) :
-    fderiv ℝ (fderiv ℝ fun z ↦ (g z).re) x v w = (fderiv ℂ (fderiv ℂ g) x v w).re := by
-  have hre : ContDiffAt ℝ 2 re (g x) := reCLM.contDiff.contDiffAt
-  have h := fderiv_fderiv_comp_apply hre (hg.restrict_scalars ℝ) v w
-  have h1 : fderiv ℝ re = fun _ ↦ reCLM := funext fun _ ↦ reCLM.fderiv
-  simp only [Function.comp_def] at h
-  rw [h, h1, hg.fderiv_fderiv_restrictScalars_apply]
-  simp
 
 /-- The Hessian quadratic form of the real part of a holomorphic function is the real part of its
 complex Hessian. -/
