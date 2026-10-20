@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Probability.Distributions.Wishart.Bartlett
 
-import TauCeti.MeasureTheory.Constructions.Pi
 import TauCeti.Probability.Distributions.Wishart.Congruence
 
 /-!
@@ -39,31 +38,6 @@ namespace TauCeti.Probability
 
 variable {p : ℕ} {n : ℝ} {S : Matrix (Fin p) (Fin p) ℝ}
 
-/-- The diagonal squares of independent Bartlett coordinates form a product of chi-squared
-laws, with the degrees decreasing along the diagonal. -/
-theorem map_diagonal_sq_pi_bartlettCoordinateMeasure (hn : (p : ℝ) - 1 < n) :
-    (Measure.pi (bartlettCoordinateMeasure (p := p) n)).map
-        (fun x i ↦ x ⟨(i, i), le_rfl⟩ ^ 2) =
-      Measure.pi (fun i : Fin p ↦ chiSquaredMeasure (n - i.1)) := by
-  classical
-  let _ := isProbabilityMeasure_bartlettCoordinateMeasure (p := p) hn
-  let e : Fin p ↪ lowerTriangle p :=
-    ⟨fun i ↦ ⟨(i, i), le_rfl⟩, fun _ _ h ↦ congrArg (fun ij ↦ ij.1.1) h⟩
-  have hmap := (measurePreserving_pi_comp_embedding
-    (bartlettCoordinateMeasure (p := p) n) e).map_eq
-  calc
-    _ = ((Measure.pi (bartlettCoordinateMeasure (p := p) n)).map
-          (fun x i ↦ x (e i))).map (fun x i ↦ x i ^ 2) := by
-      rw [Measure.map_map (by fun_prop) (by fun_prop)]
-      rfl
-    _ = (Measure.pi (fun i ↦ bartlettCoordinateMeasure n (e i))).map
-          (fun x i ↦ x i ^ 2) := by rw [hmap]
-    _ = _ := by
-      rw [Measure.pi_map_pi (f := fun _ (x : ℝ) ↦ x ^ 2) (fun _ ↦ by fun_prop)]
-      congr 1
-      funext i
-      exact map_sq_bartlettCoordinateMeasure_of_eq hn rfl
-
 /-- The determinant of a standard Wishart matrix is a product of independent chi-squared
 variables. This includes the empty product in dimension zero. -/
 theorem map_det_nonsingularWishartMeasure_one (hn : (p : ℝ) - 1 < n) :
@@ -89,23 +63,18 @@ theorem map_det_nonsingularWishartMeasure (hS : S.PosDef) (hn : (p : ℝ) - 1 < 
           (A : Matrix (Fin p) (Fin p) ℝ).det) =
       (Measure.pi (fun i : Fin p ↦ chiSquaredMeasure (n - i.1))).map
         (fun x ↦ S.det * ∏ i, x i) := by
-  have hdet (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
-      ((Matrix.symmetricCongruenceLinearMap (CFC.sqrt S) A :
-        selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
-          Matrix (Fin p) (Fin p) ℝ).det = S.det * (A : Matrix (Fin p) (Fin p) ℝ).det := by
-    have hsqrt := congrArg Matrix.det (CFC.sqrt_mul_sqrt_self S hS.posSemidef.nonneg)
-    rw [Matrix.det_mul] at hsqrt
-    rw [Matrix.coe_symmetricCongruenceLinearMap_apply, Matrix.det_mul, Matrix.det_mul,
-      Matrix.det_transpose]
-    linear_combination (A : Matrix (Fin p) (Fin p) ℝ).det * hsqrt
+  have hsqrt : (CFC.sqrt S).det ^ 2 = S.det := by
+    simpa only [Matrix.det_mul, pow_two] using
+      congrArg Matrix.det (CFC.sqrt_mul_sqrt_self S hS.posSemidef.nonneg)
   rw [nonsingularWishartMeasure_eq_map_sqrt n hS,
     Measure.map_map (by fun_prop) (by fun_prop)]
   have hcomp : (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
           (A : Matrix (Fin p) (Fin p) ℝ).det) ∘
       Matrix.symmetricCongruenceLinearMap (CFC.sqrt S) =
         (fun x ↦ S.det * x) ∘ (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
-          (A : Matrix (Fin p) (Fin p) ℝ).det) :=
-    funext hdet
+          (A : Matrix (Fin p) (Fin p) ℝ).det) := by
+    funext A
+    simp only [Function.comp_apply, Matrix.det_coe_symmetricCongruenceLinearMap_apply, hsqrt]
   rw [hcomp, ← Measure.map_map (by fun_prop) (by fun_prop),
     map_det_nonsingularWishartMeasure_one hn, Measure.map_map (by fun_prop) (by fun_prop)]
   rfl
