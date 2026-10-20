@@ -325,6 +325,16 @@ theorem divergence_smul_function (f : M → ℝ) (X : (x : M) → TangentSpace I
   rw [h_trace]
   simp only [smul_eq_mul, divergence]
 
+/-- A `C²` function has a differentiable Riemannian gradient section. -/
+theorem mdifferentiableAt_mgradient_of_contMDiff_two {f : M → ℝ}
+    (hf : ContMDiff I 𝓘(ℝ) 2 f) (x : M) :
+    MDifferentiableAt I I.tangent
+      (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x := by
+  let _ : IsManifold I ((1 : ℕ∞ω) + 1) M := by
+    simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
+  exact (contMDiff_mgradient (I := I) (n := 1)
+    (by simpa only [one_add_one_eq_two] using hf)).mdifferentiableAt (by simp)
+
 /-- The Hessian of a constant function is zero. -/
 @[simp]
 theorem hessian_const (c : ℝ) (x : M) (v w : TangentSpace I x) :
@@ -344,13 +354,10 @@ theorem hessian_add {f g : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
   let : IsManifold I ((1 : ℕ∞ω) + 1) M := by
     simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
   simp only [hessian, mgradient_add (hf.mdifferentiable (by simp))
-      (hg.mdifferentiable (by simp)),
+    (hg.mdifferentiable (by simp)),
     (CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv.add
-      ((contMDiff_mgradient (n := 1)
-      (by simpa only [one_add_one_eq_two] using hf)).mdifferentiableAt (by simp))
-      ((contMDiff_mgradient (n := 1)
-      (by simpa only [one_add_one_eq_two] using hg)).mdifferentiableAt
-        (by simp)),
+      (mdifferentiableAt_mgradient_of_contMDiff_two I hf x)
+      (mdifferentiableAt_mgradient_of_contMDiff_two I hg x),
     add_apply, inner_add_left]
 
 /-- The Hessian commutes with multiplication of a `C²` function by a real constant. -/
@@ -361,9 +368,7 @@ theorem hessian_smul (c : ℝ) {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
     simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
   simp only [hessian, mgradient_smul c (hf.mdifferentiable (by simp)),
     (CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv.smul_const c
-      ((contMDiff_mgradient (n := 1)
-      (by simpa only [one_add_one_eq_two] using hf)).mdifferentiableAt
-        (by simp)),
+      (mdifferentiableAt_mgradient_of_contMDiff_two I hf x),
     smul_apply, real_inner_smul_left]
 
 /-- The Laplace–Beltrami operator vanishes on constants. -/
@@ -386,10 +391,8 @@ theorem laplaceBeltrami_add {f g : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
   simp only [laplaceBeltrami,
     mgradient_add (hf.mdifferentiable (by simp)) (hg.mdifferentiable (by simp))]
   exact divergence_add I _ _ x
-    ((contMDiff_mgradient (n := 1)
-      (by simpa only [one_add_one_eq_two] using hf)).mdifferentiableAt (by simp))
-    ((contMDiff_mgradient (n := 1)
-      (by simpa only [one_add_one_eq_two] using hg)).mdifferentiableAt (by simp))
+    (mdifferentiableAt_mgradient_of_contMDiff_two I hf x)
+    (mdifferentiableAt_mgradient_of_contMDiff_two I hg x)
 
 /- The product rule below is the manifold counterpart of
 `ContDiffAt.laplacian_fun_mul` for the flat Laplacian. -/
@@ -402,16 +405,12 @@ theorem laplaceBeltrami_mul {f g : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
       f x * laplaceBeltrami I g x +
         2 * inner ℝ (mgradient I f x) (mgradient I g x) +
           g x * laplaceBeltrami I f x := by
-  let _ : IsManifold I ((1 : ℕ∞ω) + 1) M := by
-    simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
   have hgradf : MDifferentiableAt I I.tangent
       (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x :=
-    (contMDiff_mgradient (I := I) (n := 1)
-      (by simpa only [one_add_one_eq_two] using hf)).mdifferentiableAt (by simp)
+    mdifferentiableAt_mgradient_of_contMDiff_two I hf x
   have hgradg : MDifferentiableAt I I.tangent
       (fun y ↦ (⟨y, mgradient I g y⟩ : TangentBundle I M)) x :=
-    (contMDiff_mgradient (I := I) (n := 1)
-      (by simpa only [one_add_one_eq_two] using hg)).mdifferentiableAt (by simp)
+    mdifferentiableAt_mgradient_of_contMDiff_two I hg x
   have hscaledg : MDifferentiableAt I I.tangent
       (fun y ↦ (⟨y, f y • mgradient I g y⟩ : TangentBundle I M)) x := by
     exact (hf.mdifferentiableAt (by simp)).smul_section hgradg
@@ -441,8 +440,7 @@ theorem laplaceBeltrami_smul (c : ℝ) {f : M → ℝ} (hf : ContMDiff I 𝓘(�
     simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
   simp only [laplaceBeltrami, mgradient_smul c (hf.mdifferentiable (by simp))]
   exact divergence_smul I c _ x
-    ((contMDiff_mgradient (n := 1)
-      (by simpa only [one_add_one_eq_two] using hf)).mdifferentiableAt (by simp))
+    (mdifferentiableAt_mgradient_of_contMDiff_two I hf x)
 
 end OperatorLaws
 
