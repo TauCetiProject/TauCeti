@@ -52,16 +52,16 @@ fact `measurePreserving_restrict_reindex_of_measurableSet_invariants_of_eventual
 
 The one `ℝ≥0∞` statement here is the block-cylinder mass corollary above, an equality of measure
 values. The transport results themselves are not restated in `ℝ≥0∞`: a
-consumer wanting that applies `.lintegral_comp` to the `MeasurePreserving` above, or rewrites with
+consumer wanting that applies `.lintegral_comp` to
+`measurePreserving_restrict_reindex_of_measurableSet_invariants_of_eventually_add`, or rewrites with
 `lintegral_map` through the measure equality. A weighted `ℝ≥0∞` form is available both ways: via
 `.lintegral_comp` together with `comp_reindex_apply_eq_of_measurable_invariants_of_eventually_add`,
 or as a measure equality on `ρ.withDensity w`, which the reindexing preserves because it preserves
 `ρ` and fixes `w`. It is the *signed real* weight that cannot ride in an equality of positive
 measures, which is why the `ℝ`-valued statements above are integral identities.
 
-The endomorphism-level facts are Mathlib's: `MeasurePreserving.restrict_preimage` gives the
-restricted measure preservation once the invariant event is rewritten by
-`preimage_reindex_eq_of_measurableSet_invariants_of_eventually_add`, and
+The restricted measure preservation is taken from
+`measurePreserving_restrict_reindex_of_measurableSet_invariants_of_eventually_add`, and Mathlib's
 `MeasurePreserving.lintegral_comp` gives the integral identity. This module restates no Mathlib
 API.
 
@@ -77,19 +77,14 @@ motivating consumer: `ViaKoopman/CylinderMass.lean` imports this for the block-c
 substantive difference from the `L²` route, whose block comparison is distributional — an equality
 of conditional laws given the tail — rather than an actual invariance of the test event.
 
-The general statement asks only that the reindexing preserve the law. Contractability and strict
-monotonicity are one way to obtain that, not requirements: a merely shift-invariant law with
-`φ = (· + C)` qualifies.
-
 ## Source
 
 No material is adapted from `cameronfreer/exchangeability`. That development carries its own
 block-reindexing and factorization material for the Koopman argument; the statements here were
 assembled from Tau Ceti's own pieces — the eventual-translation extension
-`StrictMono.exists_strictMono_nat_extending_fin_eventually_add`, the invariant-event preimage
-identity `preimage_reindex_eq_of_measurableSet_invariants_of_eventually_add`, contractable
-reindexing `ContractableLaw.measurePreserving_reindex`, and Mathlib's
-`MeasurePreserving.restrict_preimage`.
+`StrictMono.exists_strictMono_nat_extending_fin_eventually_add`, the restricted measure
+preservation `measurePreserving_restrict_reindex_of_measurableSet_invariants_of_eventually_add`,
+and contractable reindexing `ContractableLaw.measurePreserving_reindex`.
 
 -/
 
