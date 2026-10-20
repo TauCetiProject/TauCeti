@@ -8,7 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Markov
 public import TauCeti.Analysis.InnerProductSpace.LinearIsometry
-import Mathlib.Geometry.Euclidean.Volume.Measure
+public import Mathlib.Geometry.Euclidean.Volume.Measure
 
 /-!
 # Orthogonal line coordinates and Lebesgue sections
@@ -26,7 +26,9 @@ of the corresponding part of the set. Hyperplane sections of bounded sets have f
 
 More generally, for any subspace `K`, Tonelli's theorem splits Lebesgue integrals over `E` along
 the orthogonal decomposition `E = Kᗮ ⊕ K` (`Submodule.lintegral_eq_lintegral_lintegral_add`),
-via Mathlib's `Submodule.measurePreserving_measurableEquivProd`.
+via Mathlib's `Submodule.measurePreserving_measurableEquivProd`. In these coordinates based at a
+point `p`, a product of sets has the product volume, every point `x` is recovered as the sum of
+its two coordinates and `p`, and each coordinate moves no farther than `x` does.
 
 The coordinate construction uses Mathlib's `Submodule.orthogonalDecomposition` and
 `LinearIsometryEquiv.toSpanUnitSingleton`; its normalization follows Mathlib's volume
@@ -202,5 +204,40 @@ theorem lintegral_eq_lintegral_lintegral_add (K : Submodule ℝ E)
     lintegral_prod_symm (fun q ↦ g (e.symm q))
       (hg.comp_quasiMeasurePreserving he.symm.quasiMeasurePreserving)]
   simp [e, add_comm]
+
+/-- In orthogonal coordinates along a subspace, a product of sets has the product volume. -/
+theorem volume_preimage_measurableEquivProd_prod (V : Submodule ℝ E) (p : E) (S : Set V)
+    (T : Set Vᗮ) : volume (V.measurableEquivProd p ⁻¹' S ×ˢ T) = volume S * volume T := by
+  have hΦ : MeasurePreserving (V.measurableEquivProd p) volume volume := by
+    simpa only [InnerProductSpace.euclideanHausdorffMeasure_eq_volume] using
+      V.measurePreserving_measurableEquivProd p
+  rw [hΦ.measure_preimage_equiv, Measure.volume_eq_prod, Measure.prod_prod]
+
+/-- A point is recovered from its orthogonal coordinates along a subspace based at `p`. -/
+theorem measurableEquivProd_fst_add_add_snd (V : Submodule ℝ E) (p x : E) :
+    ((V.measurableEquivProd p x).1 : E) + p + (V.measurableEquivProd p x).2 = x := by
+  conv_rhs => rw [← (V.measurableEquivProd p).symm_apply_apply x]
+  rw [measurableEquivProd_symm_apply, vadd_eq_add]
+  abel
+
+/-- If `k - p ∈ V`, both orthogonal coordinates of `x` along `V` based at `p` are at most as far
+from those of `k` as `x` is from `k`. -/
+theorem norm_measurableEquivProd_le (V : Submodule ℝ E) {p k : E} (hkp : k - p ∈ V) (x : E) :
+    ‖((V.measurableEquivProd p x).1 : E) + p - k‖ ≤ ‖x - k‖ ∧
+      ‖((V.measurableEquivProd p x).2 : E)‖ ≤ ‖x - k‖ := by
+  have hx := V.measurableEquivProd_fst_add_add_snd p x
+  generalize V.measurableEquivProd p x = q at hx ⊢
+  obtain ⟨v, w⟩ := q
+  have hb : x - k = ((v : E) + p - k) + w := by
+    rw [← hx]
+    abel
+  have hvk : (v : E) + p - k ∈ V := by
+    convert V.sub_mem v.2 hkp using 1
+    abel
+  have hpyth := norm_add_sq_eq_norm_sq_add_norm_sq_of_inner_eq_zero ((v : E) + p - k) w
+    (inner_right_of_mem_orthogonal hvk w.2)
+  rw [← hb] at hpyth
+  constructor <;>
+    nlinarith [norm_nonneg ((v : E) + p - k), norm_nonneg (w : E), norm_nonneg (x - k)]
 
 end Submodule

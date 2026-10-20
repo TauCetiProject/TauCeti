@@ -19,11 +19,15 @@ In dimension zero, Hausdorff measure is counting measure
 (`TauCeti.hausdorffMeasure_zero_eq_count`). In dimension one the normalizing constant is `1`,
 because `μH[1]` already agrees with Lebesgue measure on `ℝ`. Hence `μHE[1] = μH[1]` on every
 extended metric space, so length statements may be proved with either normalization.
+
+On a nonempty affine subspace `s` of a Euclidean affine space, volume on the direction of `s`,
+transported to `s` by adding a base point, is the Euclidean Hausdorff measure of the dimension
+of `s` (`AffineSubspace.volume_preimage_coe_vadd`).
 -/
 
 public section
 
-open Set
+open MeasureTheory Module Set
 open scoped ENNReal
 
 namespace MeasureTheory.Measure
@@ -68,3 +72,22 @@ theorem euclideanHausdorffMeasure_one {X : Type*} [EMetricSpace X] [MeasurableSp
   rw [euclideanHausdorffMeasure_def, hc, one_smul, Nat.cast_one]
 
 end MeasureTheory.Measure
+
+namespace AffineSubspace
+
+variable {V P : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [MeasurableSpace V]
+  [BorelSpace V] [FiniteDimensional ℝ V] [MetricSpace P] [MeasurableSpace P] [BorelSpace P]
+  [NormedAddTorsor V P]
+
+/-- Volume on the direction of an affine subspace `s`, transported to `s` by adding a base point
+`q`, is the Euclidean Hausdorff measure of the dimension of `s`: the volume of the set of
+directions `v` with `v +ᵥ q ∈ t` is `μHE[finrank ℝ s.direction] (t ∩ s)`. -/
+theorem volume_preimage_coe_vadd (s : AffineSubspace ℝ P) [Nonempty s] (q : s) (t : Set P) :
+    volume ((fun v : s.direction ↦ ((v +ᵥ q : s) : P)) ⁻¹' t) =
+      μHE[finrank ℝ s.direction] (t ∩ s) := by
+  rw [← InnerProductSpace.euclideanHausdorffMeasure_eq_volume]
+  change μHE[_] (IsometryEquiv.vaddConst q ⁻¹' (Subtype.val ⁻¹' t)) = _
+  rw [(IsometryEquiv.vaddConst q).isometry.euclideanHausdorffMeasure_preimage,
+    (IsometryEquiv.vaddConst q).range_eq_univ, inter_univ, euclideanHausdorffMeasure_preimage_coe]
+
+end AffineSubspace

@@ -14,7 +14,8 @@ Mathlib computes the volume of a ball in a finite-dimensional real inner product
 extended nonnegative real (`InnerProductSpace.volume_ball`). This file records the real volume of
 the unit ball in the form `π ^ (d / 2) / Γ(d / 2 + 1)`, where `d` is the dimension, which is the
 form used in normalizing constants. It also shows that every finite-dimensional real inner
-product space has a closed ball of volume one about the origin.
+product space has a closed ball of volume one about the origin, and that a closed ball of
+radius `r` in a one-dimensional space has volume `2 * r`.
 -/
 
 public section
@@ -57,5 +58,16 @@ theorem exists_volume_closedBall_eq_one : ∃ ρ : ℝ, 0 < ρ ∧ volume (close
     rw [ENNReal.ofReal_inv_of_pos hv, ofReal_measureReal measure_ball_lt_top.ne]
   rw [Measure.addHaar_closedBall volume 0 (by positivity), hpow, hinv,
     ENNReal.inv_mul_cancel (measure_ball_pos volume 0 one_pos).ne' measure_ball_lt_top.ne]
+
+omit [Nontrivial V] in
+/-- In a one-dimensional real inner product space, a closed ball of radius `r ≥ 0` has volume
+`2 * r`. -/
+theorem volume_real_closedBall_of_finrank_eq_one (h : finrank ℝ V = 1) (x : V) {r : ℝ}
+    (hr : 0 ≤ r) : volume.real (closedBall x r) = 2 * r := by
+  have : Nontrivial V := Module.nontrivial_of_finrank_pos (R := ℝ) (by omega)
+  have hΓ : Gamma 2⁻¹ = √π := by simpa using Gamma_one_half_eq
+  have h2 : √π / (2⁻¹ * √π) = 2 := by field_simp [sqrt_ne_zero'.2 pi_pos]
+  rw [Measure.addHaar_real_closedBall _ _ hr, measureReal_def, InnerProductSpace.volume_ball]
+  simp [h, Gamma_add_one (inv_ne_zero two_ne_zero), hΓ, h2, mul_comm]
 
 end TauCeti
