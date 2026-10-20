@@ -40,13 +40,17 @@ This file develops `Γ` for an arbitrary additive group `S` with two such homomo
 * `PeriodGroup.ext_iff`: a class in `Γ` is determined by its area and first Chern number.
 * `PeriodGroup.subsingleton_iff`: `Γ` is trivial exactly when area and Chern number vanish on
   `S`, as for symplectically aspherical manifolds.
-* `PeriodGroup.chern_injective_of_monotone`, `PeriodGroup.isAddCyclic_of_monotone`: if the area
-  is a fixed multiple of the Chern number (spherical monotonicity), then the Chern number embeds
-  `Γ` into `ℤ`, so `Γ` is cyclic.
+* `PeriodGroup.chern_injective_iff`, `PeriodGroup.area_injective_iff`: the Chern number (resp.
+  the area) embeds `Γ` into `ℤ` (resp. `ℝ`) exactly when its kernel on `S` lies in the kernel of
+  the area (resp. the Chern number).
+* `PeriodGroup.chern_injective_of_area_eq_mul_chern`,
+  `PeriodGroup.isAddCyclic_of_area_eq_mul_chern`: if the area is a fixed multiple of the Chern
+  number (spherical monotonicity), then the Chern number embeds `Γ` into `ℤ`, so `Γ` is cyclic.
 * `PeriodGroup.area_injective_of_chern_eq_zero`: if the Chern number vanishes, then the area
   embeds `Γ` into `ℝ`.
 * `PeriodGroup.map_injective`: induced maps of period groups are injective, and they are
-  bijective when the map of class groups is surjective.
+  bijective when the map of class groups is surjective. They are functorial (`PeriodGroup.map_id`,
+  `PeriodGroup.map_comp`).
 
 ## References
 
@@ -162,6 +166,45 @@ theorem subsingleton_iff :
     induction γ' using QuotientAddGroup.induction_on with
     | H t => exact mk_eq_mk_iff.2 ⟨by rw [(h s).1, (h t).1], by rw [(h s).2, (h t).2]⟩
 
+section Injective
+
+variable {ω c}
+
+/-- The first Chern number embeds the period group into `ℤ` exactly when every spherical class
+with vanishing first Chern number has vanishing area. -/
+theorem chern_injective_iff : Function.Injective (chern ω c) ↔ c.ker ≤ ω.ker := by
+  rw [injective_iff_map_eq_zero]
+  constructor
+  · intro h s hs
+    have hs' := (mk_eq_mk_iff (s := s) (t := 0)).1 (h s (by simpa using hs))
+    simpa using hs'.1
+  · intro h γ hγ
+    induction γ using QuotientAddGroup.induction_on with
+    | H s =>
+      refine ext ?_ (by rw [hγ, map_zero])
+      simpa using h (by simpa using hγ)
+
+/-- The area embeds the period group into `ℝ` exactly when every spherical class with vanishing
+area has vanishing first Chern number. -/
+theorem area_injective_iff : Function.Injective (area ω c) ↔ ω.ker ≤ c.ker := by
+  rw [injective_iff_map_eq_zero]
+  constructor
+  · intro h s hs
+    have hs' := (mk_eq_mk_iff (s := s) (t := 0)).1 (h s (by simpa using hs))
+    simpa using hs'.2
+  · intro h γ hγ
+    induction γ using QuotientAddGroup.induction_on with
+    | H s =>
+      refine ext (by rw [hγ, map_zero]) ?_
+      simpa using h (by simpa using hγ)
+
+/-- If every spherical class with vanishing first Chern number has vanishing area, the period
+group is cyclic. -/
+theorem isAddCyclic_of_ker_le (h : c.ker ≤ ω.ker) : IsAddCyclic (PeriodGroup ω c) :=
+  isAddCyclic_of_injective (chern ω c) (chern_injective_iff.2 h)
+
+end Injective
+
 section Monotone
 
 variable {ω c} {τ : ℝ}
@@ -174,14 +217,21 @@ theorem area_eq_mul_chern (h : ∀ s, ω s = τ * c s) (γ : PeriodGroup ω c) :
   | H s => simpa using h s
 
 /-- For a spherically monotone pair, where the area is a fixed multiple of the first Chern number,
+every spherical class with vanishing first Chern number has vanishing area. -/
+theorem ker_le_ker_of_area_eq_mul_chern (h : ∀ s, ω s = τ * c s) : c.ker ≤ ω.ker := fun s hs => by
+  rw [AddMonoidHom.mem_ker] at hs ⊢
+  simp [h s, hs]
+
+/-- For a spherically monotone pair, where the area is a fixed multiple of the first Chern number,
 the first Chern number embeds the period group into `ℤ`. -/
-theorem chern_injective_of_monotone (h : ∀ s, ω s = τ * c s) :
-    Function.Injective (chern ω c) := fun γ γ' hγ =>
-  ext (by rw [area_eq_mul_chern h, area_eq_mul_chern h, hγ]) hγ
+theorem chern_injective_of_area_eq_mul_chern (h : ∀ s, ω s = τ * c s) :
+    Function.Injective (chern ω c) :=
+  chern_injective_iff.2 (ker_le_ker_of_area_eq_mul_chern h)
 
 /-- For a spherically monotone pair the period group is cyclic. -/
-theorem isAddCyclic_of_monotone (h : ∀ s, ω s = τ * c s) : IsAddCyclic (PeriodGroup ω c) :=
-  isAddCyclic_of_injective (chern ω c) (chern_injective_of_monotone h)
+theorem isAddCyclic_of_area_eq_mul_chern (h : ∀ s, ω s = τ * c s) :
+    IsAddCyclic (PeriodGroup ω c) :=
+  isAddCyclic_of_ker_le (ker_le_ker_of_area_eq_mul_chern h)
 
 end Monotone
 
@@ -197,8 +247,8 @@ theorem chern_eq_zero (h : ∀ s, c s = 0) (γ : PeriodGroup ω c) : chern ω c 
 /-- If the first Chern number vanishes on spherical classes, the area embeds the period group
 into `ℝ`. -/
 theorem area_injective_of_chern_eq_zero (h : ∀ s, c s = 0) :
-    Function.Injective (area ω c) := fun γ γ' hγ =>
-  ext hγ (by rw [chern_eq_zero h, chern_eq_zero h])
+    Function.Injective (area ω c) :=
+  area_injective_iff.2 fun s _ => h s
 
 end ChernZero
 
@@ -239,12 +289,23 @@ theorem map_injective : Function.Injective (map f hω hc) := fun γ γ' hγ =>
   ext (by rw [← area_map f hω hc, hγ, area_map]) (by rw [← chern_map f hω hc, hγ, chern_map])
 
 /-- The map of period groups induced by a surjective map of class groups is surjective. -/
-theorem map_surjective (hf : Function.Surjective f) : Function.Surjective (map f hω hc) := by
-  intro γ
-  induction γ using QuotientAddGroup.induction_on with
-  | H s' =>
-    obtain ⟨s, rfl⟩ := hf s'
-    exact ⟨s, map_mk f hω hc s⟩
+theorem map_surjective (hf : Function.Surjective f) : Function.Surjective (map f hω hc) :=
+  QuotientAddGroup.map_surjective_of_surjective _ _ f (QuotientAddGroup.mk_surjective.comp hf) _
+
+variable (ω c) in
+/-- The map of period groups induced by the identity is the identity. -/
+@[simp]
+theorem map_id : map (AddMonoidHom.id S) ω.comp_id c.comp_id = AddMonoidHom.id (PeriodGroup ω c) :=
+  AddMonoidHom.ext fun _ => ext (by simp) (by simp)
+
+/-- Maps of period groups induced by composable maps of class groups compose. -/
+@[simp]
+theorem map_comp {S'' : Type*} [AddGroup S''] {ω'' : S'' →+ ℝ} {c'' : S'' →+ ℤ} (g : S' →+ S'')
+    (hω' : ω''.comp g = ω') (hc' : c''.comp g = c') :
+    (map g hω' hc').comp (map f hω hc) =
+      map (g.comp f) (by rw [← AddMonoidHom.comp_assoc, hω', hω])
+        (by rw [← AddMonoidHom.comp_assoc, hc', hc]) :=
+  AddMonoidHom.ext fun _ => ext (by simp) (by simp)
 
 end Map
 
