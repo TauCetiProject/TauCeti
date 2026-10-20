@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Huber.RingOfDefinition
-public import Mathlib.RingTheory.Henselian
+public import TauCeti.RingTheory.Henselian.Lifting
 
-import Mathlib.Algebra.Polynomial.Lifts
 import Mathlib.Topology.Algebra.IsUniformGroup.Basic
 
 /-!
@@ -104,44 +103,18 @@ theorem henselianRing_of_isOpen_subring {B : Subring A}
   have hrange (x : B) (hx : x ∈ s) : x ∈ Set.range ι :=
     ⟨⟨x, hs x hx⟩, Subtype.ext rfl⟩
   obtain ⟨π, hπ⟩ := hrange ϖ (by simp [s])
-  obtain ⟨a₀, ha₀⟩ := hrange a (by simp [s])
-  obtain ⟨b₀, hb₀⟩ := hrange b (by simp [s])
-  obtain ⟨c₀, hc₀⟩ := hrange c (by simp [s])
-  obtain ⟨d₀, hd₀⟩ := hrange d (by simp [s])
-  -- Lift the monic polynomial and identify evaluation and derivative under the inclusion.
   have hlift : f ∈ Polynomial.lifts ι := by
     rw [lifts_iff_coeffs_subset_range]
     exact fun x hx ↦ hrange x (Finset.mem_union_right _ hx)
-  obtain ⟨g, hg, -, hgmonic⟩ := lifts_and_natDegree_eq_and_monic hlift hf
-  have heval (q : P.ringOfDefinition[X]) :
-      ι (q.eval a₀) = (q.map ι).eval a := by
-    rw [← ha₀, eval_map_apply]
-  have hderiv : ι (g.derivative.eval a₀) = f.derivative.eval a := by
-    rw [heval, ← derivative_map, hg]
   have hnil : IsPseudoUniformizer (π : A) := by
     have heq : (π : A) = (ϖ : A) := congrArg (fun x : B ↦ (x : A)) hπ
     rwa [heq]
   have := P.henselianRing π hnil
-  -- Injectivity descends the two simple-root conditions using the chosen witnesses.
-  have hga : g.eval a₀ ∈ Ideal.span {π} := by
-    rw [Ideal.mem_span_singleton]
-    refine ⟨d₀, hinj ?_⟩
-    simpa only [map_mul, hπ, hd₀, heval, hg] using hd
-  have hunit : IsUnit (Ideal.Quotient.mk (Ideal.span {π}) (g.derivative.eval a₀)) := by
-    apply isUnit_iff_exists_inv.mpr
-    refine ⟨Ideal.Quotient.mk _ b₀, ?_⟩
-    rw [← map_mul, ← map_one (Ideal.Quotient.mk (Ideal.span {π})), Ideal.Quotient.eq]
-    rw [Ideal.mem_span_singleton]
-    refine ⟨c₀, hinj ?_⟩
-    simpa only [map_mul, map_sub, map_one, hπ, hc₀, hb₀, hderiv] using hc
-  -- Henselianity gives a root in the ring of definition; map it and its congruence back to B.
-  obtain ⟨x, hx, hxa⟩ := HenselianRing.is_henselian g hgmonic a₀ hga hunit
-  refine ⟨ι x, ?_, ?_⟩
-  · simpa only [hg] using hx.map ι
-  · rw [← ha₀, ← map_sub]
-    exact (Ideal.map_le_iff_le_comap.mpr (by
-      rw [Ideal.span_singleton_le_iff_mem, Ideal.mem_comap, hπ]
-      exact Ideal.mem_span_singleton_self ϖ)) (Ideal.mem_map_of_mem ι hxa)
+  -- Transport the simple-root lift from the ring of definition to the open subring.
+  simpa only [hπ] using HenselianRing.exists_isRoot_of_injective hinj (π := π) hf hlift
+    (by simpa only [hπ] using hd) (by simpa only [hπ] using hc)
+    (hrange a (by simp [s])) (hrange b (by simp [s]))
+    (hrange c (by simp [s])) (hrange d (by simp [s]))
 
 /-- The power-bounded elements of a complete Hausdorff Tate ring are henselian along a
 pseudouniformizer, even when they are not adically separated. -/
