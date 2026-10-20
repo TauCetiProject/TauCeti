@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.SelfTensor
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Unit
+public import TauCeti.Algebra.Category.GradedModuleCat.BimoduleTensor.Basic
 public import TauCeti.Algebra.Category.GradedModuleCat.BimoduleTensor.Shift
 
 /-!
@@ -37,7 +38,7 @@ local notation "Z" => AlgCat.carrier (zigzagAlgebra k G)
 local notation "E" => Z ⊗[k] Zᵐᵒᵖ
 local notation "Γ" => zigzagAlgebraInternalGrading k G
 local notation "U" => zigzagGradedBraidBimodule k G
-local notation "F" => zigzagBimoduleTensor k G
+local notation "F" => gradedBimoduleTensor k Γ
 
 attribute [local instance] zigzagAlgebraIntegerGradedAlgebra
 

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Inverse.Maps
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.InverseEndpoints
+public import TauCeti.Algebra.Category.GradedModuleCat.BimoduleTensor.Basic
 public import TauCeti.Algebra.Homology.Contraction.ThreeTerm
 
 /-!
@@ -42,7 +43,7 @@ variable (k : Type w) [CommRing k] {V : Type u} (G : SimpleGraph V) [Finite V]
 
 local notation "Γ" => zigzagAlgebraInternalGrading k G
 local notation "U" => zigzagGradedBraidBimodule k G
-local notation "F" => zigzagBimoduleTensor k G
+local notation "F" => gradedBimoduleTensor k Γ
 local notation "T" => zigzagBraidInverseComplexTensor k G
 
 attribute [local instance] zigzagAlgebraIntegerGradedAlgebra

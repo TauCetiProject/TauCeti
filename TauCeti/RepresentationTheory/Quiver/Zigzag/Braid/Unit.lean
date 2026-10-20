@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Category.GradedModuleCat.BimoduleTensor.Basic
 public import TauCeti.Algebra.Category.GradedModuleCat.BimoduleTensor.Unit
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Tensor
 
@@ -63,13 +64,13 @@ variable (M : GradedModuleCat.{max u w} (zigzagEnvelopingGrading k G).piece)
 /-- Tensoring the actual regular zigzag bimodule on the left preserves a graded bimodule. -/
 def zigzagBimoduleLeftUnitor :
     GradedModuleCat.bimoduleTensorObj Γ Γ Γ (zigzagGradedBimodule k G) M ≅ M :=
-  ((zigzagBimoduleTensor k G).flip.obj M).mapIso (zigzagGradedBimoduleUnitIso k G).symm ≪≫
+  ((gradedBimoduleTensor k Γ).flip.obj M).mapIso (zigzagGradedBimoduleUnitIso k G).symm ≪≫
     GradedModuleCat.bimoduleTensorLeftUnitor.{w} Γ Γ M
 
 /-- Tensoring the actual regular zigzag bimodule on the right preserves a graded bimodule. -/
 def zigzagBimoduleRightUnitor :
     GradedModuleCat.bimoduleTensorObj Γ Γ Γ M (zigzagGradedBimodule k G) ≅ M :=
-  ((zigzagBimoduleTensor k G).obj M).mapIso (zigzagGradedBimoduleUnitIso k G).symm ≪≫
+  ((gradedBimoduleTensor k Γ).obj M).mapIso (zigzagGradedBimoduleUnitIso k G).symm ≪≫
     GradedModuleCat.bimoduleTensorRightUnitor.{w} Γ Γ M
 
 @[simp]
