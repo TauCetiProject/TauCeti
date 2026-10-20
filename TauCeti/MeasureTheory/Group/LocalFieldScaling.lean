@@ -8,7 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.Haar.Unique
 public import Mathlib.NumberTheory.LocalField.Basic
 import TauCeti.LinearAlgebra.FreeModule.CardQuotient
-import TauCeti.RingTheory.Subring.SpanSingleton
+import TauCeti.NumberTheory.LocalField.Uniformizer
 import TauCeti.Topology.Algebra.ValuativeRel.AdicTopology
 
 /-!
@@ -48,7 +48,6 @@ integers of an extension of `K` in an integral basis and `k` is the valuation of
   `TauCeti.isClosed_univ_pi_image_maximalIdeal_pow`,
   `TauCeti.measurableSet_univ_pi_image_maximalIdeal_pow`: boxes of ideal powers shrink as the
   exponents grow, and are closed and measurable.
-* `TauCeti.image_maximalIdeal_pow_eq_smul`: the image in `K` of `𝓂[K] ^ k` is `ϖ ^ k • 𝒪[K]`.
 
 * `MeasureTheory.Measure.measure_image_mulVec_integerBox`: for a left-invariant `μ`,
   the image of the integer box has measure `q ^ (-k)` times that of the box.
@@ -106,15 +105,6 @@ theorem isCompact_integerBox : IsCompact (integerBox K ι) := by
   rw [integerBox_def]
   exact isCompact_univ_pi fun _ ↦
     isCompact_iff_compactSpace.2 (inferInstanceAs (CompactSpace 𝒪[K]))
-
-/-- For a uniformizer `ϖ`, the image in `K` of the power `𝓂[K] ^ k` of the maximal ideal is the
-scaled copy `ϖ ^ k • 𝒪[K]`. -/
-theorem image_maximalIdeal_pow_eq_smul {ϖ : 𝒪[K]} (hϖ : Irreducible ϖ) (k : ℕ) :
-    ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ k) = (ϖ : K) ^ k • (𝒪[K] : Set K) := by
-  rw [hϖ.maximalIdeal_eq, Subring.coe_span_singleton_pow _ ϖ.2, image_preimage_eq_inter_range,
-    Subtype.range_coe, inter_eq_left]
-  rintro _ ⟨y, hy, rfl⟩
-  exact mul_mem (pow_mem ϖ.2 k) hy
 
 /-- A box of ideal powers is closed. -/
 theorem isClosed_univ_pi_image_maximalIdeal_pow (e : ι → ℕ) :
@@ -207,7 +197,7 @@ theorem measure_univ_pi_image_maximalIdeal_pow (μ : Measure (ι → K)) [μ.IsA
   refine pi_congr rfl fun i _ ↦ ?_
   rw [image_maximalIdeal_pow_eq_smul hϖ, ← image_smul, Algebra.algebraMap_ofSubsemiring_apply,
     SubmonoidClass.coe_pow]
-  rfl
+  simp only [smul_eq_mul]
 
 /-- **The scaling law on balls.** If the determinant of a square matrix `A` over `𝒪[K]` is
 associated to `ϖ ^ k` for a uniformizer `ϖ`, then for every left-invariant measure on `ι → K`,

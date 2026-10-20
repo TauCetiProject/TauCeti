@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.NormalizedValuation
+import TauCeti.RingTheory.Subring.SpanSingleton
 
 /-!
 # Uniformizers of a nonarchimedean local field
@@ -18,12 +19,16 @@ infrastructure.
 It also recognises uniformizers inside the maximal ideal `𝓂[K]` without choosing one: an element of
 `𝓂[K]` has the largest valuation below `1` exactly when it does not lie in `𝓂[K] ^ 2`
 (`TauCeti.forall_valuation_le_iff_notMem_maximalIdeal_sq`).
+
+For an irreducible `ϖ`, the image in `K` of `𝓂[K] ^ k` is the scaled copy `ϖ ^ k • 𝒪[K]`
+(`TauCeti.image_maximalIdeal_pow_eq_smul`).
 -/
 
 public section
 noncomputable section
 
-open scoped WithZero
+open Set
+open scoped WithZero Pointwise
 open ValuativeRel IsNonarchimedeanLocalField
 
 namespace TauCeti
@@ -120,5 +125,14 @@ theorem forall_valuation_le_iff_notMem_maximalIdeal_sq {c : 𝒪[K]} (hc : c ∈
     rw [hcy, pow_two]
     exact Ideal.mul_mem_mul ((valuation K).mem_maximalIdeal_iff.2 hy)
       ((valuation K).mem_maximalIdeal_iff.2 hz)
+
+/-- For a uniformizer `ϖ`, the image in `K` of the power `𝓂[K] ^ k` of the maximal ideal is the
+scaled copy `ϖ ^ k • 𝒪[K]`. -/
+theorem image_maximalIdeal_pow_eq_smul {ϖ : 𝒪[K]} (hϖ : Irreducible ϖ) (k : ℕ) :
+    ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ k) = (ϖ : K) ^ k • (𝒪[K] : Set K) := by
+  rw [hϖ.maximalIdeal_eq, Subring.coe_span_singleton_pow _ ϖ.2, image_preimage_eq_inter_range,
+    Subtype.range_coe, inter_eq_left]
+  rintro _ ⟨y, hy, rfl⟩
+  exact mul_mem (pow_mem ϖ.2 k) hy
 
 end TauCeti
