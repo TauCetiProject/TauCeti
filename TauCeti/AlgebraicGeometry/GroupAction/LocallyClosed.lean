@@ -49,54 +49,6 @@ namespace TauCeti.SchemeAction
 
 universe u
 
-section Translation
-
-variable {S : Scheme.{u}} (G X : Over S) [GrpObj G] [ModObj G X]
-
-/-- The global points of a group scheme act on the underlying space of a scheme it acts on, each
-acting through its translation automorphism. Install it locally to select this action. -/
-@[instance_reducible]
-noncomputable def translationMulAction : MulAction (𝟙_ (Over S) ⟶ G) X.left where
-  smul g p := (translation X g).hom.left p
-  one_smul p := by simp [HSMul.hSMul]
-  mul_smul g h p := by
-    simp only [HSMul.hSMul, SMul.smul, translation_mul, Iso.trans_hom, Over.comp_left,
-      Scheme.Hom.comp_apply]
-
-variable {G X}
-
-/-- A global point acts through its translation automorphism. -/
-theorem translationMulAction_smul (g : 𝟙_ (Over S) ⟶ G) (p : X.left) :
-    letI := translationMulAction G X
-    g • p = (translation X g).hom.left p :=
-  (rfl)
-
-/-- On the point underlying a section, the translation action is the action on sections. -/
-theorem translationMulAction_smul_apply (g : 𝟙_ (Over S) ⟶ G) (y : 𝟙_ (Over S) ⟶ X)
-    (a : (𝟙_ (Over S)).left) :
-    letI := translationMulAction G X
-    g • y.left a = (g • y).left a := by
-  rw [translationMulAction_smul, ← Scheme.Hom.comp_apply, ← Over.comp_left, comp_translation_hom,
-    toUnit_unit, Category.id_comp]
-
-/-- Every global point acts by a homeomorphism. -/
-theorem continuousConstSMul_translationMulAction :
-    letI := translationMulAction G X
-    ContinuousConstSMul (𝟙_ (Over S) ⟶ G) X.left :=
-  letI := translationMulAction G X
-  ⟨fun g ↦ (translation X g).hom.left.continuous⟩
-
-/-- Translation by a global point preserves the orbit, so the orbit is invariant under the
-translation action. -/
-theorem preimage_smul_orbit (g : 𝟙_ (Over S) ⟶ G) (x : 𝟙_ (Over S) ⟶ X) :
-    letI := translationMulAction G X
-    (fun p : X.left ↦ g • p) ⁻¹' orbit G x = orbit G x := by
-  let := translationMulAction G X
-  rw [Set.preimage_smul, ← Set.image_smul]
-  exact image_translation_orbit G g⁻¹ x
-
-end Translation
-
 /-- The geometric orbit of a section is constructible when the group is of finite type and the
 acted-on scheme is quasi-compact and locally Noetherian. -/
 theorem isConstructible_orbit {S : Scheme.{u}} (G : Over S) {X : Over S} [MonObj G] [ModObj G X]
@@ -114,11 +66,12 @@ theorem isConstructible_orbit {S : Scheme.{u}} (G : Over S) {X : Over S} [MonObj
 section AlgClosed
 
 variable {k : Type u} [Field k] [IsAlgClosed k] (G : Over (Spec (.of k)))
-  {X : Over (Spec (.of k))} [GrpObj G] [ModObj G X]
+  {X : Over (Spec (.of k))}
 
 section RationalPoints
 
-variable [LocallyOfFiniteType G.hom] [LocallyOfFiniteType X.hom]
+variable [MonObj G] [ModObj G X] [LocallyOfFiniteType G.hom]
+  [LocallyOfFiniteType X.hom]
 
 /-- Over an algebraically closed field, a rational point of `X` lies in the geometric orbit of
 `x` exactly when it is a translate of `x` by a rational point of `G`. -/
@@ -173,8 +126,8 @@ theorem orbit_inter_closedPoints (x : 𝟙_ (Over (Spec (.of k))) ⟶ X) :
 
 end RationalPoints
 
-variable [LocallyOfFiniteType G.hom] [CompactSpace G.left] [LocallyOfFiniteType X.hom]
-  [CompactSpace X.left]
+variable [GrpObj G] [ModObj G X] [LocallyOfFiniteType G.hom] [CompactSpace G.left]
+  [LocallyOfFiniteType X.hom] [CompactSpace X.left]
 
 /-- Over an algebraically closed field, the geometric orbit of a rational point under a
 finite-type group scheme acting on a finite-type scheme is locally closed. -/
