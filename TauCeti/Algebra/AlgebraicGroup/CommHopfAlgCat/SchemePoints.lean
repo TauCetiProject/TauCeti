@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Group.Affine
+public import TauCeti.AlgebraicGeometry.GroupScheme.Points
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.Basic
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.Yoneda
 
@@ -29,7 +29,9 @@ Mathlib's `AlgebraicGeometry.algΓAlgSpecAdjunction` to a multiplicative equival
 proves this comparison at bialgebra/monoid generality. It additionally records the Hopf-algebra
 case: transport across named `Grp`-presentations and the points-presheaf isomorphism for
 `CommHopfAlgCat`, together with covariance in the value algebra and contravariance in the
-coordinate algebra.
+coordinate algebra. The group-valued natural comparison on commutative value algebras
+retains multiplication as well as naturality, using `CategoryTheory.yonedaGrp` restricted
+along relative spectrum.
 
 ## Main declarations
 
@@ -58,6 +60,8 @@ coordinate algebra.
   becomes postcomposition by the induced relative spectrum morphism `Spec K ⟶ Spec H`.
 * `TauCeti.CommHopfAlgCat.pointMulEquivOfPresentation_mapDomain`: contravariance for arbitrary
   named point equivalences characterized by their underlying spectrum maps.
+* `CommHopfAlgCat.pointsFunctorIsoSchemePointsFunctor`: the group-valued natural comparison
+  between convolution points and relative-spectrum points.
 * `TauCeti.CommHopfAlgCat.pointsPresheafIsoSchemePointsPresheaf`: the natural comparison between
   convolution points and relative-spectrum points.
 -/
@@ -545,3 +549,40 @@ theorem pointsPresheafIsoSchemePointsPresheaf_inv_app_apply
 end CommHopfAlgCat
 
 end TauCeti
+
+namespace CommHopfAlgCat
+
+open TauCeti AlgebraicGeometry Opposite
+
+universe u
+
+variable {R : Type u} [CommRing R]
+
+/-- Convolution points and relative scheme points of a Hopf spectrum agree naturally as groups.
+This retains multiplicativity, in addition to the underlying type-valued comparison. -/
+noncomputable def pointsFunctorIsoSchemePointsFunctor (H : _root_.CommHopfAlgCat.{u} R) :
+    HopfAlgebra.pointsFunctor (R := R) (H := H) ≅
+      GroupScheme.algebraPointsFunctor R ((hopfSpec (CommRingCat.of R)).obj (op H)) :=
+  NatIso.ofComponents (fun _ ↦ Spec.mapMulEquiv.toGrpIso) (by
+    intro A B f
+    apply GrpCat.hom_ext
+    apply MonoidHom.ext
+    intro p
+    exact TauCeti.CommHopfAlgCat.mapMulEquiv_mapValue H f p)
+
+/-- The forward comparison is Mathlib's spectrum-points equivalence. -/
+theorem pointsFunctorIsoSchemePointsFunctor_hom_app_apply
+    (H : _root_.CommHopfAlgCat.{u} R) (A : CommAlgCat.{u} R)
+    (p : WithConv (H →ₐ[R] A)) :
+    (pointsFunctorIsoSchemePointsFunctor H).hom.app A p = Spec.mapMulEquiv p :=
+  (rfl)
+
+/-- The inverse comparison recovers the convolution point of a relative spectrum morphism. -/
+theorem pointsFunctorIsoSchemePointsFunctor_inv_app_apply
+    (H : _root_.CommHopfAlgCat.{u} R) (A : CommAlgCat.{u} R)
+    (p : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of R)) ⟶
+      ((hopfSpec (CommRingCat.of R)).obj (op H)).X) :
+    (pointsFunctorIsoSchemePointsFunctor H).inv.app A p = Spec.mapMulEquiv.symm p :=
+  (rfl)
+
+end CommHopfAlgCat
