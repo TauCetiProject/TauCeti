@@ -152,7 +152,7 @@ instance IsRegular.component_regular [IsRegular X] (U : X.affineOpens) :
 
 /-- The spectrum of a ring is regular exactly when the ring is regular.
 This is the affine case of Stacks, Lemma 28.9.3 (02IU). -/
-@[stacks 02IU "affine case"]
+@[simp 1100, stacks 02IU "affine case"]
 theorem isRegular_Spec_iff (R : CommRingCat.{u}) :
     IsRegular (Spec R) ↔ IsRegularRing R := by
   refine ⟨fun h ↦ ?_, fun _ ↦ inferInstance⟩
