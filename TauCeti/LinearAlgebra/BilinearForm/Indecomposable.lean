@@ -6,11 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
-public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
-public import Mathlib.LinearAlgebra.QuadraticForm.Basic
+public import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 import Mathlib.LinearAlgebra.Finsupp.Span
 import Mathlib.RingTheory.Noetherian.Basic
-import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 
 /-!
 # Eichler's theorem: the decomposition into indecomposable summands
@@ -135,26 +133,6 @@ theorem IsOrthIrreducible.exists_mem_of_sSup_eq_top {x : M} (hx : B.IsOrthIrredu
     · exact ih (fun i hi ↦ hsS (Finset.mem_insert_of_mem hi)) h
     · exact ⟨a, haS, h⟩
 
-section PosDef
-
-variable [PartialOrder R]
-
-/-- For a positive definite form, a submodule orthogonal to itself is zero. -/
-theorem eq_bot_of_le_orthogonal (hpos : B.toQuadraticMap.PosDef) {N : Submodule R M}
-    (h : N ≤ B.orthogonal N) : N = ⊥ :=
-  (Submodule.eq_bot_iff _).mpr fun x hx ↦ hpos.anisotropic x (by simpa using h hx x hx)
-
-/-- For a positive definite form, a set of pairwise orthogonal submodules is independent. -/
-theorem sSupIndep_of_pairwise_le_orthogonal (hpos : B.toQuadraticMap.PosDef)
-    {S : Set (Submodule R M)} (hS : S.Pairwise fun N N' ↦ N ≤ B.orthogonal N') :
-    sSupIndep S := by
-  rw [sSupIndep_iff]
-  refine B.iSupIndep_of_restrict_separatingRight (fun i j hij x hx y hy ↦ ?_) fun i y hy ↦ ?_
-  · exact hS j.2 i.2 (fun h ↦ hij (Subtype.ext h.symm)) hy x hx
-  · exact Subtype.ext <| hpos.anisotropic y (by simpa using hy y)
-
-end PosDef
-
 private theorem apply_eq_zero_of_not_reachable {u v : {x : M // B.IsOrthIrreducible x}}
     (h : ¬(orthIrreducibleGraph B).Reachable u v) : B u v = 0 := by
   by_contra huv
@@ -191,16 +169,16 @@ theorem pairwise_orthComponents :
   have hcc : c' = c := by rw [← hv, ← hw, Subtype.ext hvw]
   exact hne (hcc ▸ rfl)
 
-/-- For a positive definite form, the orthogonal components are independent. -/
-theorem sSupIndep_orthComponents [PartialOrder R] (hpos : B.toQuadraticMap.PosDef) :
+/-- For an anisotropic form, the orthogonal components are independent. -/
+theorem sSupIndep_orthComponents (hani : B.toQuadraticMap.Anisotropic) :
     sSupIndep B.orthComponents :=
-  sSupIndep_of_pairwise_le_orthogonal hpos pairwise_orthComponents
+  sSupIndep_of_pairwise_le_orthogonal hani pairwise_orthComponents
 
-/-- For a positive definite form on a Noetherian module, there are finitely many orthogonal
+/-- For an anisotropic form on a Noetherian module, there are finitely many orthogonal
 components. -/
-theorem finite_orthComponents [PartialOrder R] [IsNoetherian R M]
-    (hpos : B.toQuadraticMap.PosDef) : B.orthComponents.Finite :=
-  WellFoundedGT.finite_of_sSupIndep (sSupIndep_orthComponents hpos)
+theorem finite_orthComponents [IsNoetherian R M] (hani : B.toQuadraticMap.Anisotropic) :
+    B.orthComponents.Finite :=
+  WellFoundedGT.finite_of_sSupIndep (sSupIndep_orthComponents hani)
 
 /-- Within a connected component whose vertices all lie in `P` or in `Q`, with no edge from `P`
 to `Q`, every vertex lies in the summand containing a given one. -/
@@ -267,14 +245,14 @@ theorem isOrthIndecomposable_of_mem_orthComponents (hB : B.IsRefl)
   · have hle : span ℤ (Subtype.val '' c.supp) ≤ P := span_le.mpr <| by
       rintro _ ⟨u, hu, rfl⟩
       exact forall_mem_of_mem hmem hadj hu₀ h₀ u hu
-    exact Or.inr <| eq_bot_of_le_orthogonal hpos <|
+    exact Or.inr <| eq_bot_of_le_orthogonal hpos.anisotropic <|
       (le_sup_right.trans hsup.le).trans (hle.trans hPQ)
   · have hle : span ℤ (Subtype.val '' c.supp) ≤ Q := span_le.mpr <| by
       rintro _ ⟨u, hu, rfl⟩
       exact forall_mem_of_mem (fun u hu ↦ (hmem u hu).symm)
         (fun u v hu hv huv ↦ hadj v u hv hu huv.symm) hu₀ h₀ u hu
     have hPQ' : P ≤ Q := (le_sup_left.trans hsup.le).trans hle
-    exact Or.inl <| eq_bot_of_le_orthogonal hpos <| hPQ.trans (orthogonal_le hPQ')
+    exact Or.inl <| eq_bot_of_le_orthogonal hpos.anisotropic <| hPQ.trans (orthogonal_le hPQ')
 
 /-- A member of a decomposition into pairwise orthogonal submodules is spanned by the irreducible
 vectors it contains. -/
