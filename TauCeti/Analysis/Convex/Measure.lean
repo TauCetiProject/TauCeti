@@ -14,8 +14,10 @@ import Mathlib.Analysis.Normed.Affine.AddTorsorBases
 
 The frontier of a convex set in a finite-dimensional real normed space is null for any additive
 Haar measure (`Convex.addHaar_frontier`). Consequently, almost every point of the set is in its
-interior (`Convex.ae_mem_interior`). A convex set has positive Haar measure exactly when its
-interior is nonempty, equivalently when its affine span is the whole space
+interior (`Convex.ae_mem_interior`), so the interior meets every set that the convex set meets in
+positive measure (`Convex.interior_inter_nonempty_of_addHaar_inter_ne_zero`). A convex set has
+positive Haar measure exactly when its interior is nonempty, equivalently when its affine span is
+the whole space
 (`Convex.addHaar_pos_iff_interior_nonempty`, `Convex.addHaar_pos_iff_affineSpan_eq_top`).
 
 A convex set containing a ball of radius `r > 0` and a point at distance `L` from its centre has
@@ -36,6 +38,17 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 point, since the frontier of the set is null for every additive Haar measure. -/
 theorem Convex.ae_mem_interior (hs : Convex ℝ s) : ∀ᵐ x ∂μ, x ∈ s → x ∈ interior s :=
   (interior_ae_eq_of_null_frontier (hs.addHaar_frontier μ)).symm.le
+
+/-- If a convex set in a finite-dimensional real normed space meets a set `t` in positive additive
+Haar measure, then its interior meets `t`, since almost every point of the convex set is
+interior. -/
+theorem Convex.interior_inter_nonempty_of_addHaar_inter_ne_zero (hs : Convex ℝ s) {t : Set E}
+    (h : μ (s ∩ t) ≠ 0) : (interior s ∩ t).Nonempty := by
+  by_contra hne
+  have hnull : μ (s \ interior s) = 0 :=
+    measure_eq_zero_iff_ae_notMem.2 (hs.ae_mem_interior.mono fun x hx h ↦ h.2 (hx h.1))
+  exact h (measure_mono_null (fun x (hx : x ∈ s ∩ t) ↦
+    (⟨hx.1, fun hi ↦ hne ⟨x, hi, hx.2⟩⟩ : x ∈ s \ interior s)) hnull)
 
 /-- A convex set in a finite-dimensional real normed space has zero additive Haar measure exactly
 when its interior is empty. -/
