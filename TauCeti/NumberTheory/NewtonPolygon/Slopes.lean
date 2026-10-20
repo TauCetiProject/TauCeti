@@ -167,10 +167,12 @@ theorem card_newtonSlopes (hv : ∀ x, v x = ⊤ → x = 0) :
     ← Set.ncard_eq_toFinset_card _ (f.finite_finiteEdges_newtonPolygon v),
     ncard_finiteEdges_newtonPolygon f v hv]
 
-/-- If only zero has infinite valuation, the sum of the finite slopes of a nonzero polynomial
-is the valuation of its leading coefficient minus that of its trailing coefficient. -/
-theorem sum_newtonSlopes (hv : ∀ x, v x = ⊤ → x = 0) (hf : f ≠ 0) :
+/-- If only zero has infinite valuation, the sum of the finite slopes of a polynomial is the
+valuation of its leading coefficient minus that of its trailing coefficient. -/
+theorem sum_newtonSlopes (hv : ∀ x, v x = ⊤ → x = 0) :
     (f.newtonSlopes v).sum = (v f.leadingCoeff).untop₀ - (v f.trailingCoeff).untop₀ := by
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp [Multiset.card_eq_zero.mp (by simpa using card_newtonSlopes (0 : R[X]) v hv)]
   have hdom (n : ℕ) : f.newtonPolygon v n ≠ ⊤ ↔ f.natTrailingDegree ≤ n ∧
       n ≤ f.natTrailingDegree + (f.natDegree - f.natTrailingDegree) := by
     rw [newtonPolygon_ne_top_iff v hv hf]
@@ -204,15 +206,13 @@ theorem newtonSlopes_C (c : R) : (C c).newtonSlopes v = 0 := by
 /-- Multiplying by a constant of finite valuation preserves the finite slopes. -/
 theorem newtonSlopes_C_mul {c : R} (hc : v c ≠ ⊤) :
     (C c * f).newtonSlopes v = f.newtonSlopes v := by
-  rw [newtonSlopes_eq_map (f := f) (v := v) (φ := id) Function.injective_id (t := id) ?_ ?_,
-    Multiset.map_id]
-  · ext n
-    simp [newtonPolygon_C_mul, hc]
-  · intro n hn
-    obtain ⟨h₀, h₁⟩ := mem_finiteEdges.mp hn
-    simp only [newtonPolygon_C_mul, unitSlope_def, id, WithTop.untop₀_add hc h₁,
-      WithTop.untop₀_add hc h₀]
-    ring
+  obtain ⟨r, hr⟩ := WithTop.ne_top_iff_exists.mp hc
+  have hpoly : (C c * f).newtonPolygon v =
+      fun n => f.newtonPolygon v n + ((r + 0 * n : ℝ) : WithTop ℝ) := by
+    simp [newtonPolygon_C_mul, ← hr, add_comm]
+  rw [newtonSlopes_eq_map (f := f) (v := v) Function.injective_id (t := id)
+    (by rw [hpoly, finiteEdges_add_affine, Set.image_id])
+    (fun n hn => by rw [hpoly, id, id, unitSlope_add_affine hn, add_zero]), Multiset.map_id]
 
 /-- Multiplying by a scalar of finite valuation preserves the finite slopes. -/
 theorem newtonSlopes_smul {c : R} (hc : v c ≠ ⊤) :
@@ -223,39 +223,21 @@ theorem newtonSlopes_smul {c : R} (hc : v c ≠ ⊤) :
 @[simp]
 theorem newtonSlopes_X_pow_mul (k : ℕ) : (X ^ k * f).newtonSlopes v = f.newtonSlopes v := by
   rw [newtonSlopes_eq_map (f := f) (v := v) (φ := (· + k)) (add_left_injective k) (t := id)
-    ?_ ?_, Multiset.map_id]
-  · ext n
-    simp only [newtonPolygon_X_pow_mul, mem_finiteEdges, Set.mem_image]
-    constructor
-    · rintro ⟨h₀, h₁⟩
-      have hk : k ≤ n := by
-        by_contra hk
-        simp [hk] at h₀
-      refine ⟨n - k, ⟨by simpa [hk] using h₀, ?_⟩, by omega⟩
-      simpa [show k ≤ n + 1 by omega, show n + 1 - k = n - k + 1 by omega] using h₁
-    · rintro ⟨m, ⟨h₀, h₁⟩, rfl⟩
-      simpa [show m + k + 1 - k = m + 1 by omega, show k ≤ m + k + 1 by omega] using
-        And.intro h₀ h₁
-  · intro n _
-    simp [unitSlope_def, newtonPolygon_X_pow_mul, show k ≤ n + k + 1 by omega,
-      show n + k + 1 - k = n + 1 by omega]
+    (by rw [newtonPolygon_X_pow_mul, finiteEdges_shift])
+    (fun n _ => by rw [newtonPolygon_X_pow_mul, unitSlope_shift, id]), Multiset.map_id]
 
 /-- Substituting `c X` for `X` adds the valuation of `c` to every finite slope, provided that
 valuation is finite. -/
 theorem newtonSlopes_comp_C_mul_X {c : R} (hc : v c ≠ ⊤) :
     (f.comp (C c * X)).newtonSlopes v = (f.newtonSlopes v).map (· + (v c).untop₀) := by
   obtain ⟨r, hr⟩ := WithTop.ne_top_iff_exists.mp hc
-  have hpoly := f.newtonPolygon_comp_C_mul_X v hc
-  simp only [← hr, ← WithTop.coe_nsmul] at hpoly
-  refine newtonSlopes_eq_map (φ := id) Function.injective_id ?_ fun n hn => ?_
-  · ext n
-    simp only [hpoly, mem_finiteEdges, Set.image_id, ne_eq, WithTop.add_eq_top,
-      WithTop.coe_ne_top, or_false]
-  · obtain ⟨h₀, h₁⟩ := mem_finiteEdges.mp hn
-    simp only [hpoly, unitSlope_def, id, ← hr, WithTop.untop₀_add h₁ WithTop.coe_ne_top,
-      WithTop.untop₀_add h₀ WithTop.coe_ne_top, WithTop.untop₀_coe, nsmul_eq_mul]
-    push_cast
-    ring
+  have hpoly : (f.comp (C c * X)).newtonPolygon v =
+      fun n => f.newtonPolygon v n + ((0 + r * n : ℝ) : WithTop ℝ) := by
+    simp only [f.newtonPolygon_comp_C_mul_X v hc, ← hr, ← WithTop.coe_nsmul, nsmul_eq_mul,
+      zero_add, mul_comm]
+  refine newtonSlopes_eq_map (φ := id) Function.injective_id
+    (by rw [hpoly, finiteEdges_add_affine, Set.image_id]) fun n hn => ?_
+  rw [hpoly, id, unitSlope_add_affine hn, ← hr, WithTop.untop₀_coe]
 
 /-- Mapping the coefficients along a ring homomorphism compatible with the valuations
 preserves the finite slopes. -/
