@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.ExactOrder.Subgroup
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.NaiveLevel
 public import Mathlib.AlgebraicGeometry.Morphisms.Etale
+import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.GeometricFiber
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Torsion.Etale.Locus
 import TauCeti.AlgebraicGeometry.Morphisms.Etale
 import TauCeti.AlgebraicGeometry.RationalPoint.Basic
@@ -160,20 +161,10 @@ variable {S : Scheme.{u}} {E : EllipticCurveGeom S} {P : 𝟙_ (Over S) ⟶ Over
 theorem IsOfExactOrder.pow_left_apply_ne_zero (h : E.IsOfExactOrder P N) {s : S}
     (hN : (N : S.residueField s) ≠ 0) {k : ℕ} (hk : 0 < k) (hkN : k < N) :
     (P ^ k).left s ≠ E.zero s := by
-  -- the base change `E'` of `E` to an algebraic closure of the residue field at `s`
-  let t := S.fromSpecAlgebraicClosure s
-  let E' := E.baseChange t
-  have hg := E.isPullback_baseChange t
-  have h0 : E'.zero ≫ (E.baseChangeIso t).hom ≫ pullback.fst _ _ = t ≫ E.zero := by simp [E']
-  have h' := (h.pointsPullback hg h0).pow_ne_one_of_isSepClosed
-    (fun p ↦ t.natCast_residueField_ne_zero (by rwa [Scheme.fromSpecAlgebraicClosure_apply])) hk
-    hkN
-  obtain ⟨p⟩ : Nonempty (Spec (.of (AlgebraicClosure (S.residueField s)))) := inferInstance
-  intro hs
-  apply h'
-  rw [E'.eq_one_iff_left_apply_eq_zero _ p, ← map_pow,
-    pointsPullback_left_apply_eq_zero_iff hg h0 _ p, Scheme.fromSpecAlgebraicClosure_apply]
-  exact hs
+  refine left_apply_ne_zero_of_forall_isAlgClosed (P ^ k) hN fun K _ _ t hNK ↦ ?_
+  simpa only [map_pow] using
+    (h.pointsPullback (E.isPullback_baseChange t) (by simp)).pow_ne_one_of_isSepClosed
+      (Spec.natCast_residueField_ne_zero hNK) hk hkN
 
 /-- **A point of exact order `N` gives a naive `[Γ₁(N)]`-structure where `N` is invertible.** If
 `N` is invertible in every residue field of `S` and `φ : ℤ/Nℤ →* E(S)` sends `1` to a point of

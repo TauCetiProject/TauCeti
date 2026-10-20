@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Morphisms.Etale
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.NaiveLevel
 public import TauCeti.AlgebraicGeometry.ModularCurve.HomLevel
+public import TauCeti.AlgebraicGeometry.Morphisms.Etale
 public import TauCeti.Data.ZMod.MonoidHomEquiv
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.MulBy.Finite
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Rigidity
@@ -77,7 +77,8 @@ of `E[N]` is such an `H` (`EllipticCurveGeom.existsUnique_comp_torsionPairHom`),
 problem `[Γ(N)]` is relatively representable over every base (`ModuliProblem.gammaNaiveRelRepData`).
 Its representing schemes are open subschemes of `E[N] ×_S E[N]`, so they inherit from `E[N]` every
 property stable under base change and composition which open immersions have
-(`ModuliProblem.hasProperty_gammaNaiveRelRepData`), for instance local finite presentation.
+(`ModuliProblem.hasProperty_gammaNaiveRelRepData`), for instance local finite presentation, and
+étaleness when `N` is invertible on `B` (`ModuliProblem.hasProperty_etale_gammaNaiveRelRepData`).
 
 **Finiteness and surjectivity where `N` is invertible.** When `N` is invertible on `B`, the
 representing schemes of `[Γ₁(N)]` and `[Γ(N)]` are also closed in `E[N]` and `E[N] ×_S E[N]`, so
@@ -144,8 +145,9 @@ field of the base, the `N`-torsion of an elliptic curve is `(ℤ/Nℤ)²`, so ev
   `TauCeti.AlgebraicGeometry.ModuliProblem.hasProperty_gammaNaiveRelRepData`: the representing
   morphisms of `[Γ₁(N)]` and `[Γ(N)]` inherit the properties of `E[N]` stable under base change
   and composition and holding for open immersions.
-* `TauCeti.AlgebraicGeometry.ModuliProblem.hasProperty_etale_gammaOneNaiveRelRepData`: if `N` is
-  invertible on `B`, the naive problem `[Γ₁(N)]` is étale over `Ell/B`.
+* `TauCeti.AlgebraicGeometry.ModuliProblem.hasProperty_etale_gammaOneNaiveRelRepData` and
+  `TauCeti.AlgebraicGeometry.ModuliProblem.hasProperty_etale_gammaNaiveRelRepData`: if `N` is
+  invertible on `B`, the naive problems `[Γ₁(N)]` and `[Γ(N)]` are étale over `Ell/B`.
 * `TauCeti.AlgebraicGeometry.ModuliProblem.hasProperty_isFinite_gammaOneNaiveRelRepData` and
   `TauCeti.AlgebraicGeometry.ModuliProblem.hasProperty_isFinite_gammaNaiveRelRepData`: if `N` is
   invertible on `B`, the naive problems `[Γ₁(N)]` and `[Γ(N)]` are finite over `Ell/B`.
@@ -238,9 +240,8 @@ homomorphism `A →* E(S)` to every structure. -/
 theorem naiveLevel_hom_ext {P : ModuliProblem B} {f g : P ⟶ naiveLevel B A}
     (h : ∀ (X : EllObj B) (α : P.obj (op X)),
       (naiveLevelEquiv X (f.app (op X) α)).1 = (naiveLevelEquiv X (g.app (op X) α)).1) :
-    f = g := by
-  ext X α
-  exact (naiveLevelEquiv X.unop).injective (Subtype.ext (h X.unop α))
+    f = g :=
+  homLevel_hom_ext h
 
 /-! ### The action of the automorphisms of `A` -/
 
@@ -250,25 +251,9 @@ of `A` sends a naive `A`-structure `φ : A →* E(S)` to `φ ∘ σ`
 (`naiveLevelEquiv_naiveLevelAction_hom_app`). Since `φ ∘ (σ ∘ τ) = (φ ∘ σ) ∘ τ`, this is a right
 action, that is, a homomorphism from the opposite group `(Aut A)ᵐᵒᵖ` to the automorphisms of the
 moduli problem. -/
-noncomputable def naiveLevelAction : (MulAut A)ᵐᵒᵖ →* Aut (naiveLevel B A) where
-  toFun σ := Aut.of
-    { hom := naiveLevelMap B σ.unop.toMonoidHom σ.unop.injective
-      inv := naiveLevelMap B σ.unop.symm.toMonoidHom σ.unop.symm.injective
-      hom_inv_id := by ext; simp
-      inv_hom_id := by ext; simp }
-  map_one' := by
-    apply Aut.ext
-    apply Iso.ext
-    refine naiveLevel_hom_ext fun X α ↦ MonoidHom.ext fun a ↦ ?_
-    -- Mathlib has no lemma for the unit of `Aut`; it is `Iso.refl` by definition
-    change _ = (naiveLevelEquiv X α).1 a
-    simp
-  map_mul' σ τ := by
-    apply Aut.ext
-    rw [Aut.mul_asIso]
-    apply Iso.ext
-    refine naiveLevel_hom_ext fun X α ↦ MonoidHom.ext fun a ↦ ?_
-    simp
+noncomputable def naiveLevelAction : (MulAut A)ᵐᵒᵖ →* Aut (naiveLevel B A) :=
+  homLevelAction (hp := EllObj.Hom.isFiberwiseInjective_pointsPullback) B A
+    fun _ _ σ h ↦ h.comp σ.injective
 
 /-- An automorphism `σ` of `A` sends a naive `A`-structure `φ` to `φ ∘ σ`. -/
 @[simp]
@@ -276,7 +261,7 @@ theorem naiveLevelEquiv_naiveLevelAction_hom_app (σ : (MulAut A)ᵐᵒᵖ) (X :
     (α : (naiveLevel B A).obj (op X)) :
     (naiveLevelEquiv X ((naiveLevelAction B A σ).asIso.hom.app (op X) α)).1 =
       (naiveLevelEquiv X α).1.comp σ.unop.toMonoidHom :=
-  naiveLevelEquiv_naiveLevelMap_app _ σ.unop.injective X α
+  homLevelEquiv_homLevelAction_hom_app _ σ X α
 
 /-- The inverse of the automorphism of the moduli problem given by `σ` sends a naive
 `A`-structure `φ` to `φ ∘ σ⁻¹`. -/
@@ -285,7 +270,7 @@ theorem naiveLevelEquiv_naiveLevelAction_inv_app (σ : (MulAut A)ᵐᵒᵖ) (X :
     (α : (naiveLevel B A).obj (op X)) :
     (naiveLevelEquiv X ((naiveLevelAction B A σ).asIso.inv.app (op X) α)).1 =
       (naiveLevelEquiv X α).1.comp σ.unop.symm.toMonoidHom :=
-  naiveLevelEquiv_naiveLevelMap_app _ σ.unop.symm.injective X α
+  homLevelEquiv_homLevelAction_inv_app _ σ X α
 
 /-- **The action of the automorphisms of `A` on naive `A`-structures is free.** Over a nonempty
 base, an automorphism of `A` fixing a naive `A`-structure is the identity, because a naive
@@ -771,14 +756,9 @@ if `N` is invertible in every residue field of `B`, every representing scheme is
 base, as an open subscheme of the étale `N`-torsion. -/
 theorem hasProperty_etale_gammaOneNaiveRelRepData (hN : ∀ b : B, (N : B.residueField b) ≠ 0) :
     (gammaOneNaiveRelRepData (B := B) (N := N)).HasProperty @Etale :=
-  -- instance search does not reach composition stability of étale morphisms by itself
-  have : MorphismProperty.IsStableUnderComposition @Etale :=
-    MorphismProperty.IsMultiplicative.toIsStableUnderComposition
   hasProperty_gammaOneNaiveRelRepData (fun _ _ _ _ ↦ inferInstance) fun X ↦
-    X.curve.etale_torsion_hom_of_forall_intCast_ne_zero (n := N) fun s hs ↦
-      hN (X.structureMap s) <| (X.structureMap.residueFieldMap s).hom.injective <| by
-        rw [map_natCast, map_zero]
-        simpa using hs
+    X.curve.etale_torsion_hom_of_forall_intCast_ne_zero (n := N) fun _ ↦ by
+      simpa using X.structureMap.natCast_residueField_ne_zero (hN _)
 
 /-- **The naive moduli problem `[Γ₁(N)]` is finite over `Ell/B` when `N` is invertible on `B`**:
 if `N` is invertible in every residue field of `B`, every representing scheme is finite over its
@@ -844,6 +824,15 @@ theorem hasProperty_gammaNaiveRelRepData {W : MorphismProperty Scheme.{u}}
 theorem hasProperty_gammaNaiveRelRepData_locallyOfFinitePresentation :
     (gammaNaiveRelRepData (B := B) (N := N)).HasProperty @LocallyOfFinitePresentation :=
   hasProperty_gammaNaiveRelRepData (fun _ _ _ _ ↦ inferInstance) fun _ ↦ inferInstance
+
+/-- **The naive moduli problem `[Γ(N)]` is étale over `Ell/B` when `N` is invertible on `B`**
+(Katz–Mazur, 3.7.1): if `N` is invertible in every residue field of `B`, each representing scheme
+is étale over its base, as an open subscheme of `E[N] ×_S E[N]`. -/
+theorem hasProperty_etale_gammaNaiveRelRepData (hN : ∀ b : B, (N : B.residueField b) ≠ 0) :
+    (gammaNaiveRelRepData (B := B) (N := N)).HasProperty @Etale :=
+  hasProperty_gammaNaiveRelRepData (fun _ _ _ _ ↦ inferInstance) fun X ↦
+    X.curve.etale_torsion_hom_of_forall_intCast_ne_zero (n := N) fun _ ↦ by
+      simpa using X.structureMap.natCast_residueField_ne_zero (hN _)
 
 /-- **The naive moduli problem `[Γ(N)]` is finite over `Ell/B` when `N` is invertible on `B`**:
 if `N` is invertible in every residue field of `B`, every representing scheme is finite over its

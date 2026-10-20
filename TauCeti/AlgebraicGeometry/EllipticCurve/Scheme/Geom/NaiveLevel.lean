@@ -427,16 +427,6 @@ theorem isFiberwiseInjective_zmod_three_prod_iff
   simp only [map_one, map_inv, hom_inv_left]
   exact and_congr_right fun _ ↦ and_congr_right fun _ ↦ and_comm
 
-/-- A homomorphism `φ : (ℤ/Nℤ)² →* E(S)` takes values in the `N`-torsion of `E(S)`. -/
-theorem range_le_ker_mulBy {N : ℕ}
-    (φ : Multiplicative (ZMod N × ZMod N) →* (𝟙_ (Over S) ⟶ Over.mk E.structureMap)) :
-    φ.range ≤ (IsMonHom.monoidHom (E.mulBy N) _).ker := by
-  rintro _ ⟨a, rfl⟩
-  have ha : a ^ N = 1 := Multiplicative.toAdd.injective <| by
-    ext <;> simp [nsmul_eq_mul]
-  rw [MonoidHom.mem_ker, IsMonHom.monoidHom_apply, comp_mulBy, zpow_natCast, ← map_pow, ha,
-    map_one]
-
 /-! ### Naive `[Γ(N)]`-structures over a separably closed field -/
 
 section SepClosed

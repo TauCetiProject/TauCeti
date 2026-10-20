@@ -13,6 +13,7 @@ import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.FinitePresentation
 import TauCeti.AlgebraicGeometry.IdealSheaf.Comap
 import TauCeti.AlgebraicGeometry.IdealSheaf.Product
 import TauCeti.AlgebraicGeometry.Morphisms.Smooth.RelativeDimension
+import TauCeti.AlgebraicGeometry.RationalPoint.Basic
 
 /-!
 # The divisor of a finite family of points on an elliptic curve
@@ -45,7 +46,9 @@ Particular cases are the divisor `[P] + [2P] + ⋯ + [NP]` of points of exact or
   `TauCeti.AlgebraicGeometry.EllipticCurveGeom.locallyOfFinitePresentation_pointsDivisor`:
   `∑_a [x a]` is finite locally free over `S`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.coe_support_pointsDivisor`: the support of
-  `∑_a [x a]` is the union of the images of the sections `x a`.
+  `∑_a [x a]` is the union of the images of the sections `x a`; over a field, a point lies on
+  `∑_a [x a]` exactly when it is one of the `x a`
+  (`TauCeti.AlgebraicGeometry.EllipticCurveGeom.mem_support_pointsDivisor_iff`).
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.pointsDivisor_comp_equiv`: `∑_a [x a]` does not
   depend on the indexing.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.pointsDivisor_pointsPullback`: `∑_a [x a]`
@@ -124,9 +127,23 @@ theorem coe_support_pointsDivisor (x : A → (𝟙_ (Over S) ⟶ Over.mk E.struc
     ((E.pointsDivisor x).support : Set E.carrier) = ⋃ a, Set.range (x a).left := by
   have (a : A) : IsClosedImmersion (x a).left :=
     (x a).left.isClosedImmersion_of_comp_eq_id (left_comp_structureMap _)
-  simp [pointsDivisor_def, Scheme.IdealSheafData.support_prod,
-    TopologicalSpace.Closeds.coe_finset_sup, Scheme.Hom.support_ker,
-    fun a ↦ (x a).left.isClosedEmbedding.isClosed_range.closure_eq]
+  rw [pointsDivisor_def, Scheme.IdealSheafData.coe_support_prod]
+  exact Set.iUnion_congr fun a ↦ by
+    rw [Scheme.Hom.support_ker,
+      (IsClosedImmersion.isClosedEmbedding (x a).left).isClosed_range.closure_eq]
+
+/-- **Over a field, the points of `E` on `∑_a [x a]` are the `x a`.** -/
+theorem mem_support_pointsDivisor_iff {K : Type u} [Field K] {E : EllipticCurveGeom (Spec (.of K))}
+    (x : A → (𝟙_ (Over (Spec (.of K))) ⟶ Over.mk E.structureMap))
+    (y : 𝟙_ (Over (Spec (.of K))) ⟶ Over.mk E.structureMap) (p : Spec (.of K)) :
+    y.left p ∈ ((E.pointsDivisor x).support : Set E.carrier) ↔ y ∈ Set.range x := by
+  rw [coe_support_pointsDivisor]
+  simp only [Set.mem_iUnion, Set.mem_range]
+  refine exists_congr fun a ↦ ⟨fun ⟨q, hq⟩ ↦ ?_, fun h ↦ ⟨p, congrArg (fun z ↦ z.left p) h⟩⟩
+  rw [Subsingleton.elim (α := Spec (.of K)) q p] at hq
+  exact Over.OverMorphism.ext <| by
+    simpa using (comp_eq_comp_iff_of_section (f := E.structureMap) (s₁ := (x a).left)
+      (s₂ := y.left) (by simp) (by simp) (𝟙 _) p).mpr (by simpa using hq)
 
 /-- **The divisor `∑_a [x a]` does not depend on the indexing** of the family of points. -/
 @[simp]
