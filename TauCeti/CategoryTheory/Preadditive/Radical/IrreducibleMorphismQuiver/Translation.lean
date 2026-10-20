@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Preadditive.Radical.IrreducibleMorphismQuiver
+public import TauCeti.CategoryTheory.Preadditive.Radical.IrreducibleMorphismQuiver.Basic
 public import Mathlib.CategoryTheory.Preadditive.Projective.Basic
 public import Mathlib.CategoryTheory.Preadditive.Injective.Basic
 

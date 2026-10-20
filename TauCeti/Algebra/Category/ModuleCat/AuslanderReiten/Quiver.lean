@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Preadditive.Radical.IrreducibleMorphismQuiverTranslation
+public import TauCeti.CategoryTheory.Preadditive.Radical.IrreducibleMorphismQuiver.Translation
 public import TauCeti.Algebra.Category.ModuleCat.AuslanderReiten.Translate
 public import TauCeti.Algebra.Category.ModuleCat.Algebra
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
