@@ -9,11 +9,10 @@ public import Mathlib.LinearAlgebra.CliffordAlgebra.Contraction
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Grading
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import Mathlib.LinearAlgebra.Trace
--- Private: the `changeForm`, constant-term, monomial and dimension lemmas below are used only
--- inside proofs.
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
+-- Private: the `changeForm`, constant-term and monomial lemmas below are used only inside proofs.
 import TauCeti.Algebra.CharP.Invertible
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
-import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 import TauCeti.LinearAlgebra.CliffordAlgebra.Monomials
 import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement
 import TauCeti.LinearAlgebra.ExteriorAlgebra.AlgebraMapInv
@@ -54,7 +53,11 @@ preserved by every algebra isomorphism between Clifford algebras of finite-dimen
   under the grade involution and under reversion.
 * `CliffordAlgebra.scalarTrace_eq_zero_of_mem_evenOdd_one`: the scalar part of an odd element is
   zero.
+* `CliffordAlgebra.scalarTrace_reverse_mul_comm`: symmetry,
+  `τ (reverse x * y) = τ (reverse y * x)`.
 * `CliffordAlgebra.scalarTrace_mul_comm`: cyclicity, `τ (x * y) = τ (y * x)`.
+* `CliffordAlgebra.scalarTrace_basis` and `CliffordAlgebra.basis_repr_empty`: the scalar parts of
+  the members of `CliffordAlgebra.basis Q b`; the coefficient of `1` in it is the scalar part.
 * `CliffordAlgebra.scalarTrace_ι_mul_prod_map_ι_eq_zero`: `τ` vanishes on `ι Q a * p` for `p` a
   product of vectors orthogonal to `a`.
 * `CliffordAlgebra.eq_smul_scalarTrace`: for `M` spanned by pairwise orthogonal vectors, every
@@ -90,7 +93,7 @@ product is either odd or anticommutes with its first factor.
 
 public section
 
-universe u v
+universe u v w
 
 namespace CliffordAlgebra
 
@@ -142,6 +145,11 @@ theorem scalarTrace_reverse (x : CliffordAlgebra Q) :
   rw [scalarTrace_apply, equivExterior_reverse, ExteriorAlgebra.algebraMapInv_reverse,
     scalarTrace_apply]
 
+/-- **Symmetry of the reverse pairing**: `τ (reverse x * y) = τ (reverse y * x)`. -/
+theorem scalarTrace_reverse_mul_comm (x y : CliffordAlgebra Q) :
+    scalarTrace Q (reverse x * y) = scalarTrace Q (reverse y * x) := by
+  rw [← scalarTrace_reverse, reverse.map_mul, reverse_reverse]
+
 /-- The scalar part of an odd element is zero. -/
 theorem scalarTrace_eq_zero_of_mem_evenOdd_one {x : CliffordAlgebra Q} (hx : x ∈ evenOdd Q 1) :
     scalarTrace Q x = 0 :=
@@ -164,6 +172,29 @@ theorem scalarTrace_mul_comm (x y : CliffordAlgebra Q) :
   | algebraMap r => rw [Algebra.commutes]
   | add x x' hx hx' => rw [add_mul, mul_add, map_add, map_add, hx, hx']
   | ι_mul x m hx => rw [mul_assoc, scalarTrace_ι_mul, mul_assoc, hx, mul_assoc]
+
+section Basis
+
+open Module
+
+variable {I : Type w} [LinearOrder I] (b : Basis I R M)
+
+/-- The scalar part of the member of `CliffordAlgebra.basis Q b` at `s` is `1` if `s` is empty and
+`0` otherwise. -/
+@[simp]
+theorem scalarTrace_basis (s : Finset I) :
+    scalarTrace Q (basis Q b s) = if s = ∅ then 1 else 0 := by
+  rw [scalarTrace_apply, equivExterior_basis, ExteriorAlgebra.algebraMapInv_basis]
+
+/-- The coefficient of `1` in the basis `CliffordAlgebra.basis Q b` is the scalar part. -/
+@[simp]
+theorem basis_repr_empty (x : CliffordAlgebra Q) : (basis Q b).repr x ∅ = scalarTrace Q x := by
+  have h : (basis Q b).coord ∅ = scalarTrace Q :=
+    (basis Q b).ext fun s => by
+      rw [Basis.coord_apply, Basis.repr_self, Finsupp.single_apply, scalarTrace_basis]
+  exact LinearMap.congr_fun h x
+
+end Basis
 
 /-! ### Uniqueness and the regular trace -/
 

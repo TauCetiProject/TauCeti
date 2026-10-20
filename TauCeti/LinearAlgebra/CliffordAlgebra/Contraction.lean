@@ -242,12 +242,13 @@ theorem equivExterior_mul_ι (x : CliffordAlgebra Q) (m : M) :
   exact changeForm_mul_ι changeForm.associated_neg_proof x m
 
 /-- `CliffordAlgebra.equivExterior` sends an ordered product of pairwise orthogonal vectors to their
-exterior product: every contraction term of `CliffordAlgebra.equivExterior_ι_mul` vanishes. -/
+exterior product. -/
 theorem equivExterior_prod_map_ι {l : List M} (hl : l.Pairwise Q.IsOrtho) :
     equivExterior Q (l.map (ι Q)).prod = (l.map (ExteriorAlgebra.ι R)).prod := by
   induction l with
   | nil => simp [equivExterior]
   | cons a l ih =>
+    -- Every contraction term of `CliffordAlgebra.equivExterior_ι_mul` vanishes.
     rw [List.pairwise_cons] at hl
     rw [List.map_cons, List.prod_cons, equivExterior_ι_mul, ih hl.2, List.map_cons, List.prod_cons,
       contractLeft_prod_map_ι_eq_zero fun m hm => ?_, sub_zero]

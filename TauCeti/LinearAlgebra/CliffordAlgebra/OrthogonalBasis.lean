@@ -9,7 +9,6 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 public import TauCeti.LinearAlgebra.CliffordAlgebra.ScalarTrace.Basic
 import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
-import TauCeti.LinearAlgebra.ExteriorAlgebra.AlgebraMapInv
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 
 /-!
@@ -37,7 +36,6 @@ ordered ring, if every `Q (b i)` is nonnegative then `τ (reverse x * x) ≥ 0`,
 
 * `CliffordAlgebra.basis_eq_prod_map_sort`: for an orthogonal basis, the members of
   `CliffordAlgebra.basis Q b` are the ordered products of basis vectors.
-* `CliffordAlgebra.basis_repr_empty`: the coefficient of `1` is the scalar part.
 * `CliffordAlgebra.scalarTrace_reverse_prod_mul_prod`: the scalar part pairs the ordered products
   of an orthogonal family diagonally, and `CliffordAlgebra.scalarTrace_reverse_basis_mul` is the
   basis form.
@@ -71,12 +69,33 @@ private theorem scalarTrace_ι_mul_prod_map_eq_zero
     obtain ⟨k, hk, rfl⟩ := List.mem_map.mp hx
     exact hv (h k hk)
 
+/-- The scalar part kills `reverse (v_i * v_{l₁}) * v_{l₂}`, for ordered products along lists of
+indices different from `i`. -/
+private theorem scalarTrace_reverse_cons_prod_mul_prod_eq_zero
+    (hv : Pairwise fun i j => Q.IsOrtho (v i) (v j)) {i : I} {l₁ l₂ : List I}
+    (h₁ : ∀ k ∈ l₁, k ≠ i) (h₂ : ∀ k ∈ l₂, k ≠ i) :
+    scalarTrace Q (reverse (((i :: l₁).map v).map (ι Q)).prod * ((l₂.map v).map (ι Q)).prod) =
+      0 := by
+  -- `ι Q (v i)` moves, by cyclicity, to the front of the product along `l₂ ++ l₁.reverse`.
+  have h : reverse (((i :: l₁).map v).map (ι Q)).prod * ((l₂.map v).map (ι Q)).prod =
+      ((l₁.reverse.map v).map (ι Q)).prod * (ι Q (v i) * ((l₂.map v).map (ι Q)).prod) := by
+    rw [reverse_prod_map_ι]
+    simp [mul_assoc]
+  have h' : ((l₂.map v).map (ι Q)).prod * ((l₁.reverse.map v).map (ι Q)).prod =
+      (((l₂ ++ l₁.reverse).map v).map (ι Q)).prod := by
+    simp
+  rw [h, scalarTrace_mul_comm, mul_assoc, h']
+  refine scalarTrace_ι_mul_prod_map_eq_zero hv fun k hk => ?_
+  rcases List.mem_append.mp hk with hk | hk
+  exacts [h₂ k hk, h₁ k (List.mem_reverse.mp hk)]
+
 variable [LinearOrder I]
 
 /-- The scalar-part pairing of the ordered products of an orthogonal family along two strictly
 increasing lists of indices. The heads of the two lists are compared: equal heads cancel to
-`Q (v i)`, and otherwise the smaller head moves, by cyclicity, to the front of a product of
-vectors with larger indices, where `scalarTrace_ι_mul_prod_map_eq_zero` kills it. -/
+`Q (v i)`, and otherwise the smaller head occurs in neither tail, so
+`scalarTrace_reverse_cons_prod_mul_prod_eq_zero` applies, after `scalarTrace_reverse_mul_comm`
+if the smaller head is on the right. -/
 private theorem scalarTrace_reverse_prod_mul_prod_of_pairwise_lt
     (hv : Pairwise fun i j => Q.IsOrtho (v i) (v j)) :
     ∀ {l₁ l₂ : List I}, l₁.Pairwise (· < ·) → l₂.Pairwise (· < ·) →
@@ -84,59 +103,33 @@ private theorem scalarTrace_reverse_prod_mul_prod_of_pairwise_lt
         if l₁ = l₂ then (l₁.map (Q ∘ v)).prod else 0
   | [], [], _, _ => by simp
   | [], j :: l₂, _, h₂ => by
-    simp only [List.map_nil, List.prod_nil, reverse.map_one, one_mul, List.map_cons,
-      List.prod_cons, reduceCtorEq, ↓reduceIte]
-    exact scalarTrace_ι_mul_prod_map_eq_zero hv fun k hk => (List.rel_of_pairwise_cons h₂ hk).ne'
+    rw [scalarTrace_reverse_mul_comm, ite_eq_right (List.cons_ne_nil _ _).symm]
+    exact scalarTrace_reverse_cons_prod_mul_prod_eq_zero hv
+      (fun k hk => (List.rel_of_pairwise_cons h₂ hk).ne') (by simp)
   | i :: l₁, [], h₁, _ => by
-    simp only [List.map_nil, List.prod_nil, mul_one, scalarTrace_reverse, List.map_cons,
-      List.prod_cons, reduceCtorEq, ↓reduceIte]
-    exact scalarTrace_ι_mul_prod_map_eq_zero hv fun k hk => (List.rel_of_pairwise_cons h₁ hk).ne'
+    rw [ite_eq_right (List.cons_ne_nil _ _)]
+    exact scalarTrace_reverse_cons_prod_mul_prod_eq_zero hv
+      (fun k hk => (List.rel_of_pairwise_cons h₁ hk).ne') (by simp)
   | i :: l₁, j :: l₂, h₁, h₂ => by
     obtain ⟨hi, hl₁⟩ := List.pairwise_cons.mp h₁
     obtain ⟨hj, hl₂⟩ := List.pairwise_cons.mp h₂
-    have hrev : reverse (((i :: l₁).map v).map (ι Q)).prod =
-        ((l₁.reverse.map v).map (ι Q)).prod * ι Q (v i) := by
-      rw [reverse_prod_map_ι]
-      simp
-    rw [hrev]
     rcases lt_trichotomy i j with hij | rfl | hji
-    · -- `ι Q (v i)` moves, by cyclicity, to the front of a product of vectors with larger indices.
-      have h : ((l₁.reverse.map v).map (ι Q)).prod * ι Q (v i) *
-            (((j :: l₂).map v).map (ι Q)).prod =
-          ((l₁.reverse.map v).map (ι Q)).prod *
-            (ι Q (v i) * (((j :: l₂).map v).map (ι Q)).prod) :=
-        mul_assoc _ _ _
-      have h' : (((j :: l₂).map v).map (ι Q)).prod * ((l₁.reverse.map v).map (ι Q)).prod =
-          (((j :: l₂ ++ l₁.reverse).map v).map (ι Q)).prod := by
-        simp [mul_assoc]
-      rw [h, scalarTrace_mul_comm, mul_assoc, h', ite_eq_right fun h => hij.ne (List.cons.inj h).1]
-      refine scalarTrace_ι_mul_prod_map_eq_zero hv fun k hk => ?_
-      simp only [List.cons_append, List.mem_cons, List.mem_append, List.mem_reverse] at hk
-      rcases hk with rfl | hk | hk
-      exacts [hij.ne', (hij.trans (hj k hk)).ne', (hi k hk).ne']
+    · rw [ite_eq_right fun h => hij.ne (List.cons.inj h).1]
+      refine scalarTrace_reverse_cons_prod_mul_prod_eq_zero hv (fun k hk => (hi k hk).ne') ?_
+      rintro k (_ | ⟨_, hk⟩)
+      exacts [hij.ne', (hij.trans (hj k hk)).ne']
     · -- Equal heads cancel to the scalar `Q (v i)`.
-      have h : ((l₁.reverse.map v).map (ι Q)).prod * ι Q (v i) *
-            (((i :: l₂).map v).map (ι Q)).prod =
+      have h : reverse (((i :: l₁).map v).map (ι Q)).prod * (((i :: l₂).map v).map (ι Q)).prod =
           Q (v i) • (reverse ((l₁.map v).map (ι Q)).prod * ((l₂.map v).map (ι Q)).prod) := by
-        rw [reverse_prod_map_ι]
+        rw [reverse_prod_map_ι, reverse_prod_map_ι]
         simp [mul_assoc, ← mul_assoc (ι Q (v i)), Algebra.smul_def, Algebra.commutes]
       rw [h, map_smul, scalarTrace_reverse_prod_mul_prod_of_pairwise_lt hv hl₁ hl₂, smul_eq_mul]
       simp only [List.cons.injEq, true_and, List.map_cons, List.prod_cons, Function.comp_apply]
       split_ifs <;> simp
-    · -- `ι Q (v j)` moves, by cyclicity, to the front of a product of vectors with larger indices.
-      have h : ((l₁.reverse.map v).map (ι Q)).prod * ι Q (v i) *
-            (((j :: l₂).map v).map (ι Q)).prod =
-          ((l₁.reverse.map v).map (ι Q)).prod * ι Q (v i) *
-            (ι Q (v j) * ((l₂.map v).map (ι Q)).prod) := by
-        simp
-      have h' : ((l₂.map v).map (ι Q)).prod * (((l₁.reverse.map v).map (ι Q)).prod * ι Q (v i)) =
-          (((l₂ ++ (l₁.reverse ++ [i])).map v).map (ι Q)).prod := by
-        simp
-      rw [h, scalarTrace_mul_comm, mul_assoc, h', ite_eq_right fun h => hji.ne' (List.cons.inj h).1]
-      refine scalarTrace_ι_mul_prod_map_eq_zero hv fun k hk => ?_
-      simp only [List.mem_append, List.mem_reverse, List.mem_singleton] at hk
-      rcases hk with hk | hk | rfl
-      exacts [(hj k hk).ne', (hji.trans (hi k hk)).ne', hji.ne']
+    · rw [scalarTrace_reverse_mul_comm, ite_eq_right fun h => hji.ne' (List.cons.inj h).1]
+      refine scalarTrace_reverse_cons_prod_mul_prod_eq_zero hv (fun k hk => (hj k hk).ne') ?_
+      rintro k (_ | ⟨_, hk⟩)
+      exacts [hji.ne', (hji.trans (hi k hk)).ne']
 
 /-- **The scalar part pairs the ordered products of an orthogonal family diagonally.** For
 `v : I → M` pairwise orthogonal and finite sets `s` and `t` of indices, with products taken in
@@ -173,35 +166,6 @@ theorem basis_eq_prod_map_sort (hb : Pairwise fun i j => Q.IsOrtho (b i) (b j)) 
   exact List.pairwise_map.mpr ((List.sortedLT_iff_pairwise.mp s.sortedLT_sort).imp fun h =>
     hb h.ne)
 
-/-- The member of `CliffordAlgebra.basis Q b` at the empty set is `1`. -/
-@[simp]
-theorem basis_empty : basis Q b ∅ = 1 := by
-  apply (equivExterior Q).injective
-  rw [equivExterior_basis, TauCeti.ExteriorAlgebra.basis_eq_prod_map_sort]
-  simp [equivExterior]
-
-/-- The member of `CliffordAlgebra.basis Q b` at `{i}` is the generator `ι Q (b i)`. -/
-@[simp]
-theorem basis_singleton (i : I) : basis Q b {i} = ι Q (b i) := by
-  apply (equivExterior Q).injective
-  rw [equivExterior_basis, TauCeti.ExteriorAlgebra.basis_singleton]
-  simp [equivExterior]
-
-/-- The scalar part of the member of `CliffordAlgebra.basis Q b` at `s` is `1` if `s` is empty and
-`0` otherwise. -/
-@[simp]
-theorem scalarTrace_basis (s : Finset I) :
-    scalarTrace Q (basis Q b s) = if s = ∅ then 1 else 0 := by
-  rw [scalarTrace_apply, equivExterior_basis, ExteriorAlgebra.algebraMapInv_basis]
-
-/-- The coefficient of `1` in the basis `CliffordAlgebra.basis Q b` is the scalar part. -/
-@[simp]
-theorem basis_repr_empty (x : CliffordAlgebra Q) : (basis Q b).repr x ∅ = scalarTrace Q x := by
-  have h : (basis Q b).coord ∅ = scalarTrace Q :=
-    (basis Q b).ext fun s => by
-      rw [Basis.coord_apply, Basis.repr_self, Finsupp.single_apply, scalarTrace_basis]
-  exact LinearMap.congr_fun h x
-
 variable {Q b} (hb : Pairwise fun i j => Q.IsOrtho (b i) (b j))
 include hb
 
@@ -236,8 +200,8 @@ theorem scalarTrace_reverse_mul_eq_sum_basis_repr [Fintype I] (x y : CliffordAlg
   conv_lhs => rw [← (basis Q b).sum_repr y]
   rw [Finset.mul_sum, map_sum]
   refine Finset.sum_congr rfl fun s _ => ?_
-  rw [mul_smul_comm, map_smul, smul_eq_mul, ← scalarTrace_reverse, reverse.map_mul,
-    reverse_reverse, ← prod_mul_basis_repr hb, mul_comm]
+  rw [mul_smul_comm, map_smul, smul_eq_mul, scalarTrace_reverse_mul_comm,
+    ← prod_mul_basis_repr hb, mul_comm]
 
 section Ordered
 

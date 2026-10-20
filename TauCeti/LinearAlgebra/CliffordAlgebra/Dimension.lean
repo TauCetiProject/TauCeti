@@ -11,6 +11,9 @@ public import TauCeti.LinearAlgebra.ExteriorAlgebra.Dimension
 -- Private: `CliffordAlgebra.nonempty_evenOddEquivAddOne` is used only inside the proof that the
 -- two halves of the `ℤ/2`-grading are equidimensional.
 import TauCeti.LinearAlgebra.CliffordAlgebra.ParitySwap
+-- Private: the exterior-basis product formulas are used only inside the proofs of
+-- `CliffordAlgebra.basis_empty` and `CliffordAlgebra.basis_singleton`.
+import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 
 /-!
 # Freeness and dimension of a Clifford algebra
@@ -64,6 +67,8 @@ isomorphism `gr (CliffordAlgebra Q) ≅ ExteriorAlgebra R M` for the degree filt
 
 * `CliffordAlgebra.basis`: the basis of `CliffordAlgebra Q` indexed by the finite subsets of
   the index set of a basis of `M`, over a ring in which `2` is invertible.
+  Its members at `∅` and at `{i}` are `1` and `ι Q (b i)` (`CliffordAlgebra.basis_empty`,
+  `CliffordAlgebra.basis_singleton`).
 
 ## Main results
 
@@ -138,6 +143,21 @@ Not a `simp` lemma: `simp` unfolds `CliffordAlgebra.equivExterior` to the underl
 theorem equivExterior_basis {I : Type w} [LinearOrder I] (b : Basis I R M) (s : Finset I) :
     equivExterior Q (basis Q b s) = b.ExteriorAlgebra s := by
   rw [basis_apply, LinearEquiv.apply_symm_apply]
+
+/-- The member of `CliffordAlgebra.basis Q b` at the empty set is `1`. -/
+@[simp]
+theorem basis_empty {I : Type w} [LinearOrder I] (b : Basis I R M) : basis Q b ∅ = 1 := by
+  apply (equivExterior Q).injective
+  rw [equivExterior_basis, TauCeti.ExteriorAlgebra.basis_eq_prod_map_sort]
+  simp [equivExterior]
+
+/-- The member of `CliffordAlgebra.basis Q b` at `{i}` is the generator `ι Q (b i)`. -/
+@[simp]
+theorem basis_singleton {I : Type w} [LinearOrder I] (b : Basis I R M) (i : I) :
+    basis Q b {i} = ι Q (b i) := by
+  apply (equivExterior Q).injective
+  rw [equivExterior_basis, TauCeti.ExteriorAlgebra.basis_singleton]
+  simp [equivExterior]
 
 /-- The Clifford algebra of a free module is a free module, over a ring in which `2` is
 invertible. -/
