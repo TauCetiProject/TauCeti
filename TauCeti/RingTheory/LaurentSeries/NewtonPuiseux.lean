@@ -74,21 +74,6 @@ open _root_.LaurentSeries
 
 variable {R : Type*} [CommSemiring R]
 
-/-- Multiplying the ramified series `c(X ^ q)` by `X ^ (-k)` leaves no terms of negative degree
-when `k ≤ q * ord c`. -/
-private theorem coeff_single_mul_expand_eq_zero {c : R⸨X⸩} {q : ℕ+} {k n : ℤ}
-    (hk : c ≠ 0 → k ≤ q * c.order) (hn : n < 0) :
-    (single (-k) 1 * expand R q c).coeff n = 0 := by
-  rcases eq_or_ne c 0 with rfl | hc
-  · simp
-  rw [coeff_single_mul, one_mul, sub_neg_eq_add]
-  by_cases hd : (q : ℤ) ∣ n + k
-  · obtain ⟨j, hj⟩ := hd
-    rw [hj, coeff_expand_mul]
-    refine coeff_eq_zero_of_lt_order (lt_of_mul_lt_mul_left ?_ (by positivity : (0 : ℤ) ≤ q))
-    linarith [hk hc]
-  · exact coeff_expand_of_not_dvd q c hd
-
 /-- A monic polynomial `P` of degree `m`, other than `X ^ m`, has a coefficient `P.coeff j₀ ≠ 0`
 with `j₀ < m` attaining the smallest slope `ord (P.coeff j) / (m - j)` among its nonzero
 coefficients, stated with denominators cleared. -/
