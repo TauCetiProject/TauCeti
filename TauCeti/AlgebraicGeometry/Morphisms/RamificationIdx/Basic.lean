@@ -5,6 +5,7 @@ Authors: Taylor Dupuy, Thomas Tucker, Zhuoran Wang
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import Mathlib.AlgebraicGeometry.Morphisms.QuasiFinite
 public import TauCeti.RingTheory.RamificationInertia.QuasiFinite
 
@@ -31,6 +32,10 @@ quasi-finite and `Ideal.ramificationIdx_pos_of_quasiFiniteAt` applies.
 * `AlgebraicGeometry.Scheme.Hom.ramificationIdxAt_def`: the defining equation.
 * `AlgebraicGeometry.Scheme.Hom.ramificationIdxAt_pos`: the ramification index is positive at every
   point where the morphism is quasi-finite.
+* `AlgebraicGeometry.Scheme.Hom.ramificationIdxAt_comp_of_flat_stalkMap`: ramification indices
+  multiply in a tower when the first stalk map is flat.
+* `AlgebraicGeometry.Scheme.Hom.ramificationIdxAt_comp`: ramification indices multiply in a tower
+  whose first morphism is flat.
 
 ## References
 
@@ -40,12 +45,14 @@ quasi-finite and `Ideal.ramificationIdx_pos_of_quasiFiniteAt` applies.
   `lean/Pcf/Bounding/SchemeDynamics.lean`: `ramificationIdxAt` is its
   `Pcf.schemeDivisorRamificationIdx` (there restricted to codimension-one points), and
   `ramificationIdxAt_pos` generalizes its `Pcf.schemeDivisorRamificationIdx_pos` (there for a
-  locally quasi-finite morphism).
+  locally quasi-finite morphism). The composition theorem generalizes its
+  `Pcf.schemeDivisorRamificationIdx_comp` (there for a finite dominant first morphism with integral
+  source and a codimension-one point on a locally Noetherian normal intermediate scheme).
 -/
 
 public section
 
-open AlgebraicGeometry
+open CategoryTheory AlgebraicGeometry IsLocalRing
 
 namespace AlgebraicGeometry.Scheme.Hom
 
@@ -76,5 +83,35 @@ theorem ramificationIdxAt_pos {x : X} (hx : f.QuasiFiniteAt x) : 0 < ramificatio
     RingHom.quasiFinite_algebraMap.mp hx
   rw [ramificationIdxAt_def]
   exact Ideal.ramificationIdx_pos_of_quasiFiniteAt _
+
+/-- Ramification indices multiply along a composite at any point where the first stalk map is
+flat. No finiteness, normality, or codimension assumptions are required.
+
+The tower uses the definitional equality `(f ≫ g) x = g (f x)` to identify the two descriptions
+of the source stalk of the composite stalk map. -/
+theorem ramificationIdxAt_comp_of_flat_stalkMap {Z : Scheme.{u}} (g : Y ⟶ Z) (x : X)
+    (hflat : (f.stalkMap x).hom.Flat) :
+    ramificationIdxAt (f ≫ g) x = ramificationIdxAt f x * ramificationIdxAt g (f x) := by
+  let sourceStalk := Z.presheaf.stalk (g (f x))
+  let middleStalk := Y.presheaf.stalk (f x)
+  let targetStalk := X.presheaf.stalk x
+  let : Algebra sourceStalk middleStalk := (g.stalkMap (f x)).hom.toAlgebra
+  let : Algebra middleStalk targetStalk := (f.stalkMap x).hom.toAlgebra
+  let : Algebra sourceStalk targetStalk := ((f ≫ g).stalkMap x).hom.toAlgebra
+  have hcomp : ((f ≫ g).stalkMap x).hom = (f.stalkMap x).hom.comp (g.stalkMap (f x)).hom := by
+    rw [Scheme.Hom.stalkMap_comp]
+    exact CommRingCat.hom_comp _ _
+  have : IsScalarTower sourceStalk middleStalk targetStalk := .of_algebraMap_eq' hcomp
+  have : IsLocalHom (algebraMap middleStalk targetStalk) :=
+    inferInstanceAs (IsLocalHom (f.stalkMap x).hom)
+  have : Module.Flat middleStalk targetStalk := RingHom.flat_algebraMap_iff.mp hflat
+  rw [ramificationIdxAt_def, ramificationIdxAt_def, ramificationIdxAt_def, mul_comm]
+  exact Ideal.ramificationIdx_tower (R := sourceStalk) (maximalIdeal middleStalk)
+    (maximalIdeal targetStalk)
+
+/-- Ramification indices multiply along any composite whose first morphism is flat. -/
+theorem ramificationIdxAt_comp {Z : Scheme.{u}} (g : Y ⟶ Z) [Flat f] (x : X) :
+    ramificationIdxAt (f ≫ g) x = ramificationIdxAt f x * ramificationIdxAt g (f x) :=
+  f.ramificationIdxAt_comp_of_flat_stalkMap g x (Flat.stalkMap f x)
 
 end AlgebraicGeometry.Scheme.Hom

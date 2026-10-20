@@ -26,9 +26,9 @@ rings (Stacks, Definition 15.113.1 (09E4)).
 
 ## Main results
 
-* `AlgebraicGeometry.Scheme.Hom.ramificationIdxAt_comp`: ramification indices multiply for a
-  dominant morphism from an integral scheme when the intermediate point has coheight one on a
-  locally Noetherian normal scheme.
+* `AlgebraicGeometry.Scheme.Hom.ramificationIdxAt_comp_of_coheight_eq_one`: ramification indices
+  multiply for a dominant morphism from an integral scheme when the intermediate point has
+  coheight one on a locally Noetherian normal scheme.
 * `AlgebraicGeometry.Scheme.Hom.map_maximalIdeal_eq_pow_ramificationIdxAt`: at a point of coheight
   one of a locally Noetherian normal integral scheme and for a dominant map to a reduced scheme
   with non-generic image point, `𝔪_{f(x)} 𝒪_{X,x} = 𝔪_x ^ e` with `e = ramificationIdxAt f x`.
@@ -40,7 +40,8 @@ rings (Stacks, Definition 15.113.1 (09E4)).
 * [Stacks Project, Definition 15.113.1](https://stacks.math.columbia.edu/tag/09E4).
 * Ported from T. Dupuy, T. Tucker and Z. Wang,
   [pcfawd-formalization](https://github.com/tdupu/pcfawd-formalization) at commit
-  `9a20b3f351446d64e6015d704198bc71c7002008` (Apache-2.0): `ramificationIdxAt_comp` is its
+  `9a20b3f351446d64e6015d704198bc71c7002008` (Apache-2.0):
+  `ramificationIdxAt_comp_of_coheight_eq_one` generalizes its
   `Pcf.schemeDivisorRamificationIdx_comp` (`lean/Pcf/Bounding/SchemeDynamics.lean`, there with `f`
   finite and `x` of coheight one), and `map_maximalIdeal_eq_pow_ramificationIdxAt` is the scheme
   form of its `Pcf.heightOneRamificationIdx_eq_dvrExponent` (`lean/Pcf/Bounding/Divisors.lean`).
@@ -59,27 +60,14 @@ variable {X Y : Scheme.{u}} (f : X ⟶ Y)
 /-- **Ramification indices multiply in towers.** For a dominant morphism `f : X ⟶ Y` from an
 integral scheme and a point `x` whose image has coheight one on the locally Noetherian normal
 scheme `Y`, `e_x(f ≫ g) = e_x(f) e_{f(x)}(g)` for every `g : Y ⟶ Z`. -/
-theorem ramificationIdxAt_comp {Z : Scheme.{u}} (g : Y ⟶ Z) [IsDominant f] [IsIntegral X]
+theorem ramificationIdxAt_comp_of_coheight_eq_one {Z : Scheme.{u}} (g : Y ⟶ Z)
+    [IsDominant f] [IsIntegral X]
     [IsLocallyNoetherian Y] [IsNormalScheme Y] (x : X)
     (hfx : coheight (f x) = 1) :
     ramificationIdxAt (f ≫ g) x = ramificationIdxAt f x * ramificationIdxAt g (f x) := by
-  -- `(f ≫ g) x` is `g (f x)` by definition, so the stalk of `Z` at `(f ≫ g) x`, the codomain of
-  -- `(f ≫ g).stalkMap x`, is the stalk at `g (f x)`; the algebra structures below rely on this.
-  let R := Z.presheaf.stalk (g (f x))
-  let S := Y.presheaf.stalk (f x)
-  let T := X.presheaf.stalk x
-  let : Algebra R S := (g.stalkMap (f x)).hom.toAlgebra
-  let : Algebra S T := (f.stalkMap x).hom.toAlgebra
-  let : Algebra R T := ((f ≫ g).stalkMap x).hom.toAlgebra
-  have hcomp : ((f ≫ g).stalkMap x).hom = (f.stalkMap x).hom.comp (g.stalkMap (f x)).hom := by
-    rw [Scheme.Hom.stalkMap_comp]
-    exact CommRingCat.hom_comp _ _
-  have : IsScalarTower R S T := .of_algebraMap_eq' hcomp
-  have : IsLocalHom (algebraMap S T) := inferInstanceAs (IsLocalHom (f.stalkMap x).hom)
-  have : IsDiscreteValuationRing S := IsNormalScheme.isDiscreteValuationRing_stalk Y (f x) hfx
-  have : Module.Flat S T := RingHom.flat_algebraMap_iff.mp (f.flat_stalkMap_of_isDominant x)
-  rw [ramificationIdxAt_def, ramificationIdxAt_def, ramificationIdxAt_def, mul_comm]
-  exact Ideal.ramificationIdx_tower (R := R) (maximalIdeal S) (maximalIdeal T)
+  have : IsDiscreteValuationRing (Y.presheaf.stalk (f x)) :=
+    IsNormalScheme.isDiscreteValuationRing_stalk Y (f x) hfx
+  exact f.ramificationIdxAt_comp_of_flat_stalkMap g x (f.flat_stalkMap_of_isDominant x)
 
 /-- **The ramification index at a codimension-one point.** At a point `x` of coheight one of a
 locally Noetherian normal integral scheme `X`, for a dominant `f : X ⟶ Y` to a reduced scheme with
