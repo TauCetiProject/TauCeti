@@ -146,7 +146,7 @@ theorem zigzagBraidBimodule_tmul_eq_zero_of_ne_of_not_adj
   simpa only [hm] using hscalar m.val
 
 /-- The full graded tensor product of distinct nonadjacent vertex braid bimodules vanishes. -/
-theorem subsingleton_gradedBimoduleTensor_of_ne_of_not_adj
+theorem subsingleton_zigzagGradedBraidBimodule_tensor_of_ne_of_not_adj
     (hij : i ≠ j) (hadj : ¬ G.Adj i j) :
     Subsingleton (((gradedBimoduleTensor k Γ).obj (U i)).obj (U j)) := by
   have hzero : ∀ z : GradedModuleCat.bimoduleTensorObj Γ Γ Γ (U i) (U j), z = 0 := by
@@ -158,10 +158,11 @@ theorem subsingleton_gradedBimoduleTensor_of_ne_of_not_adj
   exact ⟨fun x y ↦ (hzero x).trans (hzero y).symm⟩
 
 /-- The full vertex-bimodule tensor is a zero object for distinct nonadjacent vertices. -/
-theorem isZero_gradedBimoduleTensor_of_ne_of_not_adj
+theorem isZero_zigzagGradedBraidBimodule_tensor_of_ne_of_not_adj
     (hij : i ≠ j) (hadj : ¬ G.Adj i j) :
     Limits.IsZero (((gradedBimoduleTensor k Γ).obj (U i)).obj (U j)) := by
-  have := subsingleton_gradedBimoduleTensor_of_ne_of_not_adj (k := k) (G := G) hij hadj
+  have := subsingleton_zigzagGradedBraidBimodule_tensor_of_ne_of_not_adj
+    (k := k) (G := G) hij hadj
   apply (Limits.IsZero.iff_id_eq_zero _).2
   apply GradedModuleCat.hom_ext
   apply LinearMap.ext
@@ -180,7 +181,7 @@ theorem isZero_zigzagBraidComplexTensor_X_of_ne_of_not_adj
       ((zigzagBraidComplex k G i).X p)).obj ((zigzagBraidComplex k G j).X q)) := by
     by_cases h : p = -1 ∧ q = -1
     · obtain ⟨rfl, rfl⟩ := h
-      exact (isZero_gradedBimoduleTensor_of_ne_of_not_adj (k := k) hij hadj).of_iso
+      exact (isZero_zigzagGradedBraidBimodule_tensor_of_ne_of_not_adj (k := k) hij hadj).of_iso
         (((gradedBimoduleTensor k Γ).flip.obj ((zigzagBraidComplex k G j).X (-1))).mapIso
             (zigzagBraidComplexXIso₀ k G i) ≪≫
           ((gradedBimoduleTensor k Γ).obj (U i)).mapIso (zigzagBraidComplexXIso₀ k G j))

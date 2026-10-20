@@ -23,8 +23,10 @@ satisfy the braid relation up to chain homotopy.
 This file instantiates the abstract relations and the abstract transfer principle of
 `TauCeti.Algebra.Category.GradedModuleCat.BimoduleTensor.BraidRelations` for the zigzag
 algebra. The unit complex of the graded bimodule setting of the zigzag algebra is the regular
-graded zigzag bimodule in cohomological degree zero, and
-`zigzagBraidUnitComplexHomotopyEquiv` identifies it with the unit complex of that setting.
+graded zigzag bimodule in cohomological degree zero; the declarations
+`zigzagBraidUnitComplex` and `zigzagBraidUnitComplexHomotopyEquiv` of
+`TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Unit` spell it out and identify it with the
+unit complex of that setting.
 
 `zigzagBraidRelationsTransfer` transports those relations to a second graded bimodule setting,
 the setting of a graded algebra `A` with internal grading `Ξ`, and
@@ -72,24 +74,6 @@ section Zigzag
 variable [Finite V]
 
 attribute [local instance] zigzagAlgebraIntegerGradedAlgebra
-
-/-- The regular graded zigzag bimodule concentrated in cohomological degree zero: the
-common target of the two one-sided inverse-product equivalences of the braid family. -/
-abbrev zigzagBraidUnitComplex :
-    HomologicalComplex (GradedModuleCat.{max u w} (zigzagEnvelopingGrading k G).piece) c :=
-  (HomologicalComplex.single (GradedModuleCat.{max u w} (zigzagEnvelopingGrading k G).piece)
-    c 0).obj (zigzagGradedBimodule k G)
-
-/-- The regular graded zigzag bimodule is the unit complex of the graded bimodule setting of
-the zigzag algebra: the homotopy equivalence between the regular graded bimodule in
-cohomological degree zero and the unit complex of that setting. It is the transport of
-`zigzagGradedBimoduleUnitIso` to the single-degree complex. -/
-def zigzagBraidUnitComplexHomotopyEquiv :
-    HomotopyEquiv (zigzagBraidUnitComplex k G)
-      (gradedBimoduleUnitComplex k (zigzagAlgebraInternalGrading k G)) :=
-  HomotopyEquiv.ofIso
-    ((HomologicalComplex.single (GradedModuleCat.{max u w} (zigzagEnvelopingGrading k G).piece)
-      c 0).mapIso (zigzagGradedBimoduleUnitIso k G).symm)
 
 /-- The zigzag braid complexes satisfy the Khovanov-Seidel relations, with the inverse
 complexes as prescribed inverses and the regular graded bimodule concentrated in cohomological

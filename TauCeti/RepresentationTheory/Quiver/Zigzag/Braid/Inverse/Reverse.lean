@@ -8,6 +8,7 @@ module
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Inverse.Maps
 public import TauCeti.Algebra.Category.GradedModuleCat.BimoduleTensor.Basic
 public import TauCeti.Algebra.Homology.Contraction.ThreeTerm
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Unit
 
 /-!
 # The inverse graded braid complex followed by the braid complex
@@ -326,9 +327,7 @@ def zigzagBraidInverseTensorComplexHomotopyEquiv (i : V) :
     HomotopyEquiv
       (HomologicalComplex.mapBifunctor (zigzagBraidInverseComplex k G i) (zigzagBraidComplex k G i)
         F (ComplexShape.up ℤ))
-      ((HomologicalComplex.single
-        (GradedModuleCat.{max u w} (zigzagEnvelopingGrading k G).piece)
-        (ComplexShape.up ℤ) 0).obj (zigzagGradedBimodule k G)) :=
+      (zigzagBraidUnitComplex k G) :=
   (Contraction.ThreeTermCancellationData.toContraction
     (reverseCancellationData k G i)).homotopyEquiv.symm
 

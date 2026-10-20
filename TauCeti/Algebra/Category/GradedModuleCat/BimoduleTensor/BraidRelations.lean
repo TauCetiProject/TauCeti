@@ -24,7 +24,9 @@ tensor `gradedBimoduleTensor`, and the unit complex of the setting is
 `gradedBimoduleUnitComplex k Ξ`, the regular graded bimodule
 `GradedModuleCat.bimoduleUnit Ξ` placed in cohomological degree zero. The category
 `GradedBimoduleCat` and the tensor `gradedBimoduleTensor` of such a setting are defined in
-`TauCeti.Algebra.Category.GradedModuleCat.BimoduleTensor.Basic`.
+`TauCeti.Algebra.Category.GradedModuleCat.BimoduleTensor.Basic`, and the unit complex
+`gradedBimoduleUnitComplex` in `TauCeti.Algebra.Category.GradedModuleCat.BimoduleTensor.Unit`,
+next to `GradedModuleCat.bimoduleUnit`.
 
 `KhovanovSeidelRelations` records the three relations for a family `C` of complexes with
 prescribed inverses `C'` in a graded bimodule setting. The unit of the relations is the unit
@@ -82,14 +84,6 @@ universe u w uA uB
 variable (k : Type w) [CommRing k] {V : Type u} (G : SimpleGraph V)
 
 local notation "c" => ComplexShape.up ℤ
-
-/-- The unit complex of the graded bimodule setting of `Ξ`: the regular graded bimodule
-`GradedModuleCat.bimoduleUnit Ξ` placed in cohomological degree zero. -/
-noncomputable abbrev gradedBimoduleUnitComplex {A : Type uA} [Ring A] [Algebra k A]
-    (Ξ : InternalGrading k A) [GradedAlgebra Ξ.piece] :
-    HomologicalComplex (GradedBimoduleCat k Ξ) c :=
-  (HomologicalComplex.single (GradedBimoduleCat k Ξ) c 0).obj
-    (GradedModuleCat.bimoduleUnit.{w} Ξ)
 
 /-- The three Khovanov-Seidel relations for a family `C` of complexes of graded bimodules in
 the graded bimodule setting of `Ξ`, with prescribed inverses `C'`: both one-sided inverse
@@ -316,8 +310,9 @@ inverses `B'` satisfies the Khovanov-Seidel relations in the source setting, and
 complexes are identified with a target family `C` with inverses `C'` by the homotopy
 equivalences `a` and `a'`, then the target family satisfies the Khovanov-Seidel relations in
 the target setting. -/
--- The body is exposed so that the field values of the transferred relations are readable.
-@[expose, simps!]
+-- The body is not exposed: the four field values of the transferred relations are the
+-- public declarations `transferInverseForward`, `transferInverseReverse`, `transferCommute`
+-- and `transferAdjacent`, which state them without unfolding this definition.
 def transfer {k : Type w} [CommRing k] {V : Type u} {G : SimpleGraph V}
     {A₁ : Type uA} [Ring A₁] [Algebra k A₁] {A₂ : Type uB} [Ring A₂] [Algebra k A₂]
     {Ξ₁ : InternalGrading k A₁} [GradedAlgebra Ξ₁.piece]

@@ -8,6 +8,8 @@ module
 public import TauCeti.Algebra.Category.GradedModuleCat.BimoduleTensor.Basic
 public import TauCeti.Algebra.Category.GradedModuleCat.BimoduleTensor.Unit
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Tensor
+public import Mathlib.Algebra.Homology.Homotopy
+public import Mathlib.Algebra.Homology.Single
 
 /-!
 # Unit identifications for the actual graded zigzag bimodule
@@ -19,6 +21,10 @@ identify the mixed terms in tensor products of braid complexes. Their pure-tenso
 express the two restricted enveloping-algebra actions. The constructions specialize
 `GradedModuleCat.bimoduleTensorLeftUnitor` and `GradedModuleCat.bimoduleTensorRightUnitor`
 using `ULift.moduleEquiv`.
+
+The unit complex of the graded bimodule setting of the zigzag algebra, the regular graded
+zigzag bimodule in cohomological degree zero, is `zigzagBraidUnitComplex`;
+`zigzagBraidUnitComplexHomotopyEquiv` identifies it with the unit complex of that setting.
 -/
 
 public section
@@ -35,6 +41,7 @@ universe u w
 variable (k : Type w) [CommRing k] {V : Type u} (G : SimpleGraph V) [Finite V]
 
 local notation "Z" => AlgCat.carrier (zigzagAlgebra k G)
+local notation "c" => ComplexShape.up ℤ
 local notation "Γ" => zigzagAlgebraInternalGrading k G
 
 attribute [local instance] zigzagAlgebraIntegerGradedAlgebra
@@ -58,6 +65,24 @@ theorem zigzagGradedBimoduleUnitIso_hom_apply (x : GradedModuleCat.bimoduleUnit.
 @[simp]
 theorem zigzagGradedBimoduleUnitIso_inv_apply (x : zigzagGradedBimodule k G) :
     (zigzagGradedBimoduleUnitIso k G).inv.hom x = ULift.up x := (rfl)
+
+/-- The regular graded zigzag bimodule concentrated in cohomological degree zero: the
+common target of the two one-sided inverse-product equivalences of the braid family. -/
+abbrev zigzagBraidUnitComplex :
+    HomologicalComplex (GradedModuleCat.{max u w} (zigzagEnvelopingGrading k G).piece) c :=
+  (HomologicalComplex.single (GradedModuleCat.{max u w} (zigzagEnvelopingGrading k G).piece)
+    c 0).obj (zigzagGradedBimodule k G)
+
+/-- The regular graded zigzag bimodule is the unit complex of the graded bimodule setting of
+the zigzag algebra: the homotopy equivalence between the regular graded bimodule in
+cohomological degree zero and the unit complex of that setting. It is the transport of
+`zigzagGradedBimoduleUnitIso` to the single-degree complex. -/
+def zigzagBraidUnitComplexHomotopyEquiv :
+    HomotopyEquiv (zigzagBraidUnitComplex k G)
+      (gradedBimoduleUnitComplex k (zigzagAlgebraInternalGrading k G)) :=
+  HomotopyEquiv.ofIso
+    ((HomologicalComplex.single (GradedModuleCat.{max u w} (zigzagEnvelopingGrading k G).piece)
+      c 0).mapIso (zigzagGradedBimoduleUnitIso k G).symm)
 
 variable (M : GradedModuleCat.{max u w} (zigzagEnvelopingGrading k G).piece)
 

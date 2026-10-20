@@ -9,6 +9,7 @@ public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Inverse.Maps
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.InverseEndpoints
 public import TauCeti.Algebra.Category.GradedModuleCat.BimoduleTensor.Basic
 public import TauCeti.Algebra.Homology.Contraction.ThreeTerm
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Unit
 
 /-!
 # The graded braid complex followed by its inverse
@@ -268,10 +269,7 @@ private def forwardCancellationData (i : V) :
 /-- The graded braid complex followed by its inverse is homotopy equivalent
 to the regular graded zigzag bimodule in cochain degree zero. -/
 def zigzagBraidComplexTensorInverseHomotopyEquiv (i : V) :
-    HomotopyEquiv (zigzagBraidInverseComplexTensor k G i)
-      ((HomologicalComplex.single
-        (GradedModuleCat.{max u w} (zigzagEnvelopingGrading k G).piece)
-        (ComplexShape.up ℤ) 0).obj (zigzagGradedBimodule k G)) :=
+    HomotopyEquiv (zigzagBraidInverseComplexTensor k G i) (zigzagBraidUnitComplex k G) :=
   (Contraction.ThreeTermCancellationData.toContraction
     (forwardCancellationData k G i)).homotopyEquiv.symm
 
