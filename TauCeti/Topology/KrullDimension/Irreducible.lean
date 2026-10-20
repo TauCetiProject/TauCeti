@@ -38,8 +38,8 @@ subset, hence the whole space, and in a `T₀` space two points with the same cl
 * `IsIrreducible.topologicalKrullDim_add_one_le`, `IsIrreducible.topologicalKrullDim_lt`: the
   same statements for a closed subset strictly contained in an irreducible subset of an ambient
   space.
-* `topologicalKrullDim_eq_zero_iff_subsingleton`: an irreducible `T₀` space has Krull dimension
-  zero if and only if it is a subsingleton.
+* `TauCeti.topologicalKrullDim_eq_zero_iff_subsingleton`: an irreducible `T₀` space has Krull
+  dimension zero if and only if it is a subsingleton.
 
 ## References
 
@@ -133,7 +133,7 @@ theorem topologicalKrullDim_lt (hY : IsIrreducible Y) (hZ : IsClosed Z) (hZY : Z
 
 end IsIrreducible
 
-section Subsingleton
+namespace TauCeti
 
 variable {X : Type*} [TopologicalSpace X] [IrreducibleSpace X]
 
@@ -155,4 +155,4 @@ theorem topologicalKrullDim_eq_zero_iff_subsingleton [T0Space X] :
     have : Nonempty (IrreducibleCloseds X) := ⟨top⟩
     exact krullDim_eq_zero
 
-end Subsingleton
+end TauCeti

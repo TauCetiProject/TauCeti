@@ -14,7 +14,7 @@ public import TauCeti.Topology.KrullDimension.Irreducible
 
 An abelian variety of dimension zero is the zero abelian variety `Spec K`. The underlying scheme
 of an abelian variety `A` over `K` is integral, so it has dimension zero exactly when it is a single
-point (`topologicalKrullDim_eq_zero_iff_subsingleton`). In that case the zero section
+point (`TauCeti.topologicalKrullDim_eq_zero_iff_subsingleton`). In that case the zero section
 `Spec K ⟶ A` is a surjective closed immersion, being a section of the separated structure morphism,
 into a reduced scheme; hence it is an isomorphism, and so is the structure morphism `A ⟶ Spec K`.
 Consequently `A` is a zero object of the category of abelian varieties, and conversely a zero object
