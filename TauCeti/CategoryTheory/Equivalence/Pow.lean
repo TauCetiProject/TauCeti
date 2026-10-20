@@ -162,6 +162,61 @@ def _root_.CategoryTheory.Equivalence.powCommIso (σ : e.functor ⋙ F ≅ F ⋙
   | Int.ofNat n => e.powNatCommIso e' F σ n
   | Int.negSucc n => e.symm.powNatCommIso e'.symm F (Equivalence.inverseCommIso σ) (n + 1)
 
+/-- At the zeroth power, `CategoryTheory.Equivalence.powCommIso` is the comparison of unitors
+`𝟭 ⋙ F ≅ F ⋙ 𝟭`. -/
+theorem _root_.CategoryTheory.Equivalence.powCommIso_zero
+    (σ : e.functor ⋙ F ≅ F ⋙ e'.functor) :
+    Equivalence.powCommIso σ 0 = Functor.leftUnitor F ≪≫ (Functor.rightUnitor F).symm := by
+  unfold Equivalence.powCommIso; rfl
+
+/-- At the first power, `CategoryTheory.Equivalence.powCommIso` is the given intertwiner. -/
+theorem _root_.CategoryTheory.Equivalence.powCommIso_one (σ : e.functor ⋙ F ≅ F ⋙ e'.functor) :
+    Equivalence.powCommIso σ 1 = σ := by
+  unfold Equivalence.powCommIso; rfl
+
+/-- At the power `-1`, `CategoryTheory.Equivalence.powCommIso` is the intertwiner of the inverses
+given by `CategoryTheory.Equivalence.inverseCommIso`. -/
+theorem _root_.CategoryTheory.Equivalence.powCommIso_neg_one
+    (σ : e.functor ⋙ F ≅ F ⋙ e'.functor) :
+    Equivalence.powCommIso σ (-1) = Equivalence.inverseCommIso σ := by
+  unfold Equivalence.powCommIso; rfl
+
+@[simp]
+theorem _root_.CategoryTheory.Equivalence.powCommIso_zero_hom_app
+    (σ : e.functor ⋙ F ≅ F ⋙ e'.functor) (X : C) :
+    (Equivalence.powCommIso σ 0).hom.app X = 𝟙 (F.obj X) := by
+  simp [Equivalence.powCommIso_zero]
+
+@[simp]
+theorem _root_.CategoryTheory.Equivalence.powCommIso_zero_inv_app
+    (σ : e.functor ⋙ F ≅ F ⋙ e'.functor) (X : C) :
+    (Equivalence.powCommIso σ 0).inv.app X = 𝟙 (F.obj X) := by
+  simp [Equivalence.powCommIso_zero]
+
+@[simp]
+theorem _root_.CategoryTheory.Equivalence.powCommIso_one_hom
+    (σ : e.functor ⋙ F ≅ F ⋙ e'.functor) :
+    (Equivalence.powCommIso σ 1).hom = σ.hom := by
+  rw [Equivalence.powCommIso_one]
+
+@[simp]
+theorem _root_.CategoryTheory.Equivalence.powCommIso_one_inv
+    (σ : e.functor ⋙ F ≅ F ⋙ e'.functor) :
+    (Equivalence.powCommIso σ 1).inv = σ.inv := by
+  rw [Equivalence.powCommIso_one]
+
+@[simp]
+theorem _root_.CategoryTheory.Equivalence.powCommIso_neg_one_hom
+    (σ : e.functor ⋙ F ≅ F ⋙ e'.functor) :
+    (Equivalence.powCommIso σ (-1)).hom = (Equivalence.inverseCommIso σ).hom := by
+  rw [Equivalence.powCommIso_neg_one]
+
+@[simp]
+theorem _root_.CategoryTheory.Equivalence.powCommIso_neg_one_inv
+    (σ : e.functor ⋙ F ≅ F ⋙ e'.functor) :
+    (Equivalence.powCommIso σ (-1)).inv = (Equivalence.inverseCommIso σ).inv := by
+  rw [Equivalence.powCommIso_neg_one]
+
 end Comm
 
 end TauCeti
