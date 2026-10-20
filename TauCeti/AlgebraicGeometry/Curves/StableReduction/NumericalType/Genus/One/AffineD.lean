@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Genus.One.Basic
-public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Fork
+public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.DoubleFork
 import TauCeti.Algebra.Group.AffineSequence
 import Mathlib.Tactic.LinearCombination
 
@@ -268,5 +268,30 @@ theorem IsMinimal.isGenusOneAffineDShape (hT : T.IsMinimal) (hg : T.arithmeticGe
     ⟨hc.reverse, by omega, fun i hi ↦ hleft_ne (t - 1 - i) (by omega), hself left, by
       simpa only [show t - 1 - (t - 2) = 1 by omega] using hleft_pos⟩
     hcard ht
+
+/-- The displayed genus-one shape has weight ratios at most four and multiplicity ratios
+at most six, with integral ratios from suitable components. -/
+lemma IsGenusOneAffineDShape.exists_weight_and_multiplicity_dvd_and_le
+    {t : ℕ} {c : ℕ → T.Component} {left right : T.Component}
+    (hD : T.IsGenusOneAffineDShape t c left right) (ht : 4 ≤ t)
+    (hcard : Fintype.card T.Component = t + 2)
+    (hr : T.IsSelfIntersectionMinusTwoFork t c right)
+    (hl : T.IsSelfIntersectionMinusTwoFork t (fun i ↦ c (t - 1 - i)) left) :
+    (∃ j, ∀ i, (T.weight j : ℕ) ∣ T.weight i ∧ (T.weight i : ℕ) ≤ 4 * T.weight j) ∧
+      (∃ j, ∀ i, (T.multiplicity j : ℕ) ∣ T.multiplicity i ∧
+        (T.multiplicity i : ℕ) ≤ 6 * T.multiplicity j) := by
+  classical
+  obtain ⟨w, m, _, _, hw, hwl, hwr, hm, hml, hmr, -⟩ := isGenusOneAffineDShape_iff.mp hD
+  refine T.exists_weight_and_multiplicity_dvd_and_le_of_int left left (fun i ↦ ?_) (fun i ↦ ?_)
+  · rcases hr.eq_or_eq_or_exists_lt_eq_of_card_eq hl ht hcard i with rfl | rfl | ⟨k, hk, rfl⟩
+    · omega
+    · omega
+    · have hwk := hw k hk
+      omega
+  · rcases hr.eq_or_eq_or_exists_lt_eq_of_card_eq hl ht hcard i with rfl | rfl | ⟨k, hk, rfl⟩
+    · omega
+    · omega
+    · have hmk := hm k hk
+      split_ifs at hmk <;> omega
 
 end TauCeti.NumericalType

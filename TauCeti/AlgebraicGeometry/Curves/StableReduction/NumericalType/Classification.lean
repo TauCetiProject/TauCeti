@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.RootSystem.AffineDynkinType.Basic
 import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Branch
 import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.E8
 import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Exceptional
+import Mathlib.Tactic.ITauto
 import Mathlib.Tactic.IntervalCases
 import Mathlib.Tactic.LinearCombination
 
@@ -568,28 +569,18 @@ private lemma exists_affineE6 (hc : T.IsSelfIntersectionMinusTwoChain t c) {r : 
       | exact absurd hij hxy
       | exact absurd hij hxy.symm
   refine ⟨l, hl, fun i j hadj ↦ T.adj_iff.mpr ⟨hl.ne hadj.ne, ?_⟩⟩
-  have hlt (u v : Fin 7) (huv : u < v) (h : AffineDynkinType.E6.graph.Adj u v) :
-      0 < T.intersection (l u) (l v) := by
-    have hG := (AffineDynkinType.graph_E6_adj u v).mp h
-    rw [min_eq_left (Fin.le_def.mp huv.le), max_eq_right (Fin.le_def.mp huv.le)] at hG
-    simp only [List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at hG
-    rcases hG with ⟨hu, hv⟩ | ⟨hu, hv⟩ | ⟨hu, hv⟩ | ⟨hu, hv⟩ | ⟨hu, hv⟩ | ⟨hu, hv⟩ <;>
-      [obtain ⟨rfl, rfl⟩ : u = 0 ∧ v = 1 := ⟨Fin.ext hu, Fin.ext hv⟩;
-        obtain ⟨rfl, rfl⟩ : u = 1 ∧ v = 2 := ⟨Fin.ext hu, Fin.ext hv⟩;
-        obtain ⟨rfl, rfl⟩ : u = 0 ∧ v = 3 := ⟨Fin.ext hu, Fin.ext hv⟩;
-        obtain ⟨rfl, rfl⟩ : u = 3 ∧ v = 4 := ⟨Fin.ext hu, Fin.ext hv⟩;
-        obtain ⟨rfl, rfl⟩ : u = 0 ∧ v = 5 := ⟨Fin.ext hu, Fin.ext hv⟩;
-        obtain ⟨rfl, rfl⟩ : u = 5 ∧ v = 6 := ⟨Fin.ext hu, Fin.ext hv⟩]
-    all_goals first
-      | exact hx
-      | exact hxy_pos
-      | exact hc.intersection_pos (by omega) (by omega)
-      | (rw [T.intersection_comm]; exact hc.intersection_pos (by omega) (by omega))
-  rcases lt_trichotomy i j with hij | rfl | hji
-  · exact hlt i j hij hadj
-  · exact (AffineDynkinType.E6.graph.loopless.irrefl i hadj).elim
-  · rw [T.intersection_comm]
-    exact hlt j i hji hadj.symm
+  apply T.intersection_pos_of_adj_of_forall_lt (G := AffineDynkinType.E6.graph)
+    (l := l) ?_ hadj
+  intro u v _huv h
+  fin_cases u <;> fin_cases v
+  all_goals norm_num [Fin.lt_def] at _huv
+  all_goals norm_num [AffineDynkinType.graph_E6_adj] at h
+  all_goals simp only [l]
+  all_goals first
+    | exact hx
+    | exact hxy_pos
+    | exact hc.intersection_pos (by omega) (by omega)
+    | (rw [T.intersection_comm]; exact hc.intersection_pos (by omega) (by omega))
 
 /-- A chain component `c r` (`3 ≤ r` and `r + 4 ≤ t`) meeting `x` outside the chain produces the
 eight-component affine `E₇` configuration. -/
@@ -608,29 +599,17 @@ private lemma exists_affineE7 (hc : T.IsSelfIntersectionMinusTwoChain t c) {r : 
       | exact absurd hij (hx_ne _ (by omega)).symm
       | exact absurd hij (hx_ne _ (by omega))
   refine ⟨l, hl, fun i j hadj ↦ ?_⟩
-  have hlt (u v : Fin 8) (huv : u < v) (h : AffineDynkinType.E7.graph.Adj u v) :
-      0 < T.intersection (l u) (l v) := by
-    have hG := (AffineDynkinType.graph_E7_adj u v).mp h
-    rw [min_eq_left (Fin.le_def.mp huv.le), max_eq_right (Fin.le_def.mp huv.le)] at hG
-    simp only [List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at hG
-    rcases hG with ⟨hu, hv⟩ | ⟨hu, hv⟩ | ⟨hu, hv⟩ | ⟨hu, hv⟩ |
-        ⟨hu, hv⟩ | ⟨hu, hv⟩ | ⟨hu, hv⟩ <;>
-      [obtain ⟨rfl, rfl⟩ : u = 0 ∧ v = 1 := ⟨Fin.ext hu, Fin.ext hv⟩;
-        obtain ⟨rfl, rfl⟩ : u = 0 ∧ v = 2 := ⟨Fin.ext hu, Fin.ext hv⟩;
-        obtain ⟨rfl, rfl⟩ : u = 2 ∧ v = 3 := ⟨Fin.ext hu, Fin.ext hv⟩;
-        obtain ⟨rfl, rfl⟩ : u = 3 ∧ v = 4 := ⟨Fin.ext hu, Fin.ext hv⟩;
-        obtain ⟨rfl, rfl⟩ : u = 0 ∧ v = 5 := ⟨Fin.ext hu, Fin.ext hv⟩;
-        obtain ⟨rfl, rfl⟩ : u = 5 ∧ v = 6 := ⟨Fin.ext hu, Fin.ext hv⟩;
-        obtain ⟨rfl, rfl⟩ : u = 6 ∧ v = 7 := ⟨Fin.ext hu, Fin.ext hv⟩]
-    all_goals first
-      | exact hx
-      | exact hc.intersection_pos (by omega) (by omega)
-      | (rw [T.intersection_comm]; exact hc.intersection_pos (by omega) (by omega))
-  rcases lt_trichotomy i j with hij | rfl | hji
-  · exact hlt i j hij hadj
-  · exact (AffineDynkinType.E7.graph.loopless.irrefl i hadj).elim
-  · rw [T.intersection_comm]
-    exact hlt j i hji hadj.symm
+  apply T.intersection_pos_of_adj_of_forall_lt (G := AffineDynkinType.E7.graph)
+    (l := l) ?_ hadj
+  intro u v _huv h
+  fin_cases u <;> fin_cases v
+  all_goals norm_num [Fin.lt_def] at _huv
+  all_goals norm_num [AffineDynkinType.graph_E7_adj] at h
+  all_goals simp only [l]
+  all_goals first
+    | exact hx
+    | exact hc.intersection_pos (by omega) (by omega)
+    | (rw [T.intersection_comm]; exact hc.intersection_pos (by omega) (by omega))
 
 /-- A chain `c 0, …, c (t - 1)` of length `8 ≤ t` with a leaf `x` outside the chain meeting `c 2`
 produces the nine-component affine `E₈` configuration. -/
@@ -647,30 +626,17 @@ private lemma exists_affineE8 (hc : T.IsSelfIntersectionMinusTwoChain t c) (ht :
       | exact absurd hij (hx_ne _ (by omega)).symm
       | exact absurd hij (hx_ne _ (by omega))
   refine ⟨l, hl, fun i j hadj ↦ ?_⟩
-  have hlt (u v : Fin 9) (huv : u < v) (h : AffineDynkinType.E8.graph.Adj u v) :
-      0 < T.intersection (l u) (l v) := by
-    have hG := (AffineDynkinType.graph_E8_adj u v).mp h
-    rw [min_eq_left (Fin.le_def.mp huv.le), max_eq_right (Fin.le_def.mp huv.le)] at hG
-    simp only [List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at hG
-    rcases hG with ⟨hu, hv⟩ | ⟨hu, hv⟩ | ⟨hu, hv⟩ | ⟨hu, hv⟩ |
-        ⟨hu, hv⟩ | ⟨hu, hv⟩ | ⟨hu, hv⟩ | ⟨hu, hv⟩ <;>
-      [obtain ⟨rfl, rfl⟩ : u = 0 ∧ v = 1 := ⟨Fin.ext hu, Fin.ext hv⟩;
-        obtain ⟨rfl, rfl⟩ : u = 0 ∧ v = 2 := ⟨Fin.ext hu, Fin.ext hv⟩;
-        obtain ⟨rfl, rfl⟩ : u = 2 ∧ v = 3 := ⟨Fin.ext hu, Fin.ext hv⟩;
-        obtain ⟨rfl, rfl⟩ : u = 0 ∧ v = 4 := ⟨Fin.ext hu, Fin.ext hv⟩;
-        obtain ⟨rfl, rfl⟩ : u = 4 ∧ v = 5 := ⟨Fin.ext hu, Fin.ext hv⟩;
-        obtain ⟨rfl, rfl⟩ : u = 5 ∧ v = 6 := ⟨Fin.ext hu, Fin.ext hv⟩;
-        obtain ⟨rfl, rfl⟩ : u = 6 ∧ v = 7 := ⟨Fin.ext hu, Fin.ext hv⟩;
-        obtain ⟨rfl, rfl⟩ : u = 7 ∧ v = 8 := ⟨Fin.ext hu, Fin.ext hv⟩]
-    all_goals first
-      | exact hx
-      | exact hc.intersection_pos (by omega) (by omega)
-      | (rw [T.intersection_comm]; exact hc.intersection_pos (by omega) (by omega))
-  rcases lt_trichotomy i j with hij | rfl | hji
-  · exact hlt i j hij hadj
-  · exact (AffineDynkinType.E8.graph.loopless.irrefl i hadj).elim
-  · rw [T.intersection_comm]
-    exact hlt j i hji hadj.symm
+  apply T.intersection_pos_of_adj_of_forall_lt (G := AffineDynkinType.E8.graph)
+    (l := l) ?_ hadj
+  intro u v _huv h
+  fin_cases u <;> fin_cases v
+  all_goals norm_num [Fin.lt_def] at _huv
+  all_goals norm_num [AffineDynkinType.graph_E8_adj] at h
+  all_goals simp only [l]
+  all_goals first
+    | exact hx
+    | exact hc.intersection_pos (by omega) (by omega)
+    | (rw [T.intersection_comm]; exact hc.intersection_pos (by omega) (by omega))
 
 /-- Two distinct leaves `x` and `y` outside a chain `c` meeting interior chain components `c r`
 and `c s` (`0 < r ≤ s` and `s + 1 < t`) either sit at the same component (forming a four-leaf
@@ -795,24 +761,30 @@ theorem topologicalGenus_pos_or_exists_chain_or_fork_or_star_or_affine
   · -- `c` and `x` exhaust `T`.
     have hcard : Fintype.card T.Component = t + 1 := by
       rw [← card_univ, ← hBU, card_insert_of_notMem hxA, hAcard]
-    right; right
     by_cases hfork_right : r = t - 2
-    · exact .inl ⟨t, c, x, hcard, hc, by omega, hx_ne, hself x, hfork_right ▸ hpos⟩
+    · have hfork : ∃ t c b, Fintype.card T.Component = t + 1 ∧
+          T.IsSelfIntersectionMinusTwoFork t c b :=
+        ⟨t, c, x, hcard, hc, by omega, hx_ne, hself x, hfork_right ▸ hpos⟩
+      itauto
     by_cases hfork_left : r = 1
-    · refine .inl ⟨t, fun i ↦ c (t - 1 - i), x, hcard, hc.reverse, by omega,
-        fun i hi ↦ hx_ne _ (by omega), hself x, ?_⟩
-      have hreverse : t - 1 - (t - 2) = r := by omega
-      simpa [hreverse] using hpos
-    right; right; right; right
+    · have hfork : ∃ t c b, Fintype.card T.Component = t + 1 ∧
+          T.IsSelfIntersectionMinusTwoFork t c b := by
+        refine ⟨t, fun i ↦ c (t - 1 - i), x, hcard, hc.reverse, by omega,
+          fun i hi ↦ hx_ne _ (by omega), hself x, ?_⟩
+        have hreverse : t - 1 - (t - 2) = r := by omega
+        simpa [hreverse] using hpos
+      itauto
     by_cases hdir : 2 * r + 1 ≤ t
-    · exact hc.exists_affineE7_or_affineE8_of_card_eq_succ hcard hx_ne (hself x)
+    · have hE := hc.exists_affineE7_or_affineE8_of_card_eq_succ hcard hx_ne (hself x)
         (by omega) hdir hpos hx_zero
+      itauto
     · have hreverse : t - 1 - (t - 1 - r) = r := by omega
       have hpos' : 0 < T.intersection (c (t - 1 - (t - 1 - r))) x := by
         simpa [hreverse] using hpos
-      exact hc.reverse.exists_affineE7_or_affineE8_of_card_eq_succ hcard
+      have hE := hc.reverse.exists_affineE7_or_affineE8_of_card_eq_succ hcard
         (fun i hi ↦ hx_ne _ (by omega)) (hself x) (by omega) (by omega) hpos'
         fun i hi hir ↦ hx_zero _ (by omega) (by omega)
+      itauto
   · -- Some component `y` outside `insert x A` meets `insert x A`.
     obtain ⟨b, hb, y, hyB, hby⟩ :=
       T.exists_mem_notMem_adj ↑(insert x A) (insert_nonempty x A) (coe_eq_univ.not.mpr hBU)
@@ -834,22 +806,21 @@ theorem topologicalGenus_pos_or_exists_chain_or_fork_or_star_or_affine
         (mem_univ x) (fun i hi ↦ hx_ne _ (by omega)) (hself x) (mem_univ y)
         (fun i hi ↦ hy_ne _ (by omega)) (hself y) hyx (r := t - 1 - r) (by omega)
         (by simpa [hreverse] using hpos) hby
-      exact .inr (.inr (.inr (.inr (.inr (.inl
-        (hc.exists_affineE6 hr2 (by omega) hyx.symm hx_ne hy_ne hpos hby))))))
+      have hE := hc.exists_affineE6 hr2 (by omega) hyx.symm hx_ne hy_ne hpos hby
+      itauto
     · -- `y` meets `c s`, producing either a four-leaf star or an exhaustive double fork.
       obtain ⟨s, hs, rfl⟩ := mem_A.mp hbA
       obtain ⟨hs0, hst⟩ := hc.pos_and_lt_of_intersection_pos hcU hmax (mem_univ y) hy_ne
         (hself y) hs hby
-      right; right; right
       rcases le_total r s with hrs | hsr
       · rcases hc.exists_fourLeafStar_or_doubleFork hcard₂ hyx.symm hx_ne hy_ne (hself x)
             (hself y) hr0 hrs hst hpos hby with hstar | hdouble
-        · exact .inl hstar
-        · exact .inr (.inl hdouble)
+        · itauto
+        · itauto
       · rcases hc.exists_fourLeafStar_or_doubleFork hcard₂ hyx hy_ne hx_ne (hself y)
             (hself x) hs0 hsr hrt hby hpos with hstar | hdouble
-        · exact .inl hstar
-        · exact .inr (.inl hdouble)
+        · itauto
+        · itauto
 
 /-- **Structural classification of tree-shaped numerical types with self-intersections `-2w`.**
 If every component of `T` has self-intersection `-2w` and `T.topologicalGenus = 0` (so the

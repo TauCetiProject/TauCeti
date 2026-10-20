@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.ProperSubgraph
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Topology
-import Mathlib.Combinatorics.SimpleGraph.DegreeSum
 import TauCeti.Algebra.BigOperators.Finset.Range
 import Mathlib.Tactic.IntervalCases
 import Mathlib.Tactic.Linarith
@@ -857,47 +856,37 @@ lemma IsSelfIntersectionMinusTwoChain.topologicalGenus_pos_of_card_eq
     (hends : 0 < T.intersection (c 0) (c (t - 1))) :
     0 < T.topologicalGenus := by
   classical
-  have hu : (range t).image c = (univ : Finset T.Component) :=
-    eq_univ_of_card _ (by rw [hc.card_image_range, hcard])
-  have htwo (v : T.Component) : 2 ≤ T.intersectionGraph.degree v := by
-    have hv : v ∈ (range t).image c := hu ▸ mem_univ v
-    obtain ⟨i, hi, rfl⟩ := mem_image.mp hv
-    replace hi := mem_range.mp hi
-    suffices ∃ j k, j ≠ k ∧ T.Adj (c i) j ∧ T.Adj (c i) k by
-      obtain ⟨j, k, hjk, hj, hk⟩ := this
-      rw [← SimpleGraph.card_neighborFinset_eq_degree]
-      have hsub : ({j, k} : Finset T.Component) ⊆ T.intersectionGraph.neighborFinset (c i) := by
-        intro z hz
-        simp only [mem_insert, mem_singleton] at hz
-        rw [SimpleGraph.mem_neighborFinset, T.intersectionGraph_adj_iff]
-        rcases hz with rfl | rfl <;> assumption
-      exact (card_pair hjk).symm.trans_le (card_le_card hsub)
-    rcases Nat.eq_zero_or_pos i with rfl | hi0
-    · exact ⟨c 1, c (t - 1), hc.ne (by omega) (by omega) (by omega),
-        T.adj_iff.mpr ⟨hc.ne (by omega) (by omega) (by omega),
-          hc.intersection_succ_pos 0 (by omega)⟩,
-        T.adj_iff.mpr ⟨hc.ne (by omega) (by omega) (by omega), hends⟩⟩
-    by_cases hilast : i = t - 1
-    · subst i
-      refine ⟨c 0, c (t - 2), hc.ne (by omega) (by omega) (by omega),
-        T.adj_iff.mpr ⟨hc.ne (by omega) (by omega) (by omega),
-          by rwa [T.intersection_comm]⟩,
-        T.adj_iff.mpr ⟨hc.ne (by omega) (by omega) (by omega), ?_⟩⟩
-      rw [T.intersection_comm]
-      exact hc.intersection_pos (by omega) (by omega)
-    · refine ⟨c (i - 1), c (i + 1), hc.ne (by omega) (by omega) (by omega),
-        T.adj_iff.mpr ⟨hc.ne (by omega) (by omega) (by omega), ?_⟩,
-        T.adj_iff.mpr ⟨hc.ne (by omega) (by omega) (by omega),
-          hc.intersection_succ_pos i (by omega)⟩⟩
-      rw [T.intersection_comm]
-      exact hc.intersection_pos (by omega) (by omega)
-  have hdeg : 2 * Fintype.card T.Component ≤ ∑ v, T.intersectionGraph.degree v := by
-    simpa [mul_comm 2] using sum_le_sum fun v (_ : v ∈ univ) ↦ htwo v
-  have hsum := T.intersectionGraph.sum_degrees_eq_twice_card_edges
-  have hedge : #T.intersectionGraph.edgeFinset = T.intersectionGraph.edgeSet.ncard := by
-    rw [SimpleGraph.edgeFinset_card, ← Nat.card_eq_fintype_card, Nat.card_coe_set_eq]
-  rw [topologicalGenus_def, Nat.card_eq_fintype_card]
-  omega
+  apply T.topologicalGenus_pos_of_two_le_degree
+  intro v
+  obtain ⟨i, hi, rfl⟩ := hc.exists_lt_eq_of_card_eq hcard v
+  suffices ∃ j k, j ≠ k ∧ T.Adj (c i) j ∧ T.Adj (c i) k by
+    obtain ⟨j, k, hjk, hj, hk⟩ := this
+    rw [← SimpleGraph.card_neighborFinset_eq_degree]
+    have hsub : ({j, k} : Finset T.Component) ⊆ T.intersectionGraph.neighborFinset (c i) := by
+      intro z hz
+      simp only [mem_insert, mem_singleton] at hz
+      rw [SimpleGraph.mem_neighborFinset, T.intersectionGraph_adj_iff]
+      rcases hz with rfl | rfl <;> assumption
+    exact (card_pair hjk).symm.trans_le (card_le_card hsub)
+  rcases Nat.eq_zero_or_pos i with rfl | hi0
+  · exact ⟨c 1, c (t - 1), hc.ne (by omega) (by omega) (by omega),
+      T.adj_iff.mpr ⟨hc.ne (by omega) (by omega) (by omega),
+        hc.intersection_succ_pos 0 (by omega)⟩,
+      T.adj_iff.mpr ⟨hc.ne (by omega) (by omega) (by omega), hends⟩⟩
+  by_cases hilast : i = t - 1
+  · subst i
+    refine ⟨c 0, c (t - 2), hc.ne (by omega) (by omega) (by omega),
+      T.adj_iff.mpr ⟨hc.ne (by omega) (by omega) (by omega),
+        by rwa [T.intersection_comm]⟩,
+      T.adj_iff.mpr ⟨hc.ne (by omega) (by omega) (by omega), ?_⟩⟩
+    rw [T.intersection_comm]
+    exact hc.intersection_pos (by omega) (by omega)
+  · refine ⟨c (i - 1), c (i + 1), hc.ne (by omega) (by omega) (by omega),
+      T.adj_iff.mpr ⟨hc.ne (by omega) (by omega) (by omega), ?_⟩,
+      T.adj_iff.mpr ⟨hc.ne (by omega) (by omega) (by omega),
+        hc.intersection_succ_pos i (by omega)⟩⟩
+    rw [T.intersection_comm]
+    exact hc.intersection_pos (by omega) (by omega)
 
 end NumericalType
 

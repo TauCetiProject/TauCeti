@@ -291,7 +291,38 @@ theorem exists_isGenusOneFourStarShape (hcard : Fintype.card T.Component = 4)
     (hjk0 : T.intersection j k = 0) (hci0 : 0 < T.intersection c i)
     (hcj0 : 0 < T.intersection c j) (hck0 : 0 < T.intersection c k) :
     ∃ x y z, ({x, y, z} : Finset T.Component) = {i, j, k} ∧
+      ({c, x, y, z} : Finset T.Component) = univ ∧
+      x ≠ y ∧ x ≠ z ∧ y ≠ z ∧
+      T.intersection x y = 0 ∧ T.intersection x z = 0 ∧ T.intersection y z = 0 ∧
       T.IsGenusOneFourStarShape c x y z := by
+  classical
+  have hci := ne_of_intersection_nonneg hc hci0.le
+  have hcj := ne_of_intersection_nonneg hc hcj0.le
+  have hck := ne_of_intersection_nonneg hc hck0.le
+  have hij := ne_of_intersection_nonneg hi hij0.ge
+  have hik := ne_of_intersection_nonneg hi hik0.ge
+  have hjk := ne_of_intersection_nonneg hj hjk0.ge
+  suffices ∃ x y z, ({x, y, z} : Finset T.Component) = {i, j, k} ∧
+      T.IsGenusOneFourStarShape c x y z by
+    obtain ⟨x, y, z, hset, hshape⟩ := this
+    have huniv : ({c, x, y, z} : Finset T.Component) = univ := by
+      rw [hset]
+      apply eq_univ_of_card
+      simp [hci, hcj, hck, hij, hik, hjk, hcard]
+    have hxyz : x ≠ y ∧ x ≠ z ∧ y ≠ z := by
+      apply card_triple_eq_three_iff.mp
+      rw [hset]
+      exact card_triple_eq_three_iff.mpr ⟨hij, hik, hjk⟩
+    have hzero (u v : T.Component) (hu : u ∈ ({x, y, z} : Finset T.Component))
+        (hv : v ∈ ({x, y, z} : Finset T.Component)) (huv : u ≠ v) :
+        T.intersection u v = 0 := by
+      rw [hset] at hu hv
+      simp only [mem_insert, mem_singleton] at hu hv
+      grind [T.intersection_comm]
+    exact ⟨x, y, z, hset, huniv, hxyz.1, hxyz.2.1, hxyz.2.2,
+      hzero x y (by simp) (by simp) hxyz.1,
+      hzero x z (by simp) (by simp) hxyz.2.1,
+      hzero y z (by simp) (by simp) hxyz.2.2, hshape⟩
   -- The four components are distinct, so they exhaust `T` and each satisfies a fibre relation.
   have hr := fiber_relation_of_card_eq_four hcard (ne_of_intersection_nonneg hc hci0.le)
     (ne_of_intersection_nonneg hc hcj0.le) (ne_of_intersection_nonneg hc hck0.le)
@@ -349,11 +380,54 @@ theorem exists_isGenusOneFourStarShape_of_isMinimal_and_arithmeticGenus_eq_one
     (hci0 : 0 < T.intersection c i) (hcj0 : 0 < T.intersection c j)
     (hck0 : 0 < T.intersection c k) :
     ∃ x y z, ({x, y, z} : Finset T.Component) = {i, j, k} ∧
+      ({c, x, y, z} : Finset T.Component) = univ ∧
+      x ≠ y ∧ x ≠ z ∧ y ≠ z ∧
+      T.intersection x y = 0 ∧ T.intersection x z = 0 ∧ T.intersection y z = 0 ∧
       T.IsGenusOneFourStarShape c x y z := by
   have h₂ := (T.isMinimal_and_arithmeticGenus_eq_one_iff (by omega)).mp ⟨hT, hg⟩
   exact T.exists_isGenusOneFourStarShape hcard (T.isMinusTwoIndex_iff.mp (h₂ c)).2
     (T.isMinusTwoIndex_iff.mp (h₂ i)).2 (T.isMinusTwoIndex_iff.mp (h₂ j)).2
     (T.isMinusTwoIndex_iff.mp (h₂ k)).2 hij0 hik0 hjk0 hci0 hcj0 hck0
+
+/-- The displayed genus-one shape has weight ratios at most four and multiplicity ratios
+at most six, with integral ratios from suitable components. -/
+lemma IsGenusOneFourPathShape.exists_weight_and_multiplicity_dvd_and_le
+    {x y z t : T.Component} (h4 : T.IsGenusOneFourPathShape x y z t)
+    (huniv : ({x, y, z, t} : Finset T.Component) = univ) :
+    (∃ j, ∀ i, (T.weight j : ℕ) ∣ T.weight i ∧ (T.weight i : ℕ) ≤ 4 * T.weight j) ∧
+      (∃ j, ∀ i, (T.multiplicity j : ℕ) ∣ T.multiplicity i ∧
+        (T.multiplicity i : ℕ) ≤ 6 * T.multiplicity j) := by
+  classical
+  have mem (i : T.Component) : i = x ∨ i = y ∨ i = z ∨ i = t := by
+    simpa using (huniv ▸ mem_univ i : i ∈ ({x, y, z, t} : Finset T.Component))
+  rcases isGenusOneFourPathShape_iff.mp h4 with ⟨hw1, hw2, hw3, hm1, hm2, hm3, -⟩ |
+    ⟨hw1, hw2, hw3, hm1, hm2, hm3, -⟩ | ⟨hw1, hw2, hw3, hm1, hm2, hm3, -⟩
+  all_goals first
+    | (refine T.exists_weight_and_multiplicity_dvd_and_le_of_int x t ?_ ?_
+       all_goals intro i; rcases mem i with rfl | rfl | rfl | rfl <;> omega)
+    | (refine T.exists_weight_and_multiplicity_dvd_and_le_of_int x x ?_ ?_
+       all_goals intro i; rcases mem i with rfl | rfl | rfl | rfl <;> omega)
+    | (refine T.exists_weight_and_multiplicity_dvd_and_le_of_int y x ?_ ?_
+       all_goals intro i; rcases mem i with rfl | rfl | rfl | rfl <;> omega)
+
+/-- The displayed genus-one shape has weight ratios at most four and multiplicity ratios
+at most six, with integral ratios from suitable components. -/
+lemma IsGenusOneFourStarShape.exists_weight_and_multiplicity_dvd_and_le
+    {c₀ x y z : T.Component} (hstar : T.IsGenusOneFourStarShape c₀ x y z)
+    (huniv : ({c₀, x, y, z} : Finset T.Component) = univ) :
+    (∃ j, ∀ i, (T.weight j : ℕ) ∣ T.weight i ∧ (T.weight i : ℕ) ≤ 4 * T.weight j) ∧
+      (∃ j, ∀ i, (T.multiplicity j : ℕ) ∣ T.multiplicity i ∧
+        (T.multiplicity i : ℕ) ≤ 6 * T.multiplicity j) := by
+  classical
+  have mem (i : T.Component) : i = c₀ ∨ i = x ∨ i = y ∨ i = z := by
+    simpa using (huniv ▸ mem_univ i : i ∈ ({c₀, x, y, z} : Finset T.Component))
+  rcases isGenusOneFourStarShape_iff.mp hstar with ⟨hw1, hw2, hw3, hm1, hm2, hm3, -⟩ |
+    ⟨hw1, hw2, hw3, hm1, hm2, hm3, -⟩
+  all_goals first
+    | (refine T.exists_weight_and_multiplicity_dvd_and_le_of_int c₀ x ?_ ?_
+       all_goals intro i; rcases mem i with rfl | rfl | rfl | rfl <;> omega)
+    | (refine T.exists_weight_and_multiplicity_dvd_and_le_of_int z x ?_ ?_
+       all_goals intro i; rcases mem i with rfl | rfl | rfl | rfl <;> omega)
 
 end NumericalType
 

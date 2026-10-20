@@ -376,4 +376,29 @@ theorem isGenusOneFivePathShape_or_isGenusOneFivePathShape_of_isMinimal_and_arit
     (T.isMinusTwoIndex_iff.mp (h₂ e)).2 hac₀ had₀ hae₀ hbd₀ hbe₀ hce₀
     hab₀ hbc₀ hcd₀ hde₀
 
+/-- The displayed genus-one shape has weight ratios at most four and multiplicity ratios
+at most six, with integral ratios from suitable components. -/
+lemma IsGenusOneFivePathShape.exists_weight_and_multiplicity_dvd_and_le
+    {x y z t u : T.Component} (h5 : T.IsGenusOneFivePathShape x y z t u)
+    (huniv : ({x, y, z, t, u} : Finset T.Component) = univ) :
+    (∃ j, ∀ i, (T.weight j : ℕ) ∣ T.weight i ∧ (T.weight i : ℕ) ≤ 4 * T.weight j) ∧
+      (∃ j, ∀ i, (T.multiplicity j : ℕ) ∣ T.multiplicity i ∧
+        (T.multiplicity i : ℕ) ≤ 6 * T.multiplicity j) := by
+  classical
+  have mem (i : T.Component) : i = x ∨ i = y ∨ i = z ∨ i = t ∨ i = u := by
+    simpa using (huniv ▸ mem_univ i : i ∈ ({x, y, z, t, u} : Finset T.Component))
+  obtain ⟨w, m, _, _, ⟨hw0, hw1, hw2, hw3, hw4, hm0, hm1, hm2, hm3, hm4, -⟩ |
+    ⟨hw0, hw1, hw2, hw3, hw4, hm0, hm1, hm2, hm3, hm4, -⟩ |
+    ⟨hw0, hw1, hw2, hw3, hw4, hm0, hm1, hm2, hm3, hm4, -⟩ |
+    ⟨hw0, hw1, hw2, hw3, hw4, hm0, hm1, hm2, hm3, hm4, -⟩ |
+    ⟨hw0, hw1, hw2, hw3, hw4, hm0, hm1, hm2, hm3, hm4, -⟩⟩ :=
+      isGenusOneFivePathShape_iff.mp h5
+  all_goals first
+    | (refine T.exists_weight_and_multiplicity_dvd_and_le_of_int x x ?_ ?_
+       all_goals intro i; rcases mem i with rfl | rfl | rfl | rfl | rfl <;> omega)
+    | (refine T.exists_weight_and_multiplicity_dvd_and_le_of_int t x ?_ ?_
+       all_goals intro i; rcases mem i with rfl | rfl | rfl | rfl | rfl <;> omega)
+    | (refine T.exists_weight_and_multiplicity_dvd_and_le_of_int x u ?_ ?_
+       all_goals intro i; rcases mem i with rfl | rfl | rfl | rfl | rfl <;> omega)
+
 end TauCeti.NumericalType
