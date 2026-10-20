@@ -42,9 +42,9 @@ theorem piFactorₐ_apply (hle : ∀ j, I j ≤ J j) (x : (j : ι) → A ⧸ I j
 
 /-- The componentwise quotient map is surjective. -/
 theorem piFactorₐ_surjective (hle : ∀ j, I j ≤ J j) :
-    Function.Surjective (piFactorₐ R₁ hle) := fun y ↦
-  ⟨fun j ↦ (Ideal.Quotient.factor_surjective (hle j) (y j)).choose,
-    funext fun j ↦ (Ideal.Quotient.factor_surjective (hle j) (y j)).choose_spec⟩
+    Function.Surjective (piFactorₐ R₁ hle) :=
+  -- `piFactorₐ R₁ hle` is definitionally `Pi.map` of the factor maps, as in `piFactorₐ_apply`.
+  Function.Surjective.piMap fun j ↦ Ideal.Quotient.factor_surjective (hle j)
 
 end Ideal.Quotient
 
