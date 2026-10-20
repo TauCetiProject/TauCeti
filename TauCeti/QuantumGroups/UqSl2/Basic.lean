@@ -25,7 +25,8 @@ relations force `E = F = 0`.
 
 The quotient construction supplies a universal property for tuples satisfying these relations.
 Since the generators generate the algebra, a complex-linear map between `UqSl2 q`-modules that
-commutes with `E`, `F` and `K` is `UqSl2 q`-linear. We also package `K` as a unit and derive the
+commutes with `E`, `F` and `K` is `UqSl2 q`-linear, and an element of `UqSl2 q` that commutes
+with `E`, `F` and `K` is central. We also package `K` as a unit and derive the
 commutation rules with `K⁻¹`; these are the basic presentation-level identities used when putting
 words into triangular order.  Establishing a PBW basis, and hence nontriviality of this
 presentation, requires additional Ore-extension arguments and is not part of the presentation
@@ -320,6 +321,21 @@ theorem _root_.LinearMap.map_smul_of_commute_uqSl2 {V W : Type*} [AddCommGroup V
   | algebraMap c => rw [algebraMap_smul, algebraMap_smul, map_smul]
   | add a b _ _ ha hb => rw [add_smul, add_smul, map_add, ha, hb]
   | mul a b _ _ ha hb => rw [mul_smul, mul_smul, ha, hb]
+
+/-- An element of `UqSl2 q` that commutes with `E`, `F` and `K` commutes with every element of
+`UqSl2 q`; commuting with `K⁻¹` is automatic. -/
+theorem commute_of_commute_generators {z : UqSl2 q} (he : Commute (e q) z)
+    (hf : Commute (f q) z) (hk : Commute (k q) z) (a : UqSl2 q) : Commute a z := by
+  have hkInv : Commute (kInv q) z := by
+    rw [← kUnit_inv]
+    exact Commute.units_inv_left (by rwa [kUnit_val])
+  refine (Algebra.commute_of_mem_adjoin_of_forall_mem_commute (R := ℂ)
+    (s := Set.range (generator q)) ?_ ?_).symm
+  · rw [adjoin_range_generator]
+    exact Algebra.mem_top
+  · rintro _ ⟨g, rfl⟩
+    cases g
+    exacts [he.symm, hf.symm, hk.symm, hkInv.symm]
 
 /-- A complex subspace of a `UqSl2 q`-module that is stable under `E`, `F`, `K` and `K⁻¹` is
 stable under every element of `UqSl2 q`. -/

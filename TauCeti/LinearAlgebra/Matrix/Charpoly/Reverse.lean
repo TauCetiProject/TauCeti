@@ -28,6 +28,7 @@ the dimension.
 * `Matrix.coeff_charpolyRev`: the `k`-th coefficient is `(-1) ^ k` times the sum of the `k × k`
   principal minors. In particular the constant coefficient is `1` and the coefficient in degree
   `Fintype.card ι` is `(-1) ^ Fintype.card ι * det A`.
+* `Matrix.eval_one_charpolyRev`: the value of `det (1 - X A)` at `X = 1` is `det (1 - A)`.
 * `Matrix.charpolyRev_map`, `Matrix.charpolyRev_transpose`, `Matrix.charpolyRev_reindex`:
   functoriality in the coefficient ring and invariance under transposition and relabelling.
 * `Matrix.charpolyRev_fromBlocks_zero₂₁`, `Matrix.BlockTriangular.charpolyRev`: multiplicativity on
@@ -92,6 +93,14 @@ theorem coeff_charpolyRev_card (A : Matrix ι ι R) :
   rw [charpolyRev_eq_reflect, coeff_reflect, revAt_le le_rfl, Nat.sub_self,
     det_eq_sign_charpoly_coeff]
   simp [← mul_assoc, ← mul_pow]
+
+/-- Evaluating `det (1 - X A)` at `X = 1` gives `det (1 - A)`. -/
+@[simp]
+theorem eval_one_charpolyRev (A : Matrix ι ι R) : A.charpolyRev.eval 1 = (1 - A).det := by
+  rw [charpolyRev, ← coe_evalRingHom, RingHom.map_det]
+  congr 1
+  ext i j
+  by_cases h : i = j <;> simp [h]
 
 /-- The coefficients of `det (1 - X A)` above the dimension vanish. -/
 theorem coeff_charpolyRev_eq_zero (A : Matrix ι ι R) {k : ℕ} (hk : Fintype.card ι < k) :

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.LocalField.MassFormula.Eisenstein
+public import TauCeti.NumberTheory.LocalField.MassFormula.Eisenstein.Basic
 public import TauCeti.FieldTheory.IntermediateField.Isomorphic
 
 /-!

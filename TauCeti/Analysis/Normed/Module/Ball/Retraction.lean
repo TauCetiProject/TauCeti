@@ -39,6 +39,8 @@ constant never matters for cutting off, where one is free to shrink the radius i
 * `TauCeti.radialRetraction_eventuallyEq_id`: inside the open ball, it agrees locally with the
   identity.
 * `TauCeti.lipschitzWith_radialRetraction`: for `0 ≤ r`, it is `2`-Lipschitz.
+* `Continuous.radialRetraction`: it depends jointly continuously on a nonnegative radius and the
+  point.
 * `TauCeti.dist_centeredRadialRetraction`: for `0 ≤ r`, the distance from the centre is
   `min (dist x x₀) r`.
 * `TauCeti.lipschitzWith_centeredRadialRetraction`: for `0 ≤ r`, the centred retraction is
@@ -71,6 +73,10 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {r : ℝ} {x y :
 ball of radius `r` centred at the origin: vectors of norm at most `r` are fixed and the others are
 pulled back along their ray to the sphere of radius `r`. -/
 noncomputable def radialRetraction (r : ℝ) (x : E) : E := min 1 (r / ‖x‖) • x
+
+/-- The defining formula of the radial retraction. -/
+theorem radialRetraction_def (r : ℝ) (x : E) : radialRetraction r x = min 1 (r / ‖x‖) • x :=
+  (rfl)
 
 /-- Translate `radialRetraction r` to centre `x₀`: `x ↦ x₀ + radialRetraction r (x - x₀)`.
 When `0 ≤ r`, this is the radial retraction onto the closed ball of radius `r` centred at `x₀`. -/
@@ -244,6 +250,21 @@ theorem lipschitzWith_centeredRadialRetraction {x₀ : E} (hr : 0 ≤ r) :
     (lipschitzWith_radialRetraction hr).dist_le_mul (x - x₀) (y - x₀)
 
 end TauCeti
+
+/-- **The radial retraction depends continuously on the radius and the point**, as long as the
+radius stays nonnegative. For a negative radius the retraction is discontinuous at the origin. -/
+theorem Continuous.radialRetraction {E X : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [TopologicalSpace X] {r : X → ℝ} {f : X → E} (hr : Continuous r) (hr0 : ∀ x, 0 ≤ r x)
+    (hf : Continuous f) : Continuous fun x ↦ TauCeti.radialRetraction (r x) (f x) := by
+  refine continuous_iff_continuousAt.2 fun x ↦ ?_
+  by_cases hx : f x = 0
+  · -- Near a point sent to the origin, the retraction is bounded in norm by `‖f‖`.
+    rw [ContinuousAt, hx, TauCeti.radialRetraction_zero]
+    exact squeeze_zero_norm (fun y ↦ (TauCeti.norm_radialRetraction (hr0 y) (f y)).trans_le
+      (min_le_left _ _)) (by simpa [hx] using (hf.tendsto x).norm)
+  · simp only [TauCeti.radialRetraction_def]
+    exact (continuousAt_const.min (hr.continuousAt.div hf.continuousAt.norm
+      (norm_ne_zero_iff.2 hx))).smul hf.continuousAt
 
 /-- Precomposing with the centred radial retraction turns a map that is Lipschitz on a closed ball
 into a globally Lipschitz map, at the cost of doubling the constant. -/

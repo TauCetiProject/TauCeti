@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Pi
+public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.Algebra.Homology.Homotopy
 public import Mathlib.CategoryTheory.Limits.Shapes.Kernels
 public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
@@ -37,6 +38,9 @@ complexes from its components `h n : P.X n ⟶ Q.X (n + 1)`, given all at once t
 homotopy identities in degree zero and in positive degrees.  It is the non-inductive counterpart of
 Mathlib's `Homotopy.mkInductive`, for the situation where the components are constructed by a
 recursion of their own rather than one degree at a time from the previous two.
+
+`Homotopy.comm_zero_apply` and `Homotopy.comm_succ_apply` are the homotopy identities of a
+homotopy between maps of `ℕ`-indexed chain complexes of modules, evaluated on elements.
 
 `Homotopy.cyclesMap_sub_eq` expresses the difference of the maps on cycles induced by
 homotopic maps as a factorization through a term of the target complex. In particular, these
@@ -203,3 +207,30 @@ lemma mkChainComplex_hom_succ (e : P ⟶ Q) (h : ∀ n, P.X n ⟶ Q.X (n + 1))
 end Homotopy
 
 end MkChainComplex
+
+section ModuleCat
+
+variable {R : Type*} [Ring R] {P Q : ChainComplex (ModuleCat R) ℕ} {e e' : P ⟶ Q}
+
+namespace Homotopy
+
+/-- The homotopy identity in degree zero, on elements: the difference of the two maps is the
+boundary of the homotopy. -/
+theorem comm_zero_apply (h : Homotopy e e') (x : P.X 0) :
+    e.f 0 x = Q.d 1 0 (h.hom 0 1 x) + e'.f 0 x := by
+  have hc := h.comm 0
+  rw [dNext_zero_chainComplex, prevD_chainComplex, zero_add] at hc
+  simpa using congrArg (fun φ : P.X 0 ⟶ Q.X 0 ↦ φ x) hc
+
+/-- The homotopy identity in positive degrees, on elements. -/
+theorem comm_succ_apply (h : Homotopy e e') (n : ℕ) (x : P.X (n + 1)) :
+    e.f (n + 1) x =
+      h.hom n (n + 1) (P.d (n + 1) n x) + Q.d (n + 2) (n + 1) (h.hom (n + 1) (n + 2) x) +
+        e'.f (n + 1) x := by
+  have hc := h.comm (n + 1)
+  rw [dNext_succ_chainComplex, prevD_chainComplex] at hc
+  simpa [add_assoc] using congrArg (fun φ : P.X (n + 1) ⟶ Q.X (n + 1) ↦ φ x) hc
+
+end Homotopy
+
+end ModuleCat

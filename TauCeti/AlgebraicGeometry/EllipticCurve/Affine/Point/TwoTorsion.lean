@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.Torsion.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.TwoTorsion
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Basic
 
@@ -34,6 +35,7 @@ of multiplication by `2` (Silverman X.1.4).
 
 * `WeierstrassCurve.Affine.Point.some_add_self_eq_zero_iff`: `(x, y)` has order two exactly when
   `ψ₂(x, y) = 0`.
+* `WeierstrassCurve.Affine.Point.some_mem_torsionBy_two`: such a point lies in `E[2]`.
 * `WeierstrassCurve.Affine.Point.eq_zero_or_eq_or_exists_of_add_self_eq_zero`: a point `S` with
   `2S = O` is `O`, `T`, or a point of order two over another root.
 * `WeierstrassCurve.Affine.Point.xCoord_add_sub_mul_sub`: `(x(P + T) - e)(x - e) = c_T`.
@@ -67,6 +69,11 @@ theorem Point.some_add_self_eq_zero_iff (h : W.Nonsingular x y) :
     add_self_of_Y_eq (evalEval_polynomialY_eq_zero_iff.1 hy)⟩
   rw [add_self_of_Y_ne (mt evalEval_polynomialY_eq_zero_iff.2 hy)] at hS
   exact some_ne_zero _ hS
+
+/-- An affine point at which `ψ₂` vanishes is killed by two. -/
+theorem Point.some_mem_torsionBy_two (h : W.Nonsingular x y)
+    (hy : W.polynomialY.evalEval x y = 0) : some x y h ∈ AddSubgroup.torsionBy W.Point (2 : ℕ) := by
+  rw [AddSubgroup.torsionBy.nsmul_iff, two_nsmul, (some_add_self_eq_zero_iff h).2 hy]
 
 /-- **The points of order two, seen from one of them**: if `T = (e, t)` has `ψ₂(e, t) = 0`, a point
 `S` with `2S = O` is `O`, `T`, or a point `(e₀, t₀)` with `ψ₂(e₀, t₀) = 0` and `e₀ ≠ e`. -/
