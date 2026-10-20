@@ -20,6 +20,8 @@ normal. Then `f` preserves the codimension of every point, and in particular sen
 codimension one to points of codimension one. This supplies the input `hf` of
 `AlgebraicGeometry.Scheme.Hom.codimensionOneMap`. Without normality of `Y` this fails
 (Stacks, Section 110.19 (02JE)).
+The declarations use scheme-theoretic dominance, equivalent to dominance for these finite
+morphisms with reduced target.
 
 ## Main results
 
@@ -52,8 +54,9 @@ variable {X Y : Scheme.{u}} (f : X ⟶ Y)
 
 /-- A finite dominant morphism of integral schemes with locally Noetherian normal target preserves
 the coheight of every point. -/
-@[simp] theorem coheight_apply_eq_coheight [IsFinite f] [IsDominant f] [IsIntegral X]
-    [IsLocallyNoetherian Y] [IsNormalScheme Y] (x : X) : coheight (f x) = coheight x := by
+@[simp] theorem coheight_apply_eq_coheight [IsFinite f] [IsSchemeTheoreticallyDominant f]
+    [IsIntegral X] [IsLocallyNoetherian Y] [IsNormalScheme Y] (x : X) :
+    coheight (f x) = coheight x := by
   have himage : IsIrreducible (Set.range f) := by
     simpa only [Set.image_univ] using
       (IrreducibleSpace.isIrreducible_univ X).image f f.continuous.continuousOn
@@ -67,7 +70,6 @@ the coheight of every point. -/
   have : Nonempty (f ⁻¹ᵁ U) := ⟨⟨x, hxU⟩⟩
   let := (f.app U).hom.toAlgebra
   have : Module.Finite Γ(Y, U) Γ(X, f ⁻¹ᵁ U) := f.finite_app U hU
-  have : IsSchemeTheoreticallyDominant f := .of_isDominant f
   have : FaithfulSMul Γ(Y, U) Γ(X, f ⁻¹ᵁ U) :=
     (faithfulSMul_iff_algebraMap_injective _ _).mpr (f.app_injective U)
   have : IsNoetherianRing Γ(Y, U) := IsLocallyNoetherian.component_noetherian ⟨U, hU⟩
@@ -95,7 +97,7 @@ points of coheight one to points of coheight one (going down, Stacks, Propositio
 the ring-theoretic existence statement of that tag. -/
 @[stacks 00H8 "codimension-one consequence for finite dominant morphisms to normal schemes"]
 theorem coheight_apply_eq_one_of_coheight_eq_one [IsLocallyNoetherian Y] [IsNormalScheme Y]
-    [IsFinite f] [IsDominant f] [IsIntegral X]
+    [IsFinite f] [IsSchemeTheoreticallyDominant f] [IsIntegral X]
     (x : X) (hx : coheight x = 1) : coheight (f x) = 1 :=
   (coheight_apply_eq_coheight f x).trans hx
 

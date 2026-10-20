@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import Mathlib.AlgebraicGeometry.Morphisms.QuasiFinite
+public import TauCeti.RingTheory.RamificationInertia.DiscreteValuationRing
 public import TauCeti.RingTheory.RamificationInertia.QuasiFinite
 
 /-!
@@ -17,8 +18,7 @@ The ramification index `ramificationIdxAt f x` of a morphism of schemes `f : X �
 `𝒪_{X,x}` over `𝒪_{Y,f(x)}` along the stalk map, that is, the length of
 `𝒪_{X,x} ⧸ 𝔪_{f(x)} 𝒪_{X,x}` when this length is finite, and `0` when it is infinite. When the stalk
 map is a finite injective local homomorphism of discrete valuation rings, this is the usual
-ramification index of that extension (Stacks, Definition 15.113.1 (09E4)); that comparison is not
-proved in this file.
+ramification index of that extension (Stacks, Definition 15.113.1 (09E4)).
 
 It is finite and positive at every point where `f` is quasi-finite, since the stalk map is then
 quasi-finite and `Ideal.ramificationIdx_pos_of_quasiFiniteAt` applies.
@@ -36,6 +36,11 @@ quasi-finite and `Ideal.ramificationIdx_pos_of_quasiFiniteAt` applies.
   multiply in a tower when the first stalk map is flat.
 * `AlgebraicGeometry.Scheme.Hom.ramificationIdxAt_comp`: ramification indices multiply in a tower
   whose first morphism is flat.
+* `AlgebraicGeometry.Scheme.Hom.map_maximalIdeal_eq_pow_ramificationIdxAt_of_map_ne_bot`: when the
+  source stalk is a DVR and the mapped maximal ideal is nonzero, it equals the power of the source
+  maximal ideal with exponent the ramification index.
+* `AlgebraicGeometry.Scheme.Hom.ramificationIdxAt_eq_of_map_maximalIdeal_eq_pow`: when the source
+  stalk is a DVR, the index equals any exponent satisfying that maximal-ideal identity.
 
 ## References
 
@@ -48,6 +53,9 @@ quasi-finite and `Ideal.ramificationIdx_pos_of_quasiFiniteAt` applies.
   locally quasi-finite morphism). The composition theorem generalizes its
   `Pcf.schemeDivisorRamificationIdx_comp` (there for a finite dominant first morphism with integral
   source and a codimension-one point on a locally Noetherian normal intermediate scheme).
+  The maximal-ideal comparison generalizes its `Pcf.heightOneRamificationIdx_eq_dvrExponent`
+  (`lean/Pcf/Bounding/Divisors.lean`).
+* [Stacks Project, Definition 15.113.1](https://stacks.math.columbia.edu/tag/09E4).
 -/
 
 public section
@@ -120,5 +128,36 @@ theorem ramificationIdxAt_comp_of_flat_stalkMap {Z : Scheme.{u}} (g : Y ⟶ Z) (
 theorem ramificationIdxAt_comp {Z : Scheme.{u}} (g : Y ⟶ Z) [Flat f] (x : X) :
     ramificationIdxAt (f ≫ g) x = ramificationIdxAt f x * ramificationIdxAt g (f x) :=
   f.ramificationIdxAt_comp_of_flat_stalkMap g x (Flat.stalkMap f x)
+
+/-- The maximal-ideal power identity at a point with a DVR stalk, assuming that the mapped
+maximal ideal is nonzero. -/
+theorem map_maximalIdeal_eq_pow_ramificationIdxAt_of_map_ne_bot
+    (x : X) [IsDomain (X.presheaf.stalk x)] [IsDiscreteValuationRing (X.presheaf.stalk x)]
+    (hmap : (maximalIdeal (Y.presheaf.stalk (f x))).map (f.stalkMap x).hom ≠ ⊥) :
+    (maximalIdeal (Y.presheaf.stalk (f x))).map (f.stalkMap x).hom =
+      maximalIdeal (X.presheaf.stalk x) ^ ramificationIdxAt f x := by
+  let := (f.stalkMap x).hom.toAlgebra
+  have : IsLocalHom (algebraMap (Y.presheaf.stalk (f x)) (X.presheaf.stalk x)) :=
+    inferInstanceAs (IsLocalHom (f.stalkMap x).hom)
+  rw [ramificationIdxAt_def]
+  exact IsDiscreteValuationRing.map_maximalIdeal_eq_pow_ramificationIdx hmap
+
+/-- The pointwise ramification index equals the DVR exponent characterized by the maximal-ideal
+identity in Stacks, Definition 15.113.1 (09E4).
+
+Divergence from Stacks: only the source stalk needs to be a DVR. No dominance or assumption
+on the target is required when the maximal-ideal power identity is supplied. -/
+@[stacks 09E4 "comparison with the exponent in the maximal-ideal identity"]
+theorem ramificationIdxAt_eq_of_map_maximalIdeal_eq_pow
+    (x : X) [IsDomain (X.presheaf.stalk x)] [IsDiscreteValuationRing (X.presheaf.stalk x)]
+    {exponent : ℕ}
+    (hexponent : (maximalIdeal (Y.presheaf.stalk (f x))).map (f.stalkMap x).hom =
+      maximalIdeal (X.presheaf.stalk x) ^ exponent) :
+    f.ramificationIdxAt x = exponent := by
+  let := (f.stalkMap x).hom.toAlgebra
+  have : IsLocalHom (algebraMap (Y.presheaf.stalk (f x)) (X.presheaf.stalk x)) :=
+    inferInstanceAs (IsLocalHom (f.stalkMap x).hom)
+  rw [ramificationIdxAt_def]
+  exact IsDiscreteValuationRing.ramificationIdx_eq_of_map_maximalIdeal_eq_pow hexponent
 
 end AlgebraicGeometry.Scheme.Hom
