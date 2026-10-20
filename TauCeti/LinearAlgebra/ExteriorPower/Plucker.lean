@@ -69,8 +69,6 @@ Plücker coordinate, equal to `1`, and a family of more than `#ι` vectors has n
   signs.
 * `TauCeti.gcd_plucker_eq_one`: the Plücker coordinates of a basis of a saturated submodule of
   `ℤ^ι` are coprime.
-* `Matrix.gcd_plucker_row_eq_zero_iff`: the maximal minors of an integer matrix have greatest
-  common divisor `0` exactly when its rows are linearly dependent over `ℚ`.
 
 ## References
 
@@ -403,15 +401,6 @@ theorem gcd_plucker_eq_one [Fintype ι] {N : Submodule ℤ (ι → ℤ)}
   have h0 := Fintype.linearIndependent_iff.1 hli _ hrel i₀
   apply hi₀
   rw [← hc', sub_eq_zero.1 h0]
-  simp
-
-/-- The greatest common divisor of the maximal minors of an integer matrix vanishes exactly when
-its rows are linearly dependent over `ℚ`. -/
-theorem _root_.Matrix.gcd_plucker_row_eq_zero_iff [Fintype ι] (A : Matrix (Fin p) ι ℤ) :
-    Finset.univ.gcd (plucker A.row) = 0 ↔ ¬LinearIndependent ℚ (A.map ((↑) : ℤ → ℚ)).row := by
-  have h := Matrix.plucker_row_map (Int.castRingHom ℚ) A
-  rw [Int.coe_castRingHom] at h
-  rw [Finset.gcd_eq_zero_iff, ← plucker_ne_zero_iff, not_not, h, funext_iff]
   simp
 
 end TauCeti

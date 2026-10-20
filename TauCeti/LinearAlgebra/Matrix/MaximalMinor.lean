@@ -9,6 +9,7 @@ public import Mathlib.Algebra.GCDMonoid.Finset
 public import Mathlib.Data.Fintype.CardEmbedding
 public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
+public import TauCeti.LinearAlgebra.ExteriorPower.Plucker
 import Mathlib.Algebra.GCDMonoid.Nat
 import Mathlib.LinearAlgebra.LinearIndependent.BaseChange
 import Mathlib.LinearAlgebra.Matrix.Notation
@@ -26,9 +27,9 @@ independent exactly when some maximal minor is nonzero.
 
 Over a GCD domain, `Matrix.minorGcd A` is the normalized gcd of the maximal minors. For an
 integer matrix `A` with linearly independent rows, the quotient `√det (A * Aᵀ) / minorGcd A` is
-classically the covolume of the lattice of integer solutions of `A *ᵥ x = 0`, which enters the
-sharp form of Siegel's lemma due to Bombieri and Vaaler; that identity is not proved here. Since
-the covolume depends only on the kernel, the quotient must be unchanged when `A` is replaced by
+the covolume of the lattice of integer solutions of `A *ᵥ x = 0`, which enters the sharp form of
+Siegel's lemma due to Bombieri and Vaaler (`Matrix.covolume_intLattice_ker_mulVecLin`). Since the
+covolume depends only on the kernel, the quotient must be unchanged when `A` is replaced by
 `B * A` with `det B ≠ 0`, and this file proves that invariance directly: the maximal minors are
 multiplied by `det B` and the Gram determinant `det (A * Aᵀ)` by `det B ^ 2`. In particular the
 quotient is invariant under `GL_m(ℤ)`, unlike Siegel's bound in terms of the entries of `A`. The
@@ -50,6 +51,8 @@ consequence of the Cauchy–Binet formula, is in `TauCeti.LinearAlgebra.Exterior
   independent.
 * `Matrix.minorGcd_mul_left` and `Matrix.minorGcd_unit_mul`: left multiplication by `B`
   multiplies the minor gcd by `normalize (det B)`, and leaves it unchanged for `B` invertible.
+* `Matrix.minorGcd_eq_gcd_plucker`: the minor gcd is the gcd of the Plücker coordinates
+  `TauCeti.plucker A.row` of the rows.
 * `Matrix.linearIndependent_rat_row_iff`: the rows of an integer matrix are linearly independent
   over `ℚ` exactly when they are over `ℤ`; `Matrix.one_le_minorGcd` takes independence over `ℚ`
   as its hypothesis.
@@ -180,6 +183,34 @@ end NormalizedGCDMonoid
 theorem minorGcd_mul_left [CommRing R] [StrongNormalizedGCDMonoid R] (B : Matrix m m R)
     (A : Matrix m n R) : minorGcd (B * A) = normalize B.det * A.minorGcd := by
   simp only [minorGcd_def, det_submatrix_mul_left, Finset.gcd_mul_left]
+
+/-- For a matrix with rows indexed by `Fin p` and linearly ordered columns, the minor gcd is the
+gcd of the Plücker coordinates of the rows: these are the maximal minors on columns taken in
+increasing order, and every maximal minor is one of them up to sign. -/
+theorem minorGcd_eq_gcd_plucker {ι : Type*} [Fintype ι] [LinearOrder ι] {p : ℕ} [CommRing R]
+    [NormalizedGCDMonoid R] (A : Matrix (Fin p) ι R) :
+    A.minorGcd = Finset.univ.gcd (TauCeti.plucker A.row) := by
+  -- The Plücker coordinate at `s` is the maximal minor on the increasing enumeration of `s`.
+  have hp (s) : (A.submatrix id (Set.powersetCard.ofFinEmbEquiv.symm s)).det =
+      TauCeti.plucker A.row s :=
+    (TauCeti.plucker_apply A.row s).symm
+  refine dvd_antisymm_of_normalize_eq (normalize_minorGcd A) Finset.normalize_gcd
+    (Finset.dvd_gcd fun s _ ↦ hp s ▸ minorGcd_dvd A _) (dvd_minorGcd_iff.2 fun e ↦ ?_)
+  -- The embedding `e` lists the columns of its range `s` in the order of a permutation `σ` of
+  -- the increasing enumeration `t` of `s`, so its minor is `sign σ` times the Plücker coordinate
+  -- at `s`.
+  set s := Set.powersetCard.ofFinEmb p ι e
+  set t := Set.powersetCard.ofFinEmbEquiv.symm s
+  have hrange : Set.range t = Set.range e := Set.ext fun i ↦ by
+    rw [Set.powersetCard.mem_range_ofFinEmbEquiv_symm_iff_mem,
+      Set.powersetCard.mem_ofFinEmb_iff_mem_range]
+  let σ : Equiv.Perm (Fin p) := (Equiv.ofInjective e e.injective).trans
+    ((Set.equivOfEq hrange.symm).trans (Equiv.ofInjective t t.injective).symm)
+  have he : A.submatrix id e = (A.submatrix id t).submatrix id σ := by
+    ext i j
+    simp [σ, Equiv.apply_ofInjective_symm]
+  rw [he, det_permute', hp]
+  exact (Finset.gcd_dvd (Finset.mem_univ s)).mul_left _
 
 end Gcd
 
