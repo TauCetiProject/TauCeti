@@ -12,7 +12,8 @@ public import Mathlib.RingTheory.MvPowerSeries.Order
 
 If a series has order at least `p`, the degree-`n * p` homogeneous component of its `n`-th power
 is the `n`-th power of its degree-`p` component. This reduces lowest-degree coefficient
-computations for powers to homogeneous series, over arbitrary semirings.
+computations for powers to homogeneous series, over arbitrary semirings. The degree-zero
+component of a series is its constant term, and a variable is its own degree-one component.
 
 For two-variable series with linear coefficients one, the degree-one component is `X + Y`.
 Over a ring, vanishing of the constant coefficient then puts the remainder after subtracting
@@ -44,6 +45,32 @@ theorem homogeneousComponent_pow_of_le_order {p : ℕ} (hf : p ≤ f.order) (n :
     rw [pow_succ, Nat.succ_mul, homogeneousComponent_mul_of_le_order hn hf, ih, pow_succ]
 
 end Powers
+
+section Components
+
+variable {σ R : Type*} [Semiring R]
+
+/-- The degree-zero homogeneous component of a power series is its constant term. -/
+theorem homogeneousComponent_zero (f : MvPowerSeries σ R) :
+    homogeneousComponent 0 f = C (constantCoeff f) := by
+  classical
+  ext d
+  simp only [coeff_homogeneousComponent, coeff_C, Finsupp.degree_eq_zero_iff]
+  split_ifs with h
+  · rw [h, coeff_zero_eq_constantCoeff_apply]
+  · rfl
+
+/-- A variable is homogeneous of degree one. -/
+theorem homogeneousComponent_one_X (i : σ) :
+    homogeneousComponent 1 (X i : MvPowerSeries σ R) = X i := by
+  refine (isHomogeneous_iff_eq_homogeneousComponent.mp fun {d} hd ↦ ?_).symm
+  classical
+  rw [coeff_X] at hd
+  split_ifs at hd with h
+  · simp [h, Finsupp.weight_apply]
+  · exact absurd rfl hd
+
+end Components
 
 open Finsupp
 
