@@ -185,6 +185,7 @@ noncomputable def height (p : ℕ) : ℕ∞ :=
   if F.nsmulSeries p = 0 then ⊤ else Nat.log p (F.nsmulSeries p).order.toNat
 
 /-- A formal group law has infinite height exactly when multiplication by `p` is zero. -/
+@[simp]
 theorem height_eq_top_iff : F.height p = ⊤ ↔ F.nsmulSeries p = 0 := by
   unfold height
   split_ifs with h <;> simp [h]

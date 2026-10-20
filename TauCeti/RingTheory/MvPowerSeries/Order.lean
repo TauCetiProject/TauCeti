@@ -51,6 +51,7 @@ section Components
 variable {σ R : Type*} [Semiring R]
 
 /-- The degree-zero homogeneous component of a power series is its constant term. -/
+@[simp]
 theorem homogeneousComponent_zero (f : MvPowerSeries σ R) :
     homogeneousComponent 0 f = C (constantCoeff f) := by
   classical
@@ -61,6 +62,7 @@ theorem homogeneousComponent_zero (f : MvPowerSeries σ R) :
   · rfl
 
 /-- A variable is homogeneous of degree one. -/
+@[simp]
 theorem homogeneousComponent_one_X (i : σ) :
     homogeneousComponent 1 (X i : MvPowerSeries σ R) = X i := by
   refine (isHomogeneous_iff_eq_homogeneousComponent.mp fun {d} hd ↦ ?_).symm
