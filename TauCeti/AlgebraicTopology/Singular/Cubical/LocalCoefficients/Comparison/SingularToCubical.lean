@@ -370,9 +370,9 @@ lemma cubeCubicalPushforward_sub {n m : ℕ} (c : SingularCube X n)
 lemma ofCube_eq_cubeCubicalPushforward {n : ℕ} (c : SingularCube X n)
     (a : L.obj (FundamentalGroupoid.mk (c 0))) :
     NormalizedTwistedCubicalChain.ofCube L c a =
-      cubeCubicalPushforward L c n (cubeGen (ULift.{v} ℤ) n) a := by
+      cubeCubicalPushforward L c n ((cubicalModelPresentation (ULift.{v} ℤ)).gen n) a := by
   refine Eq.symm ((congrArg (fun y ↦ cubeCubicalPushforward L c n y a)
-    (cubeGen_def (ULift.{v} ℤ) n)).trans
+    (cubicalModelPresentation_gen (ULift.{v} ℤ) n)).trans
     ((cubeCubicalPushforward_apply L c n _ a).trans
       ((NormalizedTwistedCubicalChain.pushforward_ofCube (L := L)
         (f := (cubeToHom c).hom) (z₀ := cubeModelOrigin n) (upCube n) a).trans ?_)))

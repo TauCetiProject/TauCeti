@@ -29,7 +29,6 @@ invariance, the long exact sequence of a pair, excision) are transported to cubi
   singular chains.
 * `TauCeti.cubicalToSingular k`: the natural chain map back.
 * `TauCeti.cubicalSingularHomotopyEquiv k X`: the chain homotopy equivalence they form.
-* `TauCeti.cubeGen k n`: the identity cube of the model `Iⁿ` as a normalized cubical chain.
 * `TauCeti.cubicalToSingularGen k n`, `TauCeti.singularToCubicalGen k n`: the images of the
   identity cube of the model `Iⁿ` and of the identity simplex of the model `Δⁿ` under the
   comparison maps.
@@ -219,16 +218,6 @@ theorem singularChains_map_cubicalToSingular {X Y : TopCat.{u}} (f : X ⟶ Y) {n
 section ModelChains
 
 variable (k)
-
-/-- The identity cube of the model `Iⁿ`, as a normalized cubical chain. -/
-def cubeGen (n : ℕ) : ((normalizedCubicalChainComplex k).obj (cubeModel.{u} n)).X n :=
-  NormalizedCubicalChain.ofCube (cubeModel.{u} n) k (upCube n)
-
-/-- The identity cube of the model is the class of the identity cube.  This is the defining
-equation of `cubeGen`. -/
-theorem cubeGen_def (n : ℕ) :
-    cubeGen k n = NormalizedCubicalChain.ofCube (cubeModel.{u} n) k (upCube n) :=
-  (rfl)
 
 /-- The image, under the comparison with simplicial chains, of the identity cube of the model
 `Iⁿ`. -/

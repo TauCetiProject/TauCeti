@@ -386,8 +386,9 @@ private lemma cubical_identity_zero (c : SingularCube X 0)
         (normalizedTwistedCubicalHomotopy L 0 (NormalizedTwistedCubicalChain.ofCube L c a)) := by
   have hm := Homotopy.comm_zero_apply
     (cubicalToSingularCompHomotopy (ULift.{v} ℤ) (cubeModel.{v} 0))
-    (cubeGen (ULift.{v} ℤ) 0)
-  rw [ofCube_eq_cubeCubicalPushforward,
+    ((cubicalModelPresentation (ULift.{v} ℤ)).gen 0)
+  -- The model generator is typed through the model presentation, which `rw` does not unfold.
+  erw [ofCube_eq_cubeCubicalPushforward,
     normalizedTwistedCubicalToSingular_cubeCubicalPushforward,
     twistedSingularToCubical_twistedCubePushforward,
     normalizedTwistedCubicalHomotopy_cubeCubicalPushforward, d_cubeCubicalPushforward,
@@ -407,8 +408,9 @@ private lemma cubical_identity_succ (n : ℕ) (c : SingularCube X (n + 1))
           (NormalizedTwistedCubicalChain.ofCube L c a)) := by
   have hm := Homotopy.comm_succ_apply
     (cubicalToSingularCompHomotopy (ULift.{v} ℤ) (cubeModel.{v} (n + 1))) n
-    (cubeGen (ULift.{v} ℤ) (n + 1))
-  rw [ofCube_eq_cubeCubicalPushforward,
+    ((cubicalModelPresentation (ULift.{v} ℤ)).gen (n + 1))
+  -- The model generator is typed through the model presentation, which `rw` does not unfold.
+  erw [ofCube_eq_cubeCubicalPushforward,
     normalizedTwistedCubicalToSingular_cubeCubicalPushforward,
     twistedSingularToCubical_twistedCubePushforward, boundary_cubeCubicalPushforward,
     normalizedTwistedCubicalHomotopy_cubeCubicalPushforward,
