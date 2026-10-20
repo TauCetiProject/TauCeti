@@ -107,13 +107,21 @@ abbrev cubeFaceOne : Finset ι ⥤ C where
 
 /-- The edge maps of a cube indexed by `WithBot ι` in the direction of the first index `⊥`, as a
 map of cubes from the `0`-face to the `1`-face. -/
-@[expose, simps]
 def cubeFaceMap : F.cubeFaceZero ⟶ F.cubeFaceOne where
   app S := F.map (homOfLE (subset_insert ⊥ (S.map Function.Embedding.coeWithBot)))
   naturality _ _ _ := by
     simp only [← F.map_comp]
     -- Morphisms in the preorder category of subsets are proofs of inclusion.
     rfl
+
+omit [Preadditive C] [HasFiniteBiproducts C] [Fintype ι] in
+/-- The component of `Functor.cubeFaceMap F` at a vertex `S` is the edge map of `F` from `S` to
+`insert ⊥ S`. -/
+@[simp]
+lemma cubeFaceMap_app (S : Finset ι) :
+    F.cubeFaceMap.app S =
+      F.map (homOfLE (subset_insert ⊥ (S.map Function.Embedding.coeWithBot))) :=
+  (rfl)
 
 /-! ### The vertices of the two faces -/
 
