@@ -103,6 +103,11 @@ def leviCivitaConnection : CovariantDerivative I E (fun x : M ↦ TangentSpace I
   toFun := g.connection
   isCovariantDerivativeOnUniv := g.isCovariantDerivativeOn_connection
 
+/-- The Levi-Civita connection vanishes on a vector field not differentiable at the point. -/
+@[simp] theorem leviCivitaConnection_of_not_mdifferentiableAt (hY : ¬ MDiffAt (T% Y) x) :
+    g.leviCivitaConnection Y x = 0 := by
+  simp only [leviCivitaConnection, connection, dite_eq_right hY]
+
 /-- The connection constructed from a nondegenerate metric satisfies the Koszul formula. -/
 theorem two_apply_leviCivitaConnection_eq_koszul
     (hX : MDiffAt (T% X) x) (hY : MDiffAt (T% Y) x) (hZ : MDiffAt (T% Z) x) :
