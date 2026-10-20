@@ -188,6 +188,17 @@ theorem map_homDifferential (X Y : C) (f : homModule (R := R) X Y) :
     AInfinityAlgebra.differential_apply, AInfinityAlgebra.differential_apply,
     AInfinityHom.linearPart_m_one]
 
+/-- The map of an `A∞` functor on a Hom module is a chain map, as an equation of linear maps. -/
+theorem map_comp_homDifferential (X Y : C) :
+    ℱ.map X Y ∘ₗ ℬ.homDifferential X Y = 𝒞.homDifferential (ℱ.obj X) (ℱ.obj Y) ∘ₗ ℱ.map X Y :=
+  LinearMap.ext (ℱ.map_homDifferential X Y)
+
+/-- The map of an `A∞` functor on a Hom module sends closed morphisms to closed morphisms. -/
+theorem homDifferential_map_eq_zero {X Y : C} {f : homModule (R := R) X Y}
+    (hf : ℬ.homDifferential X Y f = 0) :
+    𝒞.homDifferential (ℱ.obj X) (ℱ.obj Y) (ℱ.map X Y f) = 0 := by
+  rw [← map_homDifferential, hf, map_zero]
+
 end AInfinityFunctor
 
 /-! ### Strict functors as `A∞` functors -/

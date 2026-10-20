@@ -93,17 +93,6 @@ variable {ℬ : AInfinityCategory R C} {𝒞 : AInfinityCategory R D} (ℱ : AIn
 
 /-! ### The map on Hom cohomology -/
 
-/-- The map of an `A∞` functor on a Hom module is a chain map, as an equation of linear maps. -/
-theorem map_comp_homDifferential (X Y : C) :
-    ℱ.map X Y ∘ₗ ℬ.homDifferential X Y = 𝒞.homDifferential (ℱ.obj X) (ℱ.obj Y) ∘ₗ ℱ.map X Y :=
-  LinearMap.ext (ℱ.map_homDifferential X Y)
-
-/-- The map of an `A∞` functor on a Hom module sends closed morphisms to closed morphisms. -/
-theorem homDifferential_map_eq_zero {X Y : C} {f : homModule (R := R) X Y}
-    (hf : ℬ.homDifferential X Y f = 0) :
-    𝒞.homDifferential (ℱ.obj X) (ℱ.obj Y) (ℱ.map X Y f) = 0 := by
-  rw [← map_homDifferential, hf, map_zero]
-
 /-- The **map induced by an `A∞` functor on the cohomology of a Hom complex**, in all degrees at
 once: the class of a closed morphism `f` goes to the class of `f₁(f)`
 (`TauCeti.AInfinityFunctor.homCohomologyMap_mk`). -/
@@ -126,6 +115,12 @@ theorem homCohomologyMap_mk {X Y : C} (f : LinearMap.ker (ℬ.homDifferential X 
 bijection on the cohomology `ker m₁ ⧸ im m₁` of every Hom module. -/
 def IsQuasiFullyFaithful : Prop :=
   ∀ X Y : C, Function.Bijective (ℱ.homCohomologyMap X Y)
+
+/-- An `A∞` functor is quasi-fully faithful exactly when it induces a bijection on the cohomology
+of every Hom module. -/
+theorem isQuasiFullyFaithful_def :
+    ℱ.IsQuasiFullyFaithful ↔ ∀ X Y : C, Function.Bijective (ℱ.homCohomologyMap X Y) :=
+  Iff.rfl
 
 /-- **The elementwise description of quasi-full faithfulness.**  An `A∞` functor is quasi-fully
 faithful exactly when, on every Hom complex, a closed morphism whose image under `f₁` is a
@@ -219,8 +214,7 @@ theorem isUnital : ℱ.IsUnital := by
   exact (AInfinityCategory.homClass_eq_iff_sub_mem_range _ _ _).mp key.symm
 
 /-- **Cohomological unitality descends along quasi-fully faithful functors.**  If `𝒞` is
-cohomologically unital, so is `ℬ`: a closed degree-zero endomorphism of `X` whose image is
-cohomologous to the unit of `𝒞` at `ℱ.obj X` is a cohomological unit of `ℬ` at `X`. -/
+cohomologically unital, so is `ℬ`. -/
 theorem cohomologicallyUnital (h𝒞 : 𝒞.CohomologicallyUnital) : ℬ.CohomologicallyUnital := by
   obtain ⟨e', he'⟩ := 𝒞.cohomologicallyUnital_iff.mp h𝒞
   choose e he hee using fun X ↦
@@ -256,11 +250,14 @@ variable (hℬ : ℬ.CohomologicallyUnital) (h𝒞 : 𝒞.CohomologicallyUnital)
 
 /-- A quasi-fully faithful `A∞` functor induces a full functor on homotopy categories. -/
 theorem full_mapHomotopyCategory : (mapHomotopyCategory hℬ h𝒞 hℱ.isUnital).Full :=
-  ⟨fun {X Y} ↦ (hℱ.homClassMap_bijective X.obj Y.obj).2⟩
+  ⟨fun {X Y} a ↦ by
+    obtain ⟨b, hb⟩ := (hℱ.homClassMap_bijective X.obj Y.obj).2 a
+    exact ⟨b, by rw [mapHomotopyCategory_map, hb]⟩⟩
 
 /-- A quasi-fully faithful `A∞` functor induces a faithful functor on homotopy categories. -/
 theorem faithful_mapHomotopyCategory : (mapHomotopyCategory hℬ h𝒞 hℱ.isUnital).Faithful :=
-  ⟨fun {X Y} ↦ (hℱ.homClassMap_bijective X.obj Y.obj).1⟩
+  ⟨fun {X Y} a b h ↦ (hℱ.homClassMap_bijective X.obj Y.obj).1 <| by
+    rwa [mapHomotopyCategory_map, mapHomotopyCategory_map] at h⟩
 
 end IsQuasiFullyFaithful
 
@@ -304,10 +301,11 @@ theorem IsQuasiFullyFaithful.isQuasiEquivalence_iff_essSurj (hℱ : ℱ.IsQuasiF
   rw [isQuasiEquivalence_iff, and_iff_right hℱ]
   refine ⟨fun h ↦ ⟨fun Y ↦ ?_⟩, fun h Y ↦ ?_⟩
   · obtain ⟨X, ⟨i⟩⟩ := h Y.obj
-    -- `H⁰(ℱ)` sends `X` to the image of `X` under `ℱ`.
-    exact ⟨.of X, ⟨i⟩⟩
+    refine ⟨.of X, ?_⟩
+    rw [mapHomotopyCategory_obj]
+    exact ⟨i⟩
   · obtain ⟨X, ⟨i⟩⟩ := h.mem_essImage (.of Y)
-    -- As above, `H⁰(ℱ)` sends `X` to the image of its underlying object.
+    rw [mapHomotopyCategory_obj] at i
     exact ⟨X.obj, ⟨i⟩⟩
 
 /-- **A quasi-equivalence of `A∞` categories induces an equivalence of homotopy categories.** -/
@@ -319,6 +317,7 @@ theorem IsQuasiEquivalence.isEquivalence_mapHomotopyCategory (hℱ : ℱ.IsQuasi
   essSurj := (hℱ.isQuasiFullyFaithful.isQuasiEquivalence_iff_essSurj hℬ).mp hℱ
 
 /-- The identity `A∞` functor of a cohomologically unital `A∞` category is a quasi-equivalence. -/
+@[simp]
 theorem isQuasiEquivalence_id (hℬ : ℬ.CohomologicallyUnital) :
     (AInfinityFunctor.id ℬ).IsQuasiEquivalence hℬ :=
   isQuasiEquivalence_iff.mpr ⟨isQuasiFullyFaithful_id, fun Y ↦ ⟨Y, ⟨Iso.refl _⟩⟩⟩
