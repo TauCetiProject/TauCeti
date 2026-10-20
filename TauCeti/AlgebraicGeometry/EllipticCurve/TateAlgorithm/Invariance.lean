@@ -260,8 +260,10 @@ private theorem starTest_two_mul_add_one {k : ℕ} :
 /-- The even stage `k` implies the odd stage `k` and passes its test `ϖ^(2k+5) ∣ b₆`. -/
 private theorem IsTateEvenStage.isTateOddStage_and_pow_dvd_b₆ {k : ℕ}
     (h : IsTateEvenStage ϖ k W) : IsTateOddStage ϖ k W ∧ ϖ ^ (2 * k + 5) ∣ W.b₆ := by
-  obtain ⟨-, -, -, ⟨x₃, hx₃⟩, -, ⟨x₆, hx₆⟩⟩ := isTateEvenStage_iff.1 h
-  exact ⟨h.isTateOddStage, ⟨ϖ * x₃ ^ 2 + 4 * x₆, by rw [b₆, hx₃, hx₆]; ring⟩⟩
+  obtain ⟨h₁, h₂, h₂', ⟨x₃, hx₃⟩, h₄, ⟨x₆, hx₆⟩⟩ := isTateEvenStage_iff.1 h
+  exact ⟨isTateOddStage_iff.2
+    ⟨h₁, h₂, h₂', ⟨ϖ * x₃, by rw [hx₃]; ring⟩, h₄, ⟨ϖ * x₆, by rw [hx₆]; ring⟩⟩,
+    ⟨ϖ * x₃ ^ 2 + 4 * x₆, by rw [b₆, hx₃, hx₆]; ring⟩⟩
 
 /-- The odd stage `k + 1` implies the even stage `k` and passes its test
 `ϖ^(2k+7) ∣ a₄² - 4 a₂ a₆`. -/

@@ -115,13 +115,6 @@ theorem isTateEvenStage_iff {k : ℕ} {W : WeierstrassCurve R} :
       ϖ ^ (k + 3) ∣ W.a₄ ∧ ϖ ^ (2 * k + 5) ∣ W.a₆ :=
   Iff.rfl
 
-/-- The even stage `n = 2k + 2` satisfies the divisibilities of the odd stage `n = 2k + 1`. -/
-theorem IsTateEvenStage.isTateOddStage {k : ℕ} {W : WeierstrassCurve R}
-    (h : IsTateEvenStage ϖ k W) : IsTateOddStage ϖ k W := by
-  obtain ⟨h₁, h₂, h₂', ⟨x₃, hx₃⟩, h₄, ⟨x₆, hx₆⟩⟩ := isTateEvenStage_iff.1 h
-  exact isTateOddStage_iff.2
-    ⟨h₁, h₂, h₂', ⟨ϖ * x₃, by rw [hx₃]; ring⟩, h₄, ⟨ϖ * x₆, by rw [hx₆]; ring⟩⟩
-
 /-- At stage `n = 2k + 1`, `ϖ^(n+6) ∣ Δ`. -/
 theorem IsTateOddStage.pow_dvd_Δ {k : ℕ} {W : WeierstrassCurve R}
     (hW : IsTateOddStage ϖ k W) : ϖ ^ (2 * k + 7) ∣ W.Δ := by
