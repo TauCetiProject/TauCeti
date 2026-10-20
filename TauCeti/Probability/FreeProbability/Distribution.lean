@@ -55,6 +55,14 @@ theorem jointDistribution_prod (φ : A →ₗ[R] R) (a : ι → A) (w : List ι)
     jointDistribution φ a (w.map (FreeAlgebra.ι R)).prod = φ (w.map a).prod := by
   simp [map_list_prod, List.map_map, Function.comp_def]
 
+/-- Evaluating the distribution on a free-monoid basis vector gives its ordered moment. -/
+theorem jointDistribution_basisFreeMonoid (φ : A →ₗ[R] R) (a : ι → A)
+    (w : FreeMonoid ι) :
+    jointDistribution φ a (FreeAlgebra.basisFreeMonoid R ι w) =
+      φ (w.toList.map a).prod := by
+  simp [FreeAlgebra.basisFreeMonoid, FreeAlgebra.equivMonoidAlgebraFreeMonoid,
+    FreeMonoid.lift_apply, map_list_prod, List.map_map, Function.comp_def]
+
 /-- A joint algebraic distribution is determined by all its word moments, including the
 empty word. The two families may live in different algebras. -/
 theorem jointDistribution_eq_iff {φ : A →ₗ[R] R} {ψ : B →ₗ[R] R}
@@ -68,10 +76,7 @@ theorem jointDistribution_eq_iff {φ : A →ₗ[R] R} {ψ : B →ₗ[R] R}
   · intro h
     apply (FreeAlgebra.basisFreeMonoid R ι).ext
     intro w
-    -- The free-monoid basis is transported from singleton coefficients, so its value is
-    -- the product of generators in the displayed word order.
-    simpa [FreeAlgebra.basisFreeMonoid, FreeAlgebra.equivMonoidAlgebraFreeMonoid,
-      FreeMonoid.lift_apply, map_list_prod, List.map_map, Function.comp_def] using h w.toList
+    simpa only [jointDistribution_basisFreeMonoid] using h w.toList
 
 /-- Evaluating the formal generators recovers the original polynomial functional. -/
 @[simp]
