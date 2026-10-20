@@ -50,6 +50,10 @@ noncomputable def half : EuclideanSpace ℝ (Fin 5) := WithLp.toLp 2 fun _ ↦ 1
 noncomputable def gen (k : Fin 5) : EuclideanSpace ℝ (Fin 5) :=
   if k = 4 then half else EuclideanSpace.single k 1
 
+theorem gen_four : gen 4 = half := by
+  simp [gen]
+
+@[simp]
 theorem gen_apply (k j : Fin 5) :
     gen k j = if k = 4 then 1 / 2 else if j = k then 1 else 0 := by
   unfold gen half
@@ -85,7 +89,7 @@ theorem single_mem_lattice (i : Fin 5) : EuclideanSpace.single i (1 : ℝ) ∈ l
   · simpa [gen, hi] using hgen i
 
 theorem half_mem_lattice : half ∈ lattice := by
-  rw [show half = gen 4 by simp [gen]]
+  rw [← gen_four]
   exact subset_span (mem_range_self 4)
 
 theorem stdLattice_le_lattice : stdLattice ≤ lattice :=
@@ -215,8 +219,7 @@ theorem not_exists_basis_eq_single :
     rw [hx']
     exact sum_mem fun i _ ↦ smul_mem _ _ (hb i ▸ subset_span (mem_range_self i))
   have := relIndex_stdLattice_lattice
-  rw [AddSubgroup.relIndex_eq_one.2 (show lattice.toAddSubgroup ≤ stdLattice.toAddSubgroup from h)]
-    at this
+  rw [AddSubgroup.relIndex_eq_one.2 ((toAddSubgroup_le _ _).2 h)] at this
   omega
 
 /-- **Cassels' basis lemma on `L`.** Applied to the minima witnesses `e 0, …, e 4`, it gives a basis
@@ -231,6 +234,7 @@ theorem exists_basis_norm_le : ∃ b : Basis (Fin 5) ℤ lattice, ∀ i : Fin 5,
     (by simp) single_mem_lattice hli (fun i j _ ↦ by simp)
   exact ⟨b, fun i ↦ by simpa [gauge_closedBall zero_le_one] using hb i⟩
 
+@[simp]
 theorem norm_half : ‖half‖ = √5 / 2 := by
   rw [EuclideanSpace.norm_eq]
   simp [half, div_eq_mul_inv]
@@ -239,6 +243,7 @@ theorem norm_half : ‖half‖ = √5 / 2 := by
 noncomputable def basis : Basis (Fin 5) ℤ lattice :=
   Basis.span (linearIndependent_gen.restrict_scalars' ℤ)
 
+@[simp]
 theorem basis_apply (i : Fin 5) : (basis i : EuclideanSpace ℝ (Fin 5)) = gen i :=
   congrArg Subtype.val (Basis.span_apply _ i)
 
@@ -251,7 +256,7 @@ theorem norm_basis_le (i : Fin 5) :
   · subst hi
     have h5 : √5 ≤ 5 := Real.sqrt_le_iff.2 ⟨by norm_num, by norm_num⟩
     have h4 : (((4 : Fin 5) : ℕ) : ℝ) = 4 := by norm_num
-    rw [show gen 4 = half by simp [gen], norm_half, h4]
+    rw [gen_four, norm_half, h4]
     exact le_max_of_le_right (by linarith)
   · simp [gen, hi]
 
