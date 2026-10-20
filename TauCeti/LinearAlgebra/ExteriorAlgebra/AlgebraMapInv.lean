@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Contraction
 public import Mathlib.LinearAlgebra.ExteriorAlgebra.Basis
 -- Private: `CliffordAlgebra.contractRight_ι_mul` and
--- `TauCeti.ExteriorAlgebra.basis_eq_prod_map_sort` are used only inside proofs.
+-- `Module.Basis.exteriorAlgebra_eq_prod_map_sort` are used only inside proofs.
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 
@@ -92,7 +92,7 @@ theorem _root_.Module.Basis.exteriorAlgebra_repr_empty {I : Type*} [LinearOrder 
   refine LinearMap.congr_fun (b.ExteriorAlgebra.ext (f₁ := b.ExteriorAlgebra.coord ∅)
     (f₂ := algebraMapInv.toLinearMap) fun s ↦ ?_) x
   rw [Module.Basis.coord_apply, Module.Basis.repr_self, AlgHom.toLinearMap_apply,
-    TauCeti.ExteriorAlgebra.basis_eq_prod_map_sort, map_list_prod, List.map_map, List.map_map]
+    Module.Basis.exteriorAlgebra_eq_prod_map_sort, map_list_prod, List.map_map, List.map_map]
   rcases s.eq_empty_or_nonempty with rfl | hs
   · simp
   · rw [Finsupp.single_apply, ite_eq_right hs.ne_empty, eq_comm]

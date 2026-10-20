@@ -84,7 +84,7 @@ theorem basis_eq_prod_map_sort (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (
     basis Q b s = ((s.sort.map b).map (ι Q)).prod := by
   rw [basis_apply, LinearEquiv.symm_apply_eq,
     equivExterior_prod_map_ι_of_pairwise_isOrtho Q (pairwise_isOrtho_map_sort hb s),
-    TauCeti.ExteriorAlgebra.basis_eq_prod_map_sort]
+    Module.Basis.exteriorAlgebra_eq_prod_map_sort]
 
 /-- The scalar part of a product of generators of an orthogonal basis vanishes as soon as one index
 occurs exactly once. -/

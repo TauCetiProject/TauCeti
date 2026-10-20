@@ -45,8 +45,8 @@ variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
 
 /-- **An exterior-basis vector is the product of its generators in increasing order**: the basis
 vector indexed by `s` is `ι (b i₁) * ⋯ * ι (b iₖ)` for `s.sort = [i₁, …, iₖ]`. -/
-theorem basis_eq_prod_map_sort {I : Type w} [LinearOrder I] (b : Module.Basis I R M)
-    (s : Finset I) :
+theorem _root_.Module.Basis.exteriorAlgebra_eq_prod_map_sort {I : Type w} [LinearOrder I]
+    (b : Module.Basis I R M) (s : Finset I) :
     b.ExteriorAlgebra s = ((s.sort.map b).map (ExteriorAlgebra.ι R)).prod := by
   rw [ExteriorAlgebra.basis_apply_ofCard b rfl, ExteriorAlgebra.ιMulti_family,
     ExteriorAlgebra.ιMulti_apply]
@@ -61,7 +61,7 @@ theorem basis_eq_prod_map_sort {I : Type w} [LinearOrder I] (b : Module.Basis I 
 private theorem contractLeft_coord_basis_eq_zero_of_not_mem {I : Type w} [LinearOrder I]
     (b : Module.Basis I R M) (i : I) (s : Finset I) (hi : i ∉ s) :
     contractLeft (Q := (0 : QuadraticForm R M)) (b.coord i) (b.ExteriorAlgebra s) = 0 := by
-  rw [basis_eq_prod_map_sort]
+  rw [b.exteriorAlgebra_eq_prod_map_sort]
   refine contractLeft_prod_map_ι_eq_zero _ fun m hm ↦ ?_
   obtain ⟨j, hj, rfl⟩ := List.mem_map.mp hm
   rw [Module.Basis.coord_apply, Module.Basis.repr_self, Finsupp.single_apply,
@@ -263,13 +263,14 @@ vector under the exterior-algebra generator. -/
 theorem basis_singleton {I : Type w} [LinearOrder I]
     (b : Module.Basis I R M) (i : I) :
     b.ExteriorAlgebra {i} = ExteriorAlgebra.ι R (b i) := by
-  simp [basis_eq_prod_map_sort]
+  simp [b.exteriorAlgebra_eq_prod_map_sort]
 
 /-- The exterior-basis vector indexed by a pair `{i, j}` with `i < j` is the product of the two
 basis vectors in increasing order. -/
 theorem basis_pair {I : Type w} [LinearOrder I] (b : Module.Basis I R M) {i j : I} (hij : i < j) :
     b.ExteriorAlgebra {i, j} = ExteriorAlgebra.ι R (b i) * ExteriorAlgebra.ι R (b j) := by
-  rw [basis_eq_prod_map_sort, Finset.sort_insert _ (by simpa using hij.le) (by simpa using hij.ne)]
+  rw [b.exteriorAlgebra_eq_prod_map_sort,
+    Finset.sort_insert _ (by simpa using hij.le) (by simpa using hij.ne)]
   simp
 
 /-- Multiplying the basis vector for `i` by the basis vector for `s.erase i` reconstructs the
