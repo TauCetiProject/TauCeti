@@ -20,7 +20,8 @@ coefficient window of prescribed length needs when it is read off polynomials th
 into the coefficient window used for polynomial relations with formal degree bounds `m` and `n`.
 `Polynomial.natDegree_multiset_prod_X_sub_C_le` bounds the degree of a product of `card s` monic
 linear factors by `card s` over any commutative ring, without the nontriviality that Mathlib's
-`Polynomial.natDegree_multiset_prod_X_sub_C_eq_card` needs.
+`Polynomial.natDegree_multiset_prod_X_sub_C_eq_card` needs. `Polynomial.sub_C_ne_zero` records
+that a nonconstant polynomial differs from every constant polynomial.
 -/
 
 public section
@@ -66,5 +67,10 @@ theorem _root_.Polynomial.natDegree_multiset_prod_X_sub_C_le {S : Type*} [CommRi
   | cons a s ih =>
     rw [Multiset.map_cons, Multiset.prod_cons, Multiset.card_cons, add_comm]
     exact natDegree_mul_le.trans (add_le_add (natDegree_X_sub_C_le a) ih)
+
+/-- A nonconstant polynomial differs from every constant polynomial. -/
+theorem _root_.Polynomial.sub_C_ne_zero {S : Type*} [Ring S] {p : S[X]} (hp : 0 < p.natDegree)
+    (a : S) : p - C a ≠ 0 :=
+  ne_zero_of_natDegree_gt (n := 0) (by rwa [natDegree_sub_C])
 
 end TauCeti

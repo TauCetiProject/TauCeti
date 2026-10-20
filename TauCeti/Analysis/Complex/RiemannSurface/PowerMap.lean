@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.RiemannSurface.BranchValues
-public import TauCeti.Geometry.Manifold.Instances.OnePoint
+public import TauCeti.Analysis.Complex.RiemannSurface.Polynomial
 
 /-!
 # The power maps of the Riemann sphere
@@ -22,6 +21,10 @@ values are `0` and `∞`. Together with the identity (`n = 1`), these are the si
 holomorphic maps of the sphere, and the basic examples of branched covers of the sphere with
 few branch values: `z ↦ z ^ n` is the local model of every branched cover near a ramification
 point of index `n`.
+
+The power map is the polynomial map of `X ^ n`, so holomorphy, the local multiplicity at `∞` and
+the degree are read off from the general polynomial maps of the sphere; this file adds the facts
+special to `z ↦ z ^ n`, at `0` and away from `0`.
 
 ## Main declarations
 
@@ -46,7 +49,7 @@ point of index `n`.
 
 public noncomputable section
 
-open Filter Function OnePoint Set Topology
+open Filter Function OnePoint Polynomial Set Topology
 
 open scoped Manifold
 
@@ -62,47 +65,22 @@ theorem invChart_onePointMap_pow_invChart_symm (hn : n ≠ 0) (w : ℂ) :
   · simp [zero_pow hn]
   · simp [hw, inv_pow]
 
-/-- Near `∞`, the extension of `z ↦ z ^ n` to the Riemann sphere is `w ↦ w ^ n` read in the
-inverted chart. -/
-private theorem onePointMap_pow_eventuallyEq_infty (hn : n ≠ 0) :
-    (OnePoint.map fun z : ℂ ↦ z ^ n) =ᶠ[𝓝 (∞ : OnePoint ℂ)]
-      ((invChart : OpenPartialHomeomorph (OnePoint ℂ) ℂ).symm ∘ (fun w : ℂ ↦ w ^ n) ∘
-        invChart) := by
-  filter_upwards [invChart.open_source.mem_nhds (by simp : (∞ : OnePoint ℂ) ∈ invChart.source)]
-    with x hx
-  have hfx : OnePoint.map (fun z : ℂ ↦ z ^ n) x ∈ invChart.source := by
-    induction x using OnePoint.rec with
-    | infty => simp
-    | coe z =>
-      have hz : z ≠ 0 := by simpa using hx
-      simpa using fun h ↦ hz (pow_eq_zero_iff hn |>.1 (coe_injective h))
-  rw [comp_apply, comp_apply, ← invChart_onePointMap_pow_invChart_symm hn, invChart.left_inv hx,
-    invChart.left_inv hfx]
+/-- For `n ≠ 0`, the polynomial `X ^ n` is nonconstant. -/
+private theorem natDegree_X_pow_pos (hn : n ≠ 0) : 0 < (X ^ n : ℂ[X]).natDegree := by
+  rw [natDegree_X_pow]
+  exact Nat.pos_of_ne_zero hn
+
+/-- The extension of `X ^ n` to the Riemann sphere is the extension of `z ↦ z ^ n`. -/
+private theorem onePointMap_eval_X_pow :
+    (OnePoint.map fun z : ℂ ↦ (X ^ n : ℂ[X]).eval z) = OnePoint.map fun z : ℂ ↦ z ^ n := by
+  simp
 
 /-- **The power maps of the Riemann sphere are holomorphic.** For `n ≠ 0`, the extension of
 `z ↦ z ^ n` to `OnePoint ℂ`, sending `∞` to `∞`, is holomorphic. -/
 theorem mdifferentiable_onePointMap_pow (hn : n ≠ 0) :
     MDifferentiable 𝓘(ℂ) 𝓘(ℂ) (OnePoint.map fun z : ℂ ↦ z ^ n) := by
-  intro x
-  induction x using OnePoint.rec with
-  | infty =>
-    refine MDifferentiableAt.congr_of_eventuallyEq ?_ (onePointMap_pow_eventuallyEq_infty hn)
-    exact (mdifferentiableAt_atlas_symm (Or.inr rfl) (by simp)).comp _
-      ((differentiableAt_pow n).mdifferentiableAt.comp _
-        (mdifferentiableAt_atlas (Or.inr rfl) (by simp)))
-  | coe z =>
-    -- Off `∞`, the map is `z ↦ z ^ n` read in the affine chart.
-    have h : (OnePoint.map fun z : ℂ ↦ z ^ n) =ᶠ[𝓝 (z : OnePoint ℂ)]
-        (((↑) : ℂ → OnePoint ℂ) ∘ (fun w : ℂ ↦ w ^ n) ∘ affineChart) := by
-      filter_upwards [affineChart.open_source.mem_nhds
-        (by simp : (z : OnePoint ℂ) ∈ affineChart.source)] with x hx
-      induction x using OnePoint.rec with
-      | infty => simp at hx
-      | coe w => simp
-    refine MDifferentiableAt.congr_of_eventuallyEq ?_ h
-    exact ((contMDiff_coe _).mdifferentiableAt (by simp)).comp _
-      ((differentiableAt_pow n).mdifferentiableAt.comp _
-        (mdifferentiableAt_atlas (Or.inl rfl) (by simp)))
+  rw [← onePointMap_eval_X_pow]
+  exact mdifferentiable_onePointMap_eval (natDegree_X_pow_pos hn)
 
 /-- At a finite point `z`, the local multiplicity of the extension of `z ↦ z ^ n` to the Riemann
 sphere is the order of vanishing of `w ↦ w ^ n - z ^ n` at `z`: both charts are the affine
@@ -123,8 +101,8 @@ it is `w ↦ w ^ n` in the inverted chart. -/
 @[simp]
 theorem localMultiplicity_onePointMap_pow_infty (hn : n ≠ 0) :
     localMultiplicity (OnePoint.map fun z : ℂ ↦ z ^ n) (∞ : OnePoint ℂ) = n := by
-  simpa [localMultiplicity_def, invChart_onePointMap_pow_invChart_symm hn, zero_pow hn] using
-    localMultiplicity_pow_zero n
+  rw [← onePointMap_eval_X_pow, localMultiplicity_onePointMap_eval_infty (natDegree_X_pow_pos hn),
+    natDegree_X_pow]
 
 /-- Away from `0` and `∞`, the extension of `z ↦ z ^ n` to the Riemann sphere has local
 multiplicity `1`: there the derivative `n z ^ (n - 1)` does not vanish. -/
@@ -137,15 +115,14 @@ theorem localMultiplicity_onePointMap_pow_coe_of_ne_zero (hn : n ≠ 0) {z : ℂ
 namespace FiniteHolomorphicMap
 
 /-- The **power map** `z ↦ z ^ n` of the Riemann sphere, for `n ≠ 0`, sending `∞` to `∞`, as a
-finite holomorphic map. -/
+finite holomorphic map: the polynomial map of `X ^ n`. -/
 def spherePow (hn : n ≠ 0) : FiniteHolomorphicMap (OnePoint ℂ) (OnePoint ℂ) :=
-  .ofMDifferentiable (mdifferentiable_onePointMap_pow hn)
-    ⟨(0 : ℂ), ∞, by simp⟩
+  spherePolynomial (natDegree_X_pow_pos hn)
 
 @[simp]
 theorem coe_spherePow (hn : n ≠ 0) :
     ⇑(spherePow hn) = OnePoint.map fun z : ℂ ↦ z ^ n :=
-  coe_ofMDifferentiable _ _
+  (coe_spherePolynomial _).trans onePointMap_eval_X_pow
 
 /-- The branch values of the power map `z ↦ z ^ n` of the Riemann sphere lie in `{0, ∞}`. -/
 theorem branchValues_spherePow_subset (hn : n ≠ 0) :
@@ -161,22 +138,10 @@ theorem branchValues_spherePow_subset (hn : n ≠ 0) :
 
 end FiniteHolomorphicMap
 
-open FiniteHolomorphicMap in
-/-- The power map `z ↦ z ^ n` of the Riemann sphere has degree `n`: its fibre over `0` is the
-single point `0`, of local multiplicity `n`. -/
+/-- The power map `z ↦ z ^ n` of the Riemann sphere has degree `n`, the degree of `X ^ n`. -/
 @[simp]
 theorem degree_onePointMap_pow (hn : n ≠ 0) :
     degree (OnePoint.map fun z : ℂ ↦ z ^ n) = n := by
-  have hfib : (OnePoint.map fun z : ℂ ↦ z ^ n) ⁻¹' {((0 : ℂ) : OnePoint ℂ)} =
-      {((0 : ℂ) : OnePoint ℂ)} := by
-    ext x
-    induction x using OnePoint.rec with
-    | infty => simp
-    | coe z => simp [pow_eq_zero_iff hn]
-  have hne : ∀ x, ¬ EventuallyConst (OnePoint.map fun z : ℂ ↦ z ^ n) (𝓝 x) := by
-    simpa using (spherePow hn).not_eventuallyConst
-  rw [← fiberMultiplicitySum_eq_degree (mdifferentiable_onePointMap_pow hn) hne
-    ((0 : ℂ) : OnePoint ℂ), fiberMultiplicitySum_def, hfib, finsum_mem_singleton,
-    localMultiplicity_onePointMap_pow_zero]
+  rw [← onePointMap_eval_X_pow, degree_onePointMap_eval (natDegree_X_pow_pos hn), natDegree_X_pow]
 
 end TauCeti.RiemannSurface
