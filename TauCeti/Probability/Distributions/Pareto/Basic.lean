@@ -62,7 +62,7 @@ namespace TauCeti.Probability
 variable {t r q : ℝ}
 
 /-- The Pareto law presented by its real-valued density. -/
-private theorem paretoMeasure_eq_withDensity_ofReal (t r : ℝ) :
+theorem paretoMeasure_eq_withDensity_ofReal (t r : ℝ) :
     paretoMeasure t r = volume.withDensity fun x => ENNReal.ofReal (paretoPDFReal t r x) :=
   (rfl)
 
@@ -101,7 +101,8 @@ private theorem paretoPDFReal_mul_rpow (ht : 0 < t) (q x : ℝ) :
     rw [mul_assoc, ← Real.rpow_add hx0, hexponent]
   · simp [hx]
 
-private theorem ae_paretoMeasure_mem_Ici (t r : ℝ) :
+/-- A Pareto law is carried by the half-line `[t, ∞)` above its threshold. -/
+theorem ae_paretoMeasure_mem_Ici (t r : ℝ) :
     ∀ᵐ x : ℝ ∂paretoMeasure t r, t ≤ x := by
   rw [paretoMeasure, ae_withDensity_iff (TauCeti.Probability.measurable_paretoPDF t r)]
   filter_upwards with x

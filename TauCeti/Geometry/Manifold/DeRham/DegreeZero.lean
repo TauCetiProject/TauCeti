@@ -52,7 +52,7 @@ theorem mem_closedForms_zero_iff (φ : SmoothForm I M ℝ 0) :
     φ ∈ closedForms I M 0 ↔ IsLocallyConstant fun x ↦ φ.1 x 0 := by
   have hφ : IsSmoothForm I ∞ (RoughForm.ofFunction I fun x ↦ φ.1 x 0) := by
     rw [← RoughForm.eq_ofFunction, isSmoothForm_def]
-    exact (isSmoothBundleForm_def ∞ φ.1).mp (mem_smoothForms.mp φ.2)
+    exact φ.contMDiff
   have h := mextDeriv_ofFunction_eq_zero_iff
     ((isSmoothForm_ofFunction_iff.mp hφ).mdifferentiable (by simp))
   rwa [← RoughForm.eq_ofFunction, ← mem_closedForms] at h

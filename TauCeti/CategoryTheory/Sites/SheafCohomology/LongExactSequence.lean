@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Sites.SheafCohomology.ExactSequences
+public import TauCeti.CategoryTheory.Sites.SheafCohomology.FreeYoneda
 
 /-!
 # Consequences of the long exact cohomology sequence of abelian sheaves
@@ -27,7 +28,16 @@ follow from it.
 * `CategoryTheory.Sheaf.H.exact_map_map`, `H.exact_map_δ` and `H.exact_δ_map`, the exactness of
   the sequence at `Hⁿ(F₂)`, at `Hⁿ⁰(F₃)` and at `Hⁿ¹(F₁)`;
 * `CategoryTheory.Sheaf.H.map_g_surjective`, `H.subsingleton_X₂`, `H.subsingleton_X₃` and
-  `H.subsingleton_X₁`, the vanishing consequences that the sequence is normally used for.
+  `H.subsingleton_X₁`, the vanishing consequences that the sequence is normally used for;
+* `CategoryTheory.Sheaf.H.δ_surjective` and `H.δ_bijective`, the connecting map is onto, or an
+  isomorphism, when the middle sheaf has no cohomology in the relevant degrees;
+* `CategoryTheory.Sheaf.H'.postcomp_g_surjective`, `H'.subsingleton_X₃` and
+  `H'.g_hom_app_surjective`, the corresponding statements for the cohomology `Hⁿ(V, -)` over an
+  object `V` of the site, read off from the long exact `Ext` sequence out of the free abelian sheaf
+  on `V`; the last is the degree zero case of the first, and says that
+  sections over `V` of `F₂` map onto those of `F₃` when `H¹(V, F₁) = 0`, so that the sequence
+  `0 ⟶ F₁(V) ⟶ F₂(V) ⟶ F₃(V) ⟶ 0` of sections is then short exact
+  (`H'.shortExact_map_sheafSections`).
 
 The underlying exactness statements are Mathlib's `CategoryTheory.Sheaf.H.longSequence_exact₁'`,
 `longSequence_exact₂'` and `longSequence_exact₃'`. Sheaf cohomology on the small Zariski site of a
@@ -103,7 +113,70 @@ theorem subsingleton_X₁ (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁) (h₃ : Subsin
   obtain ⟨y₃, hy₃⟩ := (exact_δ_map hS n₀ n₁ h y).1 (Subsingleton.elim _ _)
   rw [← hx₃, ← hy₃, Subsingleton.elim x₃ y₃]
 
+/-- If `Hⁿ¹(F₂)` vanishes, then the connecting map `Hⁿ⁰(F₃) →+ Hⁿ¹(F₁)` is surjective. -/
+theorem δ_surjective (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁) (_ : Subsingleton (H S.X₂ n₁)) :
+    Function.Surjective (δ hS n₀ n₁ h) := fun x ↦
+  (exact_δ_map hS n₀ n₁ h x).1 (Subsingleton.elim _ _)
+
+/-- If `Hⁿ⁰(F₂)` and `Hⁿ¹(F₂)` vanish, then the connecting map `Hⁿ⁰(F₃) →+ Hⁿ¹(F₁)` is
+bijective. -/
+theorem δ_bijective (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁) (_ : Subsingleton (H S.X₂ n₀))
+    (h₁ : Subsingleton (H S.X₂ n₁)) : Function.Bijective (δ hS n₀ n₁ h) := by
+  refine ⟨(injective_iff_map_eq_zero _).2 fun x hx ↦ ?_, δ_surjective hS n₀ n₁ h h₁⟩
+  obtain ⟨y, rfl⟩ := (exact_map_δ hS n₀ n₁ h x).1 hx
+  rw [Subsingleton.elim y 0, map_zero]
+
 end H
+
+namespace H'
+
+open Opposite TauCeti.CategoryTheory
+
+include hS
+
+/-- If `Hⁿ⁺¹(V, F₁)` vanishes, then `Hⁿ(V, F₂) ⟶ Hⁿ(V, F₃)` is surjective. Here `Hⁿ(V, -)` is
+`Ext` out of the free abelian sheaf on `V` (`TauCeti.CategoryTheory.sheafH'_eq`), and the map is
+postcomposition with `F₂ ⟶ F₃`. -/
+theorem postcomp_g_surjective (V : C) (n : ℕ) (h : Subsingleton (S.X₁.H' (n + 1) V)) :
+    Function.Surjective
+      ((Ext.mk₀ S.g).postcomp ((freeYonedaSheafFunctor J).obj V) (add_zero n)) := by
+  have : Subsingleton (Ext ((freeYonedaSheafFunctor J).obj V) S.X₁ (n + 1)) := by
+    simpa only [sheafH'_eq] using h
+  exact fun x₃ ↦ Ext.covariant_sequence_exact₃ _ hS x₃ rfl (Subsingleton.elim _ _)
+
+/-- If `Hⁿ(V, F₂)` and `Hⁿ⁺¹(V, F₁)` vanish, then so does `Hⁿ(V, F₃)`. -/
+theorem subsingleton_X₃ (V : C) (n : ℕ) (h₂ : Subsingleton (S.X₂.H' n V))
+    (h₁ : Subsingleton (S.X₁.H' (n + 1) V)) : Subsingleton (S.X₃.H' n V) := by
+  have : Subsingleton (Ext ((freeYonedaSheafFunctor J).obj V) S.X₂ n) := by
+    simpa only [sheafH'_eq] using h₂
+  simpa only [sheafH'_eq] using (postcomp_g_surjective hS V n h₁).subsingleton
+
+/-- If `H¹(V, F₁)` vanishes, then every section of `F₃` over `V` lifts to a section of `F₂`. -/
+theorem g_hom_app_surjective (V : C) (h : Subsingleton (S.X₁.H' 1 V)) :
+    Function.Surjective (S.g.hom.app (op V)) := by
+  intro s
+  obtain ⟨x, hx⟩ := postcomp_g_surjective hS V 0 h
+    (Ext.mk₀ ((freeYonedaSheafSectionsEquiv J V S.X₃).symm s))
+  refine ⟨freeYonedaSheafSectionsEquiv J V S.X₂ (Ext.addEquiv₀ x), ?_⟩
+  rw [← freeYonedaSheafSectionsEquiv_naturality_right]
+  have hx' : Ext.addEquiv₀ x ≫ S.g = (freeYonedaSheafSectionsEquiv J V S.X₃).symm s :=
+    (TauCeti.ext_addEquiv₀_comp_mk₀ x S.g).symm.trans <| (congrArg Ext.addEquiv₀ hx).trans <|
+      Ext.addEquiv₀.apply_symm_apply _
+  rw [hx', AddEquiv.apply_symm_apply]
+
+/-- If `H¹(V, F₁)` vanishes, then the sequence of sections `0 ⟶ F₁(V) ⟶ F₂(V) ⟶ F₃(V) ⟶ 0` is
+short exact. -/
+theorem shortExact_map_sheafSections (V : C) (h : Subsingleton (S.X₁.H' 1 V)) :
+    (S.map (sheafToPresheaf J AddCommGrpCat.{v} ⋙
+      (evaluation Cᵒᵖ AddCommGrpCat.{v}).obj (op V))).ShortExact := by
+  have := hS.mono_f
+  refine ShortComplex.ShortExact.mk' ?_ ?_ ?_
+  · exact hS.exact.map_of_mono_of_preservesKernel _ inferInstance inferInstance
+  · exact Functor.map_mono (sheafToPresheaf J AddCommGrpCat.{v} ⋙
+      (evaluation Cᵒᵖ AddCommGrpCat.{v}).obj (op V)) S.f
+  · exact (AddCommGrpCat.epi_iff_surjective _).2 (g_hom_app_surjective hS V h)
+
+end H'
 
 end Sheaf
 

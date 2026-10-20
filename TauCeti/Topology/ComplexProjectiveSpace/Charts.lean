@@ -196,6 +196,15 @@ theorem affineChart_apply (k : Fin (n + 1)) (p : ComplexProjectiveSpace n) (j : 
 theorem affineChart_symm_apply (k : Fin (n + 1)) (z : Fin n → ℂ) :
     (affineChart k).symm z = affineParam k z := (rfl)
 
+/-- On its domain, the standard chart together with the normalizing coordinate one gives all
+homogeneous ratios. -/
+theorem insertNth_affineChart (k : Fin (n + 1)) {p : ComplexProjectiveSpace n}
+    (hp : p ∈ affineOpen k) (j : Fin (n + 1)) :
+    Fin.insertNth (α := fun _ ↦ ℂ) k 1 (affineChart k p) j = ratio k j p := by
+  induction j using k.succAboveCases with
+  | x => simp [ratio_self_eq_one k hp]
+  | p j => simp
+
 /-- On a chart overlap the only restriction is nonvanishing of the new denominator. -/
 @[simp↓]
 theorem affineParam_mem_affineOpen_iff (k l : Fin (n + 1)) (z : Fin n → ℂ) :

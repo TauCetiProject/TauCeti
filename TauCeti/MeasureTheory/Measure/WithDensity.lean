@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Function.JacobianOneDim
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Map
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Integral
+public import Mathlib.MeasureTheory.Measure.Support
 public import Mathlib.MeasureTheory.Measure.WithDensity
 public import TauCeti.MeasureTheory.Measure.Real
 
@@ -49,6 +50,10 @@ measure finite.
   constant Jacobian factor.
 * `MeasureTheory.Measure.rnDeriv_map_affine`: the Radon–Nikodym derivative of an affine image is
   obtained by the same substitution and Jacobian factor.
+* `MeasureTheory.Measure.support_withDensity_eq_closure_of_subset`: a density positive on an open
+  set and zero off its closure has topological support equal to that closure.
+* `MeasureTheory.Measure.support_withDensity_eq_closure`: the special case where the function
+  support is exactly the open set.
 * `MeasureTheory.isFiniteMeasure_withDensity_ofReal_exp`: a finite measure weighted by `exp ∘ g`,
   with `g` bounded above almost everywhere, is finite.
 * `TauCeti.MeasureTheory.map_withDensity_abs_deriv_mul`: the change of variables on the real line
@@ -111,6 +116,38 @@ end TauCeti.Probability
 namespace MeasureTheory.Measure
 
 variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
+
+/-- If a measurable density is positive on an open set and zero off its closure, then its weighted
+measure has topological support equal to that closure, provided the reference measure is positive
+on nonempty open sets.
+
+This form allows the density to take arbitrary values on the boundary. -/
+theorem support_withDensity_eq_closure_of_subset {X : Type*} [TopologicalSpace X]
+    [MeasurableSpace X] [OpensMeasurableSpace X] {μ : Measure X} [μ.IsOpenPosMeasure]
+    {f : X → ℝ≥0∞} {U : Set X} (hf : Measurable f) (hU : IsOpen U)
+    (hU_support : U ⊆ Function.support f)
+    (hsupport_closure : Function.support f ⊆ closure U) :
+    (μ.withDensity f).support = closure U := by
+  apply Set.Subset.antisymm
+  · apply support_subset_of_isClosed isClosed_closure
+    rw [← Filter.eventually_mem_set, ae_withDensity_iff hf]
+    exact ae_of_all _ fun _ hx ↦ hsupport_closure hx
+  · rw [support_eq_forall_isOpen]
+    intro x hx V hxV hV
+    obtain ⟨y, hyV, hyU⟩ := mem_closure_iff.mp hx V hV hxV
+    rw [withDensity_apply _ hV.measurableSet, setLIntegral_pos_iff hf]
+    exact ((hU.inter hV).measure_pos μ ⟨y, hyU, hyV⟩).trans_le
+      (measure_mono fun _ hz ↦ ⟨hU_support hz.1, hz.2⟩)
+
+/-- If a measurable density is positive exactly on an open set, then its weighted measure has
+topological support equal to the closure of that set, provided the reference measure is positive
+on nonempty open sets. -/
+theorem support_withDensity_eq_closure {X : Type*} [TopologicalSpace X] [MeasurableSpace X]
+    [OpensMeasurableSpace X] {μ : Measure X} [μ.IsOpenPosMeasure] {f : X → ℝ≥0∞}
+    {U : Set X} (hf : Measurable f) (hU : IsOpen U) (hsupp : Function.support f = U) :
+    (μ.withDensity f).support = closure U := by
+  exact support_withDensity_eq_closure_of_subset hf hU (hsupp.ge)
+    (hsupp.le.trans subset_closure)
 
 /-- **A Jacobian identity transports a weight.** Suppose `f` carries `μ` weighted by `jac` to `ν`,
 which is the Jacobian formula for `f` when `μ` and `ν` are the restrictions of a Haar measure to

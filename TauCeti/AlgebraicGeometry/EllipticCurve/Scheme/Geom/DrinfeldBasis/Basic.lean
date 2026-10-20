@@ -28,8 +28,8 @@ characteristic `p`, the subgroup scheme `E[p]` is the divisor `p²[0]`, so the h
 whose points are the zero section is a Drinfeld basis of `E[p]`. It is the integral counterpart
 of the naive `[Γ(N)]`-structures (`EllipticCurveGeom.IsFiberwiseInjective`), which ask instead
 that the `φ a` be distinct in every fibre and are the right notion only where `N` is invertible.
-Every naive full level structure is a Drinfeld basis over an arbitrary base; this direction is
-proved in `DrinfeldBasis.Naive`. The converse where `N` is invertible remains to be established.
+Every naive full level structure is a Drinfeld basis over an arbitrary base, and the converse holds
+where `N` is invertible; both directions are proved in `DrinfeldBasis.Naive`.
 
 The divisor `∑_a [φ a]` is the divisor of a finite family of `S`-points of `E`
 (`EllipticCurveGeom.pointsDivisor`), the product of the ideal sheaves of the sections `φ a`; it is
@@ -63,6 +63,8 @@ Following `EllipticCurveGeom.mulBy`, the group law on points of `E` is written m
   are stable under automorphisms of `(ℤ/Nℤ)²`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isDrinfeldBasis_one`: every homomorphism is a
   Drinfeld basis of `E[1]`.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.IsDrinfeldBasis.range_eq_ker`: over any field,
+  the image of a Drinfeld basis is exactly the group of rational `N`-torsion points.
 
 ## References
 
@@ -95,6 +97,32 @@ def IsDrinfeldBasis
   E.pointsDivisor φ = (E.torsionι N).left.ker
 
 variable {E N}
+
+/-- The divisor `∑_a [φ a]` of a Drinfeld basis is the closed subscheme `E[N]`. -/
+theorem IsDrinfeldBasis.pointsDivisor_eq
+    {φ : Multiplicative (ZMod N × ZMod N) →* (𝟙_ (Over S) ⟶ Over.mk E.structureMap)}
+    (h : E.IsDrinfeldBasis N φ) : E.pointsDivisor φ = (E.torsionι N).left.ker :=
+  h
+
+section Field
+
+variable {K : Type u} [Field K] {E : EllipticCurveGeom (Spec (.of K))}
+  {φ : Multiplicative (ZMod N × ZMod N) →* (𝟙_ (Over (Spec (.of K))) ⟶ Over.mk E.structureMap)}
+
+/-- **Over a field, the image of a Drinfeld basis of `E[N]` is `E[N](K)`.** The points `φ a` are
+exactly the `K`-points of `E` killed by `N`. No hypothesis on the characteristic of `K` is
+needed. -/
+theorem IsDrinfeldBasis.range_eq_ker (h : E.IsDrinfeldBasis N φ) :
+    φ.range = (IsMonHom.monoidHom (E.mulBy N) _).ker := by
+  refine le_antisymm (range_le_ker_mulBy φ) fun x hx ↦ ?_
+  rw [MonoidHom.mem_ker, IsMonHom.monoidHom_apply] at hx
+  obtain ⟨p⟩ : Nonempty (Spec (.of K)) := inferInstance
+  rw [MonoidHom.mem_range, ← Set.mem_range, ← mem_support_pointsDivisor_iff φ x p,
+    h.pointsDivisor_eq, Scheme.Hom.support_ker]
+  refine subset_closure ⟨(E.torsionLift x hx).left p, ?_⟩
+  rw [← Scheme.Hom.comp_apply, ← Over.comp_left, E.torsionLift_torsionι x hx]
+
+end Field
 
 /-- **A Drinfeld basis is a homomorphism with `∑_a [φ a] = [N]⁻¹[0]`.** -/
 theorem isDrinfeldBasis_iff
