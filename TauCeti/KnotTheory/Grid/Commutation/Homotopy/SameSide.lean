@@ -109,50 +109,6 @@ private theorem existsUnique_sameSidePartner (R : Type*) [CommSemiring R]
           ((G.inr_mem_commutationPentagons C P).mp hP)
           (((G.swapColumns a b).inr_mem_commutationPentagons C.reverse Q).mp hQ) hne
 
-private noncomputable def sameSidePartner {x z : GridState n} (hzx : z ≠ x)
-    (D : {D // D ∈ G.sameSidePentagonPairs C x z}) :
-    GridHexagonCompositeDecomposition a C.turnRow C.oppositeTurnRow x z :=
-  (G.existsUnique_sameSidePartner C ℕ hzx D.val D.property).exists.choose
-
-private theorem sameSidePartner_spec {x z : GridState n} (hzx : z ≠ x)
-    (D : {D // D ∈ G.sameSidePentagonPairs C x z}) :
-    G.sameSidePartner C hzx D ∈ G.unpairedHexagonComposites C x z ∧
-      D.val.toRectangleDecomposition.IsRecut
-        (G.sameSidePartner C hzx D).toRectangleDecomposition :=
-  (G.existsUnique_sameSidePartner C ℕ hzx D.val D.property).exists.choose_spec.imp_right
-    fun h => h.1
-
-private theorem sameSidePartner_injective {x z : GridState n} (hzx : z ≠ x) :
-    Function.Injective (G.sameSidePartner C hzx) := by
-  intro D E h
-  have hD := (G.sameSidePartner_spec C hzx D).2
-  have hE := (G.sameSidePartner_spec C hzx E).2
-  rw [← h] at hE
-  obtain ⟨hfD, hsD⟩ := G.isEmpty_of_mem_pentagonPairDecompositions C
-    (G.sameSidePentagonPairs_subset C x z D.property)
-  obtain ⟨hfE, hsE⟩ := G.isEmpty_of_mem_pentagonPairDecompositions C
-    (G.sameSidePentagonPairs_subset C x z E.property)
-  apply Subtype.ext
-  apply GridPentagonPairDecomposition.toRectangleDecomposition_injective
-  exact hD.eq_of_isRecut hE
-    (GridRectangleDecomposition.hasOneCommonSide_of_isRecut hD hzx)
-    (GridRectangleDecomposition.hasOneCommonSide_of_isRecut hE hzx) hfD hsD hfE hsE
-
-private theorem sameSidePartner_eq {x z : GridState n} (hzx : z ≠ x)
-    (D : {D // D ∈ G.sameSidePentagonPairs C x z})
-    {F : GridHexagonCompositeDecomposition a C.turnRow C.oppositeTurnRow x z}
-    (hF : F ∈ G.unpairedHexagonComposites C x z)
-    (hrecut : D.val.toRectangleDecomposition.IsRecut F.toRectangleDecomposition) :
-    G.sameSidePartner C hzx D = F := by
-  apply G.injOn_toRectangleDecomposition_hexagonCompositeDecompositions C x z
-    ((G.mem_unpairedHexagonComposites C _).mp (G.sameSidePartner_spec C hzx D).1).1
-    ((G.mem_unpairedHexagonComposites C F).mp hF).1
-  obtain ⟨hf, hs⟩ := G.isEmpty_of_mem_pentagonPairDecompositions C
-    (G.sameSidePentagonPairs_subset C x z D.property)
-  exact (D.val.toRectangleDecomposition.existsUnique_isRecut
-    (GridRectangleDecomposition.hasOneCommonSide_of_isRecut hrecut hzx) hf hs).unique
-    (G.sameSidePartner_spec C hzx D).2 hrecut
-
 /-- The unpaired hexagon composites obtained by recutting counted same-side pentagon pairs.
 This is their exact recut image, without a claim that it exhausts the unpaired composites. -/
 noncomputable def sameSidePentagonPartners (x z : GridState n) :
@@ -178,35 +134,40 @@ theorem sameSidePentagonPartners_subset (x z : GridState n) :
     G.sameSidePentagonPartners C x z ⊆ G.unpairedHexagonComposites C x z :=
   fun F hF => ((G.mem_sameSidePentagonPartners C F).mp hF).1
 
-private theorem sameSidePentagonPartners_eq_map {x z : GridState n} (hzx : z ≠ x) :
-    G.sameSidePentagonPartners C x z = (G.sameSidePentagonPairs C x z).attach.map
-      ⟨G.sameSidePartner C hzx, G.sameSidePartner_injective C hzx⟩ := by
-  classical
-  ext F
-  simp only [mem_sameSidePentagonPartners, Finset.mem_map, Finset.mem_attach,
-    true_and, Function.Embedding.coeFn_mk]
-  constructor
-  · rintro ⟨hF, D, hD, hrecut⟩
-    exact ⟨⟨D, hD⟩, G.sameSidePartner_eq C hzx ⟨D, hD⟩ hF hrecut⟩
-  · rintro ⟨D, rfl⟩
-    exact ⟨(G.sameSidePartner_spec C hzx D).1, D.val, D.property,
-      (G.sameSidePartner_spec C hzx D).2⟩
-
 /-- Off the diagonal, the same-side pentagon pairs and their exact hexagon-composite recut
 image have equal total polynomial weight over every commutative semiring. -/
 theorem sum_pentagonPairWeight_sameSide_eq_sum_partners
     (R : Type*) [CommSemiring R] {x z : GridState n} (hzx : z ≠ x) :
     ∑ D ∈ G.sameSidePentagonPairs C x z, G.pentagonPairWeight C R D =
       ∑ F ∈ G.sameSidePentagonPartners C x z, G.hexagonCompositeWeight C R F := by
-  classical
-  have hweight (D : {D // D ∈ G.sameSidePentagonPairs C x z}) :
-      G.hexagonCompositeWeight C R (G.sameSidePartner C hzx D) =
-        G.pentagonPairWeight C R D.val := by
-    obtain ⟨F, ⟨hF, hrecut, hweight⟩, -⟩ :=
-      G.existsUnique_sameSidePartner C R hzx D.val D.property
-    rw [G.sameSidePartner_eq C hzx D hF hrecut, hweight]
-  rw [G.sameSidePentagonPartners_eq_map C hzx, Finset.sum_map]
-  simp only [Function.Embedding.coeFn_mk, hweight, Finset.sum_attach]
+  refine Finset.sum_bij
+    (fun D hD => (G.existsUnique_sameSidePartner C R hzx D hD).exists.choose)
+    (fun D hD => ?_) (fun D hD E hE h => ?_) (fun F hF => ?_) (fun D hD => ?_)
+  · obtain ⟨hF, hrecut, -⟩ := (G.existsUnique_sameSidePartner C R hzx D hD).exists.choose_spec
+    exact (G.mem_sameSidePentagonPartners C _).mpr ⟨hF, D, hD, hrecut⟩
+  · have hD' := (G.existsUnique_sameSidePartner C R hzx D hD).exists.choose_spec.2.1
+    have hE' := (G.existsUnique_sameSidePartner C R hzx E hE).exists.choose_spec.2.1
+    rw [← h] at hE'
+    obtain ⟨hfD, hsD⟩ := G.isEmpty_of_mem_pentagonPairDecompositions C
+      (G.sameSidePentagonPairs_subset C x z hD)
+    obtain ⟨hfE, hsE⟩ := G.isEmpty_of_mem_pentagonPairDecompositions C
+      (G.sameSidePentagonPairs_subset C x z hE)
+    apply GridPentagonPairDecomposition.toRectangleDecomposition_injective
+    exact hD'.eq_of_isRecut hE'
+      (GridRectangleDecomposition.hasOneCommonSide_of_isRecut hD' hzx)
+      (GridRectangleDecomposition.hasOneCommonSide_of_isRecut hE' hzx) hfD hsD hfE hsE
+  · obtain ⟨hF, D, hD, hrecut⟩ := (G.mem_sameSidePentagonPartners C F).mp hF
+    obtain ⟨hF', hrecut', -⟩ :=
+      (G.existsUnique_sameSidePartner C R hzx D hD).exists.choose_spec
+    obtain ⟨hf, hs⟩ := G.isEmpty_of_mem_pentagonPairDecompositions C
+      (G.sameSidePentagonPairs_subset C x z hD)
+    exact ⟨D, hD, G.injOn_toRectangleDecomposition_hexagonCompositeDecompositions C x z
+      ((G.mem_unpairedHexagonComposites C _).mp hF').1
+      ((G.mem_unpairedHexagonComposites C F).mp hF).1
+      ((D.toRectangleDecomposition.existsUnique_isRecut
+        (GridRectangleDecomposition.hasOneCommonSide_of_isRecut hrecut hzx) hf hs).unique
+        hrecut' hrecut)⟩
+  · exact (G.existsUnique_sameSidePartner C R hzx D hD).exists.choose_spec.2.2.symm
 
 open scoped Classical in
 /-- The off-diagonal homotopy coefficient equation holds exactly when the remaining

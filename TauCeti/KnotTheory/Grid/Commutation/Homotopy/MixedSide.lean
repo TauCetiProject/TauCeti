@@ -133,36 +133,6 @@ private theorem existsUnique_mixedSidePartner (R : Type*) [CommSemiring R]
           (((G.swapColumns a b).inl_mem_commutationPentagons C.reverse Q).mp hQ) hzx
     | inr Q => simp at hside
 
-private noncomputable def mixedSidePartner {x z : GridState n} (hzx : z ≠ x)
-    (D : {D // D ∈ G.mixedSidePentagonPairs C x z}) :
-    GridHexagonCompositeDecomposition a C.turnRow C.oppositeTurnRow x z :=
-  (G.existsUnique_mixedSidePartner C ℕ hzx D.val D.property).exists.choose
-
-private theorem mixedSidePartner_spec {x z : GridState n} (hzx : z ≠ x)
-    (D : {D // D ∈ G.mixedSidePentagonPairs C x z}) :
-    G.mixedSidePartner C hzx D ∈ G.unpairedHexagonComposites C x z ∧
-      (G.mixedSidePartner C hzx D).toRectangleDecomposition = D.val.toRectangleDecomposition :=
-  (G.existsUnique_mixedSidePartner C ℕ hzx D.val D.property).exists.choose_spec.imp_right
-    fun h => h.1
-
-private theorem mixedSidePartner_injective {x z : GridState n} (hzx : z ≠ x) :
-    Function.Injective (G.mixedSidePartner C hzx) := by
-  intro D E h
-  apply Subtype.ext
-  apply GridPentagonPairDecomposition.toRectangleDecomposition_injective
-  rw [← (G.mixedSidePartner_spec C hzx D).2, ← (G.mixedSidePartner_spec C hzx E).2, h]
-
-private theorem mixedSidePartner_eq {x z : GridState n} (hzx : z ≠ x)
-    (D : {D // D ∈ G.mixedSidePentagonPairs C x z})
-    {F : GridHexagonCompositeDecomposition a C.turnRow C.oppositeTurnRow x z}
-    (hF : F ∈ G.unpairedHexagonComposites C x z)
-    (hFD : F.toRectangleDecomposition = D.val.toRectangleDecomposition) :
-    G.mixedSidePartner C hzx D = F :=
-  G.injOn_toRectangleDecomposition_hexagonCompositeDecompositions C x z
-    ((G.mem_unpairedHexagonComposites C _).mp (G.mixedSidePartner_spec C hzx D).1).1
-    ((G.mem_unpairedHexagonComposites C F).mp hF).1
-    ((G.mixedSidePartner_spec C hzx D).2.trans hFD.symm)
-
 /-- The unpaired hexagon composites with the underlying rectangle decomposition of a counted
 mixed-side pentagon pair. This is their exact image, without a claim that it exhausts the
 unpaired composites. -/
@@ -190,35 +160,26 @@ theorem mixedSidePentagonPartners_subset (x z : GridState n) :
     G.mixedSidePentagonPartners C x z ⊆ G.unpairedHexagonComposites C x z :=
   fun F hF => ((G.mem_mixedSidePentagonPartners C F).mp hF).1
 
-private theorem mixedSidePentagonPartners_eq_map {x z : GridState n} (hzx : z ≠ x) :
-    G.mixedSidePentagonPartners C x z = (G.mixedSidePentagonPairs C x z).attach.map
-      ⟨G.mixedSidePartner C hzx, G.mixedSidePartner_injective C hzx⟩ := by
-  classical
-  ext F
-  simp only [mem_mixedSidePentagonPartners, Finset.mem_map, Finset.mem_attach,
-    true_and, Function.Embedding.coeFn_mk]
-  constructor
-  · rintro ⟨hF, D, hD, hDF⟩
-    exact ⟨⟨D, hD⟩, G.mixedSidePartner_eq C hzx ⟨D, hD⟩ hF hDF.symm⟩
-  · rintro ⟨D, rfl⟩
-    exact ⟨(G.mixedSidePartner_spec C hzx D).1, D.val, D.property,
-      (G.mixedSidePartner_spec C hzx D).2.symm⟩
-
 /-- Off the diagonal, the mixed-side pentagon pairs and their hexagon-composite image have
 equal total polynomial weight over every commutative semiring. -/
 theorem sum_pentagonPairWeight_mixedSide_eq_sum_partners
     (R : Type*) [CommSemiring R] {x z : GridState n} (hzx : z ≠ x) :
     ∑ D ∈ G.mixedSidePentagonPairs C x z, G.pentagonPairWeight C R D =
       ∑ F ∈ G.mixedSidePentagonPartners C x z, G.hexagonCompositeWeight C R F := by
-  classical
-  have hweight (D : {D // D ∈ G.mixedSidePentagonPairs C x z}) :
-      G.hexagonCompositeWeight C R (G.mixedSidePartner C hzx D) =
-        G.pentagonPairWeight C R D.val := by
-    obtain ⟨F, ⟨hF, hFD, hweight⟩, -⟩ :=
-      G.existsUnique_mixedSidePartner C R hzx D.val D.property
-    rw [G.mixedSidePartner_eq C hzx D hF hFD, hweight]
-  rw [G.mixedSidePentagonPartners_eq_map C hzx, Finset.sum_map]
-  simp only [Function.Embedding.coeFn_mk, hweight, Finset.sum_attach]
+  refine Finset.sum_bij
+    (fun D hD => (G.existsUnique_mixedSidePartner C R hzx D hD).exists.choose)
+    (fun D hD => ?_) (fun D hD E hE h => ?_) (fun F hF => ?_) (fun D hD => ?_)
+  · obtain ⟨hF, hFD, -⟩ := (G.existsUnique_mixedSidePartner C R hzx D hD).exists.choose_spec
+    exact (G.mem_mixedSidePentagonPartners C _).mpr ⟨hF, D, hD, hFD.symm⟩
+  · apply GridPentagonPairDecomposition.toRectangleDecomposition_injective
+    rw [← (G.existsUnique_mixedSidePartner C R hzx D hD).exists.choose_spec.2.1,
+      ← (G.existsUnique_mixedSidePartner C R hzx E hE).exists.choose_spec.2.1, h]
+  · obtain ⟨hF, D, hD, hDF⟩ := (G.mem_mixedSidePentagonPartners C F).mp hF
+    obtain ⟨hF', hF'D, -⟩ := (G.existsUnique_mixedSidePartner C R hzx D hD).exists.choose_spec
+    exact ⟨D, hD, G.injOn_toRectangleDecomposition_hexagonCompositeDecompositions C x z
+      ((G.mem_unpairedHexagonComposites C _).mp hF').1
+      ((G.mem_unpairedHexagonComposites C F).mp hF).1 (hF'D.trans hDF)⟩
+  · exact (G.existsUnique_mixedSidePartner C R hzx D hD).exists.choose_spec.2.2.symm
 
 /-! ### Disjointness of the two partner images -/
 
