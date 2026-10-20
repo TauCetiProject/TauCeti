@@ -116,8 +116,8 @@ theorem coeff_prod_eq_coeff_prod_of_X_pow_dvd_sub_one [DecidableEq ι] {s t : Fi
     coeff n (∏ i ∈ s, g i) = coeff n (∏ i ∈ t, g i) := by
   have hdvd : X ^ (n + 1) ∣ ∏ i ∈ s \ t, g i - 1 := by
     refine prod_induction g (fun a ↦ X ^ (n + 1) ∣ a - 1) (fun a b ha hb ↦ ?_) (by simp) h
-    rw [show a * b - 1 = a * (b - 1) + (a - 1) by ring]
-    exact dvd_add (dvd_mul_of_dvd_right hb a) ha
+    have := dvd_add (dvd_mul_of_dvd_right hb a) ha
+    rwa [mul_sub_one, sub_add_sub_cancel] at this
   obtain ⟨q, hq⟩ := hdvd
   rw [← prod_sdiff hts, sub_eq_iff_eq_add.1 hq, add_mul, one_mul, map_add, mul_assoc,
     coeff_X_pow_mul']
