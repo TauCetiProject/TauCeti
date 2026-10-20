@@ -39,7 +39,9 @@ dual is also a left dual.
   `TauCeti.pivotalIsoApp_tensor_hom`: monoidality of `φ`, in components;
 * `TauCeti.pivotalIsoApp_rightDual`: the Freyd–Yetter identity `φ_{Xᘁ} = (φ_X⁻¹)ᘁ`, with its
   inverse form `TauCeti.pivotalIsoApp_rightDual_inv`;
-* `TauCeti.pivotalExactPairing`: the exact pairing `ExactPairing Xᘁ X` obtained from `φ_X`.
+* `TauCeti.pivotalExactPairing`: the exact pairing `ExactPairing Xᘁ X` obtained from `φ_X`, whose
+  evaluation is dinatural by
+  `TauCeti.whiskerLeft_rightAdjointMate_comp_pivotalIsoApp_hom_whiskerRight`.
 
 ## References
 
@@ -185,5 +187,14 @@ theorem pivotalExactPairing_coevaluation (X : C) :
     @ExactPairing.coevaluation C _ _ Xᘁ X (pivotalExactPairing X) =
       η_ (Xᘁ : C) ((Xᘁ : C)ᘁ : C) ≫ Xᘁ ◁ (pivotalIsoApp X).inv :=
   exactPairingCongrRight_coevaluation _
+
+/-- The evaluation of the pivotal pairing is dinatural: for `f : X ⟶ Y`, pairing `X` with `Yᘁ`
+through `fᘁ` or through `f` gives the same morphism. -/
+@[reassoc]
+theorem whiskerLeft_rightAdjointMate_comp_pivotalIsoApp_hom_whiskerRight {X Y : C} (f : X ⟶ Y) :
+    X ◁ fᘁ ≫ (pivotalIsoApp X).hom ▷ Xᘁ ≫ ε_ (Xᘁ : C) ((Xᘁ : C)ᘁ : C) =
+      f ▷ Yᘁ ≫ (pivotalIsoApp Y).hom ▷ Yᘁ ≫ ε_ (Yᘁ : C) ((Yᘁ : C)ᘁ : C) := by
+  rw [whisker_exchange_assoc, ← rightAdjointMate_comp_evaluation, ← comp_whiskerRight_assoc,
+    ← pivotalIsoApp_hom_naturality, comp_whiskerRight_assoc]
 
 end TauCeti

@@ -34,10 +34,9 @@ they are a pivotal structure for that rigid structure, whose left duals are the 
   `TauCeti.leftDualIsoRightDual_tensor_inv`;
 * `TauCeti.dualFunctorIso`: the natural isomorphism `leftDualFunctor C ≅ rightDualFunctor C`,
   monoidal by `TauCeti.dualFunctorIso_isMonoidal`;
-* `TauCeti.rigidCategoryOfIsoDoubleRightDual`: a right rigid category with isomorphisms
-  `X ≅ Xᘁᘁ` is rigid;
 * `TauCeti.pivotalCategoryOfRightRigid`: a monoidal trivialization of the double right dual
-  functor of a right rigid category is a pivotal structure, for which
+  functor of a right rigid category is a pivotal structure for the rigid structure
+  `TauCeti.rigidCategoryOfIsoDoubleRightDual` whose left duals are the right duals, for which
   `TauCeti.leftDualIsoRightDual_pivotalCategoryOfRightRigid` identifies left and right duals by
   the identity.
 
@@ -109,15 +108,6 @@ theorem rightMate_leftDualIsoRightDual_inv (X : C) :
     rw [rightMate_comp_evaluation, ← whiskerLeft_leftDualIsoRightDual_hom_comp_evaluation,
       whiskerLeft_inv_hom_assoc])
 
-/-- The evaluation of the pivotal pairing is dinatural: for `f : X ⟶ Y`, pairing `X` with `Yᘁ`
-through `fᘁ` or through `f` gives the same morphism. -/
-@[reassoc]
-theorem whiskerLeft_rightAdjointMate_comp_pivotalIsoApp_hom_whiskerRight {X Y : C} (f : X ⟶ Y) :
-    X ◁ fᘁ ≫ (pivotalIsoApp X).hom ▷ Xᘁ ≫ ε_ (Xᘁ : C) ((Xᘁ : C)ᘁ : C) =
-      f ▷ Yᘁ ≫ (pivotalIsoApp Y).hom ▷ Yᘁ ≫ ε_ (Yᘁ : C) ((Yᘁ : C)ᘁ : C) := by
-  rw [whisker_exchange_assoc, ← rightAdjointMate_comp_evaluation, ← comp_whiskerRight_assoc,
-    ← pivotalIsoApp_hom_naturality, comp_whiskerRight_assoc]
-
 /-- **Naturality of `leftDualIsoRightDual`**: it intertwines the left adjoint mate `ᘁf` with the
 right adjoint mate `fᘁ`. -/
 @[reassoc]
@@ -149,10 +139,12 @@ theorem leftDualIsoRightDual_unit_inv :
   -- Both sides are now maps out of `(𝟙_ C)ᘁ` into the left dual `𝟙_ C` of `𝟙_ C`; compare them
   -- after evaluation, where the pivotal component `φ_𝟙` is the unit comparison of the double dual.
   refine (@leftDualHom_ext C _ _ (𝟙_ C) (𝟙_ C) _ exactPairingUnit _ _ ?_).symm
-  rw [leftMate_comp_evaluation, id_whiskerRight, Category.id_comp, pivotalExactPairing_evaluation,
-    pivotalIsoApp_unit_hom, doubleRightDualFunctor_ε, comp_whiskerRight, Category.assoc,
-    rightMate_comp_evaluation, rightDualIso_hom, rightDualIso_inv, ← whisker_exchange_assoc,
-    rightMate_comp_evaluation]
+  rw [leftMate_comp_evaluation, pivotalExactPairing_evaluation, pivotalIsoApp_unit_hom,
+    doubleRightDualFunctor_ε]
+  -- `φ_𝟙` is a composite of two right mates; evaluate them one after the other.
+  simp only [comp_whiskerRight, Category.assoc, rightMate_comp_evaluation, rightDualIso_hom,
+    rightDualIso_inv]
+  rw [← whisker_exchange_assoc, rightMate_comp_evaluation]
   simp
 
 /-- The comparison at a tensor product: `leftDualIsoRightDual (X ⊗ Y)` is the reversed tensor
@@ -176,6 +168,8 @@ isomorphic. As both functors are contravariant, the component at `X` is the inve
 noncomputable def dualFunctorIso : leftDualFunctor C ≅ rightDualFunctor C :=
   NatIso.ofComponents (fun X => (mopFunctor Cᵒᵖ).mapIso (leftDualIsoRightDual X).symm.op)
     fun {X Y} f => by
+      -- Composition in `(Cᵒᵖ)ᴹᵒᵖ` is that of `C` in the reverse order, by definition, so after
+      -- removing the wrappers the naturality square is definitionally the identity in `C`.
       apply Quiver.Hom.unmop_inj
       apply Quiver.Hom.unop_inj
       exact (rightAdjointMate_comp_leftDualIsoRightDual_inv f).symm
@@ -192,6 +186,11 @@ theorem dualFunctorIso_hom_app (X : C) :
 theorem dualFunctorIso_inv_app (X : C) :
     (dualFunctorIso C).inv.app X = (leftDualIsoRightDual X).hom.op.mop :=
   (rfl)
+
+/-! As for `dualFunctorIso`, after `Quiver.Hom.unmop_inj` and `Quiver.Hom.unop_inj` the coherence
+conditions below are definitionally the identities `leftDualIsoRightDual_unit_inv` and
+`leftDualIsoRightDual_tensor_inv` in `C`, since composition and tensor products in `(Cᵒᵖ)ᴹᵒᵖ`
+are those of `C` in the reverse order. -/
 
 /-- The natural isomorphism between the left and right dual functors is monoidal. -/
 instance dualFunctorIso_isMonoidal : NatTrans.IsMonoidal (dualFunctorIso C).hom where
@@ -212,18 +211,6 @@ end Pivotal
 section RightRigid
 
 variable [RightRigidCategory C]
-
-/-- A right rigid category in which every object `X` is isomorphic to its double right dual
-`(doubleRightDualFunctor C).obj X = Xᘁᘁ` is rigid: transporting the pairing of `Xᘁ` with `Xᘁᘁ`
-along the isomorphism makes `Xᘁ` a left dual of `X`. Not an instance, as the left duals depend on
-the chosen isomorphisms. -/
-@[expose, instance_reducible]
-noncomputable def rigidCategoryOfIsoDoubleRightDual
-    (φ : ∀ X : C, X ≅ (doubleRightDualFunctor C).obj X) : RigidCategory C where
-  toRightRigidCategory := ‹_›
-  leftDual X :=
-    { leftDual := Xᘁ
-      exact := @exactPairingCongrRight C _ _ Xᘁ X ((Xᘁ : C)ᘁ : C) HasRightDual.exact (φ X) }
 
 /-- A monoidal trivialization `φ : 𝟭 C ≅ doubleRightDualFunctor C` of the double right dual
 functor of a right rigid category is a pivotal structure, for the rigid structure whose left
@@ -256,11 +243,10 @@ theorem leftDualIsoRightDual_pivotalCategoryOfRightRigid (φ : 𝟭 C ≅ double
   -- paired with `X` through `φ`, which is also the pivotal pairing.
   refine @leftDualHom_ext C _ _ Xᘁ X Xᘁ (pivotalExactPairing X) _ _ ?_
   rw [pivotalExactPairing_evaluation, whiskerLeft_leftDualIsoRightDual_hom_comp_evaluation,
-    pivotalIsoApp_pivotalCategoryOfRightRigid]
+    pivotalIsoApp_pivotalCategoryOfRightRigid, rigidCategoryOfIsoDoubleRightDual_evaluation]
   -- The identity `ᘁX ⟶ Xᘁ` is an identity only up to unfolding the chosen left dual, so the
   -- whiskered identity is removed by `Eq.trans` rather than by rewriting.
-  exact (@exactPairingCongrRight_evaluation C _ _ Xᘁ X ((Xᘁ : C)ᘁ : C) _ (φ.app X)).trans
-    ((Category.id_comp _).symm.trans (MonoidalCategory.whiskerLeft_id X Xᘁ =≫ _).symm)
+  exact ((MonoidalCategory.whiskerLeft_id X Xᘁ =≫ _).trans (Category.id_comp _)).symm
 
 end RightRigid
 
