@@ -200,6 +200,7 @@ theorem indCyclicCoprimeK0_le_indCyclicK0 (ℓ : ℕ) :
 
 /-- **For a cyclic group every class is induced from a cyclic subgroup**, the whole group being
 one. Artin's theorem is vacuous here: no multiplier is needed. -/
+@[simp]
 theorem indCyclicK0_eq_top [IsCyclic G] : indCyclicK0 k G = ⊤ :=
   indClassesK0_eq_top k (Subgroup.isCyclic ⊤)
 
