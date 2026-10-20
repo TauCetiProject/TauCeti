@@ -281,10 +281,10 @@ private theorem isHoledDiscUnion_cell_inter [IsAlgClosed K] {Z : Finset K} {f g 
       have hm : m = 0 := (card_filter_eq_zero_or_of_mem_cell hx h0 hfg).resolve_right
         (by omega)
       rw [hm, Nat.sub_zero] at hρ
-      rw [h0, hm, pow_zero, one_mul, zero_pow (by omega), zero_mul, le_zero_iff, le_zero_iff,
-        closedPolydisc_valuation_weightedC_eq_zero_iff,
-        closedPolydisc_valuation_weightedC_eq_zero_iff, iff_comm,
-        ← pow_eq_zero_iff (by omega : n ≠ 0), hρ, div_eq_zero_iff, or_iff_left he]
+      have hρc : ρ = 0 ↔ c = 0 := by
+        rw [← pow_eq_zero_iff (by omega : n ≠ 0), hρ, div_eq_zero_iff, or_iff_left he]
+      simp [h0, hm, zero_pow (by omega : n ≠ 0),
+        closedPolydisc_valuation_weightedC_eq_zero_iff, hρc]
     · exact (valuation_pow_mul_le_iff hmn he hρ h0).1
   · -- `m = n`: the inequality says `‖c‖ ≤ ‖e‖`, independently of the point
     have hiff (x) (hx : x ∈ cell Z γ δ) : x.1.valuation (T - C γ) ^ m * x.1.valuation (C c) ≤
