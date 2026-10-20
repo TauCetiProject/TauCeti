@@ -48,6 +48,9 @@ deck group of every connected cover does (`TauCeti.Deck.fiber_stabilizer_eq_bot`
 * `TauCeti.ConnectedFiberNumberedCover.deckMulEquiv`: **the deck group of a numbered cover of `U`
   is the automorphism group of its triple**, with `coe_deckMulEquiv_apply` and
   `deckMulEquiv_symm_smul` recording which permutation corresponds to which deck transformation.
+* `IsCoveringMap.deckMulEquivAutomorphismGroup`: the same identification for a cover given by a
+  covering map with connected total space and a numbering of its fibre, against its monodromy
+  triple.
 * `TauCeti.ConnectedFiberNumberedCover.range_deckPerm_of_connectedTriple_eq_cyclicTriple`,
   `TauCeti.ConnectedFiberNumberedCover.range_deckPerm_of_connectedTriple_eq_torusTriple`: the deck
   actions of the two examples, with their cyclicity, their orders and their transitivity on the
@@ -194,5 +197,49 @@ theorem isPretransitive_deck_of_connectedTriple_eq_torusTriple :
 end Torus
 
 end ConnectedFiberNumberedCover
+
+/-! ### Covers given by a covering map
+
+The same identification for a cover given by an unbundled covering map `p : E → ℂ ∖ {0, 1}` with
+connected total space and a numbering `ν` of its fibre over `1/2`, stated against the monodromy
+triple `IsCoveringMap.monodromyTriple`. This is the form in which the covers attached to
+topological branched covers and to Belyi maps arise. -/
+
+section CoveringMap
+
+variable {E : Type} [TopologicalSpace E] [ConnectedSpace E] {p : E → ThricePuncturedSphere}
+  (hp : IsCoveringMap p) (ν : p ⁻¹' {basePt} ≃ Fin n)
+
+/-- The numbered cover `(p, ν)`. -/
+private noncomputable def numberedCover :
+    ConnectedFiberNumberedCover (X := TopCat.of ThricePuncturedSphere) basePt n :=
+  ⟨ConnectedCoveringSpace.mk (TopCat.ofHom ⟨p, hp.continuous⟩) hp, ν⟩
+
+/-- **The deck group of a connected cover of `ℂ ∖ {0, 1}` is the automorphism group of its
+monodromy triple**, for a cover given by a covering map `p` with connected total space and a
+numbering `ν` of its fibre over `1/2`. A deck transformation goes to the permutation it induces on
+the labels (`IsCoveringMap.coe_deckMulEquivAutomorphismGroup_apply`). -/
+noncomputable def _root_.IsCoveringMap.deckMulEquivAutomorphismGroup :
+    deck p ≃* (hp.monodromyTriple ν).automorphismGroup :=
+  (numberedCover hp ν).deckMulEquiv.trans
+    (MulEquiv.subgroupCongr (congrArg automorphismGroup (numberedCover hp ν).coe_connectedTriple))
+
+/-- The automorphism of the monodromy triple attached to a deck transformation sends the label `i`
+to the label of the image of the point labelled `i`. -/
+@[simp]
+theorem _root_.IsCoveringMap.coe_deckMulEquivAutomorphismGroup_apply (φ : deck p) (i : Fin n) :
+    (hp.deckMulEquivAutomorphismGroup ν φ : Perm (Fin n)) i = ν (φ • ν.symm i) :=
+  (numberedCover hp ν).deckPerm_apply φ i
+
+/-- The deck transformation attached to an automorphism `τ` of the monodromy triple sends the
+point labelled `i` to the point labelled `τ i`. -/
+@[simp]
+theorem _root_.IsCoveringMap.deckMulEquivAutomorphismGroup_symm_smul
+    (τ : (hp.monodromyTriple ν).automorphismGroup) (i : Fin n) :
+    (hp.deckMulEquivAutomorphismGroup ν).symm τ • ν.symm i = ν.symm ((τ : Perm (Fin n)) i) :=
+  (numberedCover hp ν).deckMulEquiv_symm_smul
+    ⟨τ, by rw [ConnectedFiberNumberedCover.coe_connectedTriple]; exact τ.2⟩ i
+
+end CoveringMap
 
 end TauCeti
