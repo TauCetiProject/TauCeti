@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Algebra.Group.End
+public import Mathlib.Algebra.Group.Hom.End
+public import Mathlib.Algebra.Ring.GeomSum
 public import Mathlib.GroupTheory.OrderOfElement
-public import Mathlib.Tactic.Abel
+import Mathlib.Tactic.Abel
 
 /-!
 # Iterates of affine automorphisms of additive groups
@@ -18,11 +19,12 @@ in particular on the additive group of a complex torus. The translation part of 
 power is the partial cyclic norm. This file computes every power, distinguishes periodicity
 from exact order, and characterizes fixed points by the image of `1 - A^k`.
 
-The partial norm and difference maps are defined for arbitrary additive endomorphisms.
+The partial norm and difference maps use sums and powers in `AddMonoid.End`.
 All results allow torsion. In particular, no division is used for involutions.
 
 The norm and difference convention is the one in Brown, *Cohomology of Groups*,
-Chapter VI, Section 2. Powers of additive maps are written using function iteration.
+Chapter VI, Section 2. Periodicity is expressed using powers in `AddMonoid.End`;
+the iterate formula also uses function iteration.
 -/
 
 public section
@@ -31,154 +33,140 @@ namespace TauCeti.CyclicAffine
 
 variable {T : Type*}
 
-section Norm
-
-variable [AddCommMonoid T]
-
-/-- The partial cyclic norm `1 + A + ⋯ + A^(k-1)`, including the empty sum at `k = 0`. -/
-def cyclicNormHom (A : T →+ T) (k : ℕ) : T →+ T where
-  toFun t := ∑ i ∈ Finset.range k, A^[i] t
-  map_zero' := by simp [iterate_map_zero]
-  map_add' x y := by simp [iterate_map_add, Finset.sum_add_distrib]
-
-/-- Evaluation of the partial cyclic norm as an ordered sum of powers. -/
-theorem cyclicNormHom_apply (A : T →+ T) (k : ℕ) (t : T) :
-    cyclicNormHom A k t = ∑ i ∈ Finset.range k, A^[i] t :=
-  (rfl)
+/-- View an additive automorphism as an element of the endomorphism monoid, so that its
+powers and geometric sums use composition and pointwise addition. -/
+def toEnd [AddZeroClass T] (A : T ≃+ T) : AddMonoid.End T :=
+  A.toAddMonoidHom
 
 @[simp]
-theorem cyclicNormHom_zero (A : T →+ T) : cyclicNormHom A 0 = 0 := by
-  ext t
-  simp [cyclicNormHom_apply]
-
-@[simp]
-theorem cyclicNormHom_one (A : T →+ T) : cyclicNormHom A 1 = AddMonoidHom.id T := by
-  ext t
-  simp [cyclicNormHom_apply]
-
-/-- Extending a partial norm by its last summand. -/
-theorem cyclicNormHom_succ_apply (A : T →+ T) (k : ℕ) (t : T) :
-    cyclicNormHom A (k + 1) t = cyclicNormHom A k t + A^[k] t :=
-  Finset.sum_range_succ _ _
-
-/-- The period-two norm, with no assumption on `A` or on torsion in `T`. -/
-@[simp]
-theorem cyclicNormHom_two (A : T →+ T) :
-    cyclicNormHom A 2 = AddMonoidHom.id T + A := by
-  ext t
-  simp [cyclicNormHom_succ_apply]
-
-end Norm
+theorem coe_toEnd [AddZeroClass T] (A : T ≃+ T) : ⇑(toEnd A) = A := by rfl
 
 variable [AddCommGroup T]
 
-/-- The difference map whose image detects fixed points of an affine power. -/
-def oneSubPow (A : T →+ T) (k : ℕ) : T →+ T :=
-  AddMonoidHom.id T - AddMonoidHom.mk' A^[k] (iterate_map_add A k)
+/-- For an involution, the period-two norm followed by the difference map is zero. -/
+theorem one_sub_comp_one_add_of_sq_eq_one (A : AddMonoid.End T) (hA : A ^ 2 = 1) :
+    (1 - A).comp (1 + A) = 0 := by
+  change (1 - A) * (1 + A) = 0
+  rw [add_comm (1 : AddMonoid.End T) A, ← geom_sum_two, mul_neg_geom_sum, hA, sub_self]
 
-@[simp]
-theorem oneSubPow_apply (A : T →+ T) (k : ℕ) (t : T) :
-    oneSubPow A k t = t - A^[k] t :=
-  (rfl)
-
-@[simp]
-theorem oneSubPow_zero (A : T →+ T) : oneSubPow A 0 = 0 := by
-  ext t
-  simp
-
-/-- The first difference map is `1 - A`. -/
-@[simp]
-theorem oneSubPow_one (A : T →+ T) : oneSubPow A 1 = AddMonoidHom.id T - A := by
-  ext t
-  simp
+/-- For an involution, the difference map followed by the period-two norm is zero. -/
+theorem one_add_comp_one_sub_of_sq_eq_one (A : AddMonoid.End T) (hA : A ^ 2 = 1) :
+    (1 + A).comp (1 - A) = 0 := by
+  change (1 + A) * (1 - A) = 0
+  rw [add_comm (1 : AddMonoid.End T) A, ← geom_sum_two, geom_sum_mul_neg, hA, sub_self]
 
 /-- An affine permutation with linear part `A` and translation part `t`. -/
-def affineEquiv (A : T ≃+ T) (t : T) : Equiv.Perm T :=
+def affinePerm (A : T ≃+ T) (t : T) : Equiv.Perm T :=
   A.toEquiv.trans (Equiv.addRight t)
 
 @[simp]
-theorem affineEquiv_apply (A : T ≃+ T) (t x : T) : affineEquiv A t x = A x + t :=
+theorem affinePerm_apply (A : T ≃+ T) (t x : T) : affinePerm A t x = A x + t :=
   (rfl)
 
 @[simp]
-theorem affineEquiv_symm_apply (A : T ≃+ T) (t x : T) :
-    (affineEquiv A t).symm x = A.symm (x - t) := by
-  simp [affineEquiv, sub_eq_add_neg]
+theorem affinePerm_symm_apply (A : T ≃+ T) (t x : T) :
+    (affinePerm A t).symm x = A.symm (x - t) := by
+  simp [affinePerm, sub_eq_add_neg]
+
+/-- Composing affine permutations composes their linear parts and transports the twist. -/
+theorem affinePerm_mul (B A : T ≃+ T) (s t : T) :
+    affinePerm B s * affinePerm A t = affinePerm (A.trans B) (B t + s) := by
+  ext x
+  simp [Equiv.Perm.mul_apply, map_add, add_assoc]
+
+@[simp]
+theorem affinePerm_refl (b : T) :
+    affinePerm (AddEquiv.refl T) b = Equiv.addRight b := by
+  ext x
+  rfl
+
+theorem affinePerm_refl_zero : affinePerm (AddEquiv.refl T) (0 : T) = 1 := by
+  ext x
+  simp
 
 /-- Every affine power has translation part equal to its partial cyclic norm. -/
-theorem affineEquiv_pow_apply (A : T ≃+ T) (t : T) (k : ℕ) (x : T) :
-    (affineEquiv A t ^ k) x = A^[k] x + cyclicNormHom A.toAddMonoidHom k t := by
+theorem affinePerm_pow_apply (A : T ≃+ T) (t : T) (k : ℕ) (x : T) :
+    (affinePerm A t ^ k) x = A^[k] x + (∑ i ∈ Finset.range k, (toEnd A) ^ i) t := by
   induction k generalizing x with
   | zero => simp
   | succ k ih =>
-    rw [pow_succ, Equiv.Perm.mul_apply, ih, affineEquiv_apply, iterate_map_add,
-      cyclicNormHom_succ_apply]
-    simp only [AddEquiv.coe_toAddMonoidHom, Function.iterate_succ_apply]
+    have add_apply (f g : AddMonoid.End T) (y : T) : (f + g) y = f y + g y := by rfl
+    simp [pow_succ, ih, iterate_map_add, Finset.sum_range_succ,
+      Function.iterate_succ_apply, add_apply]
     abel
 
 /-- An affine power is the identity exactly when both its linear and translation parts are. -/
-theorem affineEquiv_pow_eq_one_iff (A : T ≃+ T) (t : T) (k : ℕ) :
-    affineEquiv A t ^ k = 1 ↔
-      A^[k] = id ∧ cyclicNormHom A.toAddMonoidHom k t = 0 := by
+theorem affinePerm_pow_eq_one_iff (A : T ≃+ T) (t : T) (k : ℕ) :
+    affinePerm A t ^ k = 1 ↔
+      (toEnd A) ^ k = 1 ∧ (∑ i ∈ Finset.range k, (toEnd A) ^ i) t = 0 := by
   constructor
   · intro h
     have ht := congrArg (fun e : Equiv.Perm T ↦ e 0) h
-    simp only [affineEquiv_pow_apply, iterate_map_zero, zero_add, Equiv.Perm.one_apply] at ht
+    simp only [affinePerm_pow_apply, iterate_map_zero, zero_add, Equiv.Perm.one_apply] at ht
     refine ⟨?_, ht⟩
-    funext x
+    ext x
     have hx := congrArg (fun e : Equiv.Perm T ↦ e x) h
-    simpa only [affineEquiv_pow_apply, ht, add_zero, Equiv.Perm.one_apply, id_eq] using hx
+    simpa only [affinePerm_pow_apply, ht, add_zero, Equiv.Perm.one_apply,
+      AddMonoid.End.coe_pow, coe_toEnd, AddMonoid.End.one_apply] using hx
   · rintro ⟨hA, ht⟩
     ext x
-    simp only [affineEquiv_pow_apply, hA, ht, id_eq, add_zero, Equiv.Perm.one_apply]
+    have hx := DFunLike.congr_fun hA x
+    have hx' : A^[k] x = x := by
+      simpa only [AddMonoid.End.coe_pow, coe_toEnd, AddMonoid.End.one_apply] using hx
+    simpa only [ht, add_zero, hx', Equiv.Perm.one_apply] using affinePerm_pow_apply A t k x
 
 /-- If the linear part is `m`-periodic, the affine map is `m`-periodic exactly when its norm
 vanishes. This asserts order dividing `m`, not exact order. -/
-theorem affineEquiv_pow_eq_one_iff_of_pow_eq_one (A : T ≃+ T) (t : T) (m : ℕ)
-    (hA : A^[m] = id) :
-    affineEquiv A t ^ m = 1 ↔ cyclicNormHom A.toAddMonoidHom m t = 0 := by
-  simp [affineEquiv_pow_eq_one_iff, hA]
+theorem affinePerm_pow_eq_one_iff_of_pow_eq_one (A : T ≃+ T) (t : T) (m : ℕ)
+    (hA : (toEnd A) ^ m = 1) :
+    affinePerm A t ^ m = 1 ↔ (∑ i ∈ Finset.range m, (toEnd A) ^ i) t = 0 := by
+  simp [affinePerm_pow_eq_one_iff, hA]
 
 /-- Exact order requires excluding every smaller positive affine power. -/
-theorem orderOf_affineEquiv_eq_iff (A : T ≃+ T) (t : T) {m : ℕ} (hm : 0 < m) :
-    orderOf (affineEquiv A t) = m ↔
-      (A^[m] = id ∧ cyclicNormHom A.toAddMonoidHom m t = 0) ∧
+theorem orderOf_affinePerm_eq_iff (A : T ≃+ T) (t : T) {m : ℕ} (hm : 0 < m) :
+    orderOf (affinePerm A t) = m ↔
+      ((toEnd A) ^ m = 1 ∧ (∑ i ∈ Finset.range m, (toEnd A) ^ i) t = 0) ∧
       ∀ k, 0 < k → k < m →
-        A^[k] ≠ id ∨ cyclicNormHom A.toAddMonoidHom k t ≠ 0 := by
+        (toEnd A) ^ k ≠ 1 ∨ (∑ i ∈ Finset.range k, (toEnd A) ^ i) t ≠ 0 := by
   rw [orderOf_eq_iff hm]
-  simp only [Ne, affineEquiv_pow_eq_one_iff, not_and_or]
+  simp only [Ne, affinePerm_pow_eq_one_iff, not_and_or]
   exact and_congr_right fun _ ↦ forall_congr' fun k ↦ forall_comm
 
-/-- The fixed-point equation for each affine power, with the displayed positive difference sign. -/
-theorem affineEquiv_pow_apply_eq_self_iff (A : T ≃+ T) (t : T) (k : ℕ) (x : T) :
-    (affineEquiv A t ^ k) x = x ↔
-      oneSubPow A.toAddMonoidHom k x = cyclicNormHom A.toAddMonoidHom k t := by
-  rw [affineEquiv_pow_apply, oneSubPow_apply]
-  simp only [AddEquiv.coe_toAddMonoidHom]
+/-- `x` is fixed by the `k`-th affine power iff `x - A^k x = N_k t`. -/
+theorem affinePerm_pow_apply_eq_self_iff (A : T ≃+ T) (t : T) (k : ℕ) (x : T) :
+    (affinePerm A t ^ k) x = x ↔
+      (1 - (toEnd A) ^ k) x = (∑ i ∈ Finset.range k, (toEnd A) ^ i) t := by
+  rw [affinePerm_pow_apply]
+  change A^[k] x + (∑ i ∈ Finset.range k, (toEnd A) ^ i) t = x ↔
+    x - A^[k] x = (∑ i ∈ Finset.range k, (toEnd A) ^ i) t
   rw [sub_eq_iff_eq_add']
   exact eq_comm
 
 /-- An affine power has a fixed point exactly when its partial norm is in the image of the
 corresponding difference map. This applies to every power, including composite periods. -/
-theorem exists_affineEquiv_pow_fixedPoint_iff (A : T ≃+ T) (t : T) (k : ℕ) :
-    (∃ x, (affineEquiv A t ^ k) x = x) ↔
-      cyclicNormHom A.toAddMonoidHom k t ∈ (oneSubPow A.toAddMonoidHom k).range := by
-  simp only [AddMonoidHom.mem_range, affineEquiv_pow_apply_eq_self_iff]
+theorem exists_affinePerm_pow_fixedPoint_iff (A : T ≃+ T) (t : T) (k : ℕ) :
+    (∃ x, (affinePerm A t ^ k) x = x) ↔
+      (∑ i ∈ Finset.range k, (toEnd A) ^ i) t ∈ (1 - (toEnd A) ^ k).range := by
+  change (∃ x, (affinePerm A t ^ k) x = x) ↔
+    ∃ x, (1 - (toEnd A) ^ k) x = (∑ i ∈ Finset.range k, (toEnd A) ^ i) t
+  simp only [affinePerm_pow_apply_eq_self_iff]
 
-/-- Exclusion of fixed points for all nonidentity powers in a specified period range.
-Periodicity is separate: this equivalence itself does not assume it. -/
-theorem affineEquiv_pow_fixedPoint_free_iff (A : T ≃+ T) (t : T) (m : ℕ) :
-    (∀ k, 0 < k → k < m → ∀ x, (affineEquiv A t ^ k) x ≠ x) ↔
+/-- No power `k` with `0 < k < m` has a fixed point iff, for each such `k`, the partial
+norm `N_k t` is not in the range of `1 - A^k`. -/
+theorem affinePerm_pow_fixedPoint_free_iff (A : T ≃+ T) (t : T) (m : ℕ) :
+    (∀ k, 0 < k → k < m → ∀ x, (affinePerm A t ^ k) x ≠ x) ↔
       ∀ k, 0 < k → k < m →
-        cyclicNormHom A.toAddMonoidHom k t ∉ (oneSubPow A.toAddMonoidHom k).range := by
-  simp only [← exists_affineEquiv_pow_fixedPoint_iff, not_exists]
+        (∑ i ∈ Finset.range k, (toEnd A) ^ i) t ∉ (1 - (toEnd A) ^ k).range := by
+  simp only [← exists_affinePerm_pow_fixedPoint_iff, not_exists]
 
 /-- Conjugating by the translation `x ↦ x + b` changes the twist by `(1 - A)b`. -/
-theorem translation_conj_affineEquiv (A : T ≃+ T) (t b : T) :
-    Equiv.addRight b * affineEquiv A t * (Equiv.addRight b)⁻¹ =
-      affineEquiv A (t + oneSubPow A.toAddMonoidHom 1 b) := by
+theorem affinePerm_conj_addRight (A : T ≃+ T) (t b : T) :
+    Equiv.addRight b * affinePerm A t * (Equiv.addRight b)⁻¹ =
+      affinePerm A (t + (1 - toEnd A) b) := by
+  change Equiv.addRight b * affinePerm A t * (Equiv.addRight b)⁻¹ =
+    affinePerm A (t + (b - A b))
   ext x
-  simp [Equiv.Perm.mul_apply, affineEquiv_apply, map_add, map_neg, sub_eq_add_neg]
+  simp [Equiv.Perm.mul_apply, map_add, map_neg, sub_eq_add_neg]
   abel
 
 end TauCeti.CyclicAffine
