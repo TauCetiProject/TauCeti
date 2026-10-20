@@ -250,6 +250,7 @@ theorem sum_apply_part {M : Type*} [AddCommMonoid M] (P : Finpartition s) (f : F
   exact fun hx => P.le hA hx
 
 /-- Refining a partition shrinks the part containing each point. -/
+@[gcongr]
 theorem part_mono (h : P ≤ Q) (a : α) : P.part a ⊆ Q.part a := by
   by_cases ha : a ∈ s
   · obtain ⟨C, hC, hPC⟩ := h (P.part_mem.2 ha)

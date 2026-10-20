@@ -20,8 +20,10 @@ probability.
 The noncrossing partitions of `s`, ordered by refinement, form a finite lattice `NC(s)`. Its
 meet is the common refinement of `Finpartition`, its bottom element is the partition into
 singletons and its top element is the partition with one part (no parts when `s = ∅`). Its join
-is the least noncrossing partition coarser than both arguments; it can be strictly coarser than
-their join among all partitions, which may cross.
+is the least noncrossing partition coarser than both arguments; mathematically it can be strictly
+coarser than their join among all partitions, which may cross. Mathlib's `Finpartition s` has
+only a meet, not a join, so the join in `NC(s)` is characterised by its universal property
+(`le_sup_left`, `le_sup_right`, `sup_le`) rather than by a comparison lemma.
 
 ## Main definitions
 
