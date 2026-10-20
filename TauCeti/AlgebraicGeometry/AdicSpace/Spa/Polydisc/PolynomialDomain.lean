@@ -359,17 +359,6 @@ theorem exists_finset_setOf_vle_eq_iUnion_holedDisc [IsAlgClosed K]
 
 /-! ### Rational subsets of the closed disc -/
 
-private theorem isHoledDiscUnion_biInter {ι : Type*} (s : Finset ι)
-    {S : ι → Set (closedPolydisc 1 K)} (hS : ∀ i ∈ s, IsHoledDiscUnion (S i)) :
-    IsHoledDiscUnion (⋂ i ∈ s, S i) := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simpa using isHoledDiscUnion_univ
-  | insert i s _ ih =>
-    rw [Finset.set_biInter_insert]
-    exact (hS i (Finset.mem_insert_self i s)).inter
-      (ih fun j hj ↦ hS j (Finset.mem_insert_of_mem hj))
-
 omit [IsUltrametricDist K] in
 /-- Cancelling `gcd(g, p)` does not change the inequality `x(g) ≤ x(p)` at a point where
 `x(gcd(g, p)) ≠ 0`. -/

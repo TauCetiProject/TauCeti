@@ -54,7 +54,8 @@ one of its holes swallows the whole of `D(a, |c|)`, that is when `max ‖c‖ �
   by a disc, gives again a holed disc.
 * `TauCeti.ValuationSpectrum.IsHoledDiscUnion.union` and
   `TauCeti.ValuationSpectrum.IsHoledDiscUnion.inter`: finite unions of holed discs are closed
-  under finite unions and intersections.
+  under finite unions and intersections; `TauCeti.ValuationSpectrum.isHoledDiscUnion_biInter`
+  gives closure under finite intersections indexed by a finite set.
 * `TauCeti.ValuationSpectrum.isOpen_holedDisc`: a holed disc whose holes have unit radius
   parameters is open.
 * `TauCeti.ValuationSpectrum.holedDisc_mem_spaRationalFamily` and
@@ -148,11 +149,11 @@ theorem isHoledDiscUnion_iff {S : Set (closedPolydisc 1 K)} :
   Iff.rfl
 
 /-- The empty set is a finite union of holed discs. -/
-theorem isHoledDiscUnion_empty : IsHoledDiscUnion (∅ : Set (closedPolydisc 1 K)) :=
+@[simp] theorem isHoledDiscUnion_empty : IsHoledDiscUnion (∅ : Set (closedPolydisc 1 K)) :=
   ⟨∅, by simp⟩
 
 /-- The whole closed unit disc is a finite union of holed discs, namely the disc `D(0, |1|)`. -/
-theorem isHoledDiscUnion_univ : IsHoledDiscUnion (Set.univ : Set (closedPolydisc 1 K)) :=
+@[simp] theorem isHoledDiscUnion_univ : IsHoledDiscUnion (Set.univ : Set (closedPolydisc 1 K)) :=
   ⟨{(0, 1, ∅)}, by simp⟩
 
 /-- A finite union of finite unions of holed discs is a finite union of holed discs. -/
@@ -307,6 +308,18 @@ theorem IsHoledDiscUnion.inter {S S' : Set (closedPolydisc 1 K)} (hS : IsHoledDi
     simp [and_assoc]
   rw [h]
   exact (hS.inter_closedSubdisc p.1 p.2.1).inter_biInter_hole p.2.2 Prod.fst Prod.snd
+
+/-- A finite intersection of finite unions of holed discs is a finite union of holed discs. -/
+theorem isHoledDiscUnion_biInter {ι : Type*} (s : Finset ι)
+    {S : ι → Set (closedPolydisc 1 K)} (hS : ∀ i ∈ s, IsHoledDiscUnion (S i)) :
+    IsHoledDiscUnion (⋂ i ∈ s, S i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s _ ih =>
+    rw [Finset.set_biInter_insert]
+    exact (hS i (Finset.mem_insert_self i s)).inter
+      (ih fun j hj ↦ hS j (Finset.mem_insert_of_mem hj))
 
 /-- **A hole that swallows the outer disc empties the holed disc**: if
 `max ‖c‖ ‖a - bᵢ‖ < ‖dᵢ‖`, then on `D(a, |c|)` the value of `T - bᵢ = (T - a) + (a - bᵢ)` stays
