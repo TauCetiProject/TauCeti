@@ -194,6 +194,16 @@ def IsUnital : Prop :=
       ℱ.map X X (e X) - e' (ℱ.obj X) ∈
         LinearMap.range (𝒞.homDifferential (ℱ.obj X) (ℱ.obj X))
 
+/-- An `A∞` functor is unital when it carries every family of cohomological-unit representatives
+of the source to every family of cohomological-unit representatives of the target, modulo
+boundaries. -/
+theorem isUnital_def : ℱ.IsUnital ↔
+    ∀ ⦃e : ∀ X : C, homModule (R := R) X X⦄ ⦃e' : ∀ Y : D, homModule (R := R) Y Y⦄,
+      ℬ.CohomologicalUnits e → 𝒞.CohomologicalUnits e' → ∀ X : C,
+        ℱ.map X X (e X) - e' (ℱ.obj X) ∈
+          LinearMap.range (𝒞.homDifferential (ℱ.obj X) (ℱ.obj X)) :=
+  Iff.rfl
+
 /-- **Unitality can be checked on one choice of units.**  Given cohomological-unit
 representatives `e` of `ℬ` and `e'` of `𝒞`, an `A∞` functor is unital exactly when it carries each
 `e X` to `e' (ℱ.obj X)` modulo boundaries. -/

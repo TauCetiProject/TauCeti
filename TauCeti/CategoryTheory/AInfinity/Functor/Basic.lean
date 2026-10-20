@@ -166,6 +166,15 @@ theorem map_mem (X Y : C) {p : ℤ} {f : homModule (R := R) X Y}
   rwa [(𝒞.induced ℱ.obj).grading_eq, ← homInclusion_map,
     homInclusion_mem_totalGrading_piece_iff] at h
 
+/-- The map of an `A∞` functor on a Hom module commutes with taking homogeneous components. -/
+theorem map_decompose (X Y : C) (p : ℤ) (f : homModule (R := R) X Y) :
+    ℱ.map X Y (DirectSum.decompose (grading (R := R) X Y).piece f p) =
+      (DirectSum.decompose (grading (R := R) (ℱ.obj X) (ℱ.obj Y)).piece (ℱ.map X Y f) p :
+        homModule (R := R) (ℱ.obj X) (ℱ.obj Y)) :=
+  DirectSum.map_decompose_shift (grading (R := R) X Y).piece
+    (grading (R := R) (ℱ.obj X) (ℱ.obj Y)).piece (ℱ.map X Y).toAddMonoidHom id
+    Function.injective_id (fun _ _ ↦ ℱ.map_mem X Y) p f
+
 /-- **The map of an `A∞` functor on a Hom module is a chain map** for the differentials `m₁`: this
 is the arity-one `A∞` functor equation. -/
 @[simp]

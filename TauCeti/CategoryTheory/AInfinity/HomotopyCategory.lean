@@ -230,6 +230,47 @@ theorem comp_mem_homCyclesZero {X Y Z : C} {g : homModule (R := R) Y Z}
   · rw [𝒞.homDifferential_comp hg.1, hg.2, hf.2]
     simp
 
+/-- The composite of two closed morphisms is closed.  Neither morphism needs to be homogeneous. -/
+theorem homDifferential_comp_eq_zero {X Y Z : C} {g : homModule (R := R) Y Z}
+    {f : homModule (R := R) X Y} (hg : 𝒞.homDifferential Y Z g = 0)
+    (hf : 𝒞.homDifferential X Y f = 0) :
+    𝒞.homDifferential X Z (𝒞.comp X Y Z g f) = 0 := by
+  apply homInclusion_injective X Z
+  rw [homInclusion_homDifferential, homInclusion_comp, map_zero, ← LinearMap.mem_ker,
+    ← 𝒞.toAInfinityAlgebra.cycles_def]
+  exact 𝒞.toAInfinityAlgebra.m_two_mem_cycles (𝒞.homInclusion_mem_cycles hg)
+    (𝒞.homInclusion_mem_cycles hf)
+
+/-- If `g` is a boundary and `f` is closed, then `g ∘ f` is a boundary. -/
+theorem comp_mem_range_homDifferential_of_left {X Y Z : C} {g : homModule (R := R) Y Z}
+    {f : homModule (R := R) X Y} (hg : g ∈ LinearMap.range (𝒞.homDifferential Y Z))
+    (hf : 𝒞.homDifferential X Y f = 0) :
+    𝒞.comp X Y Z g f ∈ LinearMap.range (𝒞.homDifferential X Z) := by
+  obtain ⟨h, rfl⟩ := hg
+  have hh : homInclusion Y Z (𝒞.homDifferential Y Z h) ∈ 𝒞.toAInfinityAlgebra.boundaries := by
+    rw [𝒞.toAInfinityAlgebra.boundaries_def, homInclusion_homDifferential]
+    exact LinearMap.mem_range_self _ _
+  have hm := 𝒞.toAInfinityAlgebra.m_two_mem_boundaries_of_left hh (𝒞.homInclusion_mem_cycles hf)
+  rw [𝒞.toAInfinityAlgebra.boundaries_def] at hm
+  obtain ⟨y, hy⟩ := hm
+  refine ⟨homProjection X Z y, ?_⟩
+  rw [← 𝒞.homProjection_differential, hy, ← homInclusion_comp, homProjection_homInclusion]
+
+/-- If `g` is closed and `f` is a boundary, then `g ∘ f` is a boundary. -/
+theorem comp_mem_range_homDifferential_of_right {X Y Z : C} {g : homModule (R := R) Y Z}
+    {f : homModule (R := R) X Y} (hg : 𝒞.homDifferential Y Z g = 0)
+    (hf : f ∈ LinearMap.range (𝒞.homDifferential X Y)) :
+    𝒞.comp X Y Z g f ∈ LinearMap.range (𝒞.homDifferential X Z) := by
+  obtain ⟨h, rfl⟩ := hf
+  have hh : homInclusion X Y (𝒞.homDifferential X Y h) ∈ 𝒞.toAInfinityAlgebra.boundaries := by
+    rw [𝒞.toAInfinityAlgebra.boundaries_def, homInclusion_homDifferential]
+    exact LinearMap.mem_range_self _ _
+  have hm := 𝒞.toAInfinityAlgebra.m_two_mem_boundaries_of_right (𝒞.homInclusion_mem_cycles hg) hh
+  rw [𝒞.toAInfinityAlgebra.boundaries_def] at hm
+  obtain ⟨y, hy⟩ := hm
+  refine ⟨homProjection X Z y, ?_⟩
+  rw [← 𝒞.homProjection_differential, hy, ← homInclusion_comp, homProjection_homInclusion]
+
 /-- Multiplication in total cohomology computes the class of a composite in Keller order. -/
 theorem cohomologyMul_homClass {X Y Z : C} (g : homModule (R := R) Y Z)
     (f : homModule (R := R) X Y) (hg : g ∈ 𝒞.homCyclesZero Y Z)
