@@ -138,6 +138,42 @@ private lemma bridgeNeighbor_rev_ne_of_bridgeNeighbor_eq
     rw [Fin.rev_rev]
     exact (G.halfEdgeOfValenceEqTwo hu l).2
 
+/-! ### Isomorphisms of double contractions -/
+
+section SubtypeSubtype
+
+variable {v₁ v₂ : G.Vertex} {hne₁ : v₂ ≠ v₁} {hne₂ : v₁ ≠ v₂}
+  [Fintype {w : {w : G.Vertex // w ≠ v₁} // w ≠ ⟨v₂, hne₁⟩}]
+  [DecidableEq {w : {w : G.Vertex // w ≠ v₁} // w ≠ ⟨v₂, hne₁⟩}]
+  {n₁ : Nonempty {w : {w : G.Vertex // w ≠ v₁} // w ≠ ⟨v₂, hne₁⟩}}
+  [Fintype {w : {w : G.Vertex // w ≠ v₂} // w ≠ ⟨v₁, hne₂⟩}]
+  [DecidableEq {w : {w : G.Vertex // w ≠ v₂} // w ≠ ⟨v₁, hne₂⟩}]
+  {n₂ : Nonempty {w : {w : G.Vertex // w ≠ v₂} // w ≠ ⟨v₁, hne₂⟩}}
+  {E₁ E₂ : Type u} [Fintype E₁] [DecidableEq E₁] [Fintype E₂] [DecidableEq E₂]
+  {f₁ : E₁ → Fin 2 → {w : {w : G.Vertex // w ≠ v₁} // w ≠ ⟨v₂, hne₁⟩}}
+  {f₂ : E₂ → Fin 2 → {w : {w : G.Vertex // w ≠ v₂} // w ≠ ⟨v₁, hne₂⟩}}
+  {m₁ : ι → {w : {w : G.Vertex // w ≠ v₁} // w ≠ ⟨v₂, hne₁⟩}}
+  {m₂ : ι → {w : {w : G.Vertex // w ≠ v₂} // w ≠ ⟨v₁, hne₂⟩}} {c₁ c₂}
+
+/-- An isomorphism between a graph obtained from `G` by deleting `v₁` and then `v₂` and one
+obtained by deleting `v₂` and then `v₁`, both keeping the genera of the remaining vertices, from a
+bijection of their edges compatible with the ends and the markings in `G`. Contracting tails and
+bridges deletes a vertex in this way, so this applies to any two double contractions of `G`, in
+either order. -/
+private def Iso.ofSubtypeSubtype (τ : E₁ ≃ E₂)
+    (hτ : ∀ e, s((f₂ (τ e) 0).1.1, (f₂ (τ e) 1).1.1) = s((f₁ e 0).1.1, (f₁ e 1).1.1))
+    (hm : ∀ i, (m₂ i).1.1 = (m₁ i).1.1) :
+    Iso ⟨_, E₁, f₁, fun w ↦ G.genus w.1.1, m₁, c₁⟩ ⟨_, E₂, f₂, fun w ↦ G.genus w.1.1, m₂, c₂⟩ :=
+  Iso.ofInjective (Subtype.val ∘ Subtype.val) (Subtype.val ∘ Subtype.val)
+    (Subtype.val_injective.comp Subtype.val_injective)
+    (Equiv.subtypeSubtypeComm (fun _ _ ↦ by simp [Subtype.ext_iff])
+      fun _ _ ↦ by simp [Subtype.ext_iff])
+    (fun _ ↦ Equiv.coe_coe_subtypeSubtypeComm_apply _ _ _) τ
+    (fun e ↦ by simpa [ends_def] using hτ e)
+    (fun _ ↦ congrArg G.genus (Equiv.coe_coe_subtypeSubtypeComm_apply _ _ _)) hm
+
+end SubtypeSubtype
+
 /-! ### The diamond property -/
 
 /-- Two distinct rational tails with at most one marking each can be contracted in either
@@ -161,14 +197,10 @@ private lemma exists_iso_contractTail_contractTail
       · exact .inr ((endpoint_rev_eq_attachment hv₁ hi).trans hatt)
       · exact .inl ((endpoint_rev_eq_attachment hv₂ hi).trans hatt')
   have hatt₂ : G.attachment hv₂ ≠ v₁ := fun h ↦ hatt₁ (attachment_eq_of_attachment_eq hv₂ hv₁ h)
-  have hval₁ : (G.contractTail hv₂).valence ⟨v₁, hne⟩ = 1 := by
-    have := valence_contractTail hv₂ v₁ hne
-    rw [ite_eq_right hatt₂] at this
-    omega
-  have hval₂ : (G.contractTail hv₁).valence ⟨v₂, hne.symm⟩ = 1 := by
-    have := valence_contractTail hv₁ v₂ hne.symm
-    rw [ite_eq_right hatt₁] at this
-    omega
+  have hval₁ : (G.contractTail hv₂).valence ⟨v₁, hne⟩ = 1 :=
+    (valence_contractTail_of_attachment_ne hv₂ hne hatt₂).trans hv₁
+  have hval₂ : (G.contractTail hv₁).valence ⟨v₂, hne.symm⟩ = 1 :=
+    (valence_contractTail_of_attachment_ne hv₁ hne.symm hatt₁).trans hv₂
   have hmark₁ : (G.contractTail hv₂).numMarkings ⟨v₁, hne⟩ ≤ 1 := by
     rw [numMarkings_contractTail, ite_eq_right hatt₂]
     omega
@@ -180,20 +212,10 @@ private lemma exists_iso_contractTail_contractTail
   refine ⟨_, _,
     .contractTail _ ((G.contractTail hv₁).isRationalTail_iff.mpr ⟨hg₂, hval₂⟩) hmark₂,
     .contractTail _ ((G.contractTail hv₂).isRationalTail_iff.mpr ⟨hg₁, hval₁⟩) hmark₁,
-    ⟨Iso.ofInjective (Subtype.val ∘ Subtype.val) (Subtype.val ∘ Subtype.val)
-      (Subtype.val_injective.comp Subtype.val_injective)
-      (Equiv.subtypeSubtypeComm (fun _ _ ↦ by simp [Subtype.ext_iff])
-        fun _ _ ↦ by simp [Subtype.ext_iff])
-      (fun _ ↦ Equiv.coe_coe_subtypeSubtypeComm_apply _ _ _)
-      (Equiv.subtypeSubtypeComm (fun _ _ ↦ by simp [Subtype.ext_iff])
-        fun _ _ ↦ by simp [Subtype.ext_iff])
-      (fun _ ↦ by
-        rw [← Sym2.map_map, ← Sym2.map_map, map_val_ends_contractTail, map_val_ends_contractTail,
-          map_val_ends_contractTail, map_val_ends_contractTail,
-          Equiv.coe_coe_subtypeSubtypeComm_apply]) (fun _ ↦ by simp) fun i ↦ ?_⟩⟩
+    ⟨Iso.ofSubtypeSubtype (Equiv.subtypeSubtypeComm (fun _ _ ↦ by simp [Subtype.ext_iff])
+      fun _ _ ↦ by simp [Subtype.ext_iff]) (fun _ ↦ by simp) fun i ↦ ?_⟩⟩
   by_cases h₁ : G.marking i = v₁ <;> by_cases h₂ : G.marking i = v₂ <;>
-    simp [Subtype.ext_iff, h₁, h₂, hatt₁, hatt₂, ha₁, ha₂, hne,
-      hne.symm]
+    simp [Subtype.ext_iff, h₁, h₂, hatt₁, hatt₂, ha₁, ha₂, hne, hne.symm]
 
 /-- A rational tail `v₁` with at most one marking and an unmarked rational bridge `v₂` to which it
 is not attached can be contracted in either order, with isomorphic results. -/
@@ -211,33 +233,19 @@ private lemma exists_iso_contractTail_contractBridge_of_ne {v₁ v₂ : G.Vertex
     have := endpoint_rev_eq_attachment hv₁ hk
     rw [Fin.rev_rev, (G.halfEdgeOfValenceEqTwo hv₂ k).2] at this
     exact hatt this.symm
-  have hval₂ : (G.contractTail hv₁).valence ⟨v₂, hne.symm⟩ = 2 := by
-    have := valence_contractTail hv₁ v₂ hne.symm
-    rw [ite_eq_right hatt] at this
-    omega
-  have hloop₂' : ∀ e, (G.contractTail hv₁).endpoint e 0 = ⟨v₂, hne.symm⟩ →
-      (G.contractTail hv₁).endpoint e 1 ≠ ⟨v₂, hne.symm⟩ :=
-    fun e h₀ h₁ ↦ hloop₂ e.1 (congrArg Subtype.val h₀) (congrArg Subtype.val h₁)
-  have hm₂' : ∀ i, (G.contractTail hv₁).marking i ≠ ⟨v₂, hne.symm⟩ := fun i h ↦ by
-    rw [marking_contractTail] at h
-    split_ifs at h
-    · exact hatt (congrArg Subtype.val h)
-    · exact hm₂ i (congrArg Subtype.val h)
-  have hval₁ : (G.contractBridge hv₂ hloop₂ hm₂).valence ⟨v₁, hne⟩ = 1 := by
-    rw [valence_contractBridge]
-    exact hv₁
-  have hmark₁ : (G.contractBridge hv₂ hloop₂ hm₂).numMarkings ⟨v₁, hne⟩ ≤ 1 := by
-    rw [numMarkings_contractBridge]
-    exact hm₁
+  have hval₂ : (G.contractTail hv₁).valence ⟨v₂, hne.symm⟩ = 2 :=
+    (valence_contractTail_of_attachment_ne hv₁ hne.symm hatt).trans hv₂
+  have hval₁ : (G.contractBridge hv₂ hloop₂ hm₂).valence ⟨v₁, hne⟩ = 1 :=
+    (valence_contractBridge hv₂ hloop₂ hm₂ v₁ hne).trans hv₁
+  have hmark₁ : (G.contractBridge hv₂ hloop₂ hm₂).numMarkings ⟨v₁, hne⟩ ≤ 1 :=
+    (numMarkings_contractBridge hv₂ hloop₂ hm₂ v₁ hne).trans_le hm₁
   have ha := coe_attachment_contractBridge hv₂ hloop₂ hm₂ hv₁ hne hatt hval₁
   refine ⟨_, _,
-    .contractBridge _ ((G.contractTail hv₁).isRationalBridge_iff.mpr ⟨hg₂, hval₂, hloop₂'⟩) hm₂',
+    .contractBridge _ ((G.contractTail hv₁).isRationalBridge_iff.mpr
+      ⟨hg₂, hval₂, forall_endpoint_one_ne_contractTail hv₁ hne.symm hloop₂⟩)
+      (marking_contractTail_ne hv₁ hne.symm hm₂ hatt),
     .contractTail _ ((G.contractBridge hv₂ hloop₂ hm₂).isRationalTail_iff.mpr ⟨hg₁, hval₁⟩) hmark₁,
-    ⟨Iso.ofInjective (Subtype.val ∘ Subtype.val) (Subtype.val ∘ Subtype.val)
-      (Subtype.val_injective.comp Subtype.val_injective)
-      (Equiv.subtypeSubtypeComm (fun _ _ ↦ by simp [Subtype.ext_iff])
-        fun _ _ ↦ by simp [Subtype.ext_iff])
-      (fun _ ↦ Equiv.coe_coe_subtypeSubtypeComm_apply _ _ _)
+    ⟨Iso.ofSubtypeSubtype
       { toFun := fun
           | none => ⟨none, fun k h ↦ hnb k (congrArg Subtype.val h)⟩
           | some e => ⟨some ⟨e.1.1, fun i h ↦ e.2 i (Subtype.ext h)⟩,
@@ -248,14 +256,11 @@ private lemma exists_iso_contractTail_contractBridge_of_ne {v₁ v₂ : G.Vertex
               fun i h' ↦ e.2 i (congrArg Subtype.val h')⟩
         left_inv := by rintro (_ | _) <;> rfl
         right_inv := by rintro ⟨_ | _, _⟩ <;> rfl }
-      (fun e ↦ ?_) (fun _ ↦ by simp) fun i ↦ ?_⟩⟩
+      (fun e ↦ ?_) fun i ↦ ?_⟩⟩
   · cases e with
     | none =>
-      rw [ends_def, ends_def, Sym2.map_mk, Sym2.map_mk]
-      exact (sym2_coe_bridgeNeighbor_contractTail hv₁ hv₂ hloop₂ hne.symm hnb hval₂).symm
-    | some e =>
-      rw [ends_def, ends_def, Sym2.map_mk, Sym2.map_mk]
-      rfl
+      simpa using (sym2_coe_bridgeNeighbor_contractTail hv₁ hv₂ hloop₂ hne.symm hnb hval₂).symm
+    | some e => simp
   · by_cases h₁ : G.marking i = v₁ <;>
       simp [Subtype.ext_iff, h₁, ha]
 
@@ -285,12 +290,10 @@ private lemma exists_iso_contractTail_contractBridge_of_eq {v₁ v₂ : G.Vertex
     have : G.numMarkings v₂ = 0 := by simp [numMarkings_def, hm₂]
     rw [numMarkings_contractTail, ite_eq_left hatt]
     omega
-  have hval₁ : (G.contractBridge hv₂ hloop₂ hm₂).valence ⟨v₁, hne⟩ = 1 := by
-    rw [valence_contractBridge]
-    exact hv₁
-  have hmark₁ : (G.contractBridge hv₂ hloop₂ hm₂).numMarkings ⟨v₁, hne⟩ ≤ 1 := by
-    rw [numMarkings_contractBridge]
-    exact hm₁
+  have hval₁ : (G.contractBridge hv₂ hloop₂ hm₂).valence ⟨v₁, hne⟩ = 1 :=
+    (valence_contractBridge hv₂ hloop₂ hm₂ v₁ hne).trans hv₁
+  have hmark₁ : (G.contractBridge hv₂ hloop₂ hm₂).numMarkings ⟨v₁, hne⟩ ≤ 1 :=
+    (numMarkings_contractBridge hv₂ hloop₂ hm₂ v₁ hne).trans_le hm₁
   -- After either contraction, the remaining component is attached to the other neighbour of the
   -- bridge.
   have ha₂ : ((G.contractTail hv₁).attachment hval₂).1 = G.bridgeNeighbor hv₂ k.rev := by
@@ -301,19 +304,15 @@ private lemma exists_iso_contractTail_contractBridge_of_eq {v₁ v₂ : G.Vertex
     exact endpoint_halfEdgeOfValenceEqTwo_rev hv₂ k.rev
   have ha₁ : ((G.contractBridge hv₂ hloop₂ hm₂).attachment hval₁).1 =
       G.bridgeNeighbor hv₂ k.rev := by
-    rw [← endpoint_rev_eq_attachment hval₁ (e := none) (i := k) (Subtype.ext hk)]
-    rfl
+    rw [← endpoint_rev_eq_attachment hval₁ (e := none) (i := k) (Subtype.ext hk),
+      endpoint_contractBridge_none]
   -- The node replacing the bridge meets the tail, so it is deleted with the tail.
   have hnone : ¬ ∀ i, (G.contractBridge hv₂ hloop₂ hm₂).endpoint none i ≠ ⟨v₁, hne⟩ :=
     fun h ↦ h k (Subtype.ext hk)
   refine ⟨_, _,
     .contractTail _ ((G.contractTail hv₁).isRationalTail_iff.mpr ⟨hg₂, hval₂⟩) hmark₂,
     .contractTail _ ((G.contractBridge hv₂ hloop₂ hm₂).isRationalTail_iff.mpr ⟨hg₁, hval₁⟩) hmark₁,
-    ⟨Iso.ofInjective (Subtype.val ∘ Subtype.val) (Subtype.val ∘ Subtype.val)
-      (Subtype.val_injective.comp Subtype.val_injective)
-      (Equiv.subtypeSubtypeComm (fun _ _ ↦ by simp [Subtype.ext_iff])
-        fun _ _ ↦ by simp [Subtype.ext_iff])
-      (fun _ ↦ Equiv.coe_coe_subtypeSubtypeComm_apply _ _ _)
+    ⟨Iso.ofSubtypeSubtype
       { toFun := fun e ↦ ⟨some ⟨e.1.1, fun i h ↦ e.2 i (Subtype.ext h)⟩,
           fun i h ↦ e.1.2 i (congrArg Subtype.val h)⟩
         invFun := fun
@@ -325,8 +324,7 @@ private lemma exists_iso_contractTail_contractBridge_of_eq {v₁ v₂ : G.Vertex
           rintro ⟨_ | _, h⟩
           · exact (hnone h).elim
           · rfl }
-      (fun _ ↦ by rw [ends_def, ends_def, Sym2.map_mk, Sym2.map_mk]; rfl) (fun _ ↦ by simp)
-      fun i ↦ ?_⟩⟩
+      (fun _ ↦ by simp) fun i ↦ ?_⟩⟩
   by_cases h₁ : G.marking i = v₁ <;>
     simp [Subtype.ext_iff, h₁, hm₂ i, ha₁, ha₂, hatt]
 
@@ -343,36 +341,18 @@ private lemma exists_iso_contractBridge_contractBridge_of_forall_ne {v₁ v₂ :
   have hnb₂ (k : Fin 2) : G.bridgeNeighbor hv₂ k ≠ v₁ := fun hk ↦ by
     obtain ⟨l, hl⟩ := exists_bridgeNeighbor_eq hv₂ hv₁ hk
     exact hnb₁ l hl
-  have hval₂ : (G.contractBridge hv₁ hloop₁ hm₁).valence ⟨v₂, hne.symm⟩ = 2 := by
-    rw [valence_contractBridge]
-    exact hv₂
-  have hval₁ : (G.contractBridge hv₂ hloop₂ hm₂).valence ⟨v₁, hne⟩ = 2 := by
-    rw [valence_contractBridge]
-    exact hv₁
-  have hloop₂' : ∀ e, (G.contractBridge hv₁ hloop₁ hm₁).endpoint e 0 = ⟨v₂, hne.symm⟩ →
-      (G.contractBridge hv₁ hloop₁ hm₁).endpoint e 1 ≠ ⟨v₂, hne.symm⟩ := by
-    rintro (_ | e) h₀ h₁
-    · exact hnb₁ 0 (congrArg Subtype.val h₀)
-    · exact hloop₂ e.1 (congrArg Subtype.val h₀) (congrArg Subtype.val h₁)
-  have hloop₁' : ∀ e, (G.contractBridge hv₂ hloop₂ hm₂).endpoint e 0 = ⟨v₁, hne⟩ →
-      (G.contractBridge hv₂ hloop₂ hm₂).endpoint e 1 ≠ ⟨v₁, hne⟩ := by
-    rintro (_ | e) h₀ h₁
-    · exact hnb₂ 0 (congrArg Subtype.val h₀)
-    · exact hloop₁ e.1 (congrArg Subtype.val h₀) (congrArg Subtype.val h₁)
-  have hm₂' : ∀ i, (G.contractBridge hv₁ hloop₁ hm₁).marking i ≠ ⟨v₂, hne.symm⟩ :=
-    fun i h ↦ hm₂ i (congrArg Subtype.val h)
-  have hm₁' : ∀ i, (G.contractBridge hv₂ hloop₂ hm₂).marking i ≠ ⟨v₁, hne⟩ :=
-    fun i h ↦ hm₁ i (congrArg Subtype.val h)
+  have hval₂ : (G.contractBridge hv₁ hloop₁ hm₁).valence ⟨v₂, hne.symm⟩ = 2 :=
+    (valence_contractBridge hv₁ hloop₁ hm₁ v₂ hne.symm).trans hv₂
+  have hval₁ : (G.contractBridge hv₂ hloop₂ hm₂).valence ⟨v₁, hne⟩ = 2 :=
+    (valence_contractBridge hv₂ hloop₂ hm₂ v₁ hne).trans hv₁
   refine ⟨_, _,
     .contractBridge _ ((G.contractBridge hv₁ hloop₁ hm₁).isRationalBridge_iff.mpr
-      ⟨hg₂, hval₂, hloop₂'⟩) hm₂',
+      ⟨hg₂, hval₂, forall_endpoint_one_ne_contractBridge hv₁ hloop₁ hm₁ hne.symm hloop₂ (hnb₁ 0)⟩)
+      (marking_contractBridge_ne hv₁ hloop₁ hm₁ hne.symm hm₂),
     .contractBridge _ ((G.contractBridge hv₂ hloop₂ hm₂).isRationalBridge_iff.mpr
-      ⟨hg₁, hval₁, hloop₁'⟩) hm₁',
-    ⟨Iso.ofInjective (Subtype.val ∘ Subtype.val) (Subtype.val ∘ Subtype.val)
-      (Subtype.val_injective.comp Subtype.val_injective)
-      (Equiv.subtypeSubtypeComm (fun _ _ ↦ by simp [Subtype.ext_iff])
-        fun _ _ ↦ by simp [Subtype.ext_iff])
-      (fun _ ↦ Equiv.coe_coe_subtypeSubtypeComm_apply _ _ _)
+      ⟨hg₁, hval₁, forall_endpoint_one_ne_contractBridge hv₂ hloop₂ hm₂ hne hloop₁ (hnb₂ 0)⟩)
+      (marking_contractBridge_ne hv₂ hloop₂ hm₂ hne hm₁),
+    ⟨Iso.ofSubtypeSubtype
       -- The node replacing either bridge is the node replacing it in the other order.
       { toFun := fun
           | none => some ⟨none, fun k h ↦ hnb₂ k (congrArg Subtype.val h)⟩
@@ -386,15 +366,12 @@ private lemma exists_iso_contractBridge_contractBridge_of_forall_ne {v₁ v₂ :
               fun i h' ↦ e.2 i (congrArg Subtype.val h')⟩
         left_inv := by rintro (_ | ⟨_ | _, _⟩) <;> rfl
         right_inv := by rintro (_ | ⟨_ | _, _⟩) <;> rfl }
-      (fun e ↦ ?_) (fun _ ↦ by simp) fun _ ↦ rfl⟩⟩
+      (fun e ↦ ?_) fun _ ↦ by simp⟩⟩
   rcases e with _ | ⟨_ | e, _⟩
-  · rw [ends_def, ends_def, Sym2.map_mk, Sym2.map_mk]
-    exact (sym2_coe_bridgeNeighbor_contractBridge hv₁ hloop₁ hm₁ hv₂ hloop₂ hne.symm hnb₂
+  · simpa using (sym2_coe_bridgeNeighbor_contractBridge hv₁ hloop₁ hm₁ hv₂ hloop₂ hne.symm hnb₂
       hval₂).symm
-  · rw [ends_def, ends_def, Sym2.map_mk, Sym2.map_mk]
-    exact sym2_coe_bridgeNeighbor_contractBridge hv₂ hloop₂ hm₂ hv₁ hloop₁ hne hnb₁ hval₁
-  · rw [ends_def, ends_def, Sym2.map_mk, Sym2.map_mk]
-    rfl
+  · simpa using sym2_coe_bridgeNeighbor_contractBridge hv₂ hloop₂ hm₂ hv₁ hloop₁ hne hnb₁ hval₁
+  · simp
 
 /-- Two unmarked rational bridges joined by a node can be contracted in either order: both orders
 replace the chain of the two bridges by a single node joining their other neighbours. -/
@@ -412,46 +389,24 @@ private lemma exists_iso_contractBridge_contractBridge_of_eq
     hm₂ hk
   have hl' := bridgeNeighbor_rev_ne_of_bridgeNeighbor_eq hrange hne.symm hg₂ hv₂ hloop₂ hm₂ hg₁ hv₁
     hm₁ hl
-  have hval₂ : (G.contractBridge hv₁ hloop₁ hm₁).valence ⟨v₂, hne.symm⟩ = 2 := by
-    rw [valence_contractBridge]
-    exact hv₂
-  have hval₁ : (G.contractBridge hv₂ hloop₂ hm₂).valence ⟨v₁, hne⟩ = 2 := by
-    rw [valence_contractBridge]
-    exact hv₁
-  -- The node replacing one bridge is not a loop at the other bridge.
-  have hloop₂' : ∀ e, (G.contractBridge hv₁ hloop₁ hm₁).endpoint e 0 = ⟨v₂, hne.symm⟩ →
-      (G.contractBridge hv₁ hloop₁ hm₁).endpoint e 1 ≠ ⟨v₂, hne.symm⟩ := by
-    rintro (_ | e) h₀ h₁
-    · fin_cases k
-      · exact hk' (congrArg Subtype.val h₁)
-      · exact hk' (congrArg Subtype.val h₀)
-    · exact hloop₂ e.1 (congrArg Subtype.val h₀) (congrArg Subtype.val h₁)
-  have hloop₁' : ∀ e, (G.contractBridge hv₂ hloop₂ hm₂).endpoint e 0 = ⟨v₁, hne⟩ →
-      (G.contractBridge hv₂ hloop₂ hm₂).endpoint e 1 ≠ ⟨v₁, hne⟩ := by
-    rintro (_ | e) h₀ h₁
-    · fin_cases l
-      · exact hl' (congrArg Subtype.val h₁)
-      · exact hl' (congrArg Subtype.val h₀)
-    · exact hloop₁ e.1 (congrArg Subtype.val h₀) (congrArg Subtype.val h₁)
-  have hm₂' : ∀ i, (G.contractBridge hv₁ hloop₁ hm₁).marking i ≠ ⟨v₂, hne.symm⟩ :=
-    fun i h ↦ hm₂ i (congrArg Subtype.val h)
-  have hm₁' : ∀ i, (G.contractBridge hv₂ hloop₂ hm₂).marking i ≠ ⟨v₁, hne⟩ :=
-    fun i h ↦ hm₁ i (congrArg Subtype.val h)
+  have hval₂ : (G.contractBridge hv₁ hloop₁ hm₁).valence ⟨v₂, hne.symm⟩ = 2 :=
+    (valence_contractBridge hv₁ hloop₁ hm₁ v₂ hne.symm).trans hv₂
+  have hval₁ : (G.contractBridge hv₂ hloop₂ hm₂).valence ⟨v₁, hne⟩ = 2 :=
+    (valence_contractBridge hv₂ hloop₂ hm₂ v₁ hne).trans hv₁
   -- The node replacing the first bridge meets the second one, so it is replaced in turn.
   have hnone₁ : ¬ ∀ i, (G.contractBridge hv₁ hloop₁ hm₁).endpoint none i ≠ ⟨v₂, hne.symm⟩ :=
     fun h ↦ h k (Subtype.ext hk)
   have hnone₂ : ¬ ∀ i, (G.contractBridge hv₂ hloop₂ hm₂).endpoint none i ≠ ⟨v₁, hne⟩ :=
     fun h ↦ h l (Subtype.ext hl)
   refine ⟨_, _,
+    -- The node replacing one bridge is not a loop at the other bridge.
     .contractBridge _ ((G.contractBridge hv₁ hloop₁ hm₁).isRationalBridge_iff.mpr
-      ⟨hg₂, hval₂, hloop₂'⟩) hm₂',
+      ⟨hg₂, hval₂, forall_endpoint_one_ne_contractBridge hv₁ hloop₁ hm₁ hne.symm hloop₂ hk'⟩)
+      (marking_contractBridge_ne hv₁ hloop₁ hm₁ hne.symm hm₂),
     .contractBridge _ ((G.contractBridge hv₂ hloop₂ hm₂).isRationalBridge_iff.mpr
-      ⟨hg₁, hval₁, hloop₁'⟩) hm₁',
-    ⟨Iso.ofInjective (Subtype.val ∘ Subtype.val) (Subtype.val ∘ Subtype.val)
-      (Subtype.val_injective.comp Subtype.val_injective)
-      (Equiv.subtypeSubtypeComm (fun _ _ ↦ by simp [Subtype.ext_iff])
-        fun _ _ ↦ by simp [Subtype.ext_iff])
-      (fun _ ↦ Equiv.coe_coe_subtypeSubtypeComm_apply _ _ _)
+      ⟨hg₁, hval₁, forall_endpoint_one_ne_contractBridge hv₂ hloop₂ hm₂ hne hloop₁ hl'⟩)
+      (marking_contractBridge_ne hv₂ hloop₂ hm₂ hne hm₁),
+    ⟨Iso.ofSubtypeSubtype
       { toFun := fun
           | none => none
           | some ⟨none, h⟩ => (hnone₁ h).elim
@@ -472,16 +427,15 @@ private lemma exists_iso_contractBridge_contractBridge_of_eq
           · rfl
           · exact (hnone₂ h).elim
           · rfl }
-      (fun e ↦ ?_) (fun _ ↦ by simp) fun _ ↦ rfl⟩⟩
+      (fun e ↦ ?_) fun _ ↦ by simp⟩⟩
   rcases e with _ | ⟨_ | e, h⟩
-  · rw [ends_def, ends_def, Sym2.map_mk, Sym2.map_mk]
-    refine (sym2_coe_bridgeNeighbor_contractBridge_of_bridgeNeighbor_eq hv₂ hloop₂ hm₂ hv₁ hne.symm
-      hl hk' hval₁).trans (Sym2.eq_swap.trans ?_)
-    exact (sym2_coe_bridgeNeighbor_contractBridge_of_bridgeNeighbor_eq hv₁ hloop₁ hm₁ hv₂ hne hk
-      hl' hval₂).symm
+  · have h₁ := sym2_coe_bridgeNeighbor_contractBridge_of_bridgeNeighbor_eq hv₂ hloop₂ hm₂ hv₁
+      hne.symm hl hk' hval₁
+    have h₂ := sym2_coe_bridgeNeighbor_contractBridge_of_bridgeNeighbor_eq hv₁ hloop₁ hm₁ hv₂ hne hk
+      hl' hval₂
+    simp [h₁, h₂]
   · exact (hnone₁ h).elim
-  · rw [ends_def, ends_def, Sym2.map_mk, Sym2.map_mk]
-    rfl
+  · simp
 
 /-- **The diamond property up to isomorphism.** In the stable range, two stabilization steps from
 the same graph can each be followed by at most one further step so that the results are

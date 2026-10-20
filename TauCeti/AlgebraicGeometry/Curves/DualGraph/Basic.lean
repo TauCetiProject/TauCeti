@@ -166,7 +166,7 @@ lemma forall_endpoint_ne_iff {v : G.Vertex} {e : G.Edge} :
 
 variable {G} in
 /-- An edge avoids `v` when neither of its branches lies there. -/
-lemma forall_endpoint_ne_of {v : G.Vertex} {e : G.Edge} {i : Fin 2}
+lemma forall_endpoint_ne_of_ne_of_rev_ne {v : G.Vertex} {e : G.Edge} {i : Fin 2}
     (h : G.endpoint e i ≠ v) (h' : G.endpoint e i.rev ≠ v) (j : Fin 2) : G.endpoint e j ≠ v := by
   rcases Fin.fin_two_eq_or_eq_rev i j with rfl | rfl <;> assumption
 

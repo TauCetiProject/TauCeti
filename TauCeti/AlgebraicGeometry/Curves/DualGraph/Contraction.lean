@@ -210,7 +210,7 @@ attachment. -/
 lemma forall_endpoint_ne_of_valence_eq_one {u v : G.Vertex} (hu : G.valence u = 1)
     (huv : u ≠ v) (hatt : G.attachment hu ≠ v) {e : G.Edge} {i : Fin 2}
     (he : G.endpoint e i = u) : ∀ j, G.endpoint e j ≠ v :=
-  forall_endpoint_ne_of (by rw [he]; exact huv)
+  forall_endpoint_ne_of_ne_of_rev_ne (by rw [he]; exact huv)
     (by rw [endpoint_rev_eq_attachment hu he]; exact hatt)
 
 /-- The `k`th half-edge at a vertex `u` of valence two avoids every vertex other than `u` and its
@@ -218,7 +218,7 @@ lemma forall_endpoint_ne_of_valence_eq_one {u v : G.Vertex} (hu : G.valence u = 
 lemma forall_endpoint_halfEdgeOfValenceEqTwo_ne {u v : G.Vertex} (hu : G.valence u = 2)
     (huv : u ≠ v) {k : Fin 2} (hk : G.bridgeNeighbor hu k ≠ v) :
     ∀ i, G.endpoint (G.halfEdgeOfValenceEqTwo hu k).1.1 i ≠ v :=
-  forall_endpoint_ne_of (i := (G.halfEdgeOfValenceEqTwo hu k).1.2)
+  forall_endpoint_ne_of_ne_of_rev_ne (i := (G.halfEdgeOfValenceEqTwo hu k).1.2)
     (by rw [(G.halfEdgeOfValenceEqTwo hu k).2]; exact huv)
     (by rw [endpoint_halfEdgeOfValenceEqTwo_rev]; exact hk)
 
@@ -440,6 +440,27 @@ lemma sym2_coe_bridgeNeighbor_contractTail {u : G.Vertex} (hu : G.valence u = 2)
   exact congrArg₂ (fun a b ↦ s(a, b)) (endpoint_halfEdgeOfValenceEqTwo_rev hu 0)
     (endpoint_halfEdgeOfValenceEqTwo_rev hu 1)
 
+/-- Contracting a tail does not change the valence of a vertex other than its attachment. -/
+lemma valence_contractTail_of_attachment_ne {u : G.Vertex} (hu : u ≠ v)
+    (hatt : G.attachment hv ≠ u) : (G.contractTail hv).valence ⟨u, hu⟩ = G.valence u := by
+  have := valence_contractTail hv u hu
+  rw [ite_eq_right hatt] at this
+  omega
+
+/-- After contracting a tail, a loopless vertex is still loopless. -/
+lemma forall_endpoint_one_ne_contractTail {u : G.Vertex} (hu : u ≠ v)
+    (hloop : ∀ e, G.endpoint e 0 = u → G.endpoint e 1 ≠ u) :
+    ∀ e, (G.contractTail hv).endpoint e 0 = ⟨u, hu⟩ → (G.contractTail hv).endpoint e 1 ≠ ⟨u, hu⟩ :=
+  fun e h₀ h₁ ↦ hloop e.1 (congrArg Subtype.val h₀) (congrArg Subtype.val h₁)
+
+/-- After contracting a tail, an unmarked vertex other than its attachment is still unmarked. -/
+lemma marking_contractTail_ne {u : G.Vertex} (hu : u ≠ v) (hm : ∀ i, G.marking i ≠ u)
+    (hatt : G.attachment hv ≠ u) (i : ι) : (G.contractTail hv).marking i ≠ ⟨u, hu⟩ := fun h ↦ by
+  rw [marking_contractTail] at h
+  split_ifs at h
+  · exact hatt (congrArg Subtype.val h)
+  · exact hm i (congrArg Subtype.val h)
+
 section Markings
 
 variable [Fintype ι]
@@ -623,20 +644,36 @@ theorem logCanonicalDegree_contractBridge [Fintype ι] (u : G.Vertex) (hu : u �
   rw [logCanonicalDegree_def, logCanonicalDegree_def, valence_contractBridge,
     numMarkings_contractBridge]
 
+/-- After contracting a bridge, a loopless vertex which is not both neighbours of the bridge is
+still loopless. -/
+lemma forall_endpoint_one_ne_contractBridge {u : G.Vertex} (hu : u ≠ v)
+    (hloopu : ∀ e, G.endpoint e 0 = u → G.endpoint e 1 ≠ u) {k : Fin 2}
+    (hk : G.bridgeNeighbor hv k ≠ u) :
+    ∀ e, (G.contractBridge hv hloop hm).endpoint e 0 = ⟨u, hu⟩ →
+      (G.contractBridge hv hloop hm).endpoint e 1 ≠ ⟨u, hu⟩ := by
+  rintro (_ | e) h₀ h₁
+  · fin_cases k
+    · exact hk (congrArg Subtype.val h₀)
+    · exact hk (congrArg Subtype.val h₁)
+  · exact hloopu e.1 (congrArg Subtype.val h₀) (congrArg Subtype.val h₁)
+
+/-- After contracting a bridge, an unmarked vertex is still unmarked. -/
+lemma marking_contractBridge_ne {u : G.Vertex} (hu : u ≠ v) (hmu : ∀ i, G.marking i ≠ u)
+    (i : ι) : (G.contractBridge hv hloop hm).marking i ≠ ⟨u, hu⟩ :=
+  fun h ↦ hmu i (congrArg Subtype.val h)
+
 /-- Contracting a bridge replaces it by a new edge joining its two neighbours. -/
 @[simp]
 lemma map_val_ends_contractBridge_none :
     ((G.contractBridge hv hloop hm).ends none).map Subtype.val =
       s(G.bridgeNeighbor hv 0, G.bridgeNeighbor hv 1) := by
-  rw [ends_def, Sym2.map_mk]
-  rfl
+  simp [ends_def]
 
 /-- Contracting a bridge does not change the ends of the old edges away from it. -/
 @[simp]
 lemma map_val_ends_contractBridge_some (e : {e // ∀ i, G.endpoint e i ≠ v}) :
     ((G.contractBridge hv hloop hm).ends (some e)).map Subtype.val = G.ends e.1 := by
-  rw [ends_def, ends_def, Sym2.map_mk]
-  rfl
+  simp [ends_def]
 
 /-- After contracting a bridge `v`, a vertex of valence one whose node avoids `v` keeps its
 attachment. -/
@@ -646,8 +683,7 @@ lemma coe_attachment_contractBridge {u : G.Vertex} (hu : G.valence u = 1) (huv :
   obtain ⟨⟨e, i⟩, he⟩ := exists_endpoint_eq_of_valence_pos (G := G) (by omega : 0 < G.valence u)
   rw [← endpoint_rev_eq_attachment hu'
     (e := some ⟨e, forall_endpoint_ne_of_valence_eq_one hu huv hatt he⟩) (i := i) (Subtype.ext he),
-    ← endpoint_rev_eq_attachment hu he]
-  rfl
+    ← endpoint_rev_eq_attachment hu he, endpoint_contractBridge_some]
 
 /-- After contracting a bridge `v`, a loopless vertex of valence two whose neighbours differ from
 `v` keeps its neighbours. -/
