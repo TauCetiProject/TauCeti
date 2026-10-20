@@ -61,59 +61,6 @@ open Multiplicative (mem_zpowers_ofAdd_one)
 
 namespace AddEquiv
 
-section Representation
-
-variable {T : Type*} [AddCommGroup T] {m : ℕ} [NeZero m] (A : T ≃+ T) (hA : (⇑A)^[m] = id)
-
-/-- An element of `T` lies in the kernel of the norm of the cyclic representation of `A` exactly
-when the ordered sum of its images under the powers of `A` vanishes. -/
-theorem mem_ker_cyclicRep_norm_iff (x : T) :
-    x ∈ LinearMap.ker (A.cyclicRep hA).norm.asHom.hom.toLinearMap ↔
-      ∑ j ∈ Finset.range m, (⇑A)^[j] x = 0 := by
-  rw [LinearMap.mem_ker, Representation.IntertwiningMap.coe_toLinearMap, Rep.norm_apply, Rep.of_ρ,
-    cyclicRepresentation_norm_apply]
-
-/-- An element of `T` lies in the image of the norm of the cyclic representation of `A` exactly
-when it is the ordered sum of the images of some `y` under the powers of `A`. -/
-theorem mem_range_cyclicRep_norm_iff (x : T) :
-    x ∈ LinearMap.range (A.cyclicRep hA).norm.asHom.hom.toLinearMap ↔
-      ∃ y, ∑ j ∈ Finset.range m, (⇑A)^[j] y = x := by
-  refine LinearMap.mem_range.trans (exists_congr fun y ↦ ?_)
-  rw [Representation.IntertwiningMap.coe_toLinearMap, Rep.norm_apply, Rep.of_ρ,
-    cyclicRepresentation_norm_apply]
-
-/-- The map `ρ(g) - 𝟙` of the periodic resolution, for the generator `g = ofAdd 1`, sends `y` to
-`A y - y`. -/
-private theorem cyclicRep_applyAsHom_sub_apply (y : T) :
-    (applyAsHom (A.cyclicRep hA) (.ofAdd 1) - 𝟙 _).hom.toLinearMap y = A y - y := by
-  rw [sub_hom, Representation.IntertwiningMap.coe_toLinearMap,
-    Representation.IntertwiningMap.coe_sub, Pi.sub_apply, applyAsHom_apply]
-  simp
-
-/-- An element of `T` lies in the kernel of `ρ(g) - 𝟙`, for the generator `g = ofAdd 1`, exactly
-when it is fixed by `A`. -/
-theorem mem_ker_cyclicRep_applyAsHom_sub_iff (x : T) :
-    x ∈ LinearMap.ker (applyAsHom (A.cyclicRep hA) (.ofAdd 1) - 𝟙 _).hom.toLinearMap ↔
-      A x = x := by
-  rw [LinearMap.mem_ker, cyclicRep_applyAsHom_sub_apply, sub_eq_zero]
-
-/-- An element of `T` lies in the image of `ρ(g) - 𝟙`, for the generator `g = ofAdd 1`, exactly
-when it has the form `b - A b`: the images of `A - 1` and `1 - A` agree. -/
-theorem mem_range_cyclicRep_applyAsHom_sub_iff (x : T) :
-    x ∈ LinearMap.range (applyAsHom (A.cyclicRep hA) (.ofAdd 1) - 𝟙 _).hom.toLinearMap ↔
-      ∃ b, b - A b = x := by
-  rw [LinearMap.mem_range]
-  -- `A y - y = b - A b` for `b = -y`.
-  refine ⟨fun ⟨y, hy⟩ ↦ ⟨-y, ?_⟩, fun ⟨b, hb⟩ ↦ ⟨-b, ?_⟩⟩
-  · rw [← hy, cyclicRep_applyAsHom_sub_apply, map_neg]
-    abel
-  · rw [cyclicRep_applyAsHom_sub_apply, ← hb, map_neg]
-    abel
-
-end Representation
-
-section Cohomology
-
 variable {T : Type} [AddCommGroup T] {m : ℕ} [NeZero m] (A : T ≃+ T) (hA : (⇑A)^[m] = id)
 
 /-- **Odd-degree classes of the cyclic representation.** A norm-zero element `x` has zero class
@@ -152,7 +99,5 @@ theorem groupCohomologyπEven_cyclicRep_eq_iff (i : ℕ) [NeZero i] (hi : Even i
       ∃ z, (y : T) = (x : T) + ∑ j ∈ Finset.range m, (⇑A)^[j] z := by
   rw [eq_comm, groupCohomologyπEven_eq_iff, mem_range_cyclicRep_norm_iff]
   constructor <;> rintro ⟨z, hz⟩ <;> refine ⟨z, ?_⟩ <;> rw [hz] <;> abel
-
-end Cohomology
 
 end AddEquiv
