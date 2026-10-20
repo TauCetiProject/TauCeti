@@ -16,8 +16,6 @@ public import TauCeti.LinearAlgebra.Complex.Finrank
 This file computes the Levi form and the Morse index of the three model functions of complex Morse
 theory on a complex vector space `V` of dimension `n`.
 
-* The real part of a holomorphic function is pluriharmonic: its Levi form vanishes, and its real
-  Hessian is the real part of its complex Hessian.
 * For a continuous complex bilinear form `q`, the real part `z ↦ Re (q z z)` of the holomorphic
   quadratic form has vanishing Levi form. Multiplication by `I` negates its Hessian, so its
   positive and negative indices of inertia agree, and its radical is the kernel of the
@@ -34,8 +32,6 @@ theory on a complex vector space `V` of dimension `n`.
 
 ## Main results
 
-* `TauCeti.fderiv_fderiv_re_apply`, `TauCeti.leviForm_re_eq_zero`: the real part of a holomorphic
-  function.
 * `ContinuousLinearMap.hessianQuadraticForm_re_apply_self`,
   `ContinuousLinearMap.leviForm_re_apply_self`: the Hessian and the Levi form of `Re (q z z)`.
 * `ContinuousLinearMap.morseIndex_re_apply_self_add_finrank_ker`: the Morse index of `Re (q z z)`
@@ -62,37 +58,6 @@ open Complex ComplexConjugate Module
 namespace TauCeti
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
-
-/-! ### The real part of a holomorphic function -/
-
-section Holomorphic
-
-variable {g : V → ℂ} {x : V}
-
-/-- The real second derivative of the real part of a holomorphic function is the real part of its
-complex second derivative. -/
-theorem fderiv_fderiv_re_apply (hg : ContDiffAt ℂ 2 g x) (v w : V) :
-    fderiv ℝ (fderiv ℝ fun z ↦ (g z).re) x v w = (fderiv ℂ (fderiv ℂ g) x v w).re := by
-  have hre : ContDiffAt ℝ 2 re (g x) := reCLM.contDiff.contDiffAt
-  have h := fderiv_fderiv_comp_apply hre (hg.restrict_scalars ℝ) v w
-  have h1 : fderiv ℝ re = fun _ ↦ reCLM := funext fun _ ↦ reCLM.fderiv
-  simp only [Function.comp_def] at h
-  rw [h, h1, hg.fderiv_fderiv_restrictScalars_apply]
-  simp
-
-/-- The Hessian quadratic form of the real part of a holomorphic function is the real part of its
-complex Hessian. -/
-theorem hessianQuadraticForm_re (hg : ContDiffAt ℂ 2 g x) (v : V) :
-    hessianQuadraticForm (fun z ↦ (g z).re) x v = (fderiv ℂ (fderiv ℂ g) x v v).re := by
-  rw [hessianQuadraticForm_apply, fderiv_fderiv_re_apply hg]
-
-/-- **The real part of a holomorphic function is pluriharmonic**: its Levi form vanishes. -/
-theorem leviForm_re_eq_zero (hg : ContDiffAt ℂ 2 g x) : leviForm (fun z ↦ (g z).re) x = 0 := by
-  rw [leviForm_def, LinearMap.BilinForm.leviForm_eq_zero_iff]
-  intro v w
-  simp [fderiv_fderiv_re_apply hg]
-
-end Holomorphic
 
 /-! ### The real part of a holomorphic quadratic form -/
 
@@ -223,18 +188,16 @@ Levi form: it is still the inner product. -/
 @[simp]
 theorem _root_.ContinuousLinearMap.leviForm_norm_sq_add_re_apply_self (x : E) :
     leviForm (fun z ↦ ‖z‖ ^ 2 + (q z z).re) x = innerₛₗ ℂ := by
-  rw [show (fun z ↦ ‖z‖ ^ 2 + (q z z).re) = (fun z ↦ ‖z‖ ^ 2) + fun z ↦ (q z z).re from rfl,
-    leviForm_add (contDiff_norm_sq ℂ).contDiffAt
-      (contDiffAt_re_apply_self q x), leviForm_norm_sq, q.leviForm_re_apply_self, add_zero]
+  simpa [Pi.add_def] using
+    leviForm_add (contDiff_norm_sq ℂ).contDiffAt (contDiffAt_re_apply_self q x)
 
 /-- The Hessian quadratic form of `z ↦ ‖z‖ ^ 2 + Re (q z z)` is `v ↦ 2 * ‖v‖ ^ 2 + 2 * Re (q v v)`,
 at every point. -/
 theorem _root_.ContinuousLinearMap.hessianQuadraticForm_norm_sq_add_re_apply_self (x v : E) :
     hessianQuadraticForm (fun z ↦ ‖z‖ ^ 2 + (q z z).re) x v = 2 * ‖v‖ ^ 2 + 2 * (q v v).re := by
-  rw [show (fun z ↦ ‖z‖ ^ 2 + (q z z).re) = (fun z ↦ ‖z‖ ^ 2) + fun z ↦ (q z z).re from rfl,
-    hessianQuadraticForm_add (contDiff_norm_sq ℂ).contDiffAt
-      (contDiffAt_re_apply_self q x), add_apply, hessianQuadraticForm_norm_sq_complex,
-    q.hessianQuadraticForm_re_apply_self]
+  simpa only [Pi.add_def, add_apply, hessianQuadraticForm_norm_sq_complex,
+    q.hessianQuadraticForm_re_apply_self] using congr($(hessianQuadraticForm_add
+      (contDiff_norm_sq ℂ).contDiffAt (contDiffAt_re_apply_self q x)) v)
 
 end NormSq
 

@@ -30,7 +30,8 @@ is strict plurisubharmonicity.
 
 This file gives the calculus of the Levi form: its value on the diagonal in terms of the Hessian
 quadratic form, Hermitian symmetry, the sum rule, the product rule, the rule for post-composition
-with a function of one real variable, and invariance under holomorphic maps.
+with a function of one real variable, invariance under holomorphic maps, and the vanishing of the
+Levi form of the real part of a holomorphic function.
 
 ## Main definitions
 
@@ -51,6 +52,9 @@ with a function of one real variable, and invariance under holomorphic maps.
 * `TauCeti.leviForm_comp_apply`: invariance under holomorphic maps,
   `L(f ∘ g)(v, w) = L f(Dg v, Dg w)`; in particular the Levi form transforms as a Hermitian form
   under holomorphic changes of coordinates.
+* `TauCeti.fderiv_fderiv_re_apply`, `TauCeti.leviForm_re_eq_zero`: the real Hessian of the real
+  part of a holomorphic function is the real part of its complex Hessian, and its Levi form
+  vanishes (it is pluriharmonic).
 
 Here `∂f = (Df(x)(·) - I * Df(x)(I • ·)) / 2` is the complex-linear part of the real
 differential. The statements use the complex-linear extension
@@ -186,5 +190,31 @@ theorem leviForm_comp_apply {g : W → V} {b : W} (hf : ContDiffAt ℝ 2 f (g b)
   apply Complex.ext <;>
   simp [fderiv_fderiv_comp_apply hf (hg.restrict_scalars ℝ), h1, h2, smul_smul]
   ring
+
+/-! ### The real part of a holomorphic function -/
+
+/-- The real second derivative of the real part of a holomorphic function is the real part of its
+complex second derivative. -/
+theorem fderiv_fderiv_re_apply {g : V → ℂ} (hg : ContDiffAt ℂ 2 g x) (v w : V) :
+    fderiv ℝ (fderiv ℝ fun z ↦ (g z).re) x v w = (fderiv ℂ (fderiv ℂ g) x v w).re := by
+  have hre : ContDiffAt ℝ 2 re (g x) := reCLM.contDiff.contDiffAt
+  have h := fderiv_fderiv_comp_apply hre (hg.restrict_scalars ℝ) v w
+  have h1 : fderiv ℝ re = fun _ ↦ reCLM := funext fun _ ↦ reCLM.fderiv
+  simp only [Function.comp_def] at h
+  rw [h, h1, hg.fderiv_fderiv_restrictScalars_apply]
+  simp
+
+/-- The Hessian quadratic form of the real part of a holomorphic function is the real part of its
+complex Hessian. -/
+theorem hessianQuadraticForm_re {g : V → ℂ} (hg : ContDiffAt ℂ 2 g x) (v : V) :
+    hessianQuadraticForm (fun z ↦ (g z).re) x v = (fderiv ℂ (fderiv ℂ g) x v v).re := by
+  rw [hessianQuadraticForm_apply, fderiv_fderiv_re_apply hg]
+
+/-- **The real part of a holomorphic function is pluriharmonic**: its Levi form vanishes. -/
+theorem leviForm_re_eq_zero {g : V → ℂ} (hg : ContDiffAt ℂ 2 g x) :
+    leviForm (fun z ↦ (g z).re) x = 0 := by
+  rw [leviForm_def, LinearMap.BilinForm.leviForm_eq_zero_iff]
+  intro v w
+  simp [fderiv_fderiv_re_apply hg]
 
 end TauCeti
