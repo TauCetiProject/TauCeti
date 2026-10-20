@@ -17,11 +17,9 @@ This space carries the compact-open topology, whose convergence is locally unifo
 The compactness equivalence supplies the input for the subsequence selection theorem in
 `Conformal/Montel/Basic.lean`.
 
-The converse is purely topological: a relatively compact family of continuous maps is uniformly
-bounded on every compact subset of its domain. It holds on any topological domain, with values in
-any seminormed group. Restricting the maps to a compact subset makes joint evaluation continuous,
-so compactness bounds all their values there at once. No local compactness of the original domain
-is required.
+The converse, `TauCeti.isLocallyBoundedOn_of_isCompact_closure_range`, is proved in
+`TauCeti/Analysis/Normed/Group/LocallyBounded.lean`: it is purely topological and holds on any
+topological domain, with values in any seminormed group.
 
 The theorems take an ambient family `F` and continuous restrictions `f`, related by
 `⇑(f i) = Ω.domRestrict (F i)`. Given `hF : ∀ i, ContinuousOn (F i) Ω`, one can take
@@ -31,8 +29,6 @@ The theorems take an ambient family `F` and continuous restrictions `f`, related
 
 * `TauCeti.isCompact_closure_range_of_isLocallyBoundedOn`: a locally bounded holomorphic family
   with proper target has relatively compact continuous restrictions.
-* `TauCeti.isLocallyBoundedOn_of_isCompact_closure_range`: relative compactness of continuous
-  restrictions implies local boundedness, on any topological domain and in any seminormed group.
 * `TauCeti.isCompact_closure_range_iff_isLocallyBoundedOn`: for holomorphic families on an open
   set with proper target, relative compactness and local boundedness are equivalent.
 
@@ -58,41 +54,7 @@ open Complex Metric Filter Topology Set
 
 namespace TauCeti
 
-variable {ι E : Type*}
-
-section GeneralDomain
-
-variable [SeminormedAddGroup E] {X : Type*} [TopologicalSpace X] {Ω : Set X}
-  {F : ι → X → E} {f : ι → C(Ω, E)}
-
-/-- **The converse of Montel's theorem.** A family of maps into a seminormed group whose
-continuous restrictions to `Ω` are relatively compact in `C(↥Ω, E)` is locally bounded on `Ω`.
-
-The domain is an arbitrary topological space: neither holomorphy nor local compactness is needed.
--/
-theorem isLocallyBoundedOn_of_isCompact_closure_range
-    (hf : ∀ i, ⇑(f i) = Ω.domRestrict (F i)) (hcpt : IsCompact (closure (Set.range f))) :
-    IsLocallyBoundedOn F Ω := by
-  refine isLocallyBoundedOn_def.mpr fun K hKΩ hK => ?_
-  have hK' : IsCompact (Subtype.val ⁻¹' K : Set Ω) := by
-    refine Topology.IsEmbedding.subtypeVal.isCompact_iff.2 ?_
-    rwa [Subtype.image_preimage_val, inter_eq_self_of_subset_right hKΩ]
-  let S : Set Ω := Subtype.val ⁻¹' K
-  have : CompactSpace S := isCompact_iff_compactSpace.mp hK'
-  -- Restriction to the compact domain S makes joint evaluation continuous.
-  have hcont : Continuous fun p : C(Ω, E) × S => ‖p.1 p.2‖ :=
-    (continuous_eval.comp ((ContinuousMap.continuous_restrict S).prodMap continuous_id)).norm
-  obtain ⟨C, hC⟩ := ((hcpt.prod isCompact_univ).image hcont).bddAbove
-  refine ⟨C, fun i z hz => ?_⟩
-  have hmem : (f i, (⟨⟨z, hKΩ hz⟩, hz⟩ : S)) ∈
-      closure (Set.range f) ×ˢ (univ : Set S) :=
-    ⟨subset_closure ⟨i, rfl⟩, mem_univ _⟩
-  have hle : ‖(f i) (⟨z, hKΩ hz⟩ : Ω)‖ ≤ C := hC (mem_image_of_mem _ hmem)
-  rwa [hf i] at hle
-
-end GeneralDomain
-
-variable [NormedAddCommGroup E] [NormedSpace ℂ E] {Ω : Set ℂ} {F : ι → ℂ → E}
+variable {ι E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {Ω : Set ℂ} {F : ι → ℂ → E}
   {f : ι → C(Ω, E)}
 
 /-- **Montel's theorem, relative-compactness form.** A locally bounded family of holomorphic
