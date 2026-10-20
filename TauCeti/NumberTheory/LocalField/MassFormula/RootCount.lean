@@ -7,15 +7,14 @@ module
 
 public import Mathlib.Topology.Instances.ENNReal.Lemmas
 public import TauCeti.NumberTheory.LocalField.MassFormula.Eisenstein
-public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
-import TauCeti.FieldTheory.IntermediateField.Roots
+public import TauCeti.FieldTheory.IntermediateField.RootCount
 
 /-!
 # Root counts of Eisenstein polynomials in the counted extensions
 
-A monic polynomial of degree `n` over `K` is its coefficient vector `a : Fin n → K`, through
-`TauCeti.Polynomial.monicOfCoeff`. For a subextension `L`, the root count `L.rootCount a` is the
-number of roots of that polynomial lying in `L`, counted with multiplicity. Serre's proof of the
+For a subextension `L` and a coefficient vector `a : Fin n → K`, the root count
+`L.rootCount a` is the number of roots of the monic polynomial
+`TauCeti.Polynomial.monicOfCoeff a` lying in `L`, counted with multiplicity. Serre's proof of the
 mass formula integrates these root counts over the Eisenstein polynomials, and the identity that
 makes the integration work is that, at a separable Eisenstein polynomial of degree `n`, the root
 counts over all `L ∈ σ_K(n)` add up to `n`.
@@ -28,15 +27,11 @@ once. When `f` is separable it has `n` roots in the separable closure. Separabil
 inseparable Eisenstein polynomial, which exists in equal characteristic, is irreducible and so has
 no root at all in the separable closure.
 
-## Main definitions
-
-* `IntermediateField.rootCount L a`: the number of roots, with multiplicity, of the monic
-  polynomial with coefficient vector `a` that lie in `L`.
-
 ## Main results
 
 * `TauCeti.rootCount_eq_card_filter_adjoin_eq`: at an Eisenstein polynomial of degree `n`, the
-  roots in `L ∈ σ_K(n)` are the roots `x` in the separable closure with `K⟮x⟯ = L`.
+  roots in an intermediate field `L` of degree `n` are the roots `x` in the separable closure with
+  `K⟮x⟯ = L`.
 * `TauCeti.tsum_rootCount_eq_of_separable`: at a separable Eisenstein polynomial of degree `n`,
   the root counts over `σ_K(n)` sum to `n`.
 
@@ -56,22 +51,6 @@ namespace TauCeti
 
 open TauCeti.Polynomial (monicOfCoeff natDegree_monicOfCoeff)
 
-section General
-
-variable {K E : Type*} [Field K] [Field E] [Algebra K E]
-
-/-- The root count of a coefficient vector `a : Fin n → K` in a subextension `L`: the number of
-roots of the monic polynomial `monicOfCoeff a` lying in `L`, counted with multiplicity. -/
-def _root_.IntermediateField.rootCount (L : IntermediateField K E) {n : ℕ} (a : Fin n → K) : ℕ :=
-  ((monicOfCoeff a).aroots L).card
-
-/-- The defining equation of `IntermediateField.rootCount`. -/
-theorem _root_.IntermediateField.rootCount_def (L : IntermediateField K E) {n : ℕ}
-    (a : Fin n → K) : L.rootCount a = ((monicOfCoeff a).aroots L).card := by
-  rw [IntermediateField.rootCount]
-
-end General
-
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 
@@ -88,26 +67,28 @@ private theorem adjoin_mem_totallyRamifiedOfDegree_of_mem_aroots {n : ℕ} {a : 
   exact adjoin_mem_totallyRamifiedOfDegree_of_eisenstein he hfdeg (hf ▸ (mem_aroots.mp hx).2)
 
 open Classical in
-/-- **The roots in a counted extension are its generators.** Let `f` be an Eisenstein polynomial
-over `𝒪[K]` with image `monicOfCoeff a` over `K`, for `a : Fin n → K`. For `L ∈ σ_K(n)`, the
-roots of `monicOfCoeff a` in `L` correspond, with multiplicities, to the roots `x` in the
+/-- **The roots in a degree-`n` extension are its generators.** Let `f` be an Eisenstein
+polynomial over `𝒪[K]` with image `monicOfCoeff a` over `K`, for `a : Fin n → K`. For an
+intermediate field `L` of the separable closure with `[L : K] = n`, such as a member of `σ_K(n)`,
+the roots of `monicOfCoeff a` in `L` correspond, with multiplicities, to the roots `x` in the
 separable closure with `K⟮x⟯ = L`. -/
 theorem rootCount_eq_card_filter_adjoin_eq {n : ℕ} {a : Fin n → K} {f : 𝒪[K][X]}
     (he : f.IsEisensteinAt 𝓂[K]) (hf : f.map (algebraMap 𝒪[K] K) = monicOfCoeff a)
-    {L : IntermediateField K (SeparableClosure K)} (hL : L ∈ totallyRamifiedOfDegree K n) :
+    {L : IntermediateField K (SeparableClosure K)} (hL : Module.finrank K L = n) :
     L.rootCount a =
       (((monicOfCoeff a).aroots (SeparableClosure K)).filter fun x ↦ K⟮x⟯ = L).card := by
   classical
-  rw [mem_totallyRamifiedOfDegree_iff] at hL
-  have := hL.2.finite
   rw [L.rootCount_def, ← Multiset.card_map, ← L.filter_aroots_eq_map_aroots]
   congr 1
   refine Multiset.filter_congr fun x hx ↦ ⟨fun hxL ↦ ?_, fun h ↦ h ▸ ?_⟩
-  · -- `K⟮x⟯ ≤ L`, and both have degree `n`.
-    have hdeg := (mem_totallyRamifiedOfDegree_iff.mp
-      (adjoin_mem_totallyRamifiedOfDegree_of_mem_aroots he hf hx)).1
+  · -- `K⟮x⟯ ≤ L`, and both have degree `n`, which is positive as `K⟮x⟯` is finite over `K`.
+    have hdeg := mem_totallyRamifiedOfDegree_iff.mp
+      (adjoin_mem_totallyRamifiedOfDegree_of_mem_aroots he hf hx)
+    have := hdeg.2.finite
+    have : FiniteDimensional K L :=
+      Module.finite_of_finrank_pos (hL ▸ hdeg.1 ▸ Module.finrank_pos)
     exact IntermediateField.eq_of_le_of_finrank_eq
-      (IntermediateField.adjoin_simple_le_iff.mpr hxL) (hdeg.trans hL.1.symm)
+      (IntermediateField.adjoin_simple_le_iff.mpr hxL) (hdeg.1.trans hL.symm)
   · exact IntermediateField.mem_adjoin_simple_self K x
 
 /-- **The root counts over `σ_K(n)` sum to `n`.** Let `f` be an Eisenstein polynomial over `𝒪[K]`
@@ -129,7 +110,8 @@ theorem tsum_rootCount_eq_of_separable {n : ℕ} {a : Fin n → K} {f : 𝒪[K][
     obtain ⟨x, hx, rfl⟩ := Multiset.mem_map.mp hL
     exact adjoin_mem_totallyRamifiedOfDegree_of_mem_aroots he hf hx
   have hcount (L : totallyRamifiedOfDegree K n) : L.1.rootCount a = F.count L.1 := by
-    rw [rootCount_eq_card_filter_adjoin_eq he hf L.2, Multiset.count_map]
+    rw [rootCount_eq_card_filter_adjoin_eq he hf (mem_totallyRamifiedOfDegree_iff.mp L.2).1,
+      Multiset.count_map]
     exact congrArg _ (Multiset.filter_congr fun _ _ ↦ eq_comm)
   have hsupp : Function.support (fun L ↦ (F.count L : ℝ≥0∞)) ⊆ totallyRamifiedOfDegree K n :=
     fun L hL ↦ hmem L (Multiset.count_ne_zero.mp (by simpa using hL))

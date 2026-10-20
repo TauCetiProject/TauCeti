@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.Roots
 public import Mathlib.FieldTheory.IntermediateField.Basic
+public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
 
 /-!
 # Roots of a polynomial in an intermediate field
@@ -15,13 +16,30 @@ For an intermediate field `L` of `E / K` and a polynomial `p` over `K`, the root
 with multiplicities, are the roots of `p` in `E` that lie in `L`. This is Mathlib's
 `Polynomial.filter_roots_map_range_eq_map_roots` for the inclusion `L → E`, whose range is `L`.
 It lets root counts in different subfields of one ambient field be compared inside that field.
+
+A monic polynomial of degree `n` over `K` is its coefficient vector `a : Fin n → K`, through
+`TauCeti.Polynomial.monicOfCoeff`. The root count `L.rootCount a` is the number of roots of that
+polynomial lying in `L`, counted with multiplicity.
+
+## Main definitions
+
+* `IntermediateField.rootCount L a`: the number of roots, with multiplicity, of the monic
+  polynomial with coefficient vector `a` that lie in `L`.
+
+## Main results
+
+* `IntermediateField.filter_aroots_eq_map_aroots`: the roots in `E` that lie in `L` are the roots
+  in `L`, with multiplicities.
 -/
 
 public section
+noncomputable section
 
 open Polynomial
 
 namespace IntermediateField
+
+open TauCeti.Polynomial (monicOfCoeff)
 
 variable {K E : Type*} [Field K] [Field E] [Algebra K E]
 
@@ -37,5 +55,15 @@ theorem filter_aroots_eq_map_aroots (L : IntermediateField K E) (p : K[X])
   convert h using 1
   · exact Multiset.filter_congr fun x _ ↦ ⟨fun hx ↦ ⟨⟨x, hx⟩, rfl⟩, fun ⟨y, hy⟩ ↦ hy ▸ y.2⟩
   · exact Multiset.map_congr rfl fun x _ ↦ (algebraMap_apply L x).symm
+
+/-- The root count of a coefficient vector `a : Fin n → K` in a subextension `L`: the number of
+roots of the monic polynomial `monicOfCoeff a` lying in `L`, counted with multiplicity. -/
+def rootCount (L : IntermediateField K E) {n : ℕ} (a : Fin n → K) : ℕ :=
+  ((monicOfCoeff a).aroots L).card
+
+/-- The defining equation of `IntermediateField.rootCount`. -/
+theorem rootCount_def (L : IntermediateField K E) {n : ℕ} (a : Fin n → K) :
+    L.rootCount a = ((monicOfCoeff a).aroots L).card := by
+  rw [rootCount]
 
 end IntermediateField
