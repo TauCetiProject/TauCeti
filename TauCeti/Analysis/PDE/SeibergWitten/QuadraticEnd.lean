@@ -96,16 +96,10 @@ theorem quadraticEnd_apply_self (ψ : E) :
 /-- `Q₀` is homogeneous of degree two for the real structure: `Q₀(c ψ) = |c|² Q₀(ψ)`. -/
 theorem quadraticEnd_smul (c : ℂ) (ψ : E) :
     quadraticEnd (c • ψ) = ‖c‖ ^ 2 • quadraticEnd ψ := by
-  ext v
-  rw [smul_apply, quadraticEnd_apply, quadraticEnd_apply, inner_smul_left, norm_smul, smul_smul,
-    RCLike.real_smul_eq_coe_smul (K := ℂ), smul_sub, smul_smul, smul_smul,
-    RCLike.ofReal_eq_complex_ofReal]
-  congr 2
-  · rw [mul_comm _ ⟪ψ, v⟫_ℂ, mul_assoc, Complex.conj_mul']
-    push_cast
-    ring
-  · push_cast
-    ring
+  simp only [quadraticEnd_def, map_smul, map_smulₛₗ, smul_apply, smul_smul, Complex.conj_mul',
+    norm_smul]
+  push_cast
+  module
 
 /-- `Q₀` is invariant under unit phases: `Q₀(u ψ) = Q₀(ψ)` when `|u| = 1`. -/
 theorem quadraticEnd_smul_of_norm_eq_one {u : ℂ} (hu : ‖u‖ = 1) (ψ : E) :
@@ -134,15 +128,14 @@ theorem isSelfAdjoint_quadraticEnd [CompleteSpace E] (ψ : E) :
 times the reflection fixing `ψ` and negating its orthogonal complement. -/
 theorem norm_quadraticEnd_apply (ψ v : E) :
     ‖quadraticEnd ψ v‖ = ‖ψ‖ ^ 2 / 2 * ‖v‖ := by
-  have hc : ((‖ψ‖ : ℂ) ^ 2 / 2) • v = (‖ψ‖ ^ 2 / 2 : ℝ) • v := by
-    rw [RCLike.real_smul_eq_coe_smul (K := ℂ)]
-    push_cast
-    rfl
-  rw [quadraticEnd_apply, hc]
+  -- Write `Q₀(ψ) v = x - r v` with `x = ⟪ψ, v⟫ ψ` and `r = ‖ψ‖² / 2`. Since
+  -- `‖x‖² = |⟪ψ, v⟫|² ‖ψ‖² = 2 r Re⟪x, v⟫`, the cross terms cancel in `‖x - r v‖²`.
+  set r : ℝ := ‖ψ‖ ^ 2 / 2 with hr
+  have hQ : quadraticEnd ψ v = ⟪ψ, v⟫_ℂ • ψ - r • v := by simp [hr, ← Complex.coe_smul]
+  have hx : RCLike.re ⟪⟪ψ, v⟫_ℂ • ψ, v⟫_ℂ = ‖⟪ψ, v⟫_ℂ‖ ^ 2 := by
+    rw [inner_smul_left, RCLike.conj_mul, ← RCLike.ofReal_pow, RCLike.ofReal_re]
   refine (sq_eq_sq₀ (norm_nonneg _) (by positivity)).1 ?_
-  rw [@norm_sub_sq ℂ, norm_smul, norm_smul, inner_smul_left, inner_smul_right_eq_smul,
-    Complex.real_smul, mul_left_comm, Complex.conj_mul', RCLike.re_to_complex,
-    ← Complex.ofReal_pow, ← Complex.ofReal_mul, Complex.ofReal_re,
+  rw [hQ, @norm_sub_sq ℂ, inner_smul_right_eq_smul, RCLike.smul_re, hx, norm_smul, norm_smul,
     Real.norm_of_nonneg (by positivity)]
   ring
 
@@ -236,19 +229,24 @@ theorem quadraticEnd_add (ψ φ : E) :
   push_cast
   module
 
+/-- `B(ψ, i ψ) = 0`: the derivative of `Q₀` vanishes along the infinitesimal phase direction
+`i ψ`. -/
+@[simp]
+theorem quadraticEndPolar_I_smul_self (ψ : E) : quadraticEndPolar ψ (Complex.I • ψ) = 0 := by
+  ext v
+  simp [inner_smul_left, inner_smul_right, inner_self_eq_norm_sq_to_K, ← Complex.ofReal_pow]
+  module
+
 /-- `B(ψ, c ψ) = 2 Re(c) Q₀(ψ)`. In particular `B(ψ, ξ ψ) = 0` for imaginary `ξ`: the derivative
 of `Q₀` vanishes along the infinitesimal phase directions. -/
 theorem quadraticEndPolar_smul_self (c : ℂ) (ψ : E) :
     quadraticEndPolar ψ (c • ψ) = (2 * c.re) • quadraticEnd ψ := by
-  ext v
-  simp only [quadraticEndPolar_apply, add_apply, sub_apply, smul_apply, quadraticEnd_apply,
-    rankOne_apply, id_apply, inner_smul_left, inner_smul_right, inner_self_eq_norm_sq_to_K,
-    RCLike.ofReal_eq_complex_ofReal]
-  rw [RCLike.real_smul_eq_coe_smul (K := ℂ), ← Complex.ofReal_pow, Complex.re_mul_ofReal,
-    ← Complex.re_add_im c]
-  simp only [map_add, Complex.conj_ofReal, map_mul, Complex.conj_I, Complex.add_re,
-    Complex.ofReal_re, Complex.mul_re, Complex.I_re, Complex.ofReal_im, Complex.I_im]
-  push_cast
+  -- Split `c ψ = Re(c) ψ + Im(c) (i ψ)` and use real bilinearity.
+  have hc : c • ψ = c.re • ψ + c.im • Complex.I • ψ := by
+    nth_rw 1 [← c.re_add_im]
+    rw [add_smul, mul_smul, Complex.coe_smul, Complex.coe_smul]
+  rw [hc, map_add, map_smul, map_smul, quadraticEndPolar_I_smul_self, smul_zero, add_zero,
+    quadraticEndPolar_self]
   module
 
 /-- `B(ψ - φ, ψ + φ) = 2 (Q₀(ψ) - Q₀(φ))`. -/
@@ -306,9 +304,9 @@ theorem hasStrictFDerivAt_quadraticEnd (ψ : E) :
   rw [quadraticEnd_eq_smul_quadraticEndPolar]
   refine (((quadraticEndPolar (E := E)).hasStrictFDerivAt_of_bilinear (hasStrictFDerivAt_id ψ)
     (hasStrictFDerivAt_id ψ)).const_smul (1 / 2 : ℝ)).congr_fderiv ?_
+  -- The derivative of `ψ ↦ B(ψ, ψ)` is `φ ↦ B(ψ, φ) + B(φ, ψ)`; symmetry of `B` finishes.
   ext φ : 1
-  simp only [smul_apply, add_apply, precompR_apply, precompL_apply, compL_apply, comp_id,
-    coe_id', id_eq, quadraticEndPolar_comm φ ψ]
+  simp [quadraticEndPolar_comm φ ψ]
   module
 
 /-- The real Fréchet derivative of `Q₀` at `ψ` is `B(ψ, ·)`. -/
