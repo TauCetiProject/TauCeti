@@ -14,7 +14,9 @@ public import TauCeti.MeasureTheory.Measure.Weighted
 
 Power biasing reweights a positive real-valued law by a real power of its coordinate. The
 normalization is inherited from `Measure.weighted`, so a zero or infinite power moment gives the
-zero measure. This file establishes the basic normalization and composition API.
+zero measure; for a law carried by `[0, ∞)` this happens whenever `x ^ q` is not integrable
+(`powerBias_eq_zero_of_not_integrable`). This file establishes the basic normalization and
+composition API.
 
 This construction is useful for transporting moment formulas between members of a positive
 distribution family. In particular, its composition law turns successive biases into addition
@@ -158,6 +160,16 @@ theorem rnDeriv_powerBias (μ : Measure ℝ) [SigmaFinite μ] (q : ℝ) :
 theorem powerBias_absolutelyContinuous (μ : Measure ℝ) (q : ℝ) : μ.powerBias q ≪ μ :=
   weighted_absolutelyContinuous
 
+/-- For a law carried by `[0, ∞)` under which `x ^ q` is not integrable, the normalizing power
+moment is infinite, so the totalized power bias is the zero measure. -/
+theorem powerBias_eq_zero_of_not_integrable {μ : Measure ℝ} {q : ℝ} (hμ : 0 ≤ᵐ[μ] id)
+    (hq : ¬Integrable (fun x : ℝ => x ^ q) μ) : μ.powerBias q = 0 := by
+  refine weighted_eq_zero_of_lintegral_eq_top ?_
+  simp_rw [ENNReal.ofNNReal_toNNReal]
+  by_contra h
+  exact hq ⟨by fun_prop, (hasFiniteIntegral_iff_ofReal
+    (hμ.mono fun x hx => Real.rpow_nonneg hx q)).2 (lt_top_iff_ne_top.2 h)⟩
+
 /-- For a law carried by `(0, ∞)`, power biasing by `q` is exponential tilting by `q * log x`. -/
 theorem powerBias_eq_tilted {μ : Measure ℝ} (hpos : ∀ᵐ x ∂μ, 0 < x) (q : ℝ) :
     μ.powerBias q = μ.tilted fun x => q * log x := by
@@ -200,13 +212,14 @@ function `g` such that `ρ.withDensity g` is a probability measure. Then the pow
 `ρ.withDensity g`. -/
 theorem powerBias_withDensity_ofReal {ρ : Measure ℝ} {f g : ℝ → ℝ} {q c : ℝ}
     [IsProbabilityMeasure (ρ.withDensity fun x => ENNReal.ofReal (g x))]
-    (hf : Measurable f) (hf0 : 0 ≤ᵐ[ρ] f) (hg : Measurable g) (hc : 0 < c)
+    (hf : AEMeasurable f ρ) (hf0 : 0 ≤ᵐ[ρ] f) (hc : 0 < c)
     (hfg : ∀ᵐ x ∂ρ, f x * x ^ q = c * g x) :
     (ρ.withDensity fun x => ENNReal.ofReal (f x)).powerBias q =
       ρ.withDensity fun x => ENNReal.ofReal (g x) := by
   refine powerBias_eq_of_withDensity_eq_smul (c := ENNReal.ofReal c)
     (ENNReal.ofReal_pos.2 hc).ne' ENNReal.ofReal_ne_top ?_
-  rw [← withDensity_mul _ (by fun_prop) (by fun_prop), ← withDensity_smul _ (by fun_prop)]
+  rw [← withDensity_mul₀ hf.ennreal_ofReal (by fun_prop),
+    ← withDensity_smul' _ _ ENNReal.ofReal_ne_top]
   refine withDensity_congr_ae ?_
   filter_upwards [hf0, hfg] with x hx0 hx
   rw [Pi.mul_apply, Pi.smul_apply, smul_eq_mul, ← ENNReal.ofReal_mul hx0, hx,

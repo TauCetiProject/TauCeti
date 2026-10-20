@@ -17,6 +17,9 @@ constant.
 
 * `TauCeti.Probability.powerBias_paretoMeasure` — the Pareto law of threshold `t` and shape `r`
   biased by `x ^ q` is the Pareto law of threshold `t` and shape `r - q`, for `q < r`.
+* `TauCeti.Probability.powerBias_paretoMeasure_of_le` — for `r ≤ q` the power bias is zero.
+* `TauCeti.Probability.isProbabilityMeasure_powerBias_paretoMeasure_iff` — the power bias is a
+  probability measure exactly when `q < r`.
 
 The range of `q` is exactly the range on which `x ^ q` is integrable, so on it the power-biased law
 is a probability measure. The identity is an instance of
@@ -43,8 +46,8 @@ theorem powerBias_paretoMeasure {t r q : ℝ} (ht : 0 < t) (hr : 0 < r) (hq : q 
   have := isProbabilityMeasure_paretoMeasure ht hrq
   rw [paretoMeasure_eq_withDensity_ofReal t (r - q)] at this ⊢
   rw [paretoMeasure_eq_withDensity_ofReal]
-  refine Measure.powerBias_withDensity_ofReal (measurable_paretoPDFReal t r)
-    (ae_of_all _ (paretoPDFReal_nonneg ht.le hr.le)) (measurable_paretoPDFReal t _)
+  refine Measure.powerBias_withDensity_ofReal (measurable_paretoPDFReal t r).aemeasurable
+    (ae_of_all _ (paretoPDFReal_nonneg ht.le hr.le))
     (div_pos (mul_pos hr (rpow_pos_of_pos ht q)) hrq) (ae_of_all _ fun x => ?_)
   by_cases hx : t ≤ x
   · have htr : t ^ r = t ^ q * t ^ (r - q) := by rw [← rpow_add ht, add_sub_cancel]
@@ -52,5 +55,21 @@ theorem powerBias_paretoMeasure {t r q : ℝ} (ht : 0 < t) (hr : 0 < r) (hq : q 
       ← rpow_add (ht.trans_le hx), show -(r + 1) + q = -(r - q + 1) by ring, htr]
     field_simp
   · simp [paretoPDFReal, hx]
+
+/-- At or above the sharp threshold `r ≤ q` the power `x ^ q` is not integrable under the Pareto
+law, so the totalized power bias is the zero measure. -/
+theorem powerBias_paretoMeasure_of_le {t r q : ℝ} (ht : 0 < t) (hr : 0 < r) (hq : r ≤ q) :
+    (paretoMeasure t r).powerBias q = 0 :=
+  Measure.powerBias_eq_zero_of_not_integrable
+    ((ae_paretoMeasure_mem_Ici t r).mono fun _ hx => ht.le.trans hx)
+    (by rw [integrable_rpow_paretoMeasure_iff ht hr q]; exact not_lt.2 hq)
+
+/-- A power-biased Pareto law is a probability measure exactly below the sharp threshold `r`. -/
+theorem isProbabilityMeasure_powerBias_paretoMeasure_iff {t r q : ℝ} (ht : 0 < t) (hr : 0 < r) :
+    IsProbabilityMeasure ((paretoMeasure t r).powerBias q) ↔ q < r := by
+  refine ⟨fun hprob => not_le.1 fun hq => ?_, fun hq => ?_⟩
+  · simpa [powerBias_paretoMeasure_of_le ht hr hq] using hprob.measure_univ
+  · rw [powerBias_paretoMeasure ht hr hq]
+    exact isProbabilityMeasure_paretoMeasure ht (sub_pos.2 hq)
 
 end TauCeti.Probability
