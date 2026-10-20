@@ -183,7 +183,7 @@ jobs:
       # means removing the module pages AND the marker that tells Lake the render is up to date;
       # removing only the pages would leave Lake skipping the render and produce none at all. The
       # previous run's provenance marker goes too, since the step after this one writes it anew, and
-      # so does the previous facts generation, which describes the previous marker's commit.
+      # so does the previous facts file, which describes the previous marker's commit.
       - name: Build the API documentation (doc-gen4)
         env:
           DOCGEN_LOCAL_MODULE_ROOTS: TauCeti
@@ -191,7 +191,7 @@ jobs:
           # The restore above placed what this needs, so do not reach for a remote cache.
           LAKE_NO_CACHE: "true"
         run: |
-          rm -rf .lake/build/doc/TauCeti .lake/build/doc/SOURCE_SHA .lake/build/doc/FACTS_V1
+          rm -rf .lake/build/doc/TauCeti .lake/build/doc/SOURCE_SHA .lake/build/doc/facts.json.gz
           rm -f .lake/build/doc-data/*.docs_built
           lake build TauCetiDocs:docs
 
@@ -214,32 +214,27 @@ jobs:
           fi
           printf '%s\n' "$SHA" > "$marker"
 
-      # The compact facts generation that progress reporting pins (scripts/docs-facts.md), read
-      # from this build's pages, index and doc-gen4 database while that database is still here.
-      # It lands in the tree's reserved FACTS_V1 directory, so it travels through the cache with
-      # the SOURCE_SHA it describes, and pages.yml publishes it after deploying that tree. No Lean
-      # runs here. A failure must not cost the documentation: the tree is saved without a facts
-      # generation, the Pages run that deploys it reports the gap, and the next hourly run of this
-      # workflow exports again.
-      - name: Export the documentation facts generation
+      # One compact file of declaration facts (scripts/docs-facts.md), so progress reporting reads
+      # one URL, /docs/facts.json.gz, instead of thousands of pages that a deploy can change
+      # between reads. Read from this build's pages, index and doc-gen4 database while that
+      # database is still here; no Lean runs. It sits beside SOURCE_SHA, so every deploy of this
+      # tree serves the facts for exactly its pages. A failure must not cost the documentation:
+      # the tree is saved without the file, and the next hourly run exports again.
+      - name: Export the documentation facts
         id: facts
         continue-on-error: true
         env:
           DOCS_BASE: ${{ vars.DOCS_BASE_URL || 'https://taucetiproject.org/docs' }}
         run: |
-          set -euo pipefail
-          if [ -e .lake/build/doc/FACTS_V1 ] || [ -L .lake/build/doc/FACTS_V1 ]; then
-            echo "::error title=FACTS_V1 is taken::doc-gen4 produced an entry at .lake/build/doc/FACTS_V1; the facts directory needs another name"
-            exit 1
-          fi
           python3 ../scripts/docs_facts.py export \
             --doc-dir .lake/build/doc --db .lake/build/api-docs.db --repo .. --root TauCeti \
             --docs-base "$DOCS_BASE" --toolchain-file ../lean-toolchain --docs-manifest lake-manifest.json
 
-      # The exporter creates FACTS_V1 with a single rename, so a failed export leaves nothing behind.
-      - name: Note that this tree has no facts generation
+      # The exporter writes facts.json.gz with a single rename, and refuses to replace an existing
+      # file, so a failure leaves the tree as doc-gen4 produced it.
+      - name: Note that this tree has no facts file
         if: steps.facts.outcome == 'failure'
-        run: echo "::warning title=No documentation facts::this tree is saved without a facts generation; the facts pointer keeps its last good generation, and the next hourly run exports again"
+        run: echo "::warning title=No documentation facts::this tree is saved without facts.json.gz; the next hourly run exports again"
 
       # pages.yml publishes the most recently SAVED tree, which is not necessarily the newest one:
       # re-running an old run of this workflow would save its older tree last, and the next Pages

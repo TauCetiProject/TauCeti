@@ -1,54 +1,41 @@
-# Immutable documentation facts (v1)
+# Documentation facts file
 
-Progress reporting reads declaration facts (names, kinds, canonical documentation links, source
-files and line ranges, docstrings) for one exact documented commit. The HTML site cannot promise
-that: its index and module pages are independent URLs that a deploy can replace between two
-reads. Each documentation build therefore also exports one compact, content-addressed
-*generation*, and a single mutable pointer names the newest complete one. A reader saves the
-generation it planned against and can read it again after later deploys.
+Progress reporting needs, for one exact documented commit, the declarations TauCeti contains:
+names, kinds, canonical documentation links, source files and line ranges, and docstrings. Read
+from the HTML site, that is the declaration index plus thousands of module pages, and a deploy can
+land between any two of those requests, so a reader can mix two builds. The same facts are
+therefore also served as one file, `/docs/facts.json.gz`, deployed together with the pages it
+summarizes. One request returns one build.
 
-This file is the producer side of the contract. The consumer is TauCetiProgress
-(https://github.com/TauCetiProject/TauCetiProgress/issues/26, `progress/immutable_docs.py`).
+The consumer is TauCetiProgress
+(https://github.com/TauCetiProject/TauCetiProgress/issues/26). A reader that needs the same facts
+again later, for example to resume a report after another deploy, keeps its own copy: the site
+only serves the current file.
 
-## Layout
+## Format
 
-Everything lives under a public facts base (repository variable `DOCS_FACTS_BASE_PUBLIC`):
+Gzipped UTF-8 JSON with sorted keys and no insignificant whitespace:
 
-```text
-v1/current.json                                              the only mutable object
-v1/generations/<source_commit>/<facts_sha256>/facts.json.gz  immutable
-v1/generations/<source_commit>/<facts_sha256>/manifest.json  immutable
-```
-
-All JSON is UTF-8 with sorted keys, no insignificant whitespace and one trailing newline. Hashes
-are lowercase SHA-256 of the exact published bytes.
-
-- `current.json`: `schema_version` (integer 1), `source_commit` (40-character lowercase sha),
-  `manifest_path` (relative to the base) and `manifest_sha256`.
-- `manifest.json`: `schema_version`, `source_commit`, `generation` (the directory holding it),
-  `facts_sha256` (of the **compressed** bundle), `compressed_bytes`, `uncompressed_bytes`,
-  `modules` (sorted source paths of every documented module, declaration-free ones included) and
-  `provenance` (`toolchain`, `doc_gen` as `<repository>@<rev>`, and `docs_base`).
-- `facts.json.gz`: gzip of `{"schema_version", "source_commit", "modules"}`, where `modules` maps
-  each covered source path to `{full_name: {kind, url, file, start, end, doc}}`. `kind` is
-  doc-gen4's rendered kind (`theorem`, `def`, `abbrev`, `noncomputable instance`, ...), `url` the
-  canonical page and fragment under the documentation base, `start`/`end` inclusive 1-based lines
-  (both null when doc-gen4 has no range), `doc` the raw docstring source text (empty when none).
-  A declaration-free module maps to `{}`. Manifest and bundle coverage agree exactly.
+- `schema_version`: integer 1.
+- `source_commit`: the documented commit, the same as `/docs/SOURCE_SHA`.
+- `provenance`: `toolchain` (the `lean-toolchain` pin) and `doc_gen` (`<repository>@<rev>`).
+- `modules`: every documented source path, declaration-free modules included (as `{}`), mapped to
+  `{full_name: {kind, url, file, start, end, doc}}`. `kind` is doc-gen4's rendered kind
+  (`theorem`, `def`, `abbrev`, `noncomputable instance`, ...), `url` the canonical page and
+  fragment under the documentation base, `start`/`end` inclusive 1-based lines (both null when
+  doc-gen4 has no range), and `doc` the raw docstring source text (empty when none).
 
 Declarations are the ones doc-gen4 renders as declarations on module pages, as the legacy HTML
 reader saw them: compiler-generated ones (`deriving` instances and their fields) are included,
 constructors and structure fields (rendered inside their parent) are not.
-
-`docs_facts_fixture/published/` is a complete generation and pointer produced by this exporter
-from real doc-gen4 output; `docs_facts_fixture/contract/` is the consumer's own fixture, which
-this producer reproduces byte for byte. `scripts/test_docs_facts.py` checks both.
+`docs_facts_fixture/facts.json` is the uncompressed file for real doc-gen4 output of three small
+modules; `scripts/test_docs_facts.py` keeps it current.
 
 ## Producer
 
-`scripts/docs_facts.py export` runs in `api-docs.yml` right after doc-gen4, reading only its
+`scripts/docs_facts.py export` runs in `api-docs.yml` right after doc-gen4 and reads only its
 output: the module pages, `declarations/declaration-data.bmp` and the `api-docs.db` analysis
-database. No Lean runs and no source is parsed. It refuses, and exports nothing, unless:
+database. No Lean runs and no source is parsed. It refuses, and writes nothing, unless:
 
 - the documented modules are exactly the `TauCeti/` Lean files at `SOURCE_SHA`;
 - each page shows exactly the declarations the database marks for rendering (less constructors),
@@ -57,42 +44,8 @@ database. No Lean runs and no source is parsed. It refuses, and exports nothing,
 - every module analyzed at an older commit (doc-gen4 analysis is incremental) is byte-identical
   at `SOURCE_SHA`.
 
-The generation is written into the doc tree's reserved `FACTS_V1/` directory, so it is cached
-with the `SOURCE_SHA` it describes. `pages.yml` removes it from the deployed site and, after the
-deploy and the `docgen` update, `publish-docs-facts` publishes it with
-`scripts/docs_facts.py publish`:
-
-1. validate the generation as strictly as the consumer does, and require its source commit to be
-   the deployed tree's `SOURCE_SHA` (not the Pages run's checkout);
-2. PUT `facts.json.gz`, then `manifest.json`, each conditional on the key being absent
-   (`If-None-Match: *`), unless already present with identical bytes; different bytes at an
-   immutable key are an error, and a concurrent writer is never overwritten;
-3. read both back from the public base and check their hashes;
-4. replace `v1/current.json` with one PUT (`Cache-Control: no-cache`), then read it back.
-
-An interruption before step 4 leaves the pointer on the last good generation; the objects already
-written are reused by the next attempt. Republishing an unchanged tree writes nothing.
-
-## Failure, retry and rollback
-
-Facts never block the documentation. A failed export saves the docs tree without `FACTS_V1/`
-(warning in `api-docs.yml`; the next hourly run exports again). A missing generation or failed
-publication fails only `publish-docs-facts`, after the deploy; `report-data-freshness` turns the
-Pages run red, which the stuck-alerts failing-scheduler check reports, and the next scheduled
-Pages run (every three hours) retries. Rollback: remove the `publish-docs-facts` job or clear the
-variables below. Published generations and the last pointer stay where they are.
-
-## Deployment
-
-- `DOCS_FACTS_ENDPOINT`: S3-compatible write URL of the facts prefix, for example
-  `https://<account>.r2.cloudflarestorage.com/tauceti-cache/docs-facts`.
-- `DOCS_FACTS_BASE_PUBLIC`: the same prefix's public URL, for example
-  `https://cache.taucetiproject.org/docs-facts`.
-- secret `DOCS_FACTS_KEY` (`<access key id>:<secret>`), defaulting to `LAKE_CACHE_KEY`.
-- optional `DOCS_BASE_URL`: documentation base for canonical URLs (default
-  `https://taucetiproject.org/docs`).
-
-Unconfigured, `publish-docs-facts` logs a notice and succeeds. The producer never deletes. Any
-storage lifecycle rule on `v1/generations/` must keep objects for at least 30 days, and must not
-expire the generation `v1/current.json` names; a reader whose pinned generation has expired must
-replan rather than advance.
+The file is written beside `SOURCE_SHA`, so it is cached and deployed with the tree it describes,
+including when a Pages run reuses an older tree. A failed export only leaves the file out of that
+tree, with a warning; the documentation still deploys, readers fall back to the HTML pages, and
+the next hourly `api-docs.yml` run exports again. Set the repository variable `DOCS_BASE_URL` to
+change the documentation base used in `url` (default `https://taucetiproject.org/docs`).

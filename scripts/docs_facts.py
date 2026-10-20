@@ -1,36 +1,27 @@
 #!/usr/bin/env python3
-"""Export and publish immutable documentation facts generations (schema version 1).
+"""Export the documentation facts file served at /docs/facts.json.gz.
 
-Progress reporting needs declaration facts that describe exactly one documented source commit.
-Reading them from the live documentation site cannot guarantee that: the declaration index and
-thousands of module pages are separate URLs, and a deploy can land between any two reads. This
-script turns one finished doc-gen4 tree into a single content-addressed object instead, and
-publishes it so that a reader can pin it across later deploys. See `docs-facts.md` beside this
-file for the producer/consumer contract and the deployment settings.
+Progress reporting needs declaration facts that describe exactly one documented commit. Reading
+them from the HTML site cannot guarantee that: the declaration index and thousands of module
+pages are separate URLs, and a deploy can land between any two reads. One file, deployed with the
+pages it summarizes, is read in one request and so always describes one build. See
+`docs-facts.md` beside this file for the format.
 
-Three subcommands:
-
-* `export` runs in api-docs.yml, straight after doc-gen4, while its SQLite database is still on
-  disk. It writes `manifest.json` and `facts.json.gz` into the doc tree's reserved `FACTS_V1/`
-  directory, so the generation travels with the tree, and with its `SOURCE_SHA`, through the
-  actions cache. A Pages run that reuses an older tree therefore publishes the commit that tree
-  documents, not the commit the Pages run checked out.
-* `check` validates a generation directory offline, exactly as a consumer would.
-* `publish` runs in pages.yml after the deploy. It uploads the immutable objects, reads them back
-  from the public base, and only then replaces `v1/current.json` with one PUT.
+`export` runs in api-docs.yml straight after doc-gen4, while its SQLite database is still on
+disk, and writes `facts.json.gz` into the doc tree beside `SOURCE_SHA`. The file then travels
+with that tree through the actions cache into every Pages deploy of it. `check` validates a file.
 
 Nothing here parses Lean. Every fact comes from doc-gen4's own output: the rendered module pages
 (declaration names, kinds and source links, the same markup the legacy reader used), the
 declaration index (every declaration's canonical page), and the analysis database (raw docstring
-text and each module's source URL). The three are cross-checked against one another and against
-git, and any disagreement refuses the export rather than publishing a partial generation.
+text, ranges, and each module's source URL). The three are cross-checked against one another and
+against git, and any disagreement refuses the export rather than writing an incomplete file.
 """
 
 from __future__ import annotations
 
 import argparse
 import gzip
-import hashlib
 import html
 import io
 import json
@@ -41,23 +32,12 @@ import sqlite3
 import subprocess
 import sys
 import tempfile
-import time
 import urllib.parse
 
 SCHEMA_VERSION = 1
-# The reserved directory inside the doc tree. Upper case, like SOURCE_SHA, so that it cannot be
-# mistaken for (or collide with) anything doc-gen4 writes.
-FACTS_DIR = "FACTS_V1"
 FACTS_NAME = "facts.json.gz"
-MANIFEST_NAME = "manifest.json"
-POINTER_KEY = "v1/current.json"
-
-IMMUTABLE_CACHE_CONTROL = "public, max-age=31536000, immutable"
-POINTER_CACHE_CONTROL = "no-cache"
 
 _SHA40 = re.compile(r"[0-9a-f]{40}")
-_SHA64 = re.compile(r"[0-9a-f]{64}")
-_GENERATION = re.compile(r"v1/generations/([0-9a-f]{40})/([0-9a-f]{64})")
 
 # doc-gen4's own markup, as in TauCetiProgress's legacy HTML reader. `export` refuses a page whose
 # markup stops matching rather than reading it as a page with no declarations.
@@ -70,25 +50,17 @@ _RANGE_RE = re.compile(r"L(\d+)-L(\d+)")
 
 
 class FactsError(RuntimeError):
-    """The documentation output or a generation is unusable; nothing may be published from it."""
+    """The documentation output or a facts file is unusable; nothing may be written from it."""
 
 
-class ConflictError(FactsError):
-    """An immutable key already holds different bytes."""
-
-
-def _require(condition, message, error=FactsError):
+def _require(condition, message):
     if not condition:
-        raise error(message)
+        raise FactsError(message)
 
 
 def encode(value) -> bytes:
     """Canonical JSON bytes: sorted keys, no insignificant whitespace, one trailing newline."""
     return (json.dumps(value, sort_keys=True, separators=(",", ":")) + "\n").encode()
-
-
-def sha256(data: bytes) -> str:
-    return hashlib.sha256(data).hexdigest()
 
 
 def _strict_json(raw: bytes, label: str):
@@ -185,7 +157,7 @@ def _db_rows(db_path):
 def collect(doc_dir, db_path, repo, root, source_commit, docs_base):
     """The facts payload for one doc-gen4 tree, cross-checked against its index, database and git.
 
-    Raises FactsError on any inconsistency: a generation that is not provably complete and
+    Raises FactsError on any inconsistency: a file that is not provably complete and
     provably about `source_commit` must not exist at all.
     """
     doc_dir = pathlib.Path(doc_dir)
@@ -290,93 +262,33 @@ def collect(doc_dir, db_path, repo, root, source_commit, docs_base):
     return {"schema_version": SCHEMA_VERSION, "source_commit": source_commit, "modules": modules}
 
 
-def build_generation(facts: dict, provenance: dict):
-    """`(manifest_bytes, facts_gz_bytes)` for a facts payload."""
-    raw = encode(facts)
-    # GzipFile, not gzip.compress: from Python 3.12 the latter's header names the host OS, so
-    # the same payload would hash differently depending on where it was exported.
+def pack(facts: dict) -> bytes:
+    """The gzipped canonical bytes of a facts payload, identical wherever they are produced."""
+    # GzipFile, not gzip.compress: from Python 3.12 the latter's header names the host OS.
     buffer = io.BytesIO()
     with gzip.GzipFile(filename="", fileobj=buffer, mode="wb", compresslevel=9, mtime=0) as stream:
-        stream.write(raw)
-    packed = buffer.getvalue()
-    digest = sha256(packed)
-    commit = facts["source_commit"]
-    manifest = {
-        "schema_version": SCHEMA_VERSION,
-        "source_commit": commit,
-        "generation": f"v1/generations/{commit}/{digest}",
-        "facts_sha256": digest,
-        "compressed_bytes": len(packed),
-        "uncompressed_bytes": len(raw),
-        "modules": sorted(facts["modules"]),
-        "provenance": provenance,
-    }
-    return encode(manifest), packed
+        stream.write(encode(facts))
+    return buffer.getvalue()
 
 
-def pointer_for(manifest_bytes: bytes) -> bytes:
-    manifest = json.loads(manifest_bytes)
-    return encode({
-        "schema_version": SCHEMA_VERSION,
-        "source_commit": manifest["source_commit"],
-        "manifest_path": f"{manifest['generation']}/{MANIFEST_NAME}",
-        "manifest_sha256": sha256(manifest_bytes),
-    })
-
-
-def write_generation(out_dir, manifest_bytes, packed):
-    """Create `out_dir` holding exactly the two files, or leave nothing behind."""
-    out = pathlib.Path(out_dir)
-    _require(not out.exists() and not out.is_symlink(), f"{out} already exists; refusing to overwrite it")
-    tmp = pathlib.Path(tempfile.mkdtemp(prefix=".facts-", dir=out.parent))
-    try:
-        (tmp / FACTS_NAME).write_bytes(packed)
-        (tmp / MANIFEST_NAME).write_bytes(manifest_bytes)
-        os.rename(tmp, out)
-    except OSError:
-        for child in tmp.iterdir():
-            child.unlink()
-        tmp.rmdir()
-        raise
-
-
-# ----- validation ----------------------------------------------------------------------------
-
-
-def validate(manifest_bytes: bytes, packed: bytes) -> dict:
-    """Check a generation as strictly as TauCetiProgress's reader does; return the manifest."""
-    manifest = _strict_json(manifest_bytes, "manifest")
-    _require(manifest.get("schema_version") == SCHEMA_VERSION
-             and type(manifest.get("schema_version")) is int, "manifest: unsupported schema_version")
-    commit = manifest.get("source_commit")
-    _require(isinstance(commit, str) and _SHA40.fullmatch(commit) is not None, "manifest: invalid source commit")
-    digest = manifest.get("facts_sha256")
-    _require(isinstance(digest, str) and _SHA64.fullmatch(digest) is not None, "manifest: invalid facts hash")
-    _require(manifest.get("generation") == f"v1/generations/{commit}/{digest}",
-             "manifest: generation path does not match source commit and facts hash")
-    _require(sha256(packed) == digest, "facts: SHA-256 does not match the manifest")
-    for key in ("compressed_bytes", "uncompressed_bytes"):
-        _require(type(manifest.get(key)) is int and manifest[key] > 0, f"manifest: invalid {key}")
-    _require(len(packed) == manifest["compressed_bytes"], "facts: compressed length mismatch")
-    provenance = manifest.get("provenance")
-    _require(isinstance(provenance, dict) and all(
-        isinstance(provenance.get(k), str) and provenance[k] for k in ("toolchain", "doc_gen")),
-        "manifest: missing toolchain/doc-gen provenance")
-    coverage = manifest.get("modules")
-    _require(isinstance(coverage, list) and coverage and all(_source_path(p) for p in coverage)
-             and len(coverage) == len(set(coverage)), "manifest: invalid module coverage")
+def validate(packed: bytes) -> dict:
+    """Check a facts file's structure; return the payload."""
     try:
         raw = gzip.decompress(packed)
     except (OSError, EOFError) as exc:
         raise FactsError(f"facts: invalid gzip: {exc}") from exc
-    _require(len(raw) == manifest["uncompressed_bytes"], "facts: uncompressed length mismatch")
     data = _strict_json(raw, "facts")
     _require(data.get("schema_version") == SCHEMA_VERSION and type(data["schema_version"]) is int,
              "facts: unsupported schema_version")
-    _require(data.get("source_commit") == commit, "facts: source commit mismatch")
+    _require(isinstance(data.get("source_commit"), str)
+             and _SHA40.fullmatch(data["source_commit"]) is not None, "facts: invalid source commit")
+    provenance = data.get("provenance")
+    _require(isinstance(provenance, dict) and all(
+        isinstance(provenance.get(k), str) and provenance[k] for k in ("toolchain", "doc_gen")),
+        "facts: missing toolchain/doc-gen provenance")
     modules = data.get("modules")
-    _require(isinstance(modules, dict) and sorted(modules) == sorted(coverage),
-             "facts: module coverage differs from manifest")
+    _require(isinstance(modules, dict) and modules and all(_source_path(p) for p in modules),
+             "facts: invalid module coverage")
     names = set()
     for path, declarations in modules.items():
         _require(isinstance(declarations, dict), f"facts: invalid module {path}")
@@ -396,142 +308,20 @@ def validate(manifest_bytes: bytes, packed: bytes) -> dict:
                 (start is None and end is None)
                 or (type(start) is int and type(end) is int and 1 <= start <= end)),
                 f"facts: invalid source range for {name}")
-    return manifest
+    return data
 
 
-def read_generation(gen_dir):
-    """`(manifest_bytes, facts_gz_bytes)` from a directory holding exactly the two files."""
-    gen = pathlib.Path(gen_dir)
-    _require(gen.is_dir() and not gen.is_symlink(), f"{gen}: no generation directory")
-    names = sorted(p.name for p in gen.iterdir())
-    _require(names == sorted([FACTS_NAME, MANIFEST_NAME]), f"{gen}: unexpected contents {names}")
-    files = []
-    for name in (MANIFEST_NAME, FACTS_NAME):
-        path = gen / name
-        _require(path.is_file() and not path.is_symlink(), f"{path}: not a regular file")
-        files.append(path.read_bytes())
-    return files[0], files[1]
-
-
-# ----- publication ---------------------------------------------------------------------------
-
-
-class CurlStore:
-    """Object storage over curl: SigV4-signed reads and writes, and unsigned public reads.
-
-    The key reaches curl on stdin, never on its command line.
-    """
-
-    def __init__(self, write_base, public_base, key, curl="curl"):
-        self.write_base = write_base.rstrip("/")
-        self.public_base = public_base.rstrip("/")
-        self.key = key
-        self.curl = curl
-
-    def _run(self, args, url, signed, body=None):
-        with tempfile.TemporaryDirectory() as tmp:
-            out = pathlib.Path(tmp) / "body"
-            cmd = [self.curl, "--silent", "--show-error", "--retry", "2", "--max-time", "300",
-                   "--output", str(out), "--write-out", "%{http_code}"]
-            config = ""
-            if signed:
-                cmd += ["--aws-sigv4", "aws:amz:auto:s3", "--config", "-"]
-                escaped = self.key.replace("\\", "\\\\").replace('"', '\\"')
-                config = f'user = "{escaped}"\n'
-            if body is not None:
-                src = pathlib.Path(tmp) / "upload"
-                src.write_bytes(body)
-                cmd += ["--upload-file", str(src)]
-            cmd += [*args, url]
-            proc = subprocess.run(cmd, input=config.encode(), capture_output=True)
-            status = proc.stdout.decode().strip()
-            if proc.returncode != 0:
-                raise FactsError(f"curl failed for {url}: {proc.stderr.decode().strip()}")
-            data = out.read_bytes() if out.exists() else b""
-            return int(status or 0), data
-
-    def get(self, key, public=False):
-        """The object's bytes, or None when it does not exist."""
-        url = f"{self.public_base if public else self.write_base}/{key}"
-        status, data = self._run([], url, signed=not public)
-        if status == 404:
-            return None
-        _require(status == 200, f"GET {url}: HTTP {status}")
-        return data
-
-    def put(self, key, data, content_type, cache_control, create_only=False):
-        """Store an object. `create_only` returns False, writing nothing, if the key exists."""
-        url = f"{self.write_base}/{key}"
-        headers = ["--header", f"Content-Type: {content_type}",
-                   "--header", f"Cache-Control: {cache_control}"]
-        if create_only:
-            headers += ["--header", "If-None-Match: *"]
-        status, _ = self._run(headers, url, signed=True, body=data)
-        if create_only and status == 412:
-            return False
-        _require(200 <= status < 300, f"PUT {url}: HTTP {status}")
-        return True
-
-
-def _verify_public(store, key, digest, attempts, sleep, log):
-    for attempt in range(1, attempts + 1):
-        data = store.get(key, public=True)
-        if data is not None and sha256(data) == digest:
-            return
-        log(f"{key}: not yet readable with the expected hash (attempt {attempt}/{attempts})")
-        if attempt < attempts:
-            sleep(10)
-    raise FactsError(f"{key}: the public object does not have SHA-256 {digest}")
-
-
-def _put_immutable(store, key, data, content_type, log):
-    """Create `key` holding `data`, or accept it already holding exactly `data`.
-
-    The PUT is conditional on the key being absent, so two publishers can never replace each
-    other's bytes; whichever loses compares what the winner wrote.
-    """
-    if store.get(key) is None and store.put(key, data, content_type, IMMUTABLE_CACHE_CONTROL,
-                                            create_only=True):
-        log(f"uploaded {key} ({len(data)} bytes)")
-        return
-    _require(store.get(key) == data, f"{key} already exists with different bytes", ConflictError)
-    log(f"{key} already published")
-
-
-def publish(gen_dir, expected_commit, store, attempts=6, sleep=time.sleep, log=print):
-    """Publish one generation; return the pointer bytes now current.
-
-    Order is what makes this safe to interrupt anywhere: the facts, then the manifest that names
-    them, then a public read-back of both, and only then the single pointer PUT. Until that PUT,
-    the previous pointer still names a complete generation, and a retry finds the objects already
-    in place and continues.
-    """
-    manifest_bytes, packed = read_generation(gen_dir)
-    manifest = validate(manifest_bytes, packed)
-    _require(manifest["source_commit"] == expected_commit,
-             f"the generation documents {manifest['source_commit']}, but the deployed docs are "
-             f"from {expected_commit}; refusing to publish facts for documentation that is not live")
-    generation = manifest["generation"]
-    facts_key = f"{generation}/{FACTS_NAME}"
-    manifest_key = f"{generation}/{MANIFEST_NAME}"
-
-    _put_immutable(store, facts_key, packed, "application/gzip", log)
-    _put_immutable(store, manifest_key, manifest_bytes, "application/json", log)
-
-    _verify_public(store, facts_key, manifest["facts_sha256"], attempts, sleep, log)
-    _verify_public(store, manifest_key, sha256(manifest_bytes), attempts, sleep, log)
-
-    pointer = pointer_for(manifest_bytes)
-    if store.get(POINTER_KEY) == pointer:
-        log(f"{POINTER_KEY} already names {generation}")
-        return pointer
-    store.put(POINTER_KEY, pointer, "application/json", POINTER_CACHE_CONTROL)
-    _require(store.get(POINTER_KEY) == pointer, f"{POINTER_KEY} did not read back as written")
-    log(f"{POINTER_KEY} now names {generation}")
-    return pointer
-
-
-# ----- command line --------------------------------------------------------------------------
+def write_once(path, data: bytes):
+    """Create `path` holding `data` in one rename, refusing to replace anything already there."""
+    path = pathlib.Path(path)
+    _require(not path.exists() and not path.is_symlink(), f"{path} already exists; refusing to overwrite it")
+    fd, tmp = tempfile.mkstemp(prefix=".facts-", dir=path.parent)
+    try:
+        with os.fdopen(fd, "wb") as out:
+            out.write(data)
+        os.rename(tmp, path)
+    finally:
+        pathlib.Path(tmp).unlink(missing_ok=True)
 
 
 def _doc_gen_provenance(manifest_path):
@@ -548,7 +338,7 @@ def _doc_gen_provenance(manifest_path):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     sub = parser.add_subparsers(dest="command", required=True)
-    exp = sub.add_parser("export", help="write a generation from a doc-gen4 tree")
+    exp = sub.add_parser("export", help="write facts.json.gz from a doc-gen4 tree")
     exp.add_argument("--doc-dir", required=True)
     exp.add_argument("--db", required=True)
     exp.add_argument("--repo", required=True)
@@ -556,13 +346,9 @@ def main(argv=None):
     exp.add_argument("--docs-base", required=True)
     exp.add_argument("--toolchain-file", required=True)
     exp.add_argument("--docs-manifest", required=True, help="the docs project's lake-manifest.json")
-    exp.add_argument("--out", help=f"default: <doc-dir>/{FACTS_DIR}")
-    chk = sub.add_parser("check", help="validate a generation directory")
-    chk.add_argument("generation")
-    chk.add_argument("--source-commit")
-    pub = sub.add_parser("publish", help="upload a generation and advance the pointer")
-    pub.add_argument("generation")
-    pub.add_argument("--source-commit", required=True)
+    exp.add_argument("--out", help=f"default: <doc-dir>/{FACTS_NAME}")
+    chk = sub.add_parser("check", help="validate a facts file")
+    chk.add_argument("file")
     args = parser.parse_args(argv)
     try:
         if args.command == "export":
@@ -573,30 +359,19 @@ def main(argv=None):
             _require(_SHA40.fullmatch(commit.rstrip("\n")) is not None and commit.count("\n") == 1
                      and commit.endswith("\n"), f"{marker}: malformed")
             facts = collect(doc_dir, args.db, args.repo, args.root, commit.rstrip("\n"), args.docs_base)
-            provenance = {
+            facts["provenance"] = {
                 "toolchain": pathlib.Path(args.toolchain_file).read_text().strip(),
                 "doc_gen": _doc_gen_provenance(args.docs_manifest),
-                "docs_base": args.docs_base.rstrip("/"),
             }
-            manifest_bytes, packed = build_generation(facts, provenance)
-            validate(manifest_bytes, packed)
-            write_generation(args.out or doc_dir / FACTS_DIR, manifest_bytes, packed)
-            manifest = json.loads(manifest_bytes)
+            packed = pack(facts)
+            validate(packed)
+            write_once(args.out or doc_dir / FACTS_NAME, packed)
             declarations = sum(len(d) for d in facts["modules"].values())
-            print(f"exported {manifest['generation']}: {len(manifest['modules'])} modules, "
+            print(f"exported facts for {facts['source_commit']}: {len(facts['modules'])} modules, "
                   f"{declarations} declarations, {len(packed)} bytes compressed")
-        elif args.command == "check":
-            manifest = validate(*read_generation(args.generation))
-            _require(args.source_commit in (None, manifest["source_commit"]),
-                     f"generation documents {manifest['source_commit']}, not {args.source_commit}")
-            print(f"valid generation {manifest['generation']}")
         else:
-            key = os.environ.get("DOCS_FACTS_KEY", "").strip()
-            write_base = os.environ.get("DOCS_FACTS_ENDPOINT", "")
-            public_base = os.environ.get("DOCS_FACTS_BASE_PUBLIC", "")
-            _require(key and write_base and public_base,
-                     "DOCS_FACTS_KEY, DOCS_FACTS_ENDPOINT and DOCS_FACTS_BASE_PUBLIC are required")
-            publish(args.generation, args.source_commit, CurlStore(write_base, public_base, key))
+            data = validate(pathlib.Path(args.file).read_bytes())
+            print(f"valid facts for {data['source_commit']}")
     except FactsError as exc:
         print(f"::error title=Documentation facts::{exc}", file=sys.stderr)
         return 1
