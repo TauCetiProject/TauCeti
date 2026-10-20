@@ -150,44 +150,43 @@ lemma toEquiv_whiskerRight {n n' : FiniteBijection} (f : n ⟶ n') (m : FiniteBi
     (f ▷ m).toEquiv = finSumFinEquiv.symm.trans
       ((f.toEquiv.sumCongr (Equiv.refl (Fin m.len))).trans finSumFinEquiv) := rfl
 
+/- `simp` does not rewrite `finSumFinEquiv.symm` at an index typed by `(n ⊗ n').len` on its own,
+since that length only unfolds to `n.len + n'.len`; instantiating the Mathlib lemma at `i` fixes
+the lengths so that it fires. -/
 @[simp]
 lemma toEquiv_tensorHom_castAdd {n m n' m' : FiniteBijection} (f : n ⟶ m) (g : n' ⟶ m')
     (i : Fin n.len) :
     (f ⊗ₘ g).toEquiv (Fin.castAdd n'.len i) = Fin.castAdd m'.len (f.toEquiv i) := by
-  rw [toEquiv_tensorHom, Equiv.trans_apply, Equiv.trans_apply, finSumFinEquiv_symm_apply_castAdd]
-  simp
+  simp [toEquiv_tensorHom, finSumFinEquiv_symm_apply_castAdd i]
 
 @[simp]
 lemma toEquiv_tensorHom_natAdd {n m n' m' : FiniteBijection} (f : n ⟶ m) (g : n' ⟶ m')
     (i : Fin n'.len) :
     (f ⊗ₘ g).toEquiv (Fin.natAdd n.len i) = Fin.natAdd m.len (g.toEquiv i) := by
-  rw [toEquiv_tensorHom, Equiv.trans_apply, Equiv.trans_apply, finSumFinEquiv_symm_apply_natAdd]
-  simp
+  simp [toEquiv_tensorHom, finSumFinEquiv_symm_apply_natAdd i]
 
+/- Whiskering is defined as tensoring with an identity, so the whisker block lemmas are the
+tensor block lemmas at `𝟙 n` and `𝟙 m`. -/
 @[simp]
 lemma toEquiv_whiskerLeft_castAdd (n : FiniteBijection) {m m' : FiniteBijection} (g : m ⟶ m')
-    (i : Fin n.len) : (n ◁ g).toEquiv (Fin.castAdd m.len i) = Fin.castAdd m'.len i := by
-  rw [toEquiv_whiskerLeft, Equiv.trans_apply, Equiv.trans_apply, finSumFinEquiv_symm_apply_castAdd]
-  simp
+    (i : Fin n.len) : (n ◁ g).toEquiv (Fin.castAdd m.len i) = Fin.castAdd m'.len i :=
+  toEquiv_tensorHom_castAdd (𝟙 n) g i
 
 @[simp]
 lemma toEquiv_whiskerLeft_natAdd (n : FiniteBijection) {m m' : FiniteBijection} (g : m ⟶ m')
-    (i : Fin m.len) : (n ◁ g).toEquiv (Fin.natAdd n.len i) = Fin.natAdd n.len (g.toEquiv i) := by
-  rw [toEquiv_whiskerLeft, Equiv.trans_apply, Equiv.trans_apply, finSumFinEquiv_symm_apply_natAdd]
-  simp
+    (i : Fin m.len) : (n ◁ g).toEquiv (Fin.natAdd n.len i) = Fin.natAdd n.len (g.toEquiv i) :=
+  toEquiv_tensorHom_natAdd (𝟙 n) g i
 
 @[simp]
 lemma toEquiv_whiskerRight_castAdd {n n' : FiniteBijection} (f : n ⟶ n') (m : FiniteBijection)
     (i : Fin n.len) :
-    (f ▷ m).toEquiv (Fin.castAdd m.len i) = Fin.castAdd m.len (f.toEquiv i) := by
-  rw [toEquiv_whiskerRight, Equiv.trans_apply, Equiv.trans_apply, finSumFinEquiv_symm_apply_castAdd]
-  simp
+    (f ▷ m).toEquiv (Fin.castAdd m.len i) = Fin.castAdd m.len (f.toEquiv i) :=
+  toEquiv_tensorHom_castAdd f (𝟙 m) i
 
 @[simp]
 lemma toEquiv_whiskerRight_natAdd {n n' : FiniteBijection} (f : n ⟶ n') (m : FiniteBijection)
-    (i : Fin m.len) : (f ▷ m).toEquiv (Fin.natAdd n.len i) = Fin.natAdd n'.len i := by
-  rw [toEquiv_whiskerRight, Equiv.trans_apply, Equiv.trans_apply, finSumFinEquiv_symm_apply_natAdd]
-  simp
+    (i : Fin m.len) : (f ▷ m).toEquiv (Fin.natAdd n.len i) = Fin.natAdd n'.len i :=
+  toEquiv_tensorHom_natAdd f (𝟙 m) i
 
 lemma toEquiv_associator_hom (n m k : FiniteBijection) :
     (α_ n m k).hom.toEquiv = finCongr (Nat.add_assoc n.len m.len k.len) := rfl
