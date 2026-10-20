@@ -8,14 +8,15 @@ module
 public import Mathlib.LinearAlgebra.Matrix.SesquilinearForm
 public import TauCeti.Analysis.Complex.LeviForm
 public import TauCeti.LinearAlgebra.Complex.LinearPart
+import TauCeti.Analysis.Calculus.FDeriv.OfReal
 
 /-!
 # Wirtinger derivatives and the Levi form
 
-For a complex-valued function `g` on a complex normed space `V`, the **Wirtinger derivatives**
-of `g` at `x` are the complex-linear and complex-antilinear parts of its real derivative:
+For a function `g : V → W` between complex normed spaces, the **Wirtinger derivatives** of `g`
+at `x` are the complex-linear and complex-antilinear parts of its real derivative:
 
-`∂g(x) v = (Dg(x) v - I * Dg(x)(I • v)) / 2`,  `\bar∂g(x) v = (Dg(x) v + I * Dg(x)(I • v)) / 2`.
+`∂g(x) v = (Dg(x) v - I • Dg(x)(I • v)) / 2`,  `\bar∂g(x) v = (Dg(x) v + I • Dg(x)(I • v)) / 2`.
 
 In holomorphic coordinates `z_j = x_j + I y_j` with coordinate vectors `e_j`, these are the
 classical operators `∂g(x) e_j = ∂g/∂z_j = (∂g/∂x_j - I ∂g/∂y_j) / 2` and
@@ -31,9 +32,9 @@ Hermitian form with matrix `L_{j \bar k} = ∂²f / ∂z_j ∂(conj z_k)` evalua
 
 ## Main definitions
 
-* `TauCeti.wirtingerDeriv g x`: the complex-linear Wirtinger derivative `∂g(x) : V →L[ℂ] ℂ`.
+* `TauCeti.wirtingerDeriv g x`: the complex-linear Wirtinger derivative `∂g(x) : V →L[ℂ] W`.
 * `TauCeti.conjWirtingerDeriv g x`: the complex-antilinear Wirtinger derivative
-  `\bar∂g(x) : V →L⋆[ℂ] ℂ`.
+  `\bar∂g(x) : V →L⋆[ℂ] W`.
 
 ## Main results
 
@@ -64,47 +65,48 @@ open Complex ComplexConjugate
 
 namespace TauCeti
 
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
+variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
+  [NormedAddCommGroup W] [NormedSpace ℂ W]
 
 section Wirtinger
 
-variable (g : V → ℂ) (x : V)
+variable (g : V → W) (x : V)
 
-/-- The **Wirtinger derivative** `∂g(x)` of a complex-valued function: the complex-linear part
-`v ↦ (Dg(x) v - I * Dg(x)(I • v)) / 2` of its real derivative. On a coordinate vector `e_j` it is
-`∂g / ∂z_j`. -/
-noncomputable def wirtingerDeriv : V →L[ℂ] ℂ where
-  toFun v := (2 : ℂ)⁻¹ * (fderiv ℝ g x v - I * fderiv ℝ g x (I • v))
-  map_add' v w := by simp only [smul_add, map_add]; ring
+/-- The **Wirtinger derivative** `∂g(x)` of a function into a complex normed space: the
+complex-linear part `v ↦ (Dg(x) v - I • Dg(x)(I • v)) / 2` of its real derivative. On a coordinate
+vector `e_j` it is `∂g / ∂z_j`. -/
+noncomputable def wirtingerDeriv : V →L[ℂ] W where
+  toFun v := (2 : ℂ)⁻¹ • (fderiv ℝ g x v - I • fderiv ℝ g x (I • v))
+  map_add' v w := by simp only [smul_add, map_add]; module
   map_smul' c v := by
     -- Split `c • v` into real multiples of `v` and `I • v`.
     rw [← re_smul_add_im_smul c v]
     simp only [smul_add, smul_comm I, smul_smul, I_mul_I, neg_smul, one_smul, map_add,
-      map_smul, map_neg, smul_eq_mul, RingHom.id_apply]
-    apply Complex.ext <;> simp <;> ring
+      map_smul, map_neg, RingHom.id_apply]
+    match_scalars <;> apply Complex.ext <;> simp <;> ring
   cont := by fun_prop
 
-/-- The **conjugate Wirtinger derivative** `\bar∂g(x)` of a complex-valued function: the
-complex-antilinear part `v ↦ (Dg(x) v + I * Dg(x)(I • v)) / 2` of its real derivative. On a
+/-- The **conjugate Wirtinger derivative** `\bar∂g(x)` of a function into a complex normed space:
+the complex-antilinear part `v ↦ (Dg(x) v + I • Dg(x)(I • v)) / 2` of its real derivative. On a
 coordinate vector `e_j` it is `∂g / ∂(conj z_j)`. -/
-noncomputable def conjWirtingerDeriv : V →L⋆[ℂ] ℂ where
-  toFun v := (2 : ℂ)⁻¹ * (fderiv ℝ g x v + I * fderiv ℝ g x (I • v))
-  map_add' v w := by simp only [smul_add, map_add]; ring
+noncomputable def conjWirtingerDeriv : V →L⋆[ℂ] W where
+  toFun v := (2 : ℂ)⁻¹ • (fderiv ℝ g x v + I • fderiv ℝ g x (I • v))
+  map_add' v w := by simp only [smul_add, map_add]; module
   map_smul' c v := by
     rw [← re_smul_add_im_smul c v]
     simp only [smul_add, smul_comm I, smul_smul, I_mul_I, neg_smul, one_smul, map_add,
-      map_smul, map_neg, smul_eq_mul, starRingEnd_apply]
-    apply Complex.ext <;> simp <;> ring
+      map_smul, map_neg, starRingEnd_apply]
+    match_scalars <;> apply Complex.ext <;> simp <;> ring
   cont := by fun_prop
 
 /-- The defining formula of the Wirtinger derivative. -/
 theorem wirtingerDeriv_apply (v : V) :
-    wirtingerDeriv g x v = (2 : ℂ)⁻¹ * (fderiv ℝ g x v - I * fderiv ℝ g x (I • v)) :=
+    wirtingerDeriv g x v = (2 : ℂ)⁻¹ • (fderiv ℝ g x v - I • fderiv ℝ g x (I • v)) :=
   (rfl)
 
 /-- The defining formula of the conjugate Wirtinger derivative. -/
 theorem conjWirtingerDeriv_apply (v : V) :
-    conjWirtingerDeriv g x v = (2 : ℂ)⁻¹ * (fderiv ℝ g x v + I * fderiv ℝ g x (I • v)) :=
+    conjWirtingerDeriv g x v = (2 : ℂ)⁻¹ • (fderiv ℝ g x v + I • fderiv ℝ g x (I • v)) :=
   (rfl)
 
 /-- The two Wirtinger derivatives add up to the real derivative. -/
@@ -112,19 +114,18 @@ theorem conjWirtingerDeriv_apply (v : V) :
 theorem wirtingerDeriv_add_conjWirtingerDeriv (v : V) :
     wirtingerDeriv g x v + conjWirtingerDeriv g x v = fderiv ℝ g x v := by
   rw [wirtingerDeriv_apply, conjWirtingerDeriv_apply]
-  ring
+  module
 
 /-- The Wirtinger derivative is the complex-linear part `TauCeti.complexLinearPart` of the real
 derivative, for the complex structures given by multiplication by `I`. -/
 theorem coe_wirtingerDeriv_eq_complexLinearPart :
     ⇑(wirtingerDeriv g x) =
-      complexLinearPart (DistribSMul.toLinearMap ℝ V I) (DistribSMul.toLinearMap ℝ ℂ I)
-        (fderiv ℝ g x : V →ₗ[ℝ] ℂ) := by
+      complexLinearPart (DistribSMul.toLinearMap ℝ V I) (DistribSMul.toLinearMap ℝ W I)
+        (fderiv ℝ g x : V →ₗ[ℝ] W) := by
   ext v
   simp only [wirtingerDeriv_apply, complexLinearPart_apply, ContinuousLinearMap.coe_coe,
-    DistribSMul.toLinearMap_apply, smul_eq_mul, real_smul]
-  push_cast
-  ring
+    DistribSMul.toLinearMap_apply]
+  module
 
 /-- The conjugate Wirtinger derivative is the complex-antilinear part
 `TauCeti.complexAntilinearPart` of the real derivative, for the complex structures given by
@@ -132,30 +133,29 @@ multiplication by `I`. -/
 theorem coe_conjWirtingerDeriv_eq_complexAntilinearPart :
     ⇑(conjWirtingerDeriv g x) =
       complexAntilinearPart (DistribSMul.toLinearMap ℝ V I)
-        (DistribSMul.toLinearMap ℝ ℂ I) (fderiv ℝ g x : V →ₗ[ℝ] ℂ) := by
+        (DistribSMul.toLinearMap ℝ W I) (fderiv ℝ g x : V →ₗ[ℝ] W) := by
   ext v
   simp only [conjWirtingerDeriv_apply, complexAntilinearPart_apply, ContinuousLinearMap.coe_coe,
-    DistribSMul.toLinearMap_apply, smul_eq_mul, real_smul]
-  push_cast
-  ring
+    DistribSMul.toLinearMap_apply]
+  module
 
 /-- For complex differentiable `g`, the conjugate Wirtinger derivative vanishes: this is the
 Cauchy–Riemann equation `\bar∂g = 0`. -/
 @[simp]
-theorem _root_.DifferentiableAt.conjWirtingerDeriv_eq_zero {g : V → ℂ} {x : V}
+theorem _root_.DifferentiableAt.conjWirtingerDeriv_eq_zero {g : V → W} {x : V}
     (hg : DifferentiableAt ℂ g x) : conjWirtingerDeriv g x = 0 := by
   ext v
   rw [conjWirtingerDeriv_apply, hg.fderiv_restrictScalars ℝ]
-  simp [← mul_assoc]
+  simp [smul_smul]
 
 /-- For complex differentiable `g`, the Wirtinger derivative is the complex derivative. -/
 @[simp]
-theorem _root_.DifferentiableAt.wirtingerDeriv_eq_fderiv {g : V → ℂ} {x : V}
+theorem _root_.DifferentiableAt.wirtingerDeriv_eq_fderiv {g : V → W} {x : V}
     (hg : DifferentiableAt ℂ g x) : wirtingerDeriv g x = fderiv ℂ g x := by
   ext v
   rw [wirtingerDeriv_apply, hg.fderiv_restrictScalars ℝ]
-  simp [← mul_assoc]
-  ring
+  simp only [ContinuousLinearMap.coe_restrictScalars', map_smul, smul_smul, I_mul_I]
+  module
 
 end Wirtinger
 
@@ -163,20 +163,14 @@ section Real
 
 variable {f : V → ℝ} {x : V}
 
-/-- Composing a real function with the inclusion `ℝ → ℂ` does not change its real derivative.
-No differentiability is assumed: both sides vanish when `f` is not differentiable at `x`. -/
-@[simp]
-theorem fderiv_ofReal_comp_apply {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    (f : E → ℝ) (x v : E) :
-    fderiv ℝ (fun y ↦ (f y : ℂ)) x v = fderiv ℝ f x v := by
-  by_cases hf : DifferentiableAt ℝ f x
-  · have h : HasFDerivAt (fun y ↦ (f y : ℂ)) (ofRealCLM.comp (fderiv ℝ f x)) x :=
-      ofRealCLM.hasFDerivAt.comp x hf.hasFDerivAt
-    simp [h.fderiv]
-  · have hf' : ¬DifferentiableAt ℝ (fun y ↦ (f y : ℂ)) x := fun h ↦ by
-      have hre := reCLM.differentiableAt.comp x h
-      exact hf (by simpa [Function.comp_def] using hre)
-    simp [fderiv_zero_of_not_differentiableAt hf, fderiv_zero_of_not_differentiableAt hf']
+/-- At a `C²` point of a real function `f`, the complexified directional derivative
+`y ↦ D(↑f)(y) u` has derivative `w ↦ ↑(D²f(x)(w, u))`. This is the common step in both orders of
+the Wirtinger comparison. -/
+private theorem hasFDerivAt_fderiv_ofReal_comp_apply (hf : ContDiffAt ℝ 2 f x) (u : V) :
+    HasFDerivAt (fun y ↦ fderiv ℝ (fun z ↦ (f z : ℂ)) y u)
+      (ofRealCLM.comp ((fderiv ℝ (fderiv ℝ f) x).flip u)) x := by
+  simpa only [fderiv_ofReal_comp_apply, Function.comp_def, ofRealCLM_apply] using
+    ofRealCLM.hasFDerivAt.comp x (hf.hasFDerivAt_fderiv_apply le_rfl u)
 
 /-- For a real function, the conjugate Wirtinger derivative is the complex conjugate of the
 Wirtinger derivative. -/
@@ -192,12 +186,9 @@ theorem wirtingerDeriv_conjWirtingerDeriv_eq_leviForm (hf : ContDiffAt ℝ 2 f x
     wirtingerDeriv (fun y ↦ conjWirtingerDeriv (fun z ↦ (f z : ℂ)) y v) x w =
       leviForm f x v w := by
   have hsymm := hf.isSymmSndFDerivAt (by simp)
-  have hd : HasFDerivAt (fun y ↦ conjWirtingerDeriv (fun z ↦ (f z : ℂ)) y v)
-      ((2 : ℂ)⁻¹ • (ofRealCLM.comp ((fderiv ℝ (fderiv ℝ f) x).flip v) +
-        I • ofRealCLM.comp ((fderiv ℝ (fderiv ℝ f) x).flip (I • v)))) x := by
-    simp only [conjWirtingerDeriv_apply, fderiv_ofReal_comp_apply]
-    have hD (u : V) := ofRealCLM.hasFDerivAt.comp x (hf.hasFDerivAt_fderiv_apply le_rfl u)
-    exact ((hD v).add ((hD (I • v)).const_smul I)).const_smul (2 : ℂ)⁻¹
+  have hD := hasFDerivAt_fderiv_ofReal_comp_apply hf
+  have hd : HasFDerivAt (fun y ↦ conjWirtingerDeriv (fun z ↦ (f z : ℂ)) y v) _ x :=
+    ((hD v).add ((hD (I • v)).const_smul I)).const_smul (2 : ℂ)⁻¹
   rw [wirtingerDeriv_apply, hd.fderiv]
   apply Complex.ext <;> simp [hsymm w v, hsymm (I • w) v, hsymm w (I • v),
     hsymm (I • w) (I • v)] <;> ring
@@ -207,12 +198,9 @@ Wirtinger derivative `\bar∂_v ∂_w f` is the Levi form `leviForm f x v w`. -/
 theorem conjWirtingerDeriv_wirtingerDeriv_eq_leviForm (hf : ContDiffAt ℝ 2 f x) (v w : V) :
     conjWirtingerDeriv (fun y ↦ wirtingerDeriv (fun z ↦ (f z : ℂ)) y w) x v =
       leviForm f x v w := by
-  have hd : HasFDerivAt (fun y ↦ wirtingerDeriv (fun z ↦ (f z : ℂ)) y w)
-      ((2 : ℂ)⁻¹ • (ofRealCLM.comp ((fderiv ℝ (fderiv ℝ f) x).flip w) -
-        I • ofRealCLM.comp ((fderiv ℝ (fderiv ℝ f) x).flip (I • w)))) x := by
-    simp only [wirtingerDeriv_apply, fderiv_ofReal_comp_apply]
-    have hD (u : V) := ofRealCLM.hasFDerivAt.comp x (hf.hasFDerivAt_fderiv_apply le_rfl u)
-    exact ((hD w).sub ((hD (I • w)).const_smul I)).const_smul (2 : ℂ)⁻¹
+  have hD := hasFDerivAt_fderiv_ofReal_comp_apply hf
+  have hd : HasFDerivAt (fun y ↦ wirtingerDeriv (fun z ↦ (f z : ℂ)) y w) _ x :=
+    ((hD w).sub ((hD (I • w)).const_smul I)).const_smul (2 : ℂ)⁻¹
   rw [conjWirtingerDeriv_apply, hd.fderiv]
   apply Complex.ext <;> simp <;> ring
 
