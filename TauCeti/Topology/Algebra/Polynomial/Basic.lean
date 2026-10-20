@@ -10,6 +10,9 @@ public import Mathlib.Algebra.Polynomial.Bivariate
 public import Mathlib.Algebra.Polynomial.Eval.Degree
 public import Mathlib.Topology.Algebra.Polynomial
 public import Mathlib.Topology.Algebra.Ring.Basic
+public import Mathlib.Topology.Instances.Matrix
+public import Mathlib.RingTheory.Polynomial.Resultant.Basic
+public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
 
 /-!
 # Continuity of polynomial families
@@ -22,7 +25,10 @@ as a single polynomial family.
 
 If the degrees of the family are bounded and its coefficients are continuous, then the evaluation
 `(x, t) ↦ (f x).eval t` is jointly continuous, since it is a finite sum of products of
-coefficients with powers of `t`.
+coefficients with powers of `t`. Likewise the resultant of two families with continuous
+coefficients, taken at fixed degree bounds, is continuous, being the determinant of a matrix of
+coefficients. The basic example of a family with continuous coefficients is the monic polynomial
+`TauCeti.Polynomial.monicOfCoeff a` as a function of its coefficient tuple `a`.
 
 ## Main results
 
@@ -33,6 +39,10 @@ coefficients with powers of `t`.
 * `Polynomial.continuous_eval_of_continuous_coeff`: joint continuity of the evaluation of a family
   of bounded degree.
 * `Polynomial.continuous_evalEval`: joint continuity of bivariate polynomial evaluation.
+* `Polynomial.continuous_resultant`: continuity of the resultant of two families at fixed degree
+  bounds.
+* `TauCeti.Polynomial.continuous_coeff_monicOfCoeff`: the coefficients of `monicOfCoeff a` are
+  continuous in `a`.
 -/
 
 public section
@@ -114,4 +124,38 @@ theorem continuous_eval_of_continuous_coeff [Semiring R] [IsTopologicalSemiring 
   exact continuousAt_eval (fun i hi ↦ ((hf i hi).comp continuous_fst).continuousAt)
     (.of_forall fun y ↦ hd y.1) continuous_snd.continuousAt
 
+/-- The resultant of two polynomial families with continuous coefficients, taken at fixed degree
+bounds `m` and `n`, is continuous: it is the determinant of the Sylvester matrix, whose entries are
+coefficients of the two families or zero. -/
+theorem continuous_resultant {X R : Type*} [TopologicalSpace X] [CommRing R] [TopologicalSpace R]
+    [IsTopologicalRing R] {f g : X → R[X]} (hf : ∀ i, Continuous fun x ↦ (f x).coeff i)
+    (hg : ∀ i, Continuous fun x ↦ (g x).coeff i) (m n : ℕ) :
+    Continuous fun x ↦ resultant (f x) (g x) m n := by
+  refine Continuous.matrix_det (continuous_pi fun i ↦ continuous_pi fun j ↦ ?_)
+  induction j using Fin.addCases with
+  | left j => simpa [sylvester] using continuous_if_const _ (fun _ ↦ hg _) fun _ ↦ continuous_const
+  | right j => simpa [sylvester] using continuous_if_const _ (fun _ ↦ hf _) fun _ ↦ continuous_const
+
 end Polynomial
+
+namespace TauCeti.Polynomial
+
+open _root_.Polynomial
+
+/-- Each coefficient of the monic polynomial `monicOfCoeff a` is a continuous function of the
+coefficient tuple `a`: it is either constant or a coordinate of `a`. -/
+theorem continuous_coeff_monicOfCoeff {R : Type*} [CommSemiring R] [TopologicalSpace R]
+    {n : ℕ} (j : ℕ) : Continuous fun a : Fin n → R ↦ (monicOfCoeff a).coeff j := by
+  rcases subsingleton_or_nontrivial R with hR | hR
+  · exact continuous_of_const fun _ _ ↦ Subsingleton.elim _ _
+  rcases lt_trichotomy j n with hj | rfl | hj
+  · rw [funext fun a ↦ coeff_monicOfCoeff a ⟨j, hj⟩]
+    exact continuous_apply _
+  · have h (a : Fin j → R) : (monicOfCoeff a).coeff j = 1 := by
+      simpa using (monic_monicOfCoeff a).coeff_natDegree
+    rw [funext h]
+    exact continuous_const
+  · rw [funext fun a ↦ coeff_eq_zero_of_natDegree_lt ((natDegree_monicOfCoeff a).trans_lt hj)]
+    exact continuous_const
+
+end TauCeti.Polynomial
