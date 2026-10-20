@@ -179,12 +179,6 @@ theorem mextDeriv_wedgeWith [IsManifold I 2 M] (μ : F₁ →L[ℝ] F₂ →L[�
       (-1 : ℝ) ^ k • cast (congrArg (fun q ↦ SmoothForm I M F₃ q)
         (show k + (l + 1) = k + l + 1 by omega))
         (SmoothForm.wedgeWith μ φ (mextDerivₗ I l ψ)) := by
-  have cast_apply {n m : ℕ} (h : n = m) (α : SmoothForm I M F₃ n) (x : M)
-      (v : Fin m → TangentSpace I x) :
-      ((cast (congrArg (fun q ↦ SmoothForm I M F₃ q) h) α : SmoothForm I M F₃ m) :
-        RoughForm I M F₃ m) x v = α.1 x (v ∘ Fin.cast h) := by
-    cases h
-    rfl
   apply Subtype.ext
   ext x v
   rw [mextDerivₗ_apply, SmoothForm.coe_wedgeWith]
@@ -215,12 +209,6 @@ theorem mextDeriv_wedge [IsManifold I 2 M] (φ : SmoothForm I M ℝ k)
       (-1 : ℝ) ^ k • cast (congrArg (fun q ↦ SmoothForm I M ℝ q)
         (show k + (l + 1) = k + l + 1 by omega))
         (SmoothForm.wedge φ (mextDerivₗ I l ψ)) := by
-  have cast_apply {n m : ℕ} (h : n = m) (α : SmoothForm I M ℝ n) (x : M)
-      (v : Fin m → TangentSpace I x) :
-      ((cast (congrArg (fun q ↦ SmoothForm I M ℝ q) h) α : SmoothForm I M ℝ m) :
-        RoughForm I M ℝ m) x v = α.1 x (v ∘ Fin.cast h) := by
-    cases h
-    rfl
   apply Subtype.ext
   ext x v
   rw [mextDerivₗ_apply, SmoothForm.coe_wedge]

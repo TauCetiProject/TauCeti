@@ -169,6 +169,16 @@ theorem coe_wedgeWith (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (φ : SmoothForm
       RoughForm.wedgeWith μ (φ : RoughForm I M F₁ k) (ψ : RoughForm I M F₂ l) := by
   rw [wedgeWith, LinearMap.mk₂_apply]
 
+/-- Evaluating a smooth form after transporting its degree across an equality. -/
+@[simp]
+theorem cast_apply {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {n m : ℕ} (h : n = m) (α : SmoothForm I M F n) (x : M)
+    (v : Fin m → TangentSpace I x) :
+    ((cast (congrArg (fun q ↦ SmoothForm I M F q) h) α : SmoothForm I M F m) :
+      RoughForm I M F m) x v = α.1 x (v ∘ Fin.cast h) := by
+  cases h
+  rfl
+
 /-- Evaluation of the smooth fixed-coefficient paired wedge. -/
 theorem wedgeWith_apply (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (φ : SmoothForm I M F₁ k)
     (ψ : SmoothForm I M F₂ l) (x : M) (v : Fin (k + l) → TangentSpace I x) :
