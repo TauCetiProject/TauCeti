@@ -154,14 +154,10 @@ theorem integrable_exp_mul_id_halfStudentTMeasure_iff (hν : 0 < ν) (hs : 0 < s
   · intro hint
     by_contra ht
     have ht₀ : 0 < t := lt_of_not_ge ht
-    rw [halfStudentTMeasure_of_pos hν hs,
-      integrable_map_measure (by fun_prop) (by fun_prop)] at hint
-    apply not_integrable_exp_mul_id_studentTMeasure hν (mul_pos ht₀ hs).ne'
-    refine hint.mono' (by fun_prop) (.of_forall fun x ↦ ?_)
-    rw [Real.norm_eq_abs, abs_of_pos (exp_pos _)]
-    apply exp_le_exp.2
-    simpa only [Function.comp_apply, mul_assoc] using
-      mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left (le_abs_self x) hs.le) ht₀.le
+    have hmom : ¬ Integrable (fun x : ℝ ↦ x ^ ν) (halfStudentTMeasure ν s) := by
+      simp [integrable_rpow_halfStudentTMeasure_iff hν hs]
+    exact not_integrable_exp_mul_of_not_integrable_rpow ν measurable_id.aemeasurable
+      ((ae_pos_halfStudentTMeasure ν s).mono fun _ hx ↦ hx.le) hν.le hmom ht₀ hint
   · intro ht
     exact integrable_exp_mul_of_ge t 0 ht measurable_id.aemeasurable
       ((ae_pos_halfStudentTMeasure ν s).mono fun _ hx ↦ hx.le)
@@ -174,39 +170,45 @@ theorem integrableExpSet_id_halfStudentTMeasure (hν : 0 < ν) (hs : 0 < s) :
   simpa only [integrableExpSet, id_eq, mem_ofPred_eq, mem_Iic] using
     integrable_exp_mul_id_halfStudentTMeasure_iff hν hs t
 
-variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ}
+end TauCeti.Probability
+
+namespace ProbabilityTheory.HasLaw
+
+open TauCeti.Probability
+
+variable {ν s q : ℝ} {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ}
 
 /-- A half-Student t random variable has the same sharp real-power integrability range. -/
-theorem integrable_rpow_iff_of_hasLaw_halfStudentTMeasure
+theorem integrable_rpow_halfStudentTMeasure_iff
     (hX : HasLaw X (halfStudentTMeasure ν s) P) (hν : 0 < ν) (hs : 0 < s) (q : ℝ) :
     Integrable (fun ω ↦ X ω ^ q) P ↔ -1 < q ∧ q < ν := by
-  rw [← integrable_rpow_halfStudentTMeasure_iff hν hs, ← hX.map_eq,
+  rw [← TauCeti.Probability.integrable_rpow_halfStudentTMeasure_iff hν hs, ← hX.map_eq,
     integrable_map_measure (by fun_prop) hX.aemeasurable]
   rfl
 
 /-- Real-power moments of a random variable with half-Student t law. -/
-theorem integral_rpow_of_hasLaw_halfStudentTMeasure
+theorem integral_rpow_halfStudentTMeasure
     (hX : HasLaw X (halfStudentTMeasure ν s) P) (hν : 0 < ν) (hs : 0 < s)
     (hq₀ : -1 < q) (hqν : q < ν) :
     ∫ ω, X ω ^ q ∂P =
       s ^ q * ν ^ (q / 2) * Real.Gamma ((q + 1) / 2) * Real.Gamma ((ν - q) / 2) /
         (√π * Real.Gamma (ν / 2)) := by
-  rw [← integral_rpow_halfStudentTMeasure hν hs hq₀ hqν, ← hX.map_eq,
+  rw [← TauCeti.Probability.integral_rpow_halfStudentTMeasure hν hs hq₀ hqν, ← hX.map_eq,
     integral_map hX.aemeasurable (by fun_prop)]
 
 /-- The expectation of a half-Student t random variable with finite first moment. -/
-theorem integral_of_hasLaw_halfStudentTMeasure
+theorem integral_halfStudentTMeasure
     (hX : HasLaw X (halfStudentTMeasure ν s) P) (hν : 1 < ν) (hs : 0 < s) :
     ∫ ω, X ω ∂P =
       s * √ν * Real.Gamma ((ν - 1) / 2) / (√π * Real.Gamma (ν / 2)) := by
   rw [hX.integral_eq, integral_id_halfStudentTMeasure hν hs]
 
 /-- The variance of a half-Student t random variable with finite second moment. -/
-theorem variance_of_hasLaw_halfStudentTMeasure
+theorem variance_halfStudentTMeasure
     (hX : HasLaw X (halfStudentTMeasure ν s) P) (hν : 2 < ν) (hs : 0 < s) :
     variance X P = s ^ 2 *
       (ν / (ν - 2) - ν / π *
         (Real.Gamma ((ν - 1) / 2) / Real.Gamma (ν / 2)) ^ 2) := by
   rw [hX.variance_eq, variance_id_halfStudentTMeasure hν hs]
 
-end TauCeti.Probability
+end ProbabilityTheory.HasLaw
