@@ -257,6 +257,14 @@ noncomputable def abelian (F : A ⥤ B) [F.Additive] [PreservesFiniteLimits F]
   isConflationExact := ExactStructure.isConflationExact_abelian F
   commShift := σ
 
+/-- The shift-commutation isomorphism of the graded conflation-exact functor induced by an exact
+functor between abelian categories is the chosen one. -/
+@[simp]
+theorem abelian_commShift (F : A ⥤ B) [F.Additive] [PreservesFiniteLimits F]
+    [PreservesFiniteColimits F] (σ : e.functor ⋙ F ≅ F ⋙ e'.functor) :
+    (abelian F σ).commShift = σ :=
+  (rfl)
+
 end Abelian
 
 end GradedConflationExact

@@ -34,7 +34,8 @@ are bijective
 
 At the level of graded Grothendieck groups, if `F` carries the extension-closed, shift-stable
 properties `P` and `Q` of `C` into such properties `P'` and `Q'` of `D`, its restrictions induce
-`ℤ[q,q⁻¹]`-linear maps of graded `K₀`, and these intertwine the two q-Euler forms
+`ℤ[q,q⁻¹]`-linear maps of graded `K₀`. If moreover `F` is bijective on the bigraded `Ext` groups
+of every pair of objects in `P × Q`, these maps intertwine the two q-Euler forms
 (`TauCeti.gradedExtEulerSesquilinear_map_map`). This is the graded counterpart of
 `TauCeti.extEulerPairing_map_map`.
 
@@ -54,7 +55,8 @@ objects it is Mathlib's `CategoryTheory.Functor.mapExt_bijective_of_preservesPro
 * `TauCeti.gradedExtEuler_map_equivalence`: the same for a shift-compatible equivalence, with no
   further hypothesis.
 * `TauCeti.gradedExtEulerSesquilinear_map_map`: the maps of graded `K₀` induced by a graded
-  exact functor intertwine the q-Euler forms.
+  exact functor which is bijective on the bigraded `Ext` groups of every pair in `P × Q`
+  intertwine the q-Euler forms.
 
 ## References
 
