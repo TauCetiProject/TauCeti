@@ -18,7 +18,7 @@ only at zero.
 ## Main results
 
 * `normEDS_two_three_two_eq_intCast`: `normEDS (2 : R) 3 2 = Int.cast`.
-* `TauCeti.complEDS₂_two_three_two`: the 2-complement is constantly `2` over any
+* `complEDS₂_two_three_two_eq_two`: the 2-complement is constantly `2` over any
   commutative ring, extending Mathlib's integer-valued result.
 * `universalNormEDS_ne_zero`: the universal sequence vanishes only at `0`.
 
@@ -42,10 +42,10 @@ open MvPolynomial NormEDSParam
 /-- **The 2-complement of `normEDS 2 3 2` is the constant `2`, over any commutative ring**:
 the complement of `n` in `2n` for the integer-cast sequence. -/
 @[simp]
-theorem TauCeti.complEDS₂_two_three_two (R : Type*) [CommRing R] (n : ℤ) :
+theorem complEDS₂_two_three_two_eq_two (R : Type*) [CommRing R] (n : ℤ) :
     complEDS₂ (2 : R) 3 2 n = 2 := by
   have h := map_complEDS₂ (f := Int.castRingHom R) (b := (2 : ℤ)) (c := 3) (d := 2) n
-  rw [_root_.complEDS₂_two_three_two] at h
+  rw [complEDS₂_two_three_two] at h
   simpa using h.symm
 
 /-- **`normEDS 2 3 2` is the integer cast, over any commutative ring.** The identity on `ℤ`

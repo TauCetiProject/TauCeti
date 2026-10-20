@@ -65,7 +65,7 @@ and seventh transports `evalEval_ψc` and `evalEval_ω`, needed `ψc`, `two_mul_
 `map_ω` — the `ω` API this passage once recorded as not yet here. `DivisionPolynomial/Omega.lean`
 now supplies all four, on top of `reducedInvarNum_eq_reducedInvarDenom_mul`, so they are below:
 `evalEval_ψc` and `evalEval_ω` close the transport family, `polyEval_cusp_ψc` reads the
-complement off `TauCeti.complEDS₂_two_three_two`, and `polyEval_cusp_ω` divides the cusp
+complement off `complEDS₂_two_three_two_eq_two`, and `polyEval_cusp_ω` divides the cusp
 evaluation of `two_mul_ω` by two.
 
 ## Provenance
