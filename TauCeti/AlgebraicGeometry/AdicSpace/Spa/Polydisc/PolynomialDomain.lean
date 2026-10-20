@@ -111,7 +111,8 @@ private theorem mem_cell {Z : Finset K} {γ δ : K} {x : closedPolydisc 1 K} :
 private theorem isHoledDiscUnion_cell (Z : Finset K) (γ δ : K) :
     IsHoledDiscUnion (cell Z γ δ) := by
   rw [cell, ← Set.univ_inter (⋂ α ∈ Z, _)]
-  exact ((isHoledDiscUnion_univ.inter_biInter_hole Z (fun α ↦ α) (fun α ↦ γ - α)).inter_hole
+  exact ((isHoledDiscUnion_univ.inter_biInter_setOf_vle Z (fun α ↦ α)
+    (fun α ↦ γ - α)).inter_setOf_vle
     γ (γ - δ)).inter_biInter_closedSubdisc _ (fun _ ↦ γ) (fun α ↦ γ - α)
 
 /-- **The cells cover the closed disc**: take `γ ∈ Z` minimising `α ↦ x(T - α)`, then `δ ∈ Z`
@@ -273,7 +274,7 @@ private theorem isHoledDiscUnion_cell_inter [IsAlgClosed K] {Z : Finset K} {f g 
   rcases lt_trichotomy m n with hmn | hmn | hmn
   · -- `m < n`: the inequality says `x(ρ) ≤ x(T - γ)` for `ρ ^ (n - m) = c / e`
     obtain ⟨ρ, hρ⟩ := IsAlgClosed.exists_pow_nat_eq (c / e) (Nat.sub_pos_of_lt hmn)
-    refine key _ (hcell.inter_hole γ ρ) fun x hx ↦ ?_
+    refine key _ (hcell.inter_setOf_vle γ ρ) fun x hx ↦ ?_
     rw [Set.mem_ofPred_eq, ← valuation_le_iff]
     by_cases h0 : x.1.valuation (T - C γ) = 0
     · -- here `m = 0` by coprimality, and `x(c) = 0 ↔ x(ρ) = 0`

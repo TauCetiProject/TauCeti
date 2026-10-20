@@ -174,7 +174,7 @@ theorem IsHoledDiscUnion.union {S S' : Set (closedPolydisc 1 K)} (hS : IsHoledDi
 
 /-- **Cutting out a hole** from a finite union of holed discs gives a finite union of holed discs:
 add the hole to each of them. -/
-theorem IsHoledDiscUnion.inter_hole {S : Set (closedPolydisc 1 K)}
+theorem IsHoledDiscUnion.inter_setOf_vle {S : Set (closedPolydisc 1 K)}
     (hS : IsHoledDiscUnion S) (b d : K) :
     IsHoledDiscUnion (S ∩ {v | v.1.toValuativeRel.vle (C d) (T - C b)}) := by
   classical
@@ -185,7 +185,7 @@ theorem IsHoledDiscUnion.inter_hole {S : Set (closedPolydisc 1 K)}
 
 /-- Cutting out finitely many holes from a finite union of holed discs gives a finite union of
 holed discs. -/
-theorem IsHoledDiscUnion.inter_biInter_hole {ι : Type*} {S : Set (closedPolydisc 1 K)}
+theorem IsHoledDiscUnion.inter_biInter_setOf_vle {ι : Type*} {S : Set (closedPolydisc 1 K)}
     (hS : IsHoledDiscUnion S) (s : Finset ι) (b d : ι → K) :
     IsHoledDiscUnion (S ∩ ⋂ i ∈ s, {v | v.1.toValuativeRel.vle (C (d i)) (T - C (b i))}) := by
   classical
@@ -193,7 +193,7 @@ theorem IsHoledDiscUnion.inter_biInter_hole {ι : Type*} {S : Set (closedPolydis
   | empty => simpa using hS
   | insert i s _ ih =>
     rw [Finset.set_biInter_insert, ← Set.inter_assoc, Set.inter_right_comm]
-    exact ih.inter_hole (b i) (d i)
+    exact ih.inter_setOf_vle (b i) (d i)
 
 /-- A hole whose radius parameter is a unit `d` is the basic open `{v : v(d) ≤ v(T - b) ≠ 0}`: the
 inequality `v(d) ≤ v(T - b)` already forces `v(T - b) ≠ 0`. -/
@@ -307,7 +307,7 @@ theorem IsHoledDiscUnion.inter {S S' : Set (closedPolydisc 1 K)} (hS : IsHoledDi
     ext v
     simp [and_assoc]
   rw [h]
-  exact (hS.inter_closedSubdisc p.1 p.2.1).inter_biInter_hole p.2.2 Prod.fst Prod.snd
+  exact (hS.inter_closedSubdisc p.1 p.2.1).inter_biInter_setOf_vle p.2.2 Prod.fst Prod.snd
 
 /-- A finite intersection of finite unions of holed discs is a finite union of holed discs. -/
 theorem isHoledDiscUnion_biInter {ι : Type*} (s : Finset ι)
