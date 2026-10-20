@@ -56,21 +56,20 @@ theorem koszulPairRight_apply (x y : R) (p : M × M) :
 theorem range_koszulPairRight_eq_span (x y : R) :
     LinearMap.range (koszulPairRight (M := R) x y) =
       Ideal.span ({x, y} : Set R) := by
-  ext z
-  constructor
-  · rintro ⟨⟨a, b⟩, rfl⟩
-    rw [Ideal.mem_span_pair]
-    refine ⟨a, b, ?_⟩
-    simp only [koszulPairRight_apply, smul_eq_mul]
-    ring
-  · intro hz
-    rw [Ideal.mem_span_pair] at hz
-    obtain ⟨a, b, hab⟩ := hz
-    refine ⟨(a, b), ?_⟩
-    simp only [koszulPairRight_apply, smul_eq_mul]
-    calc
-      x * a + y * b = a * x + b * y := by ring
-      _ = z := hab
+  have hlsmul (z : R) :
+      LinearMap.lsmul R R z = LinearMap.toSpanSingleton R R z := by
+    apply LinearMap.ext
+    intro a
+    simp only [LinearMap.lsmul_apply, LinearMap.toSpanSingleton_apply, smul_eq_mul, mul_comm]
+  calc
+    LinearMap.range (koszulPairRight (M := R) x y) =
+        LinearMap.range (LinearMap.lsmul R R x) ⊔
+          LinearMap.range (LinearMap.lsmul R R y) :=
+      LinearMap.range_coprod _ _
+    _ = Ideal.span {x} ⊔ Ideal.span {y} := by
+      rw [hlsmul x, hlsmul y, LinearMap.range_toSpanSingleton,
+        LinearMap.range_toSpanSingleton]
+    _ = Ideal.span ({x, y} : Set R) := (Ideal.span_insert x {y}).symm
 
 end Right
 
