@@ -77,8 +77,9 @@ theorem lipschitzGroupBaseChange_inv_coe (x : lipschitzGroup Q) :
 /-- Extension of scalars maps the Clifford unit represented by a vector `v` to the unit
 represented by `1 ⊗ₜ v`. -/
 @[simp]
-theorem ofBaseChangeAux_unitι (v : M) [Invertible (Q v)]
-    [Invertible (Q.baseChange A (1 ⊗ₜ v))] :
+theorem ofBaseChangeAux_unitι (v : M) [Invertible (Q v)] :
+    let _ : Invertible (Q.baseChange A (1 ⊗ₜ v)) :=
+      (Invertible.map (algebraMap R A) (Q v)).copy _ (by simp [Algebra.smul_def])
     Units.map (ofBaseChangeAux A Q) (unitι Q v) = unitι (Q.baseChange A) (1 ⊗ₜ v) := by
   ext
   simp
@@ -86,8 +87,9 @@ theorem ofBaseChangeAux_unitι (v : M) [Invertible (Q v)]
 /-- The Lipschitz-group homomorphism induced by extension of scalars preserves the distinguished
 vector units. -/
 @[simp]
-theorem lipschitzGroupBaseChange_unitι (v : M) [Invertible (Q v)]
-    [Invertible (Q.baseChange A (1 ⊗ₜ v))] :
+theorem lipschitzGroupBaseChange_unitι (v : M) [Invertible (Q v)] :
+    let _ : Invertible (Q.baseChange A (1 ⊗ₜ v)) :=
+      (Invertible.map (algebraMap R A) (Q v)).copy _ (by simp [Algebra.smul_def])
     lipschitzGroupBaseChange (A := A) Q ⟨unitι Q v, unitι_mem_lipschitzGroup v⟩ =
       ⟨unitι (Q.baseChange A) (1 ⊗ₜ v), unitι_mem_lipschitzGroup _⟩ := by
   ext
