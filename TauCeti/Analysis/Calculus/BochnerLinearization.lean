@@ -134,6 +134,12 @@ theorem bochnerAverage_apply_of_forall_smul_eq {x : X} (hx : ∀ g : G, g • x 
   congr 1
   exact Fintype.sum_equiv (Equiv.inv G) _ _ fun g => by simp [ContRepresentation.toMonoidHom_apply]
 
+/-- The Bochner average along a map `f : Y → X`, as a function of the point of `Y`. -/
+theorem bochnerAverage_comp_eq {Y : Type*} (f : Y → X) :
+    bochnerAverage ρ c ∘ f = fun w => ⅟(Fintype.card G : 𝕜) • ∑ g : G, ρ g⁻¹ (c (g • f w)) := by
+  funext w
+  rw [Function.comp_apply, bochnerAverage_def]
+
 section Regularity
 
 variable {Y : Type*} [TopologicalSpace Y] [ContinuousConstSMul 𝕜 F] {f : Y → X}
@@ -142,10 +148,9 @@ variable {Y : Type*} [TopologicalSpace Y] [ContinuousConstSMul 𝕜 F] {f : Y �
 theorem continuousOn_bochnerAverage_comp {s : Set Y}
     (hc : ∀ g : G, ContinuousOn (fun w => c (g • f w)) s) :
     ContinuousOn (bochnerAverage ρ c ∘ f) s := by
-  convert (continuousOn_finsetSum Finset.univ fun g _ =>
-    (ρ g⁻¹).continuous.comp_continuousOn (hc g)).const_smul (⅟(Fintype.card G : 𝕜)) using 1
-  ext w
-  simp [bochnerAverage_def]
+  rw [bochnerAverage_comp_eq]
+  exact (continuousOn_finsetSum Finset.univ fun g _ =>
+    (ρ g⁻¹).continuous.comp_continuousOn (hc g)).const_smul _
 
 /-- The Bochner average along `f : Y → X` is continuous if each `w ↦ c (g • f w)` is. -/
 theorem continuous_bochnerAverage_comp (hc : ∀ g : G, Continuous fun w => c (g • f w)) :
@@ -170,10 +175,9 @@ theorem hasStrictFDerivAt_bochnerAverage_comp {D : G → E →L[𝕜] F}
     (hc : ∀ g : G, HasStrictFDerivAt (fun w => c (g • f w)) (D g) z) :
     HasStrictFDerivAt (bochnerAverage ρ c ∘ f)
       (⅟(Fintype.card G : 𝕜) • ∑ g : G, (ρ g⁻¹).comp (D g)) z := by
-  convert (HasStrictFDerivAt.sum fun g (_ : g ∈ Finset.univ) =>
-    (ρ g⁻¹).hasStrictFDerivAt.comp z (hc g)).const_smul (⅟(Fintype.card G : 𝕜)) using 1
-  ext w
-  simp only [Function.comp_apply, bochnerAverage_def, Pi.smul_apply, Finset.sum_apply]
+  rw [bochnerAverage_comp_eq]
+  exact (HasStrictFDerivAt.fun_sum fun g (_ : g ∈ Finset.univ) =>
+    (ρ g⁻¹).hasStrictFDerivAt.comp z (hc g)).fun_const_smul _
 
 /-- The derivative of the Bochner average along a map `f : E → X`, given the derivatives `D g` of
 the maps `w ↦ c (g • f w)`. -/
@@ -181,10 +185,9 @@ theorem hasFDerivAt_bochnerAverage_comp {D : G → E →L[𝕜] F}
     (hc : ∀ g : G, HasFDerivAt (fun w => c (g • f w)) (D g) z) :
     HasFDerivAt (bochnerAverage ρ c ∘ f)
       (⅟(Fintype.card G : 𝕜) • ∑ g : G, (ρ g⁻¹).comp (D g)) z := by
-  convert (HasFDerivAt.sum fun g (_ : g ∈ Finset.univ) =>
-    (ρ g⁻¹).hasFDerivAt.comp z (hc g)).const_smul (⅟(Fintype.card G : 𝕜)) using 1
-  ext w
-  simp only [Function.comp_apply, bochnerAverage_def, Pi.smul_apply, Finset.sum_apply]
+  rw [bochnerAverage_comp_eq]
+  exact (HasFDerivAt.fun_sum fun g (_ : g ∈ Finset.univ) =>
+    (ρ g⁻¹).hasFDerivAt.comp z (hc g)).fun_const_smul _
 
 /-- Averaging the intertwined linear maps `ρ g ∘ D₀` against `ρ g⁻¹` returns `D₀`. -/
 private theorem average_comp_intertwining (D₀ : E →L[𝕜] F) :
@@ -212,19 +215,17 @@ variable {n : WithTop ℕ∞}
 /-- The Bochner average along `f : E → X` is `C^n` at `z` if each `w ↦ c (g • f w)` is. -/
 theorem contDiffAt_bochnerAverage_comp (hc : ∀ g : G, ContDiffAt 𝕜 n (fun w => c (g • f w)) z) :
     ContDiffAt 𝕜 n (bochnerAverage ρ c ∘ f) z := by
-  convert (ContDiffAt.sum fun g (_ : g ∈ Finset.univ) =>
-    (ρ g⁻¹).contDiff.contDiffAt.comp z (hc g)).const_smul (⅟(Fintype.card G : 𝕜)) using 1
-  ext w
-  simp [bochnerAverage_def]
+  rw [bochnerAverage_comp_eq]
+  exact (ContDiffAt.sum fun g (_ : g ∈ Finset.univ) =>
+    (ρ g⁻¹).contDiff.contDiffAt.comp z (hc g)).const_smul _
 
 /-- The Bochner average along `f : E → X` is `C^n` on `s` if each `w ↦ c (g • f w)` is. -/
 theorem contDiffOn_bochnerAverage_comp {s : Set E}
     (hc : ∀ g : G, ContDiffOn 𝕜 n (fun w => c (g • f w)) s) :
     ContDiffOn 𝕜 n (bochnerAverage ρ c ∘ f) s := by
-  convert (ContDiffOn.sum fun g (_ : g ∈ Finset.univ) =>
-    (ρ g⁻¹).contDiff.comp_contDiffOn (hc g)).const_smul (⅟(Fintype.card G : 𝕜)) using 1
-  ext w
-  simp [bochnerAverage_def]
+  rw [bochnerAverage_comp_eq]
+  exact (ContDiffOn.sum fun g (_ : g ∈ Finset.univ) =>
+    (ρ g⁻¹).contDiff.comp_contDiffOn (hc g)).const_smul _
 
 end Deriv
 
