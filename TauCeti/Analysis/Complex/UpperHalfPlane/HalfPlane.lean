@@ -393,11 +393,13 @@ theorem sideForm_mk_ofReal (A : SL(2, ℝ)) (x : ℝ) :
   ring
 
 /-- The side form of the imaginary axis is the real part. -/
+@[simp]
 theorem sideForm_one (z : ℂ) : sideForm 1 z = z.re := by
   rw [← QuotientGroup.mk_one, sideForm_mk]
   simp
 
 /-- The side form of the reversed imaginary axis is minus the real part. -/
+@[simp]
 theorem sideForm_pslS (z : ℂ) : sideForm pslS z = -z.re := by
   rw [pslS_def, psl2zToPSL2R_mk, sl2zToPSL2R_apply, sideForm_mk]
   simp [ModularGroup.coe_S]
