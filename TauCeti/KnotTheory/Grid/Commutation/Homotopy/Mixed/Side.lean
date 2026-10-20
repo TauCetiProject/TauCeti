@@ -88,17 +88,6 @@ theorem pentagonPairDecompositions_sdiff_sameSidePentagonPairs (x z : GridState 
   simp only [Finset.mem_sdiff, mem_sameSidePentagonPairs, mem_mixedSidePentagonPairs]
   tauto
 
-/-- The replaced grid line is a common side of the two rectangles of a pentagon pair: the
-terminal side of a terminal-side pentagon and the initial side of an initial-side one. -/
-theorem finRotate_mem_commonSideColumns_of_pentagonPair {x z : GridState n}
-    (D : GridPentagonPairDecomposition a C.turnRow C.reverse.column C.reverse.turnRow x z) :
-    b ∈ D.toRectangleDecomposition.commonSideColumns := by
-  rcases D with ⟨m, P | P, Q | Q⟩
-  · simp [P.right_eq, Q.right_eq]
-  · simp [P.right_eq, Q.left_eq]
-  · simp [P.left_eq, Q.right_eq]
-  · simp [P.left_eq, Q.left_eq]
-
 /-! ### Matching with unpaired hexagon composites -/
 
 private theorem existsUnique_mixedSidePartner (R : Type*) [CommSemiring R]
