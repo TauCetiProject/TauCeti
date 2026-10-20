@@ -154,9 +154,8 @@ theorem equivExterior_basis {I : Type w} [LinearOrder I] (b : Basis I R M) (s : 
 @[simp]
 theorem basis_empty {I : Type w} [LinearOrder I] (b : Basis I R M) : basis Q b ∅ = 1 := by
   apply (equivExterior Q).injective
-  rw [equivExterior_basis, Module.Basis.exteriorAlgebra_eq_prod_map_sort]
-  rw [← map_one (algebraMap R (CliffordAlgebra Q)), equivExterior_algebraMap, map_one]
-  simp
+  rw [equivExterior_basis, TauCeti.ExteriorAlgebra.basis_empty,
+    ← map_one (algebraMap R (CliffordAlgebra Q)), equivExterior_algebraMap, map_one]
 
 /-- The member of `CliffordAlgebra.basis Q b` at `{i}` is the generator `ι Q (b i)`. -/
 @[simp]

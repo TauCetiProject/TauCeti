@@ -327,16 +327,11 @@ end Table
 
 /-! ### The even half and its monomial basis -/
 
-private theorem basis_empty_eq_one : b.ExteriorAlgebra ∅ = 1 := by
-  rw [ExteriorAlgebra.basis_apply]
-  simp only [ExteriorAlgebra.ιMulti_family]
-  exact ExteriorAlgebra.ιMulti_zero_apply _
-
 private theorem evenMonomial_eq :
     b.spinSixEvenMonomial = b.ExteriorAlgebra ∘ ![∅, {0, 1}, {0, 2}, {1, 2}] := by
   ext j
   fin_cases j
-  · simp [Module.Basis.spinSixEvenMonomial, basis_empty_eq_one]
+  · simp [Module.Basis.spinSixEvenMonomial]
   · simp [Module.Basis.spinSixEvenMonomial,
       ExteriorAlgebra.basis_pair b (show (0 : Fin 3) < 1 by decide)]
   · simp [Module.Basis.spinSixEvenMonomial,
