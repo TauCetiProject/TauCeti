@@ -58,7 +58,7 @@ for a negative-gradient flow on a vector space. The intersection is read in the 
 * `TauCeti.IsAdaptedPseudoGradient.manifoldMorseIndex_lt_of_mem_unstableSet_inter_stableSet`:
   along a transverse trajectory joining distinct critical points, the Morse index drops strictly.
 * `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale`: the Morse–Smale condition, with
-  `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.exists_isManifold_unstableSet_inter_stableSet`:
+  `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.exists_unstableSet_inter_stableSet_isManifold`:
   the space of trajectories from `a` to `b` is a smooth manifold of dimension `ind a - ind b`.
 
 ## References
@@ -238,7 +238,7 @@ omit hX in
 runs from a critical point `a` to a critical point `b`, then `W^u(a) ∩ W^s(b)` carries a smooth
 manifold structure, modelled on a subspace of dimension `ind a - ind b`, with its subspace topology
 and a smooth inclusion into `M`. -/
-theorem IsMorseSmale.exists_isManifold_unstableSet_inter_stableSet
+theorem IsMorseSmale.exists_unstableSet_inter_stableSet_isManifold
     {hX : IsAdaptedPseudoGradient f X} (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
     (ha : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f a = 0) (hb : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f b = 0)
     (hne : (hX.flow.unstableSet a ∩ hX.flow.stableSet b).Nonempty) :
