@@ -443,7 +443,8 @@ theorem jacobsonRadicalIdeal_sq_hom (X Y : C) :
 theorem comp_mem_jacobsonRadicalSq {X Z Y : C} {a : X ⟶ Z} {b : Z ⟶ Y}
     (ha : a ∈ jacobsonRadical X Z) (hb : b ∈ jacobsonRadical Z Y) :
     a ≫ b ∈ jacobsonRadicalSq X Y := by
-  rw [jacobsonRadicalSq, pow_two]
+  rw [← jacobsonRadicalIdeal_sq_hom, pow_two]
+  rw [← jacobsonRadicalIdeal_hom] at ha hb
   exact MorphismIdeal.comp_mem_mul ha hb
 
 /-- **The universal property of the square of the radical**: an additive subgroup contains
@@ -456,8 +457,8 @@ radical ideal. It is the `simp` normal form of such a containment. -/
 theorem jacobsonRadicalSq_le_iff {X Y : C} {K : AddSubgroup (X ⟶ Y)} :
     jacobsonRadicalSq X Y ≤ K ↔ ∀ (Z : C) (a : X ⟶ Z) (b : Z ⟶ Y),
       a ∈ jacobsonRadical X Z → b ∈ jacobsonRadical Z Y → a ≫ b ∈ K := by
-  rw [jacobsonRadicalSq, pow_two]
-  exact MorphismIdeal.mul_hom_le_iff
+  rw [← jacobsonRadicalIdeal_sq_hom, pow_two, MorphismIdeal.mul_hom_le_iff]
+  simp only [jacobsonRadicalIdeal_hom]
 
 /-- **The square of the radical is contained in the radical**, the radical being closed under
 composition. -/
@@ -467,13 +468,15 @@ theorem jacobsonRadicalSq_le_jacobsonRadical (X Y : C) :
 
 /-- **Precomposition preserves the square of the radical.** -/
 theorem comp_mem_jacobsonRadicalSq_left {W X Y : C} (h : W ⟶ X) {f : X ⟶ Y}
-    (hf : f ∈ jacobsonRadicalSq X Y) : h ≫ f ∈ jacobsonRadicalSq W Y :=
-  (jacobsonRadicalIdeal C ^ 2).comp_mem_left h hf
+    (hf : f ∈ jacobsonRadicalSq X Y) : h ≫ f ∈ jacobsonRadicalSq W Y := by
+  rw [← jacobsonRadicalIdeal_sq_hom] at hf ⊢
+  exact (jacobsonRadicalIdeal C ^ 2).comp_mem_left h hf
 
 /-- **Postcomposition preserves the square of the radical.** -/
 theorem comp_mem_jacobsonRadicalSq_right {X Y Z : C} {f : X ⟶ Y}
-    (hf : f ∈ jacobsonRadicalSq X Y) (h : Y ⟶ Z) : f ≫ h ∈ jacobsonRadicalSq X Z :=
-  (jacobsonRadicalIdeal C ^ 2).comp_mem_right h hf
+    (hf : f ∈ jacobsonRadicalSq X Y) (h : Y ⟶ Z) : f ≫ h ∈ jacobsonRadicalSq X Z := by
+  rw [← jacobsonRadicalIdeal_sq_hom] at hf ⊢
+  exact (jacobsonRadicalIdeal C ^ 2).comp_mem_right h hf
 
 /-! ### Irreducible morphisms and the square of the radical -/
 
@@ -488,9 +491,8 @@ theorem mem_jacobsonRadicalSq_iff_exists_comp [Limits.HasBinaryBiproducts C] {X 
     {f : X ⟶ Y} :
     f ∈ jacobsonRadicalSq X Y ↔ ∃ (Z : C) (a : X ⟶ Z) (b : Z ⟶ Y),
       a ∈ jacobsonRadical X Z ∧ b ∈ jacobsonRadical Z Y ∧ f = a ≫ b := by
-  rw [jacobsonRadicalSq, pow_two, MorphismIdeal.mem_mul_iff_exists_comp]
-  exact ⟨fun ⟨Z, a, b, ha, hb, e⟩ ↦ ⟨Z, a, b, ha, hb, e.symm⟩,
-    fun ⟨Z, a, b, ha, hb, e⟩ ↦ ⟨Z, a, b, ha, hb, e.symm⟩⟩
+  rw [← jacobsonRadicalIdeal_sq_hom, pow_two, MorphismIdeal.mem_mul_iff_exists_comp]
+  simp only [jacobsonRadicalIdeal_hom, eq_comm]
 
 /-- **In a category with binary biproducts, between objects with local endomorphism rings the
 irreducible morphisms are exactly the morphisms in the radical but not in its square** — the

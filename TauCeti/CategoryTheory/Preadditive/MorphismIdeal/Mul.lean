@@ -95,6 +95,7 @@ theorem comp_mem_mul {I J : MorphismIdeal C} {X Z Y : C} {g : X ⟶ Z} {f : Z �
 
 /-- The universal property of `(I * J)(X, Y)`: an additive subgroup of `X ⟶ Y` contains it
 exactly when it contains every composite of a member of `J` followed by a member of `I`. -/
+@[simp]
 theorem mul_hom_le_iff {I J : MorphismIdeal C} {X Y : C} {K : AddSubgroup (X ⟶ Y)} :
     (I * J).hom X Y ≤ K ↔ ∀ (Z : C) (g : X ⟶ Z) (f : Z ⟶ Y),
       g ∈ J.hom X Z → f ∈ I.hom Z Y → g ≫ f ∈ K := by
@@ -105,21 +106,37 @@ theorem mul_hom_le_iff {I J : MorphismIdeal C} {X Y : C} {K : AddSubgroup (X ⟶
 
 /-- The product is the smallest ideal containing the composites of a member of `J` followed by a
 member of `I`. -/
+@[simp]
 theorem mul_le_iff {I J K : MorphismIdeal C} :
     I * J ≤ K ↔ ∀ ⦃X Z Y : C⦄ (g : X ⟶ Z) (f : Z ⟶ Y),
       g ∈ J.hom X Z → f ∈ I.hom Z Y → g ≫ f ∈ K.hom X Y := by
   refine ⟨fun h X Z Y g f hg hf ↦ le_def.mp h _ (comp_mem_mul hg hf), fun h ↦ ?_⟩
   exact le_def.mpr fun X Y e he ↦ mul_hom_le_iff.mpr (fun Z g f hg hf ↦ h g f hg hf) he
 
+/-- The product is contained in its left factor: a composite `g ≫ f` with `f` in `I` lies in `I`,
+since `I` is closed under precomposition. In particular the powers of an ideal lie in it. -/
 theorem mul_le_left (I J : MorphismIdeal C) : I * J ≤ I :=
   mul_le_iff.mpr fun _ _ _ g _ _ hf ↦ I.comp_mem_left g hf
 
+/-- The product is contained in its right factor: a composite `g ≫ f` with `g` in `J` lies in
+`J`, since `J` is closed under postcomposition. -/
 theorem mul_le_right (I J : MorphismIdeal C) : I * J ≤ J :=
   mul_le_iff.mpr fun _ _ _ _ f hg _ ↦ J.comp_mem_right f hg
 
+/-- The product is monotone in both factors. -/
 theorem mul_le_mul {I I' J J' : MorphismIdeal C} (hI : I ≤ I') (hJ : J ≤ J') :
     I * J ≤ I' * J' :=
   mul_le_iff.mpr fun _ _ _ _ _ hg hf ↦ comp_mem_mul (le_def.mp hJ _ hg) (le_def.mp hI _ hf)
+
+/-- The zero ideal is absorbing on the left. -/
+@[simp]
+theorem bot_mul (I : MorphismIdeal C) : ⊥ * I = ⊥ :=
+  le_antisymm (mul_le_left _ _) bot_le
+
+/-- The zero ideal is absorbing on the right. -/
+@[simp]
+theorem mul_bot (I : MorphismIdeal C) : I * ⊥ = ⊥ :=
+  le_antisymm (mul_le_right _ _) bot_le
 
 /-- The ideal of all morphisms is a left unit for the product. -/
 @[simp]
