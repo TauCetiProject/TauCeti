@@ -22,6 +22,10 @@ Realization depends only on the free valuation on this set. For a countable bran
 the support is countable, and for an embedded first-order formula it is exactly Mathlib's
 `BoundedFormula.freeVarFinset`. Coded connectives collect the support of their original branches,
 and carrier transport and bound-variable relabelling preserve support.
+
+Use the support API with the `TauCeti.BoundedFormulaInf` qualification or after
+`open TauCeti.BoundedFormulaInf`, including the finitary embedding laws
+`freeVarSupport_toInf` and `finite_freeVarSupport_toInf`.
 -/
 
 public section

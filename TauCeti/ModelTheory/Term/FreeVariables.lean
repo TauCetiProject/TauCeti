@@ -12,6 +12,9 @@ public import Mathlib.ModelTheory.Semantics
 
 Term realization depends only on the valuation of the variables in `Term.varFinsetLeft`
 when the right-variable valuation is fixed. Relabelling right variables preserves this support.
+
+The public lemmas are `TauCeti.realize_congr_varFinsetLeft` and
+`TauCeti.varFinsetLeft_relabel`; use these qualified names or `open TauCeti` to apply them.
 -/
 
 public section
