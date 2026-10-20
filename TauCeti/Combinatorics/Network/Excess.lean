@@ -12,6 +12,8 @@ public import Mathlib.Data.Fintype.BigOperators
 public import Mathlib.Tactic.Abel
 public import TauCeti.Combinatorics.Network.Basic
 
+import Mathlib.Algebra.Group.Submonoid.BigOperators
+
 /-!
 # Arrow assignments and their excess
 
@@ -156,6 +158,13 @@ theorem map_arrowSum {L F : Type*} [AddCommMonoid L] [FunLike F K L] [AddMonoidH
     φ (arrowSum f S T) = arrowSum (fun ⦃a b⦄ (e : Q a b) ↦ φ (f e)) S T := by
   simp [arrowSum_def, map_sum]
 
+/-- Arrow sums preserve values in an additive submonoid: if `f` takes values in `H`, so does its
+total value on the arrows from `S` to `T`. -/
+theorem arrowSum_mem {M : Type*} [SetLike M K] [AddSubmonoidClass M K] {H : M}
+    {f : Assignment Q K} (hf : ∀ ⦃v w⦄ (e : Q v w), f e ∈ H) (S T : Finset V) :
+    arrowSum f S T ∈ H :=
+  sum_mem fun _ _ ↦ sum_mem fun _ _ ↦ sum_mem fun e _ ↦ hf e
+
 /-- Summing over the arrows between two vertex sets is monotone in the assignment. -/
 @[gcongr]
 theorem arrowSum_mono [PartialOrder K] [IsOrderedAddMonoid K] {f g : Assignment Q K} (h : f ≤ g)
@@ -260,6 +269,12 @@ theorem excessAt_neg (f : Assignment Q K) (v : V) : excessAt (-f) v = -excessAt 
 theorem excessAt_sub (f g : Assignment Q K) (v : V) :
     excessAt (f - g) v = excessAt f v - excessAt g v :=
   congrFun (map_sub (excessHom Q K) f g) v
+
+/-- Excess preserves values in an additive subgroup: if `f` takes values in `H`, so does its
+excess at every vertex. -/
+theorem excessAt_mem {M : Type*} [SetLike M K] [AddSubgroupClass M K] {H : M}
+    {f : Assignment Q K} (hf : ∀ ⦃v w⦄ (e : Q v w), f e ∈ H) (v : V) : excessAt f v ∈ H :=
+  sub_mem (sum_mem fun _ _ ↦ sum_mem fun e _ ↦ hf e) (sum_mem fun _ _ ↦ sum_mem fun e _ ↦ hf e)
 
 /-- **Excess on a vertex set.** The total excess of `f` on `S` is the value on arrows entering `S`
 from its complement minus the value on arrows leaving `S` for its complement; arrows with both ends

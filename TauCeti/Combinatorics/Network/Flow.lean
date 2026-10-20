@@ -34,6 +34,7 @@ flows is assembled.
 * `TauCeti.BoundedFlow.swap`: the same assignment as a bounded `t`–`s` assignment.
 * `TauCeti.BoundedFlow.update`: the residual update by a residual `s`–`t` assignment.
 * `TauCeti.Flow cap s t`: ordinary `s`–`t` flows for the capacities `cap`.
+* `TauCeti.Flow.zero`: the zero flow for nonnegative capacities.
 * `TauCeti.BoundedFlow.swapFlow`: terminal exchange, turning a capacity-feasible assignment of
   nonpositive value into an ordinary flow in the opposite direction.
 * `TauCeti.Flow.augment`: augmentation of a flow by a flow of its residual network.
@@ -119,6 +120,12 @@ def val (f : BoundedFlow lo hi s t) : K :=
 
 theorem val_def (f : BoundedFlow lo hi s t) : f.val = excessAt f.toFun t :=
   (rfl)
+
+/-- The value of a bounded `s`–`t` assignment lies in any additive subgroup containing its arrow
+values. -/
+theorem val_mem {M : Type*} [SetLike M K] [AddSubgroupClass M K] {H : M}
+    (f : BoundedFlow lo hi s t) (hf : ∀ ⦃x y⦄ (e : Q x y), f.toFun e ∈ H) : f.val ∈ H :=
+  excessAt_mem hf t
 
 /-- The excess at the source is minus the value. -/
 theorem excessAt_source (f : BoundedFlow lo hi s t) : excessAt f.toFun s = -f.val :=
@@ -250,6 +257,21 @@ theorem nonneg (f : Flow cap s t) {x y : V} (e : Q x y) : 0 ≤ f.toFun e :=
 
 theorem val_nonneg (f : Flow cap s t) : 0 ≤ f.val :=
   f.excessAt_sink_nonneg
+
+/-- The *zero flow* for nonnegative capacities, which carries nothing on every arrow. -/
+def zero (hcap : 0 ≤ cap) : Flow cap s t where
+  toFun := 0
+  mem_Icc := ⟨le_rfl, hcap⟩
+  conserve v _ _ := excessAt_zero v
+  excessAt_sink_nonneg := (excessAt_zero t).ge
+
+@[simp]
+theorem zero_toFun (hcap : 0 ≤ cap) : (zero hcap : Flow cap s t).toFun = 0 :=
+  (rfl)
+
+@[simp]
+theorem val_zero (hcap : 0 ≤ cap) : (zero hcap : Flow cap s t).val = 0 :=
+  excessAt_zero t
 
 /-- Ordinary `s`–`t` flows are the bounded `s`–`t` assignments with zero lower bounds and
 nonnegative value. -/
