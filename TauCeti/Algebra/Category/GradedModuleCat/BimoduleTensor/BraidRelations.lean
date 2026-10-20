@@ -47,6 +47,11 @@ image complexes are identified with a target family by the homotopy equivalences
 The two settings need not agree: the target is a second graded algebra, and `H` need not be an
 equivalence.
 
+The four field values of the transferred relations are the public declarations
+`transferInverseForward`, `transferInverseReverse`, `transferCommute` and `transferAdjacent`,
+and the four projection lemmas `transfer_inverseForward`, `transfer_inverseReverse`,
+`transfer_commute` and `transfer_braid` read those values off the transferred relations.
+
 ## Scope
 
 The principle is stated for a functor `H` of *bimodule categories*, applied to complexes
@@ -312,7 +317,9 @@ equivalences `a` and `a'`, then the target family satisfies the Khovanov-Seidel 
 the target setting. -/
 -- The body is not exposed: the four field values of the transferred relations are the
 -- public declarations `transferInverseForward`, `transferInverseReverse`, `transferCommute`
--- and `transferAdjacent`, which state them without unfolding this definition.
+-- and `transferAdjacent`, which state them without unfolding this definition; the four
+-- projection lemmas `transfer_inverseForward` and its three siblings read them off the
+-- transferred relations.
 def transfer {k : Type w} [CommRing k] {V : Type u} {G : SimpleGraph V}
     {A₁ : Type uA} [Ring A₁] [Algebra k A₁] {A₂ : Type uB} [Ring A₂] [Algebra k A₂]
     {Ξ₁ : InternalGrading k A₁} [GradedAlgebra Ξ₁.piece]
@@ -332,6 +339,89 @@ def transfer {k : Type w} [CommRing k] {V : Type u} {G : SimpleGraph V}
   inverseReverse i := transferInverseReverse k G Ξ₁ Ξ₂ H i η ε rel a a'
   commute i j hij hadj := transferCommute k G Ξ₁ Ξ₂ H i j hij hadj η rel a
   braid h := transferAdjacent k G Ξ₁ Ξ₂ H h η rel a
+
+-- The four field values of `transfer` are read off by the four projection lemmas below.
+-- Their proofs are written `(rfl)` and not `rfl`: a theorem whose proof is syntactically `rfl`
+-- is tagged `@[defeq]`, and the module system refuses to export a `@[defeq]` theorem whose proof
+-- needs the body of a definition that is not exposed.
+/-- The forward inverse relation of the transferred relations is the forward inverse transfer
+`transferInverseForward`. -/
+@[simp] theorem transfer_inverseForward {k : Type w} [CommRing k] {V : Type u}
+    {G : SimpleGraph V} {A₁ : Type uA} [Ring A₁] [Algebra k A₁] {A₂ : Type uB} [Ring A₂]
+    [Algebra k A₂] {Ξ₁ : InternalGrading k A₁} [GradedAlgebra Ξ₁.piece]
+    {Ξ₂ : InternalGrading k A₂} [GradedAlgebra Ξ₂.piece]
+    {H : GradedBimoduleCat k Ξ₁ ⥤ GradedBimoduleCat k Ξ₂} [H.Additive]
+    {B B' : V → HomologicalComplex (GradedBimoduleCat k Ξ₁) c}
+    {C C' : V → HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
+    (rel : KhovanovSeidelRelations k G Ξ₁ B B')
+    (η : GradedBimoduleMonoidalDatum k Ξ₁ Ξ₂ H)
+    (ε : HomotopyEquiv
+      ((H.mapHomologicalComplex c).obj (gradedBimoduleUnitComplex k Ξ₁))
+      (gradedBimoduleUnitComplex k Ξ₂))
+    (a : ∀ i, HomotopyEquiv ((H.mapHomologicalComplex c).obj (B i)) (C i))
+    (a' : ∀ i, HomotopyEquiv ((H.mapHomologicalComplex c).obj (B' i)) (C' i))
+    (i : V) :
+    (rel.transfer η ε a a').inverseForward i
+      = transferInverseForward k G Ξ₁ Ξ₂ H i η ε rel a a' := (rfl)
+
+/-- The reverse inverse relation of the transferred relations is the reverse inverse transfer
+`transferInverseReverse`. -/
+@[simp] theorem transfer_inverseReverse {k : Type w} [CommRing k] {V : Type u}
+    {G : SimpleGraph V} {A₁ : Type uA} [Ring A₁] [Algebra k A₁] {A₂ : Type uB} [Ring A₂]
+    [Algebra k A₂] {Ξ₁ : InternalGrading k A₁} [GradedAlgebra Ξ₁.piece]
+    {Ξ₂ : InternalGrading k A₂} [GradedAlgebra Ξ₂.piece]
+    {H : GradedBimoduleCat k Ξ₁ ⥤ GradedBimoduleCat k Ξ₂} [H.Additive]
+    {B B' : V → HomologicalComplex (GradedBimoduleCat k Ξ₁) c}
+    {C C' : V → HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
+    (rel : KhovanovSeidelRelations k G Ξ₁ B B')
+    (η : GradedBimoduleMonoidalDatum k Ξ₁ Ξ₂ H)
+    (ε : HomotopyEquiv
+      ((H.mapHomologicalComplex c).obj (gradedBimoduleUnitComplex k Ξ₁))
+      (gradedBimoduleUnitComplex k Ξ₂))
+    (a : ∀ i, HomotopyEquiv ((H.mapHomologicalComplex c).obj (B i)) (C i))
+    (a' : ∀ i, HomotopyEquiv ((H.mapHomologicalComplex c).obj (B' i)) (C' i))
+    (i : V) :
+    (rel.transfer η ε a a').inverseReverse i
+      = transferInverseReverse k G Ξ₁ Ξ₂ H i η ε rel a a' := (rfl)
+
+/-- The commutation relation of the transferred relations is the commutation transfer
+`transferCommute`. -/
+@[simp] theorem transfer_commute {k : Type w} [CommRing k] {V : Type u}
+    {G : SimpleGraph V} {A₁ : Type uA} [Ring A₁] [Algebra k A₁] {A₂ : Type uB} [Ring A₂]
+    [Algebra k A₂] {Ξ₁ : InternalGrading k A₁} [GradedAlgebra Ξ₁.piece]
+    {Ξ₂ : InternalGrading k A₂} [GradedAlgebra Ξ₂.piece]
+    {H : GradedBimoduleCat k Ξ₁ ⥤ GradedBimoduleCat k Ξ₂} [H.Additive]
+    {B B' : V → HomologicalComplex (GradedBimoduleCat k Ξ₁) c}
+    {C C' : V → HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
+    (rel : KhovanovSeidelRelations k G Ξ₁ B B')
+    (η : GradedBimoduleMonoidalDatum k Ξ₁ Ξ₂ H)
+    (ε : HomotopyEquiv
+      ((H.mapHomologicalComplex c).obj (gradedBimoduleUnitComplex k Ξ₁))
+      (gradedBimoduleUnitComplex k Ξ₂))
+    (a : ∀ i, HomotopyEquiv ((H.mapHomologicalComplex c).obj (B i)) (C i))
+    (a' : ∀ i, HomotopyEquiv ((H.mapHomologicalComplex c).obj (B' i)) (C' i))
+    (i j : V) (hij : i ≠ j) (hadj : ¬ G.Adj i j) :
+    (rel.transfer η ε a a').commute i j hij hadj
+      = transferCommute k G Ξ₁ Ξ₂ H i j hij hadj η rel a := (rfl)
+
+/-- The braid relation of the transferred relations is the adjacent transfer `transferAdjacent`. -/
+@[simp] theorem transfer_braid {k : Type w} [CommRing k] {V : Type u}
+    {G : SimpleGraph V} {A₁ : Type uA} [Ring A₁] [Algebra k A₁] {A₂ : Type uB} [Ring A₂]
+    [Algebra k A₂] {Ξ₁ : InternalGrading k A₁} [GradedAlgebra Ξ₁.piece]
+    {Ξ₂ : InternalGrading k A₂} [GradedAlgebra Ξ₂.piece]
+    {H : GradedBimoduleCat k Ξ₁ ⥤ GradedBimoduleCat k Ξ₂} [H.Additive]
+    {B B' : V → HomologicalComplex (GradedBimoduleCat k Ξ₁) c}
+    {C C' : V → HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
+    (rel : KhovanovSeidelRelations k G Ξ₁ B B')
+    (η : GradedBimoduleMonoidalDatum k Ξ₁ Ξ₂ H)
+    (ε : HomotopyEquiv
+      ((H.mapHomologicalComplex c).obj (gradedBimoduleUnitComplex k Ξ₁))
+      (gradedBimoduleUnitComplex k Ξ₂))
+    (a : ∀ i, HomotopyEquiv ((H.mapHomologicalComplex c).obj (B i)) (C i))
+    (a' : ∀ i, HomotopyEquiv ((H.mapHomologicalComplex c).obj (B' i)) (C' i))
+    {i j : V} (h : G.Adj j i) :
+    (rel.transfer η ε a a').braid h
+      = transferAdjacent k G Ξ₁ Ξ₂ H h η rel a := (rfl)
 
 end KhovanovSeidelRelations
 
