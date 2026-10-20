@@ -54,8 +54,12 @@ Plücker coordinate, equal to `1`, and a family of more than `#ι` vectors has n
   `exteriorPower.ιMulti R p x` in the exterior-power basis induced by `Pi.basisFun R ι`.
 * `TauCeti.plucker_sum_smul`: replacing the family by its product with a square matrix
   multiplies the Plücker coordinates by the determinant of that matrix.
+* `Matrix.gcd_plucker_row_mul_of_isUnit`: left multiplication by a square matrix of unit
+  determinant does not change the greatest common divisor of the maximal minors.
 * `TauCeti.det_mul_transpose_eq_sum_plucker_mul`: the Cauchy–Binet formula.
 * `Matrix.det_mul_transpose_eq_sum_plucker_sq`: its Gram-determinant form for a matrix.
+* `Matrix.det_mul_transpose_pos_iff`: over a linearly ordered field, the Gram determinant of a
+  matrix is positive exactly when its rows are linearly independent.
 * `TauCeti.det_mul_conjTranspose_eq_sum_plucker_mul_star`: its Hermitian form.
 * `TauCeti.plucker_ne_zero_iff`: over a field, the Plücker coordinates of a family are not all
   zero exactly when the family is linearly independent.
@@ -66,6 +70,9 @@ Plücker coordinate, equal to `1`, and a family of more than `#ι` vectors has n
   `ℤ^ι` are coprime.
 * `Matrix.gcd_plucker_row_eq_zero_iff`: the maximal minors of an integer matrix have greatest
   common divisor `0` exactly when its rows are linearly dependent over `ℚ`.
+* `Matrix.gcd_plucker_row_pos_iff`, `Matrix.det_mul_transpose_pos_iff_rat`: the greatest common
+  divisor of the maximal minors and the Gram determinant of an integer matrix are positive exactly
+  when its rows are linearly independent over `ℚ`.
 
 ## References
 
@@ -143,6 +150,27 @@ theorem plucker_sum_smul (A : Matrix (Fin p) (Fin p) R) (x : Fin p → ι → R)
   ext i j
   simp [Matrix.mul_apply]
 
+/-- The maximal minors of `B * A`, for a square matrix `B`, are those of `A` multiplied by
+`det B`. -/
+@[simp]
+theorem _root_.Matrix.plucker_row_mul (B : Matrix (Fin p) (Fin p) R) (A : Matrix (Fin p) ι R)
+    (s : powersetCard ι p) : plucker (B * A).row s = B.det * plucker A.row s := by
+  have h : (B * A).row = fun i ↦ ∑ k, B i k • A.row k := by
+    ext i j
+    simp [Matrix.mul_apply, Finset.sum_apply]
+  rw [h, plucker_sum_smul]
+
+/-- **Invariance of the minor gcd.** Multiplying a matrix on the left by a square matrix of unit
+determinant, for instance an element of `GL_p(ℤ)`, does not change the greatest common divisor of
+its maximal minors. -/
+theorem _root_.Matrix.gcd_plucker_row_mul_of_isUnit [Fintype ι] [NormalizedGCDMonoid R]
+    {B : Matrix (Fin p) (Fin p) R} (hB : IsUnit B.det) (A : Matrix (Fin p) ι R) :
+    Finset.univ.gcd (plucker (B * A).row) = Finset.univ.gcd (plucker A.row) := by
+  have h : plucker (B * A).row = fun s ↦ B.det * plucker A.row s := funext (B.plucker_row_mul A)
+  rw [h]
+  exact ((Finset.gcd_mul_left' _ _ _).trans (associated_unit_mul_left _ _ hB)).eq_of_normalized
+    Finset.normalize_gcd Finset.normalize_gcd
+
 /-- The Plücker coordinates of `x` are the coordinates of the exterior product of `x` in the basis
 of `⋀[R]^p (ι → R)` induced by the standard basis of `ι → R`. -/
 theorem plucker_eq_repr_ιMulti [Finite ι] (x : Fin p → ι → R) (s : powersetCard ι p) :
@@ -185,6 +213,12 @@ theorem _root_.Matrix.det_mul_transpose_eq_sum_plucker_sq [Fintype ι] (A : Matr
     (A * A.transpose).det = ∑ s, plucker A.row s ^ 2 := by
   simpa [sq, Matrix.row_eq_self] using det_mul_transpose_eq_sum_plucker_mul A.row A.row
 
+/-- Over a linearly ordered commutative ring, the Gram determinant `det (A Aᵀ)` is nonnegative. -/
+theorem _root_.Matrix.det_mul_transpose_nonneg [LinearOrder R] [IsOrderedRing R] [Fintype ι]
+    (A : Matrix (Fin p) ι R) : 0 ≤ (A * A.transpose).det := by
+  rw [A.det_mul_transpose_eq_sum_plucker_sq]
+  exact Finset.sum_nonneg fun s _ ↦ sq_nonneg _
+
 /-- **The Cauchy–Binet formula, Hermitian form.** Over a commutative star ring, the determinant
 of the Hermitian Gram matrix `∑ₖ x i k * star (x j k)` of a family is the sum of the products of
 its Plücker coordinates with their conjugates. -/
@@ -211,6 +245,16 @@ theorem plucker_ne_zero_iff [Finite ι] (x : Fin p → ι → K) :
     ext s
     exact plucker_eq_repr_ιMulti x s
   rw [h, Finsupp.coe_eq_zero, LinearEquiv.map_eq_zero_iff]
+
+/-- Over a linearly ordered field, the Gram determinant `det (A Aᵀ)` is positive exactly when the
+rows of `A` are linearly independent. -/
+theorem _root_.Matrix.det_mul_transpose_pos_iff [LinearOrder K] [IsStrictOrderedRing K]
+    [Fintype ι] (A : Matrix (Fin p) ι K) :
+    0 < (A * A.transpose).det ↔ LinearIndependent K A.row := by
+  rw [← plucker_ne_zero_iff, A.det_mul_transpose_nonneg.lt_iff_ne', Ne,
+    A.det_mul_transpose_eq_sum_plucker_sq,
+    Finset.sum_eq_zero_iff_of_nonneg fun s _ ↦ sq_nonneg _, not_iff_not]
+  simp [funext_iff]
 
 /-! ### Complementary minors -/
 
@@ -375,5 +419,28 @@ theorem _root_.Matrix.gcd_plucker_row_eq_zero_iff [Fintype ι] (A : Matrix (Fin 
   rw [Int.coe_castRingHom] at h
   rw [Finset.gcd_eq_zero_iff, ← plucker_ne_zero_iff, not_not, h, funext_iff]
   simp
+
+/-- The greatest common divisor of the maximal minors of an integer matrix is positive exactly
+when its rows are linearly independent over `ℚ`. -/
+theorem _root_.Matrix.gcd_plucker_row_pos_iff [Fintype ι] (A : Matrix (Fin p) ι ℤ) :
+    0 < Finset.univ.gcd (plucker A.row) ↔ LinearIndependent ℚ (A.map ((↑) : ℤ → ℚ)).row := by
+  have h0 : 0 ≤ Finset.univ.gcd (plucker A.row) := by
+    rw [← Finset.normalize_gcd, ← Int.abs_eq_normalize]
+    exact abs_nonneg _
+  rw [h0.lt_iff_ne', Ne, A.gcd_plucker_row_eq_zero_iff, not_not]
+
+/-- The Gram determinant `det (A Aᵀ)` of an integer matrix is positive exactly when its rows are
+linearly independent over `ℚ`. -/
+theorem _root_.Matrix.det_mul_transpose_pos_iff_rat [Fintype ι] (A : Matrix (Fin p) ι ℤ) :
+    0 < (A * A.transpose).det ↔ LinearIndependent ℚ (A.map ((↑) : ℤ → ℚ)).row := by
+  rw [← Matrix.det_mul_transpose_pos_iff, ← Int.cast_pos (R := ℚ), Int.cast_det,
+    ← Int.coe_castRingHom, Matrix.map_mul, Matrix.transpose_map, Int.coe_castRingHom]
+
+/-- The rows `(1, 2)` and `(2, 4)` have Gram determinant `0`, so they are linearly dependent
+over `ℚ`. -/
+example :
+    ¬LinearIndependent ℚ ((!![1, 2; 2, 4] : Matrix (Fin 2) (Fin 2) ℤ).map ((↑) : ℤ → ℚ)).row := by
+  rw [← Matrix.det_mul_transpose_pos_iff_rat]
+  decide
 
 end TauCeti

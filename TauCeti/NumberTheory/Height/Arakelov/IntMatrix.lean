@@ -30,6 +30,8 @@ replaced by any integer matrix with the same rational row space.
 * `Matrix.gcd_plucker_row_mul_subspaceHeight_span_range_row`: the identity for the row space.
 * `Matrix.gcd_plucker_row_mul_subspaceHeight_ker_mulVecLin`: the identity for the kernel.
 * `Matrix.covolume_intLattice_ker_mulVecLin`: the covolume of the lattice of integral solutions.
+* `Matrix.sqrt_det_div_gcd_plucker_row_mul_of_isUnit`: the quantity `√det (A Aᵀ) / g` is
+  unchanged when `A` is replaced by `U A` for `U ∈ GL_p(ℤ)`.
 
 ## Implementation notes
 
@@ -102,6 +104,19 @@ theorem covolume_intLattice_ker_mulVecLin {A : Matrix (Fin p) ι ℤ}
   have hg : Finset.univ.gcd (plucker A.row) ≠ 0 := fun h ↦ (gcd_plucker_row_eq_zero_iff A).mp h hA
   rw [covolume_intLattice, ← gcd_plucker_row_mul_subspaceHeight_ker_mulVecLin,
     mul_div_cancel_left₀ _ (Int.cast_ne_zero.mpr hg)]
+
+/-- **Unimodular invariance of the Bombieri–Vaaler quantity.** The ratio `√det (A Aᵀ) / g` of the
+square root of the Gram determinant of an integer matrix `A` to the greatest common divisor of its
+maximal minors is unchanged when `A` is replaced by `U A` for `U ∈ GL_p(ℤ)`: both the Gram
+determinant and the greatest common divisor are invariant. -/
+theorem sqrt_det_div_gcd_plucker_row_mul_of_isUnit {U : Matrix (Fin p) (Fin p) ℤ}
+    (hU : IsUnit U.det) (A : Matrix (Fin p) ι ℤ) :
+    √((U * A * (U * A)ᵀ).det : ℝ) / ((Finset.univ.gcd (plucker (U * A).row) : ℤ) : ℝ) =
+      √((A * Aᵀ).det : ℝ) / ((Finset.univ.gcd (plucker A.row) : ℤ) : ℝ) := by
+  have hdet : (U * A * (U * A)ᵀ).det = (A * Aᵀ).det := by
+    rw [transpose_mul, ← Matrix.mul_assoc, Matrix.mul_assoc U, det_mul, det_mul, det_transpose,
+      mul_right_comm, Int.isUnit_mul_self hU, one_mul]
+  rw [hdet, gcd_plucker_row_mul_of_isUnit hU]
 
 end Matrix
 
