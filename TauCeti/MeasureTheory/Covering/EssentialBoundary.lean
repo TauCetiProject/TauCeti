@@ -23,10 +23,11 @@ of `s` in closed balls around `x` tends to `d` as `r → 0⁺`. The points of de
 All three sets depend only on the `μ`-a.e. class of `s`, unlike the topological interior and
 frontier. They are nevertheless comparable to them: for a locally finite measure that charges
 every open set, `interior s ⊆ essentialInterior μ s ⊆ closure s` and
-`essentialBoundary μ s ⊆ frontier s`. For a null-measurable set, complements exchange the
-essential interior and exterior, so the essential boundary of `sᶜ` is that of `s`. The essential
-boundary of a union of any two sets lies in the union of their essential boundaries; the same
-holds for an intersection of two null-measurable sets, for any measure.
+`essentialBoundary μ s ⊆ frontier s`. For such a measure and a null-measurable set `s`,
+complements exchange the essential interior and exterior, so the essential boundary of `sᶜ` is
+that of `s`. The essential boundary of a union of any two sets lies in the union of their
+essential boundaries; the same holds for an intersection of two null-measurable sets, for any
+measure.
 
 For a locally finite measure on a second-countable metric space with its Borel σ-algebra and the
 Besicovitch covering property, such as a finite-dimensional real normed space, Lebesgue's density
