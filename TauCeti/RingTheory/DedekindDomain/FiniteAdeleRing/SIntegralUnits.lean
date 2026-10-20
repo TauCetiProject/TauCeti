@@ -56,11 +56,10 @@ theorem isEmbedding_coe_sIntegralUnits {S : Set (HeightOneSpectrum R)} (hS : S.F
     (Filter.le_principal_iff.mpr hS.compl_mem_cofinite)
     ((unitsContinuousMulEquiv R K).toHomeomorph.isEmbedding.comp
       Topology.IsEmbedding.subtypeVal) fun x v hv ↦ ?_
-  -- outside `S` the component of an `S`-integral finite idele has valuation one, so it and its
-  -- inverse are local integers
-  have h : Valued.v (((x : 𝔸ᶠ[R, K]ˣ) : 𝔸ᶠ[R, K]) v) = 1 := mem_sIntegralUnits_iff.mp x.2 v hv
-  simp only [SetLike.mem_coe, Submonoid.mem_units_iff, Units.val_inv_eq_inv_val,
-    coe_unitsContinuousMulEquiv_apply]
-  simp [Submonoid.ofClass, mem_adicCompletionIntegers, h]
+  -- outside `S` the component of an `S`-integral finite idele has valuation one, so it is a unit
+  -- of the local integers
+  refine adicCompletionIntegers.mem_units_iff_valued_eq_one.mpr ?_
+  rw [coe_unitsContinuousMulEquiv_apply]
+  exact mem_sIntegralUnits_iff.mp x.2 v hv
 
 end IsDedekindDomain.FiniteAdeleRing
