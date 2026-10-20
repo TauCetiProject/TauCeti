@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.RealAlgebraic.LazardInvariant
 public import TauCeti.Geometry.RealAlgebraic.Stack.Lazard.Analytic
 public import TauCeti.Geometry.RealAlgebraic.Stack.Lazard.Semialgebraic
 public import TauCeti.Geometry.RealAlgebraic.Stack.Map
@@ -30,16 +31,11 @@ cells, so the lifted decomposition is again cylindrical in the ambient coordinat
 the Lazard valuations are constant when the base coordinates are read in the order `e`. This is
 what lets recursive Lazard lifting read all coordinates in one fixed order at every level.
 
-A polynomial is sign-invariant on a preconnected set on which one of its reindexed Lazard
-valuations is constant, because the valuation vanishes exactly where the polynomial does not.
-
 This is the CAD-level assembly step in Lazard's projection-and-lifting construction. The
 separate analytic lifting theorem supplies the Lazard delineation over each base cell.
 
 ## Main results
 
-* `IsPreconnected.signInvariant_of_lazardValuationReindex_eq`: constant Lazard valuation implies
-  sign-invariance on preconnected sets.
 * `TauCeti.IsCAD.exists_isCAD_lazardValuation_eq_of_lazardDelineation_comp`: CAD lifting by
   Lazard delineations over reordered base cells.
 * `TauCeti.IsCAD.exists_isCAD_lazardValuation_eq_of_lazardDelineation`: CAD lifting by Lazard
@@ -60,19 +56,6 @@ open MvPolynomial Set
 namespace TauCeti
 
 variable {n : ℕ} {ι : Type*} {F : ι → MvPolynomial (Fin (n + 1)) ℝ}
-
-/-- A polynomial whose reindexed Lazard valuation is constant on a preconnected set is
-sign-invariant there: the valuation vanishes exactly where the polynomial does not. -/
-theorem _root_.IsPreconnected.signInvariant_of_lazardValuationReindex_eq {σ τ R : Type*}
-    [LinearOrder τ] [WellFoundedGT τ] [CommSemiring R] [LinearOrder R] [TopologicalSpace R]
-    [OrderTopology R] [IsTopologicalSemiring R] {s : Set (σ → R)} (hs : IsPreconnected s)
-    {p : MvPolynomial σ R} {e : σ ≃ τ}
-    (h : ∀ x ∈ s, ∀ y ∈ s, p.lazardValuationReindex e x = p.lazardValuationReindex e y) :
-    SignInvariant (fun x ↦ eval x p) s :=
-  hs.signInvariant_of_eq_zero_iff (continuous_eval p).continuousOn fun x hx y hy ↦ by
-    have hx' := lazardValuationReindex_eq_zero_iff p e x
-    rw [h x hx y hy, lazardValuationReindex_eq_zero_iff] at hx'
-    exact not_iff_not.1 hx'.symm
 
 /-- **CAD lifting by Lazard delineations over permuted bases.** Let `e` permute the base
 coordinates. Suppose every cell `C` of a cylindrical algebraic decomposition of `ℝ ^ n` is an
