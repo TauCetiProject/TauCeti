@@ -8,8 +8,8 @@ module
 public import Mathlib.RingTheory.PowerSeries.Binomial
 public import Mathlib.RingTheory.PowerSeries.Derivative
 public import Mathlib.RingTheory.PowerSeries.Substitution
+public import Mathlib.RingTheory.PowerSeries.Trunc
 import Mathlib.RingTheory.PowerSeries.Inverse
-import Mathlib.RingTheory.PowerSeries.Trunc
 
 /-!
 # Substitution of power series: orders, linear coefficients, algebra maps, and the binomial series
@@ -26,6 +26,10 @@ injective, which is what extends it to Laurent series by passing to fraction fie
 Substitution of series of zero constant coefficient is compatible with congruences modulo
 powers of `X`, in both the substituted series and the series substituted into. This makes
 truncation modulo `X ^ n` compatible with composition of formal coordinates.
+
+Substitution at a nilpotent series depends on only finitely many coefficients. At a nilpotent
+constant it is the constant series obtained by evaluating a finite polynomial truncation.
+This connects formal identities with polynomial maps on nilpotent elements.
 
 An algebra map on power series whose value at `X` has nilpotent constant coefficient is the
 corresponding substitution, without any continuity hypothesis. Over a field, every algebra
@@ -59,6 +63,39 @@ of a completed group algebra attached to two topological generators.
 public section
 
 namespace PowerSeries
+
+/-- A nilpotent constant can be substituted into a power series. -/
+theorem HasSubst.C {R : Type*} [CommRing R] {x : R} (hx : IsNilpotent x) :
+    HasSubst (C x) := by
+  simpa only [HasSubst, ← constantCoeff_eq, constantCoeff_C] using hx
+
+/-- Substitution preserves the constant series one. -/
+@[simp]
+theorem subst_one {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
+    {τ : Type*} {a : MvPowerSeries τ S} (ha : HasSubst a) :
+    (1 : R⟦X⟧).subst a = 1 := by
+  rw [← coe_substAlgHom ha, map_one]
+
+section Nilpotent
+
+variable {R : Type*} [CommRing R]
+
+/-- Substituting a series whose `n`th power vanishes uses only the coefficients below `n`. -/
+theorem subst_eq_aeval_trunc_of_pow_eq_zero {a : R⟦X⟧} {n : ℕ}
+    (hn : a ^ n = 0) (f : R⟦X⟧) :
+    f.subst a = Polynomial.aeval a (trunc n f) := by
+  have ha : HasSubst a := IsNilpotent.map ⟨n, hn⟩ MvPowerSeries.constantCoeff
+  conv_lhs => rw [eq_X_pow_mul_shift_add_trunc n f]
+  rw [subst_add ha, subst_mul ha, subst_pow ha, subst_X ha, hn, zero_mul, zero_add,
+    subst_coe ha]
+
+/-- A nilpotent constant substitutes by evaluating a finite truncation. -/
+theorem subst_C_eq_C_eval_trunc {x : R} {n : ℕ} (hn : x ^ n = 0) (f : R⟦X⟧) :
+    f.subst (C x) = C ((trunc n f).eval x) := by
+  rw [subst_eq_aeval_trunc_of_pow_eq_zero (n := n) (by rw [← map_pow, hn, map_zero])]
+  simp [Polynomial.aeval_def]
+
+end Nilpotent
 
 /-- A nonzero power series of zero constant coefficient has positive integer order, so it
 multiplies orders under substitution by a positive integer. -/

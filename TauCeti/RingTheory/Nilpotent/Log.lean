@@ -7,15 +7,16 @@ module
 
 public import Mathlib.RingTheory.Nilpotent.Exp
 public import Mathlib.RingTheory.PowerSeries.Log
-public import TauCeti.RingTheory.PowerSeries.Nilpotent
+public import TauCeti.RingTheory.PowerSeries.Substitution
 import Mathlib.RingTheory.Adjoin.Singleton
 
 /-!
 # Finite logarithms of unipotent elements
 
 In an associative rational algebra, the finite logarithm of a unipotent element is nilpotent.
-It is inverse to `IsNilpotent.exp`, and both maps commute with algebra homomorphisms. Thus the
-nilpotent elements and the elements whose difference from one is nilpotent are in bijection.
+It is inverse to `IsNilpotent.exp`, and both maps commute with ring homomorphisms between rings
+with a rational module structure. Thus the nilpotent elements and the elements whose difference
+from one is nilpotent are in bijection.
 These polynomial identities apply in particular to strictly upper-triangular and
 upper-unitriangular matrices, without topology or convergence assumptions.
 
@@ -38,7 +39,8 @@ open Finset
 
 variable {A : Type*} [Ring A] [Module ℚ A]
 
-/-- The finite logarithm, meaningful when `a - 1` is nilpotent. -/
+/-- The finite logarithm, meaningful when `a - 1` is nilpotent.
+When `a - 1` is not nilpotent, the sum is empty and `log a = 0`; this is a junk value. -/
 noncomputable def log (a : A) : A :=
   ∑ i ∈ range (nilpotencyClass (a - 1)), ((-1 : ℚ) ^ (i + 1) / i) • (a - 1) ^ i
 
@@ -63,7 +65,8 @@ theorem log_one : log (1 : A) = 0 := by
   rw [log_eq_sum (n := 1) (by simp)]
   simp
 
-/-- The logarithm commutes with homomorphisms of rational algebras. -/
+/-- The logarithm commutes with ring homomorphisms between rings with a rational module
+structure. -/
 theorem map_log {B F : Type*} [Ring B] [Module ℚ B]
     [FunLike F A B] [RingHomClass F A B] {a : A}
     (ha : IsNilpotent (a - 1)) (f : F) : f (log a) = log (f a) := by
@@ -118,16 +121,12 @@ open scoped PowerSeries
 
 private theorem log_exp_comm {A : Type*} [CommRing A] [Algebra ℚ A]
     {a : A} (ha : IsNilpotent a) : log (exp a) = a := by
-  have hC : PowerSeries.HasSubst (PowerSeries.C a) := by
-    simpa only [PowerSeries.HasSubst, ← PowerSeries.constantCoeff_eq,
-      PowerSeries.constantCoeff_C] using ha
+  have hC := PowerSeries.HasSubst.C ha
   have h := PowerSeries.subst_comp_subst_apply
     (R := A) (PowerSeries.HasSubst.exp_sub_one (A := A)) hC (PowerSeries.log A)
   rw [PowerSeries.subst_log_exp_sub_one, PowerSeries.subst_X hC,
     PowerSeries.subst_sub hC, PowerSeries.subst_C_exp ha] at h
-  have hOne : (1 : A⟦X⟧).subst (PowerSeries.C a) = 1 := by
-    rw [← PowerSeries.coe_substAlgHom hC, map_one]
-  rw [hOne, ← map_one PowerSeries.C, ← map_sub,
+  rw [PowerSeries.subst_one hC, ← map_one PowerSeries.C, ← map_sub,
     PowerSeries.subst_C_log (isNilpotent_exp_sub_one ha)] at h
   have heq : 1 + (exp a - 1) = exp a := by abel
   rw [heq] at h
@@ -135,47 +134,48 @@ private theorem log_exp_comm {A : Type*} [CommRing A] [Algebra ℚ A]
 
 private theorem exp_log_comm {A : Type*} [CommRing A] [Algebra ℚ A]
     {a : A} (ha : IsNilpotent (a - 1)) : exp (log a) = a := by
-  have hC : PowerSeries.HasSubst (PowerSeries.C (a - 1)) := by
-    simpa only [PowerSeries.HasSubst, ← PowerSeries.constantCoeff_eq,
-      PowerSeries.constantCoeff_C] using ha
+  have hC := PowerSeries.HasSubst.C ha
   have h := PowerSeries.subst_comp_subst_apply
     (R := A) (PowerSeries.HasSubst.log (A := A)) hC (PowerSeries.exp A)
   rw [PowerSeries.subst_exp_log, PowerSeries.subst_add hC,
     PowerSeries.subst_X hC, PowerSeries.subst_C_log ha] at h
   have heq : 1 + (a - 1) = a := by abel
   rw [heq, PowerSeries.subst_C_exp (isNilpotent_log ha)] at h
-  have hOne : (1 : A⟦X⟧).subst (PowerSeries.C (a - 1)) = 1 := by
-    rw [← PowerSeries.coe_substAlgHom hC, map_one]
-  rw [hOne, ← map_one PowerSeries.C, ← map_add, heq] at h
+  rw [PowerSeries.subst_one hC, ← map_one PowerSeries.C, ← map_add, heq] at h
   exact PowerSeries.C_injective h.symm
 
 open scoped IsMulCommutative
 
 variable {A : Type*} [Ring A] [Algebra ℚ A]
 
-/-- The finite logarithm undoes the exponential of a nilpotent element. -/
-@[simp]
-theorem log_exp {a : A} (ha : IsNilpotent a) : log (exp a) = a := by
+private theorem exp_log_identities (a : A) :
+    (IsNilpotent a → log (exp a) = a) ∧
+      (IsNilpotent (a - 1) → exp (log a) = a) := by
   let S := Algebra.adjoin ℚ ({a} : Set A)
   let x : S := ⟨a, Algebra.subset_adjoin (by simp)⟩
-  have hx : IsNilpotent x := by
-    obtain ⟨n, hn⟩ := ha
-    exact ⟨n, Subtype.ext (by simpa [x] using hn)⟩
-  have h := congrArg S.val (log_exp_comm hx)
-  rw [map_log (isNilpotent_exp_sub_one hx), map_exp hx] at h
-  exact h
+  have hx : S.val x = a := rfl
+  constructor
+  · intro ha
+    have hxnil : IsNilpotent x :=
+      (IsNilpotent.map_iff (f := S.val) Subtype.val_injective).mp (hx.symm ▸ ha)
+    simpa only [map_log (isNilpotent_exp_sub_one hxnil), map_exp hxnil, hx] using
+      congrArg S.val (log_exp_comm hxnil)
+  · intro ha
+    have hxnil : IsNilpotent (x - 1) :=
+      (IsNilpotent.map_iff (f := S.val) Subtype.val_injective).mp (by
+        simpa only [map_sub, map_one, hx] using ha)
+    simpa only [map_exp (isNilpotent_log hxnil), map_log hxnil, hx] using
+      congrArg S.val (exp_log_comm hxnil)
+
+/-- The finite logarithm undoes the exponential of a nilpotent element. -/
+@[simp]
+theorem log_exp {a : A} (ha : IsNilpotent a) : log (exp a) = a :=
+  (exp_log_identities a).1 ha
 
 /-- The finite exponential undoes the logarithm of a unipotent element. -/
 @[simp]
-theorem exp_log {a : A} (ha : IsNilpotent (a - 1)) : exp (log a) = a := by
-  let S := Algebra.adjoin ℚ ({a} : Set A)
-  let x : S := ⟨a, Algebra.subset_adjoin (by simp)⟩
-  have hx : IsNilpotent (x - 1) := by
-    obtain ⟨n, hn⟩ := ha
-    exact ⟨n, Subtype.ext (by simpa [x] using hn)⟩
-  have h := congrArg S.val (exp_log_comm hx)
-  rw [map_exp (isNilpotent_log hx), map_log hx] at h
-  exact h
+theorem exp_log {a : A} (ha : IsNilpotent (a - 1)) : exp (log a) = a :=
+  (exp_log_identities a).2 ha
 
 /-- Finite exponential and logarithm identify nilpotent and unipotent elements of an
 associative rational algebra. This is an equivalence of sets, not of groups. -/
