@@ -5,12 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Group.InfiniteSum
 public import Mathlib.Analysis.Normed.Group.Quotient
 public import Mathlib.Analysis.Normed.Operator.Banach
-public import Mathlib.Analysis.SpecificLimits.Basic
-public import Mathlib.Topology.Algebra.InfiniteSum.Module
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
+import TauCeti.Analysis.Normed.Operator.GlidingHump
+import TauCeti.Analysis.SpecificLimits.GeometricWeights
 
 /-!
 # The separating space of a linear map
@@ -58,6 +57,9 @@ automatic continuity theory.
   the composite `W ∘ T` is continuous exactly when `W` kills the separating space of `T`.
 * `LinearMap.separatingSpace_comp`: the separating space of `U ∘ T` is the closure of the
   image under `U` of the separating space of `T`.
+* `LinearMap.map_separatingSpace_le_of_continuous_sub`: a continuous linear map `U` with
+  `U ∘ T - T' ∘ V` continuous for a continuous linear map `V` sends the separating space of
+  `T` into that of `T'`.
 * `LinearMap.map_separatingSpace_le_self`: a continuous linear map intertwining `T` with a
   continuous linear map up to a continuous error preserves the separating space of `T`.
 * `LinearMap.exists_separatingSpace_comp_eq`: the stability lemma.
@@ -209,6 +211,14 @@ theorem separatingSpace_eq_of_continuous_sub {T₁ T₂ : E →ₗ[R] F} (h : Co
     T₁.separatingSpace = T₂.separatingSpace := by
   simpa using T₂.separatingSpace_add ⟨T₁ - T₂, h⟩
 
+/-- If `U ∘ T - T' ∘ V` is continuous for continuous linear maps `U` and `V`, then `U` maps the
+separating space of `T` into that of `T'`. -/
+theorem map_separatingSpace_le_of_continuous_sub (T' : D →ₗ[R] G) (U : F →L[R] G)
+    (V : E →L[R] D) (h : Continuous ((U : F →ₗ[R] G) ∘ₗ T - T' ∘ₗ (V : E →ₗ[R] D))) :
+    T.separatingSpace.map (U : F →ₗ[R] G) ≤ T'.separatingSpace :=
+  (T.map_separatingSpace_le U).trans
+    ((separatingSpace_eq_of_continuous_sub h).trans_le (T'.separatingSpace_comp_le V))
+
 /-- If `U ∘ T - T ∘ V` is continuous for continuous linear maps `U` and `V`, then `U` maps the
 separating space of `T` into itself. Applied to the left or right actions of an algebra on `E`
 and `F`, this says that the separating space of a map whose commutators with the actions are
@@ -216,8 +226,7 @@ continuous is a submodule. -/
 theorem map_separatingSpace_le_self (U : F →L[R] F) (V : E →L[R] E)
     (h : Continuous ((U : F →ₗ[R] F) ∘ₗ T - T ∘ₗ (V : E →ₗ[R] E))) :
     T.separatingSpace.map (U : F →ₗ[R] F) ≤ T.separatingSpace :=
-  (T.map_separatingSpace_le U).trans
-    ((separatingSpace_eq_of_continuous_sub h).trans_le (T.separatingSpace_comp_le V))
+  T.map_separatingSpace_le_of_continuous_sub T U V h
 
 /-- The graph of `T` becomes closed after passing to the quotient by its separating space. -/
 theorem isClosed_graph_mkQ_comp :
@@ -311,66 +320,7 @@ variable {𝕜 G F : Type*} [NontriviallyNormedField 𝕜] {E : ℕ → Type*}
   [NormedAddCommGroup G] [NormedSpace 𝕜 G] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   (T : G →ₗ[𝕜] F) (R : ∀ n, E (n + 1) →L[𝕜] E n) {U : ∀ n, E n →L[𝕜] G}
 
-/-- The composite `R m ∘ R (m + 1) ∘ ⋯ ∘ R (m + k - 1) : E (m + k) → E m`. -/
-private def towerComp (m : ℕ) : ∀ k, E (m + k) →L[𝕜] E m
-  | 0 => ContinuousLinearMap.id 𝕜 (E m)
-  | k + 1 => (towerComp m k).comp (R (m + k))
-
-private theorem apply_towerComp (hU : ∀ n, U (n + 1) = (U n).comp (R n)) (m : ℕ) :
-    ∀ k (v : E (m + k)), U m (towerComp R m k v) = U (m + k) v
-  | 0, _ => rfl
-  | k + 1, v => by
-    rw [towerComp, ContinuousLinearMap.comp_apply, apply_towerComp hU m k]
-    exact (DFunLike.congr_fun (hU (m + k)) v).symm
-
-variable [∀ n, CompleteSpace (E n)]
-
-/-- The gliding hump: if the vectors `y n : E n` are small enough that their images under the
-composites `E (m + k) → E m` are dominated by `b m * (1 / 2) ^ k`, then the series
-`∑ U n (y n)` converges to some `x`, and every tail of it factors through `U m` with a
-preimage of norm at most `2 * b m`. -/
-private theorem exists_tail (hU : ∀ n, U (n + 1) = (U n).comp (R n)) (y : ∀ n, E n)
-    (b : ℕ → ℝ) (hb : ∀ m k, ‖towerComp R m k‖ * ‖y (m + k)‖ ≤ b m * (1 / 2) ^ k) :
-    ∃ x : G, ∀ m, ∃ z : E m, ‖z‖ ≤ 2 * b m ∧
-      U m z = x - ∑ k ∈ Finset.range m, U k (y k) := by
-  have hle : ∀ m k, ‖towerComp R m k (y (m + k))‖ ≤ b m * (1 / 2) ^ k := fun m k ↦
-    ((towerComp R m k).le_opNorm _).trans (hb m k)
-  have hsum : ∀ m, Summable fun k ↦ towerComp R m k (y (m + k)) := fun m ↦
-    .of_norm_bounded (summable_geometric_two.mul_left (b m)) (hle m)
-  set g : ℕ → G := fun j ↦ U j (y j)
-  have hg : ∀ m, (fun k ↦ g (k + m)) = fun k ↦ U m (towerComp R m k (y (m + k))) := by
-    intro m
-    ext k
-    rw [apply_towerComp R hU, Nat.add_comm k m]
-  have hgs : Summable g := (summable_nat_add_iff 0).1 (hg 0 ▸ (U 0).summable (hsum 0))
-  refine ⟨∑' k, g k, fun m ↦ ⟨∑' k, towerComp R m k (y (m + k)), ?_, ?_⟩⟩
-  · rw [mul_comm]
-    exact tsum_of_norm_bounded (hasSum_geometric_two.mul_left (b m)) (hle m)
-  · rw [(U m).map_tsum (hsum m), ← hg, ← hgs.sum_add_tsum_nat_add m, add_sub_cancel_left]
-
-/-- Given nonnegative weights `a m k`, there are positive sizes `η n` such that
-`a m k * η (m + k) ≤ (1 / 2) ^ k` for all `m` and `k`. -/
-private theorem exists_pos_mul_le_half_pow (a : ℕ → ℕ → ℝ) (ha : ∀ m k, 0 ≤ a m k) :
-    ∃ η : ℕ → ℝ, (∀ n, 0 < η n) ∧ ∀ m k, a m k * η (m + k) ≤ (1 / 2) ^ k := by
-  set D : ℕ → ℝ := fun n ↦ 1 + ∑ m ∈ Finset.range (n + 1), a m (n - m)
-  have hD : ∀ n, 0 < D n := fun n ↦
-    add_pos_of_pos_of_nonneg one_pos (Finset.sum_nonneg fun m _ ↦ ha m _)
-  refine ⟨fun n ↦ (1 / 2) ^ n / D n, fun n ↦ div_pos (by positivity) (hD n), fun m k ↦ ?_⟩
-  have hle : a m k ≤ D (m + k) := by
-    have := Finset.single_le_sum (f := fun i ↦ a i (m + k - i)) (fun i _ ↦ ha i _)
-      (Finset.mem_range.2 (by omega : m < m + k + 1))
-    simp only [Nat.add_sub_cancel_left] at this
-    linarith
-  calc a m k * ((1 / 2) ^ (m + k) / D (m + k))
-      = (1 / 2) ^ (m + k) * (a m k / D (m + k)) := by ring
-    _ ≤ (1 / 2) ^ (m + k) * 1 := by
-        gcongr
-        exact div_le_one_of_le₀ hle (hD _).le
-    _ ≤ (1 / 2) ^ k := by
-        rw [mul_one, pow_add]
-        exact mul_le_of_le_one_left (by positivity) (pow_le_one₀ (by norm_num) (by norm_num))
-
-variable [CompleteSpace F]
+variable [∀ n, CompleteSpace (E n)] [CompleteSpace F]
 
 /-- **The stability lemma** for separating spaces. Let `T : G → F` be a linear map into a
 Banach space, let `R n : E (n + 1) → E n` be continuous linear maps between Banach spaces, and
@@ -388,10 +338,14 @@ theorem exists_separatingSpace_comp_eq (hU : ∀ n, U (n + 1) = (U n).comp (R n)
   -- `T ∘ U m` becomes continuous modulo `S m`, with operator norm `c m`.
   let C : ∀ m, E m →L[𝕜] F ⧸ S m := fun m ↦
     ⟨(S m).mkQ ∘ₗ T ∘ₗ (U m : E m →ₗ[𝕜] G), (T ∘ₗ (U m : E m →ₗ[𝕜] G)).continuous_mkQ_comp⟩
+  -- Evaluating `C` unfolds its definition.
+  have hC : ∀ m v, C m v = (S m).mkQ (T (U m v)) := fun _ _ ↦ rfl
   -- `T ∘ U n` modulo the next separating space `S (n + 1)` is discontinuous whenever the
   -- sequence drops at `n`.
   let V : ∀ n, E n →ₗ[𝕜] F ⧸ S (n + 1) := fun n ↦
     ((S (n + 1)).mkQL : F →ₗ[𝕜] F ⧸ S (n + 1)) ∘ₗ T ∘ₗ (U n : E n →ₗ[𝕜] G)
+  -- Evaluating `V` unfolds its definition.
+  have hVv : ∀ n v, V n v = (S (n + 1)).mkQ (T (U n v)) := fun _ _ ↦ rfl
   have hV : ∀ n, S (n + 1) ≠ S n → ¬ Continuous (V n) := by
     intro n hne hcont
     have := hSc (n + 1)
@@ -402,8 +356,8 @@ theorem exists_separatingSpace_comp_eq (hU : ∀ n, U (n + 1) = (U n).comp (R n)
   -- The admissible sizes `η n` of the humps.
   set c : ℕ → ℝ := fun m ↦ ‖C m‖
   have hc : ∀ m, 0 ≤ c m := fun m ↦ norm_nonneg _
-  obtain ⟨η, hηpos, hη⟩ := exists_pos_mul_le_half_pow
-    (fun m k ↦ (1 + c m) * ‖towerComp R m k‖) fun m k ↦
+  obtain ⟨η, hηpos, hη⟩ := TauCeti.exists_pos_mul_le_half_pow
+    (fun m k ↦ (1 + c m) * ‖TauCeti.towerComp R m k‖) fun m k ↦
       mul_nonneg (by linarith [hc m]) (norm_nonneg _)
   -- At each drop, choose a hump of size at most `η n` whose image is large.
   have hpick : ∀ n (s : G), ∃ y : E n, ‖y‖ ≤ η n ∧
@@ -426,14 +380,17 @@ theorem exists_separatingSpace_comp_eq (hU : ∀ n, U (n + 1) = (U n).comp (R n)
     induction n with
     | zero => rw [hs0, Finset.sum_range_zero]
     | succ n ih => rw [hs_succ, Finset.sum_range_succ, ← ih]
-  obtain ⟨x, hx⟩ := exists_tail R hU y (fun m ↦ 1 / (1 + c m)) fun m k ↦ by
+  have hy : ∀ m k, ‖TauCeti.towerComp R m k (y (m + k))‖ ≤ 1 / (1 + c m) * (1 / 2) ^ k := by
+    intro m k
+    refine ((TauCeti.towerComp R m k).le_opNorm _).trans ?_
     rw [div_mul_eq_mul_div, one_mul, le_div_iff₀ (by linarith [hc m])]
-    calc ‖towerComp R m k‖ * ‖y (m + k)‖ * (1 + c m)
-        ≤ ‖towerComp R m k‖ * η (m + k) * (1 + c m) := by
+    calc ‖TauCeti.towerComp R m k‖ * ‖y (m + k)‖ * (1 + c m)
+        ≤ ‖TauCeti.towerComp R m k‖ * η (m + k) * (1 + c m) := by
           gcongr
           exact hpick_le _ _
-      _ = (1 + c m) * ‖towerComp R m k‖ * η (m + k) := by ring
+      _ = (1 + c m) * ‖TauCeti.towerComp R m k‖ * η (m + k) := by ring
       _ ≤ (1 / 2) ^ k := hη m k
+  obtain ⟨x, hx⟩ := TauCeti.exists_norm_le_and_apply_eq_sub_sum R hU y _ hy
   -- The sequence cannot drop at any `n > ‖T x‖`.
   have hstab : ∀ n, ⌊‖T x‖⌋₊ + 1 ≤ n → S (n + 1) = S n := by
     intro n hn
@@ -443,10 +400,7 @@ theorem exists_separatingSpace_comp_eq (hU : ∀ n, U (n + 1) = (U n).comp (R n)
       rw [hUz, ← hs, hs_succ, add_sub_cancel]
     have key : V n (y n) =
         (S (n + 1)).mkQ (T x) - (S (n + 1)).mkQ (T (s n)) - C (n + 1) z := by
-      rw [hx']
-      simp only [V, C, map_add]
-      simp only [Submodule.toLinearMap_mkQL, coe_comp, ContinuousLinearMap.coe_coe,
-        Function.comp_apply, Submodule.mkQ_apply, ContinuousLinearMap.coe_mk']
+      simp only [hVv, hC, hx', map_add]
       abel
     have hCz : ‖C (n + 1) z‖ ≤ 2 := by
       calc ‖C (n + 1) z‖ ≤ c (n + 1) * (2 * (1 / (1 + c (n + 1)))) :=
@@ -506,8 +460,14 @@ theorem exists_topologicalClosure_map_separatingSpace_eq (T : E →ₗ[𝕜] F)
             ((V n : F →ₗ[𝕜] F) ∘ₗ T - T ∘ₗ (U n : E →ₗ[𝕜] E)) ∘ₗ (R n : E →ₗ[𝕜] E) := by
         ext
         simp [hV, hU]
-      rw [this, LinearMap.coe_add, LinearMap.coe_comp, LinearMap.coe_comp]
-      exact ((V n).continuous.comp (hRS n)).add (ih.comp (R n).continuous)
+      have h₁ : Continuous ((V n : F →ₗ[𝕜] F) ∘ₗ
+          ((S n : F →ₗ[𝕜] F) ∘ₗ T - T ∘ₗ (R n : E →ₗ[𝕜] E))) :=
+        (V n).continuous.comp (hRS n)
+      have h₂ : Continuous (((V n : F →ₗ[𝕜] F) ∘ₗ T - T ∘ₗ (U n : E →ₗ[𝕜] E)) ∘ₗ
+          (R n : E →ₗ[𝕜] E)) :=
+        ih.comp (R n).continuous
+      rw [this]
+      exact h₁.add h₂
   have hsep : ∀ n, (T.separatingSpace.map (V n : F →ₗ[𝕜] F)).topologicalClosure =
       (T ∘ₗ (U n : E →ₗ[𝕜] E)).separatingSpace := fun n ↦ by
     rw [← separatingSpace_comp, separatingSpace_eq_of_continuous_sub (hcont n)]
