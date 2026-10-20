@@ -20,7 +20,7 @@ products are homotopy equivalent to the regular graded bimodule concentrated in 
 degree zero, the nonadjacent factors commute up to chain homotopy, and the adjacent factors
 satisfy the braid relation up to chain homotopy.
 
-This file instantiates the abstract relations and the abstract transfer principle of
+This file instantiates the abstract relations of
 `TauCeti.Algebra.Category.GradedModuleCat.BimoduleTensor.BraidRelations` for the zigzag
 algebra. The unit complex of the graded bimodule setting of the zigzag algebra is the regular
 graded zigzag bimodule in cohomological degree zero; the declarations
@@ -34,24 +34,30 @@ The four field values of the zigzag braid relations are the public declarations
 the four projection lemmas `zigzagBraidComplexRelations_inverseForward` and its three siblings
 read those values off the relations.
 
-`zigzagBraidMapHomologicalComplexRelations` records the relations for the image complexes
-`H(zigzagBraidComplex i)` themselves: it is the transfer of the zigzag braid relations along
-the given data with identity homotopy equivalences, and the characterising lemma
-`zigzagBraidMapHomologicalComplexRelations_eq` identifies it with that transfer, so that the
-projection lemmas `transfer_inverseForward` and its three siblings apply to it.
+The relations of the image complexes `H(zigzagBraidComplex i)` under the degreewise action of
+an additive functor `H` of graded bimodule categories are the degreewise transfer
+`KhovanovSeidelRelations.transferDegreewise` of the zigzag braid relations, applied with the
+identity homotopy equivalences for the source family and its inverse. That transfer is not
+restated here: a caller writes it as
+`(zigzagBraidComplexRelations k G).transferDegreewise η ε (fun _ => .refl _) (fun _ => .refl _)`,
+and the projection lemmas `transferDegreewise_inverseForward` and its three siblings read its
+four field values off.
 
 ## Scope
 
-The transfer principle used here is the one of the general module: it is stated for a functor
-of *bimodule categories*, applied to complexes degree by degree through
-`H.mapHomologicalComplex`. This is the shape of a Morita-type equivalence realised by a single
+The transfer principle of the general module is stated for a functor `Φ` on *complexes* of
+graded bimodules that carries homotopy equivalences to homotopy equivalences; the
+instantiation used for the zigzag family is its degreewise specialisation
+`transferDegreewise`, at the functor `H.mapHomologicalComplex` of an additive functor `H` of
+graded bimodule categories. This is the shape of a Morita-type equivalence realised by a single
 bimodule: such an equivalence is an equivalence of bimodule categories, and its action on a
 complex of bimodules is the degreewise action of that equivalence.
 
 A *derived* transfer, in which the target setting is reached by conjugating bimodules with a
-tilting bimodule complex, is **not** covered. Conjugation by a tilting complex is not an
-additive functor on bimodules, so it is not an instance of `H` here, and the principle cannot
-be applied to it.
+tilting bimodule complex, is **not** instantiated here: conjugation by a tilting complex is not
+an additive functor on bimodules, so it is not an instance of `H`, and the repository has no
+tilting bimodule complex and no Morita equivalence between two graded algebras to instantiate
+the general principle with.
 
 Naturality of the transferred relations up to chain homotopy, the derived-Koszul comparison,
 spherical twists and graded-`K₀` statements are out of scope.
@@ -70,11 +76,9 @@ namespace TauCeti
 
 open CategoryTheory CategoryTheory.Limits
 
-universe u w uA
+universe u w
 
 variable (k : Type w) [CommRing k] {V : Type u} (G : SimpleGraph V)
-
-local notation "c" => ComplexShape.up ℤ
 
 section Zigzag
 
@@ -128,50 +132,6 @@ equivalence `zigzagBraidComplexTensorCommHomotopyEquiv`. -/
 @[simp] theorem zigzagBraidComplexRelations_braid {i j : V} (h : G.Adj j i) :
     (zigzagBraidComplexRelations k G).braid h
       = zigzagBraidComplexAdjacentHomotopyEquiv k G h := (rfl)
-
-section ZigzagTransfer
-
-variable {A : Type uA} [Ring A] [Algebra k A]
-variable (Ξ : InternalGrading k A) [GradedAlgebra Ξ.piece]
-variable (H : GradedBimoduleCat k (zigzagAlgebraInternalGrading k G) ⥤ GradedBimoduleCat k Ξ)
-  [H.Additive]
-
-/-- The complexes `H(zigzagBraidComplex i)` and their inverses
-`H(zigzagBraidInverseComplex i)`, the images of the zigzag braid complexes under
-`H.mapHomologicalComplex`, satisfy the Khovanov-Seidel relations in the target graded
-bimodule setting: this is the transfer of the zigzag braid relations with identity homotopy
-equivalences for the source family and its inverse. -/
-def zigzagBraidMapHomologicalComplexRelations
-    (η : GradedBimoduleMonoidalDatum k (zigzagAlgebraInternalGrading k G) Ξ H)
-    (ε : HomotopyEquiv
-      ((H.mapHomologicalComplex c).obj
-        (gradedBimoduleUnitComplex k (zigzagAlgebraInternalGrading k G)))
-      (gradedBimoduleUnitComplex k Ξ)) :
-    KhovanovSeidelRelations k G Ξ
-      (fun i => (H.mapHomologicalComplex c).obj (zigzagBraidComplex k G i))
-      (fun i => (H.mapHomologicalComplex c).obj (zigzagBraidInverseComplex k G i)) :=
-  (zigzagBraidComplexRelations k G).transfer η ε
-    (fun _ => HomotopyEquiv.refl _) (fun _ => HomotopyEquiv.refl _)
-
--- The characterising lemma below is written `(rfl)` and not `rfl`: a theorem whose proof is
--- syntactically `rfl` is tagged `@[defeq]`, and the module system refuses to export a
--- `@[defeq]` theorem whose proof needs the body of a definition that is not exposed.
-
-/-- The relations of the image complexes are the transfer of the zigzag braid relations along
-the given data with identity homotopy equivalences. This is the characterisation that lets
-the projection lemmas `transfer_inverseForward` and its three siblings apply to them. -/
-@[simp] theorem zigzagBraidMapHomologicalComplexRelations_eq
-    (η : GradedBimoduleMonoidalDatum k (zigzagAlgebraInternalGrading k G) Ξ H)
-    (ε : HomotopyEquiv
-      ((H.mapHomologicalComplex c).obj
-        (gradedBimoduleUnitComplex k (zigzagAlgebraInternalGrading k G)))
-      (gradedBimoduleUnitComplex k Ξ)) :
-    zigzagBraidMapHomologicalComplexRelations k G Ξ H η ε
-      = (zigzagBraidComplexRelations k G).transfer η ε
-        (fun _ => HomotopyEquiv.refl _)
-        (fun _ => HomotopyEquiv.refl _) := (rfl)
-
-end ZigzagTransfer
 
 end Zigzag
 
