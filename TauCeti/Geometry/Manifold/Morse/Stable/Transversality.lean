@@ -38,7 +38,8 @@ point `y` of `W^u(a) ∩ W^s(b)`.
 These are the manifold forms of the results of `TauCeti.Analysis.Calculus.Morse.Transversality`
 for a negative-gradient flow on a vector space. The intersection is read in the preferred chart at
 `y`, where the slice charts of `W^u(a)` and `W^s(b)` given by
-`TauCeti.IsAdaptedPseudoGradient.exists_stableSet_chart` meet transversally, and
+`TauCeti.IsAdaptedPseudoGradient.exists_isSliceChart_unstableSet` and
+`TauCeti.IsAdaptedPseudoGradient.exists_isSliceChart_stableSet` meet transversally, and
 `TauCeti.exists_isSliceChart_inter_of_span_mtangentConeAt_sup_eq_top` applies.
 
 ## Main results
@@ -83,35 +84,6 @@ namespace IsAdaptedPseudoGradient
 
 variable (hX : IsAdaptedPseudoGradient f X)
 include hX
-
-/-- Slice charts of the maximal atlas for the stable manifold of a critical point `b`, onto a
-subspace of dimension `n - ind b`. -/
-private theorem exists_isSliceChart_stableSet (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f)
-    (hb : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f b = 0) (hy : y ∈ hX.flow.stableSet b) :
-    ∃ (L : Submodule ℝ E) (q : OpenPartialHomeomorph M E),
-      Module.finrank ℝ L + manifoldMorseIndex 𝓘(ℝ, E) f b = Module.finrank ℝ E ∧
-        y ∈ q.source ∧ q ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M ∧
-        IsSliceChart q (L : Set E) (hX.flow.stableSet b) := by
-  obtain ⟨φ, hφ⟩ := hX.exists_morseChart b hb
-  obtain ⟨q, hyq, hq, hmem⟩ := hX.exists_stableSet_chart hf φ hφ hy
-  exact ⟨φ.stableSubspace, q, φ.finrank_stableSubspace_add_manifoldMorseIndex, hyq, hq,
-    isSliceChart_iff.2 hmem⟩
-
-/-- Slice charts of the maximal atlas for the unstable manifold of a critical point `a`, onto a
-subspace of dimension `ind a`. They are the slice charts of the stable manifold of `a` for the
-reversed pseudo-gradient `-X`, adapted to `-f`. -/
-private theorem exists_isSliceChart_unstableSet (hf : IsMorse 𝓘(ℝ, E) f)
-    (ha : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f a = 0) (hy : y ∈ hX.flow.unstableSet a) :
-    ∃ (L : Submodule ℝ E) (q : OpenPartialHomeomorph M E),
-      Module.finrank ℝ L = manifoldMorseIndex 𝓘(ℝ, E) f a ∧
-        y ∈ q.source ∧ q ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M ∧
-        IsSliceChart q (L : Set E) (hX.flow.unstableSet a) := by
-  rw [hX.unstableSet_eq_stableSet_neg hf] at hy ⊢
-  obtain ⟨L, q, hL, hyq, hq, hs⟩ := (hX.neg hf).exists_isSliceChart_stableSet
-    (hf.neg.contMDiff.mdifferentiable (by simp)) (mfderiv_neg_eq_zero_iff.2 ha) hy
-  have hidx := (hf.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero ha
-    ).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
-  exact ⟨L, q, by omega, hyq, hq, hs⟩
 
 /-- The tangent space of the stable manifold of a critical point `b`, at any of its points, has
 dimension `n - ind b`. -/

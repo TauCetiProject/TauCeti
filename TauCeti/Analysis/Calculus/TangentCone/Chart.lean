@@ -27,6 +27,8 @@ charts used to verify it.
 * `OpenPartialHomeomorph.isInvertible_fderiv`: a chart that is
   differentiable at a point, with inverse differentiable at the image point, has an invertible
   derivative there.
+* `TauCeti.image_tangentConeAt_eq_tangentConeAt_preimage_symm`: the invertible derivative `A` of a
+  chart at a point carries the tangent cone of a set there onto the tangent cone of its image.
 * `TauCeti.IsSliceChart.tangentConeAt_eq_preimage`: the tangent cone of a set flattened onto a
   closed subspace is the preimage of that subspace under the derivative of the chart.
 * `TauCeti.IsSliceChart.span_tangentConeAt_eq_comap`: hence the span of the tangent cone is that
@@ -70,6 +72,29 @@ theorem exists_hasFDerivAt_of_chart (e : OpenPartialHomeomorph E F) {y : E} (hy 
 end OpenPartialHomeomorph
 
 namespace TauCeti
+
+/-- **A chart transports tangent cones.** If the chart `e` has invertible derivative `A` at a point
+`y` of its source, then `A` maps the tangent cone of `S` at `y` onto the tangent cone at `e y` of
+the image of `S` read through `e`. -/
+theorem image_tangentConeAt_eq_tangentConeAt_preimage_symm {e : OpenPartialHomeomorph E F}
+    {S : Set E} {y : E} {A : E ≃L[𝕜] F} (hy : y ∈ e.source)
+    (hA : HasFDerivAt e (A : E →L[𝕜] F) y) :
+    A '' tangentConeAt 𝕜 S y = tangentConeAt 𝕜 (e.symm ⁻¹' S) (e y) := by
+  have hyt : e y ∈ e.target := e.map_source hy
+  refine Subset.antisymm ?_ fun w hw ↦ ⟨A.symm w, ?_, A.apply_symm_apply w⟩
+  · rintro _ ⟨v, hv, rfl⟩
+    rw [← tangentConeAt_inter_nhds (e.open_source.mem_nhds hy)] at hv
+    refine tangentConeAt_mono ?_ (hA.hasFDerivWithinAt.mapsTo_tangent_cone hv)
+    rintro _ ⟨z, ⟨hzS, hz⟩, rfl⟩
+    rwa [mem_preimage, e.left_inv hz]
+  · have hAs : HasFDerivAt e.symm (A.symm : F →L[𝕜] E) (e y) :=
+      e.hasFDerivAt_symm hyt (by rwa [e.left_inv hy])
+    rw [← tangentConeAt_inter_nhds (e.open_target.mem_nhds hyt)] at hw
+    have hmaps := hAs.hasFDerivWithinAt.mapsTo_tangent_cone hw
+    rw [e.left_inv hy] at hmaps
+    refine tangentConeAt_mono ?_ hmaps
+    rintro _ ⟨w, ⟨hwS, -⟩, rfl⟩
+    exact hwS
 
 namespace IsSliceChart
 
