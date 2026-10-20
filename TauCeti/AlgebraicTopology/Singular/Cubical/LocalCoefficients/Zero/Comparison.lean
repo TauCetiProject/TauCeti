@@ -117,7 +117,7 @@ open Limits in
 /-- **The comparison to simplicial chains is compatible with the colimit identifications.** On
 zeroth homology it intertwines the identification of cubical homology with the colimit and the
 identification of simplicial homology with the colimit. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 theorem homologyMap_twistedCubicalToSingularMap_comp_isoColimit_hom :
     HomologicalComplex.homologyMap (twistedCubicalToSingularMap L) 0 ≫
         (twistedHomology₀IsoColimit L).hom =
@@ -133,7 +133,7 @@ open Limits in
 /-- **The comparison to cubical chains is compatible with the colimit identifications.** On
 zeroth homology it intertwines the identification of simplicial homology with the colimit and the
 identification of cubical homology with the colimit. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 theorem homologyMap_twistedSingularToCubicalMap_comp_isoColimit_hom :
     HomologicalComplex.homologyMap (twistedSingularToCubicalMap L) 0 ≫
         (normalizedTwistedCubicalHomology₀IsoColimit L).hom =

@@ -247,6 +247,7 @@ theorem normalizedTwistedCubicalToSingular_ofCube {n : ℕ} (c : SingularCube X 
 variable (L) in
 /-- On a point cube, the comparison to simplicial chains is the inclusion of the summand of the
 point simplex. -/
+@[simp]
 theorem normalizedTwistedCubicalToSingular_ofCube_const (x : X)
     (a : L.obj (FundamentalGroupoid.mk x)) :
     normalizedTwistedCubicalToSingular L 0
