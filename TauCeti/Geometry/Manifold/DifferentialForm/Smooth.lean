@@ -323,6 +323,7 @@ def castDegree {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {n m : ℕ
   exact LinearEquiv.refl ℝ _
 
 /-- Evaluating a smooth form after transporting its degree across an equality. -/
+@[simp]
 theorem castDegree_apply {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     {n m : ℕ} (h : n = m) (α : SmoothForm I M F n) (x : M)
     (v : Fin m → TangentSpace I x) :
