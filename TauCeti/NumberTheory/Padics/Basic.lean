@@ -16,9 +16,9 @@ its field structure, and an instance expressing that `2` is invertible. These in
 finite-dimensional constructions and algebraic trace and norm calculations over the `p`-adic field.
 
 It also records that the scalar action of `ℤ_[p]` on `ℚ_[p]` multiplies norms,
-`‖a • x‖ = ‖a‖ * ‖x‖`. In particular the action is contractive, so `ℚ_[p]` and the Banach spaces
-over it are coefficient modules for Mathlib's Mahler isometry `PadicInt.mahlerEquiv` and for the
-Amice transform of measures on `ℤ_p`.
+`‖a • x‖ = ‖a‖ * ‖x‖`. In particular the action is contractive, so `ℚ_[p]` itself is a
+coefficient ring for Mathlib's Mahler isometry `PadicInt.mahlerEquiv` and for the Amice transform
+of measures on `ℤ_p`.
 -/
 
 public section

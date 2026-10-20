@@ -97,15 +97,11 @@ theorem hasSum_mahlerEquiv_mul_coeff_amiceTransform (μ : D(ℤ_[p], R)) (f : C(
 theorem norm_apply_le_of_forall_norm_coeff_le (μ : D(ℤ_[p], R)) {C : ℝ}
     (hC : ∀ n, ‖μ.amiceTransform.coeff n‖ ≤ C) (f : C(ℤ_[p], R)) : ‖μ f‖ ≤ C * ‖f‖ := by
   have hC₀ : 0 ≤ C := (norm_nonneg _).trans (hC 0)
-  rw [← (hasSum_mahlerEquiv_mul_coeff_amiceTransform μ f).tsum_eq]
-  refine IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg (by positivity) fun n ↦ ?_
-  calc ‖mahlerEquiv R f n * μ.amiceTransform.coeff n‖
-      ≤ ‖mahlerEquiv R f n‖ * ‖μ.amiceTransform.coeff n‖ := norm_mul_le _ _
-    _ ≤ ‖f‖ * C := by
-        gcongr
-        · exact ((mahlerEquiv R f).norm_coe_le_norm n).trans ((mahlerEquiv R).norm_map f).le
-        · exact hC n
-    _ = C * ‖f‖ := mul_comm _ _
+  let b : lp (fun _ : ℕ ↦ R) ∞ :=
+    ⟨fun n ↦ μ.amiceTransform.coeff n, memℓp_infty ⟨C, by rintro _ ⟨n, rfl⟩; exact hC n⟩⟩
+  rw [← (hasSum_mahlerEquiv_mul_coeff_amiceTransform μ f).tsum_eq, ← (mahlerEquiv R).norm_map f]
+  exact ((mahlerEquiv R f).norm_tsum_smul_le b).trans
+    (mul_le_mul_of_nonneg_right (lp.norm_le_of_forall_le hC₀ hC) (norm_nonneg _))
 
 omit [CompleteSpace R] in
 /-- A bound `‖μ f‖ ≤ C * ‖f‖` on a measure bounds its moments by `C`, since the Mahler basis
