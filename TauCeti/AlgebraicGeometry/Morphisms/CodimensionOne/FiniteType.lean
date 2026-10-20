@@ -98,15 +98,13 @@ theorem coheight_apply_eq {X Y : Scheme.{u}} (morphism : X ⟶ Y)
   rw [← htargetHeight, ← hcontract,
     ← Ideal.height_eq_height_under_of_finite_of_finiteType field, hsourceHeight]
 
-/-- A finite dominant morphism of integral schemes whose target is locally of finite type over
-a field sends points of coheight one to points of coheight one. -/
+/-- A finite scheme-theoretically dominant morphism from an integral scheme whose target is
+locally of finite type over a field sends points of coheight one to points of coheight one. -/
 theorem coheight_apply_eq_one {X Y : Scheme.{u}} (morphism : X ⟶ Y)
     (field : Type u) [Field field]
     (structureMap : Y ⟶ Spec (.of field)) [LocallyOfFiniteType structureMap]
-    [IsFinite morphism] [IsDominant morphism] [IsIntegral X] [IsIntegral Y]
+    [IsFinite morphism] [IsSchemeTheoreticallyDominant morphism] [IsIntegral X]
     (point : X) (hpoint : coheight point = 1) : coheight (morphism point) = 1 := by
-  have : IsSchemeTheoreticallyDominant morphism :=
-    IsSchemeTheoreticallyDominant.of_isDominant morphism
   rw [morphism.coheight_apply_eq field structureMap, hpoint]
 
 end AlgebraicGeometry.Scheme.Hom
