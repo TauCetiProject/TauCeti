@@ -343,9 +343,8 @@ theorem normalizedTwistedCubicalToSingular_pushforward {Z : TopCat.{v}} [SimplyC
         (NormalizedCubicalChain.ofCube Z (ULift.{v} ℤ) d) a) =
     twistedPushforward L f z₀ n (((cubicalToSingular (ULift.{v} ℤ)).app Z).f n
       (NormalizedCubicalChain.ofCube Z (ULift.{v} ℤ) d)) a
-  rw [NormalizedTwistedCubicalChain.pushforward_ofCube, cubicalToSingular_app_f_ofCube,
+  rw [NormalizedTwistedCubicalChain.pushforward_ofCube_eq_ofCube, cubicalToSingular_app_f_ofCube,
     twistedPushforward_map (L := L) (f := f) (z₀ := z₀) (cubeToHom d) (cubeModelOrigin n),
-    TwistedCubicalChain.pushCube_apply, ← NormalizedTwistedCubicalChain.ofCube_apply,
     normalizedTwistedCubicalToSingular_ofCube]
   -- The pushforward along the cube `f ∘ d` is the pushforward along `cubeToHom d ≫ f`, which is
   -- `cubeToHom_comp`; the coefficients' fibres agree only by definition, which blocks `rw`.

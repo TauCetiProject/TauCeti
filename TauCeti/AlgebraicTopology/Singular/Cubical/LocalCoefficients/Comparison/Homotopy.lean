@@ -369,13 +369,8 @@ theorem normalizedTwistedCubicalHomotopy_pushforward {Z : TopCat.{v}} [SimplyCon
         (NormalizedCubicalChain.ofCube Z (ULift.{v} ℤ) d)) a
   -- The pushforward of a cube is the cube `f ∘ d` with the transported coefficient, and the
   -- untwisted homotopy carries the cube `d` to the pushforward of its model value under `d`.
-  have e1 : NormalizedTwistedCubicalChain.pushforward L f.hom z₀ n
-      (NormalizedCubicalChain.ofCube Z (ULift.{v} ℤ) d) a =
-      NormalizedTwistedCubicalChain.ofCube L (f.hom.comp d)
-        (L.map (f.hom.pathClass z₀ (d 0)) a) :=
-    (NormalizedTwistedCubicalChain.pushforward_ofCube d a).trans
-      ((congrArg Submodule.Quotient.mk (TwistedCubicalChain.pushCube_apply d a)).trans
-        (NormalizedTwistedCubicalChain.ofCube_apply _ _).symm)
+  have e1 := NormalizedTwistedCubicalChain.pushforward_ofCube_eq_ofCube (L := L) (f := f.hom)
+    (z₀ := z₀) d a
   have e2 := cubicalToSingularCompHomotopy_hom_ofCube (k := ULift.{v} ℤ) d
   refine (congrArg _ e1).trans ((normalizedTwistedCubicalHomotopy_ofCube L (f.hom.comp d) _).trans
     ?_)

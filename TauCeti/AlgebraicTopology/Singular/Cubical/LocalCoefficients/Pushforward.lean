@@ -30,6 +30,8 @@ space and in the coefficient system.
 
 ## Main results
 
+* `TauCeti.LocalCoefficientSystem.NormalizedTwistedCubicalChain.pushforward_ofCube_eq_ofCube`:
+  the pushforward of a cube is the composite cube with the transported coefficient.
 * `TauCeti.LocalCoefficientSystem.NormalizedTwistedCubicalChain.boundary_pushforward`: it
   commutes with the boundaries.
 * `TauCeti.LocalCoefficientSystem.NormalizedTwistedCubicalChain.pushforward_map`: change of the
@@ -170,6 +172,15 @@ theorem pushforward_ofCube {n : ℕ} (d : SingularCube Z n)
       Submodule.Quotient.mk (pushCube L f z₀ d a) := by
   rw [pushforward, NormalizedCubicalChain.ofCube_def, Submodule.liftQ_apply,
     Finsupp.linearCombination_single, one_smul, LinearMap.comp_apply, Submodule.mkQ_apply]
+
+/-- The twisted pushforward of the class of a cube is the class of the composite cube, with the
+coefficient transported from `f z₀` to the origin of the cube. -/
+theorem pushforward_ofCube_eq_ofCube {n : ℕ} (d : SingularCube Z n)
+    (a : L.obj (FundamentalGroupoid.mk (f z₀))) :
+    pushforward L f z₀ n (NormalizedCubicalChain.ofCube Z (ULift.{v} ℤ) d) a =
+      ofCube L (f.comp d) (L.map (f.pathClass z₀ (d 0)) a) :=
+  (pushforward_ofCube d a).trans
+    ((congrArg Submodule.Quotient.mk (pushCube_apply d a)).trans (ofCube_apply _ _).symm)
 
 /-- The twisted pushforward commutes with the boundaries. -/
 theorem boundary_pushforward {n : ℕ} (y : NormalizedCubicalChain Z (ULift.{v} ℤ) (n + 1))
