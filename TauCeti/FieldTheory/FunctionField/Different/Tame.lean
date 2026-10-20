@@ -55,8 +55,6 @@ the statement.
   `e(P' ∣ P) = d(P' ∣ P) + 1`, holding exactly at the tame places.
 * `TauCeti.Place.ramificationIdx_le_differentExponent_iff`: `e(P' ∣ P) ≤ d(P' ∣ P)` exactly at the
   wild places (Stichtenoth, Corollary 3.5.5).
-* `TauCeti.Place.ramificationIdx_eq_one_and_isSeparable_iff_isUnramifiedAt`: ramification index
-  one and separable residue extension characterize an unramified local model at the centre.
 * `TauCeti.Place.relativeDegree_eq_one_of_isSepClosed_of_differentExponent_eq_zero`: a place with
   zero different exponent over a separably closed residue field has relative degree one.
 * `TauCeti.Divisor.coeff_different_add_one_eq_ramificationIdx_iff` and
@@ -284,31 +282,6 @@ theorem ramificationIdx_eq_differentExponent_add_one_iff :
   have hiff : ramificationIdx F P' = differentExponent k F P' + 1 ↔
       ¬ ramificationIdx F P' ≤ differentExponent k F P' := ⟨fun _ ↦ by omega, fun _ ↦ by omega⟩
   rw [hiff, ramificationIdx_le_differentExponent_iff, IsWild, not_not]
-
-/-- **Unramified places are those with unramified local model**: a place `P'` has ramification
-index one and separable residue extension exactly when the local model `𝒪'_P` is unramified at
-the centre of `P'`, in Mathlib's `Algebra.IsUnramifiedAt` sense. Both conditions are read off the
-vanishing of the different exponent (Stichtenoth, Theorem 3.5.1), via
-`TauCeti.Place.differentExponent_eq_zero_iff`. -/
-theorem ramificationIdx_eq_one_and_isSeparable_iff_isUnramifiedAt (P' : Place k F') :
-    (ramificationIdx F P' = 1 ∧
-      Algebra.IsSeparable (P'.restrict k F).ResidueField P'.ResidueField) ↔
-      Algebra.IsUnramifiedAt ((P'.restrict k F).integers)
-      (centerIntegralClosure k F P').asIdeal := by
-  have hle := ramificationIdx_le_differentExponent_add_one k F P'
-  have hpos := ramificationIdx_pos F P'
-  rw [← differentExponent_eq_zero_iff]
-  constructor
-  · intro h
-    have htame : IsTame k F P' :=
-      (isTame_iff_isSeparable_residueField k F P').mpr ⟨h.2, by simp [h.1]⟩
-    have := (ramificationIdx_eq_differentExponent_add_one_iff k F P').mpr htame
-    have := h.1
-    omega
-  · intro hd
-    have he : ramificationIdx F P' = 1 := by omega
-    have htame := (ramificationIdx_eq_differentExponent_add_one_iff k F P').mp (by omega)
-    exact ⟨he, ((isTame_iff_isSeparable_residueField k F P').mp htame).1⟩
 
 /-- If the residue field of the place below `P'` is separably closed and the different exponent
 of `P'` vanishes, then the relative residue degree of `P'` is one. -/
