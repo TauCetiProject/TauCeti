@@ -60,6 +60,10 @@ def orbitBoundary (x : 𝟙_ (Over S) ⟶ X) : Set X.left := orbitClosure G x \ 
 theorem orbitClosure_def (x : 𝟙_ (Over S) ⟶ X) :
     orbitClosure G x = closure (orbit G x) := (rfl)
 
+/-- The orbit boundary is the orbit closure with the orbit removed. -/
+theorem orbitBoundary_def (x : 𝟙_ (Over S) ⟶ X) :
+    orbitBoundary G x = orbitClosure G x \ orbit G x := (rfl)
+
 /-- Boundary membership consists of closure membership and failure of orbit membership. -/
 @[simp]
 theorem mem_orbitBoundary (x : 𝟙_ (Over S) ⟶ X) (p : X.left) :
