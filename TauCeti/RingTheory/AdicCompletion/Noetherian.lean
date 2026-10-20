@@ -31,9 +31,10 @@ rings and to finitely generated ideals with Noetherian quotient.
 * `Ideal.isNoetherianRing_adicCompletion_of_fg`: the completion along a finitely generated ideal
   `I` is Noetherian when `R ⧸ I` is.
 * `Ideal.isNoetherianRing_adicCompletion`: the adic completion of a Noetherian ring is Noetherian.
-* `Ideal.isNoetherianRing_of_isAdicComplete_of_denseRange`: an `I`-adically complete topological
-  ring, with `I` finitely generated and open, is Noetherian as soon as it receives a ring map with
-  dense range from a Noetherian ring. This is the form used for topological completions.
+* `Ideal.isNoetherianRing_of_isAdicComplete_of_denseRange`: an `I`-adically complete ring with
+  separately continuous addition and `I` finitely generated and open is Noetherian as soon as it
+  receives a ring map with dense range from a Noetherian semiring. This is the form used for
+  topological completions.
 
 ## References
 
@@ -214,18 +215,20 @@ instance isNoetherianRing_adicCompletion [IsNoetherianRing R] :
   isNoetherianRing_adicCompletion_of_fg I (IsNoetherian.noetherian I)
 
 variable {I} in
-/-- **Noetherianity of complete rings with a dense Noetherian subring.** A topological ring that is
-`I`-adically complete for a finitely generated open ideal `I` is Noetherian as soon as it receives a
-ring homomorphism with dense range from a Noetherian ring. -/
-theorem isNoetherianRing_of_isAdicComplete_of_denseRange [TopologicalSpace R] [ContinuousAdd R]
-    (hI : I.FG) (hIo : IsOpen (I : Set R)) [IsAdicComplete I R] {A : Type*} [CommRing A]
-    [IsNoetherianRing A] {f : A →+* R} (hf : DenseRange f) : IsNoetherianRing R := by
+/-- **Noetherianity of complete rings with a dense Noetherian subsemiring.** A ring with separately
+continuous addition that is `I`-adically complete for a finitely generated open ideal `I` is
+Noetherian as soon as it receives a ring homomorphism with dense range from a Noetherian
+semiring. -/
+theorem isNoetherianRing_of_isAdicComplete_of_denseRange [TopologicalSpace R]
+    [SeparatelyContinuousAdd R] (hI : I.FG) (hIo : IsOpen (I : Set R)) [IsAdicComplete I R]
+    {A : Type*} [Semiring A] [IsNoetherianRing A] {f : A →+* R} (hf : DenseRange f) :
+    IsNoetherianRing R := by
   have hsurj : Function.Surjective ((Ideal.Quotient.mk I).comp f) := by
     refine Ideal.Quotient.mk_surjective.forall.mpr fun y ↦ ?_
     -- the coset `y + I` is open and nonempty, so it meets the dense range of `f`
     have hU : IsOpen {z : R | z - y ∈ I} := by
       simp_rw [sub_eq_add_neg]
-      exact hIo.preimage (f := (· + -y)) (continuous_id.add continuous_const)
+      exact hIo.preimage (continuous_add_const (-y))
     obtain ⟨a, ha⟩ := hf.exists_mem_open hU ⟨y, by simp⟩
     exact ⟨a, Ideal.Quotient.eq.mpr ha⟩
   have := isNoetherianRing_of_surjective A (R ⧸ I) _ hsurj
