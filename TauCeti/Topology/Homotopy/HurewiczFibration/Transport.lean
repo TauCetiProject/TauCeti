@@ -26,6 +26,8 @@ therefore a local coefficient system
 
 ## Main results
 
+* `TauCeti.LiftingFunction.exists_lift_trans`: the lift of a concatenation of paths, from each
+  point of the fiber, ends at the iterated transport.
 * `TauCeti.LiftingFunction.transport_homotopic`: homotopic paths have homotopic transports.
 * `TauCeti.LiftingFunction.transport_refl_homotopic`,
   `TauCeti.LiftingFunction.transport_trans_homotopic`: transport along the constant path is
@@ -117,9 +119,13 @@ theorem transport_homotopic {γ γ' : Path b₀ b₁} (h : γ.Homotopic γ') :
   · rw [K_apply]
     exact (Λ.apply_liftFamily f G hG (y, s) 1).trans ((G_apply _).trans (F.target s))
 
-/-- Transport along a concatenation of paths is homotopic to the composite of the transports. -/
-theorem transport_trans_homotopic (γ : Path b₀ b₁) (δ : Path b₁ b₂) :
-    (Λ.transport (γ.trans δ)).Homotopic ((Λ.transport δ).comp (Λ.transport γ)) := by
+/-- **Lifting a concatenation of paths.**  For paths `γ` and `δ`, the family of the lifts of
+`γ.trans δ` obtained by lifting `γ` from each point `y` of the fiber and then `δ` from the end
+point has the transport of `y` along `γ` followed by `δ` as end point. -/
+theorem exists_lift_trans (γ : Path b₀ b₁) (δ : Path b₁ b₂) :
+    ∃ C : C(p ⁻¹' {b₀} × I, E), (∀ y, C (y, 0) = y.1) ∧
+      (∀ y, C (y, 1) = (Λ.transport δ (Λ.transport γ y)).1) ∧
+      ∀ y t, p (C (y, t)) = (γ.trans δ) t := by
   let f : C(p ⁻¹' {b₀}, E) := ⟨Subtype.val, continuous_subtype_val⟩
   -- The constant-in-`y` families of paths `γ`, `δ` and `γ.trans δ` over the fiber.
   let Γγ : C(p ⁻¹' {b₀} × I, B) := γ.toContinuousMap.comp ContinuousMap.snd
@@ -161,19 +167,31 @@ theorem transport_trans_homotopic (γ : Path b₀ b₁) (δ : Path b₁ b₂) :
       exact (Λ.apply_liftFamily f _ hγ y _).trans (Γγ_apply _)
     · simp only [ht, ↓reduceDIte]
       exact (Λ.apply_liftFamily f' _ hδ y _).trans (Γδ_apply _)
+  refine ⟨C₂, fun y ↦ ?_, fun y ↦ ?_, fun y t ↦ ?_⟩
+  · rw [C₂_apply]
+    exact Path.source _
+  · -- At time `1` the concatenation is at the end of the second path, the lift of `δ` from the end
+    -- point of the lift of `γ`.
+    rw [C₂_apply, Path.target]
+    exact Λ.liftFamily_comp_snd_one f' δ hδ y (Λ.transport γ y)
+      (Λ.liftFamily_comp_snd_one f γ hγ y y rfl)
+  · exact (hC y t).trans (Γ_apply _)
+
+/-- Transport along a concatenation of paths is homotopic to the composite of the transports. -/
+theorem transport_trans_homotopic (γ : Path b₀ b₁) (δ : Path b₁ b₂) :
+    (Λ.transport (γ.trans δ)).Homotopic ((Λ.transport δ).comp (Λ.transport γ)) := by
+  obtain ⟨C, hC₀, hC₁, hC⟩ := Λ.exists_lift_trans γ δ
+  let f : C(p ⁻¹' {b₀}, E) := ⟨Subtype.val, continuous_subtype_val⟩
+  let Γ : C(p ⁻¹' {b₀} × I, B) := (γ.trans δ).toContinuousMap.comp ContinuousMap.snd
+  have Γ_apply : ∀ z, Γ z = (γ.trans δ) z.2 := fun _ ↦ (rfl) -- the definition of `Γ`
   have hz : ∀ y, Γ (y, 0) = p (f y) := fun y ↦ (γ.trans δ).source.trans (y.2 : p y.1 = b₀).symm
-  have h0 : ∀ y, Λ.liftFamily f _ hz (y, 0) = C₂ (y, 0) := fun y ↦
-    (Λ.liftFamily_zero f _ hz y).trans ((Path.source _).symm.trans (C₂_apply (y, 0)).symm)
-  obtain ⟨K, hK₀, hK₁, hK⟩ := Λ.isHurewiczFibration.{u}.exists_homotopy_endpoints
-    Γ (Λ.liftFamily f _ hz) C₂ (Λ.apply_liftFamily f _ hz) hC h0
-  refine ContinuousMap.homotopic_of_fiber _ _ K
+  obtain ⟨K, hK₀, hK₁, hK⟩ := Λ.isHurewiczFibration.{u}.exists_homotopy_endpoints Γ
+    (Λ.liftFamily f _ hz) C (Λ.apply_liftFamily f _ hz)
+    (fun y t ↦ (hC y t).trans (Γ_apply (y, t)).symm)
+    fun y ↦ (Λ.liftFamily_zero f _ hz y).trans (hC₀ y).symm
+  exact ContinuousMap.homotopic_of_fiber _ _ K
     (fun y ↦ (hK₀ y).trans (Λ.liftFamily_comp_snd_one f _ hz y y rfl))
-    (fun y ↦ (hK₁ y).trans ?_) fun y s ↦ (hK y s).trans (γ.trans δ).target
-  -- At time `1` the concatenation is at the end of the second path, the lift of `δ` from the end
-  -- point of the lift of `γ`.
-  rw [C₂_apply, Path.target]
-  exact Λ.liftFamily_comp_snd_one f' δ hδ y (Λ.transport γ y)
-    (Λ.liftFamily_comp_snd_one f γ hγ y y rfl)
+    (fun y ↦ (hK₁ y).trans (hC₁ y)) fun y s ↦ (hK y s).trans (γ.trans δ).target
 
 end Transport
 
