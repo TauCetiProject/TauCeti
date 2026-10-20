@@ -12,6 +12,8 @@ public import Mathlib.Topology.OpenPartialHomeomorph.Continuity
 public import Mathlib.Topology.OpenPartialHomeomorph.IsImage
 public import Mathlib.RepresentationTheory.Continuous.Basic
 public import Mathlib.RepresentationTheory.Invariants
+import TauCeti.Topology.OpenPartialHomeomorph.MulAction
+import TauCeti.RepresentationTheory.Invariants
 
 /-!
 # Finite Bochner linearization
@@ -39,7 +41,7 @@ identity.
 
 ## Main definitions
 
-* `TauCeti.bochnerAverage ρ c`: the Bochner average of `c : X → F` with respect to `ρ`.
+* `ContRepresentation.bochnerAverage ρ c`: the Bochner average of `c : X → F` with respect to `ρ`.
 * `TauCeti.isotropyRepresentation`: the derivative representation of `G` at a fixed point, in the
   coordinates of a chart.
 * `TauCeti.bochnerChart χ ρ c hA`: the inverse-function-theorem chart of the Bochner average,
@@ -47,14 +49,16 @@ identity.
 
 ## Main results
 
-* `TauCeti.bochnerAverage_smul`: the Bochner average is equivariant.
-* `TauCeti.bochnerAverage_eq_self`: averaging an equivariant map does not change it.
-* `TauCeti.bochnerAverage_apply_of_forall_smul_eq`: at a fixed point the Bochner average is
-  `Representation.averageMap` applied to the value of `c`.
-* `TauCeti.hasStrictFDerivAt_bochnerAverage_comp_of_intertwining`: the derivative of the Bochner
-  average when the derivatives of `c (g • ·)` intertwine with `ρ`.
-* `TauCeti.bochnerChart_smul`, `TauCeti.bochnerChart_symm_map`: the Bochner chart has a
-  `G`-invariant domain and target and intertwines the action of `G` with `ρ`.
+* `ContRepresentation.bochnerAverage_smul`: the Bochner average is equivariant.
+* `ContRepresentation.bochnerAverage_eq_self`: averaging an equivariant map does not change it.
+* `ContRepresentation.bochnerAverage_apply_of_forall_smul_eq`: at a fixed point the Bochner
+  average is `Representation.averageMap` applied to the value of `c`.
+* `ContRepresentation.hasStrictFDerivAt_bochnerAverage_comp_of_intertwining`: the derivative of
+  the Bochner average when the derivatives of `c (g • ·)` intertwine with `ρ`.
+* `TauCeti.smul_mem_bochnerChart_source`, `TauCeti.map_mem_bochnerChart_target`: the Bochner
+  chart has a `G`-invariant domain and a `ρ`-invariant target.
+* `TauCeti.bochnerChart_smul`, `TauCeti.bochnerChart_symm_map`: the Bochner chart and its inverse
+  intertwine the action of `G` with `ρ`.
 * `TauCeti.exists_equivariant_chart`: Bochner linearization. Near a fixed point of a finite group
   action whose conjugated maps have strict derivatives `σ g` for a representation `σ`, there is a
   chart with `G`-invariant domain, centred at the point, with derivative the identity, in which
@@ -75,7 +79,7 @@ noncomputable section
 open Set Filter
 open scoped Topology
 
-namespace TauCeti
+namespace ContRepresentation
 
 section Average
 
@@ -84,9 +88,16 @@ variable {𝕜 G X F : Type*} [CommRing 𝕜] [Group G] [Fintype G] [Invertible 
 
 /-- The Bochner average `|G|⁻¹ • ∑ g, ρ g⁻¹ (c (g • y))` of a map `c : X → F` with respect to a
 continuous representation `ρ` of a finite group `G` acting on `X`. It is `G`-equivariant
-(`TauCeti.bochnerAverage_smul`). -/
+(`ContRepresentation.bochnerAverage_smul`). -/
 def bochnerAverage (ρ : ContRepresentation 𝕜 G F) (c : X → F) (y : X) : F :=
   ⅟(Fintype.card G : 𝕜) • ∑ g : G, ρ g⁻¹ (c (g • y))
+
+omit [Group G] in
+/-- Averaging a constant over `G` returns it. -/
+private theorem invOf_card_smul_sum_const {M : Type*} [AddCommGroup M] [Module 𝕜 M] (v : M) :
+    ⅟(Fintype.card G : 𝕜) • ∑ _g : G, v = v := by
+  rw [Finset.sum_const, Finset.card_univ, ← Nat.cast_smul_eq_nsmul 𝕜, smul_smul, invOf_mul_self,
+    one_smul]
 
 variable (ρ : ContRepresentation 𝕜 G F) (c : X → F)
 
@@ -110,20 +121,20 @@ theorem bochnerAverage_eq_self (hc : ∀ (g : G) (y : X), c (g • y) = ρ g (c 
     bochnerAverage ρ c = c := by
   ext y
   have hg (g : G) : ρ g⁻¹ (c (g • y)) = c y := by
-    rw [hc, ← mul_apply_eq_comp, ← map_mul, inv_mul_cancel, map_one,
-      one_apply_eq_self]
-  simp only [bochnerAverage_def, hg, Finset.sum_const, Finset.card_univ,
-    ← Nat.cast_smul_eq_nsmul 𝕜, smul_smul, invOf_mul_self, one_smul]
+    rw [hc]
+    exact ρ.toRepresentation.inv_self_apply g (c y)
+  rw [bochnerAverage_def, Finset.sum_congr rfl fun g _ => hg g, invOf_card_smul_sum_const]
 
 /-- At a point fixed by `G`, the Bochner average is the average of the value of `c` over the
 representation, that is, its image under `Representation.averageMap`. In particular it lies in the
 invariants of `ρ`. -/
 theorem bochnerAverage_apply_of_forall_smul_eq {x : X} (hx : ∀ g : G, g • x = x) :
     bochnerAverage ρ c x = ρ.toRepresentation.averageMap (c x) := by
-  simp only [bochnerAverage_def, hx, Representation.averageMap, GroupAlgebra.average, map_smul,
-    map_sum, Representation.asAlgebraHom_of, LinearMap.smul_apply, LinearMap.sum_apply]
+  rw [Representation.averageMap_eq_invOf_card_smul_norm, LinearMap.smul_apply, Representation.norm,
+    LinearMap.sum_apply, bochnerAverage_def]
+  simp only [hx]
   congr 1
-  exact Fintype.sum_equiv (Equiv.inv G) _ _ fun g => by simp [ContRepresentation.toMonoidHom_apply]
+  exact Fintype.sum_equiv (Equiv.inv G) _ _ fun g => rfl
 
 end Average
 
@@ -159,11 +170,9 @@ theorem hasFDerivAt_bochnerAverage_comp {D : G → E →L[𝕜] F}
 /-- Averaging the intertwined linear maps `ρ g ∘ D₀` against `ρ g⁻¹` returns `D₀`. -/
 private theorem average_comp_intertwining (D₀ : E →L[𝕜] F) :
     ⅟(Fintype.card G : 𝕜) • ∑ g : G, (ρ g⁻¹).comp ((ρ g).comp D₀) = D₀ := by
-  have hg (g : G) : (ρ g⁻¹).comp ((ρ g).comp D₀) = D₀ := by
-    rw [← ContinuousLinearMap.comp_assoc, ← ContinuousLinearMap.mul_def, ← map_mul,
-      inv_mul_cancel, map_one, ContinuousLinearMap.one_def, ContinuousLinearMap.id_comp]
-  simp only [hg, Finset.sum_const, Finset.card_univ, ← Nat.cast_smul_eq_nsmul 𝕜, smul_smul,
-    invOf_mul_self, one_smul]
+  have hg (g : G) : (ρ g⁻¹).comp ((ρ g).comp D₀) = D₀ :=
+    ContinuousLinearMap.ext fun v => ρ.toRepresentation.inv_self_apply g (D₀ v)
+  rw [Finset.sum_congr rfl fun g _ => hg g, invOf_card_smul_sum_const]
 
 /-- If the strict derivative of each `w ↦ c (g • f w)` at `z` is `ρ g ∘ D₀`, then the Bochner
 average along `f` has strict derivative `D₀` at `z`. -/
@@ -181,6 +190,10 @@ theorem hasFDerivAt_bochnerAverage_comp_of_intertwining {D₀ : E →L[𝕜] F}
 
 end Deriv
 
+end ContRepresentation
+
+namespace TauCeti
+
 section Chart
 
 variable {𝕜 G X E F : Type*} [NontriviallyNormedField 𝕜] [Group G] [Fintype G]
@@ -193,7 +206,7 @@ variable {𝕜 G X E F : Type*} [NontriviallyNormedField 𝕜] [Group G] [Fintyp
 /-- The composite of `χ` with the inverse-function-theorem chart of the Bochner average in the
 coordinates of `χ`, before restricting to a `G`-invariant domain. -/
 private def bochnerChartAux
-    (hA : HasStrictFDerivAt (bochnerAverage ρ c ∘ χ.symm) (D : E →L[𝕜] F) z) :
+    (hA : HasStrictFDerivAt (ρ.bochnerAverage c ∘ χ.symm) (D : E →L[𝕜] F) z) :
     OpenPartialHomeomorph X F :=
   χ.trans (hA.toOpenPartialHomeomorph _)
 
@@ -202,14 +215,14 @@ coordinates of `χ`, this is the inverse-function-theorem chart of the Bochner a
 to the largest `G`-invariant open subset of its domain. On its domain it agrees with the Bochner
 average (`TauCeti.bochnerChart_apply`), so it intertwines the action of `G` with `ρ`
 (`TauCeti.bochnerChart_smul`). -/
-def bochnerChart (hA : HasStrictFDerivAt (bochnerAverage ρ c ∘ χ.symm) (D : E →L[𝕜] F) z) :
+def bochnerChart (hA : HasStrictFDerivAt (ρ.bochnerAverage c ∘ χ.symm) (D : E →L[𝕜] F) z) :
     OpenPartialHomeomorph X F :=
   (bochnerChartAux χ ρ c hA).restrOpen (⋂ g : G, (g • ·) ⁻¹' (bochnerChartAux χ ρ c hA).source)
     (isOpen_iInter_of_finite fun g =>
       (bochnerChartAux χ ρ c hA).open_source.preimage (continuous_const_smul g))
 
 variable {χ ρ c}
-variable (hA : HasStrictFDerivAt (bochnerAverage ρ c ∘ χ.symm) (D : E →L[𝕜] F) z)
+variable (hA : HasStrictFDerivAt (ρ.bochnerAverage c ∘ χ.symm) (D : E →L[𝕜] F) z)
 
 private theorem mem_bochnerChart_source_iff {y : X} :
     y ∈ (bochnerChart χ ρ c hA).source ↔ ∀ g : G, g • y ∈ (bochnerChartAux χ ρ c hA).source := by
@@ -240,14 +253,14 @@ theorem mem_bochnerChart_source {x : X} (hx : ∀ g : G, g • x = x) (hxχ : x 
 
 /-- On its domain, the Bochner chart is the Bochner average. -/
 theorem bochnerChart_apply {y : X} (hy : y ∈ (bochnerChart χ ρ c hA).source) :
-    bochnerChart χ ρ c hA y = bochnerAverage ρ c y := by
+    bochnerChart χ ρ c hA y = ρ.bochnerAverage c y := by
   simp [bochnerChart, bochnerChartAux, χ.left_inv (bochnerChart_source_subset hA hy)]
 
 /-- The Bochner chart intertwines the action of `G` with `ρ`. -/
 theorem bochnerChart_smul {y : X} (hy : y ∈ (bochnerChart χ ρ c hA).source) (g : G) :
     bochnerChart χ ρ c hA (g • y) = ρ g (bochnerChart χ ρ c hA y) := by
   rw [bochnerChart_apply hA (smul_mem_bochnerChart_source hA hy g), bochnerChart_apply hA hy,
-    bochnerAverage_smul]
+    ContRepresentation.bochnerAverage_smul]
 
 /-- The target of the Bochner chart is invariant under `ρ`. -/
 theorem map_mem_bochnerChart_target {w : F} (hw : w ∈ (bochnerChart χ ρ c hA).target) (g : G) :
@@ -278,27 +291,6 @@ variable {𝕜 G X E : Type*} [NontriviallyNormedField 𝕜] [Group G] [Topologi
   [MulAction G X] [ContinuousConstSMul G X] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {χ : OpenPartialHomeomorph X E} {x : X}
 
-/-- Near the `χ`-coordinate of a fixed point, the conjugate by `χ` of the action of a product is
-the composite of the conjugates. -/
-private theorem conj_mul_eventuallyEq (hxχ : x ∈ χ.source) (hx : ∀ g : G, g • x = x) (g h : G) :
-    χ ∘ ((g * h) • ·) ∘ χ.symm =ᶠ[𝓝 (χ x)] (χ ∘ (g • ·) ∘ χ.symm) ∘ (χ ∘ (h • ·) ∘ χ.symm) := by
-  have hcont : ContinuousAt (fun w => h • χ.symm w) (χ x) :=
-    (continuous_const_smul h).continuousAt.comp (χ.continuousAt_symm (χ.map_source hxχ))
-  have hmem : ∀ᶠ w in 𝓝 (χ x), h • χ.symm w ∈ χ.source := by
-    refine hcont.preimage_mem_nhds ?_
-    rw [χ.left_inv hxχ, hx]
-    exact χ.open_source.mem_nhds hxχ
-  filter_upwards [hmem] with w hw
-  simp [χ.left_inv hw, mul_smul]
-
-omit [ContinuousConstSMul G X] in
-/-- Near the `χ`-coordinate of a point of the domain of `χ`, the conjugate by `χ` of the action of
-the identity is the identity. -/
-private theorem conj_one_eventuallyEq (hxχ : x ∈ χ.source) :
-    χ ∘ ((1 : G) • ·) ∘ χ.symm =ᶠ[𝓝 (χ x)] id := by
-  filter_upwards [χ.eventually_right_inverse (χ.map_source hxχ)] with w hw
-  simp [hw]
-
 /-- The isotropy representation of `G` at a fixed point `x`, in the coordinates of a chart `χ`
 around `x`: `g` acts by the derivative at `χ x` of the conjugated map `χ ∘ (g • ·) ∘ χ.symm`.
 Multiplicativity is the chain rule at the fixed point. -/
@@ -308,10 +300,11 @@ def isotropyRepresentation (hxχ : x ∈ χ.source) (hx : ∀ g : G, g • x = x
   .ofMonoidHom
     { toFun g := fderiv 𝕜 (χ ∘ (g • ·) ∘ χ.symm) (χ x)
       map_one' := by
-        rw [(conj_one_eventuallyEq hxχ).fderiv_eq, fderiv_id, ContinuousLinearMap.one_def]
+        rw [(χ.conj_one_smul_eventuallyEq (χ.map_source hxχ)).fderiv_eq, fderiv_id,
+          ContinuousLinearMap.one_def]
       map_mul' g h := by
         have hfix : (χ ∘ (h • ·) ∘ χ.symm) (χ x) = χ x := by simp [χ.left_inv hxχ, hx]
-        rw [(conj_mul_eventuallyEq hxχ hx g h).fderiv_eq,
+        rw [(χ.conj_mul_smul_eventuallyEq hxχ ((hx h).symm ▸ hxχ) g).fderiv_eq,
           fderiv_comp (χ x) (by rw [hfix]; exact hd g) (hd h), hfix,
           ContinuousLinearMap.mul_def] }
 
@@ -323,7 +316,8 @@ theorem isotropyRepresentation_apply (hxχ : x ∈ χ.source) (hx : ∀ g : G, g
 
 /-- If each conjugated map `χ ∘ (g • ·) ∘ χ.symm` has a strict derivative at `χ x`, then this
 strict derivative is given by the isotropy representation. -/
-theorem hasStrictFDerivAt_isotropyRepresentation (hxχ : x ∈ χ.source) (hx : ∀ g : G, g • x = x)
+theorem hasStrictFDerivAt_conj_smul_isotropyRepresentation (hxχ : x ∈ χ.source)
+    (hx : ∀ g : G, g • x = x)
     {L : G → E →L[𝕜] E} (hL : ∀ g : G, HasStrictFDerivAt (χ ∘ (g • ·) ∘ χ.symm) (L g) (χ x))
     (g : G) :
     HasStrictFDerivAt (χ ∘ (g • ·) ∘ χ.symm)
@@ -346,22 +340,22 @@ chart `e` around `x` with `G`-invariant domain inside that of `χ`, sending `x` 
 derivative the identity at `x` in the coordinates of `χ`, in which `g` acts linearly as `σ g`.
 The chart is the Bochner chart of `y ↦ χ y - χ x`. When the conjugated maps are strictly
 differentiable at `χ x`, one can take `σ` to be `TauCeti.isotropyRepresentation`
-(`TauCeti.hasStrictFDerivAt_isotropyRepresentation`). -/
+(`TauCeti.hasStrictFDerivAt_conj_smul_isotropyRepresentation`). -/
 theorem exists_equivariant_chart (χ : OpenPartialHomeomorph X E) {x : X} (hxχ : x ∈ χ.source)
     (hx : ∀ g : G, g • x = x) (σ : ContRepresentation 𝕜 G E)
     (hσ : ∀ g : G, HasStrictFDerivAt (χ ∘ (g • ·) ∘ χ.symm) (σ g) (χ x)) :
     ∃ e : OpenPartialHomeomorph X E, x ∈ e.source ∧ e x = 0 ∧ e.source ⊆ χ.source ∧
       (∀ g : G, ∀ y ∈ e.source, g • y ∈ e.source ∧ e (g • y) = σ g (e y)) ∧
       HasStrictFDerivAt (e ∘ χ.symm) (ContinuousLinearMap.id 𝕜 E) (χ x) := by
-  have hA : HasStrictFDerivAt (bochnerAverage σ (fun y => χ y - χ x) ∘ χ.symm)
+  have hA : HasStrictFDerivAt (σ.bochnerAverage (fun y => χ y - χ x) ∘ χ.symm)
       ((ContinuousLinearEquiv.refl 𝕜 E : E ≃L[𝕜] E) : E →L[𝕜] E) (χ x) := by
-    refine hasStrictFDerivAt_bochnerAverage_comp_of_intertwining fun g => ?_
+    refine ContRepresentation.hasStrictFDerivAt_bochnerAverage_comp_of_intertwining fun g => ?_
     simpa using (hσ g).sub_const (χ x)
   have hxs := mem_bochnerChart_source hA hx hxχ rfl
   refine ⟨bochnerChart χ σ _ hA, hxs, ?_, bochnerChart_source_subset hA,
     fun g y hy => ⟨smul_mem_bochnerChart_source hA hy g, bochnerChart_smul hA hy g⟩, ?_⟩
-  · rw [bochnerChart_apply hA hxs, bochnerAverage_apply_of_forall_smul_eq _ _ hx, sub_self,
-      map_zero]
+  · rw [bochnerChart_apply hA hxs, ContRepresentation.bochnerAverage_apply_of_forall_smul_eq _ _ hx,
+      sub_self, map_zero]
   · simpa using hasStrictFDerivAt_bochnerChart_comp_symm hA (χ.map_source hxχ)
 
 end Linearization
