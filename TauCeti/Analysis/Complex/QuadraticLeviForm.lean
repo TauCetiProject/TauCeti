@@ -10,8 +10,8 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Analysis.Calculus.Bilinear
 public import TauCeti.Analysis.Calculus.Morse.NormSq
 public import TauCeti.Analysis.Complex.LeviForm
+public import TauCeti.Analysis.InnerProductSpace.Orthonormal.SumInnerSq
 public import TauCeti.Analysis.SpecialFunctions.Complex.Arg
-public import TauCeti.LinearAlgebra.Complex.Finrank
 public import TauCeti.LinearAlgebra.QuadraticForm.Signature
 
 /-!
@@ -260,52 +260,16 @@ private theorem hessianQuadraticForm_mul_norm_sq_add_re_mul_sum_inner_sq
   simp only [add_apply, flip_apply, hB, hQ, re_inner_self]
   ring
 
-/-- On the real span of the rotated basis `ζ • b j`, for a unit complex number `ζ`, the
-holomorphic quadratic form `∑ⱼ ⟪b j, v⟫²` is `ζ² ‖v‖²`. This real span has real dimension the
-complex dimension. -/
-private theorem exists_submodule_sum_inner_sq_eq (b : OrthonormalBasis ι ℂ E) {ζ : ℂ}
-    (hζ : ‖ζ‖ = 1) : ∃ S : Submodule ℝ E, finrank ℝ S = finrank ℂ E ∧
-      ∀ v ∈ S, ∑ j, ⟪b j, v⟫_ℂ ^ 2 = ζ ^ 2 * ‖v‖ ^ 2 := by
-  have hζ0 : ζ ≠ 0 := by
-    rintro rfl
-    simp at hζ
-  refine ⟨Submodule.span ℝ (Set.range fun j ↦ ζ • b j), ?_, fun v hv ↦ ?_⟩
-  · have hli : LinearIndependent ℝ fun j ↦ ζ • b j := by
-      have h := b.toBasis.linearIndependent.units_smul fun _ ↦ Units.mk0 ζ hζ0
-      convert h.restrict_scalars' ℝ using 1
-      ext j
-      simp [Units.smul_def]
-    rw [finrank_span_eq_card hli, finrank_eq_card_basis b.toBasis]
-  obtain ⟨t, rfl⟩ := (Submodule.mem_span_range_iff_exists_fun ℝ).1 hv
-  have hk (k : ι) : ⟪b k, ∑ j, t j • ζ • b j⟫_ℂ = ζ * t k := by
-    have h : ∑ j, t j • ζ • b j = ∑ j, (ζ * t j) • b j := by
-      refine Finset.sum_congr rfl fun j _ ↦ ?_
-      rw [← Complex.coe_smul, smul_smul, mul_comm]
-    rw [h, b.orthonormal.inner_right_fintype]
-  rw [← ofReal_pow, ← b.sum_sq_norm_inner_right]
-  simp only [hk, norm_mul, hζ, one_mul, Complex.norm_real, Real.norm_eq_abs, sq_abs, mul_pow,
-    ← Finset.mul_sum]
-  push_cast
-  ring
-
-/-- The holomorphic part is bounded by the squared norm: `|Re (c ∑ⱼ ⟪b j, v⟫²)| ≤ ‖c‖ ‖v‖²`. -/
-private theorem abs_re_mul_sum_inner_sq_le (b : OrthonormalBasis ι ℂ E) (c : ℂ) (v : E) :
-    |(c * ∑ j, ⟪b j, v⟫_ℂ ^ 2).re| ≤ ‖c‖ * ‖v‖ ^ 2 := by
-  refine (abs_re_le_norm _).trans ?_
-  rw [norm_mul, ← b.sum_sq_norm_inner_right]
-  gcongr
-  exact (norm_sum_le _ _).trans_eq (by simp)
-
 /-- On the real span of `ζ • b j`, for a unit complex number `ζ`, the Hessian of
 `a ‖z‖² + Re (c ∑ⱼ ⟪b j, z⟫²)` is the multiple `2 (a + Re (c ζ²))` of `‖v‖²`. -/
 private theorem exists_submodule_hessianQuadraticForm_eq (b : OrthonormalBasis ι ℂ E) (a : ℝ)
     (c : ℂ) (x : E) {ζ : ℂ} (hζ : ‖ζ‖ = 1) : ∃ S : Submodule ℝ E, finrank ℝ S = finrank ℂ E ∧
       ∀ v ∈ S, hessianQuadraticForm (fun z ↦ a * ‖z‖ ^ 2 + (c * ∑ j, ⟪b j, z⟫_ℂ ^ 2).re) x v =
         2 * (a + (c * ζ ^ 2).re) * ‖v‖ ^ 2 := by
-  obtain ⟨S, hS, hSv⟩ := exists_submodule_sum_inner_sq_eq b hζ
-  refine ⟨S, hS, fun v hv ↦ ?_⟩
-  rw [hessianQuadraticForm_mul_norm_sq_add_re_mul_sum_inner_sq, hSv v hv, ← ofReal_pow,
-    ← mul_assoc, re_mul_ofReal]
+  refine ⟨_, b.finrank_span_smul (ne_zero_of_norm_ne_zero (hζ.trans_ne one_ne_zero)),
+    fun v hv ↦ ?_⟩
+  rw [hessianQuadraticForm_mul_norm_sq_add_re_mul_sum_inner_sq,
+    b.sum_inner_sq_eq_of_mem_span_smul hζ hv, ← ofReal_pow, ← mul_assoc, re_mul_ofReal]
   ring
 
 /-- **The Levi form of a Hermitian plus holomorphic quadratic function.** For an orthonormal
@@ -342,6 +306,11 @@ theorem morseIndex_mul_norm_sq_add_re_mul_sum_inner_sq [FiniteDimensional ℂ E]
   set H := hessianQuadraticForm (fun z ↦ a * ‖z‖ ^ 2 + (c * ∑ j, ⟪b j, z⟫_ℂ ^ 2).re) x
   have hH (v : E) : H v = 2 * (a * ‖v‖ ^ 2 + (c * ∑ j, ⟪b j, v⟫_ℂ ^ 2).re) :=
     hessianQuadraticForm_mul_norm_sq_add_re_mul_sum_inner_sq b a c x v
+  have habs (v : E) : |(c * ∑ j, ⟪b j, v⟫_ℂ ^ 2).re| ≤ ‖c‖ * ‖v‖ ^ 2 := by
+    refine (abs_re_le_norm _).trans ?_
+    rw [norm_mul]
+    gcongr
+    exact b.norm_sum_inner_sq_le v
   obtain ⟨ω, hω, hcω⟩ := Complex.exists_norm_eq_one_mul_sq_eq_neg_norm c
   have hdim := finrank_real_eq_two_mul_finrank_complex (V := E)
   have hc := norm_nonneg c
@@ -367,14 +336,14 @@ theorem morseIndex_mul_norm_sq_add_re_mul_sum_inner_sq [FiniteDimensional ℂ E]
     intro ha
     refine (QuadraticForm.forall_nonneg_iff_sigNeg_eq_zero H).1 fun v ↦ ?_
     rw [hH]
-    nlinarith [abs_re_mul_sum_inner_sq_le b c v, neg_abs_le (c * ∑ j, ⟪b j, v⟫_ℂ ^ 2).re,
+    nlinarith [habs v, neg_abs_le (c * ∑ j, ⟪b j, v⟫_ℂ ^ 2).re,
       sq_nonneg ‖v‖]
   have hall : a < -‖c‖ → sigNeg H = 2 * finrank ℂ E := by
     intro ha
     have h := le_sigNeg_of_negDef H (V := ⊤) fun v hv ↦ by
       have hv' : 0 < ‖(v : E)‖ := norm_pos_iff.2 (by simpa using hv)
       rw [QuadraticMap.restrict_apply, neg_apply, hH]
-      nlinarith [abs_re_mul_sum_inner_sq_le b c v, le_abs_self (c * ∑ j, ⟪b j, (v : E)⟫_ℂ ^ 2).re,
+      nlinarith [habs v, le_abs_self (c * ∑ j, ⟪b j, (v : E)⟫_ℂ ^ 2).re,
         mul_pos hv' hv']
     have h' := sigPos_le_finrank (-H)
     rw [sigPos_neg] at h'
