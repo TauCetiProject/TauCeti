@@ -441,4 +441,12 @@ theorem Equivalence.precomposeLaxMonoidalEquivalence_functor (e : C ≌ D)
       e.functor.precomposeLaxMonoidal :=
   (rfl)
 
+/-- The inverse functor of monoidal precomposition is precomposition by the inverse functor. -/
+@[simp]
+theorem Equivalence.precomposeLaxMonoidalEquivalence_inverse (e : C ≌ D)
+    [e.functor.Monoidal] [e.inverse.Monoidal] [e.IsMonoidal] :
+    (e.precomposeLaxMonoidalEquivalence (E := E)).inverse =
+      e.inverse.precomposeLaxMonoidal :=
+  (rfl)
+
 end CategoryTheory
