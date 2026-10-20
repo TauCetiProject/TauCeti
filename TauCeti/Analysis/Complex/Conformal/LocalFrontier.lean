@@ -349,9 +349,8 @@ theorem exists_notMem_closure_of_forall_mem_notMem_halfStrip {c b : ℂ} {ρ : �
   exact hU z hzρ hzU ⟨hzre, hzim⟩
 
 /-- The far part `{ρ < ‖w - c‖}` of the exterior of the closed half-strip
-`{0 ≤ re ((w - c) / b), 0 ≤ im ((w - c) / b) ≤ π}` is preconnected.  This is the part far out of
-an end of opening `2 * π`; under a conformal map, its preimage therefore lies on one side of any
-crosscut whose image it avoids. -/
+`{0 ≤ re ((w - c) / b), 0 ≤ im ((w - c) / b) ≤ π}` is preconnected.  This set is the part far
+out of an end of opening `2 * π`. -/
 theorem isPreconnected_far_halfStripExterior (ρ : ℝ) (c b : ℂ) :
     IsPreconnected {w : ℂ | ρ < ‖w - c‖ ∧
       (((w - c) / b).re < 0 ∨ ((w - c) / b).im ∉ Icc 0 Real.pi)} := by
