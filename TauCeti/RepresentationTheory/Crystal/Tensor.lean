@@ -21,8 +21,8 @@ the normal crystal on `B₁ × B₂` with weight `wt (x₁, x₂) = wt x₁ + wt
 * `e i (x₁, x₂) = (e i x₁, x₂)` if `ε i x₂ ≤ φ i x₁`, and `(x₁, e i x₂)` otherwise;
 * `f i (x₁, x₂) = (f i x₁, x₂)` if `ε i x₂ < φ i x₁`, and `(x₁, f i x₂)` otherwise.
 
-The value `none` of `e i` or `f i` on a factor stands for `0` and makes the operator on the
-tensor product `0` as well.
+If the operator on the factor it acts on returns `none` (standing for `0`), the operator on the
+tensor product returns `none` as well.
 
 **Tie convention.** This is Kashiwara's convention: on a tie `φ i x₁ = ε i x₂` the raising
 operator acts on the left factor and the lowering operator on the right factor. It is the
