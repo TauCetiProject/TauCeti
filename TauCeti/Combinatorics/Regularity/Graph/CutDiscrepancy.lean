@@ -8,7 +8,7 @@ module
 public import Mathlib.Combinatorics.SimpleGraph.Density
 public import Mathlib.Basic.Real.Basic
 import Mathlib.Algebra.Order.BigOperators.Ring.Finset
-import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Ring
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
 import TauCeti.Combinatorics.SimpleGraph.Density
@@ -118,11 +118,8 @@ theorem steppedCount_eq_card_interedges {A B : Finset V}
   -- Each trace is either empty or the whole part, and a pair of whole parts is exact.
   rcases hA C hC with hCA | hCA
   · rcases hB D hD with hDB | hDB
-    · have hC₀ : (#C : ℝ) ≠ 0 := mod_cast (P.nonempty_of_mem_parts hC).card_ne_zero
-      have hD₀ : (#D : ℝ) ≠ 0 := mod_cast (P.nonempty_of_mem_parts hD).card_ne_zero
-      rw [inter_eq_right.2 hCA, inter_eq_right.2 hDB, edgeDensity_def]
-      push_cast
-      field_simp
+    · rw [inter_eq_right.2 hCA, inter_eq_right.2 hDB, ← G.card_mul_card_mul_edgeDensity_real]
+      ring
     · rw [inter_comm B, disjoint_iff_inter_eq_empty.1 hDB]
       simp [interedges_def]
   · rw [inter_comm A, disjoint_iff_inter_eq_empty.1 hCA]
