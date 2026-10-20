@@ -42,6 +42,7 @@ The resulting direct sum is a `ZMod 2`-algebra whose multiplication preserves de
 * `TauCeti.cohomF2.one_eq_one`: the unit class is the `1` of the degree-zero ring; with
   `DirectSum.of_zero_one`, it is therefore also the `1` of `gradedCohomF2`.
 * `TauCeti.cohomF2.algebraMap_apply`: scalars from `ZMod 2` lie in degree zero.
+* `TauCeti.trivialF2Map_one`: pullback along a continuous homomorphism preserves the unit.
 
 The cup-product identities used here are the Alexander–Whitney identities in Brown,
 *Cohomology of Groups*, Chapter V, §3, and Neukirch–Schmidt–Wingberg,
@@ -144,5 +145,17 @@ theorem algebraMap_apply (r : ZMod 2) :
   rfl
 
 end cohomF2
+
+/-- Pullback with trivial `𝔽₂` coefficients along a continuous homomorphism preserves the unit
+class. -/
+@[simp]
+theorem trivialF2Map_one {H : Type u} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+    (φ : H →ₜ* G) : trivialF2Map φ 0 (1 : cohomF2 G 0) = (1 : cohomF2 H 0) := by
+  rw [← cohomF2.one_eq_one, ← cohomF2.one_eq_one, cohomF2.one_def, cohomF2.one_def,
+    trivialF2Map_def, ContinuousCohomology.map_degreeZeroClass]
+  congr 1
+  apply (trivialF2Equiv H).injective
+  rw [TopRep.eqToHom_hom_apply (res_trivialF2_hom φ), trivialF2Equiv_cast,
+    AddEquiv.apply_symm_apply, AddEquiv.apply_symm_apply]
 
 end TauCeti

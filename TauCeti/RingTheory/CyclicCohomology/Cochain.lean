@@ -11,6 +11,7 @@ public import Mathlib.Logic.Equiv.Fin.Rotate
 import Mathlib.Algebra.Module.BigOperators
 import Mathlib.Algebra.Ring.GeomSum
 import TauCeti.Algebra.BigOperators.AlternatingSum
+import TauCeti.Data.Fin.Basic
 
 /-!
 # The Hochschild coboundary and cyclic cochains
@@ -52,6 +53,8 @@ identities between faces and the cyclic rotation
   cyclic cochains also squares to zero.
 * `TauCeti.hochschildCoboundary_zero_eq_zero_iff`: the degree-zero cocycles are the traces.
 * `TauCeti.hochschildCoboundary_compLinearMap`: `b` commutes with pullback along a homomorphism.
+* `TauCeti.prod_hochschildFace`: over a commutative monoid the faces preserve the product of the
+  entries.
 
 ## References
 
@@ -280,6 +283,16 @@ theorem hochschildFace_const_of_isIdempotentElem {x : A} (hx : IsIdempotentElem 
     simp only [Fin.contractNth, hx.eq, ite_self]
 
 end Mul
+
+/-- In a commutative monoid every Hochschild face preserves the product of the entries. -/
+@[simp]
+theorem prod_hochschildFace [CommMonoid A] (i : Fin (n + 2)) (a : Fin (n + 2) → A) :
+    ∏ k, hochschildFace i a k = ∏ k, a k := by
+  induction i using Fin.lastCases with
+  | last =>
+    rw [hochschildFace_last_eq_contractNth, ← Fin.castSucc_zero, Fin.prod_contractNth_castSucc]
+    exact Equiv.prod_comp (finRotate (n + 2)).symm a
+  | cast j => rw [hochschildFace_castSucc, Fin.prod_contractNth_castSucc]
 
 /-- The simplicial identity `dᵢ ∘ d_{j+1} = d_j ∘ dᵢ` for `i ≤ j` between Hochschild faces. -/
 theorem hochschildFace_hochschildFace [Semigroup A] {i j : Fin (n + 2)} (hij : i ≤ j)

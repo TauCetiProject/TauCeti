@@ -10,7 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Etale
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Cotangent
 import TauCeti.Algebra.AlgebraicGroup.Tangent.KrullDimension
 import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.BaseChange
-import TauCeti.AlgebraicGeometry.Scheme.RegularLocalRing
+import TauCeti.AlgebraicGeometry.Scheme.Regular.LocalRing
 import TauCeti.RingTheory.KrullDimension.Integral
 import TauCeti.RingTheory.Smooth.Regular
 

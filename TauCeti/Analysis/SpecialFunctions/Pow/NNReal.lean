@@ -40,6 +40,7 @@ closed intervals for a reciprocal radius parameter `α / r`.
 * `ENNReal.le_of_rpow_le_mul_rpow_sub_one`: `X ^ r ≤ C * X ^ (r - 1)` gives `X ≤ C` for a finite
   `X`.
 * `ENNReal.rpow_mul_rpow_one_sub`: `x ^ p * x ^ (1 - p) = x` for `p ∈ [0, 1]`.
+* `ENNReal.sq_rpow_one_half`: `(x ^ 2) ^ (1 / 2) = x`, with no hypothesis on `x`.
 * `ENNReal.min_le_rpow_one_sub_mul_rpow`: `min x y ≤ x ^ (1 - p) * y ^ p` for `p ∈ [0, 1]`.
 * `ENNReal.rpow_le_rpow_of_nonpos`: `x ≤ y` gives `y ^ z ≤ x ^ z` for `z ≤ 0`.
 * `ENNReal.ofReal_inv_sqrt_le_enorm_rpow`: `ofReal (√x)⁻¹ ≤ ‖x‖ₑ ^ (-2⁻¹)` for every real `x`.
@@ -72,6 +73,11 @@ theorem le_of_rpow_le_mul_rpow_sub_one {X C : ℝ≥0∞} {r : ℝ} (hX : X ≠ 
 theorem rpow_mul_rpow_one_sub (x : ℝ≥0∞) {p : ℝ} (hp₀ : 0 ≤ p) (hp₁ : p ≤ 1) :
     x ^ p * x ^ (1 - p) = x := by
   rw [← rpow_add_of_nonneg _ _ hp₀ (sub_nonneg.2 hp₁), add_sub_cancel, rpow_one]
+
+/-- The square root of a square in `ℝ≥0∞`, written as a real power: `(x ^ 2) ^ (1 / 2) = x`. -/
+theorem sq_rpow_one_half (x : ℝ≥0∞) : (x ^ 2) ^ (1 / 2 : ℝ) = x := by
+  rw [← rpow_two, ← rpow_mul]
+  norm_num
 
 /-- For `p ∈ [0, 1]`, the weighted geometric mean `x ^ (1 - p) * y ^ p` dominates `min x y`. -/
 theorem min_le_rpow_one_sub_mul_rpow (x y : ℝ≥0∞) {p : ℝ} (hp₀ : 0 ≤ p) (hp₁ : p ≤ 1) :

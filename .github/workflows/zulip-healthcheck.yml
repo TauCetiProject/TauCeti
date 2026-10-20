@@ -27,6 +27,12 @@ jobs:
       - uses: actions/checkout@v4
         with:
           sparse-checkout: scripts/pr_status
+      - name: Prepare pinned shared tools
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@02db6ea51c27553cb6271e605612a56169ae72f6
+        with:
+          tools-repository: TauCetiProject/TauCetiTools
+          tools-ref: 02db6ea51c27553cb6271e605612a56169ae72f6
+          project-directory: .
       - name: Probe Zulip credentials
         # No continue-on-error: a failed probe means the integration is broken
         # and this run should go red. See scripts/pr_status/README.md.
