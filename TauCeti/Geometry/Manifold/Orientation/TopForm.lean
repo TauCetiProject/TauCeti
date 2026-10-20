@@ -48,13 +48,13 @@ def topFormOrientationAt [IsManifold I 1 M]
 
 /-- A basis is positive for `topFormOrientationAt` exactly when the form evaluates positively. -/
 theorem topFormOrientationAt_spec [IsManifold I 1 M]
-    {φ : RoughForm I M ℝ (Module.finrank ℝ E)} (h0 : ∀ x, φ x ≠ 0) (x : M)
+    {φ : RoughForm I M ℝ (Module.finrank ℝ E)} (x : M) (h0 : φ x ≠ 0)
     (b : Module.Basis (Fin (Module.finrank ℝ E)) ℝ (TangentSpace I x)) :
     b.orientation = topFormOrientationAt (I := I) φ x ↔ 0 < φ x b := by
   let b₀ := topFormBasis (I := I) x
   have hbase : φ x b₀ ≠ 0 := by
     intro hz
-    apply h0 x
+    apply h0
     ext v
     rw [ContinuousAlternatingMap.apply_eq_det_mul (φ x) b₀ v, hz, mul_zero]
     simp
