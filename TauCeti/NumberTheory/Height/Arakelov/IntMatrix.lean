@@ -13,11 +13,11 @@ public import TauCeti.NumberTheory.Height.Arakelov.Covolume
 
 Let `A` be a `p × ι` integer matrix and let `g` be the greatest common divisor of its maximal
 minors, the Plücker coordinates `TauCeti.plucker A.row` of its rows. The absolute Euclidean height
-of the rational row space of `A`, and that of the rational solution space of `A y = 0`, are both
-`√det (A Aᵀ) / g`. Stated multiplicatively,
+of the rational row space of `A`, and that of the rational solution space of `A y = 0`, satisfy
 `g · subspaceHeight (ker A) = √det (A Aᵀ)`,
 which holds without any rank hypothesis: if the rows of `A` are linearly dependent, then all
-maximal minors vanish and both sides are zero.
+maximal minors vanish and both sides are zero. If the rows of `A` are linearly independent, then
+`g ≠ 0` and both heights are `√det (A Aᵀ) / g`.
 
 With `Submodule.covolume_intLattice` this computes the covolume of the lattice of integral
 solutions of `A y = 0`: for `A` with linearly independent rows it is `√det (A Aᵀ) / g`. This is
@@ -30,6 +30,8 @@ replaced by any integer matrix with the same rational row space.
 * `Matrix.gcd_plucker_row_mul_subspaceHeight_span_range_row`: the identity for the row space.
 * `Matrix.gcd_plucker_row_mul_subspaceHeight_ker_mulVecLin`: the identity for the kernel.
 * `Matrix.covolume_intLattice_ker_mulVecLin`: the covolume of the lattice of integral solutions.
+* `Matrix.gcd_plucker_row_eq_zero_iff`: the maximal minors have greatest common divisor `0`
+  exactly when the rows are linearly dependent.
 
 ## Implementation notes
 
@@ -66,8 +68,19 @@ variable {ι : Type*} [Fintype ι] [LinearOrder ι] {p : ℕ}
 omit [Fintype ι] in
 /-- The maximal minors of the rational matrix are the casts of those of the integer matrix. -/
 private theorem plucker_row_map_intCast (A : Matrix (Fin p) ι ℤ) :
-    plucker (A.map ((↑) : ℤ → ℚ)).row = ((↑) : ℤ → ℚ) ∘ plucker A.row :=
-  funext (plucker_map (Int.castRingHom ℚ) A.row)
+    plucker (A.map ((↑) : ℤ → ℚ)).row = ((↑) : ℤ → ℚ) ∘ plucker A.row := by
+  have h : (A.map ((↑) : ℤ → ℚ)).row = fun i k ↦ Int.castRingHom ℚ (A.row i k) := by
+    ext i k
+    simp
+  ext s
+  rw [h, plucker_map, Function.comp_apply, eq_intCast]
+
+/-- The greatest common divisor of the maximal minors of an integer matrix vanishes exactly when
+its rows are linearly dependent over `ℚ`. -/
+theorem gcd_plucker_row_eq_zero_iff (A : Matrix (Fin p) ι ℤ) :
+    Finset.univ.gcd (plucker A.row) = 0 ↔ ¬LinearIndependent ℚ (A.map ((↑) : ℤ → ℚ)).row := by
+  rw [Finset.gcd_eq_zero_iff, ← plucker_ne_zero_iff, not_not, plucker_row_map_intCast, funext_iff]
+  simp
 
 /-- **The height of the row space of an integer matrix.** The greatest common divisor of the
 maximal minors of an integer matrix `A`, times the absolute Euclidean height of the rational row
@@ -76,20 +89,13 @@ theorem gcd_plucker_row_mul_subspaceHeight_span_range_row (A : Matrix (Fin p) ι
     ((Finset.univ.gcd (plucker A.row) : ℤ) : ℝ) *
         (span ℚ (range (A.map ((↑) : ℤ → ℚ)).row)).subspaceHeight =
       √((A * Aᵀ).det : ℝ) := by
-  -- By Cauchy–Binet, the Gram determinant of the rows is the sum of the squared maximal minors.
-  have hdet : (A * Aᵀ).det = ∑ s, plucker A.row s ^ 2 := by
-    have h := det_mul_transpose_eq_sum_plucker_mul A.row A.row
-    rw [row_eq_self, Equiv.apply_symm_apply, ← row_eq_self] at h
-    simp [h, sq]
-  rw [hdet]
+  rw [det_mul_transpose_eq_sum_plucker_sq]
   by_cases hA : LinearIndependent ℚ (A.map ((↑) : ℤ → ℚ)).row
   · rw [subspaceHeight_span_range hA, plucker_row_map_intCast, gcd_mul_height2_intCast]
     simp
   · -- Dependent rows have vanishing maximal minors.
-    have h0 : plucker A.row = 0 := by
-      rw [← plucker_ne_zero_iff, plucker_row_map_intCast, not_not] at hA
-      ext s
-      simpa using congrFun hA s
+    have h0 : plucker A.row = 0 := funext fun s ↦
+      Finset.gcd_eq_zero_iff.mp ((gcd_plucker_row_eq_zero_iff A).mpr hA) s (Finset.mem_univ s)
     simp [h0, Finset.gcd_eq_zero_iff.mpr]
 
 /-- **The height of the kernel of an integer matrix.** The greatest common divisor of the maximal
@@ -110,11 +116,7 @@ theorem covolume_intLattice_ker_mulVecLin {A : Matrix (Fin p) ι ℤ}
     (hA : LinearIndependent ℚ (A.map ((↑) : ℤ → ℚ)).row) :
     ZLattice.covolume (LinearMap.ker (A.map ((↑) : ℤ → ℚ)).mulVecLin).intLattice =
       √((A * Aᵀ).det : ℝ) / ((Finset.univ.gcd (plucker A.row) : ℤ) : ℝ) := by
-  have hg : Finset.univ.gcd (plucker A.row) ≠ 0 := by
-    rw [ne_eq, Finset.gcd_eq_zero_iff]
-    intro h
-    rw [← plucker_ne_zero_iff, plucker_row_map_intCast] at hA
-    exact hA (funext fun s ↦ by simp [h s (Finset.mem_univ s)])
+  have hg : Finset.univ.gcd (plucker A.row) ≠ 0 := fun h ↦ (gcd_plucker_row_eq_zero_iff A).mp h hA
   rw [covolume_intLattice, ← gcd_plucker_row_mul_subspaceHeight_ker_mulVecLin,
     mul_div_cancel_left₀ _ (Int.cast_ne_zero.mpr hg)]
 
