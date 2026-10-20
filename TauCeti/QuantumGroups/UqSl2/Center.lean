@@ -263,8 +263,8 @@ private theorem laurentEval_harishChandra_linkage (hq : IsGenericQuantumParamete
   have hQμ : Units.mk0 (q ^ j) hμ = Units.mk0 q hq0 ^ (j : ℤ) := Units.ext (by simp)
   have hQν : Units.mk0 ((q⁻¹ ^ 2) ^ (j + 1) * q ^ j) hν = Units.mk0 q hq0 ^ (-(j : ℤ) - 2) := by
     refine Units.ext ?_
-    rw [Units.val_mk0, Units.val_zpow_eq_zpow_val, Units.val_mk0,
-      show -(j : ℤ) - 2 = -((j + 2 : ℕ) : ℤ) by push_cast; ring, zpow_neg, zpow_natCast]
+    have hexp : -(j : ℤ) - 2 = -((j + 2 : ℕ) : ℤ) := by push_cast; ring
+    rw [Units.val_mk0, Units.val_zpow_eq_zpow_val, Units.val_mk0, hexp, zpow_neg, zpow_natCast]
     simp only [inv_pow]
     field_simp
     ring
@@ -307,8 +307,9 @@ theorem exists_eval_casimirScalar_eq_laurentEval_harishChandra (hq : IsGenericQu
     rintro _ ⟨j, rfl⟩
     simp only [Set.mem_ofPred_eq, ← laurentEval_eq_eval₂, laurentEval_invert, R,
       laurentEval_rescale, hmap]
-    rw [show Q⁻¹ * (Q ^ ((j : ℤ) + 1))⁻¹ = Q ^ (-(j : ℤ) - 2) by group,
-      show Q⁻¹ * Q ^ ((j : ℤ) + 1) = Q ^ (j : ℤ) by group]
+    have hinv : Q⁻¹ * (Q ^ ((j : ℤ) + 1))⁻¹ = Q ^ (-(j : ℤ) - 2) := by group
+    have hself : Q⁻¹ * Q ^ ((j : ℤ) + 1) = Q ^ (j : ℤ) := by group
+    rw [hinv, hself]
     exact (laurentEval_harishChandra_linkage hq hz j).symm
   obtain ⟨g, hg⟩ := (invert_eq_self_iff_exists_eval₂ R).mp hR
   refine ⟨g.comp (Polynomial.C ((q - q⁻¹) ^ 2) * Polynomial.X), fun μ hμ => ?_⟩

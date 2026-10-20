@@ -220,8 +220,9 @@ theorem e_pow_smul_vec_of_lt {c j : ℕ} (h : j < c) : e q ^ c • vec q μ j = 
   obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_lt h
   have hj := e_pow_smul_vec_add (q := q) (μ := μ) j 0
   rw [zero_add] at hj
-  rw [show j + d + 1 = d + 1 + j by omega, pow_add, mul_smul, hj, smul_comm, pow_succ, mul_smul,
-    e_smul_vec_zero, smul_zero, smul_zero]
+  have hexp : j + d + 1 = d + 1 + j := by omega
+  rw [hexp, pow_add, mul_smul, hj, smul_comm, pow_succ, mul_smul, e_smul_vec_zero, smul_zero,
+    smul_zero]
 
 /-! ### Spanning -/
 
