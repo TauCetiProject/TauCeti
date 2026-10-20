@@ -52,7 +52,8 @@ theorem mk_leftInvariantDerivation (I : HopfIdeal R H)
   have h := (_root_.Bialgebra.Quotient.mkBialgHom I.toIdeal).map_leftInvariantDerivation
     (I.quotientLieEquiv.symm d) x
   rw [← quotientLieHom_apply, ← quotientLieEquiv_apply_coe, LieEquiv.apply_symm_apply] at h
-  exact h
+  simpa only [_root_.Bialgebra.Quotient.mkBialgHom_apply,
+    Ideal.Quotient.mkₐ_eq_mk] using h
 
 /-- The left-invariant vector field of a subgroup tangent vector preserves the defining
 Hopf ideal. -/
@@ -62,12 +63,12 @@ theorem leftInvariantDerivation_mem (I : HopfIdeal R H)
   rw [← Ideal.Quotient.eq_zero_iff_mem]
   have h := I.mk_leftInvariantDerivation ⟨d, hd⟩ x
   have hx0 : Ideal.Quotient.mkₐ R I.toIdeal x = 0 := Ideal.Quotient.eq_zero_iff_mem.mpr hx
-  rw [hx0, map_zero] at h
+  rw [hx0, map_zero, Ideal.Quotient.mkₐ_eq_mk] at h
   exact h
 
 /-- A tangent vector belongs to the Lie algebra of a closed subgroup exactly when its
 left-invariant extension preserves the subgroup's defining Hopf ideal. -/
-theorem mem_lieSubalgebra_iff_leftInvariantDerivation (I : HopfIdeal R H)
+theorem mem_lieSubalgebra_iff_leftInvariantDerivation_mem (I : HopfIdeal R H)
     (d : Derivation R H (CounitAlgebra R H R)) :
     d ∈ I.lieSubalgebra (B := R) ↔
       ∀ x ∈ I.toIdeal, leftInvariantDerivation d x ∈ I.toIdeal := by

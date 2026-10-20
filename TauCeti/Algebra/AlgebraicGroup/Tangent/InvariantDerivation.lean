@@ -177,16 +177,14 @@ theorem map_leftInvariantDerivation {K : Type*} [CommRing K] [_root_.Bialgebra R
     (f : H →ₐc[R] K) (d : Derivation R K (CounitAlgebra R K R)) (h : H) :
     f (leftInvariantDerivation (derivationComp f d) h) =
       leftInvariantDerivation d (f h) := by
-  have hcomp :
-      ((CounitAlgebra.algEquivSelf R K R).toLinearMap ∘ₗ d.toLinearMap).comp
-          (f : H →ₗ[R] K) =
-        (CounitAlgebra.algEquivSelf R H R).toLinearMap ∘ₗ
-          (derivationComp f d).toLinearMap := by
-    ext x
-    exact (algEquivSelf_derivationComp_apply f d x).symm
-  rw [leftInvariantDerivation_apply, leftInvariantDerivation_apply,
-    ← CoalgHomClass.map_comp_comul_apply f, tensorComponent_map, hcomp]
-  exact congrFun (BialgHom.coe_toLinearMap f).symm _
+  change f ((leftInvariantDerivation (derivationComp f d)).toLinearMap h) =
+    (leftInvariantDerivation d).toLinearMap (f h)
+  rw [toLinearMap_leftInvariantDerivation, toLinearMap_leftInvariantDerivation]
+  have hcore := Comodule.differential_corestrict H f d h
+  let : Comodule R K H := Comodule.Corestrict f.toCoalgHom
+  rw [← hcore]
+  simpa only [CoalgHom.toComoduleHom_apply, BialgHom.toCoalgHom_apply] using
+    f.toCoalgHom.toComoduleHom.map_differential d h
 
 end BialgHom
 
