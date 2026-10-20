@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Calculus.Deriv.Slope
 import TauCeti.Geometry.Euclidean.Volume.Measure
 import TauCeti.MeasureTheory.Measure.Lebesgue.OrthogonalSlices
 import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
+import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # Outer parallel volume of sets in affine subspaces
@@ -34,10 +35,7 @@ Since `K` is null in `E` when `k < n`, the right derivative at `0` of the parall
 `t ↦ volume (K + t • closedBall 0 1)` follows. When `k = n - 1` it is `2 * μHE[n - 1] K`, twice
 the area of `K`, because the ball of radius `t` in a line has length `2 t`; when `k ≤ n - 2` it
 is zero. Taking `A` to be the affine span, this applies to every lower-dimensional compact convex
-set. Such a set is null, so its perimeter vanishes, while in codimension one the right derivative
-is twice the area of its topological boundary `K`: for degenerate bodies of codimension one the
-right derivative is neither the perimeter nor the area of the boundary; in higher codimension all
-three vanish.
+set.
 
 The product coordinates are Mathlib's `Submodule.measurableEquivProd`, which preserves volume by
 `Submodule.measurePreserving_measurableEquivProd`. Coordinates on `A` itself are its directions
@@ -71,13 +69,6 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- A closed ball of positive radius has positive real volume. -/
-private theorem volume_real_closedBall_pos {F : Type*} [NormedAddCommGroup F]
-    [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F] (x : F)
-    {t : ℝ} (ht : 0 < t) : 0 < volume.real (closedBall x t) :=
-  ENNReal.toReal_pos (measure_closedBall_pos volume x ht).ne' measure_closedBall_lt_top.ne
 
 /-- **Lower product bound for outer parallel volume.** If `K` lies in an affine subspace `A`,
 then the volume of `K + t • closedBall 0 1` is at least the Euclidean Hausdorff measure of `K` in
@@ -145,10 +136,8 @@ theorem preimage_coe_vadd_add_smul_closedBall {A : AffineSubspace ℝ E} [Nonemp
     (fun v : A.direction ↦ ((v +ᵥ q : A) : E)) ⁻¹' (K + t • closedBall (0 : E) 1) =
       cthickening t ((fun v : A.direction ↦ ((v +ᵥ q : A) : E)) ⁻¹' K) := by
   set g := fun v : A.direction ↦ ((v +ᵥ q : A) : E)
-  have hg : Isometry g := isometry_subtype_coe.comp (IsometryEquiv.vaddConst q).isometry
-  have hrange : range g = A := by
-    rw [show g = Subtype.val ∘ IsometryEquiv.vaddConst q from rfl, range_comp,
-      (IsometryEquiv.vaddConst q).range_eq_univ, image_univ, Subtype.range_coe]
+  have hg : Isometry g := A.isometry_coe_vadd q
+  have hrange : range g = A := A.range_coe_vadd q
   rw [smul_unitClosedBall_of_nonneg ht, hK.add_closedBall_zero ht]
   ext v
   have h := Metric.infEDist_image hg (x := v) (t := g ⁻¹' K)
@@ -169,9 +158,7 @@ theorem tendsto_volume_real_add_smul_closedBall_div {A : AffineSubspace ℝ E} {
   let q : A := ⟨p, hKA hp⟩
   have : Nonempty A := ⟨q⟩
   set g := fun v : A.direction ↦ ((v +ᵥ q : A) : E)
-  have hg : Isometry g := isometry_subtype_coe.comp (IsometryEquiv.vaddConst q).isometry
-  have hKg : IsCompact (g ⁻¹' K) := isCompact_of_isClosed_isBounded
-    (hK.isClosed.preimage hg.continuous) (hg.antilipschitzWith.isBounded_preimage hK.isBounded)
+  have hKg : IsCompact (g ⁻¹' K) := (A.isometry_coe_vadd q).isClosedEmbedding.isCompact_preimage hK
   have hKmeas : volume (g ⁻¹' K) = μHE[finrank ℝ A.direction] K := by
     rw [A.volume_preimage_coe_vadd q, inter_eq_left.2 hKA]
   -- The upper bound is the volume of the thickening of `g ⁻¹' K`, which tends to its volume.
@@ -183,7 +170,7 @@ theorem tendsto_volume_real_add_smul_closedBall_div {A : AffineSubspace ℝ E} {
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hupper ?_ ?_
   all_goals
     filter_upwards [self_mem_nhdsWithin] with t (ht : 0 < t)
-    have hb := volume_real_closedBall_pos (0 : A.directionᗮ) ht
+    have hb := measureReal_closedBall_pos volume (0 : A.directionᗮ) ht
   -- Both bounds pass from `ℝ≥0∞` to `ℝ` through `ENNReal.toReal_mono` and `ENNReal.toReal_mul`.
   · rw [le_div_iff₀ hb]
     simpa only [measureReal_def, ENNReal.toReal_mul] using ENNReal.toReal_mono
@@ -256,7 +243,7 @@ theorem hasDerivWithinAt_volume_real_add_smul_closedBall_of_finrank_add_two_le
   have hb : volume.real (closedBall (0 : A.directionᗮ) t) = t ^ (m - 1) * c * t := by
     rw [Measure.addHaar_real_closedBall' _ _ ht.le, mul_right_comm, ← pow_succ,
       Nat.sub_add_cancel (by omega)]
-  have hb0 := volume_real_closedBall_pos (0 : A.directionᗮ) ht
+  have hb0 := measureReal_closedBall_pos volume (0 : A.directionᗮ) ht
   rw [slope_def_field, volume_real_add_zero_smul_closedBall hKA (by omega), sub_zero, sub_zero]
   rw [hb] at hb0 ⊢
   have hc : c ≠ 0 := fun hc ↦ by simp [hc] at hb0

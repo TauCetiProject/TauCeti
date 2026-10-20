@@ -225,19 +225,12 @@ from those of `k` as `x` is from `k`. -/
 theorem norm_measurableEquivProd_le (V : Submodule ℝ E) {p k : E} (hkp : k - p ∈ V) (x : E) :
     ‖((V.measurableEquivProd p x).1 : E) + p - k‖ ≤ ‖x - k‖ ∧
       ‖((V.measurableEquivProd p x).2 : E)‖ ≤ ‖x - k‖ := by
-  have hx := V.measurableEquivProd_fst_add_add_snd p x
-  generalize V.measurableEquivProd p x = q at hx ⊢
-  obtain ⟨v, w⟩ := q
-  have hb : x - k = ((v : E) + p - k) + w := by
-    rw [← hx]
-    abel
-  have hvk : (v : E) + p - k ∈ V := by
-    convert V.sub_mem v.2 hkp using 1
-    abel
-  have hpyth := norm_add_sq_eq_norm_sq_add_norm_sq_of_inner_eq_zero ((v : E) + p - k) w
-    (inner_right_of_mem_orthogonal hvk w.2)
-  rw [← hb] at hpyth
-  constructor <;>
-    nlinarith [norm_nonneg ((v : E) + p - k), norm_nonneg (w : E), norm_nonneg (x - k)]
+  -- Both coordinates are orthogonal projections of `x - k`, since `k - p ∈ V`.
+  have hx : x -ᵥ p = (x - k) + (k - p) := by rw [vsub_eq_sub]; abel
+  rw [measurableEquivProd_apply, hx, map_add, map_add,
+    V.orthogonalProjectionOnto_mem_subspace_eq_self ⟨_, hkp⟩,
+    V.orthogonalProjectionOnto_orthogonal_apply_eq_zero hkp, add_zero, coe_add, coe_mk, add_assoc,
+    sub_add_cancel, add_sub_cancel_right]
+  exact ⟨V.norm_orthogonalProjectionOnto_apply_le _, Vᗮ.norm_orthogonalProjectionOnto_apply_le _⟩
 
 end Submodule

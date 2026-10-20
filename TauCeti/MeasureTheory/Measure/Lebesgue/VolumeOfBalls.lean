@@ -64,10 +64,7 @@ omit [Nontrivial V] in
 `2 * r`. -/
 theorem volume_real_closedBall_of_finrank_eq_one (h : finrank ℝ V = 1) (x : V) {r : ℝ}
     (hr : 0 ≤ r) : volume.real (closedBall x r) = 2 * r := by
-  have : Nontrivial V := Module.nontrivial_of_finrank_pos (R := ℝ) (by omega)
-  have hΓ : Gamma 2⁻¹ = √π := by simpa using Gamma_one_half_eq
-  have h2 : √π / (2⁻¹ * √π) = 2 := by field_simp [sqrt_ne_zero'.2 pi_pos]
-  rw [Measure.addHaar_real_closedBall _ _ hr, measureReal_def, InnerProductSpace.volume_ball]
-  simp [h, Gamma_add_one (inv_ne_zero two_ne_zero), hΓ, h2, mul_comm]
+  rw [measureReal_def, InnerProductSpace.volume_closedBall_of_dim_odd (k := 0) h, h]
+  simp [ENNReal.toReal_ofReal hr, mul_comm]
 
 end TauCeti
