@@ -16,8 +16,8 @@ import TauCeti.Algebra.Module.LinearMap.Finite
 For an algebra `A` over a field `k`, Mathlib's `ModuleCat.linearOverField` makes `ModuleCat A`
 a `k`-linear category. When `A` is finite-dimensional over `k`, the morphisms between two
 finitely generated `A`-modules form a finite-dimensional `k`-vector space
-(`ModuleCat.finiteDimensional_hom_of_finite`). This is the Hom-finiteness that dimension counts
-in the module category of a finite-dimensional algebra rest on.
+(the instance `ModuleCat.finiteDimensional_hom_of_finite`). This is the Hom-finiteness that
+dimension counts in the module category of a finite-dimensional algebra rest on.
 
 The morphism space is identified with the `A`-linear maps by `ModuleCat.homLinearEquiv`, and
 those embed in maps into a power of the target by `Module.Finite.linearMap_of_isNoetherian`.
@@ -36,7 +36,7 @@ variable {k : Type u} {A : Type v} [Field k] [Ring A] [Algebra k A] [FiniteDimen
 
 /-- Morphisms between finitely generated modules over a finite-dimensional algebra form a
 finite-dimensional space over the ground field. -/
-theorem finiteDimensional_hom_of_finite (M N : ModuleCat.{w} A) [Module.Finite A M]
+instance finiteDimensional_hom_of_finite (M N : ModuleCat.{w} A) [Module.Finite A M]
     [Module.Finite A N] : FiniteDimensional k (M ⟶ N) := by
   have : Module.Finite k N := Module.Finite.trans A N
   have : Module.Finite k (M →ₗ[A] N) := Module.Finite.linearMap_of_isNoetherian

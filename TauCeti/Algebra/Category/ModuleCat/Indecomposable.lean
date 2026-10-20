@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import TauCeti.CategoryTheory.Preadditive.Indecomposable
 public import TauCeti.RingTheory.KrullSchmidt.Indecomposable
 import Mathlib.RingTheory.LocalRing.RingHom.Basic
-import Mathlib.RingTheory.HopkinsLevitzki
 
 /-!
 # Indecomposable modules are the indecomposable objects of `ModuleCat`
@@ -29,8 +28,6 @@ theorem, which are stated for the module predicate.
 * `TauCeti.indecomposable_iff_isLocalRing_end`: an object of `ModuleCat A` whose underlying module
   has finite length is indecomposable exactly when `CategoryTheory.End` of it is local, which is
   Fitting's lemma stated categorically.
-* `TauCeti.indecomposable_iff_isLocalRing_end_of_finite`: the same for a finitely generated module
-  over an Artinian ring, where finite generation already gives finite length.
 
 ## Implementation notes
 
@@ -83,12 +80,5 @@ theorem indecomposable_iff_isLocalRing_end (M : ModuleCat.{v} A) (hM : IsFiniteL
     Indecomposable M ↔ IsLocalRing (End M) := by
   rw [indecomposable_iff_isIndecomposableModule, isIndecomposableModule_iff_isLocalRing_end hM]
   exact ⟨fun _ ↦ M.endRingEquiv.symm.isLocalRing, fun _ ↦ M.endRingEquiv.isLocalRing⟩
-
-/-- **Fitting's lemma for finitely generated modules over an Artinian ring**: such a module has
-finite length (`IsArtinianRing.tfae`), so it is indecomposable exactly when its ring of
-endomorphisms in the category is local. -/
-theorem indecomposable_iff_isLocalRing_end_of_finite [IsArtinianRing A] (M : ModuleCat.{v} A)
-    [Module.Finite A M] : Indecomposable M ↔ IsLocalRing (End M) :=
-  indecomposable_iff_isLocalRing_end M (((IsArtinianRing.tfae A M).out 1 4).mp ‹_›)
 
 end TauCeti

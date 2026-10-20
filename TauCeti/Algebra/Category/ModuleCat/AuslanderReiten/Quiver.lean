@@ -7,9 +7,9 @@ module
 
 public import TauCeti.CategoryTheory.Preadditive.Radical.IrreducibleMorphismQuiver
 public import TauCeti.Algebra.Category.ModuleCat.Algebra
-public import TauCeti.Algebra.Category.ModuleCat.Indecomposable
--- Non-public: Artinianity of a finite-dimensional algebra is used only inside a proof.
-import Mathlib.RingTheory.Artinian.Module
+public import Mathlib.Algebra.Category.ModuleCat.Abelian
+-- Non-public: Fitting's lemma for finite-dimensional endomorphism algebras is used only in a proof.
+import TauCeti.CategoryTheory.Preadditive.Indecomposable
 
 /-!
 # The quiver of irreducible morphisms of a finite-dimensional algebra
@@ -27,7 +27,8 @@ The instances here make the general API apply without further hypotheses:
 * the morphism spaces between representatives are finite-dimensional
   (`ModuleCat.finiteDimensional_hom_of_finite`), so every arrow set is finite;
 * representatives have local endomorphism rings
-  (`TauCeti.indecomposable_iff_isLocalRing_end_of_finite`), so
+  (`TauCeti.isLocalRing_end_of_indecomposable`, Fitting's lemma for the finite-dimensional
+  endomorphism algebra), so
   `TauCeti.IrreducibleMorphismQuiver.nonempty_arrows_of_iff` and
   `TauCeti.exists_isIrreducibleMorphism_irreducibleMorphismMk_eq` apply to them.
 
@@ -51,16 +52,12 @@ open scoped ModuleCat.Algebra
 universe u v w
 
 variable {k : Type u} {A : Type v} [Field k] [Ring A] [Algebra k A] [FiniteDimensional k A]
-  (a b : IrreducibleMorphismQuiver k fun M : ModuleCat.{w} A ↦ Module.Finite A M)
+  (a : IrreducibleMorphismQuiver k fun M : ModuleCat.{w} A ↦ Module.Finite A M)
 
 instance : Module.Finite A a.representative :=
   a.representative_property.1
 
-instance : FiniteDimensional k (a.representative ⟶ b.representative) :=
-  ModuleCat.finiteDimensional_hom_of_finite _ _
-
 instance : IsLocalRing (End a.representative) :=
-  have : IsArtinianRing A := IsArtinianRing.of_finite k A
-  (indecomposable_iff_isLocalRing_end_of_finite _).mp a.representative_property.2
+  isLocalRing_end_of_indecomposable (k := k) a.representative_property.2
 
 end TauCeti.IrreducibleMorphismQuiver
