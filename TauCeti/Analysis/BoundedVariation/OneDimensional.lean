@@ -76,13 +76,9 @@ theorem _root_.BoundedVariationOn.totalVariationOn_le_variation_vectorMeasure
     {f : ℝ → ℝ} (hf : BoundedVariationOn f univ) (Ω : TopologicalSpace.Opens ℝ) :
     totalVariationOn volume Ω f ≤ hf.vectorMeasure.variation Ω := by
   refine totalVariationOn_le_iff.mpr fun φ hφ ↦ ?_
-  have hdiv (x : ℝ) : TestFunction.divergenceCLM φ x = deriv φ x := by
-    rw [TestFunction.divergenceCLM_apply,
-      LinearMap.trace_eq_matrix_trace ℝ (Module.Basis.singleton Unit ℝ)]
-    simp [Matrix.trace, LinearMap.toMatrix_apply]
   have hpair : ∫ x, TestFunction.divergenceCLM φ x * f x =
       -∫ᵛ x, φ x ∂•hf.vectorMeasure := by
-    simp_rw [hdiv]
+    simp_rw [TestFunction.divergenceCLM_apply_real]
     exact hf.integral_deriv_smul_eq_neg_vectorMeasure
       (φ.contDiff.of_le (by simp)) φ.hasCompactSupport
   have hloc : ∫ᵛ x in Ω, φ x ∂•hf.vectorMeasure = ∫ᵛ x, φ x ∂•hf.vectorMeasure :=
@@ -91,11 +87,18 @@ theorem _root_.BoundedVariationOn.totalVariationOn_le_variation_vectorMeasure
   rw [hpair]
   refine (Real.ofReal_le_enorm _).trans ?_
   rw [enorm_neg, ← hloc]
-  have hbound := VectorMeasure.enorm_setIntegral_le_of_enorm_le_const
-    (μ := hf.vectorMeasure) (B := ContinuousLinearMap.lsmul ℝ ℝ) (s := (Ω : Set ℝ))
-    (C := 1) (f := (φ : ℝ → ℝ)) (fun x _ ↦ by
-      simpa using (enorm_le_iff_norm_le (y := (1 : ℝ))).mpr (by simpa using hφ x))
-  simpa [enorm_eq_nnnorm, ← coe_nnnorm, ContinuousLinearMap.opNorm_lsmul] using hbound
+  have hφnorm (x : ℝ) : ‖φ x‖ₑ ≤ 1 := by
+    rw [← ofReal_norm, ← ENNReal.ofReal_one]
+    exact ENNReal.ofReal_le_ofReal (hφ x)
+  have hsmul : ‖(ContinuousLinearMap.lsmul ℝ ℝ : ℝ →L[ℝ] ℝ →L[ℝ] ℝ)‖ₑ ≤ 1 :=
+    ContinuousLinearMap.opENorm_lsmul_le
+  calc
+    ‖∫ᵛ x in Ω, φ x ∂•hf.vectorMeasure‖ₑ ≤
+        1 * ‖(ContinuousLinearMap.lsmul ℝ ℝ : ℝ →L[ℝ] ℝ →L[ℝ] ℝ)‖ₑ *
+          hf.vectorMeasure.variation Ω :=
+      VectorMeasure.enorm_setIntegral_le_of_enorm_le_const (fun x _ ↦ hφnorm x)
+    _ ≤ 1 * 1 * hf.vectorMeasure.variation Ω := by gcongr
+    _ = hf.vectorMeasure.variation Ω := by rw [one_mul, one_mul]
 
 /-- Classical global bounded variation implies finite distributional variation on every
 open set, including the whole line and functions with nonzero limits at infinity. -/
