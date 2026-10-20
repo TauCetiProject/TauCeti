@@ -381,6 +381,17 @@ theorem rescale_rescale (c d : Aˣ) (p : A[T;T⁻¹]) :
 theorem rescale_one : rescale A 1 = AlgHom.id A A[T;T⁻¹] :=
   (laurentEval_unique _ _ (by simp)).symm
 
+/-- Evaluating a rescaled Laurent polynomial at `u` is evaluating it at `c u`. -/
+@[simp]
+theorem laurentEval_rescale {B : Type*} [Semiring B] [Algebra A B] (c : Aˣ) (u : Bˣ)
+    (p : A[T;T⁻¹]) :
+    laurentEval u (rescale A c p) =
+      laurentEval (Units.map (algebraMap A B).toMonoidHom c * u) p := by
+  have h : (laurentEval u).comp (rescale A c) =
+      laurentEval (Units.map (algebraMap A B).toMonoidHom c * u) :=
+    laurentEval_unique _ _ <| by simp
+  exact DFunLike.congr_fun h p
+
 /-- If `x` commutes with a unit `u` up to the scalar `c`, that is `x u = c u x`, then moving `x`
 past the evaluation of a Laurent polynomial `p` at `u` rescales `p` by `c`. -/
 theorem _root_.TauCeti.mul_laurentEval {B : Type*} [Semiring B] [Algebra A B] {u : Bˣ} {x : B}

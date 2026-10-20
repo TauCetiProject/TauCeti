@@ -48,6 +48,8 @@ one of the signed simple modules `L_j^±`. In that case `v_(j + 1)` is a vector 
 
 * `TauCeti.UqSl2.VermaModule.e_smul_vec_succ`, `f_smul_vec`, `k_smul_vec`, `kInv_smul_vec`:
   the action of the generators.
+* `TauCeti.UqSl2.VermaModule.e_pow_smul_vec_add`, `e_pow_smul_vec_of_lt`: the action of the
+  powers of `E`.
 * `TauCeti.UqSl2.VermaModule.lift_vec_zero`, `TauCeti.UqSl2.VermaModule.hom_ext`: the universal
   property.
 * `TauCeti.UqSl2.VermaModule.span_vec_eq_top`, `linearIndependent_vec`: the vectors `v_j` span
@@ -197,6 +199,29 @@ theorem e_smul_vec_succ (j : ℕ) :
     congr 1
     push_cast
     ring
+
+/-- The action of the powers of `E`: `E^c v_(j + c)` is `v_j` times the product, over `i < c`,
+of the coefficients of the steps `E v_(j + i + 1)` on `v_(j + i)`. -/
+theorem e_pow_smul_vec_add (c j : ℕ) :
+    e q ^ c • vec q μ (j + c) =
+      (∏ i ∈ Finset.range c,
+        quantumInteger q (j + i + 1) * (q⁻¹ ^ (j + i) * μ - q ^ (j + i) * μ⁻¹) / (q - q⁻¹)) •
+        vec q μ j := by
+  induction c with
+  | zero => simp
+  | succ c ih =>
+    rw [pow_succ, mul_smul, ← add_assoc, e_smul_vec_succ, smul_comm, ih, smul_smul,
+      Finset.prod_range_succ, mul_comm]
+    push_cast
+    rfl
+
+/-- A power of `E` of exponent larger than `j` kills `v_j`. -/
+theorem e_pow_smul_vec_of_lt {c j : ℕ} (h : j < c) : e q ^ c • vec q μ j = 0 := by
+  obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_lt h
+  have hj := e_pow_smul_vec_add (q := q) (μ := μ) j 0
+  rw [zero_add] at hj
+  rw [show j + d + 1 = d + 1 + j by omega, pow_add, mul_smul, hj, smul_comm, pow_succ, mul_smul,
+    e_smul_vec_zero, smul_zero, smul_zero]
 
 /-! ### Spanning -/
 
