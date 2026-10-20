@@ -11,11 +11,11 @@ public import Mathlib.GroupTheory.SpecificGroups.Cyclic
 # Cyclic groups
 
 For `n ≠ 0`, this file gives the standard computable enumeration of
-`Multiplicative (ZMod n)`, transported from the additive group `ZMod n`, and records that
-`ofAdd 1` generates it. It also records that an element corresponding to `1` under an
-equivalence with `Multiplicative ℤ` generates its group, and Euler's criterion for `n`-th powers
-in a finite cyclic group: when `n` divides the order `m`, an element is an `n`-th power exactly
-when its `(m / n)`-th power is trivial.
+`Multiplicative (ZMod n)`, transported from the additive group `ZMod n`.
+It also records that an element corresponding to `1` under an equivalence with
+`Multiplicative ℤ` generates its group, and Euler's criterion for `n`-th powers in a finite cyclic
+group: when `n` divides the order `m`, an element is an `n`-th power exactly when its
+`(m / n)`-th power is trivial.
 
 ## Main definitions
 
@@ -24,7 +24,6 @@ when its `(m / n)`-th power is trivial.
 ## Main results
 
 * `TauCeti.mem_cyclicElements`: the enumeration exhausts the group when `n ≠ 0`.
-* `TauCeti.mem_zpowers_ofAdd_one`: `ofAdd 1` generates `Multiplicative (ZMod n)`.
 * `MulEquiv.zpowers_eq_top_of_apply_eq_ofAdd_one`: an element sent to `1` by an equivalence with
   `Multiplicative ℤ` generates its group.
 * `IsCyclic.mem_range_powMonoidHom_iff`: Euler's criterion for `n`-th powers in a finite cyclic
@@ -51,12 +50,6 @@ theorem mem_cyclicElements (n : ℕ) [NeZero n] (g : Multiplicative (ZMod n)) :
   rw [cyclicElements, List.mem_ofFn']
   exact ⟨⟨g.toAdd.val, ZMod.val_lt g.toAdd⟩,
     congrArg Multiplicative.ofAdd (ZMod.natCast_zmod_val g.toAdd)⟩
-
-/-- The element `ofAdd 1` generates the cyclic group `Multiplicative (ZMod n)`, for every `n`. -/
-theorem mem_zpowers_ofAdd_one {n : ℕ} (x : Multiplicative (ZMod n)) :
-    x ∈ Subgroup.zpowers (Multiplicative.ofAdd 1) := by
-  obtain ⟨k, hk⟩ := ZMod.intCast_surjective x.toAdd
-  exact ⟨k, by simp [← ofAdd_zsmul, hk]⟩
 
 /-- An element sent to `1` by a group equivalence with `Multiplicative ℤ` generates its
 group. -/

@@ -8,13 +8,14 @@ module
 public import Mathlib.Algebra.Group.TypeTags.Finite
 public import Mathlib.RingTheory.PowerSeries.WeierstrassPreparation
 public import TauCeti.Algebra.MonoidAlgebra.Cyclic
-public import TauCeti.GroupTheory.SpecificGroups.Cyclic.Basic
 
 import Mathlib.Algebra.CharP.Algebra
 import Mathlib.Algebra.CharP.Lemmas
 import Mathlib.NumberTheory.Padics.PadicIntegers
 import Mathlib.RingTheory.Filtration
 import Mathlib.RingTheory.PowerSeries.Ideal
+import TauCeti.Data.ZMod.MonoidHomEquiv
+import TauCeti.NumberTheory.Padics.QuotientTower
 
 /-!
 # The level coordinates of the Iwasawa algebra `O⟦T⟧`
@@ -150,10 +151,10 @@ noncomputable def levelEquiv (n : ℕ) :
     (TauCeti.Polynomial.isDistinguishedAt_one_add_X_pow_sub_one Fact.out
       hp n).algEquivQuotient.symm.trans <|
       (Ideal.quotientEquivAlgOfEq O (by
-        rw [TauCeti.MonoidAlgebra.ker_aeval_of_sub_one mem_zpowers_ofAdd_one,
+        rw [TauCeti.MonoidAlgebra.ker_aeval_of_sub_one Multiplicative.mem_zpowers_ofAdd_one,
           Nat.card_congr Multiplicative.toAdd, Nat.card_zmod])).trans <|
         Ideal.quotientKerAlgEquivOfSurjective
-          (TauCeti.MonoidAlgebra.aeval_of_sub_one_surjective mem_zpowers_ofAdd_one)
+          (TauCeti.MonoidAlgebra.aeval_of_sub_one_surjective Multiplicative.mem_zpowers_ofAdd_one)
 
 /-- **The level-`n` Iwasawa coordinate** `O⟦T⟧ →ₐ[O] O[ℤ/pⁿ]`, `T ↦ [1] - 1`: the quotient map
 by `ω_n = (1 + T) ^ pⁿ - 1` followed by `levelEquiv`. -/
@@ -229,20 +230,24 @@ theorem levelCoordinate_eq_zero_iff (n : ℕ) (F : O⟦X⟧) :
   rw [← RingHom.mem_ker, ker_levelCoordinate, Ideal.mem_span_singleton]
 
 variable (p O) in
-/-- The projection `O[ℤ/pⁿ] → O[ℤ/pᵐ]` induced by reduction `ℤ/pⁿ → ℤ/pᵐ`, for `m ≤ n`. -/
+/-- The projection `O[ℤ/pⁿ] → O[ℤ/pᵐ]` induced by reduction `ℤ/pⁿ → ℤ/pᵐ`, for `m ≤ n`: the
+transition map of the congruence tower of `ℤ_p` (`TauCeti.FiniteQuotientTower.padicTower`). -/
 noncomputable def levelTransition {m n : ℕ} (h : m ≤ n) :
     MonoidAlgebra O (Multiplicative (ZMod (p ^ n))) →ₐ[O]
       MonoidAlgebra O (Multiplicative (ZMod (p ^ m))) :=
-  MonoidAlgebra.mapDomainAlgHom O O
-    (ZMod.castHom (pow_dvd_pow p h) (ZMod (p ^ m))).toAddMonoidHom.toMultiplicative
+  MonoidAlgebra.mapDomainAlgHom O O ((FiniteQuotientTower.padicTower p).t h)
 
 /-- **Compatibility of the level coordinates.** For `m ≤ n`, the level-`n` coordinate followed by
 the projection `O[ℤ/pⁿ] → O[ℤ/pᵐ]` is the level-`m` coordinate. -/
 theorem levelCoordinate_transition {m n : ℕ} (h : m ≤ n) :
     (levelTransition p O h).comp (levelCoordinate hp n) = levelCoordinate hp m :=
   levelCoordinate_unique hp m (by
+    have h1 : (FiniteQuotientTower.padicTower p).t h (.ofAdd 1) = .ofAdd 1 :=
+      Multiplicative.toAdd.injective (by
+        rw [FiniteQuotientTower.padicTower_t_apply, toAdd_ofAdd, toAdd_ofAdd,
+          ZMod.cast_one (pow_dvd_pow p h)])
     rw [AlgHom.comp_apply, levelCoordinate_X, map_sub, map_one (levelTransition p O h)]
-    simp [levelTransition, ZMod.cast_one (pow_dvd_pow p h)])
+    simp [levelTransition, h1])
 
 /-- At level zero the coordinate is the constant coefficient, as an element of
 `O[ℤ/1] = O[1]`. -/
