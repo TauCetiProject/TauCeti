@@ -45,7 +45,9 @@ characteristic `p`, `a_V = X ^ p - X`.
 * `AddSubgroup.aeval_additivePolynomial_add`: `a_V (x + y) = a_V x + a_V y`.
 * `AddSubgroup.derivative_additivePolynomial`: the derivative of `a_V` is the constant
   `∏_{c ∈ V, c ≠ 0} (-c)`.
+* `AddSubgroup.isIntegral_of_aeval_additivePolynomial_eq`: a root of `a_V - u` is integral.
 * `AddSubgroup.separable_additivePolynomial`: `a_V` is separable.
+* `AddSubgroup.separable_additivePolynomial_sub_C`: `a_V - u` is separable.
 
 ## References
 
@@ -96,6 +98,15 @@ theorem monic_additivePolynomial_sub_C [Nontrivial R] (u : R) :
 theorem natDegree_additivePolynomial_sub_C [Nontrivial R] (u : R) :
     (V.additivePolynomial - C u).natDegree = Fintype.card V := by
   rw [natDegree_sub_C, natDegree_additivePolynomial]
+
+/-- A root of `a_V - u` is integral over the base ring. -/
+theorem isIntegral_of_aeval_additivePolynomial_eq {A : Type*} [Ring A] [Algebra R A]
+    {u : R} {y : A}
+    (hy : aeval y V.additivePolynomial = algebraMap R A u) : IsIntegral R y := by
+  nontriviality A using Subsingleton.elim y 0, isIntegral_zero
+  have := (algebraMap R A).domain_nontrivial
+  exact ⟨_, V.monic_additivePolynomial_sub_C u, by
+    rw [← aeval_def, map_sub, hy, aeval_C, sub_self]⟩
 
 section Algebra
 
@@ -200,6 +211,14 @@ theorem derivative_additivePolynomial :
 theorem separable_additivePolynomial : V.additivePolynomial.Separable := by
   rw [additivePolynomial_eq_prod]
   exact separable_prod_X_sub_C_iff'.mpr Subtype.val_injective.injOn
+
+/-- `a_V - u` is separable. -/
+theorem separable_additivePolynomial_sub_C (u : K) : (V.additivePolynomial - C u).Separable := by
+  rw [separable_def, derivative_sub, derivative_C, sub_zero, V.derivative_additivePolynomial]
+  have hc : (∏ᶠ c : {c : V // c ≠ 0}, -(c : K)) ≠ 0 :=
+    finprod_ne_zero fun c ↦ by simpa using c.property
+  refine ⟨0, C (∏ᶠ c : {c : V // c ≠ 0}, -(c : K))⁻¹, ?_⟩
+  simp [← C_mul, hc]
 
 end Field
 
