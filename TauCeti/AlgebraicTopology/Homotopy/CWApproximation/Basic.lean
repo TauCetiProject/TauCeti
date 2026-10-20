@@ -43,7 +43,8 @@ bijective on `πₖ`, and it is a weak homotopy equivalence when `X` is path-con
   map to `X`.
 * `TauCeti.cwApproximationTower X x`: the tower, as a functor `ℕ ⥤ TopCat`, starting with the empty
   space.
-* `TauCeti.cwApproximation X x`: its colimit, with the map `TauCeti.cwApproximationMap X x` to `X`.
+* `TauCeti.cwApproximation X x`: its colimit, with the map `TauCeti.cwApproximationMap X x` to `X`
+  and the base point `TauCeti.cwApproximationBasepoint X x`, which the map sends to `x`.
 * `TauCeti.cwApproximationCWComplex X x`: the categorical CW structure of the colimit.
 
 ## Main results
@@ -240,14 +241,25 @@ instance instT2SpaceCWApproximationStage (m : ℕ) :
     (cwApproximationCWComplex X x).isClosedEmbedding_incl_app (m + 1)
   h.isEmbedding.t2Space
 
-/-- The base point of the CW approximation: the image of the vertex. -/
-private def basepoint : cwApproximation X x :=
+/-- The map of each stage to `X` sends the base point of the stage to `x`. -/
+@[simp]
+lemma cwApproximationStage_map_basepoint (m : ℕ) :
+    (cwApproximationStage X x m).2.2 (cwApproximationStage X x m).2.1 = x := by
+  induction m with
+  | zero => exact ConcreteCategory.congr_hom (cellAttachmentCell_lift _ _ _ _ PUnit.unit) _
+  | succ m ih =>
+    rw [← cwApproximationStageIncl_basepoint, ← ConcreteCategory.comp_apply,
+      cwApproximationStageIncl_comp, ih]
+
+/-- The base point of the CW approximation `TauCeti.cwApproximation X x`: the image of the vertex
+of stage `1`. -/
+def cwApproximationBasepoint : cwApproximation X x :=
   colimit.ι (cwApproximationTower X x) 1 (cwApproximationStage X x 0).2.1
 
-/-- The base point of each stage goes to the image of the vertex. -/
-private lemma colimit_ι_basepoint (m : ℕ) :
+/-- The base point of each stage goes to the base point of the CW approximation. -/
+lemma colimit_ι_cwApproximationBasepoint (m : ℕ) :
     colimit.ι (cwApproximationTower X x) (m + 1) (cwApproximationStage X x m).2.1 =
-      basepoint X x := by
+      cwApproximationBasepoint X x := by
   induction m with
   | zero => rfl
   | succ m ih =>
@@ -255,6 +267,14 @@ private lemma colimit_ι_basepoint (m : ℕ) :
       cwApproximationTower_map_homOfLE_succ, ← cwApproximationStageIncl_basepoint]
     -- Both sides evaluate the composite of the stage inclusion and the colimit inclusion.
     rfl
+
+/-- The map `TauCeti.cwApproximationMap X x` sends the base point of the CW approximation to
+`x`. -/
+@[simp]
+lemma cwApproximationMap_cwApproximationBasepoint :
+    cwApproximationMap X x (cwApproximationBasepoint X x) = x :=
+  (ConcreteCategory.congr_hom (colimit_ι_cwApproximationMap X x 0) _).trans
+    (cwApproximationStage_map_basepoint X x 0)
 
 /-- The first stage, a single `0`-cell, is a point. -/
 private instance instSubsingletonCWApproximationStageZero :
@@ -278,12 +298,12 @@ instance instPathConnectedSpaceCWApproximation : PathConnectedSpace (cwApproxima
   -- The vertex carries the cells of dimension at most `0`, so it maps onto `π₀` of the colimit.
   have hsurj := (cwApproximationCWComplex X x).surjective_homotopyGroupMap_incl_app
     (n := 0) (N := Fin 0) (by simp) (cwApproximationStage X x 0).2.1
-  have : Subsingleton (π_ 0 (cwApproximation X x) (basepoint X x)) := by
-    rw [← colimit_ι_basepoint X x 0]
+  have : Subsingleton (π_ 0 (cwApproximation X x) (cwApproximationBasepoint X x)) := by
+    rw [← colimit_ι_cwApproximationBasepoint X x 0]
     exact Function.Surjective.subsingleton (α := π_ 0 (cwApproximationStage X x 0).1 _) hsurj
   exact pathConnectedSpace_iff_zerothHomotopy.2
-    ⟨⟨⟦basepoint X x⟧⟩,
-      (HomotopyGroup.pi0EquivZerothHomotopy (x := basepoint X x)).symm.subsingleton⟩
+    ⟨⟨⟦cwApproximationBasepoint X x⟧⟩,
+      (HomotopyGroup.pi0EquivZerothHomotopy (x := cwApproximationBasepoint X x)).symm.subsingleton⟩
 
 /-- Stage `k + 2` of the tower maps onto `πₖ₊₁(X)`: stage `2` by its circles, and stage `k + 3` by
 its spheres. -/
@@ -311,10 +331,9 @@ private lemma surjective_homotopyGroupMap_cwApproximationStage_succ (k : ℕ) {b
   have hcomp : HomotopyGroup.map (N := Fin (k + 1)) (cwApproximationStage X x (k + 2)).2.2.hom h ∘
       HomotopyGroup.map (cwApproximationStageIncl X x (k + 1)).hom
         (cwApproximationStageIncl_basepoint X x (k + 1)) =
-      HomotopyGroup.map (cwApproximationStage X x (k + 1)).2.2.hom h' := by
-    rw [HomotopyGroup.map_comp_map]
-    exact funext (HomotopyGroup.map_congr
-      (congrArg TopCat.Hom.hom (cwApproximationStageIncl_comp X x (k + 1))) _ _)
+      HomotopyGroup.map (cwApproximationStage X x (k + 1)).2.2.hom h' :=
+    HomotopyGroup.map_comp_map_of_comp_eq
+      (congrArg TopCat.Hom.hom (cwApproximationStageIncl_comp X x (k + 1))) _ _ _
   exact Function.Surjective.of_comp
     (hcomp ▸ surjective_homotopyGroupMap_cwApproximationStage X x k h')
 
@@ -332,30 +351,29 @@ private lemma injective_homotopyGroupMap_cwApproximationStage (k : ℕ) {b : X}
 homotopy equivalence. -/
 theorem isWeakHomotopyEquivalence_cwApproximationMap [PathConnectedSpace X] :
     (cwApproximationMap X x).hom.IsWeakHomotopyEquivalence := by
-  refine (ContinuousMap.isWeakHomotopyEquivalence_iff_forall_bijective (basepoint X x)).2
-    fun j ↦ ?_
+  refine (ContinuousMap.isWeakHomotopyEquivalence_iff_forall_bijective
+    (cwApproximationBasepoint X x)).2 fun j ↦ ?_
   cases j with
   | zero =>
     -- Both spaces are path-connected, so both sets of path components are points.
-    have : Subsingleton (π_ 0 X (cwApproximationMap X x (basepoint X x))) :=
+    have : Subsingleton (π_ 0 X (cwApproximationMap X x (cwApproximationBasepoint X x))) :=
       HomotopyGroup.pi0EquivZerothHomotopy.subsingleton
-    have : Subsingleton (π_ 0 (cwApproximation X x) (basepoint X x)) :=
+    have : Subsingleton (π_ 0 (cwApproximation X x) (cwApproximationBasepoint X x)) :=
       HomotopyGroup.pi0EquivZerothHomotopy.subsingleton
     exact ⟨fun _ _ _ ↦ Subsingleton.elim _ _, fun _ ↦ ⟨⟦GenLoop.const⟧, Subsingleton.elim _ _⟩⟩
   | succ k =>
     -- Stage `k + 3` carries the cells of dimension at most `k + 2`, so it maps onto `πₖ₊₁` of the
     -- colimit, and its map to `X` is bijective on `πₖ₊₁`.
-    rw [← colimit_ι_basepoint X x (k + 2)]
+    rw [← colimit_ι_cwApproximationBasepoint X x (k + 2)]
     have hsurj := (cwApproximationCWComplex X x).surjective_homotopyGroupMap_incl_app
       (n := k + 2) (N := Fin (k + 1)) (by simp) (cwApproximationStage X x (k + 2)).2.1
     have hcomp : HomotopyGroup.map (N := Fin (k + 1)) (cwApproximationMap X x).hom rfl ∘
         HomotopyGroup.map (x := (cwApproximationStage X x (k + 2)).2.1)
           (colimit.ι (cwApproximationTower X x) (k + 2 + 1)).hom rfl =
         HomotopyGroup.map (cwApproximationStage X x (k + 2)).2.2.hom
-          (ConcreteCategory.congr_hom (colimit_ι_cwApproximationMap X x (k + 2)) _).symm := by
-      funext a
-      exact (HomotopyGroup.map_comp_apply _ _ _ _ a).trans (HomotopyGroup.map_congr
-        (congrArg TopCat.Hom.hom (colimit_ι_cwApproximationMap X x (k + 2))) _ _ a)
+          (ConcreteCategory.congr_hom (colimit_ι_cwApproximationMap X x (k + 2)) _).symm :=
+      HomotopyGroup.map_comp_map_of_comp_eq
+        (congrArg TopCat.Hom.hom (colimit_ι_cwApproximationMap X x (k + 2))) _ _ _
     exact ⟨Function.Injective.of_comp_right
         (hcomp ▸ injective_homotopyGroupMap_cwApproximationStage X x k _) hsurj,
       Function.Surjective.of_comp

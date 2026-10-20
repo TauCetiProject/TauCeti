@@ -310,12 +310,21 @@ namespace TopCat.CWComplex
 
 variable {X : TopCat.{u}}
 
-/-- The classical CW structure on a space with a categorical CW structure: the classical relative
-structure `c.toRelCWComplex`, whose base, the range of the map out of the empty space, is empty. -/
+/-- The classical CW structure on a space with a categorical CW structure: the cells and
+characteristic maps of the classical relative structure `c.toRelCWComplex`, whose base, the range
+of the map out of the empty space, is empty. -/
 @[instance_reducible] def toCWComplex (c : CWComplex X) : Topology.CWComplex (univ : Set X) :=
-  letI : Topology.RelCWComplex (univ : Set X) ∅ :=
-    range_eq_empty (initial.to X) ▸ RelativeCWComplex.toRelCWComplex c
-  Topology.RelCWComplex.toCWComplex _
+  letI := RelativeCWComplex.toRelCWComplex c
+  have hD : range (initial.to X) = ∅ := range_eq_empty _
+  { cell := Topology.RelCWComplex.cell (univ : Set X)
+    map := Topology.RelCWComplex.map
+    source_eq := Topology.RelCWComplex.source_eq
+    continuousOn := Topology.RelCWComplex.continuousOn
+    continuousOn_symm := Topology.RelCWComplex.continuousOn_symm
+    pairwiseDisjoint' := Topology.RelCWComplex.pairwiseDisjoint'
+    mapsTo' n i := by simpa [hD] using Topology.RelCWComplex.mapsTo (C := (univ : Set X)) n i
+    closed' A hA h := Topology.RelCWComplex.closed' A hA ⟨h, by simp [hD]⟩
+    union' := by simpa [hD] using Topology.RelCWComplex.union' (C := (univ : Set X)) }
 
 /-- **A space with a categorical CW structure has CW type.** -/
 theorem cwType (c : CWComplex X) : TauCeti.CWType X :=
