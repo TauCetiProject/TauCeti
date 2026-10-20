@@ -64,10 +64,7 @@ private theorem coneToJoin_coneMap_eq
     rw [closedStarMap_apply_of_lt f x hx j]
     by_cases hj : j = w <;> simp [hj]
   · rw [starToCone_of_not_lt x hx, coneMap_zero, coneToJoin_apply]
-    have he : x.1 = vertex K v := (Realization.eq_vertex_iff K x.1 v).mpr
-      (le_antisymm (Realization.le_one K x.1 v) (not_lt.mp hx))
-    have hex : x = starApex K v := Subtype.ext (by simpa only [starApex_val] using he)
-    rw [hex, closedStarMap_starApex]
+    rw [eq_starApex_of_not_lt K v hx, closedStarMap_starApex]
     ext j
     simp [vertex_val, Finsupp.single_apply, Pi.single_apply, eq_comm]
 

@@ -82,12 +82,6 @@ private theorem joinFormula_starApex (F : (ι → ℝ) → (κ → ℝ)) (b : κ
     starToCone_of_not_lt (starApex K v) (by simp [vertex_val]), coneMap_zero, coneToJoin_apply]
   simp
 
-/-- A point of the closed star whose apex coordinate is not less than one is the apex. -/
-private theorem eq_starApex_of_not_lt (x : closedStarRealization K {v}) (hx : ¬x.1.1 v < 1) :
-    x = starApex K v :=
-  Subtype.ext <| (starApex_val K v).symm ▸ (Realization.eq_vertex_iff K x.1 v).mpr
-    (le_antisymm (Realization.le_one K x.1 v) (not_lt.mp hx))
-
 variable {F : (ι → ℝ) → (κ → ℝ)} {G : (κ → ℝ) → (ι → ℝ)} {b : κ → ℝ} {h : (κ → ℝ) → ℝ}
 
 /-- Every point of the closed star is sent into the join of the link model with the centre. -/
@@ -102,7 +96,7 @@ private theorem joinFormula_mem (hne : (geometricLink K v).Nonempty)
     exact ⟨1 - x.1.1 v, x.1.1 v, sub_nonneg.mpr (Realization.le_one K x.1 v),
       Realization.nonneg K x.1 v, by ring, rfl⟩
   · obtain ⟨y, hy⟩ := hne
-    rw [eq_starApex_of_not_lt x hx, joinFormula_starApex]
+    rw [eq_starApex_of_not_lt K v hx, joinFormula_starApex]
     exact mem_convexJoin.mpr ⟨_, mem_range_self ⟨y, hy⟩, b, rfl, right_mem_segment ℝ _ _⟩
 
 /-- The height function reads off the apex coordinate along the join formula. -/
@@ -116,7 +110,7 @@ private theorem h_joinFormula (hne : (geometricLink K v).Nonempty)
   · obtain ⟨y, hy⟩ := hne
     have hb := hhF ⟨y, hy⟩ 1 ⟨zero_le_one, le_rfl⟩
     rw [sub_self, zero_smul, one_smul, zero_add] at hb
-    rw [eq_starApex_of_not_lt x hx, joinFormula_starApex, hb, starApex_val, vertex_val]
+    rw [eq_starApex_of_not_lt K v hx, joinFormula_starApex, hb, starApex_val, vertex_val]
     simp
 
 /-- The inverse formula undoes the join formula on the closed star. -/
@@ -141,23 +135,17 @@ private theorem joinInverseFormula_joinFormula (hne : (geometricLink K v).Nonemp
     · subst hvw
       simp
     · simp [Ne.symm hvw, hvw]
-  · rw [eq_starApex_of_not_lt x hx] at hx' ⊢
+  · rw [eq_starApex_of_not_lt K v hx] at hx' ⊢
     rw [joinInverseFormula, Function.comp_apply, Function.comp_apply, hx',
       joinFormula_starApex, starApex_val, vertex_val]
     simp [coneToJoin_apply, Finsupp.single_eq_pi_single]
-
-/-- The coordinates of a compact geometric link form a compact set. -/
-private theorem isCompact_range_geometricLink (hK : IsCompact (closedStarRealization K {v})) :
-    IsCompact (range fun y : geometricLink K v => (y.1.1 : ι → ℝ)) := by
-  have := isCompact_iff_compactSpace.mp (K.isCompact_geometricLink v hK)
-  exact isCompact_range ((continuous_realization_coe K).comp continuous_subtype_val)
 
 /-- The join formula is piecewise linear on the closed-star coordinates. -/
 private theorem isPLOn_joinFormula (hK : IsCompact (closedStarRealization K {v}))
     (hF : IsPLOn F (range fun y : geometricLink K v => (y.1.1 : ι → ℝ))) :
     IsPLOn (joinFormula F b v) (range fun x : closedStarRealization K {v} => (x.1.1 : ι → ℝ)) :=
   (isPLOn_continuousAffineMap (coneToJoin b) univ).comp
-    ((hF.coneMap (isCompact_range_geometricLink hK)).comp
+    ((hF.coneMap (K.isCompact_range_geometricLink v hK)).comp
       (isPLOn_continuousAffineMap (starToCone v) _) (by rintro _ ⟨x, rfl⟩; exact starToCone_mem x))
     (fun _ _ => mem_univ _)
 
@@ -186,7 +174,7 @@ private theorem isPLOn_joinInverseFormula (hK : IsCompact (closedStarRealization
       (convexJoin ℝ (range fun y : geometricLink K v => F (y.1.1 : ι → ℝ)) {b}) := by
   have hT : IsCompact (range fun y : geometricLink K v => F (y.1.1 : ι → ℝ)) := by
     rw [range_comp' F]
-    exact (isCompact_range_geometricLink hK).image_of_continuousOn hF.continuousOn
+    exact (K.isCompact_range_geometricLink v hK).image_of_continuousOn hF.continuousOn
   -- The pair `(z - h z • b, 1 - h z)` is an affine image of `(z, h z)`.
   let A : ((κ → ℝ) × ℝ) →ᴬ[ℝ] ((κ → ℝ) × ℝ) :=
     ((ContinuousLinearMap.fst ℝ (κ → ℝ) ℝ - (ContinuousLinearMap.snd ℝ (κ → ℝ) ℝ).smulRight b).prod

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Convex.StdSimplex
 public import TauCeti.AlgebraicTopology.SimplicialComplex.CombinatorialManifold.Realization
-public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Star.ConvexJoin
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Star.PL.ConvexJoin
 public import TauCeti.Topology.PL.FiniteInf
 import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Finite
 
@@ -61,7 +61,7 @@ private theorem IsCombinatorialSphere.exists_isPLOn_geometricLink
       IsPLOn g (range fun y : geometricLink K v => f (y.1.1 : ι → ℝ)) ∧
       (∀ y : geometricLink K v, g (f (y.1.1 : ι → ℝ)) = y.1.1) ∧
       (range fun y : geometricLink K v => f (y.1.1 : ι → ℝ)) =
-        {z | (∀ i, 0 ≤ z i) ∧ ∑ i, z i = 1 ∧ ∃ i, z i = 0} := by
+        {z ∈ range fun t : Convexity.StdSimplex ℝ (Fin (n + 2)) => ⇑t.weights | ∃ i, z i = 0} := by
   obtain ⟨e, f, g, hf, hg, hfe, hge⟩ :=
     h.exists_homeomorph_standardSimplexBoundary (A := K) link_le
   -- The geometric link is the weak polyhedron of the combinatorial link.
@@ -108,8 +108,7 @@ theorem IsCombinatorialSphere.exists_homeomorph_closedStarRealization_top
   have hne : (geometricLink K v).Nonempty := by
     obtain ⟨_, y, -⟩ : (range fun y : geometricLink K v => f (y.1.1 : ι → ℝ)).Nonempty := by
       rw [hT]
-      exact ⟨Pi.single 0 1, fun i => by by_cases hi : i = 0 <;> simp [hi], by simp, 1,
-        by simp⟩
+      exact ⟨_, mem_range_self (Convexity.StdSimplex.single 0), 1, by simp⟩
     exact ⟨y.1, y.2⟩
   -- Pseudo-radial projection from the barycentre, with height `c` times the least coordinate.
   let c : ℝ := Fintype.card (Fin (n + 2))
@@ -121,13 +120,14 @@ theorem IsCombinatorialSphere.exists_homeomorph_closedStarRealization_top
         fun i => (ContinuousLinearMap.proj i).toContinuousAffineMap)
       (fun _ _ => mem_univ _)).congr fun z _ => ?_
     simp [A, hgt]
+  let b := ⇑(Convexity.StdSimplex.barycenter : Convexity.StdSimplex ℝ (Fin (n + 2))).weights
   have hhF (y : geometricLink K v) (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) :
-      hgt ((1 - t) • f (y.1.1 : ι → ℝ) + t • fun _ => c⁻¹) = t := by
-    obtain ⟨h0, -, i, hi⟩ : f (y.1.1 : ι → ℝ) ∈
-        {z : Fin (n + 2) → ℝ | (∀ i, 0 ≤ z i) ∧ ∑ i, z i = 1 ∧ ∃ i, z i = 0} :=
+      hgt ((1 - t) • f (y.1.1 : ι → ℝ) + t • b) = t := by
+    obtain ⟨⟨s, hs⟩, i, hi⟩ : f (y.1.1 : ι → ℝ) ∈
+        {z ∈ range fun t : Convexity.StdSimplex ℝ (Fin (n + 2)) => ⇑t.weights | ∃ i, z i = 0} :=
       hT ▸ mem_range_self y
-    exact card_mul_inf'_smul_add_smul_barycenter (fun j => h0 j) hi ht.2
-  have hS : convexJoin ℝ (range fun y : geometricLink K v => f (y.1.1 : ι → ℝ)) {fun _ => c⁻¹} =
+    exact card_mul_inf'_smul_add_smul_barycenter (fun j => hs ▸ s.weights_nonneg j) hi ht.2
+  have hS : convexJoin ℝ (range fun y : geometricLink K v => f (y.1.1 : ι → ℝ)) {b} =
       range fun y : Realization (⊤ : AbstractSimplicialComplex (Fin (n + 2))) =>
         (y.1 : Fin (n + 2) → ℝ) := by
     rw [hT, convexJoin_boundary_stdSimplex_barycenter, range_coe_realization_top]
@@ -147,7 +147,8 @@ theorem IsCombinatorialSphere.exists_homeomorph_closedStarRealization_top
   have hc : c = (n : ℝ) + 2 := by simp [c]
   refine ⟨ψ, ?_, fun x => ?_, F, G, hF, by rw [← hS]; exact hG,
     fun x => by rw [hψ]; exact hFφ x, fun x => by rw [hψ]; exact hGφ x⟩
-  · rw [hψ, hapex, hc]
+  · rw [hψ, hapex, ← hc]
+    exact funext Convexity.StdSimplex.weights_barycenter_apply
   · rw [hψ, ← hc]
     exact hheight x
 
