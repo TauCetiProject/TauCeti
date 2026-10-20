@@ -88,8 +88,7 @@ variable [IsTopologicalGroup G] [CompactSpace G] [TotallyDisconnectedSpace G]
 
 /-- **The pro-`p` kernel of a subgroup containing the pro-`p` kernel.** Let `f : H → G` be a
 topological embedding of groups into a profinite group whose image contains the pro-`p` kernel
-`N` of `G`. Then the pro-`p` kernel of `H` is the preimage of `N`. The nontrivial inclusion holds
-because `N` has no nontrivial `p`-group quotient (`TauCeti.proPKernel_proPKernel_eq_top`). -/
+`N` of `G`. Then the pro-`p` kernel of `H` is the preimage of `N`. -/
 theorem proPKernel_eq_comap_of_le_range (f : H →* G) (hf : Topology.IsEmbedding f)
     (hle : proPKernel p G ≤ f.range) : proPKernel p H = (proPKernel p G).comap f := by
   refine le_antisymm (proPKernel_le_comap f hf.continuous) fun x hx ↦ ?_

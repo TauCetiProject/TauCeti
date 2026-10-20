@@ -28,9 +28,11 @@ Q ≃ₜ* U ≤ P,   [P : U] = [L : K],
 ```
 
 by the map that `m_K` and `m_L` read off from the map `G_L(p) → G_K(p)` induced by `σ`, and the
-orientation `χ_K ∘ m_K⁻¹` of `P` restricts on `U` to the orientation `χ_L ∘ m_L⁻¹` of `Q`. So the
-marked presentation of `G_L(p)` is the marked presentation of `G_K(p)` restricted to an open
-subgroup, with its orientation.
+orientation `χ_K ∘ m_K⁻¹` of `P` restricts on `U` to the orientation `χ_L ∘ m_L⁻¹` of `Q`. So any
+presentation of `G_L(p)` is identified with an open subgroup of index `[L : K]` of any presentation
+of `G_K(p)`, compatibly with the orientations. The marking data (generators, relator and the values
+of the orientation on the generators) is not transported: the statement concerns the presented
+groups and their orientations only.
 
 Two inputs combine. The map `G_L(p) → G_K(p)` is injective with image of index `[L : K]`
 (`TauCeti.injective_maximalProPQuotient_map_absoluteGaloisGroupExtend`,
@@ -61,13 +63,14 @@ variable (p : ℕ) [Fact p.Prime] {K L : Type*} [Field K] [Field L] [Algebra K L
   [FiniteDimensional K L] (σ : L →ₐ[K] SeparableClosure K)
   {P Q : Type*} [Group P] [TopologicalSpace P] [Group Q] [TopologicalSpace Q]
 
-/-- **Compatibility of the marked presentations with finite extensions.** Let `L/K` be a finite
-extension embedded by `σ` in the maximal pro-`p` extension of `K`, where `K` contains a primitive
-`p`th root of unity, and let `m_K : G_K(p) ≃ₜ* P` and `m_L : G_L(p) ≃ₜ* Q` be presentations of the
-maximal pro-`p` Galois groups. Then `Q` is isomorphic to an open subgroup `U` of index `[L : K]` of
-`P`, by the isomorphism `e` that the markings read off from the map `G_L(p) → G_K(p)` induced by
-`σ`, and `e` carries the cyclotomic orientation of `G_L(p)`, read on `Q` through `m_L`, to that of
-`G_K(p)`, read on `P` through `m_K`. -/
+/-- **Presentations of `G_L(p)` as open subgroups of presentations of `G_K(p)`.** Let `L/K` be a
+finite extension embedded by `σ` in the maximal pro-`p` extension of `K`, where `K` contains a
+primitive `p`th root of unity, and let `m_K : G_K(p) ≃ₜ* P` and `m_L : G_L(p) ≃ₜ* Q` be
+presentations of the maximal pro-`p` Galois groups. Then `Q` is isomorphic to an open subgroup `U`
+of index `[L : K]` of `P`, by the isomorphism `e` that the markings read off from the map
+`G_L(p) → G_K(p)` induced by `σ`, and `e` carries the cyclotomic orientation of `G_L(p)`, read on
+`Q` through `m_L`, to that of `G_K(p)`, read on `P` through `m_K`. No generators or orientation
+values are transported. -/
 theorem exists_continuousMulEquiv_marked_of_le_range_absoluteGaloisGroupExtend
     (hmu : ∃ ζ : K, IsPrimitiveRoot ζ p)
     (hle : proPKernel p (Field.absoluteGaloisGroup K) ≤ (absoluteGaloisGroupExtend K L σ).range)
