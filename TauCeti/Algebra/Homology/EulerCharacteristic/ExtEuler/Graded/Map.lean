@@ -92,19 +92,25 @@ private noncomputable def shiftCommExtEquiv (X Y : C) (n : ℕ) (j : ℤ) :
       GradedExt.{w'} e' (F.obj X) (F.obj Y) n j :=
   extAddEquivOfIso (Iso.refl _) ((e.powCommIso σ j).app Y) n
 
+/-- `gradedExtMap` is `F.mapExtAddHom` followed by the identification `shiftCommExtEquiv`. -/
+private theorem coe_gradedExtMap (n : ℕ) (j : ℤ) :
+    ⇑(gradedExtMap (k := k) F σ X Y n j) =
+      shiftCommExtEquiv F σ X Y n j ∘ F.mapExtAddHom.{w, w'} X ((e ^ j).functor.obj Y) n := by
+  ext
+  simp [gradedExtMap, shiftCommExtEquiv, extLinearEquivOfIso_apply, extAddEquivOfIso_apply,
+    Functor.mapExtLinearMap_apply]
+
 private theorem gradedExtMap_injective {n : ℕ} {j : ℤ}
     (hF : Function.Injective (F.mapExtAddHom.{w, w'} X ((e ^ j).functor.obj Y) n)) :
     Function.Injective (gradedExtMap (k := k) F σ X Y n j) := by
-  rw [gradedExtMap, LinearMap.coe_comp, LinearEquiv.coe_coe, EquivLike.comp_injective,
-    Functor.mapExtLinearMap_coe]
-  exact hF
+  rw [coe_gradedExtMap]
+  exact (EquivLike.comp_injective _ _).2 hF
 
 private theorem gradedExtMap_surjective {n : ℕ} {j : ℤ}
     (hF : Function.Surjective (F.mapExtAddHom.{w, w'} X ((e ^ j).functor.obj Y) n)) :
     Function.Surjective (gradedExtMap (k := k) F σ X Y n j) := by
-  rw [gradedExtMap, LinearMap.coe_comp, LinearEquiv.coe_coe, EquivLike.comp_surjective,
-    Functor.mapExtLinearMap_coe]
-  exact hF
+  rw [coe_gradedExtMap]
+  exact (EquivLike.comp_surjective _ _).2 hF
 
 /-! ### Transporting the finiteness conditions -/
 
