@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.ContinuousLog.Basic
 public import Mathlib.Topology.Path
 import TauCeti.Analysis.Contour.Primitive
+import TauCeti.Analysis.Normed.Field.Inversion
 
 /-!
 # Continuous logarithms of a Borsuk map off a connected set
@@ -28,7 +29,8 @@ set when the two points are joined in its complement.
 
 The proof inverts about `q`. Writing `w = (z - q)⁻¹`, the Borsuk map becomes the affine function
 `w ↦ 1 + (q - p) * w`, whose only zero `(p - q)⁻¹` is the image of `p`. The image `A` of
-`closure C \ {q}` under the inversion is closed. The image of `C` is preconnected, unbounded
+`closure C \ {q}` under the inversion is closed by
+`TauCeti.isClosed_setOf_ne_zero_and_add_inv_mem`. The image of `C` is preconnected, unbounded
 because `q ∈ closure C`, and dense in `A`, so every connected component of `A` is unbounded. Thus
 the complement of `A` has no holes, and the affine function has a holomorphic logarithm there by
 `TauCeti.Contour.exists_differentiableOn_eqOn_exp_comp_of_filledHull_subset`.
@@ -48,39 +50,6 @@ open Bornology Metric Set Topology
 
 variable {C : Set ℂ} {p q : ℂ}
 
-/-- For bounded `C`, the image of `closure C \ {q}` under the inversion `z ↦ (z - q)⁻¹` is closed:
-it stays away from `0`, and away from `0` it is the preimage of `closure C` under `w ↦ q + w⁻¹`. -/
-private theorem isClosed_setOf_inv_mem_closure (hCb : IsBounded C) :
-    IsClosed {w : ℂ | w ≠ 0 ∧ q + w⁻¹ ∈ closure C} := by
-  obtain ⟨R, hR⟩ := (hCb.closure.subset_closedBall q)
-  set R' := max R 1
-  have hR' : 0 < R' := lt_of_lt_of_le one_pos (le_max_right _ _)
-  have heq : {w : ℂ | w ≠ 0 ∧ q + w⁻¹ ∈ closure C} =
-      {w : ℂ | R'⁻¹ ≤ ‖w‖} ∩ (fun w : ℂ => q + w⁻¹) ⁻¹' closure C := by
-    ext w
-    simp only [mem_ofPred_eq, mem_inter_iff, mem_preimage]
-    constructor
-    · rintro ⟨hw, hwC⟩
-      refine ⟨?_, hwC⟩
-      have hle : ‖w⁻¹‖ ≤ R' := by
-        have := mem_closedBall.mp (hR hwC)
-        rw [dist_eq_norm, add_sub_cancel_left] at this
-        exact this.trans (le_max_left _ _)
-      rw [norm_inv] at hle
-      have hpos : 0 < ‖w‖ := norm_pos_iff.mpr hw
-      calc R'⁻¹ ≤ (‖w‖⁻¹)⁻¹ := inv_anti₀ (inv_pos.mpr hpos) hle
-        _ = ‖w‖ := inv_inv _
-    · rintro ⟨hw, hwC⟩
-      refine ⟨fun h0 => ?_, hwC⟩
-      rw [h0, norm_zero] at hw
-      exact absurd hw (not_le.mpr (inv_pos.mpr hR'))
-  rw [heq]
-  refine ContinuousOn.preimage_isClosed_of_isClosed ?_
-    (isClosed_le continuous_const continuous_norm) isClosed_closure
-  refine continuousOn_const.add (continuousOn_inv₀.mono fun w hw h0 => ?_)
-  rw [mem_ofPred_eq, h0, norm_zero] at hw
-  exact absurd hw (not_le.mpr (inv_pos.mpr hR'))
-
 /-- **The Borsuk map has a continuous logarithm off a connected set joining its two points.** Let
 `C` be bounded and preconnected, with `q` in its closure but not in `C`, and with `p ≠ q` in its
 closure. Then `z ↦ (z - p) / (z - q)` has a continuous logarithm on the complement of
@@ -89,7 +58,7 @@ theorem hasContinuousLogOn_sub_div_sub_compl_closure (hCc : IsPreconnected C)
     (hCb : IsBounded C) (hqC : q ∈ closure C) (hqC' : q ∉ C) (hpC : p ∈ closure C)
     (hpq : p ≠ q) : HasContinuousLogOn (fun z => (z - p) / (z - q)) (closure C)ᶜ := by
   set A : Set ℂ := {w : ℂ | w ≠ 0 ∧ q + w⁻¹ ∈ closure C}
-  have hA : IsClosed A := isClosed_setOf_inv_mem_closure hCb
+  have hA : IsClosed A := isClosed_setOf_ne_zero_and_add_inv_mem isClosed_closure hCb.closure q
   -- the inversion of `C` is a preconnected unbounded subset of `A`, dense in `A`
   set D : Set ℂ := (fun z => (z - q)⁻¹) '' C
   have hqz : ∀ z ∈ C, z - q ≠ 0 := fun z hz h0 => hqC' (sub_eq_zero.mp h0 ▸ hz)
