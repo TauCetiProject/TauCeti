@@ -52,7 +52,7 @@ variable {X Y : Scheme.{u}} (f : X ⟶ Y)
 
 /-- A finite dominant morphism of integral schemes with locally Noetherian normal target preserves
 the coheight of every point. -/
-theorem coheight_apply_eq_coheight [IsFinite f] [IsDominant f] [IsIntegral X]
+@[simp] theorem coheight_apply_eq_coheight [IsFinite f] [IsDominant f] [IsIntegral X]
     [IsLocallyNoetherian Y] [IsNormalScheme Y] (x : X) : coheight (f x) = coheight x := by
   have himage : IsIrreducible (Set.range f) := by
     simpa only [Set.image_univ] using
