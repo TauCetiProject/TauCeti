@@ -25,7 +25,7 @@ decompositions of a cut Riemann surface are carried out (Robbin–Salamon).
 
 The space is `TauCeti.CircleSobolev s E`, an extensional structure recording the coefficient
 sequence `coeff`. Multiplication by the weights `(1 + |n|) ^ s` identifies it isometrically with
-`ℓ²(ℤ, E)` (`CircleSobolev.toLpₗᵢ`), which supplies its norm, and its completeness and inner
+`ℓ²(ℤ, E)` (`CircleSobolev.toℓ2ₗᵢ`), which supplies its norm, and its completeness and inner
 product when `E` has them.
 
 ## Main definitions
@@ -179,6 +179,14 @@ instance : AddCommGroup (CircleSobolev s E) :=
     (fun _ _ ↦ funext fun _ ↦ Nat.cast_smul_eq_nsmul ℂ _ _)
     (fun _ _ ↦ funext fun _ ↦ Int.cast_smul_eq_zsmul ℂ _ _)
 
+@[simp]
+theorem coeff_nsmul (k : ℕ) (a : CircleSobolev s E) : (k • a).coeff = k • a.coeff :=
+  funext fun _ ↦ Nat.cast_smul_eq_nsmul ℂ _ _
+
+@[simp]
+theorem coeff_zsmul (k : ℤ) (a : CircleSobolev s E) : (k • a).coeff = k • a.coeff :=
+  funext fun _ ↦ Int.cast_smul_eq_zsmul ℂ _ _
+
 instance : Module ℂ (CircleSobolev s E) :=
   coeff_injective.module ℂ ⟨⟨coeff, rfl⟩, fun _ _ ↦ rfl⟩ fun _ _ ↦ rfl
 
@@ -199,7 +207,7 @@ theorem coeff_sum {ι : Type*} (S : Finset ι) (a : ι → CircleSobolev s E) :
 
 /-- An element of `ℓ²(ℤ, E)` divided by the weights `(1 + |n|) ^ s` is a Fourier-coefficient
 sequence of order `s`. -/
-def ofLp (f : lp (fun _ : ℤ ↦ E) 2) : CircleSobolev s E where
+def ofℓ2 (f : lp (fun _ : ℤ ↦ E) 2) : CircleSobolev s E where
   coeff n := weight (-s) n • f n
   memℓp_weight_smul_coeff := by
     convert lp.memℓp f using 1
@@ -207,26 +215,26 @@ def ofLp (f : lp (fun _ : ℤ ↦ E) 2) : CircleSobolev s E where
     simp [smul_smul, weight_mul_weight_neg]
 
 @[simp]
-theorem coeff_ofLp (f : lp (fun _ : ℤ ↦ E) 2) (n : ℤ) :
-    (ofLp (s := s) f).coeff n = weight (-s) n • f n :=
+theorem coeff_ofℓ2 (f : lp (fun _ : ℤ ↦ E) 2) (n : ℤ) :
+    (ofℓ2 (s := s) f).coeff n = weight (-s) n • f n :=
   (rfl)
 
 /-- Multiplication by the weights `(1 + |n|) ^ s`, an isometric isomorphism onto `ℓ²(ℤ, E)`
-(see `CircleSobolev.toLpₗᵢ`). -/
-def toLp : CircleSobolev s E ≃ₗ[ℂ] lp (fun _ : ℤ ↦ E) 2 where
+(see `CircleSobolev.toℓ2ₗᵢ`). -/
+def toℓ2 : CircleSobolev s E ≃ₗ[ℂ] lp (fun _ : ℤ ↦ E) 2 where
   toFun a := ⟨fun n ↦ weight s n • a.coeff n, a.memℓp_weight_smul_coeff⟩
   map_add' a b := by ext n; exact smul_add _ _ _
   map_smul' c a := by ext n; exact smul_comm _ _ _
-  invFun := ofLp
+  invFun := ofℓ2
   left_inv a := by ext n; simp [smul_smul, mul_comm (weight (-s) n), weight_mul_weight_neg]
   right_inv f := by ext n; simp [smul_smul, weight_mul_weight_neg]
 
 @[simp]
-theorem toLp_apply (a : CircleSobolev s E) (n : ℤ) : toLp a n = weight s n • a.coeff n :=
+theorem toℓ2_apply (a : CircleSobolev s E) (n : ℤ) : toℓ2 a n = weight s n • a.coeff n :=
   (rfl)
 
 @[simp]
-theorem toLp_symm_apply (f : lp (fun _ : ℤ ↦ E) 2) : toLp.symm f = ofLp (s := s) f :=
+theorem toℓ2_symm_apply (f : lp (fun _ : ℤ ↦ E) 2) : toℓ2.symm f = ofℓ2 (s := s) f :=
   (rfl)
 
 /-- A sequence is the coefficient sequence of an element of `H^s` exactly when its weighted
@@ -236,36 +244,36 @@ theorem exists_coeff_eq_iff (c : ℤ → E) :
   ⟨fun ⟨a, ha⟩ ↦ ha ▸ a.memℓp_weight_smul_coeff, fun h ↦ ⟨⟨c, h⟩, rfl⟩⟩
 
 instance : NormedAddCommGroup (CircleSobolev s E) :=
-  NormedAddCommGroup.induced _ _ (toLp : CircleSobolev s E ≃ₗ[ℂ] _) toLp.injective
+  NormedAddCommGroup.induced _ _ (toℓ2 : CircleSobolev s E ≃ₗ[ℂ] _) toℓ2.injective
 
 instance : NormedSpace ℂ (CircleSobolev s E) :=
-  NormedSpace.induced ℂ _ _ (toLp : CircleSobolev s E ≃ₗ[ℂ] _)
+  NormedSpace.induced ℂ _ _ (toℓ2 : CircleSobolev s E ≃ₗ[ℂ] _)
 
 @[simp]
-theorem norm_toLp (a : CircleSobolev s E) : ‖toLp a‖ = ‖a‖ :=
+theorem norm_toℓ2 (a : CircleSobolev s E) : ‖toℓ2 a‖ = ‖a‖ :=
   (rfl)
 
 /-- The isometric identification of `H^s` with `ℓ²(ℤ, E)` by the weights `(1 + |n|) ^ s`. -/
-def toLpₗᵢ : CircleSobolev s E ≃ₗᵢ[ℂ] lp (fun _ : ℤ ↦ E) 2 :=
-  { toLp with norm_map' := norm_toLp }
+def toℓ2ₗᵢ : CircleSobolev s E ≃ₗᵢ[ℂ] lp (fun _ : ℤ ↦ E) 2 :=
+  { toℓ2 with norm_map' := norm_toℓ2 }
 
 @[simp]
-theorem coe_toLpₗᵢ : ⇑(toLpₗᵢ : CircleSobolev s E ≃ₗᵢ[ℂ] _) = toLp :=
+theorem coe_toℓ2ₗᵢ : ⇑(toℓ2ₗᵢ : CircleSobolev s E ≃ₗᵢ[ℂ] _) = toℓ2 :=
   (rfl)
 
 @[simp]
-theorem coe_toLpₗᵢ_symm : ⇑(toLpₗᵢ : CircleSobolev s E ≃ₗᵢ[ℂ] _).symm = toLp.symm :=
+theorem coe_toℓ2ₗᵢ_symm : ⇑(toℓ2ₗᵢ : CircleSobolev s E ≃ₗᵢ[ℂ] _).symm = toℓ2.symm :=
   (rfl)
 
 instance [CompleteSpace E] : CompleteSpace (CircleSobolev s E) :=
-  (toLpₗᵢ (s := s) (E := E)).toIsometryEquiv.completeSpace_iff.2 inferInstance
+  (toℓ2ₗᵢ (s := s) (E := E)).toIsometryEquiv.completeSpace_iff.2 inferInstance
 
 /-- The squared norm of `H^s` is the sum of the squared weighted coefficient norms. -/
 theorem hasSum_sq_weight_mul_norm_coeff (a : CircleSobolev s E) :
     HasSum (fun n ↦ (weight s n * ‖a.coeff n‖) ^ 2) (‖a‖ ^ 2) := by
-  have h := lp.hasSum_norm (p := 2) (by norm_num) (toLp a)
-  simpa only [ENNReal.toReal_ofNat, Real.rpow_two, toLp_apply, norm_smul,
-    Real.norm_of_nonneg (weight_pos s _).le, norm_toLp] using h
+  have h := lp.hasSum_norm (p := 2) (by norm_num) (toℓ2 a)
+  simpa only [ENNReal.toReal_ofNat, Real.rpow_two, toℓ2_apply, norm_smul,
+    Real.norm_of_nonneg (weight_pos s _).le, norm_toℓ2] using h
 
 /-- The squared norm of `H^s` is `∑ₙ (1 + |n|) ^ (2 s) ‖a.coeff n‖²`. -/
 theorem hasSum_norm_sq (a : CircleSobolev s E) :
@@ -291,19 +299,24 @@ theorem norm_le_of_forall_le {a : CircleSobolev s E} {b : CircleSobolev t E} {C 
     exact pow_le_pow_left₀ (mul_nonneg (weight_pos t n).le (norm_nonneg _)) (h n) 2
   exact (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).1 hle
 
+/-- The `n`-th Fourier coefficient of an element of `H^s` is bounded by `(1 + |n|) ^ (-s)` times
+its norm. -/
+theorem norm_coeff_le (a : CircleSobolev s E) (n : ℤ) : ‖a.coeff n‖ ≤ weight (-s) n * ‖a‖ := by
+  have h := lp.norm_apply_le_norm (by norm_num) (toℓ2 a) n
+  rw [toℓ2_apply, norm_smul, Real.norm_of_nonneg (weight_pos s n).le, norm_toℓ2] at h
+  rw [weight_neg, le_inv_mul_iff₀ (weight_pos s n)]
+  exact h
+
 /-- The `n`-th Fourier coefficient is a continuous linear functional on `H^s`. -/
 def coeffCLM (n : ℤ) : CircleSobolev s E →L[ℂ] E :=
-  (LinearMap.proj n ∘ₗ coeffₗ).mkContinuous (weight (-s) n) fun a ↦ by
-    have h := lp.norm_apply_le_norm (by norm_num) (toLp a) n
-    rw [toLp_apply, norm_smul, Real.norm_of_nonneg (weight_pos s n).le, norm_toLp] at h
-    simp only [LinearMap.coe_comp, Function.comp_apply, coeffₗ_apply, LinearMap.coe_proj,
-      Function.eval]
-    rw [weight_neg, le_inv_mul_iff₀ (weight_pos s n)]
-    exact h
+  (LinearMap.proj n ∘ₗ coeffₗ).mkContinuous (weight (-s) n) fun a ↦ norm_coeff_le a n
 
 @[simp]
 theorem coeffCLM_apply (n : ℤ) (a : CircleSobolev s E) : coeffCLM n a = a.coeff n :=
   (rfl)
+
+theorem opNorm_coeffCLM_le (n : ℤ) : ‖(coeffCLM n : CircleSobolev s E →L[ℂ] E)‖ ≤ weight (-s) n :=
+  ContinuousLinearMap.opNorm_le_bound _ (weight_pos (-s) n).le fun a ↦ norm_coeff_le a n
 
 /-- A sequence whose weighted norms of order `t` are bounded by a multiple of the weighted norms of
 order `s` of an element of `H^s` is the coefficient sequence of an element of `H^t`. -/
@@ -323,18 +336,18 @@ section Inner
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F]
 
 instance : InnerProductSpace ℂ (CircleSobolev s F) :=
-  InnerProductSpace.induced (toLp : CircleSobolev s F ≃ₗ[ℂ] _)
+  InnerProductSpace.induced (toℓ2 : CircleSobolev s F ≃ₗ[ℂ] _)
 
-theorem inner_toLp (a b : CircleSobolev s F) : inner ℂ (toLp a) (toLp b) = inner ℂ a b :=
+theorem inner_toℓ2 (a b : CircleSobolev s F) : inner ℂ (toℓ2 a) (toℓ2 b) = inner ℂ a b :=
   (rfl)
 
 /-- The inner product of `H^s` is `∑ₙ (1 + |n|) ^ (2 s) ⟪a.coeff n, b.coeff n⟫`. -/
 theorem hasSum_inner (a b : CircleSobolev s F) :
     HasSum (fun n ↦ (weight (2 * s) n : ℂ) * inner ℂ (a.coeff n) (b.coeff n)) (inner ℂ a b) := by
-  convert lp.hasSum_inner (toLp a) (toLp b) using 1
+  convert lp.hasSum_inner (toℓ2 a) (toℓ2 b) using 1
   · ext n
-    rw [toLp_apply, toLp_apply, ← Complex.coe_smul, ← Complex.coe_smul, inner_smul_left,
-      inner_smul_right, two_mul, weight_add, Complex.conj_ofReal, Complex.ofReal_mul]
+    simp only [toℓ2_apply, two_mul, weight_add, ← Complex.coe_smul, inner_smul_left,
+      inner_smul_right, Complex.conj_ofReal, Complex.ofReal_mul]
     ring
 
 theorem inner_eq_tsum (a b : CircleSobolev s F) :
@@ -345,53 +358,53 @@ end Inner
 
 /-! ### Fourier monomials and density of trigonometric polynomials -/
 
+/-- The weighted coefficients of the Fourier monomial `x e^{inθ}` form the `ℓ²` monomial
+`(1 + |n|) ^ s • x` at `n`. -/
+theorem weight_smul_piSingle (n m : ℤ) (x : E) :
+    weight s m • Pi.single (M := fun _ : ℤ ↦ E) n x m =
+      lp.single (E := fun _ : ℤ ↦ E) 2 n (weight s n • x) m := by
+  rcases eq_or_ne m n with rfl | hm
+  · simp
+  · simp [hm]
+
 /-- The Fourier monomial `x e^{inθ}` in `H^s`, as a continuous linear map in `x`. -/
 def single (n : ℤ) : E →L[ℂ] CircleSobolev s E :=
   LinearMap.mkContinuous
     { toFun x := ⟨Pi.single n x, by
         convert lp.memℓp (lp.single (E := fun _ : ℤ ↦ E) 2 n (weight s n • x)) using 1
-        ext m
-        rcases eq_or_ne m n with rfl | hm
-        · simp
-        · simp [hm]⟩
-      map_add' x y := by ext m; rcases eq_or_ne m n with rfl | hm <;> simp [*]
-      map_smul' c x := by ext m; rcases eq_or_ne m n with rfl | hm <;> simp [*] }
+        exact funext fun m ↦ weight_smul_piSingle n m x⟩
+      map_add' x y := CircleSobolev.ext (Pi.single_add (f := fun _ : ℤ ↦ E) n x y)
+      map_smul' c x := CircleSobolev.ext (Pi.single_smul' n c x) }
     (weight s n) fun x ↦ by
-      rw [← norm_toLp]
+      rw [← norm_toℓ2]
       convert (lp.norm_single (E := fun _ : ℤ ↦ E) (p := 2) (by norm_num) n
         (weight s n • x)).le using 1
-      · congr 1
-        ext m
-        rcases eq_or_ne m n with rfl | hm
-        · simp
-        · simp [hm]
+      · exact congr_arg _ (lp.ext (funext fun m ↦ weight_smul_piSingle n m x))
       · rw [norm_smul, Real.norm_of_nonneg (weight_pos s n).le]
 
 @[simp]
 theorem coeff_single (n : ℤ) (x : E) : (single (s := s) n x).coeff = Pi.single n x := by
   simp [single]
 
-theorem toLp_single (n : ℤ) (x : E) :
-    toLp (single (s := s) n x) = lp.single 2 n (weight s n • x) := by
+theorem toℓ2_single (n : ℤ) (x : E) :
+    toℓ2 (single (s := s) n x) = lp.single 2 n (weight s n • x) := by
   ext m
-  rcases eq_or_ne m n with rfl | hm
-  · simp
-  · simp [hm]
+  rw [toℓ2_apply, coeff_single, weight_smul_piSingle]
 
 @[simp]
 theorem norm_single (n : ℤ) (x : E) : ‖single (s := s) n x‖ = weight s n * ‖x‖ := by
-  rw [← norm_toLp, toLp_single, lp.norm_single (by norm_num), norm_smul,
+  rw [← norm_toℓ2, toℓ2_single, lp.norm_single (by norm_num), norm_smul,
     Real.norm_of_nonneg (weight_pos s n).le]
 
 /-- The Fourier series of an element of `H^s` converges to it in `H^s`. -/
 theorem hasSum_single (a : CircleSobolev s E) : HasSum (fun n ↦ single n (a.coeff n)) a := by
-  have h := (lp.hasSum_single (p := 2) (by norm_num) (toLp a)).mapL
-    ((toLpₗᵢ (s := s) (E := E)).symm.toContinuousLinearEquiv : _ →L[ℂ] CircleSobolev s E)
+  have h := (lp.hasSum_single (p := 2) (by norm_num) (toℓ2 a)).mapL
+    ((toℓ2ₗᵢ (s := s) (E := E)).symm.toContinuousLinearEquiv : _ →L[ℂ] CircleSobolev s E)
   convert h using 1
   · funext n
-    apply toLp.injective
+    apply toℓ2.injective
     simp only [ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
-      coe_toLpₗᵢ_symm, LinearEquiv.apply_symm_apply, toLp_apply, toLp_single]
+      coe_toℓ2ₗᵢ_symm, LinearEquiv.apply_symm_apply, toℓ2_apply, toℓ2_single]
   · simp
 
 /-- Trigonometric polynomials, the elements of `H^s` with finitely many nonzero Fourier
@@ -423,6 +436,16 @@ def inclusion (h : t ≤ s) : CircleSobolev s E →L[ℂ] CircleSobolev t E :=
 theorem coeff_inclusion (h : t ≤ s) (a : CircleSobolev s E) :
     (inclusion h a).coeff = a.coeff := by
   simp [inclusion]
+
+@[simp]
+theorem inclusion_inclusion {u : ℝ} (h₁ : u ≤ t) (h₂ : t ≤ s) (a : CircleSobolev s E) :
+    inclusion h₁ (inclusion h₂ a) = inclusion (h₁.trans h₂) a :=
+  CircleSobolev.ext (by simp)
+
+@[simp]
+theorem inclusion_single (h : t ≤ s) (n : ℤ) (x : E) :
+    inclusion h (single n x) = single n x :=
+  CircleSobolev.ext (by simp)
 
 theorem inclusion_injective (h : t ≤ s) :
     Function.Injective (inclusion (E := E) h) :=
@@ -462,8 +485,9 @@ theorem isCompactOperator_inclusion [FiniteDimensional ℂ E] (h : t < s) :
           ((F N - inclusion h.le : CircleSobolev s E →L[ℂ] CircleSobolev t E) a).coeff m =
             -a.coeff m := by
         simp [hF, Finset.sum_apply, Pi.single_apply, hm]
-      rw [hcoeff, norm_neg, ← mul_assoc, ← sub_add_cancel t s, weight_add, add_sub_cancel_right,
-        mul_assoc, mul_assoc]
+      have hweight : weight t m = weight (t - s) m * weight s m := by
+        rw [← weight_add, sub_add_cancel]
+      rw [hcoeff, norm_neg, hweight, mul_assoc]
       exact mul_le_mul_of_nonneg_right (weight_le_of_le_abs (by linarith) hN) hw
   · refine Finset.sum_induction _ (fun G : CircleSobolev s E →L[ℂ] CircleSobolev t E ↦
       IsCompactOperator G) (fun G G' hG hG' ↦ ?_) ?_ fun n _ ↦ ?_
@@ -509,24 +533,22 @@ section Continuous
 
 variable (T : ℝ) [Fact (0 < T)]
 
-private theorem norm_fourier_smul_const_le (n : ℤ) (x : E) :
-    ‖fourier (T := T) n • ContinuousMap.const (AddCircle T) x‖ ≤ ‖x‖ :=
-  (ContinuousMap.norm_le _ (norm_nonneg x)).2 fun y ↦ by
-    simp [ContinuousMap.smul_apply', norm_smul, fourier_apply]
-
 private theorem norm_tsum_fourier_smul_const_le (hs : 1 / 2 < s) (a : CircleSobolev s E) :
     ‖∑' n, fourier (T := T) n • ContinuousMap.const (AddCircle T) (a.coeff n)‖ ≤
       √(∑' n, weight (-(2 * s)) n) * ‖a‖ := by
-  have h := fun n ↦ norm_fourier_smul_const_le T n (a.coeff n)
-  have hsum := (summable_norm_coeff hs a).of_nonneg_of_le (fun _ ↦ norm_nonneg _) h
-  exact (norm_tsum_le_tsum_norm hsum).trans
-    ((hsum.tsum_le_tsum h (summable_norm_coeff hs a)).trans (tsum_norm_coeff_le hs a))
+  have h (n : ℤ) :
+      ‖fourier (T := T) n • ContinuousMap.const (AddCircle T) (a.coeff n)‖ = ‖a.coeff n‖ := by
+    rw [ContinuousMap.norm_smul_const, fourier_norm, one_mul]
+  refine (norm_tsum_le_tsum_norm ?_).trans ?_
+  · simpa only [h] using summable_norm_coeff hs a
+  · simpa only [h] using tsum_norm_coeff_le hs a
 
 variable [CompleteSpace E]
 
 private theorem summable_fourier_smul_const (hs : 1 / 2 < s) (a : CircleSobolev s E) :
     Summable fun n ↦ fourier (T := T) n • ContinuousMap.const (AddCircle T) (a.coeff n) :=
-  .of_norm_bounded (summable_norm_coeff hs a) fun n ↦ norm_fourier_smul_const_le T n _
+  .of_norm_bounded (summable_norm_coeff hs a) fun n ↦ by
+    rw [ContinuousMap.norm_smul_const, fourier_norm, one_mul]
 
 /-- For `s > 1/2`, the continuous function on `AddCircle T` attached to an element of `H^s`:
 the sum of its uniformly convergent Fourier series `∑ₙ a.coeff n e^{2πinx/T}`. -/
@@ -566,6 +588,14 @@ theorem toContinuousMap_single (hs : 1 / 2 < s) (n : ℤ) (x : E) :
   rw [← (hasSum_toContinuousMap T hs (single n x)).tsum_eq, tsum_eq_single n fun m hm ↦ by
     simp [hm]]
   simp
+
+/-- For `1/2 < t ≤ s`, the continuous function attached to `a ∈ H^s` does not depend on whether
+`a` is regarded as an element of `H^s` or of `H^t`. -/
+@[simp]
+theorem toContinuousMap_inclusion (ht : 1 / 2 < t) (h : t ≤ s) (a : CircleSobolev s E) :
+    toContinuousMap T ht (inclusion h a) = toContinuousMap T (ht.trans_le h) a :=
+  (hasSum_toContinuousMap T ht (inclusion h a)).unique
+    (by simpa using hasSum_toContinuousMap T (ht.trans_le h) a)
 
 /-- For `s > 1/2`, the continuous function attached to `a ∈ H^s` has Fourier coefficients
 `a.coeff`. -/
