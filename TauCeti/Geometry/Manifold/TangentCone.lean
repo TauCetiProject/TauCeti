@@ -8,7 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
 public import TauCeti.Analysis.Calculus.TransverseIntersection
-import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
+public import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 
 /-!
 # Tangent cones of subsets of a manifold, and transverse intersections
@@ -45,10 +45,6 @@ everything in the preferred chart at `y`.
   cone of every set the curve stays in.
 * `TauCeti.image_mtangentConeAt_eq_tangentConeAt`: read in another chart, the tangent cone is
   carried onto the tangent cone in that chart by the derivative of the transition map.
-* `TauCeti.contDiffAt_symm_trans_of_mem_maximalAtlas` and
-  `TauCeti.trans_mem_maximalAtlas_of_contDiffAt`: transition maps between charts of the maximal
-  atlas are `C^n`, and a chart of the maximal atlas followed by a `C^n` chart of the model space
-  with `C^n` inverse is in the maximal atlas.
 * `TauCeti.IsSliceChart.finrank_span_mtangentConeAt`: the tangent space of a flattened set has the
   dimension of the model subspace.
 * `TauCeti.exists_isSliceChart_inter_of_span_mtangentConeAt_sup_eq_top`: a transverse intersection
@@ -153,33 +149,6 @@ section SliceChart
 variable {𝕜 E M : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [TopologicalSpace M] [ChartedSpace E M] {n : ℕ∞ω} [IsManifold 𝓘(𝕜, E) n M]
   {q : OpenPartialHomeomorph M E} {L : Submodule 𝕜 E} {s : Set M} {y : M}
-
-omit [IsManifold 𝓘(𝕜, E) n M] in
-/-- A transition map `q.symm.trans q'` between two charts of the maximal atlas is `C^n` at every
-point of its source. -/
-theorem contDiffAt_symm_trans_of_mem_maximalAtlas {q' : OpenPartialHomeomorph M E}
-    (hq : q ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M) (hq' : q' ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M)
-    {z : E} (hz : z ∈ (q.symm.trans q').source) : ContDiffAt 𝕜 n (q.symm.trans q') z := by
-  rw [OpenPartialHomeomorph.trans_source, mem_inter_iff, mem_preimage] at hz
-  rw [← contMDiffAt_iff_contDiffAt, OpenPartialHomeomorph.coe_trans]
-  exact (contMDiffAt_of_mem_maximalAtlas hq' hz.2).comp z
-    (contMDiffAt_symm_of_mem_maximalAtlas hq hz.1)
-
-/-- A chart `q` of the maximal atlas followed by a chart `e` of the model space which is `C^n` on
-its source, with `C^n` inverse on its target, is again a chart of the maximal atlas. -/
-theorem trans_mem_maximalAtlas_of_contDiffAt {e : OpenPartialHomeomorph E E}
-    (hq : q ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M) (he : ∀ z ∈ e.source, ContDiffAt 𝕜 n e z)
-    (hes : ∀ z ∈ e.target, ContDiffAt 𝕜 n e.symm z) :
-    q.trans e ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M := by
-  refine (IsManifold.mem_maximalAtlas_iff_contMDiffOn _).2 ⟨fun z hz ↦ ?_, fun z hz ↦ ?_⟩
-  · rw [OpenPartialHomeomorph.trans_source, mem_inter_iff, mem_preimage] at hz
-    rw [OpenPartialHomeomorph.coe_trans]
-    exact ((contMDiffAt_iff_contDiffAt.2 (he _ hz.2)).comp z
-      (contMDiffAt_of_mem_maximalAtlas hq hz.1)).contMDiffWithinAt
-  · rw [OpenPartialHomeomorph.trans_target, mem_inter_iff, mem_preimage] at hz
-    rw [OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm, OpenPartialHomeomorph.coe_trans]
-    exact ((contMDiffAt_symm_of_mem_maximalAtlas hq hz.2).comp z
-      (contMDiffAt_iff_contDiffAt.2 (hes _ hz.1))).contMDiffWithinAt
 
 /-- **Chart invariance of the tangent cone.** Let `q` be a chart around `y` and `A` the derivative
 at the image of `y` of the transition map from the preferred chart at `y` to `q`. Then `A` maps the

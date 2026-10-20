@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Stable.Manifold
 public import TauCeti.Geometry.Manifold.TangentCone
 import TauCeti.Dynamics.Flow.ConnectingOrbit
-import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # Transverse intersections of unstable and stable manifolds
