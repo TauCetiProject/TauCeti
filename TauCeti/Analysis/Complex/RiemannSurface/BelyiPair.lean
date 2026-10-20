@@ -805,7 +805,7 @@ end Deck
 
 section AutomorphismGroup
 
-variable (P : AnalyticBelyiPair.{0}) {n : ℕ} (ν : P.restrict ⁻¹' {basePt} ≃ Fin n)
+variable (P : AnalyticBelyiPair.{u}) {n : ℕ} (ν : P.restrict ⁻¹' {basePt} ≃ Fin n)
 
 /-- **The automorphism group of an analytic Belyi pair is the automorphism group of its monodromy
 triple**, for any numbering `ν` of the fibre over `1/2`. An automorphism goes to the permutation it
@@ -816,9 +816,9 @@ the pair (`TauCeti.TopBranchedCover.deckMulEquivDeckRestrict`), and those are th
 its monodromy triple (`IsCoveringMap.deckMulEquivAutomorphismGroup`). -/
 noncomputable def isoMulEquivAutomorphismGroup :
     P.Iso P ≃* (P.isCoveringMap_restrict.monodromyTriple ν).automorphismGroup :=
-  -- The projection of `P.toTopBranchedCover rfl` coerces to `P.β` by definition, so its deck
-  -- group is `deck P.β`.
-  P.isoMulEquivDeck.trans <| (P.toTopBranchedCover rfl).deckMulEquivDeckRestrict.trans <|
+  P.isoMulEquivDeck.trans <|
+    (Deck.conjMulEquiv (Homeomorph.refl P.X) (P.toTopBranchedCover_π_apply rfl)).trans <|
+    (P.toTopBranchedCover rfl).deckMulEquivDeckRestrict.trans <|
     (MulEquiv.subgroupCongr (congrArg deck (P.restrict_toTopBranchedCover rfl))).trans <|
       P.isCoveringMap_restrict.deckMulEquivAutomorphismGroup ν
 
@@ -829,10 +829,10 @@ theorem coe_isoMulEquivAutomorphismGroup_apply (e : P.Iso P) (i : Fin n) :
     (P.isoMulEquivAutomorphismGroup ν e : Equiv.Perm (Fin n)) i = ν (e • ν.symm i) := by
   refine (IsCoveringMap.coe_deckMulEquivAutomorphismGroup_apply _ _ _ i).trans
     (congrArg ν (Subtype.ext (Subtype.ext ?_)))
-  -- The goal is not type-correct at the transparency `rw` and `simp` use: the deck group of
-  -- `(P.toTopBranchedCover rfl).π` is `deck P.β` only by unfolding. So the steps are chained.
+  -- Evaluate the composite one identification at a time.
   exact (congrArg Subtype.val (deck.fiber_smul_coe _ (ν.symm i))).trans <|
     (TopBranchedCover.coe_deckMulEquivDeckRestrict_apply _ _ _).trans <|
+    (Deck.conjMulEquiv_apply_coe _ _ _ _).trans <|
       (congrFun (P.coe_isoMulEquivDeck_apply e) _).trans (Iso.coe_smul _ e _).symm
 
 /-- The automorphism of a pair attached to an automorphism `τ` of its monodromy triple sends the
