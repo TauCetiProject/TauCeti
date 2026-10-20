@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.GCDMonoid.Finset
-public import Mathlib.Data.Fintype.CardEmbedding
 public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import TauCeti.LinearAlgebra.ExteriorPower.Plucker
@@ -118,9 +117,9 @@ omit [Fintype m] [DecidableEq m] in
 /-- The rows of an integer matrix are linearly independent over `ℚ` exactly when they are linearly
 independent over `ℤ`. -/
 theorem linearIndependent_rat_row_iff {A : Matrix m n ℤ} :
-    LinearIndependent ℚ (fun i j ↦ (A i j : ℚ)) ↔ LinearIndependent ℤ A.row := by
-  rw [← linearIndependent_algebraMap_comp_iff (R := ℤ) (S := ℚ) (v := A.row)]
-  simp only [Function.comp_def, eq_intCast, row_apply]
+    LinearIndependent ℚ (A.map ((↑) : ℤ → ℚ)).row ↔ LinearIndependent ℤ A.row := by
+  rw [← linearIndependent_algebraMap_comp_iff (R := ℤ) (S := ℚ) (v := A.row), algebraMap_int_eq,
+    Int.coe_castRingHom, ← funext (row_map A _)]
 
 end LinearIndependent
 
@@ -226,7 +225,7 @@ theorem minorGcd_pos_iff {A : Matrix m n ℤ} : 0 < A.minorGcd ↔ LinearIndepen
 
 /-- The minor gcd of an integer matrix whose rows are linearly independent over `ℚ` is at
 least `1`. -/
-theorem one_le_minorGcd {A : Matrix m n ℤ} (hA : LinearIndependent ℚ fun i j ↦ (A i j : ℚ)) :
+theorem one_le_minorGcd {A : Matrix m n ℤ} (hA : LinearIndependent ℚ (A.map ((↑) : ℤ → ℚ)).row) :
     1 ≤ A.minorGcd :=
   minorGcd_pos_iff.2 (linearIndependent_rat_row_iff.1 hA)
 

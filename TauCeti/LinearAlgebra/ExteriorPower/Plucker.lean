@@ -213,13 +213,11 @@ theorem _root_.Matrix.det_mul_transpose_pos_iff {R m n : Type*} [CommRing R] [Li
 /-- The Gram determinant of an integer matrix whose rows are linearly independent over `ℚ` is
 positive. -/
 theorem _root_.Matrix.det_mul_transpose_pos {m n : Type*} [Fintype m] [DecidableEq m] [Fintype n]
-    {A : Matrix m n ℤ} (hA : LinearIndependent ℚ fun i j ↦ (A i j : ℚ)) :
+    {A : Matrix m n ℤ} (hA : LinearIndependent ℚ (A.map ((↑) : ℤ → ℚ)).row) :
     0 < (A * A.transpose).det := by
   rw [← Int.cast_pos (R := ℚ), Int.cast_det, ← Int.coe_castRingHom, Matrix.map_mul,
     Matrix.transpose_map, Matrix.det_mul_transpose_pos_iff]
-  convert hA using 1
-  ext
-  simp
+  rwa [Int.coe_castRingHom]
 
 /-- **The Cauchy–Binet formula, Hermitian form.** Over a commutative star ring, the determinant
 of the Hermitian Gram matrix `∑ₖ x i k * star (x j k)` of a family is the sum of the products of
