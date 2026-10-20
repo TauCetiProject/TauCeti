@@ -60,6 +60,82 @@ theorem scalarExtensionMonoidalFunctor_obj (V : FGPointRepresentationCat.{u, v, 
   rw [PointRepresentationCat.toComodule_obj_toSemimoduleCat] at hM
   exact congrArg (fun M : SemimoduleCat.{u} R ↦ SemimoduleCat.of A (A ⊗[R] M)) hM
 
+/-- The underlying functor is scalar extension after recovering the finite comodule. -/
+theorem scalarExtensionMonoidalFunctor_toFunctor :
+    (scalarExtensionMonoidalFunctor R H A).toFunctor =
+      toComodule R H ⋙ FGComoduleCat.scalarExtensionFunctor R H A := by
+  rw [scalarExtensionMonoidalFunctor, Functor.precomposeLaxMonoidal_obj_toFunctor,
+    FGComoduleCat.scalarExtensionMonoidalFunctor_toFunctor]
+
+/-- Scalar extension acts on representation morphisms by base change of the underlying
+linear map. The object equalities identify its source and target with tensor products. -/
+theorem scalarExtensionMonoidalFunctor_map
+    {V W : FGPointRepresentationCat.{u, v, u} R H} (f : V ⟶ W) :
+    (scalarExtensionMonoidalFunctor R H A).map f =
+      eqToHom (scalarExtensionMonoidalFunctor_obj R H A V) ≫
+        SemimoduleCat.ofHom (f.hom.toLinearMap.baseChange A) ≫
+          eqToHom (scalarExtensionMonoidalFunctor_obj R H A W).symm := by
+  apply (conj_eqToHom_iff_heq _ _ (scalarExtensionMonoidalFunctor_obj R H A V)
+    (scalarExtensionMonoidalFunctor_obj R H A W)).2
+  rw [scalarExtensionMonoidalFunctor, Functor.precomposeLaxMonoidal_obj_toFunctor,
+    FGComoduleCat.scalarExtensionMonoidalFunctor_toFunctor, Functor.comp_map,
+    FGComoduleCat.scalarExtensionFunctor_map]
+  simp only [eqToHom_comp_heq_iff, comp_eqToHom_heq_iff]
+  have hV := congrArg ComoduleCat.toSemimoduleCat (toComodule_obj_obj R H V)
+  have hW := congrArg ComoduleCat.toSemimoduleCat (toComodule_obj_obj R H W)
+  rw [PointRepresentationCat.toComodule_obj_toSemimoduleCat] at hV hW
+  have hf := toComodule_map_toLinearMap R H f
+  -- Eliminate bundled-module equalities before changing scalars in heterogeneous maps.
+  have hbase : ∀ {M N M' N' : SemimoduleCat.{u} R}
+      (g : M →ₗ[R] N) (g' : M' →ₗ[R] N'), M = M' → N = N' → HEq g g' →
+        HEq (SemimoduleCat.ofHom (g.baseChange A))
+          (SemimoduleCat.ofHom (g'.baseChange A)) := by
+    intro M N M' N' g g' hM hN hg
+    cases hM
+    cases hN
+    cases hg
+    rfl
+  exact hbase _ _ hV hW hf
+
+open MonoidalCategory Functor.LaxMonoidal
+
+/-- The tensorator is comodule scalar extension's tensorator followed by base change of
+the representation--comodule tensor comparison, with the composite's object transports. -/
+theorem scalarExtensionMonoidalFunctor_μ
+    (V W : FGPointRepresentationCat.{u, v, u} R H) :
+    let h (X : FGPointRepresentationCat.{u, v, u} R H) :
+        (scalarExtensionMonoidalFunctor R H A).obj X =
+          (FGComoduleCat.scalarExtensionFunctor R H A).obj ((toComodule R H).obj X) :=
+      (congrArg (fun F ↦ F.obj X) (scalarExtensionMonoidalFunctor_toFunctor R H A)).trans
+        (Functor.comp_obj (toComodule R H) (FGComoduleCat.scalarExtensionFunctor R H A) X)
+    μ (scalarExtensionMonoidalFunctor R H A).toFunctor V W =
+      eqToHom (congrArg₂ (fun M N : SemimoduleCat.{u} A ↦ M ⊗ N) (h V) (h W)) ≫
+        (μ (FGComoduleCat.scalarExtensionFunctor R H A)
+          ((toComodule R H).obj V) ((toComodule R H).obj W) ≫
+          (FGComoduleCat.scalarExtensionFunctor R H A).map (μ (toComodule R H) V W)) ≫
+        eqToHom (h (V ⊗ W)).symm := by
+  apply (conj_eqToHom_iff_heq _ _ _
+    ((congrArg (fun F ↦ F.obj (V ⊗ W))
+      (scalarExtensionMonoidalFunctor_toFunctor R H A)).trans (Functor.comp_obj (toComodule R H)
+        (FGComoduleCat.scalarExtensionFunctor R H A) (V ⊗ W)))).2
+  exact Functor.precomposeLaxMonoidal_obj_μ
+    (toComodule R H) (FGComoduleCat.scalarExtensionMonoidalFunctor R H A) V W
+
+/-- The unit comparison is comodule scalar extension's unit comparison followed by base
+change of the representation--comodule unit comparison, with the composite's object transport. -/
+theorem scalarExtensionMonoidalFunctor_ε :
+    ε (scalarExtensionMonoidalFunctor R H A).toFunctor =
+      (ε (FGComoduleCat.scalarExtensionFunctor R H A) ≫
+        (FGComoduleCat.scalarExtensionFunctor R H A).map (ε (toComodule R H))) ≫
+        eqToHom ((congrArg (fun F ↦ F.obj (𝟙_ (FGPointRepresentationCat.{u, v, u} R H)))
+          (scalarExtensionMonoidalFunctor_toFunctor R H A)).trans
+            (Functor.comp_obj (toComodule R H) (FGComoduleCat.scalarExtensionFunctor R H A)
+              (𝟙_ (FGPointRepresentationCat.{u, v, u} R H)))).symm := by
+  apply eq_of_heq
+  rw [heq_comp_eqToHom_iff]
+  exact Functor.precomposeLaxMonoidal_obj_ε
+    (toComodule R H) (FGComoduleCat.scalarExtensionMonoidalFunctor R H A)
+
 end FGPointRepresentationCat
 
 namespace Tannaka
@@ -126,6 +202,8 @@ end Comparison
 
 section Functor
 
+-- Point-representation automorphisms live in max (u + 1) (v + 1), since representations
+-- quantify over value algebras. A common universe matches the comodule functor's target.
 variable (R H : Type u) [CommRing R] [CommRing H] [HopfAlgebra R H]
 
 /-- The group-valued tensor-automorphism functor on finite natural point representations,
@@ -163,6 +241,18 @@ theorem pointRepresentationTensorAutFunctor_map {B C : CommAlgCat.{u} R} (f : B 
   apply (conj_eqToHom_iff_heq _ _ (pointRepresentationTensorAutFunctor_obj R H B)
     (pointRepresentationTensorAutFunctor_obj R H C)).2
   rw [pointRepresentationTensorAutFunctor]
+
+/-- Applying the point-representation tensor-automorphism functor map to a transported
+automorphism changes its value algebra through the representation--comodule dictionary. -/
+theorem pointRepresentationTensorAutFunctor_map_transport_apply
+    {B C : CommAlgCat.{u} R} (f : B ⟶ C)
+    (η : Aut (FGPointRepresentationCat.scalarExtensionMonoidalFunctor R H B)) :
+    eqToHom (pointRepresentationTensorAutFunctor_obj R H C)
+        ((pointRepresentationTensorAutFunctor R H).map f
+          (eqToHom (pointRepresentationTensorAutFunctor_obj R H B).symm η)) =
+      tensorAutEquivPointRepresentation R H C
+        (tensorAutMapValue R H B C f.hom ((tensorAutEquivPointRepresentation R H B).symm η)) := by
+  exact pointRepresentationTensorAutMapValueHom_apply R H B C f.hom η
 
 /-- The representation--comodule dictionary identifies tensor-automorphism functors,
 naturally in every commutative value algebra. -/

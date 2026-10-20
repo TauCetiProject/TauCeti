@@ -106,6 +106,24 @@ theorem Functor.precomposeLaxMonoidal_obj_toFunctor (F : C ⥤ D) [F.LaxMonoidal
     ((F.precomposeLaxMonoidal).obj G).toFunctor = F ⋙ G.toFunctor :=
   (rfl)
 
+open MonoidalCategory Functor.LaxMonoidal in
+/-- Precomposition composes the tensor comparisons. Its underlying functor objects are
+propositionally identified with those of the composite functor. -/
+theorem Functor.precomposeLaxMonoidal_obj_μ (F : C ⥤ D) [F.LaxMonoidal]
+    (G : LaxMonoidalFunctor D E) (X Y : C) :
+    HEq (μ ((F.precomposeLaxMonoidal).obj G).toFunctor X Y)
+      (μ G.toFunctor (F.obj X) (F.obj Y) ≫ G.map (μ F X Y)) :=
+  (HEq.rfl)
+
+open MonoidalCategory Functor.LaxMonoidal in
+/-- Precomposition composes the unit comparisons. Its underlying functor object is
+propositionally identified with that of the composite functor. -/
+theorem Functor.precomposeLaxMonoidal_obj_ε (F : C ⥤ D) [F.LaxMonoidal]
+    (G : LaxMonoidalFunctor D E) :
+    HEq (ε ((F.precomposeLaxMonoidal).obj G).toFunctor)
+      (ε G.toFunctor ≫ G.map (ε F)) :=
+  (HEq.rfl)
+
 /-- Precomposition acts on a monoidal natural transformation by ordinary left whiskering.
 The two transformations are typed through propositionally identified functor objects. -/
 @[simp]
