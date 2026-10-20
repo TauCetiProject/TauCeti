@@ -59,6 +59,8 @@ converge because `Â` is complete, and their sums exhibit the element as a combi
   the powers `Iⁿ` are a neighbourhood basis of zero in `Â`; `mem_nhds_completion_iff` and
   `exists_coe_sub_mem_completionIdealImage` are its forms at an arbitrary point of `Â`.
 * `TauCeti.Huber.PairOfDefinition.completionIdeal_pow`: `Îⁿ` is the closure of the image of `Iⁿ`.
+* `TauCeti.Huber.PairOfDefinition.exists_sub_toCompletionRingOfDefinition_mem_completionIdeal_pow`:
+  every point of `Â₀` is congruent modulo `Îⁿ` to the image of a point of `A₀`.
 * `TauCeti.Huber.PairOfDefinition.isAdicComplete_completionIdeal`: `Â₀` is `Î`-adically complete.
 * `TauCeti.Huber.PairOfDefinition.completionIdealImage_le_of_image_subset` and
   `TauCeti.Huber.isOpen_map_coeRingHom`: an ideal of `Â` containing the image of `Iⁿ` contains the
@@ -439,6 +441,18 @@ the closure of the image of `Iⁿ`. -/
 theorem completionIdeal_pow (P : PairOfDefinition A) (n : ℕ) :
     P.completionIdeal ^ n = P.completionIdealImageIdeal n :=
   le_antisymm (P.completionIdeal_pow_le n) (P.completionIdealImageIdeal_le n)
+
+/-- **Approximation from `A₀`.** Every point of `Â₀` is congruent modulo `Îⁿ` to the image of a
+point of `A₀`, for each `n`. -/
+theorem exists_sub_toCompletionRingOfDefinition_mem_completionIdeal_pow (P : PairOfDefinition A)
+    (n : ℕ) (y : P.completionRingOfDefinition) :
+    ∃ b : P.ringOfDefinition, y - P.toCompletionRingOfDefinition b ∈ P.completionIdeal ^ n := by
+  obtain ⟨a, ha⟩ := P.exists_coe_sub_mem_completionIdealImage n y
+  have hmem : (a : Completion A) ∈ P.completionRingOfDefinition := by
+    simpa using add_mem (P.completionIdealImage_le n ha) y.2
+  refine ⟨⟨a, P.coe_mem_completionRingOfDefinition_iff.mp hmem⟩, ?_⟩
+  rw [P.completionIdeal_pow, mem_completionIdealImageIdeal_iff]
+  simpa using (P.completionIdealImage n).neg_mem ha
 
 /-- Wedhorn Remark 6.8: the subspace topology on the ring of definition of the completion is the
 adic topology of the ideal of definition of the completion. -/

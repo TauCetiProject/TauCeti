@@ -139,13 +139,8 @@ theorem mk_comp_toCompletionRingOfDefinition_surjective (n : ℕ) :
       ((Ideal.Quotient.mk (P.completionIdeal ^ n)).comp P.toCompletionRingOfDefinition) := by
   intro y
   obtain ⟨y, rfl⟩ := Ideal.Quotient.mk_surjective y
-  obtain ⟨a, ha⟩ := P.exists_coe_sub_mem_completionIdealImage n y
-  have hmem : (a : Completion R) ∈ P.completionRingOfDefinition := by
-    simpa using add_mem (P.completionIdealImage_le n ha) y.2
-  refine ⟨⟨a, P.coe_mem_completionRingOfDefinition_iff.mp hmem⟩, ?_⟩
-  rw [RingHom.comp_apply, Ideal.Quotient.eq, P.completionIdeal_pow,
-    mem_completionIdealImageIdeal_iff]
-  simpa using ha
+  obtain ⟨b, hb⟩ := P.exists_sub_toCompletionRingOfDefinition_mem_completionIdeal_pow n y
+  exact ⟨b, (Ideal.Quotient.eq.mpr hb).symm⟩
 
 /-- The kernel of the completion map `A₀ → Â₀ ⧸ Îⁿ` is `Iⁿ`. -/
 theorem ker_mk_comp_toCompletionRingOfDefinition (n : ℕ) :
