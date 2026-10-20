@@ -81,23 +81,18 @@ theorem norm_image_sub_sub_le_of_hasFDerivWithinAt {s : Set E} {g : E → F}
     (hxw : segment ℝ x (x + w) ⊆ s) :
     ‖g (x + w) - g x - g' x w‖ ≤ H * ‖w‖ ^ (1 + (α : ℝ)) := by
   have hx : x ∈ segment ℝ x (x + w) := left_mem_segment ℝ x (x + w)
-  -- The derivative of `y ↦ g y - g' x y` is `g' y - g' x`, of norm at most `H ‖w‖^α` on the
-  -- segment, so the mean value inequality bounds its increment from `x` to `x + w`.
+  -- On the segment, `g'` stays within `H ‖w‖^α` of `g' x`, so the mean value inequality for a
+  -- derivative minus a fixed linear map bounds the linear remainder from `x` to `x + w`.
   have hbound : ∀ y ∈ segment ℝ x (x + w), ‖g' y - g' x‖ ≤ H * ‖w‖ ^ (α : ℝ) := by
     intro y hy
     have hyx : dist y x ≤ ‖w‖ := by
       simpa [dist_comm] using segment_subset_closedBall_left x (x + w) hy
     rw [← dist_eq_norm]
     exact (hH.dist_le (hxw hy) (hxw hx)).trans (by gcongr)
-  have hmvt := (convex_segment x (x + w)).norm_image_sub_le_of_norm_hasFDerivWithin_le
-    (f := fun y => g y - g' x y) (f' := fun y => g' y - g' x)
-    (fun y hy => ((hg y (hxw hy)).mono hxw).sub (g' x).hasFDerivWithinAt) hbound hx
-    (right_mem_segment ℝ x (x + w))
-  have hsplit : g (x + w) - g' x (x + w) - (g x - g' x x) = g (x + w) - g x - g' x w := by
-    rw [map_add]
-    abel
+  have hmvt := (convex_segment x (x + w)).norm_image_sub_le_of_norm_hasFDerivWithin_le'
+    (fun y hy => (hg y (hxw hy)).mono hxw) hbound hx (right_mem_segment ℝ x (x + w))
   rw [Real.rpow_add' (norm_nonneg w) (by positivity), Real.rpow_one, mul_comm (‖w‖)]
-  simpa only [hsplit, add_sub_cancel_left, mul_assoc] using hmvt
+  simpa only [add_sub_cancel_left, mul_assoc] using hmvt
 
 /-- **Interpolation along a segment.** If `g` has derivative `g'` within `s` and `g'` is
 `α`-Hölder with constant `H` on `s`, then for a segment from `x` to `x + w` contained in `s`,
