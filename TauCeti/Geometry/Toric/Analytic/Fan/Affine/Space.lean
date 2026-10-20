@@ -67,6 +67,13 @@ private noncomputable abbrev orthantCoordinates :
     (orthant b hi)).2
 
 open Classical in
+variable (ι) in
+/-- The coordinates of the orthant chart, indexed by `{k : Option ι // k ≠ none}`, are indexed
+by `ι`. -/
+private noncomputable abbrev orthantIndexEquiv : ι ≃ {k : Option ι // k ≠ none} :=
+  Equiv.optionSubtype none ⟨Equiv.refl (Option ι), rfl⟩
+
+open Classical in
 /-- The analytic realization of the fan of affine space is homeomorphic to `ι → ℂ`. The
 coordinate indexed by `j` is the character function of `b.coord j`, by
 `affineSpaceHomeomorph_apply`. -/
@@ -74,8 +81,7 @@ noncomputable def affineSpaceHomeomorph :
     (affineSpace b hi).analyticRealization (isRegular_affineSpace b hi) ≃ₜ (ι → ℂ) :=
   ((analyticOfConeHomeomorph hi (isRegularCone_orthant b hi)).symm.trans
     (orthantCoordinates b hi)).trans
-    (Homeomorph.piCongrLeft (Y := fun _ ↦ ℂ)
-      (Equiv.optionSubtype none ⟨Equiv.refl (Option ι), rfl⟩)).symm
+    (Homeomorph.piCongrLeft (Y := fun _ ↦ ℂ) (orthantIndexEquiv ι)).symm
 
 private theorem affineSpaceHomeomorph_analyticAffineChartι
     (x : (affineSpace b hi).analyticAffineChartDiagram.obj (orthant b hi)) (j : ι) :
@@ -91,6 +97,19 @@ private theorem affineSpaceHomeomorph_analyticAffineChartι
   rw [affineSpaceHomeomorph, Homeomorph.trans_apply, Homeomorph.trans_apply, h,
     Homeomorph.piCongrLeft_symm_apply]
   exact projectiveSpacePointHomeomorph_apply b hi none _ x _
+
+open Classical in
+/-- The inverse of `affineSpaceHomeomorph`, through the maximal affine chart of the orthant. -/
+private theorem affineSpaceHomeomorph_symm_apply (z : ι → ℂ) :
+    (affineSpaceHomeomorph b hi).symm z =
+      (affineSpace b hi).analyticAffineChartι (isRegular_affineSpace b hi) (orthant b hi)
+        ((orthantCoordinates b hi).symm fun k ↦ z ((orthantIndexEquiv ι).symm k)) := by
+  rw [affineSpaceHomeomorph, Homeomorph.symm_trans_apply, Homeomorph.symm_trans_apply,
+    Homeomorph.symm_symm, analyticOfConeHomeomorph_apply]
+  congr 2
+  funext k
+  obtain ⟨j, rfl⟩ := (orthantIndexEquiv ι).surjective k
+  simp [Homeomorph.piCongrLeft_apply_apply]
 
 /-- The coordinates of the analytic realization of the fan of affine space are the character
 functions of the coordinate characters `b.coord j`. -/
@@ -116,12 +135,9 @@ theorem analyticCharacter_affineSpaceHomeomorph_symm (m : IntegralCharacter N)
         ((affineSpaceHomeomorph b hi).symm z) =
       ∏ j, z j ^ (m (b j)).toNat := by
   classical
-  rw [affineSpaceHomeomorph, Homeomorph.symm_trans_apply, Homeomorph.symm_trans_apply,
-    Homeomorph.symm_symm, analyticOfConeHomeomorph_apply, analyticCharacter_analyticAffineChartι]
+  rw [affineSpaceHomeomorph_symm_apply, analyticCharacter_analyticAffineChartι]
   refine (projectiveSpacePointHomeomorph_symm_apply_single b hi none _ _ _).trans ?_
-  refine (Fintype.prod_equiv (Equiv.optionSubtype none ⟨Equiv.refl (Option ι), rfl⟩) _ _
-    fun j ↦ ?_).symm
-  simp [Homeomorph.piCongrLeft_apply_apply]
+  exact (Fintype.prod_equiv (orthantIndexEquiv ι) _ _ fun j ↦ by simp).symm
 
 /-- Torus translation scales each coordinate of affine space by the corresponding character
 value. -/
@@ -159,19 +175,15 @@ theorem contMDiff_affineSpaceHomeomorph_symm (n : ℕ∞ω) :
   let _ := coneChartedSpace hi (isRegularCone_orthant b hi).toIsToricCone hB κ g
   have hre : ContMDiff 𝓘(ℂ, ι → ℂ) 𝓘(ℂ, {k : Option ι // k ≠ none} → ℂ) n
       fun (z : ι → ℂ) (k : {k : Option ι // k ≠ none}) ↦
-        z ((Equiv.optionSubtype none ⟨Equiv.refl (Option ι), rfl⟩).symm k) :=
+        z ((orthantIndexEquiv ι).symm k) :=
     contMDiff_pi_module_iff.2 fun k ↦ (contDiff_apply ℂ (fun _ : ι ↦ ℂ) _).contMDiff
   refine ((analyticOfConeDiffeomorph hi (isRegularCone_orthant b hi) hB κ g n).contMDiff.comp
     ((projectiveSpacePointDiffeomorph b hi none hB κ g n).symm.contMDiff.comp hre)).congr
       fun z ↦ ?_
   rw [Function.comp_apply, Function.comp_apply, analyticOfConeDiffeomorph_apply,
-    affineSpaceHomeomorph, Homeomorph.symm_trans_apply, Homeomorph.symm_trans_apply,
-    Homeomorph.symm_symm, analyticOfConeHomeomorph_apply, ← Diffeomorph.coe_toHomeomorph_symm,
+    affineSpaceHomeomorph_symm_apply, ← Diffeomorph.coe_toHomeomorph_symm,
     projectiveSpacePointDiffeomorph_toHomeomorph]
-  congr 2
-  funext k
-  obtain ⟨j, rfl⟩ := (Equiv.optionSubtype none ⟨Equiv.refl (Option ι), rfl⟩).surjective k
-  simp [Homeomorph.piCongrLeft_apply_apply]
+  rfl
 
 /-- The analytic realization of the fan of affine space is biholomorphic to `ι → ℂ`, for the
 complex structure glued from its affine charts. The underlying homeomorphism is

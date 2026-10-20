@@ -24,8 +24,6 @@ character `b.coord j` is nonnegative on the orthant but negative at `-b j`.
 
 ## Main declarations
 
-* `TauCeti.Toric.projectiveSpaceCone_compl_none`: the maximal projective-space cone omitting
-  the extra ray is the positive orthant spanned by the basis.
 * `TauCeti.Toric.Fan.affineSpace`: the fan of affine space.
 * `TauCeti.Toric.Fan.isRegular_affineSpace`: it is regular.
 * `TauCeti.Toric.Fan.affineSpace_eq_subfan`: it is the open subfan of the fan of projective
@@ -42,20 +40,10 @@ public section
 
 open Set
 
-namespace TauCeti.Toric
+namespace TauCeti.Toric.Fan
 
 variable {N V ι : Type*} [AddCommGroup N] [AddCommGroup V] [Module ℝ V]
   [Fintype ι] (b : Module.Basis ι ℤ N) {i : N →+ V}
-
-/-- The maximal cone of the fan of projective space omitting the extra ray is the positive
-orthant spanned by the basis vectors. -/
-theorem projectiveSpaceCone_compl_none :
-    projectiveSpaceCone b i {none}ᶜ = PointedCone.hull ℝ (range fun j ↦ i (b j)) := by
-  rw [projectiveSpaceCone_def, (isCompl_range_some_none ι).symm.compl_eq, ← range_comp,
-    ← range_comp]
-  simp [Function.comp_def]
-
-namespace Fan
 
 /-- The fan of affine space attached to an integral basis `b`: the faces of the positive orthant
 spanned by `b`. The orthant is represented as the maximal cone of the fan of projective space
@@ -115,6 +103,4 @@ theorem isComplete_affineSpace_iff (hi : IsIntegralLattice i) :
     rw [hspan, Submodule.mem_bot] at hx
     exact hx ▸ zero_mem _
 
-end Fan
-
-end TauCeti.Toric
+end TauCeti.Toric.Fan
