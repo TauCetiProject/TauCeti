@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.SimpleGraph.Basic
+public import TauCeti.Algebra.Category.GradedModuleCat.BimoduleTensor.Basic
 public import TauCeti.Algebra.Category.GradedModuleCat.BimoduleTensor.Unit
 public import TauCeti.Algebra.Category.GradedModuleCat.Coproducts.Basic
 public import TauCeti.Algebra.Homology.Bifunctor.Homotopy
@@ -21,7 +22,9 @@ satisfy the braid relation up to chain homotopy. A graded bimodule setting is a 
 enveloping grading `Ξ.tensorProduct Ξ.opposite`, they are combined by the balanced bimodule
 tensor `gradedBimoduleTensor`, and the unit complex of the setting is
 `gradedBimoduleUnitComplex k Ξ`, the regular graded bimodule
-`GradedModuleCat.bimoduleUnit Ξ` placed in cohomological degree zero.
+`GradedModuleCat.bimoduleUnit Ξ` placed in cohomological degree zero. The category
+`GradedBimoduleCat` and the tensor `gradedBimoduleTensor` of such a setting are defined in
+`TauCeti.Algebra.Category.GradedModuleCat.BimoduleTensor.Basic`.
 
 `KhovanovSeidelRelations` records the three relations for a family `C` of complexes with
 prescribed inverses `C'` in a graded bimodule setting. The unit of the relations is the unit
@@ -80,21 +83,6 @@ variable (k : Type w) [CommRing k] {V : Type u} (G : SimpleGraph V)
 
 local notation "c" => ComplexShape.up ℤ
 
-/-- The category of graded bimodules over the graded algebra `A` with internal grading `Ξ`:
-the graded modules over the enveloping grading `Ξ.tensorProduct Ξ.opposite`. -/
-abbrev GradedBimoduleCat (k : Type w) [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
-    (Ξ : InternalGrading k A) :=
-  GradedModuleCat.{max uA w} (Ξ.tensorProduct Ξ.opposite).piece
-
-/-- The balanced bimodule tensor of the graded bimodule setting of `Ξ`. This is
-`GradedModuleCat.bimoduleTensor Ξ Ξ Ξ`, the tensor of two graded bimodules of the graded
-algebra `A`, balanced over `A` itself. The carrier universe is pinned to the universe of the
-graded bimodule category, so that the tensor is a bifunctor on that single category. -/
-noncomputable abbrev gradedBimoduleTensor {A : Type uA} [Ring A] [Algebra k A]
-    (Ξ : InternalGrading k A) [GradedAlgebra Ξ.piece] :
-    GradedBimoduleCat k Ξ ⥤ GradedBimoduleCat k Ξ ⥤ GradedBimoduleCat k Ξ :=
-  GradedModuleCat.bimoduleTensor Ξ Ξ Ξ
-
 /-- The unit complex of the graded bimodule setting of `Ξ`: the regular graded bimodule
 `GradedModuleCat.bimoduleUnit Ξ` placed in cohomological degree zero. -/
 noncomputable abbrev gradedBimoduleUnitComplex {A : Type uA} [Ring A] [Algebra k A]
@@ -102,15 +90,6 @@ noncomputable abbrev gradedBimoduleUnitComplex {A : Type uA} [Ring A] [Algebra k
     HomologicalComplex (GradedBimoduleCat k Ξ) c :=
   (HomologicalComplex.single (GradedBimoduleCat k Ξ) c 0).obj
     (GradedModuleCat.bimoduleUnit.{w} Ξ)
-
-/-- The unit complex of the graded bimodule setting of `Ξ` is the regular graded bimodule in
-cohomological degree zero. -/
-theorem gradedBimoduleUnitComplex_def {A : Type uA} [Ring A] [Algebra k A]
-    (Ξ : InternalGrading k A) [GradedAlgebra Ξ.piece] :
-    gradedBimoduleUnitComplex k Ξ =
-      (HomologicalComplex.single (GradedBimoduleCat k Ξ) c 0).obj
-        (GradedModuleCat.bimoduleUnit.{w} Ξ) :=
-  rfl
 
 /-- The three Khovanov-Seidel relations for a family `C` of complexes of graded bimodules in
 the graded bimodule setting of `Ξ`, with prescribed inverses `C'`: both one-sided inverse
