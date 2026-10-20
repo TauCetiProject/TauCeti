@@ -7,6 +7,7 @@ module
 
 public import TauCeti.ModelTheory.Infinitary.Reindex
 public import TauCeti.ModelTheory.Infinitary.Operations
+public import TauCeti.ModelTheory.Term.FreeVariables
 public import Mathlib.Data.Set.Countable
 
 /-!
@@ -32,26 +33,6 @@ namespace TauCeti
 open FirstOrder.Language
 
 variable {L : FirstOrder.Language.{u, v}} {ι : Type uι} {α : Type uα} {n : ℕ}
-
-/-- Term realization depends only on the free valuation on its finite left-variable support;
-the valuation of the right variables is held fixed. -/
-theorem term_realize_congr_varFinsetLeft [DecidableEq α] {β : Type*} {M : Type w} [L.Structure M]
-    (t : L.Term (α ⊕ β)) {v₁ v₂ : α → M} (ys : β → M)
-    (h : Set.EqOn v₁ v₂ ↑t.varFinsetLeft) :
-    t.realize (Sum.elim v₁ ys) = t.realize (Sum.elim v₂ ys) := by
-  rw [← t.realize_restrictVarLeft' (Set.Subset.refl _),
-    ← t.realize_restrictVarLeft' (Set.Subset.refl _)]
-  have hv : v₁ ∘ ((↑) : (↑t.varFinsetLeft : Set α) → α) = v₂ ∘ (↑) :=
-    funext fun a => h a.property
-  rw [hv]
-
-/-- Relabelling right variables preserves a term's finite left-variable support. -/
-theorem term_varFinsetLeft_relabel [DecidableEq α] {β γ : Type*}
-    (t : L.Term (α ⊕ β)) (f : β → γ) :
-    (t.relabel (Sum.map id f)).varFinsetLeft = t.varFinsetLeft := by
-  induction t with
-  | var a => cases a <;> simp
-  | func g ts ih => simp [ih]
 
 namespace BoundedFormulaInf
 
@@ -158,8 +139,8 @@ theorem freeVarSupport_mapBound {m : ℕ} (f : Fin m → Fin n)
   classical
   induction φ generalizing n with
   | falsum => simp
-  | equal t₁ t₂ => simp [term_varFinsetLeft_relabel]
-  | rel R ts => simp [term_varFinsetLeft_relabel]
+  | equal t₁ t₂ => simp [TauCeti.Term.varFinsetLeft_relabel]
+  | rel R ts => simp [TauCeti.Term.varFinsetLeft_relabel]
   | imp φ ψ ihφ ihψ => simp [ihφ, ihψ]
   | all φ ih => simp [ih]
   | iSup φs ih => simp [ih]
@@ -225,12 +206,12 @@ theorem realize_congr_freeVarSupport {M : Type w} [L.Structure M]
   | equal t₁ t₂ =>
     simp only [freeVarSupport_equal] at h
     simp only [FirstOrder.Language.BoundedFormulaInf.realize_equal,
-      term_realize_congr_varFinsetLeft t₁ xs (h.mono Set.subset_union_left),
-      term_realize_congr_varFinsetLeft t₂ xs (h.mono Set.subset_union_right)]
+      TauCeti.Term.realize_congr_varFinsetLeft t₁ xs (h.mono Set.subset_union_left),
+      TauCeti.Term.realize_congr_varFinsetLeft t₂ xs (h.mono Set.subset_union_right)]
   | rel R ts =>
     rw [freeVarSupport_rel] at h
     simp only [FirstOrder.Language.BoundedFormulaInf.realize_rel]
-    have ht (i) := term_realize_congr_varFinsetLeft (ts i) xs
+    have ht (i) := TauCeti.Term.realize_congr_varFinsetLeft (ts i) xs
       (h.mono (Set.subset_iUnion (fun i => ((ts i).varFinsetLeft : Set α)) i))
     simp only [ht]
   | imp φ ψ ihφ ihψ =>
