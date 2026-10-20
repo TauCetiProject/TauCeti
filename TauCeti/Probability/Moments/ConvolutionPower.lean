@@ -27,6 +27,7 @@ variable {α : Type*} [MeasurableSpace α] [AddMonoid α] [MeasurableAdd₂ α]
 
 /-- The mgf of an additive real observable under a convolution power is the corresponding
 power of its mgf. -/
+@[simp]
 theorem mgf_addMonoidHom_convolutionPower (μ : Measure α) [SFinite μ]
     (f : α →+ ℝ) (hf : Measurable f) (n : ℕ) (t : ℝ) :
     mgf f (μ.convolutionPower n) t = mgf f μ t ^ n := by

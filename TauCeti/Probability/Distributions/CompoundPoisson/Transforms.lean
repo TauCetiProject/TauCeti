@@ -96,7 +96,7 @@ single-jump mgf minus one. -/
 theorem mgf_compoundPoissonMeasure (r : ℝ≥0) (hf : Measurable f) {t : ℝ}
     (ht : t ∈ integrableExpSet f (compoundPoissonMeasure r μ)) :
     mgf f (compoundPoissonMeasure r μ) t = exp (r * (mgf f μ t - 1)) := by
-  have hint : Integrable (fun x ↦ exp (t * f x)) (compoundPoissonMeasure r μ) := ht
+  have hint := integrable_of_mem_integrableExpSet ht
   rw [compoundPoissonMeasure_def] at hint
   rw [mgf, compoundPoissonMeasure_def,
     Measure.integral_bind Measurable.of_discrete.aemeasurable
