@@ -53,6 +53,12 @@ jobs:
           # Harmless (just a slightly deeper fetch) when the cache is off.
           fetch-depth: 100
 
+      - name: Prepare pinned shared tools
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@02db6ea51c27553cb6271e605612a56169ae72f6
+        with:
+          tools-repository: TauCetiProject/TauCetiTools
+          tools-ref: 02db6ea51c27553cb6271e605612a56169ae72f6
+          project-directory: .
       - name: Infrastructure policy unit tests
         run: |
           python3 scripts/test_cancel_bors_candidate.py
@@ -107,10 +113,10 @@ jobs:
             exit 1
           fi
 
-      # Option overrides and heartbeat instrumentation are forbidden in library code.
+      # Option overrides, heartbeat instrumentation, and explicit metaprogramming are forbidden.
       # This cheap trusted scan ignores comments without double quotes, conservatively
       # includes strings and names, and needs no elaboration or sandbox access.
-      - name: Reject option overrides and heartbeat instrumentation
+      - name: Reject option overrides and metaprogramming (allow local macros)
         run: |
           python3 scripts/check_source_options.py TauCeti/ TauCeti.lean
 

@@ -178,44 +178,11 @@ private theorem tripleLoopCount_flip (D₁ D₂ D₃ : BrauerDiagram k) :
 
 /-! ### The strands of the stack of `D₁` above `D₂` in the stack of three -/
 
-/-- A strand of the stack of `D₁` above `D₂` that starts at a bottom point and crosses the middle
-boundary runs up a through strand of `D₂`. -/
-private theorem stackStart_inl_eq_inr_iff {i : Fin k} {s : Fin k ⊕ Fin k} :
-    stackStart D₁ D₂ (Sum.inl i) = Sum.inr s ↔
-      ∃ a, s = Sum.inl a ∧ D₂.val (Sum.inl i) = Sum.inr a := by
-  rw [stackStart_inl]
-  rcases D₂.val (Sum.inl i) with i' | a
-  · simp
-  · simp [eq_comm]
-
-/-- A strand about to run up through `D₁` that stays in the middle follows a cap of `D₁`. -/
-private theorem stackStep_inl_eq_inr_iff {a : Fin k} {v : Fin k ⊕ Fin k} :
-    stackStep D₁ D₂ (Sum.inl a) = Sum.inr v ↔
-      ∃ b, v = Sum.inr b ∧ D₁.val (Sum.inl a) = Sum.inl b := by
-  rw [stackStep_inl]
-  rcases D₁.val (Sum.inl a) with b | j
-  · simp [eq_comm]
-  · simp
-
-/-- A strand about to run down through `D₂` that stays in the middle follows a cup of `D₂`. -/
-private theorem stackStep_inr_eq_inr_iff {a : Fin k} {v : Fin k ⊕ Fin k} :
-    stackStep D₁ D₂ (Sum.inr a) = Sum.inr v ↔
-      ∃ b, v = Sum.inl b ∧ D₂.val (Sum.inr a) = Sum.inr b := by
-  rw [stackStep_inr]
-  rcases D₂.val (Sum.inr a) with i | b
-  · simp
-  · simp [eq_comm]
-
 /-- The strand of the stack of `D₁` above `D₂` starting at the bottom point `i` reaches the
 middle state `t`. -/
 private def OnStrand (D₁ D₂ : BrauerDiagram k) (i : Fin k) (t : Fin k ⊕ Fin k) : Prop :=
   ∃ s, stackStart D₁ D₂ (Sum.inl i) = Sum.inr s ∧
     ReflTransGen (fun u v => stackStep D₁ D₂ u = Sum.inr v) s t
-
-private theorem OnStrand.step {i : Fin k} {t v : Fin k ⊕ Fin k} (ht : OnStrand D₁ D₂ i t)
-    (h : stackStep D₁ D₂ t = Sum.inr v) : OnStrand D₁ D₂ i v :=
-  let ⟨s, hs, hpath⟩ := ht
-  ⟨s, hs, hpath.tail h⟩
 
 /-- A strand reaches the middle point `a` about to run down through `D₂` only along a cap of
 `D₁` ending at `a`. -/
@@ -223,14 +190,9 @@ private theorem OnStrand.exists_of_inr {i a : Fin k} (ht : OnStrand D₁ D₂ i 
     ∃ b, OnStrand D₁ D₂ i (Sum.inl b) ∧ D₁.val (Sum.inl b) = Sum.inl a := by
   obtain ⟨s, hs, hpath⟩ := ht
   rcases hpath.cases_tail with rfl | ⟨u, hu, hstep⟩
-  · obtain ⟨_, h, -⟩ := stackStart_inl_eq_inr_iff.mp hs
-    simp at h
-  · rcases u with b | b
-    · obtain ⟨c, hc, hb⟩ := stackStep_inl_eq_inr_iff.mp hstep
-      cases Sum.inr_injective hc
-      exact ⟨b, ⟨s, hs, hu⟩, hb⟩
-    · obtain ⟨c, hc, -⟩ := stackStep_inr_eq_inr_iff.mp hstep
-      simp at hc
+  · exact absurd (stackStart_eq_inr_inr_iff.mp hs).1 (by simp)
+  · obtain ⟨b, rfl, hb⟩ := stackStep_eq_inr_inr_iff.mp hstep
+    exact ⟨b, ⟨s, hs, hu⟩, D₁.apply_eq_of_apply_eq hb⟩
 
 /-- A strand reaches the middle point `a` about to run up through `D₁` either along its first
 arc, a through strand of `D₂`, or along a cup of `D₂` ending at `a`. -/
@@ -239,47 +201,28 @@ private theorem OnStrand.exists_of_inl {i a : Fin k} (ht : OnStrand D₁ D₂ i 
       ∃ b, OnStrand D₁ D₂ i (Sum.inr b) ∧ D₂.val (Sum.inr b) = Sum.inr a := by
   obtain ⟨s, hs, hpath⟩ := ht
   rcases hpath.cases_tail with rfl | ⟨u, hu, hstep⟩
-  · obtain ⟨c, hc, hi⟩ := stackStart_inl_eq_inr_iff.mp hs
-    cases Sum.inl_injective hc
-    exact Or.inl hi
-  · rcases u with b | b
-    · obtain ⟨c, hc, -⟩ := stackStep_inl_eq_inr_iff.mp hstep
-      simp at hc
-    · obtain ⟨c, hc, hb⟩ := stackStep_inr_eq_inr_iff.mp hstep
-      cases Sum.inl_injective hc
-      exact Or.inr ⟨b, ⟨s, hs, hu⟩, hb⟩
+  · exact Or.inl (D₂.apply_eq_of_apply_eq (stackStart_eq_inr_inl_iff.mp hs).2)
+  · obtain ⟨b, rfl, hb⟩ := stackStep_eq_inr_inl_iff.mp hstep
+    exact Or.inr ⟨b, ⟨s, hs, hu⟩, D₂.apply_eq_of_apply_eq hb⟩
 
 /-- **A strand runs through the whole upper component it enters**: an arc of the middle graph of
 `D₁` above `D₂` at a middle point of the strand leads to another middle point of the strand. -/
 private theorem OnStrand.exists_of_middleAdj {i c : Fin k} {t : Fin k ⊕ Fin k}
     (ht : OnStrand D₁ D₂ i t) (h : MiddleAdj D₁ D₂ (middlePoint t) c) :
-    ∃ t', OnStrand D₁ D₂ i t' ∧ middlePoint t' = c := by
-  rw [middleAdj_def] at h
-  rcases t with a | a <;> simp only [middlePoint_inl, middlePoint_inr] at h <;> rcases h with h | h
-  · exact ⟨Sum.inr c, ht.step (stackStep_inl_eq_inr_iff.mpr ⟨c, rfl, h⟩), middlePoint_inr c⟩
-  · rcases ht.exists_of_inl with hi | ⟨b, hb, hba⟩
-    · simp [D₂.apply_eq_of_apply_eq hi] at h
-    · rw [D₂.apply_eq_of_apply_eq hba] at h
-      exact ⟨Sum.inr b, hb, (middlePoint_inr b).trans (Sum.inr_injective h)⟩
-  · obtain ⟨b, hb, hba⟩ := ht.exists_of_inr
-    rw [D₁.apply_eq_of_apply_eq hba] at h
-    exact ⟨Sum.inl b, hb, (middlePoint_inl b).trans (Sum.inl_injective h)⟩
-  · exact ⟨Sum.inl c, ht.step (stackStep_inr_eq_inr_iff.mpr ⟨c, rfl, h⟩), middlePoint_inl c⟩
+    ∃ t', OnStrand D₁ D₂ i t' ∧ middlePoint t' = c :=
+  let ⟨s, hs, hpath⟩ := ht
+  let ⟨t', hpath', ht'⟩ := exists_reflTransGen_stackStep_of_middleAdj hs hpath h
+  ⟨t', ⟨s, hs, hpath'⟩, ht'⟩
 
 /-- A through strand of `D₂` leaving a middle point of the strand from the bottom point `i` down to
 the bottom point `i'` either retraces the first arc of the strand or ends it: then `D₁ ∘ D₂` has a
 cap joining `i` to `i'`. -/
 private theorem OnStrand.eq_or_composeDiagram {i i' : Fin k} {t : Fin k ⊕ Fin k}
     (ht : OnStrand D₁ D₂ i t) (h : D₂.val (Sum.inr (middlePoint t)) = Sum.inl i') :
-    i' = i ∨ (composeDiagram D₁ D₂).val (Sum.inl i) = Sum.inl i' := by
-  rcases t with a | a <;> simp only [middlePoint_inl, middlePoint_inr] at h
-  · rcases ht.exists_of_inl with hi | ⟨b, -, hba⟩
-    · rw [D₂.apply_eq_of_apply_eq hi] at h
-      exact Or.inl (Sum.inl_injective h).symm
-    · simp [D₂.apply_eq_of_apply_eq hba] at h
-  · obtain ⟨s, hs, hpath⟩ := ht
-    refine Or.inr ((composeDiagram_val_eq_iff D₁ D₂).mpr (Or.inr ⟨s, Sum.inr a, hs, hpath, ?_⟩))
-    simp [stackStep_inr, h]
+    i' = i ∨ (composeDiagram D₁ D₂).val (Sum.inl i) = Sum.inl i' :=
+  let ⟨_, hs, hpath⟩ := ht
+  (eq_or_composeDiagram_val_eq_inl_of_reflTransGen_stackStep hs hpath h).imp
+    (fun h => Sum.inl_injective h) id
 
 /-- If `D₁ ∘ D₂` has a cap at the bottom point `i`, then every middle point the strand from `i`
 reaches carries a cap of `D₁`: a through strand of `D₁` there would carry the strand out of the

@@ -239,6 +239,19 @@ theorem isProbabilityMeasure_generalizedParetoMeasure {s : ℝ} (hs : 0 < s) (ξ
   let _ : IsProbabilityMeasure (expMeasure 1) := isProbabilityMeasure_expMeasure one_pos
   infer_instance
 
+/-- A generalized Pareto variable lies almost surely in its open positive support.
+The statement includes the zero law at nonpositive scale. -/
+theorem ae_pos_and_one_add_mul_div_pos_generalizedParetoMeasure (s ξ : ℝ) :
+    ∀ᵐ x ∂generalizedParetoMeasure s ξ, 0 < x ∧ 0 < 1 + ξ * x / s := by
+  rcases le_or_gt s 0 with hs | hs
+  · simp [generalizedParetoMeasure_of_nonpos hs]
+  rw [generalizedParetoMeasure_of_pos hs,
+    ae_map_iff (measurable_generalizedParetoMap_right s ξ).aemeasurable (by measurability)]
+  filter_upwards [ae_pos_expMeasure 1] with e he
+  refine ⟨generalizedParetoMap_pos hs ξ he, ?_⟩
+  rw [one_add_mul_generalizedParetoMap_div hs.ne']
+  exact Real.exp_pos _
+
 /-- Every singleton has zero generalized Pareto measure at positive scale. -/
 theorem nullSingletonClass_generalizedParetoMeasure {s : ℝ} (hs : 0 < s) (ξ : ℝ) :
     NullSingletonClass (generalizedParetoMeasure s ξ) := by

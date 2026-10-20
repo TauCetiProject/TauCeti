@@ -20,9 +20,9 @@ weight has length at most two, so the module is a sum of copies of the trivial a
 two-dimensional representation. This file records what that hypothesis buys.
 
 First it halves the relation `H E - E H = 2 E` to `E F E = E`: once `E ^ 2 = 0` both `H E` and
-`-E H` are already equal to `E F E`. This needs only an additively torsion-free ring, with no
-identity element required. The two products `E F` and `F E` then become orthogonal idempotents whose
-difference is `H`, cutting out the two ends of each `α`-string.
+`-E H` are already equal to `E F E`. This needs only injectivity of doubling on the additive
+group, with no identity element required. The two products `E F` and `F E` then become orthogonal
+idempotents whose difference is `H`, cutting out the two ends of each `α`-string.
 
 Second, a square-zero element makes the exponential `1 + t E` affine in its parameter, and the
 Chevalley rank-one identity
@@ -74,11 +74,12 @@ namespace Sl2
 
 section HalfRelation
 
-variable {A : Type*} [NonUnitalRing A] [IsAddTorsionFree A] {H E F : A}
+variable {A : Type*} [NonUnitalRing A] {H E F : A}
 
 /-- **A square-zero raising element satisfies `E F E = E`.** The two commutator relations imply
-this identity in any additively torsion-free nonunital ring. -/
-theorem e_mul_f_mul_e_of_mul_self_eq_zero (hEE : E * E = 0) (hef : E * F - F * E = H)
+this identity in any nonunital ring in which doubling is injective. -/
+theorem e_mul_f_mul_e_of_mul_self_eq_zero (htwo : IsSMulRegular A (2 : ℕ))
+    (hEE : E * E = 0) (hef : E * F - F * E = H)
     (hhe : H * E - E * H = 2 • E) : E * F * E = E := by
   have h1 : E * F * E = H * E := by
     have h := congrArg (fun T => T * E) hef
@@ -89,14 +90,15 @@ theorem e_mul_f_mul_e_of_mul_self_eq_zero (hEE : E * E = 0) (hef : E * F - F * E
     simp only [mul_sub, ← mul_assoc, hEE, zero_mul, zero_sub] at h
     exact h.symm
   -- Cancel doubling in the additive group.
-  apply ((AddCommute.all _ _).nsmul_right_inj (by decide : (2 : ℕ) ≠ 0)).1
-  rw [← hhe, ← h1, h2, two_nsmul, sub_neg_eq_add]
+  apply htwo
+  simpa only [← h1, h2, two_nsmul, sub_neg_eq_add] using hhe
 
 /-- **A square-zero lowering element satisfies `F E F = F`**, the mirror image of
 `e_mul_f_mul_e_of_mul_self_eq_zero` across the `sl₂` triple `(-H, F, E)`. -/
-theorem f_mul_e_mul_f_of_mul_self_eq_zero (hFF : F * F = 0) (hef : E * F - F * E = H)
+theorem f_mul_e_mul_f_of_mul_self_eq_zero (htwo : IsSMulRegular A (2 : ℕ))
+    (hFF : F * F = 0) (hef : E * F - F * E = H)
     (hhf : H * F - F * H = -(2 • F)) : F * E * F = F := by
-  refine e_mul_f_mul_e_of_mul_self_eq_zero (H := -H) hFF ?_ ?_
+  refine e_mul_f_mul_e_of_mul_self_eq_zero (H := -H) htwo hFF ?_ ?_
   · rw [← hef]; abel
   · rw [neg_mul, mul_neg, sub_neg_eq_add, ← neg_neg (2 • F), ← hhf]
     abel

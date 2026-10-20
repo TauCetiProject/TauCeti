@@ -64,12 +64,6 @@ section StepValue
 
 variable (P : Finpartition (Set.univ : Set Ω))
 
-omit [MeasurableSpace Ω] in
-/-- Every point of the carrier belongs to one of the parts of a partition of `Set.univ`. -/
-private theorem exists_part (x : Ω) : ∃ p : P.parts, x ∈ (p : Set Ω) := by
-  obtain ⟨p, ⟨hp, hxp⟩, _⟩ := P.isPartition_parts.2 x
-  exact ⟨⟨p, hp⟩, hxp⟩
-
 /-- The finite rectangle-indicator sum underlying a step graphon. -/
 private def stepValue (val : P.parts → P.parts → Set.Icc (0 : ℝ) 1) (x y : Ω) : ℝ :=
   ∑ p : P.parts, ∑ q : P.parts,
@@ -112,9 +106,9 @@ def stepGraphon (P : Finpartition (Set.univ : Set Ω))
     Graphon Ω μ where
   toFun := stepValue P val
   symm' x y := by
-    obtain ⟨p, hxp⟩ := exists_part P x
-    obtain ⟨q, hyq⟩ := exists_part P y
-    rw [stepValue_apply P val hxp hyq, stepValue_apply P val hyq hxp, hsymm]
+    have hx := P.indexedPartition.mem_index x
+    have hy := P.indexedPartition.mem_index y
+    rw [stepValue_apply P val hx hy, stepValue_apply P val hy hx, hsymm]
   meas' := by
     apply Finset.measurable_sum
     intro p _
@@ -122,15 +116,12 @@ def stepGraphon (P : Finpartition (Set.univ : Set Ω))
     intro q _
     exact measurable_const.indicator ((hP p p.property).prod (hP q q.property))
   bdd' := ⟨1, fun x y => by
-    obtain ⟨p, hxp⟩ := exists_part P x
-    obtain ⟨q, hyq⟩ := exists_part P y
-    rw [stepValue_apply P val hxp hyq, abs_of_nonneg (val p q).property.1]
-    exact (val p q).property.2⟩
+    rw [stepValue_apply P val (P.indexedPartition.mem_index x) (P.indexedPartition.mem_index y),
+      abs_of_nonneg (val _ _).property.1]
+    exact (val _ _).property.2⟩
   mem01' x y := by
-    obtain ⟨p, hxp⟩ := exists_part P x
-    obtain ⟨q, hyq⟩ := exists_part P y
-    rw [stepValue_apply P val hxp hyq]
-    exact (val p q).property
+    rw [stepValue_apply P val (P.indexedPartition.mem_index x) (P.indexedPartition.mem_index y)]
+    exact (val _ _).property
 
 /-- A step graphon takes its prescribed value on each rectangle of the partition. -/
 theorem stepGraphon_apply (P : Finpartition (Set.univ : Set Ω))
@@ -185,10 +176,8 @@ theorem stepGraphon_const (P : Finpartition (Set.univ : Set Ω))
     (hP : ∀ p ∈ P.parts, MeasurableSet p) (c : Set.Icc (0 : ℝ) 1) :
     stepGraphon (μ := μ) P hP (fun _ _ => c) (fun _ _ => rfl) = Graphon.const μ c := by
   ext x y
-  obtain ⟨p, hxp⟩ := exists_part P x
-  obtain ⟨q, hyq⟩ := exists_part P y
-  rw [stepGraphon_apply P hP (fun _ _ => c) (fun _ _ => rfl) hxp hyq,
-    Graphon.const_apply]
+  rw [stepGraphon_apply P hP (fun _ _ => c) (fun _ _ => rfl) (P.indexedPartition.mem_index x)
+    (P.indexedPartition.mem_index y), Graphon.const_apply]
 
 /-- **Step graphons on a fixed partition are the graphons constant on its rectangles.** A graphon
 is a step graphon on `P` exactly when its value at `(x, y)` depends only on the parts of `P`
@@ -206,10 +195,10 @@ theorem exists_stepGraphon_eq_iff (P : Finpartition (Set.univ : Set Ω))
     refine ⟨fun p q => ⟨W (P.indexedPartition.some p) (P.indexedPartition.some q), W.mem_Icc _ _⟩,
       fun p q => Subtype.ext (W.symm _ _), ?_⟩
     ext x y
-    obtain ⟨p, hxp⟩ := exists_part P x
-    obtain ⟨q, hyq⟩ := exists_part P y
-    rw [stepGraphon_apply P hP _ _ hxp hyq]
-    exact hW p q _ (P.indexedPartition.some_mem p) x hxp _ (P.indexedPartition.some_mem q) y hyq
+    have hx := P.indexedPartition.mem_index x
+    have hy := P.indexedPartition.mem_index y
+    rw [stepGraphon_apply P hP _ _ hx hy]
+    exact hW _ _ _ (P.indexedPartition.some_mem _) x hx _ (P.indexedPartition.some_mem _) y hy
 
 /-- **The pullback of a graphon on a finite carrier is a step graphon.** Reading a graphon on a
 finite discrete probability space -- a weighted graph -- along a measurable map `g` gives a step
