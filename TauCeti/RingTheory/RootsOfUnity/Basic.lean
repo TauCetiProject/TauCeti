@@ -114,7 +114,7 @@ theorem _root_.IsPrimitiveRoot.neg_of_odd {ζ : R} {n : ℕ} (hζ : IsPrimitiveR
 /-- A domain containing a primitive `n`-th root of unity has enough `n`-th roots of unity. -/
 theorem hasEnoughRootsOfUnity_of_isPrimitiveRoot [IsDomain R] {n : ℕ} [NeZero n]
     {ζ : R} (hζ : IsPrimitiveRoot ζ n) : HasEnoughRootsOfUnity R n :=
-  ⟨⟨ζ, hζ⟩, rootsOfUnity.isCyclic R n⟩
+  .of_card_le hζ.card_rootsOfUnity.ge
 
 /-- A domain receiving an injective monoid homomorphism from a commutative monoid with enough
 `n`-th roots of unity has enough `n`-th roots of unity: the image of a primitive root is primitive,
