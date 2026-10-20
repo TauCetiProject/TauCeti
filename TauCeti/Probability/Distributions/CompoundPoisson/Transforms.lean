@@ -84,12 +84,12 @@ theorem integrableExpSet_compoundPoissonMeasure (r : ℝ≥0) (hf : Measurable f
     simpa only [ite_eq_right hr, integrableExpSet, mem_ofPred_eq] using
       integrable_exp_mul_compoundPoissonMeasure_iff hr hf t
 
-/-- On the jump exponential-integrability domain, Poisson compounding exponentiates the
+/-- On the compound Poisson exponential-integrability domain, Poisson compounding exponentiates the
 single-jump mgf minus one. -/
 theorem mgf_compoundPoissonMeasure (r : ℝ≥0) (hf : Measurable f) {t : ℝ}
-    (ht : t ∈ integrableExpSet f μ) :
+    (ht : t ∈ integrableExpSet f (compoundPoissonMeasure r μ)) :
     mgf f (compoundPoissonMeasure r μ) t = exp (r * (mgf f μ t - 1)) := by
-  have hint := integrable_exp_mul_compoundPoissonMeasure r hf ht
+  have hint : Integrable (fun x ↦ exp (t * f x)) (compoundPoissonMeasure r μ) := ht
   rw [compoundPoissonMeasure_def] at hint
   rw [mgf, compoundPoissonMeasure_def,
     Measure.integral_bind Measurable.of_discrete.aemeasurable
@@ -99,10 +99,10 @@ theorem mgf_compoundPoissonMeasure (r : ℝ≥0) (hf : Measurable f) {t : ℝ}
   simp_rw [hM]
   simpa only [pgf_def, id_eq] using pgf_poissonMeasure r (mgf f μ t)
 
-/-- On the jump exponential-integrability domain, the compound Poisson cgf is its intensity
-times the single-jump mgf minus one. -/
+/-- On the compound Poisson exponential-integrability domain, its cgf is its intensity times
+the single-jump mgf minus one. -/
 theorem cgf_compoundPoissonMeasure (r : ℝ≥0) (hf : Measurable f) {t : ℝ}
-    (ht : t ∈ integrableExpSet f μ) :
+    (ht : t ∈ integrableExpSet f (compoundPoissonMeasure r μ)) :
     cgf f (compoundPoissonMeasure r μ) t = r * (mgf f μ t - 1) := by
   rw [cgf, mgf_compoundPoissonMeasure r hf ht, log_exp]
 

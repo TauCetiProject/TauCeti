@@ -11,9 +11,9 @@ public import TauCeti.Probability.Moments.Basic
 /-!
 # Moment-generating functions of convolution powers
 
-A measurable additive real observable turns an `n`-fold convolution into a sum of `n`
-independent real variables. Its moment-generating function is therefore the `n`th power of
-the single-jump transform. This identity also holds for totalized divergent integrals.
+The moment-generating function of a measurable additive real observable under an `n`-fold
+convolution power of an s-finite measure is the `n`th power of its moment-generating function
+under the original measure. This identity also holds for totalized divergent integrals.
 -/
 
 public section
