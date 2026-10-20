@@ -90,6 +90,14 @@ noncomputable def shiftedModuleComplexAct {a : A} (ha : a ∈ 𝒜 0) (hda : d a
       shiftedModuleComplexXEquiv_d, shiftedModuleComplexXEquiv_shiftedModuleComplexActX]
     exact (hM.op_smul_koszulTwist_map_eq_neg hda (shiftedModuleComplexXEquiv hM (q + 1) i α).2).symm
 
+/-- The components of `shiftedModuleComplexAct` are the linear maps `shiftedModuleComplexActX`. -/
+@[simp]
+theorem shiftedModuleComplexAct_f {a : A} (ha : a ∈ 𝒜 0) (hda : d a = 0) (q n : ℤ) :
+    (shiftedModuleComplexAct hM ha hda q).f n =
+      ModuleCat.ofHom (shiftedModuleComplexActX hM ha q n) :=
+  -- The components are given by this expression in the definition of the morphism.
+  (rfl)
+
 /-- **The action of a cycle of degree zero on cohomology**: the map
 `H^n(shiftedModuleComplex hM (q + 1)) ⟶ H^{n + 1}(shiftedModuleComplex hM q)` induced by
 `shiftedModuleComplexAct`, both being the cohomology of `ℳ` in degree `n + q + 1`. -/
