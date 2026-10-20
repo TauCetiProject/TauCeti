@@ -70,6 +70,7 @@ theorem isLocalRiemannianIsometry_restrictOpenTangentSpace [IsManifold I 1 M] {n
     inner_mfderiv := fun x v w ↦ by
       have h := g.toRiemannianMetric.restrictOpenTangentSpace_inner_mfderiv_subtype_val U x v w
       rw [← restrictOpenTangentSpace_toRiemannianMetric] at h
+      rw [inner_riemannianBundle g, inner_riemannianBundle (g.restrictOpenTangentSpace U)]
       exact h.symm }
 
 variable [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M]

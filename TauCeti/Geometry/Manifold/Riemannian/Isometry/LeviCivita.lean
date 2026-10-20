@@ -36,7 +36,7 @@ In the namespace `TauCeti.IsLocalRiemannianIsometry`:
 * `mfderiv_leviCivitaConnection_mpullback`: the same statement for Mathlib's
   `CovariantDerivative.leviCivitaConnection`.
 * `leviCivitaConnection_mpullback_apply_mpullback`: the vector-field form
-  `∇ᴹ_{Φ^* Y} (Φ^* Z) = Φ^* (∇ᴺ_Y Z)`.
+  `∇ᴹ_{f^* Y} (f^* Z) = f^* (∇ᴺ_Y Z)`.
 
 A Riemannian isometry `Φ` is a local Riemannian isometry
 (`TauCeti.RiemannianIsometry.isLocalRiemannianIsometry`), so these apply to it through
