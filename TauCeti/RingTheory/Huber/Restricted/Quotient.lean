@@ -16,11 +16,12 @@ import Mathlib.Data.Finsupp.Encodable
 /-!
 # Restricted power series over a quotient ring
 
-Let `A` be a complete Hausdorff Tate ring and `J` an ideal of `A`. Reducing coefficients modulo
-`J` is a continuous surjection `A⟨X₁, …, Xₖ⟩ → (A ⧸ J)⟨X₁, …, Xₖ⟩`, whose kernel consists of the
-series with every coefficient in `J`. This file identifies that kernel with the extended ideal
-`J · A⟨X₁, …, Xₖ⟩` when `J` is finitely generated and closed — for instance for every ideal of a
-noetherian `A` — and deduces the quotient isomorphism
+Let `A` be a complete Hausdorff Tate ring with countably generated uniformity and `J` an ideal
+of `A`. Reducing coefficients modulo `J` is a continuous surjection
+`A⟨X₁, …, Xₖ⟩ → (A ⧸ J)⟨X₁, …, Xₖ⟩`, whose kernel consists of the series with every coefficient
+in `J` (`TauCeti.Huber.mem_ker_weightedMap_iff`). This file identifies that kernel with the
+extended ideal `J · A⟨X₁, …, Xₖ⟩` when `J` is finitely generated and closed — for instance for
+every ideal of a noetherian `A` — and deduces the quotient isomorphism
 
 ```text
 (A ⧸ J)⟨X₁, …, Xₖ⟩ ≅ A⟨X₁, …, Xₖ⟩ ⧸ J · A⟨X₁, …, Xₖ⟩,
@@ -29,12 +30,12 @@ noetherian `A` — and deduces the quotient isomorphism
 of topological rings, the restricted-series analogue of Mathlib's
 `Ideal.polynomialQuotientEquivQuotientPolynomial`.
 
-The inclusion of `J · A⟨X⟩` in the series with coefficients in `J` is formal. The converse is not:
-writing a series with coefficients `cᵥ ∈ J` as `∑ᵢ gᵢ fᵢ` for generators `gᵢ` of `J` asks for
-coefficients `cᵥ = ∑ᵢ gᵢ aᵢᵥ` with `aᵢᵥ → 0`, and lifting each coefficient separately need not give
-that. The open mapping theorem over a Tate ring makes the presentation `Aⁿ → J` open, because `J`
-is closed, and open surjections lift null families to null families
-(`TauCeti.exists_lift_tendsto_cofinite_nhds`).
+The inclusion of `J · A⟨X⟩` in the series with coefficients in `J` is formal
+(`Ideal.coeff_mem_of_mem_map_weightedC`). The converse is not: writing a series with coefficients
+`cᵥ ∈ J` as `∑ᵢ gᵢ fᵢ` for generators `gᵢ` of `J` asks for coefficients `cᵥ = ∑ᵢ gᵢ aᵢᵥ` with
+`aᵢᵥ → 0`, and lifting each coefficient separately need not give that. The open mapping theorem
+over a Tate ring makes the presentation `Aⁿ → J` open, because `J` is closed, and open
+surjections lift null families to null families (`TauCeti.exists_lift_tendsto_cofinite_nhds`).
 
 For a noetherian `A` the isomorphism is also the case `M = A ⧸ J` of Wedhorn's Remark 8.29
 (`TauCeti.Huber.restrictedMvPowerSeriesBaseChangeEquiv`), composed with
@@ -47,11 +48,9 @@ noetherianness, and the reduction map is `TauCeti.Huber.weightedMap`.
 
 ## Main results
 
-* `TauCeti.Huber.mem_ker_weightedMap_iff`: the kernel of the coefficientwise map induced by `φ` is
-  the set of series with coefficients in `ker φ`, for any weights.
 * `Ideal.mem_map_weightedC_iff`: a restricted series lies in `J · A⟨X⟩` exactly when all of its
   coefficients lie in `J`, for a closed finitely generated ideal `J` of a complete Hausdorff Tate
-  ring.
+  ring with countably generated uniformity.
 * `Ideal.ker_weightedMap_quotientMk`: so the kernel of reduction modulo `J` is `J · A⟨X⟩`.
 * `Ideal.restrictedQuotientEquivQuotientRestricted`: the ring isomorphism
   `(A ⧸ J)⟨X⟩ ≃+* A⟨X⟩ ⧸ J · A⟨X⟩`, a homeomorphism for the quotient topology
@@ -68,26 +67,6 @@ public section
 open Filter Topology
 open scoped Uniformity
 
-namespace TauCeti.Huber
-
-variable {k : ℕ} {A B : Type*} [CommRing A] [TopologicalSpace A] [NonarchimedeanRing A]
-  [CommRing B] [TopologicalSpace B] [NonarchimedeanRing B]
-
-/-- **The kernel of `weightedMap` is coefficientwise**: a series is killed by the map induced by
-`φ` exactly when each of its coefficients is killed by `φ`. -/
-theorem mem_ker_weightedMap_iff {φ : A →+* B} (hφ : Continuous φ) {T : Fin k → Set A}
-    {S : Fin k → Set B} {hT : IsWeightFamily T} {hS : IsWeightFamily S}
-    {hTS : ∀ i, φ '' T i ⊆ S i} {f : weightedRestrictedSubring T hT} :
-    f ∈ RingHom.ker (weightedMap hφ hT hS hTS) ↔
-      ∀ ν, MvPowerSeries.coeff ν (f : MvPowerSeries (Fin k) A) ∈ RingHom.ker φ := by
-  simp only [RingHom.mem_ker]
-  refine ⟨fun h ν ↦ ?_, fun h ↦ Subtype.ext <| MvPowerSeries.ext fun ν ↦ ?_⟩
-  · simpa using congrArg (fun g : weightedRestrictedSubring S hS ↦
-      MvPowerSeries.coeff ν (g : MvPowerSeries (Fin k) B)) h
-  · simpa using h ν
-
-end TauCeti.Huber
-
 namespace Ideal
 
 open TauCeti.Huber
@@ -98,58 +77,46 @@ variable {k : ℕ} {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup 
 /-- **`J · A⟨X⟩` is the set of series with coefficients in `J`**, for a closed finitely generated
 ideal `J` of a complete Hausdorff Tate ring `A` with countably generated uniformity. Over a
 noetherian such `A` every ideal is finitely generated and closed
-(`TauCeti.Huber.isClosed_of_isNoetherian`).
-
-Write `J = (g₁, …, gₙ)`. The map `Aⁿ → J`, `a ↦ ∑ aᵢ gᵢ`, is open by the open mapping theorem over
-a Tate ring (`TauCeti.Huber.IsTateRing.isStrictMap_of_isClosed_range`), which is where closedness
-of `J` is used. So the null family of coefficients of a series with coefficients in `J` lifts to a
-null family in `Aⁿ`, whose components are restricted series `fᵢ` with `f = ∑ gᵢ fᵢ`. -/
+(`TauCeti.Huber.isClosed_of_isNoetherian`). -/
 theorem mem_map_weightedC_iff {J : Ideal A} (hJ : J.FG) (hJc : IsClosed (J : Set A))
     {f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight} :
     f ∈ J.map (weightedC _ isWeightFamily_one_weight) ↔
       ∀ ν, MvPowerSeries.coeff ν (f : MvPowerSeries (Fin k) A) ∈ J := by
-  constructor
-  · -- `J · A⟨X⟩` lies in the kernel of reduction modulo `J`, which is coefficientwise.
-    intro hf
-    have hle : J.map (weightedC _ isWeightFamily_one_weight) ≤
-        RingHom.ker (weightedMap (k := k) (QuotientRing.isOpenQuotientMap_mk J).continuous
-          isWeightFamily_one_weight isWeightFamily_one_weight (fun _ ↦ by simp)) :=
-      map_le_iff_le_comap.mpr fun a ha ↦ by
-        simp [RingHom.mem_ker, Quotient.eq_zero_iff_mem.mpr ha]
-    simpa [mk_ker] using mem_ker_weightedMap_iff _ |>.mp (hle hf)
-  · intro hf
-    obtain ⟨n, g, hg⟩ := Submodule.fg_iff_exists_fin_generating_family.mp hJ
-    let u := Fintype.linearCombination A g
-    have hu : LinearMap.range u = J := by
-      rw [Fintype.range_linearCombination]
-      exact hg
-    -- The presentation `Aⁿ → J` is open, by the open mapping theorem.
-    have hopen := LinearMap.isStrictMap_iff_isOpenQuotientMap_rangeRestrict.mp <|
-      IsTateRing.isStrictMap_of_isClosed_range u (LinearMap.continuous_on_pi u).continuousAt
-        (hu ▸ hJc)
-    have hf₀ : Tendsto (fun ν ↦ MvPowerSeries.coeff ν (f : MvPowerSeries (Fin k) A))
-        cofinite (𝓝 0) :=
-      isWeightedRestricted_one_weight_iff.mp (mem_weightedRestrictedSubring.mp f.2)
-    obtain ⟨a, ha, hlim⟩ := TauCeti.exists_lift_tendsto_cofinite_nhds u.rangeRestrict
-      u.surjective_rangeRestrict (map_zero u.rangeRestrict ▸ hopen.isOpenMap.nhds_le 0)
-      (fun ν ↦ (⟨_, hu ▸ hf ν⟩ : LinearMap.range u)) (tendsto_subtype_rng.mpr hf₀)
-    -- The components of the lift are restricted series.
-    let F (i : Fin n) : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
-        isWeightFamily_one_weight :=
-      ⟨fun ν ↦ a ν i, mem_weightedRestrictedSubring.mpr <| isWeightedRestricted_one_weight_iff.mpr
-        ((continuous_apply i).tendsto (0 : Fin n → A) |>.comp hlim)⟩
-    have hfF : f = ∑ i, weightedC _ isWeightFamily_one_weight (g i) * F i := by
-      refine Subtype.ext <| MvPowerSeries.ext fun ν ↦ ?_
-      have hν := congrArg Subtype.val (ha ν)
-      simp only [LinearMap.codRestrict_apply, Fintype.linearCombination_apply, smul_eq_mul,
-        u] at hν
-      rw [← hν, AddSubmonoidClass.coe_finsetSum, map_sum]
-      refine Finset.sum_congr rfl fun i _ ↦ ?_
-      rw [Subring.coe_mul, coe_weightedC, MvPowerSeries.coeff_C_mul, MvPowerSeries.coeff_apply,
-        mul_comm]
-    rw [hfF]
-    exact sum_mem _ fun i _ ↦ mul_mem_right _ _ <|
-      mem_map_of_mem _ (hg ▸ Submodule.subset_span ⟨i, rfl⟩)
+  refine ⟨coeff_mem_of_mem_map_weightedC, fun hf ↦ ?_⟩
+  -- Write `J = (g₁, …, gₙ)` and lift the null family of coefficients of `f` along the open
+  -- presentation `Aⁿ → J`, `a ↦ ∑ aᵢ gᵢ`; the components `fᵢ` of the lift give `f = ∑ gᵢ fᵢ`.
+  obtain ⟨n, g, hg⟩ := Submodule.fg_iff_exists_fin_generating_family.mp hJ
+  let u := Fintype.linearCombination A g
+  have hu : LinearMap.range u = J := by
+    rw [Fintype.range_linearCombination]
+    exact hg
+  -- The presentation `Aⁿ → J` is open, by the open mapping theorem.
+  have hopen := LinearMap.isStrictMap_iff_isOpenQuotientMap_rangeRestrict.mp <|
+    IsTateRing.isStrictMap_of_isClosed_range u (LinearMap.continuous_on_pi u).continuousAt
+      (hu ▸ hJc)
+  have hf₀ : Tendsto (fun ν ↦ MvPowerSeries.coeff ν (f : MvPowerSeries (Fin k) A))
+      cofinite (𝓝 0) :=
+    isWeightedRestricted_one_weight_iff.mp (mem_weightedRestrictedSubring.mp f.2)
+  obtain ⟨a, ha, hlim⟩ := TauCeti.exists_lift_tendsto_cofinite_nhds u.rangeRestrict
+    u.surjective_rangeRestrict (map_zero u.rangeRestrict ▸ hopen.isOpenMap.nhds_le 0)
+    (fun ν ↦ (⟨_, hu ▸ hf ν⟩ : LinearMap.range u)) (tendsto_subtype_rng.mpr hf₀)
+  -- The components of the lift are restricted series.
+  let F (i : Fin n) : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
+      isWeightFamily_one_weight :=
+    ⟨fun ν ↦ a ν i, mem_weightedRestrictedSubring.mpr <| isWeightedRestricted_one_weight_iff.mpr
+      ((continuous_apply i).tendsto (0 : Fin n → A) |>.comp hlim)⟩
+  have hfF : f = ∑ i, weightedC _ isWeightFamily_one_weight (g i) * F i := by
+    refine Subtype.ext <| MvPowerSeries.ext fun ν ↦ ?_
+    have hν := congrArg Subtype.val (ha ν)
+    simp only [LinearMap.codRestrict_apply, Fintype.linearCombination_apply, smul_eq_mul,
+      u] at hν
+    rw [← hν, AddSubmonoidClass.coe_finsetSum, map_sum]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rw [Subring.coe_mul, coe_weightedC, MvPowerSeries.coeff_C_mul, MvPowerSeries.coeff_apply,
+      mul_comm]
+  rw [hfF]
+  exact sum_mem _ fun i _ ↦ mul_mem_right _ _ <|
+    mem_map_of_mem _ (hg ▸ Submodule.subset_span ⟨i, rfl⟩)
 
 /-- **The kernel of reduction modulo `J` on restricted series is `J · A⟨X⟩`**, for a closed
 finitely generated ideal `J` of a complete Hausdorff Tate ring `A` with countably generated

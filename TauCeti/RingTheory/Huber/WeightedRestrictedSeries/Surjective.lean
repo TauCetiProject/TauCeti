@@ -22,6 +22,10 @@ The coefficients can be lifted subject to their index-dependent weighted neighbo
 lifts satisfies every weighted neighbourhood bound eventually. For each bound, the finitely
 many coefficients outside the target weighted additive subgroup are lifted arbitrarily.
 
+The kernel of the induced map is coefficientwise (`TauCeti.Huber.mem_ker_weightedMap_iff`), and
+every series in the extension `J · A⟨X⟩_T` of an ideal `J` has its coefficients in `J`
+(`Ideal.coeff_mem_of_mem_map_weightedC`).
+
 ## References
 
 * [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), §5.6 and Proposition 6.33.
@@ -94,6 +98,38 @@ theorem _root_.IsOpenQuotientMap.weightedMap_surjective
   TauCeti.Huber.weightedMap_surjective hq.continuous hq.surjective
     (map_zero φ ▸ hq.isOpenMap.nhds_le 0) hT hS hTS
 
+/-- **The kernel of `weightedMap` is coefficientwise**: a series is killed by the map induced by
+`φ` exactly when each of its coefficients is killed by `φ`. -/
+theorem mem_ker_weightedMap_iff {φ : A →+* B} (hφ : Continuous φ) {T : Fin k → Set A}
+    {S : Fin k → Set B} {hT : IsWeightFamily T} {hS : IsWeightFamily S}
+    {hTS : ∀ i, φ '' T i ⊆ S i} {f : weightedRestrictedSubring T hT} :
+    f ∈ RingHom.ker (weightedMap hφ hT hS hTS) ↔
+      ∀ ν, MvPowerSeries.coeff ν (f : MvPowerSeries (Fin k) A) ∈ RingHom.ker φ := by
+  simp only [RingHom.mem_ker]
+  refine ⟨fun h ν ↦ ?_, fun h ↦ Subtype.ext <| MvPowerSeries.ext fun ν ↦ ?_⟩
+  · simpa using congrArg (fun g : weightedRestrictedSubring S hS ↦
+      MvPowerSeries.coeff ν (g : MvPowerSeries (Fin k) B)) h
+  · simpa using h ν
+
 end TauCeti.Huber
+
+namespace Ideal
+
+open TauCeti.Huber
+
+variable {k : ℕ} {A : Type*} [CommRing A] [TopologicalSpace A] [NonarchimedeanRing A]
+
+/-- **Series in `J · A⟨X⟩_T` have coefficients in `J`**, for any ideal `J` and any weights. -/
+theorem coeff_mem_of_mem_map_weightedC {T : Fin k → Set A} {hT : IsWeightFamily T}
+    {J : Ideal A} {f : weightedRestrictedSubring T hT} (hf : f ∈ J.map (weightedC T hT))
+    (ν : Fin k →₀ ℕ) : MvPowerSeries.coeff ν (f : MvPowerSeries (Fin k) A) ∈ J := by
+  have hle : J.map (weightedC T hT) ≤ (RingHom.ker
+      (MvPowerSeries.map (Quotient.mk J))).comap (weightedRestrictedSubring T hT).subtype :=
+    map_le_iff_le_comap.mpr fun a ha ↦ by
+      simp [RingHom.mem_ker, Quotient.eq_zero_iff_mem.mpr ha]
+  simpa [Quotient.eq_zero_iff_mem] using
+    congrArg (MvPowerSeries.coeff ν) (RingHom.mem_ker.mp (hle hf))
+
+end Ideal
 
 end
