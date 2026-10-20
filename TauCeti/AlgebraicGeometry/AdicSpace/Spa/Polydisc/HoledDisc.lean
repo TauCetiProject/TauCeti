@@ -699,8 +699,11 @@ private theorem isRat_setOf_vle_union_biUnion_closedSubdisc (F : Finset (K × K)
       rwa [Ne, closedPolydisc_valuation_weightedC_eq_zero_iff]
     refine ((Finset.pow_card_le_prod F _ _ h).trans (hP ▸ (map_prod x.1.valuation _ F).symm.le
       |>.trans hx)).not_gt ?_
-    rw [map_mul, map_mul, map_pow, map_pow, show x.1.valuation (C τ) ^ F.card =
-      x.1.valuation (C τ) * x.1.valuation (C τ) ^ (F.card - 1) by rw [← pow_succ', hn]]
+    -- split off one factor `v(τ)` to compare with `v(ρ τⁿ⁻¹) = v(ρ) v(τ)ⁿ⁻¹`
+    have hτpow : x.1.valuation (C τ) ^ F.card =
+        x.1.valuation (C τ) * x.1.valuation (C τ) ^ (F.card - 1) := by
+      rw [← pow_succ', hn]
+    rw [map_mul, map_mul, map_pow, map_pow, hτpow]
     exact mul_lt_mul_of_pos_right
       ((closedPolydisc_valuation_weightedC_lt_iff x _ _).mpr hρτ)
       (zero_lt_iff.mpr (pow_ne_zero _ hτ₀'))

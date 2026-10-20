@@ -212,9 +212,9 @@ theorem setOf_vle_or_vle_mem_spaRationalFamily (Aplus : Subring A) (f : A) {r σ
     obtain ⟨u, hu⟩ := (hr.mul hσ).exists_left_inv
     obtain ⟨w, hw⟩ := hσ.exists_left_inv
     have hspan : Ideal.span (({σ * f, f * f - r * σ} : Finset A) : Set A) = ⊤ := by
-      rw [Ideal.eq_top_iff_one,
-        show (1 : A) = (u * w * f) * (σ * f) + (-u) * (f * f - r * σ) by
-          linear_combination (-1 : A) * hu - u * f * f * hw]
+      have hone : (1 : A) = (u * w * f) * (σ * f) + (-u) * (f * f - r * σ) := by
+        linear_combination (-1 : A) * hu - u * f * f * hw
+      rw [Ideal.eq_top_iff_one, hone]
       exact add_mem (Ideal.mul_mem_left _ _ (Ideal.subset_span (by simp)))
         (Ideal.mul_mem_left _ _ (Ideal.subset_span (by simp)))
     rw [hspan]
