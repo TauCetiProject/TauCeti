@@ -60,6 +60,22 @@ namespace TauCeti.RealRMK
 
 variable {X : Type*} [TopologicalSpace X] {Λ : C_c(X, ℝ) →ₗ[ℝ] ℝ}
 
+section toReal
+
+private lemma toReal_zero : (0 : C_c(X, ℝ≥0)).toReal = 0 := by
+  ext x
+  simp
+
+private lemma toReal_le_toReal_iff {f g : C_c(X, ℝ≥0)} : f.toReal ≤ g.toReal ↔ f ≤ g := by
+  simp [le_def]
+
+private lemma toReal_nnrealPart_of_nonneg {f : C_c(X, ℝ)} (hf : 0 ≤ f) :
+    f.nnrealPart.toReal = f := by
+  ext x
+  simpa using le_def.1 hf x
+
+end toReal
+
 section Construction
 
 /-- The positive part of `Λ` on a nonnegative function `f`, the supremum of `Λ` over the
@@ -74,7 +90,7 @@ private lemma bddAbove_range_posPartAux (f : C_c(X, ℝ≥0)) :
     BddAbove (range fun g : Iic f => Λ (g : C_c(X, ℝ≥0)).toReal) :=
   (hΛ f.toReal).mono <| by
     rintro _ ⟨⟨g, hg⟩, rfl⟩
-    exact ⟨g.toReal, ⟨toReal_nonneg, le_def.2 fun x => by simpa using le_def.1 hg x⟩, rfl⟩
+    exact ⟨g.toReal, ⟨toReal_nonneg, toReal_le_toReal_iff.2 hg⟩, rfl⟩
 
 private lemma apply_le_posPartAux {f g : C_c(X, ℝ≥0)} (hg : g ≤ f) :
     Λ g.toReal ≤ posPartAux Λ f :=
@@ -88,10 +104,7 @@ private lemma posPartAux_le {f : C_c(X, ℝ≥0)} {c : ℝ} (h : ∀ g ≤ f, Λ
   ciSup_le fun g => h g g.2
 
 private lemma posPartAux_nonneg (f : C_c(X, ℝ≥0)) : 0 ≤ posPartAux Λ f := by
-  have h0 : (0 : C_c(X, ℝ≥0)).toReal = 0 := by
-    ext x
-    simp
-  simpa [h0] using apply_le_posPartAux hΛ (le_def.2 fun x => by simp : 0 ≤ f)
+  simpa [toReal_zero] using apply_le_posPartAux hΛ (le_def.2 fun x => by simp : 0 ≤ f)
 
 private lemma posPartAux_add (f₁ f₂ : C_c(X, ℝ≥0)) :
     posPartAux Λ (f₁ + f₂) = posPartAux Λ f₁ + posPartAux Λ f₂ := by
@@ -124,10 +137,8 @@ private lemma posPartAux_smul (c : ℝ≥0) (f : C_c(X, ℝ≥0)) :
     posPartAux Λ (c • f) = c * posPartAux Λ f := by
   rcases eq_or_ne c 0 with rfl | hc
   · refine le_antisymm (posPartAux_le fun g hg => ?_) (by simpa using posPartAux_nonneg hΛ 0)
-    have hg0 : g.toReal = 0 := by
-      ext x
-      simpa using le_def.1 hg x
-    simp [hg0]
+    have hg0 : g = 0 := le_antisymm (by simpa using hg) (le_def.2 fun x => by simp)
+    simp [hg0, toReal_zero]
   have hc₀ : (0 : ℝ) < c := by positivity
   refine le_antisymm (posPartAux_le fun g hg => ?_) ?_
   · -- `g = c • (c⁻¹ • g)` with `c⁻¹ • g ≤ f`.
@@ -168,28 +179,25 @@ variable {Λ}
 
 private lemma posPart_apply_eq_posPartAux {f : C_c(X, ℝ)} (hf : 0 ≤ f) :
     posPart Λ hΛ f = posPartAux Λ f.nnrealPart := by
-  rw [posPart, toRealPositiveLinear_apply, nnrealPart_neg_eq_zero_of_nonneg hf, map_zero,
-    NNReal.coe_zero, sub_zero, coe_posPartNNReal_apply]
+  simp [posPart, toRealPositiveLinear_apply, nnrealPart_neg_eq_zero_of_nonneg hf,
+    coe_posPartNNReal_apply]
 
 /-- Every `Λ g` with `0 ≤ g ≤ f` is bounded by the positive part of `Λ` at `f`. -/
 theorem apply_le_posPart_apply {f g : C_c(X, ℝ)} (hg : 0 ≤ g) (hgf : g ≤ f) :
     Λ g ≤ posPart Λ hΛ f := by
   rw [posPart_apply_eq_posPartAux hΛ (hg.trans hgf)]
-  have hg' : g.nnrealPart.toReal = g := by
-    ext x
-    simpa using le_def.1 hg x
-  simpa [hg'] using apply_le_posPartAux hΛ (f := f.nnrealPart) (g := g.nnrealPart)
-    (le_def.2 fun x => Real.toNNReal_le_toNNReal (le_def.1 hgf x))
+  have h := apply_le_posPartAux hΛ (f := f.nnrealPart) (g := g.nnrealPart) <|
+    toReal_le_toReal_iff.1 <| by
+      rwa [toReal_nnrealPart_of_nonneg hg, toReal_nnrealPart_of_nonneg (hg.trans hgf)]
+  rwa [toReal_nnrealPart_of_nonneg hg] at h
 
 /-- On a nonnegative `f`, the positive part of `Λ` is at most every upper bound of `Λ` on
 `[0, f]`. -/
 theorem posPart_apply_le {f : C_c(X, ℝ)} (hf : 0 ≤ f) {c : ℝ}
     (h : ∀ g : C_c(X, ℝ), 0 ≤ g → g ≤ f → Λ g ≤ c) : posPart Λ hΛ f ≤ c := by
   rw [posPart_apply_eq_posPartAux hΛ hf]
-  refine posPartAux_le fun g hg => h _ toReal_nonneg (le_def.2 fun x => ?_)
-  have hx := NNReal.coe_le_coe.2 (le_def.1 hg x)
-  rw [toReal_apply]
-  rwa [nnrealPart_apply, Real.coe_toNNReal _ (le_def.1 hf x)] at hx
+  exact posPartAux_le fun g hg => h _ toReal_nonneg
+    ((toReal_le_toReal_iff.2 hg).trans_eq (toReal_nnrealPart_of_nonneg hf))
 
 /-- On a nonnegative `f`, the positive part of `Λ` is the supremum of `Λ` over `[0, f]`. -/
 theorem posPart_apply_of_nonneg {f : C_c(X, ℝ)} (hf : 0 ≤ f) :
