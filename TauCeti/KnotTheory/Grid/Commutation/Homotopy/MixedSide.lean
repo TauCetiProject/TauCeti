@@ -7,6 +7,7 @@ module
 
 public import TauCeti.KnotTheory.Grid.Commutation.Homotopy.SameSide
 public import TauCeti.KnotTheory.Grid.Commutation.Homotopy.MixedPair
+import TauCeti.Algebra.BigOperators.Finset.Pairing
 import TauCeti.Algebra.CharP.Two
 
 /-!
@@ -166,20 +167,17 @@ theorem sum_pentagonPairWeight_mixedSide_eq_sum_partners
     (R : Type*) [CommSemiring R] {x z : GridState n} (hzx : z ≠ x) :
     ∑ D ∈ G.mixedSidePentagonPairs C x z, G.pentagonPairWeight C R D =
       ∑ F ∈ G.mixedSidePentagonPartners C x z, G.hexagonCompositeWeight C R F := by
-  refine Finset.sum_bij
-    (fun D hD => (G.existsUnique_mixedSidePartner C R hzx D hD).exists.choose)
-    (fun D hD => ?_) (fun D hD E hE h => ?_) (fun F hF => ?_) (fun D hD => ?_)
-  · obtain ⟨hF, hFD, -⟩ := (G.existsUnique_mixedSidePartner C R hzx D hD).exists.choose_spec
-    exact (G.mem_mixedSidePentagonPartners C _).mpr ⟨hF, D, hD, hFD.symm⟩
-  · apply GridPentagonPairDecomposition.toRectangleDecomposition_injective
-    rw [← (G.existsUnique_mixedSidePartner C R hzx D hD).exists.choose_spec.2.1,
-      ← (G.existsUnique_mixedSidePartner C R hzx E hE).exists.choose_spec.2.1, h]
-  · obtain ⟨hF, D, hD, hDF⟩ := (G.mem_mixedSidePentagonPartners C F).mp hF
-    obtain ⟨hF', hF'D, -⟩ := (G.existsUnique_mixedSidePartner C R hzx D hD).exists.choose_spec
-    exact ⟨D, hD, G.injOn_toRectangleDecomposition_hexagonCompositeDecompositions C x z
-      ((G.mem_unpairedHexagonComposites C _).mp hF').1
-      ((G.mem_unpairedHexagonComposites C F).mp hF).1 (hF'D.trans hDF)⟩
-  · exact (G.existsUnique_mixedSidePartner C R hzx D hD).exists.choose_spec.2.2.symm
+  have hunpaired {F} (hF : F ∈ G.mixedSidePentagonPartners C x z) :=
+    ((G.mem_unpairedHexagonComposites C F).mp (G.mixedSidePentagonPartners_subset C x z hF)).1
+  refine Finset.sum_bij_of_rel
+    (fun D F => D.toRectangleDecomposition = F.toRectangleDecomposition)
+    (fun D hD => ?_) (fun D _ E _ F _ hDF hEF => ?_) (fun D _ F hF F' hF' hDF hDF' => ?_)
+    (fun F hF => ((G.mem_mixedSidePentagonPartners C F).mp hF).2)
+  · obtain ⟨F, ⟨hF, hFD, hw⟩, -⟩ := G.existsUnique_mixedSidePartner C R hzx D hD
+    exact ⟨F, (G.mem_mixedSidePentagonPartners C F).mpr ⟨hF, D, hD, hFD.symm⟩, hFD.symm, hw.symm⟩
+  · exact GridPentagonPairDecomposition.toRectangleDecomposition_injective (hDF.trans hEF.symm)
+  · exact G.injOn_toRectangleDecomposition_hexagonCompositeDecompositions C x z
+      (hunpaired hF) (hunpaired hF') (hDF.symm.trans hDF')
 
 /-! ### Disjointness of the two partner images -/
 

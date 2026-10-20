@@ -8,6 +8,7 @@ module
 public import TauCeti.KnotTheory.Grid.Commutation.Homotopy.TerminalPair
 public import TauCeti.KnotTheory.Grid.Commutation.Homotopy.InitialPair.Weight
 public import TauCeti.KnotTheory.Grid.Commutation.Homotopy.PentagonPair
+import TauCeti.Algebra.BigOperators.Finset.Pairing
 import TauCeti.Algebra.CharP.Two
 
 /-!
@@ -140,34 +141,28 @@ theorem sum_pentagonPairWeight_sameSide_eq_sum_partners
     (R : Type*) [CommSemiring R] {x z : GridState n} (hzx : z ≠ x) :
     ∑ D ∈ G.sameSidePentagonPairs C x z, G.pentagonPairWeight C R D =
       ∑ F ∈ G.sameSidePentagonPartners C x z, G.hexagonCompositeWeight C R F := by
-  refine Finset.sum_bij
-    (fun D hD => (G.existsUnique_sameSidePartner C R hzx D hD).exists.choose)
-    (fun D hD => ?_) (fun D hD E hE h => ?_) (fun F hF => ?_) (fun D hD => ?_)
-  · obtain ⟨hF, hrecut, -⟩ := (G.existsUnique_sameSidePartner C R hzx D hD).exists.choose_spec
-    exact (G.mem_sameSidePentagonPartners C _).mpr ⟨hF, D, hD, hrecut⟩
-  · have hD' := (G.existsUnique_sameSidePartner C R hzx D hD).exists.choose_spec.2.1
-    have hE' := (G.existsUnique_sameSidePartner C R hzx E hE).exists.choose_spec.2.1
-    rw [← h] at hE'
-    obtain ⟨hfD, hsD⟩ := G.isEmpty_of_mem_pentagonPairDecompositions C
+  have hunpaired {F} (hF : F ∈ G.sameSidePentagonPartners C x z) :=
+    ((G.mem_unpairedHexagonComposites C F).mp (G.sameSidePentagonPartners_subset C x z hF)).1
+  refine Finset.sum_bij_of_rel
+    (fun D F => D.toRectangleDecomposition.IsRecut F.toRectangleDecomposition)
+    (fun D hD => ?_) (fun D hD E hE F _ hDF hEF => ?_) (fun D hD F hF F' hF' hDF hDF' => ?_)
+    (fun F hF => ((G.mem_sameSidePentagonPartners C F).mp hF).2)
+  · obtain ⟨F, ⟨hF, hrecut, hw⟩, -⟩ := G.existsUnique_sameSidePartner C R hzx D hD
+    exact ⟨F, (G.mem_sameSidePentagonPartners C F).mpr ⟨hF, D, hD, hrecut⟩, hrecut, hw.symm⟩
+  · obtain ⟨hfD, hsD⟩ := G.isEmpty_of_mem_pentagonPairDecompositions C
       (G.sameSidePentagonPairs_subset C x z hD)
     obtain ⟨hfE, hsE⟩ := G.isEmpty_of_mem_pentagonPairDecompositions C
       (G.sameSidePentagonPairs_subset C x z hE)
     apply GridPentagonPairDecomposition.toRectangleDecomposition_injective
-    exact hD'.eq_of_isRecut hE'
-      (GridRectangleDecomposition.hasOneCommonSide_of_isRecut hD' hzx)
-      (GridRectangleDecomposition.hasOneCommonSide_of_isRecut hE' hzx) hfD hsD hfE hsE
-  · obtain ⟨hF, D, hD, hrecut⟩ := (G.mem_sameSidePentagonPartners C F).mp hF
-    obtain ⟨hF', hrecut', -⟩ :=
-      (G.existsUnique_sameSidePartner C R hzx D hD).exists.choose_spec
-    obtain ⟨hf, hs⟩ := G.isEmpty_of_mem_pentagonPairDecompositions C
+    exact hDF.eq_of_isRecut hEF
+      (GridRectangleDecomposition.hasOneCommonSide_of_isRecut hDF hzx)
+      (GridRectangleDecomposition.hasOneCommonSide_of_isRecut hEF hzx) hfD hsD hfE hsE
+  · obtain ⟨hf, hs⟩ := G.isEmpty_of_mem_pentagonPairDecompositions C
       (G.sameSidePentagonPairs_subset C x z hD)
-    exact ⟨D, hD, G.injOn_toRectangleDecomposition_hexagonCompositeDecompositions C x z
-      ((G.mem_unpairedHexagonComposites C _).mp hF').1
-      ((G.mem_unpairedHexagonComposites C F).mp hF).1
+    exact G.injOn_toRectangleDecomposition_hexagonCompositeDecompositions C x z
+      (hunpaired hF) (hunpaired hF')
       ((D.toRectangleDecomposition.existsUnique_isRecut
-        (GridRectangleDecomposition.hasOneCommonSide_of_isRecut hrecut hzx) hf hs).unique
-        hrecut' hrecut)⟩
-  · exact (G.existsUnique_sameSidePartner C R hzx D hD).exists.choose_spec.2.2.symm
+        (GridRectangleDecomposition.hasOneCommonSide_of_isRecut hDF hzx) hf hs).unique hDF hDF')
 
 open scoped Classical in
 /-- The off-diagonal homotopy coefficient equation holds exactly when the remaining
