@@ -111,7 +111,9 @@ private def firstEdge (m : ℕ) : Path (0 : Fin (m + 1) → I) (Fin.cons 1 0) wh
     cases i using Fin.cases <;> rfl
   target' := rfl
 
-private theorem originTransport_heq {m : ℕ} (c : SingularCube X m) :
+/-- The transport along the track of the origin of `c` is the path class inside the swept cube of
+`c` from its origin to the origin of the end of the deformation. -/
+theorem originTransport_heq {m : ℕ} (c : SingularCube X m) :
     D.originTransport c ≍ (D.sweep c).pathClass 0 (Fin.cons 1 0) :=
   fromPath_heq_pathClass (D.sweep c) (firstEdge m) _ fun t ↦ by
     simp [firstEdge, sweep_apply]
@@ -120,10 +122,6 @@ private theorem originTransport_heq {m : ℕ} (c : SingularCube X m) :
 private theorem mk_sweep_zero {m : ℕ} (c : SingularCube X m) :
     FundamentalGroupoid.mk (c 0) = FundamentalGroupoid.mk (D.sweep c 0) :=
   congrArg _ (D.sweep_apply_zero c).symm
-
-/-- `Matrix.cons_zero_zero`, stated with `Fin.cons` for the cube. -/
-private theorem cons_zero_zero (m : ℕ) : (Fin.cons 0 0 : Fin (m + 1) → I) = 0 :=
-  Matrix.cons_zero_zero
 
 private theorem eq_sweep_comp {m : ℕ} (c : SingularCube X m) :
     c = (D.sweep c).comp ⟨fun y ↦ Fin.cons 0 y, by fun_prop⟩ := by
@@ -163,14 +161,16 @@ private theorem face_id_apply_zero {m : ℕ} (i : Fin (m + 1)) (t : I) :
 
 private theorem insertNth_succ_zero {m : ℕ} (i : Fin (m + 1)) (t : I) :
     (i.succ.insertNth t 0 : Fin (m + 2) → I) = Fin.cons 0 (i.insertNth t 0) := by
-  rw [← cons_zero_zero, Fin.insertNth_succ_cons]
+  rw [← Matrix.cons_zero_zero]
+  exact Fin.insertNth_succ_cons i t 0 0
 
 /-- Transport into the bottom face of the swept cube is trivial. -/
 private theorem eqToHom_comp_pathClass_face_zero_zero_heq {m : ℕ} (c : SingularCube X m) :
     eqToHom (D.mk_sweep_zero c) ≫ (D.sweep c).pathClass 0 (face 0 0 (ContinuousMap.id _) 0) ≍
       𝟙 (FundamentalGroupoid.mk (c 0)) := by
   refine (eqToHom_comp_heq _ _).trans ((pathClass_heq (y' := 0) rfl rfl ?_).trans ?_)
-  · rw [face_id_apply_zero, Fin.insertNth_zero', cons_zero_zero]
+  · rw [face_id_apply_zero, Fin.insertNth_zero']
+    exact Matrix.cons_zero_zero
   · rw [ContinuousMap.pathClass_self]
     exact (eqToHom_heq_id_cod _ _ (D.mk_sweep_zero c)).symm.trans
       (eqToHom_heq_id_dom _ _ (D.mk_sweep_zero c))
@@ -193,13 +193,13 @@ private theorem eqToHom_comp_pathClass_face_succ_heq {m : ℕ} (c : SingularCube
       c.pathClass 0 (face i t (ContinuousMap.id _) 0) ≫
         eqToHom (D.mk_sweep_zero (c.comp (face i t (ContinuousMap.id _)))) := by
   refine (eqToHom_comp_heq _ _).trans (HEq.symm ((comp_eqToHom_heq _ _).trans
-    ((D.pathClass_heq_sweep c _ _).trans (pathClass_heq rfl (cons_zero_zero (m + 1)) ?_))))
+    ((D.pathClass_heq_sweep c _ _).trans (pathClass_heq rfl (Matrix.cons_zero_zero) ?_))))
   rw [face_id_apply_zero, face_id_apply_zero, insertNth_succ_zero]
 
 /-- Transport along the track of the origin of `c`, followed by transport inside the end of the
 deformation into one of its faces, is transport inside `c` into that face followed by
 transport along the track of the origin of the face. -/
-private theorem originTransport_comp_pathClass_heq {m : ℕ} (c : SingularCube X (m + 1))
+theorem originTransport_comp_pathClass_heq {m : ℕ} (c : SingularCube X (m + 1))
     (i : Fin (m + 1)) {t : I} (ht : t = 0 ∨ t = 1) :
     D.originTransport c ≫
         ((ContinuousMap.subtypeVal A).comp (D.retract c)).pathClass 0
@@ -220,7 +220,7 @@ private theorem originTransport_comp_pathClass_heq {m : ℕ} (c : SingularCube X
   have hr₁ : c.pathClass 0 (face i t (ContinuousMap.id _) 0) ≍
       (D.sweep c).pathClass 0 (Fin.cons 0 v) :=
     (D.pathClass_heq_sweep c _ _).trans
-      (pathClass_heq rfl (cons_zero_zero (m + 1)) (by rw [hface]))
+      (pathClass_heq rfl (Matrix.cons_zero_zero) (by rw [hface]))
   have hr₂ : D.originTransport (c.comp (face i t (ContinuousMap.id _))) ≍
       (D.sweep c).pathClass (Fin.cons 0 v) (Fin.cons 1 v) :=
     (D.originTransport_heq _).trans ((pathClass_heq (D.sweep_comp_face_eq c i ht) rfl rfl).trans
@@ -232,7 +232,7 @@ private theorem originTransport_comp_pathClass_heq {m : ℕ} (c : SingularCube X
   · simp [sweep_apply, comp_face_id, ← D.homotopy_insertNth c i ht, hv]
 
 /-- The track of the origin of a cube of `A` is constant. -/
-private theorem originTransport_subtypeVal_comp_heq {m : ℕ} (c : SingularCube A m) :
+theorem originTransport_subtypeVal_comp_heq {m : ℕ} (c : SingularCube A m) :
     D.originTransport ((ContinuousMap.subtypeVal A).comp c) ≍
       𝟙 (FundamentalGroupoid.mk ((c 0 : A) : X)) := by
   refine (fromPath_heq_pathClass ((ContinuousMap.subtypeVal A).comp c) (Path.refl 0) _
