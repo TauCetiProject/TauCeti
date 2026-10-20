@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Basic.Finite.Prod
 public import Mathlib.Data.Fintype.Defs
 public import Mathlib.Data.List.Chain
 public import Mathlib.Data.Quot
@@ -425,7 +426,7 @@ instance instT2SpaceComponentUnion [∀ i, TopologicalSpace (X i)] [∀ i, T2Spa
         exact absurd huv hij
 
 /-- The disjoint union of finitely many compact spaces is compact. -/
-instance instCompactSpaceComponentUnion [∀ i, TopologicalSpace (X i)] [Fintype ι]
+instance instCompactSpaceComponentUnion [∀ i, TopologicalSpace (X i)] [Finite ι]
     [∀ i, CompactSpace (X i)] : CompactSpace (ComponentUnion X) := by
   refine ⟨?_⟩
   have hunion : (Set.univ : Set (ComponentUnion X))
@@ -448,7 +449,7 @@ theorem mem_flagPointSet (d : NodalCurve ι Flag X) (x : ComponentUnion X) :
   simp [flagPointSet]
 
 /-- The flag points of `d` form a finite set. -/
-theorem flagPointSet_finite [Fintype Flag] : (flagPointSet d).Finite := by
+theorem flagPointSet_finite [Finite Flag] : (flagPointSet d).Finite := by
   have hsub : flagPointSet d ⊆ flagPoint d '' (Set.univ : Set (Flag × Bool)) := by
     intro x hx
     obtain ⟨f, hx⟩ := (mem_flagPointSet d x).mp hx
@@ -458,7 +459,7 @@ theorem flagPointSet_finite [Fintype Flag] : (flagPointSet d).Finite := by
   exact (Set.finite_univ.image (flagPoint d)).subset hsub
 
 /-- The product of the flag points of `d` with itself is a finite set. -/
-theorem flagPointSet_prod_finite [Fintype Flag] :
+theorem flagPointSet_prod_finite [Finite Flag] :
     (flagPointSet d ×ˢ flagPointSet d).Finite := by
   have hsub : flagPointSet d ×ˢ flagPointSet d
       ⊆ (fun p : (Flag × Bool) × (Flag × Bool) => (flagPoint d p.1, flagPoint d p.2))
@@ -469,16 +470,16 @@ theorem flagPointSet_prod_finite [Fintype Flag] :
     obtain ⟨g, hy⟩ := (mem_flagPointSet d z.2).mp hy
     rcases hx with hx | hx <;> rcases hy with hy | hy
     · refine ⟨((f, false), (g, false)), Set.mem_univ _, ?_⟩
-      show (fstPoint d f, fstPoint d g) = z
+      change (fstPoint d f, fstPoint d g) = z
       exact Prod.ext hx.symm hy.symm
     · refine ⟨((f, false), (g, true)), Set.mem_univ _, ?_⟩
-      show (fstPoint d f, sndPoint d g) = z
+      change (fstPoint d f, sndPoint d g) = z
       exact Prod.ext hx.symm hy.symm
     · refine ⟨((f, true), (g, false)), Set.mem_univ _, ?_⟩
-      show (sndPoint d f, fstPoint d g) = z
+      change (sndPoint d f, fstPoint d g) = z
       exact Prod.ext hx.symm hy.symm
     · refine ⟨((f, true), (g, true)), Set.mem_univ _, ?_⟩
-      show (sndPoint d f, sndPoint d g) = z
+      change (sndPoint d f, sndPoint d g) = z
       exact Prod.ext hx.symm hy.symm
   exact (Set.finite_univ.image _).subset hsub
 
@@ -486,7 +487,7 @@ theorem flagPointSet_prod_finite [Fintype Flag] :
 closed subset of the product of the disjoint union of the normalization components with itself.
 Indeed, away from the finitely many flag points the relation is the diagonal, and on the flag
 points it is a finite set. -/
-theorem gluedRel_isClosed [∀ i, TopologicalSpace (X i)] [∀ i, T2Space (X i)] [Fintype Flag] :
+theorem gluedRel_isClosed [∀ i, TopologicalSpace (X i)] [∀ i, T2Space (X i)] [Finite Flag] :
     IsClosed {p : ComponentUnion X × ComponentUnion X | gluedRel d p.1 p.2} := by
   set R : Set (ComponentUnion X × ComponentUnion X) := {p | gluedRel d p.1 p.2}
   have hsplit : R = (R ∩ (flagPointSet d ×ˢ flagPointSet d))
@@ -551,7 +552,7 @@ theorem isOpen_iff_preimage {U : Set (gluedCurve d)} [∀ i, TopologicalSpace (X
 /-- **The glued space is compact.**  The quotient of a compact space is compact, so the glued curve
 is compact as soon as the finitely many normalization components are compact. -/
 instance instCompactSpaceGluedCurve (d : NodalCurve ι Flag X) [∀ i, TopologicalSpace (X i)]
-    [Fintype ι] [∀ i, CompactSpace (X i)] : CompactSpace (gluedCurve d) :=
+    [Finite ι] [∀ i, CompactSpace (X i)] : CompactSpace (gluedCurve d) :=
   Quotient.compactSpace (s := gluedRelSetoid d)
 
 /-- The generated relation relates two points of the disjoint union only when they are equal or
@@ -665,13 +666,13 @@ theorem nodeSet_eq_image_nodeOfFlag (d : NodalCurve ι Flag X) :
       ⟨fstPoint d f, (mem_flagPointSet d _).mpr ⟨f, Or.inl rfl⟩, hqf⟩
 
 /-- The node set of the glued curve is finite: it is the image of the finite set of flag points. -/
-theorem nodeSet_finite [Fintype Flag] : (nodeSet d).Finite :=
+theorem nodeSet_finite [Finite Flag] : (nodeSet d).Finite :=
   (flagPointSet_finite d).image _
 
 /-- **The node set is closed.**  The node set of the glued curve is a closed subset of it, so the
 smooth locus, its complement, is open. -/
 theorem isClosed_nodeSet (d : NodalCurve ι Flag X) [∀ i, TopologicalSpace (X i)]
-    [∀ i, T2Space (X i)] [Fintype Flag] : IsClosed (nodeSet d) := by
+    [∀ i, T2Space (X i)] [Finite Flag] : IsClosed (nodeSet d) := by
   refine ⟨?_⟩
   rw [isOpen_iff_preimage, Set.preimage_compl]
   have hpre : gluedCurveQuotientMap d ⁻¹' nodeSet d = flagPointSet d := by
@@ -696,7 +697,7 @@ def smoothLocus (d : NodalCurve ι Flag X) : Set (gluedCurve d) := (nodeSet d)�
 
 /-- The smooth locus is open, being the complement of the closed node set. -/
 theorem isOpen_smoothLocus (d : NodalCurve ι Flag X) [∀ i, TopologicalSpace (X i)]
-    [∀ i, T2Space (X i)] [Fintype Flag] : IsOpen (smoothLocus d) :=
+    [∀ i, T2Space (X i)] [Finite Flag] : IsOpen (smoothLocus d) :=
   (isClosed_nodeSet d).isOpen_compl
 
 /-- A point of the disjoint union that is not a flag point is not mapped to a node. -/
@@ -733,7 +734,7 @@ It is a bijection because the quotient map is injective away from the flag point
 because the quotient map is, and it is open because the inverse image of the image of an open set
 of the smooth locus under the quotient map is that very open set. -/
 theorem gluedCurveQuotientMapOnSmooth_isHomeomorph (d : NodalCurve ι Flag X)
-    [∀ i, TopologicalSpace (X i)] [∀ i, T2Space (X i)] [Fintype Flag] :
+    [∀ i, TopologicalSpace (X i)] [∀ i, T2Space (X i)] [Finite Flag] :
     IsHomeomorph (gluedCurveQuotientMapOnSmooth d) := by
   have hS : IsOpen {x : ComponentUnion X | x ∉ flagPointSet d} :=
     (flagPointSet_finite d).isClosed.isOpen_compl
