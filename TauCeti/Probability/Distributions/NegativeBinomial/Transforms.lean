@@ -285,7 +285,7 @@ theorem charFun_map_cast_negativeBinomialMeasure
       ring
     rw [hmul, Complex.exp_nat_mul]
   rw [negativeBinomialWeight_toReal hr.le hp.le hp1,
-    negativeBinomialWeightReal_eq_coeff hr k, hexp]
+    negativeBinomialWeightReal_eq_coeff hr.le k, hexp]
   rw [mul_pow]
   push_cast
   ring

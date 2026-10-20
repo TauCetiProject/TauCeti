@@ -15,7 +15,7 @@ import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.ODE.Transform
 import Mathlib.Topology.Order.MonotoneConvergence
 import Mathlib.Topology.UniformSpace.HeineCantor
-import TauCeti.Topology.Connected.TotallyDisconnected
+import TauCeti.Topology.Order.MonotoneConvergence
 
 /-!
 # Convergence of a negative gradient trajectory
@@ -56,9 +56,9 @@ energy converges. Hence `∇ f (γ t) → 0`.
 
 *The ω-limit set is a point.* Every cluster point of `γ` along `atTop` is therefore a critical
 point in `K`, so the ω-limit set is finite; and it is preconnected, by
-`TauCeti.isPreconnected_setOf_mapClusterPt_atTop`. A finite preconnected set is a single point
-(`Set.Finite.isTotallyDisconnected`), and a map into a compact set with a unique cluster point
-converges to it.
+`TauCeti.isPreconnected_setOf_mapClusterPt_atTop`. A finite preconnected set is a single point,
+and a map into a compact set with a unique cluster point converges to it
+(`TauCeti.exists_tendsto_atTop_of_setOf_mapClusterPt_subset`).
 
 ## Main results
 
@@ -122,19 +122,11 @@ theorem exists_tendsto_comp_atTop
     antitoneOn_comp_neg_gradient hγ (convex_Ici 0) fun t ht ↦ hdiff _ (hmaps ht)
   obtain ⟨M, hM⟩ := hK.exists_bound_of_continuousOn
     fun y hy ↦ (hdiff y hy).continuousAt.continuousWithinAt
-  -- Extend the trajectory backwards by its initial value, so that the antitonicity is global.
-  have hgA : Antitone fun t ↦ f (γ (max t 0)) := fun a b hab ↦
-    hanti (mem_Ici.mpr (le_max_right a 0)) (mem_Ici.mpr (le_max_right b 0))
-      (max_le_max hab le_rfl)
-  have hgB : BddBelow (Set.range fun t ↦ f (γ (max t 0))) := by
-    refine ⟨-M, ?_⟩
-    rintro _ ⟨t, rfl⟩
-    have h := hM _ (hmaps (mem_Ici.mpr (le_max_right t 0)))
-    rw [Real.norm_eq_abs] at h
-    linarith [neg_abs_le (f (γ (max t 0)))]
-  refine ⟨⨅ t, f (γ (max t 0)), Tendsto.congr' ?_ (tendsto_atTop_ciInf hgA hgB)⟩
-  filter_upwards [eventually_ge_atTop (0 : ℝ)] with t ht
-  rw [max_eq_left ht]
+  refine ⟨_, tendsto_atTop_ciInf_of_antitoneOn_Ici hanti ⟨-M, ?_⟩⟩
+  rintro _ ⟨t, ht, rfl⟩
+  have h := hM _ (hmaps ht)
+  rw [Real.norm_eq_abs] at h
+  linarith [neg_abs_le (f (γ t))]
 
 /-! ### The gradient dies along the trajectory -/
 
@@ -276,22 +268,14 @@ theorem exists_tendsto_atTop
     (hmaps : MapsTo γ (Ici 0) K) (hdiff : ∀ y ∈ K, DifferentiableAt ℝ f y)
     (hgrad : ContinuousOn (∇ f) K) (hfin : {y ∈ K | ∇ f y = 0}.Finite) :
     ∃ p ∈ K, ∇ f p = 0 ∧ Tendsto γ atTop (𝓝 p) := by
-  obtain ⟨p, hpK, hp⟩ := hK.exists_mapClusterPt
-    (le_principal_iff.mpr (mem_map.mpr (mem_of_superset (Ici_mem_atTop 0) hmaps)))
-  -- The ω-limit set consists of critical points, so it is finite; and it is preconnected.
+  -- The ω-limit set consists of critical points in `K`, of which there are finitely many.
   have hsub : {y | MapClusterPt y atTop γ} ⊆ {y ∈ K | ∇ f y = 0} := fun y hy ↦
     ⟨hK.isClosed.mem_of_mapClusterPt hy
         (mem_map.mpr (mem_of_superset (Ici_mem_atTop 0) hmaps)),
       gradient_eq_zero_of_mapClusterPt hγ hK hmaps hdiff hgrad hy⟩
-  have hconn : IsPreconnected {y | MapClusterPt y atTop γ} :=
-    isPreconnected_setOf_mapClusterPt_atTop hK hγ.continuousOn hmaps
-  -- A finite preconnected set is a single point.
-  have hone : ∀ y ∈ K, MapClusterPt y atTop γ → y = p := fun y _ hy ↦
-    (hfin.subset hsub).isTotallyDisconnected _ subset_rfl hconn hy hp
-  exact ⟨p, hpK, (hsub hp).2,
-    hK.tendsto_nhds_of_unique_mapClusterPt
-      (by filter_upwards [eventually_ge_atTop (0 : ℝ)] with t ht using hmaps (mem_Ici.mpr ht))
-      hone⟩
+  obtain ⟨p, hp, h⟩ :=
+    exists_tendsto_atTop_of_setOf_mapClusterPt_subset hK hγ.continuousOn hmaps hfin hsub
+  exact ⟨p, hp.1, hp.2, h⟩
 
 /-- **The Morse form of the convergence theorem.** A negative gradient trajectory confined to a
 compact set on which `fderiv ℝ f` is continuous and every critical point of `f` is nondegenerate

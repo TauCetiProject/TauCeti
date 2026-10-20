@@ -289,6 +289,16 @@ theorem mem_quotientPointsSubgroup_derivationMulEquivTangentKer_iff
     · rw [derivationMulEquivTangentKer_apply_snd]
       exact h x (mem_toIdeal.mpr hx)
 
+/-- The whole group, cut out by the zero Hopf ideal, has the whole Lie algebra. -/
+@[simp]
+theorem lieSubalgebra_bot : (⊥ : HopfIdeal R H).lieSubalgebra (B := B) = ⊤ := by
+  rw [eq_top_iff]
+  intro d _
+  rw [mem_lieSubalgebra_iff]
+  intro x hx
+  rw [bot_toIdeal, Ideal.mem_bot] at hx
+  rw [hx, map_zero]
+
 /-- The identity subgroup has zero Lie algebra, over any commutative base ring. -/
 @[simp]
 theorem lieSubalgebra_augmentation :

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.Wishart.Basic
 public import TauCeti.Probability.Distributions.Wishart.Nonsingular
-public import TauCeti.Probability.Distributions.ChiSquared
+public import TauCeti.Probability.Distributions.ChiSquared.Basic
 import TauCeti.Probability.Distributions.Gaussian.ChiSquared
 import TauCeti.Probability.Distributions.Gamma.Basic
 import TauCeti.MeasureTheory.Measure.WithDensity

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.OpenImmersion
+public import TauCeti.Geometry.Toric.Algebraic.Fan.Preimage
 public import TauCeti.Geometry.Toric.Algebraic.Fan.Scheme
 
 /-!
@@ -16,7 +17,31 @@ subscheme of the fan's toric scheme. On each cone chart, the inclusion is the us
 inclusion. This supplies the algebraic open-subfan restriction used by toric chart gluing and
 comparison with complex points.
 
-Reference: W. Fulton, *Introduction to Toric Varieties*, §1.4.
+A toric map restricts to open subfans. For a morphism of finite fans and a face-closed subfan
+of the target, the toric scheme of the preimage subfan is the inverse image of the open subscheme
+of the target subfan, and the restricted toric map is its base change: the square formed by the
+two toric maps and the two open-subfan inclusions is a pullback of schemes. The proof is
+chartwise. If a point of the chart of a source cone `σ` lands in the chart of a target cone `τ`,
+then its image lies in the chart of the face `υ ⊓ τ` of the least target cone `υ` of `σ`. That
+face is cut out of `υ` by a character, and the pullback of this character cuts out a face of `σ`
+whose chart contains the point and whose least target cone is a face of `τ`. No regularity
+assumption is needed.
+
+## Main declarations
+
+* `TauCeti.Toric.Fan.isOpenImmersion_subfanInclusion_algebraicMap`: the toric scheme of a subfan
+  is an open subscheme, with image `TauCeti.Toric.Fan.range_subfanInclusion_algebraicMap`.
+* `TauCeti.Toric.FanHom.preimageSubfanAlgebraicMap_comp_algebraicMap`: restriction to a preimage
+  subfan commutes with the ambient toric map.
+* `TauCeti.Toric.FanHom.range_preimageSubfanAlgebraicMap`: the open subscheme of the preimage
+  subfan is the inverse image of the open subscheme of the target subfan.
+* `TauCeti.Toric.FanHom.isPullback_preimageSubfan_algebraicMap`: the restriction square is a
+  pullback of schemes.
+
+## References
+
+* W. Fulton, *Introduction to Toric Varieties*, §§1.4 and 2.4.
+* D. Cox, J. Little and H. Schenck, *Toric Varieties*, §§3.1 and 3.3.
 -/
 
 public section
@@ -122,3 +147,117 @@ instance isOpenImmersion_subfanInclusion_algebraicMap :
 end Fan
 
 end TauCeti.Toric
+
+/-! ### Restricting toric maps to open subfans -/
+
+namespace TauCeti.Toric.FanHom
+
+universe u
+
+variable {N N' V V' : Type u} [AddCommGroup N] [AddCommGroup N']
+  [AddCommGroup V] [AddCommGroup V'] [Module ℝ V] [Module ℝ V']
+  {i : N →+ V} {i' : N' →+ V'} {Φ : Fan i} {Ψ : Fan i'}
+  (f : FanHom Φ Ψ) (S : Set (PointedCone ℝ V')) (hS : S ⊆ Ψ.cones)
+  (hface : ∀ ⦃σ τ⦄, σ ∈ S → τ.IsFaceOf σ → τ ∈ S)
+
+/-- Restricting an algebraic toric map to the preimage of an open subfan commutes with the two
+open-subfan inclusions. -/
+@[reassoc]
+theorem preimageSubfanAlgebraicMap_comp_algebraicMap :
+    (Φ.subfanInclusion (f.preimageCones S) (f.preimageCones_subset S)
+          (f.preimageCones_closedUnderFaces S hface)).algebraicMap ≫ f.algebraicMap =
+      (f.restrictToPreimage S hS hface).algebraicMap ≫
+        (Ψ.subfanInclusion S hS hface).algebraicMap := by
+  rw [← algebraicMap_comp, ← algebraicMap_comp, subfanInclusion_comp_restrictToPreimage]
+
+/-- If the algebraic toric map sends a point of the chart of `σ` into the chart of a target cone
+`τ`, then that point lies in the chart of a face of `σ` whose least target cone is a face of
+`τ`. -/
+private theorem exists_affineToricChartι_eq_of_algebraicMap_mem (σ : Φ.cones)
+    (y : Φ.affineToricChart σ) (τ : Ψ.cones)
+    (hy : f.algebraicMap (Φ.affineToricChartι σ y) ∈ Set.range (Ψ.affineToricChartι τ)) :
+    ∃ (σ' : Φ.cones) (y' : Φ.affineToricChart σ'),
+      Φ.affineToricChartι σ' y' = Φ.affineToricChartι σ y ∧
+        (f.leastCone σ'.2).IsFaceOf τ.1 := by
+  let υ : Ψ.cones := ⟨f.leastCone σ.2, f.leastCone_mem σ.2⟩
+  have hυ := Ψ.isToricCone υ.2
+  -- The image lies in the chart of `υ ⊓ τ`, which is cut out of the chart of `υ` by a character.
+  obtain ⟨m, hm, hmυτ⟩ := hυ.rational.exists_mem_dualSemigroup_inf_ker_eq Ψ.lattice
+    (Ψ.inf_isFaceOf_left υ.2 τ.2)
+  have hρ : (υ.1 ⊓ PointedCone.ofSubmodule (LinearMap.ker (Ψ.lattice.realCharacter m))).IsFaceOf
+      υ.1 := PointedCone.isFaceOf_inf_ker ((mem_dualSemigroup Ψ.lattice m).1 hm)
+  have hy' : f.affineToricChartMap σ y ∈ Set.range (faceAffineToricSchemeMap Ψ.lattice hρ) := by
+    rw [← Scheme.Hom.comp_apply, affineToricChartι_comp_algebraicMap, Scheme.Hom.comp_apply]
+      at hy
+    have hυτ : Ψ.affineToricChartι υ (f.affineToricChartMap σ y) ∈
+        Set.range (Ψ.affineToricChartι (υ ⊓ τ)) := by
+      rw [← Fan.range_affineToricChartι_inter_range_affineToricChartι]
+      exact ⟨⟨_, rfl⟩, hy⟩
+    have hinf : υ ⊓ τ = ⟨_, Ψ.mem_of_isFaceOf υ.2 hρ⟩ := Subtype.ext hmυτ.symm
+    rw [hinf, ← Fan.faceAffineToricSchemeMap_comp_affineToricChartι hρ] at hυτ
+    obtain ⟨z, hz⟩ := hυτ
+    rw [Scheme.Hom.comp_apply] at hz
+    exact ⟨z, (Ψ.affineToricChartι υ).isOpenEmbedding.injective hz⟩
+  -- Pulling back along the affine chart map, `y` lies in the chart of the face of `σ` cut out
+  -- by the pullback of that character.
+  have hmaps : Set.MapsTo f.realMap (σ.1 : Set V) (υ.1 : Set V') :=
+    fun x hx ↦ f.map_le_leastCone σ.2 ⟨x, hx, rfl⟩
+  rw [← Set.mem_preimage, affineToricChartMap_def,
+    preimage_range_faceAffineToricSchemeMap_inf_ker Φ.lattice Ψ.lattice _ _ _ hmaps
+      (Φ.isToricCone σ.2).fg hυ.fg ⟨m, hm⟩] at hy'
+  obtain ⟨y', hy'⟩ := hy'
+  have hσ' := PointedCone.isFaceOf_inf_ker ((mem_dualSemigroup Φ.lattice _).1
+    (dualSemigroupMap Φ.lattice Ψ.lattice f.latticeMap f.realMap f.map_lattice hmaps
+      ⟨m, hm⟩).2)
+  refine ⟨⟨_, Φ.mem_of_isFaceOf σ.2 hσ'⟩, y', ?_, ?_⟩
+  · rw [← hy', ← Scheme.Hom.comp_apply,
+      Fan.faceAffineToricSchemeMap_comp_affineToricChartι (τ := ⟨_, Φ.mem_of_isFaceOf σ.2 hσ'⟩)]
+  -- The face of `σ` maps into `υ ⊓ ker m = υ ⊓ τ`, so its least target cone is a face of `τ`.
+  have hle : f.leastCone (Φ.mem_of_isFaceOf σ.2 hσ') ≤ υ.1 ⊓ τ.1 := by
+    rw [← hmυτ]
+    refine f.leastCone_le _ (Ψ.mem_of_isFaceOf υ.2 hρ) ?_
+    rintro _ ⟨x, hx, rfl⟩
+    refine ⟨f.mapsTo_leastCone σ.2 hx.1, ?_⟩
+    have hx₂ := LinearMap.mem_ker.1 hx.2
+    rwa [coe_dualSemigroupMap,
+      Φ.lattice.realCharacter_comp Ψ.lattice f.latticeMap f.realMap f.map_lattice] at hx₂
+  exact (Ψ.isFaceOf_of_le (Ψ.inf_mem υ.2 τ.2) (f.leastCone_mem _) hle).trans
+    (Ψ.inf_isFaceOf_right υ.2 τ.2)
+
+/-- The open subscheme of the preimage subfan is exactly the inverse image of the open subscheme
+of the target subfan under the algebraic toric map. -/
+theorem range_preimageSubfanAlgebraicMap :
+    Set.range (Φ.subfanInclusion (f.preimageCones S) (f.preimageCones_subset S)
+        (f.preimageCones_closedUnderFaces S hface)).algebraicMap =
+      f.algebraicMap ⁻¹' Set.range (Ψ.subfanInclusion S hS hface).algebraicMap := by
+  rw [Fan.range_subfanInclusion_algebraicMap, Fan.range_subfanInclusion_algebraicMap]
+  ext x
+  simp only [Set.mem_iUnion, Set.mem_preimage]
+  constructor
+  · rintro ⟨σ, y, rfl⟩
+    have hσ := f.preimageSubfan_cones_subset S hface σ.2
+    have hleast := (f.mem_preimageCones_iff S hσ).1 (by simpa only [Fan.subfan_cones] using σ.2)
+    refine ⟨⟨f.leastCone hσ, by simpa only [Fan.subfan_cones] using hleast⟩,
+      f.affineToricChartMap ⟨σ.1, hσ⟩ y, ?_⟩
+    rw [← Scheme.Hom.comp_apply, ← Scheme.Hom.comp_apply, affineToricChartι_comp_algebraicMap]
+  · rintro ⟨τ, hx⟩
+    obtain ⟨σ, y, rfl⟩ := Φ.exists_affineToricChartι_apply_eq x
+    have hτ : τ.1 ∈ S := by simpa only [Fan.subfan_cones] using τ.2
+    obtain ⟨σ', y', hy', hσ'⟩ :=
+      f.exists_affineToricChartι_eq_of_algebraicMap_mem σ y ⟨τ.1, hS hτ⟩ hx
+    exact ⟨⟨σ'.1, by
+      simpa only [Fan.subfan_cones] using
+        (f.mem_preimageCones_iff S σ'.2).2 (hface hτ hσ')⟩, y', hy'⟩
+
+/-- Restriction to an open subfan is a base change: the toric scheme of the preimage subfan is
+the pullback of the open subscheme of the target subfan along the algebraic toric map. -/
+theorem isPullback_preimageSubfan_algebraicMap :
+    IsPullback
+      (Φ.subfanInclusion (f.preimageCones S) (f.preimageCones_subset S)
+        (f.preimageCones_closedUnderFaces S hface)).algebraicMap
+      (f.restrictToPreimage S hS hface).algebraicMap
+      f.algebraicMap (Ψ.subfanInclusion S hS hface).algebraicMap :=
+  (IsOpenImmersion.isPullback _ _ _ _ (f.preimageSubfanAlgebraicMap_comp_algebraicMap S hS hface)
+    (TopologicalSpace.Opens.ext (f.range_preimageSubfanAlgebraicMap S hS hface).symm)).flip
+
+end TauCeti.Toric.FanHom

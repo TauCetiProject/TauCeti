@@ -11,6 +11,7 @@ public import Mathlib.Order.Hom.Set
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Extended
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Endpoint
 public import Mathlib.Analysis.Complex.UpperHalfPlane.FunctionsBoundedAtInfty
+import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Affine
 
 /-!
 # Oriented geodesics between points of `ℍ ∪ ∂ℍ`
@@ -53,6 +54,9 @@ left half-plane up to that reversal (`extLeftHalfPlane_eq_or_eq_mul_pslS_of_rang
   running from or to `∞` is a vertical line.
 * `TauCeti.UpperHalfPlane.exists_sideForm_eq_of_infty_mem_boundaryLeftHalfPlane`: a geodesic line
   with `∞` strictly on its left is a semicircle.
+* `TauCeti.UpperHalfPlane.tendsto_geodesicLine_atTop_atImInfty`,
+  `TauCeti.UpperHalfPlane.tendsto_geodesicLine_atBot_atImInfty`: a vertical geodesic line goes to
+  `i∞` along its end at `∞`.
 * `TauCeti.UpperHalfPlane.eventually_mem_leftHalfPlane_of_infty_mem_boundaryLeftHalfPlane`:
   all points high enough lie strictly to the left of such a line.
 
@@ -625,6 +629,26 @@ theorem exists_sideForm_eq_of_infty_mem_boundaryLeftHalfPlane {g : PSL(2, ℝ)}
   obtain ⟨κ, hκ, hform⟩ := exists_sideForm_eq_of_smul_zero_of_smul_infty he₀.symm he₁.symm
   exact ⟨(e₀ + e₁) / 2, (e₁ - e₀) / 2, κ * (e₁ - e₀), by linarith, mul_pos hκ (sub_pos.2 he),
     hform⟩
+
+/-- Along a geodesic line running up to `∞`, the points go to `i∞`. -/
+theorem tendsto_geodesicLine_atTop_atImInfty {g : PSL(2, ℝ)} (hg : g • (∞ : OnePoint ℝ) = ∞) :
+    Filter.Tendsto (geodesicLine g) Filter.atTop atImInfty := by
+  obtain ⟨μ, hμ, c, hc⟩ := exists_coe_smul_eq_mul_add_of_smul_infty hg
+  have him (t : ℝ) : (geodesicLine g t).im = μ * Real.exp t := by
+    rw [← mul_one g, ← smul_geodesicLine, ← coe_im, hc, geodesicLine_one_apply]
+    simp
+  refine Filter.tendsto_comap_iff.2 ?_
+  simp only [Function.comp_def, him]
+  exact Real.tendsto_exp_atTop.const_mul_atTop hμ
+
+/-- Backwards along a geodesic line running down from `∞`, the points go to `i∞`. -/
+theorem tendsto_geodesicLine_atBot_atImInfty {g : PSL(2, ℝ)}
+    (hg : g • ((0 : ℝ) : OnePoint ℝ) = ∞) :
+    Filter.Tendsto (geodesicLine g) Filter.atBot atImInfty := by
+  have h := (tendsto_geodesicLine_atTop_atImInfty (g := g * pslS)
+    (by rw [mul_smul, pslS_smul_infty, hg])).comp Filter.tendsto_neg_atBot_atTop
+  refine h.congr fun t ↦ ?_
+  rw [Function.comp_apply, geodesicLine_mul_pslS, neg_neg]
 
 /-- A geodesic line with `∞` strictly on its left has every sufficiently high point of `ℍ` in its
 open left half-plane: the line is a semicircle, so it lies below the height of its radius. -/

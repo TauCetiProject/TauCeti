@@ -7,11 +7,13 @@ module
 
 public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Analysis.Normed.Field.Lemmas
+import Mathlib.Topology.Bornology.BoundedOperation
 
 /-!
 # Complex limits at infinity
 
 If `z * ψ z` has a finite limit along a filter approaching infinity, then `ψ z` tends to zero.
+If `ζ` tends to infinity, then so does the normalized coordinate `(ζ - c) / b`, for `b ≠ 0`.
 -/
 
 public section
@@ -31,6 +33,13 @@ theorem tendsto_zero_of_tendsto_mul_cobounded {l : Filter ℂ} (hl : l ≤ cobou
     self_mem_nhdsWithin] with z hz
   have hz0 : z ≠ 0 := by simpa using hz
   field_simp
+
+/-- If `ζ` tends to infinity, then so does the normalized coordinate `(ζ - c) / b`, for `b ≠ 0`. -/
+theorem tendsto_sub_div_of_tendsto_cobounded {α : Type*} {l : Filter α} {ζ : α → ℂ} {c b : ℂ}
+    (hb : b ≠ 0) (hζ : Tendsto ζ l (cobounded ℂ)) :
+    Tendsto (fun a => (ζ a - c) / b) l (cobounded ℂ) := by
+  simpa [div_eq_mul_inv, Function.comp_def] using
+    (tendsto_mul_right_cobounded (inv_ne_zero hb)).comp ((tendsto_sub_const_cobounded c).comp hζ)
 
 end TauCeti
 

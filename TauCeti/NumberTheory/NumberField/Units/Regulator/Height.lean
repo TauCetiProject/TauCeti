@@ -19,6 +19,12 @@ is positive, including in rank zero, when the product is empty and equals one.
 The estimates combine the determinant bounds in `Regulator.Basic` with the comparison between
 height and the `ℓ¹` norm of the logarithmic embedding in `Units.Log.Embedding`.
 
+In unit rank one the comparison is an identity. The two infinite places contribute equally to
+the height of a unit, so the relative logarithmic height of a fundamental unit is the regulator,
+and its absolute logarithmic height is `regulator K / [K : ℚ]`. Hence, at `rank K = 1`, the
+constant `(r!)² / (2 ^ (r - 1) d ^ r) = 1 / d` of Bugeaud–Győry's lower bound for the regulator by
+the heights of a reduced fundamental system is attained by every fundamental unit.
+
 For Mathlib's canonical `fundSystem K`, positivity specializes to
 `prod_absLogHeight₁_pos (closure_fundSystem_sup_torsion_eq_top (K := K))`.
 Both this specialization and the regulator bounds are available from the present module.
@@ -87,5 +93,38 @@ theorem prod_absLogHeight₁_pos {ε : Fin (rank K) → (𝓞 K)ˣ}
   have h := (regulator_pos K).trans_le (regulator_le_prod_absLogHeight₁ hε)
   have hd : (0 : ℝ) < Module.finrank ℚ K := Nat.cast_pos.mpr Module.finrank_pos
   exact (mul_pos_iff_of_pos_left (by positivity)).mp h
+
+/-! ### Unit rank one -/
+
+/-- In unit rank one, the relative logarithmic height of a unit is the index of the subgroup it
+generates together with the torsion, times the regulator. -/
+theorem logHeight₁_eq_index_mul_regulator (hr : rank K = 1) (u : (𝓞 K)ˣ) :
+    logHeight₁ (u : K) = ((Subgroup.closure {u} ⊔ torsion K).index : ℝ) * regulator K := by
+  have hplaces : Fintype.card (InfinitePlace K) = 2 := by
+    unfold rank at hr
+    omega
+  have h := two_mul_logHeight₁_eq_sum_mult_mul_abs_log u
+  simp only [mult_abs_log_eq_index_mul_regulator hr u, Finset.sum_const, Finset.card_univ,
+    hplaces, nsmul_eq_mul, Nat.cast_ofNat] at h
+  linarith
+
+/-- In unit rank one, the absolute logarithmic height of a unit is its index times the regulator,
+divided by the degree. -/
+theorem absLogHeight₁_eq_index_mul_regulator_div_finrank (hr : rank K = 1) (u : (𝓞 K)ˣ) :
+    absLogHeight₁ (u : K) =
+      ((Subgroup.closure {u} ⊔ torsion K).index : ℝ) * regulator K / Module.finrank ℚ K := by
+  rw [NumberField.absLogHeight₁_eq_div, logHeight₁_eq_index_mul_regulator hr]
+
+/-- In unit rank one, the relative logarithmic height of a fundamental unit is the regulator. -/
+theorem logHeight₁_eq_regulator_of_rank_eq_one (hr : rank K = 1) {ε : (𝓞 K)ˣ}
+    (hε : Subgroup.closure {ε} ⊔ torsion K = ⊤) : logHeight₁ (ε : K) = regulator K := by
+  simp [logHeight₁_eq_index_mul_regulator hr, hε]
+
+/-- In unit rank one, the absolute logarithmic height of a fundamental unit is the regulator
+divided by the degree. -/
+theorem absLogHeight₁_eq_regulator_div_finrank_of_rank_eq_one (hr : rank K = 1) {ε : (𝓞 K)ˣ}
+    (hε : Subgroup.closure {ε} ⊔ torsion K = ⊤) :
+    absLogHeight₁ (ε : K) = regulator K / Module.finrank ℚ K := by
+  simpa [hε] using absLogHeight₁_eq_index_mul_regulator_div_finrank hr ε
 
 end TauCeti.NumberField.Units

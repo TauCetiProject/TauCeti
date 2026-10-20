@@ -11,6 +11,7 @@ import Mathlib.Data.Fin.Rev
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import Mathlib.RingTheory.Flat.Equalizer
 import TauCeti.Algebra.Lie.Submodule.Decomposition
+import TauCeti.LinearAlgebra.Eigenspace.Anticommute
 
 /-!
 # Symmetry of the weight multiplicities of an `sl₂`-module
@@ -110,47 +111,12 @@ private theorem nonempty_linearEquiv_eigenspace_neg_of_eq_top (t : IsSl2Triple h
   have hr_basis (i : Fin k) (j : Fin (n i + 1)) :
       r (B ⟨i, j⟩) = B ⟨i, j.rev⟩ := by
     exact Basis.equiv_apply B ⟨i, j⟩ B σ
-  have hanti : ∀ x : M, r ⁅h, x⁆ = -⁅h, r x⁆ := by
-    intro x
-    have heq :
-        (r : M →ₗ[K] M).comp (toEnd K L M h) =
-          -(toEnd K L M h).comp (r : M →ₗ[K] M) := by
-      apply B.ext
-      rintro ⟨i, j⟩
-      simp only [LinearMap.comp_apply, LinearMap.neg_apply, toEnd_apply_apply]
-      calc
-        r ⁅h, B ⟨i, j⟩⁆ = ((n i : K) - 2 * (j : ℕ)) • r (B ⟨i, j⟩) := by
-          rw [hweight, map_smul]
-        _ = ((n i : K) - 2 * (j : ℕ)) • B ⟨i, j.rev⟩ := by rw [hr_basis]
-        _ = -⁅h, B ⟨i, j.rev⟩⁆ := by rw [hweight, hweight_rev, neg_smul, neg_neg]
-        _ = -⁅h, r (B ⟨i, j⟩)⁆ := by rw [hr_basis]
-    exact DFunLike.congr_fun heq x
-  have hr_involutive : Function.Involutive r := by
-    intro x
-    have hr_symm : r.symm = r := by simp [r, σ]
-    simpa only [hr_symm] using r.symm_apply_apply x
-  have hr_mem {a : K} {x : M} (hx : x ∈ (toEnd K L M h).eigenspace a) :
-      r x ∈ (toEnd K L M h).eigenspace (-a) := by
-    rw [Module.End.mem_eigenspace_iff] at hx ⊢
-    simp only [toEnd_apply_apply] at hx ⊢
-    have ha := hanti x
-    rw [hx, map_smul] at ha
-    simpa only [neg_smul, neg_neg] using (congrArg Neg.neg ha).symm
-  let rμ : (toEnd K L M h).eigenspace μ →ₗ[K]
-      (toEnd K L M h).eigenspace (-μ) := {
-    toFun x := ⟨r x, hr_mem x.2⟩
-    map_add' x y := Subtype.ext (r.map_add x y)
-    map_smul' c x := Subtype.ext (r.map_smul c x) }
-  have rμ_apply (x : (toEnd K L M h).eigenspace μ) : (rμ x : M) = r x := rfl
-  refine ⟨LinearEquiv.ofBijective rμ ⟨?_, ?_⟩⟩
-  · intro x y hxy
-    apply Subtype.ext
-    apply r.injective
-    simpa only [rμ_apply] using congrArg Subtype.val hxy
-  · intro y
-    let x : (toEnd K L M h).eigenspace μ :=
-      ⟨r y, by simpa only [neg_neg] using hr_mem y.2⟩
-    exact ⟨x, Subtype.ext (hr_involutive y)⟩
+  have hanti : toEnd K L M h * (r : M →ₗ[K] M) + (r : M →ₗ[K] M) * toEnd K L M h = 0 := by
+    apply B.ext
+    rintro ⟨i, j⟩
+    simp only [LinearMap.add_apply, Module.End.mul_apply, LinearMap.zero_apply, LinearEquiv.coe_coe,
+      toEnd_apply_apply, hr_basis, hweight, map_smul, hweight_rev, neg_smul, neg_add_cancel]
+  exact ⟨Module.End.genEigenspaceEquivOfAnticommute r hanti μ 1⟩
 
 end Generated
 
