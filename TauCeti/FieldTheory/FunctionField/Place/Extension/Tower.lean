@@ -23,8 +23,8 @@ towers `k₀ → k₁ → k₂` and `F₀ → F₁ → F₂`, with each `Fᵢ` a
 expected commuting scalar towers. No function-field, finite-dimensionality, separability, or
 perfectness hypothesis is needed: restriction uses only integrality of the field extensions,
 and the degree identity is the ordinary finrank tower formula for the residue fields. The
-inseparable-degree identity assumes the lower residue extension algebraic, as the tower formula
-for inseparable degrees requires; this holds whenever `F₁ / F₀` is finite.
+inseparable residue degrees are multiplicative as well, since integrality makes every residue
+extension algebraic.
 
 ## Main results
 
@@ -173,9 +173,7 @@ theorem relativeDegree_restrict_mul (P : Place k₂ F₂) :
 /-- **Inseparable residue degrees are multiplicative in towers**:
 `[F₂_P : F₀_{P ∩ F₀}]ᵢ = [F₂_P : F₁_{P ∩ F₁}]ᵢ [F₁_{P ∩ F₁} : F₀_{P ∩ F₀}]ᵢ`, the bottom step read
 at the twice-restricted place `(P ∩ F₁) ∩ F₀`. -/
-theorem finInsepDegree_residueField_restrict_mul (P : Place k₂ F₂)
-    [Algebra.IsAlgebraic ((P.restrict k₁ F₁).restrict k₀ F₀).ResidueField
-      (P.restrict k₁ F₁).ResidueField] :
+theorem finInsepDegree_residueField_restrict_mul (P : Place k₂ F₂) :
     Field.finInsepDegree
         (@restrict k₀ k₂ F₀ F₂ _ _ _ _ _ _ _ _ _ _ _ P
           (Algebra.IsIntegral.trans F₁)).ResidueField P.ResidueField =

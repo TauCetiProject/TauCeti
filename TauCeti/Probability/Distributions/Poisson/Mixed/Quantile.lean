@@ -12,17 +12,19 @@ public import Mathlib.Topology.Instances.EReal.Lemmas
 /-!
 # Quantiles of mixed Poisson laws
 
-An interior quantile of a real-cast mixed Poisson law is the least natural number whose
-Poisson-mixture cumulative mass reaches the level. This retains equality at an attained
-cumulative mass, as required for lower quantiles.
+An interior quantile of a real-cast mixed Poisson count is the least natural number whose
+cumulative mixed-Poisson mass reaches the requested level. This file states that crossing using
+the explicit cumulative mass series, so it can be evaluated directly from the mixing law.
 
-The quantile is zero through the mixed mass at zero, the expectation of `exp (-Λ)`. This mass
-is strictly positive for every probability mixing law, so mixed Poisson quantiles converge to
-zero as the level tends to zero from above.
+Every mixed Poisson law has positive mass at zero: conditionally on any finite rate `x`, the
+zero-count probability is `exp (-x)`. Consequently its lower quantiles are zero on a nonempty
+initial interval, and their one-sided limit at probability level zero is zero.
 
 ## References
 
 * J. Grandell, *Mixed Poisson Processes*, Chapman & Hall (1997), ch. 2.
+* N. L. Johnson, A. W. Kemp, S. Kotz, *Univariate Discrete Distributions*, 3rd ed., Wiley
+  (2005), §8.3.
 -/
 
 public section
@@ -31,54 +33,51 @@ noncomputable section
 
 open Filter MeasureTheory ProbabilityTheory Real Set Topology
 open TauCeti.Probability
-open scoped NNReal Nat
+open scoped NNReal
 
 namespace MeasureTheory.Measure
 
 variable {u : ℝ}
 
-/-- A natural number is the mixed Poisson lower quantile exactly when it is the least index whose
-explicit cumulative mass reaches the interior probability level. -/
+/-- A natural number is a mixed Poisson lower quantile exactly when it is the least index whose
+explicit cumulative mixed-Poisson mass reaches the interior probability level. -/
 theorem quantile_map_cast_mixedPoissonMeasure_eq_iff (ρ : Measure ℝ≥0)
     [IsProbabilityMeasure ρ] (hu : u ∈ Ioo 0 1) (k : ℕ) :
     ((mixedPoissonMeasure ρ).map (Nat.cast : ℕ → ℝ)).quantile u = k ↔
       IsLeast {n : ℕ | u ≤ ∑ j ∈ Finset.range (n + 1),
-        ∫ x, (exp (-(x : ℝ)) * (x : ℝ) ^ j / j !) ∂ρ} k := by
+        ∫ x, exp (-(x : ℝ)) * (x : ℝ) ^ j / Nat.factorial j ∂ρ} k := by
   rw [Measure.quantile_map_natCast_eq_iff _ hu]
   simp_rw [mixedPoissonMeasure_real_Iic]
 
-/-- The mixed Poisson quantile is zero exactly through its mass at zero, the expectation of
-`exp (-Λ)` under the mixing law. -/
+/-- The initial constant segment of a mixed Poisson quantile ends at the mixed probability of a
+zero count, `∫ x, exp (-x) ∂ρ`. -/
 @[simp]
 theorem quantile_map_cast_mixedPoissonMeasure_eq_zero_iff (ρ : Measure ℝ≥0)
     [IsProbabilityMeasure ρ] (hu : u ∈ Ioo 0 1) :
     ((mixedPoissonMeasure ρ).map (Nat.cast : ℕ → ℝ)).quantile u = 0 ↔
       u ≤ ∫ x, exp (-(x : ℝ)) ∂ρ := by
-  simpa [IsLeast, lowerBounds] using
-    quantile_map_cast_mixedPoissonMeasure_eq_iff ρ hu 0
+  simpa [IsLeast, lowerBounds] using quantile_map_cast_mixedPoissonMeasure_eq_iff ρ hu 0
 
-/-- Mixed Poisson quantiles tend to the lower support endpoint zero as the level tends to zero
-from above, for every probability mixing law. -/
-theorem tendsto_quantile_map_cast_mixedPoissonMeasure_nhdsGT_zero
-    (ρ : Measure ℝ≥0) [IsProbabilityMeasure ρ] :
-    Tendsto (fun u ↦
-      (((mixedPoissonMeasure ρ).map (Nat.cast : ℕ → ℝ)).quantile u : EReal))
+/-- Mixed Poisson quantiles tend to the lower support endpoint zero as the probability level
+tends to zero from above. -/
+theorem tendsto_quantile_map_cast_mixedPoissonMeasure_nhdsGT_zero (ρ : Measure ℝ≥0)
+    [IsProbabilityMeasure ρ] :
+    Tendsto
+      (fun u ↦ (((mixedPoissonMeasure ρ).map (Nat.cast : ℕ → ℝ)).quantile u : EReal))
       (𝓝[>] 0) (𝓝 0) := by
-  have hint : Integrable (fun x : ℝ≥0 ↦ exp (-(x : ℝ))) ρ := by
-    refine Integrable.mono' (integrable_const (1 : ℝ)) (by fun_prop) ?_
-    filter_upwards with x
-    rw [Real.norm_eq_abs, abs_of_pos (exp_pos _)]
-    exact exp_le_one_iff.mpr (neg_nonpos.mpr x.coe_nonneg)
-  have hmass : 0 < ∫ x : ℝ≥0, exp (-(x : ℝ)) ∂ρ := integral_exp_pos hint
-  have hmass_le : ∫ x : ℝ≥0, exp (-(x : ℝ)) ∂ρ ≤ 1 := by
-    calc
-      _ ≤ ∫ _ : ℝ≥0, (1 : ℝ) ∂ρ := integral_mono_ae hint (integrable_const 1) <|
-        ae_of_all _ fun x ↦ exp_le_one_iff.mpr (neg_nonpos.mpr x.coe_nonneg)
-      _ = 1 := by simp
+  have hmass : 0 < (mixedPoissonMeasure ρ).real {0} :=
+    mixedPoissonMeasure_real_singleton_zero_pos ρ
+  have hmass_le : (mixedPoissonMeasure ρ).real {0} ≤ 1 :=
+    (measureReal_mono (subset_univ _)).trans_eq probReal_univ
   refine tendsto_const_nhds.congr' ?_
   filter_upwards [Ioo_mem_nhdsGT hmass] with u hu
   have hu' : u ∈ Ioo (0 : ℝ) 1 := ⟨hu.1, hu.2.trans_le hmass_le⟩
-  rw [(quantile_map_cast_mixedPoissonMeasure_eq_zero_iff ρ hu').2 hu.2.le]
-  rfl
+  have hzero : ((mixedPoissonMeasure ρ).map (Nat.cast : ℕ → ℝ)).quantile u = 0 := by
+    rw [quantile_map_cast_mixedPoissonMeasure_eq_zero_iff ρ hu']
+    have hmass_eq : (mixedPoissonMeasure ρ).real {0} =
+        ∫ x, exp (-(x : ℝ)) ∂ρ := by
+      simpa using mixedPoissonMeasure_real_singleton ρ 0
+    exact hu.2.le.trans_eq hmass_eq
+  exact congrArg (fun x : ℝ ↦ (x : EReal)) hzero.symm
 
 end MeasureTheory.Measure

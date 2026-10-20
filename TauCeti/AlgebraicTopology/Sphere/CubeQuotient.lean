@@ -77,6 +77,8 @@ public section
 
 noncomputable section
 
+universe u
+
 open Metric Set Topology Topology.Homotopy
 open scoped unitInterval
 
@@ -522,8 +524,6 @@ end GenLoop
 
 namespace GenLoop
 
-universe u
-
 variable {n : ℕ} [NeZero n] {X : TopCat.{u}} {x : X}
 
 /-- The attaching map `∂𝔻 (n + 1) ⟶ X` of the `(n + 1)`-cell that kills the class of a generalized
@@ -536,6 +536,15 @@ def diskBoundaryMap (p : Ω^ (Fin n) X x) : TopCat.diskBoundary.{u} (n + 1) ⟶ 
 theorem diskBoundaryMap_apply (p : Ω^ (Fin n) X x) (s : TopCat.diskBoundary.{u} (n + 1)) :
     diskBoundaryMap p s = GenLoop.toSphere p s.down :=
   (rfl)
+
+open CategoryTheory in
+/-- The attaching map of the image of a generalized loop under a based map is the attaching map of
+the loop followed by the map. -/
+@[simp]
+theorem diskBoundaryMap_map {Y : TopCat.{u}} (f : X ⟶ Y) {y : Y} (hf : f x = y)
+    (p : Ω^ (Fin n) X x) : diskBoundaryMap (GenLoop.map f.hom hf p) = diskBoundaryMap p ≫ f := by
+  ext s
+  simp
 
 end GenLoop
 
@@ -580,5 +589,34 @@ theorem mk_eq_one_iff_nullhomotopic_toSphere (p : Ω^ (Fin n) X x) :
       GenLoop.ext _ _ fun z ↦ by simp
     rw [← hp, ← map_mk]
     exact map_eq_one_of_nullhomotopic h _ _
+
+/-- **A homotopy class is trivial exactly when its attaching map is null-homotopic.** The class of
+a generalized loop `p` is the identity of `πₙ(X, x)` if and only if the map
+`GenLoop.diskBoundaryMap p : ∂𝔻 (n + 1) ⟶ X`, along which a cell kills that class, is freely
+null-homotopic. -/
+theorem mk_eq_one_iff_nullhomotopic_diskBoundaryMap {X : TopCat.{u}} {x : X}
+    (p : Ω^ (Fin n) X x) :
+    (⟦p⟧ : HomotopyGroup (Fin n) X x) = (1 : HomotopyGroup (Fin n) X x) ↔
+      (GenLoop.diskBoundaryMap p).hom.Nullhomotopic := by
+  rw [mk_eq_one_iff_nullhomotopic_toSphere]
+  -- The attaching map is `GenLoop.toSphere p` precomposed with `ULift.down`, and conversely
+  -- `GenLoop.toSphere p` is the attaching map precomposed with `ULift.up`.
+  refine ⟨fun h ↦ h.comp_left ⟨ULift.down, continuous_uliftDown⟩, fun h ↦ ?_⟩
+  have hp : GenLoop.toSphere p =
+      (GenLoop.diskBoundaryMap p).hom.comp ⟨ULift.up, continuous_uliftUp⟩ := by
+    ext s
+    exact (GenLoop.diskBoundaryMap_apply p ⟨s⟩).symm
+  exact hp ▸ h.comp_left _
+
+open CategoryTheory in
+/-- **A based map kills a class exactly when it extends the attaching map over a disk.** The image
+of the class of `p` under a based map `f` is the identity exactly when the attaching map
+`GenLoop.diskBoundaryMap p` followed by `f` is null-homotopic. -/
+theorem map_mk_eq_one_iff_nullhomotopic_diskBoundaryMap_comp {X Y : TopCat.{u}} {x : X} {y : Y}
+    (f : X ⟶ Y) (hf : f x = y) (p : Ω^ (Fin n) X x) :
+    map f.hom hf (⟦p⟧ : HomotopyGroup (Fin n) X x) = 1 ↔
+      (GenLoop.diskBoundaryMap p ≫ f).hom.Nullhomotopic := by
+  rw [map_mk, ← GenLoop.diskBoundaryMap_map f hf]
+  exact mk_eq_one_iff_nullhomotopic_diskBoundaryMap _
 
 end HomotopyGroup
