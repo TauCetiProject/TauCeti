@@ -188,18 +188,20 @@ theorem lineDerivOp_vacuumAdjoint (v : ℂ) :
     ∂_{v} (vacuumAdjoint y) = vacuumAdjoint (∂_{v} y) :=
   lineDerivOp_firstOrder _ _ _ v y
 
-/-- **The Weitzenböck identity at the vacuum**: `L₀* L₀ = -Δ + 1 / 4`. The second-order cross
-terms cancel because the coefficients of `∂₁` and `∂₂` anticommute, and the first-order terms
-cancel against the zeroth-order part. -/
+/-- **The Weitzenböck identity at the vacuum**: `L₀* L₀ = -Δ + 1 / 4`. -/
 theorem vacuumAdjoint_vacuumOperator :
     vacuumAdjoint (vacuumOperator x) = -Δ x + (1 / 4 : ℝ) • x := by
-  have hΔ : Δ x = ∂_{(1 : ℂ)} (∂_{(1 : ℂ)} x) + ∂_{I} (∂_{I} x) := by
-    simp [SchwartzMap.laplacian_eq_sum Complex.orthonormalBasisOneI, Fin.sum_univ_two]
   have hc := x.lineDerivOp_comm I 1
   ext z i
   fin_cases i <;>
-  · simp [lineDerivOp_vacuumOperator, hΔ, hc]
+  · simp [lineDerivOp_vacuumOperator, laplacian_eq_lineDerivOp_one_I, hc]
     ring
+
+private theorem integrable_inner (f g : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) :
+    Integrable (fun z ↦ ⟪f z, g z⟫) := by
+  convert (pairing (innerSL ℝ) f g).integrable (μ := volume) using 1
+  ext z
+  rw [pairing_apply_apply, innerSL_apply_apply]
 
 private theorem integral_inner_firstOrder (A₁ A₂ B : Matrix (Fin 4) (Fin 4) ℝ) :
     ∫ z, ⟪firstOrder A₁ A₂ B x z, y z⟫ = ∫ z, ⟪x z, firstOrder (-A₁ᵀ) (-A₂ᵀ) Bᵀ y z⟫ := by
@@ -209,9 +211,7 @@ private theorem integral_inner_firstOrder (A₁ A₂ B : Matrix (Fin 4) (Fin 4) 
       ContinuousLinearMap.star_eq_adjoint, ContinuousLinearMap.adjoint_inner_right]
   have hint (M : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4))
       (f g : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) : Integrable (fun z ↦ ⟪M (f z), g z⟫) := by
-    convert (pairing (innerSL ℝ) (postcompCLM M f) g).integrable (μ := volume) using 1
-    ext z
-    rw [pairing_apply_apply, innerSL_apply_apply, postcompCLM_apply]
+    simpa only [postcompCLM_apply] using integrable_inner (postcompCLM M f) g
   have hint' (M : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4))
       (f g : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) : Integrable (fun z ↦ ⟪f z, M (g z)⟫) := by
     simpa only [real_inner_comm (f _)] using hint M g f
@@ -253,29 +253,24 @@ the squared `L²` norms of the two coordinate derivatives `∂₁ x` and `∂₂
 theorem integral_norm_sq_vacuumOperator :
     ∫ z, ‖vacuumOperator x z‖ ^ 2 =
       (∫ z, ‖∂_{(1 : ℂ)} x z‖ ^ 2) + (∫ z, ‖∂_{I} x z‖ ^ 2) + 1 / 4 * ∫ z, ‖x z‖ ^ 2 := by
-  have hint (f g : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) : Integrable (fun z ↦ ⟪f z, g z⟫) := by
-    convert (pairing (innerSL ℝ) f g).integrable (μ := volume) using 1
-    ext z
-    rw [pairing_apply_apply, innerSL_apply_apply]
   have hparts (v : ℂ) : ∫ z, ⟪x z, ∂_{v} (∂_{v} x) z⟫ = -∫ z, ‖∂_{v} x z‖ ^ 2 := by
     have h := integral_bilinear_lineDerivOp_right_eq_neg_left (μ := volume) x (∂_{v} x)
       ((innerSL ℝ).bilinearComp (.id ℝ _) (.id ℝ _)) v
     simpa only [ContinuousLinearMap.bilinearComp_apply, ContinuousLinearMap.id_apply,
       innerSL_apply_apply, real_inner_self_eq_norm_sq] using h
-  have hΔ : Δ x = ∂_{(1 : ℂ)} (∂_{(1 : ℂ)} x) + ∂_{I} (∂_{I} x) := by
-    simp [SchwartzMap.laplacian_eq_sum Complex.orthonormalBasisOneI, Fin.sum_univ_two]
   calc ∫ z, ‖vacuumOperator x z‖ ^ 2
       = ∫ z, ⟪x z, vacuumAdjoint (vacuumOperator x) z⟫ := by
         simp_rw [← real_inner_self_eq_norm_sq]
         exact integral_inner_vacuumOperator x (vacuumOperator x)
     _ = -(∫ z, ⟪x z, ∂_{(1 : ℂ)} (∂_{(1 : ℂ)} x) z⟫) - (∫ z, ⟪x z, ∂_{I} (∂_{I} x) z⟫) +
           1 / 4 * ∫ z, ⟪x z, x z⟫ := by
-        simp only [vacuumAdjoint_vacuumOperator, hΔ, _root_.add_apply, _root_.neg_apply,
-          _root_.smul_apply, inner_add_right, inner_neg_right, inner_smul_right]
+        simp only [vacuumAdjoint_vacuumOperator, laplacian_eq_lineDerivOp_one_I, _root_.add_apply,
+          _root_.neg_apply, _root_.smul_apply, inner_add_right, inner_neg_right, inner_smul_right]
         have h₁ : Integrable (fun z ↦ -(⟪x z, ∂_{(1 : ℂ)} (∂_{(1 : ℂ)} x) z⟫ +
-            ⟪x z, ∂_{I} (∂_{I} x) z⟫)) := ((hint _ _).add (hint _ _)).neg
-        rw [integral_add h₁ ((hint x x).const_mul _), integral_neg,
-          integral_add (hint _ _) (hint _ _), integral_const_mul]
+            ⟪x z, ∂_{I} (∂_{I} x) z⟫)) := ((integrable_inner _ _).add (integrable_inner _ _)).neg
+        rw [integral_add h₁ ((integrable_inner x x).const_mul _), integral_neg,
+          integral_add (integrable_inner _ _) (integrable_inner _ _),
+          integral_const_mul]
         ring
     _ = _ := by
         rw [hparts (1 : ℂ), hparts I]
