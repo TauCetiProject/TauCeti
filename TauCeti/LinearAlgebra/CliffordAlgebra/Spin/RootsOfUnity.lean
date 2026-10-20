@@ -51,6 +51,7 @@ public section
 namespace CliffordAlgebra
 
 open TauCeti
+open scoped TensorProduct
 
 universe u v w
 
@@ -88,14 +89,9 @@ theorem rootsOfUnityToSpin_injective (Q : QuadraticForm R M) (hQ : ∃ v, IsUnit
 @[simp]
 theorem spinToSpecialOrthogonal_rootsOfUnityToSpin (Q : QuadraticForm R M)
     (hQ : ∃ v, IsUnit (Q v)) (ζ : rootsOfUnity 2 R) :
-    spinToSpecialOrthogonal Q (rootsOfUnityToSpin Q hQ ζ) = 1 := by
-  ext m
-  apply ι_injective Q
-  -- The scalar commutes past `ι Q m`, so the twisted conjugate is `ζ ^ 2 • ι Q m = ι Q m`.
-  rw [coe_spinToSpecialOrthogonal_apply, ι_spinVectorAction_apply, coe_rootsOfUnityToSpin_apply,
-    star_algebraMap, mul_assoc, ← Algebra.commutes, ← mul_assoc, ← map_mul, ← sq,
-    (mem_rootsOfUnity' 2 (ζ : Rˣ)).mp ζ.2, map_one, one_mul]
-  simp
+    spinToSpecialOrthogonal Q (rootsOfUnityToSpin Q hQ ζ) = 1 :=
+  MonoidHom.mem_ker.mp
+    (mem_ker_spinToSpecialOrthogonal_of_coe_eq_algebraMap Q _ (coe_rootsOfUnityToSpin_apply Q hQ ζ))
 
 /-- The image of `μ₂(R)` lies in the kernel of the Spin action. -/
 theorem range_rootsOfUnityToSpin_le_ker (Q : QuadraticForm R M) (hQ : ∃ v, IsUnit (Q v)) :
@@ -112,8 +108,9 @@ variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V]
 /-- Over a field, the inclusion of `μ₂(K)` sends the square root `-1` to the canonical scalar
 `-1` of the Spin group. -/
 theorem rootsOfUnityToSpin_eq_negOne (Q : QuadraticForm K V) (hQ : ∃ v, IsUnit (Q v))
-    (hQ0 : Q ≠ 0) {ζ : rootsOfUnity 2 K} (hζ : ((ζ : Kˣ) : K) = -1) :
-    rootsOfUnityToSpin Q hQ ζ = spinGroup.negOne Q hQ0 :=
+    {ζ : rootsOfUnity 2 K} (hζ : ((ζ : Kˣ) : K) = -1) :
+    rootsOfUnityToSpin Q hQ ζ =
+      spinGroup.negOne Q (by rintro rfl; obtain ⟨v, hv⟩ := hQ; simp at hv) :=
   Subtype.ext (by simp [hζ])
 
 variable [FiniteDimensional K V] [Invertible (2 : K)]
@@ -131,7 +128,7 @@ theorem range_rootsOfUnityToSpin (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
   rcases (mem_ker_spinToSpecialOrthogonal_iff Q hQ x).mp hx with rfl | rfl
   · exact Subgroup.one_mem _
   · have hneg : (-1 : Kˣ) ∈ rootsOfUnity 2 K := (mem_rootsOfUnity 2 _).mpr (by simp)
-    exact ⟨⟨-1, hneg⟩, rootsOfUnityToSpin_eq_negOne Q hQv hQ.ne_zero (by simp)⟩
+    exact ⟨⟨-1, hneg⟩, rootsOfUnityToSpin_eq_negOne Q hQv (by simp)⟩
 
 /-- For a finite-dimensional nondegenerate quadratic form over a field in which `2` is invertible,
 the sequence `μ₂(K) → Spin(Q) → SO(Q)` is exact at `Spin(Q)`. -/
@@ -151,9 +148,11 @@ variable [AddCommGroup M] [Module R M] [Invertible (2 : R)]
 /-- Extension of scalars of Spin groups carries the inclusion of `μ₂(R)` to the inclusion of
 `μ₂(A)`, precomposed with the induced map `μ₂(R) → μ₂(A)`. -/
 theorem spinGroupBaseChange_comp_rootsOfUnityToSpin (Q : QuadraticForm R M)
-    (hQ : ∃ v, IsUnit (Q v)) (hQA : ∃ v, IsUnit (Q.baseChange A v)) :
+    (hQ : ∃ v, IsUnit (Q v)) :
     (spinGroupBaseChange (A := A) Q).comp (rootsOfUnityToSpin Q hQ) =
-      (rootsOfUnityToSpin (Q.baseChange A) hQA).comp
+      (rootsOfUnityToSpin (Q.baseChange A) (hQ.imp' (1 ⊗ₜ ·) fun _ hv ↦ by
+          simpa [QuadraticForm.baseChange_tmul, Algebra.smul_def] using
+            hv.map (algebraMap R A))).comp
         (restrictRootsOfUnity (algebraMap R A) 2) := by
   ext ζ
   simp only [MonoidHom.comp_apply, coe_spinGroupBaseChange_apply, coe_rootsOfUnityToSpin_apply,
@@ -176,9 +175,9 @@ variable {R : Type u} {M₁ : Type v} {M₂ : Type w} [CommRing R]
 
 /-- A Spin-group map induced by a quadratic isometry carries the inclusion of `μ₂(R)` for the
 source form to that for the target form. -/
-theorem spinGroupMap_comp_rootsOfUnityToSpin (f : Q₁ →qᵢ Q₂) (hQ₁ : ∃ v, IsUnit (Q₁ v))
-    (hQ₂ : ∃ v, IsUnit (Q₂ v)) :
-    f.spinGroupMap.comp (rootsOfUnityToSpin Q₁ hQ₁) = rootsOfUnityToSpin Q₂ hQ₂ := by
+theorem spinGroupMap_comp_rootsOfUnityToSpin (f : Q₁ →qᵢ Q₂) (hQ₁ : ∃ v, IsUnit (Q₁ v)) :
+    f.spinGroupMap.comp (rootsOfUnityToSpin Q₁ hQ₁) =
+      rootsOfUnityToSpin Q₂ (hQ₁.imp' f fun v hv ↦ by rwa [f.map_app]) := by
   ext ζ
   simp only [MonoidHom.comp_apply, coe_spinGroupMap_apply, coe_rootsOfUnityToSpin_apply,
     AlgHom.commutes]
@@ -186,8 +185,9 @@ theorem spinGroupMap_comp_rootsOfUnityToSpin (f : Q₁ →qᵢ Q₂) (hQ₁ : �
 /-- A Spin-group map induced by a quadratic isometry fixes each square root of unity. -/
 @[simp]
 theorem spinGroupMap_rootsOfUnityToSpin (f : Q₁ →qᵢ Q₂) (hQ₁ : ∃ v, IsUnit (Q₁ v))
-    (hQ₂ : ∃ v, IsUnit (Q₂ v)) (ζ : rootsOfUnity 2 R) :
-    f.spinGroupMap (rootsOfUnityToSpin Q₁ hQ₁ ζ) = rootsOfUnityToSpin Q₂ hQ₂ ζ :=
-  DFunLike.congr_fun (spinGroupMap_comp_rootsOfUnityToSpin f hQ₁ hQ₂) ζ
+    (ζ : rootsOfUnity 2 R) :
+    f.spinGroupMap (rootsOfUnityToSpin Q₁ hQ₁ ζ) =
+      rootsOfUnityToSpin Q₂ (hQ₁.imp' f fun v hv ↦ by rwa [f.map_app]) ζ :=
+  DFunLike.congr_fun (spinGroupMap_comp_rootsOfUnityToSpin f hQ₁) ζ
 
 end QuadraticMap.Isometry

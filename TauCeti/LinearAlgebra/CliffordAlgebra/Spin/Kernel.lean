@@ -25,6 +25,8 @@ exterior-algebra basis. Unitarity then restricts the scalar to `1` or `-1`.
 
 * `CliffordAlgebra.algebraMap_mem_spinGroup_of_isUnit`: a square root of unity lies in the Spin
   group as soon as the quadratic form takes a unit value.
+* `CliffordAlgebra.mem_ker_spinToSpecialOrthogonal_of_coe_eq_algebraMap`: a scalar Spin element
+  acts trivially.
 * `CliffordAlgebra.mem_ker_spinToSpecialOrthogonal_iff`: a Spin element is in the kernel
 exactly when it is `1` or the canonical scalar `-1`.
 * `QuadraticMap.Isometry.spinGroupMap_negOne`: maps induced by quadratic isometries preserve the
@@ -74,22 +76,11 @@ vector: it is the product of the two invertible vectors `ζ (Q v)⁻¹ • v` an
 theorem algebraMap_mem_spinGroup_of_isUnit (Q : QuadraticForm R M) (v : M)
     (hvQ : IsUnit (Q v)) {ζ : R} (hζ : ζ ^ 2 = 1) :
     algebraMap R (CliffordAlgebra Q) ζ ∈ spinGroup Q := by
-  let _ : Invertible (Q v) := hvQ.invertible
-  let a : R := ζ * ⅟(Q v)
-  have ha : IsUnit a := (IsUnit.of_pow_eq_one hζ two_ne_zero).mul (isUnit_of_invertible _)
-  have havQ : IsUnit (Q (a • v)) := QuadraticMap.isUnit_apply_smul ha hvQ
-  let _ : Invertible (Q (a • v)) := havQ.invertible
-  let x := unitι Q (a • v) * unitι Q v
-  have hx : (x : CliffordAlgebra Q) = algebraMap R _ ζ := by
-    simp only [x, Units.val_mul, coe_unitι, map_smul, Algebra.smul_def]
-    rw [mul_assoc, ι_sq_scalar, ← map_mul]
-    simp [a]
+  let u := (IsUnit.of_pow_eq_one hζ two_ne_zero).unit
   rw [spinGroup.mem_iff]
   refine ⟨?_, ?_⟩
-  · refine ⟨⟨x, mul_mem (unitι_mem_lipschitzGroup _) (unitι_mem_lipschitzGroup _), hx⟩,
-      ?_⟩
-    rw [SetLike.mem_coe, Unitary.mem_iff, star_algebraMap, ← map_mul, ← sq, hζ, map_one]
-    exact ⟨rfl, rfl⟩
+  · refine ⟨⟨_, unitsMap_algebraMap_mem_lipschitzGroup ⟨v, hvQ⟩ u, rfl⟩, ?_⟩
+    simp [Unitary.mem_iff, ← sq, ← map_pow, hζ]
   · exact (CliffordAlgebra.even Q).algebraMap_mem ζ
 
 /-- The scalar `-1` belongs to the Spin group when the quadratic form is a unit
@@ -189,9 +180,9 @@ section NegOne
 
 variable [Invertible (2 : R)]
 
-/-- A Spin element whose Clifford value is `-1` lies in the kernel of the Spin action. -/
-theorem mem_ker_spinToSpecialOrthogonal_of_coe_eq_neg_one
-    (x : spinGroup Q) (h : (x : CliffordAlgebra Q) = -1) :
+/-- A Spin element whose Clifford value is a scalar lies in the kernel of the Spin action. -/
+theorem mem_ker_spinToSpecialOrthogonal_of_coe_eq_algebraMap
+    (x : spinGroup Q) {r : R} (h : (x : CliffordAlgebra Q) = algebraMap R _ r) :
     x ∈ MonoidHom.ker (spinToSpecialOrthogonal Q) := by
   rw [MonoidHom.mem_ker]
   apply Subtype.ext
@@ -199,8 +190,15 @@ theorem mem_ker_spinToSpecialOrthogonal_of_coe_eq_neg_one
   intro m
   rw [coe_spinToSpecialOrthogonal_apply]
   apply ι_injective Q
-  rw [ι_spinVectorAction_apply]
-  simp [h]
+  have hc : Commute (x : CliffordAlgebra Q) (ι Q m) := h ▸ Algebra.commute_algebraMap_left r _
+  rw [ι_spinVectorAction_apply, hc.eq, mul_assoc, spinGroup.mul_star_self_of_mem x.2, mul_one]
+  simp
+
+/-- A Spin element whose Clifford value is `-1` lies in the kernel of the Spin action. -/
+theorem mem_ker_spinToSpecialOrthogonal_of_coe_eq_neg_one
+    (x : spinGroup Q) (h : (x : CliffordAlgebra Q) = -1) :
+    x ∈ MonoidHom.ker (spinToSpecialOrthogonal Q) :=
+  mem_ker_spinToSpecialOrthogonal_of_coe_eq_algebraMap Q x (r := -1) (by simpa using h)
 
 namespace spinGroup
 
