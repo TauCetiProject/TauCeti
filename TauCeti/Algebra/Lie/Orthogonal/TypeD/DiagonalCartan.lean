@@ -176,11 +176,7 @@ def typeDDiagonalEquiv : (ι → K) ≃ₗ[K] typeDDiagonalCartan K ι where
   map_smul' c d := by
     apply Subtype.ext
     apply Subtype.ext
-    simp only [SetLike.val_smul, RingHom.id_apply]
-    simp only [typeDDiagonalMatrix]
-    rw [← diagonal_smul]
-    congr 1
-    ext (i | i) <;> simp [typeDDiagonalValue]
+    simp [typeDDiagonalMatrix, typeDDiagonalValue, ← diagonal_smul]
   invFun A i := (A : Matrix (ι ⊕ ι) (ι ⊕ ι) K) (.inl i) (.inl i)
   left_inv d := by
     ext i
@@ -188,13 +184,15 @@ def typeDDiagonalEquiv : (ι → K) ≃ₗ[K] typeDDiagonalCartan K ι where
   right_inv A := by
     apply Subtype.ext
     apply Subtype.ext
+    -- Reconstruct the diagonal matrix after identifying its signed coordinates.
+    simp only [typeDDiagonalMatrix]
     refine Eq.trans (congrArg diagonal ?_)
       (mem_typeDDiagonalCartan_iff_isDiag.mp A.2).diagonal_diag
     funext a
     rcases a with i | i
-    · rfl
-    · exact (typeD.apply_inr_inr
-        (A : LieAlgebra.Orthogonal.typeD ι K) i i).symm
+    · simp [typeDDiagonalValue_inl, diag_apply]
+    · simpa only [typeDDiagonalValue_inr, diag_apply] using
+        (typeD.apply_inr_inr (A : LieAlgebra.Orthogonal.typeD ι K) i i).symm
 
 @[simp]
 theorem coe_typeDDiagonalEquiv_apply (d : ι → K) :
