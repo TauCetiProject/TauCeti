@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvatu
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Conformal
 import TauCeti.Analysis.InnerProductSpace.KulkarniNomizu
+import TauCeti.Geometry.Manifold.Riemannian.Scaling
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
@@ -250,6 +251,25 @@ theorem curvatureOperator_leviCivitaConnection_rescale_exp
     real_inner_comm, map_add, map_sub, map_smul, smul_eq_mul, RCLike.conj_to_real]
   module
 
+/-- In an orthonormal basis, `∑ du(bᵢ)² = |grad u|²`. -/
+private theorem sum_mvfderiv_mul_mvfderiv [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    (u : M → ℝ) (x : M) {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ (TangentSpace I x)) :
+    ∑ i, mvfderiv I u x (b i) * mvfderiv I u x (b i) = ⟪mgradient I u x, mgradient I u x⟫ := by
+  rw [← b.sum_inner_mul_inner]
+  simp only [inner_mgradient, inner_mgradient_right]
+
+omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] in
+/-- In an orthonormal basis of a tangent space, `∑ ⟪bᵢ, bᵢ⟫` is the dimension of the model
+space. -/
+private theorem sum_inner_self_eq_finrank [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    (x : M) (b : OrthonormalBasis (Fin (Module.finrank ℝ (TangentSpace I x))) ℝ
+      (TangentSpace I x)) :
+    ∑ i, ⟪b i, b i⟫ = Module.finrank ℝ E := by
+  simp only [real_inner_self_eq_norm_sq, b.orthonormal.1, one_pow, Finset.sum_const,
+    Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, mul_one]
+  -- The tangent space `TangentSpace I x` is the model space `E`.
+  rfl
+
 variable [T2Space M]
 
 /-- **Curvature tensor under the conformal change `e^(2u) g`.** For a smooth metric `g` and a
@@ -338,17 +358,10 @@ theorem ricciTensor_leviCivitaConnection_rescale_exp
     ← CovariantDerivative.ricciTensor_eq_sum_inner cov x b,
     LinearMap.BilinForm.sum_kulkarniNomizu_innerₗ, TauCeti.bilinFormTrace_eq_sum K b,
     laplaceBeltrami_eq_sum_hessian I u x b]
-  have s₂ : ∑ i, mvfderiv I u x (b i) * mvfderiv I u x (b i) = ⟪G, G⟫ := by
-    rw [← b.sum_inner_mul_inner]
-    simp only [inner_mgradient, inner_mgradient_right, G]
-  have s₃ : ∑ i, ⟪b i, b i⟫ = Module.finrank ℝ E := by
-    simp only [real_inner_self_eq_norm_sq, b.orthonormal.1, one_pow, Finset.sum_const,
-      Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, mul_one]
-    -- The tangent space `TangentSpace I x` is the model space `E`.
-    rfl
   -- The tangent space `TangentSpace I x` is the model space `E`.
   have hn : Module.finrank ℝ (TangentSpace I x) = Module.finrank ℝ E := rfl
-  simp only [hK, Finset.sum_add_distrib, Finset.sum_sub_distrib, ← Finset.mul_sum, s₂, s₃, hn]
+  simp only [hK, Finset.sum_add_distrib, Finset.sum_sub_distrib, ← Finset.mul_sum,
+    sum_mvfderiv_mul_mvfderiv u x b, sum_inner_self_eq_finrank x b, hn]
   ring
 
 /-- **Scalar curvature under the conformal change `e^(2u) g`.** For a smooth metric `g` on a
@@ -370,58 +383,22 @@ theorem scalarCurvature_rescale_exp
       ((Module.finrank ℝ E : ℝ) - 1) * ((Module.finrank ℝ E : ℝ) - 2) *
         (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
           ⟪mgradient I u x, mgradient I u x⟫)) := by
-  rw [scalarCurvature_def, scalarCurvature_def]
   let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
   -- A `g`-orthonormal basis, recorded as a plain basis through the inner products of `g`.
   let b := stdOrthonormalBasis ℝ (TangentSpace I x)
-  have hb : ∀ i j, g.inner x (b i) (b j) = if i = j then 1 else 0 := fun i j ↦ by
-    rw [← inner_riemannianBundle]
-    exact orthonormal_iff_ite.1 b.orthonormal i j
-  let b₀ : Module.Basis _ ℝ (TangentSpace I x) := b.toBasis
-  have hb₀ : ⇑b₀ = ⇑b := b.coe_toBasis
-  set g' := g.rescale (fun y ↦ Real.exp (2 * u y))
-    (Real.contDiff_exp.comp_contMDiff (contMDiff_const.mul hu)) fun _ ↦ Real.exp_pos _
-  -- Dividing it by `e^u` gives a basis orthonormal for `e^(2u) g`.
-  have h₁ : (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g'.toRiemannianMetric⟩;
-      (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x) =
-      Real.exp (-2 * u x) * ∑ i, (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-        ⟨g'.toRiemannianMetric⟩;
-        (CovariantDerivative.leviCivitaConnection I M).ricciTensor x (b i) (b i)) := by
-    let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g'.toRiemannianMetric⟩
-    have hon : Orthonormal ℝ (b₀.unitsSMul fun _ ↦
-        Units.mk0 (Real.exp (-u x)) (Real.exp_pos _).ne') := by
-      rw [orthonormal_iff_ite]
-      intro i j
-      simp only [Module.Basis.unitsSMul_apply, Units.smul_def, Units.val_mk0,
-        inner_riemannianBundle, g', rescale_inner, map_smul, smul_apply, smul_eq_mul, hb₀, hb]
-      split_ifs
-      · rw [mul_one, ← Real.exp_add, ← Real.exp_add]
-        ring_nf
-        exact Real.exp_zero
-      · simp
-    rw [CovariantDerivative.scalarCurvature_eq_sum _ x
-      ((b₀.unitsSMul _).toOrthonormalBasis hon), Finset.mul_sum]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    simp only [Module.Basis.coe_toOrthonormalBasis, Module.Basis.unitsSMul_apply, Units.smul_def,
-      Units.val_mk0, map_smul, LinearMap.smul_apply, smul_eq_mul, hb₀, ← mul_assoc,
-      ← Real.exp_add]
-    ring_nf
-  rw [h₁]
+  have hb : ∀ i j, g.inner x (b.toBasis i) (b.toBasis j) = if i = j then 1 else 0 :=
+    fun i j ↦ by
+      rw [b.coe_toBasis, ← inner_riemannianBundle]
+      exact orthonormal_iff_ite.1 b.orthonormal i j
+  rw [scalarCurvature_rescale_eq_sum g _ _ x b.toBasis hb, b.coe_toBasis, ← Real.exp_neg,
+    neg_mul_eq_neg_mul, scalarCurvature_def]
   simp only [ricciTensor_leviCivitaConnection_rescale_exp g hu x]
   -- Sum the Ricci formula over the `g`-orthonormal basis.
   have s₁ : ∑ i, hessian I u x (b i) (b i) = laplaceBeltrami I u x :=
     (laplaceBeltrami_eq_sum_hessian I u x b).symm
-  have s₂ : ∑ i, mvfderiv I u x (b i) * mvfderiv I u x (b i) =
-      ⟪mgradient I u x, mgradient I u x⟫ := by
-    rw [← b.sum_inner_mul_inner]
-    simp only [inner_mgradient, inner_mgradient_right]
-  have s₃ : ∑ i, ⟪b i, b i⟫ = Module.finrank ℝ E := by
-    simp only [real_inner_self_eq_norm_sq, b.orthonormal.1, one_pow, Finset.sum_const,
-      Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, mul_one]
-    -- The tangent space `TangentSpace I x` is the model space `E`.
-    rfl
   rw [Finset.sum_sub_distrib, Finset.sum_sub_distrib, ← Finset.mul_sum, ← Finset.mul_sum,
-    Finset.sum_sub_distrib, s₁, s₂, s₃, ← CovariantDerivative.scalarCurvature_eq_sum _ x b]
+    Finset.sum_sub_distrib, s₁, sum_mvfderiv_mul_mvfderiv u x b, sum_inner_self_eq_finrank x b,
+    ← CovariantDerivative.scalarCurvature_eq_sum _ x b]
   ring
 
 end Exp
