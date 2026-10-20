@@ -161,8 +161,10 @@ theorem degree_obj_gradedSymmetricAlgebra_obj (F : QuasicoherentSheaf X) (n : �
   (degree_obj_obj _ n).trans (gradedSymmetricAlgebra_obj_obj_X F n)
 
 /-- The degree-`n` component functor acts on the graded symmetric algebra of a morphism `φ` by
-`Symⁿ φ`, up to the identifications `degree_obj_gradedSymmetricAlgebra_obj`. -/
-@[simp]
+`Symⁿ φ`, up to the identifications `degree_obj_gradedSymmetricAlgebra_obj`.
+
+This is not a `simp` lemma: `degree_map_hom` and `gradedSymmetricAlgebra_map_hom_hom_hom` already
+rewrite its left-hand side, so pass it to `simp` explicitly in place of `degree_map_hom`. -/
 theorem degree_map_gradedSymmetricAlgebra_map_hom {F G : QuasicoherentSheaf X} (φ : F ⟶ G)
     (n : ℕ) :
     ((degree n).map ((gradedSymmetricAlgebra X).map φ)).hom =
@@ -185,7 +187,8 @@ def gradedSymmetricAlgebraDegreeIso (n : ℕ) :
   NatIso.ofComponents
     (fun F ↦ ObjectProperty.isoMk _ (eqToIso ((degree_obj_gradedSymmetricAlgebra_obj F n).trans
       (QuasicoherentSheaf.symmetricPower_obj_obj X n F).symm)))
-    (fun φ ↦ ObjectProperty.hom_ext _ (by simp [-degree_map_hom]))
+    (fun φ ↦ ObjectProperty.hom_ext _ (by
+      simp [-degree_map_hom, degree_map_gradedSymmetricAlgebra_map_hom]))
 
 /-- The component of `gradedSymmetricAlgebraDegreeIso` at `F` is the identification of the
 degree-`n` component of the graded symmetric algebra of `F` with `Symⁿ F`. -/
@@ -214,7 +217,8 @@ def gradedSymmetricAlgebraDegreeOneIso :
   NatIso.ofComponents
     (fun F ↦ ObjectProperty.isoMk _ (eqToIso (degree_obj_gradedSymmetricAlgebra_obj F 1) ≪≫
       (SheafOfModules.symmetricPowerOneIso X.sheaf).app F.obj))
-    (fun φ ↦ ObjectProperty.hom_ext _ (by simp [-degree_map_hom]))
+    (fun φ ↦ ObjectProperty.hom_ext _ (by
+      simp [-degree_map_hom, degree_map_gradedSymmetricAlgebra_map_hom]))
 
 variable {X}
 
