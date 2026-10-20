@@ -49,15 +49,17 @@ private lemma summable_inv_pow_pow (hb : 2 ≤ b) (hr : 2 ≤ r) :
 
 /-- The partial sum of the first `n` terms of the lacunary series, written as an integer over the
 denominator `q = b ^ (r ^ n)`. -/
-lemma partial_sum_inv_pow_pow_eq (hb : 0 < b) (hr : 0 < r) (n : ℕ) :
+lemma partial_sum_inv_pow_pow_eq (hb : 0 < b) (n : ℕ) :
     ((∑ k ∈ Finset.range n, (b : ℤ) ^ (r ^ n - r ^ (k + 1)) : ℤ) : ℝ) / (b : ℝ) ^ r ^ n =
       ∑ k ∈ Finset.range n, ((b : ℝ) ^ r ^ (k + 1))⁻¹ := by
   have hb0 : (0 : ℝ) < b := by exact_mod_cast hb
   push_cast
   rw [Finset.sum_div]
   refine Finset.sum_congr rfl fun k hk ↦ ?_
-  have hle : r ^ (k + 1) ≤ r ^ n :=
-    Nat.pow_le_pow_right (by omega) (Finset.mem_range.1 hk)
+  have hle : r ^ (k + 1) ≤ r ^ n := by
+    rcases Nat.eq_zero_or_pos r with rfl | hr
+    · simp
+    · exact Nat.pow_le_pow_right hr (Finset.mem_range.1 hk)
   rw [div_eq_iff (by positivity), eq_inv_mul_iff_mul_eq₀ (by positivity), ← pow_add,
     Nat.add_sub_cancel' hle]
 
@@ -121,7 +123,7 @@ theorem liouvilleWith_tsum_inv_pow_pow (hb : 2 ≤ b) (hr : 2 ≤ r) :
   -- goal has the cast `(q : ℝ)` of the natural number `q = b ^ r ^ n`; `hqr` bridges the two.
   have hrepr : ((∑ k ∈ Finset.range n, (b : ℤ) ^ (r ^ n - r ^ (k + 1)) : ℤ) : ℝ) / q =
       ∑ k ∈ Finset.range n, f k := by
-    rw [hqr]; exact partial_sum_inv_pow_pow_eq (by omega) (by omega) n
+    rw [hqr]; exact partial_sum_inv_pow_pow_eq (by omega) n
   rw [hrepr]
   refine ⟨fun h ↦ hpos.ne' (by rw [← htail, h, sub_self]), ?_⟩
   rw [htail, abs_of_pos hpos]
