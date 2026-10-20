@@ -17,6 +17,11 @@ module with the homogeneous component of the same degree. This identifies the qu
 and polynomial descriptions of symmetric powers, allowing constructions on symmetric tensors
 to be used degreewise on the symmetric algebra.
 
+The scalar semiring lies in `Type` because Mathlib's `SymmetricPower R ι M` requires `R` and
+`ι` to share a universe, and `Sym[R]^n M` uses `ι = Fin n`. This is also the universe
+convention of `Module.Basis.symmetricPower`, used in the homogeneous comparison below.
+The module and its basis index type have independent universes.
+
 ## Main declarations
 
 * `TauCeti.SymmetricPower.toSymmetricAlgebra` multiplies the generators of a pure symmetric tensor.

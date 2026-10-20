@@ -23,6 +23,9 @@ the enveloping algebra. Equivariance and assembly across all degrees are separat
 The averaging map reuses `SymmetricPower.toTensorPower`; the leading-symbol computation uses
 `prod_map_ι_sub_prod_map_ι_mem_pbwFiltrationPrevious_of_perm`.
 
+The scalar ring lies in `Type`, as required by Mathlib's `Fin n`-indexed symmetric power
+`Sym[R]^n L`. The Lie algebra module has an independent universe.
+
 ## References
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §23.3.
