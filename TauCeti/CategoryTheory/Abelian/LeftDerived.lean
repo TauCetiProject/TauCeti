@@ -22,6 +22,9 @@ Let `S : 0 ⟶ P₁ ⟶ P₀ ⟶ M ⟶ 0` be a short exact sequence in an abelia
 * `LₙF(M)` vanishes for `n ≥ 2`
   (`CategoryTheory.ShortComplex.ShortExact.isZero_leftDerived_add_two`).
 
+The complex, its augmentation, and the chain maps induced by morphisms of short complexes are
+defined for any category with zero morphisms and a zero object.
+
 The identification of `L₁F(M)` is natural in the functor `F` and in maps of such presentations.
 For an arbitrary additive `F` the projectivity of `P₁` is needed even in degree `1`: the long exact
 sequence only gives `L₁F(M) ≅ ker(L₀F(P₁) ⟶ F(P₀))`, and `L₀F(P₁) = F(P₁)` for projective `P₁`.
@@ -46,13 +49,18 @@ open Limits ZeroObject
 
 universe v u
 
-variable {C : Type u} [Category.{v} C] [Abelian C] {S S' : ShortComplex C}
+variable {C : Type u} [Category.{v} C]
 
 namespace ShortComplex
 
+section
+
+variable [HasZeroMorphisms C] [HasZeroObject C] {S S' : ShortComplex C}
+
 /-- The chain complex `⋯ ⟶ 0 ⟶ S.X₁ ⟶ S.X₂` with `S.X₂` in degree `0` and `S.X₁` in degree `1`,
-whose only nonzero differential is `S.f`. For a short exact `S` it underlies the projective
-resolution `CategoryTheory.ShortComplex.ShortExact.projectiveResolution`. -/
+whose only nonzero differential is `S.f`. When `S` is short exact and `S.X₁`, `S.X₂` are
+projective, it underlies the projective resolution
+`CategoryTheory.ShortComplex.ShortExact.projectiveResolution`. -/
 @[expose]
 def resolutionComplex (S : ShortComplex C) : ChainComplex C ℕ where
   X n := match n with | 0 => S.X₂ | 1 => S.X₁ | _ + 2 => 0
@@ -62,9 +70,7 @@ def resolutionComplex (S : ShortComplex C) : ChainComplex C ℕ where
   d_comp_d' i j k hij hjk := by
     simp only [ComplexShape.down_Rel] at hij hjk
     subst hij hjk
-    obtain _ | k := k
-    · exact zero_comp
-    · exact zero_comp
+    obtain _ | k := k <;> exact zero_comp
 
 /-- The differential of `S.resolutionComplex` from degree `1` to degree `0` is `S.f`. -/
 @[simp]
@@ -97,27 +103,6 @@ def resolutionπ (S : ShortComplex C) :
 lemma resolutionπ_f_zero (S : ShortComplex C) : S.resolutionπ.f 0 = S.g :=
   ChainComplex.toSingle₀Equiv_symm_apply_f_zero _ _
 
-/-- For a short exact `S`, the augmentation of `S.resolutionComplex` is a quasi-isomorphism. -/
-lemma quasiIso_resolutionπ (hS : S.ShortExact) : _root_.QuasiIso S.resolutionπ := by
-  refine ⟨fun n => ?_⟩
-  obtain _ | _ | n := n
-  · rw [ChainComplex.quasiIsoAt₀_iff, ShortComplex.quasiIso_iff_of_zeros' _ rfl rfl rfl]
-    refine ⟨(ShortComplex.exact_iff_of_iso ?_).2 hS.exact, ?_⟩
-    · refine ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _) ?_ ?_
-      · exact (Category.id_comp _).trans (Category.comp_id _).symm
-      · simp only [HomologicalComplex.shortComplexFunctor'_map_τ₂, Iso.refl_hom,
-          resolutionπ_f_zero]
-        exact (Category.id_comp _).trans (Category.comp_id _).symm
-    · simp only [HomologicalComplex.shortComplexFunctor'_map_τ₂, resolutionπ_f_zero]
-      exact hS.epi_g
-  · rw [quasiIsoAt_iff_exactAt' _ _ (ChainComplex.exactAt_succ_single_obj _ _),
-      HomologicalComplex.exactAt_iff' _ 2 1 0 (by simp) (by simp)]
-    exact ShortComplex.exact_of_f_is_kernel _ <|
-      KernelFork.IsLimit.ofMonoOfIsZero _ hS.mono_f (isZero_zero C)
-  · rw [quasiIsoAt_iff_exactAt' _ _ (ChainComplex.exactAt_succ_single_obj _ _),
-      HomologicalComplex.exactAt_iff]
-    exact ShortComplex.exact_of_isZero_X₂ _ (isZero_zero C)
-
 /-- A morphism of short complexes induces the chain map of the associated complexes given by its
 first two components. -/
 def resolutionComplexMap (φ : S ⟶ S') : S.resolutionComplex ⟶ S'.resolutionComplex :=
@@ -147,6 +132,31 @@ lemma resolutionComplexMap_comp_resolutionπ (φ : S ⟶ S') :
   simp only [HomologicalComplex.comp_f, resolutionComplexMap_f_zero, resolutionπ_f_zero,
     ChainComplex.single₀_map_f_zero]
   exact φ.comm₂₃
+
+end
+
+variable [Abelian C] {S S' : ShortComplex C}
+
+/-- For a short exact `S`, the augmentation of `S.resolutionComplex` is a quasi-isomorphism. -/
+lemma quasiIso_resolutionπ (hS : S.ShortExact) : _root_.QuasiIso S.resolutionπ := by
+  refine ⟨fun n => ?_⟩
+  obtain _ | _ | n := n
+  · rw [ChainComplex.quasiIsoAt₀_iff, ShortComplex.quasiIso_iff_of_zeros' _ rfl rfl rfl]
+    refine ⟨(ShortComplex.exact_iff_of_iso ?_).2 hS.exact, ?_⟩
+    · refine ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _) ?_ ?_
+      · exact (Category.id_comp _).trans (Category.comp_id _).symm
+      · simp only [HomologicalComplex.shortComplexFunctor'_map_τ₂, Iso.refl_hom,
+          resolutionπ_f_zero]
+        exact (Category.id_comp _).trans (Category.comp_id _).symm
+    · simp only [HomologicalComplex.shortComplexFunctor'_map_τ₂, resolutionπ_f_zero]
+      exact hS.epi_g
+  · rw [quasiIsoAt_iff_exactAt' _ _ (ChainComplex.exactAt_succ_single_obj _ _),
+      HomologicalComplex.exactAt_iff' _ 2 1 0 (by simp) (by simp)]
+    exact ShortComplex.exact_of_f_is_kernel _ <|
+      KernelFork.IsLimit.ofMonoOfIsZero _ hS.mono_f (isZero_zero C)
+  · rw [quasiIsoAt_iff_exactAt' _ _ (ChainComplex.exactAt_succ_single_obj _ _),
+      HomologicalComplex.exactAt_iff]
+    exact ShortComplex.exact_of_isZero_X₂ _ (isZero_zero C)
 
 namespace ShortExact
 
@@ -187,26 +197,14 @@ lemma isZero_leftDerived_add_two (n : ℕ) : IsZero ((F.leftDerived (n + 2)).obj
     HomologicalComplex.exactAt_iff]
   exact ShortComplex.exact_of_isZero_X₂ _ (F.map_isZero (S.isZero_resolutionComplex_X_add_two n))
 
-omit [HasProjectiveResolutions C] in
-/-- After applying `F`, the differential of the resolution into degree `1` vanishes. -/
-private lemma mapHomologicalComplex_d_two_one :
-    ((F.mapHomologicalComplex _).obj hS.projectiveResolution.complex).d 2 1 = 0 :=
-  (F.map_isZero (S.isZero_resolutionComplex_X_add_two 0)).eq_of_src _ _
-
-omit [Projective S.X₁] [Projective S.X₂] [HasProjectiveResolutions C] [F.Additive] in
-/-- For a chain complex with no nonzero differential into degree `1`, its homology in degree `1`,
-written as `homologyFunctor` applied to it as in `isoLeftDerivedObj`, is its cycles. -/
-private def homologyOneIsoCycles (K : ChainComplex D ℕ) (hK : K.d 2 1 = 0) :
-    (HomologicalComplex.homologyFunctor D _ 1).obj K ≅ K.cycles 1 :=
-  (K.isoHomologyπ 2 1 (by simp) hK).symm
-
 /-- The map `L₁F(M) ⟶ F(P₁)` computed on `F` applied to the resolution: the class in degree `1`
 of a cycle goes to that cycle, since no nonzero differential enters degree `1`. -/
 private def leftDerivedOneι :
     (F.leftDerived 1).obj S.X₃ ⟶
       ((F.mapHomologicalComplex _).obj hS.projectiveResolution.complex).X 1 :=
   ((hS.projectiveResolution.isoLeftDerivedObj F 1).hom ≫
-    (homologyOneIsoCycles _ (hS.mapHomologicalComplex_d_two_one F)).hom) ≫
+    (((F.mapHomologicalComplex _).obj hS.projectiveResolution.complex).isoHomologyπ
+      2 1 (by simp) (F.map_zero _ _)).inv) ≫
     ((F.mapHomologicalComplex _).obj hS.projectiveResolution.complex).iCycles 1
 
 private lemma leftDerivedOneι_comp :
@@ -220,7 +218,8 @@ private def isLimitLeftDerivedOneι :
   IsKernel.isoKernel _ _
     (((F.mapHomologicalComplex _).obj hS.projectiveResolution.complex).cyclesIsKernel 1 0 (by simp))
     (hS.projectiveResolution.isoLeftDerivedObj F 1 ≪≫
-      homologyOneIsoCycles _ (hS.mapHomologicalComplex_d_two_one F)) rfl
+      (((F.mapHomologicalComplex _).obj hS.projectiveResolution.complex).isoHomologyπ
+        2 1 (by simp) (F.map_zero _ _)).symm) rfl
 
 /-- On an object with a projective presentation `0 ⟶ P₁ ⟶ P₀ ⟶ M ⟶ 0`, the first left derived
 functor of `F` is the kernel of `F(P₁) ⟶ F(P₀)`. It sends the homology class of a cycle of `F`
@@ -234,7 +233,8 @@ def leftDerivedOneIsoKernel : (F.leftDerived 1).obj S.X₃ ≅ kernel (F.map S.f
 private lemma leftDerivedOneIsoKernel_hom_comp_ι :
     (hS.leftDerivedOneIsoKernel F).hom ≫ kernel.ι (F.map S.f) =
       (hS.projectiveResolution.isoLeftDerivedObj F 1).hom ≫
-        (homologyOneIsoCycles _ (hS.mapHomologicalComplex_d_two_one F)).hom ≫
+        (((F.mapHomologicalComplex _).obj hS.projectiveResolution.complex).isoHomologyπ
+          2 1 (by simp) (F.map_zero _ _)).inv ≫
         ((F.mapHomologicalComplex _).obj hS.projectiveResolution.complex).iCycles 1 :=
   (IsLimit.conePointUniqueUpToIso_hom_comp (hS.isLimitLeftDerivedOneι F) (limit.isLimit _)
     WalkingParallelPair.zero).trans (Category.assoc _ _ _)
@@ -253,7 +253,7 @@ lemma homologyπ_comp_isoLeftDerivedObj_inv_comp_leftDerivedOneIsoKernel_hom_com
   -- Mathlib's `ProjectiveResolution.isoLeftDerivedObj_hom_naturality`.
   erw [Iso.inv_hom_id_assoc]
   exact HomologicalComplex.isoHomologyπ_hom_inv_id_assoc _ 2 1 (by simp)
-    (hS.mapHomologicalComplex_d_two_one F) _
+    (F.map_zero _ _) _
 
 variable {hS} {G : C ⥤ D} [G.Additive] (hS' : S'.ShortExact) [Projective S'.X₁] [Projective S'.X₂]
 
@@ -279,7 +279,7 @@ private lemma comp_leftDerivedOneIsoKernel_hom_comp_ι
   -- composed as a term.
   erw [Iso.inv_hom_id_assoc,
     HomologicalComplex.isoHomologyπ_inv_naturality_assoc ψ 2 1 (by simp)
-      (hS.mapHomologicalComplex_d_two_one F) (hS'.mapHomologicalComplex_d_two_one G),
+      (F.map_zero _ _) (G.map_zero _ _),
     HomologicalComplex.cyclesMap_i]
   exact ((Category.assoc _ _ _).trans (_ ≫= Category.assoc _ _ _)).symm
 
