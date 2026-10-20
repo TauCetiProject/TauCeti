@@ -365,12 +365,6 @@ theorem lt_of_notMem_of_one_le (H : ConvexSubgroup Γ) {γ : Γ} (hγ : γ ∉ H
 
 end LinearOrder
 
-/-- The coercion `Γ → Γ ⧸ H.toSubgroup` is `Quotient.mk` of the left-coset setoid; this
-names the definitional equality so that the condensation API applies by rewriting. -/
-private theorem coe_eq_mk (H : ConvexSubgroup Γ) (a : Γ) :
-    (a : Γ ⧸ H.toSubgroup) = Quotient.mk (QuotientGroup.leftRel H.toSubgroup) a :=
-  rfl
-
 /-! ### Total ordering of convex subgroups -/
 
 section TotalOrder
@@ -608,7 +602,7 @@ noncomputable instance quotientLinearOrder : LinearOrder (Γ ⧸ H.toSubgroup) :
 theorem quotient_le_iff (a b : Γ) :
     ((a : Γ ⧸ H.toSubgroup) ≤ (b : Γ ⧸ H.toSubgroup)) ↔
       (b⁻¹ * a ≤ 1 ∨ b⁻¹ * a ∈ H.toSubgroup) := by
-  rw [coe_eq_mk, coe_eq_mk, Quotient.mk_le_mk (H := ordConnected_leftRel_fiber H)]
+  rw [Quotient.mk_le_mk (H := ordConnected_leftRel_fiber H)]
   refine or_congr ⟨fun h ↦ ?_, fun h ↦ ?_⟩ ?_
   · simpa using mul_le_mul_right h b⁻¹
   · simpa using mul_le_mul_right h b
