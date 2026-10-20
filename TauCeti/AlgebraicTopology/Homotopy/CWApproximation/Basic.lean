@@ -257,6 +257,7 @@ def cwApproximationBasepoint : cwApproximation X x :=
   colimit.ι (cwApproximationTower X x) 1 (cwApproximationStage X x 0).2.1
 
 /-- The base point of each stage goes to the base point of the CW approximation. -/
+@[simp]
 lemma colimit_ι_cwApproximationBasepoint (m : ℕ) :
     colimit.ι (cwApproximationTower X x) (m + 1) (cwApproximationStage X x m).2.1 =
       cwApproximationBasepoint X x := by
