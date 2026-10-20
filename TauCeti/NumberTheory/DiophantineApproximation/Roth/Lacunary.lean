@@ -126,8 +126,12 @@ theorem liouvilleWith_tsum_inv_pow_pow (hb : 2 ≤ b) (hr : 2 ≤ r) :
     refine lt_of_le_of_lt ?_ (div_lt_div_of_pos_right (by norm_num : (2 : ℝ) < 3) (by positivity))
     rw [Real.rpow_natCast, hqr]
     simpa [hf, add_right_comm] using tsum_inv_pow_pow_tail_le hb hr n
-  rw [show ((∑ k ∈ Finset.range n, (b : ℤ) ^ (r ^ n - r ^ (k + 1)) : ℤ) : ℝ) / q =
-      ∑ k ∈ Finset.range n, f k from hqr ▸ partial_sum_inv_pow_pow_eq hb hr n]
+  -- `partial_sum_inv_pow_pow_eq` is stated with the denominator `(b : ℝ) ^ r ^ n`, while the
+  -- goal has the cast `(q : ℝ)` of the natural number `q = b ^ r ^ n`; `hqr` bridges the two.
+  have hrepr : ((∑ k ∈ Finset.range n, (b : ℤ) ^ (r ^ n - r ^ (k + 1)) : ℤ) : ℝ) / q =
+      ∑ k ∈ Finset.range n, f k := by
+    rw [hqr]; exact partial_sum_inv_pow_pow_eq hb hr n
+  rw [hrepr]
   refine ⟨fun h ↦ hpos.ne' (by rw [← htail, h, sub_self]), ?_⟩
   rw [htail, abs_of_pos hpos]
   exact hlt
