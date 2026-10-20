@@ -95,12 +95,8 @@ Gaussian density. It expresses that `d₊² - d₋² = 2 (log (s / K) + r τ)`. 
 theorem mul_gaussianPDFReal_dPlus (hs : 0 < s) (hK : 0 < K) (hσ : σ ≠ 0) (hτ : 0 < τ) :
     s * gaussianPDFReal 0 1 (dPlus s r σ K τ) =
       K * exp (-r * τ) * gaussianPDFReal 0 1 (dMinus s r σ K τ) := by
-  rw [gaussianPDFReal_dMinus hs hK hσ hτ]
-  have hrt : exp (-r * τ) * exp (r * τ) = 1 := by rw [← exp_add]; simp
-  rw [show K * exp (-r * τ) * (gaussianPDFReal 0 1 (dPlus s r σ K τ) * (s / K) * exp (r * τ)) =
-    s * gaussianPDFReal 0 1 (dPlus s r σ K τ) * (exp (-r * τ) * exp (r * τ)) * (K / K) by ring,
-    hrt, div_self hK.ne']
-  ring
+  rw [gaussianPDFReal_dMinus hs hK hσ hτ, neg_mul, exp_neg]
+  field_simp
 
 /-! ### Derivatives of `d₊` and `d₋` in the spot -/
 
@@ -181,10 +177,8 @@ theorem hasDerivAt_callPrice_maturity (hs : 0 < s) (hK : 0 < K) (hσ : σ ≠ 0)
       (mul_ne_zero hσ (sqrt_pos.2 hτ).ne')
     refine ⟨_, h.congr_of_eventuallyEq (Eventually.of_forall fun u => ?_)⟩
     simp [dPlus_def]
-  have hdm : HasDerivAt (dMinus s r σ K) (D - σ * (1 / (2 * √τ))) τ := by
-    rw [show dMinus s r σ K = fun u => dPlus s r σ K u - σ * √u from
-      funext fun u => dMinus_def s r σ K u]
-    exact hd.sub hsqrt
+  have hdm : HasDerivAt (dMinus s r σ K) (D - σ * (1 / (2 * √τ))) τ :=
+    (hd.sub hsqrt).congr_of_eventuallyEq (Eventually.of_forall fun u => dMinus_def s r σ K u)
   have he : HasDerivAt (fun u => exp (-r * u)) (exp (-r * τ) * (-r * 1)) τ :=
     ((hasDerivAt_id τ).const_mul (-r)).exp
   have h := (((hasDerivAt_cdf_gaussianReal 0 one_ne_zero _).comp τ hd).const_mul s).sub
