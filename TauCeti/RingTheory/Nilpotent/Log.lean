@@ -54,6 +54,8 @@ theorem log_eq_sum {a : A} {n : ℕ} (hn : (a - 1) ^ n = 0) :
     log a = ∑ i ∈ range n, ((-1 : ℚ) ^ (i + 1) / i) • (a - 1) ^ i := by
   classical
   rw [log_def]
+  -- The nilpotency class is the infimum of the exponents with vanishing power, so `hn`
+  -- is membership in the defining set and bounds that infimum above by `n`.
   apply sum_subset (range_mono (csInf_le' hn))
   intro i hi hni
   rw [mem_range, not_lt] at hni
@@ -113,6 +115,11 @@ theorem subst_C_log {a : A} (ha : IsNilpotent a) :
   intro i _
   by_cases hi : i = 0 <;> simp [coeff_log, hi, Algebra.smul_def]
 
+private theorem subst_C_exp_sub_one {a : A} (ha : IsNilpotent a) :
+    (exp A - 1).subst (C a) = C (IsNilpotent.exp a - 1) := by
+  simp only [subst_sub (HasSubst.C ha), subst_C_exp ha, subst_one (HasSubst.C ha),
+    map_sub, map_one]
+
 end PowerSeries
 
 namespace IsNilpotent
@@ -124,13 +131,10 @@ private theorem log_exp_comm {A : Type*} [CommRing A] [Algebra ℚ A]
   have hC := PowerSeries.HasSubst.C ha
   have h := PowerSeries.subst_comp_subst_apply
     (R := A) (PowerSeries.HasSubst.exp_sub_one (A := A)) hC (PowerSeries.log A)
-  rw [PowerSeries.subst_log_exp_sub_one, PowerSeries.subst_X hC,
-    PowerSeries.subst_sub hC, PowerSeries.subst_C_exp ha] at h
-  rw [PowerSeries.subst_one hC, ← map_one PowerSeries.C, ← map_sub,
-    PowerSeries.subst_C_log (isNilpotent_exp_sub_one ha)] at h
-  have heq : 1 + (exp a - 1) = exp a := by abel
-  rw [heq] at h
-  exact PowerSeries.C_injective h.symm
+  apply PowerSeries.C_injective
+  simpa only [PowerSeries.subst_log_exp_sub_one, PowerSeries.subst_X hC,
+    PowerSeries.subst_C_exp_sub_one ha,
+    PowerSeries.subst_C_log (isNilpotent_exp_sub_one ha), add_sub_cancel] using h.symm
 
 private theorem exp_log_comm {A : Type*} [CommRing A] [Algebra ℚ A]
     {a : A} (ha : IsNilpotent (a - 1)) : exp (log a) = a := by
@@ -138,11 +142,11 @@ private theorem exp_log_comm {A : Type*} [CommRing A] [Algebra ℚ A]
   have h := PowerSeries.subst_comp_subst_apply
     (R := A) (PowerSeries.HasSubst.log (A := A)) hC (PowerSeries.exp A)
   rw [PowerSeries.subst_exp_log, PowerSeries.subst_add hC,
-    PowerSeries.subst_X hC, PowerSeries.subst_C_log ha] at h
-  have heq : 1 + (a - 1) = a := by abel
-  rw [heq, PowerSeries.subst_C_exp (isNilpotent_log ha)] at h
-  rw [PowerSeries.subst_one hC, ← map_one PowerSeries.C, ← map_add, heq] at h
-  exact PowerSeries.C_injective h.symm
+    PowerSeries.subst_one hC, PowerSeries.subst_X hC] at h
+  apply PowerSeries.C_injective
+  simpa only [← map_one PowerSeries.C, ← map_add PowerSeries.C,
+    PowerSeries.subst_C_log ha, add_sub_cancel,
+    PowerSeries.subst_C_exp (isNilpotent_log ha)] using h.symm
 
 open scoped IsMulCommutative
 

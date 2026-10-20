@@ -12,7 +12,7 @@ public import Mathlib.RingTheory.PowerSeries.Trunc
 import Mathlib.RingTheory.PowerSeries.Inverse
 
 /-!
-# Substitution of power series: orders, linear coefficients, algebra maps, and the binomial series
+# Power series substitution: nilpotent series, orders, algebra maps, and the binomial series
 
 Mathlib substitutes a power series `b` with nilpotent constant coefficient into a power series
 `f` through `PowerSeries.subst b f`, and records the side condition on `b` as
@@ -43,6 +43,12 @@ of a completed group algebra attached to two topological generators.
 
 ## Main results
 
+* `PowerSeries.HasSubst.C`: a nilpotent constant can be substituted.
+* `PowerSeries.subst_one`: substitution preserves the constant series one.
+* `PowerSeries.subst_eq_aeval_trunc_of_pow_eq_zero`: substitution at a series with a vanishing
+  power is evaluation of a finite truncation.
+* `PowerSeries.subst_C_eq_C_eval_trunc`: substitution at a nilpotent constant is the constant
+  series obtained by evaluating a finite truncation.
 * `PowerSeries.order_subst`: `ord (f (φ)) = ord φ * ord f` when `φ` has zero constant
   coefficient.
 * `PowerSeries.subst_eq_zero_iff`: substitution of a nonzero `φ` of zero constant coefficient
