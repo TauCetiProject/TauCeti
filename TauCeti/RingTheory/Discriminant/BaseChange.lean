@@ -43,7 +43,7 @@ variable {R S A ι : Type*} [CommRing R] [CommRing S] [Algebra R S] [CommRing A]
 
 /-- The trace matrix of a base-changed finite family is the image of its original trace matrix. -/
 @[simp]
-theorem Algebra.traceMatrix_baseChange [Module.Free R S] [Module.Finite R S] [Finite ι]
+theorem Algebra.traceMatrix_baseChange [Module.Free R S] [Module.Finite R S]
     (b : ι → S) :
     Algebra.traceMatrix A (fun i ↦ (1 : A) ⊗ₜ[R] b i) =
       (Algebra.traceMatrix R b).map (algebraMap R A) := by
