@@ -443,7 +443,8 @@ def nodeOfFlag (d : FlagPairData ι Flag X) (f : Flag) : GluedCurve d :=
   exact (gluedRel_iff_of_flagPoints d (f := f) (g := f) (Or.inr rfl) (Or.inl rfl)).mpr rfl
 
 /-- **The fibres of the flag-pair map.**  Two flag pairs have the same node exactly when they are
-equal, so every fibre of `nodeOfFlag` is a singleton. -/
+equal, so every non-empty fibre of `nodeOfFlag` is a singleton.  The fibres over the points that
+are not nodes are empty. -/
 @[simp] theorem nodeOfFlag_inj (d : FlagPairData ι Flag X) (f g : Flag) :
     nodeOfFlag d f = nodeOfFlag d g ↔ f = g := by
   simp only [nodeOfFlag, mk_eq_mk_iff]
@@ -666,6 +667,10 @@ to its image in the glued curve. -/
     (x : ↑((flagPointSet d)ᶜ)) :
     ((quotientMapOnComplNodeSetHomeomorph d x).val : GluedCurve d) =
       Quotient.mk (gluedRelSetoid d) x.1 := by
+  -- The bundled homeomorphism is built on `Equiv.ofBijective (quotientMapOnComplNodeSet d) _`,
+  -- whose forward map is `quotientMapOnComplNodeSet d` by definition, so the `change` below is
+  -- exactly that reduction, applied to our own bundled definition.
+  unfold quotientMapOnComplNodeSetHomeomorph
   change (quotientMapOnComplNodeSet d x).val = _
   exact quotientMapOnComplNodeSet_apply d x
 
