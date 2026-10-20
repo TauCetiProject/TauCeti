@@ -218,7 +218,9 @@ cohomology of the cyclic cochain complex. For `M = R` this is Connes' cyclic coh
 abbrev cyclicCohomology (n : ℕ) : ModuleCat R :=
   (cyclicCochainComplex R A M).homology n
 
-private theorem mem_cyclicCocycles_iff_complex (n : ℕ) (φ : cyclicCochains R A M n) :
+/-- A cyclic cochain is a cyclic cocycle exactly when the differential of the cyclic cochain
+complex kills it. -/
+theorem mem_cyclicCocycles_iff_complex (n : ℕ) (φ : cyclicCochains R A M n) :
     φ ∈ cyclicCocycles R A M n ↔
       (cyclicCochainComplex R A M).d n (n + 1)
         ((cyclicCochainComplexXIso R A M n).inv φ) = 0 := by

@@ -365,11 +365,9 @@ private def cyclesToCocycles (n : ℕ) :
     ((hochschildCochainComplexXIso R A M n).hom.hom ∘ₗ
       ((hochschildCochainComplex R A M).iCycles n).hom)
     fun z ↦ (mem_hochschildCocycles_iff_complex R A M n _).2 <| by
-      -- `hochschildCochainComplexXIso` is the identity.
-      change (hochschildCochainComplex R A M).d n (n + 1)
-        ((hochschildCochainComplex R A M).iCycles n z) = 0
-      rw [← ConcreteCategory.comp_apply, HomologicalComplex.iCycles_d]
-      rfl
+      rw [LinearMap.comp_apply, Iso.hom_inv_id_apply, ← ConcreteCategory.comp_apply,
+        HomologicalComplex.iCycles_d]
+      simp only [ModuleCat.hom_zero, LinearMap.zero_apply]
 
 private theorem coe_cyclesToCocycles (n : ℕ) (z : (hochschildCochainComplex R A M).cycles n) :
     (cyclesToCocycles R A M n z : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) =
@@ -442,12 +440,8 @@ theorem toHochschild_mk {n : ℕ} (φ : cyclicCocycles R A M n) :
         ⟨φ, mem_hochschildCocycles_of_mem_cyclicCocycles φ.2⟩ := by
   -- A cyclic cocycle, viewed in the cyclic cochain complex, is killed by the differential.
   have hφ (ψ : cyclicCocycles R A M n) : (cyclicCochainComplex R A M).d n (n + 1)
-      ((cyclicCochainComplexXIso R A M n).inv ψ.1) = 0 := by
-    apply (ModuleCat.mono_iff_injective (cyclicCochainComplexXIso R A M (n + 1)).hom).1
-      inferInstance
-    rw [cyclicCochainComplex_d_apply, Iso.inv_hom_id_apply, map_zero, ← Subtype.coe_inj,
-      coe_cyclicHochschildCoboundary_apply, ZeroMemClass.coe_zero]
-    exact (mem_cyclicCocycles_iff R A M).1 ψ.2
+      ((cyclicCochainComplexXIso R A M n).inv ψ.1) = 0 :=
+    (mem_cyclicCocycles_iff_complex R A M n ψ.1).1 ψ.2
   -- The naturality of the class map along the inclusion of the cyclic cochain complex.
   have key := HomologicalComplex.homologyMap_moduleCatHomologyClass (CochainComplex.next ℕ n)
     ((cyclicCochainComplexXIso R A M n).inv.hom ∘ₗ (cyclicCocycles R A M n).subtype) (fun ψ ↦ hφ ψ)
@@ -455,13 +449,11 @@ theorem toHochschild_mk {n : ℕ} (φ : cyclicCocycles R A M n) :
     ((hochschildCochainComplexXIso R A M n).inv.hom ∘ₗ (hochschildCocycles R A M n).subtype)
     (fun ψ ↦ (mem_hochschildCocycles_iff_complex R A M n ψ.1).1 ψ.2)
     (((cyclicCochains R A M n).subtype ∘ₗ (cyclicCocycles R A M n).subtype).codRestrict _
-      fun ψ ↦ mem_hochschildCocycles_of_mem_cyclicCocycles ψ.2)
+      fun ψ ↦ by simpa using mem_hochschildCocycles_of_mem_cyclicCocycles ψ.2)
     (fun ψ ↦ by
       apply (ModuleCat.mono_iff_injective (hochschildCochainComplexXIso R A M n).hom).1
         inferInstance
-      simp [cyclicCochainComplexι_f_apply]
-      -- `codRestrict` keeps the underlying cochain.
-      rfl) φ
+      simp [cyclicCochainComplexι_f_apply]) φ
   rw [(cyclicCochainComplex R A M).moduleCatHomologyClass_apply (CochainComplex.next ℕ n)
       ((cyclicCochainComplexXIso R A M n).inv.hom ∘ₗ (cyclicCocycles R A M n).subtype)
       (fun ψ ↦ hφ ψ),
