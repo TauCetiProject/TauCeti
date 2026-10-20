@@ -22,12 +22,11 @@ open scoped Matrix
 
 namespace Function
 
-variable {X S C I : Type*} [Fintype X] [Fintype C] [Fintype I]
-    [DecidableEq C]
+variable {X S C I : Type*} [Fintype X] [Fintype C]
 
-omit [Fintype I] [DecidableEq C] in
-/-- Injective candidate columns covering every observation satisfy the moment equations. -/
-theorem mulVec_occCount {K : Type*} [Semiring K] (obs : X → S) (columns : C → S)
+/-- Injective candidate columns covering every observation satisfy the moment equations
+over a nonassociative semiring. -/
+theorem mulVec_occCount {K : Type*} [NonAssocSemiring K] (obs : X → S) (columns : C → S)
     (hinj : Function.Injective columns) (cover : ∀ x, ∃ c, columns c = obs x)
     (weight : I → S → K) :
     (Matrix.of fun i c => weight i (columns c)) *ᵥ (fun c => (occCount obs (columns c) : K)) =
@@ -44,7 +43,8 @@ theorem mulVec_occCount {K : Type*} [Semiring K] (obs : X → S) (columns : C �
 
 /-- A left inverse gives uniqueness for injective candidate columns covering every
 observation. Coverage is a separate premise, not a consequence of the matrix identity. -/
-theorem eq_occCount {K : Type*} [Semiring K] (obs : X → S) (columns : C → S)
+theorem eq_occCount [Fintype I] [DecidableEq C] {K : Type*} [Semiring K]
+    (obs : X → S) (columns : C → S)
     (hinj : Function.Injective columns) (cover : ∀ x, ∃ c, columns c = obs x)
     (weight : I → S → K) (A : Matrix C I K)
     (hA : (A * (Matrix.of fun i c => weight i (columns c)) : Matrix C C K) = 1) (proposed : C → K)
@@ -54,6 +54,5 @@ theorem eq_occCount {K : Type*} [Semiring K] (obs : X → S) (columns : C → S)
   have hm := mulVec_occCount obs columns hinj cover weight
   have he := congrArg (fun v => A *ᵥ v) (hsolve.trans hm.symm)
   simpa only [Matrix.mulVec_mulVec, hA, Matrix.one_mulVec] using he
-
 
 end Function
