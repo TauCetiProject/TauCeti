@@ -71,7 +71,7 @@ open TauCeti.Probability
 
 /-- The sum of independent noncentral chi-squared variables has the sum of their degrees
 and noncentralities. -/
-theorem hasLaw_add_noncentralChiSquared
+theorem hasLaw_add_noncentralChiSquaredMeasure
     {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X Y : Ω → ℝ}
     {k₁ k₂ : ℝ} {l₁ l₂ : ℝ≥0} (hXY : IndepFun X Y P)
     (hX : HasLaw X (noncentralChiSquaredMeasure k₁ l₁) P)
