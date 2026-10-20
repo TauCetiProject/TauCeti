@@ -11,12 +11,12 @@ public import Mathlib.RingTheory.LocalRing.Module
 public import TauCeti.LinearAlgebra.TensorProduct.Prod
 
 /-!
-# Regular pairs and the two-term Koszul relation
+# Weakly regular pairs and the two-term Koszul relation
 
-For a pair `x, y` regular on a module, every relation `x • a + y • b = 0` is a
+For a pair `x, y` weakly regular on a module, every relation `x • a + y • b = 0` is a
 Koszul relation. Tensoring this calculation proves that a finitely presented
-module over a local ring is free when a regular pair generates the maximal
-ideal and is also regular on the module.
+module over a local ring is free when a weakly regular pair generates the maximal
+ideal and is also weakly regular on the module.
 
 ## References
 
@@ -52,6 +52,7 @@ theorem koszulPairRight_apply (x y : R) (p : M × M) :
   simp only [koszulPairRight, LinearMap.coprod_apply, LinearMap.lsmul_apply]
 
 /-- The range of the second Koszul differential is the two-generated ideal. -/
+@[simp]
 theorem range_koszulPairRight_eq_span (x y : R) :
     LinearMap.range (koszulPairRight (M := R) x y) =
       Ideal.span ({x, y} : Set R) := by
@@ -97,7 +98,7 @@ theorem koszulPairRight_comp_koszulPairLeft (x y : R) :
   rw [mul_comm x y, neg_add_cancel]
 
 /-- The first Koszul differential commutes with tensoring by `M`. -/
-theorem prodScalarLeftEquiv_comp_koszulPairLeft_rTensor (x y : R) :
+private theorem prodScalarLeftEquiv_comp_koszulPairLeft_rTensor (x y : R) :
     (TauCeti.TensorProduct.prodScalarLeftEquiv (R := R) (M := M)).toLinearMap.comp
         ((koszulPairLeft (M := R) x y).rTensor M) =
       (koszulPairLeft (M := M) x y).comp (TensorProduct.lid R M).toLinearMap := by
@@ -112,7 +113,7 @@ theorem prodScalarLeftEquiv_comp_koszulPairLeft_rTensor (x y : R) :
   · rw [mul_smul, smul_comm x r m]
 
 /-- The second Koszul differential commutes with tensoring by `M`. -/
-theorem lid_comp_koszulPairRight_rTensor (x y : R) :
+private theorem lid_comp_koszulPairRight_rTensor (x y : R) :
     (TensorProduct.lid R M).toLinearMap.comp
         ((koszulPairRight (M := R) x y).rTensor M) =
       (koszulPairRight (M := M) x y).comp
@@ -129,8 +130,8 @@ private theorem isWeaklyRegular_pair_iff (x y : R) :
       IsSMulRegular M x ∧ IsSMulRegular (QuotSMulTop x M) y := by
   rw [isWeaklyRegular_cons_iff, isWeaklyRegular_singleton_iff]
 
-/-- Every relation on a pair regular on `M` is a Koszul relation. -/
-theorem exists_koszul_relation_of_isSMulRegular_pair
+/-- Every relation on a pair weakly regular on `M` is a Koszul relation. -/
+theorem exists_koszul_relation_of_isWeaklyRegular_pair
     {x y : R} {a b : M}
     (hreg : IsWeaklyRegular M [x, y])
     (h : x • a + y • b = 0) :
@@ -159,8 +160,8 @@ theorem exists_koszul_relation_of_isSMulRegular_pair
       _ = x • (-(y • c)) := by simp only [smul_neg, smul_smul, mul_comm x y]
   · exact hc'.symm
 
-/-- The two-element Koszul complex is exact at the middle for a regular pair. -/
-theorem exact_koszulPair_of_isSMulRegular
+/-- The two-element Koszul complex is exact at the middle for a weakly regular pair. -/
+theorem exact_koszulPair_of_isWeaklyRegular
     {x y : R}
     (hreg : IsWeaklyRegular M [x, y]) :
     Function.Exact (koszulPairLeft (M := M) x y) (koszulPairRight (M := M) x y) := by
@@ -168,7 +169,7 @@ theorem exact_koszulPair_of_isSMulRegular
   constructor
   · intro hp
     obtain ⟨c, hc₁, hc₂⟩ :=
-      exists_koszul_relation_of_isSMulRegular_pair hreg hp
+      exists_koszul_relation_of_isWeaklyRegular_pair hreg hp
     refine ⟨c, ?_⟩
     ext
     · exact hc₁.symm
@@ -178,8 +179,8 @@ theorem exact_koszulPair_of_isSMulRegular
       LinearMap.congr_fun (koszulPairRight_comp_koszulPairLeft (M := M) x y) c
 
 /-- Tensoring the two-element Koszul complex with `M` preserves exactness at
-the middle when the pair is regular on `M`. -/
-theorem exact_rTensor_koszulPair_of_isSMulRegular
+the middle when the pair is weakly regular on `M`. -/
+theorem exact_rTensor_koszulPair_of_isWeaklyRegular
     {x y : R}
     (hreg : IsWeaklyRegular M [x, y]) :
     Function.Exact
@@ -189,13 +190,13 @@ theorem exact_rTensor_koszulPair_of_isSMulRegular
   let e₂ := TauCeti.TensorProduct.prodScalarLeftEquiv (R := R) (M := M)
   have hcomm₁ := prodScalarLeftEquiv_comp_koszulPairLeft_rTensor (M := M) x y
   have hcomm₂ := lid_comp_koszulPairRight_rTensor (M := M) x y
-  have hexact := exact_koszulPair_of_isSMulRegular hreg
+  have hexact := exact_koszulPair_of_isWeaklyRegular hreg
   exact (Function.Exact.iff_of_ladder_linearEquiv
     (e₁ := e₁) (e₂ := e₂) (e₃ := e₁) hcomm₁.symm hcomm₂.symm).mp hexact
 
-/-- A regular pair on the ring and module keeps the inclusion of its ideal
+/-- A weakly regular pair on the ring and module keeps the inclusion of its ideal
 injective after tensoring with the module. -/
-theorem range_koszulPairRight_subtype_rTensor_injective_of_isSMulRegular
+theorem range_koszulPairRight_subtype_rTensor_injective_of_isWeaklyRegular
     {x y : R}
     (hregR : IsWeaklyRegular R [x, y])
     (hregM : IsWeaklyRegular M [x, y]) :
@@ -210,11 +211,11 @@ theorem range_koszulPairRight_subtype_rTensor_injective_of_isSMulRegular
   have hsurj : Function.Surjective g := g₀.surjective_rangeRestrict
   have hexactRing : Function.Exact f g := by
     rw [LinearMap.exact_iff, LinearMap.ker_rangeRestrict]
-    exact LinearMap.exact_iff.mp (exact_koszulPair_of_isSMulRegular hregR)
+    exact LinearMap.exact_iff.mp (exact_koszulPair_of_isWeaklyRegular hregR)
   have hexactRange : Function.Exact (f.rTensor M) (g.rTensor M) :=
     _root_.rTensor_exact M hexactRing hsurj
   have hexactModule : Function.Exact (f.rTensor M) (g₀.rTensor M) :=
-    exact_rTensor_koszulPair_of_isSMulRegular hregM
+    exact_rTensor_koszulPair_of_isWeaklyRegular hregM
   apply LinearMap.ker_eq_bot.mp
   apply le_antisymm
   · intro z hz
@@ -233,9 +234,9 @@ theorem range_koszulPairRight_subtype_rTensor_injective_of_isSMulRegular
     exact hw.symm.trans hgw
   · exact bot_le
 
-/-- A finitely presented module over a local ring is free when a regular pair
-generates the maximal ideal and is also regular on the module. -/
-theorem Module.free_of_regular_pair_generates_maximalIdeal
+/-- A finitely presented module over a local ring is free when a weakly regular pair
+generates the maximal ideal and is also weakly regular on the module. -/
+theorem Module.free_of_weaklyRegular_pair_generates_maximalIdeal
     [IsLocalRing R] [Module.FinitePresentation R M]
     {x y : R}
     (hspan : Ideal.span ({x, y} : Set R) = IsLocalRing.maximalIdeal R)
@@ -244,7 +245,7 @@ theorem Module.free_of_regular_pair_generates_maximalIdeal
     Module.Free R M := by
   apply Module.free_of_maximalIdeal_rTensor_injective
   rw [← hspan, ← range_koszulPairRight_eq_span x y]
-  exact range_koszulPairRight_subtype_rTensor_injective_of_isSMulRegular hregR hregM
+  exact range_koszulPairRight_subtype_rTensor_injective_of_isWeaklyRegular hregR hregM
 
 end RegularPair
 

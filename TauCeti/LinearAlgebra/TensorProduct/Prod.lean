@@ -10,7 +10,7 @@ public import Mathlib.LinearAlgebra.TensorProduct.Prod
 /-!
 # Tensoring a product of scalars
 
-The tensor product of a pair of copies of a commutative ring with a module is
+The tensor product of a pair of copies of a commutative semiring with a module is
 equivalent to a pair of copies of that module.
 -/
 
@@ -31,6 +31,8 @@ noncomputable def prodScalarLeftEquiv : (R × R) ⊗[R] M ≃ₗ[R] (M × M) :=
 @[simp]
 theorem prodScalarLeftEquiv_tmul (a b : R) (m : M) :
     prodScalarLeftEquiv ((a, b) ⊗ₜ[R] m) = (a • m, b • m) := by
-  rfl
+  simp only [prodScalarLeftEquiv, LinearEquiv.trans_apply,
+    _root_.TensorProduct.prodLeft_tmul, LinearEquiv.prodCongr_apply,
+    _root_.TensorProduct.lid_tmul]
 
 end TauCeti.TensorProduct
