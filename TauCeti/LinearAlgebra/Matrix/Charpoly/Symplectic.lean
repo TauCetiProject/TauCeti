@@ -28,20 +28,20 @@ pairing, hence is symplectic in a symplectic basis), the Lefschetz zeta function
 
 ## Main results
 
-* `Matrix.SymplecticGroup.charpoly_inv`: `P⁻¹` and `P` have the same characteristic
+* `SymplecticGroup.charpoly_inv`: `P⁻¹` and `P` have the same characteristic
   polynomial.
-* `Matrix.SymplecticGroup.charpolyRev_eq_charpoly`: `det (1 - t P) = det (t - P)`.
-* `Matrix.SymplecticGroup.reflect_charpolyRev`: `det (1 - t P)` is self-reciprocal.
-* `Matrix.SymplecticGroup.derivative_eval_one_charpolyRev`: `p' (1) = g det (1 - P)`.
-* `Matrix.SymplecticGroup.coeff_coe_charpolyRev_mul_mk_one_sq`: the coefficient of `t ^ a`
+* `SymplecticGroup.charpolyRev_eq_charpoly`: `det (1 - t P) = det (t - P)`.
+* `SymplecticGroup.reflect_charpolyRev`: `det (1 - t P)` is self-reciprocal.
+* `SymplecticGroup.derivative_eval_one_charpolyRev`: `p' (1) = g det (1 - P)`.
+* `SymplecticGroup.coeff_coe_charpolyRev_mul_mk_one_sq`: the coefficient of `t ^ a`
   in `det (1 - t P) / (1 - t) ^ 2` is `det (1 - P) (a + 1 - g)` for `a ≥ 2 g - 1`.
 -/
 
 public section
 
-open Polynomial
+open Matrix Polynomial
 
-namespace Matrix.SymplecticGroup
+namespace SymplecticGroup
 
 variable {l R : Type*} [Fintype l] [DecidableEq l] [CommRing R]
 
@@ -92,4 +92,4 @@ theorem coeff_coe_charpolyRev_mul_mk_one_sq
     eval_one_charpolyRev]
   ring
 
-end Matrix.SymplecticGroup
+end SymplecticGroup

@@ -82,7 +82,7 @@ theorem det_one_sub_catMap_pow_neg {n : ℕ} (hn : n ≠ 0) : (1 - catMap ^ n).d
 
 /-- The coefficient of `t ^ n` in `det (1 - t P) / (1 - t) ^ 2` is `-n` for `n ≠ 0`. This is the
 genus-one case `det (1 - P) (n + 1 - g)` of
-`Matrix.SymplecticGroup.coeff_coe_charpolyRev_mul_mk_one_sq`. -/
+`SymplecticGroup.coeff_coe_charpolyRev_mul_mk_one_sq`. -/
 theorem coeff_coe_charpolyRev_catMap_mul_mk_one_sq {n : ℕ} (hn : n ≠ 0) :
     PowerSeries.coeff n ((catMap.charpolyRev : PowerSeries ℤ) * PowerSeries.mk 1 ^ 2) =
       -(n : ℤ) := by
