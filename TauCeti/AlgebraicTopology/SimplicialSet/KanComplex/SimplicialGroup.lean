@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.KanComplex
-public import Mathlib.Algebra.Category.Grp.Basic
 public import Mathlib.Algebra.Category.ModuleCat.Basic
 
 /-!
