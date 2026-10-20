@@ -31,12 +31,25 @@ for the homotopies), and on the model the identities are those of the untwisted 
 
 ## Main definitions
 
-* `TauCeti.LocalCoefficientSystem.twistedSingularHomotopy`,
-  `TauCeti.LocalCoefficientSystem.normalizedTwistedCubicalHomotopy`: the components of the
-  homotopies on normalized cubical chains.
+* `TauCeti.LocalCoefficientSystem.twistedSingularHomotopy`: the components of the homotopy on
+  simplicial chains with coefficients, and
+  `TauCeti.LocalCoefficientSystem.twistedSingularToCubicalCompHomotopy`: the homotopy from the
+  composite `to ∘ from` of the comparison maps on simplicial chains to the identity.
+* `TauCeti.LocalCoefficientSystem.normalizedTwistedCubicalHomotopy`: the components of the
+  homotopy on normalized cubical chains with coefficients, and
+  `TauCeti.LocalCoefficientSystem.twistedCubicalToSingularCompHomotopy`: the homotopy from the
+  composite `from ∘ to` on normalized cubical chains to the identity.
 * `TauCeti.LocalCoefficientSystem.twistedCubicalSingularHomotopyEquiv L`: the chain homotopy
-  equivalence between the simplicial chain complex with coefficients in `L` and the normalized
-  cubical chain complex with coefficients in `L`.
+  equivalence between the normalized cubical chain complex with coefficients in `L` and the
+  simplicial chain complex with coefficients in `L`.
+
+## Main results
+
+* `TauCeti.LocalCoefficientSystem.twistedSingularHomotopy_twistedPushforward` and
+  `TauCeti.LocalCoefficientSystem.normalizedTwistedCubicalHomotopy_pushforward`: compatibility of
+  the homotopies with pushforwards from simply connected spaces.
+* The instances `QuasiIso (twistedCubicalToSingularMap L)` and
+  `QuasiIso (twistedSingularToCubicalMap L)`: both comparison maps are quasi-isomorphisms.
 
 ## References
 
