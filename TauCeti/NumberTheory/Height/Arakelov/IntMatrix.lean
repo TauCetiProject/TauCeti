@@ -30,8 +30,6 @@ replaced by any integer matrix with the same rational row space.
 * `Matrix.gcd_plucker_row_mul_subspaceHeight_span_range_row`: the identity for the row space.
 * `Matrix.gcd_plucker_row_mul_subspaceHeight_ker_mulVecLin`: the identity for the kernel.
 * `Matrix.covolume_intLattice_ker_mulVecLin`: the covolume of the lattice of integral solutions.
-* `Matrix.gcd_plucker_row_eq_zero_iff`: the maximal minors have greatest common divisor `0`
-  exactly when the rows are linearly dependent.
 
 ## Implementation notes
 
@@ -65,23 +63,6 @@ namespace Matrix
 
 variable {ι : Type*} [Fintype ι] [LinearOrder ι] {p : ℕ}
 
-omit [Fintype ι] in
-/-- The maximal minors of the rational matrix are the casts of those of the integer matrix. -/
-private theorem plucker_row_map_intCast (A : Matrix (Fin p) ι ℤ) :
-    plucker (A.map ((↑) : ℤ → ℚ)).row = ((↑) : ℤ → ℚ) ∘ plucker A.row := by
-  have h : (A.map ((↑) : ℤ → ℚ)).row = fun i k ↦ Int.castRingHom ℚ (A.row i k) := by
-    ext i k
-    simp
-  ext s
-  rw [h, plucker_map, Function.comp_apply, eq_intCast]
-
-/-- The greatest common divisor of the maximal minors of an integer matrix vanishes exactly when
-its rows are linearly dependent over `ℚ`. -/
-theorem gcd_plucker_row_eq_zero_iff (A : Matrix (Fin p) ι ℤ) :
-    Finset.univ.gcd (plucker A.row) = 0 ↔ ¬LinearIndependent ℚ (A.map ((↑) : ℤ → ℚ)).row := by
-  rw [Finset.gcd_eq_zero_iff, ← plucker_ne_zero_iff, not_not, plucker_row_map_intCast, funext_iff]
-  simp
-
 /-- **The height of the row space of an integer matrix.** The greatest common divisor of the
 maximal minors of an integer matrix `A`, times the absolute Euclidean height of the rational row
 space of `A`, is `√det (A Aᵀ)`. If the rows are linearly dependent, both sides vanish. -/
@@ -91,7 +72,9 @@ theorem gcd_plucker_row_mul_subspaceHeight_span_range_row (A : Matrix (Fin p) ι
       √((A * Aᵀ).det : ℝ) := by
   rw [det_mul_transpose_eq_sum_plucker_sq]
   by_cases hA : LinearIndependent ℚ (A.map ((↑) : ℤ → ℚ)).row
-  · rw [subspaceHeight_span_range hA, plucker_row_map_intCast, gcd_mul_height2_intCast]
+  · have h := plucker_row_map (Int.castRingHom ℚ) A
+    rw [Int.coe_castRingHom] at h
+    rw [subspaceHeight_span_range hA, h, gcd_mul_height2_intCast]
     simp
   · -- Dependent rows have vanishing maximal minors.
     have h0 : plucker A.row = 0 := funext fun s ↦

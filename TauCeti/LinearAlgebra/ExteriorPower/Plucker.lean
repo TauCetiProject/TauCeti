@@ -64,6 +64,8 @@ Plücker coordinate, equal to `1`, and a family of more than `#ι` vectors has n
   signs.
 * `TauCeti.gcd_plucker_eq_one`: the Plücker coordinates of a basis of a saturated submodule of
   `ℤ^ι` are coprime.
+* `Matrix.gcd_plucker_row_eq_zero_iff`: the maximal minors of an integer matrix have greatest
+  common divisor `0` exactly when its rows are linearly dependent over `ℚ`.
 
 ## References
 
@@ -120,6 +122,16 @@ theorem plucker_map (f : R →+* S) (x : Fin p → ι → R) (s : powersetCard �
   rw [plucker_apply, plucker_apply, f.map_det]
   refine congrArg Matrix.det (Matrix.ext fun i j ↦ ?_)
   simp
+
+/-- The maximal minors of a matrix with a ring homomorphism applied to all entries are the
+images of the maximal minors of the matrix. -/
+theorem _root_.Matrix.plucker_row_map (f : R →+* S) (A : Matrix (Fin p) ι R) :
+    plucker (A.map f).row = f ∘ plucker A.row := by
+  have h : (A.map f).row = fun i k ↦ f (A.row i k) := by
+    ext i k
+    simp
+  ext s
+  rw [h, plucker_map, Function.comp_apply]
 
 /-- Replacing a family by its product with a square matrix `A` multiplies its Plücker
 coordinates by `det A`. -/
@@ -353,6 +365,15 @@ theorem gcd_plucker_eq_one [Fintype ι] {N : Submodule ℤ (ι → ℤ)}
   have h0 := Fintype.linearIndependent_iff.1 hli _ hrel i₀
   apply hi₀
   rw [← hc', sub_eq_zero.1 h0]
+  simp
+
+/-- The greatest common divisor of the maximal minors of an integer matrix vanishes exactly when
+its rows are linearly dependent over `ℚ`. -/
+theorem _root_.Matrix.gcd_plucker_row_eq_zero_iff [Fintype ι] (A : Matrix (Fin p) ι ℤ) :
+    Finset.univ.gcd (plucker A.row) = 0 ↔ ¬LinearIndependent ℚ (A.map ((↑) : ℤ → ℚ)).row := by
+  have h := Matrix.plucker_row_map (Int.castRingHom ℚ) A
+  rw [Int.coe_castRingHom] at h
+  rw [Finset.gcd_eq_zero_iff, ← plucker_ne_zero_iff, not_not, h, funext_iff]
   simp
 
 end TauCeti
