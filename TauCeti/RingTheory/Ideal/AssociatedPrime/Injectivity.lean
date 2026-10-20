@@ -43,7 +43,7 @@ theorem injective_of_forall_associatedPrime_localization (map : M →ₗ[R] N)
     (LinearMap.ker map).subtype (Submodule.injective_subtype _)
   have injective := (local_injective prime).resolve_right (not_not.mpr associated_domain)
   obtain ⟨_, element, annihilator⟩ := isAssociatedPrime_iff.mp associated
-  have element_zero : map element.val = 0 := element.property
+  have element_zero : map element.val = 0 := LinearMap.mem_ker.mp element.property
   have localized_zero : LocalizedModule.mkLinearMap prime.primeCompl M element.val = 0 := by
     apply injective
     simp only [LocalizedModule.mkLinearMap_apply, LocalizedModule.map_mk, element_zero,
@@ -54,6 +54,7 @@ theorem injective_of_forall_associatedPrime_localization (map : M →ₗ[R] N)
   apply denominator.property
   apply annihilator.ge
   rw [Submodule.mem_colon_singleton, Submodule.mem_bot]
-  exact Subtype.ext annihilates
+  apply Subtype.ext
+  simpa only [Submodule.coe_smul, Submodule.coe_zero, Submonoid.smul_def] using annihilates
 
 end LinearMap
