@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.FundamentalGroup
+public import Mathlib.AlgebraicTopology.FundamentalGroupoid.InducedMaps
 public import TauCeti.Algebra.Group.Conj
 public import TauCeti.Algebra.Group.NormalizerQuotient.Conjugation
 import Mathlib.Tactic.Group
@@ -21,8 +22,9 @@ and the induced transport of the normalizer quotient `N(H) / H` used for deck gr
 attached to subgroups. It also descends basepoint change to conjugacy classes, where the result is
 independent of the chosen path.
 
-It also records the element-level behaviour of the transport: path-quotient formulas and its
-compatibility with concatenation of paths.
+It also records the element-level behaviour of the transport: path-quotient formulas, its
+compatibility with concatenation of paths and with induced maps, and the comparison of the maps
+induced by freely homotopic maps, which differ by basepoint change along the trace of the homotopy.
 
 Mathlib already supplies the fundamental-group isomorphism
 `FundamentalGroup.fundamentalGroupMulEquivOfPath`; the declarations here are the computation
@@ -43,6 +45,11 @@ rules, subgroup, and normalizer-quotient bookkeeping built on it.
   path is the composite of the basepoint changes.
 * `FundamentalGroup.fundamentalGroupMulEquivOfPath_eq_conj`: basepoint change along a loop is
   conjugation by its class.
+* `FundamentalGroup.map_fundamentalGroupMulEquivOfPath`: induced maps commute with basepoint
+  change.
+* `ContinuousMap.Homotopy.fundamentalGroupMulEquivOfPath_evalAt_map`: **freely homotopic maps
+  induce the same map on fundamental groups, up to basepoint change along the trace of the
+  homotopy.**
 * `FundamentalGroup.conjClassesEquivOfPath`: the induced equivalence of conjugacy classes.
 * `FundamentalGroup.conjClassesEquivOfPath_eq`: this equivalence is independent of the path.
 * `FundamentalGroup.conjClassesEquivOfPathConnected_trans`: canonical conjugacy-class transport
@@ -175,6 +182,45 @@ lemma fundamentalGroupMulEquivOfPath_refl
       MulEquiv.refl (FundamentalGroup X x) := by
   ext g
   simp
+
+open CategoryTheory in
+/-- **Induced maps commute with basepoint change.** Changing basepoint along `γ` and then applying
+`f` is applying `f` and then changing basepoint along the image path `γ.map f.continuous`. -/
+lemma map_fundamentalGroupMulEquivOfPath {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+    {x₀ x₁ : X} (f : C(X, Y)) (γ : Path x₀ x₁) (g : FundamentalGroup X x₀) :
+    map f x₁ (fundamentalGroupMulEquivOfPath γ g) =
+      fundamentalGroupMulEquivOfPath (γ.map f.continuous) (map f x₀ g) := by
+  -- `FundamentalGroupoid.map f` sends the class of `γ` to the class of `γ.map f.continuous` by
+  -- definition, so the image of the basepoint-change isomorphism is the one along the image path.
+  have hα : (FundamentalGroupoid.map f).mapIso ((Groupoid.isoEquivHom _ _).symm ⟦γ⟧) =
+      (Groupoid.isoEquivHom _ _).symm ⟦γ.map f.continuous⟧ := Iso.ext rfl
+  ext
+  refine (Functor.map_conj (FundamentalGroupoid.map f) _ g).trans ?_
+  rw [hα]
+  -- Mathlib defines basepoint change as `Iso.conj` and `FundamentalGroup.map` as
+  -- `Functor.mapEnd`, so the two sides now agree by unfolding these definitions.
+  rfl
+
+open CategoryTheory in
+/-- **Freely homotopic maps induce the same map on fundamental groups, up to basepoint change.**
+A homotopy `H` from `f₀` to `f₁` moves the image of the basepoint `x` along its trace
+`H.evalAt x`, and changing basepoint along this trace carries the map induced by `f₀` to the map
+induced by `f₁`. This is the naturality of Mathlib's
+`FundamentalGroupoidFunctor.homotopicMapsNatIso`, read on endomorphisms of `x`. -/
+lemma _root_.ContinuousMap.Homotopy.fundamentalGroupMulEquivOfPath_evalAt_map {X Y : Type*}
+    [TopologicalSpace X] [TopologicalSpace Y] {f₀ f₁ : C(X, Y)} (H : f₀.Homotopy f₁) (x : X)
+    (g : FundamentalGroup X x) :
+    fundamentalGroupMulEquivOfPath (H.evalAt x) (map f₀ x g) = map f₁ x g := by
+  let α : FundamentalGroupoid.mk (f₀ x) ≅ FundamentalGroupoid.mk (f₁ x) :=
+    (Groupoid.isoEquivHom _ _).symm ⟦H.evalAt x⟧
+  -- The component of `homotopicMapsNatIso H` at `x` is defined to be the class of the trace
+  -- `H.evalAt x`, which is `α.hom`; Mathlib has no `app` lemma to rewrite with.
+  have h : (FundamentalGroupoid.map f₀).map g.asHom ≫ α.hom =
+      α.hom ≫ (FundamentalGroupoid.map f₁).map g.asHom :=
+    (FundamentalGroupoidFunctor.homotopicMapsNatIso H).naturality g.asHom
+  ext
+  exact (Iso.conj_apply_asHom α _).trans
+    ((congrArg (α.inv ≫ ·) h).trans (Iso.inv_hom_id_assoc α _))
 
 /-- Changing basepoint along a path induces an equivalence between conjugacy classes in the two
 fundamental groups. -/
