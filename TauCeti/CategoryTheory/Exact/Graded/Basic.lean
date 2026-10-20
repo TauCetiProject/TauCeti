@@ -258,12 +258,16 @@ noncomputable def abelian (F : A ⥤ B) [F.Additive] [PreservesFiniteLimits F]
   commShift := σ
 
 /-- The shift-commutation isomorphism of the graded conflation-exact functor induced by an exact
-functor between abelian categories is the chosen one. -/
+functor between abelian categories is the chosen one. The grading shifts are identified with `e`
+and `e'` by `TauCeti.GradedExactStructure.abelian_shift`, which is why the components are
+compared up to `eqToHom`. -/
 @[simp]
-theorem abelian_commShift (F : A ⥤ B) [F.Additive] [PreservesFiniteLimits F]
-    [PreservesFiniteColimits F] (σ : e.functor ⋙ F ≅ F ⋙ e'.functor) :
-    (abelian F σ).commShift = σ :=
-  (rfl)
+theorem abelian_commShift_hom_app (F : A ⥤ B) [F.Additive] [PreservesFiniteLimits F]
+    [PreservesFiniteColimits F] (σ : e.functor ⋙ F ≅ F ⋙ e'.functor) (X : A) :
+    (abelian F σ).commShift.hom.app X =
+      eqToHom (by simp) ≫ σ.hom.app X ≫ eqToHom (by simp) :=
+  -- Inside this file both shifts unfold, so each `eqToHom` is definitionally an identity.
+  ((Category.id_comp _).trans (Category.comp_id _)).symm
 
 end Abelian
 
