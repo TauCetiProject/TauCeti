@@ -30,13 +30,17 @@ signed highest weight.
 
 * `TauCeti.UqSl2.casimir`: the Casimir element `Ω`.
 * `TauCeti.UqSl2.casimirScalar`: the scalar by which `Ω` acts on a highest-weight vector.
+* `TauCeti.UqSl2.casimirBlock`: the generalized eigenspace of `Ω` for a scalar, as a submodule.
 
 ## Main results
 
 * `TauCeti.UqSl2.casimir_mem_center`: `Ω` is central.
 * `TauCeti.UqSl2.casimir_smul_of_e_smul_eq_zero`: the action of `Ω` on a highest-weight vector.
+* `TauCeti.UqSl2.map_casimirBlock_le`: module maps send Casimir blocks into Casimir blocks.
 * `TauCeti.UqSl2.casimirScalar_units_mul_pow_inj`: at a generic parameter, the scalars of the
   signed highest weights `ε q^m` determine `m` and `ε`.
+* `TauCeti.UqSl2.iSup_casimirBlock_eq_top`: a finite-dimensional module is the sum of its
+  Casimir blocks.
 
 ## References
 
@@ -167,6 +171,55 @@ theorem casimir_smul_smul_of_e_smul_eq_zero (hv : v ∈ weightSpace q V μ) (he 
     (a : UqSl2 q) : casimir q • a • v = casimirScalar q μ • a • v := by
   rw [← mul_smul, ← (commute_casimir a).eq, mul_smul, casimir_smul_of_e_smul_eq_zero hv he,
     smul_comm]
+
+variable (q V) in
+/-- The Casimir block of `V` for a scalar `c`: the maximal generalized eigenspace of the action
+of the Casimir element for the eigenvalue `c`. It is a submodule since `Ω` is central. -/
+noncomputable def casimirBlock (c : ℂ) : Submodule (UqSl2 q) V where
+  toAddSubmonoid := ((Algebra.lsmul ℂ ℂ V (casimir q)).maxGenEigenspace c).toAddSubmonoid
+  smul_mem' a _ hv := Module.End.mapsTo_maxGenEigenspace_of_comm
+    ((commute_casimir a).symm.map (Algebra.lsmul ℂ ℂ V)) c hv
+
+/-- As a complex subspace, the Casimir block for `c` is the native maximal generalized
+eigenspace of the action of the Casimir element. -/
+theorem restrictScalars_casimirBlock (c : ℂ) :
+    (casimirBlock q V c).restrictScalars ℂ = (Algebra.lsmul ℂ ℂ V (casimir q)).maxGenEigenspace c :=
+  (rfl)
+
+/-- A vector lies in the Casimir block for `c` exactly when some power of `Ω - c` kills it. -/
+@[simp]
+theorem mem_casimirBlock_iff {c : ℂ} :
+    v ∈ casimirBlock q V c ↔ ∃ n : ℕ, (casimir q - algebraMap ℂ (UqSl2 q) c) ^ n • v = 0 := by
+  rw [← Submodule.restrictScalars_mem ℂ, restrictScalars_casimirBlock,
+    Module.End.mem_maxGenEigenspace, ← Algebra.algebraMap_eq_smul_one,
+    ← AlgHom.commutes (Algebra.lsmul ℂ ℂ V (A := UqSl2 q))]
+  simp only [← map_sub, ← map_pow, Algebra.lsmul_coe]
+
+/-- A module map sends the Casimir block for `c` into the Casimir block for `c`. -/
+theorem map_casimirBlock_le {W : Type*} [AddCommGroup W] [Module ℂ W] [Module (UqSl2 q) W]
+    [IsScalarTower ℂ (UqSl2 q) W] (φ : V →ₗ[UqSl2 q] W) (c : ℂ) :
+    (casimirBlock q V c).map φ ≤ casimirBlock q W c := by
+  rintro _ ⟨v, hv, rfl⟩
+  obtain ⟨n, hn⟩ := mem_casimirBlock_iff.mp hv
+  exact mem_casimirBlock_iff.mpr ⟨n, by rw [← map_smul, hn, map_zero]⟩
+
+/-- The Casimir block for `c`, viewed as a module itself, is its own Casimir block for `c`. -/
+theorem casimirBlock_casimirBlock_eq_top (c : ℂ) :
+    casimirBlock q (casimirBlock q V c) c = ⊤ := by
+  refine Submodule.eq_top_iff'.mpr fun v => ?_
+  obtain ⟨n, hn⟩ := mem_casimirBlock_iff.mp v.2
+  exact mem_casimirBlock_iff.mpr ⟨n, Subtype.ext hn⟩
+
+/-- Casimir blocks for distinct scalars are independent. -/
+theorem iSupIndep_casimirBlock : iSupIndep (casimirBlock q V) := fun c => by
+  rw [← Submodule.disjoint_restrictScalars_iff ℂ]
+  simpa only [Submodule.restrictScalars_iSup, restrictScalars_casimirBlock] using
+    Module.End.independent_maxGenEigenspace (Algebra.lsmul ℂ ℂ V (casimir q)) c
+
+/-- A finite-dimensional module is the sum of its Casimir blocks. -/
+theorem iSup_casimirBlock_eq_top [FiniteDimensional ℂ V] : ⨆ c, casimirBlock q V c = ⊤ := by
+  rw [← Submodule.restrictScalars_eq_top_iff ℂ, Submodule.restrictScalars_iSup]
+  simpa only [restrictScalars_casimirBlock] using Module.End.iSup_maxGenEigenspace_eq_top _
 
 end Module
 
