@@ -52,11 +52,7 @@ theorem generalizedGammaMeasure_one_shape_eq_weibullMeasure (hc : 0 < c) :
     generalizedGammaMeasure 1 c s = weibullMeasure c s := by
   by_cases hs : 0 < s
   swap
-  · have hz : weibullPDF c s = 0 := by
-      ext x
-      exact weibullPDF_of_scale_nonpos (not_lt.mp hs) c x
-    simp [generalizedGammaMeasure_of_not_valid (by tauto : ¬ (0 < (1 : ℝ) ∧ c ≠ 0 ∧ 0 < s)),
-      weibullMeasure_def, hz]
+  · rw [generalizedGammaMeasure_of_not_valid (by tauto), weibullMeasure_of_not_pos (by tauto)]
   let _ := isProbabilityMeasure_generalizedGammaMeasure zero_lt_one hc.ne' hs
   let _ := isProbabilityMeasure_weibullMeasure hc hs
   apply Measure.eq_of_cdf
