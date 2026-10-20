@@ -5,12 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.SpecificGroups.Quaternion
 public import TauCeti.GroupTheory.AlmostConjugate
 import TauCeti.GroupTheory.GroupAction.Orbit.CycleType
 
 /-!
-# Almost-conjugate regular representations and a Gassmann pair in `S₁₆`
+# Almost-conjugate regular representations
 
 Let `G` be a finite group of order `m`, with its left-regular action on itself. An element of
 order `d` acts on `G` with `m / d` cycles, all of length `d`
@@ -22,13 +21,8 @@ each order have almost-conjugate regular images in `Equiv.Perm α`. If one of th
 commutative and the other is not, the images are not conjugate, because conjugate subgroups are
 isomorphic.
 
-The groups `C₄ × C₄ = Multiplicative (ZMod 4) × Multiplicative (ZMod 4)` and
-`Q₈ × C₂ = QuaternionGroup 2 × Multiplicative (ZMod 2)` both have one element of order `1`, three
-of order `2` and twelve of order `4`. Their regular actions have the full cycle types `1^16`,
-`2^8` and `4^4`, with multiplicities `1`, `3` and `12`. (Mathlib's `Equiv.Perm.cycleType` omits
-the fixed points, so it records these as the empty multiset, `2^8` and `4^4`.) The first group is
-commutative and the second is not, which produces two non-conjugate almost-conjugate subgroups of
-`Equiv.Perm (Fin 16)`.
+The concrete Gassmann pair in `S₁₆` built from these results is in
+`TauCeti.GroupTheory.AlmostConjugate.GassmannPair`.
 
 ## Main statements
 
@@ -38,8 +32,6 @@ commutative and the second is not, which produces two non-conjugate almost-conju
   order have almost-conjugate regular images.
 * `Subgroup.not_exists_map_conj_map_range_toPermHom_eq`: the regular images of a commutative and a
   non-commutative group are not conjugate.
-* `TauCeti.exists_S16_gassmann_pair`: `Equiv.Perm (Fin 16)` has two almost-conjugate subgroups of
-  order `16` that are not conjugate.
 
 ## References
 
@@ -130,56 +122,3 @@ theorem not_exists_map_conj_map_range_toPermHom_eq [IsMulCommutative G]
     (isMulCommutative_iff.mp hK ⟨φ a, a, rfl⟩ ⟨φ b, b, rfl⟩)
 
 end Subgroup
-
-namespace TauCeti
-
-/-- **`C₄ × C₄` and `Q₈ × C₂` have the same order statistics**: for every `n`, they have equally
-many elements of order `n`. Both have one element of order `1`, three of order `2` and twelve of
-order `4`. -/
-theorem natCard_orderOf_zmod_four_prod_eq_quaternionGroup_prod (n : ℕ) :
-    Nat.card {a : Multiplicative (ZMod 4) × Multiplicative (ZMod 4) // orderOf a = n} =
-      Nat.card {b : QuaternionGroup 2 × Multiplicative (ZMod 2) // orderOf b = n} := by
-  -- In a group of exponent dividing four the order of an element is read off from whether it and
-  -- its square are trivial, so the two order counts become a finite computation.
-  have key (M : Type) [Group M] [Fintype M] [DecidableEq M] (h : ∀ a : M, a ^ 4 = 1) :
-      Nat.card {a : M // orderOf a = n} = Multiset.count n ((Finset.univ : Finset M).val.map
-        fun a ↦ if a = 1 then 1 else if a ^ 2 = 1 then 2 else 4) := by
-    have hord (a : M) : orderOf a = if a = 1 then 1 else if a ^ 2 = 1 then 2 else 4 := by
-      have h4 : orderOf a ∣ 4 := orderOf_dvd_of_pow_eq_one (h a)
-      have hpos : 0 < orderOf a :=
-        orderOf_pos_iff.mpr (isOfFinOrder_iff_pow_eq_one.mpr ⟨4, by norm_num, h a⟩)
-      have hle := Nat.le_of_dvd (by norm_num) h4
-      split_ifs with h1 h2
-      · rw [h1, orderOf_one]
-      · have h2' : orderOf a ∣ 2 := orderOf_dvd_of_pow_eq_one h2
-        have h1' : orderOf a ≠ 1 := orderOf_eq_one_iff.not.mpr h1
-        interval_cases h : orderOf a <;> simp_all
-      · have h2' : ¬ orderOf a ∣ 2 := orderOf_dvd_iff_pow_eq_one.not.mpr h2
-        interval_cases h : orderOf a <;> simp_all
-    rw [Multiset.count_map, Nat.card_eq_fintype_card, Fintype.card_subtype]
-    simp only [hord, eq_comm (a := n), ← Finset.filter_val, Finset.card_val]
-  rw [key _ (by decide), key _ (by decide)]
-  congr 1
-  decide
-
-/-- **A Gassmann pair in `S₁₆`.** The symmetric group on sixteen letters has two subgroups of order
-`16` that are almost conjugate but not conjugate: the regular representations of `C₄ × C₄` and of
-`Q₈ × C₂`. -/
-theorem exists_S16_gassmann_pair :
-    ∃ H K : Subgroup (Equiv.Perm (Fin 16)), Nat.card H = 16 ∧ Nat.card K = 16 ∧
-      H.AlmostConjugate K ∧ ¬ ∃ σ : Equiv.Perm (Fin 16), H.map (MulAut.conj σ) = K := by
-  let e : Multiplicative (ZMod 4) × Multiplicative (ZMod 4) ≃ Fin 16 :=
-    Fintype.equivFinOfCardEq (by decide)
-  let f : QuaternionGroup 2 × Multiplicative (ZMod 2) ≃ Fin 16 :=
-    Fintype.equivFinOfCardEq (by decide)
-  refine ⟨_, _, ?_, ?_, Subgroup.almostConjugate_map_range_toPermHom e f
-      natCard_orderOf_zmod_four_prod_eq_quaternionGroup_prod,
-    Subgroup.not_exists_map_conj_map_range_toPermHom_eq ?_ e f⟩
-  · rw [Subgroup.natCard_map_range_toPermHom, Nat.card_eq_fintype_card]
-    decide
-  · rw [Subgroup.natCard_map_range_toPermHom, Nat.card_eq_fintype_card]
-    decide
-  · rw [isMulCommutative_iff]
-    decide
-
-end TauCeti
