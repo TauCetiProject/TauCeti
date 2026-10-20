@@ -181,15 +181,6 @@ theorem conjWirtingerDeriv_ofReal (f : V → ℝ) (x v : V) :
   apply Complex.ext <;>
   simp [conjWirtingerDeriv_apply, wirtingerDeriv_apply, fderiv_ofReal_comp_apply]
 
-/-- The derivative at `x` of `y ↦ D(f)(y) v`, viewed as a complex-valued function, in the
-direction `u` is the second derivative `D²f(x)(u, v)`. -/
-private theorem hasFDerivAt_ofReal_fderiv_apply (hf : ContDiffAt ℝ 2 f x) (v : V) :
-    HasFDerivAt (fun y ↦ (fderiv ℝ f y v : ℂ))
-      (ofRealCLM.comp ((fderiv ℝ (fderiv ℝ f) x).flip v)) x := by
-  have h := (ContinuousLinearMap.apply ℝ ℝ v).hasFDerivAt.comp x
-    (hf.hasFDerivAt_fderiv le_rfl)
-  exact ofRealCLM.hasFDerivAt.comp x h
-
 /-- **Wirtinger comparison.** For a `C²` real function `f`, the mixed second Wirtinger derivative
 `∂_w \bar∂_v f`, that is `∂²f / ∂z_j ∂(conj z_k)` for coordinate vectors `v = e_k` and `w = e_j`,
 is the Levi form `leviForm f x v w`. -/
@@ -201,8 +192,8 @@ theorem wirtingerDeriv_conjWirtingerDeriv_eq_leviForm (hf : ContDiffAt ℝ 2 f x
       ((2 : ℂ)⁻¹ • (ofRealCLM.comp ((fderiv ℝ (fderiv ℝ f) x).flip v) +
         I • ofRealCLM.comp ((fderiv ℝ (fderiv ℝ f) x).flip (I • v)))) x := by
     simp only [conjWirtingerDeriv_apply, fderiv_ofReal_comp_apply]
-    exact ((hasFDerivAt_ofReal_fderiv_apply hf v).add
-      ((hasFDerivAt_ofReal_fderiv_apply hf (I • v)).const_smul I)).const_smul (2 : ℂ)⁻¹
+    have hD (u : V) := ofRealCLM.hasFDerivAt.comp x (hf.hasFDerivAt_fderiv_apply le_rfl u)
+    exact ((hD v).add ((hD (I • v)).const_smul I)).const_smul (2 : ℂ)⁻¹
   rw [wirtingerDeriv_apply, hd.fderiv]
   apply Complex.ext <;> simp [hsymm w v, hsymm (I • w) v, hsymm w (I • v),
     hsymm (I • w) (I • v)] <;> ring
@@ -216,8 +207,8 @@ theorem conjWirtingerDeriv_wirtingerDeriv_eq_leviForm (hf : ContDiffAt ℝ 2 f x
       ((2 : ℂ)⁻¹ • (ofRealCLM.comp ((fderiv ℝ (fderiv ℝ f) x).flip w) -
         I • ofRealCLM.comp ((fderiv ℝ (fderiv ℝ f) x).flip (I • w)))) x := by
     simp only [wirtingerDeriv_apply, fderiv_ofReal_comp_apply]
-    exact ((hasFDerivAt_ofReal_fderiv_apply hf w).sub
-      ((hasFDerivAt_ofReal_fderiv_apply hf (I • w)).const_smul I)).const_smul (2 : ℂ)⁻¹
+    have hD (u : V) := ofRealCLM.hasFDerivAt.comp x (hf.hasFDerivAt_fderiv_apply le_rfl u)
+    exact ((hD w).sub ((hD (I • w)).const_smul I)).const_smul (2 : ℂ)⁻¹
   rw [conjWirtingerDeriv_apply, hd.fderiv]
   apply Complex.ext <;> simp <;> ring
 
