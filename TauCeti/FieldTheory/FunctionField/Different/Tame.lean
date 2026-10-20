@@ -8,9 +8,6 @@ module
 public import TauCeti.FieldTheory.FunctionField.Different.Divisor
 public import TauCeti.RingTheory.DedekindDomain.Different
 import Mathlib.RingTheory.Finiteness.Quotient
--- Non-public: `TauCeti.Place.isIntegral_integers_algebraMap` puts the constants into the local
--- model, in a proof below only.
-import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
 -- Non-public: `Algebra.HasSeparableResidueFieldsAt.isSeparable_quotient` supplies the separability
 -- half of tameness over a perfect residue field, in the proof below only.
 import Mathlib.RingTheory.LocalRing.ResidueField.Separable
@@ -140,39 +137,17 @@ theorem isTame_iff_isSeparable_residueField :
   -- The residue ring of `𝒪_P` is by definition the residue field of `P`.
   let e₀ : ((P'.restrict k F).integers ⧸ IsLocalRing.maximalIdeal (P'.restrict k F).integers) ≃+*
       (P'.restrict k F).ResidueField := RingEquiv.refl _
-  let S := integralClosure (P'.restrict k F).integers F'
-  let f : S →+* P'.ResidueField :=
-    (IsLocalRing.residue P'.integers).comp
-      ((algebraMap S F').codRestrict P'.integers hS)
-  have hker : RingHom.ker f = (P'.center hS).asIdeal := by
-    ext r
-    rw [RingHom.mem_ker]
-    change IsLocalRing.residue P'.integers _ = 0 ↔ _
-    rw [P'.residue_eq_zero_iff_valuation_lt_one, P'.mem_center_asIdeal hS]
-    rfl
-  have hsurj : Function.Surjective f := by
-    intro y
-    obtain ⟨a, rfl⟩ := IsLocalRing.residue_surjective y
-    obtain ⟨c, hc⟩ := HeightOneSpectrum.exists_valuation_sub_lt_of_integer (P'.center hS)
-      (by rw [P'.valuation_center hS]; exact P'.mem_integers_iff.mp a.2) 1
-    rw [Units.val_one, P'.valuation_center hS] at hc
-    refine ⟨c, ?_⟩
-    change IsLocalRing.residue P'.integers _ = _
-    rw [← sub_eq_zero, ← map_sub, P'.residue_eq_zero_iff_valuation_lt_one]
-    push_cast
-    exact hc
   let e : (integralClosure (P'.restrict k F).integers F' ⧸
       (centerIntegralClosure k F P').asIdeal) ≃+* P'.ResidueField :=
-    (Ideal.quotEquivOfEq (by rw [centerIntegralClosure_def, hker])).trans
-      (RingHom.quotientKerEquivOfSurjective hsurj)
+    (Ideal.quotEquivOfEq (by rw [centerIntegralClosure_def])).trans
+      (P'.quotientRingEquivResidueField hS)
   have he : (algebraMap (P'.restrict k F).ResidueField P'.ResidueField).comp e₀.toRingHom =
       e.toRingHom.comp (algebraMap ((P'.restrict k F).integers ⧸
         IsLocalRing.maximalIdeal (P'.restrict k F).integers) _) := by
     refine Ideal.Quotient.ringHom_ext (RingHom.ext fun r ↦ ?_)
-    simp only [Ideal.Quotient.algebraMap_mk_of_liesOver,
+    simp only [RingHom.comp_apply, Ideal.Quotient.algebraMap_mk_of_liesOver,
       e, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe, RingEquiv.trans_apply,
-      Ideal.quotEquivOfEq_mk, RingHom.quotientKerEquivOfSurjective_apply_mk, f,
-      RingHom.comp_apply]
+      Ideal.quotEquivOfEq_mk, quotientRingEquivResidueField_mk, residueRingHom_apply]
     -- `e₀` is the identity and `Ideal.Quotient.mk` of the maximal ideal is the residue map, but
     -- only after unfolding `IsLocalRing.ResidueField` to the quotient: `e₀` expects an argument
     -- of the quotient type, so rewriting with `IsLocalRing.residue_def` under it gives an
