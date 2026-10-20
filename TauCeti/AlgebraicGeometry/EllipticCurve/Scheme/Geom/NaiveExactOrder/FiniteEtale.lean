@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.NaiveExactOrder.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Torsion.Etale.Locus
+import TauCeti.Algebra.Algebra.NatCast
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.MulBy.Finite
 import TauCeti.AlgebraicGeometry.ResidueField
 
@@ -83,7 +84,7 @@ instance surjective_naiveExactOrderOpens :
   refine ⟨fun s ↦ ?_⟩
   let t := S.fromSpecAlgebraicClosure s
   obtain ⟨P, hP⟩ := E.exists_isOfNaiveExactOrder_over t
-    (Scheme.natCast_algebraicClosure_residueField_ne_zero (hN s))
+    (hN s).isUnit.natCast_ne_zero_of_algebra
   let u := (E.naiveExactOrderRepresentableBy hN).homEquiv.symm
     ⟨P, mem_naiveExactOrderSubfunctor_obj.mpr hP⟩
   obtain ⟨a⟩ : Nonempty (Spec (.of (AlgebraicClosure (S.residueField s)))) := inferInstance

@@ -90,10 +90,8 @@ theorem IsFiberwiseInjective.isDrinfeldBasis
   have hle : i.ker ≤ E.pointsDivisor φ := by
     rw [hprod]
     refine le_iInf fun a ↦ ?_
-    have ha : a ^ N = 1 := Multiplicative.toAdd.injective <| by
-      ext <;> simp [nsmul_eq_mul]
     have hx : φ a ≫ E.mulBy N = 1 := by
-      rw [comp_mulBy, zpow_natCast, ← map_pow, ha, map_one]
+      simpa [IsMonHom.monoidHom_apply] using range_le_ker_mulBy φ ⟨a, rfl⟩
     simpa [i, ← Over.comp_left, E.torsionLift_torsionι (φ a) hx] using
       Scheme.Hom.le_ker_comp (E.torsionLift (φ a) hx).left i
   rw [isDrinfeldBasis_iff, ← ker_torsionι_left]

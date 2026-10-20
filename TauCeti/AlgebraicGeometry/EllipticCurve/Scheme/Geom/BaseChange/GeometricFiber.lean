@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.Points
+import TauCeti.Algebra.Algebra.NatCast
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.FieldPoints
 import TauCeti.AlgebraicGeometry.ResidueField
 
@@ -40,7 +41,7 @@ theorem left_apply_ne_zero_of_forall_isAlgClosed
   obtain ⟨p⟩ : Nonempty (Spec (.of (AlgebraicClosure (S.residueField s)))) := inferInstance
   have htp : t p = s := Scheme.fromSpecAlgebraicClosure_apply S s p
   intro hs
-  apply h _ t (Scheme.natCast_algebraicClosure_residueField_ne_zero hN)
+  apply h _ t hN.isUnit.natCast_ne_zero_of_algebra
   apply ((E.baseChange t).eq_one_iff_left_apply_eq_zero _ p).mpr
   exact (pointsPullback_left_apply_eq_zero_iff (E.isPullback_baseChange t)
     (by simp) P p).mpr (htp.symm ▸ hs)

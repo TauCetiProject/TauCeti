@@ -29,8 +29,6 @@ conditions are checked after base change to an algebraically closed field.
   field at `f x`, then it is invertible in the residue field at `x`, for any morphism `f`.
 * `AlgebraicGeometry.Spec.natCast_residueField_ne_zero`: if `N` is invertible in a field `K`, then
   it is invertible in the residue field of `Spec K`.
-* `AlgebraicGeometry.Scheme.natCast_algebraicClosure_residueField_ne_zero`: if `N` is invertible
-  in the residue field at `x`, then it is invertible in its algebraic closure.
 
 The proofs only use that a ring homomorphism between fields, such as Mathlib's
 `Scheme.Hom.residueFieldMap`, preserves natural number casts and is injective.
@@ -58,18 +56,18 @@ theorem Spec.natCast_residueField_ne_zero {K : Type u} [Field K] {N : ℕ} (hN :
     (Spec (.of K)).presheaf.germ ⊤ s trivial ≫ (Spec (.of K)).residue s).hom]
   exact (map_ne_zero _).mpr hN
 
-/-- If `N` is invertible in the residue field at `x`, it is invertible in an algebraic closure of
-that residue field. -/
-theorem Scheme.natCast_algebraicClosure_residueField_ne_zero {X : Scheme.{u}} {x : X} {N : ℕ}
-    (hN : (N : X.residueField x) ≠ 0) : (N : AlgebraicClosure (X.residueField x)) ≠ 0 := by
-  rw [← map_natCast (algebraMap (X.residueField x) (AlgebraicClosure (X.residueField x)))]
-  exact (map_ne_zero _).mpr hN
-
 /-- The geometric point of `X` over `x`: the morphism `Spec κ(x)ᵃˡᵍ ⟶ X` from the spectrum of an
 algebraic closure of the residue field at `x`, through `X.fromSpecResidueField x`. -/
 noncomputable def Scheme.fromSpecAlgebraicClosure (X : Scheme.{u}) (x : X) :
     Spec (.of (AlgebraicClosure (X.residueField x))) ⟶ X :=
   Spec.map (CommRingCat.ofHom (algebraMap (X.residueField x) _)) ≫ X.fromSpecResidueField x
+
+/-- The geometric point over `x` factors through `X.fromSpecResidueField x`. -/
+theorem Scheme.fromSpecAlgebraicClosure_def (X : Scheme.{u}) (x : X) :
+    X.fromSpecAlgebraicClosure x =
+      Spec.map (CommRingCat.ofHom (algebraMap (X.residueField x) _)) ≫
+        X.fromSpecResidueField x :=
+  (rfl)
 
 /-- Every point of `Spec κ(x)ᵃˡᵍ` maps to `x` under the geometric point over `x`. -/
 @[simp]
