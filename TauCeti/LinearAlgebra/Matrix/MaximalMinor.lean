@@ -47,10 +47,15 @@ examples at the end of the file check this on the row `[2, 2]` and on a unimodul
   independent.
 * `Matrix.minorGcd_mul_left` and `Matrix.minorGcd_unit_mul`: left multiplication by `B`
   multiplies the minor gcd by `normalize (det B)`, and leaves it unchanged for `B` invertible.
+* `Matrix.det_mul_transpose_mul_left`: the Gram determinant of `B * A` is `det B ^ 2` times that
+  of `A`.
 * `Matrix.det_mul_transpose_ne_zero_iff`: over a linearly ordered commutative ring, the Gram
   determinant `det (A * Aᵀ)` is nonzero exactly when the rows are linearly independent.
 * `Matrix.det_mul_transpose_nonneg` and `Matrix.det_mul_transpose_pos_iff`: over `ℤ` the Gram
   determinant is nonnegative, and positive exactly when the rows are linearly independent.
+* `Matrix.linearIndependent_rat_row_iff`: the rows of an integer matrix are linearly independent
+  over `ℚ` exactly when they are over `ℤ`; `Matrix.det_mul_transpose_pos` and
+  `Matrix.one_le_minorGcd` take independence over `ℚ` as their hypothesis.
 * `Matrix.sqrt_det_div_minorGcd_mul_left` and `Matrix.sqrt_det_div_minorGcd_unit_mul`: the
   quotient `√det (A * Aᵀ) / minorGcd A` is unchanged by `A ↦ B * A` for `det B ≠ 0`, in
   particular for `B ∈ GL_m(ℤ)`.
@@ -107,6 +112,13 @@ theorem linearIndependent_row_iff_exists_det_submatrix_ne_zero [CommRing R] [IsD
   simp only [submatrix_map, ← RingHom.mapMatrix_apply, ← RingHom.map_det,
     map_ne_zero_iff _ (IsFractionRing.injective R K)]
 
+omit [Fintype m] [DecidableEq m] in
+/-- The rows of an integer matrix are linearly independent over `ℚ` exactly when they are linearly
+independent over `ℤ`. -/
+theorem linearIndependent_rat_row_iff {A : Matrix m n ℤ} :
+    LinearIndependent ℚ (fun i j ↦ (A i j : ℚ)) ↔ LinearIndependent ℤ A.row :=
+  linearIndependent_algebraMap_comp_iff (R := ℤ) (S := ℚ) (v := A.row)
+
 end LinearIndependent
 
 /-- A minor of `B * A` on all the rows is `det B` times the corresponding minor of `A`. -/
@@ -115,6 +127,12 @@ theorem det_submatrix_mul_left [CommRing R] (B : Matrix m m R) (A : Matrix m n R
   rw [submatrix_mul B A id id e Function.bijective_id, submatrix_id_id, det_mul]
 
 variable [Fintype n]
+
+/-- The Gram determinant of the rows of `B * A` is `det B ^ 2` times that of `A`. -/
+theorem det_mul_transpose_mul_left [CommRing R] (B : Matrix m m R) (A : Matrix m n R) :
+    (B * A * (B * A)ᵀ).det = B.det ^ 2 * (A * Aᵀ).det := by
+  rw [transpose_mul, Matrix.mul_assoc, ← Matrix.mul_assoc A, det_mul, det_mul, det_transpose]
+  ring
 
 section Gcd
 
@@ -182,12 +200,12 @@ theorem det_mul_transpose_ne_zero_iff {A : Matrix m n R} :
   have key (v : m → R) : v ᵥ* (A * Aᵀ) = 0 ↔ v ᵥ* A = 0 := by
     refine ⟨fun h ↦ ?_, fun h ↦ by rw [← vecMul_vecMul, h, zero_vecMul]⟩
     have := congr($h ⬝ᵥ v)
-    rwa [← vecMul_vecMul, ← dotProduct_mulVec, mulVec_transpose, zero_dotProduct,
-      dotProduct_self_eq_zero] at this
+    rw [← vecMul_vecMul, ← dotProduct_mulVec, mulVec_transpose] at this
+    simpa using this
   rw [← vecMul_injective_iff, Ne, ← exists_vecMul_eq_zero_iff, ← coe_vecMulLinear,
     injective_iff_map_eq_zero]
-  simp only [key, vecMulLinear_apply, not_exists, not_and]
-  exact ⟨fun h v hv ↦ by_contra fun hv' ↦ h v hv' hv, fun h v hv hv' ↦ hv (h v hv')⟩
+  simp only [key, vecMulLinear_apply]
+  grind
 
 end Gram
 
@@ -203,9 +221,10 @@ theorem minorGcd_pos_iff {A : Matrix m n ℤ} : 0 < A.minorGcd ↔ LinearIndepen
 
 /-- The Gram determinant of the rows of an integer matrix is nonnegative. -/
 theorem det_mul_transpose_nonneg (A : Matrix m n ℤ) : 0 ≤ (A * Aᵀ).det := by
-  have h := (posSemidef_self_mul_conjTranspose (A.map (Int.castRingHom ℝ))).det_nonneg
-  rwa [conjTranspose_eq_transpose_of_trivial, ← transpose_map, ← Matrix.map_mul,
-    ← RingHom.mapMatrix_apply, ← RingHom.map_det, eq_intCast, Int.cast_nonneg_iff] at h
+  rw [← Int.cast_nonneg_iff (R := ℝ), Int.cast_det]
+  convert (posSemidef_self_mul_conjTranspose (A.map (Int.castRingHom ℝ))).det_nonneg using 2
+  ext
+  simp [mul_apply]
 
 /-- The Gram determinant of the rows of an integer matrix is positive exactly when the rows are
 linearly independent. -/
@@ -213,18 +232,27 @@ theorem det_mul_transpose_pos_iff {A : Matrix m n ℤ} :
     0 < (A * Aᵀ).det ↔ LinearIndependent ℤ A.row := by
   rw [← det_mul_transpose_ne_zero_iff, (det_mul_transpose_nonneg A).lt_iff_ne', ne_eq]
 
+/-- The Gram determinant of an integer matrix whose rows are linearly independent over `ℚ` is
+positive. -/
+theorem det_mul_transpose_pos {A : Matrix m n ℤ} (hA : LinearIndependent ℚ fun i j ↦ (A i j : ℚ)) :
+    0 < (A * Aᵀ).det :=
+  det_mul_transpose_pos_iff.2 (linearIndependent_rat_row_iff.1 hA)
+
+/-- The minor gcd of an integer matrix whose rows are linearly independent over `ℚ` is at
+least `1`. -/
+theorem one_le_minorGcd {A : Matrix m n ℤ} (hA : LinearIndependent ℚ fun i j ↦ (A i j : ℚ)) :
+    1 ≤ A.minorGcd :=
+  minorGcd_pos_iff.2 (linearIndependent_rat_row_iff.1 hA)
+
 /-- The quotient `√det (A * Aᵀ) / minorGcd A` is unchanged by `A ↦ B * A` for any square integer
 matrix `B` with `det B ≠ 0`: both numerator and denominator are multiplied by `|det B|`. -/
 theorem sqrt_det_div_minorGcd_mul_left {B : Matrix m m ℤ} (hB : B.det ≠ 0)
     (A : Matrix m n ℤ) :
     √((B * A * (B * A)ᵀ).det : ℝ) / ((B * A).minorGcd : ℝ) =
       √((A * Aᵀ).det : ℝ) / (A.minorGcd : ℝ) := by
-  have hdet : (B * A * (B * A)ᵀ).det = B.det ^ 2 * (A * Aᵀ).det := by
-    rw [transpose_mul, Matrix.mul_assoc, ← Matrix.mul_assoc A, det_mul, det_mul, det_transpose]
-    ring
-  rw [hdet, minorGcd_mul_left, ← Int.abs_eq_normalize, Int.cast_mul, Int.cast_mul, Int.cast_pow,
-    Int.cast_abs, Real.sqrt_mul (by positivity), Real.sqrt_sq_eq_abs,
-    mul_div_mul_left _ _ (abs_ne_zero.2 (Int.cast_ne_zero.2 hB))]
+  rw [det_mul_transpose_mul_left, minorGcd_mul_left, ← Int.abs_eq_normalize]
+  push_cast [-Int.cast_det]
+  rw [Real.sqrt_mul (by positivity), Real.sqrt_sq_eq_abs, mul_div_mul_left _ _ (by simpa)]
 
 /-- The quotient `√det (A * Aᵀ) / minorGcd A` is invariant under `A ↦ U * A` for `U ∈ GL_m(ℤ)`. -/
 theorem sqrt_det_div_minorGcd_unit_mul (U : GL m ℤ) (A : Matrix m n ℤ) :
