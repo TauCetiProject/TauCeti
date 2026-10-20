@@ -34,6 +34,8 @@ public section
 
 namespace TauCeti
 
+-- Scaling cochain endomorphisms requires commuting scalar actions on the cochain module.
+-- Mathlib supplies these instances here for commutative coefficient semirings.
 variable {R A M : Type*} [CommSemiring R] [AddCommMonoid A] [Module R A] [AddCommGroup M]
   [Module R M] {n : ℕ} [Invertible (n + 1 : R)]
 
