@@ -13,10 +13,10 @@ prefixes of its basename and report, as one advisory PR comment:
   definitions-only) and each ``PrefixBar.lean`` becoming ``Prefix/Bar.lean``,
   and places the new file there: move as you add.
 
-This check is advisory by construction: findings exit ``0``, every failure is
-downgraded to a ``::warning::`` annotation and exit ``0``, and the workflow step
-that runs it is ``continue-on-error``. It must never feed the ``build`` commit
-status.
+roadmap_label.py calls this check with a shared PR snapshot. Findings return
+``0``. Event runs turn its errors into ``::warning::`` annotations; recovery
+runs queue them for bounded retry. The standalone CLI warns and exits ``0`` on
+errors. This check never writes the ``build`` commit status.
 
 Tokenizer (the formal spec; see the tests for the fixture set): a basename splits
 into the tokens matched left to right by
@@ -37,11 +37,13 @@ right family boundary is left to humans and the placement rubric.
 from __future__ import annotations
 
 import argparse
-import json
 import pathlib
+import os
 import re
 import subprocess
 import sys
+
+from github_api import APIError, GitHub, pr_snapshot
 
 MARKER = "<!--structure:nudge-->"
 TRACKING_ISSUE = "https://github.com/TauCetiProject/TauCeti/issues/987"
@@ -128,12 +130,18 @@ def render_comment(head_sha: str, findings: dict[str, list[dict]]) -> str:
                     f"`{c['prefix']}/Bar.lean`) and place this file there.")
     lines.append("")
     lines.append(f"Policy and context: {TRACKING_ISSUE}.")
-    return "\n".join(lines)
-
-
-def _gh_json(args: list[str]):
-    return json.loads(subprocess.run(["gh"] + args, check=True,
-                                     capture_output=True, text=True).stdout)
+    body = "\n".join(lines)
+    if len(body.encode("utf-8")) > 60000:
+        footer = "\n\nFurther findings omitted to fit GitHub's comment limit.\n" + lines[-1]
+        kept, size = [], len(footer.encode("utf-8"))
+        for line in lines[:-2]:
+            added = len((line + "\n").encode("utf-8"))
+            if size + added > 60000:
+                break
+            kept.append(line)
+            size += added
+        body = "\n".join(kept) + footer
+    return body
 
 
 def _local_tree() -> set[str]:
@@ -142,41 +150,78 @@ def _local_tree() -> set[str]:
     return {l for l in out.splitlines() if l.endswith(".lean")}
 
 
-def run_pr(repo: str, pr: int, apply: bool) -> int:
-    info = _gh_json(["api", f"repos/{repo}/pulls/{pr}",
-                     "--jq", "{head: .head.sha}"])
-    files = _gh_json(["api", "--paginate", f"repos/{repo}/pulls/{pr}/files?per_page=100",
-                      "--jq", "[.[] | select(.status == \"added\") | .filename]"])
-    added = [f for f in files if f.endswith(".lean") and f.startswith("TauCeti/")]
+def run_pr(repo: str, pr: int, apply: bool, *, api: GitHub, snapshot=None) -> int:
+    """Analyze added Lean paths using a supplied snapshot or one fetched through ``api``.
+
+    Skip incomplete diffs. Print findings when read-only; with ``apply``, create
+    or update this bot's marker comment and remove its duplicates, preserving
+    human comments. Return zero for completed analysis and propagate API errors
+    so the caller can warn or queue recovery.
+    """
+    snapshot = snapshot if snapshot is not None else pr_snapshot(api, repo, pr)
+    if snapshot["info"].get("incomplete_files"):
+        print(f"::notice::structure-nudge: PR #{pr}: incomplete diff; skipping analysis")
+        return 0
+    added = [row["filename"] for row in snapshot["files"]
+             if row["status"] == "added" and row["filename"].endswith(".lean")
+             and row["filename"].startswith("TauCeti/")]
     tree = _local_tree() | set(added)
     findings = {}
-    for f in added:
-        cands = candidates_for(f, tree - {f})
+    for path in added:
+        cands = candidates_for(path, tree - {path})
         if cands:
-            findings[f] = cands
+            findings[path] = cands
     if not findings:
         print(f"structure-nudge: PR #{pr}: no findings")
-        # An earlier comment may be stale (files since removed from the diff):
-        # leave it in place; it names the head SHA it analyzed.
         return 0
-    body = render_comment(info["head"], findings)
+    body = render_comment(snapshot["info"]["head"]["sha"], findings)
     if not apply:
         print(body)
         return 0
-    comments = _gh_json(["api", "--paginate",
-                         f"repos/{repo}/issues/{pr}/comments?per_page=100",
-                         "--jq", "[.[] | {id: .id, body: .body}]"])
-    prev = next((c["id"] for c in comments if MARKER in (c["body"] or "")), None)
+    comments = api.items(f"repos/{repo}/issues/{pr}/comments")
+    expected_author = os.environ.get("GH_COMMENT_AUTHOR")
+    marked = sorted((comment for comment in comments if MARKER in (comment.get("body") or "")
+                     and (not expected_author or (comment.get("user") or {}).get("login") == expected_author)),
+                    key=lambda comment: comment["id"])
+    prev = marked[0] if marked else None
+    # Collapse marker duplicates left by overlapping event/recovery POSTs.
+    for duplicate in marked[1:]:
+        author = duplicate.get("user") or {}
+        previous_author = prev.get("user") or {}
+        if author.get("type") != "Bot" or author.get("login") != previous_author.get("login"):
+            continue  # Cleanup never deletes human comments or another bot's thread.
+        try:
+            api.request("DELETE", f"repos/{repo}/issues/comments/{duplicate['id']}")
+        except APIError as error:
+            if error.status != 404:
+                raise
     if prev is not None:
-        subprocess.run(["gh", "api", "-X", "PATCH",
-                        f"repos/{repo}/issues/comments/{prev}", "-f", f"body={body}"],
-                       check=True, capture_output=True, text=True)
-        print(f"structure-nudge: PR #{pr}: updated comment {prev}")
+        if prev["body"] == body:
+            api.skip_write("structure-comment")
+            print(f"structure-nudge: PR #{pr}: comment unchanged")
+            return 0
+        api.request("PATCH", f"repos/{repo}/issues/comments/{prev['id']}", {"body": body})
+        print(f"structure-nudge: PR #{pr}: updated comment {prev['id']}")
     else:
-        subprocess.run(["gh", "api", f"repos/{repo}/issues/{pr}/comments",
-                        "-f", f"body={body}"],
-                       check=True, capture_output=True, text=True)
+        created = api.request("POST", f"repos/{repo}/issues/{pr}/comments", {"body": body})
         print(f"structure-nudge: PR #{pr}: posted comment")
+        # The last overlapping POST can see both comments even when both preflight
+        # listings were empty. Verify after creation so cached recovery success does
+        # not leave a duplicate behind until another head/body edit.
+        if isinstance(created, dict) and (created.get("user") or {}).get("type") == "Bot":
+            login = created["user"]["login"]
+            own = sorted((comment for comment in api.items(f"repos/{repo}/issues/{pr}/comments")
+                          if MARKER in (comment.get("body") or "")
+                          and (comment.get("user") or {}).get("login") == login),
+                         key=lambda comment: comment["id"])
+            if own and own[0]["id"] != created["id"] and own[0]["body"] != body:
+                api.request("PATCH", f"repos/{repo}/issues/comments/{own[0]['id']}", {"body": body})
+            for duplicate in own[1:]:
+                try:
+                    api.request("DELETE", f"repos/{repo}/issues/comments/{duplicate['id']}")
+                except APIError as error:
+                    if error.status != 404:
+                        raise
     return 0
 
 
@@ -206,15 +251,18 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--tree-dry-run", action="store_true",
                     help="report over every existing file (snapshot mode)")
     args = ap.parse_args(argv)
+    api = GitHub()
     try:
         if args.tree_dry_run:
             return run_tree_dry_run()
         if args.pr is None:
             ap.error("--pr or --tree-dry-run required")
-        return run_pr(args.repo, args.pr, args.apply)
+        return run_pr(args.repo, args.pr, args.apply, api=api)
     except Exception as e:  # advisory: never fail the job
         print(f"::warning::structure-nudge failed harmlessly: {e}")
         return 0
+    finally:
+        api.report()
 
 
 if __name__ == "__main__":

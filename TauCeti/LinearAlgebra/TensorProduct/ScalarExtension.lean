@@ -5,10 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.TensorProduct.Maps
+public import Mathlib.RingTheory.Flat.Basic
 
 /-!
-# Cancelling scalar extension
+# Scalar extensions of modules
+
+A flat module embeds in its scalar extension along a faithful semiring algebra. The map
+`m ↦ 1 ⊗ m` identifies it with the submodule of unit pure tensors, which is free whenever the
+original module is free. For a module with a basis, this submodule is the span over the original
+semiring of the base-changed basis.
 
 The canonical identification `(E ⊗[K] L) ⊗[L] V ≃ E ⊗[K] V` is linear over `E`, although
 `L` acts on the right component of the scalar-extended algebra. This identification compares
@@ -25,6 +30,16 @@ underlying `R`-linear map with `P` (`TensorProduct.cancelBaseChangeLeft_lTensor`
 injective together (`LinearMap.injective_lTensor_iff_injective_lTensor_restrictScalars`). When
 `P` is an `R`-algebra, the first is extension of scalars along `B → B ⊗[R] P`; for `P = κ(p)`,
 this compares base change to the fibre ring `B ⊗[R] κ(p)` with base change to `κ(p)`.
+
+## Main declarations
+
+* `Module.Basis.range_mk_one_eq_span`: the unit pure tensors are the span over the original
+  semiring of a base-changed basis.
+* `TauCeti.TensorProduct.unitTmulEquiv`: a flat module is equivalent to its unit-tensor image
+  under a faithful scalar extension.
+* `TauCeti.TensorProduct.free_range_mk_one`: the unit-tensor image of a free module is free.
+* `TensorProduct.cancelBaseChangeRight` and `TensorProduct.cancelBaseChangeLeft`: cancelling
+  a scalar-extended algebra identifies two iterated scalar extensions.
 -/
 
 public section
@@ -153,3 +168,63 @@ theorem injective_lTensor_iff_injective_lTensor_restrictScalars (f : N →ₗ[B]
   rw [this, EquivLike.comp_injective, EquivLike.injective_comp]
 
 end LinearMap
+
+namespace TauCeti.TensorProduct
+
+open Module
+
+universe u v w
+
+variable {R : Type u} {K : Type v} {M : Type w}
+
+section CommSemiring
+
+variable [CommSemiring R] [Semiring K] [Algebra R K]
+variable [AddCommMonoid M] [Module R M]
+
+/-- The unit pure tensors are the `R`-span of the base change of any basis. -/
+theorem _root_.Module.Basis.range_mk_one_eq_span {ι : Type*} (b : Basis ι R M) :
+    LinearMap.range (TensorProduct.mk R K M 1) =
+      Submodule.span R (Set.range (b.baseChange K)) := by
+  rw [LinearMap.range_eq_map, ← b.span_eq, Submodule.map_span, ← Set.range_comp]
+  exact congrArg (Submodule.span R)
+    (congrArg Set.range (funext fun i ↦ (Basis.baseChange_apply K b i).symm))
+
+variable [FaithfulSMul R K]
+
+section Flat
+
+variable [Module.Flat R M]
+
+variable (R K M) in
+/-- A flat module is canonically isomorphic to the module of unit pure tensors in its scalar
+extension along a faithful algebra. -/
+noncomputable def unitTmulEquiv : M ≃ₗ[R] LinearMap.range (TensorProduct.mk R K M 1) :=
+  LinearEquiv.ofInjective _ (Module.Flat.tensorProduct_mk_injective R M K)
+
+/-- The unit-tensor equivalence sends a vector to its unit pure tensor. This equation
+characterizes the equivalence. -/
+@[simp]
+theorem coe_unitTmulEquiv_apply (m : M) :
+    (unitTmulEquiv R K M m : K ⊗[R] M) = 1 ⊗ₜ[R] m := by
+  rw [unitTmulEquiv, LinearEquiv.ofInjective_apply, TensorProduct.mk_apply]
+
+/-- The inverse unit-tensor equivalence recovers a vector from its unit pure tensor. -/
+@[simp]
+theorem unitTmulEquiv_symm_tmul (m : M)
+    (h : (1 : K) ⊗ₜ[R] m ∈ LinearMap.range (TensorProduct.mk R K M 1)) :
+    (unitTmulEquiv R K M).symm ⟨1 ⊗ₜ[R] m, h⟩ = m := by
+  apply (unitTmulEquiv R K M).injective
+  rw [LinearEquiv.apply_symm_apply]
+  exact Subtype.ext (coe_unitTmulEquiv_apply m).symm
+
+end Flat
+
+/-- The module of unit pure tensors is free whenever the original module is free. -/
+instance free_range_mk_one [Module.Free R M] :
+    Module.Free R (LinearMap.range (TensorProduct.mk R K M 1)) :=
+  Module.Free.of_equiv (unitTmulEquiv R K M)
+
+end CommSemiring
+
+end TauCeti.TensorProduct
