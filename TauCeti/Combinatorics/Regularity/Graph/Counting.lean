@@ -10,6 +10,7 @@ public import Mathlib.Data.Fintype.Pi
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Tactic.Linarith
 import TauCeti.Algebra.Order.BigOperators.Sum.UnitWeights
+import TauCeti.Combinatorics.SimpleGraph.Density
 
 /-!
 # Counting induced three-vertex patterns in uniform triples of cells
@@ -59,15 +60,6 @@ namespace SimpleGraph
 
 variable {α 𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] {G : SimpleGraph α}
   [DecidableRel G.Adj] {ε : 𝕜} {s t s' t' : Finset α}
-
-private lemma card_interedges_eq_edgeDensity_mul (G : SimpleGraph α) [DecidableRel G.Adj]
-    (s t : Finset α) : (#(G.interedges s t) : 𝕜) = G.edgeDensity s t * (#s * #t) := by
-  rcases eq_or_ne (#s * #t) 0 with h | h
-  · have : #(G.interedges s t) = 0 := Nat.eq_zero_of_le_zero (h ▸ G.card_interedges_le_mul s t)
-    simp [this, ← Nat.cast_mul, h]
-  · rw [edgeDensity_def]
-    push_cast
-    exact (div_mul_cancel₀ _ (by exact_mod_cast h)).symm
 
 /-- **Rectangle discrepancy of a uniform pair.** If `(s, t)` is `ε`-uniform, then for all `s' ⊆ s`
 and `t' ⊆ t` the number of edges between `s'` and `t'` is within `ε |s| |t|` of the count
@@ -228,11 +220,8 @@ private lemma abs_sum_patternWeight_sub_le (e₀₁ e₀₂ e₁₂ : Prop) [Dec
         (fun _ _ ↦ zero_le_one) (fun _ _ ↦ le_rfl) (fun _ _ ↦ zero_le_one)
         (fun _ _ ↦ le_rfl)).trans_eq (by ring)
   rw [hsplit]
-  linarith [abs_add_le (∑ z ∈ s₂, ∑ x ∈ s₀, ∑ y ∈ s₁, b x z * c y z * (a x y - p) +
-    p * ∑ y ∈ s₁, ∑ x ∈ s₀, ∑ z ∈ s₂, 1 * c y z * (b x z - q))
-    (p * q * ∑ x ∈ s₀, ∑ y ∈ s₁, ∑ z ∈ s₂, 1 * 1 * (c y z - r)),
-    abs_add_le (∑ z ∈ s₂, ∑ x ∈ s₀, ∑ y ∈ s₁, b x z * c y z * (a x y - p))
-    (p * ∑ y ∈ s₁, ∑ x ∈ s₀, ∑ z ∈ s₂, 1 * c y z * (b x z - q))]
+  refine ((abs_add_le _ _).trans (add_le_add (abs_add_le _ _) le_rfl)).trans ?_
+  linarith
 
 /-- **Induced counting lemma for three cells.** Let `A 0`, `A 1`, `A 2` be pairwise `ε`-uniform
 cells of `G`, and `J` a graph on `Fin 3`. Then the number of maps `g` with `g i ∈ A i` such that
