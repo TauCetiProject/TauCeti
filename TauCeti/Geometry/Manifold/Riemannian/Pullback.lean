@@ -195,17 +195,27 @@ variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
   {P : Type*} [TopologicalSpace P] [ChartedSpace H'' P] [IsManifold K 1 P]
 
 omit [IsManifold I 1 M] [IsManifold J 1 N] [FiniteDimensional ℝ E] [IsManifold K 1 P] in
+private theorem mfderiv_comp_of_injective
+    (h : N → P) (f : M → N)
+    (hinjh : ∀ y, Function.Injective (mfderiv J K h y))
+    (hinjf : ∀ x, Function.Injective (mfderiv I J f x)) :
+    ∀ x, mfderiv I K (h ∘ f) x =
+      (mfderiv J K h (f x)).comp (mfderiv I J f x) := by
+  intro x
+  have hhx : MDiffAt h (f x) :=
+    mdifferentiableAt_of_mfderiv_injective (hinjh (f x))
+  have hfx : MDiffAt f x :=
+    mdifferentiableAt_of_mfderiv_injective (hinjf x)
+  exact mfderiv_comp x hhx hfx
+
+omit [IsManifold I 1 M] [IsManifold J 1 N] [FiniteDimensional ℝ E] [IsManifold K 1 P] in
 theorem injective_mfderiv_comp
     (h : N → P) (f : M → N)
     (hinjh : ∀ y, Function.Injective (mfderiv J K h y))
     (hinjf : ∀ x, Function.Injective (mfderiv I J f x)) :
     ∀ x, Function.Injective (mfderiv I K (h ∘ f) x) := by
   intro x
-  have hhx : MDiffAt h (f x) :=
-    mdifferentiableAt_of_mfderiv_injective (hinjh (f x))
-  have hfx : MDiffAt f x :=
-    mdifferentiableAt_of_mfderiv_injective (hinjf x)
-  rw [mfderiv_comp x hhx hfx]
+  rw [mfderiv_comp_of_injective h f hinjh hinjf x]
   exact (hinjh (f x)).comp (hinjf x)
 
 /-- Pulling a metric back along a composite is the same as pulling it back successively. -/
@@ -221,12 +231,9 @@ theorem pullback_comp
   apply ext
   intro x v w
   rw [pullback_inner, pullback_inner, pullback_inner]
-  have hhx : MDiffAt h (f x) :=
-    mdifferentiableAt_of_mfderiv_injective (hinjh (f x))
-  have hfx : MDiffAt f x :=
-    mdifferentiableAt_of_mfderiv_injective (hinjf x)
-  rw [mfderiv_comp_apply x hhx hfx v, mfderiv_comp_apply x hhx hfx w]
-  rfl
+  rw [mfderiv_comp_of_injective h f hinjh hinjf x]
+  simp only [ContinuousLinearMap.comp_apply]
+  rw [Function.comp_apply]
 
 variable {g : ContMDiffRiemannianMetric J n F (fun y : N ↦ TangentSpace J y)} {f : M → N}
   {hf : ContMDiff I J (n + 1) f} {hinj : ∀ x, Function.Injective (mfderiv I J f x)}
