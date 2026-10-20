@@ -14,6 +14,7 @@ import Mathlib.FieldTheory.Finite.GaloisField
 import TauCeti.Algebra.QuadraticAlgebra.NormTrace
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.VariableChange
 import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic
+import TauCeti.AlgebraicGeometry.EllipticCurve.Weierstrass
 import TauCeti.RingTheory.LocalRing.QuadraticDoubleRoot
 -- Proof-only: Hensel's lemma for a polynomial that is not monic.
 import TauCeti.RingTheory.Henselian.Basic
@@ -30,7 +31,9 @@ The singular point of `W_k` lifts too, when it is a node at the origin: if `a₃
 a unit, then the two partial derivatives of the Weierstrass polynomial vanish at some `(r, t) ∈ 𝔪²`,
 and the translation `x ↦ x + r`, `y ↦ y + t` makes `a₃ = a₄ = 0`. The two conditions combine to
 `6 r² + b₂ r + b₄ = 0`, a quadratic with unit linear coefficient `b₂`, which Hensel's lemma solves;
-then `t` is read off from either condition, as `2` or `a₁` is a unit.
+then `t` is read off from either condition, as `2` or `a₁` is a unit. When `b₂` is a unit, a root
+modulo `𝔪` of the tangent quadratic `T² + a₁ T − a₂`, whose discriminant is `b₂`, is simple, so it
+lifts to a root in `R`: the tangent directions of a split node lift with it.
 
 For a finite residue field and a nonsplit tangent quadratic, a discriminant that is a unit times
 a square gives a solution with both coordinates in the maximal ideal. The centred case reduces
@@ -43,6 +46,8 @@ general case follows by the translation above.
   nonsingular point of the reduced curve is the residue of a nonsingular point.
 * `WeierstrassCurve.exists_translate_a₃_eq_zero_and_a₄_eq_zero`: over a Henselian local ring, if
   `a₃, a₄ ∈ 𝔪` and `b₂` is a unit, a translation by an element of `𝔪²` makes `a₃ = a₄ = 0`.
+* `WeierstrassCurve.exists_tangentQuadratic_eq_zero`: over a Henselian local ring, if `b₂` is a
+  unit, a root modulo `𝔪` of the tangent quadratic lifts to a root.
 
 * `WeierstrassCurve.exists_equation_mem_maximalIdeal_of_a₃_eq_zero_of_a₄_eq_zero`: the centred
   nonsplit equation with even discriminant order has a solution in the maximal ideal.
@@ -172,6 +177,34 @@ theorem exists_translate_a₃_eq_zero_and_a₄_eq_zero {R : Type*} [CommRing R]
     refine ha₁.mul_right_eq_zero.1 ?_
     linear_combination hr' - 2 * e₄
 
+/-- **The tangent directions of a node lift.** Over a Henselian local ring, if `b₂` is a unit, a
+root `t₀` modulo the maximal ideal of the tangent quadratic `T² + a₁ T − a₂` lifts to a root `α`
+with `α ≡ t₀`. The root is simple: the derivative `2 t₀ + a₁` squares to `b₂` modulo the maximal
+ideal. -/
+theorem exists_tangentQuadratic_eq_zero {R : Type*} [CommRing R] [HenselianLocalRing R]
+    (W : WeierstrassCurve R) (hb₂ : IsUnit W.b₂) {t₀ : R}
+    (ht₀ : t₀ ^ 2 + W.a₁ * t₀ - W.a₂ ∈ maximalIdeal R) :
+    ∃ α : R, α ^ 2 + W.a₁ * α - W.a₂ = 0 ∧ α - t₀ ∈ maximalIdeal R := by
+  have h0 := (residue_eq_zero_iff _).2 ht₀
+  simp only [map_sub, map_add, map_mul, map_pow] at h0
+  obtain ⟨α, hα, hαt⟩ := HenselianLocalRing.is_henselian (X ^ 2 + C W.a₁ * X - C W.a₂)
+    (by monicity!) t₀
+    (by
+      rw [← residue_eq_zero_iff]
+      simpa using h0)
+    (by
+      -- `(2 t₀ + a₁)² = 4 (t₀² + a₁ t₀ - a₂) + b₂`, a unit modulo the maximal ideal
+      have hd : (derivative (X ^ 2 + C W.a₁ * X - C W.a₂)).eval t₀ = 2 * t₀ + W.a₁ := by
+        simp [one_add_one_eq_two]
+      have hb := (residue_ne_zero_iff_isUnit _).2 hb₂
+      simp only [b₂, map_add, map_mul, map_pow, map_ofNat] at hb
+      rw [hd, ← residue_ne_zero_iff_isUnit]
+      intro h1
+      simp only [map_add, map_mul, map_ofNat] at h1
+      apply hb
+      linear_combination (2 * residue R t₀ + residue R W.a₁) * h1 - 4 * h0)
+  exact ⟨α, by simpa using hα.eq_zero, hαt⟩
+
 /-- Over a Henselian local ring with finite residue field, suppose `a₃ = a₄ = 0`, `a₆ ∈ 𝔪`,
 `b₂` is a unit, and the tangent quadratic has no residue-field root. If the discriminant is
 associated to a square, the Weierstrass equation has a solution with both coordinates in `𝔪`. -/
@@ -181,10 +214,8 @@ theorem exists_equation_mem_maximalIdeal_of_a₃_eq_zero_of_a₄_eq_zero {R : Ty
     (hroot : ∀ t : ResidueField R, t ^ 2 + residue R W.a₁ * t - residue R W.a₂ ≠ 0) {z : R}
     (hΔ : Associated (z ^ 2) W.Δ) :
     ∃ x y : R, x ∈ maximalIdeal R ∧ y ∈ maximalIdeal R ∧ W.toAffine.Equation x y := by
-  -- with `a₃ = a₄ = 0`, one has `b₄ = 0`, `b₆ = 4 a₆` and `b₈ = b₂ a₆`
-  have hΔ' : W.Δ = -W.a₆ * (W.b₂ ^ 3 + 432 * W.a₆) := by
-    simp only [Δ, b₂, b₄, b₆, b₈, h₃, h₄]
-    ring
+  -- with `a₃ = a₄ = 0`, the discriminant is `-a₆ (b₂³ + 432 a₆)`
+  have hΔ' := Δ_eq_of_a₃_eq_zero_of_a₄_eq_zero h₃ h₄
   have hw : IsUnit (W.b₂ ^ 3 + 432 * W.a₆) := by
     rw [← residue_ne_zero_iff_isUnit]
     simpa [(residue_eq_zero_iff _).2 h₆] using (residue_ne_zero_iff_isUnit _).2 hb₂
