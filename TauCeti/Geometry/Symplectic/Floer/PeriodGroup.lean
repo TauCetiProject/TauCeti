@@ -91,24 +91,24 @@ def chern : PeriodGroup ω c →+ ℤ :=
   (AddMonoidHom.snd ℝ ℤ).comp (periods ω c)
 
 /-- The joint period map sends the class of `s` to its area and first Chern number. -/
-@[simp]
 theorem periods_mk (s : S) : periods ω c (s : PeriodGroup ω c) = (ω s, c s) := by
   rw [periods, QuotientAddGroup.kerLift_mk, AddMonoidHom.prod_apply]
 
 /-- The area of the class of a spherical class `s` is `ω s`. -/
 @[simp]
 theorem area_mk (s : S) : area ω c (s : PeriodGroup ω c) = ω s := by
-  simp [area]
+  rw [area, AddMonoidHom.comp_apply, periods_mk, AddMonoidHom.coe_fst]
 
 /-- The first Chern number of the class of a spherical class `s` is `c s`. -/
 @[simp]
 theorem chern_mk (s : S) : chern ω c (s : PeriodGroup ω c) = c s := by
-  simp [chern]
+  rw [chern, AddMonoidHom.comp_apply, periods_mk, AddMonoidHom.coe_snd]
 
 /-- The joint period map has components `PeriodGroup.area` and `PeriodGroup.chern`. -/
+@[simp]
 theorem periods_apply (γ : PeriodGroup ω c) : periods ω c γ = (area ω c γ, chern ω c γ) := by
   induction γ using QuotientAddGroup.induction_on with
-  | H s => simp
+  | H s => simp [periods_mk]
 
 /-- The joint period map is injective. -/
 theorem periods_injective : Function.Injective (periods ω c) :=
