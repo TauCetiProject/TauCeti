@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Commutation.Homotopy.SameSide
-public import TauCeti.KnotTheory.Grid.Commutation.Homotopy.MixedPair
+public import TauCeti.KnotTheory.Grid.Commutation.Homotopy.Mixed.Pair
 import TauCeti.Algebra.BigOperators.Finset.Pairing
 import TauCeti.Algebra.CharP.Two
 
@@ -16,7 +16,7 @@ import TauCeti.Algebra.CharP.Two
 Off the diagonal, a counted pair of a forward and a reverse commutation pentagon turning on
 opposite sides of the replaced grid line has the same underlying rectangle decomposition as a
 unique unpaired hexagon composite, and the two have the same weight
-(`Homotopy.MixedPair`). Since a pentagon pair is determined by its underlying rectangles, this
+(`Homotopy.Mixed.Pair`). Since a pentagon pair is determined by its underlying rectangles, this
 matches the mixed-side pairs bijectively with their image, which therefore has the same total
 weight.
 
