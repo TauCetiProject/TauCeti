@@ -76,7 +76,7 @@ private theorem norm_testFunctionLp_le_of_subset_slab {i : Fin (n + 1)} {a b : �
     ((phi.contDiff.continuous_fderiv (by simp)).memLp_of_hasCompactSupport
       (phi.hasCompactSupport.fderiv ℝ)).ne
   have hslab := eLpNorm_le_eLpNorm_fderiv_of_support_subset_slab (i := i) (p := p)
-    (phi.contDiff.of_le (by simp)) hab
+    (phi.contDiff.of_le (by simp))
     (fun x hx => hOmega x (phi.tsupport_subset (subset_tsupport _ hx))) Fact.out
   rw [norm_testFunctionLp_eq, norm_gradientTestFunctionLp_eq,
     ← ENNReal.toReal_ofReal (sub_nonneg.2 hab), ← ENNReal.toReal_mul]
