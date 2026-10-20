@@ -29,6 +29,8 @@ block-triangular invertible matrix is block triangular.
   kills this ideal as soon as it kills every forbidden coordinate.
 * `TauCeti.GeneralLinear.weightParabolicGroupScheme`: the resulting closed subgroup scheme.
 * `TauCeti.GeneralLinear.weightParabolicInclusion`: its closed immersion into `GL_N`.
+* `TauCeti.GeneralLinear.weightParabolicPoints`: the matrix-valued points over any commutative
+  algebra, characterized by `mem_weightParabolicPoints_iff`.
 * `TauCeti.GeneralLinear.mem_weightParabolicDefiningPointsSubgroup_iff_blockTriangular`: a point
   of `GL_N` over an `R`-algebra lies in the subgroup cut out by the ideal exactly when its matrix
   is block triangular for the order dual of `w`, that is, its `(i,j)` entry vanishes whenever
@@ -50,7 +52,7 @@ open AlgebraicGeometry CategoryTheory
 
 namespace TauCeti.GeneralLinear
 
-universe u
+universe u v
 
 variable (R : Type u) [CommRing R] {N : ℕ}
 
@@ -296,5 +298,26 @@ theorem mem_weightParabolicDefiningPointsSubgroup_iff_blockTriangular (w : Fin N
       (fun i j hij ↦ ?_) (HopfIdeal.mem_toIdeal.mpr hx))
     rw [← pointToGeneralLinear_apply, ← pointsMulEquiv_apply]
     exact h hij
+
+variable (w : Fin N → ℤ)
+
+/-- The matrix-valued points of the closed weight-parabolic subgroup of `GL_N`. -/
+noncomputable def weightParabolicPoints (A : Type v) [CommRing A] [Algebra R A] :
+    Subgroup (GL (Fin N) A) :=
+  (CommHopfAlgCat.quotientPointsSubgroup (coordinateHopfAlgebra R N)
+    (weightParabolicDefiningHopfIdeal R w) (CommAlgCat.of R A)).map
+      (pointsMulEquiv N).toMonoidHom
+
+/-- A matrix belongs to the weight parabolic precisely when all entries increasing the
+weight vanish. This holds over nonreduced value algebras as well. -/
+@[simp]
+theorem mem_weightParabolicPoints_iff {A : Type v} [CommRing A] [Algebra R A]
+    (g : GL (Fin N) A) :
+    g ∈ weightParabolicPoints R w A ↔ ∀ i j, w i < w j →
+      (g : Matrix (Fin N) (Fin N) A) i j = 0 := by
+  rw [weightParabolicPoints, Subgroup.mem_map_equiv,
+    mem_weightParabolicDefiningPointsSubgroup_iff_blockTriangular]
+  simp only [MulEquiv.apply_symm_apply, Matrix.BlockTriangular, Function.comp_apply,
+    OrderDual.toDual_lt_toDual]
 
 end TauCeti.GeneralLinear

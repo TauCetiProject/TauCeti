@@ -21,6 +21,10 @@ transpose, `Aᵀ = J * A⁻¹ * J⁻¹`. Conjugation by `J` is the shape the mat
 the exponential does not interact with `Aᵀ * J = J * (-A)`, but it does turn `Aᵀ = J * (-A) * J⁻¹`
 into `(exp A)ᵀ = J * (exp A)⁻¹ * J⁻¹`.
 
+Read entrywise, `Jᵀ = -J` and `J * Jᵀ = 1` become the antisymmetry of the entries and the pairing
+of a row of `J` with itself; summing the latter over all rows contracts `J` against itself to
+`2 * card l`, the loop value of the symplectic Brauer diagrams up to sign.
+
 It also records membership in `Matrix.symplecticGroup` of three families of block matrices, each a
 specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
 
@@ -28,6 +32,9 @@ specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
 
 * `Matrix.J_mul_neg_J`, `Matrix.neg_J_mul_J` and `Matrix.isUnit_J`: the canonical skew-symmetric
   matrix is a unit, with inverse `-J`.
+* `Matrix.J_apply_swap` and `Matrix.sum_J_mul_J`: the two entrywise identities for `J`, its
+  antisymmetry and the pairing of a row with itself; `Matrix.sum_sum_J_mul_J` is the double sum of
+  the latter, `tr (J * Jᵀ) = 2 * card l`.
 * `Matrix.eq_J_conj_iff_mul_J_eq`: cancelling a conjugation by `J`.
 * `SymplecticGroup.transpose_eq_J_conj_inv`: the transpose of a symplectic matrix is the
   `J`-conjugate of its inverse.
@@ -58,6 +65,27 @@ theorem neg_J_mul_J : (-J l R) * J l R = 1 := by
 /-- The canonical skew-symmetric matrix is a unit, with inverse `-J`, because `J * J = -1`. -/
 theorem isUnit_J : IsUnit (J l R) :=
   ⟨⟨J l R, -J l R, J_mul_neg_J l R, neg_J_mul_J l R⟩, rfl⟩
+
+omit [Fintype l] in
+/-- `J` is antisymmetric, entrywise: `Jᵀ = -J` read at a pair of indices. -/
+theorem J_apply_swap (x y : l ⊕ l) : J l R y x = -J l R x y := by
+  have h := congrFun (congrFun (J_transpose l R) x) y
+  simpa only [transpose_apply, neg_apply] using h
+
+/-- Each row of `J` pairs with itself to `1`, because `J * Jᵀ = 1`. -/
+theorem sum_J_mul_J (x : l ⊕ l) : ∑ y : l ⊕ l, J l R x y * J l R x y = 1 := by
+  have hJ : J l R * (J l R)ᵀ = 1 := by
+    rw [J_transpose]
+    exact J_mul_neg_J l R
+  have h := congrFun (congrFun hJ x) x
+  simpa only [mul_apply, one_apply_eq, transpose_apply] using h
+
+/-- **`J` contracted against itself** is `tr (J * Jᵀ) = tr 1 = 2 * card l`: the double sum of
+`Matrix.sum_J_mul_J` over the `2 * card l` rows. -/
+theorem sum_sum_J_mul_J :
+    ∑ x : l ⊕ l, ∑ y : l ⊕ l, J l R x y * J l R x y = (2 * Fintype.card l : R) := by
+  rw [Finset.sum_congr rfl fun x _ => sum_J_mul_J l R x, Finset.sum_const, Finset.card_univ,
+    Fintype.card_sum, nsmul_eq_mul, mul_one, Nat.cast_add, two_mul]
 
 variable {l R}
 

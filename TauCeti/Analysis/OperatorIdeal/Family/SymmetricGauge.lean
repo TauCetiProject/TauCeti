@@ -9,7 +9,7 @@ public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Adjoint
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Equivalence
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.KyFan
 public import TauCeti.Analysis.OperatorIdeal.Family
-public import TauCeti.Analysis.OperatorIdeal.SymmetricGauge
+public import TauCeti.Analysis.OperatorIdeal.SymmetricGauge.Basic
 
 /-!
 # The operator-ideal family induced by a symmetric gauge

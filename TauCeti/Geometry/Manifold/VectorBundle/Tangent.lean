@@ -639,6 +639,16 @@ theorem tangentSpaceOpenEquiv_mfderiv_apply
     mfderiv_subtype_val, mfderiv_subtype_val] at h
   exact h.symm
 
+/-- The differential of the inclusion of nested open submanifolds is the identity of the common
+model vector space. -/
+@[simp]
+theorem mfderiv_inclusion_apply {U V : Opens M} (h : U ≤ V) (x : U)
+    (v : TangentSpace I x) : mfderiv I I (Opens.inclusion h) x v = v := by
+  have h' := tangentSpaceOpenEquiv_mfderiv_apply (A := id)
+    ((contMDiff_inclusion h).mdifferentiableAt one_ne_zero) mdifferentiableAt_id rfl v
+  rw [tangentSpaceOpenEquiv_apply, tangentSpaceOpenEquiv_apply, mfderiv_id] at h'
+  exact h'
+
 /-- The tangent bundle of a model space is Hausdorff. -/
 theorem instT2SpaceTangentBundleModelSpace :
     T2Space (TangentBundle I H) := by

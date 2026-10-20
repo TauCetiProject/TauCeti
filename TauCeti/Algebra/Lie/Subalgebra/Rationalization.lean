@@ -77,7 +77,7 @@ private theorem _root_.LieSubalgebra.rationalizationEquiv_map_lie (M : LieSubalg
 /-- The canonical rationalization of a free full integral Lie subalgebra, as a Lie algebra
 equivalence.
 
-The underlying linear equivalence is `TauCeti.Submodule.rationalizationEquiv`. The bracket on its
+The underlying linear equivalence is `Submodule.rationalizationEquiv`. The bracket on its
 source is Mathlib's scalar-extension bracket on `K ⊗[R] M`. -/
 noncomputable def _root_.LieSubalgebra.rationalizationEquiv (M : LieSubalgebra R L)
     [Module.Free R M] [M.toSubmodule.IsLattice K] :

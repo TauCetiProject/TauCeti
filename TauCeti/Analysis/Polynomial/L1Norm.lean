@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Polynomial.Norm
 public import Mathlib.Algebra.Polynomial.HasseDeriv
+public import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # The coefficient l¹-norm of a polynomial
@@ -27,7 +28,12 @@ coefficients.
 * `Polynomial.norm_eval_le_l1Norm_mul`: the evaluation bound.
 * `Polynomial.l1Norm_comp_le` and `Polynomial.l1Norm_comp_X_add_C_le`: the composition and
   translation bounds.
-* `Polynomial.l1Norm_hasseDeriv_le`: the Hasse derivative bound.
+* `Polynomial.l1Norm_hasseDeriv_le` and `Polynomial.l1Norm_hasseDeriv_le_pow`: Hasse derivative
+  bounds in terms of the degree and coefficient length.
+* `Polynomial.l1Norm_mul_X_pow` and `Polynomial.l1Norm_map`: invariance under shifts and
+  norm-preserving coefficient maps.
+* `Polynomial.norm_eval_le_l1Norm_mul_of_mul_X_sub_C_pow_eq`: the values near `a` of the
+  quotient of a polynomial by a power of `X - a`.
 
 ## References
 
@@ -108,6 +114,26 @@ theorem l1Norm_X_pow [NormOneClass R] (n : ℕ) : (X ^ n : R[X]).l1Norm = 1 := b
 @[simp]
 theorem l1Norm_neg (P : R[X]) : (-P).l1Norm = P.l1Norm := by
   simp only [l1Norm_eq_sum_range, natDegree_neg, coeff_neg, norm_neg]
+
+/-- Multiplying by a power of `X` shifts the coefficients, so it does not change the coefficient
+l¹-norm. -/
+@[simp]
+theorem l1Norm_mul_X_pow (P : R[X]) (n : ℕ) : (P * X ^ n).l1Norm = P.l1Norm := by
+  classical
+  rw [l1Norm_eq_sum_of_support_subset (s := P.support.map (addRightEmbedding n)),
+    Finset.sum_map, l1Norm_eq_sum_support]
+  · simp only [addRightEmbedding_apply, coeff_mul_X_pow]
+  · intro d hd
+    rw [mem_support_iff, coeff_mul_X_pow'] at hd
+    split_ifs at hd with h
+    · exact Finset.mem_map.2 ⟨d - n, mem_support_iff.2 hd, Nat.sub_add_cancel h⟩
+    · exact absurd rfl hd
+
+/-- A norm-preserving ring homomorphism preserves the coefficient l¹-norm. -/
+theorem l1Norm_map (P : R[X]) {S : Type*} [SeminormedRing S] (f : R →+* S)
+    (hf : ∀ x, ‖f x‖ = ‖x‖) : (P.map f).l1Norm = P.l1Norm := by
+  rw [l1Norm_eq_sum_of_support_subset _ (support_map_subset f P), l1Norm_eq_sum_support]
+  simp only [coeff_map, hf]
 
 /-- The norm of each coefficient is at most the coefficient l¹-norm. -/
 theorem norm_coeff_le_l1Norm (P : R[X]) (i : ℕ) : ‖P.coeff i‖ ≤ P.l1Norm := by
@@ -263,5 +289,35 @@ theorem l1Norm_hasseDeriv_le [NormOneClass R] (P : R[X]) (k : ℕ) :
       P.sum_support_norm_coeff_mul_le _ fun i hi ↦ by
         exact_mod_cast (Nat.choose_le_two_pow i k).trans
           (Nat.pow_le_pow_right (by omega) (le_natDegree_of_mem_supp i hi))
+
+/-- The coefficient length of a Hasse derivative of `P` is at most `(2 ^ δ) ^ r C₁ ^ r` when
+`P` has degree at most `δ r` and coefficient length at most `C₁ ^ r`. -/
+theorem l1Norm_hasseDeriv_le_pow [NormOneClass R] {P : R[X]} {k r : ℕ} {δ C₁ : ℝ}
+    (hP : (P.natDegree : ℝ) ≤ δ * r) (hPC : P.l1Norm ≤ C₁ ^ r) :
+    (hasseDeriv k P).l1Norm ≤ (2 ^ δ) ^ r * C₁ ^ r :=
+  (P.l1Norm_hasseDeriv_le k).trans <|
+    mul_le_mul (Real.pow_le_rpow_pow_of_le_mul one_le_two hP) hPC P.l1Norm_nonneg (by positivity)
+
+section CommRing
+
+variable {A : Type*} [SeminormedCommRing A] [NormOneClass A]
+
+/-- If `V * (X - a) ^ m = W`, then `V` is bounded on the closed unit ball around `a` by the
+coefficient l¹-norm of `W` times `(1 + ‖a‖) ^ natDegree W`. -/
+theorem norm_eval_le_l1Norm_mul_of_mul_X_sub_C_pow_eq {V W : A[X]} {a z : A} {m : ℕ}
+    (h : V * (X - C a) ^ m = W) (hz : ‖z - a‖ ≤ 1) :
+    ‖V.eval z‖ ≤ W.l1Norm * (1 + ‖a‖) ^ W.natDegree := by
+  have hshift : V.comp (X + C a) * X ^ m = W.comp (X + C a) := by
+    rw [← h, mul_comp, pow_comp, sub_comp, X_comp, C_comp, add_sub_cancel_right]
+  calc
+    ‖V.eval z‖ = ‖(V.comp (X + C a)).eval (z - a)‖ := by
+      rw [eval_comp, eval_add, eval_X, eval_C, sub_add_cancel]
+    _ ≤ (V.comp (X + C a)).l1Norm * max 1 ‖z - a‖ ^ (V.comp (X + C a)).natDegree :=
+      norm_eval_le_l1Norm_mul _ _
+    _ = (W.comp (X + C a)).l1Norm := by
+      rw [max_eq_left hz, one_pow, mul_one, ← hshift, l1Norm_mul_X_pow]
+    _ ≤ W.l1Norm * (1 + ‖a‖) ^ W.natDegree := l1Norm_comp_X_add_C_le W a
+
+end CommRing
 
 end Polynomial

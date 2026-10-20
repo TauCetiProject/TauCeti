@@ -147,7 +147,7 @@ private theorem eLpNorm_adjointJet_comp_le (J : Sobolev1JetLp mu V p) :
           fun x hx => norm_adjointJet_le (hL x hx) _) p
     _ ≤ ENNReal.ofReal (max 1 L) * (C ^ (1 / p).toReal * eLpNorm J p (mu.restrict V)) := by
         gcongr
-        exact eLpNorm_comp_le_of_map_le_smul hm hmap (Lp.aestronglyMeasurable J) p
+        exact eLpNorm_comp_le_of_map_le_smul hm hmap p
 
 omit [Fact (1 ≤ p)] in
 include hm hmap hC hL in
