@@ -6,13 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
-public import Mathlib.RingTheory.Spectrum.Prime.Defs
 
 /-!
 # Field-valued points and residue-field data
 
 An algebra map to a field determines a prime ideal and an embedding of its
 residue field. Conversely, these data determine the algebra map.
+The forward map from residue-field data is defined for any commutative target algebra.
 
 ## References
 
@@ -96,17 +96,16 @@ end Ideal
 
 namespace TauCeti.ResidueField
 
-variable {R S Ω : Type*} [CommRing R] [CommRing S] [Field Ω] [Algebra R S] [Algebra R Ω]
+section CommRing
 
-local instance (point : S →ₐ[R] Ω) : (RingHom.ker point).IsPrime :=
-  RingHom.ker_isPrime point
+variable {R S Ω : Type*} [CommRing R] [CommRing S] [CommRing Ω] [Algebra R S] [Algebra R Ω]
 
-/-- A prime and an embedding of its residue field into the chosen field. -/
-abbrev PointData (R S Ω : Type*) [CommRing R] [CommRing S] [Field Ω]
+/-- A prime and an algebra map from its residue field to the chosen algebra. -/
+abbrev PointData (R S Ω : Type*) [CommRing R] [CommRing S] [CommRing Ω]
     [Algebra R S] [Algebra R Ω] :=
   Σ prime : PrimeSpectrum S, prime.asIdeal.ResidueField →ₐ[R] Ω
 
-/-- The field-valued point associated with residue-field data. -/
+/-- The algebra-valued point associated with residue-field data. -/
 noncomputable def PointData.toAlgHom (data : PointData R S Ω) : S →ₐ[R] Ω :=
   data.2.comp (IsScalarTower.toAlgHom R S data.1.asIdeal.ResidueField)
 
@@ -115,6 +114,15 @@ noncomputable def PointData.toAlgHom (data : PointData R S Ω) : S →ₐ[R] Ω 
 theorem PointData.toAlgHom_apply (data : PointData R S Ω) (element : S) :
     data.toAlgHom element = data.2 (algebraMap S data.1.asIdeal.ResidueField element) := by
   simp only [PointData.toAlgHom, AlgHom.comp_apply, IsScalarTower.toAlgHom_apply]
+
+end CommRing
+
+section Field
+
+variable {R S Ω : Type*} [CommRing R] [CommRing S] [Field Ω] [Algebra R S] [Algebra R Ω]
+
+local instance (point : S →ₐ[R] Ω) : (RingHom.ker point).IsPrime :=
+  RingHom.ker_isPrime point
 
 /-- Residue-field data determine the point bijectively. -/
 theorem PointData.toAlgHom_bijective :
@@ -152,7 +160,12 @@ theorem pointDataEquiv_symm_apply (point : S →ₐ[R] Ω) :
   simp only [Equiv.apply_symm_apply, pointDataEquiv_apply, PointData.toAlgHom,
     AlgHom.residueEmbedding_comp]
 
-/-- Morphisms of field-valued points are precisely morphisms of the corresponding triples. -/
+end Field
+
+variable {R S Ω : Type*} [CommRing R] [CommRing S] [CommRing Ω] [Nontrivial Ω]
+  [Algebra R S] [Algebra R Ω]
+
+/-- Compatibility of induced points is compatibility of the prime and residue-field maps. -/
 theorem PointData.toAlgHom_comp_iff {T : Type*} [CommRing T] [Algebra R T]
     (source : PointData R S Ω) (target : PointData R T Ω) (morphism : S →ₐ[R] T) :
     target.toAlgHom.comp morphism = source.toAlgHom ↔
