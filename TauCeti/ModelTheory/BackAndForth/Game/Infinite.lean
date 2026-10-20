@@ -214,20 +214,20 @@ theorem exists_isTupleBFSystem_mem (s : CoherentEFStrategy L a b) :
       intro x
       refine ⟨s.right (.inl x :: h) (last _), .inl x :: h,
         snoc (Fin.castSucc ∘ f) (last _), ?_, ?_⟩
-      · funext i
-        exact lastCases (by simp) (fun j => by simp) i
-      · funext i
-        exact lastCases (by simp) (fun j => by simp) i
+      · rw [s.forth_left]
+        exact (snoc_comp_snoc_castSucc_comp _ _ _).symm
+      · rw [s.forth_right]
+        simpa using (snoc_comp_snoc_castSucc_comp _ _ _).symm
     · rintro k c d ⟨h, f, hc, hd⟩
       dsimp only at f hc hd
       subst c d
       intro y
       refine ⟨s.left (.inr y :: h) (last _), .inr y :: h,
         snoc (Fin.castSucc ∘ f) (last _), ?_, ?_⟩
-      · funext i
-        exact lastCases (by simp) (fun j => by simp) i
-      · funext i
-        exact lastCases (by simp) (fun j => by simp) i
+      · rw [s.back_left]
+        simpa using (snoc_comp_snoc_castSucc_comp _ _ _).symm
+      · rw [s.back_right]
+        exact (snoc_comp_snoc_castSucc_comp _ _ _).symm
   · simp
   · simp
 

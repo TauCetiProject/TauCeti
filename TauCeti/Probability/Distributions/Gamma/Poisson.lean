@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.Gamma.Basic
 public import TauCeti.Probability.Distributions.NegativeBinomial.Basic
+public import TauCeti.Probability.Distributions.Poisson.Mixed.Basic
 public import Mathlib.Probability.Distributions.Poisson.Basic
 
 import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
@@ -27,6 +28,9 @@ to `r + k`. Euler's Gamma integral then gives exactly the negative-binomial mass
 
 * `TauCeti.Probability.bind_gammaMeasure_poissonMeasure` — a Gamma mixture of Poisson laws is
   negative-binomial.
+* `TauCeti.Probability.mixedPoissonMeasure_map_toNNReal_gammaMeasure` — the same identity for the
+  mixed Poisson law `TauCeti.Probability.mixedPoissonMeasure`, whose mixing measure lives on the
+  rates `ℝ≥0`; the Gamma law is carried there by `Real.toNNReal`.
 * `Real.gammaKernel_mul_exp_mul_pow_div_factorial` — the pointwise algebra it runs on: at a
   nonzero point, `c ^ r / Γ r * x ^ (r - 1) * exp (-(c * x))` times `exp (-x) * x ^ k / k !`
   collects into `c ^ r / (Γ r * k !) * (x ^ (r + k - 1) * exp (-((c + 1) * x)))`. The identity is
@@ -161,6 +165,17 @@ theorem bind_gammaMeasure_poissonMeasure {r p : ℝ} (hr : 0 < r) (hp : 0 < p) (
     filter_upwards [TauCeti.Probability.ae_pos_gammaMeasure r (p / (1 - p))] with lam hlam
     rw [Real.coe_toNNReal lam hlam.le])]
   exact integral_poissonMass_gammaMeasure hr hp hp1 k
+
+/-- **The Gamma-mixed Poisson law is negative-binomial**, stated for
+`TauCeti.Probability.mixedPoissonMeasure`: the Gamma law of shape `r` and rate `p / (1 - p)`,
+carried to the rates `ℝ≥0` by `Real.toNNReal`, mixes the Poisson laws into the negative-binomial
+law of shape `r` and success probability `p`. -/
+theorem mixedPoissonMeasure_map_toNNReal_gammaMeasure {r p : ℝ} (hr : 0 < r) (hp : 0 < p)
+    (hp1 : p < 1) :
+    mixedPoissonMeasure ((gammaMeasure r (p / (1 - p))).map Real.toNNReal) =
+      negativeBinomialMeasure r p := by
+  rw [mixedPoissonMeasure_def, Measure.bind_map (by fun_prop) (by fun_prop)]
+  exact bind_gammaMeasure_poissonMeasure hr hp hp1
 
 end Probability
 

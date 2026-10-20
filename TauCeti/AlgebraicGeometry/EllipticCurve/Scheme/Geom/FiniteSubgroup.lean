@@ -116,16 +116,12 @@ private theorem exists_sectionCover_pointsDivisor
     have hx := I.subschemeι.range_subset_ker_support ⟨x, rfl⟩
     rw [Scheme.IdealSheafData.ker_subschemeι] at hx
     have hsupport : (I.support : Set E.carrier) = ⋃ a, Set.range (φ a).left := by
-      have H (t : Finset A) :
-          (((∏ a ∈ t, (φ a).left.ker : E.carrier.IdealSheafData).support) : Set E.carrier) =
-            ⋃ a ∈ t, Set.range (φ a).left := by
-        induction t using Finset.induction_on with
-        | empty => simp
-        | @insert a t ha ih =>
-          have := (φ a).left.isClosedImmersion_of_comp_eq_id (left_comp_structureMap _)
-          simp [Finset.prod_insert ha, Scheme.Hom.support_ker,
-            (φ a).left.isClosedEmbedding.isClosed_range.closure_eq, ih]
-      simpa [I, pointsDivisor_def] using H Finset.univ
+      dsimp only [I]
+      rw [pointsDivisor_def, Scheme.IdealSheafData.coe_support_prod]
+      congr 1
+      funext a
+      have := (φ a).left.isClosedImmersion_of_comp_eq_id (left_comp_structureMap _)
+      rw [Scheme.Hom.support_ker, (φ a).left.isClosedEmbedding.isClosed_range.closure_eq]
     rw [hsupport, Set.mem_iUnion] at hx
     obtain ⟨a, ha⟩ := hx
     obtain ⟨t, ht⟩ := ha

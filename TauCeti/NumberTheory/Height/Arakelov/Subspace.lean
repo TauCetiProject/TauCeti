@@ -30,6 +30,12 @@ height, equivalently the absolute Euclidean height `TauCeti.height2` of the Plü
 any basis of `U`. This is the height of a subspace in Evertse–Ferretti's quantitative Subspace
 Theorem. It inherits the Northcott property.
 
+The orthogonal complement of `U` for the dot product, `Submodule.euclideanDual`, has the same
+relative Arakelov height and the same absolute height as `U`, since its Plücker coordinates are
+the complementary Plücker coordinates of `U` up to a common nonzero factor and signs. Over `ℚ`,
+the plane in `ℚ³` orthogonal to `(1, 2, 2)` has absolute height `3`, the Euclidean norm of
+`(1, 2, 2)`.
+
 ## Main definitions
 
 * `Submodule.relativeSubspaceArakelovHeight U`: the relative Arakelov height of `U`.
@@ -51,6 +57,9 @@ Theorem. It inherits the Northcott property.
 * `Submodule.relativeSubspaceHeight_rpow_le_subspaceHeight` and
   `Submodule.subspaceHeight_le_sqrt_choose_mul_relativeSubspaceHeight_rpow`: the comparison with
   the absolute sup height, with their logarithmic forms.
+* `Submodule.relativeSubspaceArakelovHeight_euclideanDual` and
+  `Submodule.subspaceHeight_euclideanDual`: the orthogonal complement of `U` for the dot product
+  has the height of `U`, with their logarithmic forms.
 * `Submodule.finite_subspaceHeight_le`, `Submodule.instNorthcottSubspaceHeight` and
   `Submodule.instNorthcottSubspaceLogHeight`: Northcott's theorem for the absolute height.
 
@@ -233,6 +242,30 @@ theorem relativeSubspaceArakelovLogHeight_span_singleton {x : ι → K} (hx : x 
   rw [relativeSubspaceArakelovLogHeight_eq_log_relativeSubspaceArakelovHeight,
     relativeSubspaceArakelovHeight_span_singleton hx, arakelovLogHeight_eq_log_arakelovMulHeight]
 
+/-- **Duality of heights.** The orthogonal complement of a subspace `U` of `ι → K` for the dot
+product has the relative Arakelov height of `U`. -/
+@[simp]
+theorem relativeSubspaceArakelovHeight_euclideanDual [Fintype ι] :
+    relativeSubspaceArakelovHeight U.euclideanDual = relativeSubspaceArakelovHeight U := by
+  let b := finBasis K U
+  let b' := finBasis K U.euclideanDual
+  obtain ⟨c, hc, h⟩ :=
+    exists_plucker_eq_mul_plucker_compl_or_eq_neg (finrank_add_finrank_euclideanDual U)
+    b.linearIndependent_coe_basis b'.linearIndependent_coe_basis
+    fun i j ↦ mem_euclideanDual.1 (b' j).2 _ (b i).2
+  rw [relativeSubspaceArakelovHeight_eq_arakelovMulHeight_plucker b',
+    relativeSubspaceArakelovHeight_eq_arakelovMulHeight_plucker b,
+    arakelovMulHeight_eq_of_forall_eq_or_eq_neg h]
+  -- The tuple `fun t ↦ c * plucker _ (compl _ t)` is `c • (plucker _ ∘ compl _)` pointwise.
+  exact (arakelovMulHeight_smul _ hc).trans (arakelovMulHeight_comp_equiv _ _)
+
+/-- The orthogonal complement of a subspace `U` of `ι → K` for the dot product has the relative
+logarithmic Arakelov height of `U`. -/
+@[simp]
+theorem relativeSubspaceArakelovLogHeight_euclideanDual [Fintype ι] :
+    relativeSubspaceArakelovLogHeight U.euclideanDual = relativeSubspaceArakelovLogHeight U := by
+  simp [relativeSubspaceArakelovLogHeight_eq_log_relativeSubspaceArakelovHeight]
+
 /-- The relative Arakelov height of subspaces has the Northcott property: for every `B` there are
 finitely many subspaces of `ι → K` of relative Arakelov height at most `B`, of all dimensions
 together. -/
@@ -346,6 +379,20 @@ theorem subspaceLogHeight_span_singleton {x : ι → K} (hx : x ≠ 0) :
     subspaceLogHeight (K ∙ x) = Real.log (height2 x) := by
   rw [subspaceLogHeight, subspaceHeight_span_singleton hx]
 
+/-- **Duality of heights**, Evertse–Ferretti (6.13). The orthogonal complement of a subspace `U` of
+`ι → K` for the dot product has the absolute height of `U`. -/
+@[simp]
+theorem subspaceHeight_euclideanDual [Fintype ι] :
+    subspaceHeight U.euclideanDual = subspaceHeight U := by
+  simp [subspaceHeight]
+
+/-- The orthogonal complement of a subspace `U` of `ι → K` for the dot product has the absolute
+logarithmic height of `U`. -/
+@[simp]
+theorem subspaceLogHeight_euclideanDual [Fintype ι] :
+    subspaceLogHeight U.euclideanDual = subspaceLogHeight U := by
+  simp [subspaceLogHeight]
+
 /-- The absolute sup height of a subspace, the `[K : ℚ]`-th root of its relative sup height, is at
 most its absolute Euclidean height. -/
 theorem relativeSubspaceHeight_rpow_le_subspaceHeight :
@@ -426,6 +473,32 @@ example : (ℚ ∙ ![(2 : ℚ), 2]).subspaceHeight = √2 := by
   rw [Submodule.subspaceHeight_span_singleton (by simp), h, height2_smul _ two_ne_zero, height2_eq]
   simp [InfinitePlace.mult, hw, Real.sqrt_eq_rpow, Fintype.card_eq_nat_card,
     -Nat.card_eq_fintype_card, Nat.card_fin]
+
+/-! Over `ℚ`, the plane in `ℚ³` orthogonal to `(1, 2, 2)` has absolute height `3`, the Euclidean
+norm of `(1, 2, 2)`. -/
+
+open TauCeti NumberField in
+example : (ℚ ∙ ![(1 : ℚ), 2, 2]).euclideanDual.subspaceHeight = 3 := by
+  have hw : (default : InfinitePlace ℚ).IsReal := by
+    rw [Subsingleton.elim default Rat.infinitePlace]; exact Rat.isReal_infinitePlace
+  -- At every finite place the coordinates have absolute value at most `1`, and the first is `1`.
+  have hfin (v : FinitePlace ℚ) : ⨆ i, v (![(1 : ℚ), 2, 2] i) = 1 := by
+    have h2 : v 2 ≤ 1 := by
+      simpa [one_add_one_eq_two] using FinitePlace.add_le v 1 1
+    refine le_antisymm (ciSup_le fun i ↦ ?_) ?_
+    · fin_cases i <;> simp [h2]
+    · exact le_ciSup_of_le (Set.finite_range _).bddAbove 0 (by simp)
+  -- `height2` sums over the `Fintype` instance obtained from `Finite`.
+  have hsum :
+      (letI := Fintype.ofFinite (Fin 3); ∑ i, ((![(1 : ℚ), 2, 2] i : ℚ) : ℝ) ^ 2) = 3 ^ 2 := by
+    convert (show ∑ i : Fin 3, ((![(1 : ℚ), 2, 2] i : ℚ) : ℝ) ^ 2 = 3 ^ 2 by
+      norm_num [Fin.sum_univ_three])
+  rw [Submodule.subspaceHeight_euclideanDual, Submodule.subspaceHeight_span_singleton (by simp),
+    height2_eq]
+  have h3 : ((3 : ℝ) ^ 2) ^ (2⁻¹ : ℝ) = 3 := by
+    rw [← Real.rpow_natCast, ← Real.rpow_mul (by norm_num)]
+    norm_num
+  simp [InfinitePlace.mult, hw, hfin, hsum, h3]
 
 /-! Over `ℚ` there are finitely many subspaces of bounded absolute logarithmic height. -/
 
