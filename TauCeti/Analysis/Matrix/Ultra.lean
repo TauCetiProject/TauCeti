@@ -42,7 +42,8 @@ bounds compare a row weight with an unrelated column weight.
 * `Matrix.norm_det_le_prod_mul_prod`, `Matrix.norm_det_le_prod_of_norm_le`,
   `Matrix.norm_principalMinor_le`, `Matrix.norm_principalMinor_le_prod_mul`,
   `Matrix.norm_principalMinor_le_zpow`: determinant and principal-minor bounds.
-* `Matrix.norm_coeff_charpolyRev_le`, `Matrix.norm_coeff_charpolyRev_le_of_norm_le`,
+* `TauCeti.norm_coeff_charpolyRev_le_of_principalMinor_le`,
+  `Matrix.norm_coeff_charpolyRev_le`, `Matrix.norm_coeff_charpolyRev_le_of_norm_le`,
   `Matrix.norm_coeff_charpolyRev_le_zpow`: coefficient bounds for `det (1 - X A)`.
 * `TauCeti.norm_det_sub_le`, `TauCeti.norm_principalMinor_sub_le`: perturbation bounds on
   entrywise bounded sets, also over seminormed rings.
@@ -57,6 +58,24 @@ bounds compare a row weight with an unrelated column weight.
 public section
 
 open Equiv Finset Polynomial
+
+namespace TauCeti
+
+/-- A common nonnegative bound on the size-`k` principal minors bounds the `k`-th
+coefficient of `det (1 - X A)` over an ultrametric seminormed commutative ring. -/
+theorem norm_coeff_charpolyRev_le_of_principalMinor_le {ι R : Type*}
+    [Fintype ι] [DecidableEq ι] [SeminormedCommRing R] [IsUltrametricDist R]
+    {A : Matrix ι ι R} {k : ℕ} {C : ℝ} (hC : 0 ≤ C)
+    (hs : ∀ s : Finset ι, s.card = k → ‖A.principalMinor s‖ ≤ C) :
+    ‖A.charpolyRev.coeff k‖ ≤ C := by
+  rw [Matrix.coeff_charpolyRev]
+  have hsum : ‖∑ s ∈ univ.powersetCard k,
+      (A.submatrix (Subtype.val : s → ι) Subtype.val).det‖ ≤ C := by
+    refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg hC fun s hs' ↦ ?_
+    simpa only [Matrix.principalMinor_def] using hs s (mem_powersetCard.mp hs').2
+  rcases neg_one_pow_eq_or R k with hk | hk <;> simpa [hk] using hsum
+
+end TauCeti
 
 namespace Matrix
 
@@ -116,15 +135,9 @@ theorem norm_coeff_charpolyRev_le {A : Matrix ι ι R} {c d : ι → ℝ}
     (h : ∀ i j, ‖A i j‖ ≤ c i * d j) {k : ℕ} {C : ℝ} (hC : 0 ≤ C)
     (hs : ∀ s : Finset ι, s.card = k → (∏ i ∈ s, c i) * ∏ i ∈ s, d i ≤ C) :
     ‖A.charpolyRev.coeff k‖ ≤ C := by
-  rw [coeff_charpolyRev]
-  have hsum : ‖∑ s ∈ univ.powersetCard k,
-      (A.submatrix (Subtype.val : s → ι) Subtype.val).det‖ ≤ C := by
-    refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg hC fun s hs' ↦ ?_
-    refine (norm_det_le_prod_mul_prod (A := A.submatrix (Subtype.val : s → ι) Subtype.val)
-      fun i j ↦ h i j).trans ?_
-    rw [prod_coe_sort s c, prod_coe_sort s d]
-    exact hs s (mem_powersetCard.mp hs').2
-  rcases neg_one_pow_eq_or R k with hk | hk <;> simpa [hk] using hsum
+  refine TauCeti.norm_coeff_charpolyRev_le_of_principalMinor_le hC fun s hs' ↦ ?_
+  exact (norm_principalMinor_le_prod_mul h s).trans
+    (by simpa only [prod_mul_distrib] using hs s hs')
 
 /-- **Coefficient bound from row bounds.** If `c i` bounds the `i`-th row of `A` and `C ≥ 0`
 bounds `∏ i ∈ s, c i` for every `k`-element set `s`, then `C` bounds the `k`-th coefficient of
@@ -141,15 +154,10 @@ set `s`, then `‖coeff k (det (1 - X A))‖ ≤ σ ^ m`. -/
 theorem norm_coeff_charpolyRev_le_zpow {A : Matrix ι ι R} {σ : ℝ} (hσ₀ : 0 < σ) (hσ₁ : σ ≤ 1)
     {w w' : ι → ℤ} (h : ∀ i j, ‖A i j‖ ≤ σ ^ (w i - w' j)) {k : ℕ} {m : ℤ}
     (hm : ∀ s : Finset ι, s.card = k → m ≤ ∑ i ∈ s, (w i - w' i)) :
-    ‖A.charpolyRev.coeff k‖ ≤ σ ^ m := by
-  rw [coeff_charpolyRev]
-  have hsum : ‖∑ s ∈ univ.powersetCard k,
-      (A.submatrix (Subtype.val : s → ι) Subtype.val).det‖ ≤ σ ^ m := by
-    refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (zpow_nonneg hσ₀.le m)
-      fun s hs ↦ ?_
-    simpa only [principalMinor_def] using (norm_principalMinor_le_zpow hσ₀ h s).trans
-      (zpow_le_zpow_right_of_le_one₀ hσ₀ hσ₁ (hm s (mem_powersetCard.mp hs).2))
-  rcases neg_one_pow_eq_or R k with hk | hk <;> simpa [hk] using hsum
+    ‖A.charpolyRev.coeff k‖ ≤ σ ^ m :=
+  TauCeti.norm_coeff_charpolyRev_le_of_principalMinor_le (zpow_nonneg hσ₀.le m) fun s hs ↦
+    (norm_principalMinor_le_zpow hσ₀ h s).trans
+      (zpow_le_zpow_right_of_le_one₀ hσ₀ hσ₁ (hm s hs))
 
 end Matrix
 
