@@ -249,11 +249,12 @@ theorem abs_hopfLax_norm_rpow_le (hp : 0 < p) {C : ℝ} (hφ : ∀ y, |φ y| ≤
 
 /-- For `1 ≤ p` and a bounded initial datum `φ`, the Hopf–Lax value for the cost `‖w‖ ^ p` is
 jointly lower semicontinuous in time and space on the open half-space `t > 0`. No regularity of `φ`
-is needed: points `y` far from `x` cannot compete with `y = x`, and for `y` in a bounded region the
-penalties `‖x - y‖ ^ p / t ^ (p - 1)` are uniformly equicontinuous in `(t, x)`. -/
+is needed. -/
 theorem lowerSemicontinuousOn_hopfLax_norm_rpow (hp : 1 ≤ p)
     (hφ : Bornology.IsBounded (range φ)) :
     LowerSemicontinuousOn (fun q : ℝ × E ↦ hopfLax (‖·‖ ^ p) φ q.1 q.2) {q | 0 < q.1} := by
+  -- Points `y` far from `x` cannot compete with `y = x`, and for `y` in a bounded region the
+  -- penalties `‖x - y‖ ^ p / t ^ (p - 1)` are uniformly equicontinuous in `(t, x)`.
   have hp0 : 0 < p := zero_lt_one.trans_le hp
   obtain ⟨C, hC⟩ := isBounded_iff_forall_norm_le.1 hφ
   have hφC (y : E) : |φ y| ≤ C := by simpa [Real.norm_eq_abs] using hC _ ⟨y, rfl⟩

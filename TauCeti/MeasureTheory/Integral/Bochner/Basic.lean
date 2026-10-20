@@ -23,6 +23,11 @@ for set and probability integrals.
 * `ofReal_integral_le_lintegral_ofReal` bounds the positive part of a real-valued
   function's integral by the integral of its pointwise positive part.
 
+## Bounded functions
+
+* `integrable_of_isBounded_range` shows that an almost-everywhere strongly measurable function
+  with bounded range is integrable on a finite measure space.
+
 ## Exponentials
 
 * `integrable_exp_neg_of_ae_nonneg` shows that the negative exponential of an almost-everywhere
@@ -102,6 +107,14 @@ open scoped ENNReal Function Topology
 namespace TauCeti
 
 namespace MeasureTheory
+
+/-- An almost-everywhere strongly measurable function with bounded range is integrable on a
+finite measure space. -/
+theorem integrable_of_isBounded_range {α E : Type*} [MeasurableSpace α] {μ : Measure α}
+    [IsFiniteMeasure μ] [NormedAddCommGroup E] {f : α → E} (hf : AEStronglyMeasurable f μ)
+    (hb : Bornology.IsBounded (Set.range f)) : Integrable f μ := by
+  obtain ⟨C, hC⟩ := isBounded_iff_forall_norm_le.1 hb
+  exact .of_bound hf C (ae_of_all _ fun x ↦ hC _ ⟨x, rfl⟩)
 
 /-- The negative exponential of an almost-everywhere nonnegative, almost-everywhere measurable
 function is integrable on a finite measure space. -/

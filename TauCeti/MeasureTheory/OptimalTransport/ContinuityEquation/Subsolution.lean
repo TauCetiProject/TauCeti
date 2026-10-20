@@ -25,8 +25,10 @@ against a subsolution bounds its boundary terms by the action of the velocity fi
 
 The left side is a Kantorovich dual value when `u (a, ·)` and `u (b, ·)` are dual potentials for a
 transport cost, and for `L w = ‖w‖ ^ p` the right side is the `p`-action of `v`. This is the
-inequality behind the lower bound `W_p (ν_a, ν_b) ^ p ≤ ∫_a^b ∫ ‖vₜ‖ ^ p dνₜ dt` of the
-Benamou–Brenier formula, whose subsolutions are Hopf–Lax functions.
+inequality behind the lower bound `W_p (ν_a, ν_b) ^ p ≤ (b - a) ^ (p - 1) ∫_a^b ∫ ‖vₜ‖ ^ p dνₜ dt`
+of the Benamou–Brenier formula
+(`TauCeti.IsContinuityEquation.wassersteinEDist_rpow_le_mul_lintegral`), whose subsolutions are
+Hopf–Lax functions.
 
 For a `C¹` subsolution with bounded values and derivative, the inequality is the integrated
 continuity equation `TauCeti.IsContinuityEquation.intervalIntegral_integral_fderiv_eq_sub`. Hopf–Lax

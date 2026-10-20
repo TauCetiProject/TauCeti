@@ -9,6 +9,7 @@ public import TauCeti.MeasureTheory.OptimalTransport.ContinuityEquation.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Basic
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.Analysis.PDE.HopfLax
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Map
 import TauCeti.MeasureTheory.OptimalTransport.ContinuityEquation.Endpoint
 import TauCeti.MeasureTheory.OptimalTransport.ContinuityEquation.PlanInterpolation
@@ -28,14 +29,14 @@ finite measures on `E`, narrowly continuous on `[a, b]`, solving the continuity 
 
 On `[0, 1]` this reads `W_p (ν₀, ν₁) ^ p ≤ ∫₀¹ ∫ ‖vₜ‖ ^ p dνₜ dt`, the lower bound in the
 Benamou–Brenier formula. The displacement interpolation of an optimal coupling solves the
-continuity equation with action at most `W_p (μ, ν) ^ p`
+continuity equation with action at most `W_p (μ, μ') ^ p`
 (`TauCeti.exists_isContinuityEquation_map_smul_fst_add_smul_snd_of_isOptimalCoupling_le`), and it
 is a narrowly continuous curve. Together these give the **Benamou–Brenier formula**: for
-probability measures `μ`, `ν` at finite `W_p` distance,
+probability measures `μ`, `μ'` at finite `W_p` distance,
 
-`W_p (μ, ν) ^ p = min ∫₀¹ ∫ ‖vₜ‖ ^ p dνₜ dt`,
+`W_p (μ, μ') ^ p = min ∫₀¹ ∫ ‖vₜ‖ ^ p dνₜ dt`,
 
-the minimum running over the narrowly continuous curves of finite measures from `μ` to `ν` that
+the minimum running over the narrowly continuous curves of finite measures from `μ` to `μ'` that
 solve the continuity equation on `(0, 1)`, and being attained by the displacement interpolation
 of an optimal coupling.
 
@@ -88,6 +89,15 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
   [FiniteDimensional ℝ E] [BorelSpace E] {v : ℝ → E → E} {a b : ℝ} {ν : ℝ → FiniteMeasure E}
 
+omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] in
+/-- A bound `C` on the initial datum `f` bounds `k` times its Hopf–Lax value for the cost
+`‖w‖ ^ p` by `k * C`. -/
+private theorem norm_mul_hopfLax_norm_rpow_le {p k t C : ℝ} (hp : 0 < p) {f : E → ℝ}
+    (hfC : ∀ y, |f y| ≤ C) (hk : 0 ≤ k) (ht : 0 ≤ t) (x : E) :
+    ‖k * hopfLax (‖·‖ ^ p) f t x‖ ≤ k * C := by
+  rw [Real.norm_eq_abs, abs_mul, abs_of_nonneg hk]
+  exact mul_le_mul_of_nonneg_left (abs_hopfLax_norm_rpow_le hp hfC ht x) hk
+
 namespace IsContinuityEquation
 
 /-- One delayed Hopf–Lax test. For a bounded initial datum `f`, `k ≥ 0`, `1 ≤ p` and a delay
@@ -124,9 +134,8 @@ private theorem ofReal_integral_hopfLax_sub_le
     refine setLIntegral_congr_fun measurableSet_Ioo fun t _ ↦ ?_
     rw [← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
     simp_rw [ENNReal.ofReal_mul hk]
-  · rw [Real.norm_eq_abs, abs_mul, abs_of_nonneg hk]
-    exact mul_le_mul_of_nonneg_left
-      (abs_hopfLax_norm_rpow_le (by linarith) hfC (le_max_of_le_right (half_pos hδ).le) _) hk
+  · exact norm_mul_hopfLax_norm_rpow_le (by linarith) hfC hk
+      (le_max_of_le_right (half_pos hδ).le) _
   · -- The subsolution inequality holds on the strip, where the delay keeps times positive.
     filter_upwards [self_mem_nhdsWithin] with s (hs : 0 < s) q hq
     have hτ : δ / 2 ≤ q.1 - a + δ := by linarith [hq.1]
@@ -151,9 +160,8 @@ private theorem ofReal_integral_hopfLax_sub_integral_le
         ∫⁻ t in Ioo a b, ∫⁻ x, ENNReal.ofReal (‖v t x‖ ^ p) ∂(ν t : Measure E) := by
   obtain ⟨C, hC⟩ := isBounded_iff_forall_norm_le.1 hf
   have hfC (y : E) : |f y| ≤ C := by simpa [Real.norm_eq_abs] using hC _ ⟨y, rfl⟩
-  have hHC {t : ℝ} (ht : 0 < t) (x : E) : ‖k * hopfLax (‖·‖ ^ p) f t x‖ ≤ k * C := by
-    rw [Real.norm_eq_abs, abs_mul, abs_of_nonneg hk]
-    exact mul_le_mul_of_nonneg_left (abs_hopfLax_norm_rpow_le (by linarith) hfC ht.le x) hk
+  have hHC {t : ℝ} (ht : 0 < t) (x : E) : ‖k * hopfLax (‖·‖ ^ p) f t x‖ ≤ k * C :=
+    norm_mul_hopfLax_norm_rpow_le (by linarith) hfC hk ht.le x
   have hT : 0 < b - a := sub_pos.2 hab
   have hH := continuousOn_hopfLax_norm_rpow hp.le hf
   have hmeas {t : ℝ} (ht : 0 < t) : Measurable fun x ↦ k * hopfLax (‖·‖ ^ p) f t x :=
@@ -234,16 +242,14 @@ theorem wassersteinEDist_rpow_le_mul_lintegral
     refine le_ciInf fun x ↦ ?_
     rw [mul_add, hkf, ← hk_def, mul_div_cancel₀ _ hk.ne', norm_sub_rev]
     linarith [hfeas' x y]
-  obtain ⟨Cψ, hCψ⟩ := isBounded_iff_forall_norm_le.1 hψb
   obtain ⟨Cf, hCf⟩ := isBounded_iff_forall_norm_le.1 hf
   have hfC (y : E) : |f y| ≤ Cf := by simpa [Real.norm_eq_abs] using hCf _ ⟨y, rfl⟩
-  have hHint : Integrable (fun y ↦ k * hopfLax (‖·‖ ^ p.toReal) f (b - a) y) (ν b : Measure E) := by
-    refine .of_bound (C := k * Cf) (continuous_const.mul
-      (continuous_hopfLax_norm_rpow hr.le hf hT)).aestronglyMeasurable (ae_of_all _ fun y ↦ ?_)
-    rw [Real.norm_eq_abs, abs_mul, abs_of_nonneg hk.le]
-    exact mul_le_mul_of_nonneg_left (abs_hopfLax_norm_rpow_le (by linarith) hfC hT.le y) hk.le
-  have hint := integral_mono (.of_bound hψ.measurable.aestronglyMeasurable Cψ
-    (ae_of_all _ fun y ↦ hCψ _ ⟨y, rfl⟩)) hHint hψle
+  have hHint : Integrable (fun y ↦ k * hopfLax (‖·‖ ^ p.toReal) f (b - a) y) (ν b : Measure E) :=
+    .of_bound (C := k * Cf) (continuous_const.mul
+      (continuous_hopfLax_norm_rpow hr.le hf hT)).aestronglyMeasurable
+      (ae_of_all _ (norm_mul_hopfLax_norm_rpow_le (by linarith) hfC hk.le hT.le))
+  have hint := integral_mono
+    (MeasureTheory.integrable_of_isBounded_range hψ.measurable.aestronglyMeasurable hψb) hHint hψle
   rw [kantorovichDualValue_def, integral_neg]
   linarith
 

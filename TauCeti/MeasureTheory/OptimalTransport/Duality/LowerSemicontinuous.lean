@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.OptimalTransport.Duality.Compact
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.OptimalTransport.Duality.Attainment
 import TauCeti.MeasureTheory.OptimalTransport.Existence.Basic
 
@@ -144,11 +145,9 @@ lower-semicontinuous cost on Polish spaces, the primal transport cost is the lea
 `ℝ≥0∞`, of the positive parts of the values of the dual-feasible pairs of bounded upper
 semicontinuous potentials. Both the cost and the common value may be infinite.
 
-Restricting the dual problem to this class loses nothing because, for each bounded continuous
-approximation of the cost, the attained dual optimum is a pair of `c`-conjugate potentials, each an
-infimum of continuous functions. Bounded upper semicontinuous potentials are Borel and
-integrable against every probability measure, and their negatives are admissible initial data for
-semicontinuous constructions such as Hopf–Lax functions. -/
+Bounded upper semicontinuous potentials are Borel and integrable against every probability
+measure, and their negatives are admissible initial data for semicontinuous constructions such as
+Hopf–Lax functions. -/
 theorem isLUB_ofReal_kantorovichDualValue_upperSemicontinuous_of_lowerSemicontinuous
     (hc : LowerSemicontinuous c) :
     IsLUB {r : ℝ≥0∞ | ∃ φ ψ, UpperSemicontinuous φ ∧ UpperSemicontinuous ψ ∧
@@ -159,12 +158,13 @@ theorem isLUB_ofReal_kantorovichDualValue_upperSemicontinuous_of_lowerSemicontin
   let : PseudoMetricSpace Y := TopologicalSpace.pseudoMetrizableSpacePseudoMetric Y
   constructor
   · rintro r ⟨φ, ψ, hφ, hψ, hφb, hψb, hfeas, rfl⟩
-    obtain ⟨Cφ, hCφ⟩ := isBounded_iff_forall_norm_le.1 hφb
-    obtain ⟨Cψ, hCψ⟩ := isBounded_iff_forall_norm_le.1 hψb
     exact hfeas.ofReal_kantorovichDualValue_le_transportCost
-      (.of_bound hφ.measurable.aestronglyMeasurable Cφ (ae_of_all _ fun x ↦ hCφ _ ⟨x, rfl⟩))
-      (.of_bound hψ.measurable.aestronglyMeasurable Cψ (ae_of_all _ fun y ↦ hCψ _ ⟨y, rfl⟩))
-  · intro b hb
+      (MeasureTheory.integrable_of_isBounded_range hφ.measurable.aestronglyMeasurable hφb)
+      (MeasureTheory.integrable_of_isBounded_range hψ.measurable.aestronglyMeasurable hψb)
+  · -- Restricting the dual problem to this class loses nothing: for each bounded continuous
+    -- approximation of the cost, the attained dual optimum is a pair of `c`-conjugate potentials,
+    -- each an infimum of continuous functions.
+    intro b hb
     rw [transportCost_eq_iSup_transportCost_lscApprox
       isTightMeasureSet_singleton isTightMeasureSet_singleton hc]
     refine iSup_le fun n ↦ ?_
@@ -215,11 +215,9 @@ theorem isLUB_ofReal_kantorovichDualValue_integrable_of_lowerSemicontinuous
     exact hfeas.ofReal_kantorovichDualValue_le_transportCost hφ hψ
   · -- Bounded upper semicontinuous potentials are integrable.
     rintro r ⟨φ, ψ, hφ, hψ, hφb, hψb, hfeas, rfl⟩
-    obtain ⟨Cφ, hCφ⟩ := isBounded_iff_forall_norm_le.1 hφb
-    obtain ⟨Cψ, hCψ⟩ := isBounded_iff_forall_norm_le.1 hψb
     exact hb ⟨φ, ψ,
-      .of_bound hφ.measurable.aestronglyMeasurable Cφ (ae_of_all _ fun x ↦ hCφ _ ⟨x, rfl⟩),
-      .of_bound hψ.measurable.aestronglyMeasurable Cψ (ae_of_all _ fun y ↦ hCψ _ ⟨y, rfl⟩),
+      MeasureTheory.integrable_of_isBounded_range hφ.measurable.aestronglyMeasurable hφb,
+      MeasureTheory.integrable_of_isBounded_range hψ.measurable.aestronglyMeasurable hψb,
       hfeas, rfl⟩
 
 /-- Polish lower-semicontinuous Kantorovich duality, written as equality with the supremum of the
