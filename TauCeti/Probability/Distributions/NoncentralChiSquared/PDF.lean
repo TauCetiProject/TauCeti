@@ -15,7 +15,6 @@ The Poisson-weighted central densities form a convergent series on the positive 
 For positive degree this is the density of the noncentral chi-squared law. At degree zero
 it describes only the continuous component; the atom at zero is kept separate.
 
-The series convergence uses `Complex.hasSum_regularizedHGFun_zero_singleton_ofReal_re`.
 The modified Bessel representation identifies the usual closed density formula.
 Chosen densities vanish at nonpositive arguments and at negative degrees.
 
@@ -49,7 +48,7 @@ def noncentralChiSquaredPDF (k : ℝ) (l : ℝ≥0) (x : ℝ) : ℝ≥0∞ :=
   ENNReal.ofReal (noncentralChiSquaredPDFReal k l x)
 
 /-- The extended density is obtained from its nonnegative real companion. -/
-theorem noncentralChiSquaredPDF_eq (k : ℝ) (l : ℝ≥0) (x : ℝ) :
+theorem noncentralChiSquaredPDF_eq_ofReal (k : ℝ) (l : ℝ≥0) (x : ℝ) :
     noncentralChiSquaredPDF k l x = ENNReal.ofReal (noncentralChiSquaredPDFReal k l x) := (rfl)
 
 private theorem poisson_mul_chiSquaredPDFReal (k : ℝ) (l : ℝ≥0) (hx : 0 < x) (n : ℕ) :
@@ -110,19 +109,34 @@ theorem noncentralChiSquaredPDFReal_zero_noncentrality (k x : ℝ) :
 /-- The double-zero Dirac law has zero continuous density. -/
 @[simp high]
 theorem noncentralChiSquaredPDFReal_zero_zero (x : ℝ) : noncentralChiSquaredPDFReal 0 0 x = 0 := by
-  simp [chiSquaredPDFReal_eq_gammaPDFReal, gammaPDFReal]
+  simp
+
+/-- At zero noncentrality the extended density is the central density on the positive
+half-line, with the declared zero values elsewhere. -/
+@[simp]
+theorem noncentralChiSquaredPDF_zero_noncentrality (k x : ℝ) :
+    noncentralChiSquaredPDF k 0 x =
+      if 0 ≤ k ∧ 0 < x then chiSquaredPDF k x else 0 := by
+  rw [noncentralChiSquaredPDF_eq_ofReal, noncentralChiSquaredPDFReal_zero_noncentrality]
+  split_ifs <;> simp only [chiSquaredPDF_eq_gammaPDF, chiSquaredPDFReal_eq_gammaPDFReal,
+    gammaPDF, ENNReal.ofReal_zero]
+
+/-- The double-zero Dirac law has zero extended continuous density. -/
+@[simp high]
+theorem noncentralChiSquaredPDF_zero_zero (x : ℝ) : noncentralChiSquaredPDF 0 0 x = 0 := by
+  simp [noncentralChiSquaredPDF]
 
 /-- The chosen extended density vanishes at and below zero. -/
 @[simp]
 theorem noncentralChiSquaredPDF_of_nonpos (hx : x ≤ 0) :
     noncentralChiSquaredPDF k l x = 0 := by
-  simp [noncentralChiSquaredPDF_eq, noncentralChiSquaredPDFReal_of_nonpos hx]
+  simp [noncentralChiSquaredPDF_eq_ofReal, noncentralChiSquaredPDFReal_of_nonpos hx]
 
 /-- Invalid degrees have zero extended density. -/
 @[simp]
 theorem noncentralChiSquaredPDF_of_neg (hk : k < 0) (l : ℝ≥0) (x : ℝ) :
     noncentralChiSquaredPDF k l x = 0 := by
-  simp [noncentralChiSquaredPDF_eq, noncentralChiSquaredPDFReal_of_neg hk]
+  simp [noncentralChiSquaredPDF_eq_ofReal, noncentralChiSquaredPDFReal_of_neg hk]
 
 /-- The real density is nonnegative for every parameter value. -/
 theorem noncentralChiSquaredPDFReal_nonneg (k : ℝ) (l : ℝ≥0) (x : ℝ) :
@@ -151,6 +165,13 @@ theorem noncentralChiSquaredPDFReal_pos (hk : 0 ≤ k) (hne : k ≠ 0 ∨ l ≠ 
       div_one, mul_one] using mul_pos (exp_pos (-(↑(l / 2) : ℝ))) hd
   · exact hsum.tsum_pos hnonneg 1
       (mul_pos (poissonMeasure_real_singleton_pos 1 (by positivity)) (hcentral 1 (by positivity)))
+
+/-- Every non-Dirac valid law has strictly positive extended continuous density at
+positive arguments. -/
+theorem noncentralChiSquaredPDF_pos (hk : 0 ≤ k) (hne : k ≠ 0 ∨ l ≠ 0) (hx : 0 < x) :
+    0 < noncentralChiSquaredPDF k l x := by
+  rw [noncentralChiSquaredPDF, ENNReal.ofReal_pos]
+  exact noncentralChiSquaredPDFReal_pos hk hne hx
 
 /-- The density is jointly measurable in the degree, noncentrality and argument. -/
 @[fun_prop]
@@ -190,8 +211,7 @@ theorem noncentralChiSquaredPDF_of_pos (hk : 0 ≤ k) (hx : 0 < x) :
   funext n
   rw [ENNReal.ofReal_mul measureReal_nonneg, measureReal_def,
     ENNReal.ofReal_toReal (measure_ne_top _ _), chiSquaredPDF_eq_gammaPDF,
-    chiSquaredPDFReal_eq_gammaPDFReal]
-  rfl
+    chiSquaredPDFReal_eq_gammaPDFReal, gammaPDF]
 
 /-- The density series agrees with the chosen density almost everywhere, including the
 nonpositive half-line. The value chosen at zero has no effect on the measure. -/
@@ -213,7 +233,7 @@ private theorem withDensity_noncentralChiSquaredPDF (hk : 0 ≤ k) (l : ℝ≥0)
       ∑' n : ℕ, poissonMeasure (l / 2) {n} • chiSquaredPDF (k + 2 * n) := by
     ext x
     rw [Pi.tsum_apply (Pi.summable.2 fun _ ↦ ENNReal.summable)]
-    rfl
+    simp only [Pi.smul_apply, smul_eq_mul]
   rw [hfun, withDensity_tsum (fun n : ℕ ↦
     (measurable_chiSquaredPDF (k + 2 * n)).const_smul _)]
   congr 1
@@ -234,15 +254,12 @@ theorem noncentralChiSquaredMeasure_zero_degree_eq_atom_add_withDensity (l : ℝ
     noncentralChiSquaredMeasure 0 l =
       ENNReal.ofReal (exp (-(l : ℝ) / 2)) • Measure.dirac 0 +
         volume.withDensity (noncentralChiSquaredPDF 0 l) := by
-  have hzero : chiSquaredPDF 0 = 0 := by
-    ext x
-    simp [chiSquaredPDF_eq_gammaPDF, gammaPDF, gammaPDFReal]
   rw [noncentralChiSquaredMeasure_zero_degree, withDensity_noncentralChiSquaredPDF (by norm_num)]
   congr 1
   ext s hs
   rw [Measure.sum_apply _ hs, Measure.sum_apply _ hs]
   conv_rhs => rw [tsum_eq_zero_add' ENNReal.summable]
-  simp only [Nat.cast_zero, mul_zero, zero_add, hzero, withDensity_zero,
+  simp only [Nat.cast_zero, mul_zero, zero_add, chiSquaredPDF_zero_degree, withDensity_zero,
     Measure.smul_apply, smul_eq_mul]
   simp only [Measure.coe_zero, Pi.zero_apply, mul_zero, zero_add]
   congr 1
@@ -324,10 +341,10 @@ theorem integrable_noncentralChiSquaredPDFReal (k : ℝ) (l : ℝ≥0) :
     (hasFiniteIntegral_iff_ofReal (ae_of_all _ (noncentralChiSquaredPDFReal_nonneg k l))).2 ?_⟩
   rcases lt_trichotomy k 0 with hk | rfl | hk
   · simp [noncentralChiSquaredPDFReal_of_neg hk]
-  · simp_rw [← noncentralChiSquaredPDF_eq]
+  · simp_rw [← noncentralChiSquaredPDF_eq_ofReal]
     rw [lintegral_noncentralChiSquaredPDF_zero_degree]
     exact lt_of_le_of_lt tsub_le_self (by norm_num : (1 : ℝ≥0∞) < ∞)
-  · simp_rw [← noncentralChiSquaredPDF_eq]
+  · simp_rw [← noncentralChiSquaredPDF_eq_ofReal]
     exact (lintegral_noncentralChiSquaredPDF_eq_one hk l).trans_lt (by norm_num)
 
 /-- The real density integrates to one at positive degree. -/
@@ -336,8 +353,20 @@ theorem integral_noncentralChiSquaredPDFReal_eq_one (hk : 0 < k) (l : ℝ≥0) :
   rw [integral_eq_lintegral_of_nonneg_ae
       (ae_of_all _ (noncentralChiSquaredPDFReal_nonneg k l))
       (measurable_noncentralChiSquaredPDFReal k l).aestronglyMeasurable]
-  simp_rw [← noncentralChiSquaredPDF_eq]
+  simp_rw [← noncentralChiSquaredPDF_eq_ofReal]
   rw [lintegral_noncentralChiSquaredPDF_eq_one hk l, ENNReal.toReal_one]
+
+/-- At degree zero, the real continuous density integrates to `1 - exp (-l / 2)`. -/
+theorem integral_noncentralChiSquaredPDFReal_zero_degree (l : ℝ≥0) :
+    ∫ x, noncentralChiSquaredPDFReal 0 l x = 1 - exp (-(l : ℝ) / 2) := by
+  rw [integral_eq_lintegral_of_nonneg_ae
+      (ae_of_all _ (noncentralChiSquaredPDFReal_nonneg 0 l))
+      (measurable_noncentralChiSquaredPDFReal 0 l).aestronglyMeasurable]
+  simp_rw [← noncentralChiSquaredPDF_eq_ofReal]
+  rw [lintegral_noncentralChiSquaredPDF_zero_degree, ENNReal.toReal_sub_of_le
+    (ENNReal.ofReal_le_one.mpr (exp_le_one_iff.mpr (by linarith [l.coe_nonneg])))
+      ENNReal.one_ne_top,
+    ENNReal.toReal_one, ENNReal.toReal_ofReal (exp_nonneg _)]
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ}
 
