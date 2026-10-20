@@ -284,7 +284,9 @@ theorem contDiffOn_christoffelSecondKind {m n : WithTop ℕ∞} {U : Set E} (hU 
     ContDiffOn ℝ n (christoffelSecondKind g) U := by
   have hD := hg.fderiv_of_isOpen hU hnm
   intro y hy
-  exact ((contDiffAt_christoffelSecondKindOfJet (j := (g y, fderiv ℝ g y))
+  rw [funext (christoffelSecondKind_eq_christoffelSecondKindOfJet g)]
+  simpa only [Function.comp_def] using
+    ((contDiffAt_christoffelSecondKindOfJet (j := (g y, fderiv ℝ g y))
       (isInvertible_of_separatingLeft (hnd y hy).1)).comp y
       (((hg.of_le (le_self_add.trans hnm)).contDiffAt (hU.mem_nhds hy)).prodMk
         (hD.contDiffAt (hU.mem_nhds hy)))).contDiffWithinAt
