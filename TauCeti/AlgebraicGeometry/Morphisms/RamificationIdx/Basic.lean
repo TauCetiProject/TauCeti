@@ -140,7 +140,7 @@ theorem map_maximalIdeal_eq_pow_ramificationIdxAt_of_map_ne_bot
   have : IsLocalHom (algebraMap (Y.presheaf.stalk (f x)) (X.presheaf.stalk x)) :=
     inferInstanceAs (IsLocalHom (f.stalkMap x).hom)
   rw [ramificationIdxAt_def]
-  exact IsDiscreteValuationRing.map_maximalIdeal_eq_pow_ramificationIdx hmap
+  exact TauCeti.IsDiscreteValuationRing.map_maximalIdeal_eq_pow_ramificationIdx hmap
 
 /-- The pointwise ramification index equals the DVR exponent characterized by the maximal-ideal
 identity in Stacks, Definition 15.113.1 (09E4).
@@ -158,6 +158,6 @@ theorem ramificationIdxAt_eq_of_map_maximalIdeal_eq_pow
   have : IsLocalHom (algebraMap (Y.presheaf.stalk (f x)) (X.presheaf.stalk x)) :=
     inferInstanceAs (IsLocalHom (f.stalkMap x).hom)
   rw [ramificationIdxAt_def]
-  exact IsDiscreteValuationRing.ramificationIdx_eq_of_map_maximalIdeal_eq_pow hexponent
+  exact TauCeti.IsDiscreteValuationRing.ramificationIdx_eq_of_map_maximalIdeal_eq_pow hexponent
 
 end AlgebraicGeometry.Scheme.Hom

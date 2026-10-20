@@ -20,10 +20,10 @@ exponent `e` with `π_S = u π_T ^ e` for uniformizers `π_S`, `π_T` and a unit
 
 ## Main results
 
-* `IsDiscreteValuationRing.map_maximalIdeal_eq_pow_ramificationIdx`: `𝔪_S T = 𝔪_T ^ e` with `e` the
-  ramification index of `𝔪_T` over `S`.
-* `IsDiscreteValuationRing.ramificationIdx_eq_of_map_maximalIdeal_eq_pow`: the index equals any
-  exponent satisfying this maximal-ideal identity.
+* `TauCeti.IsDiscreteValuationRing.map_maximalIdeal_eq_pow_ramificationIdx`: `𝔪_S T = 𝔪_T ^ e` with
+  `e` the ramification index of `𝔪_T` over `S`.
+* `TauCeti.IsDiscreteValuationRing.ramificationIdx_eq_of_map_maximalIdeal_eq_pow`: the index equals
+  any exponent satisfying this maximal-ideal identity.
 
 ## References
 
@@ -38,9 +38,9 @@ exponent `e` with `π_S = u π_T ^ e` for uniformizers `π_S`, `π_T` and a unit
 
 public section
 
-open IsLocalRing
+open IsLocalRing IsDiscreteValuationRing
 
-namespace IsDiscreteValuationRing
+namespace TauCeti.IsDiscreteValuationRing
 
 variable {S T : Type*} [CommRing S] [CommRing T] [IsLocalRing S] [IsDomain T]
   [IsDiscreteValuationRing T] [Algebra S T] [IsLocalHom (algebraMap S T)]
@@ -81,4 +81,4 @@ theorem ramificationIdx_eq_of_map_maximalIdeal_eq_pow {exponent : ℕ}
     exact ne_of_gt (lt_of_le_of_lt bot_le (hpowers (Nat.lt_succ_self exponent)))
   exact hpowers.injective ((map_maximalIdeal_eq_pow_ramificationIdx hmap).symm.trans hexponent)
 
-end IsDiscreteValuationRing
+end TauCeti.IsDiscreteValuationRing
