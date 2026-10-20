@@ -272,15 +272,13 @@ theorem exactCompactlySupportedForms_le_exactForms (k : ℕ) :
 /-- A compactly supported exact form is compactly supported and closed. -/
 theorem exactCompactlySupportedForms_le_compactlySupportedClosedForms (k : ℕ) :
     exactCompactlySupportedForms I M k ≤ compactlySupportedClosedForms I M k := by
+  refine le_inf ?_
+    ((exactCompactlySupportedForms_le_exactForms I k).trans (exactForms_le_closedForms I k))
   cases k with
   | zero => exact bot_le
   | succ k =>
       rintro _ ⟨ψ, hψ, rfl⟩
-      refine ⟨?_, exactForms_le_closedForms I (k + 1) ?_⟩
-      · rw [SetLike.mem_coe, mem_compactlySupportedForms, mextDerivₗ_apply]
-        exact RoughForm.isCompact_tsupport_mextDeriv hψ
-      · rw [exactForms_succ]
-        exact LinearMap.mem_range_self _ ψ
+      exact (compactlySupportedForms.mextDerivₗ I M k ⟨ψ, hψ⟩).2
 
 namespace compactlySupportedDeRhamCohomology
 
