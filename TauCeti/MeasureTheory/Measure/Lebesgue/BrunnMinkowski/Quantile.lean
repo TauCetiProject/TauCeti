@@ -67,14 +67,7 @@ open scoped ENNReal RealInnerProductSpace Topology
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {e : E} {s : Set E}
-
-/-- The heights of interior points form an open set. -/
-private theorem isOpen_image_inner_interior (he : ‖e‖ = 1) (s : Set E) :
-    IsOpen ((fun x ↦ ⟪e, x⟫) '' interior s) := by
-  refine (innerₛₗ ℝ e).isOpenMap_of_finiteDimensional (fun t ↦ ⟨t • e, ?_⟩) _ isOpen_interior
-  simp [he]
-
-variable [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E]
 
 /-- The height law gives a Borel set of heights the proportion of the volume of `s` at those
 heights. -/
@@ -141,26 +134,6 @@ private theorem cdf_map_inner_cond_mem_Ioo_iff_volume (he : ‖e‖ = 1) (hs0 : 
       mul_ne_zero_iff, and_iff_right hinv]
   rw [mem_Ioo, hlo, hhi]
 
-/-- If a convex set has positive volume at heights in `I`, some interior point lies at a height
-in `I`, since almost every point of a convex set is interior. -/
-private theorem _root_.Convex.exists_mem_interior_inner_mem (hs : Convex ℝ s) {I : Set ℝ}
-    (h : volume {x ∈ s | ⟪e, x⟫ ∈ I} ≠ 0) : ∃ x ∈ interior s, ⟪e, x⟫ ∈ I := by
-  by_contra! hne
-  have hnull : volume (s \ interior s) = 0 :=
-    measure_eq_zero_iff_ae_notMem.2 (hs.ae_mem_interior.mono fun x hx h ↦ h.2 (hx h.1))
-  exact h (measure_mono_null (fun x (hx : x ∈ {x ∈ s | ⟪e, x⟫ ∈ I}) ↦
-    (⟨hx.1, fun hi ↦ hne x hi hx.2⟩ : x ∈ s \ interior s)) hnull)
-
-/-- If an interior point of `s` lies at a height in the open set `I`, then `s` has positive
-volume at heights in `I`. -/
-private theorem volume_sep_inner_mem_pos {I : Set ℝ} (hI : IsOpen I)
-    (h : ∃ x ∈ interior s, ⟪e, x⟫ ∈ I) : 0 < volume {x ∈ s | ⟪e, x⟫ ∈ I} := by
-  obtain ⟨x, hx, hxI⟩ := h
-  have hU : IsOpen (interior s ∩ (fun x ↦ ⟪e, x⟫) ⁻¹' I) :=
-    isOpen_interior.inter (hI.preimage (continuous_const.inner continuous_id))
-  exact (hU.measure_pos volume ⟨x, hx, hxI⟩).trans_le
-    (measure_mono fun y hy ↦ ⟨interior_subset hy.1, hy.2⟩)
-
 /-- For a convex set of positive finite volume, the cumulative distribution function of the
 height law lies strictly between `0` and `1` exactly at the heights of interior points. -/
 theorem _root_.Convex.cdf_map_inner_cond_mem_Ioo_iff (hs : Convex ℝ s) (he : ‖e‖ = 1)
@@ -169,8 +142,10 @@ theorem _root_.Convex.cdf_map_inner_cond_mem_Ioo_iff (hs : Convex ℝ s) (he : �
   rw [cdf_map_inner_cond_mem_Ioo_iff_volume he hs0 hsi]
   constructor
   · rintro ⟨hlo, hhi⟩
-    obtain ⟨x, hx, hxc⟩ := hs.exists_mem_interior_inner_mem hlo
-    obtain ⟨y, hy, hyc⟩ := hs.exists_mem_interior_inner_mem hhi
+    obtain ⟨x, hx, hxc⟩ := hs.interior_inter_nonempty_of_addHaar_inter_ne_zero
+      (t := (fun x ↦ ⟪e, x⟫) ⁻¹' Iio c) hlo
+    obtain ⟨y, hy, hyc⟩ := hs.interior_inter_nonempty_of_addHaar_inter_ne_zero
+      (t := (fun x ↦ ⟪e, x⟫) ⁻¹' Ioi c) hhi
     exact (convex_iff_ordConnected.1 (hs.interior.linear_image (innerₛₗ ℝ e))).out
       ⟨x, hx, rfl⟩ ⟨y, hy, rfl⟩ ⟨le_of_lt hxc, le_of_lt hyc⟩
   · intro hc

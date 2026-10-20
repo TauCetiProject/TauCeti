@@ -22,7 +22,9 @@ without choosing a Borel representative permanently.
 Dually, the volume is the integral over heights `t` of the volumes of the hyperplane sections
 `{y ∈ (ℝ ∙ e)ᗮ | y + t • e ∈ s}`, and restricting the heights to a Borel set gives the volume
 of the corresponding part of the set. Hyperplane sections of bounded sets have finite volume,
-and hyperplane sections through interior points have positive volume.
+and hyperplane sections through interior points have positive volume. The heights of interior
+points form an open set, and a set has positive volume at any open set of heights containing the
+height of an interior point.
 
 The coordinate construction uses Mathlib's `Submodule.orthogonalDecomposition` and
 `LinearIsometryEquiv.toSpanUnitSingleton`; its normalization follows Mathlib's volume
@@ -167,6 +169,13 @@ theorem _root_.Bornology.IsBounded.volume_hyperplaneSection_lt_top {s : Set E}
   ((Isometry.of_dist_eq fun y z : (ℝ ∙ e)ᗮ ↦ by
     simp [dist_add_right, Subtype.dist_eq]).antilipschitzWith.isBounded_preimage hs).measure_lt_top
 
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- The heights along a unit vector of the interior points of a set form an open set. -/
+theorem isOpen_image_inner_interior {e : E} (he : ‖e‖ = 1) (s : Set E) :
+    IsOpen ((fun x ↦ ⟪e, x⟫) '' interior s) := by
+  refine (innerₛₗ ℝ e).isOpenMap_of_finiteDimensional (fun t ↦ ⟨t • e, ?_⟩) _ isOpen_interior
+  simp [he]
+
 /-- The hyperplane section along a unit vector through an interior point of a set has positive
 volume. -/
 theorem volume_hyperplaneSection_pos (e : E) (he : ‖e‖ = 1) {s : Set E} {c : ℝ}
@@ -181,6 +190,16 @@ theorem volume_hyperplaneSection_pos (e : E) (he : ‖e‖ = 1) {s : Set E} {c :
     (measure_mono fun y (hy : (y : E) + ⟪e, x⟫ • e ∈ interior s) ↦
       (interior_subset hy : (y : E) + ⟪e, x⟫ • e ∈ s))
   simpa [orthogonalLineEquiv_symm_fst] using hx
+
+/-- If an interior point of `s` lies at a height along `e` in the open set `I`, then `s` has
+positive volume at heights in `I`. -/
+theorem volume_sep_inner_mem_pos {e : E} {s : Set E} {I : Set ℝ} (hI : IsOpen I)
+    (h : ∃ x ∈ interior s, ⟪e, x⟫ ∈ I) : 0 < volume {x ∈ s | ⟪e, x⟫ ∈ I} := by
+  obtain ⟨x, hx, hxI⟩ := h
+  have hU : IsOpen (interior s ∩ (fun x ↦ ⟪e, x⟫) ⁻¹' I) :=
+    isOpen_interior.inter (hI.preimage (continuous_const.inner continuous_id))
+  exact (hU.measure_pos volume ⟨x, hx, hxI⟩).trans_le
+    (measure_mono fun y hy ↦ ⟨interior_subset hy.1, hy.2⟩)
 
 /-- Cavalieri's formula for the part of a Lebesgue-measurable set at heights in a Borel set `I`
 along a unit vector `e`. -/
