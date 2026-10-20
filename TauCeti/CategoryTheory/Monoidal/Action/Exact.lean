@@ -23,9 +23,9 @@ inclusion of a full subcategory or an equivalence.
 The main application is to a property `P : ObjectProperty D` stable under the action, through the
 equivariant inclusion `P.ι` (`TauCeti.CategoryTheory.Monoidal.Action.FullSubcategory`):
 
-* if `D` has kernels and `P` is closed under kernels, then the restricted action functors on
-  `P.FullSubcategory` preserve the kernels of that full subcategory whenever the action functors
-  on `D` preserve the corresponding kernels in `D`; dually for cokernels;
+* if `P` is closed under kernels, then the restricted action functors on `P.FullSubcategory`
+  preserve the kernel of each morphism whose underlying morphism has a kernel in `D`, whenever
+  the action functors on `D` preserve that kernel; dually for cokernels;
 * if `D` is preadditive with a zero object and finite products, and `P` contains zero and is
   closed under finite products and kernels (cokernels), then the restricted action functors
   preserve finite limits (colimits) whenever the action functors on `D` do. For an abelian
@@ -109,24 +109,28 @@ section Kernels
 variable [HasZeroMorphisms D] {X Y : P.FullSubcategory} (f : X ⟶ Y)
 
 /-- If `P` is closed under kernels, the restricted action of `c` preserves the kernel of a
-morphism `f` of `P.FullSubcategory` whenever the action of `c` on `D` preserves the kernel
-of `f` in `D`. -/
-instance preservesLimit_parallelPair_actionLeft [HasKernels D] [P.IsClosedUnderKernels]
+morphism `f` of `P.FullSubcategory` whose underlying morphism has a kernel in `D`, whenever the
+action of `c` on `D` preserves that kernel. -/
+instance preservesLimit_parallelPair_actionLeft [HasKernel f.hom] [P.IsClosedUnderKernels]
     [PreservesLimit (parallelPair f.hom 0) (actionLeft D c)] :
     PreservesLimit (parallelPair f 0) (actionLeft P.FullSubcategory c) :=
-  have := P.preservesKernels_ι f
+  have := P.createsKernels f
+  have := P.hasLimit_parallelPair_comp_ι f
+  have := preservesLimit_of_createsLimit_and_hasLimit (parallelPair f 0) P.ι
   have : PreservesLimit (parallelPair f 0 ⋙ P.ι) (actionLeft D c) :=
     preservesLimit_of_iso_diagram (K₁ := parallelPair f.hom 0) _
       (diagramIsoParallelPair (parallelPair f 0 ⋙ P.ι)).symm
   preservesLimit_actionLeft_of_leftLinear c P.ι _
 
 /-- If `P` is closed under cokernels, the restricted action of `c` preserves the cokernel of a
-morphism `f` of `P.FullSubcategory` whenever the action of `c` on `D` preserves the cokernel
-of `f` in `D`. -/
-instance preservesColimit_parallelPair_actionLeft [HasCokernels D] [P.IsClosedUnderCokernels]
-    [PreservesColimit (parallelPair f.hom 0) (actionLeft D c)] :
+morphism `f` of `P.FullSubcategory` whose underlying morphism has a cokernel in `D`, whenever
+the action of `c` on `D` preserves that cokernel. -/
+instance preservesColimit_parallelPair_actionLeft [HasCokernel f.hom]
+    [P.IsClosedUnderCokernels] [PreservesColimit (parallelPair f.hom 0) (actionLeft D c)] :
     PreservesColimit (parallelPair f 0) (actionLeft P.FullSubcategory c) :=
-  have := P.preservesCokernels_ι f
+  have := P.createsCokernels f
+  have := P.hasColimit_parallelPair_comp_ι f
+  have := preservesColimit_of_createsColimit_and_hasColimit (parallelPair f 0) P.ι
   have : PreservesColimit (parallelPair f 0 ⋙ P.ι) (actionLeft D c) :=
     preservesColimit_of_iso_diagram (K₁ := parallelPair f.hom 0) _
       (diagramIsoParallelPair (parallelPair f 0 ⋙ P.ι)).symm
