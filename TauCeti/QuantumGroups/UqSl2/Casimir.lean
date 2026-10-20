@@ -36,6 +36,7 @@ signed highest weight.
 
 * `TauCeti.UqSl2.casimir_mem_center`: `Ω` is central.
 * `TauCeti.UqSl2.casimir_smul_of_e_smul_eq_zero`: the action of `Ω` on a highest-weight vector.
+* `TauCeti.UqSl2.map_casimirBlock_le`: module maps send Casimir blocks into Casimir blocks.
 * `TauCeti.UqSl2.casimirScalar_units_mul_pow_inj`: at a generic parameter, the scalars of the
   signed highest weights `ε q^m` determine `m` and `ε`.
 * `TauCeti.UqSl2.iSup_casimirBlock_eq_top`: a finite-dimensional module is the sum of its
@@ -193,6 +194,21 @@ theorem mem_casimirBlock_iff {c : ℂ} :
     Module.End.mem_maxGenEigenspace, ← Algebra.algebraMap_eq_smul_one,
     ← AlgHom.commutes (Algebra.lsmul ℂ ℂ V (A := UqSl2 q))]
   simp only [← map_sub, ← map_pow, Algebra.lsmul_coe]
+
+/-- A module map sends the Casimir block for `c` into the Casimir block for `c`. -/
+theorem map_casimirBlock_le {W : Type*} [AddCommGroup W] [Module ℂ W] [Module (UqSl2 q) W]
+    [IsScalarTower ℂ (UqSl2 q) W] (φ : V →ₗ[UqSl2 q] W) (c : ℂ) :
+    (casimirBlock q V c).map φ ≤ casimirBlock q W c := by
+  rintro _ ⟨v, hv, rfl⟩
+  obtain ⟨n, hn⟩ := mem_casimirBlock_iff.mp hv
+  exact mem_casimirBlock_iff.mpr ⟨n, by rw [← map_smul, hn, map_zero]⟩
+
+/-- The Casimir block for `c`, viewed as a module itself, is its own Casimir block for `c`. -/
+theorem casimirBlock_casimirBlock_eq_top (c : ℂ) :
+    casimirBlock q (casimirBlock q V c) c = ⊤ := by
+  refine Submodule.eq_top_iff'.mpr fun v => ?_
+  obtain ⟨n, hn⟩ := mem_casimirBlock_iff.mp v.2
+  exact mem_casimirBlock_iff.mpr ⟨n, Subtype.ext hn⟩
 
 /-- Casimir blocks for distinct scalars are independent. -/
 theorem iSupIndep_casimirBlock : iSupIndep (casimirBlock q V) := fun c => by
