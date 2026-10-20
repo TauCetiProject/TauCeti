@@ -344,6 +344,28 @@ theorem continuousOn_quantile (μ : Measure ℝ) (hμ : Continuous (cdf μ))
     (isOpen_Ioo.mem_nhds ht) (mem_of_superset ((isOpen_Ioo.preimage hμ).mem_nhds hmem)
       fun y hy => ⟨cdf μ y, hy, quantile_cdf μ hmono hy⟩)).continuousWithinAt
 
+/-- If the cdf is strictly increasing on an interval containing all interior quantiles,
+the quantile is continuous on the interior levels, even when the law has atoms. -/
+theorem continuousOn_quantile_of_strictMonoOn (μ : Measure ℝ) {s : Set ℝ}
+    (hs : s.OrdConnected) (hmono : StrictMonoOn (cdf μ) s)
+    (hq : MapsTo μ.quantile (Ioo 0 1) s) : ContinuousOn μ.quantile (Ioo 0 1) := by
+  intro u hu
+  refine tendsto_order.2 ⟨fun a ha ↦ ?_, fun b hb ↦ ?_⟩
+  · have ha' := (lt_quantile_iff μ hu.1 hu.2).1 ha
+    filter_upwards [self_mem_nhdsWithin,
+      eventually_nhdsWithin_of_eventually_nhds (eventually_gt_nhds ha')] with v hv hav
+    exact (lt_quantile_iff μ hv.1 hv.2).2 hav
+  · by_cases hbound : ∀ v ∈ Ioo 0 1, μ.quantile v < b
+    · filter_upwards [self_mem_nhdsWithin] with v hv using hbound v hv
+    push Not at hbound
+    obtain ⟨v, hv, hbv⟩ := hbound
+    obtain ⟨c, hqc, hcb⟩ := exists_between hb
+    have hcs : c ∈ s := hs.out (hq hu) (hq hv) ⟨hqc.le, hcb.le.trans hbv⟩
+    have hc : u < cdf μ c := (le_cdf_quantile μ hu.2).trans_lt (hmono (hq hu) hcs hqc)
+    filter_upwards [self_mem_nhdsWithin,
+      eventually_nhdsWithin_of_eventually_nhds (eventually_lt_nhds hc)] with w hw hwc
+    exact ((quantile_le_iff μ hw.1 hw.2).2 hwc.le).trans_lt hcb
+
 /-- The quantile function is left continuous at every level strictly between `0` and `1`. -/
 theorem continuousWithinAt_Iio_quantile (μ : Measure ℝ) (h0 : 0 < t) (h1 : t < 1) :
     ContinuousWithinAt μ.quantile (Iio t) t := by

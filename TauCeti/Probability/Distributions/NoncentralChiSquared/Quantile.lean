@@ -40,10 +40,8 @@ variable {k u x : ℝ} {l : ℝ≥0}
 /-- Every interior quantile is nonnegative. -/
 theorem quantile_noncentralChiSquaredMeasure_nonneg (hk : 0 ≤ k) (l : ℝ≥0)
     (hu : u ∈ Ioo 0 1) : 0 ≤ (noncentralChiSquaredMeasure k l).quantile u := by
-  by_contra h
-  have hq := Measure.le_cdf_quantile (noncentralChiSquaredMeasure k l) hu.2
-  rw [cdf_noncentralChiSquaredMeasure_of_neg hk l (lt_of_not_ge h)] at hq
-  exact hu.1.not_ge hq
+  have := isProbabilityMeasure_noncentralChiSquaredMeasure hk l
+  exact ordConnected_Ici.quantile_mem (ae_nonneg_noncentralChiSquaredMeasure k l) hu.1 hu.2
 
 /-- An interior quantile is zero exactly through the mass of the atom at zero. At positive
 degree that mass is zero, so every interior quantile is positive. -/
@@ -57,13 +55,18 @@ theorem quantile_noncentralChiSquaredMeasure_eq_zero_iff (hk : 0 ≤ k) (l : ℝ
     ← Measure.quantile_le_iff _ hu.1 hu.2]
   exact ⟨fun h ↦ h.le, fun h ↦ le_antisymm h hq⟩
 
+/-- Every interior quantile above the mass of the atom at zero is positive. -/
+theorem quantile_noncentralChiSquaredMeasure_pos (hk : 0 ≤ k) (hu : u ∈ Ioo 0 1)
+    (hcut : (if k = 0 then exp (-(l : ℝ) / 2) else 0) < u) :
+    0 < (noncentralChiSquaredMeasure k l).quantile u := by
+  rwa [Measure.lt_quantile_iff _ hu.1 hu.2, cdf_noncentralChiSquaredMeasure_zero hk]
+
 /-- A quantile above the atom solves the cdf equation exactly. -/
 theorem cdf_quantile_noncentralChiSquaredMeasure (hk : 0 ≤ k) (hu : u ∈ Ioo 0 1)
     (hcut : (if k = 0 then exp (-(l : ℝ) / 2) else 0) < u) :
     cdf (noncentralChiSquaredMeasure k l) ((noncentralChiSquaredMeasure k l).quantile u) = u := by
   have := isProbabilityMeasure_noncentralChiSquaredMeasure hk l
-  have hpos : 0 < (noncentralChiSquaredMeasure k l).quantile u := by
-    rwa [Measure.lt_quantile_iff _ hu.1 hu.2, cdf_noncentralChiSquaredMeasure_zero hk]
+  have hpos := quantile_noncentralChiSquaredMeasure_pos hk hu hcut
   exact Measure.cdf_quantile' _ hu.1 hu.2
     (noncentralChiSquaredMeasure_singleton_of_ne_zero hpos.ne' k l)
 
@@ -74,8 +77,7 @@ theorem quantile_noncentralChiSquaredMeasure_eq_iff (hk : 0 ≤ k) (hu : u ∈ I
     (hcut : (if k = 0 then exp (-(l : ℝ) / 2) else 0) < u) :
     (noncentralChiSquaredMeasure k l).quantile u = x ↔
       0 < x ∧ cdf (noncentralChiSquaredMeasure k l) x = u := by
-  have hpos : 0 < (noncentralChiSquaredMeasure k l).quantile u := by
-    rwa [Measure.lt_quantile_iff _ hu.1 hu.2, cdf_noncentralChiSquaredMeasure_zero hk]
+  have hpos := quantile_noncentralChiSquaredMeasure_pos hk hu hcut
   have hroot := cdf_quantile_noncentralChiSquaredMeasure hk hu hcut
   constructor
   · rintro rfl
@@ -109,20 +111,9 @@ theorem continuousOn_quantile_noncentralChiSquaredMeasure (hk : 0 ≤ k) (l : �
     exact continuousOn_const.congr fun u hu ↦ by
       rw [noncentralChiSquaredMeasure_zero_noncentrality, chiSquaredMeasure_zero,
         Measure.quantile_dirac 0 hu.1 hu.2.le]
-  have hm := strictMonoOn_cdf_noncentralChiSquaredMeasure hk (not_and_or.mp h)
-  intro u hu
-  have hq := quantile_noncentralChiSquaredMeasure_nonneg hk l hu
-  refine tendsto_order.2 ⟨fun a ha ↦ ?_, fun b hb ↦ ?_⟩
-  · have ha' := (Measure.lt_quantile_iff _ hu.1 hu.2).1 ha
-    filter_upwards [self_mem_nhdsWithin,
-      eventually_nhdsWithin_of_eventually_nhds (eventually_gt_nhds ha')] with v hv hav
-    exact (Measure.lt_quantile_iff _ hv.1 hv.2).2 hav
-  · obtain ⟨c, hqc, hcb⟩ := exists_between hb
-    have hc : u < cdf (noncentralChiSquaredMeasure k l) c :=
-      (Measure.le_cdf_quantile _ hu.2).trans_lt (hm hq (hq.trans hqc.le) hqc)
-    filter_upwards [self_mem_nhdsWithin,
-      eventually_nhdsWithin_of_eventually_nhds (eventually_lt_nhds hc)] with v hv hvc
-    exact ((Measure.quantile_le_iff _ hv.1 hv.2).2 hvc.le).trans_lt hcb
+  exact Measure.continuousOn_quantile_of_strictMonoOn _ ordConnected_Ici
+    (strictMonoOn_cdf_noncentralChiSquaredMeasure hk (not_and_or.mp h))
+    (fun _ hu ↦ quantile_noncentralChiSquaredMeasure_nonneg hk l hu)
 
 /-- At the lower endpoint, every valid noncentral chi-squared quantile tends to zero. -/
 theorem tendsto_quantile_noncentralChiSquaredMeasure_nhdsGT_zero (hk : 0 ≤ k) (l : ℝ≥0) :
