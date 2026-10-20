@@ -68,7 +68,7 @@ public section
 open Filter Topology
 open scoped ENNReal ZeroAtInfty TauCeti.RingOpNorm
 
-variable {I J K R : Type*} [TopologicalSpace I] [DiscreteTopology I] [DecidableEq I]
+variable {I J K R : Type*} [TopologicalSpace I] [DiscreteTopology I]
   [TopologicalSpace J] [DiscreteTopology J] [DecidableEq J]
 
 namespace ZeroAtInftyContinuousMap
@@ -77,14 +77,14 @@ section Pairing
 
 /-- Pairing the coordinate family `lp.single ∞ i r` with `a` gives `a i * r`. -/
 @[simp]
-theorem linearCombination_lpSingle [NormedRing R] [IsUltrametricDist R] [CompleteSpace R] (i : I)
-    (r : R) (a : C₀(I, R)) : linearCombination R (lp.single ∞ i r) a = a i * r := by
+theorem linearCombination_lpSingle [DecidableEq I] [NormedRing R] [IsUltrametricDist R]
+    [CompleteSpace R] (i : I) (r : R) (a : C₀(I, R)) :
+    linearCombination R (lp.single ∞ i r) a = a i * r := by
   rw [linearCombination_apply, tsum_eq_single i fun j hj ↦ by simp [hj],
     lp.single_apply_self, smul_eq_mul]
 
 variable [NormedCommRing R] [IsUltrametricDist R] [CompleteSpace R]
 
-omit [DecidableEq I] in
 /-- **The pairing** of a bounded family `b` with `a ∈ C₀(I, R)` is the convergent sum
 `∑' i, b i * a i`. -/
 theorem linearCombination_eq_tsum_mul (b : lp (fun _ : I ↦ R) ∞) (a : C₀(I, R)) :
@@ -97,7 +97,6 @@ section Bidual
 
 variable [NormedCommRing R] [TauCeti.NormedRing.IsTate R] [IsUltrametricDist R] [CompleteSpace R]
 
-omit [DecidableEq I] in
 /-- A functional on `ℓ∞(I, R)` given by pairing with `a` has operator norm at least `‖a‖`: its
 value at the coordinate family at `i` is `a i`. -/
 private theorem norm_le_ringOpNorm_of_eq_linearCombination (a : C₀(I, R))
@@ -115,9 +114,7 @@ noncomputable def toLpInftyDual : C₀(I, R) →ₗᵢ[R] (lp (fun _ : I ↦ R) 
   toFun a := LinearMap.mkContinuous
     { toFun b := linearCombination R b a
       map_add' b c := by rw [linearCombination_add, _root_.add_apply]
-      map_smul' c b := by
-        rw [← linearCombinationEquiv_apply, map_smul, linearCombinationEquiv_apply,
-          _root_.smul_apply, RingHom.id_apply] }
+      map_smul' c b := by simp [linearCombination_smul] }
     ‖a‖ fun b ↦ (norm_linearCombination_apply_le b a).trans_eq (mul_comm _ _)
   map_add' a a' := ContinuousLinearMap.ext fun b ↦ map_add (linearCombination R b) a a'
   map_smul' c a := ContinuousLinearMap.ext fun b ↦ map_smul (linearCombination R b) c a
@@ -135,7 +132,8 @@ theorem toLpInftyDual_apply (a : C₀(I, R)) (b : lp (fun _ : I ↦ R) ∞) :
 /-- Under the identification `linearCombinationEquiv R R` of `ℓ∞(I, R)` with the dual of
 `C₀(I, R)`, the isometry `toLpInftyDual R` is the canonical evaluation map `a ↦ (u ↦ u a)` into the
 bidual. -/
-theorem toLpInftyDual_linearCombinationEquiv_symm (a : C₀(I, R)) (u : C₀(I, R) →L[R] R) :
+theorem toLpInftyDual_linearCombinationEquiv_symm [DecidableEq I] (a : C₀(I, R))
+    (u : C₀(I, R) →L[R] R) :
     toLpInftyDual R a ((linearCombinationEquiv R R).symm u) = u a := by
   rw [toLpInftyDual_apply, ← linearCombinationEquiv_apply, LinearIsometryEquiv.apply_symm_apply]
 
@@ -158,9 +156,7 @@ noncomputable def transposeLpInfty (u : C₀(J, R) →L[R] C₀(I, R)) :
   LinearMap.mkContinuous
     { toFun b := (linearCombinationEquiv R R).symm ((linearCombination R b).comp u)
       map_add' b c := by rw [linearCombination_add, add_comp, map_add]
-      map_smul' c b := by
-        rw [← linearCombinationEquiv_apply, map_smul, smul_comp, map_smul,
-          linearCombinationEquiv_apply, RingHom.id_apply] }
+      map_smul' c b := by simp [linearCombination_smul, smul_comp] }
     ‖u‖ fun b ↦ by
       dsimp only [LinearMap.coe_mk, AddHom.coe_mk]
       rw [LinearIsometryEquiv.norm_map, mul_comm]
@@ -189,20 +185,21 @@ theorem hasSum_transposeLpInfty_apply (u : C₀(J, R) →L[R] C₀(I, R)) (b : l
 
 /-- The transpose sends the coordinate family at `i` to the `i`-th row of the matrix of `u`. -/
 @[simp]
-theorem transposeLpInfty_lpSingle (u : C₀(J, R) →L[R] C₀(I, R)) (i : I) (j : J) :
+theorem transposeLpInfty_lpSingle [DecidableEq I] (u : C₀(J, R) →L[R] C₀(I, R)) (i : I) (j : J) :
     u.transposeLpInfty (lp.single ∞ i 1) j = u.matrixCoeff i j := by
   simp [transposeLpInfty_apply, matrixCoeff_apply]
 
 /-- A continuous linear map between model spaces is determined by its transpose. -/
 theorem transposeLpInfty_injective :
     Function.Injective (transposeLpInfty : (C₀(J, R) →L[R] C₀(I, R)) → _) := by
+  classical
   intro u v h
   refine matrixCoeff_injective (Matrix.ext fun i j ↦ ?_)
   rw [← transposeLpInfty_lpSingle, h, transposeLpInfty_lpSingle]
 
 /-- The transpose of the identity is the identity. -/
 @[simp]
-theorem transposeLpInfty_id :
+theorem transposeLpInfty_id [DecidableEq I] :
     (ContinuousLinearMap.id R C₀(I, R)).transposeLpInfty = ContinuousLinearMap.id R _ :=
   ext fun b ↦ linearCombination_injective (R := R) <| by simp
 
@@ -222,10 +219,7 @@ theorem transposeLpInfty_add (u v : C₀(J, R) →L[R] C₀(I, R)) :
 @[simp]
 theorem transposeLpInfty_smul (c : R) (u : C₀(J, R) →L[R] C₀(I, R)) :
     (c • u).transposeLpInfty = c • u.transposeLpInfty :=
-  ext fun b ↦ linearCombination_injective (R := R) <| by
-    rw [linearCombination_transposeLpInfty, _root_.smul_apply,
-      ← linearCombinationEquiv_apply (c • u.transposeLpInfty b), map_smul,
-      linearCombinationEquiv_apply, linearCombination_transposeLpInfty, comp_smul]
+  ext fun b ↦ linearCombination_injective (R := R) <| by simp [linearCombination_smul]
 
 /-- **Transposition reverses composition**: `(u ∘ v)ᵗ = vᵗ ∘ uᵗ`. -/
 @[simp]
@@ -238,6 +232,7 @@ theorem transposeLpInfty_comp [TopologicalSpace K] [DiscreteTopology K] [Decidab
 @[simp]
 theorem ringOpNorm_transposeLpInfty (u : C₀(J, R) →L[R] C₀(I, R)) :
     ‖u.transposeLpInfty‖ = ‖u‖ := by
+  classical
   refine le_antisymm (ringOpNorm_le_bound _ (ringOpNorm_nonneg u) fun b ↦ ?_) ?_
   · rw [← ringOpNorm_linearCombination (R := R), linearCombination_transposeLpInfty,
       ← ringOpNorm_linearCombination (R := R) b, mul_comm]

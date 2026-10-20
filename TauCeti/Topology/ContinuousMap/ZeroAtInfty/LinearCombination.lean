@@ -225,6 +225,19 @@ theorem linearCombination_surjective :
 
 end Tate
 
+section SMul
+
+variable [DiscreteTopology I] [NormedCommRing R] [NormedAddCommGroup M] [Module R M]
+  [IsBoundedSMul R M] [IsUltrametricDist M] [CompleteSpace M]
+
+/-- Over a commutative ring, the linear combination map is linear in the family. -/
+theorem linearCombination_smul (c : R) (e : lp (fun _ : I ↦ M) ∞) :
+    linearCombination R (c • e) = c • linearCombination R e := by
+  classical
+  exact continuousLinearMap_ext fun i b ↦ by simp [smul_comm b c]
+
+end SMul
+
 section CommRing
 
 open scoped TauCeti.RingOpNorm
@@ -245,7 +258,7 @@ noncomputable def linearCombinationEquiv : lp (fun _ : I ↦ M) ∞ ≃ₗᵢ[R]
   left_inv e := lp.ext <| funext fun i ↦ by simp
   right_inv := linearCombination_self
   map_add' := linearCombination_add
-  map_smul' c e := continuousLinearMap_ext fun i b ↦ by simp [smul_comm b c]
+  map_smul' := linearCombination_smul
   norm_map' := ringOpNorm_linearCombination
 
 /-- The universal property sends a bounded family to its linear combination map. -/
