@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.MeasureTheory.Measure.Real
+public import TauCeti.MeasureTheory.Measure.Real.Basic
 public import TauCeti.Probability.Distributions.FisherSnedecor.ChiSquared
 public import TauCeti.Probability.Distributions.Gaussian.ChiSquared
 public import TauCeti.Probability.Distributions.StudentT.Cdf

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Integral.Average
-public import TauCeti.MeasureTheory.Measure.Real
+public import TauCeti.MeasureTheory.Measure.Real.Basic
 import Mathlib.Topology.Algebra.Field
 import Mathlib.Algebra.Order.Group.Pointwise.Interval
 

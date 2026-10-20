@@ -39,7 +39,8 @@ densities and quantiles are instances of these formulas.
 
 The identities about `μ.map (|·|)` that do not depend on a random variable live with the theory
 they belong to. The decomposition `MeasureTheory.Measure.map_abs_eq_restrict_add_restrict` and the
-atom `MeasureTheory.Measure.map_abs_apply_zero` are in `TauCeti.MeasureTheory.Measure.Real`, the
+atom `MeasureTheory.Measure.map_abs_apply_zero` are in
+`TauCeti.MeasureTheory.Measure.Real.Basic`, and the
 density `TauCeti.Probability.map_abs_withDensity` is in `TauCeti.MeasureTheory.Measure.WithDensity`,
 the cdf formulas `MeasureTheory.Measure.cdf_map_abs_of_nonneg`,
 `MeasureTheory.Measure.cdf_map_abs_of_neg` and `MeasureTheory.Measure.cdf_map_abs_of_isNegInvariant`

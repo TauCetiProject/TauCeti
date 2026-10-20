@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.Measure.Real
+public import TauCeti.MeasureTheory.Measure.Real.Basic
 public import TauCeti.MeasureTheory.Measure.WithDensity
 public import TauCeti.Probability.Distributions.ChiSquared.Basic
 public import TauCeti.Probability.Distributions.Gamma.Basic

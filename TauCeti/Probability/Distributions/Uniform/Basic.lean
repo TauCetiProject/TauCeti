@@ -14,7 +14,7 @@ public import Mathlib.Probability.Moments.IntegrableExpMul
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
-import TauCeti.MeasureTheory.Measure.Real
+import TauCeti.MeasureTheory.Measure.Real.Basic
 
 /-!
 # The uniform distribution on an interval
