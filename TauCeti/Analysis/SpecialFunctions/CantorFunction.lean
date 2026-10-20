@@ -141,7 +141,6 @@ theorem monotone_cantorFunction : Monotone cantorFunction := fun _ y hxy ↦
     (cantorFunction_nonneg y)
 
 /-- The Cantor function vanishes at `0`. -/
-@[simp]
 theorem cantorFunction_zero : cantorFunction 0 = 0 := by
   have h := cantorFunction_ternary fun _ ↦ false
   -- The constant digits `cond false 2 0` and `cond false 1 0` are `0` by definition.
@@ -150,7 +149,6 @@ theorem cantorFunction_zero : cantorFunction 0 = 0 := by
     ofDigits_const_zero] at h
 
 /-- The Cantor function equals `1` at `1`. -/
-@[simp]
 theorem cantorFunction_one : cantorFunction 1 = 1 := by
   have h := cantorFunction_ternary fun _ ↦ true
   -- `ofDigits_const_last_eq_one` is stated for the constant digit `Fin.last`.
