@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.RegularLocalRing.Basic
-import TauCeti.RingTheory.Ideal.Maps
+import TauCeti.RingTheory.Ideal.Quotient.Operations
 import TauCeti.Data.Fin.Tuple.Basic
 import TauCeti.Algebra.Module.SpanRank
 
