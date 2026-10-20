@@ -17,8 +17,9 @@ public import TauCeti.LinearAlgebra.TensorProduct.ScalarExtension
 This file provides generic results about full submodules over fraction fields. It relates bases and
 ranks of full submodules to their ambient spaces. It also extends integral linear equivalences
 between full submodules to rational linear equivalences of their ambient spaces, and proves that
-rational linear equivalences preserve fullness. Finally, a free full lattice over an integral
-domain rationalizes to its ambient vector space over the fraction field.
+surjective linear maps preserve full lattices over commutative-ring algebras. Finally, a free
+full lattice over an integral domain rationalizes to its ambient vector space over the fraction
+field.
 
 ## Main declarations
 
@@ -238,18 +239,20 @@ end Rationalization
 
 section Map
 
-variable {V : Type u} {W : Type v}
-variable [AddCommGroup V] [Module ℚ V]
-variable [AddCommGroup W] [Module ℚ W]
+variable {R A : Type*} {V : Type u} {W : Type v}
+variable [CommRing R] [CommRing A] [Algebra R A]
+variable [AddCommGroup V] [Module R V] [Module A V] [IsScalarTower R A V]
+variable [AddCommGroup W] [Module R W] [Module A W] [IsScalarTower R A W]
 
-/-- A rational linear equivalence maps a full integral submodule to a full integral submodule. -/
-theorem isLattice_map (S : Submodule ℤ V) [S.IsLattice ℚ] (e : V ≃ₗ[ℚ] W) :
-    (S.map (e.restrictScalars ℤ).toLinearMap).IsLattice ℚ where
-  fg := Submodule.FG.map (e.restrictScalars ℤ).toLinearMap
+/-- A surjective linear map over a commutative-ring algebra sends a full lattice to a full
+lattice. -/
+theorem isLattice_map (S : Submodule R V) [S.IsLattice A] (f : V →ₗ[A] W)
+    (hf : Function.Surjective f) : (S.map (f.restrictScalars R)).IsLattice A where
+  fg := Submodule.FG.map (f.restrictScalars R)
     _root_.Submodule.IsLattice.fg
   span_eq_top := by
-    simp [Submodule.map_coe, Submodule.span_image_linearEquiv,
-      _root_.Submodule.IsLattice.span_eq_top]
+    simp [Submodule.map_coe, Submodule.span_image, _root_.Submodule.IsLattice.span_eq_top,
+      LinearMap.range_eq_top.mpr hf]
 
 end Map
 

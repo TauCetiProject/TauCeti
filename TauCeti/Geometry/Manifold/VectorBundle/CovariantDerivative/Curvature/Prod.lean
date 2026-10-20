@@ -50,6 +50,8 @@ whose Lie brackets are computed factor by factor
   is the sum of the Ricci tensors.
 * `TauCeti.Manifold.scalarCurvature_leviCivitaConnection_prod`: the scalar curvature of the product
   metric is the sum of the scalar curvatures.
+* `Bundle.ContMDiffRiemannianMetric.scalarCurvature_prodTangentSpace`: the same for the product
+  `Bundle.ContMDiffRiemannianMetric.prodTangentSpace` of two smooth metrics.
 
 ## References
 
@@ -187,3 +189,36 @@ theorem scalarCurvature_leviCivitaConnection_prod (p : M × N) :
     LinearMap.inl_apply, LinearMap.inr_apply, map_zero, add_zero, zero_add]
 
 end TauCeti.Manifold
+
+namespace Bundle.ContMDiffRiemannianMetric
+
+variable
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [T2Space M] [ChartedSpace H M] [IsManifold I ∞ M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {G : Type*} [TopologicalSpace G] {J : ModelWithCorners ℝ F G}
+  {N : Type*} [TopologicalSpace N] [T2Space N] [ChartedSpace G N] [IsManifold J ∞ N]
+
+/-- **The scalar curvature of a product metric** `g₁ × g₂` is the sum of the scalar curvatures of
+the factors: `Scal(x, y) = Scal_{g₁}(x) + Scal_{g₂}(y)`. -/
+@[simp]
+theorem scalarCurvature_prodTangentSpace
+    (g₁ : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+    (g₂ : ContMDiffRiemannianMetric J ∞ F (fun y : N ↦ TangentSpace J y)) (p : M × N) :
+    (g₁.prodTangentSpace g₂).scalarCurvature p =
+      g₁.scalarCurvature p.1 + g₂.scalarCurvature p.2 := by
+  rw [scalarCurvature_def, scalarCurvature_def, scalarCurvature_def]
+  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g₁.toRiemannianMetric⟩
+  let _ : RiemannianBundle (fun y : N ↦ TangentSpace J y) := ⟨g₂.toRiemannianMetric⟩
+  -- With the factor metrics installed, the product metric `g₁ × g₂` is the installed product
+  -- metric `TauCeti.Manifold.instRiemannianBundleProd`.
+  have hg : (⟨(g₁.prodTangentSpace g₂).toRiemannianMetric⟩ :
+      RiemannianBundle (fun p : M × N ↦ TangentSpace (I.prod J) p)) =
+      TauCeti.Manifold.instRiemannianBundleProd := by
+    rw [prodTangentSpace_toRiemannianMetric]
+    exact congrArg RiemannianBundle.mk TauCeti.Manifold.riemannianBundleProd_g.symm
+  -- `convert` identifies the two product-metric instances through `hg`.
+  convert TauCeti.Manifold.scalarCurvature_leviCivitaConnection_prod (I := I) (J := J) p using 3
+
+end Bundle.ContMDiffRiemannianMetric

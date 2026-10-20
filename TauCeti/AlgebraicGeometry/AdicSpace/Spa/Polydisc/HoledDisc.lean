@@ -45,9 +45,17 @@ one of its holes swallows the whole of `D(a, |c|)`, that is when `max ‖c‖ �
 ## Main definitions
 
 * `TauCeti.ValuationSpectrum.holedDisc`: the holed disc `D(a, |c|) ∖ ⋃ᵢ D⁻(bᵢ, |dᵢ|)`.
+* `TauCeti.ValuationSpectrum.IsHoledDiscUnion`: finite unions of holed discs.
 
 ## Main results
 
+* `TauCeti.ValuationSpectrum.holedDisc_insert` and
+  `TauCeti.ValuationSpectrum.exists_holedDisc_inter_closedSubdisc_eq`: adding a hole, or cutting
+  by a disc, gives again a holed disc.
+* `TauCeti.ValuationSpectrum.IsHoledDiscUnion.union` and
+  `TauCeti.ValuationSpectrum.IsHoledDiscUnion.inter`: finite unions of holed discs are closed
+  under finite unions and intersections; `TauCeti.ValuationSpectrum.isHoledDiscUnion_biInter`
+  gives closure under finite intersections indexed by a finite set.
 * `TauCeti.ValuationSpectrum.isOpen_holedDisc`: a holed disc whose holes have unit radius
   parameters is open.
 * `TauCeti.ValuationSpectrum.holedDisc_mem_spaRationalFamily` and
@@ -113,6 +121,79 @@ theorem holedDisc_of_isEmpty [IsEmpty ι] (a c : K) (b d : ι → K) :
     holedDisc a c b d = closedSubdisc a c := by
   ext v
   simp
+
+/-- **Adding a hole to a holed disc** intersects it with the hole's defining inequality: for holes
+indexed by a finset `s`, adding the index `i` cuts out `{v : v(dᵢ) ≤ v(T - bᵢ)}`. -/
+theorem holedDisc_insert [DecidableEq ι] (a c : K) (b d : ι → K) (i : ι) (s : Finset ι) :
+    holedDisc a c (fun j : ↥(insert i s) ↦ b j) (fun j ↦ d j) =
+      holedDisc a c (fun j : ↥s ↦ b j) (fun j ↦ d j) ∩
+        {v | v.1.toValuativeRel.vle (C (d i)) (T - C (b i))} := by
+  ext v
+  simp only [mem_holedDisc, Subtype.forall, Finset.mem_insert, forall_eq_or_imp, Set.mem_inter_iff,
+    Set.mem_ofPred_eq]
+  tauto
+
+/-! ### Finite unions of holed discs -/
+
+/-- **A finite union of holed discs**: a subset of the closed unit disc of the form
+`⋃_{(a, c, H) ∈ P} D(a, |c|) ∖ ⋃_{(b, d) ∈ H} D⁻(b, |d|)` for a finite set `P` of triples. -/
+def IsHoledDiscUnion (S : Set (closedPolydisc 1 K)) : Prop :=
+  ∃ P : Finset (K × K × Finset (K × K)),
+    S = ⋃ p ∈ P, holedDisc p.1 p.2.1 (fun q : p.2.2 ↦ q.1.1) (fun q ↦ q.1.2)
+
+/-- Unfolding `IsHoledDiscUnion`: `S` is a finite union of holed discs exactly when it is
+`⋃_{(a, c, H) ∈ P} D(a, |c|) ∖ ⋃_{(b, d) ∈ H} D⁻(b, |d|)` for some finite set `P` of triples. -/
+theorem isHoledDiscUnion_iff {S : Set (closedPolydisc 1 K)} :
+    IsHoledDiscUnion S ↔ ∃ P : Finset (K × K × Finset (K × K)),
+      S = ⋃ p ∈ P, holedDisc p.1 p.2.1 (fun q : p.2.2 ↦ q.1.1) (fun q ↦ q.1.2) :=
+  Iff.rfl
+
+/-- The empty set is a finite union of holed discs. -/
+@[simp] theorem isHoledDiscUnion_empty : IsHoledDiscUnion (∅ : Set (closedPolydisc 1 K)) :=
+  ⟨∅, by simp⟩
+
+/-- The whole closed unit disc is a finite union of holed discs, namely the disc `D(0, |1|)`. -/
+@[simp] theorem isHoledDiscUnion_univ : IsHoledDiscUnion (Set.univ : Set (closedPolydisc 1 K)) :=
+  ⟨{(0, 1, ∅)}, by simp⟩
+
+/-- A finite union of finite unions of holed discs is a finite union of holed discs. -/
+theorem isHoledDiscUnion_biUnion {ι : Type*} (s : Finset ι)
+    {S : ι → Set (closedPolydisc 1 K)} (hS : ∀ i ∈ s, IsHoledDiscUnion (S i)) :
+    IsHoledDiscUnion (⋃ i ∈ s, S i) := by
+  classical
+  choose! P hP using hS
+  exact ⟨s.biUnion P, by rw [Finset.set_biUnion_biUnion]; exact Set.iUnion₂_congr hP⟩
+
+/-- The union of two finite unions of holed discs is a finite union of holed discs. -/
+theorem IsHoledDiscUnion.union {S S' : Set (closedPolydisc 1 K)} (hS : IsHoledDiscUnion S)
+    (hS' : IsHoledDiscUnion S') : IsHoledDiscUnion (S ∪ S') := by
+  classical
+  obtain ⟨P, rfl⟩ := hS
+  obtain ⟨P', rfl⟩ := hS'
+  exact ⟨P ∪ P', by rw [Finset.set_biUnion_union]⟩
+
+/-- **Cutting out a hole** from a finite union of holed discs gives a finite union of holed discs:
+add the hole to each of them. -/
+theorem IsHoledDiscUnion.inter_setOf_vle {S : Set (closedPolydisc 1 K)}
+    (hS : IsHoledDiscUnion S) (b d : K) :
+    IsHoledDiscUnion (S ∩ {v | v.1.toValuativeRel.vle (C d) (T - C b)}) := by
+  classical
+  obtain ⟨P, rfl⟩ := hS
+  refine ⟨P.image fun p ↦ (p.1, p.2.1, insert (b, d) p.2.2), ?_⟩
+  rw [Finset.set_biUnion_finset_image, Set.iUnion₂_inter]
+  exact Set.iUnion₂_congr fun p _ ↦ (holedDisc_insert p.1 p.2.1 Prod.fst Prod.snd (b, d) p.2.2).symm
+
+/-- Cutting out finitely many holes from a finite union of holed discs gives a finite union of
+holed discs. -/
+theorem IsHoledDiscUnion.inter_biInter_setOf_vle {ι : Type*} {S : Set (closedPolydisc 1 K)}
+    (hS : IsHoledDiscUnion S) (s : Finset ι) (b d : ι → K) :
+    IsHoledDiscUnion (S ∩ ⋂ i ∈ s, {v | v.1.toValuativeRel.vle (C (d i)) (T - C (b i))}) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simpa using hS
+  | insert i s _ ih =>
+    rw [Finset.set_biInter_insert, ← Set.inter_assoc, Set.inter_right_comm]
+    exact ih.inter_setOf_vle (b i) (d i)
 
 /-- A hole whose radius parameter is a unit `d` is the basic open `{v : v(d) ≤ v(T - b) ≠ 0}`: the
 inequality `v(d) ≤ v(T - b)` already forces `v(T - b) ≠ 0`. -/
@@ -182,6 +263,63 @@ end TopologicalRing
 section NormedField
 
 variable {K : Type*} [NormedField K] [IsUltrametricDist K] [NonarchimedeanRing K]
+
+/-- **A holed disc cut by a disc is a holed disc with the same holes**: the intersection of the
+outer disc `D(a, |c|)` with `D(a', |c'|)` is a disc, possibly the empty disc. -/
+theorem exists_holedDisc_inter_closedSubdisc_eq (a c a' c' : K) (b d : ι → K) :
+    ∃ e r : K, holedDisc a c b d ∩ closedSubdisc a' c' = holedDisc e r b d := by
+  obtain ⟨e, r, h⟩ := exists_closedSubdisc_inter_closedSubdisc_eq a a' c c'
+  exact ⟨e, r, by rw [holedDisc, holedDisc, ← h, Set.inter_right_comm]⟩
+
+/-- **Cutting by a disc** a finite union of holed discs gives a finite union of holed discs. -/
+theorem IsHoledDiscUnion.inter_closedSubdisc {S : Set (closedPolydisc 1 K)}
+    (hS : IsHoledDiscUnion S) (a c : K) : IsHoledDiscUnion (S ∩ closedSubdisc a c) := by
+  classical
+  obtain ⟨P, rfl⟩ := hS
+  choose e r h using fun p : K × K × Finset (K × K) ↦
+    exists_holedDisc_inter_closedSubdisc_eq p.1 p.2.1 a c (fun q : p.2.2 ↦ q.1.1) (fun q ↦ q.1.2)
+  refine ⟨P.image fun p ↦ (e p, r p, p.2.2), ?_⟩
+  rw [Finset.set_biUnion_finset_image, Set.iUnion₂_inter]
+  exact Set.iUnion₂_congr fun p _ ↦ h p
+
+/-- Cutting by finitely many discs a finite union of holed discs gives a finite union of holed
+discs. -/
+theorem IsHoledDiscUnion.inter_biInter_closedSubdisc {ι : Type*}
+    {S : Set (closedPolydisc 1 K)} (hS : IsHoledDiscUnion S) (s : Finset ι) (a c : ι → K) :
+    IsHoledDiscUnion (S ∩ ⋂ i ∈ s, closedSubdisc (a i) (c i)) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simpa using hS
+  | insert i s _ ih =>
+    rw [Finset.set_biInter_insert, ← Set.inter_assoc, Set.inter_right_comm]
+    exact ih.inter_closedSubdisc (a i) (c i)
+
+/-- **The intersection of two finite unions of holed discs is a finite union of holed discs**:
+cut the first by the outer disc and the holes of each holed disc of the second. -/
+theorem IsHoledDiscUnion.inter {S S' : Set (closedPolydisc 1 K)} (hS : IsHoledDiscUnion S)
+    (hS' : IsHoledDiscUnion S') : IsHoledDiscUnion (S ∩ S') := by
+  obtain ⟨P, rfl⟩ := hS'
+  rw [Set.inter_iUnion₂]
+  refine isHoledDiscUnion_biUnion P fun p _ ↦ ?_
+  have h : S ∩ holedDisc p.1 p.2.1 (fun q : p.2.2 ↦ q.1.1) (fun q ↦ q.1.2) =
+      S ∩ closedSubdisc p.1 p.2.1 ∩
+        ⋂ q ∈ p.2.2, {v | v.1.toValuativeRel.vle (C q.2) (T - C q.1)} := by
+    ext v
+    simp [and_assoc]
+  rw [h]
+  exact (hS.inter_closedSubdisc p.1 p.2.1).inter_biInter_setOf_vle p.2.2 Prod.fst Prod.snd
+
+/-- A finite intersection of finite unions of holed discs is a finite union of holed discs. -/
+theorem isHoledDiscUnion_biInter {ι : Type*} (s : Finset ι)
+    {S : ι → Set (closedPolydisc 1 K)} (hS : ∀ i ∈ s, IsHoledDiscUnion (S i)) :
+    IsHoledDiscUnion (⋂ i ∈ s, S i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s _ ih =>
+    rw [Finset.set_biInter_insert]
+    exact (hS i (Finset.mem_insert_self i s)).inter
+      (ih fun j hj ↦ hS j (Finset.mem_insert_of_mem hj))
 
 /-- **A hole that swallows the outer disc empties the holed disc**: if
 `max ‖c‖ ‖a - bᵢ‖ < ‖dᵢ‖`, then on `D(a, |c|)` the value of `T - bᵢ = (T - a) + (a - bᵢ)` stays
