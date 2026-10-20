@@ -54,6 +54,22 @@ theorem isAdmissible_iff_mem_Icc [DecidableEq V] [Fintype V] {A B S : Finset V} 
     IsAdmissible A B S ↔ S ∈ Set.Icc A Bᶜ := by
   simp [isAdmissible_iff, Finset.disjoint_left, Finset.subset_iff]
 
+/-- Complementing a source side exchanges the source and sink terminal sets. -/
+@[simp]
+theorem isAdmissible_compl_iff [Fintype V] [DecidableEq V] {A B S : Finset V} :
+    IsAdmissible B A Sᶜ ↔ IsAdmissible A B S := by
+  rw [isAdmissible_iff_mem_Icc, isAdmissible_iff_mem_Icc]
+  constructor
+  · rintro ⟨hB, hA⟩
+    exact ⟨compl_le_compl_iff_le.mp hA, le_compl_comm.mp hB⟩
+  · rintro ⟨hA, hB⟩
+    exact ⟨le_compl_comm.mp hB, compl_le_compl_iff_le.mpr hA⟩
+
+/-- The complement of an admissible side is admissible for the exchanged terminal sets. -/
+theorem IsAdmissible.compl [Fintype V] [DecidableEq V] {A B S : Finset V}
+    (hS : IsAdmissible A B S) : IsAdmissible B A Sᶜ :=
+  isAdmissible_compl_iff.mpr hS
+
 /-- Disjoint terminal sets admit the source terminal set itself as a cut. -/
 theorem isAdmissible_self {A B : Finset V} (hAB : Disjoint A B) :
     IsAdmissible A B A := ⟨Subset.rfl, hAB⟩
@@ -367,6 +383,15 @@ end Extremal
     IsAdmissible {s} {t} S ↔ s ∈ S ∧ t ∉ S := by
   classical
   simp [isAdmissible_iff]
+
+/-- A minimum cut for a pair of singleton terminal sets has the usual source-membership,
+sink-exclusion, and optimality characterization. -/
+theorem isMinimum_singleton_iff [Preorder K] {f : Finset V → K} {s t : V}
+    {S : Finset V} :
+    IsMinimum f {s} {t} S ↔
+      s ∈ S ∧ t ∉ S ∧ ∀ T, s ∈ T → t ∉ T → f S ≤ f T := by
+  simp only [isMinimum_iff, isAdmissible_singleton]
+  aesop
 
 /-!
 ## Examples

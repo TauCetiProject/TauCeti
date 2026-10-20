@@ -135,6 +135,57 @@ end IndexGrading
 
 end IndexFiltration
 
+section IndexExtend
+
+variable (R : Type uR) (M : Type uM) {P : Type uP} [Semiring R] [AddCommMonoid M] [Module R M]
+  (ind : P → ℤ) (p : ℤ)
+
+/-- The extension by zero of a family indexed by the generators of index `p` to all generators. -/
+noncomputable def indexExtend : ({x : P // ind x = p} → M) →ₗ[R] (P → M) :=
+  Function.ExtendByZero.linearMap R M (Subtype.val : {x : P // ind x = p} → P)
+
+variable {R M ind p}
+
+/-- The extension by zero takes the given value at a generator of index `p`. -/
+@[simp]
+theorem indexExtend_apply_of_eq (f : {x : P // ind x = p} → M) {x : P} (hx : ind x = p) :
+    indexExtend R M ind p f x = f ⟨x, hx⟩ :=
+  Subtype.val_injective.extend_apply f 0 ⟨x, hx⟩
+
+/-- The extension by zero vanishes at a generator of index different from `p`. -/
+@[simp]
+theorem indexExtend_apply_of_ne (f : {x : P // ind x = p} → M) {x : P} (hx : ind x ≠ p) :
+    indexExtend R M ind p f x = 0 :=
+  Function.extend_apply' _ _ _ fun ⟨y, hy⟩ ↦ hx (hy ▸ y.2)
+
+/-- Restricting a family extended by zero recovers the family. -/
+@[simp]
+theorem funLeft_indexExtend (f : {x : P // ind x = p} → M) :
+    LinearMap.funLeft R M (Subtype.val : {x : P // ind x = p} → P) (indexExtend R M ind p f) =
+      f :=
+  funext fun x ↦ indexExtend_apply_of_eq (R := R) f x.2
+
+/-- A family extended by zero from the generators of index `p` lies in the `p`-th piece of the
+index filtration. -/
+theorem indexExtend_mem_twistedIndexFiltration (f : {x : P // ind x = p} → M) :
+    indexExtend R M ind p f ∈ twistedIndexFiltration (R := R) ind p :=
+  (mem_twistedIndexFiltration_iff _).2 fun _ hx ↦ indexExtend_apply_of_ne f hx.ne'
+
+/-- A family of total degree `n` on the generators of index `p`, extended by zero, has total
+degree `n`. -/
+theorem indexExtend_mem_twistedTotalGrading {ℳ : ℤ → Submodule R M} {n : ℤ}
+    {f : {x : P // ind x = p} → M}
+    (hf : f ∈ twistedTotalGrading ℳ (fun x : {x : P // ind x = p} ↦ ind x) n) :
+    indexExtend R M ind p f ∈ twistedTotalGrading ℳ ind n :=
+  mem_twistedTotalGrading_iff.2 fun x ↦ by
+    by_cases hx : ind x = p
+    · rw [indexExtend_apply_of_eq f hx]
+      exact mem_twistedTotalGrading_iff.1 hf ⟨x, hx⟩
+    · rw [indexExtend_apply_of_ne f hx]
+      exact zero_mem _
+
+end IndexExtend
+
 section Differential
 
 variable {R : Type uR} {A : Type uA} {M : Type uM} {P : Type uP}

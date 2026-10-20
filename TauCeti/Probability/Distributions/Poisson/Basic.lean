@@ -18,6 +18,8 @@ analytic API of the real-valued Poisson law. For a rate
 `exp (r * (exp t - 1))`, cumulant-generating function `r * (exp t - 1)`, and both mean and
 variance equal to `r`.
 
+The zero-rate law is recorded explicitly as the point mass at zero.
+
 The series calculation for the probability-generating function follows the calculation of
 `ProbabilityTheory.charFun_map_cast_poissonMeasure` in Mathlib; the moment-generating function is
 its value at `exp t`. The same series, together with the factorial-moment series
@@ -32,6 +34,13 @@ open MeasureTheory ProbabilityTheory Real
 open scoped NNReal Nat
 
 namespace TauCeti.Probability
+
+/-- A Poisson law of rate zero is concentrated at zero. -/
+@[simp]
+theorem poissonMeasure_zero : poissonMeasure 0 = Measure.dirac 0 := by
+  apply Measure.ext_of_singleton
+  intro n
+  cases n <;> simp [poissonMeasure_singleton]
 
 /-- The probability-generating series of a Poisson law: weighted by the Poisson masses, the powers
 `z ^ k` sum to `exp ((z - 1) * r)`. -/

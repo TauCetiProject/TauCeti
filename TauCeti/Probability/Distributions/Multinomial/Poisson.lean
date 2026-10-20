@@ -158,13 +158,13 @@ theorem _root_.ProbabilityTheory.iIndepFun.hasLaw_cond_sum_poissonMeasure
 zero measure. No normalized category weights are needed. -/
 @[simp]
 theorem cond_pi_poissonMeasure_zero_of_ne_zero {n : ℕ} (hn : n ≠ 0) :
-    cond (Measure.pi (fun _ : ι => poissonMeasure 0)) {k | ∑ i, k i = n} = 0 := by
+    cond (Measure.pi (fun _ : ι => Measure.dirac 0)) {k | ∑ i, k i = n} = 0 := by
   apply cond_eq_zero_of_meas_eq_zero
   have hmass := congrArg (fun μ : Measure ℕ => μ {n})
     (map_sum_pi_poissonMeasure (fun _ : ι => 0))
   rw [Measure.map_apply (.of_discrete) (measurableSet_singleton n),
     Set.preimage_singleton] at hmass
-  simpa [poissonMeasure_singleton, hn] using hmass
+  simpa [poissonMeasure_zero, poissonMeasure_singleton, hn] using hmass
 
 -- Simplify before `Finset.sum_eq_zero_iff` rewrites the conditioning event.
 /-- At all-zero rates, conditioning on total zero gives the point mass at the zero count
@@ -185,7 +185,7 @@ theorem cond_pi_poissonMeasure_zero :
   rw [cond_apply' (measurableSet_singleton k), hzero, inv_one, one_mul]
   by_cases hk : k = 0
   · subst k
-    simp [Measure.pi_singleton, poissonMeasure_singleton]
+    simp [Measure.pi_singleton]
   · have hsum : ∑ i, k i ≠ 0 := by simpa [funext_iff] using hk
     rw [Set.inter_singleton_of_notMem (s := {l : ι → ℕ | ∑ i, l i = 0}) hsum]
     simp [hk]
