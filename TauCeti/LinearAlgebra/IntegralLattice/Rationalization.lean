@@ -72,7 +72,7 @@ theorem form_rationalizationEquiv (L : IntegralLattice V) (x y : ℚ ⊗[ℤ] L)
     L.form (Submodule.rationalizationEquiv L.carrier x)
         (Submodule.rationalizationEquiv L.carrier y) =
       L.integralForm.baseChange ℚ x y := by
-  let h := Submodule.IsLattice.isBaseChange_subtype L.carrier
+  let h := Submodule.isBaseChange_subtype L.carrier
   -- The generic equivalence is opaque across modules; identify it by its pure-tensor equation.
   have he : Submodule.rationalizationEquiv L.carrier = h.equiv := by
     apply LinearEquiv.ext

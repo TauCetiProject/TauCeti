@@ -5,23 +5,28 @@ open Verso.Output Verso.Output.Html
 /-- Cached reports update independently of the site build; static charts remain fallbacks. -/
 def liveStatus : Html := {{
   <section class="ci-live" data-ci-live="true" aria-label="Current CI activity">
-    <h2>"Current activity"</h2>
-    <p data-ci-status="true" role="status">"Loading the latest CI snapshot…"</p>
-    <p data-ci-counts="true"></p>
-    <ul data-ci-builds="true"></ul>
-    <details><summary>"Report freshness"</summary><ul data-ci-freshness="true"></ul></details>
-    <noscript>"Enable JavaScript for current activity and automatic chart updates. Historical charts are available below."</noscript>
+    <div class="ci-live-heading">
+      <h2>"Jobs right now"</h2>
+      <p data-ci-status="true" role="status">"Loading live counts…"</p>
+    </div>
+    <dl class="ci-live-counts" data-ci-counts="true"></dl>
+    <p class="ci-live-backlog" data-ci-backlog="true" hidden="hidden"></p>
+    <noscript>"Enable JavaScript for live counts and automatic chart updates."</noscript>
   </section>
   <script src="static/ci-live.js" defer="defer"></script>
 }}
 
-/-- The fleet timelines. -/
-def fleetGraphs : Html := {{
+/-- Lead with the recent fleet timeline. -/
+def recentFleetGraph : Html := {{
   <figure class="loc-figure loc-figure-wide">
     <img class="loc-graph" src="static/ci-fleet-72h.svg"
          alt="CI jobs running, queued and waiting over the last 72 hours, by runner and kind"/>
     <figcaption>"The last three days in ten-minute bins."</figcaption>
   </figure>
+}}
+
+/-- The longer fleet timeline follows the explanation. -/
+def monthlyFleetGraph : Html := {{
   <figure class="loc-figure loc-figure-wide">
     <img class="loc-graph" src="static/ci-fleet-30d.svg"
          alt="CI jobs running, queued and waiting over the last 30 days, by runner and kind"
@@ -68,6 +73,16 @@ def pickerGraph : Html := dailyChart "ci-picker.svg"
 
 #doc (Page) "CI" =>
 
+Build activity and runner queues across Tau Ceti. The charts update automatically.
+
+:::blob recentFleetGraph
+:::
+
+:::blob liveStatus
+:::
+
+# Understanding the fleet
+
 Where does Tau Ceti's continuous integration run, and how long does it wait? Every pull request
 is built in a sandbox, on one of two kinds of runner. GitHub-hosted runners cost nothing for a
 public repository, but the organisation may run only twenty GitHub-hosted jobs at once, across
@@ -76,10 +91,7 @@ paid for. So a pull-request build takes a GitHub runner while one is free and ov
 Namespace when they are all taken. Merge validation through the GitHub queue or bors runs on
 Namespace; human-reviewed infrastructure changes can land directly.
 
-:::blob liveStatus
-:::
-
-The timeline below has three panels on one time axis. The top panel shows how many jobs were
+The fleet timelines have three panels on one time axis. The top panel shows how many jobs were
 running, averaged over each bin and stacked by runner and kind, against the twenty-job cap on
 GitHub-hosted jobs. "Other GitHub jobs" are mostly the label, notification and merge-bot jobs
 that run on every pull-request event; they are brief but numerous, and they compete with builds
@@ -93,7 +105,7 @@ GitHub merge-queue entries also run a performance-gate job, which bors staging b
 That difference affects the fleet and runner-minute totals across the transition. Pilot and
 unidentified bors builds remain in the other-job and cost totals.
 
-:::blob fleetGraphs
+:::blob monthlyFleetGraph
 :::
 
 # Merge queue and staging runs

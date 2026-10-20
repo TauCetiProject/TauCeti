@@ -59,6 +59,49 @@ theorem isSupportingLine_iff {h : ℕ → WithTop ℝ} {σ c : ℝ} :
     IsSupportingLine h σ c ↔ (c : EReal) ≤ supportingValue h σ :=
   coe_le_supportingValue_iff.symm
 
+/-- A line through a finite height supports a convex sequence exactly when its slope
+lies between the adjacent finite unit slopes. A missing adjacent edge imposes no bound. -/
+theorem IsConvexSeq.isSupportingLine_iff_unitSlope {h : ℕ → WithTop ℝ}
+    (hh : IsConvexSeq h) {n : ℕ} (hn : h n ≠ ⊤) (σ : ℝ) :
+    IsSupportingLine h σ ((h n).untop₀ - σ * n) ↔
+      (∀ i, i + 1 = n → h i ≠ ⊤ → unitSlope h i ≤ σ) ∧
+      (h (n + 1) ≠ ⊤ → σ ≤ unitSlope h n) := by
+  constructor
+  · intro hc
+    constructor
+    · intro i hi hif
+      have hb := hc i
+      rw [← WithTop.coe_untop₀_of_ne_top hif, WithTop.coe_le_coe] at hb
+      rw [unitSlope_def, hi]
+      have hcast : (i : ℝ) + 1 = n := by exact_mod_cast hi
+      rw [← hcast] at hb
+      nlinarith
+    · intro hn'
+      have hb := hc (n + 1)
+      rw [← WithTop.coe_untop₀_of_ne_top hn', WithTop.coe_le_coe] at hb
+      simp only [unitSlope_def, Nat.cast_add, Nat.cast_one] at hb ⊢
+      linarith
+  · rintro ⟨hleft, hright⟩ k
+    by_cases hk : h k = ⊤
+    · simp [hk]
+    rw [← WithTop.coe_untop₀_of_ne_top hk, WithTop.coe_le_coe]
+    rcases lt_trichotomy k n with hkn | rfl | hnk
+    · obtain ⟨i, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by omega : n ≠ 0)
+      have hi : h i ≠ ⊤ := hh.ne_top_of_le_of_le hk hn (by omega) (by omega)
+      have hs := hh.sub_le_mul_slope hk hn hi hn hkn.le le_rfl
+      have hb := hleft i rfl hi
+      rw [Nat.cast_sub hkn.le] at hs
+      have hdiff : (0 : ℝ) ≤ (i + 1 : ℕ) - (k : ℝ) :=
+        sub_nonneg.mpr (Nat.cast_le.mpr hkn.le)
+      nlinarith
+    · simp
+    · have hn' := hh.ne_top_of_le_of_le hn hk (Nat.le_succ n) hnk
+      have hs := hh.mul_slope_le_sub hn hk hn hn' hnk.le le_rfl
+      have hb := hright hn'
+      rw [Nat.cast_sub hnk.le] at hs
+      have hdiff : 0 ≤ (k : ℝ) - n := sub_nonneg.mpr (Nat.cast_le.mpr hnk.le)
+      nlinarith
+
 /-- The supporting face cut out by a specified affine supporting line. -/
 def supportingFace (h : ℕ → WithTop ℝ) (σ c : ℝ) : Set ℕ :=
   {n | h n = ((c + σ * n : ℝ) : WithTop ℝ)}
@@ -135,6 +178,15 @@ interval. -/
 theorem exists_intercept (hf : IsFiniteFace h σ l u) :
     ∃ c : ℝ, IsSupportingLine h σ c ∧ supportingFace h σ c = Set.Icc l u :=
   hf.2
+
+/-- The line of the face slope through any point of a finite face supports the sequence. -/
+theorem isSupportingLine_untop₀_sub (hf : IsFiniteFace h σ l u) {n : ℕ}
+    (hn : n ∈ Set.Icc l u) : IsSupportingLine h σ ((h n).untop₀ - σ * n) := by
+  obtain ⟨c, hc, hface⟩ := hf.exists_intercept
+  have hn' : h n = ((c + σ * n : ℝ) : WithTop ℝ) :=
+    mem_supportingFace.mp (hface.symm.subset hn)
+  rw [hn', WithTop.untop₀_coe, add_sub_cancel_right]
+  exact hc
 
 /-- The intercept cutting out a finite face is unique. -/
 theorem existsUnique_intercept (hf : IsFiniteFace h σ l u) :
