@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Normed.Lp.ProdLp
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
 public import Mathlib.Topology.Homeomorph.Lemmas
-public import TauCeti.Geometry.Sphere.LinearIsometry
 
 /-!
 # The unit sphere of an `L²` product as a union of two solid pieces
@@ -83,6 +82,23 @@ private theorem continuous_normalizer : Continuous normalizer :=
 
 private theorem normalizer_sq (r : ℝ) : normalizer r ^ 2 * (1 + r ^ 2) = 1 := by
   rw [normalizer, inv_pow, Real.sq_sqrt (by positivity), inv_mul_cancel₀ (by positivity)]
+
+/-- Exchanging the two factors of `WithLp 2 (F × G)` restricts to a homeomorphism of unit
+spheres. -/
+private def sphereProdComm : sphere (0 : WithLp 2 (F × G)) 1 ≃ₜ sphere (0 : WithLp 2 (G × F)) 1 :=
+  (IsometryEquiv.withLpProdComm 2 F G).toHomeomorph.subtype fun x ↦ by
+    simp only [mem_sphere_zero_iff_norm, IsometryEquiv.coe_toHomeomorph,
+      (IsometryEquiv.withLpProdComm 2 F G).isometry.norm_map_of_map_zero (by simp)]
+
+private theorem coe_sphereProdComm_apply (x : sphere (0 : WithLp 2 (F × G)) 1) :
+    (sphereProdComm x : WithLp 2 (G × F)) =
+      WithLp.toLp 2 ((x : WithLp 2 (F × G)).snd, (x : WithLp 2 (F × G)).fst) := by
+  simp [sphereProdComm]
+
+private theorem coe_sphereProdComm_symm_apply (y : sphere (0 : WithLp 2 (G × F)) 1) :
+    (sphereProdComm.symm y : WithLp 2 (F × G)) =
+      WithLp.toLp 2 ((y : WithLp 2 (G × F)).snd, (y : WithLp 2 (G × F)).fst) := by
+  simp [sphereProdComm]
 
 variable [NormedSpace ℝ F] [NormedSpace ℝ G]
 
@@ -233,22 +249,6 @@ theorem frontier_setOf_norm_fst_le_norm_snd :
   exact lt_mul_left (hx ▸ hsnd) (by linarith)
 
 /-! ### The second piece -/
-
-/-- Exchanging the two factors of `WithLp 2 (F × G)` restricts to a homeomorphism of unit
-spheres. -/
-private def sphereProdComm : sphere (0 : WithLp 2 (F × G)) 1 ≃ₜ sphere (0 : WithLp 2 (G × F)) 1 :=
-  (LinearIsometryEquiv.unitSphereIsometryEquiv
-    (LinearIsometryEquiv.withLpProdComm 2 ℝ F G)).toHomeomorph
-
-private theorem coe_sphereProdComm_apply (x : sphere (0 : WithLp 2 (F × G)) 1) :
-    (sphereProdComm x : WithLp 2 (G × F)) =
-      WithLp.toLp 2 ((x : WithLp 2 (F × G)).snd, (x : WithLp 2 (F × G)).fst) := by
-  simp [sphereProdComm]
-
-private theorem coe_sphereProdComm_symm_apply (y : sphere (0 : WithLp 2 (G × F)) 1) :
-    (sphereProdComm.symm y : WithLp 2 (F × G)) =
-      WithLp.toLp 2 ((y : WithLp 2 (G × F)).snd, (y : WithLp 2 (G × F)).fst) := by
-  simp [sphereProdComm]
 
 variable (F G) in
 /-- The piece `‖x.snd‖ ≤ ‖x.fst‖` of the unit sphere of `WithLp 2 (F × G)` is homeomorphic to the
