@@ -28,6 +28,8 @@ are written multiplicatively, as `Multiplicative (ZMod N)` and `Multiplicative (
 * `TauCeti.zmodMonoidHomEquiv_symm_apply` and `TauCeti.zmodProdMonoidHomEquiv_symm_apply`: the
   homomorphism of `g` sends `a` to `g ^ a.val`, and that of `(g, h)` sends `(a, b)` to
   `g ^ a.val * h ^ b.val`.
+* `TauCeti.zmodMonoidHomEquiv_symm_injective_of_orderOf_eq`: the homomorphism of an element of
+  order exactly `N` is injective.
 -/
 
 public section
@@ -87,6 +89,16 @@ theorem coe_zmodMonoidHomEquiv_apply {G : Type*} [Group G] (φ : Multiplicative 
 theorem zmodMonoidHomEquiv_symm_apply {G : Type*} [Group G] (g : {g : G // g ^ N = 1})
     (a : ZMod N) : (zmodMonoidHomEquiv N G).symm g (.ofAdd a) = g.1 ^ a.val :=
   zmodLift_apply _ _ a
+
+/-- The homomorphism `ℤ/Nℤ →* G` of an element `g` of order `N` is injective. -/
+theorem zmodMonoidHomEquiv_symm_injective_of_orderOf_eq {G : Type*} [Group G]
+    {g : {g : G // g ^ N = 1}} (hg : orderOf g.1 = N) :
+    Function.Injective ((zmodMonoidHomEquiv N G).symm g) := by
+  refine (injective_iff_map_eq_one _).mpr fun a ha ↦ ?_
+  rw [← ofAdd_toAdd a, zmodMonoidHomEquiv_symm_apply] at ha
+  rw [← toAdd_eq_zero, ← ZMod.natCast_zmod_val a.toAdd, ZMod.natCast_eq_zero_iff]
+  have := orderOf_dvd_of_pow_eq_one ha
+  rwa [hg] at this
 
 variable (N) in
 /-- **Homomorphisms `(ℤ/Nℤ)² →* G` are the pairs of elements of `G` killed by `N`**, through the

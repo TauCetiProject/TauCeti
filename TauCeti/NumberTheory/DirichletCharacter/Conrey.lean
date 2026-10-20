@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 public import Mathlib.NumberTheory.DirichletCharacter.Orthogonality
 public import TauCeti.Data.ZMod.PrimePowUnits
+import TauCeti.Data.ZMod.OrderOf
 
 /-!
 # The Conrey labelling of Dirichlet characters
@@ -87,10 +88,9 @@ private theorem exists_orderOf_natCast_eq_totient {p : ℕ} (hp : p.Prime) (hp2 
 
 private theorem orderOf_conreyGenerator_sq {p : ℕ} (hp : p.Prime) (hp2 : p ≠ 2) :
     orderOf (conreyGenerator p : ZMod (p ^ 2)) = (p ^ 2).totient := by
-  classical
   have h := exists_orderOf_natCast_eq_totient hp hp2
   rw [conreyGenerator, dite_eq_left h]
-  convert Nat.find_spec h
+  exact Nat.find_spec h
 
 /-- **The Conrey generator is a primitive root modulo every power of `p`**, for an odd prime
 `p`. -/
@@ -101,10 +101,9 @@ theorem orderOf_conreyGenerator {p : ℕ} (hp : p.Prime) (hp2 : p ≠ 2) (e : �
 /-- The Conrey generator is the least natural number that is a primitive root modulo `p ²`. -/
 theorem conreyGenerator_le {p g : ℕ} (hg : orderOf (g : ZMod (p ^ 2)) = (p ^ 2).totient) :
     conreyGenerator p ≤ g := by
-  classical
   have h : ∃ g : ℕ, orderOf (g : ZMod (p ^ 2)) = (p ^ 2).totient := ⟨g, hg⟩
   rw [conreyGenerator, dite_eq_left h]
-  convert Nat.find_min' h hg
+  exact Nat.find_min' h hg
 
 /-- The Conrey generator of `3` is `2`. -/
 theorem conreyGenerator_three : conreyGenerator 3 = 2 := by
@@ -127,8 +126,8 @@ theorem conreyGenerator_three : conreyGenerator 3 = 2 := by
 private theorem coprime_conreyGenerator {p : ℕ} (hp : p.Prime) (hp2 : p ≠ 2) (e : ℕ) :
     Nat.Coprime (conreyGenerator p) (p ^ e) := by
   have : NeZero (p ^ e) := ⟨pow_ne_zero e hp.ne_zero⟩
-  exact (ZMod.isUnit_iff_coprime _ _).mp (orderOf_pos_iff.mp
-    ((orderOf_conreyGenerator hp hp2 e).symm ▸ Nat.totient_pos.mpr (NeZero.pos _))).isUnit
+  exact (ZMod.isUnit_iff_coprime _ _).mp
+    (ZMod.isUnit_of_orderOf_eq_totient (orderOf_conreyGenerator hp hp2 e))
 
 /-! ### The prime-power pairings -/
 
@@ -167,9 +166,8 @@ private theorem conreyGenerator_mem_zpowers {p : ℕ} (hp : p.Prime) (hp2 : p �
     (u : (ZMod (p ^ e))ˣ) :
     u ∈ Subgroup.zpowers (ZMod.unitOfCoprime _ (coprime_conreyGenerator hp hp2 e)) := by
   have : NeZero (p ^ e) := ⟨pow_ne_zero e hp.ne_zero⟩
-  refine (Subgroup.eq_top_iff' _).mp ((Subgroup.card_eq_iff_eq_top _).mp ?_) u
-  rw [Nat.card_zpowers, ← orderOf_units, ZMod.coe_unitOfCoprime, orderOf_conreyGenerator hp hp2,
-    Nat.card_eq_fintype_card, ZMod.card_units_eq_totient]
+  refine (Subgroup.eq_top_iff' _).mp (ZMod.zpowers_eq_top_of_orderOf_eq_totient ?_) u
+  rw [← orderOf_units, ZMod.coe_unitOfCoprime, orderOf_conreyGenerator hp hp2]
 
 /-- The discrete logarithm to the base of the Conrey generator modulo `p ^ e`. -/
 private noncomputable def conreyLog {p : ℕ} (hp : p.Prime) (hp2 : p ≠ 2) (e : ℕ) :
@@ -240,11 +238,8 @@ theorem conreyLocal_apply_of_eq_pow {p e : ℕ} (hp : p.Prime) (hp2 : p ≠ 2)
     Units.ext (by simpa using hm)
   have hn' : n = ZMod.unitOfCoprime _ (coprime_conreyGenerator hp hp2 e) ^ b :=
     Units.ext (by simpa using hn)
-  rw [conreyLocal_of_ne_two hp hp2, conreyOdd, MonoidHom.comp_apply, MonoidHom.compl₂_apply,
-    zmodPairing_apply, MulEquiv.coe_toMonoidHom, hm', hn', conreyLog_pow, conreyLog_pow,
-    toAdd_ofAdd, toAdd_ofAdd, ← Nat.cast_mul, ZMod.toCircle_natCast]
-  push_cast
-  ring_nf
+  rw [conreyLocal_of_ne_two hp hp2, conreyOdd, transportPairing_apply, hm', hn']
+  simp [conreyLog_pow, zmodPairing_apply, ← Nat.cast_mul, ZMod.toCircle_natCast]
 
 /-- **The Conrey pairing modulo `2 ^ (e + 2)`**: if `m ≡ (-1) ^ x 5 ^ a` and `n ≡ (-1) ^ y 5 ^ b`
 modulo `2 ^ (e + 2)`, then `χ_{2 ^ (e + 2)}(m, n) = e(x y / 2) e(a b / 2 ^ e)`. -/
@@ -261,11 +256,8 @@ theorem conreyLocal_two_apply {e : ℕ} {m n : (ZMod (2 ^ (e + 2)))ˣ} {x y a b 
       (ofAdd (y : ZMod 2), ofAdd (b : ZMod (2 ^ e))) := by
     rw [MulEquiv.symm_apply_eq]
     exact Units.ext (by rw [ZMod.coe_unitsTwoPowEquiv_ofAdd_natCast, hn])
-  rw [conreyLocal_two, conreyTwoPow_add_two_apply, hm', hn', zmodPairing_apply,
-    zmodPairing_apply, toAdd_ofAdd, toAdd_ofAdd, toAdd_ofAdd, toAdd_ofAdd, ← Nat.cast_mul,
-    ← Nat.cast_mul, Circle.coe_mul, ZMod.toCircle_natCast, ZMod.toCircle_natCast]
-  push_cast
-  ring_nf
+  rw [conreyLocal_two, conreyTwoPow_add_two_apply, hm', hn']
+  simp [zmodPairing_apply, ← Nat.cast_mul, ZMod.toCircle_natCast]
 
 /-- Modulo `1` and `2` the Conrey pairing is trivial. -/
 theorem conreyLocal_two_of_le_one {v : ℕ} (hv : v ≤ 1) : conreyLocal 2 v = 1 := by
@@ -320,10 +312,8 @@ theorem conreyLocal_eq_one_iff {p e : ℕ} (hp : p.Prime) (m : (ZMod (p ^ e))ˣ)
     rw [conreyLocal_of_ne_two hp h2] at h
     -- Pair `m` with the Conrey generator, whose logarithm is `1`.
     have := DFunLike.congr_fun h (ZMod.unitOfCoprime _ (coprime_conreyGenerator hp h2 e) ^ 1)
-    rw [conreyOdd, transportPairing_apply, MulEquiv.coe_toMonoidHom, conreyLog_pow,
-      Nat.cast_one, MonoidHom.one_apply, zmodPairing_eq_one_iff,
-      MulEquiv.map_eq_one_iff] at this
-    exact this
+    rw [conreyOdd, transportPairing_apply, MulEquiv.coe_toMonoidHom, conreyLog_pow] at this
+    simpa [zmodPairing_eq_one_iff] using this
 
 /-! ### The Conrey pairing and the Conrey labelling -/
 
@@ -358,14 +348,9 @@ theorem conreyPairing_eq_one_iff {N : ℕ} [NeZero N] (m : (ZMod N)ˣ) :
   -- Pair `m` with the unit that is `u` modulo `p ^ v` and `1` modulo the other prime powers.
   let v : Π q : N.primeFactors, (ZMod (q ^ N.factorization q))ˣ := Pi.mulSingle p u
   have hu := DFunLike.congr_fun h ((ZMod.unitsEquivPi hN).symm v)
-  have key (q : N.primeFactors) :
-      ZMod.unitsMap (Nat.ordProj_dvd N q) ((ZMod.unitsEquivPi hN).symm v) = v q := by
-    rw [← ZMod.unitsEquivPi_apply hN, MulEquiv.apply_symm_apply]
   rw [conreyPairing_apply, MonoidHom.one_apply, Fintype.prod_eq_single p] at hu
-  · rw [key] at hu
-    simpa [v] using hu
+  · simpa [v] using hu
   · intro q hq
-    rw [key]
     simp [v, Pi.mulSingle_eq_of_ne hq]
 
 private theorem card_dirichletCharacter (N : ℕ) [NeZero N] :
@@ -379,9 +364,7 @@ private noncomputable def conreyHom (N : ℕ) : (ZMod N)ˣ →* DirichletCharact
 
 private theorem conreyHom_apply (N : ℕ) (m n : (ZMod N)ˣ) :
     conreyHom N m n = conreyPairing N m n := by
-  rw [conreyHom, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    MulChar.mulEquivToUnitHom_symm_apply, MulChar.equivToUnitHom_symm_coe,
-    MonoidHom.compr₂_apply, Circle.toUnits_apply, Units.val_mk0]
+  simp [conreyHom]
 
 private theorem conreyHom_bijective (N : ℕ) [NeZero N] : Function.Bijective (conreyHom N) := by
   refine (Fintype.bijective_iff_injective_and_card _).mpr
