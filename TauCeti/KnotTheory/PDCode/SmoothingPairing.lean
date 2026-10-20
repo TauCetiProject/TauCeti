@@ -48,16 +48,14 @@ agree, and one otherwise. The native orbit count counts both traversal direction
 @[simp] theorem orbitCount_slotSmoothing_mul_div_two (b : Bool) (p : Perm (Fin 4))
     (hp : IsPerfectMatching p) :
     orbitCount (slotSmoothing b * p) / 2 = if p = slotSmoothing b then 2 else 1 := by
-  have hs : IsPerfectMatching (slotSmoothing b) :=
-    isPerfectMatching_iff.mpr ⟨slotSmoothing_apply_apply b, slotSmoothing_ne b⟩
-  rw [hs.orbitCount_mul_fin_four hp]
+  rw [(isPerfectMatching_slotSmoothing b).orbitCount_mul_fin_four hp]
   by_cases h : p = slotSmoothing b
   · rw [ite_eq_left h.symm, ite_eq_left h]
   · rw [ite_eq_right (Ne.symm h), ite_eq_right h]
 
 /-- Changing smoothing `b` to its alternative merges two local circles precisely when the
 exterior pairing is smoothing `b`. Reversing `b` gives the split criterion. -/
-theorem orbitCount_slotSmoothing_not_add_one_eq_iff (b : Bool) (p : Perm (Fin 4))
+theorem orbitCount_slotSmoothing_not_mul_div_two_add_one_eq_iff (b : Bool) (p : Perm (Fin 4))
     (hp : IsPerfectMatching p) :
     orbitCount (slotSmoothing (!b) * p) / 2 + 1 =
       orbitCount (slotSmoothing b * p) / 2 ↔ p = slotSmoothing b := by
@@ -68,16 +66,14 @@ theorem orbitCount_slotSmoothing_not_add_one_eq_iff (b : Bool) (p : Perm (Fin 4)
 
 /-- The opposite-slot exterior pairing is exactly the one-to-one case: the two smoothing
 closures have equal circle counts. -/
-theorem orbitCount_slotSmoothing_true_eq_false_iff (p : Perm (Fin 4))
+theorem orbitCount_slotSmoothing_true_mul_div_two_eq_false_iff (p : Perm (Fin 4))
     (hp : IsPerfectMatching p) :
     orbitCount (slotSmoothing true * p) / 2 =
       orbitCount (slotSmoothing false * p) / 2 ↔ p = oppositeCrossingSlot := by
   have hcases := (isPerfectMatching_iff_eq_slotSmoothing_or_eq_oppositeCrossingSlot p).mp hp
   have hne := slotSmoothing_ne_slotSmoothing_not false
-  have hfalse : slotSmoothing false ≠ oppositeCrossingSlot :=
-    fun h => slotSmoothing_ne_oppositeCrossingSlot false 0 (congrArg (fun f => f 0) h)
-  have htrue : slotSmoothing true ≠ oppositeCrossingSlot :=
-    fun h => slotSmoothing_ne_oppositeCrossingSlot true 0 (congrArg (fun f => f 0) h)
+  have hfalse := slotSmoothing_ne_oppositeCrossingSlot_perm false
+  have htrue := slotSmoothing_ne_oppositeCrossingSlot_perm true
   simp only [Bool.not_false] at hne
   rw [orbitCount_slotSmoothing_mul_div_two _ _ hp,
     orbitCount_slotSmoothing_mul_div_two _ _ hp]
