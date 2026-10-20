@@ -377,7 +377,9 @@ theorem coeff_neg_one_coe_zpow_mul_derivative_eq_ite {k : Type*} [Field k] (φ :
     · simp
     · rw [ite_eq_right (show Int.negSucc (m + 1) ≠ -1 by omega)]
       let U : k⟦X⟧ˣ := ⟨u, u⁻¹, by rwa [mul_comm], hvu⟩
-      exact nsmul_coeff_mul_succ_coe_inv_pow_succ_add_coeff_X_mul_derivative U e m
+      simpa only [U, Units.val_mk, Units.inv_mk] using
+        nsmul_coeff_val_inv_pow_succ_add_coeff_X_mul_val_inv_pow_add_two_mul_derivative_eq_zero
+          U e m
 
 /-- **The residue of `φ ^ n dφ`.** For a power series `φ` of order one over a field, the
 coefficient of `X⁻¹` in the Laurent series `φ ^ n * φ'` is `1` if `n = -1` and `0` otherwise.

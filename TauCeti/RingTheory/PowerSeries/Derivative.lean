@@ -42,8 +42,8 @@ for `e, k ≥ 1`, which governs the behaviour of residues under a substitution `
   its `X *`-shifted form for all `e`.
 * `PowerSeries.coeff_succ_pow_succ_eq_coeff_pow_mul_derivative`: the `e = 1` case
   `coeff (n + 1) (v ^ (n + 1)) = coeff n (v ^ n * v')`.
-* `PowerSeries.mul_coeff_coe_zpow_neg_add_coeff_coe_zpow_neg_sub_one_mul_derivative`: for a unit
-  `u : R⟦X⟧ˣ` over a commutative ring and `e, k ≥ 1`,
+* `PowerSeries.mul_coeff_val_zpow_neg_add_coeff_val_zpow_neg_sub_one_mul_derivative_eq_zero`:
+  for a unit `u : R⟦X⟧ˣ` over a commutative ring and `e, k ≥ 1`,
   `(e : R) * coeff (e * k) (u ^ (-k)) + coeff (e * k - 1) (u ^ (-k - 1) * u') = 0`.
 -/
 
@@ -121,7 +121,8 @@ variable {R : Type*} [CommRing R]
 /-- Universal coefficient identity for a unit `u : R⟦X⟧ˣ` over a commutative ring, in shifted form
 for all `e, n : ℕ`:
 `e • coeff (e * (n + 1)) (u⁻¹ ^ (n + 1)) + coeff (e * (n + 1)) (X * (u⁻¹ ^ (n + 2) * u')) = 0`. -/
-theorem nsmul_coeff_mul_succ_coe_inv_pow_succ_add_coeff_X_mul_derivative (u : R⟦X⟧ˣ) (e n : ℕ) :
+theorem nsmul_coeff_val_inv_pow_succ_add_coeff_X_mul_val_inv_pow_add_two_mul_derivative_eq_zero
+    (u : R⟦X⟧ˣ) (e n : ℕ) :
     e • coeff (e * (n + 1)) ((↑u⁻¹ : R⟦X⟧) ^ (n + 1)) +
       coeff (e * (n + 1)) (X * ((↑u⁻¹ : R⟦X⟧) ^ (n + 2) * d⁄dX (u : R⟦X⟧))) = 0 := by
   have hd : (↑u⁻¹ : R⟦X⟧) ^ (n + 2) * d⁄dX (u : R⟦X⟧) =
@@ -131,22 +132,11 @@ theorem nsmul_coeff_mul_succ_coe_inv_pow_succ_add_coeff_X_mul_derivative (u : R�
   rw [hd, mul_neg, map_neg, nsmul_coeff_mul_succ_pow_succ_eq_coeff_X_mul_pow_mul_derivative,
     add_neg_cancel]
 
-/-- Universal coefficient identity for positive powers of the inverse of a unit `u : R⟦X⟧ˣ` and
-`e ≠ 0`:
-`(e : R) * coeff (e * (n + 1)) (u⁻¹ ^ (n + 1)) + coeff (e * (n + 1) - 1) (u⁻¹ ^ (n + 2) * u') = 0`.
--/
-theorem mul_coeff_mul_succ_coe_inv_pow_succ_add_coeff_mul_derivative (u : R⟦X⟧ˣ) {e : ℕ}
-    (he : e ≠ 0) (n : ℕ) :
-    (e : R) * coeff (e * (n + 1)) ((↑u⁻¹ : R⟦X⟧) ^ (n + 1)) +
-      coeff (e * (n + 1) - 1) ((↑u⁻¹ : R⟦X⟧) ^ (n + 2) * d⁄dX (u : R⟦X⟧)) = 0 := by
-  obtain ⟨m, hm⟩ := Nat.exists_eq_add_one_of_ne_zero (mul_ne_zero he (Nat.succ_ne_zero n))
-  simpa [nsmul_eq_mul, hm, coeff_succ_X_mul] using
-    nsmul_coeff_mul_succ_coe_inv_pow_succ_add_coeff_X_mul_derivative u e n
-
 /-- **Universal coefficient identity for negative powers of a unit power series.** For a commutative
 ring `R`, a unit `u : R⟦X⟧ˣ`, and `e, k ≥ 1`,
 `(e : R) * coeff (e * k) (u ^ (-k)) + coeff (e * k - 1) (u ^ (-k - 1) * u') = 0`. -/
-theorem mul_coeff_coe_zpow_neg_add_coeff_coe_zpow_neg_sub_one_mul_derivative (u : R⟦X⟧ˣ) {e k : ℕ}
+theorem mul_coeff_val_zpow_neg_add_coeff_val_zpow_neg_sub_one_mul_derivative_eq_zero
+    (u : R⟦X⟧ˣ) {e k : ℕ}
     (he : e ≠ 0) (hk : k ≠ 0) :
     (e : R) * coeff (e * k) (↑(u ^ (-(k : ℤ))) : R⟦X⟧) +
       coeff (e * k - 1) ((↑(u ^ (-(k : ℤ) - 1)) : R⟦X⟧) * d⁄dX (u : R⟦X⟧)) = 0 := by
@@ -157,7 +147,10 @@ theorem mul_coeff_coe_zpow_neg_add_coeff_coe_zpow_neg_sub_one_mul_derivative (u 
     rw [show -((n + 1 : ℕ) : ℤ) - 1 = -((n + 2 : ℕ) : ℤ) by push_cast; ring,
       zpow_neg, zpow_natCast, ← inv_pow, Units.val_pow_eq_pow_val]
   rw [hk1, hk2]
-  exact mul_coeff_mul_succ_coe_inv_pow_succ_add_coeff_mul_derivative u he n
+  obtain ⟨m, hm⟩ := Nat.exists_eq_add_one_of_ne_zero (mul_ne_zero he (Nat.succ_ne_zero n))
+  simpa [nsmul_eq_mul, hm, coeff_succ_X_mul] using
+    nsmul_coeff_val_inv_pow_succ_add_coeff_X_mul_val_inv_pow_add_two_mul_derivative_eq_zero
+      u e n
 
 end CommRing
 

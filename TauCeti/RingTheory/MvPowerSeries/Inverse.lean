@@ -84,7 +84,7 @@ theorem map_inv_aux (f : R →+* S) (a : R) (φ : MvPowerSeries σ R) :
 
 /-- For a unit `u : (MvPowerSeries σ R)ˣ`, its inverse in `MvPowerSeries σ R` is `invOfUnit` with
 respect to the unit constant coefficient. -/
-theorem coe_inv_eq_invOfUnit (u : (MvPowerSeries σ R)ˣ) :
+theorem val_inv_eq_invOfUnit (u : (MvPowerSeries σ R)ˣ) :
     (↑u⁻¹ : MvPowerSeries σ R) =
       invOfUnit (u : MvPowerSeries σ R)
         (Units.map (constantCoeff (σ := σ) (R := R)).toMonoidHom u) :=
@@ -140,9 +140,9 @@ theorem map_invOfUnit {F : Type*} [FunLike F (PowerSeries R) (PowerSeries S)]
 
 /-- For a unit `u : R⟦X⟧ˣ`, its inverse in `R⟦X⟧` is `invOfUnit` with respect to the unit
 constant coefficient. -/
-theorem coe_inv_eq_invOfUnit (u : R⟦X⟧ˣ) :
+theorem val_inv_eq_invOfUnit (u : R⟦X⟧ˣ) :
     (↑u⁻¹ : R⟦X⟧) = invOfUnit (u : R⟦X⟧) (Units.map (constantCoeff (R := R)).toMonoidHom u) :=
-  MvPowerSeries.coe_inv_eq_invOfUnit u
+  MvPowerSeries.val_inv_eq_invOfUnit u
 
 /-- Applying a coefficient ring homomorphism to `PowerSeries.inv.aux` is `PowerSeries.inv.aux` of
 the image. -/

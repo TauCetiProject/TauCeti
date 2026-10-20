@@ -26,14 +26,12 @@ This file collects facts used to compare power series to a finite order `m`:
 ## Main results
 
 * `PowerSeries.trunc_eq_zero_iff_le_order`: `trunc m φ = 0 ↔ m ≤ order φ`.
-* `PowerSeries.trunc_eq_iff`: `trunc m φ = trunc m ψ ↔ ∀ n < m, coeff n φ = coeff n ψ`.
-* `PowerSeries.trunc_derivative_eq_of_trunc_eq`: `trunc m (d⁄dX φ)` depends only on
-  `trunc (m + 1) φ`.
+* `PowerSeries.trunc_eq_trunc_iff`: `trunc m φ = trunc m ψ ↔ ∀ n < m, coeff n φ = coeff n ψ`.
 * `PowerSeries.trunc_inv_aux_eq_of_trunc_eq`, `PowerSeries.trunc_invOfUnit_eq_of_trunc_eq`,
-  `PowerSeries.trunc_inv_eq_of_trunc_eq`, `PowerSeries.trunc_coe_inv_eq_of_trunc_eq`: the `m`-th
+  `PowerSeries.trunc_inv_eq_of_trunc_eq`, `PowerSeries.trunc_val_inv_eq_of_trunc_eq`: the `m`-th
   truncation of an inverse power series depends only on `trunc m`.
-* `PowerSeries.trunc_coe_zpow_eq_of_trunc_eq` and
-  `PowerSeries.trunc_coe_zpow_mul_derivative_eq_of_trunc_eq`: the finite jets of `u ^ k` and
+* `PowerSeries.trunc_val_zpow_eq_of_trunc_eq` and
+  `PowerSeries.trunc_val_zpow_mul_derivative_eq_of_trunc_eq`: the finite jets of `u ^ k` and
   `(u ^ k) * d⁄dX u` for a unit `u : R⟦X⟧ˣ` depend only on `trunc m u` and `trunc (m + 1) u`.
 * `PowerSeries.coeff_sum_C_mul_X_pow`: the coefficients of `∑ i : Fin m, C (a i) * X ^ i`.
 * `PowerSeries.coeff_coe_mul_eq_sum`: `coeff n (p * g) = ∑_{i < N} pᵢ coeff n (Xⁱ g)` for a
@@ -67,7 +65,7 @@ theorem coeff_eq_of_trunc_eq {n m : ℕ} {φ ψ : R⟦X⟧} (h : trunc m φ = tr
 
 /-- Two power series have the same `m`-truncation if and only if their coefficients agree in all
 degrees `< m`. -/
-theorem trunc_eq_iff {m : ℕ} {φ ψ : R⟦X⟧} :
+theorem trunc_eq_trunc_iff {m : ℕ} {φ ψ : R⟦X⟧} :
     trunc m φ = trunc m ψ ↔ ∀ n < m, coeff n φ = coeff n ψ := by
   refine ⟨fun h n hn ↦ coeff_eq_of_trunc_eq h hn, fun h ↦ Polynomial.ext fun n ↦ ?_⟩
   rw [coeff_trunc, coeff_trunc]
@@ -77,12 +75,12 @@ theorem trunc_eq_iff {m : ℕ} {φ ψ : R⟦X⟧} :
 /-- Equality of truncations at `m` implies equality of truncations at any `n ≤ m`. -/
 theorem trunc_eq_of_trunc_eq_of_le {n m : ℕ} {φ ψ : R⟦X⟧} (h : trunc m φ = trunc m ψ)
     (hnm : n ≤ m) : trunc n φ = trunc n ψ :=
-  trunc_eq_iff.mpr fun _ hi ↦ coeff_eq_of_trunc_eq h (hi.trans_le hnm)
+  trunc_eq_trunc_iff.mpr fun _ hi ↦ coeff_eq_of_trunc_eq h (hi.trans_le hnm)
 
 /-- The `m`-truncation of a product depends only on the `m`-truncations of the factors. -/
 theorem trunc_mul_eq_of_trunc_eq {m : ℕ} {f₁ f₂ g₁ g₂ : R⟦X⟧} (hf : trunc m f₁ = trunc m f₂)
     (hg : trunc m g₁ = trunc m g₂) : trunc m (f₁ * g₁) = trunc m (f₂ * g₂) := by
-  rw [trunc_eq_iff]
+  rw [trunc_eq_trunc_iff]
   intro n hn
   rw [coeff_mul, coeff_mul]
   refine Finset.sum_congr rfl fun x hx ↦ ?_
@@ -121,18 +119,6 @@ theorem coeff_coe_mul_eq_sum (p : Polynomial R) (g : R⟦X⟧) {N : ℕ} (hN : p
 
 end Semiring
 
-section CommSemiring
-
-variable {R : Type*} [CommSemiring R]
-
-/-- The `m`-truncation of the formal derivative `d⁄dX φ` depends only on the `(m + 1)`-truncation
-of `φ`. -/
-theorem trunc_derivative_eq_of_trunc_eq {m : ℕ} {φ ψ : R⟦X⟧}
-    (h : trunc (m + 1) φ = trunc (m + 1) ψ) : trunc m (d⁄dX φ) = trunc m (d⁄dX ψ) := by
-  rw [trunc_derivative, trunc_derivative, h]
-
-end CommSemiring
-
 section Ring
 
 variable {R : Type*} [Ring R]
@@ -155,7 +141,7 @@ theorem coeff_inv_aux_eq_of_trunc_eq {n m : ℕ} (a : R) {φ ψ : R⟦X⟧} (h :
 /-- The `m`-truncation of `PowerSeries.inv.aux a φ` depends only on `trunc m φ`. -/
 theorem trunc_inv_aux_eq_of_trunc_eq {m : ℕ} (a : R) {φ ψ : R⟦X⟧} (h : trunc m φ = trunc m ψ) :
     trunc m (PowerSeries.inv.aux a φ) = trunc m (PowerSeries.inv.aux a ψ) :=
-  trunc_eq_iff.mpr fun _ hn ↦ coeff_inv_aux_eq_of_trunc_eq a h hn
+  trunc_eq_trunc_iff.mpr fun _ hn ↦ coeff_inv_aux_eq_of_trunc_eq a h hn
 
 /-- The `m`-truncation of `invOfUnit φ u` depends only on `trunc m φ`. -/
 theorem trunc_invOfUnit_eq_of_trunc_eq {m : ℕ} {φ ψ : R⟦X⟧} (u : Rˣ) (h : trunc m φ = trunc m ψ) :
@@ -164,7 +150,7 @@ theorem trunc_invOfUnit_eq_of_trunc_eq {m : ℕ} {φ ψ : R⟦X⟧} (u : Rˣ) (h
 
 /-- The `m`-truncation of the inverse of a unit power series depends only on the `m`-truncation of
 the unit. -/
-theorem trunc_coe_inv_eq_of_trunc_eq {m : ℕ} {u v : R⟦X⟧ˣ}
+theorem trunc_val_inv_eq_of_trunc_eq {m : ℕ} {u v : R⟦X⟧ˣ}
     (h : trunc m (u : R⟦X⟧) = trunc m (v : R⟦X⟧)) :
     trunc m (↑u⁻¹ : R⟦X⟧) = trunc m (↑v⁻¹ : R⟦X⟧) := by
   rcases m with _ | m
@@ -173,26 +159,26 @@ theorem trunc_coe_inv_eq_of_trunc_eq {m : ℕ} {u v : R⟦X⟧ˣ}
       simpa using coeff_eq_of_trunc_eq h (Nat.zero_lt_succ m)
     have hu : Units.map (constantCoeff (R := R)).toMonoidHom u =
         Units.map (constantCoeff (R := R)).toMonoidHom v := Units.ext h0
-    rw [coe_inv_eq_invOfUnit, coe_inv_eq_invOfUnit, hu]
+    rw [val_inv_eq_invOfUnit, val_inv_eq_invOfUnit, hu]
     exact trunc_invOfUnit_eq_of_trunc_eq _ h
 
 /-- The `m`-truncation of an integer power `u ^ k` of a unit `u : R⟦X⟧ˣ` depends only on
 `trunc m u`. -/
-theorem trunc_coe_zpow_eq_of_trunc_eq {m : ℕ} {u v : R⟦X⟧ˣ}
+theorem trunc_val_zpow_eq_of_trunc_eq {m : ℕ} {u v : R⟦X⟧ˣ}
     (h : trunc m (u : R⟦X⟧) = trunc m (v : R⟦X⟧)) (k : ℤ) :
     trunc m (↑(u ^ k) : R⟦X⟧) = trunc m (↑(v ^ k) : R⟦X⟧) := by
   rcases k with n | n
   · simpa using trunc_pow_eq_of_trunc_eq h n
   · rw [zpow_negSucc, zpow_negSucc, ← inv_pow, ← inv_pow, Units.val_pow_eq_pow_val,
       Units.val_pow_eq_pow_val]
-    exact trunc_pow_eq_of_trunc_eq (trunc_coe_inv_eq_of_trunc_eq h) (n + 1)
+    exact trunc_pow_eq_of_trunc_eq (trunc_val_inv_eq_of_trunc_eq h) (n + 1)
 
 /-- For `n < m`, the `n`-th coefficient of an integer power `u ^ k` of a unit `u : R⟦X⟧ˣ` depends
 only on `trunc m u`. -/
-theorem coeff_coe_zpow_eq_of_trunc_eq {n m : ℕ} {u v : R⟦X⟧ˣ}
+theorem coeff_val_zpow_eq_of_trunc_eq {n m : ℕ} {u v : R⟦X⟧ˣ}
     (h : trunc m (u : R⟦X⟧) = trunc m (v : R⟦X⟧)) (k : ℤ) (hn : n < m) :
     coeff n (↑(u ^ k) : R⟦X⟧) = coeff n (↑(v ^ k) : R⟦X⟧) :=
-  coeff_eq_of_trunc_eq (trunc_coe_zpow_eq_of_trunc_eq h k) hn
+  coeff_eq_of_trunc_eq (trunc_val_zpow_eq_of_trunc_eq h k) hn
 
 end Ring
 
@@ -202,21 +188,21 @@ variable {R : Type*} [CommRing R]
 
 /-- The `m`-truncation of `(u ^ k) * d⁄dX u` for a unit `u : R⟦X⟧ˣ` depends only on
 `trunc (m + 1) u`. -/
-theorem trunc_coe_zpow_mul_derivative_eq_of_trunc_eq {m : ℕ} {u v : R⟦X⟧ˣ}
+theorem trunc_val_zpow_mul_derivative_eq_of_trunc_eq {m : ℕ} {u v : R⟦X⟧ˣ}
     (h : trunc (m + 1) (u : R⟦X⟧) = trunc (m + 1) (v : R⟦X⟧)) (k : ℤ) :
     trunc m ((↑(u ^ k) : R⟦X⟧) * d⁄dX (u : R⟦X⟧)) =
       trunc m ((↑(v ^ k) : R⟦X⟧) * d⁄dX (v : R⟦X⟧)) :=
   trunc_mul_eq_of_trunc_eq
-    (trunc_coe_zpow_eq_of_trunc_eq (trunc_eq_of_trunc_eq_of_le h (Nat.le_succ m)) k)
-    (trunc_derivative_eq_of_trunc_eq h)
+    (trunc_val_zpow_eq_of_trunc_eq (trunc_eq_of_trunc_eq_of_le h (Nat.le_succ m)) k)
+    (by rw [trunc_derivative, trunc_derivative, h])
 
 /-- For `n < m`, the `n`-th coefficient of `(u ^ k) * d⁄dX u` for a unit `u : R⟦X⟧ˣ` depends only on
 `trunc (m + 1) u`. -/
-theorem coeff_coe_zpow_mul_derivative_eq_of_trunc_eq {n m : ℕ} {u v : R⟦X⟧ˣ}
+theorem coeff_val_zpow_mul_derivative_eq_of_trunc_eq {n m : ℕ} {u v : R⟦X⟧ˣ}
     (h : trunc (m + 1) (u : R⟦X⟧) = trunc (m + 1) (v : R⟦X⟧)) (k : ℤ) (hn : n < m) :
     coeff n ((↑(u ^ k) : R⟦X⟧) * d⁄dX (u : R⟦X⟧)) =
       coeff n ((↑(v ^ k) : R⟦X⟧) * d⁄dX (v : R⟦X⟧)) :=
-  coeff_eq_of_trunc_eq (trunc_coe_zpow_mul_derivative_eq_of_trunc_eq h k) hn
+  coeff_eq_of_trunc_eq (trunc_val_zpow_mul_derivative_eq_of_trunc_eq h k) hn
 
 end CommRing
 
