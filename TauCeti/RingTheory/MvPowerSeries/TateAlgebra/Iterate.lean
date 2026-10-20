@@ -73,9 +73,10 @@ private theorem prod_pow_optionElim (n : ℕ) (t : σ →₀ ℕ) :
   rw [Finsupp.prod_option_index _ _ (fun _ ↦ pow_zero _) fun _ _ _ ↦ pow_add _ _ _,
     Finsupp.optionElim_apply_none, Finsupp.some_optionElim]
 
-omit [IsUltrametricDist R] in
-/-- Each coefficient slice obtained by separating one variable is restricted. -/
-theorem isRestricted_coeff_optionEquivLeft {f : MvPowerSeries (Option σ) R}
+omit [IsUltrametricDist R] [∀ i, Fact (0 < c i)] in
+/-- Each coefficient slice obtained by separating one variable is restricted. Only the radius of
+the separated variable needs to be positive. -/
+theorem isRestricted_coeff_optionEquivLeft [Fact (0 < c none)] {f : MvPowerSeries (Option σ) R}
     (hf : IsRestricted c f) (n : ℕ) :
     IsRestricted (fun i ↦ c (some i)) (PowerSeries.coeff n (optionEquivLeft σ R f)) := by
   have hi : Function.Injective (fun t : σ →₀ ℕ ↦ t.optionElim n) := fun t u h ↦ by
@@ -186,11 +187,17 @@ completeness of `R` and no finiteness of the variable type is needed. -/
 noncomputable def restrictedOptionEquiv : Flat ≃+* Iter :=
   (RingEquiv.ofBijective _ (restrictedOptionFlatten_bijective (σ := σ) (R := R) (c := c))).symm
 
+private theorem restrictedOptionEquiv_symm_apply (g : Iter) :
+    restrictedOptionEquiv.symm g = restrictedOptionFlatten g := by
+  rw [restrictedOptionEquiv, RingEquiv.symm_symm, RingEquiv.ofBijective_apply]
+
 /-- Flattening the comparison recovers Mathlib's inverse formal-series comparison. -/
 @[simp]
 theorem coe_restrictedOptionEquiv_symm (g : Iter) :
     (restrictedOptionEquiv.symm g : MvPowerSeries (Option σ) R) =
-      (optionEquivLeft σ R).symm (PowerSeries.map (Inner).subtype (g : PowerSeries Inner)) := (rfl)
+      (optionEquivLeft σ R).symm (PowerSeries.map (Inner).subtype (g : PowerSeries Inner)) := by
+  rw [restrictedOptionEquiv_symm_apply]
+  simp [restrictedOptionFlatten]
 
 /-- The iterated series has exactly the coefficient slices of Mathlib's formal-series comparison. -/
 @[simp]
@@ -205,6 +212,7 @@ theorem coeff_restrictedOptionEquiv (f : Flat) (n : ℕ) :
 
 /-- The comparison is determined by its formal series: the image of `f` is the image of `f`
 under `MvPowerSeries.optionEquivLeft`, with coefficients regarded as restricted series. -/
+@[simp]
 theorem map_subtype_restrictedOptionEquiv (f : Flat) :
     PowerSeries.map (Inner).subtype (restrictedOptionEquiv f : PowerSeries Inner) =
       optionEquivLeft σ R (f : MvPowerSeries (Option σ) R) := by
