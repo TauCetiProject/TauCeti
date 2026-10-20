@@ -115,9 +115,9 @@ theorem proPKernel_eq_subgroupOf {S : Subgroup G} (hS : proPKernel p G ≤ S) :
   proPKernel_eq_comap_of_le_range S.subtype Topology.IsEmbedding.subtypeVal
     (S.range_subtype.symm ▸ hS)
 
-/-- **A subgroup containing the pro-`p` kernel embeds in the maximal pro-`p` quotient.** If
-`f : H → G` is a topological embedding into a profinite group whose image contains the pro-`p`
-kernel of `G`, the induced map `H(p) → G(p)` is injective. -/
+/-- **The induced map of maximal pro-`p` quotients is injective** for a subgroup containing the
+pro-`p` kernel. If `f : H → G` is a topological embedding into a profinite group whose image
+contains the pro-`p` kernel of `G`, the induced map `H(p) → G(p)` is injective. -/
 theorem maximalProPQuotient.map_injective_of_le_range (f : H →* G) (hf : Topology.IsEmbedding f)
     (hle : proPKernel p G ≤ f.range) :
     Function.Injective (maximalProPQuotient.map (p := p) f hf.continuous) := by
