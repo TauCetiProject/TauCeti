@@ -213,9 +213,10 @@ theorem differentExponent_map_restrictScalars [FiniteDimensional F₀ F₂] [Alg
   have hres : (P₁.map (e.restrictScalars k₀)).restrict k₀ F₁ = P₁ := by
     rw [restrict_eq_iff_integers_le]
     intro f hf
-    rw [mem_integers_map_iff]
-    change e.symm (e f) ∈ P₁.integers
-    rwa [e.symm_apply_apply]
+    simpa only [mem_integers_map_iff, RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe,
+      AlgHom.coe_toRingHom, AlgEquiv.coe_toAlgHom,
+      AlgEquiv.symm_restrictScalars, AlgEquiv.restrictScalars_apply,
+      AlgEquiv.symm_apply_apply] using hf
   rw [differentExponent_eq_restrict_of_finrank_right_eq_one (k₁ := k₀) (F₁ := F₁) _ hfin1, hres]
 
 end Place
