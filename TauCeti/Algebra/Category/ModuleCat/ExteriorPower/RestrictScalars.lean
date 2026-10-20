@@ -95,12 +95,8 @@ private def restrictScalarsExteriorPowerInvAux (e : S ≃+* R) (n : ℕ)
       map_update_add' m i a b := (ModuleCat.exteriorPower.mk (M := N)).map_update_add m i a b
       map_update_smul' m i r a := by
         -- The action of `e.symm r` on `N` is the original action of `r` on `M`.
-        have hr : e (e.symm r) = r := e.apply_symm_apply r
         have hw := (ModuleCat.exteriorPower.mk (M := N)).map_update_smul m i (e.symm r) a
-        -- Expose only the transported action on each wedge factor, not on the exterior power.
-        change ModuleCat.exteriorPower.mk (M := N) (Function.update m i (e (e.symm r) • a)) =
-          e.symm r • ModuleCat.exteriorPower.mk (M := N) (Function.update m i a) at hw
-        rw [hr] at hw
+        erw [ModuleCat.restrictScalars.smul_def e.toRingHom, RingEquiv.apply_symm_apply] at hw
         exact hw
       map_eq_zero_of_eq' m _ _ h hij :=
         (ModuleCat.exteriorPower.mk (M := N)).map_eq_zero_of_eq m h hij }
