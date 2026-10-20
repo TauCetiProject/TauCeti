@@ -10,17 +10,21 @@ public import Mathlib.Analysis.Real.OfDigits
 /-!
 # Comparing base-`b` expansions
 
-Mathlib's `Real.ofDigits a` is the real number `0.a₀a₁a₂…` in base `b`. This file bounds it by
-its finite partial sums and deduces the lexicographic comparison of expansions: if two digit
+Mathlib's `Real.ofDigits a` is the real number `0.a₀a₁a₂…` in base `b`. This file notes that the
+all-zero digit sequence has value `0`, bounds `Real.ofDigits a` by its finite partial sums, and
+deduces the lexicographic comparison of expansions: if two digit
 sequences agree before position `n` and the first has the smaller digit at `n`, then its value
 is at most that of the second, and strictly smaller when the two digits at `n` differ by at
 least two. The strict form says, for example, that ternary expansions using only the digits `0`
-and `2` are ordered lexicographically, which is how the Cantor function is shown to be monotone.
+and `2` are ordered lexicographically, which is how the Cantor function is shown to take the
+dyadic value `0.s₀s₁…` (in base `2`) at the Cantor point `0.(2s₀)(2s₁)…` (in base `3`).
 
 ## Main results
 
+* `Real.ofDigits_const_zero`: the all-zero digit sequence has value `0`.
 * `Real.sum_ofDigitsTerm_le_ofDigits`, `Real.ofDigits_le_sum_ofDigitsTerm_add`: the value of a
   digit sequence lies between its `n`-th partial sum and that partial sum plus `b⁻ⁿ`.
+* `Real.ofDigits_add_le_ofDigits`: quantitative lexicographic comparison of `Real.ofDigits`.
 * `Real.ofDigits_le_ofDigits_of_lt`: lexicographic monotonicity of `Real.ofDigits`.
 * `Real.ofDigits_lt_ofDigits_of_add_one_lt`: strict lexicographic monotonicity when the first
   differing digits are at least two apart.
@@ -31,6 +35,11 @@ public section
 namespace Real
 
 variable {b : ℕ}
+
+/-- The all-zero digit sequence has value `0`. -/
+@[simp]
+theorem ofDigits_const_zero [NeZero b] : ofDigits (fun _ ↦ (0 : Fin b)) = 0 := by
+  simp [ofDigits, ofDigitsTerm]
 
 /-- A partial sum of the digit terms is a lower bound for the value of the digit sequence. -/
 theorem sum_ofDigitsTerm_le_ofDigits (a : ℕ → Fin b) (n : ℕ) :
@@ -45,7 +54,7 @@ theorem ofDigits_le_sum_ofDigitsTerm_add (a : ℕ → Fin b) (n : ℕ) :
 
 /-- If two digit sequences agree before position `n`, the value of the second exceeds that of
 the first by at least `(a' n - a n - 1) b⁻⁽ⁿ⁺¹⁾`. -/
-private lemma ofDigits_add_le_ofDigits {a a' : ℕ → Fin b} {n : ℕ} (h : ∀ i < n, a i = a' i) :
+theorem ofDigits_add_le_ofDigits {a a' : ℕ → Fin b} {n : ℕ} (h : ∀ i < n, a i = a' i) :
     ofDigits a + ((a' n : ℝ) - a n - 1) * ((b : ℝ) ^ (n + 1))⁻¹ ≤ ofDigits a' := by
   have hsum : ∑ i ∈ Finset.range n, ofDigitsTerm a i =
       ∑ i ∈ Finset.range n, ofDigitsTerm a' i :=

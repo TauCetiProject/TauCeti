@@ -71,6 +71,11 @@ function vanishes on `(-∞, 0)`. -/
 noncomputable def cantorFunction (x : ℝ) : ℝ :=
   sSup (dyadic '' {s | ternary s ≤ x})
 
+/-- The defining formula of the Cantor function, stated without its private helpers. -/
+theorem cantorFunction_eq_sSup (x : ℝ) :
+    cantorFunction x = sSup ((fun s ↦ ofDigits fun i ↦ cond (s i) (1 : Fin 2) 0) ''
+      {s | (cantorSetEquivNatToBool.symm s : ℝ) ≤ x}) := (rfl)
+
 /-- Mathlib's `cantorSetEquivNatToBool.symm` is defined by this formula. -/
 private lemma ternary_eq (s : ℕ → Bool) :
     ternary s = ofDigits fun i ↦ cond (s i) (2 : Fin 3) 0 := (rfl)
@@ -139,8 +144,10 @@ theorem monotone_cantorFunction : Monotone cantorFunction := fun _ y hxy ↦
 @[simp]
 theorem cantorFunction_zero : cantorFunction 0 = 0 := by
   have h := cantorFunction_ternary fun _ ↦ false
-  rw [ternary_eq] at h
-  simpa [dyadic, ofDigits, ofDigitsTerm] using h
+  -- The constant digits `cond false 2 0` and `cond false 1 0` are `0` by definition.
+  rwa [ternary_eq, show (fun _ ↦ cond false (2 : Fin 3) 0) = fun _ ↦ 0 from rfl,
+    ofDigits_const_zero, dyadic, show (fun _ ↦ cond false (1 : Fin 2) 0) = fun _ ↦ 0 from rfl,
+    ofDigits_const_zero] at h
 
 /-- The Cantor function equals `1` at `1`. -/
 @[simp]
@@ -180,6 +187,7 @@ theorem range_cantorFunction : range cantorFunction = Icc 0 1 :=
     (image_cantorFunction_cantorSet ▸ image_subset_range _ _)
 
 /-- The Cantor function is continuous, being monotone with an interval as its range. -/
+@[fun_prop]
 theorem continuous_cantorFunction : Continuous cantorFunction := by
   let g : ℝ → Icc (0 : ℝ) 1 := fun x ↦ ⟨cantorFunction x, cantorFunction_nonneg x,
     cantorFunction_le_one x⟩
@@ -190,6 +198,11 @@ theorem continuous_cantorFunction : Continuous cantorFunction := by
       exact y.2
     exact ⟨x, Subtype.ext hx⟩
   exact continuous_subtype_val.comp (hg.continuous_of_surjective hsurj)
+
+/-- The Cantor function is measurable. -/
+@[fun_prop]
+theorem measurable_cantorFunction : Measurable cantorFunction :=
+  continuous_cantorFunction.measurable
 
 /-- The Cantor function is locally constant off the Cantor set. -/
 theorem cantorFunction_eventuallyEq_of_notMem {x : ℝ} (hx : x ∉ cantorSet) :
@@ -273,8 +286,8 @@ theorem cantorStieltjesFunction_measure_compl_cantorSet :
   refine ⟨Ioc (x - ε / 2) (x + ε / 2), mem_nhdsWithin_of_mem_nhds
     (Ioc_mem_nhds (by linarith) (by linarith)), ?_⟩
   rw [StieltjesFunction.measure_Ioc, coe_cantorStieltjesFunction,
-    hmem (x + ε / 2) (by rw [add_sub_cancel_left, abs_of_pos (half_pos hε)]),
-    hmem (x - ε / 2) (by rw [sub_sub_cancel_left, abs_neg, abs_of_pos (half_pos hε)]),
+    hmem (x + ε / 2) (abs_le.mpr ⟨by linarith, by linarith⟩),
+    hmem (x - ε / 2) (abs_le.mpr ⟨by linarith, by linarith⟩),
     sub_self, ENNReal.ofReal_zero]
 
 /-- The Cantor measure and Lebesgue measure are mutually singular: the former is concentrated

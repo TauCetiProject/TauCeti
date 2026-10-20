@@ -37,9 +37,8 @@ private lemma volume_image_add_div_three (c : ℝ) (s : Set ℝ) :
     ext x
     simp only [AffineMap.homothety_apply, vsub_eq_sub, smul_eq_mul, vadd_eq_add]
     ring
-  rw [h, Measure.addHaar_image_homothety, Module.finrank_self, pow_one,
-    abs_of_pos (by norm_num : (0 : ℝ) < 3⁻¹), ENNReal.ofReal_inv_of_pos (by norm_num),
-    ENNReal.ofReal_ofNat]
+  rw [h, Measure.addHaar_image_homothety]
+  norm_num [ENNReal.ofReal_div_of_pos, one_div]
 
 /-- The `n`-th pre-Cantor set has Lebesgue measure `(2 / 3) ^ n`. -/
 theorem volume_preCantorSet (n : ℕ) : volume (preCantorSet n) = (2 / 3 : ℝ≥0∞) ^ n := by
