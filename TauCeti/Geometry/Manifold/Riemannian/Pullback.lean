@@ -194,6 +194,21 @@ variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
   {H'' : Type*} [TopologicalSpace H''] {K : ModelWithCorners ℝ G H''}
   {P : Type*} [TopologicalSpace P] [ChartedSpace H'' P] [IsManifold K 1 P]
 
+omit [IsManifold I 1 M] [IsManifold J 1 N] [FiniteDimensional ℝ E] [IsManifold K 1 P] in
+theorem injective_mfderiv_comp
+    [FiniteDimensional ℝ F]
+    (h : N → P) (f : M → N)
+    (hinjh : ∀ y, Function.Injective (mfderiv J K h y))
+    (hinjf : ∀ x, Function.Injective (mfderiv I J f x)) :
+    ∀ x, Function.Injective (mfderiv I K (h ∘ f) x) := by
+  intro x
+  have hhx : MDiffAt h (f x) :=
+    mdifferentiableAt_of_mfderiv_injective (hinjh (f x))
+  have hfx : MDiffAt f x :=
+    mdifferentiableAt_of_mfderiv_injective (hinjf x)
+  rw [mfderiv_comp x hhx hfx]
+  exact (hinjh (f x)).comp (hinjf x)
+
 /-- Pulling a metric back along a composite is the same as pulling it back successively. -/
 theorem pullback_comp
     [FiniteDimensional ℝ F]
@@ -202,18 +217,16 @@ theorem pullback_comp
     (hh : ContMDiff J K (n + 1) h) (hf : ContMDiff I J (n + 1) f)
     (hinjh : ∀ y, Function.Injective (mfderiv J K h y))
     (hinjf : ∀ x, Function.Injective (mfderiv I J f x)) :
-    g.pullback (h ∘ f) (hh.comp hf) (fun x ↦ by
-      have hhx : MDiffAt h (f x) := (hh (f x)).mdifferentiableAt (by simp)
-      have hfx : MDiffAt f x := (hf x).mdifferentiableAt (by simp)
-      rw [mfderiv_comp x hhx hfx]
-      exact (hinjh (f x)).comp (hinjf x)) =
+    g.pullback (h ∘ f) (hh.comp hf) (injective_mfderiv_comp h f hinjh hinjf) =
       (g.pullback h hh hinjh).pullback f hf hinjf := by
   apply ext
   intro x v w
   rw [pullback_inner, pullback_inner, pullback_inner]
-  have hhx : MDiffAt h (f x) := (hh (f x)).mdifferentiableAt (by simp)
-  have hfx : MDiffAt f x := (hf x).mdifferentiableAt (by simp)
-  rw [mfderiv_comp x hhx hfx]
+  have hhx : MDiffAt h (f x) :=
+    mdifferentiableAt_of_mfderiv_injective (hinjh (f x))
+  have hfx : MDiffAt f x :=
+    mdifferentiableAt_of_mfderiv_injective (hinjf x)
+  rw [mfderiv_comp_apply x hhx hfx v, mfderiv_comp_apply x hhx hfx w]
   rfl
 
 variable {g : ContMDiffRiemannianMetric J n F (fun y : N ↦ TangentSpace J y)} {f : M → N}
