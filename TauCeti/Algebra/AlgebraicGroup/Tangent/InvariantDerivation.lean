@@ -177,9 +177,8 @@ theorem map_leftInvariantDerivation {K : Type*} [CommRing K] [_root_.Bialgebra R
     (f : H →ₐc[R] K) (d : Derivation R K (CounitAlgebra R K R)) (h : H) :
     f (leftInvariantDerivation (derivationComp f d) h) =
       leftInvariantDerivation d (f h) := by
-  change f ((leftInvariantDerivation (derivationComp f d)).toLinearMap h) =
-    (leftInvariantDerivation d).toLinearMap (f h)
-  rw [toLinearMap_leftInvariantDerivation, toLinearMap_leftInvariantDerivation]
+  rw [← Derivation.coeFn_coe, ← Derivation.coeFn_coe,
+    toLinearMap_leftInvariantDerivation, toLinearMap_leftInvariantDerivation]
   have hcore := Comodule.differential_corestrict H f d h
   let : Comodule R K H := Comodule.Corestrict f.toCoalgHom
   rw [← hcore]
