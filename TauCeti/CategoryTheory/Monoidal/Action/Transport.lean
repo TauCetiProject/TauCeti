@@ -87,10 +87,7 @@ def transportMonoidalLeftAction (e : D ≌ D') : MonoidalLeftAction C D' where
     dsimp +instances only [transportMonoidalLeftActionStruct]
     simp only [← Functor.map_comp, Category.assoc]
     congr 1
-    rw [actionAssocIso_hom_naturality_assoc, ← id_actionHom, ← id_actionHom, ← actionHom_comp,
-      ← actionHom_comp, Category.comp_id, Category.id_comp]
-    congr 1
-    simp
+    simp [actionAssocIso_hom_naturality_assoc, ← id_actionHom, ← actionHom_comp]
   actionUnitIso_hom_naturality f := by
     dsimp +instances only [transportMonoidalLeftActionStruct]
     simp
@@ -202,10 +199,10 @@ def functorLeftLinearOfTransport :
     δₗ_unitality_inv X := by
       simp [transportMonoidalLeftAction_actionUnitIso_inv, counitInv_app_functor]
     μₗ_comp_δₗ c X := by
-      simp [← Functor.map_comp, ← actionHomRight_comp]
+      rw [← Functor.map_comp, ← actionHomRight_comp, Iso.inv_hom_id_app]
       -- The two identities agree since `c ⊙ₗ e.functor.obj X` is by definition
       -- `e.functor.obj (c ⊙ₗ e.inverse.obj (e.functor.obj X))`.
-      rfl
+      exact (congrArg e.functor.map (actionHomRight_id c _)).trans (e.functor.map_id _)
     δₗ_comp_μₗ c X := by simp [← Functor.map_comp, ← actionHomRight_comp] }
 
 section Lineators
@@ -273,7 +270,7 @@ variable [Preadditive D] [Preadditive D'] (c : C)
 
 /-- If the action of `c` on a preadditive category `D` is additive and `e.functor` is additive,
 the transported action of `c` on `D'` is additive. -/
-lemma actionLeft_additive_transport [e.functor.Additive] [(actionLeft D c).Additive] :
+lemma additive_actionLeft_transport [e.functor.Additive] [(actionLeft D c).Additive] :
     letI := e.transportMonoidalLeftAction C
     (actionLeft D' c).Additive :=
   letI := e.transportMonoidalLeftAction C
@@ -281,7 +278,7 @@ lemma actionLeft_additive_transport [e.functor.Additive] [(actionLeft D c).Addit
 
 /-- If the action of `c` on a preadditive category `D` is `R`-linear and `e.functor` is
 `R`-linear, the transported action of `c` on `D'` is `R`-linear. -/
-lemma actionLeft_linear_transport (R : Type*) [Semiring R] [Linear R D] [Linear R D']
+lemma linear_actionLeft_transport (R : Type*) [Semiring R] [Linear R D] [Linear R D']
     [e.functor.Linear R] [(actionLeft D c).Linear R] :
     letI := e.transportMonoidalLeftAction C
     (actionLeft D' c).Linear R :=
