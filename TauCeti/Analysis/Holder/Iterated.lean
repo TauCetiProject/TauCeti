@@ -42,7 +42,7 @@ conditions are closed under uniform convergence, which gives completeness.
 * `TauCeti.CkHolderSpace.norm_eq`: the norm is the sum of the supremum norms of the derivatives
   through order `k` and the `α`-Hölder seminorm of the `k`-th derivative.
 * `TauCeti.CkHolderSpace.iteratedFDerivL` and `TauCeti.CkHolderSpace.iteratedFDerivHolderL`: the
-  derivative fields as continuous linear maps of norm at most one.
+  derivative fields as continuous linear maps; the second has operator norm at most one.
 * `TauCeti.CkHolderSpace.instCompleteSpace`: completeness when the codomain is complete.
 
 ## References
@@ -69,7 +69,7 @@ variable (k : ℕ) (α : ℝ≥0) (E : Type u) (F : Type v)
 /-- Shortcut instance for bounded continuous fields of `n`-multilinear maps. Without it, instance
 search for the module structure of `ℓ¹` products of these fields indexed by the order `n` exceeds
 the default synthesis depth. It is local so that the instance path for these fields is unchanged
-outside this file. -/
+outside this file, and no public statement below mentions it. -/
 local instance CkHolderSpace.instNormedAddCommGroupBoundedContinuousFunction (n : ℕ) :
     NormedAddCommGroup (E →ᵇ (E [×n]→L[ℝ] F)) :=
   inferInstance
@@ -365,7 +365,11 @@ theorem nnHolderNorm_iteratedFDeriv_le (f : CkHolderSpace k α E F) :
   rw [norm_eq]
   exact le_add_of_nonneg_left (Finset.sum_nonneg fun j _ ↦ norm_nonneg _)
 
-/-- The `i`-th derivative field, as a continuous linear map to bounded continuous fields. -/
+/-- The `i`-th derivative field, as a continuous linear map to bounded continuous fields. It is
+bounded by the `C^{k,α}` norm pointwise, by `CkHolderSpace.norm_iteratedFDeriv_le`. -/
+-- No operator-norm bound is stated: outside this file, without the local shortcut instances,
+-- instance search for the operator norm on this space of continuous linear maps exceeds the
+-- default synthesis limits, so such a statement could only be used here.
 def iteratedFDerivL (i : Fin (k + 1)) :
     CkHolderSpace k α E F →L[ℝ] (E →ᵇ (E [×i]→L[ℝ] F)) :=
   (fieldL i).comp toJetL
@@ -384,13 +388,6 @@ theorem iteratedFDerivHolderL_apply (f : CkHolderSpace k α E F) :
     iteratedFDerivHolderL f = f.iteratedFDerivHolder := by
   rw [iteratedFDerivHolderL, ContinuousLinearMap.comp_apply, toJetL_apply, WithLp.sndL_apply,
     iteratedFDerivHolder, WithLp.ofLp_snd]
-
-/-- The `i`-th derivative map has operator norm at most one. -/
-theorem norm_iteratedFDerivL_le_one (i : Fin (k + 1)) :
-    ‖iteratedFDerivL (α := α) (E := E) (F := F) i‖ ≤ 1 :=
-  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun f ↦ by
-    rw [iteratedFDerivL_apply, one_mul]
-    exact norm_iteratedFDeriv_le f i
 
 /-- The Hölder-space norm of the `k`-th derivative field is controlled by the `C^{k,α}` norm. -/
 theorem norm_iteratedFDerivHolder_le (f : CkHolderSpace k α E F) :
