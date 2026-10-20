@@ -115,18 +115,6 @@ private lemma deg_split {S : Finset (Fin (n + 1))} {t : Fin (n + 1)} (ht : t ∈
   have := card_filter_lt_add_card_filter_gt ht
   omega
 
-private lemma le_of_mem_left {i j t : Fin (n + 1)} {S : Finset (Fin (n + 1))}
-    (hS : S ⊆ Ioo i j) (ht : t ∈ S) : i ≤ t :=
-  (mem_Ioo.1 (hS ht)).1.le
-
-private lemma le_of_mem_right {i j t : Fin (n + 1)} {S : Finset (Fin (n + 1))}
-    (hS : S ⊆ Ioo i j) (ht : t ∈ S) : t ≤ j :=
-  (mem_Ioo.1 (hS ht)).2.le
-
-private lemma eq_empty_of_subset_Ioo_of_eq {i t : Fin (n + 1)} {S : Finset (Fin (n + 1))}
-    (h : i = t) (hS : S ⊆ Ioo i t) : S = ∅ := by
-  rwa [h, Ioo_self, subset_empty] at hS
-
 variable (R) in
 /-- The right-hand side of the equation defining the simplices of the differential graded
 nerve. For `i ≤ j` and interior vertices `S`, writing `σ t = (-1) ^ #{s ∈ S | t ≤ s}`, it is
@@ -139,11 +127,37 @@ noncomputable def boundary {X : Fin (n + 1) → C} (f : Coherences R X) (i j : F
     (f i j (S.erase t) (d + 1) hij ((erase_subset _ _).trans hS) (card_erase_deg t.2 hd) -
       (#{s ∈ S | s < t.1} * #{s ∈ S | t.1 < s} : ℤ).negOnePow •
         dgComp R
-          (f i t {s ∈ S | s < t.1} _ (le_of_mem_left hS t.2) (filter_lt_subset_Ioo hS)
+          (f i t {s ∈ S | s < t.1} _ (mem_Ioo.1 (hS t.2)).1.le (filter_lt_subset_Ioo hS)
             (neg_add_cancel _))
-          (f t j {s ∈ S | t.1 < s} _ (le_of_mem_right hS t.2) (filter_gt_subset_Ioo hS)
+          (f t j {s ∈ S | t.1 < s} _ (mem_Ioo.1 (hS t.2)).2.le (filter_gt_subset_Ioo hS)
             (neg_add_cancel _))
           (deg_split t.2 hd))
+
+/-- The defining formula of `TauCeti.DGNerve.boundary`. -/
+-- The degree and subset proofs are `by` blocks because the lemmas they cite are not part of this
+-- module's public interface.
+theorem boundary_def {X : Fin (n + 1) → C} (f : Coherences R X) (i j : Fin (n + 1))
+    (S : Finset (Fin (n + 1))) (d : ℤ) (hij : i ≤ j) (hS : S ⊆ Ioo i j) (hd : d + #S = 0) :
+    boundary R f i j S d hij hS hd =
+      ∑ t ∈ S.attach, (#{s ∈ S | t.1 ≤ s} : ℤ).negOnePow •
+        (f i j (S.erase t) (d + 1) hij ((erase_subset _ _).trans hS)
+            (by exact card_erase_deg t.2 hd) -
+          (#{s ∈ S | s < t.1} * #{s ∈ S | t.1 < s} : ℤ).negOnePow •
+            dgComp R
+              (f i t {s ∈ S | s < t.1} _ (mem_Ioo.1 (hS t.2)).1.le
+                (by exact filter_lt_subset_Ioo hS) (neg_add_cancel _))
+              (f t j {s ∈ S | t.1 < s} _ (mem_Ioo.1 (hS t.2)).2.le
+                (by exact filter_gt_subset_Ioo hS) (neg_add_cancel _))
+              (by exact deg_split t.2 hd)) := by
+  rw [boundary]
+
+/-- The right-hand side of the dg nerve equation vanishes on the empty set of interior vertices,
+so a coherence without interior vertices is closed. -/
+@[simp]
+theorem boundary_empty {X : Fin (n + 1) → C} (f : Coherences R X) (i j : Fin (n + 1)) (d : ℤ)
+    (hij : i ≤ j) (hS : ∅ ⊆ Ioo i j) (hd : d + #(∅ : Finset (Fin (n + 1))) = 0) :
+    boundary R f i j ∅ d hij hS hd = 0 := by
+  simp [boundary]
 
 variable (R C) in
 /-- An `n`-simplex of the differential graded nerve: objects `X 0, …, X n` with coherences
@@ -174,8 +188,8 @@ theorem dgComp_coh_of_eq_left {i t j : Fin (n + 1)} {S₁ S₂ : Finset (Fin (n 
     {htj : t ≤ j} {hS₂ : S₂ ⊆ Ioo t j} {hq : q + #S₂ = 0} {e : p + q = r} :
     dgComp R (x.coh i t S₁ p hit hS₁ hp) (x.coh t j S₂ q htj hS₂ hq) e =
       x.coh i j S₂ r (hit.trans htj) (hS₂.trans (Ioo_subset_Ioo_left hit))
-        (by rw [eq_empty_of_subset_Ioo_of_eq h hS₁, card_empty] at hp; omega) := by
-  obtain rfl := eq_empty_of_subset_Ioo_of_eq h hS₁
+        (by rw [h, Ioo_self, subset_empty] at hS₁; rw [hS₁, card_empty] at hp; omega) := by
+  obtain rfl : S₁ = ∅ := by rwa [h, Ioo_self, subset_empty] at hS₁
   subst h
   obtain rfl : p = 0 := by simpa using hp
   obtain rfl : r = q := by omega
@@ -188,8 +202,8 @@ theorem dgComp_coh_of_eq_right {i t j : Fin (n + 1)} {S₁ S₂ : Finset (Fin (n
     {htj : t ≤ j} {hS₂ : S₂ ⊆ Ioo t j} {hq : q + #S₂ = 0} {e : p + q = r} :
     dgComp R (x.coh i t S₁ p hit hS₁ hp) (x.coh t j S₂ q htj hS₂ hq) e =
       x.coh i j S₁ r (hit.trans htj) (hS₁.trans (Ioo_subset_Ioo_right htj))
-        (by rw [eq_empty_of_subset_Ioo_of_eq h hS₂, card_empty] at hq; omega) := by
-  obtain rfl := eq_empty_of_subset_Ioo_of_eq h hS₂
+        (by rw [h, Ioo_self, subset_empty] at hS₂; rw [hS₂, card_empty] at hq; omega) := by
+  obtain rfl : S₂ = ∅ := by rwa [h, Ioo_self, subset_empty] at hS₂
   subst h
   obtain rfl : q = 0 := by simpa using hq
   obtain rfl : r = p := by omega
@@ -353,15 +367,14 @@ private lemma exists_collapse {a b : Fin (m + 1)} {T : Finset (Fin (m + 1))} (hT
 
 /-- The pullback of a simplex satisfies the dg nerve equation on interior vertices where `α` is
 injective with image strictly between the endpoints: the equation is the reindexing of the one
-for the original simplex.
-
-The terms are matched by `t ↦ α t`. Since `α` is strictly monotone on `T`, it carries erasing `t`
-and the vertices before, after and from `t` to the corresponding operations on the image. -/
+for the original simplex. -/
 private lemma dgDifferential_mapCoh_eq_coh {a b : Fin (m + 1)} {T : Finset (Fin (m + 1))}
     {d : ℤ} (hab : a ≤ b) (hT : T ⊆ Ioo a b) (hd : d + #T = 0)
     (h : #(T.image α) = #T ∧ T.image α ⊆ Ioo (α a) (α b)) :
     dgDifferential R d (x.mapCoh α a b T d hab hT hd) =
       boundary R (x.mapCoh α) a b T d hab hT hd := by
+  -- The terms are matched by `t ↦ α t`. Since `α` is strictly monotone on `T`, it carries erasing
+  -- `t` and the vertices before, after and from `t` to the corresponding operations on the image.
   have hinj : Set.InjOn α T := card_image_iff.1 h.1
   have hmono : StrictMonoOn α T := (α.monotone.monotoneOn _).strictMonoOn_of_injOn hinj
   rw [x.mapCoh_eq_coh α h, x.dgDifferential_coh, boundary, boundary]
@@ -438,9 +451,9 @@ private lemma dgComp_mapCoh_eq_zero_of_collapse {a b u v t : Fin (m + 1)}
     (hu : u = a ∨ u ∈ T) (hv : v = b ∨ v ∈ T) (huv : u < v) (hα : α u = α v)
     (hcons : ∀ s ∈ T, ¬ (u < s ∧ s < v)) (htu : t ≠ u) (htv : t ≠ v) :
     dgComp R
-      (x.mapCoh α a t {s ∈ T | s < t} _ (le_of_mem_left hT ht) (filter_lt_subset_Ioo hT)
+      (x.mapCoh α a t {s ∈ T | s < t} _ (mem_Ioo.1 (hT ht)).1.le (filter_lt_subset_Ioo hT)
         (neg_add_cancel _))
-      (x.mapCoh α t b {s ∈ T | t < s} _ (le_of_mem_right hT ht) (filter_gt_subset_Ioo hT)
+      (x.mapCoh α t b {s ∈ T | t < s} _ (mem_Ioo.1 (hT ht)).2.le (filter_gt_subset_Ioo hT)
         (neg_add_cancel _))
       (deg_split ht hd) = 0 := by
   have hTa := (mem_Ioo.1 (hT ht)).1
@@ -465,16 +478,15 @@ private lemma dgComp_mapCoh_eq_zero_of_collapse {a b u v t : Fin (m + 1)}
     · exact Or.inr (mem_filter.2 ⟨hu, huv.trans hvt⟩)
 
 /-- When `α` collapses two vertices of `a < T < b`, the terms of the dg nerve equation for the
-pullback cancel in pairs, so the right-hand side vanishes, as does the pulled-back coherence.
-
-The proof picks adjacent collapsed vertices `u < v`. All terms away from `u` and `v` vanish.
-If `u = a`, the face and composite parts of the term at `v` cancel, the composite being with an
-identity; symmetrically if `v = b`. If both are interior, the two face terms at `u` and `v` are
-equal with opposite signs, and their composite parts vanish. -/
+pullback cancel in pairs, so the right-hand side vanishes, as does the pulled-back coherence. -/
 private lemma boundary_mapCoh_eq_zero {a b : Fin (m + 1)} {T : Finset (Fin (m + 1))} {d : ℤ}
     (hab : a ≤ b) (hT : T ⊆ Ioo a b) (hd : d + #T = 0)
     (h : ¬ (#(T.image α) = #T ∧ T.image α ⊆ Ioo (α a) (α b))) :
     boundary R (x.mapCoh α) a b T d hab hT hd = 0 := by
+  -- Pick adjacent collapsed vertices `u < v`. All terms away from `u` and `v` vanish. If `u = a`,
+  -- the face and composite parts of the term at `v` cancel, the composite being with an identity;
+  -- symmetrically if `v = b`. If both are interior, the two face terms at `u` and `v` are equal
+  -- with opposite signs, and their composite parts vanish.
   obtain ⟨u, v, huv, hu, hv, huvT, hα, hcons⟩ := exists_collapse α hT h
   have hTa : ∀ s ∈ T, a < s := fun s hs ↦ (mem_Ioo.1 (hT hs)).1
   have hTb : ∀ s ∈ T, s < b := fun s hs ↦ (mem_Ioo.1 (hT hs)).2
@@ -649,12 +661,9 @@ theorem map_map {k : ℕ} (β : Fin (k + 1) →o Fin (m + 1)) :
 
 /-! ### Vertices and low-dimensional simplices -/
 
-private lemma eq_zero_of_fin_one (i : Fin (0 + 1)) : i = 0 :=
-  Fin.ext (by omega)
-
 private lemma eq_empty_of_subset_Ioo_fin_one {i j : Fin (0 + 1)} {S : Finset (Fin (0 + 1))}
     (hS : S ⊆ Ioo i j) : S = ∅ := by
-  rwa [eq_zero_of_fin_one i, eq_zero_of_fin_one j, Ioo_self, subset_empty] at hS
+  rwa [Fin.eq_zero i, Fin.eq_zero j, Ioo_self, subset_empty] at hS
 
 /-- The vertex of the differential graded nerve at an object `X`: its only coherence is the
 identity of `X`. -/
@@ -675,11 +684,11 @@ theorem vertex_obj (X : C) (i : Fin 1) : (vertex X : Simplex R C 0).obj i = X :=
 
 /-- A `0`-simplex is determined by its object. -/
 theorem ext_zero {x y : Simplex R C 0} (h : x.obj 0 = y.obj 0) : x = y := by
-  have hobj : x.obj = y.obj := funext fun i ↦ by rwa [eq_zero_of_fin_one i]
+  have hobj : x.obj = y.obj := funext fun i ↦ by rwa [Fin.eq_zero i]
   refine ext hobj fun i j S d hij hS hd ↦ ?_
   obtain rfl := eq_empty_of_subset_Ioo_fin_one hS
   obtain rfl : d = 0 := by simpa using hd
-  obtain rfl := (eq_zero_of_fin_one i).trans (eq_zero_of_fin_one j).symm
+  obtain rfl := (Fin.eq_zero i).trans (Fin.eq_zero j).symm
   rw [x.coh_self, y.coh_self, hobj]
 
 /-- **The 2-simplex check**: a `2`-simplex with edges `f : X 0 ⟶ X 1`, `g : X 1 ⟶ X 2` and
