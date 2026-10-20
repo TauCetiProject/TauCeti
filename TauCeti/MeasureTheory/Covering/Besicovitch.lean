@@ -10,17 +10,16 @@ public import Mathlib.MeasureTheory.Covering.Besicovitch
 /-!
 # Density points of null-measurable sets
 
-The proportion `μ (s ∩ t) / μ t` of a set `s` in a set `t` is at most one
-(`MeasureTheory.measure_inter_div_le_one`). For a null-measurable set `s`, the proportion of the
-complement `sᶜ` in a set of positive finite measure is one minus the proportion of `s`.
-Consequently, if the proportion of `s` along
+For a null-measurable set `s`, the proportion of the complement `sᶜ` in a set of positive finite
+measure is one minus the proportion of `s`. Consequently, if the proportion of `s` along
 a family of such sets tends to `d`, that of `sᶜ` tends to `1 - d`; in particular `s` has density
 one along the family exactly when `sᶜ` has density zero along it. This lets density arguments
 estimate the complement, where measures add, and return to density-one points.
 
-For a locally finite measure on a space with the Besicovitch covering property, Mathlib's
-density theorem `Besicovitch.ae_tendsto_measure_inter_div_of_measurableSet` identifies the
-limit of `μ (s ∩ closedBall x r) / μ (closedBall x r)` almost everywhere for a measurable set.
+For a locally finite measure on a second-countable metric space with its Borel σ-algebra and the
+Besicovitch covering property, Mathlib's density theorem
+`Besicovitch.ae_tendsto_measure_inter_div_of_measurableSet` identifies the limit of
+`μ (s ∩ closedBall x r) / μ (closedBall x r)` almost everywhere for a measurable set.
 We extend it to null-measurable sets and record its set form: a null-measurable set agrees almost
 everywhere with its set of density-one points. That set is a canonical representative of the
 `μ`-a.e. class of `s`, since it depends only on that class.
@@ -32,11 +31,6 @@ open Filter Metric Set Topology
 open scoped ENNReal
 
 namespace MeasureTheory
-
-/-- The proportion `μ (s ∩ t) / μ t` of a set `s` in a set `t` is at most one. -/
-theorem measure_inter_div_le_one {α : Type*} [MeasurableSpace α] {μ : Measure α}
-    (s t : Set α) : μ (s ∩ t) / μ t ≤ 1 :=
-  ENNReal.div_le_of_le_mul (by rw [one_mul]; exact measure_mono inter_subset_right)
 
 namespace NullMeasurableSet
 
