@@ -107,3 +107,20 @@ theorem Scheme.Hom.natCard_eq_finrank_of_etale [IsSepClosed K] (f : X ⟶ Spec (
   simp [hne] at this
 
 end AlgebraicGeometry
+
+namespace TauCeti.AlgebraicGeometry
+
+-- Instance search does not unfold the étale predicate to recover the parent instance of
+-- `IsMultiplicative`, so register composition stability explicitly here for its consumers.
+/-- Étale morphisms are stable under composition. -/
+instance etale_isStableUnderComposition :
+    CategoryTheory.MorphismProperty.IsStableUnderComposition @AlgebraicGeometry.Etale :=
+  CategoryTheory.MorphismProperty.IsMultiplicative.toIsStableUnderComposition
+
+/-- Being étale is invariant under isomorphisms of source and target. -/
+instance etale_respectsIso :
+    CategoryTheory.MorphismProperty.RespectsIso @AlgebraicGeometry.Etale :=
+  CategoryTheory.MorphismProperty.respectsIso_of_isStableUnderComposition
+    fun _ _ _ (_ : CategoryTheory.IsIso _) ↦ inferInstance
+
+end TauCeti.AlgebraicGeometry

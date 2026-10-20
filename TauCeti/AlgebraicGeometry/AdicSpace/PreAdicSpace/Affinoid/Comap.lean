@@ -153,7 +153,7 @@ theorem presentationLimitHomRingHom_presentationLimitPreAdicSpaceComap
       (presentationLimitPreAdicSpaceComap φ hφ hopen hplus hAplus hBplus hP hP' hsheaf) = φ := by
   have hc0 : toPresentationLimit (P := P) Aplus ⊤ ≫
       eqToHom (presentationLimitPresheaf_obj P Aplus (Opposite.op ⊤)).symm ≫
-      (presentationLimitPresheafComap φ hφ hopen hplus hBplus hsheaf).app (Opposite.op ⊤) =
+      (presentationLimitPresheafComap φ hφ hplus hBplus hsheaf).app (Opposite.op ⊤) =
       ObjectProperty.homMk (eqToHom (CompleteSeparatedTopCommRingCat.of_obj A) ≫
           (⟨φ, hφ⟩ : _root_.TopCommRingCat.of A ⟶ _root_.TopCommRingCat.of B) ≫
           eqToHom (CompleteSeparatedTopCommRingCat.of_obj B).symm) ≫

@@ -7,13 +7,13 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Etale
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Torsion
-import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.RelativeFrobenius.Supersingular
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.FieldPoints
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.MulBy.Rank
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Torsion.Unramified
 import TauCeti.AlgebraicGeometry.Morphisms.Etale
+import TauCeti.AlgebraicGeometry.ResidueField
 
 /-!
 # The `n`-torsion of an elliptic curve is étale exactly where `n` is invertible
@@ -104,8 +104,7 @@ theorem etale_torsion_hom_iff {n : ℤ} (hn : n ≠ 0) :
   refine ⟨fun _ s hns ↦ ?_, E.etale_torsion_hom_of_forall_intCast_ne_zero⟩
   -- the base change `E'` of `E` to an algebraic closure `L` of the residue field at `s`
   let L := AlgebraicClosure (S.residueField s)
-  let t : Spec (.of L) ⟶ S :=
-    Spec.map (CommRingCat.ofHom (algebraMap (S.residueField s) L)) ≫ S.fromSpecResidueField s
+  let t := S.fromSpecAlgebraicClosure s
   let E' := E.baseChange t
   have h0 : E'.zero ≫ (E.baseChangeIso t).hom ≫ pullback.fst _ _ = t ≫ E.zero := by simp [E']
   -- `E'[n]` is the base change of `E[n]`, so it is finite étale over `Spec L`, of rank `n²`

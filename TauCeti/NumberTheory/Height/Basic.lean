@@ -17,6 +17,11 @@ These bounds control the affine coordinates of a projective point after normaliz
 Both multiplicative and logarithmic heights are treated over any field with admissible
 absolute values and any finite coordinate type.
 
+Changing the signs of some coordinates of a tuple changes none of its local factors, so it does
+not change the height. Together with invariance under scaling and reindexing, this is how the
+height of a subspace is compared with the height of its orthogonal complement, whose Plücker
+coordinates are those of the subspace up to a common factor, signs and reindexing.
+
 A height bound for a tuple `z` in terms of a tuple `x` often comes from estimates at each
 absolute value separately: the local factor `⨆ i, v (z i)` is at most a constant times
 `(⨆ j, v (x j)) ^ p` at the archimedean absolute values, and at most `(⨆ j, v (x j)) ^ p` at the
@@ -59,6 +64,27 @@ lemma logHeight₁_div_le_logHeight (x : ι → K) (i j : ι) :
     logHeight₁ (x i / x j) ≤ logHeight x := by
   rw [logHeight₁_div_eq_logHeight]
   simpa only [Matrix.vecCons, Fin.comp_cons, Matrix.empty_eq] using logHeight_comp_le ![i, j] x
+
+omit [Finite ι] in
+/-- The multiplicative height is unchanged by changing the signs of some coordinates. -/
+lemma mulHeight_eq_of_forall_eq_or_eq_neg {x y : ι → K} (h : ∀ i, y i = x i ∨ y i = -x i) :
+    mulHeight y = mulHeight x := by
+  have hv (v : AbsoluteValue K ℝ) : ⨆ i, v (y i) = ⨆ i, v (x i) :=
+    iSup_congr fun i ↦ by rcases h i with h | h <;> simp [h]
+  have hy : y = 0 ↔ x = 0 := by
+    simp only [funext_iff, Pi.zero_apply]
+    exact forall_congr' fun i ↦ by rcases h i with h | h <;> simp [h]
+  rcases eq_or_ne x 0 with hx | hx
+  · rw [hy.2 hx, hx]
+  · rw [mulHeight_eq hx, mulHeight_eq (hy.not.2 hx)]
+    simp only [hv]
+
+omit [Finite ι] in
+/-- The logarithmic height is unchanged by changing the signs of some coordinates. -/
+lemma logHeight_eq_of_forall_eq_or_eq_neg {x y : ι → K} (h : ∀ i, y i = x i ∨ y i = -x i) :
+    logHeight y = logHeight x := by
+  rw [logHeight_eq_log_mulHeight, logHeight_eq_log_mulHeight,
+    mulHeight_eq_of_forall_eq_or_eq_neg h]
 
 open AdmissibleAbsValues in
 /-- **Local-to-global height bound.** Suppose that at every archimedean absolute value `v` the
