@@ -103,6 +103,18 @@ noncomputable def _root_.Sym.equivFinsuppDegree (ι : Type w) (n : ℕ) :
     (Equiv.subtypeEquiv (Equiv.refl _) (fun d => by
       simp [Finsupp.degree_eq_weight_one, Finsupp.weight_apply, Function.id_def]))
 
+/-- The exponent vector of a degree-`n` multiset is its multiplicity function. -/
+@[simp]
+theorem _root_.Sym.coe_equivFinsuppDegree_apply {ι : Type w} [DecidableEq ι] (n : ℕ)
+    (s : Sym ι n) :
+    ((Sym.equivFinsuppDegree ι n s : {d : ι →₀ ℕ // d.degree = n}) : ι →₀ ℕ) =
+      Multiset.toFinsupp (s : Multiset ι) := by
+  ext i
+  -- `Sym.equivFinsuppDegree` is built with classical decidable equality.
+  simp only [Sym.equivFinsuppDegree, Equiv.trans_apply, Equiv.subtypeEquiv_apply,
+    Sym.coe_equivNatSum_apply_apply, Equiv.refl_apply, Multiset.toFinsupp_apply]
+  convert rfl
+
 variable {R M} in
 /-- A basis of a module induces the monomial basis on each homogeneous component of its
 symmetric algebra. The basis vectors are indexed by degree-`n` multisets of basis indices. -/
