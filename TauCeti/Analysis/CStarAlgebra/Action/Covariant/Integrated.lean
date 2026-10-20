@@ -17,7 +17,8 @@ For a compactly supported continuous coefficient function `f`, the integrated fo
 operator `v ↦ ∫ g, π (f g) (U g v)`. Integration is in the Hilbert space, not in the operator-norm
 space: strong continuity of `U` does not imply norm continuity. The operator depends linearly on
 `f` and has norm at most `∫ g, ‖f g‖`. No separability, second countability, or σ-finiteness is
-needed. The measure need only be finite on compact sets; Haar invariance is not used here.
+needed. For the definition, the norm bound and the covariance identity the measure need only be
+finite on compact sets; left invariance enters only for multiplicativity under twisted convolution.
 
 Covariance moves a coefficient on the right of an integrated operator inside its integral with
 the action twist. For scalar multiples of a fixed coefficient, the construction agrees with
@@ -127,6 +128,16 @@ theorem integratedOperator_coefficient_apply (f : C_c(G, A)) (a : A) (v : H) :
   rw [integratedOperator_apply]
   simp_rw [P.covariance, map_mul, mul_apply_eq_comp]
 
+omit [MeasurableSpace G] [OpensMeasurableSpace G] in
+/-- Vector evaluation of the coefficient representation commutes with Bochner integration. -/
+theorem integral_coefficient_apply {X : Type*} [MeasurableSpace X] {ν : Measure X} {F : X → A}
+    (hF : Integrable F ν) (w : H) :
+    ∫ x, P.coefficient (F x) w ∂ν = P.coefficient (∫ x, F x ∂ν) w := by
+  let L : A →L[ℂ] H := (ContinuousLinearMap.apply ℂ H w).comp
+    { toLinearMap := (P.coefficient : A →ₗ[ℂ] (H →L[ℂ] H)), cont := map_continuous _ }
+  have hL (a : A) : L a = P.coefficient a w := rfl
+  simpa only [hL] using L.integral_comp_comm hF
+
 section Convolution
 
 variable [IsTopologicalGroup G] [MeasurableMul G] [μ.IsMulLeftInvariant]
@@ -154,12 +165,7 @@ theorem integratedOperator_convolution (f g : C_c(G, A)) :
         congr 1 with s
         have hint : Integrable (fun r => f r * α r (g (r⁻¹ * s))) μ :=
           (Continuous.integrable_of_hasCompactSupport (by fun_prop) f.hasCompactSupport.mul_right)
-        -- Evaluation of the coefficient representation at `U s v` is a continuous linear map,
-        -- whose application unfolds to `a ↦ π a (U s v)`.
-        let L : A →L[ℂ] H := (ContinuousLinearMap.apply ℂ H (P.group s v)).comp
-          { toLinearMap := (P.coefficient : A →ₗ[ℂ] (H →L[ℂ] H)), cont := map_continuous _ }
-        rw [convolution_apply]
-        exact (L.integral_comp_comm hint).symm
+        rw [convolution_apply, ← P.integral_coefficient_apply hint]
     _ = ∫ r, ∫ s, Ψ s r ∂μ ∂μ := integral_integral_swap_of_hasCompactSupport hcont hsupp
     _ = ∫ r, (P.coefficient (f r) * P.group r) (P.integratedOperator μ g v) ∂μ := by
         congr 1 with r
