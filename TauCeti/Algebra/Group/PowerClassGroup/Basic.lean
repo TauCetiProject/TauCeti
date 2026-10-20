@@ -76,6 +76,7 @@ theorem mem_powerSubgroup_iff {g : G} : g ∈ powerSubgroup G n ↔ ∃ h : G, h
   exact exists_congr fun h => by rw [powMonoidHom_apply]
 
 /-- **`n` kills the power classes**: every element of `G ⧸ Gⁿ` has `n`th power `1`. -/
+@[simp]
 theorem powerClassQuotient_pow_eq_one (x : powerClassQuotient G n) : x ^ n = 1 := by
   obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective x
   rw [← QuotientGroup.mk_pow, QuotientGroup.eq_one_iff, mem_powerSubgroup_iff]

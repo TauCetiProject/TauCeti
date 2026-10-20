@@ -9,16 +9,15 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Local.Reciprocity
 public import TauCeti.NumberTheory.Padics.MultiplicativeCompletion.Norm.Basic
 import TauCeti.Algebra.Group.PowerClassGroup.Card
 import TauCeti.GroupTheory.QuotientGroup.KerEquiv
-import TauCeti.NumberTheory.LocalField.PowerSubgroup.Basic
 import TauCeti.NumberTheory.Padics.MultiplicativeCompletion.Finite
 
 /-!
 # The cokernel of the completed norm
 
-Let `L/K` be a finite Galois extension of nonarchimedean local fields with `p ≠ 0` in `K`, and
-let `A(K) = lim_m Kˣ/(Kˣ)^(p^m)` be the `p`-adic completion of `Kˣ`. The field norm induces the
-completed norm `N : A(L) → A(K)` (`TauCeti.padicCompletionUnitsNorm`). Its cokernel is the
-maximal `p`-quotient of `Gal(L/K)^ab`, read off from the norm residue isomorphism
+Let `L/K` be a finite Galois extension of nonarchimedean local fields, let `p` be a prime with
+`p ≠ 0` in `K`, and let `A(K) = lim_m Kˣ/(Kˣ)^(p^m)` be the `p`-adic completion of `Kˣ`. The field
+norm induces the completed norm `N : A(L) → A(K)` (`TauCeti.padicCompletionUnitsNorm`). Its
+cokernel is the maximal `p`-quotient of `Gal(L/K)^ab`, read off from the norm residue isomorphism
 `Kˣ / N_{L/K}(Lˣ) ≃ Gal(L/K)^ab` (`TauCeti.ClassFieldTheory.normResidue`).
 
 Concretely, for every `m` the class of `x ∈ A(K)` at level `m` followed by the norm residue
@@ -151,8 +150,8 @@ exponent dividing `p ^ m`. -/
 theorem padicCompletionUnitsNormResidue_pow_smul [Fact p.Prime] (m : ℕ)
     (y : Additive ↑(padicCompletionUnits p K)) :
     padicCompletionUnitsNormResidue p K L m ((p : ℤ_[p]) ^ m • y) = 0 := by
-  rw [← Nat.cast_pow, padicCompletionUnits_natCast_smul, map_nsmul, ← ofMul_toMul (_ • _),
-    toMul_nsmul, powerClassQuotient_pow_eq_one, ofMul_one]
+  rw [← Nat.cast_pow, padicCompletionUnits_natCast_smul, map_nsmul]
+  exact Additive.toMul.injective (by simp)
 
 /-- If `p ^ m` contains the full power of `p` dividing `#Gal(L/K)^ab`, then every
 `p ^ m`-multiple in `A(K)` is a completed norm. -/
@@ -191,23 +190,24 @@ theorem ker_padicCompletionUnitsNormResidue [Fact p.Prime] (hpK : (p : K) ≠ 0)
   constructor
   · intro hx
     obtain ⟨u, y, rfl⟩ := exists_eq_padicCompletionUnitsOf_add_pow_smul p K m x
-    rw [map_add, padicCompletionUnitsNormResidue_pow_smul, add_zero,
+    simp only [map_add, padicCompletionUnitsNormResidue_pow_smul, add_zero,
       padicCompletionUnitsNormResidue_of, ofMul_eq_zero, QuotientGroup.eq_one_iff,
-      mem_powerSubgroup_iff (p ^ m)] at hx
+      mem_powerSubgroup_iff] at hx
     -- The norm residue symbol of `u` is a `p ^ m`-th power, so `u` is a norm times a
     -- `p ^ m`-th power.
     obtain ⟨g, hg⟩ := hx
     obtain ⟨c, rfl⟩ := (normResidue K L).surjective g
     obtain ⟨w, rfl⟩ := QuotientGroup.mk_surjective c
     have hnorm : u * (w ^ p ^ m)⁻¹ ∈ normGroup K L := by
-      rw [← normResidue_mk_eq_one_iff, QuotientGroup.mk_mul, map_mul, QuotientGroup.mk_inv,
-        map_inv, QuotientGroup.mk_pow, map_pow, hg, mul_inv_cancel]
+      rw [← normResidue_mk_eq_one_iff]
+      simp [hg]
     obtain ⟨v, hv⟩ := mem_normGroup_iff_exists_normUnits.1 hnorm
     rw [eq_mul_inv_iff_mul_eq] at hv
-    rw [← hv, map_mul, ofMul_mul, map_pow, ofMul_pow, ← padicCompletionUnits_natCast_smul,
-      Nat.cast_pow, add_assoc, ← smul_add]
-    refine add_mem ⟨Additive.ofMul (padicCompletionUnitsOf p L v), by simp⟩ ?_
-    exact pow_smul_mem_range_padicCompletionUnitsNorm p K L hpK hm _
+    convert add_mem (LinearMap.mem_range_self _ (Additive.ofMul (padicCompletionUnitsOf p L v)))
+      (pow_smul_mem_range_padicCompletionUnitsNorm p K L hpK hm
+        (Additive.ofMul (padicCompletionUnitsOf p K w) + y)) using 1
+    simp only [← hv, padicCompletionUnitsNorm_of, map_mul, map_pow, ofMul_mul, ofMul_pow]
+    module
   · rintro ⟨y, rfl⟩
     -- The level-`m` coordinate of a completed norm is the class of a norm.
     obtain ⟨v, hv⟩ := QuotientGroup.mk_surjective (y.toMul.1 m)
