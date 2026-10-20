@@ -189,13 +189,21 @@ theorem castDegree_rfl {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     {n : ℕ} (α : SmoothForm I M F n) : castDegree rfl α = α := by
   rfl
 
-/-- Transporting across a composite degree equality agrees with successive transports. -/
-theorem castDegree_trans {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+/-- Successive degree transports collapse to the transport along their composite equality. -/
+@[simp]
+theorem castDegree_castDegree {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     {n m o : ℕ} (h : n = m) (h' : m = o)
     (α : SmoothForm I M F n) :
-    castDegree (h.trans h') α = castDegree h' (castDegree h α) := by
+    castDegree h' (castDegree h α) = castDegree (h.trans h') α := by
   cases h
   cases h'
+  rfl
+
+/-- Inverting a degree transport gives the transport along the inverse equality. -/
+@[simp]
+theorem castDegree_symm {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {n m : ℕ} (h : n = m) : (castDegree h).symm = castDegree h.symm := by
+  cases h
   rfl
 
 /-- Evaluation of the smooth fixed-coefficient paired wedge. -/
