@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.SymmetricAlgebra.Basis
 public import Mathlib.Data.Sym.NatCard
+public import TauCeti.Data.Sym.Finsupp
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Semilinear
 public import TauCeti.RingTheory.MvPolynomial.Finrank
 
@@ -25,7 +26,6 @@ the polynomial ring.
 * `map_homogeneousSubmodule_equivMvPolynomial`: the basis-induced equivalence carries the degree
   `n` part of a symmetric algebra to the degree `n` part of a multivariate polynomial ring.
 * `SymmetricAlgebra.equivMvPolynomial_isHomogeneous_iff`: the degreewise form of that comparison.
-* `TauCeti.Sym.equivFinsuppDegree`: degree-`n` multisets are exponent vectors of total degree `n`.
 * `Module.Basis.symmetricAlgebraHomogeneous`: the monomial basis of a homogeneous component of a
   symmetric algebra induced by a basis of the generating module.
 -/
@@ -93,24 +93,6 @@ theorem coe_homogeneousSubmoduleEquivMvPolynomial_apply {ι : Type w} (b : Basis
       MvPolynomial.homogeneousSubmodule ι R n) : MvPolynomial ι R) =
         SymmetricAlgebra.equivMvPolynomial b x := by
   rfl
-
-/-- Degree-`n` multisets of basis indices are equivalent to exponent vectors of total degree
-`n`. -/
-noncomputable def _root_.TauCeti.Sym.equivFinsuppDegree (ι : Type w) (n : ℕ) :
-    Sym ι n ≃ {d : ι →₀ ℕ // d.degree = n} := by
-  classical
-  exact (Sym.equivNatSum ι n).trans
-    (Equiv.subtypeEquiv (Equiv.refl _) (fun d => by
-      simp [Finsupp.degree_eq_weight_one, Finsupp.weight_apply, Function.id_def]))
-
-/-- The exponent vector of an unordered tuple records its multiplicities. -/
-@[simp]
-theorem _root_.TauCeti.Sym.coe_equivFinsuppDegree_apply (ι : Type w) [DecidableEq ι] (n : ℕ)
-    (s : Sym ι n) : (Sym.equivFinsuppDegree ι n s).1 = (s : Multiset ι).toFinsupp := by
-  ext i
-  simp only [Sym.equivFinsuppDegree, Equiv.trans_apply, Equiv.subtypeEquiv_apply,
-    Equiv.refl_apply, Sym.coe_equivNatSum_apply_apply, Multiset.toFinsupp_apply]
-  congr 1
 
 variable {R M} in
 /-- A basis of a module induces the monomial basis on each homogeneous component of its
