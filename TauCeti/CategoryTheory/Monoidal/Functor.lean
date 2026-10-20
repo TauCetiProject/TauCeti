@@ -399,9 +399,13 @@ theorem Equivalence.laxMonoidalRoundTripIso_hom_app (e : C ≌ D)
     [e.functor.Monoidal] [e.inverse.Monoidal] [e.IsMonoidal]
     (F : LaxMonoidalFunctor D E) (X : D) :
     (e.laxMonoidalRoundTripIso F).hom.hom.app X = F.map (e.counitIso.inv.app X) := by
-  dsimp [Equivalence.laxMonoidalRoundTripIso, LaxMonoidalFunctor.of,
-    LaxMonoidalFunctor.isoMk, LaxMonoidalFunctor.homMk]
-  simp
+  -- Pass to the underlying natural isomorphism constructed by the round-trip comparison.
+  change (F.toFunctor.leftUnitor.symm ≪≫
+    isoWhiskerRight e.counitIso.symm F.toFunctor ≪≫
+      Functor.associator e.inverse e.functor F.toFunctor).hom.app X = _
+  simp only [Iso.trans_hom, Iso.symm_hom, NatTrans.comp_app,
+    leftUnitor_inv_app, isoWhiskerRight_hom, whiskerRight_app, associator_hom_app,
+    Category.id_comp, Category.comp_id]
 
 /-- The round-trip comparison is natural in the lax monoidal functor. -/
 theorem Equivalence.laxMonoidalRoundTripIso_naturality (e : C ≌ D)

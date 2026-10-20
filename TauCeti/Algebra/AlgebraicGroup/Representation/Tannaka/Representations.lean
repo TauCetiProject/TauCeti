@@ -68,8 +68,8 @@ theorem tensorAutEquivPointRepresentation_hom_app
     HEq ((tensorAutEquivPointRepresentation R H A η).asIso.hom.hom.app V)
       (η.asIso.hom.hom.app
         ((fgPointRepresentationCategoryEquivalence R H).functor.obj V)) := by
-  dsimp [tensorAutEquivPointRepresentation, MulEquiv.ofBijective, Equiv.ofBijective,
-    Functor.mapAut, Functor.mapIso]
+  simp only [tensorAutEquivPointRepresentation, MulEquiv.ofBijective_apply,
+    Functor.mapAut_apply_asIso, Functor.mapIso_hom]
   exact Functor.precomposeLaxMonoidal_map_hom_app
     (fgPointRepresentationCategoryEquivalence R H).functor η.asIso.hom V
 
@@ -98,14 +98,12 @@ end Comparison
 
 section Functor
 
--- Point-representation automorphisms live in max (u + 1) (v + 1), since representations
--- quantify over value algebras. A common universe matches the comodule functor's target.
-variable (R H : Type u) [CommRing R] [CommRing H] [HopfAlgebra R H]
+variable (R : Type u) [CommRing R] (H : Type v) [CommRing H] [HopfAlgebra R H]
 
 /-- The group-valued tensor-automorphism functor on finite natural point representations,
 with value-algebra maps induced by base change of components. -/
 noncomputable def pointRepresentationTensorAutFunctor :
-    CommAlgCat.{u} R ⥤ GrpCat.{u + 1} where
+    CommAlgCat.{u} R ⥤ GrpCat.{max (u + 1) (v + 1)} where
   obj A := GrpCat.of (Aut (FGPointRepresentationCat.scalarExtensionMonoidalFunctor R H A))
   map {A B} f := GrpCat.ofHom (pointRepresentationTensorAutMapValueHom R H A B f.hom)
   map_id A := by
@@ -150,6 +148,13 @@ theorem pointRepresentationTensorAutFunctor_map_transport_apply
         (tensorAutMapValue R H B C f.hom ((tensorAutEquivPointRepresentation R H B).symm η)) := by
   exact pointRepresentationTensorAutMapValueHom_apply R H B C f.hom η
 
+end Functor
+
+section FunctorComparison
+
+-- A common universe identifies the comodule and point-representation functor targets.
+variable (R H : Type u) [CommRing R] [CommRing H] [HopfAlgebra R H]
+
 /-- The representation--comodule dictionary identifies tensor-automorphism functors,
 naturally in every commutative value algebra. -/
 noncomputable def tensorAutFunctorIsoPointRepresentationTensorAutFunctor :
@@ -192,7 +197,7 @@ theorem tensorAutFunctorIsoPointRepresentationTensorAutFunctor_hom_app_apply
   -- composition is exactly the underlying group equivalence.
   rfl
 
-end Functor
+end FunctorComparison
 
 section Reconstruction
 
