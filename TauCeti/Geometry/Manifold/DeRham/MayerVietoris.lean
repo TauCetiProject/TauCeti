@@ -140,8 +140,7 @@ theorem exact_mayerVietoris (U V : Opens M) :
       · cases b
         · exact hγV ▸ β.isSmoothForm
         · exact hγU ▸ α.isSmoothForm
-    exact ⟨⟨γ, mem_smoothForms.mpr ((isSmoothBundleForm_def ∞ _).mpr
-      ((isSmoothForm_def ∞ _).mp hγ))⟩, Subtype.ext ((coe_mpullback _ _ _).trans hγU),
+    exact ⟨⟨γ, hγ.mem_smoothForms⟩, Subtype.ext ((coe_mpullback _ _ _).trans hγU),
       Subtype.ext ((coe_mpullback _ _ _).trans hγV)⟩
   · rintro ⟨φ, rfl, rfl⟩
     rw [← LinearMap.comp_apply, ← LinearMap.comp_apply, ← mpullback_comp, ← mpullback_comp]
@@ -183,18 +182,16 @@ variable [IsManifold I ∞ M] (hρ : ContMDiff I 𝓘(ℝ) ∞ ρ) (hρV : tsupp
 /-- The cut-off form `ρ φ` on `U ⊓ V`, extended by zero to a smooth form on `U`. -/
 private def cutoffLeft (φ : SmoothForm I (U ⊓ V : Opens M) F k) : SmoothForm I U F k :=
   ⟨RoughForm.extendByZero U fun y : (U ⊓ V : Opens M) ↦ ρ (Opens.inclusion inf_le_sup y) • φ.1 y,
-    mem_smoothForms.mpr ((isSmoothBundleForm_def ∞ _).mpr ((isSmoothForm_def ∞ _).mp
-      (φ.isSmoothForm.extendByZero_smul inf_le_left (hρ.comp (contMDiff_inclusion le_sup_left))
-        fun _ hx ↦ eventually_eq_zero_of_tsupport_subset hρV hx)))⟩
+    (φ.isSmoothForm.extendByZero_smul inf_le_left (hρ.comp (contMDiff_inclusion le_sup_left))
+      fun _ hx ↦ eventually_eq_zero_of_tsupport_subset hρV hx).mem_smoothForms⟩
 
 /-- The cut-off form `(ρ - 1) φ` on `U ⊓ V`, extended by zero to a smooth form on `V`. -/
 private def cutoffRight (φ : SmoothForm I (U ⊓ V : Opens M) F k) : SmoothForm I V F k :=
   ⟨RoughForm.extendByZero V
       fun y : (U ⊓ V : Opens M) ↦ (ρ (Opens.inclusion inf_le_sup y) - 1) • φ.1 y,
-    mem_smoothForms.mpr ((isSmoothBundleForm_def ∞ _).mpr ((isSmoothForm_def ∞ _).mp
-      (φ.isSmoothForm.extendByZero_smul inf_le_right
-        ((hρ.comp (contMDiff_inclusion le_sup_right)).sub contMDiff_const)
-        fun _ hx ↦ eventually_sub_one_eq_zero_of_tsupport_subset hρU hx)))⟩
+    (φ.isSmoothForm.extendByZero_smul inf_le_right
+      ((hρ.comp (contMDiff_inclusion le_sup_right)).sub contMDiff_const)
+      fun _ hx ↦ eventually_sub_one_eq_zero_of_tsupport_subset hρU hx).mem_smoothForms⟩
 
 /-- A form `φ` on `U ⊓ V` is the difference `ρ φ - (ρ - 1) φ` of the restrictions of its two
 cut-off forms. -/
@@ -228,21 +225,18 @@ private theorem mpullback_extendByZero_mextDeriv_cutoff (φ : closedForms I (U �
   have hρφ' : IsSmoothForm I ∞
       fun y : (U ⊓ V : Opens M) ↦ (ρ (Opens.inclusion inf_le_sup y) - 1) • φ.1.1 y :=
     φ.1.isSmoothForm.fun_smul ((hρ.comp (contMDiff_inclusion inf_le_sup)).sub contMDiff_const)
-  have hC1 {W : Opens M} {ψ : RoughForm I W ℝ k} (hψ : IsSmoothForm I ∞ ψ) : IsSmoothForm I 1 ψ :=
-    (isSmoothForm_def 1 ψ).mpr (hψ.contMDiff.of_le (by simp))
   rw [mextDerivₗ_apply, mextDerivₗ_apply, cutoffLeft, cutoffRight,
     RoughForm.mpullback_inclusion_extendByZero_eq_extendByZero,
     RoughForm.mpullback_inclusion_extendByZero_eq_extendByZero,
-    mextDeriv_extendByZero inf_le_left (hC1 hρφ) fun _ hx ↦
+    mextDeriv_extendByZero inf_le_left (hρφ.of_le (by simp)) fun _ hx ↦
       RoughForm.eventually_extendByZero_smul_eq_zero inf_le_left _
         (eventually_eq_zero_of_tsupport_subset hρV hx),
-    mextDeriv_extendByZero inf_le_right (hC1 hρφ') fun _ hx ↦
+    mextDeriv_extendByZero inf_le_right (hρφ'.of_le (by simp)) fun _ hx ↦
       RoughForm.eventually_extendByZero_smul_eq_zero inf_le_right _
         (eventually_sub_one_eq_zero_of_tsupport_subset hρU hx)]
   refine ⟨rfl, congrArg _ ?_⟩
   -- Since `φ` is closed, `d((ρ - 1) φ) = d(ρ φ) - dφ = d(ρ φ)`.
-  let ρφ : SmoothForm I (U ⊓ V : Opens M) ℝ k :=
-    ⟨_, mem_smoothForms.mpr ((isSmoothBundleForm_def ∞ _).mpr ((isSmoothForm_def ∞ _).mp hρφ))⟩
+  let ρφ : SmoothForm I (U ⊓ V : Opens M) ℝ k := ⟨_, hρφ.mem_smoothForms⟩
   have hsub : (fun y : (U ⊓ V : Opens M) ↦ (ρ (Opens.inclusion inf_le_sup y) - 1) • φ.1.1 y) =
       (ρφ - φ.1).1 := by
     funext y
@@ -269,8 +263,7 @@ theorem exists_closedForms_coe_eq_extendByZero_mextDeriv (φ : closedForms I (U 
     · cases b
       · exact hV ▸ (mextDerivₗ I k (cutoffRight hρ hρU φ.1)).isSmoothForm
       · exact hU ▸ (mextDerivₗ I k (cutoffLeft hρ hρV φ.1)).isSmoothForm
-  let σ : SmoothForm I (U ⊔ V : Opens M) ℝ (k + 1) :=
-    ⟨_, mem_smoothForms.mpr ((isSmoothBundleForm_def ∞ _).mpr ((isSmoothForm_def ∞ _).mp hσ))⟩
+  let σ : SmoothForm I (U ⊔ V : Opens M) ℝ (k + 1) := ⟨_, hσ.mem_smoothForms⟩
   -- It is closed, since its restrictions to `U` and to `V` are exact.
   refine ⟨⟨σ, (mem_closedForms_iff_mextDerivₗ_eq_zero I σ).mpr <|
     SmoothForm.injective_mayerVietoris U V ?_⟩, rfl⟩
@@ -466,37 +459,26 @@ theorem mayerVietorisδ_mk (U V : Opens M) {k : ℕ} (φ : closedForms I (U ⊓ 
     mayerVietorisδ I U V k (mk I k φ) = mk I (k + 1) σ := by
   -- The lift of `φ` to `Ω^•(U) ⊞ Ω^•(V)` is the pair `(α, β)`.
   let x₂ : (deRhamComplex I U ⊞ deRhamComplex I V).X k :=
-    ((biprod.inl : deRhamComplex I U ⟶ deRhamComplex I U ⊞ deRhamComplex I V).f k).hom
-        ((deRhamComplexXIso I k).inv.hom α) +
-      ((biprod.inr : deRhamComplex I V ⟶ deRhamComplex I U ⊞ deRhamComplex I V).f k).hom
-        ((deRhamComplexXIso I k).inv.hom β)
-  have hx₂ : ((biprod.desc
+    (biprod.inl : deRhamComplex I U ⟶ deRhamComplex I U ⊞ deRhamComplex I V).f k
+        ((deRhamComplexXIso I k).inv α) +
+      (biprod.inr : deRhamComplex I V ⟶ deRhamComplex I U ⊞ deRhamComplex I V).f k
+        ((deRhamComplexXIso I k).inv β)
+  have hx₂ : (biprod.desc
       (deRhamComplex.map (I := I) (I' := I) (Opens.inclusion (inf_le_left : U ⊓ V ≤ U))
         (contMDiff_inclusion _))
       (-deRhamComplex.map (I := I) (I' := I) (Opens.inclusion (inf_le_right : U ⊓ V ≤ V))
-        (contMDiff_inclusion _))).f k).hom x₂ = (deRhamComplexXIso I k).inv.hom φ.1 := by
-    have hinl {K L N : CochainComplex (ModuleCat ℝ) ℕ} (f : K ⟶ N) (g : L ⟶ N) (y : K.X k) :
-        ((biprod.desc f g).f k).hom (((biprod.inl : K ⟶ K ⊞ L).f k).hom y) = (f.f k).hom y := by
-      rw [← ModuleCat.comp_apply, ← HomologicalComplex.comp_f, biprod.inl_desc]
-    have hinr {K L N : CochainComplex (ModuleCat ℝ) ℕ} (f : K ⟶ N) (g : L ⟶ N) (y : L.X k) :
-        ((biprod.desc f g).f k).hom (((biprod.inr : L ⟶ K ⊞ L).f k).hom y) = (g.f k).hom y := by
-      rw [← ModuleCat.comp_apply, ← HomologicalComplex.comp_f, biprod.inr_desc]
-    rw [map_add, hinl, hinr, HomologicalComplex.neg_f_apply, ModuleCat.hom_neg, LinearMap.neg_apply,
-      deRhamComplex.map_f_inv_apply, deRhamComplex.map_f_inv_apply, ← map_neg, ← map_add,
-      ← sub_eq_add_neg, hαβ]
+        (contMDiff_inclusion _))).f k x₂ = (deRhamComplexXIso I k).inv φ.1 := by
+    rw [← hαβ, map_sub, ← deRhamComplex.map_f_inv_apply, ← deRhamComplex.map_f_inv_apply]
+    simp [x₂, ← ModuleCat.comp_apply, sub_eq_add_neg]
   -- The image of `σ` in `Ω^•(U) ⊞ Ω^•(V)` is the differential of the lift.
-  have hσ : ((biprod.lift
+  have hσ : (biprod.lift
       (deRhamComplex.map (I := I) (I' := I) (Opens.inclusion (le_sup_left : U ≤ U ⊔ V))
         (contMDiff_inclusion _))
       (deRhamComplex.map (I := I) (I' := I) (Opens.inclusion (le_sup_right : V ≤ U ⊔ V))
-        (contMDiff_inclusion _))).f (k + 1)).hom ((deRhamComplexXIso I (k + 1)).inv.hom σ.1) =
-      ((deRhamComplex I U ⊞ deRhamComplex I V).d k (k + 1)).hom x₂ := by
-    rw [biprod.lift_eq, HomologicalComplex.add_f_apply, ModuleCat.hom_add, LinearMap.add_apply,
-      HomologicalComplex.comp_f, HomologicalComplex.comp_f, ModuleCat.comp_apply,
-      ModuleCat.comp_apply, deRhamComplex.map_f_inv_apply, deRhamComplex.map_f_inv_apply, hσU, hσV,
-      map_add, HomologicalComplex.Hom.comm_apply, HomologicalComplex.Hom.comm_apply,
-      deRhamComplex_d_apply, deRhamComplex_d_apply]
-    simp
+        (contMDiff_inclusion _))).f (k + 1) ((deRhamComplexXIso I (k + 1)).inv σ.1) =
+      (deRhamComplex I U ⊞ deRhamComplex I V).d k (k + 1) x₂ := by
+    simp [x₂, biprod.lift_eq, deRhamComplex.map_f_inv_apply _ _ (k + 1) σ.1, hσU, hσV,
+      HomologicalComplex.Hom.comm_apply, deRhamComplex_d_apply]
   rw [mayerVietorisδ, mk_eq_moduleCatHomologyClass, mk_eq_moduleCatHomologyClass,
     HomologicalComplex.moduleCatHomologyClass_apply,
     HomologicalComplex.moduleCatHomologyClass_apply]
