@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.QuantumGroups.UqSl2.Casimir
+public import TauCeti.QuantumGroups.UqSl2.Casimir.Basic
 public import TauCeti.QuantumGroups.UqSl2.CompleteReducibility
 
 import TauCeti.Algebra.Ring.Int.Units
@@ -25,7 +25,7 @@ lowest-weight vector has weight `ε q^(-m)`. Consequently every generalized weig
 is `q^(-2j) ε q^m` for some `0 ≤ j ≤ m`, exactly the weights of the ladder module `L_m^ε`.
 On the top generalized weight space `W` of the block, for the weight `ε q^m`, the generator `E`
 and the power `F^(m+1)` act by zero while `F^m` is injective, and `K` acts on `W` by the scalar
-`ε q^m`. The last two facts follow by applying the results of
+`ε q^m`. These facts follow by applying the results of
 `TauCeti.QuantumGroups.UqSl2.CompleteReducibility` to the block viewed as a module itself.
 
 ## Main results
@@ -53,10 +53,6 @@ namespace TauCeti.UqSl2
 
 variable {q : ℂ} {V : Type*} [AddCommGroup V] [Module ℂ V]
   [Module (UqSl2 q) V] [IsScalarTower ℂ (UqSl2 q) V]
-
-/-- A signed power of a nonzero parameter is nonzero. -/
-private theorem sign_mul_pow_ne_zero (hq : q ≠ 0) (ε : ℤˣ) (m : ℕ) : (ε : ℂ) * q ^ m ≠ 0 :=
-  mul_ne_zero (Int.cast_ne_zero.mpr ε.ne_zero) (pow_ne_zero _ hq)
 
 /-! ### The Casimir scalar on highest- and lowest-weight vectors of a block -/
 
@@ -173,49 +169,39 @@ theorem exists_eq_of_mem_genWeightSpace_of_mem_casimirBlock (hq : IsGenericQuant
     linear_combination h - q ^ (2 * (n + n') + 2) * hsi -
       q ^ (2 * (n + n') + 2) * s * s⁻¹ * hqq m'
 
-/-- At a generic parameter, `E` kills the top generalized weight space `ε q^m` of the Casimir
-block for `ε q^m` of a finite-dimensional module. -/
-theorem e_smul_eq_zero_of_mem_casimirBlock (hq : IsGenericQuantumParameter q) {m : ℕ}
-    {ε : ℤˣ} {w : V} (hw : w ∈ genWeightSpace q V (ε * q ^ m))
-    (hb : w ∈ casimirBlock q V (casimirScalar q (ε * q ^ m))) : e q • w = 0 := by
-  by_contra h0
-  obtain ⟨j, -, hj⟩ := exists_eq_of_mem_genWeightSpace_of_mem_casimirBlock hq
-    (e_smul_mem_genWeightSpace hw) ((casimirBlock q V _).smul_mem _ hb) h0
-  -- The weight `q² ε q^m` would be `q^(-2j) ε q^m`, so `q^(2j + 2) = 1`.
-  have h := mul_right_cancel₀ (sign_mul_pow_ne_zero hq.ne_zero ε m) hj
-  refine hq.pow_ne_one (n := 2 * j + 2) (by omega) ?_
-  have hqq : (q * q⁻¹) ^ (2 * j) = 1 := by rw [mul_inv_cancel₀ hq.ne_zero, one_pow]
-  linear_combination q ^ (2 * j) * h + hqq
-
-/-- At a generic parameter, `F^(m+1)` kills the top generalized weight space `ε q^m` of the
-Casimir block for `ε q^m` of a finite-dimensional module. -/
-theorem f_pow_smul_eq_zero_of_mem_casimirBlock (hq : IsGenericQuantumParameter q) {m : ℕ}
-    {ε : ℤˣ} {w : V} (hw : w ∈ genWeightSpace q V (ε * q ^ m))
-    (hb : w ∈ casimirBlock q V (casimirScalar q (ε * q ^ m))) : f q ^ (m + 1) • w = 0 := by
-  by_contra h0
-  obtain ⟨j, hjm, hj⟩ := exists_eq_of_mem_genWeightSpace_of_mem_casimirBlock hq
-    (f_pow_smul_mem_genWeightSpace hw (m + 1)) ((casimirBlock q V _).smul_mem _ hb) h0
-  -- The weight `q^(-2(m+1)) ε q^m` would be `q^(-2j) ε q^m` with `j ≤ m`.
-  have h := mul_right_cancel₀ (sign_mul_pow_ne_zero hq.ne_zero ε m) hj
-  simp only [← pow_mul] at h
-  have := hq.inv.pow_injective h
-  omega
-
 /-! ### The top weight space of a block -/
 
-omit [FiniteDimensional ℂ V] in
-/-- A vector of a submodule lies in one of its generalized weight spaces exactly when it lies in
-the corresponding generalized weight space of the ambient module. -/
-private theorem mem_genWeightSpace_submodule_iff {U : Submodule (UqSl2 q) V} {μ : ℂ} {w : U} :
-    w ∈ genWeightSpace q U μ ↔ (w : V) ∈ genWeightSpace q V μ := by
-  simp only [mem_genWeightSpace_iff, ← Submodule.coe_eq_zero, Submodule.coe_smul]
+/-- A Casimir block of a finite-dimensional module is finite-dimensional. -/
+private theorem finiteDimensional_casimirBlock (c : ℂ) :
+    FiniteDimensional ℂ (casimirBlock q V c) :=
+  Module.Finite.of_injective ((casimirBlock q V c).subtype.restrictScalars ℂ)
+    Subtype.val_injective
+
+attribute [local instance] finiteDimensional_casimirBlock
 
 /-- At a generic parameter, `E` kills the top generalized weight space `ε q^m` of the Casimir
 block for `ε q^m`, viewed as a module itself. -/
 private theorem forall_e_smul_eq_zero_casimirBlock (hq : IsGenericQuantumParameter q) {m : ℕ}
     {ε : ℤˣ} (w : casimirBlock q V (casimirScalar q (ε * q ^ m)))
     (hw : w ∈ genWeightSpace q _ (ε * q ^ m)) : e q • w = 0 :=
-  Subtype.ext (e_smul_eq_zero_of_mem_casimirBlock hq (mem_genWeightSpace_submodule_iff.mp hw) w.2)
+  e_smul_eq_zero_of_casimirBlock_eq_top hq (casimirBlock_casimirBlock_eq_top _) hw
+
+/-- At a generic parameter, `E` kills the top generalized weight space `ε q^m` of the Casimir
+block for `ε q^m` of a finite-dimensional module. -/
+theorem e_smul_eq_zero_of_mem_casimirBlock (hq : IsGenericQuantumParameter q) {m : ℕ}
+    {ε : ℤˣ} {w : V} (hw : w ∈ genWeightSpace q V (ε * q ^ m))
+    (hb : w ∈ casimirBlock q V (casimirScalar q (ε * q ^ m))) : e q • w = 0 :=
+  congrArg Subtype.val (forall_e_smul_eq_zero_casimirBlock hq ⟨w, hb⟩
+    (mem_genWeightSpace_submodule_iff.mpr hw))
+
+/-- At a generic parameter, `F^(m+1)` kills the top generalized weight space `ε q^m` of the
+Casimir block for `ε q^m` of a finite-dimensional module. -/
+theorem f_pow_smul_eq_zero_of_mem_casimirBlock (hq : IsGenericQuantumParameter q) {m : ℕ}
+    {ε : ℤˣ} {w : V} (hw : w ∈ genWeightSpace q V (ε * q ^ m))
+    (hb : w ∈ casimirBlock q V (casimirScalar q (ε * q ^ m))) : f q ^ (m + 1) • w = 0 :=
+  congrArg Subtype.val (f_pow_smul_eq_zero_of_forall_e_smul_eq_zero hq
+    (forall_e_smul_eq_zero_casimirBlock hq) (w := ⟨w, hb⟩)
+    (mem_genWeightSpace_submodule_iff.mpr hw))
 
 /-- At a generic parameter, `F^m` is injective on the top generalized weight space `ε q^m` of
 the Casimir block for `ε q^m` of a finite-dimensional module. -/
@@ -234,9 +220,6 @@ theorem k_smul_eq_of_mem_casimirBlock (hq : IsGenericQuantumParameter q) {m : �
     {w : V} (hw : w ∈ genWeightSpace q V (ε * q ^ m))
     (hb : w ∈ casimirBlock q V (casimirScalar q (ε * q ^ m))) :
     k q • w = (ε * q ^ m : ℂ) • w := by
-  have : FiniteDimensional ℂ (casimirBlock q V (casimirScalar q (ε * q ^ m))) :=
-    Module.Finite.of_injective ((casimirBlock q V _).subtype.restrictScalars ℂ)
-      Subtype.val_injective
   have h := (mem_genWeightSpace_submodule_iff (w := ⟨w, hb⟩)).mpr hw
   rw [genWeightSpace_eq_weightSpace_of_forall_e_smul_eq_zero hq
     (forall_e_smul_eq_zero_casimirBlock hq)] at h

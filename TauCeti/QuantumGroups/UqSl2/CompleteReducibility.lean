@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.QuantumGroups.UqSl2.Casimir
+public import TauCeti.QuantumGroups.UqSl2.Casimir.Basic
 public import TauCeti.QuantumGroups.UqSl2.HighestWeight
 public import TauCeti.QuantumGroups.UqSl2.LadderModule
 public import Mathlib.RingTheory.SimpleModule.Basic
