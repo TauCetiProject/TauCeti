@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.CompoundPoisson.Basic
 public import TauCeti.Probability.Moments.ConvolutionPower
-import TauCeti.MeasureTheory.Integral.Bind
+import TauCeti.Probability.Distributions.Mixture
 
 /-!
 # Exponential moments of compound Poisson laws
@@ -96,14 +96,9 @@ single-jump mgf minus one. -/
 theorem mgf_compoundPoissonMeasure (r : ℝ≥0) (hf : Measurable f) {t : ℝ}
     (ht : t ∈ integrableExpSet f (compoundPoissonMeasure r μ)) :
     mgf f (compoundPoissonMeasure r μ) t = exp (r * (mgf f μ t - 1)) := by
-  have hint := integrable_of_mem_integrableExpSet ht
-  rw [compoundPoissonMeasure_def] at hint
-  rw [mgf, compoundPoissonMeasure_def,
-    Measure.integral_bind Measurable.of_discrete.aemeasurable
-      hint]
-  have hM (n : ℕ) : ∫ x, exp (t * f x) ∂μ.convolutionPower n = mgf f μ t ^ n :=
-    μ.mgf_addMonoidHom_convolutionPower f hf n t
-  simp_rw [hM]
+  rw [compoundPoissonMeasure_def] at ht ⊢
+  rw [Measure.mgf_bind _ Measurable.of_discrete.aemeasurable f t ht]
+  simp_rw [μ.mgf_addMonoidHom_convolutionPower f hf]
   simpa only [pgf_def, id_eq] using pgf_poissonMeasure r (mgf f μ t)
 
 /-- On the compound Poisson exponential-integrability domain, its cgf is its intensity times
