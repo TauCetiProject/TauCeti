@@ -374,7 +374,7 @@ lemma ofCube_eq_cubeCubicalPushforward {n : ℕ} (c : SingularCube X n)
   refine Eq.symm ((congrArg (fun y ↦ cubeCubicalPushforward L c n y a)
     (cubeGen_def (ULift.{v} ℤ) n)).trans
     ((cubeCubicalPushforward_apply L c n _ a).trans
-      ((NormalizedTwistedCubicalChain.pushforward_ofCube_eq_ofCube (L := L)
+      ((NormalizedTwistedCubicalChain.pushforward_ofCube (L := L)
         (f := (cubeToHom c).hom) (z₀ := cubeModelOrigin n) (upCube n) a).trans ?_)))
   -- The path class from the origin of the model to itself is the identity.
   exact congrArg (NormalizedTwistedCubicalChain.ofCube L c)
