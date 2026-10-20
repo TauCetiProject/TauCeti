@@ -61,12 +61,7 @@ noncomputable def shiftedModuleComplexActX {a : A} (ha : a ∈ 𝒜 0) (q n : �
       (ℳ (n + (q + 1))).subtype).codRestrict _ fun x ↦ by
         have hdeg : n + 1 + q = n + (q + 1) := by ring
         rw [hdeg]
-        have hx : (x : M) ∈ (InternalGrading.ofDecomposition ℳ).piece (n + (q + 1)) := by
-          rw [InternalGrading.ofDecomposition_piece]
-          exact x.2
-        have hε := (InternalGrading.ofDecomposition ℳ).koszulTwist_mem_piece hx 1
-        rw [InternalGrading.ofDecomposition_piece] at hε
-        exact op_smul_mem_of_mem_zero ha hε) ∘ₗ
+        exact op_smul_koszulTwist_mem_of_mem_zero ha x.2) ∘ₗ
     (shiftedModuleComplexXEquiv hM (q + 1) n).toLinearMap
 
 @[simp]
@@ -75,32 +70,7 @@ theorem shiftedModuleComplexXEquiv_shiftedModuleComplexActX {a : A} (ha : a ∈ 
     (shiftedModuleComplexXEquiv hM q (n + 1) (shiftedModuleComplexActX hM ha q n α) : M) =
       op a • (InternalGrading.ofDecomposition ℳ).koszulTwist 1
         (shiftedModuleComplexXEquiv hM (q + 1) n α : M) := by
-  simp only [shiftedModuleComplexActX, LinearMap.coe_comp, LinearEquiv.coe_coe,
-    Function.comp_apply, LinearEquiv.apply_symm_apply]
-  rfl
-
-include hM in
-/-- The right action of a cycle `a` of degree zero of the algebra commutes with `dM`. -/
-theorem dM_op_smul_of_d_eq_zero {a : A} (hda : d a = 0) {k : ℤ} {x : M} (hx : x ∈ ℳ k) :
-    dM (op a • x) = op a • dM x := by
-  rw [hM.leibniz hx a, hda, MulOpposite.op_zero, zero_smul, smul_zero, add_zero]
-
-include hM in
-/-- The right action of a cycle `a` of degree zero, twisted by the Koszul sign, anticommutes with
-`dM`. -/
-theorem op_smul_koszulTwist_dM {a : A} (hda : d a = 0) {k : ℤ} {x : M}
-    (hx : x ∈ ℳ k) :
-    op a • (InternalGrading.ofDecomposition ℳ).koszulTwist 1 (dM x) =
-      -dM (op a • (InternalGrading.ofDecomposition ℳ).koszulTwist 1 x) := by
-  have hx' : x ∈ (InternalGrading.ofDecomposition ℳ).piece k := by
-    rwa [InternalGrading.ofDecomposition_piece]
-  have hdx : dM x ∈ (InternalGrading.ofDecomposition ℳ).piece (k + 1) := by
-    rw [InternalGrading.ofDecomposition_piece]
-    exact hM.isHomogeneous.map_mem hx
-  rw [InternalGrading.koszulTwist_one_apply_of_mem _ hdx,
-    InternalGrading.koszulTwist_one_apply_of_mem _ hx',
-    dM_op_smul_of_d_eq_zero hM hda (Submodule.smul_mem _ _ hx), map_smul, Int.negOnePow_succ,
-    Units.val_neg, Int.cast_neg, neg_smul, smul_neg, smul_comm (op a)]
+  simp [shiftedModuleComplexActX]
 
 /-- **The right action of a cycle of degree zero, twisted by the Koszul sign**, as a morphism of
 complexes from `shiftedModuleComplex hM (q + 1)` to the shift by one of
@@ -118,16 +88,7 @@ noncomputable def shiftedModuleComplexAct {a : A} (ha : a ∈ 𝒜 0) (hda : d a
       LinearMap.neg_apply, map_neg, Submodule.coe_neg]
     rw [shiftedModuleComplexXEquiv_shiftedModuleComplexActX, shiftedModuleComplexXEquiv_d,
       shiftedModuleComplexXEquiv_d, shiftedModuleComplexXEquiv_shiftedModuleComplexActX]
-    exact (op_smul_koszulTwist_dM hM hda (shiftedModuleComplexXEquiv hM (q + 1) i α).2).symm
-
-/-- Transport along an equality of degrees does not change the underlying element of `ℳ`. -/
-theorem shiftedModuleComplexXEquiv_XIsoOfEq_hom (p i j : ℤ) (hij : i = j)
-    (z : (shiftedModuleComplex.{uR, uA, uM, uP} hM p).X i) :
-    (shiftedModuleComplexXEquiv hM p j
-        (((shiftedModuleComplex.{uR, uA, uM, uP} hM p).XIsoOfEq hij).hom.hom z) : M) =
-      shiftedModuleComplexXEquiv hM p i z := by
-  subst hij
-  rfl
+    exact (hM.op_smul_koszulTwist_map_eq_neg hda (shiftedModuleComplexXEquiv hM (q + 1) i α).2).symm
 
 /-- **The action of a cycle of degree zero on cohomology**: the map
 `H^n(shiftedModuleComplex hM (q + 1)) ⟶ H^{n + 1}(shiftedModuleComplex hM q)` induced by
@@ -179,17 +140,9 @@ theorem exists_shiftedModuleComplexActHomology_homologyπ {a : A} (ha : a ∈ �
           ((shiftedModuleComplex.{uR, uA, uM, uP} hM q).moduleCatCyclesMk β (n' + 1)
             (by simp) hβ') := by
   have hmem : op a • (InternalGrading.ofDecomposition ℳ).koszulTwist 1
-      (shiftedModuleComplexXEquiv hM (q + 1) n α : M) ∈ ℳ (n' + q) := by
-    have hx : (shiftedModuleComplexXEquiv hM (q + 1) n α : M) ∈
-        (InternalGrading.ofDecomposition ℳ).piece (n + (q + 1)) := by
-      rw [InternalGrading.ofDecomposition_piece]
-      exact (shiftedModuleComplexXEquiv hM (q + 1) n α).2
-    have hε : ∀ j, j = n + (q + 1) → (InternalGrading.ofDecomposition ℳ).koszulTwist 1
-        (shiftedModuleComplexXEquiv hM (q + 1) n α : M) ∈ ℳ j := by
-      rintro j rfl
-      have h := (InternalGrading.ofDecomposition ℳ).koszulTwist_mem_piece hx 1
-      rwa [InternalGrading.ofDecomposition_piece] at h
-    exact op_smul_mem_of_mem_zero ha (hε _ (by omega))
+      (shiftedModuleComplexXEquiv hM (q + 1) n α : M) ∈ ℳ (n' + q) :=
+    op_smul_koszulTwist_mem_of_mem_zero ha
+      (shiftedModuleComplexXEquiv_mem hM (by omega : n' + q = n + (q + 1)) α)
   have hβ : (shiftedModuleComplexXEquiv hM q n'
       ((shiftedModuleComplexXEquiv hM q n').symm ⟨_, hmem⟩) : M) =
         op a • (InternalGrading.ofDecomposition ℳ).koszulTwist 1
@@ -198,7 +151,7 @@ theorem exists_shiftedModuleComplexActHomology_homologyπ {a : A} (ha : a ∈ �
   have hβ' : ((shiftedModuleComplex.{uR, uA, uM, uP} hM q).d n' (n' + 1)).hom
       ((shiftedModuleComplexXEquiv hM q n').symm ⟨_, hmem⟩) = 0 := by
     rw [shiftedModuleComplexXEquiv_d_eq_zero_iff, hβ]
-    have h := op_smul_koszulTwist_dM hM hda (shiftedModuleComplexXEquiv hM (q + 1) n α).2
+    have h := hM.op_smul_koszulTwist_map_eq_neg hda (shiftedModuleComplexXEquiv hM (q + 1) n α).2
     rw [(shiftedModuleComplexXEquiv_d_eq_zero_iff hM (q + 1) n α).1 hα, map_zero,
       smul_zero] at h
     exact neg_eq_zero.1 h.symm

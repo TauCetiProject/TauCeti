@@ -126,6 +126,13 @@ theorem m_mem_zero_of_eq_add_one (m : TwistingCocycle 𝒜 d P ind) {x y : P}
   have hdeg : ind y - ind x + 1 = 0 := by omega
   rwa [hdeg] at h
 
+/-- The entries between generators whose indices differ by two have degree `-1`. -/
+theorem m_mem_neg_one_of_eq_add_two (m : TwistingCocycle 𝒜 d P ind) {x y : P}
+    (hxy : ind x = ind y + 2) : m.m x y ∈ 𝒜 (-1) := by
+  have h := m.mem_graded x y
+  have hdeg : ind y - ind x + 1 = -1 := by omega
+  rwa [hdeg] at h
+
 /-- The entries between generators whose indices differ by one are cycles: no generator has an
 index strictly between theirs. -/
 theorem d_m_eq_zero_of_eq_add_one (m : TwistingCocycle 𝒜 d P ind) {x y : P}

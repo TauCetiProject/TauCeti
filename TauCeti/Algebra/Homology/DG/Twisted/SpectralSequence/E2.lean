@@ -117,34 +117,25 @@ theorem sum_indexClassicalEntry_comp (q : ℤ) (x : {x : P // ind x = q + 1 + 1}
     LinearMap.comp_apply, ModuleCat.hom_zero, LinearMap.zero_apply, indexClassicalEntry, hβπ,
     hγπ]
   rw [← map_sum, HomologicalComplex.sum_moduleCatCyclesMk]
+  -- Reduction to representatives is done; `α₀` is the underlying cycle of `ℳ` of degree `k`.
   set α₀ := (shiftedModuleComplexXEquiv hM (q + 1 + 1) _ α : M)
-  have hα₀ : α₀ ∈ ℳ k := by
-    have h : ∀ j, j = k - (q + 1 + 1) + (q + 1 + 1) → α₀ ∈ ℳ j := by
-      rintro j rfl
-      exact (shiftedModuleComplexXEquiv hM (q + 1 + 1) _ α).2
-    exact h k (by ring)
+  have hα₀ : α₀ ∈ ℳ k := shiftedModuleComplexXEquiv_mem hM (by ring) α
   have hdα₀ : dM α₀ = 0 := (shiftedModuleComplexXEquiv_d_eq_zero_iff hM _ _ α).1 hα
-  have hεα₀ : (InternalGrading.ofDecomposition ℳ).koszulTwist 1 α₀ ∈ ℳ k := by
-    have h := (InternalGrading.ofDecomposition ℳ).koszulTwist_mem_piece
-      (by rwa [InternalGrading.ofDecomposition_piece]) 1
-    rwa [InternalGrading.ofDecomposition_piece] at h
-  have hmz : m.m x z ∈ 𝒜 (-1) := by
-    have h := m.mem_graded x z
-    have hdeg : ind z - ind x + 1 = -1 := by omega
-    rwa [hdeg] at h
   have hb : -((k.negOnePow : ℤ) • (op (m.m x z) • α₀)) ∈ ℳ (k - q - 1 + q) := by
     have hdeg : k - q - 1 + q = k + -1 := by ring
     rw [hdeg]
-    exact neg_mem (zsmul_mem (op_smul_mem_of_mem_graded hmz hα₀) _)
+    exact neg_mem (zsmul_mem (op_smul_mem_of_mem_graded (m.m_mem_neg_one_of_eq_add_two
+      (by rw [hx, hz]; ring)) hα₀) _)
+  -- The sum of the composites is a boundary: it is `dM` of the element `hb`-membership provides.
   refine shiftedModuleComplex_homologyπ_eq_zero hM q (k - q) _ _
     ((shiftedModuleComplexXEquiv hM q _).symm ⟨_, hb⟩) ?_
   rw [LinearEquiv.apply_symm_apply, map_sum, Submodule.coe_sum]
   simp only [hγ, hβ]
-  rw [Finset.sum_congr rfl fun y _ ↦ by
-    rw [koszulTwist_one_op_smul_of_mem_zero
-      (m.m_mem_zero_of_eq_add_one (x := x.1) (y := y.1) (by rw [x.2, y.2])) hεα₀,
-      InternalGrading.koszulTwist_koszulTwist, smul_smul, ← op_mul],
+  -- The twisting equation at index difference two: the double action is by `∑ y, m x y * m y z`.
+  rw [Finset.sum_congr rfl fun y _ ↦ op_smul_koszulTwist_op_smul_koszulTwist
+      (m.m_mem_zero_of_eq_add_one (x := x.1) (y := y.1) (by rw [x.2, y.2])) hα₀,
     ← Finset.sum_smul, ← Finset.op_sum, m.sum_subtype_m_mul_m_of_eq_add_two q x.2 z.2]
+  -- The Leibniz rule for the cycle `α₀` and the entry `m x z` of degree `-1`.
   have hl := hM.leibniz hα₀ (m.m x z)
   rw [hdα₀, smul_zero, zero_add] at hl
   rw [map_neg, map_zsmul, hl, MulOpposite.op_neg, neg_smul, ← Units.smul_def, smul_smul,
@@ -183,7 +174,8 @@ private theorem indexClassicalComplex_d_eq (q : ℤ) :
   exact ChainComplex.of_d (fun q ↦ ∏ᶜ fun _ : {x : P // ind x = q} ↦
     (shiftedModuleComplex.{uR, uA, uM, uP} hM q).homology (k - q)) (m.indexClassicalD hM k) q
 
-/-- The differential of the classical complex is `indexClassicalD`. -/
+/-- The differential of the classical complex is `indexClassicalD`, up to the identification of
+its terms (`indexClassicalComplex_X`) with products of cohomology. -/
 theorem indexClassicalComplex_d (q : ℤ) :
     (m.indexClassicalComplex hM k).d (q + 1) q =
       eqToHom (m.indexClassicalComplex_X hM k (q + 1)) ≫ m.indexClassicalD hM k q ≫
@@ -281,7 +273,7 @@ theorem indexSpectralSequenceFirstPageXIsoOfEq_comp_indexClassicalD (pq pq' : �
     indexClassicalD_π]
   refine Finset.sum_congr rfl fun x _ ↦ ?_
   rw [m.homologyMap_single_comp_page_two_d_comp_eval hM pq pq' hpq' q i₁ _ _ hq hi₁ hq' hn hn' x y]
-  rfl
+  rw [indexClassicalEntry]
 
 /-- **The second page of the index spectral sequence is the cohomology of the classical complex**
 (BDHO, Definition 3.38 and Ch. 3 §4.2): the object at `(a, b)` of the page `3` of the index

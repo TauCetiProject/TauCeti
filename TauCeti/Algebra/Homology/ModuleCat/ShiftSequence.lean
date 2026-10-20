@@ -61,6 +61,8 @@ theorem shiftMap_homologyπ_moduleCatCyclesMk {K L : CochainComplex (ModuleCat R
     (ModuleCat.Hom.hom ((shiftShortComplexFunctorIso (ModuleCat R) n a a' h).hom.app L).τ₂)
     (HomologicalComplex.iCycles_moduleCatCyclesMk _ _ _ _ _ _)) ?_
   rw [HomologicalComplex.iCycles_moduleCatCyclesMk, hy]
+  -- The `τ₂` component of the shift isomorphism of short complexes is `shiftFunctorObjXIso` by
+  -- definition, which is how `y` is related to `f x` in the hypothesis `hy`.
   rfl
 
 end CochainComplex

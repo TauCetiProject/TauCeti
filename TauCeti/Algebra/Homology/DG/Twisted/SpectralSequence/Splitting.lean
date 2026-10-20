@@ -88,6 +88,24 @@ theorem shiftedModuleComplexXEquiv_d (p n : ℤ)
   exact key
 
 omit [SMulCommClass R Aᵐᵒᵖ M] in
+/-- The value of an element of degree `n` of `shiftedModuleComplex hM p` lies in `ℳ j` for every
+`j = n + p`. -/
+theorem shiftedModuleComplexXEquiv_mem {p n j : ℤ} (hj : j = n + p)
+    (α : (shiftedModuleComplex.{uR, uA, uM, uP} hM p).X n) :
+    (shiftedModuleComplexXEquiv hM p n α : M) ∈ ℳ j :=
+  hj ▸ (shiftedModuleComplexXEquiv hM p n α).2
+
+omit [SMulCommClass R Aᵐᵒᵖ M] in
+/-- Transport along an equality of degrees does not change the underlying element of `ℳ`. -/
+theorem shiftedModuleComplexXEquiv_XIsoOfEq_hom (p i j : ℤ) (hij : i = j)
+    (z : (shiftedModuleComplex.{uR, uA, uM, uP} hM p).X i) :
+    (shiftedModuleComplexXEquiv hM p j
+        (((shiftedModuleComplex.{uR, uA, uM, uP} hM p).XIsoOfEq hij).hom.hom z) : M) =
+      shiftedModuleComplexXEquiv hM p i z := by
+  subst hij
+  rfl
+
+omit [SMulCommClass R Aᵐᵒᵖ M] in
 /-- A cycle of `shiftedModuleComplex hM p` is a cycle of `ℳ`. -/
 theorem shiftedModuleComplexXEquiv_d_eq_zero_iff (p n : ℤ)
     (α : (shiftedModuleComplex.{uR, uA, uM, uP} hM p).X n) :

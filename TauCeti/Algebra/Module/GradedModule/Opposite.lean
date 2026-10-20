@@ -243,6 +243,24 @@ theorem koszulTwist_one_op_smul_of_mem_zero {a : A} (ha : a ∈ 𝒜 0) {k : ℤ
     InternalGrading.koszulTwist_one_apply_of_mem _ (e := k)
       (by rwa [InternalGrading.ofDecomposition_piece]), smul_comm]
 
+omit [SMulCommClass R Aᵐᵒᵖ M] in
+/-- The right action of an element of degree zero, twisted by the Koszul sign, preserves each
+piece of the module. -/
+theorem op_smul_koszulTwist_mem_of_mem_zero {a : A} (ha : a ∈ 𝒜 0) {k : ℤ} {x : M}
+    (hx : x ∈ ℳ k) :
+    op a • (InternalGrading.ofDecomposition ℳ).koszulTwist 1 x ∈ ℳ k :=
+  op_smul_mem_of_mem_zero ha (InternalGrading.koszulTwist_mem_ofDecomposition ℳ hx 1)
+
+/-- Two successive twisted right actions of elements of degree zero act by their product, in the
+order of the algebra: the Koszul signs cancel. -/
+theorem op_smul_koszulTwist_op_smul_koszulTwist {a b : A} (ha : a ∈ 𝒜 0) {k : ℤ} {x : M}
+    (hx : x ∈ ℳ k) :
+    op b • (InternalGrading.ofDecomposition ℳ).koszulTwist 1
+      (op a • (InternalGrading.ofDecomposition ℳ).koszulTwist 1 x) = op (a * b) • x := by
+  rw [koszulTwist_one_op_smul_of_mem_zero ha
+      (InternalGrading.koszulTwist_mem_ofDecomposition ℳ hx 1),
+    InternalGrading.koszulTwist_koszulTwist, smul_smul, ← op_mul]
+
 end Koszul
 
 end TauCeti
