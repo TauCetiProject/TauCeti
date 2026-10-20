@@ -43,7 +43,7 @@ the elementary equivalence between its two points and `Fin 2`.
 * `AbstractSimplicialComplex.instLocallyPathConnectedSpaceStandardSimplex`: every closed
   coordinate simplex is locally path-connected.
 * `realizationTopHomeomorphStdSimplex`: the full complex realizes to Mathlib's standard simplex.
-* `range_coe_realization_top`, `range_coe_realization_standardSuccSimplexBoundary`: the coordinate
+* `range_realization_coe_top`, `range_realization_coe_standardSuccSimplexBoundary`: the coordinate
   vectors of the realizations of the full complex and of the boundary of a standard simplex.
 * `realizationOneSimplexHomeomorphUnitInterval`: the standard one-simplex realizes to `[0, 1]`.
 * `realizationOneSimplexBoundaryHomeomorphSphereZero`: its boundary realizes to `S⁰`.
@@ -168,14 +168,14 @@ noncomputable def simplexRealizationHomeomorph (K : AbstractSimplicialComplex ι
 
 /-- The coordinate vectors of the realization of the boundary of a standard simplex are the weight
 vectors of the standard simplex with some vanishing coordinate. -/
-theorem range_coe_realization_standardSuccSimplexBoundary (n : ℕ) :
+theorem range_realization_coe_standardSuccSimplexBoundary (n : ℕ) :
     range (fun x : Realization (standardSuccSimplexBoundary n) => (x.1 : Fin (n + 2) → ℝ)) =
       {z ∈ range fun t : Convexity.StdSimplex ℝ (Fin (n + 2)) => ⇑t.weights | ∃ i, z i = 0} := by
   ext z
   have hz : ∑ i, z i = 1 → z ≠ 0 := by
     rintro h rfl
     simp at h
-  rw [mem_range_coe_realization_iff, mem_standardSuccSimplexBoundary_iff]
+  rw [mem_range_realization_coe_iff, mem_standardSuccSimplexBoundary_iff]
   simp [Finset.ssubset_univ_iff, Finset.eq_univ_iff_forall,
     Convexity.StdSimplex.range_toFun_comp_weights]
   grind
@@ -242,13 +242,13 @@ theorem realizationTopHomeomorphStdSimplex_symm_apply_val (x : Convexity.StdSimp
 omit [Fintype ι] [Nonempty ι] in
 /-- The coordinate vectors of the realization of the full complex on a finite type are the weight
 vectors of the standard simplex. -/
-theorem range_coe_realization_top [Finite ι] :
+theorem range_realization_coe_top [Finite ι] :
     range (fun x : Realization (⊤ : AbstractSimplicialComplex ι) => (x.1 : ι → ℝ)) =
       range fun t : Convexity.StdSimplex ℝ ι => ⇑t.weights := by
   have := Fintype.ofFinite ι
   rcases isEmpty_or_nonempty ι with hι | hι
   · ext z
-    rw [mem_range_coe_realization_iff, Convexity.StdSimplex.range_toFun_comp_weights]
+    rw [mem_range_realization_coe_iff, Convexity.StdSimplex.range_toFun_comp_weights]
     simp
   · rw [← realizationTopHomeomorphStdSimplex.surjective.range_comp]
     exact congrArg range (funext fun x => funext fun i =>

@@ -122,7 +122,7 @@ variable {ι : Type*} [Fintype ι]
 
 /-- On a finite vertex type, a coordinate vector is the coordinate vector of a point of the
 realization exactly when it is nonnegative, sums to one, and its support is a face. -/
-theorem mem_range_coe_realization_iff {K : AbstractSimplicialComplex ι} {z : ι → ℝ} :
+theorem mem_range_realization_coe_iff {K : AbstractSimplicialComplex ι} {z : ι → ℝ} :
     z ∈ range (fun x : Realization K => (x.1 : ι → ℝ)) ↔
       (∀ i, 0 ≤ z i) ∧ ∑ i, z i = 1 ∧ (Finsupp.equivFunOnFinite.symm z).support ∈ K := by
   constructor

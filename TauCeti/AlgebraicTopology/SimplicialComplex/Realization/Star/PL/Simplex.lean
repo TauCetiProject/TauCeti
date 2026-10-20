@@ -82,7 +82,7 @@ private theorem IsCombinatorialSphere.exists_isPLOn_geometricLink
       (range_subset_iff.mpr fun w => ⟨ofLink (e.symm w),
         (hfe (e.symm w)).trans (by rw [e.apply_symm_apply])⟩)
   refine ⟨f, g, hL ▸ hf, hT ▸ hg, fun y => ?_,
-    hT.trans (range_coe_realization_standardSuccSimplexBoundary n)⟩
+    hT.trans (range_realization_coe_standardSuccSimplexBoundary n)⟩
   rw [hfe (toLink y), hge, e.symm_apply_apply]
 
 /-- **Simplex model of a closed vertex star with a spherical link.** If the link of `v` is a
@@ -130,7 +130,7 @@ theorem IsCombinatorialSphere.exists_homeomorph_closedStarRealization_top
   have hS : convexJoin ℝ (range fun y : geometricLink K v => f (y.1.1 : ι → ℝ)) {b} =
       range fun y : Realization (⊤ : AbstractSimplicialComplex (Fin (n + 2))) =>
         (y.1 : Fin (n + 2) → ℝ) := by
-    rw [hT, convexJoin_boundary_stdSimplex_barycenter, range_coe_realization_top]
+    rw [hT, convexJoin_boundary_stdSimplex_barycenter, range_realization_coe_top]
   obtain ⟨φ, hapex, hheight, -, F, G, hF, hG, hFφ, hGφ⟩ :=
     exists_homeomorph_closedStarRealization_convexJoin hK hne hf hg hgf
       (hh.mono (subset_univ _)) hhF
