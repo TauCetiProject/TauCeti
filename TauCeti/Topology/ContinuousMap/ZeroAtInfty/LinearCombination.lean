@@ -50,6 +50,8 @@ nonarchimedean functional analysis, for instance from bounded lifts of the coord
 * `ZeroAtInftyContinuousMap.hasSum_linearCombination`: the unconditional expansion
   `∑ i, a i • e i = linearCombination R e a`.
 * `ZeroAtInftyContinuousMap.linearCombination_single`: the value on a coordinate vector.
+* `ZeroAtInftyContinuousMap.linearCombination_eq_tsum_mul`: for scalar-valued families, the
+  pairing `∑' i, b i * a i`.
 * `ZeroAtInftyContinuousMap.ringOpNorm_linearCombination`: over a norm-one ring the operator
   norm is the family supremum.
 * `ZeroAtInftyContinuousMap.linearCombination_injective` and
@@ -139,6 +141,12 @@ theorem linearCombination_single [DecidableEq I] (e : lp (fun _ : I ↦ M) ∞) 
     linearCombination R e (single i r) = r • e i := by
   rw [linearCombination_apply, tsum_eq_single i fun j hj ↦ by simp [single_eq_of_ne hj],
     single_eq_same]
+
+/-- Pairing the coordinate family `lp.single ∞ i m` with `a` gives `a i • m`. -/
+@[simp]
+theorem linearCombination_lpSingle [DecidableEq I] (i : I) (m : M) (a : C₀(I, R)) :
+    linearCombination R (lp.single ∞ i m) a = a i • m := by
+  rw [linearCombination_apply, tsum_eq_single i fun j hj ↦ by simp [hj], lp.single_apply_self]
 
 /-- The linear combination map is bounded by the supremum of the family. -/
 theorem norm_linearCombination_apply_le (e : lp (fun _ : I ↦ M) ∞) (a : C₀(I, R)) :
@@ -237,6 +245,18 @@ theorem linearCombination_smul (c : R) (e : lp (fun _ : I ↦ M) ∞) :
   exact continuousLinearMap_ext fun i b ↦ by simp [smul_comm b c]
 
 end SMul
+
+section Pairing
+
+variable [DiscreteTopology I] [NormedCommRing R] [IsUltrametricDist R] [CompleteSpace R]
+
+/-- **The pairing** of a bounded family `b` with `a ∈ C₀(I, R)` is the convergent sum
+`∑' i, b i * a i`. -/
+theorem linearCombination_eq_tsum_mul (b : lp (fun _ : I ↦ R) ∞) (a : C₀(I, R)) :
+    linearCombination R b a = ∑' i, b i * a i := by
+  simp_rw [linearCombination_apply, smul_eq_mul, mul_comm]
+
+end Pairing
 
 section CommRing
 

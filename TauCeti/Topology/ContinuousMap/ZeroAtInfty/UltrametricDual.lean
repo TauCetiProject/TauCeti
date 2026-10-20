@@ -47,7 +47,6 @@ This file develops the two sides of this pairing.
 
 ## Main results
 
-* `ZeroAtInftyContinuousMap.linearCombination_eq_tsum_mul`: the pairing `∑' i, b i * a i`.
 * `ZeroAtInftyContinuousMap.toLpInftyDual_linearCombinationEquiv_symm`: the isometry
   `toLpInftyDual` is the canonical embedding of `C₀(I, R)` into its bidual.
 * `ContinuousLinearMap.linearCombination_transposeLpInfty`: the defining property of the
@@ -72,26 +71,6 @@ variable {I J K R : Type*} [TopologicalSpace I] [DiscreteTopology I]
   [TopologicalSpace J] [DiscreteTopology J] [DecidableEq J]
 
 namespace ZeroAtInftyContinuousMap
-
-section Pairing
-
-/-- Pairing the coordinate family `lp.single ∞ i r` with `a` gives `a i * r`. -/
-@[simp]
-theorem linearCombination_lpSingle [DecidableEq I] [NormedRing R] [IsUltrametricDist R]
-    [CompleteSpace R] (i : I) (r : R) (a : C₀(I, R)) :
-    linearCombination R (lp.single ∞ i r) a = a i * r := by
-  rw [linearCombination_apply, tsum_eq_single i fun j hj ↦ by simp [hj],
-    lp.single_apply_self, smul_eq_mul]
-
-variable [NormedCommRing R] [IsUltrametricDist R] [CompleteSpace R]
-
-/-- **The pairing** of a bounded family `b` with `a ∈ C₀(I, R)` is the convergent sum
-`∑' i, b i * a i`. -/
-theorem linearCombination_eq_tsum_mul (b : lp (fun _ : I ↦ R) ∞) (a : C₀(I, R)) :
-    linearCombination R b a = ∑' i, b i * a i := by
-  simp_rw [linearCombination_apply, smul_eq_mul, mul_comm]
-
-end Pairing
 
 section Bidual
 
