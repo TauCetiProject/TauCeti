@@ -13,6 +13,7 @@ public import Mathlib.Topology.Basic
 public import Mathlib.Topology.Compactness.Compact
 public import Mathlib.Topology.Constructions
 public import Mathlib.Topology.Constructions.SumProd
+public import Mathlib.Topology.Homeomorph.Lemmas
 public import Mathlib.Topology.Separation.Hausdorff
 public import Mathlib.Topology.Separation.Regular
 
@@ -41,6 +42,7 @@ The model is the following.
   *nodal* curve and not of an arbitrary gluing of curves along points: every singularity of the
   glued curve is then a plain node, at which exactly two branches meet.
 * `Sigma X` is the disjoint union of the normalization components, with the coproduct topology.
+  It is Hausdorff as soon as the components are (Mathlib's `Sigma.t2Space`).
 * `flagRel` is the generating relation: the two points of one flag pair are related.
 * `flagAdjacent` and `sameNode` relate two flag pairs that are glued at the same node, the second
   through a chain of the first.  Because the flag points are pairwise distinct, two flag pairs
@@ -48,19 +50,20 @@ The model is the following.
   (`flagAdjacent_iff`, `sameNode_iff`).
 * `gluedRel` is the equivalence relation *generated* by the flag pairs.  Because the flag points
   are pairwise distinct, a chain of flag pairs has at most one step, so the generated relation is
-  simply "the two points are equal, or they are the two points of one flag pair"
-  (`gluedRel_iff`).  It is symmetric and transitive (`gluedRel_symm`, `gluedRel_trans`), hence an
-  equivalence relation (`gluedRel_equivalence`), and it relates two points only when they are
-  equal or when both of them are flag points (`gluedRel_flagPoints`).  It is also exactly the
-  equivalence closure `Relation.EqvGen` of the generating relation (`gluedRel_iff_eqvGen`).
+  simply "the two points are equal, or they are the two points of one flag pair"; this is the
+  content of the definition of `gluedRel` itself.  It is symmetric and transitive
+  (`gluedRel_symm`, `gluedRel_trans`), hence an equivalence relation (`gluedRel_equivalence`), and
+  it relates two points only when they are equal or when both of them are flag points
+  (`gluedRel_flagPoints`).  It is also exactly the equivalence closure `Relation.EqvGen` of the
+  generating relation (`gluedRel_iff_eqvGen`).
 * `gluedCurve` is the quotient of the disjoint union by that relation: the underlying space of
   the nodal curve.  It is the `Quotient` of the disjoint union by the setoid `gluedRelSetoid`,
-  with the quotient topology: `isOpen_iff_preimage` states that a subset of the glued curve is
-  open exactly when its inverse image under the quotient map `gluedCurveQuotientMap` is open in
-  the disjoint union.  The quotient map is continuous (`continuous_gluedCurveQuotientMap`) and
-  identifies two points exactly when the generated relation relates them
-  (`gluedRel_iff_quotientMk_eq`).  The glued space is compact whenever the normalization
-  components are compact (`instCompactSpaceGluedCurve`).
+  with the quotient topology: a subset of the glued curve is open exactly when its inverse image
+  under the quotient map `Quotient.mk (gluedRelSetoid d)` is open in the disjoint union
+  (Mathlib's `isOpen_coinduced` for the coinduced quotient topology).  The quotient map is
+  continuous (`continuous_quotient_mk'`) and identifies two points exactly when the generated
+  relation relates them (`Quotient.eq`).  The glued space is compact whenever the normalization
+  components are compact (`isCompact_gluedCurve`).
 * `nodeSet` is the image of the flag points in the glued curve: the singular locus of the curve.
   It is the image of the flag pairs (`mem_nodeSet`, `nodeSet_eq_image_nodeOfFlag`), it is finite
   (`nodeSet_finite`) and it is closed (`isClosed_nodeSet`).  The map `nodeOfFlag` sends a flag
@@ -70,15 +73,16 @@ The model is the following.
   (`isOpen_smoothLocus`).  The quotient map restricts to a homeomorphism from the disjoint union
   of the normalization components minus their flag points onto the smooth locus
   (`gluedCurveQuotientMapOnSmooth_isHomeomorph`): the restriction is injective away from the
-  flag points (`gluedCurveQuotientMap_injective_of_not_flagPoint`), and it is continuous and
-  open.
+  flag points (`gluedCurveQuotientMap_injective_of_not_flagPoint`), and it is a quotient map
+  because it is the restriction of the quotient map to the preimage of the open smooth locus.
 
 **Scope.** This file is the topological, pre-hypersurface-chart part of the quoted sentence.  What
 is proved is:
 
 * the glued space is built: it is the quotient of the disjoint union of the normalization
   components by the generated relation, endowed with the quotient topology; the quotient map is
-  continuous; and the glued space is compact when the normalization components are;
+  continuous; and the glued space is compact when the normalization components are
+  (`isCompact_gluedCurve`);
 * the generated relation is closed (`gluedRel_isClosed`);
 * the node set, the image of the flag pairs, is closed, and the quotient map identifies the
   disjoint union minus the flag points homeomorphically with the complement of the node set;
@@ -91,9 +95,9 @@ What is **not** proved here:
 * the **Hausdorff** part of the quoted sentence: the glued space is not shown to be Hausdorff.
   Its equivalence classes are finite -- the class of a point that is not a flag point is a
   singleton, and the class of a flag point is the pair of points of its flag pair
-  (`gluedRel_iff`) -- but the passage from finiteness of the classes, closedness of the
-  quotient map and normality of the disjoint union to the Hausdorff property of the quotient is
-  not carried out here.
+  (the content of the definition of `gluedRel`) -- but the passage from finiteness of the
+  classes, closedness of the quotient map and normality of the disjoint union to the Hausdorff
+  property of the quotient is not carried out here.
 * the **biholomorphic** refinement of "the complement maps locally biholomorphic": the glued
   space carries no complex structure on its smooth locus, so there is nothing for a biholomorphism
   to be a morphism between.
@@ -222,7 +226,6 @@ theorem flagRel_symm (d : NodalCurve ι Flag X) {x y : ComponentUnion X} (h : fl
   rcases h with ⟨f, (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩)⟩
   · exact ⟨f, Or.inr ⟨rfl, rfl⟩⟩
   · exact ⟨f, Or.inl ⟨rfl, rfl⟩⟩
-
 /-- Two flag pairs are *adjacent* when they share a point of the disjoint union: the point at
 which one of them is glued is the point at which the other one is glued. -/
 def flagAdjacent (d : NodalCurve ι Flag X) (f g : Flag) : Prop :=
@@ -236,11 +239,7 @@ theorem flagAdjacent_iff (d : NodalCurve ι Flag X) (f g : Flag) :
   constructor
   · intro h
     obtain ⟨z, hz₁, hz₂⟩ := h
-    rcases hz₁ with hz₁ | hz₁ <;> rcases hz₂ with hz₂ | hz₂
-    · exact fstPoint_injective d f g (hz₁.symm.trans hz₂)
-    · exact absurd (hz₁.symm.trans hz₂) (fstPoint_ne_sndPoint d f g)
-    · exact absurd (hz₁.symm.trans hz₂) (sndPoint_ne_fstPoint d f g)
-    · exact sndPoint_injective d f g (hz₁.symm.trans hz₂)
+    exact eq_of_flagPoint_mem d hz₁ hz₂
   · intro h
     subst h
     exact ⟨fstPoint d f, Or.inl rfl, Or.inl rfl⟩
@@ -270,60 +269,52 @@ theorem flagRel_chain (d : NodalCurve ι Flag X) {x y z : ComponentUnion X}
     (h₁ : flagRel d x y) (h₂ : flagRel d y z) : x = z := by
   obtain ⟨f, hf⟩ := h₁
   obtain ⟨g, hg⟩ := h₂
-  rcases hf with hf | hf <;> rcases hg with hg | hg
-  · obtain ⟨hxf, hys⟩ := hf
-    obtain ⟨hyg, hzs⟩ := hg
-    exact absurd (hys.symm.trans hyg) (sndPoint_ne_fstPoint d f g)
-  · obtain ⟨hxf, hys⟩ := hf
-    obtain ⟨hys', hzg⟩ := hg
-    have hfg : f = g := sndPoint_injective d f g (hys.symm.trans hys')
-    subst hfg
-    exact hxf.trans hzg.symm
-  · obtain ⟨hxs, hyf⟩ := hf
-    obtain ⟨hyg, hzs⟩ := hg
-    have hfg : f = g := fstPoint_injective d f g (hyf.symm.trans hyg)
-    subst hfg
-    exact hxs.trans hzs.symm
-  · obtain ⟨hxs, hyf⟩ := hf
-    obtain ⟨hys', hzg⟩ := hg
-    exact absurd (hyf.symm.trans hys') (fstPoint_ne_sndPoint d f g)
+  rcases hf with ⟨hxf, hyf⟩ | ⟨hxf, hyf⟩
+  · rcases hg with ⟨hyg, hzg⟩ | ⟨hyg, hzg⟩
+    · exact absurd (hyf.symm.trans hyg) (sndPoint_ne_fstPoint d f g)
+    · have hfg : f = g := eq_of_flagPoint_mem d (p := y) (Or.inr hyf) (Or.inr hyg)
+      exact hxf.trans ((congrArg (fun f => fstPoint d f) hfg).trans hzg.symm)
+  · rcases hg with ⟨hyg, hzg⟩ | ⟨hyg, hzg⟩
+    · have hfg : f = g := eq_of_flagPoint_mem d (p := y) (Or.inl hyf) (Or.inl hyg)
+      exact hxf.trans ((congrArg (fun f => sndPoint d f) hfg).trans hzg.symm)
+    · exact absurd (hyf.symm.trans hyg) (fstPoint_ne_sndPoint d f g)
 
 /-- **The equivalence relation generated by the flag pairs.**  Two points of the disjoint union are
-glued together when they are equal, or when they are the two points of one flag pair.  Because the
-flag points are pairwise distinct, no chain of flag pairs has more than one step, so this is
-exactly the relation generated by the flag pairs. -/
+glued together exactly when they are equal, or when they are the two points of one flag pair.
+Because the flag points are pairwise distinct, no chain of flag pairs has more than one step, so
+this is exactly the relation generated by the flag pairs. -/
 def gluedRel (d : NodalCurve ι Flag X) (x y : ComponentUnion X) : Prop :=
-  x = y ∨ flagRel d x y
+  x = y ∨ ∃ f : Flag,
+    (x = fstPoint d f ∧ y = sndPoint d f) ∨ (x = sndPoint d f ∧ y = fstPoint d f)
 
 /-- The glued relation is symmetric. -/
 theorem gluedRel_symm (d : NodalCurve ι Flag X) {x y : ComponentUnion X} (h : gluedRel d x y) :
     gluedRel d y x := by
   rcases h with h | h
   · exact Or.inl h.symm
-  · exact Or.inr (flagRel_symm d h)
+  · rcases h with ⟨f, h | h⟩
+    · exact Or.inr ⟨f, Or.inr ⟨h.2, h.1⟩⟩
+    · exact Or.inr ⟨f, Or.inl ⟨h.2, h.1⟩⟩
 
 /-- The glued relation is transitive. -/
 theorem gluedRel_trans (d : NodalCurve ι Flag X) {x y z : ComponentUnion X}
     (h₁ : gluedRel d x y) (h₂ : gluedRel d y z) : gluedRel d x z := by
-  rcases h₁ with h₁ | h₁
-  · rcases h₂ with h₂ | h₂
+  rcases h₁ with h₁ | ⟨f, hf⟩
+  · rcases h₂ with h₂ | ⟨g, hg⟩
     · exact Or.inl (h₁.trans h₂)
-    · exact Or.inr (h₁.symm ▸ h₂)
-  · rcases h₂ with h₂ | h₂
-    · exact Or.inr (h₂ ▸ h₁)
-    · exact Or.inl (flagRel_chain d h₁ h₂)
+    · rcases hg with hg | hg
+      · exact Or.inr ⟨g, Or.inl ⟨h₁.symm ▸ hg.1, hg.2⟩⟩
+      · exact Or.inr ⟨g, Or.inr ⟨h₁.symm ▸ hg.1, hg.2⟩⟩
+  · rcases h₂ with h₂ | ⟨g, hg⟩
+    · rcases hf with hf | hf
+      · exact Or.inr ⟨f, Or.inl ⟨hf.1, h₂ ▸ hf.2⟩⟩
+      · exact Or.inr ⟨f, Or.inr ⟨hf.1, h₂ ▸ hf.2⟩⟩
+    · exact Or.inl (flagRel_chain d ⟨f, hf⟩ ⟨g, hg⟩)
 
 /-- The generating relation is contained in the glued relation. -/
 theorem flagRel_le_gluedRel (d : NodalCurve ι Flag X) {x y : ComponentUnion X}
     (h : flagRel d x y) : gluedRel d x y :=
   Or.inr h
-
-/-- **The generated relation.**  Two points of the disjoint union are glued together exactly when
-they are equal or when they are the two points of one flag pair. -/
-theorem gluedRel_iff (d : NodalCurve ι Flag X) (x y : ComponentUnion X) :
-    gluedRel d x y ↔ x = y ∨ ∃ f : Flag,
-      (x = fstPoint d f ∧ y = sndPoint d f) ∨ (x = sndPoint d f ∧ y = fstPoint d f) := by
-  rw [gluedRel, flagRel]
 
 /-- **The relation between two flag points.**  Two flag points of the glued curve are identified
 exactly when they belong to the same flag pair. -/
@@ -354,16 +345,6 @@ theorem gluedRel_of_flagPoints (d : NodalCurve ι Flag X) {f g : Flag} {p q : Co
     · exact Or.inr ⟨f, Or.inr ⟨hp, hq⟩⟩
     · exact Or.inl (hp.trans hq.symm)
 
-/-- The glued relation is an equivalence relation. -/
-instance instIsEquivGluedRel : IsEquiv (ComponentUnion X) (gluedRel d) where
-  refl := fun _ => Or.inl rfl
-  symm := by
-    intro x y hxy
-    exact gluedRel_symm d hxy
-  trans := by
-    intro x y z h₁ h₂
-    exact gluedRel_trans d h₁ h₂
-
 /-- **The generated relation is the equivalence closure of the generating relation.**  The
 equivalence relation `gluedRel` generated by the flag pairs is exactly `Relation.EqvGen` of the
 generating relation `flagRel`: two points of the disjoint union are glued together precisely when
@@ -378,73 +359,10 @@ theorem gluedRel_iff_eqvGen (d : NodalCurve ι Flag X) (x y : ComponentUnion X) 
     · exact Relation.EqvGen.rel _ _ h
   · intro h
     induction h with
-    | rel a b hr => exact Or.inr hr
+    | rel a b hr => exact flagRel_le_gluedRel d hr
     | refl => exact Or.inl rfl
     | symm a b _ ih => exact gluedRel_symm d ih
     | trans a b c _ _ ih₁ ih₂ => exact gluedRel_trans d ih₁ ih₂
-
-/-- The disjoint union of Hausdorff spaces is Hausdorff. -/
-instance instT2SpaceComponentUnion [∀ i, TopologicalSpace (X i)] [∀ i, T2Space (X i)] :
-    T2Space (ComponentUnion X) := by
-  constructor
-  · intro x y hxy
-    rcases x with ⟨i, a⟩
-    rcases y with ⟨j, b⟩
-    by_cases hij : i = j
-    · subst hij
-      have hab : a ≠ b := by
-        intro hab
-        apply hxy
-        exact congrArg (Sigma.mk i) hab
-      obtain ⟨U, V, hU, hV, haU, hbV, hUV⟩ := t2_separation (X := X i) hab
-      have hUV' : ∀ ⦃a⦄, a ∈ U → a ∉ V := Set.disjoint_left.mp hUV
-      refine ⟨Sigma.mk i '' U, Sigma.mk i '' V, ?_, ?_, ?_, ?_, ?_⟩
-      · rw [isOpen_sigma_iff]
-        intro k
-        rcases eq_or_ne k i with rfl | hki
-        · rw [preimage_image_eq _ sigma_mk_injective]
-          exact hU
-        · rw [preimage_image_sigmaMk_of_ne hki]
-          exact isOpen_empty
-      · rw [isOpen_sigma_iff]
-        intro k
-        rcases eq_or_ne k i with rfl | hki
-        · rw [preimage_image_eq _ sigma_mk_injective]
-          exact hV
-        · rw [preimage_image_sigmaMk_of_ne hki]
-          exact isOpen_empty
-      · exact ⟨a, haU, rfl⟩
-      · exact ⟨b, hbV, rfl⟩
-      · refine Set.disjoint_left.2 fun a ha => ?_
-        rcases ha with ⟨u, hu, hzu⟩
-        refine fun hzv => ?_
-        rcases hzv with ⟨v, hv, hvu⟩
-        have huv : u = v := eq_of_heq (Sigma.mk.inj (hzu.trans hvu.symm)).2
-        exact hUV' hu (huv ▸ hv)
-    · refine ⟨Sigma.mk i '' (Set.univ : Set (X i)), Sigma.mk j '' (Set.univ : Set (X j)),
-        ?_, ?_, ?_, ?_, ?_⟩
-      · rw [isOpen_sigma_iff]
-        intro k
-        rcases eq_or_ne k i with rfl | hki
-        · rw [preimage_image_eq _ sigma_mk_injective]
-          exact isOpen_univ
-        · rw [preimage_image_sigmaMk_of_ne hki]
-          exact isOpen_empty
-      · rw [isOpen_sigma_iff]
-        intro k
-        rcases eq_or_ne k j with rfl | hkj
-        · rw [preimage_image_eq _ sigma_mk_injective]
-          exact isOpen_univ
-        · rw [preimage_image_sigmaMk_of_ne hkj]
-          exact isOpen_empty
-      · exact ⟨a, Set.mem_univ _, rfl⟩
-      · exact ⟨b, Set.mem_univ _, rfl⟩
-      · refine Set.disjoint_left.2 fun a ha => ?_
-        rcases ha with ⟨u, hu, hzu⟩
-        refine fun hzv => ?_
-        rcases hzv with ⟨v, hv, hvu⟩
-        have huv : i = j := (Sigma.mk.inj (hzu.trans hvu.symm)).1
-        exact absurd huv hij
 
 /-- The disjoint union of finitely many compact spaces is compact. -/
 instance instCompactSpaceComponentUnion [∀ i, TopologicalSpace (X i)] [Finite ι]
@@ -557,28 +475,11 @@ quotient topology, i.e. the finest topology making the quotient map continuous. 
 abbrev gluedCurve (d : NodalCurve ι Flag X) :=
   Quotient (gluedRelSetoid d)
 
-/-- The quotient map from the disjoint union of the normalization components to the glued
-curve. -/
-def gluedCurveQuotientMap (d : NodalCurve ι Flag X) : ComponentUnion X → gluedCurve d :=
-  Quotient.mk (gluedRelSetoid d)
-
-/-- The quotient map is continuous. -/
-theorem continuous_gluedCurveQuotientMap (d : NodalCurve ι Flag X)
-    [∀ i, TopologicalSpace (X i)] : Continuous (gluedCurveQuotientMap d) :=
-  continuous_quotient_mk' (s := gluedRelSetoid d)
-
-/-- **The quotient topology.**  A subset of the glued curve is open exactly when its inverse image
-under the quotient map is open in the disjoint union of the normalization components. -/
-theorem isOpen_iff_preimage {U : Set (gluedCurve d)} [∀ i, TopologicalSpace (X i)] :
-    IsOpen U ↔ IsOpen (gluedCurveQuotientMap d ⁻¹' U) := by
-  rw [isOpen_coinduced]
-  rfl
-
 /-- **The glued space is compact.**  The quotient of a compact space is compact, so the glued curve
 is compact as soon as the finitely many normalization components are compact. -/
-instance instCompactSpaceGluedCurve (d : NodalCurve ι Flag X) [∀ i, TopologicalSpace (X i)]
-    [Finite ι] [∀ i, CompactSpace (X i)] : CompactSpace (gluedCurve d) :=
-  Quotient.compactSpace (s := gluedRelSetoid d)
+theorem isCompact_gluedCurve (d : NodalCurve ι Flag X) [∀ i, TopologicalSpace (X i)]
+    [Finite ι] [∀ i, CompactSpace (X i)] : IsCompact (Set.univ : Set (gluedCurve d)) :=
+  isCompact_univ
 
 /-- The generated relation relates two points of the disjoint union only when they are equal or
 when both of them are flag points. -/
@@ -592,27 +493,17 @@ theorem gluedRel_flagPoints (d : NodalCurve ι Flag X) {a b : ComponentUnion X}
     · exact Or.inr ⟨(mem_flagPointSet d a).mpr ⟨f, Or.inr ha⟩,
         (mem_flagPointSet d b).mpr ⟨f, Or.inl hb⟩⟩
 
-/-- The quotient map identifies two points of the disjoint union exactly when the generated
-relation relates them. -/
-theorem gluedRel_iff_quotientMk_eq (d : NodalCurve ι Flag X) {a b : ComponentUnion X} :
-    gluedCurveQuotientMap d a = gluedCurveQuotientMap d b ↔ gluedRel d a b := by
-  constructor
-  · intro h
-    exact (Quotient.eq (r := gluedRelSetoid d) (x := a) (y := b)).mp h
-  · intro h
-    exact (Quotient.eq (r := gluedRelSetoid d) (x := a) (y := b)).mpr h
-
 /-- **The node set.**  The image of the flag points in the glued curve: the singular locus of the
 nodal curve. -/
 def nodeSet (d : NodalCurve ι Flag X) : Set (gluedCurve d) :=
-  gluedCurveQuotientMap d '' flagPointSet d
+  Quotient.mk (gluedRelSetoid d) '' flagPointSet d
 
 /-- The node set is the image of the flag pairs: a point of the glued curve is a node exactly when
 it is the image of one of the two points of a flag pair. -/
 theorem mem_nodeSet (d : NodalCurve ι Flag X) {q : gluedCurve d} :
     q ∈ nodeSet d ↔ ∃ f : Flag,
-      q = gluedCurveQuotientMap d (fstPoint d f) ∨
-        q = gluedCurveQuotientMap d (sndPoint d f) := by
+      q = Quotient.mk (gluedRelSetoid d) (fstPoint d f) ∨
+        q = Quotient.mk (gluedRelSetoid d) (sndPoint d f) := by
   rw [nodeSet, Set.mem_image]
   constructor
   · rintro ⟨x, hx, hqx⟩
@@ -626,7 +517,7 @@ theorem mem_nodeSet (d : NodalCurve ι Flag X) {q : gluedCurve d} :
 
 /-- The node point of a flag pair: the image of its first point in the glued curve. -/
 def nodeOfFlag (d : NodalCurve ι Flag X) (f : Flag) : gluedCurve d :=
-  gluedCurveQuotientMap d (fstPoint d f)
+  Quotient.mk (gluedRelSetoid d) (fstPoint d f)
 
 /-- **The fibres of the flag-pair map.**  Two flag pairs determine the same node of the glued
 curve exactly when they are the same flag pair, so every fibre of `nodeOfFlag` is a singleton. -/
@@ -635,7 +526,7 @@ theorem nodeOfFlag_eq_iff (d : NodalCurve ι Flag X) (f g : Flag) :
   constructor
   · intro h
     have h' : gluedRel d (fstPoint d f) (fstPoint d g) :=
-      (gluedRel_iff_quotientMk_eq d).mp h
+      (Quotient.eq (r := gluedRelSetoid d)).mp h
     rcases h' with h' | ⟨c, hc⟩
     · exact fstPoint_injective d f g h'
     · rcases hc with ⟨h1, h2⟩ | ⟨h1, h2⟩
@@ -666,11 +557,11 @@ theorem nodeSet_eq_image_nodeOfFlag (d : NodalCurve ι Flag X) :
     have hglue : gluedRel d (fstPoint d f) (sndPoint d f) :=
       (gluedRel_of_flagPoints d (f := f) (g := f) (Or.inl rfl) (Or.inr rfl)).mpr rfl
     rcases hxf with hxf | hxf
-    · change gluedCurveQuotientMap d (fstPoint d f) = q
+    · change Quotient.mk (gluedRelSetoid d) (fstPoint d f) = q
       rw [← hxf]
       exact hqx
-    · change gluedCurveQuotientMap d (fstPoint d f) = q
-      rw [← ((gluedRel_iff_quotientMk_eq d).mpr (gluedRel_symm d hglue))]
+    · change Quotient.mk (gluedRelSetoid d) (fstPoint d f) = q
+      rw [← ((Quotient.eq (r := gluedRelSetoid d)).mpr (gluedRel_symm d hglue))]
       rw [← hxf]
       exact hqx
   · intro hq
@@ -700,26 +591,36 @@ theorem mem_nodeSet_of_nodeOfFlag (d : NodalCurve ι Flag X) (f : Flag) :
 theorem nodeSet_finite [Finite Flag] : (nodeSet d).Finite :=
   (flagPointSet_finite d).image _
 
+/-- **The preimage of the node set.**  The quotient map sends a point of the disjoint union to a
+node exactly when that point is a flag point: the preimage of the node set is the flag point set.
+-/
+theorem preimage_nodeSet (d : NodalCurve ι Flag X) :
+    (Quotient.mk (gluedRelSetoid d)) ⁻¹' nodeSet d = flagPointSet d := by
+  ext x
+  constructor
+  · intro hx
+    have hx' : Quotient.mk (gluedRelSetoid d) x ∈ nodeSet d := hx
+    rw [nodeSet] at hx'
+    obtain ⟨y, hyF, hqy⟩ :=
+      (Set.mem_image (Quotient.mk (gluedRelSetoid d)) (flagPointSet d) _).mp hx'
+    have hrel : gluedRel d y x := (Quotient.eq (r := gluedRelSetoid d)).mp hqy
+    rcases gluedRel_flagPoints d hrel with heq | ⟨_, hxF⟩
+    · exact heq ▸ hyF
+    · exact hxF
+  · intro hx
+    exact ⟨x, hx, rfl⟩
+
 /-- **The node set is closed.**  The node set of the glued curve is a closed subset of it, so the
 smooth locus, its complement, is open. -/
 theorem isClosed_nodeSet (d : NodalCurve ι Flag X) [∀ i, TopologicalSpace (X i)]
     [∀ i, T2Space (X i)] [Finite Flag] : IsClosed (nodeSet d) := by
   refine ⟨?_⟩
-  rw [isOpen_iff_preimage, Set.preimage_compl]
-  have hpre : gluedCurveQuotientMap d ⁻¹' nodeSet d = flagPointSet d := by
-    ext x
-    constructor
-    · intro hx
-      obtain ⟨y, hyF, hqy⟩ : ∃ y ∈ flagPointSet d, gluedCurveQuotientMap d y
-          = gluedCurveQuotientMap d x := by
-        simpa [nodeSet] using hx
-      have hrel : gluedRel d y x := (gluedRel_iff_quotientMk_eq d).mp hqy
-      rcases (gluedRel_flagPoints d hrel) with heq | ⟨_, hxF⟩
-      · exact heq ▸ hyF
-      · exact hxF
-    · intro hx
-      exact ⟨x, hx, rfl⟩
-  rw [hpre]
+  have hiff : IsOpen ((nodeSet d)ᶜ)
+      ↔ IsOpen ((Quotient.mk (gluedRelSetoid d)) ⁻¹' ((nodeSet d)ᶜ)) := by
+    rw [isOpen_coinduced]
+    rfl
+  rw [hiff]
+  rw [Set.preimage_compl, preimage_nodeSet]
   exact (flagPointSet_finite d).isClosed.isOpen_compl
 
 /-- **The smooth locus.**  The complement of the node set in the glued curve: the points at which
@@ -731,99 +632,59 @@ theorem isOpen_smoothLocus (d : NodalCurve ι Flag X) [∀ i, TopologicalSpace (
     [∀ i, T2Space (X i)] [Finite Flag] : IsOpen (smoothLocus d) :=
   (isClosed_nodeSet d).isOpen_compl
 
+/-- **The preimage of the smooth locus.**  The quotient map sends a point of the disjoint union to
+a smooth point exactly when that point is not a flag point: the preimage of the smooth locus is
+the disjoint union of the normalization components minus the flag points. -/
+theorem preimage_smoothLocus (d : NodalCurve ι Flag X) :
+    (Quotient.mk (gluedRelSetoid d)) ⁻¹' smoothLocus d = (flagPointSet d)ᶜ := by
+  rw [smoothLocus, Set.preimage_compl, preimage_nodeSet]
+
 /-- A point of the disjoint union that is not a flag point is not mapped to a node. -/
 theorem not_mem_nodeSet_of_not_mem_flagPointSet {x : ComponentUnion X}
-    (hx : x ∉ flagPointSet d) : gluedCurveQuotientMap d x ∉ nodeSet d := by
+    (hx : x ∉ flagPointSet d) : Quotient.mk (gluedRelSetoid d) x ∉ nodeSet d := by
   intro hx'
-  obtain ⟨y, hyF, hqy⟩ : ∃ y ∈ flagPointSet d, gluedCurveQuotientMap d y
-      = gluedCurveQuotientMap d x := by
-    simpa [nodeSet] using hx'
-  have hrel : gluedRel d y x := (gluedRel_iff_quotientMk_eq d).mp hqy
-  rcases (gluedRel_flagPoints d hrel) with heq | ⟨_, hxF⟩
-  · exact hx (heq ▸ hyF)
-  · exact hx hxF
+  have hx'' : x ∈ (Quotient.mk (gluedRelSetoid d)) ⁻¹' nodeSet d := hx'
+  rw [preimage_nodeSet] at hx''
+  exact hx hx''
 
 /-- The quotient map is injective away from the flag points. -/
 theorem gluedCurveQuotientMap_injective_of_not_flagPoint {x y : ComponentUnion X}
-    (hx : x ∉ flagPointSet d) (h : gluedCurveQuotientMap d x = gluedCurveQuotientMap d y) :
+    (hx : x ∉ flagPointSet d)
+    (h : Quotient.mk (gluedRelSetoid d) x = Quotient.mk (gluedRelSetoid d) y) :
     x = y := by
-  have hrel : gluedRel d x y := (gluedRel_iff_quotientMk_eq d).mp h
-  rcases (gluedRel_flagPoints d hrel) with heq | ⟨hxF, _⟩
+  have hrel : gluedRel d x y := (Quotient.eq (r := gluedRelSetoid d)).mp h
+  rcases gluedRel_flagPoints d hrel with heq | ⟨hxF, _⟩
   · exact heq
   · exact absurd hxF hx
 
-/-- The quotient map, restricted to the smooth locus of the disjoint union of the normalization
-components, i.e. to the points that are not flag points. -/
-def gluedCurveQuotientMapOnSmooth (d : NodalCurve ι Flag X)
-    (x : {x : ComponentUnion X | x ∉ flagPointSet d}) : {q : gluedCurve d | q ∉ nodeSet d} :=
-  ⟨gluedCurveQuotientMap d x.1, not_mem_nodeSet_of_not_mem_flagPointSet d x.2⟩
+/-- The quotient map, restricted to the smooth locus of the glued curve, i.e. to the preimage of
+the smooth locus under the quotient map: by `preimage_smoothLocus`, the points of the disjoint
+union of the normalization components that are not flag points. -/
+def gluedCurveQuotientMapOnSmooth (d : NodalCurve ι Flag X) :
+    (Quotient.mk (gluedRelSetoid d)) ⁻¹' smoothLocus d → smoothLocus d :=
+  (smoothLocus d).restrictPreimage (Quotient.mk (gluedRelSetoid d))
 
 /-- **The quotient map is a homeomorphism of the smooth loci.**  The disjoint union of the
 normalization components minus the flag points is homeomorphic to the smooth locus of the glued
 curve, the complement of the node set; the homeomorphism is the restriction of the quotient map.
-It is a bijection because the quotient map is injective away from the flag points, it is continuous
-because the quotient map is, and it is open because the inverse image of the image of an open set
-of the smooth locus under the quotient map is that very open set. -/
+It is a quotient map, being the restriction of the quotient map to the preimage of the open smooth
+locus, and it is injective away from the flag points
+(`gluedCurveQuotientMap_injective_of_not_flagPoint`), so it is a homeomorphism. -/
 theorem gluedCurveQuotientMapOnSmooth_isHomeomorph (d : NodalCurve ι Flag X)
     [∀ i, TopologicalSpace (X i)] [∀ i, T2Space (X i)] [Finite Flag] :
     IsHomeomorph (gluedCurveQuotientMapOnSmooth d) := by
-  have hS : IsOpen {x : ComponentUnion X | x ∉ flagPointSet d} :=
-    (flagPointSet_finite d).isClosed.isOpen_compl
-  refine ⟨?_, ?_, ?_⟩
-  · have hcont : Continuous (fun x : {x : ComponentUnion X | x ∉ flagPointSet d} =>
-        gluedCurveQuotientMap d x.1) :=
-      Continuous.comp (continuous_gluedCurveQuotientMap d) continuous_subtype_val
-    exact Continuous.subtype_mk hcont (fun x => not_mem_nodeSet_of_not_mem_flagPointSet d x.2)
-  · intro s hs
-    have hopen_α : IsOpen (s : Set (ComponentUnion X)) := by
-      have h := hS.isOpenEmbedding_subtypeVal.isOpenMap s hs
-      exact h
-    have hq : IsOpen (gluedCurveQuotientMap d '' (s : Set (ComponentUnion X))) := by
-      rw [isOpen_iff_preimage]
-      have hpre : gluedCurveQuotientMap d ⁻¹' (gluedCurveQuotientMap d ''
-          (s : Set (ComponentUnion X))) = (s : Set (ComponentUnion X)) := by
-        ext x
-        constructor
-        · intro hx
-          obtain ⟨z, hz, hqz⟩ := hx
-          obtain ⟨w, hw, hzw⟩ := hz
-          have hnotF : w.1 ∉ flagPointSet d := w.2
-          have hrel : gluedRel d w.1 x := (gluedRel_iff_quotientMk_eq d).mp (hzw ▸ hqz)
-          rcases (gluedRel_flagPoints d hrel) with heq | ⟨hwF, _⟩
-          · exact ⟨w, hw, heq⟩
-          · exact absurd hwF hnotF
-        · intro hx
-          exact ⟨x, hx, rfl⟩
-      rw [hpre]
-      exact hopen_α
-    refine (isOpen_induced_iff
-      (f := (Subtype.val : {q : gluedCurve d | q ∉ nodeSet d} → gluedCurve d))).2
-      ⟨gluedCurveQuotientMap d '' (s : Set (ComponentUnion X)), hq, ?_⟩
-    ext y
-    constructor
-    · intro hy
-      obtain ⟨z, hz, hqz⟩ := hy
-      obtain ⟨w, hw, hzw⟩ := hz
-      refine ⟨w, hw, ?_⟩
-      apply Subtype.ext
-      exact (congrArg (fun t => gluedCurveQuotientMap d t) hzw).trans hqz
-    · intro hy
-      obtain ⟨w, hw, hwf⟩ := hy
-      refine ⟨w.1, ⟨w, hw, rfl⟩, ?_⟩
-      exact congrArg Subtype.val hwf
-  · refine ⟨?_, ?_⟩
-    · intro x y hxy
-      have hxy' : gluedCurveQuotientMap d x.1 = gluedCurveQuotientMap d y.1 :=
-        congrArg Subtype.val hxy
-      exact Subtype.ext (gluedCurveQuotientMap_injective_of_not_flagPoint d x.2 hxy')
-    · intro y
-      obtain ⟨x, hx⟩ := @Quotient.exists_rep _ (gluedRelSetoid d) y.1
-      have hnotF : x ∉ flagPointSet d := by
-        intro hxF
-        apply y.2
-        exact ⟨x, hxF, hx⟩
-      refine ⟨⟨x, hnotF⟩, ?_⟩
-      apply Subtype.ext
-      exact hx
+  refine isHomeomorph_iff_isQuotientMap_injective.2 ⟨?_, ?_⟩
+  · exact Topology.IsQuotientMap.restrictPreimage_isOpen
+      (isQuotientMap_quotient_mk' (s := gluedRelSetoid d)) (isOpen_smoothLocus d)
+  · intro x y hxy
+    have hxy' : Quotient.mk (gluedRelSetoid d) x.1 = Quotient.mk (gluedRelSetoid d) y.1 :=
+      congrArg Subtype.val hxy
+    have hxnotF : x.1 ∉ flagPointSet d := by
+      have hxmem : x.1 ∈ (Quotient.mk (gluedRelSetoid d)) ⁻¹' smoothLocus d := x.2
+      have hxmem' : x.1 ∈ (flagPointSet d)ᶜ := by
+        rw [← preimage_smoothLocus d]
+        exact hxmem
+      exact hxmem'
+    exact Subtype.ext (gluedCurveQuotientMap_injective_of_not_flagPoint d hxnotF hxy')
 
 end TauCeti.ComplexCurveModuli
