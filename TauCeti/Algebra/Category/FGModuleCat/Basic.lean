@@ -66,8 +66,9 @@ theorem _root_.FGModuleCat.braiding_hom_hom_hom {R : Type u} [CommRing R]
 
 open MonoidalCategory in
 /-- The linear map underlying the right whiskering `f ▷ U` of finitely generated modules over a
-commutative ring is `LinearMap.rTensor U f`. -/
-@[simp]
+commutative ring is `LinearMap.rTensor U f`. Not a simp lemma: simp first unfolds `f ▷ U` to the
+whiskering in `ModuleCat` via `ObjectProperty.whiskerRight_def`, and Mathlib's
+`ModuleCat.hom_whiskerRight` is likewise not a simp lemma. -/
 theorem _root_.FGModuleCat.whiskerRight_hom_hom {R : Type u} [CommRing R]
     {V W : FGModuleCat.{u} R} (f : V ⟶ W) (U : FGModuleCat.{u} R) :
     (f ▷ U).hom.hom = f.hom.hom.rTensor U :=
