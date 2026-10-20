@@ -69,7 +69,8 @@ variable (k : ℕ) (α : ℝ≥0) (E : Type u) (F : Type v)
 /-- Shortcut instance for bounded continuous fields of `n`-multilinear maps. Without it, instance
 search for the module structure of `ℓ¹` products of these fields indexed by the order `n` exceeds
 the default synthesis depth. It is local so that the instance path for these fields is unchanged
-outside this file, and no public statement below mentions it. -/
+outside this file, and no public statement below mentions it: only definition bodies and proofs
+use it. -/
 local instance CkHolderSpace.instNormedAddCommGroupBoundedContinuousFunction (n : ℕ) :
     NormedAddCommGroup (E →ᵇ (E [×n]→L[ℝ] F)) :=
   inferInstance
@@ -435,26 +436,22 @@ theorem iteratedFDerivHolder_smul (c : ℝ) (f : CkHolderSpace k α E F) :
 @[simp]
 theorem coe_zero : ⇑(0 : CkHolderSpace k α E F) = 0 := by
   ext x
-  -- The bounded continuous field lemma is applied by `rw`: `simp` does not see through the
-  -- shortcut instance `instNormedAddCommGroupBoundedContinuousFunction`.
-  simp only [← toFun_eq_coe, toFun, iteratedFDeriv_zero, Pi.zero_apply]
-  rw [BoundedContinuousFunction.coe_zero]
+  simp only [← toFun_eq_coe, toFun, iteratedFDeriv_zero, Pi.zero_apply,
+    BoundedContinuousFunction.coe_zero]
   simp
 
 @[simp]
 theorem coe_add (f g : CkHolderSpace k α E F) : ⇑(f + g) = f + g := by
   ext x
-  -- As in `coe_zero`, the bounded continuous field lemma is applied by `rw`.
-  simp only [← toFun_eq_coe, toFun, iteratedFDeriv_add, Pi.add_apply]
-  rw [BoundedContinuousFunction.add_apply]
+  simp only [← toFun_eq_coe, toFun, iteratedFDeriv_add, Pi.add_apply,
+    BoundedContinuousFunction.add_apply]
   simp
 
 @[simp]
 theorem coe_smul (c : ℝ) (f : CkHolderSpace k α E F) : ⇑(c • f) = c • ⇑f := by
   ext x
-  -- As in `coe_zero`, the bounded continuous field lemma is applied by `rw`.
-  simp only [← toFun_eq_coe, toFun, iteratedFDeriv_smul, Pi.smul_apply]
-  rw [BoundedContinuousFunction.smul_apply]
+  simp only [← toFun_eq_coe, toFun, iteratedFDeriv_smul, Pi.smul_apply,
+    BoundedContinuousFunction.smul_apply]
   simp
 
 /-- A bounded continuous field built from a continuous function with a uniform bound. -/
