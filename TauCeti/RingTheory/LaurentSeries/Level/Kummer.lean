@@ -52,11 +52,11 @@ algebraically closed of characteristic zero.
 * `TauCeti.LaurentSeries.Level.galEquivRootsOfUnity_symm_apply`: the Galois automorphism attached
   to `η` is the Kummer automorphism attached to `η`.
 * `TauCeti.puiseuxField.levelKummer_levelParameter`: on the actual level, the Kummer automorphism
-  attached to `η` sends the level parameter `t ^ (1 / d)` to `η t ^ (1 / d)`.
+  attached to `η` sends `t ^ (1 / d)` to `η t ^ (1 / d)`.
 * `TauCeti.puiseuxField.coeff_levelKummer`: on the actual level, the Kummer automorphism attached
   to `η` multiplies the coefficient of `t ^ (k / d)` by `ηᵏ`.
 * `TauCeti.puiseuxField.levelKummer_inclusion`: restriction of Kummer automorphisms from level `m`
-  to level `n`, for `n ∣ m`, through the power map `TauCeti.rootsOfUnityPowOfDvd`.
+  to level `n`, for `n ∣ m`, along the power map `TauCeti.rootsOfUnityPowOfDvd`.
 -/
 
 public section
@@ -165,6 +165,17 @@ noncomputable def galEquivRootsOfUnity : Gal(Level K d/K⸨X⸩) ≃* rootsOfUni
         obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot K d
         exact ⟨ζ, (mem_primitiveRoots d.pos).mpr hζ⟩)).symm
 
+/-- A Galois automorphism `σ` multiplies the level parameter `u` by its root of unity. -/
+private theorem apply_parameter (σ : Gal(Level K d/K⸨X⸩)) :
+    σ (parameter K d) =
+      Algebra.algebraMap K⸨X⸩ (Level K d)
+          (Algebra.algebraMap K K⸨X⸩ ((galEquivRootsOfUnity K d σ : Kˣ) : K)) *
+        parameter K d := by
+  rw [← autEquivRootsOfUnity_smul (primitiveRoots_nonempty K d)
+      (irreducible_X_pow_sub_C_single K d) _ (parameter_pow K d), Subgroup.smul_def,
+    Units.smul_def, Algebra.smul_def, galEquivRootsOfUnity, MulEquiv.trans_apply,
+    rootsOfUnityEquivOfPrimitiveRoots_symm_apply]
+
 /-- The Galois automorphism attached to a root of unity `η` is the Kummer automorphism
 `u ↦ η u`. -/
 @[simp]
@@ -173,12 +184,8 @@ theorem galEquivRootsOfUnity_symm_apply (η : rootsOfUnity d K) :
   -- both automorphisms are determined by their value on the generator `u`
   apply AlgEquiv.coe_toAlgHom_injective
   apply (powerBasis K d).algHom_ext
-  -- Kummer theory: `σ u = (galEquivRootsOfUnity σ) • u`
   rw [powerBasis_gen, AlgEquiv.coe_toAlgHom, AlgEquiv.coe_toAlgHom, kummer_parameter,
-    ← autEquivRootsOfUnity_smul (primitiveRoots_nonempty K d) (irreducible_X_pow_sub_C_single K d)
-      _ (parameter_pow K d)]
-  simp [galEquivRootsOfUnity, Subgroup.smul_def, Units.smul_def, Algebra.smul_def,
-    val_rootsOfUnityEquivOfPrimitiveRoots_apply_coe]
+    apply_parameter, MulEquiv.apply_symm_apply]
 
 /-- The root of unity attached to the Kummer automorphism `u ↦ η u` is `η`. -/
 @[simp]
@@ -214,13 +221,14 @@ theorem levelKummer_levelEquiv (η : rootsOfUnity d K) (f : Level K d) :
     levelKummer K d η (levelEquiv K d f) = levelEquiv K d (Level.kummer K d η f) := by
   simp [levelKummer, AlgEquiv.autCongr_apply]
 
-/-- The Kummer automorphism attached to `η` multiplies the level parameter `t ^ (1 / d)` by `η`. -/
-@[simp]
+/-- The Kummer automorphism attached to `η` multiplies the actual level parameter `t ^ (1 / d)` by
+`η`. This is not a simp lemma: `simp` already computes it through `levelPowerBasis_gen`,
+`levelKummer_levelEquiv` and `TauCeti.LaurentSeries.Level.kummer_parameter`. -/
 theorem levelKummer_levelParameter (η : rootsOfUnity d K) :
     levelKummer K d η (levelParameter K d) =
       algebraMap K⸨X⸩ (level K d) (algebraMap K K⸨X⸩ ((η : Kˣ) : K)) * levelParameter K d := by
-  rw [levelParameter, levelPowerBasis_gen, levelKummer_levelEquiv, Level.kummer_parameter,
-    map_mul, AlgEquiv.commutes]
+  rw [levelParameter, levelPowerBasis_gen, levelKummer_levelEquiv, Level.kummer_parameter, map_mul,
+    AlgEquiv.commutes]
 
 /-- If `x` is the level-`d` image of the Laurent series `f`, then its image under the Kummer
 automorphism attached to `η` is the level-`d` image of the rescaled series `f (η X)`. -/
