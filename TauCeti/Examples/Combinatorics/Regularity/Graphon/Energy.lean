@@ -12,7 +12,7 @@ import Mathlib.Tactic.NormNum
 # Regression examples: graphon partition energy of finite graphs
 
 These downstream examples compute graphon partition energies of finite-graph graphons through the
-public bridge `graphonPartitionEnergy_finiteGraphGraphon`.
+public bridge `SimpleGraph.graphonPartitionEnergy_finiteGraphGraphon`.
 
 * The complete graph `K₂` over its singleton partition has energy `1 / 2`: the two off-diagonal
   blocks have density `1` and weight `1 / 4`, the diagonal blocks density `0`.
@@ -26,10 +26,10 @@ open Finset MeasureTheory
 
 namespace TauCeti.DenseGraphLimits
 
-example : graphonPartitionEnergy volume (cellPartition (⊥ : Finpartition (univ : Finset (Fin 2))))
-    (measurableSet_of_mem_cellPartition _) (finiteGraphGraphon (⊤ : SimpleGraph (Fin 2))) =
-      1 / 2 := by
-  rw [graphonPartitionEnergy_finiteGraphGraphon, SimpleGraph.weightedEnergy_def]
+example : graphonPartitionEnergy volume (⊥ : Finpartition (univ : Finset (Fin 2))).cellPartition
+    (Finpartition.measurableSet_of_mem_cellPartition _)
+      (finiteGraphGraphon (⊤ : SimpleGraph (Fin 2))) = 1 / 2 := by
+  rw [SimpleGraph.graphonPartitionEnergy_finiteGraphGraphon, SimpleGraph.weightedEnergy_def]
   simp only [Finpartition.parts_bot, sum_map, Fin.sum_univ_two, Function.Embedding.coeFn_mk,
     card_singleton, Fintype.card_fin]
   simp only [SimpleGraph.edgeDensity_def, card_singleton]
@@ -40,10 +40,10 @@ example : graphonPartitionEnergy volume (cellPartition (⊥ : Finpartition (univ
   norm_num
 
 example : graphonPartitionEnergy volume
-    (cellPartition (Finpartition.indiscrete (univ_nonempty (α := Fin 2)).ne_empty))
-    (measurableSet_of_mem_cellPartition _) (finiteGraphGraphon (⊤ : SimpleGraph (Fin 2))) =
-      1 / 4 := by
-  rw [graphonPartitionEnergy_finiteGraphGraphon, SimpleGraph.weightedEnergy_def]
+    (Finpartition.indiscrete (univ_nonempty (α := Fin 2)).ne_empty).cellPartition
+    (Finpartition.measurableSet_of_mem_cellPartition _)
+      (finiteGraphGraphon (⊤ : SimpleGraph (Fin 2))) = 1 / 4 := by
+  rw [SimpleGraph.graphonPartitionEnergy_finiteGraphGraphon, SimpleGraph.weightedEnergy_def]
   simp only [Finpartition.indiscrete_parts, sum_singleton, SimpleGraph.edgeDensity_def,
     Fintype.card_fin]
   rw [show #((⊤ : SimpleGraph (Fin 2)).interedges univ univ) = 2 by decide,
@@ -56,10 +56,11 @@ example :
         supIndep := (Finset.supIndep_pair (by decide)).2 (by decide)
         sup_parts := by decide
         bot_notMem := by decide }
-    graphonPartitionEnergy volume (cellPartition P) (measurableSet_of_mem_cellPartition _)
+    graphonPartitionEnergy volume P.cellPartition
+      (Finpartition.measurableSet_of_mem_cellPartition _)
       (finiteGraphGraphon (⊤ : SimpleGraph (Fin 3))) = 5 / 9 := by
   intro P
-  rw [graphonPartitionEnergy_finiteGraphGraphon, SimpleGraph.weightedEnergy_def]
+  rw [SimpleGraph.graphonPartitionEnergy_finiteGraphGraphon, SimpleGraph.weightedEnergy_def]
   simp only [P, sum_pair (show ({0} : Finset (Fin 3)) ≠ {1, 2} by decide),
     SimpleGraph.edgeDensity_def, Fintype.card_fin]
   rw [show #((⊤ : SimpleGraph (Fin 3)).interedges {0} {0}) = 0 by decide,

@@ -14,10 +14,10 @@ public import TauCeti.Combinatorics.DenseGraphLimits.StepGraphon.FiniteGraph.Bas
 
 For a graph `G` on `Fin m` with `0 < m`, the graphon `finiteGraphGraphon G` takes the adjacency
 value of `G` on the products of the `m` equal cells of the unit interval. A partition `P` of the
-vertices lifts to the partition `cellPartition P` of the unit interval whose parts are the unions
+vertices lifts to the partition `P.cellPartition` of the unit interval whose parts are the unions
 of the cells over each part of `P`. Over the cells of two vertex sets `A` and `B`, the graphon
 averages to the edge density `d_G(A, B)`, so the block-average step graphon of `G` over
-`cellPartition P` takes the value `d_G(P.part i, P.part j)` on the cells of `i` and `j`. Its
+`P.cellPartition` takes the value `d_G(P.part i, P.part j)` on the cells of `i` and `j`. Its
 `L²` norm squared is therefore the size-weighted finite energy, diagonal blocks included.
 
 This module depends on both the finite regularity energy and the graphon energy; neither theory
@@ -25,23 +25,23 @@ imports the other.
 
 ## Main definitions
 
-* `TauCeti.DenseGraphLimits.cellPartition`: the partition of the unit interval induced by a
-  partition of `Fin m`.
+* `Finpartition.cellPartition`: the partition of the unit interval induced by a partition of
+  `Fin m`.
 
 ## Main results
 
-* `TauCeti.DenseGraphLimits.setAverage_finiteGraphGraphon_preimage`: block averages of the graphon
-  of a finite graph are edge densities.
-* `TauCeti.DenseGraphLimits.graphonPartitionEnergy_finiteGraphGraphon`: the size-weighted energy
-  of `P` is the graphon partition energy over `cellPartition P`.
+* `SimpleGraph.setAverage_finiteGraphGraphon_preimage`: block averages of the graphon of a finite
+  graph are edge densities.
+* `SimpleGraph.graphonPartitionEnergy_finiteGraphGraphon`: the size-weighted energy of `P` is the
+  graphon partition energy over `P.cellPartition`.
 -/
 
 public section
 
-open MeasureTheory ProbabilityTheory TauCeti.unitInterval Finset
+open MeasureTheory ProbabilityTheory TauCeti.unitInterval TauCeti.DenseGraphLimits Finset
 open scoped unitInterval
 
-namespace TauCeti.DenseGraphLimits
+namespace Finpartition
 
 variable {m : ℕ} [NeZero m]
 
@@ -49,17 +49,51 @@ variable {m : ℕ} [NeZero m]
 `m` equal cells of `I` according to the parts of `P`. -/
 noncomputable def cellPartition (P : Finpartition (univ : Finset (Fin m))) :
     Finpartition (Set.univ : Set I) :=
-  Finpartition.ofFibers fun x => P.part (cellFin m x)
+  ofFibers fun x => P.part (cellFin m x)
 
 /-- The part of `P` containing the cell of a point depends measurably on the point. -/
 theorem measurable_part_cellFin (P : Finpartition (univ : Finset (Fin m))) :
     Measurable fun x : I => P.part (cellFin m x) :=
   (measurable_from_top (f := fun i : Fin m => P.part i)).comp measurable_cellFin
 
-/-- The parts of `cellPartition P` are measurable. -/
+/-- The parts of `P.cellPartition` are measurable. -/
 theorem measurableSet_of_mem_cellPartition (P : Finpartition (univ : Finset (Fin m))) :
-    ∀ p ∈ (cellPartition P).parts, MeasurableSet p :=
-  fun _ hp => Finpartition.measurableSet_of_mem_ofFibers (measurable_part_cellFin P) hp
+    ∀ p ∈ P.cellPartition.parts, MeasurableSet p :=
+  fun _ hp => measurableSet_of_mem_ofFibers P.measurable_part_cellFin hp
+
+/-- The cells of the part of `P` containing the cell of `x` form the part of `P.cellPartition`
+containing `x`. -/
+theorem preimage_part_cellFin_mem (P : Finpartition (univ : Finset (Fin m))) (x : I) :
+    cellFin m ⁻¹' (P.part (cellFin m x) : Set (Fin m)) ∈ P.cellPartition.parts := by
+  refine mem_ofFibers_parts.2 ⟨x, Set.ext fun z => ?_⟩
+  simp only [Set.mem_preimage, Set.mem_singleton_iff, Finset.mem_coe]
+  exact (P.mem_part_iff_part_eq_part (mem_univ _) (mem_univ _)).symm
+
+/-- The parts of `P.cellPartition` are exactly the unions of the cells over the parts of `P`. -/
+theorem mem_cellPartition_parts_iff (P : Finpartition (univ : Finset (Fin m))) {s : Set I} :
+    s ∈ P.cellPartition.parts ↔ ∃ A ∈ P.parts, cellFin m ⁻¹' (A : Set (Fin m)) = s := by
+  constructor
+  · intro hs
+    obtain ⟨x, rfl⟩ := mem_ofFibers_parts.1 hs
+    refine ⟨P.part (cellFin m x), P.part_mem.2 (mem_univ _), Set.ext fun z => ?_⟩
+    simp only [Set.mem_preimage, Set.mem_singleton_iff, Finset.mem_coe]
+    exact P.mem_part_iff_part_eq_part (mem_univ _) (mem_univ _)
+  · rintro ⟨A, hA, rfl⟩
+    obtain ⟨i, hi⟩ := P.nonempty_of_mem_parts hA
+    -- every cell has positive volume, so it contains a point
+    have hcell : (volume : Measure I) (cellFin m ⁻¹' {i}) ≠ 0 := by
+      rw [measurePreserving_cellFin.measure_preimage (measurableSet_singleton i).nullMeasurableSet]
+      simp [ProbabilityTheory.uniformOn_univ]
+    obtain ⟨x, hx⟩ := nonempty_of_measure_ne_zero hcell
+    rw [Set.mem_preimage, Set.mem_singleton_iff] at hx
+    rw [← P.part_eq_of_mem hA hi, ← hx]
+    exact P.preimage_part_cellFin_mem x
+
+end Finpartition
+
+namespace SimpleGraph
+
+variable {m : ℕ} [NeZero m]
 
 /-- **Block averages of the graphon of a finite graph.** Over the cells of two vertex sets `A`
 and `B`, the graphon of `G` averages to the edge density `d_G(A, B)`. When either set is empty,
@@ -104,30 +138,22 @@ theorem setAverage_finiteGraphGraphon_preimage (G : SimpleGraph (Fin m)) [Decida
   push_cast
   field_simp
 
-/-- The cells of the part of `P` containing the cell of `x` form the part of `cellPartition P`
-containing `x`. -/
-theorem preimage_part_cellFin_mem (P : Finpartition (univ : Finset (Fin m))) (x : I) :
-    cellFin m ⁻¹' (P.part (cellFin m x) : Set (Fin m)) ∈ (cellPartition P).parts := by
-  refine Finpartition.mem_ofFibers_parts.2 ⟨x, Set.ext fun z => ?_⟩
-  simp only [Set.mem_preimage, Set.mem_singleton_iff, Finset.mem_coe]
-  exact (P.mem_part_iff_part_eq_part (mem_univ _) (mem_univ _)).symm
-
 /-- **Finite partition energy is graphon partition energy.** For a graph `G` on `Fin m` with
 `0 < m` and a partition `P` of its vertices, the size-weighted energy of `P` is the partition
 energy of the graphon of `G` over the partition of the unit interval grouping the vertex cells by
 the parts of `P`. -/
 theorem graphonPartitionEnergy_finiteGraphGraphon (G : SimpleGraph (Fin m)) [DecidableRel G.Adj]
     (P : Finpartition (univ : Finset (Fin m))) :
-    graphonPartitionEnergy volume (cellPartition P) (measurableSet_of_mem_cellPartition P)
+    graphonPartitionEnergy volume P.cellPartition P.measurableSet_of_mem_cellPartition
       (finiteGraphGraphon G) = G.weightedEnergy P := by
   -- The block average at `(x, y)` is the edge density between the parts of their cells.
-  have hpt (x y : I) : stepGraphonAvg (μ := volume) (cellPartition P)
-      (measurableSet_of_mem_cellPartition P) (finiteGraphGraphon G) x y =
+  have hpt (x y : I) : stepGraphonAvg (μ := volume) P.cellPartition
+      P.measurableSet_of_mem_cellPartition (finiteGraphGraphon G) x y =
         (G.edgeDensity (P.part (cellFin m x)) (P.part (cellFin m y)) : ℝ) := by
-    rw [stepGraphonAvg_apply (cellPartition P) (measurableSet_of_mem_cellPartition P) _
-      (p := ⟨_, preimage_part_cellFin_mem P x⟩) (q := ⟨_, preimage_part_cellFin_mem P y⟩)
+    rw [stepGraphonAvg_apply P.cellPartition P.measurableSet_of_mem_cellPartition _
+      (p := ⟨_, P.preimage_part_cellFin_mem x⟩) (q := ⟨_, P.preimage_part_cellFin_mem y⟩)
       (P.mem_part (mem_univ _)) (P.mem_part (mem_univ _))]
-    exact setAverage_finiteGraphGraphon_preimage G _ _
+    exact G.setAverage_finiteGraphGraphon_preimage _ _
   -- Its mean square over `I × I` is the mean square over pairs of vertices.
   let h : Fin m × Fin m → ℝ := fun ij => (G.edgeDensity (P.part ij.1) (P.part ij.2) : ℝ) ^ 2
   have hmp := (measurePreserving_cellFin (m := m)).prod (measurePreserving_cellFin (m := m))
@@ -146,4 +172,4 @@ theorem graphonPartitionEnergy_finiteGraphGraphon (G : SimpleGraph (Fin m)) [Dec
   simp [h]
   ring
 
-end TauCeti.DenseGraphLimits
+end SimpleGraph
