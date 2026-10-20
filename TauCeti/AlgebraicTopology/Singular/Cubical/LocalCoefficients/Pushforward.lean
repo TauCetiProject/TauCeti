@@ -36,6 +36,8 @@ space and in the coefficient system.
   commutes with the boundaries.
 * `TauCeti.LocalCoefficientSystem.NormalizedTwistedCubicalChain.pushforward_map`: change of the
   source, with change of base point.
+* `TauCeti.LocalCoefficientSystem.NormalizedTwistedCubicalChain.augment_pushforward_ofCube`: the
+  augmentation of the pushforward of a point cube.
 * `TauCeti.LocalCoefficientSystem.NormalizedTwistedCubicalChain.map_pushforward`,
   `TauCeti.LocalCoefficientSystem.NormalizedTwistedCubicalChain.coefficientMap_pushforward`:
   naturality in the space and in the coefficient system.
@@ -212,6 +214,17 @@ theorem pushforward_map {Z' : Type*} [TopologicalSpace Z'] [SimplyConnectedSpace
       pushCube_comp]
   | add y y' hy hy' => simp only [map_add, LinearMap.add_apply, hy, hy']
   | smul r y hy => simp only [LinearMap.smul_apply, ULift.smul_def, map_zsmul, hy]
+
+/-- The augmentation of the pushforward of a point cube is the image of the coefficient under the
+cocone: the transport of the coefficient to the point does not change its image. -/
+theorem augment_pushforward_ofCube (s : Limits.Cocone L) (d : SingularCube Z 0)
+    (a : L.obj (FundamentalGroupoid.mk (f z₀))) :
+    augment s (pushforward L f z₀ 0 (NormalizedCubicalChain.ofCube Z (ULift.{v} ℤ) d) a) =
+      s.ι.app (FundamentalGroupoid.mk (f z₀)) a :=
+  (congrArg (augment s) (pushforward_ofCube d a)).trans ((augment_mk s _).trans
+    ((congrArg (TwistedCubicalChain.augment s) (pushCube_apply d a)).trans
+      ((TwistedCubicalChain.augment_ofCube s _ _).trans
+        (ConcreteCategory.congr_hom (s.w (pathClass f z₀ (d 0))) a))))
 
 /-- The twisted pushforward is natural in the space. -/
 theorem map_pushforward {Y : TopCat.{v}} (h : C(X, Y)) (L : LocalCoefficientSystem.{u, v, w} R Y)
