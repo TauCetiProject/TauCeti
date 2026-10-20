@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.Polynomial.Eisenstein.Basic
 public import TauCeti.MeasureTheory.Group.LocalFieldScaling
 public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
 import TauCeti.NumberTheory.LocalField.Uniformizer
+import TauCeti.RingTheory.Valuation.ValuativeRel.Basic
 
 /-!
 # The Eisenstein region of coefficient space
@@ -188,7 +189,8 @@ theorem measure_eisensteinSet {n : ℕ} (hn : 0 < n) [MeasurableSpace (Fin n →
   have hsub := univ_pi_image_maximalIdeal_pow_subset (K := K) (e' := fun _ ↦ 1) (e := e)
     (le_update_iff.2 ⟨one_le_two, fun _ _ ↦ le_rfl⟩)
   have he : ∑ i, e i = n + 1 := by
-    simp [e, Finset.sum_update_of_mem, Finset.card_univ_sdiff]
+    simp only [e, Finset.sum_update_of_mem (Finset.mem_univ _), Finset.sum_const,
+      Finset.card_univ_sdiff, Finset.card_singleton, smul_eq_mul, mul_one, Fintype.card_fin]
     omega
   have h₁ := Measure.measure_univ_pi_image_maximalIdeal_pow μ hμ fun _ ↦ 1
   have h₂ := Measure.measure_univ_pi_image_maximalIdeal_pow μ hμ e

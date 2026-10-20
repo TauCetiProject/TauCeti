@@ -28,18 +28,8 @@ open ValuativeRel IsNonarchimedeanLocalField
 
 namespace TauCeti
 
-variable {K : Type*} [Field K] [ValuativeRel K]
-
-/-- An element of `K` has valuation below `1` exactly when it lies in the maximal ideal of
-`𝒪[K]`. -/
-theorem valuation_lt_one_iff_mem_image_maximalIdeal {x : K} :
-    valuation K x < 1 ↔ x ∈ ((↑) : 𝒪[K] → K) '' ↑𝓂[K] := by
-  refine ⟨fun hx ↦ ⟨⟨x, (Valuation.mem_integer_iff _ _).2 hx.le⟩,
-    (valuation K).mem_maximalIdeal_iff.2 hx, rfl⟩, ?_⟩
-  rintro ⟨c, hc, rfl⟩
-  exact (valuation K).mem_maximalIdeal_iff.1 hc
-
-variable [TopologicalSpace K] [IsNonarchimedeanLocalField K]
+variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
+  [IsNonarchimedeanLocalField K]
 
 variable (K) in
 /-- A uniformizer is a nonzero field element whose normalized valuation is one. -/
