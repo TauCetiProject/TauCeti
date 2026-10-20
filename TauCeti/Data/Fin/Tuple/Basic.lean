@@ -119,7 +119,7 @@ end ContractNth
 /-- The image of the first `n + 1` entries of a prepended tuple consists of its first entry
 and the image of the first `n` entries of its tail. -/
 @[simp]
-theorem image_cons_le {α : Type*} {n : ℕ} (x : α) (p : Fin m → α) :
+theorem image_cons_le_eq_insert {α : Type*} {n : ℕ} (x : α) (p : Fin m → α) :
     Fin.cons x p '' {index | (index : ℕ) ≤ n} =
       insert x (p '' {index | (index : ℕ) < n}) := by
   ext element

@@ -20,10 +20,11 @@ including the zero ideal and zero-dimensional cases.
 
 ## Main results
 
-* `Ideal.exists_mem_notMem_maximalIdeal_sq_of_quotient`: a nonzero ideal
-  with regular local quotient contains an element outside the square of the maximal ideal.
 * `Ideal.exists_regularSystem_of_quotient`: the full generating family,
   including the zero-ideal and zero-dimensional cases.
+
+The parameter-selection input is `Ideal.exists_mem_notMem_maximalIdeal_sq_of_quotient` in
+`TauCeti.RingTheory.RegularLocalRing.Basic`.
 
 ## References
 
@@ -39,25 +40,6 @@ universe u
 namespace Ideal
 
 variable {R : Type u} [CommRing R] [IsRegularLocalRing R]
-
-/-- A nonzero ideal of a regular local ring with regular quotient contains a parameter. -/
-theorem exists_mem_notMem_maximalIdeal_sq_of_quotient (I : Ideal R)
-    [IsRegularLocalRing (R ⧸ I)] (hne : I ≠ ⊥) :
-    ∃ parameter ∈ I, parameter ∉ maximalIdeal R ^ 2 := by
-  by_contra! hall
-  have hemb := TauCeti.IsLocalRing.spanFinrank_map_maximalIdeal_quotient_of_le_sq
-    (maximalIdeal R).fg_of_isNoetherianRing hall
-  rw [map_maximalIdeal_of_surjective _ Ideal.Quotient.mk_surjective] at hemb
-  obtain ⟨element, hmem, hzero⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hne
-  have hle : span {element} ≤ I := (span_singleton_le_iff_mem _).mpr hmem
-  have hdim := ringKrullDim_le_of_surjective (Ideal.Quotient.factor hle)
-    (Ideal.Quotient.factor_surjective hle)
-  have hdrop := ringKrullDim_quotient_succ_le_of_nonZeroDivisor
-    (mem_nonZeroDivisors_of_ne_zero hzero)
-  have hbad := (add_le_add hdim (le_refl 1)).trans hdrop
-  rw [← spanFinrank_maximalIdeal (R := R ⧸ I),
-    ← spanFinrank_maximalIdeal (R := R), hemb] at hbad
-  exact absurd hbad (by norm_cast; omega)
 
 private theorem exists_regularSystem_aux (dimension : ℕ) :
     ∀ (R : Type u) [CommRing R] [IsRegularLocalRing R],
@@ -105,7 +87,7 @@ private theorem exists_regularSystem_aux (dimension : ℕ) :
       apply span_insert_eq_of_quotient _ hmax
       rw [← Set.range_comp, hcomp, hspan]
       exact (map_maximalIdeal_of_surjective _ Ideal.Quotient.mk_surjective).symm
-    · simp only [Order.lt_add_one_iff, Fin.image_cons_le]
+    · simp only [Order.lt_add_one_iff, Fin.image_cons_le_eq_insert]
       symm
       apply span_insert_eq_of_quotient _ hmem
       rw [← Set.image_comp, hcomp, ← hideal]
