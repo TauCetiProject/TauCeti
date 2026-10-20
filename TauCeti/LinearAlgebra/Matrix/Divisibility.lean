@@ -130,8 +130,10 @@ theorem det_mul_eq_sum_prod_mul_det_submatrix [Fintype ι] [DecidableEq ι] [Fin
   -- `B.submatrix f id` is the matrix whose rows are the `B (f i)`
   congr 2
 
-/-- A common divisor of the `ι`-minors of `B` divides every `ι`-minor of `A * B`. -/
-private lemma dvd_det_submatrix_mul_left [Fintype ι] [DecidableEq ι] [Fintype m]
+/-- **A common divisor of the minors survives left multiplication.** If `c` divides every
+`ι`-minor of `B`, then it divides every `ι`-minor of `A * B`, since each such minor is an
+`R`-combination of minors of `B`. -/
+theorem dvd_det_submatrix_mul_left [Fintype ι] [DecidableEq ι] [Fintype m]
     {B : Matrix m n R} {c : R} (hc : ∀ (f : ι → m) (g : ι → n), c ∣ (B.submatrix f g).det)
     (A : Matrix l m R) (f : ι → l) (g : ι → n) : c ∣ ((A * B).submatrix f g).det := by
   rw [submatrix_mul A B f id g Function.bijective_id, det_mul_eq_sum_prod_mul_det_submatrix]
@@ -205,10 +207,10 @@ theorem prod_castLE_mul_prod_castLE_dvd_of_mul_diagonal_mul_diagonal_mul_eq
       ((diagonal d).submatrix (Fin.castLE hk) (Fin.castLE hk)).det := by
     rw [submatrix_diagonal _ _ (Fin.castLE_injective hk), det_diagonal]
     simp only [Function.comp_apply]
-  rw [hd, ← h, show P * diagonal c₁ * Q * diagonal c₂ * S =
-    P * (diagonal c₁ * Q * diagonal c₂) * S by simp only [Matrix.mul_assoc]]
-  exact dvd_det_submatrix_mul_mul
-    (prod_castLE_mul_prod_castLE_dvd_det_submatrix_diagonal_mul_diagonal hc₁ hc₂ Q hk) P S _ _
+  rw [hd, ← h]
+  simpa only [Matrix.mul_assoc] using dvd_det_submatrix_mul_mul
+    (prod_castLE_mul_prod_castLE_dvd_det_submatrix_diagonal_mul_diagonal hc₁ hc₂ Q hk) P S
+    (Fin.castLE hk) (Fin.castLE hk)
 
 end ChainMinor
 
