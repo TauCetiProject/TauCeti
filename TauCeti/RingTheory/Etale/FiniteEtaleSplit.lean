@@ -17,6 +17,7 @@ import Mathlib.RingTheory.Finiteness.Prod
 import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 import Mathlib.RingTheory.Flat.Rank
 import Mathlib.Tactic.LinearCombination
+import TauCeti.RingTheory.Ideal.Quotient.Pi
 
 /-!
 # Rings without nonsplit finite étale covers
@@ -44,6 +45,7 @@ there only through sections of faithfully flat covers and roots of separable pol
   degree whose derivative is a unit modulo it has a root.
 * `TauCeti.isFiniteEtaleSplit_iff_isSepClosed`: a field has no nonsplit finite étale covers if
   and only if it is separably closed.
+* `TauCeti.IsFiniteEtaleSplit.of_isSepClosed`: the instance for separably closed fields.
 
 ## Implementation notes
 
@@ -129,21 +131,6 @@ theorem prod {A B : Type*} [CommRing A] [CommRing B] [Algebra R A] [Algebra R B]
   exact of_algEquiv_pi (Sum.elim e f) (Sum.rec he hf)
     ((φ.prodCongr ψ).trans (AlgEquiv.ofBijective χ hχ).symm)
 
-/-- The componentwise quotient map `∏ j, R ⧸ I j → ∏ j, R ⧸ J j` for ideals `I j ≤ J j`. -/
-private def piFactorₐ {ι : Type*} {I J : ι → Ideal R} (hle : ∀ j, I j ≤ J j) :
-    ((j : ι) → R ⧸ I j) →ₐ[R] ((j : ι) → R ⧸ J j) :=
-  AlgHom.pi fun j ↦ (Ideal.Quotient.factorₐ R (hle j)).comp (Pi.evalAlgHom R _ j)
-
-private theorem piFactorₐ_apply {ι : Type*} {I J : ι → Ideal R} (hle : ∀ j, I j ≤ J j)
-    (x : (j : ι) → R ⧸ I j) (j : ι) :
-    piFactorₐ hle x j = Ideal.Quotient.factor (hle j) (x j) :=
-  rfl
-
-private theorem piFactorₐ_surjective {ι : Type*} {I J : ι → Ideal R} (hle : ∀ j, I j ≤ J j) :
-    Function.Surjective (piFactorₐ hle) := fun y ↦
-  ⟨fun j ↦ (Ideal.Quotient.factor_surjective (hle j) (y j)).choose,
-    funext fun j ↦ (Ideal.Quotient.factor_surjective (hle j) (y j)).choose_spec⟩
-
 /-- A quotient of a totally split algebra by an idempotent, that is, a direct factor of it, is
 totally split. -/
 theorem quotient_span_singleton (h : IsTotallySplit R T) {ε : T} (hε : IsIdempotentElem ε) :
@@ -170,16 +157,17 @@ theorem quotient_span_singleton (h : IsTotallySplit R T) {ε : T} (hε : IsIdemp
   have hle (j : Fin m) : Ideal.span {1 - e j} ≤ Ideal.span {1 - e' j} :=
     Ideal.span_singleton_le_span_singleton.mpr
       ⟨1 - e j, by linear_combination (a j - 1) * (he j).eq⟩
-  have hker : RingHom.ker (piFactorₐ hle) = Ideal.span {ε'} := by
+  have hker : RingHom.ker (Ideal.Quotient.piFactorₐ R hle) = Ideal.span {ε'} := by
     rw [← Ideal.pi_span]
     ext x
-    simp only [RingHom.mem_ker, Ideal.mem_pi, funext_iff, Pi.zero_apply, piFactorₐ_apply]
+    simp only [RingHom.mem_ker, Ideal.mem_pi, funext_iff, Pi.zero_apply,
+      Ideal.Quotient.piFactorₐ_apply]
     refine forall_congr' fun j ↦ ?_
     rw [← RingHom.mem_ker, Ideal.Quotient.factor_ker, Ideal.map_span, Set.image_singleton]
     simp [e', hmk, ha]
   exact ⟨m, e', he', ⟨(Ideal.quotientEquivAlg _ (Ideal.span {ε'}) φ
     (by simp [ε', Ideal.map_span])).trans ((Ideal.quotientEquivAlgOfEq R hker.symm).trans
-      (Ideal.quotientKerAlgEquivOfSurjective (piFactorₐ_surjective hle)))⟩⟩
+      (Ideal.quotientKerAlgEquivOfSurjective (Ideal.Quotient.piFactorₐ_surjective R hle)))⟩⟩
 
 /-- A factor of a totally split product is totally split: `A` is the quotient of `A × B` by the
 idempotent `(0, 1)`. -/
@@ -202,18 +190,15 @@ theorem nonempty_algHom_of_faithfulSMul (h : IsTotallySplit R T) [FaithfulSMul R
   obtain ⟨m, e, he, ⟨φ⟩⟩ := h
   have hcover : ∏ j, (1 - e j) = 0 := by
     apply FaithfulSMul.algebraMap_injective R T
-    apply φ.injective
-    rw [map_zero, map_zero, AlgEquiv.commutes]
-    funext j
-    rw [Pi.algebraMap_apply, Ideal.Quotient.algebraMap_eq, Pi.zero_apply,
-      Ideal.Quotient.eq_zero_iff_mem]
-    exact Ideal.mem_span_singleton.mpr (Finset.dvd_prod_of_mem _ (Finset.mem_univ j))
+    refine φ.injective (funext fun j ↦ ?_)
+    simpa using Ideal.Quotient.eq_zero_iff_mem.mpr <| Ideal.mem_span_singleton.mpr <|
+      Finset.dvd_prod_of_mem (fun i ↦ 1 - e i) (Finset.mem_univ j)
   obtain ⟨f, hf, hfe⟩ := exists_completeOrthogonalIdempotents_of_prod_one_sub_eq_zero e he hcover
   have hle (j : Fin m) : Ideal.span {1 - e j} ≤ Ideal.span {1 - f j} :=
     Ideal.span_singleton_le_span_singleton.mpr ⟨1 - e j, by linear_combination -(hfe j)⟩
   let ι : R ≃ₐ[R] ((j : Fin m) → R ⧸ Ideal.span {1 - f j}) :=
     AlgEquiv.ofBijective (Algebra.ofId R _) hf.bijective_pi
-  exact ⟨ι.symm.toAlgHom.comp ((piFactorₐ hle).comp φ.toAlgHom)⟩
+  exact ⟨ι.symm.toAlgHom.comp ((Ideal.Quotient.piFactorₐ R hle).comp φ.toAlgHom)⟩
 
 /-- A totally split algebra is étale. -/
 theorem etale (h : IsTotallySplit R T) : Algebra.Etale R T := by
@@ -262,9 +247,8 @@ private theorem exists_rankAtStalk_prod_quotient_eq_max (T : Type*) [CommRing T]
   have hU₁ : Module.rankAtStalk (R := R) (R ⧸ Ideal.span {e₀}) p ≤ 1 :=
     Module.rankAtStalk_le_one_iff_surjective.mpr Ideal.Quotient.mk_surjective p
   have hU₀ : 0 < Module.rankAtStalk (R := R) (R ⧸ Ideal.span {e₀}) p ↔ e₀ ∈ p.asIdeal := by
-    rw [PrimeSpectrum.rankAtStalk_pos_iff_mem_range_comap, Ideal.Quotient.algebraMap_eq,
+    simp [PrimeSpectrum.rankAtStalk_pos_iff_mem_range_comap,
       range_comap_of_surjective _ _ Ideal.Quotient.mk_surjective]
-    simp
   have hT : 0 < Module.rankAtStalk (R := R) T p ↔ e₀ ∉ p.asIdeal := by
     rw [Module.rankAtStalk_pos_iff_mem_support, ← hsupp, SetLike.mem_coe,
       PrimeSpectrum.mem_basicOpen]
@@ -343,14 +327,18 @@ theorem IsFiniteEtaleSplit.exists_root [IsFiniteEtaleSplit R] {P : R[X]} (hP : P
     Module.nontrivial_of_finrank_pos (by rwa [pb.finrank, AdjoinRoot.powerBasis'_dim])
   obtain ⟨σ⟩ := isFiniteEtaleSplit_iff_exists_section.mp ‹_› (AdjoinRoot P)
   refine ⟨σ (AdjoinRoot.root P), ?_⟩
-  rw [Polynomial.IsRoot, ← Polynomial.coe_aeval_eq_eval, Polynomial.aeval_algHom_apply,
-    AdjoinRoot.aeval_eq, AdjoinRoot.mk_self, map_zero]
+  simp [← Polynomial.coe_aeval_eq_eval, Polynomial.aeval_algHom_apply]
+
+/-- A separably closed field has no nonsplit finite étale covers: every finite étale algebra over
+it has constant split rank. -/
+instance IsFiniteEtaleSplit.of_isSepClosed (K : Type u) [Field K] [IsSepClosed K] :
+    IsFiniteEtaleSplit K :=
+  ⟨fun _ _ _ _ _ ↦ .of_isFiniteSplit⟩
 
 /-- A field has no nonsplit finite étale covers if and only if it is separably closed. -/
 theorem isFiniteEtaleSplit_iff_isSepClosed (K : Type u) [Field K] :
     IsFiniteEtaleSplit K ↔ IsSepClosed K := by
-  refine ⟨fun _ ↦ IsSepClosed.of_exists_root K fun p hp hirr hsep ↦ ?_,
-    fun _ ↦ ⟨fun T _ _ _ _ ↦ .of_isFiniteSplit⟩⟩
+  refine ⟨fun _ ↦ IsSepClosed.of_exists_root K fun p hp hirr hsep ↦ ?_, fun _ ↦ inferInstance⟩
   exact IsFiniteEtaleSplit.exists_root hp hirr.natDegree_pos
     (separable_iff_isUnit_mk_derivative.mp hsep)
 

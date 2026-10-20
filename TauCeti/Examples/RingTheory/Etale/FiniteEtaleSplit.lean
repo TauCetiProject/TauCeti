@@ -26,7 +26,7 @@ example (K : Type) [Field K] : IsFiniteEtaleSplit K ↔ IsSepClosed K :=
 
 /-- *test_Cp*: `ℂ_[p]` is algebraically closed, so it has no nonsplit finite étale covers. -/
 example (p : ℕ) [Fact p.Prime] : IsFiniteEtaleSplit ℂ_[p] :=
-  (isFiniteEtaleSplit_iff_isSepClosed ℂ_[p]).mpr inferInstance
+  inferInstance
 
 /-- *test_zero*: the zero ring has no nonsplit finite étale covers. -/
 example : IsFiniteEtaleSplit (ZMod 1) :=
