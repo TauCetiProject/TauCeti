@@ -45,6 +45,11 @@ bounds compare a row weight with an unrelated column weight.
 * `TauCeti.norm_coeff_charpolyRev_le_of_principalMinor_le`,
   `Matrix.norm_coeff_charpolyRev_le`, `Matrix.norm_coeff_charpolyRev_le_of_norm_le`,
   `Matrix.norm_coeff_charpolyRev_le_zpow`: coefficient bounds for `det (1 - X A)`.
+* `TauCeti.norm_coeff_prod_le_of_natDegree_le_one`,
+  `Matrix.norm_coeff_det_le_of_natDegree_le_one`: the same bounds for the coefficients of
+  products and determinants of polynomials of degree at most one.
+* `Matrix.norm_sum_coeff_charpolyRev_smul_pow_apply_le`: the entries of the coefficients of the
+  Fredholm resolvent `adjugate (1 - X A)` obey the row-bound estimate of `det (1 - X A)`.
 * `TauCeti.norm_det_sub_le`, `TauCeti.norm_principalMinor_sub_le`: perturbation bounds on
   entrywise bounded sets, also over seminormed rings.
 
@@ -74,6 +79,49 @@ theorem norm_coeff_charpolyRev_le_of_principalMinor_le {ι R : Type*}
     refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg hC fun s hs' ↦ ?_
     simpa only [Matrix.principalMinor_def] using hs s (mem_powersetCard.mp hs').2
   rcases neg_one_pow_eq_or R k with hk | hk <;> simpa [hk] using hsum
+
+/-- **Coefficients of a product of linear polynomials.** Over an ultrametric seminormed
+commutative ring with `‖1‖ = 1`, let `p a` be polynomials of degree at most one with
+`‖(p a).coeff 0‖ ≤ 1` and `‖(p a).coeff 1‖ ≤ r a`. If `c ≥ 0` bounds `∏ a ∈ t, r a` for every
+`m`-element subset `t` of `s`, then `c` bounds the `m`-th coefficient of `∏ a ∈ s, p a`. -/
+theorem norm_coeff_prod_le_of_natDegree_le_one {α R : Type*}
+    [SeminormedCommRing R] [NormOneClass R] [IsUltrametricDist R]
+    {s : Finset α} {p : α → R[X]} {r : α → ℝ}
+    (hdeg : ∀ a ∈ s, (p a).natDegree ≤ 1) (h₀ : ∀ a ∈ s, ‖(p a).coeff 0‖ ≤ 1)
+    (h₁ : ∀ a ∈ s, ‖(p a).coeff 1‖ ≤ r a) {m : ℕ} {c : ℝ} (hc : 0 ≤ c)
+    (hs : ∀ t ⊆ s, t.card = m → ∏ a ∈ t, r a ≤ c) :
+    ‖(∏ a ∈ s, p a).coeff m‖ ≤ c := by
+  classical
+  induction s using Finset.induction_on generalizing m c with
+  | empty =>
+    rcases m with _ | m
+    · simpa using hs ∅ (empty_subset _) rfl
+    · simpa [Polynomial.coeff_one] using hc
+  | insert a s ha ih =>
+    have hdeg' := fun b hb ↦ hdeg b (mem_insert_of_mem hb)
+    have h₀' := fun b hb ↦ h₀ b (mem_insert_of_mem hb)
+    have h₁' := fun b hb ↦ h₁ b (mem_insert_of_mem hb)
+    have hra : ‖(p a).coeff 1‖ ≤ r a := h₁ a (mem_insert_self a s)
+    -- Multiplying by `p a = p₁ X + p₀` mixes the coefficients of `∏ b ∈ s, p b` in degrees
+    -- `m` and `m - 1`; the second one is weighted by `‖p₁‖ ≤ r a`.
+    have hlow : ‖(p a).coeff 0 * (∏ b ∈ s, p b).coeff m‖ ≤ c :=
+      (norm_mul_le _ _).trans <| (mul_le_of_le_one_left (norm_nonneg _)
+        (h₀ a (mem_insert_self a s))).trans <|
+          ih hdeg' h₀' h₁' hc fun t ht htm ↦ hs t (ht.trans (subset_insert a s)) htm
+    rw [prod_insert ha, eq_X_add_C_of_natDegree_le_one (hdeg a (mem_insert_self a s)), add_mul,
+      coeff_add, coeff_C_mul, mul_comm (C _), mul_assoc]
+    rcases m with _ | k
+    · simpa using hlow
+    refine IsUltrametricDist.norm_add_le_max _ _ |>.trans (max_le ?_ hlow)
+    rw [coeff_X_mul, coeff_C_mul]
+    refine (norm_mul_le _ _).trans <| (mul_le_mul_of_nonneg_right hra (norm_nonneg _)).trans ?_
+    rcases (norm_nonneg _).trans hra |>.eq_or_lt with hr | hr
+    · simpa [← hr] using hc
+    rw [← le_div_iff₀' hr]
+    refine ih hdeg' h₀' h₁' (div_nonneg hc hr.le) fun t ht htk ↦ ?_
+    have hat : a ∉ t := fun h ↦ ha (ht h)
+    rw [le_div_iff₀' hr, ← prod_insert hat]
+    exact hs _ (insert_subset_insert a ht) (by rw [card_insert_of_notMem hat, htk])
 
 end TauCeti
 
@@ -158,6 +206,50 @@ theorem norm_coeff_charpolyRev_le_zpow {A : Matrix ι ι R} {σ : ℝ} (hσ₀ :
   TauCeti.norm_coeff_charpolyRev_le_of_principalMinor_le (zpow_nonneg hσ₀.le m) fun s hs ↦
     (norm_principalMinor_le_zpow hσ₀ h s).trans
       (zpow_le_zpow_right_of_le_one₀ hσ₀ hσ₁ (hm s hs))
+
+/-- **Coefficients of a determinant of linear polynomials.** Over an ultrametric normed ring
+with `‖1‖ = 1`, let `M` be a matrix of polynomials of degree at most one whose constant
+coefficients have norm at most one and whose linear coefficients in row `i` have norm at most
+`r i`. If `c ≥ 0` bounds `∏ i ∈ s, r i` for every `m`-element set `s`, then `c` bounds the
+`m`-th coefficient of `det M`. -/
+theorem norm_coeff_det_le_of_natDegree_le_one {M : Matrix ι ι R[X]} {r : ι → ℝ}
+    (hdeg : ∀ i j, (M i j).natDegree ≤ 1) (h₀ : ∀ i j, ‖(M i j).coeff 0‖ ≤ 1)
+    (h₁ : ∀ i j, ‖(M i j).coeff 1‖ ≤ r i) {m : ℕ} {c : ℝ} (hc : 0 ≤ c)
+    (hs : ∀ s : Finset ι, s.card = m → ∏ i ∈ s, r i ≤ c) :
+    ‖M.det.coeff m‖ ≤ c := by
+  rw [det_apply, finsetSum_coeff]
+  refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg hc fun σ _ ↦ ?_
+  rw [coeff_smul, norm_units_zsmul]
+  refine TauCeti.norm_coeff_prod_le_of_natDegree_le_one (fun i _ ↦ hdeg _ _) (fun i _ ↦ h₀ _ _)
+    (fun i _ ↦ h₁ _ _) hc fun t _ ht ↦ ?_
+  simpa only [prod_map, Equiv.coe_toEmbedding] using
+    hs (t.map σ.toEmbedding) (by rw [card_map, ht])
+
+/-- **Fredholm resolvent bound.** If `r i` bounds the `i`-th row of `A` and `c ≥ 0` bounds
+`∏ i ∈ s, r i` for every `m`-element set `s`, then `c` bounds every entry of the `m`-th
+coefficient `∑ k ∈ range (m + 1), c k • A ^ (m - k)` of `adjugate (1 - X A)`, where `c k` are
+the coefficients of `det (1 - X A)`. This is the same bound as for the `m`-th coefficient of
+`det (1 - X A)` itself (`Matrix.norm_coeff_charpolyRev_le_of_norm_le`). -/
+theorem norm_sum_coeff_charpolyRev_smul_pow_apply_le {A : Matrix ι ι R} {r : ι → ℝ}
+    (hA : ∀ i j, ‖A i j‖ ≤ r i) {m : ℕ} {c : ℝ} (hc : 0 ≤ c)
+    (hs : ∀ s : Finset ι, s.card = m → ∏ i ∈ s, r i ≤ c) (i j : ι) :
+    ‖(∑ k ∈ range (m + 1), A.charpolyRev.coeff k • A ^ (m - k)) i j‖ ≤ c := by
+  rw [← coeff_adjugate_one_sub_X_smul, adjugate_apply]
+  -- Row `j` of the matrix is constant, and every other row `k` is `δ k - X A k`.
+  refine norm_coeff_det_le_of_natDegree_le_one (r := r) (fun k l ↦ ?_) (fun k l ↦ ?_)
+    (fun k l ↦ ?_) hc hs <;> rcases eq_or_ne k j with rfl | hk
+  · rw [updateRow_self, Pi.single_apply]
+    split_ifs <;> simp
+  · rw [updateRow_ne hk, sub_apply, one_apply, smul_apply, map_apply, smul_eq_mul]
+    split_ifs <;> compute_degree
+  · rw [updateRow_self, Pi.single_apply]
+    split_ifs <;> simp
+  · rw [updateRow_ne hk, sub_apply, one_apply, smul_apply, map_apply, smul_eq_mul]
+    split_ifs <;> simp
+  · rw [updateRow_self, Pi.single_apply]
+    split_ifs <;> simpa [coeff_one] using (norm_nonneg _).trans (hA k k)
+  · rw [updateRow_ne hk, sub_apply, one_apply, smul_apply, map_apply, smul_eq_mul]
+    split_ifs <;> simpa [coeff_one] using hA k l
 
 end Matrix
 
