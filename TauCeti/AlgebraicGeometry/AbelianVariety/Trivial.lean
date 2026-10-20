@@ -26,7 +26,9 @@ category of abelian varieties over `K`.
   either direction between it and any abelian variety;
 * `AbelianVariety.toTrivial_comp_fromTrivial`: the composite `A ⟶ trivial K ⟶ B` is the identity
   element of the group `A ⟶ B` of `MorphismGroup.lean`, so the zero object of the category and the
-  neutral element of the pointwise group law agree;
+  neutral element of the pointwise group law agree; `AbelianVariety.Hom.toSchemeHom_one` describes
+  its underlying scheme morphism as the structure morphism of `A` followed by the zero section of
+  `B`;
 * `AbelianVariety.baseChangeTrivialIso`: base change along `K → L` carries the trivial abelian
   variety over `K` to the trivial abelian variety over `L`.
 
@@ -282,6 +284,16 @@ group law agree. -/
 lemma toTrivial_comp_fromTrivial (A B : AbelianVariety K) :
     toTrivial A ≫ fromTrivial B = 1 :=
   Hom.one_comp (fromTrivial B)
+
+/-- The scheme morphism underlying the identity element of the group `A ⟶ B` is the constant
+morphism through the zero section of `B`: the structure morphism of `A` followed by the zero
+section. -/
+@[simp]
+lemma Hom.toSchemeHom_one (A B : AbelianVariety K) :
+    Hom.toSchemeHom (1 : A ⟶ B) = A.toOver.hom ≫ B.zeroSection := by
+  rw [← toTrivial_comp_fromTrivial, Hom.toSchemeHom_comp, ← toSchemeHom_toTrivial A,
+    ← toSchemeHom_fromTrivial B]
+  simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
 
 /-! ### Base change -/
 
