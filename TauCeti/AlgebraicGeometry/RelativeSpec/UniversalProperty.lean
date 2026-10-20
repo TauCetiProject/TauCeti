@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.RelativeSpec.Counit
+public import TauCeti.AlgebraicGeometry.RelativeSpec.PullbackAlgebra
 public import TauCeti.AlgebraicGeometry.RelativeSpec.Unit
 public import TauCeti.AlgebraicGeometry.Sites.SmallAffineZariski
 
@@ -25,6 +26,10 @@ each affine open `U` of `X`, a ring map `Γ(A.X, U) ⟶ Γ(T, q⁻¹ U)` and hen
 restriction and glue to `CommMon.relativeSpecLift φ`, along the cover of `T` by the inverse images
 of the affine opens of `X`. Both constructions are natural in `T` and in `A`.
 
+Composing with the adjunction between pullback and pushforward of algebras gives the universal
+property in pullback form: morphisms `T ⟶ Spec_X A` over `X` correspond to morphisms of
+`𝒪_T`-algebras `q^* A ⟶ 𝒪_T` (`TauCeti.AlgebraicGeometry.relativeSpecPullbackHomEquiv`).
+
 ## Main declarations
 
 * `CategoryTheory.CommMon.relativeSpecLift`: the morphism `T ⟶ Spec_X A` induced by an algebra
@@ -36,7 +41,9 @@ of the affine opens of `X`. Both constructions are natural in `T` and in `A`.
 * `TauCeti.AlgebraicGeometry.relativeSpecHomIso X`: the bijection as a natural isomorphism of
   functors of quasi-coherent algebras and schemes over `X` (whose target uses the function-algebra
   functor `TauCeti.AlgebraicGeometry.overFunctions X`), with components
-  `CommMon.relativeSpecHomEquiv`.
+  `CommMon.relativeSpecHomEquiv`;
+* `TauCeti.AlgebraicGeometry.relativeSpecPullbackHomEquiv`: the bijection between morphisms over
+  `X` and algebra maps `q^* A ⟶ 𝒪_T`, natural in the algebra.
 
 ## References
 
@@ -451,6 +458,50 @@ lemma relativeSpecHomIso_inv_app_app (A : (QuasicoherentAlgebra X)ᵒᵖ) (T : (
     ((relativeSpecHomIso X).inv.app A).app T φ =
       Over.homMk (CommMon.relativeSpecLift φ) (CommMon.relativeSpecLift_relativeSpecToBase φ) :=
   (rfl)
+
+variable {T : Scheme.{u}}
+
+/-- **The universal property of relative Spec, in pullback form.** For a quasicoherent algebra
+`A` on `X` and a scheme `q : T ⟶ X`, morphisms `T ⟶ Spec_X A` over `X` correspond to morphisms
+of `𝒪_T`-algebras `q^* A ⟶ 𝒪_T`. It is `CommMon.relativeSpecHomEquiv` followed by the
+adjunction between pullback and pushforward of algebras,
+`QuasicoherentAlgebra.pullbackHomEquiv`. -/
+def relativeSpecPullbackHomEquiv (A : QuasicoherentAlgebra X) (q : T ⟶ X) :
+    {t : T ⟶ A.obj.relativeSpec // t ≫ A.obj.relativeSpecToBase = q} ≃
+      (((QuasicoherentAlgebra.pullback q).obj A).obj ⟶ CommMon.trivial T.Modules) :=
+  (A.obj.relativeSpecHomEquiv q).trans
+    (QuasicoherentAlgebra.pullbackHomEquiv q A (CommMon.trivial T.Modules)).symm
+
+/-- The algebra map `q^* A ⟶ 𝒪_T` of a morphism over `X` is the transpose of its pullback of
+regular functions `A ⟶ q_* 𝒪_T`. -/
+@[simp]
+lemma relativeSpecPullbackHomEquiv_apply (A : QuasicoherentAlgebra X) (q : T ⟶ X)
+    (t : {t : T ⟶ A.obj.relativeSpec // t ≫ A.obj.relativeSpecToBase = q}) :
+    relativeSpecPullbackHomEquiv A q t =
+      (QuasicoherentAlgebra.pullbackHomEquiv q A _).symm (A.obj.relativeSpecHomEquiv q t) :=
+  (rfl)
+
+/-- The morphism over `X` of an algebra map `q^* A ⟶ 𝒪_T` is the lift of its transpose
+`A ⟶ q_* 𝒪_T`. -/
+@[simp]
+lemma relativeSpecPullbackHomEquiv_symm_apply_coe (A : QuasicoherentAlgebra X) (q : T ⟶ X)
+    (φ : ((QuasicoherentAlgebra.pullback q).obj A).obj ⟶ CommMon.trivial T.Modules) :
+    ((relativeSpecPullbackHomEquiv A q).symm φ).1 =
+      CommMon.relativeSpecLift (QuasicoherentAlgebra.pullbackHomEquiv q A _ φ) :=
+  (rfl)
+
+/-- The pullback form of the universal property is natural in the algebra: precomposing an
+algebra map `q^* A ⟶ 𝒪_T` with the pullback of `a : B ⟶ A` corresponds to composing with the
+relative-spectrum map of `a`. -/
+lemma relativeSpecPullbackHomEquiv_symm_pullback_map_comp {B A : QuasicoherentAlgebra X}
+    (a : B ⟶ A) (q : T ⟶ X)
+    (φ : ((QuasicoherentAlgebra.pullback q).obj A).obj ⟶ CommMon.trivial T.Modules) :
+    ((relativeSpecPullbackHomEquiv B q).symm
+        (((QuasicoherentAlgebra.pullback q).map a).hom ≫ φ)).1 =
+      ((relativeSpecPullbackHomEquiv A q).symm φ).1 ≫ CommMon.relativeSpecMap a.hom := by
+  rw [relativeSpecPullbackHomEquiv_symm_apply_coe, relativeSpecPullbackHomEquiv_symm_apply_coe,
+    QuasicoherentAlgebra.pullbackHomEquiv_naturality_left]
+  exact CommMon.relativeSpecLift_comp a.hom _
 
 end
 

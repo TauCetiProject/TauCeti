@@ -51,6 +51,9 @@ import Mathlib.Tactic.NoncommRing
   `Finset.mem_map_swap_symmDiff_pair_iff`, `Finset.involutive_map_swap_symmDiff_pair` and
   `Finset.map_swap_symmDiff_pair_eq_self_iff` do the same for a transposition composed with the
   toggle of the two transposed points.
+* `Finset.mem_map_swap_prodCongr_refl_iff_of_ne` and
+  `Finset.mk_mem_map_swap_prodCongr_refl_iff` describe membership in a finset of pairs whose
+  first coordinates are transposed.
 * `Finset.sum_filter_le_sum_filter_le` reindexes a double sum over chains in a finite type with a
   `≤` relation.
 * `Finset.sum_eq_two` and `Finset.sum_eq_four` reduce a sum over a finite type, and a double sum
@@ -230,6 +233,25 @@ theorem map_swap_eq_self_iff {α : Type*} [DecidableEq α] (a b : α) (s : Finse
       · rw [Equiv.swap_apply_right]
         exact h
       · rw [Equiv.swap_apply_of_ne_of_ne hx hx']
+
+/-- A pair whose first coordinate is neither transposed point lies in a finset of pairs with
+the first coordinates transposed exactly when it lies in the finset. -/
+theorem mem_map_swap_prodCongr_refl_iff_of_ne {α β : Type*} [DecidableEq α] {a b : α}
+    (s : Finset (α × β)) {p : α × β} (ha : p.1 ≠ a) (hb : p.1 ≠ b) :
+    p ∈ s.map ((Equiv.swap a b).prodCongr (Equiv.refl β)).toEmbedding ↔ p ∈ s := by
+  rcases p with ⟨x, y⟩
+  simp only [mem_map_equiv, Equiv.prodCongr_symm, Equiv.symm_swap, Equiv.refl_symm,
+    Equiv.prodCongr_apply, Prod.map_apply, Equiv.refl_apply]
+  rw [Equiv.swap_apply_of_ne_of_ne ha hb]
+
+/-- A pair lies in a finset of pairs with the first coordinates transposed exactly when the pair
+with its first coordinate transposed lies in the finset. -/
+theorem mk_mem_map_swap_prodCongr_refl_iff {α β : Type*} [DecidableEq α] (a b : α)
+    (s : Finset (α × β)) (x : α) (y : β) :
+    (x, y) ∈ s.map ((Equiv.swap a b).prodCongr (Equiv.refl β)).toEmbedding ↔
+      (Equiv.swap a b x, y) ∈ s := by
+  simp only [mem_map_equiv, Equiv.prodCongr_symm, Equiv.symm_swap, Equiv.refl_symm,
+    Equiv.prodCongr_apply, Prod.map_apply, Equiv.refl_apply]
 
 /-- Membership in a transposed finset with the two transposed points toggled. -/
 theorem mem_map_swap_symmDiff_pair_iff {α : Type*} [DecidableEq α] (a b : α) (s : Finset α)
