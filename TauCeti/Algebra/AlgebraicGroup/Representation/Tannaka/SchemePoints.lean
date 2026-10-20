@@ -61,6 +61,8 @@ theorem algebraPointsFunctorIsoTensorAutFunctor_hom_app_apply (A : CommAlgCat.{u
       Tannaka.fgPointTensorIso k _ A
         ((algebraPointsFunctorIsoCoordinatePointsFunctor k G).hom.app A p.down) := by
   rw [algebraPointsFunctorIsoTensorAutFunctor, Iso.trans_hom, NatTrans.comp_app]
+  -- Whiskering by `GrpCat.uliftFunctor` sends `p` to `ULift.up` of the coordinate
+  -- comparison at `p.down`; evaluating the `GrpCat` composite reduces to that application.
   exact Tannaka.pointsFunctorIsoTensorAutFunctor_hom_app_apply k _ A _
 
 /-- The inverse comparison reconstructs the native coordinate point and then transports it
@@ -73,6 +75,8 @@ theorem algebraPointsFunctorIsoTensorAutFunctor_inv_app_apply (A : CommAlgCat.{u
       ULift.up ((algebraPointsFunctorIsoCoordinatePointsFunctor k G).inv.app A
         (Tannaka.reconstructedPoint k _ A eta)) := by
   rw [algebraPointsFunctorIsoTensorAutFunctor, Iso.trans_inv, NatTrans.comp_app]
+  -- The inverse whiskered component applies the coordinate comparison under `ULift.up`
+  -- to the reconstructed point; `GrpCat` composition and `.down` reduce definitionally.
   have h := Tannaka.pointsFunctorIsoTensorAutFunctor_inv_app_apply k _ A eta
   exact congrArg (fun p ↦ ULift.up
     ((algebraPointsFunctorIsoCoordinatePointsFunctor k G).inv.app A p)) h
