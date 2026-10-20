@@ -13,7 +13,6 @@ public import Mathlib.Algebra.Ring.Defs
 public import Mathlib.Data.Finset.Interval
 public import Mathlib.Data.Finset.Prod
 public import Mathlib.Data.Finset.SymmDiff
-public import Mathlib.Order.Interval.Finset.Fin
 import Mathlib.Data.Nat.Choose.Sum
 public import Mathlib.Data.Fintype.Card
 public import Mathlib.SetTheory.Cardinal.Finite
@@ -50,8 +49,6 @@ import TauCeti.Data.Set.PowersetCard
   halves of a finset inside an open interval between the split point and an endpoint;
   `Finset.add_one_add_card_erase_eq_zero` and `Finset.neg_card_filter_lt_add_neg_card_filter_gt`
   are the corresponding identities for an integer cancelling the cardinality of the finset.
-* `Fin.Ioo_eq_empty_of_le_two` and `Fin.eq_empty_of_subset_Ioo_of_le_two` say that open
-  intervals in `Fin n`, and hence finsets inside them, are empty when `n ≤ 2`.
 * `Finset.exists_adjacent_eq_of_not_card_image_and_image_subset_Ioo` finds two consecutive points
   identified by a monotone map that is not injective on a finset `T` inside `Ioo a b`, or does not
   map it strictly between the images of `a` and `b`, and
@@ -528,15 +525,6 @@ theorem filter_gt_subset_Ioo {α : Type*} [Preorder α] [LocallyFiniteOrder α] 
   fun _ hx ↦ by
     rw [mem_filter] at hx
     exact mem_Ioo.2 ⟨hx.2, (mem_Ioo.1 (hs hx.1)).2⟩
-
-/-- An open interval in `Fin n` with `n ≤ 2` is empty. -/
-theorem _root_.Fin.Ioo_eq_empty_of_le_two {n : ℕ} (hn : n ≤ 2) (a b : Fin n) : Ioo a b = ∅ :=
-  card_eq_zero.1 (by rw [Fin.card_Ioo]; omega)
-
-/-- A finset inside an open interval in `Fin n` with `n ≤ 2` is empty. -/
-theorem _root_.Fin.eq_empty_of_subset_Ioo_of_le_two {n : ℕ} (hn : n ≤ 2) {a b : Fin n}
-    {s : Finset (Fin n)} (hs : s ⊆ Ioo a b) : s = ∅ :=
-  subset_empty.1 (hs.trans (Fin.Ioo_eq_empty_of_le_two hn a b).subset)
 
 /-- If a monotone map `f` is not injective on a finset `T` inside `Ioo a b`, or does not map `T`
 strictly between `f a` and `f b`, then it identifies two consecutive points `u < v` of

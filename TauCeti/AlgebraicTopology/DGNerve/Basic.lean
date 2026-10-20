@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.CompStruct
 public import TauCeti.CategoryTheory.DG.HomotopyCategory
+import TauCeti.Data.Fin.Basic
 import TauCeti.Data.Finset.Basic
 
 /-!
@@ -797,10 +798,11 @@ theorem edgeEquiv_symm_apply_heq {X Y : C}
 zero. -/
 theorem coh_σ_vertex (X : C) :
     ((dgNerve R C).σ 0 (Simplex.vertex X : Simplex R C 0)).coh 0 1 ∅ 0 (by decide)
-      (empty_subset _) (by simp) = dgId R X :=
-  ((Simplex.vertex X).mapCoh_eq_coh (SimplexCategory.σ 0).toOrderHom (i := 0) (j := 1)
-    (S := ∅) (d := 0) (hij := by decide) (hS := empty_subset _) (hd := by simp)
-    (by simp)).trans (castDeg_self R rfl _)
+      (empty_subset _) (by simp) = dgId R X := by
+  -- `σ 0` acts on the nerve through `dgNerve.map`, i.e. by `Simplex.map`.
+  change (Simplex.map (Simplex.vertex X) (SimplexCategory.σ 0).toOrderHom).coh 0 1 ∅ 0 _ _ _ = _
+  rw [Simplex.map_coh, Simplex.mapCoh_eq_coh _ _ (by simp)]
+  exact castDeg_self R rfl _
 
 end dgNerve
 
