@@ -277,6 +277,7 @@ theorem scalarRegularLevelChartAt_symm_zero (x : {x : M // f x = c}) :
 /-- The source of the preferred chart at `x`: points of the level in the preferred chart of `M`
 at `x` whose extended coordinates lie in the source of the implicit-function chart of `f - c` and
 in the neighbourhood where its derivative stays invertible. -/
+@[simp]
 theorem scalarRegularLevelChartAt_source (x : {x : M // f x = c}) :
     (scalarRegularLevelChartAt hf hreg x).source =
       let D := fderiv ℝ (f ∘ (extChartAt I (x : M)).symm) (extChartAt I (x : M) x)
@@ -305,6 +306,7 @@ theorem scalarRegularLevelChartAt_source (x : {x : M // f x = c}) :
 /-- The target of the preferred chart at `x`: model points `k` whose kernel vector `K.symm k`
 gives a point `(0, K.symm k)` of the implicit-function chart target of `f - c`, whose inverse lies
 in the regular neighbourhood and in the target of the preferred extended chart at `x`. -/
+@[simp]
 theorem mem_scalarRegularLevelChartAt_target_iff (x : {x : M // f x = c})
     (k : Fin (finrank ℝ E - 1) → ℝ) :
     k ∈ (scalarRegularLevelChartAt hf hreg x).target ↔
