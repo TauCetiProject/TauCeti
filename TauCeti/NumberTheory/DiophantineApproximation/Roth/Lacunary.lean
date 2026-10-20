@@ -39,29 +39,20 @@ section Lacunary
 
 variable {b r : ℕ}
 
-/-- Each term of the lacunary series is at most the corresponding term of the geometric series
-with ratio `b⁻¹`. -/
-lemma inv_pow_pow_le_inv_pow (hb : 2 ≤ b) (hr : 2 ≤ r) (k : ℕ) :
-    ((b : ℝ) ^ r ^ (k + 1))⁻¹ ≤ ((b : ℝ)⁻¹) ^ k := by
-  have hb1 : (1 : ℝ) < b := by exact_mod_cast hb
-  rw [inv_pow]
-  refine inv_anti₀ (by positivity) (pow_le_pow_right₀ hb1.le ?_)
-  exact (Nat.lt_pow_self (by omega)).le.trans (Nat.pow_le_pow_right (by omega) k.le_succ)
-
-/-- The lacunary series `∑_{k ≥ 1} b ^ (-r ^ k)` is summable. -/
-lemma summable_inv_pow_pow (hb : 2 ≤ b) (hr : 2 ≤ r) :
+/-- The lacunary series is summable, by comparison with the geometric series: the exponents
+`r ^ (k + 1)` grow at least linearly (`summable_one_div_pow_of_le`). -/
+private lemma summable_inv_pow_pow (hb : 2 ≤ b) (hr : 2 ≤ r) :
     Summable fun k : ℕ ↦ ((b : ℝ) ^ r ^ (k + 1))⁻¹ := by
   have hb1 : (1 : ℝ) < b := by exact_mod_cast hb
-  exact (summable_geometric_of_lt_one (by positivity)
-    (inv_lt_one_of_one_lt₀ hb1)).of_nonneg_of_le (fun k ↦ by positivity)
-    (inv_pow_pow_le_inv_pow hb hr)
+  simpa [one_div] using summable_one_div_pow_of_le hb1 fun k ↦
+    (Nat.lt_pow_self (by omega)).le.trans (Nat.pow_le_pow_right (by omega) k.le_succ)
 
 /-- The partial sum of the first `n` terms of the lacunary series, written as an integer over the
 denominator `q = b ^ (r ^ n)`. -/
-lemma partial_sum_inv_pow_pow_eq (hb : 2 ≤ b) (hr : 2 ≤ r) (n : ℕ) :
+lemma partial_sum_inv_pow_pow_eq (hb : 0 < b) (hr : 0 < r) (n : ℕ) :
     ((∑ k ∈ Finset.range n, (b : ℤ) ^ (r ^ n - r ^ (k + 1)) : ℤ) : ℝ) / (b : ℝ) ^ r ^ n =
       ∑ k ∈ Finset.range n, ((b : ℝ) ^ r ^ (k + 1))⁻¹ := by
-  have hb0 : (0 : ℝ) < b := by positivity
+  have hb0 : (0 : ℝ) < b := by exact_mod_cast hb
   push_cast
   rw [Finset.sum_div]
   refine Finset.sum_congr rfl fun k hk ↦ ?_
@@ -130,7 +121,7 @@ theorem liouvilleWith_tsum_inv_pow_pow (hb : 2 ≤ b) (hr : 2 ≤ r) :
   -- goal has the cast `(q : ℝ)` of the natural number `q = b ^ r ^ n`; `hqr` bridges the two.
   have hrepr : ((∑ k ∈ Finset.range n, (b : ℤ) ^ (r ^ n - r ^ (k + 1)) : ℤ) : ℝ) / q =
       ∑ k ∈ Finset.range n, f k := by
-    rw [hqr]; exact partial_sum_inv_pow_pow_eq hb hr n
+    rw [hqr]; exact partial_sum_inv_pow_pow_eq (by omega) (by omega) n
   rw [hrepr]
   refine ⟨fun h ↦ hpos.ne' (by rw [← htail, h, sub_self]), ?_⟩
   rw [htail, abs_of_pos hpos]
