@@ -1,0 +1,159 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.RingTheory.StrictHenselization.Neighbourhood
+public import TauCeti.RingTheory.LocalRing.ResidueField.Point
+
+/-!
+# Pointed étale neighbourhoods as triples
+
+The point/residue-field correspondence gives an equivalence between the
+categories of pointed étale algebras and étale algebra, prime,
+residue-embedding triples of Stacks Tag 04GW.
+-/
+
+public section
+
+universe u
+
+namespace TauCeti.StrictHenselization
+
+open CategoryTheory
+open TauCeti.ResidueField
+
+variable (R Ω : Type u) [CommRing R] [Field Ω] [Algebra R Ω]
+
+/-- An étale algebra, a prime, and an embedding of its residue field into `Ω`. -/
+structure TripleNeighbourhood where
+  carrier : Type u
+  [commRing : CommRing carrier]
+  [algebra : Algebra R carrier]
+  [etale : Algebra.Etale R carrier]
+  data : PointData R carrier Ω
+
+attribute [instance] TripleNeighbourhood.commRing TripleNeighbourhood.algebra
+  TripleNeighbourhood.etale
+
+/-- Regard a prime and residue-field embedding as a pointed étale algebra. -/
+@[expose] noncomputable def TripleNeighbourhood.toNeighbourhood
+    (triple : TripleNeighbourhood R Ω) : Neighbourhood R Ω :=
+  ⟨Over.mk (CommAlgCat.ofHom triple.data.toAlgHom),
+    (isPointedNeighbourhood_iff R Ω _).mpr triple.etale⟩
+
+/-- The point of the neighbourhood associated with a triple is its induced algebra map. -/
+@[simp]
+theorem TripleNeighbourhood.toNeighbourhood_point (triple : TripleNeighbourhood R Ω) :
+    (triple.toNeighbourhood R Ω).obj.hom.hom = triple.data.toAlgHom :=
+  rfl
+
+/-- Extract the prime and residue-field embedding from a pointed étale algebra. -/
+noncomputable def Neighbourhood.toTriple
+    (point : Neighbourhood R Ω) : TripleNeighbourhood R Ω :=
+  { carrier := point.obj.left
+    commRing := inferInstance
+    algebra := inferInstance
+    etale := (isPointedNeighbourhood_iff R Ω _).mp point.property
+    data := (pointDataEquiv : PointData R point.obj.left Ω ≃ _).symm point.obj.hom.hom }
+
+/-- The point map of the triple extracted from a neighbourhood is its original point map. -/
+@[simp]
+theorem Neighbourhood.toTriple_point (point : Neighbourhood R Ω) :
+    HEq (point.toTriple R Ω).data.toAlgHom point.obj.hom.hom := by
+  simp only [Neighbourhood.toTriple]
+  apply heq_of_eq
+  exact (pointDataEquiv_apply
+    ((pointDataEquiv : PointData R point.obj.left Ω ≃ _).symm point.obj.hom.hom)).symm.trans
+      (Equiv.apply_symm_apply (pointDataEquiv : PointData R point.obj.left Ω ≃ _)
+        point.obj.hom.hom)
+
+/-- Triples and pointed étale neighbourhoods are equivalent as objects. -/
+@[expose] noncomputable def tripleNeighbourhoodEquiv :
+    TripleNeighbourhood R Ω ≃ Neighbourhood R Ω where
+  toFun := TripleNeighbourhood.toNeighbourhood R Ω
+  invFun := Neighbourhood.toTriple R Ω
+  left_inv := by
+    intro triple
+    cases triple with
+    | mk carrier data =>
+      simp only [TripleNeighbourhood.toNeighbourhood, Neighbourhood.toTriple]
+      congr 1
+      exact pointDataEquiv_symm_apply_toAlgHom data
+  right_inv := by
+    intro point
+    apply Neighbourhood.ext R Ω _ point
+    · rfl
+    · exact Neighbourhood.toTriple_point R Ω point
+
+/-- The forward object equivalence uses the pointed algebra of a triple. -/
+@[simp]
+theorem tripleNeighbourhoodEquiv_apply (triple : TripleNeighbourhood R Ω) :
+    tripleNeighbourhoodEquiv R Ω triple = triple.toNeighbourhood R Ω := by
+  rfl
+
+/-- The point of the neighbourhood associated with a triple under the object equivalence. -/
+@[simp]
+theorem tripleNeighbourhoodEquiv_point (triple : TripleNeighbourhood R Ω) :
+    ((tripleNeighbourhoodEquiv R Ω) triple).obj.hom.hom = triple.data.toAlgHom :=
+  rfl
+
+/-- The inverse object equivalence extracts the prime and residue embedding. -/
+@[simp]
+theorem tripleNeighbourhoodEquiv_symm_apply (point : Neighbourhood R Ω) :
+    (tripleNeighbourhoodEquiv R Ω).symm point = point.toTriple R Ω := by
+  rfl
+
+/-- The category of étale algebra, prime, and residue-field embedding triples. -/
+abbrev TripleCategory :=
+  InducedCategory (Neighbourhood R Ω) (tripleNeighbourhoodEquiv R Ω)
+
+/-- The category of Stacks 04GW triples is equivalent to pointed étale neighbourhoods. -/
+noncomputable def tripleCategoryEquivalence : TripleCategory R Ω ≌ Neighbourhood R Ω :=
+  Equivalence.induced (tripleNeighbourhoodEquiv R Ω)
+
+/-- A triple-category morphism commutes with the induced field-valued points. -/
+theorem TripleCategory.hom_point {first second : TripleCategory R Ω}
+    (morphism : first ⟶ second) :
+    second.data.toAlgHom.comp morphism.hom.hom.left.hom = first.data.toAlgHom := by
+  have h := congrArg CommAlgCat.Hom.hom morphism.hom.hom.w
+  simp only [CommAlgCat.hom_comp, tripleNeighbourhoodEquiv_point] at h
+  exact h
+
+/-- Construct a morphism of triples from a map preserving their points. -/
+private noncomputable def TripleCategory.homMk (first second : TripleCategory R Ω)
+    (map : first.carrier →ₐ[R] second.carrier)
+    (hpoint : second.data.toAlgHom.comp map = first.data.toAlgHom) : first ⟶ second :=
+  InducedCategory.homMk (ObjectProperty.homMk (Over.homMk (CommAlgCat.ofHom map) (by
+    apply CommAlgCat.hom_ext
+    exact hpoint)))
+
+/-- The algebra map underlying a constructed triple morphism is the supplied map. -/
+@[simp]
+private theorem TripleCategory.homMk_left (first second : TripleCategory R Ω)
+    (map : first.carrier →ₐ[R] second.carrier)
+    (hpoint : second.data.toAlgHom.comp map = first.data.toAlgHom) :
+    (TripleCategory.homMk R Ω first second map hpoint).hom.hom.left.hom = map :=
+  rfl
+
+/-- A morphism of triples is an algebra map preserving the prime and residue embedding. -/
+theorem tripleCategory_hom_iff (first second : TripleCategory R Ω)
+    (map : first.carrier →ₐ[R] second.carrier) :
+    (∃ morphism : first ⟶ second, morphism.hom.hom.left.hom = map) ↔
+      ∃ hprime : first.data.1.asIdeal = second.data.1.asIdeal.comap map.toRingHom,
+        second.data.2.comp
+          (Ideal.ResidueField.mapₐ first.data.1.asIdeal second.data.1.asIdeal map hprime) =
+          first.data.2 := by
+  constructor
+  · rintro ⟨morphism, equality⟩
+    apply (PointData.toAlgHom_comp_iff first.data second.data map).mp
+    rw [← equality]
+    exact TripleCategory.hom_point R Ω morphism
+  · intro h
+    have hcomp := (PointData.toAlgHom_comp_iff first.data second.data map).mpr h
+    exact ⟨TripleCategory.homMk R Ω first second map hcomp,
+      TripleCategory.homMk_left R Ω first second map hcomp⟩
+
+end TauCeti.StrictHenselization
