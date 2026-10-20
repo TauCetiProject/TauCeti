@@ -99,6 +99,30 @@ private theorem joinFormula_mem (hne : (geometricLink K v).Nonempty)
     rw [eq_starApex_of_not_lt K v hx, joinFormula_starApex]
     exact mem_convexJoin.mpr ⟨_, mem_range_self ⟨y, hy⟩, b, rfl, right_mem_segment ℝ _ _⟩
 
+/-- Every point of the join of the link model with the centre is hit by the join formula. -/
+private theorem exists_joinFormula_eq {z : κ → ℝ}
+    (hz : z ∈ convexJoin ℝ (range fun y : geometricLink K v => F (y.1.1 : ι → ℝ)) {b}) :
+    ∃ x : closedStarRealization K {v}, joinFormula F b v (x.1.1 : ι → ℝ) = z := by
+  obtain ⟨_, ⟨y, rfl⟩, b', hb', α, β, hα, hβ, hαβ, rfl⟩ := mem_convexJoin.mp hz
+  rw [mem_singleton_iff] at hb'
+  subst b'
+  have hβle : β ≤ 1 := by linarith
+  rcases hβle.lt_or_eq with hβ1 | rfl
+  · let r := starRay K v y ⟨β, hβ, hβ1⟩
+    have hrv : r.1.1 v = β := by simp [r]
+    have hr := ((mem_puncturedClosedStar K v _).mp r.2).1
+    refine ⟨⟨r.1, hr⟩, ?_⟩
+    -- The punctured-star point rebuilt from `r` is `r` itself, whose projection is `y`.
+    rw [joinFormula_of_lt F b ⟨r.1, hr⟩ (hrv ▸ hβ1), Subtype.coe_eta,
+      starLinkProjection_starRay]
+    simp only [hrv]
+    congr 2
+    linarith
+  · obtain rfl : α = 0 := by linarith
+    refine ⟨starApex K v, ?_⟩
+    rw [joinFormula_starApex]
+    simp
+
 /-- The height function reads off the apex coordinate along the join formula. -/
 private theorem h_joinFormula (hne : (geometricLink K v).Nonempty)
     (hhF : ∀ y : geometricLink K v, ∀ t ∈ Icc (0 : ℝ) 1,
@@ -124,9 +148,9 @@ private theorem joinInverseFormula_joinFormula (hne : (geometricLink K v).Nonemp
   by_cases hx : x.1.1 v < 1
   · set p := starLinkProjection K v ⟨x.1, (mem_puncturedClosedStar K v _).mpr ⟨x.2, hx⟩⟩
     have hray := starRay_starLinkProjection K v ⟨x.1, (mem_puncturedClosedStar K v _).mpr ⟨x.2, hx⟩⟩
-    rw [joinInverseFormula, Function.comp_apply, Function.comp_apply, hx',
-      joinFormula_of_lt F b x hx, add_sub_cancel_right, coneMap_smul G _ (sub_pos.mpr hx).ne',
-      hGF, coneToJoin_apply]
+    simp only [joinInverseFormula, Function.comp_apply]
+    rw [hx', joinFormula_of_lt F b x hx, add_sub_cancel_right,
+      coneMap_smul G _ (sub_pos.mpr hx).ne', hGF, coneToJoin_apply]
     funext w
     have hw := congrArg (fun z : puncturedClosedStar K v => z.1.1 w) hray
     simp only [starRay_apply] at hw
@@ -136,8 +160,8 @@ private theorem joinInverseFormula_joinFormula (hne : (geometricLink K v).Nonemp
       simp
     · simp [Ne.symm hvw, hvw]
   · rw [eq_starApex_of_not_lt K v hx] at hx' ⊢
-    rw [joinInverseFormula, Function.comp_apply, Function.comp_apply, hx',
-      joinFormula_starApex, starApex_val, vertex_val]
+    simp only [joinInverseFormula, Function.comp_apply]
+    rw [hx', joinFormula_starApex, starApex_val, vertex_val]
     simp [coneToJoin_apply, Finsupp.single_eq_pi_single]
 
 /-- The join formula is piecewise linear on the closed-star coordinates. -/
@@ -228,34 +252,16 @@ theorem exists_homeomorph_closedStarRealization_convexJoin
     have hcoe := congrArg (fun z : S => joinInverseFormula G h b v z.1) hxy
     simp only [f, joinInverseFormula_joinFormula hne hGF hhF] at hcoe
     exact Subtype.ext (Subtype.ext (DFunLike.coe_injective hcoe))
-  have hsurj : Function.Surjective f := by
-    rintro ⟨z, hz⟩
-    obtain ⟨_, ⟨y, rfl⟩, b', hb', α, β, hα, hβ, hαβ, rfl⟩ := mem_convexJoin.mp hz
-    rw [mem_singleton_iff] at hb'
-    subst b'
-    have hβle : β ≤ 1 := by linarith
-    rcases hβle.lt_or_eq with hβ1 | rfl
-    · let r := starRay K v y ⟨β, hβ, hβ1⟩
-      have hrv : r.1.1 v = β := by simp [r]
-      have hr := ((mem_puncturedClosedStar K v _).mp r.2).1
-      refine ⟨⟨r.1, hr⟩, Subtype.ext ?_⟩
-      simp only [f]
-      -- The punctured-star point rebuilt from `r` is `r` itself, whose projection is `y`.
-      rw [joinFormula_of_lt F b ⟨r.1, hr⟩ (hrv ▸ hβ1), Subtype.coe_eta,
-        starLinkProjection_starRay]
-      simp only [hrv]
-      congr 2
-      linarith
-    · obtain rfl : α = 0 := by linarith
-      refine ⟨starApex K v, Subtype.ext ?_⟩
-      simp only [f]
-      rw [joinFormula_starApex]
-      simp
+  have hsurj : Function.Surjective f := fun z =>
+    (exists_joinFormula_eq z.2).imp fun _ hx => Subtype.ext hx
   have : CompactSpace (closedStarRealization K {v}) := isCompact_iff_compactSpace.mp hK
   let φ : closedStarRealization K {v} ≃ₜ S :=
     hcont.homeoOfEquivCompactToT2 (f := Equiv.ofBijective f ⟨hinj, hsurj⟩)
+  -- `Equiv.ofBijective` and `homeoOfEquivCompactToT2` both keep the underlying function, so
+  -- `φ x` is `f x` by definition; the rewriting lemmas `Equiv.coe_ofBijective` and
+  -- `Continuous.toEquiv_homeoOfEquivCompactToT2` are themselves proved by `rfl`.
   refine ⟨φ, joinFormula_starApex F b, h_joinFormula hne hhF, joinFormula_of_lt F b,
     joinFormula F b v, joinInverseFormula G h b v, hFPL, isPLOn_joinInverseFormula hK hF hG hh hhF,
-    fun x => (rfl), joinInverseFormula_joinFormula hne hGF hhF⟩
+    fun x => rfl, joinInverseFormula_joinFormula hne hGF hhF⟩
 
 end AbstractSimplicialComplex

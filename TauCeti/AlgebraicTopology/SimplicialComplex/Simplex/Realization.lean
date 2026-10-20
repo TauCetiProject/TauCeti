@@ -172,15 +172,13 @@ theorem range_coe_realization_standardSuccSimplexBoundary (n : ℕ) :
     range (fun x : Realization (standardSuccSimplexBoundary n) => (x.1 : Fin (n + 2) → ℝ)) =
       {z ∈ range fun t : Convexity.StdSimplex ℝ (Fin (n + 2)) => ⇑t.weights | ∃ i, z i = 0} := by
   ext z
-  rw [mem_range_coe_realization_iff, mem_standardSuccSimplexBoundary_iff,
-    Finsupp.support_nonempty_iff, Finset.ssubset_univ_iff, mem_sep_iff,
+  have hz : ∑ i, z i = 1 → z ≠ 0 := by
+    rintro h rfl
+    simp at h
+  rw [mem_range_coe_realization_iff, mem_standardSuccSimplexBoundary_iff]
+  simp [Finset.ssubset_univ_iff, Finset.eq_univ_iff_forall,
     Convexity.StdSimplex.range_toFun_comp_weights]
-  simp only [ne_eq, Finset.eq_univ_iff_forall, Finsupp.mem_support_iff,
-    Finsupp.coe_equivFunOnFinite_symm, not_forall, not_not, mem_ofPred_eq, mem_inter_iff,
-    mem_iInter]
-  refine ⟨fun h => ⟨⟨h.1, h.2.1⟩, h.2.2.2⟩, fun h => ⟨h.1.1, h.1.2, fun hz => ?_, h.2⟩⟩
-  have : z = 0 := by simpa using congrArg (⇑) hz
-  simp [this] at h
+  grind
 
 variable [Fintype ι] [Nonempty ι]
 
@@ -253,7 +251,8 @@ theorem range_coe_realization_top [Finite ι] :
     rw [mem_range_coe_realization_iff, Convexity.StdSimplex.range_toFun_comp_weights]
     simp
   · rw [← realizationTopHomeomorphStdSimplex.surjective.range_comp]
-    rfl
+    exact congrArg range (funext fun x => funext fun i =>
+      (realizationTopHomeomorphStdSimplex_apply x i).symm)
 
 /-- The realization of the standard one-simplex is homeomorphic to the unit interval. The zeroth
 vertex maps to `0` and the first vertex maps to `1`; see the two endpoint lemmas below. -/
