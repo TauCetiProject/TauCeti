@@ -196,10 +196,20 @@ theorem eq_of_flagPoint_mem (d : FlagPairData ι Flag X) {f g : Flag} {p : Σ i,
   · exact absurd (hp.symm.trans hq) (fun h => fstPoint_ne_sndPoint d g f h.symm)
   · exact sndPoint_injective d (hp.symm.trans hq)
 
-/-- The generating relation of the gluing: two points of the disjoint union are related when they
-are the two points of one flag pair. -/
-def flagRel (d : FlagPairData ι Flag X) (x y : Σ i, X i) : Prop :=
+/-- The generating relation of the gluing, in its hidden form. -/
+private def flagRelAux (d : FlagPairData ι Flag X) (x y : Σ i, X i) : Prop :=
   ∃ f : Flag, (x = fstPoint d f ∧ y = sndPoint d f) ∨ (x = sndPoint d f ∧ y = fstPoint d f)
+
+/-- The generating relation of the gluing: two points of the disjoint union are related when they
+are the two points of one flag pair.  Its characterisation is `flagRel_def`. -/
+def flagRel (d : FlagPairData ι Flag X) (x y : Σ i, X i) : Prop := flagRelAux d x y
+
+/-- **The generating relation, characterised.**  Two points of the disjoint union are related by
+the generating relation exactly when they are the two points of one flag pair, in either order. -/
+theorem flagRel_def (d : FlagPairData ι Flag X) (x y : Σ i, X i) :
+    flagRel d x y ↔ ∃ f : Flag, (x = fstPoint d f ∧ y = sndPoint d f) ∨
+      (x = sndPoint d f ∧ y = fstPoint d f) :=
+  Iff.rfl
 
 /-- The generating relation is symmetric. -/
 theorem flagRel_symm (d : FlagPairData ι Flag X) {x y : Σ i, X i} (h : flagRel d x y) :
