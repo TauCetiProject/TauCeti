@@ -124,6 +124,45 @@ theorem not_integrable_exp_mul_id_generalizedGammaMeasure_of_lt_one
   · exact not_integrable_exp_mul_id_generalizedGammaMeasure_of_pos_lt_one
       ha hcpos hc1 hs ht
 
+/-- Above power parameter one, the exponential-integrability domain is all of `ℝ`. -/
+@[simp]
+theorem integrableExpSet_id_generalizedGammaMeasure_of_one_lt
+    (ha : 0 < a) (hc : 1 < c) (hs : 0 < s) :
+    integrableExpSet id (generalizedGammaMeasure a c s) = univ := by
+  ext t
+  simp [integrableExpSet, integrable_exp_mul_id_generalizedGammaMeasure_of_one_lt ha hc hs]
+
+/-- Below power parameter one, exponential integrability is equivalent to a nonpositive rate. -/
+@[simp]
+theorem integrable_exp_mul_id_generalizedGammaMeasure_iff_of_lt_one
+    (ha : 0 < a) (hc : c ≠ 0) (hc1 : c < 1) (hs : 0 < s) (t : ℝ) :
+    Integrable (fun x : ℝ ↦ exp (t * x)) (generalizedGammaMeasure a c s) ↔ t ≤ 0 :=
+  ⟨fun h ↦ not_lt.1 fun ht ↦
+    not_integrable_exp_mul_id_generalizedGammaMeasure_of_lt_one ha hc hc1 hs ht h,
+    integrable_exp_mul_id_generalizedGammaMeasure_of_nonpos a c s⟩
+
+/-- Below power parameter one, the exponential-integrability domain is `(-∞, 0]`. -/
+@[simp]
+theorem integrableExpSet_id_generalizedGammaMeasure_of_lt_one
+    (ha : 0 < a) (hc : c ≠ 0) (hc1 : c < 1) (hs : 0 < s) :
+    integrableExpSet id (generalizedGammaMeasure a c s) = Iic 0 := by
+  ext t
+  simpa only [integrableExpSet, mem_ofPred_eq, id_eq, mem_Iic] using
+    integrable_exp_mul_id_generalizedGammaMeasure_iff_of_lt_one ha hc hc1 hs t
+
+/-- At power parameter one, the exponential-integrability domain excludes the reciprocal scale.
+For `simp`, `generalizedGammaMeasure_one` reduces this to the Gamma domain theorem. -/
+theorem integrableExpSet_id_generalizedGammaMeasure_one (ha : 0 < a) (hs : 0 < s) :
+    integrableExpSet id (generalizedGammaMeasure a 1 s) = Iio s⁻¹ := by
+  rw [generalizedGammaMeasure_one ha hs, integrableExpSet_id_gammaMeasure ha (inv_pos.2 hs)]
+
+/-- At power parameter one, exponential integrability holds exactly below the reciprocal scale. -/
+theorem integrable_exp_mul_id_generalizedGammaMeasure_one_iff
+    (ha : 0 < a) (hs : 0 < s) (t : ℝ) :
+    Integrable (fun x : ℝ ↦ exp (t * x)) (generalizedGammaMeasure a 1 s) ↔ t < s⁻¹ := by
+  simpa only [integrableExpSet, mem_ofPred_eq, id_eq, mem_Iio] using
+    Set.ext_iff.1 (integrableExpSet_id_generalizedGammaMeasure_one ha hs) t
+
 /-- The exact exponential-integrability domain of a valid generalized gamma law.
 At power one the endpoint is excluded; below power one the endpoint zero is included. -/
 @[simp]
@@ -132,16 +171,11 @@ theorem integrableExpSet_id_generalizedGammaMeasure
     integrableExpSet id (generalizedGammaMeasure a c s) =
       if 1 < c then univ else if c = 1 then Iio s⁻¹ else Iic 0 := by
   rcases lt_trichotomy c 1 with hc1 | rfl | hc1
-  · simp only [not_lt.mpr hc1.le, ↓reduceIte, hc1.ne]
-    ext t
-    simp only [integrableExpSet, mem_ofPred_eq, id_eq, mem_Iic]
-    exact ⟨fun h ↦ not_lt.1 fun ht ↦
-      not_integrable_exp_mul_id_generalizedGammaMeasure_of_lt_one ha hc hc1 hs ht h,
-      integrable_exp_mul_id_generalizedGammaMeasure_of_nonpos a c s⟩
-  · simp [generalizedGammaMeasure_one ha hs, integrableExpSet_id_gammaMeasure ha (inv_pos.2 hs)]
-  · simp only [hc1, ↓reduceIte]
-    ext t
-    simp only [integrableExpSet, mem_ofPred_eq, id_eq, mem_univ, iff_true]
-    exact integrable_exp_mul_id_generalizedGammaMeasure_of_one_lt ha hc1 hs t
+  · simpa only [not_lt.mpr hc1.le, ↓reduceIte, hc1.ne] using
+      integrableExpSet_id_generalizedGammaMeasure_of_lt_one ha hc hc1 hs
+  · simpa only [lt_self_iff_false, ↓reduceIte] using
+      integrableExpSet_id_generalizedGammaMeasure_one ha hs
+  · simpa only [hc1, ↓reduceIte] using
+      integrableExpSet_id_generalizedGammaMeasure_of_one_lt ha hc1 hs
 
 end TauCeti.Probability
