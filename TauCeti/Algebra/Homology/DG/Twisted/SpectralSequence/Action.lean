@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Homology.DG.Twisted.SpectralSequence.Splitting
 public import TauCeti.Algebra.Homology.ModuleCat.ShiftSequence
-import TauCeti.Algebra.Homology.DG.Twisted.Continuation
 
 /-!
 # The action of a cycle of degree zero on the cohomology of a shifted module complex

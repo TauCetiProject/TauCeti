@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Homology.DG.Twisted.SpectralSequence.Action
 public import TauCeti.Algebra.Homology.DG.Twisted.SpectralSequence.FirstDifferential
-import TauCeti.Algebra.Homology.DG.Twisted.Continuation
 
 /-!
 # The second page of the index spectral sequence

@@ -123,7 +123,8 @@ theorem m_eq_zero_of_le (m : TwistingCocycle 𝒜 d P ind) {x y : P} (hxy : ind 
 theorem m_mem_zero_of_eq_add_one (m : TwistingCocycle 𝒜 d P ind) {x y : P}
     (hxy : ind x = ind y + 1) : m.m x y ∈ 𝒜 0 := by
   have h := m.mem_graded x y
-  rwa [show ind y - ind x + 1 = 0 by omega] at h
+  have hdeg : ind y - ind x + 1 = 0 := by omega
+  rwa [hdeg] at h
 
 /-- The entries between generators whose indices differ by one are cycles: no generator has an
 index strictly between theirs. -/
@@ -143,7 +144,8 @@ theorem sum_m_mul_m_of_eq_add_two (m : TwistingCocycle 𝒜 d P ind) {x z : P}
   rw [m.twisting x z, ← Finset.sum_neg_distrib]
   refine Finset.sum_congr rfl fun y _ ↦ ?_
   by_cases hy : ind y = ind z + 1
-  · rw [show ind x - ind y = 1 by omega, Int.negOnePow_one, Units.neg_smul, one_smul, neg_neg]
+  · have hdeg : ind x - ind y = 1 := by omega
+    rw [hdeg, Int.negOnePow_one, Units.neg_smul, one_smul, neg_neg]
   · rcases le_or_gt (ind x) (ind y) with h | h
     · rw [m.one_sided x y h, zero_mul, smul_zero, neg_zero]
     · rw [m.one_sided y z (by omega), mul_zero, smul_zero, neg_zero]
