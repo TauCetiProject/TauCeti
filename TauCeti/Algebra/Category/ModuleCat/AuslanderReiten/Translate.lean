@@ -93,13 +93,7 @@ theorem nonempty_iso_arTranslate_of_iso {M N : ModuleCat.{max u v w} A} [Module.
   exact ⟨f.toModuleIso⟩
 
 instance (M : ModuleCat.{max u v w} A) [Module.Finite A M] : Module.Finite A (arTranslate k M) :=
-  let T := ModuleCat.of A (AuslanderReitenTranslate k (arPresentation k M).p)
-  -- Pin the restricted scalar action, rather than the dual's own scalar action.
-  let : SMul k T := (moduleOfAlgebraModule (k := k) T).toSMul
-  let : Module k T := moduleOfAlgebraModule (k := k) T
-  let : IsScalarTower k A T := isScalarTower_of_algebra_moduleCat (k := k) T
-  have : Module.Finite k T := Module.Finite.trans A _
-  Module.Finite.of_restrictScalars_finite k A T
+  inferInstanceAs (Module.Finite A (AuslanderReitenTranslate k (arPresentation k M).p))
 
 /-- The translate vanishes precisely on the projective modules. -/
 @[simp]
