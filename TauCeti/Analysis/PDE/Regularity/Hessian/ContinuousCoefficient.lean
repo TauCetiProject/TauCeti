@@ -144,7 +144,10 @@ theorem exists_lpNorm_iteratedGradient_le_of_sum_mul_inner_eq_of_continuousAt (h
       have h3 := hosc x hx y hy i j
       rw [hΛ]
       linarith
-    have key := hball hl0 (hA x hx) (show r x < 2 * r x by linarith) hR
+    -- The inner radius `rₓ` is below the outer radius `2 rₓ`, with gap exactly `rₓ`.
+    have hlt : r x < 2 * r x := by linarith
+    have hgap : 2 * r x - r x = r x := by ring
+    have key := hball hl0 (hA x hx) hlt hR
       (ha.mono_measure (Measure.restrict_mono hR le_rfl)) le_rfl
       (Eventually.of_forall (hosc x hx)) hΛ0 (Eventually.of_forall haΛ) u f
       (ae_restrict_of_ae_restrict_of_subset hR heq)
@@ -152,7 +155,7 @@ theorem exists_lpNorm_iteratedGradient_le_of_sum_mul_inner_eq_of_continuousAt (h
     have hU := (hsub (Wkp.value 2 u) hR).2
     have hF0 : 0 ≤ F := norm_nonneg _
     have hU0 : 0 ≤ U := norm_nonneg _
-    rw [show 2 * r x - r x = r x by ring] at key
+    rw [hgap] at key
     -- Divide by `rₓ²` and enlarge the norms on `B(x, 2 rₓ)` to the norms on `Ω`.
     have hbound : r x ^ 2 * lpNorm (Wkp.iteratedGradient 1 u) p
         (volume.restrict (ball x (r x))) ≤ r x ^ 2 * (c x * (F + U)) := by
