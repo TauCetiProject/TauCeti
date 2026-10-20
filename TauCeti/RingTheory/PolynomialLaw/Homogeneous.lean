@@ -40,10 +40,9 @@ Homogeneous laws of degree `d` are the objects represented by the degree-`d` div
   recovered from `u.toPolynomialLaw` is `u`.
 * `PolynomialLaw.isHomogeneousOfDegree_one_iff`: a law is homogeneous of degree one if and only
   if it is the polynomial law `u.toPolynomialLaw` of a linear map `u`.
-* `LinearMap.range_toPolynomialLawₗ`: the polynomial laws of linear maps form
-  `homogeneousSubmodule R M N 1`.
-* `LinearMap.toPolynomialLawEquiv`: the linear equivalence between `M →ₗ[R] N` and
-  `homogeneousSubmodule R M N 1`.
+* `PolynomialLaw.range_toPolynomialLawₗ`, `PolynomialLaw.homogeneousSubmoduleOneEquiv`: the
+  laws homogeneous of degree one are the image of `LinearMap.toPolynomialLawₗ`, which identifies
+  `M →ₗ[R] N` with `homogeneousSubmodule R M N 1`.
 
 ## References
 
@@ -250,39 +249,37 @@ theorem LinearMap.toLinearMap_isHomogeneousOfDegree_toPolynomialLaw {R : Type u}
   ext m
   simp
 
-namespace LinearMap
+namespace PolynomialLaw
 
 variable {R : Type u} [CommSemiring R] {M N : Type*} [AddCommMonoid M] [Module R M]
   [AddCommMonoid N] [Module R N]
 
 variable (R M N) in
-/-- The polynomial laws of linear maps are exactly the laws homogeneous of degree one. -/
+/-- The polynomial laws homogeneous of degree one are exactly those of linear maps. -/
 theorem range_toPolynomialLawₗ :
-    range (toPolynomialLawₗ R M N) = PolynomialLaw.homogeneousSubmodule R M N 1 := by
+    LinearMap.range (LinearMap.toPolynomialLawₗ R M N) = homogeneousSubmodule R M N 1 := by
   ext f
-  simp [PolynomialLaw.isHomogeneousOfDegree_one_iff]
+  simp [isHomogeneousOfDegree_one_iff]
 
 variable (R M N) in
-/-- Linear maps `M →ₗ[R] N` correspond to polynomial laws homogeneous of degree one, through
-`LinearMap.toPolynomialLaw`, with inverse the ground map
-`PolynomialLaw.IsHomogeneousOfDegree.toLinearMap`. -/
-def toPolynomialLawEquiv : (M →ₗ[R] N) ≃ₗ[R] PolynomialLaw.homogeneousSubmodule R M N 1 where
+/-- Linear maps `M →ₗ[R] N` are identified with polynomial laws homogeneous of degree one, by
+`LinearMap.toPolynomialLaw` with inverse `IsHomogeneousOfDegree.toLinearMap`. -/
+def homogeneousSubmoduleOneEquiv : (M →ₗ[R] N) ≃ₗ[R] homogeneousSubmodule R M N 1 where
   toFun u := ⟨u.toPolynomialLaw, u.isHomogeneousOfDegree_toPolynomialLaw⟩
-  map_add' u v := Subtype.ext (toPolynomialLaw_add u v)
-  map_smul' r u := Subtype.ext (toPolynomialLaw_smul r u)
-  invFun f := (PolynomialLaw.mem_homogeneousSubmodule.mp f.2).toLinearMap
-  left_inv := toLinearMap_isHomogeneousOfDegree_toPolynomialLaw
-  right_inv f := Subtype.ext f.2.toPolynomialLaw_toLinearMap
+  invFun f := (mem_homogeneousSubmodule.mp f.2).toLinearMap
+  map_add' u v := Subtype.ext (LinearMap.toPolynomialLaw_add u v)
+  map_smul' r u := Subtype.ext (LinearMap.toPolynomialLaw_smul r u)
+  left_inv := LinearMap.toLinearMap_isHomogeneousOfDegree_toPolynomialLaw
+  right_inv f := Subtype.ext (mem_homogeneousSubmodule.mp f.2).toPolynomialLaw_toLinearMap
 
 @[simp]
-theorem coe_toPolynomialLawEquiv_apply (u : M →ₗ[R] N) :
-    (toPolynomialLawEquiv R M N u : M →ₚₗ[R] N) = u.toPolynomialLaw :=
+theorem coe_homogeneousSubmoduleOneEquiv_apply (u : M →ₗ[R] N) :
+    (homogeneousSubmoduleOneEquiv R M N u : M →ₚₗ[R] N) = u.toPolynomialLaw :=
   (rfl)
 
 @[simp]
-theorem toPolynomialLawEquiv_symm_apply (f : PolynomialLaw.homogeneousSubmodule R M N 1) :
-    (toPolynomialLawEquiv R M N).symm f =
-      (PolynomialLaw.mem_homogeneousSubmodule.mp f.2).toLinearMap :=
+theorem homogeneousSubmoduleOneEquiv_symm_apply (f : homogeneousSubmodule R M N 1) :
+    (homogeneousSubmoduleOneEquiv R M N).symm f = (mem_homogeneousSubmodule.mp f.2).toLinearMap :=
   (rfl)
 
-end LinearMap
+end PolynomialLaw

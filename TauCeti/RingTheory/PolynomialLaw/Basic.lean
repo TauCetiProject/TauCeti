@@ -120,7 +120,7 @@ theorem toPolynomialLaw_smul (r : R) (u : M →ₗ[R] N) :
   simp [baseChange_smul]
 
 variable (R M N) in
-/-- `LinearMap.toPolynomialLaw` as an `R`-linear map `(M →ₗ[R] N) →ₗ[R] (M →ₚₗ[R] N)`. -/
+/-- `LinearMap.toPolynomialLaw`, bundled as an `R`-linear map. -/
 def toPolynomialLawₗ : (M →ₗ[R] N) →ₗ[R] M →ₚₗ[R] N where
   toFun := toPolynomialLaw
   map_add' := toPolynomialLaw_add
@@ -129,5 +129,8 @@ def toPolynomialLawₗ : (M →ₗ[R] N) →ₗ[R] M →ₚₗ[R] N where
 @[simp]
 theorem toPolynomialLawₗ_apply (u : M →ₗ[R] N) : toPolynomialLawₗ R M N u = u.toPolynomialLaw :=
   (rfl)
+
+theorem toPolynomialLawₗ_injective : Function.Injective (toPolynomialLawₗ R M N) :=
+  toPolynomialLaw_injective
 
 end LinearMap
