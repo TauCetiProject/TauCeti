@@ -9,7 +9,7 @@ public import Mathlib.Analysis.LocallyConvex.SeparatingDual
 public import Mathlib.Analysis.Normed.Module.HahnBanach
 public import Mathlib.LinearAlgebra.SesquilinearForm.Orthogonal
 public import TauCeti.Analysis.Normed.Operator.Banach
-import TauCeti.Analysis.Normed.Module.Dual.Basic
+public import TauCeti.Analysis.Normed.Module.Dual.Basic
 
 /-!
 # Kernels and ranges of adjoints, and the closed-range theorem
@@ -185,9 +185,7 @@ theorem isClosed_range_of_isClosed_range_precomp [CompleteSpace E]
     (h : IsClosed ((precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E).range :
       Set (StrongDual 𝕜 E))) :
     IsClosed (T.range : Set F) := by
-  -- The dual is separated even when the domain is only seminormed.
-  let : NormedAddCommGroup (StrongDual 𝕜 E) := .ofSeparation fun f hf ↦
-    ext fun x ↦ norm_le_zero_iff.mp (by simpa [hf] using f.le_opNorm x)
+  let : NormedAddCommGroup (StrongDual 𝕜 E) := StrongDual.normedAddCommGroup
   -- Corestrict `T` to the closure `Z` of its range; it suffices to show this is surjective.
   set Z := T.range.topologicalClosure
   have hmem : ∀ x, T x ∈ Z := fun x ↦ T.range.le_topologicalClosure ⟨x, rfl⟩
