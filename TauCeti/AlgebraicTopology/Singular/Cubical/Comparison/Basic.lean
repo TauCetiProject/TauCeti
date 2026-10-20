@@ -29,11 +29,17 @@ invariance, the long exact sequence of a pair, excision) are transported to cubi
   singular chains.
 * `TauCeti.cubicalToSingular k`: the natural chain map back.
 * `TauCeti.cubicalSingularHomotopyEquiv k X`: the chain homotopy equivalence they form.
+* `TauCeti.cubicalToSingularGen k n`, `TauCeti.singularToCubicalGen k n`: the images of the
+  identity cube of the model `Iⁿ` and of the identity simplex of the model `Δⁿ` under the
+  comparison maps.
 * `TauCeti.singularCubicalHomologyIso k X n`, `TauCeti.singularCubicalHomologyNatIso k n`: cubical
   singular homology is naturally isomorphic to singular homology.
 
 ## Main results
 
+* `TauCeti.singularToCubical_app_f_simplexChain` and `TauCeti.cubicalToSingular_app_f_ofCube`: the
+  comparison maps send a simplex, respectively a cube, to the image of the model generator under
+  it, regarded as a map from the model.
 * `TauCeti.cubicalAugment_singularToCubical` and `TauCeti.singularAugment_cubicalToSingular`: the
   comparison maps are compatible with the augmentations.
 * `TauCeti.singularToCubical_app_f_zero_simplexChain` and

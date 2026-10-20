@@ -331,30 +331,33 @@ theorem normalizedTwistedCubicalToSingular_pushforward {Z : TopCat.{v}} [SimplyC
     normalizedTwistedCubicalToSingular L n
         (NormalizedTwistedCubicalChain.pushforward L f.hom z₀ n y a) =
       twistedPushforward L f z₀ n (((cubicalToSingular (ULift.{v} ℤ)).app Z).f n y) a := by
-  have h := NormalizedCubicalChain.linearMap_ext (R := ULift.{v} ℤ)
-    (f := ((normalizedTwistedCubicalToSingular L n).toAddMonoidHom.toIntLinearMap
-      |>.restrictScalars (ULift.{v} ℤ)) ∘ₗ
-      ((LinearMap.applyₗ' ℤ a).restrictScalars (ULift.{v} ℤ)) ∘ₗ
-      NormalizedTwistedCubicalChain.pushforward L f.hom z₀ n)
-    (g := ((LinearMap.applyₗ' ℤ a).restrictScalars (ULift.{v} ℤ)) ∘ₗ
-      twistedPushforward L f z₀ n ∘ₗ
-      (((cubicalToSingular (ULift.{v} ℤ)).app Z).f n).hom) fun d ↦ ?_
-  · exact congrArg (fun φ ↦ φ y) h
-  simp only [LinearMap.comp_apply, LinearMap.restrictScalars_apply, AddMonoidHom.coe_toIntLinearMap,
-    LinearMap.applyₗ'_apply_apply, LinearMap.toAddMonoidHom_coe]
-  -- Composites of `ModuleCat` morphisms are composites of linear maps by definition.
-  change normalizedTwistedCubicalToSingular L n
-      (NormalizedTwistedCubicalChain.pushforward L f.hom z₀ n
-        (NormalizedCubicalChain.ofCube Z (ULift.{v} ℤ) d) a) =
-    twistedPushforward L f z₀ n (((cubicalToSingular (ULift.{v} ℤ)).app Z).f n
-      (NormalizedCubicalChain.ofCube Z (ULift.{v} ℤ) d)) a
-  rw [NormalizedTwistedCubicalChain.pushforward_ofCube, cubicalToSingular_app_f_ofCube,
-    twistedPushforward_map (L := L) (f := f) (z₀ := z₀) (cubeToHom d) (cubeModelOrigin n),
-    TwistedCubicalChain.pushCube_apply, ← NormalizedTwistedCubicalChain.ofCube_apply,
-    normalizedTwistedCubicalToSingular_ofCube]
-  -- The pushforward along the cube `f ∘ d` is the pushforward along `cubeToHom d ≫ f`, by the
-  -- definition of `cubeToHom`.
-  rfl
+  -- The comparison chain map is a linear map on normalized chains; the coercion of the chain
+  -- complex terms hides this from `simp`.
+  let φ : NormalizedCubicalChain Z (ULift.{v} ℤ) n →ₗ[ULift.{v} ℤ]
+      ((singularChains (ULift.{v} ℤ)).obj Z).X n :=
+    (((cubicalToSingular (ULift.{v} ℤ)).app Z).f n).hom
+  induction y using NormalizedCubicalChain.induction_on with
+  | zero =>
+    rw [show NormalizedTwistedCubicalChain.pushforward L f.hom z₀ n 0 a = 0 by simp, map_zero]
+    exact ((congrArg (fun z ↦ twistedPushforward L f z₀ n z a) (map_zero φ)).trans (by simp)).symm
+  | ofCube d =>
+    rw [NormalizedTwistedCubicalChain.pushforward_ofCube, cubicalToSingular_app_f_ofCube,
+      twistedPushforward_map (L := L) (f := f) (z₀ := z₀) (cubeToHom d) (cubeModelOrigin n),
+      TwistedCubicalChain.pushCube_apply, ← NormalizedTwistedCubicalChain.ofCube_apply,
+      normalizedTwistedCubicalToSingular_ofCube]
+    -- The pushforward along the cube `f ∘ d` is the pushforward along `cubeToHom d ≫ f`, by the
+    -- definition of `cubeToHom`.
+    rfl
+  | add y y' hy hy' =>
+    rw [map_add, LinearMap.add_apply, map_add, hy, hy']
+    exact ((congrArg (fun z ↦ twistedPushforward L f z₀ n z a) (map_add φ y y')).trans
+      (by rw [map_add, LinearMap.add_apply]; rfl)).symm
+  | smul r y hy =>
+    have h : twistedPushforward L f z₀ n (φ (r.down • y)) a =
+        r.down • twistedPushforward L f z₀ n (φ y) a := by
+      rw [map_zsmul, map_zsmul, LinearMap.smul_apply]
+    rw [ULift.smul_def, map_zsmul, LinearMap.smul_apply, map_zsmul, hy]
+    exact h.symm
 
 end LocalCoefficientSystem
 

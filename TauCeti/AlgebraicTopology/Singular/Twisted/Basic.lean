@@ -434,6 +434,13 @@ lemma twistedChainComplex_hom_ext {k : ℕ} {A : ModuleCat.{max v w} R}
     (h : ∀ σ, ιTwistedChainComplex L k σ ≫ f = ιTwistedChainComplex L k σ ≫ g) : f = g :=
   twistedChains_hom_ext L h
 
+/-- The summands of equal simplices agree on heterogeneously equal coefficients. -/
+lemma ιTwistedChainComplex_congr {k : ℕ} {ρ τ : (TopCat.toSSet.obj X) _⦋k⦌} (h : ρ = τ)
+    {b : L.obj (initialVertex ρ)} {b' : L.obj (initialVertex τ)} (hb : b ≍ b') :
+    ιTwistedChainComplex L k ρ b = ιTwistedChainComplex L k τ b' := by
+  subst h
+  rw [eq_of_heq hb]
+
 /-- The map out of the degree-`k` term of the twisted chain complex given by a map out of the
 coefficient module of each singular `k`-simplex. -/
 def twistedChainComplexDesc {k : ℕ} {A : ModuleCat.{max v w} R}

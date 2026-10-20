@@ -16,8 +16,8 @@ coefficients exactly as the comparison in the other direction does
 (`TauCeti.LocalCoefficientSystem.twistedCubicalToSingularMap`).  For a singular `n`-simplex `σ` of
 `X` and a coefficient `a` in the fibre at its initial vertex, the image is the twisted cubical
 pushforward (`TauCeti.LocalCoefficientSystem.NormalizedTwistedCubicalChain.pushforward`) along
-`σ`, regarded as a map from the model, of the image `singularToCubicalGen n` of the identity simplex
-of the model, with the coefficient `a` at the initial vertex of the model.
+`σ`, regarded as a map from the model, of the image `TauCeti.singularToCubicalGen n` of the
+identity simplex of the model, with the coefficient `a` at the initial vertex of the model.
 
 The decisive property is the compatibility with pushforwards from simply connected spaces
 (`TauCeti.LocalCoefficientSystem.twistedSingularToCubical_twistedPushforward`): the comparison
@@ -30,8 +30,6 @@ compatibility of the comparison in the other direction is
 
 ## Main definitions
 
-* `TauCeti.singularToCubicalGen k n`: the image of the identity simplex of the model under the
-  comparison.
 * `TauCeti.LocalCoefficientSystem.twistedSingularToCubical L n`: the comparison on the
   `n`-chains with coefficients in `L`.
 * `TauCeti.LocalCoefficientSystem.twistedSingularToCubicalMap L`: the comparison chain map from
@@ -69,44 +67,22 @@ namespace LocalCoefficientSystem
 
 variable {R : Type u} [Ring R] {X : TopCat.{v}} (L : LocalCoefficientSystem.{u, v, v} R X)
 
-/-- A singular simplex of `X`, as a map from the model simplex. -/
-abbrev simplexHom {n : ℕ} (σ : (TopCat.toSSet.obj X) _⦋n⦌) : simplexModel.{v} n ⟶ X := σ.down
-
 /-- The comparison from the summand of a simplex `σ`: the pushforward along `σ`, from the initial
 vertex of the model, of the image of the identity simplex. -/
 def twistedSingularToCubicalSummand {n : ℕ} (σ : (TopCat.toSSet.obj X) _⦋n⦌) :
     L.obj (initialVertex σ) →ₗ[R] L.NormalizedTwistedCubicalChain n :=
-  NormalizedTwistedCubicalChain.pushforward (Z := simplexModel.{v} n) L (simplexHom σ).hom
+  NormalizedTwistedCubicalChain.pushforward (Z := simplexModel.{v} n) L (simplexToHom σ).hom
     (SimplexCategory.toTopInitialVertex ⦋n⦌) n (singularToCubicalGen (ULift.{v} ℤ) n)
 
-/-- The summands of equal simplices agree on heterogeneously equal coefficients. -/
-private theorem ιTwistedChainComplex_congr {n : ℕ} {ρ τ : (TopCat.toSSet.obj X) _⦋n⦌} (h : ρ = τ)
-    {b : L.obj (initialVertex ρ)} {b' : L.obj (initialVertex τ)} (hb : b ≍ b') :
-    ιTwistedChainComplex L n ρ b = ιTwistedChainComplex L n τ b' := by
-  subst h
-  rw [eq_of_heq hb]
-
-/-- Transport along the path class to a point equal to the starting point does not change the
-coefficient, up to the identification of the fibres. -/
-private theorem map_pathClass_heq {Z : Type*} [TopologicalSpace Z] [SimplyConnectedSpace Z]
-    (f : C(Z, X)) {z z' : Z} (h : z' = z) (b : L.obj (FundamentalGroupoid.mk (f z))) :
-    (L.map (f.pathClass z z') b) ≍ b := by
-  subst h
-  rw [ContinuousMap.pathClass_self]
-  simp
-
-/-- Every twisted simplex is the pushforward along itself of the identity simplex of the
-model: the summand of `σ` is reached by the pushforward from the initial vertex of the
-model. -/
-theorem ιTwistedChainComplex_eq_twistedPushforward {n : ℕ} (σ : (TopCat.toSSet.obj X) _⦋n⦌)
-    (b : L.obj (initialVertex σ)) :
-    ιTwistedChainComplex L n σ b =
-      twistedPushforward (Z := simplexModel.{v} n) L (simplexHom σ)
-        (SimplexCategory.toTopInitialVertex ⦋n⦌) n (simplexChain (idSimplex n) 1) b := by
-  rw [twistedPushforward_simplexChain_one (Z := simplexModel.{v} n)]
-  -- Composites of `ModuleCat` morphisms are composites of linear maps by definition.
-  exact ιTwistedChainComplex_congr L (toSSet_map_down_idSimplex σ).symm
-    (map_pathClass_heq L _ (simplexMap_idSimplex n _) b).symm
+/-- The comparison on the summand of a simplex is the cubical pushforward of the model generator
+along the simplex.  This is the defining equation of `twistedSingularToCubicalSummand`, whose
+definition is not unfolded outside this file. -/
+theorem twistedSingularToCubicalSummand_apply {n : ℕ} (σ : (TopCat.toSSet.obj X) _⦋n⦌)
+    (a : L.obj (initialVertex σ)) :
+    twistedSingularToCubicalSummand L σ a =
+      NormalizedTwistedCubicalChain.pushforward (Z := simplexModel.{v} n) L (simplexToHom σ).hom
+        (SimplexCategory.toTopInitialVertex ⦋n⦌) n (singularToCubicalGen (ULift.{v} ℤ) n) a :=
+  (rfl)
 
 /-- The comparison from the simplicial chains with coefficients in `L` to the normalized cubical
 chains with coefficients in `L`: a simplex `σ` with a coefficient goes to the pushforward along
@@ -122,6 +98,14 @@ theorem ιTwistedChainComplex_comp_twistedSingularToCubical {n : ℕ}
     ιTwistedChainComplex L n σ ≫ twistedSingularToCubical L n =
       ModuleCat.ofHom (twistedSingularToCubicalSummand L σ) :=
   ιTwistedChainComplex_twistedChainComplexDesc L _ σ
+
+/-- The comparison on a simplex with a coefficient. -/
+@[simp]
+theorem twistedSingularToCubical_ιTwistedChainComplex {n : ℕ}
+    (σ : (TopCat.toSSet.obj X) _⦋n⦌) (a : L.obj (initialVertex σ)) :
+    (twistedSingularToCubical L n).hom (ιTwistedChainComplex L n σ a) =
+      twistedSingularToCubicalSummand L σ a :=
+  ConcreteCategory.congr_hom (ιTwistedChainComplex_comp_twistedSingularToCubical L σ) a
 
 /-- **Compatibility with pushforwards.** The comparison carries the simplicial pushforward of a
 chain of a simply connected space `Z` to the cubical pushforward of the image of the chain. -/
@@ -149,8 +133,52 @@ theorem twistedSingularToCubical_twistedPushforward {Z : TopCat.{v}} [SimplyConn
   refine (ConcreteCategory.congr_hom
     (ιTwistedChainComplex_comp_twistedSingularToCubical (L := L) _) _).trans ?_
   exact (NormalizedTwistedCubicalChain.pushforward_map (L := L) (f := f.hom) (z₀ := z₀)
-    (Z' := simplexModel.{v} n) (simplexHom σ).hom
+    (Z' := simplexModel.{v} n) (simplexToHom σ).hom
     (SimplexCategory.toTopInitialVertex ⦋n⦌) _ a).symm
+
+/-- The simplicial pushforward along a simplex `σ` from the initial vertex of the model, with the
+coefficient at the initial vertex of `σ`. -/
+private def spush {n : ℕ} (σ : (TopCat.toSSet.obj X) _⦋n⦌) (m : ℕ)
+    (y : ((singularChains (ULift.{v} ℤ)).obj (simplexModel.{v} n)).X m)
+    (a : L.obj (initialVertex σ)) : (twistedChainComplex L).X m :=
+  twistedPushforward (Z := simplexModel.{v} n) L (simplexToHom σ)
+    (SimplexCategory.toTopInitialVertex ⦋n⦌) m y a
+
+/-- The cubical pushforward along a simplex `σ` from the initial vertex of the model, with the
+coefficient at the initial vertex of `σ`. -/
+private def cpush {n : ℕ} (σ : (TopCat.toSSet.obj X) _⦋n⦌) (m : ℕ)
+    (y : ((normalizedCubicalChainComplex (ULift.{v} ℤ)).obj (simplexModel.{v} n)).X m)
+    (a : L.obj (initialVertex σ)) : L.NormalizedTwistedCubicalChain m :=
+  NormalizedTwistedCubicalChain.pushforward (Z := simplexModel.{v} n) L (simplexToHom σ).hom
+    (SimplexCategory.toTopInitialVertex ⦋n⦌) m y a
+
+private lemma ι_eq_spush {n : ℕ} (σ : (TopCat.toSSet.obj X) _⦋n⦌) (a : L.obj (initialVertex σ)) :
+    ιTwistedChainComplex L n σ a = spush L σ n (simplexChain (idSimplex n) 1) a :=
+  ιTwistedChainComplex_eq_twistedPushforward σ a
+
+private lemma d_spush {n m : ℕ} (σ : (TopCat.toSSet.obj X) _⦋n⦌)
+    (y : ((singularChains (ULift.{v} ℤ)).obj (simplexModel.{v} n)).X (m + 1))
+    (a : L.obj (initialVertex σ)) :
+    (twistedChainComplex L).d (m + 1) m (spush L σ (m + 1) y a) =
+      spush L σ m (((singularChains (ULift.{v} ℤ)).obj (simplexModel.{v} n)).d (m + 1) m y) a :=
+  twistedPushforward_d (Z := simplexModel.{v} n) y a
+
+private lemma from_spush {n m : ℕ} (σ : (TopCat.toSSet.obj X) _⦋n⦌)
+    (y : ((singularChains (ULift.{v} ℤ)).obj (simplexModel.{v} n)).X m)
+    (a : L.obj (initialVertex σ)) :
+    (twistedSingularToCubical L m).hom (spush L σ m y a) =
+      cpush L σ m (((singularToCubical (ULift.{v} ℤ)).app (simplexModel.{v} n)).f m y) a :=
+  twistedSingularToCubical_twistedPushforward L (simplexToHom σ) _ y a
+
+private lemma boundary_cpush {n m : ℕ} (σ : (TopCat.toSSet.obj X) _⦋n⦌)
+    (y : ((normalizedCubicalChainComplex (ULift.{v} ℤ)).obj (simplexModel.{v} n)).X (m + 1))
+    (a : L.obj (initialVertex σ)) :
+    NormalizedTwistedCubicalChain.boundary L m (cpush L σ (m + 1) y a) =
+      cpush L σ m (((normalizedCubicalChainComplex (ULift.{v} ℤ)).obj (simplexModel.{v} n)).d
+        (m + 1) m y) a :=
+  (NormalizedTwistedCubicalChain.boundary_pushforward (L := L) (f := (simplexToHom σ).hom)
+    (z₀ := SimplexCategory.toTopInitialVertex _) y a).trans
+    (congrArg (fun z ↦ cpush L σ m z a) (normalizedCubicalChainComplex_obj_d_apply _ m y).symm)
 
 /-- The comparison from simplicial to cubical chains commutes with the boundaries. -/
 theorem twistedSingularToCubical_comm (n : ℕ) :
@@ -162,39 +190,10 @@ theorem twistedSingularToCubical_comm (n : ℕ) :
       ((twistedChainComplex L).d (n + 1) n (ιTwistedChainComplex L (n + 1) σ a)) =
     L.normalizedTwistedCubicalChainComplex.d (n + 1) n
       ((twistedSingularToCubical L (n + 1)).hom (ιTwistedChainComplex L (n + 1) σ a))
-  -- The fibre at the initial vertex of `σ` is the fibre at the initial vertex of the model
-  -- mapped by `σ` by definition, so the coefficient `a` serves for the pushforwards, and the
-  -- steps are composed as terms.
-  have h1 := ιTwistedChainComplex_eq_twistedPushforward L σ a
-  have h2 : (twistedChainComplex L).d (n + 1) n (ιTwistedChainComplex L (n + 1) σ a) =
-      twistedPushforward L (simplexHom σ) (SimplexCategory.toTopInitialVertex _) n
-        (((singularChains (ULift.{v} ℤ)).obj (simplexModel.{v} (n + 1))).d (n + 1) n
-          (simplexChain (idSimplex (n + 1)) 1)) a :=
-    (congrArg _ h1).trans (twistedPushforward_d _ _)
-  have h3 := twistedSingularToCubical_twistedPushforward L (simplexHom σ)
-    (SimplexCategory.toTopInitialVertex _) (simplexChain (idSimplex (n + 1)) (1 : ULift.{v} ℤ)) a
-  have h4 := twistedSingularToCubical_twistedPushforward L (simplexHom σ)
-    (SimplexCategory.toTopInitialVertex _)
-    (((singularChains (ULift.{v} ℤ)).obj (simplexModel.{v} (n + 1))).d (n + 1) n
-      (simplexChain (idSimplex (n + 1)) 1)) a
-  refine Eq.trans ?_ (normalizedTwistedCubicalChainComplex_d_apply L n _).symm
-  calc
-    _ = (twistedSingularToCubical L n).hom (twistedPushforward L (simplexHom σ)
-          (SimplexCategory.toTopInitialVertex _) n
-          (((singularChains (ULift.{v} ℤ)).obj (simplexModel.{v} (n + 1))).d (n + 1) n
-            (simplexChain (idSimplex (n + 1)) 1)) a) := congrArg _ h2
-    _ = _ := h4
-    _ = _ := congrArg (fun y ↦ NormalizedTwistedCubicalChain.pushforward L (simplexHom σ).hom
-          (SimplexCategory.toTopInitialVertex _) n y a)
-        (HomologicalComplex.Hom.comm_apply ((singularToCubical (ULift.{v} ℤ)).app _) (n + 1) n
-          _).symm
-    _ = _ := congrArg (fun y ↦ NormalizedTwistedCubicalChain.pushforward L (simplexHom σ).hom
-          (SimplexCategory.toTopInitialVertex _) n y a)
-        (normalizedCubicalChainComplex_obj_d_apply _ n _)
-    _ = _ := (NormalizedTwistedCubicalChain.boundary_pushforward (L := L)
-        (f := (simplexHom σ).hom) (z₀ := SimplexCategory.toTopInitialVertex _) _ a).symm
-    _ = _ := congrArg _ h3.symm
-    _ = _ := congrArg _ (congrArg _ h1.symm)
+  rw [ι_eq_spush, d_spush, from_spush, from_spush, normalizedTwistedCubicalChainComplex_d_apply,
+    boundary_cpush]
+  exact congrArg (fun y ↦ cpush L σ n y a)
+    (HomologicalComplex.Hom.comm_apply ((singularToCubical (ULift.{v} ℤ)).app _) (n + 1) n _).symm
 
 /-- The **comparison chain map** from the simplicial chain complex with coefficients in `L` to the
 normalized cubical chain complex with coefficients in `L`. -/
@@ -227,11 +226,10 @@ theorem twistedSingularToCubicalMap_coefficientMap_naturality
       ((twistedSingularToCubical L n).hom (ιTwistedChainComplex L n σ a))
   refine ((congrArg (twistedSingularToCubical K n).hom (ConcreteCategory.congr_hom
     (ιTwistedChainComplex_twistedChainComplexCoefficientMap_f η n σ) a)).trans
-    (ConcreteCategory.congr_hom (ιTwistedChainComplex_comp_twistedSingularToCubical (L := K) σ)
-      _)).trans ?_
+    (twistedSingularToCubical_ιTwistedChainComplex K σ _)).trans ?_
   exact (NormalizedTwistedCubicalChain.coefficientMap_pushforward (L := L) η _ _).symm.trans
-    (congrArg (NormalizedTwistedCubicalChain.coefficientMap η n) (ConcreteCategory.congr_hom
-      (ιTwistedChainComplex_comp_twistedSingularToCubical (L := L) σ) a).symm)
+    (congrArg (NormalizedTwistedCubicalChain.coefficientMap η n)
+      (twistedSingularToCubical_ιTwistedChainComplex L σ a).symm)
 
 end LocalCoefficientSystem
 
