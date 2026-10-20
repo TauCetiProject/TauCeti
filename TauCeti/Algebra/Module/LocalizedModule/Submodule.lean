@@ -12,12 +12,15 @@ public import Mathlib.RingTheory.Localization.Basic
 /-!
 # Submodules over a localization
 
-This file proves two facts about submodules and localized modules:
+This file proves three facts about submodules and localized modules:
 
 * `IsLocalizedModule.mk'_mem_iff`: a fraction `f x / s` lies in a submodule over the localization
   exactly when `f x` does.
 * `Submodule.localized'_one`: the localization of the image of `A` in an algebra `B` is the image
   of the localized base ring `A'` in the localized algebra `B'`.
+* `LinearMap.localizedMap_injective_iff_subsingleton_localized_ker`: a localized linear map is
+  injective exactly when the localization of its kernel vanishes, the companion of Mathlib's
+  `LinearMap.localizedMap_surjective_iff_subsingleton_localized_coker`.
 -/
 
 public section
@@ -55,3 +58,16 @@ theorem localized'_one :
     exact subset_span ⟨1, mem_one.mpr ⟨1, map_one _⟩, by simp⟩
 
 end Submodule
+
+/-- A localized linear map is injective iff the localization of its kernel vanishes. This is the
+kernel counterpart of `LinearMap.localizedMap_surjective_iff_subsingleton_localized_coker`. -/
+theorem LinearMap.localizedMap_injective_iff_subsingleton_localized_ker {R M N : Type*}
+    [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N] (S : Submonoid R)
+    (φ : M →ₗ[R] N) :
+    Function.Injective (LocalizedModule.map S φ) ↔
+      Subsingleton (LocalizedModule S (LinearMap.ker φ)) := by
+  have := LinearMap.toKerLocalized_isLocalizedModule (Localization S) S
+    (LocalizedModule.mkLinearMap S M) (LocalizedModule.mkLinearMap S N) φ
+  rw [(IsLocalizedModule.iso S (LinearMap.toKerIsLocalized S (LocalizedModule.mkLinearMap S M)
+      (LocalizedModule.mkLinearMap S N) φ)).subsingleton_congr, Submodule.subsingleton_iff_eq_bot,
+    LinearMap.ker_eq_bot, IsLocalizedModule.map_injective_iff_localizedModuleMap_injective]

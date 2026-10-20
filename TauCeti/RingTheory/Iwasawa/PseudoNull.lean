@@ -203,17 +203,8 @@ example (p : ℕ) [Fact p.Prime] :
     IsPseudoNull ℤ_[p]⟦X⟧ (ℤ_[p]⟦X⟧ ⧸ Ideal.span {C (p : ℤ_[p]), X}) ∧
       ¬ IsPseudoNull ℤ_[p]⟦X⟧ (ℤ_[p]⟦X⟧ ⧸ Ideal.span {C (p : ℤ_[p])}) := by
   refine ⟨(isPseudoNull_quotient_iff _).mpr fun 𝔮 h𝔮 ↦ ?_, fun h ↦ ?_⟩
-  · have hX : X ∉ Ideal.span {C (p : ℤ_[p])} := by
-      rw [← PadicInt.ker_map_toZMod, RingHom.mem_ker, map_X]
-      exact X_ne_zero
-    have h1 : Ideal.span {C (p : ℤ_[p])} < 𝔮.asIdeal := by
-      refine lt_of_le_of_ne (Ideal.span_le.mpr ?_) fun h ↦ hX (h ▸ h𝔮 (Ideal.subset_span ?_))
-      · exact Set.singleton_subset_iff.mpr (h𝔮 (Ideal.subset_span (by simp)))
-      · simp
-    have := PadicInt.isPrime_span_C_p (p := p)
-    have h2 := Ideal.height_add_one_le_of_lt_of_isPrime h1
-    rw [PadicInt.height_span_C_p] at h2
-    exact lt_of_lt_of_le (by norm_num) h2
+  · exact PadicInt.one_lt_height_of_C_p_mem_of_X_mem (h𝔮 (Ideal.subset_span (by simp)))
+      (h𝔮 (Ideal.subset_span (by simp)))
   · exact ((isPseudoNull_quotient_iff _).mp h ⟨_, PadicInt.isPrime_span_C_p⟩ le_rfl).ne'
       PadicInt.height_span_C_p
 
