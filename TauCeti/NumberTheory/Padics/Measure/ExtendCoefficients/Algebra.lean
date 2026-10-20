@@ -24,6 +24,10 @@ pseudomeasures after clearing a character-dependent denominator. Its values
 on source-valued characters agree with the original integrals after applying the coefficient map.
 No map on a total quotient ring is asserted.
 
+Use `TauCeti.ContinuousMonoidHom.extendedCharacterRingHom χ j hj`, or open
+`TauCeti.ContinuousMonoidHom` and write `extendedCharacterRingHom χ j hj`. Character dot notation
+does not resolve this namespace because the character type is Mathlib's `ContinuousMonoidHom`.
+
 The extension is `AbstractMeasure.extendCoefficients`, and convolution and character integration
 are the existing `AbstractMeasure` and `ContinuousMonoidHom` constructions. No topology or norm
 instance on measures is introduced.
