@@ -21,12 +21,13 @@ homomorphism into a domain. For a prime `p` it relates the triviality of the `p`
 unity to the absence of a primitive one. It also records that
 roots of unity, and hence the values of a character of a finite group, are integral over `ℤ`.
 Finally, it identifies the `n`-torsion of a unit group, written additively, with the `n`-th roots
-of unity.
+of unity, and records the power maps `ζ ↦ ζ ^ (m / n)` between groups of roots of unity.
 
 ## Main definitions
 
 * `TauCeti.torsionByUnitsEquivRootsOfUnity`: the `n`-torsion of `Mˣ`, written additively, is
   `μₙ(M)`, written additively.
+* `TauCeti.rootsOfUnityPowHom`: for `n ∣ m`, the power map `μₘ(M) → μₙ(M)`, `ζ ↦ ζ ^ (m / n)`.
 
 ## Main results
 
@@ -166,5 +167,19 @@ theorem coe_torsionByUnitsEquivRootsOfUnity_symm_apply {M : Type*} [CommMonoid M
 instance finite_torsionBy_additive_units {M : Type*} [CommMonoid M] (n : ℕ)
     [Finite (rootsOfUnity n M)] : Finite (Submodule.torsionBy ℤ (Additive Mˣ) (n : ℤ)) :=
   .of_equiv _ ((torsionByUnitsEquivRootsOfUnity n).toEquiv.trans Additive.toMul).symm
+
+/-- For `n ∣ m`, the power map `ζ ↦ ζ ^ (m / n)` from the `m`-th to the `n`-th roots of unity. -/
+def rootsOfUnityPowHom (M : Type*) [CommMonoid M] {n m : ℕ} (h : n ∣ m) :
+    rootsOfUnity m M →* rootsOfUnity n M :=
+  ((powMonoidHom (m / n)).comp (rootsOfUnity m M).subtype).codRestrict _ fun ζ ↦
+    (mem_rootsOfUnity _ _).2 <| by
+      rw [MonoidHom.comp_apply, powMonoidHom_apply, ← pow_mul, Nat.div_mul_cancel h,
+        Subgroup.coe_subtype, (mem_rootsOfUnity _ _).1 ζ.2]
+
+/-- The power map sends `ζ` to `ζ ^ (m / n)`. -/
+@[simp]
+theorem coe_rootsOfUnityPowHom_apply (M : Type*) [CommMonoid M] {n m : ℕ} (h : n ∣ m)
+    (ζ : rootsOfUnity m M) : (rootsOfUnityPowHom M h ζ : Mˣ) = (ζ : Mˣ) ^ (m / n) :=
+  (rfl)
 
 end TauCeti

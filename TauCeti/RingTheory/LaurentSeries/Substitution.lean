@@ -246,23 +246,45 @@ theorem coeff_substAlgHom_X_pow_of_not_dvd {e : ℕ} (he : e ≠ 0) (f : K⸨X�
   rw [← AlgHom.coe_toRingHom, substAlgHom_X_pow he]
   exact embDomain_of_notMem_range fun ⟨k, hk⟩ ↦ hn ⟨k, hk.symm⟩
 
+/-- The coefficients of a rescaled power series, viewed as a Laurent series: rescaling by `a`
+multiplies the coefficient of `Xⁿ` by `a ^ n`. -/
+private theorem coeff_coe_powerSeriesRescale (a : K) (g : K⟦X⟧) (n : ℤ) :
+    ((PowerSeries.rescale a g : K⟦X⟧) : K⸨X⸩).coeff n = a ^ n * (g : K⸨X⸩).coeff n := by
+  rw [PowerSeries.coeff_coe, PowerSeries.coeff_coe]
+  split_ifs with h
+  · rw [mul_zero]
+  · rw [PowerSeries.coeff_rescale, ← zpow_natCast, Int.natAbs_of_nonneg (not_lt.mp h)]
+
+section CMulX
+
+variable {a : K} (ha : a ≠ 0)
+
+include ha in
+/-- On power series, substituting `X ↦ a X` is `PowerSeries.rescale a`. -/
+private theorem substAlgHom_C_mul_X_coe (g : K⟦X⟧) :
+    substAlgHom (φ := C a * X) (by simp) (by simp [ha]) (g : K⸨X⸩) =
+      ((PowerSeries.rescale a g : K⟦X⟧) : K⸨X⸩) := by
+  rw [substAlgHom_coe, ← smul_eq_C_mul, ← rescale_eq_subst]
+
+include ha in
+/-- Substituting `X ↦ a X` sends `Xᴺ` to `a ^ N Xᴺ`, for every integer `N`. -/
+private theorem substAlgHom_C_mul_X_single (N : ℤ) :
+    substAlgHom (φ := C a * X) (by simp) (by simp [ha]) (single N 1) = single N (a ^ N) := by
+  rw [substAlgHom_single, HahnSeries.C_one, one_mul, PowerSeries.coe_mul, PowerSeries.coe_C,
+    PowerSeries.coe_X, mul_zpow, ← map_zpow₀, ← RatFunc.single_zpow, HahnSeries.C_apply,
+    single_mul_single, zero_add, mul_one]
+
 /-- Substituting `X ↦ a X`, for `a ≠ 0`, multiplies the coefficient of `Xⁿ` by `a ^ n`, for every
 integer `n`. -/
 @[simp]
-theorem coeff_substAlgHom_C_mul_X {a : K} (ha : a ≠ 0) (f : K⸨X⸩) (n : ℤ) :
+theorem coeff_substAlgHom_C_mul_X (f : K⸨X⸩) (n : ℤ) :
     (substAlgHom (φ := C a * X) (by simp) (by simp [ha]) f).coeff n = a ^ n * f.coeff n := by
-  have hf := f.single_order_mul_powerSeriesPart
-  generalize f.order = N, f.powerSeriesPart = g at hf
-  subst hf
-  -- `(a X) ^ N = a ^ N X ^ N`, and `g (a X)` has coefficients `a ^ k g_k`
-  rw [substAlgHom_single_mul_coe, PowerSeries.coe_mul, PowerSeries.coe_C, PowerSeries.coe_X,
-    mul_zpow, ← map_zpow₀, ← RatFunc.single_zpow, ← smul_eq_C_mul, ← rescale_eq_subst, mul_assoc,
-    C_mul_eq_smul, HahnSeries.coeff_smul, coeff_single_mul, coeff_single_mul, one_mul, one_mul,
-    PowerSeries.coeff_coe, PowerSeries.coeff_coe, smul_eq_mul]
-  split_ifs with h
-  · simp
-  · rw [PowerSeries.coeff_rescale, ← mul_assoc, ← zpow_natCast,
-      Int.natAbs_of_nonneg (not_lt.mp h), ← zpow_add₀ ha, add_sub_cancel]
+  -- write `f = Xᴺ g` with `g` a power series
+  rw [← f.single_order_mul_powerSeriesPart, map_mul, substAlgHom_C_mul_X_single ha,
+    substAlgHom_C_mul_X_coe ha, coeff_single_mul, coeff_single_mul, coeff_coe_powerSeriesRescale,
+    one_mul, ← mul_assoc, ← zpow_add₀ ha, add_sub_cancel]
+
+end CMulX
 
 /-- The substitution `X ↦ a X` for a unit `a`. -/
 private noncomputable abbrev rescaleAlgHom (a : Kˣ) : K⸨X⸩ →ₐ[K] K⸨X⸩ :=
@@ -323,9 +345,6 @@ theorem rescale_single (a : Kˣ) (n : ℤ) (c : K) :
 theorem rescale_coe (a : Kˣ) (f : K⟦X⟧) :
     rescale a (f : K⸨X⸩) = ((PowerSeries.rescale (a : K) f : K⟦X⟧) : K⸨X⸩) := by
   ext n
-  rw [coeff_rescale, PowerSeries.coeff_coe, PowerSeries.coeff_coe]
-  split_ifs with h
-  · rw [mul_zero]
-  · rw [PowerSeries.coeff_rescale, ← zpow_natCast, Int.natAbs_of_nonneg (not_lt.mp h)]
+  rw [coeff_rescale, coeff_coe_powerSeriesRescale]
 
 end TauCeti.LaurentSeries
