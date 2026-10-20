@@ -31,6 +31,10 @@ this flow is a diffeomorphism of `M` carrying `M_b` onto `M_a` and the level `f�
 `f⁻¹(a)` (`TauCeti.exists_diffeomorph_sublevel`); in particular `M_b` is homeomorphic to `M_a`
 (`TauCeti.exists_sublevelHomeomorph`).
 
+Following each point of the band down its flow line to the level `a` shows that the band itself is
+a product: `f⁻¹[a, b]` is homeomorphic to `f⁻¹(a) × [a, b]` by a homeomorphism preserving the value
+of `f` and fixing the level `f⁻¹(a)` (`TauCeti.exists_bandHomeomorph`).
+
 Running such a flow for a longer time deforms the whole manifold, through maps along which `f`
 never increases, so that `M_b` ends in the open sublevel `{f < a}`
 (`TauCeti.exists_ambientSublevelDeformation`). Across a critical level `c` the same flow, built
@@ -51,6 +55,8 @@ bound on the number of critical points of a smooth function.
 * `TauCeti.exists_diffeomorph_sublevel` and `TauCeti.exists_sublevelHomeomorph`: a diffeomorphism
   of `M` carrying `M_b` onto `M_a` and `f⁻¹(b)` onto `f⁻¹(a)`, and the resulting homeomorphism
   `M_b ≃ₜ M_a`.
+* `TauCeti.exists_bandHomeomorph`: the product structure `f⁻¹[a, b] ≃ₜ f⁻¹(a) × [a, b]` of the
+  band.
 * `TauCeti.exists_ambientSublevelDeformation`: a deformation of `M` carrying `M_b` into `{f < a}`.
 * `TauCeti.exists_criticalLevelDeformation`: a deformation of `M` carrying `{f ≤ c + ε}` into
   `{f < c - ε} ∪ U`, for arbitrary, possibly degenerate, critical points in `U`.
@@ -59,6 +65,8 @@ bound on the number of critical points of a smooth function.
 
 * J. Milnor, *Morse Theory*, Annals of Mathematics Studies 51, Princeton University Press, 1963,
   Theorem 3.1.
+* J. Milnor, *Lectures on the h-cobordism theorem*, Princeton University Press, 1965,
+  Theorem 3.4.
 * O. Cornea, G. Lupton, J. Oprea and D. Tanré, *Lusternik–Schnirelmann Category*, Mathematical
   Surveys and Monographs 103, American Mathematical Society, 2003, Chapter 1.
 -/
@@ -242,6 +250,30 @@ theorem exists_sublevelHomeomorph (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hab : a �
     ∃ e : {x | f x ≤ b} ≃ₜ {x | f x ≤ a}, ∀ x, f (e x) = a ↔ f x = b := by
   obtain ⟨Φ, hΦ⟩ := exists_diffeomorph_sublevel hf hab hcompact hreg
   exact ⟨Φ.toHomeomorph.sets (ext fun x ↦ (hΦ x).1.symm), fun x ↦ (hΦ x).2⟩
+
+/-- **A band without critical points is a product** (Milnor, *Lectures on the h-cobordism
+theorem*, Theorem 3.4). If `f` is smooth and the band `f⁻¹[a, b]` is compact and contains no
+critical point of `f`, then there is a homeomorphism `e : f⁻¹[a, b] ≃ₜ f⁻¹(a) × [a, b]` whose
+second component is the value of `f` and which is the identity on the level `f⁻¹(a)`. In particular
+each level `f⁻¹(s)`, `a ≤ s ≤ b`, is carried onto `f⁻¹(a) × {s}`. -/
+theorem exists_bandHomeomorph (hf : ContMDiff I 𝓘(ℝ) ∞ f)
+    (hcompact : IsCompact (f ⁻¹' Icc a b))
+    (hreg : ∀ x, a ≤ f x → f x ≤ b → mfderiv I 𝓘(ℝ) f x ≠ 0) :
+    ∃ e : f ⁻¹' Icc a b ≃ₜ (f ⁻¹' {a}) × Icc a b,
+      (∀ x, ((e x).2 : ℝ) = f x) ∧
+        ∀ x : f ⁻¹' Icc a b, f x = a → ((e x).1 : M) = x := by
+  rcases lt_or_ge b a with hba | hab
+  · -- For `b < a` both sides are empty.
+    have : IsEmpty (Icc a b) := by simp [hba]
+    have : IsEmpty (f ⁻¹' Icc a b) := by simp [Icc_eq_empty_of_lt hba]
+    exact ⟨.empty, fun x ↦ isEmptyElim x, fun x ↦ isEmptyElim x⟩
+  obtain ⟨φ, -, hanti, hlt, hφ⟩ := exists_flow_apply_eq_sub hf hcompact hreg
+  have hanti' : ∀ x, AntitoneOn (fun t ↦ f (φ t x)) (Ici 0) := fun x ↦ (hanti x).antitoneOn _
+  have hφa : ∀ x t, f x = a → 0 < t → f (φ t x) < a := fun x t hx ht ↦
+    (hlt x t hx.ge (hx.trans_le hab) ht).trans_eq hx
+  exact ⟨φ.bandHomeomorph hf.continuous hanti' hφ hφa,
+    φ.coe_bandHomeomorph_apply_snd hf.continuous hanti' hφ hφa,
+    fun _ hx ↦ φ.coe_bandHomeomorph_apply_fst_of_apply_eq hf.continuous hanti' hφ hφa hx⟩
 
 /-- **Deformation into an open lower sublevel across a band without critical points.** If `f` is
 smooth and the band `f⁻¹[a, b]` is compact and contains no critical point of `f`, there is a

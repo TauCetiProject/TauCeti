@@ -467,6 +467,15 @@ theorem InternalGrading.koszulTwist_mem_piece (G : InternalGrading R M) {x : M} 
   rw [InternalGrading.koszulTwist_apply_of_mem G hx q]
   exact Submodule.smul_mem _ _ hx
 
+/-- The Koszul twist of the grading of a decomposition `ℳ` preserves each piece `ℳ k`. -/
+theorem InternalGrading.koszulTwist_mem_ofDecomposition (ℳ : ℤ → Submodule R M)
+    [DirectSum.Decomposition ℳ] {x : M} {k : ℤ} (hx : x ∈ ℳ k) (q : ℤ) :
+    koszulTwist (InternalGrading.ofDecomposition ℳ) q x ∈ ℳ k := by
+  have hx' : x ∈ (InternalGrading.ofDecomposition ℳ).piece k := by
+    rwa [InternalGrading.ofDecomposition_piece]
+  have := koszulTwist_mem_piece _ hx' q
+  rwa [InternalGrading.ofDecomposition_piece] at this
+
 /-- The Koszul twist of parameter zero is the identity. -/
 @[simp]
 theorem InternalGrading.koszulTwist_zero (G : InternalGrading R M) :

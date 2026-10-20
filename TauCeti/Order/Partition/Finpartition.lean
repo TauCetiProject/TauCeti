@@ -21,12 +21,13 @@ import Mathlib.Data.Set.Finite.Range
 This file contains general-purpose constructions and facts about finite partitions: the partition
 of the top element into an element and its complement, the decidability of the refinement order,
 the single part of the coarsest partition of a non-bottom element, the partition of a type into the
-fibres of a map to a finite type, the associated indexed partition, cardinality bounds for common
-refinements, a bound on the sum of the squared part sizes, the refinement relations of
-`Finpartition.bind` and of a refining partition's parts, the behavior of intersections of parts
-under refinement, the monotonicity of `Finpartition.part` under refinement, and the coarse parent
-`Finpartition.refinementParent` of a part of a finer partition, together with decomposition and
-summation formulas for the fine parts below a coarse part.
+fibres of a map to a finite type, the associated indexed partition, the sizes of the traces of a
+subset on the parts, cardinality bounds for common refinements, a bound on the sum of the squared
+part sizes, the refinement relations of `Finpartition.bind` and of a refining partition's parts,
+the behavior of intersections of parts under refinement, the monotonicity of `Finpartition.part`
+under refinement, and the coarse parent `Finpartition.refinementParent` of a part of a finer
+partition, together with decomposition and summation formulas for the fine parts below a coarse
+part.
 -/
 
 public section
@@ -85,6 +86,14 @@ theorem card_parts_inf_le_mul {α : Type*} [DistribLattice α] [OrderBot α] [De
   rw [Finpartition.parts_inf]
   exact Finset.card_erase_le.trans
     (Finset.card_image_le.trans_eq (Finset.card_product _ _))
+
+/-- The traces of a subset of `s` on the parts of a finite partition of `s` partition it, so their
+sizes sum to its size. -/
+theorem sum_card_inter_parts {ι : Type*} [DecidableEq ι] {s X : Finset ι} (P : Finpartition s)
+    (hX : X ⊆ s) : ∑ C ∈ P.parts, (X ∩ C).card = X.card := by
+  have h := P.sum_restrict hX (fun C ↦ C.card) (by simp)
+  rw [Finpartition.sum_card_parts] at h
+  simp_rw [h, Finset.inf_eq_inter, Finset.inter_comm]
 
 /-- Juxtaposing finite partitions of the parts of `P` refines `P`. -/
 theorem bind_le {α : Type*} [Lattice α] [OrderBot α] [IsModularLattice α] [DecidableEq α]

@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Complex.Fuchsian.Conj
 public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Conj
 public import TauCeti.Geometry.Manifold.Complex.Chart
 public import TauCeti.Topology.Algebra.Group.Subgroup
+import TauCeti.Geometry.Manifold.Complex.Analytic
 
 /-!
 # Compactified quotients of conjugate Fuchsian groups

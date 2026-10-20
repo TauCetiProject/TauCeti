@@ -29,7 +29,9 @@ complex exact in degree `j` fit into a short exact sequence `0 ⟶ Zᵢ ⟶ Kᵢ
 requires homology only in the two selected degrees.
 The exactness results additionally require homology of the cycle sequence itself.
 For chain complexes indexed by the natural numbers, the identification of zero chains with
-cycles is natural (`ChainComplex.cycles₀Iso_inv_naturality`). The isomorphisms `homologyIsoSc'`
+cycles is natural (`ChainComplex.cycles₀Iso_inv_naturality`), and so is the passage from zero
+chains to zeroth homology (`ChainComplex.pOpcycles_comp_isoHomologyι₀_inv_comp_homologyMap`).
+The isomorphisms `homologyIsoSc'`
 are natural (`HomologicalComplex.homologyMap_comp_homologyIsoSc'_hom`).
 -/
 
@@ -252,6 +254,14 @@ lemma cycles₀Iso_inv_naturality (φ : K ⟶ L) :
       φ.f 0 ≫ L.cycles₀Iso.inv := by
   apply (cancel_mono (L.iCycles 0)).1
   simp
+
+/-- The passage from degree-zero chains to degree-zero homology, through the identification of
+the homology with the opcycles, is natural. -/
+@[reassoc]
+lemma pOpcycles_comp_isoHomologyι₀_inv_comp_homologyMap (φ : K ⟶ L) :
+    K.pOpcycles 0 ≫ K.isoHomologyι₀.inv ≫ HomologicalComplex.homologyMap φ 0 =
+      φ.f 0 ≫ L.pOpcycles 0 ≫ L.isoHomologyι₀.inv := by
+  rw [ChainComplex.isoHomologyι₀_inv_naturality, HomologicalComplex.p_opcyclesMap_assoc]
 
 end ChainComplex
 

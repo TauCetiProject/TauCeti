@@ -28,6 +28,7 @@ moves points of `G` that are not defined over the base, such as the tautological
 
 ## Main definitions
 
+* `TauCeti.rightTranslation x`: right translation by a global point, as an isomorphism.
 * `TauCeti.leftTranslation x`: left translation by `x`, as an isomorphism `G ≅ G`.
 * `TauCeti.leftTranslationProd φ`: left translation by a point `φ : Y ⟶ G`, as an isomorphism
   `G ⊗ Y ≅ G ⊗ Y`.
@@ -81,6 +82,28 @@ translation by its image `x ≫ i`. -/
 theorem leftTranslation_hom_comp {H : C} [GrpObj H] (i : H ⟶ G) [IsMonHom i] (x : 𝟙_ C ⟶ H) :
     (leftTranslation x).hom ≫ i = i ≫ (leftTranslation (x ≫ i)).hom := by
   simp [leftTranslation_hom, MonObj.mul_comp, MonObj.comp_mul]
+
+/-- Right translation `y ↦ y * x` by a global group point, with inverse given by `x⁻¹`. -/
+noncomputable def rightTranslation (x : 𝟙_ C ⟶ G) : G ≅ G where
+  hom := 𝟙 G * (toUnit G ≫ x)
+  inv := 𝟙 G * (toUnit G ≫ x⁻¹)
+  hom_inv_id := by simp [MonObj.comp_mul, _root_.mul_assoc, GrpObj.comp_inv]
+  inv_hom_id := by simp [MonObj.comp_mul, _root_.mul_assoc, GrpObj.comp_inv]
+
+/-- The morphism underlying right translation is right multiplication by the constant point. -/
+theorem rightTranslation_hom (x : 𝟙_ C ⟶ G) :
+    (rightTranslation x).hom = 𝟙 G * (toUnit G ≫ x) := (rfl)
+
+/-- The inverse of right translation is right translation by the inverse point. -/
+@[simp]
+theorem rightTranslation_inv (x : 𝟙_ C ⟶ G) :
+    (rightTranslation x).inv = (rightTranslation x⁻¹).hom := (rfl)
+
+/-- Right translation acts on every test-object point by right multiplication. -/
+@[reassoc (attr := simp)]
+theorem comp_rightTranslation_hom {Y : C} (f : Y ⟶ G) (x : 𝟙_ C ⟶ G) :
+    f ≫ (rightTranslation x).hom = f * (toUnit Y ≫ x) := by
+  simp [rightTranslation_hom, MonObj.comp_mul]
 
 /-! ### Translation by a point with values in an object -/
 

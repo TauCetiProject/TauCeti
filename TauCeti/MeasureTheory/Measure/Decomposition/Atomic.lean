@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Measure.AEMeasurable
 public import Mathlib.MeasureTheory.Measure.Dirac.Basic
 public import Mathlib.MeasureTheory.Measure.Typeclasses.NullSingletonClass
 public import Mathlib.MeasureTheory.Measure.Typeclasses.SFinite
@@ -170,5 +171,27 @@ instance diffusePart_nullSingletonClass (μ : Measure X) :
   ⟨diffusePart_apply_singleton μ⟩
 
 end MeasureTheory.Measure
+
+namespace TauCeti
+
+open MeasureTheory.Measure
+
+variable {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y]
+  [MeasurableSingletonClass X] {μ : Measure X} [SFinite μ]
+
+/-- A measurable map sends the atomic part to the sum of the images of its point masses. -/
+theorem map_atomicPart_eq_sum_dirac {T : X → Y} (hT : Measurable T) :
+    (atomicPart μ).map T = Measure.sum fun x : positiveSingletons μ ↦
+      μ {(x : X)} • Measure.dirac (T x) := by
+  rw [atomicPart_eq_sum_dirac, Measure.map_sum hT.aemeasurable]
+  simp only [Measure.map_smul _ hT.aemeasurable, Measure.map_dirac' hT]
+
+/-- The diffuse part vanishes on the positive-mass singleton points. -/
+@[simp]
+theorem diffusePart_apply_positiveSingletons : diffusePart μ (positiveSingletons μ) = 0 := by
+  rw [diffusePart_apply μ _ (measurableSet_positiveSingletons μ)]
+  simp
+
+end TauCeti
 
 end
