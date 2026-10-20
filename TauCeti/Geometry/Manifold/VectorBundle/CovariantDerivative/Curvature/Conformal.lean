@@ -29,10 +29,12 @@ of the Riemann curvature under the conformal change `e^(2φ) g`. It is the input
 Ricci and scalar curvatures of `ĝ`, and hence the conformal Laplacian of the Yamabe problem, are
 computed.
 
-The identity holds at a point for a `C¹` metric, under differentiability hypotheses at that
-point, and with the Levi-Civita connection of `g` replaced by any connection that is Levi-Civita
-for `g`; for a smooth metric, a smooth conformal factor and smooth vector fields all the
-hypotheses hold. As for the conformal change of the Levi-Civita connection
+The identity holds at a point `x` for a `Cⁿ` metric with `1 ≤ n`, and with the Levi-Civita
+connection of `g` replaced by any connection that is Levi-Civita for `g`. The conformal factor `f`
+is assumed `Cⁿ` on all of `M` and the vector field `Z` differentiable on all of `M`; the remaining
+hypotheses are differentiability at `x` of `X`, `Y`, `∇_X Z`, `∇_Y Z`, `A(Z, X)` and `A(Z, Y)`.
+For a smooth metric, a smooth conformal factor and smooth vector fields all the hypotheses hold.
+As for the conformal change of the Levi-Civita connection
 (`Bundle.ContMDiffRiemannianMetric.leviCivitaConnection_rescale_apply`), connections do not depend
 on a metric, so each metric is installed in turn as the `RiemannianBundle` instance of the tangent
 bundle of `M` and the connections are compared directly on `M`.
@@ -74,8 +76,10 @@ Levi-Civita connection of `f g` is
 
 `R^(f g)(X, Y) Z = R^∇(X, Y) Z + (∇_X A)(Z, Y) - (∇_Y A)(Z, X) + A(A(Z, Y), X) - A(A(Z, X), Y)`,
 
-with `(∇_X A)(Z, Y) = ∇_X (A(Z, Y)) - A(∇_X Z, Y) - A(Z, ∇_X Y)`. The hypotheses are the
-differentiability at the point of the sections differentiated there. -/
+with `(∇_X A)(Z, Y) = ∇_X (A(Z, Y)) - A(∇_X Z, Y) - A(Z, ∇_X Y)`. The metric `g` and the
+function `f` are assumed `Cⁿ` on all of `M` for some `1 ≤ n`, and `Z` differentiable on all of `M`;
+the remaining hypotheses are differentiability at `x` of `X`, `Y`, `∇_X Z`, `∇_Y Z`, `A(Z, X)` and
+`A(Z, Y)`. -/
 theorem curvatureOperator_leviCivitaConnection_rescale [IsManifold I 2 M] {n : ℕ∞ω}
     (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)) (hn : 1 ≤ n)
     {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) n f) (hf_pos : ∀ x, 0 < f x)
