@@ -23,8 +23,9 @@ basis.
 
 The number of arrows is independent of the representatives (`card_arrows_of`). Between objects
 with local endomorphism rings, in a category with binary biproducts, every basis vector is
-represented by an irreducible morphism (`exists_irreducibleMorphism_arrowBasis`), and an arrow
-exists exactly when an irreducible morphism exists (`nonempty_arrows_of_iff`). No finiteness of
+represented by an irreducible morphism
+(`exists_isIrreducibleMorphism_irreducibleMorphismMk_eq_arrowBasis`), and an arrow exists exactly
+when an irreducible morphism exists (`nonempty_arrows_of_iff`). No finiteness of
 the morphism spaces is needed for these statements; it is needed only for finiteness of the arrow
 sets.
 
@@ -150,7 +151,8 @@ noncomputable def arrowBasis (a b : IrreducibleMorphismQuiver k P) :
   Module.Free.chooseBasis k _
 
 instance (a b : IrreducibleMorphismQuiver k P)
-    [FiniteDimensional k (a.representative ⟶ b.representative)] : Finite (a ⟶ b) :=
+    [FiniteDimensional k (irreducibleMorphismSpace k a.representative b.representative)] :
+    Finite (a ⟶ b) :=
   Module.Finite.finite_basis (arrowBasis a b)
 
 /-- The arrow count is the dimension of the irreducible morphism space. Both sides are `0` when
@@ -179,7 +181,8 @@ theorem nonempty_arrows_iff (a b : IrreducibleMorphismQuiver k P) :
 
 /-- Every arrow's basis vector is represented by an irreducible morphism, when the two
 representatives have local endomorphism rings. -/
-theorem exists_irreducibleMorphism_arrowBasis (a b : IrreducibleMorphismQuiver k P)
+theorem exists_isIrreducibleMorphism_irreducibleMorphismMk_eq_arrowBasis
+    (a b : IrreducibleMorphismQuiver k P)
     [IsLocalRing (End a.representative)] [IsLocalRing (End b.representative)] (i : a ⟶ b) :
     ∃ f : jacobsonRadicalSubmodule k a.representative b.representative,
       IsIrreducibleMorphism (f : a.representative ⟶ b.representative) ∧

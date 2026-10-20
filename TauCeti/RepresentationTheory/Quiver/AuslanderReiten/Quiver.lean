@@ -47,6 +47,11 @@ instance [Finite Q] (a b : IrreducibleMorphismQuiver k (IsFinDim.{u, v, w, t} k 
     FiniteDimensional k (a.representative ⟶ b.representative) :=
   QuiverRep.finiteDimensional_hom a.representative_property.1 b.representative_property.1
 
+instance [Finite Q] (a : IrreducibleMorphismQuiver k (IsFinDim.{u, v, w, t} k Q)) :
+    IsLocalRing (End a.representative) :=
+  (QuiverRep.indecomposable_iff_isLocalRing_end a.representative_property.1).mp
+    a.representative_property.2
+
 end IrreducibleMorphismQuiver
 
 variable (k Q)
