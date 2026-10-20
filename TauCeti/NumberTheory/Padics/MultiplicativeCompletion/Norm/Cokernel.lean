@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.Reciprocity
 public import TauCeti.NumberTheory.Padics.MultiplicativeCompletion.Norm.Basic
 import TauCeti.Algebra.Group.PowerClassGroup.Card
+import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 import TauCeti.NumberTheory.LocalField.PowerSubgroup.Basic
 import TauCeti.NumberTheory.Padics.MultiplicativeCompletion.Finite
 
@@ -238,8 +239,8 @@ theorem padicCompletionUnitsNormCokernelEquiv_mk [Fact p.Prime] (hpK : (p : K) �
     padicCompletionUnitsNormCokernelEquiv p K L hpK hm (QuotientAddGroup.mk x) =
       padicCompletionUnitsNormResidue p K L m x := by
   simp only [padicCompletionUnitsNormCokernelEquiv, AddEquiv.trans_apply,
-    QuotientAddGroup.quotientAddEquivOfEq_mk, QuotientAddGroup.quotientKerEquivOfSurjective,
-    QuotientAddGroup.quotientKerEquivOfRightInverse_apply, QuotientAddGroup.kerLift_mk]
+    QuotientAddGroup.quotientAddEquivOfEq_mk,
+    TauCeti.QuotientAddGroup.quotientKerEquivOfSurjective_apply_mk]
 
 /-- **The order of the cokernel of the completed norm** `A(L) → A(K)` is the full power of `p`
 dividing `#Gal(L/K)^ab = [Kˣ : N_{L/K}(Lˣ)]`. -/
