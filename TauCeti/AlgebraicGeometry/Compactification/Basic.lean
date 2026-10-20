@@ -77,11 +77,14 @@ abbrev ofHom {Y : Scheme.{u}} (j : X ⟶ Y) (p : Y ⟶ S)
   ⟨⟨Y, j, p, fac⟩, (compactificationProperty_iff f _).mpr
     ⟨inferInstance, inferInstance, inferInstance⟩⟩
 
+/-- A morphism of compactifications fixes the source and lies over the base. -/
+abbrev Hom (C D : Compactification f) : Type _ := C ⟶ D
+
 namespace Hom
 
 /-- Every map of compactifications is proper, since its composite with the separated
 target structure map is proper. -/
-instance proper {C D : Compactification f} (h : C ⟶ D) : IsProper h.hom.h := by
+instance proper {C D : Compactification f} (h : Hom C D) : IsProper h.hom.h := by
   have : IsProper (h.hom.h ≫ D.p) := by
     rw [h.hom.h_π]
     infer_instance
