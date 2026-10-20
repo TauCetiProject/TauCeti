@@ -453,8 +453,9 @@ theorem hasSum_single (a : CircleSobolev s E) : HasSum (fun n ↦ single n (a.co
   · simp
 
 /-- Continuous linear maps out of `H^s` are determined by their values on the Fourier monomials. -/
-theorem continuousLinearMap_ext_single {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
-    {f g : CircleSobolev s E →L[ℂ] F} (h : ∀ n x, f (single n x) = g (single n x)) : f = g :=
+theorem continuousLinearMap_ext_single {F : Type*} [AddCommMonoid F] [Module ℂ F]
+    [TopologicalSpace F] [T2Space F] {f g : CircleSobolev s E →L[ℂ] F}
+    (h : ∀ n x, f (single n x) = g (single n x)) : f = g :=
   ContinuousLinearMap.ext fun a ↦
     ((hasSum_single a).mapL f).unique (by simpa only [h] using (hasSum_single a).mapL g)
 

@@ -31,6 +31,10 @@ the Fourier-coefficient Sobolev spaces of the circle.
   `‖v‖ ^ k * ‖𝓕 f v‖ ≤ C` for some `C > 0`.
 * `TauCeti.exists_abs_pow_mul_norm_fourierCoeff_le`: if `f : AddCircle T → ℂ` is `C^k` as a
   periodic function on `ℝ`, then `|n| ^ k * ‖fourierCoeff f n‖ ≤ C` for some `C`.
+* `TauCeti.fourierCoeffOn_iteratedDeriv`: on a period interval, the Fourier coefficients of the
+  `j`-th derivative of a `C^k` periodic function are `(2πin / T) ^ j` times those of the function.
+* `TauCeti.norm_fourierCoeffOn_le`: a sup bound on `(a, b]` bounds the Fourier coefficients on
+  `[a, b]`.
 -/
 
 public section
@@ -61,32 +65,30 @@ open scoped Real Interval
 
 variable {T : ℝ} [hT : Fact (0 < T)]
 
-/-- The Fourier coefficients of a function on `AddCircle T` are those of its lift to `ℝ` on the
-period interval `(0, T]`. -/
-private theorem fourierCoeff_eq_fourierCoeffOn (f : AddCircle T → ℂ) (n : ℤ) :
-    fourierCoeff f n = fourierCoeffOn (lt_add_of_pos_right 0 hT.out) (fun x : ℝ ↦ f x) n := by
+/-- The Fourier coefficients of a function on `AddCircle T` are those of its lift to `ℝ` on any
+period interval `(a, a + T]`. -/
+theorem fourierCoeff_eq_fourierCoeffOn (a : ℝ) (f : AddCircle T → ℂ) (n : ℤ) :
+    fourierCoeff f n = fourierCoeffOn (lt_add_of_pos_right a hT.out) (fun x : ℝ ↦ f x) n := by
   rw [← fourierCoeff_liftIoc_eq]
   congr 1
   funext x
   simp [AddCircle.liftIoc, AddCircle.coe_equivIoc]
 
-/-- Each derivative of a `C^k` periodic function multiplies its nonzero-frequency Fourier
-coefficients by `2πin / T`. -/
-private theorem fourierCoeffOn_iteratedDeriv {f : AddCircle T → ℂ} {k : ℕ}
-    (hf : ContDiff ℝ k fun x : ℝ ↦ f x) {n : ℤ} (hn : n ≠ 0) {j : ℕ} (hj : j ≤ k) :
-    fourierCoeffOn (lt_add_of_pos_right 0 hT.out) (iteratedDeriv j fun x : ℝ ↦ f x) n =
-      (2 * π * I * n / T) ^ j *
-        fourierCoeffOn (lt_add_of_pos_right 0 hT.out) (fun x : ℝ ↦ f x) n := by
+/-- Each derivative of a `C^k` function of period `T` multiplies its nonzero-frequency Fourier
+coefficients on a period interval by `2πin / T`. -/
+theorem fourierCoeffOn_iteratedDeriv {f : ℝ → ℂ} {k : ℕ} (hf : ContDiff ℝ k f)
+    (hper : Function.Periodic f T) (a : ℝ) {n : ℤ} (hn : n ≠ 0) {j : ℕ} (hj : j ≤ k) :
+    fourierCoeffOn (lt_add_of_pos_right a hT.out) (iteratedDeriv j f) n =
+      (2 * π * I * n / T) ^ j * fourierCoeffOn (lt_add_of_pos_right a hT.out) f n := by
   induction j with
   | zero => simp
   | succ j ih =>
     have hd := hf.differentiable_iteratedDeriv j (by exact_mod_cast hj)
-    have h := fourierCoeffOn_of_hasDerivAt (lt_add_of_pos_right 0 hT.out) hn
-      (f := iteratedDeriv j fun x : ℝ ↦ f x) (f' := iteratedDeriv (j + 1) fun x : ℝ ↦ f x)
+    have h := fourierCoeffOn_of_hasDerivAt (lt_add_of_pos_right a hT.out) hn
+      (f := iteratedDeriv j f) (f' := iteratedDeriv (j + 1) f)
       (fun x _ ↦ by simpa [iteratedDeriv_succ] using (hd x).hasDerivAt)
       ((hf.continuous_iteratedDeriv (j + 1) (by exact_mod_cast hj)).intervalIntegrable _ _)
-    have hper : Function.Periodic (fun x : ℝ ↦ f x) T := fun x ↦ by simp
-    rw [hper.iteratedDeriv j 0, sub_self, mul_zero, zero_sub, ih (by omega)] at h
+    rw [hper.iteratedDeriv j a, sub_self, mul_zero, zero_sub, ih (by omega)] at h
     have hT0 : (T : ℂ) ≠ 0 := ofReal_ne_zero.2 hT.out.ne'
     have hc : (2 * π * I * n : ℂ) ≠ 0 := by simp [hn, Real.pi_ne_zero, I_ne_zero]
     rw [pow_succ, mul_comm _ (2 * π * I * n / T), mul_assoc, h]
@@ -94,21 +96,20 @@ private theorem fourierCoeffOn_iteratedDeriv {f : AddCircle T → ℂ} {k : ℕ}
     field_simp
     ring
 
-/-- A pointwise bound on a function over the period interval bounds its Fourier coefficients. -/
-private theorem norm_fourierCoeffOn_le {g : ℝ → ℂ} {M : ℝ}
-    (hM : ∀ x ∈ Set.Icc 0 (0 + T), ‖g x‖ ≤ M) (n : ℤ) :
-    ‖fourierCoeffOn (lt_add_of_pos_right 0 hT.out) g n‖ ≤ M := by
+/-- A pointwise bound on a function over the interval `(a, b]` bounds its Fourier coefficients
+on `[a, b]`. -/
+theorem norm_fourierCoeffOn_le {a b : ℝ} (hab : a < b) {g : ℝ → E} {M : ℝ}
+    (hM : ∀ x ∈ Set.Ioc a b, ‖g x‖ ≤ M) (n : ℤ) : ‖fourierCoeffOn hab g n‖ ≤ M := by
   rw [fourierCoeffOn_eq_integral, norm_smul]
-  have h := intervalIntegral.norm_integral_le_of_norm_le_const (a := 0) (b := 0 + T)
-    (f := fun x : ℝ ↦ fourier (-n) (x : AddCircle (0 + T - 0)) • g x) (C := M) fun x hx ↦ by
+  have h := intervalIntegral.norm_integral_le_of_norm_le_const (a := a) (b := b)
+    (f := fun x : ℝ ↦ fourier (-n) (x : AddCircle (b - a)) • g x) (C := M) fun x hx ↦ by
       simp only [norm_smul, fourier_apply, Circle.norm_coe, one_mul]
-      have hx' := Set.uIoc_subset_uIcc hx
-      rw [Set.uIcc_of_le (by linarith [hT.out])] at hx'
-      exact hM x hx'
-  simp only [zero_add, sub_zero, abs_of_pos hT.out] at h ⊢
-  rw [norm_div, norm_one, Real.norm_of_nonneg hT.out.le]
-  have hT := hT.out
-  calc 1 / T * _ ≤ 1 / T * (M * T) := by gcongr
+      rw [Set.uIoc_of_le hab.le] at hx
+      exact hM x hx
+  have hba := sub_pos.2 hab
+  rw [abs_of_pos hba] at h
+  rw [norm_div, norm_one, Real.norm_of_nonneg hba.le]
+  calc 1 / (b - a) * _ ≤ 1 / (b - a) * (M * (b - a)) := by gcongr
     _ = M := by field_simp
 
 /-- **Decay of the Fourier coefficients of a `C^k` function on the circle.** If a function on
@@ -121,15 +122,17 @@ theorem exists_abs_pow_mul_norm_fourierCoeff_le {f : AddCircle T → ℂ} {k : �
     (hf.continuous_iteratedDeriv k le_rfl).continuousOn
   have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM 0 ⟨le_rfl, by linarith [hT.out]⟩)
   refine ⟨(T / (2 * π)) ^ k * M, fun n ↦ ?_⟩
-  have hbound := norm_fourierCoeffOn_le hM n
-  rw [fourierCoeff_eq_fourierCoeffOn]
+  have hbound := norm_fourierCoeffOn_le (lt_add_of_pos_right 0 hT.out)
+    (fun x hx ↦ hM x (Set.Ioc_subset_Icc_self hx)) n
+  rw [fourierCoeff_eq_fourierCoeffOn 0]
   rcases eq_or_ne n 0 with rfl | hn
   · rcases Nat.eq_zero_or_pos k with rfl | hk
     · simpa using hbound
     · simp only [Int.cast_zero, abs_zero, zero_pow hk.ne', zero_mul]
       have := hT.out
       positivity
-  · rw [fourierCoeffOn_iteratedDeriv hf hn le_rfl, norm_mul, norm_pow] at hbound
+  · rw [fourierCoeffOn_iteratedDeriv hf (fun x ↦ by simp) 0 hn le_rfl, norm_mul,
+      norm_pow] at hbound
     have hnorm : ‖(2 * π * I * n / T : ℂ)‖ = 2 * π * |(n : ℝ)| / T := by
       simp [abs_of_pos hT.out]
     rw [hnorm, div_pow, mul_pow] at hbound
