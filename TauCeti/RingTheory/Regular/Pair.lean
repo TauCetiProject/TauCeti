@@ -37,7 +37,49 @@ universe u v
 namespace TauCeti
 
 variable {R : Type u} {M : Type v}
-  [CommRing R] [AddCommGroup M] [Module R M]
+
+section Right
+
+variable [CommSemiring R] [AddCommMonoid M] [Module R M]
+
+/-- The second differential of the two-element Koszul complex. -/
+def koszulPairRight (x y : R) : M × M →ₗ[R] M where
+  toFun p := x • p.1 + y • p.2
+  map_add' a b := by simp only [Prod.fst_add, Prod.snd_add, smul_add]; abel
+  map_smul' r c := by
+    simp only [Prod.smul_fst, Prod.smul_snd, RingHom.id_apply, smul_add, smul_smul]
+    module
+
+@[simp]
+theorem koszulPairRight_apply (x y : R) (p : M × M) :
+    koszulPairRight x y p = x • p.1 + y • p.2 := by
+  simp only [koszulPairRight, LinearMap.coe_mk, AddHom.coe_mk]
+
+/-- The range of the second Koszul differential is the two-generated ideal. -/
+theorem range_koszulPairRight_eq_span (x y : R) :
+    LinearMap.range (koszulPairRight (M := R) x y) =
+      Ideal.span ({x, y} : Set R) := by
+  ext z
+  constructor
+  · rintro ⟨⟨a, b⟩, rfl⟩
+    rw [Ideal.mem_span_pair]
+    refine ⟨a, b, ?_⟩
+    simp only [koszulPairRight_apply, smul_eq_mul]
+    ring
+  · intro hz
+    rw [Ideal.mem_span_pair] at hz
+    obtain ⟨a, b, hab⟩ := hz
+    refine ⟨(a, b), ?_⟩
+    simp only [koszulPairRight_apply, smul_eq_mul]
+    calc
+      x * a + y * b = a * x + b * y := by ring
+      _ = z := hab
+
+end Right
+
+section RegularPair
+
+variable [CommRing R] [AddCommGroup M] [Module R M]
 
 /-- The first differential of the two-element Koszul complex, with sign convention
 `c ↦ (-y • c, x • c)`. -/
@@ -54,35 +96,15 @@ theorem koszulPairLeft_apply (x y : R) (c : M) :
   simp only [koszulPairLeft, LinearMap.coe_mk, AddHom.coe_mk]
 
 @[simp]
-theorem koszulPairLeft_fst (x y : R) (c : M) :
-    (koszulPairLeft x y c).1 = -(y • c) := by
-  rw [koszulPairLeft_apply]
-
-@[simp]
-theorem koszulPairLeft_snd (x y : R) (c : M) :
-    (koszulPairLeft x y c).2 = x • c := by
-  rw [koszulPairLeft_apply]
-
-/-- The second differential of the two-element Koszul complex. -/
-def koszulPairRight (x y : R) : M × M →ₗ[R] M where
-  toFun p := x • p.1 + y • p.2
-  map_add' a b := by simp only [Prod.fst_add, Prod.snd_add, smul_add]; abel
-  map_smul' r c := by
-    simp only [Prod.smul_fst, Prod.smul_snd, RingHom.id_apply, smul_add, smul_smul]
-    module
-
-@[simp]
-theorem koszulPairRight_apply (x y : R) (p : M × M) :
-    koszulPairRight x y p = x • p.1 + y • p.2 := by
-  simp only [koszulPairRight, LinearMap.coe_mk, AddHom.coe_mk]
-
-@[simp]
-theorem koszulPairRight_apply_pair (x y : R) (a b : M) :
-    koszulPairRight x y (a, b) = x • a + y • b := by
-  rw [koszulPairRight_apply]
+theorem koszulPairRight_comp_koszulPairLeft (x y : R) :
+    (koszulPairRight (M := M) x y).comp (koszulPairLeft (M := M) x y) = 0 := by
+  ext c
+  simp only [LinearMap.comp_apply, koszulPairLeft_apply, koszulPairRight_apply,
+    smul_neg, smul_smul, LinearMap.zero_apply]
+  rw [mul_comm x y, neg_add_cancel]
 
 /-- The first Koszul differential commutes with tensoring by `M`. -/
-theorem koszulPairTensorEquiv_rTensor_left (x y : R) :
+theorem prodScalarLeftEquiv_comp_koszulPairLeft_rTensor (x y : R) :
     (TauCeti.TensorProduct.prodScalarLeftEquiv (R := R) (M := M)).toLinearMap.comp
         ((koszulPairLeft (M := R) x y).rTensor M) =
       (koszulPairLeft (M := M) x y).comp (TensorProduct.lid R M).toLinearMap := by
@@ -91,7 +113,7 @@ theorem koszulPairTensorEquiv_rTensor_left (x y : R) :
   simp [koszulPairLeft, mul_smul]
 
 /-- The second Koszul differential commutes with tensoring by `M`. -/
-theorem lid_rTensor_koszulPairRight (x y : R) :
+theorem lid_comp_koszulPairRight_rTensor (x y : R) :
     (TensorProduct.lid R M).toLinearMap.comp
         ((koszulPairRight (M := R) x y).rTensor M) =
       (koszulPairRight (M := M) x y).comp
@@ -146,8 +168,8 @@ theorem exact_koszulPair_of_isSMulRegular
     · exact hc₁.symm
     · exact hc₂.symm
   · rintro ⟨c, rfl⟩
-    simp only [koszulPairLeft_apply, koszulPairRight_apply_pair, smul_neg, smul_smul]
-    rw [mul_comm x y, neg_add_cancel]
+    simpa only [LinearMap.comp_apply, LinearMap.zero_apply] using
+      LinearMap.congr_fun (koszulPairRight_comp_koszulPairLeft (M := M) x y) c
 
 /-- Tensoring the two-element Koszul complex with `M` preserves exactness at
 the middle when the pair is regular on `M`. -/
@@ -160,8 +182,8 @@ theorem exact_rTensor_koszulPair_of_isSMulRegular
       ((koszulPairRight (M := R) x y).rTensor M) := by
   let e₁ := TensorProduct.lid R M
   let e₂ := TauCeti.TensorProduct.prodScalarLeftEquiv (R := R) (M := M)
-  have hcomm₁ := koszulPairTensorEquiv_rTensor_left (M := M) x y
-  have hcomm₂ := lid_rTensor_koszulPairRight (M := M) x y
+  have hcomm₁ := prodScalarLeftEquiv_comp_koszulPairLeft_rTensor (M := M) x y
+  have hcomm₂ := lid_comp_koszulPairRight_rTensor (M := M) x y
   have hexact := exact_koszulPair_of_isSMulRegular hx hy
   exact (Function.Exact.iff_of_ladder_linearEquiv
     (e₁ := e₁) (e₂ := e₂) (e₃ := e₁) hcomm₁.symm hcomm₂.symm).mp hexact
@@ -197,7 +219,8 @@ theorem range_koszulPairRight_subtype_rTensor_injective_of_isSMulRegular
     obtain ⟨w, hw⟩ := g.rTensor_surjective M hsurj z
     have hg₀w : (g₀.rTensor M) w = 0 := by
       calc
-        (g₀.rTensor M) w = ((i.comp g).rTensor M) w := rfl
+        (g₀.rTensor M) w = ((i.comp g).rTensor M) w := by
+          rw [show i.comp g = g₀ from LinearMap.subtype_comp_rangeRestrict g₀]
         _ = (i.rTensor M) ((g.rTensor M) w) :=
           LinearMap.rTensor_comp_apply M i g w
         _ = (i.rTensor M) z := by rw [hw]
@@ -206,26 +229,6 @@ theorem range_koszulPairRight_subtype_rTensor_injective_of_isSMulRegular
     have hgw : (g.rTensor M) w = 0 := (hexactRange w).mpr hwRange
     exact hw.symm.trans hgw
   · exact bot_le
-
-/-- The range of the second Koszul differential is the two-generated ideal. -/
-theorem range_koszulPairRight_eq_span (x y : R) :
-    LinearMap.range (koszulPairRight (M := R) x y) =
-      Ideal.span ({x, y} : Set R) := by
-  ext z
-  constructor
-  · rintro ⟨⟨a, b⟩, rfl⟩
-    rw [Ideal.mem_span_pair]
-    refine ⟨a, b, ?_⟩
-    simp only [koszulPairRight_apply_pair, smul_eq_mul]
-    ring
-  · intro hz
-    rw [Ideal.mem_span_pair] at hz
-    obtain ⟨a, b, hab⟩ := hz
-    refine ⟨(a, b), ?_⟩
-    simp only [koszulPairRight_apply_pair, smul_eq_mul]
-    calc
-      x * a + y * b = a * x + b * y := by ring
-      _ = z := hab
 
 /-- A finitely presented module over a local ring is free when a regular pair
 generates the maximal ideal and is also regular on the module. -/
@@ -241,5 +244,7 @@ theorem Module.free_of_regular_pair_generates_maximalIdeal
   apply Module.free_of_maximalIdeal_rTensor_injective
   rw [← hspan, ← range_koszulPairRight_eq_span x y]
   exact range_koszulPairRight_subtype_rTensor_injective_of_isSMulRegular hxR hyR hxM hyM
+
+end RegularPair
 
 end TauCeti
