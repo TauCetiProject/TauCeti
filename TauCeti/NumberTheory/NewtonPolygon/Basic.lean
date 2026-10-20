@@ -47,9 +47,9 @@ not have admissible heights; its `newtonPolygon` is then the all-infinite fallba
   interval from its order of vanishing at zero to its degree.
 * `Polynomial.newtonPolygon_natTrailingDegree` and `Polynomial.newtonPolygon_natDegree`:
   the polygon begins at the trailing coefficient and ends at the leading coefficient.
-* `Polynomial.ncard_finiteEdges_newtonPolygon`: a polynomial of degree `d` and order `a`
-  of vanishing at zero has `d - a` finite unit edges, and by
-  `Polynomial.finiteEdges_newtonPolygon_monomial` a monomial has none.
+* `Polynomial.ncard_finiteEdges_newtonPolygon`: if only zero has infinite valuation, a
+  polynomial of degree `d` and order `a` of vanishing at zero has `d - a` finite unit edges,
+  and by `Polynomial.finiteEdges_newtonPolygon_monomial` a monomial has none.
 * `PowerSeries.newtonPolygon_smul`, `PowerSeries.newtonPolygon_X_pow_mul`,
   `PowerSeries.newtonPolygon_rescale` and `PowerSeries.newtonPolygon_map`: multiplication by
   a scalar translates the heights, multiplication by `X ^ k` shifts the polygon `k` places,
