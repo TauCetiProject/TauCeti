@@ -217,17 +217,7 @@ theorem leftDualIsoRightDual_pivotalCategoryOfRightRigid (φ : 𝟭 C ≅ double
     [NatTrans.IsMonoidal φ.hom] (X : C) :
     @leftDualIsoRightDual C _ _ (rigidCategoryOfIsoDoubleRightDual φ.app)
       (pivotalCategoryOfRightRigid φ) X = Iso.refl _ := by
-  let := rigidCategoryOfIsoDoubleRightDual φ.app
-  let := pivotalCategoryOfRightRigid φ
-  ext
-  -- Compare after evaluation against the pivotal pairing; the chosen left dual of `X` is `Xᘁ`,
-  -- paired with `X` through `φ`, which is also the pivotal pairing.
-  refine @leftDualHom_ext C _ _ Xᘁ X Xᘁ (pivotalExactPairing X) _ _ ?_
-  rw [pivotalExactPairing_evaluation, whiskerLeft_leftDualIsoRightDual_hom_comp_evaluation,
-    pivotalIsoApp_pivotalCategoryOfRightRigid, rigidCategoryOfIsoDoubleRightDual_evaluation]
-  -- The identity `ᘁX ⟶ Xᘁ` is an identity only up to unfolding the chosen left dual, so the
-  -- whiskered identity is removed by `Eq.trans` rather than by rewriting.
-  exact ((MonoidalCategory.whiskerLeft_id X Xᘁ =≫ _).trans (Category.id_comp _)).symm
+  exact leftDualIso_id _
 
 end RightRigid
 
