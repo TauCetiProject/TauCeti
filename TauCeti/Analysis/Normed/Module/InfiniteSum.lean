@@ -110,7 +110,7 @@ theorem summable_sum_bilinear_range_of_nonarchimedean [CompleteSpace G]
 
 end Summability
 
-namespace LinearMap
+section BilinearIdentities
 
 variable [CommRing R] [Module R E] [Module R F] [Module R G]
 variable (B : E →ₗ[R] F →ₗ[R] G) {C : ℝ}
@@ -120,7 +120,7 @@ include hB
 
 /-- A bounded bilinear map commutes with two sums in an ultrametric target,
 with the sum taken over the product index. -/
-theorem hasSum_map_of_nonarchimedean
+theorem hasSum_bilinear_of_nonarchimedean
     {f : ι → E} {g : κ → F} {a : E} {b : F} (hf : HasSum f a) (hg : HasSum g b) :
     HasSum (fun ij : ι × κ ↦ B (f ij.1) (g ij.2)) (B a b) := by
   let c := UniformSpace.Completion.toCompl (α := G)
@@ -141,51 +141,51 @@ theorem hasSum_map_of_nonarchimedean
   exact (hasSum_iff_hasSum_compl _ _).mp hsum
 
 /-- Evaluating a bounded bilinear map on two infinite sums equals its double sum. -/
-theorem map_tsum_tsum_of_nonarchimedean [T0Space G]
+theorem bilinear_tsum_tsum_of_nonarchimedean [T0Space G]
     {f : ι → E} {g : κ → F} (hf : Summable f) (hg : Summable g) :
     B (∑' i, f i) (∑' j, g j) = ∑' ij : ι × κ, B (f ij.1) (g ij.2) :=
-  (hasSum_map_of_nonarchimedean B hB hf.hasSum hg.hasSum).tsum_eq.symm
+  (hasSum_bilinear_of_nonarchimedean B hB hf.hasSum hg.hasSum).tsum_eq.symm
 
 section CauchyProduct
 
 variable {A : Type*} [AddCommMonoid A] [Finset.HasAntidiagonal A]
 
 /-- Grouping a bilinear double sum by antidiagonals preserves its sum. -/
-theorem hasSum_sum_map_antidiagonal_of_nonarchimedean
+theorem hasSum_sum_bilinear_antidiagonal_of_nonarchimedean
     {f : A → E} {g : A → F} {a : E} {b : F} (hf : HasSum f a) (hg : HasSum g b) :
     HasSum (fun n ↦ ∑ ij ∈ Finset.antidiagonal n, B (f ij.1) (g ij.2)) (B a b) := by
   have hsigma := Finset.HasAntidiagonal.sigmaAntidiagonalEquivProd.hasSum_iff.mpr
-    (hasSum_map_of_nonarchimedean B hB hf hg)
+    (hasSum_bilinear_of_nonarchimedean B hB hf hg)
   exact hsigma.sigma fun n ↦ Finset.hasSum (Finset.antidiagonal n)
     fun ij ↦ B (f ij.1) (g ij.2)
 
 /-- The bilinear Cauchy-product formula for an additive index monoid. -/
-theorem map_tsum_tsum_eq_tsum_sum_antidiagonal_of_nonarchimedean
+theorem bilinear_tsum_tsum_eq_tsum_sum_antidiagonal_of_nonarchimedean
     [T0Space G] {f : A → E} {g : A → F}
     (hf : Summable f) (hg : Summable g) :
     B (∑' n, f n) (∑' n, g n) =
       ∑' n, ∑ ij ∈ Finset.antidiagonal n, B (f ij.1) (g ij.2) :=
-  (hasSum_sum_map_antidiagonal_of_nonarchimedean B hB hf.hasSum hg.hasSum).tsum_eq.symm
+  (hasSum_sum_bilinear_antidiagonal_of_nonarchimedean B hB hf.hasSum hg.hasSum).tsum_eq.symm
 
 end CauchyProduct
 
 /-- The natural-number bilinear Cauchy product sums to the image of the two sums. -/
-theorem hasSum_sum_map_range_of_nonarchimedean
+theorem hasSum_sum_bilinear_range_of_nonarchimedean
     {f : ℕ → E} {g : ℕ → F} {a : E} {b : F} (hf : HasSum f a) (hg : HasSum g b) :
     HasSum (fun n ↦ ∑ k ∈ Finset.range (n + 1), B (f k) (g (n - k))) (B a b) := by
   simp_rw [← Finset.Nat.sum_antidiagonal_eq_sum_range_succ fun k l ↦ B (f k) (g l)]
-  exact hasSum_sum_map_antidiagonal_of_nonarchimedean B hB hf hg
+  exact hasSum_sum_bilinear_antidiagonal_of_nonarchimedean B hB hf hg
 
 /-- The natural-number bilinear Cauchy-product formula. -/
-theorem map_tsum_tsum_eq_tsum_sum_range_of_nonarchimedean
+theorem bilinear_tsum_tsum_eq_tsum_sum_range_of_nonarchimedean
     [T0Space G] {f : ℕ → E} {g : ℕ → F}
     (hf : Summable f) (hg : Summable g) :
     B (∑' n, f n) (∑' n, g n) =
       ∑' n, ∑ k ∈ Finset.range (n + 1), B (f k) (g (n - k)) := by
   simp_rw [← Finset.Nat.sum_antidiagonal_eq_sum_range_succ fun k l ↦ B (f k) (g l)]
-  exact map_tsum_tsum_eq_tsum_sum_antidiagonal_of_nonarchimedean B hB hf hg
+  exact bilinear_tsum_tsum_eq_tsum_sum_antidiagonal_of_nonarchimedean B hB hf hg
 
-end LinearMap
+end BilinearIdentities
 
 end Bilinear
 
