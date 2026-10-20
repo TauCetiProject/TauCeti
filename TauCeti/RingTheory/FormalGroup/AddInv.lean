@@ -234,7 +234,9 @@ theorem eq_subst_addInvX_iff {f g : MvPowerSeries σ R}
   · rintro rfl
     exact subst_addInvX_self F hf
   · intro h
-    have h' : y + x = 0 := Subtype.ext h
+    have h' : y + x = 0 := Subtype.ext (by
+      rw [FormalGroup.add_apply, FormalGroup.zero_apply]
+      exact h)
     have heq : y = -x := eq_neg_of_add_eq_zero_left h'
     have hval := congrArg (fun z : F.Point σ ↦ z.val) heq
     rw [neg_apply] at hval
@@ -264,7 +266,9 @@ theorem eq_subst_addInvX_iff_right {f g : MvPowerSeries σ R}
   · rintro rfl
     exact subst_self_addInvX F hf
   · intro h
-    have h' : x + y = 0 := Subtype.ext h
+    have h' : x + y = 0 := Subtype.ext (by
+      rw [FormalGroup.add_apply, FormalGroup.zero_apply]
+      exact h)
     have heq : y = -x := eq_neg_of_add_eq_zero_right h'
     have hval := congrArg (fun z : F.Point σ ↦ z.val) heq
     rw [neg_apply] at hval
