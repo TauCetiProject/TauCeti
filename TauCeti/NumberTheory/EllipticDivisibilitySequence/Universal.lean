@@ -22,10 +22,10 @@ of which every sequence **of the form** `normEDS b c d` is a specialization: it 
 `preNormEDS` and for the two complement sequences (`preNormEDS_eq_aeval`, `complEDS₂_eq_aeval`,
 `complEDS_eq_aeval`).
 
-Note the claim is about the *constructed function* `normEDS`, not about elliptic divisibility
-sequences in the abstract: the pinned Mathlib does not know that `normEDS b c d` satisfies
-`IsEllipticDvdSequence` — it records proving so as a TODO — so nothing here says every EDS arises
-this way, only that every `normEDS b c d` does.
+Mathlib also proves `IsEllipticDvdSequence.normEDS` and classifies elliptic divisibility
+sequences with a nonzerodivisor second term as scalar multiples of `normEDS`, via
+`IsEllipticDvdSequence.eq_smul_normEDS`. The specialization identities here concern the
+constructed function `normEDS` itself.
 
 The point is that an identity between the terms of a sequence of the form `normEDS b c d` need
 only be proved once, over `MvPolynomial NormEDSParam ℤ`, and then specialises to every ring and
@@ -87,10 +87,9 @@ complements but not for `preNormEDS`, although Mathlib's `map_preNormEDS` makes 
 one-line proof and consumers reaching for the pre-normalised sequence would otherwise have to
 redo it.
 
-`universalNormEDS_ne_zero` lives in `NormEDS.lean`: it rests on
-`normEDS_two_three_two_eq_id`, proved there using Mathlib's `IsEllipticSequence.normEDS` and
-`IsEllipticSequence.ext` from `Ext.lean`. That proof specialises the universal parameters, so
-`NormEDS.lean` imports this file and the nonvanishing lemma follows the same import direction.
+`universalNormEDS_ne_zero` lives in `NormEDS.lean`: it specialises the universal parameters
+using Mathlib's `normEDS_two_three_two`. Thus `NormEDS.lean` imports this file and the
+nonvanishing lemma follows the same import direction.
 -/
 
 public section
