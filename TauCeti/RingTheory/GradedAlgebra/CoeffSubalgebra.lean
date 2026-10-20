@@ -302,9 +302,10 @@ theorem map_val_adjoin_grade_one :
   ext f
   refine ⟨?_, ?_⟩
   · rintro ⟨g, hg, rfl⟩
-    exact hg
+    obtain ⟨b, hb, hbg⟩ := mem_grade_iff.mp hg
+    exact ⟨b, hb, by simpa using hbg⟩
   · rintro ⟨b, hb, rfl⟩
-    exact ⟨monomial M 1 b hb, monomial_mem_grade 1 b hb, rfl⟩
+    exact ⟨monomial M 1 b hb, monomial_mem_grade 1 b hb, by simp⟩
 
 /-- **Generation in degree one.** `coeffSubalgebra M` is generated as an `R`-algebra by its
 elements of degree one exactly when `M n ≤ (M 1)ⁿ` for every `n`, that is, when every element
@@ -314,6 +315,7 @@ theorem adjoin_grade_one_eq_top_iff :
   rw [← coeffSubalgebra_le_coeffSubalgebra_iff, ← map_val_adjoin_grade_one, eq_top_iff]
   refine ⟨fun h f hf ↦ ⟨⟨f, hf⟩, h Algebra.mem_top, rfl⟩, fun h f _ ↦ ?_⟩
   obtain ⟨g, hg, hgf⟩ := h f.2
+  have hgf : (g : B[X]) = f := by simpa using hgf
   rwa [Subtype.ext hgf] at hg
 
 end coeffSubalgebra
