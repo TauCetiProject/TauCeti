@@ -99,18 +99,18 @@ variable {A : Type*} [CommRing A] [Algebra ℚ A]
 theorem subst_C_exp {a : A} (ha : IsNilpotent a) :
     (exp A).subst (C a) = C (IsNilpotent.exp a) := by
   obtain ⟨n, hn⟩ := ha
-  rw [subst_C_eq_C_eval_trunc hn, IsNilpotent.exp_eq_sum hn]
+  rw [subst_C_eq_C_aeval_trunc hn, IsNilpotent.exp_eq_sum hn]
   congr 1
-  rw [Polynomial.eval, eval₂_trunc_eq_sum_range]
+  rw [Polynomial.aeval_def, eval₂_trunc_eq_sum_range]
   simp [coeff_exp, Algebra.smul_def]
 
 /-- The formal logarithm at a nilpotent constant is the finite logarithm of one plus it. -/
 theorem subst_C_log {a : A} (ha : IsNilpotent a) :
     (log A).subst (C a) = C (IsNilpotent.log (1 + a)) := by
   obtain ⟨n, hn⟩ := ha
-  rw [subst_C_eq_C_eval_trunc hn, IsNilpotent.log_eq_sum (n := n) (by simpa using hn)]
+  rw [subst_C_eq_C_aeval_trunc hn, IsNilpotent.log_eq_sum (n := n) (by simpa using hn)]
   congr 1
-  rw [Polynomial.eval, eval₂_trunc_eq_sum_range]
+  rw [Polynomial.aeval_def, eval₂_trunc_eq_sum_range]
   apply Finset.sum_congr rfl
   intro i _
   by_cases hi : i = 0 <;> simp [coeff_log, hi, Algebra.smul_def]

@@ -27,8 +27,9 @@ Substitution of series of zero constant coefficient is compatible with congruenc
 powers of `X`, in both the substituted series and the series substituted into. This makes
 truncation modulo `X ^ n` compatible with composition of formal coordinates.
 
-Substitution at a nilpotent series depends on only finitely many coefficients. At a nilpotent
-constant it is the constant series obtained by evaluating a finite polynomial truncation.
+Substitution at a nilpotent series depends on only finitely many coefficients. The substituted
+series may be multivariate, with coefficients in an algebra over the coefficient ring. At a
+nilpotent constant it is the constant series obtained by evaluating a finite polynomial truncation.
 This connects formal identities with polynomial maps on nilpotent elements.
 
 An algebra map on power series whose value at `X` has nilpotent constant coefficient is the
@@ -47,7 +48,7 @@ of a completed group algebra attached to two topological generators.
 * `PowerSeries.subst_one`: substitution preserves the constant series one.
 * `PowerSeries.subst_eq_aeval_trunc_of_pow_eq_zero`: substitution at a series with a vanishing
   power is evaluation of a finite truncation.
-* `PowerSeries.subst_C_eq_C_eval_trunc`: substitution at a nilpotent constant is the constant
+* `PowerSeries.subst_C_eq_C_aeval_trunc`: substitution at a nilpotent constant is the constant
   series obtained by evaluating a finite truncation.
 * `PowerSeries.order_subst`: `ord (f (φ)) = ord φ * ord f` when `φ` has zero constant
   coefficient.
@@ -84,10 +85,11 @@ theorem subst_one {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
 
 section Nilpotent
 
-variable {R : Type*} [CommRing R]
+variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
 
-/-- Substituting a series whose `n`th power vanishes uses only the coefficients below `n`. -/
-theorem subst_eq_aeval_trunc_of_pow_eq_zero {a : R⟦X⟧} {n : ℕ}
+/-- Substituting a possibly multivariate series over an `R`-algebra whose `n`th power vanishes
+uses only the coefficients below `n`. -/
+theorem subst_eq_aeval_trunc_of_pow_eq_zero {τ : Type*} {a : MvPowerSeries τ S} {n : ℕ}
     (hn : a ^ n = 0) (f : R⟦X⟧) :
     f.subst a = Polynomial.aeval a (trunc n f) := by
   have ha : HasSubst a := IsNilpotent.map ⟨n, hn⟩ MvPowerSeries.constantCoeff
@@ -95,11 +97,13 @@ theorem subst_eq_aeval_trunc_of_pow_eq_zero {a : R⟦X⟧} {n : ℕ}
   rw [subst_add ha, subst_mul ha, subst_pow ha, subst_X ha, hn, zero_mul, zero_add,
     subst_coe ha]
 
-/-- A nilpotent constant substitutes by evaluating a finite truncation. -/
-theorem subst_C_eq_C_eval_trunc {x : R} {n : ℕ} (hn : x ^ n = 0) (f : R⟦X⟧) :
-    f.subst (C x) = C ((trunc n f).eval x) := by
+/-- A nilpotent constant in an `R`-algebra substitutes by algebra evaluation of a finite
+truncation. -/
+theorem subst_C_eq_C_aeval_trunc {x : S} {n : ℕ} (hn : x ^ n = 0) (f : R⟦X⟧) :
+    f.subst (C x) = C (Polynomial.aeval x (trunc n f)) := by
   rw [subst_eq_aeval_trunc_of_pow_eq_zero (n := n) (by rw [← map_pow, hn, map_zero])]
-  simp [Polynomial.aeval_def]
+  simpa only [IsScalarTower.toAlgHom_apply, algebraMap_eq] using
+    Polynomial.aeval_algHom_apply (IsScalarTower.toAlgHom R S S⟦X⟧) x (trunc n f)
 
 end Nilpotent
 
