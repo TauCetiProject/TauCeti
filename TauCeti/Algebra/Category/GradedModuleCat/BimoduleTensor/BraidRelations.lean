@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.SimpleGraph.Basic
-public import TauCeti.Algebra.Category.GradedModuleCat.BimoduleTensor.Unit
-public import TauCeti.Algebra.Category.GradedModuleCat.Coproducts.Basic
-public import TauCeti.Algebra.Homology.Bifunctor.Homotopy
+public import TauCeti.Algebra.Category.GradedModuleCat.BimoduleTensor.Monoidal
 
 /-!
 # A transfer principle for the Khovanov-Seidel braid relations
@@ -26,7 +24,10 @@ tensor `GradedModuleCat.bimoduleTensor Ξ Ξ Ξ`, and the unit complex of the se
 `TauCeti.Algebra.Category.GradedModuleCat.BimoduleTensor.Basic`, next to
 `GradedModuleCat.bimoduleTensor`, and the unit complex
 `gradedBimoduleUnitComplex` in `TauCeti.Algebra.Category.GradedModuleCat.BimoduleTensor.Unit`,
-next to `GradedModuleCat.bimoduleUnit`.
+next to `GradedModuleCat.bimoduleUnit`. The pointwise homotopy-monoidal datum
+`GradedBimoduleMonoidalDatum` of a functor on complexes of graded bimodules is defined in
+`TauCeti.Algebra.Category.GradedModuleCat.BimoduleTensor.Monoidal`, next to
+`bimoduleMonoidalCategory`.
 
 `KhovanovSeidelRelations` records the three relations for a family `C` of complexes with
 prescribed inverses `C'` in a graded bimodule setting. The unit of the relations is the unit
@@ -39,9 +40,9 @@ bimodule setting, together with
 
 * a datum `hΦ`, carrying every homotopy equivalence of source complexes to a homotopy
   equivalence of image complexes,
-* a pointwise homotopy-monoidal datum `η`, a homotopy equivalence for every pair of source
-  complexes `X` and `Y` comparing the target tensor product of the image complexes with the
-  image of the source tensor product, and
+* a pointwise homotopy-monoidal datum `η : GradedBimoduleMonoidalDatum k Ξ₁ Ξ₂ Φ`, a
+  homotopy equivalence for every pair of source complexes `X` and `Y` comparing the target
+  tensor product of the image complexes with the image of the source tensor product, and
 * a unit datum `ε`, a homotopy equivalence comparing the image of the source unit complex
   with the target unit complex,
 
@@ -140,18 +141,6 @@ variable (Ξ₂ : InternalGrading k A₂) [GradedAlgebra Ξ₂.piece]
 variable (Φ : HomologicalComplex (GradedBimoduleCat k Ξ₁) c ⥤
     HomologicalComplex (GradedBimoduleCat k Ξ₂) c)
 variable (hΦ : ∀ {X Y}, HomotopyEquiv X Y → HomotopyEquiv (Φ.obj X) (Φ.obj Y))
-
-/-- The pointwise homotopy-monoidal datum of the functor `Φ` on complexes of graded bimodules
-between the source and the target graded bimodule setting: for every pair of source complexes
-`X` and `Y`, a homotopy equivalence comparing the target tensor product of the image
-complexes with the image of the source tensor product. -/
-abbrev GradedBimoduleMonoidalDatum :=
-  ∀ (X Y : HomologicalComplex (GradedBimoduleCat k Ξ₁) c),
-    HomotopyEquiv
-      (HomologicalComplex.mapBifunctor (Φ.obj X) (Φ.obj Y)
-        (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c)
-      (Φ.obj (HomologicalComplex.mapBifunctor X Y
-        (GradedModuleCat.bimoduleTensor Ξ₁ Ξ₁ Ξ₁) c))
 
 namespace KhovanovSeidelRelations
 
