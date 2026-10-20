@@ -14,6 +14,15 @@ public import Mathlib.CategoryTheory.Comma.StructuredArrow.Small
 
 Retaining the point gives a fully faithful embedding into the category of
 finite-type algebras equipped with a map to the chosen commutative algebra.
+
+## References
+
+* Stacks Project, Tag 04GW, for pointed étale neighbourhoods.
+* Tau Ceti, `TauCeti.RingTheory.Henselization.SmallModel`: the finite-type-algebra
+  essential-smallness method adapted here while retaining the point.
+* Taylor Dupuy, Thomas Tucker, and Zhuoran Wang, pcfawd-formalization at `9a20b3f`,
+  `StrictHenselizationConstruction.lean`, `PointedEtaleNeighborhood`: the motivating pointed
+  category uses a presentation-coded smallness construction rather than this proof.
 -/
 
 public section
