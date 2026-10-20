@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Distributions.HalfStudentT.Basic
 import TauCeti.Probability.Distributions.BetaPrime.Moments
 import TauCeti.Probability.Distributions.StudentT.Moments
+import TauCeti.Probability.Moments.IntegrableExpMul
 
 /-!
 # Moments of half-Student t laws
@@ -60,6 +61,7 @@ theorem integrable_rpow_halfStudentTMeasure_iff (hν : 0 < ν) (hs : 0 < s) (q :
   constructor <;> rintro ⟨h₁, h₂⟩ <;> constructor <;> linarith
 
 /-- The real-power moments of a half-Student t law on their exact integrability range. -/
+@[simp]
 theorem integral_rpow_halfStudentTMeasure (hν : 0 < ν) (hs : 0 < s)
     (hq₀ : -1 < q) (hqν : q < ν) :
     ∫ x, x ^ q ∂halfStudentTMeasure ν s =
@@ -88,6 +90,7 @@ theorem integrable_pow_halfStudentTMeasure_iff (hν : 0 < ν) (hs : 0 < s) (n : 
     integrable_rpow_halfStudentTMeasure_iff hν hs (n : ℝ)
 
 /-- Natural moments, including order zero, on their finite range. -/
+@[simp]
 theorem integral_pow_halfStudentTMeasure (hν : 0 < ν) (hs : 0 < s) (n : ℕ)
     (hn : (n : ℝ) < ν) :
     ∫ x, x ^ n ∂halfStudentTMeasure ν s =
@@ -156,10 +159,8 @@ theorem integrable_exp_mul_id_halfStudentTMeasure_iff (hν : 0 < ν) (hs : 0 < s
     simpa only [Function.comp_apply, mul_assoc] using
       mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left (le_abs_self x) hs.le) ht₀.le
   · intro ht
-    refine (integrable_const (1 : ℝ)).mono' (by fun_prop) ?_
-    filter_upwards [ae_pos_halfStudentTMeasure ν s] with x hx
-    rw [Real.norm_eq_abs, abs_of_pos (exp_pos _)]
-    exact exp_le_one_iff.2 (mul_nonpos_of_nonpos_of_nonneg ht hx.le)
+    exact integrable_exp_mul_of_ge t 0 ht measurable_id.aemeasurable
+      ((ae_pos_halfStudentTMeasure ν s).mono fun _ hx ↦ hx.le)
 
 /-- The exact exponential-integrability domain is the nonpositive half-line. -/
 @[simp]
@@ -188,5 +189,20 @@ theorem integral_rpow_of_hasLaw_halfStudentTMeasure
         (√π * Real.Gamma (ν / 2)) := by
   rw [← integral_rpow_halfStudentTMeasure hν hs hq₀ hqν, ← hX.map_eq,
     integral_map hX.aemeasurable (by fun_prop)]
+
+/-- The expectation of a half-Student t random variable with finite first moment. -/
+theorem integral_of_hasLaw_halfStudentTMeasure
+    (hX : HasLaw X (halfStudentTMeasure ν s) P) (hν : 1 < ν) (hs : 0 < s) :
+    ∫ ω, X ω ∂P =
+      s * √ν * Real.Gamma ((ν - 1) / 2) / (√π * Real.Gamma (ν / 2)) := by
+  rw [hX.integral_eq, integral_id_halfStudentTMeasure hν hs]
+
+/-- The variance of a half-Student t random variable with finite second moment. -/
+theorem variance_of_hasLaw_halfStudentTMeasure
+    (hX : HasLaw X (halfStudentTMeasure ν s) P) (hν : 2 < ν) (hs : 0 < s) :
+    variance X P = s ^ 2 *
+      (ν / (ν - 2) - ν / π *
+        (Real.Gamma ((ν - 1) / 2) / Real.Gamma (ν / 2)) ^ 2) := by
+  rw [hX.variance_eq, variance_id_halfStudentTMeasure hν hs]
 
 end TauCeti.Probability
