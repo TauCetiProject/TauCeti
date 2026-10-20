@@ -64,9 +64,10 @@ theorem cyclicRepresentation_ofAdd_apply (a : ZMod m) (x : T) :
 @[simp]
 theorem cyclicRepresentation_ofAdd_one_apply (x : T) :
     A.cyclicRepresentation hA (.ofAdd 1) x = A x := by
-  rw [cyclicRepresentation, MonoidHom.comp_apply, ← TauCeti.coe_zmodMonoidHomEquiv_apply,
-    Equiv.apply_symm_apply]
-  simp
+  rw [cyclicRepresentation_ofAdd_apply, ZMod.val_one_eq_one_mod]
+  obtain rfl | hm := eq_or_ne m 1
+  · simpa using (congrFun hA x).symm
+  · rw [Nat.one_mod_eq_one.mpr hm, Function.iterate_one]
 
 /-- The norm of the cyclic representation of `A` is the ordered sum of the powers
 `A^0, …, A^(m-1)`. -/
