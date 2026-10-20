@@ -24,11 +24,12 @@ point mass at an alternating path, `A = univ` and `φ = (· + 1)`. Eventual tran
 *sufficient* condition for the reindexing to fix every invariant event, not a necessary one for the
 integral identity, which needs only `T ⁻¹' A = A`.
 
+The primitive, that such a reindexing preserves the restricted law, is the general path-space
+fact `measurePreserving_restrict_reindex_of_measurableSet_invariants_of_eventually_add` in
+`TauCeti.Probability.Process.Tail.ShiftInvariant`; this file specializes it to contractable laws.
+
 ## Main results
 
-* `measurePreserving_restrict_reindex_of_measurableSet_invariants_of_eventually_add` — the
-  primitive: such a reindexing preserves the restricted law, so Koopman-side consumers get a
-  `MeasurePreserving`, not only an integral identity;
 * `ContractableLaw.map_restrict_prefixProj_of_strictMono_of_measurableSet_invariants` — the
   finite-selection form as a measure equality on the **restricted** law: reading a strictly
   increasing block and reading the prefix push `ρ.restrict A` to the same measure, so Bochner and
@@ -61,8 +62,8 @@ measures, which is why the `ℝ`-valued statements above are integral identities
 The endomorphism-level facts are Mathlib's: `MeasurePreserving.restrict_preimage` gives the
 restricted measure preservation once the invariant event is rewritten by
 `preimage_reindex_eq_of_measurableSet_invariants_of_eventually_add`, and
-`MeasurePreserving.lintegral_comp` gives the integral identity. This module supplies only the
-reindexing-and-invariant-event instance, and restates no Mathlib API.
+`MeasurePreserving.lintegral_comp` gives the integral identity. This module restates no Mathlib
+API.
 
 Nothing here is specific to a de Finetti route. The statements mention a contractable path law, a
 shift-invariant event and a finite selection, and no Koopman operator; the Koopman route is the
@@ -114,22 +115,6 @@ private theorem prefixProj_reindex_apply_eq {m : ℕ} {k : Fin m → ℕ} {φ : 
     (prefixProj α m fun j => x (φ j)) = fun i => x (k i) := by
   funext i
   simp only [prefixProj_apply, hφ_eq]
-
-/-- **Such a reindexing preserves the restricted law.** The primitive form: consumers needing the
-Koopman operator on `Lp (ρ.restrict A)`, or a Bochner integral, get a `MeasurePreserving` rather
-than only an `ℝ≥0∞` identity.
-
-Only measure preservation by *this* reindexing is used; contractability and strict monotonicity are
-one way to obtain it, not requirements. In particular a merely shift-invariant law with
-`φ = (· + C)` qualifies. -/
-theorem measurePreserving_restrict_reindex_of_measurableSet_invariants_of_eventually_add
-    {ρ : Measure (ℕ → α)} {φ : ℕ → ℕ} {m C : ℕ}
-    (hmp : MeasurePreserving (fun x : ℕ → α => fun k => x (φ k)) ρ ρ)
-    (hφ_add : ∀ n, m ≤ n → φ n = n + C)
-    {A : Set (ℕ → α)} (hA : MeasurableSet[MeasurableSpace.invariants (shift α)] A) :
-    MeasurePreserving (fun x : ℕ → α => fun k => x (φ k)) (ρ.restrict A) (ρ.restrict A) := by
-  have h := hmp.restrict_preimage (MeasurableSpace.measurableSet_invariants.1 hA).1
-  rwa [preimage_reindex_eq_of_measurableSet_invariants_of_eventually_add hA hφ_add] at h
 
 /-- **The primitive measure equality.** Over an invariant event, reading a strictly increasing
 block and reading the prefix push the restricted law to the same measure on `Fin m → α`.
