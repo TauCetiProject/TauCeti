@@ -118,32 +118,33 @@ section ExteriorBasis
 variable {R W : Type*} [CommRing R] [AddCommGroup W] [Module R W]
   (b : Module.Basis (Fin (1 + 1)) R W)
 
-/-- The two relations among the exterior basis vectors of a rank-two free module that the
-generator computations use beyond the simp lemmas `TauCeti.ExteriorAlgebra.basis_empty` and
-`TauCeti.ExteriorAlgebra.basis_singleton`. -/
+/-- The three relations among the exterior basis vectors of a rank-two free module that the
+generator computations use. -/
 private theorem rankTwo_exteriorBasis :
-    b.ExteriorAlgebra {0, 1} = ExteriorAlgebra.ι R (b 0) * ExteriorAlgebra.ι R (b 1) ∧
+    b.ExteriorAlgebra ∅ = 1 ∧
+      b.ExteriorAlgebra {0, 1} = ExteriorAlgebra.ι R (b 0) * ExteriorAlgebra.ι R (b 1) ∧
       ExteriorAlgebra.ι R (b 1) * ExteriorAlgebra.ι R (b 0) =
         -(ExteriorAlgebra.ι R (b 0) * ExteriorAlgebra.ι R (b 1)) := by
-  refine ⟨TauCeti.ExteriorAlgebra.basis_pair b (by decide), ?_⟩
+  refine ⟨by rw [ExteriorAlgebra.basis_apply]; simp,
+    TauCeti.ExteriorAlgebra.basis_pair b (by decide), ?_⟩
   exact eq_neg_of_add_eq_zero_left (ExteriorAlgebra.ι_add_mul_swap _ _)
 
 private theorem ι_mul_contractLeft_one_exteriorBasis (S : Finset (Fin (1 + 1))) :
     ExteriorAlgebra.ι R (b 0) * CliffordAlgebra.contractLeft (b.coord 1) (b.ExteriorAlgebra S) =
       ∑ T, (rankTwoRootMatrix (.inl 0) T S : R) • b.ExteriorAlgebra T := by
-  obtain ⟨h01, -⟩ := rankTwo_exteriorBasis b
+  obtain ⟨hempty, h01, -⟩ := rankTwo_exteriorBasis b
   have hι : CliffordAlgebra.ι (0 : QuadraticForm R W) = ExteriorAlgebra.ι R := rfl
   rcases finset_fin_two_cases S with rfl | rfl | rfl | rfl <;>
-    simp [rankTwoRootMatrix, single_apply, finset_fin_two_ne, h01, hι,
+    simp [rankTwoRootMatrix, single_apply, finset_fin_two_ne, hempty, h01, hι,
       CliffordAlgebra.contractLeft_ι_mul]
 
 private theorem ι_mul_involute_exteriorBasis (S : Finset (Fin (1 + 1))) :
     ExteriorAlgebra.ι R (b 1) * CliffordAlgebra.involute (b.ExteriorAlgebra S) =
       ∑ T, (rankTwoRootMatrix (.inl 1) T S : R) • b.ExteriorAlgebra T := by
-  obtain ⟨h01, hanti⟩ := rankTwo_exteriorBasis b
+  obtain ⟨hempty, h01, hanti⟩ := rankTwo_exteriorBasis b
   have hι : CliffordAlgebra.ι (0 : QuadraticForm R W) = ExteriorAlgebra.ι R := rfl
   rcases finset_fin_two_cases S with rfl | rfl | rfl | rfl <;>
-    simp [rankTwoRootMatrix, single_apply, finset_fin_two_ne, h01, hι, ← mul_assoc,
+    simp [rankTwoRootMatrix, single_apply, finset_fin_two_ne, hempty, h01, hι, ← mul_assoc,
       hanti]
   -- The pair `{0, 1}` is left as `ι b₀ ι b₁ ι b₁`, which vanishes after reassociation.
   simp [mul_assoc]
@@ -151,19 +152,19 @@ private theorem ι_mul_involute_exteriorBasis (S : Finset (Fin (1 + 1))) :
 private theorem ι_mul_contractLeft_zero_exteriorBasis (S : Finset (Fin (1 + 1))) :
     ExteriorAlgebra.ι R (b 1) * CliffordAlgebra.contractLeft (b.coord 0) (b.ExteriorAlgebra S) =
       ∑ T, (rankTwoRootMatrix (.inr 0) T S : R) • b.ExteriorAlgebra T := by
-  obtain ⟨h01, -⟩ := rankTwo_exteriorBasis b
+  obtain ⟨hempty, h01, -⟩ := rankTwo_exteriorBasis b
   have hι : CliffordAlgebra.ι (0 : QuadraticForm R W) = ExteriorAlgebra.ι R := rfl
   rcases finset_fin_two_cases S with rfl | rfl | rfl | rfl <;>
-    simp [rankTwoRootMatrix, single_apply, finset_fin_two_ne, h01, hι,
+    simp [rankTwoRootMatrix, single_apply, finset_fin_two_ne, hempty, h01, hι,
       CliffordAlgebra.contractLeft_ι_mul]
 
 private theorem involute_contractLeft_one_exteriorBasis (S : Finset (Fin (1 + 1))) :
     CliffordAlgebra.involute (CliffordAlgebra.contractLeft (b.coord 1) (b.ExteriorAlgebra S)) =
       ∑ T, (rankTwoRootMatrix (.inr 1) T S : R) • b.ExteriorAlgebra T := by
-  obtain ⟨h01, -⟩ := rankTwo_exteriorBasis b
+  obtain ⟨hempty, h01, -⟩ := rankTwo_exteriorBasis b
   have hι : CliffordAlgebra.ι (0 : QuadraticForm R W) = ExteriorAlgebra.ι R := rfl
   rcases finset_fin_two_cases S with rfl | rfl | rfl | rfl <;>
-    simp [rankTwoRootMatrix, single_apply, finset_fin_two_ne, h01, hι,
+    simp [rankTwoRootMatrix, single_apply, finset_fin_two_ne, hempty, h01, hι,
       CliffordAlgebra.contractLeft_ι_mul]
 
 end ExteriorBasis

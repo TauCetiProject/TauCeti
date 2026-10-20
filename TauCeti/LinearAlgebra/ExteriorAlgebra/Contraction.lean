@@ -29,9 +29,8 @@ The grade involution is diagonal for the exterior basis as well: it multiplies a
 monomial, and so the basis vector indexed by `s`, by the parity of its degree.
 
 Every basis vector is the product of the exterior-algebra generators of its index set, in
-increasing order; for index sets with at most two elements this is also recorded in the explicit
-forms `TauCeti.ExteriorAlgebra.basis_empty`, `TauCeti.ExteriorAlgebra.basis_singleton` and
-`TauCeti.ExteriorAlgebra.basis_pair`.
+increasing order; for index sets with one or two elements this is also recorded in the explicit
+forms `TauCeti.ExteriorAlgebra.basis_singleton` and `TauCeti.ExteriorAlgebra.basis_pair`.
 -/
 
 public section
@@ -257,12 +256,6 @@ theorem basisEraseSign_eq_neg_one_pow_card_filter_lt {I : Type w} [LinearOrder I
     rw [← hsign, ← hfilter]
     exact basisEraseSign_eq_neg_one_pow_card_filter_lt_of_mem i (insert i s)
       (Finset.mem_insert_self i s)
-
-/-- The exterior-basis vector indexed by the empty set is `1`. -/
-@[simp]
-theorem basis_empty {I : Type w} [LinearOrder I] (b : Module.Basis I R M) :
-    b.ExteriorAlgebra ∅ = 1 := by
-  simp [b.exteriorAlgebra_eq_prod_map_sort]
 
 /-- The exterior-basis vector indexed by a singleton is the image of the corresponding basis
 vector under the exterior-algebra generator. -/

@@ -124,9 +124,12 @@ private theorem eq_algebraMap_of_all_contractLeft_eq_zero {n : ℕ}
     (hx : ∀ d : Module.Dual R M,
       contractLeft (Q := (0 : QuadraticForm R M)) d x = 0) :
     x = algebraMap R (ExteriorAlgebra R M) (b.ExteriorAlgebra.repr x ∅) := by
+  have hbempty : b.ExteriorAlgebra (∅ : Finset (Fin n)) = 1 := by
+    rw [ExteriorAlgebra.basis_apply]
+    simp
   apply b.ExteriorAlgebra.repr.injective
   ext s
-  rw [Algebra.algebraMap_eq_smul_one, ← TauCeti.ExteriorAlgebra.basis_empty b, map_smul,
+  rw [Algebra.algebraMap_eq_smul_one, ← hbempty, map_smul,
     Module.Basis.repr_self, Finsupp.smul_single, Finsupp.single_apply]
   by_cases hs : s = ∅
   · subst s

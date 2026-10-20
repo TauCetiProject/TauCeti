@@ -189,7 +189,10 @@ private theorem matrixUnit_mem_actionRange {n : ℕ} (b : Module.Basis (Fin n) K
 private theorem create_basis_empty {n : ℕ} (b : Module.Basis (Fin n) K W)
     (s : Finset (Fin n)) :
     create b s (b.ExteriorAlgebra ∅) = b.ExteriorAlgebra s := by
-  rw [create, TauCeti.ExteriorAlgebra.basis_empty, ExteriorAlgebra.basis_apply]
+  have hEmpty : b.ExteriorAlgebra (∅ : Finset (Fin n)) = 1 := by
+    rw [ExteriorAlgebra.basis_apply]
+    simp
+  rw [create, hEmpty, ExteriorAlgebra.basis_apply]
   have hmap (xs : List (Fin n)) :
       (xs.map (fun i ↦ LinearMap.mulLeft K (ExteriorAlgebra.ι K (b i)))).prod 1 =
         (xs.map fun i ↦ ExteriorAlgebra.ι K (b i)).prod := by
@@ -246,7 +249,10 @@ private theorem annihilate_listProd_self {n : ℕ}
 private theorem annihilate_basis_self {n : ℕ} (b : Module.Basis (Fin n) K W)
     (s : Finset (Fin n)) :
     annihilate b s (b.ExteriorAlgebra s) = b.ExteriorAlgebra ∅ := by
-  rw [annihilate, ExteriorAlgebra.basis_apply, TauCeti.ExteriorAlgebra.basis_empty]
+  have hEmpty : b.ExteriorAlgebra (∅ : Finset (Fin n)) = 1 := by
+    rw [ExteriorAlgebra.basis_apply]
+    simp
+  rw [annihilate, ExteriorAlgebra.basis_apply, hEmpty]
   -- Expose `annihilate` as its reversed product of contraction maps.
   change ((List.map (fun i ↦ (CliffordAlgebra.contractLeft
       (Q := (0 : QuadraticForm K W)) (b.coord i) : Module.End K _))

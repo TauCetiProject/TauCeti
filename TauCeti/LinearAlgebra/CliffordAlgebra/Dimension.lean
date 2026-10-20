@@ -11,14 +11,6 @@ public import TauCeti.LinearAlgebra.ExteriorAlgebra.Dimension
 -- Private: `CliffordAlgebra.nonempty_evenOddEquivAddOne` is used only inside the proof that the
 -- two halves of the `ℤ/2`-grading are equidimensional.
 import TauCeti.LinearAlgebra.CliffordAlgebra.ParitySwap
--- Private: the exterior-basis product formulas are used only inside the proofs of
--- `CliffordAlgebra.basis_empty` and `CliffordAlgebra.basis_singleton`.
-import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
--- Private: `CliffordAlgebra.equivExterior_algebraMap` and `CliffordAlgebra.equivExterior_ι` are
--- used only inside the proofs of `CliffordAlgebra.basis_empty` and
--- `CliffordAlgebra.basis_singleton`.
-import TauCeti.LinearAlgebra.CliffordAlgebra.Basic
-import TauCeti.LinearAlgebra.CliffordAlgebra.Vectors
 
 /-!
 # Freeness and dimension of a Clifford algebra
@@ -59,13 +51,9 @@ matrix algebras one size down, acting on the two half-spin summands.
 `basis` transports Mathlib's `Module.Basis.ExteriorAlgebra` along `equivExterior`, so its elements
 are not by definition the products `ι Q (b i₁) * ⋯ * ι Q (b iₖ)` of generators: `equivExterior` is
 built from `CliffordAlgebra.changeForm`, which corrects a product of generators by lower-order
-terms. For a basis `b` orthogonal for `Q` the corrections vanish and the elements are the ordered
-products (`CliffordAlgebra.basis_eq_prod_map_sort` in
-`TauCeti.LinearAlgebra.CliffordAlgebra.OrthogonalBasis`). Apart from the members at `∅` and `{i}`
-(`CliffordAlgebra.basis_empty`, `CliffordAlgebra.basis_singleton`), nothing below needs the
-products, only their number. Identifying the two families is the Clifford analogue of a
-Poincaré-Birkhoff-Witt theorem, and is the content of the associated-graded isomorphism
-`gr (CliffordAlgebra Q) ≅ ExteriorAlgebra R M` for the degree filtration of
+terms. Nothing below needs the products, only their number. Identifying the two families is the
+Clifford analogue of a Poincaré-Birkhoff-Witt theorem, and is the content of the associated-graded
+isomorphism `gr (CliffordAlgebra Q) ≅ ExteriorAlgebra R M` for the degree filtration of
 `TauCeti/LinearAlgebra/CliffordAlgebra/Filtration.lean`; that isomorphism is
 `CliffordAlgebra.associatedGradedEquivExterior` in `TauCeti.LinearAlgebra.CliffordAlgebra.PBW`.
 
@@ -73,8 +61,6 @@ Poincaré-Birkhoff-Witt theorem, and is the content of the associated-graded iso
 
 * `CliffordAlgebra.basis`: the basis of `CliffordAlgebra Q` indexed by the finite subsets of
   the index set of a basis of `M`, over a ring in which `2` is invertible.
-  Its members at `∅` and at `{i}` are `1` and `ι Q (b i)` (`CliffordAlgebra.basis_empty`,
-  `CliffordAlgebra.basis_singleton`).
 
 ## Main results
 
@@ -123,8 +109,7 @@ variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M] [I
 of the index set of `b`, obtained by transporting Mathlib's basis of `ExteriorAlgebra R M` along
 `CliffordAlgebra.equivExterior`.
 
-Its elements are not products of generators by construction; see the implementation notes, and
-`CliffordAlgebra.basis_eq_prod_map_sort` for an orthogonal basis.
+Its elements are not products of generators by construction; see the implementation notes.
 
 `@[expose]` because the characteristic equation `basis_apply` below is a public theorem whose proof
 has to unfold this definition. -/
@@ -132,11 +117,7 @@ has to unfold this definition. -/
     Basis (Finset I) R (CliffordAlgebra Q) :=
   b.ExteriorAlgebra.map (equivExterior Q).symm
 
-/-- The characteristic equation of `CliffordAlgebra.basis`.
-
-Not a `simp` lemma: `simp` would continue by unfolding `CliffordAlgebra.equivExterior` to the
-underlying `CliffordAlgebra.changeForm`, while the members of the basis have the better simp normal
-forms `CliffordAlgebra.basis_empty` and `CliffordAlgebra.basis_singleton`. -/
+@[simp]
 theorem basis_apply {I : Type w} [LinearOrder I] (b : Basis I R M) (s : Finset I) :
     basis Q b s = (equivExterior Q).symm (b.ExteriorAlgebra s) :=
   rfl
@@ -149,20 +130,6 @@ Not a `simp` lemma: `simp` unfolds `CliffordAlgebra.equivExterior` to the underl
 theorem equivExterior_basis {I : Type w} [LinearOrder I] (b : Basis I R M) (s : Finset I) :
     equivExterior Q (basis Q b s) = b.ExteriorAlgebra s := by
   rw [basis_apply, LinearEquiv.apply_symm_apply]
-
-/-- The member of `CliffordAlgebra.basis Q b` at the empty set is `1`. -/
-@[simp]
-theorem basis_empty {I : Type w} [LinearOrder I] (b : Basis I R M) : basis Q b ∅ = 1 := by
-  apply (equivExterior Q).injective
-  rw [equivExterior_basis, TauCeti.ExteriorAlgebra.basis_empty,
-    ← map_one (algebraMap R (CliffordAlgebra Q)), equivExterior_algebraMap, map_one]
-
-/-- The member of `CliffordAlgebra.basis Q b` at `{i}` is the generator `ι Q (b i)`. -/
-@[simp]
-theorem basis_singleton {I : Type w} [LinearOrder I] (b : Basis I R M) (i : I) :
-    basis Q b {i} = ι Q (b i) := by
-  apply (equivExterior Q).injective
-  rw [equivExterior_basis, TauCeti.ExteriorAlgebra.basis_singleton, equivExterior_ι]
 
 /-- The Clifford algebra of a free module is a free module, over a ring in which `2` is
 invertible. -/
