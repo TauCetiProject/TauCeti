@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.FDeriv.Linear
 public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Comp
+import TauCeti.Analysis.Calculus.SecondDerivative
 
 /-!
 # Real derivatives of complexified real functions
@@ -20,6 +22,8 @@ sides vanish when `f` is not differentiable at `x`.
 
 * `TauCeti.fderiv_ofReal_comp_apply`: the real derivative of `y ↦ (f y : ℂ)` is the
   complexification of the real derivative of `f`.
+* `ContDiffAt.hasFDerivAt_fderiv_ofReal_comp_apply`: at a `C²` point of `f`, the complexified
+  directional derivative `y ↦ D(↑f)(y) u` has derivative `w ↦ ↑(D²f(x)(w, u))`.
 -/
 
 public section
@@ -43,5 +47,14 @@ theorem fderiv_ofReal_comp_apply (f : E → ℝ) (x v : E) :
       have hre := reCLM.differentiableAt.comp x h
       exact hf (by simpa [Function.comp_def] using hre)
     simp [fderiv_zero_of_not_differentiableAt hf, fderiv_zero_of_not_differentiableAt hf']
+
+/-- At a `C²` point of a real function `f`, the complexified directional derivative
+`y ↦ D(↑f)(y) u` has derivative `w ↦ ↑(D²f(x)(w, u))`. -/
+theorem _root_.ContDiffAt.hasFDerivAt_fderiv_ofReal_comp_apply {f : E → ℝ} {x : E}
+    (hf : ContDiffAt ℝ 2 f x) (u : E) :
+    HasFDerivAt (fun y ↦ fderiv ℝ (fun z ↦ (f z : ℂ)) y u)
+      (ofRealCLM.comp ((fderiv ℝ (fderiv ℝ f) x).flip u)) x := by
+  simpa only [fderiv_ofReal_comp_apply, Function.comp_def, ofRealCLM_apply] using
+    ofRealCLM.hasFDerivAt.comp x (hf.hasFDerivAt_fderiv_apply le_rfl u)
 
 end TauCeti

@@ -163,15 +163,6 @@ section Real
 
 variable {f : V → ℝ} {x : V}
 
-/-- At a `C²` point of a real function `f`, the complexified directional derivative
-`y ↦ D(↑f)(y) u` has derivative `w ↦ ↑(D²f(x)(w, u))`. This is the common step in both orders of
-the Wirtinger comparison. -/
-private theorem hasFDerivAt_fderiv_ofReal_comp_apply (hf : ContDiffAt ℝ 2 f x) (u : V) :
-    HasFDerivAt (fun y ↦ fderiv ℝ (fun z ↦ (f z : ℂ)) y u)
-      (ofRealCLM.comp ((fderiv ℝ (fderiv ℝ f) x).flip u)) x := by
-  simpa only [fderiv_ofReal_comp_apply, Function.comp_def, ofRealCLM_apply] using
-    ofRealCLM.hasFDerivAt.comp x (hf.hasFDerivAt_fderiv_apply le_rfl u)
-
 /-- For a real function, the conjugate Wirtinger derivative is the complex conjugate of the
 Wirtinger derivative. -/
 theorem conjWirtingerDeriv_ofReal (f : V → ℝ) (x v : V) :
@@ -186,7 +177,7 @@ theorem wirtingerDeriv_conjWirtingerDeriv_eq_leviForm (hf : ContDiffAt ℝ 2 f x
     wirtingerDeriv (fun y ↦ conjWirtingerDeriv (fun z ↦ (f z : ℂ)) y v) x w =
       leviForm f x v w := by
   have hsymm := hf.isSymmSndFDerivAt (by simp)
-  have hD := hasFDerivAt_fderiv_ofReal_comp_apply hf
+  have hD := hf.hasFDerivAt_fderiv_ofReal_comp_apply
   have hd : HasFDerivAt (fun y ↦ conjWirtingerDeriv (fun z ↦ (f z : ℂ)) y v) _ x :=
     ((hD v).add ((hD (I • v)).const_smul I)).const_smul (2 : ℂ)⁻¹
   rw [wirtingerDeriv_apply, hd.fderiv]
@@ -198,7 +189,7 @@ Wirtinger derivative `\bar∂_v ∂_w f` is the Levi form `leviForm f x v w`. -/
 theorem conjWirtingerDeriv_wirtingerDeriv_eq_leviForm (hf : ContDiffAt ℝ 2 f x) (v w : V) :
     conjWirtingerDeriv (fun y ↦ wirtingerDeriv (fun z ↦ (f z : ℂ)) y w) x v =
       leviForm f x v w := by
-  have hD := hasFDerivAt_fderiv_ofReal_comp_apply hf
+  have hD := hf.hasFDerivAt_fderiv_ofReal_comp_apply
   have hd : HasFDerivAt (fun y ↦ wirtingerDeriv (fun z ↦ (f z : ℂ)) y w) _ x :=
     ((hD w).sub ((hD (I • w)).const_smul I)).const_smul (2 : ℂ)⁻¹
   rw [conjWirtingerDeriv_apply, hd.fderiv]
