@@ -29,6 +29,8 @@ be combined with other permutation sums, such as those defining wedge products.
 
 * `ContinuousAlternatingMap.alternatizeUncurryFin_curryLeft_comp_add_curryLeft`: the identity
   above.
+* `ContinuousAlternatingMap.alternatizeUncurryFin_compContinuousLinearMap`: alternatization
+  commutes with pullback along a continuous linear map.
 * `ContinuousAlternatingMap.factorial_smul_alternatizeUncurryFin_apply`: the permutation-sum
   formula.
 * `ContinuousAlternatingMap.alternatizeUncurryFin_apply_eq_inv_factorial_smul_sum`: the same
@@ -59,6 +61,17 @@ theorem alternatizeUncurryFin_curryLeft_comp_add_curryLeft
   rw [add_apply, curryLeft_apply_apply, alternatizeUncurryFin_apply, alternatizeUncurryFin_apply,
     Fin.sum_univ_succ (n := n + 1)]
   simp [hremove, pow_succ]
+
+/-- Alternatization commutes with pullback along a continuous linear map `L`: pulling back the
+alternatization of `f` is alternatizing `f` with its argument and its values pulled back. Applied
+to the derivative of a differential form, this is the pointwise linear case of the naturality of
+the exterior derivative. -/
+theorem alternatizeUncurryFin_compContinuousLinearMap {E' : Type*} [NormedAddCommGroup E']
+    [NormedSpace 𝕜 E'] (f : E →L[𝕜] E [⋀^Fin n]→L[𝕜] F) (L : E' →L[𝕜] E) :
+    (alternatizeUncurryFin f).compContinuousLinearMap L =
+      alternatizeUncurryFin (compContinuousLinearMapCLM L ∘L f ∘L L) := by
+  ext v
+  simp +unfoldPartialApp [alternatizeUncurryFin_apply, Fin.removeNth, Function.comp_def]
 
 /-- Up to the factor `n!`, the alternatization of a linear family of `n`-forms is the signed sum
 over all permutations of the uncurried map: the entry moved to the first slot is fed to `f`, and

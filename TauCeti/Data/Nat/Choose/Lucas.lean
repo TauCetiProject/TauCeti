@@ -7,8 +7,6 @@ module
 
 public import Mathlib.Data.Nat.Choose.Lucas
 
-import Lean.Elab.Tactic.Omega
-
 /-!
 # Lucas' theorem with a nonzero last digit on top
 

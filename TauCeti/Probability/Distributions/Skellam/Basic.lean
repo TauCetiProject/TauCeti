@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 public import Mathlib.MeasureTheory.Measure.Support
 public import TauCeti.Probability.Distributions.Poisson.Measurability
+public import TauCeti.Topology.Algebra.InfiniteSum.ENNReal
 
 import Mathlib.MeasureTheory.Integral.Lebesgue.Countable
 
@@ -102,14 +103,26 @@ theorem hasSum_skellamMeasure_mass (r₁ r₂ : ℝ≥0) (k : ℕ) :
       (Real.exp (-(r₁ : ℝ)) * (r₁ : ℝ) ^ (j + k) / (j + k).factorial) *
         (Real.exp (-(r₂ : ℝ)) * (r₂ : ℝ) ^ j / j.factorial))
       ((skellamMeasure r₁ r₂).real {(k : ℤ)}) := by
-  have hfin : (∑' j : ℕ, poissonMeasure r₁ {j + k} * poissonMeasure r₂ {j}) ≠ ⊤ := by
-    rw [← skellamMeasure_singleton_natCast]
-    exact measure_ne_top _ _
-  have hsum := (ENNReal.summable_toReal hfin).hasSum
-  rw [← ENNReal.tsum_toReal_eq (fun j =>
-    ENNReal.mul_ne_top (measure_ne_top _ _) (measure_ne_top _ _)),
-    ← skellamMeasure_singleton_natCast] at hsum
+  have hsum := (ENNReal.summable.hasSum_iff.mpr
+    (skellamMeasure_singleton_natCast r₁ r₂ k).symm).toReal (measure_ne_top _ _)
   simpa only [ENNReal.toReal_mul, ← measureReal_def, poissonMeasure_real_singleton] using hsum
+
+/-- The real singleton mass as a Poisson-product series, uniformly for positive and negative
+integers. The two natural offsets are the positive and negative parts of the integer. -/
+theorem skellamMeasure_real_singleton_eq_tsum (r₁ r₂ : ℝ≥0) (k : ℤ) :
+    (skellamMeasure r₁ r₂).real {k} =
+      ∑' j : ℕ,
+        (Real.exp (-(r₁ : ℝ)) * (r₁ : ℝ) ^ (j + k.toNat) / (j + k.toNat).factorial) *
+        (Real.exp (-(r₂ : ℝ)) * (r₂ : ℝ) ^ (j + (-k).toNat) / (j + (-k).toNat).factorial) := by
+  cases k with
+  | ofNat n => simpa using (hasSum_skellamMeasure_mass r₁ r₂ n).tsum_eq.symm
+  | negSucc n =>
+    have hmass : (skellamMeasure r₁ r₂).real {Int.negSucc n} =
+        (skellamMeasure r₂ r₁).real {((n + 1 : ℕ) : ℤ)} := by
+      simp only [measureReal_def, Int.negSucc_eq, skellamMeasure_singleton_neg,
+        Nat.cast_add, Nat.cast_one]
+    rw [hmass]
+    simpa [mul_comm] using (hasSum_skellamMeasure_mass r₂ r₁ (n + 1)).tsum_eq.symm
 
 /-- Every integer has positive mass when both rates are positive. -/
 theorem skellamMeasure_singleton_pos {r₁ r₂ : ℝ≥0} (h₁ : 0 < r₁) (h₂ : 0 < r₂)

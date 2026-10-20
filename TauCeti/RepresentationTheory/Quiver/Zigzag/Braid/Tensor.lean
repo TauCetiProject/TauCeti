@@ -15,9 +15,10 @@ public import TauCeti.Algebra.Homology.ComplexShape.Signs
 /-!
 # Tensor composition of zigzag braid bimodules and complexes
 
-The internally graded balanced tensor bifunctor composes the actual enveloping-algebra
-modules used in the zigzag braid complexes. Mathlib's cochain totalization supplies the
-cohomological signs; internal degrees add without a further sign.
+The internally graded balanced tensor bifunctor `GradedModuleCat.bimoduleTensor` of the zigzag
+algebra's internal grading composes the actual enveloping-algebra modules used in the
+zigzag braid complexes. Mathlib's cochain totalization supplies the cohomological signs;
+internal degrees add without a further sign.
 
 The full tensor product of vertex braid bimodules vanishes at distinct nonadjacent vertices.
 This is the degree-`-2` vanishing needed for the commuting equivalence of braid complexes.
@@ -43,30 +44,26 @@ variable (k : Type w) [CommRing k] {V : Type u} (G : SimpleGraph V) [Finite V]
 
 attribute [local instance] zigzagAlgebraIntegerGradedAlgebra
 
-/-- Balanced tensor composition in the category of the actual graded zigzag bimodules. -/
--- Its category indices and object assignment must compute for totalization and tensor maps.
-noncomputable abbrev zigzagBimoduleTensor :
-    GradedModuleCat.{max u w} (zigzagEnvelopingGrading k G).piece ⥤
-      GradedModuleCat.{max u w} (zigzagEnvelopingGrading k G).piece ⥤
-        GradedModuleCat.{max u w} (zigzagEnvelopingGrading k G).piece :=
-  GradedModuleCat.bimoduleTensor (zigzagAlgebraInternalGrading k G)
-    (zigzagAlgebraInternalGrading k G) (zigzagAlgebraInternalGrading k G)
+local notation "Γ" => zigzagAlgebraInternalGrading k G
+local notation "F" => (GradedModuleCat.bimoduleTensor Γ Γ Γ :
+  GradedBimoduleCat k Γ ⥤ GradedBimoduleCat k Γ ⥤ GradedBimoduleCat k Γ)
 
 /-- The cochain tensor product of the existing two-term graded braid complexes. -/
 noncomputable abbrev zigzagBraidComplexTensor (i j : V) :
     CochainComplex (GradedModuleCat.{max u w} (zigzagEnvelopingGrading k G).piece) ℤ :=
   HomologicalComplex.mapBifunctor (zigzagBraidComplex k G i) (zigzagBraidComplex k G j)
-    (zigzagBimoduleTensor k G) (ComplexShape.up ℤ)
+    (F) (ComplexShape.up ℤ)
 
 /-- A tensor summand vanishes if either braid-complex degree is outside `{-1, 0}`. -/
 theorem isZero_zigzagBraidComplexTensor_pair (i j : V) (p q : ℤ)
     (h : ¬ ((p = -1 ∨ p = 0) ∧ (q = -1 ∨ q = 0))) :
-    CategoryTheory.Limits.IsZero (((zigzagBimoduleTensor k G).obj
+    CategoryTheory.Limits.IsZero (((F).obj
       ((zigzagBraidComplex k G i).X p)).obj ((zigzagBraidComplex k G j).X q)) := by
   by_cases hp : p = -1 ∨ p = 0
-  · exact ((zigzagBimoduleTensor k G).obj ((zigzagBraidComplex k G i).X p)).map_isZero
+  · exact ((F).obj ((zigzagBraidComplex k G i).X p)).map_isZero
       (isZero_zigzagBraidComplex_X j (by omega) (by omega))
-  · exact ((zigzagBimoduleTensor k G).flip.obj ((zigzagBraidComplex k G j).X q)).map_isZero
+  · exact ((F).flip.obj
+      ((zigzagBraidComplex k G j).X q)).map_isZero
       (isZero_zigzagBraidComplex_X i (by omega) (by omega))
 
 /-- Every actual braid-complex tensor product is supported in degrees `-2`, `-1`, and `0`. -/
@@ -86,7 +83,6 @@ local notation "Z" => AlgCat.carrier (zigzagAlgebra k G)
 local notation "E" => Z ⊗[k] Zᵐᵒᵖ
 local notation "e" => fun v : V ↦ zigzagAlgebraBasis k G (Sum.inl v)
 local notation "U" => zigzagGradedBraidBimodule k G
-local notation "Γ" => zigzagAlgebraInternalGrading k G
 local notation "t" => GradedModuleCat.bimoduleTensorTmul Γ Γ Γ (U i) (U j)
 
 private theorem vertex_smul_braidBimodule_eq_zero
@@ -153,9 +149,9 @@ theorem zigzagBraidBimodule_tmul_eq_zero_of_ne_of_not_adj
   simpa only [hm] using hscalar m.val
 
 /-- The full graded tensor product of distinct nonadjacent vertex braid bimodules vanishes. -/
-theorem subsingleton_zigzagBimoduleTensor_of_ne_of_not_adj
+theorem subsingleton_zigzagGradedBraidBimodule_tensor_of_ne_of_not_adj
     (hij : i ≠ j) (hadj : ¬ G.Adj i j) :
-    Subsingleton (((zigzagBimoduleTensor k G).obj (U i)).obj (U j)) := by
+    Subsingleton (((F).obj (U i)).obj (U j)) := by
   have hzero : ∀ z : GradedModuleCat.bimoduleTensorObj Γ Γ Γ (U i) (U j), z = 0 := by
     intro z
     induction z using GradedModuleCat.bimoduleTensor_induction_on Γ Γ Γ (U i) (U j) with
@@ -165,10 +161,11 @@ theorem subsingleton_zigzagBimoduleTensor_of_ne_of_not_adj
   exact ⟨fun x y ↦ (hzero x).trans (hzero y).symm⟩
 
 /-- The full vertex-bimodule tensor is a zero object for distinct nonadjacent vertices. -/
-theorem isZero_zigzagBimoduleTensor_of_ne_of_not_adj
+theorem isZero_zigzagGradedBraidBimodule_tensor_of_ne_of_not_adj
     (hij : i ≠ j) (hadj : ¬ G.Adj i j) :
-    Limits.IsZero (((zigzagBimoduleTensor k G).obj (U i)).obj (U j)) := by
-  have := subsingleton_zigzagBimoduleTensor_of_ne_of_not_adj (k := k) (G := G) hij hadj
+    Limits.IsZero (((F).obj (U i)).obj (U j)) := by
+  have := subsingleton_zigzagGradedBraidBimodule_tensor_of_ne_of_not_adj
+    (k := k) (G := G) hij hadj
   apply (Limits.IsZero.iff_id_eq_zero _).2
   apply GradedModuleCat.hom_ext
   apply LinearMap.ext
@@ -183,14 +180,15 @@ theorem isZero_zigzagBraidComplexTensor_X_of_ne_of_not_adj
   apply HomologicalComplex.mapBifunctor.hom_ext
   intro p q hpq
   rw [ComplexShape.π_eq_add] at hpq
-  have hz : Limits.IsZero (((zigzagBimoduleTensor k G).obj
+  have hz : Limits.IsZero (((F).obj
       ((zigzagBraidComplex k G i).X p)).obj ((zigzagBraidComplex k G j).X q)) := by
     by_cases h : p = -1 ∧ q = -1
     · obtain ⟨rfl, rfl⟩ := h
-      exact (isZero_zigzagBimoduleTensor_of_ne_of_not_adj (k := k) hij hadj).of_iso
-        (((zigzagBimoduleTensor k G).flip.obj ((zigzagBraidComplex k G j).X (-1))).mapIso
+      exact (isZero_zigzagGradedBraidBimodule_tensor_of_ne_of_not_adj (k := k) hij hadj).of_iso
+        (((F).flip.obj
+            ((zigzagBraidComplex k G j).X (-1))).mapIso
             (zigzagBraidComplexXIso₀ k G i) ≪≫
-          ((zigzagBimoduleTensor k G).obj (U i)).mapIso (zigzagBraidComplexXIso₀ k G j))
+          ((F).obj (U i)).mapIso (zigzagBraidComplexXIso₀ k G j))
     · exact isZero_zigzagBraidComplexTensor_pair k G i j p q (by omega)
   exact hz.eq_of_src _ _
 

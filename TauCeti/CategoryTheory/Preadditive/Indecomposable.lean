@@ -267,6 +267,16 @@ theorem isLocalRing_end_of_indecomposable {k : Type*} [Field k] [Linear k C]
 
 end TauCeti
 
+namespace CategoryTheory.Indecomposable
+
+variable {C : Type*} [Category* C] [Limits.HasZeroMorphisms C] [Limits.HasBinaryBiproducts C]
+
+/-- Indecomposability is invariant under isomorphism. -/
+theorem of_iso {X Y : C} (hX : Indecomposable X) (e : X ≅ Y) : Indecomposable Y :=
+  ⟨fun h ↦ hX.1 (h.of_iso e), fun A B f ↦ hX.2 A B (e ≪≫ f)⟩
+
+end CategoryTheory.Indecomposable
+
 namespace CategoryTheory.Functor
 
 open Limits
