@@ -7,7 +7,7 @@ module
 
 public import Mathlib.GroupTheory.Frattini
 public import TauCeti.Topology.Algebra.Group.ContinuousAut.Characteristic
-import Mathlib.Order.Atoms.Finite
+public import TauCeti.Topology.Algebra.Group.OpenSubgroup.FiniteIndex
 import Mathlib.Topology.Separation.Connected
 import TauCeti.Topology.Algebra.Group.Generation
 
@@ -48,8 +48,6 @@ this needs no finiteness of the family, and the lift is arbitrary.
   the Frattini subgroup of the target.
 * `TauCeti.profiniteFrattini_eq_frattini`: for a discrete group, the Frattini subgroup is Mathlib's
   `frattini`.
-* `Subgroup.exists_isOpen_isCoatom_le_of_isOpen`: in a compact group, a proper open subgroup lies
-  in a maximal open subgroup.
 * `TauCeti.eq_top_of_sup_profiniteFrattini_eq_top`: the Frattini subgroup of a profinite group
   consists of non-generators.
 * `TauCeti.topologicalClosure_closure_eq_top_iff_of_ker_le_profiniteFrattini`: along a continuous
@@ -60,6 +58,12 @@ this needs no finiteness of the family, and the lift is arbitrary.
 * `TauCeti.topologicalClosure_closure_eq_top_iff_quotient_profiniteFrattini`: a set topologically
   generates a profinite group exactly when its image topologically generates the quotient by the
   Frattini subgroup.
+
+The non-generator argument generalizes the formal proofs
+`TauCeti.IsProP.eq_top_of_forall_not_le_openNormalSubgroup_index_eq` and
+`TauCeti.IsProP.eq_top_of_sup_proPFrattini_eq_top` in
+`TauCeti.Topology.Algebra.Group.Profinite.ProP.Burnside`, replacing open normal subgroups of
+index `p` by maximal open subgroups.
 
 ## References
 
@@ -155,30 +159,6 @@ theorem profiniteFrattini_eq_frattini [DiscreteTopology G] : profiniteFrattini G
   simp only [isOpen_discrete, iInf_true, Set.mem_ofPred_eq]
 
 /-! ### Non-generators -/
-
-/-- **A proper open subgroup of a compact group lies in a maximal open subgroup.** It contains an
-open normal subgroup `U` of finite index, and a maximal subgroup of the finite group `G ⧸ U` above
-its image pulls back to a maximal subgroup of `G` containing `U`, hence open. -/
-theorem _root_.Subgroup.exists_isOpen_isCoatom_le_of_isOpen [IsTopologicalGroup G]
-    [CompactSpace G] {K : Subgroup G} (hKo : IsOpen (K : Set G)) (hK : K ≠ ⊤) :
-    ∃ M : Subgroup G, IsOpen (M : Set G) ∧ IsCoatom M ∧ K ≤ M := by
-  obtain ⟨U, hU⟩ := IsTopologicalGroup.exist_openNormalSubgroup_sub_clopen_nhds_of_one
-    ⟨K.isClosed_of_isOpen hKo, hKo⟩ K.one_mem
-  let q : G →* G ⧸ U.toSubgroup := QuotientGroup.mk' U.toSubgroup
-  have hq : Function.Surjective q := QuotientGroup.mk'_surjective U.toSubgroup
-  have hUK : q.ker ≤ K := by
-    rw [QuotientGroup.ker_mk']
-    exact hU
-  have : Finite (G ⧸ U.toSubgroup) := Subgroup.quotient_finite_of_isOpen _ U.isOpen
-  have : Finite (Subgroup (G ⧸ U.toSubgroup)) :=
-    Finite.of_injective (fun L : Subgroup (G ⧸ U.toSubgroup) ↦ (L : Set (G ⧸ U.toSubgroup)))
-      SetLike.coe_injective
-  obtain ⟨L, hL, hKL⟩ := (eq_top_or_exists_le_coatom (K.map q)).resolve_left fun h ↦
-    hK (by rw [← Subgroup.comap_map_eq_self hUK, h, Subgroup.comap_top])
-  exact ⟨L.comap q,
-    Subgroup.isOpen_mono ((QuotientGroup.ker_mk' _).ge.trans (L.ker_le_comap q)) U.isOpen,
-    Subgroup.isCoatom_comap_of_surjective hq hL,
-    (Subgroup.comap_map_eq_self hUK).ge.trans (Subgroup.comap_mono hKL)⟩
 
 variable [IsTopologicalGroup G] [CompactSpace G] [TotallyDisconnectedSpace G]
 
