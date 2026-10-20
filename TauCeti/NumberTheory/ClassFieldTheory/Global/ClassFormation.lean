@@ -24,21 +24,22 @@ formation `globalFormation K`.
 
 From the sum formula for the Brauer group of `K` (`sumLocalInv_brLocalization_eq_zero`), the sum
 of the local invariants vanishes on the kernel of `H²(Gal(L/F), I_L) → H²(Gal(L/F), C_L)` and does
-not depend on the choice of lift and refinement. The remaining steps are conditional reductions
-assuming **generators on layers of prime degree** (`hgen`): every layer of `globalFormation K` of
-prime degree `p` carries a class of `H²(Gal(L/F), I_L)` whose local invariants sum to `1/p`. Their
-names record this input with the suffix `_of_prime_degree`. With `hgen`, the kernel above is
-exactly the set of classes whose local invariants sum to zero, and every class of
-`H²(Gal(L/F), C_L)` lifts to the ideles after inflation to a suitable refinement.
+not depend on the choice of lift and refinement. Every layer of prime degree `p` carries a class of
+`H²(Gal(L/F), I_L)` whose local invariants sum to `1/p`
+(`exists_ideleSumLocalInv_eq_one_div_degree_of_prime`); its image generates `H²(Gal(L/F), C_L)`,
+whose order divides `p` by the second inequality. The reduction to layers of prime degree then
+shows that the kernel above is exactly the set of classes whose local invariants sum to zero, and
+that every class of `H²(Gal(L/F), C_L)` lifts to the ideles after inflation to a suitable
+refinement.
 
 ## Main statements
 
 All in the namespace `TauCeti.ClassFieldTheory`:
 
-* `ideleToClassH2_eq_zero_iff_of_prime_degree`: a class of
-  `H²(Gal(L/F), I_L)` dies in the idele classes exactly when its local invariants sum to zero.
-* `exists_refinement_mem_range_ideleToClassH2_of_prime_degree`: after
-  inflation to a refinement, every class of `H²(Gal(L/F), C_L)` lifts to the ideles.
+* `ideleToClassH2_eq_zero_iff`: a class of `H²(Gal(L/F), I_L)` dies in the idele classes exactly
+  when its local invariants sum to zero.
+* `exists_refinement_mem_range_ideleToClassH2`: after inflation to a refinement, every class of
+  `H²(Gal(L/F), C_L)` lifts to the ideles.
 * `ideleSumLocalInv_eq_of_ideleToClassH2_eq`: two lifts of the inflations of
   one class to two refinements have the same sum of local invariants.
 
@@ -83,50 +84,43 @@ theorem ideleSumLocalInv_eq_of_ideleToClassH2_eq
 
 /-! ### The kernel of the passage to idele classes -/
 
-variable (hgen : ∀ L : NormalLayer (AbsoluteGaloisGroup K), L.degree.Prime →
-    ∃ z : L.H (ideleFormation K) 2,
-      ideleSumLocalInv K L z = ((1 / L.degree : ℚ) : AddCircle (1 : ℚ)))
-
-include hgen in
 /-- **A class of the idele layer dies in the idele classes exactly when its local invariants sum to
-zero**, if every layer of prime degree `p` carries a class whose local invariants sum to `1/p`. -/
-theorem ideleToClassH2_eq_zero_iff_of_prime_degree
-    {L : NormalLayer (AbsoluteGaloisGroup K)} {y : L.H (ideleFormation K) 2} :
+zero.** -/
+theorem ideleToClassH2_eq_zero_iff {L : NormalLayer (AbsoluteGaloisGroup K)}
+    {y : L.H (ideleFormation K) 2} :
     ideleToClassH2 K L y = 0 ↔ ideleSumLocalInv K L y = 0 := by
   refine ⟨ideleSumLocalInv_eq_zero_of_ideleToClassH2_eq_zero, fun hy ↦ ?_⟩
   have hker (L : NormalLayer (AbsoluteGaloisGroup K)) (y : L.H (ideleFormation K) 2)
       (hy : groupCohomology.map (MonoidHom.id L.Gal) (L.repMap (ideleClassHom K)) 2 y = 0) :
       ideleSumLocalInv K L y = 0 :=
     ideleSumLocalInv_eq_zero_of_ideleToClassH2_eq_zero (by rw [ideleToClassH2_apply]; exact hy)
-  -- On a layer of prime degree the image of the given class generates `H²(Gal(L/F), C_L)`; the
-  -- Sylow and tower reduction carries the statement to every layer.
+  -- On a layer of prime degree the class of invariant `1/p` maps to a generator of
+  -- `H²(Gal(L/F), C_L)`; the Sylow and tower reduction carries the statement to every layer.
   rw [ideleToClassH2_apply]
   refine NormalLayer.map_eq_zero_of_prime_degree (ideleClassHom K) (fun L ↦ ideleSumLocalInv K L)
     (fun T y ↦ ideleSumLocalInv_infl K T y) (fun R y ↦ ideleSumLocalInv_res K R y) hker
     subsingleton_h1_globalFormation (fun L hp x ↦ ?_)
     (fun L hp y hy ↦ NormalLayer.map_eq_zero_of_natCard_H2_dvd_degree (ideleClassHom K) _ hker
-      (natCard_H2_globalFormation_dvd_degree L) (hgen L hp) hy) L hy
+      (natCard_H2_globalFormation_dvd_degree L)
+      (exists_ideleSumLocalInv_eq_one_div_degree_of_prime L hp) hy) L hy
   have := NormalLayer.isCyclic_gal_of_prime_degree hp
   exact (surjective_ideleToClassH2_of_isCyclic K L x).imp fun y hy ↦
     by rw [ideleToClassH2_apply] at hy; exact hy
 
-include hgen in
-/-- **Killing the obstruction**, if every layer of prime degree `p` carries a class whose local
-invariants sum to `1/p`: some refinement of every layer `L/F` is such that the inflation of every
-class of `H²(Gal(L/F), C_L)` to it lifts to the ideles. -/
-theorem exists_refinement_mem_range_ideleToClassH2_of_prime_degree
-    (Lay : NormalLayer (AbsoluteGaloisGroup K)) :
+/-- **Killing the obstruction**: some refinement of every layer `L/F` is such that the inflation of
+every class of `H²(Gal(L/F), C_L)` to it lifts to the ideles. -/
+theorem exists_refinement_mem_range_ideleToClassH2 (Lay : NormalLayer (AbsoluteGaloisGroup K)) :
     ∃ (Lay' : NormalLayer (AbsoluteGaloisGroup K)) (T : LayerRefinement Lay Lay'),
       ∀ x : Lay.H (globalFormation K) 2,
         T.cohomologyInfl (globalFormation K) 2 x ∈ (ideleToClassH2 K Lay').range := by
   obtain ⟨Lay', T, hT⟩ := NormalLayer.exists_refinement_forall_exists_map_eq_cohomologyInfl
     (ideleClassHom K) (fun L ↦ ideleSumLocalInv K L) (fun R y ↦ ideleSumLocalInv_res K R y)
     (fun L y hy ↦ by
-      have h := ideleToClassH2_eq_zero_iff_of_prime_degree hgen (L := L) (y := y)
+      have h := ideleToClassH2_eq_zero_iff (L := L) (y := y)
       rw [ideleToClassH2_apply] at h
       exact h.1 hy)
     (fun L y hy ↦ by
-      have h := ideleToClassH2_eq_zero_iff_of_prime_degree hgen (L := L) (y := y)
+      have h := ideleToClassH2_eq_zero_iff (L := L) (y := y)
       rw [ideleToClassH2_apply] at h
       exact h.2 hy)
     subsingleton_h1_globalFormation (natCard_H2_globalFormation_dvd_degree Lay)
