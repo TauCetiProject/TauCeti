@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Cubical.LocalCoefficients.Zero.Basic
-public import TauCeti.AlgebraicTopology.Singular.Cubical.LocalCoefficients.SingularToCubical
+public import TauCeti.AlgebraicTopology.Singular.Cubical.LocalCoefficients.Comparison.SingularToCubical
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Zero
 
 /-!
@@ -99,14 +99,9 @@ theorem twistedSingularToCubical_ιTwistedChainComplex_const (x : X)
           (f := (simplexToHom σ).hom) (z₀ := SimplexCategory.toTopInitialVertex ⦋0⦌) _ a).trans
           ?_)))
   -- The pushed cube is the point cube at `x`, and the transport of `a` is trivial.
-  refine (congrArg Submodule.Quotient.mk (TwistedCubicalChain.pushCube_apply (L := L)
-    (f := (simplexToHom σ).hom) (z₀ := SimplexCategory.toTopInitialVertex ⦋0⦌)
-    (SingularCube.point (TopCat.toSSetObj₀Equiv (idSimplex 0))) a)).trans
-    ((NormalizedTwistedCubicalChain.ofCube_apply _ _).symm.trans
-      (NormalizedTwistedCubicalChain.ofCube_congr (L := L)
-        (ContinuousMap.ext fun _ ↦ rfl) ?_))
-  exact map_pathClass_heq (L := L) (simplexToHom σ).hom
-    (z := SimplexCategory.toTopInitialVertex ⦋0⦌) (Subsingleton.elim _ _) a
+  exact NormalizedTwistedCubicalChain.ofCube_congr (L := L) (ContinuousMap.ext fun _ ↦ rfl)
+    (map_pathClass_heq (L := L) (simplexToHom σ).hom
+      (z := SimplexCategory.toTopInitialVertex ⦋0⦌) (Subsingleton.elim _ _) a)
 
 /-- The comparison to simplicial chains sends the class of a coefficient in the fibre at `x` in
 zeroth cubical homology to the class of the same coefficient in zeroth simplicial homology. -/
