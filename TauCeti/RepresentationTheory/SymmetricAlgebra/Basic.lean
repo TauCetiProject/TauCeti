@@ -47,6 +47,10 @@ Mathlib's invariant extensions `Algebra.IsInvariant`.
 * `Representation.toSubmodule_symmetricAlgebraInvariants`: as a submodule, it is the module of
   invariants of the induced representation.
 * `Representation.ι_mem_symmetricAlgebraInvariants_iff`: its degree-one part is `M^G`.
+* `Representation.symmetricAlgebraInvariants_eq_fixedPoints` and
+  `Representation.isInvariant_symmetricAlgebraInvariants`: it is the fixed subalgebra of the
+  bundled action, and `Sym M` is an invariant extension of it in the sense of
+  `Algebra.IsInvariant`.
 * `Representation.isIntegral_symmetricAlgebraInvariants`: for a finite group, `Sym M` is integral
   over the invariant subalgebra.
 
@@ -154,6 +158,14 @@ theorem mem_symmetricAlgebraInvariants (p : SymmetricAlgebra R M) :
     p ∈ ρ.symmetricAlgebraInvariants ↔ ∀ g : G, ρ.symmetricAlgebra g p = p :=
   Iff.rfl
 
+/-- The invariant subalgebra is the fixed subalgebra `FixedPoints.subalgebra` of the bundled
+action `Representation.symmetricAlgebraMulSemiringAction`; this holds by definition. -/
+theorem symmetricAlgebraInvariants_eq_fixedPoints :
+    letI := ρ.symmetricAlgebraMulSemiringAction
+    haveI := ρ.smulCommClass_symmetricAlgebraMulSemiringAction
+    ρ.symmetricAlgebraInvariants = FixedPoints.subalgebra R (SymmetricAlgebra R M) G :=
+  (rfl)
+
 /-- The invariant subalgebra is homogeneous: every homogeneous component of an invariant is
 invariant. -/
 theorem isHomogeneous_symmetricAlgebraInvariants :
@@ -169,6 +181,23 @@ theorem ι_mem_symmetricAlgebraInvariants_iff (m : M) :
     (ι_injective R M).eq_iff]
 
 end CommSemiring
+
+section Group
+
+variable [CommSemiring R] [Group G] [AddCommMonoid M] [Module R M]
+variable (ρ : Representation R G M)
+
+/-- For a group, `Sym M` is an invariant extension of the invariant subalgebra under the bundled
+action, so Mathlib's `Algebra.IsInvariant` API applies to it. This is Mathlib's instance for
+`FixedPoints.subalgebra`, transported along `symmetricAlgebraInvariants_eq_fixedPoints`. -/
+theorem isInvariant_symmetricAlgebraInvariants :
+    letI := ρ.symmetricAlgebraMulSemiringAction
+    Algebra.IsInvariant ρ.symmetricAlgebraInvariants (SymmetricAlgebra R M) G :=
+  letI := ρ.symmetricAlgebraMulSemiringAction
+  haveI := ρ.smulCommClass_symmetricAlgebraMulSemiringAction
+  ρ.symmetricAlgebraInvariants_eq_fixedPoints ▸ inferInstance
+
+end Group
 
 section CommRing
 
@@ -188,9 +217,7 @@ over the invariant subalgebra: each `p` is a root of the monic orbit polynomial
 instance isIntegral_symmetricAlgebraInvariants [Finite G] :
     Algebra.IsIntegral ρ.symmetricAlgebraInvariants (SymmetricAlgebra R M) :=
   letI := ρ.symmetricAlgebraMulSemiringAction
-  haveI := ρ.smulCommClass_symmetricAlgebraMulSemiringAction
-  haveI : Algebra.IsInvariant ρ.symmetricAlgebraInvariants (SymmetricAlgebra R M) G :=
-    inferInstanceAs (Algebra.IsInvariant (FixedPoints.subalgebra R (SymmetricAlgebra R M) G) _ G)
+  haveI := ρ.isInvariant_symmetricAlgebraInvariants
   Algebra.IsInvariant.isIntegral _ _ G
 
 end CommRing
