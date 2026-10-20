@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.Height.MahlerMeasure
 public import TauCeti.NumberTheory.Height.NumberField
 import Mathlib.Algebra.FiniteSupport.Basic
+import TauCeti.FieldTheory.IntermediateField.Adjoin.Inv
 import TauCeti.NumberTheory.Height.FiniteOrder
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Roots
 import TauCeti.RingTheory.Polynomial.GaussNorm
@@ -59,7 +60,7 @@ uses the splitting field of `minpoly ℚ x` as `L`.
 
 public section
 
-open Polynomial NumberField Height Module IntermediateField
+open Polynomial NumberField Height Module
 
 namespace TauCeti
 
@@ -174,25 +175,12 @@ theorem log_mahlerMeasure_eq_mul_absLogHeight₁ (x : F) :
     Real.log (mahlerMeasure x) = (minpoly ℚ x).natDegree * absLogHeight₁ x := by
   rw [mahlerMeasure_eq_absMulHeight₁_pow, Real.log_pow, absLogHeight₁]
 
-/-- An element and its inverse have minimal polynomials over `ℚ` of the same degree, since they
-generate the same field over `ℚ`. -/
-private theorem natDegree_minpoly_inv (x : F) :
-    (minpoly ℚ x⁻¹).natDegree = (minpoly ℚ x).natDegree := by
-  by_cases hx : IsIntegral ℚ x
-  · have h : ℚ⟮x⁻¹⟯ = ℚ⟮x⟯ := le_antisymm
-      (adjoin_simple_le_iff.mpr (inv_mem (mem_adjoin_simple_self ℚ x)))
-      (adjoin_simple_le_iff.mpr
-        (by simpa using inv_mem (mem_adjoin_simple_self ℚ x⁻¹)))
-    rw [← adjoin.finrank hx.inv, ← adjoin.finrank hx, h]
-  · have hx' : ¬IsIntegral ℚ x⁻¹ := fun h ↦ hx (by simpa using h.inv)
-    rw [minpoly.eq_zero hx, minpoly.eq_zero hx']
-
 /-- **Mahler measure of an inverse.** `M(x⁻¹) = M(x)` for every element `x` of a field of
 characteristic zero. For `x = 0` this reads `M(0) = M(0)`, since `0⁻¹ = 0`. -/
 @[simp]
 theorem mahlerMeasure_inv (x : F) : mahlerMeasure x⁻¹ = mahlerMeasure x := by
   rw [mahlerMeasure_eq_absMulHeight₁_pow, mahlerMeasure_eq_absMulHeight₁_pow, absMulHeight₁_inv,
-    natDegree_minpoly_inv]
+    TauCeti.minpoly.natDegree_inv]
 
 /-- **Northcott's theorem for the absolute height.** In a field of characteristic zero there are
 only finitely many algebraic elements of degree at most `d` and absolute height at most `B`. -/
