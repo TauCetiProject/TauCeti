@@ -13,7 +13,7 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.StarredReduction
 -- Proof-only: a common root of a cubic and its derivative divides the discriminant.
 import TauCeti.Algebra.CubicDiscriminant
 -- Proof-only: membership in the maximal ideal `(ϖ)` is divisibility by `ϖ`.
-import TauCeti.RingTheory.LocalRing.Basic
+import TauCeti.RingTheory.LocalRing.MaximalIdeal.Generator
 -- Proof-only: a multiple of `ϖ` in the valuation ring has value less than `1`.
 import TauCeti.RingTheory.Valuation.PrincipalMaximalIdeal
 
@@ -85,6 +85,7 @@ residue cubic are simple, and `(ϖ X, 0)` is a point of `W` with singular reduct
 public section
 
 open IsLocalRing Polynomial
+open TauCeti.IsLocalRing (mem_maximalIdeal_iff_dvd)
 
 namespace WeierstrassCurve
 
@@ -215,7 +216,7 @@ private theorem exists_dvd_of_add_notMem_nonsingularReduction {ϖ : v.valuationS
   obtain ⟨x₁, y₁, h₁, rfl, -, -⟩ := exists_eq_some_of_notMem_nonsingularReduction v m₃ m₄ m₆ hP
   obtain ⟨x₂, y₂, h₂', rfl, -, -⟩ := exists_eq_some_of_notMem_nonsingularReduction v m₃ m₄ m₆ hQ
   -- the chord through `P` and `Q`, with slope `ℓ` and third point `(x₃, y₃)`
-  obtain ⟨x₃, y₃, ℓ, -, -, -, hx₃, -, hb, -, hc⟩ :=
+  obtain ⟨x₃, y₃, ℓ, -, -, -, hx₃, -, hb, -, hc, -⟩ :=
     exists_chord_of_add_notMem_nonsingularReduction v m₃ m₄ m₆ hPQ
   obtain ⟨X₃, rfl⟩ := (mem_maximalIdeal_iff_dvd hϖ).1 hx₃
   rw [Point.xCoord_some] at hX₁ hX₂
@@ -394,8 +395,9 @@ theorem exists_notMem_nonsingularReduction_of_isTateTerminal_IStar_zero
     rw [h₂, h₄]
     have hne : 3 * X ^ 2 + 2 * A₂ * X + A₄ ≠ 0 := (hsimple X (hX0 ▸ dvd_zero ϖ)).ne_zero
     have hϖ2 : ϖ ^ 2 ≠ 0 := pow_ne_zero 2 hp.ne_zero
-    contrapose! hne
-    exact (mul_eq_zero.1 (by linear_combination -hne)).resolve_left hϖ2
+    intro hzero
+    apply hne
+    exact (mul_eq_zero.1 (by linear_combination -hzero)).resolve_left hϖ2
   have hF : W.Nonsingular ((ϖ * X : v.valuationSubring) : F) ((0 : v.valuationSubring) : F) := by
     have := ((integralModel v.valuationSubring W).toAffine.map_nonsingular
       (IsFractionRing.injective _ F) _ _).mpr hns

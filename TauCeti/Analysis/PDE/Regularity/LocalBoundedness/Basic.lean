@@ -428,7 +428,8 @@ private theorem setIntegral_ball_max_sub_sq_succ_le {q : ℝ≥0∞} (hq : 2 ≤
   have hlhs : ∫ x in Metric.ball x₀ r₁, max (W1p.value u x - l) 0 ^ 2 ∂mu ≤
       ∫ x in Omega, ψ x ^ 2 * max (W1p.value u x - l) 0 ^ 2 ∂mu :=
     MeasureTheory.setIntegral_le_setIntegral_sq_mul_of_eqOn (hint l (hk0.trans hkl.le))
-      (fun x => hnn l x) hψ.continuous.aestronglyMeasurable hψ01 measurableSet_ball
+      (ae_of_all _ fun x => hnn l x) hψ.continuous.aestronglyMeasurable
+      (ae_of_all _ fun x => hψ01 (mem_range_self x)) measurableSet_ball
       (hψ1.mono Metric.ball_subset_closedBall)
       ((Metric.ball_subset_ball (hr₁ρ.trans hρr₀).le).trans
         ((Metric.ball_subset_ball hr₀R).trans hball))

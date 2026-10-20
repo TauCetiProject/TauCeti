@@ -14,9 +14,11 @@ import Mathlib.MeasureTheory.Measure.Real
 In a finite-dimensional real normed space, the real measure of a positive-radius ball is its
 radius raised to the dimension times the real measure of the unit ball, independently of its
 centre. It agrees with the measure of the closed ball, which therefore differs from the open ball
-by a null set. Consequently the ratio of the measures of two closed balls is controlled by the
-ratio of their radii raised to the dimension, and the part of a ball outside a translate of
-itself is controlled by the distance between the centres. The measure of an affine image
+by a null set. In a nontrivial space, concentric balls are ordered by measure as by radius, so the
+points `x` whose centered ball of radius `‖x‖` has measure below `m` form a set of measure `m`.
+The ratio of the measures of two closed balls is controlled by the ratio of their radii raised to
+the dimension, and the part of a ball outside a translate of itself is controlled by the distance
+between the centres. The measure of an affine image
 `y + r • S` relative to a ball of radius `r` is that of `S` relative to the unit ball, and a
 homothety of ratio `r ≠ 0` pushes the measure forward to its multiple by `|r|⁻ⁿ`. Comparing
 the measure of the image of the closed unit ball under a linear endomorphism `f` with that of the
@@ -29,6 +31,10 @@ closed ball of radius `‖f‖` bounds `|det f|` by `‖f‖` raised to the dime
   set in a nontrivial space.
 * `MeasureTheory.Measure.addHaar_closedBall_ae_eq_ball_of_ne_zero`: the same agreement at nonzero
   radius, including trivial spaces.
+* `MeasureTheory.Measure.addHaar_ball_lt_addHaar_ball_iff`: concentric balls are ordered by
+  measure as by radius.
+* `MeasureTheory.Measure.addHaar_setOf_addHaar_ball_norm_lt`: in a nontrivial space, the set where
+  the centered ball has measure below `m` has measure `m`.
 * `MeasureTheory.Measure.addHaar_real_closedBall_div_le`: a closed ball of radius `R ≤ c r` has
   at most `cⁿ` times the measure of a closed ball of radius `r`.
 * `MeasureTheory.Measure.addHaar_real_ball_sdiff_ball_le`: the part of a ball outside a ball of the
@@ -79,6 +85,46 @@ theorem _root_.MeasureTheory.Measure.addHaar_closedBall_ae_eq_ball_of_ne_zero
     ext y
     simp [mem_closedBall, mem_ball, Subsingleton.elim y x, le_iff_lt_or_eq, Ne.symm hr]
   · exact mu.addHaar_closedBall_ae_eq_ball x r
+
+/-- In a nontrivial finite-dimensional space, comparing the measures of two concentric balls is
+comparing their radii, as long as the first radius is nonnegative. -/
+theorem _root_.MeasureTheory.Measure.addHaar_ball_lt_addHaar_ball_iff
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [Nontrivial E] [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
+    (x : E) {a b : ℝ} (ha : 0 ≤ a) :
+    mu (ball x a) < mu (ball x b) ↔ a < b := by
+  refine ⟨fun h ↦ lt_of_not_ge fun hba ↦ h.not_ge (measure_mono (ball_subset_ball hba)),
+    fun hab ↦ ?_⟩
+  rw [mu.addHaar_ball x ha, mu.addHaar_ball x (ha.trans hab.le)]
+  exact ENNReal.mul_lt_mul_left (measure_ball_pos mu 0 one_pos).ne' measure_ball_lt_top.ne
+    ((ENNReal.ofReal_lt_ofReal_iff_of_nonneg (by positivity)).2
+      (pow_lt_pow_left₀ hab ha finrank_pos.ne'))
+
+/-- In a nontrivial finite-dimensional space, `{x | μ (ball 0 ‖x‖) < m}` is the centered open ball
+of `μ`-measure `m` when `m` is finite, and the whole space when `m = ∞`; in both cases its
+measure is `m`. -/
+theorem _root_.MeasureTheory.Measure.addHaar_setOf_addHaar_ball_norm_lt
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [Nontrivial E] [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
+    (m : ENNReal) :
+    mu {x | mu (ball (0 : E) ‖x‖) < m} = m := by
+  rcases eq_or_ne m ⊤ with rfl | hm
+  · have huniv : {x : E | mu (ball (0 : E) ‖x‖) < ⊤} = Set.univ :=
+      Set.eq_univ_of_forall fun _ ↦ measure_ball_lt_top
+    rw [huniv, measure_univ_of_isAddLeftInvariant]
+  -- For finite `m`, pick the radius `r` of the centered ball of measure `m`.
+  have hω0 : mu (ball (0 : E) 1) ≠ 0 := (measure_ball_pos mu 0 one_pos).ne'
+  obtain ⟨r, hr0, hr⟩ : ∃ r : ℝ, 0 ≤ r ∧ mu (ball (0 : E) r) = m := by
+    refine ⟨(m / mu (ball (0 : E) 1)).toReal ^ (finrank ℝ E : ℝ)⁻¹, by positivity, ?_⟩
+    rw [mu.addHaar_ball 0 (by positivity),
+      Real.rpow_inv_natCast_pow ENNReal.toReal_nonneg finrank_pos.ne',
+      ENNReal.ofReal_toReal (ENNReal.div_ne_top hm hω0),
+      ENNReal.div_mul_cancel hω0 measure_ball_lt_top.ne]
+  have hset : {x : E | mu (ball (0 : E) ‖x‖) < m} = ball 0 r := by
+    ext x
+    rw [← hr, Set.mem_ofPred_eq, mu.addHaar_ball_lt_addHaar_ball_iff 0 (norm_nonneg x),
+      mem_ball_zero_iff]
+  rw [hset, hr]
 
 /-- A closed ball of radius `R ≤ c r` has at most `cⁿ` times the real measure of a closed ball of
 radius `r > 0`, whatever their centres, where `n` is the dimension. -/

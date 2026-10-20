@@ -545,7 +545,6 @@ private theorem presentationLimitComap_toCompletionLoc
     letI := isTopologicalRing_locUniformSpace P T s S hden
     presentationLimitComap (toCompletionLoc P T s S hden)
         (continuous_toCompletionLoc P T s S hden)
-        (fun _ hJ ↦ isOpen_map_toCompletionLoc P T s S hden hJ)
         (fun _ ha ↦ toCompletionLoc_mem_completedPlusSubring P Aplus T s S hden ha)
         (isPowerBounded_of_mem_completedPlusSubring P Aplus hAplus T s S hden) hsheaf U =
       presentationLimitMap (P := P) (spaComapLoc_functor_obj_map_le P Aplus T s S hden hP U) ≫
@@ -558,7 +557,7 @@ private theorem presentationLimitComap_toCompletionLoc
   let _ := locUniformSpace P T s S hden
   have _ := isUniformAddGroup_locUniformSpace P T s S hden
   have _ := isTopologicalRing_locUniformSpace P T s S hden
-  refine presentationLimit_hom_ext_of_isSheaf (P := P) _ _
+  refine presentationLimit_hom_ext_of_isSheaf_comap (P := P) _ _
     (fun _ hJ ↦ isOpen_map_toCompletionLoc P T s S hden hJ) _ hsheaf fun i ↦ ?_
   refine presentationLimit_hom_ext_toPresentation fun m ↦ ?_
   simp only [Category.assoc]
@@ -638,7 +637,6 @@ private theorem presentationLimitPreAdicSpaceLocIso_hom_comp_comap
     -- so the components of the three morphisms are only definitionally the ones named here
     change ((presentationLimitPresheafComap (toCompletionLoc P T s S hden)
         (continuous_toCompletionLoc P T s S hden)
-        (fun _ hJ ↦ isOpen_map_toCompletionLoc P T s S hden hJ)
         (fun _ ha ↦ toCompletionLoc_mem_completedPlusSubring P Aplus T s S hden ha)
         (isPowerBounded_of_mem_completedPlusSubring P Aplus hAplus T s S hden) hsheaf).app U ≫
         (presentationLimitPresheafLocIso P Aplus T s S hden hAplus hP hT).inv.app

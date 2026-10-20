@@ -16,6 +16,16 @@ The native `Finsupp.mulHeight` is a projective height on the nonzero support.
 This module identifies it with finite tuples containing that support, and proves
 invariance under scalar multiplication and injective reindexing. These interfaces
 allow polynomial coefficient heights to use the finite-tuple height estimates in Mathlib.
+
+`Finsupp.mulHeight_eq_mul_of_injOn` transfers Mathlib's Segre relation
+`Height.mulHeight_fun_mul_eq` to finitely supported vectors: a vector whose nonzero entries are
+exactly the products `x a * y b`, each occurring once, has the product of the heights of `x` and
+`y`. The coefficients of a product of polynomials in disjoint sets of variables have this form.
+
+## References
+
+* The multiplication-table height follows `DiophantineApproximation/DisjointVariables.lean` in
+  Ralf Stephan's `rwst/Subspace-Theorems`, snapshot `c26d909dc48cf7fe` (Apache 2.0).
 -/
 
 public section
@@ -126,5 +136,49 @@ theorem logHeight_embDomain (x : α →₀ K) (f : α ↪ β) :
     (x.embDomain f).logHeight = x.logHeight := by
   rw [logHeight_eq_log_mulHeight_support, mulHeight_embDomain,
     logHeight_eq_log_mulHeight_support]
+
+/-- **The height of a multiplication table.** Suppose that `e` is injective on pairs of indices
+in the supports of `x` and `y`, that `z (e (a, b)) = x a * y b` for such pairs, and that every
+index in the support of `z` is of this form. If `x` and `y` are nonzero, then the height of `z`
+is the product of the heights of `x` and `y`. This is the Segre relation
+`Height.mulHeight_fun_mul_eq` for finitely supported vectors. -/
+theorem mulHeight_eq_mul_of_injOn {γ : Type*} {x : α →₀ K} {y : β →₀ K} {z : γ →₀ K}
+    {e : α × β → γ} (he : Set.InjOn e (x.support ×ˢ y.support : Finset (α × β)))
+    (hz : ∀ a ∈ x.support, ∀ b ∈ y.support, z (e (a, b)) = x a * y b)
+    (hsupp : ∀ c ∈ z.support, ∃ a ∈ x.support, ∃ b ∈ y.support, e (a, b) = c)
+    (hx : x ≠ 0) (hy : y ≠ 0) :
+    z.mulHeight = x.mulHeight * y.mulHeight := by
+  classical
+  set s : Finset γ := (x.support ×ˢ y.support).image e
+  have hs : z.support ⊆ s := fun c hc ↦ by
+    obtain ⟨a, ha, b, hb, rfl⟩ := hsupp c hc
+    exact Finset.mem_image_of_mem e (Finset.mem_product.2 ⟨ha, hb⟩)
+  -- The pairs of indices in the two supports are in bijection with `s`.
+  let E : x.support × y.support ≃ s := (Equiv.Finset.prod x.support y.support).symm.trans
+    ((Equiv.Set.imageOfInjOn e _ he).trans (Set.equivOfEq Finset.coe_image.symm))
+  have hx' : (fun a : x.support ↦ x a) ≠ 0 := by
+    obtain ⟨a, ha⟩ := Finsupp.support_nonempty_iff.2 hx
+    exact Function.ne_iff.2 ⟨⟨a, ha⟩, mem_support_iff.1 ha⟩
+  have hy' : (fun b : y.support ↦ y b) ≠ 0 := by
+    obtain ⟨b, hb⟩ := Finsupp.support_nonempty_iff.2 hy
+    exact Function.ne_iff.2 ⟨⟨b, hb⟩, mem_support_iff.1 hb⟩
+  have hzE : (fun c : s ↦ z c) ∘ E = fun p : x.support × y.support ↦ x p.1 * y p.2 :=
+    funext fun p ↦ hz _ p.1.2 _ p.2.2
+  rw [mulHeight_eq_of_support_subset z s hs, ← Height.mulHeight_comp_equiv E, hzE,
+    Height.mulHeight_fun_mul_eq hx' hy', mulHeight_eq_of_support_subset x x.support subset_rfl,
+    mulHeight_eq_of_support_subset y y.support subset_rfl]
+
+/-- **The logarithmic height of a multiplication table.** Under the hypotheses of
+`Finsupp.mulHeight_eq_mul_of_injOn`, the logarithmic height of `z` is the sum of the logarithmic
+heights of `x` and `y`. -/
+theorem logHeight_eq_add_of_injOn {γ : Type*} {x : α →₀ K} {y : β →₀ K} {z : γ →₀ K}
+    {e : α × β → γ} (he : Set.InjOn e (x.support ×ˢ y.support : Finset (α × β)))
+    (hz : ∀ a ∈ x.support, ∀ b ∈ y.support, z (e (a, b)) = x a * y b)
+    (hsupp : ∀ c ∈ z.support, ∃ a ∈ x.support, ∃ b ∈ y.support, e (a, b) = c)
+    (hx : x ≠ 0) (hy : y ≠ 0) :
+    z.logHeight = x.logHeight + y.logHeight := by
+  rw [logHeight_eq_log_mulHeight_support, logHeight_eq_log_mulHeight_support,
+    logHeight_eq_log_mulHeight_support, mulHeight_eq_mul_of_injOn he hz hsupp hx hy,
+    Real.log_mul (mulHeight_pos x).ne' (mulHeight_pos y).ne']
 
 end Finsupp

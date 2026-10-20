@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Data.Set.Card
 public import Mathlib.RingTheory.Valuation.ValuationSubring
-import TauCeti.RingTheory.LocalRing.Basic
+import TauCeti.RingTheory.LocalRing.MaximalIdeal.Generator
 
 /-!
 # Values of a valuation whose maximal ideal is principal
@@ -41,7 +41,8 @@ less than `1`. -/
 theorem map_lt_one_of_maximalIdeal_eq_span_of_dvd
     (hϖ : maximalIdeal v.valuationSubring = Ideal.span {ϖ}) {z : v.valuationSubring}
     (hz : ϖ ∣ z) : v (z : F) < 1 :=
-  (Valuation.mem_maximalIdeal_iff (v := v)).1 ((mem_maximalIdeal_iff_dvd hϖ).2 hz)
+  (Valuation.mem_maximalIdeal_iff (v := v)).1
+    ((TauCeti.IsLocalRing.mem_maximalIdeal_iff_dvd hϖ).2 hz)
 
 /-- A generator of the maximal ideal of the valuation ring has value less than `1`. -/
 theorem map_lt_one_of_maximalIdeal_eq_span

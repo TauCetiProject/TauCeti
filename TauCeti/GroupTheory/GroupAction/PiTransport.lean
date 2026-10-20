@@ -17,9 +17,10 @@ lying over a `G`-set `P` along `p : ι → P`, and suppose `g` carries the facto
 factor at `j` along a bijection `T g : M i ≃ M j` whenever `p j = g • p i`. The action on `X`
 need not be a `MulAction`: it is only required to be compatible with `T`. If every index is
 carried to a fixed index `w`, an element of `X` is determined by the components at `w` of its
-translates (`TauCeti.eq_of_forall_transport_component_eq`). If moreover every element of `G`
-carries some index to `w`, every function `G → M w` that is equivariant for the stabilizer of
-`p w` arises in this way (`TauCeti.exists_forall_transport_component_eq`).
+translates (`Equiv.eq_of_forall_transport_component_eq`); this needs only a scalar action
+`SMul G P`. If moreover every element of `G` carries some index to `w`, every function `G → M w`
+that is equivariant for the stabilizer of `p w` arises in this way
+(`Equiv.exists_forall_transport_component_eq`).
 
 The motivating example is the Galois group of `L/K` acting on the semi-local algebra
 `K_v ⊗[K] L ≃ ∏_{w ∣ v} L_w`, permuting the places above `v`. These two results are the
@@ -28,19 +29,22 @@ group, `TauCeti.resCoindToHom_bijective_of_transport`.
 
 ## Main results
 
-* `TauCeti.eq_of_forall_transport_component_eq`,
-  `TauCeti.exists_forall_transport_component_eq`: injectivity and surjectivity of the map
+* `Equiv.eq_of_forall_transport_component_eq`,
+  `Equiv.exists_forall_transport_component_eq`: injectivity and surjectivity of the map
   `x ↦ (g ↦ (g • x)_w)` into the stabilizer-equivariant functions.
 -/
 
 public section
 
-namespace TauCeti
+namespace Equiv
 
-variable {G P ι X : Type*} [Group G] [MulAction G P] {p : ι → P} {act : G → X → X}
-  {M : ι → Type*} (e : X ≃ ∀ i, M i) (T : ∀ (g : G) {i j : ι}, p j = g • p i → M i ≃ M j)
-  (he : ∀ (g : G) (x : X) {i j : ι} (h : p j = g • p i), e (act g x) j = T g h (e x i))
+variable {G P ι X : Type*} {p : ι → P} {act : G → X → X} {M : ι → Type*} (e : X ≃ ∀ i, M i)
   {w : ι}
+
+section SMul
+
+variable [SMul G P] (T : ∀ (g : G) {i j : ι}, p j = g • p i → M i ≃ M j)
+  (he : ∀ (g : G) (x : X) {i j : ι} (h : p j = g • p i), e (act g x) j = T g h (e x i))
 
 include he in
 /-- If `G` carries every factor to the factor at `w`, an element of `X` is determined by the
@@ -50,6 +54,13 @@ theorem eq_of_forall_transport_component_eq (htrans : ∀ i, ∃ g : G, p w = g 
   e.injective <| funext fun i ↦ by
     obtain ⟨g, hg⟩ := htrans i
     simpa only [he g _ hg, (T g hg).apply_eq_iff_eq] using h g
+
+end SMul
+
+section Group
+
+variable [Group G] [MulAction G P] (T : ∀ (g : G) {i j : ι}, p j = g • p i → M i ≃ M j)
+  (he : ∀ (g : G) (x : X) {i j : ι} (h : p j = g • p i), e (act g x) j = T g h (e x i))
 
 include he in
 /-- If `G` carries every factor to the factor at `w`, every element of `G` carries some factor
@@ -68,12 +79,10 @@ theorem exists_forall_transport_component_eq
   refine ⟨e.symm fun i ↦ (T (g i) (hg i)).symm (f (g i)), fun σ ↦ ?_⟩
   obtain ⟨i, hi⟩ := hsurj σ
   have hd : p w = (σ * (g i)⁻¹) • p w := by rw [mul_smul, inv_smul_eq_iff.mpr (hg i), ← hi]
-  have hcongr {g₁ g₂ : G} (h₁ : p w = g₁ • p i) (h₂ : p w = g₂ • p i) (hg : g₁ = g₂) (b : M i) :
-      T g₁ h₁ b = T g₂ h₂ b := by
-    subst hg
-    rfl
-  rw [he σ _ hi, e.apply_symm_apply,
-    hcongr hi (by rw [mul_smul, ← hg i, ← hd]) (inv_mul_cancel_right σ (g i)).symm,
-    ← hT _ _ (hg i) hd, Equiv.apply_symm_apply, ← hf, inv_mul_cancel_right]
+  rw [he σ _ hi, e.apply_symm_apply]
+  simpa only [Equiv.apply_symm_apply, ← hf, inv_mul_cancel_right] using
+    (hT (g i) (σ * (g i)⁻¹) (hg i) hd ((T (g i) (hg i)).symm (f (g i)))).symm
 
-end TauCeti
+end Group
+
+end Equiv
