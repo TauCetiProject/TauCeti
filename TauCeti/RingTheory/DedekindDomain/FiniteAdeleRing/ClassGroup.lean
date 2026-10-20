@@ -540,12 +540,6 @@ theorem comap_unitEmbedding_sIntegralUnits (S : Set (HeightOneSpectrum R)) :
   rw [Subgroup.mem_comap, mem_sIntegralUnits_iff]
   exact forall_valued_unitEmbedding_eq_one_iff a
 
-variable (R K) in
-/-- The `S`-integral principal finite ideles are the image of the `S`-units. -/
-theorem range_unitEmbedding_inf_sIntegralUnits (S : Set (HeightOneSpectrum R)) :
-    (unitEmbedding R K).range ⊓ sIntegralUnits R K S = (S.unit K).map (unitEmbedding R K) := by
-  rw [← Subgroup.map_comap_eq, comap_unitEmbedding_sIntegralUnits]
-
 /-! ### Ideal classes of `S`-integral finite ideles -/
 
 variable (R K) in
