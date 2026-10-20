@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
+import Mathlib.Combinatorics.Enumerative.DoubleCounting
 
 /-!
 # The intersection algebra of a pseudoholomorphic cycle in a good class through generic points
@@ -23,8 +24,8 @@ lattice:
 * distinct images meet nonnegatively, `C_i · C_j ≥ 0` for `i ≠ j`;
 * if `C_i` has singularity number `δ_i` and contains `k_i` of the generic points, then
   `2 k_i ≤ d(C_i) - 2 δ_i`, the index of the simple curves in the class of `C_i`;
-* an image of negative square is an exceptional sphere, so `C_i · C_i = -1`, and as `e` is good
-  it satisfies `e · C_i ≥ -1`;
+* an image of negative square is an exceptional sphere, and as `e` is good it satisfies
+  `e · C_i ≥ -1`;
 * the classes sum to `e`, and every generic point lies on some image.
 
 This file records these facts as `TauCeti.IsGoodCycle` on an arbitrary integral bilinear form and
@@ -36,6 +37,7 @@ from Seiberg–Witten solutions in a good class:
   nonnegatively, provided `e · C_i ≥ -1` whenever `C_i · C_i < 0`;
 * every image is embedded, `δ_i = 0`, and contains exactly `d(C_i) / 2` of the points;
 * every point lies on exactly one image, and `d(e) = ∑ d(C_i)`;
+* an image of negative square has square `-1`;
 * distinct images are homologically disjoint, and exceptional spheres occur with multiplicity one;
 * an image occurring with multiplicity at least two satisfies `C_i · C_i = κ · C_i = 0` and
   contains none of the points, so by adjunction it is a square-zero torus orthogonal to `κ`.
@@ -46,7 +48,7 @@ The argument expands `d(e) = ∑ m_i (d(C_i) + (e · C_i - C_i · C_i))`: each e
 
 ## Main declarations
 
-* `TauCeti.sum_mul_apply_sub_apply_canonical_le`: the good-curve component inequality.
+* `TauCeti.sum_mul_apply_self_sub_apply_canonical_le`: the good-curve component inequality.
 * `TauCeti.IsGoodCycle`: the numerical properties of a positive cycle of simple pseudoholomorphic
   images in a good class through generic points.
 * `TauCeti.IsGoodCycle.singularity_eq_zero`: every image is embedded.
@@ -54,6 +56,7 @@ The argument expands `d(e) = ∑ m_i (d(C_i) + (e · C_i - C_i · C_i))`: each e
   dimension of the points.
 * `TauCeti.IsGoodCycle.existsUnique_mem`: every point lies on exactly one image.
 * `TauCeti.IsGoodCycle.apply_eq_apply_self`: `e · C_i = C_i · C_i` for every image.
+* `TauCeti.IsGoodCycle.apply_self_eq_neg_one`: images of negative square have square `-1`.
 * `TauCeti.IsGoodCycle.apply_eq_zero`: distinct images are homologically disjoint.
 * `TauCeti.IsGoodCycle.mult_eq_one_of_apply_self_neg`: exceptional spheres occur once.
 * `TauCeti.IsGoodCycle.apply_self_sub_apply_canonical_eq_zero_of_one_lt_mult`,
@@ -86,14 +89,14 @@ private theorem apply_eq_sum (he : ∑ j, m j • C j = e) (x : H) :
 
 /-- The pairing of `e = ∑ m j • C j` with an image `C i`, split into the contribution of `C i`
 itself and those of the other images. -/
-theorem apply_eq_add_sum [DecidableEq ι] (he : ∑ j, m j • C j = e) (i : ι) :
+theorem cycle_apply_eq_add_sum [DecidableEq ι] (he : ∑ j, m j • C j = e) (i : ι) :
     B e (C i) = m i * B (C i) (C i) + ∑ j ∈ Finset.univ.erase i, (m j : ℤ) * B (C j) (C i) := by
   rw [apply_eq_sum he]
   exact (Finset.add_sum_erase _ _ (Finset.mem_univ i)).symm
 
 /-- The virtual dimension of `e = ∑ m i • C i` splits into the virtual dimensions of the images
 and their excess intersections `e · C i - C i · C i` with the cycle. -/
-theorem apply_sub_apply_canonical_eq_sum (he : ∑ i, m i • C i = e) :
+theorem cycle_apply_self_sub_apply_canonical_eq_sum_add_sum (he : ∑ i, m i • C i = e) :
     B e e - B κ e = ∑ i, (m i : ℤ) * (B (C i) (C i) - B κ (C i)) +
       ∑ i, (m i : ℤ) * (B e (C i) - B (C i) (C i)) := by
   have hee : B e e = ∑ i, (m i : ℤ) * B e (C i) := by
@@ -132,18 +135,18 @@ private theorem mul_apply_sub_apply_self_nonneg (he : ∑ j, m j • C j = e)
   · linarith [hgood i hi]
   have hs := sum_erase_mul_apply_nonneg (m := m) hpos i
   have hm' : (1 : ℤ) ≤ m i := by exact_mod_cast hm
-  rw [apply_eq_add_sum he]
+  rw [cycle_apply_eq_add_sum he]
   nlinarith
 
 /-- **The good-curve component inequality.** If `e = ∑ m i • C i` is a combination with natural
 coefficients of classes which meet pairwise nonnegatively, and `e` is at least `-1` on every
 class `C i` of negative square (as for a good class and exceptional spheres), then the virtual
 dimensions `d(x) = x · x - κ · x` satisfy `∑ m i d(C i) ≤ d(e)`. -/
-theorem sum_mul_apply_sub_apply_canonical_le (he : ∑ i, m i • C i = e)
+theorem sum_mul_apply_self_sub_apply_canonical_le (he : ∑ i, m i • C i = e)
     (hpos : ∀ {i j}, i ≠ j → 0 ≤ B (C i) (C j))
     (hgood : ∀ i, B (C i) (C i) < 0 → -1 ≤ B e (C i)) :
     ∑ i, (m i : ℤ) * (B (C i) (C i) - B κ (C i)) ≤ B e e - B κ e := by
-  rw [apply_sub_apply_canonical_eq_sum he]
+  rw [cycle_apply_self_sub_apply_canonical_eq_sum_add_sum he]
   exact le_add_of_nonneg_right <| Finset.sum_nonneg fun i _ ↦
     mul_apply_sub_apply_self_nonneg he hpos hgood i
 
@@ -153,9 +156,10 @@ pseudoholomorphic images in a good class `e` of a symplectic four-manifold with 
 integral homology. The image `C i` has singularity number `δ i` and contains the points `pts i`.
 The fields say: the multiplicities are positive; distinct images meet nonnegatively; the number
 of points on an image is at most half the index `d(C i) - 2 δ i` of simple curves in its class,
-where `d(x) = x · x - κ · x`; an image of negative square is an exceptional sphere, of square
-`-1`, on which the good class `e` is at least `-1`; the cycle represents `e`; every point lies
-on some image; and the number of points is half the virtual dimension of `e`. -/
+where `d(x) = x · x - κ · x`; the good class `e` is at least `-1` on every image of negative
+square; the cycle represents `e`; every point lies on some image; and the number of points is
+half the virtual dimension of `e`. The square `-1` of an image of negative square, which
+adjunction forces for an exceptional sphere, then follows (`IsGoodCycle.apply_self_eq_neg_one`). -/
 structure IsGoodCycle [Fintype P] (B : BilinForm ℤ H) (κ e : H) (C : ι → H) (m δ : ι → ℕ)
     (pts : ι → Finset P) : Prop where
   /-- Every image occurs with positive multiplicity. -/
@@ -165,8 +169,6 @@ structure IsGoodCycle [Fintype P] (B : BilinForm ℤ H) (κ e : H) (C : ι → H
   /-- The generic points on an image cut its index `d(C) - 2 δ(C)` down to a nonnegative
   dimension. -/
   two_mul_card_add_le : ∀ i, 2 * ((pts i).card + δ i : ℤ) ≤ B (C i) (C i) - B κ (C i)
-  /-- An image of negative square is an exceptional sphere: its square is `-1`. -/
-  apply_self_eq_neg_one : ∀ i, B (C i) (C i) < 0 → B (C i) (C i) = -1
   /-- The class `e` is good: it is at least `-1` on every exceptional sphere among the images. -/
   neg_one_le_apply : ∀ i, B (C i) (C i) < 0 → -1 ≤ B e (C i)
   /-- The cycle represents `e`. -/
@@ -220,7 +222,8 @@ private theorem rigid (h : IsGoodCycle B κ e C m δ pts) : Rigid B κ e C m δ 
         ∑ i, ((m i : ℤ) - 1) * (B (C i) (C i) - B κ (C i)) +
         ∑ i, (B (C i) (C i) - B κ (C i) - 2 * ((pts i).card + δ i : ℤ)) +
         2 * ∑ i, (δ i : ℤ) + 2 * ∑ i, ((pts i).card : ℤ) := by
-    rw [← h.apply_self_sub_apply_canonical, apply_sub_apply_canonical_eq_sum h.sum_eq]
+    rw [← h.apply_self_sub_apply_canonical,
+      cycle_apply_self_sub_apply_canonical_eq_sum_add_sum h.sum_eq]
     simp only [Finset.mul_sum, ← Finset.sum_add_distrib]
     exact Finset.sum_congr rfl fun i _ ↦ by ring
   have h1 := Finset.sum_nonneg fun i (_ : i ∈ Finset.univ) ↦ hex i
@@ -259,10 +262,9 @@ theorem existsUnique_mem (h : IsGoodCycle B κ e C m δ pts) (p : P) : ∃! i, p
   -- Count incidences point by point: each point lies on at least one image, and the total
   -- number of incidences is the number of points.
   have hswap : ∑ i, (pts i).card = ∑ q, (Finset.univ.filter fun i ↦ q ∈ pts i).card := by
-    have hcard : ∀ i, (pts i).card = ∑ q, if q ∈ pts i then 1 else 0 := fun i ↦ by
-      rw [← Finset.card_filter, Finset.filter_mem_eq_inter, Finset.univ_inter]
-    simp only [hcard, Finset.card_filter]
-    exact Finset.sum_comm
+    convert Finset.sum_card_bipartiteAbove_eq_sum_card_bipartiteBelow
+      (s := Finset.univ) (t := Finset.univ) (r := fun i q ↦ q ∈ pts i) using 3 <;>
+      simp [Finset.bipartiteAbove, Finset.bipartiteBelow]
   have hle : ∀ q ∈ Finset.univ, 1 ≤ (Finset.univ.filter fun i ↦ q ∈ pts i).card := fun q _ ↦
     Finset.card_pos.2 <| by simpa [Finset.Nonempty] using h.exists_mem q
   have heq := (Finset.sum_eq_sum_iff_of_le hle).1 (by
@@ -279,6 +281,11 @@ theorem apply_eq_apply_self (h : IsGoodCycle B κ e C m δ pts) (i : ι) :
   have hm : (0 : ℤ) < m i := by exact_mod_cast h.mult_pos i
   linarith [(mul_eq_zero.1 (h.rigid.mul_apply_sub_apply_self_eq_zero i)).resolve_left hm.ne']
 
+/-- An image of negative square has square `-1`, as an exceptional sphere does. -/
+theorem apply_self_eq_neg_one (h : IsGoodCycle B κ e C m δ pts) {i : ι}
+    (hi : B (C i) (C i) < 0) : B (C i) (C i) = -1 := by
+  linarith [h.apply_eq_apply_self i, h.neg_one_le_apply i hi]
+
 /-- No other image meets an image of nonnegative square, and the square of such an image
 vanishes unless its multiplicity is one. -/
 private theorem rigid_of_apply_self_nonneg (h : IsGoodCycle B κ e C m δ pts) {i : ι}
@@ -286,7 +293,7 @@ private theorem rigid_of_apply_self_nonneg (h : IsGoodCycle B κ e C m δ pts) {
     (∀ j, j ≠ i → B (C j) (C i) = 0) ∧ ((m i : ℤ) - 1) * B (C i) (C i) = 0 := by
   classical
   have hm : (1 : ℤ) ≤ m i := by exact_mod_cast h.mult_pos i
-  have hexp := apply_eq_add_sum (B := B) h.sum_eq i
+  have hexp := cycle_apply_eq_add_sum (B := B) h.sum_eq i
   have hs := sum_erase_mul_apply_nonneg (m := m) h.apply_nonneg i
   have he := h.apply_eq_apply_self i
   have hsq : 0 ≤ ((m i : ℤ) - 1) * B (C i) (C i) := mul_nonneg (by linarith) hi
@@ -303,8 +310,8 @@ private theorem mul_apply_le_of_apply_self_neg (h : IsGoodCycle B κ e C m δ pt
     (hab : a ≠ b) (ha : B (C a) (C a) < 0) : (m b : ℤ) * B (C b) (C a) ≤ m a - 1 := by
   classical
   have he := h.apply_eq_apply_self a
-  have hexp := apply_eq_add_sum (B := B) h.sum_eq a
-  rw [he, h.apply_self_eq_neg_one a ha] at hexp
+  have hexp := cycle_apply_eq_add_sum (B := B) h.sum_eq a
+  rw [he, h.apply_self_eq_neg_one ha] at hexp
   have hle := Finset.single_le_sum (f := fun k ↦ (m k : ℤ) * B (C k) (C a))
     (fun _ hk ↦ mul_apply_nonneg_of_mem_erase h.apply_nonneg hk)
     (Finset.mem_erase.2 ⟨hab.symm, Finset.mem_univ b⟩)
@@ -334,8 +341,8 @@ theorem mult_eq_one_of_apply_self_neg (hB : B.IsSymm) (h : IsGoodCycle B κ e C 
     (hi : B (C i) (C i) < 0) : m i = 1 := by
   classical
   have he := h.apply_eq_apply_self i
-  have hexp := apply_eq_add_sum (B := B) h.sum_eq i
-  rw [he, h.apply_self_eq_neg_one i hi, Finset.sum_eq_zero fun j hj ↦ by
+  have hexp := cycle_apply_eq_add_sum (B := B) h.sum_eq i
+  rw [he, h.apply_self_eq_neg_one hi, Finset.sum_eq_zero fun j hj ↦ by
     rw [h.apply_eq_zero hB (Finset.ne_of_mem_erase hj), mul_zero]] at hexp
   omega
 
