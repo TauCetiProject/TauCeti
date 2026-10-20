@@ -11,10 +11,8 @@ public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Frattini.Basic
 import Mathlib.GroupTheory.Nilpotent
 import Mathlib.Topology.Algebra.ClopenNhdofOne
-import Mathlib.Topology.Separation.Connected
 import TauCeti.GroupTheory.Index.Basic
 import TauCeti.GroupTheory.PGroup
-import TauCeti.Topology.Algebra.Group.Profinite.ProP.Burnside
 
 /-!
 # Maximal open subgroups of pro-`p` groups
@@ -33,9 +31,9 @@ among all subgroups is the same thing as a maximal element of the lattice of ope
 statements below use the former reading.
 
 Two consequences are recorded. For a nontrivial profinite pro-`p` group the pro-`p` Frattini
-subgroup is proper, which is Burnside's non-generator property applied to the trivial subgroup.
-For a finite `p`-group with the discrete topology, where every subgroup is open, the pro-`p`
-Frattini subgroup agrees with Mathlib's abstract `frattini`.
+subgroup is proper, which is the non-generator property of the Frattini subgroup applied to the
+trivial subgroup. For a finite `p`-group with the discrete topology, where every subgroup is open,
+the pro-`p` Frattini subgroup agrees with Mathlib's abstract `frattini`.
 
 ## Main results
 
@@ -126,16 +124,11 @@ theorem proPFrattini_eq_profiniteFrattini (hG : IsProP p G) :
   exact proPFrattini_le (U := ⟨⟨M, hMo⟩, hG.normal_of_isCoatom hMo hM⟩)
     (hG.index_eq_of_isCoatom hMo hM) hx
 
-/-- **The Frattini subgroup of a nontrivial pro-`p` group is proper.** Otherwise the trivial
-subgroup together with the Frattini subgroup would generate, and the Frattini subgroup consists
-of non-generators. -/
+/-- **The Frattini subgroup of a nontrivial pro-`p` group is proper.** It is the Frattini
+subgroup `TauCeti.profiniteFrattini`, which is proper by `TauCeti.profiniteFrattini_ne_top`. -/
 theorem proPFrattini_ne_top [TotallyDisconnectedSpace G] [Nontrivial G] (hG : IsProP p G) :
-    proPFrattini p G ≠ ⊤ := by
-  intro h
-  have hbot : IsClosed ((⊥ : Subgroup G) : Set G) := by
-    rw [Subgroup.coe_bot]
-    exact isClosed_singleton
-  exact bot_ne_top (hG.eq_top_of_sup_proPFrattini_eq_top hbot (by rw [h, sup_top_eq]))
+    proPFrattini p G ≠ ⊤ :=
+  hG.proPFrattini_eq_profiniteFrattini ▸ profiniteFrattini_ne_top
 
 end IsProP
 
