@@ -327,19 +327,19 @@ theorem markPoint_injective : Function.Injective C.markPoint := fun _ _ h ↦
 partner lies on the second: they are joined by an edge of the dual graph. A component carrying
 both flags of a self-node is adjacent to itself. -/
 def ComponentAdj (a b : ConnectedComponents C.Normalization) : Prop :=
-  ∃ x, ConnectedComponents.mk x = a ∧ ConnectedComponents.mk (C.pairing x) = b
+  ∃ x ∈ C.flags, ConnectedComponents.mk x = a ∧ ConnectedComponents.mk (C.pairing x) = b
 
 variable {C} in
 theorem componentAdj_iff {a b : ConnectedComponents C.Normalization} :
     C.ComponentAdj a b ↔
-      ∃ x, ConnectedComponents.mk x = a ∧ ConnectedComponents.mk (C.pairing x) = b :=
+      ∃ x ∈ C.flags, ConnectedComponents.mk x = a ∧ ConnectedComponents.mk (C.pairing x) = b :=
   Iff.rfl
 
 variable {C} in
 theorem ComponentAdj.symm {a b : ConnectedComponents C.Normalization} (h : C.ComponentAdj a b) :
     C.ComponentAdj b a := by
-  obtain ⟨x, rfl, rfl⟩ := h
-  exact ⟨C.pairing x, rfl, by rw [pairing_pairing]⟩
+  obtain ⟨x, hx, rfl, rfl⟩ := h
+  exact ⟨C.pairing x, pairing_mem_flags.2 hx, rfl, by rw [pairing_pairing]⟩
 
 /-- **Connectedness of the dual graph.** Any two connected components of the normalization are
 joined by a finite chain of components, consecutive ones carrying the two flags of a node. -/
@@ -351,7 +351,9 @@ theorem reflTransGen_componentAdj (a b : ConnectedComponents C.Normalization) :
   rintro a b ⟨x, y, hxy, rfl, rfl⟩
   rcases nodeSetoid_iff.1 hxy with rfl | rfl
   · exact Relation.ReflTransGen.refl
-  · exact Relation.ReflTransGen.single (ComponentAdj.symm ⟨y, rfl, rfl⟩)
+  by_cases hy : y ∈ C.flags
+  · exact Relation.ReflTransGen.single (ComponentAdj.symm ⟨y, hy, rfl, rfl⟩)
+  · rw [pairing_eq_self_of_notMem_flags hy]
 
 /-! ### Examples -/
 
