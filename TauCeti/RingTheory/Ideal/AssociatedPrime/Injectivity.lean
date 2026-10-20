@@ -74,7 +74,8 @@ theorem injective_of_forall_isLocalized
   apply Subtype.ext
   simpa only [Submodule.coe_smul, Submodule.coe_zero, Submonoid.smul_def] using annihilates
 
-/-- Stacks 0AV7 for the canonical localization modules. -/
+/-- A linear map is injective if its localization is injective at every associated prime
+of its domain. This is Stacks 0AV7 for the canonical localization modules. -/
 @[stacks 0AV7]
 theorem injective_of_forall_localization (map : M →ₗ[R] N)
     (local_injective : ∀ (prime : Ideal R) [prime.IsPrime],
