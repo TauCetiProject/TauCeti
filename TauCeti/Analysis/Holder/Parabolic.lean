@@ -51,7 +51,7 @@ def mk (x : X) (t : T) : ParabolicSpace X T :=
   WithLp.toLp 1 (x, Metric.Snowflaking.toSnowflaking t)
 
 /-- Every parabolic point has spatial and temporal coordinates. -/
-theorem mk_surjective (p : ParabolicSpace X T) : ∃ x t, mk x t = p :=
+theorem exists_mk_eq (p : ParabolicSpace X T) : ∃ x t, mk x t = p :=
   ⟨p.ofLp.1, p.ofLp.2.ofSnowflaking, rfl⟩
 
 /-- Parabolic points are equal exactly when both coordinates are equal. -/
@@ -118,8 +118,8 @@ theorem holderWith_of_slices {A B : ℝ≥0}
     (ht : ∀ x, HolderWith B (α / 2) (fun t ↦ f (mk x t))) :
     HolderWith (A + B) α f := by
   intro p q
-  obtain ⟨x, t, rfl⟩ := mk_surjective p
-  obtain ⟨y, s, rfl⟩ := mk_surjective q
+  obtain ⟨x, t, rfl⟩ := exists_mk_eq p
+  obtain ⟨y, s, rfl⟩ := exists_mk_eq q
   have hx' := hx t x y
   have ht' := ht y t s
   calc
@@ -154,10 +154,6 @@ theorem iSup_add_iSup_le_two_mul_eHolderNorm (f : ParabolicSpace X T → Y) (α 
   exact add_le_add (iSup_le fun t ↦ eHolderNorm_space_le f α t)
     (iSup_le fun x ↦ eHolderNorm_time_le f α x)
 
-end PseudoEMetricSpace
-
-variable [MetricSpace X] [MetricSpace T] [EMetricSpace Y]
-
 /-- The parabolic seminorm is bounded by the sum of the uniform spatial and temporal seminorms.
 The inequality is in extended nonnegative reals, so it also holds for infinite seminorms. -/
 theorem eHolderNorm_le_iSup_add_iSup (f : ParabolicSpace X T → Y) (α : ℝ≥0) :
@@ -171,13 +167,22 @@ theorem eHolderNorm_le_iSup_add_iSup (f : ParabolicSpace X T → Y) (α : ℝ≥
   by_cases hB : B = ∞
   · dsimp only [B] at hB
     simp [hB]
-  have hx (t : T) : HolderWith A.toNNReal α (fun x ↦ f (mk x t)) :=
-    HolderWith.of_eHolderNorm_le hA (le_iSup (fun t ↦ eHolderNorm α (fun x ↦ f (mk x t))) t)
-  have ht (x : X) : HolderWith B.toNNReal (α / 2) (fun t ↦ f (mk x t)) :=
-    HolderWith.of_eHolderNorm_le hB
-      (le_iSup (fun x ↦ eHolderNorm (α / 2) (fun t ↦ f (mk x t))) x)
-  simpa only [ENNReal.coe_add, ENNReal.coe_toNNReal hA, ENNReal.coe_toNNReal hB]
-    using (holderWith_of_slices hx ht).eHolderNorm_le
+  refine ENNReal.le_of_forall_pos_le_add fun ε hε _ ↦ ?_
+  have hAε : A < (A.toNNReal + ε / 2 : ℝ≥0) := by
+    rw [← ENNReal.coe_toNNReal hA, ENNReal.coe_lt_coe]
+    exact lt_add_of_pos_right _ (half_pos hε)
+  have hBε : B < (B.toNNReal + ε / 2 : ℝ≥0) := by
+    rw [← ENNReal.coe_toNNReal hB, ENNReal.coe_lt_coe]
+    exact lt_add_of_pos_right _ (half_pos hε)
+  have hx (t : T) : HolderWith (A.toNNReal + ε / 2) α (fun x ↦ f (mk x t)) :=
+    holderWith_of_eHolderNorm_lt
+      ((le_iSup (fun t ↦ eHolderNorm α (fun x ↦ f (mk x t))) t).trans_lt hAε)
+  have ht (x : X) : HolderWith (B.toNNReal + ε / 2) (α / 2) (fun t ↦ f (mk x t)) :=
+    holderWith_of_eHolderNorm_lt
+      ((le_iSup (fun x ↦ eHolderNorm (α / 2) (fun t ↦ f (mk x t))) x).trans_lt hBε)
+  convert (holderWith_of_slices hx ht).eHolderNorm_le using 1
+  rw [add_add_add_comm, add_halves, ENNReal.coe_add, ENNReal.coe_add,
+    ENNReal.coe_toNNReal hA, ENNReal.coe_toNNReal hB]
 
 /-- Parabolic Hölder regularity is equivalent to finiteness of both uniform slice seminorms.
 Pointwise finiteness of the slice seminorms alone would not suffice. -/
@@ -192,6 +197,8 @@ theorem memHolder_iff_slices (f : ParabolicSpace X T → Y) (α : ℝ≥0) :
   · rintro ⟨hx, ht⟩
     exact eHolderNorm_lt_top.mp <|
       (eHolderNorm_le_iSup_add_iSup f α).trans_lt (ENNReal.add_lt_top.mpr ⟨hx, ht⟩)
+
+end PseudoEMetricSpace
 
 end ParabolicSpace
 end TauCeti
