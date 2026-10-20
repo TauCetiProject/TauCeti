@@ -30,6 +30,7 @@ variable {R M N : Type*} [CommRing R] [IsNoetherianRing R]
 from a localization of the domain is injective. Neither module needs to be finitely generated,
 and the target of the compatible map need not itself be a localization. -/
 theorem injective_of_forall_isLocalizedModule
+    (map : M →ₗ[R] N)
     (Mₚ : ∀ (prime : Ideal R) [prime.IsPrime], Type*)
     [∀ (prime : Ideal R) [prime.IsPrime], AddCommMonoid (Mₚ prime)]
     [∀ (prime : Ideal R) [prime.IsPrime], Module R (Mₚ prime)]
@@ -39,12 +40,10 @@ theorem injective_of_forall_isLocalizedModule
     [∀ (prime : Ideal R) [prime.IsPrime], AddCommMonoid (Nₚ prime)]
     [∀ (prime : Ideal R) [prime.IsPrime], Module R (Nₚ prime)]
     (g : ∀ (prime : Ideal R) [prime.IsPrime], N →ₗ[R] Nₚ prime)
-    (map : M →ₗ[R] N)
     (F : ∀ (prime : Ideal R) [prime.IsPrime], Mₚ prime →ₗ[R] Nₚ prime)
     (commutes : ∀ (prime : Ideal R) [prime.IsPrime], F prime ∘ₗ f prime = g prime ∘ₗ map)
     (local_injective : ∀ (prime : Ideal R) [prime.IsPrime],
-      Function.Injective (F prime) ∨
-      prime ∉ associatedPrimes R M) :
+      prime ∈ associatedPrimes R M → Function.Injective (F prime)) :
     Function.Injective map := by
   let : AddCommGroup M := Module.addCommMonoidToAddCommGroup R
   let : AddCommGroup N := Module.addCommMonoidToAddCommGroup R
@@ -55,7 +54,7 @@ theorem injective_of_forall_isLocalizedModule
   have : prime.IsPrime := associated.isPrime
   have associated_domain := associated.map_of_injective
     (LinearMap.ker map).subtype (Submodule.injective_subtype _)
-  have injective := (local_injective prime).resolve_right (not_not.mpr associated_domain)
+  have injective := local_injective prime associated_domain
   obtain ⟨_, element, annihilator⟩ := isAssociatedPrime_iff.mp associated
   have element_zero : map element.val = 0 := LinearMap.mem_ker.mp element.property
   have localized_zero : f prime element.val = 0 := by
@@ -83,11 +82,14 @@ theorem injective_of_forall_localization (map : M →ₗ[R] N)
       prime ∉ associatedPrimes R M) :
     Function.Injective map :=
   injective_of_forall_isLocalizedModule
+    map
     (fun prime _ ↦ LocalizedModule prime.primeCompl M)
     (fun prime _ ↦ LocalizedModule.mkLinearMap prime.primeCompl M)
     (fun prime _ ↦ LocalizedModule prime.primeCompl N)
     (fun prime _ ↦ LocalizedModule.mkLinearMap prime.primeCompl N)
-    map (fun prime _ ↦ LocalizedModule.map prime.primeCompl map)
-    (fun prime _ ↦ by ext; simp) local_injective
+    (fun prime _ ↦ LocalizedModule.map prime.primeCompl map)
+    (fun prime _ ↦ by ext; simp)
+    (fun prime _ associated =>
+      (local_injective prime).resolve_right (not_not.mpr associated))
 
 end LinearMap
