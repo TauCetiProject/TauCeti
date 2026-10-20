@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicTopology.SimplicialSet.KanComplex
 public import Mathlib.Algebra.Category.Grp.Basic
 public import Mathlib.Algebra.Category.ModuleCat.Basic
+public import TauCeti.AlgebraicTopology.SimplicialSet.Basic
 
 /-!
 # Simplicial groups are Kan complexes
@@ -55,38 +56,6 @@ open CategoryTheory Simplicial
 
 namespace SSet
 
-/-! ### Simplicial identities with indices given by their values
-
-These restate Mathlib's simplicial identities with the indices given by their values, so that
-the inductive steps below can name indices such as `j - 1` directly. -/
-
-section Identities
-
-variable {X : SSet.{u}} {n : ℕ}
-
-private lemma δ_σ_of_lt (a : Fin (n + 3)) (b : Fin (n + 2)) (a' : Fin (n + 2)) (b' : Fin (n + 1))
-    (hab : a.val < b.val) (ha' : a'.val = a.val) (hb' : b'.val + 1 = b.val) (x : X _⦋n + 1⦌) :
-    X.δ a (X.σ b x) = X.σ b' (X.δ a' x) := by
-  obtain rfl : a = a'.castSucc := Fin.ext ha'.symm
-  obtain rfl : b = b'.succ := Fin.ext (by simpa using hb'.symm)
-  exact δ_comp_σ_of_le_apply (by rw [Fin.le_def]; simp at hab ⊢; omega) x
-
-private lemma δ_σ_of_gt (a : Fin (n + 3)) (b : Fin (n + 2)) (a' : Fin (n + 2)) (b' : Fin (n + 1))
-    (hab : b.val + 1 < a.val) (ha' : a'.val + 1 = a.val) (hb' : b'.val = b.val) (x : X _⦋n + 1⦌) :
-    X.δ a (X.σ b x) = X.σ b' (X.δ a' x) := by
-  obtain rfl : a = a'.succ := Fin.ext (by simpa using ha'.symm)
-  obtain rfl : b = b'.castSucc := Fin.ext hb'.symm
-  exact δ_comp_σ_of_gt_apply (by rw [Fin.lt_def]; simp at hab ⊢; omega) x
-
-private lemma δ_δ_of_lt (a b : Fin (n + 3)) (a' b' : Fin (n + 2)) (hab : a.val < b.val)
-    (ha' : a'.val = a.val) (hb' : b'.val + 1 = b.val) (x : X _⦋n + 2⦌) :
-    X.δ a' (X.δ b x) = X.δ b' (X.δ a x) := by
-  obtain rfl : a = a'.castSucc := Fin.ext ha'.symm
-  obtain rfl : b = b'.succ := Fin.ext (by simpa using hb'.symm)
-  exact δ_comp_δ_apply (by rw [Fin.le_def]; simp at hab ⊢; omega) x
-
-end Identities
-
 section Group
 
 variable {X : SSet.{u}} [∀ n, Group (X.obj n)]
@@ -129,11 +98,10 @@ private lemma exists_lower_step (b : Fin (m + 2)) (hbi : b.castSucc ≠ i)
   rcases lt_or_eq_of_le hjb with hjb | hjb
   · -- Below `b`, the correction is the degeneracy of a simplex with trivial `j`-th face.
     have hb₁ : b.val - 1 + 1 < m + 2 := by omega
-    rw [δ_mul_σ_inv_mul hX
-      (δ_σ_of_lt j b ⟨j.val, by omega⟩ ⟨b.val - 1, by omega⟩ hjb rfl (by simp; omega)) ?_,
-      hw j hj hjb]
-    rw [δ_δ_of_lt j b.castSucc ⟨j.val, by omega⟩ ⟨b.val - 1, by omega⟩ hjb rfl (by simp; omega),
-      hw j hj hjb]
+    rw [δ_mul_σ_inv_mul hX (δ_comp_σ_of_val_lt_apply j b ⟨j.val, by omega⟩ ⟨b.val - 1, by omega⟩
+      hjb rfl (by simp; omega)) ?_, hw j hj hjb]
+    rw [δ_comp_δ_of_val_lt_apply j b.castSucc ⟨j.val, by omega⟩ ⟨b.val - 1, by omega⟩ hjb rfl
+      (by simp; omega), hw j hj hjb]
     exact hy j b.castSucc hj hbi ⟨b.val - 1, by omega⟩ ⟨j.val, by omega⟩ hjb (by simp; omega) rfl
   · obtain rfl : j = b.castSucc := Fin.ext hjb
     rw [δ_mul hX, δ_comp_σ_self_apply, mul_inv_cancel_left]
@@ -148,18 +116,17 @@ private lemma exists_upper_step (b : Fin (m + 2)) (hbi : b.succ ≠ i) (hb : i.v
   refine ⟨w * X.σ b ((X.δ b.succ w)⁻¹ * y b.succ hbi), fun j hj hji => ?_, fun j hj hbj => ?_⟩
   · -- Below `i`, the correction is the degeneracy of a simplex with trivial `j`-th face.
     have hjb : j.val < b.val := by omega
-    rw [δ_mul_σ_inv_mul hX
-      (δ_σ_of_lt j b ⟨j.val, by omega⟩ ⟨b.val - 1, by omega⟩ hjb rfl (by simp; omega)) ?_,
+    rw [δ_mul_σ_inv_mul hX (δ_comp_σ_of_val_lt_apply j b ⟨j.val, by omega⟩ ⟨b.val - 1, by omega⟩
+      hjb rfl (by simp; omega)) ?_, hlow j hj hji]
+    rw [δ_comp_δ_of_val_lt_apply j b.succ ⟨j.val, by omega⟩ b (by simp; omega) rfl (by simp),
       hlow j hj hji]
-    rw [δ_δ_of_lt j b.succ ⟨j.val, by omega⟩ b (by simp; omega) rfl (by simp), hlow j hj hji]
     exact hy j b.succ hj hbi b ⟨j.val, by omega⟩ (by simp; omega) (by simp) rfl
   · rcases lt_or_eq_of_le (Nat.succ_le_of_lt hbj) with hbj | hbj
     · -- Above `b.succ`, the correction is the degeneracy of a simplex with trivial face.
-      rw [δ_mul_σ_inv_mul hX
-        (δ_σ_of_gt j b ⟨j.val - 1, by omega⟩ ⟨b.val, by omega⟩ hbj (by simp; omega) rfl) ?_,
-        hup j hj hbj]
-      rw [← δ_δ_of_lt b.succ j ⟨b.val + 1, by omega⟩ ⟨j.val - 1, by omega⟩ (by simpa using hbj)
-        (by simp) (by simp; omega), hup j hj hbj]
+      rw [δ_mul_σ_inv_mul hX (δ_comp_σ_of_val_gt_apply j b ⟨j.val - 1, by omega⟩
+        ⟨b.val, by omega⟩ hbj (by simp; omega) rfl) ?_, hup j hj hbj]
+      rw [← δ_comp_δ_of_val_lt_apply b.succ j ⟨b.val + 1, by omega⟩ ⟨j.val - 1, by omega⟩
+        (by simpa using hbj) (by simp) (by simp; omega), hup j hj hbj]
       exact (hy b.succ j hbi hj ⟨j.val - 1, by omega⟩ ⟨b.val + 1, by omega⟩
         (by simpa using hbj) (by simp; omega) (by simp)).symm
     · obtain rfl : j = b.succ := Fin.ext (by simpa using hbj.symm)
