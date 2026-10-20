@@ -236,8 +236,10 @@ theorem padicCompletionUnitsNormCokernelEquiv_mk [Fact p.Prime] (hpK : (p : K) �
     (hm : (Nat.card (Abelianization Gal(L/K))).factorization p ≤ m)
     (x : Additive ↑(padicCompletionUnits p K)) :
     padicCompletionUnitsNormCokernelEquiv p K L hpK hm (QuotientAddGroup.mk x) =
-      padicCompletionUnitsNormResidue p K L m x :=
-  (rfl)
+      padicCompletionUnitsNormResidue p K L m x := by
+  simp only [padicCompletionUnitsNormCokernelEquiv, AddEquiv.trans_apply,
+    QuotientAddGroup.quotientAddEquivOfEq_mk, QuotientAddGroup.quotientKerEquivOfSurjective,
+    QuotientAddGroup.quotientKerEquivOfRightInverse_apply, QuotientAddGroup.kerLift_mk]
 
 /-- **The order of the cokernel of the completed norm** `A(L) → A(K)` is the full power of `p`
 dividing `#Gal(L/K)^ab = [Kˣ : N_{L/K}(Lˣ)]`. -/
