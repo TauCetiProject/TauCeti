@@ -194,8 +194,8 @@ theorem indCyclicCoprimeK0_perm_fin_three_zmod_two_eq_range_alternating :
   · have hcyclic : IsCyclic A := isCyclic_of_prime_card (p := 3)
       card_alternatingGroup_fin_three
     rintro _ ⟨y, rfl⟩
-    exact indK0_mem_indClassesK0 k ⟨hcyclic, by
-      rw [card_alternatingGroup_fin_three]; decide⟩ y
+    exact indK0_mem_indCyclicCoprimeK0 k hcyclic (by
+      rw [card_alternatingGroup_fin_three]; decide) y
 
 /-- The prime-to-two cyclic induction subgroup of S₃ over 𝔽₂ is precisely `2 · G₀`.
 Here multiplication by two is in the integral Grothendieck group, not in the coefficient field. -/

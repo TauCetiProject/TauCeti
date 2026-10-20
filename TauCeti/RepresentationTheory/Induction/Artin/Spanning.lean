@@ -79,8 +79,7 @@ theorem modularArtin_natCard_nsmul_mem_indCyclicCoprime
   obtain ⟨a, ha⟩ := exists_linearCombination_indK0_resK0_eq_natCard_nsmul (k := k) (G := G) p
   rw [← ha x, Finsupp.linearCombination_apply]
   refine AddSubgroup.sum_mem _ fun D _ ↦ AddSubgroup.zsmul_mem _ ?_ _
-  exact indK0_mem_indClassesK0 k
-    ⟨D.property.1, (Fact.out : p.Prime).coprime_iff_not_dvd.2 D.property.2⟩ _
+  exact indK0_mem_indCyclicCoprimeK0_of_not_dvd k D.property.1 D.property.2 _
 
 /-- **The modular Artin induction theorem** (NSW (7.3.4), Milne ADT I Lemma 2.10). In
 characteristic `p`, every class in `G₀(k[G])` has a positive multiple in

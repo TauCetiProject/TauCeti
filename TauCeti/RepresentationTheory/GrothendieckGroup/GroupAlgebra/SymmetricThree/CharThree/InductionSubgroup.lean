@@ -123,8 +123,8 @@ theorem mem_indCyclicCoprimeK0_perm_fin_three_char_three_iff (x : K₀) :
       (mem_range_indK0_stabilizer_perm_fin_three_char_three_iff k 0 x).mpr hx
     have hcard : Nat.card (MulAction.stabilizer G (0 : Fin 3)) = 2 :=
       card_stabilizer_perm_fin_three 0
-    exact indK0_mem_indClassesK0 k
-      ⟨isCyclic_of_prime_card (p := 2) hcard, by rw [hcard]; decide⟩ y
+    exact indK0_mem_indCyclicCoprimeK0 k (isCyclic_of_prime_card (p := 2) hcard)
+      (by rw [hcard]; decide) y
 
 /-- The induction subgroup is the kernel of dimension reduced modulo three. Thus its
 quotient records exactly the dimension obstruction to prime-to-three cyclic induction. -/
