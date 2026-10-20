@@ -12,6 +12,7 @@ import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
 import Mathlib.RingTheory.PowerSeries.Ideal
 import TauCeti.Algebra.Module.LocalizedModule.Submodule
 import TauCeti.NumberTheory.Padics.PowerSeriesIdeal
+import TauCeti.RingTheory.Finiteness.Finsupp
 import TauCeti.RingTheory.Localization.Module
 import TauCeti.RingTheory.Support
 
@@ -151,36 +152,8 @@ theorem IsPseudoIsomorphism.comp [IsNoetherianRing A] {f : M →ₗ[A] N} {g : N
       Function.Bijective (LocalizedModule.map 𝔭.asIdeal.primeCompl (g ∘ₗ f)) := by
     rw [LocalizedModule.map_comp, LinearMap.coe_comp]
     exact (hg.bijective_localizedModule_map 𝔭 h𝔭).comp (hf.bijective_localizedModule_map 𝔭 h𝔭)
-  refine ⟨⟨?_, fun 𝔭 h𝔭 ↦ ?_⟩, ⟨?_, fun 𝔭 h𝔭 ↦ ?_⟩⟩
-  · -- The kernel of `g ∘ f` is an extension of a submodule of `ker g` by `ker f`.
-    refine Module.Finite.iff_fg.mpr (Submodule.fg_of_fg_map_of_fg_inf_ker f ?_ ?_)
-    · refine (Module.Finite.iff_fg.mp ‹Module.Finite A (LinearMap.ker g)›).of_le ?_
-      rintro _ ⟨m, hm, rfl⟩
-      exact hm
-    · rw [inf_eq_right.mpr fun m hm ↦ by simp [LinearMap.mem_ker.mp hm]]
-      exact Module.Finite.iff_fg.mp inferInstance
+  refine ⟨⟨.ker_comp f g, fun 𝔭 h𝔭 ↦ ?_⟩, ⟨.quotient_range_comp f g, fun 𝔭 h𝔭 ↦ ?_⟩⟩
   · exact (LinearMap.localizedMap_injective_iff_subsingleton_localized_ker _ _).mp (hloc 𝔭 h𝔭).1
-  · -- The cokernel of `g ∘ f` is an extension of `coker g` by a quotient of `coker f`.
-    have hle : LinearMap.range (g ∘ₗ f) ≤ LinearMap.range g := LinearMap.range_comp_le_range f g
-    refine Module.Finite.of_exact (f := (LinearMap.range f).mapQ _ g fun n hn ↦ ?_)
-      (g := Submodule.factor hle) ?_ (Submodule.factor_surjective hle)
-    · obtain ⟨m, rfl⟩ := hn
-      exact ⟨m, rfl⟩
-    · rw [LinearMap.exact_iff]
-      ext x
-      obtain ⟨x, rfl⟩ := Submodule.mkQ_surjective _ x
-      simp only [LinearMap.mem_ker, Submodule.factor, Submodule.mapQ_apply, LinearMap.id_apply,
-        Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero, LinearMap.mem_range]
-      constructor
-      · rintro ⟨n, rfl⟩
-        exact ⟨Submodule.Quotient.mk n, rfl⟩
-      · rintro ⟨y, hy⟩
-        obtain ⟨n, rfl⟩ := Submodule.mkQ_surjective _ y
-        have hx : x - g n ∈ LinearMap.range (g ∘ₗ f) := by
-          rw [← Submodule.Quotient.eq]
-          simpa using hy.symm
-        obtain ⟨n', hn'⟩ := hle hx
-        exact ⟨n' + n, by rw [map_add, hn', sub_add_cancel]⟩
   · exact (LinearMap.localizedMap_surjective_iff_subsingleton_localized_coker _ _).mp
       (hloc 𝔭 h𝔭).2
 
