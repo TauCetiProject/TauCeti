@@ -236,6 +236,7 @@ class ExportTests(unittest.TestCase):
         with contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(facts.main(argv), 0)
         packed = (doc / facts.FACTS_NAME).read_bytes()
+        self.assertEqual((doc / facts.FACTS_NAME).stat().st_mode & 0o777, 0o644)
         with contextlib.redirect_stderr(io.StringIO()) as err:
             self.assertEqual(facts.main(argv), 1)
         self.assertIn("already exists", err.getvalue())

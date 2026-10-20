@@ -319,6 +319,9 @@ def write_once(path, data: bytes):
     try:
         with os.fdopen(fd, "wb") as out:
             out.write(data)
+            # mkstemp creates 0600, and the mode survives the cache into the Pages artifact, where a
+            # file not readable by others fails the whole deployment.
+            os.fchmod(out.fileno(), 0o644)
         os.rename(tmp, path)
     finally:
         pathlib.Path(tmp).unlink(missing_ok=True)
