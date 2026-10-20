@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.RieszMarkovKakutani.Real
+public import TauCeti.Topology.ContinuousMap.CompactlySupported
 
 /-!
 # The Riesz–Markov–Kakutani theorem for order-bounded functionals
@@ -60,22 +61,6 @@ namespace TauCeti.RealRMK
 
 variable {X : Type*} [TopologicalSpace X] {Λ : C_c(X, ℝ) →ₗ[ℝ] ℝ}
 
-section toReal
-
-private lemma toReal_zero : (0 : C_c(X, ℝ≥0)).toReal = 0 := by
-  ext x
-  simp
-
-private lemma toReal_le_toReal_iff {f g : C_c(X, ℝ≥0)} : f.toReal ≤ g.toReal ↔ f ≤ g := by
-  simp [le_def]
-
-private lemma toReal_nnrealPart_of_nonneg {f : C_c(X, ℝ)} (hf : 0 ≤ f) :
-    f.nnrealPart.toReal = f := by
-  ext x
-  simpa using le_def.1 hf x
-
-end toReal
-
 section Construction
 
 /-- The positive part of `Λ` on a nonnegative function `f`, the supremum of `Λ` over the
@@ -104,7 +89,7 @@ private lemma posPartAux_le {f : C_c(X, ℝ≥0)} {c : ℝ} (h : ∀ g ≤ f, Λ
   ciSup_le fun g => h g g.2
 
 private lemma posPartAux_nonneg (f : C_c(X, ℝ≥0)) : 0 ≤ posPartAux Λ f := by
-  simpa [toReal_zero] using apply_le_posPartAux hΛ (le_def.2 fun x => by simp : 0 ≤ f)
+  simpa using apply_le_posPartAux hΛ (le_def.2 fun x => by simp : 0 ≤ f)
 
 private lemma posPartAux_add (f₁ f₂ : C_c(X, ℝ≥0)) :
     posPartAux Λ (f₁ + f₂) = posPartAux Λ f₁ + posPartAux Λ f₂ := by
@@ -138,7 +123,7 @@ private lemma posPartAux_smul (c : ℝ≥0) (f : C_c(X, ℝ≥0)) :
   rcases eq_or_ne c 0 with rfl | hc
   · refine le_antisymm (posPartAux_le fun g hg => ?_) (by simpa using posPartAux_nonneg hΛ 0)
     have hg0 : g = 0 := le_antisymm (by simpa using hg) (le_def.2 fun x => by simp)
-    simp [hg0, toReal_zero]
+    simp [hg0]
   have hc₀ : (0 : ℝ) < c := by positivity
   refine le_antisymm (posPartAux_le fun g hg => ?_) ?_
   · -- `g = c • (c⁻¹ • g)` with `c⁻¹ • g ≤ f`.
