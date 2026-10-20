@@ -7,7 +7,9 @@ module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.CharacterCarry
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.LayerInvariant
+import TauCeti.NumberTheory.ClassFieldTheory.Formation.PrimeDegree
 import TauCeti.NumberTheory.ClassFieldTheory.Global.Cyclotomic.Input
+import TauCeti.NumberTheory.ClassFieldTheory.Global.PrimeDegreeDecomposition
 import TauCeti.NumberTheory.LocalField.Unramified.Existence
 import TauCeti.NumberTheory.NumberField.FinitePlace
 import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.Conjugation
@@ -69,6 +71,8 @@ that `NormalLayer.map_eq_zero_of_natCard_H2_dvd_degree` takes as input.
 * `TauCeti.ClassFieldTheory.exists_ideleSumLocalInv_eq_one_div_degree_of_isCyclic`: a cyclic layer
   `V ◁ G_K` whose decomposition group at some finite place is the whole Galois group carries a
   class whose local invariants sum to `1 / [G_K : V]`.
+* `TauCeti.ClassFieldTheory.exists_ideleSumLocalInv_eq_one_div_degree_of_prime`: every layer
+  `V ◁ G_K` of prime degree carries such a class.
 
 ## References
 
@@ -245,7 +249,7 @@ private theorem exists_sumLocalInv_ideleLocalization_eq_aux {E : Ω}
       hζ.pow_eq_one, one_mul]
   have hmem : τ ζ ∈ Ev := rootSet_subset_unramifiedExtension _ _ n <| by
     rw [Polynomial.mem_rootSet]
-    refine ⟨FiniteField.X_pow_card_pow_sub_X_ne_zero _ hn hq, ?_⟩
+    refine ⟨Polynomial.X_pow_sub_X_ne_zero (Nat.one_lt_pow hn hq), ?_⟩
     simp [hτζ]
   let ζv : Ev := ⟨τ ζ, hmem⟩
   have hζv : IsPrimitiveRoot ζv (Nat.card 𝓀[v.adicCompletion K] ^ n - 1) :=
@@ -494,5 +498,20 @@ theorem exists_ideleSumLocalInv_eq_one_div_degree_of_isCyclic
   -- `CharacterModule` is a semireducible definition for `A →+ AddCircle (1 : ℚ)`, so `hχ'` does
   -- not rewrite the goal, which is stated for the bundled homomorphism; it applies by `exact`.
   exact hχ'.trans (by rw [addOrderOf_ofMul_eq_orderOf, hof])
+
+/-- **A prime-degree layer over `K` carries a class of invariant `1 / [L : K]`.** The layer has a
+finite place of full local degree, and its Galois group is cyclic, so the prescribed-invariant
+construction applies at that place. -/
+theorem exists_ideleSumLocalInv_eq_one_div_degree_of_prime
+    (V : OpenNormalSubgroup (AbsoluteGaloisGroup K))
+    (hV : (NormalLayer.ofOpenNormal V).degree.Prime) :
+    ∃ y : (NormalLayer.ofOpenNormal V).H (ideleFormation K) 2,
+      ideleSumLocalInv K (NormalLayer.ofOpenNormal V) y =
+        ((1 / (NormalLayer.ofOpenNormal V).degree : ℚ) : AddCircle (1 : ℚ)) := by
+  let _ : IsCyclic (NormalLayer.ofOpenNormal V).Gal :=
+    NormalLayer.isCyclic_gal_of_prime_degree hV
+  obtain ⟨v, τ, hτ⟩ :=
+    OpenNormalSubgroup.exists_surjective_quotient_absoluteGaloisGroupMap_of_degree_prime V hV
+  exact exists_ideleSumLocalInv_eq_one_div_degree_of_isCyclic V τ hτ
 
 end TauCeti.ClassFieldTheory

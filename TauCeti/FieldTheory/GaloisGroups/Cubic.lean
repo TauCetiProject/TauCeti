@@ -34,6 +34,10 @@ prime.
 * `TauCeti.hasGaloisLabel_three_zero_iff`, `TauCeti.hasGaloisLabel_three_one_iff`: **the
   discriminant decides the label of a cubic**, `3T1` for a square discriminant and `3T2`
   otherwise.
+* `TauCeti.range_galActionHom_X_pow_three_sub_three_mul_X_sub_one_le_alternatingGroup`,
+  `TauCeti.not_range_galActionHom_X_pow_three_sub_two_le_alternatingGroup`: the discriminant test
+  on the two examples, before any classification: the Galois image of `X³ - 3X - 1` is even and
+  that of `X³ - 2` is not.
 * `TauCeti.hasGaloisLabel_X_pow_three_sub_three_mul_X_sub_one`: `X³ - 3X - 1` over `ℚ` has label
   `3T1`, and `TauCeti.natCard_gal_X_pow_three_sub_three_mul_X_sub_one`: its Galois group has
   order `3`.
@@ -153,6 +157,47 @@ theorem irreducible_X_pow_three_sub_two : Irreducible (X ^ 3 - 2 : ℚ[X]) := by
       revert y
       decide
   simpa using this
+
+/-! The two discriminants agree with `Cubic.discr`, computed from its closed formula
+`b²c² - 4ac³ - 4b³d - 27a²d² + 18abcd`, as `Cubic.toPoly_discr` predicts. -/
+
+example : (⟨1, 0, -3, -1⟩ : Cubic ℚ).discr = (X ^ 3 - 3 * X - 1 : ℚ[X]).discr := by
+  rw [discr_X_pow_three_sub_three_mul_X_sub_one, Cubic.discr]
+  norm_num
+
+example : (⟨1, 0, 0, -2⟩ : Cubic ℚ).discr = (X ^ 3 - 2 : ℚ[X]).discr := by
+  rw [discr_X_pow_three_sub_two, Cubic.discr]
+  norm_num
+
+section Parity
+
+variable (E : Type*) [Field E] [Algebra ℚ E]
+
+open scoped Classical in
+/-- **The Galois image of `X³ - 3X - 1` consists of even permutations**, in any extension in which
+the cubic splits: its discriminant `81 = 9²` is a square. -/
+theorem range_galActionHom_X_pow_three_sub_three_mul_X_sub_one_le_alternatingGroup
+    [Fact (((X ^ 3 - 3 * X - 1 : ℚ[X]).map (algebraMap ℚ E)).Splits)] :
+    (Gal.galActionHom (X ^ 3 - 3 * X - 1 : ℚ[X]) E).range ≤
+      alternatingGroup ((X ^ 3 - 3 * X - 1 : ℚ[X]).rootSet E) := by
+  rw [← Gal.sign_eq_one_iff_range_le_alternatingGroup, ← Monic.isSquare_discr_iff_sign_eq_one
+    (by monicity!) irreducible_X_pow_three_sub_three_mul_X_sub_one.separable (by simp),
+    discr_X_pow_three_sub_three_mul_X_sub_one]
+  exact ⟨9, by norm_num⟩
+
+open scoped Classical in
+/-- **The Galois image of `X³ - 2` contains an odd permutation**, in any extension in which the
+cubic splits: its discriminant `-108` is negative, hence not a square in `ℚ`. -/
+theorem not_range_galActionHom_X_pow_three_sub_two_le_alternatingGroup
+    [Fact (((X ^ 3 - 2 : ℚ[X]).map (algebraMap ℚ E)).Splits)] :
+    ¬ (Gal.galActionHom (X ^ 3 - 2 : ℚ[X]) E).range ≤
+      alternatingGroup ((X ^ 3 - 2 : ℚ[X]).rootSet E) := by
+  rw [← Gal.sign_eq_one_iff_range_le_alternatingGroup, ← Monic.isSquare_discr_iff_sign_eq_one
+    (by monicity!) irreducible_X_pow_three_sub_two.separable (by simp), discr_X_pow_three_sub_two]
+  rintro ⟨r, hr⟩
+  nlinarith [mul_self_nonneg r]
+
+end Parity
 
 /-- **`X³ - 3X - 1` has label `3T1`**: its Galois group over `ℚ` is cyclic of order three. -/
 theorem hasGaloisLabel_X_pow_three_sub_three_mul_X_sub_one :

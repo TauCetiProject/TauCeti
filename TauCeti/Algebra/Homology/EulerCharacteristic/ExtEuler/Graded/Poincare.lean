@@ -38,6 +38,7 @@ large `b` (`TauCeti.diagonalExtPoincarePolynomial_eq_of_le` and
 
 * `TauCeti.bigradedExtPoincareSeries`: the complete truncated bigraded dimension of Ext, with
   its defining double sum `TauCeti.bigradedExtPoincareSeries_def`.
+* `TauCeti.bigradedExtPoincareMatrix`: the full bigraded Ext Poincaré matrix of a family.
 * `TauCeti.isDiagonal_bigradedExtPoincareSeries_iff`: diagonal support is equivalent to
   off-diagonal Ext-vanishing when the truncation is a vanishing bound.
 * `TauCeti.diagonalExtPoincarePolynomial` and `TauCeti.diagonalExtPoincareMatrix`: the
@@ -60,7 +61,7 @@ universe w v uk uA u v' t
 section Bigraded
 
 variable {C : Type u} [Category.{v'} C] [Abelian C]
-  {k : Type t} [Field k] [Linear k C] [HasExt.{w} C] {e : C ≌ C} {X Y : C}
+  {k : Type t} [Field k] [Linear k C] [HasExt.{w} C] {e : C ≌ C} {X Y : C} {I : Type*}
 
 variable (k e) in
 /-- The **bigraded Ext Poincaré series** of two objects, truncated below cohomological
@@ -157,6 +158,32 @@ theorem isDiagonal_bigradedExtPoincareSeries_iff (h : IsGradedExtInternallyFinit
       | ofNat n => exact (hm (Int.natCast_nonneg n)).elim
       | negSucc n =>
           rw [coeff_bigradedExtPoincareSeries_negSucc]
+
+variable (S : I → C) in
+/-- The **full bigraded Ext Poincaré matrix** of a family, truncated below a common
+cohomological degree `b`. Its `(i,j)` entry records all dimensions
+`dim_k Ext^n(S_i,S_j{p})`, not only the diagonal terms `n = p`. -/
+noncomputable def bigradedExtPoincareMatrix
+    (h : ∀ i j, IsGradedExtInternallyFinite.{w} k e (S i) (S j))
+    (b : ℕ) : Matrix I I Bigraded.Series :=
+  fun i j ↦ bigradedExtPoincareSeries.{w} k e (h i j) b
+
+/-- An entry of the full bigraded Ext Poincaré matrix is the bigraded Ext Poincaré series of the
+corresponding pair. -/
+@[simp]
+theorem bigradedExtPoincareMatrix_apply
+    (S : I → C) (h : ∀ i j, IsGradedExtInternallyFinite.{w} k e (S i) (S j))
+    (b : ℕ) (i j : I) :
+    bigradedExtPoincareMatrix S h b i j = bigradedExtPoincareSeries.{w} k e (h i j) b :=
+  (rfl)
+
+/-- Raising the common truncation degree past a common cohomological vanishing bound does not
+change the full bigraded Ext Poincaré matrix. -/
+theorem bigradedExtPoincareMatrix_eq_of_le
+    (S : I → C) (h : ∀ i j, IsGradedExtInternallyFinite.{w} k e (S i) (S j)) {b b' : ℕ}
+    (hb : ∀ i j, IsGradedExtBoundedBy.{w} e (S i) (S j) b) (hbb' : b ≤ b') :
+    bigradedExtPoincareMatrix S h b' = bigradedExtPoincareMatrix S h b :=
+  Matrix.ext fun i j ↦ bigradedExtPoincareSeries_eq_of_le (h i j) (hb i j) hbb'
 
 end Bigraded
 

@@ -677,6 +677,26 @@ theorem _root_.Module.Basis.hasWeakFDerivOn_of_forall {ι : Type*} [CompleteSpac
 
 end Basis
 
+/-- `Cᵏ` weak derivatives along an orthonormal basis assemble into a `Cᵏ` weak Fréchet
+derivative. Local integrability of `u` is needed separately when the basis is empty. -/
+theorem contDiffOn_sum_innerSL_and_hasWeakFDerivOn
+    {H ι : Type*} [NormedAddCommGroup H] [InnerProductSpace ℝ H]
+    [MeasurableSpace H] [OpensMeasurableSpace H] [Fintype ι]
+    {b : OrthonormalBasis ι ℝ H} {μ : Measure H} {Ω : Opens H}
+    {u : H → ℝ} {G : ι → H → ℝ} {k : ℕ∞ω}
+    (hG : ∀ i, ContDiffOn ℝ k (G i) Ω) (hu : LocallyIntegrableOn u Ω μ)
+    (hdG : ∀ i, HasWeakLineDerivOn μ Ω u (G i) (b i)) :
+    ContDiffOn ℝ k (fun x => ∑ i, G i x • innerSL ℝ (b i)) Ω ∧
+      HasWeakFDerivOn μ Ω u (fun x => ∑ i, G i x • innerSL ℝ (b i)) := by
+  classical
+  have hDb : ∀ i x, (∑ j, G j x • innerSL ℝ (b j)) (b i) = G i x := by
+    intro i x
+    simp [b.inner_eq_ite]
+  refine ⟨ContDiffOn.sum (fun i _ => (hG i).smul contDiffOn_const),
+    b.toBasis.hasWeakFDerivOn_of_forall hu ?_⟩
+  intro i
+  simpa only [OrthonormalBasis.coe_toBasis, hDb] using hdG i
+
 /-! ### Classical derivatives are weak derivatives
 
 This is where the measure has to be an additive Haar measure: integration by parts is available

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Distributions.Pareto
-public import TauCeti.Probability.PowerBias
+public import TauCeti.MeasureTheory.Measure.PowerBias
 import TauCeti.Probability.Distributions.Pareto.Basic
 
 /-!

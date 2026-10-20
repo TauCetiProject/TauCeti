@@ -1,0 +1,175 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Chart
+public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
+public import TauCeti.Geometry.Manifold.ExtChartAt
+public import TauCeti.Geometry.Manifold.VectorBundle.Tangent
+
+/-!
+# Differential forms on nested open subsets
+
+For open subsets `U ≤ W` of a manifold, a rough form on `W` restricts to `U` by pullback along the
+inclusion `TopologicalSpace.Opens.inclusion`. The differential of that inclusion is the identity of
+the model space, so restriction does not change the values of the form
+(`TauCeti.mpullback_inclusion_apply`), and the charts of `U` are restrictions of those of `W`, so
+the coordinate expressions agree near every point of `U`.
+
+Consequently regularity of forms is local (`TauCeti.contMDiffAt_mpullback_inclusion_iff`): a form
+on `W` is `C^n` as soon as its restrictions to the members of an open cover of `W` are
+(`TauCeti.IsSmoothForm.of_mpullback_inclusion`). Conversely, a form on `U` extends by zero to `W`
+(`TauCeti.RoughForm.extendByZero`), and the extension is `C^n` when it vanishes near every point
+of `W` outside `U` (`TauCeti.IsSmoothForm.extendByZero`); this applies in particular to the
+product of a form with a cut-off function (`TauCeti.IsSmoothForm.extendByZero_smul`).
+
+These are the gluing and cut-off steps of the Mayer–Vietoris sequence of de Rham cohomology.
+
+## References
+
+* John M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Chapters 14 and 17.
+-/
+
+public section
+
+noncomputable section
+
+open Set Filter TopologicalSpace Bundle
+open scoped Manifold Topology
+
+namespace TauCeti
+
+variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ}
+
+/-- Restricting a form to a smaller open subset does not change its value at any point. -/
+theorem mpullback_inclusion_apply {U W : Opens M} (h : U ≤ W) (γ : RoughForm I W F k) (x : U) :
+    mpullback I I (Opens.inclusion h) γ x = γ (Opens.inclusion h x) := by
+  ext v
+  rw [mpullback_apply]
+  simp only [Manifold.mfderiv_inclusion_apply]
+  rfl
+
+/-- The extension by zero of a rough form on an open subset `U` to an open subset `W`: it agrees
+with the form at the points of `W` lying in `U` and vanishes at the others. -/
+def RoughForm.extendByZero {U : Opens M} (W : Opens M) (ω : RoughForm I U F k) :
+    RoughForm I W F k := by
+  classical
+  exact fun x ↦ if hx : (x : M) ∈ U then ω ⟨x, hx⟩ else 0
+
+namespace RoughForm
+
+/-- The extension by zero agrees with the form on the smaller open subset. -/
+@[simp]
+theorem extendByZero_inclusion {U W : Opens M} (h : U ≤ W) (ω : RoughForm I U F k) (x : U) :
+    extendByZero W ω (Opens.inclusion h x) = ω x := by
+  simp only [extendByZero, Opens.inclusion]
+  exact dite_eq_left x.2
+
+/-- The extension by zero vanishes outside the smaller open subset. -/
+theorem extendByZero_apply_of_notMem {U W : Opens M} (ω : RoughForm I U F k)
+    {x : W} (hx : (x : M) ∉ U) : extendByZero W ω x = 0 := by
+  simp only [extendByZero]
+  exact dite_eq_right hx
+
+/-- Restricting the extension by zero recovers the original form. -/
+@[simp]
+theorem mpullback_inclusion_extendByZero {U W : Opens M} (h : U ≤ W) (ω : RoughForm I U F k) :
+    mpullback I I (Opens.inclusion h) (extendByZero W ω) = ω := by
+  funext x
+  rw [mpullback_inclusion_apply, extendByZero_inclusion]
+
+end RoughForm
+
+variable [IsManifold I 1 M]
+
+/-- Near the chart image of a point of an open subset `U ≤ W`, the coordinate expression of the
+restriction of a form on `W` agrees with that of the form itself. -/
+theorem RoughForm.inChartAt_mpullback_inclusion_eventuallyEq {U W : Opens M} (h : U ≤ W)
+    (γ : RoughForm I W F k) (x : U) :
+    (mpullback I I (Opens.inclusion h) γ).inChartAt x =ᶠ[𝓝[range I] (extChartAt I x x)]
+      γ.inChartAt (Opens.inclusion h x) := by
+  filter_upwards [extChartAt_target_mem_nhdsWithin x,
+    nhdsWithin_le_nhds (extChartAt_inclusion_symm_eventuallyEq (I := I) h x).eventually_nhds]
+    with z hz hev
+  have hev' : (extChartAt I (Opens.inclusion h x)).symm =ᶠ[𝓝 z]
+      Opens.inclusion h ∘ (extChartAt I x).symm := hev
+  have hmf : mfderivWithin 𝓘(ℝ, E) I (Opens.inclusion h ∘ (extChartAt I x).symm) (range I) z =
+      mfderivWithin 𝓘(ℝ, E) I (extChartAt I (Opens.inclusion h x)).symm (range I) z :=
+    (hev'.filter_mono nhdsWithin_le_nhds).symm.mfderivWithin_eq hev'.self_of_nhds.symm
+  rw [inChartAt_mpullback γ _ x hz ((contMDiff_inclusion h).mdifferentiableAt one_ne_zero), hmf,
+    ← Function.comp_apply (f := Opens.inclusion h), ← hev'.self_of_nhds]
+  ext v
+  exact (inChartAt_apply γ (Opens.inclusion h x) z v).symm
+
+/-- Regularity of a form at a point of an open subset is regularity of its restriction there. -/
+theorem contMDiffAt_mpullback_inclusion_iff {U W : Opens M} (h : U ≤ W) {n : WithTop ℕ∞}
+    (γ : RoughForm I W F k) (x : U) :
+    ContMDiffAt I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F)) n
+        (fun y ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) y (mpullback I I (Opens.inclusion h) γ y))
+        x ↔
+      ContMDiffAt I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F)) n
+        (fun y ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) y (γ y)) (Opens.inclusion h x) := by
+  have heq := RoughForm.inChartAt_mpullback_inclusion_eventuallyEq h γ x
+  have hpt : extChartAt I x x ∈ range I := mem_range_self _
+  refine ⟨fun hx ↦ contMDiffAt_form_of_contDiffWithinAt_inChartAt_self ?_,
+    fun hx ↦ contMDiffAt_form_of_contDiffWithinAt_inChartAt_self ?_⟩
+  · have hc := RoughForm.contDiffWithinAt_inChartAt _ hx.contMDiffWithinAt (s := univ)
+    rw [preimage_univ, univ_inter] at hc
+    rw [extChartAt_inclusion_self]
+    exact hc.congr_of_eventuallyEq heq.symm (heq.self_of_nhdsWithin hpt).symm
+  · have hc := RoughForm.contDiffWithinAt_inChartAt _ hx.contMDiffWithinAt (s := univ)
+    rw [preimage_univ, univ_inter, extChartAt_inclusion_self] at hc
+    exact hc.congr_of_eventuallyEq heq (heq.self_of_nhdsWithin hpt)
+
+/-- A form on an open subset `W` is `C^n` when its restrictions to the members of a family of open
+subsets of `W` covering it are `C^n`. -/
+theorem IsSmoothForm.of_mpullback_inclusion {W : Opens M} {ι : Type*} {U : ι → Opens M}
+    (hU : ∀ i, U i ≤ W) (hcover : ∀ x : W, ∃ i, (x : M) ∈ U i) {n : WithTop ℕ∞}
+    {γ : RoughForm I W F k}
+    (hγ : ∀ i, IsSmoothForm I n (mpullback I I (Opens.inclusion (hU i)) γ)) :
+    IsSmoothForm I n γ := by
+  rw [isSmoothForm_def]
+  intro x
+  obtain ⟨i, hi⟩ := hcover x
+  exact (contMDiffAt_mpullback_inclusion_iff (hU i) γ ⟨x, hi⟩).mp ((hγ i).contMDiff _)
+
+
+/-- The extension by zero of a `C^n` form on an open subset `U ≤ W` is `C^n`, provided it vanishes
+near every point of `W` outside `U`. -/
+theorem IsSmoothForm.extendByZero {U W : Opens M} (h : U ≤ W) {n : WithTop ℕ∞}
+    {ω : RoughForm I U F k} (hω : IsSmoothForm I n ω)
+    (hzero : ∀ x : W, (x : M) ∉ U → ∀ᶠ y in 𝓝 x, RoughForm.extendByZero W ω y = 0) :
+    IsSmoothForm I n (RoughForm.extendByZero W ω) := by
+  rw [isSmoothForm_def]
+  intro x
+  by_cases hx : (x : M) ∈ U
+  · refine (contMDiffAt_mpullback_inclusion_iff h _ ⟨x, hx⟩).mp ?_
+    rw [RoughForm.mpullback_inclusion_extendByZero]
+    exact hω.contMDiff _
+  · refine ((IsSmoothForm.zero (I := I) (M := W) (F := F) (k := k) n).contMDiff x)
+      |>.congr_of_eventuallyEq ?_
+    filter_upwards [hzero x hx] with y hy
+    rw [hy]
+    rfl
+
+/-- Multiplying a `C^n` form on an open subset `U ≤ W` by a `C^n` function on `W` that vanishes near
+every point of `W` outside `U`, and extending by zero, gives a `C^n` form on `W`. -/
+theorem IsSmoothForm.extendByZero_smul {U W : Opens M} (h : U ≤ W) {n : WithTop ℕ∞}
+    {ω : RoughForm I U F k} (hω : IsSmoothForm I n ω) {g : W → ℝ}
+    (hg : ContMDiff I 𝓘(ℝ) n g) (hzero : ∀ x : W, (x : M) ∉ U → ∀ᶠ y in 𝓝 x, g y = 0) :
+    IsSmoothForm I n
+      (RoughForm.extendByZero W fun y : U ↦ g (Opens.inclusion h y) • ω y) := by
+  refine (hω.fun_smul (hg.comp (contMDiff_inclusion h))).extendByZero h fun x hx ↦ ?_
+  filter_upwards [hzero x hx] with y hy
+  by_cases hyU : (y : M) ∈ U
+  · obtain ⟨y, rfl⟩ : ∃ y' : U, Opens.inclusion h y' = y := ⟨⟨y, hyU⟩, Subtype.ext rfl⟩
+    rw [RoughForm.extendByZero_inclusion]
+    exact (congrArg (· • ω y) hy).trans (zero_smul ℝ _)
+  · exact RoughForm.extendByZero_apply_of_notMem _ hyU
+
+end TauCeti

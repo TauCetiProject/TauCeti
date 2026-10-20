@@ -26,6 +26,8 @@ fewer than the unknowns, so Siegel's lemma gives a solution with small coefficie
 
 ## Main results
 
+* `TauCeti.card_piFinset_range`, `TauCeti.card_piFinset_range_le_two_pow`: the box has
+  `∏ i, (r i + 1) ≤ 2 ^ (∑ i, r i)` points.
 * `TauCeti.sum_range_exp_mul_div_sub_half_le`: Hoeffding's lemma on the grid
   `{0, 1 / r, …, 1}`, `∑ k ≤ r, exp (t (k / r - 1 / 2)) ≤ (r + 1) exp (t² / 8)`.
 * `TauCeti.card_filter_sum_div_le_mul_one_sub_le`: the count
@@ -59,6 +61,18 @@ public section
 open Finset Real
 
 namespace TauCeti
+
+/-- The box `∏ i, {0, …, r i}` has `∏ i, (r i + 1)` points. -/
+theorem card_piFinset_range {ι : Type*} [Fintype ι] [DecidableEq ι] (r : ι → ℕ) :
+    #(Fintype.piFinset fun i ↦ range (r i + 1)) = ∏ i, (r i + 1) := by
+  simp [Fintype.card_piFinset]
+
+/-- The box `∏ i, {0, …, r i}` has at most `2 ^ (∑ i, r i)` points. -/
+theorem card_piFinset_range_le_two_pow {ι : Type*} [Fintype ι] [DecidableEq ι] (r : ι → ℕ) :
+    #(Fintype.piFinset fun i ↦ range (r i + 1)) ≤ 2 ^ ∑ i, r i := by
+  rw [card_piFinset_range, ← prod_pow_eq_pow_sum]
+  gcongr with i
+  exact Nat.lt_two_pow_self
 
 /-- **Hoeffding's lemma on the grid `{0, 1 / r, …, 1}`.** For `r ≠ 0` and every real `t`, the
 exponential moment of the uniformly distributed centred point `k / r - 1 / 2` satisfies

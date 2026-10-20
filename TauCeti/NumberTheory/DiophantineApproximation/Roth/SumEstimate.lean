@@ -9,26 +9,35 @@ public import Mathlib.Algebra.BigOperators.Field
 public import Mathlib.Algebra.BigOperators.Intervals
 public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
+public import Mathlib.Algebra.Order.Chebyshev
 
 /-!
 # A lower bound for a sum of truncated linear terms
 
-For `k : ℕ` and `δ : ℝ` we prove
+For `k m : ℕ` with `m ≤ k + 1` and `δ : ℝ` we prove
 
-`(k + 1) * min (δ / 2) (δ ^ 2 / 2) ≤ ∑ i ∈ Finset.range (k + 1), max (δ - i / k) 0`,
+`m * min (δ / 2) (δ ^ 2 / 2) ≤ ∑ i ∈ Finset.range m, max (δ - i / k) 0`,
 
-where `i / k` is real division, so that `i / 0 = 0`. The left-hand side is `(k + 1) δ / 2` for
-`δ ≥ 1` and `(k + 1) δ² / 2` for `0 ≤ δ ≤ 1`.
+where `i / k` is real division, so that `i / 0 = 0`. The left-hand side is `m δ / 2` for
+`δ ≥ 1` and `m δ² / 2` for `0 ≤ δ ≤ 1`.
 
 This is the numerical estimate in the inductive step of Roth's lemma, which bounds the index
 of a multivariate polynomial at a point of large height. A Hasse derivative of order `l` in a
 variable of weight `k` lowers the index by at most `l / k`, so it keeps index at least
 `max (δ - l / k) 0` when the polynomial has index `δ`. The estimate bounds the sum of these
-lower bounds over `l = 0, …, k` from below by a quantity that is quadratic in `δ` for small `δ`.
+lower bounds over `l = 0, …, m - 1` from below by a quantity that is quadratic in `δ` for small
+`δ`. The number `m` of derivatives is one more than the degree of the polynomial in the
+variable, so it can be smaller than `k + 1`.
 
 ## Main results
 
 * `TauCeti.mul_min_le_sum_max_sub_div`: the lower bound above.
+
+## Implementation notes
+
+The case `m = k + 1` is Pottmeyer's computation. Since the terms decrease in `i`, Chebyshev's
+sum inequality `MonovaryOn.sum_mul_sum_le_card_mul_sum` shows that the average of the first `m`
+terms is at least the average of all `k + 1` terms, which gives the general case.
 
 ## References
 
@@ -58,10 +67,8 @@ private lemma succ_mul_sub_le_sum_max_sub_div {k N : ℕ} (hN : N ≤ k) (δ : �
         sum_le_sum_of_subset_of_nonneg (range_subset_range.2 (by omega))
           fun _ _ _ ↦ le_max_right _ _
 
-/-- **Pottmeyer, Lemma 3.4.8.** For `k : ℕ` and `δ : ℝ`, the positive parts of
-`δ - i / k` for `i = 0, …, k` sum to at least `(k + 1) * min (δ / 2) (δ ^ 2 / 2)`. Here `i / k`
-is real division, so for `k = 0` the sum is `max δ 0`. -/
-theorem mul_min_le_sum_max_sub_div (k : ℕ) (δ : ℝ) :
+/-- Lemma 3.4.8 for the full range `i = 0, …, k`. -/
+private lemma succ_mul_min_le_sum_max_sub_div (k : ℕ) (δ : ℝ) :
     (k + 1) * min (δ / 2) (δ ^ 2 / 2) ≤ ∑ i ∈ range (k + 1), max (δ - i / k) 0 := by
   rcases le_or_gt δ 0 with hδ | hδ
   · -- For `δ ≤ 0` the left-hand side is nonpositive and the sum is nonnegative.
@@ -93,5 +100,35 @@ theorem mul_min_le_sum_max_sub_div (k : ℕ) (δ : ℝ) :
       nlinarith [mul_nonneg (sub_nonneg.2 hN₂.le) (sub_nonneg.2 hN₁),
         mul_nonneg hδk (sub_nonneg.2 hδ₁.le)]
     nlinarith [min_le_right (δ / 2) (δ ^ 2 / 2)]
+
+/-- **Pottmeyer, Lemma 3.4.8.** For `k : ℕ`, `m ≤ k + 1` and `δ : ℝ`, the positive parts of
+`δ - i / k` for `i = 0, …, m - 1` sum to at least `m * min (δ / 2) (δ ^ 2 / 2)`. Here `i / k` is
+real division, so for `k = 0` the sum is `m * max δ 0`. -/
+theorem mul_min_le_sum_max_sub_div {k m : ℕ} (hm : m ≤ k + 1) (δ : ℝ) :
+    m * min (δ / 2) (δ ^ 2 / 2) ≤ ∑ i ∈ range m, max (δ - i / k) 0 := by
+  -- The terms decrease, so by Chebyshev's sum inequality the average of the first `m` of them
+  -- is at least the average of all `k + 1`, which `succ_mul_min_le_sum_max_sub_div` bounds.
+  set f : ℕ → ℝ := fun i ↦ max (δ - i / k) 0
+  set g : ℕ → ℝ := fun i ↦ if i < m then 1 else 0
+  have hf : Antitone f := fun i j hij ↦ max_le_max
+    (sub_le_sub_left (div_le_div_of_nonneg_right (by exact_mod_cast hij) k.cast_nonneg) δ) le_rfl
+  have hg : Antitone g := fun i j hij ↦ by
+    simp only [g]
+    split_ifs <;> first | (exfalso; omega) | norm_num
+  have hfilter : (range (k + 1)).filter (· < m) = range m := by
+    ext i
+    simp only [mem_filter, mem_range]
+    omega
+  have hcheb := ((Antitone.monovary hf hg).monovaryOn (range (k + 1))).sum_mul_sum_le_card_mul_sum
+  have hgsum : ∑ i ∈ range (k + 1), g i = m := by
+    simp [g, hfilter]
+  have hfg : ∑ i ∈ range (k + 1), f i * g i = ∑ i ∈ range m, f i := by
+    simp only [g, mul_ite, mul_one, mul_zero]
+    rw [← sum_filter, hfilter]
+  rw [card_range, hgsum, hfg] at hcheb
+  have hfull := succ_mul_min_le_sum_max_sub_div k δ
+  refine le_of_mul_le_mul_left ?_ (by positivity : (0 : ℝ) < k + 1)
+  push_cast at hcheb
+  nlinarith [mul_le_mul_of_nonneg_left hfull (Nat.cast_nonneg m : (0 : ℝ) ≤ m)]
 
 end TauCeti

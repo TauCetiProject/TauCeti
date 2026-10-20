@@ -29,6 +29,8 @@ unfolded by hand.
 * `UpperHalfPlane.num_sub_smul_mul_denom`: the difference formula
   `g • z - g • τ = det g · (z - τ) / ((cz + d)(cτ + d))` for `det g > 0`, with the denominator of
   `g • z` cleared.
+* `UpperHalfPlane.J_smul_re`, `UpperHalfPlane.J_smul_im`: the involution `J : z ↦ -conj z`
+  negates the real part and preserves the imaginary part.
 * `ModularGroup.sl_smul_set`: the `SL(2, ℤ)`-action on subsets of `ℍ` is the `GL(2, ℝ)`-action
   along the coercion, the pointwise-image counterpart of Mathlib's `ModularGroup.sl_moeb`.
 * `ModularGroup.smul_eq_smul_of_eq_or_eq_neg`: elements of `SL(2, ℤ)` that agree up to sign act
@@ -81,6 +83,16 @@ theorem _root_.Matrix.SpecialLinearGroup.toGL_smul (g : SL(2, ℝ)) (τ : ℍ) :
     ext i j
     simp [Matrix.SpecialLinearGroup.mapGL_coe_matrix]
   rw [MulAction.compHom_smul_def, h]
+
+/-- The orientation-reversing involution `J : z ↦ -conj z` negates the real part. -/
+@[simp]
+theorem J_smul_re (τ : ℍ) : (J • τ).re = -τ.re := by
+  rw [← coe_re, coe_J_smul, Complex.neg_re, Complex.conj_re, coe_re]
+
+/-- The orientation-reversing involution `J : z ↦ -conj z` preserves the imaginary part. -/
+@[simp]
+theorem J_smul_im (τ : ℍ) : (J • τ).im = τ.im := by
+  rw [← coe_im, coe_J_smul, Complex.neg_im, Complex.conj_im, neg_neg, coe_im]
 
 /-- A real linear combination `m z + n` of a point `z` of the upper half-plane and `1` vanishes only
 when both coefficients do, as `z` is not real: the `iff` form of `UpperHalfPlane.linear_ne_zero`. -/

@@ -83,6 +83,13 @@ theorem dirichletNormalize_eq_zero_of_sum_eq_zero {x : ι → ℝ} (hx : ∑ i, 
   ext i
   simp [dirichletNormalize, hx]
 
+/-- Multiplying every coordinate by the same nonzero scalar leaves normalization unchanged. -/
+@[simp]
+theorem dirichletNormalize_const_mul {c : ℝ} (hc : c ≠ 0) (x : ι → ℝ) :
+    dirichletNormalize (fun i ↦ c * x i) = dirichletNormalize x := by
+  ext i
+  simp only [dirichletNormalize_apply, ← Finset.mul_sum, mul_div_mul_left _ _ hc]
+
 /-- The coordinates of a normalized vector with nonzero total sum to one. -/
 theorem sum_dirichletNormalize {x : ι → ℝ} (hx : ∑ i, x i ≠ 0) :
     ∑ i, dirichletNormalize x i = 1 := by

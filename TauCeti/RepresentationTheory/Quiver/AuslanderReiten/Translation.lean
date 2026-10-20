@@ -15,7 +15,7 @@ For a quiver with finitely many paths, the Auslander–Reiten translate `D Tr` d
 partial map on the isomorphism classes of finite-dimensional indecomposables. It is undefined
 exactly at projective classes, and its defined values are non-injective classes.
 
-`irreducibleMorphismQuiver.translate_of_eq_some_of_iff` characterizes the partial map using any
+`IrreducibleMorphismQuiver.translate_of_eq_some_of_iff` characterizes the partial map using any
 representatives, so computations can use a convenient minimal presentation rather than the
 chosen representative of a skeleton class. This file does not establish an inverse translation
 or the mesh relation between arrows.
@@ -31,7 +31,7 @@ No algebraic closedness assumption is needed.
 
 public section
 
-namespace TauCeti.irreducibleMorphismQuiver
+namespace TauCeti.IrreducibleMorphismQuiver
 
 open CategoryTheory
 
@@ -42,18 +42,19 @@ variable {k : Type u} {Q : Type v} [Field k] [Quiver.{w} Q]
 
 /-- The partial Auslander–Reiten translation on isomorphism classes: `D Tr` away from
 projectives, and `none` on projectives. -/
-noncomputable def translate (a : irreducibleMorphismQuiver.{u, v, w, max u v w t} k Q) :
-    Option (irreducibleMorphismQuiver.{u, v, w, max u v w t} k Q) := by
+noncomputable def translate
+    (a : IrreducibleMorphismQuiver k (IsFinDim.{u, v, w, max u v w t} k Q)) :
+    Option (IrreducibleMorphismQuiver k (IsFinDim.{u, v, w, max u v w t} k Q)) := by
   classical
   exact if hp : Projective a.representative then none else
-    some (of (isFinDim_arTranslate.{u, v, w, t} k Q a.representative a.representative_property.1)
+    some (of k (isFinDim_arTranslate.{u, v, w, t} k Q a.representative a.representative_property.1)
       ((indecomposable_arTranslate_iff.{u, v, w, t} k Q a.representative a.representative_property.1
         a.representative_property.2).mpr hp))
 
 /-- Translation is undefined exactly at projective classes. -/
 @[simp]
 theorem translate_eq_none_iff
-    (a : irreducibleMorphismQuiver.{u, v, w, max u v w t} k Q) :
+    (a : IrreducibleMorphismQuiver k (IsFinDim.{u, v, w, max u v w t} k Q)) :
     translate.{u, v, w, t} a = none ↔ Projective a.representative := by
   classical
   by_cases hp : Projective a.representative <;> simp [translate, hp]
@@ -64,22 +65,22 @@ is projective. -/
 @[simp high]
 theorem translate_of_eq_none_iff {M : QuiverRep.{u, v, w, max u v w t} k Q}
     (hM : IsFinDim k Q M) (hI : Indecomposable M) :
-    translate.{u, v, w, t} (of hM hI) = none ↔ Projective M := by
+    translate.{u, v, w, t} (of k hM hI) = none ↔ Projective M := by
   rw [translate_eq_none_iff.{u, v, w, t}]
-  exact Projective.iso_iff (representativeIso hM hI)
+  exact Projective.iso_iff (representativeIso k hM hI)
 
 /-- Any representative computes translation: the class of a non-projective representation
 is sent to the class of its `D Tr` translate. -/
 theorem translate_of {M : QuiverRep.{u, v, w, max u v w t} k Q}
     (hM : IsFinDim k Q M) (hI : Indecomposable M) (hp : ¬ Projective M) :
-    translate.{u, v, w, t} (of hM hI) = some (of (isFinDim_arTranslate.{u, v, w, t} k Q M hM)
+    translate.{u, v, w, t} (of k hM hI) = some (of k (isFinDim_arTranslate.{u, v, w, t} k Q M hM)
       ((indecomposable_arTranslate_iff.{u, v, w, t} k Q M hM hI).mpr hp)) := by
   classical
-  have hrep : ¬ Projective (of hM hI).representative :=
-    fun h ↦ hp ((Projective.iso_iff (representativeIso hM hI)).mp h)
+  have hrep : ¬ Projective (of k hM hI).representative :=
+    fun h ↦ hp ((Projective.iso_iff (representativeIso k hM hI)).mp h)
   simp only [translate, dite_eq_right hrep, Option.some.injEq]
   apply (of_eq_of_iff _ _ _ _).mpr
-  exact nonempty_iso_arTranslate_of_iso.{u, v, w, t} _ _ _ _ (representativeIso hM hI)
+  exact nonempty_iso_arTranslate_of_iso.{u, v, w, t} _ _ _ _ (representativeIso k hM hI)
 
 /-- Translation of one class is another class exactly when the first is non-projective and
 its `D Tr` translate is isomorphic to a representative of the second. -/
@@ -87,7 +88,7 @@ its `D Tr` translate is isomorphic to a representative of the second. -/
 theorem translate_of_eq_some_of_iff {M N : QuiverRep.{u, v, w, max u v w t} k Q}
     (hM : IsFinDim k Q M) (hI : Indecomposable M)
     (hN : IsFinDim k Q N) (hJ : Indecomposable N) :
-    translate.{u, v, w, t} (of hM hI) = some (of hN hJ) ↔
+    translate.{u, v, w, t} (of k hM hI) = some (of k hN hJ) ↔
       ¬ Projective M ∧ Nonempty (arTranslate.{u, v, w, t} k Q M hM ≅ N) := by
   by_cases hp : Projective M
   · have hz := (translate_of_eq_none_iff.{u, v, w, t} hM hI).mpr hp
@@ -97,7 +98,7 @@ theorem translate_of_eq_some_of_iff {M N : QuiverRep.{u, v, w, max u v w t} k Q}
 
 /-- Every defined translation lands at a non-injective class. -/
 theorem not_injective_of_translate_eq_some
-    {a b : irreducibleMorphismQuiver.{u, v, w, max u v w t} k Q}
+    {a b : IrreducibleMorphismQuiver k (IsFinDim.{u, v, w, max u v w t} k Q)}
     (h : translate.{u, v, w, t} a = some b) : ¬ Injective b.representative := by
   have hp : ¬ Projective a.representative := by
     intro hp
@@ -108,11 +109,11 @@ theorem not_injective_of_translate_eq_some
   rw [of_representative, h, Option.some.injEq] at ha
   rw [ha]
   intro hi
-  have ht := Injective.of_iso (representativeIso
+  have ht := Injective.of_iso (representativeIso k
     (isFinDim_arTranslate.{u, v, w, t} k Q a.representative a.representative_property.1)
     ((indecomposable_arTranslate_iff.{u, v, w, t} k Q a.representative a.representative_property.1
       a.representative_property.2).mpr hp)) hi
   exact hp ((injective_arTranslate_iff.{u, v, w, t} k Q a.representative
     a.representative_property.1).mp ht)
 
-end TauCeti.irreducibleMorphismQuiver
+end TauCeti.IrreducibleMorphismQuiver
