@@ -49,9 +49,8 @@ example {κ : Type*} [DecidableEq κ] (c : κ) (hP : P.support.Nonempty) :
   have hQ₀ : Q₀.support = ∅ := by
     ext x
     simp [Q₀]
-  have hpar : (const c : Colored3Graph κ V).relDensityOn c P.support = 1 := by
-    rw [relDensityOn_def]
-    simp [hP.card_pos.ne']
+  have hpar : (const c : Colored3Graph κ V).relDensityOn c P.support = 1 :=
+    relDensityOn_const_self hP
   have := isTopRegularOverPolyad_one_iff.1 h c Q₀ (by simp [hQ₀])
   simp [hQ₀, relativeDensity_def, hpar, not_le.2 (zero_lt_one' ℝ)] at this
 
