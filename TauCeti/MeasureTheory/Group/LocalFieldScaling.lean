@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.Haar.Unique
 public import Mathlib.NumberTheory.LocalField.Basic
 import TauCeti.LinearAlgebra.FreeModule.CardQuotient
+import TauCeti.Topology.Algebra.ValuativeRel.AdicTopology
 
 /-!
 # Scaling of Haar measure on `ι → K` under integral matrices
@@ -27,6 +28,10 @@ same identity holds for every left-invariant measure, with no regularity hypothe
 set the measure `s ↦ μ (A '' s)` is again a Haar measure, so by uniqueness of Haar measure it is a
 constant multiple of `μ`, and the box computes the constant; this needs `μ` to be regular.
 
+Specializing to diagonal matrices gives the volume of a box of ideals: the box whose `i`-th factor
+is `𝓂[K] ^ e i` is the image of the integer box under the diagonal matrix with entries `ϖ ^ e i`,
+whose determinant is `ϖ ^ ∑ i, e i`, so it has `q ^ (-∑ i, e i)` times the measure of the box.
+
 These volumes are the change of variables in Serre's proof of his mass formula for totally
 ramified extensions, where `A` is the matrix of multiplication by an element of the ring of
 integers of an extension of `K` in an integral basis and `k` is the valuation of its norm.
@@ -37,8 +42,16 @@ integers of an extension of `K` in an integral basis and `k` is the valuation of
 
 ## Main results
 
+* `TauCeti.isOpen_integerBox`, `TauCeti.isCompact_integerBox`: the integer box is open and compact.
+* `TauCeti.univ_pi_image_maximalIdeal_pow_subset`,
+  `TauCeti.isClosed_univ_pi_image_maximalIdeal_pow`,
+  `TauCeti.measurableSet_univ_pi_image_maximalIdeal_pow`: boxes of ideal powers shrink as the
+  exponents grow, and are closed and measurable.
+
 * `MeasureTheory.Measure.measure_image_mulVec_integerBox`: for a left-invariant `μ`,
   the image of the integer box has measure `q ^ (-k)` times that of the box.
+* `MeasureTheory.Measure.measure_univ_pi_image_maximalIdeal_pow`: for a left-invariant `μ`
+  normalized on the integer box, the box with factors `𝓂[K] ^ e i` has volume `q ^ (-∑ i, e i)`.
 * `MeasureTheory.Measure.measure_image_mulVec_vadd_smul_integerBox`: the same for every
   ball `x +ᵥ c • ∏ i, 𝒪[K]` with `c ≠ 0`.
 * `MeasureTheory.Measure.addHaar_image_mulVec`: for a regular Haar measure `μ`,
@@ -61,13 +74,47 @@ variable {K : Type*} [Field K] [ValuativeRel K]
 
 variable (K) in
 /-- The integer box `∏ i, 𝒪[K]` of `ι → K`, on which Haar measure on `ι → K` is normalized. -/
-@[expose] noncomputable def integerBox (ι : Type*) : Set (ι → K) :=
+noncomputable def integerBox (ι : Type*) : Set (ι → K) :=
   univ.pi fun _ ↦ (𝒪[K] : Set K)
 
 /-- Membership in the integer box: every coordinate is integral. -/
 @[simp]
 theorem mem_integerBox {ι : Type*} {a : ι → K} : a ∈ integerBox K ι ↔ ∀ i, a i ∈ 𝒪[K] := by
   simp [integerBox]
+
+/-- The integer box is the product of copies of `𝒪[K]`. -/
+theorem integerBox_def {ι : Type*} : integerBox K ι = univ.pi fun _ ↦ (𝒪[K] : Set K) :=
+  (rfl)
+
+/-- Boxes of ideal powers shrink as the exponents grow. -/
+theorem univ_pi_image_maximalIdeal_pow_subset {ι : Type*} {e e' : ι → ℕ} (h : e' ≤ e) :
+    (univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ e i)) ⊆
+      univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ e' i) :=
+  pi_mono fun i _ ↦ image_mono <| Ideal.pow_le_pow_right (h i)
+
+variable [TopologicalSpace K] [IsNonarchimedeanLocalField K] {ι : Type*}
+
+/-- The integer box is open. -/
+theorem isOpen_integerBox [Finite ι] : IsOpen (integerBox K ι) := by
+  rw [integerBox_def]
+  exact isOpen_set_pi finite_univ fun _ _ ↦ Valuation.isOpen_integer
+
+/-- The integer box is compact. -/
+theorem isCompact_integerBox : IsCompact (integerBox K ι) := by
+  rw [integerBox_def]
+  exact isCompact_univ_pi fun _ ↦
+    isCompact_iff_compactSpace.2 (inferInstanceAs (CompactSpace 𝒪[K]))
+
+/-- A box of ideal powers is closed. -/
+theorem isClosed_univ_pi_image_maximalIdeal_pow (e : ι → ℕ) :
+    IsClosed (univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ e i)) :=
+  isClosed_set_pi fun i _ ↦ (isCompact_image_maximalIdeal_pow K (e i)).isClosed
+
+/-- A box of ideal powers is measurable. -/
+theorem measurableSet_univ_pi_image_maximalIdeal_pow [MeasurableSpace (ι → K)]
+    [OpensMeasurableSpace (ι → K)] (e : ι → ℕ) :
+    MeasurableSet (univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ e i)) :=
+  (isClosed_univ_pi_image_maximalIdeal_pow e).measurableSet
 
 end TauCeti
 
@@ -128,6 +175,35 @@ theorem measure_image_mulVec_integerBox (μ : Measure (ι → K)) [μ.IsAddLeftI
   have hq : (Nat.card 𝓀[K] : ℝ≥0∞) ^ k ≠ 0 := pow_ne_zero _ (by simp [Nat.card_pos.ne'])
   rw [← h, Nat.cast_pow, ← mul_assoc, one_div, ENNReal.inv_mul_cancel hq (by simp), one_mul]
 
+omit [DecidableEq ι] in
+/-- **The volume of a box of ideals**: for a left-invariant measure on `ι → K` normalized on the
+integer box, the box whose `i`-th factor is `𝓂[K] ^ e i` has volume `q ^ (-∑ i, e i)`, where
+`q = Nat.card 𝓀[K]`. -/
+theorem measure_univ_pi_image_maximalIdeal_pow (μ : Measure (ι → K)) [μ.IsAddLeftInvariant]
+    (hμ : μ (integerBox K ι) = 1) (e : ι → ℕ) :
+    μ (univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ e i)) =
+      1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ∑ i, e i := by
+  classical
+  -- The box is the image of the integer box under the diagonal matrix with entries `ϖ ^ e i`.
+  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
+  have h := measure_image_mulVec_integerBox μ hϖ (k := ∑ i, e i)
+    (A := Matrix.diagonal fun i ↦ ϖ ^ e i) (by rw [Matrix.det_diagonal, Finset.prod_pow_eq_pow_sum])
+  rw [hμ, mul_one, Matrix.diagonal_map (map_zero _)] at h
+  refine Eq.trans (congrArg μ ?_) h
+  rw [show (Matrix.diagonal fun i ↦ algebraMap 𝒪[K] K (ϖ ^ e i)).mulVec =
+      Pi.map fun i y ↦ algebraMap 𝒪[K] K (ϖ ^ e i) * y from
+    funext fun _ ↦ funext fun _ ↦ Matrix.mulVec_diagonal .., integerBox_def, piMap_image_univ_pi]
+  refine pi_congr rfl fun i _ ↦ ?_
+  rw [hϖ.maximalIdeal_eq, Ideal.span_singleton_pow]
+  ext x
+  constructor
+  · rintro ⟨c, hc, rfl⟩
+    obtain ⟨d, rfl⟩ := Ideal.mem_span_singleton.1 hc
+    exact ⟨d, d.2, by rw [Algebra.algebraMap_ofSubsemiring_apply, MulMemClass.coe_mul]⟩
+  · rintro ⟨y, hy, rfl⟩
+    exact ⟨ϖ ^ e i * ⟨y, hy⟩, Ideal.mem_span_singleton.2 (dvd_mul_right _ _),
+      by rw [Algebra.algebraMap_ofSubsemiring_apply, MulMemClass.coe_mul]⟩
+
 /-- **The scaling law on balls.** If the determinant of a square matrix `A` over `𝒪[K]` is
 associated to `ϖ ^ k` for a uniformizer `ϖ`, then for every left-invariant measure on `ι → K`,
 the image under `A` of the ball `x +ᵥ c • ∏ i, 𝒪[K]` (with `c ≠ 0`) has `q ^ (-k)` times the
@@ -184,11 +260,8 @@ theorem addHaar_image_mulVec (μ : Measure (ι → K)) [μ.IsAddHaarMeasure] [μ
   have hsmul := isAddLeftInvariant_eq_smul_of_regular (μ.map f) μ
   -- The constant is read off the integer box, which is compact and open.
   have hB0 : μ (integerBox K ι) ≠ 0 :=
-    (isOpen_set_pi finite_univ fun _ _ ↦ Valuation.isOpen_integer).measure_ne_zero μ
-      ⟨0, fun _ _ ↦ zero_mem _⟩
-  have hBtop : μ (integerBox K ι) ≠ ∞ :=
-    (isCompact_univ_pi fun _ ↦
-      isCompact_iff_compactSpace.2 (inferInstanceAs (CompactSpace 𝒪[K]))).measure_lt_top.ne
+    isOpen_integerBox.measure_ne_zero μ ⟨0, mem_integerBox.2 fun _ ↦ zero_mem _⟩
+  have hBtop : μ (integerBox K ι) ≠ ∞ := isCompact_integerBox.measure_lt_top.ne
   have hc : (addHaarScalarFactor (μ.map f) μ : ℝ≥0∞) = 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ k := by
     have h := measure_image_mulVec_integerBox μ hϖ hk
     rw [← hf, hsmul, Measure.smul_apply, ENNReal.smul_def, smul_eq_mul] at h
