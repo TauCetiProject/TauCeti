@@ -11,6 +11,7 @@ import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
+import TauCeti.Order.Partition.Finpartition
 
 /-!
 # Stepped counts and the cut discrepancy of a partition
@@ -97,34 +98,34 @@ theorem steppedCount_nonneg (A B : Finset V) : 0 ≤ G.steppedCount P A B := by
 
 /-- The stepped prediction never exceeds the number `#A * #B` of ordered pairs. -/
 theorem steppedCount_le_card_mul_card (A B : Finset V) : G.steppedCount P A B ≤ #A * #B := by
-  -- The traces of a set on the parts of `P` partition it.
-  have htrace (X : Finset V) : ∑ C ∈ P.parts, (#(X ∩ C) : ℝ) = #X := by
-    have h := P.sum_restrict (subset_univ X) (fun C ↦ (#C : ℝ)) (by simp)
-    rw [← Nat.cast_sum, Finpartition.sum_card_parts] at h
-    simp_rw [h, Finset.inf_eq_inter, inter_comm]
   calc G.steppedCount P A B ≤ ∑ C ∈ P.parts, ∑ D ∈ P.parts, (#(A ∩ C) : ℝ) * #(B ∩ D) := by
         rw [steppedCount_def]
         gcongr with C _ D _
         exact mul_le_of_le_one_left (by positivity) (mod_cast G.edgeDensity_le_one C D)
-    _ = #A * #B := by rw [← sum_mul_sum, htrace, htrace]
+    _ = #A * #B := by
+        rw [← sum_mul_sum, ← Nat.cast_sum, ← Nat.cast_sum, P.sum_card_inter_parts (subset_univ A),
+          P.sum_card_inter_parts (subset_univ B)]
+
+/-- The number of edges from `A` to `B` splits along the traces of the parts of `P` on `A` and
+on `B`. -/
+theorem card_interedges_eq_sum_parts (A B : Finset V) :
+    #(G.interedges A B) = ∑ C ∈ P.parts, ∑ D ∈ P.parts, #(G.interedges (A ∩ C) (B ∩ D)) := by
+  -- `G.interedges` is `Rel.interedges G.Adj`, as in Mathlib's own `SimpleGraph` density API.
+  have h : #(G.interedges A B) = ∑ X ∈ (P.restrict (subset_univ A)).parts,
+      ∑ Y ∈ (P.restrict (subset_univ B)).parts, #(G.interedges X Y) :=
+    (Rel.card_interedges_finpartition G.Adj _ _).trans (sum_product _ _ _)
+  rw [h, P.sum_restrict _ (fun X ↦ ∑ Y ∈ (P.restrict (subset_univ B)).parts,
+      #(G.interedges X Y)) (by simp)]
+  refine sum_congr rfl fun C _ ↦ ?_
+  rw [P.sum_restrict _ (fun Y ↦ #(G.interedges (C ⊓ A) Y)) (by simp [interedges_def])]
+  simp_rw [Finset.inf_eq_inter, inter_comm]
 
 /-- If `A` and `B` are unions of parts of `P`, the stepped prediction on `(A, B)` is the true
 number of edges from `A` to `B`. -/
 theorem steppedCount_eq_card_interedges {A B : Finset V}
     (hA : ∀ C ∈ P.parts, C ⊆ A ∨ Disjoint C A) (hB : ∀ D ∈ P.parts, D ⊆ B ∨ Disjoint D B) :
     G.steppedCount P A B = #(G.interedges A B) := by
-  -- Split the edge count along the traces of the parts on `A` and on `B`.
-  have hsplit : #(G.interedges A B) =
-      ∑ C ∈ P.parts, ∑ D ∈ P.parts, #(G.interedges (C ∩ A) (D ∩ B)) := by
-    -- `G.interedges` is `Rel.interedges G.Adj`, as in Mathlib's own `SimpleGraph` density API.
-    have h : #(G.interedges A B) = ∑ X ∈ (P.restrict (subset_univ A)).parts,
-        ∑ Y ∈ (P.restrict (subset_univ B)).parts, #(G.interedges X Y) :=
-      (Rel.card_interedges_finpartition G.Adj _ _).trans (sum_product _ _ _)
-    rw [h, P.sum_restrict _ (fun X ↦ ∑ Y ∈ (P.restrict (subset_univ B)).parts,
-        #(G.interedges X Y)) (by simp)]
-    refine sum_congr rfl fun C _ ↦ ?_
-    exact P.sum_restrict _ (fun Y ↦ #(G.interedges (C ⊓ A) Y)) (by simp [interedges_def])
-  rw [hsplit, steppedCount_def]
+  rw [G.card_interedges_eq_sum_parts P, steppedCount_def]
   push_cast
   refine sum_congr rfl fun C hC ↦ sum_congr rfl fun D hD ↦ ?_
   -- Each trace is either empty or the whole part, and a pair of whole parts is exact.
@@ -132,13 +133,12 @@ theorem steppedCount_eq_card_interedges {A B : Finset V}
   · rcases hB D hD with hDB | hDB
     · have hC₀ : (#C : ℝ) ≠ 0 := mod_cast (P.nonempty_of_mem_parts hC).card_ne_zero
       have hD₀ : (#D : ℝ) ≠ 0 := mod_cast (P.nonempty_of_mem_parts hD).card_ne_zero
-      rw [inter_eq_left.2 hCA, inter_eq_left.2 hDB, inter_eq_right.2 hCA, inter_eq_right.2 hDB,
-        edgeDensity_def]
+      rw [inter_eq_right.2 hCA, inter_eq_right.2 hDB, edgeDensity_def]
       push_cast
       field_simp
-    · rw [disjoint_iff_inter_eq_empty.1 hDB, inter_comm B, disjoint_iff_inter_eq_empty.1 hDB]
+    · rw [inter_comm B, disjoint_iff_inter_eq_empty.1 hDB]
       simp [interedges_def]
-  · rw [disjoint_iff_inter_eq_empty.1 hCA, inter_comm A, disjoint_iff_inter_eq_empty.1 hCA]
+  · rw [inter_comm A, disjoint_iff_inter_eq_empty.1 hCA]
     simp
 
 /-- The partition into singletons predicts every edge count exactly. -/
@@ -146,9 +146,7 @@ theorem steppedCount_eq_card_interedges {A B : Finset V}
 theorem steppedCount_bot (A B : Finset V) : G.steppedCount ⊥ A B = #(G.interedges A B) := by
   have h (X : Finset V) : ∀ C ∈ (⊥ : Finpartition (univ : Finset V)).parts,
       C ⊆ X ∨ Disjoint C X := by
-    simp only [Finpartition.parts_bot, mem_map, Function.Embedding.coeFn_mk, forall_exists_index,
-      and_imp, forall_apply_eq_imp_iff₂, singleton_subset_iff, disjoint_singleton_left]
-    exact fun a _ ↦ em _
+    simp [Finpartition.parts_bot, em]
   exact G.steppedCount_eq_card_interedges ⊥ (h A) (h B)
 
 /-- The one-part partition predicts the global edge density on every rectangle. -/
@@ -176,12 +174,14 @@ theorem abs_card_interedges_sub_steppedCount_le_cutDiscrepancy (A B : Finset V) 
   le_sup' (fun p : Finset V × Finset V ↦
     |(#(G.interedges p.1 p.2) : ℝ) - G.steppedCount P p.1 p.2|) (mem_univ (A, B))
 
+variable {G P} in
 /-- A bound on the cut discrepancy is exactly a bound on every rectangle deviation. -/
 theorem cutDiscrepancy_le_iff {c : ℝ} :
     G.cutDiscrepancy P ≤ c ↔
       ∀ A B : Finset V, |(#(G.interedges A B) : ℝ) - G.steppedCount P A B| ≤ c := by
   simp [cutDiscrepancy, Prod.forall]
 
+variable {G P} in
 /-- The cut discrepancy exceeds `c` exactly when some rectangle deviation does. -/
 theorem lt_cutDiscrepancy_iff {c : ℝ} :
     c < G.cutDiscrepancy P ↔
@@ -194,7 +194,7 @@ theorem cutDiscrepancy_nonneg : 0 ≤ G.cutDiscrepancy P :=
 
 /-- The cut discrepancy is at most the number `(card V) ^ 2` of ordered pairs of vertices. -/
 theorem cutDiscrepancy_le_card_sq : G.cutDiscrepancy P ≤ (Fintype.card V : ℝ) ^ 2 := by
-  refine (G.cutDiscrepancy_le_iff P).2 fun A B ↦ ?_
+  refine cutDiscrepancy_le_iff.2 fun A B ↦ ?_
   have hcount : (#(G.interedges A B) : ℝ) ≤ #A * #B := mod_cast G.card_interedges_le_mul A B
   have hstep := G.steppedCount_le_card_mul_card P A B
   have hnn := G.steppedCount_nonneg P A B
@@ -209,6 +209,6 @@ theorem cutDiscrepancy_le_card_sq : G.cutDiscrepancy P ≤ (Fintype.card V : ℝ
 /-- The partition into singletons has cut discrepancy `0`. -/
 @[simp]
 theorem cutDiscrepancy_bot : G.cutDiscrepancy ⊥ = 0 :=
-  le_antisymm ((G.cutDiscrepancy_le_iff ⊥).2 fun A B ↦ by simp) (G.cutDiscrepancy_nonneg ⊥)
+  le_antisymm (cutDiscrepancy_le_iff.2 fun A B ↦ by simp) (G.cutDiscrepancy_nonneg ⊥)
 
 end SimpleGraph
