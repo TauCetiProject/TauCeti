@@ -206,12 +206,11 @@ instance isSplitMono_iCycles_of_projective [Preadditive C]
   let π := cokernel.π (K.iCycles i)
   let s := Projective.factorThru (𝟙 _) π
   have hs : s ≫ π = 𝟙 _ := Projective.factorThru_comp _ _
+  let δ := cokernel.desc (K.iCycles i) (K.d i (c.next i)) (K.iCycles_d _ _)
+  have hδ : π ≫ δ = K.d i (c.next i) := cokernel.π_desc _ _ _
   -- The complementary projection lands in the kernel of the outgoing differential.
   let r := K.liftCycles (𝟙 _ - π ≫ s) (c.next i) rfl (by
-    rw [Preadditive.sub_comp, Category.id_comp, Category.assoc,
-      ← cokernel.π_desc (K.iCycles i) (K.d i (c.next i)) (K.iCycles_d _ _),
-      ← Category.assoc s, hs]
-    simp [π])
+    simp [Preadditive.sub_comp, ← hδ, Category.assoc, reassoc_of% hs])
   refine .mk' ⟨r, ?_⟩
   rw [← cancel_mono (K.iCycles i), Category.assoc, K.liftCycles_i]
   simp [Preadditive.comp_sub, π]
