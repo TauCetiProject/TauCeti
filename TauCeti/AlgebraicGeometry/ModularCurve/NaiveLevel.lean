@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.NaiveLevel
 public import TauCeti.AlgebraicGeometry.ModularCurve.HomLevel
 public import TauCeti.AlgebraicGeometry.Morphisms.Etale
 public import TauCeti.Data.ZMod.MonoidHomEquiv
+import TauCeti.Algebra.Algebra.NatCast
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.MulBy.Finite
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Rigidity
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Torsion.Etale.Locus
@@ -709,15 +710,13 @@ theorem hasProperty_surjective_naiveLevel (D : (naiveLevel B A).RelRepData) {N :
     (hψ : Function.Injective ψ) : D.HasProperty @Surjective := by
   refine (RelRepData.hasProperty_surjective_iff _).mpr fun X s ↦ ?_
   let L := AlgebraicClosure (X.base.residueField s)
-  let t : Spec (.of L) ⟶ X.base :=
-    Spec.map (CommRingCat.ofHom (algebraMap (X.base.residueField s) L)) ≫
-      X.base.fromSpecResidueField s
-  have hNL : (N : L) ≠ 0 := by
-    rw [← map_natCast (algebraMap (X.base.residueField s) L)]
-    exact (map_ne_zero _).mpr (X.structureMap.natCast_residueField_ne_zero (hN _))
+  let t : Spec (.of L) ⟶ X.base := X.base.fromSpecAlgebraicClosure s
+  have hNL : (N : L) ≠ 0 :=
+    (X.structureMap.natCast_residueField_ne_zero (x := s)
+      (hN _)).isUnit.natCast_ne_zero_of_algebra
   obtain ⟨φ, hφ⟩ := (X.curve.baseChange t).exists_isFiberwiseInjective hNL
   obtain ⟨p⟩ : Nonempty (Spec (.of L)) := inferInstance
-  exact ⟨Over.mk t, ⟨p, Scheme.fromSpecResidueField_apply s _⟩,
+  exact ⟨Over.mk t, ⟨p, Scheme.fromSpecAlgebraicClosure_apply _ _ p⟩,
     ⟨(naiveLevelEquiv _).symm ⟨φ.comp ψ, hφ.comp hψ⟩⟩⟩
 
 end Surjective
