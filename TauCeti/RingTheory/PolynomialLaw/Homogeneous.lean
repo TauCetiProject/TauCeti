@@ -7,8 +7,7 @@ module
 
 public import TauCeti.RingTheory.PolynomialLaw.Basic
 
-import Mathlib.Algebra.MvPolynomial.Basic
-import Mathlib.Algebra.Polynomial.Coeff
+import TauCeti.Algebra.MvPolynomial.AevalConstX
 import TauCeti.LinearAlgebra.End.ScalarExtension
 
 /-!
@@ -41,6 +40,10 @@ Homogeneous laws of degree `d` are the objects represented by the degree-`d` div
   recovered from `u.toPolynomialLaw` is `u`.
 * `PolynomialLaw.isHomogeneousOfDegree_one_iff`: a law is homogeneous of degree one if and only
   if it is the polynomial law `u.toPolynomialLaw` of a linear map `u`.
+* `LinearMap.range_toPolynomialLawₗ`: the polynomial laws of linear maps form
+  `homogeneousSubmodule R M N 1`.
+* `LinearMap.toPolynomialLawEquiv`: the linear equivalence between `M →ₗ[R] N` and
+  `homogeneousSubmodule R M N 1`.
 
 ## References
 
@@ -147,30 +150,6 @@ namespace PolynomialLaw
 variable {R : Type u} [CommSemiring R] {M N : Type*} [AddCommMonoid M] [Module R M]
   [AddCommMonoid N] [Module R N]
 
-open Polynomial in
-/-- The coefficient of `X` in `X • t`, for `t` in `S ⊗[R] N` viewed in `S[X] ⊗[R] N`, is `t`. -/
-private theorem rTensor_lcoeff_one_X_smul (S : Type*) [CommSemiring S] [Algebra R S]
-    (t : S ⊗[R] N) :
-    ((lcoeff S 1).restrictScalars R).rTensor N
-      ((X : S[X]) • (IsScalarTower.toAlgHom R S S[X]).toLinearMap.rTensor N t) = t := by
-  induction t using TensorProduct.inductionOn with
-  | tmul s n => simp [smul_tmul']
-  | add x y hx hy => simp_all [smul_add]
-
-open MvPolynomial in
-/-- For the substitution `Tᵢ ↦ aᵢ X` of `S[T₀, T₁]` into `S[X]`, the coefficient of `X` in the
-image of `p * Tᵢ` is `aᵢ` times the constant coefficient of `p`. -/
-private theorem coeff_one_aeval_mul_X (S : Type*) [CommSemiring S] (a : Fin 2 → S)
-    (p : MvPolynomial (Fin 2) S) (i : Fin 2) :
-    (aeval (fun j ↦ Polynomial.C (a j) * Polynomial.X) (p * X i)).coeff 1 =
-      constantCoeff p * a i := by
-  have hconst : (Polynomial.evalRingHom 0).comp
-      (aeval (R := S) fun j ↦ Polynomial.C (a j) * Polynomial.X).toRingHom = constantCoeff :=
-    ringHom_ext (by simp) (by simp)
-  rw [map_mul, aeval_X, ← mul_assoc, Polynomial.coeff_mul_X, Polynomial.coeff_mul_C,
-    Polynomial.coeff_zero_eq_eval_zero, ← Polynomial.coe_evalRingHom]
-  exact congr($hconst p * a i)
-
 namespace IsHomogeneousOfDegree
 
 variable {f : M →ₚₗ[R] N}
@@ -201,7 +180,7 @@ theorem toFun'_add (hf : f.IsHomogeneousOfDegree 1) (S : Type u) [CommSemiring S
         ← AlgHom.comp_toLinearMap, hψι, smul_add, smul_smul]
       simp [ψ, j, Polynomial.C_eq_algebraMap, mul_comm]
     rw [LinearMap.rTensor_comp_apply, isCompat_apply', hz, hf.toFun'_smul, pow_one,
-      ← isCompat_apply', rTensor_lcoeff_one_X_smul]
+      ← isCompat_apply', TauCeti.rTensor_lcoeff_one_X_smul]
   -- the coefficient of `X` is additive in the substituted values
   have hsum : c ∘ₗ (ψ ![1, 1]).toLinearMap =
       c ∘ₗ (ψ ![1, 0]).toLinearMap + c ∘ₗ (ψ ![0, 1]).toLinearMap := by
@@ -212,7 +191,7 @@ theorem toFun'_add (hf : f.IsHomogeneousOfDegree 1) (S : Type u) [CommSemiring S
     | mul_X p i _ =>
       simp only [LinearMap.add_apply, LinearMap.comp_apply, AlgHom.toLinearMap_apply, ψ, c,
         AlgHom.coe_restrictScalars', LinearMap.coe_restrictScalars, Polynomial.lcoeff_apply,
-        coeff_one_aeval_mul_X]
+        MvPolynomial.coeff_one_aeval_C_mul_X_mul_X]
       fin_cases i <;> simp
   have h := key ![1, 1]
   rw [hsum, LinearMap.rTensor_add, LinearMap.add_apply, key, key] at h
@@ -270,3 +249,40 @@ theorem LinearMap.toLinearMap_isHomogeneousOfDegree_toPolynomialLaw {R : Type u}
     (u : M →ₗ[R] N) : u.isHomogeneousOfDegree_toPolynomialLaw.toLinearMap = u := by
   ext m
   simp
+
+namespace LinearMap
+
+variable {R : Type u} [CommSemiring R] {M N : Type*} [AddCommMonoid M] [Module R M]
+  [AddCommMonoid N] [Module R N]
+
+variable (R M N) in
+/-- The polynomial laws of linear maps are exactly the laws homogeneous of degree one. -/
+theorem range_toPolynomialLawₗ :
+    range (toPolynomialLawₗ R M N) = PolynomialLaw.homogeneousSubmodule R M N 1 := by
+  ext f
+  simp [PolynomialLaw.isHomogeneousOfDegree_one_iff]
+
+variable (R M N) in
+/-- Linear maps `M →ₗ[R] N` correspond to polynomial laws homogeneous of degree one, through
+`LinearMap.toPolynomialLaw`, with inverse the ground map
+`PolynomialLaw.IsHomogeneousOfDegree.toLinearMap`. -/
+def toPolynomialLawEquiv : (M →ₗ[R] N) ≃ₗ[R] PolynomialLaw.homogeneousSubmodule R M N 1 where
+  toFun u := ⟨u.toPolynomialLaw, u.isHomogeneousOfDegree_toPolynomialLaw⟩
+  map_add' u v := Subtype.ext (toPolynomialLaw_add u v)
+  map_smul' r u := Subtype.ext (toPolynomialLaw_smul r u)
+  invFun f := (PolynomialLaw.mem_homogeneousSubmodule.mp f.2).toLinearMap
+  left_inv := toLinearMap_isHomogeneousOfDegree_toPolynomialLaw
+  right_inv f := Subtype.ext f.2.toPolynomialLaw_toLinearMap
+
+@[simp]
+theorem coe_toPolynomialLawEquiv_apply (u : M →ₗ[R] N) :
+    (toPolynomialLawEquiv R M N u : M →ₚₗ[R] N) = u.toPolynomialLaw :=
+  (rfl)
+
+@[simp]
+theorem toPolynomialLawEquiv_symm_apply (f : PolynomialLaw.homogeneousSubmodule R M N 1) :
+    (toPolynomialLawEquiv R M N).symm f =
+      (PolynomialLaw.mem_homogeneousSubmodule.mp f.2).toLinearMap :=
+  (rfl)
+
+end LinearMap

@@ -35,6 +35,8 @@ morphism of value algebras; the two are compatible in
 ## Main declarations
 
 * `TauCeti.rTensor_algHom_smul`: the comparison map is semilinear over `f`.
+* `TauCeti.rTensor_lcoeff_one_X_smul`: extending scalars from `S` to `S[X]` and multiplying by
+  `X`, the coefficient of `X` recovers the original element.
 * `Module.End.mapValue`: the transported endomorphism.
 * `Module.End.mapValue_comp_rTensor`: the defining transport square.
 * `Module.End.eq_mapValue`: the transport square characterizes the transport.
@@ -70,6 +72,15 @@ theorem rTensor_algHom_smul (f : A →ₐ[R] B) (a : A) (z : A ⊗[R] M) :
   | add x y hx hy => simp [smul_add, hx, hy]
 
 end Semiring
+
+open Polynomial in
+/-- The coefficient of `X` in `X • t`, for `t` in `S ⊗[R] M` viewed in `S[X] ⊗[R] M`, is `t`. -/
+theorem rTensor_lcoeff_one_X_smul (S : Type*) [CommSemiring S] [Algebra R S] (t : S ⊗[R] M) :
+    ((lcoeff S 1).restrictScalars R).rTensor M
+      ((X : S[X]) • (IsScalarTower.toAlgHom R S S[X]).toLinearMap.rTensor M t) = t := by
+  induction t using TensorProduct.inductionOn with
+  | tmul s m => simp [TensorProduct.smul_tmul']
+  | add x y hx hy => simp_all [smul_add]
 
 variable [CommSemiring A] [Algebra R A] [CommSemiring B] [Algebra R B]
 
