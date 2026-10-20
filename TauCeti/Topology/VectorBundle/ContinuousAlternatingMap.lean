@@ -60,6 +60,7 @@ theorem inCoordinates_compContinuousLinearMap {x₀ x : B₁} {y₀ y : B₂} {z
 
 /-- Coordinates of a fibrewise linear map, viewed as an alternating map of one variable, are the
 coordinates of the linear map, viewed in the same way. -/
+@[simp]
 theorem inCoordinates_ofSubsingleton [Subsingleton ι] (i : ι) {x₀ x : B₁} {y₀ y : B₂}
     (φ : V₁ x →L[𝕜] V₂ y) :
     inCoordinates F₁ F₂ x₀ x y₀ y (ofSubsingleton 𝕜 (V₁ x) (V₂ y) i φ) =

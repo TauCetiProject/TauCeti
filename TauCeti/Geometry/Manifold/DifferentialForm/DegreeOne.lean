@@ -30,6 +30,10 @@ derivative applies.
   linear-map bundle exactly when the corresponding degree-one form is `C^n`.
 * `TauCeti.SmoothBundleForm.degreeOneEquiv`: the linear equivalence between smooth degree-one
   forms and smooth sections of the bundle of fibrewise linear maps.
+* `TauCeti.isSmoothForm_ofSubsingleton_iff`, `TauCeti.SmoothForm.degreeOneEquiv`: the same
+  statements for fixed-coefficient forms. For `F = ℝ` the bundle of fibrewise linear maps is
+  `TauCeti.CotangentBundle I M`, so these identify smooth real one-forms with smooth sections of
+  the cotangent bundle.
 -/
 
 public section
@@ -111,5 +115,61 @@ theorem degreeOneEquiv_symm_apply_apply
   (rfl)
 
 end SmoothBundleForm
+
+/-- A family of linear functionals `TangentSpace I x →L[ℝ] F` is a `C^n` section of the bundle of
+linear maps exactly when the fixed-coefficient degree-one form it defines is `C^n`. For `F = ℝ`
+the total space of this bundle is `TauCeti.CotangentBundle I M`. -/
+theorem isSmoothForm_ofSubsingleton_iff {n : WithTop ℕ∞}
+    {α : (x : M) → TangentSpace I x →L[ℝ] F} :
+    IsSmoothForm I n (fun x ↦
+        ContinuousAlternatingMap.ofSubsingleton ℝ (TangentSpace I x) F (0 : Fin 1) (α x)) ↔
+      ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] F)) n (fun x ↦ TotalSpace.mk' (E →L[ℝ] F) x (α x)) := by
+  rw [isSmoothForm_def, ← isSmoothBundleForm_def]
+  exact isSmoothBundleForm_ofSubsingleton_iff
+
+namespace SmoothForm
+
+/-- Smooth `F`-valued one-forms are smooth sections of the bundle of linear maps
+`TangentSpace I x →L[ℝ] F`, through `ContinuousAlternatingMap.ofSubsingleton` on each fibre. For
+`F = ℝ` these are the smooth sections of `TauCeti.CotangentBundle I M`. -/
+def degreeOneEquiv :
+    SmoothForm I M F 1 ≃ₗ[ℝ]
+      ContMDiffSection I (E →L[ℝ] F) ∞ (fun x : M ↦ TangentSpace I x →L[ℝ] F) where
+  toFun φ :=
+    ⟨fun x ↦ (ContinuousAlternatingMap.ofSubsingleton ℝ (TangentSpace I x) F 0).symm (φ.1 x),
+      isSmoothForm_ofSubsingleton_iff.mp (by simpa using φ.isSmoothForm)⟩
+  invFun s :=
+    ⟨fun x ↦ ContinuousAlternatingMap.ofSubsingleton ℝ (TangentSpace I x) F 0 (s x),
+      mem_smoothForms.mpr <| (isSmoothBundleForm_def ∞ _).mpr <| (isSmoothForm_def ∞ _).mp <|
+        isSmoothForm_ofSubsingleton_iff.mpr s.contMDiff⟩
+  map_add' φ ψ := by
+    ext x v
+    simp
+  map_smul' c φ := by
+    ext x v
+    simp
+  left_inv φ := by
+    apply Subtype.ext
+    ext x v
+    simp
+  right_inv s := by
+    ext x v
+    simp
+
+/-- The section of a smooth one-form evaluates a tangent vector as the form does. -/
+@[simp]
+theorem degreeOneEquiv_apply_apply (φ : SmoothForm I M F 1) (x : M) (v : TangentSpace I x) :
+    degreeOneEquiv φ x v = φ.1 x (fun _ ↦ v) :=
+  (rfl)
+
+/-- The one-form of a smooth section evaluates a single tangent vector as the section does. -/
+@[simp]
+theorem degreeOneEquiv_symm_apply_apply
+    (s : ContMDiffSection I (E →L[ℝ] F) ∞ (fun x : M ↦ TangentSpace I x →L[ℝ] F)) (x : M)
+    (v : Fin 1 → TangentSpace I x) :
+    (degreeOneEquiv.symm s).1 x v = s x (v 0) :=
+  (rfl)
+
+end SmoothForm
 
 end TauCeti
