@@ -8,8 +8,7 @@ module
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Massey
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Transfer.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
-public import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
-public import TauCeti.LinearAlgebra.Graded.ExtendByZero
+public import TauCeti.LinearAlgebra.ExteriorAlgebra.IntegerGrading
 
 /-!
 # A finite homological transfer with a nonzero ternary operation
@@ -50,7 +49,6 @@ transferred ternary operation selects an element of that Massey product.
 
 ## Main definitions
 
-* `TauCeti.HeisenbergDGA.grading`: the grading of `Λ_R(a, b, c)` by exterior degree.
 * `TauCeti.HeisenbergDGA.differential`: the differential with `d c = a b`.
 * `TauCeti.HeisenbergDGA.aInfinityAlgebra`: the DG algebra `(Λ_R(a, b, c), d)` as an `A∞` algebra.
 * `TauCeti.HeisenbergDGA.homotopy`: the contracting homotopy with `h (a b) = c`.
@@ -108,10 +106,6 @@ theorem gen_def (i : Fin 3) : gen R i = ExteriorAlgebra.ι R (Pi.single i 1) := 
 theorem gen_mul_self (i : Fin 3) : gen R i * gen R i = 0 :=
   ExteriorAlgebra.ι_sq_zero _
 
-/-- Contraction against the coordinate of the `i`-th generator. -/
-private noncomputable def contract (i : Fin 3) : Module.End R (ExteriorAlgebra R (Fin 3 → R)) :=
-  contractLeft (Q := (0 : QuadraticForm R (Fin 3 → R))) ((Pi.basisFun R (Fin 3)).coord i)
-
 /-- The basis vector of a singleton is the corresponding generator. -/
 theorem monomial_singleton (i : Fin 3) : monomial R {i} = gen R i := by
   simp [gen]
@@ -121,12 +115,6 @@ theorem monomial_pair {i j : Fin 3} (h : i < j) : monomial R {i, j} = gen R i * 
   rw [monomial, basis_pair _ h]
   simp [gen]
 
-/-- Contraction on the exterior basis. -/
-private theorem contract_monomial (i : Fin 3) (s : Finset (Fin 3)) :
-    contract R i (monomial R s) =
-      if i ∈ s then basisEraseSign i s • monomial R (s.erase i) else 0 :=
-  contractLeft_coord_basis _ _ _
-
 /-- Left multiplication by a generator on the exterior basis. -/
 private theorem gen_mul_monomial (i : Fin 3) (s : Finset (Fin 3)) :
     gen R i * monomial R s =
@@ -134,99 +122,39 @@ private theorem gen_mul_monomial (i : Fin 3) (s : Finset (Fin 3)) :
   rw [gen, ← Pi.basisFun_apply R, ι_mul_basis]
 
 /-- Contraction of a generator is its coordinate. -/
-private theorem contract_gen (i j : Fin 3) : contract R i (gen R j) = if i = j then 1 else 0 := by
-  simp only [contract, gen, contractLeft_ι, Module.Basis.coord_apply, Pi.basisFun_repr,
+private theorem contract_gen (i j : Fin 3) :
+    contractLeft ((Pi.basisFun R (Fin 3)).coord i) (gen R j) = if i = j then 1 else 0 := by
+  simp only [gen, contractLeft_ι, Module.Basis.coord_apply, Pi.basisFun_repr,
     Pi.single_apply]
   split_ifs <;> simp
 
-/-- **The graded Leibniz rule for contraction.** -/
-private theorem contract_mul (i : Fin 3) (x y : ExteriorAlgebra R (Fin 3 → R)) :
-    contract R i (x * y) = contract R i x * y + involute x * contract R i y :=
-  contractLeft_mul _ x y
-
-/-- Contraction squares to zero. -/
-private theorem contract_contract (i : Fin 3) (x : ExteriorAlgebra R (Fin 3 → R)) :
-    contract R i (contract R i x) = 0 :=
-  contractLeft_contractLeft _ x
-
 /-- Contraction past a generator on the left. -/
 private theorem contract_gen_mul (i j : Fin 3) (x : ExteriorAlgebra R (Fin 3 → R)) :
-    contract R i (gen R j * x) =
-      (if i = j then x else 0) - gen R j * contract R i x := by
-  simp only [contract, gen, contractLeft_ι_mul, Module.Basis.coord_apply, Pi.basisFun_repr,
+    contractLeft ((Pi.basisFun R (Fin 3)).coord i) (gen R j * x) =
+      (if i = j then x else 0) - gen R j * contractLeft ((Pi.basisFun R (Fin 3)).coord i) x := by
+  simp only [gen, contractLeft_ι_mul, Module.Basis.coord_apply, Pi.basisFun_repr,
     Pi.single_apply]
   split_ifs <;> simp
 
 /-! ### The grading -/
 
-/-- The cohomological grading of `Λ_R(a, b, c)` by exterior degree, the generators having
-degree one. -/
-def grading : ℤ → Submodule R (ExteriorAlgebra R (Fin 3 → R)) :=
-  Graded.extendByZero fun n : ℕ ↦ ⋀[R]^n (Fin 3 → R)
-
-/-- `Λ_R(a, b, c)` is an integer-graded algebra for `grading`, as the extension by zero of the
-exterior powers. -/
-@[instance_reducible]
-noncomputable def gradedAlgebra : GradedAlgebra (grading R) :=
-  Graded.gradedAlgebraExtendByZero _
-
-attribute [instance] gradedAlgebra
-
-/-- In a nonnegative degree the grading is the exterior power. -/
-theorem grading_natCast (n : ℕ) : grading R n = ⋀[R]^n (Fin 3 → R) :=
-  Graded.extendByZero_natCast _ n
-
-/-- The grading vanishes in negative degrees. -/
-theorem grading_of_neg {p : ℤ} (hp : p < 0) : grading R p = ⊥ :=
-  Graded.extendByZero_of_neg _ hp
-
 /-- The generators have degree one. -/
-theorem gen_mem_grading (i : Fin 3) : gen R i ∈ grading R 1 := by
-  rw [← Nat.cast_one, grading_natCast, ExteriorAlgebra.exteriorPower,
-    pow_one]
-  exact LinearMap.mem_range_self _ _
-
-/-- The grade involution acts on the piece of degree `p` by `(-1) ^ p`. -/
-theorem involute_of_mem_grading {p : ℤ} {x : ExteriorAlgebra R (Fin 3 → R)}
-    (hx : x ∈ grading R p) : involute x = p.negOnePow • x := by
-  rcases lt_or_ge p 0 with hp | hp
-  · rw [grading_of_neg R hp, Submodule.mem_bot] at hx
-    simp [hx]
-  obtain ⟨n, rfl⟩ := Int.eq_ofNat_of_zero_le hp
-  rw [grading_natCast] at hx
-  rw [involute_of_mem_exteriorPower hx]
-  simp [Int.negOnePow_def, Units.smul_def, ← Int.cast_smul_eq_zsmul R]
-
-/-- Contraction lowers the degree by one. -/
-private theorem contract_mem_grading (i : Fin 3) {p : ℤ} {x : ExteriorAlgebra R (Fin 3 → R)}
-    (hx : x ∈ grading R p) : contract R i x ∈ grading R (p - 1) := by
-  rcases lt_or_ge p 0 with hp | hp
-  · rw [grading_of_neg R hp, Submodule.mem_bot] at hx
-    rw [hx, map_zero]
-    exact zero_mem _
-  obtain ⟨n, rfl⟩ := Int.eq_ofNat_of_zero_le hp
-  rw [grading_natCast] at hx
-  rcases n with _ | n
-  · rw [contract, contractLeft_eq_zero_of_mem_exteriorPower_zero _ hx]
-    exact zero_mem _
-  · rw [show ((n + 1 : ℕ) : ℤ) - 1 = (n : ℤ) by push_cast; ring, grading_natCast]
-    exact contractLeft_mem_exteriorPower _ hx
-
-/-- Left multiplication by a generator raises the degree by one. -/
-private theorem gen_mul_mem_grading (i : Fin 3) {p : ℤ} {x : ExteriorAlgebra R (Fin 3 → R)}
-    (hx : x ∈ grading R p) : gen R i * x ∈ grading R (p + 1) := by
-  rw [add_comm]
-  exact SetLike.mul_mem_graded (gen_mem_grading R i) hx
+theorem gen_mem_integerGrading (i : Fin 3) : gen R i ∈ integerGrading R (Fin 3 → R) 1 :=
+  ι_mem_integerGrading_one _
 
 /-! ### The differential -/
 
 /-- The **differential** of `Λ_R(a, b, c)`: left multiplication by `a b` after contraction against
 the coordinate of `c`.  It sends `c` to `a b` and kills `a` and `b`. -/
 noncomputable def differential : Module.End R (ExteriorAlgebra R (Fin 3 → R)) :=
-  LinearMap.mulLeft R (gen R 0 * gen R 1) ∘ₗ contract R 2
+  LinearMap.mulLeft R (gen R 0 * gen R 1) ∘ₗ
+    contractLeft (Q := (0 : QuadraticForm R (Fin 3 → R))) ((Pi.basisFun R (Fin 3)).coord 2)
 
-private theorem differential_apply (x : ExteriorAlgebra R (Fin 3 → R)) :
-    differential R x = gen R 0 * gen R 1 * contract R 2 x := (rfl)
+/-- The differential is left multiplication by `a b` after contraction against the coordinate of
+`c`. -/
+theorem differential_apply (x : ExteriorAlgebra R (Fin 3 → R)) :
+    differential R x = gen R 0 * gen R 1 * contractLeft ((Pi.basisFun R (Fin 3)).coord 2) x :=
+  (rfl)
 
 /-- **The differential on the exterior basis**: it sends `c` to `a b` and every other basis vector
 to zero. -/
@@ -236,8 +164,8 @@ theorem differential_monomial (s : Finset (Fin 3)) :
   · subst hs
     rw [differential_apply, monomial_singleton, contract_gen]
     simp only [↓reduceIte, mul_one, monomial_pair R (show (0 : Fin 3) < 1 by decide)]
-  · simp only [hs, ite_false, differential_apply, contract_monomial, mul_assoc, Units.smul_def,
-      mul_ite, mul_zero, mul_smul_comm, gen_mul_monomial, smul_ite, smul_zero]
+  · simp only [hs, ite_false, differential_apply, contractLeft_coord_basis, mul_assoc,
+      Units.smul_def, mul_ite, mul_zero, mul_smul_comm, gen_mul_monomial, smul_ite, smul_zero]
     split_ifs <;> first | rfl | (exfalso; revert s; decide)
 
 /-- The product `a b` commutes with every element, being even. -/
@@ -247,18 +175,20 @@ private theorem gen_mul_gen_mul_comm (x : ExteriorAlgebra R (Fin 3 → R)) :
     ExteriorAlgebra.ι_mul_eq_involute_mul (Pi.single 0 1), involute_involute, mul_assoc]
 
 /-- **`(Λ_R(a, b, c), d)` is a differential graded algebra.** -/
-theorem isDGAlgebra : IsDGAlgebra (grading R) (differential R) where
+theorem isDGAlgebra : IsDGAlgebra (integerGrading R (Fin 3 → R)) (differential R) where
   map_mem {p x} hx := by
-    have h := gen_mul_mem_grading R 0 (gen_mul_mem_grading R 1 (contract_mem_grading R 2 hx))
-    rw [← mul_assoc, ← differential_apply, show p - 1 + 1 + 1 = p + 1 by ring] at h
+    have h := ι_mul_mem_integerGrading (Pi.single 0 1) (ι_mul_mem_integerGrading (Pi.single 1 1)
+      (contractLeft_mem_integerGrading ((Pi.basisFun R (Fin 3)).coord 2) hx))
+    rw [← gen_def, ← gen_def, ← mul_assoc, ← differential_apply,
+      show p - 1 + 1 + 1 = p + 1 by ring] at h
     exact h
   sq_zero x := by
-    have h01 : contract R 2 (gen R 0 * gen R 1) = 0 := by
+    have h01 : contractLeft ((Pi.basisFun R (Fin 3)).coord 2) (gen R 0 * gen R 1) = 0 := by
       simp [contract_gen_mul, contract_gen]
-    rw [differential_apply, differential_apply, contract_mul, h01, contract_contract]
+    rw [differential_apply, differential_apply, contractLeft_mul, h01, contractLeft_contractLeft]
     simp
   leibniz {p x} hx y := by
-    simp only [differential_apply, contract_mul, involute_of_mem_grading R hx, mul_add,
+    simp only [differential_apply, contractLeft_mul, involute_of_mem_integerGrading hx, mul_add,
       smul_mul_assoc, mul_smul_comm, ← mul_assoc, gen_mul_gen_mul_comm R x]
 
 /-! ### The `A∞` algebra -/
@@ -270,7 +200,8 @@ noncomputable def aInfinityAlgebra : AInfinityAlgebra R (ExteriorAlgebra R (Fin 
 
 /-- The `A∞` algebra carries the exterior-degree grading. -/
 @[simp]
-theorem aInfinityAlgebra_grading_piece : (aInfinityAlgebra R).grading.piece = grading R := by
+theorem aInfinityAlgebra_grading_piece :
+    (aInfinityAlgebra R).grading.piece = integerGrading R (Fin 3 → R) := by
   rw [aInfinityAlgebra, IsNonUnitalDGAlgebra.toAInfinityAlgebra_grading,
     InternalGrading.ofDecomposition_piece]
 
@@ -318,10 +249,17 @@ theorem gen_zero_mul_gen_two_mem_cycles :
 /-- The **contracting homotopy**: left multiplication by `c` after contraction against the
 coordinates of `a` and of `b`.  It sends `a b` to `c` and kills the other basis vectors. -/
 noncomputable def homotopy : Module.End R (ExteriorAlgebra R (Fin 3 → R)) :=
-  LinearMap.mulLeft R (gen R 2) ∘ₗ contract R 1 ∘ₗ contract R 0
+  LinearMap.mulLeft R (gen R 2) ∘ₗ
+    contractLeft (Q := (0 : QuadraticForm R (Fin 3 → R))) ((Pi.basisFun R (Fin 3)).coord 1) ∘ₗ
+    contractLeft (Q := (0 : QuadraticForm R (Fin 3 → R))) ((Pi.basisFun R (Fin 3)).coord 0)
 
-private theorem homotopy_apply (x : ExteriorAlgebra R (Fin 3 → R)) :
-    homotopy R x = gen R 2 * contract R 1 (contract R 0 x) := (rfl)
+/-- The homotopy is left multiplication by `c` after contraction against the coordinates of `a`
+and of `b`. -/
+theorem homotopy_apply (x : ExteriorAlgebra R (Fin 3 → R)) :
+    homotopy R x = gen R 2 *
+      contractLeft ((Pi.basisFun R (Fin 3)).coord 1)
+        (contractLeft ((Pi.basisFun R (Fin 3)).coord 0) x) :=
+  (rfl)
 
 /-- **The homotopy on the exterior basis**: it sends `a b` to `c` and every other basis vector to
 zero. -/
@@ -332,8 +270,9 @@ theorem homotopy_monomial (s : Finset (Fin 3)) :
     rw [homotopy_apply, monomial_pair R (show (0 : Fin 3) < 1 by decide), contract_gen_mul,
       contract_gen, monomial_singleton]
     simp +decide only [↓reduceIte, mul_zero, sub_zero, contract_gen, mul_one]
-  · simp only [hs, ite_false, homotopy_apply, contract_monomial, Units.smul_def,
-      apply_ite (contract R 1),
+  · simp only [hs, ite_false, homotopy_apply, contractLeft_coord_basis, Units.smul_def,
+      apply_ite
+        (contractLeft (Q := (0 : QuadraticForm R (Fin 3 → R))) ((Pi.basisFun R (Fin 3)).coord 1)),
       map_zsmul, map_zero, mul_ite, mul_zero, mul_smul_comm, gen_mul_monomial, smul_ite, smul_zero]
     split_ifs <;> first | rfl | (exfalso; revert s; decide)
 
@@ -343,8 +282,10 @@ theorem isHomogeneous_homotopy :
       (aInfinityAlgebra R).grading.piece (-1) := by
   refine LinearMap.isHomogeneous_def.2 fun p x hx ↦ ?_
   rw [aInfinityAlgebra_grading_piece] at hx ⊢
-  have h := gen_mul_mem_grading R 2 (contract_mem_grading R 1 (contract_mem_grading R 0 hx))
-  rwa [← homotopy_apply, show p - 1 - 1 + 1 = p + -1 by ring] at h
+  have h := ι_mul_mem_integerGrading (Pi.single 2 1)
+    (contractLeft_mem_integerGrading ((Pi.basisFun R (Fin 3)).coord 1)
+      (contractLeft_mem_integerGrading ((Pi.basisFun R (Fin 3)).coord 0) hx))
+  rwa [← gen_def, ← homotopy_apply, show p - 1 - 1 + 1 = p + -1 by ring] at h
 
 /-! ### The projection onto the representatives -/
 
@@ -426,10 +367,13 @@ theorem cycleProjection_sub_mem_boundaries {x : ExteriorAlgebra R (Fin 3 → R)}
 
 /-- The projection has degree zero. -/
 theorem isHomogeneous_cycleProjection :
-    LinearMap.IsHomogeneous (cycleProjection R) (grading R) (grading R) 0 := by
-  have hd : LinearMap.IsHomogeneous (differential R) (grading R) (grading R) 1 :=
+    LinearMap.IsHomogeneous (cycleProjection R) (integerGrading R (Fin 3 → R))
+      (integerGrading R (Fin 3 → R)) 0 := by
+  have hd : LinearMap.IsHomogeneous (differential R) (integerGrading R (Fin 3 → R))
+      (integerGrading R (Fin 3 → R)) 1 :=
     LinearMap.isHomogeneous_def.2 fun _ _ hx ↦ (isDGAlgebra R).map_mem hx
-  have hh : LinearMap.IsHomogeneous (homotopy R) (grading R) (grading R) (-1) := by
+  have hh : LinearMap.IsHomogeneous (homotopy R) (integerGrading R (Fin 3 → R))
+      (integerGrading R (Fin 3 → R)) (-1) := by
     simpa only [aInfinityAlgebra_grading_piece] using isHomogeneous_homotopy R
   refine LinearMap.isHomogeneous_def.2 fun p x hx ↦ ?_
   refine sub_mem (by simpa using hx) (add_mem ?_ ?_)
@@ -643,7 +587,7 @@ theorem cycleProjection_gen_zero_mul_gen_two :
 private theorem koszulTwist_gen (i : Fin 3) :
     (aInfinityAlgebra R).grading.koszulTwist 1 (gen R i) = -gen R i := by
   rw [InternalGrading.koszulTwist_one_apply_of_mem _
-    (by rw [aInfinityAlgebra_grading_piece]; exact gen_mem_grading R i)]
+    (by rw [aInfinityAlgebra_grading_piece]; exact gen_mem_integerGrading R i)]
   simp
 
 /-- The Koszul twist acts on the class of a generator by `-1`. -/
@@ -653,7 +597,7 @@ private theorem koszulTwist_cohomologyClass_gen {i : Fin 3} (hi : i ≠ 2) :
       -(aInfinityAlgebra R).cohomologyClass (gen_mem_cycles R hi) := by
   rw [InternalGrading.koszulTwist_one_apply_of_mem _
     ((aInfinityAlgebra R).cohomologyClass_mem_cohomologyGrading_piece _
-      (by rw [aInfinityAlgebra_grading_piece]; exact gen_mem_grading R i))]
+      (by rw [aInfinityAlgebra_grading_piece]; exact gen_mem_integerGrading R i))]
   simp
 
 /-- **The transferred ternary operation on `([a], [a], [b])`**: `m₃^H ([a], [a], [b]) = [a c]`.
