@@ -110,7 +110,6 @@ theorem twistedSingularToCubical_ιTwistedChainComplex {n : ℕ}
   ConcreteCategory.congr_hom (ιTwistedChainComplex_comp_twistedSingularToCubical L σ) a
 
 /-- On a point simplex, the comparison to cubical chains is the class of the point cube. -/
-@[simp]
 theorem twistedSingularToCubical_ιTwistedChainComplex_const (x : X)
     (a : L.obj (FundamentalGroupoid.mk x)) :
     (twistedSingularToCubical L 0).hom
