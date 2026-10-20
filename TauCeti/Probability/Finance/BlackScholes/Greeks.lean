@@ -20,8 +20,8 @@ the volatility `σ`, and shows that both prices solve the Black–Scholes equati
 standard Gaussian cdf and `φ = gaussianPDFReal 0 1` its density.
 
 Everything rests on the identity `s φ(d₊) = K e^{-rτ} φ(d₋)`
-(`TauCeti.BlackScholes.mul_gaussianPDFReal_dPlus`), which says that the terms produced by
-differentiating `d₊` and `d₋` cancel. With it the Greeks of the call are
+(`TauCeti.BlackScholes.mul_gaussianPDFReal_dPlus`, proved with the formulas), which says that
+the terms produced by differentiating `d₊` and `d₋` cancel. With it the Greeks of the call are
 
 * delta `∂C/∂s = Φ(d₊)`, which lies in `(0, 1)`;
 * gamma `∂²C/∂s² = φ(d₊) / (s σ √τ)`, positive for `σ > 0`;
@@ -41,7 +41,6 @@ for `s > 0` and `t < T` (`TauCeti.BlackScholes.callPrice_pde`,
 
 ## Main declarations
 
-* `TauCeti.BlackScholes.mul_gaussianPDFReal_dPlus` — `s φ(d₊) = K e^{-rτ} φ(d₋)`.
 * `TauCeti.BlackScholes.hasDerivAt_callPrice_spot` — the call delta.
 * `TauCeti.BlackScholes.hasDerivAt_deriv_callPrice_spot` — the call gamma.
 * `TauCeti.BlackScholes.hasDerivAt_callPrice_maturity` — the derivative of the call in `τ`.
@@ -69,34 +68,6 @@ open scoped Topology
 namespace TauCeti.BlackScholes
 
 variable {s r σ K τ : ℝ}
-
-/-! ### The density identity -/
-
-/-- The standard Gaussian density at `d₋` is `φ(d₊) (s / K) e^{rτ}`. -/
-private theorem gaussianPDFReal_dMinus (hs : 0 < s) (hK : 0 < K) (hσ : σ ≠ 0) (hτ : 0 < τ) :
-    gaussianPDFReal 0 1 (dMinus s r σ K τ) =
-      gaussianPDFReal 0 1 (dPlus s r σ K τ) * (s / K) * exp (r * τ) := by
-  have ha : σ * √τ ≠ 0 := mul_ne_zero hσ (sqrt_pos.2 hτ).ne'
-  have hsq : (σ * √τ) ^ 2 = σ ^ 2 * τ := by rw [mul_pow, sq_sqrt hτ.le]
-  have hd : dPlus s r σ K τ * (σ * √τ) = log (s / K) + (r + σ ^ 2 / 2) * τ := by
-    rw [dPlus_def, div_mul_cancel₀ _ ha]
-  -- `-d₋² / 2 = -d₊² / 2 + log (s / K) + r τ`.
-  have hexp : exp (-(dPlus s r σ K τ - σ * √τ) ^ 2 / 2) =
-      exp (-dPlus s r σ K τ ^ 2 / 2) * (s / K) * exp (r * τ) := by
-    rw [← exp_log (div_pos hs hK), ← exp_add, ← exp_add]
-    congr 1
-    linear_combination hd - hsq / 2
-  simp only [gaussianPDFReal_def, dMinus_def, NNReal.coe_one, mul_one, sub_zero]
-  rw [hexp]
-  ring
-
-/-- The Black–Scholes density identity `s φ(d₊) = K e^{-rτ} φ(d₋)`, where `φ` is the standard
-Gaussian density. It expresses that `d₊² - d₋² = 2 (log (s / K) + r τ)`. -/
-theorem mul_gaussianPDFReal_dPlus (hs : 0 < s) (hK : 0 < K) (hσ : σ ≠ 0) (hτ : 0 < τ) :
-    s * gaussianPDFReal 0 1 (dPlus s r σ K τ) =
-      K * exp (-r * τ) * gaussianPDFReal 0 1 (dMinus s r σ K τ) := by
-  rw [gaussianPDFReal_dMinus hs hK hσ hτ, neg_mul, exp_neg]
-  field_simp
 
 /-! ### Derivatives of `d₊` and `d₋` in the spot -/
 
@@ -133,6 +104,7 @@ theorem hasDerivAt_callPrice_spot (hs : 0 < s) (hK : 0 < K) (hσ : σ ≠ 0) (h�
     linear_combination (-1 / (s * (σ * √τ))) * mul_gaussianPDFReal_dPlus (r := r) hs hK hσ hτ
 
 /-- **Call delta.** The derivative of the Black–Scholes call price in the spot is `Φ(d₊)`. -/
+@[simp]
 theorem deriv_callPrice_spot (hs : 0 < s) (hK : 0 < K) (hσ : σ ≠ 0) (hτ : 0 < τ) :
     deriv (fun x => callPrice x r σ K τ) s = cdf (gaussianReal 0 1) (dPlus s r σ K τ) :=
   (hasDerivAt_callPrice_spot hs hK hσ hτ).deriv
@@ -222,11 +194,6 @@ theorem deriv_callPrice_volatility_pos (hs : 0 < s) (hK : 0 < K) (hσ : σ ≠ 0
 
 /-! ### Greeks of the put -/
 
-/-- Put–call parity, solved for the put. -/
-private theorem putPrice_eq_callPrice (s r σ K τ : ℝ) :
-    putPrice s r σ K τ = callPrice s r σ K τ - s + K * exp (-r * τ) := by
-  linear_combination -callPrice_sub_putPrice s r σ K τ
-
 /-- **Put delta.** The derivative of the Black–Scholes put price in the spot is `-Φ(-d₊)`. -/
 theorem hasDerivAt_putPrice_spot (hs : 0 < s) (hK : 0 < K) (hσ : σ ≠ 0) (hτ : 0 < τ) :
     HasDerivAt (fun x => putPrice x r σ K τ) (-cdf (gaussianReal 0 1) (-dPlus s r σ K τ)) s := by
@@ -239,6 +206,7 @@ theorem hasDerivAt_putPrice_spot (hs : 0 < s) (hK : 0 < K) (hσ : σ ≠ 0) (hτ
     ring
 
 /-- **Put delta.** The derivative of the Black–Scholes put price in the spot is `-Φ(-d₊)`. -/
+@[simp]
 theorem deriv_putPrice_spot (hs : 0 < s) (hK : 0 < K) (hσ : σ ≠ 0) (hτ : 0 < τ) :
     deriv (fun x => putPrice x r σ K τ) s = -cdf (gaussianReal 0 1) (-dPlus s r σ K τ) :=
   (hasDerivAt_putPrice_spot hs hK hσ hτ).deriv

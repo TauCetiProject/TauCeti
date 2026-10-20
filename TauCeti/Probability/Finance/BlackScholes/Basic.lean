@@ -45,6 +45,8 @@ exponential tilting `N(0, 1) ↦ N(σ √τ, 1)`
   standard Gaussian coordinate.
 * `TauCeti.BlackScholes.riskNeutralPrice` — the discounted risk-neutral expectation of a payoff.
 * `TauCeti.BlackScholes.dPlus`, `TauCeti.BlackScholes.dMinus` — the Black–Scholes `d₊`, `d₋`.
+* `TauCeti.BlackScholes.mul_gaussianPDFReal_dPlus` — the density identity
+  `s φ(d₊) = K e^{-rτ} φ(d₋)`, where `φ` is the standard Gaussian density.
 * `TauCeti.BlackScholes.callPrice`, `TauCeti.BlackScholes.putPrice` — the closed-form prices.
 * `TauCeti.BlackScholes.riskNeutralPrice_id` — the discounted stock is priced at `s`.
 * `TauCeti.BlackScholes.callPrice_sub_putPrice` — put–call parity.
@@ -177,6 +179,34 @@ theorem dMinus_eq (s r σ K : ℝ) (hτ : 0 ≤ τ) :
     rw [eq_div_iff h, sub_mul, div_mul_cancel₀ _ h]
     linear_combination -1 * hsq
 
+/-! ### The density identity -/
+
+/-- The standard Gaussian density at `d₋` is `φ(d₊) (s / K) e^{rτ}`. -/
+private theorem gaussianPDFReal_dMinus (hs : 0 < s) (hK : 0 < K) (hσ : σ ≠ 0) (hτ : 0 < τ) :
+    gaussianPDFReal 0 1 (dMinus s r σ K τ) =
+      gaussianPDFReal 0 1 (dPlus s r σ K τ) * (s / K) * exp (r * τ) := by
+  have ha : σ * √τ ≠ 0 := mul_ne_zero hσ (sqrt_pos.2 hτ).ne'
+  have hsq : (σ * √τ) ^ 2 = σ ^ 2 * τ := by rw [mul_pow, sq_sqrt hτ.le]
+  have hd : dPlus s r σ K τ * (σ * √τ) = log (s / K) + (r + σ ^ 2 / 2) * τ := by
+    rw [dPlus_def, div_mul_cancel₀ _ ha]
+  -- `-d₋² / 2 = -d₊² / 2 + log (s / K) + r τ`.
+  have hexp : exp (-(dPlus s r σ K τ - σ * √τ) ^ 2 / 2) =
+      exp (-dPlus s r σ K τ ^ 2 / 2) * (s / K) * exp (r * τ) := by
+    rw [← exp_log (div_pos hs hK), ← exp_add, ← exp_add]
+    congr 1
+    linear_combination hd - hsq / 2
+  simp only [gaussianPDFReal_def, dMinus_def, NNReal.coe_one, mul_one, sub_zero]
+  rw [hexp]
+  ring
+
+/-- The Black–Scholes density identity `s φ(d₊) = K e^{-rτ} φ(d₋)`, where `φ` is the standard
+Gaussian density. It expresses that `d₊² - d₋² = 2 (log (s / K) + r τ)`. -/
+theorem mul_gaussianPDFReal_dPlus (hs : 0 < s) (hK : 0 < K) (hσ : σ ≠ 0) (hτ : 0 < τ) :
+    s * gaussianPDFReal 0 1 (dPlus s r σ K τ) =
+      K * exp (-r * τ) * gaussianPDFReal 0 1 (dMinus s r σ K τ) := by
+  rw [gaussianPDFReal_dMinus hs hK hσ hτ, neg_mul, exp_neg]
+  field_simp
+
 /-- The closed-form Black–Scholes price `s Φ(d₊) - K e^{-rτ} Φ(d₋)` of a European call with
 strike `K` and remaining maturity `τ`, where `Φ = cdf (gaussianReal 0 1)`. -/
 def callPrice (s r σ K τ : ℝ) : ℝ :=
@@ -207,6 +237,11 @@ theorem callPrice_sub_putPrice (s r σ K τ : ℝ) :
   rw [callPrice_def, putPrice_def, TauCeti.Probability.cdf_gaussianReal_zero_one_neg,
     TauCeti.Probability.cdf_gaussianReal_zero_one_neg]
   ring
+
+/-- Put–call parity, solved for the put. -/
+theorem putPrice_eq_callPrice (s r σ K τ : ℝ) :
+    putPrice s r σ K τ = callPrice s r σ K τ - s + K * exp (-r * τ) := by
+  linear_combination -callPrice_sub_putPrice s r σ K τ
 
 /-! ### Risk-neutral prices of calls and puts -/
 
