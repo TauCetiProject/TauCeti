@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+public import TauCeti.Algebra.Polynomial.Laurent.Coeff
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Projective
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.GradedSimple
 
@@ -125,26 +126,19 @@ theorem one_sub_T_smul_transpose_mul_gradedCartanMatrix_eq_one [Fintype Q] [Deci
         (gradedVertexSimpleClassBasis k Q) = 1 := by
   have : ∀ i j : Q, Finite (i ⟶ j) :=
     finite_hom_of_module_finite_pathAlgebra k Q inferInstance
-  have hT (f : LaurentPolynomial ℤ) (d : ℤ) : (T 1 * f).coeff d = f.coeff (d - 1) := by
-    simpa only [T, one_mul, sub_eq_neg_add] using AddMonoidAlgebra.coeff_single_mul_apply f 1 1 d
-  have hcast (m : ℕ) (f : LaurentPolynomial ℤ) (d : ℤ) :
-      ((m : LaurentPolynomial ℤ) * f).coeff d = m * f.coeff d := by
-    rw [AddMonoidAlgebra.natCast_def]
-    exact AddMonoidAlgebra.coeff_single_zero_mul f _ d
-  have hone (d : ℤ) : (1 : LaurentPolynomial ℤ).coeff d = if d = 0 then 1 else 0 := by
-    simpa using C_apply (R := ℤ) 1 d
   -- Compare the coefficients of `qⁿ` entrywise, separately for `n < 0`, `n = 0` and `n = m + 1`.
   refine Matrix.ext fun i j => ?_
   rw [Matrix.sub_mul, Matrix.one_mul, Matrix.smul_mul, Matrix.sub_apply, Matrix.smul_apply,
     smul_eq_mul, Matrix.mul_apply]
   ext n
-  simp only [AddMonoidAlgebra.coeff_sub, Finsupp.sub_apply, hT, AddMonoidAlgebra.coeff_sum,
-    Finsupp.finsetSum_apply, Matrix.transpose_apply, Matrix.of_apply, hcast, Matrix.one_apply]
+  simp only [AddMonoidAlgebra.coeff_sub, Finsupp.sub_apply, coeff_T_mul,
+    AddMonoidAlgebra.coeff_sum, Finsupp.finsetSum_apply, Matrix.transpose_apply, Matrix.of_apply,
+    coeff_natCast_mul, Matrix.one_apply]
   rcases lt_or_ge n 0 with hn | hn
   · simp only [coeff_gradedCartanMatrix_gradedVertexProjectiveClassBasis_of_neg k Q _ j n hn,
       coeff_gradedCartanMatrix_gradedVertexProjectiveClassBasis_of_neg k Q _ j (n - 1)
         (by omega), mul_zero, Finset.sum_const_zero, sub_zero]
-    split_ifs <;> simp [hone, hn.ne]
+    split_ifs <;> simp [hn.ne]
   · lift n to ℕ using hn
     cases n with
     | zero =>
@@ -156,7 +150,7 @@ theorem one_sub_T_smul_transpose_mul_gradedCartanMatrix_eq_one [Fintype Q] [Deci
       rw [h0, card_pathBetween_zero]
       by_cases h : i = j
       · subst h
-        simp [hone]
+        simp
       · simp [h, Ne.symm h]
     | succ m =>
       have hs := coeff_gradedCartanMatrix_gradedVertexProjectiveClassBasis k Q i j (m + 1)
@@ -165,7 +159,7 @@ theorem one_sub_T_smul_transpose_mul_gradedCartanMatrix_eq_one [Fintype Q] [Deci
       simp only [coeff_gradedCartanMatrix_gradedVertexProjectiveClassBasis k Q _ j m,
         ← card_pathBetween_mul_card_arrow_eq, Nat.cast_sum, Nat.cast_mul, mul_comm, sub_self]
       have hm : (m : ℤ) + 1 ≠ 0 := by omega
-      split_ifs <;> simp [hone, hm]
+      split_ifs <;> simp [hm]
 
 /-- **The graded Cartan matrix of a path algebra is `(1 - q Aᵀ)⁻¹`**, where the `(i, j)` entry
 of `A` counts arrows `i ⟶ j`, in the bases of graded vertex projectives and graded vertex
