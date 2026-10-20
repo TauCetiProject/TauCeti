@@ -64,6 +64,7 @@ Every class arises in each case (`Rep.FiniteCyclicGroup.groupCohomologyπOdd_sur
 public section
 
 open CategoryTheory Rep Rep.FiniteCyclicGroup
+open Multiplicative (mem_zpowers_ofAdd_one)
 
 namespace AddEquiv
 
@@ -162,7 +163,7 @@ variable {T : Type} [AddCommGroup T] {m : ℕ} [NeZero m] (A : T ≃+ T) (hA : (
 in odd degree exactly when `x = b - A b` for some `b : T`. -/
 theorem groupCohomologyπOdd_cyclicRep_eq_zero_iff (i : ℕ) (hi : Odd i)
     (x : LinearMap.ker (A.cyclicRep hA).norm.asHom.hom.toLinearMap) :
-    groupCohomologyπOdd (A.cyclicRep hA) (.ofAdd 1) TauCeti.mem_zpowers_ofAdd_one i hi x = 0 ↔
+    groupCohomologyπOdd (A.cyclicRep hA) (.ofAdd 1) mem_zpowers_ofAdd_one i hi x = 0 ↔
       ∃ b, b - A b = (x : T) := by
   rw [groupCohomologyπOdd_eq_zero_iff, mem_range_cyclicRep_applyAsHom_sub_iff]
 
@@ -170,8 +171,8 @@ theorem groupCohomologyπOdd_cyclicRep_eq_zero_iff (i : ℕ) (hi : Odd i)
 have the same class in odd degree exactly when `y = x + (b - A b)` for some `b : T`. -/
 theorem groupCohomologyπOdd_cyclicRep_eq_iff (i : ℕ) (hi : Odd i)
     (x y : LinearMap.ker (A.cyclicRep hA).norm.asHom.hom.toLinearMap) :
-    groupCohomologyπOdd (A.cyclicRep hA) (.ofAdd 1) TauCeti.mem_zpowers_ofAdd_one i hi x =
-        groupCohomologyπOdd (A.cyclicRep hA) (.ofAdd 1) TauCeti.mem_zpowers_ofAdd_one i hi y ↔
+    groupCohomologyπOdd (A.cyclicRep hA) (.ofAdd 1) mem_zpowers_ofAdd_one i hi x =
+        groupCohomologyπOdd (A.cyclicRep hA) (.ofAdd 1) mem_zpowers_ofAdd_one i hi y ↔
       ∃ b, (y : T) = (x : T) + (b - A b) := by
   rw [eq_comm, groupCohomologyπOdd_eq_iff, mem_range_cyclicRep_applyAsHom_sub_iff]
   constructor <;> rintro ⟨b, hb⟩ <;> refine ⟨b, ?_⟩ <;> rw [hb] <;> abel
@@ -180,7 +181,7 @@ theorem groupCohomologyπOdd_cyclicRep_eq_iff (i : ℕ) (hi : Odd i)
 class in positive even degree exactly when it is a norm `∑ j < m, A^j y`. -/
 theorem groupCohomologyπEven_cyclicRep_eq_zero_iff (i : ℕ) [NeZero i] (hi : Even i)
     (x : LinearMap.ker (applyAsHom (A.cyclicRep hA) (.ofAdd 1) - 𝟙 _).hom.toLinearMap) :
-    groupCohomologyπEven (A.cyclicRep hA) (.ofAdd 1) TauCeti.mem_zpowers_ofAdd_one i hi x = 0 ↔
+    groupCohomologyπEven (A.cyclicRep hA) (.ofAdd 1) mem_zpowers_ofAdd_one i hi x = 0 ↔
       ∃ y, ∑ j ∈ Finset.range m, (⇑A)^[j] y = (x : T) := by
   rw [groupCohomologyπEven_eq_zero_iff, mem_range_cyclicRep_norm_iff]
 
@@ -189,8 +190,8 @@ have the same class in positive even degree exactly when `y = x + ∑ j < m, A^j
 `z : T`. -/
 theorem groupCohomologyπEven_cyclicRep_eq_iff (i : ℕ) [NeZero i] (hi : Even i)
     (x y : LinearMap.ker (applyAsHom (A.cyclicRep hA) (.ofAdd 1) - 𝟙 _).hom.toLinearMap) :
-    groupCohomologyπEven (A.cyclicRep hA) (.ofAdd 1) TauCeti.mem_zpowers_ofAdd_one i hi x =
-        groupCohomologyπEven (A.cyclicRep hA) (.ofAdd 1) TauCeti.mem_zpowers_ofAdd_one i hi y ↔
+    groupCohomologyπEven (A.cyclicRep hA) (.ofAdd 1) mem_zpowers_ofAdd_one i hi x =
+        groupCohomologyπEven (A.cyclicRep hA) (.ofAdd 1) mem_zpowers_ofAdd_one i hi y ↔
       ∃ z, (y : T) = (x : T) + ∑ j ∈ Finset.range m, (⇑A)^[j] z := by
   rw [eq_comm, groupCohomologyπEven_eq_iff, mem_range_cyclicRep_norm_iff]
   constructor <;> rintro ⟨z, hz⟩ <;> refine ⟨z, ?_⟩ <;> rw [hz] <;> abel

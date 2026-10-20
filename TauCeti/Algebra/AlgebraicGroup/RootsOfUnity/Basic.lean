@@ -78,8 +78,8 @@ noncomputable def characterMulEquivRootsOfUnity (n : ℕ) :
   let hcard : Nat.card (Multiplicative (ZMod n)) = n :=
     (Nat.card_congr (Multiplicative.ofAdd : ZMod n ≃ Multiplicative (ZMod n))).trans
       (Nat.card_zmod n)
-  ((IsCyclic.monoidHomMulEquivRootsOfUnityOfGenerator (g := generator n) mem_zpowers_ofAdd_one
-      Aˣ).trans
+  ((IsCyclic.monoidHomMulEquivRootsOfUnityOfGenerator (g := generator n)
+      Multiplicative.mem_zpowers_ofAdd_one Aˣ).trans
       (MulEquiv.subgroupCongr (by rw [hcard]))).trans
     (rootsOfUnityUnitsMulEquiv A n)
 
