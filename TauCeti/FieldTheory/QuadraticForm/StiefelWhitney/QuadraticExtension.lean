@@ -216,7 +216,7 @@ theorem sw2Class_formClass_traceTransfer_smul_sq_eq_add_galoisEvens [Invertible 
       sw2Class (formClass _ h1) + galoisEvens K L σ hfin (kummerClass a) := by
   have : Algebra.IsSeparable K L := Algebra.isSeparable_of_finrank_eq_two two_ne_zero hfin
   obtain ⟨x, d, hx, hx2⟩ :=
-    IntermediateField.exists_sq_eq_algebraMap_units_of_finrank_eq_two hfin
+    exists_sq_eq_algebraMap_units_of_finrank_eq_two hfin
   -- Both `w₂(Tr_*⟨a⟩)` and `N^{Ev}((a))` are known separately for `Tr a = 0` and `Tr a ≠ 0`,
   -- and in each case they differ by `w₂(Tr_*⟨1⟩) = (2) ∪ (d)`.
   rw [sw2Class_formClass_traceTransfer_sq_of_sq hfin hx hx2]
@@ -253,7 +253,7 @@ theorem sw2Class_formClass_traceTransfer_smul_sq [Invertible (2 : L)]
         (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1 (sw1Class (formClass _ h1))
           (galoisCor K L σ 1 (kummerClass a)) := by
   obtain ⟨x, d, hx, hx2⟩ :=
-    IntermediateField.exists_sq_eq_algebraMap_units_of_finrank_eq_two hfin
+    exists_sq_eq_algebraMap_units_of_finrank_eq_two hfin
   rw [cup_sw1Class_formClass_traceTransfer_sq_galoisCor_eq_zero σ hfin hx hx2 h1, add_zero,
     sw2Class_formClass_traceTransfer_smul_sq_eq_add_galoisEvens σ hfin a ha h1]
 

@@ -16,10 +16,9 @@ extension of `ℚ₂`. The second Stiefel–Whitney class of a regular form over
 its local Hasse invariant `∏_{i<j} (aᵢ, aⱼ)_K`. So every identity between second Stiefel–Whitney
 classes over `K` is an identity between signs, which can be evaluated with the Hilbert symbol.
 
-The proofs combine the comparison of `w₂` with the Brauer-valued Hasse invariant
-(`TauCeti.sw2Class_eq_iff_hasseInvariant_eq`) with the local classification of quaternion
-algebras by their Hilbert symbols, through which the Brauer-valued Hasse invariant becomes the
-local one (`TauCeti.RegularFormClass.quaternionSubgroupSignEquiv_apply_hasseInvariant`).
+Over a general field `w₂` corresponds to the Brauer-valued Hasse invariant, a sum of quaternion
+classes. Over a local field a quaternion algebra is determined by its Hilbert symbol, so this
+Brauer-valued invariant carries exactly the information of the local sign-valued one.
 
 ## Main results
 
