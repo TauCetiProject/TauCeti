@@ -24,10 +24,9 @@ generated `A`-modules is nilpotent: some power `radᴺ` vanishes
 
 The sum `G` of one module from each isomorphism class of finitely generated indecomposable modules
 is finitely generated. By the existence half of the Krull-Schmidt theorem, every finitely generated
-module is a direct sum of indecomposable modules
-(`FGModuleCat.exists_indecomposable_sum_comp_eq_id`), so it is a direct summand of a finite
-sum of copies of `G`. The endomorphism ring of
-`G` is Artinian (`Module.End.isArtinianRing`), so the radical is nilpotent by
+module is a direct summand of a finite sum of indecomposable modules
+(`FGModuleCat.exists_indecomposable_sum_comp_eq_id`), hence of a finite sum of copies of `G`. The
+endomorphism ring of `G` is Artinian (`Module.End.isArtinianRing`), so the radical is nilpotent by
 `TauCeti.exists_jacobsonRadicalIdeal_pow_eq_bot`.
 
 ## References

@@ -13,12 +13,12 @@ import TauCeti.Algebra.Category.ModuleCat.KrullSchmidt
 /-!
 # Decomposition into indecomposables in `FGModuleCat`
 
-Over an Artinian ring, every finitely generated module is a direct sum of finitely many
-finitely generated indecomposable modules (`FGModuleCat.exists_indecomposable_sum_comp_eq_id`).
-This is the existence half of the Krull-Schmidt theorem,
-`TauCeti.exists_indecomposable_iso_biproduct`, read inside `FGModuleCat A`. The direct sum is
-recorded by morphisms `a j : X ⟶ W j` and `b j : W j ⟶ X` with `∑ j, a j ≫ b j = 𝟙 X`, which
-needs no biproducts in `FGModuleCat A`.
+Every finitely generated Artinian module `X` is a direct summand of a finite sum of finitely
+generated indecomposable modules `W j` (`FGModuleCat.exists_indecomposable_sum_comp_eq_id`). This
+is read off from the existence half of the Krull-Schmidt theorem,
+`TauCeti.exists_indecomposable_iso_biproduct`, inside `FGModuleCat A`. The summand is recorded by
+morphisms `a j : X ⟶ W j` and `b j : W j ⟶ X` with `∑ j, a j ≫ b j = 𝟙 X`, which needs no
+biproducts in `FGModuleCat A`.
 -/
 
 public section
@@ -29,12 +29,12 @@ open CategoryTheory CategoryTheory.Limits
 
 universe w v
 
-variable {A : Type v} [Ring A] [IsArtinianRing A]
+variable {A : Type v} [Ring A]
 
-/-- Over an Artinian ring, every finitely generated module `X` is a direct sum of finitely many
-finitely generated indecomposable modules `W j`, in the form of morphisms `a j : X ⟶ W j` and
+/-- Every finitely generated Artinian module `X` is a direct summand of a finite sum of finitely
+generated indecomposable modules `W j`, in the form of morphisms `a j : X ⟶ W j` and
 `b j : W j ⟶ X` with `∑ j, a j ≫ b j = 𝟙 X`. -/
-theorem exists_indecomposable_sum_comp_eq_id (X : FGModuleCat.{w} A) :
+theorem exists_indecomposable_sum_comp_eq_id (X : FGModuleCat.{w} A) [IsArtinian A X.obj] :
     ∃ (n : ℕ) (W : Fin n → FGModuleCat.{w} A) (a : ∀ j, X ⟶ W j) (b : ∀ j, W j ⟶ X),
       (∀ j, Indecomposable (W j).obj) ∧ ∑ j, a j ≫ b j = 𝟙 X := by
   obtain ⟨n, Q, hQ, ⟨d⟩⟩ := TauCeti.exists_indecomposable_iso_biproduct X.obj
