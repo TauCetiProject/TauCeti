@@ -408,9 +408,8 @@ theorem det_symmetricCongruence_apply (C : Matrix.GeneralLinearGroup (Fin p) ℝ
     ((symmetricCongruence C A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
         Matrix (Fin p) (Fin p) ℝ).det =
       Matrix.det (C : Matrix (Fin p) (Fin p) ℝ) ^ 2 * (A : Matrix (Fin p) (Fin p) ℝ).det := by
-  simpa only [← symmetricCongruence_toLinearMap C, LinearEquiv.coe_toLinearMap,
-    ContinuousLinearEquiv.coe_toLinearEquiv] using
-    det_coe_symmetricCongruenceLinearMap_apply (C : Matrix (Fin p) (Fin p) ℝ) A
+  rw [coe_symmetricCongruence_apply, ← coe_symmetricCongruenceLinearMap_apply]
+  exact det_coe_symmetricCongruenceLinearMap_apply _ A
 
 /-- Congruence by `C` turns the trace against the inverse of the scale `C * Cᵀ` into the plain
 trace: the two copies of `C` cancel against the inverse. -/

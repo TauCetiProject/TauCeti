@@ -369,6 +369,8 @@ theorem map_diagonal_sq_pi_bartlettCoordinateMeasure (hn : (p : ℝ) - 1 < n) :
     _ = ((Measure.pi (bartlettCoordinateMeasure (p := p) n)).map
           (fun x i ↦ x (e i))).map (fun x i ↦ x i ^ 2) := by
       rw [Measure.map_map (by fun_prop) (by fun_prop)]
+      -- The local embedding `e` sends `i` to `(i, i)`, so the composite is definitionally
+      -- the diagonal-square map.
       rfl
     _ = (Measure.pi (fun i ↦ bartlettCoordinateMeasure n (e i))).map
           (fun x i ↦ x i ^ 2) := by rw [hmap]
