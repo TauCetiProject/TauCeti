@@ -29,6 +29,8 @@ list, as happens to the coefficient ring of a grid complex when a grid diagram i
 
 ## Main results
 
+* `TauCeti.degreeOf_eval_finSuccEquiv_le`: specializing `X₀` does not increase the partial
+  degrees in the remaining variables.
 * `MvPolynomial.finSuccEquiv'_X_self`, `MvPolynomial.finSuccEquiv'_rename_succAbove`: the
   singled-out variable goes to the polynomial variable, and the others are constants.
 * `MvPolynomial.polynomial_eval_finSuccEquiv'`: evaluating the polynomial variable at `a`

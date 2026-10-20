@@ -5,14 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 public import Mathlib.RingTheory.MvPolynomial.Basic
-public import TauCeti.Algebra.Polynomial.Roots
-public import TauCeti.Algebra.Polynomial.Taylor
+public import TauCeti.Algebra.Polynomial.HasseDeriv.Grid
 public import TauCeti.RingTheory.MvPolynomial.HasseDeriv.Taylor
-import Mathlib.Data.Int.Interval
-import Mathlib.Data.ZMod.Basic
-import Mathlib.Tactic.FinCases
 
 /-!
 # Nonvanishing of Hasse derivatives on rectangular integer grids
@@ -38,11 +33,7 @@ orders at most `M j`. The integer-grid statements follow by counting integer poi
 
 ## Main results
 
-* `TauCeti.Grid.Polynomial.exists_eval_hasseDeriv_ne_zero`,
-  `TauCeti.Grid.MvPolynomial.exists_eval_hasseDeriv_ne_zero`: nonvanishing on finite grids.
-* `TauCeti.Grid.Polynomial.exists_eval_hasseDeriv_intCast_ne_zero`: for nonzero `p : R[X]` of
-  degree `≤ s` and `B > 0`, there exist `z : ℤ` and `i : ℕ` with `|z| ≤ B`, `i ≤ s / B`, and
-  `(hasseDeriv i p).eval (z : R) ≠ 0`.
+* `TauCeti.Grid.MvPolynomial.exists_eval_hasseDeriv_ne_zero`: nonvanishing on finite grids.
 * `TauCeti.Grid.MvPolynomial.exists_eval_hasseDeriv_intCast_ne_zero`: Evertse's Lemma 25 on
   nonvanishing of a Hasse derivative on a rectangular integer grid.
 
@@ -55,93 +46,6 @@ orders at most `M j`. The integer-grid statements follow by counting integer poi
 public section
 
 namespace TauCeti.Grid
-
-namespace Polynomial
-
-open _root_.Polynomial
-
-variable {R : Type*}
-
-/-- For any degree bound `s : ℕ` and positive parameter `B : ℝ`, the number of integer grid points
-in `[-⌊B⌋₊, ⌊B⌋₊]` times the number of derivative orders in `[0, ⌊s / B⌋₊]` strictly exceeds
-`s`. -/
-private theorem lt_two_mul_floor_add_one_mul_floor_div_add_one (s : ℕ) {B : ℝ} (hB : 0 < B) :
-    s < (2 * ⌊B⌋₊ + 1) * (⌊(s : ℝ) / B⌋₊ + 1) := by
-  have h1 : B < 2 * (⌊B⌋₊ : ℝ) + 1 := by
-    linarith [Nat.lt_floor_add_one B, Nat.cast_nonneg (α := ℝ) ⌊B⌋₊]
-  have h2 : (s : ℝ) / B < (⌊(s : ℝ) / B⌋₊ : ℝ) + 1 := Nat.lt_floor_add_one _
-  have h3 : (s : ℝ) < (2 * (⌊B⌋₊ : ℝ) + 1) * ((⌊(s : ℝ) / B⌋₊ : ℝ) + 1) := by
-    calc (s : ℝ) = B * ((s : ℝ) / B) := (mul_div_cancel₀ _ hB.ne').symm
-      _ < (2 * (⌊B⌋₊ : ℝ) + 1) * ((⌊(s : ℝ) / B⌋₊ : ℝ) + 1) :=
-          mul_lt_mul'' h1 h2 hB.le (div_nonneg (Nat.cast_nonneg s) hB.le)
-  exact_mod_cast h3
-
-/-- A nonzero polynomial has a nonvanishing Hasse derivative of order at most `N` at a point
-of `S` whenever `S.card * (N + 1)` exceeds its degree. -/
-theorem exists_eval_hasseDeriv_ne_zero [CommRing R] [IsDomain R] {p : R[X]} (hp : p ≠ 0)
-    (S : Finset R) (N : ℕ) (hdeg : p.natDegree < S.card * (N + 1)) :
-    ∃ a ∈ S, ∃ i ≤ N, (hasseDeriv i p).eval a ≠ 0 := by
-  by_contra! h
-  have hmult (a : R) (ha : a ∈ S) : N + 1 ≤ p.rootMultiplicity a :=
-    le_rootMultiplicity_of_eval_hasseDeriv_eq_zero hp fun i hi ↦ h a ha i (by omega)
-  have hsum : S.card * (N + 1) ≤ p.natDegree := by
-    calc S.card * (N + 1) = ∑ _a ∈ S, (N + 1) := by rw [Finset.sum_const, smul_eq_mul]
-      _ ≤ ∑ a ∈ S, p.rootMultiplicity a := Finset.sum_le_sum hmult
-      _ ≤ p.natDegree := sum_rootMultiplicity_le_natDegree p S
-  exact hdeg.not_ge hsum
-
-/-- Over an integral domain of characteristic zero, for any nonzero polynomial `p : R[X]` of degree
-at most `s` and any `B > 0`, there exist an integer `z` with `|z| ≤ B` and an order `i` with
-`i ≤ s / B` such that the `i`-th Hasse derivative of `p` does not vanish at `z`. -/
-theorem exists_eval_hasseDeriv_intCast_ne_zero [CommRing R] [IsDomain R] [CharZero R]
-    {p : R[X]} (hp : p ≠ 0) {s : ℕ} (hs : p.natDegree ≤ s) {B : ℝ} (hB : 0 < B) :
-    ∃ z : ℤ, ∃ i : ℕ,
-      (z.natAbs : ℝ) ≤ B ∧ (i : ℝ) ≤ (s : ℝ) / B ∧ (hasseDeriv i p).eval (z : R) ≠ 0 := by
-  let I : Finset ℤ := Finset.Icc (-(⌊B⌋₊ : ℤ)) (⌊B⌋₊ : ℤ)
-  have hcard : I.card = 2 * ⌊B⌋₊ + 1 := by
-    rw [Int.card_Icc]
-    omega
-  obtain ⟨a, ha, i, hi, hne⟩ := exists_eval_hasseDeriv_ne_zero hp
-    (I.map ⟨Int.cast, Int.cast_injective⟩) ⌊(s : ℝ) / B⌋₊ (by
-      rw [Finset.card_map, hcard]
-      exact hs.trans_lt (lt_two_mul_floor_add_one_mul_floor_div_add_one s hB))
-  obtain ⟨z, hz, rfl⟩ := Finset.mem_map.1 ha
-  obtain ⟨hz1, hz2⟩ := Finset.mem_Icc.1 hz
-  refine ⟨z, i, ?_, ?_, hne⟩
-  · exact (Nat.cast_le.2 (by omega : z.natAbs ≤ ⌊B⌋₊)).trans (Nat.floor_le hB.le)
-  · exact (Nat.cast_le.2 hi).trans (Nat.floor_le (div_nonneg (Nat.cast_nonneg s) hB.le))
-
-/-- For `p = X (X - 1) (X + 1) = X³ - X` over `ℤ` with `s = 3` and `B = 1`, `p` vanishes in order
-`i = 0` at every integer `z ∈ {-1, 0, 1}`, while its first Hasse derivative `3 X² - 1` is nonzero
-there. -/
-example : (∀ z ∈ ({-1, 0, 1} : Finset ℤ),
-      (hasseDeriv 0 (X ^ 3 - X : ℤ[X])).eval z = 0) ∧
-    (hasseDeriv 1 (X ^ 3 - X : ℤ[X])).eval (0 : ℤ) ≠ 0 := by
-  refine ⟨by simp [hasseDeriv_zero], ?_⟩
-  simp
-
-/-- For `p = X³` over `ℤ` with `s = 3` and `B = 1 / 2`, the only integer with `|z| ≤ 1 / 2` is
-`z = 0`, where the Hasse derivatives of orders `0, 1, 2` vanish and the Hasse derivative of order
-`3` is `1 ≠ 0`. -/
-example : (∀ i < 3, (hasseDeriv i (X ^ 3 : ℤ[X])).eval (0 : ℤ) = 0) ∧
-    (hasseDeriv 3 (X ^ 3 : ℤ[X])).eval (0 : ℤ) = 1 := by
-  refine ⟨fun i hi ↦ ?_, by simp [← taylor_coeff]⟩
-  rw [← taylor_coeff, taylor_zero', LinearMap.id_apply, coeff_X_pow, ite_eq_right (by omega)]
-
-/-- In positive characteristic, `exists_eval_hasseDeriv_intCast_ne_zero` can fail: over `ZMod 2`,
-the nonzero polynomial `X² - X` of degree `2` vanishes in order `0` at every integer cast, so
-`s = 2` and `B = 3` (which forces `i ≤ ⌊2 / 3⌋ = 0`) admit no nonvanishing grid jet. -/
-example : (X ^ 2 - X : (ZMod 2)[X]) ≠ 0 ∧
-    ∀ z : ℤ, (hasseDeriv 0 (X ^ 2 - X : (ZMod 2)[X])).eval (z : ZMod 2) = 0 := by
-  refine ⟨?_, fun z ↦ ?_⟩
-  · intro h
-    have := congrArg (fun p : (ZMod 2)[X] ↦ p.coeff 1) h
-    simp at this
-  · rw [hasseDeriv_zero, LinearMap.id_apply, eval_sub, eval_pow, eval_X]
-    generalize (z : ZMod 2) = x
-    fin_cases x <;> rfl
-
-end Polynomial
 
 namespace MvPolynomial
 
@@ -223,20 +127,15 @@ theorem exists_eval_hasseDeriv_intCast_ne_zero {σ : Type*} [Finite σ] [CommRin
       (∀ j, (i j : ℝ) ≤ (s j : ℝ) / B j) ∧
       eval (fun j ↦ (z j : R)) (hasseDeriv i P) ≠ 0 := by
   let I (j : σ) : Finset ℤ := Finset.Icc (-(⌊B j⌋₊ : ℤ)) (⌊B j⌋₊ : ℤ)
-  have hcard (j : σ) : (I j).card = 2 * ⌊B j⌋₊ + 1 := by
-    rw [Int.card_Icc]
-    omega
   obtain ⟨x, hx, i, hi, hne⟩ := exists_eval_hasseDeriv_ne_zero hP
     (fun j ↦ (I j).map ⟨Int.cast, Int.cast_injective⟩) (fun j ↦ ⌊(s j : ℝ) / B j⌋₊)
     (fun j ↦ by
-      rw [Finset.card_map, hcard]
+      rw [card_intCast_Icc_floor]
       exact (hs j).trans_lt
         (Polynomial.lt_two_mul_floor_add_one_mul_floor_div_add_one (s j) (hB j)))
   choose z hz hzx using fun j ↦ Finset.mem_map.1 (hx j)
   refine ⟨z, i, ?_, ?_, ?_⟩
-  · intro j
-    obtain ⟨hz1, hz2⟩ := Finset.mem_Icc.1 (hz j)
-    exact (Nat.cast_le.2 (by omega : (z j).natAbs ≤ ⌊B j⌋₊)).trans (Nat.floor_le (hB j).le)
+  · exact fun j ↦ natAbs_le_of_mem_Icc_floor (hB j).le (hz j)
   · intro j
     exact (Nat.cast_le.2 (hi j)).trans
       (Nat.floor_le (div_nonneg (Nat.cast_nonneg (s j)) (hB j).le))
@@ -249,9 +148,8 @@ example {c : ℤ} (hc : c ≠ 0) :
       (hasseDeriv 0 (C c : MvPolynomial (Fin 0) ℤ)) ≠ 0 := by
   simpa using hc
 
-/-- For `P = (X₀³ - X₀) X₁²` over `ℤ` with `s = ![3, 2]` and `B = ![1, 1 / 2]`, `P` vanishes in
-derivative order `0` at every integer point with `|z₀| ≤ 1` and `|z₁| ≤ 1 / 2`, while its Hasse
-derivative of order `(1, 2)` is `-1 ≠ 0` at `(0, 0)`. -/
+/-- For `P = (X₀³ - X₀) X₁²` over `ℤ`, the Hasse derivative of order `(1, 2)` is `-1 ≠ 0`
+at `(0, 0)`. -/
 example :
     eval (0 : Fin 2 → ℤ)
       (hasseDeriv (Finsupp.single 0 1 + Finsupp.single 1 2)

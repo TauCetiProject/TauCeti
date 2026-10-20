@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Order.AbsoluteValue.Basic
 public import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 public import Mathlib.Algebra.Polynomial.HasseDeriv
 public import Mathlib.Algebra.MvPolynomial.PDeriv
+public import TauCeti.Algebra.MvPolynomial.Equiv
 public import TauCeti.Algebra.MvPolynomial.Monomial
 public import TauCeti.Data.Finsupp.Choose
 public import TauCeti.Data.Finsupp.Interval
@@ -57,6 +58,11 @@ Roth's theorem.
 * `MvPolynomial.hasseDeriv_X`, `MvPolynomial.hasseDeriv_mul_X`: the value on a variable and the
   Leibniz rule `∂^d (P Xᵢ) = ∂^(d - eᵢ) P + (∂^d P) Xᵢ` (the first term only when
   `dᵢ ≠ 0`).
+* `TauCeti.coeff_finSuccEquiv_hasseDeriv_cons`, `TauCeti.finSuccEquiv_hasseDeriv_single_zero`:
+  singling out `X₀` turns its Hasse derivative into the univariate Hasse derivative.
+* `TauCeti.hasseDeriv_eval_hasseDeriv_finSuccEquiv`,
+  `TauCeti.degreeOf_eval_hasseDeriv_finSuccEquiv_le`: specializing `X₀` commutes with Hasse
+  differentiation in the remaining variables and does not increase their partial degrees.
 
 ## References
 
@@ -383,3 +389,60 @@ example : hasseDeriv (single 0 2) (X 0 ^ 2 : MvPolynomial (Fin 1) ℚ) = 1 ∧
   norm_num [monomial_zero', map_ofNat]
 
 end MvPolynomial
+
+namespace TauCeti
+
+open _root_.MvPolynomial
+
+variable {R : Type*} [CommSemiring R]
+
+/-- After singling out the first variable `X₀`, the `m`-th coefficient of the Hasse derivative of
+order `i.cons k` of `P` is the `i`-th Hasse derivative in the remaining variables of the `m`-th
+coefficient of the `k`-th univariate Hasse derivative of `finSuccEquiv R n P`. -/
+theorem coeff_finSuccEquiv_hasseDeriv_cons {n : ℕ} (P : MvPolynomial (Fin (n + 1)) R)
+    (k m : ℕ) (i : Fin n →₀ ℕ) :
+    (finSuccEquiv R n (hasseDeriv (i.cons k) P)).coeff m =
+      hasseDeriv i ((Polynomial.hasseDeriv k (finSuccEquiv R n P)).coeff m) := by
+  ext u
+  simp [finSuccEquiv_coeff_coeff, hasseDeriv_coeff, Polynomial.hasseDeriv_coeff,
+    Finsupp.cons_add_cons, ← nsmul_eq_mul, Finsupp.prod_fintype, Fin.prod_univ_succ]
+
+/-- Singling out the first variable `X₀` turns the Hasse derivative `∂^(k e₀)` into the `k`-th
+univariate Hasse derivative. -/
+@[simp]
+theorem finSuccEquiv_hasseDeriv_single_zero {n : ℕ} (P : MvPolynomial (Fin (n + 1)) R) (k : ℕ) :
+    finSuccEquiv R n (hasseDeriv (Finsupp.single 0 k) P) =
+      Polynomial.hasseDeriv k (finSuccEquiv R n P) := by
+  ext m u
+  rw [← Finsupp.cons_zero_eq_single_zero, coeff_finSuccEquiv_hasseDeriv_cons, hasseDeriv_zero,
+    LinearMap.id_apply]
+
+/-- Specializing the first variable `X₀` of the `k`-th univariate Hasse derivative of
+`finSuccEquiv R n P` to `a`, and then applying the multivariate Hasse derivative `∂^i` in the
+remaining variables, agrees with applying the combined Hasse derivative `∂^(i.cons k)` to `P` and
+then specializing `X₀` to `a`. -/
+theorem hasseDeriv_eval_hasseDeriv_finSuccEquiv {n : ℕ}
+    (P : MvPolynomial (Fin (n + 1)) R) (a : R) (k : ℕ) (i : Fin n →₀ ℕ) :
+    hasseDeriv i ((Polynomial.hasseDeriv k (finSuccEquiv R n P)).eval (C a)) =
+      (finSuccEquiv R n (hasseDeriv (i.cons k) P)).eval (C a) := by
+  let N := max (Polynomial.hasseDeriv k (finSuccEquiv R n P)).natDegree
+    (finSuccEquiv R n (hasseDeriv (i.cons k) P)).natDegree + 1
+  rw [Polynomial.eval_eq_sum_range' (Nat.lt_add_one_iff.2 (le_max_left _ _)),
+    Polynomial.eval_eq_sum_range' (Nat.lt_add_one_iff.2 (le_max_right _ _)), map_sum]
+  refine Finset.sum_congr rfl fun m _ ↦ ?_
+  rw [coeff_finSuccEquiv_hasseDeriv_cons]
+  simpa only [smul_eq_C_mul, map_pow, mul_comm] using
+    (hasseDeriv i).map_smul (a ^ m)
+      ((Polynomial.hasseDeriv k (finSuccEquiv R n P)).coeff m)
+
+/-- Specializing the first variable `X₀` of the `k`-th univariate Hasse derivative of
+`finSuccEquiv R n P` to `a` does not increase the partial degrees in the remaining variables. -/
+theorem degreeOf_eval_hasseDeriv_finSuccEquiv_le {n : ℕ} (P : MvPolynomial (Fin (n + 1)) R)
+    (a : R) (k : ℕ) (j : Fin n) :
+    degreeOf j ((Polynomial.hasseDeriv k (finSuccEquiv R n P)).eval (C a)) ≤
+      degreeOf j.succ P := by
+  rw [← finSuccEquiv_hasseDeriv_single_zero]
+  exact (degreeOf_eval_finSuccEquiv_le _ a j).trans
+    ((degreeOf_hasseDeriv_le _ P j.succ).trans (Nat.sub_le _ _))
+
+end TauCeti

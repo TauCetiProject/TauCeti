@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Finprod
-public import TauCeti.Algebra.MvPolynomial.Equiv
 public import TauCeti.Algebra.MvPolynomial.HasseDeriv.Basic
 public import TauCeti.RingTheory.MvPolynomial.OrderAt
 
@@ -31,13 +30,8 @@ rule for Hasse derivatives.
   neither `f` nor `d` involves `Xᵢ`.
 * `TauCeti.eval_hasseDeriv_rename`: renaming along an injective map commutes with
   evaluating Hasse derivatives.
-* `TauCeti.finSuccEquiv_hasseDeriv_single_zero`,
-  `TauCeti.hasseDeriv_eval_hasseDeriv_finSuccEquiv`,
-  `TauCeti.eval_hasseDeriv_eval_hasseDeriv_finSuccEquiv`: singling out `X₀` via
-  `finSuccEquiv` turns `∂^(k e₀)` into the univariate Hasse derivative; specializing `X₀` commutes
-  with Hasse
-  differentiation in the remaining variables without increasing their partial degrees
-  (`TauCeti.degreeOf_eval_hasseDeriv_finSuccEquiv_le`).
+* `TauCeti.eval_hasseDeriv_eval_hasseDeriv_finSuccEquiv`: evaluating a Hasse derivative after
+  specializing `X₀` agrees with evaluating the combined derivative at the full point.
 
 ## References
 
@@ -135,45 +129,6 @@ theorem eval_hasseDeriv_rename {τ : Type*} {f : σ → τ} (hf : Function.Injec
     eval b (hasseDeriv (d.mapDomain f) (rename f P)) = eval (b ∘ f) (hasseDeriv d P) := by
   rw [← coeff_taylor, taylor_rename, coeff_rename_mapDomain f hf, coeff_taylor]
 
-/-- After singling out the first variable `X₀`, the `m`-th coefficient of the Hasse derivative of
-order `i.cons k` of `P` is the `i`-th Hasse derivative in the remaining variables of the `m`-th
-coefficient of the `k`-th univariate Hasse derivative of `finSuccEquiv R n P`. -/
-theorem coeff_finSuccEquiv_hasseDeriv_cons {n : ℕ} (P : MvPolynomial (Fin (n + 1)) R)
-    (k m : ℕ) (i : Fin n →₀ ℕ) :
-    (finSuccEquiv R n (hasseDeriv (i.cons k) P)).coeff m =
-      hasseDeriv i ((Polynomial.hasseDeriv k (finSuccEquiv R n P)).coeff m) := by
-  ext u
-  simp [finSuccEquiv_coeff_coeff, hasseDeriv_coeff, Polynomial.hasseDeriv_coeff,
-    Finsupp.cons_add_cons, ← nsmul_eq_mul, Finsupp.prod_fintype, Fin.prod_univ_succ]
-
-/-- Singling out the first variable `X₀` turns the Hasse derivative `∂^(k e₀)` into the `k`-th
-univariate Hasse derivative. -/
-@[simp]
-theorem finSuccEquiv_hasseDeriv_single_zero {n : ℕ} (P : MvPolynomial (Fin (n + 1)) R) (k : ℕ) :
-    finSuccEquiv R n (hasseDeriv (Finsupp.single 0 k) P) =
-      Polynomial.hasseDeriv k (finSuccEquiv R n P) := by
-  ext m u
-  rw [← Finsupp.cons_zero_eq_single_zero, coeff_finSuccEquiv_hasseDeriv_cons, hasseDeriv_zero,
-    LinearMap.id_apply]
-
-/-- Specializing the first variable `X₀` of the `k`-th univariate Hasse derivative of
-`finSuccEquiv R n P` to `a`, and then applying the multivariate Hasse derivative `∂^i` in the
-remaining variables, agrees with applying the combined Hasse derivative `∂^(i.cons k)` to `P` and
-then specializing `X₀` to `a`. -/
-theorem hasseDeriv_eval_hasseDeriv_finSuccEquiv {n : ℕ}
-    (P : MvPolynomial (Fin (n + 1)) R) (a : R) (k : ℕ) (i : Fin n →₀ ℕ) :
-    hasseDeriv i ((Polynomial.hasseDeriv k (finSuccEquiv R n P)).eval (C a)) =
-      (finSuccEquiv R n (hasseDeriv (i.cons k) P)).eval (C a) := by
-  let N := max (Polynomial.hasseDeriv k (finSuccEquiv R n P)).natDegree
-    (finSuccEquiv R n (hasseDeriv (i.cons k) P)).natDegree + 1
-  rw [Polynomial.eval_eq_sum_range' (Nat.lt_add_one_iff.2 (le_max_left _ _)),
-    Polynomial.eval_eq_sum_range' (Nat.lt_add_one_iff.2 (le_max_right _ _)), map_sum]
-  refine Finset.sum_congr rfl fun m _ ↦ ?_
-  rw [coeff_finSuccEquiv_hasseDeriv_cons]
-  simpa only [smul_eq_C_mul, map_pow, mul_comm] using
-    (hasseDeriv i).map_smul (a ^ m)
-      ((Polynomial.hasseDeriv k (finSuccEquiv R n P)).coeff m)
-
 /-- Evaluating the `i`-th Hasse derivative of the specialized `k`-th Hasse derivative in `X₀` at
 `a` at a point `x` in the remaining variables gives the value of `∂^(i.cons k) P` at
 `Fin.cons a x`. -/
@@ -183,15 +138,5 @@ theorem eval_hasseDeriv_eval_hasseDeriv_finSuccEquiv {n : ℕ}
       eval (Fin.cons a x) (hasseDeriv (i.cons k) P) := by
   rw [← coeff_taylor (Fin.cons a x), coeff_taylor_cons, Fin.cons_zero, Fin.tail_cons,
     Polynomial.taylor_coeff, coeff_taylor]
-
-/-- Specializing the first variable `X₀` of the `k`-th univariate Hasse derivative of
-`finSuccEquiv R n P` to `a` does not increase the partial degrees in the remaining variables. -/
-theorem degreeOf_eval_hasseDeriv_finSuccEquiv_le {n : ℕ} (P : MvPolynomial (Fin (n + 1)) R)
-    (a : R) (k : ℕ) (j : Fin n) :
-    degreeOf j ((Polynomial.hasseDeriv k (finSuccEquiv R n P)).eval (C a)) ≤
-      degreeOf j.succ P := by
-  rw [← finSuccEquiv_hasseDeriv_single_zero]
-  exact (degreeOf_eval_finSuccEquiv_le _ a j).trans
-    ((degreeOf_hasseDeriv_le _ P j.succ).trans (Nat.sub_le _ _))
 
 end TauCeti
