@@ -111,6 +111,27 @@ theorem memLp_continuousLinearMap_compoundPoissonMeasure {p : ℝ≥0∞} (hp : 
     hpow] using
       memLp_id_compoundPoissonMeasure hp hp_top hmap r
 
+/-- A finite first moment of a linear observable of the jump law gives a finite first
+moment of that observable under the compound Poisson law. -/
+theorem integrable_continuousLinearMap_compoundPoissonMeasure (L : E →L[ℝ] ℝ)
+    (hL : Integrable L μ) (r : ℝ≥0) :
+    Integrable L (compoundPoissonMeasure r μ) := by
+  rw [← memLp_one_iff_integrable]
+  exact memLp_continuousLinearMap_compoundPoissonMeasure le_rfl (by simp) L
+    (memLp_one_iff_integrable.2 hL) r
+
+/-- The mean of a linear observable under a compound Poisson law is the rate times its
+jump mean. Only the observed first moment needs to be finite. -/
+@[simp]
+theorem integral_continuousLinearMap_compoundPoissonMeasure (L : E →L[ℝ] ℝ)
+    (hL : Integrable L μ) (r : ℝ≥0) :
+    ∫ x, L x ∂compoundPoissonMeasure r μ = (r : ℝ) * ∫ x, L x ∂μ := by
+  have hint := integrable_continuousLinearMap_compoundPoissonMeasure L hL r
+  rw [compoundPoissonMeasure_def] at hint ⊢
+  rw [Measure.integral_bind Measurable.of_discrete.aemeasurable hint]
+  simp_rw [μ.integral_continuousLinearMap_convolutionPower L hL]
+  rw [integral_mul_const, integral_natCast_poissonMeasure]
+
 /-- The covariance of two linear observables of a compound Poisson sum is the rate times
 their uncentered jump cross moment. Only the two observed second moments need be finite. -/
 @[simp]
@@ -181,6 +202,16 @@ theorem integral_of_hasLaw_compoundPoissonMeasure [CompleteSpace E] (hμ : Integ
     ∫ ω, X ω ∂P = (r : ℝ) • ∫ x, x ∂μ := by
   simpa only [Function.id_comp, id_eq, integral_id_compoundPoissonMeasure hμ] using
     hX.integral_comp (integrable_id_compoundPoissonMeasure hμ r).aestronglyMeasurable
+
+/-- A linear observable of a compound Poisson random variable has mean equal to the rate
+times its jump mean. Only the observed first moment needs to be finite. -/
+theorem integral_continuousLinearMap_of_hasLaw_compoundPoissonMeasure
+    (hX : HasLaw X (compoundPoissonMeasure r μ) P) (L : E →L[ℝ] ℝ)
+    (hL : Integrable L μ) :
+    ∫ ω, L (X ω) ∂P = (r : ℝ) * ∫ x, L x ∂μ := by
+  simpa only [Function.comp_apply, integral_continuousLinearMap_compoundPoissonMeasure L hL]
+    using hX.integral_comp
+      (integrable_continuousLinearMap_compoundPoissonMeasure L hL r).aestronglyMeasurable
 
 /-- Linear observables of a compound Poisson random variable have covariance given by the
 uncentered second jump moment. Only the two observed second moments need be finite. -/
