@@ -583,13 +583,6 @@ instance t2Space_gluedCurve (d : FlagPairData ι Flag X) [∀ i, TopologicalSpac
   Setoid.t2Space_quotient (gluedRelSetoid d) (flagPointSet_finite d)
     (mem_flagPointSet_of_gluedRelSetoid_of_ne d)
 
-/-- **The glued space is compact.**  The quotient of the disjoint union of the normalization
-components by the generated relation is a compact space, when there are finitely many components
-and when each of them is compact. -/
-instance compactSpace_gluedCurve (d : FlagPairData ι Flag X) [∀ i, TopologicalSpace (X i)]
-    [∀ i, CompactSpace (X i)] [Finite ι] : CompactSpace (GluedCurve d) :=
-  Quotient.compactSpace
-
 /-- **The quotient map is an open embedding away from the flag points.**  The quotient map
 restricted to the disjoint union of the normalization components minus their flag points is an
 open embedding. -/

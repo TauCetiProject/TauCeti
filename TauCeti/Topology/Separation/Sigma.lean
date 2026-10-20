@@ -26,13 +26,14 @@ public section
 
 open Topology
 
-/-- A disjoint union of `T₁` spaces is `T₁`.  The singleton of a point of the disjoint union is
-the image of the corresponding singleton in its summand, which is closed in that summand; the
-inclusion of a summand is a closed map, so that image is closed in the disjoint union. -/
+/-- A disjoint union of `T₁` spaces is `T₁`. -/
 instance Sigma.t1Space {ι : Type*} {X : ι → Type*} [∀ i, TopologicalSpace (X i)]
     [∀ i, T1Space (X i)] : T1Space (Σ i, X i) := by
   refine ⟨?_⟩
   rintro ⟨i, x⟩
+  -- The singleton of a point of the disjoint union is the image of the corresponding singleton in
+  -- its summand, which is closed in that summand; the inclusion of a summand is a closed map, so
+  -- that image is closed in the disjoint union.
   have h : ({Sigma.mk i x} : Set (Σ i, X i)) = Sigma.mk i '' {x} := by
     ext y
     simp
