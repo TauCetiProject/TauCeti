@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.Splits
 public import TauCeti.RingTheory.Polynomial.DegreeLT
 public import TauCeti.RingTheory.PowerSeries.Swap
 import Mathlib.Tactic.LinearCombination
+import TauCeti.Algebra.Polynomial.Depressed
 
 /-!
 # Hensel lifting of coprime factorizations over power series
@@ -42,6 +44,11 @@ each step gives uniqueness of the factorization.
 * `Polynomial.Monic.exists_monic_mul_eq_of_isCoprime`: existence of the lifted factorization.
 * `Polynomial.Monic.eq_and_eq_of_mul_eq_mul_of_isCoprime`: uniqueness of the lifted
   factorization.
+* `Polynomial.Monic.exists_monic_mul_eq_of_nextCoeff_map_eq_zero`: over a field `K`, a monic
+  polynomial over `K⟦t⟧` whose reduction is depressed, splits, has invertible degree and is not a
+  power of `X` factors into two monic factors of positive degree. This is the degree-lowering
+  splitting step of the Newton–Puiseux algorithm, combining the coprime splitting of the reduction
+  (`Polynomial.Monic.exists_isCoprime_mul_eq_of_nextCoeff_eq_zero`) with Hensel lifting.
 
 ## References
 
@@ -251,5 +258,31 @@ theorem Monic.eq_and_eq_of_mul_eq_mul_of_isCoprime {G G' H H' : R⟦X⟧[X]} (hG
     sub_eq_zero.mp (swapPowerSeries_injective hB0)⟩
 
 end Hensel
+
+section Splitting
+
+variable {K : Type*} [Field K]
+
+/-- A monic polynomial `P` over `K⟦t⟧` whose reduction modulo `t` has vanishing subleading
+coefficient, splits, has invertible degree and is not `X ^ P.natDegree` factors as `P = G * H` with
+`G` and `H` monic of positive degree. This is the splitting step of the Newton–Puiseux algorithm:
+the reduction splits into coprime monic factors of positive degree
+(`Polynomial.Monic.exists_isCoprime_mul_eq_of_nextCoeff_eq_zero`), and Hensel's lemma lifts them.
+In particular both factors have degree less than that of `P`, by `Polynomial.Monic.natDegree_mul`.
+-/
+theorem Monic.exists_monic_mul_eq_of_nextCoeff_map_eq_zero {P : K⟦X⟧[X]} (hP : P.Monic)
+    (hs : (P.map PowerSeries.constantCoeff).Splits) (hm : (P.natDegree : K) ≠ 0)
+    (hnext : (P.map PowerSeries.constantCoeff).nextCoeff = 0)
+    (hX : P.map PowerSeries.constantCoeff ≠ X ^ P.natDegree) :
+    ∃ G H : K⟦X⟧[X], G.Monic ∧ H.Monic ∧ G * H = P ∧ 0 < G.natDegree ∧ 0 < H.natDegree := by
+  have hdeg := hP.natDegree_map PowerSeries.constantCoeff
+  obtain ⟨g, h, hg, -, hgh, hprod, hg0, hh0⟩ :=
+    (hP.map PowerSeries.constantCoeff).exists_isCoprime_mul_eq_of_nextCoeff_eq_zero hs
+      (by rwa [hdeg]) hnext (by rwa [hdeg])
+  obtain ⟨G, H, hG, hH, hGg, hHh, hGH⟩ := hP.exists_monic_mul_eq_of_isCoprime hg hgh hprod.symm
+  exact ⟨G, H, hG, hH, hGH, by rwa [← hG.natDegree_map PowerSeries.constantCoeff, hGg],
+    by rwa [← hH.natDegree_map PowerSeries.constantCoeff, hHh]⟩
+
+end Splitting
 
 end Polynomial
