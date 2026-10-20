@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Fourier.FiniteAbelian.PontryaginDuality
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 public import Mathlib.NumberTheory.DirichletCharacter.Orthogonality
-public import TauCeti.Data.ZMod.PrimePowUnits
+public import TauCeti.Data.ZMod.Divisibility
 import TauCeti.Data.ZMod.OrderOf
+import TauCeti.RingTheory.ZMod.UnitsTwoPow
 
 /-!
 # The Conrey labelling of Dirichlet characters
@@ -77,18 +79,11 @@ root modulo every power of `p`. The value for other `p` carries no meaning. -/
 noncomputable def conreyGenerator (p : ℕ) : ℕ :=
   if h : ∃ g : ℕ, orderOf (g : ZMod (p ^ 2)) = (p ^ 2).totient then Nat.find h else 0
 
-private theorem exists_orderOf_natCast_eq_totient {p : ℕ} (hp : p.Prime) (hp2 : p ≠ 2) :
-    ∃ g : ℕ, orderOf (g : ZMod (p ^ 2)) = (p ^ 2).totient := by
-  have : NeZero (p ^ 2) := ⟨pow_ne_zero 2 hp.ne_zero⟩
-  obtain ⟨u, hu⟩ := isCyclic_iff_exists_orderOf_eq_natCard.mp
-    (ZMod.isCyclic_units_of_prime_pow p hp hp2 2)
-  refine ⟨(u : ZMod (p ^ 2)).val, ?_⟩
-  rw [ZMod.natCast_zmod_val, orderOf_units, hu, Nat.card_eq_fintype_card,
-    ZMod.card_units_eq_totient]
-
 private theorem orderOf_conreyGenerator_sq {p : ℕ} (hp : p.Prime) (hp2 : p ≠ 2) :
     orderOf (conreyGenerator p : ZMod (p ^ 2)) = (p ^ 2).totient := by
-  have h := exists_orderOf_natCast_eq_totient hp hp2
+  have : NeZero (p ^ 2) := ⟨pow_ne_zero 2 hp.ne_zero⟩
+  have := ZMod.isCyclic_units_of_prime_pow p hp hp2 2
+  have h := ZMod.exists_orderOf_natCast_eq_totient (n := p ^ 2)
   rw [conreyGenerator, dite_eq_left h]
   exact Nat.find_spec h
 
@@ -131,16 +126,13 @@ private theorem coprime_conreyGenerator {p : ℕ} (hp : p.Prime) (hp2 : p ≠ 2)
 
 /-! ### The prime-power pairings -/
 
-/-- The pairing `(a, b) ↦ e(a b / n)` on `ℤ/n`, written multiplicatively. -/
+/-- Mathlib's pairing `AddChar.zmod n`, `(a, b) ↦ e(a b / n)` on `ℤ/n`, written
+multiplicatively. -/
 private noncomputable def zmodPairing (n : ℕ) [NeZero n] :
-    Multiplicative (ZMod n) →* Multiplicative (ZMod n) →* Circle where
-  toFun a :=
-    { toFun b := ZMod.toCircle (a.toAdd * b.toAdd)
-      map_one' := by simp
-      map_mul' b c := by simp [mul_add, AddChar.map_add_eq_mul] }
-  map_one' := by ext; simp
-  map_mul' a b := by ext; simp [add_mul, AddChar.map_add_eq_mul]
+    Multiplicative (ZMod n) →* Multiplicative (ZMod n) →* Circle :=
+  AddChar.toMonoidHomMulEquiv.toMonoidHom.comp (AddChar.zmodHom (n := n)).toMonoidHom
 
+-- `AddChar.zmod n a` is defined as `b ↦ ZMod.toCircle (a * b)`.
 private theorem zmodPairing_apply (n : ℕ) [NeZero n] (a b : Multiplicative (ZMod n)) :
     zmodPairing n a b = ZMod.toCircle (a.toAdd * b.toAdd) := rfl
 
@@ -195,15 +187,16 @@ private noncomputable def conreyTwoPow : (v : ℕ) → (ZMod (2 ^ v))ˣ →* (ZM
   | 0 | 1 => 1
   | e + 2 =>
     transportPairing (zmodPairing 2)
-        ((MonoidHom.fst _ _).comp (ZMod.unitsTwoPowEquiv e).symm.toMonoidHom) *
+        ((AddMonoidHom.fst _ _).toMultiplicative.comp (ZMod.unitsTwoPowEquiv e).toMonoidHom) *
       transportPairing (zmodPairing (2 ^ e))
-        ((MonoidHom.snd _ _).comp (ZMod.unitsTwoPowEquiv e).symm.toMonoidHom)
+        ((AddMonoidHom.snd _ _).toMultiplicative.comp (ZMod.unitsTwoPowEquiv e).toMonoidHom)
 
 private theorem conreyTwoPow_add_two_apply (e : ℕ) (m n : (ZMod (2 ^ (e + 2)))ˣ) :
     conreyTwoPow (e + 2) m n =
-      zmodPairing 2 ((ZMod.unitsTwoPowEquiv e).symm m).1 ((ZMod.unitsTwoPowEquiv e).symm n).1 *
-        zmodPairing (2 ^ e) ((ZMod.unitsTwoPowEquiv e).symm m).2
-          ((ZMod.unitsTwoPowEquiv e).symm n).2 := by
+      zmodPairing 2 (ofAdd (ZMod.unitsTwoPowEquiv e m).toAdd.1)
+          (ofAdd (ZMod.unitsTwoPowEquiv e n).toAdd.1) *
+        zmodPairing (2 ^ e) (ofAdd (ZMod.unitsTwoPowEquiv e m).toAdd.2)
+          (ofAdd (ZMod.unitsTwoPowEquiv e n).toAdd.2) := by
   simp [conreyTwoPow]
 
 private theorem conreyTwoPow_of_le_one {v : ℕ} (hv : v ≤ 1) : conreyTwoPow v = 1 := by
@@ -248,14 +241,12 @@ theorem conreyLocal_two_apply {e : ℕ} {m n : (ZMod (2 ^ (e + 2)))ˣ} {x y a b 
     (hn : (n : ZMod (2 ^ (e + 2))) = (-1) ^ y * 5 ^ b) :
     (conreyLocal 2 (e + 2) m n : ℂ) =
       exp (2 * π * I * (x * y) / 2) * exp (2 * π * I * (a * b) / 2 ^ e) := by
-  have hm' : (ZMod.unitsTwoPowEquiv e).symm m =
-      (ofAdd (x : ZMod 2), ofAdd (a : ZMod (2 ^ e))) := by
-    rw [MulEquiv.symm_apply_eq]
-    exact Units.ext (by rw [ZMod.coe_unitsTwoPowEquiv_ofAdd_natCast, hm])
-  have hn' : (ZMod.unitsTwoPowEquiv e).symm n =
-      (ofAdd (y : ZMod 2), ofAdd (b : ZMod (2 ^ e))) := by
-    rw [MulEquiv.symm_apply_eq]
-    exact Units.ext (by rw [ZMod.coe_unitsTwoPowEquiv_ofAdd_natCast, hn])
+  have hm' : ZMod.unitsTwoPowEquiv e m = ofAdd ((x : ZMod 2), (a : ZMod (2 ^ e))) := by
+    rw [← MulEquiv.eq_symm_apply, ZMod.unitsTwoPowEquiv_symm_ofAdd_natCast]
+    exact Units.ext (by simp [hm])
+  have hn' : ZMod.unitsTwoPowEquiv e n = ofAdd ((y : ZMod 2), (b : ZMod (2 ^ e))) := by
+    rw [← MulEquiv.eq_symm_apply, ZMod.unitsTwoPowEquiv_symm_ofAdd_natCast]
+    exact Units.ext (by simp [hn])
   rw [conreyLocal_two, conreyTwoPow_add_two_apply, hm', hn']
   simp [zmodPairing_apply, ← Nat.cast_mul, ZMod.toCircle_natCast]
 
@@ -297,16 +288,14 @@ theorem conreyLocal_eq_one_iff {p e : ℕ} (hp : p.Prime) (m : (ZMod (p ^ e))ˣ)
       exact Subsingleton.elim _ _
     · -- Pair `m` with `-1` and with `5`, whose coordinates are `(1, 0)` and `(0, 1)`.
       have h1 := DFunLike.congr_fun h (-1)
-      have h5 := DFunLike.congr_fun h
-        (ZMod.unitOfCoprime 5 (Nat.Coprime.pow_right (e + 2) (by norm_num)))
-      simp only [conreyTwoPow_add_two_apply, ZMod.unitsTwoPowEquiv_symm_neg_one, map_one,
-        mul_one, MonoidHom.one_apply] at h1
-      simp only [conreyTwoPow_add_two_apply,
-        ZMod.unitsTwoPowEquiv_symm_of_coe_eq_five (ZMod.coe_unitOfCoprime _ _), map_one, one_mul,
-        MonoidHom.one_apply] at h5
-      rw [zmodPairing_eq_one_iff] at h1 h5
-      apply (ZMod.unitsTwoPowEquiv e).symm.injective
-      rw [map_one]
+      have h5 := DFunLike.congr_fun h (ZMod.unitsTwoPowFive e)
+      simp only [conreyTwoPow_add_two_apply, ZMod.unitsTwoPowEquiv_neg_one, toAdd_ofAdd,
+        ofAdd_zero, map_one, mul_one, MonoidHom.one_apply] at h1
+      simp only [conreyTwoPow_add_two_apply, ZMod.unitsTwoPowEquiv_five, toAdd_ofAdd, ofAdd_zero,
+        map_one, one_mul, MonoidHom.one_apply] at h5
+      rw [zmodPairing_eq_one_iff, ofAdd_eq_one] at h1 h5
+      apply (ZMod.unitsTwoPowEquiv e).injective
+      rw [map_one, ← toAdd_eq_zero]
       exact Prod.ext h1 h5
   · have : Fact p.Prime := ⟨hp⟩
     rw [conreyLocal_of_ne_two hp h2] at h
@@ -353,11 +342,6 @@ theorem conreyPairing_eq_one_iff {N : ℕ} [NeZero N] (m : (ZMod N)ˣ) :
   · intro q hq
     simp [v, Pi.mulSingle_eq_of_ne hq]
 
-private theorem card_dirichletCharacter (N : ℕ) [NeZero N] :
-    Fintype.card (DirichletCharacter ℂ N) = Fintype.card (ZMod N)ˣ := by
-  rw [← Nat.card_eq_fintype_card, DirichletCharacter.card_eq_totient_of_hasEnoughRootsOfUnity,
-    ZMod.card_units_eq_totient]
-
 /-- `m ↦ χ_N(m, ·)`, as a homomorphism to the Dirichlet characters. -/
 private noncomputable def conreyHom (N : ℕ) : (ZMod N)ˣ →* DirichletCharacter ℂ N :=
   MulChar.mulEquivToUnitHom.symm.toMonoidHom.comp ((conreyPairing N).compr₂ Circle.toUnits)
@@ -368,7 +352,9 @@ private theorem conreyHom_apply (N : ℕ) (m n : (ZMod N)ˣ) :
 
 private theorem conreyHom_bijective (N : ℕ) [NeZero N] : Function.Bijective (conreyHom N) := by
   refine (Fintype.bijective_iff_injective_and_card _).mpr
-    ⟨(injective_iff_map_eq_one _).mpr fun m hm ↦ ?_, (card_dirichletCharacter N).symm⟩
+    ⟨(injective_iff_map_eq_one _).mpr fun m hm ↦ ?_, by
+      rw [ZMod.card_units_eq_totient, ← Nat.card_eq_fintype_card,
+        DirichletCharacter.card_eq_totient_of_hasEnoughRootsOfUnity]⟩
   rw [← conreyPairing_eq_one_iff]
   ext n : 1
   have := congrArg (fun χ : DirichletCharacter ℂ N ↦ χ n) hm

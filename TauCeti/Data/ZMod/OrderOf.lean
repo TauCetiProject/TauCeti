@@ -37,6 +37,8 @@ modulo every power of `p`.
   modulo `ℓ ^ r` for all large `r`.
 * `ZMod.isUnit_of_orderOf_eq_totient`, `ZMod.zpowers_eq_top_of_orderOf_eq_totient`: a residue of
   order `φ(n)` is a unit, and generates `(ℤ/n)ˣ`.
+* `ZMod.exists_orderOf_natCast_eq_totient`: if `(ℤ/n)ˣ` is cyclic, some natural number is a
+  primitive root modulo `n`.
 * `ZMod.orderOf_natCast_eq_totient_of_dvd`: a primitive root modulo `n` is a primitive root
   modulo every divisor of `n`.
 * `ZMod.orderOf_natCast_prime_pow_eq_totient`: for odd `p`, a primitive root modulo `p ²` is a
@@ -128,6 +130,13 @@ theorem zpowers_eq_top_of_orderOf_eq_totient {n : ℕ} [NeZero n] {u : (ZMod n)�
     (h : orderOf u = n.totient) : Subgroup.zpowers u = ⊤ :=
   (Subgroup.card_eq_iff_eq_top _).mp <| by
     rw [Nat.card_zpowers, h, Nat.card_eq_fintype_card, card_units_eq_totient]
+
+/-- If `(ℤ/n)ˣ` is cyclic, some natural number is a primitive root modulo `n`. -/
+theorem exists_orderOf_natCast_eq_totient {n : ℕ} [NeZero n] [IsCyclic (ZMod n)ˣ] :
+    ∃ g : ℕ, orderOf (g : ZMod n) = n.totient := by
+  obtain ⟨u, hu⟩ := isCyclic_iff_exists_orderOf_eq_natCard.mp ‹IsCyclic (ZMod n)ˣ›
+  refine ⟨(u : ZMod n).val, ?_⟩
+  rw [natCast_zmod_val, orderOf_units, hu, Nat.card_eq_fintype_card, card_units_eq_totient]
 
 /-- A primitive root modulo `n` is a primitive root modulo every divisor `d` of `n`. -/
 theorem orderOf_natCast_eq_totient_of_dvd {d n g : ℕ} [NeZero n] (hdn : d ∣ n)
