@@ -461,6 +461,7 @@ theorem lift_mem_iff {ι : Type*} [AddCommMonoid ι] {𝒜 : ι → σ} [SetLike
     -- Pushing the degrees forward along `e` preserves weighted homogeneity.
     have hpe : p.IsWeightedHomogeneous (e ∘ degree) (e n) := fun d hd ↦ by
       simp only [← hp hd, Finsupp.weight_apply, map_finsuppSum, map_nsmul, Function.comp_apply]
+    -- The pieces are closed under the `ℤ`-action, as `IsWeightedHomogeneous.aeval_mem` requires.
     have := AddSubgroupClass.zsmulMemClass (S := σ) (M := A)
     rw [← RingHom.comp_apply, hlift]
     refine hpe.aeval_mem fun ⟨i, j⟩ ↦ ?_

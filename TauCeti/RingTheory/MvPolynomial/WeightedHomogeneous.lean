@@ -66,6 +66,8 @@ theorem IsWeightedHomogeneous.aeval_mem {M A S : Type*} [AddCommMonoid M] [CommS
   | zero => simp
   | add p q _ _ ihp ihq => simpa using add_mem ihp ihq
   | monomial d r hr =>
+    -- Write the weight of `d` as `0 + ∑ i, d i • w i` and `algebraMap R A r` as `r • 1`, matching
+    -- the product of `r • 1 ∈ 𝒜 0` with `∏ i, g i ^ d i ∈ 𝒜 (∑ i, d i • w i)`.
     rw [aeval_monomial, ← hr, Finsupp.weight_apply, Finsupp.sum, ← zero_add (∑ _ ∈ _, _),
       Algebra.algebraMap_eq_smul_one]
     exact SetLike.mul_mem_graded (SMulMemClass.smul_mem r SetLike.GradedOne.one_mem)

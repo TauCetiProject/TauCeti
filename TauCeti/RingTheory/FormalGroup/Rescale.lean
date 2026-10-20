@@ -71,18 +71,15 @@ private theorem coeff_rescaleSeries (f : MvPowerSeries (Fin 2) R) (s : R) (d : F
 
 private theorem constantCoeff_rescaleSeries {f : MvPowerSeries (Fin 2) R}
     (hf : constantCoeff f = 0) (s : R) : constantCoeff (rescaleSeries f s) = 0 := by
-  rw [← coeff_zero_eq_constantCoeff_apply, coeff_rescaleSeries, coeff_zero_eq_constantCoeff_apply,
-    hf, mul_zero]
+  simpa [hf] using coeff_rescaleSeries f s 0
 
 private theorem smul_rescaleSeries {f : MvPowerSeries (Fin 2) R} (hf : constantCoeff f = 0)
     (s : R) : s • rescaleSeries f s = rescale (fun _ ↦ s) f := by
   ext d
-  rw [coeff_smul, coeff_rescaleSeries, coeff_rescale, Finsupp.prod, Finset.prod_pow_eq_pow_sum,
-    ← Finsupp.degree_apply, ← mul_assoc, ← pow_succ']
   rcases Nat.eq_zero_or_pos d.degree with h | h
-  · rw [(Finsupp.degree_eq_zero_iff d).1 h, coeff_zero_eq_constantCoeff_apply, hf]
-    simp
-  · rw [Nat.sub_add_cancel h]
+  · simp [(Finsupp.degree_eq_zero_iff d).1 h, constantCoeff_rescaleSeries hf, hf]
+  · simp [coeff_rescaleSeries, Finsupp.prod, Finset.prod_pow_eq_pow_sum, ← Finsupp.degree_apply,
+      ← mul_assoc, ← pow_succ', Nat.sub_add_cancel h]
 
 /-- If `s • g = f(s X, s Y)`, then `s • g(v₀, v₁) = f(s v₀, s v₁)` at every substitutable pair. -/
 private theorem smul_subst_of_smul_eq_rescale {f g : MvPowerSeries (Fin 2) R} {s : R}
@@ -102,6 +99,7 @@ private theorem assoc_of_smul_eq_rescale (F : FormalGroup R) {g : MvPowerSeries 
   have hX (i : Fin 3) : PowerSeries.HasSubst (s • X i : MvPowerSeries (Fin 3) R) :=
     PowerSeries.HasSubst.of_constantCoeff_zero (by simp)
   have hreg : IsSMulRegular (MvPowerSeries (Fin 3) R) s := .pi fun _ ↦ hs.isSMulRegular
+  -- `IsSMulRegular` is injectivity of `s • ·`, so it suffices to compare both sides times `s`.
   refine hreg (?_ : s • _ = s • _)
   rw [smul_subst_of_smul_eq_rescale h (HasSubst.cons_subst_zero_left (0 : Fin 3) 1 2 hg),
     smul_subst_of_smul_eq_rescale h (HasSubst.cons_subst_zero_right (0 : Fin 3) 1 2 hg)]
@@ -118,6 +116,7 @@ private theorem comm_of_smul_eq_rescale (F : FormalGroup R) [F.IsComm]
   have hX (i : Fin 2) : PowerSeries.HasSubst (s • X i : MvPowerSeries (Fin 2) R) :=
     PowerSeries.HasSubst.of_constantCoeff_zero (by simp)
   have hreg : IsSMulRegular (MvPowerSeries (Fin 2) R) s := .pi fun _ ↦ hs.isSMulRegular
+  -- `IsSMulRegular` is injectivity of `s • ·`, so it suffices to compare both sides times `s`.
   refine hreg (?_ : s • _ = s • _)
   rw [smul_subst_of_smul_eq_rescale h HasSubst.X_X, h, rescale_eq_subst]
   simp only [Matrix.smul_cons, Matrix.smul_empty]
@@ -145,8 +144,7 @@ private theorem map_rescaleGeneric (F : FormalGroup R) (s : R) :
     ((rescaleGeneric F).map (Polynomial.evalRingHom s)).toPowerSeries =
       rescaleSeries F.toPowerSeries s := by
   ext d
-  simp only [rescaleGeneric, map_toPowerSeries, coeff_map, coeff_rescaleSeries]
-  rw [map_mul, map_pow, Polynomial.coe_evalRingHom, Polynomial.eval_X, Polynomial.eval_C]
+  simp [rescaleGeneric, coeff_rescaleSeries, mul_comm (coeff d _)]
 
 /-- The **rescaling** `F^s` of a formal group law `F` by `s ∈ R`: the formal group law whose
 coefficient of `Xⁱ Yʲ` is `s ^ (i + j - 1)` times that of `F`. It satisfies
