@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.AddOneForm
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Conformal
+import TauCeti.Analysis.InnerProductSpace.KulkarniNomizu
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
@@ -39,7 +40,8 @@ hypotheses are differentiability at `x` of `X`, `Y`, `∇_X Z`, `∇_Y Z`, `A(Z,
 For a smooth metric, a smooth conformal factor and smooth vector fields all the hypotheses hold.
 
 For the conformal factor `f = e^(2u)` of a smooth function `u`, the derivative of `A` is computed
-from the Hessian of `u`, `(∇_X A)(Z, Y) = Hess u(X, Y) Z + Hess u(X, Z) Y - g(Y, Z) ∇_X grad u`.
+from the Hessian of `u`, `(∇_X A)(Z, Y) = Hess u(X, Y) Z + Hess u(X, Z) Y - g(Y, Z) ∇_X grad u`
+(`TauCeti.Manifold.leviCivitaConnection_conformalConnectionTensor_exp_two_mul`).
 This turns the identity above into an algebraic expression in the curvature of `g` and the first
 two derivatives of `u` at the point. With `T = Hess u - du ⊗ du` and `T♯(X) = ∇_X grad u -
 du(X) grad u`,
@@ -67,8 +69,6 @@ bundle of `M` and the connections are compared directly on `M`.
   of `f g` in terms of a Levi-Civita connection of `g` and the conformal connection tensor of `f`.
 * `Bundle.ContMDiffRiemannianMetric.curvatureOperator_leviCivitaConnection_rescale_of_contMDiff`:
   the same identity for a smooth metric, a smooth conformal factor and smooth vector fields.
-* `TauCeti.Manifold.leviCivitaConnection_conformalConnectionTensor_exp_two_mul`: the covariant
-  derivative of the conformal connection tensor of `e^(2u)`, through the Hessian of `u`.
 * `Bundle.ContMDiffRiemannianMetric.curvatureOperator_leviCivitaConnection_rescale_exp` and
   `Bundle.ContMDiffRiemannianMetric.curvatureTensor_leviCivitaConnection_rescale_exp`: the curvature
   of `e^(2u) g` in terms of the curvature of `g` and the derivatives of `u`.
@@ -92,61 +92,6 @@ open Bundle
 open scoped ContDiff Manifold RealInnerProductSpace
 
 noncomputable section
-
-namespace TauCeti.Manifold
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
-  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-
-/-- **Covariant derivative of the conformal connection tensor of `e^(2u)`.** For the Levi-Civita
-connection `∇` of a smooth metric, a smooth function `u` and the tensor
-`A(Z, Y) = du(Y) Z + du(Z) Y - ⟪Z, Y⟫ grad u` of `e^(2u)`,
-
-`(∇_X A)(Z, Y) = Hess u(X, Y) Z + Hess u(X, Z) Y - ⟪Z, Y⟫ ∇_X grad u`,
-
-where `(∇_X A)(Z, Y) = ∇_X (A(Z, Y)) - A(∇_X Z, Y) - A(Z, ∇_X Y)`. The vector fields `Y` and `Z`
-need only be differentiable at the point. -/
-theorem leviCivitaConnection_conformalConnectionTensor_exp_two_mul {u : M → ℝ}
-    (hu : ContMDiff I 𝓘(ℝ) ∞ u) (X : Π x : M, TangentSpace I x)
-    {Y Z : Π x : M, TangentSpace I x} {x : M} (hY : MDiffAt (T% Y) x) (hZ : MDiffAt (T% Z) x) :
-    letI A := conformalConnectionTensor I (fun y ↦ Real.exp (2 * u y))
-    letI cov := CovariantDerivative.leviCivitaConnection I M
-    cov (fun y ↦ A y (Z y) (Y y)) x (X x) - A x (cov Z x (X x)) (Y x) -
-        A x (Z x) (cov Y x (X x)) =
-      hessian I u x (X x) (Y x) • Z x + hessian I u x (X x) (Z x) • Y x -
-        ⟪Z x, Y x⟫ • cov (mgradient I u) x (X x) := by
-  set cov := CovariantDerivative.leviCivitaConnection I M
-  have hu' : ∀ y, MDiffAt u y := hu.mdifferentiable (by simp)
-  have hG : MDiffAt (T% (mgradient I u)) x :=
-    mdifferentiable_mgradient (I := I) (hu.of_le (by simp)) x
-  -- Write `A(Z, Y)` as a combination of `Z`, `Y` and `grad u` with differentiable coefficients.
-  have hA : (fun y ↦ conformalConnectionTensor I (fun y ↦ Real.exp (2 * u y)) y (Z y) (Y y)) =
-      (fun y ↦ mvfderiv I u y (Y y)) • Z + (fun y ↦ mvfderiv I u y (Z y)) • Y +
-        (fun y ↦ -⟪Z y, Y y⟫) • mgradient I u := by
-    funext y
-    rw [conformalConnectionTensor_exp_two_mul (hu' y), sub_eq_add_neg, ← neg_smul]
-    simp only [Pi.add_apply, Pi.smul_apply']
-  have hdu {W : Π x : M, TangentSpace I x} (hW : MDiffAt (T% W) x) :
-      MDiffAt (fun y ↦ mvfderiv I u y (W y)) x := by
-    simpa only [inner_mgradient] using mdifferentiableAt_inner hG hW
-  have hZY : MDiffAt (fun y ↦ -⟪Z y, Y y⟫) x := (mdifferentiableAt_inner hZ hY).neg
-  have hc := cov.isCovariantDerivativeOnUniv
-  -- Expand by additivity and the Leibniz rule; the terms in `∇_X Z` and `∇_X Y` cancel.
-  rw [hA, hc.add (mdifferentiableAt_add_section ((hdu hY).smul_section hZ)
-      ((hdu hZ).smul_section hY)) (hZY.smul_section hG),
-    hc.add ((hdu hY).smul_section hZ) ((hdu hZ).smul_section hY), hc.leibniz hZ (hdu hY),
-    hc.leibniz hY (hdu hZ), hc.leibniz hG hZY]
-  simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, mvfderiv_fun_neg,
-    neg_apply, hessian_apply_eq_mvfderiv_sub hu x X Y hY, hessian_apply_eq_mvfderiv_sub hu x X Z hZ,
-    (CovariantDerivative.isMetricCompatible_leviCivitaConnection I).mvfderiv_inner_eq X hZ hY,
-    conformalConnectionTensor_exp_two_mul (hu' x)]
-  simp only [← inner_mgradient (f := u)]
-  module
-
-end TauCeti.Manifold
 
 namespace Bundle.ContMDiffRiemannianMetric
 
@@ -361,42 +306,49 @@ theorem ricciTensor_leviCivitaConnection_rescale_exp
   -- Trace the curvature formula against a `g`-orthonormal basis.
   let b := stdOrthonormalBasis ℝ (TangentSpace I x)
   set cov := CovariantDerivative.leviCivitaConnection I M
-  set Hv := cov (mgradient I u) x v
-  set Hw := cov (mgradient I u) x w
+  set G := mgradient I u x
+  set du : TangentSpace I x →ₗ[ℝ] ℝ := (mvfderiv I u x).toLinearMap
+  -- The correction to the curvature is `-(T + ½ |du|² g) ⊙ g`, with `T = Hess u - du ⊗ du`.
+  let K : LinearMap.BilinForm ℝ (TangentSpace I x) :=
+    (innerₗ _).comp (cov (mgradient I u) x).toLinearMap -
+      (LinearMap.mul ℝ ℝ).compl₁₂ du du + ((1 / 2 : ℝ) * ⟪G, G⟫) • innerₗ _
+  have hK (v w : TangentSpace I x) :
+      K v w =
+        hessian I u x v w - mvfderiv I u x v * mvfderiv I u x w + 1 / 2 * ⟪G, G⟫ * ⟪v, w⟫ := by
+    simp [K, du, cov, hessian_def]
+    -- `mvfderiv` takes values in the tangent space of `ℝ`, which is `ℝ` only by definition.
+    rfl
   rw [CovariantDerivative.ricciTensor_eq_sum_inner _ x b]
   simp only [curvatureTensor_leviCivitaConnection_rescale_exp g hu x]
-  rw [CovariantDerivative.ricciTensor_eq_sum_inner cov x b, laplaceBeltrami_eq_sum_hessian I u x b]
-  have hb (i) : ⟪b i, b i⟫ = 1 := by
-    rw [real_inner_self_eq_norm_sq, b.orthonormal.1 i, one_pow]
-  -- Each summand, written through the coordinates `⟪·, b i⟫` of the vectors involved.
   have key (i) : ⟪b i, cov.curvatureTensor x (b i) v w +
       (hessian I u x (b i) w - mvfderiv I u x (b i) * mvfderiv I u x w) • v -
       (hessian I u x v w - mvfderiv I u x v * mvfderiv I u x w) • b i -
-      ⟪v, w⟫ • (cov (mgradient I u) x (b i) - mvfderiv I u x (b i) • mgradient I u x) +
-      ⟪b i, w⟫ • (Hv - mvfderiv I u x v • mgradient I u x) +
-      ⟪mgradient I u x, mgradient I u x⟫ • (⟪b i, w⟫ • v - ⟪v, w⟫ • b i)⟫ =
-      ⟪b i, cov.curvatureTensor x (b i) v w⟫ + ⟪Hw, b i⟫ * ⟪b i, v⟫ -
-        mvfderiv I u x w * (⟪mgradient I u x, b i⟫ * ⟪b i, v⟫) -
-        (hessian I u x v w - mvfderiv I u x v * mvfderiv I u x w) -
-        ⟪v, w⟫ * hessian I u x (b i) (b i) +
-        ⟪v, w⟫ * (⟪mgradient I u x, b i⟫ * ⟪b i, mgradient I u x⟫) +
-        ⟪w, b i⟫ * ⟪b i, Hv⟫ - mvfderiv I u x v * (⟪w, b i⟫ * ⟪b i, mgradient I u x⟫) +
-        ⟪mgradient I u x, mgradient I u x⟫ * (⟪w, b i⟫ * ⟪b i, v⟫) -
-        ⟪mgradient I u x, mgradient I u x⟫ * ⟪v, w⟫ := by
-    have h₁ : hessian I u x (b i) w = ⟪Hw, b i⟫ := by rw [hessian_symm hu, hessian_def]
-    have h₂ : hessian I u x (b i) (b i) = ⟪b i, cov (mgradient I u) x (b i)⟫ := by
+      ⟪v, w⟫ • (cov (mgradient I u) x (b i) - mvfderiv I u x (b i) • G) +
+      ⟪b i, w⟫ • (cov (mgradient I u) x v - mvfderiv I u x v • G) +
+      ⟪G, G⟫ • (⟪b i, w⟫ • v - ⟪v, w⟫ • b i)⟫ =
+      ⟪b i, cov.curvatureTensor x (b i) v w⟫ -
+        LinearMap.BilinForm.kulkarniNomizu K (innerₗ _) (b i) v w (b i) := by
+    have h₁ (y z : TangentSpace I x) : ⟪z, cov (mgradient I u) x y⟫ = hessian I u x y z := by
       rw [hessian_def, real_inner_comm]
-    simp only [inner_add_right, inner_sub_right, inner_smul_right, hb, h₁, h₂, inner_mgradient,
-      inner_mgradient_right, real_inner_comm (b i) w]
+    simp only [LinearMap.BilinForm.kulkarniNomizu_apply, hK, innerₗ_apply_apply,
+      inner_add_right, inner_sub_right, inner_smul_right, inner_mgradient_right, G, h₁,
+      hessian_symm hu x v (b i), real_inner_comm (b i)]
     ring
-  refine (Finset.sum_congr rfl fun i _ ↦ key i).trans ?_
-  simp only [Finset.sum_add_distrib, Finset.sum_sub_distrib, ← Finset.mul_sum,
-    b.sum_inner_mul_inner, Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
-  have hHv : ⟪w, Hv⟫ = hessian I u x v w := by rw [hessian_def, real_inner_comm]
-  have hHw : ⟪Hw, v⟫ = hessian I u x v w := by rw [hessian_symm hu, hessian_def]
+  rw [Finset.sum_congr rfl fun i _ ↦ key i, Finset.sum_sub_distrib,
+    ← CovariantDerivative.ricciTensor_eq_sum_inner cov x b,
+    LinearMap.BilinForm.sum_kulkarniNomizu_innerₗ, TauCeti.bilinFormTrace_eq_sum K b,
+    laplaceBeltrami_eq_sum_hessian I u x b]
+  have s₂ : ∑ i, mvfderiv I u x (b i) * mvfderiv I u x (b i) = ⟪G, G⟫ := by
+    rw [← b.sum_inner_mul_inner]
+    simp only [inner_mgradient, inner_mgradient_right, G]
+  have s₃ : ∑ i, ⟪b i, b i⟫ = Module.finrank ℝ E := by
+    simp only [real_inner_self_eq_norm_sq, b.orthonormal.1, one_pow, Finset.sum_const,
+      Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, mul_one]
+    -- The tangent space `TangentSpace I x` is the model space `E`.
+    rfl
   -- The tangent space `TangentSpace I x` is the model space `E`.
   have hn : Module.finrank ℝ (TangentSpace I x) = Module.finrank ℝ E := rfl
-  simp only [hHv, hHw, hn, inner_mgradient, inner_mgradient_right, real_inner_comm w v]
+  simp only [hK, Finset.sum_add_distrib, Finset.sum_sub_distrib, ← Finset.mul_sum, s₂, s₃, hn]
   ring
 
 /-- **Scalar curvature under the conformal change `e^(2u) g`.** For a smooth metric `g` on a

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
+public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Conformal
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Geometry.Manifold.Riemannian.Basic
@@ -51,6 +52,8 @@ the connections are compared directly on `M`.
   tensor of `u`.
 * `TauCeti.Manifold.conformalConnectionTensor_exp_two_mul`: the tensor of `e^(2u)` is
   `du(w) v + du(v) w - ⟪v, w⟫ grad u`.
+* `TauCeti.Manifold.leviCivitaConnection_conformalConnectionTensor_exp_two_mul`: the covariant
+  derivative of the tensor of `e^(2u)`, through the Hessian of `u`.
 * `Bundle.ContMDiffRiemannianMetric.isLeviCivitaConnection_rescale_addOneForm`: adding the tensor
   of `f` to a Levi-Civita connection of `g` gives a Levi-Civita connection of `f g`.
 * `Bundle.ContMDiffRiemannianMetric.leviCivitaConnection_rescale_apply`: the Levi-Civita
@@ -137,7 +140,9 @@ theorem contMDiff_conformalConnectionTensor_apply {n : ℕ∞ω} [IsManifold I (
     ((((hinner hgrad hZ).smul_section hY).add_section
       ((hinner hgrad hY).smul_section hZ)).sub_section
         ((hinner hY hZ).smul_section hgrad))).congr fun y ↦ ?_
-  simp [conformalConnectionTensor_apply, inner_mgradient]
+  simp only [conformalConnectionTensor_apply, inner_mgradient]
+  -- The combined sections evaluate pointwise by definition.
+  rfl
 
 /-- The conformal connection tensor of a real power `u ^ p` of a positive function is `p` times
 that of `u`. For `p = 4 / (n - 2)` this is the conformal factor of the Yamabe problem. -/
@@ -170,6 +175,63 @@ theorem conformalConnectionTensor_exp_two_mul {u : M → ℝ} {x : M} (hu : MDif
     rw [← inner_mgradient, hgrad, real_inner_smul_left, inner_mgradient]
   simp only [conformalConnectionTensor_apply, hdf, hgrad]
   match_scalars <;> field_simp
+
+end TauCeti.Manifold
+
+namespace TauCeti.Manifold
+
+open scoped RealInnerProductSpace
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+
+/-- **Covariant derivative of the conformal connection tensor of `e^(2u)`.** For the Levi-Civita
+connection `∇` of a smooth metric, a smooth function `u` and the tensor
+`A(Z, Y) = du(Y) Z + du(Z) Y - ⟪Z, Y⟫ grad u` of `e^(2u)`,
+
+`(∇_X A)(Z, Y) = Hess u(X, Y) Z + Hess u(X, Z) Y - ⟪Z, Y⟫ ∇_X grad u`,
+
+where `(∇_X A)(Z, Y) = ∇_X (A(Z, Y)) - A(∇_X Z, Y) - A(Z, ∇_X Y)`. The vector fields `Y` and `Z`
+need only be differentiable at the point. -/
+theorem leviCivitaConnection_conformalConnectionTensor_exp_two_mul {u : M → ℝ}
+    (hu : ContMDiff I 𝓘(ℝ) ∞ u) (X : Π x : M, TangentSpace I x)
+    {Y Z : Π x : M, TangentSpace I x} {x : M} (hY : MDiffAt (T% Y) x) (hZ : MDiffAt (T% Z) x) :
+    letI A := conformalConnectionTensor I (fun y ↦ Real.exp (2 * u y))
+    letI cov := CovariantDerivative.leviCivitaConnection I M
+    cov (fun y ↦ A y (Z y) (Y y)) x (X x) - A x (cov Z x (X x)) (Y x) -
+        A x (Z x) (cov Y x (X x)) =
+      hessian I u x (X x) (Y x) • Z x + hessian I u x (X x) (Z x) • Y x -
+        ⟪Z x, Y x⟫ • cov (mgradient I u) x (X x) := by
+  set cov := CovariantDerivative.leviCivitaConnection I M
+  have hu' : ∀ y, MDiffAt u y := hu.mdifferentiable (by simp)
+  have hG : MDiffAt (T% (mgradient I u)) x :=
+    mdifferentiable_mgradient (I := I) (hu.of_le (by simp)) x
+  -- Write `A(Z, Y)` as a combination of `Z`, `Y` and `grad u` with differentiable coefficients.
+  have hA : (fun y ↦ conformalConnectionTensor I (fun y ↦ Real.exp (2 * u y)) y (Z y) (Y y)) =
+      (fun y ↦ mvfderiv I u y (Y y)) • Z + (fun y ↦ mvfderiv I u y (Z y)) • Y +
+        (fun y ↦ -⟪Z y, Y y⟫) • mgradient I u := by
+    funext y
+    rw [conformalConnectionTensor_exp_two_mul (hu' y), sub_eq_add_neg, ← neg_smul]
+    simp only [Pi.add_apply, Pi.smul_apply']
+  have hdu {W : Π x : M, TangentSpace I x} (hW : MDiffAt (T% W) x) :
+      MDiffAt (fun y ↦ mvfderiv I u y (W y)) x := by
+    simpa only [inner_mgradient] using mdifferentiableAt_inner hG hW
+  have hZY : MDiffAt (fun y ↦ -⟪Z y, Y y⟫) x := (mdifferentiableAt_inner hZ hY).neg
+  have hc := cov.isCovariantDerivativeOnUniv
+  -- Expand by additivity and the Leibniz rule; the terms in `∇_X Z` and `∇_X Y` cancel.
+  rw [hA, hc.add (mdifferentiableAt_add_section ((hdu hY).smul_section hZ)
+      ((hdu hZ).smul_section hY)) (hZY.smul_section hG),
+    hc.add ((hdu hY).smul_section hZ) ((hdu hZ).smul_section hY), hc.leibniz hZ (hdu hY),
+    hc.leibniz hY (hdu hZ), hc.leibniz hG hZY]
+  simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, mvfderiv_fun_neg,
+    neg_apply, hessian_apply_eq_mvfderiv_sub hu x X Y hY, hessian_apply_eq_mvfderiv_sub hu x X Z hZ,
+    (CovariantDerivative.isMetricCompatible_leviCivitaConnection I).mvfderiv_inner_eq X hZ hY,
+    conformalConnectionTensor_exp_two_mul (hu' x)]
+  simp only [← inner_mgradient (f := u)]
+  module
 
 end TauCeti.Manifold
 
