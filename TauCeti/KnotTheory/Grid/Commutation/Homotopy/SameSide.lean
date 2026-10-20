@@ -58,6 +58,22 @@ theorem sameSidePentagonPairs_subset (x z : GridState n) :
     G.sameSidePentagonPairs C x z ⊆ G.pentagonPairDecompositions C x z :=
   fun D hD => ((G.mem_sameSidePentagonPairs C D).mp hD).1
 
+private theorem terminal_pair_target_eq_source {x y z : GridState n}
+    (P : GridPentagonBetween a C.turnRow x y)
+    (Q : GridPentagonBetween C.reverse.column C.reverse.turnRow y z)
+    (h : P.left = Q.left) : z = x := by
+  apply (GridRectangleDecomposition.target_eq_source_iff_sideColumns_eq
+    ⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩).mpr
+  simp only [GridRectangleBetween.sideColumns, P.right_eq, Q.right_eq, C.reverse_column, h]
+
+private theorem initial_pair_target_eq_source {x y z : GridState n}
+    (P : GridInitialPentagonBetween a C.turnRow x y)
+    (Q : GridInitialPentagonBetween C.reverse.column C.reverse.turnRow y z)
+    (h : P.right = Q.right) : z = x := by
+  apply (GridRectangleDecomposition.target_eq_source_iff_sideColumns_eq
+    ⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩).mpr
+  simp only [GridRectangleBetween.sideColumns, P.left_eq, Q.left_eq, C.reverse_column, h]
+
 private theorem existsUnique_sameSidePartner (R : Type*) [CommSemiring R]
     {x z : GridState n} (hzx : z ≠ x)
     (D : GridPentagonPairDecomposition a C.turnRow C.reverse.column C.reverse.turnRow x z)
@@ -73,16 +89,8 @@ private theorem existsUnique_sameSidePartner (R : Type*) [CommSemiring R]
   | inl P =>
     cases Q with
     | inl Q =>
-      have hne : P.left ≠ Q.left := by
-        intro h
-        apply hzx
-        calc
-          z = m.swapColumns P.left b := by
-            simpa only [← h, Q.right_eq, C.reverse_column] using Q.target_eq_swapColumns
-          _ = (x.swapColumns P.left b).swapColumns P.left b :=
-            congrArg (GridState.swapColumns P.left b)
-              (by simpa only [P.right_eq] using P.target_eq_swapColumns)
-          _ = x := GridState.swapColumns_swapColumns _ _ _
+      have hne : P.left ≠ Q.left :=
+        fun h => hzx (G.terminal_pair_target_eq_source C P Q h)
       simpa only [GridPentagonPairDecomposition.toRectangleDecomposition,
         GridCommutationPentagonBetween.toGridRectangleBetween_inl] using
         G.existsUnique_unpairedHexagonComposite_of_terminalPentagonPair C R P Q
@@ -93,16 +101,8 @@ private theorem existsUnique_sameSidePartner (R : Type*) [CommSemiring R]
     cases Q with
     | inl Q => simp at hside
     | inr Q =>
-      have hne : P.right ≠ Q.right := by
-        intro h
-        apply hzx
-        calc
-          z = m.swapColumns b P.right := by
-            simpa only [← h, Q.left_eq, C.reverse_column] using Q.target_eq_swapColumns
-          _ = (x.swapColumns b P.right).swapColumns b P.right :=
-            congrArg (GridState.swapColumns b P.right)
-              (by simpa only [P.left_eq] using P.target_eq_swapColumns)
-          _ = x := GridState.swapColumns_swapColumns _ _ _
+      have hne : P.right ≠ Q.right :=
+        fun h => hzx (G.initial_pair_target_eq_source C P Q h)
       simpa only [GridPentagonPairDecomposition.toRectangleDecomposition,
         GridCommutationPentagonBetween.toGridRectangleBetween_inr] using
         G.existsUnique_unpairedHexagonComposite_of_initialPentagonPair C R P Q
@@ -243,19 +243,8 @@ theorem unblockedDifferential_commutationHomotopy_add_eq_iff_sdiff_sameSide
             G.pentagonPairWeight C R D := by
   have : IsCancelAdd R := isCancelAdd_of_charTwo R
   rw [G.unblockedDifferential_commutationHomotopy_add_eq_iff_unpaired C R]
-  have hdiag (x : GridState n) :
-      (∑ D ∈ G.hexagonRectangleDecompositions C x x, G.hexagonRectangleWeight C R D) +
-          ∑ D ∈ G.rectangleHexagonDecompositions C x x, G.rectangleHexagonWeight C R D =
-        1 + ∑ D ∈ G.pentagonPairDecompositions C x x, G.pentagonPairWeight C R D := by
-    simpa only [Finsupp.add_apply,
-      G.unblockedDifferential_commutationHomotopy_single_apply C R,
-      G.commutationHomotopy_unblockedDifferential_single_apply C R,
-      G.reverse_commutationMap_commutationMap_single_apply C R,
-      G.sum_commutationHexagonCoefficient_mul_unblockedCoefficient C R,
-      G.sum_unblockedCoefficient_mul_commutationHexagonCoefficient C R,
-      G.sum_rename_commutationPentagonCoefficient_mul_commutationPentagonCoefficient C R] using
-      G.unblockedDifferential_commutationHomotopy_add_single_apply_self_eq_one_add C R x
-  simp only [hdiag, implies_true, true_and]
+  simp only [G.sum_hexagonRectangleWeight_add_sum_rectangleHexagonWeight_self_eq_one_add C R,
+    implies_true, true_and]
   exact forall_congr' fun x => forall_congr' fun z =>
     imp_congr_right fun hzx => G.sum_unpaired_eq_sum_pentagonPairs_iff_sdiff_sameSide C R hzx
 
