@@ -19,7 +19,7 @@ and for all `e, n : ℕ` (including `e = 0`),
 
 `e • coeff (e * (n + 1)) (v ^ (n + 1)) = coeff (e * (n + 1)) (X * (v ^ n * v'))`.
 
-Over a ring in which `n + 1` is not a zero divisor this is `e` times the coefficient of
+Over a ring in which `n + 1` is not a zero divisor this is the coefficient of
 `X ^ (e * (n + 1) - 1)` in `(v ^ (n + 1))' = (n + 1) v ^ n v'`, divided by `n + 1`. The identity
 holds over every commutative semiring because both sides are polynomials with natural-number
 coefficients in the coefficients of `v`; the proof specializes the generic power series with
@@ -36,7 +36,7 @@ for `e, k ≥ 1`, which governs the behaviour of residues under a substitution `
 ## Main results
 
 * `PowerSeries.derivative_map`: the derivative commutes with change of coefficients.
-* `PowerSeries.nsmul_coeff_mul_succ_pow_succ`,
+* `PowerSeries.nsmul_coeff_mul_succ_pow_succ_eq_coeff_X_mul_pow_mul_derivative`,
   `PowerSeries.nsmul_coeff_mul_succ_pow_succ_eq_coeff_pow_mul_derivative`:
   `e • coeff (e * (n + 1)) (v ^ (n + 1)) = coeff (e * (n + 1) - 1) (v ^ n * v')` for `e ≠ 0`, and
   its `X *`-shifted form for all `e`.
@@ -61,8 +61,9 @@ theorem derivative_map (φ : R⟦X⟧) (f : R →+* S) : d⁄dX (map f φ) = map
   ext n
   simp [coeff_derivative]
 
-/-- The identity `nsmul_coeff_mul_succ_pow_succ` when `n + 1` can be cancelled. -/
-private theorem nsmul_coeff_mul_succ_pow_succ_of_hasUniqueDiv [HasUniqueDiv R] (v : R⟦X⟧)
+/-- The shifted coefficient identity when `n + 1` can be cancelled. -/
+private theorem nsmul_coeff_mul_succ_pow_succ_eq_coeff_X_mul_pow_mul_derivative_of_hasUniqueDiv
+    [HasUniqueDiv R] (v : R⟦X⟧)
     (e n : ℕ) :
     e • coeff (e * (n + 1)) (v ^ (n + 1)) = coeff (e * (n + 1)) (X * (v ^ n * d⁄dX v)) := by
   rcases eq_or_ne e 0 with rfl | he
@@ -81,7 +82,8 @@ private theorem nsmul_coeff_mul_succ_pow_succ_of_hasUniqueDiv [HasUniqueDiv R] (
 /-- For a power series `v` over any commutative semiring and `e, n : ℕ`, `e` times the coefficient
 of `X ^ (e * (n + 1))` in `v ^ (n + 1)` is the coefficient of `X ^ (e * (n + 1))` in
 `X * (v ^ n * v')`. -/
-theorem nsmul_coeff_mul_succ_pow_succ (v : R⟦X⟧) (e n : ℕ) :
+theorem nsmul_coeff_mul_succ_pow_succ_eq_coeff_X_mul_pow_mul_derivative
+    (v : R⟦X⟧) (e n : ℕ) :
     e • coeff (e * (n + 1)) (v ^ (n + 1)) = coeff (e * (n + 1)) (X * (v ^ n * d⁄dX v)) := by
   -- Specialize the identity for the generic power series over `MvPolynomial ℕ ℕ`, which has
   -- no additive torsion.
@@ -90,7 +92,8 @@ theorem nsmul_coeff_mul_succ_pow_succ (v : R⟦X⟧) (e n : ℕ) :
   have hV : map f V = v := by
     ext i
     simp [V, f]
-  have h := congrArg f (nsmul_coeff_mul_succ_pow_succ_of_hasUniqueDiv V e n)
+  have h := congrArg f
+    (nsmul_coeff_mul_succ_pow_succ_eq_coeff_X_mul_pow_mul_derivative_of_hasUniqueDiv V e n)
   rwa [map_nsmul, ← coeff_map, ← coeff_map, (map f).map_pow, (map f).map_mul, map_X,
     (map f).map_mul, (map f).map_pow, ← derivative_map, hV] at h
 
@@ -100,7 +103,8 @@ theorem nsmul_coeff_mul_succ_pow_succ_eq_coeff_pow_mul_derivative (v : R⟦X⟧)
     (n : ℕ) :
     e • coeff (e * (n + 1)) (v ^ (n + 1)) = coeff (e * (n + 1) - 1) (v ^ n * d⁄dX v) := by
   obtain ⟨m, hm⟩ := Nat.exists_eq_add_one_of_ne_zero (mul_ne_zero he (Nat.succ_ne_zero n))
-  rw [nsmul_coeff_mul_succ_pow_succ, hm, coeff_succ_X_mul, Nat.add_sub_cancel]
+  rw [nsmul_coeff_mul_succ_pow_succ_eq_coeff_X_mul_pow_mul_derivative, hm, coeff_succ_X_mul,
+    Nat.add_sub_cancel]
 
 /-- The coefficient of `X ^ (n + 1)` in `v ^ (n + 1)` is the coefficient of `X ^ n` in
 `v ^ n * v'`, over any commutative semiring. -/
@@ -124,7 +128,8 @@ theorem nsmul_coeff_mul_succ_coe_inv_pow_succ_add_coeff_X_mul_derivative (u : R�
       -((↑u⁻¹ : R⟦X⟧) ^ n * d⁄dX (↑u⁻¹ : R⟦X⟧)) := by
     rw [(d⁄dX).leibniz_of_mul_eq_one (Units.inv_mul u), smul_eq_mul]
     ring
-  rw [hd, mul_neg, map_neg, nsmul_coeff_mul_succ_pow_succ, add_neg_cancel]
+  rw [hd, mul_neg, map_neg, nsmul_coeff_mul_succ_pow_succ_eq_coeff_X_mul_pow_mul_derivative,
+    add_neg_cancel]
 
 /-- Universal coefficient identity for positive powers of the inverse of a unit `u : R⟦X⟧ˣ` and
 `e ≠ 0`:

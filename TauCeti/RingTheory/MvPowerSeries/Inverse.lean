@@ -102,6 +102,8 @@ multivariate power series. -/
 @[simp]
 theorem map_inv {k l : Type*} [Field k] [Field l] (f : k →+* l) (φ : MvPowerSeries σ k) :
     map f φ⁻¹ = (map f φ)⁻¹ := by
+  -- The field inverse is defined as inv.aux with the inverse constant coefficient
+  -- (MvPowerSeries.inv); Mathlib has no multivariate inv_eq_inv_aux rewrite lemma.
   change map f (inv.aux (constantCoeff φ)⁻¹ φ) =
     inv.aux (constantCoeff (map f φ))⁻¹ (map f φ)
   rw [map_inv_aux, constantCoeff_map, map_inv₀]

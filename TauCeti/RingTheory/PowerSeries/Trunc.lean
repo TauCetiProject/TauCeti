@@ -16,9 +16,9 @@ public import TauCeti.RingTheory.MvPowerSeries.Inverse
 This file collects facts used to compare power series to a finite order `m`:
 * the truncation `trunc m φ` vanishes exactly when `φ` has order at least `m`,
 * two power series have equal `m`-truncations if and only if their coefficients agree below `m`,
-* the `m`-truncations of `d⁄dX φ`, `inv.aux a φ`, `invOfUnit φ u`, `φ⁻¹`, and integer powers and
-  logarithmic-derivative products `(u ^ k) * d⁄dX u` of a unit `u : R⟦X⟧ˣ` depend only on a finite
-  truncation of the input,
+* the `m`-truncations of `d⁄dX φ`, `inv.aux a φ`, `invOfUnit φ u`, `φ⁻¹`, integer powers `u ^ k`,
+  and products `(u ^ k) * d⁄dX u` of a unit `u : R⟦X⟧ˣ` depend only on a finite truncation of the
+  input,
 * the coefficients of a finite expansion `∑_{i < m} aᵢ Xⁱ` are the `aᵢ`, read as zero from degree
   `m` on, and
 * the coefficients of a polynomial times a power series expand along the polynomial monomials.

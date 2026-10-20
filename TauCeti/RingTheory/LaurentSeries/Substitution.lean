@@ -41,9 +41,10 @@ order `1` preserve the residue).
 * `TauCeti.LaurentSeries.valuation_substAlgHom`: `v (f (φ)) = v f ^ ord φ`.
 * `TauCeti.LaurentSeries.continuous_substAlgHom`: the substitution is continuous.
 * `TauCeti.LaurentSeries.derivative_substAlgHom`: the chain rule for Laurent substitution.
-* `TauCeti.LaurentSeries.coeff_neg_one_substAlgHom_mul_derivative`: the finite-map residue formula
+* `TauCeti.LaurentSeries.coeff_neg_one_substAlgHom_mul_derivative_eq_nsmul`: the finite-map
+  residue formula
   `Res(f(φ) Dφ dX) = φ.order.toNat • Res(f dX)`, with coordinate-change invariance
-  `TauCeti.LaurentSeries.coeff_neg_one_substAlgHom_mul_derivative_of_order_eq_one` when
+  `TauCeti.LaurentSeries.coeff_neg_one_substAlgHom_mul_derivative` when
   `φ.order = 1`.
 * `TauCeti.LaurentSeries.substAlgHom_comp_substAlgHom`: `(f (φ)) (ψ) = f (φ (ψ))`.
 * `TauCeti.LaurentSeries.substAlgHom_X_pow`: the substitution `X ↦ X ^ e` is
@@ -189,7 +190,7 @@ theorem derivative_substAlgHom (f : K⸨X⸩) :
 /-- **Finite-map residue formula for Laurent series substitution.** Substituting a nonzero power
 series `φ` of zero constant coefficient multiplies the residue of `f dX` by `φ.order.toNat`, in all
 characteristics: `Res(f(φ) Dφ dX) = φ.order.toNat • Res(f dX)`. -/
-theorem coeff_neg_one_substAlgHom_mul_derivative (f : K⸨X⸩) :
+theorem coeff_neg_one_substAlgHom_mul_derivative_eq_nsmul (f : K⸨X⸩) :
     (substAlgHom hφ hφ₀ f * _root_.LaurentSeries.derivative K (φ : K⸨X⸩)).coeff (-1) =
       φ.order.toNat • f.coeff (-1) := by
   refine _root_.LaurentSeries.coeff_neg_one_map_mul_derivative_eq_nsmul
@@ -203,10 +204,10 @@ theorem coeff_neg_one_substAlgHom_mul_derivative (f : K⸨X⸩) :
 
 /-- **Coordinate-change invariance of the residue (`ord φ = 1`).** If `φ` has order one, then
 `Res(f(φ) Dφ dX) = Res(f dX)`. -/
-theorem coeff_neg_one_substAlgHom_mul_derivative_of_order_eq_one (hφ₁ : φ.order = 1) (f : K⸨X⸩) :
+theorem coeff_neg_one_substAlgHom_mul_derivative (hφ₁ : φ.order = 1) (f : K⸨X⸩) :
     (substAlgHom hφ hφ₀ f * _root_.LaurentSeries.derivative K (φ : K⸨X⸩)).coeff (-1) =
       f.coeff (-1) := by
-  rw [coeff_neg_one_substAlgHom_mul_derivative, hφ₁, ENat.toNat_one, one_smul]
+  rw [coeff_neg_one_substAlgHom_mul_derivative_eq_nsmul, hφ₁, ENat.toNat_one, one_smul]
 
 /-- Substituting `φ` and then `ψ` is substituting `φ (ψ)`. The hypotheses on `φ (ψ)` follow from
 those on `φ` and `ψ` (`PowerSeries.constantCoeff_subst_eq_zero`,

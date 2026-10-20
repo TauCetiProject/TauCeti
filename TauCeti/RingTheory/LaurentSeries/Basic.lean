@@ -37,7 +37,8 @@ The third part computes the residue of the formal one-form `φ ^ n * φ' dX`
 for any power series `φ` over a field and every integer `n`:
 it is `(φ.order.toNat : k)` for `n = -1` and `0` otherwise. For `n ≠ -1` in characteristic zero,
 `φ ^ n * φ'` is the derivative of `φ ^ (n + 1) / (n + 1)`; in characteristic `p` this fails when
-`p ∣ n + 1`, and the proof uses `PowerSeries.nsmul_coeff_mul_succ_pow_succ` instead. By linearity
+`p ∣ n + 1`, and the proof uses
+`PowerSeries.nsmul_coeff_mul_succ_pow_succ_eq_coeff_X_mul_pow_mul_derivative` instead. By linearity
 this extends to every Laurent series: a substitution `X ↦ φ` multiplies the residue of `f(X) dX`
 by `φ.order.toNat`, and in particular preserves the residue when `φ.order = 1`.
 
@@ -290,6 +291,54 @@ theorem valuation_derivative_sub_zsmul_single_mul_le {K : Type*} [Field K] {m : 
 
 end LaurentSeries
 
+namespace TauCeti
+
+open HahnSeries _root_.LaurentSeries PowerSeries
+
+private theorem inv_pow_coe_X_pow_mul {k : Type*} [Field k] (u : k⟦X⟧)
+    (hu0 : constantCoeff u ≠ 0) (e m : ℕ) : (((X ^ e * u : k⟦X⟧) : k⸨X⸩) ^ (m + 1))⁻¹ =
+    single (-((e * (m + 1) : ℕ) : ℤ)) (1 : k) * ((u⁻¹ ^ (m + 1) : k⟦X⟧) : k⸨X⸩) := by
+  refine inv_eq_of_mul_eq_one_right ?_
+  have hX : (X ^ e * u) ^ (m + 1) * u⁻¹ ^ (m + 1) = X ^ (e * (m + 1)) := by
+    rw [mul_pow, ← pow_mul, mul_assoc, ← mul_pow, mul_comm u,
+      PowerSeries.inv_mul_cancel u hu0, one_pow, mul_one]
+  rw [← coe_pow, mul_left_comm, ← coe_mul, hX, ofPowerSeries_X_pow]
+  simp
+
+private theorem inv_pow_mul_X_derivative_X_pow_mul {k : Type*} [Field k]
+    (u : k⟦X⟧) (hvu : u⁻¹ * u = 1) (e m : ℕ) : u⁻¹ ^ (m + 1) * (X * d⁄dX (X ^ e * u)) =
+    X ^ e * (e • u⁻¹ ^ m + X * (u⁻¹ ^ (m + 1) * d⁄dX u)) := by
+  have hXe : (X : k⟦X⟧) * d⁄dX (X ^ e) = e • X ^ e := by
+    rcases e with _ | d
+    · simp
+    · rw [derivative_pow, derivative_X, mul_one, nsmul_eq_mul, Nat.add_sub_cancel]
+      ring
+  calc u⁻¹ ^ (m + 1) * (X * d⁄dX (X ^ e * u))
+      = u⁻¹ ^ m * (u⁻¹ * u) * (X * d⁄dX (X ^ e)) +
+          X ^ e * (X * (u⁻¹ ^ (m + 1) * d⁄dX u)) := by
+        rw [Derivation.leibniz, smul_eq_mul, smul_eq_mul, pow_succ]
+        ring
+    _ = X ^ e * (e • u⁻¹ ^ m + X * (u⁻¹ ^ (m + 1) * d⁄dX u)) := by
+        rw [hvu, mul_one, hXe, nsmul_eq_mul, nsmul_eq_mul]
+        ring
+
+private theorem coeff_neg_one_eq_coeff_zero_X_mul {R : Type*} [CommRing R] (f : R⸨X⸩) :
+    f.coeff (-1) = (((X : R⟦X⟧) : R⸨X⸩) * f).coeff 0 := by
+  rw [ofPowerSeries_X, coeff_single_mul, zero_sub, one_mul]
+
+private theorem coeff_zero_single_neg_mul_X_pow_mul_coe {k : Type*} [Field k]
+    (e m : ℕ) (f : k⟦X⟧) :
+    (single (-((e * (m + 1) : ℕ) : ℤ)) (1 : k) *
+      ((X ^ e * f : k⟦X⟧) : k⸨X⸩)).coeff 0 = coeff (e * m) f := by
+  have hexp : -((e * (m + 1) : ℕ) : ℤ) + (e : ℤ) = -((e * m : ℕ) : ℤ) := by
+    push_cast
+    ring
+  rw [coe_mul, ofPowerSeries_X_pow, ← mul_assoc, single_mul_single, one_mul, hexp]
+  rw [coeff_single_mul, one_mul, zero_sub, neg_neg, coeff_coe,
+    ite_eq_right (show ¬((e * m : ℕ) : ℤ) < 0 by omega), Int.natAbs_natCast]
+
+end TauCeti
+
 namespace PowerSeries
 
 open HahnSeries LaurentSeries
@@ -313,41 +362,17 @@ theorem coeff_neg_one_coe_zpow_mul_derivative_eq_ite {k : Type*} [Field k] (φ :
     have hu0 : constantCoeff u ≠ 0 := constantCoeff_divXPowOrder_eq_zero_iff.not.mpr hφ0
     have hvu : u⁻¹ * u = 1 := PowerSeries.inv_mul_cancel u hu0
     have hφ : φ = X ^ e * u := (X_pow_order_mul_divXPowOrder (f := φ)).symm
-    have hinv : (((X ^ e * u : k⟦X⟧) : k⸨X⸩) ^ (m + 1))⁻¹ =
-        single (-((e * (m + 1) : ℕ) : ℤ)) (1 : k) * ((u⁻¹ ^ (m + 1) : k⟦X⟧) : k⸨X⸩) := by
-      refine inv_eq_of_mul_eq_one_right ?_
-      have hX : (X ^ e * u) ^ (m + 1) * u⁻¹ ^ (m + 1) = X ^ (e * (m + 1)) := by
-        rw [mul_pow, ← pow_mul, mul_assoc, ← mul_pow, mul_comm u, hvu, one_pow, mul_one]
-      rw [← coe_pow, mul_left_comm, ← coe_mul, hX, ofPowerSeries_X_pow]
-      simp
-    have hXe : (X : k⟦X⟧) * d⁄dX (X ^ e) = e • X ^ e := by
-      rcases e with _ | d
-      · simp
-      · rw [derivative_pow, derivative_X, mul_one, nsmul_eq_mul, Nat.add_sub_cancel]
-        ring
-    have hd : u⁻¹ ^ (m + 1) * (X * d⁄dX (X ^ e * u)) =
-        X ^ e * (e • u⁻¹ ^ m + X * (u⁻¹ ^ (m + 1) * d⁄dX u)) := by
-      calc u⁻¹ ^ (m + 1) * (X * d⁄dX (X ^ e * u))
-          = u⁻¹ ^ m * (u⁻¹ * u) * (X * d⁄dX (X ^ e)) +
-              X ^ e * (X * (u⁻¹ ^ (m + 1) * d⁄dX u)) := by
-            rw [Derivation.leibniz, smul_eq_mul, smul_eq_mul, pow_succ]
-            ring
-        _ = X ^ e * (e • u⁻¹ ^ m + X * (u⁻¹ ^ (m + 1) * d⁄dX u)) := by
-            rw [hvu, mul_one, hXe, nsmul_eq_mul, nsmul_eq_mul]
-            ring
-    have hshift (f : k⸨X⸩) : f.coeff (-1) = (((X : k⟦X⟧) : k⸨X⸩) * f).coeff 0 := by
-      rw [ofPowerSeries_X, coeff_single_mul, zero_sub, one_mul]
-    rw [hshift, hφ, zpow_negSucc, hinv,
-      show ((X : k⟦X⟧) : k⸨X⸩) *
-          (single (-((e * (m + 1) : ℕ) : ℤ)) (1 : k) * ((u⁻¹ ^ (m + 1) : k⟦X⟧) : k⸨X⸩) *
-            ((d⁄dX (X ^ e * u) : k⟦X⟧) : k⸨X⸩)) =
+    rw [TauCeti.coeff_neg_one_eq_coeff_zero_X_mul, hφ, zpow_negSucc,
+      TauCeti.inv_pow_coe_X_pow_mul u hu0]
+    have hproduct : ((X : k⟦X⟧) : k⸨X⸩) *
+        (single (-((e * (m + 1) : ℕ) : ℤ)) (1 : k) * ((u⁻¹ ^ (m + 1) : k⟦X⟧) : k⸨X⸩) *
+          ((d⁄dX (X ^ e * u) : k⟦X⟧) : k⸨X⸩)) =
         single (-((e * (m + 1) : ℕ) : ℤ)) (1 : k) *
-          ((u⁻¹ ^ (m + 1) * (X * d⁄dX (X ^ e * u)) : k⟦X⟧) : k⸨X⸩) by
-        rw [coe_mul, coe_mul]; ring,
-      hd, coe_mul, ofPowerSeries_X_pow, ← mul_assoc, single_mul_single, one_mul,
-      show -((e * (m + 1) : ℕ) : ℤ) + (e : ℤ) = -((e * m : ℕ) : ℤ) by push_cast; ring,
-      coeff_single_mul, one_mul, zero_sub, neg_neg, coeff_coe,
-      ite_eq_right (show ¬((e * m : ℕ) : ℤ) < 0 by omega), Int.natAbs_natCast, map_add, map_nsmul]
+          ((u⁻¹ ^ (m + 1) * (X * d⁄dX (X ^ e * u)) : k⟦X⟧) : k⸨X⸩) := by
+      rw [coe_mul, coe_mul]
+      ring
+    rw [hproduct, TauCeti.inv_pow_mul_X_derivative_X_pow_mul u hvu,
+      TauCeti.coeff_zero_single_neg_mul_X_pow_mul_coe, map_add, map_nsmul]
     rcases m with _ | m
     · simp
     · rw [ite_eq_right (show Int.negSucc (m + 1) ≠ -1 by omega)]
