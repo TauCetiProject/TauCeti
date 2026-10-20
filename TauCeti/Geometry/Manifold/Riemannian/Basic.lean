@@ -18,8 +18,6 @@ to a fixed vector, depends continuously on the base point.
 
 ## Main definitions
 
-* `Bundle.ContMDiffRiemannianMetric.ext`: a `C^n` Riemannian metric is determined by its inner
-  products.
 * `Bundle.ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle`: package the metric of a
   `C^n` Riemannian bundle.
 * `Bundle.ContMDiffRiemannianMetric.InducesRiemannianDistance`: express that a smooth metric
@@ -58,15 +56,18 @@ variable
   [FiberBundle F V] [VectorBundle ℝ F V]
 
 omit [∀ b, IsTopologicalAddGroup (V b)] [∀ b, ContinuousConstSMul ℝ (V b)] in
-/-- A `C^n` Riemannian metric is determined by its inner products; the other fields are
-propositions. -/
+/-- Smooth Riemannian metrics are equal when all their fibrewise inner products agree. -/
 @[ext]
-theorem ext {g₁ g₂ : ContMDiffRiemannianMetric IB n F V} (h : ∀ x, g₁.inner x = g₂.inner x) :
-    g₁ = g₂ := by
-  obtain ⟨inner₁, _, _, _, _⟩ := g₁
-  obtain ⟨inner₂, _, _, _, _⟩ := g₂
-  obtain rfl : inner₁ = inner₂ := funext h
-  rfl
+theorem ext {g h : ContMDiffRiemannianMetric IB n F V}
+    (heq : ∀ x v w, g.inner x v w = h.inner x v w) : g = h := by
+  cases g with
+  | mk ginner gsymm gpos gisVonNBounded gcontMDiff =>
+    cases h with
+    | mk hinner hsymm hpos hisVonNBounded hcontMDiff =>
+      congr 1
+      funext x
+      ext v w
+      exact heq x v w
 
 /-- Package the metric of a `C^n` Riemannian bundle as a `C^n` Riemannian metric. -/
 noncomputable def ofIsContMDiffRiemannianBundle
