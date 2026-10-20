@@ -67,10 +67,9 @@ theorem resultant_mul_left_of_natDegree_le {f₁ f₂ g : R[X]} {m₁ m₂ n : �
     (f₁ * f₂).resultant g (m₁ + m₂) n = f₁.resultant g m₁ n * f₂.resultant g m₂ n := by
   obtain ⟨k₁, rfl⟩ := Nat.exists_eq_add_of_le hf₁
   obtain ⟨k₂, rfl⟩ := Nat.exists_eq_add_of_le hf₂
-  rw [show f₁.natDegree + k₁ + (f₂.natDegree + k₂) =
-      f₁.natDegree + f₂.natDegree + (k₁ + k₂) by lia,
-    resultant_add_left_deg _ _ _ _ _ natDegree_mul_le, resultant_mul_left _ _ _ _ hg,
-    resultant_add_left_deg _ _ _ _ _ le_rfl, resultant_add_left_deg _ _ _ _ _ le_rfl]
+  rw [Nat.add_add_add_comm, resultant_add_left_deg _ _ _ _ _ natDegree_mul_le,
+    resultant_mul_left _ _ _ _ hg, resultant_add_left_deg _ _ _ _ _ le_rfl,
+    resultant_add_left_deg _ _ _ _ _ le_rfl]
   ring
 
 /-- The resultant of `f` with the linear polynomial `1 - t X`, at the degree bound `n` for `f`, is
@@ -88,7 +87,7 @@ theorem resultant_one_sub_C_mul_X_right (f : R[X]) (t : R) {n : ℕ} (hf : f.nat
       ← Finset.sum_range_reflect]
     refine Finset.sum_congr rfl fun j hj ↦ ?_
     have hj : j ≤ n := Nat.lt_succ_iff.mp (Finset.mem_range.mp hj)
-    rw [coeff_reflect, revAt_le (by lia), show n + 1 - 1 - j = n - j by lia, Nat.sub_sub_self hj]
+    rw [Nat.succ_sub_one, coeff_reflect, revAt_le (Nat.sub_le n j), Nat.sub_sub_self hj]
   rw [hc]
   obtain _ | n := n
   · rw [resultant_zero_left_deg]
@@ -113,8 +112,7 @@ theorem resultant_one_sub_C_mul_X_right (f : R[X]) (t : R) {n : ℕ} (hf : f.nat
     simp only [c, map_sum, Finset.sum_mul]
     refine Finset.sum_congr rfl fun j hj ↦ ?_
     have hj : j ≤ n + 1 := Nat.lt_succ_iff.mp (Finset.mem_range.mp hj)
-    rw [show (X : R[X]) ^ (n + 1) = X ^ j * X ^ (n + 1 - j) by
-      rw [← pow_add, Nat.add_sub_cancel' hj], C_mul, C_pow]
+    rw [← pow_mul_pow_sub X hj, C_mul, C_pow]
     ring
   rw [← resultant_add_mul_left f ℓ p (n + 1) 1 hp hℓ, hfp, resultant_C_mul_left,
     resultant_X_pow_left _ _ _ hℓ]
