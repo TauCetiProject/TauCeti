@@ -6,42 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Affinoid.SupSeminorm
-public import Mathlib.Algebra.Module.Submodule.Invariant
+public import TauCeti.Analysis.Normed.Unbundled.Slope
 public import Mathlib.FieldTheory.SplittingField.Construction
 public import Mathlib.RingTheory.AdjoinRoot
-public import Mathlib.Topology.Algebra.Module.Complement
 
 /-!
-# Numerical slopes and slope decompositions
+# Numerical slopes over affinoid algebras
 
-Let `K` be a nonarchimedean field and `A` a `K`-algebra. A polynomial `Q : A[X]` has *slope at
-most `r`*, for a real cutoff `r > 0`, if for every `K`-algebra map `χ : A → L` into an algebraic
-extension `L` of `K`, every root of `χ(Q)` has absolute value at least `r`. The absolute value of
-a root is its spectral norm over `K`, which is the unique extension of the norm of `K` when `K` is
-complete; no embedding into a chosen algebraic closure is involved. For `r = |p| ^ h` this says
-that every root has valuation at most `h`. The condition concerns roots of an annihilating
-polynomial, not of a Fredholm series `det (1 - T U)`, whose roots are the reciprocals.
-
-For an affinoid algebra `A` the condition can be tested at the classical points: for each maximal
-ideal `x` of `A`, whose residue field is finite over `K`, at the roots of `Q mod x` in a splitting
-field of `Q mod x` over `A ⧸ x`, which is again finite over `K`. In particular it suffices to test
-finite extensions of `K`. A root at an arbitrary algebraic point is conjugate over `K` to one of
-these roots, and conjugate elements have the same spectral norm.
-
-A *slope decomposition* of a continuous `A`-linear operator `U` on a topological `A`-module `M` is
-a pair of topological complements `M₁, M₂` stable under `U`, such that `M₁` is finite projective
-and is annihilated by `Q(U)` for a monic `Q` of slope at most `r` with unit constant term, while
-every such polynomial acts bijectively on `M₂`. The continuous projection onto `M₁` along `M₂`
-then commutes with `U`. Polynomial annihilation cannot be replaced by a pointwise condition on
-eigenvalues: over a nonreduced base, or on a nilpotent operator, only the polynomial detects the
-action.
-
-## Main definitions
-
-* `Polynomial.IsSlopeLE K r Q`: every root of `Q` at every algebraic point has absolute value at
-  least `r > 0`.
-* `ContinuousLinearMap.IsSlopeDecomposition K U r M₁ M₂`: `M = M₁ ⊕ M₂` is a slope `≤ r`
-  decomposition for `U`.
+For an affinoid algebra `A` over a complete nonarchimedean field `K`, the slope condition
+`Polynomial.IsSlopeLE K r Q` can be tested at the classical points: for each maximal ideal `x` of
+`A`, whose residue field is finite over `K`, at the roots of `Q mod x` in a splitting field of
+`Q mod x` over `A ⧸ x`, which is again finite over `K`. In particular it suffices to test finite
+extensions of `K`, and the bound then holds for algebraic extensions in every universe. A root at
+an arbitrary algebraic point is conjugate over `K` to one of these roots, and conjugate elements
+have the same spectral norm.
 
 ## Main results
 
@@ -51,8 +29,6 @@ action.
   condition is tested in finite extensions of `K`.
 * `TauCeti.IsAffinoidAlgebra.le_spectralNorm_of_isSlopeLE`: over an affinoid algebra the slope
   condition applies to algebraic extensions of `K` in every universe.
-* `ContinuousLinearMap.IsSlopeDecomposition.exists_projection`: a slope decomposition has a
-  continuous idempotent projector with image `M₁` and kernel `M₂`, commuting with `U`.
 
 ## References
 
@@ -64,77 +40,6 @@ public section
 open Polynomial
 
 universe v
-
-namespace Polynomial
-
-section IsSlopeLE
-
-variable (K : Type*) [NormedField K] {A : Type v} [CommRing A] [Algebra K A]
-
-/-- A polynomial `Q : A[X]` has slope at most `r` over `K` if `r > 0` and, for every `K`-algebra
-map `χ : A → L` into an algebraic extension `L` of `K`, every root of `χ(Q)` has spectral norm at
-least `r`. For `r = |p| ^ h` this says that every root has valuation at most `h`. -/
-def IsSlopeLE (r : ℝ) (Q : A[X]) : Prop :=
-  0 < r ∧ ∀ (L : Type v) [Field L] [Algebra K L] [Algebra.IsAlgebraic K L] (χ : A →ₐ[K] L) (α : L),
-    (Q.map (χ : A →+* L)).IsRoot α → r ≤ spectralNorm K L α
-
-variable {K} {r s : ℝ} {P Q : A[X]}
-
-/-- The defining property of `Polynomial.IsSlopeLE`. -/
-theorem isSlopeLE_iff : Q.IsSlopeLE K r ↔
-    0 < r ∧ ∀ (L : Type v) [Field L] [Algebra K L] [Algebra.IsAlgebraic K L] (χ : A →ₐ[K] L)
-      (α : L), (Q.map (χ : A →+* L)).IsRoot α → r ≤ spectralNorm K L α :=
-  Iff.rfl
-
-/-- The cutoff of the slope condition is positive. -/
-theorem IsSlopeLE.pos (hQ : Q.IsSlopeLE K r) : 0 < r :=
-  hQ.1
-
-/-- Under the slope condition, every root of `χ(Q)` in an algebraic extension has spectral norm
-at least the cutoff. -/
-theorem IsSlopeLE.le_spectralNorm (hQ : Q.IsSlopeLE K r) {L : Type v} [Field L] [Algebra K L]
-    [Algebra.IsAlgebraic K L] (χ : A →ₐ[K] L) {α : L} (hα : (Q.map (χ : A →+* L)).IsRoot α) :
-    r ≤ spectralNorm K L α :=
-  hQ.2 L χ α hα
-
-/-- Lowering a positive cutoff preserves the slope condition. -/
-theorem IsSlopeLE.mono (hQ : Q.IsSlopeLE K r) (hs : 0 < s) (hsr : s ≤ r) : Q.IsSlopeLE K s :=
-  ⟨hs, fun _ _ _ _ χ _ hα ↦ hsr.trans (hQ.le_spectralNorm χ hα)⟩
-
-/-- The constant polynomial `1` has no roots, so it has slope at most every positive cutoff. -/
-@[simp]
-theorem isSlopeLE_one_iff : (1 : A[X]).IsSlopeLE K r ↔ 0 < r := by
-  simp [isSlopeLE_iff]
-
-/-- The roots of a product are the roots of its factors. -/
-@[simp]
-theorem isSlopeLE_mul_iff : (P * Q).IsSlopeLE K r ↔ P.IsSlopeLE K r ∧ Q.IsSlopeLE K r := by
-  simp only [isSlopeLE_iff, Polynomial.map_mul, IsRoot, eval_mul, mul_eq_zero]
-  exact ⟨fun h ↦ ⟨⟨h.1, fun L _ _ _ χ α hα ↦ h.2 L χ α (.inl hα)⟩,
-    ⟨h.1, fun L _ _ _ χ α hα ↦ h.2 L χ α (.inr hα)⟩⟩,
-    fun h ↦ ⟨h.1.1, fun L _ _ _ χ α hα ↦ hα.elim (h.1.2 L χ α) (h.2.2 L χ α)⟩⟩
-
-/-- The linear polynomial `X - c` has slope at most `r` when `0 < r ≤ |c|`. -/
-theorem isSlopeLE_X_sub_C_algebraMap {c : K} (hr : 0 < r) (hrc : r ≤ ‖c‖) :
-    (X - C (algebraMap K A c)).IsSlopeLE K r := by
-  refine ⟨hr, fun L _ _ _ χ α hα ↦ ?_⟩
-  rw [Polynomial.map_sub, map_X, map_C, AlgHom.coe_toRingHom, AlgHom.commutes, IsRoot,
-    eval_sub, eval_X, eval_C, sub_eq_zero] at hα
-  rwa [hα, spectralNorm_extends]
-
-/-- The polynomial `1 - c X`, whose root `c⁻¹` is the reciprocal of that of `X - c`, has slope
-at most `r` when `0 < r ≤ |c|⁻¹`. -/
-theorem isSlopeLE_one_sub_C_mul_X_algebraMap {c : K} (hr : 0 < r)
-    (hrc : r ≤ ‖c‖⁻¹) : (1 - C (algebraMap K A c) * X).IsSlopeLE K r := by
-  refine ⟨hr, fun L _ _ _ χ α hα ↦ ?_⟩
-  rw [Polynomial.map_sub, Polynomial.map_one, Polynomial.map_mul, map_X, map_C,
-    AlgHom.coe_toRingHom, AlgHom.commutes, IsRoot, eval_sub, eval_one, eval_mul, eval_X, eval_C,
-    sub_eq_zero, eq_comm] at hα
-  rwa [eq_inv_of_mul_eq_one_right hα, ← map_inv₀, spectralNorm_extends, norm_inv]
-
-end IsSlopeLE
-
-end Polynomial
 
 namespace TauCeti.IsAffinoidAlgebra
 
@@ -228,10 +133,8 @@ private theorem forall_splittingField_of_finiteDimensional (hA : IsAffinoidAlgeb
     have : FiniteDimensional K S := Module.Finite.trans F S
     refine h S ((IsScalarTower.toAlgHom K F S).comp (Ideal.Quotient.mkₐ K x.asIdeal)) β ?_
     rw [mem_rootSet] at hβ
-    rw [IsRoot, ← hβ.2, aeval_def, eval₂_map, ← eval_map, AlgHom.comp_toRingHom]
-    -- The ring maps underlying `IsScalarTower.toAlgHom` and `Ideal.Quotient.mkₐ` are
-    -- `algebraMap` and `Ideal.Quotient.mk` by definition.
-    rfl
+    rw [IsRoot, ← hβ.2, aeval_def, eval₂_map, ← eval_map, AlgHom.comp_toRingHom,
+      IsScalarTower.coe_toAlgHom, ← AlgHom.toRingHom_eq_coe, Ideal.Quotient.mkₐ_toRingHom]
 
 /-- **Slope test at residue fields.** Over an affinoid algebra, `Q` has slope at most `r` if and
 only if `r > 0` and, at every maximal ideal `x`, the reduction `Q mod x` is nonzero and each of
@@ -246,7 +149,8 @@ theorem isSlopeLE_iff_splittingField (hA : IsAffinoidAlgebra K A) :
           r ≤ spectralNorm K _ β :=
   ⟨fun hQ ↦ ⟨hQ.pos, hA.forall_splittingField_of_finiteDimensional
     (fun _ _ _ _ χ _ hα ↦ hQ.le_spectralNorm χ hα) hQ.pos⟩,
-    fun h ↦ ⟨h.1, fun _ _ _ _ χ _ hα ↦ le_spectralNorm_of_forall_splittingField h.2 χ hα⟩⟩
+    fun h ↦ isSlopeLE_iff.2
+      ⟨h.1, fun _ _ _ _ χ _ hα ↦ le_spectralNorm_of_forall_splittingField h.2 χ hα⟩⟩
 
 /-- **Slope test in finite extensions.** Over an affinoid algebra, `Q` has slope at most `r` if
 and only if `r > 0` and every root of `χ(Q)` has spectral norm at least `r`, for every `K`-algebra
@@ -255,7 +159,7 @@ theorem isSlopeLE_iff_finiteDimensional (hA : IsAffinoidAlgebra K A) :
     Q.IsSlopeLE K r ↔ 0 < r ∧ ∀ (L : Type v) [Field L] [Algebra K L] [FiniteDimensional K L]
       (χ : A →ₐ[K] L) (α : L), (Q.map (χ : A →+* L)).IsRoot α → r ≤ spectralNorm K L α :=
   ⟨fun hQ ↦ ⟨hQ.pos, fun _ _ _ _ χ _ hα ↦ hQ.le_spectralNorm χ hα⟩,
-    fun h ↦ ⟨h.1, fun _ _ _ _ χ _ hα ↦ le_spectralNorm_of_forall_splittingField
+    fun h ↦ isSlopeLE_iff.2 ⟨h.1, fun _ _ _ _ χ _ hα ↦ le_spectralNorm_of_forall_splittingField
       (hA.forall_splittingField_of_finiteDimensional h.2 h.1) χ hα⟩⟩
 
 /-- Over an affinoid algebra, the slope condition bounds the roots of `χ(Q)` below by `r` for
@@ -288,95 +192,3 @@ theorem isSlopeLE_X_sub_C_algebraMap_iff [Nontrivial A] (hA : IsAffinoidAlgebra 
 end NormedField
 
 end TauCeti.IsAffinoidAlgebra
-
-namespace ContinuousLinearMap
-
-variable (K : Type*) [NormedField K] {A : Type v} [CommRing A] [Algebra K A]
-  {M : Type*} [AddCommGroup M] [Module A M] [TopologicalSpace M]
-
-/-- A slope `≤ r` decomposition `M = M₁ ⊕ M₂` of a continuous operator `U`: the submodules are
-topological complements stable under `U`, the first summand is finite projective and annihilated
-by `Q(U)` for some monic `Q` of slope at most `r` with unit constant term, and every such
-polynomial acts bijectively on the second summand. -/
-structure IsSlopeDecomposition (U : M →L[A] M) (r : ℝ) (M₁ M₂ : Submodule A M) : Prop where
-  /-- The summands are complements, with continuous projection onto `M₁` along `M₂`. -/
-  isTopCompl : M₁.IsTopCompl M₂
-  /-- The first summand is stable under `U`. -/
-  mem_invtSubmodule_left : M₁ ∈ Module.End.invtSubmodule (U : M →ₗ[A] M)
-  /-- The second summand is stable under `U`. -/
-  mem_invtSubmodule_right : M₂ ∈ Module.End.invtSubmodule (U : M →ₗ[A] M)
-  /-- The first summand is a finite `A`-module. -/
-  finite : Module.Finite A M₁
-  /-- The first summand is a projective `A`-module. -/
-  projective : Module.Projective A M₁
-  /-- A monic polynomial of slope at most `r`, with unit constant term, kills `M₁` at `U`. -/
-  exists_annihilator : ∃ Q : A[X], Q.Monic ∧ IsUnit (Q.coeff 0) ∧ Q.IsSlopeLE K r ∧
-    M₁ ≤ LinearMap.ker (aeval (U : M →ₗ[A] M) Q)
-  /-- Every monic polynomial of slope at most `r` with unit constant term is bijective on `M₂`
-  at `U`. -/
-  bijOn : ∀ P : A[X], P.Monic → IsUnit (P.coeff 0) → P.IsSlopeLE K r →
-    Set.BijOn (aeval (U : M →ₗ[A] M) P) M₂ M₂
-
-variable {K} {U : M →L[A] M} {r : ℝ} {M₁ M₂ : Submodule A M}
-
-namespace IsSlopeDecomposition
-
-/-- The cutoff of a slope decomposition is positive. -/
-theorem pos (h : U.IsSlopeDecomposition K r M₁ M₂) : 0 < r :=
-  let ⟨_, _, _, hQ, _⟩ := h.exists_annihilator
-  hQ.pos
-
-/-- The continuous projection onto the first summand along the second commutes with `U`. -/
-theorem commute_projectionL (h : U.IsSlopeDecomposition K r M₁ M₂) :
-    Commute (M₁.projectionL M₂ h.isTopCompl) U := by
-  rw [ContinuousLinearMap.IsIdempotentElem.commute_iff
-    (Submodule.isIdempotentElem_projectionL h.isTopCompl), Submodule.range_projectionL,
-    Submodule.ker_projectionL]
-  exact ⟨h.mem_invtSubmodule_left, h.mem_invtSubmodule_right⟩
-
-/-- **The slope projector.** A slope decomposition has a continuous idempotent projector with
-image `M₁` and kernel `M₂` that commutes with `U`. -/
-theorem exists_projection (h : U.IsSlopeDecomposition K r M₁ M₂) :
-    ∃ P : M →L[A] M, IsIdempotentElem P ∧ P.range = M₁ ∧ P.ker = M₂ ∧ Commute P U :=
-  ⟨_, Submodule.isIdempotentElem_projectionL h.isTopCompl,
-    Submodule.range_projectionL h.isTopCompl, Submodule.ker_projectionL h.isTopCompl,
-    h.commute_projectionL⟩
-
-end IsSlopeDecomposition
-
-variable (K M)
-
-/-- The zero operator has the slope decomposition `0 ⊕ M` at every positive cutoff. -/
-theorem isSlopeDecomposition_zero_bot_top (hr : 0 < r) :
-    (0 : M →L[A] M).IsSlopeDecomposition K r ⊥ ⊤ where
-  isTopCompl := Submodule.isTopCompl_bot_top
-  mem_invtSubmodule_left := (Module.End.mem_invtSubmodule _).2 bot_le
-  mem_invtSubmodule_right := (Module.End.mem_invtSubmodule _).2 le_top
-  finite := inferInstance
-  projective := .of_free
-  exists_annihilator := ⟨1, monic_one, by simp, isSlopeLE_one_iff.2 hr, bot_le⟩
-  bijOn P _ hP _ := by
-    rw [Submodule.top_coe, Set.bijOn_univ, ← Module.End.isUnit_iff,
-      ContinuousLinearMap.toLinearMap_zero, ← coeff_zero_eq_aeval_zero']
-    exact hP.map _
-
-/-- On a finite projective module, the scalar operator `c` with `0 < r ≤ |c|` has the slope
-decomposition `M ⊕ 0`. -/
-theorem isSlopeDecomposition_algebraMap_smul_id_top_bot [ContinuousConstSMul A M]
-    [Module.Finite A M] [Module.Projective A M] {c : K} (hr : 0 < r) (hrc : r ≤ ‖c‖) :
-    (algebraMap K A c • ContinuousLinearMap.id A M).IsSlopeDecomposition K r ⊤ ⊥ where
-  isTopCompl := Submodule.isTopCompl_top_bot
-  mem_invtSubmodule_left := (Module.End.mem_invtSubmodule _).2 le_top
-  mem_invtSubmodule_right := (Module.End.mem_invtSubmodule _).2 bot_le
-  finite := .equiv Submodule.topEquiv.symm
-  projective := .of_equiv Submodule.topEquiv.symm
-  exists_annihilator := by
-    have hc : c ≠ 0 := norm_pos_iff.1 (hr.trans_le hrc)
-    refine ⟨X - C (algebraMap K A c), monic_X_sub_C _, ?_, isSlopeLE_X_sub_C_algebraMap hr hrc,
-      fun m _ ↦ ?_⟩
-    · simpa using (isUnit_iff_ne_zero.2 hc).map (algebraMap K A)
-    · simp [Algebra.algebraMap_eq_smul_one]
-  bijOn P _ _ _ := by
-    rw [Submodule.bot_coe, Set.bijOn_singleton, map_zero]
-
-end ContinuousLinearMap
