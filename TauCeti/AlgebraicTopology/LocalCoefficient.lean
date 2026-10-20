@@ -101,6 +101,24 @@ theorem pullback_map_app {X : TopCat.{v₁}} {Y : TopCat.{v₂}} (f : C(X, Y))
       η.app ((FundamentalGroupoid.map f).obj x) :=
   rfl
 
+/-- Transport along corresponding morphisms, with propositionally equal targets, gives
+corresponding coefficients. -/
+theorem map_apply_heq (L : LocalCoefficientSystem.{u, v, w} R X)
+    {x y y' : FundamentalGroupoid X} {p : x ⟶ y} {p' : x ⟶ y'} (hy : y = y') (hp : p ≍ p')
+    (a : L.obj x) : L.map p a ≍ L.map p' a := by
+  subst hy
+  rw [eq_of_heq hp]
+
+/-- Transport in a pulled back system, after transport in the original system, is transport
+along the composite. -/
+theorem pullback_map_map_heq {X : TopCat.{v₁}} {Y : TopCat.{v₂}} (f : C(X, Y))
+    (L : LocalCoefficientSystem.{u, v₂, w} R Y) {x : FundamentalGroupoid Y}
+    {y z : FundamentalGroupoid X} (p : x ⟶ (FundamentalGroupoid.map f).obj y) (q : y ⟶ z)
+    (a : L.obj x) :
+    ((pullback f).obj L).map q (L.map p a) ≍ L.map (p ≫ (FundamentalGroupoid.map f).map q) a := by
+  rw [Functor.map_comp, ModuleCat.comp_apply]
+  rfl
+
 /-- Pullback along the identity map is naturally isomorphic to the identity functor. -/
 def pullbackIdIso (X : TopCat.{v}) :
     pullback (R := R) (.id X) ≅ 𝟭 (LocalCoefficientSystem.{u, v, w} R X) :=
