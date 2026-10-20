@@ -138,8 +138,7 @@ theorem sum_indexClassicalEntry_comp (q : ℤ) (x : {x : P // ind x = q + 1 + 1}
   -- The Leibniz rule for the cycle `α₀` and the entry `m x z` of degree `-1`.
   have hl := hM.leibniz hα₀ (m.m x z)
   rw [hdα₀, smul_zero, zero_add] at hl
-  rw [map_neg, map_zsmul, hl, MulOpposite.op_neg, neg_smul, ← Units.smul_def, smul_smul,
-    Int.units_mul_self, one_smul]
+  simp [hl, ← Units.smul_def, smul_smul]
 
 /-- **The classical differential squares to zero**, by `sum_indexClassicalEntry_comp`. -/
 theorem indexClassicalD_comp (q : ℤ) :
@@ -163,10 +162,11 @@ noncomputable def indexClassicalComplex : ChainComplex (ModuleCat.{max uM uP} R)
 
 /-- The degree-`q` term of the classical complex is the product over the generators of index `q`
 of the cohomology of `ℳ` in degree `k`. -/
-theorem indexClassicalComplex_X (q : ℤ) :
-    (m.indexClassicalComplex hM k).X q = ∏ᶜ fun _ : {x : P // ind x = q} ↦
+noncomputable def indexClassicalComplexXIso (q : ℤ) :
+    (m.indexClassicalComplex hM k).X q ≅ ∏ᶜ fun _ : {x : P // ind x = q} ↦
       (shiftedModuleComplex.{uR, uA, uM, uP} hM q).homology (k - q) :=
-  (rfl)
+  -- The terms of `ChainComplex.of` are the given family of objects.
+  Iso.refl _
 
 private theorem indexClassicalComplex_d_eq (q : ℤ) :
     (m.indexClassicalComplex hM k).d (q + 1) q = m.indexClassicalD hM k q := by
@@ -174,14 +174,16 @@ private theorem indexClassicalComplex_d_eq (q : ℤ) :
   exact ChainComplex.of_d (fun q ↦ ∏ᶜ fun _ : {x : P // ind x = q} ↦
     (shiftedModuleComplex.{uR, uA, uM, uP} hM q).homology (k - q)) (m.indexClassicalD hM k) q
 
-/-- The differential of the classical complex is `indexClassicalD`, up to the identification of
-its terms (`indexClassicalComplex_X`) with products of cohomology. -/
-theorem indexClassicalComplex_d (q : ℤ) :
-    (m.indexClassicalComplex hM k).d (q + 1) q =
-      eqToHom (m.indexClassicalComplex_X hM k (q + 1)) ≫ m.indexClassicalD hM k q ≫
-        eqToHom (m.indexClassicalComplex_X hM k q).symm := by
+/-- **The differential of the classical complex is `indexClassicalD`**, under the identification
+`indexClassicalComplexXIso` of its terms with products of cohomology.  (A plain equation
+`d = indexClassicalD` is not available as a public statement, since the complex is not exposed and
+its terms are only propositionally the products.) -/
+theorem indexClassicalComplexXIso_inv_comp_d_comp_hom (q : ℤ) :
+    (m.indexClassicalComplexXIso hM k (q + 1)).inv ≫ (m.indexClassicalComplex hM k).d (q + 1) q ≫
+      (m.indexClassicalComplexXIso hM k q).hom = m.indexClassicalD hM k q := by
   rw [indexClassicalComplex_d_eq]
-  exact (by simp : m.indexClassicalD hM k q = 𝟙 _ ≫ m.indexClassicalD hM k q ≫ 𝟙 _)
+  -- Both identifications are the identity, by definition of `indexClassicalComplexXIso`.
+  exact (Category.id_comp _).trans (Category.comp_id _)
 
 /-- The components of the classical differential are the entries `indexClassicalEntry`. -/
 @[reassoc (attr := simp)]
@@ -275,6 +277,21 @@ theorem indexSpectralSequenceFirstPageXIsoOfEq_comp_indexClassicalD (pq pq' : �
   rw [m.homologyMap_single_comp_page_two_d_comp_eval hM pq pq' hpq' q i₁ _ _ hq hi₁ hq' hn hn' x y]
   rw [indexClassicalEntry]
 
+/-- The first-page differential is the differential of the classical complex, under the
+identifications of the first page with the terms of the classical complex. -/
+private theorem secondPage_square (pq pq' : ℤ × ℤ) (hpq' : pq' = (pq.1 + 2, pq.2 - 1))
+    (q i₁ : ℤ) (hq : q = pq.2) (hi₁ : i₁ = pq'.2) (hq' : q = pq'.2 + 1)
+    (hn : k - (q + 1) = pq.1 + pq.2) (hn' : k - q = pq'.1 + pq'.2) :
+    (m.indexSpectralSequenceFirstPageXIsoOfEq dM hM pq q (q + 1) hq (by rw [hq]) _ hn ≪≫
+        indexGradedPieceHomologyIso hM ind _).hom ≫ (m.indexClassicalComplex hM k).d (q + 1) q =
+      ((m.indexSpectralSequence dM hM).page 2).d pq pq' ≫
+        (m.indexSpectralSequenceFirstPageXIsoOfEq dM hM pq' i₁ q hi₁ hq' _ hn' ≪≫
+          indexGradedPieceHomologyIso hM ind _).hom := by
+  rw [indexClassicalComplex_d_eq]
+  exact (Category.assoc _ _ _).trans
+    (m.indexSpectralSequenceFirstPageXIsoOfEq_comp_indexClassicalD hM k pq pq' hpq' q i₁ hq hi₁
+      hq' hn hn')
+
 /-- **The second page of the index spectral sequence is the cohomology of the classical complex**
 (BDHO, Definition 3.38 and Ch. 3 §4.2): the object at `(a, b)` of the page `3` of the index
 spectral sequence (the classical `E₂` page, in Mathlib's numbering of pages) is the homology in
@@ -294,20 +311,11 @@ noncomputable def indexSpectralSequenceSecondPageXIso (a b : ℤ) :
       (m.indexSpectralSequenceFirstPageXIsoOfEq dM hM (a + 2, b - 1) (b - 1) b rfl
         (by dsimp only; ring) (a + 2 * b + 1 - b) (by dsimp only; ring) ≪≫
           indexGradedPieceHomologyIso hM ind _)
-      (by
-        have hd : (m.indexClassicalComplex hM (a + 2 * b + 1)).d (b + 1 + 1) (b + 1) =
-            m.indexClassicalD hM _ (b + 1) := m.indexClassicalComplex_d_eq hM _ (b + 1)
-        refine (congrArg (fun f ↦ _ ≫ f) hd).trans ((Category.assoc _ _ _).trans ?_)
-        exact m.indexSpectralSequenceFirstPageXIsoOfEq_comp_indexClassicalD hM _ (a - 2, b + 1)
-          (a, b) (Prod.ext (by dsimp only; ring) (by dsimp only; ring)) (b + 1) b rfl rfl
-          (by dsimp only) (by dsimp only; ring) (by dsimp only; ring))
-      (by
-        have hd : (m.indexClassicalComplex hM (a + 2 * b + 1)).d (b + 1) b =
-            m.indexClassicalD hM _ b := m.indexClassicalComplex_d_eq hM _ b
-        refine (congrArg (fun f ↦ _ ≫ f) hd).trans ((Category.assoc _ _ _).trans ?_)
-        exact m.indexSpectralSequenceFirstPageXIsoOfEq_comp_indexClassicalD hM _ (a, b)
-          (a + 2, b - 1) rfl b (b - 1) rfl rfl (by dsimp only; ring) (by dsimp only; ring)
-          (by dsimp only; ring))) ≪≫
+      (m.secondPage_square hM _ (a - 2, b + 1) (a, b)
+        (Prod.ext (by dsimp only; ring) (by dsimp only; ring)) (b + 1) b rfl rfl
+        (by dsimp only) (by dsimp only; ring) (by dsimp only; ring))
+      (m.secondPage_square hM _ (a, b) (a + 2, b - 1) rfl b (b - 1) rfl rfl
+        (by dsimp only; ring) (by dsimp only; ring) (by dsimp only; ring))) ≪≫
     ((m.indexClassicalComplex hM (a + 2 * b + 1)).homologyIsoSc' (b + 1 + 1) (b + 1) b
       (by simp) (by simp)).symm
 

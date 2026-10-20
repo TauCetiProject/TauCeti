@@ -166,9 +166,8 @@ theorem op_smul_koszulTwist_map_eq_neg (hM : IsDGRightModule h ℳ dM) {a : A} (
     rw [InternalGrading.ofDecomposition_piece]
     exact hM.isHomogeneous.map_mem hx
   rw [InternalGrading.koszulTwist_one_apply_of_mem _ hdx,
-    InternalGrading.koszulTwist_one_apply_of_mem _ hx', hM.leibniz_of_map_eq_zero _ ha, map_smul,
-    Int.negOnePow_succ, Units.val_neg, Int.cast_neg, neg_smul,
-    smul_neg, smul_comm (op a)]
+    InternalGrading.koszulTwist_one_apply_of_mem _ hx', hM.leibniz_of_map_eq_zero _ ha, map_smul]
+  simp [Int.negOnePow_succ, smul_comm (op a)]
 
 end IsDGRightModule
 
