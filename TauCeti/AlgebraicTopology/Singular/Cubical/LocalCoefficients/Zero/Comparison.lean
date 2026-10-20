@@ -25,10 +25,11 @@ comparison maps, and the comparison is the identity of the colimit.
 
 * `TauCeti.LocalCoefficientSystem.normalizedTwistedCubicalToSingular_ofCube_const`: on a point
   cube the comparison to simplicial chains is the inclusion of the point simplex.
-* `TauCeti.LocalCoefficientSystem.ιNormalizedTwistedCubicalHomology₀_comp_homologyMap`: the
-  comparison to simplicial chains sends fibre classes to fibre classes.
-* `TauCeti.LocalCoefficientSystem.ιTwistedHomology₀_comp_homologyMap_twistedSingularToCubicalMap`:
-  the comparison to cubical chains sends fibre classes to fibre classes.
+* `TauCeti.LocalCoefficientSystem.twistedSingularToCubical_ιTwistedChainComplex_const`: on a point
+  simplex the comparison to cubical chains is the point cube.
+* `ιNormalizedTwistedCubicalHomology₀_comp_homologyMap_twistedCubicalToSingularMap` and
+  `ιTwistedHomology₀_comp_homologyMap_twistedSingularToCubicalMap` (in the namespace
+  `TauCeti.LocalCoefficientSystem`): the comparison maps send fibre classes to fibre classes.
 * `TauCeti.LocalCoefficientSystem.homologyMap_twistedCubicalToSingularMap_comp_isoColimit_hom`,
   `TauCeti.LocalCoefficientSystem.homologyMap_twistedSingularToCubicalMap_comp_isoColimit_hom`:
   the compatibility of the two comparison maps with the colimit identifications.
@@ -79,26 +80,91 @@ theorem normalizedTwistedCubicalToSingular_ofCube_const (x : X)
     (map_pathClass_heq (L := L) (cubeToHom (ContinuousMap.const _ x)).hom
       (z := cubeModelOrigin 0) (Subsingleton.elim _ _) a)
 
+/-- On a point simplex, the comparison to cubical chains is the class of the point cube. -/
+theorem twistedSingularToCubical_ιTwistedChainComplex_const (x : X)
+    (a : L.obj (FundamentalGroupoid.mk x)) :
+    (twistedSingularToCubical L 0).hom
+        (ιTwistedChainComplex L 0 (ULift.up (TopCat.ofHom (ContinuousMap.const _ x))) a) =
+      NormalizedTwistedCubicalChain.ofCube L (ContinuousMap.const _ x) a := by
+  -- The point simplex is named so that the fibres of its summand and of the pushforward agree.
+  set σ : (TopCat.toSSet.obj X) _⦋0⦌ := ULift.up (TopCat.ofHom (ContinuousMap.const _ x))
+  -- Unfold the summand to the pushforward of the point cube of the model.
+  refine (twistedSingularToCubical_ιTwistedChainComplex L σ a).trans
+    ((twistedSingularToCubicalSummand_apply L σ a).trans
+      ((congrArg (fun y ↦ NormalizedTwistedCubicalChain.pushforward
+        (Z := simplexModel.{v} 0) L (simplexToHom σ).hom
+        (SimplexCategory.toTopInitialVertex ⦋0⦌) 0 y a)
+        (singularToCubicalGen_zero (k := ULift.{v} ℤ))).trans
+        ((NormalizedTwistedCubicalChain.pushforward_ofCube (L := L)
+          (f := (simplexToHom σ).hom) (z₀ := SimplexCategory.toTopInitialVertex ⦋0⦌) _ a).trans
+          ?_)))
+  -- The pushed cube is the point cube at `x`, and the transport of `a` is trivial.
+  refine (congrArg Submodule.Quotient.mk (TwistedCubicalChain.pushCube_apply (L := L)
+    (f := (simplexToHom σ).hom) (z₀ := SimplexCategory.toTopInitialVertex ⦋0⦌)
+    (SingularCube.point (TopCat.toSSetObj₀Equiv (idSimplex 0))) a)).trans
+    ((NormalizedTwistedCubicalChain.ofCube_apply _ _).symm.trans
+      (NormalizedTwistedCubicalChain.ofCube_congr (L := L)
+        (ContinuousMap.ext fun _ ↦ rfl) ?_))
+  exact map_pathClass_heq (L := L) (simplexToHom σ).hom
+    (z := SimplexCategory.toTopInitialVertex ⦋0⦌) (Subsingleton.elim _ _) a
+
 /-- The comparison to simplicial chains sends the class of a coefficient in the fibre at `x` in
 zeroth cubical homology to the class of the same coefficient in zeroth simplicial homology. -/
 @[reassoc (attr := simp)]
-theorem ιNormalizedTwistedCubicalHomology₀_comp_homologyMap (x : X) :
+theorem ιNormalizedTwistedCubicalHomology₀_comp_homologyMap_twistedCubicalToSingularMap (x : X) :
     ιNormalizedTwistedCubicalHomology₀ L x ≫
         HomologicalComplex.homologyMap (twistedCubicalToSingularMap L) 0 =
       ιTwistedHomology₀ L x := by
   refine ModuleCat.hom_ext (LinearMap.ext fun a ↦ ?_)
-  -- Evaluating at a coefficient: pass to `0`-chains, apply the comparison there, and pass back.
+  -- Pass to `0`-chains, apply the comparison there, and pass back to homology.
   have h := ConcreteCategory.congr_hom
     (ChainComplex.pOpcycles_comp_isoHomologyι₀_inv_comp_homologyMap
       (twistedCubicalToSingularMap L))
     (NormalizedTwistedCubicalChain.ofCube L (ContinuousMap.const _ x) a)
-  refine (congrArg (HomologicalComplex.homologyMap (twistedCubicalToSingularMap L) 0).hom
-    (pOpcycles_comp_isoHomologyι₀_inv_ofCube L (ContinuousMap.const _ x) a).symm).trans
-    (h.trans ((congrArg ((twistedChainComplex L).pOpcycles 0 ≫
-      (twistedChainComplex L).isoHomologyι₀.inv).hom
-      ((ConcreteCategory.congr_hom (twistedCubicalToSingularMap_f (L := L) 0) _).trans
-        (normalizedTwistedCubicalToSingular_ofCube_const L x a))).trans
-      (ConcreteCategory.congr_hom (ιTwistedHomology₀_def L x) a).symm))
+  calc
+    _ = (HomologicalComplex.homologyMap (twistedCubicalToSingularMap L) 0).hom
+          ((L.normalizedTwistedCubicalChainComplex.pOpcycles 0 ≫
+            L.normalizedTwistedCubicalChainComplex.isoHomologyι₀.inv)
+              (NormalizedTwistedCubicalChain.ofCube L (ContinuousMap.const _ x) a)) :=
+      congrArg _ (pOpcycles_comp_isoHomologyι₀_inv_ofCube L (ContinuousMap.const _ x) a).symm
+    _ = ((twistedChainComplex L).pOpcycles 0 ≫ (twistedChainComplex L).isoHomologyι₀.inv)
+          (normalizedTwistedCubicalToSingular L 0
+            (NormalizedTwistedCubicalChain.ofCube L (ContinuousMap.const _ x) a)) :=
+      h.trans (congrArg ((twistedChainComplex L).pOpcycles 0 ≫
+        (twistedChainComplex L).isoHomologyι₀.inv).hom (ConcreteCategory.congr_hom
+          (twistedCubicalToSingularMap_f (L := L) 0) _))
+    _ = _ := (congrArg ((twistedChainComplex L).pOpcycles 0 ≫
+        (twistedChainComplex L).isoHomologyι₀.inv).hom
+      (normalizedTwistedCubicalToSingular_ofCube_const L x a)).trans
+      (ConcreteCategory.congr_hom (ιTwistedHomology₀_def L x) a).symm
+
+/-- The comparison to cubical chains sends the class of a coefficient in the fibre at `x` in
+zeroth simplicial homology to the class of the same coefficient in zeroth cubical homology. -/
+@[reassoc (attr := simp)]
+theorem ιTwistedHomology₀_comp_homologyMap_twistedSingularToCubicalMap (x : X) :
+    ιTwistedHomology₀ L x ≫ HomologicalComplex.homologyMap (twistedSingularToCubicalMap L) 0 =
+      ιNormalizedTwistedCubicalHomology₀ L x := by
+  refine ModuleCat.hom_ext (LinearMap.ext fun a ↦ ?_)
+  have h := ConcreteCategory.congr_hom
+    (ChainComplex.pOpcycles_comp_isoHomologyι₀_inv_comp_homologyMap
+      (twistedSingularToCubicalMap L))
+    (ιTwistedChainComplex L 0 (ULift.up (TopCat.ofHom (ContinuousMap.const _ x))) a)
+  calc
+    _ = (HomologicalComplex.homologyMap (twistedSingularToCubicalMap L) 0).hom
+          (((twistedChainComplex L).pOpcycles 0 ≫ (twistedChainComplex L).isoHomologyι₀.inv)
+            (ιTwistedChainComplex L 0 (ULift.up (TopCat.ofHom (ContinuousMap.const _ x))) a)) :=
+      congrArg _ (ConcreteCategory.congr_hom (ιTwistedHomology₀_def L x) a)
+    _ = (L.normalizedTwistedCubicalChainComplex.pOpcycles 0 ≫
+          L.normalizedTwistedCubicalChainComplex.isoHomologyι₀.inv)
+          ((twistedSingularToCubical L 0).hom
+            (ιTwistedChainComplex L 0 (ULift.up (TopCat.ofHom (ContinuousMap.const _ x))) a)) :=
+      h.trans (congrArg (L.normalizedTwistedCubicalChainComplex.pOpcycles 0 ≫
+        L.normalizedTwistedCubicalChainComplex.isoHomologyι₀.inv).hom (ConcreteCategory.congr_hom
+          (twistedSingularToCubicalMap_f (L := L) 0) _))
+    _ = _ := (congrArg (L.normalizedTwistedCubicalChainComplex.pOpcycles 0 ≫
+        L.normalizedTwistedCubicalChainComplex.isoHomologyι₀.inv).hom
+      (twistedSingularToCubical_ιTwistedChainComplex_const L x a)).trans
+      (pOpcycles_comp_isoHomologyι₀_inv_ofCube L (ContinuousMap.const _ x) a)
 
 open Limits in
 /-- **The comparison to simplicial chains is compatible with the colimit identifications.** On
@@ -111,29 +177,10 @@ theorem homologyMap_twistedCubicalToSingularMap_comp_isoColimit_hom :
       (normalizedTwistedCubicalHomology₀IsoColimit L).hom := by
   apply normalizedTwistedCubicalHomology₀_hom_ext
   intro x
-  rw [← Category.assoc, ιNormalizedTwistedCubicalHomology₀_comp_homologyMap,
+  rw [← Category.assoc,
+    ιNormalizedTwistedCubicalHomology₀_comp_homologyMap_twistedCubicalToSingularMap,
     ιTwistedHomology₀_isoColimit_hom L (FundamentalGroupoid.mk x),
     ιNormalizedTwistedCubicalHomology₀_isoColimit_hom L (FundamentalGroupoid.mk x)]
-
-open Limits in
-/-- The augmentation of the comparison to cubical chains, on a point simplex with a coefficient,
-is the image of the coefficient under the cocone. -/
-theorem augment_twistedSingularToCubical_ιTwistedChainComplex_const (s : Cocone L) (x : X)
-    (a : L.obj (FundamentalGroupoid.mk x)) :
-    NormalizedTwistedCubicalChain.augment s ((twistedSingularToCubical L 0).hom
-        (ιTwistedChainComplex L 0 (ULift.up (TopCat.ofHom (ContinuousMap.const _ x))) a)) =
-      s.ι.app (FundamentalGroupoid.mk x) a := by
-  -- The point simplex is named so that the fibres of its summand and of the pushforward agree.
-  set σ : (TopCat.toSSet.obj X) _⦋0⦌ := ULift.up (TopCat.ofHom (ContinuousMap.const _ x))
-  refine (congrArg (NormalizedTwistedCubicalChain.augment s)
-    ((twistedSingularToCubical_ιTwistedChainComplex L σ a).trans
-      ((twistedSingularToCubicalSummand_apply L σ a).trans
-        (congrArg (fun y ↦ NormalizedTwistedCubicalChain.pushforward
-          (Z := simplexModel.{v} 0) L (simplexToHom σ).hom
-          (SimplexCategory.toTopInitialVertex ⦋0⦌) 0 y a)
-          (singularToCubicalGen_zero (k := ULift.{v} ℤ)))))).trans ?_
-  exact NormalizedTwistedCubicalChain.augment_pushforward_ofCube (L := L)
-    (f := (simplexToHom σ).hom) (z₀ := SimplexCategory.toTopInitialVertex ⦋0⦌) s _ a
 
 open Limits in
 /-- **The comparison to cubical chains is compatible with the colimit identifications.** On
@@ -146,34 +193,8 @@ theorem homologyMap_twistedSingularToCubicalMap_comp_isoColimit_hom :
       (twistedHomology₀IsoColimit L).hom := by
   apply twistedHomology₀_hom_ext
   intro x
-  refine ModuleCat.hom_ext (LinearMap.ext fun a ↦ ?_)
-  have h := ConcreteCategory.congr_hom
-    (ChainComplex.pOpcycles_comp_isoHomologyι₀_inv_comp_homologyMap
-      (twistedSingularToCubicalMap L))
-    (ιTwistedChainComplex L 0 (ULift.up (TopCat.ofHom (ContinuousMap.const _ x))) a)
-  have h' := ConcreteCategory.congr_hom
-    (pOpcycles_comp_normalizedTwistedCubicalHomology₀IsoColimit_hom L)
-    ((twistedSingularToCubicalMap L).f 0
-      (ιTwistedChainComplex L 0 (ULift.up (TopCat.ofHom (ContinuousMap.const _ x))) a))
-  rw [twistedSingularToCubicalMap_f] at h h'
-  -- Both sides are the image of `a` in the colimit.
-  refine (congrArg (normalizedTwistedCubicalHomology₀IsoColimit L).hom
-    ((congrArg (HomologicalComplex.homologyMap (twistedSingularToCubicalMap L) 0).hom
-      (ConcreteCategory.congr_hom (ιTwistedHomology₀_def L x) a)).trans h)).trans ?_
-  exact h'.trans ((augment_twistedSingularToCubical_ιTwistedChainComplex_const L
-    (colimit.cocone L) x a).trans
-    (ConcreteCategory.congr_hom
-      (ιTwistedHomology₀_isoColimit_hom L (FundamentalGroupoid.mk x)) a).symm)
-
-/-- The comparison to cubical chains sends the class of a coefficient in the fibre at `x` in
-zeroth simplicial homology to the class of the same coefficient in zeroth cubical homology. -/
-@[reassoc (attr := simp)]
-theorem ιTwistedHomology₀_comp_homologyMap_twistedSingularToCubicalMap (x : X) :
-    ιTwistedHomology₀ L x ≫ HomologicalComplex.homologyMap (twistedSingularToCubicalMap L) 0 =
-      ιNormalizedTwistedCubicalHomology₀ L x := by
-  rw [← cancel_mono (normalizedTwistedCubicalHomology₀IsoColimit L).hom, Category.assoc,
-    homologyMap_twistedSingularToCubicalMap_comp_isoColimit_hom,
-    ιTwistedHomology₀_isoColimit_hom L (FundamentalGroupoid.mk x),
-    ιNormalizedTwistedCubicalHomology₀_isoColimit_hom L (FundamentalGroupoid.mk x)]
+  rw [← Category.assoc, ιTwistedHomology₀_comp_homologyMap_twistedSingularToCubicalMap,
+    ιNormalizedTwistedCubicalHomology₀_isoColimit_hom L (FundamentalGroupoid.mk x),
+    ιTwistedHomology₀_isoColimit_hom L (FundamentalGroupoid.mk x)]
 
 end TauCeti.LocalCoefficientSystem
