@@ -16,6 +16,7 @@ For a measurable additive real observable `f`, a compound Poisson law of positiv
 exactly the exponential-integrability domain of its jump law. On that domain its mgf is
 `exp (r * (mgf f μ t - 1))` and its cgf is `r * (mgf f μ t - 1)`.
 At rate zero the domain is all of `ℝ`, independently of the jump law.
+The results hold for arbitrary s-finite jump measures, without normalization.
 
 The observable formulation includes scalar jumps and linear projections of vector jumps.
 The formulas follow the Poisson-mixture construction; see W. Feller, *An Introduction to
@@ -32,7 +33,7 @@ open scoped ENNReal NNReal MeasureTheory
 namespace TauCeti.Probability
 
 variable {α : Type*} [MeasurableSpace α] [AddMonoid α] [MeasurableAdd₂ α]
-  {μ : Measure α} [IsProbabilityMeasure μ] {f : α →+ ℝ}
+  {μ : Measure α} [SFinite μ] {f : α →+ ℝ}
 
 /-- Every exponential moment of a jump law remains finite under Poisson compounding, for
 any measurable additive real observable. -/
@@ -40,8 +41,14 @@ theorem integrable_exp_mul_compoundPoissonMeasure (r : ℝ≥0) (hf : Measurable
     (ht : Integrable (fun x ↦ exp (t * f x)) μ) :
     Integrable (fun x ↦ exp (t * f x)) (compoundPoissonMeasure r μ) := by
   have hpow (n : ℕ) : Integrable (fun x ↦ exp (t * f x)) (μ.convolutionPower n) := by
-    rw [← mgf_pos_iff, μ.mgf_addMonoidHom_convolutionPower f hf]
-    exact pow_pos (mgf_pos ht) n
+    induction n with
+    | zero =>
+        rw [Measure.convolutionPower_zero]
+        exact integrable_dirac' (by fun_prop) (by simp)
+    | succ n ih =>
+        rw [Measure.convolutionPower_succ, Measure.conv,
+          integrable_map_measure (by fun_prop) (by fun_prop)]
+        simpa only [Function.comp_def, map_add, mul_add, exp_add] using ih.mul_prod ht
   rw [compoundPoissonMeasure_def, Measure.integrable_bind_iff Measurable.of_discrete
     (by fun_prop)]
   refine ⟨ae_of_all _ hpow, ?_⟩
