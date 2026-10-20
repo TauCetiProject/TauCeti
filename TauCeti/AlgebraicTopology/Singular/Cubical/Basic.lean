@@ -160,9 +160,18 @@ theorem face_cast {n m : ℕ} (h : n = m) (i : Fin (n + 1)) (t : I)
   subst h
   simp
 
+/-- The projection of the cube `Iⁿ⁺¹` forgetting the `i`-th coordinate. -/
+abbrev forgetCoordinate {n : ℕ} (i : Fin (n + 1)) : C(Fin (n + 1) → I, Fin n → I) :=
+  ContinuousMap.precomp (X := fun _ : Fin (n + 1) ↦ I) i.succAbove
+
 /-- The degeneracy along coordinate `i` forgets that coordinate before applying the cube. -/
 def degeneracy {n : ℕ} (s : SingularCube X n) (i : Fin (n + 1)) : SingularCube X (n + 1) :=
-  s.comp (ContinuousMap.precomp (X := fun _ : Fin (n + 1) ↦ I) i.succAbove)
+  s.comp (forgetCoordinate i)
+
+/-- A degeneracy is the composite with the projection forgetting a coordinate. -/
+theorem degeneracy_eq_comp {n : ℕ} (s : SingularCube X n) (i : Fin (n + 1)) :
+    degeneracy s i = s.comp (forgetCoordinate i) :=
+  (rfl)
 
 /-- Evaluation of a degeneracy. -/
 @[simp]
