@@ -24,16 +24,18 @@ public section
 namespace LinearMap
 
 variable {R M N : Type*} [CommRing R] [IsNoetherianRing R]
-  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+  [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
 
 /-- A linear map is injective if, at every prime, its localization is injective or the prime
 is not associated to its domain. Neither module needs to be finitely generated. -/
 @[stacks 0AV7]
-theorem injective_of_forall_associatedPrime_localization (map : M →ₗ[R] N)
+theorem injective_of_forall_localization (map : M →ₗ[R] N)
     (local_injective : ∀ (prime : Ideal R) [prime.IsPrime],
       Function.Injective (LocalizedModule.map prime.primeCompl map) ∨
       prime ∉ associatedPrimes R M) :
     Function.Injective map := by
+  let : AddCommGroup M := Module.addCommMonoidToAddCommGroup R
+  let : AddCommGroup N := Module.addCommMonoidToAddCommGroup R
   rw [← LinearMap.ker_eq_bot]
   by_contra kernel_ne_bot
   have : Nontrivial (LinearMap.ker map) := Submodule.nontrivial_iff_ne_bot.mpr kernel_ne_bot
