@@ -98,6 +98,12 @@ theorem koszulPairRight_comp_koszulPairLeft (x y : R) :
     smul_neg, smul_smul, LinearMap.zero_apply]
   rw [mul_comm x y, neg_add_cancel]
 
+@[simp]
+theorem koszulPairRight_koszulPairLeft_apply (x y : R) (c : M) :
+    koszulPairRight x y (koszulPairLeft x y c) = 0 := by
+  simpa only [LinearMap.comp_apply, LinearMap.zero_apply] using
+    LinearMap.congr_fun (koszulPairRight_comp_koszulPairLeft (M := M) x y) c
+
 end Left
 
 section RegularPair
@@ -178,8 +184,7 @@ theorem exact_koszulPair_of_isWeaklyRegular
     · exact hc₁.symm
     · exact hc₂.symm
   · rintro ⟨c, rfl⟩
-    simpa only [LinearMap.comp_apply, LinearMap.zero_apply] using
-      LinearMap.congr_fun (koszulPairRight_comp_koszulPairLeft (M := M) x y) c
+    exact koszulPairRight_koszulPairLeft_apply x y c
 
 /-- The first Koszul differential is injective for a weakly regular pair. -/
 theorem koszulPairLeft_injective_of_isWeaklyRegular
@@ -189,12 +194,6 @@ theorem koszulPairLeft_injective_of_isWeaklyRegular
   intro a b hab
   apply hx
   simpa only [koszulPairLeft_apply] using congrArg Prod.snd hab
-
-/-- The second Koszul differential is exact with the quotient by its two-generated ideal. -/
-theorem exact_koszulPairRight_quotient (x y : R) :
-    Function.Exact (koszulPairRight (M := R) x y)
-      (Submodule.mkQ (Ideal.span ({x, y} : Set R))) := by
-  rw [LinearMap.exact_iff, Submodule.ker_mkQ, range_koszulPairRight_eq_span]
 
 /-- Tensoring the two-element Koszul complex with `M` preserves exactness at
 the middle when the pair is weakly regular on `M`. -/
@@ -265,7 +264,9 @@ theorem Module.free_of_weaklyRegular_pair_generates_maximalIdeal
   rw [← hspan, ← range_koszulPairRight_eq_span x y]
   exact range_koszulPairRight_subtype_rTensor_injective_of_isWeaklyRegular hregR hregM
 
-/-- Freeness for a scalar-regular pair generating the maximal ideal. -/
+/-- Freeness for a pair successively scalar-regular on the ring and module.
+These are the two `IsSMulRegular` conditions for each module, equivalent to
+`IsWeaklyRegular` on `[x, y]`; `IsRegular` additionally requires a nonzero final quotient. -/
 theorem Module.free_of_regular_pair_generates_maximalIdeal
     [IsLocalRing R] [Module.FinitePresentation R M]
     {x y : R}
