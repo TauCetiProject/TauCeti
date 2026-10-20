@@ -13,7 +13,7 @@ public import Mathlib.Topology.OpenPartialHomeomorph.Continuity
 public import Mathlib.Topology.OpenPartialHomeomorph.IsImage
 public import Mathlib.RepresentationTheory.Continuous.Basic
 public import Mathlib.RepresentationTheory.Invariants
-import TauCeti.Algebra.BigOperators.Average
+import TauCeti.Algebra.BigOperators.Finset.Average
 import TauCeti.Topology.OpenPartialHomeomorph.MulAction
 import TauCeti.RepresentationTheory.Invariants
 
@@ -46,8 +46,8 @@ identity.
 * `ContRepresentation.bochnerAverage ρ c`: the Bochner average of `c : X → F` with respect to `ρ`.
 * `TauCeti.isotropyRepresentation`: the derivative representation of `G` at a fixed point, in the
   coordinates of a chart.
-* `OpenPartialHomeomorph.bochnerChart χ ρ c hA`: the inverse-function-theorem chart of the Bochner
-  average, restricted to the largest `G`-invariant open subset of its domain.
+* `OpenPartialHomeomorph.bochnerChart χ ρ c hA`: the inverse-function-theorem chart of the
+  Bochner average, restricted to the largest `G`-invariant open subset of its domain.
 
 ## Main results
 
@@ -57,22 +57,19 @@ identity.
   average is `Representation.averageMap` applied to the value of `c`.
 * `ContRepresentation.hasStrictFDerivAt_bochnerAverage_comp_of_intertwining`: the derivative of
   the Bochner average when the derivatives of `c (g • ·)` intertwine with `ρ`.
-* `ContRepresentation.continuousOn_bochnerAverage_comp`,
-  `ContRepresentation.contDiffOn_bochnerAverage_comp`: the Bochner average inherits the continuity
-  and smoothness of the maps `c (g • ·)`.
+* `ContRepresentation.contDiffOn_bochnerAverage_comp`: the Bochner average is as smooth as the
+  maps `c (g • ·)`; `OpenPartialHomeomorph.contDiffOn_bochnerChart_comp_symm` is the
+  corresponding statement for the Bochner chart, and
+  `OpenPartialHomeomorph.contDiffAt_comp_bochnerChart_symm` the one for its inverse.
 * `OpenPartialHomeomorph.smul_mem_bochnerChart_source`,
-  `OpenPartialHomeomorph.map_mem_bochnerChart_target`: the Bochner chart has a `G`-invariant domain
-  and a `ρ`-invariant target.
+  `OpenPartialHomeomorph.map_mem_bochnerChart_target`: the Bochner chart has a `G`-invariant
+  domain and a `ρ`-invariant target.
 * `OpenPartialHomeomorph.bochnerChart_smul`, `OpenPartialHomeomorph.bochnerChart_symm_map`: the
   Bochner chart and its inverse intertwine the action of `G` with `ρ`.
-* `OpenPartialHomeomorph.contDiffOn_bochnerChart_comp_symm`,
-  `OpenPartialHomeomorph.contDiffAt_comp_bochnerChart_symm`: in the coordinates of `χ`, the Bochner
-  chart is as smooth as the Bochner average, and so is its inverse where the derivative is
-  invertible.
-* `OpenPartialHomeomorph.exists_equivariant_chart`: Bochner linearization. Near a fixed point of a
-  finite group action whose conjugated maps have strict derivatives `σ g` for a representation `σ`,
-  there is a chart with `G`-invariant domain, centred at the point, with derivative the identity,
-  in which `g` acts as `σ g`.
+* `OpenPartialHomeomorph.exists_equivariant_chart`: Bochner linearization. Near a fixed point of
+  a finite group action whose conjugated maps have strict derivatives `σ g` for a representation
+  `σ`, there is a chart with `G`-invariant domain, centred at the point, with derivative the
+  identity, in which `g` acts as `σ g`.
 
 ## References
 
@@ -115,8 +112,7 @@ theorem bochnerAverage_smul (h : G) (y : X) :
   rw [bochnerAverage_def, bochnerAverage_def, map_smul, map_sum]
   congr 1
   refine Fintype.sum_equiv (Equiv.mulRight h) _ _ fun g => ?_
-  rw [Equiv.coe_mulRight, ← mul_apply_eq_comp, ← map_mul]
-  simp [mul_smul]
+  simp [mul_smul, ← mul_apply_eq_comp, ← map_mul]
 
 variable {ρ c} in
 /-- Averaging a map that is already `G`-equivariant does not change it. -/
@@ -126,34 +122,38 @@ theorem bochnerAverage_eq_self (hc : ∀ (g : G) (y : X), c (g • y) = ρ g (c 
   have hg (g : G) : ρ g⁻¹ (c (g • y)) = c y := by
     rw [hc]
     exact ρ.toRepresentation.inv_self_apply g (c y)
-  rw [bochnerAverage_def, Finset.sum_congr rfl fun g _ => hg g, TauCeti.invOf_card_smul_sum_const]
+  rw [bochnerAverage_def, Finset.sum_congr rfl fun g _ => hg g, Fintype.invOf_card_smul_sum_const]
 
 /-- At a point fixed by `G`, the Bochner average is the average of the value of `c` over the
 representation, that is, its image under `Representation.averageMap`. In particular it lies in the
 invariants of `ρ`. -/
 theorem bochnerAverage_apply_of_forall_smul_eq {x : X} (hx : ∀ g : G, g • x = x) :
     bochnerAverage ρ c x = ρ.toRepresentation.averageMap (c x) := by
-  rw [Representation.averageMap_eq_invOf_card_smul_norm, bochnerAverage_def]
-  simp only [hx, LinearMap.smul_apply, Representation.norm, LinearMap.sum_apply]
+  simp only [Representation.averageMap_eq_invOf_card_smul_norm, bochnerAverage_def, hx,
+    LinearMap.smul_apply, Representation.norm, LinearMap.sum_apply]
   congr 1
-  exact Fintype.sum_equiv (Equiv.inv G) _ _ fun g => by
-    simp [Equiv.inv_apply, ContRepresentation.toMonoidHom_apply]
+  exact Fintype.sum_equiv (Equiv.inv G) _ _ fun g => by simp [ContRepresentation.toMonoidHom_apply]
 
-variable {ρ c} [ContinuousConstSMul 𝕜 F] {Y : Type*} [TopologicalSpace Y] {f : Y → X}
+section Regularity
 
-/-- The Bochner average along a map `f` is continuous on a set where each `w ↦ c (g • f w)` is. -/
+variable {Y : Type*} [TopologicalSpace Y] [ContinuousConstSMul 𝕜 F] {f : Y → X}
+
+/-- The Bochner average along `f : Y → X` is continuous on `s` if each `w ↦ c (g • f w)` is. -/
 theorem continuousOn_bochnerAverage_comp {s : Set Y}
     (hc : ∀ g : G, ContinuousOn (fun w => c (g • f w)) s) :
     ContinuousOn (bochnerAverage ρ c ∘ f) s := by
-  simp only [Function.comp_def, bochnerAverage_def]
-  exact (continuousOn_finsetSum _ fun g _ =>
-    (ρ g⁻¹).continuous.comp_continuousOn (hc g)).const_smul _
+  convert (continuousOn_finsetSum Finset.univ fun g _ =>
+    (ρ g⁻¹).continuous.comp_continuousOn (hc g)).const_smul (⅟(Fintype.card G : 𝕜)) using 1
+  ext w
+  simp [bochnerAverage_def]
 
-/-- The Bochner average along a map `f` is continuous when each `w ↦ c (g • f w)` is. -/
+/-- The Bochner average along `f : Y → X` is continuous if each `w ↦ c (g • f w)` is. -/
 theorem continuous_bochnerAverage_comp (hc : ∀ g : G, Continuous fun w => c (g • f w)) :
     Continuous (bochnerAverage ρ c ∘ f) := by
-  simp only [Function.comp_def, bochnerAverage_def]
-  exact (continuous_finsetSum _ fun g _ => (ρ g⁻¹).continuous.comp (hc g)).const_smul _
+  simp only [← continuousOn_univ] at hc ⊢
+  exact continuousOn_bochnerAverage_comp ρ c hc
+
+end Regularity
 
 end Average
 
@@ -162,22 +162,7 @@ section Deriv
 variable {𝕜 G X E F : Type*} [NontriviallyNormedField 𝕜] [Group G] [Fintype G]
   [Invertible (Fintype.card G : 𝕜)] [MulAction G X]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-  {ρ : ContRepresentation 𝕜 G F} {c : X → F} {f : E → X} {z : E} {n : WithTop ℕ∞}
-
-/-- The Bochner average along a map `f : E → X` is `C^n` on a set where each `w ↦ c (g • f w)`
-is. -/
-theorem contDiffOn_bochnerAverage_comp {s : Set E}
-    (hc : ∀ g : G, ContDiffOn 𝕜 n (fun w => c (g • f w)) s) :
-    ContDiffOn 𝕜 n (bochnerAverage ρ c ∘ f) s := by
-  simp only [Function.comp_def, bochnerAverage_def]
-  exact (ContDiffOn.sum fun g _ => (ρ g⁻¹).contDiff.comp_contDiffOn (hc g)).const_smul _
-
-/-- The Bochner average along a map `f : E → X` is `C^n` at a point where each `w ↦ c (g • f w)`
-is. -/
-theorem contDiffAt_bochnerAverage_comp (hc : ∀ g : G, ContDiffAt 𝕜 n (fun w => c (g • f w)) z) :
-    ContDiffAt 𝕜 n (bochnerAverage ρ c ∘ f) z := by
-  simp only [Function.comp_def, bochnerAverage_def]
-  exact (ContDiffAt.sum fun g _ => (ρ g⁻¹).contDiff.contDiffAt.comp z (hc g)).const_smul _
+  {ρ : ContRepresentation 𝕜 G F} {c : X → F} {f : E → X} {z : E}
 
 /-- The strict derivative of the Bochner average along a map `f : E → X`, given the strict
 derivatives `D g` of the maps `w ↦ c (g • f w)`. -/
@@ -206,7 +191,7 @@ private theorem average_comp_intertwining (D₀ : E →L[𝕜] F) :
     ⅟(Fintype.card G : 𝕜) • ∑ g : G, (ρ g⁻¹).comp ((ρ g).comp D₀) = D₀ := by
   have hg (g : G) : (ρ g⁻¹).comp ((ρ g).comp D₀) = D₀ :=
     ContinuousLinearMap.ext fun v => ρ.toRepresentation.inv_self_apply g (D₀ v)
-  rw [Finset.sum_congr rfl fun g _ => hg g, TauCeti.invOf_card_smul_sum_const]
+  rw [Finset.sum_congr rfl fun g _ => hg g, Fintype.invOf_card_smul_sum_const]
 
 /-- If the strict derivative of each `w ↦ c (g • f w)` at `z` is `ρ g ∘ D₀`, then the Bochner
 average along `f` has strict derivative `D₀` at `z`. -/
@@ -221,6 +206,25 @@ theorem hasFDerivAt_bochnerAverage_comp_of_intertwining {D₀ : E →L[𝕜] F}
     (hc : ∀ g : G, HasFDerivAt (fun w => c (g • f w)) ((ρ g).comp D₀) z) :
     HasFDerivAt (bochnerAverage ρ c ∘ f) D₀ z := by
   simpa only [average_comp_intertwining] using hasFDerivAt_bochnerAverage_comp (ρ := ρ) hc
+
+variable {n : WithTop ℕ∞}
+
+/-- The Bochner average along `f : E → X` is `C^n` at `z` if each `w ↦ c (g • f w)` is. -/
+theorem contDiffAt_bochnerAverage_comp (hc : ∀ g : G, ContDiffAt 𝕜 n (fun w => c (g • f w)) z) :
+    ContDiffAt 𝕜 n (bochnerAverage ρ c ∘ f) z := by
+  convert (ContDiffAt.sum fun g (_ : g ∈ Finset.univ) =>
+    (ρ g⁻¹).contDiff.contDiffAt.comp z (hc g)).const_smul (⅟(Fintype.card G : 𝕜)) using 1
+  ext w
+  simp [bochnerAverage_def]
+
+/-- The Bochner average along `f : E → X` is `C^n` on `s` if each `w ↦ c (g • f w)` is. -/
+theorem contDiffOn_bochnerAverage_comp {s : Set E}
+    (hc : ∀ g : G, ContDiffOn 𝕜 n (fun w => c (g • f w)) s) :
+    ContDiffOn 𝕜 n (bochnerAverage ρ c ∘ f) s := by
+  convert (ContDiffOn.sum fun g (_ : g ∈ Finset.univ) =>
+    (ρ g⁻¹).contDiff.comp_contDiffOn (hc g)).const_smul (⅟(Fintype.card G : 𝕜)) using 1
+  ext w
+  simp [bochnerAverage_def]
 
 end Deriv
 
@@ -317,13 +321,14 @@ theorem hasStrictFDerivAt_bochnerChart_comp_symm (hz : z ∈ χ.target) :
   filter_upwards [χ.eventually_right_inverse hz] with w hw
   simp [bochnerChart, bochnerChartAux, hw]
 
-/-- In the coordinates of `χ`, the Bochner chart is `C^n` wherever the Bochner average is, within
-the domain of the chart. -/
+/-- In the coordinates of `χ`, the Bochner chart is `C^n` on any set where the maps
+`w ↦ c (g • χ.symm w)` are, intersected with the domain of the chart. -/
 theorem contDiffOn_bochnerChart_comp_symm {n : WithTop ℕ∞} {s : Set E}
-    (hc : ContDiffOn 𝕜 n (ρ.bochnerAverage c ∘ χ.symm) s) :
+    (hc : ∀ g : G, ContDiffOn 𝕜 n (fun w => c (g • χ.symm w)) s) :
     ContDiffOn 𝕜 n (bochnerChart χ ρ c hA ∘ χ.symm)
       (s ∩ χ.symm ⁻¹' (bochnerChart χ ρ c hA).source) :=
-  (hc.mono inter_subset_left).congr fun _ hw => bochnerChart_apply hA hw.2
+  ((ρ.contDiffOn_bochnerAverage_comp hc).mono inter_subset_left).congr fun _ hw =>
+    bochnerChart_apply hA hw.2
 
 /-- In the coordinates of `χ`, the inverse of the Bochner chart is `C^n` at a point `w` of its
 target, provided that, in the coordinates of `χ`, the Bochner average is `C^n` with an invertible
