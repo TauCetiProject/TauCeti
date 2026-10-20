@@ -29,9 +29,10 @@ additive set functions on a σ-algebra.
   `ℝ≥0∞`-valued one. They are inverse on `C`, hence inverse when `C` is the set of all subsets.
 * `MeasureTheory.isSetRing_univ`: all subsets form a ring of sets, so a set function on all subsets
   that vanishes at `∅` and is additive on disjoint pairs is a content
-  (`MeasureTheory.IsSetRing.addContent_of_union`). A content on all subsets is bounded by its total
-  mass, so it is finite when its total mass is, and it takes complements to differences with the
-  total mass.
+  (`MeasureTheory.IsSetRing.addContent_of_union`). A content on all subsets with canonically
+  ordered values is bounded by its total mass, so an `ℝ≥0∞`-valued one is finite when its total
+  mass is. A content on all subsets takes complements to differences with the total mass, for
+  values in an additive group, or for `ℝ≥0∞` values at sets of finite content.
 * `MeasureTheory.AddContent.map` pushes a content forward along a map, with identity and
   composition laws. Pushforward along an equivariant map preserves invariance under a group
   action, and invariance of a content on all subsets is invariance under pushforward by every
@@ -68,10 +69,13 @@ variable {G : Type*}
 theorem addContent_union_add_inter [AddCommMonoid G] {m : AddContent G C} (hC : IsSetRing C)
     (hs : s ∈ C) (ht : t ∈ C) : m (s ∪ t) + m (s ∩ t) = m s + m t := by
   have hts : t \ s ∈ C := hC.sdiff_mem ht hs
-  have hst : t ∩ s ∈ C := hC.inter_mem ht hs
-  rw [← union_sdiff_self, addContent_union hC hs hts disjoint_sdiff_right, inter_comm,
-    add_right_comm, add_assoc, ← addContent_union hC hst hts disjoint_inf_sdiff,
-    inter_union_sdiff]
+  have hunion : m (s ∪ t) = m s + m (t \ s) := by
+    rw [← addContent_union hC hs hts disjoint_sdiff_right, union_sdiff_self]
+  have ht' : m t = m (s ∩ t) + m (t \ s) := by
+    rw [inter_comm, ← addContent_union hC (hC.inter_mem ht hs) hts disjoint_inf_sdiff,
+      inter_union_sdiff]
+  rw [hunion, ht']
+  abel
 
 /-- In a ring of sets, a content with values in an additive group takes the difference of two
 nested sets to the difference of their values. -/
