@@ -28,6 +28,8 @@ the local model of a closed vertex star whose link is a combinatorial sphere.
 
 ## Main results
 
+* `Convexity.StdSimplex.convex_range_toFun_comp_weights`: the weight vectors of the standard
+  simplex form a convex set.
 * `TauCeti.card_mul_inf'_smul_add_smul_barycenter`: `card ι` times the least coordinate recovers
   the parameter along a segment from a boundary point to the barycentre.
 * `TauCeti.convexJoin_boundary_stdSimplex_barycenter`: the standard simplex is the convex join of
@@ -42,6 +44,20 @@ the local model of a closed vertex star whose link is a combinatorial sphere.
 public section
 
 open Set Finset Convexity
+
+namespace Convexity.StdSimplex
+
+/-- The weight vectors of the standard simplex on a finite type form a convex set. -/
+theorem convex_range_toFun_comp_weights (R : Type*) [Semiring R] [PartialOrder R]
+    [IsOrderedRing R] (X : Type*) [Finite X] :
+    Convex R (range fun t : StdSimplex R X => ⇑t.weights) := by
+  have := Fintype.ofFinite X
+  rw [range_toFun_comp_weights]
+  exact (convex_iInter fun i => convex_halfSpace_ge (LinearMap.proj i).isLinear 0).inter
+    (by simpa using
+      convex_hyperplane (∑ i, LinearMap.proj (R := R) (φ := fun _ : X => R) i).isLinear 1)
+
+end Convexity.StdSimplex
 
 namespace TauCeti
 
@@ -77,10 +93,7 @@ theorem convexJoin_boundary_stdSimplex_barycenter [Nontrivial ι] :
     rw [StdSimplex.range_toFun_comp_weights]
     ext z
     simp
-  have hconv : Convex ℝ (range fun s : StdSimplex ℝ ι => ⇑s.weights) := by
-    rw [StdSimplex.range_toFun_comp_weights]
-    exact (convex_iInter fun i => convex_halfSpace_ge (LinearMap.proj i).isLinear 0).inter
-      (convex_hyperplane ⟨fun x y => by simp [sum_add_distrib], fun a x => by simp [mul_sum]⟩ 1)
+  have hconv := StdSimplex.convex_range_toFun_comp_weights ℝ ι
   have hbar : ⇑(StdSimplex.barycenter : StdSimplex ℝ ι).weights = fun _ => c⁻¹ :=
     funext StdSimplex.weights_barycenter_apply
   rw [hS] at hconv
@@ -114,10 +127,9 @@ theorem convexJoin_boundary_stdSimplex_barycenter [Nontrivial ι] :
     have hzb : z = fun _ => c⁻¹ := funext fun j => by
       linarith [hzero j (Finset.mem_univ j)]
     obtain ⟨j, k, hjk⟩ := exists_pair_ne ι
-    have hj : Pi.single j (1 : ℝ) ∈
-        {y ∈ {z : ι → ℝ | (∀ i, 0 ≤ z i) ∧ ∑ i, z i = 1} | ∃ i, y i = 0} := by
-      refine ⟨⟨fun l => ?_, by simp⟩, k, by simp [hjk.symm]⟩
-      by_cases hl : l = j <;> simp [hl]
+    have hj : ⇑(StdSimplex.single j : StdSimplex ℝ ι).weights ∈
+        {y ∈ {z : ι → ℝ | (∀ i, 0 ≤ z i) ∧ ∑ i, z i = 1} | ∃ i, y i = 0} :=
+      ⟨hS ▸ mem_range_self _, k, by simp [hjk]⟩
     rw [hzb]
     exact subset_convexJoin_right ⟨_, hj⟩ (mem_singleton _)
 
