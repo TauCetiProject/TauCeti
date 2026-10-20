@@ -8,7 +8,6 @@ module
 public import TauCeti.Probability.Distributions.StudentT.Basic
 public import TauCeti.Probability.Distributions.Affine
 import TauCeti.Probability.Distributions.Cauchy.Affine
-import TauCeti.Probability.Distributions.Folding
 
 /-!
 # Half-Student t and half-Cauchy distributions
