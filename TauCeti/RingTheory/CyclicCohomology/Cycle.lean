@@ -8,7 +8,7 @@ module
 public import TauCeti.RingTheory.CyclicCohomology.Cohomology
 public import TauCeti.RingTheory.CyclicCohomology.ConnesOperator
 public import TauCeti.Algebra.Homology.DG.Algebra.Cohomology
-import TauCeti.Data.Fin.Tuple.ContractNth
+import TauCeti.Data.Fin.Tuple.Basic
 
 /-!
 # The character of a cycle
