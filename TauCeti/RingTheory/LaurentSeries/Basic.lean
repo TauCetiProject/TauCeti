@@ -33,10 +33,8 @@ with a ring homomorphism into `R⸨X⸩` gives a derivation, as for Laurent expa
 It is reduced to the product rule for power series by writing a Laurent series as a monomial
 times a power series.
 
-The third part establishes the basic properties of the residue `f.coeff (-1)` of a formal one-form
-`f dX` — vanishing on power series (series of nonnegative order / valuation at most `1`),
-vanishing on exact differentials `dg`, and integration by parts `Res(f dg) = -Res(g df)` — and
-computes the residue of `φ ^ n * φ'` for any power series `φ` over a field and every integer `n`:
+The third part computes the residue of the formal one-form `φ ^ n * φ' dX`
+for any power series `φ` over a field and every integer `n`:
 it is `(φ.order.toNat : k)` for `n = -1` and `0` otherwise. For `n ≠ -1` in characteristic zero,
 `φ ^ n * φ'` is the derivative of `φ ^ (n + 1) / (n + 1)`; in characteristic `p` this fails when
 `p ∣ n + 1`, and the proof uses `PowerSeries.nsmul_coeff_mul_succ_pow_succ` instead. By linearity
@@ -55,8 +53,6 @@ by `φ.order.toNat`, and in particular preserves the residue when `φ.order = 1`
 * `PowerSeries.order_coe` and `PowerSeries.orderTop_coe_of_ne_zero`: the order of a power series in
   `R⸨X⸩` agrees with its power series order.
 * `LaurentSeries.derivative_mul`: the product rule for the derivative of Laurent series.
-* `LaurentSeries.coeff_neg_one_mul_derivative`: integration by parts
-  `Res(f dg) = -Res(g df)`.
 * `PowerSeries.coe_derivative` and `PowerSeries.coe_hasseDeriv`: the derivative and the Hasse
   derivatives of Laurent series extend those of power series.
 * `LaurentSeries.valuation_derivative_sub_zsmul_single_mul_le`: if `f` vanishes to order at least
@@ -221,18 +217,6 @@ namespace LaurentSeries
 
 open HahnSeries
 
-/-- A Laurent series of nonnegative `orderTop` has residue zero. -/
-theorem coeff_neg_one_eq_zero_of_nonneg_orderTop {R : Type*} [Zero R] {f : R⸨X⸩}
-    (hf : 0 ≤ f.orderTop) : f.coeff (-1) = 0 :=
-  coeff_eq_zero_of_lt_orderTop (lt_of_lt_of_le (by decide : (-1 : WithTop ℤ) < 0) hf)
-
-/-- Over a field, a Laurent series of valuation at most `1` (that is, in `K⟦X⟧`) has residue
-zero. -/
-theorem coeff_neg_one_eq_zero_of_valuation_le_one {K : Type*} [Field K] {f : K⸨X⸩}
-    (hf : Valued.v f ≤ 1) : f.coeff (-1) = 0 := by
-  rw [← WithZero.exp_zero, ← neg_zero, valuation_le_iff_coeff_lt_eq_zero] at hf
-  exact hf (-1) (by omega)
-
 variable {R : Type*} [CommRing R]
 
 /-- The product rule for a monomial: `(c X ^ m * f)' = m c X ^ (m - 1) * f + c X ^ m * f'`. -/
@@ -279,19 +263,6 @@ theorem derivative_mul (f g : R⸨X⸩) :
   simp only [Derivation.leibniz, smul_eq_mul, PowerSeries.coe_add, PowerSeries.coe_mul]
   rw [hd, hab]
   ring
-
-/-- **Integration by parts for residues (additive form)**:
-`Res(f' g dX) + Res(f g' dX) = 0`. -/
-theorem coeff_neg_one_derivative_mul_add_mul_derivative (f g : R⸨X⸩) :
-    (derivative R f * g).coeff (-1) + (f * derivative R g).coeff (-1) = 0 := by
-  rw [← coeff_add, ← derivative_mul]
-  simp [derivative_apply]
-
-/-- **Integration by parts for residues**: `Res(f dg) = -Res(g df)`. -/
-theorem coeff_neg_one_mul_derivative (f g : R⸨X⸩) :
-    (f * derivative R g).coeff (-1) = -(g * derivative R f).coeff (-1) := by
-  rw [mul_comm g]
-  exact eq_neg_of_add_eq_zero_right (coeff_neg_one_derivative_mul_add_mul_derivative f g)
 
 /-- The derivative of `f` agrees with `m X⁻¹ f` up to a correction whose coefficient of `Xⁿ` is
 `(n + 1 - m)` times the coefficient of `Xⁿ⁺¹` in `f`. -/
