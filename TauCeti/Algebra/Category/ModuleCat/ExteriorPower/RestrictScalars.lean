@@ -121,15 +121,15 @@ theorem isIso_restrictScalarsExteriorPowerComparison_app_of_bijective
   let h : M.exteriorPower n →ₛₗ[e.symm.toRingHom] N.exteriorPower n :=
     (ModuleCat.semilinearMapAddEquiv e.symm.toRingHom _ _).symm
       (restrictScalarsExteriorPowerInvAux e n M)
-  -- `using!` identifies the unchanged carriers of scalar-restricted modules.
+  -- Mathlib's evaluation lemma explicitly identifies the semilinear and restricted maps.
   have hc (m : Fin n → N) :
       c (ModuleCat.exteriorPower.mk m) = ModuleCat.exteriorPower.mk (M := M) m := by
-    simpa only [c, ModuleCat.semilinearMapAddEquiv_symm_apply_apply] using!
-      restrictScalarsExteriorPowerComparison_app_mk e.toRingHom n M m
+    exact (ModuleCat.semilinearMapAddEquiv_symm_apply_apply e.toRingHom _ _ _ _).trans
+      (restrictScalarsExteriorPowerApp_mk e.toRingHom n M m)
   have hh (m : Fin n → M) :
       h (ModuleCat.exteriorPower.mk m) = ModuleCat.exteriorPower.mk (M := N) m := by
-    simpa only [h, ModuleCat.semilinearMapAddEquiv_symm_apply_apply] using!
-      restrictScalarsExteriorPowerInvAux_mk e n M m
+    exact (ModuleCat.semilinearMapAddEquiv_symm_apply_apply e.symm.toRingHom _ _ _ _).trans
+      (restrictScalarsExteriorPowerInvAux_mk e n M m)
   have hleft : Function.LeftInverse h c := by
     have heq : (h.comp c : N.exteriorPower n →ₗ[S] N.exteriorPower n) = LinearMap.id := by
       apply _root_.exteriorPower.linearMap_ext
