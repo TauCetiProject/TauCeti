@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.MeanInequalities
+import Mathlib.Analysis.MeanInequalitiesPow
 
 /-!
 # Mean inequalities
@@ -32,12 +33,15 @@ Mathlib states it for finite sums (`ENNReal.Lp_add_le`) and for summable `ℝ≥
 (`NNReal.Lp_add_le_tsum`); the `ℝ≥0∞` form follows from the finite one by taking the supremum over
 finite partial sums. It is the counting-measure case of `ENNReal.lintegral_Lp_add_le`, stated
 without measure theory. It gives the triangle inequality for gauges defined as `ℓᵖ` sums in `ℝ≥0∞`,
-such as the Hilbert–Schmidt energy of an operator.
+such as the Hilbert–Schmidt energy of an operator. Hölder's inequality holds for such sums in the
+same way, extending `ENNReal.inner_le_Lp_mul_Lq` and `NNReal.inner_le_Lp_mul_Lq_tsum`.
 
 ## Main statements
 
 * `Real.prod_rpow_add_prod_rpow_le_prod_add_rpow`: the weighted geometric mean is superadditive.
 * `ENNReal.Lp_add_le_tsum`: Minkowski's inequality for unconditional sums in `ℝ≥0∞`.
+* `ENNReal.inner_le_Lp_mul_Lq_tsum`: Hölder's inequality for unconditional sums in `ℝ≥0∞`.
+* `ENNReal.add_sq_le`: `(a + b) ^ 2 ≤ 2 * (a ^ 2 + b ^ 2)` in `ℝ≥0∞`.
 
 ## References
 
@@ -100,5 +104,26 @@ theorem Lp_add_le_tsum {ι : Type*} (f g : ι → ℝ≥0∞) {p : ℝ} (hp : 1 
   refine iSup_le fun s ↦ ?_
   rw [← rpow_inv_le_iff hp0, ← one_div]
   grw [Lp_add_le s f g hp, ENNReal.sum_le_tsum s, ENNReal.sum_le_tsum (f := fun i ↦ g i ^ p) s]
+
+/-- `(a + b) ^ 2 ≤ 2 * (a ^ 2 + b ^ 2)` in `ℝ≥0∞`. The general `add_sq_le` does not apply, since
+`ℝ≥0∞` is not a strictly ordered semiring. -/
+protected theorem add_sq_le (a b : ℝ≥0∞) : (a + b) ^ 2 ≤ 2 * (a ^ 2 + b ^ 2) := by
+  simpa [ENNReal.rpow_two, show (2 : ℝ) - 1 = 1 by norm_num] using
+    ENNReal.rpow_add_le_mul_rpow_add_rpow a b (p := 2) one_le_two
+
+/-- **Hölder's inequality** for unconditional sums in `ℝ≥0∞`: for conjugate exponents `p` and `q`,
+`∑' i, f i * g i ≤ (∑' i, f i ^ p) ^ (1 / p) * (∑' i, g i ^ q) ^ (1 / q)`.
+No summability hypotheses are needed; both sides may be infinite. -/
+theorem inner_le_Lp_mul_Lq_tsum {ι : Type*} (f g : ι → ℝ≥0∞) {p q : ℝ}
+    (hpq : p.HolderConjugate q) :
+    ∑' i, f i * g i ≤ (∑' i, f i ^ p) ^ (1 / p) * (∑' i, g i ^ q) ^ (1 / q) := by
+  -- Bound each finite partial sum by the finite Hölder inequality.
+  rw [ENNReal.tsum_eq_iSup_sum]
+  refine iSup_le fun s ↦ (inner_le_Lp_mul_Lq s f g hpq).trans ?_
+  gcongr
+  · exact one_div_nonneg.2 hpq.nonneg
+  · exact ENNReal.sum_le_tsum s
+  · exact one_div_nonneg.2 hpq.symm.nonneg
+  · exact ENNReal.sum_le_tsum s
 
 end ENNReal
