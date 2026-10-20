@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import TauCeti.Analysis.Calculus.Bilinear
+public import TauCeti.Geometry.Manifold.Riemannian.Basic
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 
 /-!
@@ -170,24 +171,6 @@ theorem pullback_inner
     (g.pullback f hf hinj).inner x v w =
       g.inner (f x) (mfderiv I J f x v) (mfderiv I J f x w) :=
   (rfl)
-
-/-! The identity map is the first functoriality law for pullback metrics.  It is
-stated for arbitrary proofs of smoothness and injectivity so that it rewrites
-pullbacks without exposing proof terms in downstream APIs. -/
-
-omit [FiniteDimensional ℝ E] in
-/-- Smooth Riemannian metrics are equal when all their fibrewise inner products agree. -/
-@[ext]
-theorem ext {g h : ContMDiffRiemannianMetric I n E (fun y : M ↦ TangentSpace I y)}
-    (heq : ∀ x v w, g.inner x v w = h.inner x v w) : g = h := by
-  cases g with
-  | mk ginner gsymm gpos gisVonNBounded gcontMDiff =>
-    cases h with
-    | mk hinner hsymm hpos hisVonNBounded hcontMDiff =>
-      congr 1
-      funext x
-      ext v w
-      exact heq x v w
 
 /-- Pulling a Riemannian metric back along the identity leaves it unchanged. -/
 @[simp]
