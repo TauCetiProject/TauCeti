@@ -61,7 +61,10 @@ The four field values of the transferred relations are the public declarations
 and the four projection lemmas `transfer_inverseForward`, `transfer_inverseReverse`,
 `transfer_commute` and `transfer_braid` read those values off the transferred relations; the
 four projection lemmas `transferDegreewise_inverseForward` and its three siblings read them off
-the degreewise transferred relations.
+the degreewise transferred relations. The `hom` and the `inv` of each of the four transferred
+equivalences are characterised by the lemmas `transferInverseForward_hom` and
+`transferInverseForward_inv` and their three sibling pairs, in terms of the supplied
+equivalences and the tensor maps.
 
 ## Scope
 
@@ -349,6 +352,268 @@ def transferAdjacent {k : Type w} [CommRing k] {V : Type u} {G : SimpleGraph V}
       ((transferAdjacentMiddle k G Ξ₁ Ξ₂ Φ hΦ h rel).trans
         ((transferAdjacentBridgeRight k Ξ₁ Ξ₂ Φ η).trans
           (transferAdjacentRightConj k Ξ₁ Ξ₂ Φ a))))
+
+-- The `hom` and the `inv` of the four transferred equivalences are characterised below, in
+-- terms of the supplied data only: the identifications `a` and `a'`, the monoidal datum `η`,
+-- the unit datum `ε` and the images of the source relations. The proofs unfold the transfer
+-- and rewrite it with the characteristic lemmas `HomotopyEquiv.trans_hom` and its siblings:
+-- a proof by `rfl` is not available here, because the body of `HomotopyEquiv.mapBifunctor` is
+-- not exposed outside the module that defines it.
+
+/-- The `hom` of the forward inverse transfer is the composite of the tensor map induced by
+the inverses of the identifications `a i` and `a' i`, the `hom` of the monoidal datum
+`η (B i) (B' i)`, the `hom` of the image `hΦ (rel.inverseForward i)` of the source forward
+inverse relation, and the `hom` of the unit datum `ε`. -/
+@[simp] theorem transferInverseForward_hom {k : Type w} [CommRing k] {V : Type u}
+    {G : SimpleGraph V} {A₁ : Type uA} [Ring A₁] [Algebra k A₁] {A₂ : Type uB} [Ring A₂]
+    [Algebra k A₂] {Ξ₁ : InternalGrading k A₁} [GradedAlgebra Ξ₁.piece]
+    {Ξ₂ : InternalGrading k A₂} [GradedAlgebra Ξ₂.piece]
+    {Φ : HomologicalComplex (GradedBimoduleCat k Ξ₁) c ⥤
+      HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
+    {B B' : V → HomologicalComplex (GradedBimoduleCat k Ξ₁) c}
+    {C C' : V → HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
+    (i : V)
+    (hΦ : ∀ {X Y}, HomotopyEquiv X Y → HomotopyEquiv (Φ.obj X) (Φ.obj Y))
+    (η : GradedBimoduleMonoidalDatum k Ξ₁ Ξ₂ Φ)
+    (ε : HomotopyEquiv (Φ.obj (gradedBimoduleUnitComplex k Ξ₁))
+      (gradedBimoduleUnitComplex k Ξ₂))
+    (rel : KhovanovSeidelRelations k G Ξ₁ B B')
+    (a : ∀ i, HomotopyEquiv (Φ.obj (B i)) (C i))
+    (a' : ∀ i, HomotopyEquiv (Φ.obj (B' i)) (C' i)) :
+    (transferInverseForward i hΦ η ε rel a a').hom
+      = (HomologicalComplex.mapBifunctorMap (a i).inv (a' i).inv
+          (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c)
+        ≫ ((η (B i) (B' i)).hom ≫ ((hΦ (rel.inverseForward i)).hom ≫ ε.hom)) := by
+  unfold transferInverseForward
+  simp only [HomotopyEquiv.trans_hom, HomotopyEquiv.mapBifunctor_hom, HomotopyEquiv.symm_hom]
+
+/-- The `inv` of the forward inverse transfer is the composite of the `inv` of the unit datum
+`ε`, the `inv` of the image `hΦ (rel.inverseForward i)` of the source forward inverse
+relation, the `inv` of the monoidal datum `η (B i) (B' i)`, and the tensor map induced by the
+identifications `a i` and `a' i`. -/
+@[simp] theorem transferInverseForward_inv {k : Type w} [CommRing k] {V : Type u}
+    {G : SimpleGraph V} {A₁ : Type uA} [Ring A₁] [Algebra k A₁] {A₂ : Type uB} [Ring A₂]
+    [Algebra k A₂] {Ξ₁ : InternalGrading k A₁} [GradedAlgebra Ξ₁.piece]
+    {Ξ₂ : InternalGrading k A₂} [GradedAlgebra Ξ₂.piece]
+    {Φ : HomologicalComplex (GradedBimoduleCat k Ξ₁) c ⥤
+      HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
+    {B B' : V → HomologicalComplex (GradedBimoduleCat k Ξ₁) c}
+    {C C' : V → HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
+    (i : V)
+    (hΦ : ∀ {X Y}, HomotopyEquiv X Y → HomotopyEquiv (Φ.obj X) (Φ.obj Y))
+    (η : GradedBimoduleMonoidalDatum k Ξ₁ Ξ₂ Φ)
+    (ε : HomotopyEquiv (Φ.obj (gradedBimoduleUnitComplex k Ξ₁))
+      (gradedBimoduleUnitComplex k Ξ₂))
+    (rel : KhovanovSeidelRelations k G Ξ₁ B B')
+    (a : ∀ i, HomotopyEquiv (Φ.obj (B i)) (C i))
+    (a' : ∀ i, HomotopyEquiv (Φ.obj (B' i)) (C' i)) :
+    (transferInverseForward i hΦ η ε rel a a').inv
+      = ((ε.inv ≫ (hΦ (rel.inverseForward i)).inv) ≫ (η (B i) (B' i)).inv)
+        ≫ (HomologicalComplex.mapBifunctorMap (a i).hom (a' i).hom
+          (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c) := by
+  unfold transferInverseForward
+  simp only [HomotopyEquiv.trans_inv, HomotopyEquiv.mapBifunctor_inv, HomotopyEquiv.symm_inv]
+
+/-- The `hom` of the reverse inverse transfer is the composite of the tensor map induced by
+the inverses of the identifications `a' i` and `a i`, the `hom` of the monoidal datum
+`η (B' i) (B i)`, the `hom` of the image `hΦ (rel.inverseReverse i)` of the source reverse
+inverse relation, and the `hom` of the unit datum `ε`. -/
+@[simp] theorem transferInverseReverse_hom {k : Type w} [CommRing k] {V : Type u}
+    {G : SimpleGraph V} {A₁ : Type uA} [Ring A₁] [Algebra k A₁] {A₂ : Type uB} [Ring A₂]
+    [Algebra k A₂] {Ξ₁ : InternalGrading k A₁} [GradedAlgebra Ξ₁.piece]
+    {Ξ₂ : InternalGrading k A₂} [GradedAlgebra Ξ₂.piece]
+    {Φ : HomologicalComplex (GradedBimoduleCat k Ξ₁) c ⥤
+      HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
+    {B B' : V → HomologicalComplex (GradedBimoduleCat k Ξ₁) c}
+    {C C' : V → HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
+    (i : V)
+    (hΦ : ∀ {X Y}, HomotopyEquiv X Y → HomotopyEquiv (Φ.obj X) (Φ.obj Y))
+    (η : GradedBimoduleMonoidalDatum k Ξ₁ Ξ₂ Φ)
+    (ε : HomotopyEquiv (Φ.obj (gradedBimoduleUnitComplex k Ξ₁))
+      (gradedBimoduleUnitComplex k Ξ₂))
+    (rel : KhovanovSeidelRelations k G Ξ₁ B B')
+    (a : ∀ i, HomotopyEquiv (Φ.obj (B i)) (C i))
+    (a' : ∀ i, HomotopyEquiv (Φ.obj (B' i)) (C' i)) :
+    (transferInverseReverse i hΦ η ε rel a a').hom
+      = (HomologicalComplex.mapBifunctorMap (a' i).inv (a i).inv
+          (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c)
+        ≫ ((η (B' i) (B i)).hom ≫ ((hΦ (rel.inverseReverse i)).hom ≫ ε.hom)) := by
+  unfold transferInverseReverse
+  simp only [HomotopyEquiv.trans_hom, HomotopyEquiv.mapBifunctor_hom, HomotopyEquiv.symm_hom]
+
+/-- The `inv` of the reverse inverse transfer is the composite of the `inv` of the unit datum
+`ε`, the `inv` of the image `hΦ (rel.inverseReverse i)` of the source reverse inverse
+relation, the `inv` of the monoidal datum `η (B' i) (B i)`, and the tensor map induced by the
+identifications `a' i` and `a i`. -/
+@[simp] theorem transferInverseReverse_inv {k : Type w} [CommRing k] {V : Type u}
+    {G : SimpleGraph V} {A₁ : Type uA} [Ring A₁] [Algebra k A₁] {A₂ : Type uB} [Ring A₂]
+    [Algebra k A₂] {Ξ₁ : InternalGrading k A₁} [GradedAlgebra Ξ₁.piece]
+    {Ξ₂ : InternalGrading k A₂} [GradedAlgebra Ξ₂.piece]
+    {Φ : HomologicalComplex (GradedBimoduleCat k Ξ₁) c ⥤
+      HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
+    {B B' : V → HomologicalComplex (GradedBimoduleCat k Ξ₁) c}
+    {C C' : V → HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
+    (i : V)
+    (hΦ : ∀ {X Y}, HomotopyEquiv X Y → HomotopyEquiv (Φ.obj X) (Φ.obj Y))
+    (η : GradedBimoduleMonoidalDatum k Ξ₁ Ξ₂ Φ)
+    (ε : HomotopyEquiv (Φ.obj (gradedBimoduleUnitComplex k Ξ₁))
+      (gradedBimoduleUnitComplex k Ξ₂))
+    (rel : KhovanovSeidelRelations k G Ξ₁ B B')
+    (a : ∀ i, HomotopyEquiv (Φ.obj (B i)) (C i))
+    (a' : ∀ i, HomotopyEquiv (Φ.obj (B' i)) (C' i)) :
+    (transferInverseReverse i hΦ η ε rel a a').inv
+      = ((ε.inv ≫ (hΦ (rel.inverseReverse i)).inv) ≫ (η (B' i) (B i)).inv)
+        ≫ (HomologicalComplex.mapBifunctorMap (a' i).hom (a i).hom
+          (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c) := by
+  unfold transferInverseReverse
+  simp only [HomotopyEquiv.trans_inv, HomotopyEquiv.mapBifunctor_inv, HomotopyEquiv.symm_inv]
+
+/-- The `hom` of the commutation transfer is the composite of the tensor map induced by the
+inverses of the identifications `a i` and `a j`, the `hom` of the monoidal datum
+`η (B i) (B j)`, the `hom` of the image `hΦ (rel.commute i j hij hadj)` of the source
+commutation relation, the `inv` of the monoidal datum `η (B j) (B i)`, and the tensor map
+induced by the identifications `a j` and `a i`. -/
+@[simp] theorem transferCommute_hom {k : Type w} [CommRing k] {V : Type u}
+    {G : SimpleGraph V} {A₁ : Type uA} [Ring A₁] [Algebra k A₁] {A₂ : Type uB} [Ring A₂]
+    [Algebra k A₂] {Ξ₁ : InternalGrading k A₁} [GradedAlgebra Ξ₁.piece]
+    {Ξ₂ : InternalGrading k A₂} [GradedAlgebra Ξ₂.piece]
+    {Φ : HomologicalComplex (GradedBimoduleCat k Ξ₁) c ⥤
+      HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
+    (i j : V) (hij : i ≠ j) (hadj : ¬ G.Adj i j)
+    {B B' : V → HomologicalComplex (GradedBimoduleCat k Ξ₁) c}
+    {C : V → HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
+    (hΦ : ∀ {X Y}, HomotopyEquiv X Y → HomotopyEquiv (Φ.obj X) (Φ.obj Y))
+    (η : GradedBimoduleMonoidalDatum k Ξ₁ Ξ₂ Φ)
+    (rel : KhovanovSeidelRelations k G Ξ₁ B B')
+    (a : ∀ i, HomotopyEquiv (Φ.obj (B i)) (C i)) :
+    (transferCommute i j hij hadj hΦ η rel a).hom
+      = (HomologicalComplex.mapBifunctorMap (a i).inv (a j).inv
+          (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c)
+        ≫ ((η (B i) (B j)).hom
+          ≫ ((hΦ (rel.commute i j hij hadj)).hom
+            ≫ ((η (B j) (B i)).inv
+              ≫ (HomologicalComplex.mapBifunctorMap (a j).hom (a i).hom
+                (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c)))) := by
+  unfold transferCommute
+  simp only [HomotopyEquiv.trans_hom, HomotopyEquiv.mapBifunctor_hom, HomotopyEquiv.symm_hom]
+
+/-- The `inv` of the commutation transfer is the composite of the tensor map induced by the
+inverses of the identifications `a j` and `a i`, the `hom` of the monoidal datum
+`η (B j) (B i)`, the `inv` of the image `hΦ (rel.commute i j hij hadj)` of the source
+commutation relation, the `inv` of the monoidal datum `η (B i) (B j)`, and the tensor map
+induced by the identifications `a i` and `a j`. -/
+@[simp] theorem transferCommute_inv {k : Type w} [CommRing k] {V : Type u}
+    {G : SimpleGraph V} {A₁ : Type uA} [Ring A₁] [Algebra k A₁] {A₂ : Type uB} [Ring A₂]
+    [Algebra k A₂] {Ξ₁ : InternalGrading k A₁} [GradedAlgebra Ξ₁.piece]
+    {Ξ₂ : InternalGrading k A₂} [GradedAlgebra Ξ₂.piece]
+    {Φ : HomologicalComplex (GradedBimoduleCat k Ξ₁) c ⥤
+      HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
+    (i j : V) (hij : i ≠ j) (hadj : ¬ G.Adj i j)
+    {B B' : V → HomologicalComplex (GradedBimoduleCat k Ξ₁) c}
+    {C : V → HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
+    (hΦ : ∀ {X Y}, HomotopyEquiv X Y → HomotopyEquiv (Φ.obj X) (Φ.obj Y))
+    (η : GradedBimoduleMonoidalDatum k Ξ₁ Ξ₂ Φ)
+    (rel : KhovanovSeidelRelations k G Ξ₁ B B')
+    (a : ∀ i, HomotopyEquiv (Φ.obj (B i)) (C i)) :
+    (transferCommute i j hij hadj hΦ η rel a).inv
+      = ((((HomologicalComplex.mapBifunctorMap (a j).inv (a i).inv
+            (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c) ≫ (η (B j) (B i)).hom)
+          ≫ (hΦ (rel.commute i j hij hadj)).inv)
+        ≫ (η (B i) (B j)).inv)
+        ≫ (HomologicalComplex.mapBifunctorMap (a i).hom (a j).hom
+          (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c) := by
+  unfold transferCommute
+  simp only [HomotopyEquiv.trans_inv, HomotopyEquiv.mapBifunctor_inv, HomotopyEquiv.symm_inv]
+
+/-- The `hom` of the adjacent transfer is the composite of the tensor map of the inverses of
+the identifications `a i` and `a j` with the inverse of `a i`, the tensor map of the `hom` of
+the monoidal datum `η (B i) (B j)` with the identity of `Φ.obj (B i)`, the `hom` of the
+monoidal datum `η (mapBifunctor (B i) (B j) …) (B i)`, the `hom` of the image
+`hΦ (rel.braid h)` of the source braid relation, the `inv` of the monoidal datum
+`η (mapBifunctor (B j) (B i) …) (B j)`, the tensor map of the `inv` of the monoidal datum
+`η (B j) (B i)` with the identity of `Φ.obj (B j)`, and the tensor map of the identifications
+`a j` and `a i` with `a j`. -/
+@[simp] theorem transferAdjacent_hom {k : Type w} [CommRing k] {V : Type u}
+    {G : SimpleGraph V} {A₁ : Type uA} [Ring A₁] [Algebra k A₁] {A₂ : Type uB} [Ring A₂]
+    [Algebra k A₂] {Ξ₁ : InternalGrading k A₁} [GradedAlgebra Ξ₁.piece]
+    {Ξ₂ : InternalGrading k A₂} [GradedAlgebra Ξ₂.piece]
+    {Φ : HomologicalComplex (GradedBimoduleCat k Ξ₁) c ⥤
+      HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
+    {i j : V} (h : G.Adj j i)
+    {B B' : V → HomologicalComplex (GradedBimoduleCat k Ξ₁) c}
+    {C : V → HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
+    (hΦ : ∀ {X Y}, HomotopyEquiv X Y → HomotopyEquiv (Φ.obj X) (Φ.obj Y))
+    (η : GradedBimoduleMonoidalDatum k Ξ₁ Ξ₂ Φ)
+    (rel : KhovanovSeidelRelations k G Ξ₁ B B')
+    (a : ∀ i, HomotopyEquiv (Φ.obj (B i)) (C i)) :
+    (transferAdjacent h hΦ η rel a).hom
+      = (HomologicalComplex.mapBifunctorMap
+          (HomologicalComplex.mapBifunctorMap (a i).inv (a j).inv
+            (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c) (a i).inv
+          (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c)
+        ≫ ((HomologicalComplex.mapBifunctorMap (η (B i) (B j)).hom (𝟙 (Φ.obj (B i)))
+            (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c)
+          ≫ (η (HomologicalComplex.mapBifunctor (B i) (B j)
+            (GradedModuleCat.bimoduleTensor Ξ₁ Ξ₁ Ξ₁) c) (B i)).hom)
+        ≫ (hΦ (rel.braid h)).hom
+        ≫ ((η (HomologicalComplex.mapBifunctor (B j) (B i)
+            (GradedModuleCat.bimoduleTensor Ξ₁ Ξ₁ Ξ₁) c) (B j)).inv
+          ≫ (HomologicalComplex.mapBifunctorMap (η (B j) (B i)).inv (𝟙 (Φ.obj (B j)))
+            (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c))
+        ≫ (HomologicalComplex.mapBifunctorMap
+            (HomologicalComplex.mapBifunctorMap (a j).hom (a i).hom
+              (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c) (a j).hom
+            (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c) := by
+  unfold transferAdjacent transferAdjacentRightConj transferAdjacentBridgeRight
+    transferAdjacentMiddle transferAdjacentBridgeLeft transferAdjacentLeftConj
+  simp only [HomotopyEquiv.trans_hom, HomotopyEquiv.trans_inv, HomotopyEquiv.mapBifunctor_hom,
+    HomotopyEquiv.mapBifunctor_inv, HomotopyEquiv.symm_hom, HomotopyEquiv.symm_inv,
+    HomotopyEquiv.refl_hom, HomotopyEquiv.refl_inv]
+
+/-- The `inv` of the adjacent transfer is the composite of the tensor map of the inverses of
+the identifications `a j` and `a i` with the inverse of `a j`, the tensor map of the `hom` of
+the monoidal datum `η (B j) (B i)` with the identity of `Φ.obj (B j)`, the `hom` of the
+monoidal datum `η (mapBifunctor (B j) (B i) …) (B j)`, the `inv` of the image
+`hΦ (rel.braid h)` of the source braid relation, the `inv` of the monoidal datum
+`η (mapBifunctor (B i) (B j) …) (B i)`, the tensor map of the `inv` of the monoidal datum
+`η (B i) (B j)` with the identity of `Φ.obj (B i)`, and the tensor map of the identifications
+`a i` and `a j` with `a i`. -/
+@[simp] theorem transferAdjacent_inv {k : Type w} [CommRing k] {V : Type u}
+    {G : SimpleGraph V} {A₁ : Type uA} [Ring A₁] [Algebra k A₁] {A₂ : Type uB} [Ring A₂]
+    [Algebra k A₂] {Ξ₁ : InternalGrading k A₁} [GradedAlgebra Ξ₁.piece]
+    {Ξ₂ : InternalGrading k A₂} [GradedAlgebra Ξ₂.piece]
+    {Φ : HomologicalComplex (GradedBimoduleCat k Ξ₁) c ⥤
+      HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
+    {i j : V} (h : G.Adj j i)
+    {B B' : V → HomologicalComplex (GradedBimoduleCat k Ξ₁) c}
+    {C : V → HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
+    (hΦ : ∀ {X Y}, HomotopyEquiv X Y → HomotopyEquiv (Φ.obj X) (Φ.obj Y))
+    (η : GradedBimoduleMonoidalDatum k Ξ₁ Ξ₂ Φ)
+    (rel : KhovanovSeidelRelations k G Ξ₁ B B')
+    (a : ∀ i, HomotopyEquiv (Φ.obj (B i)) (C i)) :
+    (transferAdjacent h hΦ η rel a).inv
+      = ((((HomologicalComplex.mapBifunctorMap
+                (HomologicalComplex.mapBifunctorMap (a j).inv (a i).inv
+                  (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c) (a j).inv
+                (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c
+              ≫ (HomologicalComplex.mapBifunctorMap (η (B j) (B i)).hom (𝟙 (Φ.obj (B j)))
+                  (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c
+                ≫ (η (HomologicalComplex.mapBifunctor (B j) (B i)
+                  (GradedModuleCat.bimoduleTensor Ξ₁ Ξ₁ Ξ₁) c) (B j)).hom))
+            ≫ (hΦ (rel.braid h)).inv)
+          ≫ ((η (HomologicalComplex.mapBifunctor (B i) (B j)
+              (GradedModuleCat.bimoduleTensor Ξ₁ Ξ₁ Ξ₁) c) (B i)).inv
+            ≫ (HomologicalComplex.mapBifunctorMap (η (B i) (B j)).inv (𝟙 (Φ.obj (B i)))
+              (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c)))
+        ≫ (HomologicalComplex.mapBifunctorMap
+            (HomologicalComplex.mapBifunctorMap (a i).hom (a j).hom
+              (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c) (a i).hom
+            (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c)) := by
+  unfold transferAdjacent transferAdjacentRightConj transferAdjacentBridgeRight
+    transferAdjacentMiddle transferAdjacentBridgeLeft transferAdjacentLeftConj
+  simp only [HomotopyEquiv.trans_hom, HomotopyEquiv.trans_inv, HomotopyEquiv.mapBifunctor_hom,
+    HomotopyEquiv.mapBifunctor_inv, HomotopyEquiv.symm_hom, HomotopyEquiv.symm_inv,
+    HomotopyEquiv.refl_hom, HomotopyEquiv.refl_inv]
 
 /-- Transfer of the Khovanov-Seidel relations of a source family to a target graded bimodule
 setting. Let `Φ` be a functor on complexes of graded bimodules from the source setting of `Ξ₁`
