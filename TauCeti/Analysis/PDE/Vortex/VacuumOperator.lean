@@ -12,7 +12,7 @@ public import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
 # The gauge-fixed vortex operator at the vacuum
 
 The vortex equations on the plane, for an imaginary connection `a` on the trivial line bundle and
-a section `α`, are `∂̄_a α = 0` and `*iF_a = (1 - |α|²) / 8`; the gauge group acts by
+a section `α`, are `∂bar_a α = 0` and `*iF_a = (1 - |α|²) / 8`; the gauge group acts by
 `(a, α) ↦ (a - u⁻¹ du, u α)`. Identify the plane with `ℂ`, with coordinates `z = s + i t`, and write
 `∂₁ = ∂_{1}` and `∂₂ = ∂_{I}` for the coordinate derivatives. A first-order deformation of the
 vacuum `(0, 1)` is written `a = i (b₁ ds + b₂ dt)` and `α = 1 + 2 p + 2 i q`, so that the
@@ -23,7 +23,7 @@ first-order operator `L₀ x = (G, C, H₁, H₂)` with
 * `G = ∂₁ b₁ + ∂₂ b₂ + q / 2` (the formal adjoint of the infinitesimal gauge action),
 * `C = -∂₁ b₂ + ∂₂ b₁ + p / 2` (the linearized curvature equation),
 * `H₁ = ∂₁ p - ∂₂ q - b₂ / 2` and `H₂ = ∂₁ q + ∂₂ p + b₁ / 2` (the real and imaginary parts of the
-  linearized `∂̄_a α`).
+  linearized `∂bar_a α`).
 
 This file defines `L₀` and its formal `L²` adjoint `L₀*` as continuous linear operators on
 `ℝ⁴`-valued Schwartz fields on `ℂ`. It proves the Weitzenböck identity `L₀* L₀ = -Δ + 1 / 4` and
@@ -90,7 +90,7 @@ private theorem firstOrder_apply (A₁ A₂ B : Matrix (Fin 4) (Fin 4) ℝ)
 
 /-- The gauge-fixed vortex operator `L₀` at the vacuum, acting on deformations
 `x = (b₁, b₂, p, q)` and producing `(G, C, H₁, H₂)`, where `G` is the gauge-fixing condition, `C`
-the linearized curvature equation and `(H₁, H₂)` the linearized `∂̄_a α`; see the component
+the linearized curvature equation and `(H₁, H₂)` the linearized `∂bar_a α`; see the component
 formulas `vacuumOperator_apply_zero` through `vacuumOperator_apply_three`. -/
 def vacuumOperator : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4)) →L[ℝ] 𝓢(ℂ, EuclideanSpace ℝ (Fin 4)) :=
   firstOrder coeffOne coeffI coeffZero
@@ -119,7 +119,7 @@ theorem vacuumOperator_apply_one :
     Fin.sum_univ_four]
   ring
 
-/-- The first `∂̄` component `H₁ = ∂₁ p - ∂₂ q - b₂ / 2` of `L₀`. -/
+/-- The first `∂bar` component `H₁ = ∂₁ p - ∂₂ q - b₂ / 2` of `L₀`. -/
 @[simp]
 theorem vacuumOperator_apply_two :
     vacuumOperator x z 2 = ∂_{(1 : ℂ)} x z 2 - ∂_{I} x z 3 - x z 1 / 2 := by
@@ -127,7 +127,7 @@ theorem vacuumOperator_apply_two :
     Fin.sum_univ_four]
   ring
 
-/-- The second `∂̄` component `H₂ = ∂₂ p + ∂₁ q + b₁ / 2` of `L₀`. -/
+/-- The second `∂bar` component `H₂ = ∂₂ p + ∂₁ q + b₁ / 2` of `L₀`. -/
 @[simp]
 theorem vacuumOperator_apply_three :
     vacuumOperator x z 3 = ∂_{I} x z 2 + ∂_{(1 : ℂ)} x z 3 + x z 0 / 2 := by
