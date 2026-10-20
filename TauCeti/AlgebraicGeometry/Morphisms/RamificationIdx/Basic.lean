@@ -85,10 +85,7 @@ theorem ramificationIdxAt_pos {x : X} (hx : f.QuasiFiniteAt x) : 0 < ramificatio
   exact Ideal.ramificationIdx_pos_of_quasiFiniteAt _
 
 /-- Ramification indices multiply along a composite at any point where the first stalk map is
-flat. No finiteness, normality, or codimension assumptions are required.
-
-The composite stalk map is transported along `Scheme.Hom.comp_apply` before forming the tower.
-The named stalk-composition formula then gives the scalar-tower compatibility. -/
+flat. No finiteness, normality, or codimension assumptions are required. -/
 theorem ramificationIdxAt_comp_of_flat_stalkMap {Z : Scheme.{u}} (g : Y ⟶ Z) (x : X)
     (hflat : (f.stalkMap x).hom.Flat) :
     ramificationIdxAt (f ≫ g) x = ramificationIdxAt f x * ramificationIdxAt g (f x) := by
@@ -117,6 +114,7 @@ theorem ramificationIdxAt_comp_of_flat_stalkMap {Z : Scheme.{u}} (g : Y ⟶ Z) (
     (maximalIdeal targetStalk)
 
 /-- Ramification indices multiply along any composite whose first morphism is flat. -/
+@[simp]
 theorem ramificationIdxAt_comp {Z : Scheme.{u}} (g : Y ⟶ Z) [Flat f] (x : X) :
     ramificationIdxAt (f ≫ g) x = ramificationIdxAt f x * ramificationIdxAt g (f x) :=
   f.ramificationIdxAt_comp_of_flat_stalkMap g x (Flat.stalkMap f x)

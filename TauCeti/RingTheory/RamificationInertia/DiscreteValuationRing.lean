@@ -75,7 +75,7 @@ theorem ramificationIdx_eq_of_map_maximalIdeal_eq_pow {exponent : ℕ}
     (hexponent : (maximalIdeal S).map (algebraMap S T) = maximalIdeal T ^ exponent) :
     (maximalIdeal T).ramificationIdx S = exponent := by
   have hpowers : StrictAnti (fun power : ℕ ↦ maximalIdeal T ^ power) :=
-    strictAnti_nat_of_succ_lt (Ideal.pow_succ_lt_pow (not_a_field T))
+    Ideal.pow_right_strictAnti (maximalIdeal T) (not_a_field T) (maximalIdeal.isMaximal T).ne_top
   have hmap : (maximalIdeal S).map (algebraMap S T) ≠ ⊥ := by
     rw [hexponent]
     exact ne_of_gt (lt_of_le_of_lt bot_le (hpowers (Nat.lt_succ_self exponent)))
