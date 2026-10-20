@@ -57,7 +57,7 @@ theorem toSymmetricAlgebra_tprod (n : ℕ) (m : Fin n → M) :
   simp [toSymmetricAlgebra, algebraMultilinear]
 
 /-- Multiplication preserves the degree of a symmetric tensor. -/
-theorem toSymmetricAlgebra_mem (n : ℕ) (x : Sym[R]^n M) :
+theorem toSymmetricAlgebra_mem_homogeneousSubmodule (n : ℕ) (x : Sym[R]^n M) :
     toSymmetricAlgebra R M n x ∈
       TauCeti.SymmetricAlgebra.homogeneousSubmodule R M n := by
   have hle : (⊤ : Submodule R (Sym[R]^n M)) ≤
@@ -74,7 +74,7 @@ theorem toSymmetricAlgebra_mem (n : ℕ) (x : Sym[R]^n M) :
 /-- Multiplication with codomain restricted to the homogeneous component of the same degree. -/
 noncomputable def toHomogeneous (n : ℕ) :
     Sym[R]^n M →ₗ[R] TauCeti.SymmetricAlgebra.homogeneousSubmodule R M n :=
-  (toSymmetricAlgebra R M n).codRestrict _ (toSymmetricAlgebra_mem R M n)
+  (toSymmetricAlgebra R M n).codRestrict _ (toSymmetricAlgebra_mem_homogeneousSubmodule R M n)
 
 /-- The homogeneous multiplication map has ordinary multiplication as its underlying map. -/
 @[simp]
@@ -88,7 +88,7 @@ theorem range_toSymmetricAlgebra (n : ℕ) :
       TauCeti.SymmetricAlgebra.homogeneousSubmodule R M n := by
   apply le_antisymm
   · rintro _ ⟨x, rfl⟩
-    exact toSymmetricAlgebra_mem R M n x
+    exact toSymmetricAlgebra_mem_homogeneousSubmodule R M n x
   · rw [TauCeti.SymmetricAlgebra.homogeneousSubmodule_eq_span, Submodule.span_le]
     rintro _ ⟨l, hl, rfl⟩
     subst n
@@ -102,7 +102,7 @@ variable {R M}
 
 variable (R M) in
 /-- Multiplication identifies the symmetric tensor basis with the homogeneous monomial basis. -/
-theorem toSymmetricAlgebra_basis {κ : Type w} (b : Module.Basis κ R M)
+theorem toSymmetricAlgebra_symmetricPower_apply {κ : Type w} (b : Module.Basis κ R M)
     (n : ℕ) (s : Sym κ n) :
     toSymmetricAlgebra R M n (b.symmetricPower n s) =
       (b.symmetricAlgebraHomogeneous n s : SymmetricAlgebra R M) := by
@@ -115,7 +115,7 @@ theorem toSymmetricAlgebra_basis {κ : Type w} (b : Module.Basis κ R M)
   rw [← List.prod_ofFn]
   have hexp : (Sym.equivFinsuppDegree κ n (TauCeti.Sym.ofFn f)).1 =
       (List.ofFn f : Multiset κ).toFinsupp := by
-    rw [Sym.equivFinsuppDegree_apply, TauCeti.Sym.coe_ofFn]
+    rw [Sym.coe_equivFinsuppDegree_apply, TauCeti.Sym.coe_ofFn]
   rw [hexp]
   simpa only [Multiset.map_coe, Multiset.prod_coe, List.map_ofFn, Function.comp_def] using
     TauCeti.prod_map_X_eq_monomial (R := R) (List.ofFn f : Multiset κ)
@@ -131,7 +131,7 @@ theorem toSymmetricAlgebra_injective [Module.Free R M] (n : ℕ) :
     apply (b.symmetricPower n).ext
     intro s
     rw [LinearMap.comp_apply, LinearEquiv.coe_coe, Module.Basis.equiv_apply, Equiv.refl_apply]
-    exact toSymmetricAlgebra_basis R M b n s
+    exact toSymmetricAlgebra_symmetricPower_apply R M b n s
   rw [heq]
   exact Subtype.val_injective.comp (LinearEquiv.injective _)
 
@@ -152,5 +152,31 @@ theorem coe_equivHomogeneous_apply [Module.Free R M] (n : ℕ) (x : Sym[R]^n M) 
     (equivHomogeneous (R := R) (M := M) n x : SymmetricAlgebra R M) =
       toSymmetricAlgebra R M n x :=
   (rfl)
+
+/-- The linear map underlying the homogeneous equivalence is homogeneous multiplication. -/
+@[simp]
+theorem toLinearMap_equivHomogeneous [Module.Free R M] (n : ℕ) :
+    (equivHomogeneous (R := R) (M := M) n).toLinearMap = toHomogeneous R M n := by
+  rfl
+
+/-- The homogeneous equivalence sends a pure symmetric tensor to its product of generators. -/
+@[simp]
+theorem equivHomogeneous_tprod [Module.Free R M] (n : ℕ) (m : Fin n → M) :
+    equivHomogeneous (R := R) (M := M) n (⨂ₛ[R] i, m i) =
+      ⟨∏ i, SymmetricAlgebra.ι R M (m i), by
+        simpa only [toSymmetricAlgebra_tprod] using
+          toSymmetricAlgebra_mem_homogeneousSubmodule R M n (⨂ₛ[R] i, m i)⟩ := by
+  apply Subtype.ext
+  exact toSymmetricAlgebra_tprod R M n m
+
+/-- The inverse homogeneous equivalence sends a product of generators to its pure tensor. -/
+@[simp]
+theorem equivHomogeneous_symm_apply [Module.Free R M] (n : ℕ) (m : Fin n → M)
+    (h : ∏ i, SymmetricAlgebra.ι R M (m i) ∈
+      TauCeti.SymmetricAlgebra.homogeneousSubmodule R M n) :
+    (equivHomogeneous (R := R) (M := M) n).symm ⟨∏ i, SymmetricAlgebra.ι R M (m i), h⟩ =
+      ⨂ₛ[R] i, m i := by
+  apply (equivHomogeneous (R := R) (M := M) n).injective
+  simp only [LinearEquiv.apply_symm_apply, equivHomogeneous_tprod]
 
 end TauCeti.SymmetricPower

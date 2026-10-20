@@ -87,7 +87,8 @@ theorem pbwSymmetrization_tprod_const (n : ℕ) (hn : IsUnit (n.factorial : R)) 
     hn.val_inv_mul, one_smul]
 
 /-- Symmetrization has PBW filtration degree at most its symmetric degree. -/
-theorem pbwSymmetrization_mem (n : ℕ) (hn : IsUnit (n.factorial : R)) (x : Sym[R]^n L) :
+theorem pbwSymmetrization_mem_pbwFiltration (n : ℕ) (hn : IsUnit (n.factorial : R))
+    (x : Sym[R]^n L) :
     pbwSymmetrization R L n hn x ∈ pbwFiltration R L n := by
   have hle : (⊤ : Submodule R (Sym[R]^n L)) ≤
       (pbwFiltration R L n).comap (pbwSymmetrization R L n hn) := by
@@ -103,7 +104,8 @@ theorem pbwSymmetrization_mem (n : ℕ) (hn : IsUnit (n.factorial : R)) (x : Sym
   exact hle Submodule.mem_top
 
 /-- Symmetrizing a word changes it only in strictly smaller PBW filtration degree. -/
-theorem pbwSymmetrization_tprod_sub_mem (n : ℕ) (hn : IsUnit (n.factorial : R)) (m : Fin n → L) :
+theorem pbwSymmetrization_tprod_sub_mem_pbwFiltrationPrevious (n : ℕ)
+    (hn : IsUnit (n.factorial : R)) (m : Fin n → L) :
     pbwSymmetrization R L n hn (⨂ₛ[R] i, m i) - (List.ofFn fun i ↦ ι (m i)).prod ∈
       pbwFiltrationPrevious R L n := by
   classical
@@ -128,6 +130,13 @@ noncomputable def pbwHomogeneousSymmetrization (n : ℕ) (hn : IsUnit (n.factori
   (pbwSymmetrization R L n hn).comp
     (SymmetricPower.equivHomogeneous (R := R) (M := L) n).symm.toLinearMap
 
+/-- Homogeneous symmetrization is tensor symmetrization after the inverse comparison. -/
+theorem pbwHomogeneousSymmetrization_apply (n : ℕ) (hn : IsUnit (n.factorial : R))
+    (p : homogeneousSubmodule R L n) :
+    pbwHomogeneousSymmetrization R L n hn p =
+      pbwSymmetrization R L n hn ((SymmetricPower.equivHomogeneous n).symm p) := by
+  rfl
+
 /-- The homogeneous map agrees with tensor symmetrization under the canonical comparison. -/
 @[simp]
 theorem pbwHomogeneousSymmetrization_equivHomogeneous (n : ℕ) (hn : IsUnit (n.factorial : R))
@@ -137,25 +146,26 @@ theorem pbwHomogeneousSymmetrization_equivHomogeneous (n : ℕ) (hn : IsUnit (n.
   simp [pbwHomogeneousSymmetrization]
 
 /-- Homogeneous symmetrization lands in the corresponding PBW filtration step. -/
-theorem pbwHomogeneousSymmetrization_mem (n : ℕ) (hn : IsUnit (n.factorial : R))
+theorem pbwHomogeneousSymmetrization_mem_pbwFiltration (n : ℕ) (hn : IsUnit (n.factorial : R))
     (p : homogeneousSubmodule R L n) :
     pbwHomogeneousSymmetrization R L n hn p ∈ pbwFiltration R L n := by
-  rw [pbwHomogeneousSymmetrization, LinearMap.comp_apply, LinearEquiv.coe_coe]
-  exact pbwSymmetrization_mem R L n hn _
+  rw [pbwHomogeneousSymmetrization_apply]
+  exact pbwSymmetrization_mem_pbwFiltration R L n hn _
 
 /-- Taking the leading PBW symbol of symmetrization recovers the canonical PBW image. -/
 theorem mk_pbwHomogeneousSymmetrization (n : ℕ) (hn : IsUnit (n.factorial : R))
     (p : homogeneousSubmodule R L n) :
     Submodule.Quotient.mk
       (⟨pbwHomogeneousSymmetrization R L n hn p,
-        by simpa only [pbwFiltration_def] using pbwHomogeneousSymmetrization_mem R L n hn p⟩ :
+        by simpa only [pbwFiltration_def] using
+          pbwHomogeneousSymmetrization_mem_pbwFiltration R L n hn p⟩ :
         TauCeti.Algebra.wordFiltration (ι).toLinearMap n) =
       pbwHomogeneousComponentMap R L n p := by
   let lhs : homogeneousSubmodule R L n →ₗ[R] PBWGradedPiece R L n :=
     (Submodule.mkQ (TauCeti.Algebra.wordFiltration.previousRestricted (ι).toLinearMap n)).comp
       ((pbwHomogeneousSymmetrization R L n hn).codRestrict _
         (fun p ↦ by simpa only [pbwFiltration_def] using
-          pbwHomogeneousSymmetrization_mem R L n hn p))
+          pbwHomogeneousSymmetrization_mem_pbwFiltration R L n hn p))
   suffices hl : lhs = pbwHomogeneousComponentMap R L n from LinearMap.congr_fun hl p
   apply (LinearMap.cancel_right
     (SymmetricPower.equivHomogeneous (R := R) (M := L) n).surjective).mp
@@ -165,14 +175,7 @@ theorem mk_pbwHomogeneousSymmetrization (n : ℕ) (hn : IsUnit (n.factorial : R)
   have hprod : (∏ i, SymmetricAlgebra.ι R L (m i)) =
       ((List.ofFn m).map (SymmetricAlgebra.ι R L)).prod := by
     simp [List.prod_ofFn]
-  have hp : SymmetricPower.equivHomogeneous n (⨂ₛ[R] i, m i) =
-      (⟨((List.ofFn m).map (SymmetricAlgebra.ι R L)).prod,
-        by simpa using prod_map_ι_mem_homogeneousSubmodule R L (List.ofFn m)⟩ :
-          homogeneousSubmodule R L n) := by
-    apply Subtype.ext
-    rw [SymmetricPower.coe_equivHomogeneous_apply, SymmetricPower.toSymmetricAlgebra_tprod,
-      hprod]
-  rw [hp]
+  rw [SymmetricPower.equivHomogeneous_tprod]
   have hsymbol (l : List L) (hl : l.length = n) :
       pbwHomogeneousComponentMap R L n
           ⟨(l.map (SymmetricAlgebra.ι R L)).prod,
@@ -182,13 +185,15 @@ theorem mk_pbwHomogeneousSymmetrization (n : ℕ) (hn : IsUnit (n.factorial : R)
             (ι).toLinearMap hl.le⟩ : PBWGradedPiece R L n) := by
     subst n
     exact pbwHomogeneousComponentMap_prod_map_ι R L l
+  simp only [hprod]
   rw [hsymbol (List.ofFn m) List.length_ofFn]
   apply (Submodule.Quotient.eq _).mpr
   rw [TauCeti.Algebra.wordFiltration.mem_previousRestricted_iff]
   simp only [LinearMap.codRestrict_apply, Submodule.coe_sub]
-  rw [← hp, pbwHomogeneousSymmetrization_equivHomogeneous]
+  simp only [← hprod]
+  rw [pbwHomogeneousSymmetrization_apply, SymmetricPower.equivHomogeneous_symm_apply]
   simpa only [pbwFiltrationPrevious_def, List.map_ofFn, Function.comp_def] using
-    pbwSymmetrization_tprod_sub_mem R L n hn m
+    pbwSymmetrization_tprod_sub_mem_pbwFiltrationPrevious R L n hn m
 
 /-- Symmetrization of homogeneous symmetric polynomials is injective. -/
 theorem pbwHomogeneousSymmetrization_injective (n : ℕ) (hn : IsUnit (n.factorial : R)) :

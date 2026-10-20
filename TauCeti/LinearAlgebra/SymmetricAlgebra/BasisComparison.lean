@@ -25,7 +25,7 @@ the polynomial ring.
 * `map_homogeneousSubmodule_equivMvPolynomial`: the basis-induced equivalence carries the degree
   `n` part of a symmetric algebra to the degree `n` part of a multivariate polynomial ring.
 * `SymmetricAlgebra.equivMvPolynomial_isHomogeneous_iff`: the degreewise form of that comparison.
-* `Sym.equivFinsuppDegree`: degree-`n` multisets are exponent vectors of total degree `n`.
+* `TauCeti.Sym.equivFinsuppDegree`: degree-`n` multisets are exponent vectors of total degree `n`.
 * `Module.Basis.symmetricAlgebraHomogeneous`: the monomial basis of a homogeneous component of a
   symmetric algebra induced by a basis of the generating module.
 -/
@@ -96,7 +96,7 @@ theorem coe_homogeneousSubmoduleEquivMvPolynomial_apply {ι : Type w} (b : Basis
 
 /-- Degree-`n` multisets of basis indices are equivalent to exponent vectors of total degree
 `n`. -/
-noncomputable def _root_.Sym.equivFinsuppDegree (ι : Type w) (n : ℕ) :
+noncomputable def _root_.TauCeti.Sym.equivFinsuppDegree (ι : Type w) (n : ℕ) :
     Sym ι n ≃ {d : ι →₀ ℕ // d.degree = n} := by
   classical
   exact (Sym.equivNatSum ι n).trans
@@ -105,7 +105,7 @@ noncomputable def _root_.Sym.equivFinsuppDegree (ι : Type w) (n : ℕ) :
 
 /-- The exponent vector of an unordered tuple records its multiplicities. -/
 @[simp]
-theorem _root_.TauCeti.Sym.equivFinsuppDegree_apply (ι : Type w) [DecidableEq ι] (n : ℕ)
+theorem _root_.TauCeti.Sym.coe_equivFinsuppDegree_apply (ι : Type w) [DecidableEq ι] (n : ℕ)
     (s : Sym ι n) : (Sym.equivFinsuppDegree ι n s).1 = (s : Multiset ι).toFinsupp := by
   ext i
   simp only [Sym.equivFinsuppDegree, Equiv.trans_apply, Equiv.subtypeEquiv_apply,
