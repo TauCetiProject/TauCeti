@@ -15,11 +15,11 @@ public import TauCeti.Topology.Homotopy.HurewiczFibration.Transport
 For a Hurewicz fibration `p : E → B` the homology groups `H_t(p⁻¹ b)` of the fibers, computed with
 normalized cubical chains, form a local coefficient system on `B`
 (`TauCeti.fiberLocalSystem`): a path `γ` from `b₀` to `b₁` acts by the map induced by the
-transport `p⁻¹ b₀ → p⁻¹ b₁` along `γ` (`TauCeti.LiftingFunction.transport`).  The transport
-depends on the path only up to homotopy and is functorial up to homotopy
-(`TauCeti.LiftingFunction.transport_homotopic`, `TauCeti.LiftingFunction.transport_refl_homotopic`,
-`TauCeti.LiftingFunction.transport_trans_homotopic`), and homotopic maps induce the same map on
-homology, so the action factors through the fundamental groupoid and is functorial.
+transport `p⁻¹ b₀ → p⁻¹ b₁` along `γ` (`TauCeti.LiftingFunction.transport`).  The result is a
+functor on the fundamental groupoid because the transport is invariant and functorial up to
+homotopy (`TauCeti.LiftingFunction.transport_homotopic`,
+`TauCeti.LiftingFunction.transport_refl_homotopic`,
+`TauCeti.LiftingFunction.transport_trans_homotopic`).
 
 ## Main definitions
 

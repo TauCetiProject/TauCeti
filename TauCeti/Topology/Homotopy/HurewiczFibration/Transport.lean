@@ -21,12 +21,10 @@ fundamental groupoid of `B` to the homotopy category of spaces, and the homology
 forms a local coefficient system (`TauCeti.LocalCoefficientSystem`, see
 `TauCeti.AlgebraicTopology.Singular.Fibration.LocalSystem`).
 
-The two homotopy statements both come from one lemma on the uniqueness of lifts of paths up to
-homotopy in the fiber (`TauCeti.LiftingFunction.exists_homotopy_endpoints`): two lifts of the same
-path with the same starting point have homotopic end points, through points of one fiber, and the
-homotopy depends continuously on parameters.  Its proof lifts a square, constant on the base in one
-direction, from the open box formed by the start and the two lifts
-(`TauCeti.IsHurewiczFibration.exists_lift_openBox`).
+Both homotopy statements rest on the uniqueness of lifts of paths up to homotopy in the fiber
+(`TauCeti.IsHurewiczFibration.exists_homotopy_endpoints`, in
+`TauCeti.Topology.Homotopy.OpenBoxLifting`): two lifts of the same path from the same starting
+point have homotopic end points, through points of one fiber.
 
 ## Main definitions
 
@@ -34,8 +32,6 @@ direction, from the open box formed by the start and the two lifts
 
 ## Main results
 
-* `TauCeti.LiftingFunction.exists_homotopy_endpoints`: lifts of one path with one starting point
-  have homotopic end points.
 * `TauCeti.LiftingFunction.transport_homotopic`: homotopic paths have homotopic transports.
 * `TauCeti.LiftingFunction.transport_refl_homotopic`,
   `TauCeti.LiftingFunction.transport_trans_homotopic`: transport along the constant path is
