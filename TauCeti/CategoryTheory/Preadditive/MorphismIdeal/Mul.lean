@@ -39,7 +39,9 @@ through a biproduct. So every morphism of `I * J` is itself a single composite
   the smallest ideal, and each `(I * J)(X, Y)` the smallest subgroup, containing the composites.
 * `TauCeti.MorphismIdeal.mul_le_left`, `TauCeti.MorphismIdeal.mul_le_right`: `I * J ≤ I` and
   `I * J ≤ J`.
-* `TauCeti.MorphismIdeal.pow_le_pow_of_le`: the powers of an ideal decrease.
+* `TauCeti.MorphismIdeal.instMulLeftMono`, `TauCeti.MorphismIdeal.instMulRightMono`: the product
+  is monotone, so Mathlib's ordered-monoid lemmas apply; in particular the powers of an ideal
+  decrease.
 * `TauCeti.MorphismIdeal.mem_mul_iff_exists_comp`: with binary biproducts, the members of
   `I * J` are exactly the composites.
 -/
@@ -119,32 +121,6 @@ theorem mul_le_mul {I I' J J' : MorphismIdeal C} (hI : I ≤ I') (hJ : J ≤ J')
     I * J ≤ I' * J' :=
   mul_le_iff.mpr fun _ _ _ _ _ hg hf ↦ comp_mem_mul (le_def.mp hJ _ hg) (le_def.mp hI _ hf)
 
-/-- One half of associativity of the product. -/
-theorem mul_mul_le (I J K : MorphismIdeal C) : I * J * K ≤ I * (J * K) := by
-  refine mul_le_iff.mpr fun X Z Y g f hg hf ↦ ?_
-  rw [mul_hom] at hf
-  induction hf using AddSubgroup.closure_induction with
-  | mem x hx =>
-    obtain ⟨W, a, b, ha, hb, rfl⟩ := hx
-    rw [← Category.assoc]
-    exact comp_mem_mul (comp_mem_mul hg ha) hb
-  | zero => simp
-  | add x y _ _ hx hy => simpa using add_mem hx hy
-  | neg x _ hx => simpa using neg_mem hx
-
-/-- The other half of associativity of the product. -/
-theorem le_mul_mul (I J K : MorphismIdeal C) : I * (J * K) ≤ I * J * K := by
-  refine mul_le_iff.mpr fun X Z Y g f hg hf ↦ ?_
-  rw [mul_hom] at hg
-  induction hg using AddSubgroup.closure_induction with
-  | mem x hx =>
-    obtain ⟨W, a, b, ha, hb, rfl⟩ := hx
-    rw [Category.assoc]
-    exact comp_mem_mul ha (comp_mem_mul hb hf)
-  | zero => simp
-  | add x y _ _ hx hy => simpa using add_mem hx hy
-  | neg x _ hx => simpa using neg_mem hx
-
 /-- The ideal of all morphisms is a left unit for the product. -/
 @[simp]
 theorem top_mul (I : MorphismIdeal C) : ⊤ * I = I :=
@@ -159,7 +135,27 @@ theorem mul_top (I : MorphismIdeal C) : I * ⊤ = I :=
 
 /-- Ideals form a monoid under the product, with unit the ideal of all morphisms. -/
 instance instMonoid : Monoid (MorphismIdeal C) where
-  mul_assoc I J K := le_antisymm (mul_mul_le I J K) (le_mul_mul I J K)
+  mul_assoc I J K := by
+    refine le_antisymm (mul_le_iff.mpr fun X Z Y g f hg hf ↦ ?_)
+      (mul_le_iff.mpr fun X Z Y g f hg hf ↦ ?_)
+    · rw [mul_hom] at hf
+      induction hf using AddSubgroup.closure_induction with
+      | mem x hx =>
+        obtain ⟨W, a, b, ha, hb, rfl⟩ := hx
+        rw [← Category.assoc]
+        exact comp_mem_mul (comp_mem_mul hg ha) hb
+      | zero => simp
+      | add x y _ _ hx hy => simpa using add_mem hx hy
+      | neg x _ hx => simpa using neg_mem hx
+    · rw [mul_hom] at hg
+      induction hg using AddSubgroup.closure_induction with
+      | mem x hx =>
+        obtain ⟨W, a, b, ha, hb, rfl⟩ := hx
+        rw [Category.assoc]
+        exact comp_mem_mul ha (comp_mem_mul hb hf)
+      | zero => simp
+      | add x y _ _ hx hy => simpa using add_mem hx hy
+      | neg x _ hx => simpa using neg_mem hx
   one := ⊤
   one_mul := top_mul
   mul_one := mul_top
@@ -168,14 +164,15 @@ instance instMonoid : Monoid (MorphismIdeal C) where
 theorem one_eq_top : (1 : MorphismIdeal C) = ⊤ :=
   rfl
 
-/-- The powers of an ideal decrease. -/
-theorem pow_le_pow_of_le (I : MorphismIdeal C) {m n : ℕ} (h : m ≤ n) : I ^ n ≤ I ^ m := by
-  induction n, h using Nat.le_induction with
-  | base => exact le_rfl
-  | succ n _ ih => exact (pow_succ I n ▸ mul_le_left _ _).trans ih
+/-- The product is monotone in its right factor. With `MorphismIdeal.instMulRightMono`, this gives
+Mathlib's ordered-monoid API: for instance the powers of an ideal decrease, by
+`pow_le_pow_right_of_le_one'` applied to `le_top`. -/
+instance instMulLeftMono : MulLeftMono (MorphismIdeal C) :=
+  ⟨fun _ _ _ h ↦ mul_le_mul le_rfl h⟩
 
-theorem pow_le_self (I : MorphismIdeal C) {n : ℕ} (hn : n ≠ 0) : I ^ n ≤ I := by
-  simpa using pow_le_pow_of_le I (Nat.one_le_iff_ne_zero.mpr hn)
+/-- The product is monotone in its left factor. -/
+instance instMulRightMono : MulRightMono (MorphismIdeal C) :=
+  ⟨fun _ _ _ h ↦ mul_le_mul h le_rfl⟩
 
 /-! ### Products in a category with binary biproducts -/
 
