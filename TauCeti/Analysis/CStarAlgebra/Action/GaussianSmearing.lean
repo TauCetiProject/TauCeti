@@ -8,8 +8,7 @@ module
 public import TauCeti.Analysis.CStarAlgebra.Action.Analytic
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
-import Mathlib.Analysis.SpecialFunctions.Gaussian.PoissonSummation
-import Mathlib.MeasureTheory.Integral.PeakFunction
+import TauCeti.Analysis.SpecialFunctions.Gaussian.Concentration
 
 /-!
 # Gaussian smearing and density of entire analytic elements
@@ -60,7 +59,7 @@ public section
 
 noncomputable section
 
-open Complex MeasureTheory Filter Topology Real
+open Complex MeasureTheory Filter Topology Real TauCeti.Real
 
 namespace TauCeti.CStarAction
 
@@ -97,6 +96,11 @@ private theorem integrable_gaussianIntegrand (c : ℝ) (a : A) :
 theorem gaussianSmear_zero (c : ℝ) : α.gaussianSmear c 0 = 0 := by
   simp [gaussianSmear_def]
 
+/-- The Gaussian smearing with parameter `0` vanishes. -/
+@[simp]
+theorem gaussianSmear_zero_param (a : A) : α.gaussianSmear 0 a = 0 := by
+  simp [gaussianSmear_def]
+
 /-- The Gaussian smearing is additive. -/
 @[simp]
 theorem gaussianSmear_add (c : ℝ) (a b : A) :
@@ -111,26 +115,6 @@ theorem gaussianSmear_smul (c : ℝ) (r : ℂ) (a : A) :
   simp only [gaussianSmear_def, map_smul, smul_comm _ r, integral_smul]
 
 /-! ### The complex-time extension -/
-
-/-- The Gaussian bound `‖exp (-(c (t - z))²)‖ ≤ exp (c² D²) exp (-(c² / 2) t²)` for `‖z‖ ≤ D`. -/
-private theorem norm_cexp_neg_sq_le (c t : ℝ) {z : ℂ} {D : ℝ} (hz : ‖z‖ ≤ D) :
-    ‖cexp (-(c * (t - z)) ^ 2)‖ ≤ rexp (c ^ 2 * D ^ 2) * rexp (-(c ^ 2 / 2) * t ^ 2) := by
-  have hz' : ‖z‖ ^ 2 ≤ D ^ 2 := pow_le_pow_left₀ (norm_nonneg z) hz 2
-  rw [norm_exp, ← Real.exp_add, Real.exp_le_exp]
-  rw [Complex.sq_norm, normSq_apply] at hz'
-  simp only [sq, neg_re, mul_re, mul_im, sub_re, sub_im, ofReal_re, ofReal_im] at hz' ⊢
-  nlinarith [mul_nonneg (sq_nonneg c) (sq_nonneg (t - 2 * z.re)), mul_le_mul_of_nonneg_left hz'
-    (sq_nonneg c)]
-
-/-- The complex derivative of the translated Gaussian kernel `z ↦ (c / √π) exp (-(c (t - z))²)`. -/
-private theorem hasDerivAt_gaussianKernel (c t : ℝ) (z : ℂ) :
-    HasDerivAt (fun z : ℂ => (c : ℂ) / √π * cexp (-(c * (t - z)) ^ 2))
-      ((c : ℂ) / √π * cexp (-(c * (t - z)) ^ 2) * (2 * c ^ 2 * (t - z))) z := by
-  have h := ((((hasDerivAt_id' z).const_sub (t : ℂ)).const_mul (c : ℂ)).fun_pow 2).fun_neg.cexp
-    |>.const_mul ((c : ℂ) / √π)
-  convert h using 1
-  push_cast
-  ring
 
 /-- The translated Gaussian integrand is continuous in the time variable. -/
 private theorem continuous_gaussianIntegrand (c : ℝ) (a : A) (z : ℂ) :
@@ -163,13 +147,15 @@ private theorem differentiable_gaussianExtension (c : ℝ) (a : A) :
       ((|t| + D) * rexp (-(c ^ 2 / 2) * t ^ 2)))
     (.of_forall fun z => (α.continuous_gaussianIntegrand c a z).aestronglyMeasurable) ?_
     ?_ (ae_of_all _ fun t z hz => ?_) (hG'.const_mul _)
-    (ae_of_all _ fun t z _ => (hasDerivAt_gaussianKernel c t z).smul_const _)).2.differentiableAt
+    (ae_of_all _ fun t z _ => by
+      simpa only [mul_assoc] using ((Complex.hasDerivAt_cexp_neg_mul_sub_sq c t z).const_mul
+        ((c : ℂ) / √π)).smul_const (α (Multiplicative.ofAdd t) a))).2.differentiableAt
   · refine Integrable.mono' ((hG.const_mul (‖(c : ℂ) / √π‖ * rexp (c ^ 2 * D ^ 2) * ‖a‖)))
       (α.continuous_gaussianIntegrand c a z₀).aestronglyMeasurable (ae_of_all _ fun t => ?_)
     rw [norm_smul, norm_mul, StarAlgEquiv.norm_map]
     calc _ ≤ ‖(c : ℂ) / √π‖ * (rexp (c ^ 2 * D ^ 2) * rexp (-(c ^ 2 / 2) * t ^ 2)) * ‖a‖ := by
           gcongr
-          exact norm_cexp_neg_sq_le c t (hD z₀ (Metric.mem_ball_self one_pos))
+          exact Complex.norm_cexp_neg_mul_sub_sq_le c t (hD z₀ (Metric.mem_ball_self one_pos))
       _ = _ := by ring
   · exact (Continuous.smul (by fun_prop)
       (α.continuous_apply continuous_ofAdd continuous_const)).aestronglyMeasurable
@@ -185,7 +171,7 @@ private theorem differentiable_gaussianExtension (c : ℝ) (a : A) :
     calc _ ≤ ‖(c : ℂ) / √π‖ * (rexp (c ^ 2 * D ^ 2) * rexp (-(c ^ 2 / 2) * t ^ 2)) *
           (2 * c ^ 2 * (|t| + D)) * ‖a‖ := by
           gcongr
-          exact norm_cexp_neg_sq_le c t (hD z hz)
+          exact Complex.norm_cexp_neg_mul_sub_sq_le c t (hD z hz)
       _ = _ := by ring
 
 /-- On the real line, the translated Gaussian integral is the orbit of the Gaussian smearing. -/
@@ -233,39 +219,12 @@ theorem apply_gaussianSmear (c s : ℝ) (a : A) :
 
 /-! ### Convergence as the width tends to zero -/
 
-/-- The real Gaussian density `t ↦ c exp (-(c t)²) / √π` of width `c⁻¹`. -/
-private def gaussianDensity (c t : ℝ) : ℝ := c * ((√π)⁻¹ * rexp (-(c * t) ^ 2))
-
-/-- For `c ≥ 0` the Gaussian density is nonnegative. -/
-private theorem gaussianDensity_nonneg {c : ℝ} (hc : 0 ≤ c) (t : ℝ) : 0 ≤ gaussianDensity c t := by
-  rw [gaussianDensity]
-  positivity
-
-/-- For `c > 0`, the Gaussian density of width `c⁻¹` has total mass one. -/
-private theorem integral_gaussianDensity {c : ℝ} (hc : 0 < c) : ∫ t, gaussianDensity c t = 1 := by
-  simp_rw [gaussianDensity, integral_const_mul, mul_pow, ← neg_mul, integral_gaussian,
-    Real.sqrt_div' _ (sq_nonneg c), Real.sqrt_sq hc.le]
-  field_simp
-
-/-- The Gaussian densities concentrate at `0` as their width tends to zero. -/
-private theorem tendsto_integral_gaussianDensity_smul {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] [CompleteSpace E] {g : ℝ → E} (hg : Integrable g)
-    (h'g : ContinuousAt g 0) :
-    Tendsto (fun c : ℝ => ∫ t, gaussianDensity c t • g t) atTop (𝓝 (g 0)) := by
-  have h := tendsto_integral_comp_smul_smul_of_integrable (μ := volume)
-    (φ := fun x : ℝ => (√π)⁻¹ * rexp (-x ^ 2)) (fun x => by positivity) ?_ ?_ hg h'g
-  · simpa [gaussianDensity, Module.finrank_self, smul_eq_mul] using h
-  · simpa [gaussianDensity] using integral_gaussianDensity one_pos
-  · rw [Metric.cobounded_eq_cocompact]
-    simpa [Module.finrank_self, mul_left_comm] using
-      (tendsto_rpow_abs_mul_exp_neg_mul_sq_cocompact one_pos 1).const_mul (√π)⁻¹
-
 /-- The Gaussian smearing as an integral against the real Gaussian density. -/
 private theorem gaussianSmear_eq_integral_gaussianDensity_smul (c : ℝ) (a : A) :
     α.gaussianSmear c a = ∫ t : ℝ, gaussianDensity c t • α (Multiplicative.ofAdd t) a := by
   rw [gaussianSmear]
   congr 1 with t
-  rw [gaussianDensity, ← Complex.coe_smul]
+  rw [gaussianDensity_def, ← Complex.coe_smul]
   push_cast
   ring_nf
 
@@ -280,7 +239,7 @@ theorem norm_gaussianSmear_le (c : ℝ) (a : A) : ‖α.gaussianSmear c a‖ ≤
     rw [norm_smul, Real.norm_of_nonneg (gaussianDensity_nonneg hc.le t), StarAlgEquiv.norm_map]
   rcases lt_trichotomy c 0 with hc | rfl | hc
   · simpa using key (neg_pos.mpr hc)
-  · simp [gaussianSmear_def]
+  · simp
   · exact key hc
 
 /-- Up to `‖a‖` times the Gaussian mass of the complement of `[-1, 1]`, the Gaussian smearing of
