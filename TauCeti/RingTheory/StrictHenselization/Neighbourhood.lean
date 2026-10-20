@@ -8,7 +8,6 @@ module
 public import TauCeti.RingTheory.Unramified.Diagonal
 public import Mathlib.Algebra.Category.CommAlgCat.Basic
 public import Mathlib.CategoryTheory.ObjectProperty.FullSubcategory
-public import Mathlib.CategoryTheory.Comma.Over.Basic
 public import Mathlib.CategoryTheory.Filtered.Basic
 public import Mathlib.RingTheory.Etale.Basic
 public import Mathlib.RingTheory.Localization.Away.Basic
