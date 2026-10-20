@@ -404,7 +404,7 @@ section BaseChange
 
 open CategoryTheory CommAlgCat TensorProduct
 
-variable (R' : Type u) [CommRing R'] [Algebra R R']
+variable (R' : Type*) [CommRing R'] [Algebra R R']
 
 /-- If every finite étale `R'`-algebra is a base change of a finite étale `R`-algebra, and `R` has
 no nonsplit finite étale covers, then neither does `R'`. -/
@@ -412,10 +412,15 @@ theorem IsFiniteEtaleSplit.of_essSurj_baseChange [IsFiniteEtaleSplit R]
     [(FiniteEtale.baseChange.{u} R R').EssSurj] : IsFiniteEtaleSplit R' where
   isTotallySplit T _ _ _ _ := by
     let F := FiniteEtale.baseChange.{u} R R'
-    let A := F.objPreimage (.of R' T)
-    -- `F.obj A` is by definition `R' ⊗[R] A`, so the isomorphism `F.obj A ≅ T` is an `AlgEquiv`.
+    -- `F` lands in algebras in the universe of `R' ⊗[R] A`, which may be larger than that of
+    -- `T`, so lift `T` there.
+    have : Algebra.Etale R' (ULift.{u} T) := .of_equiv ULift.algEquiv.symm
+    have : Module.Finite R' (ULift.{u} T) := .equiv ULift.algEquiv.symm.toLinearEquiv
+    let A := F.objPreimage (.of R' (ULift.{u} T))
+    -- `F.obj A` is by definition `R' ⊗[R] A`, so `F.obj A ≅ ULift T` is an `AlgEquiv`.
     exact ((IsFiniteEtaleSplit.isTotallySplit A.obj).baseChange R').of_algEquiv
-      (algEquivOfIso ((ObjectProperty.ι _).mapIso (F.objObjPreimageIso (.of R' T))))
+      ((algEquivOfIso ((ObjectProperty.ι _).mapIso (F.objObjPreimageIso _))).trans
+        ULift.algEquiv)
 
 /-- If base change along `R → R'` is full on finite étale algebras and `R'` has no nonsplit
 finite étale covers, then neither does `R`: the section of `R' ⊗[R] T` over `R'` descends to a
@@ -423,8 +428,8 @@ section of `T` over `R`. -/
 theorem IsFiniteEtaleSplit.of_full_baseChange [IsFiniteEtaleSplit R']
     [(FiniteEtale.baseChange.{u} R R').Full] : IsFiniteEtaleSplit R := by
   refine isFiniteEtaleSplit_iff_exists_section.mpr fun T _ _ _ _ _ ↦ ?_
-  obtain ⟨σ⟩ :=
-    (IsFiniteEtaleSplit.isTotallySplit (R := R') (R' ⊗[R] T)).nonempty_algHom_of_faithfulSMul
+  obtain ⟨σ⟩ := (Algebra.IsTotallySplit.of_isFiniteEtaleSplit (R := R')
+    (R' ⊗[R] T)).nonempty_algHom_of_faithfulSMul
   let F := FiniteEtale.baseChange.{u} R R'
   -- `F.obj (.of R T)` and `F.obj (.of R R)` are by definition `R' ⊗[R] T` and `R' ⊗[R] R`.
   let f : F.obj (.of R T) ⟶ F.obj (.of R R) :=
