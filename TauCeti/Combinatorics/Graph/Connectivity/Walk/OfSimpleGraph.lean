@@ -136,15 +136,10 @@ theorem toGraph_toSimpleGraph (p : (Graph.ofSimpleGraph H).Walk x y) :
       simp [toSimpleGraph, ih]
 
 @[simp]
-theorem toSimpleGraph_eq_nil_iff (p : (Graph.ofSimpleGraph H).Walk x x) :
-    p.toSimpleGraph = SimpleGraph.Walk.nil ↔
-      p = (Graph.Walk.nil : (Graph.ofSimpleGraph H).Walk x x) := by
-  constructor
-  · intro hp
-    have h := congrArg SimpleGraph.Walk.toGraph hp
-    simpa using h
-  · rintro rfl
-    simp
+theorem toSimpleGraph_nil_iff (p : (Graph.ofSimpleGraph H).Walk x y) :
+    p.toSimpleGraph.Nil ↔ p.Nil := by
+  rw [← SimpleGraph.Walk.length_eq_zero_iff, ← Graph.Walk.length_eq_zero_iff,
+    length_toSimpleGraph]
 
 end Graph.Walk
 
@@ -155,15 +150,9 @@ variable {α : Type u} {H : SimpleGraph α} {x y : α}
 namespace Walk
 
 @[simp]
-theorem toGraph_eq_nil_iff (p : H.Walk x x) :
-    p.toGraph = (Graph.Walk.nil : (Graph.ofSimpleGraph H).Walk x x) ↔
-      p = SimpleGraph.Walk.nil := by
-  constructor
-  · intro hp
-    have h := congrArg Graph.Walk.toSimpleGraph hp
-    simpa using h
-  · rintro rfl
-    simp
+theorem toGraph_nil_iff (p : H.Walk x y) : p.toGraph.Nil ↔ p.Nil := by
+  rw [← Graph.Walk.length_eq_zero_iff, ← SimpleGraph.Walk.length_eq_zero_iff,
+    length_toGraph]
 
 end Walk
 
@@ -197,10 +186,10 @@ theorem isPath_toGraph_iff (p : H.Walk x y) : p.toGraph.IsPath ↔ p.IsPath := b
 /-- The walk equivalence identifies simple-graph cycles with edge-labelled multigraph cycles. -/
 @[simp]
 theorem isCycle_toGraph_iff (p : H.Walk x x) : p.toGraph.IsCycle ↔ p.IsCycle := by
-  have hne : p.toGraph ≠ (Graph.Walk.nil : (Graph.ofSimpleGraph H).Walk x x) ↔
-      p ≠ SimpleGraph.Walk.nil := not_congr (toGraph_eq_nil_iff p)
+  have hne : ¬ p.toGraph.Nil ↔ ¬ p.Nil := not_congr (toGraph_nil_iff p)
   simp only [Graph.Walk.isCycle_def, SimpleGraph.Walk.isCycle_def,
-    SimpleGraph.Walk.isTrail_def, support_toGraph, edges_toGraph]
+    SimpleGraph.Walk.isTrail_def, support_toGraph, edges_toGraph, ne_eq,
+    Graph.Walk.eq_nil_iff_nil, SimpleGraph.Walk.eq_nil_iff_nil]
   rw [hne]
   tauto
 
@@ -236,11 +225,10 @@ theorem isPath_toSimpleGraph_iff (p : (Graph.ofSimpleGraph H).Walk x y) :
 @[simp]
 theorem isCycle_toSimpleGraph_iff (p : (Graph.ofSimpleGraph H).Walk x x) :
     p.toSimpleGraph.IsCycle ↔ p.IsCycle := by
-  have hne : p.toSimpleGraph ≠ SimpleGraph.Walk.nil ↔
-      p ≠ (Graph.Walk.nil : (Graph.ofSimpleGraph H).Walk x x) :=
-    not_congr (toSimpleGraph_eq_nil_iff p)
+  have hne : ¬ p.toSimpleGraph.Nil ↔ ¬ p.Nil := not_congr (toSimpleGraph_nil_iff p)
   simp only [SimpleGraph.Walk.isCycle_def, Graph.Walk.isCycle_def,
-    SimpleGraph.Walk.isTrail_def, support_toSimpleGraph, edges_toSimpleGraph]
+    SimpleGraph.Walk.isTrail_def, support_toSimpleGraph, edges_toSimpleGraph, ne_eq,
+    SimpleGraph.Walk.eq_nil_iff_nil, Graph.Walk.eq_nil_iff_nil]
   rw [hne]
   tauto
 
