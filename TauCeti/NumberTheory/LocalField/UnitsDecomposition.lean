@@ -10,6 +10,7 @@ public import Mathlib.Topology.Algebra.Group.Units
 public import TauCeti.NumberTheory.LocalField.NormalizedValuation
 public import TauCeti.NumberTheory.LocalField.Teichmuller
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
+public import TauCeti.Topology.Algebra.Group.Shear
 
 /-!
 # The structure of the multiplicative group of a local field
@@ -39,7 +40,9 @@ such as the count of its power classes, to the group of principal units `U(K,1)`
 * `TauCeti.normalizedValuation_comp_zpowersHom`: a uniformizer splits the normalized valuation.
 * `TauCeti.instSigmaCompactSpaceUnits`: `Kˣ` is σ-compact.
 * `TauCeti.existsUnique_eq_zpow_mul`: every `x : Kˣ` is uniquely `ϖ ^ n * u` with `u ∈ U(K,0)`.
-* `TauCeti.coe_unitsEquivIntProd_apply_snd_eq_mul`: how the splitting changes with the uniformizer.
+* `TauCeti.coe_unitsEquivIntProd_apply_snd_eq_mul` and `TauCeti.unitsEquivIntProd_trans_prodShear`:
+  how the splitting changes with the uniformizer; the splittings attached to `ϖ` and `ϖ'` differ
+  by the shear `(n, u) ↦ (n, (ϖ ϖ'⁻¹) ^ n u)` of `ℤ × U(K,0)`.
 * `TauCeti.unitFiltration_zero_sup_zpowers_eq_top`: `U(K,0)` and a uniformizer generate `Kˣ`.
 * `TauCeti.unitFiltration_sup_zpowers_inf_unitFiltration_zero` and
   `TauCeti.index_unitFiltration_sup_zpowers`: the subgroup `U(K,i) · ϖ ^ ℤ` meets `U(K,0)` in
@@ -193,6 +196,18 @@ theorem coe_unitsEquivIntProd_apply_snd_eq_mul {ϖ' : Kˣ}
 theorem mul_inv_mem_unitFiltration_zero {ϖ' : Kˣ} (hϖ : normalizedValuation K ϖ = .ofAdd 1)
     (hϖ' : normalizedValuation K ϖ' = .ofAdd 1) : ϖ * ϖ'⁻¹ ∈ unitFiltration K 0 := by
   rw [← ker_normalizedValuation, MonoidHom.mem_ker, map_mul, map_inv, hϖ, hϖ', mul_inv_cancel]
+
+/-- **The splittings attached to two uniformizers differ by a shear.** For uniformizers `ϖ` and
+`ϖ'`, the splitting `Kˣ ≃ₜ* ℤ × U(K,0)` attached to `ϖ'` is the one attached to `ϖ` followed by
+the shear `(n, u) ↦ (n, c ^ n * u)` by the unit `c = ϖ ϖ'⁻¹ ∈ U(K,0)`. -/
+theorem unitsEquivIntProd_trans_prodShear {ϖ' : Kˣ} (hϖ : normalizedValuation K ϖ = .ofAdd 1)
+    (hϖ' : normalizedValuation K ϖ' = .ofAdd 1) :
+    (unitsEquivIntProd K ϖ hϖ).trans (MonoidHom.prodShear
+      (zpowersHom _ ⟨ϖ * ϖ'⁻¹, mul_inv_mem_unitFiltration_zero hϖ hϖ'⟩)
+        continuous_of_discreteTopology) =
+      unitsEquivIntProd K ϖ' hϖ' :=
+  ContinuousMulEquiv.ext fun x ↦ Prod.ext (by simp) <| Subtype.ext <| by
+    simp [coe_unitsEquivIntProd_apply_snd_eq_mul hϖ hϖ' x, mul_comm]
 
 /-! ### The subgroups `U(K,i) · ϖ ^ ℤ` -/
 

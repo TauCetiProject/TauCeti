@@ -122,8 +122,8 @@ theorem mulHeight₁_sum_mul_le [Fintype ι] [Nonempty ι] (a x : ι → K) :
     fun v i _ ↦ by
       simp only [Fin.prod_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one, map_mul]
       gcongr
-      · exact le_max_iSup_one v a i
-      · exact le_max_iSup_one v x i
+      · exact le_max_of_le_left (Finite.le_ciSup_of_le i le_rfl)
+      · exact le_max_of_le_left (Finite.le_ciSup_of_le i le_rfl)
   simpa [Fin.prod_univ_two, Nat.card_eq_fintype_card] using key
 
 /-- The logarithmic form of `Height.mulHeight₁_sum_mul_le`. It needs no nonemptiness hypothesis,
@@ -180,7 +180,7 @@ theorem mulHeight₁_det_le (A : Matrix n n K) :
     fun v σ _ ↦ by
       rw [v.map_units_int_smul, map_prod]
       gcongr with j
-      exact le_max_iSup_one v (fun i ↦ A i j) (σ j)
+      exact le_max_of_le_left (Finite.le_ciSup_of_le (σ j) le_rfl)
   simpa [Fintype.card_perm, Nat.card_eq_fintype_card] using key
 
 /-- The logarithmic form of `Matrix.mulHeight₁_det_le`. -/

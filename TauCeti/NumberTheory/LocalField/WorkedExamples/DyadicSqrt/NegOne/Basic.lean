@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.QuadraticAlgebra.NormTrace
 public import TauCeti.NumberTheory.LocalField.FiniteExtension.Basic
-public import TauCeti.NumberTheory.LocalField.QuadraticForm.CupPadicTwo
+public import TauCeti.NumberTheory.LocalField.QuadraticForm.Cup.PadicTwo
 public import TauCeti.FieldTheory.GaloisCohomology.MuTwo.Transfer
 public import TauCeti.FieldTheory.QuadraticForm.StiefelWhitney.Evens.Kummer.Value
 

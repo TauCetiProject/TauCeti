@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Constructions.HaarToSphere
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+public import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 public import TauCeti.Geometry.Manifold.Instances.Sphere
 public import TauCeti.MeasureTheory.Function.AreaFormula.Basic
 
@@ -55,7 +56,16 @@ lower bound on the dimension is needed: in dimension one, both measures count po
 * `TauCeti.toSphere_volume_eq_comap_euclideanHausdorffMeasure`: Mathlib's surface measure on the
   unit sphere is normalized `(n - 1)`-dimensional Hausdorff measure.
 * `TauCeti.euclideanHausdorffMeasure_restrict_sphere`: the same comparison as measures on `E`.
+* `TauCeti.euclideanHausdorffMeasure_sphere_zero_one_eq_ofReal`: the unit sphere has
+  `(n - 1)`-dimensional Hausdorff measure `2 π ^ (n / 2) / Γ(n / 2)`.
 * `TauCeti.euclideanHausdorffMeasure_sphere`: `μHE[n - 1] (sphere c r) = n ω_n r ^ (n - 1)`.
+* `TauCeti.roundSphereVolume`: the area `|Sⁿ|` of the unit round sphere `Sⁿ ⊆ ℝⁿ⁺¹`, its normalized
+  `n`-dimensional Hausdorff measure (not the ambient Lebesgue measure, which vanishes).
+* `TauCeti.euclideanHausdorffMeasure_sphere_eq_ofReal_roundSphereVolume`: the unit sphere of every
+  real inner product space of dimension `n + 1` has `n`-dimensional Hausdorff measure `|Sⁿ|`; in
+  particular this measure is finite.
+* `TauCeti.roundSphereVolume_eq_two_mul_pi_rpow_div_Gamma`, `TauCeti.roundSphereVolume_pos`: the
+  value `|Sⁿ| = 2 π ^ ((n + 1) / 2) / Γ((n + 1) / 2)` and the positivity of `|Sⁿ|`.
 
 ## References
 
@@ -322,6 +332,24 @@ theorem euclideanHausdorffMeasure_sphere_zero_one :
     (MeasurableEmbedding.subtype_coe isClosed_sphere.measurableSet).comap_apply, image_univ,
     Subtype.range_coe]
 
+/-- The unit sphere of an `n`-dimensional real inner product space has `(n - 1)`-dimensional
+Hausdorff measure `2 π ^ (n / 2) / Γ(n / 2)`. In dimension zero both sides vanish. -/
+theorem euclideanHausdorffMeasure_sphere_zero_one_eq_ofReal :
+    μHE[finrank ℝ E - 1] (sphere (0 : E) 1) =
+      ENNReal.ofReal (2 * Real.pi ^ ((finrank ℝ E : ℝ) / 2) / Real.Gamma (finrank ℝ E / 2)) := by
+  rw [euclideanHausdorffMeasure_sphere_zero_one]
+  rcases (finrank ℝ E).eq_zero_or_pos with hn | hn
+  · simp [hn, Real.Gamma_zero]
+  have : Nontrivial E := Module.nontrivial_of_finrank_pos hn
+  have hn' : (0 : ℝ) < finrank ℝ E / 2 := by positivity
+  -- The real identity `n · √π ^ n / Γ(n / 2 + 1) = 2 π ^ (n / 2) / Γ(n / 2)`.
+  have hreal : (finrank ℝ E : ℝ) * (√Real.pi ^ finrank ℝ E / Real.Gamma (finrank ℝ E / 2 + 1)) =
+      2 * Real.pi ^ ((finrank ℝ E : ℝ) / 2) / Real.Gamma (finrank ℝ E / 2) := by
+    rw [Real.Gamma_add_one hn'.ne', Real.sqrt_eq_rpow, ← Real.rpow_mul_natCast Real.pi_pos.le]
+    field_simp
+  rw [InnerProductSpace.volume_ball, ← hreal, ENNReal.ofReal_mul (Nat.cast_nonneg _)]
+  simp
+
 /-- A sphere of radius `r > 0` in an `n`-dimensional real inner product space has
 `(n - 1)`-dimensional Hausdorff measure `n ω_n r ^ (n - 1)`, where `ω_n` is the volume of the
 unit ball. -/
@@ -331,5 +359,48 @@ theorem euclideanHausdorffMeasure_sphere (c : E) {r : ℝ} (hr : 0 < r) :
   rw [← restrict_apply_univ, euclideanHausdorffMeasure_restrict_sphere_eq_smul_map _ c hr,
     Measure.smul_apply, map_apply (by fun_prop) MeasurableSet.univ, preimage_univ,
     restrict_apply_univ, euclideanHausdorffMeasure_sphere_zero_one, smul_eq_mul, mul_comm]
+
+/-- The area `|Sⁿ|` of the unit round sphere `Sⁿ ⊆ ℝⁿ⁺¹`: the normalized `n`-dimensional Hausdorff
+measure of the unit sphere of `EuclideanSpace ℝ (Fin (n + 1))`. -/
+def roundSphereVolume (n : ℕ) : ℝ :=
+  (μHE[n] (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)).toReal
+
+/-- Unfolding lemma for `TauCeti.roundSphereVolume`. -/
+theorem roundSphereVolume_def (n : ℕ) :
+    roundSphereVolume n = (μHE[n] (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)).toReal :=
+  (rfl)
+
+omit [FiniteDimensional ℝ E] in
+/-- The `n`-dimensional Hausdorff measure of the unit sphere of an `(n + 1)`-dimensional real
+inner product space, in terms of the Gamma function. -/
+private theorem euclideanHausdorffMeasure_sphere_eq_ofReal_Gamma {n : ℕ}
+    (hE : finrank ℝ E = n + 1) :
+    μHE[n] (sphere (0 : E) 1) =
+      ENNReal.ofReal (2 * Real.pi ^ (((n : ℝ) + 1) / 2) / Real.Gamma (((n : ℝ) + 1) / 2)) := by
+  have : FiniteDimensional ℝ E := Module.finite_of_finrank_pos (by omega)
+  have h := euclideanHausdorffMeasure_sphere_zero_one_eq_ofReal (E := E)
+  rw [hE, Nat.add_sub_cancel] at h
+  exact_mod_cast h
+
+/-- **The area of the unit round sphere**: `|Sⁿ| = 2 π ^ ((n + 1) / 2) / Γ((n + 1) / 2)`. -/
+theorem roundSphereVolume_eq_two_mul_pi_rpow_div_Gamma (n : ℕ) :
+    roundSphereVolume n =
+      2 * Real.pi ^ (((n : ℝ) + 1) / 2) / Real.Gamma (((n : ℝ) + 1) / 2) := by
+  rw [roundSphereVolume_def, euclideanHausdorffMeasure_sphere_eq_ofReal_Gamma
+    finrank_euclideanSpace_fin, ENNReal.toReal_ofReal (by positivity)]
+
+/-- The unit round sphere has positive area. -/
+theorem roundSphereVolume_pos (n : ℕ) : 0 < roundSphereVolume n := by
+  rw [roundSphereVolume_eq_two_mul_pi_rpow_div_Gamma]
+  positivity
+
+omit [FiniteDimensional ℝ E] in
+/-- The unit sphere of every real inner product space of dimension `n + 1` has normalized
+`n`-dimensional Hausdorff measure `|Sⁿ|`. In particular, this measure is finite. -/
+theorem euclideanHausdorffMeasure_sphere_eq_ofReal_roundSphereVolume {n : ℕ}
+    (hE : finrank ℝ E = n + 1) :
+    μHE[n] (sphere (0 : E) 1) = ENNReal.ofReal (roundSphereVolume n) := by
+  rw [euclideanHausdorffMeasure_sphere_eq_ofReal_Gamma hE,
+    roundSphereVolume_eq_two_mul_pi_rpow_div_Gamma]
 
 end TauCeti
