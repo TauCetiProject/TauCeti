@@ -45,14 +45,7 @@ section
 variable (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f))
   (hM : HasNondegenerateCriticalPointsOn f univ)
   (hcompact : ∀ c : ℝ, IsCompact {z | f z ≤ c})
-  (htr : ∀ {a b z}, IsNondegenerateCriticalPoint f a →
-    IsNondegenerateCriticalPoint f b →
-    z ∈ Flow.unstableSet (negativeGradientFlow f hf) a →
-    z ∈ Flow.stableSet (negativeGradientFlow f hf) b →
-    Submodule.span ℝ (tangentConeAt ℝ
-        (Flow.unstableSet (negativeGradientFlow f hf) a) z) ⊔
-      Submodule.span ℝ (tangentConeAt ℝ
-        (Flow.stableSet (negativeGradientFlow f hf) b) z) = ⊤)
+  (htr : IsMorseSmale f hf)
 
 include hfs hM hcompact htr
 
@@ -96,7 +89,7 @@ private theorem exists_forward_break_of_index_one {q r y : E}
     simp [hzr] at hzε
     linarith
   have hbr := hr.morseIndex_lt_of_mem_unstableSet_inter_stableSet hb hfs hf hrb
-    hzU hzb (htr hr hb hzU hzb)
+    hzU hzb (htr.transverse_at hr hb ⟨hzU, hzb⟩)
   have hbq : b = q := by
     by_contra hbq
     have hqb := hb.morseIndex_lt_of_mem_closure_stableSet_inter_stableSet hfs hf
@@ -149,7 +142,7 @@ private theorem exists_backward_break_of_index_one {p r y : E}
     simp [hzr] at hzε
     linarith
   have hra := ha.morseIndex_lt_of_mem_unstableSet_inter_stableSet hr hfs hf har
-    hza hzS (htr ha hr hza hzS)
+    hza hzS (htr.transverse_at ha hr ⟨hza, hzS⟩)
   have hap : a = p := by
     by_contra hap
     have hap' := ha.morseIndex_lt_of_mem_closure_unstableSet_inter_unstableSet hfs hf
@@ -226,7 +219,7 @@ theorem exists_subseq_unbroken_or_broken_of_morseIndex_eq_add_two
       hfs.continuous.continuousAt ⟨hya, hyb⟩
     exact hreg y hyc (hya' ▸ ha.fderiv_eq_zero)
   have hba := ha.morseIndex_lt_of_mem_unstableSet_inter_stableSet hb hfs hf hab
-    hya hyb (htr ha hb hya hyb)
+    hya hyb (htr.transverse_at ha hb ⟨hya, hyb⟩)
   have hpa : a ≠ p → morseIndex f a < morseIndex f p := fun hap ↦
     ha.morseIndex_lt_of_mem_closure_unstableSet_inter_unstableSet hfs hf (Ne.symm hap)
       ⟨y, hyU, hya⟩

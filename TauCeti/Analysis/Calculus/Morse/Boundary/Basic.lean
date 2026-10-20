@@ -110,14 +110,7 @@ theorem finite_morseTrajectorySlice_of_isCompact_sublevel
     (hcompact : ∀ c : ℝ, IsCompact {z | f z ≤ c}) {p q : E}
     (hp : IsNondegenerateCriticalPoint f p) (hq : IsNondegenerateCriticalPoint f q)
     (hind : morseIndex f p = morseIndex f q + 1) (hqp : f q < f p)
-    (htr : ∀ {a b z}, IsNondegenerateCriticalPoint f a →
-      IsNondegenerateCriticalPoint f b →
-      z ∈ Flow.unstableSet (negativeGradientFlow f hf) a →
-      z ∈ Flow.stableSet (negativeGradientFlow f hf) b →
-      Submodule.span ℝ (tangentConeAt ℝ
-          (Flow.unstableSet (negativeGradientFlow f hf) a) z) ⊔
-        Submodule.span ℝ (tangentConeAt ℝ
-          (Flow.stableSet (negativeGradientFlow f hf) b) z) = ⊤) :
+    (htr : IsMorseSmale f hf) :
     (morseTrajectorySlice hf p q).Finite := by
   apply finite_unstableSet_inter_stableSet_inter_level_of_isCompact_sublevel
     hfs hf hM hcompact hp hq hind (c := (f p + f q) / 2) (by constructor <;> linarith) htr
@@ -139,14 +132,7 @@ section Boundary
 variable (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f))
   (hM : HasNondegenerateCriticalPointsOn f univ)
   (hcompact : ∀ c : ℝ, IsCompact {z | f z ≤ c})
-  (htr : ∀ {a b z}, IsNondegenerateCriticalPoint f a →
-    IsNondegenerateCriticalPoint f b →
-    z ∈ Flow.unstableSet (negativeGradientFlow f hf) a →
-    z ∈ Flow.stableSet (negativeGradientFlow f hf) b →
-    Submodule.span ℝ (tangentConeAt ℝ
-        (Flow.unstableSet (negativeGradientFlow f hf) a) z) ⊔
-      Submodule.span ℝ (tangentConeAt ℝ
-        (Flow.stableSet (negativeGradientFlow f hf) b) z) = ⊤)
+  (htr : IsMorseSmale f hf)
 
 /-- The coefficient of `q` in the mod-two boundary of `p`. It is zero unless the Morse index
 drops by one and the critical value strictly decreases; otherwise it counts the canonical

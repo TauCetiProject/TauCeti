@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.Morse.MorseSmale.Basic
+public import TauCeti.Analysis.Calculus.Morse.MorseSmale.Manifold
 
 /-!
 # A Morse–Smale function on the plane
