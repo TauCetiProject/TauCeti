@@ -28,7 +28,7 @@ the module-level translate through the equivalence with path-algebra modules.
 
 public section
 
-namespace TauCeti.irreducibleMorphismQuiver
+namespace TauCeti.IrreducibleMorphismQuiver
 
 open CategoryTheory
 
@@ -39,7 +39,7 @@ variable {k : Type u} {Q : Type v} [Field k] [Quiver.{w} Q]
 
 /-- Two indecomposable classes with the same defined translate are equal. -/
 theorem eq_of_translate_eq_some
-    {a b c : irreducibleMorphismQuiver.{u, v, w, max u v w t} k Q}
+    {a b c : IrreducibleMorphismQuiver k (IsFinDim.{u, v, w, max u v w t} k Q)}
     (ha : translate.{u, v, w, t} a = some c)
     (hb : translate.{u, v, w, t} b = some c) : a = b := by
   have ha' := (translate_of_eq_some_of_iff.{u, v, w, t}
@@ -55,14 +55,14 @@ theorem eq_of_translate_eq_some
   have h := (nonempty_iso_arTranslate_iff.{u, v, w, t} k Q
     a.representative_property.1 b.representative_property.1
     a.representative_property.2 b.representative_property.2 ha'.1).mp ⟨ea ≪≫ eb.symm⟩
-  simpa only [of_representative] using (of_eq_of_iff
+  simpa only [of_representative] using (of_eq_of_iff (k := k)
     a.representative_property.1 a.representative_property.2
     b.representative_property.1 b.representative_property.2).mpr h
 
 /-- Auslander–Reiten translation is injective on the non-projective vertices. -/
 theorem translate_injective :
     Function.Injective (fun a :
-      {a : irreducibleMorphismQuiver.{u, v, w, max u v w t} k Q //
+      {a : IrreducibleMorphismQuiver k (IsFinDim.{u, v, w, max u v w t} k Q) //
         ¬ Projective a.representative} ↦ translate.{u, v, w, t} a.val) := by
   intro a b hab
   apply Subtype.ext
@@ -70,4 +70,4 @@ theorem translate_injective :
   | none => exact False.elim (a.property ((translate_eq_none_iff a.val).mp ha))
   | some c => exact eq_of_translate_eq_some.{u, v, w, t} ha (hab.symm.trans ha)
 
-end TauCeti.irreducibleMorphismQuiver
+end TauCeti.IrreducibleMorphismQuiver

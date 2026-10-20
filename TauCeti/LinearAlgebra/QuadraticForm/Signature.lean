@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.QuadraticForm.Signature
 public import TauCeti.LinearAlgebra.BilinearForm.PosSemidef
+public import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
 public import TauCeti.LinearAlgebra.QuadraticForm.PosDef
 public import TauCeti.LinearAlgebra.QuadraticForm.Radical
 public import TauCeti.LinearAlgebra.Submodule.Prod
@@ -312,6 +313,19 @@ open _root_.QuadraticForm
 
 variable {K M : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
   [AddCommGroup M] [Module K M] [FiniteDimensional K M]
+
+omit [IsStrictOrderedRing K] [FiniteDimensional K M] in
+/-- The negative index of a bilinear form agrees with that of its Gram matrix in any basis. -/
+@[simp]
+theorem sigNeg_toMatrix {I : Type*} [Fintype I] [DecidableEq I]
+    (b : Module.Basis I K M) (B : LinearMap.BilinForm K M) :
+    _root_.sigNeg ((B.toMatrix b).toQuadraticForm') = _root_.sigNeg B.toQuadraticMap := by
+  apply QuadraticMap.Equivalent.sigNeg_eq
+  refine ⟨{
+    toLinearEquiv := b.equivFun.symm
+    map_app' := fun v ↦ ?_ }⟩
+  rw [Matrix.toQuadraticForm'_apply, LinearMap.BilinMap.toQuadraticMap_apply]
+  exact (B.dotProduct_toMatrix_mulVec b v v).symm
 
 /-- A symmetric bilinear form is positive-semidefinite if and only if the negative index of its
 associated quadratic form vanishes. -/

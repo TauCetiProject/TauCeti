@@ -490,5 +490,21 @@ theorem unblockedDifferential_commutationHomotopy_add_single_apply_self_eq_one_a
   convert hsum using 1
   ac_rfl
 
+/-- The diagonal commutation homotopy identity as sums of polygon-pair weights, over any
+commutative semiring of characteristic two. -/
+theorem sum_hexagonRectangleWeight_add_sum_rectangleHexagonWeight_self_eq_one_add
+    (R : Type*) [CommSemiring R] [CharP R 2] (x : GridState n) :
+    (∑ D ∈ G.hexagonRectangleDecompositions C x x, G.hexagonRectangleWeight C R D) +
+        ∑ D ∈ G.rectangleHexagonDecompositions C x x, G.rectangleHexagonWeight C R D =
+      1 + ∑ D ∈ G.pentagonPairDecompositions C x x, G.pentagonPairWeight C R D := by
+  simpa only [Finsupp.add_apply,
+    G.unblockedDifferential_commutationHomotopy_single_apply C R,
+    G.commutationHomotopy_unblockedDifferential_single_apply C R,
+    G.reverse_commutationMap_commutationMap_single_apply C R,
+    G.sum_commutationHexagonCoefficient_mul_unblockedCoefficient C R,
+    G.sum_unblockedCoefficient_mul_commutationHexagonCoefficient C R,
+    G.sum_rename_commutationPentagonCoefficient_mul_commutationPentagonCoefficient C R] using
+    G.unblockedDifferential_commutationHomotopy_add_single_apply_self_eq_one_add C R x
+
 end GridDiagram
 end TauCeti

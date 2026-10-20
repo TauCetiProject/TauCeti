@@ -22,7 +22,7 @@ number of arrows `A → X`. This is the multiplicity relation for the mesh of an
 sequence, before identifying its left endpoint with the Auslander–Reiten translate.
 
 The counts are dimensions over the ground field, matching the basis-indexed quiver
-`irreducibleMorphismQuiver`. The formulas hold over any field, for any finite vertex set;
+`IrreducibleMorphismQuiver`. The formulas hold over any field, for any finite vertex set;
 neither acyclicity nor finiteness of the arrow set is required.
 
 ## References
@@ -33,7 +33,7 @@ neither acyclicity nor finiteness of the arrow set is required.
 
 public section
 
-namespace TauCeti.irreducibleMorphismQuiver
+namespace TauCeti.IrreducibleMorphismQuiver
 
 open CategoryTheory
 
@@ -47,7 +47,7 @@ its middle term modulo the radical. -/
 theorem card_arrows_of_almostSplit_right (hS : S.IsAlmostSplit)
     (hA : IsFinDim k Q S.X₁) (hC : IsFinDim k Q S.X₃)
     {X : QuiverRep.{u, v, w, t} k Q} (hX : IsFinDim k Q X) (hI : Indecomposable X) :
-    Nat.card (of hX hI ⟶ of hC hS.isRightAlmostSplit_g.indecomposable) =
+    Nat.card (of k hX hI ⟶ of k hC hS.isRightAlmostSplit_g.indecomposable) =
       Module.finrank k ((X ⟶ S.X₂) ⧸ jacobsonRadicalSubmodule k X S.X₂) := by
   have : IsLocalRing (End S.X₁) :=
     (QuiverRep.indecomposable_iff_isLocalRing_end hA).mp hS.isLeftAlmostSplit_f.indecomposable
@@ -61,7 +61,7 @@ out of its middle term modulo the radical. -/
 theorem card_arrows_of_almostSplit_left (hS : S.IsAlmostSplit)
     (hA : IsFinDim k Q S.X₁) (hC : IsFinDim k Q S.X₃)
     {X : QuiverRep.{u, v, w, t} k Q} (hX : IsFinDim k Q X) (hI : Indecomposable X) :
-    Nat.card (of hA hS.isLeftAlmostSplit_f.indecomposable ⟶ of hX hI) =
+    Nat.card (of k hA hS.isLeftAlmostSplit_f.indecomposable ⟶ of k hX hI) =
       Module.finrank k ((S.X₂ ⟶ X) ⧸ jacobsonRadicalSubmodule k S.X₂ X) := by
   have : IsLocalRing (End S.X₁) :=
     (QuiverRep.indecomposable_iff_isLocalRing_end hA).mp hS.isLeftAlmostSplit_f.indecomposable
@@ -75,8 +75,8 @@ and `A → X` for every finite-dimensional indecomposable `X`. -/
 theorem card_arrows_of_almostSplit_right_eq_left (hS : S.IsAlmostSplit)
     (hA : IsFinDim k Q S.X₁) (hC : IsFinDim k Q S.X₃)
     {X : QuiverRep.{u, v, w, t} k Q} (hX : IsFinDim k Q X) (hI : Indecomposable X) :
-    Nat.card (of hX hI ⟶ of hC hS.isRightAlmostSplit_g.indecomposable) =
-      Nat.card (of hA hS.isLeftAlmostSplit_f.indecomposable ⟶ of hX hI) := by
+    Nat.card (of k hX hI ⟶ of k hC hS.isRightAlmostSplit_g.indecomposable) =
+      Nat.card (of k hA hS.isLeftAlmostSplit_f.indecomposable ⟶ of k hX hI) := by
   have hB : IsFinDim k Q S.X₂ :=
     (isExtensionClosed_pointwiseFiniteDimensionalQuiverRepresentations k Q).prop_X₂
       ((ExactStructure.abelian_conflation _).mpr hS.shortExact) hA hC
@@ -84,4 +84,4 @@ theorem card_arrows_of_almostSplit_right_eq_left (hS : S.IsAlmostSplit)
     card_arrows_of_almostSplit_left hS hA hC hX hI]
   exact QuiverRep.finrank_quotient_jacobsonRadicalSubmodule_comm hX hI hB
 
-end TauCeti.irreducibleMorphismQuiver
+end TauCeti.IrreducibleMorphismQuiver
