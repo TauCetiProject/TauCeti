@@ -44,7 +44,8 @@ The independence statement compares values at products `p q` of two distinct pri
 Dirichlet's theorem on primes in arithmetic progressions places in arbitrary residue classes
 modulo `N`. Since `p q` has the four divisors `1, p, q, p q`, the value
 `(psi p + phi p p^e) (psi q + phi q q^e)` is an affine function of `p^e` and of `q^e` whose
-mixed coefficient `phi p psi q` is the value of a character of `(ZMod N)ˣ × (ZMod N)ˣ`;
+coefficient of `p^e` (at `q^e`-degree zero) is `phi p psi q`, the value of a character of
+`(ZMod N)ˣ × (ZMod N)ˣ`;
 independence then follows from Artin's independence of characters
 (`linearIndependent_monoidHom`).
 

@@ -106,18 +106,12 @@ theorem t_dvd : a.t ∣ N :=
 /-- The product nebentypus of an Eisenstein index, with both primitive characters raised to the
 target level `N`. -/
 def nebentypus : (ZMod N)ˣ →* ℂˣ :=
-  (a.psi.changeLevel ((dvd_mul_right a.u a.v).trans
-      ((dvd_mul_left (a.u * a.v) a.t).trans a.level_dvd)) *
-    a.phi.changeLevel ((dvd_mul_left a.v a.u).trans
-      ((dvd_mul_left (a.u * a.v) a.t).trans a.level_dvd))).toUnitHom
+  (a.psi.changeLevel a.u_dvd * a.phi.changeLevel a.v_dvd).toUnitHom
 
 /-- The defining expression for the nebentypus of an Eisenstein index. -/
 theorem nebentypus_def :
     a.nebentypus =
-      (a.psi.changeLevel ((dvd_mul_right a.u a.v).trans
-          ((dvd_mul_left (a.u * a.v) a.t).trans a.level_dvd)) *
-        a.phi.changeLevel ((dvd_mul_left a.v a.u).trans
-          ((dvd_mul_left (a.u * a.v) a.t).trans a.level_dvd))).toUnitHom :=
+      (a.psi.changeLevel a.u_dvd * a.phi.changeLevel a.v_dvd).toUnitHom :=
   by
     unfold nebentypus
     congr
