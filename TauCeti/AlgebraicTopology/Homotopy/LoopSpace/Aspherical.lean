@@ -32,6 +32,11 @@ characterization of vanishing higher homotopy groups:
 Both the fixed-interval and Moore loop-space models, as well as simplicial singular chains and
 normalized cubical chains, are treated.
 
+The arbitrary-ring vanishing results allow `X : Type u` and `R : Type u`. The integral-homology
+characterizations use `X : Type`: the chain functors `singularChains` and
+`normalizedCubicalChainComplex` share the universe of the space and coefficient ring, so their
+specializations to `ℤ` take small spaces. The Hurewicz equivalences used here have the same scope.
+
 ## Main results
 
 * `TauCeti.isZero_homology_normalizedCubicalChainComplex_doubleLoopSpace`,
