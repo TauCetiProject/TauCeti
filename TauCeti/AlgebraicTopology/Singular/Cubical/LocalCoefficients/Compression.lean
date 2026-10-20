@@ -249,33 +249,6 @@ section Chains
 variable {R : Type u} [Ring R] {X : TopCat.{v}} {A : Set X} (D : SubspaceCubeDeformation A ⊤)
   (L : LocalCoefficientSystem.{u, v, w} R X)
 
-/-- Equal cubes, with coefficients transported along corresponding morphisms, are equal
-chains. -/
-private theorem ofCube_map_eq {Y : TopCat.{v}} (K : LocalCoefficientSystem.{u, v, w} R Y)
-    {n : ℕ} {d d' : SingularCube Y n} (h : d = d') {x : FundamentalGroupoid Y}
-    {p : x ⟶ FundamentalGroupoid.mk (d 0)} {p' : x ⟶ FundamentalGroupoid.mk (d' 0)}
-    (hp : p ≍ p') (a : K.obj x) :
-    TwistedCubicalChain.ofCube K d (K.map p a) = TwistedCubicalChain.ofCube K d' (K.map p' a) := by
-  subst h
-  rw [eq_of_heq hp]
-
-/-- Transport along corresponding morphisms gives corresponding coefficients. -/
-private theorem map_apply_heq {Y : TopCat.{v}} (K : LocalCoefficientSystem.{u, v, w} R Y)
-    {x y y' : FundamentalGroupoid Y} {p : x ⟶ y} {p' : x ⟶ y'} (hy : y = y') (hp : p ≍ p')
-    (a : K.obj x) : K.map p a ≍ K.map p' a := by
-  subst hy
-  rw [eq_of_heq hp]
-
-/-- Transport in a pulled back system, after transport in the original system, is transport
-along the composite. -/
-private theorem pullback_map_map_heq {Y Y' : TopCat.{v}} (f : C(Y', Y))
-    (K : LocalCoefficientSystem.{u, v, w} R Y) {x : FundamentalGroupoid Y}
-    {y z : FundamentalGroupoid Y'} (p : x ⟶ (FundamentalGroupoid.map f).obj y) (q : y ⟶ z)
-    (a : K.obj x) :
-    ((pullback f).obj K).map q (K.map p a) ≍ K.map (p ≫ (FundamentalGroupoid.map f).map q) a := by
-  rw [Functor.map_comp, ModuleCat.comp_apply]
-  rfl
-
 /-! ### The operators on unnormalized chains -/
 
 /-- The coefficient of the end of the deformation of `c`: transport along the track of the
@@ -294,7 +267,7 @@ private theorem map_retractCoeff_heq {m : ℕ} (c : SingularCube X m) {z : Funda
         (D.retractCoeff L c a) ≍
       L.map (D.originTransport c ≫ (FundamentalGroupoid.map (ContinuousMap.subtypeVal A)).map q)
         a :=
-  pullback_map_map_heq (Y' := TopCat.of A) (ContinuousMap.subtypeVal A) L
+  pullback_map_map_heq (X := TopCat.of A) (ContinuousMap.subtypeVal A) L
     (y := FundamentalGroupoid.mk (D.retract c 0)) (D.originTransport c) q a
 
 /-- The retraction onto the cubes of `A`, on unnormalized chains with local coefficients. -/
@@ -405,8 +378,12 @@ private theorem ofSubcube_sweep_face_succ {m : ℕ} (c : SingularCube X (m + 1))
   rw [TwistedCubicalChain.ofSubcube_apply, ← ModuleCat.comp_apply, ← L.map_comp,
     TwistedCubicalChain.ofSubcube_apply, twistedPrism_ofCube, neg_neg, ← ModuleCat.comp_apply,
     ← L.map_comp]
-  refine ofCube_map_eq L ?_ (D.eqToHom_comp_pathClass_face_succ_heq c i t) a
-  rw [comp_face_id, comp_face_id, D.face_succ_sweep c i ht]
+  have h : (D.sweep c).comp (face i.succ t (ContinuousMap.id _)) =
+      D.sweep (c.comp (face i t (ContinuousMap.id _))) := by
+    rw [comp_face_id, comp_face_id, D.face_succ_sweep c i ht]
+  exact TwistedCubicalChain.ofCube_congr L h
+    (map_apply_heq L (congrArg (fun d ↦ FundamentalGroupoid.mk (d 0)) h)
+      (D.eqToHom_comp_pathClass_face_succ_heq c i t) a)
 
 /-- The prism identity `∂ P + P ∂ = ι ρ - id` on unnormalized chains, in positive degrees. -/
 private theorem boundary_twistedPrism_add_twistedPrism_boundary (m : ℕ) :
