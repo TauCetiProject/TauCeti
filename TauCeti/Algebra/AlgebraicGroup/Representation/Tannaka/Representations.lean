@@ -47,8 +47,7 @@ noncomputable abbrev scalarExtensionMonoidalFunctor :
   (fgPointRepresentationCategoryEquivalence R H).functor.precomposeLaxMonoidal.obj
     (FGComoduleCat.scalarExtensionMonoidalFunctor R H A)
 
-/-- On underlying modules, scalar extension is the tensor product with the value algebra.
-This is a rewriting lemma: generic precomposition lemmas already simplify its left-hand side. -/
+/-- On underlying modules, scalar extension is the tensor product with the value algebra. -/
 theorem scalarExtensionMonoidalFunctor_obj (V : FGPointRepresentationCat.{u, v, u} R H) :
     (scalarExtensionMonoidalFunctor R H A).toFunctor.obj V = SemimoduleCat.of A (A ⊗[R] V) := by
   rw [scalarExtensionMonoidalFunctor, Functor.precomposeLaxMonoidal_obj_toFunctor,
@@ -336,7 +335,7 @@ noncomputable def pointsFunctorIsoPointRepresentationTensorAutFunctor :
     tensorAutFunctorIsoPointRepresentationTensorAutFunctor k H
 
 /-- The natural reconstruction comparison sends a point to its tensor action on finite
-point representations. Not a simp lemma, since the source functor object simplifies first. -/
+point representations. -/
 theorem pointsFunctorIsoPointRepresentationTensorAutFunctor_hom_app_apply
     (B : CommAlgCat.{u} k) (x : ULift.{u + 1} (WithConv (H →ₐ[k] B))) :
     eqToHom (pointRepresentationTensorAutFunctor_obj k H B)
@@ -350,8 +349,7 @@ theorem pointsFunctorIsoPointRepresentationTensorAutFunctor_hom_app_apply
   rw [tensorAutFunctorIsoPointRepresentationTensorAutFunctor_hom_app_apply,
     pointsFunctorIsoTensorAutFunctor_hom_app_apply, pointRepresentationTensorIsoEquiv_apply]
 
-/-- The inverse natural comparison reconstructs the point of a tensor automorphism.
-Not a simp lemma, since its target functor object simplifies first. -/
+/-- The inverse natural comparison reconstructs the point of a tensor automorphism. -/
 theorem pointsFunctorIsoPointRepresentationTensorAutFunctor_inv_app_apply
     (B : CommAlgCat.{u} k)
     (η : Aut (FGPointRepresentationCat.scalarExtensionMonoidalFunctor k H B)) :
