@@ -406,27 +406,28 @@ abbrev nodeOfFlag (d : NodalCurve ι Flag X) (f : Flag) : GluedCurve d :=
   refine Quotient.sound ?_
   exact (gluedRel_iff_of_flagPoints d (f := f) (g := f) (Or.inr rfl) (Or.inl rfl)).mpr rfl
 
-/-- **The fibres of the flag-pair map.**  Two flag pairs determine the same node of the glued
-curve exactly when they are the same flag pair, so every fibre of `nodeOfFlag` is a singleton. -/
+/-- **The fibres of the flag-pair map.**  The first points of two flag pairs are glued exactly
+when the two flag pairs are equal, so every fibre of `nodeOfFlag` is a singleton.  The statement is
+in simp-normal form: the quotient map identifies two flag points exactly when the generated
+relation relates them (`mk_eq_mk_iff`). -/
 @[simp] theorem nodeOfFlag_inj (d : NodalCurve ι Flag X) (f g : Flag) :
-    nodeOfFlag d f = nodeOfFlag d g ↔ f = g := by
+    gluedRel d (fstPoint d f) (fstPoint d g) ↔ f = g := by
   constructor
   · intro h
-    have h' : gluedRel d (fstPoint d f) (fstPoint d g) :=
-      (mk_eq_mk_iff d (fstPoint d f) (fstPoint d g)).mp h
-    rcases h' with h' | ⟨c, hc⟩
+    rcases h with h' | ⟨c, hc⟩
     · exact fstPoint_injective d h'
     · rcases hc with ⟨h1, h2⟩ | ⟨h1, h2⟩
       · exact absurd h2 (fstPoint_ne_sndPoint d g c)
       · exact absurd h1 (fstPoint_ne_sndPoint d f c)
   · intro h
     subst h
-    rfl
+    exact Or.inl rfl
 
 /-- **The flag-pair map to the node set is injective.**  Distinct flag pairs give distinct nodes,
 because the flag points are pairwise distinct. -/
 theorem nodeOfFlag_injective (d : NodalCurve ι Flag X) : Function.Injective (nodeOfFlag d) :=
-  fun f g h => (nodeOfFlag_inj d f g).mp h
+  fun f g h =>
+    (nodeOfFlag_inj d f g).mp ((mk_eq_mk_iff d (fstPoint d f) (fstPoint d g)).mp h)
 
 /-- **The node set is the image of the flag pairs.**  The node set of the glued curve is the image
 of the flag pairs under the quotient map. -/
