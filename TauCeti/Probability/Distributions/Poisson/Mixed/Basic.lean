@@ -162,6 +162,16 @@ theorem mixedPoissonMeasure_real_singleton (ρ : Measure ℝ≥0) (k : ℕ) :
   rw [measureReal_def, mixedPoissonMeasure_singleton,
     integral_eq_lintegral_of_nonneg_ae (ae_of_all _ fun _ ↦ by positivity) (by fun_prop)]
 
+/-- A mixed Poisson law gives positive probability to a zero count. -/
+theorem mixedPoissonMeasure_real_singleton_zero_pos (ρ : Measure ℝ≥0)
+    [IsFiniteMeasure ρ] [NeZero ρ] : 0 < (mixedPoissonMeasure ρ).real {0} := by
+  rw [mixedPoissonMeasure_real_singleton]
+  have hint : Integrable (fun x : ℝ≥0 ↦ exp (-(x : ℝ))) ρ := by
+    refine (integrable_const (1 : ℝ)).mono' (by fun_prop) (ae_of_all _ fun x ↦ ?_)
+    rw [Real.norm_of_nonneg (exp_pos _).le]
+    exact exp_le_one_iff.mpr (neg_nonpos.mpr x.coe_nonneg)
+  simpa using integral_exp_pos hint
+
 /-- The cumulative masses of a mixed Poisson law: `P(N ≤ n) = ∑ k ≤ n, E[exp (-Λ) Λ ^ k / k!]`. -/
 theorem mixedPoissonMeasure_real_Iic (ρ : Measure ℝ≥0) [IsFiniteMeasure ρ] (n : ℕ) :
     (mixedPoissonMeasure ρ).real (Iic n) =

@@ -22,10 +22,6 @@ The covariant `b² - 3c` distinguishes the last two branches for
 The characteristic `2` and `3` cases are included. Perfectness supplies square roots
 in characteristic `2` and cube roots in characteristic `3`.
 
-Over any commutative ring, a root modulo `p` of a cubic whose discriminant is not divisible by
-`p` is simple (`Cubic.not_dvd_eval_derivative_of_not_dvd_discr`); this is the input Hensel's lemma
-needs to lift the roots of the residue cubic.
-
 ## References
 
 * J. H. Silverman, *Advanced Topics in the Arithmetic of Elliptic Curves*, GTM 151,
@@ -35,37 +31,6 @@ needs to lift the roots of the residue cubic.
 public section
 
 open Polynomial
-
-namespace Cubic
-
-/-- A root modulo `p` of a cubic whose discriminant is not divisible by `p` is simple: the
-derivative is not divisible by `p` there. The discriminant is invariant under translation, and the
-translate of the cubic by `x` has constant coefficient its value and linear coefficient its
-derivative at `x`, so the discriminant lies in the ideal they generate. -/
-theorem not_dvd_eval_derivative_of_not_dvd_discr {R : Type*} [CommRing R] {P : Cubic R}
-    {p x : R} (hd : ¬ p ∣ P.discr) (hx : p ∣ P.toPoly.eval x) :
-    ¬ p ∣ P.toPoly.derivative.eval x := fun h ↦ hd <| by
-  have hz : P.toPoly.eval x = P.a * x ^ 3 + P.b * x ^ 2 + P.c * x + P.d := by
-    simp [toPoly]
-  have he : P.toPoly.derivative.eval x = 3 * P.a * x ^ 2 + 2 * P.b * x + P.c := by
-    simp [toPoly]
-    ring
-  rw [hz] at hx
-  rw [he] at h
-  -- the discriminant of `P (X + x) = a X³ + g X² + e X + z`, with `g = 3 a x + b`
-  have key : P.discr = (3 * P.a * x ^ 2 + 2 * P.b * x + P.c) *
-      ((3 * P.a * x + P.b) ^ 2 * (3 * P.a * x ^ 2 + 2 * P.b * x + P.c) -
-        4 * P.a * (3 * P.a * x ^ 2 + 2 * P.b * x + P.c) ^ 2) +
-      (P.a * x ^ 3 + P.b * x ^ 2 + P.c * x + P.d) *
-        (18 * P.a * (3 * P.a * x + P.b) * (3 * P.a * x ^ 2 + 2 * P.b * x + P.c) -
-          4 * (3 * P.a * x + P.b) ^ 3 -
-          27 * P.a ^ 2 * (P.a * x ^ 3 + P.b * x ^ 2 + P.c * x + P.d)) := by
-    simp only [discr]
-    ring
-  rw [key]
-  exact dvd_add (h.mul_right _) (hx.mul_right _)
-
-end Cubic
 
 namespace TauCeti.Polynomial
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Audit candidate import headers: reject missing project sources and meta imports.
+"""Audit headers: reject missing project sources, meta imports and direct implementation imports.
 
 No Lake environment or compiled artifacts are used. ImportHeaders.lean uses the
 pinned Lean and Lake header parsers and reads candidate sources only as data. External
@@ -77,7 +77,7 @@ def main(argv: list[str] | None = None) -> int:
         if problems:
             print(f"check-imports: {len(problems)} problem(s); compilation refused")
             return 1
-        print(f"check-imports: all local imports exist and no meta imports in {len(sources)} "
+        print(f"check-imports: all local imports exist and no forbidden imports in {len(sources)} "
               "exact-candidate source(s)")
         return 0
     except (OSError, ValueError, TypeError) as error:

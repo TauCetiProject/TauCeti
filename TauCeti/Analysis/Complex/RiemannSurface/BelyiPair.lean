@@ -97,7 +97,11 @@ sphere.
   pairs `P ≅ Q`, at most the degree of `Q`.
 * `TauCeti.AnalyticBelyiPair.Iso.natCard_dvd_degree`: the order of the automorphism group
   `P.Iso P` divides the degree of `P`.
-* `TauCeti.AnalyticBelyiPair.toTopBranchedCover`: the underlying topological branched cover.
+* `TauCeti.AnalyticBelyiPair.toTopBranchedCover`: the underlying topological branched cover, whose
+  ramification partitions are formed by the local multiplicities of the Belyi map
+  (`TauCeti.AnalyticBelyiPair.parts_ramificationPartition_toTopBranchedCover`) and whose unbranched
+  part has the monodromy of the pair
+  (`TauCeti.AnalyticBelyiPair.isoClass_monodromyTriple_toTopBranchedCover`).
 * `TauCeti.AnalyticBelyiPair.toTopBranchedCoverIsoClass`: the induced map on isomorphism classes.
 * `TauCeti.AnalyticBelyiPair.mdifferentiable_of_β`: a continuous map over the sphere between
   analytic Belyi pairs is holomorphic.
@@ -255,6 +259,17 @@ theorem localDegree_toTopBranchedCover (P : AnalyticBelyiPair.{u}) {n : ℕ}
     (P.toTopBranchedCover hdegree).localDegree z = localMultiplicity P.β z :=
   (P.toTopBranchedCover hdegree).localDegree_eq_iff.2 (P.isLocalPowerAt_localMultiplicity z)
 
+/-- The ramification partition over `y` of the topological branched cover underlying a pair is
+formed by the analytic local multiplicities of its Belyi map at the points over `y`. -/
+theorem parts_ramificationPartition_toTopBranchedCover (P : AnalyticBelyiPair.{u}) {n : ℕ}
+    (hdegree : degree P.β = n) (y : OnePoint ℂ) :
+    ((P.toTopBranchedCover hdegree).ramificationPartition y).parts =
+      (P.β.finite_fiber y).toFinset.val.map (localMultiplicity P.β) := by
+  rw [TopBranchedCover.parts_ramificationPartition]
+  -- The fibres of `(P.toTopBranchedCover hdegree).π` are those of `P.β` by definition
+  -- (`TauCeti.AnalyticBelyiPair.toTopBranchedCover_π_apply` is `rfl`).
+  exact Multiset.map_congr rfl fun z _ ↦ P.localDegree_toTopBranchedCover hdegree z
+
 /-! ### Maps over the sphere are holomorphic -/
 
 /-- **A continuous map over the sphere between analytic Belyi pairs is holomorphic.** Away from
@@ -353,6 +368,22 @@ numbering of the fibre over `1/2`. -/
 theorem isoClass_eq (ν : P.restrict ⁻¹' {basePt} ≃ Fin (degree P.β)) :
     P.isoClass = .mk (P.isCoveringMap_restrict.monodromyTriple ν) :=
   P.isCoveringMap_restrict.isoClass_monodromyTriple_eq _ _
+
+/-- The cover of `ℂ ∖ {0, 1}` attached to a pair and the unbranched part of the topological branched
+cover underlying the pair have isomorphic monodromy triples, whatever the numberings of their
+fibres. -/
+theorem isoClass_monodromyTriple_toTopBranchedCover {n : ℕ} (hdegree : degree P.β = n)
+    (ν : P.restrict ⁻¹' {basePt} ≃ Fin n)
+    (ν' : (P.toTopBranchedCover hdegree).restrict ⁻¹' {basePt} ≃ Fin n) :
+    PermutationTriple.IsoClass.mk
+        ((P.toTopBranchedCover hdegree).isCoveringMap_restrict.monodromyTriple ν') =
+      PermutationTriple.IsoClass.mk (P.isCoveringMap_restrict.monodromyTriple ν) :=
+  -- Both covers have total space the points of `X` off the marked fibres, since the projection of
+  -- `P.toTopBranchedCover hdegree` is `P.β` by definition, and both projections are `P.β`.
+  P.isCoveringMap_restrict.isoClass_monodromyTriple_eq_of_homeomorph ν
+    (P.toTopBranchedCover hdegree).isCoveringMap_restrict ν' (Homeomorph.refl _) <|
+    funext fun z ↦ Subtype.ext <| OnePoint.coe_injective <|
+      ((P.toTopBranchedCover hdegree).coe_restrict_apply z).trans (P.coe_restrict_apply z).symm
 
 /-! ### Connectedness of the cover -/
 
