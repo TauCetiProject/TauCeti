@@ -44,7 +44,7 @@ import TauCeti.Data.Set.PowersetCard
   deleting an existing element of an ordered finset in either order, deleting two distinct
   elements in either order, or inserting two distinct new elements in either order, gives
   opposite Koszul signs.
-* `Finset.card_filter_lt_add_card_filter_gt` splits a finset of a linear order at one of its
+* `Finset.card_filter_lt_add_card_filter_gt_add_one` splits a finset of a linear order at one of its
   elements, and `Finset.filter_lt_subset_Ioo` and `Finset.filter_gt_subset_Ioo` place the two
   halves of a finset inside an open interval between the split point and an endpoint;
   `Finset.add_one_add_card_erase_eq_zero` and `Finset.neg_card_filter_lt_add_neg_card_filter_gt`
@@ -486,7 +486,7 @@ theorem neg_one_pow_card_filter_lt_mul_insert_insert {α R : Type*} [LinearOrder
 
 /-- Splitting a finset of a linear order at one of its elements: the elements below it and the
 elements above it account for all the others. -/
-theorem card_filter_lt_add_card_filter_gt {α : Type*} [LinearOrder α] {s : Finset α} {t : α}
+theorem card_filter_lt_add_card_filter_gt_add_one {α : Type*} [LinearOrder α] {s : Finset α} {t : α}
     (ht : t ∈ s) : #{x ∈ s | x < t} + #{x ∈ s | t < x} + 1 = #s := by
   rw [← card_erase_add_one ht,
     ← card_filter_add_card_filter_not (s := s.erase t) (p := fun x ↦ x < t)]
@@ -509,7 +509,7 @@ at one of its elements `t`, the negated cardinalities of the elements below and 
 theorem neg_card_filter_lt_add_neg_card_filter_gt {α : Type*} [LinearOrder α] {s : Finset α}
     {t : α} (ht : t ∈ s) {d : ℤ} (hd : d + #s = 0) :
     -(#{x ∈ s | x < t} : ℤ) + -(#{x ∈ s | t < x} : ℤ) = d + 1 := by
-  have := card_filter_lt_add_card_filter_gt ht
+  have := card_filter_lt_add_card_filter_gt_add_one ht
   omega
 
 /-- The elements of a finset inside `Ioo a b` that lie below `t` lie in `Ioo a t`. -/
