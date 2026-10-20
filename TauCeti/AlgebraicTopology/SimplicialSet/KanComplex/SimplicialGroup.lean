@@ -105,6 +105,15 @@ private lemma δ_inv {n : ℕ} (j : Fin (n + 2)) (x : X _⦋n + 1⦌) : X.δ j x
 private lemma σ_one {n : ℕ} (j : Fin (n + 1)) : X.σ j (1 : X _⦋n⦌) = 1 :=
   map_one (MonoidHom.mk' (fun x => X.σ j x) (hX _))
 
+/-- Multiplying `w` by the degeneracy `σ b ((δ k w)⁻¹ * v)` does not change its `a`-th face,
+when `δ a` turns `σ b` into `σ b'` after the face `δ a'`, and `δ k w` and `v` have the same
+`a'`-th face. -/
+private lemma δ_mul_σ_inv_mul {n : ℕ} {a k : Fin (n + 3)} {b a' : Fin (n + 2)} {b' : Fin (n + 1)}
+    (hσ : ∀ x : X _⦋n + 1⦌, X.δ a (X.σ b x) = X.σ b' (X.δ a' x)) {w : X _⦋n + 2⦌}
+    {v : X _⦋n + 1⦌} (hv : X.δ a' (X.δ k w) = X.δ a' v) :
+    X.δ a (w * X.σ b ((X.δ k w)⁻¹ * v)) = X.δ a w := by
+  simp [δ_mul hX, δ_inv hX, hσ, hv, σ_one hX]
+
 variable {m : ℕ} {i : Fin (m + 3)} {y : ∀ j : Fin (m + 3), j ≠ i → X _⦋m + 1⦌}
   (hy : ∀ (j k : Fin (m + 3)) (hj : j ≠ i) (hk : k ≠ i) (p q : Fin (m + 2)), j.val < k.val →
     p.val + 1 = k.val → q.val = j.val → X.δ p (y j hj) = X.δ q (y k hk))
@@ -117,17 +126,17 @@ private lemma exists_lower_step (b : Fin (m + 2)) (hbi : b.castSucc ≠ i)
     (w : X _⦋m + 2⦌) (hw : ∀ (j : Fin (m + 3)) (hj : j ≠ i), j.val < b.val → X.δ j w = y j hj) :
     ∃ w' : X _⦋m + 2⦌, ∀ (j : Fin (m + 3)) (hj : j ≠ i), j.val ≤ b.val → X.δ j w' = y j hj := by
   refine ⟨w * X.σ b ((X.δ b.castSucc w)⁻¹ * y b.castSucc hbi), fun j hj hjb => ?_⟩
-  rw [δ_mul hX]
   rcases lt_or_eq_of_le hjb with hjb | hjb
   · -- Below `b`, the correction is the degeneracy of a simplex with trivial `j`-th face.
     have hb₁ : b.val - 1 + 1 < m + 2 := by omega
-    rw [hw j hj hjb, δ_σ_of_lt j b ⟨j.val, by omega⟩ ⟨b.val - 1, by omega⟩ hjb rfl (by simp; omega),
-      δ_mul hX, δ_inv hX,
-      δ_δ_of_lt j b.castSucc ⟨j.val, by omega⟩ ⟨b.val - 1, by omega⟩ hjb rfl (by simp; omega),
-      hw j hj hjb, ← hy j b.castSucc hj hbi ⟨b.val - 1, by omega⟩ ⟨j.val, by omega⟩ hjb
-        (by simp; omega) rfl, inv_mul_cancel, σ_one hX, mul_one]
+    rw [δ_mul_σ_inv_mul hX
+      (δ_σ_of_lt j b ⟨j.val, by omega⟩ ⟨b.val - 1, by omega⟩ hjb rfl (by simp; omega)) ?_,
+      hw j hj hjb]
+    rw [δ_δ_of_lt j b.castSucc ⟨j.val, by omega⟩ ⟨b.val - 1, by omega⟩ hjb rfl (by simp; omega),
+      hw j hj hjb]
+    exact hy j b.castSucc hj hbi ⟨b.val - 1, by omega⟩ ⟨j.val, by omega⟩ hjb (by simp; omega) rfl
   · obtain rfl : j = b.castSucc := Fin.ext hjb
-    rw [δ_comp_σ_self_apply, mul_inv_cancel_left]
+    rw [δ_mul hX, δ_comp_σ_self_apply, mul_inv_cancel_left]
 
 /-- Correcting the face `b.succ > i` by multiplying with a degenerate simplex keeps the faces
 below `i` and above `b.succ`. -/
@@ -139,25 +148,22 @@ private lemma exists_upper_step (b : Fin (m + 2)) (hbi : b.succ ≠ i) (hb : i.v
   refine ⟨w * X.σ b ((X.δ b.succ w)⁻¹ * y b.succ hbi), fun j hj hji => ?_, fun j hj hbj => ?_⟩
   · -- Below `i`, the correction is the degeneracy of a simplex with trivial `j`-th face.
     have hjb : j.val < b.val := by omega
-    rw [δ_mul hX, hlow j hj hji,
-      δ_σ_of_lt j b ⟨j.val, by omega⟩ ⟨b.val - 1, by omega⟩ hjb rfl (by simp; omega),
-      δ_mul hX, δ_inv hX,
-      δ_δ_of_lt j b.succ ⟨j.val, by omega⟩ b (by simp; omega) rfl (by simp),
-      hlow j hj hji, ← hy j b.succ hj hbi b ⟨j.val, by omega⟩ (by simp; omega) (by simp) rfl,
-      inv_mul_cancel, σ_one hX, mul_one]
-  · rw [δ_mul hX]
-    rcases lt_or_eq_of_le (Nat.succ_le_of_lt hbj) with hbj | hbj
+    rw [δ_mul_σ_inv_mul hX
+      (δ_σ_of_lt j b ⟨j.val, by omega⟩ ⟨b.val - 1, by omega⟩ hjb rfl (by simp; omega)) ?_,
+      hlow j hj hji]
+    rw [δ_δ_of_lt j b.succ ⟨j.val, by omega⟩ b (by simp; omega) rfl (by simp), hlow j hj hji]
+    exact hy j b.succ hj hbi b ⟨j.val, by omega⟩ (by simp; omega) (by simp) rfl
+  · rcases lt_or_eq_of_le (Nat.succ_le_of_lt hbj) with hbj | hbj
     · -- Above `b.succ`, the correction is the degeneracy of a simplex with trivial face.
-      rw [hup j hj hbj,
-        δ_σ_of_gt j b ⟨j.val - 1, by omega⟩ ⟨b.val, by omega⟩ hbj (by simp; omega) rfl,
-        δ_mul hX, δ_inv hX,
-        ← δ_δ_of_lt b.succ j ⟨b.val + 1, by omega⟩ ⟨j.val - 1, by omega⟩ (by simpa using hbj)
-          (by simp) (by simp; omega),
-        hup j hj hbj, hy b.succ j hbi hj ⟨j.val - 1, by omega⟩ ⟨b.val + 1, by omega⟩
-          (by simpa using hbj) (by simp; omega) (by simp),
-        inv_mul_cancel, σ_one hX, mul_one]
+      rw [δ_mul_σ_inv_mul hX
+        (δ_σ_of_gt j b ⟨j.val - 1, by omega⟩ ⟨b.val, by omega⟩ hbj (by simp; omega) rfl) ?_,
+        hup j hj hbj]
+      rw [← δ_δ_of_lt b.succ j ⟨b.val + 1, by omega⟩ ⟨j.val - 1, by omega⟩ (by simpa using hbj)
+        (by simp) (by simp; omega), hup j hj hbj]
+      exact (hy b.succ j hbi hj ⟨j.val - 1, by omega⟩ ⟨b.val + 1, by omega⟩
+        (by simpa using hbj) (by simp; omega) (by simp)).symm
     · obtain rfl : j = b.succ := Fin.ext (by simpa using hbj.symm)
-      rw [δ_comp_σ_succ_apply, mul_inv_cancel_left]
+      rw [δ_mul hX, δ_comp_σ_succ_apply, mul_inv_cancel_left]
 
 /-- **Horn filling in a simplicial group**: a compatible family of `m + 1`-simplices on the faces
 `j ≠ i` of an `(m + 2)`-simplex is the family of faces of an `(m + 2)`-simplex. -/
