@@ -30,6 +30,8 @@ are written multiplicatively, as `Multiplicative (ZMod N)` and `Multiplicative (
   `g ^ a.val * h ^ b.val`.
 * `TauCeti.zmodMonoidHomEquiv_symm_injective_of_orderOf_eq`: the homomorphism of an element of
   order exactly `N` is injective.
+* `TauCeti.injective_zmod_three_prod_iff`: a homomorphism `(ℤ/3ℤ)² →* G` is injective exactly when
+  `(1, 0)`, `(0, 1)`, `(1, 1)` and `(-1, 1)` are not in its kernel.
 -/
 
 public section
@@ -139,5 +141,24 @@ theorem zmodProdMonoidHomEquiv_symm_apply {G : Type*} [CommGroup G]
     (g : {g : G // g ^ N = 1} × {g : G // g ^ N = 1}) (a b : ZMod N) :
     (zmodProdMonoidHomEquiv N G).symm g (.ofAdd (a, b)) = g.1.1 ^ a.val * g.2.1 ^ b.val := by
   simp [zmodProdMonoidHomEquiv, zmodLift_apply]
+
+/-- **Injectivity on `(ℤ/3ℤ)²`.** A homomorphism `ψ : (ℤ/3ℤ)² →* G` is injective exactly when
+`(1, 0)`, `(0, 1)`, `(1, 1)` and `(-1, 1)` are not in its kernel: every nonzero element of
+`(ℤ/3ℤ)²` is one of these four or its negative. -/
+theorem injective_zmod_three_prod_iff {G : Type*} [Group G]
+    (ψ : Multiplicative (ZMod 3 × ZMod 3) →* G) :
+    Function.Injective ψ ↔ ψ (.ofAdd (1, 0)) ≠ 1 ∧ ψ (.ofAdd (0, 1)) ≠ 1 ∧
+      ψ (.ofAdd (1, 1)) ≠ 1 ∧ ψ (.ofAdd (-1, 1)) ≠ 1 := by
+  rw [injective_iff_map_eq_one]
+  refine ⟨fun h ↦ ⟨fun e ↦ absurd (h _ e) (by decide), fun e ↦ absurd (h _ e) (by decide),
+    fun e ↦ absurd (h _ e) (by decide), fun e ↦ absurd (h _ e) (by decide)⟩,
+    fun ⟨h₁, h₂, h₃, h₄⟩ z hz ↦ ?_⟩
+  have hp : ∀ p : ZMod 3 × ZMod 3, p = 0 ∨ p = (1, 0) ∨ p = -(1, 0) ∨ p = (0, 1) ∨
+      p = -(0, 1) ∨ p = (1, 1) ∨ p = -(1, 1) ∨ p = (-1, 1) ∨ p = -(-1, 1) := by
+    decide
+  obtain ⟨p, rfl⟩ : ∃ p, Multiplicative.ofAdd p = z := ⟨z.toAdd, rfl⟩
+  rcases hp p with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · exact ofAdd_zero
+  all_goals first | contradiction | rw [ofAdd_neg, map_inv, inv_eq_one] at hz; contradiction
 
 end TauCeti

@@ -33,6 +33,10 @@ If the motion is a flow along whose lines `f` never increases, then its time-`(b
 strictly decreases along flow lines starting on the level `a`, the level `f⁻¹(b)` exactly onto
 `f⁻¹(a)` (`Flow.apply_eq_iff_of_apply_eq_sub`). This is the topological half of the
 homeomorphism between the sublevels on either side of a band without critical points.
+
+Under the same hypotheses the band `f⁻¹[a, b]` is homeomorphic to `f⁻¹(a) × [a, b]` by a
+homeomorphism preserving the value of `f` (`Flow.bandHomeomorph`): a point of the band is sent to
+the point where its flow line meets the level `a`, together with its value.
 -/
 
 public section
@@ -202,5 +206,99 @@ theorem apply_eq_iff_of_apply_eq_sub (hf : Continuous f) (hab : a ≤ b)
   · intro h
     rw [hφf x (b - a) (sub_nonneg.2 hab) (by rw [h]; linarith) h.le, h]
     ring
+
+/-- **Ascent from the lower level.** Under the hypotheses of `Flow.apply_eq_iff_of_apply_eq_sub`,
+running the flow backwards for a time `t` from a point of the level `f⁻¹(a)` raises `f` at unit
+speed through the band: if `f y = a`, `0 ≤ t` and `a + t ≤ b`, then `f (φ (-t) y) = a + t`. -/
+theorem apply_neg_eq_add_of_apply_eq_sub (hf : Continuous f)
+    (hanti : ∀ x, AntitoneOn (fun t ↦ f (φ t x)) (Ici 0))
+    (hφf : ∀ x t, 0 ≤ t → a ≤ f x - t → f x ≤ b → f (φ t x) = f x - t)
+    (hφa : ∀ x t, f x = a → 0 < t → f (φ t x) < a) {y : X} (hy : f y = a) {t : ℝ}
+    (ht : 0 ≤ t) (htb : a + t ≤ b) : f (φ (-t) y) = a + t := by
+  have hxy : φ t (φ (-t) y) = y := by rw [← Flow.map_add, add_neg_cancel, Flow.map_zero_apply]
+  have hxa : a ≤ f (φ (-t) y) := by
+    have h := hanti (φ (-t) y) (mem_Ici.2 le_rfl) (mem_Ici.2 ht) ht
+    simp only [Flow.map_zero_apply, hxy, hy] at h
+    exact h
+  rcases lt_trichotomy (f (φ (-t) y)) (a + t) with hlt | heq | hgt
+  · -- The flow line of `φ (-t) y` reaches the level `a` before time `t`, and then drops below it.
+    exfalso
+    set s := f (φ (-t) y) - a
+    have h1 := hφf (φ (-t) y) s (by linarith) (by linarith) (by linarith)
+    have h2 := hφa (φ s (φ (-t) y)) (t - s) (by rw [h1]; ring) (by linarith)
+    rw [← Flow.map_add, sub_add_cancel, hxy, hy] at h2
+    exact lt_irrefl a h2
+  · exact heq
+  · -- Some earlier point `φ (-u) y` of the backward flow line lies on the level `a + t`; flowing
+    -- down from it for time `t` overshoots the point `y` of the level `a`.
+    exfalso
+    obtain ⟨u, ⟨hu0, hut⟩, hfu⟩ : ∃ u ∈ Icc 0 t, f (φ (-u) y) = a + t :=
+      intermediate_value_Icc ht
+        (hf.comp (φ.continuous continuous_neg continuous_const)).continuousOn
+        ⟨by simp [hy, ht], hgt.le⟩
+    have hut' : u < t := hut.lt_of_ne fun h ↦ hgt.ne' (h ▸ hfu)
+    have h1 := hφf (φ (-u) y) t ht (by linarith) (by rwa [hfu])
+    have h2 := hφa y (t - u) hy (by linarith)
+    rw [← Flow.map_add, ← sub_eq_add_neg, hfu, add_sub_cancel_right] at h1
+    exact lt_irrefl a (h1 ▸ h2)
+
+/-- **A band traversed at unit speed is a product.** Under the hypotheses of
+`Flow.apply_eq_iff_of_apply_eq_sub`, following the flow line of a point `x` of the band
+`f⁻¹[a, b]` down to the level `a` is a homeomorphism `x ↦ (φ (f x - a) x, f x)` from the band onto
+`f⁻¹(a) × [a, b]`, with inverse `(y, s) ↦ φ (a - s) y`. It preserves the value of `f`, and it is
+the identity on the level `f⁻¹(a)`. -/
+def bandHomeomorph (hf : Continuous f) (hanti : ∀ x, AntitoneOn (fun t ↦ f (φ t x)) (Ici 0))
+    (hφf : ∀ x t, 0 ≤ t → a ≤ f x - t → f x ≤ b → f (φ t x) = f x - t)
+    (hφa : ∀ x t, f x = a → 0 < t → f (φ t x) < a) :
+    f ⁻¹' Icc a b ≃ₜ (f ⁻¹' {a}) × Icc a b :=
+  have hdown (x : f ⁻¹' Icc a b) : φ (f x - a) x ∈ f ⁻¹' {a} := by
+    rw [mem_preimage, mem_singleton_iff, hφf x _ (by linarith [x.2.1]) (by linarith) x.2.2]
+    ring
+  have hup (p : (f ⁻¹' {a}) × Icc a b) : f (φ (a - p.2) p.1) = p.2 := by
+    rw [← neg_sub, φ.apply_neg_eq_add_of_apply_eq_sub hf hanti hφf hφa p.1.2
+      (sub_nonneg.2 p.2.2.1) (by linarith [p.2.2.2]), add_sub_cancel]
+  have hband (p : (f ⁻¹' {a}) × Icc a b) : φ (a - p.2) p.1 ∈ f ⁻¹' Icc a b := by
+    rw [mem_preimage, hup p]
+    exact p.2.2
+  { toFun x := (⟨φ (f x - a) x, hdown x⟩, ⟨f x, x.2⟩)
+    invFun p := ⟨φ (a - p.2) p.1, hband p⟩
+    left_inv x := Subtype.ext <| by
+      dsimp only
+      rw [← Flow.map_add, sub_add_sub_cancel, sub_self, Flow.map_zero_apply]
+    right_inv p := Prod.ext (Subtype.ext <| by
+        dsimp only
+        rw [hup p, ← Flow.map_add, sub_add_sub_cancel, sub_self, Flow.map_zero_apply])
+      (Subtype.ext (hup p))
+    continuous_toFun := by
+      have hx : Continuous fun x : f ⁻¹' Icc a b ↦ (x : X) := continuous_subtype_val
+      exact ((φ.continuous ((hf.comp hx).sub continuous_const) hx).subtype_mk _).prodMk
+        ((hf.comp hx).subtype_mk _)
+    continuous_invFun :=
+      (φ.continuous (continuous_const.sub (continuous_subtype_val.comp continuous_snd))
+        (continuous_subtype_val.comp continuous_fst)).subtype_mk hband }
+
+variable (hf : Continuous f) (hanti : ∀ x, AntitoneOn (fun t ↦ f (φ t x)) (Ici 0))
+  (hφf : ∀ x t, 0 ≤ t → a ≤ f x - t → f x ≤ b → f (φ t x) = f x - t)
+  (hφa : ∀ x t, f x = a → 0 < t → f (φ t x) < a)
+
+@[simp]
+theorem coe_bandHomeomorph_apply_fst (x : f ⁻¹' Icc a b) :
+    ((φ.bandHomeomorph hf hanti hφf hφa x).1 : X) = φ (f x - a) x :=
+  (rfl)
+
+@[simp]
+theorem coe_bandHomeomorph_apply_snd (x : f ⁻¹' Icc a b) :
+    ((φ.bandHomeomorph hf hanti hφf hφa x).2 : ℝ) = f x :=
+  (rfl)
+
+@[simp]
+theorem coe_bandHomeomorph_symm_apply (p : (f ⁻¹' {a}) × Icc a b) :
+    ((φ.bandHomeomorph hf hanti hφf hφa).symm p : X) = φ (a - p.2) p.1 :=
+  (rfl)
+
+/-- `Flow.bandHomeomorph` is the identity on the level `f⁻¹(a)`. -/
+theorem coe_bandHomeomorph_apply_fst_of_apply_eq {x : f ⁻¹' Icc a b} (hx : f x = a) :
+    ((φ.bandHomeomorph hf hanti hφf hφa x).1 : X) = x := by
+  simp [hx]
 
 end Flow

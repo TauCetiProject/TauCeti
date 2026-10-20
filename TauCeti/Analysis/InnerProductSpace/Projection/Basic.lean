@@ -19,7 +19,7 @@ hypothesis on the ambient space, where the adjoint of a bounded operator need no
 
 A map `T P_U` that factors through the projection onto a finite-dimensional `U` has rank at most
 `dim U`. For subspaces `U` and `V` of the same finite dimension, `U ⊓ Vᗮ` and `V ⊓ Uᗮ` have the
-same dimension.
+same dimension. The orthogonal complement of a nonzero vector has codimension one.
 
 For finite-dimensional `U` and `V` with `dim V ≤ dim U`, a lower bound `k ‖u‖² ≤ ‖P_V u‖²` for
 `u ∈ U` transfers to the same lower bound `k ‖v‖² ≤ ‖P_U v‖²` for `v ∈ V`.
@@ -39,6 +39,8 @@ Compressing the square of the difference `P_U - P_V` to `U`, from either side, g
 * `Submodule.norm_starProjection_comp_starProjection_comm`: `‖P_U P_V‖ = ‖P_V P_U‖`.
 * `Submodule.finrank_range_comp_starProjection_le`: `rank (T P_U) ≤ dim U`.
 * `Submodule.finrank_inf_orthogonal_comm`: `dim (U ⊓ Vᗮ) = dim (V ⊓ Uᗮ)` when `dim U = dim V`.
+* `Submodule.finrank_orthogonal_span_singleton_eq_finrank_sub_one`: `dim (𝕜 ∙ v)ᗮ = dim E - 1`
+  for a nonzero vector `v`.
 * `Submodule.mul_norm_sq_le_norm_starProjection_sq_of_finrank_le`: for finite-dimensional
   subspaces with `dim V ≤ dim U`, a lower bound on `‖P_V u‖²` over `U` transfers to the same
   bound on `‖P_U v‖²` over `V`.
@@ -129,6 +131,14 @@ theorem finrank_inf_orthogonal_comm [FiniteDimensional 𝕜 U] [FiniteDimensiona
   rw [T.finrank_range_adjoint, hT, ← hker] at h₂
   rw [← hker] at h₁
   omega
+
+/-- In a finite-dimensional inner product space, the orthogonal complement of the span of a
+nonzero vector has codimension one. Unlike `Submodule.finrank_orthogonal_span_singleton`, the
+dimension of the ambient space is not fixed in advance. -/
+theorem finrank_orthogonal_span_singleton_eq_finrank_sub_one [FiniteDimensional 𝕜 E] {v : E}
+    (hv : v ≠ 0) : Module.finrank 𝕜 (𝕜 ∙ v)ᗮ = Module.finrank 𝕜 E - 1 := by
+  have := Module.finrank_pos_iff_exists_ne_zero (R := 𝕜).2 ⟨v, hv⟩
+  exact finrank_add_finrank_orthogonal' <| by rw [finrank_span_singleton hv]; omega
 
 /-- For finite-dimensional subspaces with `dim V ≤ dim U`, a lower bound `k ‖u‖² ≤ ‖P_V u‖²` on
 the cosines of `U` towards `V` transfers to the same lower bound for `V` towards `U`. -/

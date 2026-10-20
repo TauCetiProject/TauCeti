@@ -32,6 +32,8 @@ positivity is deduced.
 * `TauCeti.fderiv_norm_sq_sub_comp`: the first derivative of squared distance along a map.
 * `TauCeti.fderiv_norm_sq_sub_comp_eq_zero_iff`: the critical-point normal-vector test.
 * `TauCeti.fderiv_fderiv_norm_sq_sub_comp_apply`: the full Hessian formula.
+* `TauCeti.fderiv_fderiv_norm_sq_apply_complex`: the real second derivative of complex squared
+  norm is twice the real part of the inner product.
 * `TauCeti.fderiv_fderiv_norm_sq_sub_comp_add_I_smul`: the complex Hessian identity.
 * `TauCeti.re_leviForm_norm_sq_sub_comp_apply_self`: the Levi diagonal of squared distance.
 * `TauCeti.isStrictlyPlurisubharmonicAt_norm_sq_sub_comp`: strict plurisubharmonicity along a
@@ -123,6 +125,15 @@ section Complex
 variable {V E : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
   [NormedAddCommGroup E] [InnerProductSpace ℂ E]
   {i : V → E} {a : E} {x : V}
+
+/-- The real second derivative of the squared norm of a complex inner product space is
+`2 * Re ⟪v, w⟫_ℂ`. -/
+theorem fderiv_fderiv_norm_sq_apply_complex (x v w : E) :
+    fderiv ℝ (fderiv ℝ fun z : E ↦ ‖z‖ ^ 2) x v w = 2 * (inner ℂ v w).re := by
+  -- The real inner product of the underlying real inner product space is `Re ⟪v, w⟫_ℂ` by
+  -- definition (`real_inner_eq_re_inner`); it is not a global instance, to avoid diamonds.
+  let := InnerProductSpace.complexToReal (G := E)
+  exact fderiv_fderiv_norm_sq_apply x v w
 
 /-- **The complex Hessian identity for squared distance.** For a holomorphic `C²` map, the sum
 of the real Hessian on `v` and `I • v` is four times the squared norm of the complex derivative.

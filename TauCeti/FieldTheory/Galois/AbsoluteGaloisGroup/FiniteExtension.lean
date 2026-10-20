@@ -384,10 +384,9 @@ theorem coe_absoluteGaloisGroupRestrictSubgroupEquiv_apply
 
 section Normal
 
-omit [FiniteDimensional K L]
-
 variable [Normal K L]
 
+omit [FiniteDimensional K L] in
 /-- **The Galois group of a normal extension `L` embedded by `σ` is the quotient of `G_K` by the
 subgroup fixing `σ(L)`**: `TauCeti.quotientFixingSubgroupEquiv` for the intermediate field `σ(L)`,
 read on `L` through `σ`. It sends the class of `g` to its restriction `σ.restrictNormalHom g`
@@ -397,6 +396,7 @@ def quotientFixingSubgroupFieldRangeEquiv :
   (quotientFixingSubgroupEquiv K (SeparableClosure K) σ.fieldRange).toMulEquiv.trans
     (AlgEquiv.autCongr σ.equivFieldRange).symm
 
+omit [FiniteDimensional K L] in
 /-- The isomorphism `quotientFixingSubgroupFieldRangeEquiv` sends the class of `g` to its
 restriction `σ.restrictNormalHom g`. -/
 @[simp]

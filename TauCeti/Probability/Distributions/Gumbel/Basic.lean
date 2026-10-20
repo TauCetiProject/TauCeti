@@ -39,8 +39,8 @@ the representation of a logistic variable as a difference of independent Gumbel 
 
 ## References
 
-* N. L. Johnson, S. Kotz, N. Balakrishnan, *Continuous Univariate Distributions*, vol. 1, 2nd ed.,
-  Wiley (1994), ch. 21.
+* N. L. Johnson, S. Kotz, N. Balakrishnan, *Continuous Univariate Distributions*, vol. 2, 2nd ed.,
+  Wiley (1995), ch. 22.
 -/
 
 public section
