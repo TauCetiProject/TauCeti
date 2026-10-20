@@ -175,6 +175,7 @@ protected theorem comp {g : N → P} (hg : IsLocalRiemannianIsometry J K g)
 end IsLocalRiemannianIsometry
 
 /-- A smooth Riemannian isometry is a local Riemannian isometry. -/
+@[simp]
 theorem RiemannianIsometry.isLocalRiemannianIsometry (Φ : RiemannianIsometry I J M N) :
     IsLocalRiemannianIsometry I J Φ where
   contMDiff := Φ.toDiffeomorph.contMDiff

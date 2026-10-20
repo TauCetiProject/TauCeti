@@ -50,11 +50,10 @@ In the namespace `TauCeti.IsLocalRiemannianIsometry`:
 * `ricciTensor_mfderiv` and `scalarCurvature_map`: preservation of the Ricci tensor and of the
   scalar curvature.
 
-In the namespace `TauCeti.RiemannianIsometry`, `sectionalCurvature_mfderiv`, `ricciTensor_mfderiv`
-and `scalarCurvature_map` state the same for a Riemannian isometry `Φ`, which is a local
-Riemannian isometry (`Φ.isLocalRiemannianIsometry`). There, `hasSectionalCurvatureAt_map_iff` and
-`hasConstantSectionalCurvature_iff` use surjectivity: isometries preserve pointwise and constant
-sectional curvature.
+These apply to a Riemannian isometry `Φ`, which is a local Riemannian isometry
+(`Φ.isLocalRiemannianIsometry`). In the namespace `TauCeti.RiemannianIsometry`,
+`hasSectionalCurvatureAt_map_iff` and `hasConstantSectionalCurvature_iff` use surjectivity:
+isometries preserve pointwise and constant sectional curvature.
 
 ## References
 
@@ -195,16 +194,6 @@ namespace RiemannianIsometry
 
 variable [T2Space M] [T2Space N]
 
-/-- A Riemannian isometry preserves sectional curvature: the plane spanned by `dΦ_x u` and
-`dΦ_x v` has the same sectional curvature as the plane spanned by `u` and `v`. -/
-theorem sectionalCurvature_mfderiv (Φ : RiemannianIsometry I J M N) (x : M)
-    (u v : TangentSpace I x) :
-    (leviCivitaConnection J N).sectionalCurvature (isMetricCompatible_leviCivitaConnection J)
-        (Φ x) (mfderiv I J Φ x u) (mfderiv I J Φ x v) =
-      (leviCivitaConnection I M).sectionalCurvature (isMetricCompatible_leviCivitaConnection I)
-        x u v :=
-  Φ.isLocalRiemannianIsometry.sectionalCurvature_mfderiv x u v
-
 /-- A Riemannian isometry `Φ` preserves pointwise sectional curvature: `N` has sectional
 curvature `k` at `Φ x` exactly when `M` has sectional curvature `k` at `x`. -/
 @[simp]
@@ -226,12 +215,12 @@ theorem hasSectionalCurvatureAt_map_iff (Φ : RiemannianIsometry I J M N) (x : M
     CovariantDerivative.hasSectionalCurvatureAt_iff]
   constructor
   · intro h u v huv
-    rw [← Φ.sectionalCurvature_mfderiv, ← he, ← he]
+    rw [← Φ.isLocalRiemannianIsometry.sectionalCurvature_mfderiv, ← he, ← he]
     exact h _ _ ((hli u v).2 huv)
   · intro h u' v' huv
     obtain ⟨u, rfl⟩ := e.surjective u'
     obtain ⟨v, rfl⟩ := e.surjective v'
-    rw [he, he, Φ.sectionalCurvature_mfderiv]
+    rw [he, he, Φ.isLocalRiemannianIsometry.sectionalCurvature_mfderiv]
     exact h u v ((hli u v).1 huv)
 
 /-- Riemannian isometric manifolds have the same constant sectional curvatures. -/
@@ -244,21 +233,6 @@ theorem hasConstantSectionalCurvature_iff (Φ : RiemannianIsometry I J M N) (k :
   refine ⟨fun h x ↦ (Φ.hasSectionalCurvatureAt_map_iff x k).1 (h (Φ x)), fun h y ↦ ?_⟩
   rw [← Φ.apply_symm_apply y]
   exact (Φ.hasSectionalCurvatureAt_map_iff (Φ.symm y) k).2 (h (Φ.symm y))
-
-/-- A Riemannian isometry preserves the Ricci tensor:
-`Ric(dΦ_x u, dΦ_x v) = Ric(u, v)`. -/
-theorem ricciTensor_mfderiv (Φ : RiemannianIsometry I J M N) (x : M)
-    (u v : TangentSpace I x) :
-    (leviCivitaConnection J N).ricciTensor (Φ x) (mfderiv I J Φ x u) (mfderiv I J Φ x v) =
-      (leviCivitaConnection I M).ricciTensor x u v :=
-  Φ.isLocalRiemannianIsometry.ricciTensor_mfderiv x u v
-
-/-- A Riemannian isometry preserves scalar curvature. -/
-@[simp]
-theorem scalarCurvature_map (Φ : RiemannianIsometry I J M N) (x : M) :
-    (leviCivitaConnection J N).scalarCurvature (Φ x) =
-      (leviCivitaConnection I M).scalarCurvature x :=
-  Φ.isLocalRiemannianIsometry.scalarCurvature_map x
 
 end RiemannianIsometry
 

@@ -40,8 +40,7 @@ In the namespace `TauCeti.IsLocalRiemannianIsometry`:
 
 A Riemannian isometry `Φ` is a local Riemannian isometry
 (`TauCeti.RiemannianIsometry.isLocalRiemannianIsometry`), so these apply to it through
-`Φ.isLocalRiemannianIsometry`; `TauCeti.RiemannianIsometry.mfderiv_leviCivitaConnection_mpullback`
-states the connection naturality directly for `Φ`.
+`Φ.isLocalRiemannianIsometry`.
 
 ## References
 
@@ -163,24 +162,6 @@ theorem leviCivitaConnection_mpullback_apply_mpullback (hf : IsLocalRiemannianIs
     hf.mfderiv_apply_mpullback]
 
 end IsLocalRiemannianIsometry
-
-namespace RiemannianIsometry
-
-variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ F]
-  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
-
-/-- **Naturality of the Levi-Civita connection under Riemannian isometries**, for Mathlib's
-`CovariantDerivative.leviCivitaConnection`:
-`dΦ_x (∇ᴹ_v (Φ^* Y)) = ∇ᴺ_{dΦ_x v} Y` for every vector field `Y` on `N` differentiable at
-`Φ x`. -/
-@[simp]
-theorem mfderiv_leviCivitaConnection_mpullback (Φ : RiemannianIsometry I J M N)
-    {Y : Π y : N, TangentSpace J y} {x : M} (hY : MDiffAt (T% Y) (Φ x)) (v : TangentSpace I x) :
-    mfderiv I J Φ x (leviCivitaConnection I M (mpullback I J Φ Y) x v) =
-      leviCivitaConnection J N Y (Φ x) (mfderiv I J Φ x v) :=
-  Φ.isLocalRiemannianIsometry.mfderiv_leviCivitaConnection_mpullback hY v
-
-end RiemannianIsometry
 
 end TauCeti
 
