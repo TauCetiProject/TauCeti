@@ -26,6 +26,8 @@ half-line, squaring is undone by `Real.sqrt`, so the pushforward determines the 
   absolute value into the two half-lines;
 * `MeasureTheory.Measure.map_abs_apply_zero` — the image under absolute value preserves the atom
   at zero;
+* `MeasureTheory.Measure.map_eq_map_map_add_of_forall_measure_setOf_le_add_eq` — translated
+  distribution functions of a real-valued function give translated laws;
 * `MeasureTheory.Measure.eq_of_map_sq_eq_of_map_neg_eq_self` — two symmetric finite real
   measures with the same pushforward after squaring are equal.
 * `MeasureTheory.Measure.map_sqrt_map_sq` — on the nonnegative half-line, taking square roots
@@ -64,6 +66,18 @@ theorem map_abs_apply_zero (μ : Measure ℝ) : μ.map (|·|) {0} = μ {0} := by
   congr 1
   ext x
   simp
+
+/-- **Translated distribution functions give translated laws.** If the distribution function of
+a real-valued measurable `f` under a finite measure `μ` is that under `ν` translated by `c`, then
+the law of `f` under `μ` is the law of `f` under `ν` translated by `c`. -/
+theorem map_eq_map_map_add_of_forall_measure_setOf_le_add_eq {α : Type*} [MeasurableSpace α]
+    {μ ν : Measure α} [IsFiniteMeasure μ] {f : α → ℝ} (hf : Measurable f) {c : ℝ}
+    (h : ∀ r : ℝ, μ {x | f x ≤ r + c} = ν {x | f x ≤ r}) :
+    μ.map f = (ν.map f).map (· + c) := by
+  refine Measure.ext_of_Iic _ _ fun a ↦ ?_
+  rw [Measure.map_map (measurable_add_const c) hf, Measure.map_apply hf measurableSet_Iic,
+    Measure.map_apply ((measurable_add_const c).comp hf) measurableSet_Iic]
+  convert h (a - c) using 2 <;> ext x <;> simp [le_sub_iff_add_le]
 
 end MeasureTheory.Measure
 

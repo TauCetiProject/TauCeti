@@ -10,6 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.Dual
 public import Mathlib.Analysis.LocallyConvex.Separation
 public import Mathlib.MeasureTheory.Function.L2Space
 public import TauCeti.Analysis.Convex.Measure
+public import TauCeti.MeasureTheory.Measure.Real
 
 /-!
 # Convex bodies with translated height distributions
@@ -133,12 +134,10 @@ private theorem map_restrict_inner_eq_map_add {s t : Set E} (ht : μ t ≠ ∞) 
     (μ.restrict t).map (⟪e, ·⟫) = ((μ.restrict s).map (⟪e, ·⟫)).map (· + c) := by
   have hf : Measurable (⟪e, ·⟫ : E → ℝ) := (continuous_const.inner continuous_id).measurable
   have : IsFiniteMeasure (μ.restrict t) := isFiniteMeasure_restrict.2 ht
-  refine Measure.ext_of_Iic _ _ fun a ↦ ?_
-  rw [Measure.map_map (measurable_add_const c) hf, Measure.map_apply hf measurableSet_Iic,
-    Measure.map_apply ((measurable_add_const c).comp hf) measurableSet_Iic,
-    Measure.restrict_apply (hf measurableSet_Iic),
-    Measure.restrict_apply ((measurable_add_const c).comp hf measurableSet_Iic)]
-  convert h (a - c) using 2 <;> ext x <;> simp [and_comm, le_sub_iff_add_le]
+  refine Measure.map_eq_map_map_add_of_forall_measure_setOf_le_add_eq hf fun r ↦ ?_
+  rw [Measure.restrict_apply (measurableSet_le hf measurable_const),
+    Measure.restrict_apply (measurableSet_le hf measurable_const)]
+  convert h r using 2 <;> ext x <;> simp [and_comm]
 
 /-- If the height distribution of `t` in direction `e` is that of `s` translated by `c`, and `t`
 has finite measure, then `s` and `t` have the same measure. -/
