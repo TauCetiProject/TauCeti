@@ -33,7 +33,7 @@ numbers, so it is installed only as scoped instances in `TauCeti.Khovanov`; `ope
 ## Main definitions and results
 
 * `TauCeti.Khovanov.coalgebra`: the Khovanov coalgebra structure on `R[ε]`.
-* `TauCeti.Khovanov.comul_one`, `TauCeti.Khovanov.comul_eps`, `TauCeti.Khovanov.counit_apply`:
+* `TauCeti.Khovanov.comul_one`, `TauCeti.Khovanov.comul_eps`, `DualNumber.khovanov_counit_apply`:
   the values of the comultiplication and counit.
 * `TauCeti.Khovanov.isCocomm`: the comultiplication is cocommutative.
 * `TauCeti.Khovanov.isFrobenius`: `R[ε]` satisfies the Frobenius equation. Through Mathlib's
@@ -43,7 +43,7 @@ numbers, so it is installed only as scoped instances in `TauCeti.Khovanov`; `ope
 * `TauCeti.Khovanov.mul_compr₂_counit`: the Frobenius form `(a, b) ↦ counit (a * b)` is the
   perfect pairing `TauCeti.dualNumberTracePairing`.
 * `TauCeti.Khovanov.counit_basis_mul_basis_rev`: the basis `ε, 1` is dual to the basis `1, ε`
-  for that pairing; `TauCeti.Khovanov.counit_eps_mul_smul_one_add_counit_smul_eps` is the
+  for that pairing; `DualNumber.khovanov_counit_eps_mul_smul_one_add_counit_smul_eps` is the
   resulting expansion `a = counit (ε * a) • 1 + counit a • ε`.
 * `TauCeti.Khovanov.baseChangeCoalgEquiv`: for a commutative `R`-algebra `S`, the algebra
   isomorphism `S ⊗[R] R[ε] ≃ S[ε]` is an isomorphism of `S`-coalgebras, so the Khovanov
@@ -81,13 +81,14 @@ noncomputable scoped instance coalgebra : Coalgebra R R[ε] where
 variable {R}
 
 /-- The Khovanov comultiplication of a general dual number. -/
-theorem comul_apply (x : R[ε]) :
+theorem _root_.DualNumber.khovanov_comul_apply (x : R[ε]) :
     Coalgebra.comul (R := R) x = x.fst • (1 ⊗ₜ ε + ε ⊗ₜ 1) + x.snd • (ε ⊗ₜ[R] ε) := by
   simp [Coalgebra.comul]
 
 /-- The Khovanov counit reads off the coefficient of `ε`. -/
 @[simp]
-theorem counit_apply (x : R[ε]) : Coalgebra.counit (R := R) x = x.snd := by
+theorem _root_.DualNumber.khovanov_counit_apply (x : R[ε]) :
+    Coalgebra.counit (R := R) x = x.snd := by
   simp [Coalgebra.counit]
 
 variable (R)
@@ -95,12 +96,12 @@ variable (R)
 /-- Splitting a circle labelled `1` gives `1 ⊗ ε + ε ⊗ 1`. -/
 @[simp]
 theorem comul_one : Coalgebra.comul (R := R) (1 : R[ε]) = 1 ⊗ₜ ε + ε ⊗ₜ 1 := by
-  simp [comul_apply]
+  simp [DualNumber.khovanov_comul_apply]
 
 /-- Splitting a circle labelled `ε` gives `ε ⊗ ε`. -/
 @[simp]
 theorem comul_eps : Coalgebra.comul (R := R) (ε : R[ε]) = ε ⊗ₜ ε := by
-  simp [comul_apply]
+  simp [DualNumber.khovanov_comul_apply]
 
 /-- The Khovanov comultiplication is cocommutative. -/
 scoped instance isCocomm : Coalgebra.IsCocomm R R[ε] where
@@ -131,7 +132,7 @@ variable {R}
 
 /-- Expansion of a dual number in the basis `1, ε` with coefficients computed by the Frobenius
 form against the dual basis `ε, 1`. -/
-theorem counit_eps_mul_smul_one_add_counit_smul_eps (a : R[ε]) :
+theorem _root_.DualNumber.khovanov_counit_eps_mul_smul_one_add_counit_smul_eps (a : R[ε]) :
     Coalgebra.counit (R := R) (ε * a) • (1 : R[ε]) + Coalgebra.counit (R := R) a • ε = a := by
   ext <;> simp
 

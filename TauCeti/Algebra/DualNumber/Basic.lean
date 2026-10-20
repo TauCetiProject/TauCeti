@@ -112,13 +112,13 @@ variable {R}
 
 /-- The coordinate of `x` along `1` is its scalar part. -/
 @[simp]
-theorem dualNumberBasis_repr_zero (x : DualNumber R) :
+theorem _root_.DualNumber.dualNumberBasis_repr_zero (x : DualNumber R) :
     (dualNumberBasis R).repr x 0 = x.fst :=
   congrFun (Module.Basis.coe_finTwoProd_repr x) 0
 
 /-- The coordinate of `x` along `ε` is its infinitesimal part. -/
 @[simp]
-theorem dualNumberBasis_repr_one (x : DualNumber R) :
+theorem _root_.DualNumber.dualNumberBasis_repr_one (x : DualNumber R) :
     (dualNumberBasis R).repr x 1 = x.snd :=
   congrFun (Module.Basis.coe_finTwoProd_repr x) 1
 
