@@ -7,11 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.BimoduleTensor.Module.HomotopyCategory
 public import TauCeti.CategoryTheory.Equivalence.Artin
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Adjacent.Contraction
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Commuting
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Inverse.Forward
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Inverse.Reverse
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Unit
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Relations
 
 /-!
 # The braid group action of a zigzag algebra on graded modules
@@ -78,12 +74,10 @@ local notation "c" => ComplexShape.up ℤ
 def zigzagBraidAutoequivalence (i : V) :
     HomotopyCategory (GradedModuleCat.{max u w} (zigzagAlgebraInternalGrading k G).piece) c ≌
       HomotopyCategory (GradedModuleCat.{max u w} (zigzagAlgebraInternalGrading k G).piece) c :=
-  GradedModuleCat.bimoduleModuleTensorHomotopyEquivalence.{0} Γ Γ
+  GradedModuleCat.bimoduleModuleTensorHomotopyEquivalence.{w} Γ Γ
     (zigzagBraidComplex k G i) (zigzagBraidInverseComplex k G i)
-    ((zigzagBraidComplexTensorInverseHomotopyEquiv k G i).trans (HomotopyEquiv.ofIso
-      ((HomologicalComplex.single _ c 0).mapIso (zigzagGradedBimoduleUnitIso k G).symm)))
-    ((zigzagBraidInverseTensorComplexHomotopyEquiv k G i).trans (HomotopyEquiv.ofIso
-      ((HomologicalComplex.single _ c 0).mapIso (zigzagGradedBimoduleUnitIso k G).symm)))
+    ((zigzagBraidComplexRelations k G).inverseForward i)
+    ((zigzagBraidComplexRelations k G).inverseReverse i)
 
 /-- The autoequivalence `σᵢ` is tensoring with the braid complex `Bᵢ`. -/
 @[simp]
