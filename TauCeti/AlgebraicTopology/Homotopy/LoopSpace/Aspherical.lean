@@ -148,43 +148,6 @@ theorem isZero_homology_singularChains_double {x : X}
 
 end MooreLoopSpace
 
-namespace IsAspherical
-
-/-- For an aspherical space, the positive-degree normalized cubical homology of the fixed-interval
-double loop space vanishes over any coefficient ring `R`. -/
-theorem isZero_homology_normalizedCubicalChainComplex_doubleLoopSpace {x : X}
-    (hX : IsAspherical X x) {m : ℕ} (hm0 : m ≠ 0) :
-    IsZero (((normalizedCubicalChainComplex R).obj
-      (TopCat.of (Ω (Ω X x) (Path.refl x)))).homology m) :=
-  TauCeti.isZero_homology_normalizedCubicalChainComplex_doubleLoopSpace R
-    hX.subsingleton_homotopyGroup hm0
-
-/-- For an aspherical space, the positive-degree singular homology of the fixed-interval double
-loop space vanishes over any coefficient ring `R`. -/
-theorem isZero_homology_singularChains_doubleLoopSpace {x : X}
-    (hX : IsAspherical X x) {m : ℕ} (hm0 : m ≠ 0) :
-    IsZero (((singularChains R).obj (TopCat.of (Ω (Ω X x) (Path.refl x)))).homology m) :=
-  TauCeti.isZero_homology_singularChains_doubleLoopSpace R hX.subsingleton_homotopyGroup hm0
-
-/-- For an aspherical space, the positive-degree normalized cubical homology of the double Moore
-loop space vanishes over any coefficient ring `R`. -/
-theorem isZero_homology_normalizedCubicalChainComplex_doubleMooreLoopSpace {x : X}
-    (hX : IsAspherical X x) {m : ℕ} (hm0 : m ≠ 0) :
-    IsZero (((normalizedCubicalChainComplex R).obj
-      (TopCat.of (MooreLoopSpace (MooreLoopSpace X x) 1))).homology m) :=
-  MooreLoopSpace.isZero_homology_normalizedCubicalChainComplex_double R
-    hX.subsingleton_homotopyGroup hm0
-
-/-- For an aspherical space, the positive-degree singular homology of the double Moore loop space
-vanishes over any coefficient ring `R`. -/
-theorem isZero_homology_singularChains_doubleMooreLoopSpace {x : X}
-    (hX : IsAspherical X x) {m : ℕ} (hm0 : m ≠ 0) :
-    IsZero (((singularChains R).obj
-      (TopCat.of (MooreLoopSpace (MooreLoopSpace X x) 1))).homology m) :=
-  MooreLoopSpace.isZero_homology_singularChains_double R hX.subsingleton_homotopyGroup hm0
-
-end IsAspherical
-
 end ArbitraryRing
 
 /-! ### Homological characterization via the Hurewicz isomorphism -/
@@ -225,8 +188,7 @@ theorem pathConnectedSpace_loopSpace_and_forall_isZero_homology_normalizedCubica
       ∀ n : ℕ, Subsingleton (π_ (n + 1) X x) := by
   rw [← pathConnectedSpace_loopSpace_and_forall_isZero_homology_singularChains_iff x]
   refine and_congr_right' (forall_congr' fun m ↦ imp_congr_right fun _ ↦ ?_)
-  exact ⟨fun h ↦ h.of_iso (singularCubicalHomologyIso ℤ (TopCat.of (Ω X x)) m),
-    fun h ↦ h.of_iso (singularCubicalHomologyIso ℤ (TopCat.of (Ω X x)) m).symm⟩
+  exact (singularCubicalHomologyIso ℤ (TopCat.of (Ω X x)) m).isZero_iff.symm
 
 /-- The fixed-interval double loop space `Ω (Ω X x) (Path.refl x)` is path connected with vanishing
 positive-degree integral singular homology if and only if `π_ (n + 2) X x` is trivial for every
@@ -281,30 +243,6 @@ theorem isAspherical_iff_doubleLoopSpace_cubicalHomology (x : X) [PathConnectedS
     pathConnectedSpace_doubleLoopSpace_and_forall_isZero_homology_normalizedCubicalChainComplex_iff]
   exact and_iff_right inferInstance
 
-/-- A path-connected space `X` is an Eilenberg--Mac Lane space `K(π₁(X, x), 1)` if and only if its
-fixed-interval double loop space is path connected with vanishing positive-degree integral singular
-homology. -/
-theorem isEilenbergMacLaneSpaceOne_fundamentalGroup_iff_doubleLoopSpace_singularHomology (x : X)
-    [PathConnectedSpace X] :
-    IsEilenbergMacLaneSpaceOne (FundamentalGroup X x) X x ↔
-      PathConnectedSpace (Ω (Ω X x) (Path.refl x)) ∧
-        ∀ m ≠ 0,
-          IsZero (((singularChains ℤ).obj (TopCat.of (Ω (Ω X x) (Path.refl x)))).homology m) :=
-  isEilenbergMacLaneSpaceOne_fundamentalGroup_iff.trans
-    (isAspherical_iff_doubleLoopSpace_singularHomology x)
-
-/-- A path-connected space `X` is an Eilenberg--Mac Lane space `K(π₁(X, x), 1)` if and only if its
-fixed-interval double loop space is path connected with vanishing positive-degree integral
-normalized cubical homology. -/
-theorem isEilenbergMacLaneSpaceOne_fundamentalGroup_iff_doubleLoopSpace_cubicalHomology (x : X)
-    [PathConnectedSpace X] :
-    IsEilenbergMacLaneSpaceOne (FundamentalGroup X x) X x ↔
-      PathConnectedSpace (Ω (Ω X x) (Path.refl x)) ∧
-        ∀ m ≠ 0, IsZero (((normalizedCubicalChainComplex ℤ).obj
-          (TopCat.of (Ω (Ω X x) (Path.refl x)))).homology m) :=
-  isEilenbergMacLaneSpaceOne_fundamentalGroup_iff.trans
-    (isAspherical_iff_doubleLoopSpace_cubicalHomology x)
-
 namespace MooreLoopSpace
 
 /-- The Moore loop space `MooreLoopSpace X x` is path connected with vanishing positive-degree
@@ -318,8 +256,7 @@ theorem pathConnectedSpace_and_forall_isZero_homology_singularChains_iff (x : X)
     ((pathConnectedSpace_iff_subsingleton_pi1 x).trans
       (pathConnectedSpace_loopSpace_iff_subsingleton_pi1 x).symm)
     (forall_congr' fun m ↦ imp_congr_right fun _ ↦ ?_)
-  exact ⟨fun h ↦ h.of_iso ((homotopyEquivPath x).singularHomologyIso (ModuleCat.of ℤ ℤ) m).symm,
-    fun h ↦ h.of_iso ((homotopyEquivPath x).singularHomologyIso (ModuleCat.of ℤ ℤ) m)⟩
+  exact ((homotopyEquivPath x).singularHomologyIso (ModuleCat.of ℤ ℤ) m).isZero_iff
 
 /-- The Moore loop space `MooreLoopSpace X x` is path connected with vanishing positive-degree
 integral normalized cubical homology if and only if `π_ (n + 1) X x` is trivial for every
@@ -331,8 +268,7 @@ theorem pathConnectedSpace_and_forall_isZero_homology_normalizedCubicalChainComp
       ∀ n : ℕ, Subsingleton (π_ (n + 1) X x) := by
   rw [← pathConnectedSpace_and_forall_isZero_homology_singularChains_iff x]
   refine and_congr_right' (forall_congr' fun m ↦ imp_congr_right fun _ ↦ ?_)
-  exact ⟨fun h ↦ h.of_iso (singularCubicalHomologyIso ℤ (TopCat.of (MooreLoopSpace X x)) m),
-    fun h ↦ h.of_iso (singularCubicalHomologyIso ℤ (TopCat.of (MooreLoopSpace X x)) m).symm⟩
+  exact (singularCubicalHomologyIso ℤ (TopCat.of (MooreLoopSpace X x)) m).isZero_iff.symm
 
 /-- The double Moore loop space `MooreLoopSpace (MooreLoopSpace X x) 1` is path connected with
 vanishing positive-degree integral singular homology if and only if `π_ (n + 2) X x` is trivial for
@@ -381,30 +317,6 @@ theorem isAspherical_iff_double_cubicalHomology (x : X) [PathConnectedSpace X] :
   rw [isAspherical_iff,
     pathConnectedSpace_double_and_forall_isZero_homology_normalizedCubicalChainComplex_iff]
   exact and_iff_right inferInstance
-
-/-- A path-connected space `X` is an Eilenberg--Mac Lane space `K(π₁(X, x), 1)` if and only if its
-double Moore loop space is path connected with vanishing positive-degree integral singular
-homology. -/
-theorem isEilenbergMacLaneSpaceOne_fundamentalGroup_iff_double_singularHomology (x : X)
-    [PathConnectedSpace X] :
-    IsEilenbergMacLaneSpaceOne (FundamentalGroup X x) X x ↔
-      PathConnectedSpace (MooreLoopSpace (MooreLoopSpace X x) 1) ∧
-        ∀ m ≠ 0, IsZero (((singularChains ℤ).obj
-          (TopCat.of (MooreLoopSpace (MooreLoopSpace X x) 1))).homology m) :=
-  isEilenbergMacLaneSpaceOne_fundamentalGroup_iff.trans
-    (isAspherical_iff_double_singularHomology x)
-
-/-- A path-connected space `X` is an Eilenberg--Mac Lane space `K(π₁(X, x), 1)` if and only if its
-double Moore loop space is path connected with vanishing positive-degree integral normalized cubical
-homology. -/
-theorem isEilenbergMacLaneSpaceOne_fundamentalGroup_iff_double_cubicalHomology (x : X)
-    [PathConnectedSpace X] :
-    IsEilenbergMacLaneSpaceOne (FundamentalGroup X x) X x ↔
-      PathConnectedSpace (MooreLoopSpace (MooreLoopSpace X x) 1) ∧
-        ∀ m ≠ 0, IsZero (((normalizedCubicalChainComplex ℤ).obj
-          (TopCat.of (MooreLoopSpace (MooreLoopSpace X x) 1))).homology m) :=
-  isEilenbergMacLaneSpaceOne_fundamentalGroup_iff.trans
-    (isAspherical_iff_double_cubicalHomology x)
 
 end MooreLoopSpace
 
