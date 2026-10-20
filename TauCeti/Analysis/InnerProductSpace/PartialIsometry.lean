@@ -117,8 +117,8 @@ theorem isPartialIsometry_iff_adjoint_apply_apply :
     exact sub_eq_zero.mp <| (Submodule.mem_bot 𝕜).mp <|
       u.ker.inf_orthogonal_eq_bot ▸ ⟨hker, hmem⟩
   · ext x
-    have hproj := u.toLinearMap.apply_starProjection_orthogonal_ker x
-    rw [coe_coe] at hproj
+    have hproj := u.toLinearMap.apply_sub_starProjection_ker x
+    rw [coe_coe, ← Submodule.starProjection_orthogonal_val] at hproj
     rw [comp_apply, comp_apply, ← hproj,
       h _ (Submodule.starProjection_apply_mem _ x)]
 
@@ -132,8 +132,8 @@ its initial space `(ker u)ᗮ`. -/
 theorem IsPartialIsometry.adjoint_comp_self_eq_starProjection (hu : u.IsPartialIsometry) :
     u† ∘L u = u.kerᗮ.starProjection := by
   ext x
-  have hproj := u.toLinearMap.apply_starProjection_orthogonal_ker x
-  rw [coe_coe] at hproj
+  have hproj := u.toLinearMap.apply_sub_starProjection_ker x
+  rw [coe_coe, ← Submodule.starProjection_orthogonal_val] at hproj
   rw [comp_apply, ← hproj,
     hu.adjoint_apply_apply (Submodule.starProjection_apply_mem _ x)]
 
