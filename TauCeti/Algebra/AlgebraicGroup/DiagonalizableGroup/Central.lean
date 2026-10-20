@@ -136,12 +136,8 @@ private theorem rTensor_comp_coact_of_mem_weightSpace (π : C →ₗc[R] MonoidA
       (TensorProduct.map LinearMap.id P).rTensor C ((TensorProduct.assoc R V C C).symm t) =
         (TensorProduct.assoc R V (MonoidAlgebra R X) C).symm
           (TensorProduct.map LinearMap.id (TensorProduct.map P LinearMap.id) t) := by
-    induction t using TensorProduct.inductionOn with
-    | add y z hy hz => simp only [map_add, hy, hz]
-    | tmul w c =>
-      induction c using TensorProduct.inductionOn with
-      | add y z hy hz => simp only [TensorProduct.tmul_add, map_add, hy, hz]
-      | tmul c d => simp
+    rw [LinearMap.rTensor_def]
+    exact TensorProduct.map_map_assoc_symm _ _ _ t
   rw [LinearMap.rTensor_comp_apply, hcoassoc, hsymm, hswap, hassoc]
   generalize ρ v = t
   induction t using TensorProduct.inductionOn with
