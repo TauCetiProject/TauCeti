@@ -101,8 +101,8 @@ theorem exists_eq_inner (D : LieDerivation K L M) : ∃ m : M, inner K L M m = D
   have hc : v.2 ≠ 0 := fun h ↦ hvN ((hmemN v).2 h)
   refine ⟨-v.2⁻¹ • v.1, LieDerivation.ext fun x ↦ ?_⟩
   have h : ⁅x, v.1⁆ + v.2 • D x = 0 := by simpa [hbr] using congrArg Prod.fst (hv x)
-  rw [inner_apply_apply, lie_smul, eq_neg_of_add_eq_zero_left h, smul_neg, neg_smul, neg_neg,
-    smul_smul, inv_mul_cancel₀ hc, one_smul]
+  rw [inner_apply_apply, lie_smul, eq_neg_of_add_eq_zero_left h]
+  simp [smul_smul, hc]
 
 end LieDerivation.IsKilling
 
