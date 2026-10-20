@@ -39,6 +39,7 @@ attribute [instance] TripleNeighbourhood.commRing TripleNeighbourhood.algebra
   TripleNeighbourhood.etale
 
 /-- Regard a prime and residue-field embedding as a pointed étale algebra. -/
+-- Exposure identifies the source carrier in public, dependently typed point and morphism equations.
 @[expose] noncomputable def TripleNeighbourhood.toNeighbourhood
     (triple : TripleNeighbourhood R Ω) : Neighbourhood R Ω :=
   ⟨Over.mk (CommAlgCat.ofHom (ULift.algEquiv.symm.toAlgHom.comp triple.data.toAlgHom)),
@@ -95,7 +96,7 @@ theorem TripleNeighbourhood.toNeighbourhood_toTriple (triple : TripleNeighbourho
       Equiv.symm_apply_apply (pointDataEquiv : PointData R carrier Ω ≃ _) data
 
 /-- Triples and pointed étale neighbourhoods are equivalent as objects. -/
-@[expose] noncomputable def tripleNeighbourhoodEquiv :
+noncomputable def tripleNeighbourhoodEquiv :
     TripleNeighbourhood R Ω ≃ Neighbourhood R Ω where
   toFun := TripleNeighbourhood.toNeighbourhood R Ω
   invFun := Neighbourhood.toTriple R Ω
@@ -120,13 +121,6 @@ theorem tripleNeighbourhoodEquiv_apply (triple : TripleNeighbourhood R Ω) :
     tripleNeighbourhoodEquiv R Ω triple = triple.toNeighbourhood R Ω := by
   rfl
 
-/-- The point of the neighbourhood associated with a triple under the object equivalence. -/
-@[simp]
-theorem tripleNeighbourhoodEquiv_point (triple : TripleNeighbourhood R Ω) :
-    ((tripleNeighbourhoodEquiv R Ω) triple).obj.hom.hom =
-      ULift.algEquiv.symm.toAlgHom.comp triple.data.toAlgHom :=
-  rfl
-
 /-- The inverse object equivalence extracts the prime and residue embedding. -/
 @[simp]
 theorem tripleNeighbourhoodEquiv_symm_apply (point : Neighbourhood R Ω) :
@@ -135,7 +129,7 @@ theorem tripleNeighbourhoodEquiv_symm_apply (point : Neighbourhood R Ω) :
 
 /-- The category of étale algebra, prime, and residue-field embedding triples. -/
 abbrev TripleCategory :=
-  InducedCategory (Neighbourhood R Ω) (tripleNeighbourhoodEquiv R Ω)
+  InducedCategory (Neighbourhood R Ω) (TripleNeighbourhood.toNeighbourhood R Ω)
 
 /-- The category of Stacks 04GW triples is equivalent to pointed étale neighbourhoods. -/
 noncomputable def tripleCategoryEquivalence : TripleCategory R Ω ≌ Neighbourhood R Ω :=
@@ -161,7 +155,7 @@ theorem TripleCategory.hom_point {first second : TripleCategory R Ω}
   exact congrArg ULift.down (DFunLike.congr_fun h element)
 
 /-- Construct a morphism of triples from a map preserving their points. -/
-@[expose] noncomputable def TripleCategory.homMk (first second : TripleCategory R Ω)
+noncomputable def TripleCategory.homMk (first second : TripleCategory R Ω)
     (map : first.carrier →ₐ[R] second.carrier)
     (hpoint : second.data.toAlgHom.comp map = first.data.toAlgHom) : first ⟶ second :=
   InducedCategory.homMk (ObjectProperty.homMk (Over.homMk (CommAlgCat.ofHom map) (by
@@ -174,7 +168,7 @@ theorem TripleCategory.hom_point {first second : TripleCategory R Ω}
 theorem TripleCategory.homMk_left (first second : TripleCategory R Ω)
     (map : first.carrier →ₐ[R] second.carrier)
     (hpoint : second.data.toAlgHom.comp map = first.data.toAlgHom) :
-    (TripleCategory.homMk R Ω first second map hpoint).hom.hom.left.hom = map :=
+    (TripleCategory.homMk R Ω first second map hpoint).hom.hom.left.hom = map := by
   rfl
 
 /-- A morphism of triples is an algebra map preserving the prime and residue embedding. -/
