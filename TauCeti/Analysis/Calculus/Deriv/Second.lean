@@ -15,7 +15,7 @@ import Mathlib.Analysis.Calculus.Deriv.Pow
 /-!
 # Second derivatives of functions of one variable
 
-Three computations of the second derivative `deriv (deriv f)` of a function of one variable.
+Computations of the second derivative `deriv (deriv f)` of a function of one variable.
 
 The second derivative of `fun x ↦ f (c * x)` is `c ^ 2` times the second derivative of `f`
 at `c * x`. As for `deriv_comp_mul_left`, no differentiability of `f` is needed, since Mathlib's
@@ -26,18 +26,21 @@ The second derivative of a quadratic polynomial `a + b s + c s ^ 2` is the const
 
 The second derivative of the square root of a quadratic polynomial `Q s = a + b s + c s ^ 2` is
 computed where `Q` is positive. Since `2 Q Q'' - Q' ^ 2` is the constant `4 a c - b ^ 2`, it is
-`(4 a c - b ^ 2) / (4 Q √Q)`.
+`(4 a c - b ^ 2) / (4 Q √Q)`; at `0` this is `(4 a c - b ^ 2) / (4 a √a)`.
 
 ## Main results
 
-* `deriv_deriv_comp_mul_left`: the second derivative of `fun x ↦ f (c * x)`.
-* `deriv_deriv_quadratic`: the second derivative of `s ↦ a + b s + c s ^ 2`.
-* `Real.deriv_deriv_sqrt_quadratic`: the second derivative of `s ↦ √(a + b s + c s ^ 2)`.
+* `TauCeti.deriv_deriv_comp_mul_left`: the second derivative of `fun x ↦ f (c * x)`.
+* `TauCeti.deriv_deriv_quadratic`: the second derivative of `s ↦ a + b s + c s ^ 2`.
+* `TauCeti.deriv_deriv_sqrt_quadratic`: the second derivative of `s ↦ √(a + b s + c s ^ 2)`, and
+  `TauCeti.deriv_deriv_sqrt_quadratic_zero` its value at `0`.
 -/
 
 public section
 
 open Filter Topology
+
+namespace TauCeti
 
 section CompMul
 
@@ -78,11 +81,7 @@ theorem deriv_deriv_quadratic (a b c t : 𝕜) :
 
 end Quadratic
 
-namespace Real
-
-/-- The second derivative of a quadratic polynomial `a + b s + c s ^ 2` is the constant `2 c`.
-
-The second derivative of the square root of a quadratic polynomial
+/-- The second derivative of the square root of a quadratic polynomial
 `Q s = a + b * s + c * s ^ 2` at a point `t` where `Q` is positive is
 `(4 * a * c - b ^ 2) / (4 * Q t * √(Q t))`. -/
 theorem deriv_deriv_sqrt_quadratic {a b c t : ℝ} (ht : 0 < a + b * t + c * t ^ 2) :
@@ -106,4 +105,10 @@ theorem deriv_deriv_sqrt_quadratic {a b c t : ℝ} (ht : 0 < a + b * t + c * t ^
   rw [hsq]
   ring
 
-end Real
+/-- The second derivative at `0` of the square root of a quadratic polynomial
+`a + b * s + c * s ^ 2` with `0 < a` is `(4 * a * c - b ^ 2) / (4 * a * √a)`. -/
+theorem deriv_deriv_sqrt_quadratic_zero {a b c : ℝ} (ha : 0 < a) :
+    deriv (deriv fun s ↦ √(a + b * s + c * s ^ 2)) 0 = (4 * a * c - b ^ 2) / (4 * a * √a) := by
+  simpa using deriv_deriv_sqrt_quadratic (b := b) (c := c) (t := 0) (by simpa using ha)
+
+end TauCeti

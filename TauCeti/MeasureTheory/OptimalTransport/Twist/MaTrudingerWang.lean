@@ -7,6 +7,8 @@ module
 
 public import TauCeti.MeasureTheory.OptimalTransport.Twist.CExponential
 import TauCeti.Analysis.Calculus.Deriv.Second
+import TauCeti.Analysis.InnerProductSpace.CompleteSquare
+import TauCeti.Analysis.InnerProductSpace.Dual
 
 /-!
 # The Ma–Trudinger–Wang tensor and conditions
@@ -14,7 +16,7 @@ import TauCeti.Analysis.Calculus.Deriv.Second
 Let `c : E × Y → ℝ` be a cost on a real normed space `E` and a type `Y`, twisted on a target set
 `V`, so that the `c`-exponential `TauCeti.cExp c V x` recovers a point of `V` from its momentum
 `-Dₓ c (x, y)` at `x`. In these *momentum coordinates* the cost becomes the function
-`(x', q) ↦ c (x', cExp c V x q)` of a source point `x'` and a momentum `q`. Its fourth mixed
+`(x', q) ↦ c (x', cExp c V x q)` of a source point `x'` and a momentum `q`. Minus its fourth mixed
 derivative, twice in a source direction `ξ` and twice in a momentum direction `η`, is the
 *Ma–Trudinger–Wang tensor*
 
@@ -25,22 +27,29 @@ where `p = -Dₓ c (x, y)` is the momentum of `y` at `x` (`TauCeti.mtwTensor`). 
 taken along lines with Mathlib's one-variable `deriv`, so `𝔖_c (x, y) (ξ, η)` is defined for every
 cost, and it is homogeneous of degree two in `ξ` and in `η` with no regularity assumption at all
 (`TauCeti.mtwTensor_smul_left`, `TauCeti.mtwTensor_smul_right`). For a cost that is smooth in
-momentum coordinates it is the mixed fourth derivative `D²_q D²_x` evaluated at `(ξ, ξ, η, η)`,
-but no regularity is needed to define it.
+momentum coordinates it is minus the mixed fourth derivative `D²_q D²_x` evaluated at
+`(ξ, ξ, η, η)`, but no regularity is needed to define it.
+
+The tensor at `(x, y)` only sees the `c`-exponential at momenta near the momentum `p` of `y`. It
+reflects the cost only when `V` is a neighbourhood of `y`: otherwise `cExp c V x` may take
+unspecified values at momenta arbitrarily close to `p` (for `V = {y}` it is constant, and the
+tensor vanishes). So, for a topology on the target space, the conditions below quantify over the
+target points in the interior of `V`.
 
 The sign of this tensor on *orthogonal* pairs, those with `η ξ = 0`, decides the regularity of
 optimal transport maps. The **weak Ma–Trudinger–Wang condition** (A3w) asks that
-`𝔖_c (x, y) (ξ, η) ≥ 0` for all such pairs (`TauCeti.SatisfiesWeakMTW`); Loeper showed that
-without it, optimal maps between smooth positive densities can be discontinuous. The **strong
-condition** (A3s) asks for the uniform bound `𝔖_c (x, y) (ξ, η) ≥ C ‖ξ‖² ‖η‖²` with a constant
-`C > 0` (`TauCeti.SatisfiesStrongMTW`).
+`𝔖_c (x, y) (ξ, η) ≥ 0` for all such pairs, at every `x ∈ U` and every `y` in the interior of
+`V` (`TauCeti.SatisfiesWeakMTW`); Loeper showed that without it, optimal maps between smooth
+positive densities can be discontinuous. The **strong condition** (A3s) asks for the uniform bound
+`𝔖_c (x, y) (ξ, η) ≥ C ‖ξ‖² ‖η‖²` with a constant `C > 0` (`TauCeti.SatisfiesStrongMTW`).
 
 Three examples calibrate these definitions.
 
-* For the quadratic cost `‖x - y‖ ^ 2 / 2` on a real Hilbert space the cost is a quadratic
+* For the quadratic cost `‖x - y‖ ^ 2 / 2` on a real inner product space the cost is a quadratic
   polynomial in `t` whose `t²` coefficient does not involve the target, so the tensor vanishes
-  identically (`TauCeti.mtwTensor_norm_sub_sq_div_two`). The quadratic cost satisfies the weak
-  condition but, as soon as the space has dimension at least two, not the strong one
+  identically, whatever the target set (`TauCeti.mtwTensor_norm_sub_sq_div_two`). The quadratic
+  cost satisfies the weak condition but, on a nonempty source set and a target set with nonempty
+  interior, as soon as the space has dimension at least two, not the strong one
   (`TauCeti.satisfiesStrongMTW_norm_sub_sq_div_two_iff`).
 * In dimension one, a momentum annihilating a nonzero direction is zero, so every cost satisfies
   the strong condition (`TauCeti.satisfiesStrongMTW_of_rank_le_one`). The conditions only carry
@@ -50,8 +59,7 @@ Three examples calibrate these definitions.
   `((1 + ‖y - x‖²) ‖ξ‖² - ⟪y - x, ξ⟫²) (‖η‖² + η (y - x)²) / √(1 + ‖y - x‖²)`
   (`TauCeti.mtwTensor_sqrt_one_add_norm_sub_sq`), which is at least
   `‖ξ‖² ‖η‖² / √(1 + ‖y - x‖²)`. So this cost satisfies the strong condition on every pair of
-  sets at bounded distance whose target set is open
-  (`TauCeti.satisfiesStrongMTW_sqrt_one_add_norm_sub_sq`).
+  sets at bounded distance (`TauCeti.satisfiesStrongMTW_sqrt_one_add_norm_sub_sq`).
 
 The normalization follows Loeper. Villani writes the same tensor with an extra factor `3 / 2`,
 which changes neither condition.
@@ -72,7 +80,8 @@ which changes neither condition.
   one satisfies the strong condition;
 * `TauCeti.mtwTensor_norm_sub_sq_div_two`, `TauCeti.satisfiesWeakMTW_norm_sub_sq_div_two` and
   `TauCeti.satisfiesStrongMTW_norm_sub_sq_div_two_iff` — the quadratic cost has vanishing tensor,
-  satisfies the weak condition, and satisfies the strong one exactly in dimension at most one;
+  satisfies the weak condition, and, on a nonempty source set and a target set with nonempty
+  interior, satisfies the strong one exactly in dimension at most one;
 * `TauCeti.mtwTensor_sqrt_one_add_norm_sub_sq` and
   `TauCeti.satisfiesStrongMTW_sqrt_one_add_norm_sub_sq` — the tensor of `√(1 + ‖x - y‖ ^ 2)` and
   the strong condition for it at bounded distance.
@@ -152,31 +161,38 @@ theorem mtwTensor_neg_right : mtwTensor c V x y ξ (-η) = mtwTensor c V x y ξ 
   rw [← neg_one_smul ℝ η, mtwTensor_smul_right]
   norm_num
 
+variable [TopologicalSpace Y]
+
 /-- A cost satisfies the **weak Ma–Trudinger–Wang condition** (A3w) on `U × V` if, at every
-`x ∈ U` and `y ∈ V`, its Ma–Trudinger–Wang tensor with respect to `V` is nonnegative on every
-source direction `ξ` and momentum direction `η` with `η ξ = 0`. -/
+`x ∈ U` and every `y` in the interior of `V`, its Ma–Trudinger–Wang tensor with respect to `V` is
+nonnegative on every source direction `ξ` and momentum direction `η` with `η ξ = 0`. Points on
+the boundary of `V` are excluded: there the tensor may only see unspecified values of the
+`c`-exponential. -/
 def SatisfiesWeakMTW (c : E × Y → ℝ) (U : Set E) (V : Set Y) : Prop :=
-  ∀ x ∈ U, ∀ y ∈ V, ∀ (ξ : E) (η : StrongDual ℝ E), η ξ = 0 → 0 ≤ mtwTensor c V x y ξ η
+  ∀ x ∈ U, ∀ y ∈ interior V, ∀ (ξ : E) (η : StrongDual ℝ E), η ξ = 0 →
+    0 ≤ mtwTensor c V x y ξ η
 
 /-- A cost satisfies the **strong Ma–Trudinger–Wang condition** (A3s) on `U × V` if there is a
-constant `C > 0` such that, at every `x ∈ U` and `y ∈ V`, its Ma–Trudinger–Wang tensor with respect
-to `V` is at least `C * ‖ξ‖ ^ 2 * ‖η‖ ^ 2` on every source direction `ξ` and momentum direction `η`
-with `η ξ = 0`. -/
+constant `C > 0` such that, at every `x ∈ U` and every `y` in the interior of `V`, its
+Ma–Trudinger–Wang tensor with respect to `V` is at least `C * ‖ξ‖ ^ 2 * ‖η‖ ^ 2` on every source
+direction `ξ` and momentum direction `η` with `η ξ = 0`. As for `TauCeti.SatisfiesWeakMTW`, points
+on the boundary of `V` are excluded. -/
 def SatisfiesStrongMTW (c : E × Y → ℝ) (U : Set E) (V : Set Y) : Prop :=
-  ∃ C > 0, ∀ x ∈ U, ∀ y ∈ V, ∀ (ξ : E) (η : StrongDual ℝ E), η ξ = 0 →
+  ∃ C > 0, ∀ x ∈ U, ∀ y ∈ interior V, ∀ (ξ : E) (η : StrongDual ℝ E), η ξ = 0 →
     C * ‖ξ‖ ^ 2 * ‖η‖ ^ 2 ≤ mtwTensor c V x y ξ η
 
 theorem satisfiesWeakMTW_iff : SatisfiesWeakMTW c U V ↔
-    ∀ x ∈ U, ∀ y ∈ V, ∀ (ξ : E) (η : StrongDual ℝ E), η ξ = 0 → 0 ≤ mtwTensor c V x y ξ η :=
+    ∀ x ∈ U, ∀ y ∈ interior V, ∀ (ξ : E) (η : StrongDual ℝ E), η ξ = 0 →
+      0 ≤ mtwTensor c V x y ξ η :=
   Iff.rfl
 
 theorem satisfiesStrongMTW_iff : SatisfiesStrongMTW c U V ↔
-    ∃ C > 0, ∀ x ∈ U, ∀ y ∈ V, ∀ (ξ : E) (η : StrongDual ℝ E), η ξ = 0 →
+    ∃ C > 0, ∀ x ∈ U, ∀ y ∈ interior V, ∀ (ξ : E) (η : StrongDual ℝ E), η ξ = 0 →
       C * ‖ξ‖ ^ 2 * ‖η‖ ^ 2 ≤ mtwTensor c V x y ξ η :=
   Iff.rfl
 
 theorem SatisfiesWeakMTW.mtwTensor_nonneg (h : SatisfiesWeakMTW c U V) (hx : x ∈ U)
-    (hy : y ∈ V) (hηξ : η ξ = 0) : 0 ≤ mtwTensor c V x y ξ η :=
+    (hy : y ∈ interior V) (hηξ : η ξ = 0) : 0 ≤ mtwTensor c V x y ξ η :=
   h x hx y hy ξ η hηξ
 
 theorem SatisfiesWeakMTW.mono (h : SatisfiesWeakMTW c U V) (hU : U' ⊆ U) :
@@ -191,7 +207,8 @@ theorem SatisfiesStrongMTW.mono (h : SatisfiesStrongMTW c U V) (hU : U' ⊆ U) :
 /-- Under the strong Ma–Trudinger–Wang condition the tensor is positive on nonzero orthogonal
 pairs. -/
 theorem SatisfiesStrongMTW.mtwTensor_pos (h : SatisfiesStrongMTW c U V) (hx : x ∈ U)
-    (hy : y ∈ V) (hξ : ξ ≠ 0) (hη : η ≠ 0) (hηξ : η ξ = 0) : 0 < mtwTensor c V x y ξ η := by
+    (hy : y ∈ interior V) (hξ : ξ ≠ 0) (hη : η ≠ 0) (hηξ : η ξ = 0) :
+    0 < mtwTensor c V x y ξ η := by
   obtain ⟨C, hC, h⟩ := h
   exact lt_of_lt_of_le (by positivity) (h x hx y hy ξ η hηξ)
 
@@ -224,36 +241,36 @@ end Tensor
 
 section Quadratic
 
-variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [CompleteSpace F]
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
 
 /-- **The quadratic cost has vanishing Ma–Trudinger–Wang tensor.** For `‖x - y‖ ^ 2 / 2` on a real
-Hilbert space, the cost in momentum coordinates is a quadratic polynomial in `t` whose `t²`
-coefficient `‖ξ‖ ^ 2 / 2` does not depend on the momentum. -/
+inner product space, the cost in momentum coordinates is a quadratic polynomial in `t` whose `t²`
+coefficient `‖ξ‖ ^ 2 / 2` does not depend on the momentum, whatever the target set `V`. -/
 @[simp]
-theorem mtwTensor_norm_sub_sq_div_two (x y ξ : F) (η : StrongDual ℝ F) :
-    mtwTensor (fun z : F × F ↦ ‖z.1 - z.2‖ ^ 2 / 2) univ x y ξ η = 0 := by
-  have h (w : F) : deriv (deriv fun t : ℝ ↦ ‖x + t • ξ - (x + w)‖ ^ 2 / 2) 0 = ‖ξ‖ ^ 2 := by
-    have hf : (fun t : ℝ ↦ ‖x + t • ξ - (x + w)‖ ^ 2 / 2) =
-        fun t ↦ ‖w‖ ^ 2 / 2 + -⟪ξ, w⟫ * t + ‖ξ‖ ^ 2 / 2 * t ^ 2 := by
+theorem mtwTensor_norm_sub_sq_div_two (V : Set F) (x y ξ : F) (η : StrongDual ℝ F) :
+    mtwTensor (fun z : F × F ↦ ‖z.1 - z.2‖ ^ 2 / 2) V x y ξ η = 0 := by
+  have h (z : F) : deriv (deriv fun t : ℝ ↦ ‖x + t • ξ - z‖ ^ 2 / 2) 0 = ‖ξ‖ ^ 2 := by
+    have hf : (fun t : ℝ ↦ ‖x + t • ξ - z‖ ^ 2 / 2) =
+        fun t ↦ ‖x - z‖ ^ 2 / 2 + ⟪ξ, x - z⟫ * t + ‖ξ‖ ^ 2 / 2 * t ^ 2 := by
       funext t
-      rw [add_sub_add_left_eq_sub, norm_sub_sq_real, norm_smul, real_inner_smul_left,
-        Real.norm_eq_abs, mul_pow, sq_abs]
+      rw [norm_add_smul_sub_sq]
       ring
     rw [hf, deriv_deriv_quadratic]
     ring
-  simp only [mtwTensor_def, cExp_norm_sub_sq_div_two, h, deriv_const', neg_zero]
+  simp only [mtwTensor_def, h, deriv_const', neg_zero]
 
 /-- The quadratic cost satisfies the weak Ma–Trudinger–Wang condition. -/
-theorem satisfiesWeakMTW_norm_sub_sq_div_two (U : Set F) :
-    SatisfiesWeakMTW (fun z : F × F ↦ ‖z.1 - z.2‖ ^ 2 / 2) U univ := by
+theorem satisfiesWeakMTW_norm_sub_sq_div_two (U V : Set F) :
+    SatisfiesWeakMTW (fun z : F × F ↦ ‖z.1 - z.2‖ ^ 2 / 2) U V := by
   intro x _ y _ ξ η _
   simp
 
-/-- **The quadratic cost and the strong Ma–Trudinger–Wang condition.** On a nonempty source set,
-the quadratic cost satisfies the strong condition exactly when the space has dimension at most
-one. -/
-theorem satisfiesStrongMTW_norm_sub_sq_div_two_iff {U : Set F} (hU : U.Nonempty) :
-    SatisfiesStrongMTW (fun z : F × F ↦ ‖z.1 - z.2‖ ^ 2 / 2) U univ ↔ Module.rank ℝ F ≤ 1 := by
+/-- **The quadratic cost and the strong Ma–Trudinger–Wang condition.** On a nonempty source set
+and a target set with nonempty interior, the quadratic cost satisfies the strong condition exactly
+when the space has dimension at most one. -/
+theorem satisfiesStrongMTW_norm_sub_sq_div_two_iff {U V : Set F} (hU : U.Nonempty)
+    (hV : (interior V).Nonempty) :
+    SatisfiesStrongMTW (fun z : F × F ↦ ‖z.1 - z.2‖ ^ 2 / 2) U V ↔ Module.rank ℝ F ≤ 1 := by
   refine ⟨fun h ↦ ?_, fun h ↦ satisfiesStrongMTW_of_rank_le_one h _ _ _⟩
   by_contra! hF
   have : Nontrivial F := rank_pos_iff_nontrivial.1 (zero_lt_one.trans hF)
@@ -272,7 +289,8 @@ theorem satisfiesStrongMTW_norm_sub_sq_div_two_iff {U : Set F} (hU : U.Nonempty)
     rw [← norm_ne_zero_iff, innerSL_apply_norm]
     exact norm_ne_zero_iff.2 hζ'
   obtain ⟨x, hx⟩ := hU
-  simpa using h.mtwTensor_pos hx (mem_univ x) hξ hη hξζ'
+  obtain ⟨y, hy⟩ := hV
+  simpa using h.mtwTensor_pos hx hy hξ hη hξζ'
 
 end Quadratic
 
@@ -280,65 +298,7 @@ end Quadratic
 
 section SqrtOneAddNormSubSq
 
-variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
-
-/-- The `x`-derivative of the cost `√(1 + ‖x - y‖ ^ 2)` is `⟪x - y, ·⟫ / √(1 + ‖x - y‖ ^ 2)`. -/
-theorem fderiv_sqrt_one_add_norm_sub_sq (x y : F) :
-    fderiv ℝ (fun x' ↦ √(1 + ‖x' - y‖ ^ 2)) x =
-      (√(1 + ‖x - y‖ ^ 2))⁻¹ • innerSL ℝ (x - y) := by
-  have hpos : 0 < 1 + ‖x - y‖ ^ 2 := by positivity
-  refine (HasFDerivAt.sqrt (((hasFDerivAt_id x).sub_const y).norm_sq.const_add 1)
-    hpos.ne').fderiv.trans ?_
-  ext v
-  simp [innerSL_apply_apply]
-  field_simp
-
-/-- The momentum `-Dₓ c (x, y)` of `y` at `x` for the cost `√(1 + ‖x - y‖ ^ 2)` is the inner
-product against the image `(y - x) / √(1 + ‖y - x‖ ^ 2)` of `y - x` in the unit ball. -/
-private theorem neg_fderiv_sqrt_one_add_norm_sub_sq (x y : F) :
-    -fderiv ℝ (fun x' ↦ √(1 + ‖x' - y‖ ^ 2)) x =
-      innerSL ℝ (OpenPartialHomeomorph.univUnitBall (y - x)) := by
-  rw [fderiv_sqrt_one_add_norm_sub_sq, norm_sub_rev, OpenPartialHomeomorph.univUnitBall_apply]
-  ext v
-  simp [innerSL_apply_apply]
-  ring
-
-/-- **The cost `√(1 + ‖x - y‖ ^ 2)` is twisted.** On a real inner product space, its
-`x`-derivative determines `y`. -/
-theorem fderiv_sqrt_one_add_norm_sub_sq_injective (x : F) :
-    Injective fun y : F ↦ fderiv ℝ (fun x' ↦ √(1 + ‖x' - y‖ ^ 2)) x := by
-  intro y₁ y₂ h
-  have h' := congrArg Neg.neg h
-  simp only [neg_fderiv_sqrt_one_add_norm_sub_sq, innerSL_inj] at h'
-  exact sub_left_inj.1 (OpenPartialHomeomorph.univUnitBall.injOn (mem_univ _) (mem_univ _) h')
-
-/-- The momentum at `x` of `x + w / √(1 - ‖w‖ ^ 2)` is the inner product against `w`, for `w` in
-the unit ball. -/
-private theorem neg_fderiv_sqrt_one_add_norm_sub_sq_add_univUnitBall_symm (x : F) {w : F}
-    (hw : w ∈ Metric.ball (0 : F) 1) :
-    -fderiv ℝ (fun x' ↦ √(1 + ‖x' - (x + OpenPartialHomeomorph.univUnitBall.symm w)‖ ^ 2)) x =
-      innerSL ℝ w := by
-  rw [neg_fderiv_sqrt_one_add_norm_sub_sq, add_sub_cancel_left,
-    OpenPartialHomeomorph.univUnitBall.right_inv hw]
-
-variable [CompleteSpace F]
-
-/-- The Riesz isomorphism inverts `innerSL`. -/
-private theorem toDual_symm_innerSL (w : F) : (toDual ℝ F).symm (innerSL ℝ w) = w :=
-  (toDual ℝ F).symm_apply_eq.2 (by ext; simp [toDual_apply_apply, innerSL_apply_apply])
-
-/-- **The `c`-exponential of `√(1 + ‖x - y‖ ^ 2)`.** A momentum `q` with `‖q‖ < 1` is the
-momentum at `x` of `x + q / √(1 - ‖q‖ ^ 2)`, where `q` is identified with a vector by the Riesz
-isomorphism; when this point lies in `V`, it is the `c`-exponential of `q` with respect to `V`. -/
-theorem cExp_sqrt_one_add_norm_sub_sq {V : Set F} {x : F} {q : StrongDual ℝ F} (hq : ‖q‖ < 1)
-    (hV : x + OpenPartialHomeomorph.univUnitBall.symm ((toDual ℝ F).symm q) ∈ V) :
-    cExp (fun z : F × F ↦ √(1 + ‖z.1 - z.2‖ ^ 2)) V x q =
-      x + OpenPartialHomeomorph.univUnitBall.symm ((toDual ℝ F).symm q) := by
-  have hmom := neg_fderiv_sqrt_one_add_norm_sub_sq_add_univUnitBall_symm x
-    (w := (toDual ℝ F).symm q) (by simpa using hq)
-  rw [show innerSL ℝ ((toDual ℝ F).symm q) = q by ext; simp [innerSL_apply_apply,
-    toDual_symm_apply]] at hmom
-  exact (cExp_eq_iff (fderiv_sqrt_one_add_norm_sub_sq_injective x).injOn hV ⟨_, hV, hmom⟩).2 hmom
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [CompleteSpace F]
 
 /-- Near `s = 0`, the momentum `p + s • η`, a perturbation of the momentum `p` of `y` at `x`, has
 norm less than `1`, and its explicit preimage `x + q / √(1 - ‖q‖ ^ 2)` under the momentum map stays
@@ -383,18 +343,16 @@ private theorem deriv_deriv_sqrt_one_add_norm_sub_sq_cExp {V : Set F} {x ξ : F}
   have hf : (fun t : ℝ ↦ √(1 + ‖x + t • ξ - (x + σ • (toDual ℝ F).symm q)‖ ^ 2)) =
       fun t ↦ √((1 + σ ^ 2 * ‖q‖ ^ 2) + (-2 * σ * q ξ) * t + ‖ξ‖ ^ 2 * t ^ 2) := by
     funext t
-    rw [add_sub_add_left_eq_sub, norm_sub_sq_real, norm_smul, norm_smul, real_inner_smul_left,
-      real_inner_smul_right, real_inner_comm, toDual_symm_apply, LinearIsometryEquiv.norm_map,
-      Real.norm_eq_abs, Real.norm_eq_abs, mul_pow, mul_pow, sq_abs, sq_abs]
+    rw [norm_add_smul_sub_sq, sub_add_cancel_left, real_inner_comm]
+    simp [norm_smul, mul_pow, real_inner_smul_left]
     ring_nf
   have hA : 1 + σ ^ 2 * ‖q‖ ^ 2 = (1 - ‖q‖ ^ 2)⁻¹ := by
     rw [hσsq]
     field_simp
     ring
   rw [cExp_sqrt_one_add_norm_sub_sq hq hV, OpenPartialHomeomorph.univUnitBall_symm_apply,
-    LinearIsometryEquiv.norm_map, hf, Real.deriv_deriv_sqrt_quadratic (by
-    simp only [mul_zero, zero_pow two_ne_zero, add_zero]; positivity)]
-  simp only [mul_zero, zero_pow two_ne_zero, add_zero, hA, Real.sqrt_inv]
+    LinearIsometryEquiv.norm_map, hf, deriv_deriv_sqrt_quadratic_zero (by positivity), hA,
+    Real.sqrt_inv]
   field_simp
   rw [hσsq]
   field_simp
@@ -432,9 +390,8 @@ theorem mtwTensor_sqrt_one_add_norm_sub_sq {V : Set F} {x y ξ : F} {η : Strong
     rw [deriv_deriv_sqrt_one_add_norm_sub_sq_cExp hs.1 hs.2]
     congr 2
     · simp [hηξ]
-    · rw [← LinearIsometryEquiv.norm_map (toDual ℝ F).symm, map_add, map_smul, norm_add_sq_real,
-        norm_smul, real_inner_smul_right, toDual_symm_apply, LinearIsometryEquiv.norm_map,
-        LinearIsometryEquiv.norm_map, Real.norm_eq_abs, mul_pow, sq_abs, hsymm]
+    · rw [← LinearIsometryEquiv.norm_map (toDual ℝ F).symm]
+      simp [norm_add_sq_real, norm_smul, mul_pow, hsymm]
       ring
   have hpη : η ((toDual ℝ F).symm p) = ρ⁻¹ * η (y - x) := by
     rw [hp, toDual_symm_innerSL, map_smul, smul_eq_mul]
@@ -444,25 +401,23 @@ theorem mtwTensor_sqrt_one_add_norm_sub_sq {V : Set F} {x y ξ : F} {η : Strong
   simp only [mtwTensor_def]
   rw [← hp_def, hG.deriv.deriv_eq]
   simp only [deriv_const_mul_field']
-  rw [Real.deriv_deriv_sqrt_quadratic (by simpa [hpr] using inv_pos.2 (pow_pos hρ 2))]
-  simp only [mul_zero, zero_pow two_ne_zero, add_zero, hpr, hpη, hpξ, Real.sqrt_inv,
-    Real.sqrt_sq hρ.le]
+  rw [deriv_deriv_sqrt_quadratic_zero (by rw [hpr]; positivity)]
+  simp only [hpr, hpη, hpξ, Real.sqrt_inv, Real.sqrt_sq hρ.le]
   field_simp
   rw [hρsq]
   ring
 
 /-- **The cost `√(1 + ‖x - y‖ ^ 2)` satisfies the strong Ma–Trudinger–Wang condition at bounded
-distance.** On a real Hilbert space, if the target set `V` is open and every pair of points of `U`
-and `V` lies at distance at most `R`, the condition holds on `U × V` with the constant
-`1 / √(1 + R ^ 2)`. -/
-theorem satisfiesStrongMTW_sqrt_one_add_norm_sub_sq {U V : Set F} (hV : IsOpen V) {R : ℝ}
+distance.** On a real Hilbert space, if every pair of points of `U` and `V` lies at distance at
+most `R`, the condition holds on `U × V` with the constant `1 / √(1 + R ^ 2)`. -/
+theorem satisfiesStrongMTW_sqrt_one_add_norm_sub_sq {U V : Set F} {R : ℝ}
     (hR : ∀ x ∈ U, ∀ y ∈ V, dist x y ≤ R) :
     SatisfiesStrongMTW (fun z : F × F ↦ √(1 + ‖z.1 - z.2‖ ^ 2)) U V := by
   refine ⟨(√(1 + R ^ 2))⁻¹, by positivity, fun x hx y hy ξ η hηξ ↦ ?_⟩
-  rw [mtwTensor_sqrt_one_add_norm_sub_sq (hV.mem_nhds hy) hηξ]
+  rw [mtwTensor_sqrt_one_add_norm_sub_sq (mem_interior_iff_mem_nhds.1 hy) hηξ]
   have hz : ‖y - x‖ ≤ R := by
     rw [← dist_eq_norm, dist_comm]
-    exact hR x hx y hy
+    exact hR x hx y (interior_subset hy)
   have hCS : ⟪y - x, ξ⟫ ^ 2 ≤ ‖y - x‖ ^ 2 * ‖ξ‖ ^ 2 := by
     have := real_inner_mul_inner_self_le (y - x) ξ
     rw [real_inner_self_eq_norm_sq, real_inner_self_eq_norm_sq] at this
