@@ -37,9 +37,14 @@ The cutoff `μ` satisfies Milnor's conditions `TauCeti.IsHandleCutoff ε μ`: it
   (`TauCeti.exists_modifiedQuadratic_sublevel_deformation`), because `F` does not decrease as `v`
   is scaled up.
 
-On a manifold, the first three facts make the band `F⁻¹[c - ε, c + ε]` free of critical points,
-so that `{f ≤ c + ε}` deformation retracts onto `{F ≤ c - ε}`; the last one retracts
-`{F ≤ c - ε}` onto `{f ≤ c - ε}` with a `λ`-cell attached.
+These are local facts about the model. In Milnor's argument on a manifold, one additionally
+assumes that `f⁻¹[c - ε, c + ε]` is compact and contains no critical point other than the given
+one, that the Morse chart contains the ellipsoid `‖u‖² + 2‖v‖² ≤ 2ε`, and that `F` is the global
+function equal to `f - μ(‖u‖² + 2‖v‖²)` in the chart and to `f` elsewhere. Under those
+hypotheses the first three facts make the band `F⁻¹[c - ε, c + ε]` free of critical points, so
+that the gradient flow deformation retracts `{f ≤ c + ε}` onto `{F ≤ c - ε}`; the last one
+retracts `{F ≤ c - ε}` onto `{f ≤ c - ε}` with a `λ`-cell attached. None of these manifold-level
+consequences are proved in this file.
 
 ## Main declarations
 
@@ -271,6 +276,7 @@ section InnerProductSpace
 
 variable [InnerProductSpace ℝ Eᵤ] [InnerProductSpace ℝ Eₛ]
 
+/-- The modified quadratic model is `Cⁿ` whenever the cutoff `μ` is `Cⁿ`. -/
 theorem contDiff_modifiedQuadratic {n : WithTop ℕ∞} (hμ : ContDiff ℝ n μ) :
     ContDiff ℝ n (modifiedQuadratic (Eᵤ := Eᵤ) (Eₛ := Eₛ) μ) := by
   have h₁ : ContDiff ℝ n fun z : Eᵤ × Eₛ ↦ ‖z.1‖ ^ 2 := contDiff_norm_sq ℝ |>.comp contDiff_fst
