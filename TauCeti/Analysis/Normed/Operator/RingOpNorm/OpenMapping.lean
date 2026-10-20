@@ -51,8 +51,9 @@ itself serves as the ultrametric domain):
   `LinearMap.continuous_of_seq_closed_graph_of_isTate`,
   `ContinuousLinearMap.ofIsClosedGraphOfIsTate`, and
   `ContinuousLinearMap.ofSeqClosedGraphOfIsTate`).
-* **Quantitative finite spanning**: any finite spanning family `v : ι → N` of a
-  complete normed module over a complete ultrametric Tate ring admits a constant `C > 0`
+* **Quantitative finite spanning**: any finite family `v : ι → N` satisfying
+  `Submodule.span R (Set.range v) = ⊤` in a complete normed module over a complete
+  ultrametric Tate ring admits a constant `C > 0`
   representing every `y : N` as `∑ i, c i • v i` with `‖c‖ ≤ C * ‖y‖`
   (`TauCeti.exists_linearCombination_eq_and_norm_le`).
 
