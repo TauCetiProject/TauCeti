@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.QuadraticAlgebra.Discriminant
 public import TauCeti.NumberTheory.NumberField.Quadratic.InfinitePlace
 public import TauCeti.NumberTheory.QuadraticOrder.Embedding
-import TauCeti.Algebra.Squarefree
+import TauCeti.Algebra.QuadraticAlgebra.Discriminant
 
 /-!
 # The squarefree radicand of a quadratic field
@@ -21,16 +20,13 @@ model. For an imaginary quadratic field the radicand is negative, so imaginary q
 up to isomorphism are in bijection with the negative squarefree integers, and statements about
 imaginary quadratic fields up to isomorphism may be read off their radicands.
 
-The comparison of models reuses Mathlib's classification of quadratic algebras by their
-discriminant modulo unit squares, `QuadraticAlgebra.nonempty_algEquiv_iff_of_invertible_two`,
-together with the uniqueness of the squarefree part of a rational number,
-`Rat.eq_of_squarefree_of_intCast_mul_sq_eq`. A presented field is identified with its model by
+The comparison of models reuses the classification of the models themselves,
+`QuadraticAlgebra.nonempty_algEquiv_iff_of_squarefree`: for squarefree integers `d` and `e`,
+`ℚ(√d) ≃ₐ[ℚ] ℚ(√e)` exactly when `d = e`. A presented field is identified with its model by
 `TauCeti.QuadraticOrder.algEquivOfSqrt`, evaluation at the chosen square root.
 
 ## Main results
 
-* `QuadraticAlgebra.nonempty_algEquiv_iff_of_squarefree`: for squarefree integers `d` and `e`,
-  `ℚ(√d) ≃ₐ[ℚ] ℚ(√e)` exactly when `d = e`.
 * `NumberField.nonempty_algEquiv_quadraticAlgebra`: a quadratic field presented by a square root
   of `d` is isomorphic to `QuadraticAlgebra ℚ d 0`.
 * `NumberField.nonempty_algEquiv_iff_of_squarefree`: two quadratic fields presented by squarefree
@@ -46,23 +42,6 @@ together with the uniqueness of the squarefree part of a rational number,
 public section
 
 open Polynomial NumberField Module
-
-namespace QuadraticAlgebra
-
-/-- **Squarefree radicands classify rational quadratic algebras.** For squarefree integers `d` and
-`e`, the rational quadratic algebras `ℚ(√d)` and `ℚ(√e)` are isomorphic exactly when `d = e`. In
-general two such algebras are isomorphic exactly when the radicands have the same class in
-`ℚ× / (ℚ×)²` (`QuadraticAlgebra.nonempty_algEquiv_iff_of_invertible_two`), and a squarefree integer
-is the unique such representative of its class. -/
-theorem nonempty_algEquiv_iff_of_squarefree {d e : ℤ} (hd : Squarefree d) (he : Squarefree e) :
-    Nonempty (QuadraticAlgebra ℚ (d : ℚ) 0 ≃ₐ[ℚ] QuadraticAlgebra ℚ (e : ℚ) 0) ↔ d = e := by
-  refine ⟨fun h => ?_, fun h => h ▸ ⟨AlgEquiv.refl⟩⟩
-  obtain ⟨u, hu⟩ := nonempty_algEquiv_iff_of_invertible_two.mp h
-  rw [discr_def, discr_def] at hu
-  exact Rat.eq_of_squarefree_of_intCast_mul_sq_eq (c := 1) (c' := u) hd he one_ne_zero
-    (by linear_combination hu / 4)
-
-end QuadraticAlgebra
 
 namespace NumberField
 

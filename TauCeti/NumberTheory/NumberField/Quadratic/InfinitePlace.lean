@@ -17,9 +17,10 @@ and for `0 ≤ d` it is totally real. Both are special cases of the generic squa
 `NumberField.isTotallyComplex_of_sq_ratCast_of_neg` and
 `NumberField.isTotallyReal_of_sq_ratCast_of_nonneg`, applied to the generator `θ` with `θ² = d`.
 Total reality needs the generator hypothesis as well, since a real square root only forces the
-embeddings fixed on `ℚ(θ)` to be real. Since a number field is never both totally real and totally
-complex, `ℚ(√d)` is totally complex exactly when `d < 0`, both for a presented field and for the
-model `QuadraticAlgebra ℚ a 0` of a nonsquare rational `a`.
+embeddings fixed on `ℚ(θ)` to be real. Combining them,
+`NumberField.isTotallyComplex_iff_neg_of_sq_ratCast` shows that `ℚ(√d)` is totally complex exactly
+when `d < 0`, both for a presented field and for the model `QuadraticAlgebra ℚ a 0` of a nonsquare
+rational `a`.
 
 ## Main results
 
@@ -60,9 +61,7 @@ by an algebraic integer `θ` with `minpoly ℤ θ = X² - d`, total complexity i
 negativity of the radicand. -/
 theorem isTotallyComplex_iff_neg_of_minpoly_eq_X_sq_sub_C (hmin : minpoly ℤ θ = X ^ 2 - C d)
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) : IsTotallyComplex K ↔ d < 0 := by
-  refine ⟨fun h => lt_of_not_ge fun hd => ?_, isTotallyComplex_of_minpoly_eq_X_sq_sub_C_of_neg hmin⟩
-  have := isTotallyReal_of_minpoly_eq_X_sq_sub_C_of_nonneg hmin hgen hd
-  exact IsTotallyComplex.not_isTotallyReal this
+  rw [isTotallyComplex_iff_neg_of_sq_ratCast (coe_gen_sq_ratCast hmin) hgen, Int.cast_lt_zero]
 
 end NumberField
 
@@ -75,8 +74,6 @@ when `a` is negative. -/
     IsTotallyComplex (QuadraticAlgebra ℚ a 0) ↔ a < 0 := by
   have hω : (ω : QuadraticAlgebra ℚ a 0) ^ 2 = algebraMap ℚ _ a := by
     simp [sq, omega_mul_omega_eq_algebraMap]
-  refine ⟨fun h => lt_of_not_ge fun ha => ?_, isTotallyComplex_of_sq_ratCast_of_neg hω⟩
-  have := isTotallyReal_of_sq_ratCast_of_nonneg hω adjoin_omega_eq_top ha
-  exact IsTotallyComplex.not_isTotallyReal this
+  exact isTotallyComplex_iff_neg_of_sq_ratCast hω adjoin_omega_eq_top
 
 end QuadraticAlgebra
