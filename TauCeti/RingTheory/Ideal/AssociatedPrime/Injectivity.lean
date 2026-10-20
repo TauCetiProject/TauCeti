@@ -34,40 +34,41 @@ and the target of the compatible map need not itself be a localization. The base
 commutative semiring when the source module has an additive group. -/
 theorem injective_of_forall_isLocalizedModule
     (map : M →ₗ[R] N)
-    (Mₚ : ∀ (prime : Ideal R) [prime.IsPrime], Type*)
-    [∀ (prime : Ideal R) [prime.IsPrime], AddCommMonoid (Mₚ prime)]
-    [∀ (prime : Ideal R) [prime.IsPrime], Module R (Mₚ prime)]
-    (f : ∀ (prime : Ideal R) [prime.IsPrime], M →ₗ[R] Mₚ prime)
-    [∀ (prime : Ideal R) [prime.IsPrime], IsLocalizedModule prime.primeCompl (f prime)]
-    (Nₚ : ∀ (prime : Ideal R) [prime.IsPrime], Type*)
-    [∀ (prime : Ideal R) [prime.IsPrime], AddCommMonoid (Nₚ prime)]
-    [∀ (prime : Ideal R) [prime.IsPrime], Module R (Nₚ prime)]
-    (g : ∀ (prime : Ideal R) [prime.IsPrime], N →ₗ[R] Nₚ prime)
-    (F : ∀ (prime : Ideal R) [prime.IsPrime], Mₚ prime →ₗ[R] Nₚ prime)
-    (commutes : ∀ (prime : Ideal R) [prime.IsPrime], F prime ∘ₗ f prime = g prime ∘ₗ map)
-    (local_injective : ∀ (prime : Ideal R) [prime.IsPrime],
-      prime ∈ associatedPrimes R M → Function.Injective (F prime)) :
+    (Mₚ : associatedPrimes R M → Type*)
+    [∀ prime, AddCommMonoid (Mₚ prime)]
+    [∀ prime, Module R (Mₚ prime)]
+    (f : ∀ prime, M →ₗ[R] Mₚ prime)
+    [∀ prime, IsLocalizedModule prime.1.primeCompl (f prime)]
+    (Nₚ : associatedPrimes R M → Type*)
+    [∀ prime, AddCommMonoid (Nₚ prime)]
+    [∀ prime, Module R (Nₚ prime)]
+    (g : ∀ prime, N →ₗ[R] Nₚ prime)
+    (F : ∀ prime, Mₚ prime →ₗ[R] Nₚ prime)
+    (commutes : ∀ prime, F prime ∘ₗ f prime = g prime ∘ₗ map)
+    (local_injective : ∀ prime, Function.Injective (F prime)) :
     Function.Injective map := by
   have kernel_bot : LinearMap.ker map = ⊥ := by
     by_contra kernel_ne_bot
     have : Nontrivial (LinearMap.ker map) := Submodule.nontrivial_iff_ne_bot.mpr kernel_ne_bot
     obtain ⟨prime, associated⟩ := associatedPrimes.nonempty R (LinearMap.ker map)
-    have : prime.IsPrime := associated.isPrime
     have associated_domain := associated.map_of_injective
       (LinearMap.ker map).subtype (Submodule.injective_subtype _)
-    have injective := local_injective prime associated_domain
+    let associated_prime : associatedPrimes R M := ⟨prime, associated_domain⟩
+    have injective := local_injective associated_prime
     obtain ⟨_, element, annihilator⟩ := isAssociatedPrime_iff.mp associated
     have element_zero : map element.val = 0 := LinearMap.mem_ker.mp element.property
-    have localized_zero : f prime element.val = 0 := by
+    have localized_zero : f associated_prime element.val = 0 := by
       apply injective
-      have mapped_zero : F prime (f prime element.val) = 0 := by
+      have mapped_zero : F associated_prime (f associated_prime element.val) = 0 := by
         calc
-          F prime (f prime element.val) = g prime (map element.val) :=
-            LinearMap.congr_fun (commutes prime) element.val
+          F associated_prime (f associated_prime element.val) =
+              g associated_prime (map element.val) :=
+            LinearMap.congr_fun (commutes associated_prime) element.val
           _ = 0 := by rw [element_zero, map_zero]
       simpa only [map_zero] using mapped_zero
     obtain ⟨denominator, annihilates⟩ :=
-      (IsLocalizedModule.eq_zero_iff prime.primeCompl (f prime)).mp localized_zero
+      (IsLocalizedModule.eq_zero_iff associated_prime.1.primeCompl (f associated_prime)).mp
+        localized_zero
     apply denominator.property
     apply annihilator.ge
     rw [Submodule.mem_colon_singleton, Submodule.mem_bot]
@@ -101,14 +102,13 @@ theorem injective_of_forall_localization (map : M →ₗ[R] N)
   let : AddCommGroup M := Module.addCommMonoidToAddCommGroup R
   exact injective_of_forall_isLocalizedModule
     map
-    (fun prime _ ↦ LocalizedModule prime.primeCompl M)
-    (fun prime _ ↦ LocalizedModule.mkLinearMap prime.primeCompl M)
-    (fun prime _ ↦ LocalizedModule prime.primeCompl N)
-    (fun prime _ ↦ LocalizedModule.mkLinearMap prime.primeCompl N)
-    (fun prime _ ↦ LocalizedModule.map prime.primeCompl map)
-    (fun prime _ ↦ by ext; simp)
-    (fun prime _ associated =>
-      (local_injective prime).resolve_right (not_not.mpr associated))
+    (fun prime ↦ LocalizedModule prime.1.primeCompl M)
+    (fun prime ↦ LocalizedModule.mkLinearMap prime.1.primeCompl M)
+    (fun prime ↦ LocalizedModule prime.1.primeCompl N)
+    (fun prime ↦ LocalizedModule.mkLinearMap prime.1.primeCompl N)
+    (fun prime ↦ LocalizedModule.map prime.1.primeCompl map)
+    (fun prime ↦ by ext; simp)
+    (fun prime ↦ (local_injective prime.1).resolve_right (not_not.mpr prime.property))
 
 end LocalizedModule
 
