@@ -279,7 +279,7 @@ theorem IsSmoothForm.fun_smul [IsManifold I 1 M] {n : WithTop ℕ∞}
 /-- A `C^n` form is `C^m` for every `m ≤ n`. -/
 theorem IsSmoothForm.of_le [IsManifold I 1 M] {m n : WithTop ℕ∞} {φ : RoughForm I M F k}
     (hφ : IsSmoothForm I n φ) (hmn : m ≤ n) : IsSmoothForm I m φ :=
-  hφ.contMDiff.of_le hmn
+  (isSmoothForm_def m φ).mpr (hφ.contMDiff.of_le hmn)
 
 /-- The submodule of smooth fixed-coefficient `F`-valued rough forms. -/
 def smoothForms (I : ModelWithCorners ℝ E H) (M : Type*) [TopologicalSpace M]
@@ -299,7 +299,7 @@ def smoothForms (I : ModelWithCorners ℝ E H) (M : Type*) [TopologicalSpace M]
 /-- A smooth fixed-coefficient rough form lies in `smoothForms`. -/
 theorem IsSmoothForm.mem_smoothForms [IsManifold I 1 M] {φ : RoughForm I M F k}
     (hφ : IsSmoothForm I ∞ φ) : φ ∈ smoothForms I M F k :=
-  hφ
+  TauCeti.mem_smoothForms.mpr ((isSmoothBundleForm_def ∞ φ).mpr ((isSmoothForm_def ∞ φ).mp hφ))
 
 /-- A smooth fixed-coefficient differential `k`-form. -/
 abbrev SmoothForm (I : ModelWithCorners ℝ E H) (M : Type*) [TopologicalSpace M]
