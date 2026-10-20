@@ -36,7 +36,7 @@ theorem contractNth_last (g : Fin (n + 1) → α) : contractNth (last n) op g = 
   funext k
   rw [contractNth_apply_of_lt _ _ _ _ (by simp), init]
 
-/-- Dropping the last entry commutes with contracting entries other than the last two. -/
+/-- Dropping the last entry commutes with a contraction at any position other than the last. -/
 @[simp]
 theorem init_contractNth_castSucc (j : Fin (n + 1)) (g : Fin (n + 2) → α) :
     init (contractNth j.castSucc op g) = contractNth j op (init g) := by
@@ -49,7 +49,7 @@ theorem init_contractNth_castSucc (j : Fin (n + 1)) (g : Fin (n + 2) → α) :
   · rw [init, contractNth_apply_of_gt _ _ _ _ (by simpa using h),
       contractNth_apply_of_gt _ _ _ _ h, init, succ_castSucc]
 
-/-- A contraction of entries other than the last two keeps the last entry. -/
+/-- A contraction not involving the last entry keeps the last entry. -/
 @[simp]
 theorem contractNth_castSucc_castSucc_apply_last (j : Fin n) (g : Fin (n + 2) → α) :
     contractNth j.castSucc.castSucc op g (last n) = g (last (n + 1)) := by

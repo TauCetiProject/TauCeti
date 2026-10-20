@@ -54,6 +54,7 @@ identity.
   cocycle.
 * `TauCeti.cycleCharacter_comp`: the character of the cycle pulled back along a homomorphism is
   the pulled-back character.
+* `TauCeti.cycleCocycle_comp`: the same naturality for the character as a cyclic cocycle.
 
 ## References
 
@@ -164,7 +165,7 @@ private theorem map_map_mul (hd : IsDGAlgebra 𝒜 d) (hρ : ∀ a, ρ a ∈ �
 variable [IsScalarTower R A A] [SMulCommClass R A A]
 
 /-- The bar coboundary of `ρ(a₀) dρ(a₁) ⋯ dρ(aₙ)` telescopes to
-`(-1)ⁿ ρ(a₀) dρ(a₁) ⋯ dρ(aₙ) ρ(aₙ₊₁)`, by the Leibniz rule in degree zero. -/
+`(-1)ⁿ ρ(a₀) dρ(a₁) ⋯ dρ(aₙ) ρ(aₙ₊₁)`. -/
 theorem barCoboundary_cycleForm (hd : IsDGAlgebra 𝒜 d) (hρ : ∀ a, ρ a ∈ 𝒜 0)
     (a : Fin (n + 2) → A) :
     barCoboundary R A Ω n (cycleForm d ρ n) a =
@@ -239,18 +240,17 @@ theorem cycleCharacter_mem_cyclicCochains (hd : IsDGAlgebra 𝒜 d) (hρ : ∀ a
     -- Closedness applied to `X ρ(aₙ₊₁)`, of degree `n`, moves the differential onto `X`.
     have hclosed := hτ.map_map_eq_zero (x := X * ρ (a (Fin.last (n + 1))))
       (by simpa using SetLike.mul_mem_graded hXmem hlast)
-    rw [hd.leibniz hXmem, map_add, map_zsmul_unit, Units.smul_def,
-      Int.coe_negOnePow_natCast] at hclosed
+    rw [hd.leibniz hXmem, map_add, map_zsmul_unit] at hclosed
     -- The trace property moves `ρ(aₙ₊₁)` to the front.
     have htrace : τ (d X * ρ (a (Fin.last (n + 1)))) = τ (ρ (a (Fin.last (n + 1))) * d X) :=
       (hτ.map_mul_comm_of_mem_zero hlast (by simpa using hd.map_mem hXmem)).symm
     rw [cycleCharacter_apply, cycleCharacter_apply, hrot, cycleForm_succ_apply, ← hX, ← htrace,
-      eq_neg_of_add_eq_zero_left hclosed, pow_succ, mul_neg_one, neg_smul]
+      eq_neg_of_add_eq_zero_left hclosed]
+    simp [pow_succ, Units.smul_def, Int.coe_negOnePow_natCast]
 
 variable [IsScalarTower R A A] [SMulCommClass R A A]
 
-/-- The character of a cycle is a Hochschild cocycle. Only the Leibniz rule in degree zero and
-the commutation of the trace with elements of degree zero are used. -/
+/-- The character of a cycle is a Hochschild cocycle. -/
 theorem hochschildCoboundary_cycleCharacter (hd : IsDGAlgebra 𝒜 d) (hρ : ∀ a, ρ a ∈ 𝒜 0)
     (hτ : IsClosedGradedTrace 𝒜 d n τ) :
     hochschildCoboundary R A M n (cycleCharacter d τ ρ n) = 0 := by
@@ -265,8 +265,8 @@ theorem hochschildCoboundary_cycleCharacter (hd : IsDGAlgebra 𝒜 d) (hρ : ∀
       mul_assoc, Fin.init, Fin.succ_castSucc, Fin.castSucc_zero]
   rw [hochschildCoboundary_eq_barCoboundary_add, add_apply, smul_apply, hochschildCoface_apply,
     hbar, barCoboundary_cycleForm hd hρ, cycleCharacter_apply, hlast,
-    hτ.map_mul_comm_of_mem_zero (hρ _) (cycleForm_mem hd hρ _), map_zsmul, pow_succ,
-    mul_neg_one, neg_smul, add_neg_cancel, zero_apply]
+    hτ.map_mul_comm_of_mem_zero (hρ _) (cycleForm_mem hd hρ _), map_zsmul]
+  simp [pow_succ]
 
 /-- The character of a cycle, as a cyclic cocycle. -/
 def cycleCocycle (hd : IsDGAlgebra 𝒜 d) (hρ : ∀ a, ρ a ∈ 𝒜 0)
@@ -281,6 +281,15 @@ theorem coe_cycleCocycle (hd : IsDGAlgebra 𝒜 d) (hρ : ∀ a, ρ a ∈ 𝒜 0
     ((cycleCocycle hd hρ hτ : cyclicCochains R A M n) :
       MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) = cycleCharacter d τ ρ n :=
   (rfl)
+
+/-- The cyclic cocycle of the cycle pulled back along a homomorphism `f` is the pullback of the
+cyclic cocycle along `f`. -/
+theorem cycleCocycle_comp {B : Type*} [NonUnitalSemiring B] [Module R B] [IsScalarTower R B B]
+    [SMulCommClass R B B] (f : B →ₙₐ[R] A) (hd : IsDGAlgebra 𝒜 d) (hρ : ∀ a, ρ a ∈ 𝒜 0)
+    (hτ : IsClosedGradedTrace 𝒜 d n τ) :
+    (cycleCocycle (ρ := ρ.comp f) hd (fun b ↦ hρ (f b)) hτ : cyclicCochains R B M n) =
+      cyclicCochainsMap M (f : B →ₗ[R] A) n (cycleCocycle hd hρ hτ) :=
+  Subtype.ext <| by rw [coe_cyclicCochainsMap_apply]; exact cycleCharacter_comp f
 
 end Character
 
