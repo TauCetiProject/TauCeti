@@ -51,8 +51,9 @@ output: the module pages, `declarations/declaration-data.bmp` and the `api-docs.
 database. No Lean runs and no source is parsed. It refuses, and exports nothing, unless:
 
 - the documented modules are exactly the `TauCeti/` Lean files at `SOURCE_SHA`;
-- every page declaration appears in the index at that page and in the database for that module,
-  with matching ranges, and every source link names its module's database source URL;
+- each page shows exactly the declarations the database marks for rendering (less constructors),
+  each appears in the index at that page, ranges agree with the database (including whether there
+  is one), and every source link names its module's database source URL;
 - every module analyzed at an older commit (doc-gen4 analysis is incremental) is byte-identical
   at `SOURCE_SHA`.
 
@@ -63,8 +64,9 @@ deploy and the `docgen` update, `publish-docs-facts` publishes it with
 
 1. validate the generation as strictly as the consumer does, and require its source commit to be
    the deployed tree's `SOURCE_SHA` (not the Pages run's checkout);
-2. PUT `facts.json.gz`, then `manifest.json`, unless already present with identical bytes;
-   different bytes at an immutable key are an error;
+2. PUT `facts.json.gz`, then `manifest.json`, each conditional on the key being absent
+   (`If-None-Match: *`), unless already present with identical bytes; different bytes at an
+   immutable key are an error, and a concurrent writer is never overwritten;
 3. read both back from the public base and check their hashes;
 4. replace `v1/current.json` with one PUT (`Cache-Control: no-cache`), then read it back.
 

@@ -663,12 +663,6 @@ jobs:
           fi
           rm -rf _out/docs
           cp -a ../docbuild/.lake/build/doc _out/docs
-          # The documentation facts generation api-docs.yml exported into the tree is published to
-          # object storage by publish-docs-facts below, not served from Pages. Hand it over here,
-          # where it is known to come from the tree being deployed.
-          if [ -e _out/docs/FACTS_V1 ] || [ -L _out/docs/FACTS_V1 ]; then
-            mv _out/docs/FACTS_V1 "$RUNNER_TEMP/docs-facts"
-          fi
           if [ ! -s _out/docs/index.html ]; then
             echo "::error title=API docs are empty::the doc tree has no index.html, so /docs would deploy unusable"
             exit 1
@@ -704,6 +698,17 @@ jobs:
           fi
           echo "docs-source-sha=$sha" >> "$GITHUB_OUTPUT"
           printf 'deploying /docs generated from %s\n' "$sha"
+
+      # The documentation facts generation api-docs.yml exported into the tree is published to
+      # object storage by publish-docs-facts below, not served from Pages. Taken from the tree being
+      # deployed, so it is known to describe that tree's SOURCE_SHA. Never allowed to fail the site:
+      # if this fails, the directory is merely served too, and publish-docs-facts reports the gap.
+      - name: Take the documentation facts out of the site
+        continue-on-error: true
+        run: |
+          if [ -e _out/docs/FACTS_V1 ] || [ -L _out/docs/FACTS_V1 ]; then
+            mv _out/docs/FACTS_V1 "$RUNNER_TEMP/docs-facts"
+          fi
 
       # Saved only once the tree has passed every check in the fold step above, so what the
       # fallback job can restore is by construction a site that was fit to deploy: it has /docs,

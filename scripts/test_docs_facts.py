@@ -143,6 +143,12 @@ class ExportTests(unittest.TestCase):
         doc, db = self.ws.docs()
         page = doc / "Demo" / "Sub" / "B.html"
         page.write_text(page.read_text().replace("B.lean#L9-L10", "B.lean"))
+        with self.assertRaisesRegex(facts.FactsError, "range presence"):
+            facts.collect(doc, db, self.ws.repo, "Demo", self.ws.analyzed, DOCS_BASE)
+        conn = sqlite3.connect(db)
+        conn.execute("DELETE FROM declaration_ranges WHERE module_name = 'Demo.Sub.B' AND position = 0")
+        conn.commit()
+        conn.close()
         data = facts.collect(doc, db, self.ws.repo, "Demo", self.ws.analyzed, DOCS_BASE)
         beta = data["modules"]["Demo/Sub/B.lean"]["Demo.Sub.beta"]
         self.assertEqual((beta["start"], beta["end"]), (None, None))
@@ -172,6 +178,20 @@ class ExportTests(unittest.TestCase):
         later = self.ws.commit("add")
         with self.assertRaisesRegex(facts.FactsError, "missing.*Demo/New.lean"):
             self.ws.collect(later)
+
+    def test_page_missing_declarations_is_refused(self):
+        doc, db = self.ws.docs()
+        page = doc / "Demo" / "A.html"
+        text = page.read_text()
+        start = text.index('<div class="decl" id="Demo.Short">')
+        end = text.index('<div class="decl" id="Demo.secret">')
+        page.write_text(text[:start] + text[end:])
+        with self.assertRaisesRegex(facts.FactsError, r"missing \['Demo.Short'\]"):
+            facts.collect(doc, db, self.ws.repo, "Demo", self.ws.analyzed, DOCS_BASE)
+        main_start = text.index("<main>")
+        page.write_text(text[:main_start] + "<main></main>" + text[text.index("</main>") + 7:])
+        with self.assertRaisesRegex(facts.FactsError, r"declarations differ.*\(14\)"):
+            facts.collect(doc, db, self.ws.repo, "Demo", self.ws.analyzed, DOCS_BASE)
 
     def test_missing_module_page_is_refused(self):
         doc, db = self.ws.docs()
@@ -300,6 +320,7 @@ class MemoryStore:
         self.log = []
         self.fail_put = set()
         self.public_lag = {}
+        self.race = {}
 
     def get(self, key, public=False):
         self.log.append(("GET", key, public))
@@ -308,11 +329,16 @@ class MemoryStore:
             return None
         return self.objects.get(key, (None,))[0]
 
-    def put(self, key, data, content_type, cache_control):
+    def put(self, key, data, content_type, cache_control, create_only=False):
         self.log.append(("PUT", key))
         if key in self.fail_put:
             raise facts.FactsError(f"PUT {key}: injected failure")
+        if key in self.race:
+            self.objects[key] = (self.race.pop(key), "", "")
+        if create_only and key in self.objects:
+            return False
         self.objects[key] = (data, content_type, cache_control)
+        return True
 
     def puts(self):
         return [entry[1] for entry in self.log if entry[0] == "PUT"]
@@ -401,6 +427,18 @@ class PublishTests(unittest.TestCase):
                 self.assertIsNone(self.current())
                 self.assertEqual(self.store.objects[key][0], b"different")
 
+    def test_a_concurrent_writer_is_never_overwritten(self):
+        g = self.manifest["generation"]
+        self.store.race[f"{g}/manifest.json"] = b"written by another publisher"
+        with self.assertRaises(facts.ConflictError):
+            self.publish()
+        self.assertEqual(self.store.objects[f"{g}/manifest.json"][0], b"written by another publisher")
+        self.assertIsNone(self.current())
+        same = MemoryStore()
+        same.race[f"{g}/facts.json.gz"] = facts.read_generation(self.gen)[1]
+        self.store = same
+        self.assertEqual(self.publish(), self.pointer)
+
     def test_cached_docs_publish_their_own_commit(self):
         """A Pages run at a newer checkout publishes the commit the reused tree documents."""
         with self.assertRaisesRegex(facts.FactsError, "not live"):
@@ -449,6 +487,8 @@ class ObjectServer(BaseHTTPRequestHandler):
         self.requests.append(("PUT", self.path, dict(self.headers)))
         if self.path in self.fail:
             self.send_response(500)
+        elif self.headers.get("If-None-Match") == "*" and self.path in self.objects:
+            self.send_response(412)
         else:
             self.objects[self.path] = body
             self.send_response(200)
@@ -502,6 +542,10 @@ class CurlStoreTests(unittest.TestCase):
         self.assertTrue(public)
         self.assertTrue(all("Authorization" not in headers for _, _, headers in public))
         self.assertIsNone(self.store.get("v1/absent.json"))
+        immutable = [h for _, path, h in puts if "/generations/" in path]
+        self.assertTrue(immutable and all(h.get("If-None-Match") == "*" for h in immutable))
+        self.assertFalse(self.store.put("v1/current.json", b"x", "application/json", "no-cache",
+                                        create_only=True))
 
 
 if __name__ == "__main__":

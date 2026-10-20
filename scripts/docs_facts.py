@@ -32,6 +32,7 @@ import argparse
 import gzip
 import hashlib
 import html
+import io
 import json
 import os
 import pathlib
@@ -151,26 +152,34 @@ def _parse_page(text: str, page: str):
 
 
 def _db_rows(db_path):
-    """Module source URLs and `{module: {name: docstring}}` from doc-gen4's analysis database."""
+    """Module source URLs, docstrings, ranges and rendered declarations from doc-gen4's database.
+
+    `rendered` is `{module: {name}}` for the declarations a module page shows as declarations:
+    those doc-gen4 marks for rendering, less constructors, which it renders inside their type.
+    """
     _require(pathlib.Path(db_path).is_file(), f"{db_path}: doc-gen4 database not found")
     db = sqlite3.connect(f"file:{pathlib.Path(db_path).resolve()}?mode=ro", uri=True)
     try:
         sources = dict(db.execute("SELECT name, source_url FROM modules"))
         docs: dict[str, dict[str, str | None]] = {}
         ranges: dict[tuple[str, str], tuple[int, int]] = {}
+        rendered: dict[str, set[str]] = {}
         rows = db.execute(
-            "SELECT n.module_name, n.name, d.text, r.start_line, r.end_line FROM name_info n"
+            "SELECT n.module_name, n.name, n.kind, n.render, d.text, r.start_line, r.end_line"
+            " FROM name_info n"
             " LEFT JOIN declaration_markdown_docstrings d USING (module_name, position)"
             " LEFT JOIN declaration_ranges r USING (module_name, position)")
-        for module, name, text, start, end in rows:
+        for module, name, kind, render, text, start, end in rows:
             docs.setdefault(module, {})[name] = text
             if start is not None:
                 ranges[(module, name)] = (start, end)
+            if render and kind != "constructor":
+                rendered.setdefault(module, set()).add(name)
     except sqlite3.Error as exc:
         raise FactsError(f"{db_path}: unreadable doc-gen4 database: {exc}") from exc
     finally:
         db.close()
-    return sources, docs, ranges
+    return sources, docs, ranges, rendered
 
 
 def collect(doc_dir, db_path, repo, root, source_commit, docs_base):
@@ -200,7 +209,7 @@ def collect(doc_dir, db_path, repo, root, source_commit, docs_base):
     index_decls = index.get("declarations")
     _require(isinstance(index_decls, dict), f"{index_path}: no declarations map")
 
-    sources, db_docs, db_ranges = _db_rows(db_path)
+    sources, db_docs, db_ranges, db_rendered = _db_rows(db_path)
 
     modules: dict[str, dict] = {}
     link_commits: dict[str, str] = {}
@@ -222,6 +231,13 @@ def collect(doc_dir, db_path, repo, root, source_commit, docs_base):
             raise FactsError(f"{page}: module page missing: {exc}") from exc
         nav, decls = _parse_page(text, page)
         _require(nav == source_url, f"{page}: navigation source {nav} differs from the database's {source_url}")
+        # A page that lost declarations would otherwise read as a module that has fewer.
+        on_page = {name for name, _, _ in decls}
+        wanted = db_rendered.get(module, set())
+        _require(on_page == wanted,
+                 f"{page}: declarations differ from the database: missing {sorted(wanted - on_page)[:5]} "
+                 f"({len(wanted - on_page)}), unexpected {sorted(on_page - wanted)[:5]} "
+                 f"({len(on_page - wanted)})")
         declarations = {}
         for name, kind, href in decls:
             _require(name and name not in seen_names, f"{page}: empty or duplicate declaration {name!r}")
@@ -229,6 +245,8 @@ def collect(doc_dir, db_path, repo, root, source_commit, docs_base):
             base, _, fragment = href.partition("#")
             _require(base == source_url, f"{page}: {name} links to {base}, not the module source {source_url}")
             start = end = None
+            _require(bool(fragment) == ((module, name) in db_ranges),
+                     f"{page}: {name} source range presence differs from the database")
             if fragment:
                 rng = _RANGE_RE.fullmatch(fragment)
                 _require(rng is not None, f"{page}: {name} has an unrecognized source range {fragment}")
@@ -275,7 +293,12 @@ def collect(doc_dir, db_path, repo, root, source_commit, docs_base):
 def build_generation(facts: dict, provenance: dict):
     """`(manifest_bytes, facts_gz_bytes)` for a facts payload."""
     raw = encode(facts)
-    packed = gzip.compress(raw, mtime=0)
+    # GzipFile, not gzip.compress: from Python 3.12 the latter's header names the host OS, so
+    # the same payload would hash differently depending on where it was exported.
+    buffer = io.BytesIO()
+    with gzip.GzipFile(filename="", fileobj=buffer, mode="wb", compresslevel=9, mtime=0) as stream:
+        stream.write(raw)
+    packed = buffer.getvalue()
     digest = sha256(packed)
     commit = facts["source_commit"]
     manifest = {
@@ -436,12 +459,18 @@ class CurlStore:
         _require(status == 200, f"GET {url}: HTTP {status}")
         return data
 
-    def put(self, key, data, content_type, cache_control):
+    def put(self, key, data, content_type, cache_control, create_only=False):
+        """Store an object. `create_only` returns False, writing nothing, if the key exists."""
         url = f"{self.write_base}/{key}"
-        status, _ = self._run(["--header", f"Content-Type: {content_type}",
-                               "--header", f"Cache-Control: {cache_control}"],
-                              url, signed=True, body=data)
+        headers = ["--header", f"Content-Type: {content_type}",
+                   "--header", f"Cache-Control: {cache_control}"]
+        if create_only:
+            headers += ["--header", "If-None-Match: *"]
+        status, _ = self._run(headers, url, signed=True, body=data)
+        if create_only and status == 412:
+            return False
         _require(200 <= status < 300, f"PUT {url}: HTTP {status}")
+        return True
 
 
 def _verify_public(store, key, digest, attempts, sleep, log):
@@ -453,6 +482,20 @@ def _verify_public(store, key, digest, attempts, sleep, log):
         if attempt < attempts:
             sleep(10)
     raise FactsError(f"{key}: the public object does not have SHA-256 {digest}")
+
+
+def _put_immutable(store, key, data, content_type, log):
+    """Create `key` holding `data`, or accept it already holding exactly `data`.
+
+    The PUT is conditional on the key being absent, so two publishers can never replace each
+    other's bytes; whichever loses compares what the winner wrote.
+    """
+    if store.get(key) is None and store.put(key, data, content_type, IMMUTABLE_CACHE_CONTROL,
+                                            create_only=True):
+        log(f"uploaded {key} ({len(data)} bytes)")
+        return
+    _require(store.get(key) == data, f"{key} already exists with different bytes", ConflictError)
+    log(f"{key} already published")
 
 
 def publish(gen_dir, expected_commit, store, attempts=6, sleep=time.sleep, log=print):
@@ -472,21 +515,8 @@ def publish(gen_dir, expected_commit, store, attempts=6, sleep=time.sleep, log=p
     facts_key = f"{generation}/{FACTS_NAME}"
     manifest_key = f"{generation}/{MANIFEST_NAME}"
 
-    existing = store.get(facts_key)
-    if existing is None:
-        store.put(facts_key, packed, "application/gzip", IMMUTABLE_CACHE_CONTROL)
-        log(f"uploaded {facts_key} ({len(packed)} bytes)")
-    else:
-        _require(existing == packed, f"{facts_key} already exists with different bytes", ConflictError)
-        log(f"{facts_key} already published")
-    existing = store.get(manifest_key)
-    if existing is None:
-        store.put(manifest_key, manifest_bytes, "application/json", IMMUTABLE_CACHE_CONTROL)
-        log(f"uploaded {manifest_key}")
-    else:
-        _require(existing == manifest_bytes, f"{manifest_key} already exists with different bytes",
-                 ConflictError)
-        log(f"{manifest_key} already published")
+    _put_immutable(store, facts_key, packed, "application/gzip", log)
+    _put_immutable(store, manifest_key, manifest_bytes, "application/json", log)
 
     _verify_public(store, facts_key, manifest["facts_sha256"], attempts, sleep, log)
     _verify_public(store, manifest_key, sha256(manifest_bytes), attempts, sleep, log)
