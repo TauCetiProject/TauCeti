@@ -220,11 +220,9 @@ cocone: the transport of the coefficient to the point does not change its image.
 theorem augment_pushforward_ofCube (s : Limits.Cocone L) (d : SingularCube Z 0)
     (a : L.obj (FundamentalGroupoid.mk (f z₀))) :
     augment s (pushforward L f z₀ 0 (NormalizedCubicalChain.ofCube Z (ULift.{v} ℤ) d) a) =
-      s.ι.app (FundamentalGroupoid.mk (f z₀)) a :=
-  (congrArg (augment s) (pushforward_ofCube d a)).trans ((augment_mk s _).trans
-    ((congrArg (TwistedCubicalChain.augment s) (pushCube_apply d a)).trans
-      ((TwistedCubicalChain.augment_ofCube s _ _).trans
-        (ConcreteCategory.congr_hom (s.w (pathClass f z₀ (d 0))) a))))
+      s.ι.app (FundamentalGroupoid.mk (f z₀)) a := by
+  rw [pushforward_ofCube, augment_mk, pushCube_apply, TwistedCubicalChain.augment_ofCube]
+  exact ConcreteCategory.congr_hom (s.w (pathClass f z₀ (d 0))) a
 
 /-- The twisted pushforward is natural in the space. -/
 theorem map_pushforward {Y : TopCat.{v}} (h : C(X, Y)) (L : LocalCoefficientSystem.{u, v, w} R Y)
