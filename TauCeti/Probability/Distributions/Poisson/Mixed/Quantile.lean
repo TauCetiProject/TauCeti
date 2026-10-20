@@ -32,9 +32,10 @@ public section
 noncomputable section
 
 open Filter MeasureTheory ProbabilityTheory Real Set Topology
+open TauCeti.Probability
 open scoped NNReal
 
-namespace TauCeti.Probability
+namespace MeasureTheory.Measure
 
 variable {u : ℝ}
 
@@ -79,4 +80,4 @@ theorem tendsto_quantile_map_cast_mixedPoissonMeasure_nhdsGT_zero (ρ : Measure 
     exact hu.2.le.trans_eq hmass_eq
   exact congrArg (fun x : ℝ ↦ (x : EReal)) hzero.symm
 
-end TauCeti.Probability
+end MeasureTheory.Measure

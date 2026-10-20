@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.Comp
 public import Mathlib.Analysis.Calculus.ContDiff.RestrictScalars
 public import Mathlib.Analysis.Calculus.FDeriv.Mul
@@ -69,6 +70,8 @@ such, so all of them belong here rather than with the Morse theory that uses the
   one variable.
 * `ContDiffAt.fderiv_fderiv_restrictScalars_apply`: the second derivative of a map which is `C²`
   over a larger field does not depend on the field.
+* `TauCeti.fderiv_fderiv_re_apply`: the real second derivative of the real part of a holomorphic
+  function is the real part of its complex second derivative.
 -/
 
 public section
@@ -271,6 +274,23 @@ theorem _root_.ContDiffAt.fderiv_fderiv_restrictScalars_apply {g : E' → F'} {x
   simpa [iteratedFDeriv_two_apply] using h.symm
 
 end RestrictScalars
+
+section Complex
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] {x : V}
+
+/-- The real second derivative of the real part of a holomorphic function is the real part of its
+complex second derivative. -/
+theorem fderiv_fderiv_re_apply {g : V → ℂ} (hg : ContDiffAt ℂ 2 g x) (v w : V) :
+    fderiv ℝ (fderiv ℝ fun z ↦ (g z).re) x v w = (fderiv ℂ (fderiv ℂ g) x v w).re := by
+  have hre : ContDiffAt ℝ 2 Complex.re (g x) := Complex.reCLM.contDiff.contDiffAt
+  have h := fderiv_fderiv_comp_apply hre (hg.restrict_scalars ℝ) v w
+  have h1 : fderiv ℝ Complex.re = fun _ ↦ Complex.reCLM := funext fun _ ↦ Complex.reCLM.fderiv
+  simp only [Function.comp_def] at h
+  rw [h, h1, hg.fderiv_fderiv_restrictScalars_apply]
+  simp
+
+end Complex
 
 end TauCeti
 

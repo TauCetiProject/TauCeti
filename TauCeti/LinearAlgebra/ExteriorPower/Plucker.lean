@@ -55,6 +55,7 @@ Plücker coordinate, equal to `1`, and a family of more than `#ι` vectors has n
 * `TauCeti.plucker_sum_smul`: replacing the family by its product with a square matrix
   multiplies the Plücker coordinates by the determinant of that matrix.
 * `TauCeti.det_mul_transpose_eq_sum_plucker_mul`: the Cauchy–Binet formula.
+* `Matrix.det_mul_transpose_eq_sum_plucker_sq`: its Gram-determinant form for a matrix.
 * `TauCeti.det_mul_conjTranspose_eq_sum_plucker_mul_star`: its Hermitian form.
 * `TauCeti.plucker_ne_zero_iff`: over a field, the Plücker coordinates of a family are not all
   zero exactly when the family is linearly independent.
@@ -63,6 +64,8 @@ Plücker coordinate, equal to `1`, and a family of more than `#ι` vectors has n
   signs.
 * `TauCeti.gcd_plucker_eq_one`: the Plücker coordinates of a basis of a saturated submodule of
   `ℤ^ι` are coprime.
+* `Matrix.gcd_plucker_row_eq_zero_iff`: the maximal minors of an integer matrix have greatest
+  common divisor `0` exactly when its rows are linearly dependent over `ℚ`.
 
 ## References
 
@@ -120,6 +123,16 @@ theorem plucker_map (f : R →+* S) (x : Fin p → ι → R) (s : powersetCard �
   refine congrArg Matrix.det (Matrix.ext fun i j ↦ ?_)
   simp
 
+/-- The maximal minors of a matrix with a ring homomorphism applied to all entries are the
+images of the maximal minors of the matrix. -/
+theorem _root_.Matrix.plucker_row_map (f : R →+* S) (A : Matrix (Fin p) ι R) :
+    plucker (A.map f).row = f ∘ plucker A.row := by
+  have h : (A.map f).row = fun i k ↦ f (A.row i k) := by
+    ext i k
+    simp
+  ext s
+  rw [h, plucker_map, Function.comp_apply]
+
 /-- Replacing a family by its product with a square matrix `A` multiplies its Plücker
 coordinates by `det A`. -/
 theorem plucker_sum_smul (A : Matrix (Fin p) (Fin p) R) (x : Fin p → ι → R)
@@ -165,6 +178,12 @@ theorem det_mul_transpose_eq_sum_plucker_mul [Fintype ι] (x y : Fin p → ι �
   rw [h, ← b.sum_repr (ιMulti R p x), map_sum]
   refine Finset.sum_congr rfl fun s _ ↦ ?_
   rw [map_smul, pairingDual_ιMulti_exteriorPower_basisFun, ← plucker_eq_repr_ιMulti, smul_eq_mul]
+
+/-- **The Cauchy–Binet formula for a Gram determinant.** The determinant of `A Aᵀ` is the sum of
+the squares of the maximal minors of `A`, the Plücker coordinates of its rows. -/
+theorem _root_.Matrix.det_mul_transpose_eq_sum_plucker_sq [Fintype ι] (A : Matrix (Fin p) ι R) :
+    (A * A.transpose).det = ∑ s, plucker A.row s ^ 2 := by
+  simpa [sq, Matrix.row_eq_self] using det_mul_transpose_eq_sum_plucker_mul A.row A.row
 
 /-- **The Cauchy–Binet formula, Hermitian form.** Over a commutative star ring, the determinant
 of the Hermitian Gram matrix `∑ₖ x i k * star (x j k)` of a family is the sum of the products of
@@ -346,6 +365,15 @@ theorem gcd_plucker_eq_one [Fintype ι] {N : Submodule ℤ (ι → ℤ)}
   have h0 := Fintype.linearIndependent_iff.1 hli _ hrel i₀
   apply hi₀
   rw [← hc', sub_eq_zero.1 h0]
+  simp
+
+/-- The greatest common divisor of the maximal minors of an integer matrix vanishes exactly when
+its rows are linearly dependent over `ℚ`. -/
+theorem _root_.Matrix.gcd_plucker_row_eq_zero_iff [Fintype ι] (A : Matrix (Fin p) ι ℤ) :
+    Finset.univ.gcd (plucker A.row) = 0 ↔ ¬LinearIndependent ℚ (A.map ((↑) : ℤ → ℚ)).row := by
+  have h := Matrix.plucker_row_map (Int.castRingHom ℚ) A
+  rw [Int.coe_castRingHom] at h
+  rw [Finset.gcd_eq_zero_iff, ← plucker_ne_zero_iff, not_not, h, funext_iff]
   simp
 
 end TauCeti
