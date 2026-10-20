@@ -28,7 +28,7 @@ evaluation at `x` separates `C` from zero.
 
 * `IsCompact.exists_finset_forall_one_lt_re_apply`: finitely many points of norm at most `ρ⁻¹`
   push a weak-star compact set of functionals of norm greater than `ρ` above the real level one.
-* `Convex.exists_forall_one_le_re_apply_of_tendsto`: if every functional in a convex set exceeds
+* `Convex.exists_forall_one_le_re_apply_of_tendsto`: if every functional in a convex set reaches
   real level one somewhere along a null family of points of a Banach space, a single point does
   it for all of them.
 * `Convex.exists_forall_one_le_re_apply`: the separation statement above.
@@ -140,14 +140,47 @@ private theorem exists_seq_finset_forall_one_lt_re_apply {C : Set (WeakDual 𝕜
   obtain ⟨m, hm⟩ := hA n x hx
   exact ⟨m, x, hm, hfx⟩
 
+/-- Translating a set of functionals with weak-star closed bounded slices by `f₀` gives a set
+which again has weak-star closed bounded slices. -/
+private theorem isClosed_inter_closedBall_preimage_add {C : Set (WeakDual 𝕜 E)}
+    (hCR : ∀ R, IsClosed (C ∩ toStrongDual ⁻¹' closedBall 0 R)) (f₀ : WeakDual 𝕜 E) (R : ℝ) :
+    IsClosed ((f₀ + ·) ⁻¹' C ∩ toStrongDual ⁻¹' closedBall 0 R) := by
+  have : (f₀ + ·) ⁻¹' C ∩ toStrongDual ⁻¹' closedBall 0 R = (f₀ + ·) ⁻¹'
+      (C ∩ toStrongDual ⁻¹' closedBall 0 (R + ‖toStrongDual f₀‖) ∩
+        toStrongDual ⁻¹' closedBall (toStrongDual f₀) R) := by
+    ext g
+    simp only [mem_inter_iff, mem_preimage, mem_closedBall, dist_zero_right, map_add,
+      dist_self_add_left]
+    refine ⟨fun ⟨hg, hgR⟩ ↦ ⟨⟨hg, ?_⟩, hgR⟩, fun ⟨⟨hg, _⟩, hgR⟩ ↦ ⟨hg, hgR⟩⟩
+    exact (norm_add_le _ _).trans (by linarith)
+  rw [this]
+  exact ((hCR _).inter (isClosed_closedBall _ R)).preimage (continuous_const_add f₀)
+
+/-- If the intersection of a set `C` of functionals with the closed unit ball is weak-star closed
+and `C` does not contain zero, then the norms of the elements of `C` are bounded below by some
+`ε > 0`. -/
+private theorem exists_pos_forall_lt_norm_of_isClosed_inter_closedBall {C : Set (WeakDual 𝕜 E)}
+    (hC : IsClosed (C ∩ toStrongDual ⁻¹' closedBall 0 1)) (h0 : (0 : WeakDual 𝕜 E) ∉ C) :
+    ∃ ε > 0, ∀ g ∈ C, ε < ‖toStrongDual g‖ := by
+  have hopen := hC.isOpen_compl.preimage NormedSpace.Dual.toWeakDual_continuous
+  obtain ⟨δ, hδ, hδsub⟩ := Metric.isOpen_iff.1 hopen 0 fun h ↦ h0 <| by
+    simpa only [mem_preimage, map_zero] using h.1
+  refine ⟨min (δ / 2) 1, by positivity, fun g hg ↦ ?_⟩
+  by_contra! hgδ
+  have hgball : toStrongDual g ∈ ball 0 δ := mem_ball_zero_iff.2 (hgδ.trans_lt
+    ((min_le_left _ _).trans_lt (half_lt_self hδ)))
+  have := hδsub hgball
+  rw [mem_preimage, toWeakDual_toStrongDual] at this
+  exact this ⟨hg, mem_closedBall_zero_iff.2 (hgδ.trans (min_le_right _ _))⟩
+
 namespace Convex
 
-/-- If every functional in a convex set `C` has real part greater than one somewhere along a null
+/-- If every functional in a convex set `C` has real part at least one somewhere along a null
 family `v` of points of a Banach space, then evaluation at a single point `x` satisfies
 `1 ≤ re (f x)` for all `f ∈ C`. -/
 theorem exists_forall_one_le_re_apply_of_tendsto [CompleteSpace E] {C : Set (WeakDual 𝕜 E)}
     (hC : Convex ℝ C) {ι : Type*} {v : ι → E} (hv : Tendsto v cofinite (𝓝 0))
-    (hCv : ∀ f ∈ C, ∃ i, 1 < re (f (v i))) :
+    (hCv : ∀ f ∈ C, ∃ i, 1 ≤ re (f (v i))) :
     ∃ x : E, ∀ f ∈ C, 1 ≤ re (f x) := by
   classical
   -- View `ι` as a discrete space, so that null families on `ι` form the space `c₀`.
@@ -161,13 +194,14 @@ theorem exists_forall_one_le_re_apply_of_tendsto [CompleteSpace E] {C : Set (Wea
   have hT (f : WeakDual 𝕜 E) (i) : T f i = re (f (v i)) :=
     congrFun (ZeroAtInftyContinuousMap.coe_mkOfDiscrete _ _) i
   -- `T` is real linear, so it maps `C` to a convex set. The operations of `WeakDual 𝕜 E` are
-  -- those of `StrongDual 𝕜 E`, which act pointwise.
+  -- those of `StrongDual 𝕜 E`, which act pointwise; Mathlib has no apply lemma for real multiples
+  -- in `WeakDual 𝕜 E`, so the final `rfl` unfolds `(a • f + b • g) (v i)` by this definition.
   have hTC : Convex ℝ (T '' C) := by
     rintro _ ⟨f, hf, rfl⟩ _ ⟨g, hg, rfl⟩ a b ha hb hab
     refine ⟨a • f + b • g, hC hf hg ha hb hab, ZeroAtInftyContinuousMap.ext fun i ↦ ?_⟩
-    rw [hT, ZeroAtInftyContinuousMap.add_apply, ZeroAtInftyContinuousMap.smul_apply,
-      ZeroAtInftyContinuousMap.smul_apply, hT, hT, smul_eq_mul, smul_eq_mul]
-    exact (map_add re _ _).trans (congrArg₂ (· + ·) (smul_re a (f (v i))) (smul_re b (g (v i))))
+    simp only [hT, ZeroAtInftyContinuousMap.add_apply, ZeroAtInftyContinuousMap.smul_apply,
+      smul_eq_mul, ← smul_re, ← map_add]
+    rfl
   -- `T` maps `C` into the complement of the open unit ball of `c₀`.
   have hdisj : Disjoint (ball (0 : C₀(ι, ℝ)) 1) (T '' C) := by
     refine Set.disjoint_right.2 ?_
@@ -175,7 +209,7 @@ theorem exists_forall_one_le_re_apply_of_tendsto [CompleteSpace E] {C : Set (Wea
     obtain ⟨i, hfi⟩ := hCv f hfC
     have := (T f).norm_coe_le_norm i
     rw [hT, Real.norm_eq_abs] at this
-    exact (mem_ball_zero_iff.1 hf).not_ge (hfi.le.trans ((le_abs_self _).trans this))
+    exact (mem_ball_zero_iff.1 hf).not_ge (hfi.trans ((le_abs_self _).trans this))
   obtain ⟨Λ, u, hΛ, hΛC⟩ :=
     _root_.geometric_hahn_banach_open (convex_ball 0 1) isOpen_ball hTC hdisj
   have hu : 0 < u := by simpa using hΛ 0 (mem_ball_self one_pos)
@@ -229,7 +263,7 @@ theorem exists_forall_one_le_re_apply [CompleteSpace E] {C : Set (WeakDual 𝕜 
         _ < r * (i.1 + 1) := by gcongr; linarith
   · obtain ⟨n, x, hx, hfx⟩ := hDC f hfC
     refine ⟨⟨n, (D n).equivFin ⟨x, hx⟩⟩, ?_⟩
-    simpa [v] using hfx
+    simpa [v] using hfx.le
 
 /-- **Krein–Šmulian theorem.** A convex subset of the dual of a Banach space is weak-star closed if
 and only if its intersection with every closed ball centred at zero is weak-star closed. -/
@@ -246,38 +280,18 @@ theorem isClosed_iff_forall_isClosed_inter_closedBall [CompleteSpace E] {C : Set
     rw [mem_preimage]
     convert hC hg hh ha hb hab using 1
     linear_combination (norm := module) -hab • f₀
-  have hC'R (R : ℝ) : IsClosed (C' ∩ toStrongDual ⁻¹' closedBall 0 R) := by
-    have : C' ∩ toStrongDual ⁻¹' closedBall 0 R = (f₀ + ·) ⁻¹'
-        (C ∩ toStrongDual ⁻¹' closedBall 0 (R + ‖toStrongDual f₀‖) ∩
-          toStrongDual ⁻¹' closedBall (toStrongDual f₀) R) := by
-      ext g
-      simp only [C', mem_inter_iff, mem_preimage, mem_closedBall, dist_zero_right, map_add,
-        dist_self_add_left]
-      refine ⟨fun ⟨hg, hgR⟩ ↦ ⟨⟨hg, ?_⟩, hgR⟩, fun ⟨⟨hg, _⟩, hgR⟩ ↦ ⟨hg, hgR⟩⟩
-      exact (norm_add_le _ _).trans (by linarith)
-    rw [this]
-    exact (((hCR _).inter (isClosed_closedBall _ R)).preimage (continuous_const_add f₀))
+  have hC'R := isClosed_inter_closedBall_preimage_add hCR f₀
   -- Since `C' ∩ closedBall 0 1` is weak-star closed and misses zero, `C'` misses a norm ball.
-  obtain ⟨ε, hε, hεC'⟩ : ∃ ε > 0, ∀ g ∈ C', ε < ‖toStrongDual g‖ := by
-    have hopen := ((hC'R 1).isOpen_compl).preimage NormedSpace.Dual.toWeakDual_continuous
-    obtain ⟨δ, hδ, hδsub⟩ := Metric.isOpen_iff.1 hopen 0 fun h ↦ hf₀C <| by
-      simpa only [C', mem_preimage, map_zero, add_zero] using h.1
-    refine ⟨min (δ / 2) 1, by positivity, fun g hg ↦ ?_⟩
-    by_contra! hgδ
-    have hgball : toStrongDual g ∈ ball 0 δ := mem_ball_zero_iff.2 (hgδ.trans_lt
-      ((min_le_left _ _).trans_lt (half_lt_self hδ)))
-    have := hδsub hgball
-    rw [mem_preimage, toWeakDual_toStrongDual] at this
-    exact this ⟨hg, mem_closedBall_zero_iff.2 (hgδ.trans (min_le_right _ _))⟩
+  obtain ⟨ε, hε, hεC'⟩ := exists_pos_forall_lt_norm_of_isClosed_inter_closedBall (hC'R 1)
+    fun h ↦ hf₀C <| by simpa only [C', mem_preimage, add_zero] using h
   obtain ⟨x, hx⟩ := hC'.exists_forall_one_le_re_apply hC'R hε hεC'
   -- The weak-star open set `{f | re (f x) < re (f₀ x) + 1}` contains `f₀` and misses `C`.
   obtain ⟨f, hfU, hfC⟩ := mem_closure_iff.1 hf₀ {f | re (f x) < re (f₀ x) + 1}
     (isOpen_lt (continuous_re.comp (eval_continuous x)) continuous_const)
     (mem_ofPred.2 (lt_add_one _))
   rw [mem_ofPred_eq] at hfU
-  have := hx (f - f₀) (mem_preimage.2 (by rwa [add_sub_cancel]))
-  rw [← toStrongDual_apply, map_sub, sub_apply, toStrongDual_apply,
-    toStrongDual_apply, map_sub] at this
+  have : 1 ≤ re (f x) - re (f₀ x) := by
+    simpa [← toStrongDual_apply] using hx (f - f₀) (mem_preimage.2 (by rwa [add_sub_cancel]))
   linarith
 
 end Convex
