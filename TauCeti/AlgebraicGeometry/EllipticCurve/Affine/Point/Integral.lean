@@ -279,7 +279,7 @@ namespace WeierstrassCurve.Affine
 /-- A point of a Weierstrass curve over `ℚ` **has integral coordinates** when it is affine and
 both of its coordinates are integers. The equation is not required to be integral: this is the
 notion that stays meaningful on a rational model, where it need not be stable under negation
-(`WeierstrassCurve.exists_not_hasIntegralCoordinates_neg`). -/
+(`exists_not_hasIntegralCoordinates_neg`). -/
 def Point.HasIntegralCoordinates {W : WeierstrassCurve ℚ} (P : W.toAffine.Point) : Prop :=
   ∃ (x y : ℤ) (h : W.toAffine.Nonsingular (x : ℚ) (y : ℚ)), P = .some (x : ℚ) (y : ℚ) h
 
@@ -309,7 +309,7 @@ end Point
 
 end WeierstrassCurve.Affine
 
-namespace WeierstrassCurve
+namespace TauCeti
 
 /-! ### An integral equation is needed for negation stability -/
 
@@ -320,7 +320,7 @@ def halfYCurve : WeierstrassCurve ℚ := ⟨0, 0, 1 / 2, 0, 0⟩
 /-- The point `(0, 0)` of `y² + ½y = x³` is nonsingular: the partial derivative in `y` is
 `2y + ½`, which is `½` there. -/
 theorem halfYCurve_nonsingular_zero : halfYCurve.toAffine.Nonsingular 0 0 := by
-  rw [Affine.nonsingular_zero]
+  rw [WeierstrassCurve.Affine.nonsingular_zero]
   norm_num [halfYCurve]
 
 /-- The point `(0, 0)` of `y² + ½y = x³`. -/
@@ -338,10 +338,11 @@ theorem neg_halfYCurvePointZero :
     ∃ h : halfYCurve.toAffine.Nonsingular 0 (-(1 / 2)),
       -halfYCurvePointZero = .some 0 (-(1 / 2)) h := by
   have hneg : halfYCurve.toAffine.negY 0 0 = -(1 / 2) := by
-    simp [Affine.negY, halfYCurve]
+    simp [WeierstrassCurve.Affine.negY, halfYCurve]
   refine ⟨hneg ▸ (halfYCurve.toAffine.nonsingular_neg 0 0).mpr halfYCurve_nonsingular_zero,
     ?_⟩
-  rw [halfYCurvePointZero, Affine.Point.neg_some, Affine.Point.some.injEq]
+  rw [halfYCurvePointZero, WeierstrassCurve.Affine.Point.neg_some,
+    WeierstrassCurve.Affine.Point.some.injEq]
   exact ⟨rfl, hneg⟩
 
 /-- **On `y² + ½y = x³` the negative of the integral point `(0, 0)` is not integral**: its
@@ -349,7 +350,7 @@ ordinate is `-½`. -/
 theorem not_hasIntegralCoordinates_neg_halfYCurvePointZero :
     ¬ (-halfYCurvePointZero).HasIntegralCoordinates := by
   obtain ⟨_, hneg⟩ := neg_halfYCurvePointZero
-  rw [hneg, Affine.Point.some_hasIntegralCoordinates]
+  rw [hneg, WeierstrassCurve.Affine.Point.some_hasIntegralCoordinates]
   rintro ⟨_, y, _, hy⟩
   have h : (2 : ℚ) * (y : ℚ) = -1 := by
     rw [← hy]
@@ -374,14 +375,14 @@ private def curveAddThree : WeierstrassCurve ℚ := ⟨0, 0, 0, 0, 3⟩
 
 /-- The point `(1, 2)` of `y² = x³ + 3` is nonsingular. -/
 private theorem curveAddThree_nonsingular : curveAddThree.toAffine.Nonsingular 1 2 := by
-  rw [Affine.nonsingular_iff', Affine.equation_iff]
+  rw [WeierstrassCurve.Affine.nonsingular_iff', WeierstrassCurve.Affine.equation_iff]
   refine ⟨?_, Or.inr ?_⟩
   · norm_num [curveAddThree]
   · norm_num [curveAddThree]
 
 /-- The change of variables `(x, y) ↦ (4x, 8y)` of `y² = x³ + 3`, that is `u = 2` with
 `r = s = t = 0`. -/
-private def twoChange : VariableChange ℚ := ⟨Units.mk0 2 (by norm_num), 0, 0, 0⟩
+private def twoChange : WeierstrassCurve.VariableChange ℚ := ⟨Units.mk0 2 (by norm_num), 0, 0, 0⟩
 
 /-- **A change of variables needs `u = ±1`.** Over `ℚ` the change with `u = 2` and
 `r = s = t = 0`, integral apart from the unit, identifies the rational points of `C • W` with
@@ -390,16 +391,18 @@ those of `W`, but it does not map the integral points of `C • W` onto those of
 integers. Over `ℤ` the unit group is `{±1}`, and there the identification is a bijection on
 integral points (`bijOn_pointEquivVariableChange_integralPoints`). -/
 theorem exists_variableChange_not_surjective_on_integralCoordinates :
-    ∃ (W : WeierstrassCurve ℚ) (C : VariableChange ℚ) (P : W.toAffine.Point),
+    ∃ (W : WeierstrassCurve ℚ) (C : WeierstrassCurve.VariableChange ℚ) (P : W.toAffine.Point),
       (C.u : ℚ) = 2 ∧ C.r = 0 ∧ C.s = 0 ∧ C.t = 0 ∧ P.HasIntegralCoordinates ∧
         ∀ Q : (C • W).toAffine.Point,
-          Q.HasIntegralCoordinates → Affine.Point.equivVariableChange W C Q ≠ P := by
+          Q.HasIntegralCoordinates →
+            WeierstrassCurve.Affine.Point.equivVariableChange W C Q ≠ P := by
   refine ⟨curveAddThree, twoChange, .some 1 2 curveAddThree_nonsingular, rfl, rfl, rfl, rfl,
     ⟨1, 2, curveAddThree_nonsingular, rfl⟩, ?_⟩
   rintro Q ⟨x, y, _, rfl⟩ hP
   -- The identification sends `(x, y)` to `(4x, 8y)`, so the abscissa `1` of the image forces
   -- `4x = 1` in `ℤ`.
-  rw [Affine.Point.equivVariableChange_some, Affine.Point.some.injEq] at hP
+  rw [WeierstrassCurve.Affine.Point.equivVariableChange_some,
+    WeierstrassCurve.Affine.Point.some.injEq] at hP
   simp only [twoChange, Units.val_mk0] at hP
   norm_num at hP
   have h4 : (4 : ℤ) * x = 1 := by
@@ -409,6 +412,6 @@ theorem exists_variableChange_not_surjective_on_integralCoordinates :
     exact_mod_cast h
   omega
 
-end WeierstrassCurve
+end TauCeti
 
 end
