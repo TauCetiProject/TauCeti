@@ -93,8 +93,9 @@ theorem hochschildDifferential_taylor_sub_taylor (hG : 𝒜.grading = ℋ.gradin
   have h := 𝒜.brace_taylor_taylor
   rw [hG, hD, brace_add_left, brace_add_right, brace_add_right, ℋ.brace_taylor_taylor,
     zero_add] at h
-  rw [hD, add_sub_cancel_left, hochschildDifferential_eq_brace_sub, negOnePowCast_one, neg_smul,
-    one_smul, sub_neg_eq_add, eq_neg_iff_add_eq_zero, ← h, add_assoc]
+  rw [hD, add_sub_cancel_left, hochschildDifferential_eq_brace_sub, negOnePowCast_one,
+    neg_one_smul, sub_neg_eq_add]
+  exact eq_neg_of_add_eq_zero_left ((add_assoc _ _ _).trans h)
 
 /-- If two `A∞` structures agree on the words of length at most `e`, the Hochschild differential
 of the difference of their Taylor maps vanishes on the words of length at most `2 e`. -/
@@ -187,19 +188,13 @@ theorem hochschildDifferential_comp_lengthProj
     {F : ReducedTensorWords R A →ₗ[R] A} (hF : F ∘ₗ lengthProj R A ⟨n + 1, n.succ_pos⟩ = F) :
     ℋ.hochschildDifferential q F ∘ₗ lengthProj R A ⟨n + 2, by omega⟩ =
       ℋ.hochschildDifferential q F := by
-  have h₁ := lengthProj_comp_gradedCoderiv (ℋ.grading.shift 1) q hF ⟨2, two_pos⟩
-  have h₂ := lengthProj_comp_gradedCoderiv (ℋ.grading.shift 1) 1 ht ⟨n + 1, n.succ_pos⟩
-  have e₁ : (⟨2 + (n + 1) - 1, by omega⟩ : {k : ℕ // 0 < k}) = ⟨n + 2, by omega⟩ :=
-    Subtype.ext (by dsimp only; omega)
-  have e₂ : (⟨n + 1 + 2 - 1, by omega⟩ : {k : ℕ // 0 < k}) = ⟨n + 2, by omega⟩ :=
-    Subtype.ext (by dsimp only; omega)
-  -- Normalize the lengths `↑⟨2, _⟩ + ↑⟨n + 1, _⟩ - 1` and `↑⟨n + 1, _⟩ + ↑⟨2, _⟩ - 1` to `n + 2`.
-  simp only at h₁ h₂
-  rw [e₁] at h₁
-  rw [e₂] at h₂
-  rw [hochschildDifferential_eq_brace_sub, brace_def, brace_def, LinearMap.sub_comp,
-    LinearMap.smul_comp, LinearMap.comp_assoc, LinearMap.comp_assoc, ← h₁, ← h₂,
-    ← LinearMap.comp_assoc, ← LinearMap.comp_assoc, ht, hF]
+  have h₁ := lengthProj_comp_gradedCoderiv (ℋ.grading.shift 1) q hF
+    (j := ⟨2, two_pos⟩) (m := ⟨n + 2, by omega⟩) (by dsimp only; omega)
+  have h₂ := lengthProj_comp_gradedCoderiv (ℋ.grading.shift 1) 1 ht
+    (j := ⟨n + 1, n.succ_pos⟩) (m := ⟨n + 2, by omega⟩) rfl
+  simp only [hochschildDifferential_eq_brace_sub, brace_def, LinearMap.sub_comp,
+    LinearMap.smul_comp, LinearMap.comp_assoc, ← h₁, ← h₂]
+  simp only [← LinearMap.comp_assoc, ht, hF]
 
 /-- **The obstruction is a Hochschild cocycle.**  Let `ℋ` be a graded algebra, presented as a
 minimal `A∞` algebra without operations above arity two, and let `𝒜` be an `A∞` structure with the

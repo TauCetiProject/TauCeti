@@ -106,14 +106,15 @@ theorem isHomogeneous_lengthProj (G : InternalGrading R M) (n : {n : ℕ // 0 < 
 
 /-- The graded Taylor expansion of a map `F` concentrated on the words of length `a` collapses a
 block of exactly `a` letters to a single letter.  So its words of length `j` come from the words
-of length `j + a - 1` alone. -/
+of length `m = j + a - 1` alone. -/
 theorem lengthProj_comp_gradedCoderiv (G : InternalGrading R M)
     {F : ReducedTensorWords R M →ₗ[R] M} (q : ℤ) {a : {a : ℕ // 0 < a}}
-    (hF : F ∘ₗ lengthProj R M a = F) (j : {j : ℕ // 0 < j}) :
-    lengthProj R M j ∘ₗ gradedCoderiv G F q =
-      gradedCoderiv G F q ∘ₗ lengthProj R M ⟨j.1 + a.1 - 1, by omega⟩ := by
+    (hF : F ∘ₗ lengthProj R M a = F) {j m : {j : ℕ // 0 < j}} (hm : m.1 + 1 = j.1 + a.1) :
+    lengthProj R M j ∘ₗ gradedCoderiv G F q = gradedCoderiv G F q ∘ₗ lengthProj R M m := by
   obtain ⟨a, ha⟩ := a
   obtain ⟨j, hj⟩ := j
+  obtain ⟨m, hm0⟩ := m
+  dsimp only at hm
   refine linearMap_ext R M fun ⟨k, hk⟩ x ↦ ?_
   -- The tuple `x` has length `↑⟨k, hk⟩`; record that it is `k` for `omega`.
   have hkk : ((⟨k, hk⟩ : {n : ℕ // 0 < n}) : ℕ) = k := rfl
@@ -131,7 +132,7 @@ theorem lengthProj_comp_gradedCoderiv (G : InternalGrading R M)
   have hterm (p d : ℕ) :
       lengthProj R M ⟨j, hj⟩
           (splice R (G.twistedTuple q x 0 p) 0 k p d (F (subword R x p d))) =
-        if k = j + a - 1 then
+        if k = m then
           splice R (G.twistedTuple q x 0 p) 0 k p d (F (subword R x p d))
         else 0 := by
     by_cases hd : d = a
@@ -150,7 +151,7 @@ theorem lengthProj_comp_gradedCoderiv (G : InternalGrading R M)
   simp only [LinearMap.comp_apply]
   rw [gradedCoderiv_of_tprod G F q hk x, map_sum]
   simp only [map_sum, hterm]
-  by_cases hkj : k = j + a - 1
+  by_cases hkj : k = m
   · subst hkj
     rw [lengthProj_of_self, gradedCoderiv_of_tprod G F q hk x]
     simp only [ite_true]
