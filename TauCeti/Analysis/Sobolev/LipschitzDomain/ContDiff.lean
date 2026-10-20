@@ -41,7 +41,7 @@ namespace TauCeti
 open Metric Set Topology
 open scoped NNReal
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {Omega : Set (WithLp 2 (ℝ × E))} {L : ℝ≥0}
   {e : WithLp 2 (ℝ × E) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)} {φ : E → ℝ} {a b : ℝ}
 
