@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Combinatorics.SimpleGraph.Acyclic
 import Mathlib.Tactic.FinCases
+import TauCeti.Data.Fin.Rev
 import Mathlib.Tactic.IntervalCases
 import Mathlib.Tactic.Linarith
 
@@ -162,6 +163,12 @@ variable {G} in
 lemma forall_endpoint_ne_iff {v : G.Vertex} {e : G.Edge} :
     (∀ i, G.endpoint e i ≠ v) ↔ v ∉ G.ends e := by
   simp
+
+variable {G} in
+/-- An edge avoids `v` when neither of its branches lies there. -/
+lemma forall_endpoint_ne_of {v : G.Vertex} {e : G.Edge} {i : Fin 2}
+    (h : G.endpoint e i ≠ v) (h' : G.endpoint e i.rev ≠ v) (j : Fin 2) : G.endpoint e j ≠ v := by
+  rcases Fin.fin_two_eq_or_eq_rev i j with rfl | rfl <;> assumption
 
 variable {G} in
 /-- A vertex carries no loop exactly when no edge has both of its ends there. -/

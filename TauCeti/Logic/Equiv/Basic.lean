@@ -24,7 +24,6 @@ namespace Equiv
 /-- Removing the elements failing `p` and then those failing `q` leaves the same elements as
 removing them in the opposite order. The predicates `q'` on `Subtype p` and `p'` on `Subtype q`
 are the restrictions of `q` and `p`. -/
-@[expose]
 def subtypeSubtypeComm {E : Type*} {p q : E → Prop} {p' : Subtype q → Prop}
     {q' : Subtype p → Prop} (hp : ∀ e he, p' ⟨e, he⟩ ↔ p e) (hq : ∀ e he, q' ⟨e, he⟩ ↔ q e) :
     {e : Subtype p // q' e} ≃ {e : Subtype q // p' e} :=
@@ -39,7 +38,7 @@ def subtypeSubtypeComm {E : Type*} {p q : E → Prop} {p' : Subtype q → Prop}
 theorem coe_coe_subtypeSubtypeComm_apply {E : Type*} {p q : E → Prop} {p' : Subtype q → Prop}
     {q' : Subtype p → Prop} (hp : ∀ e he, p' ⟨e, he⟩ ↔ p e) (hq : ∀ e he, q' ⟨e, he⟩ ↔ q e)
     (e : {e : Subtype p // q' e}) : ((subtypeSubtypeComm hp hq e : Subtype q) : E) = e.1.1 :=
-  rfl
+  (rfl)
 
 /-- The inverse of `Equiv.subtypeSubtypeComm` does not move the underlying element of `E`. -/
 @[simp]
@@ -47,6 +46,6 @@ theorem coe_coe_subtypeSubtypeComm_symm_apply {E : Type*} {p q : E → Prop}
     {p' : Subtype q → Prop} {q' : Subtype p → Prop} (hp : ∀ e he, p' ⟨e, he⟩ ↔ p e)
     (hq : ∀ e he, q' ⟨e, he⟩ ↔ q e) (e : {e : Subtype q // p' e}) :
     (((subtypeSubtypeComm hp hq).symm e : Subtype p) : E) = e.1.1 :=
-  rfl
+  (rfl)
 
 end Equiv

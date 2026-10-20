@@ -64,6 +64,7 @@ variable {ι : Type v}
 /-- An **isomorphism** of dual graphs: bijections of the vertices and of the edges, carrying the
 unordered pair of endpoints of each edge to that of its image, and preserving the genera of the
 components and the components carrying the markings. -/
+@[ext]
 structure Iso (G : DualGraph.{u} ι) (H : DualGraph.{u'} ι) where
   /-- The bijection of vertices. -/
   vertexEquiv : G.Vertex ≃ H.Vertex
@@ -262,15 +263,15 @@ theorem sym2_bridgeNeighbor {v : G.Vertex} (hv : G.valence v = 2)
 noncomputable def contractTail {v : G.Vertex} (hv : G.valence v = 1)
     (hv' : H.valence (f.vertexEquiv v) = 1) :
     (G.contractTail hv).Iso (H.contractTail hv') :=
-  ofInjective (fun w ↦ f.vertexEquiv w.1) Subtype.val Subtype.val_injective
+  ofInjective (f.vertexEquiv ∘ Subtype.val) Subtype.val Subtype.val_injective
     (f.vertexEquiv.subtypeEquiv fun _ ↦ f.vertexEquiv.injective.ne_iff.symm) (fun _ ↦ rfl)
     (f.edgeEquiv.subtypeEquiv fun _ ↦ f.forall_endpoint_edgeEquiv_ne_iff.symm)
-    (fun e ↦ by simp only [ends_def, Sym2.map_mk]; exact f.mk_endpoint_edgeEquiv e.1)
+    (fun e ↦ by rw [← Sym2.map_map, map_val_ends_contractTail, map_val_ends_contractTail]; simp)
     (fun _ ↦ by simp) fun i ↦ by
       by_cases h : G.marking i = v
       · have h' : H.marking i = f.vertexEquiv v := by rw [← f.vertexEquiv_marking, h]
-        rw [marking_contractTail, marking_contractTail, dite_eq_left h, dite_eq_left h',
-          f.vertexEquiv_attachment hv hv']
+        rw [marking_contractTail, marking_contractTail, dite_eq_left h, dite_eq_left h']
+        exact (f.vertexEquiv_attachment hv hv').symm
       · have h' : H.marking i ≠ f.vertexEquiv v := by
           rw [← f.vertexEquiv_marking]
           exact f.vertexEquiv.injective.ne h
@@ -298,17 +299,14 @@ noncomputable def contractBridge {v : G.Vertex} (hv : G.valence v = 2)
     (hloop' : ∀ e, H.endpoint e 0 = f.vertexEquiv v → H.endpoint e 1 ≠ f.vertexEquiv v)
     (hm' : ∀ i, H.marking i ≠ f.vertexEquiv v) :
     (G.contractBridge hv hloop hm).Iso (H.contractBridge hv' hloop' hm') :=
-  ofInjective (fun w ↦ f.vertexEquiv w.1) Subtype.val Subtype.val_injective
+  ofInjective (f.vertexEquiv ∘ Subtype.val) Subtype.val Subtype.val_injective
     (f.vertexEquiv.subtypeEquiv fun _ ↦ f.vertexEquiv.injective.ne_iff.symm) (fun _ ↦ rfl)
     (Equiv.optionCongr (f.edgeEquiv.subtypeEquiv fun _ ↦ f.forall_endpoint_edgeEquiv_ne_iff.symm))
     (fun e ↦ by
+      rw [← Sym2.map_map]
       cases e with
-      | none =>
-        simp only [ends_def, Sym2.map_mk]
-        exact f.sym2_bridgeNeighbor hv hloop hv'
-      | some e =>
-        simp only [ends_def, Sym2.map_mk]
-        exact f.mk_endpoint_edgeEquiv e.1)
+      | none => simpa using f.sym2_bridgeNeighbor hv hloop hv'
+      | some e => simp)
     (fun _ ↦ by simp) fun i ↦ by simp
 
 section contractBridge

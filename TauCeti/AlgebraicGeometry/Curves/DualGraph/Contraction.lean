@@ -197,6 +197,57 @@ lemma sym2_bridgeNeighbor_eq {v : G.Vertex} (hv : G.valence v = 2) {h h' : G.Edg
   · exact Sym2.eq_swap
   · exact absurd rfl hk
 
+/-- If a vertex of valence one is attached to another vertex of valence one, the latter is
+attached to the former. -/
+lemma attachment_eq_of_attachment_eq {v₁ v₂ : G.Vertex} (hv₁ : G.valence v₁ = 1)
+    (hv₂ : G.valence v₂ = 1) (h : G.attachment hv₁ = v₂) : G.attachment hv₂ = v₁ := by
+  obtain ⟨⟨e, i⟩, he⟩ := exists_endpoint_eq_of_valence_pos (G := G) (by omega : 0 < G.valence v₁)
+  have h' : G.endpoint e i.rev = v₂ := (endpoint_rev_eq_attachment hv₁ he).trans h
+  rw [← endpoint_rev_eq_attachment hv₂ h', Fin.rev_rev, he]
+
+/-- The node of a vertex `u` of valence one avoids every vertex other than `u` and its
+attachment. -/
+lemma forall_endpoint_ne_of_valence_eq_one {u v : G.Vertex} (hu : G.valence u = 1)
+    (huv : u ≠ v) (hatt : G.attachment hu ≠ v) {e : G.Edge} {i : Fin 2}
+    (he : G.endpoint e i = u) : ∀ j, G.endpoint e j ≠ v :=
+  forall_endpoint_ne_of (by rw [he]; exact huv)
+    (by rw [endpoint_rev_eq_attachment hu he]; exact hatt)
+
+/-- The `k`th half-edge at a vertex `u` of valence two avoids every vertex other than `u` and its
+`k`th neighbour. -/
+lemma forall_endpoint_halfEdgeOfValenceEqTwo_ne {u v : G.Vertex} (hu : G.valence u = 2)
+    (huv : u ≠ v) {k : Fin 2} (hk : G.bridgeNeighbor hu k ≠ v) :
+    ∀ i, G.endpoint (G.halfEdgeOfValenceEqTwo hu k).1.1 i ≠ v :=
+  forall_endpoint_ne_of (i := (G.halfEdgeOfValenceEqTwo hu k).1.2)
+    (by rw [(G.halfEdgeOfValenceEqTwo hu k).2]; exact huv)
+    (by rw [endpoint_halfEdgeOfValenceEqTwo_rev]; exact hk)
+
+/-- If the `k`th neighbour of a vertex `u` of valence two is a vertex `v` of valence two, then `u`
+is a neighbour of `v`. -/
+lemma exists_bridgeNeighbor_eq {u v : G.Vertex} (hu : G.valence u = 2)
+    (hv : G.valence v = 2) {k : Fin 2} (hk : G.bridgeNeighbor hu k = v) :
+    ∃ l, G.bridgeNeighbor hv l = u := by
+  rw [← endpoint_halfEdgeOfValenceEqTwo_rev] at hk
+  obtain ⟨l, hl⟩ := exists_eq_halfEdgeOfValenceEqTwo hv
+    (h := ((G.halfEdgeOfValenceEqTwo hu k).1.1, (G.halfEdgeOfValenceEqTwo hu k).1.2.rev)) hk
+  refine ⟨l, ?_⟩
+  rw [← endpoint_halfEdgeOfValenceEqTwo_rev, hl, Fin.rev_rev, (G.halfEdgeOfValenceEqTwo hu k).2]
+
+/-- A vertex of valence one is at most one of the two neighbours of a loopless vertex of valence
+two. -/
+lemma bridgeNeighbor_rev_ne {u v : G.Vertex} (hu : G.valence u = 2)
+    (hloop : ∀ e, G.endpoint e 0 = u → G.endpoint e 1 ≠ u) (hv : G.valence v = 1) {k : Fin 2}
+    (hk : G.bridgeNeighbor hu k = v) : G.bridgeNeighbor hu k.rev ≠ v := by
+  intro hk'
+  rw [← endpoint_halfEdgeOfValenceEqTwo_rev] at hk hk'
+  have := congrArg Prod.fst (eq_of_valence_eq_one hv
+    ((G.halfEdgeOfValenceEqTwo hu k).1.1, (G.halfEdgeOfValenceEqTwo hu k).1.2.rev)
+    ((G.halfEdgeOfValenceEqTwo hu k.rev).1.1, (G.halfEdgeOfValenceEqTwo hu k.rev).1.2.rev) hk hk')
+  have hne := halfEdgeOfValenceEqTwo_fst_ne hu hloop
+  fin_cases k
+  · exact hne this
+  · exact hne this.symm
+
 /-! ### Edges and half-edges away from a vertex -/
 
 /-- For a node `e` with a branch at `v` and a vertex `u ≠ v`, the node has a branch at `u`
@@ -352,6 +403,42 @@ theorem valence_contractTail (u : G.Vertex) (hu : u ≠ v) :
   rw [G.valence_eq_sum_add_sum v u, filter_endpoint_eq_of_valence_eq_one hv he, sum_singleton,
     card_endpoint_eq_of_endpoint_eq hu he, endpoint_rev_eq_attachment hv he, valence_eq_sum]
   simp
+
+/-- Contracting a tail does not change the ends of the remaining edges. -/
+@[simp]
+lemma map_val_ends_contractTail (e : (G.contractTail hv).Edge) :
+    ((G.contractTail hv).ends e).map Subtype.val = G.ends e.1 := by
+  rw [ends_def, ends_def, Sym2.map_mk]
+
+/-- After contracting a tail `v`, a vertex of valence one whose node avoids `v` keeps its
+attachment. -/
+lemma coe_attachment_contractTail {u : G.Vertex} (hu : G.valence u = 1) (huv : u ≠ v)
+    (hatt : G.attachment hu ≠ v) (hu' : (G.contractTail hv).valence ⟨u, huv⟩ = 1) :
+    ((G.contractTail hv).attachment hu' : G.Vertex) = G.attachment hu := by
+  obtain ⟨⟨e, i⟩, he⟩ := exists_endpoint_eq_of_valence_pos (G := G) (by omega : 0 < G.valence u)
+  rw [← endpoint_rev_eq_attachment hu'
+    (e := ⟨e, forall_endpoint_ne_of_valence_eq_one hu huv hatt he⟩) (i := i) (Subtype.ext he),
+    ← endpoint_rev_eq_attachment hu he]
+
+/-- After contracting a tail `v`, a loopless vertex of valence two whose neighbours differ from `v`
+keeps its neighbours. -/
+lemma sym2_coe_bridgeNeighbor_contractTail {u : G.Vertex} (hu : G.valence u = 2)
+    (hloop : ∀ e, G.endpoint e 0 = u → G.endpoint e 1 ≠ u) (huv : u ≠ v)
+    (hnb : ∀ k, G.bridgeNeighbor hu k ≠ v) (hu' : (G.contractTail hv).valence ⟨u, huv⟩ = 2) :
+    s(((G.contractTail hv).bridgeNeighbor hu' 0 : G.Vertex),
+        ((G.contractTail hv).bridgeNeighbor hu' 1 : G.Vertex)) =
+      s(G.bridgeNeighbor hu 0, G.bridgeNeighbor hu 1) := by
+  have := congrArg (Sym2.map Subtype.val) ((G.contractTail hv).sym2_bridgeNeighbor_eq hu'
+    (h := (⟨_, forall_endpoint_halfEdgeOfValenceEqTwo_ne hu huv (hnb 0)⟩,
+      (G.halfEdgeOfValenceEqTwo hu 0).1.2))
+    (h' := (⟨_, forall_endpoint_halfEdgeOfValenceEqTwo_ne hu huv (hnb 1)⟩,
+      (G.halfEdgeOfValenceEqTwo hu 1).1.2))
+    (Subtype.ext (G.halfEdgeOfValenceEqTwo hu 0).2) (Subtype.ext (G.halfEdgeOfValenceEqTwo hu 1).2)
+    fun h ↦ halfEdgeOfValenceEqTwo_fst_ne hu hloop (congrArg (fun x ↦ x.1.1) h))
+  rw [Sym2.map_mk, Sym2.map_mk] at this
+  rw [this]
+  exact congrArg₂ (fun a b ↦ s(a, b)) (endpoint_halfEdgeOfValenceEqTwo_rev hu 0)
+    (endpoint_halfEdgeOfValenceEqTwo_rev hu 1)
 
 section Markings
 
@@ -535,6 +622,73 @@ theorem logCanonicalDegree_contractBridge [Fintype ι] (u : G.Vertex) (hu : u �
     (G.contractBridge hv hloop hm).logCanonicalDegree ⟨u, hu⟩ = G.logCanonicalDegree u := by
   rw [logCanonicalDegree_def, logCanonicalDegree_def, valence_contractBridge,
     numMarkings_contractBridge]
+
+/-- Contracting a bridge replaces it by a new edge joining its two neighbours. -/
+@[simp]
+lemma map_val_ends_contractBridge_none :
+    ((G.contractBridge hv hloop hm).ends none).map Subtype.val =
+      s(G.bridgeNeighbor hv 0, G.bridgeNeighbor hv 1) := by
+  rw [ends_def, Sym2.map_mk]
+  rfl
+
+/-- Contracting a bridge does not change the ends of the old edges away from it. -/
+@[simp]
+lemma map_val_ends_contractBridge_some (e : {e // ∀ i, G.endpoint e i ≠ v}) :
+    ((G.contractBridge hv hloop hm).ends (some e)).map Subtype.val = G.ends e.1 := by
+  rw [ends_def, ends_def, Sym2.map_mk]
+  rfl
+
+/-- After contracting a bridge `v`, a vertex of valence one whose node avoids `v` keeps its
+attachment. -/
+lemma coe_attachment_contractBridge {u : G.Vertex} (hu : G.valence u = 1) (huv : u ≠ v)
+    (hatt : G.attachment hu ≠ v) (hu' : (G.contractBridge hv hloop hm).valence ⟨u, huv⟩ = 1) :
+    ((G.contractBridge hv hloop hm).attachment hu' : G.Vertex) = G.attachment hu := by
+  obtain ⟨⟨e, i⟩, he⟩ := exists_endpoint_eq_of_valence_pos (G := G) (by omega : 0 < G.valence u)
+  rw [← endpoint_rev_eq_attachment hu'
+    (e := some ⟨e, forall_endpoint_ne_of_valence_eq_one hu huv hatt he⟩) (i := i) (Subtype.ext he),
+    ← endpoint_rev_eq_attachment hu he]
+  rfl
+
+/-- After contracting a bridge `v`, a loopless vertex of valence two whose neighbours differ from
+`v` keeps its neighbours. -/
+lemma sym2_coe_bridgeNeighbor_contractBridge {u : G.Vertex} (hu : G.valence u = 2)
+    (hloopu : ∀ e, G.endpoint e 0 = u → G.endpoint e 1 ≠ u) (huv : u ≠ v)
+    (hnb : ∀ k, G.bridgeNeighbor hu k ≠ v)
+    (hu' : (G.contractBridge hv hloop hm).valence ⟨u, huv⟩ = 2) :
+    s(((G.contractBridge hv hloop hm).bridgeNeighbor hu' 0 : G.Vertex),
+        ((G.contractBridge hv hloop hm).bridgeNeighbor hu' 1 : G.Vertex)) =
+      s(G.bridgeNeighbor hu 0, G.bridgeNeighbor hu 1) := by
+  have := congrArg (Sym2.map Subtype.val) ((G.contractBridge hv hloop hm).sym2_bridgeNeighbor_eq
+    hu' (h := (some ⟨_, forall_endpoint_halfEdgeOfValenceEqTwo_ne hu huv (hnb 0)⟩,
+      (G.halfEdgeOfValenceEqTwo hu 0).1.2))
+    (h' := (some ⟨_, forall_endpoint_halfEdgeOfValenceEqTwo_ne hu huv (hnb 1)⟩,
+      (G.halfEdgeOfValenceEqTwo hu 1).1.2))
+    (Subtype.ext (G.halfEdgeOfValenceEqTwo hu 0).2) (Subtype.ext (G.halfEdgeOfValenceEqTwo hu 1).2)
+    fun h ↦ halfEdgeOfValenceEqTwo_fst_ne hu hloopu
+      (congrArg Subtype.val (Option.some.inj (congrArg Prod.fst h))))
+  rw [Sym2.map_mk, Sym2.map_mk] at this
+  rw [this]
+  exact congrArg₂ (fun a b ↦ s(a, b)) (endpoint_halfEdgeOfValenceEqTwo_rev hu 0)
+    (endpoint_halfEdgeOfValenceEqTwo_rev hu 1)
+
+/-- After contracting a bridge `v` adjacent to a vertex `u` of valence two along a single node,
+the neighbours of `u` are the other neighbours of `v` and of `u`. -/
+lemma sym2_coe_bridgeNeighbor_contractBridge_of_bridgeNeighbor_eq {u : G.Vertex}
+    (hu : G.valence u = 2) (hne : v ≠ u) {k l : Fin 2} (hk : G.bridgeNeighbor hv k = u)
+    (hl : G.bridgeNeighbor hu l.rev ≠ v)
+    (hval : (G.contractBridge hv hloop hm).valence ⟨u, hne.symm⟩ = 2) :
+    s(((G.contractBridge hv hloop hm).bridgeNeighbor hval 0 : G.Vertex),
+        ((G.contractBridge hv hloop hm).bridgeNeighbor hval 1 : G.Vertex)) =
+      s(G.bridgeNeighbor hv k.rev, G.bridgeNeighbor hu l.rev) := by
+  have := congrArg (Sym2.map Subtype.val) ((G.contractBridge hv hloop hm).sym2_bridgeNeighbor_eq
+    hval (h := (none, k))
+    (h' := (some ⟨_, forall_endpoint_halfEdgeOfValenceEqTwo_ne hu hne.symm hl⟩,
+      (G.halfEdgeOfValenceEqTwo hu l.rev).1.2))
+    (Subtype.ext hk) (Subtype.ext (G.halfEdgeOfValenceEqTwo hu l.rev).2) (by simp))
+  rw [Sym2.map_mk, Sym2.map_mk] at this
+  rw [this]
+  exact congrArg (fun b ↦ s(G.bridgeNeighbor hv k.rev, b))
+    (endpoint_halfEdgeOfValenceEqTwo_rev hu l.rev)
 
 end Bridge
 
