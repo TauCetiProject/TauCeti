@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.StudentT.Basic
 public import TauCeti.Probability.Distributions.Affine
+import TauCeti.Probability.Distributions.Cauchy.Affine
 import TauCeti.Probability.Distributions.Folding
 
 /-!
@@ -33,7 +34,7 @@ public section
 noncomputable section
 
 open MeasureTheory ProbabilityTheory Real Set
-open scoped ENNReal
+open scoped ENNReal NNReal
 
 namespace TauCeti.Probability
 
@@ -239,7 +240,7 @@ theorem ae_pos_halfStudentTMeasure (ν s : ℝ) :
     exact hx (by simp [halfStudentTPDF, halfStudentTPDFReal, h])
 
 /-- Multiplying by a positive constant multiplies the half-Student t scale. -/
-theorem halfStudentTMeasure_map_mul (hc : 0 < c) :
+theorem halfStudentTMeasure_map_const_mul (hc : 0 < c) :
     (halfStudentTMeasure ν s).map (fun x ↦ c * x) = halfStudentTMeasure ν (c * s) := by
   by_cases h : 0 < ν ∧ 0 < s
   · rw [halfStudentTMeasure_of_pos h.1 h.2,
@@ -252,6 +253,14 @@ theorem halfStudentTMeasure_map_mul (hc : 0 < c) :
       halfStudentTMeasure_of_not_pos (by simpa [mul_pos_iff_of_pos_left hc] using h),
       Measure.map_zero]
 
+/-- Multiplying a half-Student t variable by a positive constant multiplies its scale,
+including on the invalid zero-measure branch. -/
+theorem hasLaw_mul_halfStudentTMeasure (hc : 0 < c)
+    (hT : HasLaw T (halfStudentTMeasure ν s) P) :
+    HasLaw (fun ω ↦ c * T ω) (halfStudentTMeasure ν (c * s)) P := by
+  rw [← halfStudentTMeasure_map_const_mul hc]
+  exact (hasLaw_map (by fun_prop : Measurable fun x : ℝ ↦ c * x).aemeasurable).comp hT
+
 /-- The half-Cauchy law is the degree-one half-Student t law. -/
 abbrev halfCauchyMeasure (s : ℝ) : Measure ℝ := halfStudentTMeasure 1 s
 
@@ -259,5 +268,26 @@ abbrev halfCauchyMeasure (s : ℝ) : Measure ℝ := halfStudentTMeasure 1 s
 theorem halfCauchyMeasure_eq_map_cauchyMeasure (hs : 0 < s) :
     halfCauchyMeasure s = (cauchyMeasure 0 1).map (fun x ↦ s * |x|) := by
   rw [halfCauchyMeasure, halfStudentTMeasure_of_pos one_pos hs, studentTMeasure_one]
+
+/-- Folding a centered Cauchy law of positive scale gives the half-Cauchy law of that scale. -/
+theorem cauchyMeasure_map_abs {s : ℝ≥0} (hs : 0 < s) :
+    (cauchyMeasure 0 s).map (|·|) = halfCauchyMeasure s := by
+  have hscale : (cauchyMeasure 0 1).map (fun x : ℝ ↦ (s : ℝ) * x) =
+      cauchyMeasure 0 s := by
+    have hnorm : ‖(s : ℝ)‖₊ = s := NNReal.coe_injective (by simp)
+    simpa only [zero_add, mul_zero, mul_one, hnorm] using
+      cauchyMeasure_map_affine 0 1 0 s
+  rw [← hscale, Measure.map_map (by fun_prop) (by fun_prop),
+    halfCauchyMeasure_eq_map_cauchyMeasure (by exact_mod_cast hs)]
+  congr 1
+  ext x
+  simp only [Function.comp_apply, abs_mul, abs_of_nonneg s.coe_nonneg]
+
+/-- The absolute value of a centered Cauchy variable of positive scale has the half-Cauchy law. -/
+theorem hasLaw_halfCauchyMeasure {s : ℝ≥0} (hs : 0 < s)
+    (hT : HasLaw T (cauchyMeasure 0 s) P) :
+    HasLaw (fun ω ↦ |T ω|) (halfCauchyMeasure s) P := by
+  rw [← cauchyMeasure_map_abs hs]
+  exact (hasLaw_map (by fun_prop : Measurable fun x : ℝ ↦ |x|).aemeasurable).comp hT
 
 end TauCeti.Probability

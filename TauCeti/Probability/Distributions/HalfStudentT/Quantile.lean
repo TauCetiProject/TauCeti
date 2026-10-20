@@ -27,14 +27,27 @@ namespace TauCeti.Probability
 
 variable {ν s u x : ℝ}
 
+private theorem cdf_halfStudentTMeasure_eq_cdf_map_abs (hν : 0 < ν) (hs : 0 < s) (x : ℝ) :
+    cdf (halfStudentTMeasure ν s) x = cdf ((studentTMeasure ν).map (|·|)) (x / s) := by
+  let _ := isProbabilityMeasure_studentTMeasure hν
+  rw [halfStudentTMeasure_eq_map_abs hν hs]
+  simpa only [zero_add, sub_zero] using
+    cdf_map_affine_of_pos (μ := (studentTMeasure ν).map (|·|)) (a := 0) hs x
+
+private theorem quantile_halfStudentTMeasure_eq_quantile_map_abs (hν : 0 < ν) (hs : 0 < s)
+    (hu : u ∈ Ioo 0 1) :
+    (halfStudentTMeasure ν s).quantile u = s * ((studentTMeasure ν).map (|·|)).quantile u := by
+  let _ := isProbabilityMeasure_studentTMeasure hν
+  rw [halfStudentTMeasure_eq_map_abs hν hs]
+  simpa only [zero_add] using
+    quantile_map_affine_pos (μ := (studentTMeasure ν).map (|·|)) (a := 0) hs hu.1 hu.2
+
 /-- The half-Student t cdf on the nonnegative half-line is obtained by folding the Student t
 cdf and rescaling its argument. -/
 theorem cdf_halfStudentTMeasure_of_nonneg (hν : 0 < ν) (hs : 0 < s) (hx : 0 ≤ x) :
     cdf (halfStudentTMeasure ν s) x = 2 * cdf (studentTMeasure ν) (x / s) - 1 := by
   let _ := isProbabilityMeasure_studentTMeasure hν
-  have hscale := cdf_map_affine_of_pos (μ := (studentTMeasure ν).map (|·|)) (a := 0) hs x
-  simp only [zero_add, sub_zero] at hscale
-  rw [halfStudentTMeasure_eq_map_abs hν hs, hscale,
+  rw [cdf_halfStudentTMeasure_eq_cdf_map_abs hν hs,
     Measure.cdf_map_abs_of_isNegInvariant _ (div_nonneg hx hs.le)]
 
 /-- Below zero the half-Student t cdf vanishes. -/
@@ -42,9 +55,7 @@ theorem cdf_halfStudentTMeasure_of_nonneg (hν : 0 < ν) (hs : 0 < s) (hx : 0 �
 theorem cdf_halfStudentTMeasure_of_neg (hν : 0 < ν) (hs : 0 < s) (hx : x < 0) :
     cdf (halfStudentTMeasure ν s) x = 0 := by
   let _ := isProbabilityMeasure_studentTMeasure hν
-  have hscale := cdf_map_affine_of_pos (μ := (studentTMeasure ν).map (|·|)) (a := 0) hs x
-  simp only [zero_add, sub_zero] at hscale
-  rw [halfStudentTMeasure_eq_map_abs hν hs, hscale,
+  rw [cdf_halfStudentTMeasure_eq_cdf_map_abs hν hs,
     Measure.cdf_map_abs_of_neg _ (div_neg_of_neg_of_pos hx hs)]
 
 /-- The cdf of the half-Student t law, including its zero extension below the support. -/
@@ -75,21 +86,13 @@ theorem strictMonoOn_cdf_halfStudentTMeasure (hν : 0 < ν) (hs : 0 < s) :
 theorem quantile_halfStudentTMeasure (hν : 0 < ν) (hs : 0 < s) (hu : u ∈ Ioo 0 1) :
     (halfStudentTMeasure ν s).quantile u = s * (studentTMeasure ν).quantile ((1 + u) / 2) := by
   let _ := isProbabilityMeasure_studentTMeasure hν
-  have hscale := quantile_map_affine_pos (μ := (studentTMeasure ν).map (|·|))
-    (a := 0) hs hu.1 hu.2
-  simp only [zero_add] at hscale
-  rw [halfStudentTMeasure_eq_map_abs hν hs, hscale, Measure.quantile_map_abs _ hu.1]
+  rw [quantile_halfStudentTMeasure_eq_quantile_map_abs hν hs hu, Measure.quantile_map_abs _ hu.1]
 
 /-- Interior half-Student t quantiles are strictly positive. -/
 theorem quantile_halfStudentTMeasure_pos (hν : 0 < ν) (hs : 0 < s) (hu : u ∈ Ioo 0 1) :
     0 < (halfStudentTMeasure ν s).quantile u := by
   rw [quantile_halfStudentTMeasure hν hs hu]
-  apply mul_pos hs
-  have h := Measure.strictMonoOn_quantile _ (continuous_cdf_studentTMeasure hν)
-    (by norm_num : (2⁻¹ : ℝ) ∈ Ioo 0 1)
-    (by constructor <;> linarith [hu.1, hu.2] : (1 + u) / 2 ∈ Ioo 0 1)
-    (by linarith [hu.1] : (2⁻¹ : ℝ) < (1 + u) / 2)
-  simpa only [quantile_studentTMeasure_half hν] using h
+  exact mul_pos hs (quantile_studentTMeasure_pos hν (by constructor <;> linarith [hu.1, hu.2]))
 
 /-- The half-Student t quantile is strictly increasing on interior probability levels. -/
 theorem strictMonoOn_quantile_halfStudentTMeasure (hν : 0 < ν) (hs : 0 < s) :
