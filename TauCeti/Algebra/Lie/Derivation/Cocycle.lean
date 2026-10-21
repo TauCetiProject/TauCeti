@@ -16,7 +16,8 @@ A Lie derivation `D : L → M` into an `L`-module `M` is a 1-cocycle of `L` with
 it shears the action of `L` on `M × R` to `⁅x, (m, t)⁆ = (⁅x, m⁆ + t • D x, 0)`, an extension of
 the trivial module `R` by `M`. This file supplies:
 
-* `LieDerivation.ofD₁₂EqZero`: a 1-cochain `f` with `d₁₂ f = 0` as a Lie derivation;
+* `LieDerivation.d₁₂_eq_zero`: a Lie derivation is a 1-cocycle, `d₁₂ D = 0`;
+* `LieDerivation.ofD₁₂EqZero`: conversely, a 1-cochain `f` with `d₁₂ f = 0` as a Lie derivation;
 * `LieDerivation.ShearedModule D`: the module `M × R` sheared by a Lie derivation `D`, with its
   identification `LieDerivation.ShearedModule.ofProd` with `M × R`.
 
@@ -41,6 +42,12 @@ variable {R L M : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [AddCommGroup
   [LieRingModule L M] [LieModule R L M]
 
 namespace LieDerivation
+
+/-- A Lie derivation is a 1-cocycle. -/
+@[simp]
+lemma d₁₂_eq_zero (D : LieDerivation R L M) : d₁₂ R L M (D : L →ₗ[R] M) = 0 := by
+  ext x y
+  simp [D.apply_lie_eq_sub]
 
 /-- A 1-cochain `f` with `d₁₂ f = 0` satisfies the Leibniz rule, so it is a Lie derivation. -/
 def ofD₁₂EqZero (f : oneCochain R L M) (hf : d₁₂ R L M f = 0) : LieDerivation R L M where
