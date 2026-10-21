@@ -12,7 +12,7 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Additive
 import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Discriminant
 import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic
-import TauCeti.RingTheory.DiscreteValuationRing.Basic
+import TauCeti.RingTheory.LocalRing.MaximalIdeal.Generator
 import TauCeti.RingTheory.Multiplicity
 
 /-!
@@ -97,6 +97,7 @@ public section
 namespace WeierstrassCurve
 
 open IsLocalRing IsDiscreteValuationRing TauCeti
+open TauCeti.IsLocalRing (dvd_iff_residue_eq_zero)
 
 section CommRing
 
@@ -347,7 +348,8 @@ private theorem pow_three_dvd_sq_sub_iff (hϖ : Irreducible ϖ) {A₂ A₄ : R} 
     (hA₄ : W.a₄ = ϖ ^ 2 * A₄) :
     ϖ ^ 3 ∣ W.a₂ ^ 2 - 3 * W.a₄ ↔ residue R A₂ ^ 2 - 3 * residue R A₄ = 0 := by
   rw [hA₂, hA₄, show (ϖ * A₂) ^ 2 - 3 * (ϖ ^ 2 * A₄) = ϖ ^ 2 * (A₂ ^ 2 - 3 * A₄) by ring,
-    pow_succ, mul_dvd_mul_iff_left (pow_ne_zero 2 hϖ.ne_zero), ← hϖ.residue_eq_zero_iff_dvd]
+    pow_succ, mul_dvd_mul_iff_left (pow_ne_zero 2 hϖ.ne_zero),
+    dvd_iff_residue_eq_zero hϖ.maximalIdeal_eq]
   simp [map_ofNat]
 
 /-- Between two equations in the normal form of Step 6, a change of variables has `ϖ ∣ r`,
@@ -394,7 +396,7 @@ private theorem residue_stepSix_smul (hϖ : Irreducible ϖ) {C : VariableChange 
   obtain ⟨s₁, hs₁⟩ := hs
   obtain ⟨t₁, ht₁⟩ := ht
   have hϖ0 := hϖ.ne_zero
-  have hres : residue R ϖ = 0 := (hϖ.residue_eq_zero_iff_dvd ϖ).2 dvd_rfl
+  have hres : residue R ϖ = 0 := (dvd_iff_residue_eq_zero hϖ.maximalIdeal_eq ϖ).1 dvd_rfl
   rw [variableChange_a₂, hA₂, hx₁, hr, hs₁] at hB₂
   rw [variableChange_a₄, hA₂, hA₄, hx₁, hx₃, hr, hs₁, ht₁] at hB₄
   rw [variableChange_a₆, hA₂, hA₄, hA₆, hx₁, hx₃, hr, ht₁] at hB₆
@@ -421,7 +423,7 @@ private theorem tateTest_five_six_of_stepEight (hϖ : Irreducible ϖ) (h₂ : ϖ
   obtain ⟨y₂, hy₂⟩ := h₂
   obtain ⟨y₄, hy₄⟩ := h₄
   obtain ⟨y₆, hy₆⟩ := h₆
-  have hres : residue R ϖ = 0 := (hϖ.residue_eq_zero_iff_dvd ϖ).2 dvd_rfl
+  have hres : residue R ϖ = 0 := (dvd_iff_residue_eq_zero hϖ.maximalIdeal_eq ϖ).1 dvd_rfl
   have hA₂ : W.a₂ = ϖ * (ϖ * y₂) := by rw [hy₂]; ring
   have hA₄ : W.a₄ = ϖ ^ 2 * (ϖ * y₄) := by rw [hy₄]; ring
   have hA₆ : W.a₆ = ϖ ^ 3 * (ϖ * y₆) := by rw [hy₆]; ring
@@ -441,7 +443,7 @@ private theorem tateContext_six_of_doubleRoot (hϖ : Irreducible ϖ) (h₁ : ϖ 
   obtain ⟨A₂, hA₂⟩ := h₂
   obtain ⟨y₄, hy₄⟩ := h₄
   obtain ⟨y₆, hy₆⟩ := h₆
-  have hres : residue R ϖ = 0 := (hϖ.residue_eq_zero_iff_dvd ϖ).2 dvd_rfl
+  have hres : residue R ϖ = 0 := (dvd_iff_residue_eq_zero hϖ.maximalIdeal_eq ϖ).1 dvd_rfl
   have hA₄ : W.a₄ = ϖ ^ 2 * (ϖ * y₄) := by rw [hy₄]; ring
   have hA₆ : W.a₆ = ϖ ^ 3 * (ϖ * y₆) := by rw [hy₆]; ring
   refine ⟨⟨fun k hk ↦ ?_, fun _ ↦ ⟨hp 1 h₃, hp 1 h₄', hp 2 h₆'⟩,
@@ -454,7 +456,7 @@ private theorem tateContext_six_of_doubleRoot (hϖ : Irreducible ϖ) (h₁ : ϖ 
     simp only [tateTest]
     rw [pow_three_dvd_sq_sub_iff hϖ hA₂ hA₄]
     have : residue R A₂ ≠ 0 := by
-      rw [ne_eq, hϖ.residue_eq_zero_iff_dvd]
+      rw [ne_eq, ← dvd_iff_residue_eq_zero hϖ.maximalIdeal_eq]
       rintro ⟨B, rfl⟩
       exact h₂' ⟨B, by rw [hA₂]; ring⟩
     simpa [hres] using this
@@ -598,7 +600,7 @@ private theorem tateTest_smul (hϖ : Irreducible ϖ) (C : VariableChange R) {i :
     obtain ⟨⟨y₂, hy₂⟩, ⟨y₄, hy₄⟩, ⟨y₆, hy₆⟩⟩ := h.2.2.2.1 hi
     obtain ⟨-, -, ⟨y₆', hy₆'⟩⟩ := h'.2.2.2.1 hi
     have hϖ0 := hϖ.ne_zero
-    have hres : residue R ϖ = 0 := (hϖ.residue_eq_zero_iff_dvd ϖ).2 dvd_rfl
+    have hres : residue R ϖ = 0 := (dvd_iff_residue_eq_zero hϖ.maximalIdeal_eq ϖ).1 dvd_rfl
     have hA (n : ℕ) (A y : R) (hA : ϖ ^ (n + 1) * A = ϖ ^ (n + 2) * y) : residue R A = 0 := by
       rw [mul_left_cancel₀ (pow_ne_zero (n + 1) hϖ0) (hA.trans (by ring) :
         _ = ϖ ^ (n + 1) * (ϖ * y))]
@@ -608,7 +610,7 @@ private theorem tateTest_smul (hϖ : Irreducible ϖ) (C : VariableChange R) {i :
       hA 2 A₆ y₆ (by linear_combination hA₆.symm.trans hy₆),
       hA 2 B₆ y₆' (by linear_combination hB₆.symm.trans hy₆')] at e₆
     obtain ⟨r₂, rfl⟩ : ϖ ∣ r₁ := by
-      rw [← hϖ.residue_eq_zero_iff_dvd]
+      rw [dvd_iff_residue_eq_zero hϖ.maximalIdeal_eq]
       simpa [(C.u⁻¹.isUnit.map (residue R)).ne_zero] using e₆.symm
     exact ⟨r₂, by rw [hr]; ring⟩
   -- From the test of `III*` on, both equations are in the normal form of Step 9, so `ϖ³ ∣ t`.
