@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Complex.Trigonometric
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Dilation
 public import TauCeti.Topology.Algebra.Matrix.ProjectiveSpecialLinearGroup
-import Mathlib.Analysis.Real.Sqrt
 import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Endpoint
 import TauCeti.Analysis.SpecialFunctions.Exp.Half
 import TauCeti.Analysis.SpecialFunctions.Hyperbolic
@@ -72,7 +71,7 @@ open Matrix.SpecialLinearGroup (dilation dilation_inv dilation_zpow conj_dilatio
   conj_dilation_apply_zero_one conj_dilation_apply_one_zero conj_dilation_apply_one_one
   dilation_conj_apply_zero_zero dilation_conj_apply_zero_one dilation_conj_apply_one_zero
   dilation_conj_apply_one_one diag_or_antidiag_of_conj_dilation trace_dilation
-  trace_commutatorElement_dilation tendsto_iff_tendsto_apply)
+  trace_commutatorElement_dilation exists_tendsto_dilation_conj)
 
 attribute [local simp] Matrix.adjugate_fin_two
 
@@ -114,105 +113,9 @@ private theorem abs_jorgensenSeq_mul_le (s : ℝ) (B : SL(2, ℝ))
             mul_le_mul (mul_le_mul_of_nonneg_left h1 ht0) ih (abs_nonneg _) (by positivity)
         _ = μ ^ (n + 1) * |B 0 1 * B 1 0| := by ring
 
-/-! ### Balancing the off-diagonal entries -/
-
-/-- For `s > 0`, conjugating a matrix of `SL(2, ℝ)` by a suitable power of `dilation s` makes both
-of its off-diagonal entries at most `exp s * ρ` in absolute value, as soon as their product is at
-most `ρ ^ 2`. -/
-private theorem exists_dilation_conj_le {s : ℝ} (hs : 0 < s) {X : SL(2, ℝ)} {ρ : ℝ} (hρ : 0 < ρ)
-    (hX : |X 0 1 * X 1 0| ≤ ρ ^ 2) :
-    ∃ k : ℤ, |(dilation (k * s) * X * (dilation (k * s))⁻¹) 0 1| ≤ Real.exp s * ρ ∧
-      |(dilation (k * s) * X * (dilation (k * s))⁻¹) 1 0| ≤ Real.exp s * ρ := by
-  simp only [dilation_inv, dilation_conj_apply_zero_one, dilation_conj_apply_one_zero]
-  generalize X 0 1 = x, X 1 0 = y at hX ⊢
-  have hes : 1 ≤ Real.exp s := Real.one_le_exp hs.le
-  have hρle : ρ ≤ Real.exp s * ρ := le_mul_of_one_le_left hρ.le hes
-  rw [abs_mul] at hX
-  by_cases hy : y = 0
-  · by_cases hx : x = 0
-    · exact ⟨0, by rw [hx, mul_zero, abs_zero]; positivity,
-        by rw [hy, mul_zero, abs_zero]; positivity⟩
-    -- make the first entry small: `k s ≤ log ρ - log |x|`
-    have hx0 : 0 < |x| := abs_pos.2 hx
-    refine ⟨⌊(Real.log ρ - Real.log |x|) / s⌋, ?_, by rw [hy, mul_zero, abs_zero]; positivity⟩
-    have hk : (⌊(Real.log ρ - Real.log |x|) / s⌋ : ℝ) * s ≤ Real.log ρ - Real.log |x| :=
-      (le_div_iff₀ hs).1 (Int.floor_le _)
-    rw [abs_mul, Real.abs_exp]
-    calc Real.exp (⌊(Real.log ρ - Real.log |x|) / s⌋ * s) * |x|
-        ≤ Real.exp (Real.log ρ - Real.log |x|) * |x| :=
-          mul_le_mul_of_nonneg_right (Real.exp_le_exp.2 hk) (abs_nonneg _)
-      _ = ρ := by rw [Real.exp_sub, Real.exp_log hρ, Real.exp_log hx0]; field_simp
-      _ ≤ Real.exp s * ρ := hρle
-  -- make the second entry small: `log |y| - log ρ ≤ k s < log |y| - log ρ + s`
-  have hy0 : 0 < |y| := abs_pos.2 hy
-  set m := (Real.log |y| - Real.log ρ) / s
-  refine ⟨⌈m⌉, ?_, ?_⟩
-  · have hk : (⌈m⌉ : ℝ) * s ≤ Real.log |y| - Real.log ρ + s := by
-      have := (Int.ceil_lt_add_one m).le
-      rw [← le_div_iff₀ hs]
-      calc (⌈m⌉ : ℝ) ≤ m + 1 := this
-        _ = (Real.log |y| - Real.log ρ + s) / s := by rw [add_div, div_self hs.ne']
-    rw [abs_mul, Real.abs_exp]
-    calc Real.exp (⌈m⌉ * s) * |x| ≤ Real.exp (Real.log |y| - Real.log ρ + s) * |x| :=
-          mul_le_mul_of_nonneg_right (Real.exp_le_exp.2 hk) (abs_nonneg _)
-      _ = Real.exp s * (|x| * |y|) / ρ := by
-          rw [Real.exp_add, Real.exp_sub, Real.exp_log hy0, Real.exp_log hρ]
-          field_simp
-      _ ≤ Real.exp s * ρ ^ 2 / ρ := by gcongr
-      _ = Real.exp s * ρ := by field_simp
-  · have hk : Real.log |y| - Real.log ρ ≤ (⌈m⌉ : ℝ) * s :=
-      (div_le_iff₀ hs).1 (Int.le_ceil m)
-    rw [abs_mul, Real.abs_exp]
-    calc Real.exp (-(⌈m⌉ * s)) * |y| ≤ Real.exp (-(Real.log |y| - Real.log ρ)) * |y| :=
-          mul_le_mul_of_nonneg_right (Real.exp_le_exp.2 (neg_le_neg hk)) (abs_nonneg _)
-      _ = ρ := by
-          rw [neg_sub, Real.exp_sub, Real.exp_log hy0, Real.exp_log hρ]
-          field_simp
-      _ ≤ Real.exp s * ρ := hρle
-
 /-! ### Jørgensen's inequality -/
 
 variable {Γ : Subgroup PSL(2, ℝ)} {s : ℝ} {B : SL(2, ℝ)}
-
-/-- If the diagonal entries of a sequence of matrices of `SL(2, ℝ)` converge to those of a diagonal
-matrix `D` and the products of its off-diagonal entries tend to `0`, then conjugating each term by a
-suitable power of `dilation s`, `s > 0`, gives a sequence converging to `D`. -/
-private theorem exists_tendsto_dilation_conj (hs : 0 < s) {M : ℕ → SL(2, ℝ)} {D : SL(2, ℝ)}
-    (h00 : Tendsto (fun n ↦ M n 0 0) atTop (𝓝 (D 0 0)))
-    (h11 : Tendsto (fun n ↦ M n 1 1) atTop (𝓝 (D 1 1))) (hD01 : D 0 1 = 0) (hD10 : D 1 0 = 0)
-    (hβ : Tendsto (fun n ↦ M n 0 1 * M n 1 0) atTop (𝓝 0)) :
-    ∃ k : ℕ → ℤ, Tendsto (fun n ↦ dilation (k n * s) * M n * (dilation (k n * s))⁻¹) atTop
-      (𝓝 D) := by
-  -- the radius `ρₙ = √|βₙ| + 1 / (n + 1)` bounds the balanced off-diagonal entries
-  set ρ : ℕ → ℝ := fun n ↦ √|M n 0 1 * M n 1 0| + 1 / ((n : ℝ) + 1)
-  have hρ0 (n : ℕ) : 0 < ρ n := by positivity
-  have hρsq (n : ℕ) : |M n 0 1 * M n 1 0| ≤ ρ n ^ 2 := by
-    have h := Real.sq_sqrt (abs_nonneg (M n 0 1 * M n 1 0))
-    have : 0 ≤ 1 / ((n : ℝ) + 1) := by positivity
-    nlinarith [Real.sqrt_nonneg |M n 0 1 * M n 1 0|]
-  have hρ : Tendsto (fun n ↦ Real.exp s * ρ n) atTop (𝓝 0) := by
-    have habs := hβ.abs
-    rw [abs_zero] at habs
-    have h := ((Real.continuous_sqrt.tendsto 0).comp habs).add
-      tendsto_one_div_add_atTop_nhds_zero_nat
-    rw [Real.sqrt_zero, zero_add] at h
-    have h' := h.const_mul (Real.exp s)
-    rw [mul_zero] at h'
-    exact h'
-  choose k hk using fun n ↦ exists_dilation_conj_le hs (hρ0 n) (hρsq n)
-  set C : ℕ → SL(2, ℝ) := fun n ↦ dilation (k n * s) * M n * (dilation (k n * s))⁻¹
-  have h01 : Tendsto (fun n ↦ C n 0 1) atTop (𝓝 (D 0 1)) := by
-    rw [hD01]
-    refine squeeze_zero_norm (fun n ↦ ?_) hρ
-    simpa only [C, Real.norm_eq_abs] using (hk n).1
-  have h10 : Tendsto (fun n ↦ C n 1 0) atTop (𝓝 (D 1 0)) := by
-    rw [hD10]
-    refine squeeze_zero_norm (fun n ↦ ?_) hρ
-    simpa only [C, Real.norm_eq_abs] using (hk n).2
-  refine ⟨k, tendsto_iff_tendsto_apply.mpr (Fin.forall_fin_two.mpr
-    ⟨Fin.forall_fin_two.mpr ⟨?_, h01⟩, Fin.forall_fin_two.mpr ⟨h10, ?_⟩⟩)⟩
-  · simpa only [C, dilation_inv, dilation_conj_apply_zero_zero] using h00
-  · simpa only [C, dilation_inv, dilation_conj_apply_one_one] using h11
 
 /-- **Convergence.** If Jørgensen's inequality fails for the dilation `D` with `s > 0`, some
 iterate `Bₙ₊₁` is diagonal: suitable conjugates of the iterates by powers of `D` converge to `D`
@@ -238,19 +141,19 @@ private theorem exists_jorgensenSeq_diag [DiscreteTopology Γ] (hs : 0 < s)
     ((tendsto_add_atTop_iff_nat 1).2 hβ)
   -- the conjugates lie in `Γ`, so by discreteness one of them is `±D`
   have hCmem (n : ℕ) :
-      ((dilation (k n * s) * J (n + 1) * (dilation (k n * s))⁻¹ : SL(2, ℝ)) : PSL(2, ℝ)) ∈ Γ := by
+      ((dilation (k n * s) * J (n + 1) * dilation (-(k n * s)) : SL(2, ℝ)) : PSL(2, ℝ)) ∈ Γ := by
     have hDk : ((dilation (k n * s) : SL(2, ℝ)) : PSL(2, ℝ)) ∈ Γ := by
       rw [← dilation_zpow, QuotientGroup.mk_zpow]
       exact Γ.zpow_mem hD _
     have hJ : ((J (n + 1) : SL(2, ℝ)) : PSL(2, ℝ)) ∈ Γ := by
       rw [← QuotientGroup.mk'_apply, map_jorgensenSeq]
       exact jorgensenSeq_mem hD hB _
-    simp only [QuotientGroup.mk_mul, QuotientGroup.mk_inv]
+    simp only [← dilation_inv, QuotientGroup.mk_mul, QuotientGroup.mk_inv]
     exact Γ.mul_mem (Γ.mul_mem hDk hJ) (Γ.inv_mem hDk)
   obtain ⟨n, hn⟩ := (eventually_mk_eq_of_tendsto hCmem hD hk).exists
   rw [Matrix.ProjectiveSpecialLinearGroup.mk_eq_mk_iff] at hn
-  have hoff : (dilation (k n * s) * J (n + 1) * (dilation (k n * s))⁻¹) 0 1 = 0 ∧
-      (dilation (k n * s) * J (n + 1) * (dilation (k n * s))⁻¹) 1 0 = 0 := by
+  have hoff : (dilation (k n * s) * J (n + 1) * dilation (-(k n * s))) 0 1 = 0 ∧
+      (dilation (k n * s) * J (n + 1) * dilation (-(k n * s))) 1 0 = 0 := by
     rcases hn with h | h
     · rw [← h]
       simp
@@ -260,7 +163,7 @@ private theorem exists_jorgensenSeq_diag [DiscreteTopology Γ] (hs : 0 < s)
       have hd01 : (dilation s : SL(2, ℝ)) 0 1 = 0 := by simp
       have hd10 : (dilation s : SL(2, ℝ)) 1 0 = 0 := by simp
       exact ⟨by linarith, by linarith⟩
-  simp only [dilation_inv, dilation_conj_apply_zero_one, dilation_conj_apply_one_zero, mul_eq_zero,
+  simp only [dilation_conj_apply_zero_one, dilation_conj_apply_one_zero, mul_eq_zero,
     Real.exp_ne_zero, false_or] at hoff
   exact ⟨n, hoff⟩
 
@@ -325,8 +228,9 @@ private theorem abs_trace_sq_sub_four_add_abs_trace_commutatorElement_sub_two_eq
       4 * Real.sinh (s / 2) ^ 2 * (1 + |(P⁻¹ * B * P) 0 1 * (P⁻¹ * B * P) 1 0|) := by
   have trace_conj (M : SL(2, ℝ)) : ((P * M * P⁻¹ : SL(2, ℝ)) : Matrix (Fin 2) (Fin 2) ℝ).trace =
       (M : Matrix (Fin 2) (Fin 2) ℝ).trace := by
-    rw [Matrix.SpecialLinearGroup.coe_mul, Matrix.SpecialLinearGroup.coe_mul,
-      Matrix.SpecialLinearGroup.trace_mul_mul_inv]
+    simpa only [ConjAct.specialLinearGroup_smul_def, ConjAct.ofConjAct_toConjAct,
+      Matrix.SpecialLinearGroup.coe_mul] using
+      ConjAct.trace_specialLinearGroup_smul (ConjAct.toConjAct P) (M : Matrix (Fin 2) (Fin 2) ℝ)
   -- `A` is `± P D P⁻¹` in `SL(2, ℝ)`
   replace hA : A = P * dilation s * P⁻¹ ∨ A = -(P * dilation s * P⁻¹) :=
     Matrix.ProjectiveSpecialLinearGroup.mk_eq_mk_iff.1 hA.symm

@@ -18,8 +18,9 @@ public import Mathlib.Data.Set.Card
 -- Non-public: `Polynomial.natDegree_linear_le` and `Polynomial.natDegree_quadratic_le` bound the
 -- degree of the fixed-point polynomial, in the proof only.
 import Mathlib.Algebra.Polynomial.Degree.SmallDegree
--- Non-public: the two real fixed points of a hyperbolic element are the roots
--- `(a - d ± √(tr² - 4)) / (2 c)` of its fixed-point polynomial.
+-- Non-public: when `c ≠ 0`, the two real fixed points of a hyperbolic element are the roots
+-- `(a - d ± √(tr² - 4)) / (2 c)` of its fixed-point polynomial; when `c = 0` they are `∞` and the
+-- root of the linear polynomial.
 import Mathlib.Algebra.QuadraticDiscriminant
 import Mathlib.Analysis.Real.Sqrt
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
@@ -187,8 +188,10 @@ end Matrix.ProjGenLinGroup
 
 namespace Matrix.ProjectiveSpecialLinearGroup
 
-/-- The two fixed ideal points of the class of a matrix of `SL(2, ℝ)` whose trace has absolute
-value greater than `2`: the roots of its fixed-point polynomial. -/
+/-- The class of a matrix `A = !![a, b; c, d]` of `SL(2, ℝ)` whose trace has absolute value greater
+than `2` has two distinct fixed ideal points. When `c ≠ 0` they are the two real roots of its
+fixed-point polynomial; when `c = 0` they are `∞` and the single real root `b / (d - a)` of the
+then linear polynomial. -/
 theorem exists_ne_smul_eq_self_of_two_lt_abs_trace {A : SL(2, ℝ)}
     (h : 2 < |(A : Matrix (Fin 2) (Fin 2) ℝ).trace|) :
     ∃ ξ η : OnePoint ℝ, ξ ≠ η ∧ (A : PSL(2, ℝ)) • ξ = ξ ∧ (A : PSL(2, ℝ)) • η = η := by

@@ -37,7 +37,6 @@ commutes with taking adjugates.
 * `ConjAct.trace_specialLinearGroup_smul` and `ConjAct.det_specialLinearGroup_smul`: conjugation
   preserves the trace and the determinant.
 * `ConjAct.adjugate_specialLinearGroup_smul`: conjugation commutes with the adjugate.
-* `Matrix.SpecialLinearGroup.trace_mul_mul_inv`: `trace (g M g⁻¹) = trace M`, without `ConjAct`.
 * `TauCeti.adjugate_mem_traceDetFiber`: for `2 × 2` matrices, the adjugate has the same trace and
   determinant.
 
@@ -97,19 +96,6 @@ theorem adjugate_specialLinearGroup_smul (g : ConjAct (SpecialLinearGroup n R))
     ← SpecialLinearGroup.coe_inv]
 
 end ConjAct
-
-namespace Matrix.SpecialLinearGroup
-
-variable {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]
-
-/-- Conjugating a matrix by an element of `SL(n, R)` preserves its trace:
-`trace (g M g⁻¹) = trace M`. -/
-theorem trace_mul_mul_inv (g : SpecialLinearGroup n R) (M : Matrix n n R) :
-    trace ((g : Matrix n n R) * M * ((g⁻¹ : SpecialLinearGroup n R) : Matrix n n R)) =
-      trace M := by
-  simp [trace_mul_cycle, adjugate_mul]
-
-end Matrix.SpecialLinearGroup
 
 namespace TauCeti
 

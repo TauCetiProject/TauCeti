@@ -38,6 +38,8 @@ by hyperbolic distance `|s|`, upward for `s > 0` and downward for `s < 0`.
   diagonal matrix conjugates `dilation s` to itself and an antidiagonal one to `dilation (-s)`;
   conversely `diag_or_antidiag_of_conj_dilation`: only these conjugate a nontrivial dilation to
   a diagonal matrix.
+* `Matrix.SpecialLinearGroup.exists_dilation_conj_le`: conjugating by a suitable integer power of
+  a dilation balances the two off-diagonal entries of a matrix of `SL(2, ℝ)`.
 * `Matrix.SpecialLinearGroup.trace_dilation`, `trace_commutatorElement_dilation`: the trace of a
   dilation and of its commutator with any matrix of `SL(2, ℝ)`.
 -/
@@ -209,6 +211,62 @@ theorem diag_or_antidiag_of_conj_dilation {s : ℝ} (hs : s ≠ 0) {X : SL(2, �
       rw [hb, hd] at h
       simp at h
     exact Or.inl ⟨hb, (mul_eq_zero.1 hcd).resolve_right hd⟩
+
+/-! ### Balancing the off-diagonal entries -/
+
+/-- For `s > 0`, conjugating a matrix of `SL(2, ℝ)` by a suitable power of `dilation s` makes both
+of its off-diagonal entries at most `exp s * ρ` in absolute value, as soon as their product is at
+most `ρ ^ 2`. -/
+theorem exists_dilation_conj_le {s : ℝ} (hs : 0 < s) {X : SL(2, ℝ)} {ρ : ℝ} (hρ : 0 < ρ)
+    (hX : |X 0 1 * X 1 0| ≤ ρ ^ 2) :
+    ∃ k : ℤ, |(dilation (k * s) * X * dilation (-(k * s))) 0 1| ≤ Real.exp s * ρ ∧
+      |(dilation (k * s) * X * dilation (-(k * s))) 1 0| ≤ Real.exp s * ρ := by
+  simp only [dilation_conj_apply_zero_one, dilation_conj_apply_one_zero]
+  generalize X 0 1 = x, X 1 0 = y at hX ⊢
+  have hes : 1 ≤ Real.exp s := Real.one_le_exp hs.le
+  have hρle : ρ ≤ Real.exp s * ρ := le_mul_of_one_le_left hρ.le hes
+  rw [abs_mul] at hX
+  by_cases hy : y = 0
+  · by_cases hx : x = 0
+    · exact ⟨0, by rw [hx, mul_zero, abs_zero]; positivity,
+        by rw [hy, mul_zero, abs_zero]; positivity⟩
+    -- make the first entry small: `k s ≤ log ρ - log |x|`
+    have hx0 : 0 < |x| := abs_pos.2 hx
+    refine ⟨⌊(Real.log ρ - Real.log |x|) / s⌋, ?_, by rw [hy, mul_zero, abs_zero]; positivity⟩
+    have hk : (⌊(Real.log ρ - Real.log |x|) / s⌋ : ℝ) * s ≤ Real.log ρ - Real.log |x| :=
+      (le_div_iff₀ hs).1 (Int.floor_le _)
+    rw [abs_mul, Real.abs_exp]
+    calc Real.exp (⌊(Real.log ρ - Real.log |x|) / s⌋ * s) * |x|
+        ≤ Real.exp (Real.log ρ - Real.log |x|) * |x| :=
+          mul_le_mul_of_nonneg_right (Real.exp_le_exp.2 hk) (abs_nonneg _)
+      _ = ρ := by rw [Real.exp_sub, Real.exp_log hρ, Real.exp_log hx0]; field_simp
+      _ ≤ Real.exp s * ρ := hρle
+  -- make the second entry small: `log |y| - log ρ ≤ k s < log |y| - log ρ + s`
+  have hy0 : 0 < |y| := abs_pos.2 hy
+  set m := (Real.log |y| - Real.log ρ) / s
+  refine ⟨⌈m⌉, ?_, ?_⟩
+  · have hk : (⌈m⌉ : ℝ) * s ≤ Real.log |y| - Real.log ρ + s := by
+      have := (Int.ceil_lt_add_one m).le
+      rw [← le_div_iff₀ hs]
+      calc (⌈m⌉ : ℝ) ≤ m + 1 := this
+        _ = (Real.log |y| - Real.log ρ + s) / s := by rw [add_div, div_self hs.ne']
+    rw [abs_mul, Real.abs_exp]
+    calc Real.exp (⌈m⌉ * s) * |x| ≤ Real.exp (Real.log |y| - Real.log ρ + s) * |x| :=
+          mul_le_mul_of_nonneg_right (Real.exp_le_exp.2 hk) (abs_nonneg _)
+      _ = Real.exp s * (|x| * |y|) / ρ := by
+          rw [Real.exp_add, Real.exp_sub, Real.exp_log hy0, Real.exp_log hρ]
+          field_simp
+      _ ≤ Real.exp s * ρ ^ 2 / ρ := by gcongr
+      _ = Real.exp s * ρ := by field_simp
+  · have hk : Real.log |y| - Real.log ρ ≤ (⌈m⌉ : ℝ) * s :=
+      (div_le_iff₀ hs).1 (Int.le_ceil m)
+    rw [abs_mul, Real.abs_exp]
+    calc Real.exp (-(⌈m⌉ * s)) * |y| ≤ Real.exp (-(Real.log |y| - Real.log ρ)) * |y| :=
+          mul_le_mul_of_nonneg_right (Real.exp_le_exp.2 (neg_le_neg hk)) (abs_nonneg _)
+      _ = ρ := by
+          rw [neg_sub, Real.exp_sub, Real.exp_log hy0, Real.exp_log hρ]
+          field_simp
+      _ ≤ Real.exp s * ρ := hρle
 
 /-! ### Traces -/
 
