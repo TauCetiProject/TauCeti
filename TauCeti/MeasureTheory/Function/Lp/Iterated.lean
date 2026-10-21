@@ -42,6 +42,11 @@ variable {α β ε : Type*} [MeasurableSpace α] [MeasurableSpace β] [Topologic
 
 namespace TauCeti
 
+/-
+The unconditional formulation below is adapted from Harald Husum and Claude Opus 5.5's
+generalization audit, commit f0e7fac60832894e7feb09497ff5c956dcc7f7f4.
+-/
+
 /-- The `L^∞` seminorm only sees the null sets of the measure, so it does not change when an
 s-finite measure is replaced by the equivalent finite measure `Measure.toFinite`. -/
 @[simp]
