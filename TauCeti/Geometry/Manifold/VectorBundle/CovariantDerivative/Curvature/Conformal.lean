@@ -258,18 +258,6 @@ private theorem sum_mvfderiv_mul_mvfderiv [RiemannianBundle (fun x : M ↦ Tange
   rw [← b.sum_inner_mul_inner]
   simp only [inner_mgradient, inner_mgradient_right]
 
-omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] in
-/-- In an orthonormal basis of a tangent space, `∑ ⟪bᵢ, bᵢ⟫` is the dimension of the model
-space. -/
-private theorem sum_inner_self_eq_finrank [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-    (x : M) (b : OrthonormalBasis (Fin (Module.finrank ℝ (TangentSpace I x))) ℝ
-      (TangentSpace I x)) :
-    ∑ i, ⟪b i, b i⟫ = Module.finrank ℝ E := by
-  simp only [real_inner_self_eq_norm_sq, b.orthonormal.1, one_pow, Finset.sum_const,
-    Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, mul_one]
-  -- The tangent space `TangentSpace I x` is the model space `E`.
-  rfl
-
 variable [T2Space M]
 
 /-- **Curvature tensor under the conformal change `e^(2u) g`.** For a smooth metric `g` and a
@@ -360,8 +348,10 @@ theorem ricciTensor_leviCivitaConnection_rescale_exp
     laplaceBeltrami_eq_sum_hessian I u x b]
   -- The tangent space `TangentSpace I x` is the model space `E`.
   have hn : Module.finrank ℝ (TangentSpace I x) = Module.finrank ℝ E := rfl
+  have s₀ : ∑ i, ⟪b i, b i⟫ = Module.finrank ℝ E :=
+    (TauCeti.bilinFormTrace_eq_sum (innerₗ _) b).symm.trans TauCeti.bilinFormTrace_inner
   simp only [hK, Finset.sum_add_distrib, Finset.sum_sub_distrib, ← Finset.mul_sum,
-    sum_mvfderiv_mul_mvfderiv u x b, sum_inner_self_eq_finrank x b, hn]
+    sum_mvfderiv_mul_mvfderiv u x b, s₀, hn]
   ring
 
 /-- **Scalar curvature under the conformal change `e^(2u) g`.** For a smooth metric `g` on a
@@ -394,10 +384,12 @@ theorem scalarCurvature_rescale_exp
     neg_mul_eq_neg_mul, scalarCurvature_def]
   simp only [ricciTensor_leviCivitaConnection_rescale_exp g hu x]
   -- Sum the Ricci formula over the `g`-orthonormal basis.
+  have s₀ : ∑ i, ⟪b i, b i⟫ = Module.finrank ℝ E :=
+    (TauCeti.bilinFormTrace_eq_sum (innerₗ _) b).symm.trans TauCeti.bilinFormTrace_inner
   have s₁ : ∑ i, hessian I u x (b i) (b i) = laplaceBeltrami I u x :=
     (laplaceBeltrami_eq_sum_hessian I u x b).symm
   rw [Finset.sum_sub_distrib, Finset.sum_sub_distrib, ← Finset.mul_sum, ← Finset.mul_sum,
-    Finset.sum_sub_distrib, s₁, sum_mvfderiv_mul_mvfderiv u x b, sum_inner_self_eq_finrank x b,
+    Finset.sum_sub_distrib, s₁, sum_mvfderiv_mul_mvfderiv u x b, s₀,
     ← CovariantDerivative.scalarCurvature_eq_sum _ x b]
   ring
 
