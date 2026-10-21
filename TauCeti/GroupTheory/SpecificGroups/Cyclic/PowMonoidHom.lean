@@ -33,12 +33,13 @@ holds in any commutative group of order `N`, indeed of exponent dividing `N`; it
 * `IsCyclic.range_powMonoidHom_eq_ker`: in a finite cyclic group the image of the `d`-th power
   map is the kernel of the `(N / gcd(N, d))`-th power map.
 * `IsCyclic.mem_range_powMonoidHom_iff`: `a` is a `d`-th power iff `a ^ (N / gcd(N, d)) = 1`.
-* `Subgroup.eq_range_powMonoidHom_iff`: the `d`-th powers form the unique subgroup of order
-  `N / gcd(N, d)`.
 
 Each result has an additive version, stated for `nsmulAddMonoidHom` in an additive cyclic group
-(`IsAddCyclic.mem_range_nsmulAddMonoidHom_iff`, `AddSubgroup.eq_range_nsmulAddMonoidHom_iff`,
-...).
+(`IsAddCyclic.range_nsmulAddMonoidHom_eq_ker`, `IsAddCyclic.mem_range_nsmulAddMonoidHom_iff`).
+
+That the `d`-th powers form the unique subgroup of order `N / gcd(N, d)` is already Mathlib's
+`IsCyclic.subgroup_eq_iff_card_eq` combined with `IsCyclic.card_powMonoidHom_range`; an example
+below applies it.
 
 ## References
 
@@ -85,21 +86,6 @@ theorem mem_range_powMonoidHom_iff (d : ℕ) (x : G) :
 
 end IsCyclic
 
-namespace Subgroup
-
-variable [CommGroup G] [IsCyclic G] [Finite G]
-
-/-- In a finite cyclic group of order `N`, the `d`-th powers form the unique subgroup of order
-`N / gcd(N, d)`. -/
-@[to_additive
-/-- In a finite additive cyclic group of order `N`, the `d`-th multiples form the unique
-subgroup of order `N / gcd(N, d)`. -/]
-theorem eq_range_powMonoidHom_iff (H : Subgroup G) (d : ℕ) :
-    H = (powMonoidHom d : G →* G).range ↔ Nat.card H = Nat.card G / (Nat.card G).gcd d := by
-  rw [IsCyclic.subgroup_eq_iff_card_eq, IsCyclic.card_powMonoidHom_range]
-
-end Subgroup
-
 /-! ### Examples -/
 
 section Examples
@@ -114,8 +100,9 @@ example {G : Type*} [CommGroup G] [IsCyclic G] [Finite G] (hG : Nat.card G = 12)
 /-- In a cyclic group of order `12`, every element is a fifth power, since `gcd(12, 5) = 1`. -/
 example {G : Type*} [CommGroup G] [IsCyclic G] [Finite G] (hG : Nat.card G = 12) :
     (powMonoidHom 5 : G →* G).range = ⊤ := by
-  refine (((⊤ : Subgroup G).eq_range_powMonoidHom_iff 5).2 ?_).symm
-  rw [Subgroup.card_top, hG]
+  -- The `d`-th powers form the unique subgroup of order `N / gcd(N, d)`.
+  rw [eq_comm, IsCyclic.subgroup_eq_iff_card_eq, IsCyclic.card_powMonoidHom_range,
+    Subgroup.card_top, hG]
   rfl
 
 /-- For `d = 0` the criterion reads `x = 1`: the only `0`-th power is `1`. -/
