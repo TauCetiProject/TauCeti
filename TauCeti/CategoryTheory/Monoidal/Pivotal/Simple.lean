@@ -22,7 +22,7 @@ traces are `k`-linear, the trace of `f` is that scalar times the dimension of `X
 
 When the unit `𝟙_ C` is itself simple with finite-dimensional endomorphisms, applying
 `endAlgEquivOfSimple k (𝟙_ C)` to these identities reads the traces as elements of `k`, by the
-`simp` lemmas of `TauCeti.CategoryTheory.Preadditive.Schur`.
+`simp` lemmas for `End.of` of `TauCeti.CategoryTheory.Linear.Endomorphism`.
 
 ## References
 
