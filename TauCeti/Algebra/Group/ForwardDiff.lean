@@ -24,6 +24,7 @@ identities are stated using multiplication by the coefficients in the ring.
   binomial sum of translates.
 * `TauCeti.neg_one_pow_mul_fwdDiff_iter_succ` and
   `TauCeti.neg_one_pow_mul_fwdDiff_iter_eq_alternating_sum`: the ring-valued forms.
+* `TauCeti.sum_neg_one_pow_mul_choose_succ`: the successor step for alternating binomial sums.
 -/
 
 public section
@@ -76,5 +77,14 @@ theorem neg_one_pow_mul_fwdDiff_iter_eq_alternating_sum (n : ℕ) (F : M → R) 
   simp only [zsmul_eq_mul] at h
   push_cast at h
   exact h
+
+/-- An alternating binomial sum of successor order is the alternating binomial sum of the
+negative forward differences of consecutive values. -/
+theorem sum_neg_one_pow_mul_choose_succ (n : ℕ) (f : ℕ → R) :
+    (∑ k ∈ Finset.range (n + 2), (-1 : R) ^ k * (n + 1).choose k * f k) =
+      ∑ k ∈ Finset.range (n + 1), (-1 : R) ^ k * n.choose k * (f k - f (k + 1)) := by
+  have h := congrFun (neg_one_pow_mul_fwdDiff_iter_succ n f 1) 0
+  simpa only [neg_one_pow_mul_fwdDiff_iter_eq_alternating_sum,
+    smul_eq_mul, mul_one, zero_add, Pi.neg_apply, fwdDiff, neg_sub] using h.symm
 
 end TauCeti

@@ -70,7 +70,7 @@ theorem cdf_irwinHallMeasure_eq {n : ℕ} (hn : 0 < n) (x : ℝ) :
     rw [intervalIntegral.integral_div, intervalIntegral.integral_finsetSum]
     · calc
         _ = (∑ k ∈ Finset.range (n + 1), (-1 : ℝ) ^ k * (n.choose k : ℝ) *
-            (max (x - k) 0 ^ (n + 1) - max (x - (k + 1 : ℕ)) 0 ^ (n + 1)) /
+            (max (x - k) 0 ^ (n + 1) - max (x - k - 1) 0 ^ (n + 1)) /
               (n + 1)) / n.factorial := by
           congr 1
           apply Finset.sum_congr rfl
@@ -80,14 +80,9 @@ theorem cdf_irwinHallMeasure_eq {n : ℕ} (hn : 0 < n) (x : ℝ) :
           rw [intervalIntegral.integral_max_sub_zero_pow hn']
           simp [mul_div_assoc, sub_sub]
         _ = _ := by
-          rw [← Finset.sum_div]
-          have hsum := congrFun (neg_one_pow_mul_fwdDiff_iter_succ n
-            (fun k : ℕ ↦ max (x - k) 0 ^ (n + 1)) 1) 0
-          simp only [neg_one_pow_mul_fwdDiff_iter_eq_alternating_sum,
-            smul_eq_mul, mul_one, zero_add, Pi.neg_apply, fwdDiff, neg_sub] at hsum
-          rw [hsum]
+          rw [← Finset.sum_div, sum_neg_one_pow_mul_choose_succ]
           push_cast [Nat.factorial_succ]
-          field_simp
+          simp [sub_add_eq_sub_sub, div_div, mul_comm]
     · exact fun k _ ↦ hint k
 
 end TauCeti.Probability
