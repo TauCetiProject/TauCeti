@@ -21,13 +21,13 @@ public section
 variable {ι : Type*} {G : ι → Type*} [Fintype ι] [Unique ι] [∀ i, SeminormedGroup (G i)]
 
 /-- Over a one-point index type, the sup norm is the norm of the only coordinate. -/
-@[to_additive Pi.nnnorm_unique
+@[to_additive (attr := simp) Pi.nnnorm_unique
   /-- Over a one-point index type, the sup norm is the norm of the only coordinate. -/]
 lemma Pi.nnnorm_unique' (f : ∀ i, G i) : ‖f‖₊ = ‖f default‖₊ := by
   rw [Pi.nnnorm_def', Finset.univ_unique, Finset.sup_singleton]
 
 /-- Over a one-point index type, the sup norm is the norm of the only coordinate. -/
-@[to_additive Pi.norm_unique
+@[to_additive (attr := simp) Pi.norm_unique
   /-- Over a one-point index type, the sup norm is the norm of the only coordinate. -/]
 lemma Pi.norm_unique' (f : ∀ i, G i) : ‖f‖ = ‖f default‖ :=
   congrArg NNReal.toReal (Pi.nnnorm_unique' f)
