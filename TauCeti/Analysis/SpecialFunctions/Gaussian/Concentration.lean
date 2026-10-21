@@ -6,16 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Distributions.Gaussian.Real
-import Mathlib.Analysis.SpecialFunctions.Gaussian.PoissonSummation
-import Mathlib.MeasureTheory.Integral.PeakFunction
 
 /-!
-# Concentration of Gaussian densities
+# Gaussian densities and complex-kernel estimates
 
 For `c > 0`, the function `t ↦ c exp (-(c t)²) / √π` is the density of the centred Gaussian law
-of variance `(2 c²)⁻¹`, that is, of width `c⁻¹`. As `c → ∞` these densities concentrate at `0`:
-for every integrable `g` continuous at `0`, `∫ t, c exp (-(c t)²) / √π • g t → g 0`. This is the
-approximate-identity property used to smear elements along a one-parameter flow.
+of variance `(2 c²)⁻¹`, that is, of width `c⁻¹`. This file identifies the density with
+Mathlib’s Gaussian probability density and records that its total mass is one.
 
 This file also records the complex Gaussian estimates needed to differentiate integrals against
 the translated kernel `z ↦ exp (-(c (t - z))²)` under the integral sign: a Gaussian bound in `t`,
@@ -30,8 +27,6 @@ uniform for `z` in a ball, and the complex derivative in `z`.
 * `Real.gaussianDensity_eq_gaussianPDFReal`: for `c > 0` it is Mathlib's Gaussian
   density `ProbabilityTheory.gaussianPDFReal` with mean `0` and variance `(2 c²)⁻¹`.
 * `Real.integral_gaussianDensity`: for `c > 0` it has total mass one.
-* `Real.tendsto_integral_gaussianDensity_smul`: the densities concentrate at `0` as
-  `c → ∞`.
 * `Complex.norm_cexp_neg_mul_sub_sq_le`: the Gaussian bound
   `‖exp (-(c (t - z))²)‖ ≤ exp (c² D²) exp (-(c² / 2) t²)` for `‖z‖ ≤ D`.
 * `Complex.hasDerivAt_cexp_neg_mul_sub_sq`: the complex derivative of
@@ -81,18 +76,6 @@ theorem integral_gaussianDensity {c : ℝ} (hc : 0 < c) : ∫ t, gaussianDensity
   refine ProbabilityTheory.integral_gaussianPDFReal_eq_one 0 ?_
   simpa using pow_pos hc 2
 
-/-- The Gaussian densities concentrate at `0` as their width tends to zero. -/
-theorem tendsto_integral_gaussianDensity_smul {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] [CompleteSpace E] {g : ℝ → E} (hg : Integrable g)
-    (h'g : ContinuousAt g 0) :
-    Tendsto (fun c : ℝ => ∫ t, gaussianDensity c t • g t) atTop (𝓝 (g 0)) := by
-  have h := tendsto_integral_comp_smul_smul_of_integrable (μ := volume)
-    (φ := fun x : ℝ => (√π)⁻¹ * rexp (-x ^ 2)) (fun x => by positivity) ?_ ?_ hg h'g
-  · simpa [gaussianDensity, Module.finrank_self, smul_eq_mul] using h
-  · simpa [gaussianDensity] using integral_gaussianDensity one_pos
-  · rw [Metric.cobounded_eq_cocompact]
-    simpa [Module.finrank_self, mul_left_comm] using
-      (tendsto_rpow_abs_mul_exp_neg_mul_sq_cocompact one_pos 1).const_mul (√π)⁻¹
 
 end Real
 
