@@ -16,7 +16,7 @@ A tower of modules `A₀ ← A₁ ← A₂ ← ⋯` is *Mittag-Leffler* if, for 
 composite transitions `Aₖ → Aₙ` stabilise as `k` grows. We take this to be Mathlib's
 `CategoryTheory.Functor.IsMittagLeffler` for the underlying functor `ℕᵒᵖ ⥤ Type`, and show that it
 is the eventual constancy of the images, which are submodules. Towers with surjective transitions
-and towers of finite modules are Mittag-Leffler.
+and towers of modules with finitely many elements are Mittag-Leffler.
 
 The main result is that a Mittag-Leffler tower has vanishing `lim¹` (Stacks, Tag 07KW). This
 feeds the exactness of `lim` on short exact sequences of towers whose kernel is Mittag-Leffler,
@@ -36,7 +36,7 @@ transitions reduce a family in `∏ₙ Aₙ`, modulo the image of the shift, to 
   images `range (Aₖ → Aₙ)` are eventually constant.
 * `TauCeti.ModuleTower.isMittagLeffler_of_surjective`,
   `TauCeti.ModuleTower.isMittagLeffler_of_finite`: towers with surjective transitions, and towers
-  of finite modules, are Mittag-Leffler.
+  whose terms are finite sets, are Mittag-Leffler.
 * `TauCeti.ModuleTower.shift_surjective_of_isMittagLeffler`,
   `TauCeti.ModuleTower.subsingleton_limOne_of_isMittagLeffler`: Mittag-Leffler towers have
   surjective shift map, hence vanishing `lim¹`.
@@ -102,11 +102,11 @@ theorem isMittagLeffler_iff_ranges : F.IsMittagLeffler ↔
 theorem isMittagLeffler_of_surjective (h : ∀ n, Function.Surjective (F.transition n)) :
     F.IsMittagLeffler :=
   (F.isMittagLeffler_iff_ranges).2 fun n ↦ ⟨n, le_rfl, fun k hnk ↦ by
-    rw [LinearMap.range_eq_top.2 (F.surjective_transitionOfLE h _),
-      LinearMap.range_eq_top.2 (F.surjective_transitionOfLE h _)]⟩
+    rw [LinearMap.range_eq_top.2 (F.transitionOfLE_surjective h _),
+      LinearMap.range_eq_top.2 (F.transitionOfLE_surjective h _)]⟩
 
-/-- **Towers of finite modules are Mittag-Leffler**: the images in each term form a decreasing
-family of finite sets, which stabilises. -/
+/-- **Towers of modules with finitely many elements are Mittag-Leffler**: the images in each
+term form a decreasing family of finite sets, which stabilises. -/
 theorem isMittagLeffler_of_finite [∀ n, Finite (F.obj (op n))] : F.IsMittagLeffler :=
   Functor.isMittagLeffler_of_exists_finite_range _ fun ⟨n⟩ ↦
     ⟨op n, 𝟙 _, by rw [range_forget_map, LinearMap.coe_range]; exact Set.finite_range _⟩

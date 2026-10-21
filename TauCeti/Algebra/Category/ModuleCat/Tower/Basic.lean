@@ -131,7 +131,7 @@ theorem range_transitionOfLE_le {m n k : ℕ} (hmn : m ≤ n) (hnk : n ≤ k) :
   exact LinearMap.range_comp_le_range _ _
 
 /-- If every transition map of a tower is surjective, then so is every composite transition. -/
-theorem surjective_transitionOfLE (h : ∀ n, Function.Surjective (F.transition n)) {n k : ℕ}
+theorem transitionOfLE_surjective (h : ∀ n, Function.Surjective (F.transition n)) {n k : ℕ}
     (hnk : n ≤ k) : Function.Surjective (F.transitionOfLE hnk) := by
   induction k, hnk using Nat.le_induction with
   | base => simpa using Function.surjective_id
@@ -234,6 +234,11 @@ theorem map_apply_of_mem_lim {x : F.Product} (hx : x ∈ F.lim) {m n : ℕ} (f :
     (F.map f).hom (x n) = x m :=
   (LinearMap.congr_fun (congrArg ModuleCat.Hom.hom (F.limCone.π.naturality f)) ⟨x, hx⟩).symm
 
+/-- An element of `lim A` is compatible with the composite transition `Aₖ → Aₙ`, `n ≤ k`. -/
+theorem transitionOfLE_apply_of_mem_lim {x : F.Product} (hx : x ∈ F.lim) {n k : ℕ}
+    (h : n ≤ k) : F.transitionOfLE h (x k) = x n :=
+  F.map_apply_of_mem_lim hx (homOfLE h).op
+
 /-- `lim A`, with its projections, is a limit of the tower `A` in `ModuleCat R`. -/
 def isLimitLimCone : Limits.IsLimit F.limCone where
   lift s := ModuleCat.ofHom <| F.limLift (fun n ↦ (s.π.app (op n)).hom) fun n ↦ by
@@ -315,6 +320,12 @@ theorem productMap_add (f g : F ⟶ G) : productMap (f + g) = productMap f + pro
 theorem app_comp_transition (f : F ⟶ G) (n : ℕ) :
     (f.app (op n)).hom ∘ₗ F.transition n = G.transition n ∘ₗ (f.app (op (n + 1))).hom := by
   rw [transition_def, transition_def, ← ModuleCat.hom_comp, ← ModuleCat.hom_comp, f.naturality]
+
+/-- A morphism of towers commutes with the composite transition maps. -/
+theorem app_comp_transitionOfLE (f : F ⟶ G) {n k : ℕ} (h : n ≤ k) :
+    (f.app (op n)).hom ∘ₗ F.transitionOfLE h = G.transitionOfLE h ∘ₗ (f.app (op k)).hom := by
+  rw [transitionOfLE_def, transitionOfLE_def, ← ModuleCat.hom_comp, ← ModuleCat.hom_comp,
+    f.naturality]
 
 /-- The product map of a morphism of towers commutes with the shift maps. -/
 theorem shift_natural (f : F ⟶ G) : G.shift ∘ₗ productMap f = productMap f ∘ₗ F.shift := by
