@@ -80,6 +80,9 @@ identity.
   372–381.
 * I. Moerdijk and D. A. Pronk, *Orbifolds, sheaves and groupoids*, K-Theory 12 (1997), 3–21,
   where this linearization gives the local charts of a proper étale groupoid.
+* A. Adem, J. Leida and Y. Ruan, *Orbifolds and Stringy Topology*, Cambridge Tracts in
+  Mathematics 171, Cambridge University Press, 2007, Ch. 1, for linear local models of
+  orbifolds, including nonfaithful ones and their ineffective kernel.
 -/
 
 public section
