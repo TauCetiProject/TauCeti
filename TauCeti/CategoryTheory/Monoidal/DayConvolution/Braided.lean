@@ -90,44 +90,44 @@ def braiding (F G : C ⊛⥤ V) : F ⊗ G ≅ G ⊗ F :=
   (equiv C V).inverse.mapIso
     (DayConvolution.braiding ((ι C V (C ⊛⥤ V)).obj F) ((ι C V (C ⊛⥤ V)).obj G))
 
+instance braidedCategory : BraidedCategory (C ⊛⥤ V) where
+  braiding := braiding
+  braiding_naturality_right F G H f := by
+    apply (ι C V (C ⊛⥤ V)).map_injective
+    simp only [Functor.map_comp, ι_map_whiskerLeft_eq_tensorHom,
+      ι_map_whiskerRight_eq_tensorHom]
+    exact DayConvolution.braiding_naturality_right _ _
+  braiding_naturality_left f H := by
+    apply (ι C V (C ⊛⥤ V)).map_injective
+    simp only [Functor.map_comp, ι_map_whiskerLeft_eq_tensorHom,
+      ι_map_whiskerRight_eq_tensorHom]
+    exact DayConvolution.braiding_naturality_left _ _
+  hexagon_forward F G H := by
+    apply (ι C V (C ⊛⥤ V)).map_injective
+    simp only [Functor.map_comp, ι_map_whiskerLeft_eq_tensorHom,
+      ι_map_whiskerRight_eq_tensorHom, ι_map_associator_hom_eq_associator_hom]
+    exact DayConvolution.hexagon_forward _ _ _
+  hexagon_reverse F G H := by
+    apply (ι C V (C ⊛⥤ V)).map_injective
+    simp only [Functor.map_comp, ι_map_whiskerLeft_eq_tensorHom,
+      ι_map_whiskerRight_eq_tensorHom, ι_map_associator_inv_eq_associator_inv]
+    exact DayConvolution.hexagon_reverse _ _ _
+
+/-- The braiding of the instance `BraidedCategory (C ⊛⥤ V)` is `DayFunctor.braiding`. -/
+lemma braiding_eq (F G : C ⊛⥤ V) : β_ F G = braiding F G := (rfl)
+
 /-- `ι` carries the braiding of Day functors to Mathlib's Day convolution braiding. -/
 lemma ι_map_braiding_hom (F G : C ⊛⥤ V) :
-    (ι C V (C ⊛⥤ V)).map (braiding F G).hom =
+    (ι C V (C ⊛⥤ V)).map (β_ F G).hom =
       (DayConvolution.braiding ((ι C V (C ⊛⥤ V)).obj F) ((ι C V (C ⊛⥤ V)).obj G)).hom :=
   (rfl)
 
 /-- `ι` carries the inverse braiding of Day functors to Mathlib's inverse Day convolution
 braiding. -/
 lemma ι_map_braiding_inv (F G : C ⊛⥤ V) :
-    (ι C V (C ⊛⥤ V)).map (braiding F G).inv =
+    (ι C V (C ⊛⥤ V)).map (β_ F G).inv =
       (DayConvolution.braiding ((ι C V (C ⊛⥤ V)).obj F) ((ι C V (C ⊛⥤ V)).obj G)).inv :=
   (rfl)
-
-instance braidedCategory : BraidedCategory (C ⊛⥤ V) where
-  braiding := braiding
-  braiding_naturality_right F G H f := by
-    apply (ι C V (C ⊛⥤ V)).map_injective
-    simp only [Functor.map_comp, ι_map_whiskerLeft_eq_tensorHom,
-      ι_map_whiskerRight_eq_tensorHom, ι_map_braiding_hom]
-    exact DayConvolution.braiding_naturality_right _ _
-  braiding_naturality_left f H := by
-    apply (ι C V (C ⊛⥤ V)).map_injective
-    simp only [Functor.map_comp, ι_map_whiskerLeft_eq_tensorHom,
-      ι_map_whiskerRight_eq_tensorHom, ι_map_braiding_hom]
-    exact DayConvolution.braiding_naturality_left _ _
-  hexagon_forward F G H := by
-    apply (ι C V (C ⊛⥤ V)).map_injective
-    simp only [Functor.map_comp, ι_map_whiskerLeft_eq_tensorHom,
-      ι_map_whiskerRight_eq_tensorHom, ι_map_braiding_hom, ι_map_associator_hom_eq_associator_hom]
-    exact DayConvolution.hexagon_forward _ _ _
-  hexagon_reverse F G H := by
-    apply (ι C V (C ⊛⥤ V)).map_injective
-    simp only [Functor.map_comp, ι_map_whiskerLeft_eq_tensorHom,
-      ι_map_whiskerRight_eq_tensorHom, ι_map_braiding_hom, ι_map_associator_inv_eq_associator_inv]
-    exact DayConvolution.hexagon_reverse _ _ _
-
-/-- The braiding of the instance `BraidedCategory (C ⊛⥤ V)` is `DayFunctor.braiding`. -/
-lemma braiding_eq (F G : C ⊛⥤ V) : β_ F G = braiding F G := (rfl)
 
 /-- The braiding of Day functors restricted along the Day convolution unit `η F G`: at `(x, y)`
 it is the braiding of `V`, followed by `η G F` at `(y, x)` and the action of `G ⊗ F` on the
@@ -153,8 +153,7 @@ instance symmetricCategory [SymmetricCategory C] [SymmetricCategory V] :
     SymmetricCategory (C ⊛⥤ V) where
   symmetry F G := by
     apply (ι C V (C ⊛⥤ V)).map_injective
-    rw [Functor.map_comp, Functor.map_id, braiding_eq, braiding_eq, ι_map_braiding_hom,
-      ι_map_braiding_hom]
+    rw [Functor.map_comp, Functor.map_id, ι_map_braiding_hom, ι_map_braiding_hom]
     exact DayConvolution.symmetry _ _
 
 end DayFunctor
