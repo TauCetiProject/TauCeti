@@ -172,7 +172,7 @@ theorem IsEntire.isGoodZero_X_sub_C_pow_mul_iff (hg : g.IsEntire) :
   simp only [isGoodZero_iff, hg.evalAt_hasseDeriv_X_sub_C_pow_mul, le_refl, ite_true,
     Nat.sub_self, hasseDeriv_zero, LinearMap.id_apply, and_iff_right_iff_imp]
   intro _ j hj
-  simp [show ¬h ≤ j by omega]
+  simp [Nat.not_le.mpr hj]
 
 /-- If the Hasse derivatives of order less than `h` of an entire series `f` vanish at `a`, then
 `f = (X - a)ʰ g` for an entire series `g`. -/
@@ -206,8 +206,7 @@ theorem IsGoodZero.mul (hf : f.IsEntire) (hg : g.IsEntire) (hfa : f.IsGoodZero a
     (hga : g.IsGoodZero a k) : (f * g).IsGoodZero a (h + k) := by
   obtain ⟨f₁, hf₁, rfl, hf₁a⟩ := hf.isGoodZero_iff.mp hfa
   obtain ⟨g₁, hg₁, rfl, hg₁a⟩ := hg.isGoodZero_iff.mp hga
-  rw [show (X - C a) ^ h * f₁ * ((X - C a) ^ k * g₁) = (X - C a) ^ (h + k) * (f₁ * g₁) by ring,
-    (hf₁.mul hg₁).isGoodZero_X_sub_C_pow_mul_iff, hf₁.evalAt_mul hg₁]
+  rw [mul_mul_mul_comm, ← pow_add, (hf₁.mul hg₁).isGoodZero_X_sub_C_pow_mul_iff, hf₁.evalAt_mul hg₁]
   exact hf₁a.mul hg₁a
 
 /-- **Good zeros of normalised series are units.** If an entire series `f` with `f(0) = 1` has a
