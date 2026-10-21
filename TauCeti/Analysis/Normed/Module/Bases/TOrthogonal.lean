@@ -223,23 +223,22 @@ theorem IsOrthonormalBasis.isTOrthogonalBasis [NormedRing R] [Nontrivial R]
 
 namespace IsTOrthogonalBasis
 
+/-- **Uniqueness of expansions in a `t`-orthogonal basis**: for `t > 0`, over a ring acting
+without zero divisors, two unconditional expansions `∑ a i • e i` and `∑ b i • e i` of the same
+vector have the same coefficients. -/
+theorem eq_of_hasSum [SeminormedRing R] [NormedAddCommGroup M] [Module R M]
+    [NoZeroSMulDivisors R M] {t : ℝ≥0} {e : I → M} (he : IsTOrthogonalBasis R t e) (ht : 0 < t)
+    {a b : I → R} {x : M} (ha : HasSum (fun i ↦ a i • e i) x)
+    (hb : HasSum (fun i ↦ b i • e i) x) : a = b := by
+  funext i
+  have h := he.isTOrthogonalFamily.smul_eq_smul_of_hasSum ht ha hb i
+  rw [← sub_eq_zero, ← sub_smul] at h
+  exact sub_eq_zero.1 <| (eq_zero_or_eq_zero_of_smul_eq_zero h).resolve_right (he.ne_zero i)
+
 section Expansion
 
 variable [NormedRing R] [NormedAddCommGroup M] [Module R M] [NormSMulClass R M] {t : ℝ≥0}
   {e : I → M}
-
-/-- **Uniqueness of expansions in a `t`-orthogonal basis**: for `t > 0`, over a ring acting
-norm-multiplicatively, two unconditional expansions `∑ a i • e i` and `∑ b i • e i` of the same
-vector have the same coefficients. -/
-theorem eq_of_hasSum (he : IsTOrthogonalBasis R t e) (ht : 0 < t) {a b : I → R} {x : M}
-    (ha : HasSum (fun i ↦ a i • e i) x) (hb : HasSum (fun i ↦ b i • e i) x) : a = b := by
-  funext i
-  have h := he.isTOrthogonalFamily.smul_eq_smul_of_hasSum ht ha hb i
-  rw [← sub_eq_zero, ← sub_smul] at h
-  have := congrArg norm h
-  rw [norm_smul, norm_zero] at this
-  exact sub_eq_zero.1 <| norm_eq_zero.1 <|
-    (mul_eq_zero.1 this).resolve_right (norm_ne_zero_iff.2 (he.ne_zero i))
 
 /-- In a `t`-orthogonal basis with `t > 0`, the coefficient sequences of a Cauchy sequence of
 finite linear combinations are Cauchy. -/
@@ -321,8 +320,9 @@ theorem exists_hasSum (he : IsTOrthogonalBasis R t e) (ht : 0 < t) (x : M) :
 norm-multiplicatively on an ultrametric module, every vector is the unconditional sum of the
 `a i • e i` for exactly one family of coefficients `a`. -/
 theorem existsUnique_hasSum (he : IsTOrthogonalBasis R t e) (ht : 0 < t) (x : M) :
-    ∃! a : I → R, HasSum (fun i ↦ a i • e i) x :=
-  (he.exists_hasSum ht x).elim fun a ha ↦ ⟨a, ha, fun _ hb ↦ he.eq_of_hasSum ht hb ha⟩
+    ∃! a : I → R, HasSum (fun i ↦ a i • e i) x := by
+  have : NoZeroSMulDivisors R M := ⟨fun h ↦ by simpa [norm_smul] using congrArg norm h⟩
+  exact (he.exists_hasSum ht x).elim fun a ha ↦ ⟨a, ha, fun _ hb ↦ he.eq_of_hasSum ht hb ha⟩
 
 end Expansion
 
