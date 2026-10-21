@@ -17,7 +17,8 @@ zero. This is the hypothesis under which Mathlib's bilinear-form constructions, 
 basis `LinearMap.BilinForm.dualBasis`, apply to the inner product. In finite dimension it is
 moreover a perfect pairing (`TauCeti.bijective_innerₗ`), as Mathlib's `exteriorPower.hodgeStar`
 requires of its bilinear form. Its pullback along an injective linear map, such as the metric
-induced by an immersion, is again nondegenerate (`TauCeti.nondegenerate_inner_comp`).
+induced by an immersion, is again nondegenerate (`TauCeti.nondegenerate_inner_comp`), so a vector
+is determined by its pairings with it (`TauCeti.eq_of_forall_inner_comp`).
 -/
 
 public section
@@ -44,5 +45,13 @@ theorem bijective_innerₗ [FiniteDimensional ℝ E] : Function.Bijective (inner
 theorem nondegenerate_inner_comp {V : Type*} [AddCommGroup V] [Module ℝ V] {L : V →ₗ[ℝ] E}
     (hL : Function.Injective L) : (LinearMap.BilinForm.comp (innerₗ E) L L).Nondegenerate :=
   ⟨fun v hv ↦ hL <| by simpa using hv v, fun w hw ↦ hL <| by simpa using hw w⟩
+
+/-- For an injective linear map `L`, a vector `u` is determined by the pairings `⟪L u, L w⟫` of the
+pulled-back inner product. -/
+theorem eq_of_forall_inner_comp {V : Type*} [AddCommGroup V] [Module ℝ V] {L : V →ₗ[ℝ] E}
+    (hL : Function.Injective L) {u u' : V} (H : ∀ w, ⟪L u, L w⟫ = ⟪L u', L w⟫) : u = u' := by
+  rw [← sub_eq_zero]
+  refine (nondegenerate_inner_comp hL).1 _ fun w ↦ ?_
+  simp [H]
 
 end TauCeti

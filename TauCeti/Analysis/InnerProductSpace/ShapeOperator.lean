@@ -111,23 +111,14 @@ theorem shapeOperator_of_not_injective (h : ¬Injective (fderiv ℝ i x)) (ν : 
     shapeOperator i x ν = 0 := by
   simp [shapeOperator, h]
 
-omit [FiniteDimensional ℝ V] in
-/-- For an immersion, a vector of the source is determined by its pairings with the induced
-metric. -/
-private theorem eq_of_forall_inner_fderiv (h : Injective (fderiv ℝ i x)) {u u' : V}
-    (H : ∀ w, ⟪fderiv ℝ i x u, fderiv ℝ i x w⟫ = ⟪fderiv ℝ i x u', fderiv ℝ i x w⟫) : u = u' := by
-  rw [← sub_eq_zero]
-  refine (nondegenerate_inner_comp (L := (fderiv ℝ i x : V →ₗ[ℝ] E)) h).1 _ fun w ↦ ?_
-  simp [H]
-
 /-- **Uniqueness of the shape operator.** For an immersion, `S_ν` is the only endomorphism `S`
 with `⟪Di(x) (S v), Di(x) w⟫ = ⟪ν, B(v, w)⟫` for all `v` and `w`. -/
 theorem eq_shapeOperator_iff (h : Injective (fderiv ℝ i x)) {ν : E} {S : Module.End ℝ V} :
     S = shapeOperator i x ν ↔
       ∀ v w, ⟪fderiv ℝ i x (S v), fderiv ℝ i x w⟫ = ⟪ν, secondFundamentalForm ℝ i x v w⟫ := by
   refine ⟨fun hS ↦ hS ▸ inner_fderiv_shapeOperator_apply h ν, fun hS ↦ ?_⟩
-  exact LinearMap.ext fun v ↦ eq_of_forall_inner_fderiv h fun w ↦ by
-    rw [hS, inner_fderiv_shapeOperator_apply h]
+  exact LinearMap.ext fun v ↦ eq_of_forall_inner_comp (L := (fderiv ℝ i x : V →ₗ[ℝ] E)) h
+    fun w ↦ by simp only [ContinuousLinearMap.coe_coe, hS, inner_fderiv_shapeOperator_apply h]
 
 /-- The shape operator is additive in the normal direction. -/
 @[simp]
@@ -155,6 +146,11 @@ theorem shapeOperator_zero : shapeOperator i x 0 = 0 := by
 theorem shapeOperator_neg (ν : E) : shapeOperator i x (-ν) = -shapeOperator i x ν := by
   simpa using shapeOperator_smul (i := i) (x := x) (-1) ν
 
+@[simp]
+theorem shapeOperator_sub (ν ν' : E) :
+    shapeOperator i x (ν - ν') = shapeOperator i x ν - shapeOperator i x ν' := by
+  simp [sub_eq_add_neg]
+
 /-- The shape operator depends only on the normal component of `ν`: tangent vectors have shape
 operator `0`. -/
 theorem shapeOperator_of_mem_range {ν : E} (hν : ν ∈ (fderiv ℝ i x).range) :
@@ -165,12 +161,15 @@ theorem shapeOperator_of_mem_range {ν : E} (hν : ν ∈ (fderiv ℝ i x).range
       (secondFundamentalForm_apply_mem_orthogonal i x v w)]
   · exact shapeOperator_of_not_injective h ν
 
-/-- The shape operator of a `C²` immersion is self-adjoint for the induced metric:
+/-- The shape operator of a `C²` map is self-adjoint for the induced metric:
 `g(S_ν v, w) = g(v, S_ν w)`. -/
 theorem _root_.ContDiffAt.inner_fderiv_shapeOperator_apply_comm (hi : ContDiffAt ℝ 2 i x)
-    (h : Injective (fderiv ℝ i x)) (ν : E) (v w : V) :
+    (ν : E) (v w : V) :
     ⟪fderiv ℝ i x (shapeOperator i x ν v), fderiv ℝ i x w⟫ =
       ⟪fderiv ℝ i x v, fderiv ℝ i x (shapeOperator i x ν w)⟫ := by
+  by_cases h : Injective (fderiv ℝ i x)
+  swap
+  · simp [shapeOperator_of_not_injective h]
   rw [real_inner_comm (fderiv ℝ i x (shapeOperator i x ν w)), inner_fderiv_shapeOperator_apply h,
     inner_fderiv_shapeOperator_apply h, hi.secondFundamentalForm_apply_comm]
 
@@ -202,12 +201,14 @@ theorem ker_fderiv_fderiv_norm_sq_sub_comp (hi : ContDiffAt ℝ 2 i x)
   rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, mem_eigenspace_iff, one_smul,
     eq_comm (a := shapeOperator i x (a - i x) v), ← sub_eq_zero (a := v)]
   refine ⟨fun hv ↦ ?_, fun hv ↦ ?_⟩
-  · refine sub_eq_zero.2 (eq_of_forall_inner_fderiv h fun w ↦ ?_)
+  · refine sub_eq_zero.2 <| eq_of_forall_inner_comp (L := (fderiv ℝ i x : V →ₗ[ℝ] E)) h
+      fun w ↦ ?_
     have hw := DFunLike.congr_fun hv w
     rw [fderiv_fderiv_norm_sq_sub_comp_apply_eq_inner_shapeOperator hi h ha] at hw
     simpa [inner_sub_left, sub_eq_zero] using hw
   · ext w
-    simp [fderiv_fderiv_norm_sq_sub_comp_apply_eq_inner_shapeOperator hi h ha, hv]
+    rw [fderiv_fderiv_norm_sq_sub_comp_apply_eq_inner_shapeOperator hi h ha, hv]
+    simp
 
 /-- **Focal points on a normal line.** For a normal vector `ν` and `t ≠ 0`, the kernel of the
 Hessian at `x` of squared distance from `i x + t • ν` is the `t⁻¹`-eigenspace of `S_ν`. Thus
@@ -220,8 +221,7 @@ theorem ker_fderiv_fderiv_norm_sq_sub_add_smul_comp (hi : ContDiffAt ℝ 2 i x)
         (fderiv ℝ (fderiv ℝ fun y ↦ ‖i y - (i x + t • ν)‖ ^ 2) x : V →ₗ[ℝ] V →L[ℝ] ℝ) =
       eigenspace (shapeOperator i x ν) t⁻¹ := by
   rw [ker_fderiv_fderiv_norm_sq_sub_comp hi h (by simpa using Submodule.smul_mem _ (-t) hν),
-    add_sub_cancel_left, shapeOperator_smul, eigenspace_def, eigenspace_def, ← one_div,
-    ← genEigenspace_div _ _ _ ht, genEigenspace_one]
+    add_sub_cancel_left, shapeOperator_smul, eigenspace, genEigenspace_smul _ ht, mul_one]
 
 /-- The base point is not a focal point: squared distance from `i x` has nondegenerate Hessian
 at `x` along an immersion. -/
@@ -246,34 +246,39 @@ attribute [local instance] InnerProductSpace.complexToReal
 variable {V E : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [FiniteDimensional ℂ V]
   [NormedAddCommGroup E] [InnerProductSpace ℂ E] {i : V → E} {x : V}
 
-/-- **The shape operator anticommutes with `J`.** For a holomorphic immersion,
+omit [FiniteDimensional ℂ V] in
+/-- The real derivative of a holomorphic map commutes with multiplication by `I`. -/
+private theorem fderiv_real_I_smul (hi : ContDiffAt ℂ 2 i x) (u : V) :
+    fderiv ℝ i x (I • u) = I • fderiv ℝ i x u := by
+  simp [(hi.differentiableAt (by norm_num)).fderiv_restrictScalars ℝ]
+
+/-- **The shape operator anticommutes with `J`.** For a `C²` holomorphic map,
 `S_ν (I • v) = -(I • S_ν v)`. -/
-theorem _root_.ContDiffAt.shapeOperator_apply_I_smul (hi : ContDiffAt ℂ 2 i x)
-    (h : Injective (fderiv ℂ i x)) (ν : E) (v : V) :
+theorem _root_.ContDiffAt.shapeOperator_apply_I_smul (hi : ContDiffAt ℂ 2 i x) (ν : E) (v : V) :
     shapeOperator i x ν (I • v) = -(I • shapeOperator i x ν v) := by
-  have hd := hi.differentiableAt (by norm_num)
-  have hR := (hd.injective_fderiv_restrictScalars_iff ℝ).2 h
-  have hL (u : V) : fderiv ℝ i x (I • u) = I • fderiv ℝ i x u := by
-    simp [hd.fderiv_restrictScalars ℝ]
-  refine eq_of_forall_inner_fderiv hR fun w ↦ ?_
+  by_cases hR : Injective (fderiv ℝ i x)
+  swap
+  · simp [shapeOperator_of_not_injective hR]
+  refine eq_of_forall_inner_comp (L := (fderiv ℝ i x : V →ₗ[ℝ] E)) hR fun w ↦ ?_
   have hw := inner_fderiv_shapeOperator_apply hR ν v (I • w)
+  simp only [ContinuousLinearMap.coe_coe]
   rw [inner_fderiv_shapeOperator_apply hR, hi.secondFundamentalForm_I_smul_left,
-    ← hi.secondFundamentalForm_I_smul_right, ← hw, map_neg, hL, hL]
+    ← hi.secondFundamentalForm_I_smul_right, ← hw, map_neg, fderiv_real_I_smul hi,
+    fderiv_real_I_smul hi]
   simp [real_inner_eq_re_inner, inner_smul_left, inner_smul_right]
 
-/-- **Rotating the normal vector by `J`.** For a holomorphic immersion,
+/-- **Rotating the normal vector by `J`.** For a `C²` holomorphic map,
 `S_{I • ν} v = I • S_ν v`. -/
-theorem _root_.ContDiffAt.shapeOperator_I_smul_apply (hi : ContDiffAt ℂ 2 i x)
-    (h : Injective (fderiv ℂ i x)) (ν : E) (v : V) :
+theorem _root_.ContDiffAt.shapeOperator_I_smul_apply (hi : ContDiffAt ℂ 2 i x) (ν : E) (v : V) :
     shapeOperator i x (I • ν) v = I • shapeOperator i x ν v := by
-  have hd := hi.differentiableAt (by norm_num)
-  have hR := (hd.injective_fderiv_restrictScalars_iff ℝ).2 h
-  have hL (u : V) : fderiv ℝ i x (I • u) = I • fderiv ℝ i x u := by
-    simp [hd.fderiv_restrictScalars ℝ]
-  refine eq_of_forall_inner_fderiv hR fun w ↦ ?_
+  by_cases hR : Injective (fderiv ℝ i x)
+  swap
+  · simp [shapeOperator_of_not_injective hR]
+  refine eq_of_forall_inner_comp (L := (fderiv ℝ i x : V →ₗ[ℝ] E)) hR fun w ↦ ?_
   have hw := inner_fderiv_shapeOperator_apply hR ν v (I • w)
-  rw [hL, hi.secondFundamentalForm_I_smul_right] at hw
-  rw [inner_fderiv_shapeOperator_apply hR, hL]
+  rw [fderiv_real_I_smul hi, hi.secondFundamentalForm_I_smul_right] at hw
+  simp only [ContinuousLinearMap.coe_coe]
+  rw [inner_fderiv_shapeOperator_apply hR, fderiv_real_I_smul hi]
   -- Both sides are the imaginary part of `⟪ν, B(v, w)⟫_ℂ`, which `hw` computes.
   simp only [real_inner_eq_re_inner, inner_smul_left, inner_smul_right] at hw ⊢
   simp at hw ⊢
@@ -281,44 +286,44 @@ theorem _root_.ContDiffAt.shapeOperator_I_smul_apply (hi : ContDiffAt ℂ 2 i x)
 
 /-- In the form used by the eigenspace API: the shape operator anticommutes with the real linear
 equivalence given by multiplication by `I`. -/
-private theorem shapeOperator_mul_add_mul_eq_zero (hi : ContDiffAt ℂ 2 i x)
-    (h : Injective (fderiv ℂ i x)) (ν : E) :
+private theorem shapeOperator_mul_add_mul_eq_zero (hi : ContDiffAt ℂ 2 i x) (ν : E) :
     shapeOperator i x ν * ((LinearEquiv.smulOfNeZero ℂ V I I_ne_zero).restrictScalars ℝ :
         Module.End ℝ V) +
       ((LinearEquiv.smulOfNeZero ℂ V I I_ne_zero).restrictScalars ℝ : Module.End ℝ V) *
         shapeOperator i x ν = 0 := by
   ext v
-  simp [hi.shapeOperator_apply_I_smul h]
+  simp [hi.shapeOperator_apply_I_smul]
 
-/-- **Paired principal curvatures.** For a holomorphic immersion, multiplication by `I` identifies
+/-- **Paired principal curvatures.** For a `C²` holomorphic map, multiplication by `I` identifies
 the generalized `κ`- and `-κ`-eigenspaces of each shape operator, so they have the same
 dimension. For `k = 1` these are the geometric multiplicities of the principal curvatures `κ`
 and `-κ`. -/
 theorem _root_.ContDiffAt.finrank_genEigenspace_shapeOperator_neg (hi : ContDiffAt ℂ 2 i x)
-    (h : Injective (fderiv ℂ i x)) (ν : E) (κ : ℝ) (k : ℕ∞) :
+    (ν : E) (κ : ℝ) (k : ℕ∞) :
     finrank ℝ (genEigenspace (shapeOperator i x ν) (-κ) k) =
       finrank ℝ (genEigenspace (shapeOperator i x ν) κ k) :=
-  finrank_genEigenspace_neg_of_anticommute _ (shapeOperator_mul_add_mul_eq_zero hi h ν) κ k
+  finrank_genEigenspace_neg_of_anticommute _ (shapeOperator_mul_add_mul_eq_zero hi ν) κ k
 
-/-- For a holomorphic immersion, `-κ` is a principal curvature in the direction `ν` exactly when
+/-- For a `C²` holomorphic map, `-κ` is a principal curvature in the direction `ν` exactly when
 `κ` is. -/
 theorem _root_.ContDiffAt.hasEigenvalue_shapeOperator_neg_iff (hi : ContDiffAt ℂ 2 i x)
-    (h : Injective (fderiv ℂ i x)) (ν : E) {κ : ℝ} :
+    (ν : E) {κ : ℝ} :
     (shapeOperator i x ν).HasEigenvalue (-κ) ↔ (shapeOperator i x ν).HasEigenvalue κ :=
-  hasEigenvalue_neg_iff_of_anticommute _ (shapeOperator_mul_add_mul_eq_zero hi h ν)
+  hasEigenvalue_neg_iff_of_anticommute _ (shapeOperator_mul_add_mul_eq_zero hi ν)
 
-/-- **The zero principal curvature.** For a holomorphic immersion, the generalized
+/-- **The zero principal curvature.** For a `C²` holomorphic map, the generalized
 `0`-eigenspaces of a shape operator, in particular its kernel, are complex subspaces. -/
 theorem _root_.ContDiffAt.I_smul_mem_genEigenspace_shapeOperator_zero (hi : ContDiffAt ℂ 2 i x)
-    (h : Injective (fderiv ℂ i x)) (ν : E) (k : ℕ∞) {v : V}
+    (ν : E) (k : ℕ∞) {v : V}
     (hv : v ∈ genEigenspace (shapeOperator i x ν) 0 k) :
     I • v ∈ genEigenspace (shapeOperator i x ν) 0 k := by
   simpa using mapsTo_genEigenspace_neg_of_anticommute
-    (shapeOperator_mul_add_mul_eq_zero hi h ν) 0 k hv
+    (shapeOperator_mul_add_mul_eq_zero hi ν) 0 k hv
 
 /-- **Symmetric focal points.** For a holomorphic immersion and a normal vector `ν`, the points
-`i x + ν` and `i x - ν` are focal points of `i` at `x` with the same multiplicity: the Hessians at
-`x` of squared distance from them have null spaces of the same dimension. -/
+`i x + ν` and `i x - ν` have the same focal multiplicity, possibly zero: one is a focal point of
+`i` at `x` exactly when the other is, and the Hessians at `x` of squared distance from them have
+null spaces of the same dimension. -/
 theorem _root_.ContDiffAt.finrank_ker_fderiv_fderiv_norm_sq_sub_sub_comp
     (hi : ContDiffAt ℂ 2 i x) (h : Injective (fderiv ℂ i x)) {ν : E}
     (hν : ν ∈ (fderiv ℝ i x).rangeᗮ) :
@@ -332,7 +337,7 @@ theorem _root_.ContDiffAt.finrank_ker_fderiv_fderiv_norm_sq_sub_sub_comp
     ker_fderiv_fderiv_norm_sq_sub_comp hiR hR (by simpa using Submodule.neg_mem _ hν),
     sub_sub_cancel_left, add_sub_cancel_left, shapeOperator_neg, eigenspace, eigenspace,
     genEigenspace_neg]
-  exact hi.finrank_genEigenspace_shapeOperator_neg h ν 1 1
+  exact hi.finrank_genEigenspace_shapeOperator_neg ν 1 1
 
 end Complex
 
