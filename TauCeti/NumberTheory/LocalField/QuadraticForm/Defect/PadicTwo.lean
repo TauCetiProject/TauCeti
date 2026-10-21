@@ -30,16 +30,16 @@ the odd defect `2 ℤ₂`. The value `𝔡(-5) = 2 ℤ₂` shows that the defect
 ## Main results
 
 * `TauCeti.quadraticDefect_eq_zero_iff_padicTwo`: `𝔡(u) = 0` if and only if `ε(u) = ω(u) = 0`.
-* `TauCeti.defectExponent_of_serreOmega_eq_one_padicTwo`,
-  `TauCeti.quadraticDefect_of_serreOmega_eq_one_padicTwo`: if `ε(u) = 0` and `ω(u) = 1`, then
-  `δ(u) = 2` and `𝔡(u) = 4 ℤ₂`.
+* `TauCeti.defectExponent_of_serreEps_eq_zero_of_serreOmega_eq_one_padicTwo`,
+  `TauCeti.quadraticDefect_of_serreEps_eq_zero_of_serreOmega_eq_one_padicTwo`: if `ε(u) = 0`
+  and `ω(u) = 1`, then `δ(u) = 2` and `𝔡(u) = 4 ℤ₂`.
 * `TauCeti.defectExponent_of_serreEps_eq_one_padicTwo`,
   `TauCeti.quadraticDefect_of_serreEps_eq_one_padicTwo`: if `ε(u) = 1`, then `δ(u) = 1` and
   `𝔡(u) = 2 ℤ₂`.
 * `TauCeti.quadraticDefect_five_padicTwo`, `TauCeti.quadraticDefect_neg_one_padicTwo`,
   `TauCeti.quadraticDefect_neg_five_padicTwo`: `𝔡(5) = 4 ℤ₂`, `𝔡(-1) = 2 ℤ₂` and
   `𝔡(-5) = 2 ℤ₂`.
-* `TauCeti.quadraticDefect_neg_one_mul_five_ne_padicTwo`: `𝔡(-1 · 5) ≠ 𝔡(-1) 𝔡(5)`.
+* `TauCeti.quadraticDefect_neg_one_mul_five_ne_mul_padicTwo`: `𝔡(-1 · 5) ≠ 𝔡(-1) 𝔡(5)`.
 
 ## References
 
@@ -55,24 +55,6 @@ open ValuativeRel IsNonarchimedeanLocalField
 
 namespace TauCeti
 
-/-- A unit of `ℤ₂` has normalized valuation zero in `ℚ₂`. -/
-private theorem toAdd_normalizedValuation_eq_zero_of_coe_eq {a : ℚ_[2]ˣ} {u : ℤ_[2]ˣ}
-    (ha : (a : ℚ_[2]) = u) : (normalizedValuation ℚ_[2] a).toAdd = 0 := by
-  rw [Padic.toAdd_normalizedValuation_eq_valuation, ha, PadicInt.valuation_coe,
-    PadicInt.valuation_eq_zero_of_isUnit u.isUnit, Nat.cast_zero]
-
-/-- A unit of `ℤ₂` has valuation one in `ℚ₂`. -/
-private theorem valuation_eq_one_of_coe_eq {a : ℚ_[2]ˣ} {u : ℤ_[2]ˣ} (ha : (a : ℚ_[2]) = u) :
-    valuation ℚ_[2] (a : ℚ_[2]) = 1 :=
-  (normalizedValuation_eq_one_iff a).mp
-    (toAdd_eq_zero.mp (toAdd_normalizedValuation_eq_zero_of_coe_eq ha))
-
-/-- A unit `u` of `ℤ₂` is a square in `ℚ₂` exactly when `ε(u) = ω(u) = 0`. -/
-private theorem isSquare_iff_of_coe_eq {a : ℚ_[2]ˣ} {u : ℤ_[2]ˣ} (ha : (a : ℚ_[2]) = u) :
-    IsSquare a ↔ serreEps u = 0 ∧ serreOmega u = 0 := by
-  rw [← isSquare_units_val_iff, ha, isSquare_coe_iff_mem_unitsPrincipal_three,
-    serreEps_eq_zero_and_serreOmega_eq_zero_iff]
-
 /-- `5` as a unit of `ℤ₂`. -/
 private def padicIntUnitFive : ℤ_[2]ˣ := isUnit_five_padicInt.unit
 
@@ -84,15 +66,6 @@ private theorem coe_padicIntUnitFive :
   rw [val_padicIntUnitFive]
   norm_cast
 
-/-- The principal fractional ideal of `2 ^ n` is `𝓂[ℚ₂] ^ n`. -/
-private theorem spanSingleton_two_pow_eq_maximalIdeal_zpow (n : ℕ) :
-    FractionalIdeal.spanSingleton (nonZeroDivisors 𝒪[ℚ_[2]]) ((2 : ℚ_[2]) ^ n) =
-      ((IsLocalRing.maximalIdeal 𝒪[ℚ_[2]] : Ideal 𝒪[ℚ_[2]]) :
-        FractionalIdeal (nonZeroDivisors 𝒪[ℚ_[2]]) ℚ_[2]) ^ (n : ℤ) := by
-  have h := Units.spanSingleton_eq_maximalIdeal_zpow (Units.mk0 ((2 : ℚ_[2]) ^ n) (by simp))
-  rw [Padic.toAdd_normalizedValuation_eq_valuation, Units.val_mk0, Padic.valuation_pow] at h
-  simpa using h
-
 /-- `δ(5) = 2` over `ℚ₂`: the approximation `5 − 1² = 4` attains the upper bound `2 v(2)` of
 the defect exponent of a nonsquare unit. -/
 private theorem defectExponent_five :
@@ -100,30 +73,32 @@ private theorem defectExponent_five :
   have hsq : ¬IsSquare (Units.mk0 (5 : ℚ_[2]) (by norm_num)) :=
     fun h => Padic.not_isSquare_five (isSquare_units_val_iff.mpr h)
   have hval : valuation ℚ_[2] ((Units.mk0 (5 : ℚ_[2]) (by norm_num) : ℚ_[2]ˣ) : ℚ_[2]) = 1 :=
-    valuation_eq_one_of_coe_eq (u := padicIntUnitFive) coe_padicIntUnitFive.symm
+    Padic.valuation_eq_one_of_coe_eq (u := padicIntUnitFive) coe_padicIntUnitFive.symm
   refine le_antisymm ?_ ?_
   · simpa [Padic.natCastValuation_self 2] using
       defectExponent_le_two_mul_natCastValuation two_ne_zero hval hsq
   · have h := le_defectExponent (Units.mk0 (5 : ℚ_[2]) (by norm_num)) 1
-      (Units.mk0 ((2 : ℚ_[2]) ^ 2) (by simp)) (by norm_num)
-    rw [Padic.toAdd_normalizedValuation_eq_valuation, Units.val_mk0, Padic.valuation_pow] at h
-    simpa using h
+      (Units.mk0 (((2 : ℕ) : ℚ_[2]) ^ 2) (by simp)) (by norm_num)
+    rwa [_root_.Padic.toAdd_normalizedValuation_mk0_natCast_pow] at h
 
 /-- **The units of maximal defect over `ℚ₂`.** If `u ∈ ℤ₂ˣ` is `5 mod 8`, that is `ε(u) = 0`
 and `ω(u) = 1`, then its defect exponent is `2 = 2 v(2)`. -/
-theorem defectExponent_of_serreOmega_eq_one_padicTwo {a : ℚ_[2]ˣ} {u : ℤ_[2]ˣ}
+theorem defectExponent_of_serreEps_eq_zero_of_serreOmega_eq_one_padicTwo {a : ℚ_[2]ˣ} {u : ℤ_[2]ˣ}
     (ha : (a : ℚ_[2]) = u) (hε : serreEps u = 0) (hω : serreOmega u = 1) :
     defectExponent a = 2 := by
   -- Up to the square of a unit `w`, `u` is `5`.
   obtain ⟨w, hw⟩ := exists_eq_neg_one_pow_mul_five_pow_mul_sq u
+  have hw' : ((Units.map PadicInt.Coe.ringHom.toMonoidHom w : ℚ_[2]ˣ) : ℚ_[2]) = w :=
+    (Units.coe_map _ w).trans (PadicInt.Coe.ringHom_apply _)
+  have h5 : ((5 : ℤ_[2]) : ℚ_[2]) = 5 := by norm_cast
   have hfive : a = Units.mk0 (5 : ℚ_[2]) (by norm_num) *
       Units.map PadicInt.Coe.ringHom.toMonoidHom w ^ 2 := by
     ext
     rw [ha, hw, hε, hω]
-    simp [ZMod.val_one]
-    norm_cast
+    push_cast [h5, hw', ZMod.val_zero, ZMod.val_one, Units.val_mk0]
+    ring
   rw [hfive, defectExponent_mul_sq, defectExponent_five,
-    toAdd_normalizedValuation_eq_zero_of_coe_eq (u := w) rfl]
+    _root_.Padic.toAdd_normalizedValuation_eq_zero_of_coe_eq hw']
   norm_num
 
 /-- **The units of odd defect over `ℚ₂`.** If `u ∈ ℤ₂ˣ` is `3 mod 4`, that is `ε(u) = 1`, then
@@ -131,9 +106,9 @@ its defect exponent is `1`. -/
 theorem defectExponent_of_serreEps_eq_one_padicTwo {a : ℚ_[2]ˣ} {u : ℤ_[2]ˣ}
     (ha : (a : ℚ_[2]) = u) (hε : serreEps u = 1) :
     defectExponent a = 1 := by
-  have hval := valuation_eq_one_of_coe_eq ha
+  have hval := Padic.valuation_eq_one_of_coe_eq ha
   have hsq : ¬IsSquare a := by
-    rw [isSquare_iff_of_coe_eq ha, hε]
+    rw [isSquare_iff_serreEps_eq_zero_and_serreOmega_eq_zero ha, hε]
     simp
   rcases defectExponent_eq_two_mul_natCastValuation_or_odd two_ne_zero hval hsq with h | ⟨k, hk, h⟩
   · -- Two units of maximal defect differ by a square, but `ε(5 u) = 1` says `5 u` is not one.
@@ -142,11 +117,11 @@ theorem defectExponent_of_serreEps_eq_one_padicTwo {a : ℚ_[2]ˣ} {u : ℤ_[2]�
       rw [defectExponent_five, Padic.natCastValuation_self 2]
       norm_num
     have hprod := isSquare_mul_of_defectExponent_eq_two_mul two_ne_zero hval
-      (valuation_eq_one_of_coe_eq (u := padicIntUnitFive) coe_padicIntUnitFive.symm) h h5
+      (Padic.valuation_eq_one_of_coe_eq (u := padicIntUnitFive) coe_padicIntUnitFive.symm) h h5
     have hcoe : ((a * Units.mk0 (5 : ℚ_[2]) (by norm_num) : ℚ_[2]ˣ) : ℚ_[2]) =
         ((u * padicIntUnitFive : ℤ_[2]ˣ) : ℤ_[2]) := by
       simp [ha, coe_padicIntUnitFive]
-    rw [isSquare_iff_of_coe_eq hcoe, serreEps_mul, hε,
+    rw [isSquare_iff_serreEps_eq_zero_and_serreOmega_eq_zero hcoe, serreEps_mul, hε,
       serreEps_eq_zero_of_coe_eq_five val_padicIntUnitFive] at hprod
     simp at hprod
   · rw [Padic.natCastValuation_self 2] at hk
@@ -158,15 +133,17 @@ in `ℚ₂` if and only if `u ≡ 1 mod 8`, that is `ε(u) = ω(u) = 0`. -/
 theorem quadraticDefect_eq_zero_iff_padicTwo {a : ℚ_[2]ˣ} {u : ℤ_[2]ˣ}
     (ha : (a : ℚ_[2]) = u) :
     quadraticDefect a = 0 ↔ serreEps u = 0 ∧ serreOmega u = 0 := by
-  rw [quadraticDefect_eq_zero_iff, isSquare_iff_of_coe_eq ha]
+  rw [quadraticDefect_eq_zero_iff, isSquare_iff_serreEps_eq_zero_and_serreOmega_eq_zero ha]
 
 /-- **The units of maximal defect over `ℚ₂`, as ideals.** If `u ∈ ℤ₂ˣ` is `5 mod 8`, that is
 `ε(u) = 0` and `ω(u) = 1`, then `𝔡(u) = 4 ℤ₂`. -/
-theorem quadraticDefect_of_serreOmega_eq_one_padicTwo {a : ℚ_[2]ˣ} {u : ℤ_[2]ˣ}
-    (ha : (a : ℚ_[2]) = u) (hε : serreEps u = 0) (hω : serreOmega u = 1) :
+theorem quadraticDefect_of_serreEps_eq_zero_of_serreOmega_eq_one_padicTwo {a : ℚ_[2]ˣ}
+    {u : ℤ_[2]ˣ} (ha : (a : ℚ_[2]) = u) (hε : serreEps u = 0) (hω : serreOmega u = 1) :
     quadraticDefect a = FractionalIdeal.spanSingleton _ 4 := by
-  rw [quadraticDefect_eq_maximalIdeal_zpow (defectExponent_of_serreOmega_eq_one_padicTwo ha hε hω),
-    show (4 : ℚ_[2]) = 2 ^ 2 by norm_num, spanSingleton_two_pow_eq_maximalIdeal_zpow]
+  rw [quadraticDefect_eq_maximalIdeal_zpow
+      (defectExponent_of_serreEps_eq_zero_of_serreOmega_eq_one_padicTwo ha hε hω),
+    show (4 : ℚ_[2]) = ((2 : ℕ) : ℚ_[2]) ^ 2 by norm_num,
+    Padic.spanSingleton_natCast_pow_eq_maximalIdeal_zpow]
 
 /-- **The units of odd defect over `ℚ₂`, as ideals.** If `u ∈ ℤ₂ˣ` is `3 mod 4`, that is
 `ε(u) = 1`, then `𝔡(u) = 2 ℤ₂`. -/
@@ -174,12 +151,14 @@ theorem quadraticDefect_of_serreEps_eq_one_padicTwo {a : ℚ_[2]ˣ} {u : ℤ_[2]
     (ha : (a : ℚ_[2]) = u) (hε : serreEps u = 1) :
     quadraticDefect a = FractionalIdeal.spanSingleton _ 2 := by
   rw [quadraticDefect_eq_maximalIdeal_zpow (defectExponent_of_serreEps_eq_one_padicTwo ha hε),
-    ← pow_one (2 : ℚ_[2]), spanSingleton_two_pow_eq_maximalIdeal_zpow, Nat.cast_one]
+    show (2 : ℚ_[2]) = ((2 : ℕ) : ℚ_[2]) ^ 1 by norm_num,
+    Padic.spanSingleton_natCast_pow_eq_maximalIdeal_zpow, Nat.cast_one]
 
 /-- `𝔡(5) = 4 ℤ₂` over `ℚ₂`. -/
 theorem quadraticDefect_five_padicTwo :
     quadraticDefect (Units.mk0 (5 : ℚ_[2]) (by norm_num)) = FractionalIdeal.spanSingleton _ 4 :=
-  quadraticDefect_of_serreOmega_eq_one_padicTwo (u := padicIntUnitFive) coe_padicIntUnitFive.symm
+  quadraticDefect_of_serreEps_eq_zero_of_serreOmega_eq_one_padicTwo (u := padicIntUnitFive)
+    coe_padicIntUnitFive.symm
     (serreEps_eq_zero_of_coe_eq_five val_padicIntUnitFive)
     (serreOmega_eq_one_of_coe_eq_five val_padicIntUnitFive)
 
@@ -198,7 +177,7 @@ theorem quadraticDefect_neg_five_padicTwo :
 
 /-- **The quadratic defect is not multiplicative.** Over `ℚ₂`, `𝔡(-1) = 2 ℤ₂` and `𝔡(5) = 4 ℤ₂`,
 but `𝔡(-1 · 5) = 𝔡(-5) = 2 ℤ₂` is not `8 ℤ₂`. -/
-theorem quadraticDefect_neg_one_mul_five_ne_padicTwo :
+theorem quadraticDefect_neg_one_mul_five_ne_mul_padicTwo :
     quadraticDefect (-1 * Units.mk0 (5 : ℚ_[2]) (by norm_num)) ≠
       quadraticDefect (-1) * quadraticDefect (Units.mk0 (5 : ℚ_[2]) (by norm_num)) := by
   rw [neg_one_mul, quadraticDefect_neg_five_padicTwo, quadraticDefect_neg_one_padicTwo,
@@ -206,11 +185,11 @@ theorem quadraticDefect_neg_one_mul_five_ne_padicTwo :
   intro h
   -- Comparing valuations, `2 ℤ₂ ⊆ 8 ℤ₂` would give `v(8) ≤ v(2)`, that is `3 ≤ 1`.
   have hle := (toAdd_normalizedValuation_le_iff_valuation_le
-    (Units.mk0 ((2 : ℚ_[2]) ^ 3) (by simp)) (Units.mk0 ((2 : ℚ_[2]) ^ 1) (by simp))).mpr
+    (Units.mk0 (((2 : ℕ) : ℚ_[2]) ^ 3) (by simp)) (Units.mk0 (((2 : ℕ) : ℚ_[2]) ^ 1) (by simp))).mpr
       (by simpa [show (2 : ℚ_[2]) * 4 = 2 ^ 3 by norm_num] using
         spanSingleton_le_spanSingleton_iff_valuation_le.mp h.le)
-  rw [Padic.toAdd_normalizedValuation_eq_valuation, Padic.toAdd_normalizedValuation_eq_valuation,
-    Units.val_mk0, Units.val_mk0, Padic.valuation_pow, Padic.valuation_pow] at hle
-  simp at hle
+  rw [_root_.Padic.toAdd_normalizedValuation_mk0_natCast_pow,
+    _root_.Padic.toAdd_normalizedValuation_mk0_natCast_pow] at hle
+  omega
 
 end TauCeti
