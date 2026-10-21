@@ -51,8 +51,8 @@ calculation for first continuous cohomology with trivial integer coefficients.
   exactly when they are associated in every `ℤ_[p]`.
 * `Padic.exists_eq_zpow_valuation_mul`: every nonzero `x : ℚ_[p]` is `p ^ v(x)` times a unit of
   `ℤ_[p]`.
-* `Padic.valuation_p_pow_mul_intCast` and `Padic.valuation_p_zpow_mul_unit` compute the
-  valuation of a power of `p` times an integer prime to `p` or a unit of `ℤ_[p]`.
+* `Padic.valuation_p_zpow_mul`: multiplying a nonzero `x : ℚ_[p]` by `p ^ α` adds `α` to its
+  valuation.
 * `Padic.inv_natCast_le_norm_natCast`: the `p`-adic norm of a positive integer `m` is at least
   `1 / m`.
 * `PadicInt.compactSpace_units`, `PadicInt.totallyDisconnectedSpace_units`: `ℤ_[p]ˣ` is a
@@ -178,27 +178,11 @@ theorem exists_eq_zpow_valuation_mul {x : ℚ_[p]} (hx : x ≠ 0) :
   refine ⟨PadicInt.mkUnits hy, ?_⟩
   rw [PadicInt.mkUnits_eq, mul_left_comm, ← zpow_add₀ hp, add_neg_cancel, zpow_zero, mul_one]
 
-/-- The `p`-adic valuation of `p ^ k m`, for an integer `m` prime to `p`, is `k`. -/
-theorem valuation_p_pow_mul_intCast (k : ℕ) {m : ℤ} (hm : ¬(p : ℤ) ∣ m) :
-    ((p : ℚ_[p]) ^ k * (m : ℚ_[p])).valuation = k := by
-  have hm0 : (m : ℚ_[p]) ≠ 0 := Int.cast_ne_zero.mpr (by rintro rfl; simp at hm)
-  rw [Padic.valuation_mul (pow_ne_zero _ (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero))
-      hm0, Padic.valuation_pow, Padic.valuation_p, Padic.valuation_intCast,
-    padicValInt.eq_zero_of_not_dvd hm]
-  simp
-
-/-- The `p`-adic valuation of `p ^ α u`, for a unit `u` of `ℤ_[p]`, is `α`. -/
-theorem valuation_p_zpow_mul_unit (α : ℤ) (u : ℤ_[p]ˣ) :
-    ((p : ℚ_[p]) ^ α * ((u : ℤ_[p]) : ℚ_[p])).valuation = α := by
-  have hu : (u : ℤ_[p]).valuation = 0 := by
-    have h := PadicInt.norm_units u
-    rwa [PadicInt.norm_eq_zpow_neg_valuation u.ne_zero,
-      zpow_eq_one_iff_right₀ (Nat.cast_nonneg p) (by exact_mod_cast (Fact.out : p.Prime).ne_one),
-      neg_eq_zero, Nat.cast_eq_zero] at h
-  rw [Padic.valuation_mul (zpow_ne_zero _ (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero))
-      (PadicInt.coe_ne_zero.mpr u.ne_zero), Padic.valuation_zpow, Padic.valuation_p,
-    PadicInt.valuation_coe, hu]
-  simp
+/-- Multiplying a nonzero `x : ℚ_[p]` by `p ^ α` adds `α` to its valuation. -/
+theorem valuation_p_zpow_mul (α : ℤ) {x : ℚ_[p]} (hx : x ≠ 0) :
+    ((p : ℚ_[p]) ^ α * x).valuation = α + x.valuation := by
+  rw [Padic.valuation_mul (zpow_ne_zero _ (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero)) hx,
+    Padic.valuation_zpow, Padic.valuation_p, mul_one]
 
 /-- The `p`-adic norm of a positive integer `m` is at least `1 / m`. -/
 theorem inv_natCast_le_norm_natCast (m : ℕ) [NeZero m] : (m : ℝ)⁻¹ ≤ ‖(m : ℚ_[p])‖ := by
