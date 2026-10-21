@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Ideal.Height
 public import Mathlib.RingTheory.KrullDimension.NonZeroDivisors
 public import Mathlib.RingTheory.Spectrum.Prime.Topology
 public import TauCeti.Topology.PureDimension
+import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
 
 /-!
 # Krull dimension and heights under quotients
@@ -21,6 +22,14 @@ the height of each prime ideal. Conversely, quotients by nonzero principal ideal
 dimension from above: the second prime of a chain contains a nonzero element, and the rest of the
 chain lies over it. This is the upper-bound step of dimension counts by induction on the number of
 variables.
+
+Quotienting by a non-zero-divisor `r` lowers the height of every prime `p` containing `r` by at
+least one: a chain of primes of `R ⧸ (r)` ending at the image of `p` pulls back to a chain ending
+at `p` whose first prime contains `r`, hence is not minimal and extends by a minimal prime below
+it. This is the height form of Mathlib's `ringKrullDim_quotient_succ_le_of_nonZeroDivisor`, and
+the lower-bound step of height counts by induction on the number of variables. In a noetherian
+ring Krull's principal ideal theorem gives the reverse inequality, so the height drops by exactly
+one.
 
 The spectrum of a ring is pure-dimensional of dimension `d` exactly when every quotient by a
 minimal prime has Krull dimension `d`: the irreducible components are the closed subsets `V(P)`
@@ -36,7 +45,11 @@ for minimal primes `P`. This gives a componentwise criterion using only quotient
 * `TauCeti.ringKrullDim_le_add_one_of_forall_ringKrullDim_quotient_le`: if every quotient by a
   nonzero principal ideal has Krull dimension at most `n`, the ring has Krull dimension at most
   `n + 1`.
+* `TauCeti.ringKrullDim_quotient_add_one_le_of_lt`: for a prime `p` strictly contained in an ideal
+  `q`, `ringKrullDim (R ⧸ q) + 1 ≤ ringKrullDim (R ⧸ p)`.
 * `Ideal.height_map_quotientMk_nilradical`: reduction preserves the height of a prime ideal.
+* `Ideal.height_map_quotientMk_span_singleton_add_one`: in a noetherian ring, quotienting by a
+  non-zero-divisor in a prime `p` lowers the height of `p` by one.
 -/
 
 public section
@@ -111,6 +124,16 @@ theorem ringKrullDim_le_add_one_of_forall_ringKrullDim_quotient_le {n : ℕ∞}
   rw [show l.length = t.length + 1 by rw [RelSeries.tail_length]; omega]
   simpa using add_le_add_left hq 1
 
+/-- If `p ⊊ q` with `p` prime, then `ringKrullDim (R ⧸ q) + 1 ≤ ringKrullDim (R ⧸ p)`. -/
+theorem ringKrullDim_quotient_add_one_le_of_lt {p q : Ideal R} [p.IsPrime] (h : p < q) :
+    ringKrullDim (R ⧸ q) + 1 ≤ ringKrullDim (R ⧸ p) := by
+  obtain ⟨x, hxq, hxp⟩ := IsConcreteLE.exists_of_lt h
+  refine ringKrullDim_succ_le_of_surjective (Ideal.Quotient.factor h.le)
+    (Ideal.Quotient.factor_surjective h.le) (r := Ideal.Quotient.mk p x)
+    (mem_nonZeroDivisors_of_ne_zero ?_) ?_
+  · rwa [ne_eq, Ideal.Quotient.eq_zero_iff_mem]
+  · rwa [Ideal.Quotient.factor_mk, Ideal.Quotient.eq_zero_iff_mem]
+
 end TauCeti
 
 namespace Ideal
@@ -145,5 +168,57 @@ theorem height_map_quotientMk_nilradical (p : Ideal R) [p.IsPrime] :
       rw [← he, Order.height_orderIso]
     _ = p.height :=
       (PrimeSpectrum.height_eq_orderHeight (⟨p, inferInstance⟩ : PrimeSpectrum R)).symm
+
+open scoped nonZeroDivisors in
+/-- Quotienting by a non-zero-divisor `r` in a prime `p` lowers the height of `p` by at least one.
+The reverse inequality holds in noetherian rings, by Krull's principal ideal theorem; see
+`Ideal.height_map_quotientMk_span_singleton_add_one`. -/
+theorem height_map_quotientMk_span_singleton_add_one_le {r : R} (hr : r ∈ R⁰) (p : Ideal R)
+    [p.IsPrime] (hrp : r ∈ p) : (p.map (Quotient.mk (span {r}))).height + 1 ≤ p.height := by
+  have hle : span {r} ≤ p := (span_singleton_le_iff_mem p).mpr hrp
+  have : (p.map (Quotient.mk (span {r}))).IsPrime := isPrime_map_quotientMk_of_isPrime hle
+  let q : PrimeSpectrum (R ⧸ span {r}) := ⟨_, this⟩
+  let P : PrimeSpectrum R := ⟨p, ‹_›⟩
+  -- A chain ending at `q` pulls back to a chain ending at `p` whose head contains `r`; since
+  -- `r` lies in no minimal prime, a minimal prime strictly below the head extends it by one.
+  have key (l : LTSeries (PrimeSpectrum (R ⧸ span {r}))) (hl : l.last = q) :
+      ∃ l' : LTSeries (PrimeSpectrum R), l'.last = P ∧ l'.length = l.length + 1 := by
+    let l₁ := l.map (PrimeSpectrum.comap (Quotient.mk (span {r})))
+      (RingHom.strictMono_comap_of_surjective Quotient.mk_surjective)
+    obtain ⟨m, hm, hm'⟩ := exists_minimalPrimes_le (J := l₁.head.asIdeal) bot_le
+    have hlt : (⟨m, hm.1.1⟩ : PrimeSpectrum R) < l₁.head := by
+      refine lt_of_le_of_ne hm' fun h ↦ Set.disjoint_iff.mp
+        (disjoint_nonZeroDivisors_of_mem_minimalPrimes hm) ⟨?_, hr⟩
+      have : r ∈ l₁.head.asIdeal := by simp [l₁, PrimeSpectrum.comap_asIdeal]
+      simpa [← h] using this
+    refine ⟨l₁.cons _ hlt, ?_, by simp [l₁]⟩
+    rw [RelSeries.last_cons]
+    ext1
+    simp [l₁, hl, q, P, comap_map_mk hle]
+  rw [P.height_eq_orderHeight, q.height_eq_orderHeight]
+  cases h : Order.height q using ENat.recTopCoe with
+  | top =>
+    rw [top_add, top_le_iff, Order.height_eq_top_iff]
+    intro n
+    rcases n with _ | n
+    · exact ⟨RelSeries.singleton _ P, rfl, rfl⟩
+    · obtain ⟨l, hl, hn⟩ := Order.height_eq_top_iff.mp h n
+      obtain ⟨l', hl', hn'⟩ := key l hl
+      exact ⟨l', hl', hn' ▸ hn ▸ rfl⟩
+  | coe n =>
+    obtain ⟨l, hl, hn⟩ := Order.exists_series_of_height_eq_coe q h
+    obtain ⟨l', hl', hn'⟩ := key l hl
+    have := Order.length_le_height_last (p := l')
+    rw [hl', hn', hn] at this
+    exact_mod_cast this
+
+open scoped nonZeroDivisors in
+/-- In a noetherian ring, quotienting by a non-zero-divisor `r` in a prime `p` lowers the height of
+`p` by exactly one. -/
+theorem height_map_quotientMk_span_singleton_add_one [IsNoetherianRing R] {r : R} (hr : r ∈ R⁰)
+    (p : Ideal R) [p.IsPrime] (hrp : r ∈ p) :
+    (p.map (Quotient.mk (span {r}))).height + 1 = p.height :=
+  (height_map_quotientMk_span_singleton_add_one_le hr p hrp).antisymm
+    (height_le_height_add_one_of_mem hrp)
 
 end Ideal

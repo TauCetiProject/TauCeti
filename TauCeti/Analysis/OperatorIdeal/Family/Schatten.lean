@@ -43,6 +43,11 @@ noncomputable def schatten (𝕜 : Type u) [RCLike 𝕜] (p : ℝ) (hp : 1 ≤ p
     OperatorIdealFamily.{u, v, w} 𝕜 :=
   (SymmetricGauge.lpGauge p hp).operatorIdealFamily 𝕜
 
+/-- The Schatten `p` family is the family induced by the ℓᵖ symmetric gauge. -/
+theorem schatten_def (𝕜 : Type u) [RCLike 𝕜] (p : ℝ) (hp : 1 ≤ p) :
+    schatten.{u, v, w} 𝕜 p hp = (SymmetricGauge.lpGauge p hp).operatorIdealFamily 𝕜 := by
+  rw [schatten]
+
 variable {𝕜 : Type u} [RCLike 𝕜] {E : Type v} {F : Type w}
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
   [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]

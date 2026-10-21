@@ -16,7 +16,10 @@ polynomial with its polynomial quotient. Preparation extends this description to
 restricted series with a unit dominant coefficient. In particular, these quotients are finite free
 over the coefficient ring. This is the finite-module step in the induction proving noetherianity
 of Tate algebras: after making a series distinguished in the last variable, its quotient is finite
-over the Tate algebra in the remaining variables.
+over the Tate algebra in the remaining variables. The divisibility reflection underlying the
+comparison shows, without completeness, that a distinguished monic polynomial which is irreducible
+as a restricted series is irreducible as a polynomial; this is the step in the induction proving
+that Tate algebras are unique factorisation domains.
 
 The radius may be any positive real number, and the coefficients may lie in a complete ultrametric
 normed commutative ring with multiplicative norm. No noetherian or field hypothesis is required.
@@ -65,6 +68,28 @@ theorem IsDistinguished.polynomialToRestricted_dvd_iff
     (isRestricted_polynomial (g /ₘ p)) (fun n _ ↦ by simp) hr heq).2
   exact (Polynomial.modByMonic_eq_zero_iff_dvd hm.monic).mp
     (Polynomial.coe_injective R (by simpa using hzero.symm))
+
+/-- A distinguished monic polynomial which is irreducible as a restricted series is irreducible
+as a polynomial. -/
+theorem IsDistinguished.irreducible_of_irreducible_polynomialToRestricted
+    (hp : IsDistinguished c s (p : PowerSeries R)) (hc : 0 < c)
+    (hm : p.IsMonicOfDegree s) (h : Irreducible (polynomialToRestricted c p)) :
+    Irreducible p := by
+  have : Nontrivial R := nontrivial_of_ne _ _ hp.coeff_ne_zero
+  -- If the image of a factor `a` of `p = a * b` is a unit, then `p` divides `b` after passing
+  -- to restricted series, hence as polynomials; cancelling `b` shows that `a` is a unit.
+  have key (a b : Polynomial R) (hab : p = a * b) (ha : IsUnit (polynomialToRestricted c a)) :
+      IsUnit a := by
+    have hb : b ≠ 0 := right_ne_zero_of_mul (hab ▸ hm.ne_zero)
+    obtain ⟨d, hd⟩ := (hp.polynomialToRestricted_dvd_iff hc hm b).mp <| by
+      rw [hab, map_mul]
+      exact ha.mul_left_dvd.mpr dvd_rfl
+    rw [hab] at hd
+    exact IsUnit.of_mul_eq_one d (mul_left_cancel₀ hb (by linear_combination -hd))
+  refine ⟨fun hu ↦ h.not_isUnit (hu.map _), fun a b hab ↦ ?_⟩
+  rcases h.isUnit_or_isUnit (by rw [hab, map_mul]) with ha | hb
+  · exact Or.inl (key a b hab ha)
+  · exact Or.inr (key b a (hab.trans (mul_comm a b)) hb)
 
 section Complete
 

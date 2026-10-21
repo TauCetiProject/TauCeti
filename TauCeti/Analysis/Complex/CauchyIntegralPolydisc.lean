@@ -48,6 +48,8 @@ distinguished boundary is the torus `T(c, R)` of Mathlib's `torusIntegral`.
 * `DifferentiableOn.analyticAt_of_finiteDimensional`,
   `DifferentiableOn.analyticOnNhd_of_finiteDimensional`: a function on a finite-dimensional complex
   normed space which is complex differentiable on a neighbourhood of a point is analytic there.
+* `DifferentiableOn.contDiffOn_of_finiteDimensional`: such a function is `C^n` on an open set on
+  which it is complex differentiable, for every `n`.
 * `TauCeti.analyticOnNhd_iff_differentiableOn_of_finiteDimensional`: on an open subset of a
   finite-dimensional complex normed space, analyticity and complex differentiability agree.
 * `TauCeti.hasFDerivAt_circleIntegral`: a contour integral `p ↦ ∮ ζ in C(c, R), f (p, ζ)` whose
@@ -365,6 +367,13 @@ open set is analytic on it. This is the several-variable form of `Differentiable
 theorem _root_.DifferentiableOn.analyticOnNhd_of_finiteDimensional (hd : DifferentiableOn ℂ f s)
     (hs : IsOpen s) : AnalyticOnNhd ℂ f s :=
   fun _z hz => hd.analyticAt_of_finiteDimensional (hs.mem_nhds hz)
+
+/-- A function on a finite-dimensional complex normed space which is complex differentiable on an
+open set is `C^n` on it for every `n`, including `n = ω`. This is the several-variable form of
+`DifferentiableOn.contDiffOn`. -/
+theorem _root_.DifferentiableOn.contDiffOn_of_finiteDimensional {n : WithTop ℕ∞}
+    (hd : DifferentiableOn ℂ f s) (hs : IsOpen s) : ContDiffOn ℂ n f s :=
+  (hd.analyticOnNhd_of_finiteDimensional hs).contDiffOn_of_completeSpace
 
 /-- On an open subset of a finite-dimensional complex normed space, a function is analytic if and
 only if it is complex differentiable. This is the several-variable form of

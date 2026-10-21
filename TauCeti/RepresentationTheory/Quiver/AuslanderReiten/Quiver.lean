@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Preadditive.Radical.IrreducibleMorphismQuiver
+public import TauCeti.CategoryTheory.Preadditive.Radical.IrreducibleMorphismQuiver.Basic
 public import TauCeti.RepresentationTheory.Quiver.FiniteRepType.Basic
 public import TauCeti.RepresentationTheory.Quiver.Representation.IrreducibleMorphism
 public import TauCeti.RepresentationTheory.Quiver.Representation.HomDifferential

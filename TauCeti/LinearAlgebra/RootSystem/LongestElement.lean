@@ -46,6 +46,12 @@ available here, so length is spelled throughout as `(inversions P b w).ncard`.
 * `TauCeti.isLeast_ncard_posRoots_longestElement`: `|Φ⁺|` simple reflections spell `w₀`, and no
   fewer do.
 * `TauCeti.longestElement_inv` and `TauCeti.longestElement_sq`: `w₀` is an involution.
+* `TauCeti.inversions_longestElement_mul`: `w₀ w` inverts exactly the positive roots that `w`
+  keeps positive; consequently `ℓ(w₀ w) = ℓ(w w₀) = ℓ(w₀) - ℓ(w)`
+  (`TauCeti.ncard_inversions_longestElement_mul_add_ncard_inversions` and
+  `TauCeti.ncard_inversions_mul_longestElement_add_ncard_inversions`).
+* `TauCeti.posRoots_sdiff_inversions_inv_mul_longestElement`: the positive roots `β` with
+  `w⁻¹ β` negative are the positive roots `β` with `(w w₀)⁻¹ β` positive.
 * `TauCeti.longestElement_smul_dominantChamber` and
   `TauCeti.longestElement_smul_openDominantChamber`: `w₀` carries the dominant chamber, and its
   interior, onto its negative, the antidominant chamber.
@@ -138,13 +144,8 @@ theorem mapsTo_posRoots_negRoots_of_forall_mem_support {w : P.weylGroup}
   refine RootPairing.Base.IsPos.induction_on_add ((mem_posRoots P b i).mp hi)
     (p := fun j ↦ b.height (P.weylGroupToPerm w j) < 0) (fun j hj ↦ (hneg j).mp (h j hj))
     fun j k l hl hj hk ↦ ?_
-  -- The Weyl-group element carries the decomposition `root l = root j + root k` to the images.
-  have himage : P.root (P.weylGroupToPerm w l) =
-      P.root (P.weylGroupToPerm w j) + P.root (P.weylGroupToPerm w k) := by
-    rw [← P.weylGroup_apply_root w l, ← P.weylGroup_apply_root w j, ← P.weylGroup_apply_root w k,
-      hl, smul_add]
   have hk' := (hneg k).mp (h k hk)
-  rw [b.height_add himage]
+  rw [b.height_add (P.root_weylGroupToPerm_eq_add w hl)]
   omega
 
 variable {P b} in
@@ -298,6 +299,57 @@ theorem longestElement_ne_one [Nonempty ι] : longestElement P b ≠ 1 := by
   have hpos := posRoots_nonempty P b
   rw [← inversions_longestElement P b, h, inversions_one] at hpos
   exact hpos.ne_empty rfl
+
+/-- **The longest element reverses the sign of every root**: the image of a root under `w₀` is
+positive exactly when the root is negative.
+
+This is not a `simp` lemma: `simp` unfolds `RootPairing.weylGroupToPerm` on its left-hand side
+through `MonoidHom.domRestrict_apply`. -/
+theorem isPos_weylGroupToPerm_longestElement_iff (i : ι) :
+    b.IsPos (P.weylGroupToPerm (longestElement P b) i) ↔ ¬ b.IsPos i := by
+  refine ⟨fun h hi ↦ ?_, fun h ↦ ?_⟩
+  · exact (mem_negRoots P b _).mp
+      (mapsTo_posRoots_negRoots_longestElement P b ((mem_posRoots P b i).mpr hi)) h
+  · exact (mem_posRoots P b _).mp
+      (mapsTo_negRoots_posRoots_longestElement P b ((mem_negRoots P b i).mpr h))
+
+/-- **Left multiplication by the longest element complements inversion sets** within the positive
+roots: `w₀ w` inverts exactly the positive roots that `w` keeps positive. -/
+theorem inversions_longestElement_mul (w : P.weylGroup) :
+    inversions P b (longestElement P b * w) = posRoots P b \ inversions P b w := by
+  ext i
+  rw [mem_posRoots_sdiff_inversions, mem_inversions, map_mul, Equiv.Perm.mul_apply,
+    isPos_weylGroupToPerm_longestElement_iff, not_not]
+
+/-- **Right multiplication by the longest element exchanges the two root subsets attached to
+`w`**: the positive roots `β` with `w⁻¹ β` negative are exactly the positive roots `β` with
+`(w w₀)⁻¹ β` positive. -/
+theorem posRoots_sdiff_inversions_inv_mul_longestElement (w : P.weylGroup) :
+    posRoots P b \ inversions P b (w * longestElement P b)⁻¹ = inversions P b w⁻¹ := by
+  rw [mul_inv_rev, longestElement_inv, inversions_longestElement_mul,
+    Set.sdiff_sdiff_cancel_left (inversions_subset_posRoots P b _)]
+
+/-- The element `w₀ sᵢ` inverts every positive root except the simple root `αᵢ`. -/
+theorem inversions_longestElement_mul_ofIdx {i : ι} (hi : i ∈ b.support) :
+    inversions P b (longestElement P b * RootPairing.weylGroup.ofIdx P i) =
+      posRoots P b \ {i} := by
+  rw [inversions_longestElement_mul, inversions_ofIdx P b hi]
+
+/-- **`ℓ(w₀ w) + ℓ(w) = ℓ(w₀)`**, with length spelled as the number of inversions. -/
+theorem ncard_inversions_longestElement_mul_add_ncard_inversions (w : P.weylGroup) :
+    (inversions P b (longestElement P b * w)).ncard + (inversions P b w).ncard =
+      (posRoots P b).ncard := by
+  rw [inversions_longestElement_mul]
+  exact Set.ncard_sdiff_add_ncard_of_subset (inversions_subset_posRoots P b w)
+    (posRoots_finite P b)
+
+/-- **`ℓ(w w₀) + ℓ(w) = ℓ(w₀)`**, with length spelled as the number of inversions. -/
+theorem ncard_inversions_mul_longestElement_add_ncard_inversions (w : P.weylGroup) :
+    (inversions P b (w * longestElement P b)).ncard + (inversions P b w).ncard =
+      (posRoots P b).ncard := by
+  rw [← ncard_inversions_inv P b (w * longestElement P b), mul_inv_rev, longestElement_inv,
+    ← ncard_inversions_inv P b w]
+  exact ncard_inversions_longestElement_mul_add_ncard_inversions P b w⁻¹
 
 /-- Evaluating the coroot functional indexed by `i` on the longest-element translate of a weight
 `x` is the same as evaluating the coroot functional indexed by the longest-element image of `i` on
