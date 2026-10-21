@@ -69,10 +69,10 @@ namespace WedgeSum
 
 variable {S : Type u}
 
-/-- The sup norm of a point of `Fin 1 → ℝ` is the absolute value of its coordinate. -/
-private lemma norm_fin_one (x : Fin 1 → ℝ) : ‖x‖ = |x 0| :=
-  le_antisymm ((pi_norm_le_iff_of_nonneg (abs_nonneg _)).2 fun i ↦ by
-    rw [Subsingleton.elim i 0, Real.norm_eq_abs]) (by simpa using norm_le_pi_norm x 0)
+/-- The sup norm of a point of `Fin 1 → ℝ` is the absolute value of its coordinate: the
+specialization of `IsometryEquiv.funUnique` used to describe the cells. -/
+private lemma norm_fin_one (x : Fin 1 → ℝ) : ‖x‖ = |x 0| := by
+  simpa [Real.dist_eq] using ((IsometryEquiv.funUnique (Fin 1) ℝ).dist_eq x 0).symm
 
 /-- The map wrapping `[-1, 1]` once around the circle, starting and ending at `1`. -/
 private def circleWrap (x : Fin 1 → ℝ) : Circle :=
@@ -101,16 +101,12 @@ private lemma circleWrap_of_mem_sphere {x : Fin 1 → ℝ} (hx : x ∈ sphere 0 
 private lemma injOn_circleWrap : InjOn circleWrap (ball 0 1) := by
   intro x hx y hy h
   rw [mem_ball_zero_iff, norm_fin_one, abs_lt] at hx hy
-  obtain ⟨m, hm⟩ := Circle.exp_eq_exp.1 h
-  have h0 : (-1 : ℝ) < m := by nlinarith [pi_pos]
-  have h1 : (m : ℝ) < 1 := by nlinarith [pi_pos]
-  have hm0 : m = 0 := by
-    have h0' : -1 < m := by exact_mod_cast h0
-    have h1' : m < 1 := by exact_mod_cast h1
-    omega
+  have hmem {t : ℝ} (ht : -1 < t ∧ t < 1) : π * t + π ∈ Ico 0 (2 * π) :=
+    ⟨by nlinarith [pi_pos], by nlinarith [pi_pos]⟩
+  have hxy := Circle.exp_injOn_Ico (by rw [sub_zero]) (hmem hx) (hmem hy) h
   funext i
   rw [Subsingleton.elim i 0]
-  simpa [hm0, pi_pos.ne'] using hm
+  exact mul_left_cancel₀ pi_pos.ne' (add_right_cancel hxy)
 
 /-- Every point of the circle is the image of a point of the closed interval. -/
 private lemma image_circleWrap_closedBall : circleWrap '' closedBall 0 1 = univ := by
@@ -141,6 +137,17 @@ theorem circleCellMap_apply (s : S) (x : Fin 1 → ℝ) :
 
 @[simp]
 theorem circleCellMap_source (s : S) : (circleCellMap S s).source = ball 0 1 :=
+  (rfl)
+
+/-- The target of `circleCellMap S s` is the image of the open interval. -/
+@[simp]
+theorem circleCellMap_target (s : S) :
+    (circleCellMap S s).target = circleCellMap S s '' ball 0 1 :=
+  (rfl)
+
+/-- The inverse of `circleCellMap S s` is the inverse of the wrapping map on the open interval. -/
+theorem coe_circleCellMap_symm (s : S) :
+    ⇑(circleCellMap S s).symm = Function.invFunOn (circleCellMap S s) (ball 0 1) :=
   (rfl)
 
 private lemma coe_circleCellMap (s : S) :
@@ -197,6 +204,7 @@ private lemma disjoint_image_circleCellMap_ball {s t : S} (hst : s ≠ t) :
 /-- The inverse of the characteristic map of a `1`-cell is continuous on the open cell. -/
 private lemma continuousOn_circleCellMap_symm (s : S) :
     ContinuousOn (circleCellMap S s).symm (circleCellMap S s).target := by
+  rw [coe_circleCellMap_symm, circleCellMap_target]
   refine (continuous_circleCellMap s).continuousOn.continuousOn_invFunOn_image_of_isCompact
     (isCompact_closedBall 0 1) ball_subset_closedBall
     (fun _ hx _ hy h ↦ (circleCellMap S s).injOn hx hy h) ?_
