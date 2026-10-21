@@ -7,6 +7,9 @@ module
 
 public import Mathlib.Algebra.Lie.Basic
 public import TauCeti.RingTheory.HahnSeries.Multiplication
+-- Proof-only: reindexing double sums over antidiagonals.
+import TauCeti.Data.Finset.MulAntidiagonal
+import TauCeti.Data.Finset.SMulAntidiagonal
 
 /-!
 # Lie algebras of Hahn series with Lie algebra coefficients
@@ -38,6 +41,9 @@ coefficientwise action of `R`, and also for the convolution action of the Hahn s
 ## References
 
 * E. Frenkel, *Langlands Correspondence for Loop Groups*, §1.2.
+
+The proof of the Leibniz rule reindexes double sums over antidiagonals, following the proof of
+`HahnSeries.mul_assoc` in Mathlib's `Mathlib/RingTheory/HahnSeries/Multiplication.lean`.
 -/
 
 public section
@@ -135,30 +141,6 @@ theorem single_lie_single (a b : Γ) (x y : L) :
     rw [HahnSeries.eq_of_mem_support_single hi, HahnSeries.eq_of_mem_support_single hj] at hc
     exact (hc rfl).elim
 
-/-- Reassociating a double sum over antidiagonals: the sums indexed by `(a, (b, c))` and by
-`((a, b), c)`, with `a + b + c = d`, agree. -/
-private theorem sum_sigma_antidiagonal_assoc {M : Type*} [AddCommMonoid M] {s t u : Set Γ}
-    (hs : s.IsPWO) (ht : t.IsPWO) (hu : u.IsPWO) (d : Γ) (F : Γ → Γ → Γ → M) :
-    ∑ p ∈ (antidiagonal hs (ht.add hu) d).sigma fun p ↦ antidiagonal ht hu p.2,
-        F p.1.1 p.2.1 p.2.2 =
-      ∑ p ∈ (antidiagonal (hs.add ht) hu d).sigma fun p ↦ antidiagonal hs ht p.1,
-        F p.2.1 p.2.2 p.1.2 := by
-  apply Finset.sum_nbij' (fun ⟨⟨i, _⟩, ⟨j, k⟩⟩ ↦ ⟨(i + j, k), (i, j)⟩)
-    (fun ⟨⟨_, k⟩, ⟨i, j⟩⟩ ↦ ⟨(i, j + k), (j, k)⟩) <;>
-    aesop (add safe Set.add_mem_add) (add simp [add_assoc])
-
-/-- Commuting the first two indices of a double sum over antidiagonals: the sums indexed by
-`(a, (b, c))` and by `(b, (a, c))`, with `a + b + c = d`, agree. -/
-private theorem sum_sigma_antidiagonal_left_comm {M : Type*} [AddCommMonoid M] {s t u : Set Γ}
-    (hs : s.IsPWO) (ht : t.IsPWO) (hu : u.IsPWO) (d : Γ) (F : Γ → Γ → Γ → M) :
-    ∑ p ∈ (antidiagonal hs (ht.add hu) d).sigma fun p ↦ antidiagonal ht hu p.2,
-        F p.1.1 p.2.1 p.2.2 =
-      ∑ p ∈ (antidiagonal ht (hs.add hu) d).sigma fun p ↦ antidiagonal hs hu p.2,
-        F p.2.1 p.1.1 p.2.2 := by
-  apply Finset.sum_nbij' (fun ⟨⟨i, _⟩, ⟨j, k⟩⟩ ↦ ⟨(j, i + k), (i, k)⟩)
-    (fun ⟨⟨j, _⟩, ⟨i, k⟩⟩ ↦ ⟨(i, j + k), (j, k)⟩) <;>
-    aesop (add safe Set.add_mem_add) (add simp [add_left_comm])
-
 /-- The coefficients of a right-nested bracket, as a sum over pairs of antidiagonals. -/
 private theorem coeff_lie_lie (x y z : HahnModule Γ R L) (d : Γ) :
     ((of R).symm ⁅x, ⁅y, z⁆⁆).coeff d =
@@ -247,20 +229,6 @@ instance instLieAlgebra : LieAlgebra R (HahnModule Γ R L) where
     rw [of_symm_smul', HahnSeries.coeff_smul, coeff_lie_right' ((of R).symm y).isPWO_support
       (by rw [of_symm_smul']; exact HahnSeries.support_smul_subset _ _), coeff_lie, smul_sum]
     simp only [of_symm_smul', HahnSeries.coeff_smul, lie_smul]
-
-/-- Commuting the first two indices of a double sum, where the inner sums are over the
-antidiagonals of the action of `Γ` on itself. -/
-private theorem sum_sigma_vaddAntidiagonal_left_comm {M : Type*} [AddCommMonoid M]
-    {s t u : Set Γ} (hs : s.IsPWO) (ht : t.IsPWO) (hu : u.IsPWO) (d : Γ) (F : Γ → Γ → Γ → M) :
-    ∑ p ∈ (antidiagonal hs (ht.vadd hu) d).sigma fun p ↦
-        VAddAntidiagonal p.2 (Set.VAddAntidiagonal.finite_of_isPWO ht hu p.2),
-        F p.1.1 p.2.1 p.2.2 =
-      ∑ p ∈ (VAddAntidiagonal d (Set.VAddAntidiagonal.finite_of_isPWO ht (hs.add hu) d)).sigma
-          fun p ↦ antidiagonal hs hu p.2,
-        F p.2.1 p.1.1 p.2.2 := by
-  apply Finset.sum_nbij' (fun ⟨⟨i, _⟩, ⟨j, k⟩⟩ ↦ ⟨(j, i + k), (i, k)⟩)
-    (fun ⟨⟨j, _⟩, ⟨i, k⟩⟩ ↦ ⟨(i, j + k), (j, k)⟩) <;>
-    aesop (add safe [Set.add_mem_add, Set.vadd_mem_vadd]) (add simp [add_left_comm])
 
 /-- The convolution bracket is bilinear for the convolution action of the Hahn series
 `HahnSeries Γ R`. For `Γ = ℤ` this makes the formal loop algebra `L((t))` a Lie algebra over the
