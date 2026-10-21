@@ -262,13 +262,23 @@ variable {𝕜 : Type*} [RCLike 𝕜]
   {E₂ : Type*} [NormedAddCommGroup E₂] [NormedSpace 𝕜 E₂] [CompleteSpace E₂]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
 
-/-- The joint implicit function of a `C^n` equation, `n ≠ 0`, is `C^n`. -/
+/-- The joint implicit function of a `C^n` equation is `C^n`. -/
 theorem HasStrictFDerivAt.contDiffAt_jointImplicitFunctionOfProdDomain {u : E₁ × E₂}
     {f : E₁ × E₂ → F} {f'u : E₁ × E₂ →L[𝕜] F} (dfu : HasStrictFDerivAt f f'u u)
-    (if₂u : (f'u ∘L .inr 𝕜 E₁ E₂).IsInvertible) {n : WithTop ℕ∞} (hf : ContDiffAt 𝕜 n f u)
-    (hn : n ≠ 0) :
+    (if₂u : (f'u ∘L .inr 𝕜 E₁ E₂).IsInvertible) {n : WithTop ℕ∞} (hf : ContDiffAt 𝕜 n f u) :
     ContDiffAt 𝕜 n (dfu.jointImplicitFunctionOfProdDomain if₂u) (u.1, f u) := by
   set D := dfu.implicitFunctionDataOfProdDomain if₂u
+  rcases eq_or_ne n 0 with rfl | hn
+  · -- `C^0`: the local inverse is continuous on its open target
+    have ht : D.toOpenPartialHomeomorph.target ∈ 𝓝 (D.prodFun D.pt) :=
+      D.toOpenPartialHomeomorph.open_target.mem_nhds
+        (D.prodFun_apply _ ▸ D.map_pt_mem_toOpenPartialHomeomorph_target)
+    have hsymm : D.implicitFunction.uncurry = D.toOpenPartialHomeomorph.symm :=
+      funext fun _ ↦ D.implicitFunction_apply
+    rw [contDiffAt_zero, jointImplicitFunctionOfProdDomain_eq_comp, hsymm]
+    exact ⟨_, dfu.tendsto_swap_prodFun_pt if₂u ht, continuous_snd.comp_continuousOn
+      (D.toOpenPartialHomeomorph.continuousOn_symm.comp continuous_swap.continuousOn
+        (Set.mapsTo_preimage _ _))⟩
   have h := D.contDiffAt_implicitFunction (by simpa [D] using hf)
     (by simpa [D] using contDiffAt_fst) hn
   rw [prodFun_pt_implicitFunctionDataOfProdDomain] at h
