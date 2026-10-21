@@ -18,7 +18,8 @@ across a refinement of finite partitions: the edge count between two finsets is 
 times their edge density (with no nonemptiness hypothesis, since both sides vanish on an empty
 finset), edge counts are additive over disjoint unions on either side, and the edge count between
 two finsets splits along the traces of the parts of finite partitions on them. The corresponding
-`SimpleGraph` results are specializations to the adjacency relation.
+`SimpleGraph` results are specializations to the adjacency relation. Finally, an edge density or
+its complement, the nonedge density, lies in `[0, 1]`.
 -/
 
 public section
@@ -114,6 +115,16 @@ theorem card_mul_card_mul_edgeDensity (s t : Finset V) :
 theorem card_mul_card_mul_edgeDensity_real (s t : Finset V) :
     (#s * #t : ℝ) * (G.edgeDensity s t : ℝ) = #(G.interedges s t) :=
   Rel.card_mul_card_mul_edgeDensity_real G.Adj s t
+
+/-- An edge density `d(A, B)` or a nonedge density `1 - d(A, B)`, chosen by any condition, lies
+in `[0, 1]`. -/
+theorem ite_edgeDensity_mem_Icc (c : Prop) [Decidable c] (A B : Finset V) :
+    (if c then (G.edgeDensity A B : ℝ) else 1 - (G.edgeDensity A B : ℝ)) ∈ Set.Icc 0 1 := by
+  have h₀ : (0 : ℝ) ≤ G.edgeDensity A B := mod_cast G.edgeDensity_nonneg A B
+  have h₁ : (G.edgeDensity A B : ℝ) ≤ 1 := mod_cast G.edgeDensity_le_one A B
+  split_ifs
+  · exact ⟨h₀, h₁⟩
+  · exact ⟨sub_nonneg.2 h₁, sub_le_self _ h₀⟩
 
 variable [DecidableEq V]
 

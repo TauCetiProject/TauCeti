@@ -9,6 +9,7 @@ public import TauCeti.Combinatorics.Regularity.Graph.InducedCount
 public import TauCeti.Combinatorics.Regularity.Partition.Energy
 import Mathlib.Tactic.Linarith
 import TauCeti.Algebra.Order.BigOperators.ProdSubProd
+import TauCeti.Algebra.Order.Group.Abs
 import TauCeti.Data.Fintype.BigOperators
 
 /-!
@@ -93,22 +94,6 @@ theorem steppedInducedGraphCount3_eq_sum_part (R : Finpartition (univ : Finset V
   rw [sum_congr rfl fun g hg ↦ by simp_rw [R.part_eq_of_mem_piFinset_parts hg]; rfl, sum_const,
     Fintype.card_piFinset, nsmul_eq_mul, Nat.cast_prod]
 
-omit [Fintype V] [DecidableEq V] in
-/-- An edge or nonedge density lies in `[0, 1]`. -/
-private theorem ite_edgeDensity_mem_Icc (c : Prop) [Decidable c] (A B : Finset V) :
-    (if c then (G.edgeDensity A B : ℝ) else 1 - (G.edgeDensity A B : ℝ)) ∈ Set.Icc 0 1 := by
-  have h₀ : (0 : ℝ) ≤ G.edgeDensity A B := mod_cast G.edgeDensity_nonneg A B
-  have h₁ : (G.edgeDensity A B : ℝ) ≤ 1 := mod_cast G.edgeDensity_le_one A B
-  split_ifs <;> constructor <;> linarith
-
-/-- Edge and nonedge densities change by the same amount. -/
-private theorem abs_ite_sub_ite (c : Prop) [Decidable c] (a b : ℝ) :
-    |(if c then a else 1 - a) - (if c then b else 1 - b)| = |a - b| := by
-  split_ifs
-  · rfl
-  · rw [← abs_neg]
-    ring_nf
-
 /-- **Energy transfer.** If `Q` refines `P` and the size-weighted energy of `Q` exceeds that of
 `P` by at most `ε`, then the stepped predictions of the induced count of `J` from `Q` and from `P`
 differ by at most `3 √ε (card V) ^ 3`. No equitability or regularity is assumed. -/
@@ -130,7 +115,7 @@ theorem abs_steppedInducedGraphCount3_sub_le {P Q : Finpartition (univ : Finset 
   calc _ ≤ ∑ g : Fin 3 → V, ∑ p : {p : Fin 3 × Fin 3 // p.1 < p.2}, D (g p.1.1) (g p.1.2) := by
         refine (abs_sum_le_sum_abs _ _).trans <| sum_le_sum fun g _ ↦ ?_
         refine (TauCeti.abs_prod_sub_prod_le_sum_abs_sub _ (fun p _ ↦ ?_) fun p _ ↦ ?_).trans_eq
-          (sum_congr rfl fun p _ ↦ abs_ite_sub_ite _ _ _)
+          (sum_congr rfl fun p _ ↦ TauCeti.abs_ite_sub_ite _ _ _ _)
         all_goals
           obtain ⟨h₀, h₁⟩ := ite_edgeDensity_mem_Icc G (J.Adj p.1.1 p.1.2) _ _
           exact abs_le.2 ⟨by linarith, h₁⟩
