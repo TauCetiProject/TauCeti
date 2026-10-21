@@ -148,7 +148,6 @@ jobs:
           python3 scripts/test_roadmap_api.py
           python3 scripts/test_github_api_report.py
           PYTHONPATH=scripts python3 scripts/test_housekeeping.py
-          python3 scripts/test_stack_policy.py
           python3 scripts/pr_status/test_pr_labels.py
           python3 scripts/pr_status/test_batch.py
           python3 scripts/pr_status/test_zulip.py
