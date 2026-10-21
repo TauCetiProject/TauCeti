@@ -239,11 +239,6 @@ theorem derivative_additivePolynomial :
     exact Finset.prod_nbij' (fun d ↦ d - c) (fun e ↦ e + c) (by simp [sub_eq_zero]) (by simp)
       (by simp) (by simp) (by simp)
 
-/-- `a_V` is separable: its roots, the elements of `V`, are distinct. -/
-theorem separable_additivePolynomial : V.additivePolynomial.Separable := by
-  rw [additivePolynomial_eq_prod]
-  exact separable_prod_X_sub_C_iff'.mpr Subtype.val_injective.injOn
-
 /-- `a_V - u` is separable. -/
 theorem separable_additivePolynomial_sub_C (u : K) : (V.additivePolynomial - C u).Separable := by
   rw [separable_def, derivative_sub, derivative_C, sub_zero, V.derivative_additivePolynomial]
@@ -251,6 +246,10 @@ theorem separable_additivePolynomial_sub_C (u : K) : (V.additivePolynomial - C u
     finprod_ne_zero fun c ↦ by simpa using c.property
   refine ⟨0, C (∏ᶠ c : {c : V // c ≠ 0}, -(c : K))⁻¹, ?_⟩
   simp [← C_mul, hc]
+
+/-- `a_V` is separable: its roots, the elements of `V`, are distinct. -/
+theorem separable_additivePolynomial : V.additivePolynomial.Separable := by
+  simpa using V.separable_additivePolynomial_sub_C 0
 
 end Field
 
