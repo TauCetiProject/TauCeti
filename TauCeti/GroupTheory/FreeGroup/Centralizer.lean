@@ -39,8 +39,6 @@ a fixed nonzero exponent, transporting Mathlib's instance for `FreeGroup α` alo
 * O. Kharlampovich, A. Myasnikov, V. Remeslennikov, D. Serbin, *Subgroups of fully residually
   free groups: algorithmic problems*, Contemp. Math. 360 (2004), §5, proof of Lemma 21
   (centralizers of nontrivial elements of a free group are cyclic).
-* Mathlib PR #42677, https://github.com/leanprover-community/mathlib4/pull/42677
-  (`FreeGroup/Center.lean`; centre and centralizers of free groups).
 -/
 
 public section
