@@ -161,16 +161,19 @@ theorem shift_surjective_of_isMittagLeffler (h : F.IsMittagLeffler) :
   choose m hnm hm using (F.isMittagLeffler_iff_ranges).1 h
   -- `Bₙ` is the stable image of the composite transitions into `Aₙ`.
   let B (n : ℕ) : Submodule R (F.obj (op n)) := LinearMap.range (F.transitionOfLE (hnm n))
+  have hB_eq (n k : ℕ) (hk : m n ≤ k) :
+      B n = LinearMap.range (F.transitionOfLE ((hnm n).trans hk)) :=
+    (hm n k hk).symm
   -- The transition `φₙ` maps `Bₙ₊₁` onto `Bₙ`: both are images of `A_K` for `K` large.
   have hB (n : ℕ) : B n ≤ (B (n + 1)).map (F.transition n) := by
     let K := max (m n) (m (n + 1))
     have h₁ : m (n + 1) ≤ K := le_max_right _ _
     have h₂ : n + 1 ≤ K := (hnm (n + 1)).trans h₁
     intro x hx
-    rw [show B n = _ from (hm n K (le_max_left _ _)).symm] at hx
+    rw [hB_eq n K (le_max_left _ _)] at hx
     obtain ⟨a, rfl⟩ := hx
     refine ⟨F.transitionOfLE h₂ a, ?_, by simp⟩
-    rw [show B (n + 1) = _ from (hm (n + 1) K h₁).symm]
+    rw [hB_eq (n + 1) K h₁]
     exact ⟨a, rfl⟩
   intro b
   obtain ⟨y, hy⟩ := F.exists_sub_shift_mem B (fun n ↦ ⟨m n, hnm n, le_rfl⟩) b
