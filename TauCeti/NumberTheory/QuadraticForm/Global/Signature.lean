@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.QuadraticForm.Real
 public import TauCeti.LinearAlgebra.QuadraticForm.Signature
 public import TauCeti.NumberTheory.QuadraticForm.Global.Localization
+import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
 
 /-!
 # Signatures of quadratic forms at real places
@@ -51,6 +52,10 @@ half of the archimedean classification; the complex half is in
   `QuadraticForm.equivalent_atRealPlace_realSignatureForm`: the localization is the normal form
   `p⟨1⟩ ⊥ q⟨-1⟩` exactly when `(p, q)` is its signature, hence is always the normal form of its
   own signature.
+* `anisotropic_atRealPlace_iff_realNegativeIndex_eq_zero_or_realPositiveIndex_eq_zero`:
+  a regular form is anisotropic at a real place exactly when it is definite there.
+* `QuadraticForm.anisotropic_atRealPlace_weightedSumSquares_iff`: a regular diagonal form is
+  anisotropic at a real place exactly when its coefficients there all have the same sign.
 
 ## References
 
@@ -375,6 +380,33 @@ theorem equivalent_atRealPlace_realSignatureForm (hQ : Q.Nondegenerate)
     (Q.atRealPlace w).Equivalent
       (realSignatureForm (Q.realPositiveIndex w) (Q.realNegativeIndex w)) :=
   (equivalent_atRealPlace_realSignatureForm_iff_realSignature_eq hQ w _ _).mpr (by simp)
+
+/-- A regular quadratic form is anisotropic at a real place exactly when it is definite there,
+that is, when its negative or its positive index there vanishes. -/
+theorem anisotropic_atRealPlace_iff_realNegativeIndex_eq_zero_or_realPositiveIndex_eq_zero
+    (hQ : Q.Nondegenerate) (w : {w : InfinitePlace K // w.IsReal}) :
+    (Q.atRealPlace w).Anisotropic ↔ Q.realNegativeIndex w = 0 ∨ Q.realPositiveIndex w = 0 := by
+  rw [anisotropic_iff_sigNeg_eq_zero_or_sigPos_eq_zero
+    (Nondegenerate.atRealPlace hQ w).radical_eq_bot, realNegativeIndex_eq_sigNeg,
+    realPositiveIndex_eq_sigPos]
+
+/-- A diagonal form `⟨a₁, …, aₙ⟩` with nonzero coefficients is anisotropic at a real place exactly
+when its coefficients there are all positive or all negative. -/
+theorem anisotropic_atRealPlace_weightedSumSquares_iff {ι : Type*} [Fintype ι] {a : ι → K}
+    (ha : ∀ i, a i ≠ 0) (w : {w : InfinitePlace K // w.IsReal}) :
+    (atRealPlace (QuadraticMap.weightedSumSquares K a) w).Anisotropic ↔
+      (∀ i, 0 < embedding_of_isReal w.2 (a i)) ∨ ∀ i, embedding_of_isReal w.2 (a i) < 0 := by
+  let : CharZero K := RingHom.charZero w.1.embedding
+  let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
+  have h0 (i : ι) : embedding_of_isReal w.2 (a i) ≠ 0 := by simpa using ha i
+  rw [anisotropic_atRealPlace_iff_realNegativeIndex_eq_zero_or_realPositiveIndex_eq_zero
+    (QuadraticMap.nondegenerate_weightedSumSquares fun i => isRegular_iff_ne_zero.mpr (ha i)),
+    realNegativeIndex_weightedSumSquares, realPositiveIndex_weightedSumSquares,
+    Set.ncard_eq_zero, Set.ncard_eq_zero, Set.eq_empty_iff_forall_notMem,
+    Set.eq_empty_iff_forall_notMem]
+  simp only [Set.mem_ofPred_eq, not_lt]
+  exact or_congr (forall_congr' fun i => (h0 i).symm.le_iff_lt)
+    (forall_congr' fun i => (h0 i).le_iff_lt)
 
 end Classification
 
