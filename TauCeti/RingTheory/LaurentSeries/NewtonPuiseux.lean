@@ -6,11 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
-public import Mathlib.RingTheory.Polynomial.ScaleRoots
 public import TauCeti.RingTheory.LaurentSeries.Puiseux.Basic
 import TauCeti.Algebra.Polynomial.LinearFactor
 import TauCeti.Algebra.Polynomial.Taylor
-import TauCeti.RingTheory.LaurentSeries.Basic
+import TauCeti.RingTheory.LaurentSeries.SlopeNormalization
 import TauCeti.RingTheory.PowerSeries.Hensel
 
 /-!
@@ -31,9 +30,9 @@ which may be assumed monic.
    slope `ord (P.coeff j) / (m - j)` over the nonzero coefficients with `j < m`, attained at
    `j₀`, and put `q = m - j₀` and `v = ord (P.coeff j₀)`. Ramifying `X ↦ X ^ q` and rescaling
    `Y ↦ X ^ v * Y`, then dividing by `X ^ (v * m)`, produces a monic polynomial over `K⟦X⟧`
-   (`TauCeti.LaurentSeries.exists_monic_map_eq_scaleRoots_map_expand`). Its reduction modulo `X`
-   still has no term of degree `m - 1`, and its coefficient of `Y ^ j₀` is nonzero, so the
-   reduction is not `Y ^ m`.
+   (`Polynomial.Monic.exists_map_expand_eq_scaleRoots_of_nextCoeff_eq_zero`). Its reduction
+   modulo `X` still has no term of degree `m - 1`, and its coefficient of `Y ^ j₀` is nonzero, so
+   the reduction is not `Y ^ m`.
 3. In characteristic zero such a reduction is not a power `(Y - b) ^ m`, so at any of its roots
    it splits into coprime monic factors of degrees `0 < r < m`
    (`Polynomial.Monic.exists_eq_X_sub_C_pow_mul_of_nextCoeff_eq_zero`). Hensel's lemma lifts
@@ -41,16 +40,11 @@ which may be assumed monic.
 4. By induction the factor of degree `r` has a root after some ramification `X ↦ X ^ n`. Undoing
    the rescaling and the translation gives a root of `P` after the ramification `X ↦ X ^ (n * q)`.
 
-The ramification and rescaling step uses only the order of the coefficients, and holds over any
-commutative ring. Through the level embeddings, the root theorem gives a root of `P` in the
-Puiseux field lying in a single ramified level. It is the input for the algebraic closedness of
-the Puiseux field.
+Through the level embeddings, the root theorem gives a root of `P` in the Puiseux field lying in a
+single ramified level. It is the input for the algebraic closedness of the Puiseux field.
 
 ## Main results
 
-* `TauCeti.LaurentSeries.exists_monic_map_eq_scaleRoots_map_expand`: ramification and rescaling
-  along the smallest slope make a monic polynomial without term of degree `m - 1`, other than
-  `Y ^ m`, integral over `R⟦X⟧`, with reduction other than `Y ^ m`.
 * `TauCeti.LaurentSeries.exists_isRoot_map_expand`: a nonconstant polynomial over `K⸨X⸩` has a
   root after a finite ramification `X ↦ X ^ n`.
 * `TauCeti.puiseuxField.exists_isRoot_levelEmbedding`: a nonconstant polynomial over `K⸨X⸩` has
@@ -71,98 +65,6 @@ open scoped LaurentSeries PowerSeries
 namespace TauCeti.LaurentSeries
 
 open _root_.LaurentSeries
-
-variable {R : Type*} [CommSemiring R]
-
-/-- A monic polynomial `P` of degree `m`, other than `X ^ m`, has a coefficient `P.coeff j₀ ≠ 0`
-with `j₀ < m` attaining the smallest slope `ord (P.coeff j) / (m - j)` among its nonzero
-coefficients, stated with denominators cleared. -/
-private theorem exists_slope_le {P : R⸨X⸩[X]} (hP : P.Monic) (hX : P ≠ X ^ P.natDegree) :
-    ∃ j₀ < P.natDegree, P.coeff j₀ ≠ 0 ∧ ∀ j ≤ P.natDegree, P.coeff j ≠ 0 →
-      ((P.natDegree - j : ℕ) : ℤ) * (P.coeff j₀).order ≤
-        (P.natDegree - j₀ : ℕ) * (P.coeff j).order := by
-  classical
-  set m := P.natDegree with hm
-  -- The exponents of the nonzero coefficients below the leading one.
-  set S := (Finset.range m).filter fun j ↦ P.coeff j ≠ 0
-  have hS : S.Nonempty := by
-    by_contra hS
-    rw [Finset.not_nonempty_iff_eq_empty, Finset.filter_eq_empty_iff] at hS
-    refine hX (Polynomial.ext fun j ↦ ?_)
-    rw [coeff_X_pow]
-    rcases lt_trichotomy j m with hj | rfl | hj
-    · simpa [hj.ne] using hS (Finset.mem_range.2 hj)
-    · rw [hm, hP.coeff_natDegree]
-      simp
-    · rw [coeff_eq_zero_of_natDegree_lt hj]
-      simp [hj.ne']
-  obtain ⟨j₀, hj₀, hmin⟩ := S.exists_min_image
-    (fun j ↦ ((P.coeff j).order : ℚ) / ((m - j : ℕ) : ℚ)) hS
-  rw [Finset.mem_filter, Finset.mem_range] at hj₀
-  refine ⟨j₀, hj₀.1, hj₀.2, fun j hj hc ↦ ?_⟩
-  rcases hj.lt_or_eq with hj | rfl
-  · have := hmin j (Finset.mem_filter.2 ⟨Finset.mem_range.2 hj, hc⟩)
-    rw [div_le_div_iff₀ (by exact_mod_cast (by omega : 0 < m - j₀))
-      (by exact_mod_cast (by omega : 0 < m - j))] at this
-    rw [mul_comm (((m - j : ℕ) : ℤ)), mul_comm (((m - j₀ : ℕ) : ℤ))]
-    exact_mod_cast this
-  · simp [hm, hP.coeff_natDegree]
-
-/-- Let `P` be a monic polynomial of degree `m` over `R⸨X⸩`, without term of degree `m - 1` and
-other than `Y ^ m`. After the ramification `X ↦ X ^ q` and the rescaling
-`P(Y) ↦ X ^ (-v * m) * P(X ^ v * Y)` along the smallest slope of `P`, it becomes the image of a
-monic polynomial `Q` of degree `m` over `R⟦X⟧`, whose reduction modulo `X` still has no term of
-degree `m - 1` and is not `Y ^ m`. -/
-theorem exists_monic_map_eq_scaleRoots_map_expand {P : R⸨X⸩[X]} (hP : P.Monic)
-    (hnext : P.nextCoeff = 0) (hX : P ≠ X ^ P.natDegree) :
-    ∃ (q : ℕ+) (v : ℤ) (Q : R⟦X⟧[X]), Q.Monic ∧ Q.natDegree = P.natDegree ∧
-      Q.map (ofPowerSeries ℤ R) = (P.map (expand R q)).scaleRoots (single (-v) 1) ∧
-      (Q.map PowerSeries.constantCoeff).nextCoeff = 0 ∧
-      Q.map PowerSeries.constantCoeff ≠ X ^ P.natDegree := by
-  have : Nontrivial R := by
-    by_contra h
-    rw [not_nontrivial_iff_subsingleton] at h
-    exact hX (Subsingleton.elim _ _)
-  set m := P.natDegree with hm
-  obtain ⟨j₀, hj₀m, hj₀, hslope⟩ := exists_slope_le hP hX
-  set q : ℕ+ := ⟨m - j₀, by omega⟩
-  have hq : ((q : ℕ) : ℤ) = ((m - j₀ : ℕ) : ℤ) := congrArg _ (PNat.mk_coe _ _)
-  set v := (P.coeff j₀).order
-  -- The coefficients of the ramified and rescaled polynomial `T`.
-  set T := (P.map (expand R q)).scaleRoots (single (-v) 1 : R⸨X⸩)
-  have hT : ∀ j, T.coeff j = single (-((m - j : ℕ) * v)) 1 * expand R q (P.coeff j) := by
-    intro j
-    rw [coeff_scaleRoots, coeff_map, hP.natDegree_map, single_pow, one_pow, ← hm, nsmul_eq_mul,
-      mul_neg, RingHom.coe_coe]
-    exact mul_comm _ _
-  have hlifts : T ∈ lifts (ofPowerSeries ℤ R) := by
-    refine (lifts_iff_coeff_lifts T).2 fun j ↦ mem_range_ofPowerSeries_iff.2 fun n hn ↦ ?_
-    rw [hT]
-    by_cases hj : j ≤ m
-    · exact coeff_single_mul_expand_eq_zero (hq ▸ hslope j hj) hn
-    · rw [coeff_eq_zero_of_natDegree_lt (not_le.1 hj)]
-      simp
-  obtain ⟨Q, hQT, hQm, hQ⟩ := lifts_and_natDegree_eq_and_monic hlifts
-    ((monic_scaleRoots_iff _).2 (hP.map _))
-  -- The reduction of `Q` modulo `X` reads off the constant coefficients of `T`.
-  have hred : ∀ j, (Q.map PowerSeries.constantCoeff).coeff j = (T.coeff j).coeff 0 := by
-    intro j
-    rw [coeff_map, ← hQT, coeff_map, ← PowerSeries.coeff_zero_eq_constantCoeff_apply,
-      ← coeff_coe_powerSeries, Nat.cast_zero]
-  have hQdeg : Q.natDegree = m := by rw [hQm, natDegree_scaleRoots, hP.natDegree_map]
-  have hgm : (Q.map PowerSeries.constantCoeff).natDegree = m := by rw [hQ.natDegree_map, hQdeg]
-  refine ⟨q, v, Q, hQ, hQdeg, hQT, ?_, fun h ↦ ?_⟩
-  · rw [nextCoeff_of_natDegree_pos (by omega), hgm, hred, hT,
-      ← nextCoeff_of_natDegree_pos (by omega), hnext]
-    simp
-  · -- The coefficient of `Y ^ j₀` in the reduction is the leading coefficient of `P.coeff j₀`.
-    have h₀ := congrArg (fun p : R[X] ↦ p.coeff j₀) h
-    simp only [hred, hT, coeff_X_pow] at h₀
-    split_ifs at h₀ with hj
-    · omega
-    rw [coeff_single_mul, one_mul, zero_sub, neg_neg, ← hq, coeff_expand_mul,
-      coeff_order_eq_zero] at h₀
-    exact hj₀ h₀
 
 variable {K : Type*} [Field K]
 
@@ -187,25 +89,21 @@ private theorem exists_monic_mul_eq_of_nextCoeff_map_eq_zero [IsAlgClosed K] [Ch
       natDegree_X_sub_C, mul_one]
   exact ⟨G, H, hG, hGH, hGr ▸ hr, hGr ▸ hgm ▸ hrm⟩
 
-/-- Undoing a rescaling: if the polynomial obtained from monic `P` by the ramification
-`X ↦ X ^ q`, the rescaling by `X ^ (-v)` and a further ramification `X ↦ X ^ n` has a root,
-then `P` has a root after the ramification `X ↦ X ^ (n * q)`. -/
-private theorem exists_isRoot_map_expand_mul {P : K⸨X⸩[X]} (hP : P.Monic) {q n : ℕ+} {v : ℤ}
-    {y : K⸨X⸩}
-    (hy : (((P.map (expand K q)).scaleRoots (single (-v) 1 : K⸨X⸩)).map (expand K n)).IsRoot y) :
+/-- Undoing a rescaling: if the ramification `X ↦ X ^ q` of `P` is the root scaling by `s` of a
+monic polynomial `Q`, and `Q` has a root after a further ramification `X ↦ X ^ n`, then `P` has a
+root after the ramification `X ↦ X ^ (n * q)`. -/
+private theorem exists_isRoot_map_expand_mul {P Q : K⸨X⸩[X]} (hQ : Q.Monic) {q n : ℕ+}
+    {s : K⸨X⸩} (hPQ : P.map (expand K q : K⸨X⸩ →+* K⸨X⸩) = Q.scaleRoots s) {y : K⸨X⸩}
+    (hy : (Q.map (expand K n)).IsRoot y) :
     ∃ z : K⸨X⸩, (P.map (expand K (n * q))).IsRoot z := by
   have hmap : (P.map (expand K q : K⸨X⸩ →+* K⸨X⸩)).map (expand K n : K⸨X⸩ →+* K⸨X⸩) =
       P.map (expand K (n * q) : K⸨X⸩ →+* K⸨X⸩) := by
     rw [Polynomial.map_map]
     congr 1
     exact RingHom.ext fun f ↦ expand_expand n q f
-  rw [map_scaleRoots _ _ _ (by simp [(hP.map _).leadingCoeff]), hmap] at hy
-  set s := (expand K n : K⸨X⸩ →+* K⸨X⸩) (single (-v) 1)
-  have hs : s ≠ 0 := by simp [s]
-  refine ⟨s⁻¹ * y, ?_⟩
-  have := scaleRoots_eval_mul (P.map (expand K (n * q) : K⸨X⸩ →+* K⸨X⸩)) (s⁻¹ * y) s
-  rw [mul_inv_cancel_left₀ hs, hy.eq_zero, eq_comm, mul_eq_zero] at this
-  exact this.resolve_left (pow_ne_zero _ hs)
+  refine ⟨expand K n s * y, ?_⟩
+  rw [← hmap, hPQ, map_scaleRoots _ _ _ (by simp [hQ.leadingCoeff]), IsRoot, RingHom.coe_coe,
+    scaleRoots_eval_mul, hy.eq_zero, mul_zero]
 
 variable [IsAlgClosed K] [CharZero K]
 
@@ -234,18 +132,17 @@ private theorem exists_isRoot_map_expand_of_monic (m : ℕ) :
   · exact ⟨1, 0, by simp [hX, hm.ne']⟩
   -- Ramify and rescale to a monic polynomial over `K⟦X⟧` whose reduction is not `Y ^ m`, and
   -- split off a monic factor `G` of smaller positive degree.
-  obtain ⟨q, v, Q, hQ, hQm, hQT, hQnext, hQX⟩ :=
-    exists_monic_map_eq_scaleRoots_map_expand hP₁ hnext (hP₁m ▸ hX)
+  obtain ⟨q, v, Q, hQ, hQm, hPQ, hQnext, hQX⟩ :=
+    hP₁.exists_map_expand_eq_scaleRoots_of_nextCoeff_eq_zero hnext (hP₁m ▸ hX)
   rw [hP₁m] at hQm
   obtain ⟨G, H, hG, hGH, hG0, hGm⟩ := exists_monic_mul_eq_of_nextCoeff_map_eq_zero hQ
-    (hQm ▸ hm) hQnext (by rwa [hQm, ← hP₁m])
+    (hQm ▸ hm) hQnext hQX
   -- By induction, `G` has a root after a ramification `X ↦ X ^ n`, hence so does the rescaled
   -- polynomial.
   obtain ⟨n, y, hy⟩ := ih _ (hQm ▸ hGm) (G.map (ofPowerSeries ℤ K)) (hG.map _)
     (hG.natDegree_map _) hG0
-  obtain ⟨z, hz⟩ := exists_isRoot_map_expand_mul hP₁ (n := n) (y := y) (by
-    rw [← hQT, ← hGH, Polynomial.map_mul, Polynomial.map_mul, IsRoot, eval_mul, hy.eq_zero,
-      zero_mul])
+  obtain ⟨z, hz⟩ := exists_isRoot_map_expand_mul (hQ.map _) hPQ (n := n) (y := y) (by
+    rw [← hGH, Polynomial.map_mul, Polynomial.map_mul, IsRoot, eval_mul, hy.eq_zero, zero_mul])
   exact ⟨n * q, z, hz⟩
 
 /-- **Newton–Puiseux theorem.** Over an algebraically closed field `K` of characteristic zero,

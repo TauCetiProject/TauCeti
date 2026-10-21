@@ -41,8 +41,6 @@ definitionally equal to it, so the algebra maps here are assembled from the ring
 
 * `LaurentSeries.coeff_expand_mul`, `LaurentSeries.coeff_expand_of_not_dvd`,
   `LaurentSeries.coeff_expand_of_lt_mul_order`: the coefficients of `expand R d f`.
-* `LaurentSeries.coeff_single_mul_expand_eq_zero`: shifting `c(X ^ q)` by `X ^ (-k)` with
-  `k ≤ q * ord c` leaves no terms of negative degree.
 * `LaurentSeries.mem_range_expand_iff`: a Laurent series is in the image of `X ↦ X ^ d` exactly
   when all its exponents are divisible by `d`.
 * `LaurentSeries.expand_coe`: `expand` extends `PowerSeries.expand`.
@@ -140,16 +138,6 @@ theorem orderTop_expand (d : ℕ+) (f : R⸨X⸩) :
     obtain ⟨k, hk⟩ := Nat.exists_eq_succ_of_ne_zero d.ne_zero
     simp [hk, succ_nsmul]
   | coe k => simp [mulOrderEmbedding_apply, ← WithTop.coe_nsmul]
-
-/-- Multiplying the ramified series `c(X ^ q)` by `X ^ (-k)` leaves no terms of negative degree
-when `k ≤ q * ord c`. -/
-theorem coeff_single_mul_expand_eq_zero {c : R⸨X⸩} {q : ℕ+} {k n : ℤ}
-    (hk : c ≠ 0 → k ≤ q * c.order) (hn : n < 0) :
-    (single (-k) 1 * expand R q c).coeff n = 0 := by
-  rcases eq_or_ne c 0 with rfl | hc
-  · simp
-  rw [coeff_single_mul, one_mul, sub_neg_eq_add]
-  exact coeff_expand_of_lt_mul_order q (by linarith [hk hc])
 
 /-- Expansion is injective. -/
 theorem expand_injective (d : ℕ+) : Function.Injective (expand R d) :=
