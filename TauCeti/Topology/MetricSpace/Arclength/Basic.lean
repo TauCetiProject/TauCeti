@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.ConstantSpeed
 public import TauCeti.Topology.EMetricSpace.VariationOnFromTo
 public import Mathlib.Topology.Order.IntermediateValue
 public import Mathlib.Topology.Order.MonotoneContinuity
@@ -20,6 +21,8 @@ whose length interval is a singleton.
 For curves injective on the interior of their parameter interval, cumulative variation induces
 an increasing homeomorphism between the original parameter interval and the length interval.
 This includes injective arcs and simple closed curves.
+On its length interval, the factor is Mathlib's `naturalParameterization`, and it traces the same
+set as the curve.
 
 We use Mathlib's `variationOnFromTo`, its continuity criterion, and the exact variation formula
 for composition with a monotone map. Length is always `eVariationOn`; its conversion to a real
@@ -102,6 +105,28 @@ theorem exists_arclength_factorization (hγ : BoundedVariationOn γ (Icc a b))
       _ = (eVariationOn γ (Icc (ψ u) (ψ v))).toReal := by
         rw [variationOnFromTo.eq_of_le _ _ hp, inter_eq_right.mpr hsub]
   rw [hdiff, ENNReal.ofReal_toReal (hγ.mono hsub), hvar]
+
+/-- The arclength factor of a continuous rectifiable curve is unique on its length interval:
+a curve `g` with `g ∘ variationOnFromTo γ (Icc a b) a = γ` on `[a, b]` agrees there with the
+natural parameterization. -/
+theorem eqOn_naturalParameterization (hγ : BoundedVariationOn γ (Icc a b))
+    (hcont : ContinuousOn γ (Icc a b)) (hab : a ≤ b) {g : ℝ → X}
+    (hg : EqOn (g ∘ variationOnFromTo γ (Icc a b) a) γ (Icc a b)) :
+    EqOn g (naturalParameterization γ (Icc a b) a) (Icc 0 (eVariationOn γ (Icc a b)).toReal) := by
+  rw [← hγ.image_variationOnFromTo_Icc hcont hab]
+  rintro _ ⟨t, ht, rfl⟩
+  exact (hg ht).trans (edist_eq_zero.mp <|
+    edist_naturalParameterization_eq_zero hγ.locallyBoundedVariationOn (left_mem_Icc.2 hab) ht).symm
+
+/-- The natural parameterization of a continuous rectifiable curve on its length interval traces
+the same set as the curve. -/
+theorem image_naturalParameterization (hγ : BoundedVariationOn γ (Icc a b))
+    (hcont : ContinuousOn γ (Icc a b)) (hab : a ≤ b) :
+    naturalParameterization γ (Icc a b) a '' Icc 0 (eVariationOn γ (Icc a b)).toReal =
+      γ '' Icc a b := by
+  rw [← hγ.image_variationOnFromTo_Icc hcont hab, image_image]
+  exact image_congr fun t ht ↦ edist_eq_zero.mp <|
+    edist_naturalParameterization_eq_zero hγ.locallyBoundedVariationOn (left_mem_Icc.2 hab) ht
 
 /-- For a continuous rectifiable curve injective on the interior of its parameter interval,
 cumulative variation is an increasing homeomorphism onto the length interval. The endpoint
