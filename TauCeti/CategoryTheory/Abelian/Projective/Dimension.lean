@@ -14,9 +14,9 @@ In an abelian category with enough projectives, every object has projective dime
 if and only if every subobject of a projective object is projective. This is the hereditary
 condition, expressed using Mathlib's existing projective-dimension predicate.
 
-The subobject criterion applies to the cycles and boundaries of complexes of projective objects.
-It is the algebraic input that makes their cycle inclusions split and gives the short exact
-Künneth and universal coefficient sequences.
+When every object has projective dimension at most one, the criterion shows that the cycles and
+boundaries of a complex of projective objects are projective. Surjections onto these boundaries
+then split, so the cycles split off the terms.
 
 ## References
 
