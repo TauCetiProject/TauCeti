@@ -112,17 +112,21 @@ def supportingFace (h : ℕ → WithTop ℝ) (σ c : ℝ) : Set ℕ :=
     n ∈ supportingFace h σ c ↔ h n = ((c + σ * n : ℝ) : WithTop ℝ) :=
   Iff.rfl
 
+/-- The intercept of a line of slope `σ` through a point of a height sequence bounds its
+supporting value of slope `σ`. The line need not be a supporting line. -/
+theorem supportingValue_le_coe_of_mem_supportingFace {h : ℕ → WithTop ℝ} {σ c : ℝ} {n : ℕ}
+    (hn : n ∈ supportingFace h σ c) : supportingValue h σ ≤ (c : EReal) := by
+  refine (supportingValue_le h σ n).trans_eq ?_
+  rw [mem_supportingFace] at hn
+  rw [hn, WithTop.toEReal_coe, ← EReal.coe_sub]
+  congr 1
+  ring
+
 /-- Contact with a supporting line identifies its intercept with the supporting value. -/
 theorem supportingValue_eq_coe_of_mem_supportingFace {h : ℕ → WithTop ℝ} {σ c : ℝ}
     (hc : IsSupportingLine h σ c) {n : ℕ} (hn : n ∈ supportingFace h σ c) :
-    supportingValue h σ = (c : EReal) := by
-  apply le_antisymm
-  · refine (supportingValue_le h σ n).trans_eq ?_
-    rw [mem_supportingFace] at hn
-    rw [hn, WithTop.toEReal_coe, ← EReal.coe_sub]
-    congr 1
-    ring
-  · exact isSupportingLine_iff.mp hc
+    supportingValue h σ = (c : EReal) :=
+  le_antisymm (supportingValue_le_coe_of_mem_supportingFace hn) (isSupportingLine_iff.mp hc)
 
 /-- A height sequence with a finite nonempty domain touches a supporting line of every slope,
 and has a least contact index with it. The sequence need not be convex, so the contact set

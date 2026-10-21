@@ -42,9 +42,12 @@ not have admissible heights; its `newtonPolygon` is then the all-infinite fallba
 
 * `Polynomial.isLowerConvexEnvelope_newtonPolygon`: the Newton polygon of a polynomial is the
   greatest convex minorant of its coefficient heights.
+* `Polynomial.newtonPolygon_eq_top_iff`: the Newton polygon of a polynomial is empty exactly
+  when every coefficient has infinite valuation.
 * `Polynomial.newtonPolygon_ne_top_iff`: if only zero has infinite valuation (for example
   over a division ring), a nonzero polynomial has a polygon whose finite domain is the
-  interval from its order of vanishing at zero to its degree.
+  interval from its order of vanishing at zero to its degree; in particular the polygon is
+  nonempty by `Polynomial.newtonPolygon_ne_top`.
 * `Polynomial.newtonPolygon_natTrailingDegree` and `Polynomial.newtonPolygon_natDegree`:
   the polygon begins at the trailing coefficient and ends at the leading coefficient.
 * `Polynomial.ncard_finiteEdges_newtonPolygon`: if only zero has infinite valuation, a
@@ -221,6 +224,14 @@ theorem newtonPolygon_zero : (0 : R[X]).newtonPolygon v = ⊤ := by
   simp only [newtonPolygon_def, coeff_zero, AddValuation.map_zero]
   exact lowerConvexEnvelope_top
 
+/-- The Newton polygon of a polynomial is empty exactly when every coefficient has infinite
+valuation. -/
+theorem newtonPolygon_eq_top_iff : f.newtonPolygon v = ⊤ ↔ ∀ n, v (f.coeff n) = ⊤ := by
+  refine ⟨fun h n => top_le_iff.mp ((congrFun h n).symm.trans_le (newtonPolygon_le f v n)),
+    fun h => ?_⟩
+  rw [newtonPolygon_def, funext h]
+  exact lowerConvexEnvelope_top
+
 /-! ### Elementary operations -/
 
 /-- Multiplying by a scalar translates the Newton polygon by the valuation of the scalar. -/
@@ -295,6 +306,13 @@ theorem newtonPolygon_ne_top_iff (hv : ∀ x, v x = ⊤ → x = 0) {f : R[X]} (h
     fun ⟨hn, hn'⟩ => ⟨_, hn, _, hn', ?_, ?_⟩⟩
   · exact mt (hv _) (trailingCoeff_nonzero_iff_nonzero.mpr hf)
   · exact mt (hv _) (leadingCoeff_ne_zero.mpr hf)
+
+variable {f v} in
+/-- If only zero has infinite valuation, a nonzero polynomial has a nonempty Newton polygon.
+Over a division ring the hypothesis on `v` is `AddValuation.top_iff`. -/
+theorem newtonPolygon_ne_top (hv : ∀ x, v x = ⊤ → x = 0) (hf : f ≠ 0) :
+    f.newtonPolygon v ≠ ⊤ := fun h =>
+  leadingCoeff_ne_zero.mpr hf (hv _ ((newtonPolygon_eq_top_iff f v).mp h f.natDegree))
 
 /-- If only zero has infinite valuation, the finite unit edges of the Newton polygon of a
 polynomial are those between its order of vanishing at zero and its degree. -/

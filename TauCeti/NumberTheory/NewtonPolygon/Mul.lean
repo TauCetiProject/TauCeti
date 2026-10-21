@@ -13,7 +13,8 @@ import Mathlib.Tactic.LinearCombination
 # Newton polygons of products
 
 The Newton polygon of a product of polynomials is the Minkowski sum of the Newton polygons of
-the factors, given by the min-convolution `TauCeti.minkowskiSum`, and the finite slopes of the
+the factors, given by the min-convolution `TauCeti.minkowskiSum`. When both Newton polygons are
+nonempty, for example when both factors are nonzero over a field, the finite slopes of the
 product are those of the two factors together. These are the identities from which the slopes
 of a split polynomial are read off its linear factors.
 
@@ -145,10 +146,8 @@ private theorem exists_isSupportingLine_isLeast_coeff_coe (hf : f.newtonPolygon 
   · refine (Set.finite_Iic f.natDegree).subset fun n hn => Set.mem_Iic.mpr ?_
     refine le_of_not_gt fun h => hn ?_
     rw [coeff_coe, coeff_eq_zero_of_natDegree_lt h, AddValuation.map_zero]
-  · by_contra hne
-    have htop : (fun n => v (f.coeff n)) = ⊤ :=
-      funext fun n => not_not.mp fun hn => hne ⟨n, by rwa [Set.mem_ofPred_eq, coeff_coe]⟩
-    exact hf (by rw [newtonPolygon_def, htop, lowerConvexEnvelope_top])
+  · obtain ⟨n, hn⟩ := not_forall.mp (mt (newtonPolygon_eq_top_iff f v).mpr hf)
+    exact ⟨n, by rwa [Set.mem_ofPred_eq, coeff_coe]⟩
 
 /-- The Newton polygon of a product of polynomials is the Minkowski sum of the Newton polygons
 of the factors. If either factor has the empty Newton polygon, for example if it is zero, so
@@ -178,13 +177,14 @@ theorem newtonPolygon_mul :
     supportingValue_eq_coe_of_mem_supportingFace hd hj.1]
   -- The coefficient of the product at the sum of the first contact indices of the factors
   -- lies on the line of slope `σ` and intercept `c + d`.
-  refine (supportingValue_le _ σ (i + j)).trans_eq ?_
+  rw [← EReal.coe_add]
+  refine supportingValue_le_coe_of_mem_supportingFace (n := i + j) ?_
   have hi' := hi.1
   have hj' := hj.1
-  simp only [mem_supportingFace] at hi' hj'
+  simp only [mem_supportingFace] at hi' hj' ⊢
   rw [PowerSeries.addValuation_coeff_mul_eq_add_of_isLeast v hc hi hd hj, hi', hj',
-    ← WithTop.coe_add, WithTop.toEReal_coe, ← EReal.coe_sub, ← EReal.coe_add,
-    EReal.coe_eq_coe_iff]
+    ← WithTop.coe_add]
+  congr 1
   push_cast
   ring
 
@@ -192,7 +192,7 @@ theorem newtonPolygon_mul :
 polynomials is the sum of the finite slope multisets of the factors. The hypotheses exclude
 zero factors: the product `0 * g` has no finite slopes, whatever those of `g`. If only zero
 has infinite valuation, a nonzero polynomial has a nonempty Newton polygon by
-`Polynomial.newtonPolygon_ne_top_iff`. -/
+`Polynomial.newtonPolygon_ne_top`. -/
 theorem newtonSlopes_mul (hf : f.newtonPolygon v ≠ ⊤) (hg : g.newtonPolygon v ≠ ⊤) :
     (f * g).newtonSlopes v = f.newtonSlopes v + g.newtonSlopes v := by
   obtain ⟨d₁, hd₁⟩ := (exists_finiteSlopeData_heights_eq_iff f v).2 hf
