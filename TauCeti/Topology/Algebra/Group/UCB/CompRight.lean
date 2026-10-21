@@ -106,6 +106,7 @@ theorem monotone_compRightAlgHom (φ : G →ₜ* H) : Monotone (compRightAlgHom 
   fun _ _ h => le_def.2 fun x => le_def.1 h (φ x)
 
 /-- Along a surjective homomorphism, the pullback preserves and reflects the pointwise order. -/
+@[simp]
 theorem compRightAlgHom_le_compRightAlgHom_iff {φ : G →ₜ* H} (hφ : Function.Surjective φ)
     {f f' : UCB H} : compRightAlgHom φ f ≤ compRightAlgHom φ f' ↔ f ≤ f' := by
   refine ⟨fun h => le_def.2 fun y => ?_, fun h => monotone_compRightAlgHom φ h⟩

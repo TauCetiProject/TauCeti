@@ -71,6 +71,7 @@ theorem isLeftInvariant_iff {m : Mean G} :
   Iff.rfl
 
 /-- A left-invariant mean takes the same value at a function and at its left translates. -/
+@[simp]
 theorem IsLeftInvariant.apply_leftTranslation {m : Mean G} (hm : m.IsLeftInvariant) (g : G)
     (f : UCB G) : m (UCB.leftTranslation g f) = m f :=
   hm g f
