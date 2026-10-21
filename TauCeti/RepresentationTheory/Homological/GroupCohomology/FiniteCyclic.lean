@@ -47,9 +47,12 @@ the connecting homomorphism `δ : H¹(G, X₃) ⟶ H²(G, X₁)` of a short exac
 (`Rep.FiniteCyclicGroup.δ_groupCohomologyπOdd_one`). Indeed the coboundary of the partial norm
 cochain of `b` is the carry cochain of `N b`.
 
-The cocycle description makes the periodicity class computable under change of groups. If
-`f : G → G'` is a homomorphism of finite cyclic groups sending the generator `g` to `g' ^ d`, for a
-generator `g'` of `G'`, and `d · |G| = m · |G'|`, then the class of `b` is sent to the class of
+The cocycle descriptions make both classes computable under change of groups. Let
+`f : G → G'` be a homomorphism of finite cyclic groups sending the generator `g` to `g' ^ d`, for a
+generator `g'` of `G'`. In degree `1` the class of an element `a` killed by the norm is sent to the
+class of `a + g' a + ⋯ + g'ᵈ⁻¹ a` (`Rep.FiniteCyclicGroup.map_groupCohomologyπOdd_one`); for a
+morphism of representations of one group this is the class of the image of `a`. In degree `2`, if
+`d · |G| = m · |G'|`, the class of `b` is sent to the class of
 `m • b` (`Rep.FiniteCyclicGroup.map_groupCohomologyπEven_two`). For `d = 1`, `f` is a surjection
 with kernel of order `m`. In the cohomology of local fields this is the statement that
 inflation along a tower of unramified extensions preserves the local invariant; general `d`
@@ -74,6 +77,8 @@ Frobenius.
 * `Rep.FiniteCyclicGroup.groupCohomologyπEven_two`,
   `Rep.FiniteCyclicGroup.groupCohomologyπEven_two_apply`: in degree `2`, `groupCohomologyπEven`
   sends a fixed element to the class of its carry cocycle.
+* `Rep.FiniteCyclicGroup.sum_range_orderOf_apply`: the norm is the sum of the images under the
+  powers `1, g, …, gⁿ⁻¹` of the generator.
 * `Rep.FiniteCyclicGroup.partialNormCocycle_apply`,
   `Rep.FiniteCyclicGroup.partialNormCocycle_apply_pow`: the values of the partial norm cocycle.
 * `Rep.FiniteCyclicGroup.groupCohomologyπOdd_one`,
@@ -81,6 +86,9 @@ Frobenius.
   sends an element killed by the norm to the class of its partial norm cocycle.
 * `Rep.FiniteCyclicGroup.δ_groupCohomologyπOdd_one`: the connecting homomorphism from degree `1`
   to degree `2` sends the class of `a` to the class of the norm of a lift of `a`.
+* `Rep.FiniteCyclicGroup.map_groupCohomologyπOdd_one`: a homomorphism of finite cyclic groups
+  sending `g` to `g' ^ d` sends the degree-`1` class of `a` to the class of
+  `a + g' a + ⋯ + g'ᵈ⁻¹ a`.
 * `Rep.FiniteCyclicGroup.map_groupCohomologyπEven_two`: a homomorphism of finite cyclic groups
   sending `g` to `g' ^ d`, with `d · |G| = m · |G'|`, sends the class of `b` to the class of
   `m • b`.
@@ -440,13 +448,39 @@ theorem partialNormCocycle_apply (x : LinearMap.ker A.norm.asHom.hom.toLinearMap
       ∑ l ∈ Finset.range (cyclicLog g hg y), A.ρ (g ^ l) x.1 :=
   partialNormCochain_apply A g hg x.1 y
 
-/-- The values of the partial norm cocycle: on `gⁱ` with `i < n` it is
-`a + g a + ⋯ + gⁱ⁻¹ a`. -/
+include hg in
+/-- The sum `a + g a + ⋯ + gⁿ⁻¹ a` over the order `n` of the generator `g` is the norm of `a`. -/
+theorem sum_range_orderOf_apply (a : A) :
+    ∑ l ∈ Finset.range (orderOf g), A.ρ (g ^ l) a = A.ρ.norm a := by
+  rw [Representation.norm, LinearMap.sum_apply]
+  exact Finset.sum_nbij' (fun l => g ^ l) (cyclicLog g hg) (fun _ _ => Finset.mem_univ _)
+    (fun x _ => Finset.mem_range.2 (cyclicLog_lt g hg x))
+    (fun l hl => by rw [cyclicLog_pow, Nat.mod_eq_of_lt (Finset.mem_range.1 hl)])
+    (fun x _ => pow_cyclicLog g hg x) (fun _ _ => rfl)
+
+include hg in
+/-- For `a` killed by the norm, the partial norm `a + g a + ⋯ + gⁱ⁻¹ a` depends only on `i`
+modulo the order `n` of `g`: each block of `n` consecutive terms sums to the norm of `a`. -/
+private theorem sum_range_mod_orderOf_apply (a : A) (ha : A.ρ.norm a = 0) (i : ℕ) :
+    ∑ l ∈ Finset.range (i % orderOf g), A.ρ (g ^ l) a = ∑ l ∈ Finset.range i, A.ρ (g ^ l) a := by
+  have hblock (q : ℕ) :
+      ∑ l ∈ Finset.range (orderOf g), A.ρ (g ^ (orderOf g * q + l)) a = 0 := by
+    simp only [pow_add, pow_mul, pow_orderOf_eq_one, one_pow, one_mul,
+      sum_range_orderOf_apply A g hg, ha]
+  have hfull (q : ℕ) : ∑ l ∈ Finset.range (orderOf g * q), A.ρ (g ^ l) a = 0 := by
+    induction q with
+    | zero => simp
+    | succ q ih => rw [Nat.mul_succ, Finset.sum_range_add, ih, hblock, add_zero]
+  conv_rhs => rw [← Nat.div_add_mod i (orderOf g), Finset.sum_range_add, hfull, zero_add]
+  simp only [pow_add, pow_mul, pow_orderOf_eq_one, one_pow, one_mul]
+
+/-- The values of the partial norm cocycle: on `gⁱ` it is `a + g a + ⋯ + gⁱ⁻¹ a`, for every
+`i`, since `a` is killed by the norm. -/
 @[simp]
-theorem partialNormCocycle_apply_pow (x : LinearMap.ker A.norm.asHom.hom.toLinearMap) {i : ℕ}
-    (hi : i < orderOf g) :
+theorem partialNormCocycle_apply_pow (x : LinearMap.ker A.norm.asHom.hom.toLinearMap) (i : ℕ) :
     (partialNormCocycle A g hg x : G → A) (g ^ i) = ∑ l ∈ Finset.range i, A.ρ (g ^ l) x.1 := by
-  rw [partialNormCocycle_apply, cyclicLog_pow, Nat.mod_eq_of_lt hi]
+  rw [partialNormCocycle_apply, cyclicLog_pow,
+    sum_range_mod_orderOf_apply A g hg x.1 (LinearMap.mem_ker.1 x.2)]
 
 end PartialNormCocycle
 
@@ -612,6 +646,37 @@ theorem δ_groupCohomologyπOdd_one {X : ShortComplex (Rep k G)} (hX : X.ShortEx
 /-! ### Change of group between finite cyclic groups -/
 
 variable {G' : Type u} [CommGroup G'] [Fintype G'] {B : Rep k G'} (f : G →* G')
+
+/-- **Change of group for the odd-degree class in degree `1` between finite cyclic groups.** Let
+`f : G →* G'` be a homomorphism of finite cyclic groups sending the generator `g` to `g' ^ d`,
+where `g'` generates `G'`, and let `φ : Res_f B ⟶ A`. Then `H¹(G', B) → H¹(G, A)` sends the class
+of an element `y` killed by the norm to the class of `φ (y + g' y + ⋯ + g'ᵈ⁻¹ y)`. For a morphism
+of representations of one group (`f = id` and `d = 1`) this is the class of `φ y`. -/
+theorem map_groupCohomologyπOdd_one {g' : G'} (hg' : ∀ x, x ∈ Subgroup.zpowers g') (d : ℕ)
+    (hfg : f g = g' ^ d) (φ : res f B ⟶ A) (y : LinearMap.ker B.norm.asHom.hom.toLinearMap)
+    (z : LinearMap.ker A.norm.asHom.hom.toLinearMap)
+    (hz : z.1 = φ.hom (∑ j ∈ Finset.range d, B.ρ (g' ^ j) y.1)) :
+    groupCohomology.map f φ 1 (groupCohomologyπOdd B g' hg' 1 odd_one y) =
+      groupCohomologyπOdd A g hg 1 odd_one z := by
+  rw [groupCohomologyπOdd_one_apply, groupCohomologyπOdd_one_apply,
+    ← LinearMap.comp_apply (groupCohomology.map f φ 1).hom, ← ModuleCat.hom_comp, H1π_comp_map,
+    ModuleCat.hom_comp, LinearMap.comp_apply]
+  congr 1
+  refine cocycles₁_ext fun x => ?_
+  obtain ⟨i, rfl⟩ : ∃ i : ℕ, g ^ i = x := ⟨_, pow_cyclicLog g hg x⟩
+  rw [coe_mapCocycles₁, cochainsMap₁, ModuleCat.ofHom_apply, LinearMap.comp_apply,
+    LinearMap.compLeft_apply, Function.comp_apply, LinearMap.funLeft_apply,
+    Representation.IntertwiningMap.toLinearMap_apply, map_pow, hfg, ← pow_mul,
+    partialNormCocycle_apply_pow, partialNormCocycle_apply_pow, hz]
+  -- The first `d * i` terms of the partial norm of `y` are `i` blocks of `d` terms, the `l`-th
+  -- block being `g'ᵈˡ = f (gˡ)` applied to the first.
+  induction i with
+  | zero => simp
+  | succ i ih =>
+    rw [Nat.mul_succ, Finset.sum_range_add, map_add, ih, Finset.sum_range_succ,
+      ← hom_comm_apply φ, Rep.coe_res_obj_ρ', map_pow, hfg, ← pow_mul,
+      map_sum (B.ρ (g' ^ (d * i)))]
+    simp only [pow_add, map_mul, Module.End.mul_apply]
 
 omit [Fintype G] [Fintype G'] in
 /-- The pullback of the carry cocycle of `y` along `f`, where `f g = g' ^ d`, at `(x₁, x₂)`:
