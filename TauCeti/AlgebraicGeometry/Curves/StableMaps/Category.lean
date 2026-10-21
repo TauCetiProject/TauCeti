@@ -289,10 +289,10 @@ isomorphisms below therefore compare prestable maps after postcomposing with the
 canonical isomorphism of targets.
 
 The total space of a base-changed source curve is only definitionally, not reducibly, the chosen
-pullback `C ×_S T`, so the pullback API does not match it syntactically. Unfolding the base
-changes instead produces terms that are not type-correct at reducible transparency, on which
-`simp` makes no progress. The proofs below therefore rewrite with `erw` and close the remaining
-definitional equalities by `rfl`. -/
+pullback `C ×_S T`, so a compatibility goal mixes several spellings of the same object and the
+pullback API does not match it. The proofs below therefore first unfold `postcomp`, `pullback`
+and `PointedPrestableFamily.pullback` with `dsimp only`, which writes every such object as the
+chosen pullback, and then close the goal with `simp`. -/
 
 /-- **Base change does not depend on the chosen pullbacks.** Let `G` be a prestable map to
 `q' : V' ⟶ T`, where `V'` with `b : V' ⟶ V` is a fibre product of `q` and `g : T ⟶ S`. Suppose
@@ -307,12 +307,8 @@ def isoPullback (F : PrestableMap q n) (g : T ⟶ S) {V' : Scheme.{u}} {q' : V' 
     (hm : ∀ i, G.curve.marking i ≫ a = g ≫ F.curve.marking i) (hab : G.map ≫ b = a ≫ F.map) :
     G ≅ (F.pullback g).postcomp hb.isoPullback.inv hb.isoPullback_inv_snd :=
   isoMk (F.curve.isoPullback g G.curve a ha hm) (by
-    rw [postcomp_map, PointedPrestableFamily.isoPullback_hom_hom]
-    apply hb.hom_ext
-    · erw [Category.assoc, Category.assoc, IsPullback.isoPullback_inv_fst, pullback_map_fst,
-        IsPullback.isoPullback_hom_fst_assoc, hab]
-    · erw [Category.assoc, Category.assoc, IsPullback.isoPullback_inv_snd, w,
-        PointedPrestableFamily.pullback_toBase, IsPullback.isoPullback_hom_snd, G.w])
+    dsimp only [postcomp, pullback, PointedPrestableFamily.pullback]
+    apply hb.hom_ext <;> simp [hab])
 
 @[simp]
 theorem isoPullback_hom_curve (F : PrestableMap q n) (g : T ⟶ S) {V' : Scheme.{u}}
@@ -336,11 +332,9 @@ on total spaces it is the first projection `C ×_S S ⟶ C`. -/
 def pullbackIdIso (F : PrestableMap q n) :
     (F.pullback (𝟙 S)).postcomp (Limits.pullback.fst q (𝟙 S))
       (Limits.pullback.condition.trans (Category.comp_id _)) ≅ F :=
-  -- After `simp`, both sides are `C ×_S S ⟶ C ⟶ V`, through different but definitionally equal
-  -- descriptions of `C ×_S S`.
   isoMk F.curve.pullbackIdIso (by
-    simp
-    rfl)
+    dsimp only [postcomp, pullback, PointedPrestableFamily.pullback]
+    simp)
 
 @[simp]
 theorem pullbackIdIso_hom_curve (F : PrestableMap q n) :
@@ -381,14 +375,8 @@ def pullbackCompIso (F : PrestableMap q n) (g : T ⟶ S) (h : U ⟶ T) :
     ((F.pullback g).pullback h).postcomp (pullbackLeftPullbackSndIso q g h).hom
         (pullbackLeftPullbackSndIso_hom_snd q g h) ≅ F.pullback (h ≫ g) :=
   isoMk (F.curve.pullbackCompIso g h) (by
-    rw [PointedPrestableFamily.pullbackCompIso_hom_hom]
-    apply Limits.pullback.hom_ext
-    · erw [Category.assoc, Category.assoc, pullback_map_fst, pullbackLeftPullbackSndIso_hom_fst,
-        pullbackLeftPullbackSndIso_hom_fst_assoc, pullback_map_fst_assoc, Category.assoc,
-        pullback_map_fst]
-      rfl
-    · erw [Category.assoc, Category.assoc, w, pullbackLeftPullbackSndIso_hom_snd, w]
-      rfl)
+    dsimp only [postcomp, pullback, PointedPrestableFamily.pullback]
+    apply Limits.pullback.hom_ext <;> simp)
 
 @[simp]
 theorem pullbackCompIso_hom_curve (F : PrestableMap q n) (g : T ⟶ S) (h : U ⟶ T) :
