@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.Algebra.Module.Torsion.Basic
-public import Mathlib.CategoryTheory.ObjectProperty.Basic
+public import Mathlib.CategoryTheory.ObjectProperty.ClosedUnderIsomorphisms
 public import Mathlib.LinearAlgebra.TensorProduct.Submodule
 public import Mathlib.RingTheory.Flat.Basic
 
@@ -44,6 +44,9 @@ pseudouniformiser.
 * `TauCeti.Almost.BasicSetup.isAlmostZero_iff_subsingleton_ideal_tensor` and
   `TauCeti.Almost.BasicSetup.isAlmostZero_iff_subsingleton_tilde_tensor`: `M` is almost zero iff
   `m ⊗[V] M = 0` iff `m~ ⊗[V] M = 0`.
+* `TauCeti.Almost.BasicSetup.IsAlmostZero.of_injective`,
+  `TauCeti.Almost.BasicSetup.IsAlmostZero.of_surjective` and `LinearEquiv.isAlmostZero_iff`:
+  submodules, quotients and isomorphic copies of almost zero modules are almost zero.
 * `TauCeti.Almost.BasicSetup.isAlmostZero_classical_iff` and
   `TauCeti.Almost.BasicSetup.isAlmostIso_classical_iff`: in the classical setup, almost zero means
   zero and an almost isomorphism is a bijective linear map.
@@ -155,6 +158,28 @@ theorem isAlmostZero_quotient : S.IsAlmostZero (V ⧸ S.ideal) :=
   (Module.isTorsionBySet_quotient_iff _ _).mpr fun _ _ hε ↦ S.ideal.mul_mem_right _ hε
 
 variable {S} in
+/-- A module that embeds into an almost zero module is almost zero; in particular, so is every
+submodule of an almost zero module. -/
+theorem IsAlmostZero.of_injective {M N : Type*} [AddCommGroup M] [Module V M] [AddCommGroup N]
+    [Module V N] (h : S.IsAlmostZero N) {f : M →ₗ[V] N} (hf : Function.Injective f) :
+    S.IsAlmostZero M :=
+  isAlmostZero_iff.mpr fun ε hε x ↦ hf <| by rw [map_smul, h.smul_eq_zero hε, map_zero]
+
+variable {S} in
+/-- A quotient of an almost zero module is almost zero. -/
+theorem IsAlmostZero.of_surjective {M N : Type*} [AddCommGroup M] [Module V M] [AddCommGroup N]
+    [Module V N] (h : S.IsAlmostZero M) {f : M →ₗ[V] N} (hf : Function.Surjective f) :
+    S.IsAlmostZero N :=
+  isAlmostZero_iff.mpr fun ε hε y ↦ by
+    obtain ⟨x, rfl⟩ := hf y
+    rw [← map_smul, h.smul_eq_zero hε, map_zero]
+
+/-- Being almost zero is invariant under linear equivalence. -/
+theorem _root_.LinearEquiv.isAlmostZero_iff {M N : Type*} [AddCommGroup M] [Module V M]
+    [AddCommGroup N] [Module V N] (e : M ≃ₗ[V] N) : S.IsAlmostZero M ↔ S.IsAlmostZero N :=
+  ⟨fun h ↦ h.of_surjective e.surjective, fun h ↦ h.of_injective e.injective⟩
+
+variable {S} in
 /-- A tensor product with an almost zero module is almost zero. -/
 theorem IsAlmostZero.tensorProduct {M : Type*} [AddCommGroup M] [Module V M]
     (P : Type*) [AddCommGroup P] [Module V P] (h : S.IsAlmostZero M) :
@@ -205,6 +230,9 @@ def almostZero : CategoryTheory.ObjectProperty (ModuleCat.{v} V) := fun M ↦ S.
 theorem almostZero_iff (M : ModuleCat.{v} V) : S.almostZero M ↔ S.IsAlmostZero M :=
   Iff.rfl
 
+instance : S.almostZero.IsClosedUnderIsomorphisms :=
+  ⟨fun e h ↦ (e.toLinearEquiv.isAlmostZero_iff S).mp h⟩
+
 /-! ### Almost isomorphisms -/
 
 /-- A linear map is an *almost isomorphism* if its kernel and its cokernel are almost zero
@@ -243,10 +271,20 @@ end IsAlmostIso
 
 /-! ### The classical and the zero setups -/
 
+/-- For `m = V`, the multiplication map `m~ = V ⊗[V] V → V` is the identification
+`V ⊗[V] V ≃ V`, hence bijective. -/
+private theorem mulMap_top_bijective :
+    Function.Bijective (Submodule.mulMap (⊤ : Ideal V) (⊤ : Ideal V)) := by
+  have : Submodule.mulMap (⊤ : Ideal V) (⊤ : Ideal V) =
+      ((TensorProduct.congr Submodule.topEquiv Submodule.topEquiv).trans
+        (TensorProduct.lid V V)).toLinearMap :=
+    TensorProduct.ext' fun x y ↦ by simp
+  rw [this]
+  exact LinearEquiv.bijective _
+
 /-- For `m = V`, the module `m~ = V ⊗[V] V` is flat. -/
 theorem flat_tilde_top : Module.Flat V ((⊤ : Ideal V) ⊗[V] (⊤ : Ideal V)) :=
-  .of_linearEquiv ((TensorProduct.congr Submodule.topEquiv Submodule.topEquiv).trans
-    (TensorProduct.lid V V))
+  .of_linearEquiv (LinearEquiv.ofBijective _ mulMap_top_bijective)
 
 variable (V) in
 /-- The classical setup `(V, V)`, for which almost mathematics is ordinary commutative algebra
@@ -272,6 +310,12 @@ def zero : BasicSetup V where
 theorem zero_ideal : (zero V).ideal = ⊥ :=
   (rfl)
 
+/-- For the classical setup, the multiplication map `m~ → m` is bijective. -/
+theorem classical_tildeToIdeal_bijective : Function.Bijective (classical V).tildeToIdeal :=
+  -- `(classical V).tildeMul` is `Submodule.mulMap ⊤ ⊤`, and `coe_tildeToIdeal` holds by `rfl`.
+  ⟨fun _ _ hst ↦ mulMap_top_bijective.1 (congrArg Subtype.val hst),
+    (classical V).tildeToIdeal_surjective⟩
+
 /-- The ideal of the zero setup is zero; hence `(zero V).tilde` is zero as well. -/
 instance : Subsingleton (zero V).ideal :=
   Submodule.subsingleton_iff_eq_bot.mpr zero_ideal
@@ -295,9 +339,9 @@ theorem isAlmostZero_classical_iff : (classical V).IsAlmostZero M ↔ Subsinglet
 @[simp]
 theorem isAlmostIso_classical_iff {f : M →ₗ[V] N} :
     (classical V).IsAlmostIso f ↔ Function.Bijective f := by
-  rw [isAlmostIso_iff, isAlmostZero_classical_iff, isAlmostZero_classical_iff,
-    Submodule.subsingleton_iff_eq_bot, Submodule.Quotient.subsingleton_iff, LinearMap.ker_eq_bot,
-    LinearMap.range_eq_top, Function.Bijective]
+  simp only [isAlmostIso_iff, isAlmostZero_classical_iff, Submodule.subsingleton_iff_eq_bot,
+    Submodule.Quotient.subsingleton_iff, LinearMap.ker_eq_bot, LinearMap.range_eq_top,
+    Function.Bijective]
 
 /-- For the zero setup, every module is almost zero. -/
 @[simp]

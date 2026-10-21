@@ -16,7 +16,8 @@ classical setup `(V, V)` and the zero setup `(V, 0)`, and on concrete computatio
 
 * the multiplication maps `m~ → V` and `m~ → m` are computed on explicit tensors, and are
   bijective onto `m` for the classical and the zero setups, while `m~` vanishes for the zero setup;
-* the residue module `V ⧸ m` is almost zero for every setup, while `ℤ` is not almost zero for the
+* the residue module `V ⧸ m` is almost zero for every setup, as are submodules, quotients and
+  isomorphic copies of almost zero modules, while `ℤ` is not almost zero for the
   classical setup;
 * the inclusion `m → V` is always an almost isomorphism, every map is one for the zero setup, and
   multiplication by `2` on `ℤ` is not one for the classical setup;
@@ -60,16 +61,8 @@ example : (zero V).tildeMul = 0 := by
 
 -- Multiplication `m~ → m` is bijective for the classical setup: it is the identification
 -- `V ⊗[V] V ≅ V`.
-example : Function.Bijective (classical V).tildeToIdeal := by
-  refine ⟨fun s t hst ↦ ?_, (classical V).tildeToIdeal_surjective⟩
-  let e : (classical V).ideal ≃ₗ[V] V := (LinearEquiv.ofEq _ _ classical_ideal).trans
-    Submodule.topEquiv
-  have he : (classical V).tildeMul = ((TensorProduct.congr e e).trans (TensorProduct.lid V V)) :=
-    TensorProduct.ext' fun x y ↦ by simp [e]
-  have hst' : (classical V).tildeMul s = (classical V).tildeMul t := by
-    rw [← coe_tildeToIdeal, ← coe_tildeToIdeal, hst]
-  rw [he] at hst'
-  exact LinearEquiv.injective _ hst'
+example : Function.Bijective (classical V).tildeToIdeal :=
+  classical_tildeToIdeal_bijective
 
 -- Multiplication `m~ → m` is bijective for the zero setup, both sides being zero.
 example : Function.Bijective (zero V).tildeToIdeal :=
@@ -83,6 +76,16 @@ example (S : BasicSetup V) : S.almostZero (ModuleCat.of V (V ⧸ S.ideal)) :=
 
 example (S : BasicSetup V) : S.almostZero (ModuleCat.of V PUnit) :=
   (S.almostZero_iff _).mpr S.isAlmostZero_of_subsingleton
+
+-- Submodules and quotients of almost zero modules are almost zero, and so is every module
+-- isomorphic in `ModuleCat V` to an almost zero one.
+example (S : BasicSetup V) {M : Type*} [AddCommGroup M] [Module V M] (h : S.IsAlmostZero M)
+    (N : Submodule V M) : S.IsAlmostZero N ∧ S.IsAlmostZero (M ⧸ N) :=
+  ⟨h.of_injective N.injective_subtype, h.of_surjective N.mkQ_surjective⟩
+
+example (S : BasicSetup V) {M N : ModuleCat V} (e : M ≅ N) (h : S.almostZero M) :
+    S.almostZero N :=
+  S.almostZero.prop_of_iso e h
 
 -- `ℤ` is not almost zero for the classical setup `(ℤ, ℤ)`.
 example : ¬ (classical ℤ).IsAlmostZero ℤ := by
