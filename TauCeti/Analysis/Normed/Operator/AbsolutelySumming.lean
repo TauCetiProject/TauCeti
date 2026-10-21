@@ -309,9 +309,7 @@ theorem summingENorm_eq_zero_iff {F : Type*} [NormedAddCommGroup F] [NormedSpace
     have h0 := congrArg ENNReal.toReal (le_antisymm (h ▸ enorm_le_summingENorm T) bot_le)
     rw [toReal_enorm] at h0
     simpa using h0
-  -- Mathlib's `opNorm_zero_iff` requires a normed source; here the source is only seminormed.
-  ext v
-  exact norm_le_zero_iff.mp (by simpa [hn] using T.le_opNorm v)
+  exact T.opNorm_eq_zero_iff.mp hn
 
 /-- The rank-one operator `x ↦ f x • y` has gauge `‖f‖ ‖y‖`. -/
 @[simp]

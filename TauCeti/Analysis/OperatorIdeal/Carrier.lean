@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.NormedSpace
+public import TauCeti.Analysis.Normed.Operator.Basic
 public import Mathlib.Topology.Semicontinuity.Basic
 
 /-!
@@ -125,9 +126,7 @@ theorem map_eq_zero_iff {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
       rw [ofReal_norm]
       exact le_antisymm (h ▸ g.enorm_le A) bot_le
     exact le_antisymm (ENNReal.ofReal_eq_zero.1 h0) (norm_nonneg A)
-  -- Mathlib's `ContinuousLinearMap.opNorm_zero_iff` requires a normed source.
-  ext v
-  exact norm_le_zero_iff.mp (by simpa [hn] using A.le_opNorm v)
+  exact A.opNorm_eq_zero_iff.mp hn
 
 /-! ### The submodule of operators of finite gauge -/
 
