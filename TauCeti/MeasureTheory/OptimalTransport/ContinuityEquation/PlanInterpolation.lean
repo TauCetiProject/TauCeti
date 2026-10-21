@@ -57,6 +57,8 @@ interpolation a minimiser in the Benamou–Brenier formula
 
 ## Main results
 
+* `MeasureTheory.FiniteMeasure.continuous_map_smul_fst_add_smul_snd`: the displacement
+  interpolation of a finite measure on `E × E` is a narrowly continuous curve of finite measures.
 * `TauCeti.exists_isContinuityEquation_map_smul_fst_add_smul_snd`: the displacement interpolation
   of a plan whose displacement has finite first moment solves the continuity equation with its
   barycentric velocity, whose `p`-action is at most the `p`-th moment of the displacement.
@@ -86,6 +88,28 @@ public section
 
 open MeasureTheory Set Function
 open scoped ENNReal
+
+namespace MeasureTheory.FiniteMeasure
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
+  [SecondCountableTopology E]
+
+/-- The displacement interpolation `t ↦ (Fₜ)₊ π`, where `Fₜ (x, y) = (1 - t) • x + t • y`, of a
+finite measure `π` on `E × E` is a narrowly continuous curve of finite measures. -/
+theorem continuous_map_smul_fst_add_smul_snd (π : FiniteMeasure (E × E)) :
+    Continuous fun t : ℝ ↦ π.map fun z ↦ (1 - t) • z.1 + t • z.2 := by
+  refine continuous_iff_forall_continuous_integral.2 fun g ↦ ?_
+  simp_rw [toMeasure_map]
+  have hmap (t : ℝ) : ∫ x, g x ∂(π : Measure (E × E)).map (fun z ↦ (1 - t) • z.1 + t • z.2) =
+      ∫ z, g ((1 - t) • z.1 + t • z.2) ∂(π : Measure (E × E)) :=
+    integral_map (by fun_prop) g.continuous.aestronglyMeasurable
+  simp_rw [hmap]
+  exact continuous_of_dominated (bound := fun _ ↦ ‖g‖)
+    (fun t ↦ (g.continuous.comp (by fun_prop)).aestronglyMeasurable)
+    (fun t ↦ ae_of_all _ fun z ↦ g.norm_coe_le_norm _) (integrable_const _)
+    (ae_of_all _ fun z ↦ g.continuous.comp (by fun_prop))
+
+end MeasureTheory.FiniteMeasure
 
 namespace TauCeti
 

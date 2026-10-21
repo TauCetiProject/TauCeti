@@ -10,7 +10,6 @@ public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Basic
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.Analysis.PDE.HopfLax
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
-import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Map
 import TauCeti.MeasureTheory.OptimalTransport.ContinuityEquation.Endpoint
 import TauCeti.MeasureTheory.OptimalTransport.ContinuityEquation.PlanInterpolation
 import TauCeti.MeasureTheory.OptimalTransport.ContinuityEquation.Subsolution
@@ -285,15 +284,10 @@ theorem isLeast_wassersteinEDist_rpow_lintegral {μ μ' : Measure E} [IsProbabil
       exists_isContinuityEquation_map_smul_fst_add_smul_snd_of_isOptimalCoupling_le hp.le hp_top
         hπ hfin
     have : IsProbabilityMeasure π := hπ.toIsCoupling.isProbabilityMeasure
-    let P : ProbabilityMeasure (E × E) := ⟨π, inferInstance⟩
-    let F : ℝ → E × E → E := fun t z ↦ (1 - t) • z.1 + t • z.2
-    have hF (t : ℝ) : AEMeasurable (F t) P := (by fun_prop : Measurable (F t)).aemeasurable
-    let ν : ℝ → FiniteMeasure E := fun t ↦ (P.map (F t)).toFiniteMeasure
-    have hν (t : ℝ) : (ν t : Measure E) = π.map fun z ↦ (1 - t) • z.1 + t • z.2 := by
-      rw [ProbabilityMeasure.toMeasure_comp_toFiniteMeasure_eq_toMeasure,
-        ProbabilityMeasure.toMeasure_map, ProbabilityMeasure.coe_mk]
-    have hνc : Continuous ν := ProbabilityMeasure.toFiniteMeasure_continuous.comp
-      (P.continuous_map_of_forall_continuous hF fun z ↦ by fun_prop)
+    let P : FiniteMeasure (E × E) := ⟨π, inferInstance⟩
+    let ν : ℝ → FiniteMeasure E := fun t ↦ P.map fun z ↦ (1 - t) • z.1 + t • z.2
+    have hν (t : ℝ) : (ν t : Measure E) = π.map fun z ↦ (1 - t) • z.1 + t • z.2 := rfl
+    have hνc : Continuous ν := P.continuous_map_smul_fst_add_smul_snd
     have h0 : (ν 0 : Measure E) = μ := by
       simpa [hν, Measure.fst] using hπ.toIsCoupling.fst_eq
     have h1 : (ν 1 : Measure E) = μ' := by
