@@ -240,20 +240,15 @@ theorem koszulBilinear_smul_second
 
 /-- The Koszul expression is additive in its first argument. -/
 theorem koszulBilinear_add_first
-    (hb : ∀ x v w, b x v w = b x w v) (hX : MDiffAt (T% X) x) (hX' : MDiffAt (T% X') x)
+    (hX : MDiffAt (T% X) x) (hX' : MDiffAt (T% X') x)
     (hY : MDiffAt (T% Y) x) (hZ : MDiffAt (T% Z) x) :
     koszulBilinear I b (X + X') Y Z x =
       koszulBilinear I b X Y Z x + koszulBilinear I b X' Y Z x := by
-  have hsum := koszulBilinear_add_second hdiff (I := I) (X := Y) (Y := X) (Y' := X') (Z := Z)
-    hY hX hX' hZ
-  have hswap := koszulBilinear_sub_koszulBilinear_swap_first_two hb
-    (I := I) (X := X + X') (Y := Y) (Z := Z) (x := x)
-  have hswapX := koszulBilinear_sub_koszulBilinear_swap_first_two hb
-    (I := I) (X := X) (Y := Y) (Z := Z) (x := x)
-  have hswapX' := koszulBilinear_sub_koszulBilinear_swap_first_two hb
-    (I := I) (X := X') (Y := Y) (Z := Z) (x := x)
-  rw [mlieBracket_add_left hX hX', map_add, add_apply] at hswap
-  linarith
+  simp only [koszulBilinear_apply, Pi.add_apply, map_add, add_apply,
+    mvfderiv_fun_add (hdiff hZ hX) (hdiff hZ hX'),
+    mvfderiv_fun_add (hdiff hX hY) (hdiff hX' hY),
+    mlieBracket_add_left hX hX']
+  ring
 
 /-- The Koszul expression is tensorial in its first argument: replacing `X` by `f • X` multiplies
 it by `f x`. This follows from the second-slot Leibniz rule and the swap identity. -/
@@ -272,13 +267,14 @@ theorem koszulBilinear_smul_first
   linear_combination hswap + hsmul - f x * hswapX
 
 /-- The Koszul expression is tensorial in its first argument. Together with
-`TauCeti.Manifold.tensorialAt_koszulBilinear_third` this presents it as a continuous bilinear form
-on the tangent fibre, which is the shape in which the Levi-Civita connection gets built. -/
+`TauCeti.Manifold.tensorialAt_koszulBilinear_third`, in finite dimension this yields a continuous
+bilinear form on the tangent fibre via `TensorialAt.mkHom₂`, as used to build the Levi-Civita
+connection. -/
 theorem tensorialAt_koszulBilinear_first
     (hb : ∀ x v w, b x v w = b x w v) (hY : MDiffAt (T% Y) x) (hZ : MDiffAt (T% Z) x) :
     TensorialAt I E (fun X : Π y : M, TangentSpace I y ↦ koszulBilinear I b X Y Z x) x where
   smul hf hX := by simpa using koszulBilinear_smul_first hdiff hb hf hX hY hZ
-  add hX hX' := koszulBilinear_add_first hdiff hb hX hX' hY hZ
+  add hX hX' := koszulBilinear_add_first hdiff hX hX' hY hZ
 
 /-- The Koszul expression is tensorial in its third argument. -/
 theorem tensorialAt_koszulBilinear_third
@@ -403,8 +399,7 @@ theorem koszul_add_first (hX : MDiffAt (T% X) x) (hX' : MDiffAt (T% X') x)
     koszul I (X + X') Y Z x = koszul I X Y Z x + koszul I X' Y Z x := by
   simpa only [koszul, innerSL_apply_apply ℝ] using
     (koszulBilinear_add_first (b := fun _ ↦ innerSL ℝ)
-      (fun hU hV ↦ mdifferentiableAt_inner hU hV)
-      (fun _ v w ↦ real_inner_comm w v) hX hX' hY hZ)
+      (fun hU hV ↦ mdifferentiableAt_inner hU hV) hX hX' hY hZ)
 
 /-- The Koszul expression is tensorial in its first argument: replacing `X` by `f • X` multiplies
 it by `f x`. This follows from the second-slot Leibniz rule and the swap identity. -/
@@ -416,8 +411,8 @@ theorem koszul_smul_first (hf : MDiffAt f x) (hX : MDiffAt (T% X) x) (hY : MDiff
       (fun _ v w ↦ real_inner_comm w v) hf hX hY hZ)
 
 /-- The Koszul expression is tensorial in its first argument. Together with
-`TauCeti.Manifold.tensorialAt_koszul_third` this presents it as a continuous bilinear form on the
-tangent fibre, which is the shape in which the Levi-Civita connection gets built. -/
+`TauCeti.Manifold.tensorialAt_koszul_third`, in finite dimension this yields a continuous bilinear
+form on the tangent fibre via `TensorialAt.mkHom₂`, as used to build the Levi-Civita connection. -/
 theorem tensorialAt_koszul_first (hY : MDiffAt (T% Y) x) (hZ : MDiffAt (T% Z) x) :
     TensorialAt I E (fun X : Π y : M, TangentSpace I y ↦ koszul I X Y Z x) x := by
   simpa only [koszul, innerSL_apply_apply ℝ] using
