@@ -32,6 +32,8 @@ space the constructible topology is totally separated, which makes compact subse
   subset lies in its constructible closure, in any topological space.
 * `PrespectralSpace.exists_isOpen_isCompact_of_not_specializes`: if `x` does not specialize to
   `y`, a quasi-compact open subset contains `y` but not `x`.
+* `IsCompact.eq_sInter_of_stableUnderGeneralization`: in a prespectral space, a quasi-compact
+  subset stable under generalization is the intersection of the quasi-compact opens containing it.
 * `IsCompact.isClopen_preimage_ofTopology_of_isOpen`: a quasi-compact open subset is clopen
   in `WithConstructibleTopology X`.
 * `WithConstructibleTopology.instTotallySeparatedSpace`: the constructible topology of a T₀
@@ -122,6 +124,26 @@ theorem PrespectralSpace.exists_isOpen_isCompact_of_not_specializes [Prespectral
   push Not at h
   obtain ⟨U, ⟨⟨hUo, hUc⟩, hyU⟩, hxU⟩ := h
   exact ⟨U, hUo, hUc, hyU, hxU⟩
+
+/-- In a prespectral space, a quasi-compact subset that is stable under generalization is the
+intersection of the quasi-compact open subsets containing it. -/
+theorem IsCompact.eq_sInter_of_stableUnderGeneralization [PrespectralSpace X] {s : Set X}
+    (hs : IsCompact s) (hg : StableUnderGeneralization s) :
+    s = ⋂₀ {U | IsOpen U ∧ IsCompact U ∧ s ⊆ U} := by
+  refine Set.Subset.antisymm (fun x hx ↦ Set.mem_sInter.2 fun U hU ↦ hU.2.2 hx) fun x hx ↦ ?_
+  by_contra hxs
+  -- Each `z ∈ s` has a quasi-compact open neighbourhood `U z` missing `x`, since `x` is not a
+  -- generalization of `z`.
+  have hU (z : X) (hz : z ∈ s) : ∃ U : Set X, IsOpen U ∧ IsCompact U ∧ z ∈ U ∧ x ∉ U :=
+    PrespectralSpace.exists_isOpen_isCompact_of_not_specializes fun h ↦ hxs (hg h hz)
+  choose! U hUo hUc hzU hxU using hU
+  -- Finitely many of the `U z` cover `s`; their union is a quasi-compact open missing `x`.
+  obtain ⟨t, hts, htfin, hcover⟩ := hs.elim_finite_subcover_image
+    (fun z hz ↦ hUo z hz) (fun w hw ↦ Set.mem_biUnion hw (hzU _ hw))
+  obtain ⟨z, hz, hxz⟩ := Set.mem_iUnion₂.1 <| Set.mem_sInter.1 hx (⋃ z ∈ t, U z)
+    ⟨isOpen_biUnion fun z hz ↦ hUo z (hts hz),
+      htfin.isCompact_biUnion fun z hz ↦ hUc z (hts hz), hcover⟩
+  exact hxU z (hts hz) hxz
 
 /-- The preimage in `WithConstructibleTopology X` of a quasi-compact open subset of `X` is
 clopen. -/
