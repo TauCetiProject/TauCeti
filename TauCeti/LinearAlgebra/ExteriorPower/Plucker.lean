@@ -40,9 +40,12 @@ factor and signs, the coordinate of `y` at a `q`-element subset `t` is the coord
 the complement of `t`. This is what makes the height of a subspace equal to the height of its
 orthogonal complement.
 
-All results hold over an arbitrary commutative ring except the comparison with linear
-independence and the complementary minors, which are over a field. The empty family has a single
-Plücker coordinate, equal to `1`, and a family of more than `#ι` vectors has none.
+The identities hold over an arbitrary commutative ring. The nonnegativity of the Gram
+determinant needs a linearly ordered ring, the comparison with linear independence and the
+complementary minors are over a field, and the invariance of the greatest common divisor of the
+maximal minors needs a `NormalizedGCDMonoid`; the remaining greatest common divisor results are
+about integer families. The empty family has a single Plücker coordinate, equal to `1`, and a
+family of more than `#ι` vectors has none.
 
 ## Main definitions
 
@@ -424,17 +427,17 @@ theorem _root_.Matrix.gcd_plucker_row_eq_zero_iff [Fintype ι] (A : Matrix (Fin 
 when its rows are linearly independent over `ℚ`. -/
 theorem _root_.Matrix.gcd_plucker_row_pos_iff [Fintype ι] (A : Matrix (Fin p) ι ℤ) :
     0 < Finset.univ.gcd (plucker A.row) ↔ LinearIndependent ℚ (A.map ((↑) : ℤ → ℚ)).row := by
-  have h0 : 0 ≤ Finset.univ.gcd (plucker A.row) := by
-    rw [← Finset.normalize_gcd, ← Int.abs_eq_normalize]
-    exact abs_nonneg _
-  rw [h0.lt_iff_ne', Ne, A.gcd_plucker_row_eq_zero_iff, not_not]
+  rw [Finset.Int.finsetGcd_nonneg.lt_iff_ne', Ne, A.gcd_plucker_row_eq_zero_iff, not_not]
 
 /-- The Gram determinant `det (A Aᵀ)` of an integer matrix is positive exactly when its rows are
 linearly independent over `ℚ`. -/
 theorem _root_.Matrix.det_mul_transpose_pos_iff_rat [Fintype ι] (A : Matrix (Fin p) ι ℤ) :
     0 < (A * A.transpose).det ↔ LinearIndependent ℚ (A.map ((↑) : ℤ → ℚ)).row := by
-  rw [← Matrix.det_mul_transpose_pos_iff, ← Int.cast_pos (R := ℚ), Int.cast_det,
-    ← Int.coe_castRingHom, Matrix.map_mul, Matrix.transpose_map, Int.coe_castRingHom]
+  have h : ((A * A.transpose).det : ℚ) =
+      (A.map ((↑) : ℤ → ℚ) * (A.map ((↑) : ℤ → ℚ)).transpose).det := by
+    rw [Int.cast_det, ← Matrix.transpose_map]
+    exact congrArg Matrix.det (Matrix.map_mul (f := Int.castRingHom ℚ))
+  rw [← Int.cast_pos (R := ℚ), h, Matrix.det_mul_transpose_pos_iff]
 
 /-- The rows `(1, 2)` and `(2, 4)` have Gram determinant `0`, so they are linearly dependent
 over `ℚ`. -/

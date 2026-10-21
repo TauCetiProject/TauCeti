@@ -114,8 +114,9 @@ theorem sqrt_det_div_gcd_plucker_row_mul_of_isUnit {U : Matrix (Fin p) (Fin p) �
     √((U * A * (U * A)ᵀ).det : ℝ) / ((Finset.univ.gcd (plucker (U * A).row) : ℤ) : ℝ) =
       √((A * Aᵀ).det : ℝ) / ((Finset.univ.gcd (plucker A.row) : ℤ) : ℝ) := by
   have hdet : (U * A * (U * A)ᵀ).det = (A * Aᵀ).det := by
-    rw [transpose_mul, ← Matrix.mul_assoc, Matrix.mul_assoc U, det_mul, det_mul, det_transpose,
-      mul_right_comm, Int.isUnit_mul_self hU, one_mul]
+    have h : U * A * (U * A)ᵀ = U * (A * Aᵀ) * Uᵀ := by simp only [transpose_mul, Matrix.mul_assoc]
+    rw [h, det_mul, det_mul, det_transpose]
+    linear_combination (A * Aᵀ).det * Int.isUnit_mul_self hU
   rw [hdet, gcd_plucker_row_mul_of_isUnit hU]
 
 end Matrix
