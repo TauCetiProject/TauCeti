@@ -18,14 +18,14 @@ name records the classical description of such a set on a spectral space: an int
 finite unions of quasi-compact opens and complements of quasi-compact opens, that is, a filtered
 intersection of constructible sets.
 
-The point of the notion is the theorem at the end of this file: a pro-constructible subspace of a
-spectral space is again spectral. This is how spectrality is *transported* to those subspaces of a
-valuation spectrum that adic geometry obtains by cutting: `Cont A` is closed in `Spv(A,IA)` and
-`Spa(A,A⁺)` is pro-constructible in it, and each inherits spectrality this way. Some such
-hypothesis is needed, since the naive statement — "a subspace of a spectral space is spectral" —
-is false. It is not a universal substitute either: `Spv(A,I)` is *not* obtained from `Spv A` by
-such a cut, since the inclusion `Spv(A,I) → Spv A` is not even a spectral map, and its spectrality
-is established by a separate retraction argument instead.
+The point of the notion is `TauCeti.IsProConstructible.spectralSpace`: a pro-constructible subspace
+of a spectral space is again spectral. This is how spectrality is *transported* to those subspaces
+of a valuation spectrum that adic geometry obtains by cutting: `Cont A` is closed in `Spv(A,IA)` and
+`Spa(A,A⁺)` is pro-constructible in it, and each inherits spectrality this way. Some such hypothesis
+is needed, since the naive statement — "a subspace of a spectral space is spectral" — is false. It
+is not a universal substitute either: `Spv(A,I)` is *not* obtained from `Spv A` by such a cut, since
+the inclusion `Spv(A,I) → Spv A` is not even a spectral map, and its spectrality is established by a
+separate retraction argument instead.
 
 ## Implementation notes
 
@@ -70,7 +70,7 @@ Recall that Mathlib orders topologies by *reverse* inclusion of their open sets,
 * `TauCeti.IsProConstructible.image` — a spectral map into a T₀ prespectral space carries
   pro-constructible subsets of a compact, quasi-sober, quasi-separated prespectral space to
   pro-constructible subsets, because the constructible topology of the target is Hausdorff.
-* `TauCeti.IsProConstructible.closure_eq_setOf_specializes` — **the closure of a
+* `TauCeti.IsProConstructible.closure_eq_setOfPred_specializes` — **the closure of a
   pro-constructible subset is its set of specializations**; hence
   `.isClosed_iff_stableUnderSpecialization`, and dually
   `.eq_sInter_of_stableUnderGeneralization`: a pro-constructible subset stable under
@@ -331,39 +331,24 @@ variable [CompactSpace X] [QuasiSober X] [PrespectralSpace X] [QuasiSeparatedSpa
 prespectral space carries pro-constructible subsets to pro-constructible subsets. -/
 theorem IsProConstructible.image [PrespectralSpace Y] [T0Space Y] {f : X → Y}
     (hs : IsProConstructible s) (hf : IsSpectralMap f) : IsProConstructible (f '' s) := by
-  -- `f` read between the constructible topologies. The preimage of `V` under `g`, read back in
-  -- `X`, is `f ⁻¹'` of `V` read in `Y`: both `WithTopology` coercions are the identity on points.
-  let g (x : WithConstructibleTopology X) : WithConstructibleTopology Y :=
-    WithTopology.toTopology _ (f x.ofTopology)
-  have hg : Continuous g := continuous_def.2 fun V hV ↦ WithConstructibleTopology.isOpen_iff.2 <|
-    @Continuous.isOpen_preimage X Y (constructibleTopology X) (constructibleTopology Y) f
-      hf.continuous_constructibleTopology _ (WithConstructibleTopology.isOpen_iff.1 hV)
-  have himage : g '' (WithTopology.ofTopology ⁻¹' s) = WithTopology.ofTopology ⁻¹' (f '' s) := by
-    ext w
-    constructor
-    · rintro ⟨v, hv, rfl⟩
-      exact ⟨_, hv, rfl⟩
-    · rintro ⟨x, hx, hxw⟩
-      exact ⟨WithTopology.toTopology _ x, hx, by simp [g, hxw]⟩
   -- The image is compact, hence closed in the Hausdorff constructible topology of `Y`.
-  rw [IsProConstructible, ← himage]
-  exact ((IsClosed.isCompact hs).image hg).isClosed
+  have himage := (IsClosed.isCompact hs).image hf.continuous_withConstructibleTopology
+  rw [Set.image_comp, Set.image_comp,
+    Set.image_preimage_eq _ (WithTopology.ofTopology_surjective _),
+    WithTopology.image_toTopology] at himage
+  exact himage.isClosed
 
 /-- **The closure of a pro-constructible subset is its set of specializations.** In a compact,
 quasi-sober, quasi-separated prespectral space (for instance a spectral space), every point of the
 closure of a pro-constructible subset `s` is a specialization of a point of `s`. -/
-theorem IsProConstructible.closure_eq_setOf_specializes (hs : IsProConstructible s) :
+theorem IsProConstructible.closure_eq_setOfPred_specializes (hs : IsProConstructible s) :
     closure s = {y | ∃ x ∈ s, x ⤳ y} := by
   refine Set.Subset.antisymm (fun y hy ↦ ?_) ?_
   · rw [Set.mem_ofPred_eq]
     by_contra! h
     -- Each `x ∈ s` lies outside some quasi-compact open neighbourhood `U x` of `y`.
-    have hU (x : X) (hx : x ∈ s) : ∃ U : Set X, IsOpen U ∧ IsCompact U ∧ y ∈ U ∧ x ∉ U := by
-      have hxy := h x hx
-      rw [PrespectralSpace.isTopologicalBasis.nhds_hasBasis.specializes_iff] at hxy
-      push Not at hxy
-      obtain ⟨U, ⟨⟨hUo, hUc⟩, hyU⟩, hxU⟩ := hxy
-      exact ⟨U, hUo, hUc, hyU, hxU⟩
+    have hU (x : X) (hx : x ∈ s) : ∃ U : Set X, IsOpen U ∧ IsCompact U ∧ y ∈ U ∧ x ∉ U :=
+      PrespectralSpace.exists_isOpen_isCompact_of_not_specializes (h x hx)
     choose! U hUo hUc hyU hxU using hU
     -- The complements of the `U x` are open for the constructible topology and cover `s`.
     obtain ⟨t, hts, htfin, hcover⟩ := (IsClosed.isCompact hs).elim_finite_subcover_image
@@ -386,7 +371,7 @@ closed if and only if it is stable under specialization. -/
 theorem IsProConstructible.isClosed_iff_stableUnderSpecialization (hs : IsProConstructible s) :
     IsClosed s ↔ StableUnderSpecialization s := by
   refine ⟨IsClosed.stableUnderSpecialization, fun hsp ↦ ?_⟩
-  rw [← closure_subset_iff_isClosed, hs.closure_eq_setOf_specializes]
+  rw [← closure_subset_iff_isClosed, hs.closure_eq_setOfPred_specializes]
   rintro y ⟨x, hx, hxy⟩
   exact hsp hxy hx
 
@@ -399,20 +384,12 @@ theorem IsProConstructible.eq_sInter_of_stableUnderGeneralization (hs : IsProCon
   by_contra hxs
   -- Each `z ∈ s` has a quasi-compact open neighbourhood `U z` missing `x`, since `x` is not a
   -- generalization of `z`.
-  have hU (z : X) (hz : z ∈ s) : ∃ U : Set X, IsOpen U ∧ IsCompact U ∧ z ∈ U ∧ x ∉ U := by
-    have hxz : ¬ x ⤳ z := fun h ↦ hxs (hg h hz)
-    rw [PrespectralSpace.isTopologicalBasis.nhds_hasBasis.specializes_iff] at hxz
-    push Not at hxz
-    obtain ⟨U, ⟨⟨hUo, hUc⟩, hzU⟩, hxU⟩ := hxz
-    exact ⟨U, hUo, hUc, hzU, hxU⟩
+  have hU (z : X) (hz : z ∈ s) : ∃ U : Set X, IsOpen U ∧ IsCompact U ∧ z ∈ U ∧ x ∉ U :=
+    PrespectralSpace.exists_isOpen_isCompact_of_not_specializes fun h ↦ hxs (hg h hz)
   choose! U hUo hUc hzU hxU using hU
   -- Finitely many of the `U z` cover `s`; their union is a quasi-compact open missing `x`.
-  obtain ⟨t, hts, htfin, hcover⟩ := (IsClosed.isCompact hs).elim_finite_subcover_image
-    (b := s) (c := fun z ↦ WithTopology.ofTopology ⁻¹' U z)
-    (fun z hz ↦ ((hUc z hz).isClopen_preimage_ofTopology (hUo z hz)).isOpen)
-    (fun w hw ↦ Set.mem_biUnion hw (hzU _ hw))
-  rw [← Set.preimage_iUnion₂,
-    (WithTopology.ofTopology_surjective _).preimage_subset_preimage_iff] at hcover
+  obtain ⟨t, hts, htfin, hcover⟩ := hs.isCompact.elim_finite_subcover_image
+    (fun z hz ↦ hUo z hz) (fun w hw ↦ Set.mem_biUnion hw (hzU _ hw))
   obtain ⟨z, hz, hxz⟩ := Set.mem_iUnion₂.1 <| Set.mem_sInter.1 hx (⋃ z ∈ t, U z)
     ⟨isOpen_biUnion fun z hz ↦ hUo z (hts hz),
       htfin.isCompact_biUnion fun z hz ↦ hUc z (hts hz), hcover⟩

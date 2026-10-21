@@ -26,9 +26,12 @@ space the constructible topology is totally separated, which makes compact subse
 * `TauCeti.continuous_ofTopology_withConstructibleTopology`: the map from the constructible
   topology to the given topology of a prespectral space is continuous.
 * `IsSpectralMap.continuous_constructibleTopology`: a spectral map is continuous for the
-  constructible topologies.
+  constructible topologies; `IsSpectralMap.continuous_withConstructibleTopology` is the same
+  statement for the induced map between the `WithConstructibleTopology` type synonyms.
 * `IsGenericPoint.mem_closure_constructibleTopology`: a generic point of the closure of a
   subset lies in its constructible closure, in any topological space.
+* `PrespectralSpace.exists_isOpen_isCompact_of_not_specializes`: if `x` does not specialize to
+  `y`, a quasi-compact open subset contains `y` but not `x`.
 * `IsCompact.isClopen_preimage_ofTopology`: a quasi-compact open subset is clopen in
   `WithConstructibleTopology X`.
 * `WithConstructibleTopology.instTotallySeparatedSpace`: the constructible topology of a T₀
@@ -79,6 +82,15 @@ theorem IsSpectralMap.continuous_constructibleTopology {f : X → Y} (hf : IsSpe
     rw [← Set.preimage_compl]
     exact hUcc.preimage_of_isOpen hf hUcl.isOpen_compl
 
+/-- A spectral map induces a continuous map between the `WithConstructibleTopology` type
+synonyms. -/
+theorem IsSpectralMap.continuous_withConstructibleTopology {f : X → Y} (hf : IsSpectralMap f) :
+    Continuous (WithTopology.toTopology (constructibleTopology Y) ∘ f ∘ WithTopology.ofTopology :
+      WithConstructibleTopology X → WithConstructibleTopology Y) :=
+  continuous_def.2 fun _ hV ↦ WithConstructibleTopology.isOpen_iff.2 <|
+    @Continuous.isOpen_preimage X Y (constructibleTopology X) (constructibleTopology Y) f
+      hf.continuous_constructibleTopology _ (WithConstructibleTopology.isOpen_iff.1 hV)
+
 /-- Every generic point of the closure of a subset lies in its closure for the constructible
 topology. -/
 theorem IsGenericPoint.mem_closure_constructibleTopology {s : Set X} {η : X}
@@ -102,6 +114,15 @@ theorem IsGenericPoint.mem_closure_constructibleTopology {s : Set X} {η : X}
 
 /-! ### Separation of the constructible topology -/
 
+/-- In a prespectral space, if `x` does not specialize to `y`, then some quasi-compact open subset
+contains `y` but not `x`. -/
+theorem PrespectralSpace.exists_isOpen_isCompact_of_not_specializes [PrespectralSpace X]
+    {x y : X} (h : ¬ x ⤳ y) : ∃ U : Set X, IsOpen U ∧ IsCompact U ∧ y ∈ U ∧ x ∉ U := by
+  rw [PrespectralSpace.isTopologicalBasis.nhds_hasBasis.specializes_iff] at h
+  push Not at h
+  obtain ⟨U, ⟨⟨hUo, hUc⟩, hyU⟩, hxU⟩ := h
+  exact ⟨U, hUo, hUc, hyU, hxU⟩
+
 /-- The preimage in `WithConstructibleTopology X` of a quasi-compact open subset of `X` is
 clopen. -/
 theorem IsCompact.isClopen_preimage_ofTopology {s : Set X} (hs : IsCompact s) (ho : IsOpen s) :
@@ -115,16 +136,13 @@ moreover compact (`compactSpace_withConstructibleTopology`), that is, profinite.
 instance WithConstructibleTopology.instTotallySeparatedSpace [PrespectralSpace X] [T0Space X] :
     TotallySeparatedSpace (WithConstructibleTopology X) := by
   -- Distinct points are separated by a quasi-compact open subset, which is clopen for the
-  -- constructible topology: shrink an open set containing exactly one of them.
-  have hsep {a b : X} {U : Set X} (hUo : IsOpen U) (ha : a ∈ U) (hb : b ∉ U) :
-      ∃ V : Set X, IsOpen V ∧ IsCompact V ∧ a ∈ V ∧ b ∉ V := by
-    obtain ⟨V, ⟨hVo, hVc⟩, haV, hVU⟩ :=
-      PrespectralSpace.isTopologicalBasis.exists_subset_of_mem_open ha hUo
-    exact ⟨V, hVo, hVc, haV, fun hbV ↦ hb (hVU hbV)⟩
+  -- constructible topology.
   refine totallySeparatedSpace_iff_exists_isClopen.2 fun x y hxy ↦ ?_
   obtain ⟨U, hUo, ⟨hx, hy⟩ | ⟨hy, hx⟩⟩ :=
     exists_isOpen_xor_mem ((WithTopology.ofTopology_injective _).ne hxy)
-  · obtain ⟨V, hVo, hVc, hxV, hyV⟩ := hsep hUo hx hy
+  · obtain ⟨V, hVo, hVc, hxV, hyV⟩ :=
+      PrespectralSpace.exists_isOpen_isCompact_of_not_specializes (hUo.not_specializes hy hx)
     exact ⟨_, hVc.isClopen_preimage_ofTopology hVo, hxV, hyV⟩
-  · obtain ⟨V, hVo, hVc, hyV, hxV⟩ := hsep hUo hy hx
+  · obtain ⟨V, hVo, hVc, hyV, hxV⟩ :=
+      PrespectralSpace.exists_isOpen_isCompact_of_not_specializes (hUo.not_specializes hx hy)
     exact ⟨_, (hVc.isClopen_preimage_ofTopology hVo).compl, hxV, fun h ↦ h hyV⟩
