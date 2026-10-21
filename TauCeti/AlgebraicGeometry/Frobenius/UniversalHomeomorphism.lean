@@ -16,8 +16,8 @@ Let `p` be a prime. The absolute Frobenius `F_X : X ⟶ X` of a scheme `X` in wh
 the identity on points, but it is in general not an isomorphism of schemes. This file proves that
 it is nevertheless a *universal homeomorphism*: every base change of `F_X` is a homeomorphism of
 underlying spaces. The same holds for the relative Frobenius `F_{X/S} : X ⟶ X^{(p)}` of a scheme
-`X` over `S`, for their iterates, and so for every morphism that becomes an iterated absolute
-Frobenius after composition with a morphism in the other direction on either side.
+`X` over `S`, for their iterates, and so for every morphism `f` admitting a morphism `g` in the
+other direction such that both `f ≫ g` and `g ≫ f` are iterated absolute Frobenii.
 
 A universal homeomorphism is written here in Mathlib's form
 `(topologically @IsHomeomorph).universally f`. It follows that the absolute and relative Frobenius
