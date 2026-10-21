@@ -89,35 +89,24 @@ theorem residuePairing_eq_sum {M N : ℤ} {u v : currentAlgebra R L}
     (hu : u ∈ orderSubmodule R L M) (hv : v ∈ orderSubmodule R L N) :
     residuePairing R L Φ u v =
       ∑ n ∈ Finset.Icc N (-M), n • Φ (coeff R L (-n) u) (coeff R L n v) := by
+  -- Both sides are bilinear in `(u, v)`, so it suffices to compare them on spanning tensors.
+  let B : LinearMap.BilinForm R (currentAlgebra R L) :=
+    ∑ n ∈ Finset.Icc N (-M), n • Φ.compl₁₂ (coeff R L (-n)) (coeff R L n)
+  have hB (u v : currentAlgebra R L) :
+      B u v = ∑ n ∈ Finset.Icc N (-M), n • Φ (coeff R L (-n) u) (coeff R L n v) := by
+    simp [B, LinearMap.sum_apply]
+  rw [← hB]
   rw [orderSubmodule_def] at hu hv
-  induction hu using Submodule.span_induction with
-  | mem u hu =>
-    obtain ⟨f, x, hf, rfl⟩ := hu
-    induction hv using Submodule.span_induction with
-    | mem v hv =>
-      obtain ⟨g, y, hg, rfl⟩ := hv
-      rw [residuePairing_tmul, LaurentSeries.residuePairing_eq_sum R hf hg, Finset.sum_mul]
-      refine Finset.sum_congr rfl fun n _ ↦ ?_
-      simp only [coeff_tmul, map_smul, LinearMap.smul_apply, smul_eq_mul, smul_mul_assoc]
-      ring
-    | zero => simp
-    | add v w _ _ hv hw =>
-      rw [map_add, hv, hw, ← Finset.sum_add_distrib]
-      refine Finset.sum_congr rfl fun n _ ↦ ?_
-      rw [map_add, map_add, smul_add]
-    | smul r v _ hv =>
-      rw [map_smul, hv, Finset.smul_sum]
-      refine Finset.sum_congr rfl fun n _ ↦ ?_
-      rw [map_smul, map_smul, smul_comm]
-  | zero => simp
-  | add u w _ _ hu hw =>
-    rw [map_add, LinearMap.add_apply, hu, hw, ← Finset.sum_add_distrib]
-    refine Finset.sum_congr rfl fun n _ ↦ ?_
-    rw [map_add, map_add, LinearMap.add_apply, smul_add]
-  | smul r u _ hu =>
-    rw [map_smul, LinearMap.smul_apply, hu, Finset.smul_sum]
-    refine Finset.sum_congr rfl fun n _ ↦ ?_
-    rw [map_smul, map_smul, LinearMap.smul_apply, smul_comm]
+  refine LinearMap.eqOn_span (f := (residuePairing R L Φ).flip v) (g := B.flip v)
+    (fun u hu ↦ ?_) hu
+  obtain ⟨f, x, hf, rfl⟩ := hu
+  refine LinearMap.eqOn_span (f := residuePairing R L Φ (f ⊗ₜ x)) (g := B (f ⊗ₜ x))
+    (fun w hw ↦ ?_) hv
+  obtain ⟨g, y, hg, rfl⟩ := hw
+  rw [hB, residuePairing_tmul, LaurentSeries.residuePairing_eq_sum R hf hg, Finset.sum_mul]
+  refine Finset.sum_congr rfl fun n _ ↦ ?_
+  simp only [coeff_tmul, map_smul, LinearMap.smul_apply, smul_eq_mul, smul_mul_assoc]
+  ring
 
 /-- The residue pairing vanishes on currents of orders at least `M` and `N` when `M + N > 0`. -/
 theorem residuePairing_eq_zero_of_mem_orderSubmodule {M N : ℤ} {u v : currentAlgebra R L}
