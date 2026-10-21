@@ -117,12 +117,10 @@ boundary. -/
 @[expose]
 def universalGSpaceChainComplex : ChainComplex (Rep k G) ℕ :=
   ChainComplex.of (fun n ↦ Rep.ofMulAction k G ((indexedJoin fun _ : ℕ => G).RealizationCell n))
-    (universalGSpaceBoundary k G) fun n ↦ (forget₂ (Rep k G) (ModuleCat k)).map_injective <| by
-      rw [Functor.map_comp, Functor.map_zero,
-        ← cancel_mono (MonoidAlgebra.coeffLinearEquiv k).toModuleIso.hom, Category.assoc,
-        universalGSpaceBoundary_comp_coeff, reassoc_of% universalGSpaceBoundary_comp_coeff,
-        ← ModuleCat.ofHom_comp, OrderedSimplicialChain.boundary_boundary, ModuleCat.ofHom_zero,
-        Limits.comp_zero, Limits.zero_comp]
+    (universalGSpaceBoundary k G) fun n ↦
+      Rep.hom_ext <| Representation.IntertwiningMap.ext <| LinearMap.ext fun x ↦ by
+        simpa [universalGSpaceBoundary] using congr((MonoidAlgebra.coeffLinearEquiv k).symm
+          ($(OrderedSimplicialChain.boundary_boundary k n) (MonoidAlgebra.coeffLinearEquiv k x)))
 
 /-- In degree `n` the complex is the permutation representation on the `n`-simplices. -/
 @[simp]
@@ -168,10 +166,12 @@ theorem universalGSpaceChainComplexForget₂Iso_hom_f (n : ℕ) :
 /-- The coefficient sum vanishes on boundaries of `1`-simplices. -/
 private lemma universalGSpaceBoundary_comp_permutationAugmentation :
     universalGSpaceBoundary k G 0 ≫ permutationAugmentation k G _ = 0 :=
-  (forget₂ (Rep k G) (ModuleCat k)).map_injective <| by
-    rw [Functor.map_comp, Functor.map_zero, forget₂_map_permutationAugmentation,
-      reassoc_of% universalGSpaceBoundary_comp_coeff, ← ModuleCat.ofHom_comp,
-      OrderedSimplicialChain.augmentation_comp_boundary, ModuleCat.ofHom_zero, Limits.comp_zero]
+  Rep.hom_ext <| Representation.IntertwiningMap.ext <| LinearMap.ext fun x ↦ by
+    simpa [universalGSpaceBoundary] using
+      congr(ModuleCat.Hom.hom $(forget₂_map_permutationAugmentation k G _)
+        ((universalGSpaceBoundary k G 0).hom x)).trans
+        (LinearMap.congr_fun (OrderedSimplicialChain.augmentation_comp_boundary k)
+          (MonoidAlgebra.coeffLinearEquiv k x))
 
 /-- The **augmentation** of the ordered chains of the countable join: the chain map to the
 trivial representation, placed in degree `0`, that sums the coefficients of a `0`-chain. -/
