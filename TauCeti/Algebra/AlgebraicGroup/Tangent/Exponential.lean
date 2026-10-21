@@ -108,7 +108,8 @@ theorem taylorExp_leftInvariantDerivation_apply
   choose m hm using hd
   let N := m h + ∑ i ∈ 𝓡.index, m (𝓡.right i)
   have hN : ∀ x, m x ≤ N → D^[N] x = 0 := fun x hx => by
-    rw [← Nat.sub_add_cancel hx, Function.iterate_add_apply, hm, iterate_map_zero]
+    simpa [Module.End.pow_apply] using Module.End.pow_map_zero_of_le (f := D.toLinearMap) hx
+      (by simpa [Module.End.pow_apply] using hm x)
   have hright : ∀ i ∈ 𝓡.index, D^[N] (𝓡.right i) = 0 := fun i hi =>
     hN _ (le_add_left (Finset.single_le_sum (fun j _ => Nat.zero_le (m (𝓡.right j))) hi))
   have hexp : ∀ i ∈ 𝓡.index, expPoint d hd (𝓡.right i) =

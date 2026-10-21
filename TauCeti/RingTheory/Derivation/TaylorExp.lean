@@ -106,8 +106,9 @@ private theorem coeff_taylorPolynomial (a : A) (n : ℕ) :
   split_ifs with h
   · rfl
   · rw [mem_range, not_lt] at h
-    rw [← Nat.sub_add_cancel h, Function.iterate_add_apply, Nat.find_spec (hD a),
-      iterate_map_zero, smul_zero]
+    have hfind : (D.toLinearMap ^ Nat.find (hD a)) a = 0 := by
+      simpa [Module.End.pow_apply] using Nat.find_spec (hD a)
+    rw [← coeFn_coe, ← Module.End.pow_apply, Module.End.pow_map_zero_of_le h hfind, smul_zero]
 
 /-- The **Taylor expansion** `a ↦ ∑ (Dⁿ a / n!) Xⁿ` of a locally nilpotent derivation `D`, an
 algebra homomorphism into `A[X]`. Its evaluation at `X = 1` is the Taylor exponential. -/
@@ -164,7 +165,8 @@ theorem taylorExp_apply_eq_sum {a : A} {n : ℕ} (hn : D^[n] a = 0) :
     rw [mem_support_iff, coeff_taylorExpPolynomial] at hi
     rw [mem_range]
     by_contra! h
-    rw [← Nat.sub_add_cancel h, Function.iterate_add_apply, hn, iterate_map_zero,
+    have hn' : (D.toLinearMap ^ n) a = 0 := by simpa [Module.End.pow_apply] using hn
+    rw [← coeFn_coe, ← Module.End.pow_apply, Module.End.pow_map_zero_of_le h hn',
       smul_zero] at hi
     exact hi rfl
   rw [← aeval_one_taylorExpPolynomial, aeval_def, eval₂_eq_sum,
