@@ -96,9 +96,8 @@ theorem isLocallyBoundedOn_of_isCompact_closure_range
     (hf : ∀ i, ⇑(f i) = Ω.domRestrict (F i)) (hcpt : IsCompact (closure (Set.range f))) :
     IsLocallyBoundedOn F Ω := by
   refine isLocallyBoundedOn_def.mpr fun K hKΩ hK => ?_
-  have hK' : IsCompact (Subtype.val ⁻¹' K : Set Ω) := by
-    refine Topology.IsEmbedding.subtypeVal.isCompact_iff.2 ?_
-    rwa [Subtype.image_preimage_val, inter_eq_self_of_subset_right hKΩ]
+  have hK' : IsCompact (Subtype.val ⁻¹' K : Set Ω) :=
+    Topology.IsInducing.subtypeVal.isCompact_preimage' hK (by rwa [Subtype.range_coe])
   let S : Set Ω := Subtype.val ⁻¹' K
   have : CompactSpace S := isCompact_iff_compactSpace.mp hK'
   -- Restriction to the compact domain S makes joint evaluation continuous.
