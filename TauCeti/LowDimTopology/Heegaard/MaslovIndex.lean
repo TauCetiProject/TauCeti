@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Field.Rat
+public import Mathlib.InformationTheory.Hamming
 public import TauCeti.LowDimTopology.Heegaard.Domain
 import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Algebra.BigOperators.Fin
@@ -64,7 +65,7 @@ number of `∂D ∩ α` with `∂E ∩ β`, computed once along the `α`-curves 
 * `TauCeti.HeegaardRegionSystem.maslovIndex_one`: the Maslov index of the whole surface is
   `∑ χ(R) - #(α ∩ β) + 2n`, so it is two for a closed surface of genus `n`
   (`TauCeti.HeegaardRegionSystem.maslovIndex_one_eq_two`).
-* `TauCeti.HeegaardRegionSystem.IsDomainBetween.eulerMeasure_add_card_div_two_le_maslovIndex`:
+* `TauCeti.HeegaardRegionSystem.IsDomainBetween.eulerMeasure_add_half_hammingDist_le_maslovIndex`:
   a nonnegative domain from `x` to `y` has a corner at the points of `x` and of `y` on every
   `α`-curve where they differ, so its Maslov index is at least its Euler measure plus half the
   number of such curves.
@@ -409,10 +410,10 @@ variable [DecidableEq Point]
 
 /-- For a nonnegative domain `D` from `x` to `y`, every `α`-curve on which `x` and `y` differ
 contributes at least `1 / 4` to `n_x(D)`. -/
-theorem IsDomainBetween.card_le_four_mul_generatorPointMeasure_left
+theorem IsDomainBetween.hammingDist_le_four_mul_generatorPointMeasure_left
     (hD : H.IsDomainBetween x y D) (hD0 : 0 ≤ D) :
-    (#{i | H.point x i ≠ H.point y i} : ℚ) ≤ 4 * H.generatorPointMeasure x D := by
-  rw [generatorPointMeasure_apply, mul_sum, card_filter, Nat.cast_sum]
+    (hammingDist (H.point x) (H.point y) : ℚ) ≤ 4 * H.generatorPointMeasure x D := by
+  rw [hammingDist, generatorPointMeasure_apply, mul_sum, card_filter, Nat.cast_sum]
   refine sum_le_sum fun i _ => ?_
   split_ifs with hi
   · have := H.abs_alphaArcBoundary_alphaBoundary_le_four_mul_pointMeasure hD0 (H.point x i)
@@ -422,10 +423,10 @@ theorem IsDomainBetween.card_le_four_mul_generatorPointMeasure_left
 
 /-- For a nonnegative domain `D` from `x` to `y`, every `α`-curve on which `x` and `y` differ
 contributes at least `1 / 4` to `n_y(D)`. -/
-theorem IsDomainBetween.card_le_four_mul_generatorPointMeasure_right
+theorem IsDomainBetween.hammingDist_le_four_mul_generatorPointMeasure_right
     (hD : H.IsDomainBetween x y D) (hD0 : 0 ≤ D) :
-    (#{i | H.point x i ≠ H.point y i} : ℚ) ≤ 4 * H.generatorPointMeasure y D := by
-  rw [generatorPointMeasure_apply, mul_sum, card_filter, Nat.cast_sum]
+    (hammingDist (H.point x) (H.point y) : ℚ) ≤ 4 * H.generatorPointMeasure y D := by
+  rw [hammingDist, generatorPointMeasure_apply, mul_sum, card_filter, Nat.cast_sum]
   refine sum_le_sum fun i _ => ?_
   split_ifs with hi
   · have := H.abs_alphaArcBoundary_alphaBoundary_le_four_mul_pointMeasure hD0 (H.point y i)
@@ -437,11 +438,11 @@ variable [Fintype Point] [DecidableEq Region] [Fintype Region]
 
 /-- The Maslov index of a nonnegative domain from `x` to `y` is at least its Euler measure plus
 half the number of `α`-curves on which `x` and `y` differ. -/
-theorem IsDomainBetween.eulerMeasure_add_card_div_two_le_maslovIndex (χ : Region → ℤ)
+theorem IsDomainBetween.eulerMeasure_add_half_hammingDist_le_maslovIndex (χ : Region → ℤ)
     (hD : H.IsDomainBetween x y D) (hD0 : 0 ≤ D) :
-    H.eulerMeasure χ D + #{i | H.point x i ≠ H.point y i} / 2 ≤ H.maslovIndex χ x y D := by
-  have hx := hD.card_le_four_mul_generatorPointMeasure_left hD0
-  have hy := hD.card_le_four_mul_generatorPointMeasure_right hD0
+    H.eulerMeasure χ D + hammingDist (H.point x) (H.point y) / 2 ≤ H.maslovIndex χ x y D := by
+  have hx := hD.hammingDist_le_four_mul_generatorPointMeasure_left hD0
+  have hy := hD.hammingDist_le_four_mul_generatorPointMeasure_right hD0
   rw [maslovIndex_apply]
   linarith
 
