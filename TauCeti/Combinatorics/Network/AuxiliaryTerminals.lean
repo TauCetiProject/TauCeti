@@ -32,6 +32,8 @@ at most the capacity of `S`.
 * `TauCeti.AuxTerminalHom Q A B`: the arrow family of `Q` with the auxiliary terminals added.
 * `TauCeti.AuxTerminalHom.original`, `TauCeti.AuxTerminalHom.source` and
   `TauCeti.AuxTerminalHom.sink`: its three kinds of arrows.
+* `TauCeti.AuxTerminalHom.originalEquiv`: the arrows between original vertices are exactly the
+  original arrows.
 * `TauCeti.auxTerminalCapacity cap cσ cτ`: the capacities `cap` on original arrows, `cσ a` on
   `σ → a` and `cτ b` on `b → τ`.
 
@@ -94,6 +96,60 @@ def source {a : V} (ha : a ∈ A) : AuxTerminalHom Q A B (inr false) (inl a) :=
 def sink {b : V} (hb : b ∈ B) : AuxTerminalHom Q A B (inl b) (inr true) :=
   ⟨PUnit.unit, hb⟩
 
+/-- The arrows from `Sum.inl v` to `Sum.inl w` are exactly the original arrows `Q v w`. -/
+def originalEquiv {v w : V} : Q v w ≃ AuxTerminalHom Q A B (inl v) (inl w) :=
+  Equiv.refl _
+
+theorem originalEquiv_apply {v w : V} (e : Q v w) :
+    originalEquiv (A := A) (B := B) e = original e :=
+  (rfl)
+
+theorem originalEquiv_symm_original {v w : V} (e : Q v w) :
+    originalEquiv.symm (original (A := A) (B := B) e) = e :=
+  (rfl)
+
+theorem original_originalEquiv_symm {v w : V} (e : AuxTerminalHom Q A B (inl v) (inl w)) :
+    original (originalEquiv.symm e) = e :=
+  (rfl)
+
+theorem original_injective {v w : V} :
+    Function.Injective (original (A := A) (B := B) : Q v w → _) :=
+  originalEquiv.injective
+
+theorem original_inj {v w : V} {e e' : Q v w} :
+    original (A := A) (B := B) e = original e' ↔ e = e' :=
+  original_injective.eq_iff
+
+/-- Every arrow from the fresh source to `Sum.inl a` is `source`. -/
+theorem eq_source {a : V} (e : AuxTerminalHom Q A B (inr false) (inl a)) : e = source e.2 :=
+  (rfl)
+
+/-- Every arrow from `Sum.inl b` to the fresh sink is `sink`. -/
+theorem eq_sink {b : V} (e : AuxTerminalHom Q A B (inl b) (inr true)) : e = sink e.2 :=
+  (rfl)
+
+instance instSubsingletonSource (a : V) :
+    Subsingleton (AuxTerminalHom Q A B (inr false) (inl a)) :=
+  ⟨fun e e' ↦ (eq_source e).trans (eq_source e').symm⟩
+
+instance instSubsingletonSink (b : V) : Subsingleton (AuxTerminalHom Q A B (inl b) (inr true)) :=
+  ⟨fun e e' ↦ (eq_sink e).trans (eq_sink e').symm⟩
+
+/-- No arrow enters the fresh source. -/
+instance instIsEmptyToSource : ∀ x, IsEmpty (AuxTerminalHom Q A B x (inr false))
+  | inl _ => inferInstanceAs (IsEmpty PEmpty)
+  | inr false => inferInstanceAs (IsEmpty PEmpty)
+  | inr true => inferInstanceAs (IsEmpty PEmpty)
+
+/-- No arrow leaves the fresh sink. -/
+instance instIsEmptyFromSink : ∀ y, IsEmpty (AuxTerminalHom Q A B (inr true) y)
+  | inl _ => inferInstanceAs (IsEmpty PEmpty)
+  | inr _ => inferInstanceAs (IsEmpty PEmpty)
+
+/-- No arrow goes directly from the fresh source to the fresh sink. -/
+instance instIsEmptySourceSink : IsEmpty (AuxTerminalHom Q A B (inr false) (inr true)) :=
+  inferInstanceAs (IsEmpty PEmpty)
+
 end AuxTerminalHom
 
 variable {Q A B} {K : Type w}
@@ -141,6 +197,14 @@ section Cut
 
 variable [AddCommMonoid K] [Fintype V] [DecidableEq V] [∀ v w, Fintype (Q v w)]
 
+omit [Fintype V] [DecidableEq V] in
+/-- The total capacity with auxiliary terminals of the arrows between two original vertices is
+their original total capacity. -/
+theorem sum_auxTerminalCapacity_inl_inl (cap : Assignment Q K) (cσ cτ : V → K) (x y : V) :
+    ∑ e : AuxTerminalHom Q A B (inl x) (inl y), auxTerminalCapacity cap cσ cτ e =
+      ∑ e : Q x y, cap e :=
+  (Fintype.sum_equiv AuxTerminalHom.originalEquiv _ _ fun _ ↦ rfl).symm
+
 /-- The capacity of a cut `S` separating the fresh source from the fresh sink is the capacity
 `cσ a` of each `a ∈ A` outside `S`, plus the capacity `cτ b` of each `b ∈ B` inside `S`, plus the
 original capacity of the arrows leaving the original vertices of `S`. -/
@@ -160,26 +224,23 @@ theorem arrowSum_auxTerminalCapacity (cap : Assignment Q K) (cσ cτ : V → K)
       auxTerminalCapacity cap cσ cτ e = if a ∈ A then cσ a else 0 := by
     split_ifs with ha
     · rw [Fintype.sum_eq_single (AuxTerminalHom.source ha) fun e he ↦
-        (he (Subtype.ext rfl)).elim, auxTerminalCapacity_source]
+        (he (AuxTerminalHom.eq_source e)).elim, auxTerminalCapacity_source]
     · exact sum_eq_zero fun e _ ↦ (ha e.2).elim
   have hsnk (b : V) : ∑ e : AuxTerminalHom Q A B (inl b) (inr true),
       auxTerminalCapacity cap cσ cτ e = if b ∈ B then cτ b else 0 := by
     split_ifs with hb
     · rw [Fintype.sum_eq_single (AuxTerminalHom.sink hb) fun e he ↦
-        (he (Subtype.ext rfl)).elim, auxTerminalCapacity_sink]
+        (he (AuxTerminalHom.eq_sink e)).elim, auxTerminalCapacity_sink]
     · exact sum_eq_zero fun e _ ↦ (hb e.2).elim
   have hA : S.toLeftᶜ ∩ A = A \ S.toLeft := by
     rw [inter_comm, sdiff_eq_inter_compl]
-  -- The `Fintype` instance on original arrows is that of `Q x y`, so this holds by `rfl`.
-  have horig (x y : V) : ∑ e : AuxTerminalHom Q A B (inl x) (inl y),
-      auxTerminalCapacity cap cσ cτ e = ∑ e : Q x y, cap e :=
-    rfl
   have hnone : ∑ e : AuxTerminalHom Q A B (inr false) (inr true),
       auxTerminalCapacity cap cσ cτ e = 0 :=
-    sum_eq_zero fun e _ ↦ e.elim
+    Fintype.sum_empty _
   simp only [arrowSum_def, sum_sum_eq_sum_toLeft_add_sum_toRight S,
-    sum_sum_eq_sum_toLeft_add_sum_toRight Sᶜ, hS, hSc, hScl, sum_singleton, horig, hsrc, hsnk,
-    sum_ite_mem, hA, sum_add_distrib, hnone, add_zero, inter_comm S.toLeft B]
+    sum_sum_eq_sum_toLeft_add_sum_toRight Sᶜ, hS, hSc, hScl, sum_singleton,
+    sum_auxTerminalCapacity_inl_inl cap cσ cτ, hsrc, hsnk, sum_ite_mem, hA, sum_add_distrib, hnone,
+    add_zero, inter_comm S.toLeft B]
   abel
 
 /-- A vertex set `R` containing `A` and avoiding `B`, together with the fresh source, is a cut
