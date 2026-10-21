@@ -111,11 +111,28 @@ theorem centeredRadialRetraction_zero (r : ℝ) :
 theorem radialRetraction_of_norm_eq_zero (hx : ‖x‖ = 0) : radialRetraction r x = 0 := by
   simp [radialRetraction_def, hx]
 
+/-- The centred radial retraction sends every point at distance zero from its centre to the
+centre. -/
+@[simp]
+theorem centeredRadialRetraction_of_dist_eq_zero {x₀ : E} (h : dist x x₀ = 0) :
+    centeredRadialRetraction x₀ r x = x₀ := by
+  rw [dist_eq_norm] at h
+  simp [centeredRadialRetraction_def, h]
+
 /-- A vector of positive norm at most `r` is fixed by the radial retraction. -/
 @[simp]
 theorem radialRetraction_of_norm_pos_of_norm_le (hx : 0 < ‖x‖) (h : ‖x‖ ≤ r) :
     radialRetraction r x = x := by
   rw [radialRetraction_def, min_eq_left ((le_div_iff₀ hx).2 (by simpa using h)), one_smul]
+
+/-- A point of positive distance at most `r` from the centre is fixed by the centred radial
+retraction. -/
+@[simp]
+theorem centeredRadialRetraction_of_dist_pos_of_dist_le {x₀ : E}
+    (hx : 0 < dist x x₀) (h : dist x x₀ ≤ r) : centeredRadialRetraction x₀ r x = x := by
+  rw [dist_eq_norm] at hx h
+  rw [centeredRadialRetraction_def, radialRetraction_of_norm_pos_of_norm_le hx h]
+  abel
 
 end Seminormed
 
