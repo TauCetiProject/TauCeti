@@ -65,6 +65,7 @@ finite-dimensional representations.
 
 * `Representation.averageMap_eq_invOf_card_smul_norm`: the averaging projection is the group sum
   `Representation.norm` scaled by the inverse of the group order.
+* `Representation.averageMap_apply`: the same identity evaluated at a vector.
 * `Representation.averageMap_comp_ρ`: the averaging projection does not see the action.
 * `Representation.range_norm_eq_invariants`: the group sum `Representation.norm ρ` has the
   invariants as its range.
@@ -118,6 +119,11 @@ theorem averageMap_eq_invOf_card_smul_norm :
     ρ.averageMap = ⅟(Fintype.card G : k) • ρ.norm := by
   simp only [averageMap, GroupAlgebra.average, map_smul, map_sum, MonoidAlgebra.of_apply,
     asAlgebraHom_single_one, norm]
+
+/-- The averaging projection of `v` is the normalized group sum `⅟#G • ∑ g, ρ g v`. -/
+theorem averageMap_apply (v : V) :
+    ρ.averageMap v = ⅟(Fintype.card G : k) • ∑ g : G, ρ g v := by
+  rw [averageMap_eq_invOf_card_smul_norm, LinearMap.smul_apply, norm, LinearMap.sum_apply]
 
 /-- **Averaging does not see the action**: `avg ∘ ρ g = avg`, as `average k G * g = average k G`
 in the group algebra (`GroupAlgebra.mul_average_right`). -/
