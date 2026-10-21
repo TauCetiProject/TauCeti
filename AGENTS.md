@@ -10,8 +10,8 @@ the three repos fit together; this file only adds the contract for agents workin
 *new* mathematics: only add a new mathematical declaration (definition, theorem, instance,
 notation) or file when it advances a specific roadmap target, or supplies a prerequisite that a
 specific target needs. If something you want to build is not on the roadmap — whether a human
-asked for it or you found the gap yourself — select a target supported by the existing roadmaps instead. If an existing PR cannot be
-repaired to fit after its bounded repair attempts, close your own PR with an explanation so a fresh attempt can try again. Never
+asked for it or you found the gap yourself — select a target supported by the existing roadmaps instead. If your own PR's roadmap fit remains
+contested after its bounded repair attempts, close it with an explanation so a fresh attempt can try again. Never
 open a PR or an issue in TauCetiRoadmap yourself.
 
 Improving code that already exists is **always in scope** and needs no roadmap entry:
