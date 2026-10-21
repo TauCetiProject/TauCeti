@@ -86,10 +86,14 @@ theorem euclideanHausdorffMeasure_mul_volume_closedBall_le_volume_add_smul_close
   have : Nonempty A := ⟨q⟩
   set Φ := A.direction.measurableEquivProd p
   set g := fun v : A.direction ↦ ((v +ᵥ q : A) : E)
+  have hg (v : A.direction) : g v = (v : E) + p := by
+    simp only [g, q, AffineSubspace.coe_vadd, vadd_eq_add]
   have hsub : Φ ⁻¹' ((g ⁻¹' K) ×ˢ closedBall 0 t) ⊆ K + t • closedBall (0 : E) 1 := by
     rintro x ⟨h₁, h₂⟩
+    rw [mem_preimage, hg] at h₁
+    rw [mem_closedBall_zero_iff, ← Submodule.norm_coe] at h₂
     rw [smul_unitClosedBall_of_nonneg ht, ← A.direction.measurableEquivProd_fst_add_add_snd p x]
-    exact add_mem_add h₁ (mem_closedBall_zero_iff.2 (mem_closedBall_zero_iff.1 h₂))
+    exact add_mem_add h₁ (mem_closedBall_zero_iff.2 h₂)
   calc μHE[finrank ℝ A.direction] K * volume (closedBall (0 : A.directionᗮ) t)
       = volume (Φ ⁻¹' ((g ⁻¹' K) ×ˢ closedBall 0 t)) := by
         rw [Submodule.volume_preimage_measurableEquivProd_prod, A.volume_preimage_coe_vadd q,
@@ -111,6 +115,8 @@ theorem volume_add_smul_closedBall_le_euclideanHausdorffMeasure_inter_mul_volume
   have : Nonempty A := ⟨q⟩
   set Φ := A.direction.measurableEquivProd p
   set g := fun v : A.direction ↦ ((v +ᵥ q : A) : E)
+  have hg (v : A.direction) : g v = (v : E) + p := by
+    simp only [g, q, AffineSubspace.coe_vadd, vadd_eq_add]
   have hsub : K + t • closedBall (0 : E) 1 ⊆
       Φ ⁻¹' ((g ⁻¹' (K + t • closedBall (0 : E) 1)) ×ˢ closedBall 0 t) := by
     rw [smul_unitClosedBall_of_nonneg ht]
@@ -119,8 +125,8 @@ theorem volume_add_smul_closedBall_le_euclideanHausdorffMeasure_inter_mul_volume
       (AffineSubspace.vsub_mem_direction (hKA hk) q.2) (k + b)
     rw [add_sub_cancel_left] at h₁ h₂
     rw [mem_closedBall_zero_iff] at hb
-    exact ⟨⟨k, hk, _, mem_closedBall_zero_iff.2 (h₁.trans hb), add_sub_cancel k _⟩,
-      mem_closedBall_zero_iff.2 (h₂.trans hb)⟩
+    rw [mem_preimage, mem_prod, mem_preimage, hg, mem_closedBall_zero_iff, ← Submodule.norm_coe]
+    exact ⟨⟨k, hk, _, mem_closedBall_zero_iff.2 (h₁.trans hb), add_sub_cancel k _⟩, h₂.trans hb⟩
   calc volume (K + t • closedBall (0 : E) 1)
       ≤ volume (Φ ⁻¹' ((g ⁻¹' (K + t • closedBall (0 : E) 1)) ×ˢ closedBall 0 t)) :=
         measure_mono hsub
