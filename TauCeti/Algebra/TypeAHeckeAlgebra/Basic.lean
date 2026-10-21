@@ -83,7 +83,7 @@ reduced-word theory of the symmetric group and is not proved here.
 * M. Geck, G. Pfeiffer, *Characters of finite Coxeter groups and Iwahori-Hecke algebras*,
   London Math. Soc. Monographs 21, Oxford University Press (2000), Chapter 4.
 * The quotient presentation and universal-property API follow the construction pattern in
-  `Mathlib.LinearAlgebra.CliffordAlgebra.Basic`.
+  `Mathlib.LinearAlgebra.CliffordAlgebra.Basic` and in `TauCeti.Algebra.TemperleyLieb.Basic`.
 -/
 
 public section
@@ -168,8 +168,10 @@ theorem T_mul_self (i : Fin (n - 1)) : T q i * T q i = ((q : R) - ↑q⁻¹) •
 roots `q` and `-q⁻¹`. -/
 theorem T_sub_algebraMap_mul_T_add_algebraMap_eq_zero (i : Fin (n - 1)) :
     (T q i - algebraMap R _ (q : R)) * (T q i + algebraMap R _ (↑q⁻¹ : R)) = 0 := by
-  rw [sub_mul, mul_add, mul_add, T_mul_self, ← Algebra.commutes, ← map_mul,
-    Units.mul_inv, map_one, Algebra.smul_def, map_sub, sub_mul]
+  have hq : algebraMap R (TypeAHeckeAlgebra R q n) (q : R) * algebraMap R _ (↑q⁻¹ : R) = 1 := by
+    simp [← map_mul]
+  simp only [sub_mul, mul_add, T_mul_self, ← Algebra.commutes _ (T q i), hq,
+    Algebra.smul_def, map_sub]
   abel
 
 /-- Two generators on adjacent pairs of strands satisfy the braid relation. -/
