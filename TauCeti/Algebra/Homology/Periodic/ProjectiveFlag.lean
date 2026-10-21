@@ -113,14 +113,21 @@ theorem HasProjectiveFlag.homotopyCofiber [HasBinaryBiproducts C] {X Y : Cochain
     (fun i j ↦ (shiftFunctor_obj_d' X 1 i j).trans (by rw [hd, smul_zero]))
 
 /-- The terms of a complex with a projective flag are projective. -/
-theorem HasProjectiveFlag.projective_X [HasBinaryBiproducts C] {K : CochainComplex C (ZMod n)}
+theorem HasProjectiveFlag.projective_X {K : CochainComplex C (ZMod n)}
     (hK : HasProjectiveFlag K) (i : ZMod n) : Projective (K.X i) := by
   induction hK with
   | of_isZero hK => exact ((eval C _ i).map_isZero hK).projective
   | extension S hS _ _ ih =>
+    -- Lift through the splitting `S.X₂ ≅ S.X₁ ⊕ S.X₃` one summand at a time.
+    obtain ⟨s⟩ := hS i
     have : Projective (S.map (eval C _ i)).X₁ := ih
     have : Projective (S.map (eval C _ i)).X₃ := inferInstanceAs (Projective (S.X₃.X i))
-    exact Projective.of_iso (hS i).some.isoBinaryBiproduct.symm inferInstance
+    refine ⟨fun f e _ ↦ ⟨s.r ≫ Projective.factorThru ((S.map (eval C _ i)).f ≫ f) e +
+      (S.map (eval C _ i)).g ≫ Projective.factorThru (s.s ≫ f) e, ?_⟩⟩
+    rw [Preadditive.add_comp, Category.assoc, Category.assoc, Projective.factorThru_comp,
+      Projective.factorThru_comp, ← Category.assoc, ← Category.assoc, ← Preadditive.add_comp,
+      s.id]
+    exact Category.id_comp f
 
 end Preadditive
 
