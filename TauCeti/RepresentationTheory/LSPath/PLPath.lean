@@ -367,6 +367,9 @@ noncomputable def straight (v : V) : PLPath 𝕜 V :=
 
 variable {𝕜}
 
+theorem straight_def (v : V) : straight 𝕜 v = ofSegments 𝕜 [v] :=
+  (rfl)
+
 @[simp]
 theorem segments_ofSegments (l : List V) : (ofSegments 𝕜 l).segments = normalize 𝕜 l :=
   (rfl)
@@ -437,6 +440,9 @@ theorem prod_map_straight (l : List V) : (l.map (straight 𝕜)).prod = ofSegmen
 /-- The endpoint `π 1` of a path, the sum of its segments. -/
 def endpoint (p : PLPath 𝕜 V) : V :=
   p.segments.sum
+
+theorem endpoint_def (p : PLPath 𝕜 V) : p.endpoint = p.segments.sum :=
+  (rfl)
 
 @[simp]
 theorem endpoint_ofSegments (l : List V) : (ofSegments 𝕜 l).endpoint = l.sum :=
