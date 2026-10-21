@@ -27,20 +27,24 @@ An invertible matrix carries a nonzero vector to a nonzero vector, because it ha
 
 That representation is faithful as soon as `R` is nontrivial: the standard basis vector `eⱼ` is
 then nonzero and `g • eⱼ` is the `j`-th column of `g`, so an element acting trivially on the
-nonzero vectors has the columns of the identity matrix. Over a finite ring the set being permuted
-has `|R| ^ |n| - 1` elements, which is what can make the representation surjective as well in
-small cases; the two-dimensional worked case, `GL₂(𝔽₂) ≅ S₃`, is in
+nonzero vectors has the columns of the identity matrix. Over a finite semiring the set being
+permuted has `|R| ^ |n| - 1` elements, which can make the representation surjective in small
+cases; the two-dimensional worked case, `GL₂(𝔽₂) ≅ S₃`, is in
 `TauCeti/LinearAlgebra/Matrix/GeneralLinearGroup/FieldCardTwo.lean`.
 
 ## Main definitions
 
 * `TauCeti.nonzeroVectors`: the nonzero vectors of `n → R` as a `GL n R`-set.
+* `TauCeti.nonzeroVectorsEquivFinThree`: a numbering of the three nonzero vectors in dimension two
+  over a semiring with two elements.
 
 ## Main results
 
 * `TauCeti.faithfulSMulNonzeroVectors`: the action on the nonzero vectors is faithful over a
-  nontrivial ring.
+  nontrivial semiring.
 * `TauCeti.natCard_nonzeroVectors`: there are `|R| ^ |n| - 1` nonzero vectors.
+* `TauCeti.natCard_nonzeroVectors_fin_two_of_card_eq_two`: in dimension two over a semiring with
+  two elements, there are three nonzero vectors.
 -/
 
 public section
@@ -63,7 +67,7 @@ def nonzeroVectors (n R : Type*) [Fintype n] [DecidableEq n] [Semiring R] :
 theorem mem_nonzeroVectors {v : n → R} : v ∈ nonzeroVectors n R ↔ v ≠ 0 := Iff.rfl
 
 /-- **The action of `GL n R` on the nonzero vectors of `n → R` is faithful** over a nontrivial
-ring. -/
+semiring. -/
 instance faithfulSMulNonzeroVectors [Nontrivial R] :
     FaithfulSMul (GL n R) (nonzeroVectors n R) where
   eq_of_smul_eq_smul {g h} H := by
@@ -87,5 +91,19 @@ theorem natCard_nonzeroVectors [Finite R] :
   rw [Finite.card_option, Nat.card_fun] at key
   rw [Nat.card_congr e]
   omega
+
+/-- **A plane over a semiring with two elements has three nonzero vectors.** -/
+theorem natCard_nonzeroVectors_fin_two_of_card_eq_two (hR : Nat.card R = 2) :
+    Nat.card (nonzeroVectors (Fin 2) R) = 3 := by
+  have : Finite R := Nat.finite_of_card_ne_zero (by omega)
+  rw [natCard_nonzeroVectors, hR, Nat.card_fin]
+  decide
+
+/-- **A numbering of the three nonzero vectors of a plane over a semiring with two elements.**
+The numbering is an arbitrary choice. -/
+noncomputable def nonzeroVectorsEquivFinThree (hR : Nat.card R = 2) :
+    nonzeroVectors (Fin 2) R ≃ Fin 3 := by
+  have : Finite R := Nat.finite_of_card_ne_zero (by omega)
+  exact Finite.equivFinOfCardEq (natCard_nonzeroVectors_fin_two_of_card_eq_two hR)
 
 end TauCeti
