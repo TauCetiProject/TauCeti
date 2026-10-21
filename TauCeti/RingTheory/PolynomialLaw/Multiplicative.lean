@@ -15,7 +15,7 @@ A polynomial law between associative unital algebras is multiplicative when it p
 one and products after every commutative scalar extension. The algebras themselves need not
 be commutative. This condition does not require the law to be additive or homogeneous.
 
-`IsMultiplicativePolynomialLaw` tests the components in the universe of the base, as in
+`TauCeti.PolynomialLaw.IsMultiplicative` tests the components in the universe of the base, as in
 Mathlib's `PolynomialLaw`. Its `map_one` and `map_mul` lemmas extend this condition to
 `PolynomialLaw.toFun` in arbitrary universes. Thus `toMonoidHom` gives a multiplicative
 evaluation on every scalar extension, and `groundMonoidHom` gives the ground evaluation.
@@ -39,27 +39,38 @@ variable {R : Type u} [CommSemiring R]
 variable {A B C : Type*} [Semiring A] [Algebra R A]
   [Semiring B] [Algebra R B] [Semiring C] [Algebra R C]
 
+namespace PolynomialLaw
+
+/-- Naturality of evaluation along the algebra tensor map of a scalar algebra morphism. -/
+theorem toFun_rTensor_algHom (f : A →ₚₗ[R] B)
+    {S T : Type*} [CommSemiring S] [Algebra R S] [CommSemiring T] [Algebra R T]
+    (φ : S →ₐ[R] T) (x : S ⊗[R] A) :
+    f.toFun T (Algebra.TensorProduct.rTensor A φ x) =
+      Algebra.TensorProduct.rTensor B φ (f.toFun S x) := by
+  simpa only [← AlgHom.toLinearMap_apply, Algebra.TensorProduct.toLinearMap_map,
+    TensorProduct.AlgebraTensorModule.map_eq, AlgHom.toLinearMap_id,
+    ← LinearMap.rTensor_def] using (f.isCompat_apply φ x).symm
+
 /-- A polynomial law is multiplicative if all its scalar extensions preserve one and products.
 The source and target algebras may be noncommutative. -/
-structure IsMultiplicativePolynomialLaw (f : A →ₚₗ[R] B) : Prop where
+structure IsMultiplicative (f : A →ₚₗ[R] B) : Prop where
   /-- Every component preserves the unit. -/
   map_one' (S : Type u) [CommSemiring S] [Algebra R S] : f.toFun' S 1 = 1
   /-- Every component preserves products. -/
   map_mul' (S : Type u) [CommSemiring S] [Algebra R S] (x y : S ⊗[R] A) :
     f.toFun' S (x * y) = f.toFun' S x * f.toFun' S y
 
-namespace IsMultiplicativePolynomialLaw
+namespace IsMultiplicative
 
-variable {f : A →ₚₗ[R] B} (hf : IsMultiplicativePolynomialLaw f)
+variable {f : A →ₚₗ[R] B} (hf : IsMultiplicative f)
 
 include hf
 
 /-- Multiplicative laws preserve one over scalar algebras in any universe. -/
 @[simp]
 theorem map_one (S : Type*) [CommSemiring S] [Algebra R S] : f.toFun S 1 = 1 := by
-  have h := f.isCompat_apply (Algebra.ofId R S) (1 : R ⊗[R] A)
-  rw [← PolynomialLaw.toFun'_eq_toFun, hf.map_one'] at h
-  simpa [Algebra.TensorProduct.one_def] using h.symm
+  have h := toFun_rTensor_algHom f (Algebra.ofId R S) (1 : R ⊗[R] A)
+  simpa only [← PolynomialLaw.toFun'_eq_toFun, hf.map_one', _root_.map_one] using h
 
 /-- Multiplicative laws preserve products over scalar algebras in any universe. -/
 @[simp]
@@ -73,22 +84,11 @@ theorem map_mul (S : Type*) [CommSemiring S] [Algebra R S] (x y : S ⊗[R] A) :
     (φ := PolynomialLaw.φ R s) (hs.symm ▸ le_sup_left) hx
   obtain ⟨q, rfl⟩ := PolynomialLaw.exists_lift_of_mem_range_rTensor V
     (φ := PolynomialLaw.φ R s) (hs.symm ▸ le_sup_right) hy
-  let ψ := Algebra.TensorProduct.rTensor (R := R) (S := R) A (PolynomialLaw.φ R s)
-  let χ := Algebra.TensorProduct.rTensor (R := R) (S := R) B (PolynomialLaw.φ R s)
-  -- The algebra tensor maps have the same linear maps as those used in naturality.
-  have hψ : ψ.toLinearMap = (PolynomialLaw.φ R s).toLinearMap.rTensor A := by
-    ext
-    simp [ψ]
-  have hχ : χ.toLinearMap = (PolynomialLaw.φ R s).toLinearMap.rTensor B := by
-    ext
-    simp [χ]
-  have natural (z) : f.toFun S (ψ z) = χ (f.toFun' _ z) := by
-    simpa only [← hψ, ← hχ, AlgHom.toLinearMap_apply,
-      ← PolynomialLaw.toFun'_eq_toFun] using
-      (f.isCompat_apply (PolynomialLaw.φ R s) z).symm
-  rw [← hψ]
-  simp only [AlgHom.toLinearMap_apply, ← _root_.map_mul ψ, natural, hf.map_mul',
-    _root_.map_mul χ]
+  simp only [LinearMap.rTensor_def, ← TensorProduct.AlgebraTensorModule.map_eq,
+    ← AlgHom.toLinearMap_id, ← Algebra.TensorProduct.toLinearMap_map, AlgHom.toLinearMap_apply,
+    ← _root_.map_mul (Algebra.TensorProduct.rTensor A (PolynomialLaw.φ R s)),
+    toFun_rTensor_algHom, ← PolynomialLaw.toFun'_eq_toFun, hf.map_mul',
+    _root_.map_mul (Algebra.TensorProduct.rTensor B (PolynomialLaw.φ R s))]
 
 /-- The component of a multiplicative law, bundled as a monoid homomorphism. -/
 def toMonoidHom (S : Type*) [CommSemiring S] [Algebra R S] :
@@ -115,8 +115,8 @@ theorem groundMonoidHom_apply (a : A) : hf.groundMonoidHom a = f.ground a := by
     (Algebra.TensorProduct.lid_toLinearEquiv R B)
 
 /-- Multiplicative polynomial laws are closed under composition. -/
-theorem comp {g : C →ₚₗ[R] A} (hg : IsMultiplicativePolynomialLaw g) :
-    IsMultiplicativePolynomialLaw (f.comp g) where
+theorem comp {g : C →ₚₗ[R] A} (hg : IsMultiplicative g) :
+    IsMultiplicative (f.comp g) where
   map_one' S := by
     intros
     simp [hf.map_one, hg.map_one]
@@ -124,20 +124,22 @@ theorem comp {g : C →ₚₗ[R] A} (hg : IsMultiplicativePolynomialLaw g) :
     intros
     simp [hf.map_mul, hg.map_mul]
 
-end IsMultiplicativePolynomialLaw
+end IsMultiplicative
 
 /-- The identity polynomial law is multiplicative, including for noncommutative algebras. -/
-theorem isMultiplicativePolynomialLaw_id :
-    IsMultiplicativePolynomialLaw (PolynomialLaw.id : A →ₚₗ[R] A) where
-  map_one' _ := rfl
-  map_mul' S := by intros; rfl
+theorem IsMultiplicative.id :
+    IsMultiplicative (PolynomialLaw.id : A →ₚₗ[R] A) where
+  map_one' S := by intros; simp only [PolynomialLaw.id_apply', id_eq]
+  map_mul' S := by intros; simp only [PolynomialLaw.id_apply', id_eq]
 
 /-- The zero law is not multiplicative when the target algebra is nontrivial: the unit
 condition cannot be dropped. -/
-theorem not_isMultiplicativePolynomialLaw_zero [Nontrivial B] :
-    ¬ IsMultiplicativePolynomialLaw (0 : A →ₚₗ[R] B) := by
+theorem not_isMultiplicative_zero [Nontrivial B] :
+    ¬ IsMultiplicative (0 : A →ₚₗ[R] B) := by
   intro h
   have h1 := congrArg (TensorProduct.lid R B) (h.map_one' R)
   simp [Algebra.TensorProduct.one_def] at h1
+
+end PolynomialLaw
 
 end TauCeti
