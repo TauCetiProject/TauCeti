@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.MassFormula.Basic
-public import TauCeti.NumberTheory.LocalField.RootBall
+public import TauCeti.NumberTheory.LocalField.Root.Ball
 
 /-!
 # The local fibre count for counted subextensions
