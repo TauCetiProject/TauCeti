@@ -47,8 +47,8 @@ positive exponent equal to one; the source only needs a multiplication and ident
   cardinality `q`, the cast of `q - 1` is `-1`, a companion of Mathlib's `Nat.cast_card_eq_zero`.
 * `TauCeti.pow_pow_totient_eq_self`: `x ^ q ^ φ(n) = x` whenever `x ^ n = 1` and `q` is prime to
   `n`.
-* `TauCeti.pow_pow_card_div_gcd_eq_one`: in a group of order `N`,
-  `(x ^ d) ^ (N / gcd(N, d)) = 1`, and its additive counterpart.
+* `TauCeti.pow_pow_div_gcd_eq_one`: `(x ^ d) ^ (n / gcd(n, d)) = 1` whenever `x ^ n = 1`, and its
+  additive counterpart.
 * `TauCeti.mul_pow_eq_of_sq_eq_one`: in a commutative monoid, exponents of elements squaring to
   `1` only matter modulo `2`.
 * `TauCeti.coprime_orderOf_of_mul_mul_inv_eq_pow`,
@@ -111,16 +111,17 @@ theorem pow_pow_totient_eq_self {M : Type*} [Monoid M] {q n : ℕ} (hq : q.Copri
     (hx : x ^ n = 1) : x ^ q ^ n.totient = x := by
   rw [pow_eq_pow_mod _ hx, Nat.ModEq.pow_totient hq, ← pow_eq_pow_mod _ hx, pow_one]
 
-/-- In a group of order `N`, every `d`-th power is killed by the `(N / gcd(N, d))`-th power map:
-`(x ^ d) ^ (N / gcd(N, d)) = 1`. For an infinite group `N = 0` and the exponent is `0`. -/
-@[to_additive nsmul_nsmul_card_div_gcd_eq_zero
-/-- In an additive group of order `N`, every `d`-th multiple is killed by multiplication by
-`N / gcd(N, d)`: `(N / gcd(N, d)) • d • x = 0`. For an infinite group `N = 0`. -/]
-theorem pow_pow_card_div_gcd_eq_one {G : Type*} [Group G] (x : G) (d : ℕ) :
-    (x ^ d) ^ (Nat.card G / (Nat.card G).gcd d) = 1 := by
-  -- `d * (N / g) = N * (d / g)` with `g = gcd(N, d)` dividing both `N` and `d`.
+/-- If `x ^ n = 1` in a monoid, then every power `x ^ d` is killed by the `(n / gcd(n, d))`-th
+power map: `(x ^ d) ^ (n / gcd(n, d)) = 1`. In a group of order `N` this applies with `n = N`
+(Mathlib's `pow_card_eq_one'`). -/
+@[to_additive nsmul_nsmul_div_gcd_eq_zero
+/-- If `n • x = 0` in an additive monoid, then every multiple `d • x` is killed by multiplication
+by `n / gcd(n, d)`: `(n / gcd(n, d)) • d • x = 0`. -/]
+theorem pow_pow_div_gcd_eq_one {M : Type*} [Monoid M] {x : M} {n : ℕ} (hx : x ^ n = 1) (d : ℕ) :
+    (x ^ d) ^ (n / n.gcd d) = 1 := by
+  -- `d * (n / g) = n * (d / g)` with `g = gcd(n, d)` dividing both `n` and `d`.
   rw [← pow_mul, ← Nat.mul_div_assoc _ (Nat.gcd_dvd_left _ _), mul_comm d,
-    Nat.mul_div_assoc _ (Nat.gcd_dvd_right _ _), pow_mul, pow_card_eq_one', one_pow]
+    Nat.mul_div_assoc _ (Nat.gcd_dvd_right _ _), pow_mul, hx, one_pow]
 
 /-- **Only parities matter for `2`-torsion exponents.** In a commutative monoid whose elements
 `u, v, w, z` square to `1`, an identity between products of their powers holds as soon as the

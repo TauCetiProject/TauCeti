@@ -22,9 +22,10 @@ This is the group theory behind the `n`-th power residue criteria: applied to th
 of a finite field it decides which elements are `n`-th powers, and the kernel of the `d`-th power
 map (of order `g`, Mathlib's `IsCyclic.card_powMonoidHom_ker`) counts their roots.
 
-The inclusion of the image in the kernel holds in any group of order `N`; it is
-`TauCeti.pow_pow_card_div_gcd_eq_one` in `TauCeti.GroupTheory.OrderOfElement.Basic`. That the
-`d`-th powers are the `gcd(N, d)`-th powers holds in any commutative group of order `N`; it is
+The inclusion of the image in the kernel holds in any group of order `N`, indeed for any `x` with
+`x ^ N = 1` in a monoid; it is `TauCeti.pow_pow_div_gcd_eq_one` in
+`TauCeti.GroupTheory.OrderOfElement.Basic`. That the `d`-th powers are the `gcd(N, d)`-th powers
+holds in any commutative group of order `N`, indeed of exponent dividing `N`; it is
 `TauCeti.range_powMonoidHom_gcd` in `TauCeti.Algebra.Group.PowMonoidHom`.
 
 ## Main results
@@ -66,7 +67,7 @@ theorem range_powMonoidHom_eq_ker (d : ℕ) :
   -- The image lies in the kernel, and both have `N / gcd(N, d)` elements.
   refine Subgroup.eq_of_le_of_card_ge ?_ ?_
   · rintro _ ⟨x, rfl⟩
-    exact TauCeti.pow_pow_card_div_gcd_eq_one x d
+    exact TauCeti.pow_pow_div_gcd_eq_one pow_card_eq_one' d
   · rw [card_powMonoidHom_ker, card_powMonoidHom_range,
       Nat.gcd_eq_right (Nat.div_dvd_of_dvd (Nat.gcd_dvd_left _ _))]
 
