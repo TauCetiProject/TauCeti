@@ -78,15 +78,6 @@ private theorem glueKey_of_gt {y : α} (hy : x < y) :
 private theorem glueKey_snd (y : α) : (glueKey m x L R y).2 = R.part y :=
   rfl
 
-/-- In a noncrossing partition, positions `a < b < c < d` with `a, c` in a common part and `b, d`
-in a common part all lie in one part. -/
-private theorem part_eq_of_isNoncrossing {t : Finset α} {Q : Finpartition t}
-    (hQ : Q.IsNoncrossing) {a b c d : α} (ha : a ∈ t) (hb : b ∈ t) (hc : c ∈ t) (hd : d ∈ t)
-    (hac : Q.part a = Q.part c) (hbd : Q.part b = Q.part d) (hab : a < b) (hbc : b < c)
-    (hcd : c < d) : Q.part a = Q.part b :=
-  Finpartition.isNoncrossing_iff_part.1 hQ a ha b hb c (hac ▸ Q.mem_part_self.2 hc) d
-    (hbd ▸ Q.mem_part_self.2 hd) hab hbc hcd
-
 /-- The glued partition is noncrossing when its two pieces are. -/
 private theorem isNoncrossing_glue (hm : ∀ y ∈ s, m ≤ y) (hL : L.IsNoncrossing)
     (hR : R.IsNoncrossing) : (glue s m x L R).IsNoncrossing := by
@@ -104,7 +95,7 @@ private theorem isNoncrossing_glue (hm : ∀ y ∈ s, m ≤ y) (hL : L.IsNoncros
     have hax := hab.trans hbx
     simp only [glueKey_of_lt hax, glueKey_of_lt hbx, glueKey_of_lt hcx, glueKey_of_lt hdx,
       Prod.mk.injEq, and_true] at hac hbd ⊢
-    exact part_eq_of_isNoncrossing hL (mem_filter.2 ⟨ha, hax⟩) (mem_filter.2 ⟨hb, hbx⟩)
+    exact hL.part_eq_part (mem_filter.2 ⟨ha, hax⟩) (mem_filter.2 ⟨hb, hbx⟩)
       (mem_filter.2 ⟨hc, hcx⟩) (mem_filter.2 ⟨hd, hdx⟩) hac hbd hab hbc hcd
   · -- The last position is `x`, so `b` lies in the part of `m`.
     have hbx := hbc.trans hcd
@@ -115,7 +106,7 @@ private theorem isNoncrossing_glue (hm : ∀ y ∈ s, m ≤ y) (hL : L.IsNoncros
     rcases (hm a ha).eq_or_lt with rfl | hma
     · rfl
     · have hmL := L.part_nonempty.1 (hbd ▸ L.part_nonempty.2 (mem_filter.2 ⟨hb, hbx⟩))
-      exact (part_eq_of_isNoncrossing hL hmL (mem_filter.2 ⟨ha, hax⟩) (mem_filter.2 ⟨hb, hbx⟩)
+      exact (hL.part_eq_part hmL (mem_filter.2 ⟨ha, hax⟩) (mem_filter.2 ⟨hb, hbx⟩)
         (mem_filter.2 ⟨hc, hcd⟩) hbd.symm hac hma hab hbc).symm
   · -- The last position is after `x`, which forces all four positions after `x`.
     have hgt {y : α} (hy : y ∈ s) (hne : (glueKey m x L R y).2.Nonempty) : x < y := by
@@ -128,7 +119,7 @@ private theorem isNoncrossing_glue (hm : ∀ y ∈ s, m ≤ y) (hL : L.IsNoncros
       rw [hac, glueKey_snd, R.part_nonempty]; exact mem_filter.2 ⟨hc, hcx⟩
     simp only [glueKey_of_gt hax, glueKey_of_gt hbx, glueKey_of_gt hcx, glueKey_of_gt hxd,
       Prod.mk.injEq, true_and] at hac hbd ⊢
-    exact part_eq_of_isNoncrossing hR (mem_filter.2 ⟨ha, hax⟩) (mem_filter.2 ⟨hb, hbx⟩)
+    exact hR.part_eq_part (mem_filter.2 ⟨ha, hax⟩) (mem_filter.2 ⟨hb, hbx⟩)
       (mem_filter.2 ⟨hc, hcx⟩) (mem_filter.2 ⟨hd, hxd⟩) hac hbd hab hbc hcd
 
 /-- In the glued partition, `x` lies in the part of `m`. -/
