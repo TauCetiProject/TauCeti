@@ -14,7 +14,8 @@ public import Mathlib.Analysis.InnerProductSpace.Convex
 A **crosscut** of a plane domain `U` is a simple path whose two endpoints lie on the frontier of
 `U` and whose open interior lies in `U`. Crosscuts are the basic geometric objects used to define
 prime ends: a prime end is represented by a nested null chain of crosscuts, with two chains
-identified when they eventually select the same side of each other.
+identified when every domain cut off by either contains a domain cut off by the other
+(`TauCeti.NullChainEquivalent`).
 
 This file introduces the crosscut predicate at the level of paths, proves the elementary API that
 later prime-end constructions need, and supplies its fundamental nondegenerate examples: chords
