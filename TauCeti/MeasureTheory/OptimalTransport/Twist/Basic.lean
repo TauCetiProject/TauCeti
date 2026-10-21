@@ -10,6 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.Dual
 public import TauCeti.MeasureTheory.OptimalTransport.Disintegration
 public import TauCeti.MeasureTheory.OptimalTransport.Duality.Certificate
+import TauCeti.Analysis.InnerProductSpace.Dual
 
 /-!
 # The twist condition and uniqueness of contact partners
@@ -67,7 +68,8 @@ of `φ` is a hypothesis, to be supplied by a Rademacher-type theorem for the pot
 * `TauCeti.fderiv_norm_sub_sq_div_two` and `TauCeti.fderiv_norm_sub_sq_div_two_injective` — the
   quadratic cost `‖x - y‖ ^ 2 / 2` on a real inner product space has `x`-derivative
   `⟪x - y, ·⟫`, and is therefore twisted;
-* `TauCeti.fderiv_sqrt_one_add_norm_sub_sq`, `TauCeti.neg_fderiv_sqrt_one_add_norm_sub_sq` and
+* `TauCeti.fderiv_sqrt_one_add_norm_sub_sq`, `TauCeti.neg_fderiv_sqrt_one_add_norm_sub_sq`,
+  `TauCeti.toDual_symm_neg_fderiv_sqrt_one_add_norm_sub_sq` and
   `TauCeti.fderiv_sqrt_one_add_norm_sub_sq_injective` — the cost `√(1 + ‖x - y‖ ^ 2)` on a real
   inner product space has momentum `⟪(y - x) / √(1 + ‖y - x‖ ^ 2), ·⟫` at `x`, and is therefore
   twisted;
@@ -194,7 +196,8 @@ theorem fderiv_sqrt_one_add_norm_sub_sq {F : Type*} [NormedAddCommGroup F]
   refine (HasFDerivAt.sqrt (((hasFDerivAt_id x).sub_const y).norm_sq.const_add 1)
     hpos.ne').fderiv.trans ?_
   ext v
-  simp [innerSL_apply_apply]
+  simp only [id_eq, one_div, mul_inv_rev, map_sub, ContinuousLinearMap.comp_id, smul_apply,
+    sub_apply, innerSL_apply_apply, nsmul_eq_mul, Nat.cast_ofNat, smul_eq_mul]
   field_simp
 
 /-- The momentum `-Dₓ c (x, y)` of `y` at `x` for the cost `√(1 + ‖x - y‖ ^ 2)` is the inner
@@ -205,8 +208,18 @@ theorem neg_fderiv_sqrt_one_add_norm_sub_sq {F : Type*} [NormedAddCommGroup F]
       innerSL ℝ (OpenPartialHomeomorph.univUnitBall (y - x)) := by
   rw [fderiv_sqrt_one_add_norm_sub_sq, norm_sub_rev, OpenPartialHomeomorph.univUnitBall_apply]
   ext v
-  simp [innerSL_apply_apply]
+  simp only [map_sub, neg_apply, smul_apply, sub_apply, innerSL_apply_apply, smul_eq_mul,
+    map_smul]
   ring
+
+/-- On a real Hilbert space, the inverse Riesz isomorphism sends the momentum `-Dₓ c (x, y)` of `y`
+at `x` for the cost `√(1 + ‖x - y‖ ^ 2)` to the image `(y - x) / √(1 + ‖y - x‖ ^ 2)` of `y - x` in
+the unit ball. -/
+theorem toDual_symm_neg_fderiv_sqrt_one_add_norm_sub_sq {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℝ F] [CompleteSpace F] (x y : F) :
+    (InnerProductSpace.toDual ℝ F).symm (-fderiv ℝ (fun x' ↦ √(1 + ‖x' - y‖ ^ 2)) x) =
+      OpenPartialHomeomorph.univUnitBall (y - x) := by
+  rw [neg_fderiv_sqrt_one_add_norm_sub_sq, InnerProductSpace.toDual_symm_innerSL]
 
 /-- **The cost `√(1 + ‖x - y‖ ^ 2)` is twisted.** On a real inner product space, its
 `x`-derivative determines `y`. -/

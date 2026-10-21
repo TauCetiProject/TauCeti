@@ -8,7 +8,6 @@ module
 public import TauCeti.MeasureTheory.OptimalTransport.Twist.CExponential
 import TauCeti.Analysis.Calculus.Deriv.Second
 import TauCeti.Analysis.InnerProductSpace.CompleteSquare
-import TauCeti.Analysis.InnerProductSpace.Dual
 
 /-!
 # The Ma–Trudinger–Wang tensor and conditions
@@ -32,9 +31,9 @@ momentum coordinates it is minus the mixed fourth derivative `D²_q D²_x` evalu
 
 The tensor at `(x, y)` only sees the `c`-exponential at momenta near the momentum `p` of `y`. It
 reflects the cost only when `V` is a neighbourhood of `y`: otherwise `cExp c V x` may take
-unspecified values at momenta arbitrarily close to `p` (for `V = {y}` it is constant, and the
-tensor vanishes). So, for a topology on the target space, the conditions below quantify over the
-target points in the interior of `V`.
+unspecified values at momenta arbitrarily close to `p` (for `V = {y}` it equals `y` at `p` and
+one arbitrary default point at every other momentum, so the tensor vanishes). So, for a topology
+on the target space, the conditions below quantify over the target points in the interior of `V`.
 
 The sign of this tensor on *orthogonal* pairs, those with `η ξ = 0`, decides the regularity of
 optimal transport maps. The **weak Ma–Trudinger–Wang condition** (A3w) asks that
@@ -309,8 +308,8 @@ private theorem eventually_cExp_sqrt_one_add_norm_sub_sq_mem {V : Set F} {x y : 
       x + OpenPartialHomeomorph.univUnitBall.symm
         ((toDual ℝ F).symm (-fderiv ℝ (fun x' ↦ √(1 + ‖x' - y‖ ^ 2)) x + s • η)) ∈ V := by
   set p := -fderiv ℝ (fun x' ↦ √(1 + ‖x' - y‖ ^ 2)) x with hp_def
-  have hp : (toDual ℝ F).symm p = OpenPartialHomeomorph.univUnitBall (y - x) := by
-    rw [hp_def, neg_fderiv_sqrt_one_add_norm_sub_sq, toDual_symm_innerSL]
+  have hp : (toDual ℝ F).symm p = OpenPartialHomeomorph.univUnitBall (y - x) :=
+    toDual_symm_neg_fderiv_sqrt_one_add_norm_sub_sq x y
   have hball : (toDual ℝ F).symm p ∈ Metric.ball (0 : F) 1 :=
     hp ▸ OpenPartialHomeomorph.univUnitBall.map_source (mem_univ _)
   have hline : Continuous fun s : ℝ ↦ (toDual ℝ F).symm (p + s • η) := by fun_prop
@@ -344,8 +343,10 @@ private theorem deriv_deriv_sqrt_one_add_norm_sub_sq_cExp {V : Set F} {x ξ : F}
       fun t ↦ √((1 + σ ^ 2 * ‖q‖ ^ 2) + (-2 * σ * q ξ) * t + ‖ξ‖ ^ 2 * t ^ 2) := by
     funext t
     rw [norm_add_smul_sub_sq, sub_add_cancel_left, real_inner_comm]
-    simp [norm_smul, mul_pow, real_inner_smul_left]
-    ring_nf
+    simp only [norm_neg, norm_smul, Real.norm_eq_abs, norm_map, mul_pow, sq_abs, inner_neg_left,
+      real_inner_smul_left, toDual_symm_apply, mul_neg, neg_mul]
+    congr 1
+    ring
   have hA : 1 + σ ^ 2 * ‖q‖ ^ 2 = (1 - ‖q‖ ^ 2)⁻¹ := by
     rw [hσsq]
     field_simp
@@ -391,10 +392,12 @@ theorem mtwTensor_sqrt_one_add_norm_sub_sq {V : Set F} {x y ξ : F} {η : Strong
     congr 2
     · simp [hηξ]
     · rw [← LinearIsometryEquiv.norm_map (toDual ℝ F).symm]
-      simp [norm_add_sq_real, norm_smul, mul_pow, hsymm]
+      simp only [map_add, map_smul, norm_add_sq_real, norm_map, toDual_symm_apply, hsymm,
+        smul_eq_mul, norm_smul, Real.norm_eq_abs, mul_pow, sq_abs, neg_mul]
       ring
   have hpη : η ((toDual ℝ F).symm p) = ρ⁻¹ * η (y - x) := by
-    rw [hp, toDual_symm_innerSL, map_smul, smul_eq_mul]
+    rw [hp_def, toDual_symm_neg_fderiv_sqrt_one_add_norm_sub_sq,
+      OpenPartialHomeomorph.univUnitBall_apply, map_smul, smul_eq_mul]
   have hpξ : p ξ = ρ⁻¹ * ⟪y - x, ξ⟫ := by
     rw [hp]
     simp [innerSL_apply_apply, inner_sub_left]

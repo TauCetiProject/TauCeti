@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.FDeriv
 public import TauCeti.MeasureTheory.OptimalTransport.Twist.Basic
-import TauCeti.Analysis.InnerProductSpace.Dual
 
 /-!
 # The `c`-exponential, `c`-segments and `c`-convex sets
@@ -352,10 +351,10 @@ theorem cExp_sqrt_one_add_norm_sub_sq {V : Set F} {x : F} {q : StrongDual ℝ F}
       x + OpenPartialHomeomorph.univUnitBall.symm ((InnerProductSpace.toDual ℝ F).symm q) := by
   have hmom : -fderiv ℝ (fun x' ↦ √(1 + ‖x' - (x + OpenPartialHomeomorph.univUnitBall.symm
       ((InnerProductSpace.toDual ℝ F).symm q))‖ ^ 2)) x = q := by
-    rw [neg_fderiv_sqrt_one_add_norm_sub_sq, add_sub_cancel_left,
+    apply (InnerProductSpace.toDual ℝ F).symm.injective
+    rw [toDual_symm_neg_fderiv_sqrt_one_add_norm_sub_sq, add_sub_cancel_left,
       OpenPartialHomeomorph.univUnitBall.right_inv
-        (by simpa [OpenPartialHomeomorph.univUnitBall_target] using hq),
-      InnerProductSpace.innerSL_toDual_symm]
+        (by simpa [OpenPartialHomeomorph.univUnitBall_target] using hq)]
   exact (cExp_eq_iff (fderiv_sqrt_one_add_norm_sub_sq_injective x).injOn hV ⟨_, hV, hmom⟩).2 hmom
 
 end SqrtOneAddNormSubSq

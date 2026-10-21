@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.Deriv.CompMul
+public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Inv
@@ -17,10 +18,11 @@ import Mathlib.Analysis.Calculus.Deriv.Pow
 
 Computations of the second derivative `deriv (deriv f)` of a function of one variable.
 
-The second derivative of `fun x ↦ f (c * x)` is `c ^ 2` times the second derivative of `f`
-at `c * x`. As for `deriv_comp_mul_left`, no differentiability of `f` is needed, since Mathlib's
-derivative is `0` wherever it is undefined. Mathlib's `iteratedDeriv_comp_const_smul` states the
-corresponding formula for higher iterated derivatives under a `ContDiff` hypothesis.
+The `n`-th iterated derivative of `fun x ↦ f (c * x)` is `c ^ n` times the `n`-th iterated
+derivative of `f` at `c * x`; in particular its second derivative is `c ^ 2` times the second
+derivative of `f` at `c * x`. As for `deriv_comp_mul_left`, no differentiability of `f` is needed,
+since Mathlib's derivative is `0` wherever it is undefined. Mathlib's
+`iteratedDeriv_comp_const_smul` states the same formula under a `ContDiff` hypothesis.
 
 The second derivative of a quadratic polynomial `a + b s + c s ^ 2` is the constant `2 c`.
 
@@ -30,7 +32,8 @@ computed where `Q` is positive. Since `2 Q Q'' - Q' ^ 2` is the constant `4 a c 
 
 ## Main results
 
-* `TauCeti.deriv_deriv_comp_mul_left`: the second derivative of `fun x ↦ f (c * x)`.
+* `TauCeti.iteratedDeriv_comp_mul_left`: the iterated derivatives of `fun x ↦ f (c * x)`, and
+  `TauCeti.deriv_deriv_comp_mul_left` its second derivative.
 * `TauCeti.deriv_deriv_quadratic`: the second derivative of `s ↦ a + b s + c s ^ 2`.
 * `TauCeti.deriv_deriv_sqrt_quadratic`: the second derivative of `s ↦ √(a + b s + c s ^ 2)`, and
   `TauCeti.deriv_deriv_sqrt_quadratic_zero` its value at `0`.
@@ -46,13 +49,23 @@ section CompMul
 
 variable {𝕜 F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
+/-- The `n`-th iterated derivative of `fun x ↦ f (c * x)` is
+`fun x ↦ c ^ n • iteratedDeriv n f (c * x)`, with no differentiability assumption on `f`. -/
+theorem iteratedDeriv_comp_mul_left (n : ℕ) (c : 𝕜) (f : 𝕜 → F) :
+    iteratedDeriv n (f <| c * ·) = fun x ↦ c ^ n • iteratedDeriv n f (c * x) := by
+  induction n with
+  | zero => simp only [iteratedDeriv_zero, pow_zero, one_smul]
+  | succ n ih =>
+    funext x
+    rw [iteratedDeriv_succ, ih, deriv_fun_const_smul_field, deriv_comp_mul_left,
+      iteratedDeriv_succ, smul_smul, pow_succ]
+
 /-- The second derivative of `fun x ↦ f (c * x)` at `x` is `c ^ 2 • deriv (deriv f) (c * x)`,
 with no differentiability assumption on `f`. -/
 theorem deriv_deriv_comp_mul_left (c : 𝕜) (f : 𝕜 → F) (x : 𝕜) :
     deriv (deriv (f <| c * ·)) x = c ^ 2 • deriv (deriv f) (c * x) := by
-  have h : deriv (f <| c * ·) = fun y ↦ c • deriv f (c * y) :=
-    funext fun y ↦ deriv_comp_mul_left c f y
-  rw [h, deriv_fun_const_smul_field, deriv_comp_mul_left, smul_smul, sq]
+  simpa only [iteratedDeriv_succ (n := 1), iteratedDeriv_one] using
+    congrFun (iteratedDeriv_comp_mul_left 2 c f) x
 
 end CompMul
 
@@ -68,7 +81,7 @@ theorem hasDerivAt_quadratic (a b c t : 𝕜) :
   convert h using 1
   · ext u
     simp only [id, Pi.add_apply]
-  · simp
+  · simp only [mul_one, Nat.cast_ofNat, Nat.add_one_sub_one, pow_one]
     ring
 
 /-- The second derivative of a quadratic polynomial `a + b * s + c * s ^ 2` is `2 * c`. -/
