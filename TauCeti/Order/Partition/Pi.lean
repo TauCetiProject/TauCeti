@@ -9,6 +9,7 @@ public import Mathlib.Data.Fintype.BigOperators
 public import Mathlib.Order.Partition.Finpartition
 import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
+import TauCeti.Order.Partition.Finpartition
 
 /-!
 # Maps into the parts of a finite partition
@@ -33,6 +34,8 @@ supplies both facts.
   non-injective cell assignment.
 * `Finpartition.sum_prod_card_of_not_injective_le`: the same bound for the total size of the boxes
   of non-injective cell assignments.
+* `Finpartition.sum_prod_card_of_not_injective_le_of_card_le`: when every part has at most `m`
+  elements, that total size is at most `(card ι).choose 2 * m * #s ^ (card ι - 1)`.
 -/
 
 public section
@@ -163,5 +166,18 @@ theorem sum_prod_card_of_not_injective_le :
   split_ifs with hφ
   · rw [filter_false_of_mem fun g hg ↦ by rwa [hpart hg, ← hinj, not_not], card_empty]
   · rw [filter_true_of_mem fun g hg ↦ by rwa [hpart hg, ← hinj], Fintype.card_piFinset]
+
+/-- If every part of `P` has at most `m` elements, the boxes of the non-injective cell assignments
+have total size at most `(card ι).choose 2 * m * #s ^ (card ι - 1)`. -/
+theorem sum_prod_card_of_not_injective_le_of_card_le {m : ℕ} (hm : ∀ A ∈ P.parts, #A ≤ m) :
+    ∑ φ : ι → P.parts with ¬Injective φ, ∏ i, #(φ i : Finset α) ≤
+      (Fintype.card ι).choose 2 * m * #s ^ (Fintype.card ι - 1) := by
+  grw [P.sum_prod_card_of_not_injective_le, P.sum_sq_card_parts_le hm]
+  -- The binomial coefficient vanishes unless there are at least two coordinates.
+  obtain h | h := lt_or_ge (Fintype.card ι) 2
+  · simp [Nat.choose_eq_zero_of_lt h]
+  · obtain ⟨k, hk⟩ := Nat.exists_eq_add_of_le h
+    rw [hk, Nat.add_sub_cancel_left, show 2 + k - 1 = k + 1 by omega]
+    exact le_of_eq (by rw [pow_succ]; ac_rfl)
 
 end Finpartition

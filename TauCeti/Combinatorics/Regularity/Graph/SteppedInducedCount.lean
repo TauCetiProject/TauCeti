@@ -165,12 +165,8 @@ theorem steppedInducedGraphCount3_le_coarseInducedGraphEstimate3_add
     ← sum_filter_add_sum_filter_not univ fun φ ↦ Injective φ]
   -- The assignments with a repeated part have small total volume.
   have hvol : ∑ φ : Fin 3 → R.parts with ¬Injective φ, ∏ i, #(φ i : Finset V) ≤
-      3 * m * Fintype.card V ^ 2 :=
-    calc _ ≤ 3 * Fintype.card V * ∑ A ∈ R.parts, #A ^ 2 := by
-          simpa using R.sum_prod_card_of_not_injective_le (ι := Fin 3)
-      _ ≤ 3 * Fintype.card V * (m * Fintype.card V) := by
-          grw [R.sum_sq_card_parts_le hm, card_univ]
-      _ = 3 * m * Fintype.card V ^ 2 := by ring
+      3 * m * Fintype.card V ^ 2 := by
+    simpa using R.sum_prod_card_of_not_injective_le_of_card_le (ι := Fin 3) hm
   have hvol' : ∑ φ : Fin 3 → R.parts with ¬Injective φ, ∏ i, (#(φ i : Finset V) : ℝ) ≤
       3 * m * (Fintype.card V : ℝ) ^ 2 := by
     exact_mod_cast hvol

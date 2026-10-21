@@ -11,7 +11,7 @@ public import Mathlib.Basic.Real.Basic
 public import Mathlib.Data.Fintype.Pi
 public import TauCeti.Order.Partition.Pi
 import Mathlib.Algebra.Order.BigOperators.Ring.Finset
-import TauCeti.Order.Partition.Finpartition
+import TauCeti.Combinatorics.SimpleGraph.Density
 
 /-!
 # Labelled induced three-vertex counts and their coarse prediction
@@ -132,11 +132,8 @@ theorem inducedGraphCount3_le_sum_card_induced_add (P : Finpartition (univ : Fin
           Injective g ∧ ∀ i j, J.Adj i j ↔ G.Adj (g i) (g j)}
       ≤ ∑ φ : Fin 3 → P.parts with ¬Injective φ, ∏ i, #(φ i : Finset V) :=
         sum_le_sum fun φ _ ↦ (card_filter_le _ _).trans_eq (Fintype.card_piFinset _)
-    _ ≤ 3 * Fintype.card V * ∑ A ∈ P.parts, #A ^ 2 := by
-        simpa using P.sum_prod_card_of_not_injective_le (ι := Fin 3)
-    _ ≤ 3 * Fintype.card V * (m * Fintype.card V) := by
-        grw [P.sum_sq_card_parts_le hm, card_univ]
-    _ = 3 * m * Fintype.card V ^ 2 := by ring
+    _ ≤ 3 * m * Fintype.card V ^ 2 := by
+        simpa using P.sum_prod_card_of_not_injective_le_of_card_le (ι := Fin 3) hm
 
 /-- The coarse prediction of `J.inducedGraphCount3 G` from a partition `P` of the vertices. Each
 assignment `φ` of the vertices of `J` to three distinct parts of `P` contributes the volume
@@ -159,9 +156,7 @@ theorem coarseInducedGraphEstimate3_def (P : Finpartition (univ : Finset V)) :
 theorem coarseInducedGraphEstimate3_nonneg (P : Finpartition (univ : Finset V)) :
     0 ≤ J.coarseInducedGraphEstimate3 G P := by
   rw [coarseInducedGraphEstimate3_def]
-  refine sum_nonneg fun φ _ ↦ mul_nonneg (by positivity) (prod_nonneg fun p _ ↦ ?_)
-  split_ifs
-  · exact_mod_cast G.edgeDensity_nonneg _ _
-  · exact sub_nonneg.2 (mod_cast G.edgeDensity_le_one _ _)
+  exact sum_nonneg fun φ _ ↦ mul_nonneg (by positivity)
+    (prod_nonneg fun p _ ↦ (ite_edgeDensity_mem_Icc G (J.Adj p.1.1 p.1.2) _ _).1)
 
 end SimpleGraph
