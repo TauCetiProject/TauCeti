@@ -16,7 +16,7 @@ Let `T(x, y, z, w)` be a quadrilinear form which is antisymmetric in its first p
 last pair of arguments and satisfies the first Bianchi identity
 `T(x, y, z, w) + T(y, z, x, w) + T(z, x, y, w) = 0`, as the Riemann curvature tensor
 `Rm(x, y, z, w) = ⟨R(x, y)z, w⟩` of a metric-compatible torsion-free connection does.
-Then `T` is determined by its sectional values `T(u, v, v, u)`: this file proves the explicit
+Then `6 T` is determined by the sectional values `T(u, v, v, u)`: this file proves the explicit
 polarization identity expressing `6 T(a, b, c, d)` as a signed sum of fourteen sectional values,
 and deduces that two such tensors with the same sectional values agree once `6` is a regular
 scalar.
@@ -31,7 +31,7 @@ The identity holds over an arbitrary commutative ring and uses no pair-interchan
 
 * `LinearMap.six_mul_apply_polarization`: the polarization identity.
 * `LinearMap.eq_of_forall_sectional_eq`: a curvature-type tensor is determined by its sectional
-  values.
+  values when `6` is regular.
 
 ## References
 
@@ -47,10 +47,12 @@ variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
 
 /-- The polarization identity for curvature-type tensors: a quadrilinear form `T` which is
 antisymmetric in its first and in its last pair of arguments and satisfies the first Bianchi
-identity is recovered from its sectional values `Q(u, v) = T(u, v, v, u)` by
+identity has `6 T` expressed through its sectional values `Q(u, v) = T(u, v, v, u)` by
 `6 T(a, b, c, d) = Q(a + d, b + c) - Q(a + c, b + d) - Q(a + d, b) - Q(a + d, c)
   + Q(a + c, b) + Q(a + c, d) - Q(a, b + c) + Q(a, b + d) - Q(d, b + c) + Q(c, b + d)
-  + Q(a, c) - Q(a, d) + Q(d, b) - Q(c, b)`. -/
+  + Q(a, c) - Q(a, d) + Q(d, b) - Q(c, b)`.
+No regularity of `6` is assumed, so this recovers `6 T` rather than `T` itself; see
+`LinearMap.eq_of_forall_sectional_eq` for the uniqueness of `T` when `6` is regular. -/
 theorem six_mul_apply_polarization {T : M →ₗ[R] M →ₗ[R] M →ₗ[R] M →ₗ[R] R}
     (h₁ : ∀ x y z w, T x y z w = -T y x z w) (h₂ : ∀ x y z w, T x y z w = -T x y w z)
     (h₃ : ∀ x y z w, T x y z w + T y z x w + T z x y w = 0) (a b c d : M) :
