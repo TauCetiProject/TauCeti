@@ -53,6 +53,9 @@ design of the additive API follows that of Mathlib's `HahnSeries` in
   support exponents whose sum has period below a fixed cutoff form a finite set. In particular
   (`TauCeti.NovikovSeries.finite_setOf_add_eq`) each coefficient of the convolution is a finite
   sum.
+* `TauCeti.NovikovSeries.finite_setOf_period_add_add_lt` and
+  `TauCeti.NovikovSeries.finite_setOf_add_add_eq`: the same uniform cutoff finiteness for triples
+  of support exponents, on which associativity of the convolution rests.
 * `TauCeti.NovikovSeries.ofFinsupp_surjective_iff`: over a nontrivial coefficient type, every
   Novikov series is finitely supported if and only if `N = 0`.
 
@@ -192,6 +195,33 @@ theorem finite_setOf_add_eq_mul_ne_zero {R : Type*} [MulZeroClass R]
     {p : H × H | p.1 + p.2 = h ∧ a.coeff p.1 * b.coeff p.2 ≠ 0}.Finite :=
   (finite_setOf_add_eq a b h).subset fun _ hp =>
     ⟨hp.1, left_ne_zero_of_mul hp.2, right_ne_zero_of_mul hp.2⟩
+
+/-- Uniform cutoff finiteness for triple products: for Novikov series `a`, `b` and `c`, only
+finitely many triples `(u, v, w)` of support exponents have `N (u + v + w) < C`. -/
+theorem finite_setOf_period_add_add_lt {T : Type*} [Zero T] (a : NovikovSeries R H N)
+    (b : NovikovSeries S H N) (c : NovikovSeries T H N) (C : ℝ) :
+    {t : H × H × H | N (t.1 + t.2.1 + t.2.2) < C ∧ a.coeff t.1 ≠ 0 ∧ b.coeff t.2.1 ≠ 0 ∧
+      c.coeff t.2.2 ≠ 0}.Finite := by
+  obtain ⟨ma, hma⟩ := a.bddBelow_image_support
+  obtain ⟨mb, hmb⟩ := b.bddBelow_image_support
+  obtain ⟨mc, hmc⟩ := c.bddBelow_image_support
+  refine ((a.finite_lt (C - mb - mc)).prod
+    ((b.finite_lt (C - ma - mc)).prod (c.finite_lt (C - ma - mb)))).subset ?_
+  rintro ⟨u, v, w⟩ ⟨huvw, hu, hv, hw⟩
+  have hu' : ma ≤ N u := hma ⟨u, hu, rfl⟩
+  have hv' : mb ≤ N v := hmb ⟨v, hv, rfl⟩
+  have hw' : mc ≤ N w := hmc ⟨w, hw, rfl⟩
+  rw [map_add, map_add] at huvw
+  exact ⟨⟨hu, by linarith⟩, ⟨hv, by linarith⟩, ⟨hw, by linarith⟩⟩
+
+/-- For Novikov series `a`, `b` and `c` and an exponent `h`, only finitely many triples
+`(u, v, w)` with `u + v + w = h` have all three coefficients nonzero. -/
+theorem finite_setOf_add_add_eq {T : Type*} [Zero T] (a : NovikovSeries R H N)
+    (b : NovikovSeries S H N) (c : NovikovSeries T H N) (h : H) :
+    {t : H × H × H | t.1 + t.2.1 + t.2.2 = h ∧ a.coeff t.1 ≠ 0 ∧ b.coeff t.2.1 ≠ 0 ∧
+      c.coeff t.2.2 ≠ 0}.Finite :=
+  (finite_setOf_period_add_add_lt a b c (N h + 1)).subset fun t ht =>
+    ⟨by rw [ht.1]; exact lt_add_one _, ht.2⟩
 
 end Convolution
 

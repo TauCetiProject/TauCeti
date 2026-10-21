@@ -27,7 +27,7 @@ All ring laws are proved by finite-support arguments. The basic tool is
 `NovikovSeries.coeff_mul_eq_sum`: a coefficient of a product may be computed as a sum over any
 finite set of pairs adding up to the exponent which contains every pair of support exponents.
 Associativity rests on the uniform cutoff lemma `NovikovSeries.finite_setOf_period_add_add_lt`
-for triples of support exponents.
+for triples of support exponents, from `TauCeti.RingTheory.NovikovSeries.Basic`.
 
 The arrangement of the instances follows Mathlib's `HahnSeries` in
 `Mathlib/RingTheory/HahnSeries/Multiplication.lean`; the support arguments are different, since
@@ -51,10 +51,10 @@ The arrangement of the instances follows Mathlib's `HahnSeries` in
   supports.
 * `TauCeti.NovikovSeries.single_mul_single`: monomials multiply by adding exponents.
 * `TauCeti.NovikovSeries.isUnit_single`: over an additive group, a monomial with unit coefficient
-  is a unit, with inverse the monomial at the negated exponent.
-* `TauCeti.NovikovSeries.ofAddMonoidAlgebra_injective`: the group ring embeds into Novikov series;
-  by `TauCeti.NovikovSeries.ofFinsupp_surjective_iff` this embedding is onto exactly when `N = 0`
-  (for nontrivial `R`).
+  is a unit.
+* `TauCeti.NovikovSeries.ofAddMonoidAlgebra_injective`: the group ring embeds into Novikov series.
+  Over an additive group `H` and for nontrivial `R`, by
+  `TauCeti.NovikovSeries.ofFinsupp_surjective_iff` this embedding is onto exactly when `N = 0`.
 
 ## References
 
@@ -77,40 +77,7 @@ namespace TauCeti
 
 namespace NovikovSeries
 
-variable {R S T H : Type*}
-
-section Finite
-
-variable [Zero R] [Zero S] [Zero T] [AddZeroClass H] {N : H →+ ℝ}
-
-/-- Uniform cutoff finiteness for triple products: for Novikov series `a`, `b` and `c`, only
-finitely many triples `(u, v, w)` of support exponents have `N (u + v + w) < C`. -/
-theorem finite_setOf_period_add_add_lt (a : NovikovSeries R H N) (b : NovikovSeries S H N)
-    (c : NovikovSeries T H N) (C : ℝ) :
-    {t : H × H × H | N (t.1 + t.2.1 + t.2.2) < C ∧ a.coeff t.1 ≠ 0 ∧ b.coeff t.2.1 ≠ 0 ∧
-      c.coeff t.2.2 ≠ 0}.Finite := by
-  obtain ⟨ma, hma⟩ := a.bddBelow_image_support
-  obtain ⟨mb, hmb⟩ := b.bddBelow_image_support
-  obtain ⟨mc, hmc⟩ := c.bddBelow_image_support
-  refine ((a.finite_lt (C - mb - mc)).prod
-    ((b.finite_lt (C - ma - mc)).prod (c.finite_lt (C - ma - mb)))).subset ?_
-  rintro ⟨u, v, w⟩ ⟨huvw, hu, hv, hw⟩
-  have hu' : ma ≤ N u := hma ⟨u, mem_support.2 hu, rfl⟩
-  have hv' : mb ≤ N v := hmb ⟨v, mem_support.2 hv, rfl⟩
-  have hw' : mc ≤ N w := hmc ⟨w, mem_support.2 hw, rfl⟩
-  rw [map_add, map_add] at huvw
-  exact ⟨⟨hu, by linarith⟩, ⟨hv, by linarith⟩, ⟨hw, by linarith⟩⟩
-
-/-- For Novikov series `a`, `b` and `c` and an exponent `h`, only finitely many triples
-`(u, v, w)` with `u + v + w = h` have all three coefficients nonzero. -/
-theorem finite_setOf_add_add_eq (a : NovikovSeries R H N) (b : NovikovSeries S H N)
-    (c : NovikovSeries T H N) (h : H) :
-    {t : H × H × H | t.1 + t.2.1 + t.2.2 = h ∧ a.coeff t.1 ≠ 0 ∧ b.coeff t.2.1 ≠ 0 ∧
-      c.coeff t.2.2 ≠ 0}.Finite :=
-  (finite_setOf_period_add_add_lt a b c (N h + 1)).subset fun t ht =>
-    ⟨by rw [ht.1]; exact lt_add_one _, ht.2⟩
-
-end Finite
+variable {R S H : Type*}
 
 section Mul
 
@@ -163,6 +130,49 @@ theorem support_mul_subset (a b : NovikovSeries R H N) :
   obtain ⟨u, v, huv, hu, hv⟩ := exists_add_eq_of_coeff_mul_ne_zero (mem_support.1 hh)
   exact ⟨u, mem_support.2 hu, v, mem_support.2 hv, huv⟩
 
+/-- A coefficient of a product as a sum over a finite set `F`, mapped injectively by `f` onto a set
+of pairs adding up to `h` which contains every pair of support exponents. -/
+private theorem coeff_mul_eq_sum_of_injOn {ι : Type*} {a b : NovikovSeries R H N} {h : H}
+    {F : Finset ι} {f : ι → H × H} (hf : ∀ t ∈ F, (f t).1 + (f t).2 = h)
+    (hab : ∀ u v, u + v = h → a.coeff u ≠ 0 → b.coeff v ≠ 0 → ∃ t ∈ F, f t = (u, v))
+    (hinj : Set.InjOn f F) :
+    (a * b).coeff h = ∑ t ∈ F, a.coeff (f t).1 * b.coeff (f t).2 := by
+  classical
+  rw [coeff_mul_eq_sum (s := F.image f) (fun p hp => ?_) fun u v huv hu hv =>
+    mem_image.2 (hab u v huv hu hv), sum_image hinj]
+  obtain ⟨t, ht, rfl⟩ := mem_image.1 hp
+  exact hf t ht
+
+/-- A coefficient of a product regrouped along the fibres of a map `f` from a finite set `T` onto a
+set of pairs adding up to `h` which contains every pair of support exponents: if each term
+`a.coeff u * b.coeff v` is the sum of `g` over the fibre of `f` above `(u, v)`, then the
+coefficient is the sum of `g` over `T`. -/
+private theorem coeff_mul_eq_sum_fibre {ι : Type*} [DecidableEq H] {a b : NovikovSeries R H N}
+    {h : H} {T : Finset ι} {f : ι → H × H} (g : ι → R) (hf : ∀ t ∈ T, (f t).1 + (f t).2 = h)
+    (hab : ∀ u v, u + v = h → a.coeff u ≠ 0 → b.coeff v ≠ 0 → ∃ t ∈ T, f t = (u, v))
+    (hg : ∀ t ∈ T, a.coeff (f t).1 * b.coeff (f t).2 = ∑ t' ∈ T with f t' = f t, g t') :
+    (a * b).coeff h = ∑ t ∈ T, g t := by
+  rw [coeff_mul_eq_sum (s := T.image f) (fun p hp => ?_) fun u v huv hu hv =>
+    mem_image.2 (hab u v huv hu hv)]
+  · exact sum_image' _ hg
+  · obtain ⟨t, ht, rfl⟩ := mem_image.1 hp
+    exact hf t ht
+
+/-- The coefficient of `a * b` at `h` as a sum over the union of the pairs of support exponents of
+two products `a₁ * b₁` and `a₂ * b₂` adding up to `h`, provided these cover the pairs of support
+exponents of `a * b`. -/
+private theorem coeff_mul_eq_sum_union [DecidableEq H] {a b : NovikovSeries R H N}
+    (a₁ b₁ a₂ b₂ : NovikovSeries R H N) {h : H}
+    (hab : ∀ u v, a.coeff u ≠ 0 → b.coeff v ≠ 0 →
+      a₁.coeff u ≠ 0 ∧ b₁.coeff v ≠ 0 ∨ a₂.coeff u ≠ 0 ∧ b₂.coeff v ≠ 0) :
+    (a * b).coeff h = ∑ p ∈ (finite_setOf_add_eq a₁ b₁ h).toFinset ∪
+      (finite_setOf_add_eq a₂ b₂ h).toFinset, a.coeff p.1 * b.coeff p.2 := by
+  refine coeff_mul_eq_sum (fun p hp => ?_) fun u v huv hu hv => ?_
+  · rcases mem_union.1 hp with hp | hp <;> exact ((Set.Finite.mem_toFinset _).1 hp).1
+  · rcases hab u v hu hv with h₁ | h₂
+    · exact mem_union_left _ ((Set.Finite.mem_toFinset _).2 ⟨huv, h₁⟩)
+    · exact mem_union_right _ ((Set.Finite.mem_toFinset _).2 ⟨huv, h₂⟩)
+
 /-- Monomials multiply by adding exponents. -/
 @[simp]
 theorem single_mul_single (g g' : H) (r r' : R) :
@@ -203,46 +213,48 @@ theorem coeff_mul_single_zero (a : NovikovSeries R H N) (r : R) (h : H) :
   rw [add_zero] at huv
   rw [huv, mem_singleton]
 
+/-- Multiplying on the left by the monomial `r e^g` shifts the exponents by `g`. -/
+theorem coeff_single_mul_add [IsLeftCancelAdd H] (g : H) (r : R) (a : NovikovSeries R H N)
+    (h : H) : (single g r * a).coeff (g + h) = r * a.coeff h := by
+  rw [coeff_mul_eq_sum (s := {(g, h)}) (fun p hp => by rw [mem_singleton.1 hp])
+    fun u v huv hu _ => ?_, sum_singleton, coeff_single_same]
+  have hu : u = g := by_contra fun hug => hu (coeff_single_of_ne hug r)
+  subst hu
+  rw [mem_singleton, add_left_cancel huv]
+
+/-- Multiplying on the right by the monomial `r e^g` shifts the exponents by `g`. -/
+theorem coeff_mul_single_add [IsRightCancelAdd H] (a : NovikovSeries R H N) (g : H) (r : R)
+    (h : H) : (a * single g r).coeff (h + g) = a.coeff h * r := by
+  rw [coeff_mul_eq_sum (s := {(h, g)}) (fun p hp => by rw [mem_singleton.1 hp])
+    fun u v huv _ hv => ?_, sum_singleton, coeff_single_same]
+  have hv : v = g := by_contra fun hvg => hv (coeff_single_of_ne hvg r)
+  subst hv
+  rw [mem_singleton, add_right_cancel huv]
+
 /-- Convolution distributes over addition. -/
 instance instNonUnitalNonAssocSemiring : NonUnitalNonAssocSemiring (NovikovSeries R H N) where
   left_distrib a b c := by
     classical
     ext h
-    have hs : ∀ p ∈ (finite_setOf_add_eq a b h).toFinset ∪ (finite_setOf_add_eq a c h).toFinset,
-        p.1 + p.2 = h := fun p hp => by
-      rcases mem_union.1 hp with hp | hp <;> exact ((Set.Finite.mem_toFinset _).1 hp).1
-    have hmem (u v : H) (huv : u + v = h) (hu : a.coeff u ≠ 0)
-        (hv : b.coeff v ≠ 0 ∨ c.coeff v ≠ 0) :
-        (u, v) ∈ (finite_setOf_add_eq a b h).toFinset ∪ (finite_setOf_add_eq a c h).toFinset := by
-      rcases hv with hv | hv
-      · exact mem_union_left _ ((Set.Finite.mem_toFinset _).2 ⟨huv, hu, hv⟩)
-      · exact mem_union_right _ ((Set.Finite.mem_toFinset _).2 ⟨huv, hu, hv⟩)
-    rw [coeff_add, coeff_mul_eq_sum hs fun u v huv hu hv => hmem u v huv hu (Or.inl hv),
-      coeff_mul_eq_sum hs fun u v huv hu hv => hmem u v huv hu (Or.inr hv),
-      coeff_mul_eq_sum hs fun u v huv hu hv => hmem u v huv hu <| by
-        by_contra! hbc
-        exact hv (by rw [coeff_add, hbc.1, hbc.2, add_zero]),
-      ← sum_add_distrib]
-    simp only [coeff_add, mul_add]
+    rw [coeff_add, coeff_mul_eq_sum_union a b a c fun u v hu hv => ?_,
+      coeff_mul_eq_sum_union a b a c fun u v hu hv => Or.inl ⟨hu, hv⟩,
+      coeff_mul_eq_sum_union a b a c fun u v hu hv => Or.inr ⟨hu, hv⟩, ← sum_add_distrib]
+    · simp only [coeff_add, mul_add]
+    · rw [coeff_add] at hv
+      by_cases hb : b.coeff v = 0
+      · exact Or.inr ⟨hu, by rwa [hb, zero_add] at hv⟩
+      · exact Or.inl ⟨hu, hb⟩
   right_distrib a b c := by
     classical
     ext h
-    have hs : ∀ p ∈ (finite_setOf_add_eq a c h).toFinset ∪ (finite_setOf_add_eq b c h).toFinset,
-        p.1 + p.2 = h := fun p hp => by
-      rcases mem_union.1 hp with hp | hp <;> exact ((Set.Finite.mem_toFinset _).1 hp).1
-    have hmem (u v : H) (huv : u + v = h) (hu : a.coeff u ≠ 0 ∨ b.coeff u ≠ 0)
-        (hv : c.coeff v ≠ 0) :
-        (u, v) ∈ (finite_setOf_add_eq a c h).toFinset ∪ (finite_setOf_add_eq b c h).toFinset := by
-      rcases hu with hu | hu
-      · exact mem_union_left _ ((Set.Finite.mem_toFinset _).2 ⟨huv, hu, hv⟩)
-      · exact mem_union_right _ ((Set.Finite.mem_toFinset _).2 ⟨huv, hu, hv⟩)
-    rw [coeff_add, coeff_mul_eq_sum hs fun u v huv hu hv => hmem u v huv (Or.inl hu) hv,
-      coeff_mul_eq_sum hs fun u v huv hu hv => hmem u v huv (Or.inr hu) hv,
-      coeff_mul_eq_sum hs fun u v huv hu hv => hmem u v huv (by
-        by_contra! hab
-        exact hu (by rw [coeff_add, hab.1, hab.2, add_zero])) hv,
-      ← sum_add_distrib]
-    simp only [coeff_add, add_mul]
+    rw [coeff_add, coeff_mul_eq_sum_union a c b c fun u v hu hv => ?_,
+      coeff_mul_eq_sum_union a c b c fun u v hu hv => Or.inl ⟨hu, hv⟩,
+      coeff_mul_eq_sum_union a c b c fun u v hu hv => Or.inr ⟨hu, hv⟩, ← sum_add_distrib]
+    · simp only [coeff_add, add_mul]
+    · rw [coeff_add] at hu
+      by_cases ha : a.coeff u = 0
+      · exact Or.inr ⟨by rwa [ha, zero_add] at hu, hv⟩
+      · exact Or.inl ⟨ha, hv⟩
   zero_mul a := by
     ext h
     simp [coeff_mul]
@@ -265,6 +277,15 @@ instance instOne [Zero R] [One R] : One (NovikovSeries R H N) where
 theorem one_def [Zero R] [One R] :
     (1 : NovikovSeries R H N) = single 0 1 :=
   rfl
+
+@[simp]
+theorem single_zero_one [Zero R] [One R] : (single 0 1 : NovikovSeries R H N) = 1 :=
+  rfl
+
+@[simp]
+theorem coeff_one [Zero R] [One R] [DecidableEq H] (h : H) :
+    (1 : NovikovSeries R H N).coeff h = if h = 0 then 1 else 0 := by
+  rw [one_def, coeff_single, Pi.single_apply]
 
 instance instNonAssocSemiring [NonAssocSemiring R] :
     NonAssocSemiring (NovikovSeries R H N) where
@@ -306,38 +327,23 @@ private theorem coeff_mul_mul_eq_sum [NonUnitalSemiring R] (a b c : NovikovSerie
       b.coeff t.2.1 ≠ 0 ∧ c.coeff t.2.2 ≠ 0 :=
     Set.Finite.mem_toFinset _
   -- Group the triples by the outer pair `(u + v, w)`.
-  have hs : ∀ p ∈ T.image fun t => (t.1 + t.2.1, t.2.2), p.1 + p.2 = h := by
-    intro p hp
-    obtain ⟨t, ht, rfl⟩ := mem_image.1 hp
-    exact ((hT t).1 ht).1
-  have habc : ∀ w z, w + z = h → (a * b).coeff w ≠ 0 → c.coeff z ≠ 0 →
-      (w, z) ∈ T.image fun t => (t.1 + t.2.1, t.2.2) := by
-    intro w z hwz hw hz
-    obtain ⟨u, v, huv, hu, hv⟩ := exists_add_eq_of_coeff_mul_ne_zero hw
-    exact mem_image.2 ⟨(u, v, z), (hT _).2 ⟨by rw [huv, hwz], hu, hv, hz⟩, by rw [huv]⟩
-  rw [coeff_mul_eq_sum hs habc]
-  refine sum_image' _ fun t ht => ?_
+  refine coeff_mul_eq_sum_fibre (f := fun t => (t.1 + t.2.1, t.2.2)) _
+    (fun t ht => ((hT t).1 ht).1) (fun w z hwz hw hz => ?_) fun t ht => ?_
+  · obtain ⟨u, v, huv, hu, hv⟩ := exists_add_eq_of_coeff_mul_ne_zero hw
+    exact ⟨(u, v, z), (hT _).2 ⟨by rw [huv, hwz], hu, hv, hz⟩, by rw [huv]⟩
   -- The inner coefficient `(a * b).coeff (u + v)` is a sum over the fibre through `t`.
   set F := T.filter fun t' => (t'.1 + t'.2.1, t'.2.2) = (t.1 + t.2.1, t.2.2)
   have hF (t' : H × H × H) (ht' : t' ∈ F) : t'.1 + t'.2.1 = t.1 + t.2.1 ∧ t'.2.2 = t.2.2 :=
     Prod.ext_iff.1 (mem_filter.1 ht').2
-  have hs' : ∀ p ∈ F.image fun t' => (t'.1, t'.2.1), p.1 + p.2 = t.1 + t.2.1 := by
-    intro p hp
-    obtain ⟨t', ht', rfl⟩ := mem_image.1 hp
-    exact (hF t' ht').1
-  have hab : ∀ u v, u + v = t.1 + t.2.1 → a.coeff u ≠ 0 → b.coeff v ≠ 0 →
-      (u, v) ∈ F.image fun t' => (t'.1, t'.2.1) := by
-    intro u v huv hu hv
-    refine mem_image.2 ⟨(u, v, t.2.2), mem_filter.2 ⟨(hT _).2 ⟨?_, hu, hv, ((hT t).1 ht).2.2.2⟩,
+  rw [coeff_mul_eq_sum_of_injOn (F := F) (f := fun t' => (t'.1, t'.2.1))
+    (fun t' ht' => (hF t' ht').1) (fun u v huv hu hv => ?_) fun t₁ ht₁ t₂ ht₂ h₁₂ => ?_, sum_mul]
+  · exact sum_congr rfl fun t' ht' => by rw [(hF t' ht').2]
+  · refine ⟨(u, v, t.2.2), mem_filter.2 ⟨(hT _).2 ⟨?_, hu, hv, ((hT t).1 ht).2.2.2⟩,
       by rw [huv]⟩, rfl⟩
     rw [huv]
     exact ((hT t).1 ht).1
-  have hinj : Set.InjOn (fun t' : H × H × H => (t'.1, t'.2.1)) F := by
-    intro t₁ ht₁ t₂ ht₂ h₁₂
-    simp only [Prod.mk.injEq] at h₁₂
+  · simp only [Prod.mk.injEq] at h₁₂
     exact Prod.ext h₁₂.1 (Prod.ext h₁₂.2 ((hF t₁ ht₁).2.trans (hF t₂ ht₂).2.symm))
-  rw [coeff_mul_eq_sum hs' hab, sum_image hinj, sum_mul]
-  exact sum_congr rfl fun t' ht' => by rw [(hF t' ht').2]
 
 /-- The coefficient at `h` of a triple product `a * (b * c)` is the sum of
 `a.coeff u * (b.coeff v * c.coeff w)` over the finitely many triples of support exponents with
@@ -352,38 +358,23 @@ private theorem coeff_mul_mul_eq_sum' [NonUnitalSemiring R] (a b c : NovikovSeri
       b.coeff t.2.1 ≠ 0 ∧ c.coeff t.2.2 ≠ 0 :=
     Set.Finite.mem_toFinset _
   -- Group the triples by the outer pair `(u, v + w)`.
-  have hs : ∀ p ∈ T.image fun t => (t.1, t.2.1 + t.2.2), p.1 + p.2 = h := by
-    intro p hp
-    obtain ⟨t, ht, rfl⟩ := mem_image.1 hp
-    rw [← add_assoc]
-    exact ((hT t).1 ht).1
-  have habc : ∀ u w, u + w = h → a.coeff u ≠ 0 → (b * c).coeff w ≠ 0 →
-      (u, w) ∈ T.image fun t => (t.1, t.2.1 + t.2.2) := by
-    intro u w huw hu hw
-    obtain ⟨v, z, hvz, hv, hz⟩ := exists_add_eq_of_coeff_mul_ne_zero hw
-    exact mem_image.2 ⟨(u, v, z), (hT _).2 ⟨by rw [add_assoc, hvz, huw], hu, hv, hz⟩,
-      by rw [hvz]⟩
-  rw [coeff_mul_eq_sum hs habc]
-  refine sum_image' _ fun t ht => ?_
+  refine coeff_mul_eq_sum_fibre (f := fun t => (t.1, t.2.1 + t.2.2)) _
+    (fun t ht => by rw [← add_assoc]; exact ((hT t).1 ht).1) (fun u w huw hu hw => ?_)
+    fun t ht => ?_
+  · obtain ⟨v, z, hvz, hv, hz⟩ := exists_add_eq_of_coeff_mul_ne_zero hw
+    exact ⟨(u, v, z), (hT _).2 ⟨by rw [add_assoc, hvz, huw], hu, hv, hz⟩, by rw [hvz]⟩
   -- The inner coefficient `(b * c).coeff (v + w)` is a sum over the fibre through `t`.
   set F := T.filter fun t' => (t'.1, t'.2.1 + t'.2.2) = (t.1, t.2.1 + t.2.2)
   have hF (t' : H × H × H) (ht' : t' ∈ F) : t'.1 = t.1 ∧ t'.2.1 + t'.2.2 = t.2.1 + t.2.2 :=
     Prod.ext_iff.1 (mem_filter.1 ht').2
-  have hs' : ∀ p ∈ F.image fun t' => t'.2, p.1 + p.2 = t.2.1 + t.2.2 := by
-    intro p hp
-    obtain ⟨t', ht', rfl⟩ := mem_image.1 hp
-    exact (hF t' ht').2
-  have hbc : ∀ v z, v + z = t.2.1 + t.2.2 → b.coeff v ≠ 0 → c.coeff z ≠ 0 →
-      (v, z) ∈ F.image fun t' => t'.2 := by
-    intro v z hvz hv hz
-    refine mem_image.2 ⟨(t.1, v, z), mem_filter.2 ⟨(hT _).2 ⟨?_, ((hT t).1 ht).2.1, hv, hz⟩,
+  rw [coeff_mul_eq_sum_of_injOn (F := F) (f := fun t' => t'.2) (fun t' ht' => (hF t' ht').2)
+    (fun v z hvz hv hz => ?_)
+    fun t₁ ht₁ t₂ ht₂ h₁₂ => Prod.ext ((hF t₁ ht₁).1.trans (hF t₂ ht₂).1.symm) h₁₂, mul_sum]
+  · exact sum_congr rfl fun t' ht' => by rw [(hF t' ht').1]
+  · refine ⟨(t.1, v, z), mem_filter.2 ⟨(hT _).2 ⟨?_, ((hT t).1 ht).2.1, hv, hz⟩,
       by rw [hvz]⟩, rfl⟩
     rw [add_assoc, hvz, ← add_assoc]
     exact ((hT t).1 ht).1
-  have hinj : Set.InjOn (fun t' : H × H × H => t'.2) F :=
-    fun t₁ ht₁ t₂ ht₂ h₁₂ => Prod.ext ((hF t₁ ht₁).1.trans (hF t₂ ht₂).1.symm) h₁₂
-  rw [coeff_mul_eq_sum hs' hbc, sum_image hinj, mul_sum]
-  exact sum_congr rfl fun t' ht' => by rw [(hF t' ht').1]
 
 /-- Convolution is associative, by the uniform cutoff lemma
 `NovikovSeries.finite_setOf_period_add_add_lt`. -/
@@ -441,31 +432,21 @@ section Group
 
 variable [AddGroup H] {N : H →+ ℝ}
 
-/-- Multiplying by a monomial shifts the exponents. -/
+/-- Multiplying on the left by a monomial shifts the exponents. -/
 theorem coeff_single_mul [NonUnitalNonAssocSemiring R] (g : H) (r : R)
     (a : NovikovSeries R H N) (h : H) : (single g r * a).coeff h = r * a.coeff (-g + h) := by
-  rw [coeff_mul_eq_sum (s := {(g, -g + h)}) (fun p hp => by
-      rw [mem_singleton.1 hp, add_neg_cancel_left])
-    fun u v huv hu _ => ?_, sum_singleton, coeff_single_same]
-  have hu : u = g := by_contra fun hug => hu (coeff_single_of_ne hug r)
-  subst hu
-  rw [mem_singleton, eq_neg_add_of_add_eq huv]
+  rw [← coeff_single_mul_add, add_neg_cancel_left]
 
-/-- Multiplying by a monomial shifts the exponents. -/
+/-- Multiplying on the right by a monomial shifts the exponents. -/
 theorem coeff_mul_single [NonUnitalNonAssocSemiring R] (a : NovikovSeries R H N) (g : H) (r : R)
     (h : H) : (a * single g r).coeff h = a.coeff (h - g) * r := by
-  rw [coeff_mul_eq_sum (s := {(h - g, g)}) (fun p hp => by
-      rw [mem_singleton.1 hp, sub_add_cancel])
-    fun u v huv _ hv => ?_, sum_singleton, coeff_single_same]
-  have hv : v = g := by_contra fun hvg => hv (coeff_single_of_ne hvg r)
-  subst hv
-  rw [mem_singleton, eq_sub_of_add_eq huv]
+  rw [← coeff_mul_single_add, sub_add_cancel]
 
-/-- A monomial `r e^g` with unit coefficient is a unit, with inverse `r⁻¹ e^(-g)`. -/
+/-- A monomial `r e^g` with unit coefficient is a unit. -/
 theorem isUnit_single [Semiring R] (g : H) {r : R} (hr : IsUnit r) :
     IsUnit (single g r : NovikovSeries R H N) := by
   obtain ⟨u, rfl⟩ := hr
-  exact ⟨⟨single g u, single (-g) ↑u⁻¹, by simp [one_def], by simp [one_def]⟩, rfl⟩
+  exact ⟨⟨single g u, single (-g) ↑u⁻¹, by simp, by simp⟩, rfl⟩
 
 end Group
 
@@ -508,8 +489,7 @@ series with the same (finitely supported) coefficients. -/
 def ofAddMonoidAlgebra : R[H] →+* NovikovSeries R H N where
   toFun x := ofFinsupp x.coeff
   map_one' := by
-    rw [one_def, ← ofFinsupp_single]
-    rfl
+    rw [AddMonoidAlgebra.one_def, AddMonoidAlgebra.coeff_single, ofFinsupp_single, one_def]
   map_mul' x y := by
     classical
     ext h
