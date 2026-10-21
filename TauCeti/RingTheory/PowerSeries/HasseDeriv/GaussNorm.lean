@@ -106,7 +106,7 @@ growth of the binomial coefficients is absorbed by the geometric factor `(|c| / 
 ultrametric ring no radius is lost (`PowerSeries.IsRestricted.hasseDeriv`). -/
 theorem IsRestricted.hasseDeriv_of_abs_lt (hf : f.IsRestricted c') (h : |c| < |c'|) (k : ℕ) :
     (hasseDeriv k f).IsRestricted c := by
-  obtain ⟨A, hA0, hA⟩ := TauCeti.PowerSeries.exists_nonneg_norm_coeff_mul_pow_le hf
+  obtain ⟨A, hA0, hA⟩ := hf.exists_nonneg_norm_coeff_mul_pow_le
   set q := |c'|
   set ρ := |c| / q
   have hq : 0 < q := (abs_nonneg c).trans_lt h
@@ -115,17 +115,17 @@ theorem IsRestricted.hasseDeriv_of_abs_lt (hf : f.IsRestricted c') (h : |c| < |c
     simpa using (TauCeti.tendsto_add_pow_mul_pow_of_lt_one k (by positivity)
       ((div_lt_one hq).mpr h)).mul_const (q⁻¹ ^ k * A)
   -- the coefficients `aₙ₊ₖ` have weighted norms at most `q⁻¹ ^ k * A` at the radius `q`
-  have hAk (m : ℕ) : ‖coeff m (mk fun m ↦ coeff (m + k) f)‖ * q ^ m ≤ q⁻¹ ^ k * A :=
-    calc ‖coeff m (mk fun m ↦ coeff (m + k) f)‖ * q ^ m
+  have hAk (m : ℕ) : ‖coeff (m + k) f‖ * q ^ m ≤ q⁻¹ ^ k * A :=
+    calc ‖coeff (m + k) f‖ * q ^ m
         = q⁻¹ ^ k * (‖coeff (m + k) f‖ * q ^ (m + k)) := by
-          rw [coeff_mk, pow_add, inv_pow]
+          rw [pow_add, inv_pow]
           field_simp
       _ ≤ q⁻¹ ^ k * A := by gcongr; exact hA (m + k)
   rw [← isRestricted_abs_iff, isRestricted_iff']
   refine squeeze_zero (fun n ↦ by positivity) (fun n ↦ ?_) hupper
   rw [coeff_hasseDeriv, ← nsmul_eq_mul]
-  have hscaled : ‖coeff (n + k) f‖ * |c| ^ n ≤ q⁻¹ ^ k * A * ρ ^ n := by
-    simpa only [coeff_mk] using TauCeti.PowerSeries.norm_coeff_mul_pow_le_of_forall_le hq hAk n
+  have hscaled : ‖coeff (n + k) f‖ * |c| ^ n ≤ q⁻¹ ^ k * A * ρ ^ n :=
+    TauCeti.PowerSeries.mul_abs_pow_le_of_forall_mul_pow_le hq hAk n
   calc
     ‖(n + k).choose k • coeff (n + k) f‖ * |c| ^ n
         ≤ ((n + k).choose k : ℝ) * (‖coeff (n + k) f‖ * |c| ^ n) := by
