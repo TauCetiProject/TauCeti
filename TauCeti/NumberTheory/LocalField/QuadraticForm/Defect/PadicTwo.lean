@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.LocalField.QuadraticForm.Defect.Basic
 public import TauCeti.NumberTheory.LocalField.QuadraticForm.PadicTwo
 import TauCeti.NumberTheory.LocalField.Padic
+import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!
 # The quadratic defect over `ℚ_2`
@@ -51,11 +52,6 @@ open ValuativeRel
 
 namespace TauCeti
 
-/-- The normalized valuation of `2` in `ℚ_2` is `1`. -/
-private theorem natCastValuation_two_padicTwo (h2 : (2 : ℚ_[2]) ≠ 0) :
-    natCastValuation ℚ_[2] 2 h2 = 1 := by
-  simp
-
 /-- The `2`-adic valuation of `2 ^ k m`, for an odd integer `m`, is `k`: the case `p = 2` of
 `Padic.valuation_p_pow_mul_intCast`, with the literal `2` in place of the cast prime. -/
 private theorem valuation_two_pow_mul_intCast {k : ℕ} {m : ℤ} (hm : Odd m) :
@@ -72,7 +68,7 @@ private theorem defectExponent_padicTwo_of_eq_one_add {a x : ℚ_[2]ˣ}
       Padic.toAdd_normalizedValuation_eq_valuation, hx]
   obtain ⟨ϖ, hϖ, hϖx⟩ := (isUniformizer_iff_exists_irreducible ℚ_[2] x).mp hxu
   have h := defectExponent_one_add_pow_odd h2 hϖ (k := 0)
-    (by rw [natCastValuation_two_padicTwo]; exact one_pos)
+    (by rw [Padic.natCastValuation_self (p := 2)]; exact one_pos)
   -- `1 + ϖ ^ (2 * 0 + 1) = 1 + x = a`, whatever the nonvanishing proof carried by `Units.mk0`.
   have hϖa : ∀ h, Units.mk0 (1 + (ϖ : ℚ_[2]) ^ (2 * 0 + 1)) h = a := fun _ ↦
     Units.ext (by simp [ha, hϖx])
@@ -104,7 +100,7 @@ private theorem defectExponent_padicTwo_of_coe_eq_five {a : ℚ_[2]ˣ} (ha : (a 
       rw [← normalizedValuation_eq_one_iff, ← toAdd_eq_zero,
         Padic.toAdd_normalizedValuation_eq_valuation, ha]
       simp
-    simpa [natCastValuation_two_padicTwo] using
+    simpa [Padic.natCastValuation_self (p := 2)] using
       defectExponent_le_two_mul_natCastValuation h2 hv hsq
   · have h := le_defectExponent a 1 (Units.mk0 (2 ^ 2 * ((1 : ℤ) : ℚ_[2])) (by simp))
       (by rw [ha]; norm_num)
@@ -176,6 +172,7 @@ theorem defectExponent_padicTwo {a : ℚ_[2]ˣ} {α : ℤ} {u : ℤ_[2]ˣ}
 /-- **The defect exponents of the square classes of `ℚ_2`.** On the representatives
 `1, -1, 5, -5, 2, -2, 10, -10` of `TauCeti.padicTwoSquareClassRep`, the defect exponent takes the
 values `⊤, 1, 2, 1, 1, 1, 1, 1`. -/
+@[simp]
 theorem defectExponent_padicTwoSquareClassRep (i : Fin 8) :
     defectExponent (padicTwoSquareClassRep i) = ![⊤, 1, 2, 1, 1, 1, 1, 1] i := by
   have hodd : ∀ {a : ℚ_[2]ˣ} {m : ℤ}, Odd m → (a : ℚ_[2]) = 2 ^ 1 * (m : ℚ_[2]) →
@@ -198,25 +195,25 @@ theorem defectExponent_padicTwoSquareClassRep (i : Fin 8) :
 `1, -1, 5, -5, 2, -2, 10, -10` of `TauCeti.padicTwoSquareClassRep`, the quadratic defect is
 `0, 2 ℤ_2, 4 ℤ_2, 2 ℤ_2, 2 ℤ_2, 2 ℤ_2, 2 ℤ_2, 2 ℤ_2`. In particular the units `1`, `5` and `-1`
 attain the three defects `0`, `4 ℤ_2` and `2 ℤ_2` of units of `ℤ_2`. -/
+@[simp]
 theorem quadraticDefect_padicTwoSquareClassRep (i : Fin 8) :
     quadraticDefect (padicTwoSquareClassRep i) =
       FractionalIdeal.spanSingleton _ (![0, 2, 4, 2, 2, 2, 2, 2] i) := by
-  have h := defectExponent_padicTwoSquareClassRep i
   -- `2` and `4` as units of `ℚ_2`, with valuations `1` and `2`.
   let c : ℕ → ℚ_[2]ˣ := fun k ↦ Units.mk0 (2 ^ k * ((1 : ℤ) : ℚ_[2])) (by simp)
   have hc : ∀ k, (normalizedValuation ℚ_[2] (c k)).toAdd = k := fun k ↦ by
     rw [Padic.toAdd_normalizedValuation_eq_valuation, Units.val_mk0,
       valuation_two_pow_mul_intCast odd_one]
   fin_cases i
-  · simpa [quadraticDefect_eq_zero_iff, ← defectExponent_eq_top_iff] using h
+  · simp [quadraticDefect_eq_zero_iff, ← defectExponent_eq_top_iff]
+  case «2» =>
+    rw [quadraticDefect_eq_spanSingleton_of_defectExponent_eq (c := c 2) (by simp [hc])]
+    congr 1
+    norm_num [c]
   all_goals
-    first
-    | rw [quadraticDefect_eq_spanSingleton_of_defectExponent_eq (c := c 1) (by simpa [hc] using h)]
-      congr 1
-      norm_num [c]
-    | rw [quadraticDefect_eq_spanSingleton_of_defectExponent_eq (c := c 2) (by simpa [hc] using h)]
-      congr 1
-      norm_num [c]
+    rw [quadraticDefect_eq_spanSingleton_of_defectExponent_eq (c := c 1) (by simp [hc])]
+    congr 1
+    norm_num [c]
 
 /-- **The quadratic defect is not multiplicative.** Over `ℚ_2`, `𝔡(-5) = 2 ℤ_2`, while
 `𝔡(-1) 𝔡(5) = 2 ℤ_2 · 4 ℤ_2 = 8 ℤ_2`. -/
