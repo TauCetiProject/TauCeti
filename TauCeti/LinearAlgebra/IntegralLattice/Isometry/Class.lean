@@ -11,15 +11,15 @@ public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Basic
 # Isometry classes of integral lattices
 
 The isometry classes of integral lattices in a rational vector space `V` form the quotient
-`IsometryClass V` of `IntegralLattice V` by isometry. Transport along a rational linear
+`IsometryQuotient V` of `IntegralLattice V` by isometry. Transport along a rational linear
 equivalence `V ≃ W` identifies the isometry classes in `V` with those in `W`.
 
 ## Main definitions
 
 * `TauCeti.IntegralLattice.isometrySetoid`: isometry of integral lattices in `V`.
-* `TauCeti.IntegralLattice.IsometryClass`: the isometry classes of integral lattices in `V`.
+* `TauCeti.IntegralLattice.IsometryQuotient`: the isometry classes of integral lattices in `V`.
 * `TauCeti.IntegralLattice.isometryClass`: the class `cls L` of a lattice.
-* `TauCeti.IntegralLattice.isometryClassEquiv`: transport of classes along an ambient linear
+* `TauCeti.IntegralLattice.isometryQuotientEquiv`: transport of classes along an ambient linear
   equivalence.
 
 ## References
@@ -35,7 +35,7 @@ universe u v
 
 variable {V : Type u} {W : Type v} [AddCommGroup V] [Module ℚ V] [AddCommGroup W] [Module ℚ W]
 
-section IsometryClass
+section IsometryQuotient
 
 variable (V) in
 /-- Isometry of integral lattices in a fixed rational space, as an equivalence relation. -/
@@ -50,10 +50,10 @@ theorem isometrySetoid_apply {L M : IntegralLattice V} :
 
 variable (V) in
 /-- The isometry classes of integral lattices in a rational space `V`. -/
-abbrev IsometryClass : Type u := Quotient (isometrySetoid V)
+abbrev IsometryQuotient : Type u := Quotient (isometrySetoid V)
 
 /-- The isometry class `cls L` of an integral lattice. -/
-def isometryClass (L : IntegralLattice V) : IsometryClass V :=
+def isometryClass (L : IntegralLattice V) : IsometryQuotient V :=
   Quotient.mk _ L
 
 /-- Two lattices have the same isometry class exactly when they are isometric. -/
@@ -69,23 +69,25 @@ theorem Isometry.isometryClass_eq {L M : IntegralLattice V} (e : Isometry L M) :
 
 /-- Every isometry class is the class of a lattice. -/
 theorem isometryClass_surjective :
-    Function.Surjective (isometryClass : IntegralLattice V → IsometryClass V) :=
+    Function.Surjective (isometryClass : IntegralLattice V → IsometryQuotient V) :=
   Quotient.mk_surjective
 
 /-- A chosen representative of an isometry class has that class. -/
 @[simp]
-theorem isometryClass_out (c : IsometryClass V) : c.out.isometryClass = c :=
+theorem isometryClass_out (c : IsometryQuotient V) : c.out.isometryClass = c :=
   Quotient.out_eq c
 
 /-- An isometry between the chosen representatives of two isometry classes shows that the classes
 are equal. -/
-theorem Isometry.out_eq {c d : IsometryClass V} (e : Isometry c.out d.out) : c = d := by
+theorem IsometryQuotient.eq_of_isometry_out {c d : IsometryQuotient V} (e : Isometry c.out d.out) :
+    c = d := by
   rw [← isometryClass_out c, ← isometryClass_out d]
   exact e.isometryClass_eq
 
 /-- Transport along a rational linear equivalence `V ≃ W` identifies the isometry classes of
 integral lattices in `V` with those in `W`. -/
-noncomputable def isometryClassEquiv (f : V ≃ₗ[ℚ] W) : IsometryClass V ≃ IsometryClass W where
+noncomputable def isometryQuotientEquiv (f : V ≃ₗ[ℚ] W) :
+    IsometryQuotient V ≃ IsometryQuotient W where
   toFun := Quotient.map (·.transport f) fun M N ⟨e⟩ ↦
     ⟨((M.transportIsometry f).symm.trans e).trans (N.transportIsometry f)⟩
   invFun := Quotient.map (·.transport f.symm) fun M N ⟨e⟩ ↦
@@ -99,19 +101,19 @@ noncomputable def isometryClassEquiv (f : V ≃ₗ[ℚ] W) : IsometryClass V ≃
     exact (((M.transportIsometry f.symm).trans
       ((M.transport f.symm).transportIsometry f)).isometryClass_eq).symm
 
-/-- `isometryClassEquiv f` sends the class of `M` to the class of its transport along `f`. -/
+/-- `isometryQuotientEquiv f` sends the class of `M` to the class of its transport along `f`. -/
 @[simp]
-theorem isometryClassEquiv_isometryClass (f : V ≃ₗ[ℚ] W) (M : IntegralLattice V) :
-    isometryClassEquiv f M.isometryClass = (M.transport f).isometryClass :=
+theorem isometryQuotientEquiv_isometryClass (f : V ≃ₗ[ℚ] W) (M : IntegralLattice V) :
+    isometryQuotientEquiv f M.isometryClass = (M.transport f).isometryClass :=
   (rfl)
 
-/-- The inverse of `isometryClassEquiv f` sends the class of `M` to the class of its transport
+/-- The inverse of `isometryQuotientEquiv f` sends the class of `M` to the class of its transport
 along `f.symm`. -/
 @[simp]
-theorem isometryClassEquiv_symm_isometryClass (f : V ≃ₗ[ℚ] W) (M : IntegralLattice W) :
-    (isometryClassEquiv f).symm M.isometryClass = (M.transport f.symm).isometryClass :=
+theorem isometryQuotientEquiv_symm_isometryClass (f : V ≃ₗ[ℚ] W) (M : IntegralLattice W) :
+    (isometryQuotientEquiv f).symm M.isometryClass = (M.transport f.symm).isometryClass :=
   (rfl)
 
-end IsometryClass
+end IsometryQuotient
 
 end TauCeti.IntegralLattice

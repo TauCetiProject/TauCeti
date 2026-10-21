@@ -14,7 +14,7 @@ import TauCeti.LinearAlgebra.IntegralLattice.PosDef.Classes
 # Class sets and class numbers of integral lattices
 
 The classes in the genus of `L` form the subset `L.genusClasses` of the isometry classes
-`IsometryClass V` of integral lattices in the ambient space `V` of `L`, and the class number
+`IsometryQuotient V` of integral lattices in the ambient space `V` of `L`, and the class number
 `h(L)` is its cardinality.
 
 All lattices in one genus have the same rank, so they all live, up to isometry, in the ambient
@@ -69,7 +69,7 @@ section GenusClasses
 
 /-- The classes in the genus of `L`: the isometry classes of the lattices in the ambient space of
 `L` which have the same genus as `L`. -/
-def genusClasses (L : IntegralLattice V) : Set (IsometryClass V) :=
+def genusClasses (L : IntegralLattice V) : Set (IsometryQuotient V) :=
   isometryClass '' {M | L.SameGenus M}
 
 /-- The class of `M` lies in the genus of `L` exactly when `M` has the same genus as `L`. -/
@@ -92,7 +92,7 @@ theorem genusClasses_nonempty (L : IntegralLattice V) : L.genusClasses.Nonempty 
 
 /-- A class lies in the genus of `L` exactly when its chosen representative has the same genus
 as `L`. -/
-theorem mem_genusClasses_iff {L : IntegralLattice V} {c : IsometryClass V} :
+theorem mem_genusClasses_iff {L : IntegralLattice V} {c : IsometryQuotient V} :
     c ∈ L.genusClasses ↔ L.SameGenus c.out := by
   rw [← isometryClass_mem_genusClasses_iff, isometryClass_out]
 
@@ -115,11 +115,11 @@ theorem SameGenus.genusClasses_eq {L M : IntegralLattice V} (h : L.SameGenus M) 
 
 /-- Transport along `f : V ≃ W` carries the classes in the genus of `L` onto the classes in the
 genus of any lattice in `W` with the same genus as `L`. -/
-theorem isometryClassEquiv_mem_genusClasses_iff (f : V ≃ₗ[ℚ] W) {L : IntegralLattice V}
-    {L' : IntegralLattice W} (h : L.SameGenus L') (c : IsometryClass V) :
-    isometryClassEquiv f c ∈ L'.genusClasses ↔ c ∈ L.genusClasses := by
+theorem isometryQuotientEquiv_mem_genusClasses_iff (f : V ≃ₗ[ℚ] W) {L : IntegralLattice V}
+    {L' : IntegralLattice W} (h : L.SameGenus L') (c : IsometryQuotient V) :
+    isometryQuotientEquiv f c ∈ L'.genusClasses ↔ c ∈ L.genusClasses := by
   obtain ⟨M, rfl⟩ := isometryClass_surjective c
-  simp only [isometryClassEquiv_isometryClass, isometryClass_mem_genusClasses_iff]
+  simp only [isometryQuotientEquiv_isometryClass, isometryClass_mem_genusClasses_iff]
   have hM : M.SameGenus (M.transport f) := (M.transportIsometry f).sameGenus
   exact ⟨fun h' ↦ (h.trans h').trans hM.symm, fun h' ↦ (h.symm.trans h').trans hM⟩
 
@@ -155,8 +155,8 @@ class number, even when they live in different ambient spaces. -/
 theorem SameGenus.classNumber_eq {L : IntegralLattice V} {M : IntegralLattice W}
     (h : L.SameGenus M) : L.classNumber = M.classNumber := by
   obtain ⟨f⟩ := h.nonempty_linearEquiv
-  exact Nat.card_congr <| (isometryClassEquiv f).subtypeEquiv fun c ↦
-    (isometryClassEquiv_mem_genusClasses_iff f h c).symm
+  exact Nat.card_congr <| (isometryQuotientEquiv f).subtypeEquiv fun c ↦
+    (isometryQuotientEquiv_mem_genusClasses_iff f h c).symm
 
 /-- Isometric lattices have the same class number. -/
 theorem Isometry.classNumber_eq {L : IntegralLattice V} {M : IntegralLattice W}
@@ -172,7 +172,7 @@ theorem IsPosDef.finite_genusClasses {L : IntegralLattice V} (hL : L.IsPosDef) :
   exact Set.finite_coe_iff.mp <| finite_of_pairwise_isEmpty_isometry
     (fun c : L.genusClasses ↦ c.1.out) (fun c ↦ (hgen c).isPosDef_iff.mp hL)
     (fun c ↦ (hgen c).finrank_eq.symm) (fun c ↦ (hgen c).determinant_eq.symm.le)
-    fun c d hcd ↦ ⟨fun e ↦ hcd (Subtype.ext e.out_eq)⟩
+    fun c d hcd ↦ ⟨fun e ↦ hcd (Subtype.ext (IsometryQuotient.eq_of_isometry_out e))⟩
 
 /-- A positive definite lattice has positive class number. -/
 theorem IsPosDef.classNumber_pos {L : IntegralLattice V} (hL : L.IsPosDef) :
@@ -192,8 +192,8 @@ theorem IsNegDef.finite_genusClasses {L : IntegralLattice V} (hL : L.IsNegDef) :
   obtain ⟨e⟩ := isometryClass_eq_isometryClass_iff.mp (congrArg Subtype.val hcd)
   -- `-L` is `(-1 : ℤ) • L` by definition, so `e.smul (-1)` is an isometry of the negations.
   have e' : Isometry (-(-c.1.out)) (-(-d.1.out)) := e.smul (-1)
-  exact Subtype.ext <| Isometry.out_eq <| (Isometry.ofEq (neg_neg c.1.out).symm).trans <|
-    e'.trans (Isometry.ofEq (neg_neg d.1.out))
+  exact Subtype.ext <| IsometryQuotient.eq_of_isometry_out <|
+    (Isometry.ofEq (neg_neg c.1.out).symm).trans <| e'.trans (Isometry.ofEq (neg_neg d.1.out))
 
 /-- A negative definite lattice has positive class number. -/
 theorem IsNegDef.classNumber_pos {L : IntegralLattice V} (hL : L.IsNegDef) :
