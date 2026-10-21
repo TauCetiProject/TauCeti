@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.FilterBasis
 public import Mathlib.Topology.Algebra.IsUniformGroup.Basic
+public import Mathlib.Topology.Algebra.Nonarchimedean.Basic
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import Mathlib.Topology.LocallyConstant.Basic
 public import Mathlib.Topology.UniformSpace.AbstractCompletion
@@ -45,11 +46,15 @@ to a complete separated uniform space extends uniquely to the Novikov series. Th
 
 ## Main results
 
+* `TauCeti.NovikovSeries.exists_mem_periodFiltration`: every series lies in some `U_C`.
+* `TauCeti.NovikovSeries.exists_pos_mem_periodFiltration_iff`: a series vanishes at every exponent
+  of period `≤ 0` exactly when it lies in `U_C` for some `C > 0`.
 * `TauCeti.NovikovSeries.hasBasis_nhds_zero` and `TauCeti.NovikovSeries.hasBasis_uniformity`:
   the subgroups `U_C` form a basis of the period topology and its uniformity.
 * `TauCeti.NovikovSeries.tendsto_nhds_iff`: convergence in the period topology means eventual
   agreement of coefficients below every cutoff.
-* The instances `T2Space` and `CompleteSpace`: the period topology is separated and complete.
+* The instances `T2Space`, `CompleteSpace` and `NonarchimedeanAddGroup`: the period topology is
+  separated, complete and nonarchimedean.
 * `TauCeti.NovikovSeries.tendsto_ofFinsupp_trunc` and
   `TauCeti.NovikovSeries.denseRange_ofFinsupp`: the truncations of a series converge to it, so the
   finitely supported series are dense.
@@ -94,6 +99,28 @@ theorem mem_periodFiltration : a ∈ periodFiltration R N C ↔ ∀ h, N h < C �
 
 theorem antitone_periodFiltration : Antitone (periodFiltration R N) :=
   fun _ _ hCD _ ha h hh => ha h (hh.trans_le hCD)
+
+variable (a) in
+/-- Every Novikov series lies in some `U_C`, for a cutoff `C` below the periods of its support. -/
+theorem exists_mem_periodFiltration : ∃ C, a ∈ periodFiltration R N C := by
+  obtain ⟨C, hC⟩ := a.bddBelow_image_support
+  exact ⟨C, fun h hh => by_contra fun ha => (hC ⟨h, mem_support.2 ha, rfl⟩).not_gt hh⟩
+
+/-- A Novikov series vanishes at every exponent of period `≤ 0` exactly when it lies in `U_C` for
+some positive cutoff `C`: a nonzero such series lies in `U_C` for its least support period `C`. -/
+theorem exists_pos_mem_periodFiltration_iff :
+    (∃ C, 0 < C ∧ a ∈ periodFiltration R N C) ↔ ∀ h, N h ≤ 0 → a.coeff h = 0 := by
+  refine ⟨fun ⟨C, hC, ha⟩ h hh => ha h (hh.trans_lt hC), fun ha => ?_⟩
+  rcases eq_or_ne a 0 with rfl | ha₀
+  · exact ⟨1, one_pos, zero_mem _⟩
+  obtain ⟨g, hg, hmin⟩ := exists_isLeast_image_support (support_nonempty_iff.2 ha₀)
+  exact ⟨N g, lt_of_not_ge fun hg₀ => mem_support.1 hg (ha g hg₀), fun h hh =>
+    by_contra fun hh' => (hmin.2 ⟨h, mem_support.2 hh', rfl⟩).not_gt hh⟩
+
+/-- The monomial `r e^g` lies in `U_C` when the period of `g` is at least `C`. -/
+theorem single_mem_periodFiltration {g : H} (hg : C ≤ N g) (r : R) :
+    single g r ∈ periodFiltration R N C :=
+  fun _ hh => coeff_single_of_ne (ne_of_apply_ne N (hh.trans_le hg).ne) r
 
 /-- An element of every `U_C` is zero. -/
 theorem eq_zero_of_forall_mem_periodFiltration (ha : ∀ C, a ∈ periodFiltration R N C) : a = 0 :=
@@ -167,6 +194,10 @@ theorem isOpen_periodFiltration (C : ℝ) :
     IsOpen (periodFiltration R N C : Set (NovikovSeries R H N)) :=
   AddSubgroup.isOpen_of_mem_nhds _ (periodFiltration_mem_nhds_zero C)
 
+theorem isClosed_periodFiltration (C : ℝ) :
+    IsClosed (periodFiltration R N C : Set (NovikovSeries R H N)) :=
+  AddSubgroup.isClosed_of_isOpen _ (isOpen_periodFiltration C)
+
 /-- The sets `{b | b - a ∈ U_C}` form a basis of neighbourhoods of `a` in the period topology. -/
 theorem hasBasis_nhds (a : NovikovSeries R H N) :
     (𝓝 a).HasBasis (fun _ : ℝ => True) fun C => {b | b - a ∈ periodFiltration R N C} := by
@@ -192,6 +223,13 @@ instance : T2Space (NovikovSeries R H N) :=
     obtain ⟨h, hh⟩ := support_nonempty_iff.2 ha
     exact ⟨_, periodFiltration_mem_nhds_zero (N h + 1), fun ha' =>
       mem_support.1 hh (ha' h (lt_add_one _))⟩
+
+/-- The period topology is nonarchimedean: its basic neighbourhoods `U_C` of `0` are open
+subgroups. -/
+instance : NonarchimedeanAddGroup (NovikovSeries R H N) where
+  is_nonarchimedean U hU := by
+    obtain ⟨C, -, hC⟩ := hasBasis_nhds_zero.mem_iff.1 hU
+    exact ⟨⟨periodFiltration R N C, isOpen_periodFiltration C⟩, hC⟩
 
 /-- The coefficient of a series at the exponent `h` is locally constant in the period
 topology. -/
