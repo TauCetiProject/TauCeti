@@ -66,7 +66,7 @@ theorem IsClosed.add {form' : SmoothForm I M F k} (h : form.IsClosed)
 
 /-- A real scalar multiple of a closed smooth form is closed. -/
 theorem IsClosed.smul (c : ℝ) (h : form.IsClosed) : (c • form).IsClosed := by
-  rw [isClosed_def, SmoothForm.smul_toRoughForm]
+  rw [isClosed_def, Submodule.coe_smul]
   rw [mextDeriv_smul, h, smul_zero]
 
 /-- The negative of a closed smooth form is closed. -/
