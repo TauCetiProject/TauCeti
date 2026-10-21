@@ -83,6 +83,13 @@ theorem differentiable_intervalIntegral_mul_cexp_neg_mul {a b : ℝ}
   · have h := ((hasDerivAt_id' z).neg.mul_const (t : ℂ)).cexp.const_mul (f t)
     simpa using h
 
+/-- Pointwise bound on the Laplace integrand: if `‖w‖ ≤ M`, then
+`‖w * exp (-z t)‖ ≤ M * exp (-re z * t)` for real `t`. -/
+theorem norm_mul_cexp_neg_mul_le {w z : ℂ} {t : ℝ} (h : ‖w‖ ≤ M) :
+    ‖w * cexp (-z * t)‖ ≤ M * Real.exp (-z.re * t) := by
+  rw [norm_mul, Complex.norm_exp, Complex.re_mul_ofReal, Complex.neg_re]
+  exact mul_le_mul_of_nonneg_right h (Real.exp_pos _).le
+
 /-- For `0 < re z`, the Laplace integrand of a function bounded on `[0, ∞)` is integrable there. -/
 theorem integrableOn_mul_cexp_neg_mul (hf : AEStronglyMeasurable f (volume.restrict (Ici 0)))
     (hbound : ∀ t ∈ Ici (0 : ℝ), ‖f t‖ ≤ M) {z : ℂ} (hz : 0 < z.re) :
@@ -91,8 +98,7 @@ theorem integrableOn_mul_cexp_neg_mul (hf : AEStronglyMeasurable f (volume.restr
     (exp_neg_integrableOn_Ioi 0 hz)).const_mul M)
     (hf.mul (by fun_prop : Continuous fun t : ℝ ↦ cexp (-z * t)).aestronglyMeasurable)
     (ae_restrict_of_forall_mem measurableSet_Ici fun t ht ↦ ?_)
-  rw [norm_mul, Complex.norm_exp, Complex.re_mul_ofReal, Complex.neg_re]
-  exact mul_le_mul_of_nonneg_right (hbound t ht) (Real.exp_pos _).le
+  exact norm_mul_cexp_neg_mul_le (hbound t ht)
 
 /-- **Tail bound.** For `0 < re z` and `0 ≤ T`, the Laplace transform of a function bounded by
 `M` on `[0, ∞)` differs from its truncation at `T` by at most `M exp (-T re z) / re z`. -/
@@ -107,9 +113,8 @@ theorem norm_integral_sub_intervalIntegral_mul_cexp_neg_mul_le
     add_sub_cancel_left]
   calc ‖∫ t in Ioi T, f t * cexp (-z * t)‖ ≤ ∫ t in Ioi T, M * Real.exp (-z.re * t) := by
         refine norm_integral_le_of_norm_le ((integrableOn_exp_mul_Ioi (by linarith) T).const_mul M)
-          (ae_restrict_of_forall_mem measurableSet_Ioi fun t ht ↦ ?_)
-        rw [norm_mul, Complex.norm_exp, Complex.re_mul_ofReal, Complex.neg_re]
-        exact mul_le_mul_of_nonneg_right (hbound t (hT.trans (le_of_lt ht))) (Real.exp_pos _).le
+          (ae_restrict_of_forall_mem measurableSet_Ioi fun t ht ↦
+            norm_mul_cexp_neg_mul_le (hbound t (hT.trans (le_of_lt ht))))
     _ = M * Real.exp (-z.re * T) / z.re := by
         rw [integral_const_mul, integral_exp_mul_Ioi (by linarith), neg_div_neg_eq, mul_div_assoc]
 
@@ -123,10 +128,9 @@ theorem norm_intervalIntegral_mul_cexp_neg_mul_le_of_re_neg
     (integrableOn_exp_mul_Iic (by linarith) T).const_mul M
   calc ‖∫ t in (0 : ℝ)..T, f t * cexp (-z * t)‖
       ≤ ∫ t in (0 : ℝ)..T, M * Real.exp (-z.re * t) := by
-        refine intervalIntegral.norm_integral_le_of_norm_le hT (.of_forall fun t ht ↦ ?_)
+        refine intervalIntegral.norm_integral_le_of_norm_le hT (.of_forall fun t ht ↦
+          norm_mul_cexp_neg_mul_le (hbound t (Ioc_subset_Icc_self ht)))
           ((by fun_prop : Continuous fun t : ℝ ↦ M * Real.exp (-z.re * t)).intervalIntegrable _ _)
-        rw [norm_mul, Complex.norm_exp, Complex.re_mul_ofReal, Complex.neg_re]
-        exact mul_le_mul_of_nonneg_right (hbound t (Ioc_subset_Icc_self ht)) (Real.exp_pos _).le
     _ ≤ ∫ t in Iic T, M * Real.exp (-z.re * t) := by
         rw [intervalIntegral.integral_of_le hT]
         exact setIntegral_mono_set hg (.of_forall fun t ↦ by positivity)

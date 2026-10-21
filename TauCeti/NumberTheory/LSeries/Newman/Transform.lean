@@ -24,8 +24,9 @@ on `0 < re z`, and the tail and left half-plane bounds) with the identity
 * Cauchy's formula for the entire function `G_T`: its kernel integral over the full circle
   is `2πi ∫ t in 0..T, f t`.
 
-The factor `1 + z² / R²` cancels the small denominator `re z` exactly on the circle, which is
-what makes the estimates independent of `T`.
+The factor `exp (T z)` cancels the decay `exp (-T re z)`, making the bounds independent of `T`;
+the factor `1 + z² / R²` cancels the small denominator `re z` on the circle, making them uniform
+up to the imaginary axis.
 
 ## References
 
