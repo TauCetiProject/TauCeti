@@ -47,32 +47,6 @@ universe w
 
 namespace TauCeti
 
-/-- Two distinct points of a sphere are the image of an embedding of the `0`-sphere of `ℝ`. -/
-private lemma exists_continuous_injective_range_sphere_eq_pair {F : Type*} [NormedAddCommGroup F]
-    {p q : sphere (0 : F) 1} (hpq : p ≠ q) :
-    ∃ h : sphere (0 : ℝ) 1 → sphere (0 : F) 1, Continuous h ∧ Function.Injective h ∧
-      range h = {p, q} := by
-  -- The `0`-sphere of `ℝ` is the discrete space `{1, -1}`.
-  have hpm (t : sphere (0 : ℝ) 1) : (t : ℝ) = 1 ∨ (t : ℝ) = -1 :=
-    (sphere_eq_pair_of_finrank_eq_one (finrank_self ℝ) (p := (1 : ℝ)) (by simp)).subset t.2
-  have := discreteTopology_sphere_of_finrank_eq_one (finrank_self ℝ) 0 1
-  let one : sphere (0 : ℝ) 1 := ⟨1, by simp⟩
-  let negOne : sphere (0 : ℝ) 1 := ⟨-1, by simp⟩
-  refine ⟨fun t ↦ if (t : ℝ) = 1 then q else p, continuous_of_discreteTopology, ?_, ?_⟩
-  · intro s t hst
-    rcases hpm s with hs | hs <;> rcases hpm t with ht | ht <;>
-      simp only [hs, ht, ite_true, (by norm_num : (-1 : ℝ) ≠ 1), ite_false] at hst
-    · exact Subtype.ext (hs.trans ht.symm)
-    · exact absurd hst.symm hpq
-    · exact absurd hst hpq
-    · exact Subtype.ext (hs.trans ht.symm)
-  · refine Subset.antisymm ?_ ?_
-    · rintro _ ⟨t, rfl⟩
-      by_cases ht : (t : ℝ) = 1 <;> simp [ht]
-    · rintro _ (rfl | rfl)
-      · exact ⟨negOne, by simp [negOne, (by norm_num : (-1 : ℝ) ≠ 1)]⟩
-      · exact ⟨one, by simp [one]⟩
-
 /-- **Two path-connected open sets covering a twice-punctured sphere meet in at most two path
 components.** Let `A` and `B` be path-connected open subsets of the unit sphere of a
 three-dimensional real normed space, and suppose that `A ∪ B` is the sphere with two distinct
