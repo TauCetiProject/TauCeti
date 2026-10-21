@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.Algebra.Homology.HomologicalComplexBiprod
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
+public import TauCeti.Algebra.Category.ModuleCat.Biproducts
 
 /-!
 # Short exact sequences of complexes of modules through a biproduct
@@ -20,9 +20,9 @@ given identifications of the terms with modules, the linear maps `(a₁, a₂) :
 (`HomologicalComplex.moduleCat_shortExact_biprod`). Mayer–Vietoris sequences have this shape.
 
 The comparison uses `ModuleCat.inl_comp_biprodIsoProd_hom` and
-`ModuleCat.inr_comp_biprodIsoProd_hom`: under Mathlib's identification `ModuleCat.biprodIsoProd`
-of the biproduct of two modules with their product, the biproduct inclusions are `LinearMap.inl`
-and `LinearMap.inr`.
+`ModuleCat.inr_comp_biprodIsoProd_hom` from `TauCeti.Algebra.Category.ModuleCat.Biproducts`:
+under Mathlib's identification `ModuleCat.biprodIsoProd` of the biproduct of two modules with
+their product, the biproduct inclusions are `LinearMap.inl` and `LinearMap.inr`.
 
 ## References
 
@@ -34,28 +34,6 @@ public section
 open CategoryTheory Limits
 
 universe u v
-
-namespace ModuleCat
-
-variable {R : Type u} [Ring R] (M N : ModuleCat.{v} R)
-
-/-- The first biproduct inclusion followed by the identification of the biproduct with the product
-module is the first inclusion `LinearMap.inl` into the product. -/
-@[reassoc (attr := simp)]
-theorem inl_comp_biprodIsoProd_hom :
-    biprod.inl ≫ (biprodIsoProd M N).hom = ofHom (LinearMap.inl R M N) := by
-  rw [← Iso.eq_comp_inv]
-  apply biprod.hom_ext <;> ext x <;> simp
-
-/-- The second biproduct inclusion followed by the identification of the biproduct with the
-product module is the second inclusion `LinearMap.inr` into the product. -/
-@[reassoc (attr := simp)]
-theorem inr_comp_biprodIsoProd_hom :
-    biprod.inr ≫ (biprodIsoProd M N).hom = ofHom (LinearMap.inr R M N) := by
-  rw [← Iso.eq_comp_inv]
-  apply biprod.hom_ext <;> ext x <;> simp
-
-end ModuleCat
 
 namespace HomologicalComplex
 
