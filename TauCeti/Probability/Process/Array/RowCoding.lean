@@ -73,6 +73,18 @@ theorem arrayRowCodingLaw_def (π : Measure (ProbabilityMeasure (ℕ → α))) :
           fun p : ℕ × ℕ ↦ unitIntervalCoding (ℕ → α) q.1 (q.2 p.1) p.2) :=
   (rfl)
 
+/-- The coupled row-coding law is the image of the i.i.d. mixture law of row paths under
+uncurrying the sampled rows into an array. -/
+theorem arrayRowCodingLaw_eq_map_iidMixtureLaw (π : Measure (ProbabilityMeasure (ℕ → α))) :
+    arrayRowCodingLaw π = (iidMixtureLaw π id).map (Prod.map id Function.uncurry) := by
+  rw [arrayRowCodingLaw_def,
+    ← Measure.map_prod_unitIntervalCoding_eq_iidMixtureLaw (α := ℕ → α) π,
+    Measure.map_map (measurable_id.prodMap measurable_uncurry)
+      (measurable_fst.prodMk measurable_unitIntervalCodingPath)]
+  refine congrArg (Measure.map · _) ?_
+  funext q
+  rfl
+
 /-- The coupled row-coding construction sends the zero mixing law to zero. -/
 @[simp]
 theorem arrayRowCodingLaw_zero :
@@ -220,24 +232,15 @@ theorem map_pairReindex_arrayRowCodingLaw_eq_of_col_invariant
       ProbabilityMeasure (ℕ → α) × (ℕ → (ℕ → α)) := Prod.map f g
   let C : ProbabilityMeasure (ℕ → α) × (ℕ → (ℕ → α)) →
       ProbabilityMeasure (ℕ → α) × (ℕ × ℕ → α) := Prod.map id Function.uncurry
-  have hf : Measurable f := by
-    exact ((Measure.measurable_map _ (measurable_reindex τ)).comp
-      measurable_subtype_coe).subtype_mk
+  have hf : Measurable f :=
+    TauCeti.MeasureTheory.measurable_probabilityMeasure_map (measurable_reindex τ)
   have hg : Measurable g := by
     exact Measurable.of_eval fun i ↦
       (measurable_reindex τ).comp (measurable_pi_apply (σ i))
   have hJ : Measurable J := hf.prodMap hg
   have hC : Measurable C := measurable_id.prodMap measurable_uncurry
-  have hK : Measurable fun q : ProbabilityMeasure (ℕ → α) × (ℕ → unitInterval) ↦
-      (q.1, fun i ↦ unitIntervalCoding (ℕ → α) q.1 (q.2 i)) :=
-    measurable_fst.prodMk measurable_unitIntervalCodingPath
-  have hcode : arrayRowCodingLaw π =
-      (iidMixtureLaw π id).map C := by
-    rw [arrayRowCodingLaw_def,
-      ← Measure.map_prod_unitIntervalCoding_eq_iidMixtureLaw (α := ℕ → α) π,
-      Measure.map_map hC hK]
-    -- `C ∘ K` unfolds to the row-coding map: uncurrying the sampled rows gives the entries.
-    rfl
+  have hcode : arrayRowCodingLaw π = (iidMixtureLaw π id).map C :=
+    arrayRowCodingLaw_eq_map_iidMixtureLaw π
   -- Each fibre `P^{⊗ℕ}` is carried to `(f P)^{⊗ℕ}`: `σ` permutes the i.i.d. rows and `τ`
   -- reindexes each row.
   have hmix : (iidMixtureLaw π id).map J = iidMixtureLaw (π.map f) id :=
@@ -247,9 +250,7 @@ theorem map_pairReindex_arrayRowCodingLaw_eq_of_col_invariant
     rw [hmix, hπ]
   have hH : Measurable fun q : ProbabilityMeasure (ℕ → α) × (ℕ × ℕ → α) ↦
       (q.1.map (permReindex τ), pairReindex σ τ q.2) :=
-    (TauCeti.MeasureTheory.measurable_probabilityMeasure_map
-      (measurable_reindex (α := α) τ)).comp measurable_fst |>.prodMk
-      ((measurable_pairReindex σ τ).comp measurable_snd)
+    (hf.comp measurable_fst).prodMk ((measurable_pairReindex σ τ).comp measurable_snd)
   have hcomp :
       (fun q : ProbabilityMeasure (ℕ → α) × (ℕ × ℕ → α) ↦
         (q.1.map (permReindex τ), pairReindex σ τ q.2)) ∘ C =
