@@ -34,6 +34,7 @@ measurable, including sigma algebras larger than the Borel sigma algebra.
 * `TauCeti.Probability.integrableExpSet_inner_multivariateGaussian` gives the exact domain for a
   directional
   functional of a multivariate Gaussian.
+* `TauCeti.Probability.map_inner_multivariateGaussian` identifies scalar linear projections.
 * `TauCeti.Probability.mgf_inner_multivariateGaussian` gives the corresponding closed formula.
 * `TauCeti.Probability.cgf_inner_multivariateGaussian` gives its real logarithm, the quadratic
   polynomial determined by the directional mean and variance.
@@ -171,6 +172,25 @@ theorem integrableExpSet_inner_multivariateGaussian (m θ : EuclideanSpace ℝ �
   simpa only [coe_innerSL_apply] using
     IsGaussian.integrableExpSet_dual (μ := multivariateGaussian m S) (innerSL ℝ θ)
 
+/-- A real linear projection of a multivariate Gaussian has the corresponding directional mean
+and covariance quadratic form as its scalar Gaussian parameters. -/
+@[simp]
+theorem map_inner_multivariateGaussian (m q : EuclideanSpace ℝ ι)
+    {S : Matrix ι ι ℝ} (hS : S.PosSemidef) :
+    (multivariateGaussian m S).map (fun x ↦ ⟪q, x⟫) =
+      gaussianReal ⟪q, m⟫ (⟪q, S.toEuclideanLin q⟫).toNNReal := by
+  have hmean : (∫ x, ⟪q, x⟫ ∂multivariateGaussian m S) = ⟪q, m⟫ := by
+    simpa using (innerSL ℝ q).integral_comp_id_comm
+      (IsGaussian.integrable_id (μ := multivariateGaussian m S))
+  have hvar : Var[fun x ↦ ⟪q, x⟫; multivariateGaussian m S] =
+      ⟪q, S.toEuclideanLin q⟫ := by
+    rw [← covariance_self (by fun_prop),
+      ← covarianceBilin_apply_eq_cov IsGaussian.memLp_two_id,
+      covarianceBilin_multivariateGaussian hS]
+    exact (Matrix.inner_toEuclideanCLM S q q).symm
+  simpa only [coe_innerSL_apply, hmean, hvar] using
+    (IsGaussian.map_eq_gaussianReal (μ := multivariateGaussian m S) (innerSL ℝ q))
+
 /-- The moment-generating function of the inner product against a multivariate Gaussian vector.
 
 The exponent consists of the directional mean and one half of the covariance quadratic form,
@@ -179,24 +199,12 @@ theorem mgf_inner_multivariateGaussian (m θ : EuclideanSpace ℝ ι)
     {S : Matrix ι ι ℝ} (hS : S.PosSemidef) (t : ℝ) :
     mgf (fun x ↦ ⟪θ, x⟫) (multivariateGaussian m S) t =
       Real.exp (t * ⟪θ, m⟫ + t ^ 2 / 2 * ⟪θ, S.toEuclideanLin θ⟫) := by
-  let L : StrongDual ℝ (EuclideanSpace ℝ ι) := innerSL ℝ θ
-  have hL : (fun x ↦ ⟪θ, x⟫) = L := by
-    ext
-    simp [L, innerSL_apply_apply]
-  have hmean : ∫ x, L x ∂multivariateGaussian m S = ⟪θ, m⟫ := by
-    calc
-      ∫ x, L x ∂multivariateGaussian m S =
-          L (∫ x, x ∂multivariateGaussian m S) := by
-            simpa only [Function.comp_apply, id_eq] using
-              L.integral_comp_comm (IsGaussian.integrable_id (μ := multivariateGaussian m S))
-      _ = ⟪θ, m⟫ := by simp [L, innerSL_apply_apply]
-  have hvar : Var[L; multivariateGaussian m S] = ⟪θ, S.toEuclideanLin θ⟫ := by
-    rw [← hL]
-    rw [← covariance_self (by fun_prop),
-      ← covarianceBilin_apply_eq_cov IsGaussian.memLp_two_id,
-      covarianceBilin_multivariateGaussian hS]
-    exact (Matrix.inner_toEuclideanCLM S θ θ).symm
-  rw [hL, IsGaussian.mgf_dual, hmean, hvar]
+  have hnonneg : 0 ≤ ⟪θ, S.toEuclideanLin θ⟫ := by
+    simpa [EuclideanSpace.inner_eq_star_dotProduct, Matrix.ofLp_toLpLin,
+      Matrix.toLin'_apply, dotProduct_comm] using hS.dotProduct_mulVec_nonneg θ.ofLp
+  rw [← mgf_id_map (by fun_prop), map_inner_multivariateGaussian m θ hS,
+    mgf_id_gaussianReal, Real.coe_toNNReal _ hnonneg]
+  ring_nf
 
 /-- The cumulant-generating function of an inner product against a multivariate Gaussian vector
 is the quadratic polynomial determined by its directional mean and variance.
