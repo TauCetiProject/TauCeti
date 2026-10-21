@@ -7,11 +7,10 @@ module
 
 public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Products
 public import Mathlib.CategoryTheory.Limits.Shapes.Preorder.WellOrderContinuous
-public import Mathlib.CategoryTheory.Limits.Types.Filtered
 public import Mathlib.CategoryTheory.Limits.Types.Coproducts
 public import Mathlib.CategoryTheory.Limits.Types.Pushouts
 public import Mathlib.CategoryTheory.MorphismProperty.TransfiniteComposition
-public import Mathlib.Topology.Category.TopCat.Limits.Basic
+public import TauCeti.Topology.Category.TopCat.Limits.Basic
 
 /-!
 # Closed embeddings in `TopCat`
@@ -153,16 +152,6 @@ instance : IsStableUnderCoproducts.{w} isClosedEmbedding.{u} where
 end Coproduct
 
 section TransfiniteComposition
-
-/-- If all transition maps of a directed diagram in `TopCat` are injective, then so are the maps
-from the objects of the diagram to its colimit. -/
-theorem injective_ι_of_isColimit {J : Type w} [Preorder J] [IsDirectedOrder J]
-    {F : J ⥤ TopCat.{u}} (hF : ∀ ⦃i j : J⦄ (hij : i ≤ j), Function.Injective (F.map (homOfLE hij)))
-    {c : Cocone F} (hc : IsColimit c) (i : J) : Function.Injective (c.ι.app i) := fun x y h ↦ by
-  have : Nonempty J := ⟨i⟩
-  obtain ⟨k, g, hk⟩ :=
-    (Types.FilteredColimit.isColimit_eq_iff' (isColimitOfPreserves (forget TopCat) hc) x y).1 h
-  exact hF (leOfHom g) hk
 
 /-- If all transition maps of a directed diagram in `TopCat` are closed embeddings, then so are
 the maps from the objects of the diagram to its colimit. -/
