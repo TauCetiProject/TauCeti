@@ -379,8 +379,8 @@ private lemma alexanderWhitneyTerm_counit_whiskerRight (n p q : ℕ) (h : p + q 
     obtain rfl : q = n := by omega
     simp only [alexanderWhitneyCounit_f_zero, Monoidal.tensorUnit_map,
       TauCeti.SimplexCategory.subinterval_zero_eq_id, op_id, CategoryTheory.Functor.map_id]
-    -- the two sides agree up to unfolding the degree-`n` terms of the complexes
-    exact (congrArg (· ≫ _) (id_tensorHom_id _ _)).trans (Category.id_comp _)
+    dsimp only [alternatingFaceMapComplex_obj_X, Monoidal.tensorUnit_obj]
+    simp only [id_tensorHom_id, Category.id_comp]
   · rw [alexanderWhitneyCounit_f_eq_zero hp, MonoidalPreadditive.zero_whiskerRight, zero_comp,
       comp_zero]
 
@@ -400,8 +400,8 @@ private lemma alexanderWhitneyTerm_whiskerLeft_counit (n p q : ℕ) (h : p + q =
     obtain rfl : p = n := by omega
     simp only [alexanderWhitneyCounit_f_zero, Monoidal.tensorUnit_map,
       TauCeti.SimplexCategory.subinterval_zero_eq_id, op_id, CategoryTheory.Functor.map_id]
-    -- the two sides agree up to unfolding the degree-`n` terms of the complexes
-    exact (congrArg (· ≫ _) (id_tensorHom_id _ _)).trans (Category.id_comp _)
+    dsimp only [alternatingFaceMapComplex_obj_X, Monoidal.tensorUnit_obj]
+    simp only [id_tensorHom_id, Category.id_comp]
   · rw [alexanderWhitneyCounit_f_eq_zero hq, MonoidalPreadditive.whiskerLeft_zero, zero_comp,
       comp_zero]
 
@@ -413,8 +413,8 @@ private lemma alexanderWhitney_counit_whiskerRight :
   ext n : 1
   rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f, alexanderWhitney_f_eq_sum,
     leftUnitor_inv_f, leftUnitor'_inv]
-  -- the first factors agree: `(alternatingFaceMapComplex C).map (λ_ A).inv` is `(λ_ Aₙ).inv` in
-  -- degree `n` (`alternatingFaceMapComplex_map_f`, `Monoidal.leftUnitor_inv_app`)
+  dsimp only [alternatingFaceMapComplex_obj_X, Monoidal.tensorObj_obj, Monoidal.tensorUnit_obj]
+  rw [alternatingFaceMapComplex_map_f, Monoidal.leftUnitor_inv_app]
   congr 1
   refine Eq.symm ((Preadditive.sum_comp _ _ _).trans ?_)
   rw [Finset.sum_eq_single (0, n) (fun pq hpq hne ↦ ?_) (by simp)]
@@ -432,8 +432,8 @@ private lemma alexanderWhitney_whiskerLeft_counit :
   ext n : 1
   rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f, alexanderWhitney_f_eq_sum,
     rightUnitor_inv_f, rightUnitor'_inv]
-  -- the first factors agree: `(alternatingFaceMapComplex C).map (ρ_ A).inv` is `(ρ_ Aₙ).inv` in
-  -- degree `n` (`alternatingFaceMapComplex_map_f`, `Monoidal.rightUnitor_inv_app`)
+  dsimp only [alternatingFaceMapComplex_obj_X, Monoidal.tensorObj_obj, Monoidal.tensorUnit_obj]
+  rw [alternatingFaceMapComplex_map_f, Monoidal.rightUnitor_inv_app]
   congr 1
   refine Eq.symm ((Preadditive.sum_comp _ _ _).trans ?_)
   rw [Finset.sum_eq_single (n, 0) (fun pq hpq hne ↦ ?_) (by simp)]
