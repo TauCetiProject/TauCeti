@@ -124,16 +124,14 @@ weight. -/
 theorem IsWeightedHomogeneous.eval₂_eq_zero {m : M} (hφ : φ.IsWeightedHomogeneous w m)
     (hm : m ≠ 0) (f : R →+* S) {g : σ → S} (hg : ∀ i, w i ≠ 0 → g i = 0) :
     eval₂ f g φ = 0 := by
-  rw [eval₂_eq]
-  refine Finset.sum_eq_zero fun c hc ↦ ?_
+  refine eval₂Hom_eq_zero f g φ fun c hc ↦ ?_
   -- The monomial `X^c` has weight `m ≠ 0`, so it involves a variable of nonzero weight.
   obtain ⟨i, hi, hwi⟩ : ∃ i ∈ c.support, w i ≠ 0 := by
     by_contra! h
     refine hm ?_
-    rw [← hφ (mem_support_iff.mp hc), Finsupp.weight_apply, Finsupp.sum]
+    rw [← hφ hc, Finsupp.weight_apply, Finsupp.sum]
     exact Finset.sum_eq_zero fun i hi ↦ by rw [h i hi, smul_zero]
-  rw [Finset.prod_eq_zero hi (by rw [hg i hwi, zero_pow (Finsupp.mem_support_iff.mp hi)]),
-    mul_zero]
+  exact ⟨i, hi, hg i hwi⟩
 
 /-- If `F` is homogeneous of degree `d` in the variables `X_{b,l}` of block `b` and does not
 vanish at a point whose block-`b` coordinates all vanish, then `d = 0`. -/
