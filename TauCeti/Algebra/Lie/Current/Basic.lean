@@ -117,6 +117,11 @@ theorem ext [Module.Free R L] {u v : currentAlgebra R L}
 def orderSubmodule (N : ℤ) : Submodule R (currentAlgebra R L) :=
   Submodule.span R {u | ∃ f : R⸨X⸩, ∃ x : L, (N : WithTop ℤ) ≤ f.orderTop ∧ u = f ⊗ₜ x}
 
+/-- The order submodule is spanned by the tensors whose scalar series have order at least `N`. -/
+theorem orderSubmodule_def (N : ℤ) : orderSubmodule R L N =
+    Submodule.span R {u | ∃ f : R⸨X⸩, ∃ x : L, (N : WithTop ℤ) ≤ f.orderTop ∧ u = f ⊗ₜ x} :=
+  (rfl)
+
 /-- A tensor has order at least the order of its scalar series. -/
 theorem tmul_mem_orderSubmodule (N : ℤ) {f : R⸨X⸩}
     (hf : (N : WithTop ℤ) ≤ f.orderTop) (x : L) :

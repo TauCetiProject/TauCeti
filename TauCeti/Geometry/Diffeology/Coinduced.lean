@@ -22,7 +22,9 @@ then a subduction, and a diffeology on `Q` makes `q` a subduction exactly when i
 diffeology.
 
 The D-topology of the coinduced diffeology is the topology coinduced by `q` from the D-topology of
-`X`. In particular, every subduction is a quotient map for the D-topologies.
+`X`. In particular, every subduction is a quotient map for the D-topologies, so a subduction that
+is also a quotient map for given topologies carries compatibility of the topology with the
+D-topology from its source to its target.
 
 ## References
 
@@ -242,5 +244,16 @@ theorem IsSubduction.isQuotientMap_dTopology [DiffeologicalSpace Q] {q : X → Q
   let : TopologicalSpace X := _root_.Diffeology.dTopology
   let : TopologicalSpace Q := _root_.Diffeology.dTopology
   exact ⟨⟨hd ▸ dTopology_coinducedDiffeology q⟩, hs⟩
+
+/-- If the topology of the source of a subduction is its D-topology and the subduction is a
+quotient map for given topologies, then the topology of the target is its D-topology. -/
+theorem IsSubduction.isDTopologyCompatible [TopologicalSpace X]
+    [_root_.Diffeology.IsDTopologyCompatible X] [TopologicalSpace Q] [DiffeologicalSpace Q]
+    {q : X → Q} (hq : IsSubduction q) (h : Topology.IsQuotientMap q) :
+    _root_.Diffeology.IsDTopologyCompatible Q where
+  dTop_eq := by
+    obtain ⟨-, rfl⟩ := isSubduction_iff_eq_coinducedDiffeology.mp hq
+    rw [dTopology_coinducedDiffeology, _root_.Diffeology.IsDTopologyCompatible.dTop_eq X,
+      h.eq_coinduced]
 
 end TauCeti.Diffeology

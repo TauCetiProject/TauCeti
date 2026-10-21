@@ -107,6 +107,10 @@ def isoEquiv : (n ≅ m) ≃ (Fin n.len ≃ Fin m.len) where
 lemma skeletal : Skeletal FiniteBijection := fun _ _ ⟨e⟩ ↦
   FiniteBijection.ext (Fin.equiv_iff_eq.mp ⟨isoEquiv e⟩)
 
+/-- `FiniteBijection` has morphisms only between equal objects. -/
+lemma eq_of_hom (f : n ⟶ m) : n = m :=
+  skeletal ⟨Groupoid.isoEquivHom n m |>.symm f⟩
+
 /-- The automorphism group of an object of `FiniteBijection` is the symmetric group of the
 standard finite set it stands for. -/
 @[expose, simps]
@@ -137,6 +141,15 @@ would stop the block lemmas below from matching. -/
 lemma tensorObj_len (n m : FiniteBijection) : (n ⊗ m).len = n.len + m.len := rfl
 
 lemma tensorUnit_len : (𝟙_ FiniteBijection).len = 0 := rfl
+
+/-- There is at most one morphism out of the tensor unit `mk 0`, the empty bijection. In
+particular the only endomorphism of the tensor unit is the identity. -/
+instance (n : FiniteBijection) : Subsingleton (𝟙_ FiniteBijection ⟶ n) :=
+  ⟨fun _ _ ↦ hom_ext fun i ↦ Fin.elim0 i⟩
+
+/-- There is no morphism from the tensor unit `mk 0` to a nonempty standard finite set. -/
+instance (n : ℕ) : IsEmpty (𝟙_ FiniteBijection ⟶ mk (n + 1)) :=
+  ⟨fun f ↦ n.succ_ne_zero (congrArg len (eq_of_hom f)).symm⟩
 
 lemma toEquiv_tensorHom {n m n' m' : FiniteBijection} (f : n ⟶ m) (g : n' ⟶ m') :
     (f ⊗ₘ g).toEquiv =

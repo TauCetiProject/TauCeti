@@ -16,7 +16,8 @@ import Mathlib.Algebra.BigOperators.Field
 Facts about Mathlib's `Rel.interedges` and `Rel.edgeDensity` used when comparing edge densities
 across a refinement of finite partitions: the edge count between two finsets is their size product
 times their edge density (with no nonemptiness hypothesis, since both sides vanish on an empty
-finset), and edge counts are additive over disjoint unions on either side. The corresponding
+finset), edge counts are additive over disjoint unions on either side, and the edge count between
+two finsets splits along the traces of the parts of finite partitions on them. The corresponding
 `SimpleGraph` results are specializations to the adjacency relation.
 -/
 
@@ -60,6 +61,18 @@ theorem card_interedges_biUnion_right [DecidableEq β]
   classical
   rw [Rel.interedges_biUnion_right, card_biUnion]
   exact fun i hi j hj hij => Rel.interedges_disjoint_right r s (hf hi hj hij)
+
+/-- The number of related pairs between `A ⊆ s` and `B ⊆ t` splits along the traces on `A` and on
+`B` of the parts of finite partitions of `s` and of `t`. -/
+theorem card_interedges_eq_sum_parts [DecidableEq α] [DecidableEq β] {s A : Finset α}
+    {t B : Finset β} (P : Finpartition s) (Q : Finpartition t) (hA : A ⊆ s) (hB : B ⊆ t) :
+    #(Rel.interedges r A B) =
+      ∑ C ∈ P.parts, ∑ D ∈ Q.parts, #(Rel.interedges r (A ∩ C) (B ∩ D)) := by
+  rw [Rel.card_interedges_finpartition r (P.restrict hA) (Q.restrict hB), sum_product,
+    P.sum_restrict hA (fun X ↦ ∑ Y ∈ (Q.restrict hB).parts, #(Rel.interedges r X Y)) (by simp)]
+  refine sum_congr rfl fun C _ ↦ ?_
+  rw [Q.sum_restrict hB (fun Y ↦ #(Rel.interedges r (C ⊓ A) Y)) (by simp [Rel.interedges])]
+  simp_rw [Finset.inf_eq_inter, inter_comm]
 
 /-- The related-pair count between two coarse parts is the sum of the counts between the fine
 parts with those coarse parents. -/
@@ -115,6 +128,13 @@ theorem card_interedges_biUnion_right (s : Finset V) (t : Finset ι) (f : ι →
     (hf : (t : Set ι).PairwiseDisjoint f) :
     #(G.interedges s (t.biUnion f)) = ∑ i ∈ t, #(G.interedges s (f i)) :=
   Rel.card_interedges_biUnion_right G.Adj s t f hf
+
+/-- The number of edges between `A ⊆ s` and `B ⊆ t` splits along the traces on `A` and on `B` of
+the parts of finite partitions of `s` and of `t`. -/
+theorem card_interedges_eq_sum_parts {s t A B : Finset V} (P : Finpartition s)
+    (Q : Finpartition t) (hA : A ⊆ s) (hB : B ⊆ t) :
+    #(G.interedges A B) = ∑ C ∈ P.parts, ∑ D ∈ Q.parts, #(G.interedges (A ∩ C) (B ∩ D)) :=
+  Rel.card_interedges_eq_sum_parts G.Adj P Q hA hB
 
 /-- The edge count between two coarse parts is the sum of the edge counts between the fine parts
 with those coarse parents. -/
