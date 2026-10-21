@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.ODE.EnergyEstimate.Fredholm
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
-import TauCeti.Analysis.ODE.Linear
+import TauCeti.Analysis.ODE.Caratheodory
 import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
@@ -192,6 +192,12 @@ private theorem hasDerivAt_kerSolution (hA : Continuous A)
     HasDerivAt (kerSolution hA hAL u) (-A s (kerSolution hA hAL u s)) s :=
   (Classical.choose_spec (exists_hasDerivAt_of_trajectoryOperator_eq_zero hA hAL u.2)).1 s
 
+private theorem continuous_kerSolution (hA : Continuous A)
+    {AL : Lp (F →L[ℝ] F) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A)
+    (u : (trajectoryOperator (p := 2) AL).ker) : Continuous (kerSolution hA hAL u) :=
+  Differentiable.continuous fun s ↦ (hasDerivAt_kerSolution hA hAL u s).differentiableAt
+
 private theorem prev_ae_eq_kerSolution (hA : Continuous A)
     {AL : Lp (F →L[ℝ] F) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A)
@@ -210,9 +216,7 @@ private theorem kerSolution_eq (hA : Continuous A)
     kerSolution hA hAL u = v := by
   have h := (prev_ae_eq_kerSolution hA hAL u).symm.trans huv
   rw [Opens.coe_top, Measure.restrict_univ] at h
-  exact (Continuous.ae_eq_iff_eq volume
-    (continuous_iff_continuousAt.2 fun s ↦ (hasDerivAt_kerSolution hA hAL u s).continuousAt)
-    hv).1 h
+  exact (Continuous.ae_eq_iff_eq volume (continuous_kerSolution hA hAL u) hv).1 h
 
 /-- Evaluation at time `0` of the continuous representative, as a linear map from the kernel of
 `D_A` to `F`. -/
@@ -222,18 +226,15 @@ private def kerEval (hA : Continuous A)
     (trajectoryOperator (p := 2) AL).ker →ₗ[ℝ] F where
   toFun u := kerSolution hA hAL u 0
   map_add' u w := by
-    have hc (z : (trajectoryOperator (p := 2) AL).ker) : Continuous (kerSolution hA hAL z) :=
-      continuous_iff_continuousAt.2 fun s ↦ (hasDerivAt_kerSolution hA hAL z s).continuousAt
-    rw [kerSolution_eq hA hAL (u + w) ((hc u).add (hc w)) ?_]
+    rw [kerSolution_eq hA hAL (u + w)
+      ((continuous_kerSolution hA hAL u).add (continuous_kerSolution hA hAL w)) ?_]
     · rfl
     filter_upwards [Lp.coeFn_add (prev _ u.1) (prev _ w.1),
       prev_ae_eq_kerSolution hA hAL u, prev_ae_eq_kerSolution hA hAL w] with s hs hu hw
     rw [Submodule.coe_add, ← prevL_apply, map_add, prevL_apply, prevL_apply, hs, Pi.add_apply,
       hu, hw, Pi.add_apply]
   map_smul' c u := by
-    have hc : Continuous (kerSolution hA hAL u) :=
-      continuous_iff_continuousAt.2 fun s ↦ (hasDerivAt_kerSolution hA hAL u s).continuousAt
-    rw [kerSolution_eq hA hAL (c • u) (hc.const_smul c) ?_]
+    rw [kerSolution_eq hA hAL (c • u) ((continuous_kerSolution hA hAL u).const_smul c) ?_]
     · rfl
     filter_upwards [Lp.coeFn_smul c (prev _ u.1), prev_ae_eq_kerSolution hA hAL u]
       with s hs hu
@@ -279,7 +280,7 @@ private theorem exists_kerEval_eq (hA : Continuous A)
   obtain ⟨u, hu, huv⟩ := exists_trajectoryOperator_eq_zero_of_hasDerivAt (p := 2) hAL hv hv2
   refine ⟨⟨u, hu⟩, ?_⟩
   rw [kerEval_apply, kerSolution_eq hA hAL ⟨u, hu⟩
-    (continuous_iff_continuousAt.2 fun s ↦ (hv s).continuousAt) huv]
+    (Differentiable.continuous fun s ↦ (hv s).differentiableAt) huv]
 
 /-- **The kernel of the trajectory operator is the space of square-integrable solutions.** For a
 continuous family `A` of bounded operators on a real Banach space `F`, with `L∞` class `AL`,
@@ -291,8 +292,9 @@ def kerTrajectoryOperatorEquiv (hA : Continuous A)
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
     (trajectoryOperator (p := 2) AL).ker ≃ₗ[ℝ] squareIntegrableSolutions A :=
   LinearEquiv.ofBijective ((kerEval hA hAL).codRestrict _ (kerEval_mem hA hAL))
-    ⟨fun _ _ h ↦ kerEval_injective hA hAL (congrArg Subtype.val h), fun x ↦
-      (exists_kerEval_eq hA hAL x.2).imp fun _ h ↦ Subtype.ext h⟩
+    (show Function.Bijective _ from
+      ⟨fun _ _ h ↦ kerEval_injective hA hAL (congrArg Subtype.val h), fun x ↦
+        (exists_kerEval_eq hA hAL x.2).imp fun _ h ↦ Subtype.ext h⟩)
 
 /-- The equivalence `kerTrajectoryOperatorEquiv` evaluates at time `0` any continuous
 representative of the value of a kernel element. -/
@@ -303,9 +305,8 @@ theorem kerTrajectoryOperatorEquiv_apply (hA : Continuous A)
     (huv : ⇑(prev (ContinuousLinearMap.id ℝ (Lp F 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) u.1)
       =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] v) :
     (kerTrajectoryOperatorEquiv hA AL hAL u : F) = v 0 := by
-  -- The equivalence is `LinearEquiv.ofBijective` of `kerEval`, so it applies as `kerEval`.
-  have h : (kerTrajectoryOperatorEquiv hA AL hAL u : F) = kerEval hA hAL u := rfl
-  rw [h, kerEval_apply, kerSolution_eq hA hAL u hv huv]
+  rw [kerTrajectoryOperatorEquiv, LinearEquiv.ofBijective_apply, LinearMap.codRestrict_apply,
+    kerEval_apply, kerSolution_eq hA hAL u hv huv]
 
 /-- The kernel of `D_A u = u' + A u` on `W^{1,2}(ℝ, F)` has the dimension of the space of
 square-integrable solutions of `v' + A v = 0`. -/
