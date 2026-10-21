@@ -119,18 +119,16 @@ noncomputable def translationHom [DecidableEq k] (hF : IsFunctionField k F) (hP 
       ((degreeZeroClassGroupEquivPoint hF hP h).trans
         (Affine.Point.equivBaseChangeSelf W.toAffine))).toMonoidHom)
 
-/-- Transporting places along the inverse of an isomorphism of function fields intertwines the
-actions of the corresponding automorphisms. -/
-private theorem equivOfRingEquiv_autCongr_smul {L : Type*} [Field L] [Algebra k L]
-    (e : L ≃ₐ[k] F) (τ : L ≃ₐ[k] L) (Q : Place k F) :
-    Place.equivOfRingEquiv (RingEquiv.refl k) e.symm.toRingEquiv
-        (symm_toRingEquiv_algebraMap e) (AlgEquiv.autCongr e τ • Q) =
-      τ • Place.equivOfRingEquiv (RingEquiv.refl k) e.symm.toRingEquiv
-        (symm_toRingEquiv_algebraMap e) Q :=
-  Place.ext (Valuation.ext fun z ↦ by simp [Place.valuation_smul])
-
 variable [DecidableEq k] (hF : IsFunctionField k F) (hP : P.degree = 1)
   (h : P.IsWeierstrassCoordinates W x y)
+
+/-- The unfolding of `translationHom`: the class `c` acts through the translation by its point,
+transported to `F`. -/
+private theorem translationHom_apply (c : Multiplicative (Divisor.degreeClass hF).ker) :
+    h.translationHom hF hP c = AlgEquiv.autCongr (functionFieldEquiv hF hP h)
+      (Affine.translation W.toAffine (Affine.Point.equivBaseChangeSelf W.toAffine
+        (degreeZeroClassGroupEquivPoint hF hP h (Multiplicative.toAdd c)))) := by
+  simp [translationHom, Affine.translationHom_apply]
 
 /-- The translations of an elliptic function field act faithfully. -/
 theorem translationHom_injective : Function.Injective (h.translationHom hF hP) :=
@@ -158,22 +156,6 @@ theorem finiteIndex_range_translationHom : (h.translationHom hF hP).range.Finite
     rw [Subgroup.index_map_of_bijective (AlgEquiv.autCongr _).bijective]
     exact (Affine.finiteIndex_range_translationHom W.toAffine).index_ne_zero⟩
 
-/-- The class of a point of an elliptic curve is the class of its place minus the place at
-infinity, for every point, including the point at infinity. -/
-private theorem val_pointEquivDegreeZeroDivisorClass (R : W.toAffine.Point) :
-    (W.toAffine.pointEquivDegreeZeroDivisorClass R :
-        (Place.orderSystem W.toAffine.isFunctionField).ClassGroup) =
-      (Place.orderSystem W.toAffine.isFunctionField).divisorClass
-        (WeilDivisor.pointDifference (W.toAffine.pointEquivDegreeOnePlace R).1
-          (Place.infinity W.toAffine)) := by
-  cases R with
-  | zero =>
-    rw [Affine.coe_pointEquivDegreeOnePlace_zero, WeilDivisor.pointDifference_self, map_zero,
-      ← Affine.Point.zero_def, map_zero, ZeroMemClass.coe_zero]
-  | some x y hxy =>
-    rw [Affine.coe_pointEquivDegreeOnePlace_some, Affine.val_pointEquivDegreeZeroDivisorClass_some,
-      WeilDivisor.pointDifference]
-
 /-- **A translation moves each place of degree one by its class**: the automorphism attached to
 `c ∈ Cl⁰(F)` sends a place `Q` of degree one to the place `σ_c(Q)` with `[Q - σ_c(Q)] = c`. In
 genus one a place of degree one is determined by this class
@@ -196,14 +178,8 @@ theorem divisorClass_pointDifference_translationHom_smul
     rw [Equiv.apply_symm_apply]
   have hσ : T (h.translationHom hF hP c • Q) =
       (W.toAffine.pointEquivDegreeOnePlace (R - Pt)).1 := by
-    rw [translationHom, MonoidHom.comp_apply, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-      equivOfRingEquiv_autCongr_smul, ← hR, Affine.translationHom_apply,
-      MulEquiv.coe_toMonoidHom, AddEquiv.toMultiplicative_apply_apply, toAdd_ofAdd,
-      AddEquiv.trans_apply]
+    rw [translationHom_apply, Place.equivOfRingEquiv_autCongr_smul, ← hR]
     exact Affine.translation_smul_pointEquivDegreeOnePlace W.toAffine Pt R
-  have hT (Q' : Place k F) :
-      Finsupp.domCongr T (WeilDivisor.ofPoint Q') = WeilDivisor.ofPoint (T Q') := by
-    simpa [WeilDivisor.single_eq_zsmul_ofPoint] using Finsupp.equivMapDomain_single T Q' (1 : ℤ)
   -- compare both sides in the class group of the model
   apply (Divisor.classGroupEquivOfRingEquiv (RingEquiv.refl k) e.symm.toRingEquiv
     (symm_toRingEquiv_algebraMap e) hF W.toAffine.isFunctionField).injective
@@ -213,12 +189,13 @@ theorem divisorClass_pointDifference_translationHom_smul
     AddEquiv.apply_symm_apply _ _
   rw [Divisor.classGroupEquivOfRingEquiv_divisorClass,
     ← Divisor.coe_degreeZeroClassGroupEquivOfRingEquiv_apply, ← hc,
-    WeilDivisor.pointDifference, map_sub, hT, hT, hσ, ← hR]
+    WeilDivisor.pointDifference, map_sub, WeilDivisor.domCongr_ofPoint,
+    WeilDivisor.domCongr_ofPoint, hσ, ← hR]
   -- the class of `Pt` is the difference of the classes of `R` and `R - Pt`
   have hsub := map_sub W.toAffine.pointEquivDegreeZeroDivisorClass R (R - Pt)
   rw [sub_sub_cancel] at hsub
-  rw [hsub, AddSubgroup.coe_sub, val_pointEquivDegreeZeroDivisorClass,
-    val_pointEquivDegreeZeroDivisorClass, ← map_sub, WeilDivisor.pointDifference,
+  rw [hsub, AddSubgroup.coe_sub, Affine.val_pointEquivDegreeZeroDivisorClass,
+    Affine.val_pointEquivDegreeZeroDivisorClass, ← map_sub, WeilDivisor.pointDifference,
     WeilDivisor.pointDifference, sub_sub_sub_cancel_right]
 
 end Place.IsWeierstrassCoordinates
