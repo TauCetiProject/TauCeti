@@ -62,17 +62,10 @@ on the parameter, then so does the frame `x ↦ ∑ i, x i • B y i`, in the op
 theorem continuous_equivFunL_symm_of_continuous (h : ∀ i, Continuous fun y ↦ B y i) :
     Continuous fun y ↦ ((B y).equivFunL.symm : (ι → 𝕜) →L[𝕜] F) := by
   have := Fintype.ofFinite ι
-  have h' : (fun y ↦ ((B y).equivFunL.symm : (ι → 𝕜) →L[𝕜] F)) =
-      fun y ↦ ∑ i, (ContinuousLinearMap.proj i : (ι → 𝕜) →L[𝕜] 𝕜).smulRight (B y i) := by
-    ext1 y
-    refine ContinuousLinearMap.ext fun x ↦ ?_
-    rw [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.symm_apply_eq]
-    ext j
-    classical
-    simp [Finsupp.single_apply]
-  rw [h']
-  exact continuous_finsetSum _ fun i _ ↦
-    (ContinuousLinearMap.smulRightL 𝕜 (ι → 𝕜) F (ContinuousLinearMap.proj i)).continuous.comp (h i)
+  refine continuous_clm_apply.2 fun x ↦ ?_
+  change Continuous fun y ↦ (B y).equivFun.symm x
+  simp only [Basis.equivFun_symm_apply]
+  exact continuous_finsetSum _ fun i _ ↦ continuous_const.smul (h i)
 
 /-- **Continuity of a family of coordinate maps.** If every vector of a family of bases depends
 continuously on the parameter, then so does the coordinate map `F → ι → 𝕜`, in the operator

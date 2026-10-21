@@ -282,14 +282,12 @@ theorem continuous_torusFamilyProjection [TopologicalSpace Y] [TopologicalSpace 
   let _ := periodAddAction P
   continuous_fst.quotient_lift _
 
-/-- The projection of the family of tori is open when the periods depend continuously on the
-parameter. -/
-theorem isOpenMap_torusFamilyProjection [TopologicalSpace Y] [TopologicalSpace E]
-    [ContinuousAdd E] (hcont : ∀ l, Continuous fun y ↦ P y l) :
+/-- The projection of the family of tori is open, since it is descended from the open map
+`Prod.fst` along the quotient map. -/
+theorem isOpenMap_torusFamilyProjection [TopologicalSpace Y] [TopologicalSpace E] :
     IsOpenMap (torusFamilyProjection P) :=
   let _ := periodAddAction P
-  have := continuousConstVAdd_periodAddAction P hcont
-  AddAction.isOpenQuotientMap_quotientMk.isOpenMap_iff.2 isOpenMap_fst
+  IsOpenMap.of_comp continuous_quot_mk Quotient.mk_surjective isOpenMap_fst
 
 end Action
 
