@@ -89,6 +89,15 @@ lemma _root_.CategoryTheory.CommMon.sectionsAlgHom_restrictSections {A B : CommM
   exact (PresheafOfModules.naturality_apply f.hom.hom.val i.op x).trans
     (B.restrictSections_apply i _).symm
 
+/-- Restriction of sections commutes with the structure maps from regular functions. -/
+lemma _root_.CategoryTheory.CommMon.restrictSections_algebraMap {U V : X.Opens} (i : V ⟶ U)
+    (r : Γ(X, U)) :
+    A.restrictSections i (algebraMap Γ(X, U) Γ(A.X, U) r) =
+      algebraMap Γ(X, V) Γ(A.X, V) (X.presheaf.map i.op r) := by
+  have h := A.toSectionsPresheaf.naturality i.op
+  rw [CommMon.toSectionsPresheaf_app, CommMon.toSectionsPresheaf_app] at h
+  exact congr($h r).symm
+
 /-- A morphism of commutative `𝒪ₓ`-algebras is determined by the algebra maps it induces on
 sections. -/
 lemma _root_.CategoryTheory.CommMon.hom_ext_of_sectionsAlgHom {A B : CommMon X.Modules}

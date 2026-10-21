@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Invariant.Basic
 public import TauCeti.AlgebraicGeometry.RelativeSpec.Equalizer
 public import TauCeti.AlgebraicGeometry.RelativeSpec.MorphismProperties
+import TauCeti.RingTheory.Invariant.Localization
 
 /-!
 # Relative invariant quotients by finite groups
@@ -39,8 +40,9 @@ over a non-affine base is obtained without choosing a global invariant affine co
 preimages of the affine opens of `X` form one. The universal property of the quotient and the
 étaleness of the projection for free actions are not proved in this file.
 
-The localization argument is that of `TauCeti.FixedPoints.isLocalization`, and the gluing follows
-the relative spectrum of an equalizer, `CommMon.relativeSpecEqualizer`.
+The localization statement is a case of `TauCeti.FixedPoints.isLocalization_of_mem_range_iff`,
+which also gives `TauCeti.FixedPoints.isLocalization`, and the gluing follows the relative
+spectrum of an equalizer, `CommMon.relativeSpecEqualizer`.
 
 ## Main definitions
 
@@ -149,11 +151,8 @@ through the algebra map, and their images are invariant. -/
 def toInvariantSectionsPresheaf : X.presheaf ⟶ invariantSectionsPresheaf ρ where
   app U := CommRingCat.ofHom (algebraMap Γ(X, U.unop) (invariantSections ρ U.unop))
   naturality {U V} i := by
-    have h := A.toSectionsPresheaf.naturality i
-    rw [toSectionsPresheaf_app, toSectionsPresheaf_app] at h
     ext r
-    apply Subtype.ext
-    exact congr($h r)
+    exact Subtype.ext (A.restrictSections_algebraMap i.unop r).symm
 
 @[simp]
 lemma toInvariantSectionsPresheaf_app (U : X.Opensᵒᵖ) :
@@ -170,6 +169,12 @@ def invariantSectionsPresheafι : invariantSectionsPresheaf ρ ⟶ A.sectionsPre
 lemma invariantSectionsPresheafι_app (U : X.Opensᵒᵖ) :
     (invariantSectionsPresheafι ρ).app U =
       CommRingCat.ofHom (invariantSections ρ U.unop).val.toRingHom :=
+  (rfl)
+
+/-- The inclusion of the invariant sections is the algebra map of the subalgebra. -/
+lemma invariantSectionsPresheafι_app_eq_algebraMap (U : X.Opens) :
+    (invariantSectionsPresheafι ρ).app (op U) =
+      CommRingCat.ofHom (algebraMap (invariantSections ρ U) Γ(A.X, U)) :=
   (rfl)
 
 /-- The inclusion of the invariant sections is compatible with the structure maps from the
@@ -202,66 +207,24 @@ theorem isLocalization_invariantSections_basicOpen [Finite G] [A.X.IsQuasicohere
     IsLocalization.Away (algebraMap Γ(X, U) (invariantSections ρ U) r)
       (invariantSections ρ (X.basicOpen r)) := by
   set i : X.basicOpen r ⟶ U := homOfLE (X.basicOpen_le r)
-  set E := invariantSections ρ U
-  set E' := invariantSections ρ (X.basicOpen r)
-  let _ : Algebra E E' := ((A.restrictSections i).restrict E E'
-    fun _ ↦ restrictSections_mem_invariantSections ρ _).toAlgebra
-  set a := algebraMap Γ(X, U) Γ(A.X, U) r
-  have ha : ∀ n : ℕ, ((algebraMap Γ(X, U) E r ^ n : E) : Γ(A.X, U)) = a ^ n := fun n ↦ by
-    rw [SubmonoidClass.coe_pow, Subalgebra.coe_algebraMap]
-  have hga : ∀ (g : G) (n : ℕ), sectionsAlgHom (ρ g).asIso.hom U (a ^ n) = a ^ n := fun g n ↦ by
-    rw [map_pow, AlgHom.commutes]
-  have hA := A.isLocalization_basicOpen hU r
-  refine (isLocalization_iff _ _).mpr ⟨?_, ?_, ?_⟩
-  · -- The image of `r` is a unit, already in `Γ(X, X.basicOpen r)`.
-    rintro ⟨_, n, rfl⟩
-    have hres : A.restrictSections i a =
-        algebraMap Γ(X, X.basicOpen r) Γ(A.X, X.basicOpen r) (X.presheaf.map i.op r) := by
-      have h := A.toSectionsPresheaf.naturality i.op
-      rw [toSectionsPresheaf_app, toSectionsPresheaf_app] at h
-      exact congr($h r).symm
-    have : algebraMap E E' (algebraMap Γ(X, U) E r ^ n) =
-        algebraMap Γ(X, X.basicOpen r) E' (X.presheaf.map i.op r) ^ n := by
-      rw [map_pow]
-      congr 1
-      exact Subtype.ext hres
-    rw [this]
-    exact ((X.toRingedSpace.isUnit_res_basicOpen r).map _).pow n
-  · -- A section `z` with `z * r ^ n = x` has `g • x` and `x` equal away from `r`, hence
-    -- `r ^ m * x` is invariant for some `m` working for each of the finitely many `g`.
-    intro z
-    let := (A.restrictSections i).toAlgebra
-    obtain ⟨⟨x, _, n, rfl⟩, hx⟩ := IsLocalization.surj (Submonoid.powers a) z.1
-    simp only [RingHom.algebraMap_toAlgebra] at hx
-    have hg (g : G) : A.restrictSections i (sectionsAlgHom (ρ g).asIso.hom U x) =
-        A.restrictSections i x := by
-      rw [← sectionsAlgHom_restrictSections, ← hx, map_mul, mem_invariantSections.mp z.2 g,
-        sectionsAlgHom_restrictSections, hga]
-    have hk (g : G) : ∃ k : ℕ, a ^ k * sectionsAlgHom (ρ g).asIso.hom U x = a ^ k * x := by
-      obtain ⟨⟨_, k, rfl⟩, hk⟩ := IsLocalization.exists_of_eq (M := Submonoid.powers a) (hg g)
-      exact ⟨k, hk⟩
-    choose k hk using hk
-    have := Fintype.ofFinite G
-    set M := ∑ g, k g
-    have hM (g : G) : a ^ M * sectionsAlgHom (ρ g).asIso.hom U x = a ^ M * x := by
-      obtain ⟨c, hc⟩ : ∃ c, M = k g + c := Nat.exists_eq_add_of_le
-        (Finset.single_le_sum (f := k) (fun _ _ ↦ Nat.zero_le _) (Finset.mem_univ g))
-      rw [hc, pow_add, mul_comm (a ^ k g), mul_assoc, mul_assoc, hk g]
-    refine ⟨⟨⟨a ^ M * x, mem_invariantSections.mpr fun g ↦ ?_⟩, ⟨_, n + M, rfl⟩⟩,
-      Subtype.ext ?_⟩
-    · rw [map_mul, hga, hM]
-    · simp only [RingHom.algebraMap_toAlgebra, Subalgebra.coe_mul, SubmonoidClass.coe_pow,
-        RingHom.coe_restrict_apply, Subalgebra.coe_algebraMap, map_mul, map_pow]
-      rw [← hx, map_pow, pow_add]
-      ring
-  · -- Two sections that agree away from `r` agree after multiplication by a power of `r`.
-    intro x y h
-    let := (A.restrictSections i).toAlgebra
-    obtain ⟨⟨_, n, rfl⟩, hn⟩ := IsLocalization.exists_of_eq (M := Submonoid.powers a)
-      (congrArg Subtype.val h)
-    refine ⟨⟨_, n, rfl⟩, Subtype.ext ?_⟩
-    rw [Subalgebra.coe_mul, Subalgebra.coe_mul, ha]
-    exact hn
+  let _ := (A.restrictSections i).toAlgebra
+  let _ : Algebra (invariantSections ρ U) (invariantSections ρ (X.basicOpen r)) :=
+    ((A.restrictSections i).restrict _ _
+      fun _ ↦ restrictSections_mem_invariantSections ρ _).toAlgebra
+  -- The images of the invariant sections are the sections fixed by every `g`.
+  have hmem (V : X.Opens) (x : Γ(A.X, V)) : x ∈ Set.range (algebraMap (invariantSections ρ V) _) ↔
+      ∀ g, (sectionsAlgHom (ρ g).asIso.hom V).toRingHom x = x := by
+    rw [Subalgebra.setRange_algebraMap]
+    exact mem_invariantSections
+  have : IsLocalization (Algebra.algebraMapSubmonoid Γ(A.X, U)
+      (.powers (algebraMap Γ(X, U) (invariantSections ρ U) r))) Γ(A.X, X.basicOpen r) := by
+    rw [Algebra.algebraMapSubmonoid_powers]
+    exact A.isLocalization_basicOpen hU r
+  exact TauCeti.FixedPoints.isLocalization_of_mem_range_iff _
+    (fun g ↦ (sectionsAlgHom (ρ g).asIso.hom U).toRingHom)
+    (fun g ↦ (sectionsAlgHom (ρ g).asIso.hom (X.basicOpen r)).toRingHom)
+    (fun g ↦ sectionsAlgHom_restrictSections _ i) Subtype.val_injective (hmem U)
+    Subtype.val_injective (hmem _) fun _ ↦ rfl
 
 /-- On the affine opens of `X`, the presheaf of invariant sections is coequifibered over the
 structure presheaf: its sections over basic opens are localizations. This is the condition under
@@ -274,7 +237,7 @@ theorem coequifibered_toInvariantSectionsPresheaf [Finite G] [A.X.IsQuasicoheren
   exact isLocalization_invariantSections_basicOpen ρ U.2 r
 
 /-- The sections of `A` are integral over the invariant sections, since `G` is finite. -/
-theorem isIntegral_invariantSections [Finite G] (U : X.Opens) :
+instance isIntegral_invariantSections [Finite G] (U : X.Opens) :
     Algebra.IsIntegral (invariantSections ρ U) Γ(A.X, U) := by
   let _ : MulSemiringAction G Γ(A.X, U) := MulSemiringAction.compHom _ (sectionsAction ρ U)
   -- Through `MulSemiringAction.compHom`, `g • x` is `sectionsAction ρ U g x`; invariant sections
@@ -446,40 +409,35 @@ private lemma relativeSpecInvariantsπ_iff (P : MorphismProperty Scheme.{u})
     [IsZariskiLocalAtTarget P] :
     P (relativeSpecInvariantsπ ρ) ↔ ∀ U : X.AffineZariskiSite,
       P (Spec.map (CommRingCat.ofHom (algebraMap (invariantSections ρ U.1) Γ(A.X, U.1)))) := by
-  rw [IsZariskiLocalAtTarget.iff_of_openCover (P := P) (relativeSpecInvariantsCover ρ)]
-  refine forall_congr' fun (U : X.AffineZariskiSite) ↦ ?_
+  simp only [← invariantSectionsPresheafι_app_eq_algebraMap]
+  refine ⟨fun H U ↦ MorphismProperty.IsLocalAtTarget.of_isPullback (relativeSpecInvariantsCover ρ)
+    U (isPullback_relativeSpecInvariantsπ ρ U).flip H,
+    fun H ↦ MorphismProperty.IsLocalAtTarget.of_zeroHypercover (relativeSpecInvariantsCover ρ)
+      fun U ↦ ?_⟩
+  -- The second projection of the pullback is the chart of the projection, up to isomorphism.
   have h := (isPullback_relativeSpecInvariantsπ ρ U).flip
-  have key : P (pullback.snd (relativeSpecInvariantsπ ρ) ((relativeSpecInvariantsCover ρ).f U)) ↔
-      P (Spec.map ((invariantSectionsPresheafι ρ).app (op U.1))) := by
-    rw [← h.isoPullback_hom_snd, P.cancel_left_of_respectsIso]
-    -- The two sides differ only in the proofs of `HasPullback` they carry.
-    exact Iff.rfl
-  -- `Scheme.Cover.pullbackHom` is defined as this second projection.
-  exact key
+  exact h.isoPullback_inv_snd ▸ (P.cancel_left_of_respectsIso h.isoPullback.inv _).mpr (H U)
 
 /-- The quotient projection is integral. -/
 instance : IsIntegralHom (relativeSpecInvariantsπ ρ) := by
   have : IsZariskiLocalAtTarget @IsIntegralHom.{u} :=
     @HasAffineProperty.instIsZariskiLocalAtTarget _ _ IsIntegralHom.hasAffineProperty
   refine (relativeSpecInvariantsπ_iff ρ @IsIntegralHom).mpr fun U ↦ ?_
-  have := isIntegral_invariantSections ρ U.1
   exact IsIntegralHom.SpecMap_iff.mpr (algebraMap_isIntegral_iff.mpr inferInstance)
 
 /-- The quotient projection is surjective. -/
 instance : Surjective (relativeSpecInvariantsπ ρ) := by
   refine (relativeSpecInvariantsπ_iff ρ @Surjective).mpr fun U ↦ ?_
-  have := isIntegral_invariantSections ρ U.1
   exact ⟨Algebra.IsIntegral.comap_surjective _ _⟩
 
 /-- The quotient projection is finite when `Spec_X(A)` is locally of finite type over `X`. -/
-theorem isFinite_relativeSpecInvariantsπ [LocallyOfFiniteType A.relativeSpecToBase] :
+instance isFinite_relativeSpecInvariantsπ [LocallyOfFiniteType A.relativeSpecToBase] :
     IsFinite (relativeSpecInvariantsπ ρ) := by
   observe hasFiniteAffineProperty : HasAffineProperty @IsFinite.{u}
     (fun X _ f _ ↦ IsAffine X ∧ RingHom.Finite (f.appTop).hom)
   have : IsZariskiLocalAtTarget @IsFinite.{u} :=
     @HasAffineProperty.instIsZariskiLocalAtTarget _ _ hasFiniteAffineProperty
   refine (relativeSpecInvariantsπ_iff ρ @IsFinite).mpr fun U ↦ ?_
-  have := isIntegral_invariantSections ρ U.1
   have : Algebra.FiniteType Γ(X, U.1) Γ(A.X, U.1) :=
     (A.relativeSpec_finiteType_iff.mp inferInstance) U.1 U.2
   have : Algebra.FiniteType (invariantSections ρ U.1) Γ(A.X, U.1) :=
