@@ -213,8 +213,9 @@ private theorem inv_le_abs_apply_one_zero_of_upperRightHom_mem_of_pos [DiscreteT
   rw [not_le] at hlt
   -- the iterates converge to the transvection inside the discrete subgroup `Γ`
   have hT' : ((transSL w : SL(2, ℝ)) : PSL(2, ℝ)) ∈ Γ := by rwa [coe_transSL]
-  have hmem (n : ℕ) : ((jorgensenSeq (transSL w) A n : SL(2, ℝ)) : PSL(2, ℝ)) ∈ Γ :=
-    jorgensenSeq_mem (H := Γ.comap (QuotientGroup.mk' _)) hT' hA n
+  have hmem (n : ℕ) : ((jorgensenSeq (transSL w) A n : SL(2, ℝ)) : PSL(2, ℝ)) ∈ Γ := by
+    rw [← QuotientGroup.mk'_apply, map_jorgensenSeq]
+    exact jorgensenSeq_mem hT' hA n
   obtain ⟨n, hval⟩ := (eventually_mk_eq_of_tendsto hmem hT' (tendsto_jorgensen hw hlt)).exists
   rw [coe_transSL] at hval
   -- but no iterate can equal the transvection: their lower-left entries never vanish

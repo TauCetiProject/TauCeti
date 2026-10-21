@@ -63,7 +63,8 @@ open scoped MatrixGroups Pointwise Topology commutatorElement
 
 namespace Subgroup
 
-open TauCeti (jorgensenSeq jorgensenSeq_zero jorgensenSeq_succ jorgensenSeq_mem)
+open TauCeti (jorgensenSeq jorgensenSeq_zero jorgensenSeq_succ jorgensenSeq_mem
+  map_jorgensenSeq)
 open Matrix.SpecialLinearGroup (dilation dilation_inv dilation_zpow conj_dilation_apply_zero_zero
   conj_dilation_apply_zero_one conj_dilation_apply_one_zero conj_dilation_apply_one_one
   dilation_conj_apply_zero_zero dilation_conj_apply_zero_one dilation_conj_apply_one_zero
@@ -243,9 +244,11 @@ private theorem exists_jorgensenSeq_diag [DiscreteTopology Γ] (hs : 0 < s)
     have hDk : ((dilation (k n * s) : SL(2, ℝ)) : PSL(2, ℝ)) ∈ Γ := by
       rw [← dilation_zpow, QuotientGroup.mk_zpow]
       exact Γ.zpow_mem hD _
+    have hJ : ((J (n + 1) : SL(2, ℝ)) : PSL(2, ℝ)) ∈ Γ := by
+      rw [← QuotientGroup.mk'_apply, map_jorgensenSeq]
+      exact jorgensenSeq_mem hD hB _
     simp only [QuotientGroup.mk_mul, QuotientGroup.mk_inv]
-    exact Γ.mul_mem (Γ.mul_mem hDk (jorgensenSeq_mem (H := Γ.comap (QuotientGroup.mk' _)) hD hB _))
-      (Γ.inv_mem hDk)
+    exact Γ.mul_mem (Γ.mul_mem hDk hJ) (Γ.inv_mem hDk)
   obtain ⟨n, hn⟩ := (eventually_mk_eq_of_tendsto hCmem hD hk).exists
   rw [Matrix.ProjectiveSpecialLinearGroup.mk_eq_mk_iff] at hn
   have hoff : (dilation (k n * s) * J (n + 1) * (dilation (k n * s))⁻¹) 0 1 = 0 ∧

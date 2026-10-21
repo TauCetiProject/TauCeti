@@ -21,6 +21,7 @@ forces it to reach its limit.
 
 * `TauCeti.jorgensenSeq`: the sequence `B₀ = B`, `Bₙ₊₁ = Bₙ A Bₙ⁻¹`.
 * `TauCeti.jorgensenSeq_mem`: it lies in every subgroup containing `A` and `B`.
+* `TauCeti.map_jorgensenSeq`: group homomorphisms map it to the sequence of the images.
 
 ## References
 
@@ -53,5 +54,13 @@ theorem jorgensenSeq_mem {H : Subgroup G} {A B : G} (hA : A ∈ H) (hB : B ∈ H
   induction n with
   | zero => exact hB
   | succ n ih => exact H.mul_mem (H.mul_mem ih hA) (H.inv_mem ih)
+
+/-- A group homomorphism maps Jørgensen's sequence of `A` and `B` to that of their images. -/
+@[simp]
+theorem map_jorgensenSeq {H F : Type*} [Group H] [FunLike F G H] [MonoidHomClass F G H] (f : F)
+    (A B : G) (n : ℕ) : f (jorgensenSeq A B n) = jorgensenSeq (f A) (f B) n := by
+  induction n with
+  | zero => rfl
+  | succ n ih => rw [jorgensenSeq_succ, jorgensenSeq_succ, map_mul, map_mul, map_inv, ih]
 
 end TauCeti
