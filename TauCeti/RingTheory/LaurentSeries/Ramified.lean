@@ -311,8 +311,9 @@ theorem sum_single_mul_expand_contract {A : Type*} [CommSemiring A] (d : ℕ+) (
     ∑ r : Fin d, single (r : ℤ) 1 * expand A d (contract d f r) = f := by
   ext z
   let r : Fin d := ⟨z.natMod d, Int.natMod_lt d.ne_zero⟩
-  have hr : (r : ℤ) = z % d :=
-    Int.toNat_of_nonneg (Int.emod_nonneg _ (by exact_mod_cast d.ne_zero))
+  have hr : (r : ℤ) = z % d := by
+    simp only [r, Int.natMod]
+    exact Int.toNat_of_nonneg (Int.emod_nonneg _ (by exact_mod_cast d.ne_zero))
   have hz : (d : ℤ) * (z / d) + r = z := by
     rw [hr, add_comm, Int.emod_add_mul_ediv]
   rw [← hz, coeff_sum_single_mul_expand, coeff_contract, hz]
