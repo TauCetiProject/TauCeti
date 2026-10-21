@@ -8,13 +8,16 @@ module
 public import Mathlib.Algebra.Category.FGModuleCat.Basic
 public import TauCeti.Algebra.Category.ModuleCat.RepresentationFinite
 public import TauCeti.CategoryTheory.Preadditive.Radical.Nilpotent
+public import TauCeti.CategoryTheory.Preadditive.Radical.IrreducibleComposite
+public import Mathlib.Algebra.Category.FGModuleCat.Abelian
 public import Mathlib.RingTheory.Artinian.Defs
 import TauCeti.Algebra.Category.FGModuleCat.KrullSchmidt
+import Mathlib.RingTheory.HopkinsLevitzki
 import TauCeti.RingTheory.Artinian.End
 import TauCeti.CategoryTheory.Functor.RingEquivEnd
 
 /-!
-# The radical of a representation-finite Artin algebra is nilpotent
+# The radical and irreducible morphisms of a representation-finite Artin algebra
 
 Let `A` be an Artin algebra, that is, an algebra over a commutative Artinian ring `R` that is
 finitely generated as an `R`-module; a finite-dimensional algebra over a field is the basic
@@ -28,6 +31,14 @@ module is a direct summand of a finite sum of indecomposable modules
 (`FGModuleCat.exists_indecomposable_sum_comp_eq_id`), hence of a finite sum of copies of `G`. The
 endomorphism ring of `G` is Artinian (`Module.End.isArtinianRing`), so the radical is nilpotent by
 `TauCeti.exists_jacobsonRadicalIdeal_pow_eq_bot`.
+
+Consequently every morphism between finitely generated indecomposable modules that is not an
+isomorphism is a sum of composites of irreducible morphisms between finitely generated
+indecomposable modules (`TauCeti.IsRepresentationFinite.mem_closure_isIrreducibleComposite`). By
+Fitting's lemma (`FGModuleCat.isLocalRing_end_of_indecomposable`) these modules have local
+endomorphism rings, so such a morphism is radical, and the Krull-Schmidt decomposition above
+splits every module into them. With the radical nilpotent,
+`TauCeti.mem_closure_isIrreducibleComposite_of_mem_jacobsonRadical` applies.
 
 ## References
 
@@ -86,5 +97,23 @@ theorem IsRepresentationFinite.exists_jacobsonRadicalIdeal_pow_eq_bot
   convert hab using 2 with j
   ext : 1
   simp
+
+include R in
+/-- **Non-isomorphisms are sums of composites of irreducible morphisms.** Over a
+representation-finite Artin algebra, every morphism between finitely generated indecomposable
+modules that is not an isomorphism is a sum of composites of irreducible morphisms between
+finitely generated indecomposable modules. -/
+theorem IsRepresentationFinite.mem_closure_isIrreducibleComposite
+    (h : IsRepresentationFinite.{w} A) {X Y : FGModuleCat.{w} A} (hX : Indecomposable X.obj)
+    (hY : Indecomposable Y.obj) {f : X ⟶ Y} (hf : ¬ IsIso f) :
+    f ∈ AddSubgroup.closure {g : X ⟶ Y | IsIrreducibleComposite g} := by
+  have : IsArtinianRing A := IsArtinianRing.of_finite R A
+  have := FGModuleCat.isLocalRing_end_of_indecomposable hX
+  have := FGModuleCat.isLocalRing_end_of_indecomposable hY
+  obtain ⟨N, hN⟩ := h.exists_jacobsonRadicalIdeal_pow_eq_bot R
+  refine mem_closure_isIrreducibleComposite_of_mem_jacobsonRadical (fun Z ↦ ?_) hN
+    (mem_jacobsonRadical_iff_not_isIso.mpr hf)
+  obtain ⟨n, W, a, b, hW, hab⟩ := FGModuleCat.exists_indecomposable_sum_comp_eq_id Z
+  exact ⟨n, W, a, b, fun j ↦ FGModuleCat.isLocalRing_end_of_indecomposable (hW j), hab⟩
 
 end TauCeti

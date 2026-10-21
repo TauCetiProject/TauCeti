@@ -12,7 +12,8 @@ public import Mathlib.LinearAlgebra.StdBasis
 # Coordinates on `lp`
 
 The characteristic equation for Mathlib's bundled coordinate evaluation lets users compute
-with `lp.evalCLM` without unfolding its construction as a bounded linear map. The scalar
+with `lp.evalCLM` without unfolding its construction as a bounded linear map, and the ℓ¹ norm is
+the sum of the norms of the coordinates (`lp.hasSum_norm_one`). The scalar
 coordinate vectors are linearly independent, and vectors in their span vanish outside the
 corresponding indices. These algebraic facts hold over normed rings at every exponent.
 -/
@@ -30,6 +31,10 @@ variable {ι 𝕜 : Type*} {E : ι → Type*} [∀ i, NormedAddCommGroup (E i)]
 /-- The bundled coordinate evaluation returns the corresponding coordinate. -/
 @[simp]
 theorem evalCLM_apply [Fact (1 ≤ p)] (i : ι) (x : lp E p) : evalCLM 𝕜 E p i x = x i := (rfl)
+
+/-- The ℓ¹ norm is the sum of the norms of the coordinates. -/
+theorem hasSum_norm_one (y : lp E 1) : HasSum (fun i ↦ ‖y i‖) ‖y‖ := by
+  simpa using lp.hasSum_norm (p := 1) (by simp) y
 
 section Single
 
