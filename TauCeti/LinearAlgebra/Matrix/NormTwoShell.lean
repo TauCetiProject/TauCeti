@@ -10,6 +10,7 @@ import Mathlib.Algebra.Order.Group.PosPart
 import TauCeti.LinearAlgebra.Matrix.Gram
 import TauCeti.LinearAlgebra.Matrix.Symmetric
 import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
+import TauCeti.LinearAlgebra.Matrix.ZMatrix
 import TauCeti.LinearAlgebra.QuadraticForm.PosDef
 
 /-!
