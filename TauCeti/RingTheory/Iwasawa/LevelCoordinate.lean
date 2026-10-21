@@ -319,12 +319,6 @@ theorem iwasawaCoordinate_apply (F : O⟦X⟧) (n : ℕ) :
     iwasawaCoordinate hp F n = levelCoordinate hp n F :=
   (rfl)
 
-/-- The coordinates of `iwasawaCoordinate` are compatible with the projections
-`O[ℤ/pⁿ] → O[ℤ/pᵐ]`. -/
-theorem levelTransition_iwasawaCoordinate {m n : ℕ} (h : m ≤ n) (F : O⟦X⟧) :
-    levelTransition p O h (iwasawaCoordinate hp F n) = iwasawaCoordinate hp F m := by
-  simp
-
 /-- **The level coordinates separate points**: over a noetherian `O`, the product
 `O⟦T⟧ → ∏ₙ O[ℤ/pⁿ]` of the level maps is injective. -/
 theorem iwasawaCoordinate_injective [IsNoetherianRing O] :
