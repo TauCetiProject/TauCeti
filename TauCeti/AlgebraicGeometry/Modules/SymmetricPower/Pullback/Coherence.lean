@@ -82,11 +82,10 @@ theorem pushforwardSymmetricPowerComparison_id (n : ℕ) (M : X.Modules) :
   refine (TauCeti.SymmetricAlgebra.coe_homogeneousSubmoduleMapₛₗ_apply _ n x).trans ?_
   refine (DFunLike.congr_fun (_root_.SymmetricAlgebra.mapₛₗ_eq_id (fun _ ↦ rfl)
     (fun _ ↦ rfl)) x.1).trans ?_
-  have hid := DFunLike.congr_fun ((_root_.SymmetricAlgebra.mapₛₗ_eq_map
-    (((Scheme.Modules.pushforwardId X).hom.app M).val.app' U).hom).symm.trans
-      (_root_.SymmetricAlgebra.mapₛₗ_eq_id (fun _ ↦ rfl) (fun _ ↦ rfl))) x.1
-  exact ((ModuleCat.symmetricPower.coe_map_apply
-    (((Scheme.Modules.pushforwardId X).hom.app M).val.app' U) n x).trans hid).symm
+  exact ((ModuleCat.symmetricPower.coe_map_apply_eq_mapₛₗ
+    (((Scheme.Modules.pushforwardId X).hom.app M).val.app' U) n x).trans
+      (DFunLike.congr_fun (_root_.SymmetricAlgebra.mapₛₗ_eq_id (fun _ ↦ rfl) (fun _ ↦ rfl))
+        x.1)).symm
 
 /-- The symmetric-power comparison for composite pushforward is the composite of the two
 successive comparisons, through the canonical pushforward composition isomorphism. -/
@@ -151,9 +150,7 @@ theorem pushforwardSymmetricPowerComparison_comp (f : X ⟶ Y) (g : Y ⟶ Z)
         (𝟙 (SheafOfModules.ringCatSheaf X.sheaf).obj)).unit.app
           ((PresheafOfModulesOfCommRing.symmetricPower n).obj M.val)).app _ y)) (Subtype.ext ?_))
   -- It remains to compare the induced maps of symmetric algebras.
-  have he := (ModuleCat.symmetricPower.coe_map_apply ((e.hom.app M).val.app' U) n x).trans
-    (DFunLike.congr_fun (_root_.SymmetricAlgebra.mapₛₗ_eq_map
-      ((e.hom.app M).val.app' U).hom) x.1).symm
+  have he := ModuleCat.symmetricPower.coe_map_apply_eq_mapₛₗ ((e.hom.app M).val.app' U) n x
   refine ((TauCeti.SymmetricAlgebra.coe_homogeneousSubmoduleMapₛₗ_apply _ n _).trans
     ((congrArg (_root_.SymmetricAlgebra.mapₛₗ _)
       (TauCeti.SymmetricAlgebra.coe_homogeneousSubmoduleMapₛₗ_apply _ n x)).trans ?_)).trans
