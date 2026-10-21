@@ -47,6 +47,10 @@ The two main results are the following.
   preserved by arbitrary intersections (`TauCeti.isPolynomiallyConvex_iInter`) and holds for the
   sublevel sets `{|p| ≤ c}` (`TauCeti.isPolynomiallyConvex_setOf_norm_eval_le`) and for closed
   balls (`TauCeti.isPolynomiallyConvex_closedBall`).
+* `TauCeti.polynomialPolyhedron R s`: the polynomial polyhedron
+  `closedBall 0 R ∩ ⋂_{p ∈ s} {|p| ≤ 1}`; it is compact
+  (`TauCeti.isCompact_polynomialPolyhedron`) and polynomially convex
+  (`TauCeti.isPolynomiallyConvex_polynomialPolyhedron`).
 
 ## Main results
 
@@ -80,7 +84,10 @@ with `|p(z)| ≤ max_K |p|` for every polynomial `p`. -/
 def polynomialHull (K : Set (ι → ℂ)) : Set (ι → ℂ) :=
   {z | ∀ (p : MvPolynomial ι ℂ) (c : ℝ), (∀ w ∈ K, ‖eval w p‖ ≤ c) → ‖eval z p‖ ≤ c}
 
-/-- A set `K ⊆ ℂⁿ` is polynomially convex if it contains its polynomial hull. -/
+/-- A set `K ⊆ ℂⁿ` is polynomially convex if it contains its polynomial hull. For compact `K`
+this is the standard notion; for unbounded `K` it is stricter than the convention that the hull
+of every compact subset of `K` stays in `K` (for instance, `ℝⁿ` with `n ≥ 1` is not polynomially
+convex in this sense, since only constant polynomials are bounded on it). -/
 def IsPolynomiallyConvex (K : Set (ι → ℂ)) : Prop :=
   polynomialHull K ⊆ K
 
@@ -134,13 +141,14 @@ theorem exists_norm_eval_lt_one_lt_of_notMem_polynomialHull (hz : z ∉ polynomi
   have ha : 0 < a := (half_pos hs).trans_le (le_max_right _ _)
   have has : a < s := max_lt hcz (half_lt_self hs)
   have hr : 0 < 2 / (a + s) := by positivity
+  have hnorm (w : ι → ℂ) :
+      ‖eval w (C ((2 / (a + s) : ℝ) : ℂ) * p)‖ = 2 * ‖eval w p‖ / (a + s) := by
+    rw [map_mul, eval_C, norm_mul, Complex.norm_real, Real.norm_of_nonneg hr.le,
+      div_mul_eq_mul_div]
   refine ⟨C ((2 / (a + s) : ℝ) : ℂ) * p, fun w hw ↦ ?_, ?_⟩
-  · rw [map_mul, eval_C, norm_mul, Complex.norm_real, Real.norm_of_nonneg hr.le]
-    calc 2 / (a + s) * ‖eval w p‖ ≤ 2 / (a + s) * a :=
-          mul_le_mul_of_nonneg_left ((hpK w hw).trans (le_max_left _ _)) hr.le
-      _ < 1 := by rw [div_mul_eq_mul_div, div_lt_one (by positivity)]; linarith
-  · rw [map_mul, eval_C, norm_mul, Complex.norm_real, Real.norm_of_nonneg hr.le,
-      div_mul_eq_mul_div, one_lt_div (by positivity)]
+  · rw [hnorm, div_lt_one (by positivity)]
+    linarith [(hpK w hw).trans (le_max_left c (s / 2))]
+  · rw [hnorm, one_lt_div (by positivity)]
     linarith
 
 /-- If a polynomial is strictly smaller in modulus at every point of a compact set `K` than at `z`,
@@ -259,17 +267,50 @@ theorem _root_.IsCompact.isPolynomiallyConvex_of_forall_im_eq_zero [Finite ι]
   · simpa [sub_eq_zero] using hfw0 i (Finset.mem_univ i)
   · simpa [hreal w hw i, eq_comm] using hg0 i (Finset.mem_univ i)
 
+section polynomialPolyhedron
+
+variable [Fintype ι]
+
+/-- The polynomial polyhedron `closedBall 0 R ∩ ⋂_{p ∈ s} {|p| ≤ 1}` cut out of the closed
+polydisc of radius `R` by a finite set `s` of polynomials. -/
+noncomputable def polynomialPolyhedron (R : ℝ) (s : Finset (MvPolynomial ι ℂ)) : Set (ι → ℂ) :=
+  closedBall 0 R ∩ ⋂ p ∈ s, {w | ‖eval w p‖ ≤ 1}
+
+variable {R : ℝ} {s : Finset (MvPolynomial ι ℂ)} {w : ι → ℂ}
+
+theorem mem_polynomialPolyhedron_iff :
+    w ∈ polynomialPolyhedron R s ↔ ‖w‖ ≤ R ∧ ∀ p ∈ s, ‖eval w p‖ ≤ 1 := by
+  simp [polynomialPolyhedron]
+
+theorem isClosed_polynomialPolyhedron (R : ℝ) (s : Finset (MvPolynomial ι ℂ)) :
+    IsClosed (polynomialPolyhedron R s) :=
+  isClosed_closedBall.inter <| isClosed_biInter fun p _ ↦
+    isClosed_le (continuous_eval p).norm continuous_const
+
+theorem isCompact_polynomialPolyhedron (R : ℝ) (s : Finset (MvPolynomial ι ℂ)) :
+    IsCompact (polynomialPolyhedron R s) :=
+  (isCompact_closedBall 0 R).inter_right <| isClosed_biInter fun p _ ↦
+    isClosed_le (continuous_eval p).norm continuous_const
+
+/-- Polynomial polyhedra are polynomially convex. -/
+theorem isPolynomiallyConvex_polynomialPolyhedron (R : ℝ) (s : Finset (MvPolynomial ι ℂ)) :
+    IsPolynomiallyConvex (polynomialPolyhedron R s) :=
+  (isPolynomiallyConvex_closedBall 0 R).inter <| isPolynomiallyConvex_iInter fun p ↦
+    isPolynomiallyConvex_iInter fun _ ↦ isPolynomiallyConvex_setOf_norm_eval_le p 1
+
+end polynomialPolyhedron
+
 /-- **Polynomial polyhedron neighbourhoods.** A compact polynomially convex set `K ⊆ ℂⁿ` with an
-open neighbourhood `U` has a polynomially convex compact neighbourhood
+open neighbourhood `U` has a polynomial polyhedron neighbourhood
 `P = closedBall 0 R ∩ ⋂_{p ∈ s} {|p| ≤ 1}` inside `U`, for a radius `R > 0` and a finite set `s`
-of polynomials, such that `K` lies in the open subset `ball 0 R ∩ ⋂_{p ∈ s} {|p| < 1}` of `P`. -/
+of polynomials, such that `K` lies in the open subset `ball 0 R ∩ ⋂_{p ∈ s} {|p| < 1}` of `P`.
+The set `P` is compact (`TauCeti.isCompact_polynomialPolyhedron`) and polynomially convex
+(`TauCeti.isPolynomiallyConvex_polynomialPolyhedron`). -/
 theorem IsPolynomiallyConvex.exists_polynomialPolyhedron_subset [Fintype ι]
     (hKc : IsPolynomiallyConvex K) (hK : IsCompact K) {U : Set (ι → ℂ)} (hU : IsOpen U)
     (hKU : K ⊆ U) :
     ∃ (R : ℝ) (s : Finset (MvPolynomial ι ℂ)), 0 < R ∧
-      K ⊆ ball 0 R ∩ ⋂ p ∈ s, {w | ‖eval w p‖ < 1} ∧
-      closedBall 0 R ∩ ⋂ p ∈ s, {w | ‖eval w p‖ ≤ 1} ⊆ U ∧
-      IsPolynomiallyConvex (closedBall 0 R ∩ ⋂ p ∈ s, {w | ‖eval w p‖ ≤ 1}) := by
+      K ⊆ ball 0 R ∩ ⋂ p ∈ s, {w | ‖eval w p‖ < 1} ∧ polynomialPolyhedron R s ⊆ U := by
   obtain ⟨R₀, hR₀⟩ := hK.isBounded.subset_ball 0
   set R := max R₀ 1
   have hR : 0 < R := zero_lt_one.trans_le (le_max_right _ _)
@@ -282,7 +323,7 @@ theorem IsPolynomiallyConvex.exists_polynomialPolyhedron_subset [Fintype ι]
     (fun ζ hζ ↦ by
       obtain ⟨p, hpK, hpζ⟩ := hKc.exists_norm_eval_lt_one_lt fun h ↦ hζ.2 (hKU h)
       exact mem_iUnion.2 ⟨⟨p, hpK⟩, hpζ⟩)
-  refine ⟨R, t.map (Function.Embedding.subtype _), hR, fun w hw ↦ ⟨?_, ?_⟩, ?_, ?_⟩
+  refine ⟨R, t.map (Function.Embedding.subtype _), hR, fun w hw ↦ ⟨?_, ?_⟩, ?_⟩
   · exact ball_subset_ball (le_max_left _ _) (hR₀ hw)
   · simp only [Finset.mem_map, Function.Embedding.coe_subtype, mem_iInter]
     rintro _ ⟨p, -, rfl⟩
@@ -293,7 +334,5 @@ theorem IsPolynomiallyConvex.exists_polynomialPolyhedron_subset [Fintype ι]
     have hpw' := mem_iInter₂.1 hws p.1 (Finset.mem_map_of_mem _ hpt)
     simp only [mem_ofPred_eq] at hpw hpw'
     linarith
-  · exact (isPolynomiallyConvex_closedBall 0 R).inter <| isPolynomiallyConvex_iInter fun p ↦
-      isPolynomiallyConvex_iInter fun _ ↦ isPolynomiallyConvex_setOf_norm_eval_le p 1
 
 end TauCeti
