@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+public import TauCeti.RingTheory.MvPowerSeries.Primitive.GaussNorm
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Coefficients
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Radius
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Units
@@ -53,6 +54,9 @@ the Tate algebra `T = R{X/1}` and carries the restricted Gauss norm.
   overconvergent series is a unit of `W` iff it is a unit of the Tate algebra, iff its constant
   coefficient is nonzero and strictly dominates all others. In Gauss norm form,
   `TauCeti.Dagger.isUnit_washnitzerAlgebra_iff_norm_sub_lt` reads `|f - f(0)| < |f(0)|`.
+* `TauCeti.Dagger.primitive_mem_washnitzerAlgebra` and `TauCeti.Dagger.washnitzerAlgebra.primitive`:
+  over a field of characteristic zero, termwise primitives `∑ aᵥ Xᵛ ↦ ∑ aᵥ Xᵛ⁺ᵉⁱ / (νᵢ + 1)` of
+  overconvergent series are overconvergent.
 
 ## References
 
@@ -411,5 +415,34 @@ theorem isUnit_washnitzerAlgebra_iff_norm_sub_lt (f : washnitzerAlgebra σ K) :
   simp [coe_algebraMap_isRestrictedSubring]
 
 end Units
+
+section Primitive
+
+variable {σ K : Type*} [NormedField K] [IsUltrametricDist K] [CharZero K]
+
+/-- **Primitives of overconvergent series are overconvergent.** Over an ultrametric normed field
+of characteristic zero, if `f` is restricted at a radius `ρ > 1`, its termwise primitive with
+respect to `Xᵢ` is restricted at every radius in `(1, ρ)`. -/
+theorem primitive_mem_washnitzerAlgebra {f : MvPowerSeries σ K} (hf : f ∈ washnitzerAlgebra σ K)
+    (i : σ) : MvPowerSeries.primitive i f ∈ washnitzerAlgebra σ K := by
+  obtain ⟨ρ, hρ, hf⟩ := hf
+  obtain ⟨ρ', h1, h2⟩ := exists_between hρ
+  exact ⟨ρ', h1, hf.primitive (fun _ ↦ zero_le_one.trans h1.le) (fun _ ↦ h2.le) h2⟩
+
+variable (σ K) in
+/-- The termwise primitive with respect to `Xᵢ`, as a `K`-linear endomorphism of the
+Monsky–Washnitzer algebra. -/
+noncomputable def washnitzerAlgebra.primitive (i : σ) :
+    washnitzerAlgebra σ K →ₗ[K] washnitzerAlgebra σ K :=
+  (MvPowerSeries.primitive i ∘ₗ (washnitzerAlgebra σ K).toSubmodule.subtype).codRestrict
+    (washnitzerAlgebra σ K).toSubmodule fun f ↦ primitive_mem_washnitzerAlgebra f.2 i
+
+/-- The primitive in `W` is the termwise primitive of the underlying series. -/
+@[simp]
+theorem washnitzerAlgebra.coe_primitive (i : σ) (f : washnitzerAlgebra σ K) :
+    (washnitzerAlgebra.primitive σ K i f : MvPowerSeries σ K) = MvPowerSeries.primitive i f :=
+  (rfl)
+
+end Primitive
 
 end TauCeti.Dagger
