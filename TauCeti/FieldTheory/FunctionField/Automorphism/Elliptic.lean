@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.BaseChange
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Divisor.Class
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Translation.Automorphism
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Translation.Place
 public import TauCeti.FieldTheory.FunctionField.Divisor.Equiv
 public import TauCeti.FieldTheory.FunctionField.Elliptic.Weierstrass.Model
 public import TauCeti.FieldTheory.FunctionField.Place.Existence
@@ -16,10 +17,10 @@ public import TauCeti.FieldTheory.FunctionField.Place.Existence
 # Automorphisms of elliptic function fields
 
 Let `F / k` be an elliptic function field: genus one, a divisor of degree one, and exact constant
-field `k`. Its degree-zero divisor class group `Cl⁰(F)` is in bijection with the places of degree
-one (`TauCeti.Place.degreeOneEquivDegreeZeroClassGroup`), so it is infinite exactly when there are
-infinitely many places of degree one. This holds over an algebraically closed field, where every
-place has degree one.
+field `k`. Its degree-zero divisor class group `Cl⁰(F)` is infinite exactly when there are
+infinitely many places of degree one
+(`TauCeti.IsEllipticFunctionField.infinite_degreeClass_ker_iff`), as happens over an
+algebraically closed field (`TauCeti.infinite_degreeClass_ker_of_genus_eq_one`).
 
 Over a perfect constant field `F` is the function field of an elliptic curve `E`
 (`TauCeti.IsEllipticFunctionField.exists_isWeierstrassCoordinates_isElliptic`). The translations
@@ -30,19 +31,29 @@ index, and the points of `E` are the classes of `Cl⁰(F)`
 `WeierstrassCurve.Affine.pointEquivDegreeZeroDivisorClass`). Transporting these facts along the
 identification of `F` with the function field of `E` shows that **`Cl⁰(F)` embeds into
 `Aut(F / k)` as a normal subgroup of finite index** (Stichtenoth, Exercise 6.14), for any
-elliptic function field over a perfect field.
+elliptic function field over a perfect field. The embedding attached to Weierstrass coordinates
+moves each place `Q` of degree one by the class it translates by: the automorphism `σ_c` attached
+to `c ∈ Cl⁰(F)` satisfies `[Q - σ_c(Q)] = c`.
 
 Consequently `Aut(F / k)` is infinite as soon as `F` has infinitely many places of degree one, in
 particular over an algebraically closed field. So the hypothesis `g ≥ 2` in the finiteness of the
 automorphism group over an algebraically closed field (`TauCeti.finite_algEquiv_of_two_le_genus`)
 cannot be weakened to `g ≥ 1`. The genus-zero counterpart is `RatFunc.infinite_algEquiv`.
 
+## Main definitions
+
+* `TauCeti.Place.IsWeierstrassCoordinates.translationHom`: the translations
+  `Cl⁰(F) →* Aut(F / k)` read through Weierstrass coordinates at a place of degree one.
+
 ## Main results
 
-* `TauCeti.IsEllipticFunctionField.infinite_degreeClass_ker_iff`: `Cl⁰(F)` is infinite exactly
-  when `F` has infinitely many places of degree one.
-* `TauCeti.infinite_degreeClass_ker_of_genus_eq_one`: over an algebraically closed field, a
-  function field of genus one has an infinite group `Cl⁰(F)`.
+* `TauCeti.Place.IsWeierstrassCoordinates.translationHom_injective`,
+  `TauCeti.Place.IsWeierstrassCoordinates.normal_range_translationHom` and
+  `TauCeti.Place.IsWeierstrassCoordinates.finiteIndex_range_translationHom`: the translations act
+  faithfully and form a normal subgroup of finite index.
+* `TauCeti.Place.IsWeierstrassCoordinates.divisorClass_pointDifference_translationHom_smul`: the
+  translation by `c` moves a place `Q` of degree one to the place `σ_c(Q)` with
+  `[Q - σ_c(Q)] = c`.
 * `TauCeti.IsEllipticFunctionField.exists_injective_monoidHom_degreeClass_ker`: over a perfect
   field, `Cl⁰(F)` embeds into `Aut(F / k)` as a normal subgroup of finite index.
 * `TauCeti.IsEllipticFunctionField.infinite_algEquiv`: over a perfect field, an elliptic function
@@ -65,36 +76,159 @@ open AlgebraicGeometry WeierstrassCurve
 
 variable {k F : Type*} [Field k] [Field F] [Algebra k F]
 
-/-! ### The degree-zero divisor class group -/
-
-/-- **`Cl⁰(F)` is infinite exactly when there are infinitely many places of degree one**, for an
-elliptic function field `F` with exact constants: the places of degree one are in bijection with
-`Cl⁰(F)` (Stichtenoth, Proposition 6.1.7). -/
-theorem IsEllipticFunctionField.infinite_degreeClass_ker_iff (hF : IsFunctionField k F)
-    (hex : IsIntegrallyClosedIn k F) (he : IsEllipticFunctionField k F) :
-    Infinite (Divisor.degreeClass hF).ker ↔ {P : Place k F | P.degree = 1}.Infinite := by
-  obtain ⟨P₀, hP₀⟩ := he.exists_place_degree_eq_one hF hex
-  rw [← Set.infinite_coe_iff]
-  exact (Place.degreeOneEquivDegreeZeroClassGroup hF hex he.genus_eq_one hP₀).infinite_iff.symm
-
-/-- **Over an algebraically closed field, the degree-zero divisor class group of a function field
-of genus one is infinite**: every place has degree one, and there are infinitely many places. -/
-theorem infinite_degreeClass_ker_of_genus_eq_one [IsAlgClosed k] (hF : IsFunctionField k F)
-    (hg : genus k F = 1) : Infinite (Divisor.degreeClass hF).ker := by
-  have hex : IsIntegrallyClosedIn k F := isIntegrallyClosedIn_of_isAlgClosed
-  obtain ⟨P₀, hP₀⟩ := (Place.infinite_setOf_degree_eq_one hF).nonempty
-  have he := (isEllipticFunctionField_iff_genus_eq_one_and_exists_place_degree_eq_one hF hex).mpr
-    ⟨hg, P₀, hP₀⟩
-  exact (he.infinite_degreeClass_ker_iff hF hex).mpr (Place.infinite_setOf_degree_eq_one hF)
-
 /-! ### Translations -/
+
+namespace Place.IsWeierstrassCoordinates
+
+variable {P : Place k F} {W : WeierstrassCurve k} [W.IsElliptic] {x y : F}
+
+/-- The inverse of a `k`-isomorphism of function fields fixes the constants, in the form taken by
+the transport of places and divisor classes. -/
+private theorem symm_toRingEquiv_algebraMap {L : Type*} [Field L] [Algebra k L] (e : L ≃ₐ[k] F)
+    (c : k) : e.symm.toRingEquiv (algebraMap k F c) = algebraMap k L (RingEquiv.refl k c) := by
+  simp
+
+/-- Weierstrass coordinates at a place of degree one identify the function field of the
+Weierstrass model with `F`. -/
+private noncomputable def functionFieldEquiv (hF : IsFunctionField k F) (hP : P.degree = 1)
+    (h : P.IsWeierstrassCoordinates W x y) : W.toAffine.FunctionField ≃ₐ[k] F :=
+  W.toAffine.functionFieldEquivOfAdjoinEqTop h.equation h.transcendental_x (h.adjoin_eq_top hF hP)
+
+/-- The degree-zero divisor class group `Cl⁰(F)` is the point group of the Weierstrass model. -/
+private noncomputable def degreeZeroClassGroupEquivPoint [DecidableEq k]
+    (hF : IsFunctionField k F) (hP : P.degree = 1) (h : P.IsWeierstrassCoordinates W x y) :
+    (Divisor.degreeClass hF).ker ≃+ W.toAffine.Point :=
+  (Divisor.degreeZeroClassGroupEquivOfRingEquiv (RingEquiv.refl k)
+    (functionFieldEquiv hF hP h).symm.toRingEquiv
+      (symm_toRingEquiv_algebraMap _) hF
+      W.toAffine.isFunctionField).trans W.toAffine.pointEquivDegreeZeroDivisorClass.symm
+
+/-- **The translations of an elliptic function field** (Stichtenoth, Exercise 6.14), read
+through Weierstrass coordinates `(x, y)` at a place `P` of degree one: the model identifies
+`Cl⁰(F)` with the points of the elliptic curve `W`, and a point goes to the pullback of functions
+along the translation by that point, transported to `F`.
+
+The automorphism attached to a class `c` moves every place `Q` of degree one so that
+`[Q - σ_c(Q)] = c`
+(`TauCeti.Place.IsWeierstrassCoordinates.divisorClass_pointDifference_translationHom_smul`). -/
+noncomputable def translationHom [DecidableEq k] (hF : IsFunctionField k F) (hP : P.degree = 1)
+    (h : P.IsWeierstrassCoordinates W x y) :
+    Multiplicative (Divisor.degreeClass hF).ker →* (F ≃ₐ[k] F) :=
+  (AlgEquiv.autCongr (functionFieldEquiv hF hP h)).toMonoidHom.comp
+    ((Affine.translationHom W.toAffine).comp (AddEquiv.toMultiplicative
+      ((degreeZeroClassGroupEquivPoint hF hP h).trans
+        (Affine.Point.equivBaseChangeSelf W.toAffine))).toMonoidHom)
+
+/-- Transporting places along the inverse of an isomorphism of function fields intertwines the
+actions of the corresponding automorphisms. -/
+private theorem equivOfRingEquiv_autCongr_smul {L : Type*} [Field L] [Algebra k L]
+    (e : L ≃ₐ[k] F) (τ : L ≃ₐ[k] L) (Q : Place k F) :
+    Place.equivOfRingEquiv (RingEquiv.refl k) e.symm.toRingEquiv
+        (symm_toRingEquiv_algebraMap e) (AlgEquiv.autCongr e τ • Q) =
+      τ • Place.equivOfRingEquiv (RingEquiv.refl k) e.symm.toRingEquiv
+        (symm_toRingEquiv_algebraMap e) Q :=
+  Place.ext (Valuation.ext fun z ↦ by simp [Place.valuation_smul])
+
+variable [DecidableEq k] (hF : IsFunctionField k F) (hP : P.degree = 1)
+  (h : P.IsWeierstrassCoordinates W x y)
+
+/-- The translations of an elliptic function field act faithfully. -/
+theorem translationHom_injective : Function.Injective (h.translationHom hF hP) :=
+  (AlgEquiv.autCongr _).injective.comp
+    ((Affine.translationHom_injective W.toAffine).comp (AddEquiv.toMultiplicative _).injective)
+
+/-- The range of `translationHom` is the image of the translations of the Weierstrass model. -/
+private theorem range_translationHom :
+    (h.translationHom hF hP).range =
+      (Affine.translationHom W.toAffine).range.map
+        (AlgEquiv.autCongr (functionFieldEquiv hF hP h)).toMonoidHom := by
+  rw [translationHom, MonoidHom.range_comp, MonoidHom.range_comp,
+    MonoidHom.range_eq_top_of_surjective _ (AddEquiv.toMultiplicative _).surjective,
+    ← MonoidHom.range_eq_map]
+
+/-- The translations of an elliptic function field form a normal subgroup of `Aut(F / k)`. -/
+theorem normal_range_translationHom : (h.translationHom hF hP).range.Normal := by
+  rw [range_translationHom]
+  exact (Affine.normal_range_translationHom W.toAffine).map _ (AlgEquiv.autCongr _).surjective
+
+/-- The translations of an elliptic function field have finite index in `Aut(F / k)`. -/
+theorem finiteIndex_range_translationHom : (h.translationHom hF hP).range.FiniteIndex := by
+  rw [range_translationHom]
+  exact ⟨by
+    rw [Subgroup.index_map_of_bijective (AlgEquiv.autCongr _).bijective]
+    exact (Affine.finiteIndex_range_translationHom W.toAffine).index_ne_zero⟩
+
+/-- The class of a point of an elliptic curve is the class of its place minus the place at
+infinity, for every point, including the point at infinity. -/
+private theorem val_pointEquivDegreeZeroDivisorClass (R : W.toAffine.Point) :
+    (W.toAffine.pointEquivDegreeZeroDivisorClass R :
+        (Place.orderSystem W.toAffine.isFunctionField).ClassGroup) =
+      (Place.orderSystem W.toAffine.isFunctionField).divisorClass
+        (WeilDivisor.pointDifference (W.toAffine.pointEquivDegreeOnePlace R).1
+          (Place.infinity W.toAffine)) := by
+  cases R with
+  | zero =>
+    rw [Affine.coe_pointEquivDegreeOnePlace_zero, WeilDivisor.pointDifference_self, map_zero,
+      ← Affine.Point.zero_def, map_zero, ZeroMemClass.coe_zero]
+  | some x y hxy =>
+    rw [Affine.coe_pointEquivDegreeOnePlace_some, Affine.val_pointEquivDegreeZeroDivisorClass_some,
+      WeilDivisor.pointDifference]
+
+/-- **A translation moves each place of degree one by its class**: the automorphism attached to
+`c ∈ Cl⁰(F)` sends a place `Q` of degree one to the place `σ_c(Q)` with `[Q - σ_c(Q)] = c`. In
+genus one a place of degree one is determined by this class
+(`TauCeti.Place.eq_of_linearlyEquivalent_ofPoint_of_genus_pos`), so the action on the places of
+degree one depends on `c` only, not on the Weierstrass coordinates. -/
+theorem divisorClass_pointDifference_translationHom_smul
+    (c : Multiplicative (Divisor.degreeClass hF).ker) {Q : Place k F} (hQ : Q.degree = 1) :
+    (Place.orderSystem hF).divisorClass
+        (WeilDivisor.pointDifference Q (h.translationHom hF hP c • Q)) =
+      ((Multiplicative.toAdd c : (Divisor.degreeClass hF).ker) :
+        (Place.orderSystem hF).ClassGroup) := by
+  set e := functionFieldEquiv hF hP h
+  set T := Place.equivOfRingEquiv (RingEquiv.refl k) e.symm.toRingEquiv
+    (symm_toRingEquiv_algebraMap e)
+  set Pt := degreeZeroClassGroupEquivPoint hF hP h (Multiplicative.toAdd c)
+  -- `Q` is the transport of the place of a point `R` of the model
+  set R := (W.toAffine.pointEquivDegreeOnePlace).symm
+    ⟨T Q, (Place.degree_equivOfRingEquiv _ _ _ Q).trans hQ⟩
+  have hR : (W.toAffine.pointEquivDegreeOnePlace R).1 = T Q := by
+    rw [Equiv.apply_symm_apply]
+  have hσ : T (h.translationHom hF hP c • Q) =
+      (W.toAffine.pointEquivDegreeOnePlace (R - Pt)).1 := by
+    rw [translationHom, MonoidHom.comp_apply, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+      equivOfRingEquiv_autCongr_smul, ← hR, Affine.translationHom_apply,
+      MulEquiv.coe_toMonoidHom, AddEquiv.toMultiplicative_apply_apply, toAdd_ofAdd,
+      AddEquiv.trans_apply]
+    exact Affine.translation_smul_pointEquivDegreeOnePlace W.toAffine Pt R
+  have hT (Q' : Place k F) :
+      Finsupp.domCongr T (WeilDivisor.ofPoint Q') = WeilDivisor.ofPoint (T Q') := by
+    simpa [WeilDivisor.single_eq_zsmul_ofPoint] using Finsupp.equivMapDomain_single T Q' (1 : ℤ)
+  -- compare both sides in the class group of the model
+  apply (Divisor.classGroupEquivOfRingEquiv (RingEquiv.refl k) e.symm.toRingEquiv
+    (symm_toRingEquiv_algebraMap e) hF W.toAffine.isFunctionField).injective
+  have hc : W.toAffine.pointEquivDegreeZeroDivisorClass Pt =
+      Divisor.degreeZeroClassGroupEquivOfRingEquiv (RingEquiv.refl k) e.symm.toRingEquiv
+        (symm_toRingEquiv_algebraMap e) hF W.toAffine.isFunctionField (Multiplicative.toAdd c) :=
+    AddEquiv.apply_symm_apply _ _
+  rw [Divisor.classGroupEquivOfRingEquiv_divisorClass,
+    ← Divisor.coe_degreeZeroClassGroupEquivOfRingEquiv_apply, ← hc,
+    WeilDivisor.pointDifference, map_sub, hT, hT, hσ, ← hR]
+  -- the class of `Pt` is the difference of the classes of `R` and `R - Pt`
+  have hsub := map_sub W.toAffine.pointEquivDegreeZeroDivisorClass R (R - Pt)
+  rw [sub_sub_cancel] at hsub
+  rw [hsub, AddSubgroup.coe_sub, val_pointEquivDegreeZeroDivisorClass,
+    val_pointEquivDegreeZeroDivisorClass, ← map_sub, WeilDivisor.pointDifference,
+    WeilDivisor.pointDifference, sub_sub_sub_cancel_right]
+
+end Place.IsWeierstrassCoordinates
 
 /-- **The translations of an elliptic function field** (Stichtenoth, Exercise 6.14): over a
 perfect field, the degree-zero divisor class group `Cl⁰(F)` of an elliptic function field with
 exact constants embeds into `Aut(F / k)` as a normal subgroup of finite index.
 
-The embedding comes from a Weierstrass model `E` of `F`: it identifies `Cl⁰(F)` with the points of
-`E` and sends a point to the pullback of functions along the translation by that point. -/
+The embedding is `TauCeti.Place.IsWeierstrassCoordinates.translationHom` for a Weierstrass model
+of `F`. -/
 theorem IsEllipticFunctionField.exists_injective_monoidHom_degreeClass_ker [PerfectField k]
     (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
     (he : IsEllipticFunctionField k F) :
@@ -102,32 +236,8 @@ theorem IsEllipticFunctionField.exists_injective_monoidHom_degreeClass_ker [Perf
       Function.Injective φ ∧ φ.range.Normal ∧ φ.range.FiniteIndex := by
   classical
   obtain ⟨P, W, x, y, hP, hW, h⟩ := he.exists_isWeierstrassCoordinates_isElliptic hF hex
-  -- the function field of the Weierstrass model is `F`
-  let e : W.toAffine.FunctionField ≃ₐ[k] F := W.toAffine.functionFieldEquivOfAdjoinEqTop
-    h.equation h.transcendental_x (h.adjoin_eq_top hF hP)
-  -- `Cl⁰(F)` is the point group of the model, in the form the translations take
-  let ψ : (Divisor.degreeClass hF).ker ≃+ (W.toAffine⁄k).toAffine.Point :=
-    ((Divisor.degreeZeroClassGroupEquivOfRingEquiv (RingEquiv.refl k) e.symm.toRingEquiv
-      (fun c ↦ by simp) hF W.toAffine.isFunctionField).trans
-        W.toAffine.pointEquivDegreeZeroDivisorClass.symm).trans
-      (Affine.Point.equivBaseChangeSelf W.toAffine)
-  let τ := Affine.translationHom W.toAffine
-  have hrange : ((AlgEquiv.autCongr e).toMonoidHom.comp
-      (τ.comp (AddEquiv.toMultiplicative ψ).toMonoidHom)).range =
-      τ.range.map (AlgEquiv.autCongr e).toMonoidHom := by
-    rw [MonoidHom.range_comp, MonoidHom.range_comp,
-      MonoidHom.range_eq_top_of_surjective _ (AddEquiv.toMultiplicative ψ).surjective,
-      ← MonoidHom.range_eq_map]
-  refine ⟨(AlgEquiv.autCongr e).toMonoidHom.comp (τ.comp (AddEquiv.toMultiplicative ψ).toMonoidHom),
-    (AlgEquiv.autCongr e).injective.comp
-      ((Affine.translationHom_injective W.toAffine).comp (AddEquiv.toMultiplicative ψ).injective),
-    ?_, ?_⟩
-  · rw [hrange]
-    exact (Affine.normal_range_translationHom W.toAffine).map _ (AlgEquiv.autCongr e).surjective
-  · rw [hrange]
-    exact ⟨by
-      rw [Subgroup.index_map_of_bijective (AlgEquiv.autCongr e).bijective]
-      exact (Affine.finiteIndex_range_translationHom W.toAffine).index_ne_zero⟩
+  exact ⟨h.translationHom hF hP, h.translationHom_injective hF hP,
+    h.normal_range_translationHom hF hP, h.finiteIndex_range_translationHom hF hP⟩
 
 /-- **An elliptic function field with infinitely many places of degree one has infinitely many
 automorphisms**, over a perfect field: the group `Cl⁰(F)` of translations is then infinite. -/
@@ -142,11 +252,8 @@ theorem IsEllipticFunctionField.infinite_algEquiv [PerfectField k] (hF : IsFunct
 automorphisms**: the translations by the points of its elliptic curve. So the genus hypothesis
 of `TauCeti.finite_algEquiv_of_two_le_genus` cannot be weakened to genus one. -/
 theorem infinite_algEquiv_of_genus_eq_one [IsAlgClosed k] (hF : IsFunctionField k F)
-    (hg : genus k F = 1) : Infinite (F ≃ₐ[k] F) := by
-  have hex : IsIntegrallyClosedIn k F := isIntegrallyClosedIn_of_isAlgClosed
-  obtain ⟨P₀, hP₀⟩ := (Place.infinite_setOf_degree_eq_one hF).nonempty
-  have he := (isEllipticFunctionField_iff_genus_eq_one_and_exists_place_degree_eq_one hF hex).mpr
-    ⟨hg, P₀, hP₀⟩
-  exact he.infinite_algEquiv hF hex (Place.infinite_setOf_degree_eq_one hF)
+    (hg : genus k F = 1) : Infinite (F ≃ₐ[k] F) :=
+  (isEllipticFunctionField_of_genus_eq_one hF hg).infinite_algEquiv hF
+    isIntegrallyClosedIn_of_isAlgClosed (Place.infinite_setOf_degree_eq_one hF)
 
 end TauCeti
