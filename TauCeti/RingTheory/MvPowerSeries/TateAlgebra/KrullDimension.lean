@@ -55,7 +55,7 @@ Weierstrass quotients and going down for finite free extensions.
   `σ`, for finite `σ`, has Krull dimension `Nat.card σ`.
 * `TauCeti.MvPowerSeries.ringKrullDim_eq_natCard_of_isIntegral`: a ring that is integral over an
   injectively embedded Tate algebra in the variables `σ` has Krull dimension `Nat.card σ`.
-* `TauCeti.MvPowerSeries.height_eq_natCard_of_isMaximal`: every maximal ideal of the Tate
+* `Ideal.height_eq_natCard_of_isMaximal_tateAlgebra`: every maximal ideal of the Tate
   algebra in the variables `σ` has height `Nat.card σ`.
 
 ## References
@@ -181,7 +181,7 @@ private theorem natCard_add_one_le_height_option {σ : Type*} [Finite σ]
 /-- **Heights of maximal ideals of Tate algebras.** Over a complete nonarchimedean field, every
 maximal ideal of the Tate algebra `K⟨X₁, …, Xₙ⟩` has height `n`, its Krull dimension. -/
 @[simp]
-theorem height_eq_natCard_of_isMaximal {σ : Type*} [Finite σ] (M : Ideal (Tate σ))
+theorem _root_.Ideal.height_eq_natCard_of_isMaximal_tateAlgebra {σ : Type*} [Finite σ] (M : Ideal (Tate σ))
     [M.IsMaximal] : M.height = Nat.card σ := by
   refine le_antisymm ?_ ?_
   · have := Ideal.height_le_ringKrullDim_of_ne_top (Ideal.IsPrime.ne_top' (I := M))
