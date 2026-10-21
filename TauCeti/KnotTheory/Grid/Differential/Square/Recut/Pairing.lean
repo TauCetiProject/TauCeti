@@ -745,6 +745,49 @@ theorem recut_first_bottom_top_of_left_eq_left_of_mem_cIoo (D : GridRectangleDec
     D.first.map_of_ne _ (Grid.ne_left_of_mem_cIoo hcol) (Grid.ne_right_of_mem_cIoo hcol)]
   exact ⟨rfl, rfl⟩
 
+/-- When two empty rectangles share their initial side and the second ends strictly inside the
+first's column interval, the second rectangle of the recut has the first rectangle's rows. -/
+theorem recut_second_bottom_top_of_left_eq_left_of_mem_cIoo (D : GridRectangleDecomposition x z)
+    (hcommon : D.first.left = D.second.left)
+    (hcol : D.second.right ∈ Grid.cIoo D.first.left D.first.right)
+    (hfirst : D.first.IsEmpty) (hsecond : D.second.IsEmpty) :
+    (D.recut (D.hasOneCommonSide_of_left_eq_left_of_mem_cIoo hcommon hcol) hfirst
+        hsecond).second.bottom = D.first.bottom ∧
+      (D.recut (D.hasOneCommonSide_of_left_eq_left_of_mem_cIoo hcommon hcol) hfirst
+        hsecond).second.top = D.first.top := by
+  obtain ⟨hfl, hfr, hsl, hsr⟩ :=
+    D.recut_sides_of_left_eq_left_of_mem_cIoo hcommon hcol hfirst hsecond
+  generalize D.recut _ hfirst hsecond = E at hfl hfr hsl hsr ⊢
+  constructor
+  · rw [GridRectangleBetween.bottom_def, GridRectangleBetween.bottom_def, hsl, ← hfr,
+      E.first.map_right, hfl]
+  · rw [GridRectangleBetween.top_def, GridRectangleBetween.top_def, hsr]
+    refine E.first.map_of_ne _ ?_ ?_
+    · rw [hfl]
+      exact D.first.left_ne_right.symm
+    · rw [hfr]
+      exact (Grid.ne_right_of_mem_cIoo hcol).symm
+
+/-- When two empty rectangles share their initial side and the first ends strictly inside the
+second's column interval, the first rectangle of the recut runs from the first rectangle's top
+row to the second rectangle's top row. -/
+theorem recut_first_bottom_top_of_left_eq_left_of_first_right_mem_cIoo
+    (D : GridRectangleDecomposition x z)
+    (hcommon : D.first.left = D.second.left)
+    (hcol : D.first.right ∈ Grid.cIoo D.first.left D.second.right)
+    (hfirst : D.first.IsEmpty) (hsecond : D.second.IsEmpty) :
+    (D.recut (D.hasOneCommonSide_of_left_eq_left hcommon
+        (Grid.ne_right_of_mem_cIoo hcol)) hfirst hsecond).first.bottom = D.first.top ∧
+      (D.recut (D.hasOneCommonSide_of_left_eq_left hcommon
+        (Grid.ne_right_of_mem_cIoo hcol)) hfirst hsecond).first.top = D.second.top := by
+  obtain ⟨hleft, hright, -, -⟩ :=
+    D.recut_sides_of_left_eq_left_of_first_right_mem_cIoo hcommon hcol hfirst hsecond
+  constructor
+  · rw [GridRectangleBetween.bottom_def, GridRectangleBetween.top_def, hleft]
+  · rw [GridRectangleBetween.top_def, GridRectangleBetween.top_def, hright]
+    exact (D.first.map_of_ne _ (fun h => D.second.left_ne_right (hcommon.symm.trans h.symm))
+      (Grid.ne_right_of_mem_cIoo hcol).symm).symm
+
 /-- When two empty rectangles share their initial side and the first ends strictly inside the
 second's column interval, the second rectangle of the recut spans the two original row
 intervals. -/

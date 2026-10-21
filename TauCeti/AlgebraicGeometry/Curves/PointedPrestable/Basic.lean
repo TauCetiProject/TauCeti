@@ -89,10 +89,6 @@ namespace PointedPrestableFamily
 
 variable {S T : Scheme.{u}} {m n : ℕ} (P : PointedPrestableFamily S n)
 
-/-- The structure morphism lies under each marking. -/
-theorem toBase_marking_apply (i : Fin n) (s : S) : P.toBase (P.marking i s) = s := by
-  simp [← Scheme.Hom.comp_apply]
-
 /-- Distinct markings take distinct values at every point of the base. -/
 theorem marking_apply_ne {i j : Fin n} (hij : i ≠ j) (s : S) : P.marking i s ≠ P.marking j s :=
   fun h ↦ Set.disjoint_left.mp (P.pairwise_disjoint_range hij) ⟨s, rfl⟩ ⟨s, h.symm⟩
@@ -172,6 +168,11 @@ def reindex (e : Fin m ↪ Fin n) : PointedPrestableFamily S m where
   marking_comp_toBase i := P.marking_comp_toBase (e i)
   pairwise_disjoint_range _ _ hij := P.pairwise_disjoint_range (e.injective.ne hij)
   range_marking_subset_smoothLocus i := P.range_marking_subset_smoothLocus (e i)
+
+/-- Reindexing the markings commutes with base change. -/
+theorem reindex_pullback (e : Fin m ↪ Fin n) (g : T ⟶ S) :
+    (P.reindex e).pullback g = (P.pullback g).reindex e :=
+  rfl
 
 /-- A smooth proper relative curve with geometrically connected fibres, equipped with `n`
 sections with pairwise disjoint images, is an `n`-pointed prestable family. -/
