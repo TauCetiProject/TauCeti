@@ -73,20 +73,16 @@ theorem exists_subalgebra_fg_of_finite [Etale A B] [Module.Finite A B] :
     exact Finset.mem_coe.2 (Finset.mem_biUnion.2 ⟨y, Finset.mem_univ _, coeff_mem_coeffs hn⟩)
   choose q hqp hqm using hq
   -- Since `B₀` is flat over `A₀`, the equations already hold over `A₁`.
-  let Φ := TensorProduct.map ((ofId A₁ A).restrictScalars A₀) (.id A₀ B₀)
-  have hΦ₁ (a : A₁) (b : B₀) : Φ (a ⊗ₜ b) = (a : A) ⊗ₜ b := TensorProduct.map_tmul ..
-  -- As a linear map, `Φ` is `rTensor B₀` of the inclusion `A₁ → A`.
-  have hΦ : Function.Injective Φ := by
-    rw [← AlgHom.coe_toLinearMap, Algebra.TensorProduct.toLinearMap_map,
-      AlgebraTensorModule.map_eq, AlgHom.toLinearMap_id, ← LinearMap.rTensor_def]
-    exact Module.Flat.rTensor_preserves_injective_linearMap _ Subtype.val_injective
-  have hΦA : (Φ : A₁ ⊗[A₀] B₀ →+* A ⊗[A₀] B₀).comp (algebraMap A₁ (A₁ ⊗[A₀] B₀)) =
-      (algebraMap A (A ⊗[A₀] B₀)).comp (algebraMap A₁ A) := by
-    ext; simp [hΦ₁]
+  let Φ := Algebra.TensorProduct.map (ofId A₁ A) (.id A₀ B₀)
+  have hΦ₁ (a : A₁) (b : B₀) : Φ (a ⊗ₜ b) = (a : A) ⊗ₜ b := Algebra.TensorProduct.map_tmul ..
+  -- As an `A₀`-linear map, `Φ` is by definition `rTensor B₀` of the inclusion `A₁ → A`.
+  have hΦ : Function.Injective Φ :=
+    Module.Flat.rTensor_preserves_injective_linearMap (M := B₀)
+      ((ofId A₁ A).toLinearMap.restrictScalars A₀) Subtype.val_injective
   have hint (y : t) : IsIntegral A₁ ((1 : A₁) ⊗ₜ[A₀] (y : B₀)) := by
     refine ⟨q y, hqm y, hΦ ?_⟩
-    rw [← RingHom.coe_coe Φ, hom_eval₂, hΦA, ← eval₂_map, hqp, map_zero]
-    simpa [hΦ₁] using hp y
+    rw [← aeval_def, ← aeval_algHom_apply, hΦ₁]
+    simpa [← aeval_def, ← hqp] using hp y
   have : Module.Finite A₁ (A₁ ⊗[A₀] B₀) := by
     refine ⟨?_⟩
     rw [← Algebra.top_toSubmodule, ← TensorProduct.adjoin_one_tmul_image_eq_top (A := A₁) _ ht]

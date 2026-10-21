@@ -153,8 +153,7 @@ theorem exists_of_comp_eq_of_finitePresentation [Nonempty ι] [IsDirectedOrder �
   have hker : RingHom.ker π.toRingHom ≤ RingHom.ker ((f i l hil).comp ψ) := by
     rw [← hs, Ideal.span_le]
     intro r hr
-    rw [SetLike.mem_coe, RingHom.mem_ker, RingHom.comp_apply,
-      ← DirectedSystem.map_map' f (him ⟨r, hr⟩) (hml ⟨r, hr⟩), hm, map_zero]
+    simp [← DirectedSystem.map_map' f (him ⟨r, hr⟩) (hml ⟨r, hr⟩), hm]
   refine ⟨l, π.toRingHom.liftOfSurjective hπ ⟨_, hker⟩, RingHom.ext fun a ↦ ?_⟩
   obtain ⟨p, rfl⟩ := hπ a
   have := π.toRingHom.liftOfSurjective_comp_apply hπ ⟨_, hker⟩ p
