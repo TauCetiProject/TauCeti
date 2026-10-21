@@ -19,10 +19,10 @@ jobs:
           persist-credentials: false
           sparse-checkout: scripts/ci_live_summary.py
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@0cb5029f1fd5d14569734816e0d135d85de3778e
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@3e029deb7a9559ffe94bc23b822ffcc73c1dc895
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 0cb5029f1fd5d14569734816e0d135d85de3778e
+          tools-ref: 3e029deb7a9559ffe94bc23b822ffcc73c1dc895
           project-directory: .
       - name: Publish bounded data-only summary
         env:
