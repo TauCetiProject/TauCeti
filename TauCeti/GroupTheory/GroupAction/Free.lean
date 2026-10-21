@@ -122,6 +122,8 @@ theorem selfEquivOrbitsQuotientProd'_symm_apply {φ : orbitRel.Quotient G X → 
     (hφ : Function.LeftInverse Quotient.mk'' φ) (h : ∀ b : X, stabilizer G b = ⊥)
     (q : orbitRel.Quotient G X) (g : G) :
     (selfEquivOrbitsQuotientProd' hφ h).symm (q, g) = g • φ q := by
+  -- Mathlib states no evaluation lemma for `selfEquivOrbitsQuotientProd'` or for the class-formula
+  -- equivalences it is assembled from, in either direction, so the definitions must be unfolded.
   simp [selfEquivOrbitsQuotientProd', selfEquivSigmaOrbitsQuotientStabilizer',
     selfEquivSigmaOrbits', QuotientGroup.quotientEquivSelf, Subgroup.quotientEquivOfEq,
     Equiv.sigmaCongrRight_symm]

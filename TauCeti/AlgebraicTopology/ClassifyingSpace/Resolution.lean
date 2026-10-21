@@ -165,18 +165,6 @@ theorem universalGSpaceChainComplexForget₂Iso_hom_f (n : ℕ) :
         eqToHom (orderedSimplicialChainComplex_X k n).symm :=
   (rfl)
 
-/-- Read on coefficients, the permutation augmentation sums the coefficients of a `0`-chain. -/
-private lemma forget₂_map_permutationAugmentation :
-    (forget₂ (Rep k G) (ModuleCat k)).map
-        (permutationAugmentation k G ((indexedJoin fun _ : ℕ => G).RealizationCell 0)) =
-      (MonoidAlgebra.coeffLinearEquiv k).toModuleIso.hom ≫
-        ModuleCat.ofHom (linearCombination k fun _ ↦ (1 : k)) := by
-  refine ModuleCat.hom_ext ((MonoidAlgebra.basis _ k).ext fun c ↦ ?_)
-  simp only [Rep.forget₂_moduleCat_map, ModuleCat.hom_ofHom, ModuleCat.hom_comp,
-    LinearMap.comp_apply, Representation.IntertwiningMap.toLinearMap_apply]
-  rw [permutationAugmentation_apply]
-  simp
-
 /-- The coefficient sum vanishes on boundaries of `1`-simplices. -/
 private lemma universalGSpaceBoundary_comp_permutationAugmentation :
     universalGSpaceBoundary k G 0 ≫ permutationAugmentation k G _ = 0 :=
@@ -212,7 +200,7 @@ instance quasiIso_universalGSpaceAugmentation : QuasiIso (universalGSpaceAugment
     refine Arrow.isoMk' _ _ (universalGSpaceChainComplexForget₂Iso k G)
       ((HomologicalComplex.singleMapHomologicalComplex _ _ 0).app _) ?_
     ext : 1
-    simpa using (forget₂_map_permutationAugmentation k G).symm
+    simpa using (forget₂_map_permutationAugmentation k G _).symm
 
 end ChainComplex
 

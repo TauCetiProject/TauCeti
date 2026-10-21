@@ -268,9 +268,7 @@ theorem face_smul_universalGSpace (g : G)
     (c : (indexedJoin fun _ : ℕ => G).RealizationCell (n + 1)) (j : Fin (n + 2)) :
     (g • c).face j = g • c.face j := by
   refine Subtype.ext (Subtype.ext ?_)
-  rw [RealizationCell.face_val, smul_realizationCell_face, smul_realizationCell_face,
-    RealizationCell.face_val, vertexEmbedding_smul_universalGSpace, Finset.map_erase,
-    Equiv.toEmbedding_apply, MulAction.toPerm_apply]
+  simp [RealizationCell.face_val, smul_realizationCell_face, Finset.map_erase]
 
 end RealizationCell
 
