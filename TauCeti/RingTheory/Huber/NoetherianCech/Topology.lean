@@ -132,6 +132,25 @@ noncomputable def facePair (hf : Ideal.span (Set.range f) = ⊤) (p : ℕ) (S : 
     PairOfDefinition (Localization.Away (∏ i ∈ S, f i)) :=
   P.localization (numerators f p) _ _ (hasDenominatorPower f P hf p S)
 
+/-- The ring of definition of `facePair` is `C[F_p / f_S]`. -/
+@[simp]
+theorem facePair_ringOfDefinition (hf : Ideal.span (Set.range f) = ⊤) (p : ℕ) (S : Finset ι) :
+    letI := faceTopology f P hf p S
+    (facePair f P hf p S).ringOfDefinition =
+      P.locSubring (numerators f p) (∏ i ∈ S, f i) (Localization.Away (∏ i ∈ S, f i)) :=
+  P.localization_ringOfDefinition _ _ _ _
+
+/-- Membership in the ideal of definition of `facePair` is membership in `I · C[F_p / f_S]`. -/
+@[simp]
+theorem mem_facePair_idealOfDefinition (hf : Ideal.span (Set.range f) = ⊤) (p : ℕ)
+    (S : Finset ι) {x : letI := faceTopology f P hf p S; (facePair f P hf p S).ringOfDefinition} :
+    letI := faceTopology f P hf p S
+    x ∈ (facePair f P hf p S).idealOfDefinition ↔
+      (⟨x, by rw [← facePair_ringOfDefinition f P hf p S]; exact x.2⟩ :
+        P.locSubring (numerators f p) (∏ i ∈ S, f i) (Localization.Away (∏ i ∈ S, f i))) ∈
+        P.locIdeal (numerators f p) _ _ :=
+  P.mem_localization_idealOfDefinition _ _ _ _
+
 /-! ### The topology of the terms -/
 
 variable (M : Type*) [AddCommGroup M] [Module B M]
