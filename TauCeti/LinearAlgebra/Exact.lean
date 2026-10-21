@@ -49,6 +49,14 @@ theorem _root_.Function.Exact.prodMap
   · rintro ⟨y, rfl⟩
     exact Prod.ext ((h₁ _).2 ⟨y.1, rfl⟩) ((h₂ _).2 ⟨y.2, rfl⟩)
 
+/-- A product of exact pairs of maps is exact. -/
+theorem _root_.Function.Exact.piMap {ι : Type*} {M N P : ι → Type*} [∀ i, Zero (P i)]
+    {f : ∀ i, M i → N i} {g : ∀ i, N i → P i} (h : ∀ i, Function.Exact (f i) (g i)) :
+    Function.Exact (Pi.map f) (Pi.map g) := by
+  intro y
+  rw [Set.range_piMap, Set.mem_univ_pi, funext_iff]
+  exact forall_congr' fun i ↦ h i (y i)
+
 /-- If `M --f--> N --g--> P` is exact at `N` and both `M` and `P` are finite-dimensional, then so
 is `N`.
 

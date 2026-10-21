@@ -254,6 +254,11 @@ theorem shift_natural (f : F ⟶ G) : G.shift ∘ₗ productMap f = productMap f
   simp only [LinearMap.comp_apply, shift_apply, productMap_apply, map_sub]
   rw [← LinearMap.comp_apply (f.app (op n)).hom, app_comp_transition, LinearMap.comp_apply]
 
+/-- The product map of a morphism of towers commutes with the shift maps, pointwise. -/
+theorem shift_productMap_apply (f : F ⟶ G) (x : F.Product) :
+    G.shift (productMap f x) = productMap f (F.shift x) :=
+  LinearMap.congr_fun (shift_natural f) x
+
 /-- The linear map `lim A → lim B` induced by a morphism of towers. -/
 def limMap (f : F ⟶ G) : F.lim →ₗ[R] G.lim :=
   (productMap f).restrict fun x hx ↦ by
