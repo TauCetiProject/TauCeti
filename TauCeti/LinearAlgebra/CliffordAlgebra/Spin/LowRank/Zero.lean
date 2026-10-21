@@ -96,7 +96,6 @@ theorem zeroVectorNormalizerEquivUnits_apply [Subsingleton V]
     (x : zeroVectorNormalizer Q) :
     (zeroVectorNormalizerEquivUnits Q x : Kˣ) =
       Units.map (equivOfSubsingleton Q).toMonoidHom (x : (CliffordAlgebra Q)ˣ) := by
-  change (unitsEquivOfSubsingleton Q) (x : (CliffordAlgebra Q)ˣ) = _
   rfl
 
 private theorem map_evenUnitaryGroup_unitsEquivOfSubsingleton [Subsingleton V] :
