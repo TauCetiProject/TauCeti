@@ -72,7 +72,9 @@ theorem fiberwiseMul_tprod (f : σ → τ) (x : ∀ i, A (f i)) :
   (liftAlgHom_apply _ _ _ _).trans (lift.tprod _)
 
 /-- `PiTensorProduct.fiberwiseMul f` sends the factor inclusion at `i` to the factor inclusion at
-`f i`. -/
+`f i`. It is a pre-simp lemma since `singleAlgHom_apply` would otherwise rewrite the inner
+factor inclusion first. -/
+@[simp↓]
 theorem fiberwiseMul_singleAlgHom [DecidableEq σ] (f : σ → τ) (i : σ) (a : A (f i)) :
     fiberwiseMul f (singleAlgHom (R := R) (A := fun i ↦ A (f i)) i a) = singleAlgHom (f i) a := by
   rw [singleAlgHom_apply, fiberwiseMul_tprod, Finset.prod_eq_single i (fun j _ hj ↦ ?_) (by simp),
