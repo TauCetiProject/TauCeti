@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Basic
+public import TauCeti.AlgebraicGeometry.Morphisms.Finite.Colimits
 public import Mathlib.AlgebraicGeometry.LimitsOver
 public import Mathlib.AlgebraicGeometry.Morphisms.FlatMono
 public import Mathlib.CategoryTheory.ObjectProperty.FiniteProducts
@@ -53,19 +54,10 @@ namespace FiniteEtaleScheme
 variable {S : Scheme.{u}}
 
 instance : (finiteEtaleSchemeProperty S).IsClosedUnderLimitsOfShape (Discrete PEmpty.{1}) := by
-  -- Mathlib's instances for an infimum of morphism properties are not found by unification here.
-  have : (@IsFinite ⊓ @Etale : MorphismProperty Scheme.{u}).IsMultiplicative := .inf
-  have : (@IsFinite ⊓ @Etale : MorphismProperty Scheme.{u}).IsStableUnderBaseChange := .inf
   rw [finiteEtaleSchemeProperty_eq_overObj]
   infer_instance
 
 instance : (finiteEtaleSchemeProperty S).IsClosedUnderLimitsOfShape WalkingCospan := by
-  -- Mathlib's instances for an infimum of morphism properties are not found by unification here.
-  have : (@IsFinite ⊓ @Etale : MorphismProperty Scheme.{u}).IsMultiplicative := .inf
-  have : (@IsFinite ⊓ @Etale : MorphismProperty Scheme.{u}).IsStableUnderBaseChange := .inf
-  have : MorphismProperty.HasOfPostcompProperty (@IsFinite ⊓ @Etale : MorphismProperty Scheme.{u})
-      (@IsFinite ⊓ @Etale) :=
-    ⟨fun f g ⟨_, _⟩ ⟨_, _⟩ ↦ ⟨IsFinite.of_comp f g, Etale.of_comp f g⟩⟩
   rw [finiteEtaleSchemeProperty_eq_overObj]
   infer_instance
 
@@ -82,24 +74,11 @@ instance : (finiteEtaleSchemeProperty S).IsClosedUnderColimitsOfShape (Discrete 
 
 instance : (finiteEtaleSchemeProperty S).IsClosedUnderColimitsOfShape (Discrete WalkingPair) where
   colimitsOfShape_le X hX := by
-    -- Finiteness and étaleness are treated separately: a binary coproduct of finite morphisms is
-    -- finite by Mathlib's `coprod.desc` instance, and étaleness is local on the source.
+    -- Finiteness and étaleness are treated separately: binary coproducts of finite morphisms are
+    -- finite, and étaleness is local on the source.
     have hfin : ObjectProperty.IsClosedUnderColimitsOfShape
-        (MorphismProperty.overObj @IsFinite (X := S)) (Discrete WalkingPair) := by
-      have : MorphismProperty.RespectsIso @IsFinite.{u} :=
-        MorphismProperty.IsStableUnderBaseChange.respectsIso
-      refine CostructuredArrow.isClosedUnderColimitsOfShape (L := 𝟭 Scheme.{u})
-        (fun D _ ↦ colimit.cocone D) (fun D _ ↦ colimit.isColimit D) ?_ S
-      intro D _ X s hs
-      have hdesc : (colimit.isColimit D).desc (Cocone.mk X s) =
-          (HasColimit.isoOfNatIso (diagramIsoPair D)).hom ≫
-            coprod.desc (s.app ⟨.left⟩) (s.app ⟨.right⟩) := by
-        refine colimit.hom_ext fun ⟨j⟩ ↦ ?_
-        cases j <;> simp
-      have := hs ⟨.left⟩
-      have := hs ⟨.right⟩
-      rw [hdesc]
-      infer_instance
+        (MorphismProperty.overObj @IsFinite (X := S)) (Discrete WalkingPair) :=
+      IsFinite.isClosedUnderColimitsOfShape_walkingPair (𝟭 Scheme.{u}) S
     have het : ObjectProperty.IsClosedUnderColimitsOfShape
         (MorphismProperty.overObj @Etale (X := S)) (Discrete WalkingPair) :=
       have : IsZariskiLocalAtSource @Etale.{u} := HasRingHomProperty.instIsZariskiLocalAtSource

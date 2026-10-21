@@ -53,6 +53,19 @@ theorem finiteEtaleSchemeProperty_eq_overObj (S : Scheme.{u}) :
     finiteEtaleSchemeProperty S = (@IsFinite ⊓ @Etale : MorphismProperty Scheme).overObj :=
   (rfl)
 
+/-- Finite étale morphisms contain identities and are closed under composition. -/
+instance : (@IsFinite ⊓ @Etale : MorphismProperty Scheme.{u}).IsMultiplicative :=
+  .inf
+
+/-- Finite étale morphisms are stable under base change. -/
+instance : (@IsFinite ⊓ @Etale : MorphismProperty Scheme.{u}).IsStableUnderBaseChange :=
+  .inf
+
+/-- If `f ≫ g` and `g` are finite étale, then so is `f`. -/
+instance : (@IsFinite ⊓ @Etale : MorphismProperty Scheme.{u}).HasOfPostcompProperty
+    (@IsFinite ⊓ @Etale) :=
+  ⟨fun f g ⟨_, _⟩ ⟨_, _⟩ ↦ ⟨IsFinite.of_comp f g, Etale.of_comp f g⟩⟩
+
 /-- Finite étale schemes over `S`, with all morphisms over `S`. -/
 abbrev FiniteEtaleScheme (S : Scheme.{u}) :=
   (finiteEtaleSchemeProperty S).FullSubcategory
