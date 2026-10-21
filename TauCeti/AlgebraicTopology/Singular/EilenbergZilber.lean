@@ -71,17 +71,6 @@ def shuffleAlexanderWhitneyHomotopy (X Y : TopCat.{w}) (R S : C) :
   (Homotopy.ofEq (shuffle_alexanderWhitney X Y R S)).trans
     (SSet.shuffleAlexanderWhitneyHomotopy (toSSet.obj X) (toSSet.obj Y) R S)
 
-/-- On homology, the shuffle map followed by the Alexander–Whitney map is the identity of
-`Hₙ(C(X; R) ⊗ C(Y; S))`. -/
-@[reassoc (attr := simp)]
-lemma homologyMap_shuffle_comp_homologyMap_alexanderWhitney (X Y : TopCat.{w}) (R S : C) (n : ℕ)
-    [((toSSet.obj X).chainComplex R ⊗ (toSSet.obj Y).chainComplex S).HasHomology n]
-    [((toSSet.obj (X ⊗ Y)).chainComplex (R ⊗ S)).HasHomology n] :
-    HomologicalComplex.homologyMap (shuffle X Y R S) n ≫
-        HomologicalComplex.homologyMap (alexanderWhitney X Y R S) n = 𝟙 _ := by
-  rw [← HomologicalComplex.homologyMap_comp,
-    (shuffleAlexanderWhitneyHomotopy X Y R S).homologyMap_eq, HomologicalComplex.homologyMap_id]
-
 /-- **The Eilenberg–Zilber theorem for singular chains**: the Alexander–Whitney map
 `C(X × Y; R ⊗ S) ⟶ C(X; R) ⊗ C(Y; S)` is a chain homotopy equivalence, with homotopy inverse the
 shuffle map. -/
@@ -102,5 +91,15 @@ lemma eilenbergZilberHomotopyEquiv_hom (X Y : TopCat.{w}) (R S : C) :
 lemma eilenbergZilberHomotopyEquiv_inv (X Y : TopCat.{w}) (R S : C) :
     (eilenbergZilberHomotopyEquiv X Y R S).inv = shuffle X Y R S :=
   (rfl)
+
+/-- On homology, the shuffle map followed by the Alexander–Whitney map is the identity of
+`Hₙ(C(X; R) ⊗ C(Y; S))`. -/
+@[reassoc (attr := simp)]
+lemma homologyMap_shuffle_comp_homologyMap_alexanderWhitney (X Y : TopCat.{w}) (R S : C) (n : ℕ)
+    [((toSSet.obj X).chainComplex R ⊗ (toSSet.obj Y).chainComplex S).HasHomology n]
+    [((toSSet.obj (X ⊗ Y)).chainComplex (R ⊗ S)).HasHomology n] :
+    HomologicalComplex.homologyMap (shuffle X Y R S) n ≫
+        HomologicalComplex.homologyMap (alexanderWhitney X Y R S) n = 𝟙 _ :=
+  ((eilenbergZilberHomotopyEquiv X Y R S).toHomologyIso n).inv_hom_id
 
 end TopCat
