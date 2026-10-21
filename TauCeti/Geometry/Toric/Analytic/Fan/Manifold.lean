@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Gluing
+public import TauCeti.Geometry.Manifold.Gluing.Basic
 public import TauCeti.Geometry.Toric.Analytic.Fan.GlueData
 
 /-!
