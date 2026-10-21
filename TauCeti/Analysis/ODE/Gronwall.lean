@@ -13,7 +13,7 @@ import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 
 /-!
-# Grönwall's inequality in integral form
+# Grönwall-type estimates
 
 Mathlib's Grönwall inequality (`le_gronwallBound_of_liminf_deriv_right_le`) bounds a function by
 a bound on its derivative. Energy estimates for evolution equations instead produce a bound on a
@@ -21,13 +21,18 @@ function by an integral of itself: a continuous `φ` with `φ t ≤ c + K ∫ₐ
 some `K ≥ 0`. This file proves that such a `φ` satisfies `φ t ≤ c exp (K (t - a))`
 (`TauCeti.le_mul_exp_of_le_add_mul_integral`).
 
+The hypothesis `K ≥ 0` cannot be dropped: a very negative stretch of `φ` makes `c + K ∫ₐᵗ φ`
+large when `K < 0`.
+
 It also writes Mathlib's `gronwallBound` with a negative rate `-λ` in terms of the exponential
 integral `E_λ(T) = ∫₀ᵀ e^{λr} dr` (`TauCeti.exp_mul_gronwallBound_neg`), and records that
 `E_λ(T) > 0` for `T > 0` (`TauCeti.integral_exp_mul_pos`) and `E_λ(T) ≤ T e^{|λ|T}` for `T ≥ 0`
 (`TauCeti.integral_exp_mul_le`).
 
-The hypothesis `K ≥ 0` cannot be dropped: a very negative stretch of `φ` makes `c + K ∫ₐᵗ φ`
-large when `K < 0`.
+Finally, it specializes Mathlib's inequality to exponential decay: a function whose derivative
+satisfies `g' ≤ -λ g` on `[T, ∞)` is bounded by `g T exp (-λ (t - T))` there
+(`TauCeti.le_mul_exp_of_hasDerivAt_le_neg_mul`), hence by `C exp (-λ t)` for large `t`
+(`TauCeti.exists_le_mul_exp_atTop_of_hasDerivAt_le_neg_mul`).
 
 ## References
 
@@ -111,5 +116,33 @@ theorem integral_exp_mul_le (lam : ℝ) {T : ℝ} (hT : 0 ≤ T) :
     (intervalIntegrable_const (μ := volume)) fun r hr ↦ exp_le_exp.2 <| by
       nlinarith [le_abs_self lam, abs_nonneg lam, hr.1, hr.2]
   simpa using this
+
+/-- **Exponential decay from a differential inequality.** If `g' ≤ -lam * g` on `[T, ∞)`, then
+`g t ≤ g T * exp (-(lam * (t - T)))` for every `t ≥ T`. -/
+theorem le_mul_exp_of_hasDerivAt_le_neg_mul {g g' : ℝ → ℝ} {T lam : ℝ}
+    (hg : ∀ s ∈ Ici T, HasDerivAt g (g' s) s) (hle : ∀ s ∈ Ici T, g' s ≤ -lam * g s)
+    {t : ℝ} (ht : T ≤ t) :
+    g t ≤ g T * exp (-(lam * (t - T))) := by
+  have h := le_gronwallBound_of_liminf_deriv_right_le (f := g) (f' := g') (δ := g T) (K := -lam)
+    (ε := 0) (a := T) (b := t) (fun s hs ↦ (hg s hs.1).continuousAt.continuousWithinAt)
+    (fun s hs r hr ↦ (hg s hs.1).hasDerivWithinAt.liminf_right_slope_le hr) le_rfl
+    (fun s hs ↦ by linarith [hle s hs.1]) t ⟨ht, le_rfl⟩
+  simpa only [gronwallBound_ε0, neg_mul] using h
+
+/-- **Exponential decay from a differential inequality, eventual form.** If `g' ≤ -lam * g` on
+`[T, ∞)`, then `g t ≤ C * exp (-(lam * t))` for some `C > 0` and all large `t`. -/
+theorem exists_le_mul_exp_atTop_of_hasDerivAt_le_neg_mul {g g' : ℝ → ℝ} {T lam : ℝ}
+    (hg : ∀ s ∈ Ici T, HasDerivAt g (g' s) s) (hle : ∀ s ∈ Ici T, g' s ≤ -lam * g s) :
+    ∃ C > 0, ∀ᶠ t in atTop, g t ≤ C * exp (-(lam * t)) := by
+  refine ⟨(|g T| + 1) * exp (lam * T), by positivity, ?_⟩
+  filter_upwards [eventually_ge_atTop T] with t ht
+  calc g t ≤ g T * exp (-(lam * (t - T))) := le_mul_exp_of_hasDerivAt_le_neg_mul hg hle ht
+    _ ≤ (|g T| + 1) * exp (-(lam * (t - T))) := by
+        gcongr
+        linarith [le_abs_self (g T)]
+    _ = (|g T| + 1) * exp (lam * T) * exp (-(lam * t)) := by
+        rw [mul_assoc, ← exp_add]
+        congr 2
+        ring
 
 end TauCeti

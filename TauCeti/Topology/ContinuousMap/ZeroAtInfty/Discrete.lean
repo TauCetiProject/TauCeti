@@ -8,9 +8,7 @@ module
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Basic
 public import TauCeti.Analysis.Normed.Group.NullFamily
 public import Mathlib.Topology.Algebra.InfiniteSum.Module
-public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 public import Mathlib.Analysis.Normed.Group.Indicator
-public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.Analysis.Normed.Operator.ContinuousLinearMap
 public import TauCeti.Algebra.Module.LinearMap.FiniteRank
 
@@ -28,7 +26,9 @@ This file develops the coordinate structure of `C₀(I, E)`:
 * `ZeroAtInftyContinuousMap.mkOfDiscrete`: a family tending to zero along the cofinite filter as
   an element of `C₀(I, E)`;
 * `ZeroAtInftyContinuousMap.single i x`: the coordinate vector supported at `i` with value `x`,
-  of norm `‖x‖` (`ZeroAtInftyContinuousMap.norm_single`); a finite sum of coordinate vectors at
+  of norm `‖x‖` (`ZeroAtInftyContinuousMap.norm_single`), so that on an infinite index the
+  coordinate vectors with a fixed nonzero value are not norm null
+  (`ZeroAtInftyContinuousMap.not_tendsto_single_cofinite`); a finite sum of coordinate vectors at
   distinct coordinates has the maximum of their norms
   (`ZeroAtInftyContinuousMap.nnnorm_sum_single`);
 * `ZeroAtInftyContinuousMap.exists_norm_coe_eq_norm`: the sup norm is attained at some
@@ -41,10 +41,6 @@ This file develops the coordinate structure of `C₀(I, E)`:
   the coordinate vectors `single i 1` span a dense submodule of `C₀(I, R)`;
 * `ZeroAtInftyContinuousMap.continuousLinearMap_ext`: continuous linear maps out of `C₀(I, E)`
   are determined by their values on coordinate vectors;
-* `ZeroAtInftyContinuousMap.lift`: a bounded family `e : I → M` in a complete ultrametric
-  module `M` with contractive scalar action extends to the continuous linear map
-  `C₀(I, R) →L[R] M`, `a ↦ ∑' i, a i • e i`, with `‖lift e he a‖ ≤ (⨆ i, ‖e i‖) * ‖a‖`. It sends
-  `single i r` to `r • e i`, and it is the unique continuous linear map with `single i 1 ↦ e i`;
 * `ZeroAtInftyContinuousMap.indicatorCLM R S`: the coordinate projection `f ↦ S.indicator f`
   onto a set `S` of indices, of norm at most one; on `C₀(I, R)` it has finite rank when `S` is
   finite (`ZeroAtInftyContinuousMap.isFiniteRank_indicatorCLM`).
@@ -60,7 +56,9 @@ coordinate vectors to coordinate vectors and commute with the coordinatewise act
 Reindexing along an equivalence `e : I ≃ J` is the case `e.toHomeomorphOfDiscrete` of
 `ZeroAtInftyContinuousMap.congrLeft`.
 
-Apart from `lift`, none of these statements needs completeness or the ultrametric inequality.
+None of these statements needs completeness or the ultrametric inequality. The extension of
+bounded families to continuous linear maps out of `C₀(I, R)` is developed in
+`TauCeti.Topology.ContinuousMap.ZeroAtInfty.LinearCombination`.
 
 ## References
 
@@ -250,6 +248,15 @@ theorem dense_setOf_finite_support : Dense {f : C₀(I, β) | (Function.support 
 
 end Normed
 
+/-- On an infinite index type, the coordinate vectors `single i b` with a fixed nonzero value `b`
+do not tend to zero in norm along the cofinite filter. In particular the unit coordinate vectors
+of `c₀` are not norm null. -/
+theorem not_tendsto_single_cofinite [NormedAddCommGroup β] [DecidableEq I] [Infinite I] {b : β}
+    (hb : b ≠ 0) : ¬ Tendsto (fun i : I ↦ single i b) cofinite (𝓝 0) := fun h ↦ by
+  have h1 := h.norm
+  simp only [norm_single, norm_zero] at h1
+  exact hb (norm_eq_zero.1 (tendsto_const_nhds_iff.1 h1))
+
 section Ring
 
 variable {R : Type*} [SeminormedRing R] [DecidableEq I]
@@ -349,77 +356,6 @@ theorem isFiniteRank_indicatorCLM {R : Type*} [SeminormedRing R] (s : Finset I) 
     Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, hi, rfl⟩)
 
 end Indicator
-
-section Lift
-
-/-! ### Extension of bounded families -/
-
-variable {R M : Type*} [SeminormedRing R] [NormedAddCommGroup M] [Module R M]
-  [IsBoundedSMul R M] [IsUltrametricDist M] [CompleteSpace M]
-  {e : I → M} (he : BddAbove (Set.range fun i ↦ ‖e i‖))
-include he
-
-private theorem summable_smul_of_bddAbove (a : C₀(I, R)) : Summable fun i ↦ a i • e i := by
-  obtain ⟨C, hC⟩ := he
-  refine NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero ?_
-  rw [tendsto_zero_iff_norm_tendsto_zero]
-  refine squeeze_zero (fun _ ↦ norm_nonneg _)
-    (fun i ↦ (norm_smul_le (a i) (e i)).trans (mul_le_mul_of_nonneg_left
-      (hC ⟨i, rfl⟩) (norm_nonneg _))) ?_
-  simpa using (tendsto_zero_iff_norm_tendsto_zero.1 a.tendsto_cofinite).mul_const C
-
-omit [DiscreteTopology I] [CompleteSpace M] in
-private theorem norm_tsum_smul_le (a : C₀(I, R)) : ‖∑' i, a i • e i‖ ≤ (⨆ i, ‖e i‖) * ‖a‖ := by
-  refine IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg
-    (mul_nonneg (Real.iSup_nonneg fun _ ↦ norm_nonneg _) (norm_nonneg _)) fun i ↦ ?_
-  calc ‖a i • e i‖ ≤ ‖a i‖ * ‖e i‖ := norm_smul_le _ _
-    _ ≤ ‖a‖ * ⨆ i, ‖e i‖ := by
-        gcongr
-        · exact a.norm_coe_le_norm i
-        · exact le_ciSup he i
-    _ = (⨆ i, ‖e i‖) * ‖a‖ := mul_comm _ _
-
-omit he in
-variable (e) in
-/-- **Extension of a bounded family**: a bounded family `e : I → M` in a complete ultrametric
-module with contractive scalar action defines the continuous linear map
-`C₀(I, R) →L[R] M`, `a ↦ ∑' i, a i • e i`. Its norm bound is `norm_lift_apply_le`. -/
-noncomputable def lift (he : BddAbove (Set.range fun i ↦ ‖e i‖)) : C₀(I, R) →L[R] M :=
-  LinearMap.mkContinuous
-    { toFun a := ∑' i, a i • e i
-      map_add' a b := by
-        simp only [coe_add, Pi.add_apply, add_smul]
-        exact (summable_smul_of_bddAbove he a).tsum_add (summable_smul_of_bddAbove he b)
-      map_smul' r a := by
-        simp only [coe_smul, Pi.smul_apply, smul_eq_mul, mul_smul, RingHom.id_apply]
-        exact (summable_smul_of_bddAbove he a).tsum_const_smul r }
-    (⨆ i, ‖e i‖) (norm_tsum_smul_le he)
-
-/-- The extension of a bounded family sends `a` to `∑' i, a i • e i`. -/
-theorem lift_apply (a : C₀(I, R)) : lift e he a = ∑' i, a i • e i := (rfl)
-
-/-- The series `∑ i, a i • e i` converges unconditionally to the extension of `e` at `a`. -/
-theorem hasSum_lift (a : C₀(I, R)) : HasSum (fun i ↦ a i • e i) (lift e he a) :=
-  (summable_smul_of_bddAbove he a).hasSum
-
-/-- The extension of a bounded family has norm at most the supremum of the norms of the family. -/
-theorem norm_lift_apply_le (a : C₀(I, R)) : ‖lift e he a‖ ≤ (⨆ i, ‖e i‖) * ‖a‖ :=
-  norm_tsum_smul_le he a
-
-variable [DecidableEq I]
-
-/-- The extension of a bounded family sends the coordinate vector `single i r` to `r • e i`. -/
-@[simp]
-theorem lift_single (i : I) (r : R) : lift e he (single i r) = r • e i := by
-  rw [lift_apply, tsum_eq_single i fun j hj ↦ by simp [hj]]
-  simp
-
-/-- The extension of a bounded family is the unique continuous linear map sending each unit
-coordinate vector `single i 1` to `e i`. -/
-theorem eq_lift_iff {u : C₀(I, R) →L[R] M} : u = lift e he ↔ ∀ i, u (single i 1) = e i :=
-  ⟨by rintro rfl i; simp, fun h ↦ continuousLinearMap_ext_single_one fun i ↦ by simp [h]⟩
-
-end Lift
 
 /-! ### Changes of index -/
 
@@ -537,11 +473,7 @@ theorem equivFunOnFintype_compLeft [Fintype I] (u : E →L[R] F)
     equivFunOnFintype R F (compLeft u hu f) = u ∘ equivFunOnFintype R E f := by
   ext; simp
 
-end Semiring
-
 section Curry
-
-variable [SeminormedRing R] [Module R E] [IsBoundedSMul R E] [Module R F] [IsBoundedSMul R F]
 
 /-- The rows `j ↦ f (i, j)` of a family `f` vanishing at infinity on `I × J` tend to zero
 uniformly: their sup norms tend to zero along the cofinite filter on `I`. -/
@@ -617,6 +549,8 @@ theorem curryEquiv_compLeft (u : E →L[R] F) (hu : ∃ C, ∀ x, ‖u x‖ ≤ 
   ext; simp
 
 end Curry
+
+end Semiring
 
 end Comparison
 

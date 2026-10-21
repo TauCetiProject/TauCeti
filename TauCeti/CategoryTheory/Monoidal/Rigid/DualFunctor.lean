@@ -64,6 +64,10 @@ the double right dual functor is a monoidal autoequivalence.
 * `TauCeti.doubleRightDualFunctor_map_evaluation` and
   `TauCeti.doubleRightDualFunctor_map_coevaluation`: the double right dual functor carries the
   evaluation and coevaluation of `(X, Xᘁ)` to those of `(Xᘁᘁ, Xᘁᘁᘁ)`;
+* `TauCeti.rigidCategoryOfIsoDoubleRightDual`: a right rigid category with isomorphisms
+  `X ≅ Xᘁᘁ` is rigid, with left duals described by
+  `TauCeti.rigidCategoryOfIsoDoubleRightDual_evaluation` and
+  `TauCeti.rigidCategoryOfIsoDoubleRightDual_coevaluation`;
 * `TauCeti.doubleRightDualFunctorIsEquivalence`: in a rigid monoidal category, the double right
   dual functor is an equivalence, hence a monoidal autoequivalence.
 
@@ -448,6 +452,37 @@ theorem doubleRightDualFunctor_map_coevaluation (X : C) :
       rw [h]
       -- The two sides differ only in how the intermediate objects are written.
       rfl
+
+/-- A right rigid category in which every object `X` is isomorphic to its double right dual
+`(doubleRightDualFunctor C).obj X = Xᘁᘁ` is rigid: transporting the pairing of `Xᘁ` with `Xᘁᘁ`
+along the isomorphism makes `Xᘁ` a left dual of `X`. Not an instance, as the left duals depend on
+the chosen isomorphisms. -/
+@[expose, instance_reducible]
+noncomputable def rigidCategoryOfIsoDoubleRightDual
+    (φ : ∀ X : C, X ≅ (doubleRightDualFunctor C).obj X) : RigidCategory C where
+  toRightRigidCategory := ‹_›
+  leftDual X :=
+    { leftDual := Xᘁ
+      exact := @exactPairingCongrRight C _ _ Xᘁ X ((Xᘁ : C)ᘁ : C) HasRightDual.exact (φ X) }
+
+/-- The evaluation `X ⊗ Xᘁ ⟶ 𝟙_ C` of the left dual of `X` in
+`rigidCategoryOfIsoDoubleRightDual φ`: the evaluation of `(Xᘁ, Xᘁᘁ)` precomposed with `φ X`. -/
+@[simp, reassoc]
+theorem rigidCategoryOfIsoDoubleRightDual_evaluation
+    (φ : ∀ X : C, X ≅ (doubleRightDualFunctor C).obj X) (X : C) :
+    letI := rigidCategoryOfIsoDoubleRightDual φ
+    ε_ (ᘁX) X = (φ X).hom ▷ Xᘁ ≫ ε_ (Xᘁ : C) ((Xᘁ : C)ᘁ : C) :=
+  exactPairingCongrRight_evaluation _
+
+/-- The coevaluation `𝟙_ C ⟶ Xᘁ ⊗ X` of the left dual of `X` in
+`rigidCategoryOfIsoDoubleRightDual φ`: the coevaluation of `(Xᘁ, Xᘁᘁ)` followed by the inverse
+of `φ X`. -/
+@[simp, reassoc]
+theorem rigidCategoryOfIsoDoubleRightDual_coevaluation
+    (φ : ∀ X : C, X ≅ (doubleRightDualFunctor C).obj X) (X : C) :
+    letI := rigidCategoryOfIsoDoubleRightDual φ
+    η_ (ᘁX) X = η_ (Xᘁ : C) ((Xᘁ : C)ᘁ : C) ≫ Xᘁ ◁ (φ X).inv :=
+  exactPairingCongrRight_coevaluation _
 
 end DoubleRightDual
 

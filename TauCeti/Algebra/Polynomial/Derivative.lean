@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.Derivation
+public import Mathlib.Algebra.Polynomial.Reverse
 import Mathlib.Algebra.Polynomial.Eval.Degree
 
 /-!
@@ -21,6 +22,11 @@ A coefficient map can lower the degree of a polynomial, and in positive characte
 lower the degree of a derivative even when it preserves the degree of the polynomial itself.
 Over an additively torsion-free target the second phenomenon cannot occur: preserving the degree
 of `p` preserves the degree of `p.derivative`.
+
+A self-reciprocal polynomial `p` of even degree bound `2 g`, one with `X ^ (2 g) p (1 / X) = p (X)`,
+satisfies `p' (1) = g p (1)`: the coefficients in degrees `i` and `2 g - i` agree and their
+weights `i - g` and `g - i` cancel. The characteristic polynomial of a symplectic matrix is the
+basic example.
 -/
 
 public section
@@ -47,6 +53,31 @@ theorem _root_.Polynomial.iterate_derivative_comp_C_mul_X [CommSemiring R] (p : 
     rw [Function.iterate_succ_apply', ih, derivative_C_mul, derivative_comp, derivative_C_mul_X,
       Function.iterate_succ_apply', pow_succ, C_mul]
     ring
+
+/-- **Reciprocal-polynomial identity.** A polynomial `p` of degree at most `2 g` which is its own
+reflection at `2 g`, that is `X ^ (2 g) p (1 / X) = p (X)`, satisfies `p' (1) = g p (1)`. -/
+theorem _root_.Polynomial.derivative_eval_one_of_reflect_eq [CommRing R] {p : R[X]} {g : ℕ}
+    (hp : p.natDegree ≤ 2 * g) (h : p.reflect (2 * g) = p) :
+    p.derivative.eval 1 = g * p.eval 1 := by
+  have hlt : p.natDegree < 2 * g + 1 := Nat.lt_succ_of_le hp
+  rw [derivative_eval, sum_over_range' _ (fun _ ↦ by simp) _ hlt, eval_eq_sum_range' hlt,
+    Finset.mul_sum, ← sub_eq_zero, ← Finset.sum_sub_distrib]
+  -- The terms in degrees `i` and `2 g - i` cancel, and the term in degree `g` vanishes.
+  refine Finset.sum_involution (fun i _ ↦ 2 * g - i) (fun i hi ↦ ?_) (fun i hi hne ↦ ?_)
+    (fun i hi ↦ ?_) (fun i hi ↦ ?_) <;>
+    have hi : i ≤ 2 * g := Nat.lt_succ_iff.1 (Finset.mem_range.1 hi)
+  · have hc : p.coeff (2 * g - i) = p.coeff i := by
+      conv_rhs => rw [← h]
+      rw [coeff_reflect, revAt_le hi]
+    rw [hc, Nat.cast_sub hi]
+    push_cast
+    ring
+  · intro heq
+    obtain rfl : i = g := by omega
+    simp [mul_comm] at hne
+  · simp only [Finset.mem_range]
+    omega
+  · omega
 
 variable [Semiring R] [Semiring S] [HasUniqueDiv S]
 

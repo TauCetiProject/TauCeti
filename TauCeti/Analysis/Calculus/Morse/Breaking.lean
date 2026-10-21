@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Calculus.Morse.Basic
 public import TauCeti.Analysis.Calculus.Morse.Convergence
 public import TauCeti.Analysis.Calculus.Morse.FlowExistence
 public import TauCeti.Analysis.Calculus.Morse.Index
+public import TauCeti.Analysis.Calculus.Morse.MorseSmale.Basic
 public import TauCeti.Dynamics.Flow.Breaking
 public import Mathlib.Data.List.Chain
 -- Private: used only to compare the gradient with the differential.
@@ -255,14 +256,7 @@ theorem exists_isChain_of_mem_closure_stableSet_inter_stableSet
     (hconv : ∀ {z}, z ∈ closure (Flow.stableSet (negativeGradientFlow f hf) q) →
       ∃ a, IsNondegenerateCriticalPoint f a ∧
         z ∈ Flow.stableSet (negativeGradientFlow f hf) a)
-    (htr : ∀ {a b z}, IsNondegenerateCriticalPoint f a →
-      IsNondegenerateCriticalPoint f b →
-      z ∈ Flow.unstableSet (negativeGradientFlow f hf) a →
-      z ∈ Flow.stableSet (negativeGradientFlow f hf) b →
-      Submodule.span ℝ (tangentConeAt ℝ
-          (Flow.unstableSet (negativeGradientFlow f hf) a) z) ⊔
-        Submodule.span ℝ (tangentConeAt ℝ
-          (Flow.stableSet (negativeGradientFlow f hf) b) z) = ⊤) :
+    (htr : IsMorseSmale f hf) :
     ∃ l : List E,
       (x :: l).IsChain (fun a b ↦ a ≠ b ∧
         (Flow.unstableSet (negativeGradientFlow f hf) a ∩
@@ -290,8 +284,7 @@ theorem exists_isChain_of_mem_closure_stableSet_inter_stableSet
         obtain ⟨a, z, ha, hax, hzq, hza⟩ :=
           exists_nextCriticalPoint_of_mem_closure_stableSet_inter_stableSet
             hx hfs hf hqx hy hconv
-        have hdrop := hx.morseIndex_lt_of_mem_unstableSet_inter_stableSet ha hfs hf
-          hax.symm hzq.2 hza (htr hx ha hzq.2 hza)
+        have hdrop := htr.morseIndex_lt hx ha hfs hax.symm hzq.2 hza
         have hedge : x ≠ a ∧
             (Flow.unstableSet (negativeGradientFlow f hf) x ∩
               Flow.stableSet (negativeGradientFlow f hf) a).Nonempty :=
@@ -323,14 +316,7 @@ theorem morseIndex_lt_of_mem_closure_stableSet_inter_stableSet
     (hconv : ∀ {z}, z ∈ closure (Flow.stableSet (negativeGradientFlow f hf) q) →
       ∃ a, IsNondegenerateCriticalPoint f a ∧
         z ∈ Flow.stableSet (negativeGradientFlow f hf) a)
-    (htr : ∀ {a b z}, IsNondegenerateCriticalPoint f a →
-      IsNondegenerateCriticalPoint f b →
-      z ∈ Flow.unstableSet (negativeGradientFlow f hf) a →
-      z ∈ Flow.stableSet (negativeGradientFlow f hf) b →
-      Submodule.span ℝ (tangentConeAt ℝ
-          (Flow.unstableSet (negativeGradientFlow f hf) a) z) ⊔
-        Submodule.span ℝ (tangentConeAt ℝ
-          (Flow.stableSet (negativeGradientFlow f hf) b) z) = ⊤) :
+    (htr : IsMorseSmale f hf) :
     morseIndex f q < morseIndex f x := by
   obtain ⟨l, -, hlast, -, hlen⟩ :=
     hx.exists_isChain_of_mem_closure_stableSet_inter_stableSet hfs hf hqx hy hconv htr
@@ -353,14 +339,7 @@ theorem exists_isChain_of_mem_closure_unstableSet_inter_unstableSet
     (hconv : ∀ {z}, z ∈ closure (Flow.unstableSet (negativeGradientFlow f hf) p) →
       ∃ a, IsNondegenerateCriticalPoint f a ∧
         z ∈ Flow.unstableSet (negativeGradientFlow f hf) a)
-    (htr : ∀ {a b z}, IsNondegenerateCriticalPoint f a →
-      IsNondegenerateCriticalPoint f b →
-      z ∈ Flow.unstableSet (negativeGradientFlow f hf) a →
-      z ∈ Flow.stableSet (negativeGradientFlow f hf) b →
-      Submodule.span ℝ (tangentConeAt ℝ
-          (Flow.unstableSet (negativeGradientFlow f hf) a) z) ⊔
-        Submodule.span ℝ (tangentConeAt ℝ
-          (Flow.stableSet (negativeGradientFlow f hf) b) z) = ⊤) :
+    (htr : IsMorseSmale f hf) :
     ∃ l : List E,
       (p :: l).IsChain (fun a b ↦ a ≠ b ∧
         (Flow.unstableSet (negativeGradientFlow f hf) a ∩
@@ -389,8 +368,7 @@ theorem exists_isChain_of_mem_closure_unstableSet_inter_unstableSet
         obtain ⟨a, z, ha, hax, hzp, hza⟩ :=
           exists_prevCriticalPoint_of_mem_closure_unstableSet_inter_unstableSet
             hx hfs hf hpx hy hconv
-        have hxa := ha.morseIndex_lt_of_mem_unstableSet_inter_stableSet hx hfs hf hax
-          hza hzp.2 (htr ha hx hza hzp.2)
+        have hxa := htr.morseIndex_lt ha hx hfs hax hza hzp.2
         have hcodim : d - morseIndex f a < d - morseIndex f x := by
           have hxa' := morseIndex_le_finrank (f := f) (x := a)
           omega
@@ -428,14 +406,7 @@ theorem morseIndex_lt_of_mem_closure_unstableSet_inter_unstableSet
     (hconv : ∀ {z}, z ∈ closure (Flow.unstableSet (negativeGradientFlow f hf) p) →
       ∃ a, IsNondegenerateCriticalPoint f a ∧
         z ∈ Flow.unstableSet (negativeGradientFlow f hf) a)
-    (htr : ∀ {a b z}, IsNondegenerateCriticalPoint f a →
-      IsNondegenerateCriticalPoint f b →
-      z ∈ Flow.unstableSet (negativeGradientFlow f hf) a →
-      z ∈ Flow.stableSet (negativeGradientFlow f hf) b →
-      Submodule.span ℝ (tangentConeAt ℝ
-          (Flow.unstableSet (negativeGradientFlow f hf) a) z) ⊔
-        Submodule.span ℝ (tangentConeAt ℝ
-          (Flow.stableSet (negativeGradientFlow f hf) b) z) = ⊤) :
+    (htr : IsMorseSmale f hf) :
     morseIndex f x < morseIndex f p := by
   obtain ⟨l, -, hlast, -, hlen⟩ :=
     hx.exists_isChain_of_mem_closure_unstableSet_inter_unstableSet hfs hf hpx hy hconv htr
@@ -459,14 +430,7 @@ theorem isClosed_unstableSet_inter_stableSet_inter_level
     (hconvU : ∀ {z}, z ∈ closure (Flow.unstableSet (negativeGradientFlow f hf) p) →
       ∃ a, IsNondegenerateCriticalPoint f a ∧
         z ∈ Flow.unstableSet (negativeGradientFlow f hf) a)
-    (htr : ∀ {a b z}, IsNondegenerateCriticalPoint f a →
-      IsNondegenerateCriticalPoint f b →
-      z ∈ Flow.unstableSet (negativeGradientFlow f hf) a →
-      z ∈ Flow.stableSet (negativeGradientFlow f hf) b →
-      Submodule.span ℝ (tangentConeAt ℝ
-          (Flow.unstableSet (negativeGradientFlow f hf) a) z) ⊔
-        Submodule.span ℝ (tangentConeAt ℝ
-          (Flow.stableSet (negativeGradientFlow f hf) b) z) = ⊤) :
+    (htr : IsMorseSmale f hf) :
     IsClosed (Flow.unstableSet (negativeGradientFlow f hf) p ∩
       Flow.stableSet (negativeGradientFlow f hf) q ∩ {z | f z = c}) := by
   -- A limit point has backward and forward critical limits `a` and `b`. The two preceding
@@ -488,8 +452,7 @@ theorem isClosed_unstableSet_inter_stableSet_inter_level
     by_cases hab : a = b
     · subst a
       exact le_rfl
-    · exact (ha.morseIndex_lt_of_mem_unstableSet_inter_stableSet hb hfs hf hab hya hyb
-        (htr ha hb hya hyb)).le
+    · exact (htr.morseIndex_lt ha hb hfs hab hya hyb).le
   have hbq : b = q := by
     by_contra hbq
     have hqb := hb.morseIndex_lt_of_mem_closure_stableSet_inter_stableSet hfs hf
@@ -502,8 +465,7 @@ theorem isClosed_unstableSet_inter_stableSet_inter_level
     subst a
     have hab : p = b := by
       by_contra hab
-      have hba' := hp.morseIndex_lt_of_mem_unstableSet_inter_stableSet hb hfs hf hab hya hyb
-        (htr hp hb hya hyb)
+      have hba' := htr.morseIndex_lt hp hb hfs hab hya hyb
       omega
     subst b
     have hyp : y = p := Flow.IsNegativeGradient.eq_of_mem_unstableSet_inter_stableSet
@@ -525,8 +487,7 @@ theorem isClosed_unstableSet_inter_stableSet_inter_level
           hfs.continuous.continuousAt ⟨hya, hyb⟩
       rw [hyq] at hyc
       linarith
-    · have hba' := ha.morseIndex_lt_of_mem_unstableSet_inter_stableSet hq hfs hf hab hya hyb
-        (htr ha hq hya hyb)
+    · have hba' := htr.morseIndex_lt ha hq hfs hab hya hyb
       omega
   subst a
   exact ⟨⟨hya, hyb⟩, hyc⟩
@@ -545,14 +506,7 @@ theorem finite_unstableSet_inter_stableSet_inter_level
     (hconvU : ∀ {z}, z ∈ closure (Flow.unstableSet (negativeGradientFlow f hf) p) →
       ∃ a, IsNondegenerateCriticalPoint f a ∧
         z ∈ Flow.unstableSet (negativeGradientFlow f hf) a)
-    (htr : ∀ {a b z}, IsNondegenerateCriticalPoint f a →
-      IsNondegenerateCriticalPoint f b →
-      z ∈ Flow.unstableSet (negativeGradientFlow f hf) a →
-      z ∈ Flow.stableSet (negativeGradientFlow f hf) b →
-      Submodule.span ℝ (tangentConeAt ℝ
-          (Flow.unstableSet (negativeGradientFlow f hf) a) z) ⊔
-        Submodule.span ℝ (tangentConeAt ℝ
-          (Flow.stableSet (negativeGradientFlow f hf) b) z) = ⊤)
+    (htr : IsMorseSmale f hf)
     {C : Set E} (hC : IsCompact C)
     (hsub : Flow.unstableSet (negativeGradientFlow f hf) p ∩
       Flow.stableSet (negativeGradientFlow f hf) q ∩ {z | f z = c} ⊆ C) :
@@ -564,7 +518,7 @@ theorem finite_unstableSet_inter_stableSet_inter_level
     (hp.isClosed_unstableSet_inter_stableSet_inter_level hq hfs hf hind hc hconvS hconvU htr)
     hsub).finite
   exact hp.isDiscrete_unstableSet_inter_stableSet_level hq hfs hf hind
-    (fun y hy ↦ htr hp hq hy.1.1 hy.1.2)
+    (fun y hy ↦ htr.transverse_at hp hq hy.1)
 
 end IsNondegenerateCriticalPoint
 
