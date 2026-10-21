@@ -221,7 +221,7 @@ theorem ncard_carrier_mk_diagGL {t : Fin 2 → Fˣ} (ht : t 0 ≠ t 1) :
     (ConjClasses.mk (diagGL t)).carrier.ncard = Fintype.card F * (Fintype.card F + 1) := by
   rw [ConjClasses.ncard_carrier_mk]
   refine index_eq_of_natCard_eq_mul card_sub_one_sq_pos ?_
-    (by simpa only [Nat.card_eq_fintype_card] using natCard_GL_fin_two F)
+    ((natCard_GL_fin_two F).trans (by rw [Nat.card_eq_fintype_card]))
   rw [natCard_centralizer_diagGL ht, Nat.card_eq_fintype_card]
 
 end Counting
@@ -283,7 +283,7 @@ theorem ncard_carrier_mk_gl2NonSplitTorusHom [Fintype F]
       Fintype.card F * (Fintype.card F - 1) := by
   rw [ConjClasses.ncard_carrier_mk]
   refine index_eq_of_natCard_eq_mul card_sq_sub_one_pos ?_
-    (by simpa only [Nat.card_eq_fintype_card] using natCard_GL_fin_two_eq_sq_sub_one_mul F)
+    ((natCard_GL_fin_two_eq_sq_sub_one_mul F).trans (by rw [Nat.card_eq_fintype_card]))
   rw [natCard_centralizer_gl2NonSplitTorusHom hx, Nat.card_eq_fintype_card]
 
 end GL2NonSplitTorus
