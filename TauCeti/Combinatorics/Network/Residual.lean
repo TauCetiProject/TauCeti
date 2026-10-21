@@ -50,6 +50,8 @@ lower bounds. We prove:
   lowers the excess at `s` by its value at `t`.
 * `TauCeti.image_residualUpdate_Icc`: the residual updates of a feasible `f` by feasible residual
   assignments are exactly the feasible assignments.
+* `TauCeti.Assignment.map_residualCapacity` and `TauCeti.Assignment.map_residualUpdate`:
+  residual capacities and residual updates commute with additive coefficient maps.
 
 ## Implementation notes
 
@@ -105,6 +107,13 @@ theorem residualCapacity_inr (lo hi f : Assignment Q K) {v w : V} (e : Q w v) :
 
 end Sub
 
+/-- Residual capacities commute with additive coefficient maps. -/
+theorem Assignment.map_residualCapacity [AddGroup K] {L F : Type*} [AddGroup L] [FunLike F K L]
+    [AddMonoidHomClass F K L] (φ : F) (lo hi f : Assignment Q K) :
+    (residualCapacity lo hi f).map φ = residualCapacity (lo.map φ) (hi.map φ) (f.map φ) := by
+  funext _ _ e
+  rcases e with e | e <;> simp
+
 section AddCommGroup
 
 variable [AddCommGroup K]
@@ -147,6 +156,23 @@ theorem residualUpdate_zero (f : Assignment Q K) : residualUpdate f 0 = f := by
 theorem residualUpdate_residualUpdate (f : Assignment Q K) (r r' : Assignment (ResidualHom Q) K) :
     residualUpdate (residualUpdate f r) r' = residualUpdate f (r + r') := by
   simp [residualUpdate_def, add_assoc]
+
+section Map
+
+variable {L F : Type*} [AddCommGroup L] [FunLike F K L] [AddMonoidHomClass F K L]
+
+theorem Assignment.map_residualNet (φ : F) (r : Assignment (ResidualHom Q) K) :
+    (residualNet r).map φ = residualNet (r.map φ) := by
+  funext _ _ e
+  simp
+
+/-- Residual updates commute with additive coefficient maps. -/
+theorem Assignment.map_residualUpdate (φ : F) (f : Assignment Q K)
+    (r : Assignment (ResidualHom Q) K) :
+    (residualUpdate f r).map φ = residualUpdate (f.map φ) (r.map φ) := by
+  rw [residualUpdate_def, residualUpdate_def, map_add, map_residualNet]
+
+end Map
 
 /-- Residual updates preserve values in an additive subgroup: if `f` and `r` take values in `H`,
 so does the residual update of `f` by `r`. -/

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.InnerConjugation
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.FunctorOfPoints
+public import TauCeti.Algebra.AlgebraicGroup.Hopf.PointConjugation
 
 /-!
 # Conjugation of `GLₙ` by a constant matrix, in coordinates
@@ -35,6 +36,9 @@ automorphism carries it there, and on points that is conjugation by the change-o
 * `TauCeti.GeneralLinear.pointsMulEquiv_mapPointsFunctor_conjCoordinateIso` and
   `TauCeti.GeneralLinear.pointsMulEquiv_toConv_comp_conjCoordinateIso`: on algebra-valued points
   the coordinate automorphism is conjugation by the base-changed matrix.
+* `TauCeti.GeneralLinear.pointsMulEquiv_toConv_comp_pointConjugationAlgHom`: on algebra-valued
+  points, `HopfAlgebra.pointConjugationAlgHom` at the point of `P` is likewise conjugation by the
+  base-changed matrix.
 * `TauCeti.GeneralLinear.conjCoordinateIso_inv`: conjugation by the inverse matrix is the inverse
   coordinate automorphism.
 
@@ -98,6 +102,19 @@ theorem pointsMulEquiv_toConv_comp_conjCoordinateIso
         (Matrix.GeneralLinearGroup.map (algebraMap R A) P)⁻¹ := by
   simpa only [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] using
     pointsMulEquiv_mapPointsFunctor_conjCoordinateIso P (CommAlgCat.of R A) f
+
+/-- **Precomposing a point with `HopfAlgebra.pointConjugationAlgHom` at the point of `P`
+conjugates its matrix by the image of `P`**, over a value ring in any universe. -/
+theorem pointsMulEquiv_toConv_comp_pointConjugationAlgHom
+    (P : Matrix.GeneralLinearGroup (Fin n) R) (A : Type v) [CommRing A] [Algebra R A]
+    (f : WithConv (coordinateHopfAlgebra R n →ₐ[R] A)) :
+    pointsMulEquiv n
+        (toConv (f.ofConv.comp (HopfAlgebra.pointConjugationAlgHom
+          ((pointsMulEquiv (R := R) (A := R) n).symm P)))) =
+      Matrix.GeneralLinearGroup.map (algebraMap R A) P * pointsMulEquiv n f *
+        (Matrix.GeneralLinearGroup.map (algebraMap R A) P)⁻¹ := by
+  rw [HopfAlgebra.comp_pointConjugationAlgHom, map_mul, map_mul, map_inv,
+    pointsMulEquiv_mapValue, MulEquiv.apply_symm_apply, Algebra.toRingHom_ofId]
 
 /-- Conjugation by the inverse matrix is the inverse coordinate automorphism. -/
 @[simp]

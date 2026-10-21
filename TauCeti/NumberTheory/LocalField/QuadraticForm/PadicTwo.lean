@@ -115,8 +115,8 @@ private theorem exists_eq_two_zpow_mul (b : ℚ_[2]ˣ) :
 /-- A unit of `ℤ_2` that is not `1 mod 8` is a nonsquare of `ℚ_2ˣ`. -/
 private theorem not_isSquare_of_toZModPow_ne_one {a : ℚ_[2]ˣ} {u : ℤ_[2]ˣ}
     (ha : (a : ℚ_[2]) = u) (hu : PadicInt.toZModPow 3 (u : ℤ_[2]) ≠ 1) : ¬IsSquare a := by
-  rw [← isSquare_units_val_iff, ha, isSquare_coe_iff_mem_unitsPrincipal_three,
-    mem_unitsPrincipal_iff_toZModPow]
+  rw [isSquare_iff_serreEps_eq_zero_and_serreOmega_eq_zero ha,
+    serreEps_eq_zero_and_serreOmega_eq_zero_iff, mem_unitsPrincipal_iff_toZModPow]
   exact hu
 
 /-- For a nonsquare `c`, the symbol `(c, ·)` is nontrivial on one of the generators `2`, `-1`,

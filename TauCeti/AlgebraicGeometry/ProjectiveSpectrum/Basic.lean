@@ -22,7 +22,9 @@ of `Spec` of `HomogeneousLocalization.Away.lift φ` with the standard chart `Pro
 depend on the chart: any other homogeneous `g` of positive degree with `φ g` a unit gives the same
 morphism. It also proves that `Proj.map` of a graded ring homomorphism lies over the induced map on
 `Spec` of the degree-zero parts, and packages `Proj.map` of a graded ring isomorphism as an
-isomorphism of schemes.
+isomorphism of schemes. Finally, it computes the locus where a function `g / fⁿ` on a standard
+chart `D₊(f)` is invertible: it is `D₊(fg)`, so the restriction of sections from `D₊(f)` to
+`D₊(fg)` is a localization at `g / fⁿ`.
 
 ## Main definitions
 
@@ -35,6 +37,8 @@ isomorphism of schemes.
   chart `D₊(f)` agrees with the one defined on the chart `D₊(g)`.
 * `AlgebraicGeometry.Proj.map_toSpecZero`: `Proj.map f` lies over `Spec` of the degree-zero part
   of `f`.
+* `AlgebraicGeometry.Proj.basicOpen_awayToSection_mk`: on the chart `D₊(f)`, the function `g / fⁿ`
+  is invertible exactly on `D₊(fg)`.
 * `ProjectiveSpectrum.ext_of_mem_pos`: positive-degree homogeneous elements determine a
   projective point, allowing comparison through its positive-degree coordinate opens.
 -/
@@ -120,6 +124,29 @@ theorem mapIso_inv (f : 𝒜 →+*ᵍ ℬ) (g : ℬ →+*ᵍ 𝒜) (hfg : Functi
     (mapIso f g hfg hgf).inv =
       map g (HomogeneousIdeal.irrelevant_le_map_of_surjective g hgf.surjective) :=
   (rfl)
+
+/-- On the standard chart `D₊(f)`, the function `g / fⁿ` is invertible exactly on `D₊(fg)`. -/
+theorem basicOpen_awayToSection_mk {f : A} {d : ℕ} (hf : f ∈ 𝒜 d) (n : ℕ) (g : A)
+    (hg : g ∈ 𝒜 (n • d)) :
+    (Proj 𝒜).basicOpen (awayToSection 𝒜 f (Away.mk 𝒜 hf n g hg)) = basicOpen 𝒜 (f * g) := by
+  ext p
+  rw [SetLike.mem_coe, SetLike.mem_coe, basicOpen_mul, TopologicalSpace.Opens.mem_inf]
+  by_cases hp : p ∈ basicOpen 𝒜 f
+  · -- the germ of `g / fⁿ` at `p` is `g / fⁿ` in the homogeneous localization at `p`
+    rw [Scheme.mem_basicOpen _ _ _ hp]
+    have h := ConcreteCategory.congr_hom (ProjectiveSpectrum.Proj.awayToSection_germ 𝒜 f p hp)
+      (Away.mk 𝒜 hf n g hg)
+    -- `erw`: the germ map of the scheme `Proj 𝒜` is that of its structure sheaf only up to
+    -- unfolding the scheme structure
+    erw [h]
+    refine (MulEquiv.isUnit_map (Proj.stalkIso' 𝒜 p).symm.toMulEquiv
+      (x := mapId 𝒜 (Submonoid.powers_le.mpr hp) (Away.mk 𝒜 hf n g hg))).trans ?_
+    rw [← isUnit_iff_isUnit_val]
+    -- `erw`: the homogeneous prime of `p` is read through the same identification
+    erw [Away.mk, map_mk, val_mk, Localization.mk_eq_mk', IsLocalization.AtPrime.isUnit_mk'_iff]
+    exact ⟨fun h ↦ ⟨hp, h⟩, And.right⟩
+  · simp only [hp, false_and, iff_false]
+    exact fun h ↦ hp ((Proj 𝒜).basicOpen_le _ h)
 
 end AlgebraicGeometry.Proj
 
