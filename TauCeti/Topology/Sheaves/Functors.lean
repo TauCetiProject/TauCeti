@@ -16,17 +16,23 @@ along the inverse undoes the pushforward. This file records the resulting criter
 isomorphic to the pushforward of another along a homeomorphism is a sheaf exactly when the other
 is.
 
+It also records that the restriction maps of Mathlib's restriction of a sheaf along an open
+embedding, `Topology.IsOpenEmbedding.sheafPullback`, are restriction maps of the original sheaf
+between the image opens.
+
 ## Main results
 
 * `TopCat.Presheaf.isSheaf_iff_of_iso_pushforward`: the sheaf condition transfers along an
   isomorphism with a pushforward along a homeomorphism, in both directions.
+* `Topology.IsOpenEmbedding.sheafPullback_obj_obj_map`: the restriction maps of the restriction of
+  a sheaf along an open embedding.
 -/
 
 public section
 
 universe w v u
 
-open CategoryTheory
+open CategoryTheory TopologicalSpace
 
 namespace TopCat.Presheaf
 
@@ -43,3 +49,16 @@ theorem isSheaf_iff_of_iso_pushforward (h : Y ≅ X) {F : X.Presheaf C} {G : Y.P
     (Sheaf.pushforward_sheaf_of_sheaf h.inv hF)
 
 end TopCat.Presheaf
+
+namespace Topology.IsOpenEmbedding
+
+open TopCat
+
+/-- The restriction maps of the restriction of a sheaf along an open embedding are restriction maps
+of the original sheaf between the image opens. -/
+theorem sheafPullback_obj_obj_map {C : Type u} [Category.{w} C] {X Y : TopCat.{w}} {f : Y ⟶ X}
+    (hf : IsOpenEmbedding f) (F : Sheaf C X) {U V : (Opens Y)ᵒᵖ} (i : U ⟶ V) :
+    ((hf.sheafPullback C).obj F).obj.map i = F.obj.map (hf.functor.map i.unop).op :=
+  rfl
+
+end Topology.IsOpenEmbedding

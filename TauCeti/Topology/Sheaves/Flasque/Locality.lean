@@ -6,15 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Sheaves.Flasque
-public import Mathlib.Topology.Sheaves.Functors
-public import Mathlib.Topology.Sheaves.SheafCondition.UniqueGluing
+public import TauCeti.Topology.Sheaves.Functors
+public import TauCeti.Topology.Sheaves.Presheaf
 import Mathlib.Order.Zorn
 
 /-!
 # Flasqueness is a local property
 
-A sheaf is flasque when all of its restriction maps are surjective. This file proves that this
-can be checked locally: if every point of `X` has an open neighbourhood `W` such that every
+A sheaf of sets is flasque when all of its restriction maps are surjective. This file proves that
+this can be checked locally: if every point of `X` has an open neighbourhood `W` such that every
 restriction map `F(V) → F(U)` with `U ⊆ V ⊆ W` is surjective, then every restriction map of `F`
 is surjective.
 
@@ -27,14 +27,15 @@ restrictions inside `W` are surjective, and the two sections glue to an extensio
 
 The argument is carried out for presheaves of types satisfying the sheaf condition, and is then
 transported to sheaves valued in a concrete category whose forgetful functor preserves limits, such
-as sheaves of modules or of abelian groups. For such sheaves the conclusion is expressed by
-Mathlib's `TopCat.Sheaf.IsFlasque`, and flasqueness is shown to be equivalent to flasqueness of
-the restrictions to the members of some open cover.
+as sheaves of modules or of abelian groups. For such sheaves Mathlib's `TopCat.Sheaf.IsFlasque`
+asks that all restriction maps be epimorphisms; surjective restrictions are epimorphisms, so the
+locality statement yields flasqueness. If the forgetful functor moreover preserves epimorphisms,
+flasqueness is shown to be equivalent to flasqueness of the restrictions to the members of some
+open cover.
 
 ## Main declarations
 
-* `TopCat.Presheaf.isCompatible_of_directed` and `TopCat.Presheaf.IsSheaf.exists_gluing_sup`: the
-  two gluing steps of the Zorn argument;
+* `TopCat.Presheaf.IsSheaf.exists_gluing_sup`: the binary gluing step of the Zorn argument;
 * `TopCat.Presheaf.IsSheaf.map_surjective_of_locally_flasque`: the locality statement for
   sheaves of types;
 * `TopCat.Sheaf.map_surjective_of_locally_flasque`: the same statement for sheaves valued in a
@@ -61,20 +62,6 @@ namespace TopCat
 variable {X : TopCat.{u}}
 
 namespace Presheaf
-
-/-- A family of sections over a directed family of opens is compatible as soon as any two of its
-sections are restrictions of a common section in the family. -/
-theorem isCompatible_of_directed {C : Type*} [Category* C] {FC : C → C → Type*} {CC : C → Type*}
-    [∀ X Y, FunLike (FC X Y) (CC X) (CC Y)] [ConcreteCategory C FC] {F : Presheaf C X}
-    {ι : Type*} {U : ι → Opens X} {sf : ∀ i, ToType (F.obj (op (U i)))}
-    (h : ∀ i j, ∃ k, ∃ (hik : U i ≤ U k) (hjk : U j ≤ U k),
-      F.map (homOfLE hik).op (sf k) = sf i ∧ F.map (homOfLE hjk).op (sf k) = sf j) :
-    IsCompatible F U sf := by
-  intro i j
-  obtain ⟨k, hik, hjk, hi, hj⟩ := h i j
-  rw [← hi, ← hj, ← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply, ← F.map_comp,
-    ← F.map_comp]
-  rfl
 
 /-- Two sections of a sheaf of types over `U` and `V` that agree on `U ⊓ V` glue to a section over
 `U ⊔ V`. -/
@@ -169,13 +156,6 @@ end Locality
 section Restriction
 
 variable {C : Type*} [Category.{u} C]
-
-/-- The restriction maps of the restriction of a sheaf along an open embedding are restriction maps
-of the original sheaf between the image opens. -/
-theorem _root_.Topology.IsOpenEmbedding.sheafPullback_obj_obj_map {Y : TopCat.{u}} {f : Y ⟶ X}
-    (hf : IsOpenEmbedding f) (F : Sheaf C X) {U V : (Opens Y)ᵒᵖ} (i : U ⟶ V) :
-    ((hf.sheafPullback C).obj F).obj.map i = F.obj.map (hf.functor.map i.unop).op :=
-  rfl
 
 /-- The restriction of a flasque sheaf along an open embedding is flasque. -/
 instance isFlasque_sheafPullback_obj {Y : TopCat.{u}} {f : Y ⟶ X} (hf : IsOpenEmbedding f)
