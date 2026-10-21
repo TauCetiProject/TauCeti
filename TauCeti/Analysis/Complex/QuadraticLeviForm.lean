@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Calculus.Morse.NormSq
 public import TauCeti.Analysis.Complex.LeviForm
 public import TauCeti.Analysis.InnerProductSpace.Orthonormal.SumInnerSq
 public import TauCeti.Analysis.SpecialFunctions.Complex.Arg
+public import TauCeti.LinearAlgebra.Basis.RangeSpan
 public import TauCeti.LinearAlgebra.QuadraticForm.Signature
 
 /-!
@@ -265,7 +266,7 @@ private theorem exists_submodule_hessianQuadraticForm_eq (b : OrthonormalBasis �
     (c : ℂ) (x : E) {ζ : ℂ} (hζ : ‖ζ‖ = 1) : ∃ S : Submodule ℝ E, finrank ℝ S = finrank ℂ E ∧
       ∀ v ∈ S, hessianQuadraticForm (fun z ↦ a * ‖z‖ ^ 2 + (c * ∑ j, ⟪b j, z⟫_ℂ ^ 2).re) x v =
         2 * (a + (c * ζ ^ 2).re) * ‖v‖ ^ 2 := by
-  refine ⟨_, b.finrank_span_smul (ne_zero_of_norm_ne_zero (hζ.trans_ne one_ne_zero)),
+  refine ⟨_, b.toBasis.finrank_span_smul (ne_zero_of_norm_ne_zero (hζ.trans_ne one_ne_zero)),
     fun v hv ↦ ?_⟩
   rw [b.hessianQuadraticForm_mul_norm_sq_add_re_mul_sum_inner_sq,
     b.sum_inner_sq_eq_of_mem_span_smul hζ hv, ← ofReal_pow, ← mul_assoc, re_mul_ofReal]

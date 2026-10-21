@@ -17,20 +17,17 @@ norm, but it is bounded by it: `‖∑ⱼ ⟪b j, v⟫²‖ ≤ ‖v‖²`.
 
 Over `ℂ`, the bound is attained on the real span of a rotated basis `ζ • b j`, for a unit complex
 number `ζ`: there `∑ⱼ ⟪b j, v⟫² = ζ² ‖v‖²`. This real span has real dimension the complex
-dimension.
+dimension (`Module.Basis.finrank_span_smul`).
 
 ## Main results
 
 * `OrthonormalBasis.norm_sum_inner_sq_le`: `‖∑ⱼ ⟪b j, v⟫²‖ ≤ ‖v‖²`.
-* `OrthonormalBasis.finrank_span_smul`: the real span of `ζ • b j`, `ζ ≠ 0`, has real dimension
-  the complex dimension.
 * `OrthonormalBasis.sum_inner_sq_eq_of_mem_span_smul`: on the real span of `ζ • b j`, `‖ζ‖ = 1`,
   `∑ⱼ ⟪b j, v⟫² = ζ² ‖v‖²`.
 -/
 
 public section
 
-open Module
 open scoped InnerProductSpace
 
 namespace OrthonormalBasis
@@ -51,17 +48,6 @@ theorem norm_sum_inner_sq_le (b : OrthonormalBasis ι 𝕜 E) (v : E) :
 end RCLike
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E]
-
-/-- The real span of a rotated orthonormal basis `ζ • b j`, for `ζ ≠ 0`, has real dimension the
-complex dimension. -/
-theorem finrank_span_smul (b : OrthonormalBasis ι ℂ E) {ζ : ℂ} (hζ : ζ ≠ 0) :
-    finrank ℝ (Submodule.span ℝ (Set.range fun j ↦ ζ • b j)) = finrank ℂ E := by
-  have hli : LinearIndependent ℝ fun j ↦ ζ • b j := by
-    have h := b.toBasis.linearIndependent.units_smul fun _ ↦ Units.mk0 ζ hζ
-    convert h.restrict_scalars' ℝ using 1
-    ext j
-    simp [Units.smul_def]
-  rw [finrank_span_eq_card hli, finrank_eq_card_basis b.toBasis]
 
 /-- On the real span of a rotated orthonormal basis `ζ • b j`, for a unit complex number `ζ`, the
 bilinear square sum of the coordinates is `∑ⱼ ⟪b j, v⟫² = ζ² ‖v‖²`. -/

@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.IsSimpleRing
+public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.Matrix.Basis
 
 /-!
@@ -12,7 +14,9 @@ public import Mathlib.LinearAlgebra.Matrix.Basis
 
 A semilinear map has the same scalar-extended image span when evaluated on a basis as when evaluated
 on its entire domain. Over a coefficient algebra `A` of the scalars, the `A`-span of one basis lies
-in that of another when the change-of-basis matrix has entries in the image of `A`.
+in that of another when the change-of-basis matrix has entries in the image of `A`. Over a
+subfield `F` of the scalars, the `F`-span of a rescaled basis `ζ • b j`, `ζ ≠ 0`, has
+`F`-dimension the dimension of the module.
 -/
 
 public section
@@ -54,5 +58,19 @@ theorem span_range_le_span_range_of_forall_toMatrix_mem
   dsimp only
   rw [← ha, IsScalarTower.algebraMap_smul]
   exact Submodule.smul_mem _ a (Submodule.subset_span (Set.mem_range_self i))
+
+/-- Over a subfield `F` of the scalars `K`, the `F`-span of a rescaled basis `ζ • b j`, for
+`ζ ≠ 0`, has `F`-dimension the `K`-dimension of the module. -/
+theorem finrank_span_smul {ι F K E : Type*} [Finite ι] [Field F] [DivisionRing K] [Algebra F K]
+    [AddCommGroup E] [Module K E] [Module F E] [IsScalarTower F K E]
+    (b : Module.Basis ι K E) {ζ : K} (hζ : ζ ≠ 0) :
+    finrank F (Submodule.span F (Set.range fun j ↦ ζ • b j)) = finrank K E := by
+  have := Fintype.ofFinite ι
+  have hli : LinearIndependent F fun j ↦ ζ • b j := by
+    have h := b.linearIndependent.units_smul fun _ ↦ Units.mk0 ζ hζ
+    convert h.restrict_scalars' F using 1
+    ext j
+    simp [Units.smul_def]
+  rw [finrank_span_eq_card hli, finrank_eq_card_basis b]
 
 end Module.Basis
