@@ -82,8 +82,10 @@ theorem mem_cellPartition_parts_iff (P : Finpartition (univ : Finset (Fin m))) {
     obtain ⟨i, hi⟩ := P.nonempty_of_mem_parts hA
     -- every cell has positive volume, so it contains a point
     have hcell : (volume : Measure I) (cellFin m ⁻¹' {i}) ≠ 0 := by
-      rw [measurePreserving_cellFin.measure_preimage (measurableSet_singleton i).nullMeasurableSet]
-      simp [ProbabilityTheory.uniformOn_univ]
+      intro h0
+      have h := volume_real_preimage_cellFin ({i} : Finset (Fin m))
+      rw [coe_singleton, measureReal_def, h0] at h
+      simp [(Nat.cast_ne_zero.2 (NeZero.ne m) : (m : ℝ) ≠ 0).symm] at h
     obtain ⟨x, hx⟩ := nonempty_of_measure_ne_zero hcell
     rw [Set.mem_preimage, Set.mem_singleton_iff] at hx
     rw [← P.part_eq_of_mem hA hi, ← hx]
@@ -106,11 +108,6 @@ theorem setAverage_finiteGraphGraphon_preimage (G : SimpleGraph (Fin m)) [Decida
   · simp
   rcases B.eq_empty_or_nonempty with rfl | hB
   · simp
-  -- the cells of a vertex set have total volume the proportion of vertices it contains
-  have hcell (C : Finset (Fin m)) : volume.real (cellFin m ⁻¹' (C : Set (Fin m))) = #C / m := by
-    rw [measureReal_def, measurePreserving_cellFin.measure_preimage
-      C.measurableSet.nullMeasurableSet, ProbabilityTheory.uniformOn_univ]
-    simp [ENNReal.toReal_div]
   have hint : ∫ z in (cellFin m ⁻¹' (A : Set (Fin m))) ×ˢ (cellFin m ⁻¹' (B : Set (Fin m))),
       finiteGraphGraphon G z.1 z.2 ∂(volume.prod volume) =
         (∑ i ∈ A, ∑ j ∈ B, if G.Adj i j then (1 : ℝ) else 0) / (m : ℝ) ^ 2 := by
@@ -125,12 +122,10 @@ theorem setAverage_finiteGraphGraphon_preimage (G : SimpleGraph (Fin m)) [Decida
       ((cellFin m ⁻¹' (A : Set (Fin m))) ×ˢ (cellFin m ⁻¹' (B : Set (Fin m)))) =
         #A / m * (#B / m) := by
     rw [measureReal_def, Measure.prod_prod, ENNReal.toReal_mul, ← measureReal_def,
-      ← measureReal_def, hcell, hcell]
+      ← measureReal_def, volume_real_preimage_cellFin, volume_real_preimage_cellFin]
   have hcount : (∑ i ∈ A, ∑ j ∈ B, if G.Adj i j then (1 : ℝ) else 0) = #(G.interedges A B) := by
     rw [SimpleGraph.interedges_def, card_filter, sum_product]
-    push_cast
-    -- both sides now index the same indicator by the pair `(i, j)` and by its components
-    rfl
+    simp
   have hm : (m : ℝ) ≠ 0 := Nat.cast_ne_zero.2 (NeZero.ne m)
   have hA' : (#A : ℝ) ≠ 0 := Nat.cast_ne_zero.2 hA.card_pos.ne'
   have hB' : (#B : ℝ) ≠ 0 := Nat.cast_ne_zero.2 hB.card_pos.ne'
@@ -157,18 +152,24 @@ theorem graphonPartitionEnergy_finiteGraphGraphon (G : SimpleGraph (Fin m)) [Dec
   -- Its mean square over `I × I` is the mean square over pairs of vertices.
   let h : Fin m × Fin m → ℝ := fun ij => (G.edgeDensity (P.part ij.1) (P.part ij.2) : ℝ) ^ 2
   have hmp := (measurePreserving_cellFin (m := m)).prod (measurePreserving_cellFin (m := m))
-  rw [graphonPartitionEnergy_eq, l2sq_def]
-  simp only [Graphon.coe_toSymmKernel, hpt]
-  -- the integrand is `h` read through the two cell indices
-  change ∫ z, h (Prod.map (cellFin m) (cellFin m) z) ∂(volume.prod volume) = _
-  rw [← integral_map hmp.measurable.aemeasurable (measurable_of_countable h).aestronglyMeasurable,
+  have hfun : (fun z : I × I => (stepGraphonAvg (μ := volume) P.cellPartition
+      P.measurableSet_of_mem_cellPartition (finiteGraphGraphon G)).toSymmKernel z.1 z.2 ^ 2) =
+        fun z => h (Prod.map (cellFin m) (cellFin m) z) := by
+    funext z
+    simp only [Graphon.coe_toSymmKernel, hpt, h, Prod.map_fst, Prod.map_snd]
+  rw [graphonPartitionEnergy_eq, l2sq_def, hfun,
+    ← integral_map hmp.measurable.aemeasurable (measurable_of_countable h).aestronglyMeasurable,
     hmp.map_eq, integral_fintype (Integrable.of_finite), SimpleGraph.weightedEnergy_eq_sum_part,
     Fintype.sum_prod_type, sum_div]
   refine sum_congr rfl fun i _ => ?_
   rw [sum_div]
   refine sum_congr rfl fun j _ => ?_
-  rw [← Set.singleton_prod_singleton, measureReal_prod_prod, measureReal_def, measureReal_def,
-    ProbabilityTheory.uniformOn_univ, ProbabilityTheory.uniformOn_univ]
+  rw [← Set.singleton_prod_singleton, measureReal_prod_prod,
+    ← measurePreserving_cellFin.measureReal_preimage
+      (measurableSet_singleton i).nullMeasurableSet,
+    ← measurePreserving_cellFin.measureReal_preimage
+      (measurableSet_singleton j).nullMeasurableSet,
+    ← coe_singleton, ← coe_singleton, volume_real_preimage_cellFin, volume_real_preimage_cellFin]
   simp [h]
   ring
 

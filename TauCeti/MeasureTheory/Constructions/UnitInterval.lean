@@ -201,6 +201,14 @@ theorem measurePreserving_cellFin [NeZero m] :
     volume_preimage_cellIdx i.isLt, ProbabilityTheory.uniformOn_univ, Measure.count_singleton,
     Fintype.card_fin, one_div]
 
+/-- **The cells of a set of indices.** The union of the cells indexed by `C` has volume the
+proportion `|C| / m` of indices it contains. -/
+theorem volume_real_preimage_cellFin [NeZero m] (C : Finset (Fin m)) :
+    volume.real (cellFin m ⁻¹' (C : Set (Fin m))) = C.card / m := by
+  rw [measurePreserving_cellFin.measureReal_preimage C.measurableSet.nullMeasurableSet,
+    measureReal_def, ProbabilityTheory.uniformOn_univ]
+  simp [ENNReal.toReal_div]
+
 variable {V E : Type*} [Fintype V] [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
 
 open scoped Classical in
