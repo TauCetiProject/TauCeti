@@ -14,13 +14,13 @@ Mathlib's completeness theorem for the `Lᵖ` seminorm, `MeasureTheory.Lp.cauchy
 takes a sequence of `MemLp` functions with a *summable* Cauchy modulus `B`: for `N ≤ n, m`,
 `eLpNorm (f n - f m) p μ < B N`. This file states the form a compactness argument naturally
 produces, where the modulus only tends to zero and the terms are merely almost everywhere strongly
-measurable. Only differences of terms have finite `Lᵖ` seminorm, so the terms themselves need not
-lie in `Lᵖ`.
+measurable. Only differences of sufficiently late terms are guaranteed finite `Lᵖ` seminorm, while
+the individual terms need not lie in `Lᵖ`.
 
 Passing to a subsequence along which the modulus is summable reduces to Mathlib's almost-everywhere
-convergence theorem `MeasureTheory.Lp.ae_tendsto_of_cauchy_eLpNorm`; lower semicontinuity of the
-`Lᵖ` seminorm along almost everywhere limits, `MeasureTheory.Lp.eLpNorm_lim_le_liminf_eLpNorm`, then
-carries the Cauchy bound to the limit for the whole sequence. Since `Lᵖ` convergence implies
+convergence theorem `MeasureTheory.Lp.ae_tendsto_of_cauchy_eLpNorm`; the passage of an eventual
+`Lᵖ` bound to almost everywhere limits, `MeasureTheory.Lp.eLpNorm_le_of_ae_tendsto`, then carries
+the Cauchy bound to the limit for the whole sequence. Since `Lᵖ` convergence implies
 convergence in measure, an almost everywhere convergent subsequence is recovered from the conclusion
 by `MeasureTheory.tendstoInMeasure_of_tendsto_eLpNorm` and
 `MeasureTheory.TendstoInMeasure.exists_seq_tendsto_ae`.
@@ -71,14 +71,11 @@ theorem exists_tendsto_eLpNorm_of_tendsto_eLpNorm_bound (hp : 1 ≤ p) {f : ℕ 
   intro ε hε
   obtain ⟨N, hN⟩ := (ENNReal.tendsto_atTop_zero.mp hB) ε hε
   refine ⟨N, fun n hn ↦ ?_⟩
-  have hliminf : eLpNorm (f n - g) p μ ≤
-      atTop.liminf fun m ↦ eLpNorm (f n - f (φ m)) p μ := by
-    refine Lp.eLpNorm_lim_le_liminf_eLpNorm (fun m ↦ (hf n).sub (hf (φ m))) (f n - g)
-      ((hf n).sub hg.aestronglyMeasurable) (hlim.mono fun x hx ↦ ?_)
-    simpa only [Pi.sub_apply] using tendsto_const_nhds.sub hx
-  refine hliminf.trans ((liminf_le_of_frequently_le' ?_).trans (hN N le_rfl))
-  refine Eventually.frequently ?_
-  filter_upwards [hφ.tendsto_atTop (eventually_ge_atTop N)] with m hm
-  exact h_cau N n (φ m) hn hm
+  refine (Lp.eLpNorm_le_of_ae_tendsto (u := atTop) (f := fun m ↦ f n - f (φ m)) ?_
+    (fun m ↦ (hf n).sub (hf (φ m))) ((hf n).sub hg.aestronglyMeasurable)
+    (hlim.mono fun x hx ↦ ?_)).trans (hN N le_rfl)
+  · filter_upwards [hφ.tendsto_atTop (eventually_ge_atTop N)] with m hm
+    exact h_cau N n (φ m) hn hm
+  · simpa only [Pi.sub_apply] using tendsto_const_nhds.sub hx
 
 end TauCeti
