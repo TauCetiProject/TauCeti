@@ -88,7 +88,7 @@ theorem exists_anisotropic_and_not_anisotropic_away_from_realPlace
     nondegenerate_weightedSumSquares fun i => isRegular_iff_ne_zero.mpr (hc i)
   -- At `w₀` every coefficient is positive, so `Q` is positive definite there.
   have hQ₀ : (Q.atRealPlace w₀).Anisotropic := by
-    refine (_root_.QuadraticForm.anisotropic_atRealPlace_weightedSumSquares_iff hc w₀).mpr
+    refine (_root_.QuadraticForm.anisotropic_atRealPlace_weightedSumSquares_iff c w₀).mpr
       (Or.inl fun i => ?_)
     cases i using Fin.cases <;> simp [c, hpos]
   -- An isotropic vector over `K` would stay isotropic at `w₀`.
@@ -100,7 +100,7 @@ theorem exists_anisotropic_and_not_anisotropic_away_from_realPlace
     _root_.QuadraticForm.not_anisotropic_atFinitePlace_of_five_le_finrank Q
       (by rw [Module.finrank_fin_fun]; omega), fun w hw => ?_⟩
   -- Away from `w₀` the first coefficient is negative and the second positive.
-  rw [_root_.QuadraticForm.anisotropic_atRealPlace_weightedSumSquares_iff hc w, not_or]
+  rw [_root_.QuadraticForm.anisotropic_atRealPlace_weightedSumSquares_iff c w, not_or]
   refine ⟨fun h => (hneg w hw).not_gt (by simpa [c] using h 0), fun h => ?_⟩
   have h1 := h (Fin.succ ⟨0, by omega⟩)
   simp only [c, Fin.cons_succ, Pi.one_apply, map_one] at h1

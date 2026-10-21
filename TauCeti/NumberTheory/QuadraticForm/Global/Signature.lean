@@ -54,7 +54,7 @@ half of the archimedean classification; the complex half is in
   own signature.
 * `anisotropic_atRealPlace_iff_realNegativeIndex_eq_zero_or_realPositiveIndex_eq_zero`:
   a regular form is anisotropic at a real place exactly when it is definite there.
-* `QuadraticForm.anisotropic_atRealPlace_weightedSumSquares_iff`: a regular diagonal form is
+* `QuadraticForm.anisotropic_atRealPlace_weightedSumSquares_iff`: a diagonal form is
   anisotropic at a real place exactly when its coefficients there all have the same sign.
 
 ## References
@@ -390,23 +390,32 @@ theorem anisotropic_atRealPlace_iff_realNegativeIndex_eq_zero_or_realPositiveInd
     (Nondegenerate.atRealPlace hQ w).radical_eq_bot, realNegativeIndex_eq_sigNeg,
     realPositiveIndex_eq_sigPos]
 
-/-- A diagonal form `⟨a₁, …, aₙ⟩` with nonzero coefficients is anisotropic at a real place exactly
-when its coefficients there are all positive or all negative. -/
-theorem anisotropic_atRealPlace_weightedSumSquares_iff {ι : Type*} [Fintype ι] {a : ι → K}
-    (ha : ∀ i, a i ≠ 0) (w : {w : InfinitePlace K // w.IsReal}) :
+/-- A diagonal form `⟨a₁, …, aₙ⟩` is anisotropic at a real place exactly when its coefficients
+there are all positive or all negative. -/
+theorem anisotropic_atRealPlace_weightedSumSquares_iff {ι : Type*} [Fintype ι] (a : ι → K)
+    (w : {w : InfinitePlace K // w.IsReal}) :
     (atRealPlace (QuadraticMap.weightedSumSquares K a) w).Anisotropic ↔
       (∀ i, 0 < embedding_of_isReal w.2 (a i)) ∨ ∀ i, embedding_of_isReal w.2 (a i) < 0 := by
-  let : CharZero K := RingHom.charZero w.1.embedding
-  let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
-  have h0 (i : ι) : embedding_of_isReal w.2 (a i) ≠ 0 := by simpa using ha i
-  rw [anisotropic_atRealPlace_iff_realNegativeIndex_eq_zero_or_realPositiveIndex_eq_zero
-    (QuadraticMap.nondegenerate_weightedSumSquares fun i => isRegular_iff_ne_zero.mpr (ha i)),
-    realNegativeIndex_weightedSumSquares, realPositiveIndex_weightedSumSquares,
-    Set.ncard_eq_zero, Set.ncard_eq_zero, Set.eq_empty_iff_forall_notMem,
-    Set.eq_empty_iff_forall_notMem]
-  simp only [Set.mem_ofPred_eq, not_lt]
-  exact or_congr (forall_congr' fun i => (h0 i).symm.le_iff_lt)
-    (forall_congr' fun i => (h0 i).le_iff_lt)
+  classical
+  by_cases ha : ∀ i, a i ≠ 0
+  · let : CharZero K := RingHom.charZero w.1.embedding
+    let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
+    have h0 (i : ι) : embedding_of_isReal w.2 (a i) ≠ 0 := by simpa using ha i
+    rw [anisotropic_atRealPlace_iff_realNegativeIndex_eq_zero_or_realPositiveIndex_eq_zero
+      (QuadraticMap.nondegenerate_weightedSumSquares fun i => isRegular_iff_ne_zero.mpr (ha i)),
+      realNegativeIndex_weightedSumSquares, realPositiveIndex_weightedSumSquares,
+      Set.ncard_eq_zero, Set.ncard_eq_zero, Set.eq_empty_iff_forall_notMem,
+      Set.eq_empty_iff_forall_notMem]
+    simp only [Set.mem_ofPred_eq, not_lt]
+    exact or_congr (forall_congr' fun i => (h0 i).symm.le_iff_lt)
+      (forall_congr' fun i => (h0 i).le_iff_lt)
+  -- A zero coefficient `aᵢ = 0` makes the basis vector `eᵢ` isotropic, and rules out both signs.
+  obtain ⟨i, hi⟩ := not_forall_not.mp ha
+  have h0 : embedding_of_isReal w.2 (a i) = 0 := by simp [hi]
+  rw [QuadraticMap.Equivalent.anisotropic_iff ⟨atRealPlaceWeightedSumSquares w a⟩]
+  refine iff_of_false (fun h => ?_) fun h => h.elim (fun h => (h i).ne' h0) fun h => (h i).ne h0
+  exact Pi.single_ne_zero_iff.mpr one_ne_zero (h (Pi.single i (1 : ℝ)) (by
+    simp [QuadraticMap.weightedSumSquares_apply, Pi.single_apply, h0]))
 
 end Classification
 
