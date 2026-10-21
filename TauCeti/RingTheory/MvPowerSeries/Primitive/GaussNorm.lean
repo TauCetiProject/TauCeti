@@ -10,7 +10,6 @@ public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
 
 import TauCeti.Analysis.Normed.Field.NatCast
 import TauCeti.Data.Finsupp.Interval
-import TauCeti.Data.Finsupp.Weight
 
 /-!
 # Termwise primitives of restricted power series

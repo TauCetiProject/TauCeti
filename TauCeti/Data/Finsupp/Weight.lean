@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 public import Mathlib.Data.Finsupp.Weight
 public import Mathlib.Data.Finsupp.Multiset
 public import TauCeti.Data.Finsupp.Order
@@ -28,9 +27,6 @@ lexicographic order and weighted degree.
 On a product `ι × κ` of blocks indexed by `ι`, the weight given by the indicator of block `b`
 sums the coefficients in that block. For natural-valued exponents, this is the degree in block `b`.
 
-Over an ordered field, shrinking a polyradius `c` to `c' ≤ c` in a variable `Xᵢ` divides the
-monomial weight `∏ cⱼ ^ νⱼ` at least by `(cᵢ / c'ᵢ) ^ νᵢ`.
-
 ## Main results
 
 * `Finsupp.weight_toFinsupp`: multiset multiplicities recover the sum of entry weights.
@@ -44,8 +40,6 @@ monomial weight `∏ cⱼ ^ νⱼ` at least by `(cᵢ / c'ᵢ) ^ νᵢ`.
 * `Finsupp.weight_smul_left`: scaling the weight vector scales the weight.
 * `Finsupp.weight_ite_fst_eq_sum`: the indicator weight of a block sums its coefficients; for
   natural-valued exponents, this is the degree in that block.
-* `Finsupp.prod_pow_le_prod_pow_mul`: shrinking a polyradius from `c` to `c'` divides the
-  monomial weight `∏ cⱼ ^ νⱼ` at least by `(cᵢ / c'ᵢ) ^ νᵢ`.
 -/
 
 public section
@@ -136,34 +130,5 @@ theorem weight_ite_fst_eq_sum {ι κ R : Type*} [Fintype κ] [DecidableEq ι] [S
       classical
       simp [Finsupp.weight_single, Finsupp.single_apply]
     · simp [Finsupp.weight_single, hb]
-
-end Finsupp
-
-namespace Finsupp
-
-variable {σ R : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R] {c c' : σ → R} {i : σ}
-
-/-- Decreasing the polyradius `c` to `c'`, the weight of an exponent drops at least by the factor
-`(c'ᵢ / cᵢ) ^ νᵢ` coming from the variable `Xᵢ`. -/
-theorem prod_pow_le_prod_pow_mul (hc' : ∀ j, 0 ≤ c' j) (hle : ∀ j, c' j ≤ c j)
-    (hi : 0 < c i) (n : σ →₀ ℕ) :
-    n.prod (c' · ^ ·) ≤ n.prod (c · ^ ·) * (c' i / c i) ^ n i := by
-  classical
-  calc n.prod (c' · ^ ·)
-      ≤ n.prod fun j k ↦ c j ^ k * (if j = i then (c' i / c i) ^ k else 1) := by
-        refine Finset.prod_le_prod₀ (fun j _ ↦ pow_nonneg (hc' j) _) fun j _ ↦ ?_
-        dsimp only
-        split_ifs with h
-        · subst h
-          rw [← mul_pow, mul_div_cancel₀ _ hi.ne']
-        · rw [mul_one]
-          exact pow_le_pow_left₀ (hc' j) (hle j) _
-    _ = n.prod (c · ^ ·) * (c' i / c i) ^ n i := by
-        rw [Finsupp.prod_mul]
-        congr 1
-        simp only [Finsupp.prod, Finset.prod_ite_eq', mem_support_iff]
-        split_ifs with h
-        · rfl
-        · rw [not_not.1 h, pow_zero]
 
 end Finsupp
