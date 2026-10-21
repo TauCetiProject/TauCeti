@@ -78,7 +78,9 @@ identity gives
 `ΔʰH_u(a)` is a unit, so that `a` is a good zero of order `h` of `H_u`, then
 `b = ΔʰH_u(a)⁻¹ • ΔʰV(a)` satisfies `C ^ h (C b - 1) = 0`
 (`ContinuousLinearMap.IsRowCompact.one_sub_smul_pow_succ_mul_inverse_smul_resolventHasseDerivAt`).
-This is the identity behind the Riesz projector `(C b) ^ h` of `u` at a good zero.
+This is the identity behind the Riesz decomposition of `u` at a good zero: `1 - (C b) ^ h` is
+the Riesz projector onto the generalized eigenspace `ker C ^ h`, and `(C b) ^ h` is its
+complementary projector.
 
 The estimate is first proved for the output truncations `π_S ∘ u` to finite sets `S` of
 coordinates. The entries of their resolvent coefficients are entries of the coefficients of
@@ -373,27 +375,79 @@ theorem resolventAt_zero (u : C₀(I, R) →L[R] C₀(I, R)) : u.resolventAt 0 =
   rw [resolventAt_eq_evalScalar, PowerSeries.evalScalar_at_zero,
     ← PowerSeries.coeff_zero_eq_constantCoeff_apply, coeff_resolventSeries, resolventCoeff_zero]
 
-/-- The value of the Fredholm resolvent at a scalar commutes with the operator. -/
-theorem commute_resolventAt (u : C₀(I, R) →L[R] C₀(I, R)) (a : R) :
-    Commute u (u.resolventAt a) := by
+/-- The value `ΔᵏV(a) = ∑ₘ aᵐ • (m + k).choose k • V_{m+k}` at a scalar `a` of the `k`-th Hasse
+derivative of the Fredholm resolvent `V(T)` of an endomorphism `u` of `C₀(I, R)`, the sum being
+taken in the operator norm. It takes the junk value `0` when the sum does not converge; for
+row-compact `u` over a complete ultrametric ring it converges at every `a`
+(`ContinuousLinearMap.IsRowCompact.hasSum_resolventHasseDerivAt`). For `k = 0` it is the value
+`ContinuousLinearMap.resolventAt` of the resolvent itself. -/
+noncomputable def resolventHasseDerivAt (u : C₀(I, R) →L[R] C₀(I, R)) (k : ℕ) (a : R) :
+    C₀(I, R) →L[R] C₀(I, R) :=
+  (PowerSeries.hasseDeriv k u.resolventSeries).evalScalar a
+
+/-- The value at `a` of the `k`-th Hasse derivative of the Fredholm resolvent is the evaluation
+at `a` of the series `PowerSeries.hasseDeriv k u.resolventSeries`. -/
+theorem resolventHasseDerivAt_eq_evalScalar (u : C₀(I, R) →L[R] C₀(I, R)) (k : ℕ) (a : R) :
+    u.resolventHasseDerivAt k a = (PowerSeries.hasseDeriv k u.resolventSeries).evalScalar a :=
+  (rfl)
+
+theorem resolventHasseDerivAt_def (u : C₀(I, R) →L[R] C₀(I, R)) (k : ℕ) (a : R) :
+    u.resolventHasseDerivAt k a =
+      ∑' m, a ^ m • ((m + k).choose k : R) • u.resolventCoeff (m + k) := by
+  simp only [resolventHasseDerivAt_eq_evalScalar, PowerSeries.evalScalar_def,
+    coeff_hasseDeriv_resolventSeries]
+
+/-- The `0`-th Hasse derivative of the resolvent at `a` is the value `V(a)` of the resolvent. -/
+@[simp]
+theorem resolventHasseDerivAt_zero (u : C₀(I, R) →L[R] C₀(I, R)) (a : R) :
+    u.resolventHasseDerivAt 0 a = u.resolventAt a := by
+  rw [resolventHasseDerivAt_eq_evalScalar, PowerSeries.hasseDeriv_zero, LinearMap.id_apply,
+    resolventAt_eq_evalScalar]
+
+/-- At the scalar `0`, the `k`-th Hasse derivative of the resolvent is its `k`-th coefficient. -/
+@[simp]
+theorem resolventHasseDerivAt_at_zero (u : C₀(I, R) →L[R] C₀(I, R)) (k : ℕ) :
+    u.resolventHasseDerivAt k 0 = u.resolventCoeff k := by
+  rw [resolventHasseDerivAt_eq_evalScalar, PowerSeries.evalScalar_at_zero,
+    ← PowerSeries.coeff_zero_eq_constantCoeff_apply, coeff_hasseDeriv_resolventSeries, zero_add,
+    Nat.choose_self, Nat.cast_one, one_smul]
+
+/-- The Hasse derivatives of the Fredholm resolvent at a scalar commute with the operator. -/
+theorem commute_resolventHasseDerivAt (u : C₀(I, R) →L[R] C₀(I, R)) (k : ℕ) (a : R) :
+    Commute u (u.resolventHasseDerivAt k a) := by
   -- Synthesized up front: the nested search inside `PowerSeries.commute_evalScalar` does not
   -- find the topological ring structure of the operators.
   have : IsTopologicalSemiring (C₀(I, R) →L[R] C₀(I, R)) := inferInstance
-  rw [resolventAt_eq_evalScalar]
+  rw [resolventHasseDerivAt_eq_evalScalar]
   exact PowerSeries.commute_evalScalar (fun m ↦ by
-    simpa only [coeff_resolventSeries] using u.commute_resolventCoeff m) a
+    simpa only [coeff_hasseDeriv_resolventSeries] using
+      (u.commute_resolventCoeff (m + k)).smul_right _) a
+
+/-- The Hasse derivatives of the Fredholm resolvent at a scalar lie in the operator-norm closure
+of the polynomials in `u`. -/
+theorem resolventHasseDerivAt_mem_closure_adjoin (u : C₀(I, R) →L[R] C₀(I, R)) (k : ℕ) (a : R) :
+    u.resolventHasseDerivAt k a ∈
+      closure (Algebra.adjoin R {u} : Set (C₀(I, R) →L[R] C₀(I, R))) := by
+  have hV (m : ℕ) : a ^ m • ((m + k).choose k : R) • u.resolventCoeff (m + k) ∈
+      Algebra.adjoin R {u} := by
+    rw [resolventCoeff_def]
+    exact Subalgebra.smul_mem _ (Subalgebra.smul_mem _ (Subalgebra.sum_mem _ fun j _ ↦
+      Subalgebra.smul_mem _ (Subalgebra.pow_mem _ (Algebra.self_mem_adjoin_singleton R u) _) _)
+        _) _
+  rw [resolventHasseDerivAt_def]
+  exact tsum_mem (Algebra.adjoin R {u}).toAddSubmonoid.isClosed_topologicalClosure
+    fun m ↦ subset_closure (hV m)
+
+/-- The value of the Fredholm resolvent at a scalar commutes with the operator. -/
+theorem commute_resolventAt (u : C₀(I, R) →L[R] C₀(I, R)) (a : R) :
+    Commute u (u.resolventAt a) := by
+  simpa using u.commute_resolventHasseDerivAt 0 a
 
 /-- The value of the Fredholm resolvent at a scalar lies in the operator-norm closure of the
 polynomials in `u`. -/
 theorem resolventAt_mem_closure_adjoin (u : C₀(I, R) →L[R] C₀(I, R)) (a : R) :
     u.resolventAt a ∈ closure (Algebra.adjoin R {u} : Set (C₀(I, R) →L[R] C₀(I, R))) := by
-  have hV (m : ℕ) : a ^ m • u.resolventCoeff m ∈ Algebra.adjoin R {u} := by
-    rw [resolventCoeff_def]
-    exact Subalgebra.smul_mem _ (Subalgebra.sum_mem _ fun k _ ↦ Subalgebra.smul_mem _
-      (Subalgebra.pow_mem _ (Algebra.self_mem_adjoin_singleton R u) _) _) _
-  rw [resolventAt_def]
-  exact tsum_mem (Algebra.adjoin R {u}).toAddSubmonoid.isClosed_topologicalClosure
-    fun m ↦ subset_closure (hV m)
+  simpa using u.resolventHasseDerivAt_mem_closure_adjoin 0 a
 
 variable [IsUltrametricDist R]
 
@@ -407,12 +461,22 @@ theorem ringOpNorm_resolventAt_le (u : C₀(I, R) →L[R] C₀(I, R)) (a : R) {c
 
 variable [CompleteSpace R]
 
+/-- **Hasse derivatives of the Fredholm resolvent at a scalar.** For a row-compact `u` and every
+scalar `a`, the series `∑ₘ aᵐ • (m + k).choose k • V_{m+k}` converges in operator norm to
+`ΔᵏV(a)`. -/
+theorem IsRowCompact.hasSum_resolventHasseDerivAt {u : C₀(I, R) →L[R] C₀(I, R)}
+    (hu : u.IsRowCompact) (k : ℕ) (a : R) :
+    HasSum (fun m ↦ a ^ m • ((m + k).choose k : R) • u.resolventCoeff (m + k))
+      (u.resolventHasseDerivAt k a) := by
+  rw [resolventHasseDerivAt_eq_evalScalar]
+  simpa only [coeff_hasseDeriv_resolventSeries] using
+    (hu.isEntire_resolventSeries.hasseDeriv k).hasSum_evalScalar a
+
 /-- **Evaluation of the Fredholm resolvent.** For a row-compact `u` and every scalar `a`, the
 series `∑ₘ aᵐ • Vₘ` converges in operator norm to `V(a)`. -/
 theorem IsRowCompact.hasSum_resolventAt {u : C₀(I, R) →L[R] C₀(I, R)} (hu : u.IsRowCompact)
     (a : R) : HasSum (fun m ↦ a ^ m • u.resolventCoeff m) (u.resolventAt a) := by
-  rw [resolventAt_eq_evalScalar]
-  simpa only [coeff_resolventSeries] using hu.isEntire_resolventSeries.hasSum_evalScalar a
+  simpa using hu.hasSum_resolventHasseDerivAt 0 a
 
 /-- **The evaluated resolvent identity** `(1 - a • u) V(a) = H_u(a) • 1`, where
 `H_u(a) = det (1 - a u)` is the value at `a` of the entire Fredholm determinant of the
@@ -468,84 +532,9 @@ end Evaluation
 
 section HasseDerivatives
 
-variable [NormedCommRing R] [TauCeti.NormedRing.IsTate R]
+variable [NormedCommRing R] [TauCeti.NormedRing.IsTate R] [IsUltrametricDist R] [CompleteSpace R]
 
 open scoped TauCeti.RingOpNorm
-
-/-- The value `ΔᵏV(a) = ∑ₘ aᵐ • (m + k).choose k • V_{m+k}` at a scalar `a` of the `k`-th Hasse
-derivative of the Fredholm resolvent `V(T)` of an endomorphism `u` of `C₀(I, R)`, the sum being
-taken in the operator norm. It takes the junk value `0` when the sum does not converge; for
-row-compact `u` over a complete ultrametric ring it converges at every `a`
-(`ContinuousLinearMap.IsRowCompact.hasSum_resolventHasseDerivAt`). For `k = 0` it is the value
-`ContinuousLinearMap.resolventAt` of the resolvent itself. -/
-noncomputable def resolventHasseDerivAt (u : C₀(I, R) →L[R] C₀(I, R)) (k : ℕ) (a : R) :
-    C₀(I, R) →L[R] C₀(I, R) :=
-  (PowerSeries.hasseDeriv k u.resolventSeries).evalScalar a
-
-/-- The value at `a` of the `k`-th Hasse derivative of the Fredholm resolvent is the evaluation
-at `a` of the series `PowerSeries.hasseDeriv k u.resolventSeries`. -/
-theorem resolventHasseDerivAt_eq_evalScalar (u : C₀(I, R) →L[R] C₀(I, R)) (k : ℕ) (a : R) :
-    u.resolventHasseDerivAt k a = (PowerSeries.hasseDeriv k u.resolventSeries).evalScalar a :=
-  (rfl)
-
-theorem resolventHasseDerivAt_def (u : C₀(I, R) →L[R] C₀(I, R)) (k : ℕ) (a : R) :
-    u.resolventHasseDerivAt k a =
-      ∑' m, a ^ m • ((m + k).choose k : R) • u.resolventCoeff (m + k) := by
-  simp only [resolventHasseDerivAt_eq_evalScalar, PowerSeries.evalScalar_def,
-    coeff_hasseDeriv_resolventSeries]
-
-/-- The `0`-th Hasse derivative of the resolvent at `a` is the value `V(a)` of the resolvent. -/
-@[simp]
-theorem resolventHasseDerivAt_zero (u : C₀(I, R) →L[R] C₀(I, R)) (a : R) :
-    u.resolventHasseDerivAt 0 a = u.resolventAt a := by
-  rw [resolventHasseDerivAt_eq_evalScalar, PowerSeries.hasseDeriv_zero, LinearMap.id_apply,
-    resolventAt_eq_evalScalar]
-
-/-- At the scalar `0`, the `k`-th Hasse derivative of the resolvent is its `k`-th coefficient. -/
-@[simp]
-theorem resolventHasseDerivAt_at_zero (u : C₀(I, R) →L[R] C₀(I, R)) (k : ℕ) :
-    u.resolventHasseDerivAt k 0 = u.resolventCoeff k := by
-  rw [resolventHasseDerivAt_eq_evalScalar, PowerSeries.evalScalar_at_zero,
-    ← PowerSeries.coeff_zero_eq_constantCoeff_apply, coeff_hasseDeriv_resolventSeries, zero_add,
-    Nat.choose_self, Nat.cast_one, one_smul]
-
-/-- The Hasse derivatives of the Fredholm resolvent at a scalar commute with the operator. -/
-theorem commute_resolventHasseDerivAt (u : C₀(I, R) →L[R] C₀(I, R)) (k : ℕ) (a : R) :
-    Commute u (u.resolventHasseDerivAt k a) := by
-  -- Synthesized up front, as in `ContinuousLinearMap.commute_resolventAt`.
-  have : IsTopologicalSemiring (C₀(I, R) →L[R] C₀(I, R)) := inferInstance
-  rw [resolventHasseDerivAt_eq_evalScalar]
-  exact PowerSeries.commute_evalScalar (fun m ↦ by
-    simpa only [coeff_hasseDeriv_resolventSeries] using
-      (u.commute_resolventCoeff (m + k)).smul_right _) a
-
-/-- The Hasse derivatives of the Fredholm resolvent at a scalar lie in the operator-norm closure
-of the polynomials in `u`. -/
-theorem resolventHasseDerivAt_mem_closure_adjoin (u : C₀(I, R) →L[R] C₀(I, R)) (k : ℕ) (a : R) :
-    u.resolventHasseDerivAt k a ∈
-      closure (Algebra.adjoin R {u} : Set (C₀(I, R) →L[R] C₀(I, R))) := by
-  have hV (m : ℕ) : a ^ m • ((m + k).choose k : R) • u.resolventCoeff (m + k) ∈
-      Algebra.adjoin R {u} := by
-    rw [resolventCoeff_def]
-    exact Subalgebra.smul_mem _ (Subalgebra.smul_mem _ (Subalgebra.sum_mem _ fun j _ ↦
-      Subalgebra.smul_mem _ (Subalgebra.pow_mem _ (Algebra.self_mem_adjoin_singleton R u) _) _)
-        _) _
-  rw [resolventHasseDerivAt_def]
-  exact tsum_mem (Algebra.adjoin R {u}).toAddSubmonoid.isClosed_topologicalClosure
-    fun m ↦ subset_closure (hV m)
-
-variable [IsUltrametricDist R] [CompleteSpace R]
-
-/-- **Hasse derivatives of the Fredholm resolvent at a scalar.** For a row-compact `u` and every
-scalar `a`, the series `∑ₘ aᵐ • (m + k).choose k • V_{m+k}` converges in operator norm to
-`ΔᵏV(a)`. -/
-theorem IsRowCompact.hasSum_resolventHasseDerivAt {u : C₀(I, R) →L[R] C₀(I, R)}
-    (hu : u.IsRowCompact) (k : ℕ) (a : R) :
-    HasSum (fun m ↦ a ^ m • ((m + k).choose k : R) • u.resolventCoeff (m + k))
-      (u.resolventHasseDerivAt k a) := by
-  rw [resolventHasseDerivAt_eq_evalScalar]
-  simpa only [coeff_hasseDeriv_resolventSeries] using
-    (hu.isEntire_resolventSeries.hasseDeriv k).hasSum_evalScalar a
 
 /-- **The differentiated resolvent identity** `(1 - a • u) Δᵏ⁺¹V(a) = Δᵏ⁺¹H_u(a) • 1 + u ΔᵏV(a)`
 for a row-compact `u`, where `Δᵏ⁺¹H_u(a)` is the value at `a` of the `(k + 1)`-th Hasse
@@ -569,8 +558,9 @@ theorem IsRowCompact.one_sub_smul_mul_resolventHasseDerivAt_succ
       have hm := congr(a ^ (m + 1) • $(u.coeff_succ_hasseDeriv_succ_resolventSeries k m) x)
       simp only [_root_.add_apply, mul_apply_eq_comp] at hm
       rw [_root_.smul_apply, hm]
-      simp only [_root_.smul_apply, one_apply_eq_self, map_smul]
-      simp
+      simp only [_root_.smul_apply, one_apply_eq_self, map_smul, PowerSeries.coeff_hasseDeriv,
+        coeff_resolventSeries, mul_apply_eq_comp, natCast_apply_eq_smul, map_smul_of_tower,
+        Matrix.coeff_charPowerSeries, ContinuousLinearMap.smul_def, smul_eq_mul]
       module
   simpa [resolventHasseDerivAt_eq_evalScalar] using h
 
@@ -606,7 +596,7 @@ theorem IsRowCompact.one_sub_smul_pow_succ_mul_resolventHasseDerivAt
 suppose `ΔʲH_u(a) = 0` for `j < h` while `c = ΔʰH_u(a)` is a unit, so that `a` is a good zero
 of order `h` of the Fredholm determinant. Then `b = c⁻¹ • ΔʰV(a)` satisfies
 `C ^ (h + 1) b = C ^ h`, that is, `C ^ h (C b - 1) = 0`. This is the identity from which the
-Riesz projector `(C b) ^ h` at `a` is built. -/
+Riesz projector `1 - (C b) ^ h` at `a` and its complementary projector `(C b) ^ h` are built. -/
 theorem IsRowCompact.one_sub_smul_pow_succ_mul_inverse_smul_resolventHasseDerivAt
     {u : C₀(I, R) →L[R] C₀(I, R)} (hu : u.IsRowCompact) {a : R} {h : ℕ}
     (hH : ∀ j < h, (PowerSeries.hasseDeriv j u.matrixCoeff.charPowerSeries).evalAt a = 0)
