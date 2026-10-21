@@ -12,12 +12,9 @@ public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.RingTheory.PowerSeries.Basic
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.BasisComparison
 import Mathlib.Algebra.DirectSum.Module
-import Mathlib.LinearAlgebra.Charpoly.ToMatrix
 import Mathlib.LinearAlgebra.Eigenspace.Semisimple
 import Mathlib.LinearAlgebra.FiniteDimensional.Defs
-import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 import TauCeti.LinearAlgebra.Matrix.Charpoly.Reverse
-import TauCeti.LinearAlgebra.Matrix.Diagonal
 import TauCeti.RingTheory.MvPolynomial.Symmetric.Complete
 import TauCeti.RingTheory.PowerSeries.Geometric
 
@@ -42,8 +39,6 @@ term-by-term content of Molien's formula for the Hilbert series of the invariant
   diagonal in a basis is diagonal in the induced monomial basis of `Symⁿ M`.
 * `Module.Basis.trace_homogeneousSubmoduleMapₛₗ_of_apply`: its trace on `Symⁿ M` is the sum of
   the eigenvalue products over the degree-`n` multisets of basis indices.
-* `Module.Basis.reverse_charpoly_of_apply`: `det(1 - t f) = ∏ᵢ (1 - aᵢ t)` for `f` diagonal in a
-  finite basis with eigenvalues `aᵢ`.
 * `Module.Basis.mk_trace_homogeneousSubmoduleMapₛₗ_mul_reverse_charpoly_of_apply`: the graded
   trace formula.
 * `Module.End.IsSemisimple.mk_trace_homogeneousSubmoduleMapₛₗ_mul_reverse_charpoly`: the graded
@@ -99,15 +94,6 @@ end CommSemiring
 section CommRing
 
 variable [CommRing R] [AddCommGroup M] [Module R M] [Module.Free R M] [Module.Finite R M]
-
-/-- **`det(1 - t f)` of an endomorphism diagonal in a finite basis** is the product of the linear
-factors `1 - aᵢ t` over its eigenvalues `aᵢ`. -/
-theorem _root_.Module.Basis.reverse_charpoly_of_apply [Fintype κ] (b : Basis κ R M)
-    (f : M →ₗ[R] M) (a : κ → R) (hf : ∀ i, f (b i) = a i • b i) :
-    f.charpoly.reverse = ∏ i, (1 - Polynomial.C (a i) * Polynomial.X) := by
-  classical
-  rw [← LinearMap.charpoly_toMatrix f b, Matrix.reverse_charpoly,
-    (b.toMatrix_eq_diagonal_iff b f a).2 hf, Matrix.charpolyRev_diagonal]
 
 /-- **The graded trace formula.** If `f` is diagonal in a finite basis, the generating function
 of its traces on the homogeneous components of the symmetric algebra is the inverse of
