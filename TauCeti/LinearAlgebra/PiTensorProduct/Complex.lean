@@ -249,13 +249,10 @@ noncomputable def cochainComplexMap (f : ∀ i, M i →ₗ[R] N i)
       eqToHom (cochainComplex_X 𝒩 e hedeg he n).symm) (fun n ↦ by
     rw [cochainComplex_d, cochainComplex_d]
     simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
-    apply (cancel_epi _).2
+    congr 1
     simp only [← Category.assoc]
-    apply (cancel_mono _).2
-    apply ModuleCat.hom_ext
-    apply LinearMap.ext
-    intro z
-    apply Subtype.ext
+    congr 1
+    ext z
     exact LinearMap.congr_fun (differential_comp_map d e f hcomm) z)
 
 /-- Each component is the tensor of the factor maps restricted to the total-degree piece. -/
@@ -289,6 +286,8 @@ theorem cochainComplexMap_f_apply (f : ∀ i, M i →ₗ[R] N i)
           (fun _ hz ↦ map_mem_degreePiece ℳ 𝒩 f hf hz)) by
       rw [cochainComplexMap_f]
       simp)
+  -- Evaluation beta-reduces; ModuleCat composition applies the two maps successively,
+  -- and ofHom on a restricted linear map evaluates to the displayed subtype element.
   exact h
 
 /-- Tensoring the identity factor maps induces the identity cochain map. -/
@@ -326,13 +325,10 @@ theorem cochainComplexMap_comp (f : ∀ i, M i →ₗ[R] N i) (g : ∀ i, N i �
   intro n
   simp only [HomologicalComplex.comp_f, cochainComplexMap_f, Category.assoc,
     eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
-  apply (cancel_epi _).2
+  congr 1
   simp only [← Category.assoc]
-  apply (cancel_mono _).2
-  apply ModuleCat.hom_ext
-  apply LinearMap.ext
-  intro z
-  apply Subtype.ext
+  congr 1
+  ext z
   exact LinearMap.congr_fun (_root_.PiTensorProduct.map_comp g f) z.val
 
 end Map

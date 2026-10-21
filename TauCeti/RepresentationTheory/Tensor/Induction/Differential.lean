@@ -245,6 +245,31 @@ theorem wreathTensorCochainComplex_d (n : ℤ) :
   simp only [CochainComplex.of_d, eqToHom_refl, Category.id_comp, Category.comp_id]
   rfl
 
+/-- Forgetting the wreath action recovers the total-degree tensor complex of modules. -/
+@[simp]
+theorem wreathTensorCochainComplex_forget :
+    ((forget₂ (Rep.{max u w x} R (WreathProduct D ι)) (ModuleCat R)).mapHomologicalComplex
+      (ComplexShape.up ℤ)).obj (wreathTensorCochainComplex ℳ hρ d hdeg hd ι) =
+      PiTensorProduct.cochainComplex (fun _ : ι ↦ ℳ) (fun _ ↦ d.toLinearMap)
+        (fun _ ↦ hdeg) (fun _ ↦ by
+          simpa only [Representation.IntertwiningMap.comp_toLinearMap,
+            Representation.IntertwiningMap.zero_toLinearMap] using
+            congrArg Representation.IntertwiningMap.toLinearMap hd) := by
+  apply HomologicalComplex.ext (funext fun n ↦
+    (PiTensorProduct.cochainComplex_X (fun _ : ι ↦ ℳ) (fun _ ↦ d.toLinearMap)
+      (fun _ ↦ hdeg) (fun _ ↦ by
+          simpa only [Representation.IntertwiningMap.comp_toLinearMap,
+            Representation.IntertwiningMap.zero_toLinearMap] using
+            congrArg Representation.IntertwiningMap.toLinearMap hd) n).symm)
+  intro i j hij
+  obtain rfl : i + 1 = j := hij
+  rw [PiTensorProduct.cochainComplex_d]
+  simp only [eqToHom_trans_assoc]
+  congr 1
+  unfold wreathTensorCochainComplex
+  simp only [Functor.mapHomologicalComplex_obj_d, CochainComplex.of_d]
+  rfl
+
 variable {G : Type v} [Group G] {U : Subgroup G} {τ : Representation R U M}
 
 /-- The tensor-induced total-degree complex, obtained by restricting the wreath tensor
@@ -281,6 +306,24 @@ theorem tensorInducedCochainComplex_d (ℳ : ℤ → Submodule R M)
           ((wreathTensorCochainComplex ℳ hτ d hdeg hd (G ⧸ U)).d n m) ≫
         eqToHom (tensorInducedCochainComplex_X ℳ hτ d hdeg hd s m).symm :=
   (rfl)
+
+/-- Forgetting the tensor-induced action recovers the coset-indexed total-degree tensor
+complex of modules. -/
+@[simp]
+theorem tensorInducedCochainComplex_forget (ℳ : ℤ → Submodule R M)
+    (hτ : ∀ g, LinearMap.IsHomogeneous (τ g) ℳ ℳ 0) (d : τ.IntertwiningMap τ)
+    (hdeg : LinearMap.IsHomogeneous d.toLinearMap ℳ ℳ 1) (hd : d.comp d = 0)
+    (s : U.LeftTransversal) [Fintype (G ⧸ U)] :
+    ((forget₂ (Rep.{max u w v} R G) (ModuleCat R)).mapHomologicalComplex
+      (ComplexShape.up ℤ)).obj (tensorInducedCochainComplex ℳ hτ d hdeg hd s) =
+      PiTensorProduct.cochainComplex (fun _ : G ⧸ U ↦ ℳ) (fun _ ↦ d.toLinearMap)
+        (fun _ ↦ hdeg) (fun _ ↦ by
+          simpa only [Representation.IntertwiningMap.comp_toLinearMap,
+            Representation.IntertwiningMap.zero_toLinearMap] using
+            congrArg Representation.IntertwiningMap.toLinearMap hd) := by
+  unfold tensorInducedCochainComplex
+  rw [← wreathTensorCochainComplex_forget ℳ hτ d hdeg hd (G ⧸ U)]
+  rfl
 
 end Complex
 
