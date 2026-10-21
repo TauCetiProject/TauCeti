@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.BilinearForm.Prod
+public import TauCeti.LinearAlgebra.QuadraticForm.PosDef
 public import TauCeti.RingTheory.TensorProduct.IsBaseChange
 public import Mathlib.LinearAlgebra.TensorProduct.Prod
 public import Mathlib.LinearAlgebra.BilinearForm.IsometryEquiv
@@ -13,7 +14,6 @@ public import Mathlib.LinearAlgebra.BilinearForm.TensorProduct
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
 public import Mathlib.Algebra.Order.Algebra
-public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 import Mathlib.Algebra.Ring.Hom.InjSurj
 import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
 
@@ -499,7 +499,7 @@ theorem posDef_toQuadraticMap_baseChange_iff (B : LinearMap.BilinForm F V) :
     have hbase : (B + B.flip).baseChange K = B.baseChange K + (B.baseChange K).flip := by
       ext
       simp [add_smul]
-    simpa [QuadraticMap.PosDef, hbase] using this (B + B.flip) hsym
+    simpa only [hbase, posDef_toQuadraticMap_add_flip_iff] using this (B + B.flip) hsym
   have hmap {a : F} : 0 < algebraMap F K a ↔ 0 < a := by
     simpa using (algebraMap_strictMono (α := F) K).lt_iff_lt (a := 0) (b := a)
   constructor
