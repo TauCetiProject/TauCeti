@@ -32,7 +32,7 @@ public section
 noncomputable section
 
 open MeasureTheory ProbabilityTheory
-open scoped ENNReal
+open scoped ENNReal Nat
 
 namespace ProbabilityTheory.IsGaussian
 
@@ -58,22 +58,22 @@ theorem integrable_prod_dual (μ : Measure E) [IsGaussian μ]
 
 variable [CompleteSpace E] [SecondCountableTopology E]
 
-/-- The fourth centered moment of a linear observable of a Gaussian measure is three times
-the square of its variance, expressed by the covariance bilinear form. -/
-theorem integral_pow_four_sub_dual (μ : Measure E) [IsGaussian μ] (L : StrongDual ℝ E) :
-    (∫ x, L (x - μ[id]) ^ 4 ∂μ) = 3 * covarianceBilinDual μ L L ^ 2 := by
+/-- The `2n`th centered moment of a linear observable of a Gaussian measure is
+`Varⁿ (2n - 1)‼`, with the variance expressed by the covariance bilinear form. -/
+theorem integral_pow_two_mul_sub_dual (μ : Measure E) [IsGaussian μ]
+    (L : StrongDual ℝ E) (n : ℕ) :
+    (∫ x, L (x - μ[id]) ^ (2 * n) ∂μ) =
+      covarianceBilinDual μ L L ^ n * (2 * n - 1 : ℕ)‼ := by
   rw [covarianceBilinDual_self_eq_variance IsGaussian.memLp_two_id]
   have hmean : μ[L] = L μ[id] :=
     L.integral_comp_comm (IsGaussian.integrable_id (μ := μ))
   calc
-    _ = ∫ x, (x - μ[L]) ^ (2 * 2) ∂gaussianReal μ[L] (Var[L; μ].toNNReal) := by
+    _ = ∫ x, (x - μ[L]) ^ (2 * n) ∂gaussianReal μ[L] (Var[L; μ].toNNReal) := by
       rw [← IsGaussian.map_eq_gaussianReal L, integral_map (by fun_prop) (by fun_prop)]
       simp only [hmean, map_sub]
     _ = _ := by
       rw [TauCeti.Probability.integral_sub_pow_two_mul_gaussianReal,
         Real.coe_toNNReal _ (variance_nonneg L μ)]
-      norm_num
-      ring
 
 /-- The fourth centered mixed moment of four linear observables of a Gaussian measure
 is the sum over their three pairings. No independence or nondegeneracy is assumed. -/
@@ -110,7 +110,8 @@ theorem integral_mul_mul_mul_sub_dual (μ : Measure E) [IsGaussian μ]
       _ = _ := by
         rw [integral_finsetSum _ (fun i _ ↦ (hint i).const_mul (w i))]
         simp_rw [integral_const_mul]
-  simp_rw [integral_pow_four_sub_dual] at hpolar
+  simp_rw [integral_pow_two_mul_sub_dual μ _ 2] at hpolar
+  norm_num only [Nat.doubleFactorial] at hpolar
   -- Bilinearity and symmetry reduce the polarized variances to the three pairings.
   conv_rhs at hpolar =>
     simp only [Fin.sum_univ_succ, Fin.sum_univ_zero, L, w, Matrix.cons_val_zero,
