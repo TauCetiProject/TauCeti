@@ -50,6 +50,8 @@ When all the `ℓ`-power roots of unity exist, each factor is noncanonically `�
   of the prime-to-`p` Tate module, for `ℓ` prime to `p`.
 * `TauCeti.PrimeToPTateModule.continuousMulEquivPiPadicTateTwist`: the isomorphism of topological
   groups `ℤ̂^{(p')}(1) ≃ₜ* ∏_{ℓ ∤ p} ℤ_ℓ(1)` given by all the `ℓ`-adic components.
+* `TauCeti.PrimeToPTateModule.piPadicTateTwistReindex`: for a prime `p`, the reindexing of
+  `∏_{ℓ ∤ p} ℤ_ℓ(1)` as the product over the primes `ℓ ≠ p`.
 
 ## Main results
 
@@ -553,6 +555,29 @@ theorem proj_continuousMulEquivPiPadicTateTwist_symm_apply
   apply Additive.ofMul.injective
   rw [← proj_continuousMulEquivPiPadicTateTwist_apply, ContinuousMulEquiv.apply_symm_apply,
     ofMul_toMul]
+
+variable (E) in
+/-- For a prime `p`, reindexing a product of `ℓ`-adic Tate twists from the primes prime to `p`,
+the index of `continuousMulEquivPiPadicTateTwist`, to the primes different from `p`. -/
+def piPadicTateTwistReindex (hp : p.Prime) :
+    (∀ ℓ : {ℓ : ℕ // ℓ.Prime ∧ ℓ.Coprime p}, Multiplicative (PadicTateTwist ℓ E)) ≃ₜ*
+      ∀ ℓ : {ℓ : Nat.Primes // (ℓ : ℕ) ≠ p}, Multiplicative (PadicTateTwist ℓ E) where
+  toFun y ℓ := y ⟨ℓ, ℓ.1.2, (Nat.coprime_primes ℓ.1.2 hp).2 ℓ.2⟩
+  invFun z ℓ := z ⟨⟨ℓ, ℓ.2.1⟩, (Nat.coprime_primes ℓ.2.1 hp).1 ℓ.2.2⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_mul' _ _ := rfl
+  continuous_toFun := continuous_pi fun _ ↦ continuous_apply _
+  continuous_invFun := continuous_pi fun _ ↦ continuous_apply _
+
+/-- The member of the reindexed family at a prime `ℓ ≠ p` is the original member at `ℓ`. -/
+@[simp]
+theorem piPadicTateTwistReindex_apply (hp : p.Prime)
+    (y : ∀ ℓ : {ℓ : ℕ // ℓ.Prime ∧ ℓ.Coprime p}, Multiplicative (PadicTateTwist ℓ E))
+    (ℓ : {ℓ : Nat.Primes // (ℓ : ℕ) ≠ p}) :
+    piPadicTateTwistReindex E hp y ℓ = y ⟨ℓ, ℓ.1.2, (Nat.coprime_primes ℓ.1.2 hp).2 ℓ.2⟩ := by
+  unfold piPadicTateTwistReindex
+  rfl
 
 end Decomposition
 

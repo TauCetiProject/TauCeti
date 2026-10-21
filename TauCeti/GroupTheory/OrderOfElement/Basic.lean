@@ -123,12 +123,16 @@ theorem eq_one_of_pow_ordCompl_eq_one {M : Type*} [Monoid M] {x : M} {n : ℕ} (
   exact hℓ.one_lt.ne' <| Nat.Coprime.eq_one_of_dvd (Nat.coprime_ordCompl hℓ hn)
     (hdvd.trans (orderOf_dvd_of_pow_eq_one (h ℓ hℓ hℓn)))
 
-/-- Two `n`-th roots of unity in a commutative group, `n ≠ 0`, are equal as soon as their powers
+/-- Two `n`-th roots of unity in a commutative monoid, `n ≠ 0`, are equal as soon as their powers
 `x ^ ordCompl[ℓ] n` agree at every prime `ℓ ∣ n`. -/
-theorem eq_of_pow_ordCompl_eq {G : Type*} [CommGroup G] {x y : G} {n : ℕ} (hn : n ≠ 0)
+theorem eq_of_pow_ordCompl_eq {M : Type*} [CommMonoid M] {x y : M} {n : ℕ} (hn : n ≠ 0)
     (hx : x ^ n = 1) (hy : y ^ n = 1)
-    (h : ∀ ℓ : ℕ, ℓ.Prime → ℓ ∣ n → x ^ ordCompl[ℓ] n = y ^ ordCompl[ℓ] n) : x = y :=
-  div_eq_one.1 <| eq_one_of_pow_ordCompl_eq_one hn (by rw [div_pow, hx, hy, div_one])
+    (h : ∀ ℓ : ℕ, ℓ.Prime → ℓ ∣ n → x ^ ordCompl[ℓ] n = y ^ ordCompl[ℓ] n) : x = y := by
+  -- Both are units, so they can be compared in the commutative group `Mˣ`.
+  lift x to Mˣ using IsUnit.of_pow_eq_one hx hn
+  lift y to Mˣ using IsUnit.of_pow_eq_one hy hn
+  simp only [← Units.val_pow_eq_pow_val, Units.val_eq_one, Units.val_inj] at hx hy h ⊢
+  exact div_eq_one.1 <| eq_one_of_pow_ordCompl_eq_one hn (by rw [div_pow, hx, hy, div_one])
     fun ℓ hℓ hℓn ↦ by rw [div_pow, h ℓ hℓ hℓn, div_self']
 
 /-- **Only parities matter for `2`-torsion exponents.** In a commutative monoid whose elements

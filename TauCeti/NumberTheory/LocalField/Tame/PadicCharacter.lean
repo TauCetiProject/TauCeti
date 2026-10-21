@@ -180,19 +180,6 @@ theorem IsArithFrobeniusLift.inertiaPadicTameCharacter_conj {φ : Gal(AlgebraicC
 
 /-! ### Tame inertia as a product of `ℓ`-adic integers -/
 
-/-- Reindexing a product of `ℓ`-adic Tate twists from the primes prime to `p` to the primes
-different from `p`, for a prime `p`. -/
-private def piPadicTateTwistReindex {p : ℕ} (hp : p.Prime) (E : Type*) [CommMonoid E] :
-    (∀ ℓ : {ℓ : ℕ // ℓ.Prime ∧ ℓ.Coprime p}, Multiplicative (PadicTateTwist ℓ E)) ≃ₜ*
-      ∀ ℓ : {ℓ : Nat.Primes // (ℓ : ℕ) ≠ p}, Multiplicative (PadicTateTwist ℓ E) where
-  toFun y ℓ := y ⟨ℓ, ℓ.1.2, (Nat.coprime_primes ℓ.1.2 hp).2 ℓ.2⟩
-  invFun z ℓ := z ⟨⟨ℓ, ℓ.2.1⟩, (Nat.coprime_primes ℓ.2.1 hp).1 ℓ.2.2⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-  map_mul' _ _ := rfl
-  continuous_toFun := continuous_pi fun _ ↦ continuous_apply _
-  continuous_invFun := continuous_pi fun _ ↦ continuous_apply _
-
 variable (K) in
 /-- **Tame inertia is `∏_{ℓ ≠ p} ℤ_ℓ`**: the tame inertia group `I_K/P_K` is isomorphic, as a
 topological group, to the product of the additive groups of `ℓ`-adic integers over the primes `ℓ`
@@ -218,7 +205,7 @@ theorem nonempty_continuousMulEquiv_piPadicInt :
     (nonempty_continuousAddEquiv (ℓ : ℕ) (AlgebraicClosure K)).some
   exact ⟨(quotientWildInertiaSubgroupEquiv K).trans <|
     (PrimeToPTateModule.continuousMulEquivPiPadicTateTwist _ _).trans <|
-    (piPadicTateTwistReindex hp _).trans <|
+    (PrimeToPTateModule.piPadicTateTwistReindex _ hp).trans <|
     ({ MulEquiv.piCongrRight fun ℓ ↦ (φ ℓ).toMultiplicative.toMulEquiv with
       continuous_toFun := continuous_pi fun ℓ ↦
         (φ ℓ).toMultiplicative.continuous.comp (continuous_apply ℓ)
