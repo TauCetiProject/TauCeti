@@ -37,8 +37,8 @@ tensor.
   through the values `T(x, y, y, x)`.
 * `LinearMap.eq_of_cyclic_eq_zero`: two curvature-type tensors with the same values
   `T(x, y, y, x)` are equal when multiplication by `6` is injective.
-* `LinearMap.apply_eq_zero_of_not_linearIndependent`: `T(x, y, y, x) = 0` on linearly dependent
-  pairs.
+* `LinearMap.apply_apply_apply_apply_eq_zero_of_not_linearIndependent`: `T(x, y, y, x) = 0` on
+  linearly dependent pairs.
 * `LinearMap.eq_of_cyclic_eq_zero_of_linearIndependent`: two curvature-type tensors agreeing on
   `T(x, y, y, x)` for linearly independent pairs are equal.
 
@@ -92,9 +92,9 @@ theorem eq_of_cyclic_eq_zero (h6 : IsLeftRegular (6 : R))
 /-- A quadrilinear form antisymmetric in its first pair of arguments has `T(x, y, y, x) = 0`
 whenever `x` and `y` are linearly dependent, provided the scalars have no zero divisors and
 `2 ≠ 0`. -/
-theorem apply_eq_zero_of_not_linearIndependent [NoZeroDivisors R] (h2 : (2 : R) ≠ 0)
-    (h₁ : ∀ x y z w, T x y z w = -T y x z w) {x y : M} (hxy : ¬LinearIndependent R ![x, y]) :
-    T x y y x = 0 := by
+theorem apply_apply_apply_apply_eq_zero_of_not_linearIndependent [NoZeroDivisors R]
+    (h2 : (2 : R) ≠ 0) (h₁ : ∀ x y z w, T x y z w = -T y x z w) {x y : M}
+    (hxy : ¬LinearIndependent R ![x, y]) : T x y y x = 0 := by
   -- `T(a, a, c, d)` vanishes, since `2 ≠ 0` and there are no zero divisors.
   have hd (a c d : M) : T a a c d = 0 :=
     (mul_eq_zero.1 (by linear_combination h₁ a a c d : (2 : R) * T a a c d = 0)).resolve_left h2
@@ -131,7 +131,7 @@ theorem eq_of_cyclic_eq_zero_of_linearIndependent [NoZeroDivisors R] (h6 : (6 : 
   refine eq_of_cyclic_eq_zero (IsRegular.of_ne_zero' h6).left h₁ h₂ h₃ h₁' h₂' h₃' fun x y ↦ ?_
   by_cases hxy : LinearIndependent R ![x, y]
   · exact hT x y hxy
-  · rw [apply_eq_zero_of_not_linearIndependent h2 h₁ hxy,
-      apply_eq_zero_of_not_linearIndependent h2 h₁' hxy]
+  · rw [apply_apply_apply_apply_eq_zero_of_not_linearIndependent h2 h₁ hxy,
+      apply_apply_apply_apply_eq_zero_of_not_linearIndependent h2 h₁' hxy]
 
 end LinearMap
