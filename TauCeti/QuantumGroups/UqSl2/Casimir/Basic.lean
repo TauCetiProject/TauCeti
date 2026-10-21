@@ -39,6 +39,10 @@ signed highest weight.
 * `TauCeti.UqSl2.casimir_smul_of_e_smul_eq_zero`: the action of `Ω` on a highest-weight vector.
 * `TauCeti.UqSl2.casimirScalar_eq_casimirScalar_iff`: two nonzero weights have the same Casimir
   scalar exactly when they are equal or related by `μ ↦ q⁻² μ⁻¹`.
+* `TauCeti.UqSl2.casimirScalar_eq_of_mem_casimirBlock` and
+  `TauCeti.UqSl2.casimirScalar_inv_eq_of_mem_casimirBlock`: a nonzero highest-weight vector of
+  weight `μ` (resp. lowest-weight vector) lies only in the Casimir block for `casimirScalar q μ`
+  (resp. `casimirScalar q μ⁻¹`).
 * `TauCeti.UqSl2.map_casimirBlock_le`: module maps send Casimir blocks into Casimir blocks.
 * `TauCeti.UqSl2.casimirScalar_units_mul_pow_inj`: at a generic parameter, the scalars of the
   signed highest weights `ε q^m` determine `m` and `ε`.
@@ -198,6 +202,29 @@ theorem mem_casimirBlock_iff {c : ℂ} :
     ← AlgHom.commutes (Algebra.lsmul ℂ ℂ V (A := UqSl2 q))]
   simp only [← map_sub, ← map_pow, Algebra.lsmul_coe]
 
+/-- A vector on which the Casimir element acts by the scalar `s` lies in the Casimir block for
+`c` only if it vanishes or `s = c`. -/
+theorem eq_of_casimir_smul_of_mem_casimirBlock {s c : ℂ} (hs : casimir q • v = s • v)
+    (hb : v ∈ casimirBlock q V c) (hv0 : v ≠ 0) : s = c := by
+  by_contra hsc
+  rw [← Submodule.restrictScalars_mem ℂ, restrictScalars_casimirBlock] at hb
+  refine hv0 ((Submodule.disjoint_def.mp
+    (Module.End.disjoint_genEigenspace (Algebra.lsmul ℂ ℂ V (casimir q)) hsc 1 ⊤)) v ?_ hb)
+  exact Module.End.mem_eigenspace_iff.mpr (by rw [Algebra.lsmul_coe]; exact hs)
+
+/-- A nonzero vector of weight `μ` killed by `E` lies in the Casimir block for `c` only if
+`casimirScalar q μ = c`. -/
+theorem casimirScalar_eq_of_mem_casimirBlock {c : ℂ} (hv : v ∈ weightSpace q V μ)
+    (he : e q • v = 0) (hb : v ∈ casimirBlock q V c) (hv0 : v ≠ 0) : casimirScalar q μ = c :=
+  eq_of_casimir_smul_of_mem_casimirBlock (casimir_smul_of_e_smul_eq_zero hv he) hb hv0
+
+/-- A nonzero vector of weight `μ` killed by `F` lies in the Casimir block for `c` only if
+`casimirScalar q μ⁻¹ = c`. -/
+theorem casimirScalar_inv_eq_of_mem_casimirBlock {c : ℂ} (hv : v ∈ weightSpace q V μ)
+    (hf : f q • v = 0) (hb : v ∈ casimirBlock q V c) (hv0 : v ≠ 0) :
+    casimirScalar q μ⁻¹ = c :=
+  eq_of_casimir_smul_of_mem_casimirBlock (casimir_smul_of_f_smul_eq_zero hv hf) hb hv0
+
 /-- A module map sends the Casimir block for `c` into the Casimir block for `c`. -/
 theorem map_casimirBlock_le {W : Type*} [AddCommGroup W] [Module ℂ W] [Module (UqSl2 q) W]
     [IsScalarTower ℂ (UqSl2 q) W] (φ : V →ₗ[UqSl2 q] W) (c : ℂ) :
@@ -223,6 +250,12 @@ theorem iSupIndep_casimirBlock : iSupIndep (casimirBlock q V) := fun c => by
 theorem iSup_casimirBlock_eq_top [FiniteDimensional ℂ V] : ⨆ c, casimirBlock q V c = ⊤ := by
   rw [← Submodule.restrictScalars_eq_top_iff ℂ, Submodule.restrictScalars_iSup]
   simpa only [restrictScalars_casimirBlock] using Module.End.iSup_maxGenEigenspace_eq_top _
+
+/-- A Casimir block of a finite-dimensional module is finite-dimensional. -/
+instance finiteDimensional_casimirBlock [FiniteDimensional ℂ V] (c : ℂ) :
+    FiniteDimensional ℂ (casimirBlock q V c) :=
+  Module.Finite.of_injective ((casimirBlock q V c).subtype.restrictScalars ℂ)
+    Subtype.val_injective
 
 end Module
 

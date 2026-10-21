@@ -147,12 +147,6 @@ theorem mem_genWeightSpace_iff {μ : ℂ} {v : V} :
 theorem weightSpace_le_genWeightSpace (μ : ℂ) : weightSpace q V μ ≤ genWeightSpace q V μ :=
   Module.End.eigenspace_le_maxGenEigenspace
 
-/-- A vector of a submodule lies in one of its generalized weight spaces exactly when it lies in
-the corresponding generalized weight space of the ambient module. -/
-theorem mem_genWeightSpace_submodule_iff {U : Submodule (UqSl2 q) V} {μ : ℂ} {w : U} :
-    w ∈ genWeightSpace q U μ ↔ (w : V) ∈ genWeightSpace q V μ := by
-  simp only [mem_genWeightSpace_iff, ← Submodule.coe_eq_zero, Submodule.coe_smul]
-
 /-- The generalized zero-weight space vanishes because `K` is invertible. -/
 @[simp]
 theorem genWeightSpace_zero : genWeightSpace q V 0 = ⊥ := by
@@ -232,21 +226,28 @@ theorem k_smul_eq_of_k_sq_smul_eq {ν ρ : ℂ} (h : -ρ ≠ ν) {v : V}
   exact sub_eq_zero.mp (eq_zero_of_mem_weightSpace_of_mem_genWeightSpace h hw
     (sub_mem (k_smul_mem_genWeightSpace hv) (Submodule.smul_mem _ ρ hv)))
 
+omit [Module ℂ V] [IsScalarTower ℂ (UqSl2 q) V] in
+/-- If some power of `x` kills a nonzero vector `w`, then the string `w, x w, x² w, …` ends in a
+nonzero vector `xⁿ w` killed by `x`. -/
+theorem exists_pow_smul_ne_zero_and_smul_eq_zero {x : UqSl2 q} {w : V} (hw0 : w ≠ 0)
+    (h : ∃ n : ℕ, x ^ n • w = 0) : ∃ n : ℕ, x ^ n • w ≠ 0 ∧ x • x ^ n • w = 0 := by
+  classical
+  have hn : 0 < Nat.find h := by
+    by_contra! hn
+    exact hw0 (by simpa [Nat.eq_zero_of_le_zero hn] using Nat.find_spec h)
+  refine ⟨Nat.find h - 1, Nat.find_min h (by omega), ?_⟩
+  rw [← mul_smul, ← pow_succ', Nat.sub_add_cancel hn]
+  exact Nat.find_spec h
+
 /-- Some power of `K - μ` sends a nonzero generalized weight vector of weight `μ` to a nonzero
 weight vector of weight `μ`. -/
 theorem exists_pow_smul_mem_weightSpace {μ : ℂ} {w : V} (hw : w ∈ genWeightSpace q V μ)
     (hw0 : w ≠ 0) :
     ∃ r : ℕ, (k q - algebraMap ℂ (UqSl2 q) μ) ^ r • w ≠ 0 ∧
       (k q - algebraMap ℂ (UqSl2 q) μ) ^ r • w ∈ weightSpace q V μ := by
-  classical
-  have hD := mem_genWeightSpace_iff.mp hw
-  have hR : 0 < Nat.find hD := by
-    by_contra! h
-    exact hw0 (by simpa [Nat.eq_zero_of_le_zero h] using Nat.find_spec hD)
-  refine ⟨Nat.find hD - 1, Nat.find_min hD (by omega), ?_⟩
-  rw [mem_weightSpace_iff, ← sub_eq_zero, ← algebraMap_smul (UqSl2 q) μ, ← sub_smul,
-    ← mul_smul, ← pow_succ', Nat.sub_add_cancel hR]
-  exact Nat.find_spec hD
+  obtain ⟨r, hr0, hr⟩ := exists_pow_smul_ne_zero_and_smul_eq_zero hw0 (mem_genWeightSpace_iff.mp hw)
+  rw [sub_smul, algebraMap_smul, sub_eq_zero] at hr
+  exact ⟨r, hr0, mem_weightSpace_iff.mpr hr⟩
 
 /-- If `x` satisfies `K x = c (x K)` and some power of `x` kills a nonzero generalized weight
 vector `w`, then some element of `UqSl2 q` sends `w` to a nonzero weight vector killed by `x`. -/
@@ -255,16 +256,8 @@ private theorem exists_smul_mem_weightSpace_of_k_mul {x : UqSl2 q} {c : ℂ}
     (hw : w ∈ genWeightSpace q V μ) (hw0 : w ≠ 0) (hxw : ∃ n : ℕ, x ^ n • w = 0) :
     ∃ (a : UqSl2 q) (n : ℕ), a • w ≠ 0 ∧ a • w ∈ weightSpace q V (c ^ n * μ) ∧
       x • a • w = 0 := by
-  classical
   -- First push `w` along `x` to the last nonzero vector `u` of its `x`-string.
-  have hN : 0 < Nat.find hxw := by
-    by_contra! h
-    exact hw0 (by simpa [Nat.eq_zero_of_le_zero h] using Nat.find_spec hxw)
-  set n := Nat.find hxw - 1 with hn
-  have hu0 : x ^ n • w ≠ 0 := Nat.find_min hxw (by omega)
-  have hxu : x • x ^ n • w = 0 := by
-    rw [← mul_smul, ← pow_succ', hn, Nat.sub_add_cancel hN]
-    exact Nat.find_spec hxw
+  obtain ⟨n, hu0, hxu⟩ := exists_pow_smul_ne_zero_and_smul_eq_zero hw0 hxw
   have hxn : k q * x ^ n = c ^ n • (x ^ n * k q) := by
     have h : SemiconjBy (k q) x (c • x) := by rw [SemiconjBy, hx, smul_mul_assoc]
     rw [(h.pow_right n).eq, smul_pow, smul_mul_assoc]
@@ -349,16 +342,8 @@ theorem exists_f_pow_smul_eq_zero (hq : IsGenericQuantumParameter q) (v : V) :
 module ends in a nonzero vector `Eⁿ v` killed by `E`. When `v` has weight `μ`, this is a
 highest-weight vector of weight `(q²)ⁿ μ`. -/
 theorem exists_e_pow_smul_ne_zero_and_e_smul_eq_zero (hq : IsGenericQuantumParameter q) {v : V}
-    (hv0 : v ≠ 0) : ∃ n : ℕ, e q ^ n • v ≠ 0 ∧ e q • e q ^ n • v = 0 := by
-  classical
-  have ht := exists_e_pow_smul_eq_zero hq v
-  let n := Nat.find ht
-  have hn : 0 < n := by
-    by_contra! hn
-    have hz : e q ^ n • v = 0 := Nat.find_spec ht
-    exact hv0 (by simpa [Nat.eq_zero_of_le_zero hn] using hz)
-  refine ⟨n - 1, Nat.find_min ht (by omega), ?_⟩
-  simpa [← mul_smul, ← pow_succ', Nat.sub_add_cancel hn] using Nat.find_spec ht
+    (hv0 : v ≠ 0) : ∃ n : ℕ, e q ^ n • v ≠ 0 ∧ e q • e q ^ n • v = 0 :=
+  exists_pow_smul_ne_zero_and_smul_eq_zero hv0 (exists_e_pow_smul_eq_zero hq v)
 
 /-- Every nonzero finite-dimensional module at a generic parameter has a highest-weight
 vector. No diagonalizability of `K` is assumed. -/
