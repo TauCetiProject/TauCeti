@@ -95,9 +95,29 @@ theorem loop_apply (x : FiberInclusionPathFiber p e₀) (t : I) :
 
 variable {p}
 
+variable {Y : Type*} [TopologicalSpace Y]
+
+/-- A continuous family of paths in `E` from the fibre through `e₀` to `e₀`, parametrized by `Y`,
+as a continuous map into the homotopy fibre of the fibre inclusion. -/
+private def ofFamily (G : C(Y × I, E)) (h₀ : ∀ y, p (G (y, 0)) = p e₀)
+    (h₁ : ∀ y, G (y, 1) = e₀) : C(Y, FiberInclusionPathFiber p e₀) where
+  toFun y := ⟨(⟨G (y, 0), h₀ y⟩, G.curry y), rfl, h₁ y⟩
+  continuous_toFun := (((G.continuous.comp (continuous_id.prodMk continuous_const)).subtype_mk
+    _).prodMk G.curry.continuous).subtype_mk _
+
+@[simp]
+private theorem ofFamily_val_fst (G : C(Y × I, E)) (h₀ : ∀ y, p (G (y, 0)) = p e₀)
+    (h₁ : ∀ y, G (y, 1) = e₀) (y : Y) : ((ofFamily e₀ G h₀ h₁ y).val.1 : E) = G (y, 0) :=
+  (rfl)
+
+@[simp]
+private theorem ofFamily_val_snd (G : C(Y × I, E)) (h₀ : ∀ y, p (G (y, 0)) = p e₀)
+    (h₁ : ∀ y, G (y, 1) = e₀) (y : Y) (t : I) : (ofFamily e₀ G h₀ h₁ y).val.2 t = G (y, t) :=
+  (rfl)
+
 /-- **The loop projection is a Hurewicz fibration.** For a Hurewicz fibration `p`, the projection
 from the homotopy fibre of the inclusion of the fibre through `e₀` to the loop space
-`Ω B (p e₀)` is a Hurewicz fibration. The lifts keep the starting point in the fibre fixed. -/
+`Ω B (p e₀)` is a Hurewicz fibration. -/
 theorem isHurewiczFibration_loop (hp : IsHurewiczFibration.{w} p) :
     IsHurewiczFibration.{w} (loop p e₀) := by
   refine isHurewiczFibration_iff.2 ⟨(loop p e₀).continuous, fun A _ f H hH ↦ ?_⟩
@@ -120,17 +140,14 @@ theorem isHurewiczFibration_loop (hp : IsHurewiczFibration.{w} p) :
   have hG₁ : ∀ y : I × A, G (y.2, (1, y.1)) = e₀ := fun y ↦ by
     rw [hGg _ _ (Or.inr (Or.inr rfl))]
     exact (f y.2).property.2
-  let L : I × A → FiberInclusionPathFiber p e₀ := fun y ↦
-    ⟨((f y.2).val.1, ⟨fun t ↦ G (y.2, (t, y.1)), by fun_prop⟩), hG₀ y, hG₁ y⟩
-  have hL : Continuous L := by
-    refine (((continuous_subtype_val.comp f.continuous).fst.comp continuous_snd).prodMk
-      (ContinuousMap.continuous_of_continuous_uncurry _ ?_)).subtype_mk _
-    exact G.continuous.comp ((continuous_snd.comp continuous_fst).prodMk
-      (continuous_snd.prodMk (continuous_fst.comp continuous_fst)))
-  refine ⟨⟨L, hL⟩, funext fun y ↦ Path.ext (funext fun t ↦ ?_), fun a ↦ ?_⟩
+  let L : C(I × A, FiberInclusionPathFiber p e₀) :=
+    ofFamily e₀ (G.comp ⟨fun y : (I × A) × I ↦ (y.1.2, (y.2, y.1.1)), by fun_prop⟩)
+    (fun y ↦ (congrArg p (hG₀ y)).trans (f y.2).val.1.property) hG₁
+  refine ⟨L, funext fun y ↦ Path.ext (funext fun t ↦ ?_), fun a ↦ ?_⟩
   · simpa [L, H'] using congrFun hG (y.2, (t, y.1))
-  · refine Subtype.ext (Prod.ext rfl (ContinuousMap.ext fun t ↦ ?_))
-    simpa [L, g] using hGg a (t, 0) (Or.inl rfl)
+  · refine Subtype.ext (Prod.ext (Subtype.ext ?_) (ContinuousMap.ext fun t ↦ ?_))
+    · simpa [L] using hG₀ (0, a)
+    · simpa [L, g] using hGg a (t, 0) (Or.inl rfl)
 
 /-- The lift of the reversed loop `t ↦ β (1 - t)` from `e₀`, a family of paths parametrized by
 the loop space and lying over the reversed loops. -/
@@ -156,16 +173,10 @@ private theorem liftSymm_zero (hp : IsHurewiczFibration.{v} p) (β : Ω B (p e�
 of the reversed loop `t ↦ β (1 - t)` from `e₀`, a path from the fibre to `e₀` over `β`. The
 section is defined on every loop component. -/
 noncomputable def loopSection (hp : IsHurewiczFibration.{v} p) :
-    C(Ω B (p e₀), FiberInclusionPathFiber p e₀) where
-  toFun β := ⟨(⟨liftSymm e₀ hp (1, β), (apply_liftSymm e₀ hp (1, β)).trans (by simp)⟩,
-      (liftSymm e₀ hp).comp ⟨fun t ↦ (σ t, β), by fun_prop⟩), by simp, by
-      simpa using liftSymm_zero e₀ hp β⟩
-  continuous_toFun := by
-    refine ((((liftSymm e₀ hp).continuous.comp
-      (continuous_const.prodMk continuous_id)).subtype_mk _).prodMk
-      (ContinuousMap.continuous_of_continuous_uncurry _ ?_)).subtype_mk _
-    exact (liftSymm e₀ hp).continuous.comp
-      ((continuous_symm.comp continuous_snd).prodMk continuous_fst)
+    C(Ω B (p e₀), FiberInclusionPathFiber p e₀) :=
+  ofFamily e₀ ((liftSymm e₀ hp).comp ⟨fun y ↦ (σ y.2, y.1), by fun_prop⟩)
+    (fun β ↦ by simpa using apply_liftSymm e₀ hp (1, β))
+    (fun β ↦ by simpa using liftSymm_zero e₀ hp β)
 
 /-- The section of the loop projection lies over the given loop. -/
 @[simp]
@@ -181,9 +192,7 @@ theorem loop_comp_loopSection (hp : IsHurewiczFibration.{v} p) :
   ContinuousMap.ext (loop_loopSection e₀ hp)
 
 /-- **The section of the loop projection is a fibrewise homotopy inverse.** The composite of the
-loop projection and its section is homotopic to the identity through maps over `Ω B (p e₀)`.
-The homotopy is a lift of the constant square `(s, t) ↦ β t` prescribed by the section on one
-side, the given path on the other and `e₀` at the end. -/
+loop projection and its section is homotopic to the identity through maps over `Ω B (p e₀)`. -/
 theorem loopSection_comp_loop_homotopicWith (hp : IsHurewiczFibration.{v} p)
     (hp' : IsHurewiczFibration.{u} p) :
     ((loopSection e₀ hp).comp (loop p e₀)).HomotopicWith (.id _)
@@ -205,16 +214,11 @@ theorem loopSection_comp_loop_homotopicWith (hp : IsHurewiczFibration.{v} p)
   have hG' : ∀ x s, G (x, (s, 0)) = e₀ := fun x s ↦ by
     simpa [α, (loopSection e₀ hp _).property.2] using hG x s
   -- The homotopy reverses the lifted paths `t ↦ G (x, (s, t))` back.
-  let K : I × FiberInclusionPathFiber p e₀ → FiberInclusionPathFiber p e₀ := fun y ↦
-    ⟨(⟨G (y.2, (y.1, 1)), (hpG _ _ _).trans (by simpa [γ] using apply_path_zero y.2)⟩,
-      ⟨fun t ↦ G (y.2, (y.1, σ t)), by fun_prop⟩), by simp, by simpa using hG' y.2 y.1⟩
-  have hK : Continuous K := by
-    refine (((G.continuous.comp (continuous_snd.prodMk
-      (continuous_fst.prodMk continuous_const))).subtype_mk _).prodMk
-      (ContinuousMap.continuous_of_continuous_uncurry _ ?_)).subtype_mk _
-    exact G.continuous.comp ((continuous_snd.comp continuous_fst).prodMk
-      ((continuous_fst.comp continuous_fst).prodMk (continuous_symm.comp continuous_snd)))
-  refine ⟨⟨⟨⟨K, hK⟩, fun x ↦ ?_, fun x ↦ ?_⟩, fun s ↦ ContinuousMap.ext fun x ↦ ?_⟩⟩
+  let K : C(I × FiberInclusionPathFiber p e₀, FiberInclusionPathFiber p e₀) :=
+    ofFamily e₀ (G.comp ⟨fun y : (I × FiberInclusionPathFiber p e₀) × I ↦
+      (y.1.2, (y.1.1, σ y.2)), by fun_prop⟩)
+    (fun y ↦ by simpa [γ, apply_path_zero] using hpG y.2 y.1 1) (fun y ↦ by simpa using hG' y.2 y.1)
+  refine ⟨⟨⟨K, fun x ↦ ?_, fun x ↦ ?_⟩, fun s ↦ ContinuousMap.ext fun x ↦ ?_⟩⟩
   · refine Subtype.ext (Prod.ext (Subtype.ext ?_) (ContinuousMap.ext fun t ↦ ?_))
     · simpa [K, α, (loopSection e₀ hp _).property.1] using hG₀ x 1
     · simpa [K, α] using hG₀ x (σ t)
