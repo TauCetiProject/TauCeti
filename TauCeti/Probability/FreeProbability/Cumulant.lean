@@ -8,7 +8,6 @@ module
 public import Mathlib.Combinatorics.Enumerative.IncidenceAlgebra
 public import Mathlib.Data.Finset.Sort
 public import TauCeti.Combinatorics.NoncrossingPartition.Basic
-import TauCeti.Order.Partition.Finpartition
 
 /-!
 # Free cumulants
@@ -69,7 +68,7 @@ variable {R A α : Type*} [LinearOrder α] {s : Finset α}
 
 section Moment
 
-variable [CommSemiring R] [Monoid A]
+variable [CommMonoid R] [Monoid A]
 
 /-- The *block moment* `φ_P(a)` of a finite partition `P` of a set `s` of positions: the product
 over the parts `B` of `P` of `φ (a_{b₁} * ⋯ * a_{bₖ})`, where `b₁ < ⋯ < bₖ` lists `B` in
@@ -91,6 +90,7 @@ theorem partitionMoment_bot (φ : A → R) (a : α → A) :
 
 /-- The block moment of the partition of a nonempty set into one part is the moment of the whole
 word, read in increasing order. -/
+@[simp]
 theorem partitionMoment_top (φ : A → R) (a : α → A) (hs : s.Nonempty) :
     partitionMoment φ a (⊤ : Finpartition s) = φ ((s.sort.map a).prod) := by
   rw [partitionMoment_def, Finpartition.parts_top hs.ne_empty, prod_singleton]
