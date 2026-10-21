@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.ContMDiff.Defs
+public import Mathlib.Geometry.Manifold.MFDeriv.Defs
 public import TauCeti.Analysis.Fredholm.LevelSet.Smooth
 
 /-!
@@ -43,6 +44,8 @@ sense.
   `n`, is a `C^m` manifold modelled on `Fin n → 𝕜`.
 * `TauCeti.contMDiff_coe_levelSet`: for this atlas, the inclusion of the level set into the
   ambient Banach space is `C^m`.
+* `TauCeti.hasMFDerivAt_coe_levelSet`: for this atlas, the differential of the inclusion at `z` is
+  the inclusion of `ker (D z)`, read in the model space.
 
 ## References
 
@@ -178,10 +181,49 @@ theorem contMDiff_coe_levelSet
   -- In the model space the extended charts are the preferred chart at `z` and the identity.
   have e : chartAt (Fin n → 𝕜) z = levelSetChartAt hf hFred hsurj hindex z :=
     levelSetChartedSpace_chartAt hf hFred hsurj hindex z
-  rw [extChartAt_model_space_eq_id, PartialEquiv.refl_coe, Function.id_comp, extChartAt_coe_symm,
-    modelWithCornersSelf_coe_symm, Function.comp_id, extChartAt_coe, modelWithCornersSelf_coe,
-    Set.range_id, Function.id_comp, e]
-  exact h.contDiffWithinAt
+  simpa [mfld_simps, e, Function.comp_def, levelSetChartAt_apply_self hf hFred hsurj hindex z] using
+    h.contDiffWithinAt
+
+/-- **The derivative of the inclusion of a regular level set.** For the atlas of
+`TauCeti.levelSetChartedSpace`, the differential at `z` of the inclusion of the level set
+`{x | f x = c}` into the ambient Banach space is the inclusion of `ker (D z)`, read in the model
+space through `ContinuousLinearMap.kerModelEquiv`. So the tangent space at `z` is `ker (D z)`. -/
+theorem hasMFDerivAt_coe_levelSet
+    (hf : ∀ x ∈ {x | f x = c}, HasStrictFDerivAt f (D x) x)
+    (hFred : ∀ x ∈ {x | f x = c}, ContinuousLinearMap.IsFredholm (D x))
+    (hsurj : ∀ x ∈ {x | f x = c}, Function.Surjective (D x))
+    (hindex : ∀ x ∈ {x | f x = c}, ContinuousLinearMap.index (D x) = n)
+    (z : ↥{x | f x = c}) :
+    letI := levelSetChartedSpace hf hFred hsurj hindex
+    HasMFDerivAt 𝓘(𝕜, Fin n → 𝕜) 𝓘(𝕜, E) (Subtype.val : ↥{x | f x = c} → E) z
+      ((D z.1).ker.subtypeL.comp
+        (((D z.1).kerModelEquiv (hFred z.1 z.2).finite_ker
+          (finrank_ker_eq_of_mem_levelSet hsurj hindex z.2)).symm :
+            (Fin n → 𝕜) →L[𝕜] ↥(D z.1).ker)) := by
+  let _i := levelSetChartedSpace hf hFred hsurj hindex
+  set K := (D z.1).kerModelEquiv (hFred z.1 z.2).finite_ker
+    (finrank_ker_eq_of_mem_levelSet hsurj hindex z.2)
+  set chart := levelSetChart (hf z.1 z.2) (LinearMap.range_eq_top.2 (hsurj z.1 z.2))
+    (hFred z.1 z.2).closedComplemented_ker z.2
+  have hderiv : HasFDerivAt (fun j ↦ ((chart.symm j : ↥{x | f x = c}) : E))
+      (D z.1).ker.subtypeL (K.symm 0) := by
+    simpa only [map_zero] using
+      (hasStrictFDerivAt_coe_levelSetChart_symm (hf z.1 z.2) _ _ z.2).hasFDerivAt
+  have hcoord : HasFDerivAt
+      (fun k ↦ (((levelSetChartAt hf hFred hsurj hindex z).symm k : ↥{x | f x = c}) : E))
+      ((D z.1).ker.subtypeL.comp (K.symm : (Fin n → 𝕜) →L[𝕜] ↥(D z.1).ker)) 0 := by
+    simpa only [levelSetChartAt_symm_apply, Function.comp_def] using
+      hderiv.comp 0 K.symm.hasFDerivAt
+  -- In the model space the extended charts are the preferred chart at `z` and the identity.
+  have e : chartAt (Fin n → 𝕜) z = levelSetChartAt hf hFred hsurj hindex z :=
+    levelSetChartedSpace_chartAt hf hFred hsurj hindex z
+  refine ⟨continuous_subtype_val.continuousAt, ?_⟩
+  simp only [mfld_simps, e, Function.comp_def, levelSetChartAt_apply_self hf hFred hsurj hindex z,
+    hasFDerivWithinAt_univ]
+  -- The tangent-space casts for these boundaryless models are identity maps.
+  convert hcoord using 1
+  ext v
+  rfl
 
 end TauCeti
 

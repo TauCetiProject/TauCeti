@@ -53,6 +53,8 @@ manifold structure.
 * `TauCeti.isCompact_stiefel`: the Stiefel manifold is compact.
 * `TauCeti.contMDiff_coe_stiefel` and `TauCeti.contMDiff_stiefelProj`: the inclusion into
   `Fin k → E` and the projections to the unit sphere are smooth.
+* `TauCeti.range_mfderiv_coe_stiefel`: the tangent space of the Stiefel manifold at `v`, as the
+  range of the differential of the inclusion, is the kernel of the derivative of the Gram map.
 
 ## References
 
@@ -222,6 +224,19 @@ theorem contMDiff_coe_stiefel [FiniteDimensional ℝ E] {r : ℕ∞ω} :
     ContMDiff 𝓘(ℝ, Fin (k * finrank ℝ E - (k + 1).choose 2) → ℝ) 𝓘(ℝ, Fin k → E) r
       ((↑) : stiefel E k → Fin k → E) :=
   contMDiff_coe_levelSet _ _ _ _ fun _ _ ↦ (contDiff_gramSym2 E k).contDiffAt
+
+variable {E k} in
+/-- **The tangent space of the Stiefel manifold.** The differential at `v` of the inclusion into
+the space of `k`-families has range the kernel of the derivative `TauCeti.gramSym2Deriv E k v` of
+the Gram map: the families `a` with `⟪v i, a j⟫ + ⟪a i, v j⟫ = 0` for all `i` and `j`. -/
+theorem range_mfderiv_coe_stiefel [FiniteDimensional ℝ E] (v : stiefel E k) :
+    LinearMap.range (mfderiv 𝓘(ℝ, Fin (k * finrank ℝ E - (k + 1).choose 2) → ℝ) 𝓘(ℝ, Fin k → E)
+      ((↑) : stiefel E k → Fin k → E) v).toLinearMap = (gramSym2Deriv E k v).ker := by
+  have h : HasMFDerivAt 𝓘(ℝ, Fin (k * finrank ℝ E - (k + 1).choose 2) → ℝ) 𝓘(ℝ, Fin k → E)
+      ((↑) : stiefel E k → Fin k → E) v _ := hasMFDerivAt_coe_levelSet _ _ _ _ v
+  rw [h.mfderiv]
+  exact (LinearMap.range_comp_of_range_eq_top _ (LinearEquiv.range _)).trans
+    (Submodule.range_subtype _)
 
 /-- The `i`th vector of an orthonormal frame, as a point of the unit sphere. For `k = 2` and
 `i = 0` this is the projection of the unit tangent bundle of the sphere to its base. -/
