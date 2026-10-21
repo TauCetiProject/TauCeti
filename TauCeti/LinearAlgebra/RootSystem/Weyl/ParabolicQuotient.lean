@@ -52,10 +52,12 @@ saturated chains of orbit weights, in which each step is a reflection `ξ ↦ s_
   Weyl-group element with the same orbit weight.
 * `TauCeti.bruhatStep_ofIdx_mul_of_coroot'_neg`: `s_β w < w` in the Weyl group itself when
   `⟨w λ, β^∨⟩ < 0`.
-* `TauCeti.bruhatLE_and_ne_of_coroot'_neg`, `TauCeti.bruhatLE_and_ne_of_coroot'_pos` and
-  `TauCeti.eq_of_coroot'_eq_zero`: **the reflection test** in its three cases.
-* `TauCeti.bruhatLE_and_ne_iff_coroot'_neg` and `TauCeti.eq_iff_coroot'_eq_zero`: the reflection
-  test as characterizations of the strict order and of equality.
+* `TauCeti.bruhatLE_and_ne_of_isMinimalCosetRep_of_coroot'_neg`,
+  `TauCeti.bruhatLE_and_ne_of_isMinimalCosetRep_of_coroot'_pos` and
+  `TauCeti.eq_of_isMinimalCosetRep_of_coroot'_eq_zero`: **the reflection test** in its three cases.
+* `TauCeti.bruhatLE_and_ne_iff_coroot'_neg_of_isMinimalCosetRep` and
+  `TauCeti.eq_iff_coroot'_eq_zero_of_isMinimalCosetRep`: the reflection test as characterizations
+  of the strict order and of equality.
 
 ## References
 
@@ -130,25 +132,18 @@ theorem existsUnique_isMinimalCosetRep_smul_eq (hlam : lam ∈ dominantChamber P
       u • lam = w • lam := by
   obtain ⟨v, hv, hmin⟩ :=
     (weylCoxeterSystem P b).exists_isMinimalCosetRep (P.wallIndices b lam) w
-  refine ⟨w * v, ⟨hmin, ?_⟩, fun u ⟨hu, hulam⟩ ↦ ?_⟩
+  refine ⟨w * v, ⟨hmin, ?_⟩, fun u ⟨hu, hulam⟩ ↦ hu.eq_of_inv_mul_mem _ hmin ?_⟩
   · rw [← inv_mul_mem_parabolic_wallIndices_iff hlam, inv_mul_cancel_left]
     exact hv
-  -- `u` and `w * v` are both minimal in the coset of `w * v`, so they are its first factors.
-  have hmem : u⁻¹ * (w * v) ∈ (weylCoxeterSystem P b).parabolic (P.wallIndices b lam) := by
-    rw [inv_mul_mem_parabolic_wallIndices_iff hlam, hulam, mul_smul,
+  · rw [inv_mul_mem_parabolic_wallIndices_iff hlam, hulam, mul_smul,
       MulAction.mem_stabilizer_iff.mp ((P.parabolic_wallIndices_eq_stabilizer b hlam).le hv)]
-  obtain ⟨_, -, huniq⟩ :=
-    (weylCoxeterSystem P b).existsUnique_isMinimalCosetRep_mul (P.wallIndices b lam) (w * v)
-  have h₁ := huniq (u, u⁻¹ * (w * v)) ⟨hu, hmem, (mul_inv_cancel_left u _).symm⟩
-  have h₂ := huniq (w * v, 1) ⟨hmin, one_mem _, (mul_one _).symm⟩
-  exact congrArg Prod.fst (h₁.trans h₂.symm)
 
 /-- **Minimal coset representatives are determined by their orbit weight.** -/
 theorem eq_of_isMinimalCosetRep_of_smul_eq (hlam : lam ∈ dominantChamber P b)
     {u v : P.weylGroup} (hu : (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) u)
     (hv : (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) v)
     (h : u • lam = v • lam) : u = v :=
-  (existsUnique_isMinimalCosetRep_smul_eq hlam v).unique ⟨hu, h⟩ ⟨hv, rfl⟩
+  hu.eq_of_inv_mul_mem _ hv ((inv_mul_mem_parabolic_wallIndices_iff hlam).mpr h.symm)
 
 /-- **The minimal coset representative of an orbit weight is Bruhat-below every Weyl-group element
 with that orbit weight.** -/
@@ -177,7 +172,8 @@ theorem bruhatStep_ofIdx_mul_of_coroot'_neg (hlam : lam ∈ dominantChamber P b)
 /-- **Reflection test, negative pairing.** Let `β` be a positive root with `⟨w λ, β^∨⟩ < 0`, and
 let `v` be the minimal coset representative of `s_β w`, so `v λ = s_β (w λ)`. Then `v < w` in the
 Bruhat order. Here `w` is arbitrary; it need not be minimal in its own coset. -/
-theorem bruhatLE_and_ne_of_coroot'_neg (hlam : lam ∈ dominantChamber P b) {v w : P.weylGroup}
+theorem bruhatLE_and_ne_of_isMinimalCosetRep_of_coroot'_neg (hlam : lam ∈ dominantChamber P b)
+    {v w : P.weylGroup}
     (hv : (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) v) {β : ι}
     (hvw : v • lam = (RootPairing.weylGroup.ofIdx P β * w) • lam) (hβ : b.IsPos β)
     (hneg : P.coroot' β (w • lam) < 0) :
@@ -190,7 +186,8 @@ theorem bruhatLE_and_ne_of_coroot'_neg (hlam : lam ∈ dominantChamber P b) {v w
 /-- **Reflection test, positive pairing.** Let `u` be a minimal coset representative and `β` a
 positive root with `⟨u λ, β^∨⟩ > 0`. Then `u < w` in the Bruhat order for every `w` with
 `w λ = s_β (u λ)`, in particular for the minimal coset representative of `s_β u`. -/
-theorem bruhatLE_and_ne_of_coroot'_pos (hlam : lam ∈ dominantChamber P b) {u w : P.weylGroup}
+theorem bruhatLE_and_ne_of_isMinimalCosetRep_of_coroot'_pos (hlam : lam ∈ dominantChamber P b)
+    {u w : P.weylGroup}
     (hu : (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) u) {β : ι}
     (hwu : w • lam = (RootPairing.weylGroup.ofIdx P β * u) • lam) (hβ : b.IsPos β)
     (hpos : 0 < P.coroot' β (u • lam)) :
@@ -198,7 +195,7 @@ theorem bruhatLE_and_ne_of_coroot'_pos (hlam : lam ∈ dominantChamber P b) {u w
   -- Reflecting back, `u λ = s_β (w λ)` and `⟨w λ, β^∨⟩ = -⟨u λ, β^∨⟩ < 0`.
   have hwlam : w • lam = P.reflection β (u • lam) := by
     rw [hwu, mul_smul, RootPairing.weylGroup.ofIdx_smul, Equiv.reflection_smul]
-  refine bruhatLE_and_ne_of_coroot'_neg hlam hu ?_ hβ ?_
+  refine bruhatLE_and_ne_of_isMinimalCosetRep_of_coroot'_neg hlam hu ?_ hβ ?_
   · rw [mul_smul, hwlam, RootPairing.weylGroup.ofIdx_smul, Equiv.reflection_smul,
       reflection_same]
   · rw [hwlam, coroot'_reflection_self]
@@ -206,7 +203,8 @@ theorem bruhatLE_and_ne_of_coroot'_pos (hlam : lam ∈ dominantChamber P b) {u w
 
 /-- **Reflection test, zero pairing.** If `⟨u λ, β^∨⟩ = 0`, then `s_β` fixes `u λ`, so `u` and
 `s_β u` have the same minimal coset representative. -/
-theorem eq_of_coroot'_eq_zero (hlam : lam ∈ dominantChamber P b) {u v : P.weylGroup}
+theorem eq_of_isMinimalCosetRep_of_coroot'_eq_zero (hlam : lam ∈ dominantChamber P b)
+    {u v : P.weylGroup}
     (hu : (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) u)
     (hv : (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) v) {β : ι}
     (hvu : v • lam = (RootPairing.weylGroup.ofIdx P β * u) • lam)
@@ -217,25 +215,28 @@ theorem eq_of_coroot'_eq_zero (hlam : lam ∈ dominantChamber P b) {u v : P.weyl
 /-- **The reflection test characterizes the strict Bruhat order on minimal coset
 representatives.** If `u` and `v` are the minimal coset representatives of `u` and `s_β u` for a
 positive root `β`, then `v < u` exactly when `⟨u λ, β^∨⟩ < 0`. -/
-theorem bruhatLE_and_ne_iff_coroot'_neg (hlam : lam ∈ dominantChamber P b) {u v : P.weylGroup}
+theorem bruhatLE_and_ne_iff_coroot'_neg_of_isMinimalCosetRep (hlam : lam ∈ dominantChamber P b)
+    {u v : P.weylGroup}
     (hu : (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) u)
     (hv : (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) v) {β : ι}
     (hvu : v • lam = (RootPairing.weylGroup.ofIdx P β * u) • lam) (hβ : b.IsPos β) :
     (weylCoxeterSystem P b).BruhatLE v u ∧ v ≠ u ↔ P.coroot' β (u • lam) < 0 := by
   refine ⟨fun ⟨hle, hne⟩ ↦ lt_of_not_ge fun hnonneg ↦ ?_,
-    bruhatLE_and_ne_of_coroot'_neg hlam hv hvu hβ⟩
+    bruhatLE_and_ne_of_isMinimalCosetRep_of_coroot'_neg hlam hv hvu hβ⟩
   rcases hnonneg.eq_or_lt with hzero | hpos
-  · exact hne (eq_of_coroot'_eq_zero hlam hu hv hvu hzero.symm)
-  · exact hne (hle.antisymm (bruhatLE_and_ne_of_coroot'_pos hlam hu hvu hβ hpos).1)
+  · exact hne (eq_of_isMinimalCosetRep_of_coroot'_eq_zero hlam hu hv hvu hzero.symm)
+  · exact hne
+      (hle.antisymm (bruhatLE_and_ne_of_isMinimalCosetRep_of_coroot'_pos hlam hu hvu hβ hpos).1)
 
 /-- **The reflection test characterizes equal cosets.** If `u` and `v` are the minimal coset
 representatives of `u` and `s_β u` for a root `β`, then `v = u` exactly when `⟨u λ, β^∨⟩ = 0`. -/
-theorem eq_iff_coroot'_eq_zero (hlam : lam ∈ dominantChamber P b) {u v : P.weylGroup}
+theorem eq_iff_coroot'_eq_zero_of_isMinimalCosetRep (hlam : lam ∈ dominantChamber P b)
+    {u v : P.weylGroup}
     (hu : (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) u)
     (hv : (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) v) {β : ι}
     (hvu : v • lam = (RootPairing.weylGroup.ofIdx P β * u) • lam) :
     v = u ↔ P.coroot' β (u • lam) = 0 := by
-  refine ⟨fun h ↦ ?_, eq_of_coroot'_eq_zero hlam hu hv hvu⟩
+  refine ⟨fun h ↦ ?_, eq_of_isMinimalCosetRep_of_coroot'_eq_zero hlam hu hv hvu⟩
   -- If `v = u`, then `s_β` fixes `u λ`, and reflecting negates the pairing with `β^∨`.
   rw [h, mul_smul, RootPairing.weylGroup.ofIdx_smul, Equiv.reflection_smul] at hvu
   have hpair := congrArg (P.coroot' β) hvu
