@@ -164,25 +164,24 @@ theorem iSupIndep_isotypicComponent {κ : Type*} (S : κ → Type*) [∀ j, AddC
     [∀ j, Module R (S j)] [∀ j, IsSimpleModule R (S j)]
     (hS : ∀ i j, Nonempty (S i ≃ₗ[R] S j) → i = j) :
     iSupIndep fun j => isotypicComponent R M (S j) := by
-  rw [iSupIndep_def']
-  intro j
-  rw [disjoint_iff]
-  by_contra hne
-  set s := (fun i => isotypicComponent R M (S i)) '' {i | i ≠ j}
-  have : IsSemisimpleModule R ↥(isotypicComponent R M (S j) ⊓ sSup s) :=
-    IsSemisimpleModule.of_injective _ (Submodule.inclusion_injective inf_le_left)
-  -- A simple submodule of the intersection is a copy of `S j` and of some `S i` with `i ≠ j`.
-  obtain ⟨N, hN, _⟩ := (IsSemisimpleModule.eq_bot_or_exists_simple_le _).resolve_left hne
+  -- Restricted to the nonzero components, the family is an injective reindexing of
+  -- `isotypicComponents R M`.
+  have hmem (j : κ) (hj : isotypicComponent R M (S j) ≠ ⊥) :
+      isotypicComponent R M (S j) ∈ isotypicComponents R M := by
+    obtain ⟨N, hN, _⟩ := (IsSemisimpleModule.eq_bot_or_exists_simple_le _).resolve_left hj
+    obtain ⟨e⟩ := isIsotypicOfType_submodule_iff.mp
+      (IsIsotypicOfType.isotypicComponent R M (S j)) N hN
+    exact ⟨N, ‹_›, e.isotypicComponent_eq.symm⟩
+  rw [← iSupIndep_ne_bot]
+  refine ((sSupIndep_iff _).mp (sSupIndep_isotypicComponents R M)).comp
+    (f := fun j : {j // isotypicComponent R M (S j) ≠ ⊥} => ⟨_, hmem j.1 j.2⟩) ?_
+  intro ⟨i, hi⟩ ⟨j, _⟩ hij
+  -- A simple submodule of the common component is a copy of both `S i` and `S j`.
+  obtain ⟨N, hN, _⟩ := (IsSemisimpleModule.eq_bot_or_exists_simple_le _).resolve_left hi
   obtain ⟨e⟩ := isIsotypicOfType_submodule_iff.mp
-    (IsIsotypicOfType.isotypicComponent R M (S j)) N (hN.trans inf_le_left)
-  have (m : s) : IsSemisimpleModule R m := by
-    obtain ⟨_, ⟨i, -, rfl⟩⟩ := m
-    infer_instance
-  obtain ⟨_, ⟨i, hij, rfl⟩, N', hN', ⟨e'⟩⟩ := N.le_linearEquiv_of_le_sSup s
-    (hN.trans inf_le_right)
-  have := IsSimpleModule.congr e'.symm
-  obtain ⟨e''⟩ := isIsotypicOfType_submodule_iff.mp
-    (IsIsotypicOfType.isotypicComponent R M (S i)) N' hN'
-  exact hij (hS i j ⟨e''.symm.trans (e'.symm.trans e)⟩)
+    (IsIsotypicOfType.isotypicComponent R M (S i)) N hN
+  obtain ⟨e'⟩ := isIsotypicOfType_submodule_iff.mp
+    (IsIsotypicOfType.isotypicComponent R M (S j)) N (hN.trans (congrArg Subtype.val hij).le)
+  exact Subtype.ext (hS i j ⟨e.symm.trans e'⟩)
 
 end TauCeti

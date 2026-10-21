@@ -39,7 +39,9 @@ no choice of decomposition.
   generic parameter, a `UqSl2 q`-module is locally finite exactly when it is isomorphic to a
   direct sum `⨁ᵢ L_(mᵢ)^(εᵢ)` of signed ladder modules.
 * `TauCeti.UqSl2.ladderModuleTensorHomEquiv`: at a generic parameter, the evaluation isomorphism
-  `⨁_(m,ε) L_m^ε ⊗ Hom_U(L_m^ε, V) ≃ V` for a locally finite module `V`.
+  `⨁_(m,ε) L_m^ε ⊗ Hom_U(L_m^ε, V) ≃ V` for a locally finite module `V`, natural in `V`
+  (`TauCeti.UqSl2.ladderModuleTensorHomEquiv_map`), so that `End_U(V)` acts on the multiplicity
+  spaces alone (`TauCeti.UqSl2.ladderModuleTensorHomEquiv_symm_apply_map`).
 
 ## References
 
@@ -130,5 +132,44 @@ theorem ladderModuleTensorHomEquiv_single_tmul (hq : IsGenericQuantumParameter q
     (φ : LadderModule q p.1 p.2 →ₗ[UqSl2 q] V) :
     ladderModuleTensorHomEquiv hq (DFinsupp.single p (v ⊗ₜ φ)) = φ v := by
   simp [ladderModuleTensorHomEquiv]
+
+section Naturality
+
+variable {W : Type*} [AddCommGroup W] [Module ℂ W] [Module (UqSl2 q) W]
+  [IsScalarTower ℂ (UqSl2 q) W]
+
+-- Not `@[simp]`: unfolding `ladderModuleTensorHomEquiv` rewrites the left-hand side.
+/-- **The evaluation isomorphism is natural.** A `UqSl2 q`-linear map `g : V → W` of locally
+finite modules acts on each multiplicity space `Hom_U(L_m^ε, V)` by postcomposition, and trivially
+on the `L_m^ε`. -/
+theorem ladderModuleTensorHomEquiv_map (hq : IsGenericQuantumParameter q)
+    [IsLocallyFiniteModule ℂ (UqSl2 q) V] [IsLocallyFiniteModule ℂ (UqSl2 q) W]
+    (g : V →ₗ[UqSl2 q] W)
+    (x : Π₀ p : ℕ × ℤˣ, LadderModule q p.1 p.2 ⊗[ℂ] (LadderModule q p.1 p.2 →ₗ[UqSl2 q] V)) :
+    ladderModuleTensorHomEquiv hq
+        (DFinsupp.mapRange.linearMap (fun p =>
+          AlgebraTensorModule.map (LinearMap.id (R := UqSl2 q) (M := LadderModule q p.1 p.2))
+            (LinearMap.compRight (M := LadderModule q p.1 p.2) ℂ g)) x) =
+      g (ladderModuleTensorHomEquiv hq x) := by
+  simp only [ladderModuleTensorHomEquiv, directSumIsotypicTensorEquiv_apply]
+  exact directSumIsotypicEval_map_apply ℂ _ g x
+
+/-- **The commutant acts on the multiplicity spaces.** Through the inverse evaluation
+isomorphisms, a `UqSl2 q`-linear map `g : V → W` of locally finite modules is `1 ⊗ (g ∘ ·)` on
+every summand; for `W = V` this is the action of `End_U(V)` on the `Hom_U(L_m^ε, V)`. -/
+@[simp]
+theorem ladderModuleTensorHomEquiv_symm_apply_map (hq : IsGenericQuantumParameter q)
+    [IsLocallyFiniteModule ℂ (UqSl2 q) V] [IsLocallyFiniteModule ℂ (UqSl2 q) W]
+    (g : V →ₗ[UqSl2 q] W) (v : V) :
+    (ladderModuleTensorHomEquiv hq).symm (g v) =
+      DFinsupp.mapRange.linearMap (fun p =>
+        AlgebraTensorModule.map (LinearMap.id (R := UqSl2 q) (M := LadderModule q p.1 p.2))
+          (LinearMap.compRight (M := LadderModule q p.1 p.2) ℂ g))
+        ((ladderModuleTensorHomEquiv hq).symm v) := by
+  apply (ladderModuleTensorHomEquiv hq).injective
+  rw [LinearEquiv.apply_symm_apply, ladderModuleTensorHomEquiv_map hq g,
+    LinearEquiv.apply_symm_apply]
+
+end Naturality
 
 end TauCeti.UqSl2
