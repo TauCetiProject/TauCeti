@@ -9,8 +9,9 @@ public import Mathlib.RingTheory.Finiteness.Nakayama
 public import Mathlib.RingTheory.Ideal.Operations
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
--- Proof-only: ideals of `ℤ` are principal.
-import Mathlib.RingTheory.Int.Basic
+-- Proof-only: the prime ideals of `ℤ`, and `ℤ` is not a field.
+import Mathlib.Algebra.Ring.Int.Field
+import Mathlib.RingTheory.Ideal.NatInt
 
 /-!
 # Nakayama's lemma with weighted generators, and over `ℤ`
@@ -98,18 +99,9 @@ theorem eq_bot_of_forall_isMaximal_le_smul {N : Submodule R M} (hN : N.FG)
 theorem eq_bot_of_forall_prime_le_smul {M : Type*} [AddCommGroup M] {N : Submodule ℤ M}
     (hN : N.FG) (h : ∀ p : ℕ, p.Prime → N ≤ Ideal.span {(p : ℤ)} • N) : N = ⊥ := by
   refine eq_bot_of_forall_isMaximal_le_smul hN fun m hm => ?_
-  -- The maximal ideal `m = (a)` equals `(p)` for any prime `p` dividing `a`.
-  obtain ⟨a, rfl⟩ := (IsPrincipalIdealRing.principal m).principal
-  rw [Ideal.submodule_span_eq] at hm ⊢
-  have ha : a.natAbs ≠ 1 := by
-    rw [Ne, ← Int.isUnit_iff_natAbs_eq, ← Ideal.span_singleton_eq_top]
-    exact hm.ne_top
-  have hp := Nat.minFac_prime ha
-  have hpm : Ideal.span {(a.natAbs.minFac : ℤ)} ≠ ⊤ := by
-    rw [Ne, Ideal.span_singleton_eq_top, Int.isUnit_iff_natAbs_eq, Int.natAbs_natCast]
-    exact hp.one_lt.ne'
-  rw [hm.eq_of_le hpm (Ideal.span_singleton_le_span_singleton.2
-    (Int.natCast_dvd.2 (Nat.minFac_dvd _)))]
-  exact h _ hp
+  -- The maximal ideals of `ℤ` are the ideals `(p)` for primes `p`.
+  obtain rfl | ⟨p, hp, rfl⟩ := Ideal.isPrime_int_iff.1 hm.isPrime
+  · exact absurd rfl (Ring.ne_bot_of_isMaximal_of_not_isField hm Int.not_isField)
+  · exact h p hp
 
 end Submodule

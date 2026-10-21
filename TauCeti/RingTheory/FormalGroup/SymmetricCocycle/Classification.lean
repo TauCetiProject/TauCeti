@@ -44,15 +44,16 @@ abelian group `M`, and we classify their solutions there.
 
 ## Main definitions
 
-* `TauCeti.IsCocycleCoeff n b`: the coefficient equations in degree `n` on a sequence `b` in an
-  abelian group.
+* `TauCeti.IsSymmetricCocycleCoeff n b`: the coefficient equations in degree `n` on a sequence
+  `b` in an abelian group.
 
 ## Main results
 
-* `TauCeti.isCocycleCoeff_coeff`: the coefficients of a symmetric additive 2-cocycle satisfy the
-  coefficient equations.
-* `TauCeti.IsCocycleCoeff.exists_eq_nsmul`: every solution of the coefficient equations in an
-  abelian group is a multiple of the coefficients `n.choose i / d_n` of `C_n`.
+* `TauCeti.isSymmetricCocycleCoeff_coeff`: the coefficients of a symmetric additive 2-cocycle
+  satisfy the coefficient equations.
+* `TauCeti.IsSymmetricCocycleCoeff.exists_eq_nsmul`: every solution of the coefficient equations
+  in an abelian group is, at the indices `0 < i < n`, a multiple of the coefficients
+  `n.choose i / d_n` of `C_n`.
 * `TauCeti.exists_eq_smul_lazardCocycle`: a homogeneous symmetric additive 2-cocycle of degree
   `n ≠ 0` is `r • C_n` for some `r`.
 * `TauCeti.existsUnique_eq_smul_lazardCocycle`: for `n ≥ 2`, the multiple `r` is unique.
@@ -79,7 +80,7 @@ variable {M N : Type*} [AddCommGroup M] [AddCommGroup N] {n : ℕ}
 
 /-- The linear equations satisfied by the coefficients `bᵢ` of `XⁱYⁿ⁻ⁱ` in a symmetric additive
 2-cocycle of degree `n`, with coefficients in an abelian group. -/
-structure IsCocycleCoeff (n : ℕ) (b : ℕ → M) : Prop where
+structure IsSymmetricCocycleCoeff (n : ℕ) (b : ℕ → M) : Prop where
   /-- Symmetry: `b_{n - i} = bᵢ`. -/
   symm : ∀ i ≤ n, b (n - i) = b i
   /-- The cocycle identity at `XⁱYʲZᵏ` with `i, j, k ≥ 1`:
@@ -87,25 +88,26 @@ structure IsCocycleCoeff (n : ℕ) (b : ℕ → M) : Prop where
   rel : ∀ i j k : ℕ, 0 < i → 0 < j → 0 < k → i + j + k = n →
     (i + j).choose i • b (i + j) = (j + k).choose j • b i
 
-namespace IsCocycleCoeff
+namespace IsSymmetricCocycleCoeff
 
 variable {b b' : ℕ → M}
 
 /-- Solutions of the coefficient equations are preserved by additive group homomorphisms. -/
-theorem map (h : IsCocycleCoeff n b) (φ : M →+ N) :
-    IsCocycleCoeff n fun i => φ (b i) where
+theorem map (h : IsSymmetricCocycleCoeff n b) (φ : M →+ N) :
+    IsSymmetricCocycleCoeff n fun i => φ (b i) where
   symm i hi := by rw [h.symm i hi]
   rel i j k hi hj hk hn := by rw [← map_nsmul, ← map_nsmul, h.rel i j k hi hj hk hn]
 
 /-- The difference of two solutions of the coefficient equations is a solution. -/
-theorem sub (h : IsCocycleCoeff n b) (h' : IsCocycleCoeff n b') :
-    IsCocycleCoeff n fun i => b i - b' i where
+theorem sub (h : IsSymmetricCocycleCoeff n b) (h' : IsSymmetricCocycleCoeff n b') :
+    IsSymmetricCocycleCoeff n fun i => b i - b' i where
   symm i hi := by rw [h.symm i hi, h'.symm i hi]
   rel i j k hi hj hk hn := by rw [nsmul_sub, nsmul_sub, h.rel i j k hi hj hk hn,
     h'.rel i j k hi hj hk hn]
 
 /-- The equations with `k = 1`: `(n - i) • bᵢ = (n - 1).choose i • b_{n - 1}`. -/
-private theorem sub_nsmul_eq (h : IsCocycleCoeff n b) {i : ℕ} (hi : 0 < i) (hin : i + 1 < n) :
+private theorem sub_nsmul_eq (h : IsSymmetricCocycleCoeff n b) {i : ℕ} (hi : 0 < i)
+    (hin : i + 1 < n) :
     (n - i) • b i = (n - 1).choose i • b (n - 1) := by
   have := h.rel i (n - 1 - i) 1 hi (by omega) one_pos (by omega)
   have h₁ : i + (n - 1 - i) = n - 1 := by omega
@@ -113,7 +115,7 @@ private theorem sub_nsmul_eq (h : IsCocycleCoeff n b) {i : ℕ} (hi : 0 < i) (hi
   rw [h₁, Nat.choose_succ_self_right, h₂] at this
   exact this.symm
 
-end IsCocycleCoeff
+end IsSymmetricCocycleCoeff
 
 end CoeffEquations
 
@@ -132,8 +134,8 @@ private theorem eq_zero_of_nsmul_eq_zero_of_not_dvd (hp : p.Prime) {m : ℕ} (hp
 /-- If `p ∤ n` or `n = p`, a `p`-torsion solution in degree `n` vanishing at `1` vanishes: the
 equations with `k = 1` give `(n - i) • bᵢ = 0` and `i • bᵢ = 0`, and `p` cannot divide both
 `i` and `n - i`. -/
-private theorem IsCocycleCoeff.eq_zero_of_apply_one_eq_zero (hp : p.Prime) {n : ℕ}
-    {b : ℕ → M} (hbc : IsCocycleCoeff n b) (hb : ∀ i, 0 < i → i < n → p • b i = 0)
+private theorem IsSymmetricCocycleCoeff.eq_zero_of_apply_one_eq_zero (hp : p.Prime) {n : ℕ}
+    {b : ℕ → M} (hbc : IsSymmetricCocycleCoeff n b) (hb : ∀ i, 0 < i → i < n → p • b i = 0)
     (hpn : ¬(p ∣ n ∧ p < n)) (hb1 : b 1 = 0) {i : ℕ} (hi : 0 < i) (hin : i < n) : b i = 0 := by
   have hb1' : b (n - 1) = 0 := by rw [hbc.symm 1 (by omega), hb1]
   obtain rfl | hi1 := eq_or_ne i 1
@@ -154,10 +156,10 @@ private theorem IsCocycleCoeff.eq_zero_of_apply_one_eq_zero (hp : p.Prime) {n : 
 
 /-- **Frobenius descent.** If `p < p * q`, a `p`-torsion solution in degree `p * q` vanishes at
 the indices prime to `p`, and `a ↦ b (p * a)` is a solution in degree `q`. -/
-private theorem IsCocycleCoeff.descent (hp : p.Prime) {q : ℕ} {b : ℕ → M}
-    (hbc : IsCocycleCoeff (p * q) b) (hb : ∀ i, 0 < i → i < p * q → p • b i = 0)
+private theorem IsSymmetricCocycleCoeff.descent (hp : p.Prime) {q : ℕ} {b : ℕ → M}
+    (hbc : IsSymmetricCocycleCoeff (p * q) b) (hb : ∀ i, 0 < i → i < p * q → p • b i = 0)
     (hlt : p < p * q) :
-    (∀ i, 0 < i → i < p * q → ¬p ∣ i → b i = 0) ∧ IsCocycleCoeff q fun a => b (p * a) := by
+    (∀ i, 0 < i → i < p * q → ¬p ∣ i → b i = 0) ∧ IsSymmetricCocycleCoeff q fun a => b (p * a) := by
   have := Fact.mk hp
   have hp2 := hp.two_le
   -- The equation at `X Yᵖ⁻¹ Zⁿ⁻ᵖ` reads `p • b_p = (n - 1).choose (p - 1) • b₁`, and the
@@ -193,7 +195,7 @@ private theorem IsCocycleCoeff.descent (hp : p.Prime) {q : ℕ} {b : ℕ → M}
 is determined by its value at a single index `m`, depending only on `n` and `p`. -/
 private theorem exists_forall_eq_zero_of_eq_zero (hp : p.Prime) {n : ℕ} (hn : 2 ≤ n) :
     ∃ m, 0 < m ∧ m < n ∧ ∀ b : ℕ → M, (∀ i, 0 < i → i < n → p • b i = 0) →
-      IsCocycleCoeff n b → b m = 0 → ∀ i, 0 < i → i < n → b i = 0 := by
+      IsSymmetricCocycleCoeff n b → b m = 0 → ∀ i, 0 < i → i < n → b i = 0 := by
   induction n using Nat.strong_induction_on with
   | _ n ih =>
   have hp2 := hp.two_le
@@ -233,9 +235,9 @@ private theorem coeff_single_add_single_lazardCocycle {n i : ℕ} (hi : 0 < i) (
 
 /-- The coefficients `bᵢ` of `XⁱYⁿ⁻ⁱ` in a symmetric additive 2-cocycle satisfy the coefficient
 equations in degree `n`. -/
-theorem isCocycleCoeff_coeff {f : MvPolynomial (Fin 2) R} (hs : f.IsSymmetric)
+theorem isSymmetricCocycleCoeff_coeff {f : MvPolynomial (Fin 2) R} (hs : f.IsSymmetric)
     (hf : f.IsAddCocycle₂) (n : ℕ) :
-    IsCocycleCoeff n fun i => f.coeff (Finsupp.single 0 i + Finsupp.single 1 (n - i)) where
+    IsSymmetricCocycleCoeff n fun i => f.coeff (Finsupp.single 0 i + Finsupp.single 1 (n - i)) where
   symm i hi := by
     have h := coeff_rename_mapDomain (Equiv.swap (0 : Fin 2) 1) (Equiv.injective _) f
       (Finsupp.single 0 i + Finsupp.single 1 (n - i))
@@ -259,18 +261,19 @@ section General
 variable {M : Type*} [AddCommGroup M]
 
 /-- The integral coefficient sequence of `C_n`. This is an `abbrev` for the sequence in
-`isCocycleCoeff_coeff`, so that lemma and `coeff_single_add_single_lazardCocycle` apply to it
-directly. -/
+`isSymmetricCocycleCoeff_coeff`, so that lemma and `coeff_single_add_single_lazardCocycle` apply
+to it directly. -/
 private noncomputable abbrev lazardCoeff (n : ℕ) : ℕ → ℤ :=
   fun i => (lazardCocycle n ℤ).coeff (Finsupp.single 0 i + Finsupp.single 1 (n - i))
 
-private theorem isCocycleCoeff_lazardCoeff (n : ℕ) : IsCocycleCoeff n (lazardCoeff n) :=
-  isCocycleCoeff_coeff (isSymmetric_lazardCocycle n) (isAddCocycle₂_lazardCocycle n) n
+private theorem isSymmetricCocycleCoeff_lazardCoeff (n : ℕ) :
+    IsSymmetricCocycleCoeff n (lazardCoeff n) :=
+  isSymmetricCocycleCoeff_coeff (isSymmetric_lazardCocycle n) (isAddCocycle₂_lazardCocycle n) n
 
 /-- Over a group killed by a prime `p`, every solution of the coefficient equations in degree
-`n ≥ 2` is a multiple of the coefficients of `C_n`. -/
+`n ≥ 2` is, at the indices `0 < i < n`, a multiple of the coefficients of `C_n`. -/
 private theorem exists_eq_nsmul_of_torsion {p n : ℕ} (hp : p.Prime) (hn : 2 ≤ n) {b : ℕ → M}
-    (hb : ∀ i, 0 < i → i < n → p • b i = 0) (hbc : IsCocycleCoeff n b) :
+    (hb : ∀ i, 0 < i → i < n → p • b i = 0) (hbc : IsSymmetricCocycleCoeff n b) :
     ∃ s : M, ∀ i, 0 < i → i < n → b i = (n.choose i / lazardGcd n) • s := by
   have := Fact.mk hp
   -- Work in `M × ZMod p`, so that one index `m` controls solutions in `M` and in `ZMod p`.
@@ -283,7 +286,7 @@ private theorem exists_eq_nsmul_of_torsion {p n : ℕ} (hp : p.Prime) (hn : 2 �
     intro hcm
     set φ : ℤ →+ M × ZMod p := (AddMonoidHom.inr _ _).comp (Int.castAddHom (ZMod p))
     have hzero := hm (fun i => φ (lazardCoeff n i)) (fun i _ _ => by ext <;> simp [φ])
-      ((isCocycleCoeff_lazardCoeff n).map φ) (by rw [hcZ m hm0 hmn]; ext <;> simp [φ, hcm])
+      ((isSymmetricCocycleCoeff_lazardCoeff n).map φ) (by rw [hcZ m hm0 hmn]; ext <;> simp [φ, hcm])
     have hdvd : p ∣ (Icc 1 (n - 1)).gcd c := Finset.dvd_gcd fun i hi => by
       rw [mem_Icc] at hi
       have := congrArg Prod.snd (hzero i (by omega) (by omega))
@@ -299,7 +302,7 @@ private theorem exists_eq_nsmul_of_torsion {p n : ℕ} (hp : p.Prime) (hn : 2 �
         hcm ((ZMod.natCast_eq_zero_iff _ _).2 h)))]
   refine ⟨u • b m, fun i hi hin => ?_⟩
   -- The difference `b - (u • b m) • C_n` is a `p`-torsion solution vanishing at `m`.
-  have hdiff := hbc.sub ((isCocycleCoeff_lazardCoeff n).map (zmultiplesHom M (u • b m)))
+  have hdiff := hbc.sub ((isSymmetricCocycleCoeff_lazardCoeff n).map (zmultiplesHom M (u • b m)))
   have hzero := hm (fun i => AddMonoidHom.inl M (ZMod p)
       (b i - zmultiplesHom M (u • b m) (lazardCoeff n i)))
     (fun i hi hin => by ext <;> simp [smul_sub, smul_comm p, hb i hi hin, hb m hm0 hmn])
@@ -321,8 +324,8 @@ span a finitely generated subgroup `S` with `S = p • S` for every prime `p`, b
 case applied in `M ⧸ p • S`. -/
 private theorem eq_zero_of_sum_smul_eq_zero {n : ℕ} (hn : 2 ≤ n) {l : ℕ → ℤ}
     (hl : ∑ i ∈ Icc 1 (n - 1), l i * (n.choose i / lazardGcd n : ℕ) = 1) {e : ℕ → M}
-    (he : IsCocycleCoeff n e) (hsum : ∑ i ∈ Icc 1 (n - 1), l i • e i = 0) {i : ℕ} (hi : 0 < i)
-    (hin : i < n) : e i = 0 := by
+    (he : IsSymmetricCocycleCoeff n e) (hsum : ∑ i ∈ Icc 1 (n - 1), l i • e i = 0) {i : ℕ}
+    (hi : 0 < i) (hin : i < n) : e i = 0 := by
   set S : Submodule ℤ M := Submodule.span ℤ (e '' ↑(Icc 1 (n - 1)))
   have hS : S = ⊥ := by
     refine Submodule.eq_bot_of_forall_prime_le_smul (Submodule.fg_span
@@ -350,8 +353,10 @@ private theorem eq_zero_of_sum_smul_eq_zero {n : ℕ} (hn : 2 ≤ n) {l : ℕ �
   exact Submodule.subset_span ⟨i, mem_Icc.2 ⟨hi, by omega⟩, rfl⟩
 
 /-- Every solution of the coefficient equations in degree `n`, with coefficients in an arbitrary
-abelian group, is a multiple of the coefficients `n.choose i / d_n` of `C_n`. -/
-theorem IsCocycleCoeff.exists_eq_nsmul {n : ℕ} {b : ℕ → M} (hbc : IsCocycleCoeff n b) :
+abelian group, is, at the indices `0 < i < n`, a multiple `(n.choose i / d_n) • r` of the
+coefficients of `C_n`. -/
+theorem IsSymmetricCocycleCoeff.exists_eq_nsmul {n : ℕ} {b : ℕ → M}
+    (hbc : IsSymmetricCocycleCoeff n b) :
     ∃ r : M, ∀ i, 0 < i → i < n → b i = (n.choose i / lazardGcd n) • r := by
   -- For `n < 2` there is no index `0 < i < n`, so the statement is vacuous.
   rcases lt_or_ge n 2 with hn | hn
@@ -375,7 +380,7 @@ theorem IsCocycleCoeff.exists_eq_nsmul {n : ℕ} {b : ℕ → M} (hbc : IsCocycl
     rw [sub_eq_zero, ← Finset.sum_smul, h₁, one_smul]
   refine ⟨r, fun i hi hin => ?_⟩
   have := eq_zero_of_sum_smul_eq_zero hn hl'
-    (hbc.sub ((isCocycleCoeff_lazardCoeff n).map (zmultiplesHom M r))) hsum hi hin
+    (hbc.sub ((isSymmetricCocycleCoeff_lazardCoeff n).map (zmultiplesHom M r))) hsum hi hin
   rwa [zmultiplesHom_apply, sub_eq_zero, hcZ i (mem_Icc.2 ⟨hi, by omega⟩), natCast_zsmul] at this
 
 end General
@@ -390,7 +395,7 @@ additive 2-cocycle `f(X, Y)` of degree `n ≠ 0` is a multiple `r • C_n` of th
 theorem exists_eq_smul_lazardCocycle {n : ℕ} (hn : n ≠ 0) {f : MvPolynomial (Fin 2) R}
     (hh : f.IsHomogeneous n) (hs : f.IsSymmetric) (hf : f.IsAddCocycle₂) :
     ∃ r : R, f = r • lazardCocycle n R := by
-  obtain ⟨r, hr⟩ := (isCocycleCoeff_coeff hs hf n).exists_eq_nsmul
+  obtain ⟨r, hr⟩ := (isSymmetricCocycleCoeff_coeff hs hf n).exists_eq_nsmul
   refine ⟨r, MvPolynomial.ext _ _ fun d => ?_⟩
   rw [coeff_smul, coeff_lazardCocycle, smul_eq_mul]
   by_cases hd : d 0 + d 1 = n
@@ -409,7 +414,7 @@ theorem exists_eq_smul_lazardCocycle {n : ℕ} (hn : n ≠ 0) {f : MvPolynomial 
     · have hd0 : d 0 = n - 0 := by omega
       rw [ite_eq_right (by omega), mul_zero, hd0]
       -- The coefficient of `Xⁿ` equals that of `Yⁿ`, by symmetry.
-      exact ((isCocycleCoeff_coeff hs hf n).symm 0 (Nat.zero_le n)).trans hY
+      exact ((isSymmetricCocycleCoeff_coeff hs hf n).symm 0 (Nat.zero_le n)).trans hY
     · rw [ite_eq_left ⟨hd, h0, h1⟩, hr _ (Nat.pos_of_ne_zero h0) (by omega), nsmul_eq_mul,
         mul_comm]
   · rw [ite_eq_right fun h => hd h.1, mul_zero]
