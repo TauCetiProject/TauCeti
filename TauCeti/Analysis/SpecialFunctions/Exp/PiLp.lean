@@ -7,7 +7,10 @@ module
 
 public import TauCeti.Analysis.Matrix.EuclideanLin
 public import Mathlib.Analysis.Calculus.FDeriv.WithLp
+public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
 public import Mathlib.Analysis.SpecialFunctions.Log.Deriv
+
+import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 
 /-!
 # Coordinatewise exponential and logarithmic Jacobians
@@ -16,13 +19,38 @@ On finite real Euclidean spaces, coordinatewise exponentiation has diagonal deri
 entries `exp (x i)`. Coordinatewise logarithms have diagonal derivative with entries `(x i)⁻¹`
 where the coordinates are nonzero. Their determinant formulas provide the Jacobian factors
 for transporting densities between Euclidean space and the positive orthant.
+Coordinatewise exponentiation is injective with range the positive orthant, which is measurable.
 -/
 
 public section
 
 noncomputable section
 
+open scoped ENNReal
+
 namespace PiLp
+
+/-- Coordinatewise real exponentiation is injective. -/
+theorem injective_exp (p : ℝ≥0∞) {ι : Type*} :
+    Function.Injective (fun x : PiLp p (fun _ : ι ↦ ℝ) ↦
+      WithLp.toLp p (fun i ↦ Real.exp (x i))) := by
+  intro x y h
+  ext i
+  exact Real.exp_injective (congrArg (fun z : PiLp p (fun _ : ι ↦ ℝ) ↦ z i) h)
+
+/-- The range of coordinatewise real exponentiation is the positive orthant. -/
+@[simp]
+theorem range_exp (p : ℝ≥0∞) {ι : Type*} :
+    Set.range (fun x : PiLp p (fun _ : ι ↦ ℝ) ↦ WithLp.toLp p (fun i ↦ Real.exp (x i))) =
+      {x | ∀ i, 0 < x i} := by
+  ext x
+  constructor
+  · rintro ⟨y, rfl⟩
+    exact fun i ↦ Real.exp_pos (y i)
+  · intro hx
+    refine ⟨WithLp.toLp p (fun i ↦ Real.log (x i)), ?_⟩
+    ext i
+    exact Real.exp_log (hx i)
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
@@ -65,3 +93,11 @@ theorem det_fderiv_log (x : EuclideanSpace ℝ ι) (hx : ∀ i, x i ≠ 0) :
   rw [(hasFDerivAt_log x hx).fderiv, Matrix.det_toEuclideanCLM_diagonal, Finset.prod_inv_distrib]
 
 end PiLp
+
+/-- The positive orthant in finite real Euclidean space is measurable. -/
+theorem EuclideanSpace.measurableSet_setOf_forall_pos {ι : Type*} [Finite ι] :
+    MeasurableSet {x : EuclideanSpace ℝ ι | ∀ i, 0 < x i} := by
+  let : Fintype ι := Fintype.ofFinite ι
+  rw [Set.ofPred_forall]
+  exact MeasurableSet.iInter fun i ↦
+    measurableSet_lt (measurable_const (a := (0 : ℝ))) (by fun_prop)

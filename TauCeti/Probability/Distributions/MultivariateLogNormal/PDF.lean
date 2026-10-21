@@ -5,7 +5,6 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.Exp.PiLp
 public import TauCeti.Probability.Distributions.Gaussian.Density
 public import TauCeti.Probability.Distributions.MultivariateLogNormal.Basic
 
@@ -137,7 +136,7 @@ theorem multivariateLogNormalPDF_lt_top (m : EuclideanSpace ℝ ι) (S : Matrix 
 theorem measurable_multivariateLogNormalPDFReal (m : EuclideanSpace ℝ ι) (S : Matrix ι ι ℝ) :
     Measurable (multivariateLogNormalPDFReal m S) := by
   unfold multivariateLogNormalPDFReal
-  apply Measurable.ite measurableSet_setOf_forall_pos
+  apply Measurable.ite EuclideanSpace.measurableSet_setOf_forall_pos
   · exact ((measurable_multivariateGaussianPDFReal m S).comp (by fun_prop)).div (by fun_prop)
   · exact measurable_const
 
@@ -176,30 +175,17 @@ theorem multivariateLogNormalMeasure_eq_withDensity (m : EuclideanSpace ℝ ι)
   let e : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι :=
     fun x ↦ WithLp.toLp 2 (fun i ↦ Real.exp (x i))
   have he : Measurable e := by fun_prop
-  have hinj : Function.Injective e := by
-    intro x y h
-    ext i
-    exact Real.exp_injective (congrArg (fun z : EuclideanSpace ℝ ι ↦ z i) h)
-  have hrange : e '' Set.univ = {x | ∀ i, 0 < x i} := by
-    ext x
-    constructor
-    · rintro ⟨y, _, rfl⟩
-      exact fun i ↦ Real.exp_pos (y i)
-    · intro hx
-      refine ⟨WithLp.toLp 2 (fun i ↦ Real.log (x i)), Set.mem_univ _, ?_⟩
-      ext i
-      exact Real.exp_log (hx i)
-  have hjac := map_withDensity_abs_det_fderiv_eq_addHaar volume
+  have hjac := map_withDensity_abs_det_fderiv_eq_addHaar volume (f := e)
     MeasurableSet.univ.nullMeasurableSet
-    (fun x _ ↦ (PiLp.hasFDerivAt_exp x).hasFDerivWithinAt) hinj.injOn
+    (fun x _ ↦ (PiLp.hasFDerivAt_exp x).hasFDerivWithinAt) (PiLp.injective_exp 2).injOn
   simp only [Measure.restrict_univ, Matrix.det_toEuclideanCLM_diagonal,
     abs_of_pos (Finset.prod_pos fun i _ ↦ Real.exp_pos _)] at hjac
-  rw [hrange] at hjac
+  rw [Set.image_univ, PiLp.range_exp] at hjac
   have hmap := Measure.map_withDensity_eq_withDensity he (by fun_prop)
     (measurable_multivariateLogNormalPDF m S) hjac
     (ae_of_all _ (exp_jacobian_mul_pdf m S))
   rw [multivariateLogNormalMeasure_def, multivariateGaussian_eq_withDensity hS m, hmap,
-    ← withDensity_indicator measurableSet_setOf_forall_pos]
+    ← withDensity_indicator EuclideanSpace.measurableSet_setOf_forall_pos]
   apply withDensity_congr_ae
   exact ae_of_all _ fun x ↦ by
     by_cases hx : ∀ i, 0 < x i
