@@ -19,9 +19,9 @@ equal to the smaller of its dimensions almost surely. The means and variances ma
 entries, and either index type may be empty.
 
 The product-law theorem and its random-variable corollary supply the full-rank input to
-Gaussian Gram-matrix arguments. They use the joint density and the general almost-sure rank
-theorem for absolutely continuous matrix laws; no independence of rows or columns is assumed
-in that underlying theorem.
+Gaussian Gram-matrix arguments. They use product absolute continuity and the general almost-sure
+rank theorem for absolutely continuous matrix laws; no independence of rows or columns is
+assumed in that underlying theorem.
 
 ## References
 
@@ -45,32 +45,9 @@ theorem ae_rank_eq_min_pi_gaussianReal (a : Matrix m n ℝ) (v : Matrix m n ℝ�
     (hv : ∀ i j, v i j ≠ 0) :
     ∀ᵐ A ∂Measure.pi (fun i => Measure.pi fun j => gaussianReal (a i j) (v i j)),
       (Matrix.of A).rank = min (Fintype.card m) (Fintype.card n) := by
-  classical
-  let f (i : m) (j : n) := gaussianPDF (a i j) (v i j)
-  have hfactor (i : m) (j : n) :
-      volume.withDensity (f i j) = gaussianReal (a i j) (v i j) :=
-    (gaussianReal_of_var_ne_zero _ (hv i j)).symm
-  let (i : m) (j : n) : IsProbabilityMeasure (volume.withDensity (f i j)) := by
-    rw [hfactor]
-    infer_instance
-  have hrow (i : m) :
-      (Measure.pi fun j => gaussianReal (a i j) (v i j)) =
-        (volume : Measure (n → ℝ)).withDensity (fun x => ∏ j, f i j (x j)) := by
-    simp_rw [← hfactor i]
-    exact TauCeti.pi_withDensity _ fun j => measurable_gaussianPDF _ _
-  let (i : m) : IsProbabilityMeasure
-      ((volume : Measure (n → ℝ)).withDensity (fun x => ∏ j, f i j (x j))) := by
-    rw [← hrow]
-    infer_instance
-  have hμ : (Measure.pi fun i => Measure.pi fun j => gaussianReal (a i j) (v i j)) ≪
-      (volume : Measure (m → n → ℝ)) := by
-    simp_rw [hrow]
-    rw [TauCeti.pi_withDensity (fun _ : m => (volume : Measure (n → ℝ)))
-      (f := fun i x => ∏ j, f i j (x j)) (fun i =>
-      Finset.measurable_prod _ fun j _ =>
-        (measurable_gaussianPDF (a i j) (v i j)).comp (measurable_pi_apply j))]
-    exact withDensity_absolutelyContinuous _ _
-  exact Measure.ae_rank_eq_min _ hμ
+  let (i : m) (j : n) : SigmaFinite (gaussianReal (a i j) (v i j)) := inferInstance
+  exact Measure.ae_rank_eq_min _ (Measure.AbsolutelyContinuous.pi fun i =>
+    Measure.AbsolutelyContinuous.pi fun j => gaussianReal_absolutelyContinuous (a i j) (hv i j))
 
 end TauCeti.Probability
 
