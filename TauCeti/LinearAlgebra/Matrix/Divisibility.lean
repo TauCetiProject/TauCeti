@@ -47,10 +47,11 @@ proves the uniqueness of the Smith normal form, from one diagonal factor to two.
 * `Matrix.forall_dvd_apply_iff_of_mul_eq_mul`: if `W * B = A * W`, then an element coprime to
   `det W` divides every entry of `A` exactly when it divides every entry of `B` — `A` and `B`
   are conjugate after inverting `det W`.
-* `Matrix.exists_diagonal_mul_eq_mul_diagonal_iff`: `diagonal a⁻¹ * v * diagonal a` is
-  integral exactly when `a i ∣ v i j * a j` for all `i` and `j`; by
-  `Matrix.isUnit_det_of_diagonal_mul_eq_mul_diagonal`, such an integral conjugate of a matrix of
-  unit determinant has unit determinant.
+* `Matrix.exists_diagonal_mul_eq_mul_diagonal_iff`: `diagonal a * W = v * diagonal a` for some
+  matrix `W` exactly when `a i ∣ v i j * a j` for all `i` and `j` (over a domain with every `a i`
+  nonzero, this says `diagonal a⁻¹ * v * diagonal a`, computed in the fraction field, is
+  integral); by `Matrix.isUnit_det_of_diagonal_mul_eq_mul_diagonal`, over a domain with every
+  `a i` nonzero, such a `W` has unit determinant when `v` does.
 * `Matrix.dvd_of_forall_dvd_vecMul`: a common divisor of the entries of `r ᵥ* τ`, with `det τ` a
   unit, divides every entry of `r`.
 * `Matrix.det_mul_eq_sum_prod_mul_det_submatrix`: the expansion of `det (A * B)` for a
@@ -107,9 +108,11 @@ theorem forall_dvd_apply_iff_of_mul_eq_mul {R : Type*} [CommRing R] [Fintype n] 
     rw [h, mul_assoc, mul_adjugate, Matrix.mul_smul, mul_one, smul_apply, smul_eq_mul] at hij
     exact he.dvd_of_dvd_mul_left hij
 
-/-- **Integral conjugates by a diagonal matrix.** `diagonal a * W = v * diagonal a` for some
-matrix `W` exactly when `a i ∣ v i j * a j` for all `i` and `j`, that is, when
-`diagonal a⁻¹ * v * diagonal a` is integral. -/
+/-- **Divisibility criterion for `diagonal a * W = v * diagonal a`.** Such a matrix `W` exists
+exactly when `a i ∣ v i j * a j` for all `i` and `j`, with `W i j` a witness of the divisibility.
+No hypothesis on `a` is needed. Over a domain with every `a i` nonzero, `W` is then
+`diagonal a⁻¹ * v * diagonal a` computed in the fraction field, so the criterion says that this
+conjugate is integral. -/
 theorem exists_diagonal_mul_eq_mul_diagonal_iff [Fintype m] [DecidableEq m] {a : m → S}
     {v : Matrix m m S} :
     (∃ W : Matrix m m S, diagonal a * W = v * diagonal a) ↔ ∀ i j, a i ∣ v i j * a j := by
