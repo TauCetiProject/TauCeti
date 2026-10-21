@@ -89,13 +89,14 @@ theorem logarithmicSeriesWeightReal_zero (q : ℝ) : logarithmicSeriesWeightReal
 `-log (1 - q)` divided by its sum. -/
 theorem logarithmicSeriesWeightReal_eq_div (q : ℝ) (k : ℕ) :
     logarithmicSeriesWeightReal q k = q ^ k / k / -Real.log (1 - q) := by
-  rw [logarithmicSeriesWeightReal, div_div, mul_neg, div_neg, neg_div]
+  rw [logarithmicSeriesWeightReal]
+  ring
 
 /-- In the valid parameter range, the real mass is positive exactly at the positive integers. -/
 @[simp]
 theorem logarithmicSeriesWeightReal_pos_iff {q : ℝ} (hq0 : 0 < q) (hq1 : q < 1) (k : ℕ) :
     0 < logarithmicSeriesWeightReal q k ↔ k ≠ 0 := by
-  have hlog : 0 < -Real.log (1 - q) := neg_pos.mpr (Real.log_neg (by linarith) (by linarith))
+  have hlog : 0 < -Real.log (1 - q) := neg_pos.mpr (Real.log_one_sub_neg hq0 hq1)
   refine ⟨fun h hk => by simp [hk] at h, fun hk => ?_⟩
   rw [logarithmicSeriesWeightReal_eq_div]
   have : (0 : ℝ) < k := by exact_mod_cast Nat.pos_of_ne_zero hk
@@ -129,7 +130,7 @@ theorem isProbabilityMeasure_logarithmicSeriesMeasure {q : ℝ} (hq0 : 0 < q) (h
   rw [logarithmicSeriesMeasure_eq_sum_dirac hq0 hq1]
   refine HasSum.isProbabilityMeasure_sum_dirac (logarithmicSeriesWeightReal_nonneg hq0 hq1) ?_
   have hq : |q * 1| < 1 := by rwa [mul_one, abs_of_pos hq0]
-  have hlog : Real.log (1 - q) ≠ 0 := (Real.log_neg (by linarith) (by linarith)).ne
+  have hlog : Real.log (1 - q) ≠ 0 := (Real.log_one_sub_neg hq0 hq1).ne
   simpa [hlog] using hasSum_logarithmicSeriesWeightReal_mul_pow hq
 
 /-- The singleton mass of the logarithmic-series law in its valid parameter range. -/
@@ -190,7 +191,7 @@ theorem integrable_pow_logarithmicSeriesMeasure_iff {q : ℝ} (hq0 : 0 < q) (hq1
     Integrable (fun k : ℕ => t ^ k) (logarithmicSeriesMeasure q) ↔ |q * t| < 1 := by
   rw [logarithmicSeriesMeasure_eq_sum_dirac hq0 hq1,
     integrable_sum_dirac_iff (by simp [logarithmicSeriesWeight])]
-  have hlog : 0 < -Real.log (1 - q) := neg_pos.mpr (Real.log_neg (by linarith) (by linarith))
+  have hlog : 0 < -Real.log (1 - q) := neg_pos.mpr (Real.log_one_sub_neg hq0 hq1)
   have hfun : (fun k : ℕ => (logarithmicSeriesWeight q k).toReal * ‖t ^ k‖) =
       fun k : ℕ => (-Real.log (1 - q))⁻¹ * (|q * t| ^ k / k) := by
     funext k

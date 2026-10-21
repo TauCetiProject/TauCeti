@@ -30,6 +30,7 @@ together with its exact domain of summability.
 * `Real.neg_log_one_sub_rpow_sub_le`: for `2 ≤ y` and `1 ≤ s`, it is at most `y⁻²`.
 * `Real.neg_log_one_sub_le_add_two_mul_sq`: for `0 ≤ x ≤ 1/2`, `-log (1 - x)` is at most
   `x + 2 x ^ 2`.
+* `Real.log_one_sub_neg`: `log (1 - x) < 0` for `0 < x < 1`.
 * `Real.hasSum_pow_div_natCast` and `Real.summable_pow_div_natCast_iff`: the series
   `∑ xⁿ / n` sums to `-log (1 - x)` for `|x| < 1` and is summable exactly there.
 * `Complex.norm_neg_log_one_sub_sub_le`: for complex `z` with `‖z‖ ≤ 1/2`, the remainder
@@ -125,6 +126,10 @@ theorem neg_log_one_sub_le_add_two_mul_sq {x : ℝ} (hx0 : 0 ≤ x) (hx : x ≤ 
     rw [div_le_iff₀ (by linarith)]
     nlinarith [sq_nonneg x]
   linarith [(abs_le.mp h).1]
+
+/-- For `0 < x < 1`, the logarithm `log (1 - x)` is negative. -/
+theorem log_one_sub_neg {x : ℝ} (hx0 : 0 < x) (hx1 : x < 1) : log (1 - x) < 0 :=
+  log_neg (sub_pos.mpr hx1) (by linarith)
 
 /-- The series `∑ xⁿ / n` converges to `-log (1 - x)` for `|x| < 1`. Its zeroth term vanishes
 because division by zero is zero. This is the real counterpart of

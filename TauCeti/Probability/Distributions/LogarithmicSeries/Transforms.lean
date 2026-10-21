@@ -9,6 +9,8 @@ public import Mathlib.Probability.Moments.MGFAnalytic
 public import TauCeti.Probability.Distributions.LogarithmicSeries.Basic
 import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
+import TauCeti.Analysis.SpecialFunctions.Log.MulExpLtOne
+import TauCeti.Analysis.SpecialFunctions.Log.NegLogOneSub
 
 /-!
 # Transforms and moments of the logarithmic-series distribution
@@ -44,9 +46,6 @@ open scoped Topology
 namespace TauCeti
 
 namespace Probability
-
-private theorem mul_exp_lt_one_iff {q t : ℝ} (hq0 : 0 < q) : q * exp t < 1 ↔ t < -log q := by
-  rw [← log_inv, lt_log_iff_exp_lt (inv_pos.mpr hq0), ← one_div, lt_div_iff₀' hq0]
 
 /-- The exponential integrand for the real cast of a logarithmic-series law is integrable exactly
 when `t < -log q`. -/
@@ -167,7 +166,7 @@ theorem variance_id_map_cast_logarithmicSeriesMeasure {q : ℝ} (hq0 : 0 < q) (h
   have hmem := memLp_of_mem_interior_integrableExpSet
     (zero_mem_interior_integrableExpSet hq0 hq1) 2
   have hq : 1 - q ≠ 0 := sub_ne_zero.mpr hq1.ne'
-  have hlog : log (1 - q) ≠ 0 := (log_neg (sub_pos.mpr hq1) (by linarith)).ne
+  have hlog : log (1 - q) ≠ 0 := (log_one_sub_neg hq0 hq1).ne
   rw [variance_eq_sub hmem]
   simp only [Pi.pow_apply, id_eq]
   rw [integral_id_map_cast_logarithmicSeriesMeasure hq0 hq1,
@@ -186,7 +185,7 @@ theorem charFun_map_cast_logarithmicSeriesMeasure {q : ℝ} (hq0 : 0 < q) (hq1 :
       Real.norm_of_nonneg hq0.le]
     exact hq1
   have hlog : (log (1 - q) : ℂ) ≠ 0 :=
-    Complex.ofReal_ne_zero.mpr (log_neg (sub_pos.mpr hq1) (by linarith)).ne
+    Complex.ofReal_ne_zero.mpr (log_one_sub_neg hq0 hq1).ne
   have hsum := (Complex.hasSum_taylorSeries_neg_log hz).div_const (-(log (1 - q) : ℂ))
   rw [neg_div_neg_eq] at hsum
   have _ := isProbabilityMeasure_logarithmicSeriesMeasure hq0 hq1
