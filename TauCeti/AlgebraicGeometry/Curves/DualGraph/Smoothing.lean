@@ -442,13 +442,10 @@ end Singleton
 /-- Smoothing every node leaves a single component, since the graph is connected. -/
 theorem smoothingVertex_univ_eq (v w : G.Vertex) :
     G.smoothingVertex univ v = G.smoothingVertex univ w := by
-  rw [smoothingVertex_eq_smoothingVertex_iff]
-  induction G.connected v w with
-  | refl => exact .refl _
-  | tail _ hbc ih =>
-    obtain ⟨e, ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩⟩ := hbc
-    · exact .trans _ _ _ ih (.rel _ _ ⟨e, mem_univ e, rfl, rfl⟩)
-    · exact .trans _ _ _ ih (.symm _ _ (.rel _ _ ⟨e, mem_univ e, rfl, rfl⟩))
+  rw [smoothingVertex_eq_smoothingVertex_iff, ← Relation.EqvGen.reflTransGen_symmGen]
+  refine .mono (fun _ _ ⟨e, h⟩ ↦ ?_) _ _ (G.connected v w)
+  obtain ⟨h₀, h₁⟩ | ⟨h₀, h₁⟩ := h
+  exacts [.inl ⟨e, mem_univ e, h₀, h₁⟩, .inr ⟨e, mem_univ e, h₀, h₁⟩]
 
 /-- Smoothing every node gives a graph with a single vertex. -/
 theorem card_vertex_smoothing_univ : Fintype.card (G.smoothing univ).Vertex = 1 := by
