@@ -223,6 +223,56 @@ theorem contract_zero {S : Type*} [Zero S] (d : ℕ+) (r : Fin d) :
   ext k
   simp
 
+/-- Contraction commutes with scalar multiplication. -/
+@[simp]
+theorem contract_smul {M S : Type*} [Zero S] [SMulZeroClass M S] (d : ℕ+) (c : M) (f : S⸨X⸩)
+    (r : Fin d) : contract d (c • f) r = c • contract d f r := by
+  ext k
+  simp
+
+/-- Contraction commutes with finite sums. -/
+@[simp]
+theorem contract_sum {ι S : Type*} [AddCommMonoid S] (d : ℕ+) (s : Finset ι) (f : ι → S⸨X⸩)
+    (r : Fin d) : contract d (∑ i ∈ s, f i) r = ∑ i ∈ s, contract d (f i) r := by
+  ext k
+  simp
+
+/-- The congruence components of a monomial: `X ^ m` contributes to component `r` exactly when
+`m ≡ r` modulo `d`, and then as the monomial of exponent `(m - r) / d`. -/
+theorem contract_single {S : Type*} [Zero S] (d : ℕ+) (m : ℤ) (a : S) (r : Fin d) :
+    contract d (single m a) r = if (d : ℤ) ∣ m - r then single ((m - r) / d) a else 0 := by
+  ext k
+  have hd : (d : ℤ) ≠ 0 := by exact_mod_cast d.ne_zero
+  rw [coeff_contract, coeff_single]
+  by_cases hdvd : (d : ℤ) ∣ m - r
+  · rw [ite_eq_left hdvd, coeff_single]
+    obtain ⟨j, hj⟩ := hdvd
+    rw [hj, Int.mul_ediv_cancel_left _ hd]
+    by_cases hk : k = j
+    · rw [ite_eq_left (by rw [hk]; linear_combination -hj), ite_eq_left hk]
+    · rw [ite_eq_right hk, ite_eq_right]
+      exact fun h ↦ hk (mul_left_cancel₀ hd (by linear_combination h + hj))
+  · rw [ite_eq_right hdvd, coeff_zero, ite_eq_right]
+    intro h
+    exact hdvd ⟨k, by linear_combination -h⟩
+
+/-- The congruence components of `1` vanish except at residue zero. -/
+@[simp]
+theorem contract_one {S : Type*} [Zero S] [One S] (d : ℕ+) (r : Fin d) :
+    contract d (1 : S⸨X⸩) r = if r = 0 then 1 else 0 := by
+  rw [← single_zero_one, contract_single]
+  by_cases hr : r = 0
+  · subst hr
+    simp
+  · have hr0 : (0 : ℤ) < r := by
+      have : (r : ℕ) ≠ 0 := Fin.val_ne_zero_iff.mpr hr
+      omega
+    have hrd : (r : ℤ) < d := by exact_mod_cast r.isLt
+    have hdvd : ¬ (d : ℤ) ∣ 0 - r := by
+      rintro ⟨j, hj⟩
+      rcases lt_trichotomy j 0 with hj0 | rfl | hj0 <;> nlinarith
+    rw [ite_eq_right hdvd, ite_eq_right hr]
+
 /-- At exponent `d * k + r`, a sum of expanded congruence components recovers coefficient `k`
 of component `r`. -/
 theorem coeff_sum_single_mul_expand {A : Type*} [CommSemiring A] (d : ℕ+)
