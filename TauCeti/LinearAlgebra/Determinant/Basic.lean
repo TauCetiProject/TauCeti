@@ -189,8 +189,8 @@ theorem exists_prod_det_eq_sign_smul_mul (b : Basis ι R M) (b' : Basis ι' R M'
   have hσ : w ∘ σ = Sum.elim (LinearMap.inl R M M' ∘ fun k ↦ (w (σ (.inl k))).1)
       (LinearMap.inr R M M' ∘ fun l ↦ (w (σ (.inr l))).2) := by
     ext1 (k | l)
-    · exact Prod.ext rfl (h₁ _ (by simpa [σ] using (e₁ k).2))
-    · exact Prod.ext (h₂ _ (by simpa [σ] using (e₂ l).2)) rfl
+    · exact Prod.ext (by simp) (by simpa using h₁ _ (by simpa [σ] using (e₁ k).2))
+    · exact Prod.ext (by simpa using h₂ _ (by simpa [σ] using (e₂ l).2)) (by simp)
   refine ⟨σ, ?_⟩
   have h := (b.prod b').det.map_perm w σ
   rw [hσ, prod_det_sumElim] at h

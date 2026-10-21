@@ -83,8 +83,8 @@ private theorem prod_det_mem_span_mul {m n : ℕ} (bF : Basis (Fin m) R F) (bG :
     exact zero_mem _
   · -- Exactly `m` members lie in `F × 0`: up to sign, the determinant is a product.
     obtain ⟨σ, hdet⟩ := bF.exists_prod_det_eq_sign_smul_mul bG w P
-      (by rw [Fintype.card_subtype, heq, Fintype.card_fin]) (fun i hi ↦ by rw [hi]; rfl)
-      fun i hi ↦ by rw [(hw' i).resolve_left hi]; rfl
+      (by rw [Fintype.card_subtype, heq, Fintype.card_fin])
+      (fun i hi ↦ by simp [show w i = _ from hi]) fun i hi ↦ by simp [(hw' i).resolve_left hi]
     rw [SetLike.mem_coe, AlternatingMap.coe_multilinearMap, hdet, Units.smul_def]
     refine zsmul_mem (Ideal.subset_span (Set.mul_mem_mul ?_ ?_)) _
     exacts [⟨_, fun k ↦ (mem_prod.1 (hwKL _)).1, rfl⟩, ⟨_, fun l ↦ (mem_prod.1 (hwKL _)).2, rfl⟩]
