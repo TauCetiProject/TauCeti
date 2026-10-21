@@ -90,6 +90,8 @@ lemma _root_.CategoryTheory.CommMon.sectionsAlgHom_restrictSections {A B : CommM
     (B.restrictSections_apply i _).symm
 
 /-- Restriction of sections commutes with the structure maps from regular functions. -/
+-- Not a simp lemma: `restrictSections_apply` already simplifies its left-hand side, so adding
+-- `[simp]` would violate `simpNF`.
 lemma _root_.CategoryTheory.CommMon.restrictSections_algebraMap {U V : X.Opens} (i : V ⟶ U)
     (r : Γ(X, U)) :
     A.restrictSections i (algebraMap Γ(X, U) Γ(A.X, U) r) =

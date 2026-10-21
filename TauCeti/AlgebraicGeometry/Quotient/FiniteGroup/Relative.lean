@@ -188,7 +188,7 @@ lemma toInvariantSectionsPresheaf_comp_invariantSectionsPresheafι :
 
 /-- The inclusion of the invariant sections is fixed by the morphisms of section rings induced by
 the action. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 lemma invariantSectionsPresheafι_comp_sectionsPresheafMap (g : G) :
     invariantSectionsPresheafι ρ ≫ sectionsPresheafMap (ρ g).asIso.hom =
       invariantSectionsPresheafι ρ := by
@@ -291,7 +291,7 @@ lemma relativeSpecInvariantsCover_X (U : X.AffineZariskiSite) :
 
 /-- Over an affine open `U`, the structure morphism of the relative invariant quotient is `Spec`
 of the structure map `Γ(X, U) ⟶ CommMon.invariantSections ρ U`. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 lemma relativeSpecInvariantsCover_f_relativeSpecInvariantsToBase (U : X.AffineZariskiSite) :
     (relativeSpecInvariantsCover ρ).f U ≫ relativeSpecInvariantsToBase ρ =
       Spec.map ((toInvariantSectionsPresheaf ρ).app (op U.1)) ≫ U.2.fromSpec :=
