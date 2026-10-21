@@ -42,7 +42,7 @@ Hermitian form with matrix `L_{j \bar k} = ∂²f / ∂z_j ∂(conj z_k)` evalua
 * `TauCeti.coe_wirtingerDeriv_eq_complexLinearPart`,
   `TauCeti.coe_conjWirtingerDeriv_eq_complexAntilinearPart`: the Wirtinger derivatives are the
   complex-linear and complex-antilinear parts of the real derivative.
-* `TauCeti.conjWirtingerDeriv_ofReal`: for real-valued `f`, `\bar∂f = conj ∂f`.
+* `TauCeti.conjWirtingerDeriv_ofReal_comp_apply`: for real-valued `f`, `\bar∂f = conj ∂f`.
 * `DifferentiableAt.conjWirtingerDeriv_eq_zero`, `DifferentiableAt.wirtingerDeriv_eq_fderiv`:
   for complex differentiable `g`, `\bar∂g = 0` and `∂g` is the complex derivative.
 * `TauCeti.wirtingerDeriv_conjWirtingerDeriv_eq_leviForm`,
@@ -165,7 +165,7 @@ variable {f : V → ℝ} {x : V}
 
 /-- For a real function, the conjugate Wirtinger derivative is the complex conjugate of the
 Wirtinger derivative. -/
-theorem conjWirtingerDeriv_ofReal (f : V → ℝ) (x v : V) :
+theorem conjWirtingerDeriv_ofReal_comp_apply (f : V → ℝ) (x v : V) :
     conjWirtingerDeriv (fun y ↦ (f y : ℂ)) x v = conj (wirtingerDeriv (fun y ↦ (f y : ℂ)) x v) := by
   apply Complex.ext <;>
   simp [conjWirtingerDeriv_apply, wirtingerDeriv_apply]
