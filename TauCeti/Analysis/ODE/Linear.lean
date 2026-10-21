@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Semigroups.Group.Flow
 public import TauCeti.Analysis.Semigroups.Group.Generator
 public import TauCeti.Dynamics.Flow.Stable
 import TauCeti.Analysis.Normed.Operator.Exponential
+import Mathlib.Analysis.ODE.ExistUnique
 
 /-!
 # Flows of bounded linear operators
@@ -28,6 +29,8 @@ negative-gradient convention used by Morse theory is recovered by applying these
 ## Main declarations
 
 * `ContinuousLinearMap.flow`: the flow `exp (t A)` of a bounded linear operator.
+* `Continuous.eq_of_hasDerivAt_clm_apply`: solutions of a time-dependent linear equation
+  `v' = B(t) v` with continuous coefficient are determined by their value at one time.
 * `LinearMap.IsSymmetric.eigenvectorBasis_repr_flow_neg_apply`: the coordinate formula for the
   flow of a negative symmetric operator in its ordered eigenbasis.
 * `LinearMap.IsSymmetric.stableSet_flow_eq_negativeSpectralSubspace`: the stable set of zero
@@ -91,6 +94,24 @@ theorem norm_exp_smul_apply_le_mul_norm_of_le {A : X →L[ℝ] X} {t c M K : ℝ
     _ = K * c * ‖v‖ := by ring
 
 end ContinuousLinearMap
+
+/-- **Uniqueness for time-dependent linear equations.** Two solutions of `v' = B(t) v` on the line,
+for a continuous family `B` of bounded operators, that agree at one time agree everywhere. On a
+bounded interval `B` is bounded, so the equation is uniformly Lipschitz there. -/
+theorem Continuous.eq_of_hasDerivAt_clm_apply {X : Type*} [NormedAddCommGroup X]
+    [NormedSpace ℝ X] {B : ℝ → X →L[ℝ] X} (hB : Continuous B) {v w : ℝ → X}
+    (hv : ∀ t, HasDerivAt v (B t (v t)) t) (hw : ∀ t, HasDerivAt w (B t (w t)) t) {t₀ : ℝ}
+    (h : v t₀ = w t₀) : v = w := by
+  funext t
+  set a := min t t₀ - 1
+  set b := max t t₀ + 1
+  obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn (hB.continuousOn (s := Icc a b))
+  have hLip (s : ℝ) (hs : s ∈ Ioo a b) : LipschitzOnWith (Real.toNNReal C) (B s) univ :=
+    ((B s).lipschitzWith.weaken (NNReal.le_toNNReal_of_coe_le (by
+      simpa using hC s (Ioo_subset_Icc_self hs)))).lipschitzOnWith
+  exact ODE_solution_unique_of_mem_Ioo (v := fun s ↦ B s) (s := fun _ ↦ univ) hLip
+    (t₀ := t₀) ⟨by grind, by grind⟩ (fun s _ ↦ ⟨hv s, mem_univ _⟩)
+    (fun s _ ↦ ⟨hw s, mem_univ _⟩) h ⟨by grind, by grind⟩
 
 namespace LinearMap.IsSymmetric
 
