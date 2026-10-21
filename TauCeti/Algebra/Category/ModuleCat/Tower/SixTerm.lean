@@ -278,8 +278,7 @@ theorem limMap_surjective_of_subsingleton_limOne
     (Subsingleton.elim (Submodule.Quotient.mk a : A.limOne) 0)
   refine ⟨⟨b - productMap f a', ?_⟩, Subtype.ext ?_⟩
   · rw [mem_lim_iff_shift_eq_zero, map_sub, shift_productMap_apply, ha, sub_self]
-  · rw [coe_limMap_apply, map_sub, hb, ← LinearMap.comp_apply, ← productMap_comp,
-      comp_eq_zero hfg, productMap_zero, LinearMap.zero_apply, sub_zero]
+  · rw [coe_limMap_apply, map_sub, hb, (exact_productMap hfg).apply_apply_eq_zero, sub_zero]
 
 /-- **Naturality of the connecting map.** A morphism `(α, β, γ)` of levelwise short exact sequences
 of towers, from `0 → A → B → C → 0` to `0 → A' → B' → C' → 0`, commutes with the connecting
