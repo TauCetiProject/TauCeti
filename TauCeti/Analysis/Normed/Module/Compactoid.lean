@@ -37,9 +37,9 @@ field, the two notions agree (`TauCeti.isCompactoidSet_iff_totallyBounded`).
 * `TauCeti.isCompactoidSet_of_forall_exists_finset`: approximation by finite subfamilies of a
   fixed family suffices.
 * `TauCeti.IsCompactoidSet.mono`, `TauCeti.IsCompactoidSet.union`,
-  `TauCeti.IsCompactoidSet.add`, `TauCeti.IsCompactoidSet.smul`,
+  `TauCeti.IsCompactoidSet.add`, `TauCeti.isCompactoidSet_sum`, `TauCeti.IsCompactoidSet.smul`,
   `TauCeti.IsCompactoidSet.image`, `TauCeti.isCompactoidSet_closure_iff`: stability under
-  subsets, finite unions, sums, scalar multiples, continuous linear images and closure.
+  subsets, finite unions, finite sums, scalar multiples, continuous linear images and closure.
 * `TotallyBounded.isCompactoidSet`, `Set.Finite.isCompactoidSet`: totally bounded sets, in
   particular finite sets, are compactoid.
 * `TauCeti.IsCompactoidSet.isBounded`: compactoid sets are bounded.
@@ -149,6 +149,12 @@ theorem IsCompactoidSet.add {S T : Set E} (hS : IsCompactoidSet K S)
     _ ≤ ‖x - ∑ i, a i • v i‖ + ‖y - ∑ i, b i • w i‖ := norm_add_le _ _
     _ < ε / 2 + ε / 2 := add_lt_add hx hy
     _ = ε := add_halves ε
+
+/-- A finite pointwise sum of compactoid sets is compactoid. -/
+theorem isCompactoidSet_sum {ι : Type*} {s : Finset ι} (t : ι → Set E)
+    (h : ∀ i ∈ s, IsCompactoidSet K (t i)) : IsCompactoidSet K (∑ i ∈ s, t i) :=
+  Finset.sum_induction t (IsCompactoidSet K) (fun _ _ ↦ IsCompactoidSet.add)
+    (fun _ _ ↦ ⟨0, Fin.elim0, fun x hx ↦ ⟨Fin.elim0, (·.elim0), by simp_all⟩⟩) h
 
 /-- The closure of a compactoid set is compactoid. -/
 theorem IsCompactoidSet.closure {S : Set E} (hS : IsCompactoidSet K S) :

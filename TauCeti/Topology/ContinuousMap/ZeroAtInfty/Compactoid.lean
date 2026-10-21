@@ -14,7 +14,7 @@ public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Discrete
 For a discrete index `I` and a nontrivially normed field `K`, a subset `S` of the model space
 `C₀(I, K)` is compactoid exactly when it is bounded and its coordinates decay uniformly: for every
 `ε > 0` there is a finite `T ⊆ I` with `‖x i‖ < ε` for all `x ∈ S` and `i ∉ T`
-(`ZeroAtInftyContinuousMap.isCompactoidSet_iff`).
+(`TauCeti.isCompactoidSet_iff_isBounded_and_exists_finset_forall_norm_lt`).
 
 Applied to the image of the closed unit ball under an operator between model spaces, uniform
 coordinate decay is decay of the row norms of its matrix, so this is the set-level half of the
@@ -31,10 +31,10 @@ Neither completeness, nor discreteness of the valuation, nor the ultrametric ine
 
 public section
 
-open Filter Topology TauCeti
+open Filter Topology ZeroAtInftyContinuousMap
 open scoped ZeroAtInfty
 
-namespace ZeroAtInftyContinuousMap
+namespace TauCeti
 
 variable {K I : Type*} [TopologicalSpace I] [DiscreteTopology I]
 
@@ -44,7 +44,7 @@ variable [NormedField K]
 
 /-- The coordinates of a compactoid subset of `C₀(I, K)` decay uniformly: for every `ε > 0` there
 is a finite `T` with `‖x i‖ < ε` for all `x ∈ S` and `i ∉ T`. -/
-theorem _root_.TauCeti.IsCompactoidSet.exists_finset_forall_norm_lt {S : Set C₀(I, K)}
+theorem IsCompactoidSet.exists_finset_forall_norm_lt {S : Set C₀(I, K)}
     (hS : IsCompactoidSet K S) {ε : ℝ} (hε : 0 < ε) :
     ∃ T : Finset I, ∀ x ∈ S, ∀ i ∉ T, ‖x i‖ < ε := by
   obtain ⟨n, v, hv⟩ := isCompactoidSet_iff.1 hS (ε / 2) (half_pos hε)
@@ -79,7 +79,7 @@ variable [NontriviallyNormedField K]
 /-- **Compactoid subsets of `C₀(I, K)`**: a set is compactoid if and only if it is bounded and its
 coordinates decay uniformly, i.e. for every `ε > 0` there is a finite `T` with `‖x i‖ < ε` for all
 `x ∈ S` and `i ∉ T`. -/
-theorem isCompactoidSet_iff {S : Set C₀(I, K)} :
+theorem isCompactoidSet_iff_isBounded_and_exists_finset_forall_norm_lt {S : Set C₀(I, K)} :
     IsCompactoidSet K S ↔
       Bornology.IsBounded S ∧ ∀ ε : ℝ, 0 < ε → ∃ T : Finset I, ∀ x ∈ S, ∀ i ∉ T, ‖x i‖ < ε := by
   classical
@@ -103,4 +103,4 @@ theorem isCompactoidSet_iff {S : Set C₀(I, K)} :
     · simp [hj, (half_pos hε).le]
     · simpa [sum_single_apply, hj] using (hT x hx j hj).le
 
-end ZeroAtInftyContinuousMap
+end TauCeti
