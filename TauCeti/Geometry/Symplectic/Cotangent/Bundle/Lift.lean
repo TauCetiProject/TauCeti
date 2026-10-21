@@ -12,16 +12,16 @@ public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Liouville
 /-!
 # Cotangent lifts preserve the Liouville and canonical symplectic forms
 
-Let `h : M → N` be a smooth diffeomorphism and `h̃ : T*M → T*N` its cotangent lift
+Let `h : M → N` be a smooth diffeomorphism and `T*h : T*M → T*N` its cotangent lift
 `(x, p) ↦ (h x, p ∘ (dh_x)⁻¹)` (`Diffeomorph.cotangent`). The Liouville forms are natural:
 
-`h̃^* λ_N = λ_M` (`Diffeomorph.mpullback_cotangent_liouvilleForm`).
+`(T*h)^* λ_N = λ_M` (`Diffeomorph.mpullback_cotangent_liouvilleForm`).
 
-Indeed `h̃` covers `h`, so `dπ_N ∘ dh̃ = dh ∘ dπ_M`, and the lifted covector pairs with
+Indeed `T*h` covers `h`, so `dπ_N ∘ d(T*h) = dh ∘ dπ_M`, and the lifted covector pairs with
 `dh (dπ_M v)` as the original covector pairs with `dπ_M v`. Since exterior differentiation commutes
 with pullback, the canonical symplectic forms `ω = -dλ` are preserved as well:
 
-`h̃^* ω_N = ω_M` (`Diffeomorph.mpullback_cotangent_symplecticForm`).
+`(T*h)^* ω_N = ω_M` (`Diffeomorph.mpullback_cotangent_symplecticForm`).
 
 So every diffeomorphism of the base gives an exact symplectomorphism of cotangent bundles. The base
 may have boundary or corners and need not be finite-dimensional.
@@ -63,7 +63,7 @@ theorem mpullback_cotangent_liouvilleForm (h : M ≃ₘ⟮I, J⟯ N) :
   funext z
   ext v
   rw [SmoothForm.mpullback_apply, liouvilleForm_apply, liouvilleForm_apply]
-  -- The lift covers `h`, so `dπ_N ∘ dh̃ = d(π_N ∘ h̃) = d(h ∘ π_M) = dh ∘ dπ_M`.
+  -- The lift covers `h`, so `dπ_N ∘ d(T*h) = d(π_N ∘ T*h) = d(h ∘ π_M) = dh ∘ dπ_M`.
   have hproj : π (F →L[ℝ] ℝ) (fun y : N ↦ TangentSpace J y →L[ℝ] ℝ) ∘ h.cotangent =
       h ∘ π (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) :=
     funext (proj_cotangent h)
