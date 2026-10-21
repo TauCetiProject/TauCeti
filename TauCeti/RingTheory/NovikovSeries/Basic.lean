@@ -41,6 +41,8 @@ design of the additive API follows that of Mathlib's `HahnSeries` in
   series.
 * `TauCeti.NovikovSeries.single`: the monomial `r e^h`, with coefficient `r` at `h` and `0`
   elsewhere.
+* `TauCeti.NovikovSeries.trunc C a`: the finitely supported truncation of `a` below the period
+  cutoff `C`.
 
 ## Main results
 
@@ -487,6 +489,65 @@ theorem ofFinsupp_single [AddMonoid R] (h : H) (r : R) :
   rw [coeff_ofFinsupp, coeff_single, Finsupp.single_eq_pi_single]
 
 end Single
+
+section Truncation
+
+variable {R H : Type*} [AddZeroClass H] {N : H →+ ℝ} {C : ℝ}
+
+section Zero
+
+variable [Zero R] {a : NovikovSeries R H N}
+
+/-- The truncation of a Novikov series `a` below the period cutoff `C`: the finitely supported
+coefficient function that agrees with `a` at exponents of period `< C` and vanishes elsewhere. -/
+def trunc (C : ℝ) (a : NovikovSeries R H N) : H →₀ R :=
+  Finsupp.ofSupportFinite ({h | N h < C}.indicator a.coeff) <| by
+    rw [support_indicator]
+    exact (a.finite_lt C).subset fun _ hh => ⟨hh.2, hh.1⟩
+
+@[simp]
+theorem trunc_apply (C : ℝ) (a : NovikovSeries R H N) (h : H) :
+    trunc C a h = if N h < C then a.coeff h else 0 := by
+  simp [trunc, Finsupp.ofSupportFinite_coe, indicator_apply]
+
+theorem trunc_apply_of_lt {h : H} (hh : N h < C) : trunc C a h = a.coeff h := by
+  simp [hh]
+
+theorem trunc_apply_of_le {h : H} (hh : C ≤ N h) : trunc C a h = 0 := by
+  simp [hh.not_gt]
+
+@[simp]
+theorem trunc_zero (C : ℝ) : trunc C (0 : NovikovSeries R H N) = 0 := by
+  ext h
+  simp
+
+end Zero
+
+@[simp]
+theorem trunc_add [AddZeroClass R] (C : ℝ) (a b : NovikovSeries R H N) :
+    trunc C (a + b) = trunc C a + trunc C b := by
+  ext h
+  by_cases hh : N h < C <;> simp [hh]
+
+@[simp]
+theorem trunc_neg [NegZeroClass R] (C : ℝ) (a : NovikovSeries R H N) :
+    trunc C (-a) = -trunc C a := by
+  ext h
+  by_cases hh : N h < C <;> simp [hh]
+
+@[simp]
+theorem trunc_sub [AddGroup R] (C : ℝ) (a b : NovikovSeries R H N) :
+    trunc C (a - b) = trunc C a - trunc C b := by
+  ext h
+  by_cases hh : N h < C <;> simp [hh]
+
+@[simp]
+theorem trunc_smul {S : Type*} [Zero R] [SMulZeroClass S R] (C : ℝ) (s : S)
+    (a : NovikovSeries R H N) : trunc C (s • a) = s • trunc C a := by
+  ext h
+  by_cases hh : N h < C <;> simp [hh]
+
+end Truncation
 
 section Surjective
 
