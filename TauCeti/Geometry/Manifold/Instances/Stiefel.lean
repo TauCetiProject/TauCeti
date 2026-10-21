@@ -84,12 +84,13 @@ def gramSym2 (v : Fin k → E) : Sym2 (Fin k) → ℝ :=
 
 variable {E k} in
 @[simp]
-theorem gramSym2_mk (v : Fin k → E) (i j : Fin k) : gramSym2 E k v s(i, j) = ⟪v i, v j⟫ :=
-  (rfl)
+theorem gramSym2_mk (v : Fin k → E) (i j : Fin k) : gramSym2 E k v s(i, j) = ⟪v i, v j⟫ := by
+  rw [gramSym2, Sym2.lift_mk]
 
 theorem contDiff_gramSym2 {r : ℕ∞ω} : ContDiff ℝ r (gramSym2 E k) := by
   refine contDiff_pi.2 fun s ↦ ?_
   induction s using Sym2.ind with | _ i j => ?_
+  simp only [gramSym2_mk]
   exact (contDiff_apply ℝ (fun _ ↦ E) i).inner ℝ (contDiff_apply ℝ (fun _ ↦ E) j)
 
 /-- The derivative of the Gram map at `v`, sending `a` to
@@ -106,15 +107,21 @@ def gramSym2Deriv (v : Fin k → E) : (Fin k → E) →L[ℝ] Sym2 (Fin k) → �
 variable {E k} in
 @[simp]
 theorem gramSym2Deriv_apply_mk (v a : Fin k → E) (i j : Fin k) :
-    gramSym2Deriv E k v a s(i, j) = ⟪v i, a j⟫ + ⟪a i, v j⟫ :=
-  (rfl)
+    gramSym2Deriv E k v a s(i, j) = ⟪v i, a j⟫ + ⟪a i, v j⟫ := by
+  rw [gramSym2Deriv, ContinuousLinearMap.pi_apply, Sym2.lift_mk, ContinuousLinearMap.comp_apply,
+    fderivInnerCLM_apply, ContinuousLinearMap.prod_apply, ContinuousLinearMap.proj_apply,
+    ContinuousLinearMap.proj_apply]
 
 /-- `TauCeti.gramSym2Deriv E k v` is the strict derivative of the Gram map at `v`. -/
 theorem hasStrictFDerivAt_gramSym2 (v : Fin k → E) :
     HasStrictFDerivAt (gramSym2 E k) (gramSym2Deriv E k v) v := by
-  refine hasStrictFDerivAt_pi.2 fun s ↦ ?_
+  refine hasStrictFDerivAt_pi'.2 fun s ↦ ?_
   induction s using Sym2.ind with | _ i j => ?_
-  exact (hasStrictFDerivAt_apply i v).inner ℝ (hasStrictFDerivAt_apply j v)
+  simp only [gramSym2_mk]
+  refine ((hasStrictFDerivAt_apply i v).inner ℝ (hasStrictFDerivAt_apply j v)).congr_fderiv
+    (ContinuousLinearMap.ext fun a ↦ ?_)
+  simp only [ContinuousLinearMap.comp_apply, fderivInnerCLM_apply, ContinuousLinearMap.prod_apply,
+    ContinuousLinearMap.proj_apply, gramSym2Deriv_apply_mk]
 
 variable {E k} in
 /-- **The Gram map is a submersion at orthonormal families.** The family
