@@ -29,9 +29,10 @@ as `Q` varies. Here `Δ_L` is the product over the places of the determinants of
 
 The local factors are `TauCeti.twistedLocalHeight`. The usual hypotheses on the data are that the
 forms at each place are linearly independent, that only finitely many distinct systems of forms
-and only finitely many nonzero weight vectors occur; under them the local factors are `1` at all
-but finitely many places (`TauCeti.hasFiniteMulSupport_twistedLocalHeight`), so that the twisted
-height is a genuine finite product.
+occur, and that the weights `c v` vanish at all but finitely many places; under them the local
+factors are `1` at all but finitely many places
+(`TauCeti.hasFiniteMulSupport_twistedLocalHeight`), so that the twisted height is a genuine finite
+product.
 
 ## Main definitions
 
@@ -138,8 +139,8 @@ theorem twistedLocalHeight_vecMul (A : Matrix (Fin n) (Fin n) K) (v : Place K) (
   simp [twistedLocalHeight_def, dotProduct_mulVec]
 
 /-- If the forms at every place are linearly independent, only finitely many distinct systems of
-forms and only finitely many nonzero weight vectors occur, then the local factors of the twisted
-height of a nonzero point are `1` at all but finitely many places. -/
+forms occur and the weights `c v` vanish at all but finitely many places, then the local factors of
+the twisted height of a nonzero point are `1` at all but finitely many places. -/
 theorem hasFiniteMulSupport_twistedLocalHeight (hL : ∀ v, LinearIndependent K (L v))
     (hLfin : (Set.range L).Finite) (hc : HasFiniteSupport c) {x : Fin n → K} (hx : x ≠ 0) :
     HasFiniteMulSupport fun v ↦ twistedLocalHeight L c Q v x := by
