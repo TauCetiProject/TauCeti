@@ -25,8 +25,7 @@ fraction-field constructions such as `IsFractionRing.algEquivOfAlgEquiv` require
 `R`-algebra equivalence with `A⟦X⟧` to one with `A⸨X⸩`. This file shows that the algebra action
 of `R` on `A⸨X⸩` agrees with the coefficientwise action, and records that, over a field `K`, a
 nonzero Laurent series `f ∈ K⸨X⸩` has valuation `exp (-ord f)`, since its power series part is a
-unit of `K⟦X⟧`. Over any semiring, the power series are exactly the Laurent series without terms
-of negative degree.
+unit of `K⟦X⟧`.
 
 The second part proves the product rule for the derivative of Laurent series,
 `(f * g)' = f' * g + f * g'`. Mathlib defines `LaurentSeries.derivative` only as a linear map,
@@ -48,8 +47,7 @@ extends to every Laurent series: a substitution `X ↦ φ` preserves the residue
 * `TauCeti.LaurentSeries.coeff_algebraMap_mul`: multiplication by a constant of the algebra
   structure acts coefficientwise.
 * `TauCeti.LaurentSeries.mem_range_ofPowerSeries_iff`: the Laurent series coming from power series
-  are those with no negative exponents; `TauCeti.LaurentSeries.range_ofPowerSeries` is its simp
-  form.
+  are those with no negative exponents.
 * `TauCeti.laurentSeries_algebraMap_mul_eq_smul`: the algebra action agrees with the
   coefficientwise scalar action, and `TauCeti.laurentSeries_isScalarTower_algebra` transfers
   scalar towers from the coefficientwise action to the algebra action.
@@ -77,8 +75,6 @@ open scoped LaurentSeries PowerSeries
 
 namespace TauCeti.LaurentSeries
 
-section CommSemiring
-
 variable {R : Type*} [CommSemiring R]
 
 /-- Multiplying a Laurent series by a constant of the `R`-algebra structure on `R⸨X⸩` multiplies
@@ -88,12 +84,6 @@ theorem coeff_algebraMap_mul (c : R) (f : R⸨X⸩) (n : ℤ) :
     (algebraMap R R⸨X⸩ c * f).coeff n = c * f.coeff n := by
   rw [HahnSeries.algebraMap_apply', PowerSeries.algebraMap_eq, HahnSeries.ofPowerSeries_C,
     HahnSeries.C_mul_eq_smul, HahnSeries.coeff_smul, smul_eq_mul]
-
-end CommSemiring
-
-section Semiring
-
-variable {R : Type*} [Semiring R]
 
 /-- A Laurent series is the image of a power series exactly when its coefficients at negative
 exponents vanish. -/
@@ -107,16 +97,6 @@ theorem mem_range_ofPowerSeries_iff {f : R⸨X⸩} :
   split_ifs with hn
   · exact (hf n hn).symm
   · rw [PowerSeries.coeff_mk, Int.natCast_natAbs, abs_of_nonneg (not_lt.mp hn)]
-
-/-- The power series inside the Laurent series are those whose coefficients at negative exponents
-vanish. This is the simp form of `TauCeti.LaurentSeries.mem_range_ofPowerSeries_iff`, whose
-left-hand side `Set.mem_range` would rewrite first. -/
-@[simp]
-theorem range_ofPowerSeries :
-    Set.range (HahnSeries.ofPowerSeries ℤ R) = {f : R⸨X⸩ | ∀ n < 0, f.coeff n = 0} :=
-  Set.ext fun _ ↦ mem_range_ofPowerSeries_iff
-
-end Semiring
 
 section Valuation
 
