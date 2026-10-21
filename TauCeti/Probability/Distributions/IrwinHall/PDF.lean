@@ -124,18 +124,15 @@ private theorem integral_pdf_eq_cdf_sub {n : ℕ} (hn : 2 ≤ n) (a b : ℝ) :
   have hsucc : n - 1 + 1 = n := by omega
   have hsuccR : ((n - 1 : ℕ) : ℝ) + 1 = n := by exact_mod_cast hsucc
   have hfac : (n.factorial : ℝ) = (n : ℝ) * ((n - 1).factorial : ℝ) := by
-    simpa only [hsucc, Nat.cast_mul] using
-      congrArg (fun k : ℕ ↦ (k : ℝ)) (Nat.factorial_succ (n - 1))
+    exact_mod_cast (Nat.mul_factorial_pred (by omega : n ≠ 0)).symm
   simp_rw [intervalIntegral.integral_const_mul,
     intervalIntegral.integral_comp_sub_right (fun x : ℝ ↦ max x 0 ^ (n - 1)),
     TauCeti.intervalIntegral.integral_max_zero_pow hp, hsucc, hsuccR]
   rw [cdf_irwinHallMeasure_eq (by omega), cdf_irwinHallMeasure_eq (by omega), hfac]
-  simp_rw [← mul_div_assoc]
-  rw [← Finset.sum_div, div_div, ← sub_div, ← Finset.sum_sub_distrib]
-  congr 1
+  simp only [Finset.sum_div, ← Finset.sum_sub_distrib]
   apply Finset.sum_congr rfl
   intro k _
-  ring
+  field_simp
 
 /-- The cdf has the named density as its derivative everywhere at order at least two. -/
 theorem hasDerivAt_cdf_irwinHallMeasure {n : ℕ} (hn : 2 ≤ n) (x : ℝ) :
@@ -171,11 +168,11 @@ theorem toReal_irwinHallPDF (n : ℕ) (x : ℝ) :
 
 /-- From order two onward the continuous density vanishes at and above its upper endpoint. -/
 @[simp]
-theorem irwinHallPDFReal_of_order_le {n : ℕ} (hn : 2 ≤ n) {x : ℝ} (hx : (n : ℝ) ≤ x) :
+theorem irwinHallPDFReal_of_natCast_le {n : ℕ} (hn : 2 ≤ n) {x : ℝ} (hx : (n : ℝ) ≤ x) :
     irwinHallPDFReal n x = 0 := by
-  have hs : Iic x =ᵐ[irwinHallMeasure n] univ := by
+  have hs : Iic x =ᵐ[irwinHallMeasure n] univ := Filter.eventuallyEqSet_univ.2 (by
     filter_upwards [ae_mem_Icc_irwinHallMeasure n] with y hy
-    exact propext (iff_true_intro (hy.2.trans hx))
+    exact hy.2.trans hx)
   have hone : cdf (irwinHallMeasure n) x = 1 := by
     rw [cdf_eq_real, measureReal_congr hs, probReal_univ]
   have hmax : IsMaxOn (cdf (irwinHallMeasure n)) univ x := fun y _ ↦ by
