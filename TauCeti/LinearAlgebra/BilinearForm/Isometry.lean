@@ -272,6 +272,13 @@ theorem isIsometry_iff_toMatrix (b : Basis ι R M) :
   rw [isIsometry_iff_comp, ← (LinearMap.BilinForm.toMatrix b).injective.eq_iff,
     LinearMap.BilinForm.toMatrix_comp b b B f f]
 
+/-- A matrix `X` preserves the Gram matrix of `B` in a basis `b` exactly when the endomorphism it
+represents in `b` is an isometry of `B`. -/
+theorem isIsometry_toLin_iff_mem_isometryMatrices (b : Basis ι R M) {X : Matrix ι ι R} :
+    IsIsometry B (Matrix.toLin b b X) ↔
+      X ∈ Matrix.isometryMatrices (LinearMap.BilinForm.toMatrix b B) := by
+  rw [isIsometry_iff_toMatrix b, LinearMap.toMatrix_toLin, Matrix.mem_isometryMatrices]
+
 end Matrix
 
 /-! ### Base change -/
@@ -339,13 +346,6 @@ variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {B : BilinForm
 section Matrix
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
-
-/-- A matrix `X` preserves the Gram matrix of `B` in a basis `b` exactly when the endomorphism it
-represents in `b` is an isometry of `B`. -/
-theorem isIsometry_toLin_iff_mem_isometryMatrices (b : Basis ι R M) {X : Matrix ι ι R} :
-    IsIsometry B (Matrix.toLin b b X) ↔
-      X ∈ Matrix.isometryMatrices (LinearMap.BilinForm.toMatrix b B) := by
-  rw [isIsometry_iff_toMatrix b, LinearMap.toMatrix_toLin, Matrix.mem_isometryMatrices]
 
 namespace IsIsometry
 

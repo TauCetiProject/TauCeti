@@ -16,7 +16,7 @@ import Mathlib.Tactic.NoncommRing
 /-!
 # Matrices preserving a Gram matrix
 
-For a square matrix `A` over a commutative ring, `Matrix.isometryMatrices A` is the submonoid
+For a square matrix `A` over a commutative semiring, `Matrix.isometryMatrices A` is the submonoid
 of matrices `X` with `Xᵀ * A * X = A`, the endomorphisms of the coordinate module that preserve
 the bilinear form with Gram matrix `A`. Counting these matrices over the finite rings
 `ZMod (p ^ r)` is how the local density of a quadratic lattice is defined, and the two results
@@ -56,7 +56,11 @@ public section
 
 namespace Matrix
 
-variable {n R S : Type*} [Fintype n] [DecidableEq n] [CommRing R] [CommRing S]
+variable {n R S : Type*} [Fintype n] [DecidableEq n]
+
+section CommSemiring
+
+variable [CommSemiring R] [CommSemiring S]
 
 /-- The submonoid of matrices `X` with `Xᵀ * A * X = A`, the endomorphisms of the coordinate
 module that preserve the bilinear form with Gram matrix `A`. -/
@@ -81,6 +85,10 @@ theorem map_mem_isometryMatrices_map (f : R →+* S) {A X : Matrix n n R}
     (hX : X ∈ isometryMatrices A) : X.map f ∈ isometryMatrices (A.map f) := by
   rw [mem_isometryMatrices] at *
   rw [← transpose_map, ← Matrix.map_mul, ← Matrix.map_mul, hX]
+
+end CommSemiring
+
+variable [CommRing R] [CommRing S]
 
 /-- **The square-zero expansion of the isometry equation.** If `X` preserves a symmetric Gram
 matrix `A` and the entries of `D` lie in a square-zero ideal, then the quadratic term of
