@@ -13,7 +13,7 @@ import Mathlib.RingTheory.LocalProperties.Reduced
 import TauCeti.Algebra.AlgebraicGroup.GeometricallyReduced.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.Tangent.FiniteType
 import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.BaseChange
-import TauCeti.AlgebraicGeometry.Scheme.RegularLocalRing
+import TauCeti.AlgebraicGeometry.Scheme.Regular.LocalRing
 import TauCeti.RingTheory.FiniteType.PointSeparation
 import TauCeti.RingTheory.KrullDimension.FiniteType
 import TauCeti.RingTheory.RegularLocalRing.Basic

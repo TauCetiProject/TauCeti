@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Module.ZLattice.Covolume
 public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+public import TauCeti.Algebra.Module.ZLattice.Dual
+public import TauCeti.LinearAlgebra.Matrix.BilinearForm
 
 /-!
 # The covolume of a lattice in an inner product space
@@ -22,15 +24,21 @@ covolume, a measure-theoretic invariant of the lattice, through the metric data 
 bases. In particular the covolume does not depend on a choice of coordinates, and two lattices
 with the same Gram matrix in some bases have the same covolume.
 
+The covolume of the dual lattice `L^∨ = ZLattice.dual L` is the inverse of the covolume of `L`
+(`ZLattice.covolume_dual`): in an `ℤ`-basis of `L` and the dual basis of `L^∨`, the Gram matrices
+are inverse to each other.
+
 ## Main results
 
 * `ZLattice.covolume_sq_eq_det_gram`: `covolume L ^ 2` is the determinant of the Gram matrix of
   any `ℤ`-basis of `L`.
+* `ZLattice.covolume_dual`: `covolume L^∨ = (covolume L)⁻¹`.
 -/
 
 public section
 
-open Module MeasureTheory
+open Module MeasureTheory Submodule
+open LinearMap (BilinForm)
 
 namespace TauCeti
 
@@ -59,5 +67,34 @@ theorem _root_.ZLattice.covolume_sq_eq_det_gram (L : Submodule ℤ E) [DiscreteT
     rw [Matrix.gram_eq_conjTranspose_mul o, Matrix.det_mul, Matrix.det_conjTranspose,
       star_trivial, Basis.det_apply, hM, sq]
   rw [ZLattice.covolume_eq_det_mul_measureReal L volume b o.toBasis, hvol, hgram, mul_one, sq_abs]
+
+/-- The covolume of the dual of a full lattice is the inverse of the covolume of the lattice. -/
+@[simp]
+theorem _root_.ZLattice.covolume_dual (L : Submodule ℤ E) [DiscreteTopology L] [IsZLattice ℝ L] :
+    ZLattice.covolume (ZLattice.dual L) = (ZLattice.covolume L)⁻¹ := by
+  classical
+  let b := Free.chooseBasis ℤ L
+  let B := b.ofZLatticeBasis ℝ L
+  let D := BilinForm.dualBasis (innerₗ E) nondegenerate_inner B
+  -- The dual lattice is the `ℤ`-span of the dual basis `D`, so `D` is a `ℤ`-basis of it.
+  have hdual : span ℤ (Set.range D) = ZLattice.dual L := by
+    conv_rhs => rw [← b.ofZLatticeBasis_span ℝ L]
+    rw [ZLattice.dual_span_basis]
+  let bD : Basis _ ℤ (ZLattice.dual L) :=
+    (Basis.span (D.linearIndependent.restrict_scalars' ℤ)).map (LinearEquiv.ofEq _ _ hdual)
+  have hB : (fun i ↦ (b i : E)) = ⇑B := funext fun i ↦ (b.ofZLatticeBasis_apply ℝ L i).symm
+  have hD : (fun i ↦ (bD i : E)) = ⇑D := funext fun i ↦ by simp [bD, Basis.span_apply]
+  have hgram (v : Basis (Free.ChooseBasisIndex ℤ L) ℝ E) :
+      Matrix.gram ℝ ⇑v = BilinForm.toMatrix v (innerₗ E) := by
+    ext i j
+    simp [BilinForm.toMatrix_apply, Matrix.gram_apply]
+  -- The squared covolumes are the Gram determinants of `D` and `B`, which are inverse.
+  have hsq : (ZLattice.covolume (ZLattice.dual L) * ZLattice.covolume L) ^ 2 = 1 := by
+    rw [mul_pow, ZLattice.covolume_sq_eq_det_gram _ bD, ZLattice.covolume_sq_eq_det_gram L b, hB,
+      hD, hgram, hgram]
+    exact BilinForm.det_toMatrix_dualBasis_mul_det_toMatrix _ _ B
+  have hpos := mul_pos (ZLattice.covolume_pos (ZLattice.dual L) volume)
+    (ZLattice.covolume_pos L volume)
+  exact eq_inv_of_mul_eq_one_left ((pow_eq_one_iff_of_nonneg hpos.le two_ne_zero).mp hsq)
 
 end TauCeti

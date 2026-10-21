@@ -63,103 +63,76 @@ universe u
 variable {E : Type u} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- Radial projection of the cylinder over the closed unit ball away from the point at height `2`
-on its axis, written in the ambient coordinates `ℝ × E`.  Where the ray exits through the bottom
-face the value has time coordinate `0`; on the remaining region the space coordinate has unit
-norm.  The truncated norm `max ‖x‖ 2⁻¹` in the second branch agrees with `‖x‖` wherever that
-branch is used, and keeps the formula continuous at `x = 0`. -/
+on its axis, written in the ambient coordinates `ℝ × E`. The scale factor is the smaller of the
+factors needed to reach the bottom face and the side of the cylinder. Taking the maximum in the
+denominator gives a single continuous formula, including at the cylinder axis. -/
 private def ballRadialProjection (p : I × closedBall (0 : E) 1) : ℝ × E :=
-  if (p.1 : ℝ) ≤ 2 - 2 * ‖(p.2 : E)‖ then
-    (0, (2 / (2 - (p.1 : ℝ))) • (p.2 : E))
-  else
-    ((2 * max ‖(p.2 : E)‖ 2⁻¹ + (p.1 : ℝ) - 2) / max ‖(p.2 : E)‖ 2⁻¹,
-      (max ‖(p.2 : E)‖ 2⁻¹)⁻¹ • (p.2 : E))
+  let d := max (2 - (p.1 : ℝ)) (2 * ‖(p.2 : E)‖)
+  (2 - 2 * (2 - (p.1 : ℝ)) / d, (2 / d) • (p.2 : E))
 
 omit [NormedSpace ℝ E] in
-private lemma ballRadialProjection_max_norm_ne_zero (p : I × closedBall (0 : E) 1) :
-    max ‖(p.2 : E)‖ (2 : ℝ)⁻¹ ≠ 0 :=
-  ne_of_gt (lt_of_lt_of_le (by norm_num) (le_max_right _ _))
-
-omit [NormedSpace ℝ E] in
-private lemma ballRadialProjection_two_sub_ne_zero (p : I × closedBall (0 : E) 1) :
-    (2 : ℝ) - (p.1 : ℝ) ≠ 0 :=
-  ne_of_gt (by have := p.1.2.2; linarith)
+private lemma ballRadialProjection_den_pos (p : I × closedBall (0 : E) 1) :
+    0 < max (2 - (p.1 : ℝ)) (2 * ‖(p.2 : E)‖) :=
+  lt_of_lt_of_le (by have := p.1.2.2; linarith) (le_max_left _ _)
 
 private lemma continuous_ballRadialProjection : Continuous (ballRadialProjection (E := E)) := by
-  have hvec : Continuous fun p : I × closedBall (0 : E) 1 => ((p.2 : E)) := by fun_prop
-  have hmax : Continuous fun p : I × closedBall (0 : E) 1 => max ‖(p.2 : E)‖ (2 : ℝ)⁻¹ := by
-    fun_prop
-  refine Continuous.if_le ?_ ?_ (by fun_prop) (by fun_prop) ?_
-  · exact continuous_const.prodMk
-      ((continuous_const.div (by fun_prop) ballRadialProjection_two_sub_ne_zero).smul hvec)
-  · exact ((by fun_prop : Continuous fun p : I × closedBall (0 : E) 1 =>
-        2 * max ‖(p.2 : E)‖ (2 : ℝ)⁻¹ + (p.1 : ℝ) - 2).div hmax
-          ballRadialProjection_max_norm_ne_zero).prodMk
-      ((hmax.inv₀ ballRadialProjection_max_norm_ne_zero).smul hvec)
-  · rintro p hp
-    -- On the seam the truncation is inactive and both branches are the exit point through the
-    -- rim of the cylinder.
-    have ht1 : (p.1 : ℝ) ≤ 1 := p.1.2.2
-    have hn : (2 : ℝ)⁻¹ ≤ ‖(p.2 : E)‖ := by rw [hp] at ht1; linarith
-    have hnpos : ‖(p.2 : E)‖ ≠ 0 := ne_of_gt (lt_of_lt_of_le (by norm_num) hn)
-    rw [max_eq_left hn, hp]
-    refine Prod.ext ?_ (congrArg (· • (p.2 : E)) ?_)
-    · field_simp
-      ring
-    · field_simp
-      rw [sub_sub_cancel, div_self hnpos]
+  have hd : Continuous fun p : I × closedBall (0 : E) 1 =>
+      max (2 - (p.1 : ℝ)) (2 * ‖(p.2 : E)‖) := by fun_prop
+  have hne p := (ballRadialProjection_den_pos (E := E) p).ne'
+  exact (continuous_const.sub ((by fun_prop : Continuous fun p : I × closedBall (0 : E) 1 =>
+    2 * (2 - (p.1 : ℝ))).div hd hne)).prodMk
+      ((continuous_const.div hd hne).smul (by fun_prop))
 
 /-- The radial projection lands in the cylinder, and in the union of its bottom face with the
 part of the cylinder lying over the sphere. -/
 private lemma ballRadialProjection_spec (p : I × closedBall (0 : E) 1) :
     (ballRadialProjection p).1 ∈ I ∧ (ballRadialProjection p).2 ∈ closedBall (0 : E) 1 ∧
       ((ballRadialProjection p).1 = 0 ∨ (ballRadialProjection p).2 ∈ sphere (0 : E) 1) := by
-  have ht1 : (p.1 : ℝ) ≤ 1 := p.1.2.2
-  have hn1 : ‖(p.2 : E)‖ ≤ 1 := mem_closedBall_zero_iff.1 p.2.2
-  simp only [ballRadialProjection]
-  split_ifs with h
-  · have h2t : (0 : ℝ) < 2 - (p.1 : ℝ) := by linarith
-    have hpos : (0 : ℝ) < 2 / (2 - (p.1 : ℝ)) := by positivity
-    refine ⟨unitInterval.zero_mem, ?_, Or.inl rfl⟩
-    rw [mem_closedBall_zero_iff, norm_smul, Real.norm_eq_abs, abs_of_pos hpos,
-      div_mul_eq_mul_div, div_le_one h2t]
-    linarith
-  · rw [not_le] at h
-    have hn : (2 : ℝ)⁻¹ < ‖(p.2 : E)‖ := by linarith
-    have hnpos : (0 : ℝ) < ‖(p.2 : E)‖ := lt_trans (by norm_num) hn
-    have hunit : ‖(‖(p.2 : E)‖⁻¹ • (p.2 : E))‖ = 1 := by
-      simp [norm_smul, ne_of_gt hnpos]
-    rw [max_eq_left hn.le]
-    refine ⟨?_, ?_, Or.inr ?_⟩
-    · rw [Set.mem_Icc]
-      exact ⟨div_nonneg (by linarith) hnpos.le, by rw [div_le_one hnpos]; linarith⟩
-    · rw [mem_closedBall_zero_iff, hunit]
-    · rw [mem_sphere_zero_iff_norm, hunit]
+  have ht0 := p.1.2.1
+  have ht1 := p.1.2.2
+  have hn1 := mem_closedBall_zero_iff.1 p.2.2
+  have hd := ballRadialProjection_den_pos p
+  have hd1 := le_max_left (2 - (p.1 : ℝ)) (2 * ‖(p.2 : E)‖)
+  have hd2 := le_max_right (2 - (p.1 : ℝ)) (2 * ‖(p.2 : E)‖)
+  have hdle : max (2 - (p.1 : ℝ)) (2 * ‖(p.2 : E)‖) ≤ 2 :=
+    max_le (by linarith) (by linarith)
+  have hnorm : ‖(ballRadialProjection p).2‖ =
+      2 * ‖(p.2 : E)‖ / max (2 - (p.1 : ℝ)) (2 * ‖(p.2 : E)‖) := by
+    simp [ballRadialProjection, norm_smul, Real.norm_eq_abs, abs_of_pos hd,
+      div_mul_eq_mul_div]
+  refine ⟨?_, ?_, ?_⟩
+  · dsimp [ballRadialProjection]
+    constructor
+    · rw [sub_nonneg, div_le_iff₀ hd]
+      linarith
+    · rw [sub_le_comm, le_div_iff₀ hd]
+      linarith
+  · rw [mem_closedBall_zero_iff, hnorm, div_le_one hd]
+    exact hd2
+  · rcases le_total (2 * ‖(p.2 : E)‖) (2 - (p.1 : ℝ)) with h | h
+    · left
+      simp [ballRadialProjection, max_eq_left h,
+        ne_of_gt (by linarith : 0 < 2 - (p.1 : ℝ))]
+    · right
+      rw [mem_sphere_zero_iff_norm, hnorm, max_eq_right h, div_self]
+      simpa [max_eq_right h] using hd.ne'
 
 /-- The radial projection fixes the bottom face of the cylinder and the part of the cylinder
 lying over the sphere. -/
 private lemma ballRadialProjection_eq_self (p : I × closedBall (0 : E) 1)
     (hp : p ∈ cylinderExtensionDomain (Subtype.val ⁻¹' sphere (0 : E) 1)) :
     ballRadialProjection p = ((p.1 : ℝ), (p.2 : E)) := by
-  have ht0 : (0 : ℝ) ≤ (p.1 : ℝ) := p.1.2.1
-  rw [mem_cylinderExtensionDomain_iff] at hp
-  by_cases ht : (p.1 : ℝ) ≤ 2 - 2 * ‖(p.2 : E)‖
-  · -- The first branch applies, and the point lies on the bottom face of the cylinder.
-    have hzero : (p.1 : ℝ) = 0 := by
-      obtain h0 | hs := hp
-      · exact congrArg Subtype.val h0
-      · rw [mem_sphere_zero_iff_norm.1 hs] at ht
-        linarith
-    rw [ballRadialProjection, ite_eq_left ht, hzero]
-    norm_num
-  · -- The second branch applies, and the point lies over the sphere.
-    have hn : ‖(p.2 : E)‖ = 1 := by
-      obtain h0 | hs := hp
-      · have hz : (p.1 : ℝ) = 0 := congrArg Subtype.val h0
-        have hb : ‖(p.2 : E)‖ ≤ 1 := mem_closedBall_zero_iff.1 p.2.2
-        exact absurd (by rw [hz]; linarith) ht
-      · exact mem_sphere_zero_iff_norm.1 hs
-    rw [ballRadialProjection, ite_eq_right ht, hn, max_eq_left (by norm_num : (2 : ℝ)⁻¹ ≤ 1)]
-    norm_num
+  have hd : max (2 - (p.1 : ℝ)) (2 * ‖(p.2 : E)‖) = 2 := by
+    rcases mem_cylinderExtensionDomain_iff.1 hp with h0 | hs
+    · have ht : (p.1 : ℝ) = 0 := congrArg Subtype.val h0
+      have hn := mem_closedBall_zero_iff.1 p.2.2
+      simp only [ht, sub_zero]
+      exact max_eq_left (by linarith)
+    · rw [mem_sphere_zero_iff_norm.1 hs, mul_one]
+      exact max_eq_right (by have := p.1.2.1; linarith)
+  simp only [ballRadialProjection, hd, div_self (by norm_num : (2 : ℝ) ≠ 0), one_smul]
+  congr 1
+  ring
 
 /-- The retraction of the cylinder over the closed unit ball onto the union of its bottom face
 with the part lying over the unit sphere. -/

@@ -457,21 +457,6 @@ theorem toContinuous_injective : Function.Injective (toContinuous (K := K)) := b
   funext w
   simpa using congrArg (fun t : ContinuousInfinityType K ↦ t.realParity w) h
 
-/-- **A nontrivial sign is not an integer infinity type.**  A finite-order infinity type with a
-nonzero parity at some real place is not the continuous infinity type of any algebraic infinity
-type: the latter has modulus exponent zero at that place only when its parity there is zero. -/
-theorem toContinuous_ne_algebraicInfinityType_toContinuous {ε : FiniteOrderInfinityType K}
-    {w : {w : InfinitePlace K // w.IsReal}} (hw : ε w ≠ 0) (t : AlgebraicInfinityType K) :
-    toContinuous ε ≠ AlgebraicInfinityType.toContinuous t := by
-  intro h
-  have hexp := congrArg (fun t : ContinuousInfinityType K ↦ t.realExponent w) h
-  have hpar := congrArg (fun t : ContinuousInfinityType K ↦ t.realParity w) h
-  simp only [toContinuous_realExponent, AlgebraicInfinityType.toContinuous_realExponent,
-    toContinuous_realParity, AlgebraicInfinityType.toContinuous_realParity] at hexp hpar
-  have h0 : t w.1.embedding = 0 := by exact_mod_cast hexp.symm
-  rw [h0, Int.cast_zero] at hpar
-  exact hw hpar
-
 end FiniteOrderInfinityType
 
 end TauCeti.GlobalNumberFields

@@ -317,6 +317,18 @@ theorem primPart_smul (f : BinaryQuadraticForm ℤ)
         rw [natCast_zsmul, content_smul_primPart]
       _ = (f.content : ℤ) • (γ • f.primPart) := (smul_comm _ _ _).symm
 
+/-- A form and its primitive part have the same proper automorphs. -/
+@[simp]
+theorem stabilizer_primPart (f : BinaryQuadraticForm ℤ) :
+    MulAction.stabilizer SL(2, ℤ) f.primPart = MulAction.stabilizer SL(2, ℤ) f := by
+  ext γ
+  simp only [MulAction.mem_stabilizer_iff]
+  constructor
+  · intro h
+    rw [← content_smul_primPart f, smul_comm, h]
+  · intro h
+    rw [← primPart_smul, h]
+
 /-- The discriminant of a primitive part is invariant under proper changes of variables. -/
 @[simp] theorem discrim_primPart_smul (f : BinaryQuadraticForm ℤ)
     (γ : Matrix.SpecialLinearGroup (Fin 2) ℤ) :

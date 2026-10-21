@@ -14,7 +14,8 @@ public import Mathlib.Analysis.InnerProductSpace.Convex
 A **crosscut** of a plane domain `U` is a simple path whose two endpoints lie on the frontier of
 `U` and whose open interior lies in `U`. Crosscuts are the basic geometric objects used to define
 prime ends: a prime end is represented by a nested null chain of crosscuts, with two chains
-identified when they eventually select the same side of each other.
+identified when every domain cut off by either contains a domain cut off by the other
+(`TauCeti.NullChainEquivalent`).
 
 This file introduces the crosscut predicate at the level of paths, proves the elementary API that
 later prime-end constructions need, and supplies its fundamental nondegenerate examples: chords
@@ -26,14 +27,15 @@ visited again in the interior. For an open `U`, it follows that the path meets `
 exactly at its two endpoints.
 
 Crosscuts are unoriented objects geometrically. Accordingly, reversing a path preserves the
-predicate. The oriented path is nevertheless retained: a prime-end chain will use the order only
-to choose and compare the components of `U` cut off by its crosscuts.
+predicate.
 
 ## Main declarations
 
 * `Path.IsCrosscut` — a simple path with endpoints on `frontier U` and interior in `U`.
 * `Path.IsCrosscut.range_subset_closure` — a crosscut lies in the domain's closure.
 * `Path.IsCrosscut.range_inter_frontier` — it meets the frontier exactly at its endpoints.
+* `Path.IsCrosscut.isConnected_range_inter` — the part of a crosscut inside its domain is
+  connected.
 * `Path.isCrosscut_symm` — crosscuts are invariant under reversing orientation.
 * `Path.IsCrosscut.map_homeomorph` — ambient homeomorphisms carry crosscuts to crosscuts.
 * `Path.isCrosscut_segment_ball` — every nondegenerate chord of a disc is a crosscut.
@@ -125,6 +127,34 @@ theorem IsCrosscut.range_inter_frontier (hγ : IsCrosscut γ U) (hU : IsOpen U) 
     rcases hz with rfl | rfl
     · exact ⟨⟨0, by simp⟩, hγ.source_mem_frontier⟩
     · exact ⟨⟨1, by simp⟩, hγ.target_mem_frontier⟩
+
+/-- For an open set, the part of a crosscut inside the set is its open arc, the image of the
+open parameter interval. -/
+theorem IsCrosscut.range_inter_eq_image_Ioo (hγ : IsCrosscut γ U) (hU : IsOpen U) :
+    range γ ∩ U = γ '' Ioo (0 : I) 1 := by
+  ext z
+  constructor
+  · rintro ⟨⟨t, rfl⟩, htU⟩
+    rcases eq_endpoints_or_mem_Ioo_of_mem_Icc t.2 with ht | ht | ht
+    · have : t = 0 := Subtype.ext ht
+      subst t
+      exact ((hU.frontier_eq.subset hγ.source_mem_frontier).2 (by simpa using htU)).elim
+    · have : t = 1 := Subtype.ext ht
+      subst t
+      exact ((hU.frontier_eq.subset hγ.target_mem_frontier).2 (by simpa using htU)).elim
+    · exact ⟨t, ht, rfl⟩
+  · rintro ⟨t, ht, rfl⟩
+    exact ⟨⟨t, rfl⟩, hγ.mapsTo_interior ht⟩
+
+/-- The part of a crosscut inside its domain is connected: it contains the open arc and lies in
+its closure. -/
+theorem IsCrosscut.isConnected_range_inter (hγ : IsCrosscut γ U) :
+    IsConnected (range γ ∩ U) := by
+  refine ((isConnected_Ioo zero_lt_one).image _ γ.continuous.continuousOn).subset_closure
+    (image_subset_iff.mpr fun t ht => ⟨⟨t, rfl⟩, hγ.mapsTo_interior ht⟩) ?_
+  have h : closure (Ioo (0 : I) 1) = univ := by rw [closure_Ioo zero_ne_one]; exact Icc_bot_top
+  rw [← image_univ, ← h]
+  exact inter_subset_left.trans (image_closure_subset_closure_image γ.continuous)
 
 /-- Reversing an oriented crosscut gives a crosscut with the opposite orientation. -/
 theorem IsCrosscut.symm (hγ : IsCrosscut γ U) : IsCrosscut γ.symm U := by
