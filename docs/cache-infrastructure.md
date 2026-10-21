@@ -103,17 +103,14 @@ the build job.
 ## Contributors
 
 The read endpoints above are anonymous and are not secrets, so `scripts/lake-cache-get.sh` defaults
-to them and a contributor needs no configuration:
+to them and contributors need no credentials. Follow the
+[README Building instructions](../README.md#building) for the local Lake environment settings,
+cache restoration, and fallback handling before building.
+The helper alone does not apply its fallback settings to the caller's shell.
 
-```bash
-bash scripts/lake-cache-get.sh .
-```
-
-This is the second half of a working local build and the README documents it as such. Skipping it
-does not fail anything; it compiles the whole library from source instead, which is why its absence
-went unnoticed for as long as it did. CI keeps passing the endpoints explicitly from the
-`LAKE_CACHE_*_PUBLIC` repo variables and reaches the script only when those are set, so the defaults
-never decide what CI does.
+Skipping this fetch can require compiling the whole library from source. CI keeps passing the
+endpoints explicitly from the `LAKE_CACHE_*_PUBLIC` repo variables and reaches the script only
+when those are set, so the defaults never decide what CI does.
 
 Anything else reading this cache, including the worker exemplar in
 [`TauCetiProject/TauCetiWorker`](https://github.com/TauCetiProject/TauCetiWorker), must use the custom domain rather
