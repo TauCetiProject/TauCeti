@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Metric
 import TauCeti.Analysis.Complex.UpperHalfPlane.Rotation
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjAct
 
 /-!
 # Displacements and commutator traces in `SL(2, ℝ)`
@@ -71,10 +72,8 @@ theorem cosh_dist_smul_I (g : SL(2, ℝ)) :
     field_simp
     ring
   have him : (g • I).im = 1 / (g 1 1 ^ 2 + g 1 0 ^ 2) := by
-    rw [← coe_im, hz, Complex.div_im]
-    simp [Complex.normSq_apply]
-    field_simp
-    linear_combination hdet
+    rw [MulAction.compHom_smul_def, im_smul_eq_div_normSq]
+    simp [denom, Complex.normSq_apply, sq]
   rw [cosh_dist', hre, him]
   simp
   field_simp
@@ -87,12 +86,6 @@ private theorem eq_of_smul_I_eq_I {k : SL(2, ℝ)} (hk : k • I = I) :
   have hdet := k.det_coe
   rw [Matrix.det_fin_two, h₁₁, h₁₀] at hdet
   exact ⟨h₁₁, h₁₀, by linear_combination hdet⟩
-
-/-- Conjugation in `SL(2, ℝ)` preserves the trace. -/
-private theorem trace_mul_mul_inv (P M : SL(2, ℝ)) :
-    ((P * M * P⁻¹ : SL(2, ℝ)) : Matrix (Fin 2) (Fin 2) ℝ).trace =
-      (M : Matrix (Fin 2) (Fin 2) ℝ).trace := by
-  rw [coe_mul, coe_mul, Matrix.trace_mul_cycle, ← coe_mul, inv_mul_cancel, coe_one, one_mul]
 
 /-- The base-point displacement of a conjugate of `k = !![a, b; -b, a]`:
 `N(B k B⁻¹) - 2 = b² (N(B)² - 4)`, where `N` is the sum of the squares of the entries. -/
@@ -131,7 +124,11 @@ theorem cosh_dist_smul_of_smul_eq_self {g : SL(2, ℝ)} {z : ℍ} (hz : g • z 
       show Q⁻¹ * P * k * (Q⁻¹ * P)⁻¹ = Q⁻¹ * g * Q by rw [hg]; group, mul_smul, mul_smul]
   have hdist₂ : dist (Q • I) (P • I) = dist ((Q⁻¹ * P) • I) I := by
     rw [dist_comm, ← dist_smul Q⁻¹, ← mul_smul, inv_smul_smul]
-  rw [hdist₁, hdist₂, Real.sinh_sq, cosh_dist_smul_I, cosh_dist_smul_I, hg, trace_mul_mul_inv,
+  have htr := ConjAct.trace_specialLinearGroup_smul (ConjAct.toConjAct P)
+    (k : Matrix (Fin 2) (Fin 2) ℝ)
+  simp only [ConjAct.specialLinearGroup_smul_def, ConjAct.ofConjAct_toConjAct, ← coe_mul,
+    ← hg] at htr
+  rw [hdist₁, hdist₂, Real.sinh_sq, cosh_dist_smul_I, cosh_dist_smul_I, htr,
     Matrix.trace_fin_two, h₁₁]
   have := sumSq_conj (B := Q⁻¹ * P) h₁₁ h₁₀ hab
   linear_combination this / 2 +
@@ -159,11 +156,19 @@ theorem trace_commutatorElement_of_smul_eq_self {g : SL(2, ℝ)} {z : ℍ} (hz :
   have hdist : dist (h • P • I) (P • I) = dist (X • I) I := by
     rw [← dist_smul P⁻¹, inv_smul_smul, ← mul_smul, ← mul_smul, hX, mul_assoc]
   have htr : (g : Matrix (Fin 2) (Fin 2) ℝ).trace = 2 * k 0 0 := by
-    rw [show g = P * k * P⁻¹ by rw [hk]; group, trace_mul_mul_inv, Matrix.trace_fin_two, h₁₁]
+    have := ConjAct.trace_specialLinearGroup_smul (ConjAct.toConjAct P)
+      (k : Matrix (Fin 2) (Fin 2) ℝ)
+    simp only [ConjAct.specialLinearGroup_smul_def, ConjAct.ofConjAct_toConjAct, ← coe_mul,
+      show P * k * P⁻¹ = g by rw [hk]; group] at this
+    rw [this, Matrix.trace_fin_two, h₁₁]
     ring
   have hdet := X.det_coe
   rw [Matrix.det_fin_two] at hdet
-  rw [hcomm, trace_mul_mul_inv, hdist, cosh_dist_smul_I, htr]
+  have hconj := ConjAct.trace_specialLinearGroup_smul (ConjAct.toConjAct P)
+    ((⁅k, X⁆ : SL(2, ℝ)) : Matrix (Fin 2) (Fin 2) ℝ)
+  simp only [ConjAct.specialLinearGroup_smul_def, ConjAct.ofConjAct_toConjAct, ← coe_mul,
+    ← hcomm] at hconj
+  rw [hconj, hdist, cosh_dist_smul_I, htr]
   simp only [commutatorElement_def, coe_mul, coe_inv, Matrix.mul_apply, Fin.sum_univ_two,
     Matrix.adjugate_fin_two, Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero,
     Matrix.cons_val_one, Matrix.empty_val', Matrix.cons_val_fin_one, Matrix.trace_fin_two, h₁₁,
