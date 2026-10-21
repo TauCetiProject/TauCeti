@@ -259,20 +259,16 @@ private theorem height_eq_ringKrullDim_of_isMaximal_of_isDomain {A : Type*} [Com
     [Algebra.FiniteType k A] (m : Ideal A) [m.IsMaximal] :
     (m.height : WithBot ℕ∞) = ringKrullDim A := by
   -- Noether normalization `k[X₁, …, Xₛ] → A` gives `dim A = s`; going down over the normal domain
-  -- `k[X₁, …, Xₛ]` bounds the height of `m` below by that of its contraction, which is `s`.
+  -- `k[X₁, …, Xₛ]` gives `m` the height of its contraction, which is `s`.
   obtain ⟨s, g, hinj, hint⟩ := exists_integral_inj_algHom_of_fg k A
-  refine le_antisymm (Ideal.height_le_ringKrullDim_of_ne_top Ideal.IsPrime.ne_top') ?_
   rw [ringKrullDim_eq_of_injective_of_isIntegral_mvPolynomial g hinj hint]
   algebraize [g.toRingHom]
   have : FaithfulSMul (MvPolynomial (Fin s) k) A :=
     (faithfulSMul_iff_algebraMap_injective _ _).2 hinj
   have : Algebra.IsIntegral (MvPolynomial (Fin s) k) A := ⟨hint⟩
-  have : IsNoetherianRing A := Algebra.FiniteType.isNoetherianRing k A
-  let p := m.under (MvPolynomial (Fin s) k)
-  have : p.IsMaximal := Ideal.isMaximal_under_of_isIntegral_of_isMaximal m
-  rw [Ideal.height_eq_height_add_of_liesOver_of_hasGoingDown p m,
-    MvPolynomial.height_eq_natCard_of_isMaximal p]
-  exact_mod_cast le_self_add
+  rw [height_eq_of_isMaximal_of_isIntegral_of_hasGoingDown (R := MvPolynomial (Fin s) k)
+    (fun p _ ↦ MvPolynomial.height_eq_natCard_of_isMaximal p) m]
+  norm_cast
 
 variable (k) in
 /-- Every maximal ideal of a finitely generated algebra with irreducible spectrum over a field

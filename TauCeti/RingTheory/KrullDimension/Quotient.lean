@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.KrullDimension.NonZeroDivisors
 public import Mathlib.RingTheory.Spectrum.Prime.Topology
 public import TauCeti.Topology.PureDimension
 import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
+import TauCeti.RingTheory.Catenary
 
 /-!
 # Krull dimension and heights under quotients
@@ -33,8 +34,8 @@ one.
 
 Quotienting by an ideal `q ≤ p` does not increase the height of the prime `p`. If `p` has finite
 height, a chain of primes of length `ht p` ending at `p` starts above some minimal prime `q`, and
-it lies in `V(q) ≅ Spec (R ⧸ q)`; so the height of `p` is attained on an irreducible component of
-`Spec R` through `p`.
+it lies in the interval `[q, p]` of `Spec R`, whose dimension is `ht (p ⧸ q)`; so the height of
+`p` is attained on an irreducible component of `Spec R` through `p`.
 
 The spectrum of a ring is pure-dimensional of dimension `d` exactly when every quotient by a
 minimal prime has Krull dimension `d`: the irreducible components are the closed subsets `V(P)`
@@ -244,31 +245,6 @@ theorem height_map_quotientMk_le {p q : Ideal R} [p.IsPrime] (hqp : q ≤ p) :
           (RingHom.strictMono_comap_of_surjective Quotient.mk_surjective) P
     _ = p.height := by rw [hP]; exact (PrimeSpectrum.height_eq_orderHeight _).symm
 
-/-- A chain of primes ending at `p` whose first prime contains `q` gives a chain of the same
-length in `R ⧸ q` ending at the image of `p`. -/
-theorem length_le_height_map_quotientMk {p q : Ideal R} [p.IsPrime]
-    (l : LTSeries (PrimeSpectrum R)) (hl : l.last = (⟨p, ‹_›⟩ : PrimeSpectrum R))
-    (hq : q ≤ l.head.asIdeal) :
-    (l.length : ℕ∞) ≤ (p.map (Quotient.mk q)).height := by
-  have hqp : q ≤ p :=
-    hq.trans ((PrimeSpectrum.asIdeal_le_asIdeal _ _).mpr (hl ▸ l.head_le_last))
-  have : (p.map (Quotient.mk q)).IsPrime := isPrime_map_quotientMk_of_isPrime hqp
-  let P : PrimeSpectrum (R ⧸ q) := ⟨_, this⟩
-  -- Every prime of the chain contains `q`, so the chain lies in `V(q) ≃o Spec (R ⧸ q)`.
-  let l' : LTSeries (PrimeSpectrum.zeroLocus (R := R) q) :=
-    .mk l.length (fun i ↦ ⟨l i, hq.trans (l.head_le i)⟩)
-      fun _ _ hij ↦ Subtype.mk_lt_mk.mpr (l.strictMono hij)
-  let e := q.primeSpectrumQuotientOrderIsoZeroLocus
-  have hP : e P = l'.last := by
-    refine Subtype.ext (PrimeSpectrum.ext ?_)
-    -- `e` is contraction along `Quotient.mk q` on underlying ideals.
-    change (p.map (Quotient.mk q)).comap (Quotient.mk q) = (l.last).asIdeal
-    rw [comap_map_mk hqp, hl]
-  calc (l.length : ℕ∞) = l'.length := rfl
-    _ ≤ Order.height l'.last := Order.length_le_height_last
-    _ = Order.height P := by rw [← hP, Order.height_orderIso]
-    _ = (p.map (Quotient.mk q)).height := P.height_eq_orderHeight.symm
-
 /-- If the prime `p` has finite height, then some minimal prime `q ≤ p` satisfies
 `ht (p ⧸ q) = ht p`: the height of `p` is attained on an irreducible component of `Spec R`
 through `p`. -/
@@ -278,10 +254,15 @@ theorem exists_mem_minimalPrimes_height_map_quotientMk_eq (p : Ideal R) [p.IsPri
   -- Take a chain of length `ht p` ending at `p` and a minimal prime below its first prime.
   obtain ⟨l, hl, hlen⟩ := p.exists_ltSeries_length_eq_height
   obtain ⟨q, hq, hqh⟩ := exists_minimalPrimes_le (J := l.head.asIdeal) bot_le
-  have hqp : q ≤ p :=
-    hqh.trans ((PrimeSpectrum.asIdeal_le_asIdeal _ _).mpr (hl ▸ l.head_le_last))
-  refine ⟨q, hq, hqp, (height_map_quotientMk_le hqp).antisymm ?_⟩
-  rw [← hlen]
-  exact length_le_height_map_quotientMk l hl hqh
+  let Q : PrimeSpectrum R := ⟨q, hq.1.1⟩
+  have hQ : Q ≤ l.head := hqh
+  have hQP : Q ≤ ⟨p, ‹_›⟩ := hl ▸ hQ.trans l.head_le_last
+  refine ⟨q, hq, hQP, (height_map_quotientMk_le hQP).antisymm ?_⟩
+  -- The chain `l` lies in the interval `[q, p]` of `Spec R`, whose dimension is `ht (p ⧸ q)`.
+  let l' : LTSeries (Set.Icc Q ⟨p, ‹_›⟩) :=
+    .mk l.length (fun i ↦ ⟨l i, hQ.trans (l.head_le i), hl ▸ l.monotone (Fin.le_last i)⟩)
+      fun _ _ hij ↦ Subtype.mk_lt_mk.mpr (l.strictMono hij)
+  rw [← hlen, ← WithBot.coe_le_coe, ← PrimeSpectrum.krullDim_Icc hQP]
+  exact Order.LTSeries.length_le_krullDim l'
 
 end Ideal

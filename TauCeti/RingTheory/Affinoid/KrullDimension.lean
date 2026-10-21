@@ -13,6 +13,7 @@ import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
 import Mathlib.RingTheory.Polynomial.RationalRoot
 import TauCeti.RingTheory.Affinoid.FiniteQuotient
 import TauCeti.RingTheory.KrullDimension.Basic
+import TauCeti.RingTheory.KrullDimension.Integral
 import TauCeti.RingTheory.KrullDimension.Quotient
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.UniqueFactorization
 
@@ -96,22 +97,17 @@ theorem finiteRingKrullDim [Nontrivial A] (hA : IsAffinoidAlgebra K A) : FiniteR
 theorem height_eq_ringKrullDim_of_isDomain [IsDomain A] (hA : IsAffinoidAlgebra K A)
     (m : Ideal A) [m.IsMaximal] : (m.height : WithBot ℕ∞) = ringKrullDim A := by
   -- A normalisation `T = K⟨X₁, …, Xₙ⟩ → A` gives `dim A = n`. Since `T` is integrally closed and
-  -- `A` is a domain, going down bounds the height of `m` below by that of its contraction to `T`,
-  -- a maximal ideal of height `n`.
+  -- `A` is a domain, going down gives `m` the height of its contraction to `T`, a maximal ideal of
+  -- height `n`.
   obtain ⟨n, hn, g, hg, hfin⟩ := hA.exists_ringKrullDim_eq_finite_injective
-  refine le_antisymm (Ideal.height_le_ringKrullDim_of_ne_top Ideal.IsPrime.ne_top') ?_
   let T := IsRestricted.subring (R := K) (fun _ : Fin n ↦ 1)
   let := g.toRingHom.toAlgebra
   have : Module.Finite T A := hfin
   have : Algebra.IsIntegral T A := Algebra.IsIntegral.of_finite T A
   have : FaithfulSMul T A := (faithfulSMul_iff_algebraMap_injective T A).mpr hg
-  have : IsNoetherianRing T := MvPowerSeries.isNoetherianRing_isRestricted_subring
-  have : IsNoetherianRing A := hA.isNoetherianRing
-  let p := m.under T
-  have : p.IsMaximal := Ideal.isMaximal_under_of_isIntegral_of_isMaximal m
-  rw [hn, Ideal.height_eq_height_add_of_liesOver_of_hasGoingDown p m,
-    Ideal.height_eq_natCard_of_isMaximal_isRestricted_subring p, Nat.card_fin]
-  exact_mod_cast le_self_add
+  rw [hn, height_eq_of_isMaximal_of_isIntegral_of_hasGoingDown (R := T)
+    (fun p _ ↦ Ideal.height_eq_natCard_of_isMaximal_isRestricted_subring p) m, Nat.card_fin]
+  norm_cast
 
 /-- **Heights of maximal ideals on irreducible closed subsets.** For a prime `P` of an affinoid
 algebra `A` contained in a maximal ideal `m`, the image of `m` in the affinoid domain `A ⧸ P` has
