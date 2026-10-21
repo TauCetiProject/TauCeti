@@ -221,7 +221,6 @@ theorem smoothCommHopfAlgProperty_quotient_unipotentDefiningHopfIdeal
     [Algebra.Smooth R H] (l : H →ₐc[R] LaurentPolynomial R) :
     smoothCommHopfAlgProperty R
       (FiniteTypeCommHopfAlgCat.quotient H l.unipotentDefiningHopfIdeal).obj := by
-  have := formallySmooth_quotient_unipotentDefiningHopfIdeal l
   rw [smoothCommHopfAlgProperty_iff]
   exact ⟨inferInstance, Algebra.FinitePresentation.of_finiteType.mp inferInstance⟩
 
@@ -231,7 +230,6 @@ theorem smoothCommHopfAlgProperty_quotient_leviDefiningHopfIdeal
     [Algebra.Smooth R H] (l : H →ₐc[R] LaurentPolynomial R) :
     smoothCommHopfAlgProperty R
       (FiniteTypeCommHopfAlgCat.quotient H (leviDefiningHopfIdeal l)).obj := by
-  have := formallySmooth_quotient_leviDefiningHopfIdeal l
   rw [smoothCommHopfAlgProperty_iff]
   exact ⟨inferInstance, Algebra.FinitePresentation.of_finiteType.mp inferInstance⟩
 
