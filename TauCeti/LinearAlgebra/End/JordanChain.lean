@@ -8,6 +8,8 @@ module
 public import Mathlib.LinearAlgebra.Basis.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.LinearAlgebra.Dual.Lemmas
+import TauCeti.Algebra.Module.Equiv.Basic
+import TauCeti.LinearAlgebra.Dimension.Submodule
 
 /-!
 # Jordan chains of nilpotent endomorphisms
@@ -20,8 +22,9 @@ This file proves that every nilpotent endomorphism of a finite-dimensional vecto
 field has a Jordan-chain basis, and that the multiset of chain lengths (the partition of
 `finrank K V` given by the Jordan block sizes) is recovered from the dimensions of the kernels of
 the powers of `f`. Consequently two nilpotent endomorphisms are conjugate exactly when their
-powers have kernels of the same dimensions. The dimension formulas and the conjugator between
-Jordan-chain bases with matching lengths only need a division ring of scalars.
+powers have kernels of the same dimensions. The basic API of Jordan-chain bases and the
+conjugator between Jordan-chain bases with matching lengths only need a semiring of scalars, and
+the kernel-dimension formulas only need a division ring.
 
 ## Main definitions and results
 
@@ -55,11 +58,11 @@ open Module Submodule Finset
 
 namespace Module.End
 
-variable {K V W : Type*} [AddCommGroup V] [AddCommGroup W]
+variable {K V W : Type*}
 
-section DivisionRing
+section Semiring
 
-variable [DivisionRing K] [Module K V] [Module K W]
+variable [Semiring K] [AddCommMonoid V] [AddCommMonoid W] [Module K V] [Module K W]
 
 /-- A Jordan-chain basis of `f` indexed by `ι`: chain `i` has head `head i` and positive length
 `len i`, the power `f ^ len i` kills `head i`, and the vectors `f ^ j (head i)`, `j < len i`,
@@ -130,14 +133,45 @@ theorem range_pow (c : f.JordanChainBasis ι) (k : ℕ) :
     rintro _ ⟨⟨i, j⟩, rfl⟩
     exact ⟨c.basis ⟨i, ⟨j, by omega⟩⟩, by simp [← mul_apply, ← pow_add, add_comm]⟩
 
+/-- The linear equivalence between the spaces of two Jordan-chain bases whose lengths agree under
+the reindexing `σ`, matching chain vectors at equal depths in corresponding chains. It conjugates
+one endomorphism to the other, see `apply_equiv`. -/
+noncomputable def equiv (c : f.JordanChainBasis ι) (d : g.JordanChainBasis κ) (σ : ι ≃ κ)
+    (hσ : ∀ i, d.len (σ i) = c.len i) : V ≃ₗ[K] W :=
+  c.basis.equiv d.basis (.sigmaCongr σ fun i => finCongr (hσ i).symm)
+
+/-- The conjugator of two Jordan-chain bases with matching lengths sends `f ^ j` of a chain head
+to `g ^ j` of the corresponding head; past the end of the chains both sides vanish. -/
+@[simp]
+theorem equiv_pow_apply_head (c : f.JordanChainBasis ι) (d : g.JordanChainBasis κ) (σ : ι ≃ κ)
+    (hσ : ∀ i, d.len (σ i) = c.len i) (i : ι) (j : ℕ) :
+    c.equiv d σ hσ ((f ^ j) (c.head i)) = (g ^ j) (d.head (σ i)) := by
+  by_cases hj : j < c.len i
+  · -- `Equiv.sigmaCongr` acts on a pair componentwise by definition.
+    have h : c.equiv d σ hσ (c.basis ⟨i, ⟨j, hj⟩⟩) = d.basis ⟨σ i, finCongr (hσ i).symm ⟨j, hj⟩⟩ :=
+      Basis.equiv_apply ..
+    simpa using h
+  · rw [pow_map_zero_of_le (not_lt.1 hj) (c.pow_len_apply_head i), map_zero,
+      pow_map_zero_of_le (by rw [hσ]; omega) (d.pow_len_apply_head (σ i))]
+
+/-- The conjugator of two Jordan-chain bases with matching lengths intertwines the two
+endomorphisms. -/
+theorem apply_equiv (c : f.JordanChainBasis ι) (d : g.JordanChainBasis κ) (σ : ι ≃ κ)
+    (hσ : ∀ i, d.len (σ i) = c.len i) (x : V) : g (c.equiv d σ hσ x) = c.equiv d σ hσ (f x) := by
+  have h : g ∘ₗ (c.equiv d σ hσ).toLinearMap = (c.equiv d σ hσ).toLinearMap ∘ₗ f := by
+    refine c.basis.ext fun ⟨i, j⟩ => ?_
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, basis_apply, equiv_pow_apply_head]
+    rw [← mul_apply, ← pow_succ', ← mul_apply, ← pow_succ', equiv_pow_apply_head]
+  exact LinearMap.congr_fun h x
+
 /-- The dimension of `V` is the sum of the lengths of the chains. -/
-theorem finrank_eq_sum_len [Fintype ι] (c : f.JordanChainBasis ι) :
+theorem finrank_eq_sum_len [StrongRankCondition K] [Fintype ι] (c : f.JordanChainBasis ι) :
     finrank K V = ∑ i, c.len i := by
   simp [finrank_eq_card_basis c.basis]
 
 /-- The rank of `f ^ k` is `∑ i, (len i - k)`. -/
-theorem finrank_range_pow [Fintype ι] (c : f.JordanChainBasis ι) (k : ℕ) :
-    finrank K (LinearMap.range (f ^ k)) = ∑ i, (c.len i - k) := by
+theorem finrank_range_pow [StrongRankCondition K] [Fintype ι] (c : f.JordanChainBasis ι)
+    (k : ℕ) : finrank K (LinearMap.range (f ^ k)) = ∑ i, (c.len i - k) := by
   have hinj : Function.Injective fun p : Σ i, Fin (c.len i - k) =>
       (⟨p.1, ⟨p.2 + k, by omega⟩⟩ : Σ i, Fin (c.len i)) := by
     rintro ⟨i, j⟩ ⟨i', j'⟩ h
@@ -148,6 +182,32 @@ theorem finrank_range_pow [Fintype ι] (c : f.JordanChainBasis ι) (k : ℕ) :
     rfl
   rw [c.range_pow]
   exact (finrank_span_eq_card (c.basis.linearIndependent.comp _ hinj)).trans (by simp)
+
+end JordanChainBasis
+
+end Semiring
+
+section CommSemiring
+
+variable [CommSemiring K] [AddCommMonoid V] [AddCommMonoid W] [Module K V] [Module K W]
+  {f : End K V} {g : End K W} {ι κ : Type*}
+
+/-- Two endomorphisms are conjugate by the conjugator of Jordan-chain bases with matching
+lengths. -/
+theorem JordanChainBasis.conj_equiv (c : f.JordanChainBasis ι) (d : g.JordanChainBasis κ)
+    (σ : ι ≃ κ) (hσ : ∀ i, d.len (σ i) = c.len i) : (c.equiv d σ hσ).conj f = g := by
+  ext x
+  rw [LinearEquiv.conj_apply_apply, ← apply_equiv, LinearEquiv.apply_symm_apply]
+
+end CommSemiring
+
+section DivisionRing
+
+variable [DivisionRing K] [AddCommGroup V] [AddCommGroup W] [Module K V] [Module K W]
+
+namespace JordanChainBasis
+
+variable {f : End K V} {g : End K W} {ι κ : Type*}
 
 /-- The dimension of the kernel of `f ^ k` is `∑ i, min k (len i)`. -/
 theorem finrank_ker_pow [Fintype ι] (c : f.JordanChainBasis ι) (k : ℕ) :
@@ -197,57 +257,14 @@ theorem exists_equiv_len_eq [Finite ι] [Finite κ] (c : f.JordanChainBasis ι)
     · rw [c.card_len_eq_add_one, d.card_len_eq_add_one, h, h, h]
   exact ⟨.ofFiberEquiv fun a => Fintype.equivOfCardEq (hcard a), Equiv.ofFiberEquiv_map _⟩
 
-/-- The linear equivalence between the spaces of two Jordan-chain bases whose lengths agree under
-the reindexing `σ`, matching chain vectors at equal depths in corresponding chains. It conjugates
-one endomorphism to the other, see `apply_equiv`. -/
-noncomputable def equiv (c : f.JordanChainBasis ι) (d : g.JordanChainBasis κ) (σ : ι ≃ κ)
-    (hσ : ∀ i, d.len (σ i) = c.len i) : V ≃ₗ[K] W :=
-  c.basis.equiv d.basis (.sigmaCongr σ fun i => finCongr (hσ i).symm)
-
-/-- The conjugator of two Jordan-chain bases with matching lengths sends `f ^ j` of a chain head
-to `g ^ j` of the corresponding head; past the end of the chains both sides vanish. -/
-@[simp]
-theorem equiv_pow_apply_head (c : f.JordanChainBasis ι) (d : g.JordanChainBasis κ) (σ : ι ≃ κ)
-    (hσ : ∀ i, d.len (σ i) = c.len i) (i : ι) (j : ℕ) :
-    c.equiv d σ hσ ((f ^ j) (c.head i)) = (g ^ j) (d.head (σ i)) := by
-  by_cases hj : j < c.len i
-  · -- `Equiv.sigmaCongr` acts on a pair componentwise by definition.
-    have h : c.equiv d σ hσ (c.basis ⟨i, ⟨j, hj⟩⟩) = d.basis ⟨σ i, finCongr (hσ i).symm ⟨j, hj⟩⟩ :=
-      Basis.equiv_apply ..
-    simpa using h
-  · rw [pow_map_zero_of_le (not_lt.1 hj) (c.pow_len_apply_head i), map_zero,
-      pow_map_zero_of_le (by rw [hσ]; omega) (d.pow_len_apply_head (σ i))]
-
-/-- The conjugator of two Jordan-chain bases with matching lengths intertwines the two
-endomorphisms. -/
-theorem apply_equiv (c : f.JordanChainBasis ι) (d : g.JordanChainBasis κ) (σ : ι ≃ κ)
-    (hσ : ∀ i, d.len (σ i) = c.len i) (x : V) : g (c.equiv d σ hσ x) = c.equiv d σ hσ (f x) := by
-  have h : g ∘ₗ (c.equiv d σ hσ).toLinearMap = (c.equiv d σ hσ).toLinearMap ∘ₗ f := by
-    refine c.basis.ext fun ⟨i, j⟩ => ?_
-    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, basis_apply, equiv_pow_apply_head]
-    rw [← mul_apply, ← pow_succ', ← mul_apply, ← pow_succ', equiv_pow_apply_head]
-  exact LinearMap.congr_fun h x
-
 end JordanChainBasis
 
 end DivisionRing
 
 section Field
 
-variable [Field K] [Module K V] [Module K W] {f : End K V} {g : End K W}
-
-namespace JordanChainBasis
-
-variable {ι κ : Type*}
-
-/-- Two endomorphisms are conjugate by the conjugator of Jordan-chain bases with matching
-lengths. -/
-theorem conj_equiv (c : f.JordanChainBasis ι) (d : g.JordanChainBasis κ) (σ : ι ≃ κ)
-    (hσ : ∀ i, d.len (σ i) = c.len i) : (c.equiv d σ hσ).conj f = g := by
-  ext x
-  rw [LinearEquiv.conj_apply_apply, ← apply_equiv, LinearEquiv.apply_symm_apply]
-
-end JordanChainBasis
+variable [Field K] [AddCommGroup V] [AddCommGroup W] [Module K V] [Module K W] {f : End K V}
+  {g : End K W}
 
 /-- If `f ^ m` kills `v` and the linear form `φ` does not vanish at `f ^ (m - 1) v`, then the
 vectors `j ↦ φ (f ^ j (f ^ i v))` of `Fin m → K`, for `i < m`, are linearly independent: they form
@@ -312,6 +329,57 @@ private theorem exists_jordanChains_sup {m : ℕ} {v : V} (hm : 0 < m) (hv : (f 
     -- `F₂` is the family of the given chains, with `len₁ (.inr i)` unfolding to `len i`.
     rfl
 
+/-- The invariant complement of Halmos §57: if `f ^ m` kills the `f`-invariant subspace `Z`,
+`v ∈ Z`, and the linear form `φ` does not vanish at `f ^ (m - 1) v`, then the common kernel in
+`Z` of the forms `φ ∘ f ^ j`, `j < m`, is `f`-invariant, meets the span of the chain of `v`
+trivially, and together with it spans `Z`. -/
+private theorem invariant_complement [FiniteDimensional K V] {m : ℕ} {Z : Submodule K V}
+    (hZ : ∀ x ∈ Z, f x ∈ Z) (hfm : ∀ x ∈ Z, (f ^ m) x = 0) {v : V} (hvZ : v ∈ Z) (φ : Dual K V)
+    (hφ : φ ((f ^ (m - 1)) v) ≠ 0) :
+    (∀ x ∈ Z ⊓ LinearMap.ker (LinearMap.pi fun j : Fin m => φ ∘ₗ f ^ (j : ℕ)),
+      f x ∈ Z ⊓ LinearMap.ker (LinearMap.pi fun j : Fin m => φ ∘ₗ f ^ (j : ℕ))) ∧
+    Disjoint (span K (Set.range fun i : Fin m => (f ^ (i : ℕ)) v))
+      (Z ⊓ LinearMap.ker (LinearMap.pi fun j : Fin m => φ ∘ₗ f ^ (j : ℕ))) ∧
+    span K (Set.range fun i : Fin m => (f ^ (i : ℕ)) v) ⊔
+      Z ⊓ LinearMap.ker (LinearMap.pi fun j : Fin m => φ ∘ₗ f ^ (j : ℕ)) = Z := by
+  set u : Fin m → V := fun i => (f ^ (i : ℕ)) v
+  set Φ : V →ₗ[K] Fin m → K := LinearMap.pi fun j => φ ∘ₗ f ^ (j : ℕ) with hΦ
+  have hΦu : LinearIndependent K (Φ ∘ u) := linearIndependent_dual_pow_apply φ (hfm v hvZ) hφ
+  have hu : LinearIndependent K u := hΦu.of_comp Φ
+  -- The span `C` of the chain of `v` meets the common kernel of the `φ ∘ f ^ j` trivially.
+  have hdisj : Disjoint (span K (Set.range u)) (LinearMap.ker Φ) := by
+    rw [Submodule.disjoint_def]
+    intro x hxC hxΦ
+    obtain ⟨a, rfl⟩ := (mem_span_range_iff_exists_fun K).1 hxC
+    rw [LinearMap.mem_ker, map_sum] at hxΦ
+    simp only [map_smul] at hxΦ
+    simp [Fintype.linearIndependent_iff.1 hΦu a hxΦ]
+  refine ⟨?_, hdisj.mono_right inf_le_right, ?_⟩
+  · -- The complement `Z'` is `f`-invariant.
+    intro x hx
+    rw [Submodule.mem_inf, LinearMap.mem_ker] at hx ⊢
+    refine ⟨hZ x hx.1, funext fun j => ?_⟩
+    simp only [hΦ, LinearMap.pi_apply, LinearMap.comp_apply, Pi.zero_apply]
+    rw [← mul_apply, ← pow_succ]
+    by_cases hj : (j : ℕ) + 1 < m
+    · exact congrFun hx.2 ⟨j + 1, hj⟩
+    · rw [show (j : ℕ) + 1 = m by omega, hfm x hx.1, map_zero]
+  · -- Dimension count: `C ⊔ Z' ≤ Z` and `dim C + dim Z' ≥ dim Z`.
+    have hCZ : span K (Set.range u) ≤ Z := by
+      refine span_le.2 (Set.range_subset_iff.2 fun i => ?_)
+      simp only [u, SetLike.mem_coe, pow_apply]
+      exact Set.MapsTo.iterate hZ i hvZ
+    have hC : finrank K (span K (Set.range u)) = m := by
+      rw [finrank_span_eq_card hu, Fintype.card_fin]
+    have hrange : finrank K (LinearMap.range Φ) ≤ m := (Submodule.finrank_le _).trans (by simp)
+    have h1 := Φ.finrank_range_add_finrank_ker
+    have h2 := Submodule.finrank_sup_add_finrank_inf_eq Z (LinearMap.ker Φ)
+    have h3 := Submodule.finrank_le (Z ⊔ LinearMap.ker Φ)
+    have h4 := Submodule.finrank_sup_add_finrank_inf_eq (span K (Set.range u))
+      (Z ⊓ LinearMap.ker Φ)
+    rw [(hdisj.mono_right inf_le_right).eq_bot, finrank_bot] at h4
+    exact Submodule.eq_of_le_of_finrank_le (sup_le hCZ inf_le_left) (by omega)
+
 /-- Every `f`-invariant subspace `Z` on which `f` is nilpotent is spanned by Jordan chains whose
 vectors are linearly independent. The proof splits off a chain of maximal length together with an
 invariant complement, and recurses on the dimension of `Z`. -/
@@ -341,48 +409,18 @@ private theorem exists_jordanChains [FiniteDimensional K V] (hf : IsNilpotent f)
     simpa [IsConcreteLE.not_le_iff_exists] using Nat.find_min hex (show m - 1 < m by omega)
   obtain ⟨φ, hφ⟩ : ∃ φ : Dual K V, φ ((f ^ (m - 1)) v) ≠ 0 := by
     simpa using (Module.forall_dual_apply_eq_zero_iff K _).not.2 hv
-  have hpowZ (k : ℕ) (x : V) (hx : x ∈ Z) : (f ^ k) x ∈ Z := by
-    rw [pow_apply]
-    exact Set.MapsTo.iterate hZ k hx
-  let u : Fin m → V := fun i => (f ^ (i : ℕ)) v
+  obtain ⟨hZ', hdisj, hsup⟩ := invariant_complement hZ hfm hvZ φ hφ
   let Φ : V →ₗ[K] Fin m → K := LinearMap.pi fun j => φ ∘ₗ f ^ (j : ℕ)
-  have hΦu : LinearIndependent K (Φ ∘ u) := linearIndependent_dual_pow_apply φ (hfm v hvZ) hφ
-  have hu : LinearIndependent K u := hΦu.of_comp Φ
-  -- The span `C` of the chain of `v` meets the common kernel of the `φ ∘ f ^ j` trivially.
-  have hdisj : Disjoint (span K (Set.range u)) (LinearMap.ker Φ) := by
-    rw [Submodule.disjoint_def]
-    intro x hxC hxΦ
-    obtain ⟨a, rfl⟩ := (mem_span_range_iff_exists_fun K).1 hxC
-    rw [LinearMap.mem_ker, map_sum] at hxΦ
-    simp only [map_smul] at hxΦ
-    simp [Fintype.linearIndependent_iff.1 hΦu a hxΦ]
-  -- The complement `Z'` is `f`-invariant.
-  have hZ' : ∀ x ∈ Z ⊓ LinearMap.ker Φ, f x ∈ Z ⊓ LinearMap.ker Φ := by
-    intro x hx
-    rw [Submodule.mem_inf, LinearMap.mem_ker] at hx ⊢
-    refine ⟨hZ x hx.1, funext fun j => ?_⟩
-    simp only [Φ, LinearMap.pi_apply, LinearMap.comp_apply, Pi.zero_apply]
-    rw [← mul_apply, ← pow_succ]
-    by_cases hj : (j : ℕ) + 1 < m
-    · exact congrFun hx.2 ⟨j + 1, hj⟩
-    · rw [show (j : ℕ) + 1 = m by omega, hfm x hx.1, map_zero]
-  -- Dimension count: `C ⊔ Z' = Z`, and `Z'` is smaller than `Z`.
-  have hCZ : span K (Set.range u) ≤ Z := span_le.2 (Set.range_subset_iff.2 fun i => hpowZ i v hvZ)
-  have hC : finrank K (span K (Set.range u)) = m := by
-    rw [finrank_span_eq_card hu, Fintype.card_fin]
-  have hrange : finrank K (LinearMap.range Φ) ≤ m := (Submodule.finrank_le _).trans (by simp)
-  have h1 := Φ.finrank_range_add_finrank_ker
-  have h2 := Submodule.finrank_sup_add_finrank_inf_eq Z (LinearMap.ker Φ)
-  have h3 := Submodule.finrank_le (Z ⊔ LinearMap.ker Φ)
-  have h4 := Submodule.finrank_sup_add_finrank_inf_eq (span K (Set.range u)) (Z ⊓ LinearMap.ker Φ)
-  rw [(hdisj.mono_right inf_le_right).eq_bot, finrank_bot] at h4
-  have hsup : span K (Set.range u) ⊔ (Z ⊓ LinearMap.ker Φ) = Z :=
-    Submodule.eq_of_le_of_finrank_le (sup_le hCZ inf_le_left) (by omega)
-  rw [hsup] at h4
+  have hu : LinearIndependent K fun i : Fin m => (f ^ (i : ℕ)) v :=
+    (linearIndependent_dual_pow_apply φ (hfm v hvZ) hφ).of_comp Φ
+  -- The complement is smaller than `Z`, since the chain of `v` spans an `m`-dimensional subspace.
+  have h := Submodule.finrank_sup_add_finrank_inf_eq
+    (span K (Set.range fun i : Fin m => (f ^ (i : ℕ)) v)) (Z ⊓ LinearMap.ker Φ)
+  rw [hdisj.eq_bot, finrank_bot, hsup, finrank_span_eq_card hu, Fintype.card_fin] at h
   obtain ⟨ι, _, len, head, hpos', hpow', hli', hspan'⟩ :=
     ih _ (by omega) (Z ⊓ LinearMap.ker Φ) hZ' rfl
   obtain ⟨ι', _, len', head', h₁, h₂, h₃, h₄⟩ := exists_jordanChains_sup hpos (hfm v hvZ) hu
-    hpos' hpow' hli' (hspan' ▸ hdisj.mono_right inf_le_right)
+    hpos' hpow' hli' (hspan' ▸ hdisj)
   exact ⟨ι', inferInstance, len', head', h₁, h₂, h₃, by rw [h₄, hspan', hsup]⟩
 
 /-- A nilpotent endomorphism of a finite-dimensional vector space has a Jordan-chain basis. -/
@@ -405,12 +443,7 @@ theorem exists_linearEquiv_conj_eq_iff [FiniteDimensional K V] [FiniteDimensiona
       ∀ k, finrank K (LinearMap.ker (f ^ k)) = finrank K (LinearMap.ker (g ^ k)) := by
   constructor
   · rintro ⟨e, rfl⟩ k
-    have hpow (k : ℕ) : e.conj f ^ k = e.conj (f ^ k) := by
-      induction k with
-      | zero => simp [one_eq_id, LinearEquiv.conj_id]
-      | succ k ih => rw [pow_succ, pow_succ, ih, mul_eq_comp, mul_eq_comp, LinearEquiv.conj_comp]
-    rw [hpow, LinearEquiv.conj_apply, LinearMap.ker_comp, LinearEquiv.ker_comp,
-      ← Submodule.map_equiv_eq_comap_symm, LinearEquiv.finrank_map_eq]
+    rw [← LinearEquiv.conj_pow, LinearEquiv.finrank_ker_conj]
   · intro h
     obtain ⟨ι, _, ⟨c⟩⟩ := exists_jordanChainBasis hf
     obtain ⟨κ, _, ⟨d⟩⟩ := exists_jordanChainBasis hg
