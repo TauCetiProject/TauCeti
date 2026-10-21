@@ -86,6 +86,11 @@ theorem isPrimaryEisenstein_intCast_iff {K : Type*} [Field K] [NumberField K] {a
   have hd : Module.finrank ℤ (𝓞 K) ≠ 0 := Module.finrank_pos.ne'
   simpa only [Algebra.norm_algebraMap, Int.pow_dvd_pow_iff hd] using map_dvd (Algebra.norm ℤ) h'
 
+private theorem finrank_ringOfIntegers_three {K : Type*} [Field K] [NumberField K]
+    [IsCyclotomicExtension {3} ℚ K] : Module.finrank ℤ (𝓞 K) = 2 := by
+  rw [RingOfIntegers.rank, IsCyclotomicExtension.finrank (n := 3) K
+    (Polynomial.cyclotomic.irreducible_rat (by norm_num)), Nat.totient_prime Nat.prime_three]
+
 end TauCeti
 
 namespace IsPrimitiveRoot
@@ -97,7 +102,8 @@ variable {K : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {3} ℚ K]
 
 /-- The integral basis `1, ζ` of `𝓞 K`, indexed by `Fin 2`. -/
 private noncomputable def basisThree : Module.Basis (Fin 2) ℤ (𝓞 K) :=
-  hζ.integralPowerBasis.basis.reindex (finCongr (by simp [Nat.totient_prime Nat.prime_three]))
+  hζ.integralPowerBasis.basis.reindex (finCongr
+    (hζ.integralPowerBasis.finrank.symm.trans finrank_ringOfIntegers_three))
 
 private theorem basisThree_apply (i : Fin 2) : basisThree hζ i = hζ.toInteger ^ (i : ℕ) := by
   simp [basisThree, PowerBasis.coe_basis]
@@ -137,10 +143,22 @@ theorem isPrimaryEisenstein_add_mul_iff {a b : ℤ} :
     intCast_dvd_intCast_add_intCast_mul_toInteger_iff, Int.modEq_comm, Int.modEq_iff_dvd,
     Int.modEq_zero_iff_dvd]
 
-/-- Every element of `𝓞 K` not divisible by `ζ - 1` has a primary multiple by a unit. The proof is
-the six-associate case analysis of Xu, *Reciprocity Laws*, Proposition 4.5. -/
+omit [NumberField K] [IsCyclotomicExtension {3} ℚ K] in
+private theorem toInteger_sq : hζ.toInteger ^ 2 = -hζ.toInteger - 1 := by
+  simpa only [IsCyclotomicExtension.Rat.Three.coe_eta] using
+    IsCyclotomicExtension.Rat.Three.eta_sq hζ
+
+omit [NumberField K] [IsCyclotomicExtension {3} ℚ K] in
+/-- `3 = (ζ - 1) ^ 2 * (-ζ ^ 2)`. -/
+private theorem toInteger_sub_one_sq_dvd_three : (hζ.toInteger - 1) ^ 2 ∣ (3 : 𝓞 K) :=
+  ⟨-hζ.toInteger ^ 2, by linear_combination (hζ.toInteger - 2) * hζ.toInteger_cube_eq_one +
+    hζ.toInteger_sq⟩
+
+/-- Every element of `𝓞 K` not divisible by `ζ - 1` has a primary multiple by a unit. See Xu,
+*Reciprocity Laws*, Proposition 4.5. -/
 theorem exists_isPrimaryEisenstein_unit_mul {x : 𝓞 K} (hx : ¬ hζ.toInteger - 1 ∣ x) :
     ∃ u : (𝓞 K)ˣ, IsPrimaryEisenstein ((u : 𝓞 K) * x) := by
+  -- The six-associate case analysis of Xu, Proposition 4.5.
   obtain ⟨a, b, rfl⟩ := hζ.exists_intCast_add_intCast_mul_toInteger_eq x
   set ω := hζ.toInteger
   have hab : ¬ (3 : ℤ) ∣ a + b := by
@@ -155,9 +173,7 @@ theorem exists_isPrimaryEisenstein_unit_mul {x : 𝓞 K} (hx : ¬ hζ.toInteger 
     exact dvd_add (dvd_mul_of_dvd_left h3 _) (dvd_mul_left _ _)
   let η : (𝓞 K)ˣ := (hζ.toInteger_isPrimitiveRoot.isUnit (by decide)).unit
   have hη : (η : 𝓞 K) = ω := IsCyclotomicExtension.Rat.Three.coe_eta hζ
-  have h2 : ω ^ 2 = -ω - 1 := by
-    simpa only [IsCyclotomicExtension.Rat.Three.coe_eta] using
-      IsCyclotomicExtension.Rat.Three.eta_sq hζ
+  have h2 : ω ^ 2 = -ω - 1 := hζ.toInteger_sq
   have h3 : ω ^ 3 = 1 := hζ.toInteger_cube_eq_one
   -- A unit `u` with `u * (a + b ω) = a' + b' ω` and `a' ≡ 2`, `b' ≡ 0` modulo `3` works.
   have key (u : (𝓞 K)ˣ) (a' b' : ℤ) (h : (u : 𝓞 K) * (a + b * ω) = a' + b' * ω)
@@ -186,18 +202,11 @@ theorem existsUnique_isPrimaryEisenstein_unit_mul {x : 𝓞 K} (hx : ¬ hζ.toIn
     ∃! u : (𝓞 K)ˣ, IsPrimaryEisenstein ((u : 𝓞 K) * x) := by
   obtain ⟨u, hu⟩ := hζ.exists_isPrimaryEisenstein_unit_mul hx
   refine ⟨u, hu, fun v hv ↦ ?_⟩
-  set ω := hζ.toInteger
   have hdvd : (3 : 𝓞 K) ∣ ((v * u⁻¹ : (𝓞 K)ˣ) : 𝓞 K) - 1 :=
     hu.three_dvd_sub_one_of_mul (by simpa [← mul_assoc] using hv)
-  -- `3 = (ω - 1) ^ 2 * (-ω ^ 2)`, so `v * u⁻¹` is congruent to `1` modulo `(ω - 1) ^ 2`.
-  have hlam : (ω - 1) ^ 2 ∣ (3 : 𝓞 K) := by
-    have h2 : ω ^ 2 = -ω - 1 := by
-      simpa only [IsCyclotomicExtension.Rat.Three.coe_eta] using
-        IsCyclotomicExtension.Rat.Three.eta_sq hζ
-    refine ⟨-ω ^ 2, ?_⟩
-    linear_combination (ω - 2) * hζ.toInteger_cube_eq_one + h2
+  -- `(ζ - 1) ^ 2 ∣ 3`, so `v * u⁻¹` is congruent to `1` modulo `(ζ - 1) ^ 2`.
   rcases IsCyclotomicExtension.Rat.Three.eq_one_or_neg_one_of_unit_of_congruent hζ (v * u⁻¹)
-      ⟨1, by simpa using hlam.trans hdvd⟩ with h | h
+      ⟨1, by simpa using hζ.toInteger_sub_one_sq_dvd_three.trans hdvd⟩ with h | h
   · exact mul_inv_eq_one.mp h
   · have h0 : IsPrimaryEisenstein ((0 : ℤ) : 𝓞 K) := by
       rw [isPrimaryEisenstein_iff]
@@ -224,9 +233,7 @@ theorem norm_unit_eq_one_of_isCyclotomicExtension_three (u : (𝓞 K)ˣ) :
   have hneg : Algebra.norm ℤ (-1 : 𝓞 K) = 1 := by
     have h := Algebra.norm_algebraMap (R := ℤ) (S := 𝓞 K) (-1)
     rw [map_neg, map_one] at h
-    rw [h, RingOfIntegers.rank, IsCyclotomicExtension.finrank (n := 3) K
-      (Polynomial.cyclotomic.irreducible_rat (by norm_num)), Nat.totient_prime Nat.prime_three]
-    norm_num
+    simp [h, finrank_ringOfIntegers_three]
   have key (k : ℕ) : Algebra.norm ℤ (hζ.toInteger ^ k) = 1 ∧
       Algebra.norm ℤ (-hζ.toInteger ^ k) = 1 := by
     rw [neg_eq_neg_one_mul, map_mul, map_pow, hneg, hη]
