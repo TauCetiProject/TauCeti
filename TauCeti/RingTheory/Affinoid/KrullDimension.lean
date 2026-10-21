@@ -105,8 +105,9 @@ theorem height_eq_ringKrullDim_of_isDomain [IsDomain A] (hA : IsAffinoidAlgebra 
   have : Module.Finite T A := hfin
   have : Algebra.IsIntegral T A := Algebra.IsIntegral.of_finite T A
   have : FaithfulSMul T A := (faithfulSMul_iff_algebraMap_injective T A).mpr hg
-  rw [hn, height_eq_of_isMaximal_of_isIntegral_of_hasGoingDown (R := T)
-    (fun p _ ↦ Ideal.height_eq_natCard_of_isMaximal_isRestricted_subring p) m, Nat.card_fin]
+  have : (m.under T).IsMaximal := Ideal.isMaximal_under_of_isIntegral_of_isMaximal m
+  rw [hn, Ideal.height_eq_height_under_of_isIntegral_of_hasGoingDown (R := T) m,
+    Ideal.height_eq_natCard_of_isMaximal_isRestricted_subring, Nat.card_fin]
   norm_cast
 
 /-- **Heights of maximal ideals on irreducible closed subsets.** For a prime `P` of an affinoid

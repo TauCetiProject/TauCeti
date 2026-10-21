@@ -266,8 +266,10 @@ private theorem height_eq_ringKrullDim_of_isMaximal_of_isDomain {A : Type*} [Com
   have : FaithfulSMul (MvPolynomial (Fin s) k) A :=
     (faithfulSMul_iff_algebraMap_injective _ _).2 hinj
   have : Algebra.IsIntegral (MvPolynomial (Fin s) k) A := ⟨hint⟩
-  rw [height_eq_of_isMaximal_of_isIntegral_of_hasGoingDown (R := MvPolynomial (Fin s) k)
-    (fun p _ ↦ MvPolynomial.height_eq_natCard_of_isMaximal p) m]
+  have : (m.under (MvPolynomial (Fin s) k)).IsMaximal :=
+    Ideal.isMaximal_under_of_isIntegral_of_isMaximal m
+  rw [Ideal.height_eq_height_under_of_isIntegral_of_hasGoingDown (R := MvPolynomial (Fin s) k) m,
+    MvPolynomial.height_eq_natCard_of_isMaximal]
   norm_cast
 
 variable (k) in

@@ -27,9 +27,8 @@ For an injective integral extension both hold, and the two dimensions agree. Thi
 that reduces the dimension of a finitely generated algebra over a field to that of a polynomial
 ring through Noether normalization.
 
-If moreover `R → S` has going down, a maximal ideal of `S` has the height of
-its contraction: incomparability bounds the height from above and going down from below. So when
-all maximal ideals of `R` have one height, all maximal ideals of `S` have that height too.
+If moreover `R → S` has going down, every prime of `S` has the height of its contraction:
+incomparability bounds the height from above and going down from below.
 
 ## Main results
 
@@ -38,8 +37,8 @@ all maximal ideals of `R` have one height, all maximal ideals of `S` have that h
   up and `Spec S → Spec R` is surjective.
 * `TauCeti.ringKrullDim_eq_of_isIntegral_of_faithfulSMul`: `dim S = dim R` for an injective
   integral extension.
-* `TauCeti.height_eq_of_isMaximal_of_isIntegral_of_hasGoingDown`: if every maximal ideal of `R`
-  has height `d`, so does every maximal ideal of an integral `R`-algebra with going down.
+* `Ideal.height_eq_height_under_of_isIntegral_of_hasGoingDown`: a prime of an integral
+  `R`-algebra with going down has the height of its contraction to `R`.
 
 ## References
 
@@ -86,25 +85,22 @@ theorem ringKrullDim_eq_of_isIntegral_of_faithfulSMul [Algebra.IsIntegral R S] [
   ringKrullDim_le_of_isIntegral.antisymm <|
     ringKrullDim_le_of_hasGoingUp_of_surjective (Algebra.IsIntegral.comap_surjective R S)
 
-/-- Let `S` be an integral `R`-algebra with going down. If every maximal ideal of `R` has height
-`d`, then every maximal ideal of `S` has height `d`: a maximal ideal `m` of `S` contracts to a
-maximal ideal of `R`, whose height bounds that of `m` above by incomparability and below by going
-down. -/
-theorem height_eq_of_isMaximal_of_isIntegral_of_hasGoingDown [Algebra.IsIntegral R S]
-    [Algebra.HasGoingDown R S] {d : ℕ∞} (hR : ∀ p : Ideal R, p.IsMaximal → p.height = d)
-    (m : Ideal S) [m.IsMaximal] : m.height = d := by
-  have : (m.under R).IsMaximal := Ideal.isMaximal_under_of_isIntegral_of_isMaximal m
-  let P : PrimeSpectrum S := ⟨m, inferInstance⟩
-  have h : (m.under R).height = Order.height (PrimeSpectrum.comap (algebraMap R S) P) := by
+/-- Let `S` be an integral `R`-algebra with going down. Then every prime `P` of `S` has the height
+of its contraction to `R`: incomparability bounds the height of `P` above, and going down lifts
+chains of primes of `R` ending at `P ∩ R` to chains ending at `P`. -/
+theorem _root_.Ideal.height_eq_height_under_of_isIntegral_of_hasGoingDown [Algebra.IsIntegral R S]
+    [Algebra.HasGoingDown R S] (P : Ideal S) [P.IsPrime] : P.height = (P.under R).height := by
+  let Q : PrimeSpectrum S := ⟨P, inferInstance⟩
+  have h : (P.under R).height = Order.height (PrimeSpectrum.comap (algebraMap R S) Q) := by
     rw [← PrimeSpectrum.height_eq_orderHeight, PrimeSpectrum.comap_asIdeal, Ideal.under_def]
-  rw [← hR _ this, PrimeSpectrum.height_eq_orderHeight P, h]
+  rw [PrimeSpectrum.height_eq_orderHeight Q, h]
   refine le_antisymm
-    (Order.height_le_height_apply_of_strictMono _ primeSpectrumComap_strictMono_of_isIntegral P)
+    (Order.height_le_height_apply_of_strictMono _ primeSpectrumComap_strictMono_of_isIntegral Q)
     (Order.height_le fun l hl ↦ ?_)
-  -- Going down lifts a chain of primes of `R` ending at `m ∩ R` to one of `S` ending at `m`.
-  have : m.LiesOver l.last.asIdeal := ⟨by rw [hl]; rfl⟩
-  obtain ⟨L, hlen, hlast, -⟩ := Ideal.exists_ltSeries_of_hasGoingDown l m
-  rw [← hlen, show P = L.last from hlast.symm]
+  -- Going down lifts a chain of primes of `R` ending at `P ∩ R` to one of `S` ending at `P`.
+  have : P.LiesOver l.last.asIdeal := ⟨by rw [hl]; rfl⟩
+  obtain ⟨L, hlen, hlast, -⟩ := Ideal.exists_ltSeries_of_hasGoingDown l P
+  rw [← hlen, show Q = L.last from hlast.symm]
   exact Order.length_le_height_last
 
 end TauCeti
