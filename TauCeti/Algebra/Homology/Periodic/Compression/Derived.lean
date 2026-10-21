@@ -68,7 +68,7 @@ theorem quasiIso_iff_trW_homotopyCompressionFunctor_map
 
 /-- Compression followed by the localization to the periodic derived category inverts the
 quasi-isomorphisms of bounded complexes. -/
-lemma quasiIso_isInvertedBy_homotopyCompressionFunctor_comp_Qh :
+lemma homotopyCompressionFunctor_comp_Qh_inverts_quasiIso :
     (HomotopyCategory.Bounded.quasiIso C).IsInvertedBy
       (homotopyCompressionFunctor n ⋙ DerivedCategory.Qh C n) := fun _ _ f hf ↦
   Localization.inverts (DerivedCategory.Qh C n) (subcategoryAcyclic C n).trW _
@@ -80,7 +80,7 @@ variable [HasDerivedCategory.{w} C]
 `n`-periodic derived category, induced by the compression of bounded complexes. -/
 noncomputable def derivedCompressionFunctor :
     _root_.DerivedCategory.Bounded C ⥤ DerivedCategory C n :=
-  Localization.lift _ (quasiIso_isInvertedBy_homotopyCompressionFunctor_comp_Qh n)
+  Localization.lift _ (homotopyCompressionFunctor_comp_Qh_inverts_quasiIso n)
     (TauCeti.DerivedCategory.Bounded.Qh C)
 
 /-- The compression `D^b(C) ⥤ D_n(C)` is induced by the compression `K^b(C) ⥤ K_n(C)`. -/

@@ -68,20 +68,33 @@ noncomputable def Qh : HomotopyCategory.Bounded C ⥤ _root_.DerivedCategory.Bou
 variable (C) in
 /-- The functor `Qh C : K^b(C) ⥤ D^b(C)` is induced by
 `DerivedCategory.Qh : HomotopyCategory C (.up ℤ) ⥤ DerivedCategory C`. -/
-@[expose, simps! -isSimp]
-noncomputable def QhCompιIso :
+noncomputable def QhCompιIsoιCompQh :
     Qh C ⋙ _root_.DerivedCategory.Bounded.ι ≅
       HomotopyCategory.Bounded.ι C ⋙ _root_.DerivedCategory.Qh :=
   t.bounded.liftCompιIso _ _
 
-noncomputable instance : (Qh C).CommShift ℤ :=
-  Functor.CommShift.ofComp (QhCompιIso C) ℤ
+/-! The body of `QhCompιIsoιCompQh` is not exposed, so the following characterizing lemmas are
+proved with `(rfl)`, unfolding it inside this module, rather than exported as definitional
+equalities. -/
 
-noncomputable instance : NatTrans.CommShift (QhCompιIso C).hom ℤ :=
+/-- The components of `QhCompιIsoιCompQh` are identities. -/
+lemma QhCompιIsoιCompQh_hom_app (X : HomotopyCategory.Bounded C) :
+    (QhCompιIsoιCompQh C).hom.app X = 𝟙 (_root_.DerivedCategory.Qh.obj X.obj) :=
+  (rfl)
+
+/-- The components of the inverse of `QhCompιIsoιCompQh` are identities. -/
+lemma QhCompιIsoιCompQh_inv_app (X : HomotopyCategory.Bounded C) :
+    (QhCompιIsoιCompQh C).inv.app X = 𝟙 (_root_.DerivedCategory.Qh.obj X.obj) :=
+  (rfl)
+
+noncomputable instance : (Qh C).CommShift ℤ :=
+  Functor.CommShift.ofComp (QhCompιIsoιCompQh C) ℤ
+
+noncomputable instance : NatTrans.CommShift (QhCompιIsoιCompQh C).hom ℤ :=
   Functor.CommShift.ofComp_compatibility _ _
 
 instance : (Qh C).IsTriangulated := by
-  rw [Functor.isTriangulated_iff_comp_right (QhCompιIso C)]
+  rw [Functor.isTriangulated_iff_comp_right (QhCompιIsoιCompQh C)]
   infer_instance
 
 instance : (Qh C).EssSurj where
@@ -95,7 +108,7 @@ instance : (Qh C).EssSurj where
     exact ⟨a, b, inferInstance, inferInstance⟩
 
 /-- The quasi-isomorphisms of bounded complexes become isomorphisms in `D^b(C)`. -/
-lemma quasiIso_isInvertedBy_Qh :
+lemma Qh_inverts_quasiIso :
     (HomotopyCategory.Bounded.quasiIso C).IsInvertedBy (Qh C) := fun _ _ f hf ↦ by
   rw [← isIso_iff_of_reflects_iso _ _root_.DerivedCategory.Bounded.ι]
   exact Localization.inverts _root_.DerivedCategory.Qh
@@ -198,7 +211,8 @@ instance : (Qh C).IsLocalization (HomotopyCategory.Bounded.subcategoryAcyclic C)
       (_root_.HomotopyCategory.Plus.subcategoryAcyclic C)).comp
     ((_root_.HomotopyCategory.plus C).triangulatedLocalizerMorphism
       (_root_.HomotopyCategory.subcategoryAcyclic C)))).isLocalization_of_isLocalizedFullyFaithful
-    (L₂ := _root_.DerivedCategory.Qh) (F := _root_.DerivedCategory.Bounded.ι) (QhCompιIso C).symm
+    (L₂ := _root_.DerivedCategory.Qh) (F := _root_.DerivedCategory.Bounded.ι)
+    (QhCompιIsoιCompQh C).symm
 
 /-- **The bounded derived category is a localization of the bounded homotopy category.** The
 functor `Qh C : K^b(C) ⥤ D^b(C)` is the localization at the quasi-isomorphisms. -/
