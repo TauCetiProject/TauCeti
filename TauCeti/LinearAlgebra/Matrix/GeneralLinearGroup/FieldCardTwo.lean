@@ -78,11 +78,10 @@ theorem toPermHom_nonzeroVectors_bijective_of_card_eq_two (hF : Nat.card F = 2) 
     Function.Bijective
       (MulAction.toPermHom (GL (Fin 2) F) (nonzeroVectors (Fin 2) F)) := by
   have : Finite F := Nat.finite_of_card_ne_zero (by omega)
-  let := Fintype.ofFinite F
   -- Injectivity is faithfulness; surjectivity is the coincidence `6 = 3!` of the two orders.
   refine (Nat.bijective_iff_injective_and_card _).2 ⟨MulAction.toPerm_injective, ?_⟩
-  rw [natCard_GL_fin_two_of_card_eq_two (by simpa only [Nat.card_eq_fintype_card] using hF),
-    Nat.card_perm, natCard_nonzeroVectors_fin_two_of_card_eq_two hF]
+  rw [natCard_GL_fin_two_of_card_eq_two hF, Nat.card_perm,
+    natCard_nonzeroVectors_fin_two_of_card_eq_two hF]
   decide
 
 /-- **`GL₂(𝔽₂)` is the symmetric group on the three nonzero vectors of `𝔽₂²`.** -/
