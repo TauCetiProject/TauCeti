@@ -13,13 +13,16 @@ import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 
 /-!
-# Grönwall's inequality in integral form
+# Grönwall-type estimates
 
 Mathlib's Grönwall inequality (`le_gronwallBound_of_liminf_deriv_right_le`) bounds a function by
 a bound on its derivative. Energy estimates for evolution equations instead produce a bound on a
 function by an integral of itself: a continuous `φ` with `φ t ≤ c + K ∫ₐᵗ φ` on `[a, b]`, for
 some `K ≥ 0`. This file proves that such a `φ` satisfies `φ t ≤ c exp (K (t - a))`
 (`TauCeti.le_mul_exp_of_le_add_mul_integral`).
+
+The hypothesis `K ≥ 0` cannot be dropped: a very negative stretch of `φ` makes `c + K ∫ₐᵗ φ`
+large when `K < 0`.
 
 It also writes Mathlib's `gronwallBound` with a negative rate `-λ` in terms of the exponential
 integral `E_λ(T) = ∫₀ᵀ e^{λr} dr` (`TauCeti.exp_mul_gronwallBound_neg`), and records that
@@ -30,9 +33,6 @@ Finally, it specializes Mathlib's inequality to exponential decay: a function wh
 satisfies `g' ≤ -λ g` on `[T, ∞)` is bounded by `g T exp (-λ (t - T))` there
 (`TauCeti.le_mul_exp_of_hasDerivAt_le_neg_mul`), hence by `C exp (-λ t)` for large `t`
 (`TauCeti.exists_le_mul_exp_atTop_of_hasDerivAt_le_neg_mul`).
-
-The hypothesis `K ≥ 0` cannot be dropped: a very negative stretch of `φ` makes `c + K ∫ₐᵗ φ`
-large when `K < 0`.
 
 ## References
 
@@ -142,6 +142,7 @@ theorem exists_le_mul_exp_atTop_of_hasDerivAt_le_neg_mul {g g' : ℝ → ℝ} {T
         linarith [le_abs_self (g T)]
     _ = (|g T| + 1) * exp (lam * T) * exp (-(lam * t)) := by
         rw [mul_assoc, ← exp_add]
-        ring_nf
+        congr 2
+        ring
 
 end TauCeti

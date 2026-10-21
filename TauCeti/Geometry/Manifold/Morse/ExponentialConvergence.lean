@@ -36,8 +36,7 @@ and converging to `p`. The energy `f (γ t) - f p` is nonnegative
 the energy once `γ` stays near `p`, so by Grönwall's inequality the energy decays like
 `exp (-lam * t)` (`TauCeti.exists_sub_le_mul_exp_maximalIntegralCurve_neg_mgradient`). This is the
 manifold counterpart, for an arbitrary `C¹` metric, of the vector-space theorem
-`TauCeti.IsIntegralCurveOn.exists_sub_le_mul_exp_atTop`. The energy decay is the input from which
-the exponential approach of the trajectory itself to `p` is derived.
+`TauCeti.IsIntegralCurveOn.exists_sub_le_mul_exp_atTop`.
 
 ## Main results
 
@@ -139,9 +138,10 @@ theorem exists_sub_le_mul_exp_maximalIntegralCurve_neg_mgradient (hf : ContMDiff
   have hg : ∀ s ∈ Ici T, HasDerivAt g (-‖mgradient I f (γ s)‖ ^ 2) s := fun s hs ↦
     (hasDerivAt_comp_maximalIntegralCurve_neg_mgradient hf
       (hx ((hT T le_rfl).2.trans hs))).sub_const _
+  have hloj' : ∀ s ∈ Ici T, lam * |g s| ≤ ‖mgradient I f (γ s)‖ ^ 2 := fun s hs ↦ (hT s hs).1
   -- On `[T, ∞)` the energy `g` satisfies `g' = -‖grad f‖² ≤ -lam * g`, so it decays exponentially.
   exact ⟨lam, hlam, exists_le_mul_exp_atTop_of_hasDerivAt_le_neg_mul (lam := lam) hg fun s hs ↦
-    by linarith [mul_le_mul_of_nonneg_left (le_abs_self (g s)) hlam.le, (hT s hs).1]⟩
+    by linarith [hloj' s hs, mul_le_mul_of_nonneg_left (le_abs_self (g s)) hlam.le]⟩
 
 end Decay
 
