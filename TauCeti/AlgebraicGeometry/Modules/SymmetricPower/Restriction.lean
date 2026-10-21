@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.SymmetricPower.Pullback
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.SymmetricPower.Restriction
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Quasicoherent
 
 /-!
@@ -14,7 +14,9 @@ public import TauCeti.AlgebraicGeometry.Modules.Pullback.Quasicoherent
 Symmetric powers of module sheaves commute with restriction along every open immersion.
 The comparison is the canonical pushforward comparison for the functor sending an open to
 its image; its coefficient map is the inverse of the structure-sheaf isomorphism on that open.
-No quasicoherence hypothesis is required.
+No quasicoherence hypothesis is required. The unit of the restriction--pushforward adjunction
+is compatible with this comparison and with the pushforward comparison
+(`Scheme.Modules.restrictAdjunction_unit_app_symmetricPower`).
 -/
 
 public section
@@ -50,5 +52,22 @@ theorem restrictSymmetricPowerIso_hom_app (n : ℕ) (M : Y.Modules) :
       (TauCeti.SheafOfModules.pushforwardSymmetricPowerComparison
         (restrictRingCatSheafHom f) n).app M :=
   (rfl)
+
+/-- The unit `M ⟶ f_* (M|_X)` of the restriction--pushforward adjunction along an open
+immersion is compatible with the symmetric-power comparisons of pushforward and restriction. -/
+theorem restrictAdjunction_unit_app_symmetricPower (n : ℕ) (M : Y.Modules) :
+    (restrictAdjunction f).unit.app ((SheafOfModules.symmetricPower Y.sheaf n).obj M) =
+      (SheafOfModules.symmetricPower Y.sheaf n).map ((restrictAdjunction f).unit.app M) ≫
+        (TauCeti.SheafOfModules.pushforwardSymmetricPowerComparison f.toRingCatSheafHom n).app
+          (M.restrict f) ≫
+        (pushforward f).map ((restrictSymmetricPowerIso f n).hom.app M) := by
+  rw [restrictSymmetricPowerIso_hom_app]
+  -- As in `restrictAdjunction_unit_app_tensor`, the adjunction of opens is stated for
+  -- `IsOpenMap.functor`, which is `f.opensFunctor`; `show` restates it in the form the sheaf-level
+  -- lemma unifies with `restrictAdjunction f`.
+  exact TauCeti.SheafOfModules.pushforwardPushforwardAdj_unit_app_symmetricPower
+    (show f.opensFunctor ⊣ TopologicalSpace.Opens.map f.base from
+      f.isOpenEmbedding.isOpenMap.adjunction) (restrictRingCatSheafHom f) f.toRingCatSheafHom
+    _ _ n M
 
 end AlgebraicGeometry.Scheme.Modules
