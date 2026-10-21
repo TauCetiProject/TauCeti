@@ -14,7 +14,8 @@ public import TauCeti.NumberTheory.Multiquadratic.Quadratic.GenusCharacter.Diric
 A fundamental discriminant `D` determines a primitive integer-valued Dirichlet character
 `fundamentalDiscriminantChar` of level `|D|`. It is the product of the characters of the
 prime discriminants in any factorization of `D`. At an odd prime `q` its value is
-`legendreSym q D`, including the value zero when `q` divides `D`.
+`legendreSym q D`, including the value zero when `q` divides `D`, and at `2` it is `χ₈(D)`. It is
+nontrivial unless `D = 1`.
 
 This identifies the conductor of the quadratic splitting character, which is needed to
 determine the least cyclotomic field containing the associated quadratic field. The case
@@ -98,5 +99,28 @@ theorem fundamentalDiscriminantChar_natCast_eq_legendreSym {D : ℤ}
   obtain ⟨s, hs, _, hprod⟩ := hD.exists_finset_primeDiscriminant
   rw [fundamentalDiscriminantChar_apply_int hD hs hprod,
     genusCharFun_natCast_eq_legendreSym_prod hs hq, hprod]
+
+/-- **The fundamental-discriminant character at `2` is `χ₈` of the discriminant.** It vanishes
+for even `D`, and for odd `D`, which is `1` modulo `4`, it is `1` when `D ≡ 1 (mod 8)` and `-1`
+when `D ≡ 5 (mod 8)`. This is the value of the Kronecker symbol `(D / 2)`. -/
+@[simp]
+theorem fundamentalDiscriminantChar_two {D : ℤ} (hD : Int.IsFundamentalDiscr D) :
+    fundamentalDiscriminantChar D hD 2 = ZMod.χ₈ (D : ZMod 8) := by
+  obtain ⟨s, hs, _, hprod⟩ := hD.exists_finset_primeDiscriminant
+  have h := fundamentalDiscriminantChar_apply_int hD hs hprod 2
+  rw [Int.cast_ofNat] at h
+  rw [h, genusCharFun_def, ← hprod, Int.cast_prod, map_prod]
+  exact Finset.prod_congr rfl fun P hP => primeDiscriminantCharFun_two (hs P hP)
+
+/-- **The character of a fundamental discriminant `D ≠ 1` is nontrivial.** -/
+theorem fundamentalDiscriminantChar_ne_one {D : ℤ} (hD : Int.IsFundamentalDiscr D)
+    (h1 : D ≠ 1) : fundamentalDiscriminantChar D hD ≠ 1 := by
+  have : NeZero D.natAbs := ⟨Int.natAbs_ne_zero.mpr hD.ne_zero⟩
+  have hD1 : D.natAbs ≠ 1 := by
+    have := hD.emod_four_eq_zero_or_one
+    omega
+  rw [Ne, eq_one_iff_conductor_eq_one,
+    (isPrimitive_def _).mp (isPrimitive_fundamentalDiscriminantChar hD)]
+  exact hD1
 
 end TauCeti.Multiquadratic
