@@ -212,7 +212,7 @@ lemma truncLE'ToX_zero_d (j : ℤ) : K.truncLE'ToX 0 ≫ K.d (-((0 : ℕ) : ℤ)
 
 variable {K} in
 /-- The inclusions `CochainComplex.truncLE'ToX` are natural. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 lemma truncLE'Map_f_truncLE'ToX {L : CochainComplex C ℤ} [∀ i, L.HasHomology i] (f : K ⟶ L)
     (n : ℕ) :
     (truncLE'Map f embeddingDownNat).f n ≫ L.truncLE'ToX n = K.truncLE'ToX n ≫ f.f (-n) := by

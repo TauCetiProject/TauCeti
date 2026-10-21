@@ -188,7 +188,7 @@ lemma truncLE'TensorHom_truncLE'ToRestriction :
 variable {K L} in
 /-- On the summand `(τ_{≥ 0} K)_p ⊗ (τ_{≥ 0} L)_q`, the tensorator of the good truncation is the
 tensor product of the inclusions into `K^{-p}` and `L^{-q}`. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 lemma ι_truncLE'TensorHom_f_truncLE'ToX (p q n : ℕ) (h : p + q = n) :
     ιTensorObj (K.truncLE' embeddingDownNat) (L.truncLE' embeddingDownNat) p q n h ≫
         (truncLE'TensorHom K L).f n ≫ (K ⊗ L).truncLE'ToX n =
@@ -215,6 +215,7 @@ noncomputable def truncLE'Unit :
 variable (R) in
 /-- In degree `0`, the unit of the good truncation is the identity of `R`, up to the canonical
 isomorphisms with the degree-`0` terms of the two unit complexes. -/
+@[reassoc (attr := simp)]
 lemma truncLE'Unit_f_truncLE'ToX :
     (truncLE'Unit R).f 0 ≫ (𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ)).truncLE'ToX 0 =
       (singleObjXSelf (down ℕ) 0 (𝟙_ (ModuleCat.{v} R))).hom ≫
