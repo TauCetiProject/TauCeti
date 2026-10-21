@@ -28,9 +28,9 @@ trajectory. Write a point of the entrance face off the stable set as `(g (r • 
 `TauCeti.splitPassage_toLp_smul` its exit point is `(r • g (r • w), w)`, so it lies on `T` exactly
 when `w = k (r • g (r • w))`. When `g` and `k` are Lipschitz, the right-hand side is a contraction
 of `w` with constant `Kk * Kg * r ^ 2`. For small `r`, Banach's fixed-point theorem gives one
-solution `w r`, depending continuously on `r`. At `r = 0` the equation reads `w = k 0 = y₀`, so as
-`r → 0` the entrance points `(g (r • w r), r • w r)` tend to `(x₀, 0)` and the exit points
-`(r • g (r • w r), w r)` tend to `(0, y₀)`.
+solution `w r`, depending Lipschitz-continuously on `r`. At `r = 0` the equation reads
+`w = k 0 = y₀`, so as `r → 0` the entrance points `(g (r • w r), r • w r)` tend to `(x₀, 0)` and
+the exit points `(r • g (r • w r), w r)` tend to `(0, y₀)`.
 
 This is the nonlinear form of the linear gluing statement
 `TauCeti.setOf_mem_splitPassage_source_eq_image`, which is the case of constant `g` and `k`.
@@ -39,7 +39,7 @@ This is the nonlinear form of the linear gluing statement
 
 * `TauCeti.exists_setOf_mem_splitPassage_source_graph_eq_image`: the points of the graph of `g` in
   the entrance face whose passage lies on the graph of `k` form the image of the gluing parameter
-  interval under `r ↦ (g (r • w r), r • w r)`, for a map `w` continuous on `[0, r₀]` with
+  interval under `r ↦ (g (r • w r), r • w r)`, for a map `w` Lipschitz on `[0, r₀]` with
   `w 0 = k 0` and `‖w r‖ = ε`.
 
 ## References
@@ -75,16 +75,16 @@ private theorem norm_gluing_eq (hgε : ∀ y ∈ closedBall 0 (r₀ * ε), ‖g 
     (hw : ‖w‖ ≤ ε) : ‖k (r • g (r • w))‖ = ε :=
   hkε _ (smul_mem_closedBall_mul hr (hgε _ (smul_mem_closedBall_mul hr hw)).le)
 
-/-- The gluing map `w ↦ k (r • g (r • w))` is Lipschitz with constant `Kk * Kg * r₀` on the
+/-- The gluing map `w ↦ k (r • g (r • w))` is Lipschitz with constant `Kk * Kg * r₀ ^ 2` on the
 closed ball of radius `ε`. -/
 private theorem dist_gluing_le (hg : LipschitzOnWith Kg g (closedBall 0 (r₀ * ε)))
     (hgε : ∀ y ∈ closedBall 0 (r₀ * ε), ‖g y‖ = ε)
     (hk : LipschitzOnWith Kk k (closedBall 0 (r₀ * ε)))
-    (hr₀ : r₀ ≤ 1) {r : ℝ} (hr : r ∈ Icc 0 r₀) {v v' : Eᵤ} (hv : ‖v‖ ≤ ε) (hv' : ‖v'‖ ≤ ε) :
-    dist (k (r • g (r • v))) (k (r • g (r • v'))) ≤ Kk * Kg * r₀ * dist v v' := by
+    {r : ℝ} (hr : r ∈ Icc 0 r₀) {v v' : Eᵤ} (hv : ‖v‖ ≤ ε) (hv' : ‖v'‖ ≤ ε) :
+    dist (k (r • g (r • v))) (k (r • g (r • v'))) ≤ Kk * Kg * r₀ ^ 2 * dist v v' := by
   have hrv := smul_mem_closedBall_mul hr hv
   have hrv' := smul_mem_closedBall_mul hr hv'
-  have hrr : r * r ≤ r₀ := by nlinarith [hr.1, hr.2]
+  have hrr : r * r ≤ r₀ ^ 2 := pow_two r₀ ▸ mul_le_mul hr.2 hr.2 hr.1 (hr.1.trans hr.2)
   calc dist (k (r • g (r • v))) (k (r • g (r • v')))
       ≤ Kk * dist (r • g (r • v)) (r • g (r • v')) :=
         hk.dist_le_mul _ (smul_mem_closedBall_mul hr (hgε _ hrv).le) _
@@ -98,7 +98,7 @@ private theorem dist_gluing_le (hg : LipschitzOnWith Kg g (closedBall 0 (r₀ * 
     _ = Kk * Kg * (r * r) * dist v v' := by
         rw [dist_smul₀, Real.norm_of_nonneg hr.1]
         ring
-    _ ≤ Kk * Kg * r₀ * dist v v' := by gcongr
+    _ ≤ Kk * Kg * r₀ ^ 2 * dist v v' := by gcongr
 
 /-- The gluing map `w ↦ k (r • g (r • w))` depends Lipschitz-continuously on the gluing parameter,
 uniformly on the closed ball of radius `ε`. -/
@@ -131,13 +131,28 @@ private theorem dist_gluing_le_dist (hg : LipschitzOnWith Kg g (closedBall 0 (r�
               exact (dist_pair_smul r s v).trans (by rw [dist_zero_right]; gcongr)
     _ = Kk * ((1 + Kg) * ε) * dist r s := by ring
 
+/-- For `r ∈ [0, r₀]`, the gluing map `w ↦ k (r • g (r • w))` restricts to a contraction of the
+closed ball of radius `ε`, with constant `Kk * Kg * r₀ ^ 2`. -/
+private theorem contractingWith_gluing (hg : LipschitzOnWith Kg g (closedBall 0 (r₀ * ε)))
+    (hgε : ∀ y ∈ closedBall 0 (r₀ * ε), ‖g y‖ = ε)
+    (hk : LipschitzOnWith Kk k (closedBall 0 (r₀ * ε))) (hK : Kk * Kg * r₀ ^ 2 < 1) {r : ℝ}
+    (hr : r ∈ Icc 0 r₀) (hmaps : MapsTo (fun v ↦ k (r • g (r • v))) (closedBall 0 ε)
+      (closedBall 0 ε)) :
+    ContractingWith (Kk * Kg * r₀.toNNReal ^ 2) (hmaps.restrict _ _ _) := by
+  have hKr : ((Kk * Kg * r₀.toNNReal ^ 2 : ℝ≥0) : ℝ) = Kk * Kg * r₀ ^ 2 := by
+    simp [Real.coe_toNNReal _ (hr.1.trans hr.2)]
+  refine ⟨by rw [← NNReal.coe_lt_coe, hKr]; exact hK, LipschitzWith.of_dist_le_mul ?_⟩
+  rintro ⟨v, hv⟩ ⟨v', hv'⟩
+  rw [hKr]
+  exact dist_gluing_le hg hgε hk hr (mem_closedBall_zero_iff.1 hv) (mem_closedBall_zero_iff.1 hv')
+
 /-- **Gluing transverse discs through the split hyperbolic box.** Let `y ↦ (g y, y)` be a disc in
 the entrance face `‖x‖ = ε` over the closed ball of radius `r₀ * ε` of the expanding factor, and
 `x ↦ (x, k x)` a disc in the exit face `‖y‖ = ε` over the closed ball of radius `r₀ * ε` of the
 contracting factor, with `g` and `k` Lipschitz with constants `Kg` and `Kk`. If `r₀ ≤ 1` and
-`Kk * Kg * r₀ < 1`, then the points `z` of the first disc with `‖z.snd‖ ≤ r₀ * ε` whose passage
+`Kk * Kg * r₀ ^ 2 < 1`, then the points `z` of the first disc with `‖z.snd‖ ≤ r₀ * ε` whose passage
 through the box lies on the second disc are exactly the points `(g (r • w r), r • w r)` for
-`0 < r ≤ r₀`, where `w` is continuous on `[0, r₀]`, has norm `ε` there, and starts at `w 0 = k 0`.
+`0 < r ≤ r₀`, where `w` is Lipschitz on `[0, r₀]`, has norm `ε` there, and starts at `w 0 = k 0`.
 
 So these orbits form one continuous family, indexed by the gluing parameter `r = ‖z.snd‖ / ε`. By
 `TauCeti.splitPassage_toLp_smul`, the exit point of the orbit with parameter `r` is
@@ -149,15 +164,16 @@ theorem exists_setOf_mem_splitPassage_source_graph_eq_image [CompleteSpace Eᵤ]
     (hgε : ∀ y ∈ closedBall 0 (r₀ * ε), ‖g y‖ = ε)
     (hk : LipschitzOnWith Kk k (closedBall 0 (r₀ * ε)))
     (hkε : ∀ x ∈ closedBall 0 (r₀ * ε), ‖k x‖ = ε)
-    (hε : 0 < ε) (hr₀ : r₀ ≤ 1) (hK : Kk * Kg * r₀ < 1) :
-    ∃ w : ℝ → Eᵤ, ContinuousOn w (Icc 0 r₀) ∧ w 0 = k 0 ∧ (∀ r ∈ Icc 0 r₀, ‖w r‖ = ε) ∧
+    (hε : 0 < ε) (hr₀ : r₀ ≤ 1) (hK : Kk * Kg * r₀ ^ 2 < 1) :
+    ∃ w : ℝ → Eᵤ, LipschitzOnWith (Kk * ((1 + Kg) * ε) / (1 - Kk * Kg * r₀ ^ 2)).toNNReal w
+        (Icc 0 r₀) ∧ w 0 = k 0 ∧ (∀ r ∈ Icc 0 r₀, ‖w r‖ = ε) ∧
       {z | z ∈ (splitPassage ε).source ∧ ‖z.snd‖ ≤ r₀ * ε ∧ z.fst = g z.snd ∧
           (splitPassage ε z).snd = k (splitPassage ε z).fst} =
         (fun r ↦ WithLp.toLp 2 (g (r • w r), r • w r)) '' Ioc 0 r₀ := by
   rcases lt_or_ge r₀ 0 with hr₀0 | hr₀0
   · -- With a negative radius both sides are empty.
-    refine ⟨fun _ ↦ k 0, continuousOn_const, rfl, fun r hr ↦ absurd (hr.1.trans hr.2) hr₀0.not_ge,
-      ?_⟩
+    refine ⟨fun _ ↦ k 0, by rw [Icc_eq_empty hr₀0.not_ge]; exact lipschitzOnWith_empty _ _, rfl,
+      fun r hr ↦ absurd (hr.1.trans hr.2) hr₀0.not_ge, ?_⟩
     rw [Ioc_eq_empty hr₀0.not_gt, image_empty, eq_empty_iff_forall_notMem]
     rintro z ⟨-, hz, -⟩
     exact (norm_nonneg _).not_gt (hz.trans_lt (mul_neg_of_neg_of_pos hr₀0 hε))
@@ -166,31 +182,12 @@ theorem exists_setOf_mem_splitPassage_source_graph_eq_image [CompleteSpace Eᵤ]
     norm_gluing_eq hgε hkε hr (mem_closedBall_zero_iff.1 hv)
   have hmaps {r : ℝ} (hr : r ∈ Icc 0 r₀) : MapsTo (fun v ↦ k (r • g (r • v))) s s :=
     fun v hv ↦ mem_closedBall_zero_iff.2 (hnorm hr hv).le
-  have hcontr {r : ℝ} (hr : r ∈ Icc 0 r₀) {v v' : Eᵤ} (hv : v ∈ s) (hv' : v' ∈ s) :
-      dist (k (r • g (r • v))) (k (r • g (r • v'))) ≤ Kk * Kg * r₀ * dist v v' :=
-    dist_gluing_le hg hgε hk hr₀ hr (mem_closedBall_zero_iff.1 hv) (mem_closedBall_zero_iff.1 hv')
+  have hf {r : ℝ} (hr : r ∈ Icc 0 r₀) := contractingWith_gluing hg hgε hk hK hr (hmaps hr)
   -- Banach's fixed-point theorem on the closed ball of radius `ε`.
-  have hex (r : ℝ) (hr : r ∈ Icc 0 r₀) : ∃ v ∈ s, k (r • g (r • v)) = v := by
-    set K : ℝ≥0 := Kk * Kg * r₀.toNNReal
-    have hKr : (K : ℝ) = Kk * Kg * r₀ := by simp [K, Real.coe_toNNReal _ hr₀0]
-    have hf : ContractingWith K ((hmaps hr).restrict _ s s) := by
-      refine ⟨by rw [← NNReal.coe_lt_coe, hKr]; exact hK, LipschitzWith.of_dist_le_mul ?_⟩
-      rintro ⟨v, hv⟩ ⟨v', hv'⟩
-      rw [hKr]
-      exact hcontr hr hv hv'
-    have h0 : (0 : Eᵤ) ∈ s := mem_closedBall_self hε.le
-    obtain ⟨v, hv, hfix, -⟩ :=
-      hf.exists_fixedPoint' isClosed_closedBall.isComplete (hmaps hr) h0 (edist_ne_top _ _)
-    exact ⟨v, hv, hfix⟩
-  have huniq {r : ℝ} (hr : r ∈ Icc 0 r₀) {v v' : Eᵤ} (hv : v ∈ s) (hv' : v' ∈ s)
-      (hfv : k (r • g (r • v)) = v) (hfv' : k (r • g (r • v')) = v') : v = v' := by
-    have h := hcontr hr hv hv'
-    rw [hfv, hfv'] at h
-    have : dist v v' ≤ 0 := by nlinarith [dist_nonneg (x := v) (y := v')]
-    exact dist_le_zero.1 this
   have hchoice (r : ℝ) : ∃ v, r ∈ Icc 0 r₀ → v ∈ s ∧ k (r • g (r • v)) = v := by
     by_cases hr : r ∈ Icc 0 r₀
-    · obtain ⟨v, hv, hfv⟩ := hex r hr
+    · obtain ⟨v, hv, hfv, -⟩ := (hf hr).exists_fixedPoint' isClosed_closedBall.isComplete
+        (hmaps hr) (mem_closedBall_self hε.le) (edist_ne_top _ _)
       exact ⟨v, fun _ ↦ ⟨hv, hfv⟩⟩
     · exact ⟨0, fun h ↦ absurd h hr⟩
   choose w hw using hchoice
@@ -199,26 +196,23 @@ theorem exists_setOf_mem_splitPassage_source_graph_eq_image [CompleteSpace Eᵤ]
     exact hnorm hr (hw r hr).1
   refine ⟨w, ?_, ?_, hwnorm, ?_⟩
   · -- The fixed point depends Lipschitz-continuously on the gluing parameter.
-    set C : ℝ := Kk * ((1 + Kg) * ε) / (1 - Kk * Kg * r₀)
-    have hpos : 0 < 1 - Kk * Kg * r₀ := sub_pos.2 hK
-    refine (LipschitzOnWith.of_dist_le_mul (K := C.toNNReal) fun r hr r' hr' ↦ ?_).continuousOn
-    have h₁ := hcontr hr (hw r hr).1 (hw r' hr').1
-    have h₂ := dist_gluing_le_dist hg hgε hk hr₀ hr hr' (mem_closedBall_zero_iff.1 (hw r' hr').1)
-    have htri := dist_triangle (k (r • g (r • w r))) (k (r • g (r • w r')))
-      (k (r' • g (r' • w r')))
-    rw [(hw r hr).2, (hw r' hr').2] at htri
-    rw [(hw r hr).2] at h₁
-    rw [(hw r' hr').2] at h₂
-    have hle : dist (w r) (w r') ≤ C * dist r r' := by
-      rw [div_mul_eq_mul_div, le_div_iff₀ hpos]
-      nlinarith
-    exact hle.trans (mul_le_mul_of_nonneg_right (Real.le_coe_toNNReal C) dist_nonneg)
+    refine LipschitzOnWith.of_dist_le_mul fun r hr r' hr' ↦ ?_
+    have hKr : ((Kk * Kg * r₀.toNNReal ^ 2 : ℝ≥0) : ℝ) = Kk * Kg * r₀ ^ 2 := by
+      simp [Real.coe_toNNReal _ hr₀0]
+    have hle := (hf hr).dist_fixedPoint_fixedPoint_of_dist_le' ((hmaps hr').restrict _ s s)
+      (x := ⟨w r, (hw r hr).1⟩) (y := ⟨w r', (hw r' hr').1⟩) (Subtype.ext (hw r hr).2)
+      (Subtype.ext (hw r' hr').2) fun v ↦
+        dist_gluing_le_dist hg hgε hk hr₀ hr hr' (mem_closedBall_zero_iff.1 v.2)
+    rw [Subtype.dist_eq, hKr, ← div_mul_eq_mul_div] at hle
+    exact hle.trans (mul_le_mul_of_nonneg_right (Real.le_coe_toNNReal _) dist_nonneg)
   · have h := (hw 0 (left_mem_Icc.2 hr₀0)).2
     simp only [zero_smul] at h
     exact h.symm
   · ext z
     constructor
-    · rintro ⟨hsrc, hzr₀, hzg, hzk⟩
+    · -- A point of the set has gluing parameter `r = ‖z.snd‖ / ε`, and its exit coordinate is a
+      -- fixed point of the gluing map, hence equals `w r`.
+      rintro ⟨hsrc, hzr₀, hzg, hzk⟩
       have hy : 0 < ‖z.snd‖ := norm_pos_iff.2 (mem_splitPassage_source.1 hsrc).2.1
       set r := ‖z.snd‖ / ε with hr_def
       have hr : r ∈ Ioc 0 r₀ := ⟨div_pos hy hε, (div_le_iff₀ hε).2 hzr₀⟩
@@ -234,13 +228,16 @@ theorem exists_setOf_mem_splitPassage_source_graph_eq_image [CompleteSpace Eᵤ]
           (mem_splitPassage_target.1 ((splitPassage ε).map_source hsrc)).1.le
       have hfv : k (r • g (r • v)) = v := by
         rw [hvz, ← hzg, hzk, fst_splitPassage hsrc]
-      have hvw : v = w r := huniq hr' hv (hw r hr').1 hfv (hw r hr').2
+      have hvw : v = w r := Subtype.ext_iff.1 ((hf hr').fixedPoint_unique' (x := ⟨v, hv⟩)
+        (y := ⟨w r, (hw r hr').1⟩) (Subtype.ext hfv) (Subtype.ext (hw r hr').2))
       refine ⟨r, hr, ?_⟩
       apply WithLp.ofLp_injective
       ext
       · simp [← hvw, hvz, hzg]
       · simp [← hvw, hvz]
-    · rintro ⟨r, hr, rfl⟩
+    · -- Conversely, the point with gluing parameter `r` exits the box at `(r • g (r • w r), w r)`,
+      -- which lies on the graph of `k` because `w r` is a fixed point.
+      rintro ⟨r, hr, rfl⟩
       have hr' : r ∈ Icc 0 r₀ := Ioc_subset_Icc_self hr
       have hwr := hwnorm r hr'
       have hgr : ‖g (r • w r)‖ = ε := hgε _ (smul_mem_closedBall_mul hr' hwr.le)
