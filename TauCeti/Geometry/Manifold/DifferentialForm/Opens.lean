@@ -341,12 +341,7 @@ theorem IsSmoothForm.extendByZero_smul {U W : Opens M} (h : U ≤ W) {n : WithTo
     (hg : ContMDiff I 𝓘(ℝ) n g) (hzero : ∀ x : W, (x : M) ∉ U → ∀ᶠ y in 𝓝 x, g y = 0) :
     IsSmoothForm I n
       (RoughForm.extendByZero W fun y : U ↦ g (Opens.inclusion h y) • ω y) := by
-  refine (hω.fun_smul (hg.comp (contMDiff_inclusion h))).extendByZero h fun x hx ↦ ?_
-  filter_upwards [hzero x hx] with y hy
-  by_cases hyU : (y : M) ∈ U
-  · obtain ⟨y, rfl⟩ : ∃ y' : U, Opens.inclusion h y' = y := ⟨⟨y, hyU⟩, Subtype.ext rfl⟩
-    rw [RoughForm.extendByZero_inclusion]
-    exact (congrArg (· • ω y) hy).trans (zero_smul ℝ _)
-  · exact RoughForm.extendByZero_apply_of_notMem _ hyU
+  exact (hω.fun_smul (hg.comp (contMDiff_inclusion h))).extendByZero h
+    (fun x hx ↦ RoughForm.eventually_extendByZero_smul_eq_zero h ω (hzero x hx))
 
 end TauCeti
