@@ -39,6 +39,7 @@ variable (R : Type u) [CommRing R] [IsLocalRing R]
 /-- The complement of the closed point in the spectrum of a local ring. -/
 @[stacks 0BM7 "the punctured spectrum"]
 def puncturedSpectrum : (Spec (.of R)).Opens :=
+  -- Opens on an affine scheme are opens of its underlying prime spectrum.
   show TopologicalSpace.Opens (PrimeSpectrum R) from
     { carrier := {IsLocalRing.closedPoint R}ᶜ
       is_open' := (IsLocalRing.isClosed_singleton_closedPoint R).isOpen_compl }
@@ -46,6 +47,7 @@ def puncturedSpectrum : (Spec (.of R)).Opens :=
 @[simp]
 theorem mem_puncturedSpectrum_iff (x : PrimeSpectrum R) :
     x ∈ puncturedSpectrum R ↔ x ≠ IsLocalRing.closedPoint R := by
+  -- `Spec (.of R)` uses `PrimeSpectrum R` as its underlying topological space.
   change x ∉ ({IsLocalRing.closedPoint R} : Set (PrimeSpectrum R)) ↔ _
   simp
 
@@ -61,19 +63,39 @@ noncomputable def restrictPunctured :
     ((TauCeti.finiteEtaleSchemeProperty _).ι ⋙ Over.pullback (puncturedSpectrum R).ι)
     (fun X ↦ by
       rw [TauCeti.finiteEtaleSchemeProperty_iff]
+      -- The over-object map of the pullback is its second projection.
       change IsFinite (Limits.pullback.snd X.obj.hom (puncturedSpectrum R).ι) ∧
         Etale (Limits.pullback.snd X.obj.hom (puncturedSpectrum R).ι)
       exact ⟨inferInstance, inferInstance⟩)
+
+/-- Forgetting finite étaleness identifies restriction with pullback along the puncture. -/
+@[simp]
+theorem restrictPunctured_comp_ι :
+    restrictPunctured R ⋙ (TauCeti.finiteEtaleSchemeProperty _).ι =
+      (TauCeti.finiteEtaleSchemeProperty _).ι ⋙ Over.pullback (puncturedSpectrum R).ι :=
+  by
+    unfold restrictPunctured
+    rfl
 
 /-- Purity holds if every finite étale cover of the punctured spectrum extends across the
 closed point. -/
 @[stacks 0BM7 "definition of purity"]
 def PurityHolds : Prop := (restrictPunctured R).EssSurj
 
-/-- The punctured spectrum is the union of the basic opens for generators of the maximal ideal. -/
+/-- Under purity, every finite étale cover of the puncture extends across the closed point. -/
+theorem PurityHolds.exists_extension (h : PurityHolds R)
+    (cover : TauCeti.FiniteEtaleScheme (puncturedSpectrum R).toScheme) :
+    ∃ extension : TauCeti.FiniteEtaleScheme (Spec (.of R)),
+      Nonempty ((restrictPunctured R).obj extension ≅ cover) := by
+  let : (restrictPunctured R).EssSurj := h
+  exact Functor.EssSurj.mem_essImage (restrictPunctured R) cover
+
+/-- The punctured spectrum is the union of basic opens when their generators have maximal
+radical. -/
 theorem puncturedSpectrum_eq_iSup_basicOpen {s : Set R}
-    (hs : Ideal.span s = IsLocalRing.maximalIdeal R) :
+    (hs : (Ideal.span s).radical = IsLocalRing.maximalIdeal R) :
     puncturedSpectrum R = ⨆ x : s, PrimeSpectrum.basicOpen x.1 := by
+  -- Opens on `Spec (.of R)` are opens of its underlying `PrimeSpectrum R`.
   change (show TopologicalSpace.Opens (PrimeSpectrum R) from puncturedSpectrum R) =
     ⨆ x : s, PrimeSpectrum.basicOpen x.1
   apply SetLike.ext'
@@ -88,17 +110,16 @@ theorem puncturedSpectrum_eq_iSup_basicOpen {s : Set R}
     have hs_le : s ⊆ p.asIdeal := fun x hx ↦ h ⟨x, hx⟩
     have hm_le : IsLocalRing.maximalIdeal R ≤ p.asIdeal := by
       rw [← hs]
-      exact Ideal.span_le.mpr hs_le
+      exact p.isPrime.radical_le_iff.mpr (Ideal.span_le.mpr hs_le)
     have hp_le : p.asIdeal ≤ IsLocalRing.maximalIdeal R :=
       IsLocalRing.le_maximalIdeal p.isPrime.ne_top
     apply hp
     apply PrimeSpectrum.ext
-    change p.asIdeal = IsLocalRing.maximalIdeal R
     exact le_antisymm hp_le hm_le
   · rintro ⟨x, hx⟩ hp
     have hxm : x.1 ∈ IsLocalRing.maximalIdeal R := by
       rw [← hs]
-      exact Ideal.subset_span x.2
+      exact Ideal.le_radical (Ideal.subset_span x.2)
     apply hx
     rw [hp]
     exact hxm
