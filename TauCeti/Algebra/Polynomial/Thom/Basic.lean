@@ -40,21 +40,6 @@ open TauCeti (PolynomialRolle)
 
 open Polynomial SignType Set
 
-namespace TauCeti
-
-/-- Distinct words of length `d` have a last coordinate where they differ. -/
-theorem exists_ne_forall_gt_eq {α : Type*} {d : ℕ} {σ τ : Fin d → α} (hne : σ ≠ τ) :
-    ∃ i : Fin d, σ i ≠ τ i ∧ ∀ j, i < j → σ j = τ j := by
-  classical
-  obtain ⟨k, hk⟩ := Function.ne_iff.mp hne
-  let s := Finset.univ.filter fun j : Fin d => σ j ≠ τ j
-  have hs : s.Nonempty := ⟨k, Finset.mem_filter.mpr ⟨Finset.mem_univ k, hk⟩⟩
-  refine ⟨s.max' hs, (Finset.mem_filter.mp (Finset.max'_mem s hs)).2, fun j hj => ?_⟩
-  by_contra hne'
-  exact hj.not_ge (Finset.le_max' s j (Finset.mem_filter.mpr ⟨Finset.mem_univ j, hne'⟩))
-
-end TauCeti
-
 namespace Polynomial
 
 section Basic
@@ -184,39 +169,6 @@ theorem thomEncoding_succ_lt_natDegree (p : R[X]) {a b : R} {i : Fin p.natDegree
   by_contra! hi
   simp only [thomEncoding_apply] at hne
   exact hne (derivativeSign_const p a b hi)
-
-/-- Distinct Thom encodings have a last disagreement strictly below the degree.
-All larger derivative signs agree, including the highest derivative sign.
-For distinct roots, `thomEncoding_injOn` supplies the unequal encodings. -/
-theorem exists_derivativeSign_ne (p : R[X]) {a b : R}
-    (henc : thomEncoding p a ≠ thomEncoding p b) :
-    ∃ k, 0 < k ∧ k < p.natDegree ∧
-      derivativeSign p a k ≠ derivativeSign p b k ∧
-      ∀ j, k < j → derivativeSign p a j = derivativeSign p b j := by
-  obtain ⟨i, hi⟩ := Function.ne_iff.mp henc
-  let s := (Finset.range (p.natDegree + 1)).filter
-    (fun j => derivativeSign p a j ≠ derivativeSign p b j)
-  have hi_mem : i.val + 1 ∈ s := by
-    simp only [s, Finset.mem_filter, Finset.mem_range]
-    exact ⟨by omega, by simpa only [thomEncoding_apply] using hi⟩
-  have hs : s.Nonempty := ⟨i.val + 1, hi_mem⟩
-  let k := s.max' hs
-  have hk : k ∈ s := Finset.max'_mem s hs
-  have hk' := (Finset.mem_filter.mp hk).2
-  have hpos : 0 < k := (Nat.succ_pos i.val).trans_le (Finset.le_max' s _ hi_mem)
-  have hdeg : k < p.natDegree := by
-    by_contra hn
-    exact hk' (derivativeSign_const p a b (by omega))
-  refine ⟨k, hpos, hdeg, hk', ?_⟩
-  intro j hj
-  by_cases hd : p.natDegree ≤ j
-  · exact derivativeSign_const p a b hd
-  · by_contra hne
-    have hjs : j ∈ s := by
-      simp only [s, Finset.mem_filter, Finset.mem_range]
-      exact ⟨by omega, hne⟩
-    have hle : j ≤ k := Finset.le_max' s j hjs
-    omega
 
 /-- **Restriction to a derivative.** Coordinate `i` of the Thom encoding of the `k`th derivative
 is coordinate `i + k` of the Thom encoding of `p`. -/
@@ -511,10 +463,6 @@ theorem thomEncoding_succ_ne_zero (p : R[X]) (hrolle : PolynomialRolle R) {a b :
   exact derivativeSign_succ_ne_zero p hrolle hne
     (derivativeSign_tail p (fun j hj => htail j (Nat.lt_of_succ_lt_succ hj)))
 
-end Polynomial
-
-namespace TauCeti
-
 /-- A root and a distinct point have different derivative signs through any degree bound. -/
 theorem derivativeSign_ne_of_eval_eq_zero {R : Type*} [Field R] [LinearOrder R]
     [IsStrictOrderedRing R] {p : Polynomial R} {d : ℕ} (hd : p.natDegree ≤ d)
@@ -529,4 +477,4 @@ theorem derivativeSign_ne_of_eval_eq_zero {R : Type*} [Field R] [LinearOrder R]
   · exact congrFun h ⟨k, by omega⟩
   · simp [Polynomial.derivativeSign_eq_zero p _ (by omega : p.natDegree < k)]
 
-end TauCeti
+end Polynomial

@@ -47,12 +47,10 @@ the root with a prescribed Thom encoding or a prescribed root index. In cylinder
   polynomial evaluation `T(x)` with a Thom-encoded root.
 * `TauCeti.isSemialgebraic_setOf_mem_roots_derivative_signs_eq_and_card_roots_lt`: realization of a
   Thom encoding by the `i`-th distinct root.
-* `TauCeti.isSemialgebraic_setOf_mem_roots_card_roots_lt_and_eval_eq`,
-  `TauCeti.isSemialgebraic_setOf_mem_roots_card_roots_lt_and_eval_lt`,
+* `TauCeti.isSemialgebraic_setOf_mem_roots_card_roots_lt_and_eval_lt`,
   `TauCeti.isSemialgebraic_setOf_mem_roots_card_roots_lt_and_lt_eval`,
-  `TauCeti.isSemialgebraic_setOf_mem_roots_card_roots_lt`,
   `TauCeti.isSemialgebraic_setOf_lt_root_card_roots_lt`,
-  `TauCeti.isSemialgebraic_setOf_gt_root_card_roots_lt`: the graph and the regions strictly below
+  `TauCeti.isSemialgebraic_setOf_gt_root_card_roots_lt`: the regions strictly below
   and strictly above the `i`-th distinct root.
 
 ## References
@@ -95,6 +93,15 @@ private theorem tarskiQuery_map_eval_eq_integralNormalization {P : (MvPolynomial
   rw [← integralNormalization_map _ _ ha, hmap,
     tarskiQuery_integralNormalization hx fun z _ => ?_]
   rw [hlc, eval_map, sign_eval₂_C_pow_mul_scaleRoots _ _ ha, eval_map]
+
+omit [IsStrictOrderedRing R] in
+/-- Specializing an iterated derivative and taking its sign gives the derivative sign of the
+specialized polynomial. -/
+private theorem sign_eval_map_iterate_derivative (P : (MvPolynomial σ R)[X]) (x : σ → R)
+    (r : R) (k : ℕ) :
+    SignType.sign (((derivative^[k] P).map (MvPolynomial.eval x)).eval r) =
+      derivativeSign (P.map (MvPolynomial.eval x)) r k := by
+  rw [derivativeSign_def, iterate_derivative_map]
 
 variable [IsRealClosed R]
 
@@ -241,12 +248,14 @@ private theorem fullInverse_mulVec_tarskiQuery_derivative_eq_one_iff
           SignType.sign (((derivative^[j.val + 1] P).map
             (MvPolynomial.eval x)).eval r) = τ j := by
   classical
+  simp only [sign_eval_map_iterate_derivative]
   by_cases hp : P.map (MvPolynomial.eval x) = 0
   · simp [hp, ← Pi.zero_def, Matrix.mulVec_zero]
   · simp only [Polynomial.map_prod, Polynomial.map_pow, ← iterate_derivative_map,
       fullInverse_mulVec_iterate_derivative_of_natDegree_le _
         RealClosure.polynomialRolle_of_isRealClosed hp natDegree_map_le,
       Multiset.mem_toFinset, Polynomial.mem_roots hp, IsRoot.def]
+    simp only [iterate_derivative_map, sign_eval_map_iterate_derivative]
     simp
 
 /-- **Uniform Thom-encoding realization.** For a prescribed sign word on the derivatives of orders
@@ -307,8 +316,7 @@ private theorem eq_of_mem_roots_derivative_signs_eq {P : (MvPolynomial σ R)[X]}
     (Polynomial.isRoot_of_mem_roots (Multiset.mem_toFinset.mp hr))
     (Polynomial.isRoot_of_mem_roots (Multiset.mem_toFinset.mp hr')) ?_
   funext j
-  simpa only [Polynomial.derivativeSign_def, iterate_derivative_map] using
-    (hτ j).trans (hτ' j).symm
+  simpa only [sign_eval_map_iterate_derivative] using (hτ j).trans (hτ' j).symm
 
 /-- **Uniform Thom-encoding realization.** For a prescribed sign word `τ`, the parameters at which
 the specialized polynomial is nonzero and has a root with consecutive derivative signs `τ` form a
@@ -372,8 +380,8 @@ private theorem isSemialgebraic_setOf_mem_roots_derivative_signs_eq_and
       (fun i : Fin (P.natDegree + 1) => (derivative^[i.val] P).eval T)
       (fun υ => Ψ υ τ)) using 1
   ext x
-  simp only [mem_ofPred_eq, mem_inter_iff, ← eval_map_apply, ← iterate_derivative_map,
-    ← Polynomial.derivativeSign_def]
+  simp only [mem_ofPred_eq, mem_inter_iff, ← eval_map_apply,
+    sign_eval_map_iterate_derivative]
   have hcmp {r : R} (hr : r ∈ (P.map (MvPolynomial.eval x)).roots.toFinset)
       (hτ : ∀ j : Fin P.natDegree,
         derivativeSign (P.map (MvPolynomial.eval x)) r (j.val + 1) = τ j) :
@@ -450,13 +458,13 @@ theorem isSemialgebraic_setOf_mem_roots_derivative_signs_eq_and_card_roots_lt
     have hτ' : (fun j : Fin P.natDegree =>
         derivativeSign (P.map (MvPolynomial.eval x)) r (j.val + 1)) = τ := by
       funext j
-      simpa only [Polynomial.derivativeSign_def, iterate_derivative_map] using hτ j
+      simpa only [sign_eval_map_iterate_derivative] using hτ j
     rw [Polynomial.card_roots_lt_eq_card_filter_thomLT_of_natDegree_le natDegree_map_le
       RealClosure.polynomialRolle_of_isRealClosed hr0 hτ']
     congr 1
     ext υ
-    simp only [Finset.mem_filter, Finset.mem_univ, true_and, Polynomial.derivativeSign_def,
-      iterate_derivative_map, funext_iff]
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and, sign_eval_map_iterate_derivative,
+      funext_iff]
   exact ⟨fun ⟨r, hr, hτ, hcard⟩ => ⟨⟨r, hr, hτ⟩, (hcard_eq hr hτ).symm.trans hcard⟩,
     fun ⟨⟨r, hr, hτ⟩, hcard⟩ => ⟨r, hr, hτ, (hcard_eq hr hτ).trans hcard⟩⟩
 
@@ -482,25 +490,9 @@ private theorem isSemialgebraic_setOf_mem_roots_card_roots_lt_and
     fun ⟨_, ⟨r, hr, hτ, hcard⟩, ⟨r', hr', hτ', hΦ⟩⟩ =>
       ⟨r, hr, hcard, eq_of_mem_roots_derivative_signs_eq hr hr' hτ hτ' ▸ hΦ⟩⟩
 
-/-- **Equality with the `i`-th distinct root.** For polynomials `P` and `T`, the parameters `x` at
-which `P.map (MvPolynomial.eval x)` has an `i`-th distinct root `r` (with `i` distinct roots
-strictly below `r`) and `MvPolynomial.eval x T = r` form a semialgebraic set. -/
-theorem isSemialgebraic_setOf_mem_roots_card_roots_lt_and_eval_eq
-    (P : (MvPolynomial σ R)[X]) (T : MvPolynomial σ R) (i : ℕ) :
-    IsSemialgebraic {x : σ → R | ∃ r ∈ (P.map (MvPolynomial.eval x)).roots.toFinset,
-      {z ∈ (P.map (MvPolynomial.eval x)).roots.toFinset | z < r}.card = i ∧
-        MvPolynomial.eval x T = r} := by
-  convert (isSemialgebraic_setOf_map_eval_eq_zero P).compl.inter
-    ((isSemialgebraic_eval_eq_zero (P.eval T)).inter
-      (isSemialgebraic_setOf_card_roots_map_eval_lt P T i)) using 1
-  ext x
-  simp only [mem_ofPred_eq, mem_inter_iff, mem_compl_iff, ← eval_map_apply,
-    Multiset.mem_toFinset, Polynomial.mem_roots', IsRoot.def]
-  exact ⟨fun ⟨r, ⟨hp, hr⟩, hcard, h⟩ => h ▸ ⟨hp, hr, hcard⟩,
-    fun ⟨hp, hr, hcard⟩ => ⟨_, ⟨hp, hr⟩, hcard, rfl⟩⟩
-
 /-- **Region where a polynomial lies strictly below the `i`-th distinct root.** For polynomials `P`
 and `T`, the parameters `x` at which `P.map (MvPolynomial.eval x)` has an `i`-th distinct root `r`
+(with `i` distinct roots strictly below `r`, so `i = 0` is the smallest root)
 and `MvPolynomial.eval x T < r` form a semialgebraic set. -/
 theorem isSemialgebraic_setOf_mem_roots_card_roots_lt_and_eval_lt
     (P : (MvPolynomial σ R)[X]) (T : MvPolynomial σ R) (i : ℕ) :
@@ -513,6 +505,7 @@ theorem isSemialgebraic_setOf_mem_roots_card_roots_lt_and_eval_lt
 
 /-- **Region where a polynomial lies strictly above the `i`-th distinct root.** For polynomials `P`
 and `T`, the parameters `x` at which `P.map (MvPolynomial.eval x)` has an `i`-th distinct root `r`
+(with `i` distinct roots strictly below `r`, so `i = 0` is the smallest root)
 and `r < MvPolynomial.eval x T` form a semialgebraic set. -/
 theorem isSemialgebraic_setOf_mem_roots_card_roots_lt_and_lt_eval
     (P : (MvPolynomial σ R)[X]) (T : MvPolynomial σ R) (i : ℕ) :
@@ -525,25 +518,10 @@ theorem isSemialgebraic_setOf_mem_roots_card_roots_lt_and_lt_eval
 
 variable {n : ℕ}
 
-/-- **The graph of the `i`-th distinct root in cylinder coordinates.** The points of `R ^ (n + 1)`
-whose coordinate `0` is the `i`-th distinct root of the specialization of `P` at the remaining
-coordinates form a semialgebraic set. Zero specializations have no roots in `Polynomial.roots` and
-contribute nothing. -/
-theorem isSemialgebraic_setOf_mem_roots_card_roots_lt
-    (P : (MvPolynomial (Fin n) R)[X]) (i : ℕ) :
-    IsSemialgebraic {y : Fin (n + 1) → R |
-      y 0 ∈ (P.map (MvPolynomial.eval (Fin.tail y))).roots.toFinset ∧
-        {z ∈ (P.map (MvPolynomial.eval (Fin.tail y))).roots.toFinset | z < y 0}.card = i} := by
-  convert (isSemialgebraic_setOf_isRoot_card_roots_lt P i).inter
-    (isSemialgebraic_setOf_map_eval_eq_zero P).compl.preimage_tail using 1
-  ext y
-  simp only [mem_ofPred_eq, mem_inter_iff, mem_compl_iff, mem_preimage,
-    Multiset.mem_toFinset, Polynomial.mem_roots']
-  tauto
-
 /-- **The region strictly below the `i`-th distinct root in cylinder coordinates.** The points of
 `R ^ (n + 1)` whose coordinate `0` lies strictly below the `i`-th distinct root of the
-specialization of `P` at the remaining coordinates form a semialgebraic set. -/
+specialization of `P` at the remaining coordinates form a semialgebraic set. Here `i` counts
+distinct roots strictly below that root, so `i = 0` is the smallest root. -/
 theorem isSemialgebraic_setOf_lt_root_card_roots_lt
     (P : (MvPolynomial (Fin n) R)[X]) (i : ℕ) :
     IsSemialgebraic {y : Fin (n + 1) → R |
@@ -558,7 +536,8 @@ theorem isSemialgebraic_setOf_lt_root_card_roots_lt
 
 /-- **The region strictly above the `i`-th distinct root in cylinder coordinates.** The points of
 `R ^ (n + 1)` whose coordinate `0` lies strictly above the `i`-th distinct root of the
-specialization of `P` at the remaining coordinates form a semialgebraic set. -/
+specialization of `P` at the remaining coordinates form a semialgebraic set. Here `i` counts
+distinct roots strictly below that root, so `i = 0` is the smallest root. -/
 theorem isSemialgebraic_setOf_gt_root_card_roots_lt
     (P : (MvPolynomial (Fin n) R)[X]) (i : ℕ) :
     IsSemialgebraic {y : Fin (n + 1) → R |

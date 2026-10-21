@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Polynomial.Thom.Basic
 public import Mathlib.Algebra.Polynomial.Roots
+import Mathlib.Order.Preorder.Finite
 
 /-!
 # Thom encodings of the roots of a polynomial
@@ -225,7 +226,13 @@ theorem lt_iff_thomLT_derivativeSign_of_natDegree_le {p : R[X]} {d : ℕ} (hd : 
       fun i => derivativeSign p b i.val) :
     a < b ↔ ThomLT (fun i : Fin (d + 1) => derivativeSign p a i.val)
       (fun i => derivativeSign p b i.val) := by
-  obtain ⟨i, hi, ht⟩ := TauCeti.exists_ne_forall_gt_eq hne
+  obtain ⟨i, hi, hmax⟩ := (Set.toFinite {i : Fin (d + 1) |
+    derivativeSign p a i.val ≠ derivativeSign p b i.val}).exists_maximal
+      (Function.ne_iff.mp hne)
+  have ht (j : Fin (d + 1)) (hij : i < j) :
+      derivativeSign p a j.val = derivativeSign p b j.val := by
+    by_contra hne'
+    exact hij.not_ge (hmax hne' hij.le)
   rw [thomLT_iff_of_ne hi ht]
   have hdeg : i.val + 1 < d + 1 := by
     by_contra h
@@ -288,7 +295,7 @@ theorem lt_iff_thomLT_cons_derivativeSign_of_eval_eq_zero_right {p : R[X]} {d : 
   rcases eq_or_ne a b with rfl | hab
   · simp [thomLT_irrefl]
   · exact lt_iff_thomLT_derivativeSign_of_natDegree_le hd hrolle
-      (TauCeti.derivativeSign_ne_of_eval_eq_zero hd hrolle hp hab hb)
+      (Polynomial.derivativeSign_ne_of_eval_eq_zero hd hrolle hp hab hb)
 
 /-- For a root `a` of a nonzero polynomial `p` and any point `b`, `a < b` holds exactly when `0`
 followed by the derivative signs of `p` at `a` of orders `1, …, d` (with `p.natDegree ≤ d`)
@@ -302,7 +309,7 @@ theorem lt_iff_thomLT_cons_derivativeSign_of_eval_eq_zero_left {p : R[X]} {d : �
   rcases eq_or_ne a b with rfl | hab
   · simp [thomLT_irrefl]
   · exact lt_iff_thomLT_derivativeSign_of_natDegree_le hd hrolle
-      (TauCeti.derivativeSign_ne_of_eval_eq_zero hd hrolle hp hab.symm ha).symm
+      (Polynomial.derivativeSign_ne_of_eval_eq_zero hd hrolle hp hab.symm ha).symm
 
 /-- Two roots of a nonzero polynomial are ordered as their Thom encodings are by `ThomLT`. -/
 theorem lt_iff_thomLT_of_eval_eq_zero (hrolle : PolynomialRolle R) {p : R[X]} (hp : p ≠ 0)
