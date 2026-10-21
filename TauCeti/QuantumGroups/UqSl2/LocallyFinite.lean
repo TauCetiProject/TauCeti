@@ -8,6 +8,7 @@ module
 public import TauCeti.QuantumGroups.UqSl2.CompleteReducibility
 public import TauCeti.QuantumGroups.UqSl2.SimpleClassification
 public import TauCeti.RingTheory.Finiteness.LocallyFinite
+public import TauCeti.RingTheory.Semisimple.IsotypicTensor
 
 /-!
 # Locally finite `U_q(sl₂)`-modules
@@ -24,6 +25,12 @@ finite module these are cyclic, hence finite-dimensional, hence each isomorphic 
 the classification of finite-dimensional simple modules. Conversely, a direct sum of
 finite-dimensional modules is locally finite.
 
+The decomposition can be made canonical. Since the `L_m^ε` are pairwise non-isomorphic
+finite-dimensional simple modules over `ℂ`, evaluation `v ⊗ φ ↦ φ v` identifies a locally finite
+module `V` with `⨁_(m,ε) L_m^ε ⊗ Hom_U(L_m^ε, V)`, compatibly with the action of `UqSl2 q` on the
+left tensor factors. The multiplicity of `L_m^ε` in `V` is thus the space `Hom_U(L_m^ε, V)`, with
+no choice of decomposition.
+
 ## Main results
 
 * `TauCeti.UqSl2.isSemisimpleModule_of_isLocallyFiniteModule`: at a generic parameter, every
@@ -31,6 +38,8 @@ finite-dimensional modules is locally finite.
 * `TauCeti.UqSl2.isLocallyFiniteModule_iff_exists_linearEquiv_dfinsupp_ladderModule`: at a
   generic parameter, a `UqSl2 q`-module is locally finite exactly when it is isomorphic to a
   direct sum `⨁ᵢ L_(mᵢ)^(εᵢ)` of signed ladder modules.
+* `TauCeti.UqSl2.ladderModuleTensorHomEquiv`: at a generic parameter, the evaluation isomorphism
+  `⨁_(m,ε) L_m^ε ⊗ Hom_U(L_m^ε, V) ≃ V` for a locally finite module `V`.
 
 ## References
 
@@ -38,6 +47,8 @@ finite-dimensional modules is locally finite.
 -/
 
 public section
+
+open TensorProduct
 
 namespace TauCeti.UqSl2
 
@@ -94,5 +105,30 @@ theorem isLocallyFiniteModule_iff_exists_linearEquiv_dfinsupp_ladderModule
       Nonempty (V ≃ₗ[UqSl2 q] Π₀ i, LadderModule q (m i) (ε i)) :=
   ⟨fun _ => exists_linearEquiv_dfinsupp_ladderModule hq,
     fun ⟨_, _, _, ⟨e⟩⟩ => .of_linearEquiv e⟩
+
+/-- **The evaluation isomorphism.** At a generic parameter, a locally finite `UqSl2 q`-module `V`
+is the direct sum over `(m, ε)` of `L_m^ε ⊗ Hom_U(L_m^ε, V)`, by `v ⊗ φ ↦ φ v`. Here `UqSl2 q`
+acts on the left tensor factors, and the multiplicity spaces `Hom_U(L_m^ε, V)` may be
+infinite-dimensional. -/
+noncomputable def ladderModuleTensorHomEquiv (hq : IsGenericQuantumParameter q)
+    [IsLocallyFiniteModule ℂ (UqSl2 q) V] :
+    (Π₀ p : ℕ × ℤˣ, LadderModule q p.1 p.2 ⊗[ℂ] (LadderModule q p.1 p.2 →ₗ[UqSl2 q] V)) ≃ₗ[UqSl2 q]
+      V :=
+  have := isSemisimpleModule_of_isLocallyFiniteModule hq (V := V)
+  have (p : ℕ × ℤˣ) := LadderModule.isSimpleModule (m := p.1) (ε := p.2) hq
+  directSumIsotypicTensorEquiv ℂ (fun p : ℕ × ℤˣ => LadderModule q p.1 p.2)
+    (fun _ _ h => Prod.ext_iff.mpr ((LadderModule.nonempty_linearEquiv_iff hq).mp h))
+    (fun N _ => by
+      have := IsLocallyFiniteModule.finite_of_isSimpleModule (k := ℂ) N
+      obtain ⟨m, ε, e⟩ := exists_linearEquiv_ladderModule hq (V := N)
+      exact ⟨(m, ε), e⟩)
+
+/-- The evaluation isomorphism sends `v ⊗ φ` in the `(m, ε)` summand to `φ v`. -/
+@[simp]
+theorem ladderModuleTensorHomEquiv_single_tmul (hq : IsGenericQuantumParameter q)
+    [IsLocallyFiniteModule ℂ (UqSl2 q) V] (p : ℕ × ℤˣ) (v : LadderModule q p.1 p.2)
+    (φ : LadderModule q p.1 p.2 →ₗ[UqSl2 q] V) :
+    ladderModuleTensorHomEquiv hq (DFinsupp.single p (v ⊗ₜ φ)) = φ v := by
+  simp [ladderModuleTensorHomEquiv]
 
 end TauCeti.UqSl2

@@ -21,7 +21,10 @@ many components, for instance when the module is Noetherian, composing with
 Maps from a simple module `S` into `M` land in its `S`-isotypic component. Restricting the
 codomain therefore gives an equivalence of hom spaces, without any semisimplicity or
 finiteness assumption on `M`. A map from a simple module into an isotypic module of a different
-type is zero (`IsIsotypicOfType.linearMap_eq_zero`).
+type is zero (`IsIsotypicOfType.linearMap_eq_zero`). The isotypic components of pairwise
+non-isomorphic simple modules are independent (`TauCeti.iSupIndep_isotypicComponent`); this is the
+indexed form of Mathlib's `sSupIndep_isotypicComponents`, allowing types that do not occur in the
+module.
 
 ## Main definitions
 
@@ -150,3 +153,36 @@ theorem linearEquivIsotypicComponents_apply_of_mem {c : isotypicComponents R M} 
   linearEquivIsotypicComponents_apply_coe ⟨x, hx⟩
 
 end TauCeti.IsSemisimpleModule
+
+namespace TauCeti
+
+variable (R M : Type*) [Ring R] [AddCommGroup M] [Module R M]
+
+/-- The isotypic components of a family of pairwise non-isomorphic simple modules are
+independent. -/
+theorem iSupIndep_isotypicComponent {κ : Type*} (S : κ → Type*) [∀ j, AddCommGroup (S j)]
+    [∀ j, Module R (S j)] [∀ j, IsSimpleModule R (S j)]
+    (hS : ∀ i j, Nonempty (S i ≃ₗ[R] S j) → i = j) :
+    iSupIndep fun j => isotypicComponent R M (S j) := by
+  rw [iSupIndep_def']
+  intro j
+  rw [disjoint_iff]
+  by_contra hne
+  set s := (fun i => isotypicComponent R M (S i)) '' {i | i ≠ j}
+  have : IsSemisimpleModule R ↥(isotypicComponent R M (S j) ⊓ sSup s) :=
+    IsSemisimpleModule.of_injective _ (Submodule.inclusion_injective inf_le_left)
+  -- A simple submodule of the intersection is a copy of `S j` and of some `S i` with `i ≠ j`.
+  obtain ⟨N, hN, _⟩ := (IsSemisimpleModule.eq_bot_or_exists_simple_le _).resolve_left hne
+  obtain ⟨e⟩ := isIsotypicOfType_submodule_iff.mp
+    (IsIsotypicOfType.isotypicComponent R M (S j)) N (hN.trans inf_le_left)
+  have (m : s) : IsSemisimpleModule R m := by
+    obtain ⟨_, ⟨i, -, rfl⟩⟩ := m
+    infer_instance
+  obtain ⟨_, ⟨i, hij, rfl⟩, N', hN', ⟨e'⟩⟩ := N.le_linearEquiv_of_le_sSup s
+    (hN.trans inf_le_right)
+  have := IsSimpleModule.congr e'.symm
+  obtain ⟨e''⟩ := isIsotypicOfType_submodule_iff.mp
+    (IsIsotypicOfType.isotypicComponent R M (S i)) N' hN'
+  exact hij (hS i j ⟨e''.symm.trans (e'.symm.trans e)⟩)
+
+end TauCeti
