@@ -39,9 +39,7 @@ theorem ae_det_submatrix_ne_zero [DecidableEq l] (μ : Measure (m → n → ℝ)
     ∀ᵐ A ∂μ, ((Matrix.of A).submatrix r c).det ≠ 0 := by
   classical
   let e : (l × l) ↪ (Σ _ : m, n) :=
-    ⟨fun ij => ⟨r ij.1, c ij.2⟩, fun a b h =>
-      Prod.ext (r.injective (congrArg Sigma.fst h))
-        (c.injective (congrArg (fun ij : Σ _ : m, n => ij.2) h))⟩
+    (r.prodMap c).trans (Equiv.sigmaEquivProd m n).symm.toEmbedding
   let P := MvPolynomial.rename e (Matrix.mvPolynomialX l l ℝ).det
   have hP : P ≠ 0 := by
     intro h
@@ -55,6 +53,7 @@ theorem ae_det_submatrix_ne_zero [DecidableEq l] (μ : Measure (m → n → ℝ)
     have heval : MvPolynomial.eval x P =
         ((Matrix.of (Sigma.curry x)).submatrix r c).det := by
       rw [MvPolynomial.eval_rename, Matrix.eval_det_mvPolynomialX]
+      -- Both matrices definitionally have (i, j)-entry x ⟨r i, c j⟩.
       congr 1
     exact fun hzero => hx (heval.trans hzero)
   have h := (TauCeti.measurePreserving_piCurry (fun _ : m => fun _ : n =>
@@ -67,18 +66,14 @@ Lebesgue measure has maximal rank almost surely, including when one index type i
 theorem ae_rank_eq_min (μ : Measure (m → n → ℝ)) (hμ : μ ≪ volume) :
     ∀ᵐ A ∂μ, (Matrix.of A).rank = min (Fintype.card m) (Fintype.card n) := by
   classical
-  rcases le_total (Fintype.card m) (Fintype.card n) with hmn | hnm
-  · obtain ⟨e⟩ := Function.Embedding.nonempty_of_card_le hmn
-    filter_upwards [μ.ae_det_submatrix_ne_zero hμ (Function.Embedding.refl m) e] with A hA
-    rw [min_eq_left hmn]
-    apply le_antisymm (Matrix.of A).rank_le_card_height
-    simpa only [Matrix.rank_of_det_ne_zero hA] using
-      (Matrix.of A).rank_submatrix_le (Function.Embedding.refl m) e
-  · obtain ⟨e⟩ := Function.Embedding.nonempty_of_card_le hnm
-    filter_upwards [μ.ae_det_submatrix_ne_zero hμ e (Function.Embedding.refl n)] with A hA
-    rw [min_eq_right hnm]
-    apply le_antisymm (Matrix.of A).rank_le_card_width
-    simpa only [Matrix.rank_of_det_ne_zero hA] using
-      (Matrix.of A).rank_submatrix_le e (Function.Embedding.refl n)
+  let k := min (Fintype.card m) (Fintype.card n)
+  obtain ⟨r⟩ : Nonempty (Fin k ↪ m) := Function.Embedding.nonempty_of_card_le
+    (by simpa only [Fintype.card_fin] using min_le_left (Fintype.card m) (Fintype.card n))
+  obtain ⟨c⟩ : Nonempty (Fin k ↪ n) := Function.Embedding.nonempty_of_card_le
+    (by simpa only [Fintype.card_fin] using min_le_right (Fintype.card m) (Fintype.card n))
+  filter_upwards [μ.ae_det_submatrix_ne_zero hμ r c] with A hA
+  apply le_antisymm (le_min (Matrix.of A).rank_le_card_height (Matrix.of A).rank_le_card_width)
+  simpa only [Matrix.rank_of_det_ne_zero hA, Fintype.card_fin] using
+    (Matrix.of A).rank_submatrix_le r c
 
 end MeasureTheory.Measure
