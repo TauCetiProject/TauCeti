@@ -147,18 +147,17 @@ private theorem four_smul_mem_lattice {x : ι → ℚ}
   push_cast
   ring
 
+open scoped Pointwise in
 /-- The Construction B carrier is a full lattice: it lies in Construction A and contains four
 times every Construction A vector. -/
-instance isLattice : (lattice C).IsLattice ℚ where
-  fg := Submodule.FG.of_le (Submodule.IsLattice.fg (A := ℚ)) (lattice_le C)
-  span_eq_top := by
-    rw [eq_top_iff, ← Submodule.IsLattice.span_eq_top (A := ℚ)
-      (M := ConstructionA.lattice 2 C.toAddSubgroup), Submodule.span_le]
-    intro x hx
-    have h := Submodule.smul_mem _ (4 : ℚ)⁻¹
-      (Submodule.subset_span (R := ℚ) (four_smul_mem_lattice C hx))
-    rwa [← Int.cast_smul_eq_zsmul ℚ, smul_smul, Int.cast_ofNat, inv_mul_cancel₀ (by norm_num),
-      one_smul] at h
+instance isLattice : (lattice C).IsLattice ℚ := by
+  refine Submodule.IsLattice.of_le_of_isLattice_of_fg ℚ
+    (M := Units.mk0 (4 : ℚ) (by norm_num) • ConstructionA.lattice 2 C.toAddSubgroup) ?_
+    (Submodule.FG.of_le Submodule.IsLattice.fg (lattice_le C))
+  intro x hx
+  obtain ⟨y, hy, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp hx
+  simpa only [Units.smul_mk0, ← Int.cast_smul_eq_zsmul ℚ, Int.cast_ofNat] using
+    four_smul_mem_lattice C hy
 
 /-! ### Half the coordinate sum -/
 
