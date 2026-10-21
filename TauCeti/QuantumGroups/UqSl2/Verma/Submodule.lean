@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.SimpleModule.Basic
 public import TauCeti.QuantumGroups.UqSl2.LadderModule
 public import TauCeti.QuantumGroups.UqSl2.Verma.Basic
 
 import Mathlib.Tactic
+import TauCeti.Algebra.Ring.Int.Units
 import TauCeti.LinearAlgebra.Eigenspace.DiagonalBasis
 
 /-!
@@ -114,14 +114,10 @@ theorem vec_mem_span_singleton_vec_iff (hq : q ≠ 0) (hμ : μ ≠ 0) {j : ℕ}
     have hle (x : VermaModule q ((q⁻¹ ^ 2) ^ n * μ)) :
         singularMap he x ∈ Submodule.span ℂ (vec q μ '' Set.Ici n) := by
       have hxs : x ∈ Submodule.span ℂ (Set.range (vec q _)) := span_vec_eq_top ▸ mem_top
-      induction hxs using Submodule.span_induction with
-      | mem y hy =>
-        obtain ⟨i, rfl⟩ := hy
-        rw [singularMap_vec]
-        exact subset_span ⟨i + n, by simp, rfl⟩
-      | zero => simp
-      | add y z _ _ hy hz => rw [map_add]; exact add_mem hy hz
-      | smul c y _ hy => rw [LinearMap.map_smul_of_tower]; exact Submodule.smul_mem _ c hy
+      refine ((Submodule.image_span_subset ((singularMap he).restrictScalars ℂ) _ _).mpr ?_)
+        ⟨x, hxs, rfl⟩
+      rintro _ ⟨i, rfl⟩
+      exact subset_span ⟨i + n, by simp, (singularMap_vec he i).symm⟩
     rw [← range_singularMap he] at hj
     obtain ⟨x, hx⟩ := hj
     have hmem := hle x
@@ -220,14 +216,6 @@ section Signed
 
 variable {m : ℕ} {ε : ℤˣ}
 
-/-- For nonzero `q`, a signed highest weight `ε q^m` is nonzero. -/
-private theorem units_mul_pow_ne_zero (hq : q ≠ 0) : (ε * q ^ m : ℂ) ≠ 0 :=
-  mul_ne_zero (by simp) (pow_ne_zero _ hq)
-
-/-- The square of a signed highest weight `ε q^m` is `q^(2m)`. -/
-private theorem units_mul_pow_sq : (ε * q ^ m : ℂ) ^ 2 = q ^ (2 * m) := by
-  rcases Int.units_eq_one_or ε with rfl | rfl <;> simp [pow_mul']
-
 /-- The vector `v_(m + 1)` of `M(ε q^m)` is killed by `E`. -/
 theorem e_smul_vec_succ_eq_zero : e q • vec q (ε * q ^ m) (m + 1) = 0 := by
   have hε : ((ε : ℤ) : ℂ)⁻¹ = ε := by
@@ -241,7 +229,7 @@ theorem e_smul_vec_succ_eq_zero : e q • vec q (ε * q ^ m) (m + 1) = 0 := by
 by `v_(m + 1)`. -/
 private theorem vec_zero_notMem_span_singleton_vec_succ (hq : q ≠ 0) :
     vec q (ε * q ^ m) 0 ∉ span (UqSl2 q) {vec q (ε * q ^ m) (m + 1)} := by
-  rw [vec_mem_span_singleton_vec_iff e_smul_vec_succ_eq_zero hq (units_mul_pow_ne_zero hq)]
+  rw [vec_mem_span_singleton_vec_iff e_smul_vec_succ_eq_zero hq (by simp [hq])]
   omega
 
 /-- **The submodules of `M(ε q^m)`.** At a generic parameter, the only submodules of `M(ε q^m)` are
@@ -250,13 +238,13 @@ theorem eq_bot_or_eq_span_singleton_vec_succ_or_eq_top (hq : IsGenericQuantumPar
     (N : Submodule (UqSl2 q) (VermaModule q (ε * q ^ m))) :
     N = ⊥ ∨ N = span (UqSl2 q) {vec q (ε * q ^ m) (m + 1)} ∨ N = ⊤ := by
   obtain hN | ⟨n, he, rfl⟩ :=
-    eq_bot_or_exists_eq_span_singleton_vec hq (units_mul_pow_ne_zero hq.ne_zero) N
+    eq_bot_or_exists_eq_span_singleton_vec hq (by simp [hq.ne_zero]) N
   · exact .inl hN
   · rcases n with _ | j
     · exact .inr (.inr (span_singleton_vec_zero _ _))
     · -- The singular-vector criterion forces `q^(2m) = q^(2j)`, so `j = m`.
-      have h := (e_smul_vec_succ_eq_zero_iff hq (units_mul_pow_ne_zero hq.ne_zero) j).mp he
-      rw [units_mul_pow_sq] at h
+      have h := (e_smul_vec_succ_eq_zero_iff hq (by simp [hq.ne_zero]) j).mp he
+      rw [mul_pow, Int.cast_units_sq, one_mul, ← pow_mul, mul_comm] at h
       obtain rfl : m = j := by
         have := hq.pow_injective h
         omega
