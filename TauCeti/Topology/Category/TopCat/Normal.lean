@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Compactness.Lindelof
+public import Mathlib.CategoryTheory.Functor.OfSequence
 public import Mathlib.Topology.UrysohnsLemma
 public import TauCeti.Topology.Category.TopCat.DisjointOpens
 public import TauCeti.Topology.Category.TopCat.OpenEmbedding
@@ -43,12 +43,7 @@ separating the traces of the two sets is pulled back to `A` and extended to `B`,
 and `1` on the traces there (`ContinuousMap.exists_extension_eqOn_const`). The two functions
 agree on `A`, so the sublevel and superlevel sets at `1 / 2` glue to disjoint open sets of `P`.
 For a sequential colimit the same extension step, applied stage by stage, gives compatible
-separating functions on all stages, and their sublevel and superlevel sets are open in the
-colimit.
-
-Lindelöf spaces are treated alongside: attaching a Lindelöf space to a Lindelöf space gives a
-Lindelöf space (`TauCeti.TopCat.lindelofSpace_of_isPushout`), and the colimit of a countable
-diagram of Lindelöf spaces is Lindelöf (`TauCeti.TopCat.lindelofSpace_of_isColimit`).
+separating functions on all stages, and these descend to a separating function on the colimit.
 
 ## References
 
@@ -141,17 +136,6 @@ theorem t1Space_of_isPushout (sq : IsPushout g m f g₂) (hm : IsClosedEmbedding
     exact Set.Subsingleton.isClosed fun b₁ hb₁ b₂ hb₂ ↦
       (hinj (hoff b₁ hb₁) hb hb₁).trans (hinj (hoff b₂ hb₂) hb hb₂).symm
 
-/-- Attaching a Lindelöf space `B` to a Lindelöf space `X` gives a Lindelöf space: the corner of
-a pushout square in `TopCat` is Lindelöf when the two sides opposite the source are. -/
-theorem lindelofSpace_of_isPushout (sq : IsPushout g m f g₂) [LindelofSpace X]
-    [LindelofSpace B] : LindelofSpace P := by
-  have hp (p : P) : (∃ x, f x = p) ∨ ∃ b, g₂ b = p :=
-    Types.eq_or_eq_of_isPushout ((forget TopCat).map_isPushout sq) p
-  refine ⟨((isLindelof_range f.hom.continuous).union
-    (isLindelof_range g₂.hom.continuous)).of_isClosed_subset isClosed_univ fun p _ ↦ ?_⟩
-  obtain ⟨x, rfl⟩ | ⟨b, rfl⟩ := hp p
-  exacts [.inl ⟨x, rfl⟩, .inr ⟨b, rfl⟩]
-
 end Pushout
 
 section Colimit
@@ -161,23 +145,7 @@ theorem t1Space_of_isColimit {J : Type w} [Preorder J] [IsDirectedOrder J] {F : 
     (hF : ∀ ⦃i j : J⦄ (hij : i ≤ j), Function.Injective (F.map (homOfLE hij)))
     {c : Cocone F} (hc : IsColimit c) [∀ j, T1Space (F.obj j)] : T1Space c.pt := by
   refine ⟨fun p ↦ (TopCat.isClosed_iff_of_isColimit _ hc _).2 fun j ↦ ?_⟩
-  have : Nonempty J := ⟨j⟩
-  have hinj : Function.Injective (c.ι.app j) := fun x y h ↦ by
-    obtain ⟨k, g, hk⟩ :=
-      (Types.FilteredColimit.isColimit_eq_iff' (isColimitOfPreserves (forget TopCat) hc) x y).1 h
-    exact hF (leOfHom g) hk
-  exact (subsingleton_singleton.preimage hinj).isClosed
-
-/-- The colimit of a countable diagram of Lindelöf spaces in `TopCat` is Lindelöf. -/
-theorem lindelofSpace_of_isColimit {J : Type w} [SmallCategory J] [Countable J]
-    {F : J ⥤ TopCat.{u}} {c : Cocone F} (hc : IsColimit c) [∀ j, LindelofSpace (F.obj j)] :
-    LindelofSpace c.pt := by
-  have hp (p : c.pt) : ∃ j x, c.ι.app j x = p :=
-    Types.jointly_surjective_of_isColimit (isColimitOfPreserves (forget TopCat) hc) p
-  refine ⟨(isLindelof_iUnion fun j ↦ isLindelof_range (c.ι.app j).hom.continuous).of_isClosed_subset
-    isClosed_univ fun p _ ↦ ?_⟩
-  obtain ⟨j, x, rfl⟩ := hp p
-  exact mem_iUnion_of_mem j (mem_range_self x)
+  exact (subsingleton_singleton.preimage (injective_ι_of_isColimit hF hc j)).isClosed
 
 variable {F : ℕ ⥤ TopCat.{u}} {c : Cocone F}
 
@@ -204,51 +172,25 @@ theorem normalSpace_of_isColimit
   let u (n : ℕ) : C(F.obj n, ℝ) := (s n).1
   have hu (n : ℕ) : EqOn (u n) 0 (c.ι.app n ⁻¹' S) ∧ EqOn (u n) 1 (c.ι.app n ⁻¹' T) := (s n).2
   have hu' (n : ℕ) : u (n + 1) ∘ F.map (homOfLE n.le_succ) = u n := (hstep n (s n)).choose_spec
+  -- The compatible separating functions descend to a continuous function `v` on the colimit.
+  let d := hc.desc ⟨TopCat.of (ULift.{u} ℝ), NatTrans.ofSequence
+    (fun n ↦ TopCat.ofHom ⟨ULift.up ∘ u n, continuous_uliftUp.comp (u n).continuous⟩)
+    fun n ↦ by ext x; exact congrArg ULift.up (congrFun (hu' n) x)⟩
+  let v : C(c.pt, ℝ) := ⟨fun p ↦ (d p).down, continuous_uliftDown.comp d.hom.continuous⟩
+  have hv (n : ℕ) (x : F.obj n) : v (c.ι.app n x) = u n x := by
+    change (d (c.ι.app n x)).down = _
+    rw [← ConcreteCategory.comp_apply, hc.fac]
+    rfl
   have hp (p : c.pt) : ∃ n x, c.ι.app n x = p :=
     Types.jointly_surjective_of_isColimit (isColimitOfPreserves (forget TopCat) hc) p
-  -- The separating functions are compatible with all transition maps, so they agree on points
-  -- with the same image in the colimit.
-  have hcomp {i j : ℕ} (hij : i ≤ j) (x : F.obj i) : u j (F.map (homOfLE hij) x) = u i x := by
-    induction j, hij using Nat.le_induction with
-    | base => simp
-    | succ j hij ih =>
-      rw [← homOfLE_comp hij j.le_succ, F.map_comp, ConcreteCategory.comp_apply, ← ih]
-      exact congrFun (hu' j) _
-  have hinj (k : ℕ) : Function.Injective (c.ι.app k) :=
-    (isClosedEmbedding_ι_of_isColimit
-      (fun _ _ ↦ isClosedEmbedding_map_of_isWellOrderContinuous F fun j _ ↦ hF j) hc k).injective
-  have hu_eq {i j : ℕ} (x : F.obj i) (y : F.obj j) (hxy : c.ι.app i x = c.ι.app j y) :
-      u i x = u j y := by
-    rw [← hcomp (le_max_left i j) x, ← hcomp (le_max_right i j) y]
-    congr 1
-    apply hinj (max i j)
-    rwa [← ConcreteCategory.comp_apply, c.w, ← ConcreteCategory.comp_apply, c.w]
   -- The sublevel and superlevel sets at `1 / 2` separate `S` and `T`.
-  let W : Set c.pt := {p | ∃ n x, c.ι.app n x = p ∧ u n x < 1 / 2}
-  let W' : Set c.pt := {p | ∃ n x, c.ι.app n x = p ∧ 1 / 2 < u n x}
-  have hpre (k : ℕ) : c.ι.app k ⁻¹' W = u k ⁻¹' Iio (1 / 2) ∧
-      c.ι.app k ⁻¹' W' = u k ⁻¹' Ioi (1 / 2) := by
-    constructor <;> ext y <;> constructor
-    · rintro ⟨n, x, hx, h⟩
-      simpa [hu_eq x y hx] using h
-    · exact fun h ↦ ⟨k, y, rfl, h⟩
-    · rintro ⟨n, x, hx, h⟩
-      simpa [hu_eq x y hx] using h
-    · exact fun h ↦ ⟨k, y, rfl, h⟩
-  refine ⟨W, W', (TopCat.isOpen_iff_of_isColimit _ hc _).2 fun k ↦ ?_,
-    (TopCat.isOpen_iff_of_isColimit _ hc _).2 fun k ↦ ?_, fun p hpS ↦ ?_, fun p hpT ↦ ?_, ?_⟩
-  · rw [(hpre k).1]
-    exact isOpen_Iio.preimage (u k).continuous
-  · rw [(hpre k).2]
-    exact isOpen_Ioi.preimage (u k).continuous
+  refine ⟨v ⁻¹' Iio (1 / 2), v ⁻¹' Ioi (1 / 2), isOpen_Iio.preimage v.continuous,
+    isOpen_Ioi.preimage v.continuous, fun p hpS ↦ ?_, fun p hpT ↦ ?_,
+    (Ioi_disjoint_Iio_same (a := (1 / 2 : ℝ))).symm.preimage v⟩
   · obtain ⟨n, x, rfl⟩ := hp p
-    exact ⟨n, x, rfl, by norm_num [(hu n).1 hpS]⟩
+    norm_num [hv, (hu n).1 hpS]
   · obtain ⟨n, x, rfl⟩ := hp p
-    exact ⟨n, x, rfl, by norm_num [(hu n).2 hpT]⟩
-  · refine Set.disjoint_left.2 ?_
-    rintro p ⟨n, x, rfl, hx⟩ ⟨n', x', hx', hx''⟩
-    rw [hu_eq x' x hx'] at hx''
-    exact (lt_asymm hx hx'').elim
+    norm_num [hv, (hu n).2 hpT]
 
 end Colimit
 
