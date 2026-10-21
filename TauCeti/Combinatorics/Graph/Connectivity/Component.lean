@@ -250,13 +250,20 @@ theorem ConnectedComponent.ofSimple_toSimple {G : Graph α β}
 
 /-- The support of the underlying simple component is exactly the actual vertex set of the
 component subgraph. -/
-@[simp]
 theorem ConnectedComponent.mem_toSimple_iff {G : Graph α β} (C : G.ConnectedComponent)
     (x : V(G)) : x ∈ C.toSimple.supp ↔ (x : α) ∈ V(C.1) := by
   have hC : G.connectedComponentSubgraph C.toSimple = C.1 :=
     congrArg Subtype.val C.ofSimple_toSimple
   rw [← hC, vertexSet_connectedComponentSubgraph, mem_connectedComponentVertexSet_iff]
   simp
+
+/-- A vertex lies in the underlying simple component of a connected-component subgraph exactly
+when it is a vertex of that subgraph. -/
+@[simp]
+theorem ConnectedComponent.connectedComponentMk_eq_toSimple_iff {G : Graph α β}
+    (C : G.ConnectedComponent) (x : V(G)) :
+    G.toSimpleGraph.connectedComponentMk x = C.toSimple ↔ (x : α) ∈ V(C.1) := by
+  rw [← SimpleGraph.ConnectedComponent.mem_supp_iff, C.mem_toSimple_iff]
 
 /-- Passing from an underlying simple component to its component subgraph and back recovers the
 simple component. -/
