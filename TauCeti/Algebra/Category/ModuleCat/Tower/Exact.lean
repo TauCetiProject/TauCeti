@@ -36,10 +36,10 @@ exact sequences of derived limits of towers.
 ## Main declarations
 
 * `TauCeti.ModuleTower.connecting`: the connecting map `lim C → lim¹ A`.
-* `TauCeti.ModuleTower.limMap_injective`, `TauCeti.ModuleTower.exact_limMap`,
-  `TauCeti.ModuleTower.exact_limMap_connecting`,
-  `TauCeti.ModuleTower.exact_connecting_limOneMap`, `TauCeti.ModuleTower.exact_limOneMap`,
-  `TauCeti.ModuleTower.limOneMap_surjective`: exactness of the six-term sequence.
+* `TauCeti.ModuleTower.exact_limMap`, `TauCeti.ModuleTower.exact_limMap_connecting`,
+  `TauCeti.ModuleTower.exact_connecting_limOneMap`, `TauCeti.ModuleTower.exact_limOneMap`:
+  exactness of the six-term sequence; exactness at the two ends is
+  `TauCeti.ModuleTower.limMap_injective` and `TauCeti.ModuleTower.limOneMap_surjective`.
 * `TauCeti.ModuleTower.naturality_connecting`: naturality of the connecting map.
 * `TauCeti.ModuleTower.limMap_surjective_of_subsingleton_limOne`: `lim B → lim C` is surjective
   when `lim¹ A = 0`.
@@ -67,22 +67,6 @@ variable {R : Type u} [Ring R] {F G H : ModuleTower.{v} R} {f : F ⟶ G} {g : G 
 
 section Product
 
-/-- The product map of a morphism of towers is the componentwise map `Pi.map`. -/
-theorem coe_productMap (f : F ⟶ G) : ⇑(productMap f) = Pi.map fun n ↦ (f.app (op n)).hom :=
-  funext fun x ↦ funext fun n ↦ productMap_apply f x n
-
-/-- A levelwise injective morphism of towers is injective on products. -/
-theorem productMap_injective (hf : ∀ n, Function.Injective (f.app (op n)).hom) :
-    Function.Injective (productMap f) := by
-  rw [coe_productMap]
-  exact Function.Injective.piMap hf
-
-/-- A levelwise surjective morphism of towers is surjective on products. -/
-theorem productMap_surjective (hg : ∀ n, Function.Surjective (g.app (op n)).hom) :
-    Function.Surjective (productMap g) := by
-  rw [coe_productMap]
-  exact Function.Surjective.piMap hg
-
 /-- A levelwise exact pair of morphisms of towers is exact on products. -/
 theorem exact_productMap (hfg : ∀ n, Function.Exact (f.app (op n)).hom (g.app (op n)).hom) :
     Function.Exact (productMap f) (productMap g) := by
@@ -98,13 +82,6 @@ theorem comp_eq_zero_of_exact (hfg : ∀ n, Function.Exact (f.app (op n)).hom (g
 end Product
 
 section Lim
-
-/-- The first map of the six-term sequence: `lim A → lim B` is injective when every `Aₙ → Bₙ`
-is. -/
-theorem limMap_injective (hf : ∀ n, Function.Injective (f.app (op n)).hom) :
-    Function.Injective (limMap f) := fun x y hxy ↦
-  Subtype.ext <| productMap_injective hf <| by
-    rw [← coe_limMap_apply, ← coe_limMap_apply, hxy]
 
 /-- Exactness of `lim A → lim B → lim C` for a levelwise exact sequence `0 → A → B → C`. -/
 theorem exact_limMap (hf : ∀ n, Function.Injective (f.app (op n)).hom)
@@ -148,33 +125,20 @@ end Lim
 
 section LimOne
 
-/-- The last map of the six-term sequence: `lim¹ B → lim¹ C` is surjective when every
-`Bₙ → Cₙ` is. -/
-theorem limOneMap_surjective (hg : ∀ n, Function.Surjective (g.app (op n)).hom) :
-    Function.Surjective (limOneMap g) := by
-  intro z
-  obtain ⟨z, rfl⟩ := Submodule.Quotient.mk_surjective _ z
-  obtain ⟨y, rfl⟩ := productMap_surjective hg z
-  exact ⟨Submodule.Quotient.mk y, limOneMap_mk g y⟩
-
 /-- Exactness of `lim¹ A → lim¹ B → lim¹ C` for a levelwise exact sequence `A → B → C → 0`. -/
 theorem exact_limOneMap (hfg : ∀ n, Function.Exact (f.app (op n)).hom (g.app (op n)).hom)
     (hg : ∀ n, Function.Surjective (g.app (op n)).hom) :
     Function.Exact (limOneMap f) (limOneMap g) := by
-  refine Function.Exact.of_comp_of_mem_range ?_ fun y hy ↦ ?_
-  · ext x
-    rw [Function.comp_apply, ← LinearMap.comp_apply, ← limOneMap_comp, comp_eq_zero_of_exact hfg,
-      limOneMap_zero, LinearMap.zero_apply, Pi.zero_apply]
-  obtain ⟨y, rfl⟩ := Submodule.Quotient.mk_surjective _ y
-  obtain ⟨z, hz⟩ := (Submodule.Quotient.mk_eq_zero _).1 ((limOneMap_mk g y).symm.trans hy)
-  -- Write `z = g w`; then `y - G.shift w` lies in the kernel of `g`, hence comes from `A`.
+  have hmapQ {P Q : ModuleTower.{v} R} (e : P ⟶ Q) : limOneMap e =
+      (LinearMap.range P.shift).mapQ (LinearMap.range Q.shift) (productMap e)
+        (range_shift_le_comap e) :=
+    Submodule.linearMap_qext _ <| LinearMap.ext fun x ↦ limOneMap_mk e x
+  rw [hmapQ, hmapQ, (exact_productMap hfg).exact_mapQ_iff]
+  -- A shift `H.shift (g w)` is the image of the shift `G.shift w`.
+  rintro _ ⟨-, z, rfl⟩
   obtain ⟨w, rfl⟩ := productMap_surjective hg z
-  obtain ⟨x, hx⟩ := (exact_productMap hfg (y - G.shift w)).1 <| by
-    rw [map_sub, ← hz, ← LinearMap.comp_apply H.shift, shift_natural, LinearMap.comp_apply,
-      sub_self]
-  refine ⟨Submodule.Quotient.mk x, ?_⟩
-  rw [limOneMap_mk, hx, Submodule.Quotient.eq, sub_sub_cancel_left, neg_mem_iff]
-  exact LinearMap.mem_range_self _ w
+  exact ⟨G.shift w, LinearMap.mem_range_self _ w, by
+    rw [← LinearMap.comp_apply, ← shift_natural, LinearMap.comp_apply]⟩
 
 end LimOne
 

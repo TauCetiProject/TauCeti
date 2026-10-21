@@ -39,6 +39,8 @@ noncommutative ring are allowed.
 * `TauCeti.ModuleTower.isLimitLimCone`: `lim`, with its projections, is a limit of the tower.
 * `TauCeti.ModuleTower.limMap`, `TauCeti.ModuleTower.limOneMap`: the linear maps induced by a
   morphism of towers, with their identity, composition, zero and addition laws.
+* `TauCeti.ModuleTower.limMap_injective`, `TauCeti.ModuleTower.limOneMap_surjective`: levelwise
+  injective (surjective) morphisms induce injective (surjective) maps on `lim` (`lim¹`).
 * `TauCeti.ModuleTower.subsingleton_limOne_iff`: `lim¹` vanishes if and only if the shift map is
   surjective.
 * `TauCeti.ModuleTower.subsingleton_limOne_of_surjective`: towers with surjective transitions
@@ -243,6 +245,22 @@ theorem productMap_zero : productMap (0 : F ⟶ G) = 0 :=
 theorem productMap_add (f g : F ⟶ G) : productMap (f + g) = productMap f + productMap g :=
   (rfl)
 
+/-- The product map of a morphism of towers is the componentwise map `Pi.map`. -/
+theorem coe_productMap (f : F ⟶ G) : ⇑(productMap f) = Pi.map fun n ↦ (f.app (op n)).hom :=
+  funext fun x ↦ funext fun n ↦ productMap_apply f x n
+
+/-- A levelwise injective morphism of towers is injective on products. -/
+theorem productMap_injective {f : F ⟶ G} (hf : ∀ n, Function.Injective (f.app (op n)).hom) :
+    Function.Injective (productMap f) := by
+  rw [coe_productMap]
+  exact Function.Injective.piMap hf
+
+/-- A levelwise surjective morphism of towers is surjective on products. -/
+theorem productMap_surjective {g : G ⟶ H} (hg : ∀ n, Function.Surjective (g.app (op n)).hom) :
+    Function.Surjective (productMap g) := by
+  rw [coe_productMap]
+  exact Function.Surjective.piMap hg
+
 /-- A morphism of towers commutes with the transition maps. -/
 theorem app_comp_transition (f : F ⟶ G) (n : ℕ) :
     (f.app (op n)).hom ∘ₗ F.transition n = G.transition n ∘ₗ (f.app (op (n + 1))).hom := by
@@ -286,6 +304,13 @@ theorem limMap_zero : limMap (0 : F ⟶ G) = 0 :=
 theorem limMap_add (f g : F ⟶ G) : limMap (f + g) = limMap f + limMap g :=
   (rfl)
 
+/-- The first map of the six-term sequence: `lim A → lim B` is injective when every `Aₙ → Bₙ`
+is. -/
+theorem limMap_injective {f : F ⟶ G} (hf : ∀ n, Function.Injective (f.app (op n)).hom) :
+    Function.Injective (limMap f) := fun x y hxy ↦
+  Subtype.ext <| productMap_injective hf <| by
+    rw [← coe_limMap_apply, ← coe_limMap_apply, hxy]
+
 /-- A morphism of towers maps the image of the shift map into the image of the shift map. -/
 theorem range_shift_le_comap (f : F ⟶ G) :
     LinearMap.range F.shift ≤ (LinearMap.range G.shift).comap (productMap f) := by
@@ -321,6 +346,15 @@ theorem limOneMap_zero : limOneMap (0 : F ⟶ G) = 0 := by
 theorem limOneMap_add (f g : F ⟶ G) : limOneMap (f + g) = limOneMap f + limOneMap g := by
   ext x
   rfl
+
+/-- The last map of the six-term sequence: `lim¹ B → lim¹ C` is surjective when every
+`Bₙ → Cₙ` is. -/
+theorem limOneMap_surjective {g : G ⟶ H} (hg : ∀ n, Function.Surjective (g.app (op n)).hom) :
+    Function.Surjective (limOneMap g) := by
+  intro z
+  obtain ⟨z, rfl⟩ := Submodule.Quotient.mk_surjective _ z
+  obtain ⟨y, rfl⟩ := productMap_surjective hg z
+  exact ⟨Submodule.Quotient.mk y, limOneMap_mk g y⟩
 
 end Functoriality
 
