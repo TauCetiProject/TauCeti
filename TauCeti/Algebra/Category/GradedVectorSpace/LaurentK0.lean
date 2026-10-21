@@ -190,6 +190,19 @@ theorem hasFiniteLaurentSupport_unit : HasFiniteLaurentSupport k fun j ↦ (unit
   HasFiniteLaurentSupport.of_finset (finiteDimensional_unit_obj k) {0} fun _ hj ↦
     ModuleCat.subsingleton_of_isZero (isZero_unit_obj k (by simpa using hj))
 
+/-- A finite-dimensional vector space placed in degree `0` is a finite graded vector space. -/
+theorem finite_single (Y : ModuleCat.{u} k) [Module.Finite k Y] :
+    finite k ((GradedObject.single₀ ℤ).obj Y) := by
+  refine (finite_iff _).2 <| HasFiniteLaurentSupport.of_finset (fun i ↦ ?_) {0} fun i hi ↦
+    ModuleCat.subsingleton_of_isZero
+      (GradedObject.isInitialSingleObjApply 0 Y i (by simpa using hi)).isZero
+  by_cases hi : i = 0
+  · exact Module.Finite.equiv (R := k)
+      (GradedObject.singleObjApplyIsoOfEq 0 Y i hi).toLinearEquiv.symm
+  · have := ModuleCat.subsingleton_of_isZero
+      (GradedObject.isInitialSingleObjApply 0 Y i hi).isZero
+    infer_instance
+
 /-- The one-dimensional space `M = k` in degree `0` is finite. -/
 theorem finite_unit : finite k (unit k) :=
   hasFiniteLaurentSupport_unit k

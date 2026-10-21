@@ -28,7 +28,8 @@ of graded objects is short exact in every degree, and that totalizing a graded o
 (`TauCeti.gradedObjectTotalAdjunction`), and is the colimit functor of the corresponding discrete
 diagram (`TauCeti.gradedObjectTotalIso`). Totalizing is therefore additive and preserves finite
 colimits; it also preserves finite limits when coproducts in `C` are exact, as for modules, so that
-it is an exact functor.
+it is an exact functor. The total object of an object placed in a single degree is that object
+(`TauCeti.gradedObjectTotalSingleIso`).
 
 Mathlib provides the category of graded objects and its grading shift, but not these
 structures. They are what homological algebra needs: `Ext` groups, and hence the graded
@@ -215,5 +216,25 @@ instance gradedObjectTotalPreservesFiniteLimits (β : Type) (C : Type u) [Catego
     PreservesFiniteLimits (GradedObject.total β C) :=
   have := HasExactColimitsOfShape.preservesFiniteLimits (J := Discrete β) (C := C)
   preservesFiniteLimits_of_natIso (gradedObjectTotalIso β C)
+
+/-- **The total object of an object placed in a single degree is that object**: `∐ᵢ Xᵢ ≅ Y` for
+`X = (GradedObject.single j).obj Y`, since every other piece is initial. -/
+noncomputable def gradedObjectTotalSingleIso {β : Type} (C : Type u) [Category.{v} C]
+    [HasCoproducts.{0} C] [DecidableEq β] (j : β) (Y : C) :
+    (GradedObject.total β C).obj ((GradedObject.single j).obj Y) ≅ Y :=
+  -- `GradedObject.total` is by definition `X ↦ ∐ᵢ Xᵢ`.
+  show (∐ fun i ↦ (GradedObject.single j).obj Y i) ≅ Y from {
+    hom := Sigma.desc fun i ↦ if hi : i = j then
+      (GradedObject.singleObjApplyIsoOfEq j Y i hi).hom
+      else (GradedObject.isInitialSingleObjApply j Y i hi).to Y
+    inv := (GradedObject.singleObjApplyIso j Y).inv ≫ Sigma.ι _ j
+    hom_inv_id := by
+      apply Sigma.hom_ext
+      intro i
+      by_cases hi : i = j
+      · subst i
+        simp
+      · exact (GradedObject.isInitialSingleObjApply j Y i hi).hom_ext _ _
+    inv_hom_id := by simp }
 
 end TauCeti

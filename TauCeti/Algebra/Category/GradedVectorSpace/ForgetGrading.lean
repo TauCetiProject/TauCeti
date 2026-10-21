@@ -153,46 +153,13 @@ theorem finrank_forgetGrading (x : LaurentK0.{u} (finiteExactStructure k)) :
 
 /-! ### The comparison hypotheses -/
 
-/-- The total space of a vector space placed in degree `0` is that vector space. -/
-private noncomputable def totalObjSingleIso (Y : ModuleCat.{u} k) :
-    (∐ fun i : ℤ ↦ (GradedObject.single₀ ℤ).obj Y i) ≅ Y where
-  hom := Sigma.desc fun i ↦ if hi : i = 0 then
-    eqToHom (congrArg ((GradedObject.single₀ ℤ).obj Y) hi) ≫
-      (GradedObject.singleObjApplyIso 0 Y).hom
-    else 0
-  inv := (GradedObject.singleObjApplyIso 0 Y).inv ≫ Sigma.ι _ 0
-  hom_inv_id := by
-    apply Sigma.hom_ext
-    intro i
-    by_cases hi : i = 0
-    · subst i
-      simp only [colimit.ι_desc_assoc, Discrete.functor_obj_eq_as, Cofan.mk_pt, Cofan.mk_ι_app,
-        ↓reduceDIte, eqToHom_refl, Category.id_comp, Iso.hom_inv_id_assoc, Category.comp_id]
-    · exact (GradedObject.isInitialSingleObjApply 0 Y i hi).isZero.eq_of_src _ _
-  inv_hom_id := by
-    rw [Category.assoc, Sigma.ι_comp_desc]
-    simp
-
-/-- A finite-dimensional vector space placed in degree `0` is a finite graded vector space. -/
-private theorem finite_single (Y : FGModuleCat.{u} k) :
-    finite k ((GradedObject.single₀ ℤ).obj Y.obj) := by
-  refine (finite_iff _).2 <| HasFiniteLaurentSupport.of_finset (fun i ↦ ?_) {0} fun i hi ↦
-    ModuleCat.subsingleton_of_isZero
-      (GradedObject.isInitialSingleObjApply 0 Y.obj i (by simpa using hi)).isZero
-  by_cases hi : i = 0
-  · have : Module.Finite k Y.obj := Y.property
-    exact Module.Finite.equiv (R := k)
-      (GradedObject.singleObjApplyIsoOfEq 0 Y.obj i hi).toLinearEquiv.symm
-  · have := ModuleCat.subsingleton_of_isZero
-      (GradedObject.isInitialSingleObjApply 0 Y.obj i hi).isZero
-    infer_instance
-
 /-- Every finite-dimensional vector space is, up to isomorphism, the underlying vector space of a
 finite graded vector space: place it in degree `0`. -/
 private theorem exists_finiteTotal_obj_iso (Y : FGModuleCat.{u} k) :
     ∃ V : (finite k).FullSubcategory, Nonempty ((finiteTotal k).obj V ≅ Y) :=
-  ⟨⟨_, finite_single k Y⟩, ⟨(ModuleCat.isFG k).fullyFaithfulι.preimageIso
-    ((finiteTotalCompιIso k).app _ ≪≫ totalObjSingleIso k Y.obj)⟩⟩
+  have : Module.Finite k Y.obj := Y.property
+  ⟨⟨_, finite_single k Y.obj⟩, ⟨(ModuleCat.isFG k).fullyFaithfulι.preimageIso
+    ((finiteTotalCompιIso k).app _ ≪≫ gradedObjectTotalSingleIso _ 0 Y.obj)⟩⟩
 
 /-- **Short exact sequences of vector spaces lift along forgetting the grading**: every short exact
 sequence `Y₁ ↪ Y₂ ↠ Y₃` of finite-dimensional vector spaces is, term by term, the underlying
