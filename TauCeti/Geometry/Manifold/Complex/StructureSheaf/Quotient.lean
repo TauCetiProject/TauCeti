@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.NodeLocalRing
+public import TauCeti.Topology.Category.TopCat.Quotient
 import Mathlib.Algebra.Category.Ring.FilteredColimits
 
 /-!
@@ -42,23 +43,10 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
   {H : Type*} [TopologicalSpace H] (I : ModelWithCorners ℂ E H)
   {X : Type} [TopologicalSpace X] [ChartedSpace H X] (s : Setoid X)
 
-/-- The continuous projection from the normalization to its topological quotient. -/
--- Expose the projection so inverse-image section domains compute to quotient fibres.
-@[expose]
-def quotientMap : TopCat.of X ⟶ TopCat.of (Quotient s) :=
-  TopCat.ofHom ⟨Quotient.mk s, continuous_quotient_mk'⟩
-
-/-- The quotient projection sends a point to its equivalence class. -/
-@[simp]
--- Avoid indexing on the two definitionally equal presentations of the continuous-map type.
-theorem quotientMap_apply (x : X) :
-    DFunLike.coe (F := no_index _) (ConcreteCategory.hom (quotientMap s)) x =
-      Quotient.mk s x := rfl
-
 /-- Holomorphic functions on the normalization over `U` which agree at identified points. -/
 def quotientSectionSubring (U : Opens (Quotient s)) :
     Subring ((holomorphicStructureSheaf I X).obj.obj
-      (op ((Opens.map (quotientMap s)).obj U))) where
+      (op ((Opens.map (TopCat.quotientMk s)).obj U))) where
   carrier := {f | ∀ (x y : X) (hx : Quotient.mk s x ∈ U)
     (hy : Quotient.mk s y ∈ U), s x y → f ⟨x, hx⟩ = f ⟨y, hy⟩}
   zero_mem' := fun _ _ _ _ _ ↦ by simp
@@ -77,7 +65,7 @@ def quotientSectionSubring (U : Opens (Quotient s)) :
 @[simp]
 theorem mem_quotientSectionSubring (U : Opens (Quotient s))
     (f : (holomorphicStructureSheaf I X).obj.obj
-      (op ((Opens.map (quotientMap s)).obj U))) :
+      (op ((Opens.map (TopCat.quotientMk s)).obj U))) :
     f ∈ quotientSectionSubring I s U ↔
       ∀ (x y : X) (hx : Quotient.mk s x ∈ U) (hy : Quotient.mk s y ∈ U),
         s x y → f ⟨x, hx⟩ = f ⟨y, hy⟩ := Iff.rfl
@@ -95,7 +83,7 @@ theorem quotientSectionSubring_eq_top_of_injOn (U : Opens (Quotient s))
 
 private def quotientRestrict {U V : Opens (Quotient s)} (h : V ⟶ U) :
     quotientSectionSubring I s U →+* quotientSectionSubring I s V :=
-  ((holomorphicStructureSheaf I X).obj.map ((Opens.map (quotientMap s)).map h).op).hom
+  ((holomorphicStructureSheaf I X).obj.map ((Opens.map (TopCat.quotientMk s)).map h).op).hom
     |>.restrict _ _ (by
       intro f hf x y hx hy hxy
       simpa only [map_apply] using hf x y (h.le hx) (h.le hy) hxy)
@@ -114,37 +102,30 @@ private def quotientPresheaf : TopCat.Presheaf CommRingCat (TopCat.of (Quotient 
     apply RingHom.ext
     intro f
     apply Subtype.ext
-    apply holomorphicStructureSheaf.ext
-    intro x
-    -- Remove the categorical and subring wrappers to compare the underlying restrictions.
-    change ((holomorphicStructureSheaf I X).obj.map
-        ((Opens.map (quotientMap s)).map (h ≫ k).unop).op f.1) x =
-      ((holomorphicStructureSheaf I X).obj.map ((Opens.map (quotientMap s)).map k.unop).op
-        ((holomorphicStructureSheaf I X).obj.map ((Opens.map (quotientMap s)).map h.unop).op f.1)) x
-    simp only [map_apply]
+    exact (holomorphicStructureSheaf I X).obj.map_comp_apply _ _ f.1
 
 private def quotientInclusion : quotientPresheaf I s ⟶
-    (TopCat.Presheaf.pushforward CommRingCat (quotientMap s)).obj
+    (TopCat.Presheaf.pushforward CommRingCat (TopCat.quotientMk s)).obj
       (holomorphicStructureSheaf I X).obj where
   app U := CommRingCat.ofHom (quotientSectionSubring I s U.unop).subtype
 
 private theorem quotientPresheaf_isSheaf : (quotientPresheaf I s).IsSheaf := by
   rw [TopCat.Presheaf.isSheaf_iff_isSheafUniqueGluing]
   intro ι U f hf
-  let F := (TopCat.Presheaf.pushforward CommRingCat (quotientMap s)).obj
+  let F := (TopCat.Presheaf.pushforward CommRingCat (TopCat.quotientMk s)).obj
     (holomorphicStructureSheaf I X).obj
   have hc : F.IsCompatible U (fun i ↦ (f i).1) := by
     intro i j
     exact congrArg Subtype.val (hf i j)
   obtain ⟨g, hg, hu⟩ := TopCat.Presheaf.IsSheaf.isSheafUniqueGluing
-    (TopCat.Sheaf.pushforward_sheaf_of_sheaf (quotientMap s)
+    (TopCat.Sheaf.pushforward_sheaf_of_sheaf (TopCat.quotientMk s)
       (holomorphicStructureSheaf I X).property) U (fun i ↦ (f i).1) hc
   have hmem : g ∈ quotientSectionSubring I s (iSup U) := by
     intro x y hx hy hxy
     obtain ⟨i, hi⟩ := Opens.mem_iSup.mp hx
     have hj : Quotient.mk s y ∈ U i := Quotient.sound hxy ▸ hi
     have hgi : (holomorphicStructureSheaf I X).obj.map
-        ((Opens.map (quotientMap s)).map (Opens.leSupr U i)).op g = (f i).1 := hg i
+        ((Opens.map (TopCat.quotientMk s)).map (Opens.leSupr U i)).op g = (f i).1 := hg i
     have hxi := congrArg (fun t ↦ t ⟨x, hi⟩) hgi
     have hyi := congrArg (fun t ↦ t ⟨y, hj⟩) hgi
     simp only [map_apply] at hxi hyi
@@ -164,10 +145,19 @@ def quotientSheafSectionsEquiv (U : Opens (Quotient s)) :
     (quotientSheaf I s).obj.obj (op U) ≃+* quotientSectionSubring I s U :=
   RingEquiv.refl _
 
+/-- Quotient sections are equal if their holomorphic functions upstairs agree pointwise. -/
+@[ext]
+theorem quotientSheaf_ext {U : Opens (Quotient s)}
+    {f g : (quotientSheaf I s).obj.obj (op U)}
+    (h : ∀ x, (quotientSheafSectionsEquiv I s U f).1 x =
+      (quotientSheafSectionsEquiv I s U g).1 x) : f = g := by
+  apply (quotientSheafSectionsEquiv I s U).injective
+  exact Subtype.ext (holomorphicStructureSheaf.ext h)
+
 /-- The normalization pullback includes the quotient sheaf into the direct image of the
 holomorphic structure sheaf. -/
 def quotientSheafι : quotientSheaf I s ⟶
-    (TopCat.Sheaf.pushforward CommRingCat (quotientMap s)).obj
+    (TopCat.Sheaf.pushforward CommRingCat (TopCat.quotientMk s)).obj
       (holomorphicStructureSheaf I X) :=
   ⟨quotientInclusion I s⟩
 
@@ -176,7 +166,7 @@ def quotientSheafι : quotientSheaf I s ⟶
 theorem quotientSheafι_app_apply (U : Opens (Quotient s))
     (f : (quotientSheaf I s).obj.obj (op U)) :
     (@CommRingCat.Hom.hom _
-      ((holomorphicStructureSheaf I X).obj.obj (op ((Opens.map (quotientMap s)).obj U)))
+      ((holomorphicStructureSheaf I X).obj.obj (op ((Opens.map (TopCat.quotientMk s)).obj U)))
       ((quotientSheafι I s).hom.app (op U))) f =
       (quotientSheafSectionsEquiv I s U f).1 := (rfl)
 
@@ -185,12 +175,7 @@ instance quotientSheafι_mono : Mono (quotientSheafι I s) := by
   have (U : (Opens (Quotient s))ᵒᵖ) : Mono ((quotientSheafι I s).hom.app U) := by
     induction U using Opposite.rec
     apply ConcreteCategory.mono_of_injective
-    intro f g h
-    apply (quotientSheafSectionsEquiv I s _).injective
-    apply Subtype.ext
-    -- The simp-normal codomain is sections upstairs; h retains the direct-image presentation.
-    erw [quotientSheafι_app_apply, quotientSheafι_app_apply] at h
-    exact h
+    exact Subtype.val_injective
   exact (sheafToPresheaf (Opens.grothendieckTopology (Quotient s)) CommRingCat).mono_of_mono_map
     (NatTrans.mono_of_mono_app (quotientSheafι I s).hom)
 
@@ -200,7 +185,7 @@ theorem quotientSheaf_map_val {U V : Opens (Quotient s)} (h : V ⟶ U)
     (f : (quotientSheaf I s).obj.obj (op U)) :
     (quotientSheafSectionsEquiv I s V ((quotientSheaf I s).obj.map h.op f)).1 =
       (holomorphicStructureSheaf I X).obj.map
-        ((Opens.map (quotientMap s)).map h).op (quotientSheafSectionsEquiv I s U f).1 := (rfl)
+        ((Opens.map (TopCat.quotientMk s)).map h).op (quotientSheafSectionsEquiv I s U f).1 := (rfl)
 
 /-- A quotient germ restricts to a holomorphic germ at any point over its base point. -/
 def quotientStalkBranch (z : Quotient s) (x : X) (hx : Quotient.mk s x = z) :
@@ -208,7 +193,8 @@ def quotientStalkBranch (z : Quotient s) (x : X) (hx : Quotient.mk s x = z) :
       (holomorphicStructureSheaf I X).presheaf.stalk x :=
   (eqToHom (congrArg (fun w ↦ (quotientSheaf I s).presheaf.stalk w) hx.symm) ≫
     (TopCat.Presheaf.stalkFunctor CommRingCat (Quotient.mk s x)).map (quotientSheafι I s).hom ≫
-    (holomorphicStructureSheaf I X).presheaf.stalkPushforward CommRingCat (quotientMap s) x).hom
+    (holomorphicStructureSheaf I X).presheaf.stalkPushforward CommRingCat
+      (TopCat.quotientMk s) x).hom
 
 /-- Restricting a quotient section's germ to a branch gives its ordinary holomorphic germ. -/
 @[simp]
@@ -217,19 +203,17 @@ theorem quotientStalkBranch_germ (z : Quotient s) (x : X) (hx : Quotient.mk s x 
     quotientStalkBranch I s z x hx
       (ConcreteCategory.hom ((quotientSheaf I s).presheaf.germ U z hz) f) =
       (holomorphicStructureSheaf I X).presheaf.germ
-        ((Opens.map (quotientMap s)).obj U) x
-        (by rw [Opens.mem_map, quotientMap_apply, hx]; exact hz)
+        ((Opens.map (TopCat.quotientMk s)).obj U) x
+        (by rw [Opens.mem_map, TopCat.quotientMk_apply, hx]; exact hz)
         (quotientSheafSectionsEquiv I s U f).1 := by
   subst z
-  -- Remove the ring-hom and categorical-composition wrappers before using the stalk API.
-  change (holomorphicStructureSheaf I X).presheaf.stalkPushforward CommRingCat (quotientMap s) x
-      ((TopCat.Presheaf.stalkFunctor CommRingCat (Quotient.mk s x)).map
-        (quotientSheafι I s).hom ((quotientSheaf I s).presheaf.germ U _ hz f)) = _
-  rw [TopCat.Presheaf.stalkFunctor_map_germ_apply]
-  -- The sheaf pushforward and its presheaf pushforward have definitionally equal carriers.
-  erw [TopCat.Presheaf.stalkPushforward_germ_apply]
-  -- The inclusion lemma uses the upstairs codomain required by simpNF.
-  erw [quotientSheafι_app_apply]
+  exact (congrArg
+    ((holomorphicStructureSheaf I X).presheaf.stalkPushforward CommRingCat (TopCat.quotientMk s) x)
+    (TopCat.Presheaf.stalkFunctor_map_germ_apply U (Quotient.mk s x) hz
+      (quotientSheafι I s).hom f)).trans
+    (TopCat.Presheaf.stalkPushforward_germ_apply CommRingCat (TopCat.quotientMk s)
+      (holomorphicStructureSheaf I X).presheaf U x hz
+      (quotientSheafSectionsEquiv I s U f).1)
 
 /-- The branch restrictions of a quotient germ have equal values at any two identified points. -/
 theorem eval_quotientStalkBranch_eq (z : Quotient s) (x y : X)
