@@ -288,9 +288,9 @@ theorem pairwiseDisjoint_cycleMap_zpow_mul_inv_partialCycleMap_smul_interior_car
   have htile {k : ℤ} (hk : k ≤ K) (m : ℕ) :
       σ.cycleMap j ^ (-K) • (σ.cycleMap j ^ k * (σ.partialCycleMap j m)⁻¹) • interior P.carrier =
         (σ.partialCycleMap j ((K - k).toNat * σ.cycleLength j + m))⁻¹ • interior P.carrier := by
-    rw [smul_smul, partialCycleMap_mul_cycleLength_add, mul_inv_rev, ← mul_assoc, ← zpow_add,
-      ← zpow_natCast, Int.toNat_of_nonneg (sub_nonneg.2 hk), ← zpow_neg, neg_sub,
-      neg_add_eq_sub]
+    rw [smul_smul, partialCycleMap_mul_cycleLength_add, ← zpow_natCast,
+      Int.toNat_of_nonneg (sub_nonneg.2 hk)]
+    group
   rw [onFun, ← Set.disjoint_smul_set (a := σ.cycleMap j ^ (-K)), htile (le_max_left k k'),
     htile (le_max_right k k')]
   refine σ.pairwise_disjoint_inv_partialCycleMap_smul_interior_carrier_of_vertex_eq_inr hj
