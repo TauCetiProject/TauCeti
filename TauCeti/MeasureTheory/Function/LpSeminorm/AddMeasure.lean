@@ -9,7 +9,7 @@ public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 import Mathlib.Analysis.MeanInequalitiesPow
 
 /-!
-# Subadditivity of `eLpNorm` in the measure
+# Monotonicity and subadditivity of `eLpNorm` in the measure
 
 For `1 ≤ p`, the `Lᵖ` seminorm is subadditive in the measure:
 `eLpNorm f p (μ + ν) ≤ eLpNorm f p μ + eLpNorm f p ν`
@@ -24,8 +24,12 @@ estimate on a set covered by finitely many pieces
 `eLpNorm f p (μ.restrict (⋃ i ∈ t, s i)) ≤ ∑ i ∈ t, eLpNorm f p (μ.restrict (s i))`.
 No measurability of the sets is needed.
 
+For the real-valued norm `lpNorm`, monotonicity in the measure needs `f ∈ Lᵖ(μ)`, since
+`lpNorm` is `0` off `Lᵖ` (`MeasureTheory.lpNorm_mono_measure`).
+
 ## Main declarations
 
+* `MeasureTheory.lpNorm_mono_measure`: monotonicity of `lpNorm` in the measure.
 * `MeasureTheory.eLpNorm_add_measure_le`: subadditivity in the measure.
 * `MeasureTheory.eLpNorm_restrict_biUnion_finset_le`: subadditivity over a finite union.
 -/
@@ -38,6 +42,13 @@ namespace MeasureTheory
 
 variable {α ε : Type*} {m : MeasurableSpace α} [TopologicalSpace ε] [ContinuousENorm ε]
   [TopologicalSpace.PseudoMetrizableSpace ε] {p : ℝ≥0∞} {μ ν : Measure α}
+
+/-- **Monotonicity of `lpNorm` in the measure.** If `f ∈ Lᵖ(μ)` and `ν ≤ μ`, then
+`lpNorm f p ν ≤ lpNorm f p μ`. -/
+theorem lpNorm_mono_measure {E : Type*} [NormedAddCommGroup E] {f : α → E} (hf : MemLp f p μ)
+    (hνμ : ν ≤ μ) :
+    lpNorm f p ν ≤ lpNorm f p μ :=
+  ENNReal.toReal_mono hf.eLpNorm_ne_top (eLpNorm_mono_measure f hνμ)
 
 /-- **Subadditivity of `eLpNorm` in the measure.** For `1 ≤ p`,
 `eLpNorm f p (μ + ν) ≤ eLpNorm f p μ + eLpNorm f p ν`. -/
