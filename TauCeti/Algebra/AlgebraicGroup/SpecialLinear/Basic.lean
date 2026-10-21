@@ -287,7 +287,6 @@ theorem quotientPointsHom_pointsMulEquiv_symm
 
 /-- The point of `SLₙ` attached to a determinant-one matrix takes the value `M i j` on the
 `(i, j)` entry of the generic matrix. -/
-@[simp]
 theorem ofConv_pointsMulEquiv_symm_genericMatrix (M : Matrix.SpecialLinearGroup (Fin n) A)
     (i j : Fin n) :
     ((pointsMulEquiv (R := R) (A := A) n).symm M).ofConv
