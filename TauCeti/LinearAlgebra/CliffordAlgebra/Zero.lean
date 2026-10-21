@@ -25,6 +25,9 @@ form on `Unit` to any subsingleton module.
   coefficient ring.
 * `CliffordAlgebra.even_eq_top_of_subsingleton` says that every element is even.
 * `CliffordAlgebra.reverse_eq_self_of_subsingleton` says that reversal is the identity.
+* `CliffordAlgebra.zeroVectorNormalizer` packages the units whose twisted conjugation preserves
+  the vector range, and `zeroVectorNormalizerEquivUnits` identifies this normalizer with all scalar
+  units in dimension zero.
 -/
 
 public section
@@ -78,6 +81,64 @@ theorem reverse_eq_self_of_subsingleton [Subsingleton M] (x : CliffordAlgebra Q)
       apply (equivOfSubsingleton Q).injective
       simp only [map_mul, mul_comm]
   | add x y hx hy => rw [reverse.map_add, hx, hy]
+
+/-- Units of a zero-dimensional Clifford algebra are canonically scalar units. -/
+noncomputable def unitsEquivOfSubsingleton [Subsingleton M] :
+    (CliffordAlgebra Q)ˣ ≃* Rˣ :=
+  Units.mapEquiv (equivOfSubsingleton Q).toMulEquiv
+
+/-- The scalar-unit equivalence agrees with the units map induced by the Clifford equivalence. -/
+@[simp]
+theorem unitsEquivOfSubsingleton_apply [Subsingleton M] (x : (CliffordAlgebra Q)ˣ) :
+    (unitsEquivOfSubsingleton Q).toMonoidHom x =
+      Units.map (equivOfSubsingleton Q).toMonoidHom x := by
+  rfl
+
+/-- Units whose twisted conjugation preserves the Clifford vector range in dimension zero.
+
+The predicate is the classical Clifford normalizer condition, specialized to a subsingleton
+module.  It is kept as an explicit subgroup so that the comparison with the scalar unit group is
+visible, rather than replacing the normalizer by its known carrier. -/
+def zeroVectorNormalizer [Subsingleton M] : Subgroup (CliffordAlgebra Q)ˣ where
+  carrier := {x | ∀ m, involute (Q := Q) (x : CliffordAlgebra Q) * ι Q m *
+      (x⁻¹ : (CliffordAlgebra Q)ˣ) ∈ LinearMap.range (ι Q)}
+  one_mem' := by
+    intro m
+    simp [Subsingleton.elim m 0]
+  mul_mem' := by
+    intro x y hx hy m
+    simp [Subsingleton.elim m 0]
+  inv_mem' := by
+    intro x hx m
+    simp [Subsingleton.elim m 0]
+
+/-- Membership in the dimension-zero vector normalizer is twisted vector preservation. -/
+theorem mem_zeroVectorNormalizer_iff [Subsingleton M] (x : (CliffordAlgebra Q)ˣ) :
+    x ∈ zeroVectorNormalizer Q ↔ ∀ m, involute (Q := Q) (x : CliffordAlgebra Q) * ι Q m *
+      (x⁻¹ : (CliffordAlgebra Q)ˣ) ∈ LinearMap.range (ι Q) :=
+  Iff.rfl
+
+/-- In dimension zero every Clifford unit preserves the vector range. -/
+@[simp]
+theorem zeroVectorNormalizer_eq_top [Subsingleton M] :
+    zeroVectorNormalizer Q = ⊤ := by
+  rw [eq_top_iff]
+  intro x _ m
+  simp [Subsingleton.elim m 0]
+
+/-- The dimension-zero vector normalizer is the full scalar unit group. -/
+noncomputable def zeroVectorNormalizerEquivUnits [Subsingleton M] :
+    zeroVectorNormalizer Q ≃* Rˣ :=
+  ((MulEquiv.subgroupCongr (zeroVectorNormalizer_eq_top Q)).trans Subgroup.topEquiv).trans
+    (unitsEquivOfSubsingleton Q)
+
+/-- The scalar coordinate of the dimension-zero normalizer equivalence. -/
+@[simp]
+theorem zeroVectorNormalizerEquivUnits_apply [Subsingleton M]
+    (x : zeroVectorNormalizer Q) :
+    (zeroVectorNormalizerEquivUnits Q x : Rˣ) =
+      Units.map (equivOfSubsingleton Q).toMonoidHom (x : (CliffordAlgebra Q)ˣ) := by
+  rfl
 
 end CliffordAlgebra
 

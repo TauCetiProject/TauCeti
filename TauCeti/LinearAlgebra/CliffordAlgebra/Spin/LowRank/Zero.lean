@@ -25,9 +25,6 @@ unitary carrier generally has the two scalar elements `1` and `-1`.
 
 * `CliffordAlgebra.evenUnitaryGroupEquivRootsOfUnityOfSubsingleton` identifies the even unitary
   group with `rootsOfUnity 2 K`.
-* `CliffordAlgebra.zeroVectorNormalizer` packages the units whose twisted conjugation preserves
-  the vector range, and `zeroVectorNormalizerEquivUnits` identifies this normalizer with all scalar
-  units in dimension zero.
 * `CliffordAlgebra.range_spinGroup_toUnits_eq_bot_of_subsingleton` records that the Spin image is
   trivial in dimension zero.
 * `CliffordAlgebra.range_spinGroup_toUnits_ne_evenUnitaryGroup_of_subsingleton` shows that these
@@ -47,57 +44,6 @@ universe u v
 variable {K : Type u} {V : Type v} [CommRing K] [AddCommGroup V] [Module K V]
   (Q : QuadraticForm K V)
 
-private noncomputable def unitsEquivOfSubsingleton [Subsingleton V] :
-    (CliffordAlgebra Q)ˣ ≃* Kˣ :=
-  Units.mapEquiv (equivOfSubsingleton Q).toMulEquiv
-
-/-- Units whose twisted conjugation preserves the Clifford vector range in dimension zero.
-
-The predicate is the classical Clifford normalizer condition, specialized to a subsingleton
-module.  It is kept as an explicit subgroup so that the comparison with the scalar unit group is
-visible, rather than replacing the normalizer by its known carrier. -/
-def zeroVectorNormalizer [Subsingleton V] : Subgroup (CliffordAlgebra Q)ˣ where
-  carrier := {x | ∀ m, involute (Q := Q) (x : CliffordAlgebra Q) * ι Q m *
-      (x⁻¹ : (CliffordAlgebra Q)ˣ) ∈ LinearMap.range (ι Q)}
-  one_mem' := by
-    intro m
-    simp [Subsingleton.elim m 0]
-  mul_mem' := by
-    intro x y hx hy m
-    simp [Subsingleton.elim m 0]
-  inv_mem' := by
-    intro x hx m
-    simp [Subsingleton.elim m 0]
-
-/-- In dimension zero every Clifford unit preserves the vector range. -/
-@[simp]
-theorem zeroVectorNormalizer_eq_top [Subsingleton V] :
-    zeroVectorNormalizer Q = ⊤ := by
-  rw [eq_top_iff]
-  intro x _ m
-  simp [Subsingleton.elim m 0]
-
-/-- The dimension-zero vector normalizer is the full scalar unit group. -/
-noncomputable def zeroVectorNormalizerEquivUnits [Subsingleton V] :
-    zeroVectorNormalizer Q ≃* Kˣ := by
-  let e := unitsEquivOfSubsingleton Q
-  exact
-    { toFun := fun x => e x
-      invFun := fun u => ⟨e.symm u, by
-        rw [zeroVectorNormalizer_eq_top]
-        trivial⟩
-      left_inv := fun x => Subtype.ext (e.symm_apply_apply x)
-      right_inv := fun u => e.apply_symm_apply u
-      map_mul' := fun x y => e.map_mul x y }
-
-/-- The scalar coordinate of the dimension-zero normalizer equivalence. -/
-@[simp]
-theorem zeroVectorNormalizerEquivUnits_apply [Subsingleton V]
-    (x : zeroVectorNormalizer Q) :
-    (zeroVectorNormalizerEquivUnits Q x : Kˣ) =
-      Units.map (equivOfSubsingleton Q).toMonoidHom (x : (CliffordAlgebra Q)ˣ) := by
-  rfl
-
 private theorem map_evenUnitaryGroup_unitsEquivOfSubsingleton [Subsingleton V] :
     (evenUnitaryGroup Q).map (unitsEquivOfSubsingleton Q).toMonoidHom = rootsOfUnity 2 K := by
   ext u
@@ -105,7 +51,7 @@ private theorem map_evenUnitaryGroup_unitsEquivOfSubsingleton [Subsingleton V] :
   · rintro ⟨x, hx, rfl⟩
     rw [mem_rootsOfUnity]
     apply Units.ext
-    -- Expose the value of `Units.map`, whose coercion is definitionally the algebra equivalence.
+    rw [unitsEquivOfSubsingleton_apply]
     change (equivOfSubsingleton Q (x : CliffordAlgebra Q)) ^ 2 = 1
     rw [pow_two, ← map_mul]
     calc
@@ -125,8 +71,9 @@ private theorem map_evenUnitaryGroup_unitsEquivOfSubsingleton [Subsingleton V] :
     · simp [even_eq_top_of_subsingleton Q]
     · rw [reverse_eq_self_of_subsingleton Q]
       apply (equivOfSubsingleton Q).injective
-      have hx : Units.map (equivOfSubsingleton Q).toMonoidHom x = u :=
-        (unitsEquivOfSubsingleton Q).apply_symm_apply u
+      have hx : Units.map (equivOfSubsingleton Q).toMonoidHom x = u := by
+        rw [← unitsEquivOfSubsingleton_apply]
+        exact (unitsEquivOfSubsingleton Q).apply_symm_apply u
       have hxval : equivOfSubsingleton Q (x : CliffordAlgebra Q) = (u : K) :=
         congrArg Units.val hx
       rw [map_mul, map_one, hxval]
@@ -148,7 +95,8 @@ theorem coe_evenUnitaryGroupEquivRootsOfUnityOfSubsingleton_apply [Subsingleton 
     (x : evenUnitaryGroup Q) :
     ((evenUnitaryGroupEquivRootsOfUnityOfSubsingleton Q x : rootsOfUnity 2 K) : Kˣ) =
       Units.map (equivOfSubsingleton Q).toMonoidHom (x : (CliffordAlgebra Q)ˣ) := by
-  rfl
+  change unitsEquivOfSubsingleton Q (x : (CliffordAlgebra Q)ˣ) = _
+  exact unitsEquivOfSubsingleton_apply Q _
 
 /-- In dimension zero and characteristic not two, the even unitary group has two elements. -/
 theorem card_evenUnitaryGroup_of_subsingleton [Subsingleton V] [IsDomain K]
