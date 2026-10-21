@@ -9,7 +9,9 @@ public import TauCeti.Analysis.Convex.MongeAmpere.Interpolation
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.InternalEnergy
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Geodesic
 public import TauCeti.Analysis.GradientFlow.GeodesicConvex
+import TauCeti.Analysis.Convex.FunctionTopology
 import TauCeti.Analysis.Matrix.MinkowskiDeterminant
+import TauCeti.Data.ENNReal.Real
 import TauCeti.MeasureTheory.OptimalTransport.Brenier
 import TauCeti.MeasureTheory.OptimalTransport.Cost.Quadratic
 
@@ -21,18 +23,22 @@ Let `E` be a real inner product space of finite dimension `n ≥ 1` with an addi
 
   `s ↦ sⁿ U(s⁻ⁿ)` is convex and nonincreasing on `(0, ∞)`.
 
-For instance `U(r) = r log r`, `U(r) = rᵐ / (m - 1)` for `m > 1`, and `U(r) = -r^{1 - 1/n}` satisfy
-it. **McCann's theorem** says that the internal energy `𝓤(μ) = ∫ U(dμ/dρ) dρ + U'(∞) μˢ(E)`
-(`TauCeti.internalEnergy`) is convex along displacement interpolations. Here, for a convex
+For instance `U(r) = r log r`, `U(r) = rᵐ / (m - 1)` for `m > 1`, and, when `n ≥ 2`,
+`U(r) = -r^{1 - 1/n}` satisfy it. **McCann's theorem** says that the internal energy
+`𝓤(μ) = ∫ U(dμ/dρ) dρ + U'(∞) μˢ(E)` (`TauCeti.internalEnergy`) is convex along displacement
+interpolations. Here, for a convex
 `f : E → EReal` with real representative `F` and a σ-finite measure `μ ≪ ρ` carried by the interior
 `D` of the effective domain of `f`, the interpolant at time `t ∈ [0, 1]` is `μₜ = (Tₜ)₊ μ` with
 `Tₜ x = (1 - t) • x + t • ∇F x`, and
 
   `𝓤(μₜ) ≤ (1 - t) 𝓤(μ) + t 𝓤((∇F)₊ μ)`
-  (`TauCeti.internalEnergy_map_smul_add_smul_gradient_le`).
+  (`TauCeti.internalEnergy_map_smul_add_smul_gradient_le`),
+
+provided neither endpoint energy `𝓤(μ)`, `𝓤((∇F)₊ μ)` is `⊥`.
 
 When `∇F` is the Brenier map of `μ`, these interpolants form McCann's displacement interpolation,
-the quadratic Wasserstein geodesic from `μ` to its target
+the quadratic Wasserstein geodesic from `μ` to its target, so under the same restriction on the
+endpoint energies the internal energy is convex along it
 (`TauCeti.WassersteinSpace.exists_isGeodesicSegment_convexAlong_internalEnergy`). The target need
 not be absolutely continuous: its singular part is charged at the recession constant `U'(∞)`, and
 the theorem holds with that convention.
@@ -59,11 +65,11 @@ holds because `U'(∞)` is the upper limit of `U(r) / r` as `r → ∞` and `U(r
 * `TauCeti.internalEnergy_map_gradient`: the internal energy of the endpoint `(∇F)₊ μ`, as an
   integral over the source charging the degenerate set at the recession constant.
 * `TauCeti.internalEnergy_map_smul_add_smul_gradient_le`: **McCann's displacement convexity** of
-  the internal energy.
+  the internal energy, when neither endpoint energy is `⊥`.
 * `TauCeti.WassersteinSpace.exists_isGeodesicSegment_convexAlong_internalEnergy`: for laws of
-  finite second moment, the first absolutely continuous, the internal energy is convex along a
-  geodesic of the quadratic Wasserstein space joining them, the displacement interpolation of the
-  Brenier map.
+  finite second moment, the first absolutely continuous, and neither of internal energy `⊥`, the
+  internal energy is convex along a geodesic of the quadratic Wasserstein space joining them, the
+  displacement interpolation of the Brenier map.
 
 ## References
 
@@ -237,14 +243,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   [MeasurableSpace E] [BorelSpace E] (ρ : Measure E) [ρ.IsAddHaarMeasure] {f : E → EReal}
   {U : ℝ → ℝ}
 
-/-- The pointwise identity behind the internal energy along the interpolation: for `J ≥ 0` and
-`ε = ±1`, `J * (ε U((r / J).toReal))⁺ = (ε J U(r.toReal / J))⁺`. -/
-private theorem ofReal_mul_ofReal_apply_toReal_div {J : ℝ} (hJ : 0 ≤ J) (r : ℝ≥0∞) (ε : ℝ) :
-    ENNReal.ofReal J * ENNReal.ofReal (ε * U (r / ENNReal.ofReal J).toReal) =
-      ENNReal.ofReal (ε * (J * U (r.toReal / J))) := by
-  rw [ENNReal.toReal_div, ENNReal.toReal_ofReal hJ, ← ENNReal.ofReal_mul hJ]
-  ring_nf
-
 /-- **The internal energy along the interpolation of a convex gradient.** Let `f : E → EReal` be
 convex (convex real epigraph, never `⊥`), with real representative `F` and `D` the interior of its
 effective domain, and let `H x` be, for almost every `x ∈ D`, a first-order expansion of the
@@ -283,7 +281,8 @@ theorem internalEnergy_map_smul_add_smul_gradient (hU0 : U 0 = 0)
     refine lintegral_congr_ae (hJ.mono fun x hx => ?_)
     dsimp only
     by_cases hxD : x ∈ D
-    · rw [indicator_of_mem hxD, indicator_of_mem hxD, ofReal_mul_ofReal_apply_toReal_div (hx hxD)]
+    · rw [indicator_of_mem hxD, indicator_of_mem hxD,
+        ENNReal.ofReal_mul_ofReal_apply_toReal_div (hx hxD) fun a => ε * U a, mul_left_comm]
     · rw [indicator_of_notMem hxD, indicator_of_notMem hxD, mul_zero, ENNReal.ofReal_zero]
   have hpos := hlint 1
   have hneg := hlint (-1)
@@ -352,8 +351,9 @@ theorem internalEnergy_map_gradient (hU0 : U 0 = 0) (hf : Convex ℝ {p : E × �
     refine lintegral_congr_ae (hDS.mem_iff.mono fun x hx => ?_)
     dsimp only
     by_cases hxD : x ∈ D
-    · rw [indicator_of_mem hxD, indicator_of_mem hxD, ofReal_mul_ofReal_apply_toReal_div
-        ((ContinuousLinearMap.isPositive_toLinearMap_iff _).2 (hS x (hx.1 hxD)).2.1).det_nonneg]
+    · rw [indicator_of_mem hxD, indicator_of_mem hxD, ENNReal.ofReal_mul_ofReal_apply_toReal_div
+        ((ContinuousLinearMap.isPositive_toLinearMap_iff _).2 (hS x (hx.1 hxD)).2.1).det_nonneg
+        fun a => ε * U a, mul_left_comm]
     · rw [indicator_of_notMem hxD, indicator_of_notMem hxD, mul_zero, ENNReal.ofReal_zero]
   -- Both parts together give the claimed potential.
   have hsum (ε : ℝ) : ∫⁻ y, ENNReal.ofReal (ε * U ((μ.map G).rnDeriv ρ y).toReal) ∂ρ +
