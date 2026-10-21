@@ -81,7 +81,7 @@ private theorem IsSymm.exists_hyperbolic_of_mem_maximalIdeal (hB : B.IsSymm) {e�
     {a c : R} (h₁ : B e₀ f₀ = 1) (ha : B e₀ e₀ = 2 * a) (hc : B f₀ f₀ = 2 * c)
     (ham : a ∈ maximalIdeal R) :
     ∃ e f : M, B e f = 1 ∧ B e e = 0 ∧ B f f = 0 := by
-  obtain ⟨t, ht, htm⟩ := TauCeti.HenselianLocalRing.exists_isRoot_sub_mem_maximalIdeal
+  obtain ⟨t, ht, htm⟩ := Polynomial.exists_isRoot_sub_mem (J := maximalIdeal R)
     (C c * X ^ 2 + X + C a) (a₀ := 0) (by simpa using ham) (by simp)
   have ht : c * t ^ 2 + t + a = 0 := by simpa using ht
   have hs : IsUnit (1 + 2 * c * t) := by
@@ -109,7 +109,7 @@ private theorem IsSymm.exists_two_one_one_two_of_isUnit (hR : Nat.card (ResidueF
     ∃ e f : M, B e f = 1 ∧ B e e = 2 ∧ B f f = 2 := by
   have h2 := two_mem_maximalIdeal_of_card_residueField_eq_two hR
   -- First, `u = t e₀ + f₀` has `B u u = 2`, where `a t² + t + (c - 1) = 0`.
-  obtain ⟨t, ht, htm⟩ := TauCeti.HenselianLocalRing.exists_isRoot_sub_mem_maximalIdeal
+  obtain ⟨t, ht, htm⟩ := Polynomial.exists_isRoot_sub_mem (J := maximalIdeal R)
     (C a * X ^ 2 + X + C (c - 1)) (a₀ := 0)
     (by simpa using sub_one_mem_maximalIdeal_of_card_residueField_eq_two hR hcu)
     (by simp)
@@ -143,10 +143,10 @@ private theorem IsSymm.exists_two_one_one_two_of_isUnit (hR : Nat.card (ResidueF
     exact this.neg
   -- Third, `f = r u + (1 - 2r) w` pairs to `1` with `u`, and `B f f = 2` once
   -- `D r² - D r + (d - 1) = 0`.
-  obtain ⟨r, hr, -⟩ := TauCeti.HenselianLocalRing.exists_isRoot_sub_mem_maximalIdeal
+  obtain ⟨r, hr, -⟩ := Polynomial.exists_isRoot_sub_mem (J := maximalIdeal R)
     (C (4 * d - 1) * X ^ 2 - C (4 * d - 1) * X + C (d - 1)) (a₀ := 0)
     (by simpa using sub_one_mem_maximalIdeal_of_card_residueField_eq_two hR hdu)
-    (by simpa [derivative_X_pow] using hD.neg)
+    (by simpa [derivative_X_pow] using hD.neg.map (Ideal.Quotient.mk (maximalIdeal R)))
   have hr : (4 * d - 1) * r ^ 2 - (4 * d - 1) * r + (d - 1) = 0 := by simpa using hr
   refine ⟨u, r • u + (1 - 2 * r) • w, ?_, huu, ?_⟩
   · simp only [map_add, map_smul, smul_eq_mul, huu, huw]

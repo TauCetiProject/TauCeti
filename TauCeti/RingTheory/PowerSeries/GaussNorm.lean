@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.Degree.IsMonicOfDegree
 public import Mathlib.Analysis.Normed.Group.InfiniteSum
 public import Mathlib.RingTheory.PowerSeries.GaussNorm
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
@@ -78,6 +79,9 @@ closed unit disc next to its Gauss points.
 * `TauCeti.PowerSeries.IsDistinguished.unique`: of no more than one degree.
 * `TauCeti.PowerSeries.isDistinguished_of_norm_coeff_sub_lt`: over an ultrametric ring, a series
   is distinguished once its coefficient in degree `s` is close to an element of maximal norm.
+* `Polynomial.Monic.isDistinguished`: a monic polynomial is distinguished of its degree at every
+  radius at which its leading term dominates, such as `1 + ∑ᵢ ‖pᵢ‖`
+  (`Polynomial.Monic.isDistinguished_one_add_sum_norm_coeff`).
 * `TauCeti.PowerSeries.IsDistinguished.trunc`,
   `TauCeti.PowerSeries.IsDistinguished.gaussNorm_trunc` and
   `TauCeti.PowerSeries.IsDistinguished.gaussNorm_sub_trunc_lt`: the polynomial part of a
@@ -492,21 +496,41 @@ section SeminormedRing
 
 variable {R : Type*} [SeminormedRing R] {c : ℝ} {s : ℕ} {f : PowerSeries R}
 
+/-- A monic polynomial of degree `s` whose lower weighted coefficients are at most `c ^ s` is
+distinguished of degree `s` at the radius `c > 0`: its Gauss norm `c ^ s` is attained by the
+leading coefficient, and every later coefficient vanishes. -/
+theorem isDistinguished_of_isMonicOfDegree [NormOneClass R] (hc : 0 < c) {p : Polynomial R}
+    (hp : p.IsMonicOfDegree s) (hle : ∀ k < s, ‖p.coeff k‖ * c ^ k ≤ c ^ s) :
+    IsDistinguished c s (p : PowerSeries R) := by
+  have hs : p.coeff s = 1 := by
+    rw [← hp.natDegree_eq]
+    exact hp.monic.coeff_natDegree
+  have hzero (m : ℕ) (hm : s < m) : p.coeff m = 0 :=
+    Polynomial.coeff_eq_zero_of_natDegree_lt (hp.natDegree_eq ▸ hm)
+  have hnorm : (p : PowerSeries R).gaussNorm norm c = c ^ s := by
+    rw [gaussNorm_eq_of_forall_le (s := s)]
+    · simp [hs]
+    · intro m
+      simp only [Polynomial.coeff_coe, hs, norm_one, one_mul]
+      rcases lt_trichotomy m s with hm | rfl | hm
+      · exact hle m hm
+      · simp [hs]
+      · simp [hzero m hm, (pow_pos hc s).le]
+  refine ⟨by simp [hnorm, hs], fun m hm ↦ ?_⟩
+  simp [hnorm, hzero m hm, pow_pos hc s]
+
 /-- A linear polynomial `X - b` whose root lies in the closed disc of radius `c > 0` is
 distinguished of degree `1` at `c`: its Gauss norm `max ‖b‖ c` is `c`, attained by the leading
 coefficient. -/
 theorem isDistinguished_X_sub_C [NormOneClass R] (hc : 0 < c) {b : R} (hb : ‖b‖ ≤ c) :
     IsDistinguished c 1 (PowerSeries.X - PowerSeries.C b) := by
-  have hnorm : (PowerSeries.X - PowerSeries.C b).gaussNorm norm c = c := by
-    rw [gaussNorm_eq_of_forall_le (s := 1)]
-    · simp
-    · rintro (_ | _ | m)
-      · simpa using hb
-      · simp
-      · simp [PowerSeries.coeff_X, hc.le]
-  refine ⟨by simp [hnorm], fun m hm ↦ ?_⟩
-  have hm0 : m ≠ 0 := by omega
-  simp [hnorm, PowerSeries.coeff_X, PowerSeries.coeff_C, hm.ne', hm0, hc]
+  have : Nontrivial R := NormOneClass.nontrivial
+  have h := isDistinguished_of_isMonicOfDegree hc (Polynomial.isMonicOfDegree_X_sub_one b)
+    fun k hk ↦ by obtain rfl : k = 0 := by omega
+                  simpa using hb
+  rwa [← Polynomial.coeToPowerSeries.ringHom_apply, map_sub,
+    Polynomial.coeToPowerSeries.ringHom_apply, Polynomial.coeToPowerSeries.ringHom_apply,
+    Polynomial.coe_X, Polynomial.coe_C] at h
 
 /-- A linear polynomial `X - b` whose root lies in the open disc of radius `c > 0` has lowest
 dominant degree `1` at `c`: its Gauss norm `c` is attained by the leading coefficient and not by
@@ -519,6 +543,40 @@ theorem isLowestDominant_X_sub_C [NormOneClass R] (hc : 0 < c) {b : R} (hb : ‖
   refine ⟨hf.gaussNorm_pos, hf.norm_coeff_mul_pow_eq, fun m hm ↦ ?_⟩
   obtain rfl : m = 0 := by omega
   simpa [hnorm] using hb
+
+/-- A monic polynomial `p` is distinguished of its degree at a radius `c > 0` at which no term
+`‖pᵢ‖ cⁱ` exceeds `c ^ natDegree p`, the size of the leading term. -/
+theorem _root_.Polynomial.Monic.isDistinguished [NormOneClass R] {p : Polynomial R}
+    (hp : p.Monic) (hc : 0 < c) (h : ∀ i, ‖p.coeff i‖ * c ^ i ≤ c ^ p.natDegree) :
+    IsDistinguished c p.natDegree (p : PowerSeries R) := by
+  have hnorm : (p : PowerSeries R).gaussNorm norm c = c ^ p.natDegree := by
+    rw [gaussNorm_eq_of_forall_le (s := p.natDegree)]
+    · simp [hp.coeff_natDegree]
+    · simpa only [Polynomial.coeff_coe, hp.coeff_natDegree, norm_one, one_mul] using h
+  refine ⟨by simp [hnorm, hp.coeff_natDegree], fun m hm ↦ ?_⟩
+  simp [hnorm, Polynomial.coeff_eq_zero_of_natDegree_lt hm, hc]
+
+/-- A monic polynomial `p` is distinguished of its degree at the radius `1 + ∑ᵢ ‖pᵢ‖`, which
+bounds the norms of all its coefficients. -/
+theorem _root_.Polynomial.Monic.isDistinguished_one_add_sum_norm_coeff [NormOneClass R]
+    {p : Polynomial R} (hp : p.Monic) :
+    IsDistinguished (1 + ∑ i ∈ p.support, ‖p.coeff i‖) p.natDegree (p : PowerSeries R) := by
+  set c := 1 + ∑ i ∈ p.support, ‖p.coeff i‖
+  have hc1 : 1 ≤ c := le_add_of_nonneg_right (Finset.sum_nonneg fun _ _ ↦ norm_nonneg _)
+  have hcoeff (i : ℕ) : ‖p.coeff i‖ ≤ c := by
+    by_cases hi : i ∈ p.support
+    · exact (Finset.single_le_sum (fun j _ ↦ norm_nonneg (p.coeff j)) hi).trans
+        (le_add_of_nonneg_left zero_le_one)
+    · rw [Polynomial.notMem_support_iff.mp hi, norm_zero]
+      exact zero_le_one.trans hc1
+  refine hp.isDistinguished (zero_lt_one.trans_le hc1) fun i ↦ ?_
+  rcases lt_trichotomy i p.natDegree with hi | rfl | hi
+  · calc ‖p.coeff i‖ * c ^ i ≤ c * c ^ i := by gcongr; exact hcoeff i
+      _ = c ^ (i + 1) := by ring
+      _ ≤ c ^ p.natDegree := pow_le_pow_right₀ hc1 hi
+  · simp [hp.coeff_natDegree]
+  · simp only [Polynomial.coeff_eq_zero_of_natDegree_lt hi, norm_zero, zero_mul]
+    positivity
 
 /-- Truncating a series just past a degree in which its Gauss norm is attained leaves that norm
 unchanged. -/

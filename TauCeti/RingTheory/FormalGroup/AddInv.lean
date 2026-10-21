@@ -1,236 +1,326 @@
 /-
-Copyright (c) 2026 Wenrong Zou. All rights reserved.
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Wenrong Zou, The Tau Ceti contributors
+Authors: The Tau Ceti contributors
 -/
 module
 
 public import Mathlib.RingTheory.FormalGroup.Basic
+public import Mathlib.RingTheory.PowerSeries.WellKnown
+public import TauCeti.RingTheory.PowerSeries.Substitution
+import Mathlib.Tactic.LinearCombination
 
 /-!
-# Inverses for native formal group laws
+# The formal inverse of a formal group law
 
-For a one-dimensional formal group law `F` over a commutative ring, `addInvX F` is the
-unique series `i(X)` with zero constant term and `F(i(X), X) = 0`. Its linear coefficient
-is `-1`. Substitution gives inverses on Mathlib's native `F.Point σ` carrier, including
-points whose constant coefficients are nilpotent. Thus these points form an additive
-group, and an additive commutative group when `F` is commutative.
+Let `F(X, Y)` be a one-dimensional formal group law over a commutative ring `R`. Its **formal
+inverse** is the power series `i(X)` with zero constant coefficient such that
 
-The two inverse identities, uniqueness and involution are stated on the native series
-carriers; they provide the inverse coordinate used in formal-group calculations.
+  `F(i(X), X) = 0 = F(X, i(X))`.
+
+It exists over every commutative ring and is unique. Writing `F(X, Y) = X + Y + ⋯`, the
+coefficient of `Xⁿ` in `F(f(X), X)` for a series `f` without constant term depends only on the
+coefficients of `f` up to degree `n`, and the coefficient of `Xⁿ` in `f` enters it with the
+linear coefficient `1` of `F` in its first variable
+(`PowerSeries.coeff_subst_update_add_X_pow_mul`). So the coefficients of `i` are determined one
+degree at a time, each killing the next coefficient of `F(i(X), X)`.
+
+Substituting into the formal inverse negates the power-series points of `F`: for `x` in Mathlib's
+monoid `F.Point σ` of series with nilpotent constant coefficient, `-x = i(x)`. This makes
+`F.Point σ` a group, commutative when `F` is, and from the group laws the formal inverse is also
+a right inverse, is unique on either side, and is an involution, `i(i(X)) = X`.
+
+## Main definitions
+
+* `FormalGroup.tautologicalPoint`: the tautological point `X` of `F` in `F.Point Unit`.
+* `FormalGroup.addInvX`: the formal inverse `i(X)` of `F`.
+* `FormalGroup.Point` carries `Neg`, `AddGroup` and, for commutative `F`, `AddCommGroup`
+  instances, with `-x = i(x)`.
+
+## Main results
+
+* `FormalGroup.subst_addInvX_X_eq_zero`: `F(i(X), X) = 0`.
+* `FormalGroup.val_neg_tautologicalPoint`: `-X = i(X)` in `F.Point Unit`.
+* `FormalGroup.subst_X_addInvX_eq_zero`: `F(X, i(X)) = 0`.
+* `FormalGroup.eq_addInvX_iff_subst_left_eq_zero`, `FormalGroup.eq_addInvX_iff_subst_right_eq_zero`:
+  uniqueness of the inverse on either side.
+* `FormalGroup.coeff_one_addInvX`: `i(X) = -X + ⋯`.
+* `FormalGroup.subst_addInvX_addInvX`: `i(i(X)) = X`.
+* `TauCeti.coeff_succ_addInvX`: the recurrence in terms of preceding inverse coefficients.
+* `TauCeti.eq_subst_addInvX_iff`, `TauCeti.eq_subst_addInvX_iff_right`: inverse uniqueness
+  for multivariate points with nilpotent constant coefficients.
+* `FormalGroup.map_addInvX`: the formal inverse commutes with base change.
+* `FormalGroup.addInvX_𝔾ₐ`, `FormalGroup.addInvX_𝔾ₘ`: the inverses `-X` of the additive and
+  `-X / (1 + X)` of the multiplicative formal group law.
+
+## Implementation notes
+
+The name `addInvX` and the group structure on `F.Point σ` follow the design proposed by Wenrong
+Zou in Mathlib PR [#36167](https://github.com/leanprover-community/mathlib4/pull/36167), which
+defines the inverse there through a recursion on its coefficients. Here `i` is instead the limit
+of the polynomial approximations of each degree, and the degree-by-degree step is the general
+perturbation lemma `PowerSeries.coeff_subst_update_add_X_pow_mul`.
 
 ## References
 
-* M. Hazewinkel, *Formal Groups and Applications*, Chapter I, §1.
-
-## Attribution
-
-The coefficient recursion and its finite-stage cancellation proof are adapted from
-Wenrong Zou's Mathlib PR [#36167](https://github.com/leanprover-community/mathlib4/pull/36167),
-`Mathlib/RingTheory/FormalGroup/AddInv.lean`. The point construction here uses the native
-power-series points of the pinned Mathlib rather than the proposed topological carrier.
+* [M. Hazewinkel, *Formal Groups and Applications*][hazewinkel1978].
 -/
 
 public section
 
+open MvPowerSeries
+
+namespace FormalGroup
+
+variable {R S : Type*} [CommRing R] [CommRing S] (F : FormalGroup R)
+
+/-- The tautological point `X` of `F`, with values in the power series ring `R⟦X⟧`. -/
+noncomputable def tautologicalPoint : F.Point Unit :=
+  ⟨PowerSeries.X, PowerSeries.HasSubst.X'⟩
+
+@[simp]
+theorem val_tautologicalPoint : F.tautologicalPoint.val = PowerSeries.X := (rfl)
+
+/-- Perturbing `f` by `X ^ m * r` in `F(f(X), X)` changes the coefficient of degree `m` by `r(0)`,
+and no coefficient of lower degree. -/
+private theorem coeff_subst_add_X_pow_mul_X {f : PowerSeries R}
+    (hf : PowerSeries.constantCoeff f = 0) (r : PowerSeries R) {m n : ℕ} (hm : m ≠ 0)
+    (hn : n ≤ m) :
+    PowerSeries.coeff n (F.toPowerSeries.subst ![f + PowerSeries.X ^ m * r, PowerSeries.X]) =
+      PowerSeries.coeff n (F.toPowerSeries.subst ![f, PowerSeries.X]) +
+        if n = m then PowerSeries.constantCoeff r else 0 := by
+  have h := PowerSeries.coeff_subst_update_add_X_pow_mul F.toPowerSeries
+    (PowerSeries.hasSubst_pair hf PowerSeries.constantCoeff_X)
+    (fun s ↦ by fin_cases s <;> simp [hf]) 0 r hm hn
+  have hu : Function.update ![f, PowerSeries.X] 0 (f + PowerSeries.X ^ m * r) =
+      ![f + PowerSeries.X ^ m * r, PowerSeries.X] := by
+    ext i : 1
+    fin_cases i <;> rfl
+  rwa [Matrix.cons_val_zero, hu, F.lin_coeff_X, map_one, one_mul] at h
+
+/-- The approximation of degree `n` to the formal inverse: each step adds the multiple of
+`X ^ (n + 1)` that kills the coefficient of degree `n + 1` of `F(i(X), X)`. -/
+private noncomputable def addInvApprox : ℕ → PowerSeries R
+  | 0 => 0
+  | n + 1 => addInvApprox n + PowerSeries.X ^ (n + 1) * PowerSeries.C
+      (-PowerSeries.coeff (n + 1) (F.toPowerSeries.subst ![addInvApprox n, PowerSeries.X]))
+
+private theorem constantCoeff_addInvApprox (n : ℕ) :
+    PowerSeries.constantCoeff (F.addInvApprox n) = 0 := by
+  induction n with
+  | zero => simp [addInvApprox]
+  | succ n ih => simp [addInvApprox, ih]
+
+private theorem coeff_addInvApprox_of_le {k n : ℕ} (h : k ≤ n) :
+    PowerSeries.coeff k (F.addInvApprox n) = PowerSeries.coeff k (F.addInvApprox k) := by
+  induction n, h using Nat.le_induction with
+  | base => rfl
+  | succ n hkn ih =>
+    simp [addInvApprox, show k ≠ n + 1 by omega, ih]
+
+private theorem coeff_subst_addInvApprox (n : ℕ) :
+    PowerSeries.coeff n (F.toPowerSeries.subst ![F.addInvApprox n, PowerSeries.X]) = 0 := by
+  cases n with
+  | zero => simp [addInvApprox, F.zero_add PowerSeries.HasSubst.X']
+  | succ n =>
+    rw [addInvApprox, F.coeff_subst_add_X_pow_mul_X (F.constantCoeff_addInvApprox n) _
+      n.succ_ne_zero le_rfl]
+    simp
+
+/-- The **formal inverse** of a formal group law `F`: the power series `i(X)` with
+`F(i(X), X) = 0` (`FormalGroup.subst_addInvX_X_eq_zero`). It is the negation of the tautological
+point `X` in the group `F.Point Unit` of power-series points of `F`. -/
+noncomputable def addInvX : PowerSeries R :=
+  PowerSeries.mk fun n ↦ PowerSeries.coeff n (F.addInvApprox n)
+
+private theorem X_pow_dvd_addInvX_sub (n : ℕ) :
+    PowerSeries.X ^ (n + 1) ∣ F.addInvX - F.addInvApprox n :=
+  PowerSeries.X_pow_dvd_iff.mpr fun k hk ↦ by
+    rw [map_sub, addInvX, PowerSeries.coeff_mk, F.coeff_addInvApprox_of_le (n := n) (by omega),
+      sub_self]
+
+@[simp]
+theorem constantCoeff_addInvX : PowerSeries.constantCoeff F.addInvX = 0 := by
+  rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply, addInvX, PowerSeries.coeff_mk,
+    PowerSeries.coeff_zero_eq_constantCoeff_apply, constantCoeff_addInvApprox]
+
+/-- The formal inverse has linear coefficient `-1`: `i(X) = -X + ⋯`. -/
+@[simp]
+theorem coeff_one_addInvX : PowerSeries.coeff 1 F.addInvX = -1 := by
+  simp [addInvX, addInvApprox, F.zero_add PowerSeries.HasSubst.X']
+
+/-- The formal inverse can be substituted into power series. -/
+theorem hasSubst_addInvX : PowerSeries.HasSubst F.addInvX :=
+  .of_constantCoeff_zero' F.constantCoeff_addInvX
+
+private theorem hasSubst_addInvX_X : MvPowerSeries.HasSubst ![F.addInvX, PowerSeries.X] :=
+  PowerSeries.hasSubst_pair F.constantCoeff_addInvX PowerSeries.constantCoeff_X
+
+/-- **The formal inverse is a left inverse**: `F(i(X), X) = 0`. -/
+@[simp]
+theorem subst_addInvX_X_eq_zero :
+    F.toPowerSeries.subst ![F.addInvX, PowerSeries.X] = 0 := by
+  ext n
+  obtain ⟨r, hr⟩ := F.X_pow_dvd_addInvX_sub n
+  rw [sub_eq_iff_eq_add'.mp hr, F.coeff_subst_add_X_pow_mul_X (F.constantCoeff_addInvApprox n) _
+    n.succ_ne_zero (by omega), coeff_subst_addInvApprox]
+  simp
+
+variable {σ : Type*}
+
+/-- Negation of power-series points of `F`: `-x = i(x)`, substituting `x` into the formal
+inverse. -/
+noncomputable instance instNegPoint : Neg (F.Point σ) where
+  neg x := ⟨PowerSeries.subst x.val F.addInvX,
+    IsNilpotent_subst x.prop.const (F.constantCoeff_addInvX ▸ IsNilpotent.zero)⟩
+
+@[simp]
+lemma neg_apply {x : F.Point σ} : (-x).val = PowerSeries.subst x.val F.addInvX := rfl
+
+/-- The power-series points of a formal group law form a group under `x + y = F(x, y)`. -/
+noncomputable instance instAddGroupPoint : AddGroup (F.Point σ) where
+  zsmul := zsmulRec
+  neg_add_cancel x := Subtype.ext <| by
+    have h := congrArg (PowerSeries.substAlgHom x.prop) F.subst_addInvX_X_eq_zero
+    rw [map_zero, PowerSeries.coe_substAlgHom, PowerSeries.subst_def,
+      subst_comp_subst_apply F.hasSubst_addInvX_X x.prop.const] at h
+    rw [add_apply, neg_apply, zero_apply, ← h]
+    congr! 2 with s
+    fin_cases s <;> simp [← PowerSeries.subst_def, PowerSeries.subst_X x.prop]
+
+noncomputable instance instAddCommGroupPoint [F.IsComm] : AddCommGroup (F.Point σ) :=
+  { (inferInstance : AddGroup (F.Point σ)) with add_comm := add_comm }
+
+/-- The formal inverse is the negation of the tautological point: `-X = i(X)`. -/
+theorem val_neg_tautologicalPoint : (-F.tautologicalPoint).val = F.addInvX := by
+  rw [neg_apply, val_tautologicalPoint, PowerSeries.X_subst]
+
+/-- **The formal inverse is a right inverse**: `F(X, i(X)) = 0`. -/
+@[simp]
+theorem subst_X_addInvX_eq_zero :
+    F.toPowerSeries.subst ![PowerSeries.X, F.addInvX] = 0 := by
+  have h := congrArg Subtype.val (add_neg_cancel F.tautologicalPoint)
+  rwa [add_apply, val_neg_tautologicalPoint, zero_apply, val_tautologicalPoint] at h
+
+/-- The formal inverse is the only left inverse of `X`: a substitutable `f` satisfies
+`F(f(X), X) = 0` exactly when `f = i`. -/
+theorem eq_addInvX_iff_subst_left_eq_zero {f : PowerSeries R} (hf : PowerSeries.HasSubst f) :
+    f = F.addInvX ↔ F.toPowerSeries.subst ![f, PowerSeries.X] = 0 := by
+  refine ⟨fun h ↦ h ▸ F.subst_addInvX_X_eq_zero, fun h ↦ ?_⟩
+  let x : F.Point Unit := ⟨f, hf⟩
+  have h' := congrArg Subtype.val <| eq_neg_of_add_eq_zero_left
+    (a := x) (b := F.tautologicalPoint) <|
+      Subtype.ext (by rw [add_apply, zero_apply, val_tautologicalPoint]; exact h)
+  rwa [val_neg_tautologicalPoint] at h'
+
+/-- The formal inverse is the only right inverse of `X`: a substitutable `f` satisfies
+`F(X, f(X)) = 0` exactly when `f = i`. -/
+theorem eq_addInvX_iff_subst_right_eq_zero {f : PowerSeries R} (hf : PowerSeries.HasSubst f) :
+    f = F.addInvX ↔ F.toPowerSeries.subst ![PowerSeries.X, f] = 0 := by
+  refine ⟨fun h ↦ h ▸ F.subst_X_addInvX_eq_zero, fun h ↦ ?_⟩
+  let x : F.Point Unit := ⟨f, hf⟩
+  have h' := congrArg Subtype.val <| eq_neg_of_add_eq_zero_right
+    (a := F.tautologicalPoint) (b := x) <|
+      Subtype.ext (by rw [add_apply, zero_apply, val_tautologicalPoint]; exact h)
+  rwa [val_neg_tautologicalPoint] at h'
+
+/-- The formal inverse is an involution: `i(i(X)) = X`. -/
+@[simp]
+theorem subst_addInvX_addInvX : PowerSeries.subst F.addInvX F.addInvX = PowerSeries.X := by
+  have h := congrArg Subtype.val (neg_neg F.tautologicalPoint)
+  rwa [neg_apply, val_neg_tautologicalPoint, val_tautologicalPoint] at h
+
+/-- The formal inverse commutes with base change of the coefficient ring. -/
+@[simp]
+theorem map_addInvX (φ : R →+* S) : PowerSeries.map φ F.addInvX = (F.map φ).addInvX := by
+  have hφ : PowerSeries.constantCoeff (PowerSeries.map φ F.addInvX) = 0 := by
+    rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply, PowerSeries.coeff_map]
+    simp
+  refine ((F.map φ).eq_addInvX_iff_subst_left_eq_zero (.of_constantCoeff_zero' hφ)).mpr ?_
+  have h := congrArg (MvPowerSeries.map φ) F.subst_addInvX_X_eq_zero
+  rw [MvPowerSeries.map_subst F.hasSubst_addInvX_X, map_zero] at h
+  rw [map_toPowerSeries, ← h]
+  congr 1
+  funext i
+  fin_cases i
+  · -- `PowerSeries.map` is by definition `MvPowerSeries.map` in the unique variable
+    rfl
+  · exact (PowerSeries.map_X φ).symm
+
+/-- The formal inverse of the additive formal group law `X + Y` is `-X`. -/
+@[simp]
+theorem addInvX_𝔾ₐ : (𝔾ₐ (R := R)).addInvX = -PowerSeries.X := by
+  refine (((𝔾ₐ (R := R)).eq_addInvX_iff_subst_left_eq_zero
+    (.of_constantCoeff_zero' (by simp))).mpr ?_).symm
+  have ha : MvPowerSeries.HasSubst ![-PowerSeries.X, (PowerSeries.X : PowerSeries R)] :=
+    PowerSeries.hasSubst_pair (by simp) PowerSeries.constantCoeff_X
+  simp [subst_add ha, subst_X ha]
+
+/-- The formal inverse of the multiplicative formal group law `X + Y + XY` is
+`-X / (1 + X) = X * (-1 - X)⁻¹`. -/
+@[simp]
+theorem addInvX_𝔾ₘ : (𝔾ₘ (R := R)).addInvX = PowerSeries.X * PowerSeries.invUnitsSub (-1) := by
+  refine (((𝔾ₘ (R := R)).eq_addInvX_iff_subst_left_eq_zero
+    (.of_constantCoeff_zero' (by simp))).mpr ?_).symm
+  have ha : MvPowerSeries.HasSubst
+      ![PowerSeries.X * PowerSeries.invUnitsSub (-1), (PowerSeries.X : PowerSeries R)] :=
+    PowerSeries.hasSubst_pair (by simp) PowerSeries.constantCoeff_X
+  have h := PowerSeries.invUnitsSub_mul_sub (-1 : Rˣ)
+  simp only [Units.val_neg, Units.val_one, map_neg, map_one] at h
+  simp only [𝔾ₘ_toPowerSeries, subst_add ha, subst_mul ha, subst_X ha, Matrix.cons_val_zero,
+    Matrix.cons_val_one, Matrix.cons_val_fin_one]
+  linear_combination (-PowerSeries.X) * h
+
+end FormalGroup
+
 namespace TauCeti
 
-open PowerSeries Finset Finsupp
+open Finset
 
 variable {R : Type*} [CommRing R] (F : FormalGroup R)
-
-private noncomputable def addInvAux : ℕ → R
-  | 0 => 0
-  | 1 => -1
-  | n + 2 => -coeff (n + 2) (F.toPowerSeries.subst
-      ![∑ i : Fin (n + 2), C (addInvAux i.1) * X ^ i.1, X])
-
-private theorem addInvAux_succ (k : ℕ) : addInvAux F (k + 1) = -coeff (k + 1)
-    (F.toPowerSeries.subst ![∑ i ∈ range (k + 1), C (addInvAux F i) * X ^ i, X]) := by
-  obtain _ | k := k
-  · simp [addInvAux, FormalGroup.zeroX_eq_X]
-  · rw [addInvAux, Fin.sum_univ_eq_sum_range (fun i ↦ C (addInvAux F i) * X ^ i)]
-
-/-- The inverse coordinate of the formal group `F`, characterized by
-`F(addInvX F, X) = 0` and zero constant term. -/
-noncomputable def addInvX : PowerSeries R := .mk (addInvAux F)
-
-/-- The inverse coordinate has zero constant term. -/
-@[simp]
-theorem constantCoeff_addInvX : constantCoeff (addInvX F) = 0 := by
-  rw [← coeff_zero_eq_constantCoeff]
-  simp [addInvX, addInvAux]
-
-/-- The inverse coordinate has linear coefficient `-1`. -/
-@[simp]
-theorem coeff_one_addInvX : coeff 1 (addInvX F) = -1 := by
-  simp [addInvX, addInvAux]
 
 /-- Each coefficient of the inverse coordinate cancels the error left by the preceding
 coefficients, so its construction requires no division in the coefficient ring. -/
 theorem coeff_succ_addInvX (n : ℕ) :
-    coeff (n + 1) (addInvX F) = -coeff (n + 1) (F.toPowerSeries.subst
-      ![∑ i ∈ range (n + 1), C (coeff i (addInvX F)) * X ^ i, X]) := by
-  simpa only [addInvX, coeff_mk] using addInvAux_succ F n
-
-private theorem hasSubst_addInv_pair :
-    MvPowerSeries.HasSubst ![addInvX F, X] :=
-  MvPowerSeries.hasSubst_of_constantCoeff_zero fun i ↦ by
-    fin_cases i <;> simp [← constantCoeff_eq]
-
-private theorem hasSubst_addInv_sum (n : ℕ) :
-    MvPowerSeries.HasSubst ![∑ i ∈ range (n + 1), C (addInvAux F i) * X ^ i, X] :=
-  MvPowerSeries.hasSubst_of_constantCoeff_zero fun i ↦ by
-    fin_cases i <;> simp [← constantCoeff_eq, zero_pow_eq, addInvAux]
-
--- The recursive coefficient update affects only the linear term of the group law.
-private theorem coeff_addInvAux_step (k : ℕ) (d : Fin 2 →₀ ℕ) :
-    coeff (k + 1)
-      (((∑ i ∈ range (k + 1), C (addInvAux F i) * X ^ i) +
-        C (addInvAux F (k + 1)) * X ^ (k + 1)) ^ d 0 * X ^ d 1) =
-      coeff (k + 1) ((∑ i ∈ range (k + 1), C (addInvAux F i) * X ^ i) ^ d 0 *
-        X ^ d 1) + if d = single 0 1 then addInvAux F (k + 1) else 0 := by
-  generalize hB : (∑ i ∈ range (k + 1), C (addInvAux F i) * X ^ i) = B
-  have coeff_B : constantCoeff B = 0 := by simp [← hB, zero_pow_eq, addInvAux]
-  rw [coeff_mul_X_pow', coeff_mul_X_pow']
-  by_cases hd : d = single 0 1
-  · simp [hd]
-  rw [ite_eq_right hd, add_zero]
-  by_cases hd_le : d 1 ≤ k + 1
-  · simp_rw [ite_eq_left hd_le, add_pow, map_sum]
-    rw [Finset.sum_eq_single (d 0) _ (by simp)]
-    · simp
-    · intro i hi_mem hi
-      rw [mul_pow, ← pow_mul]
-      -- Normalize the product so the explicit power of X controls its degree.
-      have hmonomial : B ^ i * (C (addInvAux F (k + 1)) ^ (d 0 - i) *
-          X ^ ((k + 1) * (d 0 - i))) * ((d 0).choose i : PowerSeries R) =
-            (B ^ i * C (addInvAux F (k + 1)) ^ (d 0 - i) * ((d 0).choose i : PowerSeries R)) *
-              X ^ ((k + 1) * (d 0 - i)) := by ac_rfl
-      rw [hmonomial, coeff_mul_X_pow']
-      by_cases hd₀ : d 1 = 0 ∧ d 0 - i = 1
-      · have i_ne_zero : i ≠ 0 := by
-          intro hi
-          subst i
-          apply hd
-          ext j
-          fin_cases j <;> simp_all
-        simp [hd₀, coeff_B, zero_pow i_ne_zero]
-      have : k + 1 ≤ (k + 1) * (d 0 - i) :=
-        Nat.le_mul_of_pos_right _ (by grind)
-      rw [ite_eq_right _]
-      by_cases hd₀' : d 1 = 0
-      · have : (k + 1) * 2 ≤ (k + 1) * (d 0 - i) :=
-          Nat.mul_le_mul_left _ (by grind)
-        -- Two new factors have degree at least 2 * (k + 1), above k + 1.
-        omega
-      -- A positive X exponent lowers the available degree below k + 1.
-      omega
-  · simp_rw [ite_eq_right hd_le]
-
-private theorem coeff_subst_addInv_sum (n : ℕ) :
-    coeff n (F.toPowerSeries.subst
-      ![∑ i ∈ range (n + 1), C (addInvAux F i) * X ^ i, X]) = 0 := by
-  obtain _ | k := n
-  · simp [addInvAux, FormalGroup.zeroX_eq_X]
-  · rw [sum_range_succ]
-    have ha := hasSubst_addInv_sum F (k + 1)
-    rw [sum_range_succ] at ha
-    rw [coeff, MvPowerSeries.coeff_subst ha]
-    simp only [Finsupp.prod_pow, Fin.prod_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one,
-      Matrix.cons_val_fin_one, smul_eq_mul]
-    -- The remaining contribution is the linear coefficient 1 times the new coefficient.
-    -- The recursion cancels it against the error of the preceding partial sum.
-    simp only [coeff_coeToMvPowerSeries]
-    simp_rw [coeff_addInvAux_step, mul_add]
-    rw [finsum_add_distrib]
-    · have hlinear : (∑ᶠ d, MvPowerSeries.coeff d F.toPowerSeries *
-          (if d = single 0 1 then addInvAux F (k + 1) else 0)) = addInvAux F (k + 1) := by
-        rw [finsum_eq_single _ (single 0 1) fun d hd ↦ by rw [ite_eq_right hd, mul_zero]]
-        rw [ite_eq_left rfl, F.lin_coeff_X, one_mul]
-      rw [hlinear, addInvAux_succ]
-      rw [coeff, MvPowerSeries.coeff_subst (hasSubst_addInv_sum F k)]
-      simp [Finsupp.prod_pow, Fin.prod_univ_two]
-    · simpa only [Finsupp.prod_pow, Fin.prod_univ_two, Matrix.cons_val_zero,
-        Matrix.cons_val_one, Matrix.cons_val_fin_one, smul_eq_mul,
-        coeff_coeToMvPowerSeries] using
-        MvPowerSeries.coeff_subst_finite (hasSubst_addInv_sum F k) F.toPowerSeries
-          (single () (k + 1))
-    · exact (Set.finite_singleton (single 0 1)).subset
-        (Function.support_subset_iff'.mpr fun d hd ↦ by
-          simp only [Set.mem_singleton_iff] at hd
-          simp [hd])
-
-/-- The inverse coordinate is a left inverse: `F(i(X), X) = 0`. -/
-@[simp]
-theorem subst_addInvX_X : F.toPowerSeries.subst ![addInvX F, X] = 0 := by
-  ext n
-  rw [map_zero, ← coeff_subst_addInv_sum F n, coeff,
-    MvPowerSeries.coeff_subst (hasSubst_addInv_pair F),
-    MvPowerSeries.coeff_subst (hasSubst_addInv_sum F n)]
-  refine finsum_congr fun d ↦ ?_
-  congr 1
-  simp only [Finsupp.prod_pow, Fin.prod_univ_two, Matrix.cons_val_zero,
-    Matrix.cons_val_one, Matrix.cons_val_fin_one]
-  generalize hB : (∑ i ∈ range (n + 1), C (addInvAux F i) * X ^ i) = B
-  -- Agreement through degree n is preserved by powers and multiplication; the higher
-  -- coefficients therefore do not change the finite-stage cancellation.
-  have hdiv : X ^ (n + 1) ∣ addInvX F - B := by
-    rw [X_pow_dvd_iff]
-    intro m hm
-    simp [← hB, addInvX, coeff_X_pow, hm]
-  obtain ⟨Q, hQ⟩ := (hdiv.trans (sub_dvd_pow_sub_pow _ _ (d 0))).mul_right (X ^ d 1)
-  have heq : addInvX F ^ d 0 * X ^ d 1 = B ^ d 0 * X ^ d 1 + X ^ (n + 1) * Q := by
-    rw [sub_mul] at hQ
-    exact (sub_eq_iff_eq_add.mp hQ).trans (add_comm _ _)
-  rw [heq]
-  have hn : ¬n + 1 ≤ n := Nat.not_succ_le_self n
-  simp only [coeff_coeToMvPowerSeries, map_add, coeff_X_pow_mul',
-    hn, ite_false, add_zero]
+    PowerSeries.coeff (n + 1) F.addInvX = -PowerSeries.coeff (n + 1) (F.toPowerSeries.subst
+      ![∑ i ∈ range (n + 1), PowerSeries.C (PowerSeries.coeff i F.addInvX) * PowerSeries.X ^ i,
+        PowerSeries.X]) := by
+  let f : PowerSeries R := (PowerSeries.trunc (n + 1) F.addInvX : PowerSeries R)
+  have hf : PowerSeries.constantCoeff f = 0 := by
+    rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply]
+    change PowerSeries.coeff 0 (PowerSeries.trunc (n + 1) F.addInvX : PowerSeries R) = 0
+    rw [Polynomial.coeff_coe, PowerSeries.coeff_trunc, ite_eq_left (Nat.zero_lt_succ n),
+      PowerSeries.coeff_zero_eq_constantCoeff_apply, F.constantCoeff_addInvX]
+  let r : PowerSeries R := .mk fun i ↦ PowerSeries.coeff (i + (n + 1)) F.addInvX
+  have heq : f + PowerSeries.X ^ (n + 1) * r = F.addInvX := by
+    rw [add_comm]
+    exact (PowerSeries.eq_X_pow_mul_shift_add_trunc (n + 1) F.addInvX).symm
+  have h := F.coeff_subst_add_X_pow_mul_X hf r
+    (Nat.succ_ne_zero n) (le_refl (n + 1))
+  rw [heq, F.subst_addInvX_X_eq_zero, map_zero, ite_eq_left rfl] at h
+  have hsum : f =
+      ∑ i ∈ range (n + 1), PowerSeries.C (PowerSeries.coeff i F.addInvX) * PowerSeries.X ^ i := by
+    ext k
+    simp [f, Polynomial.coeff_coe, PowerSeries.coeff_trunc, PowerSeries.coeff_X_pow]
+  rw [hsum] at h
+  simpa only [← PowerSeries.coeff_zero_eq_constantCoeff_apply, r, PowerSeries.coeff_mk,
+    zero_add] using eq_neg_of_add_eq_zero_right h.symm
 
 variable {σ : Type*}
 
 /-- Substituting any native point into the inverse coordinate gives its left inverse. -/
 @[simp]
 theorem subst_addInvX_self {f : MvPowerSeries σ R} (hf : PowerSeries.HasSubst f) :
-    F.toPowerSeries.subst ![PowerSeries.subst f (addInvX F), f] = 0 := by
-  calc
-    _ = PowerSeries.subst f (F.toPowerSeries.subst ![addInvX F, X]) := by
-      rw [PowerSeries.subst_def _ (F.toPowerSeries.subst _),
-        MvPowerSeries.subst_comp_subst_apply
-        (hasSubst_addInv_pair F) hf.const]
-      congr 1
-      funext i
-      fin_cases i <;> simp [← PowerSeries.subst_def, PowerSeries.subst_X hf]
-    _ = 0 := by rw [subst_addInvX_X, ← PowerSeries.coe_substAlgHom hf, map_zero]
-
-/-- Negation on native formal-group points is substitution into the inverse coordinate. -/
-noncomputable instance instNegPoint : Neg (F.Point σ) where
-  neg x := ⟨PowerSeries.subst x.val (addInvX F),
-    MvPowerSeries.IsNilpotent_subst x.property.const
-      (by simpa only [← constantCoeff_eq, constantCoeff_addInvX] using
-        (IsNilpotent.zero : IsNilpotent (0 : R)))⟩
-
-/-- The underlying series of the negative of a point. -/
-@[simp]
-theorem neg_apply (x : F.Point σ) :
-    (-x).val = PowerSeries.subst x.val (addInvX F) := (rfl)
-
-/-- Native points of a formal group form an additive group. -/
-noncomputable instance instAddGroupPoint : AddGroup (F.Point σ) where
-  zsmul := zsmulRec
-  neg_add_cancel x := Subtype.ext <| by
-    rw [FormalGroup.add_apply, neg_apply, FormalGroup.zero_apply]
-    exact subst_addInvX_self F x.property
-
-/-- Native points of a commutative formal group form an additive commutative group. -/
-noncomputable instance instAddCommGroupPoint [F.IsComm] : AddCommGroup (F.Point σ) where
-  add_comm := add_comm
+    F.toPowerSeries.subst ![PowerSeries.subst f F.addInvX, f] = 0 := by
+  let x : F.Point σ := ⟨f, hf⟩
+  have h := congrArg (fun z : F.Point σ ↦ z.val) (neg_add_cancel x)
+  rw [FormalGroup.add_apply, FormalGroup.neg_apply, FormalGroup.zero_apply] at h
+  exact h
 
 /-- A left inverse of a native point is obtained by substituting it into `addInvX`. -/
 theorem eq_subst_addInvX_iff {f g : MvPowerSeries σ R}
     (hf : PowerSeries.HasSubst f) (hg : PowerSeries.HasSubst g) :
-    g = PowerSeries.subst f (addInvX F) ↔ F.toPowerSeries.subst ![g, f] = 0 := by
+    g = PowerSeries.subst f F.addInvX ↔ F.toPowerSeries.subst ![g, f] = 0 := by
   let x : F.Point σ := ⟨f, hf⟩
   let y : F.Point σ := ⟨g, hg⟩
   constructor
@@ -242,27 +332,22 @@ theorem eq_subst_addInvX_iff {f g : MvPowerSeries σ R}
       exact h)
     have heq : y = -x := eq_neg_of_add_eq_zero_left h'
     have hval := congrArg (fun z : F.Point σ ↦ z.val) heq
-    rw [neg_apply] at hval
+    rw [FormalGroup.neg_apply] at hval
     simpa only [x, y] using hval
 
 /-- The inverse coordinate gives right inverses too, without assuming commutativity of `F`. -/
 @[simp]
 theorem subst_self_addInvX {f : MvPowerSeries σ R} (hf : PowerSeries.HasSubst f) :
-    F.toPowerSeries.subst ![f, PowerSeries.subst f (addInvX F)] = 0 := by
+    F.toPowerSeries.subst ![f, PowerSeries.subst f F.addInvX] = 0 := by
   let x : F.Point σ := ⟨f, hf⟩
   have h := congrArg (fun z : F.Point σ ↦ z.val) (add_neg_cancel x)
-  rw [FormalGroup.add_apply, neg_apply, FormalGroup.zero_apply] at h
+  rw [FormalGroup.add_apply, FormalGroup.neg_apply, FormalGroup.zero_apply] at h
   exact h
-
-/-- The inverse coordinate is a right inverse: `F(X, i(X)) = 0`. -/
-@[simp]
-theorem subst_X_addInvX : F.toPowerSeries.subst ![X, addInvX F] = 0 := by
-  simpa only [PowerSeries.X_subst] using subst_self_addInvX F PowerSeries.HasSubst.X'
 
 /-- A right inverse of a native point is obtained by substituting it into `addInvX`. -/
 theorem eq_subst_addInvX_iff_right {f g : MvPowerSeries σ R}
     (hf : PowerSeries.HasSubst f) (hg : PowerSeries.HasSubst g) :
-    g = PowerSeries.subst f (addInvX F) ↔ F.toPowerSeries.subst ![f, g] = 0 := by
+    g = PowerSeries.subst f F.addInvX ↔ F.toPowerSeries.subst ![f, g] = 0 := by
   let x : F.Point σ := ⟨f, hf⟩
   let y : F.Point σ := ⟨g, hg⟩
   constructor
@@ -274,27 +359,7 @@ theorem eq_subst_addInvX_iff_right {f g : MvPowerSeries σ R}
       exact h)
     have heq : y = -x := eq_neg_of_add_eq_zero_right h'
     have hval := congrArg (fun z : F.Point σ ↦ z.val) heq
-    rw [neg_apply] at hval
+    rw [FormalGroup.neg_apply] at hval
     simpa only [x, y] using hval
-
-/-- Inverting twice returns the original coordinate. -/
-@[simp]
-theorem subst_addInvX_addInvX : PowerSeries.subst (addInvX F) (addInvX F) = X := by
-  let x : F.Point Unit := ⟨X, PowerSeries.HasSubst.X'⟩
-  have h := congrArg (fun z : F.Point Unit ↦ z.val) (neg_neg x)
-  rw [neg_apply, neg_apply] at h
-  simpa only [x, PowerSeries.X_subst] using h
-
-/-- The zero-constant inverse coordinate is uniquely characterized by its left inverse law. -/
-theorem eq_addInvX_iff {g : PowerSeries R} (hg : constantCoeff g = 0) :
-    g = addInvX F ↔ F.toPowerSeries.subst ![g, X] = 0 := by
-  simpa only [PowerSeries.X_subst] using eq_subst_addInvX_iff F
-    PowerSeries.HasSubst.X' (PowerSeries.HasSubst.of_constantCoeff_zero' hg)
-
-/-- The zero-constant inverse coordinate is uniquely characterized by its right inverse law. -/
-theorem eq_addInvX_iff_right {g : PowerSeries R} (hg : constantCoeff g = 0) :
-    g = addInvX F ↔ F.toPowerSeries.subst ![X, g] = 0 := by
-  simpa only [PowerSeries.X_subst] using eq_subst_addInvX_iff_right F
-    PowerSeries.HasSubst.X' (PowerSeries.HasSubst.of_constantCoeff_zero' hg)
 
 end TauCeti

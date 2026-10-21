@@ -20,7 +20,7 @@ import TauCeti.FieldTheory.Finite.FrobeniusFixed
 -- distinct orbits give distinct virtual characters.
 import TauCeti.LinearAlgebra.LinearIndependent.MonoidHom
 -- Non-public: lifting a unit of `E` lying in `F` to a unit of `F` is used only inside that proof.
-import TauCeti.Algebra.GroupWithZero.Units.Basic
+import TauCeti.Algebra.Group.Units.Basic
 
 /-!
 # The cuspidal virtual character of `GL₂(𝔽_q)`

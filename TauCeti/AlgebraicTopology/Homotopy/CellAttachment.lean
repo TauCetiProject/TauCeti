@@ -38,6 +38,11 @@ apply: the stage `c.F.obj (n + 1)` is surjective on `π_k` for `k ≤ n`
 which identifies them with their ranges. Attaching cells of a single dimension is such a relative
 CW complex (`HomotopicalAlgebra.AttachCells.toRelativeCWComplex`).
 
+Conversely, a cell attached along the constant map at `x` closes up to a sphere at `x`, so a map
+out of `Y` that is a generalized loop `γ` on such a cell sends the class of that sphere to the
+class of `γ` (`TauCeti.mk_mem_range_homotopyGroupMap_of_cellAttachmentCell_comp`). This is how
+cells realize classes of a target space in CW approximation.
+
 When `n ≥ 1`, attaching cells kills chosen classes of `π_n(X, x)`. A generalized loop `p`
 representing a class gives the attaching map `GenLoop.diskBoundaryMap p`, the
 corresponding pointed map `Sⁿ → X`. It becomes null-homotopic in `Y`
@@ -57,14 +62,16 @@ corresponding pointed map `Sⁿ → X`. It becomes null-homotopic in `Y`
   surjective on `π_k` for `k ≤ n`.
 * `HomotopicalAlgebra.AttachCells.bijective_homotopyGroupMap`: attaching `(n + 1)`-cells is
   bijective on `π_k` for `k < n`.
+* `TauCeti.mk_mem_range_homotopyGroupMap_of_cellAttachmentCell_comp`: a cell attached along a
+  constant map realizes the class of the generalized loop it is sent onto.
 * `TauCeti.subsingleton_homotopyGroup_cellAttachment`: attaching `(n + 1)`-cells along
   generators of `π_n(X, x)` kills `π_n`.
 
 ## References
 
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
-  Section 4.1, Corollary 4.12, and the same section for attaching cells to kill homotopy
-  groups.
+  Section 4.1, Corollary 4.12, the same section for attaching cells to kill homotopy
+  groups, and Proposition 4.13 for attaching spheres to realize them.
 -/
 
 public section
@@ -167,6 +174,48 @@ theorem bijective_homotopyGroupMap_cellAttachmentIncl (hN : Nat.card N < n) (x :
 
 end TauCeti
 
+/-! ### Realizing classes by spheres -/
+
+namespace TauCeti
+
+open scoped Topology.Homotopy unitInterval
+
+variable {X Y : TopCat.{u}} {ι : Type u} {n : ℕ} {x : X} {y : Y}
+
+/-- **A cell attached along a constant map realizes a class** (Hatcher, Proposition 4.13). If the
+`(n + 1)`-cell indexed by `i` is attached along the constant map at `x`, it closes up to a sphere
+at `x`. If a map `g` out of the cell attachment is a generalized loop `γ` on this cell, read on
+the disk through `TauCeti.diskHomeomorphCube`, then the class of `γ` is the image under `g` of the
+class of that sphere. -/
+theorem mk_mem_range_homotopyGroupMap_of_cellAttachmentCell_comp
+    (φ : ι → (TopCat.diskBoundary (n + 1) ⟶ X)) {i : ι}
+    (hi : φ i = TopCat.ofHom (ContinuousMap.const _ x)) (g : cellAttachment φ ⟶ Y)
+    (hg : g (cellAttachmentIncl φ x) = y) (γ : Ω^ (Fin (n + 1)) Y y)
+    (hγ : cellAttachmentCell φ i ≫ g = GenLoop.diskMap γ) :
+    (⟦γ⟧ : HomotopyGroup (Fin (n + 1)) Y y) ∈ Set.range (HomotopyGroup.map g.hom hg) := by
+  let c := cellAttachmentCell φ i
+  -- The characteristic map of the cell, read on the cube, is a generalized loop: the boundary of
+  -- the cube goes to the boundary sphere of the disk, attached at `x`.
+  let q : Ω^ (Fin (n + 1)) (cellAttachment φ) (cellAttachmentIncl φ x) :=
+    ⟨c.hom.comp ((diskHomeomorphCube (n + 1)).symm : C(I^(Fin (n + 1)), TopCat.disk (n + 1))),
+      fun t ht ↦ by
+        obtain ⟨s, hs⟩ := (diskHomeomorphCube_mem_boundary_iff _).1
+          (((diskHomeomorphCube (n + 1)).apply_symm_apply t).symm ▸ ht)
+        have h := ConcreteCategory.congr_hom (cellAttachment_boundary φ i) s
+        rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, hs, hi] at h
+        -- `h` evaluates the constant attaching map at `s` and the composite at `t`, both by
+        -- definition.
+        exact h.symm⟩
+  refine ⟨⟦q⟧, ?_⟩
+  rw [HomotopyGroup.map_mk]
+  congr 1
+  ext t
+  rw [GenLoop.map_apply]
+  refine (ConcreteCategory.congr_hom hγ ((diskHomeomorphCube (n + 1)).symm t)).trans ?_
+  simp
+
+end TauCeti
+
 /-! ### Killing `πₙ` -/
 
 namespace TauCeti
@@ -175,23 +224,14 @@ open scoped Topology.Homotopy
 
 variable {X : TopCat.{u}} {ι : Type u} {n : ℕ} [NeZero n] {x : X}
 
-/-- **Attaching a cell along a generalized loop kills its class.** After attaching
-`(n + 1)`-cells along the generalized loops `p i`, the class of each `p i` maps to the identity
-of `πₙ`. -/
-theorem map_cellAttachmentIncl_mk_eq_one (p : ι → Ω^ (Fin n) X x) (i : ι) :
-    HomotopyGroup.map (cellAttachmentIncl fun j ↦ GenLoop.diskBoundaryMap (p j)).hom rfl
-      (⟦p i⟧ : HomotopyGroup (Fin n) X x) = 1 := by
-  rw [HomotopyGroup.map_mk]
-  refine (HomotopyGroup.mk_eq_one_iff_nullhomotopic_toSphere _).2 ?_
-  rw [GenLoop.toSphere_map]
-  -- the attaching map is `GenLoop.toSphere (p i)` precomposed with `ULift.down`, so
-  -- `GenLoop.toSphere (p i)` is the attaching map precomposed with `ULift.up`
-  have h : (GenLoop.toSphere (p i)) =
-      (GenLoop.diskBoundaryMap (p i)).hom.comp ⟨ULift.up, continuous_uliftUp⟩ := by
-    ext s
-    exact (GenLoop.diskBoundaryMap_apply (p i) ⟨s⟩).symm
-  rw [h, ← ContinuousMap.comp_assoc]
-  exact (cellAttachment_attachingMap_nullhomotopic _ i).comp_left _
+/-- **Attaching a cell along a generalized loop kills its class.** If the cell indexed by `i` is
+attached along the map `GenLoop.diskBoundaryMap p` of a generalized loop `p`, then the class of `p`
+maps to the identity of `πₙ` after attaching the cells. -/
+theorem map_cellAttachmentIncl_mk_eq_one (φ : ι → (TopCat.diskBoundary (n + 1) ⟶ X)) {i : ι}
+    {p : Ω^ (Fin n) X x} (h : φ i = GenLoop.diskBoundaryMap p) :
+    HomotopyGroup.map (cellAttachmentIncl φ).hom rfl (⟦p⟧ : HomotopyGroup (Fin n) X x) = 1 := by
+  rw [HomotopyGroup.map_mk_eq_one_iff_nullhomotopic_diskBoundaryMap_comp, ← h, TopCat.hom_comp]
+  exact cellAttachment_attachingMap_nullhomotopic φ i
 
 /-- **Attaching cells along generators kills `πₙ`** (Hatcher, Section 4.1). If the classes of
 the generalized loops `p i` generate `πₙ(X, x)` as a normal subgroup, with `n ≥ 1` and `X`
@@ -207,7 +247,7 @@ theorem subsingleton_homotopyGroup_cellAttachment [T2Space X] (p : ι → Ω^ (F
     rw [← hp]
     refine Subgroup.normalClosure_le_normal ?_
     rintro _ ⟨i, rfl⟩
-    exact map_cellAttachmentIncl_mk_eq_one p i
+    exact map_cellAttachmentIncl_mk_eq_one _ rfl
   refine subsingleton_of_forall_eq 1 fun b ↦ ?_
   obtain ⟨a, rfl⟩ := surjective_homotopyGroupMap_cellAttachmentIncl
     (fun i ↦ GenLoop.diskBoundaryMap (p i)) (N := Fin n) (by simp) x b

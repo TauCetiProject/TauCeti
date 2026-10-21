@@ -13,12 +13,15 @@ public import Mathlib.RingTheory.PowerSeries.Trunc
 
 Two facts used to compare power series to a finite order `m`: the truncation `trunc m φ`
 vanishes exactly when `φ` has order at least `m`, and the coefficients of a finite expansion
-`∑_{i < m} aᵢ Xⁱ` are the `aᵢ`, read as zero from degree `m` on.
+`∑_{i < m} aᵢ Xⁱ` are the `aᵢ`, read as zero from degree `m` on. The coefficients of the product
+of a polynomial and a power series expand along the monomials of the polynomial.
 
 ## Main results
 
 * `PowerSeries.trunc_eq_zero_iff_le_order`: `trunc m φ = 0 ↔ m ≤ order φ`.
 * `PowerSeries.coeff_sum_C_mul_X_pow`: the coefficients of `∑ i : Fin m, C (a i) * X ^ i`.
+* `PowerSeries.coeff_coe_mul_eq_sum`: `coeff n (p * g) = ∑_{i < N} pᵢ coeff n (Xⁱ g)` for a
+  polynomial `p` of degree less than `N`.
 -/
 
 public section
@@ -50,5 +53,13 @@ theorem coeff_sum_C_mul_X_pow {m : ℕ} (a : Fin m → R) (n : ℕ) :
   · refine Finset.sum_eq_zero fun i _ ↦ ?_
     have hni : n ≠ (i : ℕ) := (i.2.trans_le (not_lt.mp h)).ne'
     simp [hni]
+
+/-- The coefficients of the product of a polynomial `p` and a power series `g`, expanded along the
+monomials of `p` below any bound `N` on its degree. -/
+theorem coeff_coe_mul_eq_sum (p : Polynomial R) (g : R⟦X⟧) {N : ℕ} (hN : p.natDegree < N)
+    (n : ℕ) : coeff n ((p : R⟦X⟧) * g) = ∑ i ∈ Finset.range N, p.coeff i * coeff n (X ^ i * g) := by
+  rw [← Polynomial.eval₂_C_X_eq_coe, Polynomial.eval₂_eq_sum_range' _ hN, Finset.sum_mul,
+    map_sum]
+  simp [mul_assoc, coeff_C_mul]
 
 end PowerSeries

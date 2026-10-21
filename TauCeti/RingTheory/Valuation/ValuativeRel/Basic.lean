@@ -6,6 +6,7 @@ Authors: Chris Birkbeck, The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Valuation.Integers
+public import Mathlib.RingTheory.Valuation.ValuationSubring
 public import Mathlib.RingTheory.Valuation.ValuativeRel.Basic
 
 /-!
@@ -26,6 +27,8 @@ General lemmas about `ValuativeRel` that Mathlib does not yet provide.
   an integral element, then the square root is integral.
 * `TauCeti.one_add_pow_ne_zero_of_valuation_lt_one`: a positive power of an element of valuation
   less than one cannot equal `-1`.
+* `TauCeti.valuation_lt_one_iff_mem_image_maximalIdeal`: in a field, the elements of valuation
+  less than one are the image of the maximal ideal of the ring of integers.
 
 ## References
 
@@ -98,5 +101,17 @@ theorem one_add_pow_ne_zero_of_valuation_lt_one {x : K} (hx : valuation K x < 1)
     exact pow_lt_one₀ zero_le hx hn
   intro h
   simpa [h] using (valuation K).map_one_add_of_lt hxpow
+
+/-- An element of a field has valuation below `1` exactly when it lies in the maximal ideal of the
+ring of integers. -/
+theorem valuation_lt_one_iff_mem_image_maximalIdeal {K : Type*} [Field K] [ValuativeRel K]
+    {x : K} :
+    valuation K x < 1 ↔
+      x ∈ ((↑) : (valuation K).integer → K) ''
+        ↑(IsLocalRing.maximalIdeal (valuation K).integer) := by
+  refine ⟨fun hx ↦ ⟨⟨x, (Valuation.mem_integer_iff _ _).2 hx.le⟩,
+    (valuation K).mem_maximalIdeal_iff.2 hx, rfl⟩, ?_⟩
+  rintro ⟨c, hc, rfl⟩
+  exact (valuation K).mem_maximalIdeal_iff.1 hc
 
 end TauCeti

@@ -33,8 +33,9 @@ Two consequences are recorded because later layers use them rather than the squa
 `H⁰_cont(G, -)` and the invariants functor are naturally isomorphic
 (`TauCeti.ContinuousCohomology.zeroIsoNatIso`). Second, inflation is an isomorphism in degree zero
 (`TauCeti.ContinuousCohomology.isIso_infl_zero`): `(X^N)^{G/N}` and `X^G` are canonically
-isomorphic by explicit mutually inverse maps that preserve the underlying vector. Restriction is a
-monomorphism in degree zero (`TauCeti.ContinuousCohomology.mono_res_zero`) because `X^G ⊆ X^S`.
+isomorphic by explicit mutually inverse maps that preserve the underlying vector. Restriction is
+injective in degree zero (`TauCeti.ContinuousCohomology.res_zero_injective`), and so a
+monomorphism (`TauCeti.ContinuousCohomology.mono_res_zero`), because `X^G ⊆ X^S`.
 
 The route to the square is the explicit evaluation formula
 `TauCeti.ContinuousCohomology.coe_zeroIso_hom_π`: a `0`-cocycle of the homogeneous complex is an
@@ -63,8 +64,8 @@ together with the invariant-class constructor `degreeZeroClass` that the same la
   vector is the class of any `0`-cocycle with that value at `1`.
 * `TauCeti.ContinuousCohomology.map_degreeZeroClass`: compatible-pair functoriality on classes of
   invariant vectors.
-* `TauCeti.ContinuousCohomology.isIso_infl_zero`, `TauCeti.ContinuousCohomology.mono_res_zero`:
-  the degree-zero edge of inflation-restriction.
+* `TauCeti.ContinuousCohomology.isIso_infl_zero`, `TauCeti.ContinuousCohomology.res_zero_injective`,
+  `TauCeti.ContinuousCohomology.mono_res_zero`: the degree-zero edge of inflation-restriction.
 -/
 
 public section
@@ -293,20 +294,26 @@ end Class
 
 section Edge
 
-/-- **Restriction is a monomorphism in degree zero.** This is the degree-zero left edge of the
+/-- **Restriction is injective in degree zero.** This is the degree-zero left edge of the
 inflation-restriction sequence: `X^G ⊆ X^S`. -/
-theorem mono_res_zero (S : Subgroup G) (X : TopRep R G) :
-    Mono (TauCeti.ContinuousCohomology.res S X 0) := by
+theorem res_zero_injective (S : Subgroup G) (X : TopRep R G) :
+    Function.Injective (TauCeti.ContinuousCohomology.res S X 0).hom := by
   have hinjective : Function.Injective (TopRep.invariantsResMap (S.subtype : S →* G)
       (𝟙 (TopRep.res (S.subtype : S →* G) X))) := by
     intro a b hab
     ext
     exact congrArg
       (fun w : (TopRep.res (S.subtype : S →* G) X).ρ.invariants ↦ (w : X.V)) hab
-  have : Mono (TopRep.invariantsResMap (S.subtype : S →* G)
-      (𝟙 (TopRep.res (S.subtype : S →* G) X))) :=
-    ConcreteCategory.mono_of_injective _ hinjective
-  exact mono_of_mono_fac (res_comp_zeroIso_hom S X)
+  -- read restriction through the identifications of `H⁰` with the invariants
+  refine Function.Injective.of_comp (f := (zeroIso (TopRep.res (S.subtype : S →* G) X)).hom) ?_
+  rw [← ConcreteCategory.coe_comp, res_comp_zeroIso_hom, ConcreteCategory.coe_comp]
+  exact hinjective.comp (ConcreteCategory.bijective_of_isIso (zeroIso X).hom).1
+
+/-- **Restriction is a monomorphism in degree zero**: the categorical form of
+`TauCeti.ContinuousCohomology.res_zero_injective`. -/
+theorem mono_res_zero (S : Subgroup G) (X : TopRep R G) :
+    Mono (TauCeti.ContinuousCohomology.res S X 0) :=
+  ConcreteCategory.mono_of_injective _ (res_zero_injective S X)
 
 variable (N : Subgroup G) [N.Normal] (X : TopRep R G)
 

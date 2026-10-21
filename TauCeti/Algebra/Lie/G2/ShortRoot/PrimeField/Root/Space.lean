@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Tangent
-public import TauCeti.Algebra.AlgebraicGroup.ConstantMultiplication.Tangent
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Generated.Preserves
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Adjoint.WeightSpace
 public import TauCeti.Algebra.Lie.G2.ShortRoot.AdmissibleLattice
 public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.MaximalTorus
@@ -142,21 +142,12 @@ theorem tangentMatrix_mul_crossOperatorPrime
       ConstantMultiplication.imageStructureMatrix (ZMod 3) 7 crossOperatorPrime
           (tangentMatrix x) k +
         crossOperatorPrime k * tangentMatrix x := by
-  have hmem : HopfIdeal.quotientLieHom (CommHopfAlgCat.commonKernelHopfIdeal generator)
-      (Derivation.cotangentLinearEquiv (B := ZMod 3) x) ∈
-        HopfIdeal.lieSubalgebra (B := ZMod 3)
-          (ConstantMultiplication.definingHopfIdeal (ZMod 3) 7 crossOperatorPrime) := by
-    rw [HopfIdeal.mem_lieSubalgebra_iff]
-    intro y hy
-    have hcarrier := (HopfIdeal.mem_lieSubalgebra_iff _ _).mp
-      (HopfIdeal.quotientLieEquiv (B := ZMod 3) (CommHopfAlgCat.commonKernelHopfIdeal generator)
-        (Derivation.cotangentLinearEquiv (B := ZMod 3) x)).2
-    rw [HopfIdeal.quotientLieEquiv_apply_coe] at hcarrier
-    exact hcarrier y (HopfIdeal.toIdeal_le_toIdeal.mpr
-      (definingIdeal_def ▸ constantMultiplicationDefiningHopfIdeal_le_definingIdeal) hy)
-  have h := (ConstantMultiplication.mem_lieSubalgebra_definingHopfIdeal_iff _ _).mp hmem k
   simpa only [Algebra.algebraMap_self, RingHom.coe_id, Matrix.map_id,
-    ← tangentMatrix_apply] using h
+    ← tangentMatrix_apply] using
+    GeneralLinear.tangentMatrix_mul_of_constantMultiplicationDefiningHopfIdeal_le
+      7 generator crossOperatorPrime
+      (definingIdeal_def ▸ constantMultiplicationDefiningHopfIdeal_le_definingIdeal)
+      (Derivation.cotangentLinearEquiv (B := ZMod 3) x) k
 
 /-! ## The differentials of the numbered simple root subgroups -/
 
@@ -223,7 +214,7 @@ have the weight of a numbered simple root generator is a multiple of that genera
 the explicit structure constants of `TauCeti.G2ShortRoot.crossOperator` at a few entries; the
 remaining entries vanish by the weight condition. -/
 
-/- Normalization for one entry of the derivation equation of an explicit matrix: expand the matrix
+/-- Normalization for one entry of the derivation equation of an explicit matrix: expand the matrix
 products and the structure constants, then reduce the coefficients modulo three. -/
 local macro "cross_entry_norm" : tactic =>
   `(tactic| (simp [Matrix.mul_apply, Fin.sum_univ_succ,

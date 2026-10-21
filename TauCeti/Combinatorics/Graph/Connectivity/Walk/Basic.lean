@@ -57,6 +57,11 @@ instance (x : α) : Inhabited (G.Walk x x) := ⟨.nil⟩
 def _root_.Graph.IsLink.toWalk {e : β} (h : G.IsLink e x y) : G.Walk x y :=
   .cons e h .nil
 
+/-- A one-edge walk is the corresponding `cons` followed by the empty walk. -/
+theorem _root_.Graph.IsLink.toWalk_eq_cons {e : β} (h : G.IsLink e x y) :
+    h.toWalk = .cons e h .nil :=
+  (rfl)
+
 /-- The number of edge traversals in a walk. -/
 def length {x y : α} : G.Walk x y → ℕ
   | .nil => 0

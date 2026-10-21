@@ -7,6 +7,9 @@ module
 
 public import Mathlib.ModelTheory.Basic
 public import Mathlib.Basic.Countable.Basic
+public import Mathlib.Basic.Finite.Prod
+public import Mathlib.Basic.Finite.Sigma
+public import Mathlib.Basic.Finite.Sum
 
 /-!
 # Atomic types of finite tuples
@@ -53,6 +56,15 @@ instance [Countable (Σ k, L.Relations k)] : Countable (AtomicIdx L n) := by
   rcases hij with ⟨rfl, h⟩
   cases eq_of_heq h
   simp
+
+/-- A finite relation language has finitely many atomic tests on a finite tuple. -/
+instance [Finite (Σ k, L.Relations k)] : Finite (AtomicIdx L n) := by
+  let f : AtomicIdx L n → (Fin n × Fin n) ⊕ (Σ r : Σ k, L.Relations k, Fin r.1 → Fin n)
+    | .eq i j => .inl (i, j)
+    | .rel r g => .inr ⟨⟨_, r⟩, g⟩
+  apply Finite.of_injective f
+  intro i j hij
+  cases i <;> cases j <;> simp_all [f]
 
 /-- Evaluate an atomic test at a tuple. -/
 def AtomicIdx.Holds : AtomicIdx L n → (Fin n → M) → Prop
@@ -120,6 +132,22 @@ theorem symm (h : SameAtomicType (L := L) a b) : SameAtomicType (L := L) b a :=
 theorem trans (hab : SameAtomicType (L := L) a b) (hbc : SameAtomicType (L := L) b c) :
     SameAtomicType (L := L) a c := ⟨fun i => (hab.holds i).trans (hbc.holds i)⟩
 
+/-- Atomic-type agreement is preserved by reindexing both tuples along the same map of
+positions, which may repeat or omit entries. -/
+theorem comp (h : SameAtomicType (L := L) a b) {m : ℕ} (g : Fin m → Fin n) :
+    SameAtomicType (L := L) (a ∘ g) (b ∘ g) := by
+  rw [sameAtomicType_iff]
+  exact ⟨fun i j => h.eq_iff (g i) (g j), fun r f => h.rel_iff r (g ∘ f)⟩
+
 end SameAtomicType
+
+/-- In a relational language without nullary relation symbols, the empty tuples of any two
+structures have the same atomic type. -/
+theorem sameAtomicType_elim0 [IsEmpty (L.Relations 0)] :
+    SameAtomicType (L := L) (Fin.elim0 : Fin 0 → M) (Fin.elim0 : Fin 0 → N) := by
+  refine (sameAtomicType_iff _ _).mpr ⟨fun i => i.elim0, fun {k} r f => ?_⟩
+  cases k with
+  | zero => exact isEmptyElim r
+  | succ k => exact (f 0).elim0
 
 end TauCeti

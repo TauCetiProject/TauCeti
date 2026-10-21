@@ -349,6 +349,84 @@ theorem stackStart_inr (D₁ D₂ : BrauerDiagram k) (j : Fin k) : stackStart D�
     (D₁.val (Sum.inr j)).elim (fun a => Sum.inr (Sum.inr a)) fun j' => Sum.inl (Sum.inr j') :=
   (rfl)
 
+section StackWalk
+
+variable {D₁ D₂ : BrauerDiagram k}
+
+/-- A strand that starts at a bottom point and crosses the middle boundary runs up a through
+strand of `D₂`. -/
+theorem stackStart_inl_eq_inr_iff {i : Fin k} {s : Fin k ⊕ Fin k} :
+    stackStart D₁ D₂ (Sum.inl i) = Sum.inr s ↔
+      ∃ a, s = Sum.inl a ∧ D₂.val (Sum.inl i) = Sum.inr a := by
+  rw [stackStart_inl]
+  rcases D₂.val (Sum.inl i) with i' | a
+  · simp
+  · simp [eq_comm]
+
+/-- A strand about to run up through `D₁` that stays in the middle follows a cap of `D₁`. -/
+theorem stackStep_inl_eq_inr_iff {a : Fin k} {v : Fin k ⊕ Fin k} :
+    stackStep D₁ D₂ (Sum.inl a) = Sum.inr v ↔
+      ∃ b, v = Sum.inr b ∧ D₁.val (Sum.inl a) = Sum.inl b := by
+  rw [stackStep_inl]
+  rcases D₁.val (Sum.inl a) with b | j
+  · simp [eq_comm]
+  · simp
+
+/-- A strand about to run down through `D₂` that stays in the middle follows a cup of `D₂`. -/
+theorem stackStep_inr_eq_inr_iff {a : Fin k} {v : Fin k ⊕ Fin k} :
+    stackStep D₁ D₂ (Sum.inr a) = Sum.inr v ↔
+      ∃ b, v = Sum.inl b ∧ D₂.val (Sum.inr a) = Sum.inr b := by
+  rw [stackStep_inr]
+  rcases D₂.val (Sum.inr a) with i | b
+  · simp
+  · simp [eq_comm]
+
+/-- A strand starts by running up to the middle point `a` from the bottom point `y` exactly when
+the arc of `D₂` at the top point `a` runs down to `y`. -/
+theorem stackStart_eq_inr_inl_iff {y : Fin k ⊕ Fin k} {a : Fin k} :
+    stackStart D₁ D₂ y = Sum.inr (Sum.inl a) ↔ y.isLeft ∧ D₂.val (Sum.inr a) = y := by
+  rcases y with i | j
+  · rw [stackStart_inl, D₂.apply_eq_comm (x := Sum.inr a)]
+    rcases D₂.val (Sum.inl i) with i' | a' <;> simp
+  · rw [stackStart_inr]
+    rcases D₁.val (Sum.inr j) with a' | j' <;> simp
+
+/-- A strand starts by running down to the middle point `a` from the top point `y` exactly when
+the arc of `D₁` at the bottom point `a` runs up to `y`. -/
+theorem stackStart_eq_inr_inr_iff {y : Fin k ⊕ Fin k} {a : Fin k} :
+    stackStart D₁ D₂ y = Sum.inr (Sum.inr a) ↔ y.isRight ∧ D₁.val (Sum.inl a) = y := by
+  rcases y with i | j
+  · rw [stackStart_inl]
+    rcases D₂.val (Sum.inl i) with i' | a' <;> simp
+  · rw [stackStart_inr, D₁.apply_eq_comm (x := Sum.inl a)]
+    rcases D₁.val (Sum.inr j) with a' | j' <;> simp
+
+/-- A strand reaches the middle state `Sum.inl a`, about to run up through `D₁` at `a`, exactly
+when it has just come up along a cup of `D₂` ending at `a`. -/
+theorem stackStep_eq_inr_inl_iff {w : Fin k ⊕ Fin k} {a : Fin k} :
+    stackStep D₁ D₂ w = Sum.inr (Sum.inl a) ↔
+      ∃ c, w = Sum.inr c ∧ D₂.val (Sum.inr a) = Sum.inr c := by
+  rcases w with c | c
+  · rw [stackStep_inl]
+    rcases D₁.val (Sum.inl c) with c' | j <;> simp
+  · simp only [stackStep_inr, Sum.inr.injEq, exists_eq_left']
+    rw [D₂.apply_eq_comm]
+    rcases D₂.val (Sum.inr c) with i | c' <;> simp
+
+/-- A strand reaches the middle state `Sum.inr a`, about to run down through `D₂` at `a`, exactly
+when it has just come down along a cap of `D₁` ending at `a`. -/
+theorem stackStep_eq_inr_inr_iff {w : Fin k ⊕ Fin k} {a : Fin k} :
+    stackStep D₁ D₂ w = Sum.inr (Sum.inr a) ↔
+      ∃ c, w = Sum.inl c ∧ D₁.val (Sum.inl a) = Sum.inl c := by
+  rcases w with c | c
+  · simp only [stackStep_inl, Sum.inl.injEq, exists_eq_left']
+    rw [D₁.apply_eq_comm]
+    rcases D₁.val (Sum.inl c) with c' | j <;> simp
+  · rw [stackStep_inr]
+    rcases D₂.val (Sum.inr c) with i | c' <;> simp
+
+end StackWalk
+
 namespace BrauerDiagram
 
 variable (D₁ D₂ : BrauerDiagram k)

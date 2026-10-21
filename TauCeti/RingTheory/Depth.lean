@@ -8,14 +8,17 @@ module
 public import Mathlib.RingTheory.Depth.Basic
 public import Mathlib.RingTheory.KrullDimension.Regular
 public import Mathlib.RingTheory.Regular.Category
+public import TauCeti.RingTheory.Regular.LinearMap
 
 /-!
 # Depth of a module over a Noetherian local ring
 
 Mathlib defines the depth `IsLocalRing.depth M` of a module over a local ring `R` through the
 vanishing of `Ext (R ⧸ 𝔪) M`, and identifies it, for a finite nonzero module over a Noetherian local
-ring, with the supremum of the lengths of `M`-regular sequences in `𝔪`. This file proves the two
-basic facts relating depth to dimension and to quotients by regular sequences.
+ring, with the supremum of the lengths of `M`-regular sequences in `𝔪`. This file relates depth
+to dimension, quotients by regular sequences, and modules of linear maps.
+The regular-sequence transfer lemmas for linear maps live in
+`TauCeti.RingTheory.Regular.LinearMap`.
 
 ## Main results
 
@@ -27,9 +30,11 @@ basic facts relating depth to dimension and to quotients by regular sequences.
   of the maximal ideal lowers the depth by exactly one.
 * `IsLocalRing.depth_add_length_eq_depth_of_isRegular`: dividing a finite module by an `M`-regular
   sequence `r₁, …, rₙ` lowers the depth by exactly `n`.
+* `IsLocalRing.depth_hom_ge`: depth at least one or two passes from the target
+  module to the module of linear maps (Stacks, Lemma 15.24.10 (0AV5)).
 
-Together with Mathlib's `Module.supportDim_add_length_eq_supportDim_of_isRegular`, which says the
-same for the dimension of the support, these are what make Cohen–Macaulayness stable under
+The two quotient-depth results, together with Mathlib's
+`Module.supportDim_add_length_eq_supportDim_of_isRegular`, make Cohen–Macaulayness stable under
 quotients by regular sequences.
 -/
 
@@ -115,5 +120,43 @@ theorem depth_add_length_eq_depth_of_isRegular [IsNoetherianRing R] [Module.Fini
     rw [depth_eq_of_linearEquiv (Submodule.quotOfListConsSMulTopEquivQuotSMulTopInner M x rs),
       ← depth_quotSMulTop_succ_eq_depth hx (reg.mem_maximalIdeal List.mem_cons_self), ← ih hrs,
       List.length_cons, Nat.cast_succ, add_assoc]
+
+/-- Over a Noetherian local ring, depth at least `n ≤ 2` passes from a finite target module
+to the module of linear maps from a finite module. Stacks, Lemma 15.24.10 (0AV5). -/
+@[stacks 0AV5]
+theorem depth_hom_ge {R : Type u} [CommRing R] [IsLocalRing R] [IsNoetherianRing R]
+    [Small.{v} R] {M N : Type v} [AddCommGroup M] [AddCommGroup N]
+    [Module R M] [Module R N] [Module.Finite R M] [Module.Finite R N]
+    {bound : ℕ} (bound_le_two : bound ≤ 2)
+    (depth_bound : (bound : ℕ∞) ≤ depth (ModuleCat.of R N)) :
+    (bound : ℕ∞) ≤ depth (ModuleCat.of R (M →ₗ[R] N)) := by
+  classical
+  cases subsingleton_or_nontrivial N
+  · rw [depth_eq_top_of_subsingleton]
+    exact le_top
+  cases subsingleton_or_nontrivial (M →ₗ[R] N)
+  · rw [depth_eq_top_of_subsingleton]
+    exact le_top
+  cases bound with
+  | zero => exact zero_le
+  | succ predecessor =>
+    rw [depth_eq_sSup_length_isRegular] at depth_bound ⊢
+    have strict := lt_of_lt_of_le
+      (ENat.natCast_lt_natCast.mpr (Nat.lt_succ_self predecessor)) depth_bound
+    obtain ⟨_, ⟨scalars, regular, membership, rfl⟩, strict⟩ := lt_sSup_iff.mp strict
+    have length : predecessor + 1 ≤ scalars.length :=
+      Nat.succ_le_of_lt (ENat.natCast_lt_natCast.mp strict)
+    have prefixRegular : IsWeaklyRegular N (scalars.take (predecessor + 1)) :=
+      ((isWeaklyRegular_append_iff N _ (scalars.drop (predecessor + 1))).1
+        (by simpa only [List.take_append_drop] using regular.toIsWeaklyRegular)).1
+    have prefixMembership : ∀ scalar ∈ scalars.take (predecessor + 1),
+        scalar ∈ maximalIdeal R :=
+      fun scalar member ↦ membership scalar (List.mem_of_mem_take member)
+    have homRegular : IsRegular (M →ₗ[R] N) (scalars.take (predecessor + 1)) :=
+      (isRegular_iff_isWeaklyRegular_of_subset_maximalIdeal prefixMembership).2
+        (prefixRegular.linearMap (by simpa [List.length_take, Nat.min_eq_left length]
+          using bound_le_two))
+    exact le_sSup ⟨scalars.take (predecessor + 1), homRegular, prefixMembership,
+      by simp [List.length_take, Nat.min_eq_left length]⟩
 
 end IsLocalRing

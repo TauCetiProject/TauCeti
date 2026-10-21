@@ -74,6 +74,14 @@ theorem gradedLift_surjective {f : M →ₗ[R] 𝒜 1}
   rintro _ ⟨m, rfl⟩
   exact ⟨ι R M m, by simp⟩
 
+/-- In degree zero, the graded lift preserves the scalars. -/
+@[simp]
+theorem gradedLift_gradedZeroRingHom_algebraMap (f : M →ₗ[R] 𝒜 1) (r : R) :
+    (gradedLift R 𝒜 f).gradedZeroRingHom (algebraMap R (homogeneousSubmodule R M 0) r) =
+      algebraMap R (𝒜 0) r := by
+  apply Subtype.ext
+  simp
+
 end GradedLift
 
 /-- The degree-preserving ring map of symmetric algebras induced by a linear map: the graded lift
