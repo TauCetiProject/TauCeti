@@ -411,23 +411,28 @@ private lemma two_mul_arithmeticGenus_of_valence_eq_zero {v : G.Vertex} (hv : G.
     iff_of_false (G.valence_eq_zero_iff.mp hv e 0) (G.valence_eq_zero_iff.mp hv e 1)
   rw [G.two_mul_arithmeticGenus_of_forall_endpoint_zero_eq_iff h, hv, add_zero]
 
-/-- If a vertex of valence two carries a loop, that loop is the only edge, and twice the
-arithmetic genus is `2 g(v) + 2`. -/
-private lemma two_mul_arithmeticGenus_of_valence_eq_two_of_loop {v : G.Vertex}
-    (hv : G.valence v = 2) {e : G.Edge} (he₀ : G.endpoint e 0 = v) (he₁ : G.endpoint e 1 = v) :
-    2 * G.arithmeticGenus = 2 * G.genus v + 2 := by
-  -- The loop accounts for both half-edges at `v`.
+/-- If a vertex of valence two carries a loop `e`, the loop accounts for both half-edges at the
+vertex: an edge has an endpoint there exactly when it is `e`. -/
+theorem endpoint_eq_iff_eq_of_valence_eq_two {v : G.Vertex} (hv : G.valence v = 2) {e : G.Edge}
+    (he₀ : G.endpoint e 0 = v) (he₁ : G.endpoint e 1 = v) (e' : G.Edge) (i : Fin 2) :
+    G.endpoint e' i = v ↔ e' = e := by
   have hsub : ({(e, 0), (e, 1)} : Finset (G.Edge × Fin 2)) ⊆
       univ.filter fun h ↦ G.endpoint h.1 h.2 = v := by
     intro x hx
     simp only [mem_insert, mem_singleton] at hx
     rcases hx with rfl | rfl <;> simpa
   have hpair := eq_of_subset_of_card_le hsub (by rw [card_pair (by simp)]; exact hv.le)
-  have hloop (e' : G.Edge) (i : Fin 2) : G.endpoint e' i = v ↔ e' = e := by
-    have hmem : (e', i) ∈ univ.filter (fun h : G.Edge × Fin 2 ↦ G.endpoint h.1 h.2 = v) ↔
-        G.endpoint e' i = v := by simp
-    rw [← hmem, ← hpair]
-    fin_cases i <;> simp
+  have hmem : (e', i) ∈ univ.filter (fun h : G.Edge × Fin 2 ↦ G.endpoint h.1 h.2 = v) ↔
+      G.endpoint e' i = v := by simp
+  rw [← hmem, ← hpair]
+  fin_cases i <;> simp
+
+/-- If a vertex of valence two carries a loop, that loop is the only edge, and twice the
+arithmetic genus is `2 g(v) + 2`. -/
+private lemma two_mul_arithmeticGenus_of_valence_eq_two_of_loop {v : G.Vertex}
+    (hv : G.valence v = 2) {e : G.Edge} (he₀ : G.endpoint e 0 = v) (he₁ : G.endpoint e 1 = v) :
+    2 * G.arithmeticGenus = 2 * G.genus v + 2 := by
+  have hloop := endpoint_eq_iff_eq_of_valence_eq_two hv he₀ he₁
   rw [G.two_mul_arithmeticGenus_of_forall_endpoint_zero_eq_iff fun e' ↦ by rw [hloop, hloop], hv]
 
 /-- An unmarked graph of arithmetic genus at least one is semistable exactly when it has no

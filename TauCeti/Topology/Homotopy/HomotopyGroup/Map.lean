@@ -148,6 +148,14 @@ theorem map_congr {f₁ f₂ : C(X, Y)} (hfe : f₁ = f₂) (h₁ : f₁ x = y) 
   subst hfe
   rfl
 
+/-- Composition law for a commuting triangle: if `g ∘ f = h`, then the composite of the maps
+induced by `f` and `g` on homotopy classes is the map induced by `h`. -/
+theorem map_comp_map_of_comp_eq {g : C(Y, Z)} {f : C(X, Y)} {h : C(X, Z)} (hgf : g.comp f = h)
+    (hg : g y = z) (hf : f x = y) (hh : h x = z) :
+    map (N := N) g hg ∘ map f hf = map h hh := by
+  subst hgf
+  exact map_comp_map g hg f hf
+
 /-- If `g ∘ f` is the identity, then the induced map of `g` undoes the induced map of `f` on
 homotopy classes. -/
 theorem map_map_of_comp_eq_id (g : C(Y, X)) (f : C(X, Y)) (hf : f x = y) (hg : g y = x)

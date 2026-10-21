@@ -62,7 +62,7 @@ namespace TauCeti.Probability
 variable {t r q : ℝ}
 
 /-- The Pareto law presented by its real-valued density. -/
-private theorem paretoMeasure_eq_withDensity_ofReal (t r : ℝ) :
+theorem paretoMeasure_eq_withDensity_ofReal (t r : ℝ) :
     paretoMeasure t r = volume.withDensity fun x => ENNReal.ofReal (paretoPDFReal t r x) :=
   (rfl)
 
@@ -101,8 +101,8 @@ private theorem paretoPDFReal_mul_rpow (ht : 0 < t) (q x : ℝ) :
     rw [mul_assoc, ← Real.rpow_add hx0, hexponent]
   · simp [hx]
 
-/-- A Pareto law is almost surely at least its threshold, for every parameter value. -/
-theorem ae_mem_Ici_paretoMeasure (t r : ℝ) :
+/-- A Pareto law is carried by the half-line `[t, ∞)` above its threshold. -/
+theorem ae_paretoMeasure_mem_Ici (t r : ℝ) :
     ∀ᵐ x : ℝ ∂paretoMeasure t r, t ≤ x := by
   rw [paretoMeasure, ae_withDensity_iff (TauCeti.Probability.measurable_paretoPDF t r)]
   filter_upwards with x
@@ -261,7 +261,7 @@ theorem integrable_exp_mul_id_paretoMeasure_of_nonpos (ht : 0 < t) (hr : 0 < r)
   let _ : IsProbabilityMeasure (paretoMeasure t r) :=
     isProbabilityMeasure_paretoMeasure ht hr
   exact TauCeti.integrable_exp_mul_of_ge u t hu measurable_id.aemeasurable
-    (ae_mem_Ici_paretoMeasure t r)
+    (ae_paretoMeasure_mem_Ici t r)
 
 /-- The exponential of a multiple of the identity is integrable under a nondegenerate Pareto
 law exactly when the rate is nonpositive. -/
@@ -274,7 +274,7 @@ theorem integrable_exp_mul_id_paretoMeasure_iff (ht : 0 < t) (hr : 0 < r) (u : �
     lt_irrefl r ((integrable_rpow_paretoMeasure_iff ht hr r).mp h)
   refine ⟨fun h => not_lt.mp fun hu => ?_, integrable_exp_mul_id_paretoMeasure_of_nonpos ht hr⟩
   exact TauCeti.not_integrable_exp_mul_of_not_integrable_rpow r measurable_id.aemeasurable
-    (ae_mem_Ici_paretoMeasure t r) hr.le hmoment hu h
+    (ae_paretoMeasure_mem_Ici t r) hr.le hmoment hu h
 
 /-- The exact exponential-integrability domain of the identity under a nondegenerate Pareto law
 is the nonpositive half-line. -/

@@ -18,9 +18,8 @@ is, the full image of the projective orbit morphism. Since `O` is locally closed
 `closure O \ O` is closed (`TauCeti.Comodule.isClosed_closure_diff_range_projectiveOrbitMap`, in
 `ProjectiveOrbit/LocallyClosed.lean`).
 
-If the spectrum of the coordinate Hopf algebra is irreducible, so is `O`, and the boundary has
-strictly smaller Krull dimension than `O`
-(`TauCeti.Comodule.topologicalKrullDim_closure_diff_range_projectiveOrbitMap_lt`, in
+The boundary has strictly smaller Krull dimension than `O`, including when the group is
+disconnected (`TauCeti.Comodule.topologicalKrullDim_closure_diff_range_projectiveOrbitMap_lt`, in
 `ProjectiveOrbit/Dimension.lean`). The orbit of
 a line `[m']` in the boundary lies in the boundary
 (`TauCeti.Comodule.closure_range_projectiveOrbitMap_subset_boundary`, in
@@ -28,10 +27,9 @@ a line `[m']` in the boundary lies in the boundary
 closed subset of the quasi-compact space `P(V)` contains a closed point, which is a line, so an
 orbit whose dimension is minimal among the orbits of the lines in its closure has empty boundary,
 that is, it is closed. By induction on the dimension, the closure of every orbit contains a
-closed orbit. Over an algebraically closed field, irreducibility of the group follows from its
-connectedness (`CommHopfAlgCat.irreducibleSpace_primeSpectrum_of_connectedSpace`).
+closed orbit.
 
-Neither smoothness nor reducedness of the group is assumed.
+Neither connectedness, smoothness nor reducedness of the group is assumed.
 
 ## Main declarations
 
@@ -64,10 +62,9 @@ variable {k H M : Type u} [Field k] [IsAlgClosed k] [CommRing H] [HopfAlgebra k 
   [Algebra.FiniteType k H] [AddCommGroup M] [Module k M] [Comodule k H M]
   [Module.Finite k M]
 
-/-- **Boundary orbits are smaller.** If the spectrum of the group is irreducible and the line
-`[m']` lies in the boundary `closure O \ O` of the orbit `O` of `[m]`, then the orbit of `[m']`
-has strictly smaller Krull dimension than `O`. -/
-theorem topologicalKrullDim_range_projectiveOrbitMap_lt [IrreducibleSpace (PrimeSpectrum H)]
+/-- **Boundary orbits are smaller.** If the line `[m']` lies in the boundary `closure O \ O` of
+the orbit `O` of `[m]`, then the orbit of `[m']` has strictly smaller Krull dimension than `O`. -/
+theorem topologicalKrullDim_range_projectiveOrbitMap_lt
     {m m' : M} (hm : Module.IsUnimodular k m) (hm' : Module.IsUnimodular k m')
     (hm'O : projectiveOrbitMap (H := H) m' hm'
         (AlgHom.kernelPoint (Bialgebra.counitAlgHom k H)) ∈
@@ -81,11 +78,10 @@ theorem topologicalKrullDim_range_projectiveOrbitMap_lt [IrreducibleSpace (Prime
     (closure_range_projectiveOrbitMap_subset_boundary m hm m' hm' hm'O))).isInducing
     |>.topologicalKrullDim_le
 
-/-- **Closed-orbit lemma.** If the spectrum of the group is irreducible and the orbit `O` of a
-line has minimal Krull dimension among the orbits of the lines in its closure, then `O` is
-closed. -/
+/-- **Closed-orbit lemma.** If the orbit `O` of a line has minimal Krull dimension among the
+orbits of the lines in its closure, then `O` is closed. -/
 theorem isClosed_range_projectiveOrbitMap_of_forall_mem_closure
-    [IrreducibleSpace (PrimeSpectrum H)] (m : M) (hm : Module.IsUnimodular k m)
+    (m : M) (hm : Module.IsUnimodular k m)
     (hmin : ∀ (m' : M) (hm' : Module.IsUnimodular k m'),
       projectiveOrbitMap (H := H) m' hm' (AlgHom.kernelPoint (Bialgebra.counitAlgHom k H)) ∈
           closure (Set.range (projectiveOrbitMap (H := H) m hm)) →
@@ -102,10 +98,10 @@ theorem isClosed_range_projectiveOrbitMap_of_forall_mem_closure
     (ProjectiveSpectrum.mem_closedPoints_iff_exists_projectiveOrbitMap_eq (H := H) y).mp hyc
   exact (hmin m' hm' hy.1).not_gt (topologicalKrullDim_range_projectiveOrbitMap_lt hm hm' hy)
 
-/-- **Closed-orbit lemma**, relative form. If the spectrum of the group is irreducible and the
-orbit `O` of a line lies in a closed subset `Z` of projective space and has minimal Krull
-dimension among the orbits of the lines in `Z`, then `O` is closed. -/
-theorem isClosed_range_projectiveOrbitMap_of_forall_mem [IrreducibleSpace (PrimeSpectrum H)]
+/-- **Closed-orbit lemma**, relative form. If the orbit `O` of a line lies in a closed subset `Z`
+of projective space and has minimal Krull dimension among the orbits of the lines in `Z`, then
+`O` is closed. -/
+theorem isClosed_range_projectiveOrbitMap_of_forall_mem
     (m : M) (hm : Module.IsUnimodular k m)
     {Z : Set (Proj (SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k M)))}
     (hZ : IsClosed Z) (hmZ : Set.range (projectiveOrbitMap (H := H) m hm) ⊆ Z)
@@ -117,10 +113,10 @@ theorem isClosed_range_projectiveOrbitMap_of_forall_mem [IrreducibleSpace (Prime
   isClosed_range_projectiveOrbitMap_of_forall_mem_closure m hm fun m' hm' h ↦
     hmin m' hm' (closure_minimal hmZ hZ h)
 
-/-- **Existence of closed orbits.** If the spectrum of the group is irreducible, the closure of
-the orbit of every line contains a closed orbit of a line. -/
+/-- **Existence of closed orbits.** The closure of the orbit of every line contains a closed
+orbit of a line. -/
 theorem exists_isClosed_range_projectiveOrbitMap_subset_closure
-    [IrreducibleSpace (PrimeSpectrum H)] (m : M) (hm : Module.IsUnimodular k m) :
+    (m : M) (hm : Module.IsUnimodular k m) :
     ∃ (m' : M) (hm' : Module.IsUnimodular k m'),
       IsClosed (Set.range (projectiveOrbitMap (H := H) m' hm')) ∧
         Set.range (projectiveOrbitMap (H := H) m' hm') ⊆
@@ -145,9 +141,8 @@ theorem exists_isClosed_range_projectiveOrbitMap_subset_closure
     ((closure_range_projectiveOrbitMap_subset_boundary m hm m' hm' hy).trans Set.sdiff_subset)⟩
 
 /-- Every nonempty closed subset of projective space invariant under rational group
-translations contains a closed orbit, provided the group is irreducible. -/
+translations contains a closed orbit. -/
 theorem exists_isClosed_range_projectiveOrbitMap_subset_of_isClosed
-    [IrreducibleSpace (PrimeSpectrum H)]
     {Z : Set (Proj (SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k M)))}
     (hZ : IsClosed Z) (hne : Z.Nonempty)
     (hinvariant : ∀ g : WithConv (H →ₐ[k] k),

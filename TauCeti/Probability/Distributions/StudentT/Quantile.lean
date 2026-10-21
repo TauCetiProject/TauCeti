@@ -62,6 +62,14 @@ theorem quantile_studentTMeasure_half (hν : 0 < ν) :
   exact Measure.quantile_cdf _ ((strictMono_cdf_studentTMeasure hν).strictMonoOn _)
     (by rw [hF]; norm_num)
 
+/-- Student t quantiles are strictly positive at probability levels above the median. -/
+theorem quantile_studentTMeasure_pos (hν : 0 < ν) (hu : u ∈ Ioo 2⁻¹ 1) :
+    0 < (studentTMeasure ν).quantile u := by
+  have h := Measure.strictMonoOn_quantile _ (continuous_cdf_studentTMeasure hν)
+    (by norm_num : (2⁻¹ : ℝ) ∈ Ioo 0 1)
+    (by constructor <;> linarith [hu.1, hu.2] : u ∈ Ioo 0 1) hu.1
+  simpa only [quantile_studentTMeasure_half hν] using h
+
 private theorem quantile_studentTMeasure_of_lt_half (hν : 0 < ν) (hu0 : 0 < u)
     (huHalf : u < 1 / 2) :
     (studentTMeasure ν).quantile u =

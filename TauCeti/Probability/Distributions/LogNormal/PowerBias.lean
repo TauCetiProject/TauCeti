@@ -40,8 +40,7 @@ private lemma gaussianPDFReal_mul_exp_div_mgf {m q y : ℝ} {v : ℝ≥0} (hv : 
 /-- Power biasing a log-normal law shifts its log-mean by `q * v`. -/
 theorem powerBias_logNormalMeasure (m : ℝ) (v : ℝ≥0) (q : ℝ) :
     (logNormalMeasure m v).powerBias q = logNormalMeasure (m + q * v) v := by
-  rw [Measure.powerBias_eq_tilted_log (ae_pos_logNormalMeasure m v)
-    (integrable_rpow_logNormalMeasure m v q)]
+  rw [Measure.powerBias_eq_tilted (ae_pos_logNormalMeasure m v) q]
   rcases eq_or_ne v 0 with rfl | hv
   · simp [logNormalMeasure_zero_var]
   have hZ : ∫ x, Real.exp (q * Real.log x) ∂logNormalMeasure m v =

@@ -19,10 +19,12 @@ import Mathlib.Data.Set.Finite.Range
 # Finite partition helpers
 
 This file contains general-purpose constructions and facts about finite partitions: the partition
-of the top element into an element and its complement, the partition of a type into the fibres of
-a map to a finite type, the associated indexed partition, cardinality bounds for common
-refinements, a bound on the sum of the squared part sizes, the refinement relations of
-`Finpartition.bind` and of a refining partition's parts, the behavior of intersections of parts
+of the top element into an element and its complement, the decidability of the refinement order,
+the single part of the coarsest partition of a non-bottom element, the partition of a type into the
+fibres of a map to a finite type, the associated indexed partition, the sizes of the traces of a
+subset on the parts, cardinality bounds for common refinements, a bound on the sum of the squared
+part sizes, the refinement relations of `Finpartition.bind` and of a refining partition's parts,
+the behavior of intersections of parts under refinement, the monotonicity of `Finpartition.part`
 under refinement, and the coarse parent `Finpartition.refinementParent` of a part of a finer
 partition, together with decomposition and summation formulas for the fine parts below a coarse
 part.
@@ -58,6 +60,25 @@ theorem mem_bipartition_of_ne_bot {α : Type*} [BooleanAlgebra α] [DecidableEq 
     s ∈ (bipartition s).parts := by
   simp [parts_bipartition, hs]
 
+/-- Unfolding of the refinement order: `P ≤ Q` when each part of `P` lies below a part of `Q`. -/
+theorem le_def {α : Type*} [Lattice α] [OrderBot α] {a : α} {P Q : Finpartition a} :
+    P ≤ Q ↔ ∀ b ∈ P.parts, ∃ c ∈ Q.parts, b ≤ c :=
+  Iff.rfl
+
+/-- Refinement of finite partitions is decidable when the order on parts is. -/
+instance instDecidableLE {α : Type*} [Lattice α] [OrderBot α] [DecidableLE α] {a : α} :
+    DecidableLE (Finpartition a) :=
+  fun _ _ => decidable_of_iff _ le_def.symm
+
+/-- The coarsest finite partition of a non-bottom element `a` has the single part `a`. -/
+@[simp]
+theorem parts_top {α : Type*} [Lattice α] [OrderBot α] {a : α} [Decidable (a = ⊥)]
+    (ha : a ≠ ⊥) : (⊤ : Finpartition a).parts = {a} := by
+  refine (parts_top_subset a).antisymm ?_
+  obtain ⟨b, hb⟩ := parts_nonempty ⊤ ha
+  obtain rfl := Finset.mem_singleton.1 (parts_top_subset a hb)
+  exact Finset.singleton_subset_iff.2 hb
+
 /-- The number of parts in a common refinement is at most the product of the two part counts. -/
 theorem card_parts_inf_le_mul {α : Type*} [DistribLattice α] [OrderBot α] [DecidableEq α]
     {a : α} (P Q : Finpartition a) :
@@ -65,6 +86,14 @@ theorem card_parts_inf_le_mul {α : Type*} [DistribLattice α] [OrderBot α] [De
   rw [Finpartition.parts_inf]
   exact Finset.card_erase_le.trans
     (Finset.card_image_le.trans_eq (Finset.card_product _ _))
+
+/-- The traces of a subset of `s` on the parts of a finite partition of `s` partition it, so their
+sizes sum to its size. -/
+theorem sum_card_inter_parts {ι : Type*} [DecidableEq ι] {s X : Finset ι} (P : Finpartition s)
+    (hX : X ⊆ s) : ∑ C ∈ P.parts, (X ∩ C).card = X.card := by
+  have h := P.sum_restrict hX (fun C ↦ C.card) (by simp)
+  rw [Finpartition.sum_card_parts] at h
+  simp_rw [h, Finset.inf_eq_inter, Finset.inter_comm]
 
 /-- Juxtaposing finite partitions of the parts of `P` refines `P`. -/
 theorem bind_le {α : Type*} [Lattice α] [OrderBot α] [IsModularLattice α] [DecidableEq α]
@@ -228,6 +257,15 @@ theorem sum_apply_part {M : Type*} [AddCommMonoid M] (P : Finpartition s) (f : F
   ext x
   simp only [Finset.mem_filter, P.part_eq_iff_mem hA, and_iff_right_iff_imp]
   exact fun hx => P.le hA hx
+
+/-- Refining a partition shrinks the part containing each point. -/
+@[gcongr]
+theorem part_mono (h : P ≤ Q) (a : α) : P.part a ⊆ Q.part a := by
+  by_cases ha : a ∈ s
+  · obtain ⟨C, hC, hPC⟩ := h (P.part_mem.2 ha)
+    rw [Q.part_eq_of_mem hC (hPC (P.mem_part_self.2 ha))]
+    exact hPC
+  · simp [P.part_eq_empty.2 ha]
 
 /-- A coarse part is the disjoint union of the fine parts whose coarse parent it is. -/
 theorem biUnion_filter_refinementParent_eq (h : Q ≤ P) (A : P.parts) :

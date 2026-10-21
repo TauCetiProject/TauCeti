@@ -9,7 +9,6 @@ public import TauCeti.NumberTheory.QuadraticForm.Global.Existence
 public import TauCeti.NumberTheory.QuadraticForm.Global.FormInvariants
 public import TauCeti.NumberTheory.QuadraticForm.Global.LocalRealization
 public import TauCeti.NumberTheory.QuadraticForm.Global.SignPrescription
-import TauCeti.NumberTheory.ClassFieldTheory.Global.IdeleClass.SecondInequality
 import TauCeti.NumberTheory.QuadraticForm.Global.Classification
 import TauCeti.NumberTheory.QuadraticForm.Global.DiagonalApproximation
 import TauCeti.NumberTheory.QuadraticForm.Global.Discrepancy
@@ -39,20 +38,19 @@ So `W_v ≅ U_v` exactly when `(α, β)_v = 1`. With the correction planes `P = 
 any representation of `P'` by `P ⊥ W` over `K` yields a regular global form whose system of local
 invariants is `I`.
 
-The Hasse product formula for `W` and Hilbert sign prescription are both consequences of the Kummer
-case of the second fundamental inequality, the bound `[C_F : N_{L/F}(C_L)] ≤ p` for Galois
-extensions `L/F` of number fields of prime degree `p` with `μ_p ⊆ F`. The theorems here take that
-bound as a hypothesis, as
-`TauCeti.NumberField.QuadraticForm.exists_hilbertSymbol_eq_ite_of_forall_index_le` does.
+The Hasse product formula for `W` is Hilbert reciprocity
+(`QuadraticForm.globalInvariants_hasseProduct_eq_one`), and the choice of `α` is Hilbert sign
+prescription (`TauCeti.NumberField.QuadraticForm.exists_hilbertSymbol_eq_ite`), so both steps hold
+over every number field.
 
 ## Main results
 
 Both results are in the namespace `TauCeti.NumberField.QuadraticForm.GlobalFormInvariants`.
 
-* `IsLocalRealization.exists_atFinitePlace_equivalent_iff_hilbertSymbol_eq_one_of_forall_index_le`:
+* `IsLocalRealization.exists_atFinitePlace_equivalent_iff_hilbertSymbol_eq_one`:
   a first global approximation `W` and elements `α, β` with `W_v ≅ U_v ↔ (α, β)_v = 1` at every
   finite place, `W_w ≅ R_w` at every real place and `β` positive at every real place.
-* `IsLocalRealization.exists_locallyRepresents_prod_of_forall_index_le`:
+* `IsLocalRealization.exists_locallyRepresents_prod`:
   `⟨α, -αβ⟩` is locally represented by `⟨1, -β⟩ ⊥ W`, and a global representation gives a regular
   global form whose system of local invariants is `I`.
 
@@ -73,21 +71,12 @@ variable {K : Type} [Field K] [NumberField K] {I : GlobalFormInvariants K}
     _root_.QuadraticForm (v.adicCompletion K) (Fin I.rank → v.adicCompletion K)}
   {R : {w : InfinitePlace K // w.IsReal} → _root_.QuadraticForm ℝ (Fin I.rank → ℝ)}
 
-section Kummer
-
-variable (h : ∀ (F L : Type) [Field F] [NumberField F] [Field L] [NumberField L] [Algebra F L]
-    [IsGalois F L] (p : ℕ) [Fact p.Prime] [HasEnoughRootsOfUnity F p],
-    Module.finrank F L = p → (GlobalNumberFields.ideleClassNormMap F L).range.index ≤ p)
-
-include h in
-/-- **The approximation and correction data of O'Meara 72:1.** Assume the Kummer case of the
-second inequality: for every Galois extension `L/F` of number fields of prime degree `p` such that
-`F` contains the `p`-th roots of unity, `N_{L/F}(C_L)` has index at most `p` in `C_F`. Let `U_v`
-and `R_w` be local forms realizing an admissible system `I`. Then there are a regular global form
-`W` of rank `I.rank` with the global discriminant of `I`, isometric to `R_w` at every real place,
-and `α, β ∈ Kˣ`, with `β` positive at every real place, such that `W_v ≅ U_v` exactly when
-`(α, β)_v = 1`, at every finite place `v`. -/
-theorem exists_atFinitePlace_equivalent_iff_hilbertSymbol_eq_one_of_forall_index_le
+/-- **The approximation and correction data of O'Meara 72:1.** Let `U_v` and `R_w` be local forms
+realizing an admissible system `I`. Then there are a regular global form `W` of rank `I.rank` with
+the global discriminant of `I`, isometric to `R_w` at every real place, and `α, β ∈ Kˣ`, with `β`
+positive at every real place, such that `W_v ≅ U_v` exactly when `(α, β)_v = 1`, at every finite
+place `v`. -/
+theorem exists_atFinitePlace_equivalent_iff_hilbertSymbol_eq_one
     (hI : I.IsAdmissible) (hL : I.IsLocalRealization U R) :
     ∃ (W : _root_.QuadraticForm K (Fin I.rank → K)) (hW : W.Nondegenerate) (a b : Kˣ),
       (letI : Invertible (2 : K) := invertibleOfNonzero two_ne_zero;
@@ -110,10 +99,7 @@ theorem exists_atFinitePlace_equivalent_iff_hilbertSymbol_eq_one_of_forall_index
     hWR ⟨w, Finset.mem_univ w⟩
   -- Step 2: the places where `W_v` and `U_v` differ are those where the Hasse signs differ; they
   -- are finitely many, and an even number by the two Hasse product formulas.
-  have hJ : (W.globalInvariants hW).hasseProduct = 1 :=
-    W.globalInvariants_hasseProduct_eq_one_of_subsingleton_h1_globalFormation hW
-      fun _ _ _ _ V ↦ ClassFieldTheory.subsingleton_h1_globalFormation_of_forall_index_le h
-        (ClassFieldTheory.NormalLayer.ofOpenNormal V)
+  have hJ : (W.globalInvariants hW).hasseProduct = 1 := W.globalInvariants_hasseProduct_eq_one hW
   have hreal (w : {w : InfinitePlace K // w.IsReal}) :
       I.realHasse w = (W.globalInvariants hW).realHasse w := by
     simp [(hL.atRealPlace_equivalent_iff_realPositiveIndex_eq hW (by simp) w).mp (hWR' w)]
@@ -138,7 +124,7 @@ theorem exists_atFinitePlace_equivalent_iff_hilbertSymbol_eq_one_of_forall_index
   -- Step 3: `β` positive at every real place and a nonsquare on `T`, and `α` with
   -- `(α, β)_v = -1` exactly on `T`.
   obtain ⟨b, hbT, -, hb⟩ := exists_fieldUnit_not_isSquare_at_places T ∅
-  obtain ⟨a, ha, -⟩ := exists_hilbertSymbol_eq_ite_of_forall_index_le h b T ∅
+  obtain ⟨a, ha, -⟩ := exists_hilbertSymbol_eq_ite b T ∅
     (fun v hv ↦ (hbT v hv).2) (by simp) (by simpa using hT)
   refine ⟨W, hW, a, b, hWd, hWR', fun w ↦ hb w (Finset.notMem_empty w), fun v ↦ ?_⟩
   rw [hL.atFinitePlace_equivalent_iff_finiteHasse_eq (by simp) hWd, ha, eq_comm]
@@ -146,14 +132,12 @@ theorem exists_atFinitePlace_equivalent_iff_hilbertSymbol_eq_one_of_forall_index
   · simp [hv, (hmemT v).mp hv]
   · simpa [hv] using not_not.mp ((hmemT v).not.mp hv)
 
-include h in
-/-- **O'Meara 72:1 up to one global representation.** Assume the Kummer case of the second
-inequality, and let `U_v` and `R_w` be local forms realizing an admissible system `I`. Then there
-are a regular global form `W` of rank `I.rank` and `α, β ∈ Kˣ` such that `⟨α, -αβ⟩` is represented
-by `⟨1, -β⟩ ⊥ W` at every finite and real place, and such that, if `⟨α, -αβ⟩` is represented by
-`⟨1, -β⟩ ⊥ W` over `K`, some regular global form on `K ^ I.rank` has `I` as its system of local
-invariants. -/
-theorem exists_locallyRepresents_prod_of_forall_index_le
+/-- **O'Meara 72:1 up to one global representation.** Let `U_v` and `R_w` be local forms realizing
+an admissible system `I`. Then there are a regular global form `W` of rank `I.rank` and
+`α, β ∈ Kˣ` such that `⟨α, -αβ⟩` is represented by `⟨1, -β⟩ ⊥ W` at every finite and real place,
+and such that, if `⟨α, -αβ⟩` is represented by `⟨1, -β⟩ ⊥ W` over `K`, some regular global form on
+`K ^ I.rank` has `I` as its system of local invariants. -/
+theorem exists_locallyRepresents_prod
     (hI : I.IsAdmissible) (hL : I.IsLocalRealization U R) :
     ∃ (W : _root_.QuadraticForm K (Fin I.rank → K)) (_ : W.Nondegenerate) (a b : Kˣ),
       QuadraticForm.LocallyRepresents (weightedSumSquares K ![(a : K), -(a * b : K)])
@@ -164,7 +148,7 @@ theorem exists_locallyRepresents_prod_of_forall_index_le
           Q.globalInvariants hQ = I) := by
   let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
   obtain ⟨W, hW, a, b, hWd, hWR, hb, hWU⟩ :=
-    exists_atFinitePlace_equivalent_iff_hilbertSymbol_eq_one_of_forall_index_le h hI hL
+    exists_atFinitePlace_equivalent_iff_hilbertSymbol_eq_one hI hL
   have hUd (v : HeightOneSpectrum (𝓞 K)) : (algebraMap K (v.adicCompletion K)).squareClassMap
       (RegularFormClass.discr (formClass W hW)) =
         RegularFormClass.discr (formClass _ (hL.nondegenerate_finite v)) := by
@@ -183,7 +167,5 @@ theorem exists_locallyRepresents_prod_of_forall_index_le
   · rw [QuadraticForm.globalInvariants_realPositiveIndex]
     exact (hL.atRealPlace_equivalent_iff_realPositiveIndex_eq hQ (by simp) w).mp
       ((hQR w).trans (hWR w))
-
-end Kummer
 
 end TauCeti.NumberField.QuadraticForm.GlobalFormInvariants.IsLocalRealization

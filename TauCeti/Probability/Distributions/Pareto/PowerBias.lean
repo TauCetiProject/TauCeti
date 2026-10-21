@@ -1,74 +1,76 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Codex
+Authors: The Tau Ceti contributors
 -/
 module
 
 public import TauCeti.MeasureTheory.Measure.PowerBias
 public import TauCeti.Probability.Distributions.Pareto.Basic
-import TauCeti.Probability.Distributions.Pareto.PDF
 
 /-!
-# Power biasing of Pareto laws
+# Power-biased Pareto laws
 
-Power biasing a Pareto law by `x ^ q` subtracts `q` from its shape parameter throughout the
-sharp moment domain `q < r`.
+The Pareto family is closed under power biasing (`MeasureTheory.Measure.powerBias`): multiplying
+the density by `x ^ q` only lowers the shape parameter, by `q`, and changes the normalizing
+constant.
+
+* `TauCeti.Probability.powerBias_paretoMeasure` — the Pareto law of threshold `t` and shape `r`
+  biased by `x ^ q` is the Pareto law of threshold `t` and shape `r - q`, for `q < r`.
+* `TauCeti.Probability.powerBias_paretoMeasure_of_le` — for `r ≤ q` the power bias is zero.
+* `TauCeti.Probability.isProbabilityMeasure_powerBias_paretoMeasure_iff` — the power bias is a
+  probability measure exactly when `q < r`.
+
+The range of `q` is exactly the range on which `x ^ q` is integrable, so on it the power-biased law
+is a probability measure. The identity is an instance of
+`MeasureTheory.Measure.powerBias_withDensity_ofReal`: on the support of the law, the density times
+`x ^ q` is a positive constant times the density with the shifted shape.
+
+## References
+
+* N. L. Johnson, S. Kotz, N. Balakrishnan, *Continuous Univariate Distributions*, vol. 1,
+  2nd ed., Wiley, 1994, ch. 20.
 -/
 
 public section
 
-open scoped ENNReal NNReal
-
-open MeasureTheory ProbabilityTheory Real Set
+open MeasureTheory ProbabilityTheory Real
 
 namespace TauCeti.Probability
 
-/-- Power biasing a Pareto law subtracts the exponent from its shape parameter. -/
+/-- Biasing the Pareto law of threshold `t` and shape `r` by `x ^ q` lowers the shape to
+`r - q`. -/
 theorem powerBias_paretoMeasure {t r q : ℝ} (ht : 0 < t) (hr : 0 < r) (hq : q < r) :
     (paretoMeasure t r).powerBias q = paretoMeasure t (r - q) := by
-  have hrq : 0 < r - q := sub_pos.mpr hq
-  have hqint : Integrable (fun x : ℝ => x ^ q) (paretoMeasure t r) :=
-    (integrable_rpow_paretoMeasure_iff ht hr q).2 hq
-  have hZ : ∫⁻ x, (Real.toNNReal (x ^ q) : ℝ≥0∞) ∂paretoMeasure t r =
-      ENNReal.ofReal (r * t ^ q / (r - q)) := by
-    rw [Measure.lintegral_powerBiasWeight_eq_of_integrable
-        ((ae_mem_Ici_paretoMeasure t r).mono fun x hx => (ht.trans_le hx).le) hqint,
-      integral_rpow_paretoMeasure ht hr hq]
-  have hw : Measurable fun x : ℝ => Real.toNNReal (x ^ q) :=
-    Measure.measurable_powerBiasWeight q
-  have hnorm : Measurable fun x : ℝ =>
-      (ENNReal.ofReal (r * t ^ q / (r - q)))⁻¹ *
-        (Real.toNNReal (x ^ q) : ℝ≥0∞) :=
-    measurable_const.mul hw.coe_nnreal_ennreal
-  rw [Measure.powerBias_def, Measure.weighted_eq_withDensity _ hw.aemeasurable,
-    hZ, paretoMeasure, ← withDensity_mul volume (measurable_paretoPDF t r) hnorm,
-    paretoMeasure]
-  apply withDensity_congr_ae
-  filter_upwards with x
+  have hrq : 0 < r - q := sub_pos.2 hq
+  have := isProbabilityMeasure_paretoMeasure ht hrq
+  rw [paretoMeasure_eq_withDensity_ofReal t (r - q)] at this ⊢
+  rw [paretoMeasure_eq_withDensity_ofReal]
+  refine Measure.powerBias_withDensity_ofReal (measurable_paretoPDFReal t r).aemeasurable
+    (ae_of_all _ (paretoPDFReal_nonneg ht.le hr.le))
+    (div_pos (mul_pos hr (rpow_pos_of_pos ht q)) hrq) (ae_of_all _ fun x => ?_)
   by_cases hx : t ≤ x
-  · have hxpos : 0 < x := ht.trans_le hx
-    rw [Pi.mul_apply, paretoPDF_of_le hx, paretoPDF_of_le hx,
-      ENNReal.ofNNReal_toNNReal, ← ENNReal.ofReal_inv_of_pos]
-    · have hratio : 0 < r * t ^ q / (r - q) := by positivity
-      have hdensity : 0 < r * t ^ r * x ^ (-(r + 1)) := by positivity
-      rw [← ENNReal.ofReal_mul (inv_nonneg.mpr hratio.le),
-        ← ENNReal.ofReal_mul hdensity.le]
-      congr 1
-      have htq : t ^ q ≠ 0 := (Real.rpow_pos_of_pos ht q).ne'
-      have htr : t ^ r = t ^ (r - q) * t ^ q := by
-        rw [← Real.rpow_add ht]
-        congr 1
-        ring
-      have hxr : x ^ (-(r + 1)) * x ^ q = x ^ (-(r - q + 1)) := by
-        rw [← Real.rpow_add hxpos]
-        congr 1
-        ring
-      rw [htr]
-      field_simp [hr.ne', hrq.ne', htq]
-      rw [hxr]
-    · positivity
-  · have hxt : x < t := not_le.mp hx
-    rw [Pi.mul_apply, paretoPDF_of_lt hxt, zero_mul, paretoPDF_of_lt hxt]
+  · have htr : t ^ r = t ^ q * t ^ (r - q) := by rw [← rpow_add ht, add_sub_cancel]
+    have hexp : -(r + 1) + q = -(r - q + 1) := by ring
+    rw [paretoPDFReal, ite_eq_left hx, paretoPDFReal, ite_eq_left hx, mul_assoc,
+      ← rpow_add (ht.trans_le hx), hexp, htr]
+    field_simp
+  · simp [paretoPDFReal, hx]
+
+/-- At or above the sharp threshold `r ≤ q` the power `x ^ q` is not integrable under the Pareto
+law, so the totalized power bias is the zero measure. -/
+theorem powerBias_paretoMeasure_of_le {t r q : ℝ} (ht : 0 < t) (hr : 0 < r) (hq : r ≤ q) :
+    (paretoMeasure t r).powerBias q = 0 :=
+  Measure.powerBias_eq_zero_of_not_integrable
+    ((ae_paretoMeasure_mem_Ici t r).mono fun _ hx => ht.le.trans hx)
+    (by rw [integrable_rpow_paretoMeasure_iff ht hr q]; exact not_lt.2 hq)
+
+/-- A power-biased Pareto law is a probability measure exactly below the sharp threshold `r`. -/
+theorem isProbabilityMeasure_powerBias_paretoMeasure_iff {t r q : ℝ} (ht : 0 < t) (hr : 0 < r) :
+    IsProbabilityMeasure ((paretoMeasure t r).powerBias q) ↔ q < r := by
+  refine ⟨fun hprob => not_le.1 fun hq => ?_, fun hq => ?_⟩
+  · simpa [powerBias_paretoMeasure_of_le ht hr hq] using hprob.measure_univ
+  · rw [powerBias_paretoMeasure ht hr hq]
+    exact isProbabilityMeasure_paretoMeasure ht (sub_pos.2 hq)
 
 end TauCeti.Probability
