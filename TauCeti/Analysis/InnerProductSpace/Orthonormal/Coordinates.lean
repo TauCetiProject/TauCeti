@@ -49,7 +49,6 @@ theorem exists_apply_self_eq_sum_mul_inner_sq (b : OrthonormalBasis ι ℂ E) (c
 
 /-- The real and imaginary parts of the coordinates `conj (ω j) ⟪b j, v⟫` in an orthonormal
 basis `b`, rotated by units `ω j`, as a real linear equivalence. -/
-@[expose]
 noncomputable def rotatedRealCoords (b : OrthonormalBasis ι ℂ E) (ω : ι → ℂ)
     (hω : ∀ j, ω j * conj (ω j) = 1) : E ≃ₗ[ℝ] (ι ⊕ ι → ℝ) where
   toFun v := Sum.elim (fun j ↦ (conj (ω j) * ⟪b j, v⟫_ℂ).re) (fun j ↦ (conj (ω j) * ⟪b j, v⟫_ℂ).im)
@@ -72,7 +71,7 @@ noncomputable def rotatedRealCoords (b : OrthonormalBasis ι ℂ E) (ω : ι →
 @[simp]
 theorem rotatedRealCoords_apply_inl (b : OrthonormalBasis ι ℂ E) (ω : ι → ℂ)
     (hω : ∀ j, ω j * conj (ω j) = 1) (v : E) (j : ι) :
-    b.rotatedRealCoords ω hω v (Sum.inl j) = (conj (ω j) * ⟪b j, v⟫_ℂ).re :=
+    b.rotatedRealCoords ω hω v (Sum.inl j) = (conj (ω j) * ⟪b j, v⟫_ℂ).re := by
   rfl
 
 /-- The `Sum.inr j` coordinate of `rotatedRealCoords` is the imaginary part of
@@ -80,7 +79,15 @@ theorem rotatedRealCoords_apply_inl (b : OrthonormalBasis ι ℂ E) (ω : ι →
 @[simp]
 theorem rotatedRealCoords_apply_inr (b : OrthonormalBasis ι ℂ E) (ω : ι → ℂ)
     (hω : ∀ j, ω j * conj (ω j) = 1) (v : E) (j : ι) :
-    b.rotatedRealCoords ω hω v (Sum.inr j) = (conj (ω j) * ⟪b j, v⟫_ℂ).im :=
+    b.rotatedRealCoords ω hω v (Sum.inr j) = (conj (ω j) * ⟪b j, v⟫_ℂ).im := by
+  rfl
+
+/-- The inverse of `rotatedRealCoords` sends real coordinates `u` to the vector whose rotated
+coordinate `conj (ω j) ⟪b j, v⟫` is `u (Sum.inl j) + u (Sum.inr j) i`. -/
+@[simp]
+theorem rotatedRealCoords_symm_apply (b : OrthonormalBasis ι ℂ E) (ω : ι → ℂ)
+    (hω : ∀ j, ω j * conj (ω j) = 1) (u : ι ⊕ ι → ℝ) :
+    (b.rotatedRealCoords ω hω).symm u = ∑ j, (ω j * ⟨u (Sum.inl j), u (Sum.inr j)⟩) • b j := by
   rfl
 
 end OrthonormalBasis
