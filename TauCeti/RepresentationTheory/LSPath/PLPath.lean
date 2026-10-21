@@ -141,18 +141,15 @@ theorem consMerge_consMerge (h : SameRay 𝕜 v w) (l : List V) :
   · simp
   rcases eq_or_ne v 0 with rfl | hv
   · simp
-  have hvw : v + w ≠ 0 := h.add_ne_zero hv
-  -- `v + w` lies in the same ray as `w`, and both are nonzero.
-  have hw' : SameRay 𝕜 (v + w) w := h.add_left SameRay.rfl
   cases l with
-  | nil => simp [consMerge_nil_of_ne_zero, hw, hvw, consMerge_cons_of_sameRay h]
+  | nil => simp [consMerge_nil_of_ne_zero, hw, h.add_ne_zero hv, consMerge_cons_of_sameRay h]
   | cons u l =>
     by_cases hwu : SameRay 𝕜 w u
     · rw [consMerge_cons_of_sameRay hwu,
-        consMerge_cons_of_sameRay (h.trans (SameRay.rfl.add_right hwu) fun h0 ↦ absurd h0 hw),
-        consMerge_cons_of_sameRay (hw'.trans hwu fun h0 ↦ absurd h0 hw), add_assoc]
+        consMerge_cons_of_sameRay (h.trans_of_ne_zero (SameRay.rfl.add_right hwu) hw),
+        consMerge_cons_of_sameRay ((h.sameRay_add_left_iff hw).2 hwu), add_assoc]
     · rw [consMerge_cons_of_not_sameRay hwu, consMerge_cons_of_sameRay h,
-        consMerge_cons_of_not_sameRay fun h' ↦ hwu (hw'.symm.trans h' fun h0 ↦ absurd h0 hvw)]
+        consMerge_cons_of_not_sameRay (mt (h.sameRay_add_left_iff hw).1 hwu)]
 
 private theorem foldr_consMerge_consMerge (v : V) (m r : List V) :
     (consMerge 𝕜 v m).foldr (consMerge 𝕜) r = consMerge 𝕜 v (m.foldr (consMerge 𝕜) r) := by
@@ -240,8 +237,7 @@ theorem IsReduced.consMerge (h : IsReduced 𝕜 l) (v : V) : IsReduced 𝕜 (con
     obtain ⟨hw, hwm, hm⟩ := isReduced_cons_iff.1 h
     by_cases hvw : SameRay 𝕜 v w
     · rw [consMerge_cons_of_sameRay hvw, isReduced_cons_iff]
-      refine ⟨hvw.add_ne_zero hv, fun u hu h' ↦ hwm u hu ?_, hm⟩
-      exact (hvw.add_left SameRay.rfl).symm.trans h' fun h0 ↦ absurd h0 (hvw.add_ne_zero hv)
+      exact ⟨hvw.add_ne_zero hv, fun u hu h' ↦ hwm u hu ((hvw.sameRay_add_left_iff hw).1 h'), hm⟩
     · rw [consMerge_cons_of_not_sameRay hvw, isReduced_cons_iff]
       exact ⟨hv, by simpa using hvw, h⟩
 
@@ -452,7 +448,7 @@ theorem endpoint_one : (1 : PLPath 𝕜 V).endpoint = 0 :=
 
 @[simp]
 theorem endpoint_mul (p q : PLPath 𝕜 V) : (p * q).endpoint = p.endpoint + q.endpoint := by
-  rw [endpoint, segments_mul, sum_normalize, List.sum_append, endpoint, endpoint]
+  simp [endpoint]
 
 /-! ### Reversal -/
 
@@ -484,9 +480,7 @@ theorem reverse_one : (1 : PLPath 𝕜 V).reverse = 1 :=
 
 @[simp]
 theorem reverse_mul (p q : PLPath 𝕜 V) : (p * q).reverse = q.reverse * p.reverse :=
-  PLPath.ext (by
-    rw [segments_reverse, segments_mul, segments_mul, segments_reverse, segments_reverse,
-      ← normalize_reverse_map_neg, List.map_append, List.reverse_append])
+  PLPath.ext (by simp [← normalize_reverse_map_neg])
 
 @[simp]
 theorem endpoint_reverse (p : PLPath 𝕜 V) : p.reverse.endpoint = -p.endpoint := by
