@@ -7,6 +7,7 @@ module
 
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import Mathlib.LinearAlgebra.Charpoly.Basic
+public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.LinearAlgebra.Semisimple
 public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.RingTheory.PowerSeries.Basic
@@ -41,9 +42,11 @@ term-by-term content of Molien's formula for the Hilbert series of the invariant
   the eigenvalue products over the degree-`n` multisets of basis indices.
 * `Module.Basis.mk_trace_homogeneousSubmoduleMapₛₗ_mul_reverse_charpoly_of_apply`: the graded
   trace formula.
-* `Module.End.IsSemisimple.mk_trace_homogeneousSubmoduleMapₛₗ_mul_reverse_charpoly`: the graded
-  trace formula for a semisimple endomorphism of a finite-dimensional vector space over an
-  algebraically closed field, which has an eigenbasis.
+* `Module.End.mk_trace_homogeneousSubmoduleMapₛₗ_mul_reverse_charpoly_of_iSup_eigenspace_eq_top`:
+  the graded trace formula for an endomorphism of a finite-dimensional vector space whose
+  eigenspaces span, which therefore has an eigenbasis.
+* `Module.End.IsSemisimple.mk_trace_homogeneousSubmoduleMapₛₗ_mul_reverse_charpoly`: the case of
+  a semisimple endomorphism over an algebraically closed field.
 
 ## References
 
@@ -128,27 +131,37 @@ theorem _root_.Module.Basis.mk_trace_homogeneousSubmoduleMapₛₗ_mul_reverse_c
 
 end CommRing
 
-section IsAlgClosed
+end TauCeti.SymmetricAlgebra
 
-variable {K V : Type*} [Field K] [IsAlgClosed K] [AddCommGroup V] [Module K V]
-  [FiniteDimensional K V]
+namespace Module.End
 
-/-- **The graded trace formula for a semisimple endomorphism** of a finite-dimensional vector
-space over an algebraically closed field: `(∑ₙ tr(f | Symⁿ V) tⁿ) * det(1 - t f) = 1`. -/
-theorem _root_.Module.End.IsSemisimple.mk_trace_homogeneousSubmoduleMapₛₗ_mul_reverse_charpoly
-    {f : Module.End K V} (hf : f.IsSemisimple) :
+open TauCeti.SymmetricAlgebra
+
+variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+
+/-- **The graded trace formula for a diagonalizable endomorphism** of a finite-dimensional vector
+space, one whose eigenspaces span: `(∑ₙ tr(f | Symⁿ V) tⁿ) * det(1 - t f) = 1`. -/
+theorem mk_trace_homogeneousSubmoduleMapₛₗ_mul_reverse_charpoly_of_iSup_eigenspace_eq_top
+    (f : Module.End K V) (h : ⨆ μ, eigenspace f μ = ⊤) :
     PowerSeries.mk (fun n ↦
         LinearMap.trace K (homogeneousSubmodule K V n) (homogeneousSubmoduleMapₛₗ f n)) *
       (f.charpoly.reverse : PowerSeries K) = 1 := by
   classical
   -- An eigenbasis, collected from the decomposition of `V` into eigenspaces of `f`, following the
   -- construction in Mathlib's `Mathlib/Algebra/Lie/CartanCriterion.lean`.
-  have hint := DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top
-    f.eigenspaces_iSupIndep hf.iSup_eigenspace_eq_top
+  have hint := DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top f.eigenspaces_iSupIndep h
   exact (hint.collectedBasis fun μ ↦ finBasis K (f.eigenspace μ))
     |>.mk_trace_homogeneousSubmoduleMapₛₗ_mul_reverse_charpoly_of_apply f Sigma.fst
     fun i ↦ Module.End.mem_eigenspace_iff.mp (hint.collectedBasis_mem _ i)
 
-end IsAlgClosed
+/-- **The graded trace formula for a semisimple endomorphism** of a finite-dimensional vector
+space over an algebraically closed field: `(∑ₙ tr(f | Symⁿ V) tⁿ) * det(1 - t f) = 1`. -/
+theorem IsSemisimple.mk_trace_homogeneousSubmoduleMapₛₗ_mul_reverse_charpoly
+    [IsAlgClosed K] {f : Module.End K V} (hf : f.IsSemisimple) :
+    PowerSeries.mk (fun n ↦
+        LinearMap.trace K (homogeneousSubmodule K V n) (homogeneousSubmoduleMapₛₗ f n)) *
+      (f.charpoly.reverse : PowerSeries K) = 1 :=
+  mk_trace_homogeneousSubmoduleMapₛₗ_mul_reverse_charpoly_of_iSup_eigenspace_eq_top f
+    hf.iSup_eigenspace_eq_top
 
-end TauCeti.SymmetricAlgebra
+end Module.End
