@@ -97,6 +97,14 @@ theorem koszulPairRight_comp_koszulPairLeft (x y : R) :
     smul_neg, smul_smul, LinearMap.zero_apply]
   rw [mul_comm x y, neg_add_cancel]
 
+/-- The degree 2 → 1 Koszul differential is injective when `x` acts regularly on `M`. -/
+theorem koszulPairLeft_injective_of_isSMulRegular
+    {x y : R} (hx : IsSMulRegular M x) :
+    Function.Injective (koszulPairLeft (M := M) x y) := by
+  intro a b hab
+  apply hx
+  simpa only [koszulPairLeft_apply] using congrArg Prod.snd hab
+
 end Left
 
 section RegularPair
@@ -180,14 +188,6 @@ theorem exact_koszulPairLeft_koszulPairRight_of_isWeaklyRegular
   · rintro ⟨c, rfl⟩
     simpa only [LinearMap.comp_apply, LinearMap.zero_apply] using
       LinearMap.congr_fun (koszulPairRight_comp_koszulPairLeft (M := M) x y) c
-
-/-- The degree 2 → 1 Koszul differential is injective when `x` acts regularly on `M`. -/
-theorem koszulPairLeft_injective_of_isSMulRegular
-    {x y : R} (hx : IsSMulRegular M x) :
-    Function.Injective (koszulPairLeft (M := M) x y) := by
-  intro a b hab
-  apply hx
-  simpa only [koszulPairLeft_apply] using congrArg Prod.snd hab
 
 /-- Tensoring the two-element Koszul complex with `M` preserves exactness at
 the middle when the pair is weakly regular on `M`. -/

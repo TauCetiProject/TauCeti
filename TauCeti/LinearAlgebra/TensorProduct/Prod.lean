@@ -12,6 +12,8 @@ public import Mathlib.LinearAlgebra.TensorProduct.Prod
 
 The tensor product of a pair of copies of a commutative semiring with a module is
 equivalent to a pair of copies of that module.
+This equivalence identifies tensors of product-valued maps with product-valued tensors;
+it transports the two-term Koszul complex after tensoring with a module.
 -/
 
 public section
