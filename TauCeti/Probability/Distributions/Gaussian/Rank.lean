@@ -73,7 +73,8 @@ theorem iIndepFun.ae_rank_eq_min_gaussianReal
     (fun i j => gaussianReal (a i j) (v i j))).hasLaw.comp hflat
   have hrank := TauCeti.Probability.ae_rank_eq_min_pi_gaussianReal a v hv
   rw [← hmatrix.map_eq] at hrank
-  -- piCurry definitionally turns the sigma-indexed sample into fun i j => X i j ω.
-  exact ae_of_ae_map hmatrix.aemeasurable hrank
+  have h := ae_of_ae_map hmatrix.aemeasurable hrank
+  dsimp only [MeasurableEquiv.coe_piCurry, Function.comp_def, Sigma.curry] at h
+  exact h
 
 end ProbabilityTheory
