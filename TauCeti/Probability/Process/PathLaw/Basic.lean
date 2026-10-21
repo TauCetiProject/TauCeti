@@ -147,9 +147,7 @@ theorem prefixLaw_singleton_cond_initial_mem [MeasurableSingletonClass α] {μ :
         (if w 0 ∈ S then prefixLaw μ X (n + 1) {w} else 0) := by
   let s : Set Ω := {ω | X 0 ω ∈ S}
   have hac : μ[|s] ≪ μ := cond_absolutelyContinuous
-  have hXcond : ∀ i, AEMeasurable (X i) μ[|s] := fun i => by
-    obtain ⟨f, hf, heq⟩ := hX i
-    exact ⟨f, hf, heq.filter_mono hac.ae_le⟩
+  have hXcond : ∀ i, AEMeasurable (X i) μ[|s] := fun i => (hX i).mono_ac hac
   -- `ProbabilityTheory.cond_apply` asks for a measurable conditioning event; this is its
   -- null-measurable form
   rw [prefixLaw_singleton_eq_measure hXcond, ProbabilityTheory.cond, Measure.smul_apply,
