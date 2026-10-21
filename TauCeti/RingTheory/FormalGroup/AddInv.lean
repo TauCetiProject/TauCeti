@@ -47,7 +47,8 @@ a right inverse, is unique on either side, and is an involution, `i(i(X)) = X`.
 * `FormalGroup.coeff_one_addInvX`: `i(X) = -X + ⋯`.
 * `FormalGroup.subst_addInvX_addInvX`: `i(i(X)) = X`.
 * `TauCeti.coeff_succ_addInvX`: the recurrence in terms of preceding inverse coefficients.
-* `TauCeti.eq_subst_addInvX_iff`, `TauCeti.eq_subst_addInvX_iff_right`: inverse uniqueness
+* `TauCeti.eq_subst_addInvX_iff_subst_left_eq_zero`,
+  `TauCeti.eq_subst_addInvX_iff_subst_right_eq_zero`: inverse uniqueness
   for multivariate points with nilpotent constant coefficients.
 * `FormalGroup.map_addInvX`: the formal inverse commutes with base change.
 * `FormalGroup.addInvX_𝔾ₐ`, `FormalGroup.addInvX_𝔾ₘ`: the inverses `-X` of the additive and
@@ -288,9 +289,7 @@ theorem coeff_succ_addInvX (n : ℕ) :
   let f : PowerSeries R := (PowerSeries.trunc (n + 1) F.addInvX : PowerSeries R)
   have hf : PowerSeries.constantCoeff f = 0 := by
     rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply]
-    change PowerSeries.coeff 0 (PowerSeries.trunc (n + 1) F.addInvX : PowerSeries R) = 0
-    rw [Polynomial.coeff_coe, PowerSeries.coeff_trunc, ite_eq_left (Nat.zero_lt_succ n),
-      PowerSeries.coeff_zero_eq_constantCoeff_apply, F.constantCoeff_addInvX]
+    simp [f, Polynomial.coeff_coe, PowerSeries.coeff_trunc]
   let r : PowerSeries R := .mk fun i ↦ PowerSeries.coeff (i + (n + 1)) F.addInvX
   have heq : f + PowerSeries.X ^ (n + 1) * r = F.addInvX := by
     rw [add_comm]
@@ -310,7 +309,7 @@ variable {σ : Type*}
 
 /-- Substituting any native point into the inverse coordinate gives its left inverse. -/
 @[simp]
-theorem subst_addInvX_self {f : MvPowerSeries σ R} (hf : PowerSeries.HasSubst f) :
+theorem subst_addInvX_self_eq_zero {f : MvPowerSeries σ R} (hf : PowerSeries.HasSubst f) :
     F.toPowerSeries.subst ![PowerSeries.subst f F.addInvX, f] = 0 := by
   let x : F.Point σ := ⟨f, hf⟩
   have h := congrArg (fun z : F.Point σ ↦ z.val) (neg_add_cancel x)
@@ -318,14 +317,14 @@ theorem subst_addInvX_self {f : MvPowerSeries σ R} (hf : PowerSeries.HasSubst f
   exact h
 
 /-- A left inverse of a native point is obtained by substituting it into `addInvX`. -/
-theorem eq_subst_addInvX_iff {f g : MvPowerSeries σ R}
+theorem eq_subst_addInvX_iff_subst_left_eq_zero {f g : MvPowerSeries σ R}
     (hf : PowerSeries.HasSubst f) (hg : PowerSeries.HasSubst g) :
     g = PowerSeries.subst f F.addInvX ↔ F.toPowerSeries.subst ![g, f] = 0 := by
   let x : F.Point σ := ⟨f, hf⟩
   let y : F.Point σ := ⟨g, hg⟩
   constructor
   · rintro rfl
-    exact subst_addInvX_self F hf
+    exact subst_addInvX_self_eq_zero F hf
   · intro h
     have h' : y + x = 0 := Subtype.ext (by
       rw [FormalGroup.add_apply, FormalGroup.zero_apply]
@@ -337,7 +336,7 @@ theorem eq_subst_addInvX_iff {f g : MvPowerSeries σ R}
 
 /-- The inverse coordinate gives right inverses too, without assuming commutativity of `F`. -/
 @[simp]
-theorem subst_self_addInvX {f : MvPowerSeries σ R} (hf : PowerSeries.HasSubst f) :
+theorem subst_self_addInvX_eq_zero {f : MvPowerSeries σ R} (hf : PowerSeries.HasSubst f) :
     F.toPowerSeries.subst ![f, PowerSeries.subst f F.addInvX] = 0 := by
   let x : F.Point σ := ⟨f, hf⟩
   have h := congrArg (fun z : F.Point σ ↦ z.val) (add_neg_cancel x)
@@ -345,14 +344,14 @@ theorem subst_self_addInvX {f : MvPowerSeries σ R} (hf : PowerSeries.HasSubst f
   exact h
 
 /-- A right inverse of a native point is obtained by substituting it into `addInvX`. -/
-theorem eq_subst_addInvX_iff_right {f g : MvPowerSeries σ R}
+theorem eq_subst_addInvX_iff_subst_right_eq_zero {f g : MvPowerSeries σ R}
     (hf : PowerSeries.HasSubst f) (hg : PowerSeries.HasSubst g) :
     g = PowerSeries.subst f F.addInvX ↔ F.toPowerSeries.subst ![f, g] = 0 := by
   let x : F.Point σ := ⟨f, hf⟩
   let y : F.Point σ := ⟨g, hg⟩
   constructor
   · rintro rfl
-    exact subst_self_addInvX F hf
+    exact subst_self_addInvX_eq_zero F hf
   · intro h
     have h' : x + y = 0 := Subtype.ext (by
       rw [FormalGroup.add_apply, FormalGroup.zero_apply]
