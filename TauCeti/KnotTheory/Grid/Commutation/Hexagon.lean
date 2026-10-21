@@ -56,7 +56,8 @@ it vanishes.
 kinds carrying no `X`-marking, and `GridDiagram.commutationHomotopy` is their sum, the map `H`
 above. That `∂⁻ ∘ H + H ∘ ∂⁻` is the identity plus `Ψ ∘ Φ` is not proved here;
 `GridDiagram.unblockedDifferential_commutationHomotopy_add_eq_iff` writes it as an identity
-between matrix coefficients.
+between matrix coefficients, and `GridDiagram.unblockedDifferential_commutationHomotopy_add_eq`
+proves it.
 
 ## Main definitions
 

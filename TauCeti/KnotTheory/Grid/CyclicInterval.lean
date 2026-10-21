@@ -1077,6 +1077,43 @@ theorem notMem_cIco_of_cIco_union {p r₀ r₁ s : Fin n}
   · exact h₁ h
   · exact h₂ h
 
+/-- A point of a half-open cyclic interval cut at an interior point `b` that misses the initial
+piece lies in the final piece. -/
+theorem mem_cIco_of_mem_cIco_of_notMem_cIco_left {a b c s : Fin n} (hs : s ∈ cIco a c)
+    (hb : b ∈ cIoo a c) (h : s ∉ cIco a b) : s ∈ cIco b c := by
+  rw [← cIco_union_cIco_eq_cIco_of_mem_cIoo hb] at hs
+  exact (Finset.mem_union.mp hs).resolve_left h
+
+/-- A point of a half-open cyclic interval cut at an interior point `b` that misses the final
+piece lies in the initial piece. -/
+theorem mem_cIco_of_mem_cIco_of_notMem_cIco_right {a b c s : Fin n} (hs : s ∈ cIco a c)
+    (hb : b ∈ cIoo a c) (h : s ∉ cIco b c) : s ∈ cIco a b := by
+  rw [← cIco_union_cIco_eq_cIco_of_mem_cIoo hb] at hs
+  exact (Finset.mem_union.mp hs).resolve_right h
+
+/-- The half-open cyclic interval from `a` to a point `s` of the interval from `a` to `b` is
+contained in it. -/
+theorem cIco_subset_cIco_of_mem_cIco {a b s : Fin n} (hs : s ∈ cIco a b) :
+    cIco a s ⊆ cIco a b := by
+  intro x hx
+  simp only [mem_cIco, ne_eq, ← Fin.val_inj] at hs hx ⊢
+  split_ifs at hs hx ⊢ <;> omega
+
+/-- The open cyclic interval from a point `s` of the half-open interval from `a` to `b` up to `b`
+is contained in that interval. -/
+theorem cIoo_subset_cIco_of_mem_cIco {a b s : Fin n} (hs : s ∈ cIco a b) :
+    cIoo s b ⊆ cIco a b := by
+  intro x hx
+  simp only [mem_cIco, mem_cIoo, ne_eq, ← Fin.val_inj] at hs hx ⊢
+  split_ifs at hs hx ⊢ <;> omega
+
+/-- Two points `s` and then `s'` of the half-open cyclic interval from `a` to `c` lie, in the same
+order, in every initial piece of it containing `s'`. -/
+theorem mem_cIco_and_mem_cIoo_of_mem_cIoo_of_mem_cIco {a b c s s' : Fin n} (hs : s ∈ cIco a c)
+    (hs' : s' ∈ cIoo s c) (h : s' ∈ cIco a b) : s ∈ cIco a b ∧ s' ∈ cIoo s b := by
+  simp only [mem_cIco, mem_cIoo, ne_eq, ← Fin.val_inj] at hs hs' h ⊢
+  split_ifs at hs hs' h ⊢ <;> omega
+
 /-! ### Positions on the cycle -/
 
 /-- The position of `r` on the cycle `Fin n` read clockwise from the cyclic successor of `p`: the
