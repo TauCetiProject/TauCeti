@@ -28,6 +28,10 @@ over a commutative ring the partial derivatives, act on the Tate algebra of ever
 of positive polyradius, and hence on the overconvergent series, those restricted at some radius
 greater than one.
 
+This is the multi-index version of `PowerSeries.HasGaussNorm.hasseDeriv`,
+`PowerSeries.gaussNorm_hasseDeriv_le` and `PowerSeries.IsRestricted.hasseDeriv` in
+`TauCeti.RingTheory.PowerSeries.HasseDeriv.GaussNorm`, whose statements and proofs it follows.
+
 ## Main results
 
 * `MvPowerSeries.norm_coeff_hasseDeriv_le`: `‖[Xᵐ] ∂^d f‖ ≤ ‖[Xᵐ⁺ᵈ] f‖`.
@@ -35,10 +39,11 @@ greater than one.
   positive polyradii `c`, Hasse derivatives preserve bounded weighted coefficients, and
   `gaussNorm c (∂^d f) ≤ (∏ᵢ cᵢ ^ dᵢ)⁻¹ * gaussNorm c f`.
 * `MvPowerSeries.IsRestricted.hasseDeriv` and `MvPowerSeries.IsRestricted.pderiv`: Hasse
-  derivatives and partial derivatives preserve restrictedness at nonzero polyradii.
+  derivatives and partial derivatives preserve restrictedness at polyradii with nonzero entries.
 * `MvPowerSeries.restrictedHasseDeriv`: the Hasse derivative on the restricted-series ring at
   positive polyradii, with the Cauchy estimate `MvPowerSeries.norm_restrictedHasseDeriv_le` and
-  its continuity.
+  its continuity, and over a commutative ring its `R`-linearity
+  `MvPowerSeries.restrictedHasseDeriv_smul`.
 
 ## References
 
@@ -163,6 +168,18 @@ polyradii with nonzero entries. -/
 theorem IsRestricted.pderiv (hc : ∀ i, c i ≠ 0) {f : MvPowerSeries σ R}
     (hf : IsRestricted c f) (i : σ) : IsRestricted c (pderiv i f) := by
   simpa using hf.hasseDeriv hc (Finsupp.single i 1)
+
+variable [∀ i, Fact (0 < c i)]
+
+/-- Over a commutative ring, the Hasse derivative on the restricted-series ring is `R`-linear. -/
+@[simp]
+theorem restrictedHasseDeriv_smul (d : σ →₀ ℕ) (r : R) (f : IsRestricted.subring (R := R) c) :
+    restrictedHasseDeriv d (r • f) = r • restrictedHasseDeriv d f := by
+  apply Subtype.ext
+  -- The scalar action on restricted series is multiplication by the constant series `C r`.
+  simp only [Algebra.smul_def, Subring.coe_mul, coe_algebraMap_isRestrictedSubring,
+    coe_restrictedHasseDeriv]
+  simp only [← smul_eq_C_mul, map_smul]
 
 end NormedCommRing
 

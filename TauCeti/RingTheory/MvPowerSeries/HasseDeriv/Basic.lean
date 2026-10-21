@@ -35,8 +35,8 @@ agrees on polynomials (`MvPowerSeries.hasseDeriv_coe`), and the one-variable
 ## Main results
 
 * `MvPowerSeries.coeff_hasseDeriv`: `[Xᵐ] ∂^d f = (∏ⱼ (mⱼ + dⱼ choose dⱼ)) [Xᵐ⁺ᵈ] f`.
-* `MvPowerSeries.hasseDeriv_zero`, `MvPowerSeries.hasseDeriv_C`: `∂^0` is the identity and every
-  other Hasse derivative kills constants.
+* `MvPowerSeries.hasseDeriv_zero`, `MvPowerSeries.hasseDeriv_C`, `MvPowerSeries.hasseDeriv_one`:
+  `∂^0` is the identity and every other Hasse derivative kills constants.
 * `MvPowerSeries.hasseDeriv_map`: Hasse derivatives commute with coefficient ring maps.
 * `MvPowerSeries.hasseDeriv_comp`: `∂^a ∘ ∂^b = (∏ⱼ (aⱼ + bⱼ choose aⱼ)) • ∂^(a + b)`.
 * `MvPowerSeries.hasseDeriv_coe`, `MvPowerSeries.hasseDeriv_monomial`: the comparison with
@@ -78,6 +78,8 @@ def hasseDeriv (d : σ →₀ ℕ) : MvPowerSeries σ R →ₗ[R] MvPowerSeries 
     simp only [coeff_apply, map_smul, smul_eq_mul, RingHom.id_apply, ← mul_assoc,
       (Nat.cast_commute _ a).eq]
     simp only [mul_assoc]
+    -- As in `map_add'`, the remaining goal holds coefficientwise by definition: the scalar action
+    -- on `MvPowerSeries σ R` is the pointwise action on coefficient functions.
     rfl
 
 /-- The coefficients of a Hasse derivative:
@@ -96,11 +98,17 @@ theorem hasseDeriv_zero :
   simp
 
 /-- Hasse derivatives of positive order vanish on constants. -/
+@[simp]
 theorem hasseDeriv_C {d : σ →₀ ℕ} (hd : d ≠ 0) (a : R) : hasseDeriv d (C a) = 0 := by
   classical
   ext m
   rw [coeff_hasseDeriv, coeff_C, ite_eq_right_iff.mpr fun h ↦ absurd (add_eq_zero.mp h).2 hd,
     mul_zero, map_zero]
+
+/-- Hasse derivatives of positive order vanish on `1`. -/
+@[simp]
+theorem hasseDeriv_one {d : σ →₀ ℕ} (hd : d ≠ 0) : hasseDeriv d (1 : MvPowerSeries σ R) = 0 := by
+  simpa only [map_one] using hasseDeriv_C (R := R) hd 1
 
 /-- Hasse derivatives commute with coefficient maps. -/
 @[simp]
@@ -126,9 +134,8 @@ theorem hasseDeriv_comp (a b : σ →₀ ℕ) :
     simpa only [LinearMap.comp_apply, LinearMap.smul_apply, MvPolynomial.hasseDeriv_coeff,
       MvPolynomial.coeff_smul, MvPolynomial.coeff_monomial, add_assoc, ↓reduceIte, mul_one,
       Nat.cast_id, smul_eq_mul, ← mul_assoc] using h
-  rw [LinearMap.comp_apply, LinearMap.smul_apply, map_nsmul, coeff_hasseDeriv, coeff_hasseDeriv,
-    coeff_hasseDeriv, nsmul_eq_mul, ← mul_assoc, ← Nat.cast_mul, key, Nat.cast_mul, mul_assoc,
-    add_assoc]
+  simp only [LinearMap.comp_apply, LinearMap.smul_apply, map_nsmul, coeff_hasseDeriv, add_assoc]
+  simp only [nsmul_eq_mul, ← mul_assoc, ← Nat.cast_mul, key]
 
 end Semiring
 
