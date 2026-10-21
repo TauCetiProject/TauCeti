@@ -109,7 +109,7 @@ end Consequences
 /-- A Ky Fan dominant family whose sources and targets lie in one universe is invariant under
 adjoints. -/
 @[simp]
-theorem gauge_adjoint {Φ : OperatorIdealFamily.{u, v, v} 𝕜} [Φ.IsKyFanDominant]
+theorem gauge_adjoint (Φ : OperatorIdealFamily.{u, v, v} 𝕜) [Φ.IsKyFanDominant]
     {E F : Type v} [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
     [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F] (A : E →L[𝕜] F) :
     Φ.gauge (adjoint A) = Φ.gauge A :=
