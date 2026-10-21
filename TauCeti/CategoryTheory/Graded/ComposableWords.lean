@@ -273,19 +273,6 @@ theorem replaceBlock_mem_range_homInclusion {n p d : ℕ} {a b : ℕ → C} {y :
   · rw [replaceBlock_of_gt _ _ _ _ h, replaceBlock_of_gt _ _ _ _ h, replaceBlock_of_gt _ _ _ _ h]
     exact hy (i + d - 1) (by omega)
 
-/-- Prepending a letter to a pure word of a natural-indexed string conses it onto the string. -/
-private theorem prepend_of_tprod_cons {M : Type*} [AddCommMonoid M] [Module R M] (u : M)
-    {n : ℕ} (hn : 0 < n) (z : ℕ → M) :
-    prepend R M u (of R M ⟨n, hn⟩ (PiTensorProduct.tprod R fun i : Fin n ↦ z i)) =
-      of R M ⟨n + 1, by omega⟩
-        (PiTensorProduct.tprod R fun i : Fin (n + 1) ↦ Stream'.cons u z i) := by
-  rw [prepend_of_tprod]
-  congr 2
-  funext i
-  induction i using Fin.cases with
-  | zero => rfl
-  | succ i => rfl
-
 /-- The morphisms of a string with a morphism prepended lie in the expected hom modules. -/
 private theorem cons_mem {n : ℕ} {a b : ℕ → C} {z : ℕ → TotalHom R C}
     (hz : ∀ i < n, z i ∈ LinearMap.range (homInclusion (R := R) (a i) (b i))) {Y Z : C}
@@ -523,17 +510,6 @@ theorem IsWordPathCompatible.eq_of_totalHomMap_eq {D : Type u'}
     rw [← hf₁, ← hf₂, homInclusion_injective _ _ e]
   · rw [h₁.eq_zero_of_mem_nonComposableWords hw, h₂.eq_zero_of_mem_nonComposableWords hw]
 
-/-- The letter of a word of length `n` is its only letter if `n = 1`, and zero otherwise. -/
-private theorem letter_of_tprod {M : Type*} [AddCommMonoid M] [Module R M] {n : ℕ} (hn : 0 < n)
-    (z : ℕ → M) :
-    letter R M (of R M ⟨n, hn⟩ (PiTensorProduct.tprod R fun i : Fin n ↦ z i)) =
-      if n = 1 then z 0 else 0 := by
-  rw [of_tprod_eq_subword R hn]
-  split_ifs with h
-  · subst h
-    rw [subword_one R M _ Nat.one_pos, letter_ofLetter]
-  · exact letter_subword_of_ne_one R M _ 0 h
-
 /-- The letter of a word is path-compatible on words: a single morphism `X ⟶ Y` is a composable
 word from `X` to `Y`, and every non-composable word has length at least two. -/
 theorem isWordPathCompatible_letter : IsWordPathCompatible id (letter R (TotalHom R C)) where
@@ -541,7 +517,7 @@ theorem isWordPathCompatible_letter : IsWordPathCompatible id (letter R (TotalHo
     refine composableWords_induction (fun n hn a b z hz hab ha hb ↦ ?_) (by simp)
       (fun x y hx hy ↦ by rw [map_add]; exact add_mem hx hy)
       (fun r x hx ↦ by rw [map_smul]; exact Submodule.smul_mem _ r hx) hw
-    rw [letter_of_tprod]
+    rw [letter_of_tprod R _ hn z]
     split_ifs with h
     · subst h ha hb
       exact hz 0 Nat.one_pos
@@ -553,7 +529,7 @@ theorem isWordPathCompatible_letter : IsWordPathCompatible id (letter R (TotalHo
     have hn1 : n ≠ 1 := by
       rintro rfl
       exact hab ⟨fun i hi ↦ absurd hi (by omega)⟩
-    rw [letter_of_tprod hn z, ite_eq_right hn1]
+    rw [letter_of_tprod R _ hn z, ite_eq_right hn1]
 
 /-! ### The coalgebra morphism of path-compatible Taylor components -/
 
@@ -758,35 +734,6 @@ private theorem twistNat_mem (c q : ℤ) {n : ℕ} {a b : ℕ → C} {z : ℕ �
   · exact koszulTwist_shift_mem_range c q (hz i hi)
   · exact hz i hi
 
-/-- A spliced word of a natural-indexed string is the word of the string with the block
-replaced. -/
-private theorem splice_eq_of_tprod_replaceBlock {M : Type*} [AddCommMonoid M] [Module R M]
-    (x : ℕ → M) {n p d : ℕ} (hd : 0 < d) (hpd : p + d ≤ n) (e : M) :
-    splice R (fun i : Fin n ↦ x i) 0 n p d e =
-      of R M ⟨p + 1 + (n - p - d), by omega⟩
-        (PiTensorProduct.tprod R fun j : Fin (p + 1 + (n - p - d)) ↦ replaceBlock x p d e j) := by
-  rw [splice_eq_of_tprod R _ e (a := 0) (b := n) hd hpd (by omega)]
-  refine of_tprod_congr R M _ (by omega) fun j ↦ ?_
-  rcases lt_trichotomy (j : ℕ) p with h | h | h
-  · simp [h]
-  · simp [h]
-  · simp [h, show ¬ (j : ℕ) < p by omega, show (j : ℕ) ≠ p by omega]
-
-/-- After replacing a nonempty block, the source of the last morphism is unchanged. -/
-private theorem replaceBlock_last {α : Type*} (a : ℕ → α) {n p d : ℕ} (hd : 0 < d)
-    (hpd : p + d ≤ n) :
-    replaceBlock a p d (a (p + d - 1)) (p + 1 + (n - p - d) - 1) = a (n - 1) := by
-  rcases Nat.eq_or_lt_of_le (show p ≤ p + 1 + (n - p - d) - 1 by omega) with he | hlt
-  · rw [← he, replaceBlock_self, show p + d - 1 = n - 1 by omega]
-  · rw [replaceBlock_of_gt _ _ _ _ hlt, show p + 1 + (n - p - d) - 1 + d - 1 = n - 1 by omega]
-
-/-- After replacing a block, the target of the first morphism is unchanged. -/
-private theorem replaceBlock_zero {α : Type*} (b : ℕ → α) (p d : ℕ) :
-    replaceBlock b p d (b p) 0 = b 0 := by
-  rcases Nat.eq_zero_or_pos p with rfl | hp
-  · exact replaceBlock_self _ _ _ _
-  · exact replaceBlock_of_lt _ _ _ _ hp
-
 variable {t : ReducedTensorWords R (TotalHom R C) →ₗ[R] TotalHom R C}
 
 /-- **The graded Taylor expansion of a path-compatible map preserves composable words**: for a
@@ -805,7 +752,7 @@ theorem IsWordPathCompatible.gradedCoderiv_mem_composableWords (ht : IsWordPathC
     · obtain ⟨hd, hpd⟩ := hfit
       have he := ht.mem_range_of_mem_composableWords
         (subword_mem_composableWords hz (hab.block hpd) hd hpd)
-      rw [twistedTuple_eq_twistNat, splice_eq_of_tprod_replaceBlock _ hd hpd]
+      rw [twistedTuple_eq_twistNat, splice_eq_of_tprod_replaceBlock R _ hd hpd]
       have h := of_tprod_mem_composableWords (by omega)
         (replaceBlock_mem_range_homInclusion (twistNat_mem c q hz p) he hpd)
         (hab.replaceBlock hd hpd)
@@ -832,7 +779,7 @@ theorem IsWordPathCompatible.gradedCoderiv_mem_nonComposableWords (ht : IsWordPa
       · -- The collapsed block is composable, so the string with the block replaced is not.
         have he := ht.mem_range_of_mem_composableWords
           (subword_mem_composableWords hz hblock hd hpd)
-        rw [twistedTuple_eq_twistNat, splice_eq_of_tprod_replaceBlock _ hd hpd]
+        rw [twistedTuple_eq_twistNat, splice_eq_of_tprod_replaceBlock R _ hd hpd]
         exact of_tprod_mem_nonComposableWords _
           (replaceBlock_mem_range_homInclusion (twistNat_mem c q hz p) he hpd)
           ((not_isComposableString_block_or_replaceBlock hab hpd).resolve_left (not_not.2 hblock))

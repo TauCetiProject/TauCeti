@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.DirectSum.Module
 public import Mathlib.Algebra.BigOperators.Intervals
+public import Mathlib.Data.Stream.Defs
 public import Mathlib.LinearAlgebra.TensorProduct.Map
 public import Mathlib.Order.Interval.Finset.Nat
 public import TauCeti.Algebra.BigOperators.Finset.Range
@@ -316,6 +317,18 @@ theorem prepend_of_tprod (a : N) (k : {n : ℕ // 0 < n}) (y : Fin k.1 → N) :
     TauCeti.TensorPower.oneEquiv_symm_apply, ← TensorPower.gMul_def, TensorPower.tprod_mul_tprod,
     Fin.append_left_eq_cons]
   exact of_tprod_congr R N _ (Nat.add_comm 1 k.1) fun _ ↦ rfl
+
+/-- Prepending a letter to a pure word of a natural-indexed string conses it onto the string. -/
+theorem prepend_of_tprod_cons (u : N) {n : ℕ} (hn : 0 < n) (z : ℕ → N) :
+    prepend R N u (of R N ⟨n, hn⟩ (PiTensorProduct.tprod R fun i : Fin n ↦ z i)) =
+      of R N ⟨n + 1, by omega⟩
+        (PiTensorProduct.tprod R fun i : Fin (n + 1) ↦ Stream'.cons u z i) := by
+  rw [prepend_of_tprod]
+  congr 2
+  funext i
+  induction i using Fin.cases with
+  | zero => rfl
+  | succ i => rfl
 
 /-- Prepending the letter at position `a` to the block that starts right after it extends the
 block by that letter. -/
