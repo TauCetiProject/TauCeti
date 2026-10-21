@@ -184,6 +184,16 @@ lemma ιCompression_πCompression (i : ℤ) (r : ZMod n) (hi : (i : ZMod n) = r)
       if h : i = j then eqToHom (congrArg K.X h) else 0 :=
   ιCompression_compressionDesc n K _ i hi
 
+/-- On a degree outside the residue class `r`, `πCompression` is zero. -/
+@[simp]
+lemma πCompression_eq_zero (r : ZMod n) (j : ℤ) (h : (j : ZMod n) ≠ r) :
+    πCompression n K r j = 0 := by
+  ext i hi
+  have hij : i ≠ j := by
+    rintro rfl
+    exact h hi
+  simp [hij]
+
 /-- The term of degree `j` of `K` is a retract of the term of its residue in the compression. -/
 @[reassoc]
 lemma ιCompressionOrZero_πCompression (j : ℤ) (r : ZMod n) (hj : (j : ZMod n) = r) :
