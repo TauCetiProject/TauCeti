@@ -24,7 +24,8 @@ point of index `n`.
 
 The power map is the polynomial map of `X ^ n`, so holomorphy, the local multiplicities away from
 `0`, the degree and the branch values are read off from the general polynomial maps of the sphere,
-using that `0` is the only critical point of `X ^ n`.
+using that `0` is the only critical point of `X ^ n` when `n ≥ 2`, while `X` has no critical
+points.
 
 ## Main declarations
 
