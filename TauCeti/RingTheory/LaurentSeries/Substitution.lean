@@ -250,9 +250,9 @@ theorem coeff_substAlgHom_X_pow_of_not_dvd {e : ℕ} (he : e ≠ 0) (f : K⸨X�
 private theorem substAlgHom_C_mul_X_single {a : K} (ha : a ≠ 0) (n : ℤ) (c : K) :
     substAlgHom (φ := C a * X) (by simp) (by simp [ha]) (single n c) = single n (a ^ n * c) := by
   -- `(a X) ^ n = a ^ n X ^ n`
-  rw [substAlgHom_single, PowerSeries.coe_mul, PowerSeries.coe_C, PowerSeries.coe_X, mul_zpow,
-    ← map_zpow₀, ← RatFunc.single_zpow, HahnSeries.C_apply, HahnSeries.C_apply, single_mul_single,
-    single_mul_single, zero_add, zero_add, mul_one, mul_comm]
+  rw [substAlgHom_single, PowerSeries.coe_mul, mul_zpow]
+  simp [← map_zpow₀, ← RatFunc.single_zpow, ← single_zero_mul_eq_smul, -HahnSeries.C_apply,
+    HahnSeries.C_mul_eq_smul, mul_comm]
 
 /-- On power series, `PowerSeries.rescale a` multiplies the Laurent coefficient of `Xⁿ` by `a ^ n`,
 for every integer `n`. -/
@@ -276,8 +276,8 @@ theorem coeff_substAlgHom_C_mul_X {a : K} (ha : a ≠ 0) (f : K⸨X⸩) (n : ℤ
     (substAlgHom (φ := C a * X) (by simp) (by simp [ha]) f).coeff n = a ^ n * f.coeff n := by
   -- write `f = X ^ N * f₊` with `f₊` a power series
   rw [← f.single_order_mul_powerSeriesPart, map_mul, substAlgHom_C_mul_X_single ha,
-    coeff_single_mul, coeff_single_mul, coeff_substAlgHom_C_mul_X_coe ha, mul_one, one_mul,
-    ← mul_assoc, ← zpow_add₀ ha, add_sub_cancel]
+    coeff_single_mul, coeff_single_mul, coeff_substAlgHom_C_mul_X_coe ha]
+  simp [← mul_assoc, ← zpow_add₀ ha]
 
 /-- The substitution `X ↦ a X` for a unit `a`. -/
 private noncomputable abbrev rescaleAlgHom (a : Kˣ) : K⸨X⸩ →ₐ[K] K⸨X⸩ :=

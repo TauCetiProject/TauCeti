@@ -133,24 +133,21 @@ open Polynomial
 
 variable (K d) [HasEnoughRootsOfUnity K d]
 
-/-- If the coefficient field has a primitive `d`-th root of unity, then so does `K⸨X⸩`. -/
-private theorem primitiveRoots_nonempty : (primitiveRoots d K⸨X⸩).Nonempty := by
-  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot K d
-  exact ⟨_, (mem_primitiveRoots d.pos).mpr
-    (hζ.map_of_injective (Algebra.algebraMap K K⸨X⸩).injective)⟩
-
 /-- If the coefficient field has a primitive `d`-th root of unity, then the ramified level
 `K⸨u⸩` is a splitting field of `T ^ d - X` over `K⸨X⸩`: its roots are the `η u`. -/
 instance isSplittingField :
     IsSplittingField K⸨X⸩ (Level K d) (X ^ (d : ℕ) - Polynomial.C (single 1 1)) := by
-  obtain ⟨ζ, hζ⟩ := primitiveRoots_nonempty K d
+  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.primitiveRoots_nonempty_of_injective d
+      (Algebra.algebraMap K K⸨X⸩).injective
   exact isSplittingField_X_pow_sub_C_of_adjoin_eq_top ((mem_primitiveRoots d.pos).mp hζ)
     (parameter_pow K d) (adjoin_parameter_eq_top K d)
 
 /-- If the coefficient field has a primitive `d`-th root of unity, then the ramified level
 `K⸨u⸩` is a Galois extension of `K⸨X⸩`. -/
 instance isGalois : IsGalois K⸨X⸩ (Level K d) :=
-  isGalois_of_isSplittingField_X_pow_sub_C (primitiveRoots_nonempty K d)
+  isGalois_of_isSplittingField_X_pow_sub_C
+    (HasEnoughRootsOfUnity.primitiveRoots_nonempty_of_injective d
+      (Algebra.algebraMap K K⸨X⸩).injective)
     (irreducible_X_pow_sub_C_single K d) (Level K d)
 
 /-- If the coefficient field has a primitive `d`-th root of unity, then the Galois group of the
@@ -158,12 +155,11 @@ ramified level `K⸨u⸩` over `K⸨X⸩` is the group of `d`-th roots of unity 
 `σ` corresponds to the root of unity `σ u / u`, and the inverse is `kummer`
 (`TauCeti.LaurentSeries.Level.galEquivRootsOfUnity_symm_apply`). -/
 noncomputable def galEquivRootsOfUnity : Gal(Level K d/K⸨X⸩) ≃* rootsOfUnity d K :=
-  (autEquivRootsOfUnity (primitiveRoots_nonempty K d) (irreducible_X_pow_sub_C_single K d)
+  (autEquivRootsOfUnity (HasEnoughRootsOfUnity.primitiveRoots_nonempty_of_injective d
+      (Algebra.algebraMap K K⸨X⸩).injective) (irreducible_X_pow_sub_C_single K d)
       (Level K d)).trans
     (rootsOfUnityEquivOfPrimitiveRoots (Algebra.algebraMap K K⸨X⸩).injective
-      (by
-        obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot K d
-        exact ⟨ζ, (mem_primitiveRoots d.pos).mpr hζ⟩)).symm
+      (HasEnoughRootsOfUnity.primitiveRoots_nonempty K d)).symm
 
 /-- A Galois automorphism `σ` multiplies the level parameter `u` by its root of unity. -/
 private theorem apply_parameter (σ : Gal(Level K d/K⸨X⸩)) :
@@ -171,10 +167,11 @@ private theorem apply_parameter (σ : Gal(Level K d/K⸨X⸩)) :
       Algebra.algebraMap K⸨X⸩ (Level K d)
           (Algebra.algebraMap K K⸨X⸩ ((galEquivRootsOfUnity K d σ : Kˣ) : K)) *
         parameter K d := by
-  rw [← autEquivRootsOfUnity_smul (primitiveRoots_nonempty K d)
-      (irreducible_X_pow_sub_C_single K d) _ (parameter_pow K d), Subgroup.smul_def,
-    Units.smul_def, Algebra.smul_def, galEquivRootsOfUnity, MulEquiv.trans_apply,
-    rootsOfUnityEquivOfPrimitiveRoots_symm_apply]
+  rw [← autEquivRootsOfUnity_smul (HasEnoughRootsOfUnity.primitiveRoots_nonempty_of_injective d
+      (Algebra.algebraMap K K⸨X⸩).injective)
+      (irreducible_X_pow_sub_C_single K d) _ (parameter_pow K d)]
+  simp [galEquivRootsOfUnity, rootsOfUnityEquivOfPrimitiveRoots_symm_apply, Subgroup.smul_def,
+    Units.smul_def, Algebra.smul_def]
 
 /-- The Galois automorphism attached to a root of unity `η` is the Kummer automorphism
 `u ↦ η u`. -/
@@ -261,11 +258,13 @@ theorem levelKummer_inclusion {n m : ℕ+} (h : n ∣ m) (η : rootsOfUnity m K)
   have he : ((n * e : ℕ+) : ℕ) / n = e := by rw [PNat.mul_coe, Nat.mul_div_cancel_left _ n.pos]
   obtain ⟨f, hf⟩ : ∃ f, levelEmbedding K n f = x := (mem_level_iff K n x).mp x.2
   -- `x` is the level-`n * e` image of `f (X ^ e)`
+  have hx : ((IntermediateField.inclusion (level_le_level_of_dvd K ⟨e, rfl⟩) x :
+      level K (n * e)) : puiseuxField K) = levelEmbedding K (n * e) (expand K e f) := by
+    rw [IntermediateField.coe_inclusion, ← hf, levelEmbedding_expand]
   apply Subtype.ext
   rw [IntermediateField.coe_inclusion, coe_levelKummer_of_coe_eq _ hf.symm,
-    coe_levelKummer_of_coe_eq η (f := expand K e f)
-      (by rw [IntermediateField.coe_inclusion, ← hf, levelEmbedding_expand]),
-    rescale_expand, coe_rootsOfUnityPowOfDvd_apply, he, levelEmbedding_expand]
+    coe_levelKummer_of_coe_eq η hx, rescale_expand, coe_rootsOfUnityPowOfDvd_apply, he,
+    levelEmbedding_expand]
 
 section Galois
 
@@ -287,9 +286,7 @@ Kummer automorphism `t ^ (1 / d) ↦ η t ^ (1 / d)`. -/
 @[simp]
 theorem levelGalEquivRootsOfUnity_symm_apply (η : rootsOfUnity d K) :
     (levelGalEquivRootsOfUnity K d).symm η = levelKummer K d η := by
-  rw [levelGalEquivRootsOfUnity, MulEquiv.symm_trans_apply, Level.galEquivRootsOfUnity_symm_apply,
-    MulEquiv.symm_symm]
-  rfl
+  simp [levelGalEquivRootsOfUnity, levelKummer]
 
 /-- The root of unity attached to the Kummer automorphism attached to `η` is `η`. -/
 @[simp]

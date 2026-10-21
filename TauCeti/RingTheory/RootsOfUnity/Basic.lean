@@ -17,10 +17,11 @@ public import Mathlib.RingTheory.RootsOfUnity.Minpoly
 This file records a criterion for a root of unity congruent to `1` modulo an ideal to equal `1`,
 and counts the square roots of unity in a domain in which `2 ≠ 0`; in any domain the number of
 `n`-th roots of unity divides `n`. It transfers `HasEnoughRootsOfUnity` along an injective
-homomorphism into a domain. For a prime `p` it relates the triviality of the `p`th roots of
-unity to the absence of a primitive one. It also records that
-roots of unity, and hence the values of a character of a finite group, are integral over `ℤ`.
-It identifies the `n`-torsion of a unit group, written additively, with the `n`-th roots of unity.
+homomorphism into a domain, and with it the nonemptiness of `primitiveRoots n R`. For a prime
+`p` it relates the triviality of the `p`th roots of unity to the absence of a primitive one. It
+also records that roots of unity, and hence the values of a character of a finite group, are
+integral over `ℤ`. It identifies the `n`-torsion of a unit group, written additively, with the
+`n`-th roots of unity.
 Finally, for `n ∣ m` it records the power map from the `m`-th to the `n`-th roots of unity.
 
 ## Main definitions
@@ -47,6 +48,9 @@ Finally, for `n ∣ m` it records the power map from the `m`-th to the `n`-th ro
   order `n` is a primitive `2n`-th root of unity.
 * `HasEnoughRootsOfUnity.of_injective`: a domain receiving an injective homomorphism from a
   commutative monoid with enough `n`-th roots of unity has enough `n`-th roots of unity.
+* `HasEnoughRootsOfUnity.primitiveRoots_nonempty` and
+  `HasEnoughRootsOfUnity.primitiveRoots_nonempty_of_injective`: with enough `n`-th roots of unity,
+  `primitiveRoots n R` is nonempty, also after an injective homomorphism into a domain.
 * `TauCeti.rootsOfUnity_eq_bot_iff`: for a prime `p`, the `p`th roots of unity are trivial
   exactly when there is no primitive `p`th root of unity.
 * `TauCeti.finite_torsionBy_additive_units`: the `n`-torsion of `Mˣ`, written additively, is
@@ -121,6 +125,23 @@ theorem _root_.HasEnoughRootsOfUnity.of_injective {M : Type*} [CommMonoid M] [Is
   prim := have ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot M n
     ⟨f ζ, hζ.map_of_injective hf⟩
   cyc := rootsOfUnity.isCyclic R n
+
+variable (R) in
+/-- A domain with enough `n`-th roots of unity, for `n ≠ 0`, has a primitive `n`-th root of
+unity in `primitiveRoots n R`. -/
+theorem _root_.HasEnoughRootsOfUnity.primitiveRoots_nonempty [IsDomain R] (n : ℕ) [NeZero n]
+    [HasEnoughRootsOfUnity R n] : (primitiveRoots n R).Nonempty :=
+  have ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot R n
+  ⟨ζ, (mem_primitiveRoots (NeZero.pos n)).mpr hζ⟩
+
+/-- A domain receiving an injective monoid homomorphism from a commutative monoid with enough
+`n`-th roots of unity, for `n ≠ 0`, has a primitive `n`-th root of unity in
+`primitiveRoots n R`. -/
+theorem _root_.HasEnoughRootsOfUnity.primitiveRoots_nonempty_of_injective {M : Type*}
+    [CommMonoid M] [IsDomain R] (n : ℕ) [NeZero n] [HasEnoughRootsOfUnity M n] {f : M →* R}
+    (hf : Function.Injective f) : (primitiveRoots n R).Nonempty :=
+  have := HasEnoughRootsOfUnity.of_injective (n := n) hf
+  HasEnoughRootsOfUnity.primitiveRoots_nonempty R n
 
 /-- For a prime `p`, the `p`th roots of unity of a commutative monoid are trivial exactly when it
 has no primitive `p`th root of unity: a `p`th root of unity other than `1` has order `p`. -/
