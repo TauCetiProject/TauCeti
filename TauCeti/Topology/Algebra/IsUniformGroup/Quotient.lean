@@ -10,22 +10,22 @@ public import TauCeti.Topology.Algebra.IsUniformGroup.Defs
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom.QuotientKerEquiv
 
 /-!
-# Completeness of open quotients of right-uniform additive groups
+# Completeness of open quotients of right-uniform groups
 
-Mathlib's `QuotientAddGroup.completeSpace_right` makes the quotient `G ⧸ N` of a complete first
-countable right-uniform additive group complete for its right uniformity. An additive group `H`
-receiving an open quotient map `f : G → H` is that quotient in disguise: the induced isomorphism
-`G ⧸ ker f ≃+ H` is a homeomorphism, hence a uniform embedding for any uniformity making `H` a
-right-uniform additive group (for instance a uniform additive group). So `H` is complete, whatever
-such uniformity it carries. No commutativity is needed.
+Mathlib's `QuotientGroup.completeSpace_right` makes the quotient `G ⧸ N` of a complete first
+countable right-uniform group complete for its right uniformity. A group `H` receiving an open
+quotient map `f : G → H` is that quotient in disguise: the induced isomorphism
+`G ⧸ ker f ≃* H` is a homeomorphism, hence a uniform embedding for the right uniformities.
+Consequently `H` is complete. No commutativity is needed.
 
 This is the form in which completeness is needed for a ring presented as an open quotient of a
 complete ring, such as an algebra topologically of finite type over a Tate ring.
 
 ## Main results
 
-* `IsOpenQuotientMap.completeSpace`: a right-uniform additive group admitting an open quotient
-  map from a complete first countable right-uniform additive group is complete.
+* `IsOpenQuotientMap.completeSpace_mul`: a right-uniform group admitting an open quotient map
+  from a complete first countable right-uniform group is complete.
+* `IsOpenQuotientMap.completeSpace`: the additive counterpart.
 
 ## References
 
@@ -36,22 +36,25 @@ public section
 
 open Topology
 
-variable {G H : Type*} [AddGroup G] [UniformSpace G] [IsRightUniformAddGroup G] [CompleteSpace G]
-  [FirstCountableTopology G] [AddGroup H] [UniformSpace H] [IsRightUniformAddGroup H]
-  {F : Type*} [FunLike F G H] [AddMonoidHomClass F G H] {f : F}
+variable {G H : Type*} [Group G] [UniformSpace G] [IsRightUniformGroup G] [CompleteSpace G]
+  [FirstCountableTopology G] [Group H] [UniformSpace H] [IsRightUniformGroup H]
+  {F : Type*} [FunLike F G H] [MonoidHomClass F G H] {f : F}
 
-/-- **An open quotient of a complete first countable right-uniform additive group is
-complete.** If `f : G → H` is a continuous open surjective additive homomorphism, `G` is complete
-and first countable, and `H` is a right-uniform additive group, then `H` is complete: `f`
-identifies `H` with `G ⧸ ker f`, which is complete by `QuotientAddGroup.completeSpace_right`. -/
-theorem IsOpenQuotientMap.completeSpace (hf : IsOpenQuotientMap f) : CompleteSpace H := by
-  let N := AddMonoidHom.ker (f : G →+ H)
-  let _ : UniformSpace (G ⧸ N) := IsTopologicalAddGroup.rightUniformSpace (G ⧸ N)
-  have _ : CompleteSpace (G ⧸ N) := QuotientAddGroup.completeSpace_right G N
-  have _ : IsRightUniformAddGroup (G ⧸ N) :=
-    IsTopologicalAddGroup.isRightUniformAddGroup (G ⧸ N)
-  let e := ContinuousAddEquiv.quotientKerEquivOfSurjective (f : G →+ H)
+/-- **An open quotient of a complete first countable right-uniform group is complete.**
+If `f : G → H` is a continuous open surjective homomorphism, `G` is complete and first countable,
+and `H` is a right-uniform group, then `H` is complete. -/
+@[to_additive IsOpenQuotientMap.completeSpace /-- **An open quotient of a complete first countable
+right-uniform additive group is complete.** If `f : G → H` is a continuous open surjective additive
+homomorphism, `G` is complete and first countable, and `H` is a right-uniform additive group,
+then `H` is complete. -/]
+theorem IsOpenQuotientMap.completeSpace_mul (hf : IsOpenQuotientMap f) : CompleteSpace H := by
+  let N := MonoidHom.ker (f : G →* H)
+  let _ : UniformSpace (G ⧸ N) := IsTopologicalGroup.rightUniformSpace (G ⧸ N)
+  have _ : CompleteSpace (G ⧸ N) := QuotientGroup.completeSpace_right G N
+  have _ : IsRightUniformGroup (G ⧸ N) :=
+    IsTopologicalGroup.isRightUniformGroup (G ⧸ N)
+  let e := ContinuousMulEquiv.quotientKerEquivOfSurjective (f : G →* H)
     hf.isQuotientMap.isStrictMap hf.surjective
   have he : IsUniformEmbedding e :=
-    AddMonoidHom.isUniformEmbedding_of_isEmbedding_right e.toHomeomorph.isEmbedding
+    MonoidHom.isUniformEmbedding_of_isEmbedding_right e.toHomeomorph.isEmbedding
   exact (completeSpace_congr (e := e.toEquiv) he).mp inferInstance
