@@ -234,20 +234,7 @@ theorem newtonPolygon_mul :
   obtain ⟨d, j, hd, hj⟩ := exists_isSupportingLine_isLeast_coeff_coe g v hg σ
   simp only [supportingValue_minkowskiSum hf hg, supportingValue_newtonPolygon, ← coeff_coe,
     coe_mul]
-  rw [supportingValue_eq_coe_of_mem_supportingFace hc hi.1,
-    supportingValue_eq_coe_of_mem_supportingFace hd hj.1]
-  -- The coefficient of the product at the sum of the first contact indices of the factors
-  -- lies on the line of slope `σ` and intercept `c + d`.
-  rw [← EReal.coe_add]
-  refine supportingValue_le_coe_of_mem_supportingFace (n := i + j) ?_
-  have hi' := hi.1
-  have hj' := hj.1
-  simp only [mem_supportingFace] at hi' hj' ⊢
-  rw [PowerSeries.addValuation_coeff_mul_eq_add_of_isLeast v hc hi hd hj, hi', hj',
-    ← WithTop.coe_add]
-  congr 1
-  push_cast
-  ring
+  exact (PowerSeries.supportingValue_addValuation_coeff_mul v hc hi.1 hd hj.1).le
 
 /-- Supporting values of coefficient heights add under multiplication of polynomials. When `v`
 comes from an absolute value, this is the multiplicativity of Gauss norms at every radius.
