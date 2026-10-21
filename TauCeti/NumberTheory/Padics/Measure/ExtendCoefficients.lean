@@ -366,9 +366,7 @@ theorem exists_apply_comp_eq_of_norm_le_one (hje : Topology.IsEmbedding j)
   have hmem (f : C(X, O)) : ν (J.comp f) ∈ Set.range j := hjr <| by
     rw [mem_closedBall_zero_iff, ← coe_toCLMEquiv]
     have hf : ‖J.comp f‖ ≤ 1 := (ContinuousMap.norm_le _ zero_le_one).mpr fun x ↦ hj (f x)
-    calc ‖toCLMEquiv ν (J.comp f)‖ ≤ ‖toCLMEquiv ν‖ * ‖J.comp f‖ := (toCLMEquiv ν).le_opNorm _
-      _ ≤ 1 * 1 := mul_le_mul hν hf (norm_nonneg _) zero_le_one
-      _ = 1 := one_mul 1
+    exact ((toCLMEquiv ν).le_of_opNorm_le_of_le hν hf).trans_eq (one_mul 1)
   have hspec (f : C(X, O)) : j (hmem f).choose = ν (J.comp f) := (hmem f).choose_spec
   let L : C(X, O) →ₗ[O] O :=
     { toFun f := (hmem f).choose
@@ -407,9 +405,8 @@ theorem existsUnique_apply_comp_eq_iff_norm_le_one (hje : Topology.IsEmbedding j
     (hjr : Metric.closedBall 0 1 ⊆ Set.range j) (ν : D(X, K)) :
     (∃! μ : D(X, O), ∀ f : C(X, O), ν ((⟨j, hje.continuous⟩ : C(O, K)).comp f) = j (μ f)) ↔
       ‖toCLMEquiv ν‖ ≤ 1 := by
-  refine ⟨fun ⟨μ, hμ, _⟩ ↦ ?_, fun hν ↦ ?_⟩
-  · rw [eq_extendCoefficients_of_apply_comp j μ hj hje.continuous hμ]
-    exact norm_toCLMEquiv_extendCoefficients_le j hj μ
+  refine ⟨fun ⟨μ, hμ, _⟩ ↦ (mem_range_extendCoefficients_iff hj hje hjr).mp
+    ⟨μ, (eq_extendCoefficients_of_apply_comp j μ hj hje.continuous hμ).symm⟩, fun hν ↦ ?_⟩
   · obtain ⟨μ, hμ⟩ := exists_apply_comp_eq_of_norm_le_one hj hje hjr hν
     exact ⟨μ, hμ, fun μ' hμ' ↦ ext fun f ↦ hje.injective ((hμ' f).symm.trans (hμ f))⟩
 
