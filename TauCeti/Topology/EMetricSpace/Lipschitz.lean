@@ -11,15 +11,18 @@ public import Mathlib.Topology.MetricSpace.Pseudo.Defs
 /-!
 # Lipschitz maps from extended metric spaces
 
-This file gives a real-valued Lipschitz estimate for the extended distance from a fixed point.
+This file gives a real-valued Lipschitz estimate for the extended distance from a fixed point,
+and shows that composing a function locally Lipschitz on a set with a locally Lipschitz map keeps
+it locally Lipschitz on that set.
 
-The declaration and proof follow
+The declaration `TauCeti.lipschitzWith_toReal_edist` and its proof follow
 [Mathlib pull request #41839](https://github.com/leanprover-community/mathlib4/pull/41839),
 available under Apache 2.0.
 -/
 
 public section
 
+open Filter
 open scoped ENNReal
 
 namespace TauCeti
@@ -50,3 +53,14 @@ theorem lipschitzWith_toReal_edist {X : Type*} [PseudoEMetricSpace X] (a : X) :
   constructor <;> linarith
 
 end TauCeti
+
+/-- A locally Lipschitz map composed with a function locally Lipschitz on `s` is locally Lipschitz
+on `s`. -/
+theorem LocallyLipschitz.comp_locallyLipschitzOn {α β γ : Type*} [PseudoEMetricSpace α]
+    [PseudoEMetricSpace β] [PseudoEMetricSpace γ] {g : β → γ} {f : α → β} {s : Set α}
+    (hg : LocallyLipschitz g) (hf : LocallyLipschitzOn s f) : LocallyLipschitzOn s (g ∘ f) := by
+  intro x hx
+  obtain ⟨Kf, t, ht, hKf⟩ := hf hx
+  obtain ⟨Kg, U, hU, hKg⟩ := hg (f x)
+  refine ⟨Kg * Kf, t ∩ f ⁻¹' U, inter_mem ht (hf.continuousOn x hx hU), ?_⟩
+  exact hKg.comp (hKf.mono Set.inter_subset_left) fun _ hy => hy.2

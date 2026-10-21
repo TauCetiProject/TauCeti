@@ -6,7 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Lp.Weak
+public import TauCeti.Analysis.OperatorIdeal.Carrier
 public import Mathlib.Topology.Semicontinuity.Basic
+import Mathlib.Analysis.SpecificLimits.Basic
+import Mathlib.Basic.Denumerable
+import Mathlib.Topology.Algebra.InfiniteSum.Real
 import Mathlib.Topology.Instances.ENNReal.Lemmas
 
 /-!
@@ -27,6 +31,17 @@ the operator-norm topology, which is the input for completeness of the summing-n
 At exponent `∞` it is the operator norm, and it decreases as the exponent grows:
 `π_q(T) ≤ π_p(T)` for `p ≤ q`, so absolutely `p`-summing operators are absolutely `q`-summing.
 
+At exponent `1`, an operator on a Banach space is absolutely summing exactly when it sends
+unconditionally convergent series to absolutely convergent series. One direction bounds the weak
+`L¹` norms of the partial families of a summable family; the other concatenates finite families
+of small weak norm whose images have `L¹` norm one.
+
+Packaged as an operator gauge, `πₚ` gives the normed operator ideal
+`TauCeti.AbsolutelySumming 𝕜 p E F`, written `Πₚ(E, F)`. Its norm is `πₚ`, it is a Banach space
+whenever `F` is complete, and it contains the rank-one operators with norm `‖f‖ ‖y‖`.
+Composition with bounded operators on either side and the inclusion `Πₚ(E, F) → Π_q(E, F)` for
+`p ≤ q` are bounded linear maps between these ideals, of norm at most `‖A‖`, `‖B‖` and `1`.
+
 ## Main declarations
 
 * `ContinuousLinearMap.summingENorm`: the extended `p`-summing gauge `πₚ(T)`.
@@ -43,6 +58,14 @@ At exponent `∞` it is the operator norm, and it decreases as the exponent grow
   `p ≤ q`.
 * `TauCeti.absolutelySummingOperators`: the submodule of absolutely `p`-summing operators.
 * `TauCeti.absolutelySummingOperators_le_of_exponent_le`: the inclusion of these submodules.
+* `TauCeti.mem_absolutelySummingOperators_one_iff`: absolutely `1`-summing operators on a Banach
+  space are those sending unconditionally summable series to absolutely summable series.
+* `TauCeti.summingGauge`: the `p`-summing gauge as an operator gauge.
+* `TauCeti.AbsolutelySumming`: the normed operator ideal `Πₚ(E, F)`, complete when `F` is.
+* `TauCeti.AbsolutelySumming.norm_smulRight`: the rank-one norm in `Πₚ(E, F)`.
+* `TauCeti.AbsolutelySumming.postcomp`, `TauCeti.AbsolutelySumming.precomp`: composition with
+  bounded operators, with the ideal inequalities `norm_postcomp_le` and `norm_precomp_le`.
+* `TauCeti.AbsolutelySumming.inclusion`: the contraction `Πₚ(E, F) → Π_q(E, F)` for `p ≤ q`.
 
 ## References
 
@@ -458,6 +481,256 @@ theorem absolutelySummingOperators_le_of_exponent_le {p q : ℝ≥0∞} [Fact (1
     absolutelySummingOperators 𝕜 p E F ≤ absolutelySummingOperators 𝕜 q E F :=
   fun T hT ↦ (T.summingENorm_le_summingENorm_of_exponent_le hpq).trans_lt hT
 
+/-! ### Absolutely `1`-summing operators and unconditional summability -/
+
+/-- An absolutely `1`-summing operator sends unconditionally summable families to absolutely
+summable families. -/
+theorem summable_norm_apply_of_mem_absolutelySummingOperators_one {T : E →L[𝕜] F}
+    (hT : T ∈ absolutelySummingOperators 𝕜 1 E F) {ι : Type*} {x : ι → E} (hx : Summable x) :
+    Summable fun i ↦ ‖T (x i)‖ := by
+  obtain ⟨C, hC⟩ := hx.exists_forall_weakLpNorm_one_le (𝕜 := 𝕜)
+  refine summable_of_sum_le (c := (T.summingENorm 1).toReal * C) (fun _ ↦ norm_nonneg _)
+    fun s ↦ ?_
+  calc
+    ∑ i ∈ s, ‖T (x i)‖ = ‖WithLp.toLp 1 (fun i : s ↦ T (x i))‖ := by
+      rw [PiLp.norm_eq_of_L1]
+      exact (Finset.sum_coe_sort s fun i ↦ ‖T (x i)‖).symm
+    _ ≤ (T.summingENorm 1).toReal * weakLpNorm (𝕜 := 𝕜) 1 (fun i : s ↦ x i) :=
+      T.norm_toLp_le_toReal_summingENorm_mul hT.ne _
+    _ ≤ (T.summingENorm 1).toReal * C := by gcongr; exact hC s
+
+/-- An operator that is not absolutely `1`-summing admits, for every `k`, a finite family whose
+image has `L¹` norm one while its weak `L¹` norm is at most `2⁻ᵏ`. -/
+private theorem exists_norm_toLp_eq_one_weakLpNorm_le {T : E →L[𝕜] F}
+    (hT : T ∉ absolutelySummingOperators 𝕜 1 E F) (k : ℕ) :
+    ∃ (n : ℕ) (y : Fin n → E), ‖WithLp.toLp 1 (fun i ↦ T (y i))‖ = 1 ∧
+      weakLpNorm (𝕜 := 𝕜) 1 y ≤ (1 / 2) ^ k := by
+  have h : ¬ ∀ (n : ℕ) (x : Fin n → E),
+      ‖WithLp.toLp 1 (fun i ↦ T (x i))‖ ≤ 2 ^ k * weakLpNorm (𝕜 := 𝕜) 1 x :=
+    fun h ↦ hT (mem_absolutelySummingOperators_iff.2 ⟨2 ^ k, by positivity, h⟩)
+  simp only [not_forall, not_le] at h
+  obtain ⟨n, x, hx⟩ := h
+  set a := ‖WithLp.toLp 1 (fun i ↦ T (x i))‖
+  have ha : 0 < a := (by positivity : (0 : ℝ) ≤ 2 ^ k * weakLpNorm (𝕜 := 𝕜) 1 x).trans_lt hx
+  -- Rescale `x` so that its image has `L¹` norm one.
+  refine ⟨n, ((a⁻¹ : ℝ) : 𝕜) • x, ?_, ?_⟩
+  · have hTx : (fun i ↦ T ((((a⁻¹ : ℝ) : 𝕜) • x) i)) = ((a⁻¹ : ℝ) : 𝕜) • fun i ↦ T (x i) := by
+      ext i
+      simp
+    rw [hTx, WithLp.toLp_smul, norm_smul, RCLike.norm_ofReal, abs_of_pos (inv_pos.2 ha),
+      inv_mul_cancel₀ ha.ne']
+  · rw [map_smul_eq_mul, RCLike.norm_ofReal, abs_of_pos (inv_pos.2 ha), inv_mul_le_iff₀ ha]
+    calc
+      weakLpNorm (𝕜 := 𝕜) 1 x = 2 ^ k * weakLpNorm (𝕜 := 𝕜) 1 x * (1 / 2) ^ k := by
+        rw [mul_comm, ← mul_assoc, ← mul_pow]
+        norm_num
+      _ ≤ a * (1 / 2) ^ k := by gcongr
+
+/-- **Absolutely `1`-summing operators and series.** An operator on a Banach space is absolutely
+`1`-summing exactly when it sends unconditionally convergent series to absolutely convergent
+series. -/
+theorem mem_absolutelySummingOperators_one_iff [CompleteSpace E] {T : E →L[𝕜] F} :
+    T ∈ absolutelySummingOperators 𝕜 1 E F ↔
+      ∀ x : ℕ → E, Summable x → Summable fun n ↦ ‖T (x n)‖ := by
+  refine ⟨fun hT x hx ↦ summable_norm_apply_of_mem_absolutelySummingOperators_one hT hx,
+    fun h ↦ by_contra fun hT ↦ ?_⟩
+  -- Concatenate blocks with image of `L¹` norm one and weak `L¹` norm at most `2⁻ᵏ`.
+  choose n y hTy hy using exists_norm_toLp_eq_one_weakLpNorm_le (𝕜 := 𝕜) hT
+  have hz : Summable fun j : (Σ k, Fin (n k)) ↦ y j.1 j.2 :=
+    summable_sigma_of_summable_weakLpNorm (𝕜 := 𝕜)
+      (Summable.of_nonneg_of_le (fun _ ↦ apply_nonneg _ _) hy summable_geometric_two)
+  have hsum (k : ℕ) : ∑' i, ‖T (y k i)‖ = 1 := by
+    rw [tsum_fintype, ← hTy k, PiLp.norm_eq_of_L1]
+  have hne (k : ℕ) : Nonempty (Fin (n k)) := by
+    by_contra hk
+    rw [not_nonempty_iff] at hk
+    simpa [PiLp.norm_eq_of_L1] using hTy k
+  -- The concatenation is a sequence, since it is indexed by a countably infinite type.
+  have : Infinite (Σ k, Fin (n k)) :=
+    Infinite.of_injective (fun k ↦ ⟨k, Classical.arbitrary _⟩) fun _ _ h ↦ congrArg Sigma.fst h
+  have : Denumerable (Σ k, Fin (n k)) := (nonempty_denumerable _).some
+  let e := (Denumerable.eqv (Σ k, Fin (n k))).symm
+  have hTz : Summable fun j : (Σ k, Fin (n k)) ↦ ‖T (y j.1 j.2)‖ :=
+    e.summable_iff.1 (h _ (e.summable_iff.2 hz))
+  rw [summable_sigma_of_nonneg fun _ ↦ norm_nonneg _] at hTz
+  simp only [hsum, summable_const_iff] at hTz
+  exact one_ne_zero hTz.2
+
 end RCLike
+
+/-! ### The Banach ideal of absolutely summing operators -/
+
+section Ideal
+
+variable (𝕜 : Type*) [RCLike 𝕜] (p : ℝ≥0∞) [Fact (1 ≤ p)] (E F : Type*)
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- The `p`-summing gauge `πₚ` as an operator gauge. -/
+def summingGauge : OperatorGauge 𝕜 E F where
+  toFun T := T.summingENorm p
+  map_add_le' := ContinuousLinearMap.summingENorm_add_le
+  map_smul' := ContinuousLinearMap.summingENorm_smul
+  enorm_le' := ContinuousLinearMap.enorm_le_summingENorm
+
+variable {𝕜 p E F}
+
+@[simp]
+theorem summingGauge_apply (T : E →L[𝕜] F) : summingGauge 𝕜 p E F T = T.summingENorm p := (rfl)
+
+/-- The operators of finite `p`-summing gauge are the absolutely `p`-summing operators. -/
+@[simp]
+theorem finiteSubmodule_summingGauge :
+    (summingGauge 𝕜 p E F).finiteSubmodule = absolutelySummingOperators 𝕜 p E F := by
+  ext T
+  rw [OperatorGauge.mem_finiteSubmodule, mem_absolutelySummingOperators, summingGauge_apply]
+
+/-- The `p`-summing gauge is lower semicontinuous for the operator-norm topology. -/
+theorem lowerSemicontinuous_summingGauge : LowerSemicontinuous (summingGauge 𝕜 p E F) :=
+  ContinuousLinearMap.lowerSemicontinuous_summingENorm
+
+variable (𝕜 p E F) in
+/-- The operator ideal `Πₚ(E, F)` of absolutely `p`-summing operators, normed by the
+`p`-summing norm `πₚ`. It is a Banach space when `F` is complete, and its inclusion
+`OperatorGauge.Carrier.toContinuousLinearMapL` into the bounded operators is a contraction. -/
+abbrev AbsolutelySumming := (summingGauge 𝕜 p E F).Carrier
+
+namespace AbsolutelySumming
+
+/-- The underlying operators of `Πₚ(E, F)` are the absolutely `p`-summing operators. -/
+theorem toContinuousLinearMap_mem (T : AbsolutelySumming 𝕜 p E F) :
+    T.toContinuousLinearMap ∈ absolutelySummingOperators 𝕜 p E F :=
+  mem_absolutelySummingOperators.2 (by simpa using T.gauge_lt_top)
+
+/-- An absolutely `p`-summing operator as an element of `Πₚ(E, F)`. -/
+def mk' {T : E →L[𝕜] F} (hT : T ∈ absolutelySummingOperators 𝕜 p E F) :
+    AbsolutelySumming 𝕜 p E F :=
+  ⟨T, by simpa using hT⟩
+
+@[simp]
+theorem toContinuousLinearMap_mk' {T : E →L[𝕜] F}
+    (hT : T ∈ absolutelySummingOperators 𝕜 p E F) : (mk' hT).toContinuousLinearMap = T := (rfl)
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- `Πₚ(E, F)` is a Banach space when `F` is complete. -/
+instance [CompleteSpace F] : CompleteSpace (AbsolutelySumming 𝕜 p E F) :=
+  OperatorGauge.completeSpace_carrier_of_lowerSemicontinuous lowerSemicontinuous_summingGauge
+
+/-- The norm of `Πₚ(E, F)` is the `p`-summing norm. -/
+theorem norm_def (T : AbsolutelySumming 𝕜 p E F) :
+    ‖T‖ = (T.toContinuousLinearMap.summingENorm p).toReal := by
+  rw [OperatorGauge.Carrier.norm_def, summingGauge_apply]
+
+/-- The extended norm of `Πₚ(E, F)` is the `p`-summing gauge. -/
+theorem enorm_eq_summingENorm (T : AbsolutelySumming 𝕜 p E F) :
+    ‖T‖ₑ = T.toContinuousLinearMap.summingENorm p :=
+  OperatorGauge.Carrier.enorm_eq_gauge T
+
+/-- The defining inequality of absolutely `p`-summing operators holds with constant the norm
+of `Πₚ(E, F)`. -/
+theorem norm_toLp_le (T : AbsolutelySumming 𝕜 p E F) {ι : Type*} [Fintype ι] (x : ι → E) :
+    ‖WithLp.toLp p (fun i ↦ T.toContinuousLinearMap (x i))‖ ≤ ‖T‖ * weakLpNorm (𝕜 := 𝕜) p x := by
+  rw [norm_def]
+  exact ContinuousLinearMap.norm_toLp_le_toReal_summingENorm_mul
+    (T.toContinuousLinearMap_mem).ne x
+
+/-- The norm of `Πₚ(E, F)` is the least constant in the defining inequality. -/
+theorem norm_le_iff {T : AbsolutelySumming 𝕜 p E F} {C : ℝ} (hC : 0 ≤ C) :
+    ‖T‖ ≤ C ↔ ∀ (n : ℕ) (x : Fin n → E),
+      ‖WithLp.toLp p (fun i ↦ T.toContinuousLinearMap (x i))‖ ≤ C * weakLpNorm (𝕜 := 𝕜) p x := by
+  rw [← ContinuousLinearMap.summingENorm_le_ofReal_iff hC, ← enorm_eq_summingENorm,
+    ← ofReal_norm, ENNReal.ofReal_le_ofReal_iff hC]
+
+/-- The rank-one operator `x ↦ f x • y` in `Πₚ(E, F)`. -/
+def smulRight (f : StrongDual 𝕜 E) (y : F) : AbsolutelySumming 𝕜 p E F :=
+  mk' (smulRight_mem_absolutelySummingOperators f y)
+
+@[simp]
+theorem toContinuousLinearMap_smulRight (f : StrongDual 𝕜 E) (y : F) :
+    (smulRight (p := p) f y).toContinuousLinearMap = f.smulRight y := (rfl)
+
+/-- The rank-one operator `x ↦ f x • y` has `p`-summing norm `‖f‖ ‖y‖`. -/
+@[simp]
+theorem norm_smulRight (f : StrongDual 𝕜 E) (y : F) :
+    ‖smulRight (p := p) f y‖ = ‖f‖ * ‖y‖ := by
+  rw [norm_def, toContinuousLinearMap_smulRight, ContinuousLinearMap.summingENorm_smulRight,
+    ENNReal.toReal_mul, toReal_enorm, toReal_enorm]
+
+variable {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+variable (E p) in
+/-- Composition on the left with a bounded operator, as a bounded linear map
+`Πₚ(E, F) → Πₚ(E, G)` of norm at most `‖A‖`. -/
+def postcomp (A : F →L[𝕜] G) : AbsolutelySumming 𝕜 p E F →L[𝕜] AbsolutelySumming 𝕜 p E G :=
+  LinearMap.mkContinuous
+    { toFun T := mk' (comp_left_mem_absolutelySummingOperators A T.toContinuousLinearMap_mem)
+      map_add' _ _ := OperatorGauge.Carrier.ext (by simp [ContinuousLinearMap.comp_add])
+      map_smul' _ _ := OperatorGauge.Carrier.ext (by simp) } ‖A‖ fun T ↦ by
+    rw [← ENNReal.ofReal_le_ofReal_iff (by positivity), ENNReal.ofReal_mul (norm_nonneg _),
+      ofReal_norm, ofReal_norm, ofReal_norm, enorm_eq_summingENorm, enorm_eq_summingENorm]
+    exact A.summingENorm_comp_left_le _
+
+@[simp]
+theorem toContinuousLinearMap_postcomp (A : F →L[𝕜] G) (T : AbsolutelySumming 𝕜 p E F) :
+    (postcomp p E A T).toContinuousLinearMap = A ∘L T.toContinuousLinearMap := (rfl)
+
+/-- Composition on the left multiplies the `p`-summing norm by at most `‖A‖`. -/
+theorem norm_postcomp_le (A : F →L[𝕜] G) : ‖postcomp p E A‖ ≤ ‖A‖ :=
+  LinearMap.mkContinuous_norm_le _ (norm_nonneg A) _
+
+variable {D : Type*} [SeminormedAddCommGroup D] [NormedSpace 𝕜 D]
+
+variable (F p) in
+/-- Composition on the right with a bounded operator, as a bounded linear map
+`Πₚ(E, F) → Πₚ(D, F)` of norm at most `‖B‖`. -/
+def precomp (B : D →L[𝕜] E) : AbsolutelySumming 𝕜 p E F →L[𝕜] AbsolutelySumming 𝕜 p D F :=
+  LinearMap.mkContinuous
+    { toFun T := mk' (comp_right_mem_absolutelySummingOperators T.toContinuousLinearMap_mem B)
+      map_add' _ _ := OperatorGauge.Carrier.ext (by simp [ContinuousLinearMap.add_comp])
+      map_smul' _ _ := OperatorGauge.Carrier.ext (by simp) }
+    ‖B‖ fun T ↦ by
+    rw [← ENNReal.ofReal_le_ofReal_iff (by positivity), ENNReal.ofReal_mul (norm_nonneg _),
+      ofReal_norm, ofReal_norm, ofReal_norm, enorm_eq_summingENorm, enorm_eq_summingENorm,
+      mul_comm]
+    exact ContinuousLinearMap.summingENorm_comp_right_le _ B
+
+@[simp]
+theorem toContinuousLinearMap_precomp (B : D →L[𝕜] E) (T : AbsolutelySumming 𝕜 p E F) :
+    (precomp p F B T).toContinuousLinearMap = T.toContinuousLinearMap ∘L B := (rfl)
+
+/-- Composition on the right multiplies the `p`-summing norm by at most `‖B‖`. -/
+theorem norm_precomp_le (B : D →L[𝕜] E) : ‖precomp p F B‖ ≤ ‖B‖ :=
+  LinearMap.mkContinuous_norm_le _ (norm_nonneg B) _
+
+variable (𝕜 E F) in
+/-- The inclusion `Πₚ(E, F) → Π_q(E, F)` for `p ≤ q`, as a contraction. -/
+def inclusion {q : ℝ≥0∞} [Fact (1 ≤ q)] (hpq : p ≤ q) :
+    AbsolutelySumming 𝕜 p E F →L[𝕜] AbsolutelySumming 𝕜 q E F :=
+  LinearMap.mkContinuous
+    { toFun T := mk' (absolutelySummingOperators_le_of_exponent_le hpq T.toContinuousLinearMap_mem)
+      map_add' _ _ := OperatorGauge.Carrier.ext (by simp)
+      map_smul' _ _ := OperatorGauge.Carrier.ext (by simp) } 1 fun T ↦ by
+    -- Rewriting the underlying operator explicitly keeps the kernel from comparing the gauges
+    -- of the two exponents, which are not definitionally equal.
+    rw [one_mul, norm_def, norm_def, LinearMap.coe_mk, AddHom.coe_mk, toContinuousLinearMap_mk']
+    exact ENNReal.toReal_mono T.toContinuousLinearMap_mem.ne
+      (ContinuousLinearMap.summingENorm_le_summingENorm_of_exponent_le hpq _)
+
+@[simp]
+theorem toContinuousLinearMap_inclusion {q : ℝ≥0∞} [Fact (1 ≤ q)] (hpq : p ≤ q)
+    (T : AbsolutelySumming 𝕜 p E F) :
+    (inclusion 𝕜 E F hpq T).toContinuousLinearMap = T.toContinuousLinearMap :=
+  toContinuousLinearMap_mk' (absolutelySummingOperators_le_of_exponent_le hpq
+    T.toContinuousLinearMap_mem)
+
+/-- The inclusion `Πₚ(E, F) → Π_q(E, F)` is a contraction. -/
+theorem norm_inclusion_le {q : ℝ≥0∞} [Fact (1 ≤ q)] (hpq : p ≤ q) :
+    ‖inclusion 𝕜 E F hpq‖ ≤ 1 :=
+  LinearMap.mkContinuous_norm_le _ zero_le_one _
+
+end AbsolutelySumming
+
+end Ideal
 
 end TauCeti

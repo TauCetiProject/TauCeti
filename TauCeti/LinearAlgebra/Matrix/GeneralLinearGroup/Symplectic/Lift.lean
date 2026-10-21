@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Basic
 public import Mathlib.Data.Fintype.EquivFin
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.RingTheory.Ideal.Quotient.Nilpotent
+public import TauCeti.LinearAlgebra.Matrix.IdealEntries
 
 /-!
 # Lifting symplectic matrices
@@ -45,17 +46,6 @@ noncomputable section
 
 variable {l : Type*} [DecidableEq l] [Fintype l]
 variable {R : Type u} [CommRing R]
-
-private theorem matrix_mul_eq_zero_of_entries_mem
-    (I : Ideal R) (hI : I ^ 2 = (⊥ : Ideal R)) {n : Type*} [Fintype n]
-    (A B : Matrix n n R) (hA : forall i j, A i j ∈ I) (hB : forall i j, B i j ∈ I) :
-    A * B = 0 := by
-  ext i j
-  rw [Matrix.mul_apply]
-  apply Finset.sum_eq_zero
-  intro k _
-  rw [← Ideal.mem_bot]
-  exact hI ▸ (by simpa only [pow_two] using Ideal.mul_mem_mul (hA i k) (hB k j))
 
 /-- The strict upper-triangular part of a matrix. -/
 private def upperPart {n : Type*} [LinearOrder n] (A : Matrix n n R) : Matrix n n R :=
@@ -184,11 +174,11 @@ theorem map_quotient_mk_surjective_of_sq_eq_bot
     rw [hXt, ← Matrix.mul_assoc, Matrix.J_squared]
     simp
   have hX_mul_E : X * E = 0 :=
-    matrix_mul_eq_zero_of_entries_mem I hI X E hX_mem hE_mem
+    Matrix.mul_eq_zero_of_sq_eq_bot hI hX_mem hE_mem
   have hE_mul_Xt : E * X.transpose = 0 :=
-    matrix_mul_eq_zero_of_entries_mem I hI E X.transpose hE_mem hXt_mem
+    Matrix.mul_eq_zero_of_sq_eq_bot hI hE_mem hXt_mem
   have hY_mul_Xt : Y * X.transpose = 0 :=
-    matrix_mul_eq_zero_of_entries_mem I hI Y X.transpose hY_mem hXt_mem
+    Matrix.mul_eq_zero_of_sq_eq_bot hI hY_mem hXt_mem
   let N : Matrix (l ⊕ l) (l ⊕ l) R := (1 + X) * M
   have hM_form : M * J * M.transpose = J + E := by
     dsimp only [E]

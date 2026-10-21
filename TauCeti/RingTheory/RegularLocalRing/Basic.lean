@@ -30,7 +30,9 @@ is a regular ring, so that every `Localization M` of a regular ring, including
 * `TauCeti.IsRegularLocalRing.isDomain`: a regular local ring is an integral domain;
 * `TauCeti.IsRegularLocalRing.quotient_span_singleton`: for `x ∈ 𝔪 \ 𝔪²`, the quotient `R ⧸ (x)`
   is again a regular local ring, and `TauCeti.IsRegularLocalRing.quotient_span_singleton_iff`: for
-  a nonzero `x ∈ 𝔪` this happens exactly when `x ∉ 𝔪²`;
+  a nonzero `x ∈ 𝔪` this happens exactly when `x ∉ 𝔪²`, in which case
+  `TauCeti.IsRegularLocalRing.spanFinrank_maximalIdeal_quotient_span_singleton_add_one` shows that
+  the maximal ideal of `R ⧸ (x)` needs one generator fewer;
 * `Ideal.exists_mem_notMem_maximalIdeal_sq_of_quotient`: a nonzero ideal with regular quotient
   contains an element outside `𝔪²`, also used by the one-element criterion;
 * `TauCeti.IsRegularLocalRing.span_singleton_isPrime_of_notMem_sq`: the quotient by such a
@@ -179,6 +181,16 @@ theorem quotient_span_singleton_iff {x : R} (hxm : x ∈ maximalIdeal R) (hx0 : 
     _root_.Ideal.exists_mem_notMem_maximalIdeal_sq_of_quotient (span {x})
       (span_singleton_eq_bot.not.mpr hx0)
   exact hnot (((span_singleton_le_iff_mem _).mpr hx) hmem)
+
+/-- If `R` is a regular local ring and `x ∈ 𝔪` is nonzero with `R ⧸ (x)` regular, then the
+maximal ideal of `R ⧸ (x)` needs exactly one generator fewer than `𝔪`. -/
+theorem spanFinrank_maximalIdeal_quotient_span_singleton_add_one {x : R}
+    (hxm : x ∈ maximalIdeal R) (hx0 : x ≠ 0) [IsRegularLocalRing (R ⧸ span {x})] :
+    (maximalIdeal (R ⧸ span {x})).spanFinrank + 1 = (maximalIdeal R).spanFinrank := by
+  have hdim := ringKrullDim_quotient_span_singleton_succ_eq_ringKrullDim_of_mem_nonZeroDivisors
+    (mem_nonZeroDivisors_of_ne_zero hx0) hxm
+  rw [← spanFinrank_maximalIdeal (R := R ⧸ span {x}), ← spanFinrank_maximalIdeal (R := R)] at hdim
+  exact_mod_cast hdim
 
 /-- **The curve a parameter cuts out is a domain, so its principal ideal is prime.** Let
 `(R, 𝔪)` be a regular local ring and let `f ∈ 𝔪 \ 𝔪²`, so that `f` is a parameter. Then the

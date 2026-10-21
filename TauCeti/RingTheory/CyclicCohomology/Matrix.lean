@@ -299,9 +299,6 @@ private theorem update_pathEntries_hochschildFace_castSucc {ι : Type*} [Fintype
     Function.update (pathEntries (hochschildFace i.castSucc a) p) i
         (a i.castSucc (p i) k * a i.succ k (p (finRotate (n + 1) i))) =
       hochschildFace i.castSucc (pathEntries a (Fin.insertNth i.succ k p)) := by
-  have hrot : finRotate (n + 2) i.castSucc = i.succ := by
-    ext
-    simp
   have hsA (m : Fin (n + 1)) (hm : m ≠ i) : i.castSucc.succAbove m = i.succ.succAbove m := by
     rw [Ne, Fin.ext_iff] at hm
     ext
@@ -313,7 +310,7 @@ private theorem update_pathEntries_hochschildFace_castSucc {ι : Type*} [Fintype
   simp only [hochschildFace_castSucc]
   rcases eq_or_ne m i with rfl | hm
   · simp only [Function.update_self, Fin.contractNth_apply_of_eq m.castSucc _ _ m rfl,
-      pathEntries_apply, hrot, hself, Fin.insertNth_apply_same,
+      pathEntries_apply, Fin.finRotate_castSucc, hself, Fin.insertNth_apply_same,
       Fin.finRotate_succ_eq_succ_succAbove, Fin.insertNth_apply_succAbove]
   · have hm' : (i.castSucc : ℕ) ≠ m := by simpa [Fin.ext_iff, eq_comm] using hm
     simp only [Function.update_of_ne hm, Fin.contractNth_apply_of_ne _ _ _ _ hm',
