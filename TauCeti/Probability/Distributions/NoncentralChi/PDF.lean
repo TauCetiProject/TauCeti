@@ -73,6 +73,29 @@ theorem noncentralChiPDFReal_of_nonpos (hx : x ≤ 0) : noncentralChiPDFReal k �
 theorem noncentralChiPDF_of_nonpos (hx : x ≤ 0) : noncentralChiPDF k δ s x = 0 := by
   simp [noncentralChiPDF_eq_ofReal, noncentralChiPDFReal_of_nonpos hx]
 
+/-- The real density vanishes at nonpositive scale. -/
+@[simp]
+theorem noncentralChiPDFReal_of_scale_nonpos (hs : s ≤ 0) : noncentralChiPDFReal k δ s x = 0 := by
+  rw [noncentralChiPDFReal, ite_eq_right fun h ↦ (not_lt.mpr hs) h.1]
+
+/-- The extended density vanishes at nonpositive scale. -/
+@[simp]
+theorem noncentralChiPDF_of_scale_nonpos (hs : s ≤ 0) : noncentralChiPDF k δ s x = 0 := by
+  simp [noncentralChiPDF_eq_ofReal, noncentralChiPDFReal_of_scale_nonpos hs]
+
+/-- Invalid degrees have zero real density. -/
+@[simp]
+theorem noncentralChiPDFReal_of_neg (hk : k < 0) : noncentralChiPDFReal k δ s x = 0 := by
+  rw [noncentralChiPDFReal]
+  split_ifs
+  · rw [noncentralChiSquaredPDFReal_of_neg hk, mul_zero]
+  · rfl
+
+/-- Invalid degrees have zero extended density. -/
+@[simp]
+theorem noncentralChiPDF_of_neg (hk : k < 0) : noncentralChiPDF k δ s x = 0 := by
+  simp [noncentralChiPDF_eq_ofReal, noncentralChiPDFReal_of_neg hk]
+
 /-- The real density is nonnegative for every parameter value. -/
 theorem noncentralChiPDFReal_nonneg (k : ℝ) (δ : ℝ≥0) (s x : ℝ) :
     0 ≤ noncentralChiPDFReal k δ s x := by
