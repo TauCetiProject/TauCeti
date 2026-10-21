@@ -51,6 +51,8 @@ for residual capacities these are augmenting walks.
 * `TauCeti.positiveReachable_iff_exists_isPath` and `TauCeti.positiveReachable_iff_reflTransGen`:
   positive reachability is witnessed by a path, and is the reflexive transitive closure of being
   joined by an arrow of positive capacity.
+* `TauCeti.positiveReachable_iff_nonempty_arrowWalk`: positive reachability is reachability along
+  the arrow family `TauCeti.PositiveHom c` of arrows of positive capacity.
 * `TauCeti.PositiveReachable.mem_of_mem`: a vertex set that no arrow of positive capacity leaves
   contains every vertex positively reachable from one of its members.
 * `TauCeti.positiveReachable_map_iff` and `TauCeti.positiveReachable_map_iff_of_strictMono`: a
@@ -326,6 +328,26 @@ theorem positiveReachable_iff_reflTransGen :
     induction h with
     | refl => exact .refl c s
     | tail _ he ih => exact ih.tail he.choose he.choose_spec
+
+variable (c) in
+/-- The arrows of positive capacity for `c`, retaining their identities: the arrow family of the
+part of `Q` along which positive reachability travels. -/
+abbrev PositiveHom (v w : V) : Type v :=
+  {e : Q v w // 0 < c e}
+
+/-- Positive reachability is reachability along the arrows of positive capacity. -/
+theorem positiveReachable_iff_nonempty_arrowWalk :
+    PositiveReachable c s t ↔ Nonempty (ArrowWalk (PositiveHom c) s t) := by
+  rw [positiveReachable_iff_reflTransGen]
+  constructor
+  · intro h
+    induction h with
+    | refl => exact ⟨ArrowWalk.nil s⟩
+    | tail _ he ih => exact ⟨ih.some.cons ⟨he.choose, he.choose_spec⟩⟩
+  · rintro ⟨p⟩
+    induction p with
+    | nil => exact .refl
+    | cons _ e ih => exact .tail ih ⟨e.1, e.2⟩
 
 /-- A vertex set that no arrow of positive capacity leaves is closed under positive reachability.
 -/
