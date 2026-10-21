@@ -50,6 +50,9 @@ nonarchimedean functional analysis, for instance from bounded lifts of the coord
 * `ZeroAtInftyContinuousMap.hasSum_linearCombination`: the unconditional expansion
   `∑ i, a i • e i = linearCombination R e a`.
 * `ZeroAtInftyContinuousMap.linearCombination_single`: the value on a coordinate vector.
+* `ZeroAtInftyContinuousMap.eq_linearCombination_iff`: a continuous linear map is the linear
+  combination map of a bounded family exactly when it sends each unit coordinate vector to
+  the corresponding family member.
 * `ZeroAtInftyContinuousMap.linearCombination_eq_tsum_mul`: for scalar-valued families, the
   pairing `∑' i, b i * a i`.
 * `ZeroAtInftyContinuousMap.ringOpNorm_linearCombination`: over a norm-one ring the operator
@@ -141,6 +144,12 @@ theorem linearCombination_single [DecidableEq I] (e : lp (fun _ : I ↦ M) ∞) 
     linearCombination R e (single i r) = r • e i := by
   rw [linearCombination_apply, tsum_eq_single i fun j hj ↦ by simp [single_eq_of_ne hj],
     single_eq_same]
+
+/-- The linear combination map of a bounded family is the unique continuous linear map
+sending each unit coordinate vector `single i 1` to `e i`. -/
+theorem eq_linearCombination_iff [DecidableEq I] {e : lp (fun _ : I ↦ M) ∞}
+    {u : C₀(I, R) →L[R] M} : u = linearCombination R e ↔ ∀ i, u (single i 1) = e i :=
+  ⟨by rintro rfl i; simp, fun h ↦ continuousLinearMap_ext_single_one fun i ↦ by simp [h]⟩
 
 /-- Pairing the coordinate family `lp.single ∞ i m` with `a` gives `a i • m`. -/
 @[simp]
