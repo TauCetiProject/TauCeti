@@ -133,8 +133,9 @@ theorem IsPerfectoidTateRing.of_forall_exists_pow_eq [NeZero p] [IsUniform R]
   obtain ⟨y, hy⟩ := hroot x
   obtain ⟨z, rfl⟩ := IsIntegrallyClosedIn.exists_algebraMap_eq_of_isIntegral_pow
     (R := powerBoundedSubring R) (x := y) (NeZero.pos p) (hy ▸ isIntegral_algebraMap)
+  have hx : x = z ^ p := Subtype.ext hy.symm
   refine ⟨z, ?_⟩
-  rw [show x = z ^ p from Subtype.ext hy.symm, sub_self]
+  rw [hx, sub_self]
   exact dvd_zero _
 
 /-- **A uniform perfect Tate ring of characteristic `p` is perfectoid** (Scholze, *Étale cohomology
@@ -146,7 +147,8 @@ theorem IsPerfectoidTateRing.of_perfectRing [Fact p.Prime] [CharP R p] [PerfectR
   have hp : (p : powerBoundedSubring R) = 0 := Subtype.ext (CharP.cast_eq_zero R p)
   exact .of_forall_exists_pow_eq ⟨ϖ, mem_powerBoundedSubring.mpr
     (IsPowerBounded.of_isTopologicallyNilpotent hϖ.isTopologicallyNilpotent)⟩ hϖ
-    (hp ▸ dvd_zero _) fun x ↦ surjective_frobenius R p x
+    (hp ▸ dvd_zero _) fun x ↦
+      (surjective_frobenius R p x).imp fun _ h ↦ by rwa [frobenius_def] at h
 
 /-- **Perfectoid Tate rings transport along isomorphisms of topological rings.** -/
 theorem IsPerfectoidTateRing.of_ringEquiv {S : Type*} [CommRing S] [UniformSpace S]
