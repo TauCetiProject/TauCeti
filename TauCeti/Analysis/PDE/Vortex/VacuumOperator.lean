@@ -14,7 +14,7 @@ public import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
 A vortex on the plane `ℂ` is a pair `(a, α)` of an imaginary-valued connection one-form `a` on
 the trivial line bundle and a section `α`, solving
 
-`∂̄_a α = 0`, `*iF_a = (1 - |α|²) / 8`.
+`\bar∂_a α = 0`, `*iF_a = (1 - |α|²) / 8`.
 
 At the vacuum `(a, α) = (0, 1)` write `a = i b` with `b = b₁ dx + b₂ dy` real and
 `α = 1 + u + i v`, and put `p = u / 2`, `q = v / 2`. In the coordinates `(b₁, b₂, p, q)` the
@@ -25,7 +25,7 @@ coordinates `L₀` sends `(b₁, b₂, p, q)` to `(G, C, H₁, H₂)`, where
 
 * `G = ∂₁b₁ + ∂₂b₂ + q / 2` is the Coulomb gauge condition,
 * `C = -∂₁b₂ + ∂₂b₁ + p / 2` linearizes the curvature equation, and
-* `H₁ + i H₂ = (∂₁p - ∂₂q - b₂ / 2) + i (∂₁q + ∂₂p + b₁ / 2)` linearizes `∂̄_a α`.
+* `H₁ + i H₂ = (∂₁p - ∂₂q - b₂ / 2) + i (∂₁q + ∂₂p + b₁ / 2)` linearizes `\bar∂_a α`.
 
 This file defines `L₀` and its formal `L²` adjoint `L₀*` as continuous linear operators on
 Schwartz fields `ℂ → ℝ⁴`. It proves the Weitzenböck identities `L₀* L₀ = L₀ L₀* = -Δ + 1/4` and
