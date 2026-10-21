@@ -107,7 +107,8 @@ def dualNumberGradedProjectiveBasis :
       (LaurentK0.{u} (gradedFiniteProjectiveModulesExactStructure (dualNumberIntegerGrade k))) :=
   gradedIdempotentProjectiveBasis (completeOrthogonalIdempotents_one k)
     (fun _ => one_mem_dualNumberIntegerGrade_zero k)
-    (fun _ => Ideal.isHomogeneous_span_singleton_one (dualNumberIntegerGrade k))
+    (fun _ => Ideal.isHomogeneous_span_singleton_of_mem_zero _
+      (one_mem_dualNumberIntegerGrade_zero k))
     (fun _ => dualNumberIntegerGrade_eq_bot_of_neg k) (dualNumberIntegerGrade_zero_le_span k)
     (fun _ => one_ne_zero)
 
@@ -127,9 +128,11 @@ theorem dualNumberGradedProjectiveBasis_apply (i : Unit) :
     dualNumberGradedProjectiveBasis k i =
       LaurentK0.of.{u} (gradedFiniteProjectiveModulesExactStructure (dualNumberIntegerGrade k))
         ⟨GradedModuleCat.ofIdeal (dualNumberIntegerGrade k) (Ideal.span {1})
-            (Ideal.isHomogeneous_span_singleton_one (dualNumberIntegerGrade k)),
+            (Ideal.isHomogeneous_span_singleton_of_mem_zero _
+              (one_mem_dualNumberIntegerGrade_zero k)),
           gradedFiniteProjectiveModules_ofIdeal_span_singleton IsIdempotentElem.one
-            (Ideal.isHomogeneous_span_singleton_one (dualNumberIntegerGrade k))⟩ := by
+            (Ideal.isHomogeneous_span_singleton_of_mem_zero _
+              (one_mem_dualNumberIntegerGrade_zero k))⟩ := by
   rw [dualNumberGradedProjectiveBasis, gradedIdempotentProjectiveBasis_apply]
 
 /-- The vector of `TauCeti.dualNumberGradedResidueBasis` is the class `[S]` of the graded residue
