@@ -86,7 +86,7 @@ private theorem exists_lift (f : F ⟶ G) (g : G ⟶ H)
     ∃ b : G.Product, productMap g b = c ∧ ∃ a : F.Product, productMap f a = G.shift b := by
   obtain ⟨b, hb⟩ := productMap_surjective hg (c : H.Product)
   refine ⟨b, hb, (exact_productMap hfg (G.shift b)).1 ?_⟩
-  rw [← LinearMap.comp_apply (productMap g), ← shift_natural, LinearMap.comp_apply, hb]
+  rw [← shift_natural_apply, hb]
   exact LinearMap.mem_ker.1 (H.lim_eq_ker ▸ c.2)
 
 end Product
@@ -98,16 +98,15 @@ theorem exact_limMap (hf : ∀ n, Function.Injective (f.app (op n)).hom)
     (hfg : ∀ n, Function.Exact (f.app (op n)).hom (g.app (op n)).hom) :
     Function.Exact (limMap f) (limMap g) := by
   refine Function.Exact.of_comp_of_mem_range ?_ fun y hy ↦ ?_
-  · ext x
-    rw [Function.comp_apply, ← LinearMap.comp_apply, ← limMap_comp, comp_eq_zero_of_exact hfg,
-      limMap_zero, LinearMap.zero_apply, Pi.zero_apply]
+  · rw [← LinearMap.coe_comp, LinearMap.coe_zero_iff, ← limMap_comp, comp_eq_zero_of_exact hfg,
+      limMap_zero]
   obtain ⟨x, hx⟩ := (exact_productMap hfg (y : G.Product)).1
     (by rw [← coe_limMap_apply, hy, Submodule.coe_zero])
   -- `x` is compatible because `f` is injective on products and commutes with the shifts.
   have hxlim : x ∈ F.lim := by
     rw [lim_eq_ker, LinearMap.mem_ker]
     refine productMap_injective hf ?_
-    rw [← LinearMap.comp_apply, ← shift_natural, LinearMap.comp_apply, hx, map_zero]
+    rw [← shift_natural_apply, hx, map_zero]
     exact LinearMap.mem_ker.1 (G.lim_eq_ker ▸ y.2)
   exact ⟨⟨x, hxlim⟩, Subtype.ext <| (coe_limMap_apply f _).trans hx⟩
 
@@ -123,8 +122,7 @@ theorem limMap_surjective_of_subsingleton_limOne
   obtain ⟨y, hy, x, hx⟩ := exists_lift f g hfg hg z
   obtain ⟨w, hw⟩ := F.subsingleton_limOne_iff.1 ‹_› x
   have hlim : y - productMap f w ∈ G.lim := by
-    rw [lim_eq_ker, LinearMap.mem_ker, map_sub, ← LinearMap.comp_apply G.shift, shift_natural,
-      LinearMap.comp_apply, hw, hx, sub_self]
+    rw [lim_eq_ker, LinearMap.mem_ker, map_sub, shift_natural_apply, hw, hx, sub_self]
   refine ⟨⟨_, hlim⟩, Subtype.ext ?_⟩
   rw [coe_limMap_apply, map_sub, hy, (exact_productMap hfg).apply_apply_eq_zero, sub_zero]
 
@@ -144,8 +142,7 @@ theorem exact_limOneMap (hfg : ∀ n, Function.Exact (f.app (op n)).hom (g.app (
   -- A shift `H.shift (g w)` is the image of the shift `G.shift w`.
   rintro _ ⟨-, z, rfl⟩
   obtain ⟨w, rfl⟩ := productMap_surjective hg z
-  exact ⟨G.shift w, LinearMap.mem_range_self _ w, by
-    rw [← LinearMap.comp_apply, ← shift_natural, LinearMap.comp_apply]⟩
+  exact ⟨G.shift w, LinearMap.mem_range_self _ w, (shift_natural_apply g w).symm⟩
 
 end LimOne
 
@@ -255,10 +252,8 @@ theorem connecting_naturality {F' G' H' : ModuleTower.{v} R} {f' : F' ⟶ G'} {g
     limOneMap_mk]
   -- The images `β(b)` and `α(a)` are the lifts computing the connecting map of `γ(c)`.
   refine (connecting_apply f' g' hf' hfg' hg' _ (productMap β b) ?_ (productMap α a) ?_).symm
-  · rw [coe_limMap_apply, ← LinearMap.comp_apply, ← productMap_comp, ← h₂, productMap_comp,
-      LinearMap.comp_apply, hb]
-  · rw [← LinearMap.comp_apply, ← productMap_comp, ← h₁, productMap_comp, LinearMap.comp_apply,
-      ha, ← LinearMap.comp_apply, ← shift_natural, LinearMap.comp_apply]
+  · rw [coe_limMap_apply, ← productMap_comp_apply, ← h₂, productMap_comp_apply, hb]
+  · rw [← productMap_comp_apply, ← h₁, productMap_comp_apply, ha, shift_natural_apply]
 
 end Connecting
 

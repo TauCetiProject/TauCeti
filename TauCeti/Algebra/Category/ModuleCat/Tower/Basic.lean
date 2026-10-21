@@ -237,6 +237,11 @@ theorem productMap_comp (f : F ⟶ G) (g : G ⟶ H) :
     productMap (f ≫ g) = productMap g ∘ₗ productMap f :=
   (rfl)
 
+/-- The composition law `productMap_comp`, applied to a family. -/
+theorem productMap_comp_apply (f : F ⟶ G) (g : G ⟶ H) (x : F.Product) :
+    productMap (f ≫ g) x = productMap g (productMap f x) :=
+  (rfl)
+
 @[simp]
 theorem productMap_zero : productMap (0 : F ⟶ G) = 0 :=
   (rfl)
@@ -271,6 +276,11 @@ theorem shift_natural (f : F ⟶ G) : G.shift ∘ₗ productMap f = productMap f
   ext x n : 2
   simp only [LinearMap.comp_apply, shift_apply, productMap_apply, map_sub]
   rw [← LinearMap.comp_apply (f.app (op n)).hom, app_comp_transition, LinearMap.comp_apply]
+
+/-- The naturality square `shift_natural`, applied to a family. -/
+theorem shift_natural_apply (f : F ⟶ G) (x : F.Product) :
+    G.shift (productMap f x) = productMap f (F.shift x) :=
+  LinearMap.congr_fun (shift_natural f) x
 
 /-- The linear map `lim A → lim B` induced by a morphism of towers. -/
 def limMap (f : F ⟶ G) : F.lim →ₗ[R] G.lim :=
