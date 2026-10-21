@@ -9,10 +9,12 @@ public import Mathlib.Analysis.InnerProductSpace.ExteriorPower
 public import Mathlib.Analysis.InnerProductSpace.Orientation
 public import Mathlib.LinearAlgebra.ExteriorPower.HodgeStar
 public import TauCeti.Analysis.InnerProductSpace.Nondegenerate
--- Private: `stdOrthonormalBasis`, `InnerProductSpace.ext_inner_right_basis` and
--- `Module.Basis.topVector_eq_ιMulti` are used only inside proofs.
+-- Private: `stdOrthonormalBasis`, `InnerProductSpace.ext_inner_right_basis`,
+-- `Module.Basis.topVector_eq_ιMulti` and `exteriorPower.wedgePairing_exteriorPower_apply` are used
+-- only inside proofs.
 import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.Analysis.InnerProductSpace.PiL2
+import TauCeti.LinearAlgebra.ExteriorPower.Basis
 import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
 -- The Gram-determinant formula `LinearMap.BilinForm.bilinForm_ιMulti_ιMulti` for the induced
 -- bilinear form on an exterior power is private to its file, and the body of
@@ -93,7 +95,7 @@ omit [FiniteDimensional ℝ V] in
 private theorem volumeLinearMap_topVector (b : OrthonormalBasis (Fin n) ℝ V) :
     o.volumeLinearMap b.toBasis.topVector = o.volumeForm b := by
   rw [b.toBasis.topVector_eq_ιMulti _i.out, volumeLinearMap_ιMulti]
-  congr 1
+  simp [Function.comp_def]
 
 private theorem bijective_volumeLinearMap : Function.Bijective o.volumeLinearMap := by
   -- The functional is nonzero on the wedge of any orthonormal basis, and the top exterior power
@@ -148,18 +150,14 @@ theorem hodgeStar_basis (b : OrthonormalBasis (Fin n) ℝ V) (hb : b.toBasis.ori
     o.hodgeStar hkl (b.toBasis.exteriorPower k s) =
       powersetCard.sign s • b.toBasis.exteriorPower l
         (powersetCard.compl (by rw [Fintype.card_fin, ← _i.out]; omega) s) := by
-  -- Pair both sides with the orthonormal basis of `⋀ˡ V`; the wedge pairing is computed by
-  -- Mathlib's `exteriorPower.wedgePairing_eq_apply_topVector_smul`.
+  -- Pair both sides with the orthonormal basis of `⋀ˡ V`.
   refine InnerProductSpace.ext_inner_right_basis (b.toBasis.exteriorPower l) fun t ↦ ?_
-  rw [inner_hodgeStar_apply, wedgePairing_eq_apply_topVector_smul o.volumeEquiv hkl b.toBasis,
-    volumeEquiv_topVector o b hb, one_smul]
-  simp only [LinearEquiv.coe_coe, LinearEquiv.trans_apply, Basis.repr_self, Basis.repr_symm_single,
-    one_smul, Basis.groupSMul_apply]
-  rw [Pi.smul_apply', Basis.reindex_apply, powersetCard.compl_symm,
-    ← OrthonormalBasis.toBasis_exteriorPower]
-  simp only [Units.smul_def, LinearMap.smul_apply, OrthonormalBasis.coe_toBasis,
-    ← Int.cast_smul_eq_zsmul ℝ, real_inner_smul_left, OrthonormalBasis.inner_eq_ite, smul_eq_mul]
-  rw [← OrthonormalBasis.coe_toBasis, Basis.dualBasis_apply_self]
-  simp_rw [eq_comm (a := t)]
+  rw [inner_hodgeStar_apply, wedgePairing_exteriorPower_apply, volumeEquiv_topVector o b hb,
+    one_smul, ← OrthonormalBasis.toBasis_exteriorPower, OrthonormalBasis.coe_toBasis]
+  simp only [Units.smul_def, ← Int.cast_smul_eq_zsmul ℝ, real_inner_smul_left,
+    OrthonormalBasis.inner_eq_ite, smul_eq_mul]
+  -- `s` and `t` are disjoint exactly when `t` is the complement of `s`.
+  exact congrArg _ <| if_congr
+    (disjoint_comm.trans (powersetCard.disjoint_iff_eq_compl _) |>.trans eq_comm) rfl rfl
 
 end Orientation
