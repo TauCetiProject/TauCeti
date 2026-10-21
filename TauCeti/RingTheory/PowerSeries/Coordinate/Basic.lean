@@ -271,6 +271,16 @@ noncomputable def map (f : R →+* S) : FormalCoordinate R →* FormalCoordinate
 theorem toPowerSeries_map (f : R →+* S) (φ : FormalCoordinate R) :
     (map f φ).toPowerSeries = PowerSeries.map f φ.toPowerSeries := (rfl)
 
+/-- Base change of formal coordinates along the identity changes nothing. -/
+@[simp]
+theorem map_id : map (RingHom.id R) = MonoidHom.id (FormalCoordinate R) :=
+  MonoidHom.ext fun _ ↦ FormalCoordinate.ext rfl
+
+/-- Successive base changes of a formal coordinate agree with base change along the composite. -/
+theorem map_comp {T : Type*} [CommRing T] (f : R →+* S) (g : S →+* T) (φ : FormalCoordinate R) :
+    map (g.comp f) φ = map g (map f φ) :=
+  FormalCoordinate.ext rfl
+
 end map
 
 section Strict

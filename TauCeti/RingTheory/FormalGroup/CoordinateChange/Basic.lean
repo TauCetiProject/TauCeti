@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.FormalGroup.Basic
 public import TauCeti.RingTheory.PowerSeries.Coordinate.Basic
+import TauCeti.RingTheory.FormalGroup.AddInv
 import TauCeti.RingTheory.MvPowerSeries.Substitution
 
 /-!
@@ -68,15 +69,6 @@ private noncomputable def coordinateChangeSeries : MvPowerSeries (Fin 2) R :=
         PowerSeries.subst (X 1 : MvPowerSeries (Fin 2) R) φ⁻¹.toPowerSeries])
     φ.toPowerSeries
 
-private theorem hasSubst_pair {x y : MvPowerSeries σ R} (hx : PowerSeries.HasSubst x)
-    (hy : PowerSeries.HasSubst y) : HasSubst ![x, y] :=
-  hasSubst_of_constantCoeff_nilpotent fun s ↦ by fin_cases s <;> simpa
-
-/-- The value `F(x, y)` of a formal group law at substitutable `x, y` is substitutable. -/
-private theorem hasSubst_subst_pair {x y : MvPowerSeries σ R} (hx : PowerSeries.HasSubst x)
-    (hy : PowerSeries.HasSubst y) : PowerSeries.HasSubst (F.toPowerSeries.subst ![x, y]) :=
-  IsNilpotent_subst (hasSubst_pair hx hy) (F.zero_constantCoeff ▸ IsNilpotent.zero)
-
 private theorem subst_coordinateChangeSeries {x y : MvPowerSeries σ R}
     (hx : PowerSeries.HasSubst x) (hy : PowerSeries.HasSubst y) :
     (coordinateChangeSeries φ F).subst ![x, y] =
@@ -84,11 +76,11 @@ private theorem subst_coordinateChangeSeries {x y : MvPowerSeries σ R}
         (F.toPowerSeries.subst
           ![PowerSeries.subst x φ⁻¹.toPowerSeries, PowerSeries.subst y φ⁻¹.toPowerSeries])
         φ.toPowerSeries := by
-  have hxy := hasSubst_pair hx hy
+  have hxy := hasSubst_finTwo hx hy
   have hX (i : Fin 2) := PowerSeries.HasSubst.X (S := R) i
   rw [coordinateChangeSeries, subst_powerSeriesSubst hxy
       (F.hasSubst_subst_pair (φ⁻¹.hasSubst_subst (hX 0)) (φ⁻¹.hasSubst_subst (hX 1))),
-    subst_comp_subst_apply (hasSubst_pair (φ⁻¹.hasSubst_subst (hX 0))
+    subst_comp_subst_apply (hasSubst_finTwo (φ⁻¹.hasSubst_subst (hX 0))
       (φ⁻¹.hasSubst_subst (hX 1))) hxy]
   congr 2
   funext s
@@ -105,7 +97,7 @@ noncomputable def changeCoordinate (F : FormalGroup R) (φ : FormalCoordinate R)
   zero_constantCoeff :=
     PowerSeries.constantCoeff_subst_eq_zero
       (constantCoeff_subst_eq_zero
-        (hasSubst_pair (φ⁻¹.hasSubst_subst (PowerSeries.HasSubst.X 0))
+        (hasSubst_finTwo (φ⁻¹.hasSubst_subst (PowerSeries.HasSubst.X 0))
           (φ⁻¹.hasSubst_subst (PowerSeries.HasSubst.X 1)))
         (fun s ↦ by
           fin_cases s <;>
@@ -231,7 +223,7 @@ theorem map_smul (f : R →+* S) (φ : FormalCoordinate R) (F : FormalGroup R) :
   have hφ (i : Fin 2) := φ⁻¹.hasSubst_subst (hX i)
   rw [map_toPowerSeries, smul_toPowerSeries, smul_toPowerSeries, ← map_inv,
     PowerSeries.map_subst (F.hasSubst_subst_pair (hφ 0) (hφ 1)),
-    MvPowerSeries.map_subst (hasSubst_pair (hφ 0) (hφ 1)), map_toPowerSeries,
+    MvPowerSeries.map_subst (hasSubst_finTwo (hφ 0) (hφ 1)), map_toPowerSeries,
     FormalCoordinate.toPowerSeries_map, FormalCoordinate.toPowerSeries_map]
   congr 2
   funext s

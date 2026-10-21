@@ -27,9 +27,10 @@ the change of coordinate of the universal formal group law by the universal stri
 `X + ∑ bᵢ X^(i + 1)`. The **counit** `ε : L[b₁, b₂, …] → L`, classifying the universal formal group
 law with the identity coordinate, sends every `bᵢ` to `0`, and `ε ∘ η_L = ε ∘ η_R = id`.
 
-These are the structure maps of the Hopf algebroid `(L, L[b₁, b₂, …])` that represents the
+These are the unit and counit maps of the Hopf algebroid `(L, L[b₁, b₂, …])` that represents the
 groupoid of commutative formal group laws and their strict isomorphisms; through Quillen's
-theorem it is the Hopf algebroid `(MU_*, MU_*MU)` of complex cobordism.
+theorem it is the Hopf algebroid `(MU_*, MU_*MU)` of complex cobordism. The coproduct and
+conjugation of this Hopf algebroid, and its remaining equations, are not constructed here.
 
 ## Main definitions
 
@@ -96,6 +97,19 @@ def coordinateChangeLift :
     · rw [h, Equiv.apply_symm_apply]
   right_inv f := ringHom_ext' (RingHom.ext fun r ↦ by simp) fun i ↦ by simp
 
+/-- The commutative formal group law classified by `f : L[b₁, b₂, …] →+* R` is the one classified
+by its restriction along `η_L = C`. -/
+@[simp]
+theorem coordinateChangeLift_symm_apply_fst (f : MvPolynomial ℕ+ LazardRing →+* R) :
+    (coordinateChangeLift.symm f).1 = lift.symm (f.comp C) :=
+  (rfl)
+
+/-- The strict coordinate classified by `f : L[b₁, b₂, …] →+* R` has coefficients `f (bᵢ)`. -/
+@[simp]
+theorem coordinateChangeLift_symm_apply_snd (f : MvPolynomial ℕ+ LazardRing →+* R) :
+    (coordinateChangeLift.symm f).2 = FormalCoordinate.strictCoeffsEquiv (f ∘ X) :=
+  (rfl)
+
 /-- The homomorphism classifying `(F, φ)` restricts along `η_L = C` to the homomorphism classifying
 the source `F`. -/
 @[simp]
@@ -159,6 +173,11 @@ theorem counit_X (i : ℕ+) : counit (X i) = 0 := by
 @[simp]
 theorem counit_comp_C : counit.comp C = RingHom.id LazardRing :=
   (coordinateChangeLift_comp_C _).trans <| hom_ext <| by rw [map_lift, FormalGroup.map_id]
+
+/-- The counit is the identity on constants. -/
+@[simp]
+theorem counit_C (r : LazardRing) : counit (C r) = r :=
+  RingHom.congr_fun counit_comp_C r
 
 /-- The counit is a retraction of the right unit `η_R`: changing the coordinate by the identity
 does not change a formal group law. -/

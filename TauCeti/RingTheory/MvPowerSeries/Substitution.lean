@@ -55,6 +55,8 @@ uniformities are shadowed, so the evaluation the statement is about is never re-
   series with a multivariate one is substituting into the inner series.
 * `MvPowerSeries.constantCoeff_subst_of_constantCoeff_zero` : substituting a family of series
   without constant term preserves the constant coefficient.
+* `MvPowerSeries.hasSubst_finTwo` : two substitutable series form a substitution family `![x, y]`
+  for the two variables indexed by `Fin 2`.
 * `MvPowerSeries.coeff_subst_X_zero`, `MvPowerSeries.coeff_subst_zero_X` : the coefficients of
   `f(X, 0)` and `f(0, Y)` are the coefficients of the pure powers of `X` and of `Y` in `f(X, Y)`.
 
@@ -272,6 +274,13 @@ theorem constantCoeff_subst_of_constantCoeff_zero {O O' : Type*} [CommRing O] [C
 section FinTwo
 
 variable {O : Type*} [CommRing O]
+
+/-- Two series that can each be substituted into a one-variable series form a substitution family
+`![x, y]` for the two variables indexed by `Fin 2`, as for evaluating a formal group law at
+`(x, y)`. -/
+theorem hasSubst_finTwo {x y : MvPowerSeries σ O} (hx : PowerSeries.HasSubst x)
+    (hy : PowerSeries.HasSubst y) : HasSubst ![x, y] :=
+  hasSubst_of_constantCoeff_nilpotent fun s ↦ by fin_cases s <;> simpa
 
 /-- Setting `Y = 0` in a two-variable series `f(X, Y)` keeps exactly the pure powers of `X`: the
 coefficient of `Xⁿ` in `f(X, 0)` is the coefficient of `Xⁿ` in `f`. -/
