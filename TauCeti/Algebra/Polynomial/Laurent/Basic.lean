@@ -45,6 +45,8 @@ every `R[T;T⁻¹]`-module. That automorphism is what a shift-compatible invaria
 
 ## Main results
 
+* `LaurentPolynomial.T_sum`: the monomial of a finite sum of exponents is the product of the
+  monomials.
 * `TauCeti.laurentEval_unique`: an algebra map out of `R[T;T⁻¹]` is determined by its value at `T`.
 * `TauCeti.laurentEval_eq_eval₂`: over a commutative target, this evaluation is Mathlib's
   `LaurentPolynomial.eval₂`.
@@ -76,6 +78,12 @@ theorem mapAlgHom_C (φ : A →ₐ[R] B) (a : A) :
 theorem mapAlgHom_T (φ : A →ₐ[R] B) (n : ℤ) :
     (AddMonoidAlgebra.mapAlgHom ℤ φ) (T n) = T n :=
   (AddMonoidAlgebra.mapAlgHom_single φ n 1).trans (by rw [map_one]; rfl)
+
+/-- The Laurent monomial of a finite sum of exponents is the product of the monomials. -/
+theorem T_sum {ι : Type*} (s : Finset ι) (f : ι → ℤ) :
+    (T (∑ i ∈ s, f i) : LaurentPolynomial R) = ∏ i ∈ s, T (f i) := by
+  simpa only [single_eq_C_mul_T, Finset.prod_const_one, map_one, one_mul] using
+    (AddMonoidAlgebra.prod_single s f (fun _ ↦ (1 : R))).symm
 
 end LaurentPolynomial
 

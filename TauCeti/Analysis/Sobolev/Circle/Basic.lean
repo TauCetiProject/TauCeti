@@ -285,6 +285,12 @@ theorem exists_coeff_eq_iff (c : ℤ → E) :
     (∃ a : CircleSobolev s E, a.coeff = c) ↔ Memℓp (fun n ↦ weight s n • c n) 2 :=
   ⟨fun ⟨a, ha⟩ ↦ ha ▸ a.memℓp_weight_smul_coeff, fun h ↦ ⟨⟨c, h⟩, rfl⟩⟩
 
+/-- A sequence lies in `H^s` exactly when its weighted norms are square-summable. -/
+theorem memℓp_weight_smul_iff (c : ℤ → E) :
+    Memℓp (fun n ↦ weight s n • c n) 2 ↔ Summable fun n ↦ (weight s n * ‖c n‖) ^ 2 := by
+  rw [memℓp_gen_iff (by norm_num)]
+  simp [norm_smul, abs_of_nonneg (weight_nonneg s _)]
+
 instance : NormedAddCommGroup (CircleSobolev s E) :=
   NormedAddCommGroup.induced _ _ (toℓ2 : CircleSobolev s E ≃ₗ[ℂ] _) toℓ2.injective
 

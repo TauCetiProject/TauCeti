@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.RatFunc.AsPolynomial
-public import TauCeti.Algebra.MvPolynomial.FinTwo
+public import TauCeti.Algebra.MvPolynomial.Fin.Two
 public import TauCeti.FieldTheory.FunctionField.Basic
 
 /-!

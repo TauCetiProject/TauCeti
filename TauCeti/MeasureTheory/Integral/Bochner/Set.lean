@@ -13,17 +13,19 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Set
 Mathlib's `continuousOn_integral_of_compact_support` gives continuity of a parametric integral on
 a set. This file records its global form: a jointly continuous integrand which vanishes unless the
 integration variable lies in a fixed compact set has a continuous parametric integral, against any
-measure which is finite on compact sets.
+measure which is finite on compact sets. It also records that the indicator function of a
+bounded interval `[a, b)` is integrable against a locally finite measure.
 
 ## Main statements
 
 * `TauCeti.continuous_integral_of_compact_support`: the parametric integral of a jointly
   continuous integrand which vanishes unless `r ∈ K`, for compact `K`, is continuous.
+* `TauCeti.integrable_indicator_Ico_one`: the indicator function of `[a, b)` is integrable.
 -/
 
 public section
 
-open MeasureTheory Function
+open MeasureTheory Function Set
 
 namespace TauCeti
 
@@ -36,5 +38,13 @@ theorem continuous_integral_of_compact_support {X Y E : Type*} [TopologicalSpace
     Continuous fun s => ∫ r, F s r ∂μ :=
   continuousOn_univ.mp <| continuousOn_integral_of_compact_support hK hFc.continuousOn
     fun s r _ hr => by_contra fun h => hr (hF s r h)
+
+/-- The indicator function of a bounded interval `[a, b)` is integrable against a locally finite
+measure. -/
+theorem integrable_indicator_Ico_one {α : Type*} [MeasurableSpace α] [TopologicalSpace α]
+    [LinearOrder α] [OrderClosedTopology α] [OpensMeasurableSpace α] [CompactIccSpace α]
+    {μ : Measure α} [IsLocallyFiniteMeasure μ] (a b : α) :
+    Integrable ((Ico a b).indicator (1 : α → ℝ)) μ :=
+  (integrableOn_const measure_Ico_lt_top.ne).integrable_indicator measurableSet_Ico
 
 end TauCeti
