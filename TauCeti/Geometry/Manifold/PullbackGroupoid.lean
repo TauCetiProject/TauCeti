@@ -76,6 +76,13 @@ variable {H : Type*} [TopologicalSpace H] {M : Type*} [TopologicalSpace M] [Char
 
 namespace Homeomorph
 
+/-- Precomposing an open partial homeomorphism with the identity homeomorphism leaves it
+unchanged. -/
+@[simp, mfld_simps]
+theorem refl_transOpenPartialHomeomorph {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+    (c : OpenPartialHomeomorph X Y) : (Homeomorph.refl X).transOpenPartialHomeomorph c = c := by
+  simp [transOpenPartialHomeomorph_eq_trans]
+
 /-- The charted-space structure on `N` pulled back along a homeomorphism `e : N ≃ₜ M`: the atlas
 is `{e.transOpenPartialHomeomorph c | c ∈ atlas H M}` and the chart at `x` is the chart of `M` at
 `e x` precomposed with `e`. -/
@@ -110,14 +117,10 @@ theorem transOpenPartialHomeomorph_mem_pullbackChartedSpace_atlas (e : N ≃ₜ 
 /-- Pulling back along the identity homeomorphism returns the original structure. -/
 theorem pullbackChartedSpace_refl :
     (Homeomorph.refl M).pullbackChartedSpace (H := H) = ‹ChartedSpace H M› := by
-  have h (c : OpenPartialHomeomorph M H) :
-      (Homeomorph.refl M).transOpenPartialHomeomorph c = c := by
-    rw [transOpenPartialHomeomorph_eq_trans, refl_toOpenPartialHomeomorph,
-      OpenPartialHomeomorph.refl_trans]
   ext1
-  · simp only [pullbackChartedSpace_atlas, h, image_id']
+  · simp
   · funext x
-    exact h _
+    simp
 
 /-- Pulling back along a composite of homeomorphisms is pulling back twice. -/
 theorem pullbackChartedSpace_trans (e₁ : P ≃ₜ N) (e₂ : N ≃ₜ M) :
@@ -171,6 +174,12 @@ section Manifold
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCommGroup E]
   [NormedSpace 𝕜 E] (I : ModelWithCorners 𝕜 E H) (n : ℕ∞ω)
 
+/-- The pulled-back extended chart at `x` is `e` followed by the extended chart of `M` at `e x`. -/
+theorem pullbackChartedSpace_extChartAt (e : N ≃ₜ M) (x : N) :
+    letI := e.pullbackChartedSpace (H := H)
+    extChartAt I x = e.toEquiv.transPartialEquiv (extChartAt I (e x)) :=
+  e.toEquiv.transPartialEquiv_trans _ _
+
 /-- The structure pulled back from a `C^n` manifold along a homeomorphism is a `C^n` manifold. -/
 theorem pullback_isManifold (e : N ≃ₜ M) [IsManifold I n M] :
     letI := e.pullbackChartedSpace (H := H)
@@ -193,15 +202,18 @@ def pullbackDiffeomorph (e : N ≃ₜ M) :
       refine ⟨e.continuous.continuousAt, ?_⟩
       convert h.2 using 1
       · funext y
-        simp
-      · simp
+        simp only [pullbackChartedSpace_extChartAt, Function.comp_apply,
+          Equiv.transPartialEquiv_symm_apply, coe_toEquiv, coe_symm_toEquiv, apply_symm_apply,
+          id_eq]
+      · simp only [pullbackChartedSpace_extChartAt, Equiv.transPartialEquiv_apply, coe_toEquiv]
     contMDiff_invFun := fun y ↦ by
       have h := contMDiffAt_id (I := I) (n := n) (x := y)
       rw [contMDiffAt_iff] at h ⊢
       refine ⟨e.symm.continuous.continuousAt, ?_⟩
       convert h.2 using 1
       funext z
-      simp }
+      simp only [pullbackChartedSpace_extChartAt, Function.comp_apply,
+        Equiv.transPartialEquiv_apply, coe_toEquiv, coe_symm_toEquiv, apply_symm_apply, id_eq] }
 
 /-- The underlying map of the pulled-back diffeomorphism is `e`. -/
 @[simp]
