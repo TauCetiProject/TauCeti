@@ -51,6 +51,10 @@ multiplicity. In particular, slope data of length zero has the empty slope multi
 def slopeMultiset (d : FiniteSlopeData Γ) : Multiset Γ :=
   List.ofFn d.slope
 
+/-- The slope multiset lists the slopes of the unit edges from left to right. -/
+theorem slopeMultiset_def (d : FiniteSlopeData Γ) : d.slopeMultiset = List.ofFn d.slope :=
+  (rfl)
+
 /-- A value occurs in the slope multiset exactly when it is the slope of a unit edge. -/
 @[simp]
 theorem mem_slopeMultiset {d : FiniteSlopeData Γ} {m : Γ} :

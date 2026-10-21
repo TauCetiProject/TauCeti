@@ -18,7 +18,9 @@ import Mathlib.RingTheory.Ideal.GoingUp
 The residue field at every maximal ideal of an affinoid algebra over a complete ultrametric
 field is finite over the ground field. Consequently, an algebra map into an affinoid algebra
 contracts maximal ideals to maximal ideals, even when its source is not affinoid. This gives the
-contravariant map on maximal spectra used for classical points of affinoid spaces. Every affinoid
+contravariant map on maximal spectra used for classical points of affinoid spaces, which is
+surjective for integral injective maps; so residue fields of an integral subalgebra of an affinoid
+algebra are finite over the ground field as well. Every affinoid
 algebra is moreover a Jacobson ring, so its maximal ideals, the classical points, determine every
 radical ideal: each prime ideal is the intersection of the maximal ideals containing it.
 
@@ -118,6 +120,18 @@ theorem maximalSpectrumComap_surjective (hB : IsAffinoidAlgebra K B) (f : A →�
   refine ⟨⟨m, hm⟩, ?_⟩
   apply MaximalSpectrum.ext
   exact hmcomap
+
+/-- The residue field of a maximal ideal of `A` is finite over the ground field when `A` maps
+integrally and injectively into an affinoid algebra, since the ideal lies under a maximal ideal
+of the affinoid algebra. The source algebra need not itself be affinoid. -/
+theorem finite_quotient_of_isIntegral (hB : IsAffinoidAlgebra K B) (f : A →ₐ[K] B)
+    (hf : f.toRingHom.IsIntegral) (hfi : Function.Injective f) (m : Ideal A) [m.IsMaximal] :
+    Module.Finite K (A ⧸ m) := by
+  obtain ⟨y, hy⟩ := hB.maximalSpectrumComap_surjective f hf hfi ⟨m, inferInstance⟩
+  obtain rfl : y.asIdeal.comap f = m := congrArg MaximalSpectrum.asIdeal hy
+  have := hB.finite_quotient_of_isMaximal y.asIdeal
+  exact Module.Finite.of_injective (Ideal.quotientMapₐ y.asIdeal f le_rfl).toLinearMap
+    Ideal.quotientMap_injective
 
 end IsAffinoidAlgebra
 

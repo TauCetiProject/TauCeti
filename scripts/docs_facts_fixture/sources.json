@@ -1,0 +1,5 @@
+{
+ "Demo/A.lean": "module\n\n/-!\n# Module A\n\nA small module.\n-/\n\n@[expose] public section\n\nnamespace Demo\n\n/-- **Alpha's theorem.** It states `True`.\n\nA second paragraph. -/\ntheorem alpha : True := trivial\n\n/-- A point. -/\nstructure Point where\n  /-- The x coordinate. -/\n  x : Nat\n  y : Nat\n  deriving Repr, DecidableEq\n\n/-- A colour. -/\ninductive Colour where\n  | red\n  | green\n  deriving Inhabited\n\ninstance : Inhabited Point := \u27e8\u27e80, 0\u27e9\u27e9\n\ndef undocumented (n : Nat) : Nat :=\n  n + 1\n\n/-- A class. -/\nclass Shiny (\u03b1 : Type) where\n  shine : \u03b1 \u2192 Nat\n\nabbrev Short := Nat\n\nopaque secret : Nat\n\naxiom demoAxiom : 1 = 1\n\nend Demo\n",
+ "Demo/Empty.lean": "module\n\n/-!\n# An empty module\n\nOnly a module docstring.\n-/\n",
+ "Demo/Sub/B.lean": "module\n\npublic import Demo.A\n\n@[expose] public section\n\nnamespace Demo.Sub\n\n/-- Uses alpha. -/\ntheorem beta : True := Demo.alpha\n\n\n/-- Proved by `simp`. -/\n@[simp] theorem gamma (n : Nat) : n + 0 = n := rfl\n\nend Demo.Sub\n"
+}

@@ -129,8 +129,7 @@ private def cwApproximationCellMap :
     {p : Ω^ (Fin n) Z z // HomotopyGroup.map f.hom rfl (⟦p⟧ : HomotopyGroup (Fin n) Z z) = 1} ⊕
         Ω^ (Fin (n + 1)) X (f z) → (TopCat.disk (n + 1) ⟶ X)
   | .inl p => (exists_diskBoundaryInclusion_comp_eq_diskBoundaryMap_comp f z n p).choose
-  | .inr γ => TopCat.ofHom
-      (γ.1.comp (diskHomeomorphCube (n + 1) : C(TopCat.disk (n + 1), I^(Fin (n + 1)))))
+  | .inr γ => GenLoop.diskMap γ
 
 /-- Each cell map restricts on the boundary sphere to the attaching map followed by `f`. -/
 private lemma cwApproximationAttachingMap_comp_eq (i) :
@@ -138,11 +137,7 @@ private lemma cwApproximationAttachingMap_comp_eq (i) :
       TopCat.diskBoundaryInclusion (n + 1) ≫ cwApproximationCellMap f z n i :=
   match i with
   | .inl p => (exists_diskBoundaryInclusion_comp_eq_diskBoundaryMap_comp f z n p).choose_spec.symm
-  | .inr γ => by
-    ext s
-    simp only [cwApproximationAttachingMap_inr, cwApproximationCellMap]
-    -- The boundary sphere of the disk goes to the boundary of the cube, where `γ` is `f z`.
-    exact (γ.2 _ ((diskHomeomorphCube_mem_boundary_iff _).2 ⟨s, rfl⟩)).symm
+  | .inr γ => (GenLoop.diskBoundaryInclusion_comp_diskMap γ).symm
 
 /-- The extension of `f` over `TauCeti.cwApproximationStep f z n`. It agrees with `f` on `Z`
 (`TauCeti.cwApproximationStepIncl_comp_cwApproximationStepMap`), and on the cell attached for a
@@ -164,14 +159,11 @@ theorem cwApproximationStepMap_cwApproximationStepIncl_apply (w : Z) :
   rw [← ConcreteCategory.comp_apply, cwApproximationStepIncl_comp_cwApproximationStepMap]
 
 /-- On the cell attached for a generalized loop `γ` of dimension `n + 1` of `X`, the extension
-`TauCeti.cwApproximationStepMap f z n` is `γ`, read on the disk through
-`TauCeti.diskHomeomorphCube`. -/
+`TauCeti.cwApproximationStepMap f z n` is `γ`, read on the disk (`GenLoop.diskMap γ`). -/
 @[reassoc]
 theorem cellAttachmentCell_inr_comp_cwApproximationStepMap (γ : Ω^ (Fin (n + 1)) X (f z)) :
     cellAttachmentCell (cwApproximationAttachingMap f z n) (.inr γ) ≫
-        cwApproximationStepMap f z n =
-      TopCat.ofHom
-        (γ.1.comp (diskHomeomorphCube (n + 1) : C(TopCat.disk (n + 1), I^(Fin (n + 1))))) :=
+      cwApproximationStepMap f z n = GenLoop.diskMap γ :=
   cellAttachmentCell_lift _ _ _ _ _
 
 /-- On homotopy groups at the base point, the extension `TauCeti.cwApproximationStepMap f z n`
@@ -190,30 +182,10 @@ theorem homotopyGroupMap_cwApproximationStepMap_comp_homotopyGroupMap {N : Type 
 representative. -/
 theorem surjective_homotopyGroupMap_cwApproximationStepMap_succ :
     Function.Surjective (HomotopyGroup.map (N := Fin (n + 1)) (cwApproximationStepMap f z n).hom
-      (cwApproximationStepMap_cwApproximationStepIncl_apply f z n z)) := by
-  refine Quotient.ind fun γ ↦ ?_
-  let c := cellAttachmentCell (cwApproximationAttachingMap f z n) (.inr γ)
-  -- The characteristic map of the cell attached for `γ`, read on the cube, is a generalized loop:
-  -- the boundary of the cube goes to the boundary sphere of the disk, attached at `z`.
-  let q : Ω^ (Fin (n + 1)) (cwApproximationStep f z n) (cwApproximationStepIncl f z n z) :=
-    ⟨c.hom.comp ((diskHomeomorphCube (n + 1)).symm : C(I^(Fin (n + 1)), TopCat.disk (n + 1))),
-      fun y hy ↦ by
-        obtain ⟨s, hs⟩ := (diskHomeomorphCube_mem_boundary_iff _).1
-          (((diskHomeomorphCube (n + 1)).apply_symm_apply y).symm ▸ hy)
-        have h := ConcreteCategory.congr_hom
-          (cellAttachment_boundary (cwApproximationAttachingMap f z n) (.inr γ)) s
-        rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, hs] at h
-        -- `h` evaluates the constant attaching map at `s` and the composite at `y`, both by
-        -- definition.
-        exact h.symm⟩
-  refine ⟨⟦q⟧, ?_⟩
-  rw [HomotopyGroup.map_mk]
-  congr 1
-  ext y
-  rw [GenLoop.map_apply]
-  refine (ConcreteCategory.congr_hom (cellAttachmentCell_inr_comp_cwApproximationStepMap f z n γ)
-    ((diskHomeomorphCube (n + 1)).symm y)).trans ?_
-  simp
+      (cwApproximationStepMap_cwApproximationStepIncl_apply f z n z)) :=
+  Quotient.ind fun γ ↦ mk_mem_range_homotopyGroupMap_of_cellAttachmentCell_comp _
+    (cwApproximationAttachingMap_inr f z n γ) _ _ γ
+    (cellAttachmentCell_inr_comp_cwApproximationStepMap f z n γ)
 
 variable [T2Space Z]
 

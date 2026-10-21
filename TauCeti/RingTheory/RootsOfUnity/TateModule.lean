@@ -9,6 +9,8 @@ public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 public import Mathlib.Topology.Algebra.Group.Subgroup
 public import Mathlib.Topology.LocallyConstant.Basic
 
+import TauCeti.Data.Rat.NumDenDvd
+
 /-!
 # The prime-to-`p` Tate module of the roots of unity
 
@@ -40,6 +42,9 @@ group of `K` maps to it through the tame character.
   homomorphism `E →* F`.
 * The instance `MulDistribMulAction M (PrimeToPTateModule p E)` for a monoid `M` acting on `E` by
   multiplicative maps, componentwise; for the Galois group of `E` it is the twist `(1)`.
+* `TauCeti.PrimeToPTateModule.ratChar E`: for `p = 1`, where the levels are all the `μ_n(E)`, the
+  character `ℚ → Eˣ`, `k / n ↦ ζ_n ^ k`, attached to a point `(ζ_n)_n`. Twisting rational
+  exponents by it gives the Galois action on Puiseux series.
 
 ## Main results
 
@@ -57,6 +62,11 @@ group of `K` maps to it through the tame character.
   components are all primitive roots of unity topologically generates the Tate module.
 * `TauCeti.PrimeToPTateModule.proj_map`, `TauCeti.PrimeToPTateModule.coe_proj_smul`: `map` and
   the action are computed componentwise.
+* `TauCeti.PrimeToPTateModule.ratChar_ofAdd_eq_zpow`: the character of `(ζ_n)_n` sends `q` to
+  `ζ_n ^ k` whenever `q = k / n`; it is trivial on `ℤ` and determines the point
+  (`TauCeti.PrimeToPTateModule.ratChar_injective`).
+* `TauCeti.PrimeToPTateModule.ratChar_ofAdd_eq_one_iff`: if every `ζ_n` is primitive, the
+  character vanishes exactly on `ℤ`.
 * The instances `IsTopologicalGroup`, `T2Space`, `TotallyDisconnectedSpace`,
   `ContinuousConstSMul`, and, for a domain, `CompactSpace`.
 -/
@@ -407,6 +417,109 @@ instance : ContinuousConstSMul M (PrimeToPTateModule p E) :=
   ⟨fun g ↦ continuous_map (MulDistribMulAction.toMonoidHom E g)⟩
 
 end Action
+
+/-! ### The character of rational exponents -/
+
+section RatChar
+
+/-- The value `ζ_{q.den} ^ q.num` of the character `TauCeti.PrimeToPTateModule.ratChar`, before
+bundling. -/
+private def ratCharFun (x : PrimeToPTateModule 1 E) (q : ℚ) : Eˣ :=
+  (proj ⟨q.den, q.den_nz, Nat.coprime_one_right _⟩ x : Eˣ) ^ q.num
+
+/-- `ζ_{q.den} ^ q.num = ζ_n ^ k` whenever `q = k / n`, by compatibility of the components. -/
+private theorem ratCharFun_eq_zpow (x : PrimeToPTateModule 1 E)
+    (n : {m : ℕ // m ≠ 0 ∧ m.Coprime 1}) {q : ℚ} {k : ℤ} (h : (k : ℚ) = q * (n : ℕ)) :
+    ratCharFun x q = (proj n x : Eˣ) ^ k := by
+  have hdvd : q.den ∣ (n : ℕ) := Int.natCast_dvd_natCast.mp
+    (Rat.den_dvd_of_intCast_eq_mul_intCast q (by rw [h, Int.cast_natCast]))
+  obtain ⟨c, hc⟩ := hdvd
+  have hk : k = c * q.num := by
+    have : (k : ℚ) = c * q.num := by
+      rw [h, hc, Nat.cast_mul, ← mul_assoc, Rat.mul_den_eq_num, mul_comm]
+    exact_mod_cast this
+  have hpow := proj_pow_div x (m := n) (n := ⟨q.den, q.den_nz, Nat.coprime_one_right _⟩) ⟨c, hc⟩
+  have hdiv : (n : ℕ) / q.den = c := by rw [hc, Nat.mul_div_cancel_left _ q.den_pos]
+  rw [hdiv] at hpow
+  rw [ratCharFun, hk, zpow_mul, zpow_natCast, hpow]
+
+variable (E) in
+/-- The **character of rational exponents** attached to a point `ζ = (ζ_n)_n` of the Tate module
+`lim_n μ_n(E)`: the homomorphism `ℚ → Eˣ` sending `k / n` to `ζ_n ^ k`. It is well defined by
+compatibility of the components and trivial on `ℤ`
+(`TauCeti.PrimeToPTateModule.ratChar_ofAdd_intCast`), and it determines `ζ`
+(`TauCeti.PrimeToPTateModule.ratChar_injective`). -/
+def ratChar : PrimeToPTateModule 1 E →* (Multiplicative ℚ →* Eˣ) where
+  toFun x :=
+    { toFun q := ratCharFun x q.toAdd
+      map_one' := by simp [ratCharFun]
+      map_mul' q r := by
+        -- Compute all three values at the common level `q.den * r.den`.
+        set a := q.toAdd
+        set b := r.toAdd
+        let N : {m : ℕ // m ≠ 0 ∧ m.Coprime 1} :=
+          ⟨a.den * b.den, mul_ne_zero a.den_nz b.den_nz, Nat.coprime_one_right _⟩
+        have ha : ((a.num * b.den : ℤ) : ℚ) = a * (N : ℕ) := by
+          push_cast [N]
+          rw [← mul_assoc, Rat.mul_den_eq_num]
+        have hb : ((b.num * a.den : ℤ) : ℚ) = b * (N : ℕ) := by
+          push_cast [N]
+          rw [mul_left_comm, Rat.mul_den_eq_num, mul_comm]
+        rw [toAdd_mul, ratCharFun_eq_zpow x N ha, ratCharFun_eq_zpow x N hb,
+          ratCharFun_eq_zpow x N (k := a.num * b.den + b.num * a.den)
+            (by rw [Int.cast_add, ha, hb, add_mul]), zpow_add] }
+  map_one' := by
+    ext q
+    simp [ratCharFun]
+  map_mul' x y := by
+    ext q
+    simp [ratCharFun, mul_zpow]
+
+/-- The character attached to `ζ` sends `q` to `ζ_{q.den} ^ q.num`. -/
+theorem ratChar_ofAdd (x : PrimeToPTateModule 1 E) (q : ℚ) :
+    ratChar E x (.ofAdd q) = (proj ⟨q.den, q.den_nz, Nat.coprime_one_right _⟩ x : Eˣ) ^ q.num :=
+  (rfl)
+
+/-- The character attached to `ζ` sends `q` to `ζ_n ^ k` whenever `q = k / n`. -/
+theorem ratChar_ofAdd_eq_zpow (x : PrimeToPTateModule 1 E) (n : {m : ℕ // m ≠ 0 ∧ m.Coprime 1})
+    {q : ℚ} {k : ℤ} (h : (k : ℚ) = q * (n : ℕ)) :
+    ratChar E x (.ofAdd q) = (proj n x : Eˣ) ^ k :=
+  ratCharFun_eq_zpow x n h
+
+/-- The character attached to `ζ` sends `k / n` to `ζ_n ^ k`. -/
+@[simp]
+theorem ratChar_ofAdd_intCast_div (x : PrimeToPTateModule 1 E)
+    (n : {m : ℕ // m ≠ 0 ∧ m.Coprime 1}) (k : ℤ) :
+    ratChar E x (.ofAdd ((k : ℚ) / (n : ℕ))) = (proj n x : Eˣ) ^ k :=
+  ratChar_ofAdd_eq_zpow x n (div_mul_cancel₀ _ (Nat.cast_ne_zero.mpr n.2.1)).symm
+
+/-- The character attached to `ζ` is trivial on the integers. -/
+@[simp]
+theorem ratChar_ofAdd_intCast (x : PrimeToPTateModule 1 E) (k : ℤ) :
+    ratChar E x (.ofAdd (k : ℚ)) = 1 := by
+  have h1 : (proj ⟨1, one_ne_zero, Nat.coprime_one_right _⟩ x : Eˣ) = 1 := by
+    simpa using (proj ⟨1, one_ne_zero, Nat.coprime_one_right _⟩ x).2
+  rw [ratChar_ofAdd_eq_zpow x ⟨1, one_ne_zero, Nat.coprime_one_right _⟩ (k := k)
+    (by rw [Nat.cast_one, mul_one]), h1, one_zpow]
+
+/-- A point of the Tate module is determined by its character of rational exponents: the
+character sends `1 / n` to the component `ζ_n`. -/
+theorem ratChar_injective : Function.Injective (ratChar E) := by
+  refine (injective_iff_map_eq_one _).2 fun x hx ↦ ext fun n ↦ Subtype.ext ?_
+  have h := ratChar_ofAdd_intCast_div x n 1
+  rw [hx, MonoidHom.one_apply, zpow_one] at h
+  rw [← h, map_one, OneMemClass.coe_one]
+
+/-- If every component `ζ_n` of `ζ` is a primitive `n`-th root of unity, then the character
+attached to `ζ` vanishes exactly on the integers. -/
+theorem ratChar_ofAdd_eq_one_iff {x : PrimeToPTateModule 1 E}
+    (hx : ∀ n : {m : ℕ // m ≠ 0 ∧ m.Coprime 1}, IsPrimitiveRoot (proj n x : Eˣ) n) {q : ℚ} :
+    ratChar E x (.ofAdd q) = 1 ↔ q.den = 1 := by
+  rw [ratChar_ofAdd, (hx _).zpow_eq_one_iff_dvd]
+  refine ⟨fun h ↦ Nat.Coprime.eq_one_of_dvd q.reduced.symm (Int.natCast_dvd.mp h), fun h ↦ ?_⟩
+  simp [h]
+
+end RatChar
 
 end PrimeToPTateModule
 
