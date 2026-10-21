@@ -9,10 +9,12 @@ public import Mathlib.Analysis.Complex.Trigonometric
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Dilation
 public import TauCeti.Topology.Algebra.Matrix.ProjectiveSpecialLinearGroup
 import Mathlib.Analysis.Real.Sqrt
-import TauCeti.Analysis.SpecialFunctions.ExpHalf
 import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Endpoint
+import TauCeti.Analysis.SpecialFunctions.Exp.Half
+import TauCeti.Analysis.SpecialFunctions.Hyperbolic
 import TauCeti.GroupTheory.JorgensenSequence
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjAct
 import TauCeti.Topology.Algebra.Matrix.SpecialLinearGroup
 
 /-!
@@ -323,8 +325,9 @@ private theorem abs_trace_sq_sub_four_add_abs_trace_commutatorElement_sub_two_eq
       4 * Real.sinh (s / 2) ^ 2 * (1 + |(P⁻¹ * B * P) 0 1 * (P⁻¹ * B * P) 1 0|) := by
   have trace_conj (M : SL(2, ℝ)) : ((P * M * P⁻¹ : SL(2, ℝ)) : Matrix (Fin 2) (Fin 2) ℝ).trace =
       (M : Matrix (Fin 2) (Fin 2) ℝ).trace := by
-    rw [Matrix.SpecialLinearGroup.coe_mul, Matrix.SpecialLinearGroup.coe_mul]
-    exact Matrix.trace_units_conj (Matrix.SpecialLinearGroup.toGL P) M
+    rw [Matrix.SpecialLinearGroup.coe_mul, Matrix.SpecialLinearGroup.coe_mul,
+      ← ConjAct.ofConjAct_toConjAct P, ← ConjAct.specialLinearGroup_smul_def,
+      ConjAct.trace_specialLinearGroup_smul]
   -- `A` is `± P D P⁻¹` in `SL(2, ℝ)`
   replace hA : A = P * dilation s * P⁻¹ ∨ A = -(P * dilation s * P⁻¹) :=
     Matrix.ProjectiveSpecialLinearGroup.mk_eq_mk_iff.1 hA.symm

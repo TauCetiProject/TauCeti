@@ -14,8 +14,9 @@ For elements `A` and `B` of a group, **Jørgensen's sequence** is the iteration
 `B₀ = B`, `Bₙ₊₁ = Bₙ A Bₙ⁻¹` of conjugates of `A`. It stays in any subgroup containing `A` and `B`
 (`TauCeti.jorgensenSeq_mem`). In `PSL(2, ℝ)` it drives the discreteness arguments behind
 Shimizu's lemma, for a parabolic `A`, and Jørgensen's inequality, for a hyperbolic `A`: when the
-starting point is close enough to normalising `⟨A⟩` the sequence converges, and discreteness then
-forces it to reach its limit.
+starting point is close enough to normalising `⟨A⟩` the sequence (or, for a hyperbolic `A`,
+suitable conjugates of it by powers of `A`) converges, and discreteness forces a term to reach
+the limit.
 
 ## Main declarations
 

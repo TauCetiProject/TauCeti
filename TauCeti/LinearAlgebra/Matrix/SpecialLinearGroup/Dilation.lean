@@ -10,7 +10,7 @@ public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 public import Mathlib.LinearAlgebra.Matrix.Trace
 import Mathlib.LinearAlgebra.Matrix.Notation
 import Mathlib.Tactic.LinearCombination
-import TauCeti.Analysis.SpecialFunctions.ExpHalf
+import TauCeti.Analysis.SpecialFunctions.Exp.Half
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
 /-!
