@@ -128,11 +128,11 @@ theorem kUnit_zpow_smul_of_mem_weightSpace {μ : ℂ} {v : V} (hv : v ∈ weight
   induction b using Int.induction_on with
   | zero => simp
   | succ n ih =>
-    rw [zpow_add_one, Units.val_mul, mul_smul, kUnit_val, mem_weightSpace_iff.mp hv, smul_comm,
-      ih, smul_smul, zpow_add_one₀ hμ, mul_comm]
+    simpa [zpow_add_one, zpow_add_one₀ hμ, mul_smul, mem_weightSpace_iff.mp hv,
+      smul_comm (k q ^ n) μ, smul_comm (μ ^ n) μ] using congrArg (μ • ·) ih
   | pred n ih =>
-    rw [zpow_sub_one, Units.val_mul, mul_smul, kUnit_inv, kInv_smul_of_mem_weightSpace hv,
-      smul_comm, ih, smul_smul, zpow_sub_one₀ hμ, mul_comm]
+    simpa [zpow_sub_one, zpow_sub_one₀ hμ, mul_smul, kInv_smul_of_mem_weightSpace hv,
+      smul_comm (kInv q ^ n) μ⁻¹, smul_comm (μ ^ n)⁻¹ μ⁻¹] using congrArg (μ⁻¹ • ·) ih
 
 /-- A module map carries each weight space into the weight space of the same weight. -/
 theorem map_weightSpace_le {W : Type*} [AddCommGroup W] [Module ℂ W] [Module (UqSl2 q) W]

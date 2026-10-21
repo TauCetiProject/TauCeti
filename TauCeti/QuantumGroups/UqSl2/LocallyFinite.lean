@@ -52,6 +52,22 @@ theorem isSemisimpleModule_of_isLocallyFiniteModule (hq : IsGenericQuantumParame
   IsLocallyFiniteModule.isSemisimpleModule (k := ℂ) fun _ _ =>
     isSemisimpleModule_of_finiteDimensional hq
 
+/-- At a generic parameter, `E` acts locally nilpotently on a locally finite module. -/
+theorem exists_e_pow_smul_eq_zero_of_isLocallyFiniteModule (hq : IsGenericQuantumParameter q)
+    [IsLocallyFiniteModule ℂ (UqSl2 q) V] (v : V) : ∃ n : ℕ, e q ^ n • v = 0 := by
+  have := IsLocallyFiniteModule.finite_span_singleton (k := ℂ) (A := UqSl2 q) v
+  obtain ⟨n, hn⟩ := exists_e_pow_smul_eq_zero hq
+    (⟨v, Submodule.mem_span_singleton_self v⟩ : Submodule.span (UqSl2 q) {v})
+  exact ⟨n, congrArg Subtype.val hn⟩
+
+/-- At a generic parameter, `F` acts locally nilpotently on a locally finite module. -/
+theorem exists_f_pow_smul_eq_zero_of_isLocallyFiniteModule (hq : IsGenericQuantumParameter q)
+    [IsLocallyFiniteModule ℂ (UqSl2 q) V] (v : V) : ∃ n : ℕ, f q ^ n • v = 0 := by
+  have := IsLocallyFiniteModule.finite_span_singleton (k := ℂ) (A := UqSl2 q) v
+  obtain ⟨n, hn⟩ := exists_f_pow_smul_eq_zero hq
+    (⟨v, Submodule.mem_span_singleton_self v⟩ : Submodule.span (UqSl2 q) {v})
+  exact ⟨n, congrArg Subtype.val hn⟩
+
 variable [Fact (q ≠ 0)]
 
 /-- At a generic parameter, every locally finite `UqSl2 q`-module is isomorphic to a direct sum of

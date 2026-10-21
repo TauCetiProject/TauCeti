@@ -194,23 +194,6 @@ theorem isTypeOne_iff_isInternal (hq : IsGenericQuantumParameter q) :
 theorem IsTypeOne.isSignedTypeOne (h : IsTypeOne q V) : IsSignedTypeOne q V :=
   h.mono <| Set.range_subset_iff.mpr fun n => ⟨(1, n), by simp⟩
 
-/-- At a generic parameter, a signed power `ε q ^ m` is an integral power of `q` only for the
-positive sign. -/
-private theorem eq_one_of_units_mul_zpow_eq_zpow (hq : IsGenericQuantumParameter q) {ε : ℤˣ}
-    {m n : ℤ} (h : ((ε : ℤ) : ℂ) * q ^ m = q ^ n) : ε = 1 := by
-  rcases Int.units_eq_one_or ε with rfl | rfl
-  · rfl
-  exfalso
-  have hsq : q ^ (m * 2) = q ^ (n * 2) := by
-    rw [zpow_mul, zpow_mul, ← h, zpow_two, zpow_two]
-    push_cast
-    ring
-  obtain rfl : m = n := by have := hq.zpow_injective hsq; omega
-  have : q ^ m = 0 := by
-    push_cast at h
-    linear_combination -h / 2
-  exact zpow_ne_zero m hq.ne_zero this
-
 /-! ### Signed ladder modules -/
 
 namespace LadderModule
@@ -236,24 +219,6 @@ theorem isSignedTypeOne : IsSignedTypeOne q (LadderModule q m ε) :=
 
 end LadderModule
 
-/-! ### Local nilpotence on locally finite modules -/
-
-/-- At a generic parameter, `E` acts locally nilpotently on a locally finite module. -/
-theorem exists_e_pow_smul_eq_zero_of_isLocallyFiniteModule (hq : IsGenericQuantumParameter q)
-    [IsLocallyFiniteModule ℂ (UqSl2 q) V] (v : V) : ∃ n : ℕ, e q ^ n • v = 0 := by
-  have := IsLocallyFiniteModule.finite_span_singleton (k := ℂ) (A := UqSl2 q) v
-  obtain ⟨n, hn⟩ := exists_e_pow_smul_eq_zero hq
-    (⟨v, mem_span_singleton_self v⟩ : span (UqSl2 q) {v})
-  exact ⟨n, congrArg Subtype.val hn⟩
-
-/-- At a generic parameter, `F` acts locally nilpotently on a locally finite module. -/
-theorem exists_f_pow_smul_eq_zero_of_isLocallyFiniteModule (hq : IsGenericQuantumParameter q)
-    [IsLocallyFiniteModule ℂ (UqSl2 q) V] (v : V) : ∃ n : ℕ, f q ^ n • v = 0 := by
-  have := IsLocallyFiniteModule.finite_span_singleton (k := ℂ) (A := UqSl2 q) v
-  obtain ⟨n, hn⟩ := exists_f_pow_smul_eq_zero hq
-    (⟨v, mem_span_singleton_self v⟩ : span (UqSl2 q) {v})
-  exact ⟨n, congrArg Subtype.val hn⟩
-
 variable [Fact (q ≠ 0)]
 
 /-- At a generic parameter, a signed ladder module `L_m^ε` embeds into a module of type 1 only for
@@ -267,7 +232,7 @@ theorem IsTypeOne.eq_one_of_injective (hq : IsGenericQuantumParameter q) (h : Is
   have hv0 : φ (LadderModule.vec q m ε 0) ≠ 0 :=
     (map_ne_zero_iff φ hφ).mpr (by simp)
   obtain ⟨n, hn⟩ := h.mem_of_mem_weightSpace hv hv0
-  exact eq_one_of_units_mul_zpow_eq_zpow hq hn.symm
+  exact hq.eq_one_of_units_mul_zpow_eq_zpow hn.symm
 
 /-- At a generic parameter, the negative signed ladder module `L_m^-` is not of type 1. For
 `m = 0` this is the one-dimensional module on which `K` acts by `-1` and `E`, `F` act by zero;

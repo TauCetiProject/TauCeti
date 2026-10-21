@@ -68,10 +68,26 @@ theorem zpow_injective {q : K} (hq : IsGenericQuantumParameter q) :
   wlog hmn : m ≤ n generalizing m n
   · exact (this h.symm (by omega)).symm
   obtain ⟨d, rfl⟩ := Int.le.dest hmn
-  dsimp only at h
-  rw [zpow_add₀ hq.ne_zero, zpow_natCast, left_eq_mul₀ (zpow_ne_zero _ hq.ne_zero),
-    ← pow_zero q] at h
-  simp [hq.pow_injective h]
+  have h : q ^ d = 1 := by simpa [zpow_add₀ hq.ne_zero, zpow_ne_zero, hq.ne_zero] using h.symm
+  simpa using hq.pow_injective (h.trans (pow_zero q).symm)
+
+/-- At a generic parameter in a field of characteristic not two, a signed power `ε q ^ m` is an
+integral power of `q` only for the positive sign. -/
+theorem eq_one_of_units_mul_zpow_eq_zpow [NeZero (2 : K)] {q : K}
+    (hq : IsGenericQuantumParameter q) {ε : ℤˣ} {m n : ℤ} (h : ((ε : ℤ) : K) * q ^ m = q ^ n) :
+    ε = 1 := by
+  rcases Int.units_eq_one_or ε with rfl | rfl
+  · rfl
+  exfalso
+  have hsq : q ^ (m * 2) = q ^ (n * 2) := by
+    rw [zpow_mul, zpow_mul, ← h, zpow_two, zpow_two]
+    push_cast
+    ring
+  obtain rfl : m = n := by have := hq.zpow_injective hsq; omega
+  have : (2 : K) * q ^ m = 0 := by
+    push_cast at h
+    linear_combination -h
+  exact mul_ne_zero two_ne_zero (zpow_ne_zero m hq.ne_zero) this
 
 /-- A generic quantum parameter is not equal to its inverse. -/
 theorem ne_inv {q : K} (hq : IsGenericQuantumParameter q) : q ≠ q⁻¹ := by
