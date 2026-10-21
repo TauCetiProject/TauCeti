@@ -112,12 +112,6 @@ private theorem onePointMap_eval_eventuallyEq_infty (hp : 0 < p.natDegree) :
   rw [comp_apply, comp_apply, ← invChart_onePointMap_eval_invChart_symm hp, invChart.left_inv hx,
     invChart.left_inv hfx]
 
-/-- The chart expression `w ↦ w ^ d / p.reverse.eval w` at `∞` is analytic at `0`. -/
-private theorem analyticAt_pow_div_eval_reverse (hp : 0 < p.natDegree) :
-    AnalyticAt ℂ (fun w : ℂ ↦ w ^ p.natDegree / p.reverse.eval w) 0 :=
-  ((analyticAt_id (𝕜 := ℂ)).pow _).div ((AnalyticOnNhd.eval_polynomial _) 0 (mem_univ _))
-    (eval_zero_reverse_ne_zero (ne_zero_of_natDegree_gt hp))
-
 /-- **Polynomial maps of the Riemann sphere are holomorphic.** The extension of a nonconstant
 polynomial to `OnePoint ℂ`, sending `∞` to `∞`, is holomorphic. -/
 theorem mdifferentiable_onePointMap_eval (hp : 0 < p.natDegree) :
@@ -127,7 +121,8 @@ theorem mdifferentiable_onePointMap_eval (hp : 0 < p.natDegree) :
   | infty =>
     refine MDifferentiableAt.congr_of_eventuallyEq ?_ (onePointMap_eval_eventuallyEq_infty hp)
     exact (mdifferentiableAt_atlas_symm (Or.inr rfl) (by simp)).comp _
-      ((analyticAt_pow_div_eval_reverse hp).differentiableAt.mdifferentiableAt.comp_of_eq _
+      ((analyticAt_pow_div_eval_reverse (ne_zero_of_natDegree_gt hp)
+        _).differentiableAt.mdifferentiableAt.comp_of_eq _
         (mdifferentiableAt_atlas (Or.inr rfl) (by simp)) (by simp))
   | coe z =>
     -- Off `∞`, the map is `z ↦ p(z)` read in the affine chart.
@@ -179,7 +174,7 @@ theorem localMultiplicity_onePointMap_eval_infty (hp : 0 < p.natDegree) :
     localMultiplicity (OnePoint.map fun z : ℂ ↦ p.eval z) (∞ : OnePoint ℂ) = p.natDegree := by
   have h0 := eval_zero_reverse_ne_zero (ne_zero_of_natDegree_gt hp)
   have h : analyticOrderAt (fun w : ℂ ↦ w ^ p.natDegree / p.reverse.eval w) 0 = p.natDegree :=
-    (analyticAt_pow_div_eval_reverse hp).analyticOrderAt_eq_natCast.2
+    (analyticAt_pow_div_eval_reverse (ne_zero_of_natDegree_gt hp) _).analyticOrderAt_eq_natCast.2
       ⟨fun w ↦ (p.reverse.eval w)⁻¹, ((AnalyticOnNhd.eval_polynomial _) 0 (mem_univ _)).inv h0,
         inv_ne_zero h0,
         .of_forall fun w ↦ by simp [div_eq_mul_inv]⟩

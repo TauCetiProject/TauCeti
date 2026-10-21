@@ -57,7 +57,7 @@ theorem onePointMap_eval_four_mul_X_mul_one_sub_X :
   simp
 
 /-- The derivative `4 - 8z` of `4z(1 - z)` vanishes only at `1/2`. -/
-private theorem isRoot_derivative_four_mul_X_mul_one_sub_X_iff {z : ℂ} :
+theorem isRoot_derivative_four_mul_X_mul_one_sub_X_iff {z : ℂ} :
     (derivative (C 4 * X * (1 - X) : ℂ[X])).IsRoot z ↔ z = 2⁻¹ := by
   have hd : (derivative (C 4 * X * (1 - X) : ℂ[X])).eval z = 4 - 8 * z := by
     simp

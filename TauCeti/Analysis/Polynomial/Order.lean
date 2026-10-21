@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Analytic.Order
 public import Mathlib.Analysis.Analytic.Polynomial
 public import Mathlib.Algebra.Polynomial.Div
 public import Mathlib.Algebra.Polynomial.Degree.TrailingDegree
+public import TauCeti.Algebra.Polynomial.Reverse
 
 /-!
 # Analytic order of polynomial evaluation
@@ -17,6 +18,10 @@ At zero, the analytic order of polynomial evaluation equals its trailing degree,
 infinite order for the zero polynomial. This connects coefficient calculations for polynomial
 slices to the analytic order used in preparation theorems. At an arbitrary point, the analytic
 order of a nonzero polynomial function is the root multiplicity of the polynomial there.
+
+Dividing a power by the evaluation of the reversal of a nonzero polynomial gives a function
+analytic at zero, since the reversal takes the nonzero leading coefficient there. This is the
+reciprocal-coordinate form of a polynomial near infinity.
 -/
 
 public section
@@ -64,5 +69,12 @@ theorem analyticOrderAt_eval {p : Polynomial 𝕜} (hp : p ≠ 0) (a : 𝕜) :
       fun h ↦ hq (dvd_iff_isRoot.2 h), .of_forall fun t ↦ ?_⟩
   conv_lhs => rw [hpq]
   simp only [eval_mul, eval_pow, eval_sub, eval_X, eval_C, smul_eq_mul]
+
+/-- For a nonzero polynomial `p`, the function `w ↦ w ^ n / p.reverse.eval w` is analytic at `0`:
+the reversal does not vanish at `0`, where it takes the leading coefficient of `p`. -/
+theorem analyticAt_pow_div_eval_reverse {p : Polynomial 𝕜} (hp : p ≠ 0) (n : ℕ) :
+    AnalyticAt 𝕜 (fun w : 𝕜 ↦ w ^ n / p.reverse.eval w) 0 :=
+  ((analyticAt_id (𝕜 := 𝕜)).pow _).div ((AnalyticOnNhd.eval_polynomial _) 0 (Set.mem_univ _))
+    (eval_zero_reverse_ne_zero hp)
 
 end Polynomial

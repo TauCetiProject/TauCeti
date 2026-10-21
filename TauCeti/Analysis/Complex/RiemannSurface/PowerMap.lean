@@ -65,11 +65,6 @@ theorem invChart_onePointMap_pow_invChart_symm (hn : n ≠ 0) (w : ℂ) :
   · simp [zero_pow hn]
   · simp [hw, inv_pow]
 
-/-- For `n ≠ 0`, the polynomial `X ^ n` is nonconstant. -/
-private theorem natDegree_X_pow_pos (hn : n ≠ 0) : 0 < (X ^ n : ℂ[X]).natDegree := by
-  rw [natDegree_X_pow]
-  exact Nat.pos_of_ne_zero hn
-
 /-- The extension of `X ^ n` to the Riemann sphere is the extension of `z ↦ z ^ n`. -/
 private theorem onePointMap_eval_X_pow :
     (OnePoint.map fun z : ℂ ↦ (X ^ n : ℂ[X]).eval z) = OnePoint.map fun z : ℂ ↦ z ^ n := by
@@ -80,7 +75,7 @@ private theorem onePointMap_eval_X_pow :
 theorem mdifferentiable_onePointMap_pow (hn : n ≠ 0) :
     MDifferentiable 𝓘(ℂ) 𝓘(ℂ) (OnePoint.map fun z : ℂ ↦ z ^ n) := by
   rw [← onePointMap_eval_X_pow]
-  exact mdifferentiable_onePointMap_eval (natDegree_X_pow_pos hn)
+  exact mdifferentiable_onePointMap_eval (by simp [Nat.pos_iff_ne_zero, hn])
 
 /-- At a finite point `z`, the local multiplicity of the extension of `z ↦ z ^ n` to the Riemann
 sphere is the order of vanishing of `w ↦ w ^ n - z ^ n` at `z`: both charts are the affine
@@ -101,8 +96,8 @@ it is `w ↦ w ^ n` in the inverted chart. -/
 @[simp]
 theorem localMultiplicity_onePointMap_pow_infty (hn : n ≠ 0) :
     localMultiplicity (OnePoint.map fun z : ℂ ↦ z ^ n) (∞ : OnePoint ℂ) = n := by
-  rw [← onePointMap_eval_X_pow, localMultiplicity_onePointMap_eval_infty (natDegree_X_pow_pos hn),
-    natDegree_X_pow]
+  rw [← onePointMap_eval_X_pow,
+    localMultiplicity_onePointMap_eval_infty (by simp [Nat.pos_iff_ne_zero, hn]), natDegree_X_pow]
 
 /-- Away from `0` and `∞`, the extension of `z ↦ z ^ n` to the Riemann sphere has local
 multiplicity `1`: there the derivative `n z ^ (n - 1)` does not vanish. -/
@@ -117,7 +112,7 @@ namespace FiniteHolomorphicMap
 /-- The **power map** `z ↦ z ^ n` of the Riemann sphere, for `n ≠ 0`, sending `∞` to `∞`, as a
 finite holomorphic map: the polynomial map of `X ^ n`. -/
 def spherePow (hn : n ≠ 0) : FiniteHolomorphicMap (OnePoint ℂ) (OnePoint ℂ) :=
-  spherePolynomial (natDegree_X_pow_pos hn)
+  spherePolynomial (p := X ^ n) (by simp [Nat.pos_iff_ne_zero, hn])
 
 @[simp]
 theorem coe_spherePow (hn : n ≠ 0) :
@@ -142,6 +137,7 @@ end FiniteHolomorphicMap
 @[simp]
 theorem degree_onePointMap_pow (hn : n ≠ 0) :
     degree (OnePoint.map fun z : ℂ ↦ z ^ n) = n := by
-  rw [← onePointMap_eval_X_pow, degree_onePointMap_eval (natDegree_X_pow_pos hn), natDegree_X_pow]
+  rw [← onePointMap_eval_X_pow, degree_onePointMap_eval (by simp [Nat.pos_iff_ne_zero, hn]),
+    natDegree_X_pow]
 
 end TauCeti.RiemannSurface
