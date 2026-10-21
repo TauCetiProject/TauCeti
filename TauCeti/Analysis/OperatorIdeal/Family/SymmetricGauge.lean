@@ -43,6 +43,7 @@ spaces, and adjoint invariance makes its diagonal-universe restriction a symmetr
 ## Main results
 
 * `TauCeti.SymmetricGauge.enorm_le_opGauge`: `‖T‖ ≤ Φ(T)`.
+* `TauCeti.SymmetricGauge.opGauge_supGauge`: the supremum gauge induces the operator norm.
 * `TauCeti.SymmetricGauge.opGauge_smul`: `Φ(c T) = ‖c‖ Φ(T)`.
 * `TauCeti.SymmetricGauge.opGauge_comp_comp_le`: `Φ(A T B) ≤ ‖A‖ Φ(T) ‖B‖`.
 * `TauCeti.SymmetricGauge.opGauge_le_of_forall_kyFanGauge_le`: Ky Fan domination implies
@@ -96,6 +97,12 @@ theorem enorm_le_opGauge (T : E →L[𝕜] F) : ‖T‖ₑ ≤ Φ.opGauge T :=
   calc ‖T‖ₑ = (T.singularValue 0 : ℝ≥0∞) := by rw [singularValue_zero, enorm_eq_nnnorm]
     _ ≤ ⨆ n, (T.singularValue n : ℝ≥0∞) := le_iSup (fun n ↦ (T.singularValue n : ℝ≥0∞)) 0
     _ ≤ Φ.opGauge T := Φ.iSup_le_extend _
+
+/-- The supremum gauge induces the operator norm: `supₙ aₙ(T) = ‖T‖`. -/
+@[simp]
+theorem opGauge_supGauge (T : E →L[𝕜] F) : supGauge.opGauge T = ‖T‖ₑ := by
+  rw [opGauge_def, extend_supGauge, ← ENNReal.coe_iSup T.bddAbove_range_singularValue,
+    iSup_singularValue, enorm_eq_nnnorm]
 
 /-- Absolute homogeneity of the induced gauge, including its infinite values. -/
 @[simp]
