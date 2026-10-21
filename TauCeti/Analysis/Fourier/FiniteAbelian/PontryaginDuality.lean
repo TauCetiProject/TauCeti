@@ -13,26 +13,26 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 
 Mathlib's `AddChar.zmodHom` indexes the circle-valued characters of `ZMod n` by `ZMod n` itself,
 `a ↦ (b ↦ e(a b / n))` with `e(x) = exp(2 π i x)`. This file writes it multiplicatively, as a
-pairing `AddChar.zmodPairing n` on `Multiplicative (ZMod n)` that is a monoid homomorphism in each
+pairing `TauCeti.zmodPairing n` on `Multiplicative (ZMod n)` that is a monoid homomorphism in each
 variable, the form in which it can be composed with group homomorphisms into
 `Multiplicative (ZMod n)`, such as discrete logarithms.
 
 ## Main definitions
 
-* `AddChar.zmodPairing n`: the pairing `(a, b) ↦ e(a b / n)` on `Multiplicative (ZMod n)`.
+* `TauCeti.zmodPairing n`: the pairing `(a, b) ↦ e(a b / n)` on `Multiplicative (ZMod n)`.
 
 ## Main results
 
-* `AddChar.zmodPairing_apply`: `zmodPairing n a b = ZMod.toCircle (a b)`.
-* `AddChar.zmodPairing_comm`: the pairing is symmetric.
-* `AddChar.zmodPairing_eq_one_iff`: the pairing is nondegenerate: `e(a / n) = 1` only for `a = 0`.
+* `TauCeti.zmodPairing_apply`: `zmodPairing n a b = ZMod.toCircle (a b)`.
+* `TauCeti.zmodPairing_comm`: the pairing is symmetric.
+* `TauCeti.zmodPairing_eq_one_iff`: the pairing is nondegenerate: `e(a / n) = 1` only for `a = 0`.
 -/
 
 public section
 
-open Multiplicative
+open Multiplicative AddChar
 
-namespace AddChar
+namespace TauCeti
 
 variable (n : ℕ) [NeZero n]
 
@@ -60,4 +60,4 @@ theorem zmodPairing_eq_one_iff (a : Multiplicative (ZMod n)) :
   rw [zmodPairing_apply, toAdd_ofAdd, mul_one, ← map_zero_eq_one (ZMod.toCircle (N := n)),
     (ZMod.injective_toCircle (N := n)).eq_iff, toAdd_eq_zero]
 
-end AddChar
+end TauCeti

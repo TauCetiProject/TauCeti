@@ -64,8 +64,6 @@ public section
 
 open Multiplicative Complex
 
-open AddChar (zmodPairing zmodPairing_apply zmodPairing_comm zmodPairing_eq_one_iff)
-
 open scoped Real
 
 namespace TauCeti
