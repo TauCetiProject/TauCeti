@@ -12,282 +12,311 @@ public import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
 /-!
 # The gauge-fixed vortex operator at the vacuum
 
-A vortex on the plane `ℂ` is a pair `(a, α)` of an imaginary-valued connection one-form `a` on
-the trivial line bundle and a section `α`, solving
+The vortex equations on the plane, for an imaginary connection `a` on the trivial line bundle and
+a section `α`, are `∂bar_a α = 0` and `*iF_a = (1 - |α|²) / 8`; the gauge group acts by
+`(a, α) ↦ (a - u⁻¹ du, u α)`. Identify the plane with `ℂ`, with coordinates `z = s + i t`, and write
+`∂₁ = ∂_{1}` and `∂₂ = ∂_{I}` for the coordinate derivatives. A first-order deformation of the
+vacuum `(0, 1)` is written `a = i (b₁ ds + b₂ dt)` and `α = 1 + 2 p + 2 i q`, so that the
+coefficient metric `|b|² + |δα|² / 4` becomes the Euclidean metric on `x = (b₁, b₂, p, q) ∈ ℝ⁴`. In
+these coordinates the gauge-fixed linearization of the vortex equations at the vacuum is the
+first-order operator `L₀ x = (G, C, H₁, H₂)` with
 
-`\bar∂_a α = 0`, `*iF_a = (1 - |α|²) / 8`.
-
-At the vacuum `(a, α) = (0, 1)` write `a = i b` with `b = b₁ dx + b₂ dy` real and
-`α = 1 + u + i v`, and put `p = u / 2`, `q = v / 2`. In the coordinates `(b₁, b₂, p, q)` the
-`L²` metric `|b|² + |δα|² / 4` on the deformations is the Euclidean one. The gauge-fixed
-deformation operator at the vacuum is `L₀ = d₀* ⊕ d₁`. Here `d₁` linearizes the two equations,
-and `d₀*` is the formal adjoint of the infinitesimal gauge action `ξ ↦ (-dξ, 0, ξ / 2)`. In real
-coordinates `L₀` sends `(b₁, b₂, p, q)` to `(G, C, H₁, H₂)`, where
-
-* `G = ∂₁b₁ + ∂₂b₂ + q / 2` is the Coulomb gauge condition,
-* `C = -∂₁b₂ + ∂₂b₁ + p / 2` linearizes the curvature equation, and
-* `H₁ + i H₂ = (∂₁p - ∂₂q - b₂ / 2) + i (∂₁q + ∂₂p + b₁ / 2)` linearizes `\bar∂_a α`.
+* `G = ∂₁ b₁ + ∂₂ b₂ + q / 2` (the formal adjoint of the infinitesimal gauge action),
+* `C = -∂₁ b₂ + ∂₂ b₁ + p / 2` (the linearized curvature equation),
+* `H₁ = ∂₁ p - ∂₂ q - b₂ / 2` and `H₂ = ∂₁ q + ∂₂ p + b₁ / 2` (the real and imaginary parts of the
+  linearized `∂bar_a α`).
 
 This file defines `L₀` and its formal `L²` adjoint `L₀*` as continuous linear operators on
-Schwartz fields `ℂ → ℝ⁴`. It proves the Weitzenböck identities `L₀* L₀ = L₀ L₀* = -Δ + 1/4` and
-the resulting energy identity `‖L₀ x‖₂² = ‖∂₁ x‖₂² + ‖∂₂ x‖₂² + ‖x‖₂² / 4`. In particular `L₀` has
-the first-order gap `‖L₀ x‖₂ ≥ ‖x‖₂ / 2`, and `L₀` and `L₀*` are injective. These are the vacuum
-inputs to the exterior parametrix and Fredholm theory of the linearized vortex operator.
+`ℝ⁴`-valued Schwartz fields on `ℂ`. It proves the Weitzenböck identities
+`L₀* L₀ = L₀ L₀* = -Δ + 1 / 4` and the energy identities
+`‖L₀ x‖₂² = ‖L₀* x‖₂² = ‖∇x‖₂² + ‖x‖₂² / 4`, for any additive Haar measure on `ℂ`, together with
+their consequences `‖x‖₂ ≤ 2 ‖L₀ x‖₂`, `‖x‖₂ ≤ 2 ‖L₀* x‖₂` and the injectivity of `L₀` and `L₀*` on
+Schwartz fields. These are the vacuum inputs for the linear analysis of vortices, whose exterior
+regions are modelled on the vacuum.
 
-## Main definitions
+## Main declarations
 
-* `TauCeti.Vortex.vacuumOperator`: the gauge-fixed vacuum operator `L₀`.
-* `TauCeti.Vortex.vacuumAdjoint`: its formal adjoint `L₀*`.
-
-## Main results
-
-* `TauCeti.Vortex.vacuumOperator_apply`, `TauCeti.Vortex.vacuumAdjoint_apply`: the coordinate
-  formulas; for instance `(L₀* y)_{b₁} = -∂₁G - ∂₂C + H₂ / 2`.
-* `TauCeti.Vortex.integral_inner_vacuumOperator`: `L₀*` is the formal `L²` adjoint of `L₀`.
-* `TauCeti.Vortex.vacuumAdjoint_vacuumOperator`, `TauCeti.Vortex.vacuumOperator_vacuumAdjoint`:
-  `L₀* L₀ = L₀ L₀* = -Δ + 1/4`.
-* `TauCeti.Vortex.integral_norm_vacuumOperator_sq`: the energy identity for `L₀`.
-* `TauCeti.Vortex.integral_norm_sq_le_four_mul_integral_norm_vacuumOperator_sq`: the gap
-  `‖x‖₂² ≤ 4 ‖L₀ x‖₂²`.
-* `TauCeti.Vortex.vacuumOperator_injective`, `TauCeti.Vortex.vacuumAdjoint_injective`.
+* `TauCeti.Vortex.vacuumOperator`: the vacuum gauge-fixed operator `L₀`, characterized by the
+  component formulas `TauCeti.Vortex.vacuumOperator_apply_zero` through
+  `TauCeti.Vortex.vacuumOperator_apply_three`.
+* `TauCeti.Vortex.vacuumAdjoint`: its formal adjoint `L₀*`, characterized by
+  `TauCeti.Vortex.vacuumAdjoint_apply_zero` through `TauCeti.Vortex.vacuumAdjoint_apply_three`.
+* `TauCeti.Vortex.integral_inner_vacuumOperator` and `TauCeti.Vortex.integral_inner_vacuumAdjoint`:
+  `∫ ⟪L₀ x, y⟫ = ∫ ⟪x, L₀* y⟫` and `∫ ⟪L₀* x, y⟫ = ∫ ⟪x, L₀ y⟫`.
+* `TauCeti.Vortex.vacuumAdjoint_vacuumOperator` and `TauCeti.Vortex.vacuumOperator_vacuumAdjoint`:
+  `L₀* L₀ = -Δ + 1 / 4` and `L₀ L₀* = -Δ + 1 / 4`.
+* `TauCeti.Vortex.integral_norm_sq_vacuumOperator`: `‖L₀ x‖₂² = ‖∂₁ x‖₂² + ‖∂₂ x‖₂² + ‖x‖₂² / 4`,
+  and `TauCeti.Vortex.integral_norm_sq_vacuumAdjoint`: the same identity for `L₀*`.
+* `TauCeti.Vortex.integral_norm_sq_le_four_mul_integral_norm_sq_vacuumOperator` and
+  `TauCeti.Vortex.vacuumOperator_injective`: the resulting lower bound, and triviality of the
+  kernel on Schwartz fields. Their analogues for `L₀*` are
+  `TauCeti.Vortex.integral_norm_sq_le_four_mul_integral_norm_sq_vacuumAdjoint` and
+  `TauCeti.Vortex.vacuumAdjoint_injective`.
 
 ## References
 
-* A. Jaffe, C. H. Taubes, *Vortices and Monopoles*, Progress in Physics 2, Birkhäuser, 1980.
-* C. H. Taubes, *GR ⇒ SW: from pseudo-holomorphic curves to Seiberg–Witten solutions*,
-  J. Differential Geom. 51 (1999), 203–334.
+* A. Jaffe and C. H. Taubes, *Vortices and Monopoles*, Progress in Physics 2, Birkhäuser, 1980.
+* C. H. Taubes, *SW ⇒ Gr: from the Seiberg–Witten equations to pseudo-holomorphic curves*,
+  J. Amer. Math. Soc. 9 (1996), 845--918.
 -/
 
 public section
 
-open scoped SchwartzMap LineDeriv Laplacian Matrix RealInnerProductSpace
-open MeasureTheory SchwartzMap LineDeriv
+noncomputable section
 
 namespace TauCeti.Vortex
 
-/-- The coefficient of `∂₁` in `L₀`. -/
-private noncomputable def matOne : Matrix (Fin 4) (Fin 4) ℝ :=
+open scoped SchwartzMap LineDeriv Laplacian RealInnerProductSpace
+open Complex Matrix MeasureTheory SchwartzMap
+
+/-- The coefficient matrix of `∂₁` in the vacuum operator, in the coordinates `(b₁, b₂, p, q)`. -/
+private def coeffOne : Matrix (Fin 4) (Fin 4) ℝ :=
   !![1, 0, 0, 0; 0, -1, 0, 0; 0, 0, 1, 0; 0, 0, 0, 1]
 
-/-- The coefficient of `∂₂` in `L₀`. -/
-private noncomputable def matI : Matrix (Fin 4) (Fin 4) ℝ :=
+/-- The coefficient matrix of `∂₂` in the vacuum operator. -/
+private def coeffI : Matrix (Fin 4) (Fin 4) ℝ :=
   !![0, 1, 0, 0; 1, 0, 0, 0; 0, 0, 0, -1; 0, 0, 1, 0]
 
-/-- The zeroth-order coefficient of `L₀`. -/
-private noncomputable def matZero : Matrix (Fin 4) (Fin 4) ℝ :=
+/-- The zeroth-order coefficient matrix of the vacuum operator. -/
+private def coeffZero : Matrix (Fin 4) (Fin 4) ℝ :=
   !![0, 0, 0, 1 / 2; 0, 0, 1 / 2, 0; 0, -1 / 2, 0, 0; 1 / 2, 0, 0, 0]
 
-/-- The constant-coefficient first-order operator `A₁ ∂₁ + A₂ ∂₂ + B` on Schwartz fields. -/
-private noncomputable def firstOrder (A₁ A₂ B : Matrix (Fin 4) (Fin 4) ℝ) :
+/-- The constant-coefficient operator `A₁ ∂₁ + A₂ ∂₂ + B` on `ℝ⁴`-valued Schwartz fields. -/
+private def firstOrder (A₁ A₂ B : Matrix (Fin 4) (Fin 4) ℝ) :
     𝓢(ℂ, EuclideanSpace ℝ (Fin 4)) →L[ℝ] 𝓢(ℂ, EuclideanSpace ℝ (Fin 4)) :=
-  (postcompCLM (Matrix.toEuclideanCLM (𝕜 := ℝ) A₁)).comp
-      (lineDerivOpCLM ℝ 𝓢(ℂ, EuclideanSpace ℝ (Fin 4)) (1 : ℂ)) +
-    (postcompCLM (Matrix.toEuclideanCLM (𝕜 := ℝ) A₂)).comp
-      (lineDerivOpCLM ℝ 𝓢(ℂ, EuclideanSpace ℝ (Fin 4)) Complex.I) +
-    postcompCLM (Matrix.toEuclideanCLM (𝕜 := ℝ) B)
+  (postcompCLM (toEuclideanCLM (𝕜 := ℝ) A₁)).comp
+      (LineDeriv.lineDerivOpCLM ℝ 𝓢(ℂ, EuclideanSpace ℝ (Fin 4)) (1 : ℂ)) +
+    (postcompCLM (toEuclideanCLM (𝕜 := ℝ) A₂)).comp
+      (LineDeriv.lineDerivOpCLM ℝ 𝓢(ℂ, EuclideanSpace ℝ (Fin 4)) I) +
+    postcompCLM (toEuclideanCLM (𝕜 := ℝ) B)
 
 private theorem firstOrder_apply (A₁ A₂ B : Matrix (Fin 4) (Fin 4) ℝ)
-    (f : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) (z : ℂ) :
-    firstOrder A₁ A₂ B f z = Matrix.toEuclideanCLM (𝕜 := ℝ) A₁ ((∂_{(1 : ℂ)} f) z) +
-      Matrix.toEuclideanCLM (𝕜 := ℝ) A₂ ((∂_{Complex.I} f) z) +
-      Matrix.toEuclideanCLM (𝕜 := ℝ) B (f z) :=
-  rfl
+    (x : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) (z : ℂ) :
+    firstOrder A₁ A₂ B x z = toEuclideanCLM (𝕜 := ℝ) A₁ (∂_{(1 : ℂ)} x z) +
+      toEuclideanCLM (𝕜 := ℝ) A₂ (∂_{I} x z) + toEuclideanCLM (𝕜 := ℝ) B (x z) := by
+  simp [firstOrder]
+
+/-- The gauge-fixed vortex operator `L₀` at the vacuum, acting on deformations
+`x = (b₁, b₂, p, q)` and producing `(G, C, H₁, H₂)`, where `G` is the gauge-fixing condition, `C`
+the linearized curvature equation and `(H₁, H₂)` the linearized `∂bar_a α`; see the component
+formulas `vacuumOperator_apply_zero` through `vacuumOperator_apply_three`. -/
+def vacuumOperator : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4)) →L[ℝ] 𝓢(ℂ, EuclideanSpace ℝ (Fin 4)) :=
+  firstOrder coeffOne coeffI coeffZero
+
+/-- The formal `L²` adjoint `L₀*` of the vacuum operator, with respect to the Euclidean metrics on
+the coordinates `(b₁, b₂, p, q)` and `(G, C, H₁, H₂)`; see `integral_inner_vacuumOperator` and the
+component formulas `vacuumAdjoint_apply_zero` through `vacuumAdjoint_apply_three`. -/
+def vacuumAdjoint : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4)) →L[ℝ] 𝓢(ℂ, EuclideanSpace ℝ (Fin 4)) :=
+  firstOrder (-coeffOneᵀ) (-coeffIᵀ) coeffZeroᵀ
+
+variable (x y : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) (z : ℂ)
+
+/-- The gauge component `G = ∂₁ b₁ + ∂₂ b₂ + q / 2` of `L₀`. -/
+@[simp]
+theorem vacuumOperator_apply_zero :
+    vacuumOperator x z 0 = ∂_{(1 : ℂ)} x z 0 + ∂_{I} x z 1 + x z 3 / 2 := by
+  simp [vacuumOperator, firstOrder_apply, coeffOne, coeffI, coeffZero, mulVec, dotProduct,
+    Fin.sum_univ_four]
+  ring
+
+/-- The curvature component `C = ∂₂ b₁ - ∂₁ b₂ + p / 2` of `L₀`. -/
+@[simp]
+theorem vacuumOperator_apply_one :
+    vacuumOperator x z 1 = ∂_{I} x z 0 - ∂_{(1 : ℂ)} x z 1 + x z 2 / 2 := by
+  simp [vacuumOperator, firstOrder_apply, coeffOne, coeffI, coeffZero, mulVec, dotProduct,
+    Fin.sum_univ_four]
+  ring
+
+/-- The first `∂bar` component `H₁ = ∂₁ p - ∂₂ q - b₂ / 2` of `L₀`. -/
+@[simp]
+theorem vacuumOperator_apply_two :
+    vacuumOperator x z 2 = ∂_{(1 : ℂ)} x z 2 - ∂_{I} x z 3 - x z 1 / 2 := by
+  simp [vacuumOperator, firstOrder_apply, coeffOne, coeffI, coeffZero, mulVec, dotProduct,
+    Fin.sum_univ_four]
+  ring
+
+/-- The second `∂bar` component `H₂ = ∂₂ p + ∂₁ q + b₁ / 2` of `L₀`. -/
+@[simp]
+theorem vacuumOperator_apply_three :
+    vacuumOperator x z 3 = ∂_{I} x z 2 + ∂_{(1 : ℂ)} x z 3 + x z 0 / 2 := by
+  simp [vacuumOperator, firstOrder_apply, coeffOne, coeffI, coeffZero, mulVec, dotProduct,
+    Fin.sum_univ_four]
+  ring
+
+/-- The `b₁` component `-∂₁ G - ∂₂ C + H₂ / 2` of `L₀* (G, C, H₁, H₂)`. -/
+@[simp]
+theorem vacuumAdjoint_apply_zero :
+    vacuumAdjoint y z 0 = -∂_{(1 : ℂ)} y z 0 - ∂_{I} y z 1 + y z 3 / 2 := by
+  simp [vacuumAdjoint, firstOrder_apply, coeffOne, coeffI, coeffZero, mulVec, dotProduct,
+    Fin.sum_univ_four]
+  ring
+
+/-- The `b₂` component `-∂₂ G + ∂₁ C - H₁ / 2` of `L₀* (G, C, H₁, H₂)`. -/
+@[simp]
+theorem vacuumAdjoint_apply_one :
+    vacuumAdjoint y z 1 = -∂_{I} y z 0 + ∂_{(1 : ℂ)} y z 1 - y z 2 / 2 := by
+  simp [vacuumAdjoint, firstOrder_apply, coeffOne, coeffI, coeffZero, mulVec, dotProduct,
+    Fin.sum_univ_four]
+  ring
+
+/-- The `p` component `-∂₁ H₁ - ∂₂ H₂ + C / 2` of `L₀* (G, C, H₁, H₂)`. -/
+@[simp]
+theorem vacuumAdjoint_apply_two :
+    vacuumAdjoint y z 2 = -∂_{(1 : ℂ)} y z 2 - ∂_{I} y z 3 + y z 1 / 2 := by
+  simp [vacuumAdjoint, firstOrder_apply, coeffOne, coeffI, coeffZero, mulVec, dotProduct,
+    Fin.sum_univ_four]
+  ring
+
+/-- The `q` component `∂₂ H₁ - ∂₁ H₂ + G / 2` of `L₀* (G, C, H₁, H₂)`. -/
+@[simp]
+theorem vacuumAdjoint_apply_three :
+    vacuumAdjoint y z 3 = ∂_{I} y z 2 - ∂_{(1 : ℂ)} y z 3 + y z 0 / 2 := by
+  simp [vacuumAdjoint, firstOrder_apply, coeffOne, coeffI, coeffZero, mulVec, dotProduct,
+    Fin.sum_univ_four]
+  ring
 
 private theorem lineDerivOp_firstOrder (A₁ A₂ B : Matrix (Fin 4) (Fin 4) ℝ) (v : ℂ)
-    (f : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) :
-    ∂_{v} (firstOrder A₁ A₂ B f) = firstOrder A₁ A₂ B (∂_{v} f) := by
-  simp only [firstOrder, _root_.add_apply, ContinuousLinearMap.comp_apply, lineDerivOpCLM_apply,
-    LineDeriv.lineDerivOp_add, TauCeti.lineDerivOp_postcompCLM, lineDerivOp_comm f v 1,
-    lineDerivOp_comm f v Complex.I]
+    (x : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) :
+    ∂_{v} (firstOrder A₁ A₂ B x) = firstOrder A₁ A₂ B (∂_{v} x) := by
+  simp only [firstOrder, _root_.add_apply, ContinuousLinearMap.comp_apply,
+    LineDeriv.lineDerivOpCLM_apply, LineDeriv.lineDerivOp_add, lineDerivOp_postcompCLM]
+  rw [x.lineDerivOp_comm v, x.lineDerivOp_comm v]
 
-/-- The gauge-fixed vortex deformation operator `L₀ = d₀* ⊕ d₁` at the vacuum `(a, α) = (0, 1)`,
-acting on Schwartz fields `(b₁, b₂, p, q) : ℂ → ℝ⁴`. Its coordinate formula is
-`TauCeti.Vortex.vacuumOperator_apply`. -/
-noncomputable def vacuumOperator :
-    𝓢(ℂ, EuclideanSpace ℝ (Fin 4)) →L[ℝ] 𝓢(ℂ, EuclideanSpace ℝ (Fin 4)) :=
-  firstOrder matOne matI matZero
-
-/-- The formal `L²` adjoint `L₀*` of the vacuum vortex operator (see
-`TauCeti.Vortex.integral_inner_vacuumOperator`). Its coordinate formula is
-`TauCeti.Vortex.vacuumAdjoint_apply`. -/
-noncomputable def vacuumAdjoint :
-    𝓢(ℂ, EuclideanSpace ℝ (Fin 4)) →L[ℝ] 𝓢(ℂ, EuclideanSpace ℝ (Fin 4)) :=
-  firstOrder (-matOneᵀ) (-matIᵀ) matZeroᵀ
-
-/-- The coordinates of `L₀ x` for `x = (b₁, b₂, p, q)`: they are
-`G = ∂₁b₁ + ∂₂b₂ + q / 2`, `C = -∂₁b₂ + ∂₂b₁ + p / 2`, `H₁ = ∂₁p - ∂₂q - b₂ / 2` and
-`H₂ = ∂₁q + ∂₂p + b₁ / 2`, where `∂₁ = ∂_1` and `∂₂ = ∂_I` on `ℂ`. -/
-theorem vacuumOperator_apply (f : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) (z : ℂ) :
-    vacuumOperator f z = !₂[(∂_{(1 : ℂ)} f) z 0 + (∂_{Complex.I} f) z 1 + f z 3 / 2,
-      -(∂_{(1 : ℂ)} f) z 1 + (∂_{Complex.I} f) z 0 + f z 2 / 2,
-      (∂_{(1 : ℂ)} f) z 2 - (∂_{Complex.I} f) z 3 - f z 1 / 2,
-      (∂_{(1 : ℂ)} f) z 3 + (∂_{Complex.I} f) z 2 + f z 0 / 2] := by
-  ext i
-  fin_cases i <;>
-    simp [vacuumOperator, firstOrder_apply, matOne, matI, matZero, Matrix.mulVec, dotProduct,
-      Fin.sum_univ_four] <;>
-    ring
-
-/-- The coordinates of `L₀* y` for `y = (G, C, H₁, H₂)`: they are
-`-∂₁G - ∂₂C + H₂ / 2`, `∂₁C - ∂₂G - H₁ / 2`, `-∂₁H₁ - ∂₂H₂ + C / 2` and
-`-∂₁H₂ + ∂₂H₁ + G / 2`. -/
-theorem vacuumAdjoint_apply (f : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) (z : ℂ) :
-    vacuumAdjoint f z = !₂[-(∂_{(1 : ℂ)} f) z 0 - (∂_{Complex.I} f) z 1 + f z 3 / 2,
-      (∂_{(1 : ℂ)} f) z 1 - (∂_{Complex.I} f) z 0 - f z 2 / 2,
-      -(∂_{(1 : ℂ)} f) z 2 - (∂_{Complex.I} f) z 3 + f z 1 / 2,
-      -(∂_{(1 : ℂ)} f) z 3 + (∂_{Complex.I} f) z 2 + f z 0 / 2] := by
-  ext i
-  fin_cases i <;>
-    simp [vacuumAdjoint, firstOrder_apply, matOne, matI, matZero, Matrix.mulVec, dotProduct,
-      Fin.sum_univ_four, Matrix.transpose_apply] <;>
-    ring
-
-/-- `L₀` has constant coefficients, so it commutes with directional derivatives. -/
+/-- The vacuum operator has constant coefficients, so it commutes with directional
+differentiation. -/
 @[simp]
-theorem lineDerivOp_vacuumOperator (v : ℂ) (f : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) :
-    ∂_{v} (vacuumOperator f) = vacuumOperator (∂_{v} f) :=
-  lineDerivOp_firstOrder _ _ _ v f
+theorem lineDerivOp_vacuumOperator (v : ℂ) :
+    ∂_{v} (vacuumOperator x) = vacuumOperator (∂_{v} x) :=
+  lineDerivOp_firstOrder _ _ _ v x
 
-/-- `L₀*` has constant coefficients, so it commutes with directional derivatives. -/
+/-- The formal adjoint has constant coefficients, so it commutes with directional
+differentiation. -/
 @[simp]
-theorem lineDerivOp_vacuumAdjoint (v : ℂ) (f : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) :
-    ∂_{v} (vacuumAdjoint f) = vacuumAdjoint (∂_{v} f) :=
-  lineDerivOp_firstOrder _ _ _ v f
+theorem lineDerivOp_vacuumAdjoint (v : ℂ) :
+    ∂_{v} (vacuumAdjoint y) = vacuumAdjoint (∂_{v} y) :=
+  lineDerivOp_firstOrder _ _ _ v y
 
-/-- **Weitzenböck identity** for the vacuum vortex operator: `L₀* L₀ = -Δ + 1/4`. -/
-@[simp]
-theorem vacuumAdjoint_vacuumOperator (f : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) :
-    vacuumAdjoint (vacuumOperator f) = -Δ f + (4⁻¹ : ℝ) • f := by
+/-- **The Weitzenböck identity at the vacuum**: `L₀* L₀ = -Δ + 1 / 4`. -/
+theorem vacuumAdjoint_vacuumOperator :
+    vacuumAdjoint (vacuumOperator x) = -Δ x + (1 / 4 : ℝ) • x := by
+  have hc := x.lineDerivOp_comm I 1
   ext z i
-  have hc := DFunLike.congr_fun (lineDerivOp_comm f 1 Complex.I) z
-  rw [vacuumAdjoint_apply, lineDerivOp_vacuumOperator, lineDerivOp_vacuumOperator,
-    vacuumOperator_apply, vacuumOperator_apply, vacuumOperator_apply]
-  fin_cases i <;> simp [laplacian_eq_sum Complex.orthonormalBasisOneI, Fin.sum_univ_two, hc] <;>
+  fin_cases i <;>
+  · simp [lineDerivOp_vacuumOperator, laplacian_eq_lineDerivOp_one_I, hc]
     ring
 
-/-- **Weitzenböck identity** in the other order: `L₀ L₀* = -Δ + 1/4`. -/
-@[simp]
-theorem vacuumOperator_vacuumAdjoint (f : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) :
-    vacuumOperator (vacuumAdjoint f) = -Δ f + (4⁻¹ : ℝ) • f := by
+/-- The reverse Weitzenböck identity at the vacuum: `L₀ L₀* = -Δ + 1 / 4`. -/
+theorem vacuumOperator_vacuumAdjoint :
+    vacuumOperator (vacuumAdjoint y) = -Δ y + (1 / 4 : ℝ) • y := by
+  have hc := y.lineDerivOp_comm I 1
   ext z i
-  have hc := DFunLike.congr_fun (lineDerivOp_comm f 1 Complex.I) z
-  rw [vacuumOperator_apply, lineDerivOp_vacuumAdjoint, lineDerivOp_vacuumAdjoint,
-    vacuumAdjoint_apply, vacuumAdjoint_apply, vacuumAdjoint_apply]
-  fin_cases i <;> simp [laplacian_eq_sum Complex.orthonormalBasisOneI, Fin.sum_univ_two, hc] <;>
+  fin_cases i <;>
+  · simp [lineDerivOp_vacuumAdjoint, laplacian_eq_lineDerivOp_one_I, hc]
     ring
 
 variable {μ : Measure ℂ} [μ.IsAddHaarMeasure]
 
-/-- Integration by parts for `A₁ ∂₁ + A₂ ∂₂ + B`: its formal adjoint is
-`-A₁ᵀ ∂₁ - A₂ᵀ ∂₂ + Bᵀ`. -/
-private theorem integral_inner_firstOrder (A₁ A₂ B : Matrix (Fin 4) (Fin 4) ℝ)
-    (f g : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) :
-    ∫ z, ⟪firstOrder A₁ A₂ B f z, g z⟫ ∂μ = ∫ z, ⟪f z, firstOrder (-A₁ᵀ) (-A₂ᵀ) Bᵀ g z⟫ ∂μ := by
-  -- `Matrix.toEuclideanCLM` is a star algebra equivalence, so `Aᵀ = Aᴴ` acts as the adjoint.
-  have adj : ∀ (A : Matrix (Fin 4) (Fin 4) ℝ) (u w : EuclideanSpace ℝ (Fin 4)),
-      ⟪Matrix.toEuclideanCLM (𝕜 := ℝ) A u, w⟫ = ⟪u, Matrix.toEuclideanCLM (𝕜 := ℝ) Aᵀ w⟫ := by
-    intro A u w
-    rw [← Matrix.conjTranspose_eq_transpose_of_trivial, ← Matrix.star_eq_conjTranspose, map_star,
+private theorem integral_inner_firstOrder (A₁ A₂ B : Matrix (Fin 4) (Fin 4) ℝ) :
+    ∫ z, ⟪firstOrder A₁ A₂ B x z, y z⟫ ∂μ = ∫ z, ⟪x z, firstOrder (-A₁ᵀ) (-A₂ᵀ) Bᵀ y z⟫ ∂μ := by
+  have hT (A : Matrix (Fin 4) (Fin 4) ℝ) (a b : EuclideanSpace ℝ (Fin 4)) :
+      ⟪toEuclideanCLM (𝕜 := ℝ) A a, b⟫ = ⟪a, toEuclideanCLM (𝕜 := ℝ) Aᵀ b⟫ := by
+    rw [← conjTranspose_eq_transpose_of_trivial, ← star_eq_conjTranspose, map_star,
       ContinuousLinearMap.star_eq_adjoint, ContinuousLinearMap.adjoint_inner_right]
-  have ibp : ∀ (v : ℂ) (A : Matrix (Fin 4) (Fin 4) ℝ),
-      ∫ z, ⟪(∂_{v} f) z, (g.postcompCLM (Matrix.toEuclideanCLM (𝕜 := ℝ) A)) z⟫ ∂μ =
-        -∫ z, ⟪f z, ((∂_{v} g).postcompCLM (Matrix.toEuclideanCLM (𝕜 := ℝ) A)) z⟫ ∂μ := by
-    intro v A
-    have h := integral_bilinear_lineDerivOp_right_eq_neg_left (μ := μ) f
-      (g.postcompCLM (Matrix.toEuclideanCLM (𝕜 := ℝ) A)) (innerSL ℝ) v
-    rw [TauCeti.lineDerivOp_postcompCLM] at h
-    -- `innerSL ℝ u w` unfolds to `⟪u, w⟫`, so `h` is the claim up to sign.
-    exact (neg_eq_iff_eq_neg.mpr h).symm
-  have lhs : (fun z => ⟪firstOrder A₁ A₂ B f z, g z⟫) = fun z =>
-      ⟪(∂_{(1 : ℂ)} f) z, (g.postcompCLM (Matrix.toEuclideanCLM (𝕜 := ℝ) A₁ᵀ)) z⟫ +
-        ⟪(∂_{Complex.I} f) z, (g.postcompCLM (Matrix.toEuclideanCLM (𝕜 := ℝ) A₂ᵀ)) z⟫ +
-        ⟪f z, (g.postcompCLM (Matrix.toEuclideanCLM (𝕜 := ℝ) Bᵀ)) z⟫ := by
-    funext z
-    simp only [firstOrder_apply, inner_add_left, adj, postcompCLM_apply]
-  have rhs : (fun z => ⟪f z, firstOrder (-A₁ᵀ) (-A₂ᵀ) Bᵀ g z⟫) = fun z =>
-      -⟪f z, ((∂_{(1 : ℂ)} g).postcompCLM (Matrix.toEuclideanCLM (𝕜 := ℝ) A₁ᵀ)) z⟫ +
-        -⟪f z, ((∂_{Complex.I} g).postcompCLM (Matrix.toEuclideanCLM (𝕜 := ℝ) A₂ᵀ)) z⟫ +
-        ⟪f z, (g.postcompCLM (Matrix.toEuclideanCLM (𝕜 := ℝ) Bᵀ)) z⟫ := by
-    funext z
-    simp only [firstOrder_apply, inner_add_right, map_neg, _root_.neg_apply, inner_neg_right,
-      postcompCLM_apply]
-  have hN : ∀ a b : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4)), Integrable (fun z => -⟪a z, b z⟫) μ :=
-    fun a b => (integrable_inner a b).neg
-  have hA : ∀ F G : ℂ → ℝ, Integrable F μ → Integrable G μ →
-      Integrable (fun z => F z + G z) μ := fun _ _ hF hG => hF.add hG
-  rw [lhs, rhs,
-    integral_add (hA _ _ (integrable_inner _ _) (integrable_inner _ _)) (integrable_inner _ _),
-    integral_add (integrable_inner _ _) (integrable_inner _ _),
-    integral_add (hA _ _ (hN _ _) (hN _ _)) (integrable_inner _ _),
-    integral_add (hN _ _) (hN _ _), integral_neg, integral_neg, ibp, ibp]
+  have hint (M : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4))
+      (f g : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) : Integrable (fun z ↦ ⟪M (f z), g z⟫) μ := by
+    simpa only [postcompCLM_apply] using integrable_inner (postcompCLM M f) g
+  have hint' (M : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4))
+      (f g : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) : Integrable (fun z ↦ ⟪f z, M (g z)⟫) μ := by
+    simpa only [real_inner_comm (f _)] using hint M g f
+  have hD (A : Matrix (Fin 4) (Fin 4) ℝ) (v : ℂ) :
+      ∫ z, ⟪toEuclideanCLM (𝕜 := ℝ) A (∂_{v} x z), y z⟫ ∂μ =
+        ∫ z, ⟪x z, toEuclideanCLM (𝕜 := ℝ) (-Aᵀ) (∂_{v} y z)⟫ ∂μ := by
+    have h := integral_bilinear_lineDerivOp_right_eq_neg_left (μ := μ) y x
+      ((innerSL ℝ).bilinearComp (ContinuousLinearMap.id ℝ _) (toEuclideanCLM (𝕜 := ℝ) A)) v
+    simp only [ContinuousLinearMap.bilinearComp_apply, ContinuousLinearMap.id_apply,
+      innerSL_apply_apply] at h
+    calc ∫ z, ⟪toEuclideanCLM (𝕜 := ℝ) A (∂_{v} x z), y z⟫ ∂μ
+        = ∫ z, ⟪y z, toEuclideanCLM (𝕜 := ℝ) A (∂_{v} x z)⟫ ∂μ :=
+          integral_congr_ae (.of_forall fun _ ↦ real_inner_comm _ _)
+      _ = -∫ z, ⟪∂_{v} y z, toEuclideanCLM (𝕜 := ℝ) A (x z)⟫ ∂μ := h
+      _ = ∫ z, ⟪x z, toEuclideanCLM (𝕜 := ℝ) (-Aᵀ) (∂_{v} y z)⟫ ∂μ := by
+          simp_rw [map_neg, _root_.neg_apply, inner_neg_right, integral_neg, ← hT,
+            real_inner_comm (∂_{v} y _)]
+  simp only [firstOrder_apply, inner_add_left, inner_add_right]
+  rw [integral_add, integral_add, integral_add, integral_add, hD, hD]
+  · simp_rw [hT]
+  -- the remaining goals are the integrability of the split integrands
+  · exact hint' _ _ _
+  · exact hint' _ _ _
+  · exact (hint' _ _ _).add (hint' _ _ _)
+  · exact hint' _ _ _
+  · exact hint _ _ _
+  · exact hint _ _ _
+  · exact (hint _ _ _).add (hint _ _ _)
+  · exact hint _ _ _
 
-/-- `L₀*` is the formal `L²` adjoint of `L₀`: `∫ ⟪L₀ x, y⟫ = ∫ ⟪x, L₀* y⟫`. -/
-theorem integral_inner_vacuumOperator (f g : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) :
-    ∫ z, ⟪vacuumOperator f z, g z⟫ ∂μ = ∫ z, ⟪f z, vacuumAdjoint g z⟫ ∂μ :=
-  integral_inner_firstOrder _ _ _ f g
+/-- `vacuumAdjoint` is the formal `L²` adjoint of `vacuumOperator`:
+`∫ ⟪L₀ x, y⟫ = ∫ ⟪x, L₀* y⟫` for Schwartz fields `x` and `y`. -/
+theorem integral_inner_vacuumOperator :
+    ∫ z, ⟪vacuumOperator x z, y z⟫ ∂μ = ∫ z, ⟪x z, vacuumAdjoint y z⟫ ∂μ :=
+  integral_inner_firstOrder x y _ _ _
 
-/-- `L₀` is the formal `L²` adjoint of `L₀*`: `∫ ⟪L₀* x, y⟫ = ∫ ⟪x, L₀ y⟫`. -/
-theorem integral_inner_vacuumAdjoint (f g : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) :
-    ∫ z, ⟪vacuumAdjoint f z, g z⟫ ∂μ = ∫ z, ⟪f z, vacuumOperator g z⟫ ∂μ := by
-  have h₁ : ∀ z, ⟪vacuumAdjoint f z, g z⟫ = ⟪g z, vacuumAdjoint f z⟫ :=
-    fun z => real_inner_comm _ _
-  have h₂ : ∀ z, ⟪f z, vacuumOperator g z⟫ = ⟪vacuumOperator g z, f z⟫ :=
-    fun z => real_inner_comm _ _
+/-- `vacuumOperator` is the formal `L²` adjoint of `vacuumAdjoint`:
+`∫ ⟪L₀* x, y⟫ = ∫ ⟪x, L₀ y⟫` for Schwartz fields `x` and `y`. -/
+theorem integral_inner_vacuumAdjoint :
+    ∫ z, ⟪vacuumAdjoint x z, y z⟫ ∂μ = ∫ z, ⟪x z, vacuumOperator y z⟫ ∂μ := by
+  have h₁ (z : ℂ) : ⟪vacuumAdjoint x z, y z⟫ = ⟪y z, vacuumAdjoint x z⟫ := real_inner_comm _ _
+  have h₂ (z : ℂ) : ⟪x z, vacuumOperator y z⟫ = ⟪vacuumOperator y z, x z⟫ := real_inner_comm _ _
   simp_rw [h₁, h₂]
-  exact (integral_inner_vacuumOperator g f).symm
+  exact (integral_inner_vacuumOperator y x).symm
 
-/-- **Energy identity** for the vacuum vortex operator:
-`‖L₀ x‖₂² = ‖∂₁ x‖₂² + ‖∂₂ x‖₂² + ‖x‖₂² / 4`. -/
-theorem integral_norm_vacuumOperator_sq (f : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) :
-    ∫ z, ‖vacuumOperator f z‖ ^ 2 ∂μ =
-      ∫ z, ‖(∂_{(1 : ℂ)} f) z‖ ^ 2 ∂μ + ∫ z, ‖(∂_{Complex.I} f) z‖ ^ 2 ∂μ +
-        4⁻¹ * ∫ z, ‖f z‖ ^ 2 ∂μ := by
-  simp_rw [← real_inner_self_eq_norm_sq (vacuumOperator f _)]
+/-- **The vacuum energy identity**: `‖L₀ x‖₂² = ‖∇x‖₂² + ‖x‖₂² / 4`, where `‖∇x‖₂²` is the sum of
+the squared `L²` norms of the two coordinate derivatives `∂₁ x` and `∂₂ x`. -/
+theorem integral_norm_sq_vacuumOperator :
+    ∫ z, ‖vacuumOperator x z‖ ^ 2 ∂μ =
+      (∫ z, ‖∂_{(1 : ℂ)} x z‖ ^ 2 ∂μ) + (∫ z, ‖∂_{I} x z‖ ^ 2 ∂μ) + 1 / 4 * ∫ z, ‖x z‖ ^ 2 ∂μ := by
+  simp_rw [← real_inner_self_eq_norm_sq (vacuumOperator x _)]
   rw [integral_inner_vacuumOperator, vacuumAdjoint_vacuumOperator,
-    integral_inner_neg_laplacian_add_smul_self Complex.orthonormalBasisOneI, Fin.sum_univ_two]
+    integral_inner_neg_laplacian_add_smul_self orthonormalBasisOneI, Fin.sum_univ_two]
   simp
 
-/-- **Energy identity** for the adjoint:
-`‖L₀* x‖₂² = ‖∂₁ x‖₂² + ‖∂₂ x‖₂² + ‖x‖₂² / 4`. -/
-theorem integral_norm_vacuumAdjoint_sq (f : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) :
-    ∫ z, ‖vacuumAdjoint f z‖ ^ 2 ∂μ =
-      ∫ z, ‖(∂_{(1 : ℂ)} f) z‖ ^ 2 ∂μ + ∫ z, ‖(∂_{Complex.I} f) z‖ ^ 2 ∂μ +
-        4⁻¹ * ∫ z, ‖f z‖ ^ 2 ∂μ := by
-  simp_rw [← real_inner_self_eq_norm_sq (vacuumAdjoint f _)]
+/-- The energy identity for the adjoint: `‖L₀* x‖₂² = ‖∇x‖₂² + ‖x‖₂² / 4`. -/
+theorem integral_norm_sq_vacuumAdjoint :
+    ∫ z, ‖vacuumAdjoint x z‖ ^ 2 ∂μ =
+      (∫ z, ‖∂_{(1 : ℂ)} x z‖ ^ 2 ∂μ) + (∫ z, ‖∂_{I} x z‖ ^ 2 ∂μ) + 1 / 4 * ∫ z, ‖x z‖ ^ 2 ∂μ := by
+  simp_rw [← real_inner_self_eq_norm_sq (vacuumAdjoint x _)]
   rw [integral_inner_vacuumAdjoint, vacuumOperator_vacuumAdjoint,
-    integral_inner_neg_laplacian_add_smul_self Complex.orthonormalBasisOneI, Fin.sum_univ_two]
+    integral_inner_neg_laplacian_add_smul_self orthonormalBasisOneI, Fin.sum_univ_two]
   simp
 
-/-- The **first-order gap** of the vacuum vortex operator: `‖x‖₂² ≤ 4 ‖L₀ x‖₂²`. -/
-theorem integral_norm_sq_le_four_mul_integral_norm_vacuumOperator_sq
-    (f : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) :
-    ∫ z, ‖f z‖ ^ 2 ∂μ ≤ 4 * ∫ z, ‖vacuumOperator f z‖ ^ 2 ∂μ := by
-  rw [integral_norm_vacuumOperator_sq]
-  have h₁ : 0 ≤ ∫ z, ‖(∂_{(1 : ℂ)} f) z‖ ^ 2 ∂μ := integral_nonneg fun _ => sq_nonneg _
-  have h₂ : 0 ≤ ∫ z, ‖(∂_{Complex.I} f) z‖ ^ 2 ∂μ := integral_nonneg fun _ => sq_nonneg _
+/-- **The vacuum lower bound**: `‖x‖₂² ≤ 4 ‖L₀ x‖₂²`, that is, `‖x‖₂ ≤ 2 ‖L₀ x‖₂`. -/
+theorem integral_norm_sq_le_four_mul_integral_norm_sq_vacuumOperator :
+    ∫ z, ‖x z‖ ^ 2 ∂μ ≤ 4 * ∫ z, ‖vacuumOperator x z‖ ^ 2 ∂μ := by
+  have h₁ : 0 ≤ ∫ z, ‖∂_{(1 : ℂ)} x z‖ ^ 2 ∂μ := integral_nonneg fun _ ↦ by positivity
+  have h₂ : 0 ≤ ∫ z, ‖∂_{I} x z‖ ^ 2 ∂μ := integral_nonneg fun _ ↦ by positivity
+  rw [integral_norm_sq_vacuumOperator]
   linarith
 
-/-- The first-order gap of the adjoint: `‖x‖₂² ≤ 4 ‖L₀* x‖₂²`. -/
-theorem integral_norm_sq_le_four_mul_integral_norm_vacuumAdjoint_sq
-    (f : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) :
-    ∫ z, ‖f z‖ ^ 2 ∂μ ≤ 4 * ∫ z, ‖vacuumAdjoint f z‖ ^ 2 ∂μ := by
-  rw [integral_norm_vacuumAdjoint_sq]
-  have h₁ : 0 ≤ ∫ z, ‖(∂_{(1 : ℂ)} f) z‖ ^ 2 ∂μ := integral_nonneg fun _ => sq_nonneg _
-  have h₂ : 0 ≤ ∫ z, ‖(∂_{Complex.I} f) z‖ ^ 2 ∂μ := integral_nonneg fun _ => sq_nonneg _
+/-- The lower bound for the adjoint: `‖x‖₂² ≤ 4 ‖L₀* x‖₂²`, that is, `‖x‖₂ ≤ 2 ‖L₀* x‖₂`. -/
+theorem integral_norm_sq_le_four_mul_integral_norm_sq_vacuumAdjoint :
+    ∫ z, ‖x z‖ ^ 2 ∂μ ≤ 4 * ∫ z, ‖vacuumAdjoint x z‖ ^ 2 ∂μ := by
+  have h₁ : 0 ≤ ∫ z, ‖∂_{(1 : ℂ)} x z‖ ^ 2 ∂μ := integral_nonneg fun _ ↦ by positivity
+  have h₂ : 0 ≤ ∫ z, ‖∂_{I} x z‖ ^ 2 ∂μ := integral_nonneg fun _ ↦ by positivity
+  rw [integral_norm_sq_vacuumAdjoint]
   linarith
 
-/-- The vacuum vortex operator has no Schwartz kernel. -/
+/-- The vacuum operator has trivial kernel on Schwartz fields. -/
 theorem vacuumOperator_injective : Function.Injective vacuumOperator := by
-  refine (injective_iff_map_eq_zero _).mpr fun f hf =>
-    (integral_norm_sq_eq_zero_iff (μ := volume)).mp <|
-    le_antisymm ?_ (integral_nonneg fun _ => sq_nonneg _)
-  simpa [hf] using integral_norm_sq_le_four_mul_integral_norm_vacuumOperator_sq (μ := volume) f
+  refine (injective_iff_map_eq_zero vacuumOperator).2 fun x hx ↦
+    (integral_norm_sq_eq_zero_iff (μ := volume)).1 <|
+      le_antisymm ?_ (integral_nonneg fun _ ↦ by positivity)
+  simpa [hx] using integral_norm_sq_le_four_mul_integral_norm_sq_vacuumOperator (μ := volume) x
 
-/-- The adjoint of the vacuum vortex operator has no Schwartz kernel. -/
+/-- The adjoint of the vacuum operator has trivial kernel on Schwartz fields. -/
 theorem vacuumAdjoint_injective : Function.Injective vacuumAdjoint := by
-  refine (injective_iff_map_eq_zero _).mpr fun f hf =>
-    (integral_norm_sq_eq_zero_iff (μ := volume)).mp <|
-    le_antisymm ?_ (integral_nonneg fun _ => sq_nonneg _)
-  simpa [hf] using integral_norm_sq_le_four_mul_integral_norm_vacuumAdjoint_sq (μ := volume) f
+  refine (injective_iff_map_eq_zero vacuumAdjoint).2 fun x hx ↦
+    (integral_norm_sq_eq_zero_iff (μ := volume)).1 <|
+      le_antisymm ?_ (integral_nonneg fun _ ↦ by positivity)
+  simpa [hx] using integral_norm_sq_le_four_mul_integral_norm_sq_vacuumAdjoint (μ := volume) x
 
 end TauCeti.Vortex

@@ -88,6 +88,24 @@ theorem isNeighbourhood_of_algEquiv {B : Type v} [CommRing B] [Algebra R B]
 theorem isNeighbourhood_self : IsNeighbourhood I (CommAlgCat.of R R) :=
   isNeighbourhood_of_algEquiv I AlgEquiv.refl
 
+/-- If the reduced map is injective, an element of `R` whose image lies in the extended ideal
+already lies in `I`. -/
+theorem mem_of_algebraMap_mem_map_of_reducedMap_injective {B : Type v} [CommRing B] [Algebra R B]
+    (hB : Function.Injective (reducedMap I B)) {r : R}
+    (hr : algebraMap R B r ∈ I.map (algebraMap R B)) : r ∈ I := by
+  rw [← Ideal.Quotient.eq_zero_iff_mem]
+  apply hB
+  rwa [reducedMap_mk, map_zero, Ideal.Quotient.eq_zero_iff_mem]
+
+/-- If the reduced map is surjective, every element of the algebra is congruent to the image of
+an element of `R` modulo the extended ideal. -/
+theorem exists_sub_algebraMap_mem_map_of_reducedMap_surjective {B : Type v} [CommRing B]
+    [Algebra R B] (hB : Function.Surjective (reducedMap I B)) (b : B) :
+    ∃ r : R, b - algebraMap R B r ∈ I.map (algebraMap R B) := by
+  obtain ⟨t, ht⟩ := hB (Ideal.Quotient.mk _ b)
+  obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective t
+  exact ⟨r, Ideal.Quotient.eq.mp (by rw [← reducedMap_mk, ht])⟩
+
 /-- Two maps out of an algebra whose reduced map is surjective (for instance, a neighbourhood)
 agree after quotienting their target by the extended ideal. -/
 theorem quotient_mk_eq_of_reducedMap_surjective {B : Type v} {C : Type*} [CommRing B] [CommRing C]
@@ -96,13 +114,10 @@ theorem quotient_mk_eq_of_reducedMap_surjective {B : Type v} {C : Type*} [CommRi
     Ideal.Quotient.mk (I.map (algebraMap R C)) (f b) =
       Ideal.Quotient.mk (I.map (algebraMap R C)) (g b) := by
   -- Modulo `I`, the element `b` is the image of some `r : R`, which every algebra map preserves.
-  obtain ⟨r, hr⟩ := hB (Ideal.Quotient.mk (I.map (algebraMap R B)) b)
-  obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective r
-  rw [reducedMap_mk, Ideal.Quotient.eq] at hr
+  obtain ⟨r, hr⟩ := exists_sub_algebraMap_mem_map_of_reducedMap_surjective I hB b
   have key (h : B →ₐ[R] C) : Ideal.Quotient.mk (I.map (algebraMap R C)) (h b) =
       Ideal.Quotient.mk (I.map (algebraMap R C)) (algebraMap R C r) := by
-    rw [eq_comm, Ideal.Quotient.eq, ← h.commutes, ← map_sub, ← h.comp_algebraMap,
-      ← Ideal.map_map]
+    rw [Ideal.Quotient.eq, ← h.commutes, ← map_sub, ← h.comp_algebraMap, ← Ideal.map_map]
     exact Ideal.mem_map_of_mem _ hr
   rw [key f, key g]
 

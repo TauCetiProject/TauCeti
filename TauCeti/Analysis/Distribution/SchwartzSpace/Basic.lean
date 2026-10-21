@@ -12,13 +12,13 @@ public import Mathlib.Analysis.Distribution.SchwartzSpace.Basic
 
 A Schwartz function is bounded and decays faster than any power, so `‖x‖ ^ k ‖f x‖²` is
 integrable against any measure of temperate growth. This is the integrability input for weighted
-`L²` estimates such as the weighted Plancherel identity.
+`L²` estimates such as the weighted Plancherel identity. Likewise the pointwise inner product of two
+Schwartz functions is integrable, which justifies splitting `L²` pairings of Schwartz functions.
 
 ## Main declarations
 
 * `SchwartzMap.integrable_norm_pow_mul_norm_sq`: `‖x‖ ^ k ‖f x‖²` is integrable.
-* `SchwartzMap.integrable_inner`: the pointwise inner product of two Schwartz functions is
-  integrable.
+* `SchwartzMap.integrable_inner`: `⟪f x, g x⟫` is integrable.
 * `SchwartzMap.integral_norm_sq_eq_zero_iff`: a Schwartz function vanishes exactly when the
   integral of its squared norm does, for a measure charging every nonempty open set.
 -/
@@ -29,7 +29,7 @@ open MeasureTheory
 
 namespace SchwartzMap
 
-open scoped SchwartzMap
+open scoped SchwartzMap InnerProductSpace
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
   [BorelSpace E] [SecondCountableTopology E] [NormedAddCommGroup F] [NormedSpace ℝ F]
@@ -56,11 +56,12 @@ theorem integral_norm_sq_eq_zero_iff [μ.IsOpenPosMeasure] {f : 𝓢(E, F)} :
   have := (hcont.ae_eq_iff_eq μ continuous_zero).mp hae
   exact SchwartzMap.ext fun x => by simpa using congrFun this x
 
-open scoped RealInnerProductSpace in
-/-- The pointwise inner product of two Schwartz functions is integrable. -/
-theorem integrable_inner {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
-    (f g : 𝓢(E, F)) : Integrable (fun x => ⟪f x, g x⟫) μ :=
-  -- The pairing of `f` and `g` under `innerSL ℝ` is the Schwartz function `x ↦ ⟪f x, g x⟫`.
-  (pairing (innerSL ℝ) f g).integrable
+/-- For Schwartz functions `f` and `g` with values in a real inner product space, the pointwise
+inner product `⟪f x, g x⟫` is integrable. -/
+theorem integrable_inner {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℝ H]
+    (f g : 𝓢(E, H)) : Integrable (fun x ↦ ⟪f x, g x⟫_ℝ) μ := by
+  convert (pairing (innerSL ℝ) f g).integrable (μ := μ) using 1
+  ext x
+  rw [pairing_apply_apply, innerSL_apply_apply]
 
 end SchwartzMap
