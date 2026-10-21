@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import TauCeti.Analysis.Calculus.Bilinear
+public import TauCeti.Geometry.Manifold.Riemannian.Basic
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
+public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Conformal
 
 /-!
 # Pullback Riemannian metrics
@@ -33,6 +35,13 @@ the metric that a manifold with a geometric structure receives through its chart
   metric.
 * `Bundle.ContMDiffRiemannianMetric.pullback`: the `C^n` Riemannian metric obtained from an
   immersion by pulling back the target metric.
+* `Bundle.ContMDiffRiemannianMetric.pullback_id` and
+  `Bundle.ContMDiffRiemannianMetric.pullback_comp`: the functoriality laws for pullback metrics.
+* `Bundle.ContMDiffRiemannianMetric.pullback_rescale`: pulling back commutes with conformal
+  rescaling, `f^* (h g) = (h ∘ f) f^* g`.
+* `Bundle.ContMDiffRiemannianMetric.conformalClass_pullback`: along a map with a `C^n` left
+  inverse, such as a diffeomorphism, the conformal class of `f^* g` is the pullback of the
+  conformal class of `g`.
 
 ## References
 
@@ -170,6 +179,80 @@ theorem pullback_inner
     (g.pullback f hf hinj).inner x v w =
       g.inner (f x) (mfderiv I J f x v) (mfderiv I J f x w) :=
   (rfl)
+
+/-- Pulling a Riemannian metric back along the identity leaves it unchanged. -/
+@[simp]
+theorem pullback_id
+    (g : ContMDiffRiemannianMetric I n E (fun y : M ↦ TangentSpace I y))
+    (hf : ContMDiff I I (n + 1) id)
+    (hinj : ∀ x, Function.Injective (mfderiv I I id x)) :
+    g.pullback id hf hinj = g := by
+  apply ext
+  intro x v w
+  rw [pullback_inner]
+  simp only [mfderiv_id, ContinuousLinearMap.id_apply, id_eq]
+
+variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+  {H'' : Type*} [TopologicalSpace H''] {K : ModelWithCorners ℝ G H''}
+  {P : Type*} [TopologicalSpace P] [ChartedSpace H'' P] [IsManifold K 1 P]
+
+/-- Pulling a metric back along a composite is the same as pulling it back successively. -/
+theorem pullback_comp
+    [FiniteDimensional ℝ F]
+    (g : ContMDiffRiemannianMetric K n G (fun z : P ↦ TangentSpace K z))
+    (h : N → P) (f : M → N)
+    (hh : ContMDiff J K (n + 1) h) (hf : ContMDiff I J (n + 1) f)
+    (hinjh : ∀ y, Function.Injective (mfderiv J K h y))
+    (hinjf : ∀ x, Function.Injective (mfderiv I J f x)) :
+    g.pullback (h ∘ f) (hh.comp hf)
+        (fun x ↦ by
+          rw [mfderiv_comp x (hh.mdifferentiableAt (by simp))
+            (hf.mdifferentiableAt (by simp))]
+          exact (hinjh (f x)).comp (hinjf x)) =
+      (g.pullback h hh hinjh).pullback f hf hinjf := by
+  apply ext
+  intro x v w
+  rw [pullback_inner, pullback_inner, pullback_inner]
+  rw [mfderiv_comp x (hh.mdifferentiableAt (by simp)) (hf.mdifferentiableAt (by simp))]
+  simp only [ContinuousLinearMap.comp_apply]
+  rw [Function.comp_apply]
+
+variable {g : ContMDiffRiemannianMetric J n F (fun y : N ↦ TangentSpace J y)} {f : M → N}
+  {hf : ContMDiff I J (n + 1) f} {hinj : ∀ x, Function.Injective (mfderiv I J f x)}
+
+/-- Pulling back commutes with conformal rescaling: the pullback of `h g` is `(h ∘ f)` times the
+pullback of `g`. -/
+@[simp]
+theorem pullback_rescale (h : N → ℝ) (hh : ContMDiff J 𝓘(ℝ) n h) (hh_pos : ∀ y, 0 < h y) :
+    (g.rescale h hh hh_pos).pullback f hf hinj =
+      (g.pullback f hf hinj).rescale (h ∘ f) (hh.comp (hf.of_le le_self_add))
+        (fun x ↦ hh_pos (f x)) := by
+  ext x v w
+  simp
+
+/-- The pullback of a metric conformal to `g` is conformal to the pullback of `g`. -/
+theorem pullback_mem_conformalClass_pullback
+    {g' : ContMDiffRiemannianMetric J n F (fun y : N ↦ TangentSpace J y)}
+    (h : g' ∈ g.conformalClass) :
+    g'.pullback f hf hinj ∈ (g.pullback f hf hinj).conformalClass := by
+  obtain ⟨h, hh, hh_pos, rfl⟩ := mem_conformalClass_iff.1 h
+  rw [pullback_rescale]
+  exact rescale_mem_conformalClass _
+
+/-- Along a map `f` with a `C^n` left inverse, for instance a `C^(n+1)` diffeomorphism, the
+conformal class of the pullback of `g` is the pullback of the conformal class of `g`. -/
+theorem conformalClass_pullback {f' : N → M} (hf' : ContMDiff J I n f')
+    (hff' : Function.LeftInverse f' f) :
+    (g.pullback f hf hinj).conformalClass = (·.pullback f hf hinj) '' g.conformalClass := by
+  refine Set.Subset.antisymm ?_ ?_
+  · intro _ hg
+    obtain ⟨h, hh, hh_pos, rfl⟩ := mem_conformalClass_iff.1 hg
+    refine ⟨g.rescale (h ∘ f') (hh.comp hf') (fun y ↦ hh_pos (f' y)),
+      rescale_mem_conformalClass g, ?_⟩
+    ext x v w
+    simp [hff' x]
+  · rintro _ ⟨g', hg', rfl⟩
+    exact pullback_mem_conformalClass_pullback hg'
 
 
 end ContMDiffRiemannianMetric

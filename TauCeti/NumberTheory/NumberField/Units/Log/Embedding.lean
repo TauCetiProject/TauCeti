@@ -51,6 +51,8 @@ which the unit group enters the computation of Herbrand quotients of units in cl
 
 * `TauCeti.NumberField.Units.logSpaceExtend_logSpaceRep`: the extension intertwines
   `logSpaceRep` with the permutation of the infinite places.
+* `TauCeti.NumberField.Units.mem_unitLattice_iff`: the unit lattice is the set of logarithmic
+  embeddings of units.
 * `TauCeti.NumberField.Units.logEmbedding_smul`: the logarithmic embedding is
   `Aut(L/K)`-equivariant.
 * `TauCeti.NumberField.Units.two_mul_logHeight₁_eq_sum_mult_mul_abs_log`: twice the height of a
@@ -145,6 +147,24 @@ theorem logSpaceExtend_logEmbedding (x : (𝓞 L)ˣ) :
   logSpaceExtend_eq_self (sum_mult_mul_log x)
 
 end Extend
+
+/-! ### The unit lattice -/
+
+section UnitLattice
+
+variable {L : Type*} [Field L] [NumberField L]
+
+/-- A vector lies in the unit lattice exactly when it is the logarithmic embedding of a unit. -/
+theorem mem_unitLattice_iff {y : logSpace L} :
+    y ∈ unitLattice L ↔ ∃ u : (𝓞 L)ˣ, logEmbedding L (Additive.ofMul u) = y :=
+  ⟨fun ⟨z, _, hz⟩ ↦ ⟨z.toMul, hz⟩, fun ⟨u, hu⟩ ↦ ⟨Additive.ofMul u, Submodule.mem_top, hu⟩⟩
+
+/-- The logarithmic embedding of a unit lies in the unit lattice. -/
+@[simp]
+theorem logEmbedding_mem_unitLattice (x : Additive (𝓞 L)ˣ) : logEmbedding L x ∈ unitLattice L :=
+  ⟨x, Submodule.mem_top, rfl⟩
+
+end UnitLattice
 
 /-! ### The `ℓ¹` norm -/
 

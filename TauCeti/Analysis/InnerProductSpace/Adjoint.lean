@@ -25,7 +25,9 @@ Finally, a pointwise bound `‖C x‖ ≤ c * ‖x‖` passes to the adjoint
 form for algebraic linear maps, deduced from Mathlib's isometry `ContinuousLinearMap.adjoint`.
 If a linear map vanishes on `Tᗮ`, its adjoint takes values in `T`
 (`LinearMap.adjoint_apply_mem_of_forall_mem_orthogonal`). The determinant of the adjoint of an
-endomorphism is the conjugate of its determinant (`LinearMap.det_adjoint`).
+endomorphism is the conjugate of its determinant (`LinearMap.det_adjoint`). For a surjective
+linear map, the orthogonal complement of its kernel has the dimension of the codomain
+(`LinearMap.finrank_orthogonal_ker_of_surjective`).
 -/
 
 public section
@@ -69,6 +71,12 @@ theorem adjoint_sndₗ :
 end WithLp
 
 namespace LinearMap
+
+/-- The orthogonal complement of the kernel of a surjective linear map has the dimension of the
+codomain. -/
+theorem finrank_orthogonal_ker_of_surjective (f : E →ₗ[𝕜] F) (hf : Function.Surjective f) :
+    Module.finrank 𝕜 (ker f)ᗮ = Module.finrank 𝕜 F := by
+  rw [orthogonal_ker, finrank_range_adjoint, range_eq_top.mpr hf, finrank_top]
 
 /-- The determinant of the adjoint of an endomorphism is the conjugate of its determinant. -/
 @[simp]

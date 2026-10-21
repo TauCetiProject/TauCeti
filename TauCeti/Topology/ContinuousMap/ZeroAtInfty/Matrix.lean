@@ -33,9 +33,11 @@ their matrices.
   `Matrix.toZeroAtInftyCLM` (`matrixCoeff_toZeroAtInftyCLM`), which acts by the same convergent
   sums (`hasSum_toZeroAtInftyCLM_apply`). Over Tate scalars this characterises the matrices of
   continuous linear maps (`mem_range_matrixCoeff_iff`).
-* Over an ultrametric ring the operator norm is bounded by the supremum of the entries, and over
-  Tate scalars it equals that supremum (`ringOpNorm_eq_iSup_norm_matrixCoeff`), which is Mathlib's
-  operator norm over a nontrivially normed field (`opNorm_eq_iSup_norm_matrixCoeff`).
+* Over an ultrametric ring a bound `C` on the entries gives `‖u x‖ ≤ C * ‖x‖`
+  (`norm_apply_le_of_forall_norm_matrixCoeff_le`), so the operator norm is bounded by the supremum
+  of the entries, and over Tate scalars it equals that supremum
+  (`ringOpNorm_eq_iSup_norm_matrixCoeff`), which is Mathlib's operator norm over a nontrivially
+  normed field (`opNorm_eq_iSup_norm_matrixCoeff`).
 * For finite index types the matrix is the usual matrix of the underlying linear map
   `R ^ J → R ^ I` (`matrixCoeff_eq_toMatrix'`).
 
@@ -99,6 +101,14 @@ theorem matrixCoeff_neg (u : C₀(J, R) →L[R] C₀(I, R)) : (-u).matrixCoeff =
 theorem matrixCoeff_sub (u v : C₀(J, R) →L[R] C₀(I, R)) :
     (u - v).matrixCoeff = u.matrixCoeff - v.matrixCoeff :=
   (rfl)
+
+@[simp]
+theorem matrixCoeff_sum {ι : Type*} (s : Finset ι) (u : ι → C₀(J, R) →L[R] C₀(I, R)) :
+    (∑ k ∈ s, u k).matrixCoeff = ∑ k ∈ s, (u k).matrixCoeff := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert a s ha ih => rw [Finset.sum_insert ha, Finset.sum_insert ha, matrixCoeff_add, ih]
 
 @[simp]
 theorem matrixCoeff_id : (ContinuousLinearMap.id R C₀(J, R)).matrixCoeff = 1 := by
@@ -183,16 +193,22 @@ theorem matrixCoeff_inj {u v : C₀(J, R) →L[R] C₀(I, R)} : u.matrixCoeff = 
 
 variable [IsUltrametricDist R]
 
-/-- Over an ultrametric ring, a uniform bound `C` on the entries of the matrix bounds the operator
-norm. -/
-theorem ringOpNorm_le_of_forall_norm_matrixCoeff_le (u : C₀(J, R) →L[R] C₀(I, R)) {C : ℝ}
-    (hC : 0 ≤ C) (h : ∀ i j, ‖u.matrixCoeff i j‖ ≤ C) : ‖u‖ ≤ C := by
-  refine ringOpNorm_le_bound u hC fun x ↦ (norm_le (by positivity)).2 fun i ↦ ?_
+/-- Over an ultrametric ring, a uniform bound `C` on the entries of the matrix of `u` gives the
+uniform bound `‖u x‖ ≤ C * ‖x‖`. No pseudo-uniformiser is needed. -/
+theorem norm_apply_le_of_forall_norm_matrixCoeff_le (u : C₀(J, R) →L[R] C₀(I, R)) {C : ℝ}
+    (hC : 0 ≤ C) (h : ∀ i j, ‖u.matrixCoeff i j‖ ≤ C) (x : C₀(J, R)) : ‖u x‖ ≤ C * ‖x‖ := by
+  refine (norm_le (by positivity)).2 fun i ↦ ?_
   rw [← (u.hasSum_mul_matrixCoeff x i).tsum_eq]
   refine IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg (by positivity) fun j ↦ ?_
   refine (norm_mul_le _ _).trans ?_
   rw [mul_comm C]
   exact mul_le_mul (norm_coe_le_norm x j) (h i j) (norm_nonneg _) (norm_nonneg _)
+
+/-- Over an ultrametric ring, a uniform bound `C` on the entries of the matrix bounds the operator
+norm. -/
+theorem ringOpNorm_le_of_forall_norm_matrixCoeff_le (u : C₀(J, R) →L[R] C₀(I, R)) {C : ℝ}
+    (hC : 0 ≤ C) (h : ∀ i j, ‖u.matrixCoeff i j‖ ≤ C) : ‖u‖ ≤ C :=
+  ringOpNorm_le_bound u hC (u.norm_apply_le_of_forall_norm_matrixCoeff_le hC h)
 
 variable [TauCeti.NormedRing.IsTate R]
 
@@ -251,6 +267,15 @@ noncomputable def toZeroAtInftyCLM (A : Matrix I J R)
     refine memℓp_infty ⟨max C 0, ?_⟩
     rintro _ ⟨j, rfl⟩
     exact (norm_le (le_max_right C 0)).2 fun i ↦ by simpa using (hC i j).trans (le_max_left C 0)⟩
+
+/-- The map defined by a matrix `A` sends the coordinate vector `single j r` to `r` times the
+`j`-th column of `A`. -/
+@[simp]
+theorem toZeroAtInftyCLM_single_apply (A : Matrix I J R)
+    (hcol : ∀ j, Tendsto (fun i ↦ A i j) cofinite (𝓝 0)) (hbdd : ∃ C, ∀ i j, ‖A i j‖ ≤ C)
+    (j : J) (r : R) (i : I) :
+    A.toZeroAtInftyCLM hcol hbdd (ZeroAtInftyContinuousMap.single j r) i = r * A i j := by
+  simp [toZeroAtInftyCLM]
 
 end Matrix
 

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.GeneralizedPareto.Basic
 public import TauCeti.Probability.Density
+public import Mathlib.MeasureTheory.Measure.Support
 import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!
@@ -320,5 +321,58 @@ theorem rnDeriv_generalizedParetoMeasure (s ξ : ℝ) :
     (generalizedParetoMeasure s ξ).rnDeriv volume =ᵐ[volume] generalizedParetoPDF s ξ := by
   rw [generalizedParetoMeasure_eq_withDensity]
   exact Measure.rnDeriv_withDensity volume (measurable_generalizedParetoPDF s ξ)
+
+/-! ### Topological support -/
+
+/-- At positive scale and nonnegative shape, the interior of the generalized Pareto support is
+the positive half-line. -/
+theorem setOf_generalizedPareto_eq_Ioi (hs : 0 < s) (hξ : 0 ≤ ξ) :
+    {x : ℝ | 0 < x ∧ 0 < 1 + ξ * x / s} = Ioi 0 := by
+  ext x
+  simp only [Set.mem_ofPred_eq, mem_Ioi]
+  exact and_iff_left_of_imp fun hx => by positivity
+
+/-- At positive scale and negative shape, the interior of the generalized Pareto support is the
+interval from zero to its finite upper endpoint. -/
+theorem setOf_generalizedPareto_eq_Ioo (hs : 0 < s) (hξ : ξ < 0) :
+    {x : ℝ | 0 < x ∧ 0 < 1 + ξ * x / s} = Ioo 0 (-s / ξ) := by
+  ext x
+  rw [Set.mem_ofPred_eq, mem_Ioo, one_add_div hs.ne',
+    div_pos_iff_of_pos_right hs, lt_div_iff_of_neg hξ]
+  constructor <;> rintro ⟨hx, hbound⟩ <;> refine ⟨hx, ?_⟩ <;> nlinarith
+
+/-- At positive scale, the function support of the generalized Pareto density is the interior of
+the law's support. -/
+@[simp]
+theorem support_generalizedParetoPDF (hs : 0 < s) (ξ : ℝ) :
+    Function.support (generalizedParetoPDF s ξ) =
+      {x | 0 < x ∧ 0 < 1 + ξ * x / s} := by
+  ext x
+  rw [Function.mem_support, generalizedParetoPDF, ENNReal.ofReal_ne_zero_iff,
+    generalizedParetoPDFReal_pos_iff, and_iff_right hs]
+  rfl
+
+/-- A positive-scale generalized Pareto law has support `[0, ∞)` at nonnegative shape and
+`[0, -s / ξ]` at negative shape. -/
+theorem support_generalizedParetoMeasure (hs : 0 < s) (ξ : ℝ) :
+    (generalizedParetoMeasure s ξ).support =
+      if 0 ≤ ξ then Ici 0 else Icc 0 (-s / ξ) := by
+  have hopen : IsOpen {x : ℝ | 0 < x ∧ 0 < 1 + ξ * x / s} :=
+    (isOpen_lt continuous_const continuous_id).inter
+      (isOpen_lt continuous_const
+        (continuous_const.add ((continuous_const.mul continuous_id).div_const s)))
+  rw [generalizedParetoMeasure_eq_withDensity,
+    Measure.support_withDensity_eq_closure (measurable_generalizedParetoPDF s ξ) hopen
+      (support_generalizedParetoPDF hs ξ)]
+  split_ifs with hξ
+  · rw [setOf_generalizedPareto_eq_Ioi hs hξ, closure_Ioi]
+  · have hξneg : ξ < 0 := lt_of_not_ge hξ
+    have hend : (0 : ℝ) ≠ -s / ξ := (div_pos_of_neg_of_neg (neg_neg_of_pos hs) hξneg).ne
+    rw [setOf_generalizedPareto_eq_Ioo hs hξneg, closure_Ioo hend]
+
+/-- A nonpositive scale gives the zero measure and hence empty topological support. -/
+theorem support_generalizedParetoMeasure_of_nonpos (hs : s ≤ 0) (ξ : ℝ) :
+    (generalizedParetoMeasure s ξ).support = ∅ := by
+  rw [generalizedParetoMeasure_of_nonpos hs, Measure.support_zero]
 
 end TauCeti.Probability

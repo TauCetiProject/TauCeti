@@ -41,7 +41,7 @@ namespace TauCeti.ConstructionA
 
 open Matrix
 
-variable (m : ℕ+) {ι : Type*}
+variable (m : ℕ) {ι : Type*}
 
 private theorem lattice_toAddSubgroup (C : AddSubgroup (ι → ZMod m)) :
     (lattice m C).toAddSubgroup =
@@ -64,14 +64,14 @@ theorem relIndex_lattice (C D : AddSubgroup (ι → ZMod m)) :
     AddSubgroup.relIndex_map_map_of_injective _ _ hinj, AddSubgroup.relIndex_comap,
     AddSubgroup.map_comap_eq_self_of_surjective hsurj]
 
-variable [Fintype ι]
+variable [Fintype ι] [NeZero m]
 
 private theorem map_unitLattice_carrier :
     (IntegralLattice.unitLattice ι).carrier.map
         ((LinearEquiv.smulOfNeZero ℚ (ι → ℚ) (m : ℚ)
           (NeZero.ne _)).restrictScalars ℤ).toLinearMap =
       lattice m (⊥ : AddSubgroup (ι → ZMod m)) := by
-  have hm : ((m : ℕ) : ℚ) ≠ 0 := NeZero.ne _
+  have hm : (m : ℚ) ≠ 0 := NeZero.ne _
   ext x
   rw [Submodule.mem_map_equiv, LinearEquiv.restrictScalars_symm_apply,
     IntegralLattice.mem_unitLattice_carrier_iff, mem_lattice]
@@ -104,7 +104,7 @@ noncomputable def scaledStandardIsometry :
       (integralLattice m (⊥ : AddSubgroup (ι → ZMod m)) (by simp)) where
   toLinearEquiv := LinearEquiv.smulOfNeZero ℚ (ι → ℚ) (m : ℚ) (NeZero.ne _)
   map_app' x y := by
-    have hm : ((m : ℕ) : ℚ) ≠ 0 := NeZero.ne _
+    have hm : (m : ℚ) ≠ 0 := NeZero.ne _
     rw [integralLattice_form, form_apply, IntegralLattice.smul_form,
       LinearMap.smul_apply, LinearMap.smul_apply, IntegralLattice.unitLattice_form_apply]
     simp only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, LinearEquiv.coe_coe,
@@ -127,7 +127,7 @@ theorem scaledStandardIsometry_apply (x : ι → ℚ) :
 `m ^ #ι`. -/
 theorem integralLattice_discriminant_bot :
     (integralLattice m (⊥ : AddSubgroup (ι → ZMod m))
-      (by simp)).discriminant = (m : ℕ) ^ Fintype.card ι := by
+      (by simp)).discriminant = m ^ Fintype.card ι := by
   rw [← (scaledStandardIsometry m).discriminant_eq, IntegralLattice.discriminant_smul,
     IntegralLattice.finrank_carrier, Module.finrank_fintype_fun_eq_card,
     IntegralLattice.unitLattice_discriminant]
@@ -139,7 +139,7 @@ theorem integralLattice_discriminant_mul_natCard_sq (C : AddSubgroup (ι → ZMo
     (hC : AddSubgroup.toZModSubmodule m C ≤
       (AddSubgroup.toZModSubmodule m C).euclideanDual) :
     (integralLattice m C hC).discriminant * Nat.card C ^ 2 =
-      (m : ℕ) ^ Fintype.card ι := by
+      m ^ Fintype.card ι := by
   let L₀ := integralLattice m (⊥ : AddSubgroup (ι → ZMod m)) (by simp)
   have hform : L₀.form = (integralLattice m C hC).form := by
     rw [integralLattice_form, integralLattice_form]
@@ -159,7 +159,7 @@ discriminant quotient. -/
 theorem natCard_sq_dvd_modulus_pow_card (C : AddSubgroup (ι → ZMod m))
     (hC : AddSubgroup.toZModSubmodule m C ≤
       (AddSubgroup.toZModSubmodule m C).euclideanDual) :
-    Nat.card C ^ 2 ∣ (m : ℕ) ^ Fintype.card ι :=
+    Nat.card C ^ 2 ∣ m ^ Fintype.card ι :=
   ⟨(integralLattice m C hC).discriminant, by
     simpa [mul_comm] using (integralLattice_discriminant_mul_natCard_sq m C hC).symm⟩
 
@@ -170,7 +170,7 @@ theorem integralLattice_discriminant (C : AddSubgroup (ι → ZMod m))
     (hC : AddSubgroup.toZModSubmodule m C ≤
       (AddSubgroup.toZModSubmodule m C).euclideanDual) :
     (integralLattice m C hC).discriminant =
-      (m : ℕ) ^ Fintype.card ι / Nat.card C ^ 2 := by
+      m ^ Fintype.card ι / Nat.card C ^ 2 := by
   apply Nat.eq_div_of_mul_eq_right
   · exact pow_ne_zero 2 (Nat.card_pos.ne')
   · simpa [mul_comm] using integralLattice_discriminant_mul_natCard_sq m C hC
@@ -180,15 +180,15 @@ Construction A discriminant is `p ^ (n - 2k)`. -/
 @[simp]
 theorem integralLattice_discriminant_of_prime {p : ℕ} [hp : Fact p.Prime]
     (C : Submodule (ZMod p) (ι → ZMod p)) (hC : C ≤ C.euclideanDual) :
-    (integralLattice ⟨p, hp.out.pos⟩ C.toAddSubgroup hC).discriminant =
+    (integralLattice p C.toAddSubgroup hC).discriminant =
       p ^ (Fintype.card ι - 2 * Module.finrank (ZMod p) C) := by
   have hdim := (Submodule.isSelfOrthogonal_iff_le.mpr hC).two_mul_finrank_le_card
   apply Nat.eq_of_mul_eq_mul_right (pow_pos hp.out.pos (2 * Module.finrank (ZMod p) C))
-  have hdisc := integralLattice_discriminant_mul_natCard_sq ⟨p, hp.out.pos⟩ C.toAddSubgroup hC
+  have hdisc := integralLattice_discriminant_mul_natCard_sq p C.toAddSubgroup hC
   calc
-    (integralLattice ⟨p, hp.out.pos⟩ C.toAddSubgroup hC).discriminant *
+    (integralLattice p C.toAddSubgroup hC).discriminant *
           p ^ (2 * Module.finrank (ZMod p) C) =
-        (integralLattice ⟨p, hp.out.pos⟩ C.toAddSubgroup hC).discriminant *
+        (integralLattice p C.toAddSubgroup hC).discriminant *
           Nat.card C ^ 2 := by
             rw [Module.natCard_eq_pow_finrank (K := ZMod p) (V := C), Nat.card_zmod, ← pow_mul]
             simp [mul_comm]

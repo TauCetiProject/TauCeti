@@ -59,9 +59,7 @@ theorem starToCone_of_lt (x : closedStarRealization K {v}) (hx : x.1.1 v < 1) :
 /-- At the apex, `starToCone` is the cone apex. -/
 theorem starToCone_of_not_lt (x : closedStarRealization K {v})
     (hx : ¬x.1.1 v < 1) : starToCone v (x.1.1 : ι → ℝ) = 0 := by
-  have hv : x.1.1 v = 1 := le_antisymm (Realization.le_one K x.1 v) (not_lt.mp hx)
-  have he : x.1 = vertex K v := (Realization.eq_vertex_iff K x.1 v).mpr hv
-  rw [starToCone_apply, he]
+  rw [starToCone_apply, eq_starApex_of_not_lt K v hx, starApex_val]
   ext j <;> simp [vertex_val, Finsupp.single_apply, Pi.single_apply, eq_comm]
 
 /-- The image of a closed star under `starToCone` lies in the cone over its link. -/

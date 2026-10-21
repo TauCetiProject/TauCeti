@@ -44,6 +44,8 @@ space by them.
   to the disjoint union of its connected components.
 * `TauCeti.finite_connectedComponents_of_finite_irreducibleComponents`: finiteness of the
   irreducible components implies finiteness of the connected components.
+* `TauCeti.isClopen_of_finite_pairwiseDisjoint_closed_cover`: each member of a finite pairwise
+  disjoint closed cover is clopen.
 * `TauCeti.natCard_connectedComponents_eq_of_iUnion_eq_univ`: a space covered by finitely many
   pairwise disjoint closed connected sets has exactly as many connected components as sets.
 -/
@@ -297,24 +299,25 @@ theorem finite_connectedComponents_of_finite_irreducibleComponents
     exact Set.mem_biUnion (irreducibleComponent_mem_irreducibleComponents x)
       ⟨x, mem_irreducibleComponent, rfl⟩
 
+/-- Every member of a finite pairwise disjoint closed cover is clopen. -/
+theorem isClopen_of_finite_pairwiseDisjoint_closed_cover {ι : Type*} [Finite ι] {U : ι → Set X}
+    (hclosed : ∀ i, IsClosed (U i)) (hdisj : Pairwise (Disjoint on U))
+    (hunion : ⋃ i, U i = univ) (i : ι) : IsClopen (U i) := by
+  refine ⟨hclosed i, ?_⟩
+  rw [← isClosed_compl_iff, compl_eq_univ_sdiff, ← hunion, iUnion_sdiff]
+  refine isClosed_iUnion_of_finite fun j ↦ ?_
+  rcases eq_or_ne j i with rfl | hne
+  · simp
+  · simpa only [(hdisj hne).sdiff_eq_left] using hclosed j
+
 /-- A space covered by finitely many pairwise disjoint closed connected sets has exactly as many
 connected components as sets: the sets are its connected components. -/
 theorem natCard_connectedComponents_eq_of_iUnion_eq_univ {ι : Type*} [Finite ι] {U : ι → Set X}
     (hclosed : ∀ i, IsClosed (U i)) (hdisj : Pairwise (Disjoint on U))
     (hunion : ⋃ i, U i = univ) (hconn : ∀ i, IsConnected (U i)) :
     Nat.card (ConnectedComponents X) = Nat.card ι := by
-  -- Each set is open, its complement being the finite union of the other sets.
-  have hclopen (i : ι) : IsClopen (U i) := by
-    refine ⟨hclosed i, ?_⟩
-    have : (U i)ᶜ = ⋃ j : {j // j ≠ i}, U j := by
-      ext x
-      obtain ⟨k, hk⟩ := mem_iUnion.1 (hunion ▸ mem_univ x)
-      simp only [mem_compl_iff, mem_iUnion, Subtype.exists, exists_prop]
-      refine ⟨fun hx ↦ ⟨k, fun h ↦ hx (h ▸ hk), hk⟩, ?_⟩
-      rintro ⟨j, hji, hj⟩ hi
-      exact disjoint_left.1 (hdisj hji) hj hi
-    rw [← isClosed_compl_iff, this]
-    exact isClosed_iUnion_of_finite fun j ↦ hclosed j
+  have hclopen : ∀ i, IsClopen (U i) :=
+    isClopen_of_finite_pairwiseDisjoint_closed_cover hclosed hdisj hunion
   have (i : ι) : Unique (ConnectedComponents (U i)) :=
     have := isPreconnected_iff_preconnectedSpace.1 (hconn i).isPreconnected
     have := (hconn i).nonempty.to_subtype

@@ -156,7 +156,7 @@ theorem convolutionLp_convolution [CompleteSpace F] (hp : p ≠ ∞) {k₁ k₂ 
         refine integral_congr_ae (ae_of_all _ fun z ↦ ?_)
         simp only [hτ, LinearIsometryEquiv.coe_toLinearIsometry, map_smul, smul_smul]
         rw [add_sub_cancel_right, ← LinearIsometryEquiv.trans_apply, ← Measure.translateLp_add,
-          neg_add]
+          neg_add, add_comm (-z) (-y)]
 
 /-- On a set `s` of finite measure, the convolution integrand `(x, y) ↦ k(y) • f(x - y)` of an
 integrable kernel `k` and an `Lᵖ` function `f` is integrable: `∫_s ‖f(x - y)‖ dx` is bounded

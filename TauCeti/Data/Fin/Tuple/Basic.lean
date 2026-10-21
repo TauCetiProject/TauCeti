@@ -6,14 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Fin.Tuple.Basic
+import Mathlib.Data.Set.Insert
 
 /-!
-# Insertions at adjacent positions of a tuple
+# Insertions and appends in tuples
 
 The positions `k.castSucc` and `k.succ` of `Fin (m + 1)` are adjacent: each one skips the other
 to land on `k` (`Fin.succAbove_castSucc_self`, `Fin.succAbove_succ_self`). This file reads off
 the entry of an insertion at one of them in the other position, and compares updating the two
-insertions there.
+insertions there. It also shows how `Fin.snoc` interacts with reindexing along a map extended to
+send the last position to the last position. The image of an initial segment under `Fin.cons`
+is obtained by inserting the first entry into the corresponding image for the tail.
 
 ## Main results
 
@@ -21,6 +24,18 @@ insertions there.
   one of two adjacent positions, the other position holds the `k`-th entry of the tuple.
 * `Fin.update_insertNth_castSucc`: inserting at `k.castSucc` and updating `k.succ` is inserting at
   `k.succ` and updating `k.castSucc`.
+* `Fin.snoc_comp_snoc_castSucc_comp`: reindexing along `g` and then appending agrees with
+  appending and then reindexing along the extension of `g` that fixes the last position.
+* `Fin.tail_contractNth_succ`, `Fin.init_contractNth_castSucc`: contracting two adjacent entries
+  away from the first (last) one commutes with dropping the first (last) entry.
+* `Fin.contractNth_zero_cons`, `Fin.contractNth_succ_cons`: contracting entries of a tuple
+  `Fin.cons x a`.
+* `Fin.init_contractNth_castSucc_last`: contracting the last two entries and dropping the last
+  one drops the last two entries.
+* `Fin.contractNth_castSucc_eq_update_removeNth_succ`: contracting the entries `j` and `j + 1`
+  is deleting entry `j + 1` and then overwriting entry `j` by the contraction.
+* `Fin.update_removeNth_succ_eq_removeNth_castSucc`: deleting entry `j + 1` and then overwriting
+  entry `j` by the deleted entry is deleting entry `j`.
 -/
 
 public section
@@ -57,5 +72,89 @@ theorem update_insertNth_castSucc (k : Fin m) (y : Fin m → α) (u v : α) :
   · rw [Function.update_of_ne h'.ne', Function.update_of_ne h.ne', insertNth_apply_above h,
       insertNth_apply_above h']
     simp
+
+/-- Appending `z` to `c` and reindexing along the extension of `g` that sends the last position
+to the last position is the same as appending `z` to `c ∘ g`. -/
+theorem snoc_comp_snoc_castSucc_comp {n : ℕ} (c : Fin n → α) (z : α) (g : Fin m → Fin n) :
+    snoc c z ∘ snoc (castSucc ∘ g) (last n) = snoc (c ∘ g) z := by
+  funext i
+  exact lastCases (by simp) (fun j => by simp) i
+
+section ContractNth
+
+variable {n : ℕ} (op : α → α → α)
+
+/-- Contracting two adjacent entries after the first commutes with dropping the first entry. -/
+theorem tail_contractNth_succ (j : Fin (n + 1)) (a : Fin (n + 2) → α) :
+    tail (contractNth j.succ op a) = contractNth j op (tail a) := by
+  funext k
+  simp only [tail, contractNth, val_succ, Nat.add_lt_add_iff_right, Nat.add_right_cancel_iff,
+    succ_castSucc]
+
+/-- Contracting two adjacent entries before the last commutes with dropping the last entry. -/
+theorem init_contractNth_castSucc (j : Fin (n + 1)) (a : Fin (n + 2) → α) :
+    init (contractNth j.castSucc op a) = contractNth j op (init a) := by
+  funext k
+  simp only [init, contractNth, val_castSucc, succ_castSucc]
+
+/-- Contracting the first two entries of `Fin.cons x a` combines `x` with the first entry of `a`
+under `op`. -/
+theorem contractNth_zero_cons (x : α) (a : Fin (n + 1) → α) :
+    contractNth 0 op (cons x a) = cons (op x (a 0)) (tail a) := by
+  funext k
+  cases k using Fin.cases with
+  | zero => rfl
+  | succ k => rfl
+
+/-- Contracting two entries of `Fin.cons x a` other than the first contracts `a`. -/
+theorem contractNth_succ_cons (j : Fin (n + 1)) (x : α) (a : Fin (n + 1) → α) :
+    contractNth j.succ op (cons x a) = cons x (contractNth j op a) := by
+  rw [← cons_self_tail (contractNth j.succ op (cons x a)), tail_contractNth_succ, tail_cons,
+    contractNth_apply_of_lt _ _ _ _ (Nat.succ_pos _), castSucc_zero, cons_zero]
+
+/-- Contracting the last two entries and dropping the last one drops the last two entries. -/
+theorem init_contractNth_castSucc_last (a : Fin (n + 2) → α) :
+    init (contractNth (last n).castSucc op a) = init (init a) := by
+  funext k
+  simp only [init, contractNth, val_castSucc, val_last, k.is_lt, ↓reduceIte]
+
+/-- Contracting the entries `j` and `j + 1` is deleting entry `j + 1` and then overwriting
+entry `j` by the contraction. -/
+theorem contractNth_castSucc_eq_update_removeNth_succ (j : Fin (n + 1)) (a : Fin (n + 2) → α) :
+    contractNth j.castSucc op a =
+      Function.update (removeNth j.succ a) j (op (a j.castSucc) (a j.succ)) := by
+  funext k
+  rcases lt_trichotomy k j with hkj | rfl | hkj
+  · rw [Function.update_of_ne hkj.ne, contractNth_apply_of_lt _ _ _ _ hkj, removeNth_apply,
+      succAbove_of_castSucc_lt _ _ (by simpa using hkj.le)]
+  · rw [Function.update_self, contractNth_apply_of_eq _ _ _ _ rfl]
+  · rw [Function.update_of_ne hkj.ne', contractNth_apply_of_gt _ _ _ _ hkj, removeNth_apply,
+      succAbove_of_lt_succ _ _ (by simpa using hkj)]
+
+end ContractNth
+
+/-- Deleting entry `j + 1` and then overwriting entry `j` by the deleted entry is deleting
+entry `j`. -/
+theorem update_removeNth_succ_eq_removeNth_castSucc {n : ℕ} (j : Fin (n + 1))
+    (a : Fin (n + 2) → α) :
+    Function.update (removeNth j.succ a) j (a j.succ) = removeNth j.castSucc a := by
+  funext k
+  rcases lt_trichotomy k j with hkj | rfl | hkj
+  · rw [Function.update_of_ne hkj.ne, removeNth_apply, removeNth_apply,
+      succAbove_of_castSucc_lt _ _ (by simpa using hkj.le),
+      succAbove_of_castSucc_lt _ _ (by simpa using hkj)]
+  · rw [Function.update_self, removeNth_apply, succAbove_castSucc_self]
+  · rw [Function.update_of_ne hkj.ne', removeNth_apply, removeNth_apply,
+      succAbove_of_lt_succ _ _ (by simpa using hkj),
+      succAbove_of_le_castSucc _ _ (by simpa using hkj.le)]
+
+/-- The image of the first `n + 1` entries of a prepended tuple consists of its first entry
+and the image of the first `n` entries of its tail. -/
+@[simp]
+theorem image_cons_le_eq_insert {α : Type*} {n : ℕ} (x : α) (p : Fin m → α) :
+    Fin.cons x p '' {index | (index : ℕ) ≤ n} =
+      insert x (p '' {index | (index : ℕ) < n}) := by
+  ext element
+  simp [Set.mem_image, Fin.exists_fin_succ, eq_comm, Nat.add_one_le_iff]
 
 end Fin

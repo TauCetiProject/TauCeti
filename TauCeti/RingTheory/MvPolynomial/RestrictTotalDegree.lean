@@ -26,6 +26,8 @@ a linear statement about polynomials of bounded degree reduces to monomials.
   polynomials of total degree at most `m`.
 * `TauCeti.MvPolynomial.apply_mem_of_basis`: a bilinear map takes values in a submodule on
   bounded-degree polynomials if it does so on basis vectors and bounded-degree monomials.
+* `Module.Basis.constr_X_mul_mem_restrictTotalDegree`: multiplication by a linear form raises
+  total degree by at most one.
 -/
 
 public section
@@ -82,3 +84,23 @@ theorem apply_mem_of_basis (b : Module.Basis κ R L)
   exact Submodule.map₂_le.1 hle x Submodule.mem_top p hp
 
 end TauCeti.MvPolynomial
+
+namespace Module.Basis
+
+open MvPolynomial
+
+variable {ι R L : Type*} [CommSemiring R] [AddCommMonoid L] [Module R L]
+
+/-- Multiplying by the linear form attached to `x` in the basis `b` raises total degree by at
+most one. -/
+theorem constr_X_mul_mem_restrictTotalDegree (b : Basis ι R L) {d : ℕ} (x : L)
+    {p : MvPolynomial ι R} (hp : p ∈ restrictTotalDegree ι R d) :
+    b.constr R X x * p ∈ restrictTotalDegree ι R (d + 1) := by
+  refine TauCeti.MvPolynomial.apply_mem_of_basis b
+    ((LinearMap.mul R _).comp (b.constr R X)) _ d (fun l σ hσ ↦ ?_) x hp
+  have hm : (monomial (Finsupp.single l 1 + σ) 1 : MvPolynomial ι R) ∈
+      restrictTotalDegree ι R (d + 1) :=
+    monomial_mem_restrictTotalDegree (by simpa [Nat.one_add] using hσ) 1
+  simpa [monomial_single_add] using hm
+
+end Module.Basis
