@@ -187,12 +187,6 @@ theorem eval₂_neg_genericUnit_jonesStateWeight (D : OrientedPDCode n) (s : Fin
   rcases D.crossingSign_eq_one_or_neg_one i with h | h <;> cases s i <;>
     simp [h]
 
-/-- At `t ^ (1/2) = -q`, the Jones loop value `-(t ^ (1/2) + t ^ (-1/2))` becomes `q + q⁻¹`. -/
-private theorem eval₂_jonesLoop :
-    eval₂ (Int.castRingHom ℤ[T;T⁻¹]) (-genericUnit ℤ) (-(T 1 + T (-1)) : ℤ[T;T⁻¹]) =
-      T 1 + T (-1) := by
-  simp [add_comm]
-
 /-- **The enhanced state sum of a nonempty diagram is `(q + q⁻¹)` times its Jones polynomial at
 `t ^ (1/2) = -q`.** The hypothesis `0 < componentCount` says that the diagram is nonempty; it
 excludes the empty diagram, whose enhanced state sum is `1`. -/
@@ -200,9 +194,13 @@ theorem enhancedStateSum_eq_mul_eval₂_jonesPolynomial (D : OrientedPDCode n)
     (h : 0 < D.toPDCode.componentCount) :
     D.enhancedStateSum =
       (T 1 + T (-1)) * eval₂ (Int.castRingHom ℤ[T;T⁻¹]) (-genericUnit ℤ) D.jonesPolynomial := by
+  -- At `t ^ (1/2) = -q`, the Jones loop value `-(t ^ (1/2) + t ^ (-1/2))` becomes `q + q⁻¹`.
+  have hloop : eval₂ (Int.castRingHom ℤ[T;T⁻¹]) (-genericUnit ℤ) (-(T 1 + T (-1)) : ℤ[T;T⁻¹]) =
+      T 1 + T (-1) := by
+    simp [add_comm]
   rw [enhancedStateSum_eq_sum, jonesPolynomial_def, map_sum, Finset.mul_sum]
   refine Finset.sum_congr rfl fun s _ ↦ ?_
-  rw [map_mul, map_pow, eval₂_neg_genericUnit_jonesStateWeight, eval₂_jonesLoop,
+  rw [map_mul, map_pow, eval₂_neg_genericUnit_jonesStateWeight, hloop,
     mul_left_comm, mul_pow_sub_one (Nat.one_le_iff_ne_zero.mp
       (D.toPDCode.one_le_stateLoopCount_of_componentCount_pos h s))]
 
