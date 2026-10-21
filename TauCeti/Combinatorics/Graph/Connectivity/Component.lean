@@ -9,7 +9,7 @@ public import Mathlib.Combinatorics.Graph.Delete
 public import Mathlib.Combinatorics.Graph.Simple
 public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
 public import Mathlib.Order.Minimal
-public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Basic
+public import TauCeti.Combinatorics.Graph.Connectivity.Walk.OfSimpleGraph
 
 /-!
 # Connected components of multigraphs
@@ -131,42 +131,6 @@ abbrev ConnectedComponent (G : Graph α β) := {H : Graph α β // H.IsConnected
 
 /-! ### Comparison with the underlying simple graph -/
 
-/-- Reachability by an edge-labelled walk gives reachability in the underlying simple graph. -/
-theorem Reachable.toSimpleGraph_reachable {x y : α} (h : G.Reachable x y) :
-    G.toSimpleGraph.Reachable ⟨x, h.left_mem⟩ ⟨y, h.right_mem⟩ := by
-  obtain ⟨-, ⟨p⟩⟩ := reachable_def.mp h
-  suffices ∀ hx hy, G.toSimpleGraph.Reachable ⟨x, hx⟩ ⟨y, hy⟩ from this _ _
-  clear h
-  induction p with
-  | nil => exact fun _ _ ↦ .rfl
-  | @cons x y z e hxy p ih =>
-      intro _ hz
-      refine SimpleGraph.Reachable.trans ?_ (ih hxy.right_mem hz)
-      by_cases hne : x = y
-      · subst hne
-        exact SimpleGraph.Reachable.rfl
-      · exact SimpleGraph.Adj.reachable ⟨fun h ↦ hne (congrArg Subtype.val h), e, hxy⟩
-
-/-- Reachability in the underlying simple graph is reachability by an edge-labelled walk. -/
-theorem toSimpleGraph_reachable_iff {u v : V(G)} :
-    G.toSimpleGraph.Reachable u v ↔ G.Reachable u v := by
-  refine ⟨?_, fun h ↦ h.toSimpleGraph_reachable⟩
-  rintro ⟨p⟩
-  induction p with
-  | nil => exact Reachable.refl (Subtype.property _)
-  | cons huv _ ih =>
-      obtain ⟨-, e, he⟩ := huv
-      exact he.reachable.trans ih
-
-/-- Membership in a closed subgraph propagates along reachability. -/
-theorem IsClosedSubgraph.mem_vertexSet_of_reachable (hHG : H ≤c G) {x y : α}
-    (hx : x ∈ V(H)) (hxy : G.Reachable x y) : y ∈ V(H) := by
-  obtain ⟨-, ⟨p⟩⟩ := reachable_def.mp hxy
-  clear hxy
-  induction p with
-  | nil => exact hx
-  | cons e hxy p ih => exact ih ((hHG.mem_iff_of_isLink hxy).mp hx)
-
 /-- The actual vertices belonging to a component of the underlying simple graph. -/
 def connectedComponentVertexSet (G : Graph α β)
     (C : G.toSimpleGraph.ConnectedComponent) : Set α :=
@@ -174,6 +138,7 @@ def connectedComponentVertexSet (G : Graph α β)
 
 /-- A point belongs to the lifted vertex set exactly when it has a proof of membership in the
 ambient graph whose corresponding actual vertex lies in the simple component. -/
+@[simp]
 theorem mem_connectedComponentVertexSet_iff {C : G.toSimpleGraph.ConnectedComponent} {x : α} :
     x ∈ connectedComponentVertexSet G C ↔
       ∃ hx : x ∈ V(G), (Subtype.mk x hx : V(G)) ∈ C.supp := by
@@ -364,6 +329,7 @@ theorem ConnectedComponent.toSimple_connectedComponentOf {x : α} (hx : x ∈ V(
   toSimple_ofSimple _
 
 /-- A vertex lies in the component of `x` exactly when it is reachable from `x`. -/
+@[simp]
 theorem mem_vertexSet_connectedComponentOf_iff {x y : α} (hx : x ∈ V(G)) :
     y ∈ V((G.connectedComponentOf x hx).1) ↔ G.Reachable x y := by
   rw [connectedComponentOf, ConnectedComponent.coe_ofSimple,
@@ -373,7 +339,6 @@ theorem mem_vertexSet_connectedComponentOf_iff {x y : α} (hx : x ∈ V(G)) :
   exact ⟨fun ⟨_, h⟩ ↦ h.symm, fun h ↦ ⟨h.right_mem, h.symm⟩⟩
 
 /-- A vertex lies in its own connected component. -/
-@[simp]
 theorem mem_vertexSet_connectedComponentOf_self {x : α} (hx : x ∈ V(G)) :
     x ∈ V((G.connectedComponentOf x hx).1) :=
   (mem_vertexSet_connectedComponentOf_iff hx).mpr (Reachable.refl hx)
@@ -452,10 +417,8 @@ vertices. -/
 @[simp]
 theorem componentCount_eq_zero_iff [Finite G.ConnectedComponent] :
     G.componentCount = 0 ↔ V(G) = ∅ := by
-  rw [componentCount_eq_natCard_toSimpleGraph, ← Nat.card_congr G.connectedComponentEquiv,
-    Nat.card_eq_zero, or_iff_left (not_infinite_iff_finite.mpr inferInstance),
-    G.connectedComponentEquiv.isEmpty_congr, SimpleGraph.isEmpty_connectedComponent_iff,
-    Set.isEmpty_coe_sort]
+  simp [componentCount_def, Nat.card_eq_zero, not_infinite_iff_finite.mpr ‹_›,
+    G.connectedComponentEquiv.isEmpty_congr, SimpleGraph.isEmpty_connectedComponent_iff]
 
 /-- A multigraph has one component exactly when it is connected. -/
 @[simp]
