@@ -39,8 +39,8 @@ definitionally equal to it, so the algebra maps here are assembled from the ring
 
 ## Main results
 
-* `LaurentSeries.coeff_expand_mul`, `LaurentSeries.coeff_expand_of_not_dvd`: the coefficients
-  of `expand R d f`.
+* `LaurentSeries.coeff_expand_mul`, `LaurentSeries.coeff_expand_of_not_dvd`,
+  `LaurentSeries.coeff_expand_of_lt_mul_order`: the coefficients of `expand R d f`.
 * `LaurentSeries.coeff_single_mul_expand_eq_zero`: shifting `c(X ^ q)` by `X ^ (-k)` with
   `k ≤ q * ord c` leaves no terms of negative degree.
 * `LaurentSeries.mem_range_expand_iff`: a Laurent series is in the image of `X ↦ X ^ d` exactly
@@ -110,6 +110,15 @@ theorem coeff_expand_of_not_dvd (d : ℕ+) (f : R⸨X⸩) {k : ℤ} (hk : ¬ (d 
     (expand R d f).coeff k = 0 :=
   embDomain_of_notMem_range fun ⟨j, hj⟩ ↦ hk ⟨j, hj.symm⟩
 
+/-- The coefficients of `expand R d f` below `d` times the order of `f` vanish. -/
+theorem coeff_expand_of_lt_mul_order (d : ℕ+) {f : R⸨X⸩} {k : ℤ} (hk : k < d * f.order) :
+    (expand R d f).coeff k = 0 := by
+  by_cases hd : (d : ℤ) ∣ k
+  · obtain ⟨j, rfl⟩ := hd
+    rw [coeff_expand_mul]
+    exact coeff_eq_zero_of_lt_order (lt_of_mul_lt_mul_left hk (by exact_mod_cast d.pos.le))
+  · exact coeff_expand_of_not_dvd d f hd
+
 /-- Expansion sends the monomial `r X ^ k` to `r X ^ (d * k)`. -/
 @[simp]
 theorem expand_single (d : ℕ+) (k : ℤ) (r : R) :
@@ -140,12 +149,7 @@ theorem coeff_single_mul_expand_eq_zero {c : R⸨X⸩} {q : ℕ+} {k n : ℤ}
   rcases eq_or_ne c 0 with rfl | hc
   · simp
   rw [coeff_single_mul, one_mul, sub_neg_eq_add]
-  by_cases hd : (q : ℤ) ∣ n + k
-  · obtain ⟨j, hj⟩ := hd
-    rw [hj, coeff_expand_mul]
-    refine coeff_eq_zero_of_lt_order (lt_of_mul_lt_mul_left ?_ (by positivity : (0 : ℤ) ≤ q))
-    linarith [hk hc]
-  · exact coeff_expand_of_not_dvd q c hd
+  exact coeff_expand_of_lt_mul_order q (by linarith [hk hc])
 
 /-- Expansion is injective. -/
 theorem expand_injective (d : ℕ+) : Function.Injective (expand R d) :=

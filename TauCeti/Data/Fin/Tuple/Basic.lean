@@ -32,6 +32,10 @@ is obtained by inserting the first entry into the corresponding image for the ta
   `Fin.cons x a`.
 * `Fin.init_contractNth_castSucc_last`: contracting the last two entries and dropping the last
   one drops the last two entries.
+* `Fin.contractNth_castSucc_eq_update_removeNth_succ`: contracting the entries `j` and `j + 1`
+  is deleting entry `j + 1` and then overwriting entry `j` by the contraction.
+* `Fin.update_removeNth_succ_eq_removeNth_castSucc`: deleting entry `j + 1` and then overwriting
+  entry `j` by the deleted entry is deleting entry `j`.
 -/
 
 public section
@@ -114,7 +118,35 @@ theorem init_contractNth_castSucc_last (a : Fin (n + 2) → α) :
   funext k
   simp only [init, contractNth, val_castSucc, val_last, k.is_lt, ↓reduceIte]
 
+/-- Contracting the entries `j` and `j + 1` is deleting entry `j + 1` and then overwriting
+entry `j` by the contraction. -/
+theorem contractNth_castSucc_eq_update_removeNth_succ (j : Fin (n + 1)) (a : Fin (n + 2) → α) :
+    contractNth j.castSucc op a =
+      Function.update (removeNth j.succ a) j (op (a j.castSucc) (a j.succ)) := by
+  funext k
+  rcases lt_trichotomy k j with hkj | rfl | hkj
+  · rw [Function.update_of_ne hkj.ne, contractNth_apply_of_lt _ _ _ _ hkj, removeNth_apply,
+      succAbove_of_castSucc_lt _ _ (by simpa using hkj.le)]
+  · rw [Function.update_self, contractNth_apply_of_eq _ _ _ _ rfl]
+  · rw [Function.update_of_ne hkj.ne', contractNth_apply_of_gt _ _ _ _ hkj, removeNth_apply,
+      succAbove_of_lt_succ _ _ (by simpa using hkj)]
+
 end ContractNth
+
+/-- Deleting entry `j + 1` and then overwriting entry `j` by the deleted entry is deleting
+entry `j`. -/
+theorem update_removeNth_succ_eq_removeNth_castSucc {n : ℕ} (j : Fin (n + 1))
+    (a : Fin (n + 2) → α) :
+    Function.update (removeNth j.succ a) j (a j.succ) = removeNth j.castSucc a := by
+  funext k
+  rcases lt_trichotomy k j with hkj | rfl | hkj
+  · rw [Function.update_of_ne hkj.ne, removeNth_apply, removeNth_apply,
+      succAbove_of_castSucc_lt _ _ (by simpa using hkj.le),
+      succAbove_of_castSucc_lt _ _ (by simpa using hkj)]
+  · rw [Function.update_self, removeNth_apply, succAbove_castSucc_self]
+  · rw [Function.update_of_ne hkj.ne', removeNth_apply, removeNth_apply,
+      succAbove_of_lt_succ _ _ (by simpa using hkj),
+      succAbove_of_le_castSucc _ _ (by simpa using hkj.le)]
 
 /-- The image of the first `n + 1` entries of a prepended tuple consists of its first entry
 and the image of the first `n` entries of its tail. -/

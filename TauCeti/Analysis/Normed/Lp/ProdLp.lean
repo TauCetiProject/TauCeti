@@ -51,11 +51,11 @@ universe u v
 
 namespace TauCeti
 
-variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {α β : Type*} [SeminormedAddCommGroup α]
-  [SeminormedAddCommGroup β]
+variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {α β : Type*}
 
 /-- The `ℓ^p` norm of a pair is at most the sum of the norms of its two components. -/
-theorem _root_.WithLp.prod_norm_le_norm_fst_add_norm_snd (x : WithLp p (α × β)) :
+theorem _root_.WithLp.prod_norm_le_norm_fst_add_norm_snd [SeminormedAddCommGroup α]
+    [SeminormedAddCommGroup β] (x : WithLp p (α × β)) :
     ‖x‖ ≤ ‖x.fst‖ + ‖x.snd‖ :=
   calc ‖x‖ = ‖WithLp.idemFst x + WithLp.idemSnd x‖ :=
         congrArg norm ((DFunLike.congr_fun WithLp.idemFst_add_idemSnd x).trans
@@ -68,9 +68,10 @@ theorem _root_.WithLp.prod_norm_le_norm_fst_add_norm_snd (x : WithLp p (α × β
 /-- The `ℓ^p` norm of a pair is monotone and positively homogeneous in the norms of its
 components: a componentwise bound `c * ‖x.i‖ ≤ d * ‖y.i‖` with `0 ≤ c, d` gives
 `c * ‖x‖ ≤ d * ‖y‖`. -/
-theorem _root_.WithLp.prod_mul_norm_le_mul_norm {γ δ : Type*} [SeminormedAddCommGroup γ]
-    [SeminormedAddCommGroup δ] {c d : ℝ} (hc : 0 ≤ c) (hd : 0 ≤ d) {x : WithLp p (α × β)}
-    {y : WithLp p (γ × δ)} (h₁ : c * ‖x.fst‖ ≤ d * ‖y.fst‖) (h₂ : c * ‖x.snd‖ ≤ d * ‖y.snd‖) :
+theorem _root_.WithLp.prod_mul_norm_le_mul_norm {γ δ : Type*} [SeminormedAddGroup α]
+    [SeminormedAddGroup β] [SeminormedAddGroup γ] [SeminormedAddGroup δ] {c d : ℝ} (hc : 0 ≤ c)
+    (hd : 0 ≤ d) {x : WithLp p (α × β)} {y : WithLp p (γ × δ)} (h₁ : c * ‖x.fst‖ ≤ d * ‖y.fst‖)
+    (h₂ : c * ‖x.snd‖ ≤ d * ‖y.snd‖) :
     c * ‖x‖ ≤ d * ‖y‖ := by
   rcases p.dichotomy with rfl | hp
   · rw [WithLp.prod_norm_eq_sup, WithLp.prod_norm_eq_sup, mul_max_of_nonneg _ _ hc,
@@ -124,7 +125,7 @@ end TauCeti
 namespace LinearMap
 
 /-- Lifting a linear map to `WithLp` does not change its rank. -/
-theorem rank_withLpMap {p : ℝ≥0∞} {K V V' : Type*} [Ring K] [AddCommGroup V] [Module K V]
+theorem rank_withLpMap {p : ℝ≥0∞} {K V V' : Type*} [Semiring K] [AddCommGroup V] [Module K V]
     [AddCommGroup V'] [Module K V'] (f : V →ₗ[K] V') : (f.withLpMap p).rank = f.rank := by
   -- Conjugating by the linear equivalences `WithLp.linearEquiv` does not change the range's rank.
   rw [LinearMap.rank, LinearMap.withLpMap, LinearMap.range_comp,
@@ -164,6 +165,7 @@ theorem coe_withLpProdMap (f : α →L[𝕜] α') (g : β →L[𝕜] β') :
   (rfl)
 
 /-- The block sum of zero maps is zero. -/
+@[simp]
 theorem withLpProdMap_zero :
     (0 : α →L[𝕜] α').withLpProdMap p (0 : β →L[𝕜] β') = 0 := by
   ext x
@@ -209,12 +211,13 @@ theorem withLpProdMap_sub (f f' : α →L[𝕜] α') (g g' : β →L[𝕜] β') 
 
 end SeminormedRing
 
-/-- The rank of a block sum is the sum of the ranks of the blocks. -/
+/-- The rank of a block sum with free ranges is the sum of the ranks of the blocks. -/
 theorem rank_withLpProdMap {p : ℝ≥0∞} {𝕜 α β : Type*} {α' : Type u} {β' : Type v}
-    [DivisionRing 𝕜] [TopologicalSpace α] [AddCommGroup α] [Module 𝕜 α]
+    [Semiring 𝕜] [StrongRankCondition 𝕜] [TopologicalSpace α] [AddCommGroup α] [Module 𝕜 α]
     [TopologicalSpace β] [AddCommGroup β] [Module 𝕜 β]
     [TopologicalSpace α'] [AddCommGroup α'] [Module 𝕜 α']
-    [TopologicalSpace β'] [AddCommGroup β'] [Module 𝕜 β'] (f : α →L[𝕜] α') (g : β →L[𝕜] β') :
+    [TopologicalSpace β'] [AddCommGroup β'] [Module 𝕜 β'] (f : α →L[𝕜] α') (g : β →L[𝕜] β')
+    [Module.Free 𝕜 f.range] [Module.Free 𝕜 g.range] :
     (f.withLpProdMap p g).rank = Cardinal.lift.{v} f.rank + Cardinal.lift.{u} g.rank := by
   rw [coe_withLpProdMap, LinearMap.rank_withLpMap, LinearMap.rank_prodMap]
 

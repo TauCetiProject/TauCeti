@@ -29,7 +29,17 @@ attribute [local instance] zigzagAlgebraIntegerGradedAlgebra
 local notation "Γ" => zigzagAlgebraInternalGrading k G
 local notation "U" => zigzagGradedBraidBimodule k G
 local notation "T" => GradedModuleCat.bimoduleTensorObj Γ Γ Γ
-local notation "F" => zigzagBimoduleTensor k G
+/-- The balanced bimodule tensor of the graded bimodule setting of the zigzag algebra, at the
+carrier universe of the graded zigzag bimodule category. This is the generic tensor
+`GradedModuleCat.bimoduleTensor` of the zigzag grading, written with the enveloping grading
+so that the unifications with the carrier of the braid complexes stay syntactic. -/
+private noncomputable abbrev zigzagGradedBimoduleTensor :
+    GradedModuleCat.{max u w} (zigzagEnvelopingGrading k G).piece ⥤
+      GradedModuleCat.{max u w} (zigzagEnvelopingGrading k G).piece ⥤
+        GradedModuleCat.{max u w} (zigzagEnvelopingGrading k G).piece :=
+  GradedModuleCat.bimoduleTensor (zigzagAlgebraInternalGrading k G)
+    (zigzagAlgebraInternalGrading k G) (zigzagAlgebraInternalGrading k G)
+local notation "F" => zigzagGradedBimoduleTensor k G
 local notation "B" => zigzagBraidComplex k G
 local notation "E" => zigzagBraidEvaluationHom k G
 local notation "L" => zigzagBraidTensorEvaluationLeft k G
@@ -244,8 +254,8 @@ private theorem tripleLowestInclusion_hom (i j l : V) :
   simp only [← Functor.flip_obj_map]
   rw [← Category.assoc, ← Functor.map_comp,
     ιMapBifunctor_zigzagBraidComplexTensorXMinusTwoIso_hom]
-  simp only [Functor.flip_obj_map, zigzagBimoduleTensor,
-    GradedModuleCat.bimoduleTensor_map_app, GradedModuleCat.bimoduleTensor_obj_map,
+  simp only [Functor.flip_obj_map, GradedModuleCat.bimoduleTensor_map_app,
+    GradedModuleCat.bimoduleTensor_obj_map,
     ← GradedModuleCat.bimoduleTensorMap_comp,
     Category.comp_id, Category.id_comp]
 
@@ -262,8 +272,8 @@ private theorem tripleFirstPairInclusion_hom (i j l : V) :
   simp only [← Functor.flip_obj_map]
   rw [← Category.assoc, ← Functor.map_comp,
     ιMapBifunctor_zigzagBraidComplexTensorXMinusTwoIso_hom]
-  simp only [Functor.flip_obj_map, zigzagBimoduleTensor,
-    GradedModuleCat.bimoduleTensor_map_app, GradedModuleCat.bimoduleTensor_obj_map,
+  simp only [Functor.flip_obj_map, GradedModuleCat.bimoduleTensor_map_app,
+    GradedModuleCat.bimoduleTensor_obj_map,
     ← Category.assoc, ← GradedModuleCat.bimoduleTensorMap_comp,
     Category.comp_id, Category.id_comp]
   -- The two unitor arguments are the same computed tensor-functor object.
@@ -307,8 +317,7 @@ private theorem tripleLeftPairInclusion_hom (i j l : V) :
       (((F).map (((F).obj (U i)).map (I₁ j).hom)).app ((B l).X (-1))) ≫
         (((F).map (zigzagBimoduleRightUnitor k G (U i)).hom).app ((B l).X (-1))) ≫
           ((F).obj (U i)).map (I₀ l).hom ≫ f) hinl').trans ?_
-  simp only [zigzagBimoduleTensor,
-    GradedModuleCat.bimoduleTensor_map_app, GradedModuleCat.bimoduleTensor_obj_map,
+  simp only [GradedModuleCat.bimoduleTensor_map_app, GradedModuleCat.bimoduleTensor_obj_map,
     ← Category.assoc, ← GradedModuleCat.bimoduleTensorMap_comp,
     Category.comp_id, Category.id_comp]
   rfl
@@ -350,8 +359,7 @@ private theorem tripleRightPairInclusion_hom (i j l : V) :
       (((F).map (((F).obj (zigzagGradedBimodule k G)).map (I₀ j).hom)).app ((B l).X (-1))) ≫
         (((F).map (zigzagBimoduleLeftUnitor k G (U j)).hom).app ((B l).X (-1))) ≫
           ((F).obj (U j)).map (I₀ l).hom ≫ f) hinr').trans ?_
-  simp only [zigzagBimoduleTensor,
-    GradedModuleCat.bimoduleTensor_map_app, GradedModuleCat.bimoduleTensor_obj_map,
+  simp only [GradedModuleCat.bimoduleTensor_map_app, GradedModuleCat.bimoduleTensor_obj_map,
     ← Category.assoc, ← GradedModuleCat.bimoduleTensorMap_comp,
     Category.comp_id, Category.id_comp]
   rfl
@@ -373,7 +381,7 @@ private theorem tripleFirstVertexInclusion_hom (i j l : V) :
     ιMapBifunctor_zigzagBraidComplexTensorXMinusOneIso_hom_left]
   simp only [Functor.map_comp, Category.assoc, Functor.flip_obj_map, NatTrans.comp_app]
   rw [← ((F).map (biprod.inl : U i ⟶ U i ⊞ U j)).naturality_assoc (I₁ l).hom]
-  simp only [zigzagBimoduleTensor, GradedModuleCat.bimoduleTensor_map_app,
+  simp only [GradedModuleCat.bimoduleTensor_map_app,
     GradedModuleCat.bimoduleTensor_obj_map]
   rw [zigzagBimoduleRightUnitor_naturality_assoc]
   simp only [← Category.assoc, ← GradedModuleCat.bimoduleTensorMap_comp,
@@ -395,7 +403,7 @@ private theorem tripleSecondVertexInclusion_hom (i j l : V) :
     ιMapBifunctor_zigzagBraidComplexTensorXMinusOneIso_hom_right]
   simp only [Functor.map_comp, Category.assoc, Functor.flip_obj_map, NatTrans.comp_app]
   rw [← ((F).map (biprod.inr : U j ⟶ U i ⊞ U j)).naturality_assoc (I₁ l).hom]
-  simp only [zigzagBimoduleTensor, GradedModuleCat.bimoduleTensor_map_app,
+  simp only [GradedModuleCat.bimoduleTensor_map_app,
     GradedModuleCat.bimoduleTensor_obj_map]
   rw [zigzagBimoduleRightUnitor_naturality_assoc]
   simp only [← Category.assoc, ← GradedModuleCat.bimoduleTensorMap_comp,
@@ -415,8 +423,8 @@ private theorem tripleThirdVertexInclusion_hom (i j l : V) :
   simp only [← Functor.flip_obj_map]
   rw [← Category.assoc, ← Functor.map_comp,
     ιMapBifunctor_zigzagBraidComplexTensorXZeroIso_hom]
-  simp only [Functor.flip_obj_map, zigzagBimoduleTensor,
-    GradedModuleCat.bimoduleTensor_map_app, GradedModuleCat.bimoduleTensor_obj_map,
+  simp only [Functor.flip_obj_map, GradedModuleCat.bimoduleTensor_map_app,
+    GradedModuleCat.bimoduleTensor_obj_map,
     ← Category.assoc, ← GradedModuleCat.bimoduleTensorMap_comp,
     Category.comp_id, Category.id_comp]
 
@@ -449,8 +457,8 @@ theorem zigzagBraidComplexTriple_d_minusThree (i j l : V) :
     rw [← Category.assoc, tripleLowestInclusion_d]
     simp only [Preadditive.add_comp, Preadditive.sub_comp, Category.assoc,
       tripleRightPairInclusion_hom, tripleLeftPairInclusion_hom, tripleFirstPairInclusion_hom]
-    simp only [zigzagBraidComplex_d, zigzagBimoduleTensor,
-      GradedModuleCat.bimoduleTensor_map_app, GradedModuleCat.bimoduleTensor_obj_map,
+    simp only [zigzagBraidComplex_d, GradedModuleCat.bimoduleTensor_map_app,
+      GradedModuleCat.bimoduleTensor_obj_map,
       ← Category.assoc, ← GradedModuleCat.bimoduleTensorMap_comp]
     simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id]
     have hsplit
@@ -501,8 +509,8 @@ private theorem tripleFirstPairInclusion_d_hom (i j l : V) :
   rw [← Category.assoc, tripleFirstPairInclusion_d]
   simp only [Preadditive.sub_comp, Category.assoc, tripleFirstVertexInclusion_hom,
     tripleSecondVertexInclusion_hom]
-  simp only [zigzagBraidComplex_d, zigzagBimoduleTensor,
-    GradedModuleCat.bimoduleTensor_map_app, GradedModuleCat.bimoduleTensor_obj_map,
+  simp only [zigzagBraidComplex_d, GradedModuleCat.bimoduleTensor_map_app,
+    GradedModuleCat.bimoduleTensor_obj_map,
     ← Category.assoc, ← GradedModuleCat.bimoduleTensorMap_comp]
   simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id, Category.id_comp]
   have hsplit
@@ -554,8 +562,8 @@ private theorem tripleLeftPairInclusion_d_hom (i j l : V) :
   rw [← Category.assoc, tripleLeftPairInclusion_d]
   simp only [Preadditive.sub_comp, Category.assoc, tripleFirstVertexInclusion_hom,
     tripleThirdVertexInclusion_hom]
-  simp only [zigzagBraidComplex_d, zigzagBimoduleTensor,
-    GradedModuleCat.bimoduleTensor_map_app, GradedModuleCat.bimoduleTensor_obj_map,
+  simp only [zigzagBraidComplex_d, GradedModuleCat.bimoduleTensor_map_app,
+    GradedModuleCat.bimoduleTensor_obj_map,
     ← Category.assoc, ← GradedModuleCat.bimoduleTensorMap_comp]
   simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id, Category.id_comp]
   have hsplit
@@ -607,8 +615,8 @@ private theorem tripleRightPairInclusion_d_hom (i j l : V) :
   rw [← Category.assoc, tripleRightPairInclusion_d]
   simp only [Preadditive.sub_comp, Category.assoc, tripleSecondVertexInclusion_hom,
     tripleThirdVertexInclusion_hom]
-  simp only [zigzagBraidComplex_d, zigzagBimoduleTensor,
-    GradedModuleCat.bimoduleTensor_map_app, GradedModuleCat.bimoduleTensor_obj_map,
+  simp only [zigzagBraidComplex_d, GradedModuleCat.bimoduleTensor_map_app,
+    GradedModuleCat.bimoduleTensor_obj_map,
     ← Category.assoc, ← GradedModuleCat.bimoduleTensorMap_comp]
   simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id, Category.id_comp]
   have hsplit
@@ -691,8 +699,8 @@ private theorem tripleZeroInclusion_hom (i j l : V) :
   simp only [← Functor.flip_obj_map]
   rw [← Category.assoc, ← Functor.map_comp,
     ιMapBifunctor_zigzagBraidComplexTensorXZeroIso_hom]
-  simp only [Functor.flip_obj_map, zigzagBimoduleTensor,
-    GradedModuleCat.bimoduleTensor_map_app, GradedModuleCat.bimoduleTensor_obj_map,
+  simp only [Functor.flip_obj_map, GradedModuleCat.bimoduleTensor_map_app,
+    GradedModuleCat.bimoduleTensor_obj_map,
     ← Category.assoc, ← GradedModuleCat.bimoduleTensorMap_comp,
     Category.comp_id, Category.id_comp]
 
@@ -760,8 +768,7 @@ private theorem tripleFirstVertexInclusion_d_hom (i j l : V) :
   rw [tripleFirstVertexInclusion_hom_assoc]
   rw [← Category.assoc, tripleFirstVertexInclusion_d]
   simp only [Category.assoc, tripleZeroInclusion_hom, biprod.inl_desc]
-  simp only [zigzagBraidComplex_d, zigzagBimoduleTensor,
-    GradedModuleCat.bimoduleTensor_map_app,
+  simp only [zigzagBraidComplex_d, GradedModuleCat.bimoduleTensor_map_app,
     ← Category.assoc, ← GradedModuleCat.bimoduleTensorMap_comp]
   simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id, Category.id_comp]
   rw [← zigzagBimoduleRightUnitor_naturality k G (U i) (E i)]
@@ -782,8 +789,8 @@ private theorem tripleSecondVertexInclusion_d_hom (i j l : V) :
   rw [tripleSecondVertexInclusion_hom_assoc]
   rw [← Category.assoc, tripleSecondVertexInclusion_d]
   simp only [Category.assoc, tripleZeroInclusion_hom, biprod.inl_desc, biprod.inr_desc]
-  simp only [zigzagBraidComplex_d, zigzagBimoduleTensor,
-    GradedModuleCat.bimoduleTensor_map_app, GradedModuleCat.bimoduleTensor_obj_map,
+  simp only [zigzagBraidComplex_d, GradedModuleCat.bimoduleTensor_map_app,
+    GradedModuleCat.bimoduleTensor_obj_map,
     ← Category.assoc, ← GradedModuleCat.bimoduleTensorMap_comp]
   simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id, Category.id_comp]
   rw [← zigzagBimoduleRightUnitor_naturality k G (U j) (E j)]
@@ -804,8 +811,7 @@ private theorem tripleThirdVertexInclusion_d_hom (i j l : V) :
   rw [tripleThirdVertexInclusion_hom_assoc]
   rw [← Category.assoc, tripleThirdVertexInclusion_d]
   simp only [Category.assoc, tripleZeroInclusion_hom, biprod.inr_desc]
-  simp only [zigzagBraidComplex_d, zigzagBimoduleTensor,
-    GradedModuleCat.bimoduleTensor_obj_map,
+  simp only [zigzagBraidComplex_d, GradedModuleCat.bimoduleTensor_obj_map,
     ← Category.assoc, ← GradedModuleCat.bimoduleTensorMap_comp]
   simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id, Category.id_comp]
   rw [← zigzagBimoduleLeftUnitor_naturality k G (U l) (E l)]

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.BigOperators.ZPow
 public import TauCeti.Analysis.Normed.Ring.Ultra
+public import TauCeti.Analysis.Polynomial.Ultra
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Reverse
 public import TauCeti.LinearAlgebra.Matrix.Minor
 
@@ -45,6 +46,11 @@ bounds compare a row weight with an unrelated column weight.
 * `TauCeti.norm_coeff_charpolyRev_le_of_principalMinor_le`,
   `Matrix.norm_coeff_charpolyRev_le`, `Matrix.norm_coeff_charpolyRev_le_of_norm_le`,
   `Matrix.norm_coeff_charpolyRev_le_zpow`: coefficient bounds for `det (1 - X A)`.
+* `Matrix.norm_coeff_det_le_of_natDegree_le_one`: the same bounds for the coefficients of
+  determinants of polynomials of degree at most one, from the product bound
+  `TauCeti.norm_coeff_prod_le_of_natDegree_le_one`.
+* `Matrix.norm_sum_coeff_charpolyRev_smul_pow_apply_le`: the entries of the coefficients of the
+  Fredholm resolvent `adjugate (1 - X A)` obey the row-bound estimate of `det (1 - X A)`.
 * `TauCeti.norm_det_sub_le`, `TauCeti.norm_principalMinor_sub_le`: perturbation bounds on
   entrywise bounded sets, also over seminormed rings.
 
@@ -158,6 +164,48 @@ theorem norm_coeff_charpolyRev_le_zpow {A : Matrix ι ι R} {σ : ℝ} (hσ₀ :
   TauCeti.norm_coeff_charpolyRev_le_of_principalMinor_le (zpow_nonneg hσ₀.le m) fun s hs ↦
     (norm_principalMinor_le_zpow hσ₀ h s).trans
       (zpow_le_zpow_right_of_le_one₀ hσ₀ hσ₁ (hm s hs))
+
+/-- **Coefficients of a determinant of linear polynomials.** Over an ultrametric normed ring
+with `‖1‖ = 1`, let `M` be a matrix of polynomials of degree at most one whose constant
+coefficients have norm at most one and whose linear coefficients in row `i` have norm at most
+`r i`. If `c ≥ 0` bounds `∏ i ∈ s, r i` for every `m`-element set `s`, then `c` bounds the
+`m`-th coefficient of `det M`. -/
+theorem norm_coeff_det_le_of_natDegree_le_one {M : Matrix ι ι R[X]} {r : ι → ℝ}
+    (hdeg : ∀ i j, (M i j).natDegree ≤ 1) (h₀ : ∀ i j, ‖(M i j).coeff 0‖ ≤ 1)
+    (h₁ : ∀ i j, ‖(M i j).coeff 1‖ ≤ r i) {m : ℕ} {c : ℝ} (hc : 0 ≤ c)
+    (hs : ∀ s : Finset ι, s.card = m → ∏ i ∈ s, r i ≤ c) :
+    ‖M.det.coeff m‖ ≤ c := by
+  rw [det_apply, finsetSum_coeff]
+  refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg hc fun σ _ ↦ ?_
+  rw [coeff_smul, norm_units_zsmul]
+  refine TauCeti.norm_coeff_prod_le_of_natDegree_le_one (fun i _ ↦ hdeg _ _) (fun i _ ↦ h₀ _ _)
+    (fun i _ ↦ h₁ _ _) hc fun t _ ht ↦ ?_
+  simpa only [prod_map, Equiv.coe_toEmbedding] using
+    hs (t.map σ.toEmbedding) (by rw [card_map, ht])
+
+/-- **Fredholm resolvent bound.** If `r i` bounds the `i`-th row of `A` and `c ≥ 0` bounds
+`∏ i ∈ s, r i` for every `m`-element set `s`, then `c` bounds every entry of the `m`-th
+coefficient `∑ k ∈ range (m + 1), c k • A ^ (m - k)` of `adjugate (1 - X A)`, where `c k` are
+the coefficients of `det (1 - X A)`. This is the same bound as for the `m`-th coefficient of
+`det (1 - X A)` itself (`Matrix.norm_coeff_charpolyRev_le_of_norm_le`). -/
+theorem norm_sum_coeff_charpolyRev_smul_pow_apply_le {A : Matrix ι ι R} {r : ι → ℝ}
+    (hA : ∀ i j, ‖A i j‖ ≤ r i) {m : ℕ} {c : ℝ} (hc : 0 ≤ c)
+    (hs : ∀ s : Finset ι, s.card = m → ∏ i ∈ s, r i ≤ c) (i j : ι) :
+    ‖(∑ k ∈ range (m + 1), A.charpolyRev.coeff k • A ^ (m - k)) i j‖ ≤ c := by
+  rw [← coeff_adjugate_one_sub_X_smul_apply, adjugate_apply]
+  -- Row `j` of the matrix is constant, and every other row `k` is `δ k - X A k`.
+  have hM : ∀ k l, updateRow (1 - (X : R[X]) • A.map C) j (Pi.single i 1) k l =
+      if k = j then (if l = i then 1 else 0) else (if k = l then 1 else 0) - X * C (A k l) := by
+    intro k l
+    rcases eq_or_ne k j with rfl | hk
+    · rw [updateRow_self, Pi.single_apply, ite_eq_left rfl]
+    · rw [updateRow_ne hk, sub_apply, one_apply, smul_apply, map_apply, smul_eq_mul,
+        ite_eq_right hk]
+  refine norm_coeff_det_le_of_natDegree_le_one (r := r) (fun k l ↦ ?_) (fun k l ↦ ?_)
+    (fun k l ↦ ?_) hc hs <;> rw [hM]
+  · split_ifs <;> compute_degree!
+  · split_ifs <;> simp
+  · split_ifs <;> simp [coeff_one, (norm_nonneg _).trans (hA k l), hA k l]
 
 end Matrix
 

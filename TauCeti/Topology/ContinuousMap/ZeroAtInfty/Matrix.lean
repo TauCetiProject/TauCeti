@@ -103,6 +103,14 @@ theorem matrixCoeff_sub (u v : C₀(J, R) →L[R] C₀(I, R)) :
   (rfl)
 
 @[simp]
+theorem matrixCoeff_sum {ι : Type*} (s : Finset ι) (u : ι → C₀(J, R) →L[R] C₀(I, R)) :
+    (∑ k ∈ s, u k).matrixCoeff = ∑ k ∈ s, (u k).matrixCoeff := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert a s ha ih => rw [Finset.sum_insert ha, Finset.sum_insert ha, matrixCoeff_add, ih]
+
+@[simp]
 theorem matrixCoeff_id : (ContinuousLinearMap.id R C₀(J, R)).matrixCoeff = 1 := by
   ext i j
   simp [matrixCoeff_apply, Matrix.one_apply, Pi.single_apply]
