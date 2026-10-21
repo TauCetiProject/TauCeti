@@ -284,6 +284,30 @@ theorem inv_withConstants_def (t : Language.group[[A]].Term α) :
 theorem mul_withConstants_def (t s : Language.group[[A]].Term α) :
     t * s = Functions.apply₂ ((Language.group.lhomWithConstants A).onFunction mulFunc) t s := (rfl)
 
+/-- Including `Language.group`-terms into `L_A` preserves `1`. -/
+@[simp]
+theorem onTerm_one :
+    (Language.group.lhomWithConstants A).onTerm (1 : Language.group.Term α) = 1 := by
+  rw [one_def, one_withConstants_def, Constants.term, Constants.term, LHom.onTerm]
+  exact congrArg _ (funext fun i => i.elim0)
+
+/-- Including `Language.group`-terms into `L_A` preserves `⁻¹`. -/
+@[simp]
+theorem onTerm_inv (t : Language.group.Term α) :
+    (Language.group.lhomWithConstants A).onTerm t⁻¹ =
+      ((Language.group.lhomWithConstants A).onTerm t)⁻¹ := by
+  rw [inv_def, inv_withConstants_def, Functions.apply₁, Functions.apply₁, LHom.onTerm]
+  exact congrArg _ (funext fun i => by fin_cases i; rfl)
+
+/-- Including `Language.group`-terms into `L_A` preserves `*`. -/
+@[simp]
+theorem onTerm_mul (t s : Language.group.Term α) :
+    (Language.group.lhomWithConstants A).onTerm (t * s) =
+      (Language.group.lhomWithConstants A).onTerm t *
+        (Language.group.lhomWithConstants A).onTerm s := by
+  rw [mul_def, mul_withConstants_def, Functions.apply₂, Functions.apply₂, LHom.onTerm]
+  exact congrArg _ (funext fun i => by fin_cases i <;> rfl)
+
 section Operations
 
 variable [One G] [Inv G] [Mul G]
