@@ -12,8 +12,9 @@ public import TauCeti.Geometry.Diffeology.Subduction
 
 This file constructs the diffeology induced by an arbitrary map `f : Y → X` into a diffeological
 space: a map from a Cartesian space to `Y` is a plot precisely when its composite with `f` is a
-plot of `X`. This is the coarsest diffeology making `f` smooth, and a map into `Y` is smooth
-exactly when its composite with `f` is smooth. Inducing along a composite is inducing twice.
+plot of `X`. This is the coarsest diffeology making `f` smooth, that is, the one with the most
+plots, and a map into `Y` is smooth exactly when its composite with `f` is smooth. Inducing
+along a composite is inducing twice.
 
 Inducing along `Subtype.val` gives the subspace diffeology on a subtype, the diffeological
 counterpart of Mathlib's subspace topology `instTopologicalSpaceSubtype`. It is used to restrict
@@ -65,6 +66,7 @@ def inducedDiffeology (f : Y → X) : DiffeologicalSpace Y where
 
 /-- A map is a plot of the induced diffeology exactly when its composite with the inducing map is
 a plot. -/
+@[simp]
 theorem isPlot_inducedDiffeology_iff (f : Y → X) {n : ℕ} {p : 𝔼ⁿ → Y} :
     @_root_.Diffeology.IsPlot Y (inducedDiffeology f) n p ↔ _root_.Diffeology.IsPlot (f ∘ p) :=
   Iff.rfl
@@ -76,12 +78,14 @@ theorem dSmooth_inducedDiffeology_dom (f : Y → X) :
 
 /-- A map into an induced diffeology is smooth exactly when its composite with the inducing map is
 smooth. -/
+@[simp]
 theorem dSmooth_inducedDiffeology_rng [DiffeologicalSpace Z] (f : Y → X) (g : Z → Y) :
     @_root_.Diffeology.DSmooth Z Y inferInstance (inducedDiffeology f) g ↔
       _root_.Diffeology.DSmooth (f ∘ g) :=
   Iff.rfl
 
-/-- The induced diffeology is the coarsest diffeology making the map smooth. -/
+/-- The induced diffeology is the coarsest diffeology making the map smooth: every plot of a
+diffeology making the map smooth is a plot of the induced diffeology. -/
 theorem le_inducedDiffeology_iff (f : Y → X) {d : DiffeologicalSpace Y} :
     d ≤ inducedDiffeology f ↔ @_root_.Diffeology.DSmooth Y X d inferInstance f :=
   DiffeologicalSpace.le_iff'.trans Iff.rfl
@@ -106,6 +110,7 @@ theorem isPlot_subtype_iff {n : ℕ} {p : 𝔼ⁿ → Subtype P} :
 
 /-- A map is a plot of a subtype on a subset exactly when its composite with the inclusion is a
 plot on that subset. -/
+@[simp]
 theorem isPlotOn_subtype_iff {n : ℕ} {u : Set (𝔼ⁿ)} {p : 𝔼ⁿ → Subtype P} :
     IsPlotOn u p ↔ IsPlotOn u (Subtype.val ∘ p) := by
   simp only [isPlotOn_iff, isPlot_subtype_iff, comp_assoc]
