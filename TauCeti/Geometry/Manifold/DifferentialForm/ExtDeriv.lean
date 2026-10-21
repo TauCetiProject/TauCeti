@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 public import TauCeti.Analysis.Calculus.DifferentialForm.Const
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Basic
 public import TauCeti.Geometry.Manifold.MFDeriv.Constancy
+public import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
@@ -44,6 +45,8 @@ differentiable function is closed exactly when the function is locally constant.
   of a function is its manifold derivative.
 * `TauCeti.mextDeriv_ofFunction_eq_zero_iff`: the `0`-form of a differentiable function is closed
   exactly when the function is locally constant.
+* `TauCeti.mextDeriv_eq_zero_of_finrank_le`: on a manifold of dimension at most `k`, the exterior
+  derivative of every `k`-form vanishes.
 
 ## References
 
@@ -382,5 +385,16 @@ theorem mextDeriv_ofFunction_eq_zero_iff [IsManifold I 1 M] {f : M → F}
     fun h ↦ funext fun x ↦ mextDeriv_ofFunction_apply_eq_zero_iff.mpr ?_⟩
   have hfx : f =ᶠ[𝓝 x] fun _ ↦ f x := (IsLocallyConstant.iff_eventually_eq f).mp h x
   exact hfx.mfderiv_eq.trans (mfderiv_const ..)
+
+/-! ### Forms of top degree -/
+
+/-- On a manifold of finite dimension at most `k`, the exterior derivative of every rough `k`-form
+vanishes, since there are no nonzero `(k + 1)`-forms. In particular, top-degree forms are closed. -/
+theorem mextDeriv_eq_zero_of_finrank_le [FiniteDimensional ℝ E]
+    (h : Module.finrank ℝ E ≤ k) (φ : RoughForm I M F k) : mextDeriv φ = 0 := by
+  funext x
+  -- `TangentSpace I x` is the model space `E` by definition
+  have hx : Module.finrank ℝ (TangentSpace I x) = Module.finrank ℝ E := rfl
+  exact (mextDeriv φ x).eq_zero_of_finrank_lt (by simpa [hx] using Nat.lt_succ_of_le h)
 
 end TauCeti
