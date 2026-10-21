@@ -15,8 +15,8 @@ The kernel of the projection `R̂ → R ⧸ I ^ n` is the extension `I ^ n R̂` 
 records the case `n = 1` (`AdicCompletion.ker_evalOneₐ_eq_map`); the general case identifies
 the `I R̂`-adic filtration of `R̂` with the kernels of the projections. Consequently the
 canonical map `R → R̂` identifies `I ^ n` with the preimage of `I ^ n R̂`, and every element of
-`R̂` is congruent modulo `I ^ n R̂` to the image of an element of `R`: with the `I R̂`-adic
-topology on `R̂`, the map `R → R̂` is a dense embedding for the `I`-adic topology on `R`.
+`R̂` is congruent modulo `I ^ n R̂` to the image of an element of `R`, so the image of `R` is
+dense modulo every `I ^ n R̂`.
 
 ## Main results
 
@@ -43,12 +43,10 @@ theorem ker_evalₐ_eq_map_pow (fg : I.FG) (n : ℕ) :
     RingHom.ker (evalₐ I n) = (I ^ n).map (algebraMap R (AdicCompletion I R)) := by
   ext x
   trans x ∈ (eval I R n).ker
-  · have eq : I ^ n * ⊤ = I ^ n := Ideal.mul_top _
-    have inj : Function.Injective (Ideal.Quotient.factor eq.le) := by
-      simpa [RingHom.injective_iff_ker_eq_bot, Ideal.Quotient.factor_ker]
-        using Ideal.map_mk_eq_bot_of_le eq.ge
+  · have eq : (I ^ n • ⊤ : Ideal R) = I ^ n := by simp
     rw [RingHom.mem_ker, ← factor_eval_eq_evalₐ I x eq.le, LinearMap.mem_ker]
-    exact map_eq_zero_iff _ inj
+    -- The factor map is the quotient equivalence from which `evalₐ` is built.
+    exact map_eq_zero_iff _ (Ideal.quotientEquivAlgOfEq R eq).injective
   · simp [← pow_smul_top_eq_ker_eval fg, Ideal.smul_top_eq_map]
 
 /-- For a finitely generated ideal `I`, an element of `R` maps into the extension of `I ^ n` to
