@@ -12,8 +12,9 @@ public import TauCeti.CategoryTheory.Monoidal.Functor
 /-!
 # The monoidal structure of the Dold–Kan correspondence
 
-Let `C` be a preadditive monoidal category with finite coproducts which is idempotent complete,
-for instance the category of modules over a commutative ring.  Mathlib's Dold–Kan equivalence
+Let `C` be a preadditive monoidal category whose tensor product is additive in each variable
+(`CategoryTheory.MonoidalPreadditive C`), with finite coproducts and idempotent complete, for
+instance the category of modules over a commutative ring.  Mathlib's Dold–Kan equivalence
 `CategoryTheory.Idempotents.DoldKan.equivalence : SimplicialObject C ≌ ChainComplex C ℕ` has
 functor the normalized chains `N` and inverse `Γ`.  This file makes `N` oplax monoidal through
 the Alexander–Whitney map, and hence `Γ` lax monoidal as its right adjoint.  The lax structure
@@ -262,10 +263,10 @@ complex (the identity of `𝟙_ C` in degree zero) restricted to normalized chai
 instance oplaxMonoidalN : (N : SimplicialObject C ⥤ _).OplaxMonoidal :=
   Functor.OplaxMonoidal.ofRetract retractN
     (fun X Y ↦ by
-      rw [retractN_i, retractN_r, PInftyToN_app_comp_inclusionN_app_assoc,
-        SimplicialObject.alternatingFaceMapComplex_δ, ← PInfty_comp_PInftyToN_app X,
-        ← PInfty_comp_PInftyToN_app Y, ← tensorHom_comp_tensorHom,
-        SimplicialObject.PInfty_comp_alexanderWhitney_comp_tensorHom_PInfty_assoc])
+      -- `PInfty ⊗ PInfty` is absorbed by the projection `PInftyToN ⊗ PInftyToN`
+      simpa [tensorHom_comp_tensorHom] using
+        SimplicialObject.PInfty_comp_alexanderWhitney_comp_tensorHom_PInfty_assoc X Y
+          (PInftyToN.app X ⊗ₘ PInftyToN.app Y))
     (by rw [retractN_i, retractN_r, PInftyToN_app_comp_inclusionN_app_assoc,
       SimplicialObject.PInfty_comp_η_alternatingFaceMapComplex])
 
