@@ -13,10 +13,11 @@ import TauCeti.Order.Partition.Finpartition
 /-!
 # Free cumulants
 
-Let `φ : A →ₗ[R] R` be a linear functional on a semiring `A`, and let `a : α → A` assign an
-element of `A` to each position of a linear order `α`. For a finite set `s` of positions and a
-finite partition `P` of `s`, the *block moment* `φ_P(a)` is the product over the parts `B` of `P`
-of the moments `φ (a_{b₁} * ⋯ * a_{bₖ})`, where `b₁ < ⋯ < bₖ` lists `B` in increasing order.
+Let `φ : A → R` be a function on a monoid `A` (in free probability, a linear functional on an
+algebra `A`, used through its coercion to a function), and let `a : α → A` assign an element of
+`A` to each position of a linear order `α`. For a finite set `s` of positions and a finite
+partition `P` of `s`, the *block moment* `φ_P(a)` is the product over the parts `B` of `P` of the
+moments `φ (a_{b₁} * ⋯ * a_{bₖ})`, where `b₁ < ⋯ < bₖ` lists `B` in increasing order.
 
 The *free cumulants* are obtained from the block moments by Möbius inversion on the lattice
 `NC(s)` of noncrossing partitions of `s`: for `π ∈ NC(s)`,
@@ -68,29 +69,29 @@ variable {R A α : Type*} [LinearOrder α] {s : Finset α}
 
 section Moment
 
-variable [CommSemiring R] [Semiring A] [Module R A]
+variable [CommSemiring R] [Monoid A]
 
 /-- The *block moment* `φ_P(a)` of a finite partition `P` of a set `s` of positions: the product
 over the parts `B` of `P` of `φ (a_{b₁} * ⋯ * a_{bₖ})`, where `b₁ < ⋯ < bₖ` lists `B` in
 increasing order. -/
-def partitionMoment (φ : A →ₗ[R] R) (a : α → A) (P : Finpartition s) : R :=
+def partitionMoment (φ : A → R) (a : α → A) (P : Finpartition s) : R :=
   ∏ B ∈ P.parts, φ ((B.sort.map a).prod)
 
 /-- Unfolding of the block moment. -/
-theorem partitionMoment_def (φ : A →ₗ[R] R) (a : α → A) (P : Finpartition s) :
+theorem partitionMoment_def (φ : A → R) (a : α → A) (P : Finpartition s) :
     partitionMoment φ a P = ∏ B ∈ P.parts, φ ((B.sort.map a).prod) := by
   rw [partitionMoment]
 
 /-- The block moment of the partition into singletons is the product of the individual
 moments. -/
 @[simp]
-theorem partitionMoment_bot (φ : A →ₗ[R] R) (a : α → A) :
+theorem partitionMoment_bot (φ : A → R) (a : α → A) :
     partitionMoment φ a (⊥ : Finpartition s) = ∏ i ∈ s, φ (a i) := by
   simp [partitionMoment_def]
 
 /-- The block moment of the partition of a nonempty set into one part is the moment of the whole
 word, read in increasing order. -/
-theorem partitionMoment_top (φ : A →ₗ[R] R) (a : α → A) (hs : s.Nonempty) :
+theorem partitionMoment_top (φ : A → R) (a : α → A) (hs : s.Nonempty) :
     partitionMoment φ a (⊤ : Finpartition s) = φ ((s.sort.map a).prod) := by
   rw [partitionMoment_def, Finpartition.parts_top hs.ne_empty, prod_singleton]
 
@@ -98,31 +99,31 @@ end Moment
 
 section Cumulant
 
-variable [CommRing R] [Semiring A] [Module R A]
+variable [CommRing R] [Monoid A]
 
 /-- The *free cumulant* `κ_π(a)` of a noncrossing partition `π` of `s`, defined by Möbius
 inversion of the block moments on the lattice of noncrossing partitions:
 `κ_π(a) = ∑_{σ ≤ π} μ(σ, π) φ_σ(a)`. -/
-def partitionCumulant (φ : A →ₗ[R] R) (a : α → A) (π : NoncrossingPartition s) : R :=
+def partitionCumulant (φ : A → R) (a : α → A) (π : NoncrossingPartition s) : R :=
   ∑ σ ∈ Iic π, mu R σ π * partitionMoment φ a σ.1
 
 /-- Unfolding of the free cumulant of a noncrossing partition. -/
-theorem partitionCumulant_def (φ : A →ₗ[R] R) (a : α → A) (π : NoncrossingPartition s) :
+theorem partitionCumulant_def (φ : A → R) (a : α → A) (π : NoncrossingPartition s) :
     partitionCumulant φ a π = ∑ σ ∈ Iic π, mu R σ π * partitionMoment φ a σ.1 := by
   rw [partitionCumulant]
 
 /-- The *free cumulant* `κ_s(a)` of the word `(a_i)_{i ∈ s}`: the cumulant of the partition of
 `s` into one part. For `s = Finset.univ : Finset (Fin n)` with `n ≥ 1` this is the `n`-th free
 cumulant `κ_n(a₁, …, aₙ)`; for `s = ∅` it is the meaningless value `1`. -/
-def freeCumulant (φ : A →ₗ[R] R) (a : α → A) (s : Finset α) : R :=
+def freeCumulant (φ : A → R) (a : α → A) (s : Finset α) : R :=
   partitionCumulant φ a (⊤ : NoncrossingPartition s)
 
 /-- Unfolding of the free cumulant of a word. -/
-theorem freeCumulant_def (φ : A →ₗ[R] R) (a : α → A) (s : Finset α) :
+theorem freeCumulant_def (φ : A → R) (a : α → A) (s : Finset α) :
     freeCumulant φ a s = partitionCumulant φ a (⊤ : NoncrossingPartition s) := by
   rw [freeCumulant]
 
-variable (φ : A →ₗ[R] R) (a : α → A)
+variable (φ : A → R) (a : α → A)
 
 /-- The *moment–cumulant formula*: the block moment of a noncrossing partition `π` is the sum of
 the free cumulants of the noncrossing partitions refining `π`. -/
