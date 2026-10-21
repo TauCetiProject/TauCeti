@@ -222,19 +222,15 @@ private theorem image_add_generalizedParetoMap_univ (hs : 0 < s) (hξ : ξ ≠ 0
     (fun y ↦ m + generalizedParetoMap s ξ y) '' univ =
       {x | 0 < 1 + ξ * ((x - m) / s)} := by
   ext x
-  constructor
-  · rintro ⟨y, -, rfl⟩
-    rw [Set.mem_ofPred_eq, one_add_mul_add_generalizedParetoMap_sub_div hs.ne']
-    exact Real.exp_pos _
-  · intro hx
-    have hx' : 0 < 1 + ξ * ((x - m) / s) := hx
-    have hlog : Real.exp (Real.log (1 + ξ * ((x - m) / s))) =
-        1 + ξ * ((x - m) / s) := Real.exp_log hx'
-    refine ⟨Real.log (1 + ξ * ((x - m) / s)) / ξ, Set.mem_univ _, ?_⟩
-    dsimp only
-    rw [generalizedParetoMap_of_shape_ne_zero hξ, mul_div_cancel₀ _ hξ, hlog]
-    field_simp [hs.ne', hξ]
-    ring
+  have hshift : x ∈ (fun y ↦ m + generalizedParetoMap s ξ y) '' univ ↔
+      x - m ∈ generalizedParetoMap s ξ '' univ := by
+    constructor
+    · rintro ⟨y, hy, rfl⟩
+      exact ⟨y, hy, by ring⟩
+    · rintro ⟨y, hy, h⟩
+      exact ⟨y, hy, by linarith⟩
+  rw [hshift, image_generalizedParetoMap_univ hs.ne' hξ, Set.mem_ofPred_eq, Set.mem_ofPred_eq,
+    mul_div_assoc]
 
 private theorem transform_weight (hs : 0 < s) (hξ : ξ ≠ 0) (m y : ℝ) :
     ENNReal.ofReal |s * Real.exp (ξ * y)| *
@@ -407,6 +403,42 @@ theorem setOf_generalizedExtremeValue_neg_eq_Iio (hs : 0 < s) (hξ : ξ < 0) :
   have hneg : ξ / s < 0 := div_neg_of_neg_of_pos hξ hs
   have hnot : ¬0 < ξ / s := not_lt.mpr (le_of_lt hneg)
   simp only [hnot, false_and, hneg, true_and, false_or, sub_neg]
+
+/-- At positive shape, the real density vanishes at and below the finite lower endpoint. -/
+@[simp]
+theorem generalizedExtremeValuePDFReal_of_pos_of_le (hξ : 0 < ξ) (hx : x ≤ m - s / ξ) :
+    generalizedExtremeValuePDFReal m s ξ x = 0 := by
+  rcases le_or_gt s 0 with hs | hs
+  · exact generalizedExtremeValuePDFReal_of_scale_nonpos hs m ξ x
+  · refine generalizedExtremeValuePDFReal_of_shape_ne_zero_of_not_pos hξ.ne' fun h ↦ ?_
+    have h' : x ∈ {x : ℝ | 0 < 1 + ξ * ((x - m) / s)} := h
+    rw [setOf_generalizedExtremeValue_pos_eq_Ioi hs hξ, mem_Ioi] at h'
+    exact h'.not_ge hx
+
+/-- At positive shape, the extended density vanishes at and below the finite lower endpoint. -/
+@[simp]
+theorem generalizedExtremeValuePDF_of_pos_of_le (hξ : 0 < ξ) (hx : x ≤ m - s / ξ) :
+    generalizedExtremeValuePDF m s ξ x = 0 := by
+  rw [generalizedExtremeValuePDF_eq_ofReal, generalizedExtremeValuePDFReal_of_pos_of_le hξ hx,
+    ENNReal.ofReal_zero]
+
+/-- At negative shape, the real density vanishes at and above the finite upper endpoint. -/
+@[simp]
+theorem generalizedExtremeValuePDFReal_of_neg_of_le (hξ : ξ < 0) (hx : m - s / ξ ≤ x) :
+    generalizedExtremeValuePDFReal m s ξ x = 0 := by
+  rcases le_or_gt s 0 with hs | hs
+  · exact generalizedExtremeValuePDFReal_of_scale_nonpos hs m ξ x
+  · refine generalizedExtremeValuePDFReal_of_shape_ne_zero_of_not_pos hξ.ne fun h ↦ ?_
+    have h' : x ∈ {x : ℝ | 0 < 1 + ξ * ((x - m) / s)} := h
+    rw [setOf_generalizedExtremeValue_neg_eq_Iio hs hξ, mem_Iio] at h'
+    exact h'.not_ge hx
+
+/-- At negative shape, the extended density vanishes at and above the finite upper endpoint. -/
+@[simp]
+theorem generalizedExtremeValuePDF_of_neg_of_le (hξ : ξ < 0) (hx : m - s / ξ ≤ x) :
+    generalizedExtremeValuePDF m s ξ x = 0 := by
+  rw [generalizedExtremeValuePDF_eq_ofReal, generalizedExtremeValuePDFReal_of_neg_of_le hξ hx,
+    ENNReal.ofReal_zero]
 
 /-- At positive scale, the function support of the generalized extreme-value density is all of
 `ℝ` at shape zero and the natural open support at nonzero shape. -/
