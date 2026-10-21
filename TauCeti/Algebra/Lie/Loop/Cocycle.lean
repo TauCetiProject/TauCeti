@@ -49,8 +49,9 @@ Combining the two steps, the 2-cocycles on `loopAlgebra K ℤ L` are the sums of
 residue cocycle and a coboundary. Conversely a nonzero multiple of the residue cocycle of a nonzero
 symmetric form is never a coboundary: on `(x_1, y_{-1})` and `(x_{-1}, y_1)` it takes opposite
 values `∓Ψ(x, y)`, while a coboundary takes the same value `-f(⁅x, y⁆_0)` on both. Thus for a
-simple Lie algebra the second cohomology of its loop algebra with trivial coefficients is
-one-dimensional, spanned by the residue class of the Killing form.
+simple Lie algebra over an algebraically closed field of characteristic zero the second cohomology
+of its loop algebra with trivial coefficients is one-dimensional, spanned by the residue class of
+the Killing form.
 
 ## Main results
 
@@ -235,23 +236,6 @@ theorem exists_eq_smul_twoCocycleOfBilinear_iff [IsDomain K] [CharZero K]
     ring
   · rw [zero_mul, smul_zero]
 
-/-- On a nontrivial Lie algebra with irreducible adjoint module and nondegenerate Killing form, the
-Killing form does not vanish on all brackets. -/
-private theorem exists_killingForm_lie_ne_zero {K L : Type*} [Field K] [LieRing L]
-    [LieAlgebra K L] [FiniteDimensional K L] [_root_.LieModule.IsIrreducible K L L]
-    [IsKilling K L] : ∃ x y z : L, killingForm K L ⁅x, y⁆ z ≠ 0 := by
-  have := _root_.LieModule.nontrivial_of_isIrreducible K L L
-  -- A nontrivial Killing Lie algebra is not abelian, so some bracket is nonzero, and the
-  -- nondegenerate Killing form detects it.
-  have hab : ¬ IsLieAbelian L := by
-    rw [IsKilling.isLieAbelian_iff_subsingleton K L, not_subsingleton_iff_nontrivial]
-    infer_instance
-  obtain ⟨x, y, hxy⟩ : ∃ x y : L, ⁅x, y⁆ ≠ 0 := by
-    by_contra! h
-    exact hab ⟨h⟩
-  by_contra! h
-  exact hxy ((IsKilling.killingForm_nondegenerate K L).1 _ (h x y))
-
 /-- **The 2-cocycles on the loop algebra of a simple Lie algebra vanishing on constant loops are
 the multiples of the residue cocycle of the Killing form.** Here `L` is a finite-dimensional Lie
 algebra over an algebraically closed field of characteristic zero whose adjoint module is
@@ -291,9 +275,8 @@ theorem exists_apply_one_tmul_eq_d₁₂_apply
       ext x y z
       have h := cocycle_single_tmul c 0 0 n x y z
       rw [zero_add, add_zero] at h
-      rw [d₁₂_apply_coe_apply_apply, Submodule.coe_zero, LinearMap.zero_apply,
-        LinearMap.zero_apply, LinearMap.zero_apply, LinearMap.sub_apply, LinearMap.sub_apply,
-        Module.Dual.lie_apply, Module.Dual.lie_apply]
+      simp only [d₁₂_apply_coe_apply_apply, Submodule.coe_zero, LinearMap.zero_apply,
+        LinearMap.sub_apply, Module.Dual.lie_apply]
       linear_combination h
     obtain ⟨φ, hφ⟩ := exists_eq_lie_of_d₁₂_eq_zero hD
     exact ⟨φ, fun x y ↦ by rw [hφ x, Module.Dual.lie_apply]⟩
@@ -367,13 +350,11 @@ theorem twoCocycle_eq_span_sup_range_d₁₂ {Ψ : LinearMap.BilinForm K L} (hΨ
     obtain ⟨f, hf⟩ := exists_apply_one_tmul_eq_d₁₂_apply ⟨c, hc⟩
     obtain ⟨t, ht⟩ := (exists_eq_smul_twoCocycleOfBilinear_iff hΨ hΨs hspan hne
       ⟨c + d₁₂ K _ _ (-f), add_mem hc (range_d₁₂_le_twoCocycle ⟨-f, rfl⟩)⟩).mpr
-      fun x a ↦ by
-        rw [add_apply_apply, hf, d₁₂_apply_apply_ofTrivial, d₁₂_apply_apply_ofTrivial,
-          LinearMap.neg_apply, neg_neg, neg_add_cancel]
+      fun x a ↦ by simp [hf, -map_neg]
     have hc' : c = t • twoCochainOfBilinear K ℤ L Ψ hΨs + d₁₂ K _ _ f := by
-      have h := congrArg Subtype.val ht
-      rw [Submodule.coe_smul, twoCocycleOfBilinear_coe] at h
-      rw [← h, add_assoc, ← map_add, neg_add_cancel, map_zero, add_zero]
+      have h : c + d₁₂ K _ _ (-f) = _ := congrArg Subtype.val ht
+      rw [Submodule.coe_smul, twoCocycleOfBilinear_coe, map_neg] at h
+      exact eq_add_of_add_neg_eq h
     rw [hc']
     exact Submodule.add_mem_sup (Submodule.smul_mem _ t (Submodule.mem_span_singleton_self _))
       ⟨f, rfl⟩

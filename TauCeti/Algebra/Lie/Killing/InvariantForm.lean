@@ -31,6 +31,8 @@ algebra over an algebraically closed field of characteristic zero.
 * `TauCeti.LieAlgebra.invariantForms_eq_span_killingForm` and
   `TauCeti.LieAlgebra.finrank_invariantForms_eq_one`: the invariant symmetric forms on `L` are the
   line spanned by the Killing form.
+* `TauCeti.LieAlgebra.exists_killingForm_lie_ne_zero`: the Killing form does not vanish on all
+  brackets; this needs no algebraic closure.
 
 ## References
 
@@ -45,6 +47,23 @@ open Module (finrank)
 namespace TauCeti.LieAlgebra
 
 open _root_.LieAlgebra TauCeti.LieModule
+
+/-- On a nontrivial Lie algebra with irreducible adjoint module and nondegenerate Killing form, the
+Killing form does not vanish on all brackets. -/
+theorem exists_killingForm_lie_ne_zero {K L : Type*} [Field K] [LieRing L] [LieAlgebra K L]
+    [FiniteDimensional K L] [_root_.LieModule.IsIrreducible K L L] [IsKilling K L] :
+    ∃ x y z : L, killingForm K L ⁅x, y⁆ z ≠ 0 := by
+  have := _root_.LieModule.nontrivial_of_isIrreducible K L L
+  -- A nontrivial Killing Lie algebra is not abelian, so some bracket is nonzero, and the
+  -- nondegenerate Killing form detects it.
+  have hab : ¬ IsLieAbelian L := by
+    rw [IsKilling.isLieAbelian_iff_subsingleton K L, not_subsingleton_iff_nontrivial]
+    infer_instance
+  obtain ⟨x, y, hxy⟩ : ∃ x y : L, ⁅x, y⁆ ≠ 0 := by
+    by_contra! h
+    exact hab ⟨h⟩
+  by_contra! h
+  exact hxy ((IsKilling.killingForm_nondegenerate K L).1 _ (h x y))
 
 variable {K L : Type*} [Field K] [IsAlgClosed K] [LieRing L] [LieAlgebra K L]
 variable [FiniteDimensional K L] [_root_.LieModule.IsIrreducible K L L] [IsKilling K L]
