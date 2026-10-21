@@ -118,8 +118,10 @@ private theorem norm_convolutionAux_le (hs : 1 / 2 < s) (L : E →L[ℂ] E' →L
   rw [(hasSum_sq_weight_mul_norm_coeff _).tsum_eq, (hasSum_sq_weight_mul_norm_coeff _).tsum_eq,
     (hasSum_sq_weight_mul_norm_coeff _).tsum_eq] at h
   refine (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).1 (h.trans_eq ?_)
-  rw [mul_pow, mul_pow, mul_pow, mul_pow, Real.sq_sqrt hK, sq (2 ^ (s + 1) : ℝ),
-    ← Real.mul_rpow (by norm_num) (by norm_num), show (2 : ℝ) * 2 = 4 by norm_num]
+  have h4 : ((2 : ℝ) ^ (s + 1)) ^ 2 = 4 ^ (s + 1) := by
+    rw [sq, ← Real.mul_rpow (by norm_num) (by norm_num)]
+    norm_num
+  simp only [mul_pow, Real.sq_sqrt hK, h4]
   ring
 
 /-- **The product on `H^s`, `s > 1/2`.** A continuous bilinear map `L : E →L[ℂ] E' →L[ℂ] F`

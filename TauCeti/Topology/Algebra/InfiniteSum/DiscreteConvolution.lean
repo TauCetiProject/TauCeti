@@ -38,6 +38,8 @@ groupings agree.
   `DiscreteConvolution.ConvolutionExistsAt.smul_convolution` and
   `DiscreteConvolution.ConvolutionExistsAt.convolution_smul`, whose generated additive versions
   are statements about `+ᵥ`.
+* `DiscreteConvolution.addFiberEquivSub`: on an additive group, `y ↦ (x - y, y)` identifies `M`
+  with the fibre `addFiber x` of addition at `x`.
 * `DiscreteConvolution.addConvolution_eq_tsum_sub` and its ring version
   `DiscreteConvolution.addRingConvolution_eq_tsum_sub`: on an additive group,
   `(f ⋆₊[L] g) x = ∑' y, L (f (x - y)) (g y)`.
@@ -160,11 +162,20 @@ variable {M S E E' F R : Type*} [AddGroup M]
 
 /-- On an additive group, the fibre of addition at `x` is parametrised by its second
 coordinate. -/
-private def addFiberEquivSub (x : M) : M ≃ addFiber x where
+def addFiberEquivSub (x : M) : M ≃ addFiber x where
   toFun y := ⟨(x - y, y), mem_addFiber.2 (sub_add_cancel x y)⟩
   invFun ab := ab.1.2
   left_inv _ := rfl
   right_inv ab := Subtype.ext <| Prod.ext (eq_sub_of_add_eq (mem_addFiber.1 ab.2)).symm rfl
+
+@[simp]
+theorem coe_addFiberEquivSub_apply (x y : M) : (addFiberEquivSub x y : M × M) = (x - y, y) :=
+  (rfl)
+
+@[simp]
+theorem addFiberEquivSub_symm_apply (x : M) (ab : addFiber x) :
+    (addFiberEquivSub x).symm ab = ab.1.2 :=
+  (rfl)
 
 /-- On an additive group, the fibre of addition at `x` is parametrised by its second coordinate,
 so additive convolution is the familiar sum `(f ⋆₊[L] g) x = ∑' y, L (f (x - y)) (g y)`. -/
