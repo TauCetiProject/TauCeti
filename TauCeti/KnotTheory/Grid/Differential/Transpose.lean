@@ -51,7 +51,10 @@ columns to rows.
 
 The symmetries of grid diagrams are in Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and
 Links*, Chapter 3; the unblocked complex is defined in Chapter 4.6. The fully blocked version of
-this symmetry is `GridDiagram.fullyBlockedDifferential_transpose`.
+this symmetry is `GridDiagram.fullyBlockedDifferential_transpose`. The construction adapts the
+half-turn symmetry of `TauCeti.KnotTheory.Grid.Differential.HalfTurn`
+(`GridChain.halfTurnRenameEquiv` and `GridDiagram.unblockedCoefficient_rotate_halfTurn`),
+replacing its fixed variable reversal by the diagram-dependent renaming along `G.O`.
 -/
 
 public section

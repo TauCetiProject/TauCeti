@@ -44,6 +44,9 @@ commutations.
 
 The symmetries of grid diagrams are in Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and
 Links*, Chapter 3, unblocked grid homology is defined in Chapter 4.6, and `τ` in Chapter 6.
+The construction adapts the half-turn symmetry of `TauCeti.KnotTheory.Grid.Homology.HalfTurn`
+(`GridDiagram.unblockedHomologyRotateEquiv`, its grading preservation and
+`GridDiagram.IsKnot.tau_rotate`) to the diagonal reflection.
 -/
 
 public section
