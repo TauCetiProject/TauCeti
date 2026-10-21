@@ -81,14 +81,6 @@ private theorem smul_rescaleSeries {f : MvPowerSeries (Fin 2) R} (hf : constantC
   · simp [coeff_rescaleSeries, Finsupp.prod, Finset.prod_pow_eq_pow_sum, ← Finsupp.degree_apply,
       ← mul_assoc, ← pow_succ', Nat.sub_add_cancel h]
 
-/-- If `s • g = f(s X, s Y)`, then `s • g(v₀, v₁) = f(s v₀, s v₁)` at every substitutable pair. -/
-private theorem smul_subst_of_smul_eq_rescale {f g : MvPowerSeries (Fin 2) R} {s : R}
-    (h : s • g = rescale (fun _ ↦ s) f) {σ : Type*} {v : Fin 2 → MvPowerSeries σ R}
-    (hv : HasSubst v) : s • g.subst v = f.subst (s • v) := by
-  rw [← subst_smul hv, h, subst_rescale _ _ hv]
-  -- The pointwise action of the constant family `fun _ ↦ s` is the action of `s`.
-  rfl
-
 /-- Associativity transfers from `f` to `g` along `s • g = f(s X, s Y)` when `s` is a
 nonzerodivisor. -/
 private theorem assoc_of_smul_eq_rescale (F : FormalGroup R) {g : MvPowerSeries (Fin 2) R}

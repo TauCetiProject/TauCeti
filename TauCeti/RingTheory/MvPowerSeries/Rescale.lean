@@ -16,7 +16,8 @@ This file records general facts about Mathlib's coefficientwise rescaling of mul
 power series. Rescaling by multiplicative units transports weighted coefficient norms, and hence
 restrictedness, when the weights are changed by the corresponding scalar norms. Rescaling by a
 family of units and then by their inverses is the identity. Substituting a family into a rescaled
-power series is substituting the rescaled family: `f(a X)` at `X = v` is `f(a v)`.
+power series is substituting the rescaled family: `f(a X)` at `X = v` is `f(a v)`; in particular,
+`s • g = f(s X)` gives `s • g(v) = f(s v)`.
 -/
 
 public section
@@ -76,5 +77,13 @@ theorem subst_rescale {τ A : Type*} [CommRing A] (a : σ → A) (f : MvPowerSer
   congr 1
   funext i
   simp only [Pi.smul_apply', subst_smul hv, subst_X hv]
+
+/-- If `s • g = f(s X)`, then `s • g(v) = f(s v)` at every substitutable family `v`. -/
+theorem smul_subst_of_smul_eq_rescale {τ A : Type*} [CommRing A] {f g : MvPowerSeries σ A}
+    {s : A} (h : s • g = rescale (fun _ ↦ s) f) {v : σ → MvPowerSeries τ A} (hv : HasSubst v) :
+    s • g.subst v = f.subst (s • v) := by
+  rw [← subst_smul hv, h, subst_rescale _ _ hv]
+  -- The pointwise action of the constant family `fun _ ↦ s` is the action of `s`.
+  rfl
 
 end MvPowerSeries

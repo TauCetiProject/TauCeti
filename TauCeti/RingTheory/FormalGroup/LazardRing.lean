@@ -481,6 +481,13 @@ theorem toRingHom_gradedLift (F : {F : FormalGroup A // F.IsComm ∧ ∀ d : Fin
     (gradedLift F).toRingHom = lift ⟨F.1, F.2.1⟩ :=
   (rfl)
 
+/-- The graded homomorphism attached to `F` is, as a function, the homomorphism classifying `F`. -/
+@[simp]
+theorem coe_gradedLift (F : {F : FormalGroup A // F.IsComm ∧ ∀ d : Fin 2 →₀ ℕ,
+      coeff d F.toPowerSeries ∈ 𝒜 (2 * (d.degree - 1))}) :
+    ⇑(gradedLift F) = lift ⟨F.1, F.2.1⟩ :=
+  (rfl)
+
 /-- The formal group law attached to a graded homomorphism `φ` is the base change of the universal
 formal group law along `φ`. -/
 @[simp]
