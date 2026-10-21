@@ -384,10 +384,8 @@ theorem weaklyAdmissible_lensSpace : (lensSpace p q r).WeaklyAdmissible :=
 @[simp]
 theorem cornerCount_lensSpace (s : ZMod p) : (lensSpace p q r).cornerCount s = 4 := by
   rw [cornerCount_eq_card, Finset.card_filter, Fintype.sum_prod_type_right]
-  simp only [Fin.sum_univ_four, cornerRegion_eq, lensSpace_alphaLeft, lensSpace_alphaRight,
-    lensSpace_alphaNext_symm_apply, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
-    Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons, sub_eq_iff_eq_add]
-  simp only [Finset.sum_ite_eq', Finset.mem_univ, ite_true]
+  simp only [Fin.sum_univ_four, cornerRegion_eq, Matrix.cons_val]
+  simp [sub_eq_iff_eq_add]
 
 /-- Every region of the lens space diagram is a parallelogram, a disk with four corners, so the
 diagram is nice for the region Euler characteristics `1`. -/

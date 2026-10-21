@@ -408,31 +408,35 @@ theorem generatorPointMeasure_nonneg (hD : 0 ≤ D) (x : H.Generator) :
 
 variable [DecidableEq Point]
 
+/-- If the boundary of the `α`-part of a nonnegative domain `D` has coefficient `±1` at the
+point of `w` on every `α`-curve where `x` and `y` differ, then each such curve contributes at least
+`1 / 4` to `n_w(D)`. -/
+private theorem hammingDist_le_four_mul_generatorPointMeasure_of_abs_eq_one (hD0 : 0 ≤ D)
+    (w : H.Generator) (hw : ∀ i, H.point x i ≠ H.point y i →
+      |(H.alphaArcBoundary (H.alphaBoundary D) (H.point w i) : ℚ)| = 1) :
+    (hammingDist (H.point x) (H.point y) : ℚ) ≤ 4 * H.generatorPointMeasure w D := by
+  rw [hammingDist, generatorPointMeasure_apply, mul_sum, card_filter, Nat.cast_sum]
+  refine sum_le_sum fun i _ => ?_
+  split_ifs with hi
+  · simpa using (hw i hi).ge.trans
+      (H.abs_alphaArcBoundary_alphaBoundary_le_four_mul_pointMeasure hD0 (H.point w i))
+  · simpa using H.pointMeasure_nonneg hD0 (H.point w i)
+
 /-- For a nonnegative domain `D` from `x` to `y`, every `α`-curve on which `x` and `y` differ
 contributes at least `1 / 4` to `n_x(D)`. -/
 theorem IsDomainBetween.hammingDist_le_four_mul_generatorPointMeasure_left
     (hD : H.IsDomainBetween x y D) (hD0 : 0 ≤ D) :
-    (hammingDist (H.point x) (H.point y) : ℚ) ≤ 4 * H.generatorPointMeasure x D := by
-  rw [hammingDist, generatorPointMeasure_apply, mul_sum, card_filter, Nat.cast_sum]
-  refine sum_le_sum fun i _ => ?_
-  split_ifs with hi
-  · have := H.abs_alphaArcBoundary_alphaBoundary_le_four_mul_pointMeasure hD0 (H.point x i)
-    rw [hD.alphaArcBoundary_alphaBoundary_point_left hi] at this
-    simpa using this
-  · simpa using H.pointMeasure_nonneg hD0 (H.point x i)
+    (hammingDist (H.point x) (H.point y) : ℚ) ≤ 4 * H.generatorPointMeasure x D :=
+  hammingDist_le_four_mul_generatorPointMeasure_of_abs_eq_one hD0 x fun _ hi => by
+    rw [hD.alphaArcBoundary_alphaBoundary_point_left hi]; simp
 
 /-- For a nonnegative domain `D` from `x` to `y`, every `α`-curve on which `x` and `y` differ
 contributes at least `1 / 4` to `n_y(D)`. -/
 theorem IsDomainBetween.hammingDist_le_four_mul_generatorPointMeasure_right
     (hD : H.IsDomainBetween x y D) (hD0 : 0 ≤ D) :
-    (hammingDist (H.point x) (H.point y) : ℚ) ≤ 4 * H.generatorPointMeasure y D := by
-  rw [hammingDist, generatorPointMeasure_apply, mul_sum, card_filter, Nat.cast_sum]
-  refine sum_le_sum fun i _ => ?_
-  split_ifs with hi
-  · have := H.abs_alphaArcBoundary_alphaBoundary_le_four_mul_pointMeasure hD0 (H.point y i)
-    rw [hD.alphaArcBoundary_alphaBoundary_point_right hi] at this
-    simpa using this
-  · simpa using H.pointMeasure_nonneg hD0 (H.point y i)
+    (hammingDist (H.point x) (H.point y) : ℚ) ≤ 4 * H.generatorPointMeasure y D :=
+  hammingDist_le_four_mul_generatorPointMeasure_of_abs_eq_one hD0 y fun _ hi => by
+    rw [hD.alphaArcBoundary_alphaBoundary_point_right hi]; simp
 
 variable [Fintype Point] [DecidableEq Region] [Fintype Region]
 
