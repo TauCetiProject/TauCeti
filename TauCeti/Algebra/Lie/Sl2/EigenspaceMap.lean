@@ -36,8 +36,7 @@ independence of the eigenspaces then shows that only the `μ`-component of `x` c
 For the adjoint action, `h` grades `L` by its eigenspaces `L(μ)`. The case `μ = 0` is
 `⁅e, L(0)⁆ = L(2)`, `IsSl2Triple.map_ad_e_eigenspace_zero`. It is the infinitesimal input to the
 openness of the orbit of `e` in `L(2)` under a group with Lie algebra `L(0)`: the differential at
-the identity of that orbit map is `x ↦ ⁅x, e⁆`. The disjointness statement for `ad e` says that the
-centralizer of `e` meets `L(μ)` trivially unless `μ` is a natural number.
+the identity of that orbit map is `x ↦ ⁅x, e⁆`.
 
 ## Main results
 
@@ -46,7 +45,6 @@ centralizer of `e` meets `L(μ)` trivially unless `μ` is a natural number.
 * `IsSl2Triple.map_toEnd_e_eigenspace`: `e` maps `M_μ` onto `M_(μ + 2)` unless `μ + 2 = -n`.
 * `IsSl2Triple.map_toEnd_f_eigenspace`: `f` maps `M_μ` onto `M_(μ - 2)` unless `μ - 2 = n`.
 * `IsSl2Triple.map_ad_e_eigenspace_zero`: `⁅e, L(0)⁆ = L(2)` in the adjoint grading.
-* `IsSl2Triple.disjoint_ker_ad_e_eigenspace`: the centralizer of `e` lies in the weights `μ ∈ ℕ`.
 
 ## References
 
@@ -167,7 +165,8 @@ theorem map_toEnd_f_eigenspace (t : IsSl2Triple h e f) (hμ : ∀ n : ℕ, μ - 
     ((toEnd K L M h).eigenspace μ).map (toEnd K L M f) = (toEnd K L M h).eigenspace (μ - 2) := by
   have := t.symm.map_toEnd_e_eigenspace (M := M) (μ := -μ)
     fun n hn ↦ hμ n (by linear_combination -hn)
-  rw [map_neg, show -μ + 2 = -(μ - 2) by ring] at this
+  have hneg : -μ + 2 = -(μ - 2) := by ring
+  rw [map_neg, hneg] at this
   simpa using this
 
 variable [FiniteDimensional K L]
@@ -185,22 +184,5 @@ theorem map_ad_e_eigenspace_zero (t : IsSl2Triple h e f) :
   exact this
 
 end Field
-
-/-! ### The centralizer of the raising element -/
-
-section Centralizer
-
-variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L] [FiniteDimensional K L]
-  {h e f : L} {μ : K}
-
-/-- **The centralizer of `e` has natural-number weights.** For an `sl₂` triple `(h, e, f)` in a
-finite-dimensional Lie algebra over a field of characteristic zero, the kernel of `ad e` meets the
-`μ`-eigenspace of `ad h` trivially unless `μ` is a natural number. -/
-theorem disjoint_ker_ad_e_eigenspace (t : IsSl2Triple h e f) (hμ : ∀ n : ℕ, μ ≠ n) :
-    Disjoint (LinearMap.ker (ad K L e)) ((ad K L h).eigenspace μ) :=
-  -- `ad K L` is by definition the action `toEnd K L L` of `L` on itself.
-  t.disjoint_ker_toEnd_e_eigenspace (M := L) hμ
-
-end Centralizer
 
 end IsSl2Triple
