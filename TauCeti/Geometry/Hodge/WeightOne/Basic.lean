@@ -352,22 +352,15 @@ theorem hodgeStructure_proj_one (J : AlmostComplexStructure V) :
 @[simp]
 theorem hodgeStructure_proj_zero (J : AlmostComplexStructure V) :
     J.hodgeStructure.proj 0 = J.antiholomorphicProjection := by
-  apply J.hodgeStructure.addHom_ext_of_piece
-  intro p x hx
-  by_cases hpzero : p = 0
-  · subst p
-    rw [J.hodgeStructure.proj_apply_of_mem hx, antiholomorphicProjection_def]
-    exact (Submodule.projection_apply_of_mem_left _
-      (J.hodgeStructure_piece_zero ▸ hx)).symm
-  by_cases hpone : p = 1
-  · subst p
-    rw [J.hodgeStructure.proj_apply_eq_zero_of_mem_of_ne hx (by norm_num),
-      antiholomorphicProjection_def]
-    exact (Submodule.projection_apply_of_mem_right _
-      (J.hodgeStructure_piece_one ▸ hx)).symm
-  rw [J.hodgeStructure_piece_eq_bot hpzero hpone, Submodule.mem_bot] at hx
-  subst x
-  simp
+  apply LinearMap.ext
+  intro u
+  rw [antiholomorphicProjection_apply_eq_sub]
+  apply eq_sub_iff_add_eq.mpr
+  have hsum := J.hodgeStructure.sum_proj_eq (S := {0, 1}) u fun p hp ↦ by
+    have hp' : p ≠ 0 ∧ p ≠ 1 := by simpa using hp
+    have hmem := J.hodgeStructure.proj_mem p u
+    simpa only [J.hodgeStructure_piece_eq_bot hp'.1 hp'.2, Submodule.mem_bot] using hmem
+  simpa using hsum
 
 /-- The Weil operator of the Hodge structure associated with `J` is the complex-linear scalar
 extension of `J`. Thus the construction recovers the original almost complex structure after

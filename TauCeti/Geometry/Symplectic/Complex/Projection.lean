@@ -70,6 +70,11 @@ theorem holomorphicProjection_add_antiholomorphicProjection (J : AlmostComplexSt
     (u : ℂ ⊗[ℝ] V) : J.holomorphicProjection u + J.antiholomorphicProjection u = u :=
   Submodule.projection_add_projection_eq_self J.isCompl_eigenspace_baseChange_I_neg_I u
 
+/-- The antiholomorphic component is the complement of the holomorphic component. -/
+theorem antiholomorphicProjection_apply_eq_sub (J : AlmostComplexStructure V)
+    (u : ℂ ⊗[ℝ] V) : J.antiholomorphicProjection u = u - J.holomorphicProjection u :=
+  Submodule.projection_eq_self_sub_projection J.isCompl_eigenspace_baseChange_I_neg_I u
+
 /-- The explicit `(1,0)` projection is `(u - i J u) / 2`. -/
 theorem holomorphicProjection_apply (J : AlmostComplexStructure V) (u : ℂ ⊗[ℝ] V) :
     J.holomorphicProjection u =
@@ -95,6 +100,31 @@ theorem range_antiholomorphicProjection (J : AlmostComplexStructure V) :
     LinearMap.range J.antiholomorphicProjection =
       Module.End.eigenspace (J.toLinearMap.baseChange ℂ) (-Complex.I) :=
   Submodule.range_projection _
+
+/-- The holomorphic component lies in the `i`-eigenspace of the complexified structure. -/
+theorem holomorphicProjection_apply_mem (J : AlmostComplexStructure V) (u : ℂ ⊗[ℝ] V) :
+    J.holomorphicProjection u ∈ Module.End.eigenspace (J.toLinearMap.baseChange ℂ) Complex.I :=
+  Submodule.projection_apply_mem J.isCompl_eigenspace_baseChange_I_neg_I u
+
+/-- The antiholomorphic component lies in the `-i`-eigenspace of the complexified structure. -/
+theorem antiholomorphicProjection_apply_mem (J : AlmostComplexStructure V) (u : ℂ ⊗[ℝ] V) :
+    J.antiholomorphicProjection u ∈
+      Module.End.eigenspace (J.toLinearMap.baseChange ℂ) (-Complex.I) :=
+  Submodule.projection_apply_mem J.isCompl_eigenspace_baseChange_I_neg_I.symm u
+
+/-- The complexified structure acts by `i` on the holomorphic component. -/
+@[simp]
+theorem baseChange_apply_holomorphicProjection (J : AlmostComplexStructure V) (u : ℂ ⊗[ℝ] V) :
+    J.toLinearMap.baseChange ℂ (J.holomorphicProjection u) =
+      Complex.I • J.holomorphicProjection u :=
+  Module.End.mem_eigenspace_iff.mp (J.holomorphicProjection_apply_mem u)
+
+/-- The complexified structure acts by `-i` on the antiholomorphic component. -/
+@[simp]
+theorem baseChange_apply_antiholomorphicProjection (J : AlmostComplexStructure V)
+    (u : ℂ ⊗[ℝ] V) : J.toLinearMap.baseChange ℂ (J.antiholomorphicProjection u) =
+      -Complex.I • J.antiholomorphicProjection u :=
+  Module.End.mem_eigenspace_iff.mp (J.antiholomorphicProjection_apply_mem u)
 
 @[simp]
 theorem ker_holomorphicProjection (J : AlmostComplexStructure V) :
@@ -204,10 +234,7 @@ theorem baseChange_antiholomorphicProjection (J : AlmostComplexStructure V)
     (u : ℂ ⊗[ℝ] V) :
     f.baseChange ℂ (J.antiholomorphicProjection u) =
       K.antiholomorphicProjection (f.baseChange ℂ u) := by
-  rw [antiholomorphicProjection_def, antiholomorphicProjection_def,
-    Submodule.projection_eq_self_sub_projection J.isCompl_eigenspace_baseChange_I_neg_I,
-    Submodule.projection_eq_self_sub_projection K.isCompl_eigenspace_baseChange_I_neg_I, map_sub,
-    ← holomorphicProjection_def, ← holomorphicProjection_def,
+  rw [antiholomorphicProjection_apply_eq_sub, antiholomorphicProjection_apply_eq_sub, map_sub,
     baseChange_holomorphicProjection J K f hf]
 
 /-- Projection to `(1,0)` vectors is injective on the embedded real vector space. -/
