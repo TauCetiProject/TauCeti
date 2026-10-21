@@ -390,8 +390,10 @@ private def halfYCurvePointZero : halfYCurve.toAffine.Point :=
 
 /-- The point `(0, 0)` has integral coordinates. -/
 private theorem hasIntegralCoordinates_halfYCurvePointZero :
-    halfYCurvePointZero.HasIntegralCoordinates :=
-  ⟨0, 0, halfYCurve_nonsingular_zero, rfl⟩
+    halfYCurvePointZero.HasIntegralCoordinates := by
+  rw [halfYCurvePointZero]
+  exact (WeierstrassCurve.Affine.Point.hasIntegralCoordinates_some _).mpr
+    ⟨0, 0, by norm_num, by norm_num⟩
 
 /-- **The negative of `(0, 0)` on `y² + ½y = x³` is `(0, -½)`**: negation is
 `-(x, y) = (x, -y - a₁x - a₃)`, and here `a₁ = 0` and `a₃ = ½`. -/
@@ -459,7 +461,8 @@ theorem exists_not_surjOn_equivVariableChange_hasIntegralCoordinates :
           Q.HasIntegralCoordinates →
             WeierstrassCurve.Affine.Point.equivVariableChange W C Q ≠ P := by
   refine ⟨curveAddThree, twoChange, .some 1 2 curveAddThree_nonsingular, rfl, rfl, rfl, rfl,
-    ⟨1, 2, curveAddThree_nonsingular, rfl⟩, ?_⟩
+    (WeierstrassCurve.Affine.Point.hasIntegralCoordinates_some _).mpr
+      ⟨1, 2, by norm_num, by norm_num⟩, ?_⟩
   rintro Q ⟨x, y, _, rfl⟩ hP
   -- The identification sends `(x, y)` to `(4x, 8y)`, so the abscissa `1` of the image forces
   -- `4x = 1` in `ℤ`.
