@@ -45,7 +45,7 @@ morphism.
   agree once they agree after coevaluation;
 * `CategoryTheory.leftAdjointMate_rightAdjointMate` and
   `CategoryTheory.rightAdjointMate_leftAdjointMate`: taking the opposite-handed mate recovers the
-  original morphism;
+  original morphism, so `CategoryTheory.rightAdjointMate_injective`;
 * `CategoryTheory.Iso.rightAdjointMate`: the isomorphism `Yᘁ ≅ Xᘁ` induced by `X ≅ Y`;
 * `CategoryTheory.ExactPairing.rightMate`: the right adjoint mate with respect to explicit exact
   pairings, characterized by `CategoryTheory.ExactPairing.rightMate_comp_evaluation` and
@@ -487,6 +487,11 @@ theorem rightAdjointMate_leftAdjointMate {X Y : C} [HasLeftDual X] [HasLeftDual 
     _ = X ◁ leftAdjointMate f ≫ ε_ (ᘁX) X :=
       rightAdjointMate_comp_evaluation (leftAdjointMate f)
     _ = _ := leftAdjointMate_comp_evaluation f
+
+/-- Taking right adjoint mates is injective: the left adjoint mate is a left inverse. -/
+theorem rightAdjointMate_injective {X Y : C} [HasRightDual X] [HasRightDual Y] :
+    Function.Injective (rightAdjointMate : (X ⟶ Y) → (Yᘁ ⟶ Xᘁ)) :=
+  Function.LeftInverse.injective leftAdjointMate_rightAdjointMate
 
 /-- An isomorphism `X ≅ Y` induces an isomorphism `Yᘁ ≅ Xᘁ` of right duals, whose components are
 the right adjoint mates of those of `X ≅ Y`. -/

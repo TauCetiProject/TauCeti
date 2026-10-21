@@ -43,24 +43,18 @@ instance simple_rightDual (X : C) [Simple X] : Simple Xᘁ where
     let g : X ⟶ ᘁY := ᘁf
     have hg : gᘁ = f := rightAdjointMate_leftAdjointMate f
     have hg0 : g = 0 ↔ f = 0 := by
-      rw [← hg]
-      refine ⟨fun h ↦ by rw [h, rightAdjointMate_zero], fun h ↦ ?_⟩
-      have h' : gᘁ = (0 : X ⟶ ᘁY)ᘁ := by rw [h, rightAdjointMate_zero]
-      have h'' := congrArg leftAdjointMate h'
-      rwa [leftAdjointMate_rightAdjointMate, leftAdjointMate_rightAdjointMate] at h''
+      rw [← hg, ← rightAdjointMate_injective.eq_iff, rightAdjointMate_zero]
     -- Since `f` is a monomorphism, `g` is an epimorphism.
     have : Epi g := ⟨fun {Z} a b hab ↦ by
       have h := congrArg rightAdjointMate hab
       rw [comp_rightAdjointMate, comp_rightAdjointMate, hg, cancel_mono] at h
-      rw [← leftAdjointMate_rightAdjointMate a, h, leftAdjointMate_rightAdjointMate]⟩
+      exact rightAdjointMate_injective h⟩
     refine ⟨fun _ h0 ↦ ?_, fun h0 ↦ ?_⟩
     · -- If `f` were a zero isomorphism, then `Xᘁ` and hence `X` would be zero.
       have h : (𝟙 X)ᘁ = (0 : X ⟶ X)ᘁ := by
         rw [rightAdjointMate_id, rightAdjointMate_zero, ← IsIso.inv_hom_id f]
         simp only [h0, comp_zero]
-      have h' := congrArg leftAdjointMate h
-      rw [leftAdjointMate_rightAdjointMate, leftAdjointMate_rightAdjointMate] at h'
-      exact id_nonzero X h'
+      exact id_nonzero X (rightAdjointMate_injective h)
     · have : IsIso g := isIso_of_epi_of_nonzero (mt hg0.1 h0)
       -- The mate of `inv g` inverts `gᘁ = f`; the identity of `(ᘁY)ᘁ` is that of `Y`, since
       -- `(ᘁY)ᘁ = Y` holds by definition (`CategoryTheory.rightDual_leftDual`).
