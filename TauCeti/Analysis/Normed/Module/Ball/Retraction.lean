@@ -106,9 +106,10 @@ theorem centeredRadialRetraction_zero (r : ℝ) :
   funext x
   simp [centeredRadialRetraction]
 
+/-- The radial retraction sends every vector of norm zero to zero. -/
 @[simp]
-theorem radialRetraction_zero (r : ℝ) : radialRetraction r (0 : E) = 0 := by
-  simp [radialRetraction]
+theorem radialRetraction_of_norm_eq_zero (hx : ‖x‖ = 0) : radialRetraction r x = 0 := by
+  simp [radialRetraction_def, hx]
 
 /-- A vector of positive norm at most `r` is fixed by the radial retraction. -/
 @[simp]
@@ -175,7 +176,7 @@ theorem centeredRadialRetraction_of_le_dist {x₀ : E} (h : r ≤ dist x x₀) :
 @[simp]
 theorem norm_radialRetraction (hr : 0 ≤ r) (x : E) : ‖radialRetraction r x‖ = min ‖x‖ r := by
   by_cases hx : ‖x‖ = 0
-  · simp [radialRetraction, hx, hr]
+  · simp [hx, hr]
   rw [radialRetraction, norm_smul, Real.norm_of_nonneg (by positivity),
     min_mul_of_nonneg _ _ (norm_nonneg x), one_mul, div_mul_cancel₀ _ hx]
 
@@ -202,7 +203,7 @@ theorem centeredRadialRetraction_mem_closedBall {x₀ : E} (hr : 0 ≤ r) (x : E
 theorem radialRetraction_radialRetraction (hr : 0 ≤ r) (x : E) :
     radialRetraction r (radialRetraction r x) = radialRetraction r x := by
   by_cases hx : ‖x‖ = 0
-  · simp [radialRetraction, hx]
+  · simp [hx]
   rcases hr.eq_or_lt with rfl | hr
   · simp [radialRetraction]
   apply radialRetraction_of_norm_pos_of_norm_le
@@ -225,8 +226,7 @@ private theorem norm_radialRetraction_sub_le (hr : 0 ≤ r) (hyx : ‖y‖ ≤ �
     ‖radialRetraction r x - radialRetraction r y‖ ≤ 2 * ‖x - y‖ := by
   by_cases hy0 : ‖y‖ = 0
   · -- A vector of norm zero is sent to zero, even if it is not the zero vector.
-    have hy : radialRetraction r y = 0 := by simp [radialRetraction, hy0]
-    rw [hy, sub_zero, norm_radialRetraction hr]
+    rw [radialRetraction_of_norm_eq_zero hy0, sub_zero, norm_radialRetraction hr]
     exact (min_le_left _ _).trans (by linarith [norm_sub_norm_le x y, norm_nonneg (x - y)])
   have hy0 : 0 < ‖y‖ := lt_of_le_of_ne (norm_nonneg y) (Ne.symm hy0)
   have hx0 : 0 < ‖x‖ := hy0.trans_le hyx
@@ -303,9 +303,7 @@ theorem Continuous.radialRetraction {E X : Type*} [SeminormedAddCommGroup E] [No
   refine continuous_iff_continuousAt.2 fun x ↦ ?_
   by_cases hx : ‖f x‖ = 0
   · -- Near a point sent to the origin, the retraction is bounded in norm by `‖f‖`.
-    have hret : TauCeti.radialRetraction (r x) (f x) = 0 := by
-      simp [TauCeti.radialRetraction_def, hx]
-    rw [ContinuousAt, hret]
+    rw [ContinuousAt, TauCeti.radialRetraction_of_norm_eq_zero hx]
     exact squeeze_zero_norm (fun y ↦ (TauCeti.norm_radialRetraction (hr0 y) (f y)).trans_le
       (min_le_left _ _)) (by simpa [hx] using (hf.tendsto x).norm)
   · simp only [TauCeti.radialRetraction_def]
