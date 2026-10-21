@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Rep.Basic
+public import TauCeti.LinearAlgebra.Matrix.Charpoly.Permutation
 
 /-!
-# Commuting permutation representations
+# Permutation representations
 
 If monoids `G` and `H` act on a type `X` and the two actions commute, then the permutation
 representations `Representation.ofMulAction k G X` and `Representation.ofMulAction k H X` on the
@@ -30,6 +31,11 @@ particular the norm of the basis vector at `x` has coefficient `|G_x|` at `x` an
 orbit of `x`, while a vector fixed by `G` has constant coefficients along each orbit, so it is
 determined by its coefficients at a set of orbit representatives. These are the inputs of the
 computation of the low-degree Tate cohomology of `k[X]`.
+
+For a finite `X`, the characteristic polynomial of `g` on `k[X]` is read off from the cycles of
+`g` on `X`: it is `∏ (T ^ d - 1)`, and its reverse `det (1 - T g)` is `∏ (1 - T ^ d)`, over the
+cycle lengths `d`, fixed points included. This is the permutation-matrix computation of
+`TauCeti/LinearAlgebra/Matrix/Charpoly/Permutation.lean`, transported to the monoid algebra.
 
 ## Main results
 
@@ -53,6 +59,8 @@ computation of the low-degree Tate cohomology of `k[X]`.
 * `TauCeti.coeff_norm_ofMulAction_single_self`,
   `TauCeti.coeff_norm_ofMulAction_single_of_notMem_orbit`: the norm of the basis vector at `x` has
   coefficient `|G_x|` at `x` and vanishes off the orbit of `x`.
+* `TauCeti.charpoly_ofMulAction`, `TauCeti.reverse_charpoly_ofMulAction`: the characteristic
+  polynomial of `g` on `k[X]` and its reverse, as products over the full cycle type of `g` on `X`.
 
 ## References
 
@@ -216,5 +224,40 @@ theorem coeff_norm_ofMulAction_single_of_notMem_orbit {x y : X} (h : y ∉ orbit
   exact absurd ⟨g⁻¹, inv_smul_smul g y⟩ h
 
 end Norm
+
+/-! ### Characteristic polynomials -/
+
+section Charpoly
+
+variable {k G X : Type*} [CommRing k] [Group G] [MulAction G X] [Fintype X] [DecidableEq X]
+
+omit [Fintype X] [DecidableEq X] in
+/-- The permutation representation of `g` on `k[X]` is the permutation action of
+`MulAction.toPerm g` on `X →₀ k`, transported along `MonoidAlgebra.coeffLinearEquiv`. -/
+private theorem ofMulAction_eq_conj_lmapDomain (g : G) :
+    ofMulAction k G X g = (coeffLinearEquiv k).symm.conj
+      (Finsupp.lmapDomain k k (MulAction.toPerm g : Equiv.Perm X)) := by
+  ext
+  simp
+
+/-- The characteristic polynomial of `g` on the permutation representation `k[X]` is the product
+of `X ^ d - 1` over the lengths `d` of the cycles of `g` on `X`, fixed points included. -/
+theorem charpoly_ofMulAction (g : G) :
+    (ofMulAction k G X g).charpoly =
+      ((MulAction.toPerm g : Equiv.Perm X).fullCycleType.map
+        fun d => Polynomial.X ^ d - 1).prod := by
+  rw [ofMulAction_eq_conj_lmapDomain, LinearEquiv.charpoly_conj, Equiv.Perm.charpoly_lmapDomain]
+
+/-- The reversed characteristic polynomial `det (1 - Z g)` of `g` on the permutation
+representation `k[X]` is the product of `1 - Z ^ d` over the lengths `d` of the cycles of `g` on
+`X`, fixed points included. -/
+theorem reverse_charpoly_ofMulAction (g : G) :
+    (ofMulAction k G X g).charpoly.reverse =
+      ((MulAction.toPerm g : Equiv.Perm X).fullCycleType.map
+        fun d => 1 - Polynomial.X ^ d).prod := by
+  rw [ofMulAction_eq_conj_lmapDomain, LinearEquiv.charpoly_conj,
+    Equiv.Perm.reverse_charpoly_lmapDomain]
+
+end Charpoly
 
 end TauCeti
