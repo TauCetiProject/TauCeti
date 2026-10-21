@@ -69,6 +69,13 @@ theorem ContMDiffAt.add_sectionAlong
   ContMDiffWithinAt.add_sectionAlong hs ht
 
 /-- The fibrewise sum of two `C^n` sections along the same map is `C^n`. -/
+theorem ContMDiffOn.add_sectionAlong
+    (hs : ContMDiffOn IX (IB.prod 𝓘(𝕜, F)) n (fun x ↦ TotalSpace.mk' F (b x) (s x)) u)
+    (ht : ContMDiffOn IX (IB.prod 𝓘(𝕜, F)) n (fun x ↦ TotalSpace.mk' F (b x) (t x)) u) :
+    ContMDiffOn IX (IB.prod 𝓘(𝕜, F)) n (fun x ↦ TotalSpace.mk' F (b x) (s x + t x)) u :=
+  fun x hx ↦ (hs x hx).add_sectionAlong (ht x hx)
+
+/-- The fibrewise sum of two `C^n` sections along the same map is `C^n`. -/
 theorem ContMDiff.add_sectionAlong
     (hs : ContMDiff IX (IB.prod 𝓘(𝕜, F)) n (fun x ↦ TotalSpace.mk' F (b x) (s x)))
     (ht : ContMDiff IX (IB.prod 𝓘(𝕜, F)) n (fun x ↦ TotalSpace.mk' F (b x) (t x))) :
