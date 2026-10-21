@@ -103,6 +103,10 @@ abbrev limOne : Type _ :=
 theorem lim_eq_ker : F.lim = LinearMap.ker F.shift :=
   (rfl)
 
+/-- `x ∈ lim A` if and only if its shift `δ(x)` vanishes. -/
+theorem mem_lim_iff_shift_eq_zero {x : F.Product} : x ∈ F.lim ↔ F.shift x = 0 :=
+  LinearMap.mem_ker
+
 /-- `x ∈ lim A` if and only if `φₙ(xₙ₊₁) = xₙ` for every `n`: `lim A` is exactly the module of
 compatible families. -/
 @[simp]
@@ -226,6 +230,10 @@ theorem productMap_apply (f : F ⟶ G) (x : F.Product) (n : ℕ) :
     productMap f x n = (f.app (op n)).hom (x n) :=
   (rfl)
 
+/-- The product map of a morphism of towers is the levelwise map `Pi.map`. -/
+theorem coe_productMap (f : F ⟶ G) : ⇑(productMap f) = Pi.map fun n ↦ (f.app (op n)).hom :=
+  (rfl)
+
 @[simp]
 theorem productMap_id : productMap (𝟙 F) = LinearMap.id :=
   (rfl)
@@ -262,7 +270,7 @@ theorem shift_productMap_apply (f : F ⟶ G) (x : F.Product) :
 /-- The linear map `lim A → lim B` induced by a morphism of towers. -/
 def limMap (f : F ⟶ G) : F.lim →ₗ[R] G.lim :=
   (productMap f).restrict fun x hx ↦ by
-    rw [lim_eq_ker, LinearMap.mem_ker] at hx ⊢
+    rw [mem_lim_iff_shift_eq_zero] at hx ⊢
     rw [← LinearMap.comp_apply, shift_natural, LinearMap.comp_apply, hx, map_zero]
 
 @[simp]

@@ -68,23 +68,20 @@ section Product
 
 /-- A levelwise injective morphism of towers is injective on products. -/
 theorem productMap_injective (hf : ∀ n, Function.Injective (f.app (op n)).hom) :
-    Function.Injective (productMap f) := fun x y hxy ↦
-  funext fun n ↦ hf n <| by rw [← productMap_apply, ← productMap_apply, hxy]
+    Function.Injective (productMap f) := by
+  rw [coe_productMap]
+  exact Function.Injective.piMap hf
 
 /-- A levelwise surjective morphism of towers is surjective on products. -/
 theorem productMap_surjective (hg : ∀ n, Function.Surjective (g.app (op n)).hom) :
     Function.Surjective (productMap g) := by
-  intro c
-  choose b hb using fun n ↦ hg n (c n)
-  exact ⟨b, funext fun n ↦ (productMap_apply g b n).trans (hb n)⟩
+  rw [coe_productMap]
+  exact Function.Surjective.piMap hg
 
 /-- A levelwise exact pair of morphisms of towers is exact on products. -/
 theorem exact_productMap (hfg : ∀ n, Function.Exact (f.app (op n)).hom (g.app (op n)).hom) :
     Function.Exact (productMap f) (productMap g) := by
-  have hcoe {F G : ModuleTower.{v} R} (u : F ⟶ G) :
-      ⇑(productMap u) = Pi.map fun n ↦ (u.app (op n)).hom :=
-    funext fun x ↦ funext fun n ↦ productMap_apply u x n
-  rw [hcoe, hcoe]
+  rw [coe_productMap, coe_productMap]
   exact Function.Exact.piMap hfg
 
 end Product
@@ -111,10 +108,10 @@ theorem exact_limMap : Function.Exact (limMap f) (limMap g) := by
       rw [← coe_limMap_apply, hx, Submodule.coe_zero]
     -- `a` is compatible because `f(δ(a)) = δ(f(a)) = δ(x) = 0` and `f` is injective.
     have hmem : a ∈ A.lim := by
-      rw [lim_eq_ker, LinearMap.mem_ker]
+      rw [mem_lim_iff_shift_eq_zero]
       apply productMap_injective hf
-      rw [← shift_productMap_apply, ha, map_zero, ← LinearMap.mem_ker, ← lim_eq_ker]
-      exact x.2
+      rw [← shift_productMap_apply, ha, map_zero]
+      exact B.mem_lim_iff_shift_eq_zero.1 x.2
     exact ⟨⟨a, hmem⟩, Subtype.ext ((coe_limMap_apply f _).trans ha)⟩
   · rintro ⟨a, rfl⟩
     apply Subtype.ext
@@ -126,8 +123,8 @@ include hfg in
 theorem exists_productMap_eq_shift {b : B.Product} (hb : productMap g b ∈ C.lim) :
     ∃ a, productMap f a = B.shift b := by
   refine (exact_productMap hfg _).1 ?_
-  rw [← shift_productMap_apply, ← LinearMap.mem_ker, ← lim_eq_ker]
-  exact hb
+  rw [← shift_productMap_apply]
+  exact C.mem_lim_iff_shift_eq_zero.1 hb
 
 /-- The families in `∏ₙ Bₙ` lifting a compatible family of `C`, the domain of the relation
 defining the connecting map. -/
@@ -203,14 +200,12 @@ theorem exact_limMap_connectingMap :
     obtain ⟨a', rfl⟩ := hc
     -- Correcting `b` by `f(a')` gives a compatible family of `B` still lifting `c`.
     have hmem : b - productMap f a' ∈ B.lim := by
-      rw [lim_eq_ker, LinearMap.mem_ker, map_sub, shift_productMap_apply, ha, sub_self]
+      rw [mem_lim_iff_shift_eq_zero, map_sub, shift_productMap_apply, ha, sub_self]
     refine ⟨⟨_, hmem⟩, Subtype.ext ?_⟩
     rw [coe_limMap_apply, Submodule.coe_mk, map_sub, hb,
       (exact_productMap hfg).apply_apply_eq_zero, sub_zero]
   · rintro ⟨x, rfl⟩
-    have hx : B.shift x = 0 := by
-      rw [← LinearMap.mem_ker, ← lim_eq_ker]
-      exact x.2
+    have hx : B.shift x = 0 := B.mem_lim_iff_shift_eq_zero.1 x.2
     rw [connectingMap_eq_mk hf hfg hg _ (coe_limMap_apply g x).symm (a := 0)
       (by rw [map_zero, hx]), Submodule.Quotient.mk_zero]
 
@@ -223,7 +218,7 @@ theorem exact_connectingMap_limOneMap :
   constructor
   · rintro ⟨b, hb⟩
     have hmem : productMap g b ∈ C.lim := by
-      rw [lim_eq_ker, LinearMap.mem_ker, shift_productMap_apply, hb,
+      rw [mem_lim_iff_shift_eq_zero, shift_productMap_apply, hb,
         (exact_productMap hfg).apply_apply_eq_zero]
     exact ⟨⟨_, hmem⟩, connectingMap_eq_mk hf hfg hg _ rfl hb.symm⟩
   · rintro ⟨c, hc⟩
