@@ -23,6 +23,12 @@ namespace TauCeti
 
 open FirstOrder FirstOrder.Language
 
+-- Self-realization still simplifies when both Scott-sentence simp rules match.
+example {L : Language.{u, v}} [L.IsRelational] [Countable (Σ k, L.Relations k)]
+    (M : Type w) [L.Structure M] [Countable M] :
+    SentenceInf.Realize (scottSentence (L := L) M) M := by
+  simp
+
 -- The sentence of a fixed finite relational structure holds in an isomorphic copy.
 example :
     letI : Language.graph.Structure (Fin 2) := { RelMap | .adj => fun x => x 0 ≠ x 1 }
