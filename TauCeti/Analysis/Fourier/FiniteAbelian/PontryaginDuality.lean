@@ -42,10 +42,12 @@ noncomputable def zmodPairing :
     Multiplicative (ZMod n) →* Multiplicative (ZMod n) →* Circle :=
   toMonoidHomMulEquiv.toMonoidHom.comp (zmodHom (n := n)).toMonoidHom
 
--- `AddChar.zmod n a` is defined as `b ↦ ZMod.toCircle (a * b)`. A tactic proof, unlike a term
--- `rfl`, does not require the body of `zmodPairing` to be exposed.
+/-- The standard pairing on `ℤ/n` evaluates to `e(a b / n)`, that is,
+`zmodPairing n a b = ZMod.toCircle (a b)`. -/
 theorem zmodPairing_apply (a b : Multiplicative (ZMod n)) :
     zmodPairing n a b = ZMod.toCircle (a.toAdd * b.toAdd) := by
+  -- `AddChar.zmod n a` is defined as `b ↦ ZMod.toCircle (a * b)`. A tactic proof, unlike a term
+  -- `rfl`, does not require the body of `zmodPairing` to be exposed.
   rfl
 
 /-- The standard pairing on `ℤ/n` is symmetric. -/
@@ -55,6 +57,7 @@ theorem zmodPairing_comm (a b : Multiplicative (ZMod n)) :
 
 /-- **The standard pairing on `ℤ/n` is nondegenerate**: pairing with the generator `1` is
 trivial only at the identity. -/
+@[simp]
 theorem zmodPairing_eq_one_iff (a : Multiplicative (ZMod n)) :
     zmodPairing n a (ofAdd 1) = 1 ↔ a = 1 := by
   rw [zmodPairing_apply, toAdd_ofAdd, mul_one, ← map_zero_eq_one (ZMod.toCircle (N := n)),

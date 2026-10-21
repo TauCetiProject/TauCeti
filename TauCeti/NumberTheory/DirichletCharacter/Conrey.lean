@@ -125,15 +125,6 @@ private theorem coprime_conreyGenerator {p : ℕ} (hp : p.Prime) (hp2 : p ≠ 2)
 
 /-! ### The prime-power pairings -/
 
-/-- The pairing `(m, n) ↦ p(L m, L n)` transported along `L`. -/
-private noncomputable abbrev transportPairing {G H : Type*} [Group G] [CommGroup H]
-    (P : H →* H →* Circle) (L : G →* H) : G →* G →* Circle :=
-  (P.compl₂ L).comp L
-
-private theorem transportPairing_apply {G H : Type*} [Group G] [CommGroup H]
-    (P : H →* H →* Circle) (L : G →* H) (m n : G) :
-    transportPairing P L m n = P (L m) (L n) := rfl
-
 private theorem conreyGenerator_mem_zpowers {p : ℕ} (hp : p.Prime) (hp2 : p ≠ 2) (e : ℕ)
     (u : (ZMod (p ^ e))ˣ) :
     u ∈ Subgroup.zpowers (ZMod.unitOfCoprime _ (coprime_conreyGenerator hp hp2 e)) := by
@@ -160,16 +151,15 @@ private instance {p : ℕ} [hp : Fact p.Prime] (e : ℕ) : NeZero (p ^ e).totien
 private noncomputable def conreyOdd {p : ℕ} (hp : p.Prime) (hp2 : p ≠ 2) (e : ℕ) :
     (ZMod (p ^ e))ˣ →* (ZMod (p ^ e))ˣ →* Circle :=
   have : Fact p.Prime := ⟨hp⟩
-  transportPairing (zmodPairing _) (conreyLog hp hp2 e).toMonoidHom
+  ((zmodPairing _).compl₂ (conreyLog hp hp2 e).toMonoidHom).comp (conreyLog hp hp2 e).toMonoidHom
 
 /-- The Conrey pairing modulo `2 ^ v`. -/
 private noncomputable def conreyTwoPow : (v : ℕ) → (ZMod (2 ^ v))ˣ →* (ZMod (2 ^ v))ˣ →* Circle
   | 0 | 1 => 1
   | e + 2 =>
-    transportPairing (zmodPairing 2)
-        ((AddMonoidHom.fst _ _).toMultiplicative.comp (ZMod.unitsTwoPowEquiv e).toMonoidHom) *
-      transportPairing (zmodPairing (2 ^ e))
-        ((AddMonoidHom.snd _ _).toMultiplicative.comp (ZMod.unitsTwoPowEquiv e).toMonoidHom)
+    let x := (AddMonoidHom.fst _ _).toMultiplicative.comp (ZMod.unitsTwoPowEquiv e).toMonoidHom
+    let a := (AddMonoidHom.snd _ _).toMultiplicative.comp (ZMod.unitsTwoPowEquiv e).toMonoidHom
+    ((zmodPairing 2).compl₂ x).comp x * ((zmodPairing (2 ^ e)).compl₂ a).comp a
 
 private theorem conreyTwoPow_add_two_apply (e : ℕ) (m n : (ZMod (2 ^ (e + 2)))ˣ) :
     conreyTwoPow (e + 2) m n =
@@ -211,7 +201,8 @@ theorem conreyLocal_apply_of_eq_pow {p e : ℕ} (hp : p.Prime) (hp2 : p ≠ 2)
     Units.ext (by simpa using hm)
   have hn' : n = ZMod.unitOfCoprime _ (coprime_conreyGenerator hp hp2 e) ^ b :=
     Units.ext (by simpa using hn)
-  rw [conreyLocal_of_ne_two hp hp2, conreyOdd, transportPairing_apply, hm', hn']
+  rw [conreyLocal_of_ne_two hp hp2, conreyOdd, MonoidHom.comp_apply,
+    MonoidHom.compl₂_apply, hm', hn']
   simp [conreyLog_pow, zmodPairing_apply, ← Nat.cast_mul, ZMod.toCircle_natCast]
 
 /-- **The Conrey pairing modulo `2 ^ (e + 2)`**: if `m ≡ (-1) ^ x 5 ^ a` and `n ≡ (-1) ^ y 5 ^ b`
@@ -247,12 +238,13 @@ theorem conreyLocal_comm (p e : ℕ) (m n : (ZMod (p ^ e))ˣ) :
         zmodPairing_comm (2 ^ e)]
   by_cases hp : p.Prime
   · have : Fact p.Prime := ⟨hp⟩
-    rw [conreyLocal_of_ne_two hp h2, conreyOdd, transportPairing_apply, transportPairing_apply,
-      zmodPairing_comm]
+    rw [conreyLocal_of_ne_two hp h2, conreyOdd, MonoidHom.comp_apply, MonoidHom.compl₂_apply,
+      MonoidHom.comp_apply, MonoidHom.compl₂_apply, zmodPairing_comm]
   · simp [conreyLocal, h2, hp]
 
 /-- The Conrey pairing modulo a prime power is nondegenerate: only `m = 1` pairs trivially with
 every unit. -/
+@[simp]
 theorem conreyLocal_eq_one_iff {p e : ℕ} (hp : p.Prime) (m : (ZMod (p ^ e))ˣ) :
     conreyLocal p e m = 1 ↔ m = 1 := by
   refine ⟨fun h ↦ ?_, fun h ↦ h ▸ map_one _⟩
@@ -281,7 +273,8 @@ theorem conreyLocal_eq_one_iff {p e : ℕ} (hp : p.Prime) (m : (ZMod (p ^ e))ˣ)
     rw [conreyLocal_of_ne_two hp h2] at h
     -- Pair `m` with the Conrey generator, whose logarithm is `1`.
     have := DFunLike.congr_fun h (ZMod.unitOfCoprime _ (coprime_conreyGenerator hp h2 e) ^ 1)
-    rw [conreyOdd, transportPairing_apply, MulEquiv.coe_toMonoidHom, conreyLog_pow] at this
+    rw [conreyOdd, MonoidHom.comp_apply, MonoidHom.compl₂_apply, MulEquiv.coe_toMonoidHom,
+      conreyLog_pow] at this
     simpa [zmodPairing_eq_one_iff] using this
 
 /-! ### The Conrey pairing and the Conrey labelling -/
@@ -290,8 +283,8 @@ theorem conreyLocal_eq_one_iff {p e : ℕ} (hp : p.Prime) (m : (ZMod (p ^ e))ˣ)
 exactly dividing `N`, of the prime-power pairings `TauCeti.conreyLocal p v` of the reductions of
 `m` and `n` modulo `p ^ v` (`TauCeti.conreyPairing_apply`). -/
 noncomputable def conreyPairing (N : ℕ) : (ZMod N)ˣ →* (ZMod N)ˣ →* Circle :=
-  ∏ p : N.primeFactors, transportPairing (conreyLocal p (N.factorization p))
-    (ZMod.unitsMap (Nat.ordProj_dvd N p))
+  ∏ p : N.primeFactors, ((conreyLocal p (N.factorization p)).compl₂
+    (ZMod.unitsMap (Nat.ordProj_dvd N p))).comp (ZMod.unitsMap (Nat.ordProj_dvd N p))
 
 /-- `χ_N(m, n)` is the product of the prime-power pairings of the reductions of `m` and `n`. -/
 theorem conreyPairing_apply (N : ℕ) (m n : (ZMod N)ˣ) :
@@ -305,6 +298,7 @@ theorem conreyPairing_comm (N : ℕ) (m n : (ZMod N)ˣ) :
   simp only [conreyPairing_apply, conreyLocal_comm _ _ (ZMod.unitsMap _ m)]
 
 /-- The Conrey pairing is nondegenerate: only `m = 1` pairs trivially with every unit. -/
+@[simp]
 theorem conreyPairing_eq_one_iff {N : ℕ} [NeZero N] (m : (ZMod N)ˣ) :
     conreyPairing N m = 1 ↔ m = 1 := by
   refine ⟨fun h ↦ ?_, fun h ↦ h ▸ map_one _⟩
