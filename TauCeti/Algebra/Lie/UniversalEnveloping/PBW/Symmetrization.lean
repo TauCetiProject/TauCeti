@@ -18,10 +18,7 @@ as an `R`-module, this gives an injective map on every homogeneous symmetric-alg
 splitting its PBW symbol.
 
 This is the degreewise filtered comparison used to lift invariant symmetric polynomials to
-the enveloping algebra. Equivariance and assembly across all degrees are separate statements.
-
-The averaging map reuses `SymmetricPower.toTensorPower`; the leading-symbol computation uses
-`prod_map_ι_sub_prod_map_ι_mem_pbwFiltrationPrevious_of_perm`.
+the enveloping algebra without changing their leading terms.
 
 The scalar ring lies in `Type`, as required by Mathlib's `Fin n`-indexed symmetric power
 `Sym[R]^n L`. The Lie algebra module has an independent universe.
@@ -93,18 +90,14 @@ theorem pbwSymmetrization_tprod_const (n : ℕ) (hn : IsUnit (n.factorial : R)) 
 theorem pbwSymmetrization_mem_pbwFiltration (n : ℕ) (hn : IsUnit (n.factorial : R))
     (x : Sym[R]^n L) :
     pbwSymmetrization R L n hn x ∈ pbwFiltration R L n := by
-  have hle : (⊤ : Submodule R (Sym[R]^n L)) ≤
-      (pbwFiltration R L n).comap (pbwSymmetrization R L n hn) := by
-    rw [← SymmetricPower.span_tprod_eq_top R (Fin n) L, Submodule.span_le]
-    rintro _ ⟨m, rfl⟩
-    apply (Submodule.mem_comap).mpr
-    rw [pbwSymmetrization_tprod]
-    apply Submodule.smul_mem
-    apply Submodule.sum_mem
-    intro σ _
-    simpa only [List.map_ofFn, Function.comp_def] using
-      prod_map_ι_mem_pbwFiltration R L (l := List.ofFn fun i ↦ m (σ i)) (by simp)
-  exact hle Submodule.mem_top
+  apply SymmetricPower.map_mem_of_forall_tprod
+  intro m
+  rw [pbwSymmetrization_tprod]
+  apply Submodule.smul_mem
+  apply Submodule.sum_mem
+  intro σ _
+  simpa only [List.map_ofFn, Function.comp_def] using
+    prod_map_ι_mem_pbwFiltration R L (l := List.ofFn fun i ↦ m (σ i)) (by simp)
 
 /-- Symmetrizing a word changes it only in strictly smaller PBW filtration degree. -/
 theorem pbwSymmetrization_tprod_sub_mem_pbwFiltrationPrevious (n : ℕ)
@@ -186,17 +179,9 @@ theorem mk_pbwHomogeneousSymmetrization (n : ℕ) (hn : IsUnit (n.factorial : R)
       ((List.ofFn m).map (SymmetricAlgebra.ι R L)).prod := by
     simp [List.prod_ofFn]
   rw [SymmetricPower.equivHomogeneous_tprod]
-  -- Transport the list length before applying the component map, whose definition is not exposed.
-  have hsymbol (l : List L) (hl : l.length = n) :
-      pbwHomogeneousComponentMap R L n
-          ⟨(l.map (SymmetricAlgebra.ι R L)).prod,
-            by simpa only [hl] using prod_map_ι_mem_homogeneousSubmodule R L l⟩ =
-        (Submodule.Quotient.mk
-          ⟨(l.map (ι)).prod, TauCeti.Algebra.prod_map_mem_wordFiltration
-            (ι).toLinearMap hl.le⟩ : PBWGradedPiece R L n) := by
-    subst n
-    exact pbwHomogeneousComponentMap_prod_map_ι R L l
-  conv_rhs => simp only [hprod, hsymbol (List.ofFn m) List.length_ofFn]
+  conv_rhs =>
+    simp only [hprod,
+      pbwHomogeneousComponentMap_prod_map_ι_of_length_eq R L (List.ofFn m) List.length_ofFn]
   apply (Submodule.Quotient.eq _).mpr
   rw [TauCeti.Algebra.wordFiltration.mem_previousRestricted_iff]
   simp only [LinearMap.codRestrict_apply, Submodule.coe_sub]

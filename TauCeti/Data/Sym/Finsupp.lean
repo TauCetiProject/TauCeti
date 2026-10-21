@@ -38,6 +38,7 @@ theorem coe_symEquivFinsuppDegree_apply (ι : Type w) [DecidableEq ι] (n : ℕ)
   ext i
   simp only [symEquivFinsuppDegree, Equiv.trans_apply, Equiv.subtypeEquiv_apply,
     Equiv.refl_apply, Sym.coe_equivNatSum_apply_apply, Multiset.toFinsupp_apply]
+  -- Reconcile the classical DecidableEq used by the equivalence with the supplied instance.
   congr 1
 
 end TauCeti

@@ -37,7 +37,18 @@ namespace TauCeti.SymmetricPower
 
 open _root_.SymmetricPower
 
-universe v w
+universe u v w
+
+/-- A linear map sends every symmetric tensor into a submodule if it does so on pure tensors. -/
+theorem map_mem_of_forall_tprod {R ι : Type u} {M N : Type*} [CommSemiring R]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+    (f : Sym[R] ι M →ₗ[R] N) (p : Submodule R N)
+    (h : ∀ m : ι → M, f (⨂ₛ[R] i, m i) ∈ p) (x : Sym[R] ι M) : f x ∈ p := by
+  have hle : (⊤ : Submodule R (Sym[R] ι M)) ≤ p.comap f := by
+    rw [← span_tprod_eq_top R ι M, Submodule.span_le]
+    rintro _ ⟨m, rfl⟩
+    exact h m
+  exact hle Submodule.mem_top
 
 variable (R : Type) (M : Type v) [CommSemiring R] [AddCommMonoid M] [Module R M]
 
@@ -65,16 +76,11 @@ theorem toSymmetricAlgebra_tprod (n : ℕ) (m : Fin n → M) :
 theorem toSymmetricAlgebra_mem_homogeneousSubmodule (n : ℕ) (x : Sym[R]^n M) :
     toSymmetricAlgebra R M n x ∈
       TauCeti.SymmetricAlgebra.homogeneousSubmodule R M n := by
-  have hle : (⊤ : Submodule R (Sym[R]^n M)) ≤
-      (TauCeti.SymmetricAlgebra.homogeneousSubmodule R M n).comap
-        (toSymmetricAlgebra R M n) := by
-    rw [← span_tprod_eq_top R (Fin n) M, Submodule.span_le]
-    rintro _ ⟨m, rfl⟩
-    apply (Submodule.mem_comap).mpr
-    rw [toSymmetricAlgebra_tprod]
-    simpa only [List.length_ofFn, List.map_ofFn, List.prod_ofFn, Function.comp_def] using
-      TauCeti.SymmetricAlgebra.prod_map_ι_mem_homogeneousSubmodule R M (List.ofFn m)
-  exact hle Submodule.mem_top
+  apply map_mem_of_forall_tprod
+  intro m
+  rw [toSymmetricAlgebra_tprod]
+  simpa only [List.length_ofFn, List.map_ofFn, List.prod_ofFn, Function.comp_def] using
+    TauCeti.SymmetricAlgebra.prod_map_ι_mem_homogeneousSubmodule R M (List.ofFn m)
 
 /-- Multiplication with codomain restricted to the homogeneous component of the same degree. -/
 noncomputable def toHomogeneous (n : ℕ) :
