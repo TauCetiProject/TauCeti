@@ -8,6 +8,7 @@ module
 public import Mathlib.SetTheory.Cardinal.Finite
 public import TauCeti.Combinatorics.Brauer.Generator
 public import TauCeti.Combinatorics.Brauer.LoopCount
+public import TauCeti.Combinatorics.Enumerative.InvolutionTransversal
 
 /-!
 # Labellings of Brauer diagrams that are constant on arcs
@@ -38,9 +39,14 @@ the Brauer algebra `B_k(|ι|)`.
 
 * `TauCeti.BrauerDiagram.IsConstantOnArcs`: a labelling of the boundary points is constant on the
   arcs of a diagram.
+* `TauCeti.BrauerDiagram.arcTransversal`: a set of boundary points containing one end of every arc.
+* `TauCeti.BrauerDiagram.isConstantOnArcsEquiv`: a labelling constant on arcs is a free labelling
+  of the arc transversal.
 
 ## Main results
 
+* `TauCeti.BrauerDiagram.isInvolutionTransversal_arcTransversal`: the arc transversal meets every
+  arc exactly once.
 * `TauCeti.BrauerDiagram.isConstantOnArcs_permToBrauer_iff`: the labellings constant on the arcs
   of a permutation diagram are those whose top labels are the bottom labels moved along the
   permutation.
@@ -126,6 +132,76 @@ theorem isConstantOnArcs_capCup_iff {a b : Fin k} (hab : a ≠ b) (u v : Fin k �
       rcases eq_or_ne i b with rfl | hib
       · simpa [capCup_val_inr_right hab] using hv
       · simpa [capCup_val_inr_of_ne hia hib] using (h i hia hib).symm
+
+/-! ### One end of every arc -/
+
+/-- The **arc transversal** of a Brauer diagram: the set containing, of the two ends of every arc,
+the one that comes first along `finSumFinEquiv`. -/
+def arcTransversal (D : BrauerDiagram k) : Finset (Fin k ⊕ Fin k) :=
+  Finset.univ.filter fun p => finSumFinEquiv p < finSumFinEquiv (D.val p)
+
+/-- The arc transversal contains exactly one end of every arc of `D`. -/
+theorem isInvolutionTransversal_arcTransversal (D : BrauerDiagram k) :
+    IsInvolutionTransversal D.val Finset.univ D.arcTransversal where
+  subset := Finset.subset_univ _
+  mem_iff_notMem p _ := by
+    have hne : finSumFinEquiv p ≠ finSumFinEquiv (D.val p) :=
+      fun h => D.apply_ne p (finSumFinEquiv.injective h).symm
+    simp only [arcTransversal, Finset.mem_filter, Finset.mem_univ, true_and, D.apply_apply,
+      not_lt]
+    exact ⟨le_of_lt, fun h => lt_of_le_of_ne h hne⟩
+
+/-- An end of an arc lies outside the arc transversal exactly when its partner lies in it. -/
+theorem notMem_arcTransversal_iff (D : BrauerDiagram k) (p : Fin k ⊕ Fin k) :
+    p ∉ D.arcTransversal ↔ D.val p ∈ D.arcTransversal := by
+  rw [(D.isInvolutionTransversal_arcTransversal.mem_iff_notMem p (Finset.mem_univ p)), not_not]
+
+/-- A labelling is constant on the arcs of `D` exactly when the two ends of every arc through the
+arc transversal carry the same label. -/
+theorem isConstantOnArcs_iff_forall_mem_arcTransversal (D : BrauerDiagram k)
+    (ℓ : Fin k ⊕ Fin k → ι) :
+    D.IsConstantOnArcs ℓ ↔ ∀ s ∈ D.arcTransversal, ℓ (D.val s) = ℓ s := by
+  refine ⟨fun h s _ => h s, fun h p => ?_⟩
+  by_cases hp : p ∈ D.arcTransversal
+  · exact h p hp
+  · have := h _ ((D.notMem_arcTransversal_iff p).1 hp)
+    rw [D.apply_apply] at this
+    exact this.symm
+
+/-- **Labellings constant on arcs are free labellings of the arc transversal.** A labelling
+constant on the arcs of `D` is determined by its labels on the arc transversal, which can be
+chosen freely. -/
+def isConstantOnArcsEquiv (D : BrauerDiagram k) :
+    {ℓ : Fin k ⊕ Fin k → ι // D.IsConstantOnArcs ℓ} ≃ (D.arcTransversal → ι) where
+  toFun ℓ s := ℓ.1 s
+  invFun z := ⟨fun p => if h : p ∈ D.arcTransversal then z ⟨p, h⟩
+      else z ⟨D.val p, (D.notMem_arcTransversal_iff p).1 h⟩, fun p => by
+    by_cases hp : p ∈ D.arcTransversal
+    · have hσp : D.val p ∉ D.arcTransversal := fun h =>
+        (D.notMem_arcTransversal_iff p).2 h hp
+      simp only [hσp, hp, dite_false, dite_true, D.apply_apply]
+    · simp only [hp, (D.notMem_arcTransversal_iff p).1 hp, dite_false, dite_true]⟩
+  left_inv ℓ := Subtype.ext <| funext fun p => by
+    by_cases hp : p ∈ D.arcTransversal
+    · simp [hp]
+    · simpa [hp] using ℓ.2 p
+  right_inv z := funext fun s => by simp [s.2]
+
+/-- The labelling constant on arcs with labels `z` on the arc transversal carries the label
+`z s` at the transversal point `s`. -/
+@[simp]
+theorem isConstantOnArcsEquiv_symm_apply_coe (D : BrauerDiagram k)
+    (z : D.arcTransversal → ι) (s : D.arcTransversal) :
+    (D.isConstantOnArcsEquiv.symm z).1 s = z s := by
+  simp [isConstantOnArcsEquiv, s.2]
+
+/-- The labelling constant on arcs with labels `z` on the arc transversal carries the label
+`z s` at the partner of the transversal point `s`. -/
+@[simp]
+theorem isConstantOnArcsEquiv_symm_apply_val (D : BrauerDiagram k)
+    (z : D.arcTransversal → ι) (s : D.arcTransversal) :
+    (D.isConstantOnArcsEquiv.symm z).1 (D.val s) = z s := by
+  rw [(D.isConstantOnArcsEquiv.symm z).2 s, isConstantOnArcsEquiv_symm_apply_coe]
 
 /-! ### Labels are carried along the strands of a stack -/
 

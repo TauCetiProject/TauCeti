@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Enumerative.InvolutionTransversal
 public import TauCeti.RepresentationTheory.ClassicalGroups.BrauerGenerators.Orthogonal.Action
 
 /-!
@@ -69,85 +68,44 @@ theorem sum_prod_mul_ite_isConstantOnArcs (D : BrauerDiagram k) {A : Matrix ι �
     (hA : A * Aᵀ = 1) (x : Fin k ⊕ Fin k → ι) :
     ∑ y : Fin k ⊕ Fin k → ι, (∏ p, A (x p) (y p)) * (if D.IsConstantOnArcs y then 1 else 0) =
       if D.IsConstantOnArcs x then 1 else 0 := by
-  -- Pick a set `S` containing exactly one end of every arc. A labelling constant on arcs is a
-  -- free labelling of `S`, and along it the product over the boundary is a product over the arcs.
-  -- The sum over labellings of `S` then factors over the arcs, each factor being an entry of
-  -- `A * Aᵀ = 1`, and the product of these entries is the arc indicator of `x`.
+  -- A labelling constant on arcs is a free labelling of the arc transversal `S`, and along it the
+  -- product over the boundary is a product over the arcs. The sum over labellings of `S` then
+  -- factors over the arcs, each factor being an entry of `A * Aᵀ = 1`, and the product of these
+  -- entries is the arc indicator of `x`.
   classical
-  set σ := D.val
-  have hσσ : ∀ p, σ (σ p) = p := D.apply_apply
-  -- Choose one end of every arc: the end that comes first along `finSumFinEquiv`.
-  let e : Fin k ⊕ Fin k → ℕ := fun p => (finSumFinEquiv p : ℕ)
-  have he : Function.Injective e := fun p q h => finSumFinEquiv.injective (Fin.ext h)
-  let S : Finset (Fin k ⊕ Fin k) := Finset.univ.filter fun p => e p < e (σ p)
-  have hS : ∀ p, p ∉ S ↔ σ p ∈ S := by
-    intro p
-    have hne : e p ≠ e (σ p) := fun h => D.apply_ne p (he h).symm
-    simp only [S, Finset.mem_filter, Finset.mem_univ, true_and, not_lt, hσσ]
-    omega
-  -- A labelling constant on arcs is determined by its labels on `S`, freely chosen.
-  let Φ : (S → ι) → Fin k ⊕ Fin k → ι := fun z p =>
-    if h : p ∈ S then z ⟨p, h⟩ else z ⟨σ p, (hS p).1 h⟩
-  have hΦS : ∀ z (s : S), Φ z s = z s := fun z s => by simp [Φ]
-  have hΦσ : ∀ z (s : S), Φ z (σ s) = z s := fun z s => by
-    have h : σ s ∉ S := fun h => (hS s).2 h s.2
-    simp only [Φ, h, dite_false]
-    congr 1
-    exact Subtype.ext (hσσ s)
-  have hΦinj : Function.Injective Φ := fun z z' h => funext fun s => by
-    rw [← hΦS z s, ← hΦS z' s, h]
-  have himage : Finset.univ.filter (fun y => D.IsConstantOnArcs y) = Finset.univ.image Φ := by
-    ext y
-    simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_image,
-      isConstantOnArcs_def]
-    refine ⟨fun hy => ⟨fun s => y s, funext fun p => ?_⟩, ?_⟩
-    · by_cases hp : p ∈ S
-      · simp [Φ, hp]
-      · simp only [Φ, hp, dite_false]
-        exact hy p
-    · rintro ⟨z, rfl⟩ p
-      by_cases hp : p ∈ S
-      · exact (hΦσ z ⟨p, hp⟩).trans (hΦS z ⟨p, hp⟩).symm
-      · have := hΦσ z ⟨σ p, (hS p).1 hp⟩
-        simp only [hσσ] at this
-        rw [this, ← hΦS z ⟨σ p, (hS p).1 hp⟩]
+  set S := D.arcTransversal
+  set e := D.isConstantOnArcsEquiv (ι := ι)
   -- Along such a labelling, the product over the boundary is a product over the arcs.
-  have hprod : ∀ z : S → ι, ∏ p, A (x p) (Φ z p) =
-      ∏ s : S, (A (x s) (z s) * A (x (σ s)) (z s)) := by
+  have hprod : ∀ z : S → ι, ∏ p, A (x p) ((e.symm z).1 p) =
+      ∏ s : S, (A (x s) (z s) * A (x (D.val s)) (z s)) := by
     intro z
-    have hT : IsInvolutionTransversal σ Finset.univ S :=
-      ⟨Finset.subset_univ S, fun p _ => (not_iff_comm.1 (hS p)).symm⟩
-    rw [← hT.prod_mul_prod_comp _ (fun p _ => Finset.mem_univ _) (fun p _ => hσσ p),
+    rw [← D.isInvolutionTransversal_arcTransversal.prod_mul_prod_comp _
+        (fun p _ => Finset.mem_univ _) (fun p _ => D.apply_apply p),
       ← Finset.prod_mul_distrib, ← Finset.prod_coe_sort]
-    exact Finset.prod_congr rfl fun s _ => by rw [hΦS, hΦσ]
+    exact Finset.prod_congr rfl fun s _ => by
+      rw [isConstantOnArcsEquiv_symm_apply_coe, isConstantOnArcsEquiv_symm_apply_val]
   -- Summing over the label of one arc meets the identity `A * Aᵀ = 1`.
-  have hpair : ∀ s : S, ∑ c, A (x s) c * A (x (σ s)) c =
-      if x (σ s) = x s then 1 else 0 := by
+  have hpair : ∀ s : S, ∑ c, A (x s) c * A (x (D.val s)) c =
+      if x (D.val s) = x s then 1 else 0 := by
     intro s
-    have := congrFun (congrFun hA (x s)) (x (σ s))
+    have := congrFun (congrFun hA (x s)) (x (D.val s))
     simp only [Matrix.mul_apply, Matrix.transpose_apply, Matrix.one_apply] at this
     rw [this]
     exact if_congr eq_comm rfl rfl
   calc ∑ y, (∏ p, A (x p) (y p)) * (if D.IsConstantOnArcs y then 1 else 0)
-      = ∑ y ∈ Finset.univ.filter (fun y => D.IsConstantOnArcs y), ∏ p, A (x p) (y p) := by
-        rw [Finset.sum_filter]
+      = ∑ y : {y // D.IsConstantOnArcs y}, ∏ p, A (x p) (y.1 p) := by
         simp only [mul_ite, mul_one, mul_zero]
-    _ = ∑ z : S → ι, ∏ s : S, (A (x s) (z s) * A (x (σ s)) (z s)) := by
-        rw [himage, Finset.sum_image fun z _ z' _ h => hΦinj h]
+        rw [← Finset.sum_filter, Finset.sum_subtype (p := D.IsConstantOnArcs) _ fun _ => by simp]
+    _ = ∑ z : S → ι, ∏ s : S, (A (x s) (z s) * A (x (D.val s)) (z s)) := by
+        rw [← e.symm.sum_comp]
         exact Finset.sum_congr rfl fun z _ => hprod z
-    _ = ∏ s : S, ∑ c, A (x s) c * A (x (σ s)) c :=
-        (Fintype.prod_sum fun (s : S) c => A (x s) c * A (x (σ s)) c).symm
-    _ = ∏ s : S, if x (σ s) = x s then 1 else 0 := Finset.prod_congr rfl fun s _ => hpair s
+    _ = ∏ s : S, ∑ c, A (x s) c * A (x (D.val s)) c :=
+        (Fintype.prod_sum fun (s : S) c => A (x s) c * A (x (D.val s)) c).symm
+    _ = ∏ s : S, if x (D.val s) = x s then 1 else 0 := Finset.prod_congr rfl fun s _ => hpair s
     _ = if D.IsConstantOnArcs x then 1 else 0 := by
         rw [Fintype.prod_boole]
         refine if_congr ?_ rfl rfl
-        rw [isConstantOnArcs_def]
-        refine ⟨fun h p => ?_, fun h s => h s⟩
-        by_cases hp : p ∈ S
-        · exact h ⟨p, hp⟩
-        · have := h ⟨σ p, (hS p).1 hp⟩
-          simp only [hσσ] at this
-          exact this.symm
+        rw [D.isConstantOnArcs_iff_forall_mem_arcTransversal, Subtype.forall]
 
 end BrauerDiagram
 
