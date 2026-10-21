@@ -28,6 +28,15 @@ token = os.environ['GH_TOKEN']
 with open(os.environ['CALLS'], 'a') as f:
     f.write(('repository:' if token == 'repository-token' else '') + path + '\n')
 fixture = json.load(open(os.environ['FIXTURE']))
+response_headers = fixture.get('_headers', {}).get(token + ':' + path)
+if fixture.get('_repeat_headers') and response_headers is None:
+    response_headers={'status':200,'x-github-request-id':'fixture-paginated'}
+if response_headers is not None and '--include' in args:
+    print('HTTP/2.0 ' + str(response_headers.get('status', 200)) + ' Fixture')
+    for k,v in response_headers.items():
+        if k != 'status': print(k + ': ' + str(v))
+    print()
+    sys.stdout.flush()
 pages = fixture.get(token + ':' + path, fixture.get(path))
 if pages is None:
     print('API read failed: ' + path, file=sys.stderr)
@@ -35,7 +44,9 @@ if pages is None:
 if '--paginate' not in args:
     pages = pages[:1]
 query = args[args.index('--jq') + 1]
-for page in pages:
+for index,page in enumerate(pages):
+    if index and fixture.get('_repeat_headers'):
+        print('HTTP/2.0 200 OK\r\nx-github-request-id: fixture-page-2\r\n\r\n', end='', flush=True)
     if page is None:
         sys.exit(1)
     result = subprocess.run(['jq', '-r', query], input=json.dumps(page), text=True)
@@ -118,6 +129,7 @@ class PickerTests(unittest.TestCase):
 
     def test_counts_all_repositories_and_pages(self):
         fixture = self.fixture(1)
+        fixture["_repeat_headers"] = True
         fixture["orgs/Test/repos?per_page=100"] += [[dict(name="review", archived=False)]]
         fixture["repos/Test/review/actions/runs?status=in_progress&per_page=100"] = [
             dict(total_count=101, workflow_runs=[dict(id=n) for n in range(2, 102)]),
@@ -206,7 +218,7 @@ class PickerTests(unittest.TestCase):
             dict(resources=dict(core=dict(remaining=251)))]
         output, summary, calls = self.pick(fixture)
         self.assertEqual(output["github"], "false")
-        self.assertIn("inspection would consume", summary)
+        self.assertIn("quota reserve", summary)
         self.assertFalse(any("/jobs?" in path for path in calls))
 
     def test_no_app_preserves_repository_budget_without_switching(self):
@@ -226,7 +238,7 @@ class PickerTests(unittest.TestCase):
             dict(resources=dict(core=dict(remaining=500)))]
         output, summary, _ = self.pick(fixture, repository_reserve="400")
         self.assertEqual(output["github"], "true")
-        self.assertIn("repository API requests left this hour (reserve 400)", summary)
+        self.assertIn("repository API requests left this hour (reserve 400; pre-job-scan snapshot)", summary)
         output, _, calls = self.pick(fixture, repository_reserve="500")
         self.assertEqual(output["github"], "false")
         self.assertEqual(calls, ["rate_limit", "repository:rate_limit"])
@@ -257,7 +269,57 @@ class PickerTests(unittest.TestCase):
         del fixture["rate_limit"]
         output, _, calls = self.pick(fixture)
         self.assertEqual(output["github"], "false")
-        self.assertEqual(calls, ["rate_limit"])
+        self.assertEqual(calls, ["rate_limit", "repository:rate_limit"])
+
+    def test_app_quota_query_failure_tries_healthy_repository_token(self):
+        fixture = self.fixture()
+        fixture["installation-token:rate_limit"] = [None]
+        output, summary, calls = self.pick(fixture)
+        self.assertEqual(output["github"], "true")
+        self.assertEqual(calls[:2], ["rate_limit", "repository:rate_limit"])
+        self.assertIn("credential_pool=repository", summary)
+
+    def test_post_preflight_failure_restarts_scan_with_repository_token(self):
+        for failed in ("orgs/Test/repos?per_page=100",
+                       "repos/Test/code/actions/runs?status=in_progress&per_page=100",
+                       "repos/Test/code/actions/runs/1/jobs?per_page=100"):
+            for busy, expected in ((2, "true"), (19, "false")):
+                with self.subTest(failed=failed, busy=busy):
+                    fixture = self.fixture(busy)
+                    fixture["installation-token:" + failed] = [None]
+                    output, summary, calls = self.pick(fixture)
+                    self.assertEqual(output["github"], expected)
+                    self.assertEqual(output["busy"], str(busy))
+                    self.assertIn("repository:orgs/Test/repos?per_page=100", calls)
+                    self.assertIn("credential_pool=repository", summary)
+
+    def test_failed_later_page_cannot_supply_partial_count(self):
+        fixture = self.fixture(2)
+        jobs = "repos/Test/code/actions/runs/1/jobs?per_page=100"
+        fixture["installation-token:" + jobs] = [dict(jobs=[job()]), None]
+        fixture["repository-token:" + jobs] = [dict(jobs=[job()]), None]
+        output, summary, calls = self.pick(fixture)
+        self.assertEqual(output["github"], "false")
+        self.assertEqual(output["busy"], "")
+        self.assertEqual(calls.count("repository:" + jobs), 1)
+
+    def test_rejection_headers_are_retained_without_sensitive_headers(self):
+        fixture = self.fixture()
+        jobs = "repos/Test/code/actions/runs/1/jobs?per_page=100"
+        fixture["installation-token:" + jobs] = [None]
+        fixture['_headers'] = {
+            'installation-token:' + jobs: {'status': 403, 'x-ratelimit-remaining': '0',
+               'x-ratelimit-reset': '2000000000', 'x-github-request-id': 'fixture-request',
+               'Authorization': 'secret-value', 'Set-Cookie': 'sensitive-cookie'},
+            'repository-token:rate_limit': {'status': 200, 'x-ratelimit-remaining': '1000'}}
+        output, summary, calls = self.pick(fixture)
+        self.assertEqual(output["github"], "true")
+        self.assertIn('fixture-request', summary)
+        self.assertIn('"status": 403', summary)
+        self.assertIn('"x-ratelimit-remaining": "0"', summary)
+        self.assertNotIn('secret-value', summary)
+        self.assertNotIn('sensitive-cookie', summary)
+        self.assertIn('observed_requests=' + str(len(calls)), summary)
 
     def test_namespace_profile_is_not_hosted_capacity(self):
         fixture = self.fixture()
