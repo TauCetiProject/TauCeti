@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.DividedDifference
-public import TauCeti.RepresentationTheory.Dual
 public import TauCeti.RepresentationTheory.SymmetricAlgebra.Basic
 
 /-!
