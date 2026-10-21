@@ -67,6 +67,10 @@ hold there. Compactness of `G` is assumed exactly where it is used.
   factorisation is natural in the source and in the target.
 * `TauCeti.proPKernel_eq_bot_iff`: `G` is pro-`p` if and only if its pro-`p` kernel is trivial;
   with `TauCeti.proPKernel_maximalProPQuotient_eq_bot` this is idempotence of `G ↦ G(p)`.
+* `TauCeti.maximalProPQuotient.range_map`: the image of the induced map `G(p) → H(p)` is the
+  image of the image of `f`; so its index divides that of `f` and it is open when `f` has open
+  image (`TauCeti.maximalProPQuotient.index_range_map_dvd`,
+  `TauCeti.maximalProPQuotient.isOpen_range_map`).
 * `TauCeti.map_proPKernel_eq`: continuous multiplicative equivalences preserve the pro-`p`
   kernel.
 * `TauCeti.maximalProPQuotient.congr`: hence they induce isomorphisms of maximal pro-`p`
@@ -246,6 +250,32 @@ theorem maximalProPQuotient.map_comp {K : Type w} [Group K] [TopologicalSpace K]
       (maximalProPQuotient.map g hg).comp (maximalProPQuotient.map f hf) := by
   ext x
   rfl
+
+/-- The image of the map `G(p) → H(p)` induced by `f : G → H` is the image in `H(p)` of the image
+of `f`. -/
+theorem maximalProPQuotient.range_map (f : G →* H) (hf : Continuous f) :
+    (maximalProPQuotient.map (p := p) f hf).range = f.range.map (maximalProPQuotient.mk p H) := by
+  ext y
+  constructor
+  · rintro ⟨x, rfl⟩
+    induction x using QuotientGroup.induction_on with
+    | H x => exact ⟨f x, ⟨x, rfl⟩, (maximalProPQuotient.map_mk f hf x).symm⟩
+  · rintro ⟨_, ⟨x, rfl⟩, rfl⟩
+    exact ⟨maximalProPQuotient.mk p G x, maximalProPQuotient.map_mk f hf x⟩
+
+/-- The image of the map of maximal pro-`p` quotients induced by `f : G → H` has index dividing the
+index of the image of `f`. -/
+theorem maximalProPQuotient.index_range_map_dvd (f : G →* H) (hf : Continuous f) :
+    (maximalProPQuotient.map (p := p) f hf).range.index ∣ f.range.index := by
+  rw [maximalProPQuotient.range_map]
+  exact Subgroup.index_map_dvd _ (maximalProPQuotient.mk_surjective p H)
+
+/-- If `f : G → H` has open image, so does the induced map of maximal pro-`p` quotients. -/
+theorem maximalProPQuotient.isOpen_range_map [IsTopologicalGroup H] (f : G →* H)
+    (hf : Continuous f) (ho : IsOpen (f.range : Set H)) :
+    IsOpen ((maximalProPQuotient.map (p := p) f hf).range : Set (maximalProPQuotient p H)) := by
+  rw [maximalProPQuotient.range_map, Subgroup.coe_map]
+  exact QuotientGroup.isOpenMap_coe _ ho
 
 /-- The isomorphism of maximal pro-`p` quotients induced by an isomorphism of topological groups,
 which carries the pro-`p` kernel onto the pro-`p` kernel (`map_proPKernel_eq`). -/

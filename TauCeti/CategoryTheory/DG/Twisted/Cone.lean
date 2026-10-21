@@ -21,6 +21,12 @@ of `X[1]` by `Y[0]` along this morphism (see `TauCeti/CategoryTheory/DG/Twisted/
 which supplies its Maurer–Cartan equation, the closed degree-zero morphisms
 `Y[0] ⟶ cone f ⟶ X[1]` with zero composite, and their graded splitting.
 
+The cone of the zero morphism is the direct sum `Y[0] ⊕ X[1]` with the zero twist.  If `f` is an
+isomorphism, with inverse `f' : Y ⟶ X` of degree zero, then `f'` is a degree `-1` morphism
+`Y[0] ⟶ X[1]` inverse to the twisting entry `X[1] ⟶ Y[0]`, since the shift-closure composition
+signs are trivial for these two composites.  So the cone of an isomorphism, and in particular
+`Cone(id_X)`, is contractible: it is a zero object of the homotopy category.
+
 ## Main definitions
 
 * `TauCeti.DGTwistedObject.shiftedObj`: the one-term twisted object `X[r]` with zero twist.
@@ -34,6 +40,11 @@ which supplies its Maurer–Cartan equation, the closed degree-zero morphisms
   closed morphism is closed.
 * `TauCeti.DGTwistedObject.dgHomEquiv_twist_cone_inr_inl`: the block of the twisting matrix of
   the cone from `X[1]` to `Y[0]` is `f`; the other three blocks vanish.
+* `TauCeti.DGTwistedObject.cone_zero`: the cone of the zero morphism is `Y[0] ⊕ X[1]` with the
+  zero twist.
+* `TauCeti.DGTwistedObject.isZero_of_cone`: the cone of an isomorphism is a zero object of the
+  homotopy category.
+* `TauCeti.DGTwistedObject.isZero_of_cone_dgId`: `Cone(id_X)` is contractible.
 
 ## References
 
@@ -132,7 +143,99 @@ theorem dgHomEquiv_twist_cone_inr_inr (u u' : PUnit) :
     matrixEquiv R _ _ 1 (cone f hf).twist (.inr u) (.inr u') = 0 := by
   rw [dgHomEquiv_extensionTwist_inr_inr, map_zero, Pi.zero_apply, Pi.zero_apply]
 
+variable (X Y) in
+/-- **The cone of the zero morphism is the direct sum** `Y[0] ⊕ X[1]` with the zero twist. -/
+@[simp]
+theorem cone_zero :
+    cone (0 : DGHom R 0 X Y) (map_zero _) =
+      ofObj R ((shiftedObj R Y 0).obj.sum (shiftedObj R X 1).obj) := by
+  have h : extensionTwist R (shiftedObj R Y 0) (shiftedObj R X 1) (coneMorphism R 0) = 0 :=
+    DGAdditiveClosure.dgHom_ext R fun i j ↦ by
+      rcases i with i | i <;> rcases j with j | j <;> simp [coneMorphism]
+  simp only [cone, extension, ofObj, h]
+
 end cone
+
+/-! ### Cones of isomorphisms are contractible -/
+
+section contractible
+
+/-- A degree-zero morphism `f' : Y ⟶ X` of `C`, as a degree-minus-one morphism `Y[0] ⟶ X[1]` of
+one-term twisted objects. -/
+private noncomputable def coneInverseMorphism {X Y : C} (f' : DGHom R 0 Y X) :
+    DGHom R (-1) (shiftedObj R Y 0) (shiftedObj R X 1) :=
+  embeddingHomEquiv R _ _ (-1) (DGAdditiveClosure.embeddingHomEquiv R _ _ (-1)
+    ((DGShiftClosure.dgHomEquiv R ⟨Y, 0⟩ ⟨X, 1⟩ (-1)).symm (castDeg R (by dsimp only; omega) f')))
+
+variable {R}
+
+/-- The DG functor `X[r] ↦ X[r]` from the shift closure to the one-term twisted objects of its
+additive closure. -/
+private noncomputable abbrev oneTerm :
+    EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) (DGShiftClosure C)
+      (DGTwistedObject R (DGAdditiveClosure (DGShiftClosure C))) :=
+  (DGAdditiveClosure.embedding R).comp _ (embedding R)
+
+/-- If `dgComp f f' = dgId X`, then the one-term twisted morphisms `X[r] ⟶ Y[s]` and
+`Y[s] ⟶ X[r]` underlying `f` and `f'` compose to the identity of `X[r]`: the shift-closure sign
+`(-1)^((r - s) * (n + s - r))` is trivial. -/
+private theorem dgComp_oneTerm_eq_dgId {X Y : C} {f : DGHom R 0 X Y} {f' : DGHom R 0 Y X}
+    (h : dgComp R f f' (add_zero 0) = dgId R X) (r s n : ℤ) (hn : n = r - s) :
+    dgComp R ((oneTerm (R := R)).dgMap n
+        ((DGShiftClosure.dgHomEquiv R ⟨X, r⟩ ⟨Y, s⟩ n).symm (castDeg R (by dsimp only; omega) f)))
+      ((oneTerm (R := R)).dgMap (-n)
+        ((DGShiftClosure.dgHomEquiv R ⟨Y, s⟩ ⟨X, r⟩ (-n)).symm
+          (castDeg R (by dsimp only; omega) f'))) (add_neg_cancel n) =
+      dgId R (shiftedObj R X r) := by
+  -- The shift-closure sign is trivial.
+  have hsign : ((r - s) * (n + (s - r))).negOnePow = 1 := by
+    rw [show (r - s) * (n + (s - r)) = 0 by rw [hn]; ring, Int.negOnePow_zero]
+  refine (EnrichedFunctor.dgMap_dgComp _ _ _ _).symm.trans
+    (Eq.trans ?_ (EnrichedFunctor.dgMap_dgId _ (⟨X, r⟩ : DGShiftClosure C)))
+  congr 1
+  apply (DGShiftClosure.dgHomEquiv R _ _ 0).injective
+  rw [DGShiftClosure.dgHomEquiv_dgComp, DGShiftClosure.dgHomEquiv_dgId,
+    LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply]
+  simp only [← castDeg_def, hsign, one_smul]
+  -- Transport the degrees back to zero and apply `h`.
+  rw [castDeg_dgComp R (p := 0) (n := 0) (by omega) (by omega),
+    dgComp_castDeg R (q := 0) (n := 0) (by omega) rfl, castDeg_self, h]
+
+private theorem coneMorphism_eq {X Y : C} (f : DGHom R 0 X Y) :
+    coneMorphism R f = (oneTerm (R := R)).dgMap 1
+      ((DGShiftClosure.dgHomEquiv R ⟨X, 1⟩ ⟨Y, 0⟩ 1).symm
+        (castDeg R (by dsimp only; omega) f)) := by
+  rw [EnrichedFunctor.comp_dgMap, DGAdditiveClosure.dgMap_embedding]
+  exact (dgMap_embedding R _).symm
+
+private theorem coneInverseMorphism_eq {X Y : C} (f' : DGHom R 0 Y X) :
+    coneInverseMorphism R f' = (oneTerm (R := R)).dgMap (-1)
+      ((DGShiftClosure.dgHomEquiv R ⟨Y, 0⟩ ⟨X, 1⟩ (-1)).symm
+        (castDeg R (by dsimp only; omega) f')) := by
+  rw [EnrichedFunctor.comp_dgMap, DGAdditiveClosure.dgMap_embedding]
+  exact (dgMap_embedding R _).symm
+
+variable {X Y : C} {f : DGHom R 0 X Y} {f' : DGHom R 0 Y X}
+
+/-- **The cone of an isomorphism is contractible**: if the closed degree-zero morphism
+`f : X ⟶ Y` has a two-sided inverse `f' : Y ⟶ X` of degree zero, then its cone is a zero object
+of the homotopy category of twisted objects. -/
+theorem isZero_of_cone (hf : dgDifferential R 0 f = 0)
+    (hff' : dgComp R f f' (add_zero 0) = dgId R X) (hf'f : dgComp R f' f (add_zero 0) = dgId R Y) :
+    Limits.IsZero (DGHomotopyCategory.of R (cone f hf)) :=
+  isZero_of_extension R _ (g' := coneInverseMorphism R f')
+    (by rw [coneMorphism_eq, coneInverseMorphism_eq]; exact dgComp_oneTerm_eq_dgId hff' 1 0 1 rfl)
+    (by rw [coneMorphism_eq, coneInverseMorphism_eq]
+        exact dgComp_oneTerm_eq_dgId hf'f 0 1 (-1) rfl)
+
+variable (R) in
+/-- **The cone of an identity is contractible**: `Cone(id_X)` is a zero object of the homotopy
+category of twisted objects. -/
+theorem isZero_of_cone_dgId (X : C) :
+    Limits.IsZero (DGHomotopyCategory.of R (cone (dgId R X) (dgDifferential_dgId R X))) :=
+  isZero_of_cone _ (dgComp_dgId R _) (dgComp_dgId R _)
+
+end contractible
 
 end DGTwistedObject
 

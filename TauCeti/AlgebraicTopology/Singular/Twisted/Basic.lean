@@ -434,6 +434,29 @@ lemma twistedChainComplex_hom_ext {k : ℕ} {A : ModuleCat.{max v w} R}
     (h : ∀ σ, ιTwistedChainComplex L k σ ≫ f = ιTwistedChainComplex L k σ ≫ g) : f = g :=
   twistedChains_hom_ext L h
 
+/-- The summands of equal simplices agree on heterogeneously equal coefficients. -/
+lemma ιTwistedChainComplex_congr {k : ℕ} {ρ τ : (TopCat.toSSet.obj X) _⦋k⦌} (h : ρ = τ)
+    {b : L.obj (initialVertex ρ)} {b' : L.obj (initialVertex τ)} (hb : b ≍ b') :
+    ιTwistedChainComplex L k ρ b = ιTwistedChainComplex L k τ b' := by
+  subst h
+  rw [eq_of_heq hb]
+
+/-- The map out of the degree-`k` term of the twisted chain complex given by a map out of the
+coefficient module of each singular `k`-simplex. -/
+def twistedChainComplexDesc {k : ℕ} {A : ModuleCat.{max v w} R}
+    (φ : ∀ σ : (TopCat.toSSet.obj X) _⦋k⦌, L.obj (initialVertex σ) ⟶ A) :
+    (twistedChainComplex L).X k ⟶ A :=
+  twistedChainsDesc L φ
+
+/-- The map out of twisted chains given by a family of maps restricts to each member of the
+family on the summand of the corresponding simplex. -/
+@[reassoc (attr := simp)]
+lemma ιTwistedChainComplex_twistedChainComplexDesc {k : ℕ} {A : ModuleCat.{max v w} R}
+    (φ : ∀ σ : (TopCat.toSSet.obj X) _⦋k⦌, L.obj (initialVertex σ) ⟶ A)
+    (σ : (TopCat.toSSet.obj X) _⦋k⦌) :
+    ιTwistedChainComplex L k σ ≫ twistedChainComplexDesc L φ = φ σ :=
+  ιTwistedChains_twistedChainsDesc L φ σ
+
 /-- The boundary of the twisted chain complex sends the summand of a singular `(k + 1)`-simplex
 `σ` to the alternating sum of the summands of the faces of `σ`, the coefficients being transported
 from the initial vertex of `σ` to the initial vertex of each face. -/
@@ -572,6 +595,13 @@ lemma twistedChainComplexCoefficientIso_hom (e : L ≅ K) :
 lemma twistedChainComplexCoefficientIso_inv (e : L ≅ K) :
     (twistedChainComplexCoefficientIso e).inv = twistedChainComplexCoefficientMap e.inv :=
   (rfl)
+
+/-- An isomorphism of local coefficient systems induces an isomorphism of twisted chain
+complexes. -/
+instance isIso_twistedChainComplexCoefficientMap (η : L ⟶ K) [IsIso η] :
+    IsIso (twistedChainComplexCoefficientMap η) :=
+  inferInstanceAs
+    (IsIso ((twistedChainsFunctor R X ⋙ AlgebraicTopology.alternatingFaceMapComplex _).map η))
 
 /-- The map on twisted homology induced by a morphism of local coefficient systems. -/
 abbrev twistedHomologyCoefficientMap (η : L ⟶ K) (k : ℕ) :

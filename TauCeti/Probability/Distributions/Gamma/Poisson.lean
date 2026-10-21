@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.Gamma.Basic
 public import TauCeti.Probability.Distributions.NegativeBinomial.Basic
-public import TauCeti.Probability.Distributions.Poisson.Mixed
+public import TauCeti.Probability.Distributions.Poisson.Mixed.Basic
 public import Mathlib.Probability.Distributions.Poisson.Basic
 
 import Mathlib.MeasureTheory.Measure.ProbabilityMeasure

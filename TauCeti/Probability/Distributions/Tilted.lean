@@ -25,7 +25,8 @@ probability law with density `exp (t * x) / ∫ exp (t * y) ∂μ` with respect 
 operation, and the tilt acts on the parameters as follows.
 
 * `TauCeti.Probability.gaussianReal_tilted_mul`: the Gaussian `N(m, v)` tilts to
-  `N(m + v t, v)`, including the point mass at variance zero, and
+  `N(m + v t, v)`, including the point mass at variance zero, with the pointwise density identity
+  `TauCeti.Probability.gaussianPDFReal_mul_exp_div_mgf`, and
   `TauCeti.Probability.setIntegral_exp_mul_gaussianReal` reads this off as a weighted set
   integral;
 * `TauCeti.Probability.gammaMeasure_tilted_mul`: the gamma law of shape `a` and rate `r` tilts
@@ -56,6 +57,19 @@ open scoped ENNReal NNReal unitInterval
 
 namespace TauCeti.Probability
 
+/-- Multiplying the Gaussian density of `N(m, v)` by `exp (t * x)` divided by the
+moment-generating function `exp (m t + v t² / 2)` gives the density of `N(m + v t, v)`. At variance
+zero both densities vanish. -/
+theorem gaussianPDFReal_mul_exp_div_mgf (m : ℝ) (v : ℝ≥0) (t x : ℝ) :
+    gaussianPDFReal m v x * (exp (t * x) / exp (m * t + v * t ^ 2 / 2)) =
+      gaussianPDFReal (m + v * t) v x := by
+  rcases eq_or_ne v 0 with rfl | hv
+  · simp [gaussianPDFReal]
+  simp only [gaussianPDFReal, mul_assoc, ← exp_add, ← exp_sub]
+  congr 2
+  field_simp
+  ring
+
 /-- **Exponential tilting of a Gaussian law shifts its mean.** Tilting `N(m, v)` by
 `exp (t * x)` gives `N(m + v t, v)`; at variance zero both sides are the point mass at `m`. -/
 @[simp]
@@ -69,12 +83,8 @@ theorem gaussianReal_tilted_mul (m : ℝ) (v : ℝ≥0) (t : ℝ) :
     tilted_withDensity (measurable_gaussianPDF _ _).aemeasurable (by fun_prop),
     ← gaussianReal_of_var_ne_zero _ hv, hZ]
   congr with x
-  rw [gaussianPDF, gaussianPDF, ← ENNReal.ofReal_mul (gaussianPDFReal_nonneg _ _ _)]
-  congr 1
-  simp only [gaussianPDFReal, mul_assoc, ← exp_add, ← exp_sub]
-  congr 2
-  field_simp
-  ring
+  rw [gaussianPDF, gaussianPDF, ← ENNReal.ofReal_mul (gaussianPDFReal_nonneg _ _ _),
+    gaussianPDFReal_mul_exp_div_mgf]
 
 /-- Integrating the exponential weight `exp (t * x)` against `N(m, v)` over a set `s` gives the
 moment-generating function `exp (m t + v t² / 2)` times the mass of `s` under the tilted law

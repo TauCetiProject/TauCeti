@@ -95,9 +95,8 @@ theorem isClosed_const {V F : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
     simp [NormedSpace.fromTangentSpace, tangentSpaceCastModel]
     congr 1
   rw [SmoothForm.const_toRoughForm]
-  funext x
-  rw [mextDeriv_eq_extDeriv, hconst]
-  exact ContinuousAlternatingMap.extDeriv_const A x
+  rw [hconst]
+  exact mextDeriv_const A
 
 end SmoothForm
 

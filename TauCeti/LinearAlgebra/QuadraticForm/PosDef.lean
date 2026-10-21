@@ -15,7 +15,9 @@ public import Mathlib.Data.Int.Interval
 # Positive definite quadratic maps
 
 Multiplication by a positive scalar preserves and reflects positive-definiteness when the scalar
-action preserves and reflects strict inequalities on values.
+action preserves and reflects strict inequalities on values. In particular, symmetrizing a
+bilinear form preserves positive-definiteness of its quadratic map, since the diagonal values
+are doubled. A diagonal form is positive definite exactly when its weights are positive.
 
 A positive definite quadratic form on a finitely generated free `ℤ`-module takes each of its values
 only finitely often: the sets `{x | q x ≤ n}` and `{x | q x = n}` are finite. This is the
@@ -26,6 +28,10 @@ the one that turns an orbit lying in a level set into a periodic orbit.
 
 * `QuadraticMap.posDef_smul_iff_of_pos`: a quadratic map is positive definite if and only if
   its multiple by a positive scalar is positive definite.
+* `LinearMap.BilinForm.posDef_toQuadraticMap_add_flip_iff`: symmetrizing a bilinear form
+  preserves and reflects positive-definiteness of its quadratic map.
+* `QuadraticMap.posDef_weightedSumSquares_iff`: a diagonal form over a linearly ordered ring is
+  positive definite exactly when all of its weights are positive.
 * `QuadraticMap.PosDef.finite_setOf_apply_le`: a positive definite quadratic form on a
   finitely generated free `ℤ`-module has only finitely many vectors of value at most `n`.
 * `QuadraticMap.PosDef.finite_setOf_apply_eq`: consequently only finitely many vectors of
@@ -66,6 +72,40 @@ theorem posDef_smul_iff_of_pos (Q : QuadraticMap R M N) {a : R} (ha : 0 < a) :
   forall₂_congr fun _ _ ↦ smul_pos_iff_of_pos_left ha
 
 end QuadraticMap
+
+namespace QuadraticMap
+
+variable {ι : Type*} [Fintype ι]
+
+/-- A diagonal form `⟨w₁, …, wₙ⟩` over a linearly ordered ring is positive definite exactly when
+all of its weights are positive. -/
+theorem posDef_weightedSumSquares_iff {R : Type*} [CommRing R] [LinearOrder R]
+    [IsStrictOrderedRing R] (w : ι → R) :
+    (weightedSumSquares R w).PosDef ↔ ∀ i, 0 < w i := by
+  classical
+  refine ⟨fun h i ↦ by simpa [Pi.single_apply] using h (Pi.single i 1) (by simp),
+    fun h x hx ↦ ?_⟩
+  obtain ⟨i, hi⟩ := Function.ne_iff.mp hx
+  rw [weightedSumSquares_apply]
+  exact Finset.sum_pos' (fun j _ ↦ mul_nonneg (h j).le (mul_self_nonneg _))
+    ⟨i, Finset.mem_univ i, mul_pos (h i) (mul_self_pos.mpr hi)⟩
+
+end QuadraticMap
+
+namespace LinearMap.BilinForm
+
+/-- Symmetrization preserves and reflects positive-definiteness of a bilinear form's quadratic
+map. -/
+theorem posDef_toQuadraticMap_add_flip_iff {R M : Type*} [CommSemiring R] [LinearOrder R]
+    [IsStrictOrderedRing R] [AddCommMonoid M] [Module R M] (B : LinearMap.BilinForm R M) :
+    (B + B.flip).toQuadraticMap.PosDef ↔ B.toQuadraticMap.PosDef := by
+  have hflip : B.flip.toQuadraticMap = B.toQuadraticMap := by
+    ext x
+    simp only [LinearMap.BilinMap.toQuadraticMap_apply, LinearMap.BilinForm.flip_apply]
+  rw [LinearMap.BilinMap.toQuadraticMap_add, hflip, ← two_smul R B.toQuadraticMap]
+  exact QuadraticMap.posDef_smul_iff_of_pos _ (a := (2 : R)) zero_lt_two
+
+end LinearMap.BilinForm
 
 namespace TauCeti
 

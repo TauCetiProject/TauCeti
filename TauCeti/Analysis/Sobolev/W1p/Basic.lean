@@ -613,8 +613,7 @@ theorem W1p.hasWeakFDerivOn (u : W1p mu Omega p) :
 component is. -/
 theorem W1p.locallyIntegrableOn_gradient (u : W1p mu Omega p) :
     LocallyIntegrableOn (W1p.gradient u : E → E) (Omega : Set E) mu :=
-  locallyIntegrableOn_of_locallyIntegrable_restrict
-    ((Lp.memLp (W1p.gradient u)).locallyIntegrable Fact.out)
+  Lp.locallyIntegrableOn (W1p.gradient u) Fact.out
 
 section
 variable [BorelSpace E]

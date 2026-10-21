@@ -43,6 +43,12 @@ pairs of degree `n` up to isomorphism correspond to connected degree-`n` covers 
 to isomorphism, by restriction and filling
 (`TauCeti.AnalyticBelyiPair.isoClassEquivConnectedCoverClass`).
 
+The ramification of a Belyi map is read off its monodromy triple: over `0`, `1` and `∞` the
+local multiplicities of `β` at the points of the fibre are the cycle lengths of `σ0`, `σ1` and
+`σinf`, fixed points included (`TauCeti.AnalyticBelyiPair.map_localMultiplicity_fiber_zero`). This
+is the topological statement for the underlying branched cover, whose local degrees are the local
+multiplicities.
+
 ## Main results
 
 * `TauCeti.FilledCover.contMDiff_fillMap`, `TauCeti.FilledCover.mdifferentiable_fillMap`: the
@@ -59,6 +65,10 @@ to isomorphism, by restriction and filling
 * `TauCeti.AnalyticBelyiPair.isoClassEquivConnectedCoverClass`: isomorphism classes of analytic
   Belyi pairs of degree `n` are isomorphism classes of connected degree-`n` covers of
   `ℂ ∖ {0, 1}`.
+* `TauCeti.AnalyticBelyiPair.map_localMultiplicity_fiber_zero`,
+  `TauCeti.AnalyticBelyiPair.map_localMultiplicity_fiber_one`,
+  `TauCeti.AnalyticBelyiPair.map_localMultiplicity_fiber_inf`: the local multiplicities of the
+  Belyi map over `0`, `1` and `∞` are the full cycle types of `σ0`, `σ1` and `σinf`.
 
 ## References
 
@@ -75,7 +85,7 @@ public noncomputable section
 
 namespace TauCeti
 
-open Function Set Topology ThricePuncturedSphere PunctureFilling
+open Equiv.Perm Function Set Topology ThricePuncturedSphere PunctureFilling
 
 open scoped ContDiff Manifold OnePoint
 
@@ -280,6 +290,62 @@ theorem isoClassEquivConnectedCoverClass_symm_apply {n : ℕ}
     (c : ConnectedCoverClass (X := TopCat.of ThricePuncturedSphere) basePt n) :
     (isoClassEquivConnectedCoverClass n).symm c = c.toAnalyticBelyiPair :=
   (rfl)
+
+/-! ### Ramification over `0`, `1` and `∞` -/
+
+open RiemannSurface
+
+/-- A numbering of the fibre over `1/2` of the cover attached to `P` determines the degree of `P`,
+and the monodromy triple it gives has the cycle data of the unbranched part of the underlying
+topological branched cover. -/
+private theorem exists_cycleData_monodromyTriple_eq (P : AnalyticBelyiPair.{0}) {n : ℕ}
+    (ν : P.restrict ⁻¹' {basePt} ≃ Fin n) :
+    ∃ (hn : degree P.β = n) (ν' : (P.toTopBranchedCover hn).restrict ⁻¹' {basePt} ≃ Fin n),
+      ((P.toTopBranchedCover hn).isCoveringMap_restrict.monodromyTriple ν').cycleData =
+        (P.isCoveringMap_restrict.monodromyTriple ν).cycleData := by
+  have hn : degree P.β = n := by
+    rw [← P.ncard_restrict_preimage_singleton basePt, ← Nat.card_coe_set_eq, Nat.card_congr ν,
+      Nat.card_fin]
+  obtain ⟨ν'⟩ := (P.toTopBranchedCover hn).nonempty_restrict_preimage_singleton_equiv basePt
+  exact ⟨hn, ν', PermutationTriple.cycleData_eq_of_equivalent <|
+    PermutationTriple.IsoClass.mk_eq_mk_iff.1 <|
+      P.isoClass_monodromyTriple_toTopBranchedCover hn ν ν'⟩
+
+/-- **The ramification of a Belyi map over `0`.** The local multiplicities of the Belyi map of
+an analytic Belyi pair at the points over `0` are the cycle lengths of `σ0` in the monodromy
+triple of the pair, fixed points included. -/
+theorem map_localMultiplicity_fiber_zero (P : AnalyticBelyiPair.{0}) {n : ℕ}
+    (ν : P.restrict ⁻¹' {basePt} ≃ Fin n) :
+    (P.β.finite_fiber ((0 : ℂ) : OnePoint ℂ)).toFinset.val.map (localMultiplicity P.β) =
+      fullCycleType (P.isCoveringMap_restrict.monodromyTriple ν).σ0 := by
+  obtain ⟨hn, ν', h⟩ := P.exists_cycleData_monodromyTriple_eq ν
+  rw [← P.parts_ramificationPartition_toTopBranchedCover hn,
+    TopBranchedCover.parts_ramificationPartition_zero _ ν', fullCycleType_def, fullCycleType_def,
+    ← PermutationTriple.cycleData_σ0, ← PermutationTriple.cycleData_σ0, h]
+
+/-- **The ramification of a Belyi map over `1`.** The local multiplicities of the Belyi map of
+an analytic Belyi pair at the points over `1` are the cycle lengths of `σ1` in the monodromy
+triple of the pair, fixed points included. -/
+theorem map_localMultiplicity_fiber_one (P : AnalyticBelyiPair.{0}) {n : ℕ}
+    (ν : P.restrict ⁻¹' {basePt} ≃ Fin n) :
+    (P.β.finite_fiber ((1 : ℂ) : OnePoint ℂ)).toFinset.val.map (localMultiplicity P.β) =
+      fullCycleType (P.isCoveringMap_restrict.monodromyTriple ν).σ1 := by
+  obtain ⟨hn, ν', h⟩ := P.exists_cycleData_monodromyTriple_eq ν
+  rw [← P.parts_ramificationPartition_toTopBranchedCover hn,
+    TopBranchedCover.parts_ramificationPartition_one _ ν', fullCycleType_def, fullCycleType_def,
+    ← PermutationTriple.cycleData_σ1, ← PermutationTriple.cycleData_σ1, h]
+
+/-- **The ramification of a Belyi map over `∞`.** The local multiplicities of the Belyi map of
+an analytic Belyi pair at the points over `∞` are the cycle lengths of `σinf` in the monodromy
+triple of the pair, fixed points included. -/
+theorem map_localMultiplicity_fiber_inf (P : AnalyticBelyiPair.{0}) {n : ℕ}
+    (ν : P.restrict ⁻¹' {basePt} ≃ Fin n) :
+    (P.β.finite_fiber (∞ : OnePoint ℂ)).toFinset.val.map (localMultiplicity P.β) =
+      fullCycleType (P.isCoveringMap_restrict.monodromyTriple ν).σinf := by
+  obtain ⟨hn, ν', h⟩ := P.exists_cycleData_monodromyTriple_eq ν
+  rw [← P.parts_ramificationPartition_toTopBranchedCover hn,
+    TopBranchedCover.parts_ramificationPartition_inf _ ν', fullCycleType_def, fullCycleType_def,
+    ← PermutationTriple.cycleData_σinf, ← PermutationTriple.cycleData_σinf, h]
 
 end AnalyticBelyiPair
 

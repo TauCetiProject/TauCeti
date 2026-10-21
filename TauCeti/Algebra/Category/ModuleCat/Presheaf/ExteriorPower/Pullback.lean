@@ -18,7 +18,8 @@ Taking its mate under the pullback--pushforward adjunction constructs a natural 
 `α* (⋀ⁿ M) ⟶ ⋀ⁿ (α* M)` for pullback of module presheaves. Only the adjunction is needed
 for this construction. This supplies the sectionwise input to exterior-power pullback comparisons
 for sheaves. Unlike precomposition alone, restriction of scalars does not generally give an
-isomorphism of exterior powers; no invertibility assertion is made here.
+isomorphism of exterior powers. When the coefficient map is an isomorphism, the pushforward
+comparison is invertible.
 
 In degree one the pushforward comparison is the identity, read through the identifications
 `⋀¹ M ≅ M`.
@@ -137,6 +138,27 @@ theorem pushforwardExteriorPowerComparison_app_comp_map_exteriorPowerOneIso
     (hR.trans (ModuleCat.exteriorPower.iso₁_hom_apply
       (M := PresheafOfModulesOfCommRing.obj M (F.op.obj U)) m))).trans
       (hS.trans (ModuleCat.exteriorPower.iso₁_hom_apply m)).symm
+
+-- Adapted from `TauCeti.PresheafOfModules.isIso_pushforwardSymmetricPowerComparison`.
+/-- Pushforward along an isomorphism of coefficient presheaves preserves exterior powers
+sectionwise. -/
+instance isIso_pushforwardExteriorPowerComparison [IsIso α] (n : ℕ) :
+    IsIso (pushforwardExteriorPowerComparison α n) := by
+  rw [NatTrans.isIso_iff_isIso_app]
+  intro M
+  have h (U : Cᵒᵖ) :
+      IsIso (((pushforwardExteriorPowerComparison α n).app M).app U) :=
+    ModuleCat.isIso_restrictScalarsExteriorPowerComparison_app_of_bijective
+      (α.app U).hom ((ConcreteCategory.isIso_iff_bijective (α.app U)).mp inferInstance)
+      n (M.obj (F.op.obj U))
+  let e := _root_.PresheafOfModules.isoMk
+    (fun U ↦ asIso (((pushforwardExteriorPowerComparison α n).app M).app U))
+    (fun _ _ f ↦ ((pushforwardExteriorPowerComparison α n).app M).naturality f)
+  have he : e.hom = (pushforwardExteriorPowerComparison α n).app M := by
+    ext U
+    rfl
+  rw [← he]
+  infer_instance
 
 variable [(PresheafOfModulesOfCommRing.pushforward.{u} α).IsRightAdjoint]
 

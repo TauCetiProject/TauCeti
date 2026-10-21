@@ -61,7 +61,7 @@ theorem quantile_atomMixture_eq_atom (hμ : μ (Iio c) = 0)
               exact monotone_cdf _ hx
         · have hx' : x < c := lt_of_not_ge hx
           rw [TauCeti.Probability.cdf_dirac, ite_eq_right hx,
-            TauCeti.Probability.cdf_atomMixture, ite_eq_right hx,
+            μ.cdf_atomMixture, ite_eq_right hx,
             cdf_eq_zero_of_lt_of_measure_Iio_eq_zero μ hμ hx']
           simp only [mul_zero, add_zero]
     _ = c := quantile_dirac c hu hu_one
@@ -88,11 +88,11 @@ theorem quantile_atomMixture_of_lt (hμ : μ (Iio c) = 0) (hu : u ≤ 1)
   apply quantile_eq_of_le_cdf_iff
   intro x
   by_cases hx : c ≤ x
-  · rw [TauCeti.Probability.cdf_atomMixture, ite_eq_left hx, mul_one,
+  · rw [μ.cdf_atomMixture, ite_eq_left hx, mul_one,
       div_le_iff₀ hden]
     constructor <;> intro h <;> nlinarith
   · have hx' : x < c := lt_of_not_ge hx
-    rw [TauCeti.Probability.cdf_atomMixture, ite_eq_right hx,
+    rw [μ.cdf_atomMixture, ite_eq_right hx,
       cdf_eq_zero_of_lt_of_measure_Iio_eq_zero μ hμ hx']
     simp only [mul_zero, add_zero]
     exact iff_of_false (not_le_of_gt hu0) (not_le_of_gt hv0)

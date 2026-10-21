@@ -11,17 +11,11 @@ import TauCeti.Topology.ContinuousMap.Ascoli
 /-!
 # Montel's theorem: local boundedness is relative compactness
 
-Layer **L1 (normal families / Montel)** of the conformal-mapping roadmap
-(`TauCetiRoadmap/ConformalMapping/README.md`) states its milestone as
-
-> locally bounded ⇒ precompact for `TendstoLocallyUniformlyOn`,
-
-and `Conformal/Montel/Basic.lean` records the *selection* consequence: every sequence drawn from a
-locally bounded family of holomorphic functions has a locally uniformly convergent subsequence.
-This file isolates the compactness statement that selection consequence rests on, in the space
-where "precompact" literally means precompact — the space `C(↥Ω, E)` of continuous maps on the
-domain with its compact-open topology, whose convergence *is* locally uniform convergence — and
-shows that local boundedness is not merely sufficient for it but equivalent to it.
+A family of holomorphic maps on an open set `Ω ⊆ ℂ` with values in a proper complex normed space
+is locally bounded exactly when its continuous restrictions have compact closure in `C(↥Ω, E)`.
+This space carries the compact-open topology, whose convergence is locally uniform convergence.
+The compactness equivalence supplies the input for the subsequence selection theorem in
+`Conformal/Montel/Basic.lean`.
 
 ## The two directions
 
@@ -63,16 +57,6 @@ boundedness are the same condition.
   maps on a set in a topological space whose subtype is locally compact.
 * `TauCeti.isCompact_closure_range_iff_isLocallyBoundedOn` — the two are equivalent.
 
-## Coordination with upstream Mathlib
-
-Per the *Coordination with upstream Mathlib* section of `ConformalMapping/README.md`, L0–L3
-material overlaps [mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505),
-the in-progress human-curated Riemann-mapping-theorem effort, which proves a Montel
-equicontinuity statement internally as a private lemma. **Like `Conformal/Montel/Basic.lean`, this
-file is therefore a temporary shim**: once the corresponding Mathlib results land, these statements
-should be backed by them — or deleted and their consumers refactored — rather than maintained as an
-independent re-proof. What Tau Ceti adds at L1 is named, discoverable API, not first proof.
-
 This is the **analytic** normal-families theorem; it is deliberately not routed through Mathlib's
 `Analysis/LocallyConvex/Montel.lean` (`MontelSpace`), which is an unrelated notion.
 
@@ -80,6 +64,8 @@ This is the **analytic** normal-families theorem; it is deliberately not routed 
 
 * L. Ahlfors, *Complex Analysis*, Ch. 5 §5.
 * J. B. Conway, *Functions of One Complex Variable I* (GTM 11), Ch. VII §2.
+* The Montel equicontinuity result in the Riemann mapping development
+  [mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505).
 -/
 
 public section
@@ -109,8 +95,8 @@ private theorem equicontinuous_subtype_val_range {X Y : Type*} [TopologicalSpace
 maps of an open set `Ω ⊆ ℂ` into a proper complex normed space `E` restricts to a relatively
 compact family in the space `C(↥Ω, E)` of continuous maps with the compact-open topology.
 
-This is the precompactness the roadmap's L1 milestone asks for; `TauCeti.montel` is the sequential
-selection statement extracted from it. The local boundedness hypothesis cannot be dropped once `E`
+The sequential selection theorem `TauCeti.montel` follows from this compactness result.
+The local boundedness hypothesis cannot be dropped once `E`
 is nontrivial: on a nonempty open `Ω` the holomorphic family `F n z = n • v`, for a unit vector
 `v : E`, restricts to a closed discrete — hence non-relatively-compact — family. On `Ω = ∅`, or on
 the trivial `E = 0` where no unit vector exists, the conclusion holds regardless, so there is no
