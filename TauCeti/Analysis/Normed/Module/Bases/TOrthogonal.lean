@@ -223,6 +223,13 @@ theorem IsOrthonormalBasis.isTOrthogonalBasis [NormedRing R] [Nontrivial R]
 
 namespace IsTOrthogonalBasis
 
+/-- Reindexing a `t`-orthogonal basis along an equivalence gives a `t`-orthogonal basis. -/
+theorem comp_equiv [SeminormedRing R] [SeminormedAddCommGroup M] [Module R M] {t : ℝ≥0}
+    {e : I → M} (he : IsTOrthogonalBasis R t e) (σ : J ≃ I) : IsTOrthogonalBasis R t (e ∘ σ) where
+  isTOrthogonalFamily := he.isTOrthogonalFamily.comp σ.injective
+  ne_zero j := he.ne_zero (σ j)
+  dense_span := by simpa only [Set.range_comp, σ.range_eq_univ, Set.image_univ] using he.dense_span
+
 /-- **Uniqueness of expansions in a `t`-orthogonal basis**: for `t > 0`, over a ring acting
 without zero divisors, two unconditional expansions `∑ a i • e i` and `∑ b i • e i` of the same
 vector have the same coefficients. -/

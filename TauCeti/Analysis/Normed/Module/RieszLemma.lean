@@ -10,11 +10,13 @@ public import Mathlib.Analysis.Normed.Module.RieszLemma
 /-!
 # Riesz's lemma relative to a larger subspace
 
-Mathlib's `riesz_lemma_of_norm_lt` finds, outside a proper closed subspace `F` of a normed space,
-a vector of controlled norm at distance at least `1` from `F`. This file records the relative
-form: when `F` is a proper closed subspace of a subspace `G`, the vector can be chosen in `G`.
-This is the form used to build separated sequences along strictly decreasing chains of closed
-subspaces, as in the Riesz theory of compact operators.
+Mathlib's `riesz_lemma` and `riesz_lemma_of_norm_lt` find, outside a proper closed subspace `F`
+of a normed space, a vector almost orthogonal to `F`, respectively a vector of controlled norm at
+distance at least `1` from `F`. This file records the relative forms: when `F` is a proper closed
+subspace of a subspace `G`, the vector can be chosen in `G`. These are the forms used to build
+separated sequences along strictly decreasing chains of closed subspaces, as in the Riesz theory
+of compact operators, and almost orthogonal bases along increasing chains of finite-dimensional
+subspaces, as for nonarchimedean spaces of countable type.
 -/
 
 public section
@@ -22,6 +24,16 @@ public section
 namespace TauCeti
 
 variable {𝕜 E : Type*} [NormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+
+/-- **Riesz's lemma** relative to a larger subspace: if `F` is a closed subspace properly contained
+in a subspace `G`, then for every `r < 1` some vector `x₀ ∈ G \ F` satisfies
+`r * ‖x₀‖ ≤ ‖x₀ - y‖` for all `y ∈ F`. -/
+theorem riesz_lemma_of_lt {F G : Submodule 𝕜 E} (hFc : IsClosed (F : Set E)) (hFG : F < G)
+    {r : ℝ} (hr : r < 1) : ∃ x₀ ∈ G, x₀ ∉ F ∧ ∀ y ∈ F, r * ‖x₀‖ ≤ ‖x₀ - y‖ := by
+  obtain ⟨x, hxG, hxF⟩ := IsConcreteLE.exists_of_lt hFG
+  obtain ⟨x₀, hx₀F, hx₀⟩ := riesz_lemma (F := F.comap G.subtype)
+    (hFc.preimage continuous_subtype_val) ⟨⟨x, hxG⟩, hxF⟩ hr
+  exact ⟨x₀, x₀.2, hx₀F, fun y hy => hx₀ ⟨y, hFG.le hy⟩ hy⟩
 
 /-- **Riesz's lemma** relative to a larger subspace: if `F` is a closed subspace properly contained
 in a subspace `G`, then `G` contains a vector of norm at most `R` at distance at least `1`
