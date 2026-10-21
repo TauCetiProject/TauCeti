@@ -178,15 +178,6 @@ section Action
 variable {X : Type*} [PseudoMetricSpace X] [MeasurableSpace X] [BorelSpace X]
   [SecondCountableTopology X]
 
-omit [MeasurableSpace X] [BorelSpace X] [SecondCountableTopology X] in
-/-- The Hölder estimate along a path `c : C(I, X)`: for `1 ≤ r`, if the extension of `c` to `ℝ`
-is absolutely continuous on `[0, 1]`, then its `r`-action is at least `d(c 0, c 1) ^ r`. -/
-theorem _root_.AbsolutelyContinuousOnInterval.edist_rpow_le_curveAction_IccExtend {c : C(I, X)}
-    {r : ℝ} (hc : AbsolutelyContinuousOnInterval (IccExtend zero_le_one c) 0 1) (hr : 1 ≤ r) :
-    edist (c 0) (c 1) ^ r ≤ curveAction r (IccExtend zero_le_one c) 0 1 := by
-  have h := hc.edist_rpow_le_curveAction hr
-  rwa [IccExtend_left, IccExtend_right] at h
-
 /-- The endpoint law of a dynamic plan couples its laws at times `0` and `1`, so for a finite
 nonzero exponent `p` the `p`-th power of the `p`-Wasserstein distance between these laws is at
 most the expected `p`-th power of the distance between the endpoints of its paths. -/
