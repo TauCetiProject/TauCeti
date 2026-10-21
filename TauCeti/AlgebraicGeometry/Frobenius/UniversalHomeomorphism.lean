@@ -40,6 +40,10 @@ inverse continuous maps of underlying spaces.
 * `AlgebraicGeometry.Scheme.Hom.universally_isHomeomorph_relativeFrobenius` and
   `AlgebraicGeometry.Scheme.Hom.universally_isHomeomorph_iterateRelativeFrobenius`: the relative
   Frobenius and its iterates are universal homeomorphisms.
+* `AlgebraicGeometry.Surjective.of_universally_isHomeomorph`,
+  `AlgebraicGeometry.UniversallyInjective.of_universally_isHomeomorph` and
+  `AlgebraicGeometry.UniversallyClosed.of_universally_isHomeomorph`: a universal homeomorphism is
+  surjective, universally injective and universally closed.
 * Instances: these morphisms are `Surjective`, `UniversallyInjective`, `UniversallyClosed` and
   `IsIntegralHom`.
 
@@ -55,7 +59,30 @@ open CategoryTheory Limits MorphismProperty
 
 universe u
 
-namespace AlgebraicGeometry.Scheme
+namespace AlgebraicGeometry
+
+section UniversalHomeomorphism
+
+variable {X Y : Scheme.{u}} {f : X ⟶ Y}
+
+/-- A universal homeomorphism is surjective. -/
+theorem Surjective.of_universally_isHomeomorph (hf : (topologically @IsHomeomorph).universally f) :
+    Surjective f :=
+  ⟨(universally_le _ _ hf).surjective⟩
+
+/-- A universal homeomorphism is universally injective. -/
+theorem UniversallyInjective.of_universally_isHomeomorph
+    (hf : (topologically @IsHomeomorph).universally f) : UniversallyInjective f :=
+  ⟨universally_mono (fun _ _ _ ↦ IsHomeomorph.injective) _ hf⟩
+
+/-- A universal homeomorphism is universally closed. -/
+theorem UniversallyClosed.of_universally_isHomeomorph
+    (hf : (topologically @IsHomeomorph).universally f) : UniversallyClosed f :=
+  ⟨universally_mono (fun _ _ _ ↦ IsHomeomorph.isClosedMap) _ hf⟩
+
+end UniversalHomeomorphism
+
+namespace Scheme
 
 section Absolute
 
@@ -100,30 +127,26 @@ theorem universally_isHomeomorph_frobenius (hX : (p : Γ(X, ⊤)) = 0) :
 
 instance surjective_iterateFrobenius (hX : (p : Γ(X, ⊤)) = 0) (n : ℕ) :
     Surjective (X.iterateFrobenius p hX n) :=
-  ⟨(universally_le _ _ <| universally_isHomeomorph_iterateFrobenius hX n).surjective⟩
+  .of_universally_isHomeomorph <| universally_isHomeomorph_iterateFrobenius hX n
 
 instance universallyInjective_iterateFrobenius (hX : (p : Γ(X, ⊤)) = 0) (n : ℕ) :
     UniversallyInjective (X.iterateFrobenius p hX n) :=
-  ⟨universally_mono (fun _ _ _ ↦ IsHomeomorph.injective) _ <|
-    universally_isHomeomorph_iterateFrobenius hX n⟩
+  .of_universally_isHomeomorph <| universally_isHomeomorph_iterateFrobenius hX n
 
 instance universallyClosed_iterateFrobenius (hX : (p : Γ(X, ⊤)) = 0) (n : ℕ) :
     UniversallyClosed (X.iterateFrobenius p hX n) :=
-  ⟨universally_mono (fun _ _ _ ↦ IsHomeomorph.isClosedMap) _ <|
-    universally_isHomeomorph_iterateFrobenius hX n⟩
+  .of_universally_isHomeomorph <| universally_isHomeomorph_iterateFrobenius hX n
 
 instance surjective_frobenius (hX : (p : Γ(X, ⊤)) = 0) : Surjective (X.frobenius p hX) :=
-  ⟨(universally_le _ _ <| universally_isHomeomorph_frobenius hX).surjective⟩
+  .of_universally_isHomeomorph <| universally_isHomeomorph_frobenius hX
 
 instance universallyInjective_frobenius (hX : (p : Γ(X, ⊤)) = 0) :
     UniversallyInjective (X.frobenius p hX) :=
-  ⟨universally_mono (fun _ _ _ ↦ IsHomeomorph.injective) _ <|
-    universally_isHomeomorph_frobenius hX⟩
+  .of_universally_isHomeomorph <| universally_isHomeomorph_frobenius hX
 
 instance universallyClosed_frobenius (hX : (p : Γ(X, ⊤)) = 0) :
     UniversallyClosed (X.frobenius p hX) :=
-  ⟨universally_mono (fun _ _ _ ↦ IsHomeomorph.isClosedMap) _ <|
-    universally_isHomeomorph_frobenius hX⟩
+  .of_universally_isHomeomorph <| universally_isHomeomorph_frobenius hX
 
 /-- **The absolute Frobenius is integral.** -/
 instance isIntegralHom_frobenius (hX : (p : Γ(X, ⊤)) = 0) : IsIntegralHom (X.frobenius p hX) :=
@@ -161,29 +184,25 @@ theorem universally_isHomeomorph_relativeFrobenius :
 
 instance surjective_iterateRelativeFrobenius (n : ℕ) :
     Surjective (π.iterateRelativeFrobenius p hS n) :=
-  ⟨(universally_le _ _ <| universally_isHomeomorph_iterateRelativeFrobenius π p hS n).surjective⟩
+  .of_universally_isHomeomorph <| universally_isHomeomorph_iterateRelativeFrobenius π p hS n
 
 instance universallyInjective_iterateRelativeFrobenius (n : ℕ) :
     UniversallyInjective (π.iterateRelativeFrobenius p hS n) :=
-  ⟨universally_mono (fun _ _ _ ↦ IsHomeomorph.injective) _ <|
-    universally_isHomeomorph_iterateRelativeFrobenius π p hS n⟩
+  .of_universally_isHomeomorph <| universally_isHomeomorph_iterateRelativeFrobenius π p hS n
 
 instance universallyClosed_iterateRelativeFrobenius (n : ℕ) :
     UniversallyClosed (π.iterateRelativeFrobenius p hS n) :=
-  ⟨universally_mono (fun _ _ _ ↦ IsHomeomorph.isClosedMap) _ <|
-    universally_isHomeomorph_iterateRelativeFrobenius π p hS n⟩
+  .of_universally_isHomeomorph <| universally_isHomeomorph_iterateRelativeFrobenius π p hS n
 
 instance surjective_relativeFrobenius : Surjective (π.relativeFrobenius p hS) :=
-  ⟨(universally_le _ _ <| universally_isHomeomorph_relativeFrobenius π p hS).surjective⟩
+  .of_universally_isHomeomorph <| universally_isHomeomorph_relativeFrobenius π p hS
 
 instance universallyInjective_relativeFrobenius :
     UniversallyInjective (π.relativeFrobenius p hS) :=
-  ⟨universally_mono (fun _ _ _ ↦ IsHomeomorph.injective) _ <|
-    universally_isHomeomorph_relativeFrobenius π p hS⟩
+  .of_universally_isHomeomorph <| universally_isHomeomorph_relativeFrobenius π p hS
 
 instance universallyClosed_relativeFrobenius : UniversallyClosed (π.relativeFrobenius p hS) :=
-  ⟨universally_mono (fun _ _ _ ↦ IsHomeomorph.isClosedMap) _ <|
-    universally_isHomeomorph_relativeFrobenius π p hS⟩
+  .of_universally_isHomeomorph <| universally_isHomeomorph_relativeFrobenius π p hS
 
 /-- **The iterated relative Frobenius is integral.** -/
 instance isIntegralHom_iterateRelativeFrobenius (n : ℕ) :
@@ -206,4 +225,6 @@ instance isIntegralHom_relativeFrobenius : IsIntegralHom (π.relativeFrobenius p
 
 end Hom
 
-end AlgebraicGeometry.Scheme
+end Scheme
+
+end AlgebraicGeometry
