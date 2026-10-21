@@ -95,20 +95,14 @@ quadratic involution, since it sends `ω` to a square root of `a`. -/
 theorem algHom_eq_or_eq_comp_starAe (ha : a ≤ 0) (φ : QuadraticAlgebra ℚ a 0 →ₐ[ℚ] ℂ) :
     φ = complexEmbedding ha ∨ φ = (complexEmbedding ha).comp (starAe : _ ≃ₐ[ℚ] _).toAlgHom := by
   have hφ : φ ω * φ ω = a := by
-    have hω : (ω : QuadraticAlgebra ℚ a 0) * ω = algebraMap ℚ _ a := by ext <;> simp
-    rw [← map_mul, hω, AlgHom.commutes, eq_ratCast]
+    rw [← map_mul, omega_mul_omega_eq_algebraMap, map_zero, zero_mul, add_zero, AlgHom.commutes,
+      eq_ratCast]
   have hu := sqrt_mul_I_mul_self ha
   simp only [zero_smul, add_zero, Rat.smul_def, mul_one] at hu
-  have hfac : (φ ω - (√(-(a : ℝ)) : ℂ) * I) * (φ ω + (√(-(a : ℝ)) : ℂ) * I) = 0 := by
-    linear_combination hφ - hu
-  rcases mul_eq_zero.mp hfac with h | h
-  · exact Or.inl (algHom_ext (by rw [complexEmbedding_omega]; linear_combination h))
-  · refine Or.inr (algHom_ext ?_)
-    have hstar : (complexEmbedding ha).comp (starAe : _ ≃ₐ[ℚ] _).toAlgHom ω =
-        -((√(-(a : ℝ)) : ℂ) * I) := by
-      simp
-    rw [hstar]
-    linear_combination h
+  rw [← hu] at hφ
+  rcases mul_self_eq_mul_self_iff.mp hφ with h | h
+  · exact Or.inl (algHom_ext (by simp [h]))
+  · exact Or.inr (algHom_ext (by simp [h]))
 
 /-- **The upper half-plane picks out the distinguished embedding.** For `a < 0`, a ring
 homomorphism `QuadraticAlgebra ℚ a 0 →+* ℂ` is the distinguished embedding exactly when it sends
