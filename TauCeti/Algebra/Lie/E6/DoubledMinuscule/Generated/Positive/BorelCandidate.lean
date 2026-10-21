@@ -77,6 +77,9 @@ unfolding, so this restatement is what lets it order the doubled minuscule weigh
 def weightDegree : (Fin 6 → ℤ) →+ ℚ :=
   DynkinType.E6.weightDegree DynkinType.valid_E6
 
+/-- The height is the generic type-`E₆` simple-root height `DynkinType.weightDegree`. -/
+theorem weightDegree_def : weightDegree = DynkinType.E6.weightDegree DynkinType.valid_E6 := (rfl)
+
 /-- Each positive numbered root generator has a simple root as weight, of height one. -/
 @[simp]
 theorem weightDegree_rootGeneratorWeight_inl (i : Fin 6) :
@@ -93,6 +96,10 @@ simple-root height of their weights. Coordinates of equal height are ordered by 
 finite numbering. -/
 def weightOrderEquiv : Fin 54 ≃ Fin 54 :=
   orderedWeightIndexEquiv weightDegree matrixWeight
+
+/-- The weight ordering is the generic ordering of `matrixWeight` by `weightDegree`. -/
+theorem weightOrderEquiv_def :
+    weightOrderEquiv = orderedWeightIndexEquiv weightDegree matrixWeight := (rfl)
 
 /-- Renumbering the matrix basis by `weightOrderEquiv` gives the ordered weight basis. -/
 theorem matrixBasis_reindex_weightOrderEquiv :
