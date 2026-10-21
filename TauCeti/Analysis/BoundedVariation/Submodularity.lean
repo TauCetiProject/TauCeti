@@ -6,9 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.BoundedVariation.Perimeter
+import TauCeti.Algebra.Order.Ring.Abs
 import TauCeti.Analysis.BoundedVariation.Convolution
 import TauCeti.Analysis.Convolution
+import TauCeti.Analysis.Normed.Module.RCLike.Real
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
+import TauCeti.Topology.Instances.ENNReal
 
 /-!
 # Submodularity of the perimeter
@@ -59,29 +63,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure] {Ω : Opens E}
   {u v : E → ℝ} {s t : Set E}
 
-/-- For `x, y ∈ [0, 1]`, the derivatives `y a + x b` of a product and
-`(1 - y) a + (1 - x) b` of `x + y - x y` have total norm at most `‖a‖ + ‖b‖`. -/
-private theorem norm_smul_add_add_norm_smul_add_le {F : Type*} [SeminormedAddCommGroup F]
-    [NormedSpace ℝ F] {x y : ℝ} (hx : x ∈ Icc (0 : ℝ) 1) (hy : y ∈ Icc (0 : ℝ) 1) (a b : F) :
-    ‖x • b + y • a‖ + ‖(1 - y) • a + (1 - x) • b‖ ≤ ‖a‖ + ‖b‖ := by
-  have h₁ := norm_add_le (x • b) (y • a)
-  have h₂ := norm_add_le ((1 - y) • a) ((1 - x) • b)
-  rw [norm_smul_of_nonneg hx.1, norm_smul_of_nonneg hy.1] at h₁
-  rw [norm_smul_of_nonneg (sub_nonneg.2 hy.2), norm_smul_of_nonneg (sub_nonneg.2 hx.2)] at h₂
-  linarith
-
-/-- For `b, c ∈ [0, 1]`, `|a c - b d| ≤ |a - b| + |c - d|`. -/
-private theorem abs_mul_sub_mul_le {a b c d : ℝ} (hb : b ∈ Icc (0 : ℝ) 1)
-    (hc : c ∈ Icc (0 : ℝ) 1) : |a * c - b * d| ≤ |a - b| + |c - d| := by
-  have hc' : |c| ≤ 1 := abs_le.2 ⟨by linarith [hc.1], hc.2⟩
-  have hb' : |b| ≤ 1 := abs_le.2 ⟨by linarith [hb.1], hb.2⟩
-  calc |a * c - b * d| = |(a - b) * c + b * (c - d)| := by ring_nf
-    _ ≤ |a - b| * |c| + |b| * |c - d| := by
-        rw [← abs_mul, ← abs_mul]
-        exact abs_add_le _ _
-    _ ≤ |a - b| * 1 + 1 * |c - d| := by gcongr
-    _ = |a - b| + |c - d| := by ring
-
 /-- The smooth case: for `C¹` functions `u` and `v` with values in `[0, 1]`,
 `|D(u v)|(Ω) + |D(u + v - u v)|(Ω) ≤ |Du|(Ω) + |Dv|(Ω)`. -/
 private theorem totalVariationOn_mul_add_le_of_contDiff (hu : ContDiff ℝ 1 u)
@@ -107,16 +88,6 @@ private theorem totalVariationOn_mul_add_le_of_contDiff (hu : ContDiff ℝ 1 u)
     ← ofReal_norm, ← ENNReal.ofReal_add (norm_nonneg _) (norm_nonneg _),
     ← ENNReal.ofReal_add (norm_nonneg _) (norm_nonneg _)]
   exact ENNReal.ofReal_le_ofReal (norm_smul_add_add_norm_smul_add_le (hu01 x) (hv01 x) _ _)
-
-/-- Two sequences whose sums are eventually at most `c` have liminfs summing to at most `c`. -/
-private theorem liminf_add_liminf_le_of_eventually_add_le {a b : ℕ → ℝ≥0∞} {c : ℝ≥0∞}
-    (h : ∀ᶠ n in atTop, a n + b n ≤ c) : liminf a atTop + liminf b atTop ≤ c := by
-  obtain ⟨N, hN⟩ := eventually_atTop.1 h
-  rw [liminf_eq_iSup_iInf_of_nat, liminf_eq_iSup_iInf_of_nat]
-  refine ENNReal.iSup_add_iSup_le fun m k => ?_
-  calc (⨅ i ≥ m, a i) + (⨅ i ≥ k, b i) ≤ a (max N (max m k)) + b (max N (max m k)) :=
-        add_le_add (iInf₂_le _ (by omega)) (iInf₂_le _ (by omega))
-    _ ≤ c := hN _ (le_max_left _ _)
 
 /-- The inequality with the variations of `u v` and `u + v - u v` taken on an open set `Ω'` whose
 points have closed `r`-balls inside `Ω`, for locally integrable `u` and `v` with values everywhere
@@ -162,7 +133,8 @@ private theorem totalVariationOn_mul_add_le_of_closedBall_subset {Ω' : Opens E}
       ‖mol u n x - u x‖ₑ + ‖mol v n x - v x‖ₑ := by
     simp only [Pi.mul_apply, ← ofReal_norm, Real.norm_eq_abs,
       ← ENNReal.ofReal_add (abs_nonneg _) (abs_nonneg _)]
-    exact ENNReal.ofReal_le_ofReal (abs_mul_sub_mul_le (hu01 x) (hmem hv hv01 n x))
+    exact ENNReal.ofReal_le_ofReal (abs_mul_sub_mul_le (abs_le.2 ⟨by linarith [(hu01 x).1],
+      (hu01 x).2⟩) (abs_le.2 ⟨by linarith [(hmem hv hv01 n x).1], (hmem hv hv01 n x).2⟩))
   have hunion (n : ℕ) (x : E) :
       ‖(mol u n + mol v n - mol u n * mol v n) x - (u + v - u * v) x‖ₑ ≤
         ‖mol u n x - u x‖ₑ + ‖mol v n x - v x‖ₑ := by
@@ -174,8 +146,8 @@ private theorem totalVariationOn_mul_add_le_of_closedBall_subset {Ω' : Opens E}
           congr 1
           ring
       _ ≤ |(1 - u x) - (1 - mol u n x)| + |(1 - v x) - (1 - mol v n x)| :=
-          abs_mul_sub_mul_le ⟨by linarith [hU.2], by linarith [hU.1]⟩
-            ⟨by linarith [(hv01 x).2], by linarith [(hv01 x).1]⟩
+          abs_mul_sub_mul_le (abs_le.2 ⟨by linarith [hU.2], by linarith [hU.1]⟩)
+            (abs_le.2 ⟨by linarith [(hv01 x).2], by linarith [(hv01 x).1]⟩)
       _ = |mol u n x - u x| + |mol v n x - v x| := by ring_nf
   -- Lower semicontinuity on `Ω'`.
   have hli {w : E → ℝ} (hw : ContDiff ℝ 1 w) : LocallyIntegrableOn w Ω' μ :=
@@ -196,35 +168,14 @@ private theorem totalVariationOn_mul_add_le_of_closedBall_subset {Ω' : Opens E}
     (((hu.add hv).sub huv).locallyIntegrableOn _) fun K hK _ => hlim₂ hunion hK
   -- Once the radii are at most `r`, mollification does not increase variation from `Ω` to `Ω'`.
   have hsmall : ∀ᶠ n in atTop, (φ n).rOut ≤ r := hφ.eventually (ge_mem_nhds hr)
-  refine (add_le_add hlsc₁ hlsc₂).trans
-    (liminf_add_liminf_le_of_eventually_add_le (hsmall.mono fun n hn => ?_))
+  refine (add_le_add hlsc₁ hlsc₂).trans <| (ENNReal.le_liminf_add _ _).trans <|
+    (liminf_le_liminf (hsmall.mono fun n hn => ?_)).trans_eq (liminf_const _)
   have hball (x : E) (hx : x ∈ Ω') : closedBall x (φ n).rOut ⊆ Ω :=
     (closedBall_subset_closedBall hn).trans (hΩ x hx)
   exact (totalVariationOn_mul_add_le_of_contDiff (hsmooth hu n) (hsmooth hv n) (hmem hu hu01 n)
     (hmem hv hv01 n)).trans (add_le_add
       ((φ n).totalVariationOn_normed_convolution_le (hu.locallyIntegrableOn _) hball)
       ((φ n).totalVariationOn_normed_convolution_le (hv.locallyIntegrableOn _) hball))
-
-/-- A function with values in `[0, 1]` almost everywhere on `Ω` agrees almost everywhere on `Ω`
-with a function that is locally integrable on the whole space and everywhere `[0, 1]`-valued. -/
-private theorem exists_locallyIntegrable_mem_Icc_ae_eq
-    (hu : AEStronglyMeasurable u (μ.restrict Ω)) (hu01 : ∀ᵐ x ∂μ.restrict Ω, u x ∈ Icc (0 : ℝ) 1) :
-    ∃ w : E → ℝ, LocallyIntegrable w μ ∧ (∀ x, w x ∈ Icc (0 : ℝ) 1) ∧ w =ᵐ[μ.restrict Ω] u := by
-  -- Clamp `u` to `[0, 1]` and extend by zero outside `Ω`.
-  let g : E → ℝ := fun x => max 0 (min (u x) 1)
-  have hg : g =ᵐ[μ.restrict Ω] u := hu01.mono fun x hx => by simp [g, hx.1, hx.2]
-  have hΩ : MeasurableSet (Ω : Set E) := Ω.isOpen.measurableSet
-  have hmem (x : E) : (Ω : Set E).indicator g x ∈ Icc (0 : ℝ) 1 := by
-    by_cases hx : x ∈ (Ω : Set E)
-    · rw [indicator_of_mem hx]
-      exact ⟨le_max_left _ _, max_le zero_le_one (min_le_right _ _)⟩
-    · rw [indicator_of_notMem hx]
-      exact ⟨le_rfl, zero_le_one⟩
-  refine ⟨(Ω : Set E).indicator g, (locallyIntegrable_const (1 : ℝ)).mono
-    ((aestronglyMeasurable_indicator_iff hΩ).2 (hu.congr hg.symm)) (ae_of_all _ fun x => ?_),
-    hmem, (indicator_ae_eq_restrict hΩ.nullMeasurableSet).trans hg⟩
-  rw [Real.norm_eq_abs, norm_one, abs_le]
-  exact ⟨by linarith [(hmem x).1], (hmem x).2⟩
 
 /-- **The submodularity inequality for total variation.** If `u` and `v` take values in `[0, 1]`
 almost everywhere on `Ω`, then `|D(u v)|(Ω) + |D(u + v - u v)|(Ω) ≤ |Du|(Ω) + |Dv|(Ω)`, against an
@@ -237,8 +188,9 @@ theorem totalVariationOn_mul_add_totalVariationOn_add_sub_mul_le
     totalVariationOn μ Ω (u * v) + totalVariationOn μ Ω (u + v - u * v) ≤
       totalVariationOn μ Ω u + totalVariationOn μ Ω v := by
   -- Pass to representatives that are locally integrable and everywhere `[0, 1]`-valued.
-  obtain ⟨u', hu', hu'01, hu'u⟩ := exists_locallyIntegrable_mem_Icc_ae_eq hu hu01
-  obtain ⟨v', hv', hv'01, hv'v⟩ := exists_locallyIntegrable_mem_Icc_ae_eq hv hv01
+  have hΩ : MeasurableSet (Ω : Set E) := Ω.isOpen.measurableSet
+  obtain ⟨u', hu', hu'01, hu'u⟩ := exists_locallyIntegrable_mem_Icc_ae_eq hΩ hu hu01
+  obtain ⟨v', hv', hv'01, hv'v⟩ := exists_locallyIntegrable_mem_Icc_ae_eq hΩ hv hv01
   rw [← totalVariationOn_congr_ae (hu'u.mul hv'v),
     ← totalVariationOn_congr_ae ((hu'u.add hv'v).sub (hu'u.mul hv'v)),
     ← totalVariationOn_congr_ae hu'u, ← totalVariationOn_congr_ae hv'v,
