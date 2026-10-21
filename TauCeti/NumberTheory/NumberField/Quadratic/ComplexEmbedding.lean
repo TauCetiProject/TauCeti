@@ -163,11 +163,9 @@ theorem eq_mk_complexEmbedding (ha : a ≤ 0) (w : InfinitePlace (QuadraticAlgeb
   · rw [h, mk_conjugate_eq]
 
 /-- An imaginary quadratic field has exactly one complex place, so its signature is `(0, 1)`. -/
-theorem nrComplexPlaces_eq_one (ha : a < 0) : nrComplexPlaces (QuadraticAlgebra ℚ a 0) = 1 := by
+theorem nrComplexPlaces_eq_one (ha : a < 0) : nrComplexPlaces (QuadraticAlgebra ℚ a 0) = 1 :=
   have := isTotallyComplex_iff.mpr ha
-  have h := IsTotallyComplex.finrank (K := QuadraticAlgebra ℚ a 0)
-  rw [finrank_eq_two] at h
-  omega
+  nrComplexPlaces_eq_one_of_finrank_eq_two (finrank_eq_two a 0)
 
 end Field
 
