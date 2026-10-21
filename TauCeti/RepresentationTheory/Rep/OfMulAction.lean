@@ -7,7 +7,8 @@ module
 
 public import Mathlib.Algebra.Group.Action.Sum
 public import Mathlib.LinearAlgebra.Finsupp.SumProd
-public import Mathlib.RepresentationTheory.Rep.Basic
+public import Mathlib.RepresentationTheory.Rep.Iso
+public import TauCeti.GroupTheory.GroupAction.Free
 public import TauCeti.GroupTheory.QuotientGroup.Basic
 
 /-!
@@ -25,6 +26,11 @@ carry the left regular representation.
 Both identifications go through `ofMulActionIsoCongr`, which turns a `G`-equivariant equivalence
 of `G`-sets into an isomorphism of the permutation representations they carry.
 
+For a free action of a group `G` on `X`, every point is a unique translate of the chosen
+representative of its orbit, so the permutation representation `k[X]` is free over the group
+ring, with basis the chosen representatives of the orbits. In particular it is a projective
+object of `Rep k G`.
+
 ## Main definitions
 
 * `TauCeti.ofMulActionIsoCongr`: an equivariant equivalence of `G`-sets induces an isomorphism
@@ -34,6 +40,13 @@ of `G`-sets into an isomorphism of the permutation representations they carry.
 * `TauCeti.quotientIsoCongr`: equal subgroups give isomorphic permutation representations.
 * `TauCeti.quotientTopIsoTrivial`: `k[G ⧸ ⊤] ≅ k` with the trivial action.
 * `TauCeti.quotientBotIsoLeftRegular`: `k[G ⧸ ⊥] ≅ k[G]` with the left regular action.
+* `TauCeti.ofMulActionIsoFree`: for a free action, `k[X]` is the free representation on the
+  orbits.
+
+## Main results
+
+* `TauCeti.projective_ofMulAction`: the permutation representation of a free action is
+  projective.
 
 The equivalences and isomorphisms come with lemmas reading them and their inverses on basis
 elements. For the coset representations, these bases are indexed by `G ⧸ H`.
@@ -245,5 +258,57 @@ theorem quotientTopIsoTrivial_inv_hom_apply (r : k) :
   simp [quotientTopIsoTrivial, Representation.ofMulActionSubsingletonEquivTrivial]
 
 end QuotientTop
+
+section Free
+
+open _root_.MulAction (orbitRel)
+open _root_.TauCeti.MulAction (sigmaOrbitsEquivOfIsCancelSMul sigmaOrbitsEquivOfIsCancelSMul_apply)
+
+variable (k : Type u) [CommRing k] {G : Type u} [Group G] (X : Type u) [MulAction G X]
+  [IsCancelSMul G X]
+
+/-- The basis equivalence underlying `TauCeti.ofMulActionIsoFree` sends the generator
+`single q (single g 1)` to the basis vector of `g • q.out`. -/
+private lemma basisEquiv_single (q : orbitRel.Quotient G X) (g : G) :
+    (Finsupp.basis fun _ ↦ MonoidAlgebra.basis G k).equiv (MonoidAlgebra.basis X k)
+        (sigmaOrbitsEquivOfIsCancelSMul G X) (Finsupp.single q (MonoidAlgebra.single g 1)) =
+      MonoidAlgebra.single (g • q.out) 1 := by
+  simpa only [Finsupp.coe_basis, MonoidAlgebra.basis_apply,
+    sigmaOrbitsEquivOfIsCancelSMul_apply] using
+    Module.Basis.equiv_apply (b := Finsupp.basis fun _ ↦ MonoidAlgebra.basis G k) (i := ⟨q, g⟩)
+      (MonoidAlgebra.basis X k) (sigmaOrbitsEquivOfIsCancelSMul G X)
+
+/-- The isomorphism of `TauCeti.ofMulActionIsoFree`, as an equivalence of representations from
+the free representation. -/
+private noncomputable def freeEquivOfMulAction :
+    (Representation.free k G (orbitRel.Quotient G X)).Equiv (Representation.ofMulAction k G X) :=
+  .mk ((Finsupp.basis fun _ ↦ MonoidAlgebra.basis G k).equiv (MonoidAlgebra.basis X k)
+      (sigmaOrbitsEquivOfIsCancelSMul G X)) fun g ↦
+    (Finsupp.basis fun _ ↦ MonoidAlgebra.basis G k).ext fun p ↦ by
+      simp [basisEquiv_single, mul_smul]
+
+/-- **The permutation representation of a free action is free over the group ring**, with
+basis the chosen representatives `q.out` of the orbits: the generator `single q (single g r)` of
+the free representation corresponds to `single (g • q.out) r`. -/
+noncomputable def ofMulActionIsoFree :
+    Rep.ofMulAction k G X ≅ Rep.free k G (orbitRel.Quotient G X) :=
+  (Rep.mkIso (freeEquivOfMulAction k X)).symm
+
+/-- The generator `single q (single g r)` of the free representation corresponds to the basis
+vector `single (g • q.out) r` of the permutation representation. -/
+@[simp]
+theorem ofMulActionIsoFree_inv_hom_single (q : orbitRel.Quotient G X) (g : G) (r : k) :
+    (dsimp% only ((ofMulActionIsoFree k X).inv.hom
+        (Finsupp.single q (MonoidAlgebra.single g r)))) =
+      MonoidAlgebra.single (g • q.out) r := by
+  rw [ofMulActionIsoFree, Iso.symm_inv, Rep.mkIso_hom_hom_apply, ← mul_one r, ← smul_eq_mul,
+    ← MonoidAlgebra.smul_single, ← MonoidAlgebra.smul_single, ← Finsupp.smul_single, map_smul]
+  exact congrArg (r • ·) (basisEquiv_single k X q g)
+
+/-- The permutation representation of a free action is projective. -/
+instance projective_ofMulAction : Projective (Rep.ofMulAction k G X) :=
+  Projective.of_iso (ofMulActionIsoFree k X).symm inferInstance
+
+end Free
 
 end TauCeti

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.Action.Defs
 public import Mathlib.Data.Finset.Basic
+public import Mathlib.GroupTheory.GroupAction.Defs
 public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.Algebra.Group.Nat.Defs
 import Mathlib.GroupTheory.GroupAction.Quotient
@@ -28,7 +29,13 @@ some point must return to itself under a product `e * p ≠ 1`, which freeness f
 ## Counting
 
 If a group `G` acts freely on `X`, every orbit is a copy of `G`, so `Nat.card G` divides
-`Nat.card X`.
+`Nat.card X`. Choosing a representative of each orbit identifies `X` with the disjoint union over
+the orbits of copies of `G`.
+
+## Main definitions
+
+* `TauCeti.MulAction.sigmaOrbitsEquivOfIsCancelSMul`: for a free action, `⟨q, g⟩ ↦ g • q.out` is
+  a bijection from `Σ q, G` onto `X`.
 
 ## Main results
 
@@ -98,5 +105,25 @@ theorem natCard_dvd_natCard_of_isCancelSMul {G X : Type*} [Group G] [MulAction G
   simp_rw [IsCancelSMul.stabilizer_eq_bot]
   rw [Nat.card_congr QuotientGroup.quotientBot.toEquiv]
   simp
+
+open _root_.MulAction in
+/-- **A free action is a disjoint union of copies of the group**, one for each orbit: every point
+is a unique translate `g • q.out` of the chosen representative `q.out` of its orbit `q`. This is
+the class formula `MulAction.selfEquivSigmaOrbitsQuotientStabilizer` with trivial stabilizers. -/
+noncomputable def sigmaOrbitsEquivOfIsCancelSMul (G X : Type*) [Group G] [MulAction G X]
+    [IsCancelSMul G X] : (Σ _ : orbitRel.Quotient G X, G) ≃ X :=
+  (Equiv.sigmaCongrRight (β₁ := fun _ ↦ G)
+      (β₂ := fun ω : orbitRel.Quotient G X ↦ G ⧸ stabilizer G ω.out) fun ω ↦
+    QuotientGroup.quotientBot.toEquiv.symm.trans
+      (Subgroup.quotientEquivOfEq (IsCancelSMul.stabilizer_eq_bot ω.out).symm)).trans
+    (selfEquivSigmaOrbitsQuotientStabilizer G X).symm
+
+open _root_.MulAction in
+/-- The point corresponding to `⟨q, g⟩` is the translate by `g` of the representative of `q`. -/
+@[simp]
+theorem sigmaOrbitsEquivOfIsCancelSMul_apply {G X : Type*} [Group G] [MulAction G X]
+    [IsCancelSMul G X] (p : Σ _ : orbitRel.Quotient G X, G) :
+    sigmaOrbitsEquivOfIsCancelSMul G X p = p.2 • p.1.out :=
+  (rfl)
 
 end TauCeti.MulAction
