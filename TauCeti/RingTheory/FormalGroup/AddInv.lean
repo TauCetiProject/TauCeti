@@ -144,8 +144,11 @@ private theorem coeff_subst_addInv_sum (n : ℕ) :
     simp only [coeff_coeToMvPowerSeries]
     simp_rw [coeff_addInvAux_step, mul_add]
     rw [finsum_add_distrib]
-    · nth_rw 2 [finsum_eq_single _ (single 0 1) fun d hd ↦ by rw [ite_eq_right hd, mul_zero]]
-      rw [ite_eq_left rfl, F.lin_coeff_X, one_mul, addInvAux_succ]
+    · have hlinear : (∑ᶠ d, MvPowerSeries.coeff d F.toPowerSeries *
+          (if d = single 0 1 then addInvAux F (k + 1) else 0)) = addInvAux F (k + 1) := by
+        rw [finsum_eq_single _ (single 0 1) fun d hd ↦ by rw [ite_eq_right hd, mul_zero]]
+        rw [ite_eq_left rfl, F.lin_coeff_X, one_mul]
+      rw [hlinear, addInvAux_succ]
       rw [coeff, MvPowerSeries.coeff_subst (hasSubst_addInv_sum F k)]
       simp [Finsupp.prod_pow, Fin.prod_univ_two]
     · simpa only [Finsupp.prod_pow, Fin.prod_univ_two, Matrix.cons_val_zero,
