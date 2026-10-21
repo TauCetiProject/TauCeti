@@ -158,7 +158,10 @@ theorem IsBorelOverAlgClosed.isParabolicOverAlgClosed {k : Type u} [Field k]
   ⟨hI'.1, hI'.2.prop.smooth, I, hI, le_rfl⟩
 
 /-- Over an algebraically closed field, the whole group is a parabolic subgroup of itself exactly
-when it is smooth. The whole group is cut out by the zero Hopf ideal. -/
+when it is smooth. The whole group is cut out by the zero Hopf ideal.
+
+This is not a `simp` lemma: `isParabolicOverAlgClosed_iff` unfolds `IsParabolicOverAlgClosed` on
+the left-hand side, so the statement is never in `simp`-normal form. -/
 theorem isParabolicOverAlgClosed_bot_iff {k : Type u} [Field k]
     (H : FiniteTypeCommHopfAlgCat.{u, u} k) :
     IsParabolicOverAlgClosed k H ⊥ ↔ IsAlgClosed k ∧ smoothCommHopfAlgProperty k H.obj := by
@@ -188,7 +191,10 @@ theorem IsParabolicOverAlgClosed.conjugate {I : HopfIdeal k H}
   simpa only [HopfAlgebra.pointConjugationFiniteTypeIso_hom] using h
 
 /-- The algebraically closed parabolic property is invariant under conjugation by a rational
-point. -/
+point.
+
+This is not a `simp` lemma: `isParabolicOverAlgClosed_iff` unfolds `IsParabolicOverAlgClosed` on
+the left-hand side, so the statement is never in `simp`-normal form. -/
 theorem isParabolicOverAlgClosed_conjugate_iff (I : HopfIdeal k H)
     (g : WithConv (H →ₐ[k] k)) :
     IsParabolicOverAlgClosed k (FiniteTypeCommHopfAlgCat.of k H) (I.conjugate g) ↔
@@ -372,7 +378,10 @@ theorem isParabolic_iff (k : Type u) [Field k] (H : _root_.CommHopfAlgCat.{v} k)
       J, hJ, hIJ⟩
 
 /-- The whole group is a parabolic subgroup of itself exactly when it is smooth. The whole group
-is cut out by the zero Hopf ideal. -/
+is cut out by the zero Hopf ideal.
+
+This is not a `simp` lemma: `isParabolic_iff` unfolds `IsParabolic` on the left-hand side, so the
+statement is never in `simp`-normal form. -/
 theorem isParabolic_bot_iff {k : Type u} [Field k] (H : _root_.CommHopfAlgCat.{u} k)
     [Algebra.FiniteType k H] :
     IsParabolic k H ⊥ ↔ smoothCommHopfAlgProperty k H := by
@@ -401,7 +410,10 @@ theorem IsParabolic.conjugate {I : HopfIdeal k H}
   rw [conjugate_eq_comapOfSurjective]
   simpa only [HopfAlgebra.pointConjugationFiniteTypeIso_hom] using h
 
-/-- Parabolicity is invariant under conjugation by a rational point. -/
+/-- Parabolicity is invariant under conjugation by a rational point.
+
+This is not a `simp` lemma: `isParabolic_iff` unfolds `IsParabolic` on the left-hand side, so the
+statement is never in `simp`-normal form. -/
 theorem isParabolic_conjugate_iff (I : HopfIdeal k H) (g : WithConv (H →ₐ[k] k)) :
     IsParabolic k (_root_.CommHopfAlgCat.of k H) (I.conjugate g) ↔
       IsParabolic k (_root_.CommHopfAlgCat.of k H) I := by
