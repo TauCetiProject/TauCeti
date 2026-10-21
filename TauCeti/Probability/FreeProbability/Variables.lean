@@ -118,6 +118,34 @@ theorem apply_mul_of_ne (h : IsFreelyIndependentElements φ a) (hφ : φ 1 = 1) 
   IsFreelyIndependent.apply_mul_of_ne h hφ hij (Algebra.self_mem_adjoin_singleton R _)
     (Algebra.self_mem_adjoin_singleton R _)
 
+/-- The alternating mixed moment of order three of two distinct freely independent elements:
+`φ (a i * a j * a i) = φ (a i * a i) * φ (a j)`. -/
+theorem apply_mul_mul_of_ne (h : IsFreelyIndependentElements φ a) (hφ : φ 1 = 1) {i j : ι}
+    (hij : i ≠ j) : φ (a i * a j * a i) = φ (a i * a i) * φ (a j) :=
+  IsFreelyIndependent.apply_mul_mul_of_ne h hφ hij (Algebra.self_mem_adjoin_singleton R _)
+    (Algebra.self_mem_adjoin_singleton R _) (Algebra.self_mem_adjoin_singleton R _)
+
+/-- The alternating mixed moment of order four of two distinct freely independent elements:
+`φ (a i * a j * a i * a j) =
+  φ (a i * a i) * φ (a j) ^ 2 + φ (a i) ^ 2 * φ (a j * a j) - φ (a i) ^ 2 * φ (a j) ^ 2`.
+For centred elements it vanishes. -/
+theorem apply_mul_mul_mul_of_ne (h : IsFreelyIndependentElements φ a) (hφ : φ 1 = 1) {i j : ι}
+    (hij : i ≠ j) :
+    φ (a i * a j * a i * a j) =
+      φ (a i * a i) * φ (a j) ^ 2 + φ (a i) ^ 2 * φ (a j * a j) - φ (a i) ^ 2 * φ (a j) ^ 2 := by
+  rw [IsFreelyIndependent.apply_mul_mul_mul_of_ne h hφ hij
+    (Algebra.self_mem_adjoin_singleton R _) (Algebra.self_mem_adjoin_singleton R _)
+    (Algebra.self_mem_adjoin_singleton R _) (Algebra.self_mem_adjoin_singleton R _)]
+  ring
+
+/-- Two distinct freely independent elements that commute have variances
+`φ (a i * a i) - φ (a i) ^ 2` and `φ (a j * a j) - φ (a j) ^ 2` with vanishing product. -/
+theorem sub_mul_sub_eq_zero_of_commute (h : IsFreelyIndependentElements φ a)
+    (hφ : φ 1 = 1) {i j : ι} (hij : i ≠ j) (hcomm : Commute (a i) (a j)) :
+    (φ (a i * a i) - φ (a i) ^ 2) * (φ (a j * a j) - φ (a j) ^ 2) = 0 :=
+  IsFreelyIndependent.sub_mul_sub_eq_zero_of_commute h hφ hij
+    (Algebra.self_mem_adjoin_singleton R _) (Algebra.self_mem_adjoin_singleton R _) hcomm
+
 /-- Grouping freely independent variables along the fibres of a map gives freely independent
 generated subalgebras. -/
 theorem adjoin_image_fiber (h : IsFreelyIndependentElements φ a) (hφ : φ 1 = 1) (g : ι → κ) :

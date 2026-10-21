@@ -169,6 +169,11 @@ def reindex (e : Fin m ↪ Fin n) : PointedPrestableFamily S m where
   pairwise_disjoint_range _ _ hij := P.pairwise_disjoint_range (e.injective.ne hij)
   range_marking_subset_smoothLocus i := P.range_marking_subset_smoothLocus (e i)
 
+/-- Reindexing the markings commutes with base change. -/
+theorem reindex_pullback (e : Fin m ↪ Fin n) (g : T ⟶ S) :
+    (P.reindex e).pullback g = (P.pullback g).reindex e :=
+  rfl
+
 /-- A smooth proper relative curve with geometrically connected fibres, equipped with `n`
 sections with pairwise disjoint images, is an `n`-pointed prestable family. -/
 @[expose, simps]
