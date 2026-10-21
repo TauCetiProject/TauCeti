@@ -51,7 +51,10 @@ therefore exactly the smooth closed subgroups having a conjugate that contains t
   smooth closed subgroups.
 * `TauCeti.HopfIdeal.IsParabolic`: the parabolic-subgroup predicate over an arbitrary field,
   tested after base change to an algebraic closure.
+* `TauCeti.HopfIdeal.isParabolic_iff`: a closed subgroup is parabolic exactly when it is smooth
+  over the base field and its base change to an algebraic closure contains a Borel subgroup.
 * `TauCeti.HopfIdeal.IsBorel.isParabolic`, `TauCeti.HopfIdeal.IsParabolic.smooth`,
+  `TauCeti.HopfIdeal.IsParabolic.exists_le_isBorelOverAlgClosed`,
   `TauCeti.HopfIdeal.IsParabolic.of_le`, `TauCeti.HopfIdeal.isParabolic_bot_iff`,
   `TauCeti.HopfIdeal.IsParabolic.comapOfIso_iff` and
   `TauCeti.HopfIdeal.isParabolic_conjugate_iff`: the corresponding statements over an arbitrary
@@ -259,8 +262,9 @@ theorem isParabolic_iff_isParabolicOverAlgClosed_baseChange
 /-- A Borel subgroup over an arbitrary field is parabolic. -/
 theorem IsBorel.isParabolic {k : Type u} [Field k] {H : _root_.CommHopfAlgCat.{v} k}
     [Algebra.FiniteType k H] {I : HopfIdeal k H} (hI : IsBorel k H I) : IsParabolic k H I :=
-  IsBorelOverAlgClosed.isParabolicOverAlgClosed
-    ((isBorel_iff_isBorelOverAlgClosed_baseChange k H I).mp hI)
+  (isParabolic_iff_isParabolicOverAlgClosed_baseChange k H I).mpr
+    (IsBorelOverAlgClosed.isParabolicOverAlgClosed
+      ((isBorel_iff_isBorelOverAlgClosed_baseChange k H I).mp hI))
 
 namespace IsParabolic
 
@@ -284,9 +288,12 @@ theorem comapOfIso {H L : FiniteTypeCommHopfAlgCat.{u, v} k} {I : HopfIdeal k L.
     CommHopfAlgCat.baseChangeHopfIdeal_comapOfIso (K := AlgebraicClosure k) I
       ((forget₂ (FiniteTypeCommHopfAlgCat.{u, v} k)
         (_root_.CommHopfAlgCat.{v} k)).mapIso e)
-  have h := IsParabolicOverAlgClosed.comapOfIso hI eK
+  -- `IsParabolic k L.obj I` base-changes the bundled object `⟨L.obj, _⟩`, which is `L` by
+  -- structure eta, so it is the algebraically closed predicate for the base change of `L`.
+  have h := IsParabolicOverAlgClosed.comapOfIso
+    ((isParabolic_iff_isParabolicOverAlgClosed_baseChange k L.obj I).mp hI) eK
   rw [← hbaseChange] at h
-  exact h
+  exact (isParabolic_iff_isParabolicOverAlgClosed_baseChange k H.obj _).mpr h
 
 open FiniteTypeCommHopfAlgCat in
 /-- Parabolicity is invariant under pulling the defining ideal back across an ambient
@@ -310,18 +317,59 @@ variable {H : _root_.CommHopfAlgCat.{v} k} [Algebra.FiniteType k H] {I : HopfIde
 geometric fibre descends along the faithfully flat extension to an algebraic closure. -/
 theorem smooth (hI : IsParabolic k H I) :
     smoothCommHopfAlgProperty k (CommHopfAlgCat.quotient H I) :=
+  -- `FiniteTypeCommHopfAlgCat.quotient` and `FiniteTypeCommHopfAlgCat.baseChange` are
+  -- abbreviations bundling the `CommHopfAlgCat` constructions, so the `.obj` of the finite-type
+  -- quotient is the `CommHopfAlgCat` quotient of the base change.
   (smoothCommHopfAlgProperty_quotient_baseChange_iff (K := AlgebraicClosure k) I).mp
-    (IsParabolicOverAlgClosed.smooth hI)
+    ((isParabolic_iff_isParabolicOverAlgClosed_baseChange k H I).mp hI).smooth
+
+/-- The base change of a parabolic subgroup to an algebraic closure contains a Borel subgroup of
+the geometric fibre. -/
+theorem exists_le_isBorelOverAlgClosed (hI : IsParabolic k H I) :
+    ∃ J : HopfIdeal (AlgebraicClosure k)
+        (FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k)
+          ⟨H, (finiteTypeCommHopfAlgProperty_iff H).2 inferInstance⟩).obj,
+      IsBorelOverAlgClosed (AlgebraicClosure k)
+          (FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k)
+            ⟨H, (finiteTypeCommHopfAlgProperty_iff H).2 inferInstance⟩) J ∧
+        CommHopfAlgCat.baseChangeHopfIdeal (K := AlgebraicClosure k) I ≤ J :=
+  ((isParabolic_iff_isParabolicOverAlgClosed_baseChange k H I).mp
+    hI).exists_le_isBorelOverAlgClosed
 
 /-- A closed subgroup that is smooth over the base field and contains a parabolic subgroup is
 parabolic. -/
 theorem of_le (hI : IsParabolic k H I) {J : HopfIdeal k H} (hJI : J ≤ I)
     (hJ : smoothCommHopfAlgProperty k (CommHopfAlgCat.quotient H J)) :
     IsParabolic k H J :=
-  IsParabolicOverAlgClosed.of_le hI (CommHopfAlgCat.baseChangeHopfIdeal_mono hJI)
-    ((smoothCommHopfAlgProperty_quotient_baseChange_iff (K := AlgebraicClosure k) J).mpr hJ)
+  -- As in `IsParabolic.smooth`, the finite-type quotient of the base change unfolds to the
+  -- `CommHopfAlgCat` quotient by abbreviation.
+  (isParabolic_iff_isParabolicOverAlgClosed_baseChange k H J).mpr
+    (((isParabolic_iff_isParabolicOverAlgClosed_baseChange k H I).mp hI).of_le
+      (CommHopfAlgCat.baseChangeHopfIdeal_mono hJI)
+      ((smoothCommHopfAlgProperty_quotient_baseChange_iff (K := AlgebraicClosure k) J).mpr hJ))
 
 end IsParabolic
+
+/-- The Hopf-ideal criterion for a parabolic subgroup: it is smooth over the base field, and its
+base change to an algebraic closure contains a Borel subgroup of the geometric fibre. -/
+@[simp]
+theorem isParabolic_iff (k : Type u) [Field k] (H : _root_.CommHopfAlgCat.{v} k)
+    [Algebra.FiniteType k H] (I : HopfIdeal k H) :
+    let K := AlgebraicClosure k
+    let H' := FiniteTypeCommHopfAlgCat.baseChange (K := K)
+      ⟨H, (finiteTypeCommHopfAlgProperty_iff H).2 inferInstance⟩
+    let I' := CommHopfAlgCat.baseChangeHopfIdeal (K := K) I
+    IsParabolic k H I ↔
+      smoothCommHopfAlgProperty k (CommHopfAlgCat.quotient H I) ∧
+        ∃ J : HopfIdeal K H'.obj, IsBorelOverAlgClosed K H' J ∧ I' ≤ J := by
+  refine ⟨fun hI ↦ ⟨hI.smooth, hI.exists_le_isBorelOverAlgClosed⟩, ?_⟩
+  rintro ⟨hsmooth, J, hJ, hIJ⟩
+  -- As in `IsParabolic.smooth`, the finite-type quotient of the base change unfolds to the
+  -- `CommHopfAlgCat` quotient by abbreviation.
+  exact (isParabolic_iff_isParabolicOverAlgClosed_baseChange k H I).mpr
+    ⟨inferInstance,
+      (smoothCommHopfAlgProperty_quotient_baseChange_iff (K := AlgebraicClosure k) I).mpr hsmooth,
+      J, hJ, hIJ⟩
 
 /-- The whole group is a parabolic subgroup of itself exactly when it is smooth. The whole group
 is cut out by the zero Hopf ideal. -/
@@ -338,7 +386,7 @@ theorem isParabolic_bot_iff {k : Type u} [Field k] (H : _root_.CommHopfAlgCat.{u
         ⟨H, (finiteTypeCommHopfAlgProperty_iff H).2 inferInstance⟩)).mpr
       ⟨inferInstance, (smoothCommHopfAlgProperty_iff _).mpr inferInstance⟩
     rw [← CommHopfAlgCat.baseChangeHopfIdeal_bot (K := AlgebraicClosure k) (H := H)] at h
-    exact h
+    exact (isParabolic_iff_isParabolicOverAlgClosed_baseChange k H ⊥).mpr h
 
 section Conjugation
 
