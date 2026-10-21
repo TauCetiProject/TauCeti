@@ -8,13 +8,13 @@ module
 public import TauCeti.KnotTheory.Grid.Commutation.Homotopy.Recut
 
 /-!
-# Unpaired hexagon composites have a mixed-side overlap
+# Off-diagonal unpaired hexagon composites have a mixed-side overlap
 
 On the left-hand side `∂ ∘ H + H ∘ ∂` of the homotopy equation of a column commutation, a counted
 hexagon composite whose two rectangles share exactly one side column cancels against its recut
 whenever that recut is again a counted composite (`Homotopy.Recut`). This file shows that this
 always happens when the shared column is initial for both rectangles or terminal for both.
-Consequently every unpaired composite has a mixed-side overlap.
+Consequently, off the diagonal, every unpaired composite has a mixed-side overlap.
 
 The argument has two independent parts.
 
@@ -227,7 +227,8 @@ private theorem isHexagonShape_recut_of_right_eq_right {x z : GridState n}
     · exact Or.inr (Or.inl ⟨hr, Grid.cIco_subset_of_mem_cIoo hrow hs, hs'⟩)
     · exact Or.inr (Or.inr ⟨hl, Grid.cIco_subset_of_mem_cIoo hrow hs, hs'⟩)
     · rw [htop] at hs hs'
-      exact Or.inr (Or.inl ⟨hcommon.trans hr, Grid.mem_cIco_and_mem_cIoo_of_mem_cIoo hrow hs hs'⟩)
+      exact Or.inr (Or.inl ⟨hcommon.trans hr, Grid.mem_cIco_of_mem_cIco_of_mem_cIoo hs hrow,
+        Grid.mem_cIoo_of_mem_cIco_of_mem_cIoo hrow hs hs'⟩)
     · rw [htop] at hs hs'
       exact Or.inl (Or.inr ⟨hl, hs, hs'⟩)
   · -- The first piece spans both row intervals; the second has the first rectangle's rows.
@@ -238,9 +239,11 @@ private theorem isHexagonShape_recut_of_right_eq_right {x z : GridState n}
     · exact Or.inl (Or.inl ⟨hr, Grid.cIco_subset_of_mem_cIoo hrow hs, hs'⟩)
     · exact Or.inr (Or.inr ⟨hl, hs, hs'⟩)
     · rw [htop] at hs hs'
-      exact Or.inl (Or.inl ⟨hcommon.trans hr, Grid.mem_cIco_and_mem_cIoo_of_mem_cIoo hrow hs hs'⟩)
+      exact Or.inl (Or.inl ⟨hcommon.trans hr, Grid.mem_cIco_of_mem_cIco_of_mem_cIoo hs hrow,
+        Grid.mem_cIoo_of_mem_cIco_of_mem_cIoo hrow hs hs'⟩)
     · rw [htop] at hs hs'
-      exact Or.inl (Or.inr ⟨hl, Grid.mem_cIco_and_mem_cIoo_of_mem_cIoo hrow hs hs'⟩)
+      exact Or.inl (Or.inr ⟨hl, Grid.mem_cIco_of_mem_cIco_of_mem_cIoo hs hrow,
+        Grid.mem_cIoo_of_mem_cIco_of_mem_cIoo hrow hs hs'⟩)
 
 /-- In the recut of two empty rectangles sharing their initial side, a piece has hexagon shape
 when one of the original rectangles has. -/
@@ -253,8 +256,6 @@ private theorem isHexagonShape_recut_of_left_eq_left {x z : GridState n}
   have hright : D.first.right ≠ D.second.right := fun h =>
     D.sideColumns_ne_of_hasOneCommonSide hone (by
       rw [GridRectangleBetween.sideColumns, GridRectangleBetween.sideColumns, h, hcommon])
-  have hsecondRight : D.second.right ≠ D.first.left := fun h =>
-    D.second.left_ne_right (hcommon.symm.trans h.symm)
   -- The second rectangle lies directly above the first; their rows join at the first's top.
   obtain ⟨hcol, hrow⟩ := D.cyclicOrder_of_isEmpty_of_left_eq_left hcommon hright hfirst hsecond
   have hbottom := D.second_bottom_eq_first_top_of_left_eq_left hcommon
@@ -263,42 +264,34 @@ private theorem isHexagonShape_recut_of_left_eq_left {x z : GridState n}
   unfold IsHexagonShape at hD ⊢
   rcases hcol with hcol | hcol
   · -- The first piece has the second rectangle's rows; the second spans both row intervals.
-    obtain ⟨hfl, -, hsl, -⟩ :=
+    obtain ⟨-, -, hsl, -⟩ :=
       D.recut_sides_of_left_eq_left_of_first_right_mem_cIoo hcommon hcol hfirst hsecond
+    obtain ⟨hfb, hft⟩ := D.recut_first_bottom_top_of_left_eq_left_of_first_right_mem_cIoo
+      hcommon hcol hfirst hsecond
     obtain ⟨hsb, hst⟩ := D.recut_second_bottom_top_of_left_eq_left_of_first_right_mem_cIoo
       hcommon hcol hfirst hsecond
-    have hfb : (D.recut hone hfirst hsecond).first.bottom = D.first.top := by
-      rw [GridRectangleBetween.bottom_def, GridRectangleBetween.top_def, hfl]
-    have hft : (D.recut hone hfirst hsecond).first.top = D.second.top := by
-      rw [GridRectangleBetween.top_def, GridRectangleBetween.top_def, hfr]
-      exact (D.first.map_of_ne _ hsecondRight hright.symm).symm
     rw [hfr, hsr, hfb, hft, hsb, hst, hsl]
     rcases hD with (⟨hr, hs, hs'⟩ | ⟨hl, hs, hs'⟩) | (⟨hr, hs, hs'⟩ | ⟨hl, hs, hs'⟩)
-    · exact Or.inr (Or.inl ⟨hr, Grid.mem_cIco_and_mem_cIoo_of_mem_cIoo hrow hs hs'⟩)
-    · exact Or.inr (Or.inr ⟨hl, Grid.mem_cIco_and_mem_cIoo_of_mem_cIoo hrow hs hs'⟩)
+    · exact Or.inr (Or.inl ⟨hr, Grid.mem_cIco_of_mem_cIco_of_mem_cIoo hs hrow,
+        Grid.mem_cIoo_of_mem_cIco_of_mem_cIoo hrow hs hs'⟩)
+    · exact Or.inr (Or.inr ⟨hl, Grid.mem_cIco_of_mem_cIco_of_mem_cIoo hs hrow,
+        Grid.mem_cIoo_of_mem_cIco_of_mem_cIoo hrow hs hs'⟩)
     · rw [hbottom] at hs
       exact Or.inl (Or.inl ⟨hr, hs, hs'⟩)
     · rw [hbottom] at hs
       exact Or.inr (Or.inr ⟨hcommon.trans hl, Grid.cIco_subset_of_mem_cIoo hrow hs, hs'⟩)
   · -- The first piece spans both row intervals; the second has the first rectangle's rows.
-    obtain ⟨hfl, -, hsl, -⟩ :=
+    obtain ⟨hfl, -, -, -⟩ :=
       D.recut_sides_of_left_eq_left_of_mem_cIoo hcommon hcol hfirst hsecond
     obtain ⟨hfb, hft⟩ :=
       D.recut_first_bottom_top_of_left_eq_left_of_mem_cIoo hcommon hcol hfirst hsecond
-    have hsb : (D.recut hone hfirst hsecond).second.bottom = D.first.bottom := by
-      rw [GridRectangleBetween.bottom_def, GridRectangleBetween.bottom_def, hsl, ← hfr,
-        (D.recut hone hfirst hsecond).first.map_right, hfl]
-    have hst : (D.recut hone hfirst hsecond).second.top = D.first.top := by
-      rw [GridRectangleBetween.top_def, GridRectangleBetween.top_def, hsr]
-      refine (D.recut hone hfirst hsecond).first.map_of_ne _ ?_ ?_
-      · rw [hfl]
-        exact D.first.left_ne_right.symm
-      · rw [hfr]
-        exact hright
+    obtain ⟨hsb, hst⟩ :=
+      D.recut_second_bottom_top_of_left_eq_left_of_mem_cIoo hcommon hcol hfirst hsecond
     rw [hfr, hsr, hfb, hft, hsb, hst, hfl]
     rcases hD with (⟨hr, hs, hs'⟩ | ⟨hl, hs, hs'⟩) | (⟨hr, hs, hs'⟩ | ⟨hl, hs, hs'⟩)
     · exact Or.inr (Or.inl ⟨hr, hs, hs'⟩)
-    · exact Or.inl (Or.inr ⟨hl, Grid.mem_cIco_and_mem_cIoo_of_mem_cIoo hrow hs hs'⟩)
+    · exact Or.inl (Or.inr ⟨hl, Grid.mem_cIco_of_mem_cIco_of_mem_cIoo hs hrow,
+        Grid.mem_cIoo_of_mem_cIco_of_mem_cIoo hrow hs hs'⟩)
     · rw [hbottom] at hs
       exact Or.inl (Or.inl ⟨hr, Grid.cIco_subset_of_mem_cIoo hrow hs, hs'⟩)
     · rw [hbottom] at hs
