@@ -61,6 +61,11 @@ restrictions.
   by the order of the group.
 * `groupCohomology.subsingleton_of_isUnit_natCard`: positive-degree cohomology of a finite group
   vanishes when the order of the group is a unit of the coefficient ring.
+* `groupCohomology.subsingleton_of_bijective_nsmul`: positive-degree cohomology of a finite group
+  vanishes when multiplication by the order of the group is bijective on the coefficients.
+* `groupCohomology.isIso_δ_of_bijective_nsmul`: the connecting homomorphisms of a short exact
+  sequence are isomorphisms in positive degree when multiplication by the order of the group is
+  bijective on the middle term.
 * `groupCohomology.zmultiples_map_subtype_eq_top`: a class of full `p`-order restricts to a
   generator on a `p`-subgroup whose cohomology has the order of the subgroup.
 * `TauCeti.groupCohomology.corestriction_trans`: corestriction from `A` to `B` followed by
@@ -442,13 +447,49 @@ theorem natCard_nsmul_eq_zero {A : Rep k G} {n : ℕ} (x : groupCohomology A (n 
     (ModuleCat.subsingleton_of_isZero
       (isZero_groupCohomology_succ_of_subsingleton (res (⊥ : Subgroup G).subtype A) n)).allEq _ _
 
+/-- Positive-degree cohomology of a finite group vanishes when multiplication by the order of the
+group is bijective on the coefficients, for instance for a representation on a `ℚ`-vector space
+over any coefficient ring. -/
+theorem subsingleton_of_bijective_nsmul (A : Rep k G)
+    (h : Function.Bijective fun a : A ↦ Nat.card G • a) (n : ℕ) :
+    Subsingleton (groupCohomology A (n + 1)) := by
+  -- Division by `#G` is a `G`-equivariant endomorphism `ψ` of `A` with `#G • ψ = 𝟙 A`.
+  let e := LinearEquiv.ofBijective (Nat.card G • LinearMap.id : A →ₗ[k] A) h
+  have he (a : A) : Nat.card G • e.symm a = a := e.apply_symm_apply a
+  let ψ : A ⟶ A := ConcreteCategory.ofHom (C := Rep k G)
+    { toLinearMap := e.symm.toLinearMap
+      isIntertwining' := fun g ↦ LinearMap.ext fun a ↦ h.1 <| by
+        dsimp only [LinearMap.comp_apply, LinearEquiv.coe_coe]
+        rw [he, ← map_nsmul, he] }
+  have hψ : Nat.card G • ψ = 𝟙 A := by
+    ext a
+    exact he a
+  refine subsingleton_of_forall_eq 0 fun x ↦ ?_
+  -- The functor `Hⁿ⁺¹(G, -)` is additive, so it sends `#G • ψ = 𝟙 A` to `#G • ψ_*`.
+  have hF : map (MonoidHom.id G) (𝟙 A) (n + 1) = Nat.card G • map (MonoidHom.id G) ψ (n + 1) := by
+    rw [← hψ]
+    exact (cochainsFunctor k G ⋙ HomologicalComplex.homologyFunctor _ _ (n + 1)).map_nsmul
+  calc x = (map (MonoidHom.id G) (𝟙 A) (n + 1)).hom x := by rw [map_id]; rfl
+    _ = Nat.card G • (map (MonoidHom.id G) ψ (n + 1)).hom x := by rw [hF]; rfl
+    _ = 0 := natCard_nsmul_eq_zero _
+
 /-- Positive-degree cohomology of a finite group vanishes when the order of the group is a unit
 of the coefficient ring. -/
 theorem subsingleton_of_isUnit_natCard (A : Rep k G) (h : IsUnit (Nat.card G : k)) (n : ℕ) :
-    Subsingleton (groupCohomology A (n + 1)) := by
-  refine subsingleton_of_forall_eq 0 fun x ↦ ?_
-  obtain ⟨c, hc⟩ := h.exists_left_inv
-  rw [← one_smul k x, ← hc, mul_smul, Nat.cast_smul_eq_nsmul, natCard_nsmul_eq_zero, smul_zero]
+    Subsingleton (groupCohomology A (n + 1)) :=
+  subsingleton_of_bijective_nsmul A (by
+    simpa only [Units.smul_def, IsUnit.unit_spec, Nat.cast_smul_eq_nsmul] using
+      (MulAction.bijective h.unit : Function.Bijective fun a : A ↦ h.unit • a)) n
+
+/-- The connecting homomorphism `Hⁿ⁺¹(G, X₃) ⟶ Hⁿ⁺²(G, X₁)` of a short exact sequence
+`0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` of representations of a finite group is an isomorphism when
+multiplication by the order of the group is bijective on `X₂`. -/
+theorem isIso_δ_of_bijective_nsmul {X : ShortComplex (Rep k G)} (hX : X.ShortExact)
+    (h : Function.Bijective fun a : X.X₂ ↦ Nat.card G • a) (n : ℕ) :
+    IsIso (δ hX (n + 1) (n + 2) rfl) :=
+  have := subsingleton_of_bijective_nsmul X.X₂ h
+  isIso_δ_of_isZero hX (n + 1) (ModuleCat.isZero_of_subsingleton _)
+    (ModuleCat.isZero_of_subsingleton _)
 
 /-- **A class of full `p`-order restricts to a generator on a `p`-subgroup.** Let `u ∈ Hⁿ(G, A)`
 have order divisible by the `p`-part of `#G`, and let `S` be a `p`-subgroup of `G` with

@@ -28,6 +28,8 @@ Its group cohomology is read off in
 * `AddEquiv.cyclicRepresentation A hA`: the representation of `C_m` on `T` in which the
   generator acts by `A`.
 * `AddEquiv.cyclicRep A hA`: the same representation, as an object of `Rep ℤ C_m`.
+* `AddMonoidHom.cyclicRepHom f hA hB hf`: an additive map `f` with `f ∘ A = B ∘ f`, as a morphism
+  of cyclic representations.
 
 ## Main results
 
@@ -131,3 +133,33 @@ theorem mem_range_cyclicRep_applyAsHom_sub_iff (x : T) :
     abel
 
 end AddEquiv
+
+namespace AddMonoidHom
+
+universe u
+
+variable {T M : Type u} [AddCommGroup T] [AddCommGroup M] {m : ℕ} [NeZero m] {A : T ≃+ T}
+  {B : M ≃+ M} (f : T →+ M) (hA : (⇑A)^[m] = _root_.id) (hB : (⇑B)^[m] = _root_.id)
+  (hf : ∀ x, f (A x) = B (f x))
+
+/-- An additive map `f : T →+ M` with `f ∘ A = B ∘ f` is a morphism from the cyclic
+representation of `A` to that of `B`. -/
+noncomputable def cyclicRepHom : A.cyclicRep hA ⟶ B.cyclicRep hB :=
+  Rep.ofHom
+    { toLinearMap := f.toIntLinearMap
+      isIntertwining' := fun g ↦ LinearMap.ext fun x ↦ by
+        rw [← ofAdd_toAdd g, LinearMap.comp_apply, LinearMap.comp_apply,
+          AddEquiv.cyclicRepresentation_ofAdd_apply, AddEquiv.cyclicRepresentation_ofAdd_apply]
+        exact Function.Semiconj.iterate_right hf _ x }
+
+/-- The morphism of cyclic representations defined by `f` is `f` on underlying groups. The
+coercion is stated on the intertwining maps of the underlying representations, rather than of the
+`Rep` objects, which is the form `simp` meets in applications. -/
+@[simp]
+theorem coe_cyclicRepHom_hom :
+    DFunLike.coe (F := (A.cyclicRepresentation hA).IntertwiningMap (B.cyclicRepresentation hB))
+      (f.cyclicRepHom hA hB hf).hom = f := by
+  ext x
+  simp [cyclicRepHom]
+
+end AddMonoidHom
