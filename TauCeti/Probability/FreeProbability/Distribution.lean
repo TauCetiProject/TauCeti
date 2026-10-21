@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.FreeAlgebra
+public import TauCeti.LinearAlgebra.FreeAlgebra
 import Mathlib.Algebra.Algebra.Subalgebra.Lattice
 
 /-!
@@ -51,7 +51,7 @@ theorem jointDistribution_apply (φ : A →ₗ[R] R) (a : ι → A) (p : FreeAlg
 
 /-- Evaluating the distribution on a word gives its ordered moment. For the empty word this
 is `φ 1`. -/
-theorem jointDistribution_prod (φ : A →ₗ[R] R) (a : ι → A) (w : List ι) :
+theorem jointDistribution_list_prod (φ : A →ₗ[R] R) (a : ι → A) (w : List ι) :
     jointDistribution φ a (w.map (FreeAlgebra.ι R)).prod = φ (w.map a).prod := by
   simp [map_list_prod, List.map_map, Function.comp_def]
 
@@ -60,12 +60,7 @@ theorem jointDistribution_basisFreeMonoid (φ : A →ₗ[R] R) (a : ι → A)
     (w : FreeMonoid ι) :
     jointDistribution φ a (FreeAlgebra.basisFreeMonoid R ι w) =
       φ (w.toList.map a).prod := by
-  -- Mathlib has no basis-vector evaluation lemma; isolate its representation here.
-  have basis_eq_prod : FreeAlgebra.basisFreeMonoid R ι w =
-      (w.toList.map (FreeAlgebra.ι R)).prod := by
-    simp [FreeAlgebra.basisFreeMonoid, FreeAlgebra.equivMonoidAlgebraFreeMonoid,
-      FreeMonoid.lift_apply]
-  rw [basis_eq_prod, jointDistribution_prod]
+  rw [basisFreeMonoid_apply, jointDistribution_list_prod]
 
 /-- A joint algebraic distribution is determined by all its word moments, including the
 empty word. The two families may live in different algebras. -/
@@ -75,7 +70,7 @@ theorem jointDistribution_eq_iff {φ : A →ₗ[R] R} {ψ : B →ₗ[R] R}
       ∀ w : List ι, φ (w.map a).prod = ψ (w.map b).prod := by
   constructor
   · intro h w
-    simpa only [jointDistribution_prod] using
+    simpa only [jointDistribution_list_prod] using
       LinearMap.congr_fun h (w.map (FreeAlgebra.ι R)).prod
   · intro h
     apply (FreeAlgebra.basisFreeMonoid R ι).ext
@@ -84,17 +79,16 @@ theorem jointDistribution_eq_iff {φ : A →ₗ[R] R} {ψ : B →ₗ[R] R}
 
 /-- Evaluating the formal generators recovers the original polynomial functional. -/
 @[simp]
-theorem jointDistribution_generators (φ : FreeAlgebra R ι →ₗ[R] R) :
+theorem jointDistribution_ι (φ : FreeAlgebra R ι →ₗ[R] R) :
     jointDistribution φ (FreeAlgebra.ι R) = φ := by
-  have h : FreeAlgebra.lift R (FreeAlgebra.ι R : ι → FreeAlgebra R ι) =
-      AlgHom.id R (FreeAlgebra R ι) := by
-    simpa using FreeAlgebra.lift_comp_ι (AlgHom.id R (FreeAlgebra R ι))
-  ext p
-  simp [h]
+  simpa only [jointDistribution, AlgHom.coe_id, Function.id_comp, AlgHom.toLinearMap_id,
+    LinearMap.comp_id] using
+    congrArg (fun f : FreeAlgebra R ι →ₐ[R] FreeAlgebra R ι => φ.comp f.toLinearMap)
+      (FreeAlgebra.lift_comp_ι (AlgHom.id R (FreeAlgebra R ι)))
 
 /-- Pulling a functional back along an algebra homomorphism is equivalent to mapping the
 family forward. This also gives transport along algebra equivalences. -/
-theorem jointDistribution_comp (φ : B →ₗ[R] R) (f : A →ₐ[R] B) (a : ι → A) :
+theorem jointDistribution_map (φ : B →ₗ[R] R) (f : A →ₐ[R] B) (a : ι → A) :
     jointDistribution (φ.comp f.toLinearMap) a = jointDistribution φ (f ∘ a) := by
   have h : f.comp (FreeAlgebra.lift R a) = FreeAlgebra.lift R (f ∘ a) := by
     ext i
@@ -109,11 +103,11 @@ theorem jointDistribution_subst (φ : A →ₗ[R] R) (a : ι → A)
     jointDistribution φ (fun j => FreeAlgebra.lift R a (p j)) =
       jointDistribution (jointDistribution φ a) p := by
   simpa only [jointDistribution, Function.comp_def] using
-    (jointDistribution_comp φ (FreeAlgebra.lift R a) p).symm
+    (jointDistribution_map φ (FreeAlgebra.lift R a) p).symm
 
 /-- Relabeling, including restriction to a subfamily, is pullback by the corresponding
 map of free algebras. The label map need not be injective. -/
-theorem jointDistribution_reindex (φ : A →ₗ[R] R) (a : ι → A) (r : κ → ι) :
+theorem jointDistribution_comp (φ : A →ₗ[R] R) (a : ι → A) (r : κ → ι) :
     jointDistribution φ (a ∘ r) =
       jointDistribution (jointDistribution φ a) (FreeAlgebra.ι R ∘ r) := by
   simpa [Function.comp_def] using jointDistribution_subst φ a (FreeAlgebra.ι R ∘ r)
@@ -129,20 +123,20 @@ theorem jointDistribution_subst_eq {φ : A →ₗ[R] R} {ψ : B →ₗ[R] R}
 
 /-- Equal joint distributions have equal distributions on every relabeled family,
 including every subfamily. -/
-theorem jointDistribution_reindex_eq {φ : A →ₗ[R] R} {ψ : B →ₗ[R] R}
+theorem jointDistribution_comp_eq {φ : A →ₗ[R] R} {ψ : B →ₗ[R] R}
     {a : ι → A} {b : ι → B} (h : jointDistribution φ a = jointDistribution ψ b)
     (r : κ → ι) :
     jointDistribution φ (a ∘ r) = jointDistribution ψ (b ∘ r) := by
-  rw [jointDistribution_reindex φ a r, jointDistribution_reindex ψ b r, h]
+  rw [jointDistribution_comp φ a r, jointDistribution_comp ψ b r, h]
 
 /-- A surjective relabeling loses no information about the joint distribution. -/
-theorem jointDistribution_reindex_eq_iff {φ : A →ₗ[R] R} {ψ : B →ₗ[R] R}
+theorem jointDistribution_comp_eq_iff {φ : A →ₗ[R] R} {ψ : B →ₗ[R] R}
     {a : ι → A} {b : ι → B} {r : κ → ι} (hr : Function.Surjective r) :
     jointDistribution φ (a ∘ r) = jointDistribution ψ (b ∘ r) ↔
       jointDistribution φ a = jointDistribution ψ b := by
   classical
-  refine ⟨fun h => ?_, fun h => jointDistribution_reindex_eq h r⟩
-  have h' := jointDistribution_reindex_eq h (Function.surjInv hr)
+  refine ⟨fun h => ?_, fun h => jointDistribution_comp_eq h r⟩
+  have h' := jointDistribution_comp_eq h (Function.surjInv hr)
   simpa [Function.comp_def, Function.surjInv_eq] using h'
 
 /-- Two functionals have the same joint distribution on a family exactly when they agree
