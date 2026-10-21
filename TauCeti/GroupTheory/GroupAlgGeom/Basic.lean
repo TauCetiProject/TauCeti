@@ -37,7 +37,8 @@ injectivity.
 
 ## Main results
 
-* `TauCeti.GroupAlgGeom.map_eval`: `G`-homomorphisms commute with evaluation.
+* `MonoidHom.comp_eval`, `TauCeti.GroupAlgGeom.map_eval`: homomorphisms and `G`-homomorphisms
+  commute with evaluation.
 * `TauCeti.GroupAlgGeom.GX.equivOfIsEmpty`, `TauCeti.GroupAlgGeom.GX.equivFreeGroup`: `G[∅] ≅ G`
   and, for trivial `G`, `G[X] ≅ F(X)`, under which evaluation is `FreeGroup.lift`.
 * `TauCeti.GroupAlgGeom.GX.not_commute_inl_inr_of`: a nontrivial coefficient does not commute
@@ -245,17 +246,27 @@ theorem homEquiv_symm_apply : (homEquiv ι).symm v = evalGHom ι v := (rfl)
 
 variable {ι v}
 
-/-- `G`-homomorphisms commute with evaluation: `φ (w(v)) = w(φ ∘ v)`. -/
-@[simp]
-theorem map_eval {ιK : G →* K} (φ : GHom ι ιK) (w : GX G X) :
-    φ (eval ι v w) = eval ιK (φ ∘ v) w := by
-  rw [← φ.coe_toMonoidHom, ← MonoidHom.comp_apply, eq_eval (φ.toMonoidHom.comp (eval ι v))]
-  simp [MonoidHom.comp_assoc, Function.comp_def]
+/-- Homomorphisms commute with evaluation: `f ∘ eval ι v = eval (f ∘ ι) (f ∘ v)`. -/
+theorem _root_.MonoidHom.comp_eval (f : H →* K) {ι : G →* H} {v : X → H} :
+    f.comp (eval ι v) = eval (f.comp ι) (f ∘ v) :=
+  hom_ext (by simp [MonoidHom.comp_assoc]) (FreeGroup.ext_hom _ _ fun _ => by simp)
+
+/-- Homomorphisms commute with evaluation: `f (w(v)) = w(f ∘ v)`, the coefficients being moved
+along `f`. -/
+theorem hom_eval {F : Type*} [FunLike F H K] [MonoidHomClass F H K] (f : F) (w : GX G X) :
+    f (eval ι v w) = eval ((f : H →* K).comp ι) (f ∘ v) w :=
+  DFunLike.congr_fun (f : H →* K).comp_eval w
 
 /-- `G`-homomorphisms commute with evaluation, as homomorphisms out of `G[X]`. -/
 theorem comp_eval {ιK : G →* K} (φ : GHom ι ιK) :
-    φ.toMonoidHom.comp (eval ι v) = eval ιK (φ ∘ v) :=
-  MonoidHom.ext (map_eval φ)
+    φ.toMonoidHom.comp (eval ι v) = eval ιK (φ ∘ v) := by
+  rw [MonoidHom.comp_eval, φ.comp_coeff, φ.coe_toMonoidHom]
+
+/-- `G`-homomorphisms commute with evaluation: `φ (w(v)) = w(φ ∘ v)`. -/
+@[simp]
+theorem map_eval {ιK : G →* K} (φ : GHom ι ιK) (w : GX G X) :
+    φ (eval ι v w) = eval ιK (φ ∘ v) w :=
+  DFunLike.congr_fun (comp_eval φ) w
 
 /-! ### Degenerate cases and noncommutativity of `G[X]` -/
 
@@ -300,10 +311,10 @@ theorem equivFreeGroup_symm_apply [Subsingleton G] (w : FreeGroup X) :
 /-- Over trivial coefficients, evaluation is `FreeGroup.lift` through `G[X] ≅ F(X)`. -/
 theorem eval_eq_lift_equivFreeGroup [Subsingleton G] (ι : G →* H) (v : X → H) (w : GX G X) :
     eval ι v w = FreeGroup.lift v (equivFreeGroup G X w) := by
-  rw [← MulEquiv.coe_toMonoidHom, ← MonoidHom.comp_apply]
-  congr 1
-  exact hom_ext (MonoidHom.ext fun g => by simp [Subsingleton.elim g 1])
-    (FreeGroup.ext_hom _ _ fun _ => by simp)
+  have : eval ι v = (FreeGroup.lift v).comp (equivFreeGroup G X).toMonoidHom :=
+    hom_ext (MonoidHom.ext fun g => by simp [Subsingleton.elim g 1])
+      (FreeGroup.ext_hom _ _ fun _ => by simp)
+  exact DFunLike.congr_fun this w
 
 /-- A nontrivial coefficient does not commute with a variable in `G[X]`; in particular `G[X]` is
 not the direct product `G × F(X)`. -/
@@ -332,9 +343,8 @@ theorem eval_commutator :
     let a : FreeGroup (Fin 2) := of 0
     let w : GX (FreeGroup (Fin 2)) Unit := inr (of ()) * inl a * (inr (of ()))⁻¹ * (inl a)⁻¹
     eval (.id _) (fun _ => a ^ 2) w = 1 ∧ eval (.id _) (fun _ => of 1) w ≠ 1 := by
-  refine ⟨by simp; group, ?_⟩
   simp only [_root_.map_mul, _root_.map_inv, eval_inl, eval_inr, lift_apply_of, MonoidHom.id_apply]
-  decide
+  exact ⟨by group, by decide⟩
 
 end Examples
 
