@@ -37,10 +37,9 @@ of every pair of objects in `P × Q`, these maps intertwine the two q-Euler form
 (`TauCeti.gradedExtEulerSesquilinear_map_map`). This is the graded counterpart of
 `TauCeti.extEulerPairing_map_map`.
 
-The bijectivity hypothesis holds for the forward functor of an additive equivalence, whose map on
-`Ext` underlies `CategoryTheory.Equivalence.extAddEquiv` by
-`CategoryTheory.Equivalence.extAddEquiv_apply`, so the q-Euler characteristic is invariant under
-shift-compatible equivalences (`TauCeti.gradedExtEuler_map_equivalence`). For a fully
+The bijectivity hypothesis holds for the forward functor of an additive equivalence
+(`CategoryTheory.Equivalence.mapExtAddHom_bijective`), so the q-Euler characteristic is invariant
+under shift-compatible equivalences (`TauCeti.gradedExtEuler_map_equivalence`). For a fully
 faithful exact functor out of a category with enough projectives which preserves projective
 objects it is Mathlib's `CategoryTheory.Functor.mapExt_bijective_of_preservesProjectiveObjects`.
 
@@ -250,11 +249,9 @@ theorem gradedExtEuler_map_equivalence (G : C ≌ D) [G.functor.Additive]
     [G.functor.Linear k] (σ : e.functor ⋙ G.functor ≅ G.functor ⋙ e'.functor)
     (h : IsGradedEulerAdmissible.{w} k e X Y) :
     gradedExtEuler k e'
-        (h.map G.functor σ fun n _ ↦ (funext G.extAddEquiv_apply).subst
-          (motive := Function.Surjective) (G.extAddEquiv X _ n).surjective) =
+        (h.map G.functor σ fun n _ ↦ (G.mapExtAddHom_bijective X _ n).2) =
       gradedExtEuler k e h :=
-  gradedExtEuler_map G.functor σ (fun n _ ↦ (funext G.extAddEquiv_apply).subst
-    (motive := Function.Bijective) (G.extAddEquiv X _ n).bijective) h
+  gradedExtEuler_map G.functor σ (fun n _ ↦ G.mapExtAddHom_bijective X _ n) h
 
 /-! ### Naturality of the q-Euler form -/
 
