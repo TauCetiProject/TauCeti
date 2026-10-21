@@ -115,14 +115,6 @@ instance : (Qh C).EssSurj where
     rw [HomotopyCategory.bounded_quotient_obj_iff, CochainComplex.bounded_iff]
     exact ⟨a, b, inferInstance, inferInstance⟩
 
-/-- The quasi-isomorphisms of bounded complexes become isomorphisms in `D^b(C)`. -/
-lemma Qh_inverts_quasiIso :
-    (HomotopyCategory.Bounded.quasiIso C).IsInvertedBy (Qh C) := fun _ _ f hf ↦ by
-  rw [← isIso_iff_of_reflects_iso _ _root_.DerivedCategory.Bounded.ι]
-  exact Localization.inverts _root_.DerivedCategory.Qh
-    (_root_.HomotopyCategory.quasiIso C (.up ℤ)) _
-    ((HomotopyCategory.Bounded.quasiIso_iff f).mp hf)
-
 section Localization
 
 variable (C)
