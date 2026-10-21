@@ -21,7 +21,8 @@ public import TauCeti.Topology.MetricSpace.Ultra.Completion
 A map bounded by a product of norms takes two cofinite-null families to a cofinite-null family
 on the product index. In a complete ultrametric target this gives summability; when the map is
 bilinear, passage to the completion gives double-sum and Cauchy-product identities without
-completeness. The scalar ring need not carry a norm, and neither source module needs to be
+completeness. In the sum identities, the bilinear map is inferred from its norm bound.
+The scalar ring need not carry a norm, and neither source module needs to be
 complete or ultrametric. The double-sum argument follows `HasSum.mul_eq` in
 `Mathlib.Topology.Algebra.InfiniteSum.Ring`, with bounded bilinear maps in place of multiplication.
 
@@ -114,7 +115,7 @@ end Summability
 section BilinearIdentities
 
 variable [CommRing R] [Module R E] [Module R F] [Module R G]
-variable (B : E →ₗ[R] F →ₗ[R] G) {C : ℝ}
+variable {B : E →ₗ[R] F →ₗ[R] G} {C : ℝ}
     (hB : ∀ x y, ‖B x y‖ ≤ C * ‖x‖ * ‖y‖)
 
 include hB
@@ -145,7 +146,7 @@ theorem hasSum_bilinear_of_nonarchimedean
 theorem bilinear_tsum_tsum_of_nonarchimedean [T0Space G]
     {f : ι → E} {g : κ → F} (hf : Summable f) (hg : Summable g) :
     B (∑' i, f i) (∑' j, g j) = ∑' ij : ι × κ, B (f ij.1) (g ij.2) :=
-  (hasSum_bilinear_of_nonarchimedean B hB hf.hasSum hg.hasSum).tsum_eq.symm
+  (hasSum_bilinear_of_nonarchimedean hB hf.hasSum hg.hasSum).tsum_eq.symm
 
 section CauchyProduct
 
@@ -156,7 +157,7 @@ theorem hasSum_sum_bilinear_antidiagonal_of_nonarchimedean
     {f : A → E} {g : A → F} {a : E} {b : F} (hf : HasSum f a) (hg : HasSum g b) :
     HasSum (fun n ↦ ∑ ij ∈ Finset.antidiagonal n, B (f ij.1) (g ij.2)) (B a b) := by
   have hsigma := Finset.HasAntidiagonal.sigmaAntidiagonalEquivProd.hasSum_iff.mpr
-    (hasSum_bilinear_of_nonarchimedean B hB hf hg)
+    (hasSum_bilinear_of_nonarchimedean hB hf hg)
   exact hsigma.sigma fun n ↦ Finset.hasSum (Finset.antidiagonal n)
     fun ij ↦ B (f ij.1) (g ij.2)
 
@@ -166,7 +167,7 @@ theorem bilinear_tsum_tsum_eq_tsum_sum_antidiagonal_of_nonarchimedean
     (hf : Summable f) (hg : Summable g) :
     B (∑' n, f n) (∑' n, g n) =
       ∑' n, ∑ ij ∈ Finset.antidiagonal n, B (f ij.1) (g ij.2) :=
-  (hasSum_sum_bilinear_antidiagonal_of_nonarchimedean B hB hf.hasSum hg.hasSum).tsum_eq.symm
+  (hasSum_sum_bilinear_antidiagonal_of_nonarchimedean hB hf.hasSum hg.hasSum).tsum_eq.symm
 
 end CauchyProduct
 
@@ -175,7 +176,7 @@ theorem hasSum_sum_bilinear_range_of_nonarchimedean
     {f : ℕ → E} {g : ℕ → F} {a : E} {b : F} (hf : HasSum f a) (hg : HasSum g b) :
     HasSum (fun n ↦ ∑ k ∈ Finset.range (n + 1), B (f k) (g (n - k))) (B a b) := by
   simp_rw [← Finset.Nat.sum_antidiagonal_eq_sum_range_succ fun k l ↦ B (f k) (g l)]
-  exact hasSum_sum_bilinear_antidiagonal_of_nonarchimedean B hB hf hg
+  exact hasSum_sum_bilinear_antidiagonal_of_nonarchimedean hB hf hg
 
 /-- The natural-number bilinear Cauchy-product formula. -/
 theorem bilinear_tsum_tsum_eq_tsum_sum_range_of_nonarchimedean
@@ -184,7 +185,7 @@ theorem bilinear_tsum_tsum_eq_tsum_sum_range_of_nonarchimedean
     B (∑' n, f n) (∑' n, g n) =
       ∑' n, ∑ k ∈ Finset.range (n + 1), B (f k) (g (n - k)) := by
   simp_rw [← Finset.Nat.sum_antidiagonal_eq_sum_range_succ fun k l ↦ B (f k) (g l)]
-  exact bilinear_tsum_tsum_eq_tsum_sum_antidiagonal_of_nonarchimedean B hB hf hg
+  exact bilinear_tsum_tsum_eq_tsum_sum_antidiagonal_of_nonarchimedean hB hf hg
 
 end BilinearIdentities
 
@@ -256,7 +257,7 @@ theorem _root_.HasSum.smul_of_nonarchimedean {α β : Type*} {f : α → R} {g :
     {b : M} (hf : HasSum f a) (hg : HasSum g b) :
     HasSum (fun ij : α × β ↦ f ij.1 • g ij.2) (a • b) := by
   simpa only [smulBilinearMap_apply] using
-    hasSum_bilinear_of_nonarchimedean smulBilinearMap norm_smulBilinearMap_le hf hg
+    hasSum_bilinear_of_nonarchimedean norm_smulBilinearMap_le hf hg
 
 /-- The scalar multiple of two infinite sums in a Hausdorff ultrametric normed module is their
 double sum. -/
@@ -264,7 +265,7 @@ protected theorem _root_.Summable.tsum_smul_tsum_of_nonarchimedean [T0Space M] {
     {f : α → R} {g : β → M} (hf : Summable f) (hg : Summable g) :
     (∑' i, f i) • (∑' j, g j) = ∑' ij : α × β, f ij.1 • g ij.2 := by
   simpa only [smulBilinearMap_apply] using
-    bilinear_tsum_tsum_of_nonarchimedean smulBilinearMap norm_smulBilinearMap_le hf hg
+    bilinear_tsum_tsum_of_nonarchimedean norm_smulBilinearMap_le hf hg
 
 section CauchyProduct
 
@@ -277,7 +278,7 @@ theorem _root_.HasSum.sum_smul_antidiagonal_of_nonarchimedean {f : A → R} {g :
     HasSum (fun n ↦ ∑ ij ∈ Finset.antidiagonal n, f ij.1 • g ij.2) (a • b) := by
   simpa only [smulBilinearMap_apply] using
     hasSum_sum_bilinear_antidiagonal_of_nonarchimedean
-      smulBilinearMap norm_smulBilinearMap_le hf hg
+      norm_smulBilinearMap_le hf hg
 
 /-- The Cauchy-product formula for the scalar multiple of two infinite sums, grouped over the
 antidiagonals of an additive index monoid, in a Hausdorff ultrametric normed module. -/
@@ -287,7 +288,7 @@ protected theorem _root_.Summable.tsum_smul_tsum_eq_tsum_sum_antidiagonal_of_non
       ∑' n, ∑ ij ∈ Finset.antidiagonal n, f ij.1 • g ij.2 := by
   simpa only [smulBilinearMap_apply] using
     bilinear_tsum_tsum_eq_tsum_sum_antidiagonal_of_nonarchimedean
-      smulBilinearMap norm_smulBilinearMap_le hf hg
+      norm_smulBilinearMap_le hf hg
 
 end CauchyProduct
 
@@ -301,7 +302,7 @@ protected theorem _root_.Summable.tsum_smul_tsum_eq_tsum_sum_range_of_nonarchime
       ∑' n, ∑ k ∈ Finset.range (n + 1), f k • g (n - k) := by
   simpa only [smulBilinearMap_apply] using
     bilinear_tsum_tsum_eq_tsum_sum_range_of_nonarchimedean
-      smulBilinearMap norm_smulBilinearMap_le hf hg
+      norm_smulBilinearMap_le hf hg
 
 /-- In an ultrametric normed module, the natural-number Cauchy product sums to the scalar multiple
 of the original two sums. -/
@@ -310,7 +311,7 @@ theorem _root_.HasSum.sum_smul_range_of_nonarchimedean {f : ℕ → R} {g : ℕ 
     HasSum (fun n ↦ ∑ k ∈ Finset.range (n + 1), f k • g (n - k)) (a • b) := by
   simpa only [smulBilinearMap_apply] using
     hasSum_sum_bilinear_range_of_nonarchimedean
-      smulBilinearMap norm_smulBilinearMap_le hf hg
+      norm_smulBilinearMap_le hf hg
 
 end Nat
 
