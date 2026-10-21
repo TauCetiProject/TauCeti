@@ -73,7 +73,7 @@ private theorem exists_path_frontier_prod_Icc (hs : IsClosed s)
 
 /-- At an end-face basepoint, the frontier inclusion of a closed cylinder is surjective
 on fundamental groups. -/
-private theorem surjective_fundamentalGroupMap_frontier_prod_Icc_of_mem_frontier
+private theorem fundamentalGroupMap_frontier_prod_Icc_surjective_of_mem_frontier
     (hs : IsClosed s) (hc : c ∈ frontier (Icc a b)) (x : s) :
     let hface := mk_mem_frontier_prod_Icc_of_mem_frontier x.2 hc
     Function.Surjective (FundamentalGroup.map
@@ -89,7 +89,7 @@ private theorem surjective_fundamentalGroupMap_frontier_prod_Icc_of_mem_frontier
 
 /-- The frontier of a closed cylinder surjects onto its fundamental group at every boundary
 basepoint. The interval may be degenerate or empty; in the empty case there is no basepoint. -/
-theorem surjective_fundamentalGroupMap_frontier_prod_Icc
+theorem fundamentalGroupMap_frontier_prod_Icc_surjective
     (hs : IsClosed s) (z : frontier (s ×ˢ Icc a b)) :
     Function.Surjective (FundamentalGroup.map
       (ContinuousMap.inclusion (hs.prod isClosed_Icc).frontier_subset) z) := by
@@ -99,7 +99,7 @@ theorem surjective_fundamentalGroupMap_frontier_prod_Icc
   have hcases := z.2
   simp only [frontier_prod_eq, mem_union, mem_prod] at hcases
   rcases hcases with hend | hside
-  · exact surjective_fundamentalGroupMap_frontier_prod_Icc_of_mem_frontier hs hend.2
+  · exact fundamentalGroupMap_frontier_prod_Icc_surjective_of_mem_frontier hs hend.2
       ⟨z.1.1, hz.1⟩
   · have hab : a ≤ b := hz.2.1.trans hz.2.2
     have hb : b ∈ frontier (Icc a b) := by simp [frontier_Icc hab]
@@ -113,7 +113,7 @@ theorem surjective_fundamentalGroupMap_frontier_prod_Icc
         continuous_toFun := by fun_prop
         source' := by apply Subtype.ext; simp
         target' := by apply Subtype.ext; simp [w] }
-    exact surjective_fundamentalGroupMap_of_path j p
-      (surjective_fundamentalGroupMap_frontier_prod_Icc_of_mem_frontier hs hb ⟨z.1.1, hz.1⟩)
+    exact fundamentalGroupMap_surjective_of_path j p
+      (fundamentalGroupMap_frontier_prod_Icc_surjective_of_mem_frontier hs hb ⟨z.1.1, hz.1⟩)
 
 end TauCeti

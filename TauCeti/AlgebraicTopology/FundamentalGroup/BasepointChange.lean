@@ -605,7 +605,7 @@ namespace TauCeti
 open _root_.FundamentalGroup
 
 /-- Surjectivity on fundamental groups at the end of a path implies surjectivity at its start. -/
-lemma surjective_fundamentalGroupMap_of_path
+lemma fundamentalGroupMap_surjective_of_path
     {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] {x y : X}
     (f : C(X, Y)) (p : Path x y) (h : Function.Surjective (FundamentalGroup.map f y)) :
     Function.Surjective (FundamentalGroup.map f x) := by

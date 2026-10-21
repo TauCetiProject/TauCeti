@@ -35,7 +35,7 @@ namespace TauCeti
 
 /-- The boundary inclusion of a standard handlebody is surjective on fundamental groups,
 at every boundary basepoint and in every genus, including genus zero. -/
-theorem surjective_fundamentalGroupMap_frontier_handlebody (g : ℕ) :
+theorem fundamentalGroupMap_frontier_handlebody_surjective (g : ℕ) :
     ∀ z : frontier (handlebody g), Function.Surjective (FundamentalGroup.map
       (ContinuousMap.inclusion (isCompact_handlebody g).isClosed.frontier_subset) z) := by
   -- Transport the subset, its frontier and its inclusion together; the inclusion depends on
@@ -46,6 +46,6 @@ theorem surjective_fundamentalGroupMap_frontier_handlebody (g : ℕ) :
         (ContinuousMap.inclusion hK.frontier_subset) z) from
     this _ (isCompact_handlebody g).isClosed (Set.ext fun _ => mem_handlebody)
   rintro K hK rfl
-  exact surjective_fundamentalGroupMap_frontier_prod_Icc (isCompact_planarSurface g).isClosed
+  exact fundamentalGroupMap_frontier_prod_Icc_surjective (isCompact_planarSurface g).isClosed
 
 end TauCeti
