@@ -84,7 +84,6 @@ namespace Iso
 variable {G : DualGraph.{u} ι} {H : DualGraph.{u'} ι} {K : DualGraph.{u''} ι}
 
 /-- The identity isomorphism. -/
-@[expose, simps]
 def refl (G : DualGraph.{u} ι) : G.Iso G where
   vertexEquiv := .refl _
   edgeEquiv := .refl _
@@ -92,8 +91,15 @@ def refl (G : DualGraph.{u} ι) : G.Iso G where
   genus_vertexEquiv _ := rfl
   vertexEquiv_marking _ := rfl
 
+/-- The identity isomorphism is the identity on vertices. -/
+@[simp]
+theorem refl_vertexEquiv (G : DualGraph.{u} ι) : (refl G).vertexEquiv = .refl _ := (rfl)
+
+/-- The identity isomorphism is the identity on edges. -/
+@[simp]
+theorem refl_edgeEquiv (G : DualGraph.{u} ι) : (refl G).edgeEquiv = .refl _ := (rfl)
+
 /-- The inverse isomorphism. -/
-@[expose, simps]
 def symm (f : G.Iso H) : H.Iso G where
   vertexEquiv := f.vertexEquiv.symm
   edgeEquiv := f.edgeEquiv.symm
@@ -105,8 +111,15 @@ def symm (f : G.Iso H) : H.Iso G where
     simp
   vertexEquiv_marking i := by rw [← f.vertexEquiv_marking, Equiv.symm_apply_apply]
 
+/-- The inverse isomorphism acts on vertices by the inverse bijection. -/
+@[simp]
+theorem symm_vertexEquiv (f : G.Iso H) : f.symm.vertexEquiv = f.vertexEquiv.symm := (rfl)
+
+/-- The inverse isomorphism acts on edges by the inverse bijection. -/
+@[simp]
+theorem symm_edgeEquiv (f : G.Iso H) : f.symm.edgeEquiv = f.edgeEquiv.symm := (rfl)
+
 /-- The composite of two isomorphisms. -/
-@[expose, simps]
 def trans (f : G.Iso H) (g : H.Iso K) : G.Iso K where
   vertexEquiv := f.vertexEquiv.trans g.vertexEquiv
   edgeEquiv := f.edgeEquiv.trans g.edgeEquiv
@@ -114,11 +127,20 @@ def trans (f : G.Iso H) (g : H.Iso K) : G.Iso K where
   genus_vertexEquiv v := by simp
   vertexEquiv_marking i := by simp
 
+/-- The composite isomorphism acts on vertices by the composite bijection. -/
+@[simp]
+theorem trans_vertexEquiv (f : G.Iso H) (g : H.Iso K) :
+    (f.trans g).vertexEquiv = f.vertexEquiv.trans g.vertexEquiv := (rfl)
+
+/-- The composite isomorphism acts on edges by the composite bijection. -/
+@[simp]
+theorem trans_edgeEquiv (f : G.Iso H) (g : H.Iso K) :
+    (f.trans g).edgeEquiv = f.edgeEquiv.trans g.edgeEquiv := (rfl)
+
 /-- Build an isomorphism from bijections of vertices and edges whose compatibility with the ends of
 edges and with the markings is checked after mapping the vertices of both graphs into a common
 type `α`, injectively on the target. This applies to two graphs obtained from a third one by
 deleting the same vertices, both of whose vertices are vertices of the third graph. -/
-@[expose, simps vertexEquiv edgeEquiv]
 def ofInjective {α : Type w} (p : G.Vertex → α) (q : H.Vertex → α) (hq : Injective q)
     (σ : G.Vertex ≃ H.Vertex) (hσ : ∀ v, q (σ v) = p v) (τ : G.Edge ≃ H.Edge)
     (hτ : ∀ e, (H.ends (τ e)).map q = (G.ends e).map p)
@@ -131,6 +153,25 @@ def ofInjective {α : Type w} (p : G.Vertex → α) (q : H.Vertex → α) (hq : 
     exact congrArg (Sym2.map · (G.ends e)) (funext fun v ↦ (hσ v).symm)
   genus_vertexEquiv := hgenus
   vertexEquiv_marking i := hq (by rw [hσ, hmarking])
+
+section ofInjective
+
+variable {α : Type w} (p : G.Vertex → α) (q : H.Vertex → α) (hq : Injective q)
+  (σ : G.Vertex ≃ H.Vertex) (hσ : ∀ v, q (σ v) = p v) (τ : G.Edge ≃ H.Edge)
+  (hτ : ∀ e, (H.ends (τ e)).map q = (G.ends e).map p)
+  (hgenus : ∀ v, H.genus (σ v) = G.genus v) (hmarking : ∀ i, q (H.marking i) = p (G.marking i))
+
+/-- The isomorphism `Iso.ofInjective` acts on vertices by the given bijection. -/
+@[simp]
+theorem ofInjective_vertexEquiv :
+    (ofInjective p q hq σ hσ τ hτ hgenus hmarking).vertexEquiv = σ := (rfl)
+
+/-- The isomorphism `Iso.ofInjective` acts on edges by the given bijection. -/
+@[simp]
+theorem ofInjective_edgeEquiv :
+    (ofInjective p q hq σ hσ τ hτ hgenus hmarking).edgeEquiv = τ := (rfl)
+
+end ofInjective
 
 variable (f : G.Iso H)
 
