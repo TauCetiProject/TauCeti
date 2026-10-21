@@ -115,19 +115,19 @@ theorem tsum_eq_tsum_div_natCard_algEquiv_mul (hR : IsRepresentativeSet n R)
       Set (IntermediateField K (SeparableClosure K)) :=
     {L | L ∈ totallyRamifiedOfDegree K n ∧ Nonempty (M ≃ₐ[K] L)}
   -- Every member of `σ_K(n)` lies in the class of exactly one representative.
-  have hsplit : ∑' L : totallyRamifiedOfDegree K n, f L = ∑' M : R, ∑' L : C M, f L := by
-    rw [tsum_subtype _ f, tsum_congr fun M : R ↦ tsum_subtype (C M) f, ENNReal.tsum_comm]
-    refine tsum_congr fun L ↦ ?_
-    by_cases hL : L ∈ totallyRamifiedOfDegree K n
-    · obtain ⟨M, ⟨hM, ⟨e⟩⟩, huniq⟩ := hR.existsUnique hL
-      rw [Set.indicator_of_mem hL, tsum_eq_single (⟨M, hM⟩ : R) fun M' hM' ↦
-        Set.indicator_of_notMem (s := C M') (fun h ↦ hM' (Subtype.ext
-          (huniq M' ⟨M'.2, ⟨(Classical.choice h.2).symm⟩⟩))) _,
-        Set.indicator_of_mem (s := C M) ⟨hL, ⟨e.symm⟩⟩]
-    · rw [Set.indicator_of_notMem hL]
-      exact (ENNReal.tsum_eq_zero.2 fun M : R ↦
-        Set.indicator_of_notMem (s := C M) (fun h ↦ hL h.1) f).symm
-  rw [hsplit]
+  have hU : totallyRamifiedOfDegree K n = ⋃ M ∈ R, C M := by
+    ext L
+    simp only [Set.mem_iUnion, exists_prop]
+    refine ⟨fun hL ↦ ?_, fun ⟨_, _, hL, _⟩ ↦ hL⟩
+    obtain ⟨M, ⟨hM, ⟨e⟩⟩, -⟩ := hR.existsUnique hL
+    exact ⟨M, hM, hL, ⟨e.symm⟩⟩
+  have hdisj : R.PairwiseDisjoint C := by
+    rintro M hM M' hM' hne
+    refine Set.disjoint_left.2 ?_
+    rintro L ⟨hL, ⟨e⟩⟩ ⟨-, ⟨e'⟩⟩
+    obtain ⟨_, -, huniq⟩ := hR.existsUnique hL
+    exact hne ((huniq M ⟨hM, ⟨e.symm⟩⟩).trans (huniq M' ⟨hM', ⟨e'.symm⟩⟩).symm)
+  rw [hU, ENNReal.tsum_biUnion' hdisj]
   refine tsum_congr fun M ↦ ?_
   have hcard := ncard_isomorphic_mul_natCard_algEquiv (hR.subset M.2)
   have hAut : Nat.card (M ≃ₐ[K] M) ≠ 0 := by
