@@ -112,7 +112,9 @@ theorem measurable_irwinHallPDFReal (n : ℕ) : Measurable (irwinHallPDFReal n) 
 theorem measurable_irwinHallPDF (n : ℕ) : Measurable (irwinHallPDF n) :=
   (measurable_irwinHallPDFReal n).ennreal_ofReal
 
-private theorem integral_pdf_eq_cdf_sub {n : ℕ} (hn : 2 ≤ n) (a b : ℝ) :
+/-- The interval integral of the Irwin–Hall density is the difference of cdf values
+at order at least two. -/
+theorem intervalIntegral_irwinHallPDFReal {n : ℕ} (hn : 2 ≤ n) (a b : ℝ) :
     (∫ x in a..b, irwinHallPDFReal n x) =
       cdf (irwinHallMeasure n) b - cdf (irwinHallMeasure n) a := by
   have hint (k : ℕ) : IntervalIntegrable
@@ -141,7 +143,7 @@ theorem hasDerivAt_cdf_irwinHallMeasure {n : ℕ} (hn : 2 ≤ n) (x : ℝ) :
   have heq : ⇑(cdf (irwinHallMeasure n)) =
       fun y ↦ cdf (irwinHallMeasure n) 0 + ∫ t in 0..y, irwinHallPDFReal n t := by
     ext y
-    rw [integral_pdf_eq_cdf_sub hn]
+    rw [intervalIntegral_irwinHallPDFReal hn]
     ring
   rw [heq]
   exact (intervalIntegral.integral_hasDerivAt_right (hc.intervalIntegrable _ _)
@@ -199,7 +201,7 @@ theorem irwinHallMeasure_eq_withDensity {n : ℕ} (hn : 0 < n) :
   rw [← ofReal_integral_eq_lintegral_ofReal
     ((continuous_irwinHallPDFReal hn2).integrableOn_Icc.mono_set Ioc_subset_Icc_self)
     (ae_of_all _ (irwinHallPDFReal_nonneg n)),
-    ← intervalIntegral.integral_of_le hab.le, integral_pdf_eq_cdf_sub hn2]
+    ← intervalIntegral.integral_of_le hab.le, intervalIntegral_irwinHallPDFReal hn2]
 
 /-- Every chosen real Irwin–Hall density is integrable against Lebesgue measure. -/
 theorem integrable_irwinHallPDFReal (n : ℕ) : Integrable (irwinHallPDFReal n) := by
