@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Combinatorics.Enumerative.IncidenceAlgebra
 public import Mathlib.Data.Finset.Sort
+public import TauCeti.Combinatorics.Enumerative.IncidenceAlgebra
 public import TauCeti.Combinatorics.NoncrossingPartition.Basic
 
 /-!
@@ -130,10 +130,7 @@ the free cumulants of the noncrossing partitions refining `π`. -/
 theorem sum_partitionCumulant_Iic (π : NoncrossingPartition s) :
     ∑ σ ∈ Iic π, partitionCumulant φ a σ = partitionMoment φ a π.1 := by
   simp_rw [partitionCumulant_def]
-  rw [sum_comm' (t' := Iic π) (s' := fun τ => Icc τ π) fun σ τ => by
-    simp only [mem_Iic, mem_Icc]
-    exact ⟨fun h => ⟨⟨h.2, h.1⟩, h.2.trans h.1⟩, fun h => ⟨h.1.2, h.1.1⟩⟩]
-  simp [← sum_mul, sum_Icc_mu_right]
+  exact sum_Iic_sum_Iic_mu_mul (fun σ : NoncrossingPartition s => partitionMoment φ a σ.1) π
 
 /-- The free cumulants are the only family satisfying the moment–cumulant formula
 `∑_{σ ≤ π} c_σ = φ_π(a)`. -/
