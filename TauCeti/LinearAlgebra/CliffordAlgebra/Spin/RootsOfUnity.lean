@@ -187,7 +187,7 @@ variable {R : Type u} {M₁ : Type v} {M₂ : Type w} [CommRing R]
 source form to that for the target form. -/
 theorem spinGroupMap_comp_rootsOfUnityToSpin (f : Q₁ →qᵢ Q₂) (hQ₁ : ∃ v, IsUnit (Q₁ v)) :
     f.spinGroupMap.comp (rootsOfUnityToSpin Q₁ hQ₁) =
-      rootsOfUnityToSpin Q₂ (hQ₁.imp' f fun v hv ↦ by rwa [f.map_app]) := by
+      rootsOfUnityToSpin Q₂ (f.exists_isUnit_apply hQ₁) := by
   ext ζ
   simp only [MonoidHom.comp_apply, coe_spinGroupMap_apply, coe_rootsOfUnityToSpin_apply,
     AlgHom.commutes]
@@ -197,7 +197,7 @@ theorem spinGroupMap_comp_rootsOfUnityToSpin (f : Q₁ →qᵢ Q₂) (hQ₁ : �
 theorem spinGroupMap_rootsOfUnityToSpin (f : Q₁ →qᵢ Q₂) (hQ₁ : ∃ v, IsUnit (Q₁ v))
     (ζ : rootsOfUnity 2 R) :
     f.spinGroupMap (rootsOfUnityToSpin Q₁ hQ₁ ζ) =
-      rootsOfUnityToSpin Q₂ (hQ₁.imp' f fun v hv ↦ by rwa [f.map_app]) ζ :=
+      rootsOfUnityToSpin Q₂ (f.exists_isUnit_apply hQ₁) ζ :=
   DFunLike.congr_fun (spinGroupMap_comp_rootsOfUnityToSpin f hQ₁) ζ
 
 end QuadraticMap.Isometry
