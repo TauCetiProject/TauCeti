@@ -5,23 +5,23 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.SimpleGraph.ExtensionProperty
 public import TauCeti.ModelTheory.BackAndForth.Countable
 public import TauCeti.ModelTheory.BackAndForth.ExtensionPair
 public import TauCeti.ModelTheory.BackAndForth.Graph
 public import TauCeti.ModelTheory.BackAndForth.Karp
 public import TauCeti.ModelTheory.Scott.ExtensionPair
 public import TauCeti.ModelTheory.Scott.PotentialIso
-public import Mathlib.Combinatorics.Colex
 
 /-!
 # Scott analysis of the random graph
 
-A simple graph has the *extension property* when, for any two disjoint finite sets of vertices
-`s` and `t`, some vertex outside `t` is adjacent to every vertex of `s` and to no vertex of `t`.
-Graphs with this property are the models of the theory of the random graph. Back-and-forth
-for them works just as Cantor's argument does for dense linear orders: a finite partial
-isomorphism into such a graph extends to any new vertex. For graphs of every cardinality this
-gives:
+A simple graph has the *extension property* (`SimpleGraph.HasExtensionProperty`) when, for any
+two disjoint finite sets of vertices `s` and `t`, some vertex outside `t` is adjacent to every
+vertex of `s` and to no vertex of `t`. Graphs with this property are the models of the theory of
+the random graph. Back-and-forth for them works just as Cantor's argument does for dense linear
+orders: a finite partial isomorphism into such a graph extends to any new vertex. For graphs of
+every cardinality this gives:
 
 * between two graphs with the extension property, tuples are back-and-forth equivalent at every
   level exactly when they have the same atomic type, and the two graphs are potentially
@@ -32,14 +32,9 @@ gives:
   countable graph with the extension property holds in a graph of any cardinality exactly when
   that graph has the extension property.
 
-The Rado graph `TauCeti.radoGraph` on `ℕ`, in which `i < j` are adjacent when the `i`-th binary
-digit of `j` is one, has the extension property. So up to isomorphism it is the unique countable
-graph with the extension property, the countable random graph.
-
-## Main definitions
-
-* `SimpleGraph.HasExtensionProperty`: the extension property.
-* `TauCeti.radoGraph`: the Rado graph on `ℕ`.
+The Rado graph `TauCeti.radoGraph` on `ℕ` has the extension property
+(`TauCeti.hasExtensionProperty_radoGraph`). So up to isomorphism it is the unique countable graph
+with the extension property, the countable random graph.
 
 ## Main results
 
@@ -49,7 +44,7 @@ graph with the extension property, the countable random graph.
   `SimpleGraph.HasExtensionProperty.nonempty_iso`.
 * `SimpleGraph.HasExtensionProperty.internalScottRank_eq_one`.
 * `SimpleGraph.HasExtensionProperty.realize_scottSentence_iff`.
-* `TauCeti.hasExtensionProperty_radoGraph` and `TauCeti.nonempty_iso_radoGraph_iff`.
+* `TauCeti.nonempty_iso_radoGraph_iff`.
 
 ## References
 
@@ -70,41 +65,7 @@ namespace SimpleGraph
 
 variable {G : SimpleGraph V} {H : SimpleGraph W}
 
-/-- A simple graph has the extension property when for any two disjoint finite sets of vertices
-`s` and `t` there is a vertex outside `t` adjacent to every vertex of `s` and to no vertex of
-`t`. Such a vertex also lies outside `s`, since the graph has no loops. -/
-def HasExtensionProperty (G : SimpleGraph V) : Prop :=
-  ∀ s t : Finset V, Disjoint s t →
-    ∃ z, z ∉ t ∧ (∀ u ∈ s, G.Adj z u) ∧ ∀ w ∈ t, ¬ G.Adj z w
-
-/-- Unfolding the extension property. -/
-theorem hasExtensionProperty_def : G.HasExtensionProperty ↔ ∀ s t : Finset V, Disjoint s t →
-    ∃ z, z ∉ t ∧ (∀ u ∈ s, G.Adj z u) ∧ ∀ w ∈ t, ¬ G.Adj z w := Iff.rfl
-
 namespace HasExtensionProperty
-
-/-- Over any tuple of vertices, a graph with the extension property has a vertex outside the
-tuple whose adjacencies to the entries follow any prescribed pattern compatible with the
-repetitions in the tuple. -/
-theorem exists_adj_iff (hG : G.HasExtensionProperty) {n : ℕ} (a : Fin n → V)
-    (p : Fin n → Prop) (hp : ∀ i j, a i = a j → (p i ↔ p j)) :
-    ∃ x, (∀ i, x ≠ a i) ∧ ∀ i, G.Adj x (a i) ↔ p i := by
-  classical
-  obtain ⟨x, hxt, hs, ht⟩ := hasExtensionProperty_def.mp hG ((Finset.univ.filter p).image a)
-    ((Finset.univ.filter fun i => ¬ p i).image a) (by
-      simp only [Finset.disjoint_left, Finset.mem_image, Finset.mem_filter, Finset.mem_univ,
-        true_and]
-      rintro _ ⟨i, hi, rfl⟩ ⟨j, hj, hji⟩
-      exact hj ((hp j i hji).mpr hi))
-  have hadj (i : Fin n) : G.Adj x (a i) ↔ p i := by
-    by_cases hi : p i
-    · exact iff_of_true (hs _ (Finset.mem_image_of_mem _ (by simpa using hi))) hi
-    · exact iff_of_false (ht _ (Finset.mem_image_of_mem _ (by simpa using hi))) hi
-  refine ⟨x, fun i => ?_, hadj⟩
-  by_cases hi : p i
-  · exact ((hadj i).mpr hi).ne
-  · rintro rfl
-    exact hxt (Finset.mem_image_of_mem _ (by simpa using hi))
 
 variable (G) in
 /-- If `H` has the extension property, tuples of vertices of `G` and `H` with the same atomic type
@@ -225,35 +186,6 @@ end SimpleGraph
 namespace TauCeti
 
 open SimpleGraph
-
-/-- The Rado graph on `ℕ`: two numbers `i < j` are adjacent when the `i`-th binary digit of `j` is
-one. -/
-def radoGraph : SimpleGraph ℕ := fromRel fun i j => j.testBit i
-
-/-- Distinct numbers are adjacent in the Rado graph when one of them is a binary digit of the
-other. -/
-@[simp]
-theorem radoGraph_adj {i j : ℕ} : radoGraph.Adj i j ↔ i ≠ j ∧ (j.testBit i ∨ i.testBit j) :=
-  fromRel_adj _ _ _
-
-/-- The Rado graph has the extension property: given disjoint finite sets `s` and `t`, the number
-whose binary digits are those in `s` together with one digit above `s ∪ t` is adjacent to all of
-`s` and to none of `t`. -/
-theorem hasExtensionProperty_radoGraph : radoGraph.HasExtensionProperty := by
-  refine hasExtensionProperty_def.mpr fun s t hst => ?_
-  let N := (s ∪ t).sup id + 1
-  have hN {v : ℕ} (hv : v ∈ s ∪ t) : v < N := Nat.lt_succ_of_le (Finset.le_sup (f := id) hv)
-  let z := ∑ i ∈ insert N s, 2 ^ i
-  have hbit (j : ℕ) : z.testBit j ↔ j ∈ insert N s := by
-    rw [← Nat.mem_bitIndices, ← List.mem_toFinset, Finset.toFinset_bitIndices_sum_two_pow]
-  have hlt {v : ℕ} (hv : v ∈ s ∪ t) : v < z :=
-    (hN hv).trans (Finset.lt_geomSum_of_mem le_rfl (Finset.mem_insert_self N s))
-  have hadj {v : ℕ} (hv : v ∈ s ∪ t) : radoGraph.Adj z v ↔ v ∈ s := by
-    have h₁ : v.testBit z = false := Nat.testBit_lt_two_pow ((hlt hv).trans z.lt_two_pow_self)
-    simp [h₁, hbit, (hlt hv).ne', (hN hv).ne]
-  refine ⟨z, fun hz => (hlt (Finset.mem_union_right s hz)).false, fun u hu => ?_, fun w hw => ?_⟩
-  · exact (hadj (Finset.mem_union_left t hu)).mpr hu
-  · exact fun h => Finset.disjoint_right.mp hst hw ((hadj (Finset.mem_union_right s hw)).mp h)
 
 /-- A countable graph is isomorphic to the Rado graph exactly when it has the extension
 property. -/
