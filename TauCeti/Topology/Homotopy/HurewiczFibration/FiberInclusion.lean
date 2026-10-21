@@ -238,6 +238,16 @@ noncomputable def loopFiberHomotopyEquiv (hp : IsHurewiczFibration.{max u v} p) 
     rw [loop_comp_loopSection]
     exact .refl _ (ContinuousMap.id_comp _)
 
+@[simp]
+theorem loopFiberHomotopyEquiv_toFun (hp : IsHurewiczFibration.{max u v} p) :
+    (loopFiberHomotopyEquiv e₀ hp).toFun = loop p e₀ :=
+  (rfl)
+
+@[simp]
+theorem loopFiberHomotopyEquiv_invFun (hp : IsHurewiczFibration.{max u v} p) :
+    (loopFiberHomotopyEquiv e₀ hp).invFun = loopSection e₀ hp.down :=
+  (rfl)
+
 /-- **The homotopy fibre of the fibre inclusion is the loop space of the base.** For a Hurewicz
 fibration `p`, the space of paths in `E` from the fibre through `e₀` to `e₀` is homotopy
 equivalent to the loop space `Ω B (p e₀)`, by composing the paths with `p`. -/
