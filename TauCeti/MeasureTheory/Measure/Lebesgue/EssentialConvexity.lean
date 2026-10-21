@@ -17,8 +17,8 @@ that in a unit direction `e`, almost every parallel line section `{t | y + t •
 almost everywhere with an interval (a possibly empty or unbounded `OrdConnected` subset of
 `ℝ`). Then, along each line in direction `e`, the Lebesgue density points of `s` (the points at
 which the proportion of `s` in small closed balls tends to one) form an interval. Consequently,
-if `s` has interval sections in every unit direction, its density points form a convex set,
-and `s` agrees almost everywhere with a convex set.
+if `s` has interval sections in every unit direction, its density points, that is its
+essential interior, form a convex set, and `s` agrees almost everywhere with a convex set.
 
 The proof compares cylinders around the line through two density points `x` and `x + d • e`.
 On almost every parallel line, either the section meets both end cylinders, and then by the
@@ -38,8 +38,8 @@ convexity reduces the equality analysis to convex representatives.
 
 * `TauCeti.tendsto_volume_inter_closedBall_add_smul_div_of_ae_lineSection_ordConnected`: a point
   between two density points on a line in a direction with interval sections is a density point.
-* `TauCeti.convex_setOf_tendsto_volume_inter_closedBall_div`: with interval sections in every
-  direction, the set of density points is convex.
+* `TauCeti.convex_essentialInterior_of_ae_lineSection_ordConnected`: with interval sections in
+  every direction, the essential interior is convex.
 * `TauCeti.exists_convex_ae_eq_of_ae_lineSection_ordConnected`: with interval sections in every
   direction, the set agrees almost everywhere with a convex set.
 -/
@@ -248,13 +248,12 @@ theorem tendsto_volume_inter_closedBall_add_smul_div_of_ae_lineSection_ordConnec
 
 /-- **Essential convexity.** If almost every line section of a Lebesgue-measurable set `s`, in
 every unit direction, agrees a.e. with an interval, then the Lebesgue density points of `s` form
-a convex set. -/
-theorem convex_setOf_tendsto_volume_inter_closedBall_div {s : Set E}
+a convex set: its essential interior is convex. -/
+theorem convex_essentialInterior_of_ae_lineSection_ordConnected {s : Set E}
     (hs : NullMeasurableSet s volume)
     (h : ∀ e : E, ‖e‖ = 1 → ∀ᵐ y : (ℝ ∙ e)ᗮ ∂volume, ∃ I : Set ℝ, I.OrdConnected ∧
       {t : ℝ | (y : E) + t • e ∈ s} =ᵐ[volume] I) :
-    Convex ℝ {x | Tendsto (fun r => volume (s ∩ closedBall x r) / volume (closedBall x r))
-      (𝓝[>] 0) (𝓝 1)} := by
+    Convex ℝ (essentialInterior volume s) := by
   intro x hx z hz a b ha hb hab
   rcases eq_or_ne x z with rfl | hxz
   · rwa [← add_smul, hab, one_smul]
@@ -267,24 +266,23 @@ theorem convex_setOf_tendsto_volume_inter_closedBall_div {s : Set E}
     obtain rfl : a = 1 - b := by linarith
     rw [he_def, smul_smul, mul_assoc, mul_inv_cancel₀ hd.ne', mul_one]
     module
-  rw [mem_ofPred_eq, hp]
-  rw [hz'] at hz
+  rw [mem_essentialInterior, hp]
+  rw [mem_essentialInterior] at hx
+  rw [hz', mem_essentialInterior] at hz
   refine tendsto_volume_inter_closedBall_add_smul_div_of_ae_lineSection_ordConnected he hs
     (h e he) (by positivity) (mul_le_of_le_one_left hd.le (by linarith)) hx hz
 
 /-- **Essential convexity.** A Lebesgue-measurable set whose line sections, in every unit
 direction, almost all agree a.e. with intervals agrees almost everywhere with a convex set.
 A canonical such set is its essential interior, the set of its Lebesgue density points, by
-`TauCeti.convex_setOf_tendsto_volume_inter_closedBall_div` and
+`TauCeti.convex_essentialInterior_of_ae_lineSection_ordConnected` and
 `MeasureTheory.NullMeasurableSet.essentialInterior_ae_eq`. -/
 theorem exists_convex_ae_eq_of_ae_lineSection_ordConnected {s : Set E}
     (hs : NullMeasurableSet s volume)
     (h : ∀ e : E, ‖e‖ = 1 → ∀ᵐ y : (ℝ ∙ e)ᗮ ∂volume, ∃ I : Set ℝ, I.OrdConnected ∧
       {t : ℝ | (y : E) + t • e ∈ s} =ᵐ[volume] I) :
     ∃ K : Set E, Convex ℝ K ∧ s =ᵐ[volume] K :=
-  ⟨essentialInterior volume s, by
-    convert convex_setOf_tendsto_volume_inter_closedBall_div hs h using 1
-    ext x
-    exact mem_essentialInterior, hs.essentialInterior_ae_eq.symm⟩
+  ⟨essentialInterior volume s, convex_essentialInterior_of_ae_lineSection_ordConnected hs h,
+    hs.essentialInterior_ae_eq.symm⟩
 
 end TauCeti

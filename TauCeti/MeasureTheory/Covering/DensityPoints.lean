@@ -160,14 +160,17 @@ theorem essentialBoundary_def :
     essentialBoundary μ s = (essentialInterior μ s ∪ essentialExterior μ s)ᶜ :=
   (rfl)
 
+@[simp]
 theorem mem_essentialInterior : x ∈ essentialInterior μ s ↔
     Tendsto (fun r => μ (s ∩ closedBall x r) / μ (closedBall x r)) (𝓝[>] 0) (𝓝 1) :=
   Iff.rfl
 
+@[simp]
 theorem mem_essentialExterior : x ∈ essentialExterior μ s ↔
     Tendsto (fun r => μ (s ∩ closedBall x r) / μ (closedBall x r)) (𝓝[>] 0) (𝓝 0) :=
   Iff.rfl
 
+@[simp]
 theorem mem_essentialBoundary : x ∈ essentialBoundary μ s ↔
     x ∉ essentialInterior μ s ∧ x ∉ essentialExterior μ s := by
   rw [essentialBoundary_def, mem_compl_iff, mem_union, not_or]
