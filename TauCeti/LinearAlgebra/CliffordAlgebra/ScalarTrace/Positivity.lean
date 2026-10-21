@@ -24,9 +24,9 @@ The results use the native tensor carrier and its locally enabled star module st
 no new star instance is installed globally.
 
 The coefficient formula holds for arbitrary real forms, including degenerate and indefinite
-ones. For nonpositive forms, faithfulness is equivalent to negative definiteness: a nonzero null
-vector gives a nonzero Clifford generator of zero squared trace norm. All finite ranks, including
-zero, are allowed.
+ones. Faithfulness is equivalent to negative definiteness: a nonzero null vector or a vector of
+positive quadratic value gives a nonzero Clifford element of zero squared trace norm. All finite
+ranks, including zero, are allowed.
 
 The diagonal computation extends `CliffordAlgebra.scalarTrace_reverse_basis_mul_basis`;
 the comparison of the two carriers uses `CliffordAlgebra.equivBaseChange` and
@@ -51,28 +51,6 @@ open scoped TensorProduct ComplexConjugate ComplexOrder
 namespace TauCeti
 
 open CliffordAlgebra
-
-section CommRing
-
-variable {R V I : Type*} [CommRing R] [AddCommGroup V] [Module R V] [Invertible (2 : R)]
-  [LinearOrder I] {Q : QuadraticForm R V} {b : Module.Basis I R V}
-
-/-- In an orthogonal ordered-product basis, Clifford conjugation changes the diagonal weights
-of the reversion trace pairing from `Q (b i)` to `-Q (b i)`. -/
-theorem scalarTrace_star_basis_mul_basis (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
-    (s t : Finset I) :
-    scalarTrace Q (star (basis Q b s) * basis Q b t) =
-      if s = t then ∏ i ∈ s, -Q (b i) else 0 := by
-  have hinv : involute (basis Q b s) = (-1 : R) ^ s.card • basis Q b s := by
-    rw [basis_eq_prod_map_sort hb, involute_prod_map_ι]
-    simp
-  rw [CliffordAlgebra.star_def, hinv, map_smul, smul_mul_assoc, map_smul,
-    scalarTrace_reverse_basis_mul_basis hb]
-  split_ifs with h
-  · simp [smul_eq_mul, Finset.prod_neg]
-  · simp
-
-end CommRing
 
 attribute [local instance] CliffordAlgebra.starModule_of_trivialStar
 
@@ -165,10 +143,9 @@ theorem scalarTrace_conjStar_mul_self_eq_zero_iff (hQ : (-Q).PosDef)
     baseChange_scalarTrace_star_mul_self_eq_zero_iff hb hbQ]
   exact (equivBaseChange ℂ Q).map_eq_zero_iff
 
-/-- Among nonpositive real quadratic forms, the complexified negative Clifford trace is
-faithful exactly for negative definite forms. A nonzero null vector already obstructs
-faithfulness on its Clifford generator. -/
-theorem scalarTrace_conjStar_faithful_iff (hQ : ∀ v, Q v ≤ 0) :
+/-- The complexified negative Clifford trace is faithful exactly for negative definite real
+quadratic forms. Null vectors and vectors of positive quadratic value obstruct faithfulness. -/
+theorem scalarTrace_conjStar_faithful_iff :
     (∀ x : CliffordAlgebra (Q.baseChange ℂ),
       scalarTrace (Q.baseChange ℂ) (conjStar Q x * x) = 0 ↔ x = 0) ↔ (-Q).PosDef := by
   refine ⟨fun h v hv ↦ ?_, fun h x ↦ scalarTrace_conjStar_mul_self_eq_zero_iff h⟩
@@ -178,6 +155,20 @@ theorem scalarTrace_conjStar_faithful_iff (hQ : ∀ v, Q v ≤ 0) :
       simp [neg_mul, ι_sq_scalar, hzero])
     have hi : ι Q v = 0 := (ofBaseChangeAux_injective (A := ℂ) Q) (by simpa using hx)
     exact hv ((CliffordAlgebra.ι_eq_zero_iff Q v).mp hi)
-  exact neg_pos.mpr (lt_of_le_of_ne (hQ v) hne)
+  have hnpos : ¬ 0 < Q v := by
+    intro hpos
+    let a := algebraMap ℝ (CliffordAlgebra Q) (Real.sqrt (Q v))
+    let y := a + ι Q v
+    have hy : scalarTrace Q (star y * y) = 0 := by
+      simp [y, a, add_mul, mul_add, Algebra.algebraMap_eq_smul_one,
+        ← mul_smul, Real.mul_self_sqrt hpos.le]
+    have hx := (h (ofBaseChangeAux ℂ Q y)).mp (by
+      rw [conjStar_ofBaseChangeAux, ← map_mul, scalarTrace_ofBaseChangeAux, hy, map_zero])
+    have htrace := congrArg (scalarTrace (Q.baseChange ℂ)) hx
+    have hsqrt : Real.sqrt (Q v) = 0 := by
+      rw [scalarTrace_ofBaseChangeAux] at htrace
+      simpa [y, a] using htrace
+    exact (Real.sqrt_pos.mpr hpos).ne' hsqrt
+  exact neg_pos.mpr (lt_of_le_of_ne (le_of_not_gt hnpos) hne)
 
 end TauCeti
