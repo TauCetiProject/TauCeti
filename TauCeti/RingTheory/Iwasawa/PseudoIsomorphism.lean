@@ -237,13 +237,18 @@ theorem isPseudoIsomorphism_iff_bijective [Ring.KrullDimLE 1 A] {f : M →ₗ[A]
 
 /-- Over a noetherian local ring of dimension two with finite residue field, for example the
 Iwasawa algebra `O⟦T⟧` of a complete discrete valuation ring `O` with finite residue field, a map
-of finitely generated modules is a pseudo-isomorphism iff its kernel and cokernel are finite. -/
+is a pseudo-isomorphism iff its kernel and cokernel are finite. -/
 theorem isPseudoIsomorphism_iff_finite [IsLocalRing A] [IsNoetherianRing A]
-    [Finite (IsLocalRing.ResidueField A)] (hdim : ringKrullDim A = 2) [Module.Finite A M]
-    [Module.Finite A N] {f : M →ₗ[A] N} :
+    [Finite (IsLocalRing.ResidueField A)] (hdim : ringKrullDim A = 2) {f : M →ₗ[A] N} :
     IsPseudoIsomorphism f ↔ Finite (LinearMap.ker f) ∧ Finite (N ⧸ LinearMap.range f) := by
-  rw [← isPseudoNull_iff_finite hdim, ← isPseudoNull_iff_finite hdim]
-  exact ⟨fun hf ↦ ⟨hf.1, hf.2⟩, fun h ↦ ⟨h.1, h.2⟩⟩
+  -- A pseudo-null module is finitely generated, and so is a finite one.
+  refine ⟨fun hf ↦ ?_, fun ⟨h₁, h₂⟩ ↦ ?_⟩
+  · have := hf.1.finite
+    have := hf.2.finite
+    exact ⟨(isPseudoNull_iff_finite hdim).mp hf.1, (isPseudoNull_iff_finite hdim).mp hf.2⟩
+  · have : Module.Finite A (LinearMap.ker f) := .of_finite
+    have : Module.Finite A (N ⧸ LinearMap.range f) := .of_finite
+    exact ⟨(isPseudoNull_iff_finite hdim).mpr h₁, (isPseudoNull_iff_finite hdim).mpr h₂⟩
 
 open PowerSeries in
 -- Over `Λ = ℤ_p⟦T⟧`, multiplication by `p` on `Λ ⧸ (T) ≅ ℤ_p` is a pseudo-isomorphism, although

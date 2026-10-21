@@ -26,6 +26,7 @@ variable {R : Type*} [CommSemiring R] (S : Submonoid R) {M N P : Type*} [AddComm
   [Module R M] [AddCommMonoid N] [Module R N] [AddCommMonoid P] [Module R P]
 
 /-- Localization of a composite is the composite of the localizations. -/
+@[simp]
 theorem map_comp (f : M →ₗ[R] N) (g : N →ₗ[R] P) :
     map S (g ∘ₗ f) = map S g ∘ₗ map S f := by
   ext x
