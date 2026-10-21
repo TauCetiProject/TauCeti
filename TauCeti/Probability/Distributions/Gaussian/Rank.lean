@@ -89,12 +89,14 @@ theorem iIndepFun.ae_rank_eq_min_gaussianReal
     ∀ᵐ ω ∂P, (Matrix.of fun i j => X i j ω).rank =
       min (Fintype.card m) (Fintype.card n) := by
   let (i : m) (j : n) : SigmaFinite (gaussianReal (a i j) (v i j)) := inferInstance
+  -- The index equivalence sends ⟨i, j⟩ definitionally to (i, j), so hX applies unchanged.
   have hindepSigma := hindep.precomp (Equiv.sigmaEquivProd m n).injective
   have hflat := hindepSigma.hasLaw_pi (fun ij : Σ _ : m, n => hX ij.1 ij.2)
   have hmatrix := (TauCeti.measurePreserving_piCurry
     (fun i j => gaussianReal (a i j) (v i j))).hasLaw.comp hflat
   have hrank := TauCeti.Probability.ae_rank_eq_min_pi_gaussianReal a v hv
   rw [← hmatrix.map_eq] at hrank
+  -- piCurry definitionally turns the sigma-indexed sample into fun i j => X i j ω.
   exact ae_of_ae_map hmatrix.aemeasurable hrank
 
 end ProbabilityTheory
