@@ -65,9 +65,7 @@ lemma quasiIso_iff {K L : HomotopyCategory.Bounded C} (f : K ⟶ L) :
 lemma quasiIso_eq_subcategoryAcyclic_trW : quasiIso C = (subcategoryAcyclic C).trW := by
   ext K L f
   rw [quasiIso_iff, _root_.HomotopyCategory.quasiIso_eq_trW_subcategoryAcyclic,
-    ObjectProperty.inverseImage_trW_iff]
-  -- The inclusion `ι C` sends `f` to its underlying morphism `f.hom`.
-  rfl
+    ObjectProperty.inverseImage_trW_iff, ObjectProperty.ι_map]
 
 instance : (quasiIso C).IsCompatibleWithShift ℤ := by
   rw [quasiIso_eq_subcategoryAcyclic_trW]
