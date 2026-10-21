@@ -329,8 +329,8 @@ section Idempotent
 variable {ι : Type*} [Fintype ι] {e : ι → R}
 
 /-- **The ideals `Reᵢ` of a complete family of primitive orthogonal idempotents form an exhaustive
-family**: every indecomposable finitely generated projective module is isomorphic to one of them,
-being, like one of them, a projective cover of its simple head. -/
+family**: every indecomposable finitely generated projective module is isomorphic to one of
+them. -/
 theorem isExhaustiveIndecomposableProjectiveFamily_span_singleton
     (he : CompleteOrthogonalIdempotents e) (hprim : ∀ i, IsPrimitiveIdempotent (e i)) :
     IsExhaustiveIndecomposableProjectiveFamily fun i ↦

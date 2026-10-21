@@ -99,12 +99,13 @@ theorem exists_isProjectiveCover_of_isSimpleModule (he : CompleteOrthogonalIdemp
   exact ⟨i, f, (hprim i).isProjectiveCover_of_surjective hf⟩
 
 /-- **The ideals of a complete primitive orthogonal family exhaust the indecomposable finitely
-generated projectives.** Such a module `P` is a projective cover of its simple head, as is one of
-the ideals `Reᵢ`, and projective covers of the same module are isomorphic. -/
+generated projectives.** -/
 theorem exists_nonempty_linearEquiv_span_singleton (he : CompleteOrthogonalIdempotents e)
     (hprim : ∀ i, TauCeti.IsPrimitiveIdempotent (e i)) (P : Type*) [AddCommGroup P] [Module R P]
     [Module.Finite R P] [Module.Projective R P] (hP : TauCeti.IsIndecomposableModule R P) :
     ∃ i, Nonempty (P ≃ₗ[R] (Ideal.span {e i} : Ideal R)) := by
+  -- `P` is a projective cover of its simple head, as is one of the ideals `Reᵢ`, and projective
+  -- covers of the same module are isomorphic.
   have := hP.isSimpleModule_quotient_jacobson_smul_top
     (isFiniteLength_iff_isNoetherian_isArtinian.mpr ⟨inferInstance, inferInstance⟩)
   have := IsSimpleModule.nontrivial R (P ⧸ Ring.jacobson R • (⊤ : Submodule R P))

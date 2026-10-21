@@ -80,11 +80,11 @@ theorem coe_decompose_mul_zero_of_nonneg (hneg : ∀ p < 0, 𝒜 p = ⊥) (x y :
         · rw [decompose_of_mem_ne 𝒜 hc' (by omega), mul_zero]
         · rw [decompose_of_mem_ne 𝒜 hc h', zero_mul]
 
-/-- **An idempotent with no degree-zero component vanishes** in nonnegative degrees. Its
-components vanish below degree one, so those of its `n`th power vanish below degree `n`, and the
-idempotent is its own `n`th power for every `n ≥ 1`. -/
+/-- **An idempotent with no degree-zero component vanishes** in nonnegative degrees. -/
 theorem eq_zero_of_isIdempotentElem_of_decompose_zero (hneg : ∀ p < 0, 𝒜 p = ⊥) {f : A}
     (hf : IsIdempotentElem f) (h0 : (decompose 𝒜 f 0 : A) = 0) : f = 0 := by
+  -- The components of `f` vanish below degree one, so those of `f ^ n` vanish below degree `n`,
+  -- and `f` is its own `n`th power for every `n ≥ 1`.
   have hzero {p : ℤ} (hp : p < 0) {c : A} (hc : c ∈ 𝒜 p) : c = 0 := by
     rwa [hneg p hp, Submodule.mem_bot] at hc
   set r := decompose 𝒜 f with hr
