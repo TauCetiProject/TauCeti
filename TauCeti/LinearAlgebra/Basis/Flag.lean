@@ -7,7 +7,8 @@ module
 
 public import Mathlib.LinearAlgebra.Basis.Flag
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
-import TauCeti.Data.Fin.StrictAnti
+public import TauCeti.Data.Fin.StrictMono
+import TauCeti.Data.Fin.Basic
 
 /-!
 # Pivots of a subspace relative to a basis flag and Schubert cells
@@ -50,8 +51,8 @@ construct the Schubert cells or their closures as schemes.
   every subspace lies in exactly one Schubert cell.
 * `Module.Basis.existsUnique_flagEchelon`, `Module.Basis.span_flagEchelon`: existence and
   uniqueness of the reduced echelon basis.
-* `StrictMono.card_echelonFreeEntries_image`, `StrictMono.sum_sub_add_sum_sub_eq_mul`: the number
-  of free entries of a cell is `∑ k, (p_k - k) = r (n - r) - |λ|`.
+* `StrictMono.card_echelonFreeEntries_image`: the number of free entries of a cell is
+  `∑ k, (p_k - k)`, which is `r (n - r) - |λ|` by `StrictMono.sum_sub_add_sum_sub_eq_mul`.
 
 ## References
 
@@ -117,45 +118,14 @@ theorem card_echelonFreeEntries_image (hp : StrictMono p) :
   rw [hfib, card_map]
   omega
 
-/-- For `p : Fin r → Fin n` strictly increasing, `n - p` drops by at least the index gap, so
-`p i + (k - i) ≤ p k` for `i ≤ k`. -/
-private theorem add_sub_le (hp : StrictMono p) {i k : Fin r} (hik : i ≤ k) :
-    (p i : ℕ) + (k - i) ≤ p k := by
-  have hq : StrictAnti fun i ↦ n - (p i : ℕ) := fun i k hik ↦
-    Nat.sub_lt_sub_left (p i).isLt (hp hik)
-  have := hq.add_sub_le_nat hik
-  have := (p k).isLt
-  omega
-
-/-- For pivots `p 0 < ⋯ < p (r - 1)` in `Fin n`, the sequence `λ i = n - r + i - p i` is
-antitone: it is a partition, read in increasing order of `i`. -/
-theorem antitone_sub_sub (hp : StrictMono p) : Antitone fun i : Fin r ↦ n - r + i - p i := by
-  intro i k hik
-  have := hp.add_sub_le hik
-  have := Fin.le_def.mp hik
-  dsimp only
-  omega
-
-/-- For pivots `p 0 < ⋯ < p (r - 1)` in `Fin n`, the partition `λ i = n - r + i - p i` lies in the
-`r × (n - r)` rectangle, and the number of free entries `∑ i, (p i - i)` of the corresponding
-reduced echelon matrices is `r (n - r) - |λ|`. -/
-theorem sum_sub_add_sum_sub_eq_mul (hp : StrictMono p) :
-    ∑ i, ((p i : ℕ) - i) + ∑ i, (n - r + i - p i) = r * (n - r) := by
-  have h (i : Fin r) : (p i : ℕ) - i + (n - r + i - p i) = n - r := by
-    have h₀ := hp.add_sub_le (Fin.le_def.mpr (Nat.zero_le i) : (⟨0, i.pos⟩ : Fin r) ≤ i)
-    have h₁ := hp.add_sub_le (Fin.le_def.mpr (Nat.le_sub_one_of_lt i.isLt) :
-      i ≤ ⟨r - 1, by omega⟩)
-    have := (p ⟨r - 1, by omega⟩).isLt
-    simp only at h₀ h₁
-    omega
-  simp [← Finset.sum_add_distrib, h]
-
 end StrictMono
 
 namespace Module.Basis
 
-variable {K V : Type*} [DivisionRing K] [AddCommGroup V] [Module K V] {n : ℕ}
-  (b : Basis (Fin n) K V) (W : Submodule K V)
+section Semiring
+
+variable {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M] {n : ℕ}
+  (b : Basis (Fin n) R M) (W : Submodule R M)
 
 open scoped Classical in
 /-- The pivots of a subspace `W` relative to the flag `b.flag` of a basis `b` indexed by `Fin n`:
@@ -173,7 +143,7 @@ theorem mem_flagPivots_iff_not_le {i : Fin n} :
 
 /-- A vector of `b.flag i.succ` lies in `b.flag i.castSucc` exactly when its `i`-th coordinate
 vanishes. -/
-theorem mem_flag_castSucc_iff_of_mem_flag_succ {i : Fin n} {x : V} (hx : x ∈ b.flag i.succ) :
+theorem mem_flag_castSucc_iff_of_mem_flag_succ {i : Fin n} {x : M} (hx : x ∈ b.flag i.succ) :
     x ∈ b.flag i.castSucc ↔ b.repr x i = 0 := by
   rw [mem_flag_iff_repr_eq_zero] at hx ⊢
   refine ⟨fun h ↦ h i le_rfl, fun h j hj ↦ ?_⟩
@@ -191,6 +161,31 @@ theorem mem_flagPivots {i : Fin n} :
     exact ⟨x, hxW, hxF, fun h ↦ hx ((mem_flag_castSucc_iff_of_mem_flag_succ hxF).mpr h)⟩
   · rintro ⟨x, hxW, hxF, hx⟩
     exact ⟨x, ⟨hxW, hxF⟩, fun h ↦ hx ((mem_flag_castSucc_iff_of_mem_flag_succ hxF).mp h)⟩
+
+/-- A family of vectors indexed by a finite set `S` of indices, whose `s`-th member has the
+coordinates of `b s` at the indices in `S`, is linearly independent. -/
+theorem linearIndependent_of_repr_eq_single {ι : Type*} {b : Basis ι R M}
+    {S : Finset ι} {v : S → M}
+    (hv : ∀ s : S, ∀ t ∈ S, b.repr (v s) t = Finsupp.single (s : ι) 1 t) :
+    LinearIndependent R v := by
+  classical
+  let π : M →ₗ[R] (S → R) := LinearMap.pi fun t ↦ b.coord t
+  have hπ : π ∘ v = fun s ↦ Pi.single s 1 := by
+    funext s t
+    simp only [Function.comp_apply, π, LinearMap.pi_apply, coord_apply]
+    rw [hv s t t.2]
+    by_cases hst : t = s
+    · simp [hst]
+    · rw [Finsupp.single_eq_of_ne (fun h : (t : ι) = s ↦ hst (Subtype.ext h)),
+        Pi.single_eq_of_ne hst]
+  exact LinearIndependent.of_comp π (hπ ▸ Pi.linearIndependent_single_one S R)
+
+end Semiring
+
+section DivisionRing
+
+variable {K V : Type*} [DivisionRing K] [AddCommGroup V] [Module K V] {n : ℕ}
+  {b : Basis (Fin n) K V} {W : Submodule K V}
 
 /-- Passing from `b.flag i.castSucc` to `b.flag i.succ`, the dimension of `W ⊓ b.flag` grows by
 one at a pivot of `W` and stays constant otherwise. -/
@@ -222,20 +217,6 @@ theorem finrank_inf_flag_succ (i : Fin n) :
       (le_inf inf_le_left (not_not.mp (mem_flagPivots_iff_not_le.not.mp hi)))
       (inf_le_inf_left _ (b.flag_mono Fin.castSucc_lt_succ.le))]
 
-/-- Counting the elements of `S` below `i.succ` adds `i` to those below `i.castSucc` when
-`i ∈ S`. -/
-private theorem card_filter_castSucc_lt_succ (S : Finset (Fin n)) (i : Fin n) :
-    #{s ∈ S | s.castSucc < i.succ} =
-      #{s ∈ S | s.castSucc < i.castSucc} + if i ∈ S then 1 else 0 := by
-  have h : ({s ∈ S | s.castSucc < i.succ} : Finset (Fin n)) =
-      {s ∈ S | s.castSucc < i.castSucc} ∪ {s ∈ S | s = i} := by
-    ext s
-    simp only [mem_filter, mem_union, Fin.castSucc_lt_succ_iff, Fin.castSucc_lt_castSucc_iff,
-      le_iff_lt_or_eq]
-    tauto
-  rw [h, card_union_of_disjoint (disjoint_filter.mpr fun s _ h h' ↦ by simp [h'] at h)]
-  split_ifs with hi <;> simp [filter_eq', hi]
-
 variable (b W) in
 /-- The dimension of `W ⊓ b.flag j` is the number of pivots of `W` below `j`. In one-based
 notation, with pivots `p₁ < ⋯ < p_r` and `F_j` spanned by the first `j` basis vectors, this reads
@@ -244,7 +225,7 @@ theorem finrank_inf_flag (j : Fin (n + 1)) :
     finrank K ↥(W ⊓ b.flag j) = #{i ∈ b.flagPivots W | i.castSucc < j} := by
   induction j using Fin.induction with
   | zero => rw [b.flag_zero, inf_bot_eq, finrank_bot]; simp
-  | succ i ih => rw [finrank_inf_flag_succ, ih, card_filter_castSucc_lt_succ]
+  | succ i ih => rw [finrank_inf_flag_succ, ih, Finset.card_filter_castSucc_lt_succ]
 
 variable (b W) in
 /-- A subspace has as many pivots as its dimension. -/
@@ -269,7 +250,7 @@ theorem flagPivots_eq_iff {S : Finset (Fin n)} :
   refine ⟨fun h ↦ h ▸ finrank_inf_flag b W, fun h ↦ ?_⟩
   ext i
   have h₁ := finrank_inf_flag_succ (b := b) (W := W) i
-  rw [h, h, card_filter_castSucc_lt_succ] at h₁
+  rw [h, h, Finset.card_filter_castSucc_lt_succ] at h₁
   split_ifs at h₁ with h₂ h₃ h₃ <;> simp_all
 
 /-- The pivot set of `W` is the image of a strictly increasing `p : Fin r → Fin n` exactly when
@@ -335,25 +316,8 @@ theorem existsUnique_flagEchelon {i : Fin n} (hi : i ∈ b.flagPivots W) :
     refine eq_zero_of_repr_flagPivots_eq_zero (b := b) (W.sub_mem hx.1.1 hy.1.1) fun j hj ↦ ?_
     rw [map_sub, Finsupp.sub_apply, hx.2 j hj, hy.2 j hj, sub_self]
 
-/-- A family of vectors indexed by a set `S` of indices, whose `s`-th member lies in
-`b.flag s.succ` and has the coordinates of `b s` at the indices in `S`, is linearly independent.
--/
-theorem linearIndependent_of_repr_eq_single {S : Finset (Fin n)} {v : S → V}
-    (hv : ∀ s : S, ∀ t ∈ S, b.repr (v s) t = Finsupp.single (s : Fin n) 1 t) :
-    LinearIndependent K v := by
-  let π : V →ₗ[K] (S → K) := LinearMap.pi fun t ↦ b.coord t
-  have hπ : π ∘ v = fun s ↦ Pi.single s 1 := by
-    funext s t
-    simp only [Function.comp_apply, π, LinearMap.pi_apply, coord_apply]
-    rw [hv s t t.2]
-    by_cases hst : t = s
-    · simp [hst]
-    · rw [Finsupp.single_eq_of_ne (fun h : (t : Fin n) = s ↦ hst (Subtype.ext h)),
-        Pi.single_eq_of_ne hst]
-  exact LinearIndependent.of_comp π (hπ ▸ Pi.linearIndependent_single_one S K)
-
-/-- The span of a family as in `Module.Basis.linearIndependent_of_repr_eq_single` has pivot set
-`S`. -/
+/-- The span of a family indexed by `S`, whose `s`-th member lies in `b.flag s.succ` and has the
+coordinates of `b s` at the indices in `S`, has pivot set `S`. -/
 theorem flagPivots_span_eq {S : Finset (Fin n)} {v : S → V}
     (hv : ∀ s : S, v s ∈ b.flag (s : Fin n).succ)
     (hv' : ∀ s : S, ∀ t ∈ S, b.repr (v s) t = Finsupp.single (s : Fin n) 1 t) :
@@ -411,22 +375,29 @@ theorem span_flagEchelon : span K (Set.range fun i : b.flagPivots W ↦ b.flagEc
     ?_
   rw [finrank_span_eq_card linearIndependent_flagEchelon, Fintype.card_coe, card_flagPivots]
 
+end DivisionRing
+
 /-! ### Schubert cells as affine spaces -/
+
+section Semiring
+
+variable {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M] {n : ℕ}
+  {b : Basis (Fin n) R M}
 
 variable (b) in
 /-- The row with pivot `s` of the reduced echelon matrix with pivot set `S` and free entries
 `a`: its coordinates are `1` at `s`, `a (s, j)` at a free position `(s, j)`, and `0` elsewhere. -/
-noncomputable def echelonRow (S : Finset (Fin n)) (a : S.echelonFreeEntries → K) (s : Fin n) :
-    V :=
+noncomputable def echelonRow (S : Finset (Fin n)) (a : S.echelonFreeEntries → R) (s : Fin n) :
+    M :=
   b.equivFun.symm fun j ↦ if j = s then 1 else if h : (s, j) ∈ S.echelonFreeEntries then
     a ⟨(s, j), h⟩ else 0
 
-theorem repr_echelonRow (S : Finset (Fin n)) (a : S.echelonFreeEntries → K) (s j : Fin n) :
+theorem repr_echelonRow (S : Finset (Fin n)) (a : S.echelonFreeEntries → R) (s j : Fin n) :
     b.repr (b.echelonRow S a s) j = if j = s then 1 else if h : (s, j) ∈ S.echelonFreeEntries then
       a ⟨(s, j), h⟩ else 0 := by
   rw [echelonRow, ← equivFun_apply, LinearEquiv.apply_symm_apply]
 
-theorem repr_echelonRow_of_mem {S : Finset (Fin n)} (a : S.echelonFreeEntries → K) (s : Fin n)
+theorem repr_echelonRow_of_mem {S : Finset (Fin n)} (a : S.echelonFreeEntries → R) (s : Fin n)
     {j : Fin n} (hj : j ∈ S) : b.repr (b.echelonRow S a s) j = Finsupp.single s 1 j := by
   rw [repr_echelonRow, Finsupp.single_apply]
   by_cases hjs : j = s
@@ -434,13 +405,26 @@ theorem repr_echelonRow_of_mem {S : Finset (Fin n)} (a : S.echelonFreeEntries �
   · rw [ite_eq_right hjs, ite_eq_right (Ne.symm hjs),
       dite_eq_right fun h ↦ (mem_echelonFreeEntries.mp h).2.2 hj]
 
-theorem echelonRow_mem_flag (S : Finset (Fin n)) (a : S.echelonFreeEntries → K) (s : Fin n) :
+theorem echelonRow_mem_flag (S : Finset (Fin n)) (a : S.echelonFreeEntries → R) (s : Fin n) :
     b.echelonRow S a s ∈ b.flag s.succ := by
   rw [mem_flag_iff_repr_eq_zero]
   intro j hj
   have hsj : s < j := Fin.succ_le_castSucc_iff.mp hj
   rw [repr_echelonRow, ite_eq_right hsj.ne',
     dite_eq_right fun h ↦ (mem_echelonFreeEntries.mp h).2.1.not_gt hsj]
+
+end Semiring
+
+section DivisionRing
+
+variable {K V : Type*} [DivisionRing K] [AddCommGroup V] [Module K V] {n : ℕ}
+  {b : Basis (Fin n) K V}
+
+/-- The span of the rows of the reduced echelon matrix with pivot set `S` and free entries `a` has
+pivot set `S`. -/
+theorem flagPivots_span_echelonRow (S : Finset (Fin n)) (a : S.echelonFreeEntries → K) :
+    b.flagPivots (span K (Set.range fun s : S ↦ b.echelonRow S a s)) = S :=
+  flagPivots_span_eq (fun _ ↦ echelonRow_mem_flag _ _ _) fun s _ ht ↦ repr_echelonRow_of_mem a s ht
 
 variable (b) in
 /-- The Schubert cell of the flag `b.flag` with pivot set `S`, that is the set of subspaces `W`
@@ -449,9 +433,7 @@ subspace corresponds to the free entries of its reduced echelon basis. -/
 noncomputable def flagCellEquiv (S : Finset (Fin n)) :
     {W : Submodule K V // b.flagPivots W = S} ≃ (S.echelonFreeEntries → K) where
   toFun W x := b.repr (b.flagEchelon W x.1.1) x.1.2
-  invFun a := ⟨span K (Set.range fun s : S ↦ b.echelonRow S a s),
-    flagPivots_span_eq (fun _ ↦ echelonRow_mem_flag _ _ _)
-      fun s _ ht ↦ repr_echelonRow_of_mem a s ht⟩
+  invFun a := ⟨span K (Set.range fun s : S ↦ b.echelonRow S a s), flagPivots_span_echelonRow S a⟩
   left_inv := by
     rintro ⟨W, rfl⟩
     refine Subtype.ext ((congrArg (span K) (congrArg Set.range (funext fun s ↦ ?_))).trans
@@ -470,9 +452,7 @@ noncomputable def flagCellEquiv (S : Finset (Fin n)) :
   right_inv a := by
     funext ⟨⟨s, j⟩, hx⟩
     have hs : s ∈ S := (mem_echelonFreeEntries.mp hx).1
-    have hS : b.flagPivots (span K (Set.range fun s : S ↦ b.echelonRow S a s)) = S :=
-      flagPivots_span_eq (fun _ ↦ echelonRow_mem_flag _ _ _)
-        fun s _ ht ↦ repr_echelonRow_of_mem a s ht
+    have hS := flagPivots_span_echelonRow (b := b) S a
     have hsU : s ∈ b.flagPivots (span K (Set.range fun s : S ↦ b.echelonRow S a s)) := by
       rwa [hS]
     have h := eq_flagEchelon hsU (subset_span ⟨⟨s, hs⟩, rfl⟩) (echelonRow_mem_flag S a s)
@@ -491,5 +471,7 @@ theorem coe_flagCellEquiv_symm_apply (S : Finset (Fin n)) (a : S.echelonFreeEntr
     ((b.flagCellEquiv S).symm a : Submodule K V) =
       span K (Set.range fun s : S ↦ b.echelonRow S a s) :=
   (rfl)
+
+end DivisionRing
 
 end Module.Basis
