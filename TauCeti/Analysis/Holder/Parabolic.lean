@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Lp.ProdLp
 public import Mathlib.Topology.MetricSpace.Snowflaking
-public import TauCeti.Analysis.Holder.Seminorm
+public import TauCeti.Topology.MetricSpace.HolderNorm
 
 /-!
 # Parabolic distance and Hölder seminorms
