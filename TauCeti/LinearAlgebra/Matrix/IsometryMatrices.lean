@@ -42,6 +42,8 @@ the matrix `M * (1 + ½ A⁻¹ E)` is a solution, since all quadratic terms in t
   `A ↦ Pᵀ * A * P` for invertible `P`.
 * `Matrix.exists_map_eq_of_mem_isometryMatrices_map`: solutions lift across a surjection with
   square-zero kernel.
+* `Matrix.isometryMatricesFiberEquiv`: the solutions congruent to a given one modulo a
+  square-zero ideal correspond to the skew-symmetric matrices with entries in the ideal.
 * `Matrix.natCard_isometryMatrices_eq_pow_mul`: the count across such a surjection.
 
 ## References
@@ -85,6 +87,23 @@ theorem map_mem_isometryMatrices_map (f : R →+* S) {A X : Matrix n n R}
     (hX : X ∈ isometryMatrices A) : X.map f ∈ isometryMatrices (A.map f) := by
   rw [mem_isometryMatrices] at *
   rw [← transpose_map, ← Matrix.map_mul, ← Matrix.map_mul, hX]
+
+/-- **The square-zero expansion of the isometry equation.** If `X` preserves a symmetric Gram
+matrix `A` and the entries of `D` lie in a square-zero ideal, then the quadratic term of
+`(X + D)ᵀ * A * (X + D)` vanishes, leaving `A + K + Kᵀ` for `K = Xᵀ * A * D`. -/
+theorem add_transpose_mul_mul_add_of_sq_eq_bot {I : Ideal R} (hI : I ^ 2 = ⊥)
+    {A X D : Matrix n n R} (hA : Aᵀ = A) (hX : X ∈ isometryMatrices A) (hD : ∀ i j, D i j ∈ I) :
+    (X + D)ᵀ * A * (X + D) = A + Xᵀ * A * D + (Xᵀ * A * D)ᵀ := by
+  classical
+  have hDD : Dᵀ * (A * D) = 0 :=
+    mul_eq_zero_of_sq_eq_bot hI (fun i j => hD j i) ((I.matrix n).mul_mem_left A hD)
+  calc (X + D)ᵀ * A * (X + D)
+      = Xᵀ * A * X + Xᵀ * A * D + Dᵀ * A * X + Dᵀ * (A * D) := by
+        rw [transpose_add]; noncomm_ring
+    _ = A + Xᵀ * A * D + (Xᵀ * A * D)ᵀ := by
+        rw [mem_isometryMatrices.mp hX, hDD, add_zero, transpose_mul, transpose_mul,
+          transpose_transpose, hA]
+        simp only [Matrix.mul_assoc]
 
 variable [DecidableEq n]
 
@@ -183,13 +202,46 @@ theorem exists_map_eq_of_mem_isometryMatrices_map (hf : Function.Surjective f)
   · rw [Matrix.map_mul, Matrix.map_add f (map_add f), Matrix.map_one f f.map_zero f.map_one,
       forall_mem_ker_iff_map_eq_zero.mp hZ, add_zero, Matrix.mul_one]
 
+/-- **The solutions congruent to a given one modulo a square-zero ideal form a torsor under the
+skew-symmetric matrices with entries in the ideal.** Let `A` be symmetric with unit determinant
+and let `X₀` preserve `A`. The solutions `X` with `X - X₀` having entries in a square-zero
+ideal `I` correspond to the skew-symmetric `K` with entries in `I`, via
+`K = X₀ᵀ * A * (X - X₀)` and `X = X₀ + (X₀ᵀ * A)⁻¹ * K`. -/
+@[expose, simps apply_coe symm_apply_coe_coe]
+noncomputable def isometryMatricesFiberEquiv {I : Ideal R} (hI : I ^ 2 = ⊥) {A X₀ : Matrix n n R}
+    (hA : Aᵀ = A) (hdet : IsUnit A.det) (hX₀ : X₀ ∈ isometryMatrices A) :
+    {X : isometryMatrices A // ∀ i j, X.1 i j - X₀ i j ∈ I} ≃
+      {K : Matrix n n R // (∀ i j, K i j ∈ I) ∧ Kᵀ = -K} :=
+  have hB : IsUnit (X₀ᵀ * A).det := by
+    rw [det_mul, det_transpose]
+    exact (isUnit_det_of_mem_isometryMatrices hdet hX₀).mul hdet
+  have hinv : ∀ K : Matrix n n R, (∀ i j, K i j ∈ I) → ∀ i j, ((X₀ᵀ * A)⁻¹ * K) i j ∈ I :=
+    fun _ hK => (I.matrix n).mul_mem_left _ hK
+  { toFun := fun X => ⟨X₀ᵀ * A * (X.1.1 - X₀), (I.matrix n).mul_mem_left _ X.2, by
+      have h := add_transpose_mul_mul_add_of_sq_eq_bot (D := X.1.1 - X₀) hI hA hX₀ X.2
+      rw [add_sub_cancel, mem_isometryMatrices.mp X.1.2, add_assoc, left_eq_add] at h
+      rw [eq_neg_iff_add_eq_zero, add_comm]
+      exact h⟩
+    invFun := fun K => ⟨⟨X₀ + (X₀ᵀ * A)⁻¹ * K.1, by
+      rw [mem_isometryMatrices, add_transpose_mul_mul_add_of_sq_eq_bot hI hA hX₀ (hinv _ K.2.1),
+        ← Matrix.mul_assoc, mul_nonsing_inv _ hB, Matrix.one_mul, K.2.2, add_neg_cancel_right]⟩,
+      fun i j => by simpa only [add_apply, add_sub_cancel_left] using hinv _ K.2.1 i j⟩
+    left_inv := fun X => by
+      ext : 2
+      dsimp only
+      rw [← Matrix.mul_assoc, nonsing_inv_mul _ hB, Matrix.one_mul, add_sub_cancel]
+    right_inv := fun K => by
+      ext : 1
+      dsimp only
+      rw [add_sub_cancel_left, ← Matrix.mul_assoc, mul_nonsing_inv _ hB, Matrix.one_mul] }
+
 /-- **Counting matrices preserving a Gram matrix across a square-zero extension.** Let `f` be a
 surjective ring homomorphism whose kernel squares to zero, let `2` be a unit, and let `A` be
 symmetric with unit determinant. The solutions over the source lying above a solution over the
-target are a torsor under the skew-symmetric matrices with entries in `ker f`, so the `Nat.card`
-of the solutions over the source is `Nat.card (ker f) ^ (k.choose 2)` times that over the target,
-for `k` the size of the index type. When the source is finite, above each solution over the
-target lie exactly `Nat.card (ker f) ^ (k.choose 2)` solutions over the source. -/
+target are a torsor under the skew-symmetric matrices with entries in `ker f`
+(`Matrix.isometryMatricesFiberEquiv`), so the `Nat.card` of the solutions over the source is
+`Nat.card (ker f) ^ (k.choose 2)` times that over the target, for `k` the size of the index
+type. -/
 theorem natCard_isometryMatrices_eq_pow_mul (hf : Function.Surjective f)
     (hker : RingHom.ker f ^ 2 = ⊥) (h2 : IsUnit (2 : R)) {A : Matrix n n R} (hA : Aᵀ = A)
     (hdet : IsUnit A.det) :
@@ -198,34 +250,12 @@ theorem natCard_isometryMatrices_eq_pow_mul (hf : Function.Surjective f)
         Nat.card (isometryMatrices (A.map f)) := by
   choose s hs hsf using fun Y : isometryMatrices (A.map f) =>
     exists_map_eq_of_mem_isometryMatrices_map hf hker h2 hA hdet Y.2
-  have hB : ∀ Y, IsUnit ((s Y)ᵀ * A).det := fun Y => by
-    rw [det_mul, det_transpose]
-    exact (isUnit_det_of_mem_isometryMatrices hdet (hs Y)).mul hdet
-  have hBB : ∀ Y, ((s Y)ᵀ * A) * ((s Y)ᵀ * A)⁻¹ = 1 := fun Y => mul_nonsing_inv _ (hB Y)
-  have hBB' : ∀ Y, ((s Y)ᵀ * A)⁻¹ * ((s Y)ᵀ * A) = 1 := fun Y => nonsing_inv_mul _ (hB Y)
-  -- Writing a solution as `s Y + D` above its image `Y`, the matrix `K = (s Y)ᵀ * A * D` is
-  -- skew-symmetric, because the quadratic term `Dᵀ * A * D` vanishes.
-  have hexpand : ∀ (X₀ D : Matrix n n R), X₀ ∈ isometryMatrices A →
-      (∀ i j, D i j ∈ RingHom.ker f) →
-      (X₀ + D)ᵀ * A * (X₀ + D) = A + X₀ᵀ * A * D + (X₀ᵀ * A * D)ᵀ := by
-    intro X₀ D hX₀ hD
-    have hDD : Dᵀ * (A * D) = 0 :=
-      mul_eq_zero_of_sq_eq_bot hker (fun i j => hD j i)
-        (((RingHom.ker f).matrix n).mul_mem_left A hD)
-    calc (X₀ + D)ᵀ * A * (X₀ + D)
-        = X₀ᵀ * A * X₀ + X₀ᵀ * A * D + Dᵀ * A * X₀ + Dᵀ * (A * D) := by
-          rw [transpose_add]; noncomm_ring
-      _ = A + X₀ᵀ * A * D + (X₀ᵀ * A * D)ᵀ := by
-          rw [mem_isometryMatrices.mp hX₀, hDD, add_zero, transpose_mul, transpose_mul,
-            transpose_transpose, hA]
-          simp only [Matrix.mul_assoc]
-  have hsub : ∀ X : isometryMatrices A, ∀ i j,
-      (X.1 - s ⟨X.1.map f, map_mem_isometryMatrices_map f X.2⟩) i j ∈ RingHom.ker f :=
-    fun X => forall_mem_ker_iff_map_eq_zero.mpr <| by
-      rw [Matrix.map_sub f (map_sub f), hsf, sub_self]
-  have hinv : ∀ Y (K : Matrix n n R), (∀ i j, K i j ∈ RingHom.ker f) →
-      ∀ i j, (((s Y)ᵀ * A)⁻¹ * K) i j ∈ RingHom.ker f :=
-    fun Y K hK => ((RingHom.ker f).matrix n).mul_mem_left _ hK
+  let red : isometryMatrices A → isometryMatrices (A.map f) :=
+    fun X => ⟨X.1.map f, map_mem_isometryMatrices_map f X.2⟩
+  have hfiber : ∀ (Y) (X : isometryMatrices A),
+      red X = Y ↔ ∀ i j, X.1 i j - s Y i j ∈ RingHom.ker f := fun Y X => by
+    refine Iff.trans ?_ (forall_mem_ker_iff_map_eq_zero (f := f) (D := X.1 - s Y)).symm
+    rw [Matrix.map_sub f (map_sub f), hsf, sub_eq_zero, Subtype.ext_iff]
   have h2' : ∀ x : R, x + x = 0 → x = 0 := fun x hx => by
     rw [← two_mul] at hx
     exact (h2.mul_right_eq_zero).mp hx
@@ -233,38 +263,11 @@ theorem natCard_isometryMatrices_eq_pow_mul (hf : Function.Surjective f)
       Nat.card (RingHom.ker f) ^ (Fintype.card n).choose 2 :=
     natCard_transpose_eq_neg (RingHom.ker f).toAddSubgroup h2'
   rw [mul_comm, ← hskew, ← Nat.card_prod]
-  refine Nat.card_congr
-    { toFun := fun X =>
-        (⟨X.1.map f, map_mem_isometryMatrices_map f X.2⟩,
-          ⟨(s ⟨X.1.map f, map_mem_isometryMatrices_map f X.2⟩)ᵀ * A *
-            (X.1 - s ⟨X.1.map f, map_mem_isometryMatrices_map f X.2⟩),
-            ((RingHom.ker f).matrix n).mul_mem_left _ (hsub X), ?_⟩)
-      invFun := fun YK => ⟨s YK.1 + ((s YK.1)ᵀ * A)⁻¹ * YK.2.1, ?_⟩
-      left_inv := fun X => Subtype.ext ?_
-      right_inv := fun YK => ?_ }
-  · -- the correction of a solution is skew-symmetric
-    have h := hexpand (s ⟨X.1.map f, map_mem_isometryMatrices_map f X.2⟩)
-      (X.1 - s ⟨X.1.map f, map_mem_isometryMatrices_map f X.2⟩) (hs _) (hsub X)
-    rw [add_sub_cancel, mem_isometryMatrices.mp X.2, add_assoc, left_eq_add] at h
-    rw [eq_neg_iff_add_eq_zero, add_comm]
-    exact h
-  · -- a skew-symmetric correction gives a solution
-    rw [mem_isometryMatrices, hexpand _ _ (hs _) (hinv _ _ YK.2.2.1), ← Matrix.mul_assoc,
-      hBB, Matrix.one_mul, YK.2.2.2, add_neg_cancel_right]
-  · dsimp only
-    rw [← Matrix.mul_assoc, hBB', Matrix.one_mul, add_sub_cancel]
-  · obtain ⟨Y, K, hK, hKt⟩ := YK
-    have hmap : (s Y + ((s Y)ᵀ * A)⁻¹ * K).map f = Y := by
-      rw [Matrix.map_add f (map_add f), hsf, forall_mem_ker_iff_map_eq_zero.mp (hinv Y K hK),
-        add_zero]
-    have hY : (⟨(s Y + ((s Y)ᵀ * A)⁻¹ * K).map f,
-        map_mem_isometryMatrices_map f (by
-          rw [mem_isometryMatrices, hexpand _ _ (hs _) (hinv _ _ hK), ← Matrix.mul_assoc, hBB,
-            Matrix.one_mul, hKt, add_neg_cancel_right])⟩ : isometryMatrices (A.map f)) = Y :=
-      Subtype.ext hmap
-    refine Prod.ext hY (Subtype.ext ?_)
-    dsimp only
-    rw [hY, add_sub_cancel_left, ← Matrix.mul_assoc, hBB, Matrix.one_mul]
+  -- group the solutions by their reduction; each fibre is a torsor under `hskew`'s matrices
+  exact Nat.card_congr <| (Equiv.sigmaFiberEquiv red).symm.trans <|
+    (Equiv.sigmaCongrRight fun Y => (Equiv.subtypeEquivRight (hfiber Y)).trans
+      (isometryMatricesFiberEquiv hker hA hdet (hs Y))).trans
+    (Equiv.sigmaEquivProd _ _)
 
 end SquareZero
 

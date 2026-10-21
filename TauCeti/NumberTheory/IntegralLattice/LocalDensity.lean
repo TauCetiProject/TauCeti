@@ -96,8 +96,7 @@ theorem localDensityCount_transpose_mul_mul {A P : Matrix n n ℤ_[p]} (hP : IsU
   exact hP.map _
 
 /-- **The local density count at a prime not dividing `2 det A` grows by `p ^ (n.choose 2)` at
-each level `r ≥ 1`.** The reduction `ℤ/pʳ⁺¹ → ℤ/pʳ` has square-zero kernel of order `p`, so the
-lifting count `Matrix.natCard_isometryMatrices_eq_pow_mul` applies. -/
+each level `r ≥ 1`.** -/
 theorem localDensityCount_succ_of_isUnit_det (hp : p ≠ 2) {A : Matrix n n ℤ_[p]} (hA : Aᵀ = A)
     (hdet : IsUnit A.det) {r : ℕ} (hr : r ≠ 0) :
     A.localDensityCount (r + 1) = p ^ (Fintype.card n).choose 2 * A.localDensityCount r := by
