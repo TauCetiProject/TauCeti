@@ -53,7 +53,7 @@ The specialization to discrete subgroups, whose point stabilizers are finite, is
   `m`-th power.
 * `Matrix.SpecialLinearGroup.isElliptic_of_smul_eq_self_of_ne_one`: a matrix fixing a point of
   `ℍ` and nontrivial in `PSL(2, ℝ)` is elliptic, which by
-  `Matrix.SpecialLinearGroup.isElliptic_mapGL_iff` means that its trace has square less than `4`.
+  `Matrix.isElliptic_iff_abs_trace_lt_two` means that its trace has absolute value less than `2`.
 * `Matrix.ProjectiveSpecialLinearGroup.eq_one_of_smul_eq_self_of_smul_eq_self`: a nontrivial
   element of `PSL(2, ℝ)` fixes at most one point of `ℍ`.
 * `Matrix.ProjectiveSpecialLinearGroup.exists_rotation_eq_of_smul_I_eq_I`: the stabilizer of `I`

@@ -68,14 +68,16 @@ theorem cosh_dist_smul_I (g : SL(2, ℝ)) :
     simp at hdet
   have hre : (g • I).re = (g 0 0 * g 1 0 + g 0 1 * g 1 1) / (g 1 1 ^ 2 + g 1 0 ^ 2) := by
     rw [← coe_re, hz, Complex.div_re]
-    simp [Complex.normSq_apply]
+    simp only [Complex.add_re, Complex.mul_re, Complex.ofReal_re, Complex.I_re, mul_zero,
+      Complex.ofReal_im, Complex.I_im, mul_one, sub_self, zero_add, Complex.normSq_apply,
+      Complex.add_im, Complex.mul_im, add_zero]
     field_simp
     ring
   have him : (g • I).im = 1 / (g 1 1 ^ 2 + g 1 0 ^ 2) := by
     rw [MulAction.compHom_smul_def, im_smul_eq_div_normSq]
     simp [denom, Complex.normSq_apply, sq]
   rw [cosh_dist', hre, him]
-  simp
+  simp only [I_re, sub_zero, one_div, inv_pow, I_im, one_pow, mul_one]
   field_simp
   linear_combination -(g 0 0 * g 1 1 - g 0 1 * g 1 0 + 1) * hdet
 
@@ -83,6 +85,14 @@ theorem cosh_dist_smul_I (g : SL(2, ℝ)) :
 private theorem eq_of_smul_I_eq_I {k : SL(2, ℝ)} (hk : k • I = I) :
     k 1 1 = k 0 0 ∧ k 1 0 = -k 0 1 ∧ k 0 0 ^ 2 + k 0 1 ^ 2 = 1 :=
   ⟨((smul_I_eq_I_iff k).1 hk).1, ((smul_I_eq_I_iff k).1 hk).2, sq_add_sq_eq_one_of_smul_I_eq_I hk⟩
+
+/-- Conjugation in `SL(2, ℝ)` preserves the trace: the product form of
+`ConjAct.trace_specialLinearGroup_smul`. -/
+private theorem trace_mul_mul_inv (P k : SL(2, ℝ)) :
+    ((P * k * P⁻¹ : SL(2, ℝ)) : Matrix (Fin 2) (Fin 2) ℝ).trace =
+      (k : Matrix (Fin 2) (Fin 2) ℝ).trace := by
+  simpa only [ConjAct.specialLinearGroup_smul_def, ConjAct.ofConjAct_toConjAct, ← coe_mul] using
+    ConjAct.trace_specialLinearGroup_smul (ConjAct.toConjAct P) (k : Matrix (Fin 2) (Fin 2) ℝ)
 
 /-- The base-point displacement of a conjugate of `k = !![a, b; -b, a]`:
 `N(B k B⁻¹) - 2 = b² (N(B)² - 4)`, where `N` is the sum of the squares of the entries. -/
@@ -123,11 +133,7 @@ theorem cosh_dist_smul_of_smul_eq_self {g : SL(2, ℝ)} {z : ℍ} (hz : g • z 
     rw [← dist_smul Q⁻¹, inv_smul_smul, hconj, mul_smul, mul_smul]
   have hdist₂ : dist (Q • I) (P • I) = dist ((Q⁻¹ * P) • I) I := by
     rw [dist_comm, ← dist_smul Q⁻¹, ← mul_smul, inv_smul_smul]
-  have htr := ConjAct.trace_specialLinearGroup_smul (ConjAct.toConjAct P)
-    (k : Matrix (Fin 2) (Fin 2) ℝ)
-  simp only [ConjAct.specialLinearGroup_smul_def, ConjAct.ofConjAct_toConjAct, ← coe_mul,
-    ← hg] at htr
-  rw [hdist₁, hdist₂, Real.sinh_sq, cosh_dist_smul_I, cosh_dist_smul_I, htr,
+  rw [hdist₁, hdist₂, Real.sinh_sq, cosh_dist_smul_I, cosh_dist_smul_I, hg, trace_mul_mul_inv,
     Matrix.trace_fin_two, h₁₁]
   have := sumSq_conj (B := Q⁻¹ * P) h₁₁ h₁₀ hab
   linear_combination this / 2 +
@@ -158,19 +164,11 @@ theorem trace_commutatorElement_of_smul_eq_self {g : SL(2, ℝ)} {z : ℍ} (hz :
     rw [hk]
     group
   have htr : (g : Matrix (Fin 2) (Fin 2) ℝ).trace = 2 * k 0 0 := by
-    have := ConjAct.trace_specialLinearGroup_smul (ConjAct.toConjAct P)
-      (k : Matrix (Fin 2) (Fin 2) ℝ)
-    simp only [ConjAct.specialLinearGroup_smul_def, ConjAct.ofConjAct_toConjAct, ← coe_mul,
-      hg] at this
-    rw [this, Matrix.trace_fin_two, h₁₁]
+    rw [← hg, trace_mul_mul_inv, Matrix.trace_fin_two, h₁₁]
     ring
   have hdet := X.det_coe
   rw [Matrix.det_fin_two] at hdet
-  have hconj := ConjAct.trace_specialLinearGroup_smul (ConjAct.toConjAct P)
-    ((⁅k, X⁆ : SL(2, ℝ)) : Matrix (Fin 2) (Fin 2) ℝ)
-  simp only [ConjAct.specialLinearGroup_smul_def, ConjAct.ofConjAct_toConjAct, ← coe_mul,
-    ← hcomm] at hconj
-  rw [hconj, hdist, cosh_dist_smul_I, htr]
+  rw [hcomm, trace_mul_mul_inv, hdist, cosh_dist_smul_I, htr]
   simp only [commutatorElement_def, coe_mul, coe_inv, Matrix.mul_apply, Fin.sum_univ_two,
     Matrix.adjugate_fin_two, Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero,
     Matrix.cons_val_one, Matrix.empty_val', Matrix.cons_val_fin_one, Matrix.trace_fin_two, h₁₁,

@@ -40,8 +40,8 @@ trace is `2 cos θ`, is in `TauCeti.Analysis.SpecialFunctions.Trigonometric.Matr
   property.
 * `Matrix.isHyperbolic_iff_two_lt_abs_trace`: a determinant-one matrix is hyperbolic exactly when
   its trace has absolute value greater than `2`.
-* `Matrix.SpecialLinearGroup.isElliptic_mapGL_iff`: an element of `SL(2, R)` is elliptic exactly
-  when its trace has square less than `4`.
+* `Matrix.isElliptic_iff_abs_trace_lt_two`: a determinant-one matrix is elliptic exactly when its
+  trace has absolute value less than `2`.
 * `Matrix.SpecialLinearGroup.trace_commutatorElement_fin_two`: the Fricke trace identity.
 
 ## References
@@ -121,14 +121,12 @@ theorem isHyperbolic_iff_two_lt_abs_trace {A : Matrix (Fin 2) (Fin 2) R} (hdet :
   rw [IsHyperbolic, discr_fin_two, hdet, mul_one, sub_pos, show (4 : R) = 2 ^ 2 by norm_num,
     sq_lt_sq, abs_two]
 
-open scoped MatrixGroups in
-/-- An element of `SL(2, R)` is elliptic, in the sense of `Matrix.GeneralLinearGroup.IsElliptic`,
-exactly when the square of its trace is less than `4`: its discriminant is `trace g ^ 2 - 4`. -/
-theorem SpecialLinearGroup.isElliptic_mapGL_iff (g : SL(2, R)) :
-    GeneralLinearGroup.IsElliptic (SpecialLinearGroup.mapGL R g) ↔
-      (g : Matrix (Fin 2) (Fin 2) R).trace ^ 2 < 4 := by
-  simp [GeneralLinearGroup.IsElliptic, IsElliptic, discr_fin_two,
-    SpecialLinearGroup.mapGL_coe_matrix]
+/-- A `2 × 2` matrix of determinant one is elliptic, in the sense of `Matrix.IsElliptic`, exactly
+when its trace has absolute value less than `2`: its discriminant is `trace A ^ 2 - 4`. -/
+theorem isElliptic_iff_abs_trace_lt_two {A : Matrix (Fin 2) (Fin 2) R} (hdet : A.det = 1) :
+    A.IsElliptic ↔ |A.trace| < 2 := by
+  rw [IsElliptic, discr_fin_two, hdet, mul_one, sub_neg, show (4 : R) = 2 ^ 2 by norm_num,
+    sq_lt_sq, abs_two]
 
 end Ordered
 

@@ -355,10 +355,11 @@ private theorem one_le_four_sub_trace_sq_mul_one_add_cosh_div_two [DiscreteTopol
   have hc₀ : c 0 = Real.cosh (dist (B • z) z) := by simp [c, J]
   -- `A` is elliptic, so `κ > 0`
   have hκ : 0 < κ := by
-    have hell := (Matrix.SpecialLinearGroup.isElliptic_mapGL_iff A).1
+    have hell := (Matrix.isElliptic_iff_abs_trace_lt_two A.det_coe).1
       (Matrix.SpecialLinearGroup.isElliptic_of_smul_eq_self_of_ne_one hAz hA₁)
     simp only [κ]
-    linarith
+    nlinarith [abs_nonneg (A : Matrix (Fin 2) (Fin 2) ℝ).trace,
+      sq_abs (A : Matrix (Fin 2) (Fin 2) ℝ).trace]
   by_contra hlt
   have hlt' : κ * (1 + c 0) < 1 := by
     rw [not_le, ← hc₀] at hlt
@@ -419,7 +420,8 @@ theorem one_le_abs_trace_sq_sub_four_add_abs_trace_commutatorElement_sub_two_of_
     nlinarith [abs_nonneg (A : Matrix (Fin 2) (Fin 2) ℝ).trace,
       sq_abs (A : Matrix (Fin 2) (Fin 2) ℝ).trace]
   -- `A` is elliptic, so it fixes a point `z` of `ℍ`
-  have hellA := (Matrix.SpecialLinearGroup.isElliptic_mapGL_iff A).2 htr
+  have hellA : (Matrix.SpecialLinearGroup.mapGL ℝ A).IsElliptic :=
+    (Matrix.isElliptic_iff_abs_trace_lt_two A.det_coe).2 hell
   set z := UpperHalfPlane.fixedPt _ hellA
   have hAz : A • z = z :=
     (UpperHalfPlane.gl_smul_eq_self_iff_eq_fixedPt (by simp) hellA).2 rfl
