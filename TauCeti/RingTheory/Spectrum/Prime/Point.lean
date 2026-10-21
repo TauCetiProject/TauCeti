@@ -17,6 +17,9 @@ The forward map from residue-field data is defined for any commutative target al
 ## References
 
 * Stacks Project, Tag 04GW.
+* Taylor Dupuy, Thomas Tucker, and Zhuoran Wang, pcfawd-formalization at `9a20b3f`,
+  `lean/Pcf/Stacks/Abhyankar/StrictHenselizationConstruction.lean`,
+  `PointedEtaleNeighborhood`.
 -/
 
 public section

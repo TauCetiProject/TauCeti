@@ -113,7 +113,7 @@ theorem TripleNeighbourhood.toNeighbourhood_toTriple (triple : TripleNeighbourho
       Equiv.symm_apply_apply (pointDataEquiv : PointData R carrier Ω ≃ _) data
 
 /-- Triples and pointed étale neighbourhoods are equivalent as objects. -/
-@[expose] noncomputable def tripleNeighbourhoodEquiv :
+noncomputable def tripleNeighbourhoodEquiv :
     TripleNeighbourhood R Ω ≃ Neighbourhood R Ω where
   toFun := TripleNeighbourhood.toNeighbourhood R Ω
   invFun := Neighbourhood.toTriple R Ω
