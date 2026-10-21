@@ -171,7 +171,7 @@ jobs:
           }
           decide() {
             local count
-            count=$(cat "$telemetry"/*.headers 2>/dev/null | wc -l)
+            count=$(find "$telemetry" -name '*.headers' -exec cat {} + | wc -l)
             {
               echo "$2"
               echo "reason=$reason; credential_pool=$api_pool; busy=${busy:-unknown}; budget=$BUDGET; observed_requests=$count"

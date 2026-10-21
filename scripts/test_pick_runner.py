@@ -95,7 +95,7 @@ class PickerTests(unittest.TestCase):
                    "REPOSITORY_API_RESERVE": selected_repository_reserve,
                    "GH_TOKEN": app_token or "repository-token"}
             step = next(s for s in PICKER["jobs"]["pick"]["steps"] if s.get("id") == "pick")
-            result = subprocess.run(["bash", "-c", step["run"]], env=env,
+            result = subprocess.run(["bash", "-e", "-c", step["run"]], env=env,
                                     text=True, capture_output=True, timeout=20)
             self.assertEqual(result.returncode, 0, result.stderr)
             return (dict(line.split("=", 1) for line in output.read_text().splitlines()),
