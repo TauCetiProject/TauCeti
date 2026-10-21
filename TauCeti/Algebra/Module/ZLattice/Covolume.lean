@@ -32,6 +32,8 @@ are inverse to each other.
 
 * `ZLattice.covolume_sq_eq_det_gram`: `covolume L ^ 2` is the determinant of the Gram matrix of
   any `ℤ`-basis of `L`.
+* `ZLattice.covolume_span_sq_eq_det_gram`: in particular `covolume (span ℤ (range b)) ^ 2` is the
+  Gram determinant of the basis `b` of the ambient space.
 * `ZLattice.covolume_dual`: `covolume L^∨ = (covolume L)⁻¹`.
 -/
 
@@ -67,6 +69,13 @@ theorem _root_.ZLattice.covolume_sq_eq_det_gram (L : Submodule ℤ E) [DiscreteT
     rw [Matrix.gram_eq_conjTranspose_mul o, Matrix.det_mul, Matrix.det_conjTranspose,
       star_trivial, Basis.det_apply, hM, sq]
   rw [ZLattice.covolume_eq_det_mul_measureReal L volume b o.toBasis, hvol, hgram, mul_one, sq_abs]
+
+/-- The square of the covolume of the `ℤ`-span of a basis of a finite-dimensional real inner
+product space is the determinant of the Gram matrix of the basis. -/
+theorem _root_.ZLattice.covolume_span_sq_eq_det_gram {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b : Basis ι ℝ E) : ZLattice.covolume (span ℤ (Set.range b)) ^ 2 = (Matrix.gram ℝ b).det := by
+  rw [ZLattice.covolume_sq_eq_det_gram _ (b.restrictScalars ℤ)]
+  simp only [Basis.restrictScalars_apply]
 
 /-- The covolume of the dual of a full lattice is the inverse of the covolume of the lattice. -/
 @[simp]
