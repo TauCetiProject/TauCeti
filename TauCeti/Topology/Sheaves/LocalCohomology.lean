@@ -22,8 +22,8 @@ The *local cohomology sheaf* `𝓗_Sⁿ(F)` is the sheafification of the preshea
 `Γ_S(F)`, so `𝓗_S⁰(F) ≅ Γ_S(F)`. The sheaves `𝓗_Sⁿ(F)` are supported in `S`: their stalks
 vanish off `S`, because `H_Sⁿ(W, F) = 0` for every open `W` disjoint from `S`. For a flasque
 sheaf `F` they vanish in positive degrees, since then `H_Sⁿ⁺¹(W, F) = 0` for every `W`. More
-generally, `𝓗_Sⁿ(F) = 0` exactly when every class in some `H_Sⁿ(W, F)` vanishes locally on `W`
-(`TopCat.Presheaf.isZero_presheafToSheaf_obj_iff`).
+generally, `𝓗_Sⁿ(F) = 0` exactly when, for every open `W`, every class in `H_Sⁿ(W, F)` vanishes
+locally on `W` (`TopCat.Presheaf.isZero_presheafToSheaf_obj_iff`).
 
 The sheaves `𝓗_Sⁿ(F)` are the coefficients of the local-to-global comparison for cohomology with
 supports in `S`; for a closed submanifold `M` of codimension `n` in a manifold `X`, the sheaf
@@ -33,6 +33,7 @@ supports in `S`; for a closed submanifold `M` of codimension `n` in a manifold `
 
 * `CategoryTheory.Sheaf.supportedSectionsSheaf F S`: the sheaf `Γ_S(F)` of sections supported in
   `S`, which is flasque when `F` is;
+* `CategoryTheory.Sheaf.supportedSectionsι F S`: the inclusion `Γ_S(F) ⟶ F`, a monomorphism;
 * `CategoryTheory.Sheaf.supportedHSheaf F S n`: the local cohomology sheaf `𝓗_Sⁿ(F)`;
 * `CategoryTheory.Sheaf.supportedHSheafZeroIso`: `𝓗_S⁰(F) ≅ Γ_S(F)`;
 * `CategoryTheory.Sheaf.isZero_stalk_supportedHSheaf_of_notMem`: the stalks of `𝓗_Sⁿ(F)` at
@@ -78,6 +79,11 @@ def supportedSectionsPresheaf : TopCat.Presheaf AddCommGrpCat.{u} X where
     exact congr($(F.obj.map_comp f g) s.1)
 
 @[simp]
+lemma supportedSectionsPresheaf_obj (W : (Opens X)ᵒᵖ) :
+    (F.supportedSectionsPresheaf S).obj W = AddCommGrpCat.of (F.supportedSections S W.unop) :=
+  (rfl)
+
+@[simp]
 lemma coe_supportedSectionsPresheaf_map_apply {W W' : (Opens X)ᵒᵖ} (f : W ⟶ W')
     (s : F.supportedSections S W.unop) :
     Subtype.val (p := (· ∈ F.supportedSections S W'.unop))
@@ -100,10 +106,8 @@ theorem isSheaf_supportedSectionsPresheaf : (F.supportedSectionsPresheaf S).IsSh
     · obtain ⟨i, hi⟩ := Opens.mem_iSup.1 hx.1
       exact ⟨i, hi, hx.2⟩
     · have h := congr(F.obj.map (S.complInclusion (U i)).op $(hs i))
-      rw [(F.mem_supportedSections_iff).1 (sf i).2, ← ConcreteCategory.comp_apply,
-        ← Functor.map_comp, ← op_comp] at h
-      rw [← ConcreteCategory.comp_apply, ← Functor.map_comp, ← op_comp, map_zero]
-      exact h
+      rw [(F.mem_supportedSections_iff).1 (sf i).2] at h
+      simpa [← ConcreteCategory.comp_apply, ← Functor.map_comp, ← op_comp, Opens.leSupr] using h
   refine ⟨⟨s, hmem⟩, fun i ↦ Subtype.ext (hs i), fun t ht ↦ Subtype.ext ?_⟩
   exact hs' t.1 fun i ↦ congr_arg (Subtype.val : F.supportedSections S _ → F.obj.obj _) (ht i)
 
@@ -116,6 +120,24 @@ def supportedSectionsSheaf : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.
 lemma supportedSectionsSheaf_obj :
     (F.supportedSectionsSheaf S).obj = F.supportedSectionsPresheaf S :=
   (rfl)
+
+/-- The inclusion `Γ_S(F) ⟶ F` of the sheaf of sections supported in `S`. -/
+def supportedSectionsι : F.supportedSectionsSheaf S ⟶ F :=
+  ObjectProperty.homMk
+    { app W := AddCommGrpCat.ofHom (F.supportedSections S W.unop).subtype
+      naturality _ _ _ := rfl }
+
+@[simp]
+lemma supportedSectionsι_hom_app_apply (W : (Opens X)ᵒᵖ) (s : F.supportedSections S W.unop) :
+    (F.supportedSectionsι S).hom.app W s = s :=
+  (rfl)
+
+/-- The inclusion `Γ_S(F) ⟶ F` is a monomorphism, since it is injective on sections. -/
+instance mono_supportedSectionsι : Mono (F.supportedSectionsι S) := by
+  have (W : (Opens X)ᵒᵖ) : Mono ((F.supportedSectionsι S).hom.app W) :=
+    (AddCommGrpCat.mono_iff_injective _).2 Subtype.val_injective
+  have : Mono (F.supportedSectionsι S).hom := NatTrans.mono_of_mono_app _
+  exact Sheaf.Hom.mono_of_presheaf_mono _ _ _
 
 /-- The sheaf of sections supported in a closed subset of a flasque sheaf is flasque. -/
 instance isFlasque_supportedSectionsSheaf [TopCat.Presheaf.IsFlasque F.obj] :
@@ -133,8 +155,7 @@ instance isFlasque_supportedSectionsSheaf [TopCat.Presheaf.IsFlasque F.obj] :
       (TopCat.Presheaf.IsFlasque.epi (F := F.obj) (homOfLE hW).op) t₀
     have hres (W : Opens X) (h₁ : W ≤ U.unop ⊔ V.unop ⊓ S.compl) :
         F.obj.map (homOfLE (h₁.trans hW)).op t = F.obj.map (homOfLE h₁).op t₀ := by
-      rw [← ht, ← ConcreteCategory.comp_apply, ← Functor.map_comp, ← op_comp]
-      rfl
+      simp [← ht, ← ConcreteCategory.comp_apply, ← Functor.map_comp, ← op_comp]
     refine ⟨⟨t, ?_⟩, Subtype.ext ?_⟩
     · rw [mem_supportedSections_iff]
       have h₁ : V.unop ⊓ S.compl ≤ U.unop ⊔ V.unop ⊓ S.compl := le_sup_right
@@ -142,8 +163,9 @@ instance isFlasque_supportedSectionsSheaf [TopCat.Presheaf.IsFlasque F.obj] :
       -- `V ∖ S` lies in the complement of `S` in `U ∪ (V ∖ S)`, where `t₀` vanishes
       have h₂ : V.unop ⊓ S.compl ≤ (U.unop ⊔ V.unop ⊓ S.compl) ⊓ S.compl :=
         le_inf h₁ inf_le_right
-      rw [show homOfLE h₁ = homOfLE h₂ ≫ S.complInclusion _ from rfl, op_comp, Functor.map_comp,
-        ConcreteCategory.comp_apply, (F.mem_supportedSections_iff).1 ht₀, map_zero]
+      rw [show homOfLE h₁ = homOfLE h₂ ≫ S.complInclusion _ from Subsingleton.elim _ _, op_comp,
+        Functor.map_comp, ConcreteCategory.comp_apply, (F.mem_supportedSections_iff).1 ht₀,
+        map_zero]
     · exact (hres _ le_sup_left).trans ht₀s
 
 /-- The degree-zero cohomology with supports in `S` is the presheaf of sections supported in `S`,
