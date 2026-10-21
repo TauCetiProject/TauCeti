@@ -47,8 +47,8 @@ nonreduced, rather than a set of rational points.
   the constant morphism at `x`.
 * `TauCeti.stabilizer.fiberSmulIso`: the fiber over `h • x` is isomorphic to the stabilizer of
   `x`, by left translation by `h⁻¹`.
-* `TauCeti.stabilizer.smulIso`: the stabilizers of `x` and of `h • x` are isomorphic, by
-  conjugation with `h`.
+* `TauCeti.stabilizer.smulIso`: the stabilizers of `x` and of `h • x` are isomorphic as group
+  objects, by conjugation with `h`.
 
 ## References
 
@@ -340,6 +340,27 @@ theorem smulIso_inv_incl :
     (smulIso G x h).inv ≫ incl G (h • x) =
       (toUnit _ ≫ h) * incl G x * (toUnit _ ≫ h)⁻¹ := by
   simp [smulIso]
+
+/-- Composing with the conjugation isomorphism preserves products of `T`-points. -/
+theorem mul_comp_smulIso_hom {T : C} (s t : T ⟶ stabilizer G (h • x)) :
+    (s * t) ≫ (smulIso G x h).hom = s ≫ (smulIso G x h).hom * t ≫ (smulIso G x h).hom := by
+  apply (cancel_mono (incl G x)).1
+  simp only [Category.assoc, MonObj.mul_comp _ _ (incl G x), smulIso_hom_incl, MonObj.comp_mul,
+    GrpObj.comp_inv, comp_toUnit_assoc, MonObj.mul_comp s t (incl G (h • x))]
+  group
+
+/-- Conjugation is a morphism of group objects. Its inverse is one too, by Mathlib's instance
+for inverses of monoid isomorphisms. -/
+instance : IsMonHom (smulIso G x h).hom where
+  one_hom := by
+    rw [MonObj.one_eq_one, MonObj.one_eq_one]
+    apply (cancel_mono (incl G x)).1
+    simp only [Category.assoc, smulIso_hom_incl, MonObj.comp_mul, GrpObj.comp_inv,
+      comp_toUnit_assoc, MonObj.one_comp (incl G x), MonObj.one_comp (incl G (h • x))]
+    group
+  mul_hom := by
+    rw [MonObj.mul_eq_mul, MonObj.mul_eq_mul, mul_comp_smulIso_hom, MonObj.comp_mul,
+      tensorHom_fst, tensorHom_snd]
 
 end Translation
 
