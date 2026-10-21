@@ -24,12 +24,12 @@ on `C`, and the Poincaré duality comparison `H^k → H_(2n-k) → FH_(n-k)` lan
 The regrading is the restriction along the embedding of complex shapes `k ↦ n - k` from `up ℤ`
 to `down ℤ`, and its inverse is the restriction along `k ↦ n - k` from `down ℤ` to `up ℤ`; in
 particular `HomologicalComplex.restriction_d` computes the regraded differential as `d_K`.
-For `n = 0` this agrees up to the indexing convention with Mathlib's
-`ChainComplex.cochainComplexEquivalence`. For general `n` the regrading is not the composite
-of that equivalence with the shift `⟦-n⟧` of cochain complexes: Mathlib's shift multiplies the
-differential by `(-1)^n`, whereas the regrading keeps the differential. The two agree up to the
-sign-twisted isomorphism `ChainComplex.regradeIsoShift`, whose component in degree `k` is
-`(-1)^(n k)`.
+The construction follows Mathlib's `ChainComplex.cochainComplexEquivalence`, which is the case
+`k ↦ -k`, and for `n = 0` agrees with it up to this indexing convention. For general `n` the
+regrading is not the composite of that equivalence with the shift `⟦-n⟧` of cochain complexes:
+Mathlib's shift multiplies the differential by `(-1)^n`, whereas the regrading keeps the
+differential. The two agree up to the sign-twisted isomorphism `ChainComplex.regradeIsoShift`,
+whose component in degree `k` is `(-1)^(n k)`.
 
 Both embeddings satisfy `IsTruncGE` and `IsTruncLE`, so homotopies and homotopy equivalences
 regrade by `Homotopy.restriction` and `HomotopyEquiv.restriction`, and the homology in degree `k`
