@@ -36,6 +36,8 @@ points over `∞`, which no edge reaches.
   by the cycles of `σ0`.
 * `FilledCover.center_overOne_mem_closure_edge_iff`: the white endpoints of an edge are described
   by the cycles of `σ1`.
+* `FilledCover.center_notMem_edge`, `FilledCover.center_notMem_upperTriangle`: the added points
+  lie on no edge and in no positive triangle.
 -/
 
 public section
@@ -84,6 +86,13 @@ theorem incl_mem_edge_iff {n : ℕ} (hp : IsCoveringMap p) (ν : p ⁻¹' {baseP
       ConnectedComponents.mk ⟨x, hx⟩ = hp.finEquivConnectedComponentsUnitSegment ν i := by
   simp only [edge, PunctureFilling.incl_injective.mem_set_image, mem_ofPred_eq]
 
+/-- The added points of the filled cover lie on no edge. -/
+theorem center_notMem_edge {n : ℕ} (hp : IsCoveringMap p) (ν : p ⁻¹' {basePt} ≃ Fin n)
+    (i : FilledPoint p) (m : Fin n) : PunctureFilling.center (chart p) i ∉ edge hp ν m := by
+  intro h
+  obtain ⟨x, -, -, hx⟩ := (mem_edge_iff hp ν m _).1 h
+  exact PunctureFilling.incl_ne_center x i hx
+
 /-- The open positive triangle of the filled cover indexed by `i`: the connected component indexed
 by `i` of the preimage of the upper half-plane, included into the filled surface. -/
 def upperTriangle {n : ℕ} (hp : IsCoveringMap p) (ν : p ⁻¹' {basePt} ≃ Fin n)
@@ -114,6 +123,14 @@ theorem incl_mem_upperTriangle_iff {n : ℕ} (hp : IsCoveringMap p) (ν : p ⁻�
     PunctureFilling.incl (chart p) x ∈ upperTriangle hp ν i ↔ ∃ hx : p x ∈ upperHalfPlane,
       ConnectedComponents.mk ⟨x, hx⟩ = hp.finEquivConnectedComponentsUpperHalfPlane ν i := by
   simp only [upperTriangle, PunctureFilling.incl_injective.mem_set_image, mem_ofPred_eq]
+
+/-- The added points of the filled cover lie in no positive triangle. -/
+theorem center_notMem_upperTriangle {n : ℕ} (hp : IsCoveringMap p)
+    (ν : p ⁻¹' {basePt} ≃ Fin n) (i : FilledPoint p) (m : Fin n) :
+    PunctureFilling.center (chart p) i ∉ upperTriangle hp ν m := by
+  intro h
+  obtain ⟨x, -, -, hx⟩ := (mem_upperTriangle_iff hp ν m _).1 h
+  exact PunctureFilling.incl_ne_center x i hx
 
 /-- The radial sequence from `w` towards the missing centre of the punctured disc. -/
 private def radialPoint (w : 𝔻*) (k : ℕ) : 𝔻* :=

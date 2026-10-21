@@ -323,13 +323,6 @@ private theorem chartAt_center_symm_mul_mem_iff_of (hp : IsCoveringMap p)
     PunctureFilling.disc_inclusion]
   exact hrot rfl
 
-/-- The added points of the filled cover lie on no edge. -/
-private theorem center_notMem_edge (hp : IsCoveringMap p) (ν : p ⁻¹' {basePt} ≃ Fin n)
-    (i : FilledPoint p) (m : Fin n) : PunctureFilling.center (chart p) i ∉ edge hp ν m := by
-  intro h
-  obtain ⟨x, -, -, hx⟩ := (mem_edge_iff hp ν m _).1 h
-  exact PunctureFilling.incl_ne_center x i hx
-
 /-- **The edges at a black point rotate by `σ0`.** Let `P` be the added point over `0` of a
 component `b` of `p ⁻¹' D₀*`, of local degree `e`. In the filling chart of `b`, multiplication by
 `exp (2πi/e)` carries the points of the edge of the sheet `k` exactly to the points of the edge of
@@ -588,14 +581,6 @@ theorem incl_chart_overInf_mem_upperTriangle_iff (hp : IsCoveringMap p)
   have hmk : m = k := (hp.monodromyTriple ν).σinf.injective
     ((hp.finEquivConnectedComponentsUpperHalfPlane ν).injective (hσm.symm.trans hk))
   exact ⟨hw, hmk ▸ (Equiv.apply_symm_apply _ _).symm⟩
-
-/-- The added points of the filled cover lie in no positive triangle. -/
-private theorem center_notMem_upperTriangle (hp : IsCoveringMap p) (ν : p ⁻¹' {basePt} ≃ Fin n)
-    (i : FilledPoint p) (m : Fin n) :
-    PunctureFilling.center (chart p) i ∉ upperTriangle hp ν m := by
-  intro h
-  obtain ⟨x, -, -, hx⟩ := (mem_upperTriangle_iff hp ν m _).1 h
-  exact PunctureFilling.incl_ne_center x i hx
 
 /-- **The positive triangles at a point over `∞` rotate by `σinf`, in the complex structure.** Let
 `P` be the added point over `∞` of a component `b` of `p ⁻¹' D∞*`, of local degree `e`. In the
