@@ -30,6 +30,7 @@ sums the coefficients in that block. For natural-valued exponents, this is the d
 ## Main results
 
 * `Finsupp.weight_toFinsupp`: multiset multiplicities recover the sum of entry weights.
+* `Finsupp.prod_pow_eq_pow_degree`: `∏ a ^ tᵢ = a ^ degree t`.
 * `Finsupp.weight_le_degree_nsmul`: if `w s ≤ c` for all `s`, then `weight w f ≤ degree f • c`.
 * `Finsupp.weight_le_degree_nsmul_of_mem_support`: the same bound, assuming `w s ≤ c` only for
   the variables `s` occurring in `f`.
@@ -56,6 +57,12 @@ theorem weight_toFinsupp {σ M : Type*} [DecidableEq σ] [AddCommMonoid M]
     rw [← Multiset.singleton_add, Multiset.toFinsupp_add,
       Multiset.toFinsupp_singleton, map_add, weight_single]
     simpa using congrArg (w i + ·) ih
+
+/-- A product of powers of one fixed element `a`, with exponents given by `t`, is `a` raised to
+the degree of `t`. -/
+theorem prod_pow_eq_pow_degree {σ M : Type*} [CommMonoid M] (t : σ →₀ ℕ) (a : M) :
+    (t.prod fun _ n ↦ a ^ n) = a ^ t.degree := by
+  rw [Finsupp.prod, Finset.prod_pow_eq_pow_sum, degree_apply]
 
 end Finsupp
 

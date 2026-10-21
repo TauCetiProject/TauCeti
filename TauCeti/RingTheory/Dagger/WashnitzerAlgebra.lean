@@ -66,8 +66,7 @@ public section
 namespace TauCeti.Dagger
 
 open Filter Topology _root_.MvPowerSeries
-open TauCeti.MvPowerSeries
-  (isRestricted_of_le isRestricted_const_iff denseRange_restrictedRadiusHom)
+open TauCeti.MvPowerSeries (isRestricted_of_le denseRange_restrictedRadiusHom)
 
 section ConstantRadius
 
@@ -384,7 +383,7 @@ theorem isUnit_washnitzerAlgebra_iff (f : washnitzerAlgebra σ K) :
       ⟨h0, fun t ht ↦ ?_⟩
     have := hρt t
     simp only [map_sub, coeff_C, ht, ↓reduceIte, sub_zero] at this
-    simp only [Finsupp.prod, Finset.prod_pow_eq_pow_sum, ← Finsupp.degree_apply]
+    rw [Finsupp.prod_pow_eq_pow_degree]
     exact (mul_le_mul_of_nonneg_left
       (pow_le_pow_left₀ (zero_lt_one.trans hm1).le (min_le_left _ _) _)
       (norm_nonneg _)).trans_lt this

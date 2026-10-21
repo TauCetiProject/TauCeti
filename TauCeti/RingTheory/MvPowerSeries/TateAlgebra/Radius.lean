@@ -29,7 +29,7 @@ public section
 
 namespace TauCeti.MvPowerSeries
 
-open Filter Topology _root_.MvPowerSeries
+open Filter _root_.MvPowerSeries
 
 section Restrictedness
 
@@ -43,13 +43,6 @@ theorem isRestricted_of_le {f : MvPowerSeries σ R} (hf : IsRestricted s f)
   · apply mul_le_mul_of_nonneg_left _ (norm_nonneg _)
     exact Finset.prod_le_prod₀ (fun i _ ↦ pow_nonneg (hr i) _) fun i _ ↦
       pow_le_pow_left₀ (hr i) (hrs i) _
-
-/-- Restrictedness at a constant radius: the weighted coefficient norms `‖aᵥ‖ ρ^|ν|` tend to
-zero. -/
-theorem isRestricted_const_iff {f : MvPowerSeries σ R} {ρ : ℝ} :
-    IsRestricted (fun _ : σ ↦ ρ) f ↔
-      Tendsto (fun t : σ →₀ ℕ ↦ ‖coeff t f‖ * ρ ^ t.degree) cofinite (𝓝 0) := by
-  simp only [IsRestricted, Finsupp.prod, Finset.prod_pow_eq_pow_sum, Finsupp.degree_apply]
 
 end Restrictedness
 
