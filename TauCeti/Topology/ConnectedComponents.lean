@@ -46,9 +46,10 @@ space by them.
   irreducible components implies finiteness of the connected components.
 * `TauCeti.natCard_connectedComponents_eq_of_iUnion_eq_univ`: a space covered by finitely many
   pairwise disjoint closed connected sets has exactly as many connected components as sets.
-* `Setoid.preconnectedSpace_quotient_iff`: the quotient of a locally connected space by an
-  equivalence relation is preconnected exactly when any two connected components are joined by a
-  chain of components, consecutive ones containing related points.
+* `Setoid.preconnectedSpace_quotient_iff`: the quotient of a space with open connected components
+  (for example a locally connected space) by an equivalence relation is preconnected exactly when
+  any two connected components are joined by a chain of components, consecutive ones containing
+  related points.
 -/
 
 public section
@@ -351,10 +352,10 @@ theorem preconnectedSpace_quotient_of_reflTransGen
   · rintro a b ⟨x, y, hxy, rfl, rfl⟩
     exact ⟨Quotient.mk s x, ⟨x, rfl, rfl⟩, y, rfl, (Quotient.sound hxy).symm⟩
 
-/-- If the quotient of a locally connected space by `s` is preconnected, then any two connected
-components of the space are joined by a finite chain of components, consecutive ones containing
-points related by `s`. -/
-theorem reflTransGen_of_preconnectedSpace_quotient [LocallyConnectedSpace X]
+/-- If the quotient by `s` of a space whose connected components are open (for example a locally
+connected space) is preconnected, then any two connected components of the space are joined by a
+finite chain of components, consecutive ones containing points related by `s`. -/
+theorem reflTransGen_of_preconnectedSpace_quotient [DiscreteTopology (ConnectedComponents X)]
     [PreconnectedSpace (Quotient s)] (a b : ConnectedComponents X) :
     Relation.ReflTransGen
       (fun a b ↦ ∃ x y, s x y ∧ ConnectedComponents.mk x = a ∧ ConnectedComponents.mk y = b)
@@ -379,10 +380,10 @@ theorem reflTransGen_of_preconnectedSpace_quotient [LocallyConnectedSpace X]
     exact mem_univ _
   rwa [hpre] at hy
 
-/-- The quotient of a locally connected space by `s` is preconnected exactly when any two
-connected components of the space are joined by a finite chain of components, consecutive ones
-containing points related by `s`. -/
-theorem preconnectedSpace_quotient_iff [LocallyConnectedSpace X] :
+/-- The quotient by `s` of a space whose connected components are open (for example a locally
+connected space) is preconnected exactly when any two connected components of the space are
+joined by a finite chain of components, consecutive ones containing points related by `s`. -/
+theorem preconnectedSpace_quotient_iff [DiscreteTopology (ConnectedComponents X)] :
     PreconnectedSpace (Quotient s) ↔ ∀ a b : ConnectedComponents X, Relation.ReflTransGen
       (fun a b ↦ ∃ x y, s x y ∧ ConnectedComponents.mk x = a ∧ ConnectedComponents.mk y = b) a b :=
   ⟨fun _ ↦ s.reflTransGen_of_preconnectedSpace_quotient,

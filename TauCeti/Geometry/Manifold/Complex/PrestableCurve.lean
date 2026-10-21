@@ -390,10 +390,8 @@ abbrev selfNode {p q : X} (mark : ι ↪ X) (hp : ∀ i, mark i ≠ p)
   Normalization := X
   pairing := Equiv.swap p q
   pairing_involutive := Equiv.swap_apply_self p q
-  finite_setOf_pairing_ne := (Set.toFinite {p, q}).subset fun x hx ↦ by
-    by_contra h
-    simp only [mem_insert_iff, mem_singleton_iff, not_or] at h
-    exact hx (Equiv.swap_apply_of_ne_of_ne h.1 h.2)
+  finite_setOf_pairing_ne := (Set.toFinite {p, q}).subset fun _ hx ↦ by
+    simpa using Equiv.eq_or_eq_of_swap_apply_ne_self hx
   mark := mark
   pairing_mark i := Equiv.swap_apply_of_ne_of_ne (hp i) (hq i)
   connectedSpace := inferInstance
@@ -404,14 +402,7 @@ variable {p q : X} (mark : ι ↪ X) (hp : ∀ i, mark i ≠ p) (hq : ∀ i, mar
 @[simp]
 theorem flags_selfNode (hpq : p ≠ q) : (selfNode mark hp hq).flags = {p, q} := by
   ext x
-  rw [mem_flags, mem_insert_iff, mem_singleton_iff]
-  by_cases hxp : x = p
-  · rw [hxp]
-    simpa using hpq.symm
-  by_cases hxq : x = q
-  · rw [hxq]
-    simpa using hpq
-  simp [Equiv.swap_apply_of_ne_of_ne hxp hxq, hxp, hxq]
+  simp [flags, Equiv.swap_apply_ne_self_iff, hpq]
 
 /-- The self-node curve has a single node. -/
 theorem nodes_selfNode (hpq : p ≠ q) :
