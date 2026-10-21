@@ -42,6 +42,9 @@ in characteristic zero, there are none, and the two notions agree for Noetherian
 * `TauCeti.Ring.IsJapanese.of_isIntegrallyClosed`: a Noetherian integrally closed domain with
   perfect fraction field (for instance of characteristic zero, such as `ℤ` or the ring of integers
   of a number field) is Japanese.
+* `TauCeti.Ring.IsJapanese.of_finite`: a domain that is a finite extension of a Japanese domain
+  is Japanese (Stacks, Lemma 10.161.5 (032I), finite case); in particular being Japanese is
+  invariant under ring isomorphisms (`RingEquiv.isJapanese`).
 * `TauCeti.Ring.isN1_of_isLocalization`, `TauCeti.Ring.isJapanese_of_isLocalization`: a
   localization of an N-1, respectively Japanese, domain is N-1, respectively Japanese (Stacks,
   Lemma 10.161.3 (032G)).
@@ -181,6 +184,40 @@ the integral closure in a finite separable extension is finite by the trace form
 instance of_isIntegrallyClosed [IsNoetherianRing R] [IsIntegrallyClosed R]
     [PerfectField (FractionRing R)] : IsJapanese R :=
   ⟨fun L _ _ _ _ _ ↦ IsIntegralClosure.finite R (FractionRing R) L (integralClosure R L)⟩
+
+variable (R) in
+/-- A domain `S` that is a finite extension of a Japanese domain `R` is Japanese, with no
+Noetherian hypothesis. Stacks, Lemma 10.161.5 (032I), for finite extensions. -/
+theorem of_finite (S : Type v) [CommRing S] [IsDomain S] [Algebra R S] [FaithfulSMul R S]
+    [Module.Finite R S] [IsJapanese R] : IsJapanese S := by
+  refine of_finite_integralClosure (FractionRing S) fun L _ _ _ _ _ ↦ ?_
+  -- A finite extension `L` of the fraction field of `S` is a finite extension of the fraction
+  -- field of `R`, and the integral closure of `S` in `L` is that of `R`, which is finite over `R`
+  -- and hence over `S`. First view `L` as an extension of `FractionRing R`.
+  let : Algebra (FractionRing R) (FractionRing S) := FractionRing.liftAlgebra R (FractionRing S)
+  let : Algebra R L := ((algebraMap S L).comp (algebraMap R S)).toAlgebra
+  have : IsScalarTower R S L := .of_algebraMap_eq' rfl
+  let : Algebra (FractionRing R) L :=
+    ((algebraMap (FractionRing S) L).comp (algebraMap (FractionRing R) (FractionRing S))).toAlgebra
+  have : IsScalarTower (FractionRing R) (FractionRing S) L := .of_algebraMap_eq' rfl
+  have : IsScalarTower R (FractionRing S) L := .to₁₃₄ R S _ _
+  have : IsScalarTower R (FractionRing R) L := .to₁₂₄ R _ (FractionRing S) _
+  have : FiniteDimensional (FractionRing R) L := Module.Finite.trans (FractionRing S) L
+  have := finite_integralClosure (R := R) (FractionRing R) L
+  -- The integral closure of `S` in `L` is that of `R`, as `S` is integral over `R`.
+  have : IsIntegralClosure (integralClosure S L) R L :=
+    TauCeti.IsIntegralClosure.tower_bot (A := S)
+  have : Module.Finite R (integralClosure S L) :=
+    .equiv (IsIntegralClosure.equiv R (integralClosure R L) L (integralClosure S L)).toLinearEquiv
+  exact .of_restrictScalars_finite R S _
+
+/-- Being Japanese is invariant under ring isomorphisms. -/
+theorem _root_.RingEquiv.isJapanese {S : Type v} [CommRing S] [IsDomain S] [IsJapanese R]
+    (e : R ≃+* S) : IsJapanese S :=
+  let : Algebra R S := e.toRingHom.toAlgebra
+  have : FaithfulSMul R S := (faithfulSMul_iff_algebraMap_injective R S).mpr e.injective
+  have : Module.Finite R S := RingHom.Finite.of_surjective _ e.surjective
+  of_finite R S
 
 end IsJapanese
 

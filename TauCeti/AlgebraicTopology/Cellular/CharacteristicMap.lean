@@ -88,7 +88,7 @@ private lemma continuous_norm_sigma_snd :
 private lemma radialPush_mem_closedBall (t : I) (y : closedBall (0 : Fin n → ℝ) 1) :
     radialPush 2⁻¹ t (y : Fin n → ℝ) ∈ closedBall (0 : Fin n → ℝ) 1 :=
   mem_closedBall_zero_iff.2 <|
-    norm_radialPush_le_one (by norm_num) (by norm_num) t (mem_closedBall_zero_iff.1 y.2)
+    norm_radialPush_le_one (by norm_num) t (mem_closedBall_zero_iff.1 y.2)
 
 /-- The radial deformation `TauCeti.radialPush 2⁻¹`, applied in every disk. -/
 private def sigmaRadialPush :
