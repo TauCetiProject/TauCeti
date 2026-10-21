@@ -262,11 +262,12 @@ end Matrix
 namespace TauCeti
 
 /-- If an ideal contains all evaluation determinants whose rows lie in a set, it also contains
-those whose rows lie in the linear span of that set. -/
-theorem det_mem_of_mem_span {R F : Type*} [CommRing R] [AddCommGroup F] [Module R F]
-    {p : ℕ} {s : Set F} {I : Ideal R} (f : Fin p → Dual R F) {v : Fin p → F}
+those whose rows lie in the linear span of that set. The row and functional families may be
+indexed by any finite type. -/
+theorem det_mem_of_mem_span {ι R F : Type*} [Fintype ι] [DecidableEq ι] [CommRing R]
+    [AddCommGroup F] [Module R F] {s : Set F} {I : Ideal R} (f : ι → Dual R F) {v : ι → F}
     (hv : ∀ i, v i ∈ Submodule.span R s)
-    (h : ∀ w : Fin p → F, (∀ i, w i ∈ s) → (Matrix.of fun i j ↦ f j (w i)).det ∈ I) :
+    (h : ∀ w : ι → F, (∀ i, w i ∈ s) → (Matrix.of fun i j ↦ f j (w i)).det ∈ I) :
     (Matrix.of fun i j ↦ f j (v i)).det ∈ I := by
   rw [← Matrix.detRowAlternating_compLinearMap_pi_apply]
   refine Submodule.span_le.2 ?_ <|
