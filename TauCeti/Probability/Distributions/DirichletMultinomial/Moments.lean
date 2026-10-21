@@ -102,34 +102,14 @@ private theorem covariance_cast_dirichletMultinomialMeasure {a : ι → ℝ}
     (memLp_two_iff_integrable_sq
       (integrable_dirichletMultinomialMeasure (fun k ↦ (k l : ℝ)) n a).aestronglyMeasurable).2
       (integrable_dirichletMultinomialMeasure _ n a)
-  have hmean (q : StdSimplex ℝ≥0 ι) (l : ι) :
-      ∫ k : ι → ℕ, (k l : ℝ) ∂multinomialMeasure n q = (n : ℝ) * q.weights l := by
-    let _ := isProbabilityMeasure_multinomialMeasure n q
-    have hm := memLp_id_map_multinomialToEuclidean_multinomialMeasure n q
-    calc
-      _ = ∫ z : EuclideanSpace ℝ ι, z l ∂(multinomialMeasure n q).map
-          multinomialToEuclidean := by
-        simpa only [multinomialToEuclidean_apply] using
-          (integral_map (φ := multinomialToEuclidean) (f := fun z : EuclideanSpace ℝ ι ↦ z l)
-            (by fun_prop) (by fun_prop)).symm
-      _ = (∫ z, z ∂(multinomialMeasure n q).map multinomialToEuclidean) l :=
-        (eval_integral_piLp (fun j ↦ (hm.eval_piLp j).integrable one_le_two) l).symm
-      _ = _ := by rw [integral_id_map_multinomialToEuclidean_multinomialMeasure]; rfl
-  -- Evaluate the component covariances by the multinomial formula and its cell means.
-  have hcov (q : StdSimplex ℝ≥0 ι) :
-      cov[fun k : ι → ℕ ↦ (k i : ℝ), fun k ↦ (k j : ℝ); multinomialMeasure n q] =
-        (n : ℝ) * ((if i = j then (q.weights i : ℝ) else 0) -
-          q.weights i * q.weights j) := by
-    have h := covariance_eval_map_multinomialToEuclidean_multinomialMeasure n q i j
-    rw [covariance_map (by fun_prop) (by fun_prop) (by fun_prop)] at h
-    simpa [Function.comp_def, multinomialToEuclidean_apply, Matrix.diagonal_apply] using h
+  -- Total covariance separates the mean component covariance from the covariance of cell means.
   have hmi := hmem i
   have hmj := hmem j
   rw [dirichletMultinomialMeasure_eq_bind n p hweights] at hmi hmj ⊢
   rw [covariance_bind hK (.of_forall fun _ ↦ isProbabilityMeasure_multinomialMeasure n _)
     hmi hmj]
-  simp_rw [hcov, hmean]
-  -- The mixture mean product is recovered from the Dirichlet covariance identity.
+  simp_rw [covariance_cast_apply_multinomialMeasure, integral_cast_apply_multinomialMeasure]
+  -- Recover the Dirichlet product moment from its covariance and coordinate means.
   have hprod := covariance_eq_sub (memLp_eval_dirichletMeasure (a := a) i 2)
     (memLp_eval_dirichletMeasure (a := a) j 2)
   simp only [Pi.mul_apply, integral_eval_dirichletMeasure ha] at hprod
@@ -140,6 +120,7 @@ private theorem covariance_cast_dirichletMultinomialMeasure {a : ι → ℝ}
   have hij : Integrable (fun x : EuclideanSpace ℝ ι ↦ x i * x j) (dirichletMeasure a) :=
     (memLp_eval_dirichletMeasure (a := a) i 2).integrable_mul
       (memLp_eval_dirichletMeasure (a := a) j 2)
+  -- The extended weights agree almost everywhere with the original Dirichlet coordinates.
   have heq : (fun x ↦ (n : ℝ) * ((if i = j then ((p x).weights i : ℝ) else 0) -
       (p x).weights i * (p x).weights j)) =ᵐ[dirichletMeasure a]
       fun x ↦ (n : ℝ) * ((if i = j then x i else 0) - x i * x j) := by
@@ -157,6 +138,7 @@ private theorem covariance_cast_dirichletMultinomialMeasure {a : ι → ℝ}
     apply integral_congr_ae
     filter_upwards [hmeans i, hmeans j] with x hi hj
     rw [hi, hj]
+  -- Integrate the component covariance and combine it with the scaled Dirichlet covariance.
   rw [integral_congr_ae heq, hcovmeans,
     covariance_const_mul_left, covariance_const_mul_right, integral_const_mul]
   split_ifs with he
@@ -166,6 +148,43 @@ private theorem covariance_cast_dirichletMultinomialMeasure {a : ι → ℝ}
   · simp only [zero_sub, integral_neg]
     rw [hproduct]
     ring
+
+/-- A Euclidean Dirichlet-multinomial coordinate has variance `n pᵢ (1 - pᵢ) (A+n)/(A+1)`,
+where `A` is the total concentration and `pᵢ = a i / A`. -/
+@[simp]
+theorem variance_eval_map_multinomialToEuclidean_dirichletMultinomialMeasure
+    {a : ι → ℝ} (ha : ∀ i, 0 < a i) (n : ℕ) (i : ι) :
+    Var[fun z : EuclideanSpace ℝ ι ↦ z i;
+      (dirichletMultinomialMeasure n a).map multinomialToEuclidean] =
+      (n : ℝ) * (a i / ∑ l, a l) * (1 - a i / ∑ l, a l) *
+        ((∑ l, a l) + n) / ((∑ l, a l) + 1) := by
+  have hA : 0 < ∑ l, a l := Finset.sum_pos (fun l _ ↦ ha l) Finset.univ_nonempty
+  rw [← covariance_self (by fun_prop),
+    covariance_map (by fun_prop) (by fun_prop) (by fun_prop)]
+  simp only [Function.comp_def, multinomialToEuclidean_apply]
+  rw [covariance_cast_dirichletMultinomialMeasure ha,
+    covariance_self (by fun_prop), variance_eval_dirichletMeasure ha]
+  simp only [ite_true]
+  field_simp
+  ring
+
+/-- Distinct Euclidean Dirichlet-multinomial coordinates have covariance
+`-n pᵢ pⱼ (A+n)/(A+1)`, where `A` is the total concentration and `pᵢ = a i / A`. -/
+@[simp]
+theorem covariance_eval_map_multinomialToEuclidean_dirichletMultinomialMeasure_of_ne
+    {a : ι → ℝ} (ha : ∀ i, 0 < a i) (n : ℕ) {i j : ι} (hij : i ≠ j) :
+    cov[fun z : EuclideanSpace ℝ ι ↦ z i, fun z ↦ z j;
+      (dirichletMultinomialMeasure n a).map multinomialToEuclidean] =
+      -(n : ℝ) * (a i / ∑ l, a l) * (a j / ∑ l, a l) *
+        ((∑ l, a l) + n) / ((∑ l, a l) + 1) := by
+  have hA : 0 < ∑ l, a l := Finset.sum_pos (fun l _ ↦ ha l) Finset.univ_nonempty
+  rw [covariance_map (by fun_prop) (by fun_prop) (by fun_prop)]
+  simp only [Function.comp_def, multinomialToEuclidean_apply]
+  rw [covariance_cast_dirichletMultinomialMeasure ha,
+    covariance_eval_dirichletMeasure_of_ne ha hij]
+  simp only [hij, ite_false]
+  field_simp
+  ring
 
 open scoped Classical in
 /-- Each covariance entry has the multinomial covariance shape, inflated by
@@ -178,19 +197,14 @@ theorem covariance_eval_map_multinomialToEuclidean_dirichletMultinomialMeasure
       ((n : ℝ) * ((∑ l, a l) + n) / ((∑ l, a l) + 1)) *
         ((Matrix.diagonal (fun l ↦ a l / ∑ k, a k)) i j -
           (a i / ∑ l, a l) * (a j / ∑ l, a l)) := by
-  have hA : 0 < ∑ l, a l := Finset.sum_pos (fun l _ ↦ ha l) Finset.univ_nonempty
-  rw [covariance_map (by fun_prop) (by fun_prop) (by fun_prop)]
-  simp only [Function.comp_def, multinomialToEuclidean_apply]
-  rw [covariance_cast_dirichletMultinomialMeasure ha]
   by_cases hij : i = j
   · subst j
-    rw [covariance_self (by fun_prop), variance_eval_dirichletMeasure ha]
-    simp only [ite_true, Matrix.diagonal_apply_eq]
-    field_simp
+    rw [covariance_self (by fun_prop),
+      variance_eval_map_multinomialToEuclidean_dirichletMultinomialMeasure ha]
+    simp only [Matrix.diagonal_apply_eq]
     ring
-  · rw [covariance_eval_dirichletMeasure_of_ne ha hij]
-    simp only [hij, ite_false, Matrix.diagonal_apply_ne _ hij]
-    field_simp
+  · rw [covariance_eval_map_multinomialToEuclidean_dirichletMultinomialMeasure_of_ne ha n hij]
+    simp only [Matrix.diagonal_apply_ne _ hij]
     ring
 
 open scoped Classical in
