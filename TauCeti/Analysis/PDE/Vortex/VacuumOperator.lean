@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
+public import TauCeti.Analysis.Distribution.SchwartzSpace.LaplacianResolvent
 
 /-!
 # The gauge-fixed vortex operator at the vacuum
@@ -31,8 +32,15 @@ This file defines `L₀` and its formal `L²` adjoint `L₀*` as continuous line
 `L₀* L₀ = L₀ L₀* = -Δ + 1 / 4` and the energy identities
 `‖L₀ x‖₂² = ‖L₀* x‖₂² = ‖∇x‖₂² + ‖x‖₂² / 4`, for any additive Haar measure on `ℂ`, together with
 their consequences `‖x‖₂ ≤ 2 ‖L₀ x‖₂`, `‖x‖₂ ≤ 2 ‖L₀* x‖₂` and the injectivity of `L₀` and `L₀*` on
-Schwartz fields. These are the vacuum inputs for the linear analysis of vortices, whose exterior
-regions are modelled on the vacuum.
+Schwartz fields. Combined with the inverse `(-Δ + 1 / 4)⁻¹` of the shifted Laplacian
+(`SchwartzMap.laplacianResolvent`), the Weitzenböck identities show that `L₀` and `L₀*` are
+continuous linear automorphisms of the space of Schwartz fields, with inverses
+`L₀⁻¹ = L₀* (-Δ + 1 / 4)⁻¹` and `(L₀*)⁻¹ = L₀ (-Δ + 1 / 4)⁻¹`. Since `(-Δ + 1 / 4)⁻¹` multiplies
+the Fourier transform by `(4π² |ξ|² + 1 / 4)⁻¹`, the factor `4π²` coming from Mathlib's
+normalization of the Fourier transform, `L₀⁻¹` inverts the symbol of `L₀` as
+`L₀(ξ)* / (4π² |ξ|² + 1 / 4)`. Both inverses are bounded by `2` in `L²`, the gap
+`1 / 2` of the vacuum. These are the vacuum inputs for the linear analysis of vortices, whose
+exterior regions are modelled on the vacuum.
 
 ## Main declarations
 
@@ -52,6 +60,13 @@ regions are modelled on the vacuum.
   kernel on Schwartz fields. Their analogues for `L₀*` are
   `TauCeti.Vortex.integral_norm_sq_le_four_mul_integral_norm_sq_vacuumAdjoint` and
   `TauCeti.Vortex.vacuumAdjoint_injective`.
+* `TauCeti.Vortex.vacuumOperatorEquiv` and `TauCeti.Vortex.vacuumAdjointEquiv`: `L₀` and `L₀*` as
+  continuous linear automorphisms of the Schwartz fields, with inverses given by
+  `TauCeti.Vortex.vacuumOperatorEquiv_symm_apply` and
+  `TauCeti.Vortex.vacuumAdjointEquiv_symm_apply`.
+* `TauCeti.Vortex.integral_norm_sq_vacuumOperatorEquiv_symm_le` and
+  `TauCeti.Vortex.integral_norm_sq_vacuumAdjointEquiv_symm_le`: `‖L₀⁻¹ y‖₂ ≤ 2 ‖y‖₂` and
+  `‖(L₀*)⁻¹ y‖₂ ≤ 2 ‖y‖₂`.
 
 ## References
 
@@ -318,5 +333,82 @@ theorem vacuumAdjoint_injective : Function.Injective vacuumAdjoint := by
     (integral_norm_sq_eq_zero_iff (μ := volume)).1 <|
       le_antisymm ?_ (integral_nonneg fun _ ↦ by positivity)
   simpa [hx] using integral_norm_sq_le_four_mul_integral_norm_sq_vacuumAdjoint (μ := volume) x
+
+/-! ### The inverses of the vacuum operator and its adjoint -/
+
+private theorem vacuumOperator_vacuumAdjoint_laplacianResolvent :
+    vacuumOperator (vacuumAdjoint (laplacianResolvent (1 / 4) y)) = y := by
+  rw [vacuumOperator_vacuumAdjoint, neg_laplacian_laplacianResolvent_add_smul (by norm_num)]
+
+private theorem vacuumAdjoint_vacuumOperator_laplacianResolvent :
+    vacuumAdjoint (vacuumOperator (laplacianResolvent (1 / 4) y)) = y := by
+  rw [vacuumAdjoint_vacuumOperator, neg_laplacian_laplacianResolvent_add_smul (by norm_num)]
+
+/-- **The vacuum operator is invertible**: `L₀` as a continuous linear automorphism of the Schwartz
+fields. Its inverse is `L₀⁻¹ = L₀* (-Δ + 1 / 4)⁻¹` (`vacuumOperatorEquiv_symm_apply`). Since
+`(-Δ + 1 / 4)⁻¹` multiplies the Fourier transform by `(4π² |ξ|² + 1 / 4)⁻¹`, this inverts the
+symbol of `L₀` as `L₀(ξ)* / (4π² |ξ|² + 1 / 4)`. -/
+def vacuumOperatorEquiv : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4)) ≃L[ℝ] 𝓢(ℂ, EuclideanSpace ℝ (Fin 4)) :=
+  .equivOfInverse vacuumOperator (vacuumAdjoint ∘L laplacianResolvent (1 / 4))
+    (fun x ↦ vacuumOperator_injective <| by
+      rw [ContinuousLinearMap.comp_apply, vacuumOperator_vacuumAdjoint_laplacianResolvent])
+    (fun y ↦ by
+      rw [ContinuousLinearMap.comp_apply, vacuumOperator_vacuumAdjoint_laplacianResolvent])
+
+/-- **The adjoint of the vacuum operator is invertible**: `L₀*` as a continuous linear automorphism
+of the Schwartz fields. Its inverse is `(L₀*)⁻¹ = L₀ (-Δ + 1 / 4)⁻¹`
+(`vacuumAdjointEquiv_symm_apply`). -/
+def vacuumAdjointEquiv : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4)) ≃L[ℝ] 𝓢(ℂ, EuclideanSpace ℝ (Fin 4)) :=
+  .equivOfInverse vacuumAdjoint (vacuumOperator ∘L laplacianResolvent (1 / 4))
+    (fun x ↦ vacuumAdjoint_injective <| by
+      rw [ContinuousLinearMap.comp_apply, vacuumAdjoint_vacuumOperator_laplacianResolvent])
+    (fun y ↦ by
+      rw [ContinuousLinearMap.comp_apply, vacuumAdjoint_vacuumOperator_laplacianResolvent])
+
+@[simp]
+theorem coe_vacuumOperatorEquiv : ⇑vacuumOperatorEquiv = vacuumOperator :=
+  (rfl)
+
+@[simp]
+theorem coe_vacuumAdjointEquiv : ⇑vacuumAdjointEquiv = vacuumAdjoint :=
+  (rfl)
+
+/-- The inverse of the vacuum operator is `L₀⁻¹ = L₀* (-Δ + 1 / 4)⁻¹`. -/
+theorem vacuumOperatorEquiv_symm_apply :
+    vacuumOperatorEquiv.symm y = vacuumAdjoint (laplacianResolvent (1 / 4) y) :=
+  (rfl)
+
+/-- The inverse of the adjoint of the vacuum operator is `(L₀*)⁻¹ = L₀ (-Δ + 1 / 4)⁻¹`. -/
+theorem vacuumAdjointEquiv_symm_apply :
+    vacuumAdjointEquiv.symm y = vacuumOperator (laplacianResolvent (1 / 4) y) :=
+  (rfl)
+
+@[simp]
+theorem vacuumOperator_vacuumOperatorEquiv_symm : vacuumOperator (vacuumOperatorEquiv.symm y) = y :=
+  vacuumOperatorEquiv.apply_symm_apply y
+
+@[simp]
+theorem vacuumOperatorEquiv_symm_vacuumOperator : vacuumOperatorEquiv.symm (vacuumOperator x) = x :=
+  vacuumOperatorEquiv.symm_apply_apply x
+
+@[simp]
+theorem vacuumAdjoint_vacuumAdjointEquiv_symm : vacuumAdjoint (vacuumAdjointEquiv.symm y) = y :=
+  vacuumAdjointEquiv.apply_symm_apply y
+
+@[simp]
+theorem vacuumAdjointEquiv_symm_vacuumAdjoint : vacuumAdjointEquiv.symm (vacuumAdjoint x) = x :=
+  vacuumAdjointEquiv.symm_apply_apply x
+
+/-- **The vacuum gap for the inverse**: `‖L₀⁻¹ y‖₂² ≤ 4 ‖y‖₂²`, that is, `‖L₀⁻¹ y‖₂ ≤ 2 ‖y‖₂`. -/
+theorem integral_norm_sq_vacuumOperatorEquiv_symm_le :
+    ∫ z, ‖vacuumOperatorEquiv.symm y z‖ ^ 2 ∂μ ≤ 4 * ∫ z, ‖y z‖ ^ 2 ∂μ := by
+  simpa using integral_norm_sq_le_four_mul_integral_norm_sq_vacuumOperator (μ := μ)
+    (vacuumOperatorEquiv.symm y)
+
+/-- The vacuum gap for the inverse of the adjoint: `‖(L₀*)⁻¹ y‖₂ ≤ 2 ‖y‖₂`. -/
+theorem integral_norm_sq_vacuumAdjointEquiv_symm_le :
+    ∫ z, ‖vacuumAdjointEquiv.symm y z‖ ^ 2 ∂μ ≤ 4 * ∫ z, ‖y z‖ ^ 2 ∂μ := by
+  simpa using integral_norm_sq_le_four_mul_integral_norm_sq_vacuumAdjoint (μ := μ)
+    (vacuumAdjointEquiv.symm y)
 
 end TauCeti.Vortex
