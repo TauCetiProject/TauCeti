@@ -81,14 +81,11 @@ variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
   {𝒜 : ℤ → Submodule k A} [GradedAlgebra 𝒜] {J : Type w} {e : J → A}
   (he₀ : ∀ j, e j ∈ 𝒜 0) (d : J → ℤ)
 
-include he₀ in
-private theorem isHomogeneous_span_e (j : J) : (Ideal.span {e j} : Ideal A).IsHomogeneous 𝒜 :=
-  Ideal.isHomogeneous_span_singleton_of_mem_zero 𝒜 (he₀ j)
-
 /-- The graded projective `⨁ⱼ (A eⱼ){d j}`. -/
 private abbrev coverObj : GradedModuleCat.{max w uA} 𝒜 :=
   directSumObj fun j =>
-    (ofIdeal 𝒜 (Ideal.span {e j}) (isHomogeneous_span_e he₀ j)).shiftObj (d j)
+    (ofIdeal 𝒜 (Ideal.span {e j})
+      (Ideal.isHomogeneous_span_singleton_of_mem_zero 𝒜 (he₀ j))).shiftObj (d j)
 
 private theorem mem_coverObj_piece_iff (p : ℤ) (x : coverObj he₀ d) :
     x ∈ (coverObj he₀ d).grading.piece p ↔

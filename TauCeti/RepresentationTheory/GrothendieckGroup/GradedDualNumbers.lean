@@ -199,15 +199,14 @@ theorem not_isUnit_det_gradedCartanMatrix_dualNumber :
 /-! ### The graded dual-numbers rejection -/
 
 /-- **The graded dual-numbers rejection.** The graded residue field `S` of `k[ε]`, with `ε` in
-degree two, is not graded Euler-admissible against itself. Otherwise every pair of graded heads
-would be admissible, and the graded Cartan matrix would be unimodular
-(`TauCeti.isUnit_det_gradedCartanMatrix_gradedIdempotentProjectiveBasis`), contradicting
-`TauCeti.not_isUnit_det_gradedCartanMatrix_dualNumber`. Because `TauCeti.gradedExtEuler` consumes
-a proof of `TauCeti.IsGradedEulerAdmissible`, it cannot be instantiated for this pair. -/
+degree two, is not graded Euler-admissible against itself. Because `TauCeti.gradedExtEuler`
+consumes a proof of `TauCeti.IsGradedEulerAdmissible`, it cannot be instantiated for this pair. -/
 theorem not_isGradedEulerAdmissible_dualNumberGradedResidue
     [HasExt.{u} (GradedModuleCat.{u} (dualNumberIntegerGrade k))] :
     ¬ IsGradedEulerAdmissible.{u} k (GradedModuleCat.shift (dualNumberIntegerGrade k))
       (dualNumberGradedResidue k) (dualNumberGradedResidue k) := fun h =>
+  -- `S` is the only graded head, so admissibility of `(S, S)` would make the graded Cartan
+  -- matrix unimodular, contradicting `TauCeti.not_isUnit_det_gradedCartanMatrix_dualNumber`.
   not_isUnit_det_gradedCartanMatrix_dualNumber k
     (isUnit_det_gradedCartanMatrix_gradedIdempotentProjectiveBasis _ _ _ _ _ _ fun _ _ => h)
 

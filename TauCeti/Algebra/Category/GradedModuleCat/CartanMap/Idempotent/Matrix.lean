@@ -117,14 +117,15 @@ variable [DecidableEq I] [HasExt.{uA} (GradedModuleCat.{uA} 𝒜)]
 
 /-- **Graded Cartan unimodularity is decided on the graded heads.** If every pair `(Sᵢ, Sⱼ)` of
 graded heads of the `A eᵢ` is graded Euler-admissible, then the graded Cartan matrix in the
-canonical bases has unit determinant in `ℤ[q,q⁻¹]`. Every finite graded module has a composition
-series by shifts of the `Sᵢ`, so admissibility of the heads makes every pair of finite graded
-modules admissible, and `TauCeti.isUnit_det_gradedCartanMatrix` applies. -/
+canonical bases has unit determinant in `ℤ[q,q⁻¹]`. -/
 theorem isUnit_det_gradedCartanMatrix_gradedIdempotentProjectiveBasis
     (h : ∀ i j, IsGradedEulerAdmissible.{uA} k (GradedModuleCat.shift 𝒜)
       (gradedPositiveMulQuotient 𝒜 (he₀ i)) (gradedPositiveMulQuotient 𝒜 (he₀ j))) :
     IsUnit (gradedCartanMatrix 𝒜 (gradedIdempotentProjectiveBasis he he₀ hI hneg hspan hne)
       (gradedIdempotentHeadBasis hneg he he₀ hspan hne)).det := by
+  -- Every finite graded module has a composition series by shifts of the `Sᵢ`, so admissibility
+  -- of the heads makes every pair of finite graded modules admissible, and
+  -- `TauCeti.isUnit_det_gradedCartanMatrix` applies.
   have hS := isExhaustiveGradedSimpleFamily_gradedIdempotentHead (hcomplete := he) hneg he₀ hspan
   have hne' : Pairwise fun i j =>
       (gradedPositiveMulQuotient 𝒜 (he₀ j)).smulGradedDimension (e i) = 0 := fun i j hij => by
