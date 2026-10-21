@@ -34,6 +34,7 @@ to choose and compare the components of `U` cut off by its crosscuts.
 * `Path.IsCrosscut` — a simple path with endpoints on `frontier U` and interior in `U`.
 * `Path.IsCrosscut.range_subset_closure` — a crosscut lies in the domain's closure.
 * `Path.IsCrosscut.range_inter_frontier` — it meets the frontier exactly at its endpoints.
+* `Path.IsCrosscut.isConnected_range_inter` — inside an open set, its open arc is connected.
 * `Path.isCrosscut_symm` — crosscuts are invariant under reversing orientation.
 * `Path.IsCrosscut.map_homeomorph` — ambient homeomorphisms carry crosscuts to crosscuts.
 * `Path.isCrosscut_segment_ball` — every nondegenerate chord of a disc is a crosscut.
@@ -125,6 +126,30 @@ theorem IsCrosscut.range_inter_frontier (hγ : IsCrosscut γ U) (hU : IsOpen U) 
     rcases hz with rfl | rfl
     · exact ⟨⟨0, by simp⟩, hγ.source_mem_frontier⟩
     · exact ⟨⟨1, by simp⟩, hγ.target_mem_frontier⟩
+
+/-- For an open set, the part of a crosscut inside the set is its open arc, the image of the
+open parameter interval. -/
+theorem IsCrosscut.range_inter_eq_image_Ioo (hγ : IsCrosscut γ U) (hU : IsOpen U) :
+    range γ ∩ U = γ '' Ioo (0 : I) 1 := by
+  ext z
+  constructor
+  · rintro ⟨⟨t, rfl⟩, htU⟩
+    rcases eq_endpoints_or_mem_Ioo_of_mem_Icc t.2 with ht | ht | ht
+    · have : t = 0 := Subtype.ext ht
+      subst t
+      exact ((hU.frontier_eq.subset hγ.source_mem_frontier).2 (by simpa using htU)).elim
+    · have : t = 1 := Subtype.ext ht
+      subst t
+      exact ((hU.frontier_eq.subset hγ.target_mem_frontier).2 (by simpa using htU)).elim
+    · exact ⟨t, ht, rfl⟩
+  · rintro ⟨t, ht, rfl⟩
+    exact ⟨⟨t, rfl⟩, hγ.mapsTo_interior ht⟩
+
+/-- The open arc of a crosscut of an open set is connected. -/
+theorem IsCrosscut.isConnected_range_inter (hγ : IsCrosscut γ U) (hU : IsOpen U) :
+    IsConnected (range γ ∩ U) := by
+  rw [hγ.range_inter_eq_image_Ioo hU]
+  exact (isConnected_Ioo (by norm_num)).image _ γ.continuous.continuousOn
 
 /-- Reversing an oriented crosscut gives a crosscut with the opposite orientation. -/
 theorem IsCrosscut.symm (hγ : IsCrosscut γ U) : IsCrosscut γ.symm U := by
