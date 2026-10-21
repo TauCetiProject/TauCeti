@@ -31,8 +31,8 @@ adjoint weight spaces. No maximality or integral specialization comparison is as
 
 The stable flag is supplied by
 `Comodule.exists_basis_coefficientMatrix_isUpperTriangular_of_geometricallySolvable`.
-`HopfIdeal.mem_adjointWeightSpace_iff_of_weightTorusCoordinateBialgHom` identifies adjoint
-weight spaces with the vanishing of tangent-matrix entries outside the specified character.
+`HopfIdeal.adjointWeightSpace_eq_bot_of_weightTorusCoordinateBialgHom` turns the vanishing of
+matrix entries into the vanishing of adjoint weight spaces.
 -/
 
 public section
@@ -51,17 +51,6 @@ variable {k : Type u} [Field k]
 
 local notation "μ" => e7MinusculeWeight
 local notation "C₊" => posRootCone e7SimplyConnectedRootDatum e7SimplyConnectedBase
-
-private theorem liftQuotient_generator_comp_mkQuotient
-    (J : HopfIdeal k (GeneralLinear.coordinateHopfAlgebra k 56))
-    (g : (Fin 7 ⊕ Fin 7) ⊕ Unit)
-    (hg : J.toIdeal ≤ RingHom.ker (generatorCoordinateMap k g).hom.toAlgHom.toRingHom) :
-    (CommHopfAlgCat.liftQuotient J (generatorCoordinateMap k g) hg).hom.comp
-        (Bialgebra.Quotient.mkBialgHom (R := k) J.toIdeal) =
-      (generatorCoordinateMap k g).hom := by
-  simpa only [_root_.CommHopfAlgCat.hom_comp, CommHopfAlgCat.hom_mkQuotient] using
-    congrArg _root_.CommHopfAlgCat.Hom.hom
-      (CommHopfAlgCat.mkQuotient_comp_liftQuotient J (generatorCoordinateMap k g) hg)
 
 private theorem quotient_rootSubgroup_point
     (J : HopfIdeal k (GeneralLinear.coordinateHopfAlgebra k 56))
@@ -95,7 +84,7 @@ private theorem quotient_rootSubgroup_point
       (rootSubgroupToBaseChangeCoordinateMap k (.inl i)).hom.comp (coordinateMap k).hom := by
     calc
       _ = (generatorCoordinateMap k (.inl (.inl i))).hom :=
-        liftQuotient_generator_comp_mkQuotient J (.inl (.inl i))
+        Bialgebra.Quotient.liftBialgHom_comp_mkBialgHom J.toIdeal _
           (((le_definingIdeal_iff k J).mp hJ).1 i)
       _ = _ := by
         rw [generatorCoordinateMap_inl,
@@ -103,9 +92,8 @@ private theorem quotient_rootSubgroup_point
           _root_.CommHopfAlgCat.hom_comp]
   have hcompAlg := congrArg BialgHom.toAlgHom hcomp'
   simp only [BialgHom.comp_toAlgHom] at hcompAlg
-  -- Explicit evaluation crosses the categorical object and hom coercions.
-  erw [_root_.CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at h
-  erw [_root_.CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
+  rw [_root_.CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at h
+  rw [_root_.CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
     _root_.CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
   simpa only [CommHopfAlgCat.hom_mkQuotient, ofConv_toConv, AlgHom.comp_assoc,
     ← hcompAlg, f, q, MulEquiv.apply_symm_apply] using h
@@ -184,7 +172,7 @@ theorem quotient_genericMatrix_eq_zero_of_posRootCone
   have hπ : π.hom.comp q = GeneralLinear.weightTorusCoordinateBialgHom (S := k) μ := by
     calc
       π.hom.comp q = (generatorCoordinateMap k (.inr ())).hom :=
-        liftQuotient_generator_comp_mkQuotient J (.inr ())
+        Bialgebra.Quotient.liftBialgHom_comp_mkBialgHom J.toIdeal _
           (((le_definingIdeal_iff k J).mp hJ).2)
       _ = GeneralLinear.weightTorusCoordinateBialgHom (S := k) μ := by
         rw [generatorCoordinateMap_inr, GeneralLinear.hom_weightTorusBaseChangeCoordinateMap]
@@ -236,86 +224,16 @@ theorem adjointWeightSpace_neg_eq_bot_of_posRootCone
       GeneralLinear.weightTorusCoordinateBialgHom (S := k) μ)
     {δ : Fin 7 → ℤ} (hδ : δ ∈ C₊) (hne : δ ≠ 0) :
     Derivation.adjointWeightSpace π (SplitTorus.weightCharacter (-δ)) = ⊥ := by
-  classical
-  apply (Submodule.eq_bot_iff _).mpr
-  intro x hx
-  have hentry := (HopfIdeal.mem_adjointWeightSpace_iff_of_weightTorusCoordinateBialgHom J μ π hπ
-    (SplitTorus.weightCharacter (-δ)) x).mp hx
-  apply (Derivation.cotangentLinearEquiv (B := k)).injective
-  apply (HopfIdeal.quotientLieHom_injective J)
-  apply (GeneralLinear.tangentLinearEquivMatrix 56).injective
-  simp only [GeneralLinear.tangentLinearEquivMatrix_apply]
-  ext a b
-  simp only [map_zero, Matrix.zero_apply]
-  by_cases hab : SplitTorus.weightCharacter (μ a - μ b) =
-      SplitTorus.weightCharacter (-δ)
-  · have hchars : μ a - μ b = -δ := by
-      funext i
-      have h := congrArg (fun χ : Multiplicative (Fin 7 →₀ ℤ) ↦ Multiplicative.toAdd χ i) hab
-      simpa only [SplitTorus.toAdd_weightCharacter] using h
-    have hdiff : μ b - μ a = δ := by
-      apply neg_injective
-      simpa only [neg_sub] using hchars
-    have hzero := quotient_genericMatrix_eq_zero_of_posRootCone J hJ hconn hsolv
-      (a := a) (b := b) (by simpa only [hdiff] using hδ) (by simpa only [hdiff] using hne)
-    rw [GeneralLinear.genericMatrix_apply] at hzero
-    have hqzero : Ideal.Quotient.mkₐ k J.toIdeal
-        ((GeneralLinear.coordinateHopfAlgebraAlgEquiv k 56)
-          ((GeneralLinear.coordinateRingMap k 56) (MvPolynomial.X (a, b)))) = 0 := by
-      simpa only [Bialgebra.Quotient.mkBialgHom_apply, Ideal.Quotient.mkₐ_eq_mk] using hzero
-    simp only [GeneralLinear.tangentMatrix_apply, HopfIdeal.quotientLieHom_apply_apply,
-      hqzero, map_zero]
-    -- Align the exported counit-algebra synonym before using its zero-preserving map.
-    change (Bialgebra.CounitAlgebra.algEquivSelf k
-      (GeneralLinear.coordinateHopfAlgebra k 56) k)
-        (0 : Bialgebra.CounitAlgebra k (GeneralLinear.coordinateHopfAlgebra k 56) k) = 0
-    exact map_zero _
-  · exact hentry a b hab
-
-omit [IsAlgClosed k] in
-private abbrev carrierQuotientIso (I : HopfIdeal k (generatedCoordinateHopfAlgebra k)) :
-    CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra k 56)
-        (I.comapOfSurjective (generatedCoordinateMap k).hom
-          (generatedCoordinateMap_surjective k)) ≅
-      CommHopfAlgCat.quotient (generatedCoordinateHopfAlgebra k) I :=
-  (open _root_.TauCeti.CommHopfAlgCat _root_.CommHopfAlgCat.Hom in
-    quotientIsoOfSurjective (generatedCoordinateMap k)
-      (generatedCoordinateMap_surjective k) I)
-
-omit [IsAlgClosed k] in
-private theorem carrier_comap_properties
-    (I : HopfIdeal k (generatedCoordinateHopfAlgebra k))
-    [IsReduced (generatedCoordinateHopfAlgebra k ⧸ I.toIdeal)]
-    (hconn : geometricallyConnectedCommHopfAlgProperty k
-      (CommHopfAlgCat.quotient (generatedCoordinateHopfAlgebra k) I))
-    (hsolv : geometricallySolvablePointsCommHopfAlgProperty k
-      (CommHopfAlgCat.quotient (generatedCoordinateHopfAlgebra k) I)) :
-    let J := I.comapOfSurjective (generatedCoordinateMap k).hom
-      (generatedCoordinateMap_surjective k)
-    IsReduced (GeneralLinear.coordinateHopfAlgebra k 56 ⧸ J.toIdeal) ∧
-      geometricallyConnectedCommHopfAlgProperty k
-        (CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra k 56) J) ∧
-      geometricallySolvablePointsCommHopfAlgProperty k
-        (CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra k 56) J) := by
-  let e := carrierQuotientIso I
-  exact ⟨isReduced_of_injective (_root_.CommHopfAlgCat.ofIso e).toAlgEquiv.toRingHom
-      (_root_.CommHopfAlgCat.ofIso e).injective,
-    (geometricallyConnectedCommHopfAlgProperty k).prop_of_iso e.symm hconn,
-    (geometricallySolvablePointsCommHopfAlgProperty k).prop_of_iso e.symm hsolv⟩
-
-omit [IsAlgClosed k] in
-private theorem carrierQuotientIso_hom_comp_mkQuotient
-    (I : HopfIdeal k (generatedCoordinateHopfAlgebra k)) :
-    (carrierQuotientIso I).hom.hom.comp
-        (Bialgebra.Quotient.mkBialgHom (R := k)
-          (I.comapOfSurjective (generatedCoordinateMap k).hom
-            (generatedCoordinateMap_surjective k)).toIdeal) =
-      (Bialgebra.Quotient.mkBialgHom (R := k) I.toIdeal).comp (generatedCoordinateMap k).hom := by
-  simpa only [_root_.CommHopfAlgCat.hom_comp, CommHopfAlgCat.hom_mkQuotient] using
-    congrArg _root_.CommHopfAlgCat.Hom.hom
-      (open _root_.TauCeti.CommHopfAlgCat _root_.CommHopfAlgCat.Hom in
-        mkQuotient_comp_quotientIsoOfSurjective_hom
-          (generatedCoordinateMap k) (generatedCoordinateMap_surjective k) I)
+  refine HopfIdeal.adjointWeightSpace_eq_bot_of_weightTorusCoordinateBialgHom J μ π hπ _
+    fun a b hab ↦ ?_
+  have hchars : μ a - μ b = -δ := by
+    funext i
+    simpa only [SplitTorus.toAdd_weightCharacter] using
+      congrArg (fun χ : Multiplicative (Fin 7 →₀ ℤ) ↦ Multiplicative.toAdd χ i) hab
+  have hdiff : μ b - μ a = δ := by
+    rw [← neg_sub, hchars, neg_neg]
+  exact quotient_genericMatrix_eq_zero_of_posRootCone J hJ hconn hsolv
+    (hdiff ▸ hδ) (hdiff ▸ hne)
 
 omit [IsAlgClosed k] in
 private theorem carrier_comap_le_definingIdeal
@@ -347,19 +265,23 @@ theorem carrierQuotient_genericMatrix_eq_zero_of_posRootCone
       ((generatedCoordinateMap k).hom (GeneralLinear.genericMatrix k 56 a b)) = 0 := by
   let J := I.comapOfSurjective (generatedCoordinateMap k).hom
     (generatedCoordinateMap_surjective k)
-  let e := carrierQuotientIso I
-  obtain ⟨hred, hconn', hsolv'⟩ := carrier_comap_properties I hconn hsolv
-  have : IsReduced (GeneralLinear.coordinateHopfAlgebra k 56 ⧸ J.toIdeal) := hred
+  have : IsReduced (GeneralLinear.coordinateHopfAlgebra k 56 ⧸ J.toIdeal) :=
+    (_root_.CommHopfAlgCat.Hom.isReduced_quotient_comapOfSurjective_iff _ _ I).mpr inferInstance
   have hzero := quotient_genericMatrix_eq_zero_of_posRootCone J
     (carrier_comap_le_definingIdeal I hI)
-    hconn' hsolv' hcone hne
-  have hcomm := carrierQuotientIso_hom_comp_mkQuotient I
-  have hz := BialgHom.congr_fun hcomm (GeneralLinear.genericMatrix k 56 a b)
+    ((_root_.CommHopfAlgCat.Hom.prop_quotient_comapOfSurjective_iff _ _ _ I).mpr hconn)
+    ((_root_.CommHopfAlgCat.Hom.prop_quotient_comapOfSurjective_iff _ _ _ I).mpr hsolv) hcone hne
+  have hz := BialgHom.congr_fun
+    (_root_.CommHopfAlgCat.Hom.hom_quotientIsoOfSurjective_hom_comp_mkBialgHom
+      (generatedCoordinateMap k) (generatedCoordinateMap_surjective k) I)
+    (GeneralLinear.genericMatrix k 56 a b)
   simp only [BialgHom.comp_apply] at hz
-  exact hz.symm.trans ((congrArg e.hom.hom hzero).trans (map_zero _))
+  exact hz.symm.trans ((congrArg _ hzero).trans (map_zero _))
 
-/-- The actual carrier quotient has no negative-cone adjoint characters. The torus factor
-is the one induced by the carrier's stored weight-torus generator. -/
+/-- In a reduced, geometrically connected, geometrically solvable overgroup of the positive
+subgroup inside the field-generated carrier, the adjoint weight space of the stored weight torus
+vanishes at every nonzero negative-cone character. The torus factor is the one induced by the
+carrier's stored weight-torus generator. -/
 theorem carrierQuotient_adjointWeightSpace_neg_eq_bot_of_posRootCone
     (I : HopfIdeal k (generatedCoordinateHopfAlgebra k))
     (hI : I ≤ carrierDefiningIdeal k)
@@ -376,13 +298,15 @@ theorem carrierQuotient_adjointWeightSpace_neg_eq_bot_of_posRootCone
     Derivation.adjointWeightSpace π (SplitTorus.weightCharacter (-δ)) = ⊥ := by
   let J := I.comapOfSurjective (generatedCoordinateMap k).hom
     (generatedCoordinateMap_surjective k)
-  let e := carrierQuotientIso I
-  obtain ⟨hred, hconn', hsolv'⟩ := carrier_comap_properties I hconn hsolv
-  have : IsReduced (GeneralLinear.coordinateHopfAlgebra k 56 ⧸ J.toIdeal) := hred
-  have hcomm := carrierQuotientIso_hom_comp_mkQuotient I
+  let e := (generatedCoordinateMap k).quotientIsoOfSurjective
+    (generatedCoordinateMap_surjective k) I
+  have : IsReduced (GeneralLinear.coordinateHopfAlgebra k 56 ⧸ J.toIdeal) :=
+    (_root_.CommHopfAlgCat.Hom.isReduced_quotient_comapOfSurjective_iff _ _ I).mpr inferInstance
   have htorus : (π.comp e.hom.hom).comp (Bialgebra.Quotient.mkBialgHom (R := k) J.toIdeal) =
       GeneralLinear.weightTorusCoordinateBialgHom (S := k) μ := by
-    rw [BialgHom.comp_assoc, hcomm, ← BialgHom.comp_assoc, hπ]
+    rw [BialgHom.comp_assoc,
+      _root_.CommHopfAlgCat.Hom.hom_quotientIsoOfSurjective_hom_comp_mkBialgHom,
+      ← BialgHom.comp_assoc, hπ]
     have hgen := congrArg _root_.CommHopfAlgCat.Hom.hom
       (generatedCoordinateMap_comp_generatedCoordinateLift k (.inr ()))
     simpa only [_root_.CommHopfAlgCat.hom_comp, generatorCoordinateMap_inr,
@@ -390,22 +314,12 @@ theorem carrierQuotient_adjointWeightSpace_neg_eq_bot_of_posRootCone
       GeneralLinear.hom_weightTorusCoordinateMap] using hgen
   have hzero := adjointWeightSpace_neg_eq_bot_of_posRootCone J
     (carrier_comap_le_definingIdeal I hI)
-    hconn' hsolv'
+    ((_root_.CommHopfAlgCat.Hom.prop_quotient_comapOfSurjective_iff _ _ _ I).mpr hconn)
+    ((_root_.CommHopfAlgCat.Hom.prop_quotient_comapOfSurjective_iff _ _ _ I).mpr hsolv)
     (π.comp e.hom.hom) htorus hδ hne
-  apply (Submodule.eq_bot_iff _).mpr
-  intro x hx
-  have hmem := (Derivation.dualCotangentMap_mem_adjointWeightSpace_iff_of_characterEquiv
-    MulEquiv.ulift.symm (_root_.CommHopfAlgCat.ofIso e).toBialgHom
-    (_root_.CommHopfAlgCat.ofIso e).surjective π (SplitTorus.weightCharacter (-δ)) x).mpr hx
-  rw [BialgEquiv.toBialgHom_eq_coe, CommHopfAlgCat.coe_ofIso] at hmem
-  have hxzero : Derivation.dualCotangentMap e.hom.hom x = 0 := by
-    exact (Submodule.mem_bot k).mp (hzero ▸ hmem)
-  have hmap : Derivation.dualCotangentEquiv (_root_.CommHopfAlgCat.ofIso e) x =
-      Derivation.dualCotangentMap e.hom.hom x := by
-    rw [Derivation.dualCotangentEquiv_apply]
-    exact congrArg (fun f ↦ Derivation.dualCotangentMap f x) (CommHopfAlgCat.coe_ofIso e)
-  apply (Derivation.dualCotangentEquiv (_root_.CommHopfAlgCat.ofIso e)).injective
-  exact hmap.trans (hxzero.trans (map_zero _).symm)
+  rw [← CommHopfAlgCat.coe_ofIso e] at hzero
+  exact (Derivation.adjointWeightSpace_comp_bialgEquiv_eq_bot_iff_of_characterEquiv
+    MulEquiv.ulift.symm (_root_.CommHopfAlgCat.ofIso e) π _).mp hzero
 
 /-- In particular every Borel candidate containing the generated positive subgroup satisfies
 its positive-cone matrix-entry equations. -/

@@ -20,8 +20,8 @@ equal endpoints. This is the combinatorial input describing which matrix entries
 subgroup of the twenty-seven-dimensional minuscule representation can reach.
 
 All minuscule weights have the same length for the reflection-invariant root form, so
-`RootPairing.InvariantForm.exists_pos_and_coroot'_neg_of_apply_self_eq` provides a raising step
-from the lower endpoint, and induction along the order of the weight table completes the path.
+`RootPairing.InvariantForm.reflTransGen_of_sub_eq_sum` builds the path: it takes raising steps
+from the lower endpoint, by induction along the order of the weight table.
 Positivity is used only on a nonzero difference in the root lattice; the roots need not span the
 full fundamental-weight lattice over the integers.
 
@@ -98,71 +98,6 @@ private theorem rootForm_minuscule_eq (a b : Fin 27) :
     rw [List.foldl_append]
     simpa only [List.foldl_cons, List.foldl_nil, rootForm_minuscule_reflection] using ih
 
-private theorem exists_raising_step_of_sum {a b : Fin 27} (hab : a ≠ b)
-    (c : Fin 6 → ℕ) (hc : μ b - μ a = ∑ i, c i • α i) :
-    ∃ i, 0 < c i ∧ μ a i = -1 := by
-  have hne : μ b - μ a ≠ 0 := by
-    intro h
-    exact hab (e6MinusculeWeight_injective (sub_eq_zero.mp h)).symm
-  have hspan : μ b - μ a ∈ e6SimplyConnectedRootDatum.rootSpan ℤ := by
-    rw [hc]
-    refine Submodule.sum_mem _ fun i _ ↦ ?_
-    have hroot : e6SimplyConnectedRootDatum.root (e6SimpleIndex i) ∈
-        e6SimplyConnectedRootDatum.rootSpan ℤ :=
-      (e6SimplyConnectedRootDatum.rootSpanMem ℤ (e6SimpleIndex i)).property
-    simpa only [e6SimplyConnectedRootDatum_root] using
-      (e6SimplyConnectedRootDatum.rootSpan ℤ).smul_of_tower_mem (c i) hroot
-  obtain ⟨i, -, hci, hi⟩ :=
-    e6SimplyConnectedRootDatum.toInvariantForm.exists_pos_and_coroot'_neg_of_apply_self_eq
-      (fun _ ↦ e6SimplyConnectedRootDatum.zero_le_rootForm _) (rootForm_minuscule_eq a b)
-      (e6SimplyConnectedRootDatum.rootForm_pos_of_ne_zero hspan hne) (f := e6SimpleIndex)
-      (by simpa only [e6SimplyConnectedRootDatum_root] using hc)
-  refine ⟨i, hci, ?_⟩
-  have hpair : e6SimplyConnectedRootDatum.coroot' (e6SimpleIndex i) (μ a) = μ a i := by
-    simp
-  rw [hpair] at hi
-  rcases e6MinusculeWeight_apply_eq_neg_one_or_eq_zero_or_eq_one a i with h | h | h <;> omega
-
-private theorem raisingPath_of_sum (a : Fin 27) :
-    ∀ b : Fin 27, (∃ c : Fin 6 → ℕ, μ b - μ a = ∑ i, c i • α i) →
-      Relation.ReflTransGen E6MinusculeRaisingStep a b := by
-  classical
-  induction a using WellFoundedLT.induction with
-  | ind a ih =>
-    intro b hc
-    by_cases hab : a = b
-    · subst b
-      exact .refl
-    obtain ⟨c, hc⟩ := hc
-    obtain ⟨i, hci, hi⟩ := exists_raising_step_of_sum hab c hc
-    let c' : Fin 6 → ℕ := Function.update c i (c i - 1)
-    have hcoeff (j : Fin 6) : c j = c' j + if j = i then 1 else 0 := by
-      by_cases hji : j = i
-      · subst j
-        simp only [c', Function.update_self, ↓reduceIte]
-        omega
-      · simp [c', hji]
-    have hsum : ∑ j, c j • α j = (∑ j, c' j • α j) + α i := by
-      simp_rw [hcoeff, add_nsmul]
-      rw [Finset.sum_add_distrib]
-      congr 1
-      rw [Finset.sum_eq_single i]
-      · simp only [↓reduceIte, one_nsmul]
-      · intro j _ hji
-        simp only [hji, ↓reduceIte, zero_nsmul]
-      · simp
-    have hreflection : μ (e6MinusculeReflection i a) = μ a + α i := by
-      rw [e6MinusculeWeight_reflection, hi]
-      simp
-    have hremaining : μ b - μ (e6MinusculeReflection i a) = ∑ j, c' j • α j := by
-      rw [hreflection]
-      rw [hsum] at hc
-      exact sub_eq_iff_eq_add.mpr (by linear_combination hc)
-    have hpath := ih (e6MinusculeReflection i a)
-      ((e6MinusculeReflection_lt_iff i a).mpr hi) b ⟨c', hremaining⟩
-    exact (Relation.ReflTransGen.single ((e6MinusculeRaisingStep_iff _ _).mpr
-      ⟨i, hi, rfl⟩)).trans hpath
-
 /-- Raising paths are exactly the positive integral differences of minuscule weights. -/
 theorem e6Minuscule_raisingPath_iff_mem_posRootCone (a b : Fin 27) :
     Relation.ReflTransGen E6MinusculeRaisingStep a b ↔
@@ -185,7 +120,22 @@ theorem e6Minuscule_raisingPath_iff_mem_posRootCone (a b : Fin 27) :
       rw [heq]
       exact (posRootCone P e6SimplyConnectedBase).add_mem ih hroot
   · intro h
-    exact raisingPath_of_sum a b (mem_e6_posRootCone_iff.mp h)
+    obtain ⟨c, hc⟩ := mem_e6_posRootCone_iff.mp h
+    refine e6SimplyConnectedRootDatum.toInvariantForm.reflTransGen_of_sub_eq_sum
+      (fun _ ↦ e6SimplyConnectedRootDatum.zero_le_rootForm _)
+      (fun _ hv hne ↦ e6SimplyConnectedRootDatum.rootForm_pos_of_ne_zero hv hne)
+      e6MinusculeWeight_injective rootForm_minuscule_eq (f := e6SimpleIndex)
+      (fun x i hi ↦ ?_) (by simpa only [e6SimplyConnectedRootDatum_root] using hc)
+    -- A negative coroot value on a minuscule weight is `-1`, where the simple reflection raises.
+    have hpair : e6SimplyConnectedRootDatum.coroot' (e6SimpleIndex i) (μ x) = μ x i := by
+      simp
+    have hai : μ x i = -1 := by
+      rw [hpair] at hi
+      rcases e6MinusculeWeight_apply_eq_neg_one_or_eq_zero_or_eq_one x i with h | h | h <;> omega
+    refine ⟨e6MinusculeReflection i x, (e6MinusculeReflection_lt_iff i x).mpr hai,
+      (e6MinusculeRaisingStep_iff _ _).mpr ⟨i, hai, rfl⟩, ?_⟩
+    rw [e6MinusculeWeight_reflection, hai]
+    simp
 
 /-- The raising-path criterion in the numbered six-simple-root coordinates. -/
 theorem e6Minuscule_raisingPath_iff_exists_nat_coefficients (a b : Fin 27) :
