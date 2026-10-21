@@ -7,6 +7,10 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric
 
+-- Access metric compatibility's defining tensor equality without using the section-based
+-- characterization, which requires an additional manifold regularity hypothesis.
+import all Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric
+
 /-!
 # The covariant derivative of a field of bilinear forms
 
@@ -239,17 +243,12 @@ theorem derivBilinearTensor_eq_derivMetricTensor (hb : ∀ x (v w : V x), b x v 
 
 /-- A covariant derivative on a `C¹` Riemannian bundle is compatible with the metric exactly when
 the covariant derivative of the inner product, viewed as a field of bilinear forms, vanishes. -/
-theorem isMetricCompatible_iff_derivBilinearTensor_eq_zero [IsManifold I 1 M]
+theorem isMetricCompatible_iff_derivBilinearTensor_eq_zero
     (hb : ∀ x (v w : V x), b x v w = inner ℝ v w) :
     cov.IsMetricCompatible ↔ ∀ x, cov.derivBilinearTensor b x = 0 := by
-  have hpair (σ τ : Π x : M, V x) :
-      (fun y ↦ b y (σ y) (τ y)) = fun y ↦ inner ℝ (σ y) (τ y) :=
-    funext fun y ↦ hb y _ _
-  rw [cov.derivBilinearTensor_eq_zero_iff fun _ σ τ hσ hτ ↦ hpair σ τ ▸ hσ.inner_bundle hτ,
-    isMetricCompatible_iff]
-  simp only [hb]
-  exact ⟨fun h x σ τ hσ hτ v ↦ by simpa using h (mdifferentiableAt_extend I E v) hσ hτ,
-    fun h x X σ τ _ hσ hτ ↦ h hσ hτ (X x)⟩
+  unfold CovariantDerivative.IsMetricCompatible
+  rw [cov.derivBilinearTensor_eq_derivMetricTensor hb]
+  exact ⟨fun h x ↦ congrFun h x, fun h ↦ funext h⟩
 
 end Riemannian
 
