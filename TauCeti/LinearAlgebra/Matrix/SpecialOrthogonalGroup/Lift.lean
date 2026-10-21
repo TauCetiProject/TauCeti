@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import Mathlib.RingTheory.Ideal.Quotient.Nilpotent
+public import TauCeti.LinearAlgebra.Matrix.IdealEntries
 public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Basic
 
 /-!
@@ -43,17 +44,6 @@ variable {n : Type*} [Fintype n] [DecidableEq n]
 variable {R : Type u} [CommRing R]
 
 attribute [local instance] starRingOfComm
-
-private theorem matrix_mul_eq_zero_of_entries_mem {m : Type*} [Fintype m]
-    (I : Ideal R) (hI : I ^ 2 = (⊥ : Ideal R)) (A B : Matrix m m R)
-    (hA : ∀ i j, A i j ∈ I) (hB : ∀ i j, B i j ∈ I) : A * B = 0 := by
-  classical
-  ext i j
-  rw [Matrix.mul_apply]
-  apply Finset.sum_eq_zero
-  intro k _
-  rw [← Ideal.mem_bot]
-  exact hI ▸ (by simpa only [pow_two] using Ideal.mul_mem_mul (hA i k) (hB k j))
 
 /-- Every special orthogonal matrix modulo a square-zero ideal lifts to a special orthogonal
 matrix when `2` is invertible in the coefficient ring. -/
@@ -99,11 +89,11 @@ theorem map_quotient_mk_surjective_of_sq_eq_bot [Invertible (2 : R)]
     rw [← add_smul]
     simp only [← neg_add, invOf_two_add_invOf_two, neg_smul, one_smul]
   have hXX : X * Xᵀ = 0 :=
-    matrix_mul_eq_zero_of_entries_mem I hI X Xᵀ hX_mem (fun i j ↦ hX_mem j i)
+    Matrix.mul_eq_zero_of_sq_eq_bot hI hX_mem (fun i j ↦ hX_mem j i)
   have hXE : X * E = 0 :=
-    matrix_mul_eq_zero_of_entries_mem I hI X E hX_mem hE_mem
+    Matrix.mul_eq_zero_of_sq_eq_bot hI hX_mem hE_mem
   have hEX : E * Xᵀ = 0 :=
-    matrix_mul_eq_zero_of_entries_mem I hI E Xᵀ hE_mem (fun i j ↦ hX_mem j i)
+    Matrix.mul_eq_zero_of_sq_eq_bot hI hE_mem (fun i j ↦ hX_mem j i)
   let N : Matrix n n R := (1 + X) * M
   have hM_mul : M * Mᵀ = 1 + E := by
     dsimp only [E]
