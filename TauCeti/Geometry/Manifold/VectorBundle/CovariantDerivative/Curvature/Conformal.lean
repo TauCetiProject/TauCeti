@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvatu
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Conformal
 public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar
-import Mathlib.Analysis.SpecialFunctions.Log.Deriv
+import TauCeti.Geometry.Manifold.ContMDiff.Log
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
@@ -274,19 +274,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
 
-omit [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M] in
-/-- A function `φ` with `e^(2φ)` smooth is smooth. -/
-private theorem contMDiff_of_eq_exp {f : M → ℝ}
-    (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hf_pos : ∀ x, 0 < f x) {φ : M → ℝ}
-    (hfφ : ∀ x, f x = Real.exp (2 * φ x)) : ContMDiff I 𝓘(ℝ) ∞ φ := by
-  have h : φ = fun y ↦ Real.log (f y) / 2 := by
-    funext y
-    rw [hfφ, Real.log_exp]
-    ring
-  rw [h]
-  intro y
-  exact ((Real.contDiffAt_log.2 (hf_pos y).ne').comp_contMDiffAt (hf y)).div_const 2
-
 /-- **Curvature tensor under conformal change.** Let `g` be a smooth metric and `f = e^(2φ)` a
 smooth positive function. With `Hess φ`, `∇` and `grad φ` taken for `g`, the curvature tensor of
 `f g` at `x` is
@@ -308,7 +295,8 @@ theorem curvatureTensor_leviCivitaConnection_rescale
       (mvfderiv I φ x v * mvfderiv I φ x w) • u - (mvfderiv I φ x u * mvfderiv I φ x w) • v +
       (mvfderiv I φ x u * ⟪v, w⟫ - mvfderiv I φ x v * ⟪u, w⟫) • mgradient I φ x -
       ‖mgradient I φ x‖ ^ 2 • (⟪v, w⟫ • u - ⟪u, w⟫ • v) := by
-  have hφ := contMDiff_of_eq_exp hf hf_pos hfφ
+  have hφ : ContMDiff I 𝓘(ℝ) ∞ φ := by
+    simpa [hfφ] using (hf.log fun y ↦ (hf_pos y).ne').div_const 2
   obtain rfl : f = fun y ↦ Real.exp (2 * φ y) := funext hfφ
   obtain ⟨X, hX, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E u
   obtain ⟨Y, hY, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E v
@@ -351,7 +339,8 @@ theorem ricciTensor_leviCivitaConnection_rescale
     (CovariantDerivative.leviCivitaConnection I M).ricciTensor x u v -
       (Module.finrank ℝ E - 2) * (hessian I φ x u v - mvfderiv I φ x u * mvfderiv I φ x v) +
       (-laplaceBeltrami I φ x - (Module.finrank ℝ E - 2) * ‖mgradient I φ x‖ ^ 2) * ⟪u, v⟫ := by
-  have hφ := contMDiff_of_eq_exp hf hf_pos hfφ
+  have hφ : ContMDiff I 𝓘(ℝ) ∞ φ := by
+    simpa [hfφ] using (hf.log fun y ↦ (hf_pos y).ne').div_const 2
   -- The Ricci tensor is a trace, which does not involve the metric.
   have hRic : (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
         ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩;
