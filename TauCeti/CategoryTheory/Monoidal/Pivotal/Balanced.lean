@@ -20,7 +20,7 @@ of Henriques–Penneys–Tener, eq. (3), up to associators and unitors.
 
 The balancing axiom holds because the pivotal isomorphism is monoidal, while the Drinfeld
 isomorphism of `X ⊗ Y` differs from the tensor product of those of `X` and `Y` exactly by the
-double braiding (`TauCeti.drinfeldIso_tensor_hom`).
+double braiding (`TauCeti.braiding_hom_comp_braiding_hom_comp_drinfeldIso_tensor_hom`).
 
 In a symmetric rigid category with its canonical pivotal structure, whose components are the
 Drinfeld isomorphisms, the twist is trivial.
@@ -70,7 +70,8 @@ noncomputable def balancedOfBraidedPivotal : BalancedCategory C where
       -- mix `Xᘁᘁ` with `(doubleRightDualFunctor C).obj X`, which agree only up to unfolding.
       rw [Iso.comp_inv_eq, Category.assoc, Category.assoc]
       refine (pivotalIsoApp_tensor_hom X Y).trans (Eq.trans ?_
-        (congrArg (_ ≫ ·) (drinfeldIso_tensor_hom X Y)).symm)
+        (congrArg (_ ≫ ·)
+          (braiding_hom_comp_braiding_hom_comp_drinfeldIso_tensor_hom X Y)).symm)
       refine Eq.trans ?_ (Category.assoc _ _ _)
       congr 1
       simp

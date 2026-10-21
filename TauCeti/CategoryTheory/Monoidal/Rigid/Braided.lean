@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Monoidal.Rigid.Braided
+public import TauCeti.CategoryTheory.Monoidal.Braided.Basic
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Mate
 
 /-!
@@ -86,28 +87,6 @@ end CategoryTheory.ExactPairing
 namespace TauCeti
 
 variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [BraidedCategory C]
-
-/-- Braiding `A` past `Z` and then applying `f : A ⊗ A' ⟶ 𝟙_ C` after `Z` is braiding `A'` back
-under `Z` and then applying `f` before `Z`. -/
-private theorem braiding_whiskerRight_comp_whiskerLeft {A A' : C} (Z : C) (f : A ⊗ A' ⟶ 𝟙_ C) :
-    (β_ A Z).hom ▷ A' ≫ (α_ Z A A').hom ≫ Z ◁ f =
-      (α_ A Z A').hom ≫ A ◁ (β_ A' Z).inv ≫ (α_ A A' Z).inv ≫ f ▷ Z ≫ (λ_ Z).hom ≫
-        (ρ_ Z).inv := by
-  have h := braiding_naturality_left f Z
-  rw [braiding_tensorUnit_left, braiding_tensor_left_hom] at h
-  simp only [Category.assoc] at h ⊢
-  rw [h]
-  simp only [Iso.inv_hom_id_assoc, whiskerLeft_inv_hom_assoc, Iso.hom_inv_id_assoc]
-
-/-- Braiding `Z` past `A` and then applying `f : A' ⊗ A ⟶ 𝟙_ C` before `Z` is braiding `Z` back
-under `A'` and then applying `f` after `Z`. -/
-private theorem whiskerLeft_braiding_comp_whiskerRight {A A' : C} (Z : C) (f : A' ⊗ A ⟶ 𝟙_ C) :
-    A' ◁ (β_ Z A).hom ≫ (α_ A' A Z).inv ≫ f ▷ Z =
-      (α_ A' Z A).inv ≫ (β_ Z A').inv ▷ A ≫ (α_ Z A' A).hom ≫ Z ◁ f ≫ (ρ_ Z).hom ≫
-        (λ_ Z).inv := by
-  have h := braiding_naturality_right Z f
-  rw [braiding_tensorUnit_right, braiding_tensor_right_hom] at h
-  simp [h]
 
 /-- A braiding is its own mate with respect to tensor product pairings: precomposing the
 evaluation of the tensor product pairing `(X ⊗ Y, Y' ⊗ X')` with the braiding of `Y` past `X`

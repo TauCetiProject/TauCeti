@@ -35,9 +35,9 @@ the canonical pivotal structure.
 * `TauCeti.drinfeldNatIso`: the Drinfeld isomorphisms as a natural isomorphism
   `𝟭 C ≅ doubleRightDualFunctor C` in a braided right rigid category, with
   `TauCeti.drinfeldIso_unit_hom` its compatibility with the unit comparison;
-* `TauCeti.drinfeldIso_tensor_hom`: the double braiding of `X ⊗ Y` followed by the Drinfeld
-  isomorphism of `X ⊗ Y` is the tensor product of those of `X` and `Y`, followed by the tensor
-  comparison of the double right dual functor;
+* `TauCeti.braiding_hom_comp_braiding_hom_comp_drinfeldIso_tensor_hom`: the double braiding of
+  `X ⊗ Y` followed by the Drinfeld isomorphism of `X ⊗ Y` is the tensor product of those of `X`
+  and `Y`, followed by the tensor comparison of the double right dual functor;
 * `TauCeti.drinfeldNatIso_isMonoidal`: in a symmetric category, `drinfeldNatIso` is monoidal.
 
 The construction uses Mathlib's `CategoryTheory.ExactPairing.rightDualIso` and
@@ -108,17 +108,6 @@ theorem drinfeldIso_inv_eq :
   have h₁ : (Xᘁ : C) ◁ (drinfeldIso X).inv ≫ ε_ X Xᘁ =
       (β_ ((Xᘁ : C)ᘁ : C) (Xᘁ : C)).inv ≫ ε_ (Xᘁ : C) ((Xᘁ : C)ᘁ : C) := by
     rw [← drinfeldIso_inv_comp_evaluation, Iso.inv_hom_id_assoc]
-  -- Braiding `Xᘁᘁ` past the coevaluation of `X` and back under `Xᘁ` moves it to the right of the
-  -- coevaluation.
-  have h₂ : ((Xᘁ : C)ᘁ : C) ◁ η_ X Xᘁ ≫ (α_ ((Xᘁ : C)ᘁ : C) X (Xᘁ : C)).inv ≫
-      (β_ ((Xᘁ : C)ᘁ : C) X).hom ▷ (Xᘁ : C) ≫ (α_ X ((Xᘁ : C)ᘁ : C) (Xᘁ : C)).hom =
-        (ρ_ ((Xᘁ : C)ᘁ : C)).hom ≫ (λ_ ((Xᘁ : C)ᘁ : C)).inv ≫ η_ X Xᘁ ▷ ((Xᘁ : C)ᘁ : C) ≫
-          (α_ X (Xᘁ : C) ((Xᘁ : C)ᘁ : C)).hom ≫ X ◁ (β_ ((Xᘁ : C)ᘁ : C) (Xᘁ : C)).inv := by
-    have h := braiding_naturality_right ((Xᘁ : C)ᘁ : C) (η_ X Xᘁ)
-    rw [braiding_tensorUnit_right, braiding_tensor_right_hom] at h
-    simp only [Category.assoc] at h
-    rw [← reassoc_of% h]
-    simp
   calc
     _ = (drinfeldIso X).inv ⊗≫ (η_ X Xᘁ ▷ X ⊗≫ X ◁ ε_ X Xᘁ) ⊗≫ 𝟙 X := by
       rw [evaluation_coevaluation'']; monoidal
@@ -128,7 +117,9 @@ theorem drinfeldIso_inv_eq :
     _ = 𝟙 _ ⊗≫ η_ X Xᘁ ▷ ((Xᘁ : C)ᘁ : C) ⊗≫ X ◁ ((Xᘁ : C) ◁ (drinfeldIso X).inv ≫ ε_ X Xᘁ) ⊗≫
           𝟙 X := by
       monoidal
-    _ = _ := by rw [h₁, reassoc_of% h₂]; monoidal
+    -- Braiding `Xᘁᘁ` past the coevaluation of `X` and back under `Xᘁ` moves it to the right of
+    -- the coevaluation.
+    _ = _ := by rw [h₁, whiskerLeft_comp_braiding_whiskerRight_assoc]; monoidal
 
 /-- Coevaluation into the double dual is obtained by applying the Drinfeld isomorphism
 after the braided swapped coevaluation. -/
@@ -220,7 +211,7 @@ theorem drinfeldIso_unit_hom :
 /-- The double braiding `β_{X,Y} ≫ β_{Y,X}` of `X ⊗ Y` followed by the Drinfeld isomorphism of
 `X ⊗ Y` is the tensor product of the Drinfeld isomorphisms of `X` and `Y`, followed by the tensor
 comparison of the double right dual functor. -/
-theorem drinfeldIso_tensor_hom (X Y : C) :
+theorem braiding_hom_comp_braiding_hom_comp_drinfeldIso_tensor_hom (X Y : C) :
     (β_ X Y).hom ≫ (β_ Y X).hom ≫ (drinfeldIso (X ⊗ Y)).hom =
       ((drinfeldIso X).hom ⊗ₘ (drinfeldIso Y).hom) ≫ μ (doubleRightDualFunctor C) X Y := by
   refine Eq.trans ?_ (congrArg (_ ≫ ·) (doubleRightDualFunctor_μ C X Y).symm)
@@ -264,9 +255,11 @@ isomorphism from the identity functor to the double right dual functor. -/
 instance drinfeldNatIso_isMonoidal : NatTrans.IsMonoidal (drinfeldNatIso (C := C)).hom where
   -- The unit and tensor comparisons of the identity functor are identities.
   unit := (Category.id_comp _).trans drinfeldIso_unit_hom
-  -- In a symmetric category the double braiding in `drinfeldIso_tensor_hom` is the identity.
+  -- In a symmetric category the double braiding in
+  -- `braiding_hom_comp_braiding_hom_comp_drinfeldIso_tensor_hom` is the identity.
   tensor X Y := (Category.id_comp _).trans <|
-    (SymmetricCategory.symmetry_assoc X Y _).symm.trans (drinfeldIso_tensor_hom X Y)
+    (SymmetricCategory.symmetry_assoc X Y _).symm.trans
+      (braiding_hom_comp_braiding_hom_comp_drinfeldIso_tensor_hom X Y)
 
 end Symmetric
 
