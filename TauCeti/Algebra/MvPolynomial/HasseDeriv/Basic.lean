@@ -60,9 +60,8 @@ Roth's theorem.
   `dᵢ ≠ 0`).
 * `TauCeti.coeff_finSuccEquiv_hasseDeriv_cons`, `TauCeti.finSuccEquiv_hasseDeriv_single_zero`:
   singling out `X₀` turns its Hasse derivative into the univariate Hasse derivative.
-* `TauCeti.hasseDeriv_eval_hasseDeriv_finSuccEquiv`,
-  `TauCeti.degreeOf_eval_hasseDeriv_finSuccEquiv_le`: specializing `X₀` commutes with Hasse
-  differentiation in the remaining variables and does not increase their partial degrees.
+* `TauCeti.degreeOf_eval_hasseDeriv_finSuccEquiv_le`: specializing `X₀` after taking its Hasse
+  derivative does not increase the partial degrees in the remaining variables.
 
 ## References
 
@@ -416,24 +415,6 @@ theorem finSuccEquiv_hasseDeriv_single_zero {n : ℕ} (P : MvPolynomial (Fin (n 
   ext m u
   rw [← Finsupp.cons_zero_eq_single_zero, coeff_finSuccEquiv_hasseDeriv_cons, hasseDeriv_zero,
     LinearMap.id_apply]
-
-/-- Specializing the first variable `X₀` of the `k`-th univariate Hasse derivative of
-`finSuccEquiv R n P` to `a`, and then applying the multivariate Hasse derivative `∂^i` in the
-remaining variables, agrees with applying the combined Hasse derivative `∂^(i.cons k)` to `P` and
-then specializing `X₀` to `a`. -/
-theorem hasseDeriv_eval_hasseDeriv_finSuccEquiv {n : ℕ}
-    (P : MvPolynomial (Fin (n + 1)) R) (a : R) (k : ℕ) (i : Fin n →₀ ℕ) :
-    hasseDeriv i ((Polynomial.hasseDeriv k (finSuccEquiv R n P)).eval (C a)) =
-      (finSuccEquiv R n (hasseDeriv (i.cons k) P)).eval (C a) := by
-  let N := max (Polynomial.hasseDeriv k (finSuccEquiv R n P)).natDegree
-    (finSuccEquiv R n (hasseDeriv (i.cons k) P)).natDegree + 1
-  rw [Polynomial.eval_eq_sum_range' (Nat.lt_add_one_iff.2 (le_max_left _ _)),
-    Polynomial.eval_eq_sum_range' (Nat.lt_add_one_iff.2 (le_max_right _ _)), map_sum]
-  refine Finset.sum_congr rfl fun m _ ↦ ?_
-  rw [coeff_finSuccEquiv_hasseDeriv_cons]
-  simpa only [smul_eq_C_mul, map_pow, mul_comm] using
-    (hasseDeriv i).map_smul (a ^ m)
-      ((Polynomial.hasseDeriv k (finSuccEquiv R n P)).coeff m)
 
 /-- Specializing the first variable `X₀` of the `k`-th univariate Hasse derivative of
 `finSuccEquiv R n P` to `a` does not increase the partial degrees in the remaining variables. -/
