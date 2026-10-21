@@ -78,11 +78,13 @@ proved with `(rfl)`, unfolding it inside this module, rather than exported as de
 equalities. -/
 
 /-- The components of `QhCompιIsoιCompQh` are identities. -/
+@[simp]
 lemma QhCompιIsoιCompQh_hom_app (X : HomotopyCategory.Bounded C) :
     (QhCompιIsoιCompQh C).hom.app X = 𝟙 (_root_.DerivedCategory.Qh.obj X.obj) :=
   (rfl)
 
 /-- The components of the inverse of `QhCompιIsoιCompQh` are identities. -/
+@[simp]
 lemma QhCompιIsoιCompQh_inv_app (X : HomotopyCategory.Bounded C) :
     (QhCompιIsoιCompQh C).inv.app X = 𝟙 (_root_.DerivedCategory.Qh.obj X.obj) :=
   (rfl)
