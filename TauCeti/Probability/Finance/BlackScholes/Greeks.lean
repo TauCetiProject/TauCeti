@@ -229,11 +229,17 @@ theorem hasDerivAt_deriv_putPrice_spot (hs : 0 < s) (hK : 0 < K) (hσ : σ ≠ 0
     cdf_gaussianReal_zero_one_neg]
   ring
 
+/-- Put gamma equals call gamma. -/
+theorem deriv_deriv_putPrice_spot (hs : 0 < s) (hK : 0 < K) (hσ : σ ≠ 0) (hτ : 0 < τ) :
+    deriv (deriv fun x => putPrice x r σ K τ) s =
+      deriv (deriv fun x => callPrice x r σ K τ) s := by
+  rw [(hasDerivAt_deriv_putPrice_spot hs hK hσ hτ).deriv,
+    (hasDerivAt_deriv_callPrice_spot hs hK hσ hτ).deriv]
+
 /-- Put gamma is positive when the volatility is. -/
 theorem deriv_deriv_putPrice_spot_pos (hs : 0 < s) (hK : 0 < K) (hσ : 0 < σ) (hτ : 0 < τ) :
     0 < deriv (deriv fun x => putPrice x r σ K τ) s := by
-  rw [(hasDerivAt_deriv_putPrice_spot hs hK hσ.ne' hτ).deriv,
-    ← (hasDerivAt_deriv_callPrice_spot hs hK hσ.ne' hτ).deriv]
+  rw [deriv_deriv_putPrice_spot hs hK hσ.ne' hτ]
   exact deriv_deriv_callPrice_spot_pos hs hK hσ hτ
 
 /-- The derivative of the Black–Scholes put price in the remaining maturity is

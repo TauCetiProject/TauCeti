@@ -141,6 +141,12 @@ theorem riskNeutralPrice_def (h : ℝ → ℝ) (s r σ τ : ℝ) :
 theorem riskNeutralPrice_zero (h : ℝ → ℝ) (s r σ : ℝ) : riskNeutralPrice h s r σ 0 = h s := by
   simp [riskNeutralPrice_def]
 
+/-- A nonnegative payoff has a nonnegative risk-neutral price. -/
+theorem riskNeutralPrice_nonneg {h : ℝ → ℝ} (hh : ∀ x, 0 ≤ h x) (s r σ τ : ℝ) :
+    0 ≤ riskNeutralPrice h s r σ τ := by
+  rw [riskNeutralPrice_def]
+  exact mul_nonneg (exp_pos _).le (integral_nonneg fun z => hh _)
+
 /-- The stock itself, as a payoff, is priced at the current spot: the discounted risk-neutral
 expectation `exp (-r τ) * E[S_τ]` of the terminal spot equals `s`. -/
 theorem riskNeutralPrice_id (s r σ : ℝ) (hτ : 0 ≤ τ) : riskNeutralPrice id s r σ τ = s := by
