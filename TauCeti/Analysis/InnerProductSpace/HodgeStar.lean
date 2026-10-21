@@ -128,6 +128,7 @@ theorem volumeEquiv_topVector (b : OrthonormalBasis (Fin n) ℝ V)
     o.volumeForm_robust b hb, ← OrthonormalBasis.coe_toBasis, Basis.det_self]
 
 /-- Reversing the orientation negates the volume. -/
+@[simp]
 theorem volumeEquiv_neg_orientation (x : ⋀[ℝ]^(finrank ℝ V) V) :
     (-o).volumeEquiv x = -o.volumeEquiv x := by
   have h : ((-o).volumeEquiv : ⋀[ℝ]^(finrank ℝ V) V →ₗ[ℝ] ℝ) = -(o.volumeEquiv : _ →ₗ[ℝ] ℝ) := by
@@ -136,6 +137,7 @@ theorem volumeEquiv_neg_orientation (x : ⋀[ℝ]^(finrank ℝ V) V) :
   exact LinearMap.congr_fun h x
 
 /-- Reversing the orientation negates the unit volume element of the top exterior power. -/
+@[simp]
 theorem volumeEquiv_symm_neg_orientation (t : ℝ) :
     (-o).volumeEquiv.symm t = -o.volumeEquiv.symm t := by
   rw [LinearEquiv.symm_apply_eq, volumeEquiv_neg_orientation, map_neg, neg_neg,
