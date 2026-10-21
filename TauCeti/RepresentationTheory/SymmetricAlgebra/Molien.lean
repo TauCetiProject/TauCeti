@@ -21,21 +21,25 @@ series records the dimensions of its homogeneous components:
 
 On each homogeneous component `Symⁿ M` the Reynolds operator is the averaging projection of the
 degree-`n` representation (`Representation.coe_averageMap_symmetricAlgebraHomogeneous`). A
-projection has trace equal to the dimension of its image, and the trace of the average is the
-average of the traces. Hence
+projection has trace equal in `K` to the dimension of its image, and the trace of the average is
+the average of the traces. Hence, in `K`,
 
 `dim (Sym(M)^G ∩ Symⁿ M) = #G⁻¹ ∑_{g ∈ G} tr(g | Symⁿ M)`,
 
-and summing over `n`,
+and summing over `n`, in `K⟦t⟧`,
 
 `Hilb(Sym(M)^G, t) = #G⁻¹ ∑_{g ∈ G} ∑ₙ tr(g | Symⁿ M) tⁿ`.
 
+These identities hold for the dimensions cast into `K`. In characteristic zero they determine the
+dimensions, and hence the Hilbert series; in characteristic `p` they determine the dimensions only
+modulo `p`, and the left-hand side is the image of the Hilbert series in `K⟦t⟧`.
+
 This is Molien's formula in trace form. Each inner series is the graded trace of `g` on the
-symmetric algebra; the graded trace formula, which is not proved in this file, identifies it with
-`det(1 - t g | M)⁻¹` when `g` is diagonalisable, and substituting it gives Molien's formula
-`Hilb(Sym(M)^G, t) = #G⁻¹ ∑_g det(1 - t g | M)⁻¹`. Applied to the contragredient representation
-`ρ.dual` on `M = V*`, the formula of this file computes the Hilbert series of the ring of
-polynomial invariants on `V`.
+symmetric algebra; the graded trace formula `(∑ₙ tr(g | Symⁿ M) tⁿ) · det(1 - t g | M) = 1`, which
+is not proved in this file, identifies it with `det(1 - t g | M)⁻¹`, and substituting it gives
+Molien's formula `Hilb(Sym(M)^G, t) = #G⁻¹ ∑_g det(1 - t g | M)⁻¹`. Applied to the contragredient
+representation `ρ.dual` on `M = V*`, the formula of this file computes the Hilbert series of the
+ring of polynomial invariants on `V`.
 
 The action of `g` on `Symⁿ M` is written `homogeneousSubmoduleMapₛₗ (ρ g) n`, the map induced by
 `ρ g` on degree `n` (`Representation.symmetricAlgebraHomogeneous_apply`).
@@ -43,11 +47,11 @@ The action of `g` on `Symⁿ M` is written `homogeneousSubmoduleMapₛₗ (ρ g)
 ## Main results
 
 * `Representation.trace_averageMap_symmetricAlgebraHomogeneous`: the trace of the Reynolds
-  operator on `Symⁿ M` is the dimension of the degree-`n` invariants.
+  operator on `Symⁿ M` is equal in `K` to the dimension of the degree-`n` invariants.
 * `Representation.finrank_symmetricAlgebraInvariants_inf_homogeneousSubmodule`: the dimension of
-  the degree-`n` invariants is the average over `G` of the traces on `Symⁿ M`.
+  the degree-`n` invariants, cast into `K`, is the average over `G` of the traces on `Symⁿ M`.
 * `Representation.mk_finrank_symmetricAlgebraInvariants_inf_homogeneousSubmodule`: Molien's
-  formula in trace form, as an identity of formal power series.
+  formula in trace form, as an identity of formal power series over `K`.
 
 ## References
 
@@ -68,8 +72,8 @@ variable {K G M : Type*} [Field K] [Group G] [AddCommGroup M] [Module K M] [Fini
 variable (ρ : Representation K G M) [Fintype G] [Invertible (Fintype.card G : K)]
 
 /-- **The trace of the Reynolds operator.** On the degree-`n` component `Symⁿ M`, the Reynolds
-operator (the averaging projection of the degree-`n` representation) has trace equal to the
-dimension of the degree-`n` part of the invariant subalgebra. -/
+operator (the averaging projection of the degree-`n` representation) has trace equal in `K` to
+the dimension (cast into `K`) of the degree-`n` part of the invariant subalgebra. -/
 theorem trace_averageMap_symmetricAlgebraHomogeneous (n : ℕ) :
     LinearMap.trace K _ (ρ.symmetricAlgebraHomogeneous n).averageMap =
       Module.finrank K
@@ -82,7 +86,9 @@ theorem trace_averageMap_symmetricAlgebraHomogeneous (n : ℕ) :
   rw [(isProj_averageMap _).trace, finrank_invariants_symmetricAlgebraHomogeneous]
 
 /-- **Molien's formula, degreewise.** The dimension of the degree-`n` part of the invariant
-subalgebra is the average over the group of the traces `tr(g | Symⁿ M)`.
+subalgebra, cast into `K`, is equal in `K` to the average over the group of the traces
+`tr(g | Symⁿ M)`. In characteristic zero this determines the dimension; in characteristic `p` it
+determines it only modulo `p`.
 
 This is the instance on `Symⁿ M` of the character formula
 `Representation.card_inv_mul_sum_char_eq_finrank` for the dimension of the invariants, stated
@@ -97,8 +103,10 @@ theorem finrank_symmetricAlgebraInvariants_inf_homogeneousSubmodule (n : ℕ) :
     map_smul, norm, map_sum, smul_eq_mul]
   simp only [symmetricAlgebraHomogeneous_apply]
 
-/-- **Molien's formula**, trace form: the Hilbert series of the invariant subalgebra is the
-average over the group of the graded traces `∑ₙ tr(g | Symⁿ M) tⁿ`. -/
+/-- **Molien's formula**, trace form: the image in `K⟦X⟧` of the Hilbert series of the invariant
+subalgebra (its coefficients are the dimensions of the homogeneous components, cast into `K`) is
+the average over the group of the graded traces `∑ₙ tr(g | Symⁿ M) tⁿ`. In characteristic zero
+this determines the Hilbert series. -/
 theorem mk_finrank_symmetricAlgebraInvariants_inf_homogeneousSubmodule :
     PowerSeries.mk (fun n ↦ (Module.finrank K
         ↥(Subalgebra.toSubmodule ρ.symmetricAlgebraInvariants ⊓ homogeneousSubmodule K M n) : K)) =
