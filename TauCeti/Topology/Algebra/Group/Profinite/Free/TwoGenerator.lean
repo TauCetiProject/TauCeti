@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.LowerCentralSeries
-public import Mathlib.LinearAlgebra.Determinant
+public import TauCeti.LinearAlgebra.ExteriorPower.Basis
 
 /-!
 # The closed lower central series of the free pro-`p` group on two generators
@@ -26,7 +26,8 @@ rank-one statement explicit and computes the bracket and the functoriality in th
 * a continuous endomorphism of `F` acts on `gr_1(F)` by multiplication by the determinant of its
   action on `gr_0(F)`.
 
-The first is the alternating bilinear expansion of `[a_0 e_0 + a_1 e_1, b_0 e_0 + b_1 e_1]`.
+The first transports the determinant formula `a ∧ b = det (a, b) • (e_0 ∧ e_1)` in the top
+exterior power along the identification `⋀²gr_0(F) ≃ gr_1(F)` of the degree-one basis.
 The second follows from it because graded maps commute with the bracket and with the `ℤ_p`-action.
 Together they say that `gr_1(F)` is the determinant line of `gr_0(F)`, the rank-two case of the
 identification of `gr_1(F)` with the exterior square of `gr_0(F)`.
@@ -58,14 +59,6 @@ namespace freeProP
 
 variable (p : ℕ) [Fact p.Prime]
 
-/-- The only pair `i < j` of elements of `Fin 2` is `(0, 1)`. -/
-@[instance_reducible]
-private def uniquePairs : Unique {ij : Fin 2 × Fin 2 // ij.1 < ij.2} where
-  default := ⟨(0, 1), by decide⟩
-  uniq := by decide
-
-attribute [local instance] uniquePairs
-
 /-- **The bracket of the free pro-`p` group of rank two is the determinant.** For classes `a`, `b`
 in `gr_0` of the free pro-`p` group on two generators, the bracket `[a, b]` in `gr_1` is the
 determinant of the coordinates of `a` and `b` in the basis `e_0, e_1`, times `[e_0, e_1]`. -/
@@ -74,37 +67,25 @@ theorem lcsBracket_eq_det_smul (a b : lcsGradedPiece (freeProP p (Fin 2)) 0) :
       (lcsDegreeZeroBasis p (Fin 2)).det ![a, b] •
         lcsBracket (freeProP p (Fin 2)) 0 0 (gradedMkZero 0 _ (of 0))
           (gradedMkZero 0 _ (of 1)) := by
-  have hF := isProP_freeProP p (Fin 2)
-  set B := lcsDegreeZeroBasis p (Fin 2)
-  -- Skew-symmetry, `[e_1, e_0] = -[e_0, e_1]`.
-  have hswap : lcsBracket (freeProP p (Fin 2)) 0 0 (B 1) (B 0) =
-      -lcsBracket (freeProP p (Fin 2)) 0 0 (B 0) (B 1) := by
-    rw [← gradedCast_gradedBracket_swap, gradedCast_rfl]
-  -- Expand both arguments in the basis and use bilinearity and alternation.
-  conv_lhs => rw [← B.sum_repr a, ← B.sum_repr b]
-  simp only [Fin.sum_univ_two, map_add, AddMonoidHom.add_apply, hF.gradedBracket_smul_left,
-    hF.gradedBracket_smul_right, gradedBracket_self, smul_zero, add_zero, zero_add, hswap,
-    smul_neg, Module.Basis.det_apply, Matrix.det_fin_two, Module.Basis.toMatrix_apply,
-    Matrix.cons_val_zero, Matrix.cons_val_one, ← lcsDegreeZeroBasis_apply, sub_smul, mul_smul]
-  rw [smul_comm (B.repr a 1) (B.repr b 0)]
-  abel
+  -- Transport `a ∧ b = det (a, b) • (e_0 ∧ e_1)` along `⋀²gr_0 ≃ gr_1`.
+  have h := congrArg (exteriorSquareEquivLcsGradedPieceOne p (Fin 2))
+    ((lcsDegreeZeroBasis p (Fin 2)).exteriorPower_ιMulti_eq_det_smul ![a, b])
+  simpa [lcsDegreeZeroBasis_apply] using h
 
 /-- **`gr_1` of the free pro-`p` group of rank two is free of rank one** over `ℤ_p`, on the bracket
 `[e_0, e_1]`: the isomorphism `ℤ_p ≃ gr_1`, `c ↦ c • [e_0, e_1]`
 (`padicIntEquivLcsGradedPieceOne_apply`). -/
 noncomputable def padicIntEquivLcsGradedPieceOne :
     ℤ_[p] ≃ₗ[ℤ_[p]] lcsGradedPiece (freeProP p (Fin 2)) 1 :=
-  (LinearEquiv.funUnique _ ℤ_[p] ℤ_[p]).symm ≪≫ₗ (lcsDegreeOneBasis p (Fin 2)).equivFun.symm
+  (lcsDegreeZeroBasis p (Fin 2)).exteriorPowerTopEquiv.symm ≪≫ₗ
+    exteriorSquareEquivLcsGradedPieceOne p (Fin 2)
 
 @[simp]
 theorem padicIntEquivLcsGradedPieceOne_apply (c : ℤ_[p]) :
     padicIntEquivLcsGradedPieceOne p c =
       c • lcsBracket (freeProP p (Fin 2)) 0 0 (gradedMkZero 0 _ (of 0))
         (gradedMkZero 0 _ (of 1)) := by
-  rw [padicIntEquivLcsGradedPieceOne, LinearEquiv.trans_apply, Module.Basis.equivFun_symm_apply,
-    Fintype.sum_unique, show (default : {ij : Fin 2 × Fin 2 // ij.1 < ij.2}) = ⟨(0, 1), by decide⟩
-      from Subsingleton.elim _ _, lcsDegreeOneBasis_apply]
-  simp
+  simp [padicIntEquivLcsGradedPieceOne, lcsDegreeZeroBasis_apply]
 
 /-- **In the coordinate of `gr_1 ≃ ℤ_p`, the bracket is the determinant**: the coordinate of
 `[a, b]` is the determinant of the coordinates of `a` and `b` in the basis `e_0, e_1`. -/
