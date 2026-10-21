@@ -83,7 +83,7 @@ variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
 
 include he₀ in
 private theorem isHomogeneous_span_e (j : J) : (Ideal.span {e j} : Ideal A).IsHomogeneous 𝒜 :=
-  Ideal.homogeneous_span 𝒜 _ fun _ hx => ⟨0, (Set.mem_singleton_iff.1 hx) ▸ he₀ j⟩
+  Ideal.isHomogeneous_span_singleton_of_mem_zero 𝒜 (he₀ j)
 
 /-- The graded projective `⨁ⱼ (A eⱼ){d j}`. -/
 private abbrev coverObj : GradedModuleCat.{max w uA} 𝒜 :=
