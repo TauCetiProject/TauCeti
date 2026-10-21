@@ -35,7 +35,8 @@ once.
   `.contDiffOn`: the relation to Mathlib's `ContDiffOn`.
 * `TauCeti.UniformContDiffOn.mono` and `TauCeti.UniformContDiffOn.of_le`: shrinking the set and
   lowering the order.
-* `ContDiff.uniformContDiffOn`: a `C^n` function is uniformly `C^n` on a compact set.
+* `ContDiffOn.uniformContDiffOn`: a function that is `C^n` on an open set is uniformly `C^n` on
+  every compact subset.
 -/
 
 public section
@@ -125,38 +126,32 @@ theorem UniformContDiffOn.differentiableOn {n : ℕ} (hn : 1 ≤ n) (h : Uniform
   exact fun x hx ↦ (hG' x hx).differentiableAt.differentiableWithinAt
 
 /-- On an open set, a uniformly `C^n` function is `C^n`. -/
-theorem UniformContDiffOn.contDiffOn (hs : IsOpen s) (n : ℕ) :
-    ∀ {Y : Type u} [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] {G : X → Y},
-      UniformContDiffOn 𝕜 n G s → ContDiffOn 𝕜 n G s := by
-  induction n with
-  | zero =>
-    intro Y _ _ G h
-    exact contDiffOn_zero.2 h.continuousOn
+theorem UniformContDiffOn.contDiffOn {n : ℕ} (hs : IsOpen s) (h : UniformContDiffOn 𝕜 n G s) :
+    ContDiffOn 𝕜 n G s := by
+  induction n generalizing Y with
+  | zero => exact contDiffOn_zero.2 h.continuousOn
   | succ n ih =>
-    intro Y _ _ G h
     obtain ⟨-, G', hG', -, hG'n⟩ := uniformContDiffOn_succ_iff.1 h
     have hder : ∀ x ∈ s, fderiv 𝕜 G x = G' x := fun x hx ↦ (hG' x hx).fderiv
     rw [Nat.cast_succ, contDiffOn_succ_iff_fderiv_of_isOpen hs]
     exact ⟨h.differentiableOn le_add_self, by simp, (ih hG'n).congr hder⟩
 
-/-- **A smooth function is uniformly smooth on a compact set.** If `G` is `C^n` and `s` is compact,
-then `G` is uniformly `C^n` on `s`: every derivative is continuous, hence bounded and uniformly
-continuous on `s`. -/
-theorem _root_.ContDiff.uniformContDiffOn (hs : IsCompact s) (n : ℕ) :
-    ∀ {Y : Type u} [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] {G : X → Y},
-      ContDiff 𝕜 n G → UniformContDiffOn 𝕜 n G s := by
-  induction n with
+/-- **A smooth function is uniformly smooth on a compact set.** If `G` is `C^n` on an open set `t`
+and `s ⊆ t` is compact, then `G` is uniformly `C^n` on `s`: every derivative is continuous, hence
+bounded and uniformly continuous on `s`. -/
+theorem _root_.ContDiffOn.uniformContDiffOn {t : Set X} (ht : IsOpen t) (hst : s ⊆ t)
+    (hs : IsCompact s) {n : ℕ} (hG : ContDiffOn 𝕜 n G t) : UniformContDiffOn 𝕜 n G s := by
+  induction n generalizing Y with
   | zero =>
-    intro Y _ _ G hG
     exact uniformContDiffOn_zero_iff.2
-      (hs.uniformContinuousOn_of_continuous hG.continuous.continuousOn)
+      (hs.uniformContinuousOn_of_continuous (hG.continuousOn.mono hst))
   | succ n ih =>
-    intro Y _ _ G hG
-    have hdiff : Differentiable 𝕜 G := hG.differentiable (by simp)
-    have hG' : ContDiff 𝕜 n (fderiv 𝕜 G) := hG.fderiv_right (m := n) (by simp)
-    obtain ⟨C, hC⟩ := hs.exists_bound_of_continuousOn hG'.continuous.continuousOn
+    have hdiff : DifferentiableOn 𝕜 G t := hG.differentiableOn (by simp)
+    have hG' : ContDiffOn 𝕜 n (fderiv 𝕜 G) t := hG.fderiv_of_isOpen ht (by simp)
+    obtain ⟨C, hC⟩ := hs.exists_bound_of_continuousOn (hG'.continuousOn.mono hst)
     exact uniformContDiffOn_succ_iff.2
-      ⟨hs.uniformContinuousOn_of_continuous hG.continuous.continuousOn, fderiv 𝕜 G,
-        fun x _ ↦ (hdiff x).hasFDerivAt, ⟨C, hC⟩, ih hG'⟩
+      ⟨hs.uniformContinuousOn_of_continuous (hG.continuousOn.mono hst), fderiv 𝕜 G,
+        fun x hx ↦ ((hdiff x (hst hx)).differentiableAt (ht.mem_nhds (hst hx))).hasFDerivAt,
+        ⟨C, hC⟩, ih hG'⟩
 
 end TauCeti

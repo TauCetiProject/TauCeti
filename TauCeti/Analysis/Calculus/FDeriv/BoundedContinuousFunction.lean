@@ -53,7 +53,7 @@ operator into `C^n` dependence of its fixed points on parameters.
 * `BoundedContinuousFunction.contDiffAt_comp`: the superposition operator is `C¹` near `f₀`.
 * `BoundedContinuousFunction.contDiff_comp`: when `G` is differentiable everywhere with a
   derivative uniformly continuous on bounded sets, the superposition operator is `C¹`.
-* `BoundedContinuousFunction.contDiffAt_of_uniformContDiffOn`: for `n : ℕ`, an operator that is
+* `BoundedContinuousFunction.contDiffAt_of_forall_apply_eq`: for `n : ℕ`, an operator that is
   given near `f₀` by `f ↦ G ∘ f` with `G` uniformly `C^n` on `s` (`TauCeti.UniformContDiffOn`) is
   `C^n` at `f₀`.
   `BoundedContinuousFunction.contDiffAt_comp_of_uniformContDiffOn` is the case of
@@ -84,6 +84,12 @@ private theorem ball_half_subset_of_mem_ball {f : α →ᵇ X} (hf₀ : ∀ t, b
   (ball_subset_ball' (by linarith [dist_coe_le_dist (f := f) (g := f₀) t, mem_ball.1 hf])).trans
     (hf₀ t)
 
+/-- If the values of `f₀` stay `δ > 0` inside `s`, then every function in the `δ`-ball about `f₀`
+has its values in `s`. -/
+private theorem apply_mem_of_mem_ball {f : α →ᵇ X} (hf₀ : ∀ t, ball (f₀ t) δ ⊆ s)
+    (hf : f ∈ ball f₀ δ) (t : α) : f t ∈ s :=
+  hf₀ t (mem_ball.2 ((dist_coe_le_dist t).trans_lt (mem_ball.1 hf)))
+
 /-- A locally defined superposition operator is continuous when `G` is uniformly continuous: if
 `Θ f t = G (f t)` on the ball of radius `δ` about `f₀`, and the values of `f₀` stay a distance `δ`
 inside `s`, where `G` is uniformly continuous. -/
@@ -96,7 +102,7 @@ theorem continuousAt_of_forall_apply_eq (hG : UniformContinuousOn G s) (hδ : 0 
   have hfδ : f ∈ ball f₀ δ := mem_ball.2 (hf.trans_le (min_le_left _ _))
   refine lt_of_le_of_lt ((dist_le (half_pos hε).le).2 fun t ↦ ?_) (half_lt_self hε)
   rw [hΘ f hfδ, hΘ f₀ (mem_ball_self hδ)]
-  exact hGη _ (hf₀ t (mem_ball.2 ((dist_coe_le_dist t).trans_lt (mem_ball.1 hfδ)))) _
+  exact hGη _ (apply_mem_of_mem_ball hf₀ hfδ t) _
     (hf₀ t (mem_ball_self hδ)) ((dist_coe_le_dist t).trans (hf.le.trans (min_le_right _ _)))
 
 end PseudoMetricSpace
@@ -200,7 +206,7 @@ private theorem continuousAt_fderiv_comp (hG : LipschitzWith C G)
   -- The derivative is `applyCLM` of the family of derivatives, which is continuous in `f`.
   have hfam : ContinuousAt (derivFamily hG'.continuousOn hC) f₀ :=
     continuousAt_of_forall_apply_eq hG' hδ hf₀ fun f hf t ↦ derivFamily_apply _ _
-      (fun t ↦ hf₀ t (mem_ball.2 ((dist_coe_le_dist t).trans_lt (mem_ball.1 hf)))) t
+      (apply_mem_of_mem_ball hf₀ hf) t
   refine (applyCLM.continuous.continuousAt.comp hfam).congr ?_
   filter_upwards [ball_mem_nhds f₀ (half_pos hδ)] with f hf
   have hfs := ball_half_subset_of_mem_ball hf₀ hf
@@ -255,25 +261,22 @@ section Local
 variable {α 𝕜 : Type*} {X Y : Type u} [TopologicalSpace α] [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup X] [NormedSpace 𝕜 X] [NormedAddCommGroup Y] [NormedSpace 𝕜 Y]
   [IsRCLikeNormedField 𝕜] {G : X → Y} {C : ℝ≥0} {s : Set X} {f₀ : α →ᵇ X} {δ : ℝ}
+  {Θ : (α →ᵇ X) → α →ᵇ Y}
 
 /-- **Superposition operators are `C^n`.** Let `G` be uniformly `C^n` on `s`. If the values of `f₀`
 stay a distance `δ > 0` inside `s` and `Θ` agrees with the superposition `f ↦ G ∘ f` on the ball
 of radius `δ` about `f₀`, then `Θ` is `C^n` at `f₀` for the sup norm. -/
-theorem contDiffAt_of_uniformContDiffOn (n : ℕ) :
-    ∀ {Y : Type u} [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] {G : X → Y}
-      {Θ : (α →ᵇ X) → α →ᵇ Y} {f₀ : α →ᵇ X} {δ : ℝ},
-      TauCeti.UniformContDiffOn 𝕜 n G s → 0 < δ → (∀ t, ball (f₀ t) δ ⊆ s) →
-      (∀ f ∈ ball f₀ δ, ∀ t, Θ f t = G (f t)) → ContDiffAt 𝕜 n Θ f₀ := by
-  induction n with
+theorem contDiffAt_of_forall_apply_eq {n : ℕ} (hG : TauCeti.UniformContDiffOn 𝕜 n G s)
+    (hδ : 0 < δ) (hf₀ : ∀ t, ball (f₀ t) δ ⊆ s) (hΘ : ∀ f ∈ ball f₀ δ, ∀ t, Θ f t = G (f t)) :
+    ContDiffAt 𝕜 n Θ f₀ := by
+  induction n generalizing Y G Θ f₀ δ with
   | zero =>
-    intro Y _ _ G Θ f₀ δ hG hδ hf₀ hΘ
     refine contDiffAt_zero.2 ⟨ball f₀ (δ / 2), ball_mem_nhds f₀ (half_pos hδ), fun f hf ↦ ?_⟩
     exact (continuousAt_of_forall_apply_eq (TauCeti.uniformContDiffOn_zero_iff.1 hG)
       (half_pos hδ) (ball_half_subset_of_mem_ball hf₀ hf)
       fun g hg t ↦ hΘ g (Metric.ball_half_subset _ hf hg) t
       ).continuousWithinAt
   | succ n ih =>
-    intro Y _ _ G Θ f₀ δ hG hδ hf₀ hΘ
     obtain ⟨-, G', hGs, ⟨C, hC⟩, hG'n⟩ := TauCeti.uniformContDiffOn_succ_iff.1 hG
     have hG'c : ContinuousOn G' s := hG'n.continuousOn
     -- The family of derivatives along a function with values in `s`.
@@ -295,10 +298,10 @@ theorem contDiffAt_of_uniformContDiffOn (n : ℕ) :
 
 /-- **A superposition operator is `C^n`.** Let `G` be Lipschitz and uniformly `C^n` on `s`. If the
 values of `f₀` stay a distance `δ > 0` inside `s`, then `f ↦ G ∘ f` is `C^n` at `f₀`. -/
-theorem contDiffAt_comp_of_uniformContDiffOn (hG : LipschitzWith C G) (n : ℕ)
+theorem contDiffAt_comp_of_uniformContDiffOn (hG : LipschitzWith C G) {n : ℕ}
     (hGn : TauCeti.UniformContDiffOn 𝕜 n G s) (hδ : 0 < δ) (hf₀ : ∀ t, ball (f₀ t) δ ⊆ s) :
     ContDiffAt 𝕜 n (comp G hG) f₀ :=
-  contDiffAt_of_uniformContDiffOn n hGn hδ hf₀ fun _ _ _ ↦ rfl
+  contDiffAt_of_forall_apply_eq hGn hδ hf₀ fun _ _ _ ↦ rfl
 
 end Local
 
