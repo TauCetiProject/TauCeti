@@ -355,14 +355,11 @@ theorem Adjunction.isMonoidal_of_isMonoidal_unit {F : C ⥤ D} {G : D ⥤ C} (ad
     have h := NatTrans.IsMonoidal.tensor (τ := adj.unit) (G.obj X) (G.obj Y)
     rw [Functor.LaxMonoidal.id_μ, Category.id_comp, Functor.LaxMonoidal.comp_μ] at h
     rw [reassoc_of% h, ← G.map_comp, Functor.Monoidal.μ_δ_assoc,
-      ← Functor.LaxMonoidal.μ_natural, tensorHom_comp_tensorHom_assoc,
-      adj.right_triangle_components, adj.right_triangle_components, tensorHom_id,
-      id_whiskerRight, Category.id_comp]
-    -- The two sides differ only by `(𝟭 D).obj X = X`, which holds by definition.
-    rfl
+      ← Functor.LaxMonoidal.μ_natural, tensorHom_comp_tensorHom_assoc]
+    simp
 
-/-- An equivalence whose functor is strong monoidal and whose inverse is lax monoidal is a
-monoidal equivalence as soon as its unit is a monoidal natural transformation. -/
+/-- An equivalence whose functor and inverse are strong monoidal is a monoidal equivalence as
+soon as its unit is a monoidal natural transformation. -/
 theorem Equivalence.isMonoidal_of_isMonoidal_unit (e : C ≌ D) [e.functor.Monoidal]
     [e.inverse.Monoidal] [NatTrans.IsMonoidal e.unit] : e.IsMonoidal :=
   have : NatTrans.IsMonoidal e.toAdjunction.unit := inferInstanceAs (NatTrans.IsMonoidal e.unit)

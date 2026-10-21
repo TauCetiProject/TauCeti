@@ -38,13 +38,16 @@ property of monoidal equivalences (`CategoryTheory.Equivalence.isMonoidal_of_isM
 ## Main declarations
 
 * `TauCeti.rightDualEquivalence` and `TauCeti.leftDualEquivalence`: the right and left dual
-  functors as monoidal equivalences `C ≌ (Cᵒᵖ)ᴹᵒᵖ`;
+  functors as monoidal equivalences `C ≌ (Cᵒᵖ)ᴹᵒᵖ`, whose inverses take left and right duals
+  (`TauCeti.rightDualEquivalence_inverse_map`, `TauCeti.leftDualEquivalence_inverse_map`);
 * `TauCeti.doubleRightDualEquivalence`: the monoidal autoequivalence of `C` with functor
   `doubleRightDualFunctor C` and inverse `doubleLeftDualFunctor C`;
 * `TauCeti.doubleRightDualCompDoubleLeftDual` and `TauCeti.doubleLeftDualCompDoubleRightDual`: the
-  monoidal natural isomorphisms trivializing the two composites, with components computed by
-  `TauCeti.doubleRightDualCompDoubleLeftDual_hom_app` and
-  `TauCeti.doubleLeftDualCompDoubleRightDual_hom_app`.
+  monoidal natural isomorphisms trivializing the two composites, with components and inverse
+  components computed by `TauCeti.doubleRightDualCompDoubleLeftDual_hom_app`,
+  `TauCeti.doubleRightDualCompDoubleLeftDual_inv_app`,
+  `TauCeti.doubleLeftDualCompDoubleRightDual_hom_app` and
+  `TauCeti.doubleLeftDualCompDoubleRightDual_inv_app`.
 
 ## References
 
@@ -83,26 +86,23 @@ noncomputable def rightDualEquivalence : C ≌ Cᵒᵖᴹᵒᵖ where
         rightDualLeftDualIso_inv_app,
         ← @rightAdjointMate_eq_rightMate C _ _ _ _ (RightRigidCategory.rightDual _)
           (RightRigidCategory.rightDual _)] at h
-      -- Removing the wrappers is the identity on morphisms, and the composite sends `f` to
-      -- the right adjoint mate of its left adjoint mate, by definition.
+      -- Removing the wrappers, this is naturality of `X ≅ (ᘁX)ᘁ` at `f.unmop.unop`.
+      change _ ≫ @rightAdjointMate C _ _ _ _ (RightRigidCategory.rightDual _)
+        (RightRigidCategory.rightDual _) (ᘁf.unmop.unop) = f.unmop.unop ≫ _
       exact h.symm
   functor_unitIso_comp X := by
     rw [Iso.symm_hom, leftDualRightDualIso_inv_app]
     apply Quiver.Hom.unmop_inj
     apply Quiver.Hom.unop_inj
-    -- With `A` the chosen left dual of `Xᘁ`, the right mate of the comparison `X ≅ A` of left
-    -- duals of `Xᘁ` is the comparison of the two right duals `Aᘁ` and `Xᘁ` of `A`.
-    have key {A A' : C} (q : ExactPairing A Xᘁ) (p : ExactPairing A A') :
-        (rightDualIso p q).inv ≫
-          rightMate HasRightDual.exact p (leftDualIso q HasRightDual.exact).inv = 𝟙 Xᘁ := by
-      rw [leftDualIso_inv, ← leftDualIso_hom, rightMate_leftDualIso_hom, ← rightDualIso_hom,
-        Iso.inv_hom_id]
-    have h := key (LeftRigidCategory.leftDual Xᘁ).exact (RightRigidCategory.rightDual _).exact
+    -- The right mate of the comparison `X ≅ ᘁ(Xᘁ)` of left duals of `Xᘁ` is the comparison
+    -- of the two right duals `(ᘁ(Xᘁ))ᘁ` and `Xᘁ` of `ᘁ(Xᘁ)`.
+    have h := rightMate_leftDualIso_inv (LeftRigidCategory.leftDual Xᘁ).exact HasRightDual.exact
+      (RightRigidCategory.rightDual _).exact
     rw [← @rightAdjointMate_eq_rightMate C _ _ _ _ (RightRigidCategory.rightDual _)
       (RightRigidCategory.rightDual _)] at h
     -- Removing the wrappers is the identity on morphisms, and the right dual functor sends a
     -- morphism to its right adjoint mate, by definition.
-    exact h
+    exact (whisker_eq _ h).trans (Iso.inv_hom_id _)
 
 /-- The left dual functor of a rigid monoidal category, as an equivalence `C ≌ (Cᵒᵖ)ᴹᵒᵖ`. Its
 inverse takes right duals; its unit is the trivialization `X ≅ (ᘁX)ᘁ` and its counit is the
@@ -126,26 +126,23 @@ noncomputable def leftDualEquivalence : C ≌ Cᵒᵖᴹᵒᵖ where
         leftDualRightDualIso_inv_app,
         ← @leftAdjointMate_eq_leftMate C _ _ _ _ (LeftRigidCategory.leftDual _)
           (LeftRigidCategory.leftDual _)] at h
-      -- Removing the wrappers is the identity on morphisms, and the composite sends `f` to
-      -- the left adjoint mate of its right adjoint mate, by definition.
+      -- Removing the wrappers, this is naturality of `X ≅ ᘁ(Xᘁ)` at `f.unmop.unop`.
+      change _ ≫ @leftAdjointMate C _ _ _ _ (LeftRigidCategory.leftDual _)
+        (LeftRigidCategory.leftDual _) (f.unmop.unopᘁ) = f.unmop.unop ≫ _
       exact h.symm
   functor_unitIso_comp X := by
     rw [Iso.symm_hom, rightDualLeftDualIso_inv_app]
     apply Quiver.Hom.unmop_inj
     apply Quiver.Hom.unop_inj
-    -- With `A` the chosen right dual of `ᘁX`, the left mate of the comparison `X ≅ A` of right
-    -- duals of `ᘁX` is the comparison of the two left duals `ᘁA` and `ᘁX` of `A`.
-    have key {A A' : C} (q : ExactPairing (ᘁX) A) (p : ExactPairing A' A) :
-        (leftDualIso p q).inv ≫
-          leftMate HasLeftDual.exact p (rightDualIso q HasLeftDual.exact).inv = 𝟙 (ᘁX) := by
-      rw [rightDualIso_inv, ← rightDualIso_hom, leftMate_rightDualIso_hom, ← leftDualIso_hom,
-        Iso.inv_hom_id]
-    have h := key (RightRigidCategory.rightDual (ᘁX)).exact (LeftRigidCategory.leftDual _).exact
+    -- The left mate of the comparison `X ≅ (ᘁX)ᘁ` of right duals of `ᘁX` is the comparison
+    -- of the two left duals `ᘁ((ᘁX)ᘁ)` and `ᘁX` of `(ᘁX)ᘁ`.
+    have h := leftMate_rightDualIso_inv (RightRigidCategory.rightDual (ᘁX)).exact
+      HasLeftDual.exact (LeftRigidCategory.leftDual _).exact
     rw [← @leftAdjointMate_eq_leftMate C _ _ _ _ (LeftRigidCategory.leftDual _)
       (LeftRigidCategory.leftDual _)] at h
     -- Removing the wrappers is the identity on morphisms, and the left dual functor sends a
     -- morphism to its left adjoint mate, by definition.
-    exact h
+    exact (whisker_eq _ h).trans (Iso.inv_hom_id _)
 
 variable {C} in
 /-- The counit of `rightDualEquivalence C` at `X` is the inverse of the trivialization
@@ -155,6 +152,17 @@ theorem rightDualEquivalence_counitIso_hom_app (X : Cᵒᵖᴹᵒᵖ) :
     (rightDualEquivalence C).counitIso.hom.app X =
       ((rightDualLeftDualIso C).inv.app X.unmop.unop).op.mop := by
   rw [rightDualLeftDualIso_inv_app]
+  -- The counit is defined by these components, through `mopFunctor`.
+  rfl
+
+variable {C} in
+/-- The inverse of the counit of `rightDualEquivalence C` at `X` is the trivialization
+`(ᘁX)ᘁ ≅ X`, read in `(Cᵒᵖ)ᴹᵒᵖ`. -/
+@[simp]
+theorem rightDualEquivalence_counitIso_inv_app (X : Cᵒᵖᴹᵒᵖ) :
+    (rightDualEquivalence C).counitIso.inv.app X =
+      ((rightDualLeftDualIso C).hom.app X.unmop.unop).op.mop := by
+  rw [rightDualLeftDualIso_hom_app]
   -- The counit is defined by these components, through `mopFunctor`.
   rfl
 
@@ -169,15 +177,41 @@ theorem leftDualEquivalence_counitIso_hom_app (X : Cᵒᵖᴹᵒᵖ) :
   -- The counit is defined by these components, through `mopFunctor`.
   rfl
 
+variable {C} in
+/-- The inverse of the counit of `leftDualEquivalence C` at `X` is the trivialization
+`ᘁ(Xᘁ) ≅ X`, read in `(Cᵒᵖ)ᴹᵒᵖ`. -/
+@[simp]
+theorem leftDualEquivalence_counitIso_inv_app (X : Cᵒᵖᴹᵒᵖ) :
+    (leftDualEquivalence C).counitIso.inv.app X =
+      ((leftDualRightDualIso C).hom.app X.unmop.unop).op.mop := by
+  rw [leftDualRightDualIso_hom_app]
+  -- The counit is defined by these components, through `mopFunctor`.
+  rfl
+
 /-- The functor of `rightDualEquivalence C` is the right dual functor. -/
 @[simp]
 theorem rightDualEquivalence_functor : (rightDualEquivalence C).functor = rightDualFunctor C :=
   (rfl)
 
 /-- The inverse of `rightDualEquivalence C` takes left duals. -/
-@[simp]
 theorem rightDualEquivalence_inverse : (rightDualEquivalence C).inverse =
     (leftDualFunctor C).op.opMop ⋙ (opMopOpMopEquivalence C).functor :=
+  rfl
+
+variable {C} in
+/-- The inverse of `rightDualEquivalence C` sends `X` to the left dual of the underlying object
+of `C`. -/
+@[simp]
+theorem rightDualEquivalence_inverse_obj (X : Cᵒᵖᴹᵒᵖ) :
+    (rightDualEquivalence C).inverse.obj X = ᘁX.unmop.unop :=
+  rfl
+
+variable {C} in
+/-- The inverse of `rightDualEquivalence C` sends `f` to the left adjoint mate of the underlying
+morphism of `C`. -/
+@[simp]
+theorem rightDualEquivalence_inverse_map {X Y : Cᵒᵖᴹᵒᵖ} (f : X ⟶ Y) :
+    (rightDualEquivalence C).inverse.map f = ᘁf.unmop.unop :=
   rfl
 
 /-- The unit of `rightDualEquivalence C` is the inverse of the trivialization `ᘁ(Xᘁ) ≅ X`. -/
@@ -192,9 +226,24 @@ theorem leftDualEquivalence_functor : (leftDualEquivalence C).functor = leftDual
   (rfl)
 
 /-- The inverse of `leftDualEquivalence C` takes right duals. -/
-@[simp]
 theorem leftDualEquivalence_inverse : (leftDualEquivalence C).inverse =
     (rightDualFunctor C).op.opMop ⋙ (opMopOpMopEquivalence C).functor :=
+  rfl
+
+variable {C} in
+/-- The inverse of `leftDualEquivalence C` sends `X` to the right dual of the underlying object
+of `C`. -/
+@[simp]
+theorem leftDualEquivalence_inverse_obj (X : Cᵒᵖᴹᵒᵖ) :
+    (leftDualEquivalence C).inverse.obj X = (X.unmop.unop)ᘁ :=
+  rfl
+
+variable {C} in
+/-- The inverse of `leftDualEquivalence C` sends `f` to the right adjoint mate of the underlying
+morphism of `C`. -/
+@[simp]
+theorem leftDualEquivalence_inverse_map {X Y : Cᵒᵖᴹᵒᵖ} (f : X ⟶ Y) :
+    (leftDualEquivalence C).inverse.map f = (f.unmop.unop)ᘁ :=
   rfl
 
 /-- The unit of `leftDualEquivalence C` is the inverse of the trivialization `(ᘁX)ᘁ ≅ X`. -/
@@ -322,9 +371,25 @@ theorem doubleRightDualCompDoubleLeftDual_hom_app (X : C) :
     Functor.rightUnitor_hom_app, Category.id_comp]
   rw [Equivalence.symm_unitIso, Iso.symm_inv, leftDualEquivalence_counitIso_hom_app,
     rightDualEquivalence_unitIso, Iso.symm_inv]
-  -- Applying the left dual functor through its opposite monoidal opposite and removing the
-  -- wrappers is applying the left dual functor itself, by definition.
-  rfl
+  exact rightDualEquivalence_inverse_map _ =≫ _
+
+/-- The inverse component of `doubleRightDualCompDoubleLeftDual C` at `X`: the inverse of the
+trivialization `ᘁ(Xᘁ) ≅ X`, followed by the left dual of the trivialization `ᘁ(Xᘁᘁ) ≅ Xᘁ`. -/
+@[simp]
+theorem doubleRightDualCompDoubleLeftDual_inv_app (X : C) :
+    (doubleRightDualCompDoubleLeftDual C).inv.app X =
+      (leftDualRightDualIso C).inv.app X ≫
+        ((leftDualFunctor C).map ((leftDualRightDualIso C).hom.app Xᘁ)).unmop.unop := by
+  change ((rightDualEquivalence C).trans (leftDualEquivalence C).symm).unitIso.hom.app X = _
+  simp only [Equivalence.trans_functor, Equivalence.trans_inverse, Functor.comp_obj, Functor.id_obj,
+    Equivalence.trans_unitIso, Functor.isoWhiskerRight_trans, Iso.trans_assoc, Iso.trans_hom,
+    Functor.isoWhiskerRight_hom, Iso.symm_hom, Functor.isoWhiskerLeft_hom, NatTrans.comp_app,
+    Functor.associator_inv_app, Functor.whiskerRight_app, Functor.associator_hom_app,
+    Functor.map_id, Functor.whiskerLeft_app, Functor.rightUnitor_inv_app, Category.id_comp,
+    Category.comp_id]
+  rw [rightDualEquivalence_unitIso, Iso.symm_hom, Equivalence.symm_unitIso, Iso.symm_hom,
+    leftDualEquivalence_counitIso_inv_app]
+  exact _ ≫= rightDualEquivalence_inverse_map _
 
 /-- The component of `doubleLeftDualCompDoubleRightDual C` at `X`: the right dual of the inverse
 of the trivialization `(ᘁᘁX)ᘁ ≅ ᘁX`, followed by the trivialization `(ᘁX)ᘁ ≅ X`. -/
@@ -344,8 +409,24 @@ theorem doubleLeftDualCompDoubleRightDual_hom_app (X : C) :
     Functor.rightUnitor_hom_app, Category.id_comp]
   rw [Equivalence.symm_counitIso, Iso.symm_hom, rightDualEquivalence_counitIso_hom_app,
     leftDualEquivalence_unitIso, Iso.symm_inv]
-  -- Applying the right dual functor through its opposite monoidal opposite and removing the
-  -- wrappers is applying the right dual functor itself, by definition.
-  rfl
+  exact leftDualEquivalence_inverse_map _ =≫ _
+
+/-- The inverse component of `doubleLeftDualCompDoubleRightDual C` at `X`: the inverse of the
+trivialization `(ᘁX)ᘁ ≅ X`, followed by the right dual of the trivialization `(ᘁᘁX)ᘁ ≅ ᘁX`. -/
+@[simp]
+theorem doubleLeftDualCompDoubleRightDual_inv_app (X : C) :
+    (doubleLeftDualCompDoubleRightDual C).inv.app X =
+      (rightDualLeftDualIso C).inv.app X ≫
+        ((rightDualFunctor C).map ((rightDualLeftDualIso C).hom.app (ᘁX))).unmop.unop := by
+  change ((rightDualEquivalence C).trans (leftDualEquivalence C).symm).counitIso.inv.app X = _
+  simp only [Equivalence.trans_inverse, Equivalence.trans_functor, Functor.comp_obj,
+    Functor.id_obj, Equivalence.trans_counitIso, Functor.isoWhiskerRight_trans, Iso.trans_assoc,
+    Iso.trans_inv, Iso.symm_inv, Functor.isoWhiskerRight_inv, Functor.isoWhiskerLeft_inv,
+    Category.assoc, NatTrans.comp_app, Functor.associator_inv_app, Functor.whiskerRight_app,
+    Functor.associator_hom_app, Functor.map_id, Functor.whiskerLeft_app,
+    Functor.rightUnitor_inv_app, Category.id_comp, Category.comp_id]
+  rw [Equivalence.symm_counitIso, Iso.symm_inv, leftDualEquivalence_unitIso, Iso.symm_hom,
+    rightDualEquivalence_counitIso_inv_app]
+  exact _ ≫= leftDualEquivalence_inverse_map _
 
 end TauCeti
