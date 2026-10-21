@@ -48,6 +48,7 @@ the places themselves.
 ## Main results
 
 * `TauCeti.Divisor.zeros_sub_poles`: `div z = (z)₀ - (z)_∞`, with both parts effective.
+* `TauCeti.Divisor.poles_pow`: `(zⁿ)_∞ = n (z)_∞`.
 * `TauCeti.Divisor.poles_eq_natCast_zsmul_ofPoint_of_ord_eq_neg`: a function with a single pole,
   of order `n` at `P`, has pole divisor `nP`.
 * `TauCeti.Divisor.principal_eq_zero_iff_mem_algebraicClosure`: `div z = 0` exactly when `z` is
@@ -298,6 +299,17 @@ theorem isEffective_poles (hF : IsFunctionField k F) (z : Fˣ) :
 theorem zeros_sub_poles (hF : IsFunctionField k F) (z : Fˣ) :
     zeros hF z - poles hF z = principal hF z :=
   posPart_sub_negPart (principal hF z)
+
+/-- The pole divisor of a power of a function is the multiple of its pole divisor:
+`(zⁿ)_∞ = n (z)_∞`. -/
+@[simp]
+theorem poles_pow (hF : IsFunctionField k F) (z : Fˣ) (n : ℕ) :
+    poles hF (z ^ n) = n • poles hF z :=
+  WeilDivisor.ext fun P => by
+    rw [coeff_poles, WeilDivisor.coeff_nsmul, coeff_poles, Units.val_pow_eq_pow_val, P.ord_pow]
+    rcases le_total 0 (P.ord (z : F)) with h | h
+    · rw [max_eq_right (by nlinarith), max_eq_right (by omega), mul_zero]
+    · rw [max_eq_left (by nlinarith), max_eq_left (by omega), mul_neg]
 
 /-- The poles of a function are the zeros of its inverse. -/
 theorem poles_eq_zeros_inv (hF : IsFunctionField k F) (z : Fˣ) :
