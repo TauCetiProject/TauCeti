@@ -22,9 +22,9 @@ holomorphic maps of the sphere, and the basic examples of branched covers of the
 few branch values: `z ↦ z ^ n` is the local model of every branched cover near a ramification
 point of index `n`.
 
-The power map is the polynomial map of `X ^ n`, so holomorphy, the local multiplicity at `∞` and
-the degree are read off from the general polynomial maps of the sphere; this file adds the facts
-special to `z ↦ z ^ n`, at `0` and away from `0`.
+The power map is the polynomial map of `X ^ n`, so holomorphy, the local multiplicities away from
+`0`, the degree and the branch values are read off from the general polynomial maps of the sphere,
+using that `0` is the only critical point of `X ^ n`.
 
 ## Main declarations
 
@@ -56,14 +56,6 @@ open scoped Manifold
 namespace TauCeti.RiemannSurface
 
 variable {n : ℕ}
-
-/-- In the inverted chart at `∞`, the extension of `z ↦ z ^ n` to the Riemann sphere is again
-`w ↦ w ^ n`. -/
-theorem invChart_onePointMap_pow_invChart_symm (hn : n ≠ 0) (w : ℂ) :
-    invChart (OnePoint.map (fun z : ℂ ↦ z ^ n) (invChart.symm w)) = w ^ n := by
-  rcases eq_or_ne w 0 with rfl | hw
-  · simp [zero_pow hn]
-  · simp [hw, inv_pow]
 
 /-- The extension of `X ^ n` to the Riemann sphere is the extension of `z ↦ z ^ n`. -/
 private theorem onePointMap_eval_X_pow :
@@ -103,9 +95,9 @@ theorem localMultiplicity_onePointMap_pow_infty (hn : n ≠ 0) :
 multiplicity `1`: there the derivative `n z ^ (n - 1)` does not vanish. -/
 theorem localMultiplicity_onePointMap_pow_coe_of_ne_zero (hn : n ≠ 0) {z : ℂ} (hz : z ≠ 0) :
     localMultiplicity (OnePoint.map fun z : ℂ ↦ z ^ n) (z : OnePoint ℂ) = 1 := by
-  rw [localMultiplicity_onePointMap_pow_coe, analyticOrderNatAt,
-    (analyticAt_id.pow n).analyticOrderAt_sub_eq_one_of_deriv_ne_zero (by simp [hn, hz]),
-    ENat.toNat_one]
+  rw [← onePointMap_eval_X_pow]
+  exact localMultiplicity_onePointMap_eval_coe_of_not_isRoot (by simp [Nat.pos_iff_ne_zero, hn])
+    (by simp [derivative_X_pow, hn, hz])
 
 namespace FiniteHolomorphicMap
 
@@ -122,14 +114,10 @@ theorem coe_spherePow (hn : n ≠ 0) :
 /-- The branch values of the power map `z ↦ z ^ n` of the Riemann sphere lie in `{0, ∞}`. -/
 theorem branchValues_spherePow_subset (hn : n ≠ 0) :
     (spherePow hn).branchValues ⊆ {((0 : ℂ) : OnePoint ℂ), ∞} := by
-  intro y hy
-  obtain ⟨x, rfl, hx⟩ := (mem_branchValues_iff _ _).1 hy
-  induction x using OnePoint.rec with
-  | infty => simp
-  | coe z =>
-    rcases eq_or_ne z 0 with rfl | hz
-    · simp [zero_pow hn]
-    · simp [localMultiplicity_onePointMap_pow_coe_of_ne_zero hn hz] at hx
+  refine (branchValues_spherePolynomial_subset _).trans (insert_subset_iff.2 ⟨by simp, ?_⟩)
+  rintro _ ⟨z, hz, rfl⟩
+  simp [derivative_X_pow, hn] at hz
+  simp [hz.1, zero_pow hn]
 
 end FiniteHolomorphicMap
 
