@@ -202,8 +202,9 @@ theorem mpullback_fiberTranslation_symplecticForm (α : SmoothForm I M ℝ 1) :
         SmoothForm.mpullback (π (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ))
           (Bundle.contMDiff_proj _) (mextDerivₗ I 1 α) := by
   rw [symplecticForm_eq_neg_mextDerivₗ, map_neg, ← SmoothForm.mextDerivₗ_mpullback,
-    mpullback_fiberTranslation_liouvilleForm, map_add, SmoothForm.mextDerivₗ_mpullback,
-    neg_add, sub_eq_add_neg]
+    mpullback_fiberTranslation_liouvilleForm]
+  simp only [map_add, SmoothForm.mextDerivₗ_mpullback]
+  abel
 
 /-- **Fibre translation by `α` is symplectic exactly when `α` is closed.** -/
 theorem mpullback_fiberTranslation_symplecticForm_eq_self_iff (α : SmoothForm I M ℝ 1) :
@@ -214,15 +215,17 @@ theorem mpullback_fiberTranslation_symplecticForm_eq_self_iff (α : SmoothForm I
     (Bundle.contMDiff_zeroSection ℝ (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) (F := E →L[ℝ] ℝ)
       (IB := I))
     (Bundle.contMDiff_proj (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ)) (zeroSection_proj _ _)
-  rw [mpullback_fiberTranslation_symplecticForm, sub_eq_self, map_eq_zero_iff _ hinj,
-    SmoothForm.isClosed_def, ← mextDerivₗ_apply I, ZeroMemClass.coe_eq_zero]
+  rw [mpullback_fiberTranslation_symplecticForm, sub_eq_self, map_eq_zero_iff _ hinj]
+  -- It remains to identify the vanishing of `dα` with closedness.
+  simp only [SmoothForm.isClosed_def, ← mextDerivₗ_apply I, ZeroMemClass.coe_eq_zero]
 
 /-- **Fibre negation reverses the sign of the canonical symplectic form.** -/
 theorem mpullback_fiberNeg_symplecticForm :
     SmoothForm.mpullback fiberNeg fiberNeg.contMDiff (symplecticForm I M) =
       -symplecticForm I M := by
   rw [symplecticForm_eq_neg_mextDerivₗ, map_neg, ← SmoothForm.mextDerivₗ_mpullback,
-    mpullback_fiberNeg_liouvilleForm, map_neg]
+    mpullback_fiberNeg_liouvilleForm]
+  simp
 
 end Symplectic
 
