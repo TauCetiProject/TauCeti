@@ -11,6 +11,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Parabolic.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Normalizer
 import Mathlib.Data.Fin.Tuple.Sort
 import TauCeti.Algebra.AlgebraicGroup.Borel.Conjugation
+import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Conjugation
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Dynamic.Weight.Parabolic.Geometry
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.UpperTriangular.Borel
 
@@ -92,9 +93,8 @@ theorem weightParabolicDefiningHopfIdeal_le_conjugate_upperTriangular_definingHo
       (toConv ((π : coordinateHopfAlgebra R N →ₐ[R] Q).comp
         (HopfAlgebra.pointConjugationAlgHom g))) =
       τ.reindexGL Q (pointsMulEquiv N (toConv (π : coordinateHopfAlgebra R N →ₐ[R] Q))) := by
-    rw [HopfAlgebra.comp_pointConjugationAlgHom, map_mul, map_mul, map_inv,
-      pointsMulEquiv_mapValue, MulEquiv.apply_symm_apply, Algebra.toRingHom_ofId,
-      map_permutationGL, permutationGL_mul_mul_inv]
+    rw [pointsMulEquiv_toConv_comp_pointConjugationAlgHom, map_permutationGL,
+      permutationGL_mul_mul_inv]
   have hle := HopfIdeal.conjugate_inv_le_of_mem_quotientPointsSubgroup_mkQuotient
     (UpperTriangular.definingHopfIdeal R N) (weightParabolicDefiningHopfIdeal R w) g
     ((mem_weightParabolicDefiningPointsSubgroup_iff_blockTriangular R w _).mpr (by
