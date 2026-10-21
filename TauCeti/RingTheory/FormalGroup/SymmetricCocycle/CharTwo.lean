@@ -37,8 +37,8 @@ classification over an arbitrary commutative ring and binomial-coefficient arith
 
 ## Main results
 
-* `TauCeti.lazardCocycle_eq_of_two_eq_zero`: if `2 = 0` in `R` and `n ≠ 0` is not a power of two,
-  then `C_n = (X + Y)ⁿ - Xⁿ - Yⁿ`.
+* `TauCeti.lazardCocycle_eq_add_pow_sub_pow_sub_pow_of_two_eq_zero`: if `2 = 0` in `R` and
+  `n ≠ 0` is not a power of two, then `C_n = (X + Y)ⁿ - Xⁿ - Yⁿ`.
 * `TauCeti.aeval_diag_lazardCocycle_two_pow`: if `2 = 0` in `R` and `k ≠ 0`, then
   `C_{2ᵏ}(a, a) = a^{2ᵏ}` for every element `a` of an `R`-algebra.
 * `TauCeti.existsUnique_eq_smul_add_pow_sub_pow_sub_pow_of_two_eq_zero`: if `2 = 0` in `R` and
@@ -66,8 +66,8 @@ variable {R : Type*} [CommRing R]
 /-- If `2 = 0` in `R` and `n ≠ 0` is not a power of two, the Lazard cocycle `C_n` is
 `(X + Y)ⁿ - Xⁿ - Yⁿ`: the greatest common divisor `d_n` of the `n.choose i`, `0 < i < n`, is odd,
 so `d_n = 1` in `R`. -/
-theorem lazardCocycle_eq_of_two_eq_zero (h2 : (2 : R) = 0) {n : ℕ} (hn0 : n ≠ 0)
-    (hn : ∀ k, n ≠ 2 ^ k) :
+theorem lazardCocycle_eq_add_pow_sub_pow_sub_pow_of_two_eq_zero (h2 : (2 : R) = 0) {n : ℕ}
+    (hn0 : n ≠ 0) (hn : ∀ k, n ≠ 2 ^ k) :
     lazardCocycle n R = (X 0 + X 1) ^ n - X 0 ^ n - X 1 ^ n := by
   have hodd : Odd (lazardGcd n) := by
     refine Nat.odd_iff.2 (Nat.two_dvd_ne_zero.1 fun h => ?_)
@@ -105,7 +105,7 @@ theorem existsUnique_eq_smul_add_pow_sub_pow_sub_pow_of_two_eq_zero (h2 : (2 : R
   have hn2 : 2 ≤ n := by
     have := hn 0
     omega
-  rw [← lazardCocycle_eq_of_two_eq_zero h2 hn0 hn]
+  rw [← lazardCocycle_eq_add_pow_sub_pow_sub_pow_of_two_eq_zero h2 hn0 hn]
   exact existsUnique_eq_smul_lazardCocycle hn2 hh hs hf
 
 /-- **The symmetric 2-cocycle lemma when `2 = 0`, at powers of two.** If `2 = 0` in `R`, a
