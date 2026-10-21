@@ -29,8 +29,7 @@ that are not finitely generated over the base, as in the proof of generic freene
 The rank of `R^k` at every prime is `k`, with no nontriviality hypothesis on `R`: a ring with a
 prime ideal is nontrivial.
 The support of a finitely presented flat module `M` is the basic open set of an idempotent `e`,
-and `M × R ⧸ (e)` has positive rank at every prime. Each locus where `M` has a given rank is
-likewise the basic open set of an idempotent.
+and `M × R ⧸ (e)` has positive rank at every prime.
 
 ## Main declarations
 
@@ -43,8 +42,6 @@ likewise the basic open set of an idempotent.
   module is the basic open set of an idempotent.
 * `Module.exists_rankAtStalk_prod_quotient_eq_max`: adding the complement of that support gives a
   module of positive rank at every prime.
-* `Module.exists_isIdempotentElem_basicOpen_eq_preimage_rankAtStalk`: the locus where such a module
-  has a given rank is the basic open set of an idempotent.
 
 ## References
 
@@ -139,19 +136,6 @@ theorem exists_isIdempotentElem_basicOpen_eq_support {R : Type*} (M : Type*) [Co
     exact (rankAtStalk_pos_iff_mem_support p).symm
   let U : TopologicalSpace.Clopens (PrimeSpectrum R) :=
     ⟨Module.support R M, hsupp ▸ ⟨isOpen_compl_iff.mp (hloc {n | 0 < n}ᶜ), hloc _⟩⟩
-  let e := PrimeSpectrum.isIdempotentElemEquivClopens.symm U
-  exact ⟨e.1, e.2,
-    congrArg SetLike.coe (PrimeSpectrum.basicOpen_isIdempotentElemEquivClopens_symm U)⟩
-
-/-- The locus where a finitely presented flat module has a given rank is cut out by an idempotent:
-it is a fibre of the locally constant rank function, hence clopen. -/
-theorem exists_isIdempotentElem_basicOpen_eq_preimage_rankAtStalk {R : Type*} (M : Type*)
-    [CommRing R] [AddCommGroup M] [Module R M] [Module.FinitePresentation R M] [Module.Flat R M]
-    (k : ℕ) :
-    ∃ e : R, IsIdempotentElem e ∧
-      (PrimeSpectrum.basicOpen e : Set (PrimeSpectrum R)) = rankAtStalk (R := R) M ⁻¹' {k} := by
-  let U : TopologicalSpace.Clopens (PrimeSpectrum R) :=
-    ⟨_, (isLocallyConstant_rankAtStalk (R := R) (M := M)).isClopen_fiber k⟩
   let e := PrimeSpectrum.isIdempotentElemEquivClopens.symm U
   exact ⟨e.1, e.2,
     congrArg SetLike.coe (PrimeSpectrum.basicOpen_isIdempotentElemEquivClopens_symm U)⟩
