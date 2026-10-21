@@ -99,9 +99,7 @@ theorem range_toSymmetricAlgebra (n : ℕ) :
     subst n
     refine ⟨⨂ₛ[R] i, l.get i, ?_⟩
     rw [toSymmetricAlgebra_tprod]
-    exact (List.prod_ofFn (f := fun i ↦ SymmetricAlgebra.ι R M (l.get i))).symm.trans
-      (congrArg List.prod (List.map_ofFn.symm.trans
-        (congrArg (List.map (SymmetricAlgebra.ι R M)) (List.ofFn_get l))))
+    simp
 
 variable {R M}
 
@@ -118,9 +116,9 @@ theorem toSymmetricAlgebra_symmetricPower_apply {κ : Type w} (b : Module.Basis 
   rw [map_prod, TauCeti.SymmetricAlgebra.equivMvPolynomial_symmetricAlgebraHomogeneous_apply]
   simp only [SymmetricAlgebra.equivMvPolynomial_ι_apply]
   rw [← List.prod_ofFn]
-  have hexp : (TauCeti.symEquivFinsuppDegree κ n (TauCeti.Sym.ofFn f)).1 =
+  have hexp : (TauCeti.Sym.equivFinsuppDegree κ n (TauCeti.Sym.ofFn f)).1 =
       (List.ofFn f : Multiset κ).toFinsupp := by
-    rw [TauCeti.coe_symEquivFinsuppDegree_apply, TauCeti.Sym.coe_ofFn]
+    rw [TauCeti.Sym.coe_equivFinsuppDegree_apply, TauCeti.Sym.coe_ofFn]
   rw [hexp]
   simpa only [Multiset.map_coe, Multiset.prod_coe, List.map_ofFn, Function.comp_def] using
     TauCeti.prod_map_X_eq_monomial (R := R) (List.ofFn f : Multiset κ)
@@ -176,7 +174,7 @@ theorem equivHomogeneous_tprod [Module.Free R M] (n : ℕ) (m : Fin n → M) :
 
 /-- The inverse homogeneous equivalence sends a product of generators to its pure tensor. -/
 @[simp]
-theorem equivHomogeneous_symm_apply [Module.Free R M] (n : ℕ) (m : Fin n → M)
+theorem equivHomogeneous_symm_prod_ι [Module.Free R M] (n : ℕ) (m : Fin n → M)
     (h : ∏ i, SymmetricAlgebra.ι R M (m i) ∈
       TauCeti.SymmetricAlgebra.homogeneousSubmodule R M n) :
     (equivHomogeneous (R := R) (M := M) n).symm ⟨∏ i, SymmetricAlgebra.ι R M (m i), h⟩ =

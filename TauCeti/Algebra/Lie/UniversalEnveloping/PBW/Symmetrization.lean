@@ -13,9 +13,9 @@ public import TauCeti.LinearAlgebra.SymmetricPower.Algebra
 
 When `n!` is a unit in the commutative base ring, averaging the ordered products of Lie
 generators defines a canonical linear map from the `n`th symmetric power to the enveloping
-algebra. Its leading PBW symbol is the product of the symmetric generators. For a free Lie
-algebra module this gives
-an injective map on every homogeneous symmetric-algebra component, splitting its PBW symbol.
+algebra. Its leading PBW symbol is the product of the symmetric generators. When `L` is free
+as an `R`-module, this gives an injective map on every homogeneous symmetric-algebra component,
+splitting its PBW symbol.
 
 This is the degreewise filtered comparison used to lift invariant symmetric polynomials to
 the enveloping algebra. Equivariance and assembly across all degrees are separate statements.
@@ -156,21 +156,26 @@ theorem pbwHomogeneousSymmetrization_mem_pbwFiltration (n : ℕ) (hn : IsUnit (n
   rw [pbwHomogeneousSymmetrization_apply]
   exact pbwSymmetrization_mem_pbwFiltration R L n hn _
 
+/-- Homogeneous symmetrization lands in the word filtration used for the PBW graded piece. -/
+theorem pbwHomogeneousSymmetrization_mem_wordFiltration (n : ℕ) (hn : IsUnit (n.factorial : R))
+    (p : homogeneousSubmodule R L n) :
+    pbwHomogeneousSymmetrization R L n hn p ∈ TauCeti.Algebra.wordFiltration (ι).toLinearMap n := by
+  simpa only [pbwFiltration_def] using
+    pbwHomogeneousSymmetrization_mem_pbwFiltration R L n hn p
+
 /-- Taking the leading PBW symbol of symmetrization recovers the canonical PBW image. -/
 @[simp↓] -- Take the symbol before expanding homogeneous symmetrization.
 theorem mk_pbwHomogeneousSymmetrization (n : ℕ) (hn : IsUnit (n.factorial : R))
     (p : homogeneousSubmodule R L n) :
     Submodule.Quotient.mk
       (⟨pbwHomogeneousSymmetrization R L n hn p,
-        by simpa only [pbwFiltration_def] using
-          pbwHomogeneousSymmetrization_mem_pbwFiltration R L n hn p⟩ :
+        pbwHomogeneousSymmetrization_mem_wordFiltration R L n hn p⟩ :
         TauCeti.Algebra.wordFiltration (ι).toLinearMap n) =
       pbwHomogeneousComponentMap R L n p := by
   let lhs : homogeneousSubmodule R L n →ₗ[R] PBWGradedPiece R L n :=
     (Submodule.mkQ (TauCeti.Algebra.wordFiltration.previousRestricted (ι).toLinearMap n)).comp
       ((pbwHomogeneousSymmetrization R L n hn).codRestrict _
-        (fun p ↦ by simpa only [pbwFiltration_def] using
-          pbwHomogeneousSymmetrization_mem_pbwFiltration R L n hn p))
+        (pbwHomogeneousSymmetrization_mem_wordFiltration R L n hn))
   suffices hl : lhs = pbwHomogeneousComponentMap R L n from LinearMap.congr_fun hl p
   apply (LinearMap.cancel_right
     (SymmetricPower.equivHomogeneous (R := R) (M := L) n).surjective).mp
@@ -181,6 +186,7 @@ theorem mk_pbwHomogeneousSymmetrization (n : ℕ) (hn : IsUnit (n.factorial : R)
       ((List.ofFn m).map (SymmetricAlgebra.ι R L)).prod := by
     simp [List.prod_ofFn]
   rw [SymmetricPower.equivHomogeneous_tprod]
+  -- Transport the list length before applying the component map, whose definition is not exposed.
   have hsymbol (l : List L) (hl : l.length = n) :
       pbwHomogeneousComponentMap R L n
           ⟨(l.map (SymmetricAlgebra.ι R L)).prod,
@@ -190,13 +196,11 @@ theorem mk_pbwHomogeneousSymmetrization (n : ℕ) (hn : IsUnit (n.factorial : R)
             (ι).toLinearMap hl.le⟩ : PBWGradedPiece R L n) := by
     subst n
     exact pbwHomogeneousComponentMap_prod_map_ι R L l
-  simp only [hprod]
-  rw [hsymbol (List.ofFn m) List.length_ofFn]
+  conv_rhs => simp only [hprod, hsymbol (List.ofFn m) List.length_ofFn]
   apply (Submodule.Quotient.eq _).mpr
   rw [TauCeti.Algebra.wordFiltration.mem_previousRestricted_iff]
   simp only [LinearMap.codRestrict_apply, Submodule.coe_sub]
-  simp only [← hprod]
-  rw [pbwHomogeneousSymmetrization_apply, SymmetricPower.equivHomogeneous_symm_apply]
+  rw [pbwHomogeneousSymmetrization_apply, SymmetricPower.equivHomogeneous_symm_prod_ι]
   simpa only [pbwFiltrationPrevious_def, List.map_ofFn, Function.comp_def] using
     pbwSymmetrization_tprod_sub_mem_pbwFiltrationPrevious R L n hn m
 
