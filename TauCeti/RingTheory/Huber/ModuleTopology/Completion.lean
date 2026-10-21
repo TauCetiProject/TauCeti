@@ -9,6 +9,8 @@ public import TauCeti.RingTheory.Huber.Completion.Noetherian
 public import TauCeti.RingTheory.Huber.ModuleTopology.Complete
 public import TauCeti.Topology.Algebra.Module.Completion
 
+import Mathlib.LinearAlgebra.TensorProduct.Pi
+import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 import TauCeti.Topology.Algebra.Nonarchimedean.Completion.Surjective
 import TauCeti.Topology.Algebra.Nonarchimedean.Pi
 import TauCeti.Topology.UniformSpace.AbstractCompletion
@@ -68,35 +70,31 @@ section Presentation
 
 variable {n : ℕ} (q : (Fin n → A) →ₗ[A] M)
 
-/-- The map `Âⁿ → Â ⊗[A] M`, `x ↦ ∑ xᵢ ⊗ q(eᵢ)`, induced by a presentation `q : Aⁿ → M`. -/
+/-- The map `Âⁿ → Â ⊗[A] M`, `x ↦ ∑ xᵢ ⊗ q(eᵢ)`, induced by a presentation `q : Aⁿ → M`: the base
+change of `q` along `A → Â`, read through `Â ⊗[A] Aⁿ ≃ Âⁿ`. -/
 private noncomputable def tensorOfPresentation :
     (Fin n → Completion A) →ₗ[Completion A] Completion A ⊗[A] M :=
-  Fintype.linearCombination (Completion A) fun i ↦
-    (1 : Completion A) ⊗ₜ q fun j ↦ if i = j then 1 else 0
+  q.baseChange (Completion A) ∘ₗ
+    (piScalarRight A (Completion A) (Completion A) (Fin n)).symm.toLinearMap
 
 private theorem tensorOfPresentation_apply (x : Fin n → Completion A) :
-    tensorOfPresentation q x = ∑ i, x i ⊗ₜ q fun j ↦ if i = j then 1 else 0 := by
-  simp [tensorOfPresentation, Fintype.linearCombination_apply, smul_tmul']
+    tensorOfPresentation q x = ∑ i, x i ⊗ₜ q (Pi.single i 1) := by
+  conv_lhs => rw [← Finset.univ_sum_single x]
+  simp [tensorOfPresentation]
 
 /-- `tensorOfPresentation q` sends the image of `v ∈ Aⁿ` to `1 ⊗ q v`. -/
 private theorem tensorOfPresentation_coe (v : Fin n → A) :
     tensorOfPresentation q (fun i ↦ (v i : Completion A)) = 1 ⊗ₜ q v := by
-  rw [tensorOfPresentation_apply, q.pi_apply_eq_sum_univ v, tmul_sum]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [tmul_smul, smul_tmul', ← Completion.coe_one, ← Completion.coe_smul, smul_eq_mul, mul_one]
+  have : (piScalarRight A (Completion A) (Completion A) (Fin n)).symm
+      (fun i ↦ (v i : Completion A)) = 1 ⊗ₜ v := by
+    rw [LinearEquiv.symm_apply_eq, piScalarRight_apply, piScalarRightHom_tmul]
+    ext i
+    rw [← Completion.coe_one, ← Completion.coe_smul, smul_eq_mul, mul_one]
+  simp [tensorOfPresentation, this]
 
 private theorem tensorOfPresentation_surjective (hq : Function.Surjective q) :
-    Function.Surjective (tensorOfPresentation q) := by
-  intro t
-  induction t using TensorProduct.inductionOn with
-  | tmul a m =>
-    obtain ⟨v, rfl⟩ := hq m
-    refine ⟨a • fun i ↦ (v i : Completion A), ?_⟩
-    rw [map_smul, tensorOfPresentation_coe, smul_tmul', smul_eq_mul, mul_one]
-  | add t t' ht ht' =>
-    obtain ⟨x, rfl⟩ := ht
-    obtain ⟨x', rfl⟩ := ht'
-    exact ⟨x + x', map_add _ x x'⟩
+    Function.Surjective (tensorOfPresentation q) :=
+  (LinearMap.baseChange_surjective _ hq).comp (LinearEquiv.surjective _)
 
 variable [UniformSpace M] [IsUniformAddGroup M] [IsModuleTopology A M]
   [UniformContinuousConstSMul A M]
@@ -104,7 +102,7 @@ variable [UniformSpace M] [IsUniformAddGroup M] [IsModuleTopology A M]
 private theorem continuous_ofTensorProduct_comp_tensorOfPresentation :
     Continuous (Completion.ofTensorProduct A M ∘ tensorOfPresentation q) := by
   have : Completion.ofTensorProduct A M ∘ tensorOfPresentation q = fun x ↦
-      ∑ i, Completion.ofTensorProduct A M (x i ⊗ₜ q fun j ↦ if i = j then 1 else 0) := by
+      ∑ i, Completion.ofTensorProduct A M (x i ⊗ₜ q (Pi.single i 1)) := by
     ext x
     simp [tensorOfPresentation_apply]
   rw [this]
@@ -228,5 +226,13 @@ theorem ofTensorProductEquiv_apply (P : PairOfDefinition A)
     [IsNoetherianRing P.ringOfDefinition] (t : Completion A ⊗[A] M) :
     P.ofTensorProductEquiv t = Completion.ofTensorProduct A M t :=
   (rfl)
+
+/-- The inverse of `ofTensorProductEquiv` sends the image of `m : M` in `M̂` to `1 ⊗ m`. -/
+@[simp]
+theorem ofTensorProductEquiv_symm_coe (P : PairOfDefinition A)
+    [IsNoetherianRing P.ringOfDefinition] (m : M) :
+    P.ofTensorProductEquiv.symm (m : Completion M) = 1 ⊗ₜ m := by
+  rw [LinearEquiv.symm_apply_eq, ofTensorProductEquiv_apply, ← Completion.coe_one,
+    Completion.ofTensorProduct_coe_tmul, one_smul]
 
 end TauCeti.Huber.PairOfDefinition
