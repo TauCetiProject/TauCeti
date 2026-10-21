@@ -73,7 +73,7 @@ instance : Module.Finite A a.representative :=
   a.representative_property.1
 
 instance : IsLocalRing (End a.representative) :=
-  isLocalRing_end_of_indecomposable (k := k) a.representative_property.2
+  isLocalRing_end_of_indecomposable (R := k) a.representative_property.2
 
 /-- For a representation-finite algebra, the quiver of irreducible morphisms of finitely
 generated modules has finitely many arrows in total. -/
