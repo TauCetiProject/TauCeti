@@ -56,8 +56,7 @@ theorem exactForms_succ_eq_closedForms_normedSpace (k : ℕ) :
   have hαs : IsSmoothForm 𝓘(ℝ, E) ∞ (α : RoughForm 𝓘(ℝ, E) E ℝ k) :=
     isSmoothForm_modelSpace_iff.mpr (contDiffOn_univ.mp hα)
   rw [exactForms_succ]
-  refine ⟨⟨α, mem_smoothForms.mpr ((isSmoothBundleForm_def ∞ _).mpr
-    ((isSmoothForm_def ∞ _).mp hαs))⟩, Subtype.ext (funext fun x ↦ ?_)⟩
+  refine ⟨⟨α, hαs.mem_smoothForms⟩, Subtype.ext (funext fun x ↦ ?_)⟩
   rw [mextDerivₗ_apply, mextDeriv_eq_extDeriv]
   exact hdα x (Set.mem_univ x)
 

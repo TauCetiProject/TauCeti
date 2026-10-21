@@ -151,6 +151,23 @@ theorem conformalConnectionTensor_rpow {u : M → ℝ} {x : M} (hu : MDiffAt u x
   simp only [conformalConnectionTensor_apply, smul_apply, hd, hgrad, Real.rpow_sub_one hux.ne']
   match_scalars <;> field_simp
 
+/-- The conformal connection tensor of an exponential factor `e^(2φ)` is the classical tensor
+`A(v, w) = dφ(w) v + dφ(v) w - ⟪v, w⟫ grad φ` of the conformal change `e^(2φ) g`. -/
+theorem conformalConnectionTensor_exp_two_mul_apply {φ : M → ℝ} {x : M} (hφ : MDiffAt φ x)
+    (v w : TangentSpace I x) :
+    conformalConnectionTensor I (fun y ↦ Real.exp (2 * φ y)) x v w =
+      mvfderiv I φ x w • v + mvfderiv I φ x v • w - inner ℝ v w • mgradient I φ x := by
+  have hgrad : mgradient I (fun y ↦ Real.exp (2 * φ y)) x =
+      (Real.exp (2 * φ x) * 2) • mgradient I φ x :=
+    mgradient_comp_hasDerivAt (f := φ) (g := fun t ↦ Real.exp (2 * t))
+      (by simpa using ((hasDerivAt_id (φ x)).const_mul 2).exp) hφ
+  have hd : ∀ v, mvfderiv I (fun y ↦ Real.exp (2 * φ y)) x v =
+      Real.exp (2 * φ x) * 2 * mvfderiv I φ x v := by
+    intro v
+    rw [← inner_mgradient, hgrad, real_inner_smul_left, inner_mgradient]
+  simp only [conformalConnectionTensor_apply, hd, hgrad]
+  match_scalars <;> field_simp
+
 end TauCeti.Manifold
 
 namespace Bundle.ContMDiffRiemannianMetric

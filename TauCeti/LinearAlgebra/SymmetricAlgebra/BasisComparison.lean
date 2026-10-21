@@ -28,6 +28,9 @@ the polynomial ring.
 * `Sym.equivFinsuppDegree`: degree-`n` multisets are exponent vectors of total degree `n`.
 * `Module.Basis.symmetricAlgebraHomogeneous`: the monomial basis of a homogeneous component of a
   symmetric algebra induced by a basis of the generating module.
+* `TauCeti.SymmetricAlgebra.instModuleFreeHomogeneousSubmodule`,
+  `TauCeti.SymmetricAlgebra.instModuleFiniteHomogeneousSubmodule`: the homogeneous components of
+  the symmetric algebra of a finite free module are finite free.
 -/
 
 public section
@@ -174,5 +177,17 @@ theorem homogeneousSubmoduleMapₛₗ_symmetricAlgebraHomogeneous {ι : Type w}
   simp
 
 end Semilinear
+
+/-- Each homogeneous component of the symmetric algebra of a free module is free, with the
+monomial basis `Module.Basis.symmetricAlgebraHomogeneous`. -/
+instance instModuleFreeHomogeneousSubmodule [Module.Free R M] (n : ℕ) :
+    Module.Free R (homogeneousSubmodule R M n) :=
+  .of_basis ((Module.Free.chooseBasis R M).symmetricAlgebraHomogeneous n)
+
+/-- Each homogeneous component of the symmetric algebra of a finite free module is finite: its
+monomial basis is indexed by the degree-`n` multisets of a finite basis. -/
+instance instModuleFiniteHomogeneousSubmodule [Module.Free R M] [Module.Finite R M] (n : ℕ) :
+    Module.Finite R (homogeneousSubmodule R M n) :=
+  .of_basis ((Module.Free.chooseBasis R M).symmetricAlgebraHomogeneous n)
 
 end TauCeti.SymmetricAlgebra

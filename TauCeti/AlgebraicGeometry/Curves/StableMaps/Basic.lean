@@ -172,6 +172,19 @@ theorem postcomp_ev {r : W ⟶ S} (h : V ⟶ W) (hh : h ≫ r = q) (i : Fin n) :
   -- By definition, the evaluation is `sᵢ ≫ F ≫ h`.
   (Category.assoc (F.curve.marking i) F.map h).symm
 
+/-- Postcomposition with the identity of the target does nothing. -/
+@[simp]
+theorem postcomp_id : F.postcomp (𝟙 V) (Category.id_comp q) = F := by
+  cases F
+  simp [postcomp]
+
+/-- Postcomposing twice is postcomposing with the composite. -/
+@[simp]
+theorem postcomp_postcomp {X : Scheme.{u}} {r : W ⟶ S} {t : X ⟶ S} (h : V ⟶ W)
+    (hh : h ≫ r = q) (h' : W ⟶ X) (hh' : h' ≫ t = r) :
+    (F.postcomp h hh).postcomp h' hh' = F.postcomp (h ≫ h') (by simp [hh', hh]) := by
+  simp [postcomp]
+
 /-- The **constant** prestable map on the pointed prestable family `P` through the section `σ`
 of the target: the composite of the structure morphism of `P` with `σ`. -/
 @[expose, simps curve map]
