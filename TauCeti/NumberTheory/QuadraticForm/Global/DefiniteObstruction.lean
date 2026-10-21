@@ -7,9 +7,9 @@ module
 
 public import TauCeti.NumberTheory.QuadraticForm.Global.Predicates
 public import TauCeti.NumberTheory.QuadraticForm.Global.Signature
-import TauCeti.NumberTheory.LocalField.QuadraticForm.Isotropy
+import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
 import TauCeti.NumberTheory.NumberField.Units.Signature.Integer
-import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
+import TauCeti.NumberTheory.QuadraticForm.Global.AnisotropicPlaces
 
 /-!
 # Isotropy at every completion but one real place
@@ -32,16 +32,14 @@ is regular and
 
 So isotropy at all completions but one does not imply global isotropy. If `K` has a second real
 place `w₁ ≠ w₀`, the form is indefinite at `w₁`, so indefiniteness at one real embedding does not
-imply global isotropy either. Over `ℚ`, with its single real place, the form is the sum of `n + 1`
-squares.
+imply global isotropy either. Over `ℚ`, with its single real place, one may take `a = 1`, giving
+the sum of `n + 1` squares.
 
 In rank at least five a regular form is isotropic at every finite place, so in these ranks only a
 real place can be the omitted one.
 
 ## Main results
 
-* `QuadraticForm.not_anisotropic_atFinitePlace_of_five_le_finrank`: a regular form of rank at least
-  five over a number field is isotropic at every finite place.
 * `TauCeti.NumberField.QuadraticForm.exists_anisotropic_and_not_anisotropic_away_from_realPlace`:
   for every real place `w₀` and every rank at least five, a regular form isotropic at every finite
   place and at every real place other than `w₀`, but anisotropic at `w₀` and over `K`.
@@ -57,23 +55,6 @@ public section
 noncomputable section
 
 open IsDedekindDomain NumberField NumberField.InfinitePlace QuadraticMap
-
-namespace QuadraticForm
-
-variable {K : Type*} [Field K] [NumberField K]
-variable {V : Type*} [AddCommGroup V] [Module K V]
-
-/-- A regular quadratic form of rank at least five over a number field is isotropic at every
-finite place. -/
-theorem not_anisotropic_atFinitePlace_of_five_le_finrank {Q : _root_.QuadraticForm K V}
-    (hQ : Q.Nondegenerate) (hV : 5 ≤ Module.finrank K V) (v : HeightOneSpectrum (𝓞 K)) :
-    ¬ (Q.atFinitePlace v).Anisotropic := by
-  have : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
-  let : Finite (𝓞 K ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
-  refine not_anisotropic_of_five_le_finrank _ (Nondegenerate.atFinitePlace hQ v) ?_
-  rwa [Module.finrank_baseChange]
-
-end QuadraticForm
 
 namespace TauCeti.NumberField.QuadraticForm
 
