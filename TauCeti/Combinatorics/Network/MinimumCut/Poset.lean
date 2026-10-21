@@ -95,7 +95,7 @@ abbrev ResidualComponent : Type u :=
   @Quiver.StronglyConnectedComponent V ⟨PositiveHom (residualCapacity lo hi f.toFun)⟩
 
 /-- The residual component of `f` containing a vertex. -/
-@[expose] def residualComponent (v : V) : f.ResidualComponent :=
+def residualComponent (v : V) : f.ResidualComponent :=
   @Quiver.StronglyConnectedComponent.mk V ⟨PositiveHom (residualCapacity lo hi f.toFun)⟩ v
 
 /-- The *free* residual components of `f`: those not reachable from the component of the source
@@ -115,6 +115,17 @@ theorem residualComponent_le_residualComponent {v w : V} :
   rw [positiveReachable_iff_nonempty_arrowWalk]
   exact @Quiver.StronglyConnectedComponent.mk_le_mk V
     ⟨PositiveHom (residualCapacity lo hi f.toFun)⟩ v w
+
+omit [DecidableEq V] [IsOrderedAddMonoid K] in
+/-- Two vertices have the same residual component exactly when each is positively reachable from
+the other for the residual capacities. -/
+@[simp]
+theorem residualComponent_eq_residualComponent {v w : V} :
+    f.residualComponent v = f.residualComponent w ↔
+      PositiveReachable (residualCapacity lo hi f.toFun) v w ∧
+        PositiveReachable (residualCapacity lo hi f.toFun) w v := by
+  rw [le_antisymm_iff, residualComponent_le_residualComponent,
+    residualComponent_le_residualComponent]
 
 omit [DecidableEq V] [IsOrderedAddMonoid K] in
 /-- Every residual component contains a vertex. -/
