@@ -248,6 +248,7 @@ theorem exists_eq_smul_twoCocycleOfBilinear_killingForm_iff {K L : Type*} [Field
       (_root_.LieModule.traceForm_lieInvariant K L L)
       (LinearMap.BilinForm.isSymm_iff.mpr (_root_.LieModule.traceForm_isSymm K L L))) ↔
       ∀ (x : L) (a : loopAlgebra K ℤ L), c.1 (1 ⊗ₜ x) a = 0 :=
+  have _i := _root_.LieModule.nontrivial_of_isIrreducible K L L
   exists_eq_smul_twoCocycleOfBilinear_iff _ _
     (fun _ hΦ => TauCeti.LieAlgebra.exists_eq_smul_killingForm hΦ) exists_killingForm_lie_ne_zero c
 
@@ -373,6 +374,7 @@ theorem twoCocycle_eq_span_killingForm_sup_range_d₁₂ [IsAlgClosed K]
       (K ∙ twoCochainOfBilinear K ℤ L (killingForm K L)
         (LinearMap.BilinForm.isSymm_iff.mpr (_root_.LieModule.traceForm_isSymm K L L))) ⊔
         LinearMap.range (d₁₂ K _ _) :=
+  have _i := _root_.LieModule.nontrivial_of_isIrreducible K L L
   twoCocycle_eq_span_sup_range_d₁₂ (_root_.LieModule.traceForm_lieInvariant K L L) _
     (fun _ hΦ => TauCeti.LieAlgebra.exists_eq_smul_killingForm hΦ) exists_killingForm_lie_ne_zero
 
