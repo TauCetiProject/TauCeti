@@ -58,20 +58,12 @@ theorem iterate_leftInvariantDerivation_apply (d : Derivation R H (CounitAlgebra
     (leftInvariantDerivation d)^[n] h =
       tensorComponent (Coalgebra.counit (R := R) ∘ₗ (leftInvariantDerivation d).toLinearMap ^ n)
         (Coalgebra.comul (R := R) h) := by
-  set D := leftInvariantDerivation d
-  have hcomul : Coalgebra.comul (R := R) (D^[n] h) =
-      (D.toLinearMap ^ n).lTensor H (Coalgebra.comul (R := R) h) := by
-    induction n with
-    | zero => simp [Module.End.one_eq_id]
-    | succ n ih =>
-      rw [Function.iterate_succ_apply', comul_leftInvariantDerivation, ih, pow_succ',
-        LinearMap.lTensor_mul, Module.End.mul_apply]
   -- The counit axiom recovers `Dⁿ h` from its comultiplication.
   have hcounit := congrArg (TensorProduct.rid R H)
-    (Coalgebra.lTensor_counit_comul (R := R) (D^[n] h))
+    (Coalgebra.lTensor_counit_comul (R := R) ((leftInvariantDerivation d)^[n] h))
   rw [TensorProduct.rid_tmul, one_smul] at hcounit
-  rw [← hcounit, hcomul, ← LinearMap.lTensor_comp_apply, tensorComponent_def,
-    LinearMap.comp_apply, LinearEquiv.coe_coe]
+  rw [← hcounit, comul_iterate_leftInvariantDerivation, ← LinearMap.lTensor_comp_apply,
+    tensorComponent_def, LinearMap.comp_apply, LinearEquiv.coe_coe]
 
 variable [Algebra ℚ H]
 
@@ -115,8 +107,8 @@ theorem taylorExp_leftInvariantDerivation_apply
   -- comultiplication factor of `h`.
   choose m hm using hd
   let N := m h + ∑ i ∈ 𝓡.index, m (𝓡.right i)
-  have hN : ∀ x, m x ≤ N → D^[N] x = 0 := fun x hx =>
-    D.iterate_apply_eq_zero_of_le (hm x) hx
+  have hN : ∀ x, m x ≤ N → D^[N] x = 0 := fun x hx => by
+    rw [← Nat.sub_add_cancel hx, Function.iterate_add_apply, hm, iterate_map_zero]
   have hright : ∀ i ∈ 𝓡.index, D^[N] (𝓡.right i) = 0 := fun i hi =>
     hN _ (le_add_left (Finset.single_le_sum (fun j _ => Nat.zero_le (m (𝓡.right j))) hi))
   have hexp : ∀ i ∈ 𝓡.index, expPoint d hd (𝓡.right i) =

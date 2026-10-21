@@ -19,16 +19,13 @@ derivatives `MvPolynomial.pderiv i (3 * X 0 ^ 2)`.
 
 Iterates of a derivation remain linear over the scalars, so they commute with finite scalar
 linear combinations. On products they satisfy the general Leibniz rule
-`Dⁿ (a * b) = ∑ (n choose i) Dⁱ a Dⁿ⁻ⁱ b`, so a product of elements killed by iterates of `D` is
-again killed by an iterate of `D`.
+`Dⁿ (a * b) = ∑ (n choose i) Dⁱ a Dⁿ⁻ⁱ b`.
 
 ## Main results
 
 * `Derivation.map_ofNat`: a derivation vanishes on numeric literals.
 * `Derivation.iterate_sum_smul`: iterated differentiation commutes with scalar linear combinations.
 * `Derivation.iterate_apply_mul`: the general Leibniz rule for iterates of a derivation.
-* `Derivation.iterate_apply_mul_eq_zero`: a product of elements killed by `D^[m]` and `D^[n]` is
-  killed by `D^[m + n]`.
 -/
 
 public section
@@ -66,21 +63,5 @@ theorem iterate_apply_mul (D : Derivation R A A) (n : ℕ) (a b : A) :
     congr 1
     refine Finset.sum_congr rfl fun ij hij => ?_
     rw [n.choose_symm_of_eq_add (Finset.mem_antidiagonal.1 hij).symm, mul_comm]
-
-/-- An iterate of a derivation which kills an element kills it from then on. -/
-theorem iterate_apply_eq_zero_of_le (D : Derivation R A A) {a : A} {m n : ℕ}
-    (hm : D^[m] a = 0) (hmn : m ≤ n) : D^[n] a = 0 := by
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hmn
-  rw [add_comm, Function.iterate_add_apply, hm, iterate_map_zero]
-
-/-- A product of elements killed by the iterates `D^[m]` and `D^[n]` is killed by `D^[m + n]`. -/
-theorem iterate_apply_mul_eq_zero (D : Derivation R A A) {a b : A} {m n : ℕ}
-    (ha : D^[m] a = 0) (hb : D^[n] b = 0) : D^[m + n] (a * b) = 0 := by
-  rw [iterate_apply_mul]
-  refine Finset.sum_eq_zero fun ij hij => ?_
-  rw [Finset.mem_antidiagonal] at hij
-  rcases le_or_gt m ij.1 with h | h
-  · rw [D.iterate_apply_eq_zero_of_le ha h, zero_mul, smul_zero]
-  · rw [D.iterate_apply_eq_zero_of_le hb (by omega), mul_zero, smul_zero]
 
 end Derivation

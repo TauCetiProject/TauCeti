@@ -42,6 +42,8 @@ tangent space as the ambient group. This is the infinitesimal input to Cartier's
 * `TauCeti.Bialgebra.counit_leftInvariantDerivation`: its value at the identity is the tangent
   vector.
 * `TauCeti.Bialgebra.comul_leftInvariantDerivation`: its invariance under left translations.
+* `TauCeti.Bialgebra.comul_iterate_leftInvariantDerivation`: the same invariance for its
+  iterates.
 * `TauCeti.Bialgebra.eq_leftInvariantDerivation`: a left-invariant derivation is determined
   by its value at the identity.
 * `BialgHom.map_leftInvariantDerivation`: invariant derivations intertwine a
@@ -144,6 +146,18 @@ theorem comul_leftInvariantDerivation (d : Derivation R H (CounitAlgebra R H R))
   rw [leftInvariantDerivation_apply, hD, LinearMap.lTensor_comp, LinearMap.comp_apply,
     ← LinearMap.tensorComponent_assoc_symm,
     Coalgebra.coassoc_symm_apply, LinearMap.rTensor_def, tensorComponent_map, LinearMap.comp_id]
+
+/-- **Iterated invariant derivations commute with left translations**:
+`Δ ∘ Dⁿ = (id ⊗ Dⁿ) ∘ Δ`. -/
+theorem comul_iterate_leftInvariantDerivation (d : Derivation R H (CounitAlgebra R H R)) (n : ℕ)
+    (h : H) :
+    Coalgebra.comul (R := R) ((leftInvariantDerivation d)^[n] h) =
+      ((leftInvariantDerivation d).toLinearMap ^ n).lTensor H (Coalgebra.comul (R := R) h) := by
+  induction n with
+  | zero => simp [Module.End.one_eq_id]
+  | succ n ih =>
+    rw [Function.iterate_succ_apply', comul_leftInvariantDerivation, ih, pow_succ',
+      LinearMap.lTensor_mul, Module.End.mul_apply]
 
 /-- A left-invariant derivation with value `d` at the identity is the left-invariant
 extension of `d`. -/

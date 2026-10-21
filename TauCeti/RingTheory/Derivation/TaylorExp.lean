@@ -7,9 +7,9 @@ module
 
 public import Mathlib.Algebra.Polynomial.Derivation
 public import Mathlib.Algebra.Polynomial.Taylor
-public import Mathlib.RingTheory.Adjoin.Basic
 public import TauCeti.RingTheory.Derivation.Basic
 import Mathlib.Algebra.Module.Rat
+import TauCeti.Algebra.Lie.Derivation.LocallyNilpotent
 import Mathlib.RingTheory.Adjoin.Polynomial.Basic
 import Mathlib.Tactic.FieldSimp
 
@@ -33,13 +33,11 @@ expansion `a ↦ ∑ (Dⁿ a / n!) Xⁿ` is an algebra homomorphism into the pol
 Taylor exponential is its evaluation at `X = 1`.
 
 If a locally nilpotent derivation maps an ideal into itself, so does its Taylor exponential.
-Local nilpotence may be checked on algebra generators. For the derivative `d / dX` of a
+For the derivative `d / dX` of a
 polynomial ring, scaled by `r`, the Taylor exponential is the Taylor shift `p ↦ p (X + r)`.
 
 ## Main declarations
 
-* `Derivation.exists_iterate_apply_eq_zero_of_adjoin_eq_top`: a derivation which is locally
-  nilpotent on a set of algebra generators is locally nilpotent.
 * `Derivation.taylorExpPolynomial`: the Taylor expansion `a ↦ ∑ (Dⁿ a / n!) Xⁿ` of a locally
   nilpotent derivation, as an algebra homomorphism into `A[X]`.
 * `Derivation.taylorExp`: the Taylor exponential of a locally nilpotent derivation, as an algebra
@@ -67,29 +65,7 @@ open scoped Nat
 
 namespace Derivation
 
-variable {R A : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
-
-/-- **Local nilpotence can be checked on generators.** If every element of a set generating `A`
-as an `R`-algebra is killed by some iterate of a derivation, then so is every element of `A`. -/
-theorem exists_iterate_apply_eq_zero_of_adjoin_eq_top (D : Derivation R A A) {s : Set A}
-    (hs : Algebra.adjoin R s = ⊤) (hD : ∀ x ∈ s, ∃ n, D^[n] x = 0) (a : A) :
-    ∃ n, D^[n] a = 0 := by
-  have ha : a ∈ Algebra.adjoin R s := hs ▸ Algebra.mem_top
-  induction ha using Algebra.adjoin_induction with
-  | mem x hx => exact hD x hx
-  | algebraMap r =>
-    refine ⟨1, ?_⟩
-    rw [Function.iterate_one, map_algebraMap]
-  | add x y _ _ hx hy =>
-    obtain ⟨m, hm⟩ := hx
-    obtain ⟨n, hn⟩ := hy
-    refine ⟨max m n, ?_⟩
-    rw [iterate_map_add, D.iterate_apply_eq_zero_of_le hm (le_max_left m n),
-      D.iterate_apply_eq_zero_of_le hn (le_max_right m n), add_zero]
-  | mul x y _ _ hx hy =>
-    obtain ⟨m, hm⟩ := hx
-    obtain ⟨n, hn⟩ := hy
-    exact ⟨m + n, D.iterate_apply_mul_eq_zero hm hn⟩
+variable {R : Type*} [CommSemiring R]
 
 section TaylorExp
 
@@ -129,8 +105,9 @@ private theorem coeff_taylorPolynomial (a : A) (n : ℕ) :
   rw [sum_ite_eq']
   split_ifs with h
   · rfl
-  · rw [mem_range] at h
-    rw [D.iterate_apply_eq_zero_of_le (Nat.find_spec (hD a)) (not_lt.mp h), smul_zero]
+  · rw [mem_range, not_lt] at h
+    rw [← Nat.sub_add_cancel h, Function.iterate_add_apply, Nat.find_spec (hD a),
+      iterate_map_zero, smul_zero]
 
 /-- The **Taylor expansion** `a ↦ ∑ (Dⁿ a / n!) Xⁿ` of a locally nilpotent derivation `D`, an
 algebra homomorphism into `A[X]`. Its evaluation at `X = 1` is the Taylor exponential. -/
@@ -181,17 +158,18 @@ theorem aeval_one_taylorExpPolynomial (a : A) :
 exponential of `a` is the sum of its first `n` Taylor terms. -/
 theorem taylorExp_apply_eq_sum {a : A} {n : ℕ} (hn : D^[n] a = 0) :
     taylorExp D hD a = ∑ i ∈ range n, (i ! : ℚ)⁻¹ • D^[i] a := by
-  classical
-  -- `taylorExp` evaluates the Taylor polynomial at `1`; its terms are the Taylor terms below
-  -- the least iterate killing `a`.
-  have h : taylorExp D hD a = ∑ i ∈ range (Nat.find (hD a)), (i ! : ℚ)⁻¹ • D^[i] a := by
-    change aeval (1 : A) (taylorPolynomial D hD a) = _
-    simp only [taylorPolynomial, map_sum, aeval_monomial, Algebra.algebraMap_self,
-      RingHom.id_apply, one_pow, mul_one]
-  rw [h]
-  refine sum_subset (range_mono (Nat.find_min' (hD a) hn)) fun i _ hi => ?_
-  rw [mem_range, not_lt] at hi
-  rw [D.iterate_apply_eq_zero_of_le (Nat.find_spec (hD a)) hi, smul_zero]
+  -- The Taylor coefficients vanish from `n` on, so the Taylor expansion is supported in
+  -- `range n`.
+  have hsupp : (taylorExpPolynomial D hD a).support ⊆ range n := fun i hi => by
+    rw [mem_support_iff, coeff_taylorExpPolynomial] at hi
+    rw [mem_range]
+    by_contra! h
+    rw [← Nat.sub_add_cancel h, Function.iterate_add_apply, hn, iterate_map_zero,
+      smul_zero] at hi
+    exact hi rfl
+  rw [← aeval_one_taylorExpPolynomial, aeval_def, eval₂_eq_sum,
+    Polynomial.sum_eq_of_subset _ (fun i => by rw [map_zero, zero_mul]) hsupp]
+  simp
 
 /-- The Taylor exponential of the zero derivation is the identity. -/
 @[simp]
@@ -241,9 +219,15 @@ variable {R : Type*} [CommRing R]
 polynomial. -/
 theorem exists_iterate_smul_derivative'_apply_eq_zero (r : R) (p : R[X]) :
     ∃ n, (r • derivative' : Derivation R R[X] R[X])^[n] p = 0 := by
-  refine Derivation.exists_iterate_apply_eq_zero_of_adjoin_eq_top _ adjoin_X ?_ p
-  rintro x rfl
-  exact ⟨2, by simp⟩
+  set D : Derivation R R[X] R[X] := r • derivative'
+  -- Local nilpotence on the generator `X` extends to all of `R[X]`.
+  have hD : ⇑(TauCeti.derivationEquivDerivationLieAlgebra D : Module.End R R[X]) = D :=
+    funext (TauCeti.derivationEquivDerivationLieAlgebra_apply D)
+  simpa only [Module.End.pow_apply, hD] using
+    TauCeti.derivationLieAlgebra.exists_pow_apply_eq_zero_of_mem_adjoin
+      (TauCeti.derivationEquivDerivationLieAlgebra D) (s := {X})
+      (fun x hx => ⟨2, by rw [Set.mem_singleton_iff.1 hx, Module.End.pow_apply, hD]; simp [D]⟩)
+      (by rw [adjoin_X]; exact Algebra.mem_top)
 
 variable [Algebra ℚ R]
 
