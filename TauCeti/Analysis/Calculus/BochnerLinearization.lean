@@ -13,6 +13,7 @@ public import Mathlib.Topology.OpenPartialHomeomorph.Continuity
 public import Mathlib.Topology.OpenPartialHomeomorph.IsImage
 public import Mathlib.RepresentationTheory.Continuous.Basic
 public import Mathlib.RepresentationTheory.Invariants
+public import TauCeti.Topology.Algebra.GroupAction.GermKernel
 import TauCeti.Algebra.BigOperators.Finset.Average
 import TauCeti.Topology.OpenPartialHomeomorph.MulAction
 import TauCeti.RepresentationTheory.Invariants
@@ -70,9 +71,9 @@ identity.
   a finite group action whose conjugated maps have strict derivatives `σ g` for a representation
   `σ`, there is a chart with `G`-invariant domain, centred at the point, with derivative the
   identity, in which `g` acts as `σ g`.
-* `OpenPartialHomeomorph.map_eq_one_iff_eventually_smul_eq`: the derivative representation
-  detects the ineffective kernel. An element of `G` acts as the identity near the fixed point
-  exactly when its derivative there is the identity.
+* `OpenPartialHomeomorph.map_eq_one_iff_mem_germKernel`: the derivative representation
+  detects the ineffective kernel. An element of `G` lies in the germ kernel at the fixed point,
+  that is, acts as the identity near it, exactly when its derivative there is the identity.
 
 ## References
 
@@ -450,12 +451,13 @@ theorem exists_equivariant_chart (χ : OpenPartialHomeomorph X E) {x : X} (hxχ 
 
 /-- **The derivative representation detects the ineffective kernel.** In the setting of
 `OpenPartialHomeomorph.exists_equivariant_chart`, an element of `G` acts as the identity near the
-fixed point `x` exactly when its derivative `σ g` at `x`, in the coordinates of `χ`, is the
-identity. -/
-theorem map_eq_one_iff_eventually_smul_eq (χ : OpenPartialHomeomorph X E) {x : X}
+fixed point `x`, that is, lies in the germ kernel `MulAction.germKernel G x`, exactly when its
+derivative `σ g` at `x`, in the coordinates of `χ`, is the identity. -/
+theorem map_eq_one_iff_mem_germKernel (χ : OpenPartialHomeomorph X E) {x : X}
     (hxχ : x ∈ χ.source) (hx : ∀ g : G, g • x = x) (σ : ContRepresentation 𝕜 G E)
     (hσ : ∀ g : G, HasStrictFDerivAt (χ ∘ (g • ·) ∘ χ.symm) (σ g) (χ x)) (g : G) :
-    σ g = 1 ↔ ∀ᶠ y in 𝓝 x, g • y = y := by
+    σ g = 1 ↔ g ∈ MulAction.germKernel G x := by
+  rw [MulAction.mem_germKernel]
   refine ⟨fun h => ?_, fun h => ?_⟩
   · -- the equivariant chart turns `g • y = y` into `σ g (e y) = e y`
     obtain ⟨e, hxe, -, -, he, -⟩ := χ.exists_equivariant_chart hxχ hx σ hσ
