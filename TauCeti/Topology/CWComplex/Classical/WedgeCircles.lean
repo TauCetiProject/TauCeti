@@ -39,12 +39,12 @@ characteristic map is continuous on its open cell because the closed interval is
 
 ## Main results
 
-* `TauCeti.WedgeSum.map_circleCellOneEquiv_symm`: the characteristic maps of the `1`-cells are
-  the maps `circleCellMap s`.
-* `TauCeti.WedgeSum.closedCell_circleCellOneEquiv_symm`,
-  `TauCeti.WedgeSum.openCell_circleCellOneEquiv_symm`: the closed `1`-cell of `s` is the `s`-th
-  circle, and the open `1`-cell is that circle without the wedge point.
-* `TauCeti.WedgeSum.cellFrontier_circleCellOneEquiv_symm`: the frontier of every `1`-cell is the
+* `TauCeti.WedgeSum.map_one_circleCWComplex`: the characteristic map of the `1`-cell indexed by
+  `s` (through `circleCellOneEquiv`) is `circleCellMap s`.
+* `TauCeti.WedgeSum.closedCell_one_circleCWComplex`,
+  `TauCeti.WedgeSum.openCell_one_circleCWComplex`: the closed `1`-cell indexed by `s` is the
+  `s`-th circle, and the open `1`-cell is that circle without the wedge point.
+* `TauCeti.WedgeSum.cellFrontier_one_circleCWComplex`: the frontier of every `1`-cell is the
   wedge point.
 * `TauCeti.WedgeSum.map_zero_circleCWComplex`: the `0`-cell is the wedge point.
 * `TauCeti.WedgeSum.isEmpty_cell_circleCWComplex`: there are no cells of dimension at least `2`.
@@ -71,16 +71,6 @@ namespace WedgeSum
 
 variable {S : Type u}
 
-private lemma mem_ball_fin_one {x : Fin 1 → ℝ} : x ∈ ball 0 1 ↔ -1 < x 0 ∧ x 0 < 1 := by
-  simp [abs_lt]
-
-private lemma mem_closedBall_fin_one {x : Fin 1 → ℝ} :
-    x ∈ closedBall 0 1 ↔ -1 ≤ x 0 ∧ x 0 ≤ 1 := by
-  simp [abs_le]
-
-private lemma mem_sphere_fin_one {x : Fin 1 → ℝ} : x ∈ sphere 0 1 ↔ |x 0| = 1 := by
-  simp
-
 /-- The map wrapping `[-1, 1]` once around the circle, starting and ending at `1`. -/
 private def circleWrap (x : Fin 1 → ℝ) : Circle :=
   Circle.exp (π * x 0 + π)
@@ -90,7 +80,7 @@ private lemma continuous_circleWrap : Continuous circleWrap :=
 
 /-- A point of the open interval is not sent to `1`. -/
 private lemma circleWrap_ne_one {x : Fin 1 → ℝ} (hx : x ∈ ball 0 1) : circleWrap x ≠ 1 := by
-  rw [mem_ball_fin_one] at hx
+  replace hx : -1 < x 0 ∧ x 0 < 1 := by simpa [Real.ball_eq_Ioo] using Pi.mem_ball_unique.1 hx
   intro h
   obtain ⟨n, hn⟩ := Circle.exp_eq_one.1 h
   have h0 : (0 : ℝ) < n := by nlinarith [pi_pos]
@@ -100,16 +90,16 @@ private lemma circleWrap_ne_one {x : Fin 1 → ℝ} (hx : x ∈ ball 0 1) : circ
 /-- Both end points of the interval are sent to `1`. -/
 private lemma circleWrap_of_mem_sphere {x : Fin 1 → ℝ} (hx : x ∈ sphere 0 1) :
     circleWrap x = 1 := by
-  rw [mem_sphere_fin_one] at hx
+  replace hx : |x 0| = 1 := by simpa [Real.dist_eq] using Pi.mem_sphere_unique.1 hx
   rcases abs_eq (zero_le_one' ℝ) |>.1 hx with h | h
   · rw [circleWrap, h, mul_one, ← two_mul, Circle.exp_two_pi]
   · rw [circleWrap, h, mul_neg_one, neg_add_cancel, Circle.exp_zero]
 
 private lemma injOn_circleWrap : InjOn circleWrap (ball 0 1) := by
   intro x hx y hy h
-  rw [mem_ball_fin_one] at hx hy
-  have hmem {t : ℝ} (ht : -1 < t ∧ t < 1) : π * t + π ∈ Ico 0 (2 * π) :=
-    ⟨by nlinarith [pi_pos], by nlinarith [pi_pos]⟩
+  have hmem {z : Fin 1 → ℝ} (hz : z ∈ ball 0 1) : π * z 0 + π ∈ Ico 0 (2 * π) := by
+    replace hz : -1 < z 0 ∧ z 0 < 1 := by simpa [Real.ball_eq_Ioo] using Pi.mem_ball_unique.1 hz
+    exact ⟨by nlinarith [pi_pos], by nlinarith [pi_pos]⟩
   have hxy := Circle.exp_injOn_Ico (by rw [sub_zero]) (hmem hx) (hmem hy) h
   funext i
   rw [Subsingleton.elim i 0]
@@ -122,9 +112,10 @@ private lemma image_circleWrap_closedBall : circleWrap '' closedBall 0 1 = univ 
     rw [Circle.periodic_exp.image_Icc two_pi_pos, Circle.exp_surjective.range_eq]
     exact mem_univ z
   refine ⟨fun _ ↦ r / π - 1, ?_, ?_⟩
-  · refine mem_closedBall_fin_one.2 ⟨?_, ?_⟩
-    · linarith [div_nonneg hr0 pi_pos.le]
-    · linarith [(div_le_iff₀ pi_pos).2 (by linarith : r ≤ 2 * π)]
+  · have hx : -1 ≤ r / π - 1 ∧ r / π - 1 ≤ 1 :=
+      ⟨by linarith [div_nonneg hr0 pi_pos.le],
+        by linarith [(div_le_iff₀ pi_pos).2 (by linarith : r ≤ 2 * π)]⟩
+    exact Pi.mem_closedBall_unique.2 (by simpa [Real.closedBall_eq_Icc] using hx)
   · simp [circleWrap, mul_sub, mul_div_cancel₀ r pi_pos.ne']
 
 variable (S) in
@@ -269,7 +260,7 @@ private lemma mapsTo_circleCellMaps (n : ℕ) (i : CircleCell S n) :
 
 /-- **The CW structure on a wedge of circles.** The wedge of circles indexed by `S` has one
 `0`-cell, the wedge point, and one `1`-cell for each `s : S`, with characteristic map
-`TauCeti.WedgeSum.circleCellMap s` (`TauCeti.WedgeSum.map_circleCellOneEquiv_symm`). -/
+`TauCeti.WedgeSum.circleCellMap s` (`TauCeti.WedgeSum.map_one_circleCWComplex`). -/
 @[instance_reducible]
 def circleCWComplex : CWComplex (univ : Set (WedgeSum fun _ : S ↦ (1 : Circle))) where
   cell := CircleCell S
@@ -307,37 +298,43 @@ attribute [instance] circleCWComplex
 def circleCellOneEquiv : cell (univ : Set (WedgeSum fun _ : S ↦ (1 : Circle))) 1 ≃ S :=
   Equiv.refl S
 
-/-- The characteristic map of the `1`-cell of `s` is `TauCeti.WedgeSum.circleCellMap s`. -/
+/-- The characteristic map of the `1`-cell `i` is `TauCeti.WedgeSum.circleCellMap` of the
+corresponding index `circleCellOneEquiv i`. -/
 @[simp]
-theorem map_circleCellOneEquiv_symm (s : S) :
-    map (C := (univ : Set (WedgeSum fun _ : S ↦ (1 : Circle)))) 1 (circleCellOneEquiv.symm s) =
-      circleCellMap S s :=
+theorem map_one_circleCWComplex (i : cell (univ : Set (WedgeSum fun _ : S ↦ (1 : Circle))) 1) :
+    map (C := (univ : Set (WedgeSum fun _ : S ↦ (1 : Circle)))) 1 i =
+      circleCellMap S (circleCellOneEquiv i) :=
   (rfl)
 
-/-- The closed `1`-cell of `s` is the `s`-th circle. -/
+/-- The closed `1`-cell `i` is the circle indexed by `circleCellOneEquiv i`. -/
 @[simp]
-theorem closedCell_circleCellOneEquiv_symm (s : S) :
-    closedCell (C := (univ : Set (WedgeSum fun _ : S ↦ (1 : Circle)))) 1
-      (circleCellOneEquiv.symm s) = range (incl (fun _ : S ↦ (1 : Circle)) s) :=
-  image_circleCellMap_closedBall s
+theorem closedCell_one_circleCWComplex
+    (i : cell (univ : Set (WedgeSum fun _ : S ↦ (1 : Circle))) 1) :
+    closedCell (C := (univ : Set (WedgeSum fun _ : S ↦ (1 : Circle)))) 1 i =
+      range (incl (fun _ : S ↦ (1 : Circle)) (circleCellOneEquiv i)) :=
+  image_circleCellMap_closedBall (circleCellOneEquiv i)
 
-/-- The open `1`-cell of `s` is the `s`-th circle without the wedge point. -/
+/-- The open `1`-cell `i` is the circle indexed by `circleCellOneEquiv i` without the wedge
+point. -/
 @[simp]
-theorem openCell_circleCellOneEquiv_symm (s : S) :
-    openCell (C := (univ : Set (WedgeSum fun _ : S ↦ (1 : Circle)))) 1
-      (circleCellOneEquiv.symm s) =
-      range (incl (fun _ : S ↦ (1 : Circle)) s) \ {base (fun _ : S ↦ (1 : Circle))} :=
-  image_circleCellMap_ball s
+theorem openCell_one_circleCWComplex
+    (i : cell (univ : Set (WedgeSum fun _ : S ↦ (1 : Circle))) 1) :
+    openCell (C := (univ : Set (WedgeSum fun _ : S ↦ (1 : Circle)))) 1 i =
+      range (incl (fun _ : S ↦ (1 : Circle)) (circleCellOneEquiv i)) \
+        {base (fun _ : S ↦ (1 : Circle))} :=
+  image_circleCellMap_ball (circleCellOneEquiv i)
 
 /-- The frontier of every `1`-cell is the wedge point: each `1`-cell is a loop. -/
 @[simp]
-theorem cellFrontier_circleCellOneEquiv_symm (s : S) :
-    cellFrontier (C := (univ : Set (WedgeSum fun _ : S ↦ (1 : Circle)))) 1
-      (circleCellOneEquiv.symm s) = {base (fun _ : S ↦ (1 : Circle))} := by
-  have h1 : (fun _ ↦ 1 : Fin 1 → ℝ) ∈ sphere 0 1 := by
-    rw [mem_sphere_fin_one, abs_one]
-  refine subset_antisymm (image_subset_iff.2 fun x hx ↦ circleCellMap_of_mem_sphere s hx)
-    (singleton_subset_iff.2 ⟨_, h1, circleCellMap_of_mem_sphere s h1⟩)
+theorem cellFrontier_one_circleCWComplex
+    (i : cell (univ : Set (WedgeSum fun _ : S ↦ (1 : Circle))) 1) :
+    cellFrontier (C := (univ : Set (WedgeSum fun _ : S ↦ (1 : Circle)))) 1 i =
+      {base (fun _ : S ↦ (1 : Circle))} := by
+  have h1 : (fun _ ↦ 1 : Fin 1 → ℝ) ∈ sphere 0 1 :=
+    Pi.mem_sphere_unique.2 (by simp)
+  refine subset_antisymm
+    (image_subset_iff.2 fun x hx ↦ circleCellMap_of_mem_sphere (circleCellOneEquiv i) hx)
+    (singleton_subset_iff.2 ⟨_, h1, circleCellMap_of_mem_sphere (circleCellOneEquiv i) h1⟩)
 
 /-- The wedge of circles has a single `0`-cell. -/
 instance : Unique (cell (univ : Set (WedgeSum fun _ : S ↦ (1 : Circle))) 0) :=
