@@ -172,6 +172,25 @@ section SquareIntegrable
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
   {A : ℝ → F →L[ℝ] F}
 
+/-- The projection `prev` is additive. -/
+private theorem prev_add
+    (u w : WeakDerivStep volume ⊤ 2
+      (ContinuousLinearMap.id ℝ (Lp F 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
+    prev _ (u + w) = prev _ u + prev _ w := by
+  simp only [← prevL_apply, map_add]
+
+/-- The projection `prev` commutes with scalar multiplication. -/
+private theorem prev_smul (c : ℝ)
+    (u : WeakDerivStep volume ⊤ 2
+      (ContinuousLinearMap.id ℝ (Lp F 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
+    prev _ (c • u) = c • prev _ u := by
+  simp only [← prevL_apply, map_smul]
+
+/-- The projection `prev` vanishes at zero. -/
+private theorem prev_zero :
+    prev (ContinuousLinearMap.id ℝ (Lp F 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) 0 = 0 := by
+  simp only [← prevL_apply, map_zero]
+
 /-- The continuous representative of an element of the kernel of `D_A`, a classical solution of
 `v' = -A v`. -/
 private def kerSolution (hA : Continuous A)
@@ -224,13 +243,13 @@ private def kerEval (hA : Continuous A)
     rw [kerSolution_eq hA hAL (u + w)
       ((continuous_kerSolution hA hAL u).add (continuous_kerSolution hA hAL w)) ?_]
     · rfl
-    rw [Submodule.coe_add, ← prevL_apply, map_add, prevL_apply, prevL_apply]
+    rw [Submodule.coe_add, prev_add]
     exact (Lp.coeFn_add _ _).trans
       ((prev_ae_eq_kerSolution hA hAL u).add (prev_ae_eq_kerSolution hA hAL w))
   map_smul' c u := by
     rw [kerSolution_eq hA hAL (c • u) ((continuous_kerSolution hA hAL u).const_smul c) ?_]
     · rfl
-    rw [Submodule.coe_smul, ← prevL_apply, map_smul, prevL_apply]
+    rw [Submodule.coe_smul, prev_smul]
     exact (Lp.coeFn_smul c _).trans ((prev_ae_eq_kerSolution hA hAL u).const_smul c)
 
 private theorem kerEval_apply (hA : Continuous A)
@@ -261,7 +280,7 @@ private theorem kerEval_injective (hA : Continuous A)
   have hprev : prev _ u.1 = 0 := by
     rw [Lp.eq_zero_iff_ae_eq_zero]
     simpa [h0] using prev_ae_eq_kerSolution hA hAL u
-  exact Subtype.ext (ext (by rw [hprev, Submodule.coe_zero, ← prevL_apply, map_zero]))
+  exact Subtype.ext (ext (by rw [hprev, Submodule.coe_zero, prev_zero]))
 
 /-- Every square-integrable solution is the continuous representative of a kernel element. -/
 private theorem exists_kerEval_eq (hA : Continuous A)
@@ -274,6 +293,14 @@ private theorem exists_kerEval_eq (hA : Continuous A)
   rw [kerEval_apply, kerSolution_eq hA hAL ⟨u, hu⟩
     (Differentiable.continuous fun s ↦ (hv s).differentiableAt) huv]
 
+/-- Evaluation at time `0` is a bijection onto the square-integrable solutions. -/
+private theorem bijective_codRestrict_kerEval (hA : Continuous A)
+    {AL : Lp (F →L[ℝ] F) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
+    Function.Bijective ((kerEval hA hAL).codRestrict _ (kerEval_mem hA hAL)) :=
+  ⟨fun _ _ h ↦ kerEval_injective hA hAL (congrArg Subtype.val h), fun x ↦
+    (exists_kerEval_eq hA hAL x.2).imp fun _ h ↦ Subtype.ext h⟩
+
 /-- **The kernel of the trajectory operator is the space of square-integrable solutions.** For a
 continuous family `A` of bounded operators on a real Banach space `F`, with `L∞` class `AL`,
 evaluating the continuous representative at time `0` is a linear equivalence from the kernel of
@@ -283,10 +310,7 @@ def kerTrajectoryOperatorEquiv (hA : Continuous A)
     (AL : Lp (F →L[ℝ] F) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
     (trajectoryOperator (p := 2) AL).ker ≃ₗ[ℝ] squareIntegrableSolutions A :=
-  LinearEquiv.ofBijective ((kerEval hA hAL).codRestrict _ (kerEval_mem hA hAL))
-    (show Function.Bijective _ from
-      ⟨fun _ _ h ↦ kerEval_injective hA hAL (congrArg Subtype.val h), fun x ↦
-        (exists_kerEval_eq hA hAL x.2).imp fun _ h ↦ Subtype.ext h⟩)
+  LinearEquiv.ofBijective _ (bijective_codRestrict_kerEval hA hAL)
 
 /-- The equivalence `kerTrajectoryOperatorEquiv` evaluates at time `0` any continuous
 representative of the value of a kernel element. -/
