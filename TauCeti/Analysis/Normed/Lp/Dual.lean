@@ -55,6 +55,13 @@ namespace ContinuousLinearMap
 
 variable {𝕜 ι : Type*} [NontriviallyNormedField 𝕜] [DecidableEq ι] {q : ℝ≥0∞} [Fact (1 ≤ q)]
 
+/-- The value of a continuous linear functional on `ℓ^q` at a unit coordinate vector has norm at
+most the norm of the functional. -/
+theorem norm_apply_lp_single_le (f : StrongDual 𝕜 (lp (fun _ : ι ↦ 𝕜) q)) (i : ι) :
+    ‖f (lp.single q i 1)‖ ≤ ‖f‖ := by
+  simpa [lp.norm_single (zero_lt_one.trans_le Fact.out)] using
+    f.le_opNorm (lp.single q i (1 : 𝕜))
+
 /-- Every continuous linear functional on `ℓ^q`, `q < ∞`, is given by its coordinate series. -/
 theorem hasSum_lp_single_mul (hq : q ≠ ∞) (f : StrongDual 𝕜 (lp (fun _ : ι ↦ 𝕜) q))
     (x : lp (fun _ : ι ↦ 𝕜) q) :
@@ -142,8 +149,7 @@ private theorem memℓp_lp_single (hq : q ≠ ∞) (f : StrongDual 𝕜 (lp (fun
   rcases eq_or_ne p ∞ with rfl | hp
   · refine memℓp_infty ⟨‖f‖, ?_⟩
     rintro _ ⟨i, rfl⟩
-    simpa [lp.norm_single (zero_lt_one.trans_le Fact.out)] using
-      f.le_opNorm (lp.single q i (1 : 𝕜))
+    exact f.norm_apply_lp_single_le i
   · exact memℓp_gen' (f.sum_norm_lp_single_rpow_le hp hq)
 
 /-- An `ℓᵖ` family of coordinate values of a functional on `ℓ^q`, `q < ∞`, has norm at most the
@@ -152,9 +158,7 @@ private theorem norm_le_of_forall_eq_lp_single (hq : q ≠ ∞)
     (f : StrongDual 𝕜 (lp (fun _ : ι ↦ 𝕜) q)) (a : lp (fun _ : ι ↦ 𝕜) p)
     (ha : ∀ i, a i = f (lp.single q i 1)) : ‖a‖ ≤ ‖f‖ := by
   rcases eq_or_ne p ∞ with rfl | hp
-  · refine norm_le_of_forall_le (norm_nonneg f) fun i ↦ ?_
-    simpa [ha, lp.norm_single (zero_lt_one.trans_le Fact.out)] using
-      f.le_opNorm (lp.single q i (1 : 𝕜))
+  · exact norm_le_of_forall_le (norm_nonneg f) fun i ↦ ha i ▸ f.norm_apply_lp_single_le i
   · have hp₀ : 0 < p.toReal := ENNReal.toReal_pos (ENNReal.HolderConjugate.ne_zero p q) hp
     refine norm_le_of_forall_sum_le hp₀ (norm_nonneg f) fun s ↦ ?_
     simpa only [ha] using f.sum_norm_lp_single_rpow_le hp hq s
@@ -203,20 +207,20 @@ theorem dualEquiv_apply_single (hq : q ≠ ∞) (a : lp (fun _ : ι ↦ 𝕜) p)
     dualEquiv 𝕜 ι p q hq a (lp.single q i z) = a i * z := by
   simp [dualEquiv_apply, lp.single_apply, Pi.single_apply]
 
+/-- The inverse duality map records a functional's values on the unit coordinate vectors. -/
+@[simp]
+theorem dualEquiv_symm_apply (hq : q ≠ ∞) (f : StrongDual 𝕜 (lp (fun _ : ι ↦ 𝕜) q))
+    (i : ι) : (dualEquiv 𝕜 ι p q hq).symm f i = f (lp.single q i 1) := by
+  have h := congrArg (fun g : StrongDual 𝕜 (lp (fun _ : ι ↦ 𝕜) q) ↦
+    g (lp.single q i 1)) ((dualEquiv 𝕜 ι p q hq).apply_symm_apply f)
+  rwa [dualEquiv_apply_single, mul_one] at h
+
 end lp
 
 namespace ContinuousLinearMap
 
 variable {𝕜 ι : Type*} [RCLike 𝕜] [DecidableEq ι] {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
   [p.HolderConjugate q]
-
-/-- The inverse duality map records a functional's values on the unit coordinate vectors. -/
-@[simp]
-theorem lp_dualEquiv_symm_apply (hq : q ≠ ∞) (f : StrongDual 𝕜 (lp (fun _ : ι ↦ 𝕜) q))
-    (i : ι) : (lp.dualEquiv 𝕜 ι p q hq).symm f i = f (lp.single q i 1) := by
-  have h := congrArg (fun g : StrongDual 𝕜 (lp (fun _ : ι ↦ 𝕜) q) ↦
-    g (lp.single q i 1)) ((lp.dualEquiv 𝕜 ι p q hq).apply_symm_apply f)
-  rwa [lp.dualEquiv_apply_single, mul_one] at h
 
 /-- For Hölder conjugate exponents `1 < p, q < ∞`, the `p`-th power of the norm of a functional
 on `ℓ^q` is the sum of the `p`-th powers of the norms of its coordinate values. -/
@@ -225,12 +229,12 @@ theorem norm_rpow_eq_tsum_norm_lp_single_rpow (hp : p ≠ ∞) (hq : q ≠ ∞)
     ‖f‖ ^ p.toReal = ∑' i, ‖f (lp.single q i 1)‖ ^ p.toReal := by
   rw [← (lp.dualEquiv 𝕜 ι p q hq).symm.norm_map f,
     lp.norm_rpow_eq_tsum (ENNReal.toReal_pos (ENNReal.HolderConjugate.ne_zero p q) hp)]
-  simp only [lp_dualEquiv_symm_apply]
+  simp only [lp.dualEquiv_symm_apply]
 
 /-- The norm of a functional on ℓ¹ is the supremum of the norms of its coordinate values. -/
 theorem norm_eq_ciSup_norm_lp_single (f : StrongDual 𝕜 (lp (fun _ : ι ↦ 𝕜) 1)) :
     ‖f‖ = ⨆ i, ‖f (lp.single 1 i 1)‖ := by
   rw [← (lp.dualEquiv 𝕜 ι ∞ 1 ENNReal.one_ne_top).symm.norm_map f, lp.norm_eq_ciSup]
-  simp only [lp_dualEquiv_symm_apply]
+  simp only [lp.dualEquiv_symm_apply]
 
 end ContinuousLinearMap
