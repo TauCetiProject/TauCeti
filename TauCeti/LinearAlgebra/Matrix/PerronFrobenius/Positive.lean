@@ -7,9 +7,10 @@ module
 
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Normed.Algebra.Spectrum
+public import Mathlib.Geometry.Convex.ConvexSpace.Topology
 public import Mathlib.LinearAlgebra.Eigenspace.Matrix
-public import Mathlib.LinearAlgebra.Matrix.DotProduct
 public import Mathlib.Topology.Instances.Matrix
+public import TauCeti.LinearAlgebra.Matrix.MulVec
 
 /-!
 # The Perron–Frobenius theorem for positive matrices
@@ -25,17 +26,16 @@ bound: if `A` is entrywise nonnegative and `A v = r v` with `v` strictly positiv
 for a nonzero nonnegative `y` forces `t ≤ r`. This bound, and with it the spectral radius
 statement, needs only nonnegativity of `A` once a strictly positive eigenvector is given.
 Existence is specific to `ℝ`: the Perron root is the largest `t` for which some point `x` of the
-standard simplex satisfies `t x ≤ A x`, and the maximum exists by compactness.
+standard simplex (Mathlib's `Convexity.StdSimplex`) satisfies `t x ≤ A x`, and the maximum exists
+by compactness.
 
-These are the statements used to define the Frobenius–Perron dimension of a based ring: there one
-applies them to the matrix of multiplication by the sum of all basis elements, which is strictly
-positive, and uses the uniqueness of nonnegative eigenvectors to see that the other structure
-matrices act on the Perron eigenvector by scalars.
+These are the statements used to define the Frobenius–Perron dimension of a transitive based ring:
+there one applies them to the matrix of multiplication by the sum of all basis elements, which is
+strictly positive by transitivity, and uses the uniqueness of nonnegative eigenvectors to see that
+the other structure matrices act on the Perron eigenvector by scalars.
 
 ## Main results
 
-* `Matrix.mulVec_pos`: a strictly positive matrix sends a nonzero nonnegative vector to a strictly
-  positive one.
 * `Matrix.le_of_smul_le_mulVec`: the Collatz–Wielandt bound against a positive eigenvector.
 * `Matrix.exists_eq_smul_of_mulVec_eq_smul`: for a strictly positive matrix, the eigenspace of a
   strictly positive eigenvector is spanned by it.
@@ -60,39 +60,11 @@ public section
 
 open scoped Matrix
 
+open Convexity
+
 namespace Matrix
 
 variable {n : Type*} [Fintype n]
-
-section OrderedSemiring
-
-variable {R : Type*} [Semiring R] [PartialOrder R] [IsOrderedRing R] {A : Matrix n n R}
-  {x y : n → R}
-
-/-- Multiplication by an entrywise nonnegative matrix is monotone. -/
-theorem mulVec_mono (hA : ∀ i j, 0 ≤ A i j) (hxy : x ≤ y) : A *ᵥ x ≤ A *ᵥ y := fun i =>
-  dotProduct_le_dotProduct_of_nonneg_left hxy (hA i)
-
-/-- An entrywise nonnegative matrix sends nonnegative vectors to nonnegative vectors. -/
-theorem mulVec_nonneg (hA : ∀ i j, 0 ≤ A i j) (hx : 0 ≤ x) : 0 ≤ A *ᵥ x := fun i =>
-  dotProduct_nonneg_of_nonneg (hA i) hx
-
-end OrderedSemiring
-
-section StrictOrderedSemiring
-
-variable {R : Type*} [Semiring R] [PartialOrder R] [IsStrictOrderedRing R] {A : Matrix n n R}
-  {y : n → R}
-
-/-- A strictly positive matrix sends a nonzero nonnegative vector to a vector all of whose entries
-are strictly positive. -/
-theorem mulVec_pos (hA : ∀ i j, 0 < A i j) (hy : 0 ≤ y) (hy0 : y ≠ 0) (i : n) :
-    0 < (A *ᵥ y) i := by
-  obtain ⟨j, hj⟩ := Function.ne_iff.1 hy0
-  exact Finset.sum_pos' (fun k _ => mul_nonneg (hA i k).le (hy k))
-    ⟨j, Finset.mem_univ j, mul_pos (hA i j) ((hy j).lt_of_ne' hj)⟩
-
-end StrictOrderedSemiring
 
 section OrderedField
 
@@ -206,33 +178,26 @@ section Real
 
 variable {A : Matrix n n ℝ} {v : n → ℝ} {r : ℝ}
 
-/-- If `t x ≤ A x` for a probability vector `x` and a nonnegative matrix `A`, then `t` is at most
-the sum of the entries of `A`. This bounds the set maximized in the existence proof. -/
+/-- If `t x ≤ A x` for a point `x` of the standard simplex and a nonnegative matrix `A`, then `t` is
+at most the sum of the entries of `A`. This bounds the set maximized in the existence proof. -/
 private theorem le_sum_of_smul_le_mulVec (hA : ∀ i j, 0 ≤ A i j) {x : n → ℝ} {t : ℝ}
-    (hx : 0 ≤ x) (hx1 : ∑ i, x i = 1) (h : t • x ≤ A *ᵥ x) : t ≤ ∑ i, ∑ j, A i j :=
-  calc t = ∑ i, t * x i := by rw [← Finset.mul_sum, hx1, mul_one]
-    _ ≤ ∑ i, (A *ᵥ x) i := Finset.sum_le_sum fun i _ => h i
+    (hx : x ∈ Set.range fun s : StdSimplex ℝ n => ⇑s.weights) (h : t • x ≤ A *ᵥ x) :
+    t ≤ ∑ i, ∑ j, A i j := by
+  obtain ⟨s, rfl⟩ := hx
+  calc t = ∑ i, t * s.weights i := by rw [← Finset.mul_sum, s.total_of_fintype, mul_one]
+    _ ≤ ∑ i, (A *ᵥ s.weights) i := Finset.sum_le_sum fun i _ => h i
     _ ≤ ∑ i, ∑ j, A i j := Finset.sum_le_sum fun i _ => Finset.sum_le_sum fun j _ =>
-        mul_le_of_le_one_right (hA i j)
-          (hx1 ▸ Finset.single_le_sum (fun k _ => hx k) (Finset.mem_univ j))
+        mul_le_of_le_one_right (hA i j) (s.weights_apply_le_one j)
 
-/-- The pairs `(x, t)` with `x` a probability vector, `t ∈ [0, M]` and `t x ≤ A x` form a compact
-set. When `M` is the sum of the entries of `A`, the Perron root is the largest `t` occurring in it.
--/
+/-- The pairs `(x, t)` with `x` in the standard simplex, `t ∈ [0, M]` and `t x ≤ A x` form a compact
+set. When `A` is strictly positive, `n` is nonempty and `M` is the sum of the entries of `A`, the
+Perron root is the largest `t` occurring in it. -/
 private theorem isCompact_setOf_smul_le_mulVec (A : Matrix n n ℝ) (M : ℝ) :
-    IsCompact {p : (n → ℝ) × ℝ |
-      0 ≤ p.1 ∧ ∑ i, p.1 i = 1 ∧ 0 ≤ p.2 ∧ p.2 ≤ M ∧ p.2 • p.1 ≤ A *ᵥ p.1} := by
-  refine (isCompact_Icc (a := ((0 : n → ℝ), (0 : ℝ))) (b := (1, M))).of_isClosed_subset ?_ ?_
-  · simp only [Set.ofPred_and]
-    refine (isClosed_le continuous_const continuous_fst).inter <|
-      (isClosed_eq (by fun_prop) continuous_const).inter <|
-      (isClosed_le continuous_const continuous_snd).inter <|
-      (isClosed_le continuous_snd continuous_const).inter <|
-      isClosed_le (continuous_snd.smul continuous_fst)
-        (continuous_const.matrix_mulVec continuous_fst)
-  · rintro ⟨x, t⟩ ⟨hx, hx1, ht, htM, -⟩
-    exact ⟨⟨hx, ht⟩,
-      fun j => (Finset.single_le_sum (fun k _ => hx k) (Finset.mem_univ j)).trans_eq hx1, htM⟩
+    IsCompact ((Set.range fun s : StdSimplex ℝ n => ⇑s.weights) ×ˢ Set.Icc 0 M ∩
+      {p | p.2 • p.1 ≤ A *ᵥ p.1}) :=
+  ((isCompact_range (StdSimplex.isEmbedding_toFun_comp_weights ℝ n).continuous).prod
+    isCompact_Icc).inter_right <| isClosed_le (continuous_snd.smul continuous_fst)
+      (continuous_const.matrix_mulVec continuous_fst)
 
 /-- **Perron–Frobenius theorem for positive matrices**, existence: a real square matrix whose
 entries are all strictly positive has an eigenvector whose entries are all strictly positive, for a
@@ -244,16 +209,20 @@ theorem exists_mulVec_eq_smul_of_pos [Nonempty n] (hA : ∀ i j, 0 < A i j) :
     ∃ r : ℝ, 0 < r ∧ ∃ v : n → ℝ, (∀ i, 0 < v i) ∧ A *ᵥ v = r • v := by
   classical
   have hA' : ∀ i j, 0 ≤ A i j := fun i j => (hA i j).le
+  have hmem (x : n → ℝ) :
+      x ∈ (Set.range fun s : StdSimplex ℝ n => ⇑s.weights) ↔ 0 ≤ x ∧ ∑ i, x i = 1 := by
+    simp [StdSimplex.range_toFun_comp_weights, Pi.le_def]
   obtain ⟨i₀⟩ := ‹Nonempty n›
-  -- Maximize `t` over the pairs `(x, t)` with `x` a probability vector and `t x ≤ A x`; the
+  -- Maximize `t` over the pairs `(x, t)` with `x` in the standard simplex and `t x ≤ A x`; the
   -- bound `t ≤ ∑ i, ∑ j, A i j` is automatic, and makes the set compact.
-  have hne : {p : (n → ℝ) × ℝ | 0 ≤ p.1 ∧ ∑ i, p.1 i = 1 ∧ 0 ≤ p.2 ∧
-      p.2 ≤ ∑ i, ∑ j, A i j ∧ p.2 • p.1 ≤ A *ᵥ p.1}.Nonempty := by
-    refine ⟨(Pi.single i₀ 1, 0), Pi.single_nonneg.2 zero_le_one, by simp, le_rfl,
-      Finset.sum_nonneg fun i _ => Finset.sum_nonneg fun j _ => hA' i j, ?_⟩
-    simpa using mulVec_nonneg hA' (Pi.single_nonneg.2 zero_le_one)
-  obtain ⟨⟨x, r⟩, ⟨hx, hx1, hr, -, hxr⟩, hmax⟩ :=
+  have hne : ((Set.range fun s : StdSimplex ℝ n => ⇑s.weights) ×ˢ
+      Set.Icc 0 (∑ i, ∑ j, A i j) ∩ {p | p.2 • p.1 ≤ A *ᵥ p.1}).Nonempty := by
+    refine ⟨(⇑(StdSimplex.single i₀ : StdSimplex ℝ n).weights, 0), ⟨⟨_, rfl⟩, le_rfl,
+      Finset.sum_nonneg fun i _ => Finset.sum_nonneg fun j _ => hA' i j⟩, ?_⟩
+    simpa using mulVec_nonneg hA' (StdSimplex.single i₀ : StdSimplex ℝ n).weights_nonneg
+  obtain ⟨⟨x, r⟩, ⟨⟨hxs, hr, -⟩, hxr⟩, hmax⟩ :=
     (isCompact_setOf_smul_le_mulVec A _).exists_isMaxOn hne continuous_snd.continuousOn
+  obtain ⟨hx, hx1⟩ := (hmem x).1 hxs
   have hx0 : x ≠ 0 := by
     rintro rfl
     simp at hx1
@@ -261,8 +230,9 @@ theorem exists_mulVec_eq_smul_of_pos [Nonempty n] (hA : ∀ i j, 0 < A i j) :
   have heig : A *ᵥ x = r • x := by
     by_contra hne
     obtain ⟨ε, hε, y, hy, hy1, hyr⟩ := exists_add_smul_le_mulVec hA hx hx0 hxr hne
+    have hys := (hmem y).2 ⟨hy, hy1⟩
     have := isMaxOn_iff.1 hmax (y, r + ε)
-      ⟨hy, hy1, by positivity, le_sum_of_smul_le_mulVec hA' hy hy1 hyr, hyr⟩
+      ⟨⟨hys, by positivity, le_sum_of_smul_le_mulVec hA' hys hyr⟩, hyr⟩
     linarith
   refine ⟨r, ?_, x, pos_of_mulVec_eq_smul hA hx hx0 heig, heig⟩
   have h := mulVec_pos hA hx hx0 i₀
