@@ -28,8 +28,9 @@ limits in operator norm (`ContinuousLinearMap.isClosed_setOf_hasCompactoidImage`
 compact operators have compactoid image (`IsCompactOperator.hasCompactoidImage`). Over a complete
 nontrivially normed field, so do completely continuous operators, the operator-norm limits of maps
 of finite rank (`ContinuousLinearMap.IsCompletelyContinuous.hasCompactoidImage`). Between the
-model spaces `C₀(I, K)` over an ultrametric field the converse holds too, through the comparison
-with row compactness in `TauCeti.Analysis.Normed.Operator.RowCompact.Compactoid`.
+model spaces `C₀(I, K)` over a complete ultrametric field the converse holds too, combining the
+comparison with row compactness (`ContinuousLinearMap.isRowCompact_iff_hasCompactoidImage`) with
+Serre's criterion (`ContinuousLinearMap.isRowCompact_iff_isCompletelyContinuous`).
 
 ## Main definitions
 
@@ -189,7 +190,7 @@ theorem LinearMap.IsFiniteRank.hasCompactoidImage {u : E →L[K] F}
   have hb : IsBounded {y : Q | (y : F) ∈ u '' closedBall 0 1} := by
     obtain ⟨C, hC⟩ := isBounded_iff_forall_norm_le.1 ((isBounded_closedBall (x := (0 : E))
       (r := 1)).image u)
-    exact isBounded_iff_forall_norm_le.2 ⟨C, fun y hy ↦ hC _ hy⟩
+    exact isBounded_iff_forall_norm_le.2 ⟨C, fun y hy ↦ by rw [← Submodule.norm_coe]; exact hC _ hy⟩
   refine (IsCompactoidSet.image hb.isCompactoidSet Q.subtypeL).mono ?_
   rintro _ ⟨x, hx, rfl⟩
   exact ⟨⟨u x, hQu x⟩, ⟨x, hx, rfl⟩, rfl⟩
