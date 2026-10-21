@@ -15,7 +15,8 @@ through the projection `End.asHom`. This file records the same compatibilities f
 constructor `End.of : (X ⟶ X) → End X`: it sends `𝟙 X` to `1`, a composite `f ≫ g` to the product
 `End.of g * End.of f`, and sums, differences, negatives, zero and scalar multiples to the
 corresponding operations in `End X`. As `simp` lemmas they push `End.of` inside expressions built
-from morphisms `X ⟶ X`, so that algebra maps out of `End X` can then be applied termwise.
+from morphisms `X ⟶ X`, so that algebra maps out of `End X` can then be applied termwise. We also
+compute the structure map of an `R`-linear category, `(algebraMap R (End X) r).asHom = r • 𝟙 X`.
 -/
 
 public section
@@ -66,6 +67,12 @@ theorem of_sub (f g : X ⟶ X) : End.of (f - g) = End.of f - End.of g := by
 theorem of_smul {R : Type w} [Semiring R] [Linear R C] (r : R) (f : X ⟶ X) :
     End.of (r • f) = r • End.of f := by
   ext; simp
+
+/-- The structure map `R → End X` of an `R`-linear category sends `r` to `r • 𝟙 X`. -/
+@[simp]
+theorem algebraMap_asHom {R : Type w} [CommSemiring R] [Linear R C] (r : R) :
+    (algebraMap R (End X) r).asHom = r • 𝟙 X := by
+  rw [Algebra.algebraMap_eq_smul_one, smul_asHom, one_asHom]
 
 end Preadditive
 

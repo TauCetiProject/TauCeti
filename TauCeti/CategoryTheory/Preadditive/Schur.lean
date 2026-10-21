@@ -31,13 +31,10 @@ endomorphism algebra is `k(t)`.
   `algebraMap k (End X)` by `TauCeti.endAlgEquivOfSimple_symm_apply`;
 * `TauCeti.endAlgEquivOfSimple_smul_id`: every endomorphism `f` is `endAlgEquivOfSimple k X f`
   times the identity, and `TauCeti.endAlgEquivOfSimple_apply_eq_iff` characterizes the scalar;
-* `TauCeti.endAlgEquivOfSimple_of_id`, `TauCeti.endAlgEquivOfSimple_of_comp`,
-  `TauCeti.endAlgEquivOfSimple_of_smul`, `TauCeti.endAlgEquivOfSimple_of_add`,
-  `TauCeti.endAlgEquivOfSimple_of_zero`, `TauCeti.endAlgEquivOfSimple_of_neg` and
-  `TauCeti.endAlgEquivOfSimple_of_sub`: the scalar of an endomorphism `End.of f` built from
-  morphisms `f : X ⟶ X`. The `simp` lemmas `CategoryTheory.End.of_id`, `CategoryTheory.End.of_comp`,
-  … of `TauCeti.CategoryTheory.Linear.Endomorphism` push `End.of` inside such expressions, after
-  which `map_mul`, `map_add`, … let `simp` compute scalars of composites, sums and multiples.
+* `CategoryTheory.End.of_id`, `CategoryTheory.End.of_comp`, … of
+  `TauCeti.CategoryTheory.Linear.Endomorphism` are `simp` lemmas pushing `End.of` inside
+  expressions built from morphisms `f : X ⟶ X`, after which `map_mul`, `map_add`, … let `simp`
+  compute scalars of composites, sums and multiples.
 
 ## References
 
@@ -76,61 +73,19 @@ variable {k}
 variable {X : C} [Simple X] [FiniteDimensional k (X ⟶ X)]
 
 /-- The inverse of `endAlgEquivOfSimple` is the structure map `algebraMap k (End X)`. -/
+@[simp]
 theorem endAlgEquivOfSimple_symm_apply (c : k) :
     (endAlgEquivOfSimple k X).symm c = algebraMap k (End X) c := by
   rw [endAlgEquivOfSimple, AlgEquiv.symm_symm, AlgEquiv.ofBijective_apply, Algebra.ofId_apply]
 
-/-- The inverse of `endAlgEquivOfSimple` sends a scalar `c` to `c • 𝟙 X`. -/
-@[simp]
-theorem endAlgEquivOfSimple_symm_apply_asHom (c : k) :
-    ((endAlgEquivOfSimple k X).symm c).asHom = c • 𝟙 X := by
-  rw [endAlgEquivOfSimple_symm_apply, Algebra.algebraMap_eq_smul_one, End.smul_asHom,
-    End.one_asHom]
-
 /-- Every endomorphism of a simple object is its scalar times the identity. -/
 @[simp]
 theorem endAlgEquivOfSimple_smul_id (f : End X) : endAlgEquivOfSimple k X f • 𝟙 X = f.asHom := by
-  rw [← endAlgEquivOfSimple_symm_apply_asHom, AlgEquiv.symm_apply_apply]
+  rw [← End.algebraMap_asHom, ← endAlgEquivOfSimple_symm_apply, AlgEquiv.symm_apply_apply]
 
 /-- The scalar of an endomorphism `f` is the unique `c` with `f = c • 𝟙 X`. -/
 theorem endAlgEquivOfSimple_apply_eq_iff (f : End X) (c : k) :
     endAlgEquivOfSimple k X f = c ↔ f.asHom = c • 𝟙 X := by
-  rw [← AlgEquiv.eq_symm_apply, End.ext_iff, endAlgEquivOfSimple_symm_apply_asHom]
-
-/-- The scalar of the identity is `1`. -/
-theorem endAlgEquivOfSimple_of_id : endAlgEquivOfSimple k X (End.of (𝟙 X)) = 1 := by
-  rw [End.of_id, map_one]
-
-/-- The scalar of a composite is the product of the scalars. -/
-theorem endAlgEquivOfSimple_of_comp (f g : X ⟶ X) :
-    endAlgEquivOfSimple k X (End.of (f ≫ g)) =
-      endAlgEquivOfSimple k X (End.of f) * endAlgEquivOfSimple k X (End.of g) := by
-  rw [End.of_comp, map_mul, mul_comm]
-
-/-- The scalar of a scalar multiple `c • f` is `c` times the scalar of `f`. -/
-theorem endAlgEquivOfSimple_of_smul (c : k) (f : X ⟶ X) :
-    endAlgEquivOfSimple k X (End.of (c • f)) = c * endAlgEquivOfSimple k X (End.of f) := by
-  rw [End.of_smul, map_smul, smul_eq_mul]
-
-/-- The scalar of a sum is the sum of the scalars. -/
-theorem endAlgEquivOfSimple_of_add (f g : X ⟶ X) :
-    endAlgEquivOfSimple k X (End.of (f + g)) =
-      endAlgEquivOfSimple k X (End.of f) + endAlgEquivOfSimple k X (End.of g) := by
-  rw [End.of_add, map_add]
-
-/-- The scalar of the zero endomorphism is `0`. -/
-theorem endAlgEquivOfSimple_of_zero : endAlgEquivOfSimple k X (End.of 0) = 0 := by
-  rw [End.of_zero, map_zero]
-
-/-- The scalar of a difference is the difference of the scalars. -/
-theorem endAlgEquivOfSimple_of_sub (f g : X ⟶ X) :
-    endAlgEquivOfSimple k X (End.of (f - g)) =
-      endAlgEquivOfSimple k X (End.of f) - endAlgEquivOfSimple k X (End.of g) := by
-  rw [End.of_sub, map_sub]
-
-/-- The scalar of a negated endomorphism is the negated scalar. -/
-theorem endAlgEquivOfSimple_of_neg (f : X ⟶ X) :
-    endAlgEquivOfSimple k X (End.of (-f)) = -endAlgEquivOfSimple k X (End.of f) := by
-  rw [End.of_neg, map_neg]
+  rw [← AlgEquiv.eq_symm_apply, End.ext_iff, endAlgEquivOfSimple_symm_apply, End.algebraMap_asHom]
 
 end TauCeti
