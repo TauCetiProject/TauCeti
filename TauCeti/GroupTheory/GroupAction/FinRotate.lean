@@ -8,6 +8,7 @@ module
 public import Mathlib.GroupTheory.GroupAction.Jordan
 public import Mathlib.GroupTheory.Perm.Fin
 import TauCeti.GroupTheory.Perm.MultipleTransitivity
+import TauCeti.GroupTheory.Perm.PermCongr
 
 /-!
 # Transitivity from cyclic rotation
@@ -50,15 +51,10 @@ theorem isPretransitive_zpowers_iff_isConj_finRotate {n : ℕ} {σ : Perm (Fin n
       mem_support.2 (hc.apply_ne Set.nontrivial_univ (Set.mem_univ x))
     exact (isCycle_iff_exists_isCycleOn.2 ⟨_, Set.nontrivial_univ, hc, fun _ _ => Set.mem_univ _⟩
       ).isConj (isCycle_finRotate_of_le hn) (by rw [hsupp, support_finRotate_of_le hn])
-  · -- Transport the transitivity of the powers of rotation along a conjugation.
-    obtain ⟨c, hc⟩ := isConj_iff.1 h
-    have := isPretransitive_of_finRotate_mem (Subgroup.mem_zpowers (finRotate n))
-    refine ⟨fun x y => ?_⟩
-    obtain ⟨⟨g, hg⟩, hxy⟩ := this.exists_smul_eq (c x) (c y)
-    obtain ⟨k, rfl⟩ := Subgroup.mem_zpowers_iff.1 hg
-    refine ⟨⟨σ ^ k, Subgroup.zpow_mem_zpowers σ k⟩, c.injective ?_⟩
-    have hxy' : (finRotate n ^ k) (c x) = c y := by simpa [Subgroup.smul_def] using hxy
-    rw [← hc, conj_zpow] at hxy'
-    simpa [Subgroup.smul_def, Perm.mul_apply] using hxy'
+  · -- Transport the transitivity of the powers of rotation along the conjugation.
+    obtain ⟨c, rfl⟩ := isConj_iff.1 h.symm
+    rw [← MulAut.conj_apply, ← MulEquiv.coe_toMonoidHom, ← MonoidHom.map_zpowers,
+      conj_eq_permCongrHom, isPretransitive_map_permCongrHom_iff]
+    exact isPretransitive_of_finRotate_mem (Subgroup.mem_zpowers _)
 
 end TauCeti
