@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.Topology.CWComplex.Classical.Basic
 public import TauCeti.Topology.WedgeSum
+import TauCeti.Analysis.Normed.Group.Pi
 import TauCeti.Topology.Separation.InvFunOn
 
 /-!
@@ -26,7 +27,7 @@ wedge sum of Hausdorff spaces is Hausdorff, the theory of classical CW complexes
 approximation, spaces of CW type and Whitehead's theorem) applies to it.
 
 The weak topology of the CW structure is the quotient topology of the wedge sum: a set is closed
-as soon as its trace on every circle is closed (`TauCeti.WedgeSum.isOpen_iff`). The inverse of a
+as soon as its trace on every circle is closed (`TauCeti.WedgeSum.isClosed_iff`). The inverse of a
 characteristic map is continuous on its open cell because the closed interval is compact
 (`ContinuousOn.continuousOn_invFunOn_image_of_isCompact`).
 
@@ -69,11 +70,6 @@ namespace WedgeSum
 
 variable {S : Type u}
 
-/-- The sup norm of a point of `Fin 1 → ℝ` is the absolute value of its coordinate: the
-specialization of `IsometryEquiv.funUnique` used to describe the cells. -/
-private lemma norm_fin_one (x : Fin 1 → ℝ) : ‖x‖ = |x 0| := by
-  simpa [Real.dist_eq] using ((IsometryEquiv.funUnique (Fin 1) ℝ).dist_eq x 0).symm
-
 /-- The map wrapping `[-1, 1]` once around the circle, starting and ending at `1`. -/
 private def circleWrap (x : Fin 1 → ℝ) : Circle :=
   Circle.exp (π * x 0 + π)
@@ -83,7 +79,7 @@ private lemma continuous_circleWrap : Continuous circleWrap :=
 
 /-- A point of the open interval is not sent to `1`. -/
 private lemma circleWrap_ne_one {x : Fin 1 → ℝ} (hx : x ∈ ball 0 1) : circleWrap x ≠ 1 := by
-  rw [mem_ball_zero_iff, norm_fin_one, abs_lt] at hx
+  rw [mem_ball_zero_iff, Pi.norm_unique, Real.norm_eq_abs, Fin.default_eq_zero, abs_lt] at hx
   intro h
   obtain ⟨n, hn⟩ := Circle.exp_eq_one.1 h
   have h0 : (0 : ℝ) < n := by nlinarith [pi_pos]
@@ -93,14 +89,14 @@ private lemma circleWrap_ne_one {x : Fin 1 → ℝ} (hx : x ∈ ball 0 1) : circ
 /-- Both end points of the interval are sent to `1`. -/
 private lemma circleWrap_of_mem_sphere {x : Fin 1 → ℝ} (hx : x ∈ sphere 0 1) :
     circleWrap x = 1 := by
-  rw [mem_sphere_zero_iff_norm, norm_fin_one] at hx
+  rw [mem_sphere_zero_iff_norm, Pi.norm_unique, Real.norm_eq_abs, Fin.default_eq_zero] at hx
   rcases abs_eq (zero_le_one' ℝ) |>.1 hx with h | h
   · rw [circleWrap, h, mul_one, ← two_mul, Circle.exp_two_pi]
   · rw [circleWrap, h, mul_neg_one, neg_add_cancel, Circle.exp_zero]
 
 private lemma injOn_circleWrap : InjOn circleWrap (ball 0 1) := by
   intro x hx y hy h
-  rw [mem_ball_zero_iff, norm_fin_one, abs_lt] at hx hy
+  rw [mem_ball_zero_iff, Pi.norm_unique, Real.norm_eq_abs, Fin.default_eq_zero, abs_lt] at hx hy
   have hmem {t : ℝ} (ht : -1 < t ∧ t < 1) : π * t + π ∈ Ico 0 (2 * π) :=
     ⟨by nlinarith [pi_pos], by nlinarith [pi_pos]⟩
   have hxy := Circle.exp_injOn_Ico (by rw [sub_zero]) (hmem hx) (hmem hy) h
@@ -115,7 +111,7 @@ private lemma image_circleWrap_closedBall : circleWrap '' closedBall 0 1 = univ 
     rw [Circle.periodic_exp.image_Icc two_pi_pos, Circle.exp_surjective.range_eq]
     exact mem_univ z
   refine ⟨fun _ ↦ r / π - 1, ?_, ?_⟩
-  · rw [mem_closedBall_zero_iff, norm_fin_one, abs_le]
+  · rw [mem_closedBall_zero_iff, Pi.norm_unique, Real.norm_eq_abs, abs_le]
     constructor
     · linarith [div_nonneg hr0 pi_pos.le]
     · linarith [(div_le_iff₀ pi_pos).2 (by linarith : r ≤ 2 * π)]
@@ -259,15 +255,6 @@ private lemma mapsTo_circleCellMaps (n : ℕ) (i : CircleCell S n) :
     exact ⟨0, by simp, (circleCellMap_of_mem_sphere (S := S) s hx).symm⟩
   | _ + 2, i => exact PEmpty.elim i
 
-/-- A subset of the wedge of circles whose intersection with every circle is closed is closed. -/
-private lemma isClosed_of_forall_isClosed_inter_range
-    {A : Set (WedgeSum fun _ : S ↦ (1 : Circle))}
-    (hA : ∀ s, IsClosed (A ∩ range (incl (fun _ : S ↦ (1 : Circle)) s))) : IsClosed A := by
-  rw [← isOpen_compl_iff, isOpen_iff]
-  intro s
-  rw [preimage_compl, isOpen_compl_iff, ← preimage_inter_range]
-  exact (hA s).preimage (incl (fun _ : S ↦ (1 : Circle)) s).continuous
-
 /-- **The CW structure on a wedge of circles.** The wedge of circles indexed by `S` has one
 `0`-cell, the wedge point, and one `1`-cell for each `s : S`, with characteristic map
 `TauCeti.WedgeSum.circleCellMap s` (`TauCeti.WedgeSum.map_circleCellOneEquiv_symm`). -/
@@ -289,8 +276,9 @@ def circleCWComplex : CWComplex (univ : Set (WedgeSum fun _ : S ↦ (1 : Circle)
     | _ + 2, i => PEmpty.elim i
   pairwiseDisjoint' := pairwiseDisjoint_circleCellMaps
   mapsTo' := mapsTo_circleCellMaps
-  closed' A _ hA := isClosed_of_forall_isClosed_inter_range fun s ↦ by
-    simpa [circleCellMaps, image_circleCellMap_closedBall] using hA 1 s
+  closed' A _ hA := isClosed_iff.2 fun s ↦ by
+    simpa [circleCellMaps, image_circleCellMap_closedBall, preimage_inter_range] using
+      (hA 1 s).preimage (incl _ s).continuous
   union' := by
     refine eq_univ_of_forall fun y ↦ ?_
     induction y using WedgeSum.ind with
@@ -335,7 +323,7 @@ theorem cellFrontier_circleCellOneEquiv_symm (s : S) :
     cellFrontier (C := (univ : Set (WedgeSum fun _ : S ↦ (1 : Circle)))) 1
       (circleCellOneEquiv.symm s) = {base (fun _ : S ↦ (1 : Circle))} := by
   have h1 : (fun _ ↦ 1 : Fin 1 → ℝ) ∈ sphere 0 1 := by
-    rw [mem_sphere_zero_iff_norm, norm_fin_one, abs_one]
+    rw [mem_sphere_zero_iff_norm, Pi.norm_unique, Real.norm_eq_abs, abs_one]
   refine subset_antisymm (image_subset_iff.2 fun x hx ↦ circleCellMap_of_mem_sphere s hx)
     (singleton_subset_iff.2 ⟨_, h1, circleCellMap_of_mem_sphere s h1⟩)
 
