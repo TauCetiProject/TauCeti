@@ -31,9 +31,10 @@ have the same normal form exactly when they are related by the elementary moves.
 `TauCeti.PLPath 𝕜 V` models paths by reduced segment lists, with Littelmann's concatenation
 `π₁ * π₂` as a monoid structure, the endpoint `π 1`, and the reversed path `t ↦ π (1 - t) - π 1`.
 
-This file works with segment lists only: it does not evaluate a presentation as a function
-`[0, 1] → V`, and it does not prove that two presentations give paths related by a nondecreasing
-surjective piecewise-linear reparametrization exactly when their normal forms agree.
+This file works with segment lists only. The parametrized paths `[0, 1] → V` of presentations
+with durations, and the theorem that two of them are related by nondecreasing surjective
+piecewise-linear reparametrizations exactly when their normal forms agree, are in
+`TauCeti/RepresentationTheory/LSPath/Reparametrization.lean`.
 
 ## Main definitions
 
@@ -212,6 +213,17 @@ theorem sum_consMerge (v : V) (l : List V) : (consMerge 𝕜 v l).sum = v + l.su
 theorem sum_normalize (l : List V) : (normalize 𝕜 l).sum = l.sum := by
   induction l <;> simp [*]
 
+@[simp]
+theorem consMerge_eq_nil_iff : consMerge 𝕜 v l = [] ↔ v = 0 ∧ l = [] := by
+  cases l with
+  | nil => by_cases hv : v = 0 <;> simp [consMerge, hv]
+  | cons w m => by_cases hvw : SameRay 𝕜 v w <;> simp [consMerge, hvw]
+
+/-- The normal form of a segment list is empty exactly when every segment is stationary. -/
+@[simp]
+theorem normalize_eq_nil_iff : normalize 𝕜 l = [] ↔ ∀ v ∈ l, v = 0 := by
+  induction l <;> simp [*]
+
 /-! ### Reduced segment lists -/
 
 @[simp]
@@ -337,9 +349,10 @@ end PLPath
 
 /-- A model of piecewise-linear paths `π : [0, 1] → V` with `π 0 = 0`, up to nondecreasing
 surjective piecewise-linear reparametrization, by reduced segment lists: a path is meant to be
-recorded by the successive displacements along its maximal straight pieces. The comparison with
-parametrized functions `[0, 1] → V` is not proved here. See `TauCeti.PLPath.ofSegments` for the
-path presented by an arbitrary segment list. -/
+recorded by the successive displacements along its maximal straight pieces. See
+`TauCeti.PLPath.ofSegments` for the path presented by an arbitrary segment list, and
+`TauCeti.PLPath.ofSegments_map_snd_eq_iff_exists_isReparam` for the comparison with parametrized
+paths. -/
 @[ext]
 structure PLPath (𝕜 : Type u) (V : Type v) [Field 𝕜] [PartialOrder 𝕜] [IsStrictOrderedRing 𝕜]
     [AddCommGroup V] [Module 𝕜 V] where
@@ -410,6 +423,11 @@ theorem segments_mul (p q : PLPath 𝕜 V) :
 @[simp]
 theorem ofSegments_nil : ofSegments 𝕜 ([] : List V) = 1 :=
   (rfl)
+
+/-- A segment list presents the constant path exactly when every segment is stationary. -/
+@[simp]
+theorem ofSegments_eq_one_iff : ofSegments 𝕜 l = 1 ↔ ∀ v ∈ l, v = 0 := by
+  rw [PLPath.ext_iff, segments_ofSegments, segments_one, normalize_eq_nil_iff]
 
 @[simp]
 theorem ofSegments_append (l₁ l₂ : List V) :
