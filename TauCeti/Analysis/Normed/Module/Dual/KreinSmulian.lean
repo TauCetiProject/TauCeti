@@ -173,6 +173,14 @@ private theorem exists_pos_forall_lt_norm_of_isClosed_inter_closedBall {C : Set 
   rw [mem_preimage, toWeakDual_toStrongDual] at this
   exact this ⟨hg, mem_closedBall_zero_iff.2 (hgδ.trans (min_le_right _ _))⟩
 
+/-- A real multiple of a functional in `WeakDual 𝕜 E` acts as multiplication by the corresponding
+scalar of `𝕜`. Mathlib has no apply lemma for real multiples in `WeakDual 𝕜 E`: the real action is
+the one of `StrongDual 𝕜 E`, which acts pointwise, so `(c • f) x` unfolds definitionally to
+`c • f x`, which `real_smul_eq_coe_mul` rewrites. -/
+private theorem WeakDual.real_smul_apply (c : ℝ) (f : WeakDual 𝕜 E) (x : E) :
+    (c • f) x = (c : 𝕜) * f x :=
+  real_smul_eq_coe_mul c (f x)
+
 namespace Convex
 
 /-- If every functional in a convex set `C` has real part at least one somewhere along a null
@@ -193,15 +201,15 @@ theorem exists_forall_one_le_re_apply_of_tendsto [CompleteSpace E] {C : Set (Wea
       simpa [Function.comp_def] using this
   have hT (f : WeakDual 𝕜 E) (i) : T f i = re (f (v i)) :=
     congrFun (ZeroAtInftyContinuousMap.coe_mkOfDiscrete _ _) i
-  -- `T` is real linear, so it maps `C` to a convex set. The operations of `WeakDual 𝕜 E` are
-  -- those of `StrongDual 𝕜 E`, which act pointwise; Mathlib has no apply lemma for real multiples
-  -- in `WeakDual 𝕜 E`, so the final `rfl` unfolds `(a • f + b • g) (v i)` by this definition.
+  -- `T` is real linear, so it maps `C` to a convex set.
   have hTC : Convex ℝ (T '' C) := by
     rintro _ ⟨f, hf, rfl⟩ _ ⟨g, hg, rfl⟩ a b ha hb hab
     refine ⟨a • f + b • g, hC hf hg ha hb hab, ZeroAtInftyContinuousMap.ext fun i ↦ ?_⟩
     simp only [hT, ZeroAtInftyContinuousMap.add_apply, ZeroAtInftyContinuousMap.smul_apply,
-      smul_eq_mul, ← smul_re, ← map_add]
-    rfl
+      smul_eq_mul]
+    rw [← toStrongDual_apply, map_add, add_apply, toStrongDual_apply,
+      toStrongDual_apply, real_smul_apply, real_smul_apply, map_add, re_ofReal_mul,
+      re_ofReal_mul]
   -- `T` maps `C` into the complement of the open unit ball of `c₀`.
   have hdisj : Disjoint (ball (0 : C₀(ι, ℝ)) 1) (T '' C) := by
     refine Set.disjoint_right.2 ?_
@@ -307,7 +315,7 @@ theorem isClosed_iff_isClosed_inter_closedBall_zero_one [CompleteSpace E]
   refine ⟨fun h ↦ h.inter (isClosed_closedBall 0 1), fun h ↦ ?_⟩
   -- Real multiples in `WeakDual 𝕜 E` are multiples by the corresponding scalars of `𝕜`.
   have hsmul (c : ℝ) (f : WeakDual 𝕜 E) : c • f = (c : 𝕜) • f :=
-    DFunLike.ext _ _ fun z ↦ real_smul_eq_coe_mul (K := 𝕜) c (f z)
+    DFunLike.ext _ _ fun z ↦ WeakDual.real_smul_apply c f z
   have hG : Convex ℝ (G : Set (WeakDual 𝕜 E)) := fun f hf g hg a b _ _ _ ↦ by
     rw [hsmul, hsmul]
     exact G.add_mem (G.smul_mem _ hf) (G.smul_mem _ hg)
