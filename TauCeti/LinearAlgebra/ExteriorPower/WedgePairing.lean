@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.ExteriorPower.WedgePairing
+-- Private: `Module.Basis.exteriorAlgebra_eq_prod_map_sort` is used only inside a proof.
+import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 
 /-!
 # Evaluation formulas for wedge products and pairings
@@ -13,6 +15,8 @@ public import Mathlib.LinearAlgebra.ExteriorPower.WedgePairing
 The wedge product of pure exterior products concatenates their vector families. A trivialisation
 in a specified top degree gives the wedge pairing by composing the wedge product with that
 trivialisation; the degree transports disappear after identifying the degree with the finrank.
+The top exterior product `Module.Basis.topVector` of a basis indexed by `Fin n` is the pure wedge
+of the basis vectors, read in the degree `finrank R M = n`.
 -/
 
 public section
@@ -38,6 +42,18 @@ theorem wedgePairing_eq_compr₂_of_finrank_eq (n : ℕ) (hfin : Module.finrank 
           (congrArg (fun d ↦ ⋀[R]^d M) hfin)).trans vol) (hdeg.trans hfin.symm) =
       (wedge R M k l).compr₂ (hdeg ▸ vol) := by
   subst n
+  rfl
+
+/-- The top exterior product of a basis indexed by `Fin n` is the wedge of the basis vectors in
+their given order, read in the degree `finrank R M = n`. -/
+theorem _root_.Module.Basis.topVector_eq_ιMulti [Nontrivial R] {n : ℕ}
+    (h : Module.finrank R M = n) (b : Module.Basis (Fin n) R M) :
+    b.topVector = ιMulti R _ (b ∘ finCongr h) := by
+  ext
+  rw [Module.Basis.coe_topVector, ιMulti_apply_coe, ExteriorAlgebra.ιMulti_apply,
+    Module.Basis.exteriorAlgebra_eq_prod_map_sort, Fin.sort_univ, List.map_map,
+    ← List.ofFn_eq_map]
+  subst h
   rfl
 
 end exteriorPower
