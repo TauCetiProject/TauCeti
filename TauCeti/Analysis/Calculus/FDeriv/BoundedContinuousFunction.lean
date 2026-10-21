@@ -13,11 +13,12 @@ public import TauCeti.Topology.ContinuousMap.Bounded.Normed
 /-!
 # Differentiability of superposition operators on bounded continuous functions
 
-Let `G : X → Y` be a Lipschitz map between normed spaces over `ℝ` or `ℂ`. Postcomposition with
-`G` is the *superposition* (or *Nemytskii*) operator `f ↦ G ∘ f` on bounded continuous functions,
-`BoundedContinuousFunction.comp G hG : (α →ᵇ X) → (α →ᵇ Y)`, for the sup norm. This file shows
-that it is continuously differentiable, and indeed `C^n`, wherever `G` is, in the following
-uniform sense.
+Let `G : X → Y` be a map between normed spaces over `ℝ` or `ℂ`. Postcomposition with `G`, when `G`
+is Lipschitz, is the *superposition* (or *Nemytskii*) operator `f ↦ G ∘ f` on bounded continuous
+functions, `BoundedContinuousFunction.comp G hG : (α →ᵇ X) → (α →ᵇ Y)`, for the sup norm. This
+file shows that it is continuously differentiable, and indeed `C^n`, wherever `G` is, in the
+following uniform sense. The results are also stated for an operator `Θ` that is only *given* near
+`f₀` by `Θ f t = G (f t)`, which needs no global hypothesis on `G`.
 
 Suppose that `G` has derivative `G' x` at every point `x` of a set `s`, that
 `G' : X → (X →L[𝕜] Y)` is uniformly continuous on `s`, and that the values of `f₀` stay a fixed
@@ -27,8 +28,7 @@ derivatives, `h ↦ (t ↦ G' (f₀ t) (h t))`, that is `applyCLM Φ` for the bo
 `Φ t = G' (f₀ t)`; the Lipschitz constant of `G` bounds `G'` on `s`, so this family is bounded.
 The derivative is moreover strict, and the operator is `C¹` near `f₀`. The same holds at order
 `n`: if `G` is uniformly `C^n` on `s` (`TauCeti.UniformContDiffOn`), a superposition operator is
-`C^n` near `f₀`. Its derivative is `applyCLM` of the superposition operator of `G'`, so the case
-`n + 1` follows from the case `n` for `G'`.
+`C^n` near `f₀`; its derivative at `f` is `applyCLM` of the family `t ↦ G' (f t)`.
 
 Uniform continuity of `G'` is what makes the remainder estimate hold with one constant at all
 the points `f₀ t` at once; nothing makes the range of `f₀` compact, for instance for curves on
@@ -44,6 +44,9 @@ operator into `C^n` dependence of its fixed points on parameters.
 
 * `BoundedContinuousFunction.exists_eq_comp`: along a function with values in `s`, the
   derivatives `t ↦ G' (f t)` form a bounded continuous family.
+* `BoundedContinuousFunction.hasFDerivAt_of_forall_apply_eq` and
+  `BoundedContinuousFunction.continuousAt_of_forall_apply_eq`: an operator given near `f₀` by
+  `Θ f t = G (f t)` is differentiable, respectively continuous, at `f₀`.
 * `BoundedContinuousFunction.hasFDerivAt_comp`: the superposition operator is differentiable at
   `f₀`, with derivative `h ↦ (t ↦ G' (f₀ t) (h t))`.
 * `BoundedContinuousFunction.hasStrictFDerivAt_comp`: the derivative is strict.
@@ -52,8 +55,7 @@ operator into `C^n` dependence of its fixed points on parameters.
   derivative uniformly continuous on bounded sets, the superposition operator is `C¹`.
 * `BoundedContinuousFunction.contDiffAt_of_uniformContDiffOn`: for `n : ℕ`, an operator that is
   given near `f₀` by `f ↦ G ∘ f` with `G` uniformly `C^n` on `s` (`TauCeti.UniformContDiffOn`) is
-  `C^n` at `f₀`; the derivative of the superposition operator is `applyCLM` of the superposition
-  operator of `G'`, so the case `n + 1` follows from the case `n` for `G'`.
+  `C^n` at `f₀`.
   `BoundedContinuousFunction.contDiffAt_comp_of_uniformContDiffOn` is the case of
   `BoundedContinuousFunction.comp`.
 
@@ -81,12 +83,6 @@ private theorem ball_half_subset_of_mem_ball {f : α →ᵇ X} (hf₀ : ∀ t, b
     (hf : f ∈ ball f₀ (δ / 2)) (t : α) : ball (f t) (δ / 2) ⊆ s :=
   (ball_subset_ball' (by linarith [dist_coe_le_dist (f := f) (g := f₀) t, mem_ball.1 hf])).trans
     (hf₀ t)
-
-/-- A function uniformly within `δ / 2` of `f₀` has its `δ / 2`-ball inside the `δ`-ball about
-`f₀`. -/
-private theorem ball_half_subset_ball {f : α →ᵇ X} (hf : f ∈ ball f₀ (δ / 2)) :
-    ball f (δ / 2) ⊆ ball f₀ δ :=
-  ball_subset_ball' (by linarith [mem_ball.1 hf, dist_comm f f₀])
 
 /-- A locally defined superposition operator is continuous when `G` is uniformly continuous: if
 `Θ f t = G (f t)` on the ball of radius `δ` about `f₀`, and the values of `f₀` stay a distance `δ`
@@ -274,7 +270,7 @@ theorem contDiffAt_of_uniformContDiffOn (n : ℕ) :
     refine contDiffAt_zero.2 ⟨ball f₀ (δ / 2), ball_mem_nhds f₀ (half_pos hδ), fun f hf ↦ ?_⟩
     exact (continuousAt_of_forall_apply_eq (TauCeti.uniformContDiffOn_zero_iff.1 hG)
       (half_pos hδ) (ball_half_subset_of_mem_ball hf₀ hf)
-      fun g hg t ↦ hΘ g (ball_half_subset_ball hf hg) t
+      fun g hg t ↦ hΘ g (Metric.ball_half_subset _ hf hg) t
       ).continuousWithinAt
   | succ n ih =>
     intro Y _ _ G Θ f₀ δ hG hδ hf₀ hΘ
@@ -294,7 +290,7 @@ theorem contDiffAt_of_uniformContDiffOn (n : ℕ) :
       hA.comp_contDiffAt f₀ hΘ'C⟩
     exact hasFDerivAt_of_forall_apply_eq hGs hG'n.uniformContinuousOn (half_pos hδ)
       (ball_half_subset_of_mem_ball hf₀ hf)
-      (fun g hg t ↦ hΘ g (ball_half_subset_ball hf hg) t)
+      (fun g hg t ↦ hΘ g (Metric.ball_half_subset _ hf hg) t)
       (hΘ' f hf)
 
 /-- **A superposition operator is `C^n`.** Let `G` be Lipschitz and uniformly `C^n` on `s`. If the

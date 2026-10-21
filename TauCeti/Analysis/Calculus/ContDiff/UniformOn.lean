@@ -18,8 +18,8 @@ import Mathlib.Analysis.Calculus.ContDiff.Comp
 chain of derivative families `G', G'', …` up to order `n`, each the derivative at every point of
 `s` of the previous one, such that `G` and all these derivatives are uniformly continuous on `s`
 and the derivatives of orders `1` to `n` are bounded on `s` (`G` itself need not be bounded). When
-`s` is open, these are the iterated derivatives of `G` (`UniformContDiffOn.contDiffOn`). They are
-carried along as functions `X → (X →L[𝕜] ⋯ →L[𝕜] Y)` rather than as iterated Fréchet derivatives,
+`s` is open, `G` is `C^n` on `s` (`UniformContDiffOn.contDiffOn`). The derivatives are carried
+along as functions `X → (X →L[𝕜] ⋯ →L[𝕜] Y)` rather than as iterated Fréchet derivatives,
 so a proof by induction on `n` applies the case `n` to the derivative of `G`. The domain and the
 target lie in the same universe, because the recursion passes to the target `X →L[𝕜] Y`.
 
@@ -109,8 +109,8 @@ theorem UniformContDiffOn.of_le {m n : ℕ} (hmn : m ≤ n) (h : UniformContDiff
 theorem UniformContDiffOn.uniformContinuousOn {n : ℕ} (h : UniformContDiffOn 𝕜 n G s) :
     UniformContinuousOn G s := by
   cases n with
-  | zero => exact h
-  | succ n => exact h.1
+  | zero => exact uniformContDiffOn_zero_iff.1 h
+  | succ n => exact (uniformContDiffOn_succ_iff.1 h).1
 
 /-- A uniformly `C^n` function is continuous on `s`. -/
 theorem UniformContDiffOn.continuousOn {n : ℕ} (h : UniformContDiffOn 𝕜 n G s) :
@@ -148,13 +148,15 @@ theorem _root_.ContDiff.uniformContDiffOn (hs : IsCompact s) (n : ℕ) :
   induction n with
   | zero =>
     intro Y _ _ G hG
-    exact hs.uniformContinuousOn_of_continuous hG.continuous.continuousOn
+    exact uniformContDiffOn_zero_iff.2
+      (hs.uniformContinuousOn_of_continuous hG.continuous.continuousOn)
   | succ n ih =>
     intro Y _ _ G hG
     have hdiff : Differentiable 𝕜 G := hG.differentiable (by simp)
     have hG' : ContDiff 𝕜 n (fderiv 𝕜 G) := hG.fderiv_right (m := n) (by simp)
     obtain ⟨C, hC⟩ := hs.exists_bound_of_continuousOn hG'.continuous.continuousOn
-    exact ⟨hs.uniformContinuousOn_of_continuous hG.continuous.continuousOn, fderiv 𝕜 G,
-      fun x _ ↦ (hdiff x).hasFDerivAt, ⟨C, hC⟩, ih hG'⟩
+    exact uniformContDiffOn_succ_iff.2
+      ⟨hs.uniformContinuousOn_of_continuous hG.continuous.continuousOn, fderiv 𝕜 G,
+        fun x _ ↦ (hdiff x).hasFDerivAt, ⟨C, hC⟩, ih hG'⟩
 
 end TauCeti
