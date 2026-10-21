@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Matrix.CharPowerSeries.GaussContinuity
-public import TauCeti.Analysis.Matrix.FiniteCompression
-public import TauCeti.Analysis.Normed.Operator.RowCompact
+public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.CharPowerSeries
 public import TauCeti.RingTheory.PowerSeries.Entire.Eval
 
 /-!
@@ -107,11 +105,7 @@ theorem fredholmDet_eq_det [Fintype I] (u : C₀(I, R) →L[R] C₀(I, R)) :
 theorem fredholmDet_indicatorCLM_comp (S : Finset I) (u : C₀(I, R) →L[R] C₀(I, R)) :
     ((indicatorCLM R (S : Set I)).comp u).fredholmDet =
       (1 - u.matrixCoeff.submatrix (Subtype.val : S → I) Subtype.val).det := by
-  have hmatrix : ((indicatorCLM R (S : Set I)).comp u).matrixCoeff =
-      Matrix.of fun i k ↦ if i ∈ S then u.matrixCoeff i k else 0 := by
-    ext i k
-    simp [Set.indicator_apply]
-  rw [fredholmDet_def, hmatrix, TauCeti.charPowerSeries_outputTruncation, PowerSeries.evalAt_coe,
+  rw [fredholmDet_def, charPowerSeries_matrixCoeff_indicatorCLM_comp, PowerSeries.evalAt_coe,
     Polynomial.coe_aeval_eq_eval, Matrix.eval_one_charpolyRev]
 
 end Defs
@@ -136,16 +130,9 @@ theorem tendsto_fredholmDet_of_tendsto {α : Type*} {l : Filter α}
     (hr : Tendsto r cofinite (𝓝 0)) (hw : ∀ a i j, ‖(w a).matrixCoeff i j‖ ≤ r i)
     (hw₀ : ∀ i j, ‖w₀.matrixCoeff i j‖ ≤ r i) (h : Tendsto (fun a ↦ ‖w a - w₀‖) l (𝓝 0)) :
     Tendsto (fun a ↦ (w a).fredholmDet) l (𝓝 w₀.fredholmDet) := by
-  have hunif : TendstoUniformly (fun a (p : I × I) ↦ (w a).matrixCoeff p.1 p.2)
-      (fun p ↦ w₀.matrixCoeff p.1 p.2) l := by
-    rw [Metric.tendstoUniformly_iff]
-    intro ε hε
-    filter_upwards [h.eventually_lt_const hε] with a ha p
-    rw [dist_comm]
-    simpa only [dist_eq_norm, matrixCoeff_sub, Matrix.sub_apply] using
-      ((w a - w₀).norm_matrixCoeff_le p.1 p.2).trans_lt ha
-  have hG := TauCeti.tendsto_gaussNorm_charPowerSeries_sub_charPowerSeries_of_tendstoUniformly
-    hw hw₀ hr hunif one_pos
+  have hG :=
+    TauCeti.tendsto_gaussNorm_charPowerSeries_sub_charPowerSeries_of_tendsto_ringOpNorm_of_le
+      hr hw hw₀ h one_pos
   have hent₀ : w₀.matrixCoeff.charPowerSeries.IsEntire :=
     PowerSeries.isEntire_iff.2 (Matrix.isRestricted_charPowerSeries hw₀ hr)
   refine tendsto_iff_norm_sub_tendsto_zero.2
@@ -208,39 +195,6 @@ private theorem fredholmDet_indicatorCLM_comp_add_sub_mul (S : Finset I)
   congr 1
   noncomm_ring
 
-omit [DiscreteTopology I] [DecidableEq I] [NormOneClass R] [CompleteSpace R] in
-/-- If `u' a → u` and `v' a → v` in operator norm, then `u' a + v' a - u' a v' a` converges in
-operator norm to `u + v - u v`. -/
-private theorem tendsto_ringOpNorm_add_sub_mul {α : Type*} {l : Filter α}
-    {u' v' : α → C₀(I, R) →L[R] C₀(I, R)} {u v : C₀(I, R) →L[R] C₀(I, R)}
-    (hu : Tendsto (fun a ↦ ‖u' a - u‖) l (𝓝 0)) (hv : Tendsto (fun a ↦ ‖v' a - v‖) l (𝓝 0)) :
-    Tendsto (fun a ↦ ‖(u' a + v' a - u' a * v' a) - (u + v - u * v)‖) l (𝓝 0) := by
-  refine squeeze_zero (fun _ ↦ ringOpNorm_nonneg _) (fun a ↦ ?_)
-    (by simpa using (hu.add hv).add ((hu.mul (hv.add_const ‖v‖)).add (hv.const_mul ‖u‖)))
-  have hv' : ‖v' a‖ ≤ ‖v' a - v‖ + ‖v‖ :=
-    ringOpNorm_le_bound _ (by positivity) fun x ↦ by
-      calc ‖v' a x‖ = ‖(v' a - v) x + v x‖ := by simp
-        _ ≤ ‖v' a - v‖ * ‖x‖ + ‖v‖ * ‖x‖ :=
-          (norm_add_le _ _).trans (add_le_add (le_ringOpNorm _ x) (le_ringOpNorm v x))
-        _ = (‖v' a - v‖ + ‖v‖) * ‖x‖ := by ring
-  refine ringOpNorm_le_bound _ (by positivity) fun x ↦ ?_
-  -- Pointwise, the difference is `(u' - u) x + (v' - v) x - ((u' - u) (v' x) + u ((v' - v) x))`.
-  have hx : ((u' a + v' a - u' a * v' a) - (u + v - u * v)) x =
-      (u' a - u) x + (v' a - v) x - ((u' a - u) (v' a x) + u ((v' a - v) x)) := by
-    simp only [_root_.sub_apply, _root_.add_apply, mul_apply_eq_comp, map_sub]
-    abel
-  rw [hx]
-  calc _ ≤ ‖u' a - u‖ * ‖x‖ + ‖v' a - v‖ * ‖x‖ +
-        (‖u' a - u‖ * ((‖v' a - v‖ + ‖v‖) * ‖x‖) + ‖u‖ * (‖v' a - v‖ * ‖x‖)) :=
-        (norm_sub_le _ _).trans (add_le_add ((norm_add_le _ _).trans
-          (add_le_add (le_ringOpNorm _ x) (le_ringOpNorm _ x))) ((norm_add_le _ _).trans
-          (add_le_add ((le_ringOpNorm _ _).trans (mul_le_mul_of_nonneg_left
-            ((le_ringOpNorm _ x).trans (mul_le_mul_of_nonneg_right hv' (norm_nonneg x)))
-            (ringOpNorm_nonneg _))) ((le_ringOpNorm u _).trans (mul_le_mul_of_nonneg_left
-            (le_ringOpNorm _ x) (ringOpNorm_nonneg u))))))
-    _ = (‖u' a - u‖ + ‖v' a - v‖ + (‖u' a - u‖ * (‖v' a - v‖ + ‖v‖) + ‖u‖ * ‖v' a - v‖)) *
-        ‖x‖ := by ring
-
 /-- **Multiplicativity of the Fredholm determinant.** For row-compact endomorphisms `u` and `v`
 of `C₀(I, R)`, which need not commute,
 `det (1 - (u + v - u v)) = det (1 - u) det (1 - v)`, reflecting
@@ -282,20 +236,14 @@ theorem IsRowCompact.isUnit_fredholmDet_of_isUnit_one_sub {u : C₀(I, R) →L[R
   obtain ⟨g, hg⟩ := h
   let w : C₀(I, R) →L[R] C₀(I, R) := -(↑g⁻¹ * u)
   have hw : w.IsRowCompact := (hu.clm_comp (↑g⁻¹ : C₀(I, R) →L[R] C₀(I, R))).neg
-  -- With `y = g⁻¹ (u x)`, `(1 - u) y = u x` gives `(u + w - u w) x = u x - (y - u y) = 0`.
-  have hzero : u + w - u * w = 0 := by
-    ext1 x
-    have hy : (↑g⁻¹ : C₀(I, R) →L[R] C₀(I, R)) (u x) -
-        u ((↑g⁻¹ : C₀(I, R) →L[R] C₀(I, R)) (u x)) = u x := by
-      have := DFunLike.congr_fun g.mul_inv (u x)
-      rw [hg] at this
-      simpa only [mul_apply_eq_comp, _root_.sub_apply,
-        one_apply_eq_self] using this
-    simp only [w, _root_.sub_apply, _root_.add_apply,
-      _root_.neg_apply, mul_apply_eq_comp, map_neg,
-      _root_.zero_apply]
-    rw [← neg_eq_zero, ← sub_eq_zero.2 hy]
-    abel
+  -- `u + w - u w = u - (1 - u) g⁻¹ u = 0`. The identity is stated in an arbitrary ring because on
+  -- `C₀(I, R)` the operator subtraction only unfolds to the ring subtraction at default
+  -- transparency, which `noncomm_ring` and `rw` do not use.
+  have key {A : Type _} [Ring A] (a x : A) (h : (1 - a) * x = a) : a + -x - a * -x = 0 := calc
+    a + -x - a * -x = a - (1 - a) * x := by noncomm_ring
+    _ = 0 := by rw [h, sub_self]
+  have hzero : u + w - u * w = 0 :=
+    key u _ (by rw [← mul_assoc, ← hg, Units.mul_inv, one_mul])
   have := hu.fredholmDet_add_sub_mul hw
   rw [hzero, fredholmDet_zero] at this
   exact IsUnit.of_mul_eq_one _ this.symm
