@@ -61,10 +61,9 @@ variable (M) in
 /-- Closed smooth real `0`-forms are exactly the locally constant real functions. -/
 def closedFormsZeroEquiv : closedForms I M 0 ≃ₗ[ℝ] LocallyConstant M ℝ where
   toFun φ := ⟨fun x ↦ φ.1.1 x 0, (mem_closedForms_zero_iff I φ.1).mp φ.2⟩
-  invFun f := ⟨⟨RoughForm.ofFunction I f, mem_smoothForms.mpr <|
-      (isSmoothBundleForm_def ∞ _).mpr <| (isSmoothForm_def ∞ _).mp <|
-        isSmoothForm_ofFunction_iff.mpr fun x ↦ contMDiffAt_const.congr_of_eventuallyEq
-          ((IsLocallyConstant.iff_eventually_eq f).mp f.isLocallyConstant x)⟩,
+  invFun f := ⟨⟨RoughForm.ofFunction I f,
+      (isSmoothForm_ofFunction_iff.mpr fun x ↦ contMDiffAt_const.congr_of_eventuallyEq
+        ((IsLocallyConstant.iff_eventually_eq f).mp f.isLocallyConstant x)).mem_smoothForms⟩,
     (mem_closedForms_zero_iff I _).mpr <| by
       simp only [RoughForm.ofFunction_apply]
       exact f.isLocallyConstant⟩

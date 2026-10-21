@@ -61,6 +61,8 @@ labelled point, is passing to the relabeling orbits on both sides.
   `TauCeti.ConnectedFiberNumberedCoverClass.markedClass_markLabel`,
   `TauCeti.ConnectedPointedCoverClass.isoClass_forgetPoint`: compatibility with the forgetful
   maps.
+* `TauCeti.ConnectedCoverClass.isoClass_mk`: the class of the triple of a cover is computed by any
+  numbering of its fibre.
 
 ## References
 
@@ -229,6 +231,19 @@ theorem ConnectedFiberNumberedCoverClass.isoClass_forgetNumbering
     C.forgetNumbering.isoClass = ConnectedIsoClass.mk C.triple := by
   rw [ConnectedCoverClass.isoClass, orbitRelQuotientEquiv_symm_forgetNumbering]
   exact Quotient.map'_mk'' _ _ C
+
+/-- The isomorphism class of the triple of the class of a connected cover of `ℂ ∖ {0, 1}` is the
+class of the triple of the cover, for any numbering `ν` of its fibre over `1/2`. -/
+theorem ConnectedCoverClass.isoClass_mk
+    (c : ConnectedCover (X := TopCat.of ThricePuncturedSphere) basePt n)
+    (ν : ⇑c.cover.proj ⁻¹' {basePt} ≃ Fin n) :
+    (mk c).isoClass =
+      ConnectedIsoClass.mk (ConnectedFiberNumberedCover.connectedTriple ⟨c.cover, ν⟩) := by
+  have hc : (⟨c.cover, ν⟩ : ConnectedFiberNumberedCover _ n).forgetNumbering = c :=
+    ConnectedCover.ext (ConnectedFiberNumberedCover.forgetNumbering_cover _)
+  rw [← ConnectedFiberNumberedCoverClass.triple_mk,
+    ← ConnectedFiberNumberedCoverClass.isoClass_forgetNumbering,
+    ConnectedFiberNumberedCoverClass.forgetNumbering_mk, hc]
 
 /-- **A connected cover of `ℂ ∖ {0, 1}` is determined up to isomorphism by the isomorphism class of
 its triple.** -/

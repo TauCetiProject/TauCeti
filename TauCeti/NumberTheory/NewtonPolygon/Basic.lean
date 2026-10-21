@@ -207,6 +207,11 @@ theorem isAdmissible_addValuation_coeff : IsAdmissible fun n => v (f.coeff n) :=
   isAdmissible_of_forall_gt (p := f.natDegree) fun n hn => by
     rw [coeff_eq_zero_of_natDegree_lt hn, AddValuation.map_zero]
 
+/-- A polynomial has only finitely many coefficients of finite height. -/
+theorem finite_setOf_addValuation_coeff_ne_top : {n | v (f.coeff n) ≠ ⊤}.Finite :=
+  f.support.finite_toSet.subset fun n hn =>
+    mem_support_iff.mpr fun h => hn (by rw [h, AddValuation.map_zero])
+
 /-- The Newton polygon of a polynomial is the greatest convex minorant of its coefficient
 heights. -/
 theorem isLowerConvexEnvelope_newtonPolygon :

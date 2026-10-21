@@ -27,10 +27,10 @@ jobs:
           sparse-checkout-cone-mode: false
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@6b468630edbf2eacb048466519c825b586fee84e
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ad4e955b398d1419b0931e3c825a925f1c6a6e9b
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 6b468630edbf2eacb048466519c825b586fee84e
+          tools-ref: ad4e955b398d1419b0931e3c825a925f1c6a6e9b
           project-directory: .
       - name: Recover an unacquired dedicated runner on Namespace
         env:

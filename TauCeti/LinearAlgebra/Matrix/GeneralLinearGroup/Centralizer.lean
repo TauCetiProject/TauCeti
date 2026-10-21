@@ -220,7 +220,8 @@ private theorem card_sub_one_mul_card_pos : 0 < (Fintype.card F - 1) * Fintype.c
 theorem ncard_carrier_mk_diagGL {t : Fin 2 → Fˣ} (ht : t 0 ≠ t 1) :
     (ConjClasses.mk (diagGL t)).carrier.ncard = Fintype.card F * (Fintype.card F + 1) := by
   rw [ConjClasses.ncard_carrier_mk]
-  refine index_eq_of_natCard_eq_mul card_sub_one_sq_pos ?_ (natCard_GL_fin_two F)
+  refine index_eq_of_natCard_eq_mul card_sub_one_sq_pos ?_
+    ((natCard_GL_fin_two F).trans (by rw [Nat.card_eq_fintype_card]))
   rw [natCard_centralizer_diagGL ht, Nat.card_eq_fintype_card]
 
 end Counting
@@ -282,7 +283,7 @@ theorem ncard_carrier_mk_gl2NonSplitTorusHom [Fintype F]
       Fintype.card F * (Fintype.card F - 1) := by
   rw [ConjClasses.ncard_carrier_mk]
   refine index_eq_of_natCard_eq_mul card_sq_sub_one_pos ?_
-    (natCard_GL_fin_two_eq_sq_sub_one_mul F)
+    ((natCard_GL_fin_two_eq_sq_sub_one_mul F).trans (by rw [Nat.card_eq_fintype_card]))
   rw [natCard_centralizer_gl2NonSplitTorusHom hx, Nat.card_eq_fintype_card]
 
 end GL2NonSplitTorus
@@ -377,7 +378,7 @@ theorem ncard_carrier_mk_jordanGL [Fintype F] (hb : b ≠ 0) :
   rw [ConjClasses.ncard_carrier_mk]
   refine index_eq_of_natCard_eq_mul (card_sub_one_mul_card_pos (F := F)) ?_ ?_
   · rw [natCard_centralizer_jordanGL hb, Nat.card_eq_fintype_card]
-  · rw [natCard_GL_fin_two_eq_sq_sub_one_mul]
+  · rw [natCard_GL_fin_two_eq_sq_sub_one_mul, Nat.card_eq_fintype_card]
     ring
 
 end NonSemisimple
