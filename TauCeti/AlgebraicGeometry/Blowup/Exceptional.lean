@@ -61,7 +61,7 @@ theorem affineBlowupExceptionalIdeal_comap_affineBlowupι (ha : a ∈ I) :
       ofIdealTop (Ideal.span {(Scheme.ΓSpecIso
         (.of (I.affineBlowup a S))).inv (algebraMap R (I.affineBlowup a S) a)}) := by
   rw [affineBlowupExceptionalIdeal, ← comap_comp, affineBlowupι_toSpecZero,
-    comap_ofIdealTop_map_ΓSpecIso_inv, CommRingCat.hom_ofHom,
+    TauCeti.comap_ofIdealTop_map_ΓSpecIso_inv, CommRingCat.hom_ofHom,
     Ideal.map_algebraMap_affineBlowup ha, Ideal.map_span, Set.image_singleton]
 
 /-- The equation of the exceptional divisor on a blowup chart is a nonzerodivisor. -/
