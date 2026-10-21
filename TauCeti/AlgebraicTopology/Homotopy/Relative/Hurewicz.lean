@@ -103,12 +103,8 @@ lemma cubeBoundaryPairHom_fst_apply {P : TopPair.{w}} {m : ℕ} (c : C(I^(Fin m)
 remaining ones, `Fin.consEquiv` as a homeomorphism. -/
 def cubeSplitHomeomorph (n : ℕ) : (I^(Fin (n + 1))) ≃ₜ I × (I^(Fin n)) where
   toEquiv := (Fin.consEquiv fun _ ↦ I).symm
-  continuous_toFun := by
-    change Continuous fun z : I^(Fin (n + 1)) ↦ (z 0, Fin.tail z)
-    fun_prop
-  continuous_invFun := by
-    change Continuous fun x : I × (I^(Fin n)) ↦ (Fin.cons x.1 x.2 : I^(Fin (n + 1)))
-    fun_prop
+  continuous_toFun := (continuous_apply 0).prodMk continuous_id.finTail
+  continuous_invFun := continuous_fst.finCons (A := fun _ ↦ I) continuous_snd
 
 @[simp]
 lemma cubeSplitHomeomorph_apply {n : ℕ} (z : I^(Fin (n + 1))) :
