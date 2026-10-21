@@ -55,6 +55,8 @@ uniformities are shadowed, so the evaluation the statement is about is never re-
   series with a multivariate one is substituting into the inner series.
 * `MvPowerSeries.constantCoeff_subst_of_constantCoeff_zero` : substituting a family of series
   without constant term preserves the constant coefficient.
+* `MvPowerSeries.coeff_subst_X_zero`, `MvPowerSeries.coeff_subst_zero_X` : the coefficients of
+  `f(X, 0)` and `f(0, Y)` are the coefficients of the pure powers of `X` and of `Y` in `f(X, Y)`.
 
 ## Separating multivariable parameters
 
@@ -266,6 +268,38 @@ theorem constantCoeff_subst_of_constantCoeff_zero {O O' : Type*} [CommRing O] [C
       exact Finset.prod_eq_zero (Finsupp.mem_support_iff.mpr hi) (by
         rw [map_pow, ha', zero_pow hi])
     rw [this, smul_zero]
+
+section FinTwo
+
+variable {O : Type*} [CommRing O]
+
+/-- Setting `Y = 0` in a two-variable series `f(X, Y)` keeps exactly the pure powers of `X`: the
+coefficient of `Xⁿ` in `f(X, 0)` is the coefficient of `Xⁿ` in `f`. -/
+theorem coeff_subst_X_zero (f : MvPowerSeries (Fin 2) O) (n : ℕ) :
+    PowerSeries.coeff n (subst ![PowerSeries.X, 0] f) = coeff (Finsupp.single 0 n) f := by
+  rw [PowerSeries.coeff, coeff_subst (a := ![PowerSeries.X, 0]) HasSubst.X_zero,
+    finsum_eq_single _ (Finsupp.single 0 n)]
+  · simp [PowerSeries.coeff_X_pow]
+  · intro d hd
+    by_cases hd₁ : d 1 = 0
+    · have : n ≠ d 0 := fun h ↦ hd (by ext i; fin_cases i <;> simp_all)
+      simp [Finsupp.prod_fintype, hd₁, PowerSeries.coeff_X_pow, this]
+    · simp [Finsupp.prod_fintype, hd₁]
+
+/-- Setting `X = 0` in a two-variable series `f(X, Y)` keeps exactly the pure powers of `Y`: the
+coefficient of `Yⁿ` in `f(0, Y)` is the coefficient of `Yⁿ` in `f`. -/
+theorem coeff_subst_zero_X (f : MvPowerSeries (Fin 2) O) (n : ℕ) :
+    PowerSeries.coeff n (subst ![0, PowerSeries.X] f) = coeff (Finsupp.single 1 n) f := by
+  rw [PowerSeries.coeff, coeff_subst (a := ![0, PowerSeries.X]) HasSubst.zero_X,
+    finsum_eq_single _ (Finsupp.single 1 n)]
+  · simp [PowerSeries.coeff_X_pow]
+  · intro d hd
+    by_cases hd₀ : d 0 = 0
+    · have : n ≠ d 1 := fun h ↦ hd (by ext i; fin_cases i <;> simp_all)
+      simp [Finsupp.prod_fintype, hd₀, PowerSeries.coeff_X_pow, this]
+    · simp [Finsupp.prod_fintype, hd₀]
+
+end FinTwo
 
 end MvPowerSeries
 
