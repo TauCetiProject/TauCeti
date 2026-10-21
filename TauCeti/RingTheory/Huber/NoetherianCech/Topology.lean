@@ -52,8 +52,8 @@ term, which are not treated here.
   every face, so that the topologies above exist.
 * `TauCeti.Huber.NoetherianCech.isTopologicalAddGroup_termTopology` and
   `isUniformAddGroup_termUniformSpace`: the term is a topological, and a uniform, additive group.
-* `TauCeti.Huber.NoetherianCech.filtration_hasBasis`: the filtration is a basis of neighbourhoods
-  of zero.
+* `TauCeti.Huber.NoetherianCech.hasBasis_nhds_zero_filtration`: the filtration is a basis of
+  neighbourhoods of zero.
 * `TauCeti.Huber.NoetherianCech.uniformity_hasBasis_filtration`: the filtration gives a basis of
   entourages of `termUniformSpace`.
 
@@ -270,7 +270,7 @@ theorem faceFiltration_antitone (hf : Ideal.span (Set.range f) = ⊤) (N : Set M
 /-- **The face filtration is a basis of neighbourhoods of zero.** If `N` is a finite set
 generating `M`, the subgroups `Iⁱ · C[F_p / f_S] · N` form a basis of neighbourhoods of zero in
 `M_{f_S}` for its natural topology over `B(F_p / f_S)`. -/
-theorem faceFiltration_hasBasis (hf : Ideal.span (Set.range f) = ⊤) {N : Set M}
+theorem hasBasis_nhds_zero_faceFiltration (hf : Ideal.span (Set.range f) = ⊤) {N : Set M}
     (hN : N.Finite) (hspan : Submodule.span B N = ⊤) (p : ℕ) (S : Finset ι) :
     (@nhds _ (faceModuleTopology f P M hf p S) 0).HasBasis (fun _ : ℕ ↦ True)
       fun i ↦ (faceFiltration f P M hf N p S i : Set _) := by
@@ -314,15 +314,15 @@ theorem filtration_antitone (hf : Ideal.span (Set.range f) = ⊤) (N : Set M) (p
 Huber94 §2, (1.3.1)(ii), with the subgroups `K_i^p` read off the charts of (1.2)(ii). If `ι` is
 finite and `N` is a finite set generating `M`, the subgroups `K_i^p` form a basis of
 neighbourhoods of zero for `termTopology`. -/
-theorem filtration_hasBasis [Finite ι] (hf : Ideal.span (Set.range f) = ⊤) {N : Set M}
-    (hN : N.Finite) (hspan : Submodule.span B N = ⊤) (p : ℕ) :
+theorem hasBasis_nhds_zero_filtration [Finite ι] (hf : Ideal.span (Set.range f) = ⊤)
+    {N : Set M} (hN : N.Finite) (hspan : Submodule.span B N = ⊤) (p : ℕ) :
     (@nhds _ (termTopology f P M hf p) 0).HasBasis (fun _ : ℕ ↦ True)
       fun i ↦ (filtration f P M hf N p i : Set (cechLocalizationTerm M f p)) := by
   have hfactor : ∀ S : {S : Finset ι // S.card = p + 1},
       (@nhds _ (faceModuleTopology f P M hf p S.1)
         ((0 : cechLocalizationTerm M f p) S)).HasBasis (fun _ : ℕ ↦ True)
         fun i ↦ (faceFiltration f P M hf N p S.1 i : Set _) :=
-    fun S ↦ faceFiltration_hasBasis f P M hf hN hspan p S.1
+    fun S ↦ hasBasis_nhds_zero_faceFiltration f P M hf hN hspan p S.1
   have hpi := Filter.hasBasis_pi_same_index hfactor fun I k hI _ ↦
     ⟨hI.toFinset.sup k, trivial, fun S hS ↦ faceFiltration_antitone f P M hf N p S.1
       (Finset.le_sup (hI.mem_toFinset.mpr hS))⟩
@@ -343,6 +343,6 @@ theorem uniformity_hasBasis_filtration [Finite ι] (hf : Ideal.span (Set.range f
       fun i ↦ {xy | xy.2 - xy.1 ∈ filtration f P M hf N p i} :=
   @Filter.HasBasis.uniformity_of_nhds_zero _ (termUniformSpace f P M hf p) _
     (isUniformAddGroup_termUniformSpace f P M hf p) _ _ _
-    (filtration_hasBasis f P M hf hN hspan p)
+    (hasBasis_nhds_zero_filtration f P M hf hN hspan p)
 
 end TauCeti.Huber.NoetherianCech
