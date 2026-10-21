@@ -294,14 +294,16 @@ theorem coe_apply_of_mem_atlas {c : OpenPartialHomeomorph (AddCircle p) ℝ}
     (hc : c ∈ atlas ℝ (AddCircle p)) {x : AddCircle p} (hx : x ∈ c.source) :
     (c x : AddCircle p) = x := by
   rw [Homeomorph.pullbackChartedSpace_atlas] at hc
-  -- A chart of the orbit space is, by definition of Mathlib's pushed-forward atlas, a local
-  -- inverse of the orbit projection at a chosen lift followed by a chart of `PeriodLine p`.
-  obtain ⟨_, ⟨q, rfl⟩, rfl⟩ := hc
-  -- The orbit projection undoes the local inverse, so `quotientHomeomorph p` sends the lifted point
+  -- A chart of the orbit space is a local section of the orbit projection followed by a chart of
+  -- `PeriodLine p`.
+  obtain ⟨_, hc, rfl⟩ := hc
+  obtain ⟨s, z, rfl, hs⟩ := exists_trans_eq_of_mem_atlas_quotient hc
+  rw [Homeomorph.transOpenPartialHomeomorph_source, mem_preimage,
+    OpenPartialHomeomorph.trans_source] at hx
+  -- The orbit projection undoes the local section, so `quotientHomeomorph p` sends the lifted point
   -- back to `x`.
-  have h := congrArg (quotientHomeomorph p)
-    (IsLocalHomeomorph.apply_localInverseAt_of_mem _ (mem_of_mem_inter_left hx))
-  simp only [Homeomorph.coe_toEquiv, quotientHomeomorph_mk, Homeomorph.apply_symm_apply] at h
+  have h := congrArg (quotientHomeomorph p) (hs _ hx.1)
+  simp only [quotientHomeomorph_mk, Homeomorph.apply_symm_apply] at h
   simp only [Homeomorph.transOpenPartialHomeomorph_apply, OpenPartialHomeomorph.coe_trans,
     Function.comp_apply, chartAt_apply]
   exact h
