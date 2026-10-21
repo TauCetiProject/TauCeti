@@ -134,6 +134,15 @@ theorem dgHomLinearEquivCochains_toCurvedDGHomLinearEquiv {M N : DGRightModuleCa
       dgHomLinearEquivCochains M N n f :=
   LinearEquiv.apply_symm_apply _ _
 
+/-- The inverse comparison of homogeneous morphisms keeps the underlying cochain. -/
+@[simp]
+theorem dgHomLinearEquivCochains_toCurvedDGHomLinearEquiv_symm {h₀ : IsCurvedDGAlgebra 𝒜 d 0}
+    {M N : CurvedDGRightModuleCat.{u, u, u} h₀} {n : ℤ}
+    (f : DGHom R n M N) :
+    dgHomLinearEquivCochains M.toDG N.toDG n ((toCurvedDGHomLinearEquiv M.toDG N.toDG n).symm f) =
+      CurvedDGRightModuleCat.dgHomLinearEquivCochains M N n f :=
+  LinearEquiv.apply_symm_apply _ _
+
 /-- The comparison of homogeneous morphisms commutes with the differentials: at curvature zero the
 curved Hom differential is the ordinary DG Hom differential. -/
 theorem toCurvedDGHomLinearEquiv_dgDifferential {M N : DGRightModuleCat.{u, u, u} h} (n : ℤ)
@@ -249,6 +258,23 @@ theorem curvedToDGFunctor_dgMap
   rw [EnrichedFunctor.dgMap_apply]
   rfl
 
+/-- On every Hom complex, the zero-curvature differential graded functor followed by its inverse
+is the identity. -/
+@[simp]
+theorem dgToCurvedFunctor_map_comp_curvedToDGFunctor_map (M N : DGRightModuleCat.{u, u, u} h) :
+    (dgToCurvedFunctor (h := h)).map M N ≫ (curvedToDGFunctor (h := h)).map _ _ = 𝟙 _ := by
+  ext n f
+  exact (toCurvedDGHomLinearEquiv M N n).symm_apply_apply f
+
+/-- On every Hom complex, the inverse differential graded functor followed by the zero-curvature
+differential graded functor is the identity. -/
+@[simp]
+theorem curvedToDGFunctor_map_comp_dgToCurvedFunctor_map
+    (M N : CurvedDGRightModuleCat.{u, u, u} (h.isCurvedDGAlgebra_zero (𝒜 := 𝒜))) :
+    (curvedToDGFunctor (h := h)).map M N ≫ (dgToCurvedFunctor (h := h)).map _ _ = 𝟙 _ := by
+  ext n f
+  exact (toCurvedDGHomLinearEquiv M.toDG N.toDG n).apply_symm_apply f
+
 /-- **The homotopy category of DG right modules is the curved homotopy category at curvature
 zero.** The equivalence is induced by the zero-curvature differential graded functor, with inverse
 induced by `curvedToDGFunctor`; its unit and counit are identities. -/
@@ -258,28 +284,20 @@ noncomputable def homotopyToCurvedEquivalence :
   functor := (dgToCurvedFunctor (h := h)).mapDGHomotopyCategory
   inverse := (curvedToDGFunctor (h := h)).mapDGHomotopyCategory
   unitIso := NatIso.ofComponents (fun _ ↦ Iso.refl _) fun {X Y} f ↦ by
-    -- The two DG functors compose to the identity on every Hom complex.
-    have key : (dgToCurvedFunctor (h := h)).map (DGHomotopyCategory.underlying R X)
-        (DGHomotopyCategory.underlying R Y) ≫ (curvedToDGFunctor (h := h)).map _ _ = 𝟙 _ := by
-      ext n f
-      exact (toCurvedDGHomLinearEquiv (DGHomotopyCategory.underlying R X)
-        (DGHomotopyCategory.underlying R Y) n).symm_apply_apply f
     refine (Category.comp_id _).trans (Eq.trans ?_ (Category.id_comp _).symm)
     exact LinearMap.congr_fun (congrArg ModuleCat.Hom.hom
-      (((congrArg (HomologicalComplex.homologyMap · 0) key).trans
+      (((congrArg (HomologicalComplex.homologyMap · 0)
+        (dgToCurvedFunctor_map_comp_curvedToDGFunctor_map (DGHomotopyCategory.underlying R X)
+          (DGHomotopyCategory.underlying R Y))).trans
         (HomologicalComplex.homologyMap_id _ 0)).symm.trans
           (HomologicalComplex.homologyMap_comp _ _ 0))) f
   counitIso := NatIso.ofComponents (fun _ ↦ Iso.refl _) fun {X Y} f ↦ by
-    -- The two DG functors compose to the identity on every Hom complex.
-    have key : (curvedToDGFunctor (h := h)).map (DGHomotopyCategory.underlying R X)
-        (DGHomotopyCategory.underlying R Y) ≫ (dgToCurvedFunctor (h := h)).map _ _ = 𝟙 _ := by
-      ext n f
-      exact (toCurvedDGHomLinearEquiv (DGHomotopyCategory.underlying R X).toDG
-        (DGHomotopyCategory.underlying R Y).toDG n).apply_symm_apply f
     refine (Category.comp_id _).trans (Eq.trans ?_ (Category.id_comp _).symm)
     exact LinearMap.congr_fun (congrArg ModuleCat.Hom.hom
       ((HomologicalComplex.homologyMap_comp _ _ 0).symm.trans
-        ((congrArg (HomologicalComplex.homologyMap · 0) key).trans
+        ((congrArg (HomologicalComplex.homologyMap · 0)
+          (curvedToDGFunctor_map_comp_dgToCurvedFunctor_map (DGHomotopyCategory.underlying R X)
+            (DGHomotopyCategory.underlying R Y))).trans
           (HomologicalComplex.homologyMap_id _ 0)))) f
   functor_unitIso_comp _ := (Category.comp_id _).trans (CategoryTheory.Functor.map_id _ _)
 
