@@ -31,10 +31,10 @@ polynomials in the two alphabets.
 Grouping the pairs `(i, j)` by their first letter, `hₙ(xy) = ∑_l ∏ᵢ xᵢ^{lᵢ} h_{lᵢ}(y)`, the sum
 running over the exponent vectors `l` on `σ` of total degree `n`
 (`TauCeti.aeval_hsymm_prod_eq_sum_finsuppAntidiag`).  The product `∏ᵢ h_{lᵢ}(y)` expands in the
-Schur polynomials as `∑_λ K_{λ l} s_λ(y)` with the Kostka numbers as coefficients
-(`TauCeti.prod_hsymm_eq_sum_diagramKostkaNumber_smul_schurPoly`).  Exchanging the two sums leaves
-`∑_l K_{λ l} x^l` as the cofactor of `s_λ(y)`, and that is `s_λ(x)`, the Kostka numbers being the
-coefficients of the Schur polynomials (`TauCeti.coeff_schurPoly`) and `s_λ` being homogeneous of
+Schur polynomials as `∑_λ K_{λ l} s_λ(y)`, and the Kostka number `K_{λ l}` is the coefficient of
+`x^l` in `s_λ(x)` (`TauCeti.prod_hsymm_eq_sum_coeff_schurPoly_smul_schurPoly`).  Exchanging the two
+sums leaves `∑_l K_{λ l} x^l` as the cofactor of `s_λ(y)`, and that is `s_λ(x)`, `s_λ` being
+homogeneous of
 degree `n` (`MvPolynomial.IsHomogeneous.aeval_eq_sum_finsuppAntidiag`).  Bijectively, the identity
 is the Robinson--Schensted--Knuth correspondence between matrices of natural numbers and pairs of
 semistandard tableaux of the same shape.
@@ -62,26 +62,6 @@ open MvPolynomial Finset
 variable {σ τ R S : Type*} [Fintype σ] [DecidableEq σ] [Fintype τ] [DecidableEq τ]
   [CommSemiring R] [CommSemiring S] [Algebra R S]
 
-/-- For an exponent vector `l` on `σ` of total degree `n`, the product of the complete homogeneous
-symmetric polynomials `h_{lᵢ}` in the alphabet `τ` is `∑_{λ ⊢ n} c_λ s_λ`, where `c_λ` is the
-coefficient of `x^l` in the Schur polynomial `s_λ` in the alphabet `σ`: both are the Kostka number
-`K_{λ l}`.  This is `TauCeti.prod_hsymm_eq_sum_diagramKostkaNumber_smul_schurPoly` with the
-exponent vector indexed by `σ` rather than by its numbering. -/
-private theorem prod_hsymm_eq_sum_coeff_schurPoly_smul_schurPoly {n : ℕ} {l : σ →₀ ℕ}
-    (hl : l ∈ finsuppAntidiag univ n) :
-    ∏ i, hsymm τ R (l i) =
-      ∑ μ : n.Partition, (schurPoly σ R μ).coeff l • schurPoly τ R μ := by
-  -- Number the alphabet `σ` as in `TauCeti.schurPoly`.
-  let e := Fintype.equivFin σ
-  have hdeg : (Finsupp.equivMapDomain e l).degree = n := by
-    rw [Finsupp.degree_eq_sum, ← (mem_finsuppAntidiag.mp hl).1]
-    exact Fintype.sum_equiv e.symm _ _ fun i => by simp
-  rw [Fintype.prod_equiv e _ (fun i => hsymm τ R (Finsupp.equivMapDomain e l i)) fun i => by simp,
-    prod_hsymm_eq_sum_diagramKostkaNumber_smul_schurPoly _ hdeg]
-  refine sum_congr rfl fun μ _ => ?_
-  rw [coeff_schurPoly, Finsupp.equivMapDomain_eq_mapDomain, ← Finsupp.mapDomain_comp,
-    Function.comp_def]
-
 /-- **The Cauchy identity in degree `n`**: for families `f : σ → S` and `g : τ → S`,
 
 `∑_{λ ⊢ n} s_λ(f) s_λ(g) = hₙ(fᵢ gⱼ)`,
@@ -96,7 +76,8 @@ theorem sum_aeval_schurPoly_mul_aeval_schurPoly (f : σ → S) (g : τ → S) (n
       ∏ i, f i ^ l i * aeval g (hsymm τ R (l i)) = ∑ μ : n.Partition,
         algebraMap R S ((schurPoly σ R μ).coeff l) * (∏ i, f i ^ l i) *
           aeval g (schurPoly τ R μ) := by
-    rw [prod_mul_distrib, ← map_prod, prod_hsymm_eq_sum_coeff_schurPoly_smul_schurPoly hl,
+    rw [prod_mul_distrib, ← map_prod, prod_hsymm_eq_sum_coeff_schurPoly_smul_schurPoly τ
+      (by rw [Finsupp.degree_eq_sum, (mem_finsuppAntidiag.mp hl).1]),
       map_sum, mul_sum]
     refine sum_congr rfl fun μ _ => ?_
     rw [map_smul, Algebra.smul_def]
