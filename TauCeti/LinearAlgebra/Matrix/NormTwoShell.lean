@@ -96,10 +96,16 @@ theorem ne_zero_of_mem_normTwoShell (ha : a ∈ B.normTwoShell) : a ≠ 0 := by
   rintro rfl
   simp [mem_normTwoShell] at ha
 
+/-- A coordinate vector lies in the norm-two shell exactly when the diagonal entry is `2`. -/
+@[simp]
+theorem single_mem_normTwoShell_iff [DecidableEq I] {i : I} :
+    Pi.single i 1 ∈ B.normTwoShell ↔ B i i = 2 := by
+  rw [mem_normTwoShell, single_one_dotProduct, mulVec_single_one, col_apply]
+
 /-- A coordinate vector lies in the norm-two shell when the diagonal entry is `2`. -/
 theorem single_mem_normTwoShell [DecidableEq I] {i : I} (hi : B i i = 2) :
-    Pi.single i 1 ∈ B.normTwoShell := by
-  rw [mem_normTwoShell, single_one_dotProduct, mulVec_single_one, col_apply, hi]
+    Pi.single i 1 ∈ B.normTwoShell :=
+  single_mem_normTwoShell_iff.mpr hi
 
 /-! ### Symmetric Gram matrices -/
 
@@ -244,6 +250,7 @@ diagonal `2` and nonpositive off-diagonal entries, such as the Cartan matrix of 
 Dynkin diagram. A property holding at every simple root `Pi.single i 1`, and passing from a
 nonnegative vector `a` of the norm-two shell to `a + Pi.single i 1` whenever the latter is again in
 the shell, holds at every nonnegative vector of the shell. -/
+@[elab_as_elim]
 theorem normTwoShell_nonneg_induction [DecidableEq I] (hB : B.PosDef) (hdiag : ∀ i, B i i = 2)
     (hoff : ∀ i j, i ≠ j → B i j ≤ 0) {motive : (I → ℤ) → Prop}
     (simple : ∀ i, motive (Pi.single i 1))
