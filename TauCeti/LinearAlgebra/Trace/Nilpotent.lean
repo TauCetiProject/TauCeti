@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Trace
 import Mathlib.LinearAlgebra.Charpoly.Basic
 import Mathlib.LinearAlgebra.PID
 import Mathlib.RingTheory.PrincipalIdealDomain
+import TauCeti.Algebra.Ring.Commutator
 import TauCeti.LinearAlgebra.Trace.Idempotent
 
 /-!
@@ -38,8 +39,6 @@ construction of the neutral element of an `sl₂`-triple in the Jacobson–Moroz
 
 ## Main results
 
-* `Commute.lie_pow_succ_left`: if `a` commutes with `⁅a, b⁆` in a ring, then
-  `⁅a ^ (n + 1), b⁆ = (n + 1) • (a ^ n * ⁅a, b⁆)`.
 * `LinearMap.isNilpotent_iff_forall_trace_pow_eq_zero`: in characteristic zero, an endomorphism is
   nilpotent if and only if all traces of its positive powers vanish.
 * `LinearMap.isNilpotent_lie_of_lie_lie_eq_zero`: Jacobson's lemma.
@@ -55,21 +54,6 @@ construction of the neutral element of an `sl₂`-triple in the Jacobson–Moroz
 -/
 
 public section
-
-/-- If `a` commutes with `⁅a, b⁆`, then `⁅a ^ (n + 1), b⁆ = (n + 1) • (a ^ n * ⁅a, b⁆)`. This is
-the ring analogue of `Commute.commutatorElement_pow_left`. -/
-theorem Commute.lie_pow_succ_left {R : Type*} [Ring R] {a b : R} (h : Commute a ⁅a, b⁆)
-    (n : ℕ) : ⁅a ^ (n + 1), b⁆ = (n + 1) • (a ^ n * ⁅a, b⁆) := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    calc ⁅a ^ (n + 1 + 1), b⁆ = a * ⁅a ^ (n + 1), b⁆ + ⁅a, b⁆ * a ^ (n + 1) := by
-          rw [pow_succ' a (n + 1)]
-          simp only [Ring.lie_def, mul_sub, sub_mul, mul_assoc]
-          abel
-      _ = (n + 1 + 1) • (a ^ (n + 1) * ⁅a, b⁆) := by
-          rw [ih, mul_smul_comm, ← mul_assoc, ← pow_succ', ← (h.pow_left (n + 1)).eq,
-            ← succ_nsmul]
 
 namespace LinearMap
 
@@ -93,8 +77,8 @@ private theorem apply_mem_ker_pow_succ_of_commute_lie (hc : Commute A ⁅A, B⁆
   -- Both terms of `A ^ (i + 1) * B = B * A ^ (i + 1) + (i + 1) • (A ^ i * ⁅A, B⁆)` applied to
   -- `v` vanish, since `A ^ i` kills `v` and `⁅A, B⁆ v`.
   have hv' : (A ^ (i + 1)) v = 0 := by rw [pow_succ', Module.End.mul_apply, hv, map_zero]
-  rw [← Module.End.mul_apply, (sub_eq_iff_eq_add').1 (Ring.lie_def _ _).symm,
-    hc.lie_pow_succ_left]
+  rw [← Module.End.mul_apply, TauCeti.Associative.pow_mul_eq_mul_pow_add_nsmul_of_commutator_eq
+    (sub_eq_iff_eq_add'.1 (Ring.lie_def A B).symm) hc (i + 1), Nat.add_sub_cancel]
   simp only [add_apply, smul_apply, Module.End.mul_apply, hv', hCv, map_zero, smul_zero, add_zero]
 
 /-- `A` maps `ker (A ^ (i + 1))` into `ker (A ^ i)`. -/
