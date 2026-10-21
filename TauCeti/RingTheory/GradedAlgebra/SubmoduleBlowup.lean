@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.GradedAlgebra.Homogeneous.Ideal
-public import TauCeti.Algebra.Algebra.Operations
 public import TauCeti.RingTheory.GradedAlgebra.CoeffSubalgebra
 public import TauCeti.RingTheory.GradedAlgebra.HomogeneousLocalization.Basic
 
@@ -181,8 +180,9 @@ variable (C) in
 `t`: the product of the elements `f T` with `f ∈ S`. -/
 noncomputable def monomialProd (hS : (S : Set B) ⊆ F) :
     coeffSubalgebra fun n ↦ Submodule.span C F ^ n :=
-  coeffSubalgebra.monomial _ #S (∏ g ∈ S, g)
-    (Submodule.prod_mem_pow_card fun _ hg ↦ Submodule.subset_span (hS hg))
+  coeffSubalgebra.monomial _ #S (∏ g ∈ S, g) <| by
+    simpa using SetLike.prod_mem_graded (fun n : ℕ ↦ Submodule.span C F ^ n) (fun _ ↦ 1) id
+      fun g hg ↦ by simpa using Submodule.subset_span (hS hg)
 
 variable (C) in
 /-- `t T^{#S}` is the monomial of degree `#S` with coefficient `t`. -/
