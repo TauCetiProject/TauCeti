@@ -37,9 +37,9 @@ law, with no assumptions on its probability carrier.
 * P. Diaconis, S. Janson, *Graph limits and exchangeable random graphs*, Rend. Mat. Appl. (7) 28
   (2008), 33--61, Section 5.
 
-The affine transport argument follows the graph-to-array adapter
-`mem_extremePoints_iff_arrayLaw_mem_extremePoints`; concentration is handled by
-`TauCeti.MeasureTheory.isExtreme_setOf_measure_eq_zero`.
+* `mem_extremePoints_iff_arrayLaw_mem_extremePoints`: the graph-to-array extremality adapter.
+* `TauCeti.MeasureTheory.isExtreme_setOf_measure_eq_zero`: the face of measures concentrated
+  on a set.
 -/
 
 public section

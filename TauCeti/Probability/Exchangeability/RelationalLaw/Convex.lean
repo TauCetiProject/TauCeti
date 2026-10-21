@@ -14,8 +14,7 @@ import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Convex
 
 The exchangeable probability measures on relational configurations over `ℕ` form a convex set.
 This unbundled presentation of `InfiniteExchangeableRelationalLaw` allows extremality to be
-stated using `Set.extremePoints`. No countability assumption on the language is needed: convexity
-uses only measurability of restriction and linearity of pushforward.
+stated using `Set.extremePoints`. No countability assumption on the language is needed.
 
 ## Main definitions
 
