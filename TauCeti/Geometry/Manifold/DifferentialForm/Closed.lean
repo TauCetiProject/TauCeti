@@ -11,9 +11,11 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 /-!
 # Closed smooth differential forms
 
-Closedness is the vanishing of the generic manifold exterior derivative of a smooth form.  The
-degree-two specialization in `TwoForm.Closed` only supplies its constant-form convenience
-theorem; the predicate and its generic API live here so they can be reused at every degree.
+Closedness is the vanishing of the generic manifold exterior derivative of a smooth form. This
+module also characterizes it by vanishing of the exterior derivatives of the chart expressions.
+The degree-two specialization in `TwoForm.Closed` supplies the corresponding two-form
+characterization and the constant-form convenience theorem. The predicate and its generic API
+live here so they can be reused at every degree.
 -/
 
 public section
