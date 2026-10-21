@@ -165,13 +165,6 @@ private theorem exists_refinement_map_ideleClassHom_eq (L : NormalLayer (Absolut
   obtain ⟨y, hy⟩ := hT x
   exact ⟨L', T, y, (ideleToClassH2_apply K L' y).symm.trans hy⟩
 
-/-- `ideleToClassH2_eq_zero_iff`, in the form that `descendedInv` takes. -/
-private theorem map_ideleClassHom_eq_zero_iff {L : NormalLayer (AbsoluteGaloisGroup K)}
-    {y : L.H (ideleFormation K) 2} :
-    groupCohomology.map (MonoidHom.id L.Gal) (L.repMap (ideleClassHom K)) 2 y = 0 ↔
-      ideleSumLocalInv K L y = 0 := by
-  rw [← ideleToClassH2_apply, ideleToClassH2_eq_zero_iff]
-
 variable (K) in
 /-- **The global invariant** `H²(Gal(L/F), C_L) → ℚ/ℤ` of a finite normal layer `L/F` inside
 `Kˢ`: the invariant of a class is the sum of the local invariants of a lift to the ideles of its
@@ -181,13 +174,14 @@ and `globalInv_infl`. -/
 def globalInv (L : NormalLayer (AbsoluteGaloisGroup K)) :
     L.H (globalFormation K) 2 →+ AddCircle (1 : ℚ) :=
   descendedInv (ideleClassHom K) (fun L ↦ ideleSumLocalInv K L) (ideleSumLocalInv_infl K)
-    exists_refinement_map_ideleClassHom_eq (fun _ _ ↦ map_ideleClassHom_eq_zero_iff.1) L
+    exists_refinement_map_ideleClassHom_eq
+    (fun _ _ h ↦ ideleToClassH2_eq_zero_iff.1 ((ideleToClassH2_apply K _ _).trans h)) L
 
 /-- The global invariant is the invariant descended from the sum of the local invariants. -/
 private theorem globalInv_eq_descendedInv :
     globalInv K = descendedInv (ideleClassHom K) (fun L ↦ ideleSumLocalInv K L)
       (ideleSumLocalInv_infl K) exists_refinement_map_ideleClassHom_eq
-      (fun _ _ ↦ map_ideleClassHom_eq_zero_iff.1) :=
+      (fun _ _ h ↦ ideleToClassH2_eq_zero_iff.1 ((ideleToClassH2_apply K _ _).trans h)) :=
   rfl
 
 /-- **The global invariant of a class is the sum of the local invariants of a lift of an
@@ -254,7 +248,7 @@ theorem globalInv_injective (L : NormalLayer (AbsoluteGaloisGroup K)) :
     Function.Injective (globalInv K L) := by
   rw [globalInv_eq_descendedInv]
   exact descendedInv_injective _ _ _ _ _ subsingleton_h1_globalFormation
-    (fun _ _ ↦ map_ideleClassHom_eq_zero_iff.2) L
+    (fun _ _ h ↦ (ideleToClassH2_apply K _ _).symm.trans (ideleToClassH2_eq_zero_iff.2 h)) L
 
 /-- **The image of the global invariant of a layer of degree `n` is the `n`-torsion of `ℚ/ℤ`.** -/
 theorem range_globalInv (L : NormalLayer (AbsoluteGaloisGroup K)) :
@@ -262,8 +256,8 @@ theorem range_globalInv (L : NormalLayer (AbsoluteGaloisGroup K)) :
       (AddSubgroup.torsionBy (AddCircle (1 : ℚ)) L.degree : Set (AddCircle (1 : ℚ))) := by
   rw [globalInv_eq_descendedInv]
   exact range_descendedInv _ _ _ _ _ subsingleton_h1_globalFormation
-    (fun _ _ ↦ map_ideleClassHom_eq_zero_iff.2) (fun R y ↦ ideleSumLocalInv_res K R y)
-    exists_refinement_ideleSumLocalInv_eq L
+    (fun _ _ h ↦ (ideleToClassH2_apply K _ _).symm.trans (ideleToClassH2_eq_zero_iff.2 h))
+    (fun R y ↦ ideleSumLocalInv_res K R y) exists_refinement_ideleSumLocalInv_eq L
 
 /-! ### The global class formation -/
 
@@ -273,9 +267,11 @@ invariant on a layer is the global invariant (`globalClassFormation_inv`). -/
 def globalClassFormation : ClassFormation (globalFormation K) :=
   ClassFormation.ofDescendedInv (ideleClassHom K) (fun L ↦ ideleSumLocalInv K L)
     (ideleSumLocalInv_infl K) exists_refinement_map_ideleClassHom_eq
-    (fun _ _ ↦ map_ideleClassHom_eq_zero_iff.1) subsingleton_h1_globalFormation
-    (fun _ _ ↦ map_ideleClassHom_eq_zero_iff.2) (fun R y ↦ ideleSumLocalInv_res K R y)
-    (fun L g y ↦ ideleSumLocalInv_conj K L g y) exists_refinement_ideleSumLocalInv_eq
+    (fun _ _ h ↦ ideleToClassH2_eq_zero_iff.1 ((ideleToClassH2_apply K _ _).trans h))
+    subsingleton_h1_globalFormation
+    (fun _ _ h ↦ (ideleToClassH2_apply K _ _).symm.trans (ideleToClassH2_eq_zero_iff.2 h))
+    (fun R y ↦ ideleSumLocalInv_res K R y) (fun L g y ↦ ideleSumLocalInv_conj K L g y)
+    exists_refinement_ideleSumLocalInv_eq
 
 /-- **The invariant of the global class formation is the global invariant**, the sum of the local
 invariants of a lift to the ideles. -/
