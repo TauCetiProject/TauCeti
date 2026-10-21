@@ -8,8 +8,11 @@ module
 public import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 public import TauCeti.Geometry.Manifold.IntegralCurve.Flow
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
+public import TauCeti.Geometry.Manifold.Riemannian.Energy
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
+import TauCeti.Geometry.Manifold.IntegralCurve.Regularity
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
+import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Topology.OmegaLimit
 import TauCeti.Topology.Order.MonotoneConvergence
 
@@ -40,9 +43,13 @@ arbitrary: it need not be adapted to the Morse charts of `f`.
 
 ## Main declarations
 
+* `TauCeti.contMDiffOn_maximalIntegralCurve_neg_mgradient`: a negative gradient trajectory is
+  `C¹` on its interval of definition.
 * `TauCeti.hasDerivAt_comp_maximalIntegralCurve_neg_mgradient` and
   `TauCeti.antitoneOn_comp_maximalIntegralCurve_neg_mgradient`: energy dissipation and
   monotonicity along a negative gradient trajectory.
+* `TauCeti.energy_maximalIntegralCurve_neg_mgradient`: over a bounded time interval the energy
+  `½ ∫ ‖γ'‖²` of a negative gradient trajectory is half the drop of `f`.
 * `TauCeti.integrableOn_Ioi_norm_mgradient_sq_maximalIntegralCurve` and
   `TauCeti.integral_Ioi_norm_mgradient_sq_maximalIntegralCurve`: the energy of a forward
   trajectory along which `f` has a limit is finite, and equals the drop of `f`.
@@ -78,13 +85,13 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
   {f : M → ℝ} {x : M} {K : Set M} {t : ℝ}
 
-omit [T2Space M] [BoundarylessManifold I M] in
-/-- `TauCeti.Manifold.contMDiff_neg_mgradient` at `n = 1`, with the smoothness order `1 + 1`
-written as `2`, in the form taken by the integral-curve API. -/
-private theorem contMDiff_neg_mgradient_one (hf : ContMDiff I 𝓘(ℝ) 2 f) :
-    ContMDiff I I.tangent 1 (fun y ↦ (⟨y, (-mgradient I f) y⟩ : TangentBundle I M)) :=
-  have : IsManifold I (1 + 1) M := by rwa [one_add_one_eq_two]
-  contMDiff_neg_mgradient (n := 1) (by rwa [one_add_one_eq_two])
+/-- The maximal integral curve of `-grad f` is `C¹` on its interval of definition. -/
+theorem contMDiffOn_maximalIntegralCurve_neg_mgradient (hf : ContMDiff I 𝓘(ℝ) 2 f) :
+    ContMDiffOn 𝓘(ℝ) I 1 (maximalIntegralCurve (-mgradient I f) x)
+      (maximalIntegralCurveInterval (-mgradient I f) x) :=
+  (contMDiffOn_two_of_isMIntegralCurveOn isOpen_maximalIntegralCurveInterval.uniqueDiffOn
+    (isMIntegralCurveOn_maximalIntegralCurve (contMDiff_neg_mgradient_one hf))
+    fun _ _ ↦ (contMDiff_neg_mgradient_one hf).contMDiffAt).of_le one_le_two
 
 /-! ### Energy dissipation -/
 
@@ -125,6 +132,42 @@ private theorem hasDerivAt_neg_comp_maximalIntegralCurve_neg_mgradient
   have h := (hasDerivAt_comp_maximalIntegralCurve_neg_mgradient hf ht).neg
   rw [neg_neg] at h
   exact h
+
+/-- The velocity of the maximal integral curve of `-grad f` is `-grad f`. -/
+private theorem curveVelocity_maximalIntegralCurve_neg_mgradient (hf : ContMDiff I 𝓘(ℝ) 2 f)
+    (ht : t ∈ maximalIntegralCurveInterval (-mgradient I f) x) :
+    curveVelocity I (maximalIntegralCurve (-mgradient I f) x) t =
+      -mgradient I f (maximalIntegralCurve (-mgradient I f) x t) := by
+  rw [← curveVelocityWithin_univ]
+  exact curveVelocityWithin_eq_of_hasMFDerivWithinAt
+    ((isMIntegralCurveOn_maximalIntegralCurve (contMDiff_neg_mgradient_one hf)).isMIntegralCurveAt
+      (isOpen_maximalIntegralCurveInterval.mem_nhds ht)).hasMFDerivAt.hasMFDerivWithinAt
+    uniqueDiffWithinAt_univ
+
+/-- **The energy identity on a bounded time interval.** Between two times `a` and `b` of its
+interval of definition, the energy `½ ∫ ‖γ'‖²` of the maximal integral curve `γ` of `-grad f` is
+half the drop `f (γ a) - f (γ b)`. -/
+theorem energy_maximalIntegralCurve_neg_mgradient (hf : ContMDiff I 𝓘(ℝ) 2 f) {a b : ℝ}
+    (hab : uIcc a b ⊆ maximalIntegralCurveInterval (-mgradient I f) x) :
+    energy I (maximalIntegralCurve (-mgradient I f) x) a b =
+      (f (maximalIntegralCurve (-mgradient I f) x a) -
+        f (maximalIntegralCurve (-mgradient I f) x b)) / 2 := by
+  have : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
+    IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := 1)
+  set γ := maximalIntegralCurve (-mgradient I f) x
+  -- the speed `‖γ'‖ = ‖grad f ∘ γ‖` is continuous, as the norm of a continuous section along `γ`
+  have hcont : ContinuousOn (fun s ↦ ‖curveVelocity I γ s‖ ^ 2) (uIcc a b) := by
+    refine (((continuous_norm_bundle E (fun x : M ↦ TangentSpace I x)).comp_continuousOn
+      ((contMDiff_neg_mgradient_one hf).continuous.comp_continuousOn
+        (isMIntegralCurveOn_maximalIntegralCurve
+          (contMDiff_neg_mgradient_one hf)).continuousOn)).pow 2).congr ?_ |>.mono hab
+    intro s hs
+    simp [γ, curveVelocity_maximalIntegralCurve_neg_mgradient hf hs]
+  rw [energy_def, intervalIntegral.integral_eq_sub_of_hasDerivAt (f := fun s ↦ -f (γ s))
+    (fun s hs ↦ ?_) hcont.intervalIntegrable]
+  · ring
+  rw [curveVelocity_maximalIntegralCurve_neg_mgradient hf (hab hs), norm_neg]
+  exact hasDerivAt_neg_comp_maximalIntegralCurve_neg_mgradient hf (hab hs)
 
 variable (hx : Ici 0 ⊆ maximalIntegralCurveInterval (-mgradient I f) x) {c : ℝ}
   (hc : Tendsto (fun s ↦ f (maximalIntegralCurve (-mgradient I f) x s)) atTop (𝓝 c))
