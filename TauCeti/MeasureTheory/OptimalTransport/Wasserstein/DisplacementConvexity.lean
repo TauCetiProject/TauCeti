@@ -10,6 +10,7 @@ public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.InternalEnergy
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Geodesic
 public import TauCeti.Analysis.GradientFlow.GeodesicConvex
 import TauCeti.Analysis.Convex.FunctionTopology
+import TauCeti.Analysis.Convex.McCannCondition
 import TauCeti.Analysis.Matrix.MinkowskiDeterminant
 import TauCeti.Data.ENNReal.Real
 import TauCeti.MeasureTheory.OptimalTransport.Brenier
@@ -92,15 +93,6 @@ section McCannCondition
 
 variable {U : ℝ → ℝ} {n : ℕ}
 
-/-- Under McCann's condition, for `r > 0` the function `a ↦ aⁿ U(r / aⁿ)` is `r φ(c a)` with
-`φ(s) = sⁿ U(s⁻ⁿ)` and `c = r^{-1/n}`. -/
-private theorem pow_mul_apply_div_pow_eq (hn : n ≠ 0) {r : ℝ} (hr : 0 < r) {a : ℝ} (ha : 0 < a) :
-    a ^ n * U (r / a ^ n) =
-      r * ((r⁻¹ ^ (n⁻¹ : ℝ) * a) ^ n * U ((r⁻¹ ^ (n⁻¹ : ℝ) * a) ^ n)⁻¹) := by
-  rw [mul_pow, Real.rpow_inv_natCast_pow (inv_nonneg.2 hr.le) hn,
-    show (r⁻¹ * a ^ n)⁻¹ = r / a ^ n by field_simp]
-  field_simp
-
 /-- **McCann's pointwise inequality.** Let `U 0 = 0` and let `φ(s) = sⁿ U(s⁻ⁿ)` be convex and
 nonincreasing on `(0, ∞)`, with `n ≠ 0`. If `a > 0` and `a₁ ≥ 0` satisfy the concavity bound
 `(1 - t) + t a₁ ≤ a` for some `t ∈ [0, 1]`, then for every `r ≥ 0`,
@@ -151,54 +143,6 @@ private theorem pow_mul_apply_div_pow_le (hn : n ≠ 0) (hU0 : U 0 = 0)
       ring
     have := mul_le_mul_of_nonneg_left (h₁.trans h₂) hr.le
     linarith
-
-/-- Under McCann's condition, the recession constant `U'(∞) = lim U(r) / r` bounds
-`φ(s) = sⁿ U(s⁻ⁿ)` above on `(0, ∞)`, because `U(r) / r = φ(r^{-1/n})` and `φ` is
-nonincreasing. -/
-private theorem le_recessionConstant (hn : n ≠ 0)
-    (ha : AntitoneOn (fun s : ℝ => s ^ n * U (s ^ n)⁻¹) (Ioi 0)) {s : ℝ} (hs : 0 < s) :
-    ((s ^ n * U (s ^ n)⁻¹ : ℝ) : EReal) ≤ recessionConstant U := by
-  rw [recessionConstant_def]
-  refine le_limsup_of_frequently_le (Eventually.frequently ?_)
-  filter_upwards [eventually_ge_atTop (s ^ n)⁻¹, eventually_gt_atTop 0] with r hr hr0
-  set c := r⁻¹ ^ (n⁻¹ : ℝ)
-  have hc0 : 0 < c := Real.rpow_pos_of_pos (inv_pos.2 hr0) _
-  have hcn : c ^ n = r⁻¹ := Real.rpow_inv_natCast_pow (inv_nonneg.2 hr0.le) hn
-  have hcs : c ≤ s := by
-    refine (pow_le_pow_iff_left₀ hc0.le hs.le hn).1 ?_
-    rw [hcn]
-    exact inv_le_of_inv_le₀ (by positivity) hr
-  have := ha (mem_Ioi.2 hc0) (mem_Ioi.2 hs) hcs
-  rw [EReal.coe_le_coe_iff]
-  refine this.trans_eq ?_
-  simp only [hcn, inv_inv]
-  ring
-
-/-- Under McCann's condition, `U` is measurable on `[0, ∞)`: it is continuous on `(0, ∞)`, where
-`U(r) = r φ(r^{-1/n})` with `φ` convex. -/
-private theorem measurable_apply_max (hn : n ≠ 0)
-    (hc : ConvexOn ℝ (Ioi 0) fun s : ℝ => s ^ n * U (s ^ n)⁻¹) :
-    Measurable fun r : ℝ => U (max r 0) := by
-  refine measurable_of_continuousOn_compl_singleton 0 fun r hr => ?_
-  rcases lt_or_gt_of_ne hr with hr | hr
-  · -- Left of `0` the function is constant.
-    refine (continuousAt_const (y := U 0)).congr ?_ |>.continuousWithinAt
-    filter_upwards [Iio_mem_nhds hr] with r' hr'
-    rw [max_eq_right hr'.le]
-  · -- Right of `0` it is `r ↦ r φ(r^{-1/n})`, with `φ` continuous as a convex function.
-    have hφ : ContinuousOn (fun s : ℝ => s ^ n * U (s ^ n)⁻¹) (Ioi 0) := by
-      simpa using hc.continuousOn_interior
-    have hpos : 0 < r⁻¹ ^ (n⁻¹ : ℝ) := Real.rpow_pos_of_pos (inv_pos.2 hr) _
-    have hcont : ContinuousAt (fun r : ℝ => r * ((r⁻¹ ^ (n⁻¹ : ℝ)) ^ n *
-        U ((r⁻¹ ^ (n⁻¹ : ℝ)) ^ n)⁻¹)) r := by
-      exact continuousAt_id.mul ((hφ.continuousAt (Ioi_mem_nhds hpos)).comp
-        (f := fun r : ℝ => r⁻¹ ^ (n⁻¹ : ℝ))
-        ((continuousAt_inv₀ hr.ne').rpow_const (.inl (inv_ne_zero hr.ne'))))
-    refine (hcont.congr ?_).continuousWithinAt
-    filter_upwards [Ioi_mem_nhds hr] with r' hr'
-    have := pow_mul_apply_div_pow_eq (U := U) hn hr' one_pos
-    simp only [one_pow, div_one, one_mul, mul_one] at this
-    rw [max_eq_left (le_of_lt hr'), this]
 
 /-- **McCann's inequality at a positive operator.** Let `U 0 = 0` and let `φ(s) = sⁿ U(s⁻ⁿ)` be
 convex and nonincreasing on `(0, ∞)`, where `n ≥ 1` is the dimension of `E`. For a positive operator
@@ -442,7 +386,8 @@ theorem internalEnergy_map_smul_add_smul_gradient_le [Nontrivial E] (hU0 : U 0 =
     by_cases htop : recessionConstant U = ⊤
     · exact .inr (not_not.1 fun h => hA ⟨htop, h⟩)
     · exact .inl (EReal.coe_toReal htop
-        (ne_bot_of_le_ne_bot (EReal.coe_ne_bot _) (le_recessionConstant hn ha one_pos))).symm
+        (ne_bot_of_le_ne_bot (EReal.coe_ne_bot _)
+          (pow_mul_apply_inv_pow_le_recessionConstant hn ha one_pos))).symm
   obtain ⟨S, hSm, hSD, hDS, hS, H', hH'm, hHS⟩ :=
     exists_measurableSet_ae_eq_interior_subdifferential_eq_gradient ρ hf hbot hH
   -- When the degenerate set is `μ`-null, the density vanishes almost everywhere on it.
@@ -464,7 +409,7 @@ theorem internalEnergy_map_smul_add_smul_gradient_le [Nontrivial E] (hU0 : U 0 =
     internalEnergy_map_gradient ρ hU0 hf hbot hH hμ hμD hL]
   rw [hE₀] at h₀
   rw [internalEnergy_map_gradient ρ hU0 hf hbot hH hμ hμD hL] at h₁
-  have hUm := measurable_apply_max hn hc
+  have hUm := measurable_apply_max_of_convexOn hn hc
   have hr : Measurable fun x => (μ.rnDeriv ρ x).toReal := (measurable_rnDeriv _ _).ennreal_toReal
   have hdet : Measurable fun x => (H' x).det :=
     ContinuousLinearMap.continuous_det.measurable.comp hH'm
@@ -503,7 +448,7 @@ theorem internalEnergy_map_smul_add_smul_gradient_le [Nontrivial E] (hU0 : U 0 =
     fun h0 hr s hs => ?_
   -- The bound `φ ≤ L` is needed only where the density is positive and `det (H x) = 0`.
   by_cases hrec : recessionConstant U = L
-  · exact EReal.coe_le_coe_iff.1 (hrec ▸ le_recessionConstant hn ha hs)
+  · exact EReal.coe_le_coe_iff.1 (hrec ▸ pow_mul_apply_inv_pow_le_recessionConstant hn ha hs)
   · rw [hHS x hxS'] at h0
     simp [hr0x hxS' h0 hrec] at hr
 
