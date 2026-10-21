@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Algebra.Rat
 public import Mathlib.RingTheory.MvPowerSeries.Derivative
 
+import TauCeti.Algebra.Algebra.NatCast
+
 /-!
 # Termwise primitives of multivariate power series
 
@@ -77,6 +79,7 @@ theorem coeff_add_single_primitive (i : σ) (f : MvPowerSeries σ R) (n : σ →
   simp [coeff_primitive]
 
 /-- The termwise primitive of a monomial: `∫ a Xᵛ dXᵢ = a Xᵛ⁺ᵉⁱ / (νᵢ + 1)`. -/
+@[simp]
 theorem primitive_monomial (i : σ) (n : σ →₀ ℕ) (a : R) :
     primitive i (monomial n a) = monomial (n + single i 1) (((n i : ℚ) + 1)⁻¹ • a) := by
   classical
@@ -85,7 +88,7 @@ theorem primitive_monomial (i : σ) (n : σ →₀ ℕ) (a : R) :
   · have hne : m ≠ n + single i 1 := fun h ↦ by simp [h] at hm
     rw [coeff_primitive_of_eq_zero i _ hm]
     simp [coeff_monomial, hne]
-  · obtain ⟨m, rfl⟩ := le_iff_exists_add'.1 (single_le_iff.2 (Nat.one_le_iff_ne_zero.2 hm))
+  · obtain ⟨m, rfl⟩ : ∃ k, m = k + single i 1 := ⟨_, (sub_add_single_one_cancel hm).symm⟩
     simp only [coeff_add_single_primitive, coeff_monomial, add_left_inj]
     split_ifs with h
     · rw [h]
@@ -102,18 +105,11 @@ section CommSemiring
 
 variable {σ R : Type*} [CommSemiring R] [Algebra ℚ R]
 
-/-- Dividing by `k + 1` and multiplying by `k + 1` cancel in a `ℚ`-algebra. -/
-private theorem inv_add_one_smul_mul_natCast_add_one (a : R) (k : ℕ) :
-    ((k : ℚ) + 1)⁻¹ • a * ((k : R) + 1) = a := by
-  have hk : (k : ℚ) + 1 ≠ 0 := by positivity
-  have hcast : (k : R) + 1 = algebraMap ℚ R ((k : ℚ) + 1) := by simp
-  rw [hcast, Algebra.smul_def, mul_right_comm, ← map_mul, inv_mul_cancel₀ hk, map_one, one_mul]
-
 /-- **The primitive is a right inverse of the derivative**: `∂/∂Xᵢ (∫ f dXᵢ) = f`. -/
 @[simp]
 theorem pderiv_primitive (i : σ) (f : MvPowerSeries σ R) : pderiv i (primitive i f) = f := by
   ext n
-  rw [coeff_pderiv, coeff_add_single_primitive, inv_add_one_smul_mul_natCast_add_one]
+  rw [coeff_pderiv, coeff_add_single_primitive, inv_natCast_add_one_smul_mul_natCast_add_one]
 
 /-- The termwise primitive with respect to `Xᵢ` is injective. -/
 theorem primitive_injective (i : σ) : Function.Injective (primitive (R := R) (σ := σ) i) :=
@@ -125,9 +121,9 @@ theorem coeff_primitive_pderiv (i : σ) (f : MvPowerSeries σ R) (n : σ →₀ 
     coeff n (primitive i (pderiv i f)) = if n i = 0 then 0 else coeff n f := by
   split_ifs with h
   · exact coeff_primitive_of_eq_zero i _ h
-  · obtain ⟨m, rfl⟩ := le_iff_exists_add'.1 (single_le_iff.2 (Nat.one_le_iff_ne_zero.2 h))
+  · obtain ⟨m, rfl⟩ : ∃ m, n = m + single i 1 := ⟨_, (sub_add_single_one_cancel h).symm⟩
     rw [coeff_add_single_primitive, coeff_pderiv, ← smul_mul_assoc,
-      inv_add_one_smul_mul_natCast_add_one]
+      inv_natCast_add_one_smul_mul_natCast_add_one]
 
 /-- **Characterisation of the primitive**: `g = ∫ f dXᵢ` iff `∂g/∂Xᵢ = f` and `g` has no terms
 free of `Xᵢ`. -/

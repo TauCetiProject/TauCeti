@@ -421,8 +421,8 @@ section Primitive
 variable {σ K : Type*} [NormedField K] [IsUltrametricDist K] [CharZero K]
 
 /-- **Primitives of overconvergent series are overconvergent.** Over an ultrametric normed field
-of characteristic zero, if `f` is restricted at a radius `ρ > 1`, its termwise primitive with
-respect to `Xᵢ` is restricted at every radius in `(1, ρ)`. -/
+of characteristic zero, the termwise primitive with respect to `Xᵢ` of an overconvergent series is
+overconvergent. See `MvPowerSeries.IsRestricted.primitive` for the radius-by-radius version. -/
 theorem primitive_mem_washnitzerAlgebra {f : MvPowerSeries σ K} (hf : f ∈ washnitzerAlgebra σ K)
     (i : σ) : MvPowerSeries.primitive i f ∈ washnitzerAlgebra σ K := by
   obtain ⟨ρ, hρ, hf⟩ := hf

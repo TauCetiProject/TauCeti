@@ -17,9 +17,9 @@ import TauCeti.NumberTheory.Padics.PadicIntegers
 # Inverses of natural numbers in a normed field of characteristic zero
 
 In a normed field `K` of characteristic zero the norm restricts to an absolute value on `ℚ`. By
-Ostrowski's theorem it is trivial, a power of the real absolute value, or a power `|·|_p ^ t` of a
+Ostrowski's theorem it is trivial, a power of the real absolute value, or a power `|·|_p ^ s` of a
 `p`-adic absolute value. In each case the inverse of a positive integer has at most polynomial
-size: `‖n⁻¹‖ ≤ n ^ c` for a constant `c ≥ 0`. In the `p`-adic case `c = 1 / t` (`|n|_p ≥ 1 / n`), in
+size: `‖n⁻¹‖ ≤ n ^ c` for a constant `c ≥ 0`. In the `p`-adic case `c = s` (`|n|_p ≥ 1 / n`), in
 the other two cases `c = 0`.
 
 Consequently `‖n⁻¹‖ qⁿ → 0` for every `0 ≤ q < 1`. This is the estimate that makes termwise
@@ -69,7 +69,7 @@ theorem exists_norm_inv_natCast_le_rpow :
       have := Real.rpow_lt_one (v.nonneg _) hlt ht
       rw [h1] at this
       exact absurd this (not_lt.2 (by exact_mod_cast hn))
-    · -- A power `|·|_p ^ t` of a `p`-adic absolute value: use `|n|_p ≥ 1 / n`.
+    · -- `v ^ t` is a `p`-adic absolute value, so `v = |·|_p ^ (1 / t)`: use `|n|_p ≥ 1 / n`.
       obtain ⟨t, ht, heq⟩ := AbsoluteValue.isEquiv_iff_exists_rpow_eq.1 hpad
       refine ⟨t⁻¹, inv_nonneg.2 ht.le, fun n hn ↦ ?_⟩
       have h1 : v n ^ t = padicNorm p n := by

@@ -8,8 +8,8 @@ module
 public import TauCeti.RingTheory.MvPowerSeries.Primitive.Basic
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
 
-import Mathlib.Data.Finsupp.Interval
 import TauCeti.Analysis.Normed.Field.NatCast
+import TauCeti.Data.Finsupp.Interval
 
 /-!
 # Termwise primitives of restricted power series
@@ -25,19 +25,21 @@ loses an arbitrarily small amount of the radius in the variable `Xᵢ`: for poly
 ```
 
 The radius cannot be kept: over `ℚ_p` the series `∑ₘ p^m X^(p^m - 1)` is restricted at radius `1`,
-but its primitive `∑ₘ X^(p^m)` is not. In particular, over a complete field of characteristic
+but its primitive `∑ₘ X^(p^m)` is not. In particular, over an ultrametric field of characteristic
 zero, termwise primitives preserve the overconvergent series, those restricted at some radius
 greater than `1`.
 
 ## Main results
 
+* `MvPowerSeries.prod_pow_le_prod_pow_mul`: shrinking the polyradius from `c` to `c'` divides
+  the weight of `ν` at least by `(cᵢ / c'ᵢ) ^ νᵢ`.
 * `MvPowerSeries.exists_norm_coeff_primitive_mul_prod_le`: the weighted coefficient norms of
   `∫ f dXᵢ` at `c'` are bounded by `C` times those of `f` at `c`.
 * `MvPowerSeries.exists_gaussNorm_primitive_le`: the Gauss norm bound.
 * `MvPowerSeries.IsRestricted.primitive`: the primitive of a series restricted at `c` is
   restricted at `c'`.
-* `MvPowerSeries.restrictedPrimitive`: the primitive as a `K`-linear map from series restricted at
-  `c` to series restricted at `c'`, bounded for the Gauss norms
+* `MvPowerSeries.restrictedPrimitive`: over an ultrametric field, the primitive as a `K`-linear map
+  from series restricted at `c` to series restricted at `c'`, bounded for the Gauss norms
   (`MvPowerSeries.exists_norm_restrictedPrimitive_le`) and hence continuous.
 
 ## References
@@ -64,7 +66,7 @@ theorem norm_coeff_add_single_primitive (f : MvPowerSeries σ K) (n : σ →₀ 
 
 /-- Decreasing the polyradius `c` to `c'`, the weight of an exponent drops at least by the factor
 `(c'ᵢ / cᵢ) ^ νᵢ` coming from the variable `Xᵢ`. -/
-private theorem prod_pow_le_prod_pow_mul (hc' : ∀ j, 0 ≤ c' j) (hle : ∀ j, c' j ≤ c j)
+theorem prod_pow_le_prod_pow_mul (hc' : ∀ j, 0 ≤ c' j) (hle : ∀ j, c' j ≤ c j)
     (hi : 0 < c i) (n : σ →₀ ℕ) :
     n.prod (c' · ^ ·) ≤ n.prod (c · ^ ·) * (c' i / c i) ^ n i := by
   classical
@@ -104,14 +106,6 @@ private theorem norm_coeff_add_single_primitive_mul_prod_le (hc' : ∀ j, 0 ≤ 
         rw [Nat.cast_succ, pow_succ]
         field_simp
 
-/-- Subtracting `eᵢ` from exponents has finite fibres: if `n - eᵢ = m` then `n ≤ m + eᵢ`. -/
-private theorem tendsto_sub_single_cofinite (i : σ) :
-    Tendsto (fun n : σ →₀ ℕ ↦ n - single i 1) cofinite cofinite := by
-  classical
-  exact Tendsto.cofinite_of_finite_preimage_singleton fun m ↦
-    ((Set.finite_Iic (m + single i 1)).subset fun _ hn ↦
-      tsub_le_iff_right.1 (le_of_eq hn)).to_subtype
-
 variable (c c' i) in
 /-- **Primitives lose an arbitrarily small amount of radius.** Over a normed field of
 characteristic zero, for polyradii `0 ≤ c' ≤ c` with `c'ᵢ < cᵢ`, there is `C ≥ 0` such that the
@@ -136,7 +130,7 @@ theorem exists_norm_coeff_primitive_mul_prod_le (hc' : ∀ j, 0 ≤ c' j) (hle :
   by_cases hn : n i = 0
   · rw [coeff_primitive_of_eq_zero i f hn, norm_zero, zero_mul]
     exact mul_nonneg (by positivity) hw
-  · obtain ⟨m, rfl⟩ := le_iff_exists_add'.1 (single_le_iff.2 (Nat.one_le_iff_ne_zero.2 hn))
+  · obtain ⟨m, rfl⟩ : ∃ m, n = m + single i 1 := ⟨_, (sub_add_single_one_cancel hn).symm⟩
     rw [add_tsub_cancel_right] at hw ⊢
     exact (norm_coeff_add_single_primitive_mul_prod_le hc' hle hi f m).trans
       (mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left (hB ⟨m i + 1, rfl⟩) hi.le) hw)
@@ -172,11 +166,12 @@ end NormedField
 section Restricted
 
 variable {σ K : Type*} [NormedField K] [IsUltrametricDist K] [CharZero K] {c c' : σ → ℝ}
-  [∀ j, Fact (0 < c j)] [∀ j, Fact (0 < c' j)] {i : σ}
+  [∀ j, Fact (0 < c j)] [∀ j, Fact (0 < c' j)]
 
 /-- The termwise primitive with respect to `Xᵢ`, as a `K`-linear map from series restricted at
-positive polyradii `c` to series restricted at positive polyradii `c' ≤ c` with `c'ᵢ < cᵢ`. -/
-noncomputable def restrictedPrimitive (hle : ∀ j, c' j ≤ c j) (hlt : c' i < c i) :
+positive polyradii `c` to series restricted at positive polyradii `c' ≤ c` with `c'ᵢ < cᵢ`. The
+field `K` is ultrametric, as needed for the restricted series to form a ring. -/
+noncomputable def restrictedPrimitive (i : σ) (hle : ∀ j, c' j ≤ c j) (hlt : c' i < c i) :
     IsRestricted.subring (R := K) c →ₗ[K] IsRestricted.subring (R := K) c' where
   toFun f := ⟨primitive i (f : MvPowerSeries σ K),
     f.2.primitive (fun j ↦ (Fact.out : 0 < c' j).le) hle hlt⟩
@@ -190,16 +185,16 @@ noncomputable def restrictedPrimitive (hle : ∀ j, c' j ≤ c j) (hlt : c' i < 
 
 /-- The primitive of a restricted series is its termwise primitive as a formal series. -/
 @[simp]
-theorem coe_restrictedPrimitive (hle : ∀ j, c' j ≤ c j) (hlt : c' i < c i)
+theorem coe_restrictedPrimitive (i : σ) (hle : ∀ j, c' j ≤ c j) (hlt : c' i < c i)
     (f : IsRestricted.subring (R := K) c) :
-    (restrictedPrimitive hle hlt f : MvPowerSeries σ K) = primitive i f :=
+    (restrictedPrimitive i hle hlt f : MvPowerSeries σ K) = primitive i f :=
   (rfl)
 
 /-- **The operator bound for primitives.** The termwise primitive from series restricted at `c`
 to series restricted at `c'` is bounded for the Gauss norms. -/
-theorem exists_norm_restrictedPrimitive_le (hle : ∀ j, c' j ≤ c j) (hlt : c' i < c i) :
+theorem exists_norm_restrictedPrimitive_le (i : σ) (hle : ∀ j, c' j ≤ c j) (hlt : c' i < c i) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ f : IsRestricted.subring (R := K) c,
-      ‖restrictedPrimitive hle hlt f‖ ≤ C * ‖f‖ := by
+      ‖restrictedPrimitive i hle hlt f‖ ≤ C * ‖f‖ := by
   obtain ⟨C, hC₀, hC⟩ :=
     exists_gaussNorm_primitive_le (K := K) c c' i (fun j ↦ (Fact.out : 0 < c' j).le) hle hlt
   refine ⟨C, hC₀, fun f ↦ ?_⟩
@@ -208,9 +203,9 @@ theorem exists_norm_restrictedPrimitive_le (hle : ∀ j, c' j ≤ c j) (hlt : c'
 
 /-- The termwise primitive from series restricted at `c` to series restricted at `c'` is
 continuous for the Gauss norms. -/
-theorem continuous_restrictedPrimitive (hle : ∀ j, c' j ≤ c j) (hlt : c' i < c i) :
-    Continuous (restrictedPrimitive (K := K) hle hlt) := by
-  obtain ⟨C, -, hC⟩ := exists_norm_restrictedPrimitive_le (K := K) hle hlt
+theorem continuous_restrictedPrimitive (i : σ) (hle : ∀ j, c' j ≤ c j) (hlt : c' i < c i) :
+    Continuous (restrictedPrimitive (K := K) i hle hlt) := by
+  obtain ⟨C, -, hC⟩ := exists_norm_restrictedPrimitive_le (K := K) i hle hlt
   exact AddMonoidHomClass.continuous_of_bound _ C hC
 
 end Restricted
