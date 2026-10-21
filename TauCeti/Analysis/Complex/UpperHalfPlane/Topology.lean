@@ -226,8 +226,7 @@ it. -/
 theorem im_const_sub_inv_eq_zero (c : ℝ) {z : ℂ} : ((c : ℂ) - z⁻¹).im = 0 ↔ z.im = 0 := by
   rcases eq_or_ne z 0 with rfl | hz
   · simp
-  · rw [sub_im, ofReal_im, zero_sub, inv_im, neg_div, neg_neg,
-      div_eq_zero_iff, or_iff_left (normSq_pos.mpr hz).ne']
+  · simp [div_eq_zero_iff, (normSq_pos.mpr hz).ne']
 
 /-- For real `c`, the Möbius map `z ↦ c - z⁻¹` carries the punctured closed upper half-plane near
 `0` to the closed upper half-plane near infinity. -/
