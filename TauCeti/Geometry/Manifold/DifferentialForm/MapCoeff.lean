@@ -205,6 +205,7 @@ theorem mapCoeff_comp (L' : G →L[ℝ] G') (L : F →L[ℝ] G) :
   (rfl)
 
 /-- The exterior derivative of smooth forms is natural in the coefficient space. -/
+@[simp]
 theorem mextDerivₗ_mapCoeff [IsManifold I 2 M] (L : F →L[ℝ] G) (φ : SmoothForm I M F k) :
     mextDerivₗ I k (mapCoeff L φ) = mapCoeff L (mextDerivₗ I k φ) :=
   Subtype.ext <| by
@@ -214,6 +215,7 @@ theorem mextDerivₗ_mapCoeff [IsManifold I 2 M] (L : F →L[ℝ] G) (φ : Smoot
 variable [IsManifold I' 1 M']
 
 /-- Coefficient maps commute with pullback of smooth forms. -/
+@[simp]
 theorem mpullback_mapCoeff (L : F →L[ℝ] G) (f : M → M') (hf : ContMDiff I I' ∞ f)
     (φ : SmoothForm I' M' F k) :
     mpullback f hf (mapCoeff L φ) = mapCoeff L (mpullback f hf φ) :=
@@ -254,8 +256,8 @@ instance instModule [Semiring S] [Module S F] [ContinuousConstSMul S F] [SMulCom
     Subtype.val_injective fun _ _ ↦ (rfl)
 
 /-- When the coefficient scalars restrict to real scalars, so do their actions on smooth forms;
-for complex coefficients, `Complex.coe_smul` then identifies the action of real numbers viewed
-as complex numbers with the real action. -/
+for complex coefficients, `RCLike.real_smul_eq_coe_smul` then identifies the real action on
+smooth forms with the action of real numbers viewed as complex numbers. -/
 instance [SMul ℝ S] [Monoid S] [DistribMulAction S F] [ContinuousConstSMul S F]
     [SMulCommClass ℝ S F] [IsScalarTower ℝ S F] : IsScalarTower ℝ S (SmoothForm I M F k) where
   smul_assoc r c φ := Subtype.ext (smul_assoc r c φ.1)
@@ -279,12 +281,14 @@ theorem mapCoeff_smul_of_map_smul {S' : Type*} [Monoid S] [DistribMulAction S F]
 
 /-- The exterior derivative of smooth forms is linear for scalars of a division semiring acting
 on the coefficients, such as complex scalars on complex-valued forms. -/
+@[simp]
 theorem mextDerivₗ_smul [IsManifold I 2 M] [DivisionSemiring S] [Module S F]
     [ContinuousConstSMul S F] [SMulCommClass ℝ S F] (c : S) (φ : SmoothForm I M F k) :
     mextDerivₗ I k (c • φ) = c • mextDerivₗ I k φ :=
   Subtype.ext <| by simp only [mextDerivₗ_apply, smul_toRoughForm, mextDeriv_smul]
 
 /-- Pullback of smooth forms is linear for scalars acting on the coefficients. -/
+@[simp]
 theorem mpullback_smul [Monoid S] [DistribMulAction S F] [ContinuousConstSMul S F]
     [SMulCommClass ℝ S F] (f : M → M') (hf : ContMDiff I I' ∞ f) (c : S)
     (φ : SmoothForm I' M' F k) :
