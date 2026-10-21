@@ -156,14 +156,14 @@ jobs:
           fetch-depth: 1
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@3e029deb7a9559ffe94bc23b822ffcc73c1dc895
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@6b468630edbf2eacb048466519c825b586fee84e
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 3e029deb7a9559ffe94bc23b822ffcc73c1dc895
+          tools-ref: 6b468630edbf2eacb048466519c825b586fee84e
           project-directory: gate
       - name: Select CI API credentials
         id: ci-api
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@3e029deb7a9559ffe94bc23b822ffcc73c1dc895
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@6b468630edbf2eacb048466519c825b586fee84e
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}
@@ -232,25 +232,34 @@ jobs:
             IFS=$'\t' read -r SHA REPO BASE_REF AUTHOR < <(printf '%s' "$metadata" | jq -r '[.head.sha,.head.repo.full_name,.base.ref,.user.login] | @tsv')
             STATUS_SHA="$SHA"
           fi
+          # Keep the known head available to the always-run status reporter even
+          # when Git is unavailable. This does not authorize a build or guess a base.
+          [[ "$SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::invalid head SHA"; exit 1; }
+          {
+            echo "num=$NUM"
+            echo "sha=$SHA"
+            echo "repo=$REPO"
+            echo "base_ref=$BASE_REF"
+            echo "status_sha=$STATUS_SHA"
+            echo "author=$AUTHOR"
+          } >> "$GITHUB_OUTPUT"
           # Fetch immutable identities through Git, not REST. No candidate
           # configuration/hooks execute; the authority-selected staging ref is
           # checked against H and B must be its ancestor before anything builds.
           identity_args=(--repository '${{ github.repository }}' --head-repository "$REPO"
             --head "$SHA" --base-ref "$BASE_REF" --store "$RUNNER_TEMP/ci-identity.git")
           if [ -n "${STAGING_REF:-}" ]; then identity_args+=(--staging-ref "$STAGING_REF"); fi
-          identity=$(python3 gate/scripts/ci_git.py resolve "${identity_args[@]}")
+          if ! identity=$(python3 gate/scripts/ci_git.py resolve "${identity_args[@]}"); then
+            echo 'INFRA=1' >> "$GITHUB_ENV"
+            echo "::error::Git identity unavailable; reporting failure on the known head without building"
+            exit 1
+          fi
           BASE_SHA=$(printf '%s' "$identity" | jq -er .base_sha)
           MB=$(printf '%s' "$identity" | jq -er .mergebase)
           echo 'MERGEBASE_EXACT=1' >> "$GITHUB_ENV"
           {
-            echo "num=$NUM"
             echo "base_sha=$BASE_SHA"
-            echo "sha=$SHA"
-            echo "repo=$REPO"
-            echo "base_ref=$BASE_REF"
             echo "mergebase=$MB"
-            echo "status_sha=$STATUS_SHA"
-            echo "author=$AUTHOR"
           } >> "$GITHUB_OUTPUT"
           echo "Building PR #$NUM @ $SHA from $REPO (author=${AUTHOR:-merge-group}, status -> $STATUS_SHA, bump delta vs merge-base $MB)"
 
@@ -1557,14 +1566,14 @@ jobs:
           persist-credentials: false
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@3e029deb7a9559ffe94bc23b822ffcc73c1dc895
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@6b468630edbf2eacb048466519c825b586fee84e
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 3e029deb7a9559ffe94bc23b822ffcc73c1dc895
+          tools-ref: 6b468630edbf2eacb048466519c825b586fee84e
           project-directory: .
       - name: Select CI API credentials
         id: ci-api
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@3e029deb7a9559ffe94bc23b822ffcc73c1dc895
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@6b468630edbf2eacb048466519c825b586fee84e
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}
