@@ -55,41 +55,6 @@ namespace TauCeti
 namespace Probability
 
 
-/-- Collecting `c ^ r / Γ r * x ^ (r - 1) * exp (-(c * x))` against `exp (-x) * x ^ k / k !` at a
-nonzero point: the two powers of `x` and the two exponentials each combine, leaving
-`x ^ (r + k - 1) * exp (-((c + 1) * x))` under the constant `c ^ r / (Γ r * k !)`.
-
-The identity is algebraic. Nothing here is assumed positive except that `x` is nonzero, so neither
-side need be a probability density, and the surviving constant is `c ^ r / (Γ r * k !)` rather than
-the `(c + 1) ^ (r + k) / Γ (r + k)` that would normalise the `x`-dependent factor into a gamma
-kernel of shape `r + k` and rate `c + 1`. The gamma--Poisson mixture below instantiates the
-identity pointwise at whatever rate its gamma law carries, and it is there that the two factors
-are the densities their shapes suggest. -/
--- The factors are written out rather than as `gammaPDFReal` and `poissonPMFReal`: the former
--- carries an `if 0 ≤ x` guard that is not definitional at a bound variable, and the latter is
--- indexed by `ℝ≥0`, so either would cost the consumer a congruence step under its integral.
-theorem _root_.Real.gammaKernel_mul_exp_mul_pow_div_factorial (c r : ℝ) (k : ℕ) {x : ℝ}
-    (hx : x ≠ 0) :
-    c ^ r / Real.Gamma r * x ^ (r - 1) * Real.exp (-(c * x)) *
-        (Real.exp (-x) * x ^ k / k.factorial) =
-      c ^ r / (Real.Gamma r * k.factorial) *
-        (x ^ (r + (k : ℝ) - 1) * Real.exp (-((c + 1) * x))) := by
-  have hxpow : x ^ (r - 1) * x ^ k = x ^ (r + (k : ℝ) - 1) := by
-    -- `Real.rpow_add_natCast` fires only on an exponent already in the shape `y + (n : ℕ)`,
-    -- so reassociate `r + k - 1` into `(r - 1) + k` before rewriting.
-    rw [show r + (k : ℝ) - 1 = r - 1 + (k : ℕ) by ring,
-      Real.rpow_add_natCast hx]
-  have hexp : Real.exp (-(c * x)) * Real.exp (-x) = Real.exp (-((c + 1) * x)) := by
-    rw [← Real.exp_add]
-    congr 1
-    ring
-  calc
-    c ^ r / Real.Gamma r * x ^ (r - 1) * Real.exp (-(c * x)) *
-        (Real.exp (-x) * x ^ k / k.factorial) =
-        c ^ r / (Real.Gamma r * k.factorial) *
-          ((x ^ (r - 1) * x ^ k) * (Real.exp (-(c * x)) * Real.exp (-x))) := by ring
-    _ = _ := by rw [hxpow, hexp]
-
 /-- Multiplying a Gamma kernel by finitely many Poisson masses shifts its shape by the total
 count and its rate by the sum of the Poisson weights. The identity holds for arbitrary real
 parameters at every nonzero point, without positivity or normalization assumptions. -/
@@ -120,6 +85,29 @@ theorem _root_.Real.gammaKernel_mul_prod_exp_mul_pow_div_factorial {ι : Type*} 
         ((x ^ (r - 1) * x ^ (∑ i, k i)) *
           (Real.exp (-(c * x)) * (∏ i, Real.exp (-(p i * x))))) := by ring
     _ = _ := by rw [hpow, hexp]
+
+/-- Collecting `c ^ r / Γ r * x ^ (r - 1) * exp (-(c * x))` against `exp (-x) * x ^ k / k !` at a
+nonzero point: the two powers of `x` and the two exponentials each combine, leaving
+`x ^ (r + k - 1) * exp (-((c + 1) * x))` under the constant `c ^ r / (Γ r * k !)`.
+
+The identity is algebraic. Nothing here is assumed positive except that `x` is nonzero, so neither
+side need be a probability density, and the surviving constant is `c ^ r / (Γ r * k !)` rather than
+the `(c + 1) ^ (r + k) / Γ (r + k)` that would normalise the `x`-dependent factor into a gamma
+kernel of shape `r + k` and rate `c + 1`. The gamma--Poisson mixture below instantiates the
+identity pointwise at whatever rate its gamma law carries, and it is there that the two factors
+are the densities their shapes suggest. -/
+-- The factors are written out rather than as `gammaPDFReal` and `poissonPMFReal`: the former
+-- carries an `if 0 ≤ x` guard that is not definitional at a bound variable, and the latter is
+-- indexed by `ℝ≥0`, so either would cost the consumer a congruence step under its integral.
+theorem _root_.Real.gammaKernel_mul_exp_mul_pow_div_factorial (c r : ℝ) (k : ℕ) {x : ℝ}
+    (hx : x ≠ 0) :
+    c ^ r / Real.Gamma r * x ^ (r - 1) * Real.exp (-(c * x)) *
+        (Real.exp (-x) * x ^ k / k.factorial) =
+      c ^ r / (Real.Gamma r * k.factorial) *
+        (x ^ (r + (k : ℝ) - 1) * Real.exp (-((c + 1) * x))) := by
+  simpa [div_div] using
+    (Real.gammaKernel_mul_prod_exp_mul_pow_div_factorial c r (fun _ : Unit => 1)
+      (fun _ => k) hx)
 
 private lemma integral_poissonMass_gammaMeasure {r p : ℝ} (hr : 0 < r) (hp : 0 < p)
     (hp1 : p < 1) (k : ℕ) :
