@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.ExtChartAt
 public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
+import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Geometry.Manifold.MFDeriv.Tangent
 
 /-!
@@ -49,6 +50,9 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   normed space is differentiable whenever its preferred coordinate expression is.
 * `MDifferentiableAt.mvfderiv_eq_fderiv_comp_extChartAt_symm`: on a boundaryless manifold, the
   vector-valued manifold derivative is the Fréchet derivative of the coordinate expression.
+* `ContMDiffAt.hasStrictFDerivAt_extChartAt_conj`: over `ℝ` or `ℂ`, a map out of a boundaryless
+  manifold that is `C¹` at a point, read in the extended charts at that point and at its image, is
+  strictly differentiable at the chart image of the point.
 * `TauCeti.contMDiffAt_iff_contDiffAt_comp_extChartAt_symm` and
   `TauCeti.contMDiffAt_iff_contDiffAt_comp_extend_symm`: on a boundaryless manifold, a map into a
   normed space is `C^n` at a point exactly when its coordinate expression in the preferred chart,
@@ -459,5 +463,26 @@ theorem _root_.HasMFDerivAt.hasFDerivAt_extChartAt_comp {Q : F → M} {z : F} {�
   exact he ▸ hd
 
 end NormedFieldCharts
+
+section RCLikeCharts
+
+variable {𝕜 E H M E' H' M' : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} [I.Boundaryless]
+  [TopologicalSpace M] [ChartedSpace H M]
+  [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [TopologicalSpace H']
+  {I' : ModelWithCorners 𝕜 E' H'} [TopologicalSpace M'] [ChartedSpace H' M']
+
+/-- A map out of a manifold without boundary that is `C¹` at `y`, read in the extended charts at
+`y` and at `f y`, has a strict derivative at the image of `y`. -/
+theorem _root_.ContMDiffAt.hasStrictFDerivAt_extChartAt_conj {f : M → M'} {y : M}
+    (hf : ContMDiffAt I I' 1 f y) :
+    HasStrictFDerivAt (extChartAt I' (f y) ∘ f ∘ (extChartAt I y).symm)
+      (fderiv 𝕜 (extChartAt I' (f y) ∘ f ∘ (extChartAt I y).symm) (extChartAt I y y))
+      (extChartAt I y y) := by
+  have h := (contMDiffAt_iff.mp hf).2
+  rw [I.range_eq_univ, contDiffWithinAt_univ] at h
+  exact h.hasStrictFDerivAt one_ne_zero
+
+end RCLikeCharts
 
 end TauCeti

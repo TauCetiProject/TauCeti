@@ -25,11 +25,13 @@ The form is nondegenerate, since pairing with the monomial `X⁻¹⁻ⁿ` reads 
 `Xⁿ`. The orthogonal complement of `U_a` is exactly `U_{-a}`: the product of a series in `U_a`
 and a series in `U_{-a}` has no negative exponents, and the monomials `Xᵏ`, `k ≥ a`, detect every
 coefficient below `-a`. Consequently the form descends to a pairing
-`U_a / U_b × U_{-b} / U_{-a} → R`, which is perfect over every commutative ring. The coefficients
-at the exponents `a ≤ n < b` identify `U_a / U_b` with `R^{b - a}`, so these quotients are finite
-free of rank `b - a`, and in these coordinates the pairing matches the coefficient of `Xⁿ` with
-that of `X⁻¹⁻ⁿ`. This finite-level duality is the input for describing continuous linear
-functionals on a Laurent-series field, which vanish on some `U_a`, through the residue form.
+`U_a / U_b × U_{-b} / U_{-a} → R`, which is perfect over every commutative ring. Over any ring
+`R`, the coefficients at the exponents `a ≤ n < b` identify `U_a / U_b` with the functions on
+this finite interval, so these quotients are finite free. Their rank is `(b - a).toNat` when `R`
+satisfies the strong rank condition. In these coordinates the pairing matches the coefficient
+of `Xⁿ` with that of `X⁻¹⁻ⁿ`. This finite-level duality is the input for describing continuous
+linear functionals on a Laurent-series field, which vanish on some `U_a`, through the residue
+form.
 
 ## Main definitions
 
@@ -44,7 +46,7 @@ functionals on a Laurent-series field, which vanish on some `U_a`, through the r
 * `TauCeti.LaurentSeries.residueForm_nondegenerate`: the residue form is nondegenerate.
 * `TauCeti.LaurentSeries.residueForm_orthogonal_lattice`: the orthogonal complement of `U_a` is
   `U_{-a}`.
-* `TauCeti.LaurentSeries.finrank_latticeQuotient`: `U_a / U_b` has rank `b - a`.
+* `TauCeti.LaurentSeries.finrank_latticeQuotient`: `U_a / U_b` has rank `(b - a).toNat`.
 * `TauCeti.LaurentSeries.residueFormQuotientPairing_nondegenerate`: the induced pairing is
   nondegenerate.
 * `TauCeti.LaurentSeries.residueFormQuotientPairing.instIsPerfPair`: the induced pairing is
@@ -115,9 +117,9 @@ theorem residueForm_orthogonal_lattice (a : ℤ) :
 
 end Form
 
-section Quotient
+section Coefficients
 
-variable (R : Type*) [CommRing R]
+variable (R : Type*) [Semiring R]
 
 /-- The coefficient map `U_a → R^{[a, b)}`, whose kernel is `U_b`. -/
 private noncomputable def latticeCoeff (a b : ℤ) : lattice R R a →ₗ[R] Finset.Ico a b → R :=
@@ -142,6 +144,12 @@ private theorem latticeCoeff_surjective (a b : ℤ) : Function.Surjective (latti
     single_mem_lattice (Finset.mem_Ico.mp k.2).1 _⟩, funext fun k ↦ ?_⟩
   rw [latticeCoeff_apply, coeff_sum, Finset.sum_eq_single k
     (fun j _ hj ↦ coeff_single_of_ne (Subtype.coe_ne_coe.mpr hj.symm)) (by simp), coeff_single_same]
+
+end Coefficients
+
+section Quotient
+
+variable (R : Type*) [Ring R]
 
 /-- The coefficients at the exponents `a ≤ n < b` identify the quotient `U_a / U_b` with the
 functions on these exponents. -/
@@ -181,12 +189,18 @@ instance (a b : ℤ) :
     Module.Finite R (lattice R R a ⧸ (lattice R R b).comap (lattice R R a).subtype) :=
   .equiv (latticeQuotientEquiv R a b).symm
 
-/-- The quotient `U_a / U_b` has rank `b - a` (and is zero when `b ≤ a`). -/
-theorem finrank_latticeQuotient [Nontrivial R] (a b : ℤ) :
+/-- The quotient `U_a / U_b` has rank `(b - a).toNat` (and is zero when `b ≤ a`). -/
+theorem finrank_latticeQuotient [StrongRankCondition R] (a b : ℤ) :
     Module.finrank R (lattice R R a ⧸ (lattice R R b).comap (lattice R R a).subtype) =
       (b - a).toNat := by
   rw [(latticeQuotientEquiv R a b).finrank_eq, Module.finrank_fintype_fun_eq_card,
     Fintype.card_coe, Int.card_Ico]
+
+end Quotient
+
+section Pairing
+
+variable (R : Type*) [CommRing R]
 
 /-- The residue form descends to a pairing `U_a / U_b × U_{-b} / U_{-a} → R`: series in `U_a` and
 `U_{-a}`, or in `U_b` and `U_{-b}`, have zero residue pairing. -/
@@ -258,6 +272,6 @@ instance residueFormQuotientPairing.instIsPerfPair (a b : ℤ) :
     residueForm_sum_single_right R a b (j : ℤ) _ hk, hsmul, Submodule.Quotient.mk_smul,
     map_smul, smul_eq_mul, mul_comm]
 
-end Quotient
+end Pairing
 
 end TauCeti.LaurentSeries
