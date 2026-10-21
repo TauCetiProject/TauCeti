@@ -37,4 +37,9 @@ theorem ringEquivEnd_apply_asHom (X : C) (f : End X) :
     (hF.ringEquivEnd X f).asHom = F.map f.asHom :=
   (rfl)
 
+@[simp]
+theorem ringEquivEnd_symm_apply_asHom (X : C) (g : End (F.obj X)) :
+    ((hF.ringEquivEnd X).symm g).asHom = hF.preimage g.asHom :=
+  (rfl)
+
 end CategoryTheory.Functor.FullyFaithful
