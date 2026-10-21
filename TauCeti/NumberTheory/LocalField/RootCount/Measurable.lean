@@ -59,7 +59,7 @@ open Polynomial ValuativeRel MeasureTheory
 namespace TauCeti
 
 open TauCeti.Polynomial (monicOfCoeff monic_monicOfCoeff natDegree_monicOfCoeff map_monicOfCoeff
-  continuous_coeff_monicOfCoeff)
+  continuous_coeff_monicOfCoeff continuous_coeff_prod_X_sub_C)
 
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
@@ -87,42 +87,29 @@ subset of `Fin n → K`. -/
 theorem isCompact_setOf_le_card_aroots (n k : ℕ) :
     IsCompact {a : Fin n → K | a ∈ integerBox K (Fin n) ∧
       k ≤ ((monicOfCoeff a).aroots L).card} := by
-  by_cases hk : k ≤ n
-  swap
-  · convert isCompact_empty using 1
-    refine Set.eq_empty_of_forall_notMem fun a ha ↦ hk ?_
-    exact ha.2.trans ((card_roots' _).trans (by rw [natDegree_map, natDegree_monicOfCoeff]))
   set φ := algebraMap 𝒪[K] 𝒪[L]
   have := finite_of_valuativeExtension K L
-  have hφ : Continuous φ := by
-    refine continuous_induced_rng.2 ?_
-    have : ((↑) : 𝒪[L] → L) ∘ φ = algebraMap K L ∘ (↑) := funext coe_algebraMap_integerRing
-    rw [this]
-    exact (continuous_algebraMap_of_valuativeExtension K L).comp continuous_subtype_val
+  have hφ : Continuous φ := continuous_algebraMap_integerRing K L
   -- The factorizations `∏ j, (X - x j) * q = p` over `𝒪[L]`, recorded by their coefficients.
   set C : Set (((Fin k → 𝒪[L]) × (Fin (n - k) → 𝒪[L])) × (Fin n → 𝒪[K])) :=
     {z | (∏ j, (X - Polynomial.C (z.1.1 j))) * monicOfCoeff z.1.2 = (monicOfCoeff z.2).map φ}
   have hC : IsClosed C := by
     simp only [C, Polynomial.ext_iff, Set.ofPred_forall]
     refine isClosed_iInter fun i ↦ isClosed_eq ?_ ?_
-    · refine continuous_iff_continuousAt.2 fun z ↦ continuousAt_coeff_mul (fun j _ ↦ ?_)
+    · refine continuous_iff_continuousAt.2 fun z ↦ continuousAt_coeff_mul
+        (fun j _ ↦ ((continuous_coeff_prod_X_sub_C _ j).comp
+          (continuous_fst.comp continuous_fst)).continuousAt)
         fun j _ ↦ ((continuous_coeff_monicOfCoeff j).comp
           (continuous_snd.comp continuous_fst)).continuousAt
-      refine continuousAt_coeff_prod _ fun l _ m _ ↦ ?_
-      simp only [coeff_sub, coeff_X, coeff_C]
-      refine continuousAt_const.sub ?_
-      split_ifs
-      · exact ((continuous_apply l).comp (continuous_fst.comp continuous_fst)).continuousAt
-      · exact continuousAt_const
     · simp only [map_monicOfCoeff]
       exact (continuous_coeff_monicOfCoeff i).comp
         (continuous_pi fun j ↦ hφ.comp ((continuous_apply j).comp continuous_snd))
   -- `C` is closed in a compact space, and the set of the statement is its image.
   convert hC.isCompact.image (f := fun z i ↦ (z.2 i : K)) (continuous_pi fun i ↦
     continuous_subtype_val.comp ((continuous_apply i).comp continuous_snd)) using 1
-  have hfac (α : Fin n → 𝒪[K]) := Monic.le_card_roots_iff_exists_prod_mul_monicOfCoeff_eq
+  have hfac (α : Fin n → 𝒪[K]) := Monic.le_card_roots_iff_exists_prod_mul_monicOfCoeff_eq (k := k)
     ((monic_monicOfCoeff α).map φ) (by rw [(monic_monicOfCoeff α).natDegree_map,
-      natDegree_monicOfCoeff]) hk
+      natDegree_monicOfCoeff])
   ext a
   constructor
   · rintro ⟨ha, hcard⟩

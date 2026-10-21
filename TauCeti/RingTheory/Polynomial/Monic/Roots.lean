@@ -11,7 +11,7 @@ public import TauCeti.RingTheory.Polynomial.Roots
 /-!
 # Counting roots of a monic polynomial by its factorizations
 
-A monic polynomial `p` of degree `n` over a domain has at least `k ≤ n` roots, counted with
+A monic polynomial `p` of degree `n` over a domain has at least `k` roots, counted with
 multiplicity, exactly when it factors as `∏ j, (X - x j) * q` with `q` monic of degree `n - k`.
 Writing `q` through its lower coefficients `b : Fin (n - k) → R` as
 `TauCeti.Polynomial.monicOfCoeff b` turns the condition into the solvability of a polynomial
@@ -22,7 +22,7 @@ field (`TauCeti.isCompact_setOf_le_card_aroots`).
 ## Main results
 
 * `Polynomial.Monic.le_card_roots_iff_exists_prod_mul_monicOfCoeff_eq`: a monic polynomial of
-  degree `n` has at least `k ≤ n` roots exactly when it is `∏ j, (X - x j)` times a monic
+  degree `n` has at least `k` roots exactly when it is `∏ j, (X - x j)` times a monic
   polynomial of degree `n - k`.
 -/
 
@@ -32,11 +32,11 @@ open Polynomial TauCeti.Polynomial
 
 namespace Polynomial.Monic
 
-/-- A monic polynomial `p` of degree `n` over a domain has at least `k ≤ n` roots, counted with
+/-- A monic polynomial `p` of degree `n` over a domain has at least `k` roots, counted with
 multiplicity, exactly when `p = ∏ j, (X - x j) * monicOfCoeff b` for some `x : Fin k → R` and
 `b : Fin (n - k) → R`, that is, with a monic cofactor of degree `n - k`. -/
 theorem le_card_roots_iff_exists_prod_mul_monicOfCoeff_eq {R : Type*} [CommRing R] [IsDomain R]
-    {p : R[X]} (hp : p.Monic) {n k : ℕ} (hdeg : p.natDegree = n) (hk : k ≤ n) :
+    {p : R[X]} (hp : p.Monic) {n k : ℕ} (hdeg : p.natDegree = n) :
     k ≤ p.roots.card ↔ ∃ (x : Fin k → R) (b : Fin (n - k) → R),
       (∏ j, (X - C (x j))) * monicOfCoeff b = p := by
   rw [le_card_roots_iff_exists_prod_X_sub_C_dvd hp.ne_zero]

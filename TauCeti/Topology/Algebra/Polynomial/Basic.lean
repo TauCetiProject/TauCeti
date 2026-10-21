@@ -38,6 +38,8 @@ the monic polynomial `TauCeti.Polynomial.monicOfCoeff a` as a function of its co
 * `Polynomial.continuous_evalEval`: joint continuity of bivariate polynomial evaluation.
 * `TauCeti.Polynomial.continuous_coeff_monicOfCoeff`: the coefficients of `monicOfCoeff a` are
   continuous in `a`.
+* `TauCeti.Polynomial.continuous_coeff_prod_X_sub_C`: the coefficients of `∏ i ∈ s, (X - C (f i))`
+  are continuous in the tuple of roots `f`.
 -/
 
 public section
@@ -138,5 +140,34 @@ theorem continuous_coeff_monicOfCoeff {R : Type*} [CommSemiring R] [TopologicalS
     exact continuous_const
   · rw [funext fun a ↦ coeff_eq_zero_of_natDegree_lt ((natDegree_monicOfCoeff a).trans_lt hj)]
     exact continuous_const
+
+/-- The coefficients of `∏ i ∈ s, (X - C (f i))` depend continuously on the tuple `f` of roots.
+
+Each coefficient is, up to sign, an elementary symmetric function of the roots, so continuity of the
+ring operations is all that is used. -/
+theorem continuous_coeff_prod_X_sub_C {ι R : Type*} [CommRing R] [TopologicalSpace R]
+    [IsTopologicalRing R] (s : Finset ι) (k : ℕ) :
+    Continuous fun f : ι → R => (∏ i ∈ s, (X - C (f i))).coeff k := by
+  classical
+  induction s using Finset.induction_on generalizing k with
+  | empty => simpa using continuous_const
+  | @insert a s ha ih =>
+    cases k with
+    | zero =>
+      have hpt : (fun f : ι → R => (∏ i ∈ insert a s, (X - C (f i))).coeff 0) =
+          fun f => -f a * (∏ i ∈ s, (X - C (f i))).coeff 0 := by
+        funext f
+        rw [Finset.prod_insert ha, mul_coeff_zero]
+        simp
+      rw [hpt]
+      exact (continuous_apply a).neg.mul (ih 0)
+    | succ k =>
+      have hpt : (fun f : ι → R => (∏ i ∈ insert a s, (X - C (f i))).coeff (k + 1)) =
+          fun f => (∏ i ∈ s, (X - C (f i))).coeff k
+            - f a * (∏ i ∈ s, (X - C (f i))).coeff (k + 1) := by
+        funext f
+        rw [Finset.prod_insert ha, sub_mul, coeff_sub, coeff_X_mul, coeff_C_mul]
+      rw [hpt]
+      exact (ih k).sub ((continuous_apply a).mul (ih (k + 1)))
 
 end TauCeti.Polynomial
