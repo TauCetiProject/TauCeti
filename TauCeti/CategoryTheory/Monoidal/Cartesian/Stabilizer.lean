@@ -8,20 +8,21 @@ module
 public import Mathlib.CategoryTheory.Limits.Shapes.Equalizers
 public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.HasPullback
 public import Mathlib.GroupTheory.GroupAction.Defs
-public import Mathlib.Tactic.Group
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Grp
 public import TauCeti.CategoryTheory.Monoidal.Cartesian.Action
+import Mathlib.GroupTheory.GroupAction.Basic
 
 /-!
 # Fibers of orbit morphisms and stabilizers of global points
 
-Let a group object `G` act on `X` in a cartesian monoidal category, and let `x` be a global
+Let a monoid object `G` act on `X` in a cartesian monoidal category, and let `x` be a global
 point of `X`. For a global point `y`, the fiber of the orbit morphism `G ⟶ X`, `g ↦ g • x`,
 over `y` is the pullback of the orbit morphism along `y`. A morphism `g : T ⟶ G` factors
 through it exactly when `g • x = y` as `T`-points, and the factorization is unique.
 
-The stabilizer of `x` is the fiber over `x` itself. Its `T`-points are the stabilizer, in the
-group `T ⟶ G`, of the point `x` restricted to `T`. These subgroups form a presheaf of groups
+When `G` is a group object, the stabilizer of `x` is the fiber over `x` itself. Its `T`-points
+are the stabilizer, in the group `T ⟶ G`, of the point `x` restricted to `T`. These subgroups
+form a presheaf of groups
 represented by the stabilizer, so Mathlib's `GrpObj.ofRepresentableBy` makes the stabilizer
 a group object; its inclusion into `G` is a monoid morphism. The stabilizer is also the
 equalizer of the orbit morphism and the constant morphism at `x`. The orbit morphism is
@@ -67,7 +68,11 @@ namespace TauCeti
 universe u v
 
 variable {C : Type u} [Category.{v} C] [CartesianMonoidalCategory C]
-variable (G : C) {X : C} [GrpObj G] [ModObj G X] (x : 𝟙_ C ⟶ X)
+variable (G : C) {X : C}
+
+section GroupPoints
+
+variable [GrpObj G] [ModObj G X] (x : 𝟙_ C ⟶ X)
 
 /-- The stabilizer of the global point `x`, restricted to `T`, in the group of `T`-points
 of `G`. -/
@@ -91,8 +96,7 @@ theorem inv_mul_mem_stabilizerPoints (h : 𝟙_ C ⟶ G) {T : C} {g : T ⟶ G}
     (hg : g ≫ orbitMap G x = toUnit T ≫ (h • x)) :
     (toUnit T ≫ h)⁻¹ * g ∈ stabilizerPoints G x T := by
   rw [comp_orbitMap, comp_smul] at hg
-  rw [MulAction.mem_stabilizer_iff, SemigroupAction.mul_smul, hg, ← SemigroupAction.mul_smul,
-    inv_mul_cancel, _root_.one_smul]
+  simp only [MulAction.mem_stabilizer_iff, SemigroupAction.mul_smul, hg, inv_smul_smul]
 
 /-- A stabilizing `T`-point, translated on the left by `h`, sends `x` to `h • x`. -/
 theorem mul_comp_orbitMap_of_mem (h : 𝟙_ C ⟶ G) {T : C} {g : T ⟶ G}
@@ -106,23 +110,22 @@ stabilizing `x`. -/
 theorem conj_mem_stabilizerPoints_smul (h : 𝟙_ C ⟶ G) {T : C} {g : T ⟶ G}
     (hg : g ∈ stabilizerPoints G (h • x) T) :
     (toUnit T ≫ h)⁻¹ * g * (toUnit T ≫ h) ∈ stabilizerPoints G x T := by
-  rw [MulAction.mem_stabilizer_iff, comp_smul] at hg
-  rw [MulAction.mem_stabilizer_iff, SemigroupAction.mul_smul, SemigroupAction.mul_smul, hg,
-    ← SemigroupAction.mul_smul,
-    inv_mul_cancel, _root_.one_smul]
+  simpa only [MulAction.stabilizerEquivStabilizer_symm_apply, MulAut.conj_apply, inv_inv] using
+    ((MulAction.stabilizerEquivStabilizer (comp_smul (toUnit T) h x)).symm ⟨g, hg⟩).property
 
 /-- Conjugating the other way: a `T`-point stabilizing `x` conjugates to one stabilizing
 `h • x`. -/
 theorem conj_mem_stabilizerPoints_of_mem (h : 𝟙_ C ⟶ G) {T : C} {g : T ⟶ G}
     (hg : g ∈ stabilizerPoints G x T) :
     (toUnit T ≫ h) * g * (toUnit T ≫ h)⁻¹ ∈ stabilizerPoints G (h • x) T := by
-  rw [MulAction.mem_stabilizer_iff] at hg
-  rw [MulAction.mem_stabilizer_iff, comp_smul, SemigroupAction.mul_smul, SemigroupAction.mul_smul,
-    ← SemigroupAction.mul_smul _ _ (toUnit T ≫ x), inv_mul_cancel, _root_.one_smul, hg]
+  simpa only [MulAction.stabilizerEquivStabilizer_apply, MulAut.conj_apply] using
+    ((MulAction.stabilizerEquivStabilizer (comp_smul (toUnit T) h x)) ⟨g, hg⟩).property
+
+end GroupPoints
 
 section Fibers
 
-variable (y : 𝟙_ C ⟶ X) [HasPullback (orbitMap G x) y]
+variable [MonObj G] [ModObj G X] (x y : 𝟙_ C ⟶ X) [HasPullback (orbitMap G x) y]
 
 /-- The fiber of the orbit morphism of `x` over the global point `y`. -/
 def orbitFiber : C :=
@@ -130,12 +133,12 @@ def orbitFiber : C :=
 
 namespace orbitFiber
 
-/-- The inclusion of the fiber into the group. -/
+/-- The inclusion of the fiber into the acting monoid. -/
 def incl : orbitFiber G x y ⟶ G :=
   pullback.fst (orbitMap G x) y
 
 /-- The fiber maps to `y` under the orbit morphism. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 theorem incl_orbitMap : incl G x y ≫ orbitMap G x = toUnit (orbitFiber G x y) ≫ y :=
   (pullback.condition (f := orbitMap G x) (g := y)).trans <|
     congrArg (· ≫ y) (toUnit_unique _ _)
@@ -171,6 +174,8 @@ theorem exists_lift_iff {T : C} (g : T ⟶ G) :
 end orbitFiber
 
 end Fibers
+
+variable [GrpObj G] [ModObj G X] (x : 𝟙_ C ⟶ X)
 
 variable [HasPullback (orbitMap G x) x]
 
@@ -322,12 +327,16 @@ def smulIso : stabilizer G (h • x) ≅ stabilizer G x where
     (conj_mem_stabilizerPoints_of_mem G x h (incl_mem G x))
   hom_inv_id := by
     apply (cancel_mono (incl G (h • x))).1
-    simp [MonObj.comp_mul, GrpObj.comp_inv]
-    group
+    simp only [Category.assoc, lift_incl, MonObj.comp_mul, GrpObj.comp_inv,
+      comp_toUnit_assoc, Category.id_comp]
+    simpa only [MulAut.conj_apply, MulAut.conj_symm_apply] using
+      (MulAut.conj (toUnit (stabilizer G (h • x)) ≫ h)).apply_symm_apply (incl G (h • x))
   inv_hom_id := by
     apply (cancel_mono (incl G x)).1
-    simp [MonObj.comp_mul, GrpObj.comp_inv]
-    group
+    simp only [Category.assoc, lift_incl, MonObj.comp_mul, GrpObj.comp_inv,
+      comp_toUnit_assoc, Category.id_comp]
+    simpa only [MulAut.conj_apply, MulAut.conj_symm_apply] using
+      (MulAut.conj (toUnit (stabilizer G x) ≫ h)).symm_apply_apply (incl G x)
 
 @[reassoc (attr := simp)]
 theorem smulIso_hom_incl :
@@ -347,7 +356,8 @@ theorem mul_comp_smulIso_hom {T : C} (s t : T ⟶ stabilizer G (h • x)) :
   apply (cancel_mono (incl G x)).1
   simp only [Category.assoc, MonObj.mul_comp _ _ (incl G x), smulIso_hom_incl, MonObj.comp_mul,
     GrpObj.comp_inv, comp_toUnit_assoc, MonObj.mul_comp s t (incl G (h • x))]
-  group
+  simpa only [MulAut.conj_apply, MulAut.conj_symm_apply] using
+    (MulAut.conj (toUnit T ≫ h)).symm.map_mul (s ≫ incl G (h • x)) (t ≫ incl G (h • x))
 
 /-- Conjugation is a morphism of group objects. Its inverse is one too, by Mathlib's instance
 for inverses of monoid isomorphisms. -/
@@ -357,7 +367,8 @@ instance : IsMonHom (smulIso G x h).hom where
     apply (cancel_mono (incl G x)).1
     simp only [Category.assoc, smulIso_hom_incl, MonObj.comp_mul, GrpObj.comp_inv,
       comp_toUnit_assoc, MonObj.one_comp (incl G x), MonObj.one_comp (incl G (h • x))]
-    group
+    simpa only [MulAut.conj_apply, MulAut.conj_symm_apply] using
+      (MulAut.conj (toUnit (𝟙_ C) ≫ h)).symm.map_one
   mul_hom := by
     rw [MonObj.mul_eq_mul, MonObj.mul_eq_mul, mul_comp_smulIso_hom, MonObj.comp_mul,
       tensorHom_fst, tensorHom_snd]
