@@ -5,7 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.ModelTheory.Infinitary.Semantics
+public import TauCeti.ModelTheory.Infinitary.Operations
+public import TauCeti.ModelTheory.Infinitary.Reindex
+public import TauCeti.ModelTheory.Infinitary.Substitution
+public import TauCeti.ModelTheory.Semantics
+public import TauCeti.ModelTheory.Syntax
 
 /-!
 # The free-variable support of an infinitary formula
@@ -33,8 +37,13 @@ analogue of the finitary fact that a formula only sees the variables it mentions
   `BoundedFormula.freeVarFinset`.
 * `FirstOrder.Language.BoundedFormulaInf.countable_freeVarSupport`: over a countable carrier the
   support is countable.
-* `FirstOrder.Language.Term.realize_congr_varFinsetLeft`: the term-level congruence the atomic
-  cases use.
+* `FirstOrder.Language.BoundedFormulaInf.freeVarSupport_mapBound`,
+  `FirstOrder.Language.BoundedFormulaInf.freeVarSupport_castLE` and
+  `FirstOrder.Language.BoundedFormulaInf.freeVarSupport_reindex`: relabelling bound slots,
+  weakening and carrier transport keep the support.
+* `TauCeti.BoundedFormulaInf.freeVarSupport_subst` and
+  `TauCeti.BoundedFormulaInf.freeVarSupport_relabel`: the support after substitution and
+  free-variable relabelling.
 
 ## References
 
@@ -46,26 +55,13 @@ analogue of the finitary fact that a formula only sees the variables it mentions
 
 public section
 
-universe u v u' uι uβ w
+universe u v u' uι uκ uβ w
 
 namespace FirstOrder
 
 namespace Language
 
 variable {L : Language.{u, v}} {α : Type u'}
-
-namespace Term
-
-/-- A term over `α ⊕ β` has the same realization under two valuations of `α` that agree on the
-variables `Term.varFinsetLeft` of `α` it mentions. -/
-theorem realize_congr_varFinsetLeft [DecidableEq α] {β : Type uβ} {M : Type w} [L.Structure M]
-    {t : L.Term (α ⊕ β)} {v v' : α → M} (h : Set.EqOn v v' t.varFinsetLeft) (xs : β → M) :
-    t.realize (Sum.elim v xs) = t.realize (Sum.elim v' xs) := by
-  rw [← realize_restrictVarLeft' subset_rfl (v := v),
-    ← realize_restrictVarLeft' subset_rfl (v := v'), ← Set.domRestrict_eq, ← Set.domRestrict_eq,
-    Set.domRestrict_eq_domRestrict_iff.2 h]
-
-end Term
 
 namespace BoundedFormulaInf
 
@@ -190,6 +186,84 @@ theorem freeVarSupport_exs (φ : L.BoundedFormulaInf ι α n) :
   | zero => rw [exs_zero]
   | succ n ih => rw [exs_succ, ih, freeVarSupport_ex]
 
+/-! ### Bound-variable relabelling, weakening and carrier transport -/
+
+/-- Relabelling the bound-variable slots keeps the support. -/
+@[simp]
+theorem freeVarSupport_mapBound {m : ℕ} (f : Fin m → Fin n) (φ : L.BoundedFormulaInf ι α m) :
+    (mapBound f φ).freeVarSupport = φ.freeVarSupport := by
+  classical
+  have hterm {k l : ℕ} (g : Fin k → Fin l) (t : L.Term (α ⊕ Fin k)) :
+      ((t.relabel (Sum.map id g)).varFinsetLeft : Set α) = t.varFinsetLeft := by
+    ext a
+    rw [Finset.mem_coe, Finset.mem_coe, Term.mem_varFinsetLeft_relabel, Term.mem_varFinsetLeft_iff]
+    constructor
+    · rintro ⟨x | x, hx, h⟩ <;> simp_all
+    · exact fun h => ⟨_, h, rfl⟩
+  induction φ generalizing n with
+  | falsum => simp
+  | equal t₁ t₂ => simp [hterm]
+  | rel R ts => simp [hterm]
+  | imp φ ψ ihφ ihψ => simp [ihφ, ihψ]
+  | all φ ih => simp [ih]
+  | iSup φs ih => simp [ih]
+  | iInf φs ih => simp [ih]
+
+/-- Weakening keeps the support. -/
+@[simp]
+theorem freeVarSupport_castLE {m : ℕ} (h : m ≤ n) (φ : L.BoundedFormulaInf ι α m) :
+    (castLE h φ).freeVarSupport = φ.freeVarSupport := by
+  rw [castLE_def, freeVarSupport_mapBound]
+
+section Coded
+
+variable {κ : Type uκ}
+
+/-- The support of a coded conjunction is the union of the supports of its conjuncts: the
+padding `⊤` has no free variables. -/
+@[simp]
+theorem freeVarSupport_iInfAlong (c : TauCeti.IndexCoding ι κ)
+    (φs : ι → L.BoundedFormulaInf κ α n) :
+    (iInfAlong c φs).freeVarSupport = ⋃ i, (φs i).freeVarSupport := by
+  rw [iInfAlong_def, freeVarSupport_iInf]
+  refine (Set.iUnion_subset fun k => ?_).antisymm
+    (Set.iUnion_subset fun i => Set.subset_iUnion_of_subset (c.encode i) ?_)
+  · rw [c.pad_apply]
+    cases c.decode k with
+    | none => simp
+    | some i => exact Set.subset_iUnion_of_subset i subset_rfl
+  · rw [c.pad_encode]
+
+/-- The support of a coded disjunction is the union of the supports of its disjuncts: the
+padding `⊥` has no free variables. -/
+@[simp]
+theorem freeVarSupport_iSupAlong (c : TauCeti.IndexCoding ι κ)
+    (φs : ι → L.BoundedFormulaInf κ α n) :
+    (iSupAlong c φs).freeVarSupport = ⋃ i, (φs i).freeVarSupport := by
+  rw [iSupAlong_def, freeVarSupport_iSup]
+  refine (Set.iUnion_subset fun k => ?_).antisymm
+    (Set.iUnion_subset fun i => Set.subset_iUnion_of_subset (c.encode i) ?_)
+  · rw [c.pad_apply]
+    cases c.decode k with
+    | none => simp
+    | some i => exact Set.subset_iUnion_of_subset i subset_rfl
+  · rw [c.pad_encode]
+
+/-- Transporting a formula along a coding of its carrier keeps the support. -/
+@[simp]
+theorem freeVarSupport_reindex (c : TauCeti.IndexCoding ι κ) (φ : L.BoundedFormulaInf ι α n) :
+    (reindex c φ).freeVarSupport = φ.freeVarSupport := by
+  induction φ with
+  | falsum => simp
+  | equal t₁ t₂ => classical simp
+  | rel R ts => classical simp
+  | imp φ ψ ihφ ihψ => simp [ihφ, ihψ]
+  | all φ ih => simp [ih]
+  | iSup φs ih => simp [ih]
+  | iInf φs ih => simp [ih]
+
+end Coded
+
 /-! ### Countability -/
 
 /-- Over a countable carrier, in particular in `L_{ω₁ω}`, an infinitary formula has countably many
@@ -263,3 +337,81 @@ end BoundedFormula
 end Language
 
 end FirstOrder
+
+namespace TauCeti
+
+open FirstOrder Language
+
+namespace BoundedFormulaInf
+
+variable {L : Language.{u, v}} {ι : Type uι} {α : Type u'} {β : Type uβ} {n : ℕ}
+
+/-- The support after substitution is the union of the variables of the terms substituted for
+the free variables in the support. -/
+@[simp]
+theorem freeVarSupport_subst [DecidableEq β] (φ : L.BoundedFormulaInf ι α n)
+    (f : α → L.Term β) :
+    (subst φ f).freeVarSupport = ⋃ a ∈ φ.freeVarSupport, ↑(f a).varFinset := by
+  classical
+  have hterm {k : ℕ} (t : L.Term (α ⊕ Fin k)) :
+      ((t.subst (Sum.elim (Term.relabel Sum.inl ∘ f) (Term.var ∘ Sum.inr))).varFinsetLeft :
+        Set β) = ⋃ a ∈ (t.varFinsetLeft : Set α), ↑(f a).varFinset := by
+    ext b
+    simp only [Finset.mem_coe, Term.mem_varFinsetLeft_subst, Set.mem_iUnion, exists_prop]
+    constructor
+    · rintro ⟨x | x, hx, h⟩
+      · simp only [Sum.elim_inl, Function.comp_apply, Term.mem_varFinsetLeft_relabel,
+          Sum.inl.injEq, exists_eq_right] at h
+        exact ⟨x, Term.mem_varFinsetLeft_iff.2 hx, h⟩
+      · simp at h
+    · rintro ⟨a, ha, h⟩
+      exact ⟨Sum.inl a, Term.mem_varFinsetLeft_iff.1 ha, by simpa [Term.mem_varFinsetLeft_relabel]⟩
+  induction φ with
+  | falsum => simp
+  | equal t₁ t₂ =>
+    simp only [subst_equal, Language.BoundedFormulaInf.freeVarSupport_equal, hterm,
+      Set.biUnion_union]
+  | rel R ts =>
+    simp only [subst_rel, Language.BoundedFormulaInf.freeVarSupport_rel, hterm,
+      Set.biUnion_iUnion]
+  | imp φ ψ ihφ ihψ =>
+    simp only [subst_imp, Language.BoundedFormulaInf.freeVarSupport_imp, ihφ, ihψ,
+      Set.biUnion_union]
+  | all φ ih => simp only [subst_all, Language.BoundedFormulaInf.freeVarSupport_all, ih]
+  | iSup φs ih =>
+    simp only [subst_iSup, Language.BoundedFormulaInf.freeVarSupport_iSup, ih, Set.biUnion_iUnion]
+  | iInf φs ih =>
+    simp only [subst_iInf, Language.BoundedFormulaInf.freeVarSupport_iInf, ih, Set.biUnion_iUnion]
+
+/-- The support after relabelling consists of the free variables `b` such that `g` sends a
+variable of the original support to `Sum.inl b`. Variables sent to new bound slots drop out. -/
+@[simp]
+theorem freeVarSupport_relabel {m : ℕ} (g : α → β ⊕ Fin m) (φ : L.BoundedFormulaInf ι α n) :
+    (relabel g φ).freeVarSupport = Sum.inl ⁻¹' (g '' φ.freeVarSupport) := by
+  classical
+  have hterm {k : ℕ} (t : L.Term (α ⊕ Fin k)) :
+      ((t.relabel (BoundedFormula.relabelAux g k)).varFinsetLeft : Set β) =
+        Sum.inl ⁻¹' (g '' t.varFinsetLeft) := by
+    ext b
+    simp only [Finset.mem_coe, Term.mem_varFinsetLeft_relabel, Set.mem_preimage, Set.mem_image]
+    constructor
+    · rintro ⟨x | x, hx, h⟩
+      · refine ⟨x, Term.mem_varFinsetLeft_iff.2 hx, ?_⟩
+        rcases hg : g x with c | c
+        · simpa [BoundedFormula.relabelAux, hg] using h
+        · simp [BoundedFormula.relabelAux, hg] at h
+      · simp [BoundedFormula.relabelAux] at h
+    · rintro ⟨a, ha, h⟩
+      exact ⟨Sum.inl a, Term.mem_varFinsetLeft_iff.1 ha, by simp [BoundedFormula.relabelAux, h]⟩
+  induction φ with
+  | falsum => simp
+  | equal t₁ t₂ => simp [hterm, Set.image_union]
+  | rel R ts => simp [hterm, Set.image_iUnion]
+  | imp φ ψ ihφ ihψ => simp [ihφ, ihψ, Set.image_union]
+  | all φ ih => simp [ih]
+  | iSup φs ih => simp [ih, Set.image_iUnion]
+  | iInf φs ih => simp [ih, Set.image_iUnion]
+
+end BoundedFormulaInf
+
+end TauCeti
