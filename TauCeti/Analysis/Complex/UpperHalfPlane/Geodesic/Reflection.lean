@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.UpperHalfPlane.HalfPlane
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.FromTo
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.VertexAngle
+public import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.ConjJ
 import Mathlib.Analysis.Calculus.Deriv.Star
 import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Semicircle
 
@@ -23,16 +24,16 @@ These reflections are the orientation-reversing generators used to construct hyp
 reflection groups.  Products of adjacent reflections are orientation preserving and supply the
 side-pairing transformations for triangle groups.
 
-Conjugation by `J` is the automorphism `pslConjJ` of `PSL(2, ℝ)`, sending the class of
-`!![a, b; c, d]` to that of `!![a, -b; -c, d]`, and `J` intertwines each `g` with `pslConjJ g`.
-Hence the product of two geodesic reflections is the action of an element of `PSL(2, ℝ)`,
-`geodesicReflectionComp g h`. Since the vertices of polygons may be ideal, reflections are also
-extended to `ℍ ∪ ∂ℍ`, where `J` acts on `∂ℍ = ℝ ∪ {∞}` by `x ↦ -x`: `extGeodesicReflection g`
-fixes the line of `g` with its ideal endpoints, reverses orientation (the left side of the
-geodesic from `p` to `q` goes to the left side of the geodesic from the image of `q` to the image
-of `p`), and preserves angles. Reflecting a point `c` to the left of a line from `a` to `b` lands
-it to the left of the geodesic from `c` to `a` when the angle at `a` is acute; this is the
-convexity condition for gluing a triangle to its mirror image.
+Conjugation by `J` is the automorphism `pslConjJ` of `PSL(2, ℝ)` (from
+`TauCeti/Analysis/Complex/UpperHalfPlane/PSL/ConjJ.lean`), and `J` intertwines each `g` with
+`pslConjJ g`. Hence the product of two geodesic reflections is the action of an element of
+`PSL(2, ℝ)`, `geodesicReflectionComp g h`. Since the vertices of polygons may be ideal,
+reflections are also extended to `ℍ ∪ ∂ℍ`, where `J` acts on `∂ℍ = ℝ ∪ {∞}` by `x ↦ -x`:
+`extGeodesicReflection g` fixes the line of `g` with its ideal endpoints, reverses orientation
+(the left side of the geodesic from `p` to `q` goes to the left side of the geodesic from the
+image of `q` to the image of `p`), and preserves angles. Reflecting a point `c` to the left of a
+line from `a` to `b` lands it to the left of the geodesic from `c` to `a` when the angle at `a`
+is acute; this is the convexity condition for gluing a triangle to its mirror image.
 
 ## Main declarations
 
@@ -54,8 +55,6 @@ convexity condition for gluing a triangle to its mirror image.
 * `TauCeti.UpperHalfPlane.geodesicReflection_image_rightHalfPlane` and
   `TauCeti.UpperHalfPlane.geodesicReflection_image_leftHalfPlane`: reflection exchanges the two
   sides of the geodesic.
-* `TauCeti.UpperHalfPlane.pslConjJ`: conjugation by `J` on `PSL(2, ℝ)`, computed on matrices by
-  `pslConjJ_mk`, with `J_smul_smul` and `J_smul_smul_onePoint`.
 * `TauCeti.UpperHalfPlane.extGeodesicReflection`: reflection in `geodesicLine g` on `ℍ ∪ ∂ℍ`.
 * `TauCeti.UpperHalfPlane.extGeodesicReflection_mem_extLeftHalfPlane_geodesicFromTo_iff`: a
   geodesic reflection reverses orientation.
@@ -282,82 +281,6 @@ theorem geodesicReflection_image_leftHalfPlane (g : PSL(2, ℝ)) :
   rw [← geodesicReflection_symm, IsometryEquiv.image_symm]
   ext z
   exact geodesicReflection_mem_leftHalfPlane_iff g z
-
-/-! ### Conjugation by `J` -/
-
-/-- Conjugation by the orientation-reversing involution `UpperHalfPlane.J : z ↦ -conj z` on
-`PSL(2, ℝ)`: the class of `!![a, b; c, d]` goes to the class of `!![a, -b; -c, d]`
-(`pslConjJ_mk`). It is characterised by `J_smul_smul` and `J_smul_smul_onePoint`. -/
-def pslConjJ : PSL(2, ℝ) ≃* PSL(2, ℝ) :=
-  QuotientGroup.congr _ _ Matrix.SpecialLinearGroup.conjJMulAut
-    (Subgroup.characteristic_iff_map_eq.1 inferInstance _)
-
-/-- Conjugation by `J` sends the class of `!![a, b; c, d]` to the class of `!![a, -b; -c, d]`. -/
-theorem pslConjJ_mk (A : SL(2, ℝ)) :
-    pslConjJ (A : PSL(2, ℝ)) = (Matrix.SpecialLinearGroup.conjJ A : PSL(2, ℝ)) := by
-  rw [pslConjJ]
-  exact (QuotientGroup.congr_mk (x := A) ..).trans
-    (congrArg _ (Matrix.SpecialLinearGroup.conjJMulAut_apply A))
-
-/-- Conjugation by `J` is an involution. -/
-@[simp]
-theorem pslConjJ_pslConjJ (g : PSL(2, ℝ)) : pslConjJ (pslConjJ g) = g := by
-  induction g using QuotientGroup.induction_on with | H A => ?_
-  rw [pslConjJ_mk, pslConjJ_mk, Matrix.SpecialLinearGroup.conjJ_conjJ]
-
-/-- Conjugation by `J` is its own inverse. -/
-@[simp]
-theorem pslConjJ_symm : pslConjJ.symm = pslConjJ :=
-  MulEquiv.ext fun g ↦ pslConjJ.symm_apply_eq.2 (pslConjJ_pslConjJ g).symm
-
-/-- `J` intertwines the action of `g` on `ℍ` with that of its conjugate `pslConjJ g`. -/
-theorem J_smul_smul (g : PSL(2, ℝ)) (z : ℍ) : J • g • z = pslConjJ g • J • z := by
-  induction g using QuotientGroup.induction_on with | H A => ?_
-  rw [pslConjJ_mk, pslMk_smul, pslMk_smul, MulAction.compHom_smul_def,
-    MulAction.compHom_smul_def, smul_smul, smul_smul, Matrix.SpecialLinearGroup.J_mul_mapGL]
-
-/-- `J` intertwines the action of `g` on the ideal boundary with that of `pslConjJ g`. -/
-theorem J_smul_smul_onePoint (g : PSL(2, ℝ)) (ξ : OnePoint ℝ) :
-    J • g • ξ = pslConjJ g • J • ξ := by
-  induction g using QuotientGroup.induction_on with | H A => ?_
-  rw [pslConjJ_mk, OnePoint.pslMk_smul, OnePoint.pslMk_smul, smul_smul, smul_smul]
-  congr 1
-  exact Matrix.SpecialLinearGroup.J_mul_mapGL A
-
-/-- Conjugation by `J` fixes the involution `pslS : z ↦ -1/z`. -/
-@[simp]
-theorem pslConjJ_pslS : pslConjJ pslS = pslS := by
-  rw [pslS_def, psl2zToPSL2R_mk, sl2zToPSL2R_apply, pslConjJ_mk,
-    ← Matrix.ProjectiveSpecialLinearGroup.mk_neg]
-  congr 1
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp [ModularGroup.coe_S]
-
-/-- Conjugation by `J` fixes the dilations `z ↦ exp s * z`. -/
-@[simp]
-theorem pslConjJ_dilation (s : ℝ) :
-    pslConjJ (Matrix.SpecialLinearGroup.dilation s : PSL(2, ℝ)) =
-      (Matrix.SpecialLinearGroup.dilation s : PSL(2, ℝ)) := by
-  rw [pslConjJ_mk]
-  congr 1
-  ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [Matrix.SpecialLinearGroup.coe_dilation]
-
-/-- `J` negates real ideal points. -/
-@[simp]
-theorem J_smul_coe (x : ℝ) : J • (x : OnePoint ℝ) = ((-x : ℝ) : OnePoint ℝ) := by
-  simp [OnePoint.smul_some_eq_ite, J]
-
-/-- `J` fixes the ideal point `∞`. -/
-@[simp]
-theorem J_smul_infty : J • (∞ : OnePoint ℝ) = ∞ := by
-  simp [OnePoint.smul_infty_eq_ite, J]
-
-/-- `J` is an involution of the ideal boundary. -/
-@[simp]
-theorem J_smul_J_smul_onePoint (ξ : OnePoint ℝ) : J • J • ξ = ξ := by
-  rw [smul_smul, ← sq, J_sq, one_smul]
 
 /-! ### Reflection in a geodesic on `ℍ ∪ ∂ℍ` -/
 
