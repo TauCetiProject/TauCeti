@@ -48,8 +48,6 @@ open scoped ENNReal
 
 variable {X : Type*} [MeasurableSpace X] (ρ : Measure X)
 
-variable {X : Type*} [MeasurableSpace X] (ρ : Measure X)
-
 /-- Let `T` be a measurable map and `J` a measurable function vanishing nowhere on a measurable set
 `S`, such that `ρ.withDensity g (T '' s) = ∫⁻ x in s, J x * g (T x) ∂ρ` for every measurable
 `s ⊆ S` and every `g`. Then `T` pushes `μ ≪ ρ` restricted to `S` to a measure absolutely continuous

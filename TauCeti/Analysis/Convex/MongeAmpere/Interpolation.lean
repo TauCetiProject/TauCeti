@@ -191,6 +191,22 @@ theorem withDensity_image_smul_add_smul_gradient_eq_setLIntegral {H : E → E �
   refine setLIntegral_congr_fun hs fun x hx => ?_
   rw [abs_of_pos ((hP x hx).2.1.det_one_sub_smul_id_add_smul_pos ht₀ ht₁)]
 
+/-- `withDensity_image_smul_add_smul_gradient_eq_setLIntegral` on every measurable subset of a set
+`S` of points with a first-order expansion, in the form taken by the lemmas of
+`TauCeti.MeasureTheory.Measure.ChangeOfVariables`. -/
+private theorem withDensity_image_smul_add_smul_gradient_eq_setLIntegral_of_subset
+    {H : E → E →L[ℝ] E} {S : Set E}
+    (hS : ∀ x ∈ S, subdifferential (innerₗ E) f x = {(∇ fun x' => (f x').toReal) x} ∧
+      (H x).IsPositive ∧ ∀ ε > 0, ∀ᶠ x' in 𝓝 x, ∀ y' ∈ subdifferential (innerₗ E) f x',
+        ‖y' - (∇ fun x' => (f x').toReal) x - H x (x' - x)‖ ≤ ε * ‖x' - x‖)
+    {t : ℝ} (ht₀ : 0 ≤ t) (ht₁ : t < 1) :
+    ∀ s, MeasurableSet s → s ⊆ S → ∀ g : E → ℝ≥0∞,
+      ρ.withDensity g ((fun x => (1 - t) • x + t • (∇ fun x' => (f x').toReal) x) '' s) =
+        ∫⁻ x in s, ENNReal.ofReal ((1 - t) • ContinuousLinearMap.id ℝ E + t • H x).det *
+          g ((1 - t) • x + t • (∇ fun x' => (f x').toReal) x) ∂ρ :=
+  fun _ hs hsS => withDensity_image_smul_add_smul_gradient_eq_setLIntegral ρ hs
+    (fun x hx => hS x (hsS hx)) ht₀ ht₁
+
 /-- **Interpolants of an absolutely continuous law are absolutely continuous.** Let `f : E → EReal`
 be convex (convex real epigraph, never `⊥`), with real representative `F`, and let `μ` be a measure
 absolutely continuous with respect to an additive Haar measure `ρ` and carried by the interior of
@@ -212,8 +228,7 @@ theorem map_smul_add_smul_gradient_absolutelyContinuous (hf : Convex ℝ {p : E 
     (measurable_ofReal_det_one_sub_smul_id_add_smul hH'm t)
     (fun x hx => (ENNReal.ofReal_pos.2
       ((hS x hx).2.1.det_one_sub_smul_id_add_smul_pos ht₀ ht₁)).ne')
-    (fun s hs hsS => withDensity_image_smul_add_smul_gradient_eq_setLIntegral ρ hs
-      (fun x hx => hS x (hsS hx)) ht₀ ht₁) hμ
+    (withDensity_image_smul_add_smul_gradient_eq_setLIntegral_of_subset ρ hS ht₀ ht₁) hμ
 
 /-- **The Jacobian equation along the interpolation of a convex gradient.** Let `f : E → EReal` be
 convex (convex real epigraph, never `⊥`), with real representative `F` and `D` the interior of its
@@ -245,18 +260,12 @@ theorem rnDeriv_ae_eq_indicator_ofReal_det_mul_rnDeriv_map_smul_add_smul_gradien
   have hφ : Measurable φ := (measurable_ofReal_det_one_sub_smul_id_add_smul hH'm t).mul
     ((measurable_rnDeriv (μ.map T) ρ).comp hT)
   -- `μ` has density `φ` on `S`, by the change of variables along the injective map `T`.
-  have hcov (s : Set E) (hs : MeasurableSet s) (hsS : s ⊆ S) :=
-    withDensity_image_smul_add_smul_gradient_eq_setLIntegral ρ hs (fun x hx => hS x (hsS hx))
-      ht₀ ht₁
   have hμφ : μ = ρ.withDensity (S.indicator φ) := by
     have := restrict_eq_withDensity_indicator_rnDeriv_map_restrict ρ hT hSm
       (injOn_smul_add_smul_gradient hS ht₀ ht₁)
       (fun s hs hsS => measurableSet_image_smul_add_smul_gradient hs (fun x hx => hS x (hsS hx))
-        ht₀ ht₁) hcov
-      (map_restrict_absolutelyContinuous_of_withDensity_image_eq ρ hT hSm
-        (measurable_ofReal_det_one_sub_smul_id_add_smul hH'm t)
-        (fun x hx => (ENNReal.ofReal_pos.2
-          ((hS x hx).2.1.det_one_sub_smul_id_add_smul_pos ht₀ ht₁)).ne') hcov hμ)
+        ht₀ ht₁) (withDensity_image_smul_add_smul_gradient_eq_setLIntegral_of_subset ρ hS ht₀ ht₁)
+      (hμS ▸ map_smul_add_smul_gradient_absolutelyContinuous ρ hf hbot hμ hμD ht₀ ht₁)
     rwa [hμS] at this
   calc μ.rnDeriv ρ =ᵐ[ρ] S.indicator φ := by
         rw [hμφ]
@@ -289,20 +298,15 @@ theorem lintegral_comp_rnDeriv_map_smul_add_smul_gradient
   have hT : Measurable T := measurable_smul_add_smul_gradient t
   obtain ⟨S, hSm, -, hDS, hμS, H', hH'm, hHS, hS⟩ :=
     exists_measurableSet_restrict_eq_self ρ hf hbot hH hμ hμD
-  have hJ (x : E) (hx : x ∈ S) :
-      ENNReal.ofReal ((1 - t) • ContinuousLinearMap.id ℝ E + t • H' x).det ≠ 0 :=
-    (ENNReal.ofReal_pos.2 ((hS x hx).2.1.det_one_sub_smul_id_add_smul_pos ht₀ ht₁)).ne'
-  have hcov (s : Set E) (hs : MeasurableSet s) (hsS : s ⊆ S) :=
-    withDensity_image_smul_add_smul_gradient_eq_setLIntegral ρ hs (fun x hx => hS x (hsS hx))
-      ht₀ ht₁
   -- Change variables along the injective map `T` on `S`, which carries `μ` and is `D` up to a
   -- null set.
   have h := lintegral_comp_rnDeriv_map_restrict ρ hT hSm (injOn_smul_add_smul_gradient hS ht₀ ht₁)
     (fun s hs hsS => measurableSet_image_smul_add_smul_gradient hs (fun x hx => hS x (hsS hx))
       ht₀ ht₁) (measurable_ofReal_det_one_sub_smul_id_add_smul hH'm t)
-    (fun x hx => ⟨hJ x hx, ENNReal.ofReal_ne_top⟩) hcov
-    (map_restrict_absolutelyContinuous_of_withDensity_image_eq ρ hT hSm
-      (measurable_ofReal_det_one_sub_smul_id_add_smul hH'm t) hJ hcov hμ) hΦ
+    (fun x hx => ⟨(ENNReal.ofReal_pos.2
+      ((hS x hx).2.1.det_one_sub_smul_id_add_smul_pos ht₀ ht₁)).ne', ENNReal.ofReal_ne_top⟩)
+    (withDensity_image_smul_add_smul_gradient_eq_setLIntegral_of_subset ρ hS ht₀ ht₁)
+    (hμS ▸ map_smul_add_smul_gradient_absolutelyContinuous ρ hf hbot hμ hμD ht₀ ht₁) hΦ
   rw [hμS] at h
   rw [h, setLIntegral_congr hDS]
   exact setLIntegral_congr_fun hSm fun x hx => by rw [hHS x hx]

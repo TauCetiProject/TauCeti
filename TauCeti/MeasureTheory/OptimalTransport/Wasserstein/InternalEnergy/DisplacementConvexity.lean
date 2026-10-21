@@ -86,9 +86,80 @@ open scoped ENNReal Topology Gradient
 
 namespace TauCeti
 
+section
+
+variable {X : Type*} [MeasurableSpace X] (ρ : Measure X) {U : ℝ → ℝ}
+
+/-- For a Jacobian `J ≥ 0` almost everywhere on a measurable `D`, the change of variables integrand
+`J * Φ (r / J)` with `Φ a = ofReal (ε * U a)` integrates to the integral of
+`ofReal (ε * J * U (r / J))` on `D`. -/
+private theorem setLIntegral_ofReal_mul_ofReal_eq_lintegral_ofReal_indicator {D : Set X}
+    (hD : MeasurableSet D) {J : X → ℝ} (hJ : ∀ᵐ x ∂ρ, x ∈ D → 0 ≤ J x) (r : X → ℝ≥0∞) (ε : ℝ) :
+    ∫⁻ x in D, ENNReal.ofReal (J x) * ENNReal.ofReal (ε * U (r x / ENNReal.ofReal (J x)).toReal)
+        ∂ρ =
+      ∫⁻ x, ENNReal.ofReal (ε * D.indicator (fun x => J x * U ((r x).toReal / J x)) x) ∂ρ := by
+  rw [← lintegral_indicator hD]
+  refine lintegral_congr_ae (hJ.mono fun x hx => ?_)
+  dsimp only
+  by_cases hxD : x ∈ D
+  · rw [indicator_of_mem hxD, indicator_of_mem hxD, ENNReal.toReal_div,
+      ENNReal.toReal_ofReal (hx hxD), ← ENNReal.ofReal_mul (hx hxD), mul_left_comm]
+  · rw [indicator_of_notMem hxD, indicator_of_notMem hxD, mul_zero, ENNReal.ofReal_zero]
+
+end
+
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] (ρ : Measure E) [ρ.IsAddHaarMeasure] {f : E → EReal}
   {U : ℝ → ℝ}
+
+omit [FiniteDimensional ℝ E] [BorelSpace E] in
+/-- The degenerate set `S ∩ {x | det (H' x) = 0}` of a measurable `H'` on a measurable `S` is
+measurable. -/
+private theorem measurableSet_inter_setOf_det_eq_zero {S : Set E} (hSm : MeasurableSet S)
+    {H' : E → E →L[ℝ] E} (hH'm : Measurable H') : MeasurableSet (S ∩ {x | (H' x).det = 0}) :=
+  hSm.inter (measurableSet_eq_fun (ContinuousLinearMap.continuous_det.measurable.comp hH'm)
+    measurable_const)
+
+omit [BorelSpace E] in
+/-- If `μ ≪ ρ` gives no mass to the degenerate set `{x | det (H x) = 0}`, and `H` agrees on a
+measurable `S` with a measurable `H'`, then the density of `μ` vanishes almost everywhere on
+`S ∩ {x | det (H' x) = 0}`. -/
+private theorem ae_rnDeriv_eq_zero_of_measure_setOf_det_eq_zero {S : Set E}
+    (hSm : MeasurableSet S) {H H' : E → E →L[ℝ] E} (hH'm : Measurable H')
+    (hHS : ∀ x ∈ S, H x = H' x) {μ : Measure E} [μ.HaveLebesgueDecomposition ρ] (hμ : μ ≪ ρ)
+    (h0 : μ {x | (H x).det = 0} = 0) :
+    ∀ᵐ x ∂ρ, x ∈ S → (H' x).det = 0 → μ.rnDeriv ρ x = 0 := by
+  have h := measure_mono_null (s := S ∩ {x | (H' x).det = 0})
+    (fun x hx => by simpa [hHS x hx.1] using hx.2) h0
+  rw [← setLIntegral_rnDeriv hμ, setLIntegral_eq_zero_iff
+    (measurableSet_inter_setOf_det_eq_zero hSm hH'm) (measurable_rnDeriv _ _)] at h
+  filter_upwards [h] with x hx hxS hx0
+  exact hx ⟨hxS, hx0⟩
+
+omit [FiniteDimensional ℝ E] [BorelSpace E] [ρ.IsAddHaarMeasure] in
+/-- The integrand of `internalEnergy_map_gradient` is almost everywhere strongly measurable when
+`r ≥ 0` and `U (max · 0)` are measurable, if `D` is, up to a null set, a measurable set `S` on which
+`H` agrees with a measurable `H'` and has nonnegative determinant. -/
+private theorem aestronglyMeasurable_indicator_ite_det_eq_zero {D S : Set E}
+    (hSm : MeasurableSet S) (hDS : D =ᵐ[ρ] S) {H H' : E → E →L[ℝ] E} (hH'm : Measurable H')
+    (hHS : ∀ x ∈ S, H x = H' x) (hdet : ∀ x ∈ S, 0 ≤ (H x).det)
+    (hUm : Measurable fun s : ℝ => U (max s 0)) {r : E → ℝ} (hr : Measurable r)
+    (hr0 : ∀ x, 0 ≤ r x) (L : ℝ) :
+    AEStronglyMeasurable (D.indicator fun x =>
+      if (H x).det = 0 then L * r x else (H x).det * U (r x / (H x).det)) ρ := by
+  have hdet' : Measurable fun x => (H' x).det :=
+    ContinuousLinearMap.continuous_det.measurable.comp hH'm
+  have hV : Measurable fun x => if (H' x).det = 0 then L * r x
+      else (H' x).det * U (max (r x / (H' x).det) 0) :=
+    Measurable.ite (measurableSet_eq_fun hdet' measurable_const) (measurable_const.mul hr)
+      (hdet'.mul (hUm.comp (hr.div hdet')))
+  -- Off a null set, `H` agrees with the measurable `H'`.
+  refine (hV.indicator hSm).aestronglyMeasurable.congr ?_
+  filter_upwards [hDS.mem_iff] with x hx
+  by_cases hxS : x ∈ S
+  · simp [indicator_of_mem hxS, indicator_of_mem (hx.2 hxS), hHS x hxS,
+      max_eq_left (div_nonneg (hr0 x) (hHS x hxS ▸ hdet x hxS))]
+  · simp [indicator_of_notMem hxS, indicator_of_notMem (mt hx.1 hxS)]
 
 /-- **The internal energy along the interpolation of a convex gradient.** Let `f : E → EReal` be
 convex (convex real epigraph, never `⊥`), with real representative `F` and `D` the interior of its
@@ -123,14 +194,9 @@ theorem internalEnergy_map_smul_add_smul_gradient (hU0 : U 0 = 0)
           U ((μ.rnDeriv ρ x).toReal / ((1 - t) • ContinuousLinearMap.id ℝ E + t • H x).det)) x)
         ∂ρ := by
     rw [lintegral_comp_rnDeriv_map_smul_add_smul_gradient ρ hf hbot hH hμ hμD ht₀ ht₁
-      (Φ := fun a => ENNReal.ofReal (ε * U a.toReal)) (by simp [hU0]),
-      ← lintegral_indicator measurableSet_interior]
-    refine lintegral_congr_ae (hJ.mono fun x hx => ?_)
-    dsimp only
-    by_cases hxD : x ∈ D
-    · rw [indicator_of_mem hxD, indicator_of_mem hxD, ENNReal.toReal_div,
-        ENNReal.toReal_ofReal (hx hxD), ← ENNReal.ofReal_mul (hx hxD), mul_left_comm]
-    · rw [indicator_of_notMem hxD, indicator_of_notMem hxD, mul_zero, ENNReal.ofReal_zero]
+      (Φ := fun a => ENNReal.ofReal (ε * U a.toReal)) (by simp [hU0])]
+    exact setLIntegral_ofReal_mul_ofReal_eq_lintegral_ofReal_indicator ρ measurableSet_interior hJ
+      _ ε
   have hpos := hlint 1
   have hneg := hlint (-1)
   simp only [one_mul, neg_one_mul] at hpos hneg
@@ -162,8 +228,7 @@ theorem internalEnergy_map_gradient (hU0 : U 0 = 0) (hf : Convex ℝ {p : E × �
   obtain ⟨S, hSm, hSD, hDS, hS, H', hH'm, hHS⟩ :=
     exists_measurableSet_ae_eq_interior_subdifferential_eq_gradient ρ hf hbot hH
   set Z₀ := S ∩ {x | (H' x).det = 0}
-  have hZ₀m : MeasurableSet Z₀ := hSm.inter (measurableSet_eq_fun
-    (ContinuousLinearMap.continuous_det.measurable.comp hH'm) measurable_const)
+  have hZ₀m : MeasurableSet Z₀ := measurableSet_inter_setOf_det_eq_zero hSm hH'm
   -- The degenerate set is `Z₀` up to a `μ`-null set, and it carries the singular part.
   have hμS : ∀ᵐ x ∂μ, x ∈ S := by
     filter_upwards [hμ.ae_le hDS.mem_iff, hμD] with x hx hxD
@@ -193,16 +258,10 @@ theorem internalEnergy_map_gradient (hU0 : U 0 = 0) (hf : Convex ℝ {p : E × �
       ∫⁻ x, ENNReal.ofReal (ε * D.indicator (fun x =>
         (H x).det * U ((μ.rnDeriv ρ x).toReal / (H x).det)) x) ∂ρ := by
     rw [lintegral_comp_rnDeriv_map_gradient ρ hf hbot hH hμ hμD
-      (Φ := fun a => ENNReal.ofReal (ε * U a.toReal)) (by simp [hU0]),
-      ← lintegral_indicator measurableSet_interior]
-    refine lintegral_congr_ae (hDS.mem_iff.mono fun x hx => ?_)
-    dsimp only
-    by_cases hxD : x ∈ D
-    · have hJ := ((ContinuousLinearMap.isPositive_toLinearMap_iff _).2
-        (hS x (hx.1 hxD)).2.1).det_nonneg
-      rw [indicator_of_mem hxD, indicator_of_mem hxD, ENNReal.toReal_div, ENNReal.toReal_ofReal hJ,
-        ← ENNReal.ofReal_mul hJ, mul_left_comm]
-    · rw [indicator_of_notMem hxD, indicator_of_notMem hxD, mul_zero, ENNReal.ofReal_zero]
+      (Φ := fun a => ENNReal.ofReal (ε * U a.toReal)) (by simp [hU0])]
+    exact setLIntegral_ofReal_mul_ofReal_eq_lintegral_ofReal_indicator ρ measurableSet_interior
+      (hDS.mem_iff.mono fun x hx hxD => ((ContinuousLinearMap.isPositive_toLinearMap_iff _).2
+        (hS x (hx.1 hxD)).2.1).det_nonneg) _ ε
   -- Both parts together give the claimed potential.
   have hsum (ε : ℝ) : ∫⁻ y, ENNReal.ofReal (ε * U ((μ.map G).rnDeriv ρ y).toReal) ∂ρ +
       (ε * recessionConstant U).toENNReal * (μ.map G).singularPart ρ univ =
@@ -292,18 +351,6 @@ theorem internalEnergy_map_smul_add_smul_gradient_le [Nontrivial E] (hU0 : U 0 =
           (pow_mul_apply_inv_pow_le_recessionConstant hn ha one_pos))).symm
   obtain ⟨S, hSm, hSD, hDS, hS, H', hH'm, hHS⟩ :=
     exists_measurableSet_ae_eq_interior_subdifferential_eq_gradient ρ hf hbot hH
-  -- When the degenerate set is `μ`-null, the density vanishes almost everywhere on it.
-  have hr0 : μ {x | (H x).det = 0} = 0 →
-      ∀ᵐ x ∂ρ, x ∈ S → (H' x).det = 0 → μ.rnDeriv ρ x = 0 := by
-    intro h0
-    have hZ₀m : MeasurableSet (S ∩ {x | (H' x).det = 0}) := hSm.inter
-      (measurableSet_eq_fun (ContinuousLinearMap.continuous_det.measurable.comp hH'm)
-        measurable_const)
-    have h := measure_mono_null (s := S ∩ {x | (H' x).det = 0})
-      (fun x hx => by simpa [hHS x hx.1] using hx.2) h0
-    rw [← setLIntegral_rnDeriv hμ, setLIntegral_eq_zero_iff hZ₀m (measurable_rnDeriv _ _)] at h
-    filter_upwards [h] with x hx hxS hx0
-    exact hx ⟨hxS, hx0⟩
   have hE₀ := internalEnergy_map_smul_add_smul_gradient ρ hU0 hf hbot hH hμ hμD le_rfl one_pos
   simp only [sub_zero, one_smul, zero_smul, add_zero, Measure.map_id', ContinuousLinearMap.det,
     ContinuousLinearMap.coe_id, LinearMap.det_id, div_one, one_mul] at hE₀
@@ -313,31 +360,21 @@ theorem internalEnergy_map_smul_add_smul_gradient_le [Nontrivial E] (hU0 : U 0 =
   rw [internalEnergy_map_gradient ρ hU0 hf hbot hH hμ hμD hL] at h₁
   have hUm := measurable_apply_max_of_convexOn hn hc
   have hr : Measurable fun x => (μ.rnDeriv ρ x).toReal := (measurable_rnDeriv _ _).ennreal_toReal
-  have hdet : Measurable fun x => (H' x).det :=
-    ContinuousLinearMap.continuous_det.measurable.comp hH'm
   have hV₀ : Measurable fun x => U (μ.rnDeriv ρ x).toReal := by
     convert hUm.comp hr using 2 with x
     simp
-  have hV₁ : Measurable fun x => if (H' x).det = 0 then L * (μ.rnDeriv ρ x).toReal
-      else (H' x).det * U (max ((μ.rnDeriv ρ x).toReal / (H' x).det) 0) :=
-    Measurable.ite (measurableSet_eq_fun hdet measurable_const) (measurable_const.mul hr)
-      (hdet.mul (hUm.comp (hr.div hdet)))
+  -- When the degenerate set is `μ`-null, the density vanishes almost everywhere on it.
   have hr0' : ∀ᵐ x ∂ρ, x ∈ S → (H' x).det = 0 → recessionConstant U ≠ L →
       μ.rnDeriv ρ x = 0 := by
     rcases hL with h | h
     · exact ae_of_all _ fun x _ _ hne => (hne h).elim
-    · filter_upwards [hr0 h] with x hx hxS hx0 _
+    · filter_upwards [ae_rnDeriv_eq_zero_of_measure_setOf_det_eq_zero ρ hSm hH'm hHS hμ h]
+        with x hx hxS hx0 _
       exact hx hxS hx0
   refine potentialEnergy_le_mul_add_mul (hV₀.indicator measurableSet_interior).aestronglyMeasurable
-    ((hV₁.indicator hSm).aestronglyMeasurable.congr ?_) h₀ h₁ ⟨ht₀.le, ht₁.le⟩ ?_
-  · -- Off a null set, `H` agrees with the measurable `H'`.
-    filter_upwards [hDS.mem_iff] with x hx
-    by_cases hxS : x ∈ S
-    · have hdet0 : 0 ≤ (H' x).det := hHS x hxS ▸
-        ((ContinuousLinearMap.isPositive_toLinearMap_iff _).2 (hS x hxS).2.1).det_nonneg
-      simp [indicator_of_mem hxS, indicator_of_mem (hx.2 hxS), hHS x hxS,
-        max_eq_left (div_nonneg ENNReal.toReal_nonneg hdet0)]
-    · simp [indicator_of_notMem hxS, indicator_of_notMem (mt hx.1 hxS)]
+    (aestronglyMeasurable_indicator_ite_det_eq_zero ρ hSm hDS hH'm hHS
+      (fun x hx => ((ContinuousLinearMap.isPositive_toLinearMap_iff _).2 (hS x hx).2.1).det_nonneg)
+      hUm hr (fun _ => ENNReal.toReal_nonneg) L) h₀ h₁ ⟨ht₀.le, ht₁.le⟩ ?_
   -- The pointwise inequality, from Minkowski's determinant inequality.
   filter_upwards [hDS.mem_iff, hr0'] with x hxS hr0x
   by_cases hxD : x ∈ D
