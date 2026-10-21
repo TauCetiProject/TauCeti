@@ -9,7 +9,8 @@ public import Mathlib.Algebra.Group.MinimalAxioms
 public import Mathlib.Algebra.Group.Pi.Basic
 public import Mathlib.Algebra.Group.TypeTags.Basic
 public import Mathlib.GroupTheory.FreeGroup.Basic
-public import Mathlib.ModelTheory.Complexity
+public import Mathlib.ModelTheory.Semantics
+public import TauCeti.ModelTheory.LanguageMap
 
 import Mathlib.GroupTheory.FreeGroup.Reduce
 import Mathlib.Tactic.FinCases
@@ -64,7 +65,7 @@ non-instance `groupOfModel`, and `instStructure_groupOfModel` identifies the two
   290 (2005), §2.3.
 -/
 
-@[expose] public section
+public section
 
 universe u v w
 
@@ -80,7 +81,7 @@ inductive groupFunc : ℕ → Type
 
 /-- The first-order language of groups, with function symbols `1`, `⁻¹` and `*` and no relation
 symbols. -/
-protected def Language.group : Language :=
+@[expose] protected def Language.group : Language :=
   { Functions := groupFunc
     Relations := fun _ => Empty }
   deriving IsAlgebraic
@@ -242,8 +243,7 @@ instance [Group G] [Group H] {F : Type*} [FunLike F G H] [MonoidHomClass F G H] 
 /-- Group isomorphisms are isomorphisms of structures for the language of groups. -/
 instance [Group G] [Group H] {F : Type*} [EquivLike F G H] [MulEquivClass F G H] :
     Language.group.StrongHomClass F G H where
-  map_fun φ n f x := by
-    cases f <;> simp [map_one, map_inv, map_mul]
+  map_fun := HomClass.map_fun
   map_rel _ _ r := isEmptyElim r
 
 section Coefficients
@@ -256,13 +256,6 @@ map `c : A → G` is an `L_A`-structure through `constantsOn.structure c`. -/
 section Operations
 
 variable [One G] [Inv G] [Mul G]
-
-/-- Under the coefficient structure `constantsOn.structure c`, the constant symbol of `a : A`
-denotes `c a`. -/
-@[simp]
-theorem coe_con (c : A → G) (a : A) :
-    letI := constantsOn.structure c
-    ((Language.group.con a : Language.group[[A]].Constants) : G) = c a := (rfl)
 
 /-- The `L_A`-sentence `a * b = b * a`, for coefficient names `a b : A`. -/
 def commSentence (a b : A) : Language.group[[A]].Sentence :=
@@ -283,7 +276,8 @@ variable [Group G] [Group H]
 /-- A group homomorphism `φ` with `φ ∘ c = d` is a homomorphism of `L_A`-structures, for the
 coefficient structures given by `c` and `d`. In particular realizing a term commutes with `φ`,
 by `FirstOrder.Language.HomClass.realize_term`. -/
-def coeffHom (c : A → G) (d : A → H) (φ : G →* H) (h : ∀ a, φ (c a) = d a) :
+def coeffHom {F : Type*} [FunLike F G H] [MonoidHomClass F G H] (c : A → G) (d : A → H) (φ : F)
+    (h : ∀ a, φ (c a) = d a) :
     letI := constantsOn.structure c
     letI := constantsOn.structure d
     G →[Language.group[[A]]] H :=
@@ -292,19 +286,21 @@ def coeffHom (c : A → G) (d : A → H) (φ : G →* H) (h : ∀ a, φ (c a) = 
   { toFun := φ
     map_fun' := fun {n} f x => by
       rcases f with f | f
-      · -- `funMap` of a group symbol is by definition the group operation
-        cases f with
-        | one => exact map_one φ
-        | inv => exact map_inv φ (x 0)
-        | mul => exact map_mul φ (x 0) (x 1)
+      · simp only [withConstants_funMap_sumInl]
+        exact HomClass.map_fun φ f x
       · cases n with
-        | zero => exact h f
+        | zero =>
+          -- the constant symbol `Sum.inr f` is `Language.group.con f`
+          rw [Unique.eq_default (φ ∘ x), Unique.eq_default x]
+          exact (congrArg φ (coe_con_constantsOn c f)).trans
+            ((h f).trans (coe_con_constantsOn d f).symm)
         | succ n => exact isEmptyElim f
     map_rel' := fun {n} r => by
       rcases r with r | r <;> exact isEmptyElim r }
 
 @[simp]
-theorem coe_coeffHom (c : A → G) (d : A → H) (φ : G →* H) (h : ∀ a, φ (c a) = d a) :
+theorem coe_coeffHom {F : Type*} [FunLike F G H] [MonoidHomClass F G H] (c : A → G) (d : A → H)
+    (φ : F) (h : ∀ a, φ (c a) = d a) :
     ⇑(coeffHom c d φ h) = φ := (rfl)
 
 /-- The sentence `a * b = b * a`, for the two basis constants, is false in the free group on two
