@@ -102,7 +102,7 @@ theorem _root_.Real.Angle.eq_two_mul_of_abs_toReal_eq {θ : Real.Angle} {α β :
       rw [hα, zero_add, Real.Angle.coe_zero, Real.Angle.toReal_zero, hβrep] at h
       linarith
     · have hαpos : 0 < α := lt_of_le_of_ne hα₀ (Ne.symm hα)
-      letI : Fact (0 < 2 * Real.pi) := ⟨Real.two_pi_pos⟩
+      let : Fact (0 < 2 * Real.pi) := ⟨Real.two_pi_pos⟩
       have h := (AddCircle.coe_eq_coe_iff_of_mem_Ioc (p := 2 * Real.pi) (a := 0)
         (x := α + α) (y := β) ⟨by linarith, by linarith⟩ ⟨hβ₀, by linarith⟩).1 hsum
       linarith
