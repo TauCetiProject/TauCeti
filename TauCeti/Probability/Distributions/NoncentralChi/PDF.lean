@@ -272,12 +272,35 @@ theorem noncentralChiMeasure_zero_degree_eq_atom_add_withDensity (δ : ℝ≥0) 
     Measure.map_dirac' (by fun_prop), map_withDensity_noncentralChiSquaredPDF hs, NNReal.coe_pow,
     sqrt_zero, mul_zero]
 
-/-- The Radon–Nikodym derivative of a positive-degree noncentral chi law is its named
-density. -/
-theorem rnDeriv_noncentralChiMeasure (hk : 0 < k) (hs : 0 < s) :
+/-- The Radon–Nikodym derivative is the density of the continuous component for every parameter
+value. In particular, the atom at degree zero contributes zero to this derivative. -/
+theorem rnDeriv_noncentralChiMeasure (k : ℝ) (δ : ℝ≥0) (s : ℝ) :
     (noncentralChiMeasure k δ s).rnDeriv volume =ᵐ[volume] noncentralChiPDF k δ s := by
-  rw [noncentralChiMeasure_eq_withDensity hk hs]
-  exact Measure.rnDeriv_withDensity _ (measurable_noncentralChiPDF k δ s)
+  by_cases hs : s ≤ 0
+  · have hzero : noncentralChiPDF k δ s = 0 := funext fun _ ↦ noncentralChiPDF_of_scale_nonpos hs
+    rw [noncentralChiMeasure_of_scale_nonpos hs, hzero]
+    simp
+  replace hs : 0 < s := not_le.mp hs
+  rcases lt_trichotomy k 0 with hk | rfl | hk
+  · have hzero : noncentralChiPDF k δ s = 0 := funext fun _ ↦ noncentralChiPDF_of_neg hk
+    rw [noncentralChiMeasure_of_neg hk, hzero]
+    simp
+  · let := isProbabilityMeasure_noncentralChiMeasure (k := 0) (δ := δ) le_rfl hs
+    have hc : volume.withDensity (noncentralChiPDF 0 δ s) ≤ noncentralChiMeasure 0 δ s := by
+      rw [noncentralChiMeasure_zero_degree_eq_atom_add_withDensity δ hs]
+      exact Measure.le_add_left le_rfl
+    have ha : ENNReal.ofReal (exp (-(δ : ℝ) ^ 2 / 2)) • Measure.dirac 0 ≤
+        noncentralChiMeasure 0 δ s := by
+      rw [noncentralChiMeasure_zero_degree_eq_atom_add_withDensity δ hs]
+      exact Measure.le_add_right le_rfl
+    have := isFiniteMeasure_of_le _ hc
+    have := isFiniteMeasure_of_le _ ha
+    rw [noncentralChiMeasure_zero_degree_eq_atom_add_withDensity δ hs, add_comm]
+    exact (Measure.rnDeriv_add_of_mutuallySingular _ _ _
+      ((mutuallySingular_dirac 0 volume).smul _)).trans
+        (Measure.rnDeriv_withDensity volume (measurable_noncentralChiPDF 0 δ s))
+  · rw [noncentralChiMeasure_eq_withDensity hk hs]
+    exact Measure.rnDeriv_withDensity _ (measurable_noncentralChiPDF k δ s)
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ}
 
