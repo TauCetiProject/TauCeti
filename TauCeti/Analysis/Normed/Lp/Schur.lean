@@ -9,6 +9,7 @@ public import Mathlib.Topology.Algebra.Module.Spaces.WeakDual
 public import Mathlib.Analysis.Normed.Lp.lpSpace
 import TauCeti.Analysis.Normed.Lp.Basic
 import TauCeti.Analysis.Normed.Lp.Dual
+import TauCeti.Topology.Algebra.Module.WeakSpace
 
 /-!
 # Schur's theorem for ℓ¹
@@ -159,12 +160,8 @@ theorem tendsto_of_tendsto_toWeakSpace_one {α : Type*} {l : Filter α} [l.IsCou
   intro u hu
   rw [← tendsto_sub_nhds_zero_iff]
   refine tendsto_zero_of_forall_tendsto_apply fun f ↦ ?_
-  -- Evaluating `f` is weakly continuous. Mathlib has no evaluation lemma for `toWeakSpace`, so
-  -- the stated type of `hf` is reached by deliberate definitional unfolding of the `WeakSpace`
-  -- pairing `(topDualPairing 𝕜 _).flip`, through the identity map `toWeakSpace`.
   have hf : Tendsto (fun n ↦ f (x (u n))) atTop (𝓝 (f y)) :=
-    ((WeakBilin.eval_continuous (topDualPairing 𝕜 (lp (fun _ : ι ↦ 𝕜) 1)).flip
-      f).tendsto _).comp (hx.comp hu)
+    TauCeti.tendsto_toWeakSpace_iff_forall_tendsto_apply.1 (hx.comp hu) f
   simpa only [map_sub, Function.comp_apply] using tendsto_sub_nhds_zero_iff.2 hf
 
 /-- Along a countably generated filter, weak and norm convergence agree in ℓ¹. -/
