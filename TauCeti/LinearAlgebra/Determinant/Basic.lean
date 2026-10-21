@@ -6,11 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Determinant
-public import Mathlib.LinearAlgebra.BilinearForm.Properties
+public import TauCeti.LinearAlgebra.BilinearForm.Basic
 public import Mathlib.RingTheory.Ideal.Span
 public import TauCeti.LinearAlgebra.Multilinear.Span
 import TauCeti.LinearAlgebra.BilinearForm.Multilinear
 import Mathlib.LinearAlgebra.SpecialLinearGroup
+import Mathlib.LinearAlgebra.Matrix.Adjugate
 import Mathlib.LinearAlgebra.Matrix.SchurComplement
 
 /-!
@@ -39,6 +40,10 @@ alongside Mathlib's `Matrix.det_updateRow_add` and `Matrix.det_updateRow_smul`: 
 in row form, that rescaling one row entry by entry along a fixed vector of factors and summing the
 results over the rows multiplies the determinant by the total of the factors.
 
+It also records facts used to compute ideals of maximal minors: the determinant in a product
+basis of a block-diagonal family, and of a family that becomes block diagonal after a permutation,
+and Cramer's rule for an endomorphism of a free module of finite rank.
+
 Finally, it records the Weinstein–Aronszajn identity `det (1 + X ∘ₗ Y) = det (1 + Y ∘ₗ X)` for
 linear maps `X` and `Y` between two free modules of finite rank, possibly of different ranks.
 
@@ -50,8 +55,6 @@ linear maps `X` and `Y` between two free modules of finite rank, possibly of dif
   for `R` cancellative and `N` torsion-free.
 * `LinearMap.IsAlt.compl₁₂_self_eq_det_smul` and `LinearMap.det_eq_of_compl₁₂_self_eq_smul`: the
   same two statements for an alternating bilinear form on a module of rank two.
-* `LinearMap.IsAlt.eq_zero_of_smul_apply_basis_eq_zero`: a left-separating alternating form on a
-  module of rank two takes a value with zero annihilator on a basis.
 * `LinearMap.det_eq_of_compl₁₂_self_eq_smul_of_separatingLeft`: the recovery statement over any
   commutative ring, for a left-separating form.
 * `Matrix.detRowAlternating_mulVec`: multiplication by a square matrix scales the
@@ -69,6 +72,11 @@ linear maps `X` and `Y` between two free modules of finite rank, possibly of dif
   `det (1 + X ∘ₗ Y) = det (1 + Y ∘ₗ X)` for linear maps between free modules of finite rank.
 * `LinearEquiv.det_ker_eq_bot_of_finrank_le_one`: the determinant kernel is trivial in
   dimension at most one.
+* `Module.Basis.prod_det_sumElim`: the determinant in a product basis of a family split between
+  the two factors is the product of the two determinants.
+* `Module.Basis.exists_prod_det_eq_sign_smul_mul`: the same up to sign for a family with exactly
+  as many members in the first factor as the rank of the first factor.
+* `LinearMap.det_smul_mem_range`: Cramer's rule, `det φ • x ∈ range φ`.
 
 ## Implementation notes
 
@@ -147,6 +155,47 @@ theorem compLinearMap_eq_det_smul [Finite ι] (b : Basis ι R M) (ω : M [⋀^ι
 
 end AlternatingMap
 
+namespace Module.Basis
+
+variable {ι ι' R M M' : Type*} [Fintype ι] [DecidableEq ι] [Fintype ι'] [DecidableEq ι']
+  [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup M'] [Module R M']
+
+/-- The determinant in a product basis of a family whose first arguments lie in the first factor
+and whose last arguments lie in the second factor is the product of the two determinants. -/
+theorem prod_det_sumElim (b : Basis ι R M) (b' : Basis ι' R M') (v : ι → M) (v' : ι' → M') :
+    (b.prod b').det (Sum.elim (LinearMap.inl R M M' ∘ v) (LinearMap.inr R M M' ∘ v')) =
+      b.det v * b'.det v' := by
+  have h : (b.prod b').toMatrix (Sum.elim (LinearMap.inl R M M' ∘ v)
+      (LinearMap.inr R M M' ∘ v')) = Matrix.fromBlocks (b.toMatrix v) 0 0 (b'.toMatrix v') := by
+    ext (i | i) (j | j) <;> simp [Basis.toMatrix_apply]
+  rw [det_apply, h, Matrix.det_fromBlocks_zero₂₁, det_apply, det_apply]
+
+/-- If the members of a family satisfying `P` lie in the first factor, the others lie in the
+second factor, and exactly `card ι` members satisfy `P`, then, after a permutation `σ` moving the
+former to the front, the determinant of the family in a product basis is, up to the sign of `σ`,
+the product of the determinants of the two blocks of components. -/
+theorem exists_prod_det_eq_sign_smul_mul (b : Basis ι R M) (b' : Basis ι' R M')
+    (w : ι ⊕ ι' → M × M') (P : ι ⊕ ι' → Prop) [DecidablePred P]
+    (hcard : Fintype.card {i // P i} = Fintype.card ι) (h₁ : ∀ i, P i → (w i).2 = 0)
+    (h₂ : ∀ i, ¬P i → (w i).1 = 0) :
+    ∃ σ : Equiv.Perm (ι ⊕ ι'), (b.prod b').det w = Equiv.Perm.sign σ •
+      (b.det (fun k ↦ (w (σ (.inl k))).1) * b'.det (fun l ↦ (w (σ (.inr l))).2)) := by
+  let e₁ : ι ≃ {i // P i} := (Fintype.equivOfCardEq hcard).symm
+  let e₂ : ι' ≃ {i // ¬P i} := (Fintype.equivOfCardEq (by
+    rw [Fintype.card_subtype_compl, hcard, Fintype.card_sum, Nat.add_sub_cancel_left])).symm
+  let σ : Equiv.Perm (ι ⊕ ι') := (e₁.sumCongr e₂).trans (Equiv.sumCompl P)
+  have hσ : w ∘ σ = Sum.elim (LinearMap.inl R M M' ∘ fun k ↦ (w (σ (.inl k))).1)
+      (LinearMap.inr R M M' ∘ fun l ↦ (w (σ (.inr l))).2) := by
+    ext1 (k | l)
+    · exact Prod.ext (by simp) (by simpa using h₁ _ (by simpa [σ] using (e₁ k).2))
+    · exact Prod.ext (by simpa using h₂ _ (by simpa [σ] using (e₂ l).2)) (by simp)
+  refine ⟨σ, ?_⟩
+  have h := (b.prod b').det.map_perm w σ
+  rw [hσ, prod_det_sumElim] at h
+  rw [h, smul_smul, Int.units_mul_self, one_smul]
+
+end Module.Basis
+
 namespace LinearMap
 
 variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N]
@@ -186,18 +235,6 @@ theorem det_eq_of_compl₁₂_self_eq_smul [IsCancelMulZero R] [Module.IsTorsion
     {φ : M →ₗ[R] M} {d : R} (h : ω.compl₁₂ φ φ = d • ω) : LinearMap.det φ = d :=
   smul_left_injective R hω <| (halt.compl₁₂_self_eq_det_smul b φ).symm.trans h
 
-/-- **A left-separating alternating bilinear form on a rank-two module takes a value with zero
-annihilator on a basis**, over any commutative ring: if `r • ω (b 0) (b 1) = 0`, then `r • b 0`
-pairs to zero with every `y`, since `ω (b 0) y` is a multiple of `ω (b 0) (b 1)`, so `r = 0`. -/
-theorem IsAlt.eq_zero_of_smul_apply_basis_eq_zero (b : Basis (Fin 2) R M)
-    {ω : M →ₗ[R] M →ₗ[R] N} (halt : ω.IsAlt) (hω : ω.SeparatingLeft) {r : R}
-    (hr : r • ω (b 0) (b 1) = 0) : r = 0 := by
-  have hb : r • b 0 = 0 := hω _ fun y ↦ by
-    conv_lhs => rw [← b.sum_repr y]
-    simp only [Fin.sum_univ_two, map_add, map_smul, smul_apply, halt (b 0), hr, smul_zero,
-      add_zero]
-  simpa using congr(b.repr $hb 0)
-
 /-- **The multiplier of a left-separating alternating bilinear form on a rank-two module is the
 determinant**, over any commutative ring. Left separation of `ω` takes the place of the
 cancellation hypotheses of `LinearMap.det_eq_of_compl₁₂_self_eq_smul`; this is the form that
@@ -225,6 +262,19 @@ theorem det_one_add_comp_comm {F F' : Type*} [AddCommGroup F] [Module R F] [Modu
   rw [← det_toMatrix b, ← det_toMatrix b', map_add, map_add, toMatrix_one, toMatrix_one,
     toMatrix_comp b b' b, toMatrix_comp b' b b']
   exact Matrix.det_one_add_mul_comm _ _
+
+/-- **Cramer's rule for an endomorphism.** The determinant of an endomorphism `φ` of a free
+module of finite rank multiplies every vector into the range of `φ`: `det φ • x = φ (adj φ x)`,
+for the adjugate `adj φ` of `φ`. -/
+theorem det_smul_mem_range {F : Type*} [AddCommGroup F] [Module R F] [Module.Free R F]
+    [Module.Finite R F] (φ : F →ₗ[R] F) (x : F) : LinearMap.det φ • x ∈ range φ := by
+  classical
+  let b := Free.chooseBasis R F
+  refine ⟨Matrix.toLin b b (toMatrix b b φ).adjugate x, ?_⟩
+  have h := congr(Matrix.toLin b b $((toMatrix b b φ).mul_adjugate) x)
+  rw [Matrix.toLin_mul b b b, Matrix.toLin_toMatrix, map_smul, Matrix.toLin_one,
+    det_toMatrix] at h
+  simpa using h
 
 end LinearMap
 
@@ -276,11 +326,12 @@ end Matrix
 namespace TauCeti
 
 /-- If an ideal contains all evaluation determinants whose rows lie in a set, it also contains
-those whose rows lie in the linear span of that set. -/
-theorem det_mem_of_mem_span {R F : Type*} [CommRing R] [AddCommGroup F] [Module R F]
-    {p : ℕ} {s : Set F} {I : Ideal R} (f : Fin p → Dual R F) {v : Fin p → F}
+those whose rows lie in the linear span of that set. The row and functional families may be
+indexed by any finite type. -/
+theorem det_mem_of_mem_span {ι R F : Type*} [Fintype ι] [DecidableEq ι] [CommRing R]
+    [AddCommGroup F] [Module R F] {s : Set F} {I : Ideal R} (f : ι → Dual R F) {v : ι → F}
     (hv : ∀ i, v i ∈ Submodule.span R s)
-    (h : ∀ w : Fin p → F, (∀ i, w i ∈ s) → (Matrix.of fun i j ↦ f j (w i)).det ∈ I) :
+    (h : ∀ w : ι → F, (∀ i, w i ∈ s) → (Matrix.of fun i j ↦ f j (w i)).det ∈ I) :
     (Matrix.of fun i j ↦ f j (v i)).det ∈ I := by
   rw [← Matrix.detRowAlternating_compLinearMap_pi_apply]
   refine Submodule.span_le.2 ?_ <|

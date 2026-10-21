@@ -12,11 +12,13 @@ public import Mathlib.Analysis.Distribution.SchwartzSpace.Basic
 
 A Schwartz function is bounded and decays faster than any power, so `‖x‖ ^ k ‖f x‖²` is
 integrable against any measure of temperate growth. This is the integrability input for weighted
-`L²` estimates such as the weighted Plancherel identity.
+`L²` estimates such as the weighted Plancherel identity. Likewise the pointwise inner product of two
+Schwartz functions is integrable, which justifies splitting `L²` pairings of Schwartz functions.
 
 ## Main declarations
 
 * `SchwartzMap.integrable_norm_pow_mul_norm_sq`: `‖x‖ ^ k ‖f x‖²` is integrable.
+* `SchwartzMap.integrable_inner`: `⟪f x, g x⟫` is integrable.
 -/
 
 public section
@@ -25,7 +27,7 @@ open MeasureTheory
 
 namespace SchwartzMap
 
-open scoped SchwartzMap
+open scoped SchwartzMap InnerProductSpace
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
   [BorelSpace E] [SecondCountableTopology E] [NormedAddCommGroup F] [NormedSpace ℝ F]
@@ -39,5 +41,13 @@ theorem integrable_norm_pow_mul_norm_sq (f : 𝓢(E, F)) (k : ℕ) :
   rw [Real.norm_of_nonneg (by positivity), sq, ← mul_assoc, mul_comm _ ‖f x‖]
   gcongr
   exact f.norm_le_seminorm ℝ x
+
+/-- For Schwartz functions `f` and `g` with values in a real inner product space, the pointwise
+inner product `⟪f x, g x⟫` is integrable. -/
+theorem integrable_inner {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℝ H]
+    (f g : 𝓢(E, H)) : Integrable (fun x ↦ ⟪f x, g x⟫_ℝ) μ := by
+  convert (pairing (innerSL ℝ) f g).integrable (μ := μ) using 1
+  ext x
+  rw [pairing_apply_apply, innerSL_apply_apply]
 
 end SchwartzMap

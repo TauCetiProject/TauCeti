@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.Degree.IsMonicOfDegree
 public import Mathlib.Analysis.Normed.Group.InfiniteSum
 public import Mathlib.RingTheory.PowerSeries.GaussNorm
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
@@ -495,21 +496,41 @@ section SeminormedRing
 
 variable {R : Type*} [SeminormedRing R] {c : ℝ} {s : ℕ} {f : PowerSeries R}
 
+/-- A monic polynomial of degree `s` whose lower weighted coefficients are at most `c ^ s` is
+distinguished of degree `s` at the radius `c > 0`: its Gauss norm `c ^ s` is attained by the
+leading coefficient, and every later coefficient vanishes. -/
+theorem isDistinguished_of_isMonicOfDegree [NormOneClass R] (hc : 0 < c) {p : Polynomial R}
+    (hp : p.IsMonicOfDegree s) (hle : ∀ k < s, ‖p.coeff k‖ * c ^ k ≤ c ^ s) :
+    IsDistinguished c s (p : PowerSeries R) := by
+  have hs : p.coeff s = 1 := by
+    rw [← hp.natDegree_eq]
+    exact hp.monic.coeff_natDegree
+  have hzero (m : ℕ) (hm : s < m) : p.coeff m = 0 :=
+    Polynomial.coeff_eq_zero_of_natDegree_lt (hp.natDegree_eq ▸ hm)
+  have hnorm : (p : PowerSeries R).gaussNorm norm c = c ^ s := by
+    rw [gaussNorm_eq_of_forall_le (s := s)]
+    · simp [hs]
+    · intro m
+      simp only [Polynomial.coeff_coe, hs, norm_one, one_mul]
+      rcases lt_trichotomy m s with hm | rfl | hm
+      · exact hle m hm
+      · simp [hs]
+      · simp [hzero m hm, (pow_pos hc s).le]
+  refine ⟨by simp [hnorm, hs], fun m hm ↦ ?_⟩
+  simp [hnorm, hzero m hm, pow_pos hc s]
+
 /-- A linear polynomial `X - b` whose root lies in the closed disc of radius `c > 0` is
 distinguished of degree `1` at `c`: its Gauss norm `max ‖b‖ c` is `c`, attained by the leading
 coefficient. -/
 theorem isDistinguished_X_sub_C [NormOneClass R] (hc : 0 < c) {b : R} (hb : ‖b‖ ≤ c) :
     IsDistinguished c 1 (PowerSeries.X - PowerSeries.C b) := by
-  have hnorm : (PowerSeries.X - PowerSeries.C b).gaussNorm norm c = c := by
-    rw [gaussNorm_eq_of_forall_le (s := 1)]
-    · simp
-    · rintro (_ | _ | m)
-      · simpa using hb
-      · simp
-      · simp [PowerSeries.coeff_X, hc.le]
-  refine ⟨by simp [hnorm], fun m hm ↦ ?_⟩
-  have hm0 : m ≠ 0 := by omega
-  simp [hnorm, PowerSeries.coeff_X, PowerSeries.coeff_C, hm.ne', hm0, hc]
+  have : Nontrivial R := NormOneClass.nontrivial
+  have h := isDistinguished_of_isMonicOfDegree hc (Polynomial.isMonicOfDegree_X_sub_one b)
+    fun k hk ↦ by obtain rfl : k = 0 := by omega
+                  simpa using hb
+  rwa [← Polynomial.coeToPowerSeries.ringHom_apply, map_sub,
+    Polynomial.coeToPowerSeries.ringHom_apply, Polynomial.coeToPowerSeries.ringHom_apply,
+    Polynomial.coe_X, Polynomial.coe_C] at h
 
 /-- A linear polynomial `X - b` whose root lies in the open disc of radius `c > 0` has lowest
 dominant degree `1` at `c`: its Gauss norm `c` is attained by the leading coefficient and not by

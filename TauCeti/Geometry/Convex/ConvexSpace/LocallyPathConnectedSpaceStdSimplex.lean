@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Convex.StdSimplex
 public import Mathlib.Geometry.Convex.ConvexSpace.Topology
 public import Mathlib.Topology.Algebra.Module.LocallyConvex
+import TauCeti.Analysis.Convex.StdSimplex
 
 /-!
 # The standard simplex on a finite type is locally path connected
@@ -27,12 +28,7 @@ convex subset of `M → ℝ`. -/
 instance locallyPathConnectedSpace (M : Type*) [Finite M] :
     LocallyPathConnectedSpace (StdSimplex ℝ M) := by
   have := Fintype.ofFinite M
-  have hconv : Convex ℝ (Set.range (fun t ↦ t.weights : StdSimplex ℝ M → M → ℝ)) := by
-    rw [range_toFun_comp_weights]
-    exact (convex_iInter fun i ↦ convex_halfSpace_ge (LinearMap.proj i).isLinear 0).inter
-      (by simpa using
-        convex_hyperplane (∑ i, LinearMap.proj (R := ℝ) (φ := fun _ : M ↦ ℝ) i).isLinear 1)
-  have := hconv.locallyPathConnectedSpace
+  have := (convex_range_toFun_comp_weights ℝ M).locallyPathConnectedSpace
   exact (isEmbedding_toFun_comp_weights ℝ M).toHomeomorph.symm.locallyPathConnectedSpace
 
 end Convexity.StdSimplex
