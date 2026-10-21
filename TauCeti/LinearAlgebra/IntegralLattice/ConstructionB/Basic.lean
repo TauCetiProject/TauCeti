@@ -101,22 +101,10 @@ theorem intCast_mem_lattice (z : ι → ℤ) :
   · exact_mod_cast hk
   · exact_mod_cast hk
 
-omit [Fintype ι] in
-/-- Every Construction A vector is `c + 2z`, where `c` is the `0`/`1` lift of a codeword. -/
-theorem exists_eq_val_add_two_mul {x : ι → ℚ}
-    (hx : x ∈ ConstructionA.lattice 2 C.toAddSubgroup) :
-    ∃ c ∈ C, ∃ z : ι → ℤ, x = fun i ↦ ((c i).val : ℚ) + 2 * z i := by
-  obtain ⟨w, hw, rfl⟩ := (ConstructionA.mem_lattice 2).mp hx
-  refine ⟨fun i ↦ (w i : ZMod 2), hw, fun i ↦ w i / 2, funext fun i ↦ ?_⟩
-  have hval : (((w i : ZMod 2).val : ℤ) : ℚ) = ((w i % 2 : ℤ) : ℚ) :=
-    congrArg _ (ZMod.val_intCast (w i))
-  push_cast at hval
-  rw [hval]
-  exact_mod_cast (Int.emod_add_mul_ediv (w i) 2).symm
-
 /-- **The parity form of Construction B.** For a doubly even code, the Construction A vector
 `c + 2z`, with `c` the `0`/`1` lift of a codeword, lies in Construction B exactly when `∑ zᵢ` is
-even. Together with `exists_eq_val_add_two_mul` this describes every Construction B vector. -/
+even. Together with `ConstructionA.exists_eq_val_add_mul` this describes every Construction B
+vector. -/
 theorem val_add_two_mul_mem_lattice_iff (hC : BinaryCode.IsDoublyEven C) {c : ι → ZMod 2}
     (hc : c ∈ C) (z : ι → ℤ) :
     (fun i ↦ ((c i).val : ℚ) + 2 * z i) ∈ lattice C ↔ Even (∑ i, z i) := by
@@ -161,19 +149,6 @@ instance isLattice : (lattice C).IsLattice ℚ := by
 
 /-! ### Half the coordinate sum -/
 
-/-- Every Construction A vector of an even binary code has an even coordinate sum. -/
-theorem exists_sum_eq_two_mul (hC : BinaryCode.IsEven C) {x : ι → ℚ}
-    (hx : x ∈ ConstructionA.lattice 2 C.toAddSubgroup) : ∃ k : ℤ, ∑ i, x i = 2 * k := by
-  obtain ⟨z, hz, rfl⟩ := (ConstructionA.mem_lattice 2).mp hx
-  have hpar : ((∑ i, z i : ℤ) : ZMod 2) = 0 := by
-    have h := dotProduct_one_eq_hammingNorm (fun i ↦ (z i : ZMod 2))
-    simp only [dotProduct, Pi.one_apply, mul_one] at h
-    push_cast
-    rw [h, ZMod.natCast_eq_zero_iff_even]
-    exact BinaryCode.isEven_iff.mp hC _ hz
-  obtain ⟨k, hk⟩ := (ZMod.intCast_zmod_eq_zero_iff_dvd _ 2).mp hpar
-  exact ⟨k, by beta_reduce; exact_mod_cast hk⟩
-
 /-- **Half the coordinate sum modulo two**, an additive character of the Construction A carrier
 of an even binary code. Its kernel is the Construction B carrier, by `ker_sumHalf`. -/
 noncomputable def sumHalf (hC : BinaryCode.IsEven C) :
@@ -181,8 +156,8 @@ noncomputable def sumHalf (hC : BinaryCode.IsEven C) :
   toFun x := ⌊(∑ i, (x : ι → ℚ) i) / 2⌋
   map_zero' := by simp
   map_add' x y := by
-    obtain ⟨k, hk⟩ := exists_sum_eq_two_mul C hC x.2
-    obtain ⟨l, hl⟩ := exists_sum_eq_two_mul C hC y.2
+    obtain ⟨k, hk⟩ := ConstructionA.exists_sum_eq_two_mul C hC x.2
+    obtain ⟨l, hl⟩ := ConstructionA.exists_sum_eq_two_mul C hC y.2
     simp only [Submodule.coe_add, Pi.add_apply, Finset.sum_add_distrib, hk, hl]
     rw [show ((2 : ℚ) * k + 2 * l) / 2 = ((k + l : ℤ) : ℚ) by push_cast; ring,
       show (2 : ℚ) * k / 2 = k by ring, show (2 : ℚ) * l / 2 = l by ring]
@@ -199,7 +174,7 @@ theorem sumHalf_apply_of_sum_eq (hC : BinaryCode.IsEven C)
 theorem sumHalf_eq_zero_iff (hC : BinaryCode.IsEven C)
     (x : ConstructionA.lattice 2 C.toAddSubgroup) :
     sumHalf C hC x = 0 ↔ (x : ι → ℚ) ∈ lattice C := by
-  obtain ⟨k, hk⟩ := exists_sum_eq_two_mul C hC x.2
+  obtain ⟨k, hk⟩ := ConstructionA.exists_sum_eq_two_mul C hC x.2
   rw [sumHalf_apply_of_sum_eq C hC hk, ZMod.intCast_zmod_eq_zero_iff_dvd, mem_lattice]
   constructor
   · rintro ⟨l, rfl⟩
@@ -260,8 +235,8 @@ theorem integralLattice_form (hC : C.IsSelfOrthogonal) :
 
 /-- Construction B is nondegenerate, since its form is that of Construction A. -/
 instance isNondegenerate_integralLattice (hC : C.IsSelfOrthogonal) :
-    (integralLattice C hC).IsNondegenerate where
-  nondegenerate := by rw [integralLattice_form]; exact ConstructionA.form_nondegenerate 2
+    (integralLattice C hC).IsNondegenerate :=
+  IntegralLattice.instIsNondegenerateRestrictFull _ _ _
 
 /-- Construction B is positive definite. -/
 theorem isPosDef_integralLattice (hC : C.IsSelfOrthogonal) :
