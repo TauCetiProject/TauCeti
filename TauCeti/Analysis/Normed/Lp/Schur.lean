@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.Module.Spaces.WeakDual
 public import Mathlib.Analysis.Normed.Lp.lpSpace
+import TauCeti.Analysis.Normed.Lp.Basic
 import TauCeti.Analysis.Normed.Lp.Dual
 
 /-!
@@ -33,11 +34,6 @@ open Filter Topology
 namespace lp
 
 variable {𝕜 ι : Type*} [RCLike 𝕜]
-
-/-- The ℓ¹ norm is the sum of the norms of the coordinates. -/
-private theorem hasSum_norm_one {E : ι → Type*} [∀ i, NormedAddCommGroup (E i)] (y : lp E 1) :
-    HasSum (fun i ↦ ‖y i‖) ‖y‖ := by
-  simpa using lp.hasSum_norm (p := 1) (by simp) y
 
 /-- The gliding hump: if the mass of `x n` on every finite set of coordinates tends to zero while
 `ε ≤ ‖x n‖` for infinitely many `n`, then there are indices `m 0 < m 1 < ⋯` and finite sets
@@ -120,7 +116,7 @@ private theorem tendsto_zero_of_forall_tendsto_apply {x : ℕ → lp (fun _ : ι
     exact hn (hball (by simpa using h))
   -- Weak nullity makes the mass of `x n` on any finite set of coordinates tend to zero.
   have hcoord (A : Finset ι) : Tendsto (fun n ↦ ∑ i ∈ A, ‖x n i‖) atTop (𝓝 0) := by
-    simpa [lp.evalCLM] using
+    simpa using
       tendsto_finsetSum A fun i _ ↦ (hx (lp.evalCLM 𝕜 (fun _ : ι ↦ 𝕜) 1 i)).norm
   obtain ⟨m, A, hmono, hAmono, hmA⟩ :=
     exists_strictMono_monotone_of_frequently_le hcoord (δ := ε / 8) (by positivity) hlarge
@@ -163,10 +159,13 @@ theorem tendsto_of_tendsto_toWeakSpace_one {α : Type*} {l : Filter α} [l.IsCou
   intro u hu
   rw [← tendsto_sub_nhds_zero_iff]
   refine tendsto_zero_of_forall_tendsto_apply fun f ↦ ?_
-  have hf := ((WeakBilin.eval_continuous (topDualPairing 𝕜 (lp (fun _ : ι ↦ 𝕜) 1)).flip
-    f).tendsto _).comp (hx.comp hu)
-  simp only [map_sub]
-  exact tendsto_sub_nhds_zero_iff.2 hf
+  -- Evaluating `f` is weakly continuous. Mathlib has no evaluation lemma for `toWeakSpace`, so
+  -- the stated type of `hf` is reached by deliberate definitional unfolding of the `WeakSpace`
+  -- pairing `(topDualPairing 𝕜 _).flip`, through the identity map `toWeakSpace`.
+  have hf : Tendsto (fun n ↦ f (x (u n))) atTop (𝓝 (f y)) :=
+    ((WeakBilin.eval_continuous (topDualPairing 𝕜 (lp (fun _ : ι ↦ 𝕜) 1)).flip
+      f).tendsto _).comp (hx.comp hu)
+  simpa only [map_sub, Function.comp_apply] using tendsto_sub_nhds_zero_iff.2 hf
 
 /-- Along a countably generated filter, weak and norm convergence agree in ℓ¹. -/
 theorem tendsto_toWeakSpace_iff_one {α : Type*} {l : Filter α} [l.IsCountablyGenerated]
