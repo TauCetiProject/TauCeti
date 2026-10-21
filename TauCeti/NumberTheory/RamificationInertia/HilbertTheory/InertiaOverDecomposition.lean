@@ -95,7 +95,7 @@ variable (E 𝓞E : Type*) [Field E] [Algebra E L] [IsInertiaField K L P E] [Com
 
 variable [IsGalois K L] [FiniteDimensional K L] [IsDedekindDomain A] [IsDomain B]
   [Module.Finite A B] [Module.IsTorsionFree A B]
-  [Algebra A 𝓞D] [Module.Finite A 𝓞D] [IsScalarTower A 𝓞D B] [IsDedekindDomain 𝓞D]
+  [Algebra A 𝓞D] [IsScalarTower A 𝓞D B] [IsDedekindDomain 𝓞D]
   [Algebra A 𝓞E] [Module.Finite A 𝓞E] [IsScalarTower A 𝓞E B] [IsDedekindDomain 𝓞E]
   [P.IsMaximal]
 

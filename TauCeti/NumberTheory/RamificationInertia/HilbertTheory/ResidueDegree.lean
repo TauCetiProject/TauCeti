@@ -121,19 +121,17 @@ variable (A K L : Type*) {B : Type*} [Field K] [Field L] [Algebra K L]
   [Algebra 𝓞D D] [IsFractionRing 𝓞D D] [Algebra 𝓞D B] [Algebra 𝓞D L]
   [IsScalarTower 𝓞D D L] [IsScalarTower 𝓞D B L]
   [IsGalois K L] [FiniteDimensional K L] [IsDedekindDomain A] [IsDomain B]
-  [Module.Finite A B] [Module.IsTorsionFree A B] [Algebra A 𝓞D] [Module.Finite A 𝓞D]
-  [IsScalarTower A 𝓞D B] [IsDedekindDomain 𝓞D] [P.IsMaximal]
+  [Module.Finite A B] [Algebra A 𝓞D] [IsScalarTower A 𝓞D B] [IsDedekindDomain 𝓞D] [P.IsMaximal]
 
 omit [FiniteDimensional K L] [P.IsMaximal] in
 include K L D P in
 private theorem instances :
-    Module.Finite 𝓞D B ∧ Module.IsTorsionFree 𝓞D B ∧ Module.IsTorsionFree A 𝓞D ∧
+    Module.Finite 𝓞D B ∧ Module.IsTorsionFree 𝓞D B ∧ Module.IsTorsionFree A B ∧
       IsGaloisGroup Gal(L/K) A B ∧ IsGaloisGroup (stabilizer Gal(L/K) P) 𝓞D B := by
   have : Module.Finite 𝓞D B := Module.Finite.right A 𝓞D B
-  have : Module.IsTorsionFree 𝓞D B := by
-    rw [Module.isTorsionFree_iff_faithfulSMul]
-    exact Algebra.IsAlgebraic.faithfulSMul_tower_top A 𝓞D B
-  have : Module.IsTorsionFree A 𝓞D := Module.IsTorsionFree.of_faithfulSMul _ _ B
+  -- The fraction-field embeddings make both ring maps injective.
+  have : FaithfulSMul A B := .of_field_isFractionRing A B K L
+  have : FaithfulSMul 𝓞D B := .of_field_isFractionRing 𝓞D B D L
   exact ⟨inferInstance, inferInstance, inferInstance,
     .of_isFractionRing _ _ _ K L, .of_isFractionRing _ _ _ D L⟩
 
