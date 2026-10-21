@@ -229,6 +229,9 @@ structure. -/
 theorem instStructure_groupOfModel [G ⊨ Theory.group] :
     letI := groupOfModel G
     (instStructure : Language.group.Structure G) = S :=
+  -- `Group.ofLeftAxioms` keeps the supplied `Mul`, `Inv` and `One`, so the operations of
+  -- `groupOfModel G` are definitionally `mulOfStructure G`, `invOfStructure G` and
+  -- `oneOfStructure G`
   instStructure_ofStructure G
 
 end OfStructure
