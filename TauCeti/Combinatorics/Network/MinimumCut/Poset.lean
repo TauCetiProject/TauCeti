@@ -277,25 +277,21 @@ noncomputable def minimumCutOrderIso (hst : s ≠ t) (hf : f.IsMaximum)
 
 /-- The ordinary-flow isomorphism sends a minimum cut to the free components that the
 bounded-assignment isomorphism assigns to the same cut. -/
-theorem minimumCutOrderIso_apply (hst : s ≠ t) (hf : f.IsMaximum)
-    (hsub : IsSubmodular fun S : Finset V ↦ arrowSum cap S Sᶜ)
-    (hsub' : IsSubmodular (cutBound 0 cap)) (S : minimizers hsub {s} {t}) :
+private theorem minimumCutOrderIso_apply (hst : s ≠ t) (hf : f.IsMaximum)
+    (hsub : IsSubmodular fun S : Finset V ↦ arrowSum cap S Sᶜ) (S : minimizers hsub {s} {t}) :
     hf.minimumCutOrderIso hst hsub S =
-      ((isMaximum_toBoundedFlow f).2 hf).minimumCutOrderIso hst hsub'
-        ⟨S, by
-          rw [mem_minimizers, funext (cutBound_zero_left cap)]
-          exact (mem_minimizers hsub _ _).1 S.2⟩ := by
+      ((isMaximum_toBoundedFlow f).2 hf).minimumCutOrderIso hst (isSubmodular_cutBound_zero hsub)
+        (minimizersCutBoundZero hsub (isSubmodular_cutBound_zero hsub) S) := by
   rw [minimumCutOrderIso, OrderIso.trans_apply]
-  exact congrArg _ (Subtype.ext (coe_minimizersCutBoundZero _ _ S))
 
 /-- The inverse ordinary-flow isomorphism sends an upper set of free components to the minimum cut
 that the inverse bounded-assignment isomorphism assigns to it. -/
-theorem coe_minimumCutOrderIso_symm (hst : s ≠ t) (hf : f.IsMaximum)
+private theorem coe_minimumCutOrderIso_symm (hst : s ≠ t) (hf : f.IsMaximum)
     (hsub : IsSubmodular fun S : Finset V ↦ arrowSum cap S Sᶜ)
-    (hsub' : IsSubmodular (cutBound 0 cap))
     (U : (UpperSet (Free (residualCapacity 0 cap f.toFun) s t))ᵒᵈ) :
     ((hf.minimumCutOrderIso hst hsub).symm U : Finset V) =
-      ((((isMaximum_toBoundedFlow f).2 hf).minimumCutOrderIso hst hsub').symm U : Finset V) := by
+      ((((isMaximum_toBoundedFlow f).2 hf).minimumCutOrderIso hst
+        (isSubmodular_cutBound_zero hsub)).symm U : Finset V) := by
   rw [minimumCutOrderIso, OrderIso.symm_trans_apply, coe_minimizersCutBoundZero_symm]
 
 /-- A free component corresponds to a minimum cut `S` exactly when all its vertices lie in `S`. -/
@@ -305,8 +301,8 @@ theorem mem_minimumCutOrderIso (hst : s ≠ t) (hf : f.IsMaximum)
     {C : Free (residualCapacity 0 cap f.toFun) s t} :
     C ∈ ofDual (hf.minimumCutOrderIso hst hsub S) ↔
       ∀ v, PositiveComponent.mk (residualCapacity 0 cap f.toFun) v = C.1 → v ∈ (S : Finset V) := by
-  rw [minimumCutOrderIso_apply hst hf hsub (isSubmodular_cutBound_zero hsub),
-    BoundedFlow.IsMaximum.mem_minimumCutOrderIso]
+  rw [minimumCutOrderIso_apply hst hf hsub, BoundedFlow.IsMaximum.mem_minimumCutOrderIso,
+    coe_minimizersCutBoundZero]
 
 /-- The minimum cut of an upper set `U` of free components consists of the vertices positively
 reachable from the source and the vertices of the components in `U`. -/
@@ -317,8 +313,7 @@ theorem mem_minimumCutOrderIso_symm (hst : s ≠ t) (hf : f.IsMaximum)
     v ∈ ((hf.minimumCutOrderIso hst hsub).symm U : Finset V) ↔
       PositiveReachable (residualCapacity 0 cap f.toFun) s v ∨
         ∃ C ∈ ofDual U, PositiveComponent.mk (residualCapacity 0 cap f.toFun) v = C.1 := by
-  rw [coe_minimumCutOrderIso_symm hst hf hsub (isSubmodular_cutBound_zero hsub),
-    BoundedFlow.IsMaximum.mem_minimumCutOrderIso_symm]
+  rw [coe_minimumCutOrderIso_symm hst hf hsub, BoundedFlow.IsMaximum.mem_minimumCutOrderIso_symm]
 
 /-- The minimum cut is unique exactly when there are no free components of the positive-capacity
 residual arrows of a maximum ordinary `s`–`t` flow. -/
