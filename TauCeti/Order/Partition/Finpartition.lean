@@ -27,7 +27,8 @@ part sizes, the refinement relations of `Finpartition.bind` and of a refining pa
 the behavior of intersections of parts under refinement, the monotonicity of `Finpartition.part`
 under refinement, and the coarse parent `Finpartition.refinementParent` of a part of a finer
 partition, together with decomposition and summation formulas for the fine parts below a coarse
-part.
+part, and the fact that a set with at most two elements has no finite partitions other than the
+finest and the coarsest.
 -/
 
 public section
@@ -282,6 +283,32 @@ theorem sum_card_filter_refinementParent_eq (h : Q ≤ P) (A : P.parts) :
     ∑ B with refinementParent h B = A, #B.1 = #A.1 := by
   conv_rhs => rw [← biUnion_filter_refinementParent_eq h A]
   rw [Finset.card_biUnion (Q.pairwiseDisjoint_subtype_val _)]
+
+/-- A finite partition of a set with at most two elements is either the partition into singletons
+or the partition into one part. -/
+theorem eq_bot_or_eq_top_of_pair {i j : α} (P : Finpartition ({i, j} : Finset α)) :
+    P = ⊥ ∨ P = ⊤ := by
+  have hi : i ∈ ({i, j} : Finset α) := mem_insert_self i {j}
+  have hj : j ∈ ({i, j} : Finset α) := mem_insert_of_mem (mem_singleton_self j)
+  by_cases hji : j ∈ P.part i
+  · refine Or.inr (top_le_iff.1 fun t ht => ⟨P.part i, P.part_mem.2 hi, ?_⟩)
+    rw [mem_singleton.1 (parts_top_subset _ ht)]
+    exact insert_subset_iff.2 ⟨P.mem_part hi, singleton_subset_iff.2 hji⟩
+  · refine Or.inl (le_bot_iff.1 fun t ht => ?_)
+    obtain ⟨x, hx⟩ := P.nonempty_of_mem_parts ht
+    refine ⟨{x}, mem_bot_iff.2 ⟨x, P.le ht hx, rfl⟩, fun y hy => ?_⟩
+    rw [← P.part_eq_of_mem ht hx] at hy
+    have hxs := P.le ht hx
+    rw [mem_singleton]
+    rcases mem_insert.1 hxs with rfl | hx'
+    · rcases mem_insert.1 (P.part_subset x hy) with rfl | hy'
+      · rfl
+      · exact absurd (mem_singleton.1 hy' ▸ hy) hji
+    · rw [mem_singleton.1 hx'] at hy ⊢
+      rcases mem_insert.1 (P.part_subset j hy) with rfl | hy'
+      · rw [P.mem_part_iff_part_eq_part hi hj] at hy
+        exact absurd (hy ▸ P.mem_part hj) hji
+      · exact mem_singleton.1 hy'
 
 end FinsetRefinement
 
