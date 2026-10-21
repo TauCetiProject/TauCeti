@@ -241,6 +241,11 @@ instance instLieAlgebraHahnSeries : LieAlgebra (HahnSeries Γ R) (HahnModule Γ 
       coeff_smul_right (hx.add hy) (support_lie_subset x y)]
     simp_rw [coeff_smul, coeff_lie, lie_sum, smul_sum, lie_smul]
     rw [sum_sigma', sum_sigma']
+    -- The sums from `coeff_smul` run over `Finset.VAddAntidiagonal` for `Γ` acting on itself.
+    -- Like the addition antidiagonal `Finset.antidiagonal hs ht a`, it is the `toFinset` of a
+    -- finite set antidiagonal, and `Set.vaddAntidiagonal` unfolds to `Set.addAntidiagonal` since
+    -- `+ᵥ` is `+` on `Γ`. So these finsets are definitionally the addition antidiagonals over
+    -- which `sum_sigma_antidiagonal_left_comm` is stated.
     exact sum_sigma_antidiagonal_left_comm hx f.isPWO_support hy d fun i k j ↦
       f.coeff k • ⁅((of R).symm x).coeff i, ((of R).symm y).coeff j⁆
 
