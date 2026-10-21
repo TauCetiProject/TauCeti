@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.ContinuousMap.ApplyProdMk
 public import TauCeti.Topology.Homotopy.Extension.NDRPair
 public import TauCeti.Topology.Homotopy.HurewiczFibration.Basic
 
@@ -67,37 +68,31 @@ theorem zeroSetSDR_liftingInclusion (hp : IsHurewiczFibration.{w} p) {Y : Type w
     (hr : (ContinuousMap.id Y).HomotopicRel ((ContinuousMap.subtypeVal A).comp r) A)
     (f : C(A, E)) (g : C(Y, B)) (hfg : ∀ a, p (f a) = g a) :
     ∃ ℓ : C(Y, E), p ∘ ℓ = g ∧ ∀ a : A, ℓ a = f a := by
+  have hr' (a : A) : r a = a := Subtype.ext (hr.fst_eq_snd a.2).symm
   obtain ⟨F⟩ := hr
-  have hF : ∀ t, ∀ y ∈ A, F.toContinuousMap (t, y) = y := fun t _ hy ↦ F.eq_fst t hy
   -- the homotopy `Φ (t, y) = F (1 - min 1 (t / u y), y)` from `r` to the point `y` at time `u y`
   let φ : I × Y → I := fun z ↦ σ (projIcc 0 1 zero_le_one ((z.1 : ℝ) / u z.2))
-  have hφ (z : I × Y) (hz : z.2 ∉ A) : ContinuousAt φ z := by
-    have hne : (u z.2 : ℝ) ≠ 0 := by
-      rw [Ne, ← Icc.coe_zero, Subtype.coe_inj, hu]
-      exact hz
-    exact continuous_symm.continuousAt.comp (continuous_projIcc.continuousAt.comp
-      (ContinuousAt.div (by fun_prop) (by fun_prop) hne))
+  have hφ (z : I × Y) (hz : z.2 ∉ A) : ContinuousAt φ z :=
+    continuous_symm.continuousAt.comp
+      (continuousAt_projIcc_div_of_notMem u hu continuous_fst continuous_snd hz)
   let Φ : C(I × Y, Y) :=
     ⟨fun z ↦ F.toContinuousMap (φ z, z.2),
-      F.toContinuousMap.continuous_apply_prodMk_of_fixed hF continuous_snd hφ⟩
+      F.toContinuousMap.continuous_apply_prodMk_of_fixed (fun t _ hy ↦ F.eq_fst t hy)
+        continuous_snd hφ⟩
   have hΦ₀ (y : Y) : Φ (0, y) = r y := by
     simp only [Φ, φ, ContinuousMap.coe_mk]
     simp
   have hΦu (y : Y) : Φ (u y, y) = y := by
     by_cases hy : y ∈ A
-    · exact hF _ _ hy
-    · have hne : (u y : ℝ) ≠ 0 := by
-        rw [Ne, ← Icc.coe_zero, Subtype.coe_inj, hu]
-        exact hy
-      simp only [Φ, φ, ContinuousMap.coe_mk]
-      simp [div_self hne]
-  have hr (a : A) : r a = a := Subtype.ext ((F.apply_one a).symm.trans (hF 1 _ a.2))
+    · exact F.eq_fst _ hy
+    · simp only [Φ, φ, ContinuousMap.coe_mk]
+      simp [div_self ((coe_ne_zero_iff_notMem hu y).2 hy)]
   obtain ⟨L, hL, hL₀⟩ := hp.hasHomotopyLiftingProperty Y (f.comp r) (g.comp Φ) fun y ↦ by
     simp [hΦ₀, hfg]
   refine ⟨⟨fun y ↦ L (u y, y), by fun_prop⟩, funext fun y ↦ ?_, fun a ↦ ?_⟩
   · simpa [hΦu] using congrFun hL (u y, y)
   · have hua : u a = 0 := (hu a).2 a.2
-    simp [hua, hL₀, hr]
+    simp [hua, hL₀, hr']
 
 /-- **Relative homotopy lifting for NDR pairs.** Let `(X, A)` be an NDR pair and `p` a Hurewicz
 fibration. A homotopy `H : I × X → B` lifts to a homotopy `G : I × X → E` with prescribed initial
@@ -108,10 +103,8 @@ theorem exists_lift_of_ndrPair (hp : IsHurewiczFibration.{w} p) {X : Type w}
     (hgf : ∀ a : A, g (0, a) = f a) :
     ∃ G : C(I × X, E), p ∘ G = H ∧ (∀ x, G (0, x) = f x) ∧ ∀ t (a : A), G (t, a) = g (t, a) := by
   -- glue `f` and `g` to a map on `{0} × X ∪ I × A`, extended over the cylinder by the retraction
-  obtain ⟨k, hk₀, hkA⟩ := exists_homotopy_extension_of_retraction N.isClosed
-    (r := (ContinuousMap.subtypeVal _).comp N.cylinderRetraction)
-    (fun z ↦ (N.cylinderRetraction z).2)
-    (fun _ hz ↦ by simpa using N.cylinderDeformation_of_mem 1 hz) f g hgf
+  obtain ⟨k, hk₀, hkA⟩ :=
+    N.hasHomotopyExtensionProperty.exists_extension_of_isClosed N.isClosed f g hgf
   obtain ⟨G, hG, hGJ⟩ := hp.zeroSetSDR_liftingInclusion N.cylinderControl
     N.cylinderControl_eq_zero_iff N.cylinderRetraction ⟨N.cylinderHomotopyRel⟩
     (k.restrict (cylinderExtensionDomain A)) H fun ⟨⟨t, x⟩, hz⟩ ↦ by

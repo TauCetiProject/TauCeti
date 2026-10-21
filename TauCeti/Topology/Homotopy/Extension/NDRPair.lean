@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Algebra
+public import TauCeti.Topology.ContinuousMap.ApplyProdMk
 public import TauCeti.Topology.Homotopy.Extension.Basic
 
 /-!
@@ -25,15 +26,11 @@ extension property, and the pair `(I × X, J)` satisfies the hypotheses of the f
 lifting theorem for Hurewicz fibrations
 (`TauCeti.IsHurewiczFibration.zeroSetSDR_liftingInclusion`).
 
-Continuity of such deformations along the zero set, where the formulas divide by zero, rests on
-a single compactness argument: a homotopy fixing a set pointwise, evaluated at an arbitrary time
-depending on the point, is continuous at that set
-(`ContinuousMap.continuous_apply_prodMk_of_fixed`).
+Continuity of the deformation along the zero set, where the formula divides by zero, rests on
+the compactness argument `ContinuousMap.continuous_apply_prodMk_of_fixed`.
 
 ## Main declarations
 
-* `ContinuousMap.continuous_apply_prodMk_of_fixed`: a homotopy fixing `A`, evaluated at a time
-  that is continuous away from `A`, is continuous.
 * `TauCeti.NDRPair A`: NDR data for `A ⊆ X`.
 * `TauCeti.NDRPair.cylinderControl`: the control function `(t, x) ↦ t * u x` of `J`.
 * `TauCeti.NDRPair.cylinderDeformation`: the deformation of the cylinder onto `J`, with
@@ -53,35 +50,9 @@ depending on the point, is continuous at that set
 
 public section
 
-open Set unitInterval Filter Topology
+open Set unitInterval
 
 universe u
-
-namespace ContinuousMap
-
-variable {T Y Z : Type*} [TopologicalSpace T] [TopologicalSpace Y] [TopologicalSpace Z]
-
-/-- Let `h : T × Y → Y`, with `T` compact, fix every point of `A` at all times. Then evaluating
-`h` at a point `q z` and at a time `φ z` gives a continuous function of `z`, as soon as `q` is
-continuous and `φ` is continuous at the points `z` with `q z ∉ A`. No condition on `φ` is needed
-over `A`: by compactness of `T`, near a point of `A` all the values `h (t, y)` are close to it. -/
-theorem continuous_apply_prodMk_of_fixed [CompactSpace T] (h : C(T × Y, Y)) {A : Set Y}
-    (hA : ∀ t, ∀ y ∈ A, h (t, y) = y) {q : Z → Y} (hq : Continuous q) {φ : Z → T}
-    (hφ : ∀ z, q z ∉ A → ContinuousAt φ z) :
-    Continuous fun z ↦ h (φ z, q z) := by
-  refine continuous_iff_continuousAt.2 fun z ↦ ?_
-  by_cases hz : q z ∈ A
-  · rw [ContinuousAt, hA _ _ hz, tendsto_def]
-    intro W hW
-    -- the tube lemma: near `q z`, the whole slice `h (T × {y})` lies in `W`
-    have htube : ∀ᶠ y in 𝓝 (q z), ∀ t ∈ (univ : Set T), h (t, y) ∈ W :=
-      isCompact_univ.eventually_forall_of_forall_eventually fun t _ ↦
-        (h.continuous.comp continuous_swap).continuousAt.preimage_mem_nhds
-          (by simpa [hA t _ hz] using hW)
-    exact (hq.continuousAt.eventually htube).mono fun z' hz' ↦ hz' (φ z') trivial
-  · exact h.continuous.continuousAt.comp ((hφ z hz).prodMk hq.continuousAt)
-
-end ContinuousMap
 
 namespace TauCeti
 
@@ -131,12 +102,9 @@ private noncomputable def cylinderTime (w : I × I × X) : I :=
   w.1 * projIcc 0 1 zero_le_one ((w.2.1 : ℝ) / N.control w.2.2)
 
 private theorem continuousAt_cylinderTime {w : I × I × X} (hw : w.2.2 ∉ A) :
-    ContinuousAt N.cylinderTime w := by
-  have hne : (N.control w.2.2 : ℝ) ≠ 0 := by
-    rw [Ne, ← Icc.coe_zero, Subtype.coe_inj, N.control_eq_zero_iff]
-    exact hw
-  exact continuous_fst.continuousAt.mul (continuous_projIcc.continuousAt.comp
-    (ContinuousAt.div (by fun_prop) (by fun_prop) hne))
+    ContinuousAt N.cylinderTime w :=
+  continuous_fst.continuousAt.mul (continuousAt_projIcc_div_of_notMem N.control
+    N.control_eq_zero_iff (by fun_prop) (by fun_prop) hw)
 
 private theorem cylinderHeight_mem (w : I × I × X) :
     (w.2.1 : ℝ) - w.1 * min (w.2.1 : ℝ) (N.control w.2.2) ∈ I := by
@@ -184,7 +152,7 @@ theorem cylinderDeformation_of_mem (s : I) {z : I × X} (hz : z ∈ cylinderExte
     refine Prod.ext (Subtype.ext ?_) ?_
     · simp [min_eq_left (N.control x).2.1]
     · simp
-  · have hu : (N.control x : ℝ) = 0 := by rw [(N.control_eq_zero_iff x).2 hx]; rfl
+  · have hu : (N.control x : ℝ) = 0 := by rw [(N.control_eq_zero_iff x).2 hx, Icc.coe_zero]
     refine Prod.ext (Subtype.ext ?_) ?_
     · simp [hu, min_eq_right t.2.1]
     · rw [cylinderDeformation_snd, N.deformation_of_mem _ hx]
@@ -205,10 +173,8 @@ theorem cylinderDeformation_one_mem (z : I × X) :
     by_cases hx : x ∈ A
     · rw [N.deformation_of_mem _ hx]
       exact hx
-    · have hpos : 0 < (N.control x : ℝ) := by
-        refine lt_of_le_of_ne (N.control x).2.1 fun h ↦ hx ?_
-        rw [← N.control_eq_zero_iff]
-        exact Subtype.ext h.symm
+    · have hpos : 0 < (N.control x : ℝ) :=
+        (N.control x).2.1.lt_of_ne ((coe_ne_zero_iff_notMem N.control_eq_zero_iff x).2 hx).symm
       have hproj : projIcc 0 1 zero_le_one ((t : ℝ) / N.control x) = 1 :=
         projIcc_eq_one.2 ((one_le_div hpos).2 hut.le)
       rw [hproj, one_mul]
@@ -222,6 +188,12 @@ noncomputable def cylinderRetraction : C(I × X, cylinderExtensionDomain A) :=
 @[simp]
 theorem coe_cylinderRetraction_apply (z : I × X) :
     (N.cylinderRetraction z : I × X) = N.cylinderDeformation (1, z) := (rfl)
+
+/-- The cylinder retraction fixes the points of `{0} × X ∪ I × A`. -/
+@[simp]
+theorem cylinderRetraction_apply_coe (z : cylinderExtensionDomain A) :
+    N.cylinderRetraction z = z :=
+  Subtype.ext (N.cylinderDeformation_of_mem 1 z.2)
 
 /-- The cylinder deformation is a strong deformation retraction of `I × X` onto
 `{0} × X ∪ I × A`: a homotopy relative to that subspace from the identity to the retraction. -/
@@ -245,7 +217,7 @@ protected theorem hasHomotopyExtensionProperty (N : NDRPair A) :
     HasHomotopyExtensionProperty A :=
   hasHomotopyExtensionProperty_of_retraction (r := (ContinuousMap.subtypeVal _).comp
       N.cylinderRetraction) N.isClosed (fun z ↦ (N.cylinderRetraction z).2)
-    fun _ hz ↦ N.cylinderDeformation_of_mem 1 hz
+    fun z hz ↦ congrArg Subtype.val (N.cylinderRetraction_apply_coe ⟨z, hz⟩)
 
 end NDRPair
 
