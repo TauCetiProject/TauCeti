@@ -15,6 +15,7 @@ public import TauCeti.Probability.Distributions.NegativeBinomial.Basic
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.MeasureTheory.Integral.Lebesgue.Countable
 import Mathlib.Probability.Independence.CharacteristicFunction
+import TauCeti.MeasureTheory.Measure.Prod
 
 /-!
 # Sums and differences of classical distributions
@@ -119,18 +120,6 @@ theorem IndepFun.hasLaw_sub_expMeasure {X Y : Ω → ℝ} {b : ℝ} (hindep : In
 
 /-! ### A difference of geometric variables -/
 
-/-- The integer difference of two coordinates of a product measure is symmetric when the two
-factors agree. -/
-private theorem map_neg_map_sub_prod_self (μ : Measure ℕ) [SFinite μ] :
-    ((μ.prod μ).map fun z : ℕ × ℕ => (z.1 : ℤ) - z.2).map Neg.neg =
-      (μ.prod μ).map fun z : ℕ × ℕ => (z.1 : ℤ) - z.2 := by
-  rw [Measure.map_map (by fun_prop) (by fun_prop)]
-  conv_lhs => rw [← Measure.prod_swap]
-  rw [Measure.map_map (by fun_prop) measurable_swap]
-  congr 1
-  funext z
-  simp
-
 /-- The mass of a natural number under the difference of two geometric counts. -/
 private theorem map_sub_prod_geometricMeasure_singleton_natCast {p : unitInterval} (hp : p ≠ 0)
     (n : ℕ) :
@@ -176,10 +165,12 @@ theorem map_sub_prod_geometricMeasure {p : unitInterval} (hp : p ≠ 0) :
   obtain ⟨n, rfl | rfl⟩ := k.eq_nat_or_neg
   · rw [map_sub_prod_geometricMeasure_singleton_natCast hp,
       discreteLaplaceMeasure_singleton 0 hq0 hq1]
-  · rw [← map_neg_map_sub_prod_self, ← neg_zero, ← map_neg_discreteLaplaceMeasure,
+  · -- Negative integers reduce to natural ones by the symmetry of both laws.
+    have hpre : Neg.neg ⁻¹' {-(n : ℤ)} = {(n : ℤ)} := by ext; simp
+    rw [← Measure.map_neg_map_sub_prod_self _ (f := ((↑) : ℕ → ℤ)) measurable_from_top,
+      ← neg_zero, ← map_neg_discreteLaplaceMeasure,
       Measure.map_apply (by fun_prop) (measurableSet_singleton _),
-      Measure.map_apply (by fun_prop) (measurableSet_singleton _),
-      show Neg.neg ⁻¹' {-(n : ℤ)} = {(n : ℤ)} by ext; simp,
+      Measure.map_apply (by fun_prop) (measurableSet_singleton _), hpre,
       map_sub_prod_geometricMeasure_singleton_natCast hp,
       discreteLaplaceMeasure_singleton 0 hq0 hq1]
 

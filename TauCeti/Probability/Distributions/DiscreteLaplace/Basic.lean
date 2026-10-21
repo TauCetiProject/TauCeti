@@ -109,9 +109,11 @@ theorem hasSum_discreteLaplaceWeightReal (m : ℤ) {q : ℝ} (hq : |q| < 1) :
   have hcenter : HasSum (fun j : ℤ => q ^ j.natAbs) ((1 - q)⁻¹ + q * (1 - q)⁻¹) := by
     refine HasSum.of_nat_of_neg_add_one (by simpa using hgeom) ?_
     refine (hgeom.mul_left q).congr_fun fun n => ?_
-    rw [show (-((n : ℤ) + 1)).natAbs = n + 1 by omega, pow_succ']
+    have habs : (-((n : ℤ) + 1)).natAbs = n + 1 := by omega
+    rw [habs, pow_succ']
   have h := (((Equiv.subRight m).hasSum_iff.mpr hcenter).mul_left (1 - q)).div_const (1 + q)
-  rw [show (1 - q) * ((1 - q)⁻¹ + q * (1 - q)⁻¹) / (1 + q) = 1 by field_simp] at h
+  have hone : (1 - q) * ((1 - q)⁻¹ + q * (1 - q)⁻¹) / (1 + q) = 1 := by field_simp
+  rw [hone] at h
   exact h.congr_fun fun k => by simp [discreteLaplaceWeightReal_def]
 
 /-- The discrete Laplace law is a probability measure for `0 ≤ q < 1`. -/
@@ -172,8 +174,9 @@ theorem map_add_const_discreteLaplaceMeasure (m n : ℤ) (q : ℝ) :
     (discreteLaplaceMeasure m q).map (· + n) = discreteLaplaceMeasure (m + n) q := by
   by_cases hq : 0 ≤ q ∧ q < 1
   · refine Measure.ext_of_singleton fun k => ?_
-    rw [Measure.map_apply (by fun_prop) (measurableSet_singleton k),
-      show (· + n) ⁻¹' {k} = {k - n} by ext; simp [eq_sub_iff_add_eq, ← sub_eq_add_neg],
+    have hpre : (· + n) ⁻¹' {k} = {k - n} := by
+      ext; simp [eq_sub_iff_add_eq, ← sub_eq_add_neg]
+    rw [Measure.map_apply (by fun_prop) (measurableSet_singleton k), hpre,
       discreteLaplaceMeasure_singleton _ hq.1 hq.2, discreteLaplaceMeasure_singleton _ hq.1 hq.2,
       discreteLaplaceWeightReal_def, discreteLaplaceWeightReal_def, sub_sub, add_comm n m]
   · simp [hq]
@@ -184,11 +187,11 @@ theorem map_neg_discreteLaplaceMeasure (m : ℤ) (q : ℝ) :
     (discreteLaplaceMeasure m q).map Neg.neg = discreteLaplaceMeasure (-m) q := by
   by_cases hq : 0 ≤ q ∧ q < 1
   · refine Measure.ext_of_singleton fun k => ?_
-    rw [Measure.map_apply (by fun_prop) (measurableSet_singleton k),
-      show Neg.neg ⁻¹' {k} = {-k} by ext; simp,
+    have hpre : Neg.neg ⁻¹' {k} = {-k} := by ext; simp
+    have habs : (k - -m).natAbs = (-k - m).natAbs := by omega
+    rw [Measure.map_apply (by fun_prop) (measurableSet_singleton k), hpre,
       discreteLaplaceMeasure_singleton _ hq.1 hq.2, discreteLaplaceMeasure_singleton _ hq.1 hq.2,
-      discreteLaplaceWeightReal_def, discreteLaplaceWeightReal_def,
-      show (k - -m).natAbs = (-k - m).natAbs by omega]
+      discreteLaplaceWeightReal_def, discreteLaplaceWeightReal_def, habs]
   · simp [hq]
 
 /-! ### Parameter measurability -/
