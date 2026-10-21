@@ -39,6 +39,8 @@ In the namespace `TauCeti.Manifold.ContMDiffNondegenerateMetric`:
 
 * `IsLocalIsometry`: a smooth map with invertible differentials pulling one nondegenerate metric
   back to another.
+* `IsLocalIsometry.mfderiv_apply_mpullback`: the differential cancels the pullback of a vector
+  field.
 * `IsLocalIsometry.id` and `IsLocalIsometry.comp`: the identity and composites.
 * `isLocalIsometry_ofRiemannianBundle_iff`: for Riemannian metrics, local isometries are the local
   Riemannian isometries.
@@ -93,11 +95,16 @@ namespace IsLocalIsometry
 variable {g : ContMDiffNondegenerateMetric (I := I) (M := M)}
   {g' : ContMDiffNondegenerateMetric (I := J) (M := N)} {f : M → N}
 
+/-- The differential of a local isometry sends the pullback of a vector field at `x` to the value
+of the field at `f x`. -/
+theorem mfderiv_apply_mpullback (hf : g.IsLocalIsometry g' f) (V : Π y : N, TangentSpace J y)
+    (x : M) : mfderiv I J f x (mpullback I J f V x) = V (f x) :=
+  (hf.isInvertible_mfderiv x).self_apply_inverse _
+
 /-- Pulling back vector fields along a local isometry preserves their pointwise pairing. -/
 theorem apply_mpullback (hf : g.IsLocalIsometry g' f) (V W : Π y : N, TangentSpace J y) (x : M) :
     g x (mpullback I J f V x) (mpullback I J f W x) = g' (f x) (V (f x)) (W (f x)) := by
-  rw [← hf.apply_mfderiv, mpullback_apply, mpullback_apply,
-    (hf.isInvertible_mfderiv x).self_apply_inverse, (hf.isInvertible_mfderiv x).self_apply_inverse]
+  rw [← hf.apply_mfderiv, hf.mfderiv_apply_mpullback, hf.mfderiv_apply_mpullback]
 
 variable (g) in
 /-- The identity map is a local isometry from a nondegenerate metric to itself. -/
@@ -201,7 +208,7 @@ theorem mfderiv_apply_mpullback_of_isLeviCivitaConnection (hf : g.IsLocalIsometr
   rw [hXv] at hk'
   have hpair : g' (f x) (mfderiv I J f x (cov (mpullback I J f Y) x v)) (Z (f x)) =
       g x (cov (mpullback I J f Y) x v) (mpullback I J f Z x) := by
-    rw [← hf.apply_mfderiv, mpullback_apply, (hf.isInvertible_mfderiv x).self_apply_inverse]
+    rw [← hf.apply_mfderiv, hf.mfderiv_apply_mpullback]
   dsimp only
   linarith
 
@@ -214,9 +221,8 @@ theorem mpullback_apply_mpullback_of_isLeviCivitaConnection (hf : g.IsLocalIsome
     cov (mpullback I J f Z) x (mpullback I J f Y x) =
       mpullback I J f (fun y ↦ cov' Z y (Y y)) x := by
   apply (hf.isInvertible_mfderiv x).injective
-  rw [hf.mfderiv_apply_mpullback_of_isLeviCivitaConnection h h' hZ, mpullback_apply,
-    mpullback_apply, (hf.isInvertible_mfderiv x).self_apply_inverse,
-    (hf.isInvertible_mfderiv x).self_apply_inverse]
+  rw [hf.mfderiv_apply_mpullback_of_isLeviCivitaConnection h h' hZ, hf.mfderiv_apply_mpullback,
+    hf.mfderiv_apply_mpullback]
 
 end IsLocalIsometry
 
