@@ -87,10 +87,8 @@ theorem exists_norm_iteratedFDeriv_heatKernel_le_mul_rpow_mul_heatKernel (m : �
   obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_heatKernel_le (E := E) one_pos m
   simp only [mul_one] at hC
   refine ⟨C, fun t ht x => ?_⟩
-  have hpow : (√t)⁻¹ ^ m = t ^ (-(m : ℝ) / 2) := by
-    rw [rpow_div_two_eq_sqrt _ ht.le, rpow_neg (sqrt_nonneg t), rpow_natCast, inv_pow]
   rw [iteratedFDeriv_heatKernel_eq_smul_iteratedFDeriv_heatKernel_one ht, norm_smul,
-    norm_of_nonneg (by positivity), ← hpow, mul_comm 2 t,
+    norm_of_nonneg (by positivity), ← inv_sqrt_pow_eq_rpow ht.le, mul_comm 2 t,
     heatKernel_mul_eq_mul_heatKernel_smul ht two_pos, pow_add]
   calc (√t)⁻¹ ^ finrank ℝ E * (√t)⁻¹ ^ m * ‖iteratedFDeriv ℝ m (heatKernel 1) ((√t)⁻¹ • x)‖
       ≤ (√t)⁻¹ ^ finrank ℝ E * (√t)⁻¹ ^ m * (C * heatKernel 2 ((√t)⁻¹ • x)) := by
@@ -126,8 +124,7 @@ theorem exists_norm_rpow_mul_heatKernel_le {α : ℝ} (hα : 0 ≤ α) :
     have hx : ‖x‖ = √t * ‖y‖ := by
       rw [norm_smul, norm_inv, norm_of_nonneg (sqrt_nonneg t),
         mul_inv_cancel_left₀ (sqrt_pos.2 ht).ne']
-    rw [hx, mul_rpow (sqrt_nonneg t) hy, sqrt_eq_rpow, ← rpow_mul ht.le]
-    ring_nf
+    rw [hx, mul_rpow (sqrt_nonneg t) hy, rpow_div_two_eq_sqrt _ ht.le]
   have hyα : ‖y‖ ^ α ≤ (1 + ‖y‖) ^ ⌈α⌉₊ :=
     calc ‖y‖ ^ α ≤ (1 + ‖y‖) ^ α := rpow_le_rpow hy (by linarith) hα
       _ ≤ (1 + ‖y‖) ^ (⌈α⌉₊ : ℝ) := rpow_le_rpow_of_exponent_le (by linarith) (Nat.le_ceil α)
