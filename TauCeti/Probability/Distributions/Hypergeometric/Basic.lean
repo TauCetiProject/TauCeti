@@ -36,10 +36,10 @@ mean, variance, and transform APIs. Outside the classical parameter range the me
   parameter range.
 * `TauCeti.Probability.hypergeometricMeasure_singleton`: the exact singleton mass.
 * `TauCeti.Probability.hypergeometricWeight_ne_zero_iff`: the exact support.
+* `TauCeti.Probability.hypergeometricMeasure_eq_dirac_of_support`: a law supported at one count
+  is the corresponding Dirac measure.
 * `TauCeti.Probability.hypergeometricMeasure_zero_sample` and
-  `TauCeti.Probability.hypergeometricMeasure_zero_marked`: the degenerate laws at zero.
-* `TauCeti.Probability.hypergeometricMeasure_full_sample` and
-  `TauCeti.Probability.hypergeometricMeasure_full_marked`: the deterministic full-count laws.
+  `TauCeti.Probability.hypergeometricMeasure_full_sample`: the deterministic sample-size boundaries.
 * `TauCeti.Probability.hypergeometricMeasure_real_Iic`: the native cumulative mass.
 * `TauCeti.Probability.integral_hypergeometricMeasure`: integration as a finite weighted sum.
 * `TauCeti.Probability.integral_id_map_cast_hypergeometricMeasure`: the mean of the real cast law.
@@ -211,54 +211,28 @@ theorem hypergeometricWeight_ne_top (N K n k : ℕ) (hn : n ≤ N) :
 
 /-! ## Deterministic boundary laws -/
 
+/-- A valid hypergeometric law whose support is contained in one count is the Dirac law there. -/
+theorem hypergeometricMeasure_eq_dirac_of_support {N K n j : ℕ} (hK : K ≤ N) (hn : n ≤ N)
+    (h : ∀ k, k ≤ K ∧ k ≤ n ∧ n - k ≤ N - K → k = j) :
+    hypergeometricMeasure N K n = Measure.dirac j := by
+  let _ := isProbabilityMeasure_hypergeometricMeasure hK hn
+  have hae : (fun k : ℕ ↦ k) =ᵐ[hypergeometricMeasure N K n] fun _ ↦ j := by
+    apply ae_iff_of_countable.mpr
+    intro k hk
+    exact h k ((hypergeometricMeasure_singleton_ne_zero_iff hK hn k).mp hk)
+  simpa using Measure.map_congr hae
+
 /-- Drawing no objects gives the Dirac law at zero when the marked count is valid. -/
 @[simp]
 theorem hypergeometricMeasure_zero_sample {N K : ℕ} (hK : K ≤ N) :
     hypergeometricMeasure N K 0 = Measure.dirac 0 := by
-  simp [hypergeometricMeasure, hypergeometricWeight, hK]
-
-/-- With no marked objects, every valid sample has marked count zero. -/
-@[simp]
-theorem hypergeometricMeasure_zero_marked {N n : ℕ} (hn : n ≤ N) :
-    hypergeometricMeasure N 0 n = Measure.dirac 0 := by
-  apply Measure.ext_of_singleton
-  intro k
-  rw [hypergeometricMeasure_singleton (Nat.zero_le N) hn]
-  have hchoose : (N.choose n : ℝ≥0∞) ≠ 0 := by exact_mod_cast Nat.choose_ne_zero hn
-  cases k <;> simp [hypergeometricWeight, ENNReal.div_self hchoose (by simp)]
+  exact hypergeometricMeasure_eq_dirac_of_support hK (Nat.zero_le N) (by omega)
 
 /-- Drawing the entire population gives the Dirac law at its valid marked count. -/
 @[simp]
 theorem hypergeometricMeasure_full_sample {N K : ℕ} (hK : K ≤ N) :
     hypergeometricMeasure N K N = Measure.dirac K := by
-  apply Measure.ext_of_singleton
-  intro k
-  rw [hypergeometricMeasure_singleton hK le_rfl]
-  by_cases hk : k = K
-  · subst k
-    simp [hypergeometricWeight, hK]
-  · have hweight : hypergeometricWeight N K N k = 0 := by
-      apply not_ne_iff.mp
-      rw [hypergeometricWeight_ne_zero_iff]
-      omega
-    simp [hweight, hk]
-
-/-- If every population object is marked, a valid sample has exactly its sample size as count. -/
-@[simp]
-theorem hypergeometricMeasure_full_marked {N n : ℕ} (hn : n ≤ N) :
-    hypergeometricMeasure N N n = Measure.dirac n := by
-  apply Measure.ext_of_singleton
-  intro k
-  rw [hypergeometricMeasure_singleton le_rfl hn]
-  by_cases hk : k = n
-  · subst k
-    have hchoose : (N.choose n : ℝ≥0∞) ≠ 0 := by exact_mod_cast Nat.choose_ne_zero hn
-    simp [hypergeometricWeight, ENNReal.div_self hchoose (by simp)]
-  · have hweight : hypergeometricWeight N N n k = 0 := by
-      apply not_ne_iff.mp
-      rw [hypergeometricWeight_ne_zero_iff]
-      omega
-    simp [hweight, hk]
+  exact hypergeometricMeasure_eq_dirac_of_support hK le_rfl (by omega)
 
 /-! ## Integration -/
 
