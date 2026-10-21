@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Convex.Star
 public import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
 public import TauCeti.MeasureTheory.Constructions.HaarToSphere
 public import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
+import TauCeti.MeasureTheory.Integral.InitialSegment
 
 /-!
 # The Gauss measure of a star-shaped set and the ball of volume one
@@ -75,38 +76,6 @@ section Radial
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
 
-/-- The comparison along one ray. Let `R` be an initial segment of the radii `r > 0`, let
-`φ ≤ 1`, and suppose that the integral of `φ` is at most that of the indicator of `(0, ρ]` against
-the weight `w`. Then the integral of `φ` over `R` is at most the weight of `R ∩ (0, ρ]`. -/
-private lemma setLIntegral_le_of_lintegral_le {w φ : ℝ → ℝ≥0∞} {ρ : ℝ} {R : Set ℝ}
-    (hφ : ∀ r, φ r ≤ 1)
-    (hmass : ∫⁻ r in Ioi (0 : ℝ), w r * φ r ≤ ∫⁻ r in Ioi (0 : ℝ), (Iic ρ).indicator w r)
-    (hR : ∀ ⦃r s⦄, 0 < s → s ≤ r → r ∈ R → s ∈ R) :
-    ∫⁻ r in Ioi (0 : ℝ), R.indicator (fun r ↦ w r * φ r) r ≤
-      ∫⁻ r in Ioi (0 : ℝ), (R ∩ Iic ρ).indicator w r := by
-  by_cases hρR : ∀ r, 0 < r → r ≤ ρ → r ∈ R
-  · -- `R` contains `(0, ρ]`: compare with the total mass of `φ`.
-    calc ∫⁻ r in Ioi (0 : ℝ), R.indicator (fun r ↦ w r * φ r) r
-        ≤ ∫⁻ r in Ioi (0 : ℝ), w r * φ r := lintegral_mono fun r ↦ indicator_le_self _ _ _
-      _ ≤ ∫⁻ r in Ioi (0 : ℝ), (Iic ρ).indicator w r := hmass
-      _ = ∫⁻ r in Ioi (0 : ℝ), (R ∩ Iic ρ).indicator w r := by
-        refine setLIntegral_congr_fun measurableSet_Ioi fun r hr ↦ ?_
-        by_cases hrρ : r ≤ ρ
-        · rw [indicator_of_mem (mem_Iic.2 hrρ),
-            indicator_of_mem (mem_inter (hρR r hr hrρ) (mem_Iic.2 hrρ))]
-        · rw [indicator_of_notMem (mt mem_Iic.1 hrρ),
-            indicator_of_notMem fun h ↦ hrρ (mem_Iic.1 (mem_of_mem_inter_right h))]
-  · -- `R` misses a radius `s ≤ ρ`, so it lies below `s`: use `φ ≤ 1` pointwise.
-    push Not at hρR
-    obtain ⟨s, hs, hsρ, hsR⟩ := hρR
-    refine setLIntegral_mono' measurableSet_Ioi fun r hr ↦ ?_
-    by_cases hrR : r ∈ R
-    · have hrρ : r ≤ ρ := (not_le.mp fun hsr ↦ hsR (hR hs hsr hrR)).le.trans hsρ
-      rw [indicator_of_mem hrR, indicator_of_mem (mem_inter hrR (mem_Iic.2 hrρ))]
-      exact mul_le_of_le_one_right' (hφ r)
-    · rw [indicator_of_notMem hrR]
-      exact zero_le
-
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- A point at radius `r > 0` on the ray in direction `u` has norm `r`. -/
 private lemma norm_smul_of_mem_sphere (u : sphere (0 : E) 1) {r : ℝ} (hr : r ∈ Ioi 0) :
@@ -145,7 +114,7 @@ private lemma lintegral_ray_le {w φ : ℝ → ℝ≥0∞} {ρ : ℝ} (hφ : ∀
         · rw [indicator_of_notMem hrA, indicator_of_notMem (s := R) (mt mem_preimage.1 hrA),
             mul_zero]
     _ ≤ ∫⁻ r in Ioi (0 : ℝ), (R ∩ Iic ρ).indicator w r :=
-        setLIntegral_le_of_lintegral_le hφ hmass hR
+        setLIntegral_le_of_lintegral_le (fun r _ ↦ hφ r) hmass hR
     _ = ∫⁻ r in Ioi (0 : ℝ), w r * (A ∩ closedBall 0 ρ).indicator 1 (r • (u : E)) := by
         refine setLIntegral_congr_fun measurableSet_Ioi fun r hr ↦ ?_
         rw [inter_indicator_one, Pi.mul_apply, indicator_closedBall_smul u hr]
