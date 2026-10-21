@@ -37,8 +37,6 @@ existential and universal sentences over a free group `F(A)` with basis constant
 * `FirstOrder.Language.Theory.group`: the theory of groups, consisting of associativity, the left
   identity law and the left inverse law.
 * `FirstOrder.Language.group.groupOfModel`: the group carried by a model of the theory of groups.
-* `FirstOrder.Language.group.coeffHom`: a group homomorphism carrying the coefficients `c` to the
-  coefficients `d` is a homomorphism of `L_A`-structures.
 * `FirstOrder.Language.group.commSentence`: the `L_A`-sentence `a * b = b * a`.
 
 ## Main results
@@ -49,8 +47,11 @@ existential and universal sentences over a free group `F(A)` with basis constant
 * `FirstOrder.Language.group.instStructure_groupOfModel`: the structure induced by the group of a
   model is the original structure.
 * `FirstOrder.Language.group.realize_commSentence_iff`: `a * b = b * a` holds exactly when the
-  coefficients of `a` and `b` commute; it is false in the free group on two letters and true in
-  `ℤ²`.
+  coefficients of `a` and `b` commute.
+* `FirstOrder.Language.group.not_realize_commSentence_freeGroup`: `a * b = b * a` is false in the
+  free group on two letters, with the basis as coefficients.
+* `FirstOrder.Language.group.realize_commSentence_multiplicative_pi`: `a * b = b * a` is true in
+  `ℤ²`, with the standard basis as coefficients.
 
 ## Implementation notes
 
@@ -254,7 +255,10 @@ section Coefficients
 /-! ### Coefficients
 
 For a type `A` of coefficient names, `L_A = Language.group[[A]]`. A group `G` with a coefficient
-map `c : A → G` is an `L_A`-structure through `constantsOn.structure c`. -/
+map `c : A → G` is an `L_A`-structure through `constantsOn.structure c`. A group homomorphism
+`φ` with `φ ∘ c = d` is then a homomorphism of `L_A`-structures,
+`FirstOrder.Language.withConstantsHom c d φ h`, through the `Language.group.HomClass` instance
+above. -/
 
 section Operations
 
@@ -273,40 +277,6 @@ theorem realize_commSentence_iff (c : A → G) (a b : A) :
   simp [commSentence, Sentence.Realize, Formula.Realize, Commute, SemiconjBy]
 
 end Operations
-
-variable [Group G] [Group H]
-
-/-- A group homomorphism `φ` with `φ ∘ c = d` is a homomorphism of `L_A`-structures, for the
-coefficient structures given by `c` and `d`. In particular realizing a term commutes with `φ`,
-by `FirstOrder.Language.HomClass.realize_term`. -/
-def coeffHom {F : Type*} [FunLike F G H] [MonoidHomClass F G H] (c : A → G) (d : A → H) (φ : F)
-    (h : ∀ a, φ (c a) = d a) :
-    letI := constantsOn.structure c
-    letI := constantsOn.structure d
-    G →[Language.group[[A]]] H :=
-  letI := constantsOn.structure c
-  letI := constantsOn.structure d
-  { toFun := φ
-    map_fun' := fun {n} f x => by
-      rcases f with f | f
-      · simp only [withConstants_funMap_sumInl]
-        exact HomClass.map_fun φ f x
-      · cases n with
-        | zero =>
-          -- `f : (constantsOn A).Functions 0` is the coefficient name `f : A`
-          have hG := withConstants_funMap_sumInr (L := Language.group) (α := A) (a := f) (x := x)
-          have hH :=
-            withConstants_funMap_sumInr (L := Language.group) (α := A) (a := f) (x := φ ∘ x)
-          exact (congrArg φ (hG.trans (coe_con_constantsOn c f))).trans
-            ((h f).trans (hH.trans (coe_con_constantsOn d f)).symm)
-        | succ n => exact isEmptyElim f
-    map_rel' := fun {n} r => by
-      rcases r with r | r <;> exact isEmptyElim r }
-
-@[simp]
-theorem coe_coeffHom {F : Type*} [FunLike F G H] [MonoidHomClass F G H] (c : A → G) (d : A → H)
-    (φ : F) (h : ∀ a, φ (c a) = d a) :
-    ⇑(coeffHom c d φ h) = φ := (rfl)
 
 /-- The sentence `a * b = b * a`, for the two basis constants, is false in the free group on two
 letters: an equation with constants can distinguish groups. -/
