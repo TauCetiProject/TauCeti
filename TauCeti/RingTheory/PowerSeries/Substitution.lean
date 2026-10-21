@@ -25,10 +25,10 @@ injective, which is what extends it to Laurent series by passing to fraction fie
 
 Substitution of series of zero constant coefficient is compatible with congruences modulo
 powers of `X`, in both the substituted series and the series substituted into. This makes
-truncation modulo `X ^ n` compatible with composition of formal coordinates. For a pair of
-series substituted into a bivariate series `G(X₀, X₁)`, a perturbation `X ^ m * r` of the first
-entry is invisible below degree `m` and acts in degree `m` through the coefficient of `X₀` alone;
-this drives degree-by-degree solutions of equations `G(f(X), X) = 0`.
+truncation modulo `X ^ n` compatible with composition of formal coordinates. For a family of
+series substituted into a multivariate series `G`, a perturbation `X ^ m * r` of the entry `a s`
+is invisible below degree `m` and acts in degree `m` through the coefficient of `Xₛ` alone;
+this drives degree-by-degree solutions of equations such as `G(f(X), X) = 0`.
 
 Substitution at a nilpotent series depends on only finitely many coefficients. The substituted
 series may be multivariate, with coefficients in an algebra over the coefficient ring. At a
@@ -62,9 +62,9 @@ of a completed group algebra attached to two topological generators.
 * `PowerSeries.X_pow_dvd_subst`: substitution preserves divisibility by `X ^ n`.
 * `PowerSeries.X_pow_dvd_subst_sub_subst`: substitution respects congruence modulo `X ^ n` of
   the substituted series.
-* `PowerSeries.coeff_subst_add_X_pow_mul`: perturbing the first entry of a substituted pair by
-  `X ^ m * r` changes coefficients only from degree `m` on, and in degree `m` only through the
-  linear term `X₀` of the bivariate series.
+* `PowerSeries.coeff_subst_update_add_X_pow_mul`: perturbing one entry `a s` of a substituted
+  family by `X ^ m * r` changes coefficients only from degree `m` on, and in degree `m` only
+  through the linear term `Xₛ` of the multivariate series.
 * `PowerSeries.algHom_eq_substAlgHom`: an algebra map `R⟦X⟧ → S⟦X⟧` sending `X` to a
   substitutable series is a substitution.
 * `PowerSeries.subst_X_add_of_sq_eq_zero`: `f (X + h) = f + h f'` when `h ^ 2 = 0`.
@@ -237,60 +237,93 @@ theorem X_pow_dvd_subst_sub_subst {a b : S⟦X⟧} (ha : constantCoeff a = 0)
 
 end Algebra
 
-section Pair
+section Perturbation
 
-variable {R : Type*} [CommRing R]
+variable {R S σ : Type*} [CommRing R] [CommRing S] [Algebra R S]
 
-/-- Perturbing the first entry `f` of a substituted pair `![f, g]` by `X ^ m * r` leaves the
-coefficients of degree below `m` unchanged, and changes the coefficient of degree `m` by
-`r(0)` times the coefficient of `X₀` in `G`. -/
-theorem coeff_subst_add_X_pow_mul (G : MvPowerSeries (Fin 2) R) {f g r : R⟦X⟧}
-    (hf : constantCoeff f = 0) (hg : constantCoeff g = 0) {m n : ℕ} (hm : m ≠ 0) (hn : n ≤ m) :
-    coeff n (G.subst ![f + X ^ m * r, g]) = coeff n (G.subst ![f, g]) +
-      if n = m then MvPowerSeries.coeff (Finsupp.single 0 1) G * constantCoeff r else 0 := by
+/-- Two series of zero constant coefficient can be substituted as a pair. -/
+theorem hasSubst_pair {f g : S⟦X⟧} (hf : constantCoeff f = 0) (hg : constantCoeff g = 0) :
+    MvPowerSeries.HasSubst ![f, g] :=
+  MvPowerSeries.hasSubst_of_constantCoeff_zero fun s ↦ by
+    fin_cases s <;> simp [← constantCoeff_eq, hf, hg]
+
+/-- Perturbing `f` by `X ^ m * r` in `f ^ i * c` changes the coefficient of degree `m` by
+`i * 0 ^ (i - 1) * r(0) * c(0)`, and no coefficient of lower degree. -/
+private theorem coeff_add_X_pow_mul_pow_mul {f : S⟦X⟧} (hf : constantCoeff f = 0) (r c : S⟦X⟧)
+    {m n : ℕ} (hm : m ≠ 0) (hn : n ≤ m) (i : ℕ) :
+    coeff n ((f + X ^ m * r) ^ i * c) = coeff n (f ^ i * c) +
+      if n = m then (i : S) * 0 ^ (i - 1) * constantCoeff r * constantCoeff c else 0 := by
   have hfr : constantCoeff (f + X ^ m * r) = 0 := by simp [hf, hm]
-  have ha : MvPowerSeries.HasSubst ![f + X ^ m * r, g] :=
-    MvPowerSeries.hasSubst_of_constantCoeff_zero fun s ↦ by
-      fin_cases s <;> simp [← constantCoeff_eq, hfr, hg]
-  have hb : MvPowerSeries.HasSubst ![f, g] :=
-    MvPowerSeries.hasSubst_of_constantCoeff_zero fun s ↦ by
-      fin_cases s <;> simp [← constantCoeff_eq, hf, hg]
-  -- the effect of the perturbation on a single monomial `X₀ ^ i * X₁ ^ j`
-  have key (i j : ℕ) : coeff n ((f + X ^ m * r) ^ i * g ^ j) = coeff n (f ^ i * g ^ j) +
-      if n = m then constantCoeff r * ((i : R) * 0 ^ (i - 1) * 0 ^ j) else 0 := by
-    rw [← sub_eq_iff_eq_add', ← map_sub, ← sub_mul, ← geom_sum₂_mul, add_sub_cancel_left,
-      show ∀ a c : R⟦X⟧, a * (X ^ m * r) * c = X ^ m * (a * r * c) by intros; ring,
-      coeff_X_pow_mul']
-    by_cases hnm : n = m
-    · subst hnm
-      -- the constant coefficient of the geometric sum is `i * 0 ^ (i - 1)`
-      simp [map_sum, hf, hfr, geom_sum₂_self, hg]
-      ring
-    · simp [hnm, show ¬ m ≤ n by omega]
-  have hA := MvPowerSeries.coeff_subst_finite hb G (Finsupp.single () n)
-  rw [coeff, MvPowerSeries.coeff_subst ha, MvPowerSeries.coeff_subst hb]
-  simp only [Finsupp.prod_pow, Fin.prod_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one,
-    Matrix.cons_val_fin_one] at hA ⊢
-  rw [← coeff_def (Finsupp.single_eq_same)] at hA ⊢
-  -- only the monomial `X₀` feels the perturbation in degree `m`
-  have hB (d : Fin 2 →₀ ℕ) (hd : d ≠ Finsupp.single 0 1) :
-      (d 0 : R) * 0 ^ (d 0 - 1) * 0 ^ d 1 = 0 := by
-    by_cases h₁ : d 1 = 0
-    · have h₀ : d 0 ≠ 1 := fun h₀ ↦ hd <| Finsupp.ext fun i ↦ by fin_cases i <;> simp [h₀, h₁]
-      rcases Nat.lt_or_gt_of_ne h₀ with h₀ | h₀
-      · simp [show d 0 = 0 by omega]
-      · simp [zero_pow (show d 0 - 1 ≠ 0 by omega)]
-    · simp [zero_pow h₁]
-  simp_rw [key, smul_add]
-  rw [finsum_add_distrib hA, add_right_inj, finsum_eq_single _ (Finsupp.single 0 1)]
-  · split_ifs <;> simp [mul_comm]
-  · intro d hd
-    simp [hB d hd]
-  · refine (Set.finite_singleton (Finsupp.single (0 : Fin 2) 1)).subset fun d hd ↦ ?_
-    by_contra h
-    exact hd (by simp [hB d h])
+  have h : (f + X ^ m * r) ^ i * c - f ^ i * c =
+      X ^ m * ((∑ k ∈ Finset.range i, (f + X ^ m * r) ^ k * f ^ (i - 1 - k)) * r * c) := by
+    rw [← sub_mul, ← geom_sum₂_mul, add_sub_cancel_left]
+    ring
+  rw [← sub_eq_iff_eq_add', ← map_sub, h, coeff_X_pow_mul']
+  by_cases hnm : n = m
+  · -- the constant coefficient of the geometric sum is `i * 0 ^ (i - 1)`
+    simp [hnm, map_sum, hf, hfr, geom_sum₂_self, mul_assoc]
+  · simp [hnm, show ¬ m ≤ n by omega]
 
-end Pair
+/-- Perturbing the entry `a s` of a substituted family `a` by `X ^ m * r` leaves the
+coefficients of degree below `m` unchanged, and changes the coefficient of degree `m` by
+`r(0)` times the coefficient of `Xₛ` in `G`. -/
+theorem coeff_subst_update_add_X_pow_mul [DecidableEq σ] (G : MvPowerSeries σ R)
+    {a : σ → S⟦X⟧} (ha : MvPowerSeries.HasSubst a) (ha₀ : ∀ t, constantCoeff (a t) = 0) (s : σ)
+    (r : S⟦X⟧) {m n : ℕ} (hm : m ≠ 0) (hn : n ≤ m) :
+    coeff n (G.subst (Function.update a s (a s + X ^ m * r))) = coeff n (G.subst a) +
+      if n = m then
+        algebraMap R S (MvPowerSeries.coeff (Finsupp.single s 1) G) * constantCoeff r
+      else 0 := by
+  set b := Function.update a s (a s + X ^ m * r) with hb_def
+  have hb : MvPowerSeries.HasSubst b := by
+    refine ⟨fun t ↦ ?_, fun d ↦ ((ha.coeff_zero d).union (Set.finite_singleton s)).subset
+      fun t ht ↦ ?_⟩
+    · rcases eq_or_ne t s with rfl | ht
+      · simp [b, ← constantCoeff_eq, ha₀, hm]
+      · simp [b, ht, ← constantCoeff_eq, ha₀]
+    · rcases eq_or_ne t s with rfl | hts
+      · exact Or.inr rfl
+      · exact Or.inl (by simpa [b, hts] using ht)
+  -- each monomial splits as a power of the perturbed entry times a factor `c d` not involving it
+  set c : (σ →₀ ℕ) → S⟦X⟧ := fun d ↦ (d.erase s).prod fun t e ↦ a t ^ e
+  have hprod (x : σ → S⟦X⟧) (hx : ∀ t ≠ s, x t = a t) (d : σ →₀ ℕ) :
+      (d.prod fun t e ↦ x t ^ e) = x s ^ d s * c d := by
+    rw [← Finsupp.mul_prod_erase' d s _ fun _ ↦ pow_zero _]
+    congr 1
+    exact Finsupp.prod_congr fun t ht ↦ by rw [hx t (by rintro rfl; simp at ht)]
+  have key (d : σ →₀ ℕ) : coeff n (d.prod fun t e ↦ b t ^ e) =
+      coeff n (d.prod fun t e ↦ a t ^ e) +
+        if n = m then (d s : S) * 0 ^ (d s - 1) * constantCoeff r * constantCoeff (c d) else 0 := by
+    rw [hprod b (fun t ht ↦ Function.update_of_ne ht _ _) d, hprod a (fun _ _ ↦ rfl) d,
+      hb_def, Function.update_self]
+    exact coeff_add_X_pow_mul_pow_mul (ha₀ s) r (c d) hm hn (d s)
+  -- only the monomial `Xₛ` feels the perturbation in degree `m`
+  have hw (d : σ →₀ ℕ) (hd : d ≠ Finsupp.single s 1) :
+      (d s : S) * 0 ^ (d s - 1) * constantCoeff r * constantCoeff (c d) = 0 := by
+    by_cases h₁ : d.erase s = 0
+    · have h₀ : d s ≠ 1 := fun h₀ ↦ hd <| by
+        rw [← Finsupp.single_add_erase s d, h₁, h₀, add_zero]
+      rcases Nat.lt_or_gt_of_ne h₀ with h₀ | h₀
+      · simp [show d s = 0 by omega]
+      · simp [zero_pow (show d s - 1 ≠ 0 by omega)]
+    · obtain ⟨t, ht⟩ := Finsupp.support_nonempty_iff.mpr h₁
+      have hc : constantCoeff (c d) = 0 := by
+        simp only [c, Finsupp.prod, map_prod, map_pow, ha₀]
+        exact Finset.prod_eq_zero ht (zero_pow (Finsupp.mem_support_iff.mp ht))
+      simp [hc]
+  have hA := MvPowerSeries.coeff_subst_finite ha G (Finsupp.single () n)
+  rw [coeff, MvPowerSeries.coeff_subst hb, MvPowerSeries.coeff_subst ha]
+  rw [← coeff_def Finsupp.single_eq_same] at hA ⊢
+  simp_rw [key, smul_add]
+  rw [finsum_add_distrib hA, add_right_inj, finsum_eq_single _ (Finsupp.single s 1)]
+  · split_ifs <;> simp [c, Algebra.smul_def]
+  · intro d hd
+    simp [hw d hd]
+  · refine (Set.finite_singleton (Finsupp.single s 1)).subset fun d hd ↦ ?_
+    by_contra h
+    exact hd (by simp [hw d h])
+
+end Perturbation
 
 end PowerSeries
 
