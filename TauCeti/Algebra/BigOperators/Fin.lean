@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Intervals
+public import TauCeti.Logic.Equiv.Fin.Basic
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Data.Finset.Max
 
@@ -14,6 +15,7 @@ import Mathlib.Data.Finset.Max
 
 Successive differences along a finite sequence sum to the difference of its endpoints,
 including the empty edge sequence. Reversing every difference reverses the endpoint difference.
+The equivalence omitting the last index also reindexes sums by the preceding indices.
 
 Along a divisibility chain `d₀ ∣ d₁ ∣ ⋯`, the product of the first `k` entries divides the
 product of the entries at any `k` distinct positions. This is what makes the leading `k × k`
@@ -69,3 +71,14 @@ theorem prod_castLE_dvd_prod_of_injective {M : Type*} [CommMonoid M] {n : ℕ} {
       (hd (Fin.le_def.mpr hge))
 
 end Fin
+
+namespace TauCeti
+
+/-- Reindex a sum over all indices except the last by the preceding finite ordinal. -/
+theorem sum_finSuccAboveEquiv_last {M : Type*} [AddCommMonoid M] (n : ℕ)
+    (z : {i : Fin (n + 1) // i ≠ Fin.last n} → M) :
+    ∑ i : Fin n, z ⟨i.castSucc, Fin.castSucc_ne_last i⟩ = ∑ j, z j := by
+  simpa only [finSuccAboveEquiv_last_apply] using
+    Equiv.sum_comp (finSuccAboveEquiv (Fin.last n)) z
+
+end TauCeti

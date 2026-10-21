@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Category.ModuleCat.Indecomposable
 public import TauCeti.CategoryTheory.Preadditive.Equivalence
 public import TauCeti.RepresentationTheory.Quiver.Representation.FiniteDimensional
+import TauCeti.CategoryTheory.Functor.RingEquivEnd
 
 /-!
 # Fitting's lemma for quiver representations
@@ -60,10 +61,7 @@ theorem isNilpotent_or_isIso (hfin : IsFinDim k Q M) (hM : Indecomposable M) (f 
   have hind : Indecomposable (E.functor.obj M) :=
     Functor.indecomposable_obj_of_map_bijective E.functor hM
       (E.fullyFaithfulFunctor.map_bijective M M)
-  let eCat : End M ≃+* End (E.functor.obj M) :=
-    { E.fullyFaithfulFunctor.mulEquivEnd M with
-      map_add' := fun _ _ ↦ End.ext E.functor.map_add }
-  let e := eCat.trans (ModuleCat.endRingEquiv (E.functor.obj M))
+  let e := (E.fullyFaithfulFunctor.ringEquivEnd M).trans (ModuleCat.endRingEquiv (E.functor.obj M))
   rcases ((TauCeti.indecomposable_iff_isIndecomposableModule _).mp hind).isNilpotent_or_isUnit
       (e f) with hnil | hunit
   · exact Or.inl (by simpa only [RingEquiv.symm_apply_apply] using hnil.map e.symm)

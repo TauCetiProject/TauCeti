@@ -15,7 +15,7 @@ import TauCeti.Probability.Exchangeability.ConditionallyIID.Construct
 import TauCeti.Probability.Exchangeability.ConditionallyIID.Map
 import TauCeti.Probability.Exchangeability.MixedIID.Mixture
 import TauCeti.MeasureTheory.Measure.Measurability
-import TauCeti.MeasureTheory.Measure.MixtureInjective
+import TauCeti.MeasureTheory.Measure.Mixture.Injective
 import TauCeti.Probability.ProductMeasure
 
 /-!

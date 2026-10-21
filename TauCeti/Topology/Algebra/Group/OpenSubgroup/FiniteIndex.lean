@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Index
-public import Mathlib.Topology.Algebra.OpenSubgroup
+public import Mathlib.Topology.Algebra.ClopenNhdofOne
+import Mathlib.Algebra.Group.Subgroup.Order
+import Mathlib.Order.Atoms.Finite
 
 /-!
-# Open subgroups of a compact group are compact and have finite index
+# Open subgroups of compact groups
 
 Mathlib already knows the coset space of an open subgroup `U` of a compact group `G` to be
 finite: `G ⧸ U` is compact and discrete, and that is registered as an instance. The step from
@@ -30,12 +32,17 @@ The same bundling supplies the other instance an open subgroup of a compact grou
 is handed to an API stated for a compact group, such as the profinite theory of a closed subgroup:
 an open subgroup is closed, so it is compact.
 
+Every proper open subgroup of a compact group lies in a maximal open subgroup. This follows
+by passing to a finite quotient by an open normal subgroup contained in the given subgroup.
+
 ## Main results
 
 * `OpenSubgroup.finiteIndex_toSubgroup`: the underlying subgroup of an open subgroup of a
   compact group has finite index.
 * `OpenSubgroup.compactSpace_toSubgroup`: the underlying subgroup of an open subgroup of a
   compact group is compact.
+* `Subgroup.exists_isOpen_isCoatom_le_of_isOpen`: a proper open subgroup of a compact group
+  lies in a maximal open subgroup.
 -/
 
 public section
@@ -58,3 +65,33 @@ instance OpenSubgroup.compactSpace_toSubgroup {G : Type*} [Group G] [Topological
     [SeparatelyContinuousMul G] [CompactSpace G] (U : OpenSubgroup G) :
     CompactSpace U.toSubgroup :=
   isCompact_iff_compactSpace.mp U.isClosed.isCompact
+
+section MaximalOpenSubgroup
+
+variable {G : Type*} [Group G] [TopologicalSpace G]
+
+/-- **A proper open subgroup of a compact group lies in a maximal open subgroup.** It contains an
+open normal subgroup `U` of finite index, and a maximal subgroup of the finite group `G ⧸ U` above
+its image pulls back to a maximal subgroup of `G` containing `U`, hence open. -/
+theorem Subgroup.exists_isOpen_isCoatom_le_of_isOpen [IsTopologicalGroup G]
+    [CompactSpace G] {K : Subgroup G} (hKo : IsOpen (K : Set G)) (hK : K ≠ ⊤) :
+    ∃ M : Subgroup G, IsOpen (M : Set G) ∧ IsCoatom M ∧ K ≤ M := by
+  obtain ⟨U, hU⟩ := IsTopologicalGroup.exist_openNormalSubgroup_sub_clopen_nhds_of_one
+    ⟨K.isClosed_of_isOpen hKo, hKo⟩ K.one_mem
+  let q : G →* G ⧸ U.toSubgroup := QuotientGroup.mk' U.toSubgroup
+  have hq : Function.Surjective q := QuotientGroup.mk'_surjective U.toSubgroup
+  have hUK : q.ker ≤ K := by
+    rw [QuotientGroup.ker_mk']
+    exact hU
+  have : Finite (G ⧸ U.toSubgroup) := Subgroup.quotient_finite_of_isOpen _ U.isOpen
+  have : Finite (Subgroup (G ⧸ U.toSubgroup)) :=
+    Finite.of_injective (fun L : Subgroup (G ⧸ U.toSubgroup) ↦ (L : Set (G ⧸ U.toSubgroup)))
+      SetLike.coe_injective
+  obtain ⟨L, hL, hKL⟩ := (eq_top_or_exists_le_coatom (K.map q)).resolve_left fun h ↦
+    hK (by rw [← Subgroup.comap_map_eq_self hUK, h, Subgroup.comap_top])
+  exact ⟨L.comap q,
+    Subgroup.isOpen_mono ((QuotientGroup.ker_mk' _).ge.trans (L.ker_le_comap q)) U.isOpen,
+    Subgroup.isCoatom_comap_of_surjective hq hL,
+    (Subgroup.comap_map_eq_self hUK).ge.trans (Subgroup.comap_mono hKL)⟩
+
+end MaximalOpenSubgroup

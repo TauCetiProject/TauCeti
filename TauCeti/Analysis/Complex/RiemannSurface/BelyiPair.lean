@@ -10,8 +10,11 @@ public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.TopBranchedCover
 public import TauCeti.Analysis.Complex.RiemannSurface.LocalNormalForm
 public import TauCeti.Analysis.Complex.RiemannSurface.PowerMap
 public import TauCeti.Combinatorics.PermutationTriple.IsoClass
+public import TauCeti.Combinatorics.PermutationTriple.Regular
 
+import TauCeti.AlgebraicTopology.ThricePuncturedSphere.Deck
 import TauCeti.AlgebraicTopology.ThricePuncturedSphere.RestrictOver
+import TauCeti.Geometry.Manifold.Complex.Analytic
 import TauCeti.GroupTheory.GroupAction.Free
 
 /-!
@@ -46,6 +49,15 @@ An isomorphism of pairs is determined by the image of a single point over `ℂ �
 cover attached to the target, and the points over `ℂ ∖ {0, 1}` are dense in the surface. Hence
 there are at most as many isomorphisms `P ≅ Q` as the degree of `Q`, and the automorphisms of a
 pair form a finite group whose order divides its degree.
+
+This group is the deck group of the pair in each of its guises. Since every homeomorphism over the
+sphere is holomorphic (see below), the automorphisms of a pair are the deck transformations of its
+Belyi map (`TauCeti.AnalyticBelyiPair.isoMulEquivDeck`). These restrict to the deck
+transformations of the attached cover of `ℂ ∖ {0, 1}`, and those are the automorphisms of its
+monodromy triple. So the automorphism group of a pair is the automorphism group of its monodromy
+triple, for any numbering of the fibre over `1/2`
+(`TauCeti.AnalyticBelyiPair.isoMulEquivAutomorphismGroup`), and a pair has as many automorphisms
+as its degree exactly when its triple is regular.
 
 Forgetting the complex structure turns a pair of degree `n` into a topological branched cover
 of degree `n` (`TauCeti.AnalyticBelyiPair.toTopBranchedCover`). The topological local degree is
@@ -97,6 +109,12 @@ sphere.
   pairs `P ≅ Q`, at most the degree of `Q`.
 * `TauCeti.AnalyticBelyiPair.Iso.natCard_dvd_degree`: the order of the automorphism group
   `P.Iso P` divides the degree of `P`.
+* `TauCeti.AnalyticBelyiPair.isoMulEquivDeck`: the automorphisms of a pair are the deck
+  transformations of its Belyi map.
+* `TauCeti.AnalyticBelyiPair.isoMulEquivAutomorphismGroup`: the automorphism group of a pair is
+  the automorphism group of its monodromy triple.
+* `TauCeti.AnalyticBelyiPair.isRegular_monodromyTriple_iff_natCard_iso`: the monodromy triple is
+  regular exactly when the pair has as many automorphisms as its degree.
 * `TauCeti.AnalyticBelyiPair.toTopBranchedCover`: the underlying topological branched cover, whose
   ramification partitions are formed by the local multiplicities of the Belyi map
   (`TauCeti.AnalyticBelyiPair.parts_ramificationPartition_toTopBranchedCover`) and whose unbranched
@@ -118,7 +136,8 @@ sphere.
   §8, Theorem 8.5 (uniqueness of the extension of an unbranched covering across a finite set).
 * E. Girondo and G. González-Diez, *Introduction to Compact Riemann Surfaces and Dessins
   d'Enfants*, London Mathematical Society Student Texts 79, Cambridge University Press, 2012,
-  Chapter 3 (Belyi functions and Belyi pairs) and §4.3 (the monodromy of a Belyi pair).
+  §2.7 (the monodromy and the covering group of a morphism), Chapter 3 (Belyi functions and Belyi
+  pairs) and §4.3 (the monodromy of a Belyi pair).
 * L. Schneps, *Dessins d'enfants on the Riemann sphere*, in *The Grothendieck Theory of Dessins
   d'Enfants*, London Mathematical Society Lecture Note Series 200, Cambridge University Press,
   1994.
@@ -325,6 +344,16 @@ theorem isCoveringMap_restrict : IsCoveringMap P.restrict :=
     ext w
     simp only [mem_compl_iff, mem_marked, mem_insert_iff, mem_singleton_iff]
 
+/-- The unbranched cover of the topological branched cover underlying a pair is the cover of
+`ℂ ∖ {0, 1}` attached to the pair. -/
+@[simp]
+theorem restrict_toTopBranchedCover {n : ℕ} (hdegree : degree P.β = n) :
+    (P.toTopBranchedCover hdegree).restrict = P.restrict :=
+  -- Both total spaces are the points of `X` off the marked fibres, since the projection of
+  -- `P.toTopBranchedCover hdegree` coerces to `P.β` by definition.
+  funext fun z ↦ Subtype.ext <| OnePoint.coe_injective <|
+    ((P.toTopBranchedCover hdegree).coe_restrict_apply z).trans (P.coe_restrict_apply z).symm
+
 /-- The points of `X` over a point `z` of `ℂ ∖ {0, 1}` are the fibre of the Belyi map over `z`. -/
 theorem image_val_restrict_preimage_singleton (z : ThricePuncturedSphere) :
     (↑) '' (P.restrict ⁻¹' {z}) = P.β ⁻¹' {toOnePoint z} :=
@@ -382,8 +411,7 @@ theorem isoClass_monodromyTriple_toTopBranchedCover {n : ℕ} (hdegree : degree 
   -- `P.toTopBranchedCover hdegree` is `P.β` by definition, and both projections are `P.β`.
   P.isCoveringMap_restrict.isoClass_monodromyTriple_eq_of_homeomorph ν
     (P.toTopBranchedCover hdegree).isCoveringMap_restrict ν' (Homeomorph.refl _) <|
-    funext fun z ↦ Subtype.ext <| OnePoint.coe_injective <|
-      ((P.toTopBranchedCover hdegree).coe_restrict_apply z).trans (P.coe_restrict_apply z).symm
+    P.restrict_toTopBranchedCover hdegree
 
 /-! ### Connectedness of the cover -/
 
@@ -742,6 +770,93 @@ theorem natCard_dvd_degree : Nat.card (P.Iso P) ∣ degree P.β := by
   exact MulAction.natCard_dvd_natCard_of_isCancelSMul
 
 end AnalyticBelyiPair.Iso
+
+/-! ### Automorphisms, deck transformations and the monodromy triple -/
+
+namespace AnalyticBelyiPair
+
+section Deck
+
+variable (P : AnalyticBelyiPair.{u})
+
+/-- **The automorphisms of an analytic Belyi pair are the deck transformations of its Belyi
+map**, the homeomorphisms of the surface over the sphere: these are automatically biholomorphic
+(`TauCeti.AnalyticBelyiPair.Iso.ofHomeomorph`). -/
+def isoMulEquivDeck : P.Iso P ≃* deck P.β where
+  toFun e := ⟨e.toHomeomorph, deck.mem_iff.2 e.β_comp⟩
+  invFun φ := .ofHomeomorph φ.1 (congrFun φ.2)
+  left_inv e := Iso.ext fun _ ↦ by simp
+  right_inv φ := Subtype.ext <| Homeomorph.ext fun _ ↦ by simp
+  map_mul' _ _ := rfl
+
+/-- The deck transformation of an automorphism of a pair is the automorphism. -/
+@[simp]
+theorem coe_isoMulEquivDeck_apply (e : P.Iso P) : ⇑(P.isoMulEquivDeck e : P.X ≃ₜ P.X) = e :=
+  e.coe_toHomeomorph
+
+/-- The automorphism of a pair given by a deck transformation of its Belyi map is the deck
+transformation. -/
+@[simp]
+theorem coe_isoMulEquivDeck_symm_apply (φ : deck P.β) :
+    ⇑(P.isoMulEquivDeck.symm φ) = (φ : P.X ≃ₜ P.X) :=
+  Iso.coe_ofHomeomorph _ _
+
+end Deck
+
+section AutomorphismGroup
+
+variable (P : AnalyticBelyiPair.{u}) {n : ℕ} (ν : P.restrict ⁻¹' {basePt} ≃ Fin n)
+
+/-- **The automorphism group of an analytic Belyi pair is the automorphism group of its monodromy
+triple**, for any numbering `ν` of the fibre over `1/2`. An automorphism goes to the permutation it
+induces on the labels (`TauCeti.AnalyticBelyiPair.coe_isoMulEquivAutomorphismGroup_apply`). It is
+the composite of three identifications: automorphisms of the pair are the deck transformations of
+the Belyi map, these restrict to the deck transformations of the cover of `ℂ ∖ {0, 1}` attached to
+the pair (`TauCeti.TopBranchedCover.deckMulEquivDeckRestrict`), and those are the automorphisms of
+its monodromy triple (`IsCoveringMap.deckMulEquivAutomorphismGroup`). -/
+noncomputable def isoMulEquivAutomorphismGroup :
+    P.Iso P ≃* (P.isCoveringMap_restrict.monodromyTriple ν).automorphismGroup :=
+  P.isoMulEquivDeck.trans <|
+    (Deck.conjMulEquiv (Homeomorph.refl P.X) (P.toTopBranchedCover_π_apply rfl)).trans <|
+    (P.toTopBranchedCover rfl).deckMulEquivDeckRestrict.trans <|
+    (MulEquiv.subgroupCongr (congrArg deck (P.restrict_toTopBranchedCover rfl))).trans <|
+      P.isCoveringMap_restrict.deckMulEquivAutomorphismGroup ν
+
+/-- The automorphism of the monodromy triple attached to an automorphism `e` of a pair sends the
+label `i` to the label of the image under `e` of the point labelled `i`. -/
+@[simp]
+theorem coe_isoMulEquivAutomorphismGroup_apply (e : P.Iso P) (i : Fin n) :
+    (P.isoMulEquivAutomorphismGroup ν e : Equiv.Perm (Fin n)) i = ν (e • ν.symm i) := by
+  refine (IsCoveringMap.coe_deckMulEquivAutomorphismGroup_apply _ _ _ i).trans
+    (congrArg ν (Subtype.ext (Subtype.ext ?_)))
+  -- Evaluate the composite one identification at a time.
+  exact (congrArg Subtype.val (deck.fiber_smul_coe _ (ν.symm i))).trans <|
+    (TopBranchedCover.coe_deckMulEquivDeckRestrict_apply _ _ _).trans <|
+    (Deck.conjMulEquiv_apply_coe _ _ _ _).trans <|
+      (congrFun (P.coe_isoMulEquivDeck_apply e) _).trans (Iso.coe_smul _ e _).symm
+
+/-- The automorphism of a pair attached to an automorphism `τ` of its monodromy triple sends the
+point labelled `i` to the point labelled `τ i`. -/
+@[simp]
+theorem isoMulEquivAutomorphismGroup_symm_smul
+    (τ : (P.isCoveringMap_restrict.monodromyTriple ν).automorphismGroup) (i : Fin n) :
+    (P.isoMulEquivAutomorphismGroup ν).symm τ • ν.symm i =
+      ν.symm ((τ : Equiv.Perm (Fin n)) i) := by
+  rw [← ν.symm_apply_apply ((P.isoMulEquivAutomorphismGroup ν).symm τ • ν.symm i),
+    ← coe_isoMulEquivAutomorphismGroup_apply, MulEquiv.apply_symm_apply]
+
+variable {P} in
+/-- **The monodromy triple of an analytic Belyi pair is regular exactly when the pair has as many
+automorphisms as its degree**, the number `n` of points of the fibre over `1/2`. -/
+theorem isRegular_monodromyTriple_iff_natCard_iso :
+    (P.isCoveringMap_restrict.monodromyTriple ν).IsRegular ↔ Nat.card (P.Iso P) = n := by
+  rw [PermutationTriple.isRegular_iff_card_automorphismGroup,
+    and_iff_right (P.isCoveringMap_restrict.isConnected_monodromyTriple ν),
+    Nat.card_congr (P.isoMulEquivAutomorphismGroup ν).toEquiv]
+
+end AutomorphismGroup
+
+end AnalyticBelyiPair
 
 /-! ### Isomorphism classes of analytic Belyi pairs -/
 

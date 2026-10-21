@@ -95,6 +95,38 @@ theorem twistedPushforward_simplexChain_one {n : ℕ} (σ : (TopCat.toSSet.obj Z
   -- The remaining sides agree by the definition of the composite of `ModuleCat` morphisms.
   rfl
 
+/-- Transport along the path class from a point to itself is the identity. -/
+theorem map_pathClass_self_apply {Z' : Type*} [TopologicalSpace Z'] [SimplyConnectedSpace Z']
+    (g : C(Z', X)) (z : Z') (b : L.obj (FundamentalGroupoid.mk (g z))) :
+    L.map (g.pathClass z z) b = b :=
+  (congrArg (fun p : FundamentalGroupoid.mk (g z) ⟶ FundamentalGroupoid.mk (g z) ↦ L.map p b)
+    (ContinuousMap.pathClass_self g z)).trans
+    -- `𝟙 _` acts as the identity of the module, by definition of the identity in `ModuleCat`.
+    ((congrArg (fun φ ↦ φ b) (congrArg ModuleCat.Hom.hom
+      (L.map_id (FundamentalGroupoid.mk (g z))))).trans rfl)
+
+/-- Transport along the path class to a point equal to the starting point does not change the
+coefficient, up to the identification of the fibres. -/
+theorem map_pathClass_heq {Z' : Type*} [TopologicalSpace Z'] [SimplyConnectedSpace Z']
+    (g : C(Z', X)) {z z' : Z'} (h : z' = z) (b : L.obj (FundamentalGroupoid.mk (g z))) :
+    (L.map (g.pathClass z z') b) ≍ b := by
+  subst h
+  rw [ContinuousMap.pathClass_self]
+  simp
+
+/-- Every twisted simplex is the pushforward along itself of the identity simplex of the model, from
+the initial vertex of the model. -/
+theorem ιTwistedChainComplex_eq_twistedPushforward {n : ℕ} (σ : (TopCat.toSSet.obj X) _⦋n⦌)
+    (b : L.obj (initialVertex σ)) :
+    ιTwistedChainComplex L n σ b =
+      twistedPushforward (Z := simplexModel.{v} n) L (simplexToHom σ)
+        (SimplexCategory.toTopInitialVertex ⦋n⦌) n (simplexChain (idSimplex n) 1) b := by
+  rw [twistedPushforward_simplexChain_one (Z := simplexModel.{v} n)]
+  -- The summand of the identity simplex pushed along `σ` is the summand of `σ`, and the transport
+  -- from the initial vertex to itself is trivial.
+  exact ιTwistedChainComplex_congr L (toSSet_map_down_idSimplex σ).symm
+    (map_pathClass_heq (L := L) _ (simplexMap_idSimplex n _) b).symm
+
 /-- The coefficient transport of the twisted pushforward composed with the vertex transport of a
 face is the coefficient transport of the face. -/
 private theorem pathClass_comp_vertexTransport {n : ℕ} (σ : (TopCat.toSSet.obj Z) _⦋n + 1⦌)
