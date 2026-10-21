@@ -7,8 +7,8 @@ module
 
 public import Mathlib.CategoryTheory.Limits.Shapes.Opposites.Products
 public import Mathlib.CategoryTheory.Triangulated.Generators
-public import Mathlib.CategoryTheory.Triangulated.Opposite.Pretriangulated
 public import TauCeti.CategoryTheory.Preadditive.EilenbergSwindle
+public import TauCeti.CategoryTheory.Triangulated.Opposite.Subcategory
 
 /-!
 # Localizing and colocalizing closures in a pretriangulated category
@@ -68,13 +68,6 @@ open Limits Pretriangulated Pretriangulated.Opposite ZeroObject
 
 variable {C : Type u} [Category.{v} C] [HasZeroObject C] [Preadditive C] [HasShift C ℤ]
   [∀ n : ℤ, (shiftFunctor C n).Additive] [Pretriangulated C]
-
-/-- Third-object closure of a property becomes first-object closure on the opposite category. -/
-instance (P : ObjectProperty C) [P.IsTriangulatedClosed₃] : P.op.IsTriangulatedClosed₁ where
-  ext₁' T hT h₂ h₃ := by
-    obtain ⟨X, hX, ⟨e⟩⟩ := P.ext_of_isTriangulatedClosed₃' _
-      ((mem_distTriang_op_iff T).1 hT) h₃ h₂
-    exact ⟨Opposite.op X, hX, ⟨e.symm.op⟩⟩
 
 section Thick
 
