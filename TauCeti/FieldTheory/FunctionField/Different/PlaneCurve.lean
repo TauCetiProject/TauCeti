@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.MvPolynomial.PDeriv
 public import Mathlib.Algebra.Polynomial.Bivariate
 public import Mathlib.FieldTheory.RatFunc.AsPolynomial
-public import TauCeti.Algebra.MvPolynomial.FinTwo
+public import TauCeti.Algebra.MvPolynomial.Fin.Two
 public import TauCeti.FieldTheory.FunctionField.Different.Derivative
 public import TauCeti.FieldTheory.FunctionField.Different.Divisor
 public import TauCeti.FieldTheory.FunctionField.Divisor.RatFunc

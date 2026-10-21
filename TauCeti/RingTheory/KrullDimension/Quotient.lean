@@ -36,6 +36,8 @@ for minimal primes `P`. This gives a componentwise criterion using only quotient
 * `TauCeti.ringKrullDim_le_add_one_of_forall_ringKrullDim_quotient_le`: if every quotient by a
   nonzero principal ideal has Krull dimension at most `n`, the ring has Krull dimension at most
   `n + 1`.
+* `TauCeti.ringKrullDim_quotient_add_one_le_of_lt`: for a prime `p` strictly contained in an ideal
+  `q`, `ringKrullDim (R ⧸ q) + 1 ≤ ringKrullDim (R ⧸ p)`.
 * `Ideal.height_map_quotientMk_nilradical`: reduction preserves the height of a prime ideal.
 -/
 
@@ -110,6 +112,16 @@ theorem ringKrullDim_le_add_one_of_forall_ringKrullDim_quotient_le {n : ℕ∞}
     ((ringKrullDim_quotient _).symm.le.trans (h f hf))
   rw [show l.length = t.length + 1 by rw [RelSeries.tail_length]; omega]
   simpa using add_le_add_left hq 1
+
+/-- If `p ⊊ q` with `p` prime, then `ringKrullDim (R ⧸ q) + 1 ≤ ringKrullDim (R ⧸ p)`. -/
+theorem ringKrullDim_quotient_add_one_le_of_lt {p q : Ideal R} [p.IsPrime] (h : p < q) :
+    ringKrullDim (R ⧸ q) + 1 ≤ ringKrullDim (R ⧸ p) := by
+  obtain ⟨x, hxq, hxp⟩ := IsConcreteLE.exists_of_lt h
+  refine ringKrullDim_succ_le_of_surjective (Ideal.Quotient.factor h.le)
+    (Ideal.Quotient.factor_surjective h.le) (r := Ideal.Quotient.mk p x)
+    (mem_nonZeroDivisors_of_ne_zero ?_) ?_
+  · rwa [ne_eq, Ideal.Quotient.eq_zero_iff_mem]
+  · rwa [Ideal.Quotient.factor_mk, Ideal.Quotient.eq_zero_iff_mem]
 
 end TauCeti
 

@@ -139,6 +139,16 @@ theorem pullbackExteriorPowerComparison_eq (n : ℕ) :
         (pullbackPushforwardAdjunction f) n :=
   (rfl)
 
+/-- The mate of the scheme comparison under the pullback--pushforward adjunction is the
+pushforward comparison along `f.toRingCatSheafHom`. -/
+-- Not a simp lemma: `mateEquiv_apply` expands its left-hand side first.
+theorem mateEquiv_pullbackExteriorPowerComparison (n : ℕ) :
+    mateEquiv (pullbackPushforwardAdjunction f) (pullbackPushforwardAdjunction f)
+        (pullbackExteriorPowerComparison f n) =
+      TauCeti.SheafOfModules.pushforwardExteriorPowerComparison f.toRingCatSheafHom n :=
+  TauCeti.SheafOfModules.mateEquiv_pullbackExteriorPowerComparison
+    (pullbackPushforwardAdjunction f) n
+
 /-- The adjunction equation characterizing the pullback comparison for modules on schemes: its
 transpose is the exterior power of the unit `M ⟶ f_* f^* M` followed by the exterior-power
 comparison of pushforward. -/
