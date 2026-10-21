@@ -90,11 +90,8 @@ theorem invChart_onePointMap_eval_invChart_symm (hp : 0 < p.natDegree) (w : ℂ)
 polynomial to `OnePoint ℂ`, sending `∞` to `∞`, is continuous: a polynomial tends to infinity at
 infinity. -/
 theorem continuous_onePointMap_eval (hp : 0 < p.natDegree) :
-    Continuous (OnePoint.map fun z : ℂ ↦ p.eval z) := by
-  refine OnePoint.continuous_map p.continuous ?_
-  rw [coclosedCompact_eq_cocompact, ← Metric.cobounded_eq_cocompact,
-    ← tendsto_norm_atTop_iff_cobounded]
-  exact p.tendsto_norm_atTop (natDegree_pos_iff_degree_pos.1 hp) tendsto_norm_cobounded_atTop
+    Continuous (OnePoint.map fun z : ℂ ↦ p.eval z) :=
+  continuous_onePointMap_of_isProperMap (p.isProperMap_eval (natDegree_pos_iff_degree_pos.1 hp))
 
 /-- Near `∞`, the extension of a nonconstant polynomial to the Riemann sphere is
 `w ↦ w ^ d / p.reverse.eval w` read in the inverted chart. -/
