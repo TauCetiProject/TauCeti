@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.FilterBasis
 public import Mathlib.Topology.Algebra.IsUniformGroup.Basic
+public import Mathlib.Topology.Algebra.Nonarchimedean.Basic
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import Mathlib.Topology.LocallyConstant.Basic
 public import Mathlib.Topology.UniformSpace.AbstractCompletion
@@ -50,6 +51,8 @@ to a complete separated uniform space extends uniquely to the Novikov series. Th
 * `TauCeti.NovikovSeries.tendsto_nhds_iff`: convergence in the period topology means eventual
   agreement of coefficients below every cutoff.
 * The instances `T2Space` and `CompleteSpace`: the period topology is separated and complete.
+* The instances `NonarchimedeanAddGroup` and `ContinuousConstSMul`: the period topology has a
+  basis of open subgroups, and coefficientwise scalar multiplication is continuous.
 * `TauCeti.NovikovSeries.tendsto_ofFinsupp_trunc` and
   `TauCeti.NovikovSeries.denseRange_ofFinsupp`: the truncations of a series converge to it, so the
   finitely supported series are dense.
@@ -98,6 +101,18 @@ theorem antitone_periodFiltration : Antitone (periodFiltration R N) :=
 /-- An element of every `U_C` is zero. -/
 theorem eq_zero_of_forall_mem_periodFiltration (ha : ∀ C, a ∈ periodFiltration R N C) : a = 0 :=
   ext fun h => ha (N h + 1) h (lt_add_one _)
+
+/-- Every Novikov series lies in some `U_C`, since the periods of its support are bounded
+below. -/
+theorem exists_mem_periodFiltration (a : NovikovSeries R H N) :
+    ∃ C, a ∈ periodFiltration R N C := by
+  obtain ⟨C, hC⟩ := a.bddBelow_image_support
+  exact ⟨C, fun h hh => by_contra fun ha => (hC ⟨h, mem_support.2 ha, rfl⟩).not_gt hh⟩
+
+/-- The monomial `r e^h` lies in `U_(N h)`. -/
+theorem single_mem_periodFiltration (h : H) (r : R) :
+    single h r ∈ periodFiltration R N (N h) := fun _ hg =>
+  coeff_single_of_ne (ne_of_apply_ne N hg.ne) r
 
 variable (R N) in
 theorem iInf_periodFiltration : ⨅ C, periodFiltration R N C = ⊥ :=
@@ -193,6 +208,22 @@ instance : T2Space (NovikovSeries R H N) :=
     exact ⟨_, periodFiltration_mem_nhds_zero (N h + 1), fun ha' =>
       mem_support.1 hh (ha' h (lt_add_one _))⟩
 
+/-- The period topology is nonarchimedean: the open subgroups `U_C` form a basis of
+neighbourhoods of `0`. -/
+instance : NonarchimedeanAddGroup (NovikovSeries R H N) where
+  is_nonarchimedean U hU := by
+    obtain ⟨C, -, hC⟩ := hasBasis_nhds_zero.mem_iff.1 hU
+    exact ⟨⟨periodFiltration R N C, isOpen_periodFiltration C⟩, hC⟩
+
+/-- Coefficientwise scalar multiplication is continuous in the period topology. -/
+instance {S : Type*} [DistribSMul S R] : ContinuousConstSMul S (NovikovSeries R H N) where
+  continuous_const_smul s := continuous_iff_continuousAt.2 fun a =>
+    ((hasBasis_nhds a).tendsto_iff (hasBasis_nhds (s • a))).2 fun C _ =>
+      ⟨C, trivial, fun b hb h hh => by
+        have hbh := hb h hh
+        rw [coeff_sub] at hbh ⊢
+        rw [coeff_smul, coeff_smul, ← smul_sub, hbh, smul_zero]⟩
+
 /-- The coefficient of a series at the exponent `h` is locally constant in the period
 topology. -/
 theorem isLocallyConstant_coeff (h : H) :
@@ -234,6 +265,11 @@ variable [AddCommGroup R]
 theorem sub_ofFinsupp_trunc_mem_periodFiltration (C : ℝ) (a : NovikovSeries R H N) :
     a - ofFinsupp (trunc C a) ∈ periodFiltration R N C := fun h hh => by
   simp [trunc_apply_of_lt hh]
+
+/-- Truncation preserves membership in `U_D`. -/
+theorem ofFinsupp_trunc_mem_periodFiltration {D : ℝ} (C : ℝ) {a : NovikovSeries R H N}
+    (ha : a ∈ periodFiltration R N D) : ofFinsupp (trunc C a) ∈ periodFiltration R N D :=
+  fun h hh => by simp [ha h hh]
 
 /-- The truncations of a Novikov series converge to it as the cutoff tends to `+∞`. -/
 theorem tendsto_ofFinsupp_trunc (a : NovikovSeries R H N) :
