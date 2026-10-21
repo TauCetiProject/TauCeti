@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Even
+public import Mathlib.Algebra.Order.Group.PosPart
 public import Mathlib.LinearAlgebra.Matrix.Symmetric
 import Mathlib.Algebra.Ring.Int.Parity
 import Mathlib.Tactic.LinearCombination
@@ -23,10 +24,15 @@ For a symmetric integer matrix `A` and an integer vector `m`, the quadratic form
 because the summand is symmetric under swapping the indices, and `mᵢ² ≡ mᵢ` modulo two. In
 particular `∑ᵢ mᵢ aᵢᵢ` is even whenever `mᵀ A m = 0`, for instance whenever `A m = 0`.
 
+When every off-diagonal entry of a matrix `A` over a linearly ordered ring is nonpositive, the
+positive and negative parts of a vector `x = x⁺ - x⁻` pair nonpositively: `(x⁺)ᵀ A x⁻ ≤ 0`.
+
 ## Main results
 
 * `Matrix.IsSymm.add_dotProduct_mulVec_add` and `Matrix.IsSymm.sub_dotProduct_mulVec_sub`: the
   polarization identities for a symmetric matrix.
+* `Matrix.posPart_dotProduct_mulVec_negPart_nonpos`: with nonpositive off-diagonal entries, the
+  positive and negative parts of a vector pair nonpositively.
 * `Matrix.IsSymm.even_sum_mul_diag_iff_even_dotProduct_mulVec`: if `A` is a symmetric integer
   matrix then `∑ᵢ mᵢ aᵢᵢ` is even if and only if `mᵀ A m` is.
 * `Matrix.IsSymm.even_sum_mul_diag_of_dotProduct_mulVec_eq_zero`: if `A` is a symmetric integer
@@ -54,6 +60,27 @@ theorem IsSymm.sub_dotProduct_mulVec_sub {ι R : Type*} [Fintype ι] [CommRing R
   rw [sub_eq_add_neg, hA.add_dotProduct_mulVec_add, mulVec_neg, neg_dotProduct, dotProduct_neg,
     dotProduct_neg, neg_neg]
   ring
+
+/-- The positive and negative parts of a vector pair nonpositively when every off-diagonal entry
+of the matrix is nonpositive: the diagonal terms vanish because the two parts have disjoint
+supports. -/
+theorem posPart_dotProduct_mulVec_negPart_nonpos {ι R : Type*} [Fintype ι] [CommRing R]
+    [LinearOrder R] [IsOrderedRing R] {A : Matrix ι ι R} (hoff : ∀ i j, i ≠ j → A i j ≤ 0)
+    (x : ι → R) : x⁺ ⬝ᵥ A *ᵥ x⁻ ≤ 0 := by
+  simp only [dotProduct, mulVec, Finset.mul_sum]
+  refine Finset.sum_nonpos fun i _ ↦ Finset.sum_nonpos fun j _ ↦ ?_
+  have hp : 0 ≤ x⁺ i := posPart_nonneg x i
+  have hn : 0 ≤ x⁻ j := negPart_nonneg x j
+  rcases eq_or_ne i j with rfl | hij
+  · have : x⁺ i * x⁻ i = 0 := by
+      simp only [Pi.posPart_apply, Pi.negPart_apply]
+      rcases le_total 0 (x i) with h | h
+      · simp [negPart_eq_zero.mpr h]
+      · simp [posPart_eq_zero.mpr h]
+    calc x⁺ i * (A i i * x⁻ i) = A i i * (x⁺ i * x⁻ i) := by ring
+      _ ≤ 0 := by rw [this, mul_zero]
+  · calc x⁺ i * (A i j * x⁻ j) = A i j * (x⁺ i * x⁻ j) := by ring
+      _ ≤ 0 := mul_nonpos_of_nonpos_of_nonneg (hoff i j hij) (mul_nonneg hp hn)
 
 /-- If `A` is a symmetric integer matrix and `m` is an integer vector, then `∑ᵢ mᵢ aᵢᵢ` has the
 same parity as the quadratic form `mᵀ A m`. The individual terms `mᵢ aᵢᵢ` need not be even. -/

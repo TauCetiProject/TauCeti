@@ -34,8 +34,8 @@ The file develops the elementary theory of `Φ` in three layers of hypotheses.
   supported nonnegative parts, `⟪a⁺, a⁻⟫ ≤ 0`, so two nonzero parts would give `⟪a, a⟫ ≥ 4`.
   With diagonal `2`, a nonnegative vector of `Φ` that is not simple pairs to `1` with some simple
   root `αᵢ`, and `a - αᵢ` is again a nonnegative vector of `Φ`, of height one less. This is the
-  height induction `Matrix.normTwoShell_induction`: every positive root is reached from a simple
-  root by adding simple roots one at a time without leaving `Φ`.
+  height induction `Matrix.PosDef.normTwoShell_nonneg_induction`: every positive root is reached
+  from a simple root by adding simple roots one at a time without leaving `Φ`.
 
 These are the facts about the root set that the integral Chevalley lattice of a simply laced
 diagram is built on: its root vectors are indexed by `Φ`, and its bracket on root vectors is
@@ -58,7 +58,7 @@ nonzero exactly in the cases `a + b ∈ Φ` and `a = -b` isolated here.
   every vector of `Φ` is nonnegative or nonpositive.
 * `Matrix.PosDef.exists_sub_single_mem_normTwoShell`: a positive root that is not simple has a
   simple root whose subtraction leaves a positive root.
-* `Matrix.normTwoShell_induction`: the height induction principle for positive roots.
+* `Matrix.PosDef.normTwoShell_nonneg_induction`: the height induction principle for positive roots.
 
 ## References
 
@@ -185,26 +185,6 @@ theorem finite_normTwoShell (hB : B.PosDef) : B.normTwoShell.Finite := by
 
 /-! ### Nonpositive off-diagonal entries -/
 
-/-- The positive and negative parts of an integer vector pair nonpositively when every
-off-diagonal entry is nonpositive: the diagonal terms vanish because the two parts have disjoint
-supports. -/
-private theorem posPart_dotProduct_mulVec_negPart_nonpos (hoff : ∀ i j, i ≠ j → B i j ≤ 0)
-    (a : I → ℤ) : a⁺ ⬝ᵥ B *ᵥ a⁻ ≤ 0 := by
-  simp only [dotProduct, mulVec, Finset.mul_sum]
-  refine Finset.sum_nonpos fun i _ ↦ Finset.sum_nonpos fun j _ ↦ ?_
-  have hp : 0 ≤ a⁺ i := posPart_nonneg a i
-  have hn : 0 ≤ a⁻ j := negPart_nonneg a j
-  rcases eq_or_ne i j with rfl | hij
-  · have : a⁺ i * a⁻ i = 0 := by
-      simp only [Pi.posPart_apply, Pi.negPart_apply]
-      rcases le_total 0 (a i) with h | h
-      · simp [negPart_eq_zero.mpr h]
-      · simp [posPart_eq_zero.mpr h]
-    calc a⁺ i * (B i i * a⁻ i) = B i i * (a⁺ i * a⁻ i) := by ring
-      _ ≤ 0 := by rw [this, mul_zero]
-  · calc a⁺ i * (B i j * a⁻ j) = B i j * (a⁺ i * a⁻ j) := by ring
-      _ ≤ 0 := mul_nonpos_of_nonpos_of_nonneg (hoff i j hij) (mul_nonneg hp hn)
-
 /-- **Every vector of the norm-two shell has coefficients of one sign**, for a positive definite
 Gram matrix with even diagonal and nonpositive off-diagonal entries, such as a simply laced Cartan
 matrix. -/
@@ -259,14 +239,12 @@ theorem exists_sub_single_mem_normTwoShell [DecidableEq I] (hB : B.PosDef)
     · simpa using Int.add_one_le_iff.mpr hai
     · simpa [Pi.single_apply, hji] using hpos j
 
-end PosDef
-
 /-- **Height induction on positive roots.** Let `B` be a positive definite Gram matrix with
 diagonal `2` and nonpositive off-diagonal entries, such as the Cartan matrix of a simply laced
 Dynkin diagram. A property holding at every simple root `Pi.single i 1`, and passing from a
 nonnegative vector `a` of the norm-two shell to `a + Pi.single i 1` whenever the latter is again in
 the shell, holds at every nonnegative vector of the shell. -/
-theorem normTwoShell_induction [DecidableEq I] (hB : B.PosDef) (hdiag : ∀ i, B i i = 2)
+theorem normTwoShell_nonneg_induction [DecidableEq I] (hB : B.PosDef) (hdiag : ∀ i, B i i = 2)
     (hoff : ∀ i j, i ≠ j → B i j ≤ 0) {motive : (I → ℤ) → Prop}
     (simple : ∀ i, motive (Pi.single i 1))
     (add : ∀ a i, a ∈ B.normTwoShell → 0 ≤ a → a + Pi.single i 1 ∈ B.normTwoShell →
@@ -290,5 +268,7 @@ theorem normTwoShell_induction [DecidableEq I] (hB : B.PosDef) (hdiag : ∀ i, B
       omega
     have := add _ i hsub hsubpos (by rwa [sub_add_cancel]) (ih _ hlt hsub hsubpos rfl)
     rwa [sub_add_cancel] at this
+
+end PosDef
 
 end Matrix
