@@ -13,10 +13,13 @@ import Mathlib.Geometry.Manifold.VectorBundle.Hom
 /-!
 # Signature of a smooth nondegenerate metric
 
-The positive and negative inertia indices of a smooth field of symmetric nondegenerate bilinear
-forms are locally constant.  The proof reads the metric in a tangent-bundle trivialization and
-applies stability of the signature for continuous families of forms on the fixed model space.
-The coordinate form is isometric to the original form, so its inertia indices are intrinsic.
+The positive and negative inertia indices of a continuous family of symmetric nondegenerate
+tangent bilinear forms are locally constant.  The family is any continuous map into the total
+space of the tangent bilinear-form bundle, so this covers a smooth nondegenerate metric as well as
+a family of metrics depending on a parameter.  The proof reads the forms in a tangent-bundle
+trivialization and applies stability of the signature for continuous families of forms on the
+fixed model space.  The coordinate form is isometric to the original form, so its inertia indices
+are intrinsic.
 
 Thus a smooth nondegenerate metric has one fixed signature on each connected component.  This is
 the topological input for treating a nondegenerate metric of fixed signature as a
@@ -24,6 +27,9 @@ pseudo-Riemannian metric.
 
 ## Main results
 
+* `TauCeti.Manifold.isLocallyConstant_sigPos_sigNeg_of_continuous` proves that the inertia
+  indices of a continuous family of symmetric nondegenerate tangent bilinear forms are locally
+  constant.
 * `TauCeti.Manifold.ContMDiffNondegenerateMetric.signature` is the pair consisting of the positive
   and negative inertia indices.
 * `TauCeti.Manifold.ContMDiffNondegenerateMetric.isLocallyConstant_signature` proves that this pair
@@ -69,115 +75,129 @@ theorem signature_snd (g : ContMDiffNondegenerateMetric (I := I) (M := M)) (x : 
     (g.signature x).2 = sigNeg (g x).toBilinForm.toQuadraticMap :=
   (rfl)
 
-private abbrev inCoordinates
-    (g : ContMDiffNondegenerateMetric (I := I) (M := M)) (a x : M) :
-    E →L[ℝ] E →L[ℝ] ℝ :=
+end ContMDiffNondegenerateMetric
+
+/-- A tangent bilinear form at `x`, read in the tangent-bundle trivialization at `a`. -/
+private abbrev inCoordinates (a x : M)
+    (ϕ : TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) : E →L[ℝ] E →L[ℝ] ℝ :=
   ContinuousLinearMap.inCoordinates E (fun y : M ↦ TangentSpace I y)
-    (E →L[ℝ] ℝ) (fun y : M ↦ TangentSpace I y →L[ℝ] ℝ) a x a x (g x)
+    (E →L[ℝ] ℝ) (fun y : M ↦ TangentSpace I y →L[ℝ] ℝ) a x a x ϕ
 
-private theorem continuousAt_inCoordinates_self
-    (g : ContMDiffNondegenerateMetric (I := I) (M := M)) (a : M) :
-    ContinuousAt (g.inCoordinates a) a := by
-  have hg := g.contMDiff.continuous.continuousAt (x := a)
-  have hcoord := (FiberBundle.continuousAt_section
-    (E →L[ℝ] E →L[ℝ] ℝ) a).mp hg
-  simpa only [hom_trivializationAt_apply] using hcoord
-
-private theorem inCoordinates_apply
-    (g : ContMDiffNondegenerateMetric (I := I) (M := M)) (a : M) {x : M}
-    (hx : x ∈ (trivializationAt E (fun y : M ↦ TangentSpace I y) a).baseSet) (v w : E) :
-    g.inCoordinates a x v w =
-      g x ((trivializationAt E (fun y : M ↦ TangentSpace I y) a).symm x v)
+private theorem inCoordinates_apply (a : M) {x : M}
+    (hx : x ∈ (trivializationAt E (fun y : M ↦ TangentSpace I y) a).baseSet)
+    (ϕ : TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) (v w : E) :
+    inCoordinates a x ϕ v w =
+      ϕ ((trivializationAt E (fun y : M ↦ TangentSpace I y) a).symm x v)
         ((trivializationAt E (fun y : M ↦ TangentSpace I y) a).symm x w) := by
   simpa only [inCoordinates, Trivial.fiberBundle_trivializationAt',
     Trivial.linearMapAt_trivialization, LinearMap.id_coe, id_eq] using
     (inCoordinates_apply_eq₂ (F₁ := E) (F₂ := E) (F₃ := ℝ)
       (E₁ := fun y : M ↦ TangentSpace I y) (E₂ := fun y : M ↦ TangentSpace I y)
       (E₃ := Bundle.Trivial M ℝ) (x₀ := a) (x := x)
-      (ϕ := g x) hx hx (by simp) (v := v) (w := w))
+      (ϕ := ϕ) hx hx (by simp) (v := v) (w := w))
 
-private theorem inCoordinates_toBilinForm
-    (g : ContMDiffNondegenerateMetric (I := I) (M := M)) (a : M) {x : M}
-    (hx : x ∈ (trivializationAt E (fun y : M ↦ TangentSpace I y) a).baseSet) :
-    (g.inCoordinates a x).toBilinForm =
+private theorem inCoordinates_toBilinForm (a : M) {x : M}
+    (hx : x ∈ (trivializationAt E (fun y : M ↦ TangentSpace I y) a).baseSet)
+    (ϕ : TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) :
+    (inCoordinates a x ϕ).toBilinForm =
       LinearMap.BilinForm.congr
         ((trivializationAt E (fun y : M ↦ TangentSpace I y) a).continuousLinearEquivAt ℝ x hx
-          |>.toLinearEquiv) (g x).toBilinForm := by
+          |>.toLinearEquiv) ϕ.toBilinForm := by
   ext v w
   rw [ContinuousLinearMap.toBilinForm_apply, LinearMap.BilinForm.congr_apply,
-    inCoordinates_apply g a hx]
+    inCoordinates_apply a hx]
   rfl
 
-private theorem isSymm_inCoordinates
-    (g : ContMDiffNondegenerateMetric (I := I) (M := M)) (a : M) {x : M}
-    (hx : x ∈ (trivializationAt E (fun y : M ↦ TangentSpace I y) a).baseSet) :
-    (g.inCoordinates a x).toBilinForm.IsSymm := by
+private theorem isSymm_inCoordinates (a : M) {x : M}
+    (hx : x ∈ (trivializationAt E (fun y : M ↦ TangentSpace I y) a).baseSet)
+    {ϕ : TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ} (hϕ : ϕ.toBilinForm.IsSymm) :
+    (inCoordinates a x ϕ).toBilinForm.IsSymm := by
   constructor
   intro v w
-  simp only [ContinuousLinearMap.toBilinForm_apply, inCoordinates_apply g a hx]
-  exact g.apply_comm x _ _
+  simpa only [ContinuousLinearMap.toBilinForm_apply, inCoordinates_apply a hx] using hϕ.eq _ _
 
-private theorem nondegenerate_inCoordinates
-    (g : ContMDiffNondegenerateMetric (I := I) (M := M)) (a : M) {x : M}
-    (hx : x ∈ (trivializationAt E (fun y : M ↦ TangentSpace I y) a).baseSet) :
-    (g.inCoordinates a x).toBilinForm.Nondegenerate := by
-  rw [inCoordinates_toBilinForm g a hx]
-  exact (g.nondegenerate x).congr _
+private theorem nondegenerate_inCoordinates (a : M) {x : M}
+    (hx : x ∈ (trivializationAt E (fun y : M ↦ TangentSpace I y) a).baseSet)
+    {ϕ : TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ} (hϕ : ϕ.toBilinForm.Nondegenerate) :
+    (inCoordinates a x ϕ).toBilinForm.Nondegenerate := by
+  rw [inCoordinates_toBilinForm a hx]
+  exact hϕ.congr _
 
-private theorem signature_inCoordinates
-    (g : ContMDiffNondegenerateMetric (I := I) (M := M)) (a : M) {x : M}
-    (hx : x ∈ (trivializationAt E (fun y : M ↦ TangentSpace I y) a).baseSet) :
-    (sigPos (g.inCoordinates a x).toBilinForm.toQuadraticMap,
-      sigNeg (g.inCoordinates a x).toBilinForm.toQuadraticMap) = g.signature x := by
+private theorem signature_inCoordinates (a : M) {x : M}
+    (hx : x ∈ (trivializationAt E (fun y : M ↦ TangentSpace I y) a).baseSet)
+    (ϕ : TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) :
+    (sigPos (inCoordinates a x ϕ).toBilinForm.toQuadraticMap,
+      sigNeg (inCoordinates a x ϕ).toBilinForm.toQuadraticMap) =
+      (sigPos ϕ.toBilinForm.toQuadraticMap, sigNeg ϕ.toBilinForm.toQuadraticMap) := by
   let e := (trivializationAt E (fun y : M ↦ TangentSpace I y) a)
     |>.continuousLinearEquivAt ℝ x hx
-  have hequiv : QuadraticMap.Equivalent (g x).toBilinForm.toQuadraticMap
-      (g.inCoordinates a x).toBilinForm.toQuadraticMap := by
+  have hequiv : QuadraticMap.Equivalent ϕ.toBilinForm.toQuadraticMap
+      (inCoordinates a x ϕ).toBilinForm.toQuadraticMap := by
     refine ⟨{ toLinearEquiv := e.toLinearEquiv, map_app' := fun v ↦ ?_ }⟩
-    rw [inCoordinates_toBilinForm g a hx]
+    rw [inCoordinates_toBilinForm a hx]
     simp only [LinearMap.BilinMap.toQuadraticMap_apply, LinearMap.BilinForm.congr_apply]
-    exact congrArg (fun w ↦ g x w w) (e.symm_apply_apply v)
+    exact congrArg (fun w ↦ ϕ w w) (e.symm_apply_apply v)
   exact Prod.ext hequiv.sigPos_eq.symm hequiv.sigNeg_eq.symm
 
 variable [FiniteDimensional ℝ E]
 
+/-- The positive and negative inertia indices of a continuous family of symmetric nondegenerate
+tangent bilinear forms are locally constant. The family is a continuous map from an arbitrary
+topological space to the total space of the tangent bilinear-form bundle, so its base point may
+vary as well as the form. -/
+theorem isLocallyConstant_sigPos_sigNeg_of_continuous {X : Type*} [TopologicalSpace X]
+    {q : X → TotalSpace (E →L[ℝ] E →L[ℝ] ℝ)
+      fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ}
+    (hq : Continuous q) (hsymm : ∀ y, (q y).snd.toBilinForm.IsSymm)
+    (hnd : ∀ y, (q y).snd.toBilinForm.Nondegenerate) :
+    IsLocallyConstant fun y ↦
+      (sigPos (q y).snd.toBilinForm.toQuadraticMap,
+        sigNeg (q y).snd.toBilinForm.toQuadraticMap) := by
+  rw [IsLocallyConstant.iff_eventually_eq]
+  intro y₀
+  let a := (q y₀).proj
+  let e := trivializationAt E (fun y : M ↦ TangentSpace I y) a
+  let V : X → E →L[ℝ] E →L[ℝ] ℝ := fun y ↦ inCoordinates a (q y).proj (q y).snd
+  have ha : a ∈ e.baseSet := mem_baseSet_trivializationAt E _ a
+  have he : ∀ᶠ y in nhds y₀, (q y).proj ∈ e.baseSet :=
+    (FiberBundle.continuous_proj _ _ |>.comp hq).continuousAt.preimage_mem_nhds
+      (e.open_baseSet.mem_nhds ha)
+  have hV : ContinuousAt V y₀ := by
+    have hcoord := ((FiberBundle.continuousAt_totalSpace (E →L[ℝ] E →L[ℝ] ℝ) q).mp
+      (hq.continuousAt (x := y₀))).2
+    simpa only [hom_trivializationAt_apply] using hcoord
+  have hsymmV : ∀ᶠ y in nhds y₀, (V y).toBilinForm.IsSymm := by
+    filter_upwards [he] with y hy
+    exact isSymm_inCoordinates a hy (hsymm y)
+  have hndV : (V y₀).toBilinForm.Nondegenerate := nondegenerate_inCoordinates a ha (hnd y₀)
+  have hneg : ∀ᶠ y in nhds y₀,
+      sigNeg (V y).toBilinForm.toQuadraticMap =
+        sigNeg (V y₀).toBilinForm.toQuadraticMap :=
+    ContinuousLinearMap.eventually_sigNeg_toBilinForm_eq_of_continuousAt hsymmV hV hndV
+  have hpos : ∀ᶠ y in nhds y₀,
+      sigPos (V y).toBilinForm.toQuadraticMap =
+        sigPos (V y₀).toBilinForm.toQuadraticMap := by
+    filter_upwards [he, hneg] with y hy hny
+    have hsum {z : X} (hz : (q z).proj ∈ e.baseSet) :=
+      QuadraticForm.sigPos_add_sigNeg_of_nondegenerate (V z).toBilinForm.toQuadraticMap
+        ((nondegenerate_inCoordinates a hz (hnd z)).toQuadraticMap
+          (LinearMap.BilinForm.isSymm_iff_flip.mp (isSymm_inCoordinates a hz (hsymm z))))
+    have hsumy := hsum hy
+    have hsumx := hsum ha
+    omega
+  filter_upwards [he, hpos, hneg] with y hy hpy hny
+  rw [← signature_inCoordinates a hy, ← signature_inCoordinates a ha]
+  exact Prod.ext hpy hny
+
+namespace ContMDiffNondegenerateMetric
+
 /-- The signature of a smooth nondegenerate metric is locally constant. -/
 theorem isLocallyConstant_signature
     (g : ContMDiffNondegenerateMetric (I := I) (M := M)) :
-    IsLocallyConstant g.signature := by
-  rw [IsLocallyConstant.iff_eventually_eq]
-  intro x
-  let e := trivializationAt E (fun y : M ↦ TangentSpace I y) x
-  let V := g.inCoordinates x
-  have hx : x ∈ e.baseSet := mem_baseSet_trivializationAt E _ x
-  have he : e.baseSet ∈ nhds x := e.open_baseSet.mem_nhds hx
-  have hV : ContinuousAt V x := g.continuousAt_inCoordinates_self x
-  have hsymm : ∀ᶠ y in nhds x, (V y).toBilinForm.IsSymm := by
-    filter_upwards [he] with y hy
-    exact g.isSymm_inCoordinates x hy
-  have hnd : (V x).toBilinForm.Nondegenerate := g.nondegenerate_inCoordinates x hx
-  have hneg : ∀ᶠ y in nhds x,
-      sigNeg (V y).toBilinForm.toQuadraticMap =
-        sigNeg (V x).toBilinForm.toQuadraticMap :=
-    ContinuousLinearMap.eventually_sigNeg_toBilinForm_eq_of_continuousAt hsymm hV hnd
-  have hpos : ∀ᶠ y in nhds x,
-      sigPos (V y).toBilinForm.toQuadraticMap =
-        sigPos (V x).toBilinForm.toQuadraticMap := by
-    filter_upwards [he, hneg] with y hy hny
-    have hQy : (V y).toBilinForm.toQuadraticMap.Nondegenerate :=
-      (g.nondegenerate_inCoordinates x hy).toQuadraticMap
-        (LinearMap.BilinForm.isSymm_iff_flip.mp (g.isSymm_inCoordinates x hy))
-    have hQx : (V x).toBilinForm.toQuadraticMap.Nondegenerate :=
-      hnd.toQuadraticMap
-        (LinearMap.BilinForm.isSymm_iff_flip.mp (g.isSymm_inCoordinates x hx))
-    have hsumy := QuadraticForm.sigPos_add_sigNeg_of_nondegenerate
-      (V y).toBilinForm.toQuadraticMap hQy
-    have hsumx := QuadraticForm.sigPos_add_sigNeg_of_nondegenerate
-      (V x).toBilinForm.toQuadraticMap hQx
-    omega
-  filter_upwards [he, hpos, hneg] with y hy hpy hny
-  rw [← g.signature_inCoordinates x hy, ← g.signature_inCoordinates x hx]
-  exact Prod.ext hpy hny
+    IsLocallyConstant g.signature :=
+  isLocallyConstant_sigPos_sigNeg_of_continuous
+    (q := fun x ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ) x (g x)) g.contMDiff.continuous
+    (fun x ↦ g.symm x) (fun x ↦ g.nondegenerate x)
 
 /-- The metric signature is constant on each connected component. -/
 theorem signature_eq_of_mem_connectedComponent
