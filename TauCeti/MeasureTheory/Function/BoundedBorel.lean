@@ -142,7 +142,7 @@ theorem norm_le {f : BoundedBorelFunction X} {C : ℝ} (hC : 0 ≤ C) :
   ⟨fun h x ↦ (norm_coe_le_norm f x).trans h, lp.norm_le_of_forall_le hC⟩
 
 /-- On an empty domain every symbol has norm zero. -/
-theorem norm_of_isEmpty [IsEmpty X] (f : BoundedBorelFunction X) : ‖f‖ = 0 := by
+theorem norm_eq_zero_of_empty [IsEmpty X] (f : BoundedBorelFunction X) : ‖f‖ = 0 := by
   simp [Subsingleton.elim f 0]
 
 /-- Convergence in the supremum norm is uniform convergence of the values. -/
