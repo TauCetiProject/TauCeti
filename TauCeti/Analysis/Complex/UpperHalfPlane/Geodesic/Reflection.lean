@@ -294,7 +294,8 @@ def pslConjJ : PSL(2, ℝ) ≃* PSL(2, ℝ) :=
 theorem pslConjJ_mk (A : SL(2, ℝ)) :
     pslConjJ (A : PSL(2, ℝ)) = (Matrix.SpecialLinearGroup.conjJ A : PSL(2, ℝ)) := by
   rw [pslConjJ]
-  exact congrArg _ (Matrix.SpecialLinearGroup.conjJMulAut_apply A)
+  exact (QuotientGroup.congr_mk (x := A) ..).trans
+    (congrArg _ (Matrix.SpecialLinearGroup.conjJMulAut_apply A))
 
 /-- Conjugation by `J` is an involution. -/
 @[simp]
