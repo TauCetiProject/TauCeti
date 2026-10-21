@@ -204,7 +204,8 @@ private def leftDerivedOneι :
       ((F.mapHomologicalComplex _).obj hS.projectiveResolution.complex).X 1 :=
   ((hS.projectiveResolution.isoLeftDerivedObj F 1).hom ≫
     (((F.mapHomologicalComplex _).obj hS.projectiveResolution.complex).isoHomologyπ
-      2 1 (by simp) (F.map_zero _ _)).inv) ≫
+      2 1 (by simp)
+      ((F.map_isZero (S.isZero_resolutionComplex_X_add_two 0)).eq_of_src _ _)).inv) ≫
     ((F.mapHomologicalComplex _).obj hS.projectiveResolution.complex).iCycles 1
 
 private lemma leftDerivedOneι_comp :
@@ -219,7 +220,8 @@ private def isLimitLeftDerivedOneι :
     (((F.mapHomologicalComplex _).obj hS.projectiveResolution.complex).cyclesIsKernel 1 0 (by simp))
     (hS.projectiveResolution.isoLeftDerivedObj F 1 ≪≫
       (((F.mapHomologicalComplex _).obj hS.projectiveResolution.complex).isoHomologyπ
-        2 1 (by simp) (F.map_zero _ _)).symm) rfl
+        2 1 (by simp)
+        ((F.map_isZero (S.isZero_resolutionComplex_X_add_two 0)).eq_of_src _ _)).symm) rfl
 
 /-- On an object with a projective presentation `0 ⟶ P₁ ⟶ P₀ ⟶ M ⟶ 0`, the first left derived
 functor of `F` is the kernel of `F(P₁) ⟶ F(P₀)`. It sends the homology class of a cycle of `F`
@@ -234,7 +236,8 @@ private lemma leftDerivedOneIsoKernel_hom_comp_ι :
     (hS.leftDerivedOneIsoKernel F).hom ≫ kernel.ι (F.map S.f) =
       (hS.projectiveResolution.isoLeftDerivedObj F 1).hom ≫
         (((F.mapHomologicalComplex _).obj hS.projectiveResolution.complex).isoHomologyπ
-          2 1 (by simp) (F.map_zero _ _)).inv ≫
+          2 1 (by simp)
+          ((F.map_isZero (S.isZero_resolutionComplex_X_add_two 0)).eq_of_src _ _)).inv ≫
         ((F.mapHomologicalComplex _).obj hS.projectiveResolution.complex).iCycles 1 :=
   (IsLimit.conePointUniqueUpToIso_hom_comp (hS.isLimitLeftDerivedOneι F) (limit.isLimit _)
     WalkingParallelPair.zero).trans (Category.assoc _ _ _)
@@ -253,7 +256,7 @@ lemma homologyπ_comp_isoLeftDerivedObj_inv_comp_leftDerivedOneIsoKernel_hom_com
   -- Mathlib's `ProjectiveResolution.isoLeftDerivedObj_hom_naturality`.
   erw [Iso.inv_hom_id_assoc]
   exact HomologicalComplex.isoHomologyπ_hom_inv_id_assoc _ 2 1 (by simp)
-    (F.map_zero _ _) _
+    ((F.map_isZero (S.isZero_resolutionComplex_X_add_two 0)).eq_of_src _ _) _
 
 variable {hS} {G : C ⥤ D} [G.Additive] (hS' : S'.ShortExact) [Projective S'.X₁] [Projective S'.X₂]
 
@@ -279,7 +282,8 @@ private lemma comp_leftDerivedOneIsoKernel_hom_comp_ι
   -- composed as a term.
   erw [Iso.inv_hom_id_assoc,
     HomologicalComplex.isoHomologyπ_inv_naturality_assoc ψ 2 1 (by simp)
-      (F.map_zero _ _) (G.map_zero _ _),
+      ((F.map_isZero (S.isZero_resolutionComplex_X_add_two 0)).eq_of_src _ _)
+      ((G.map_isZero (S'.isZero_resolutionComplex_X_add_two 0)).eq_of_src _ _),
     HomologicalComplex.cyclesMap_i]
   exact ((Category.assoc _ _ _).trans (_ ≫= Category.assoc _ _ _)).symm
 
