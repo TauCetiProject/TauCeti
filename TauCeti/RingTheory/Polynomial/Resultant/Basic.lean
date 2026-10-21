@@ -30,6 +30,7 @@ spectral transform, whose rank is a specified degree bound rather than an actual
 ## Main results
 
 * `Polynomial.resultant_C_sub_X_right`
+* `Polynomial.natDegree_one_sub_C_mul_X_le`: `1 - t X` has degree at most one.
 * `Polynomial.resultant_one_sub_C_mul_X_right`: `Res_(n,1)(f, 1 - t X) = (reflect n f)(t)`.
 * `Polynomial.resultant_mul_left_of_natDegree_le`: multiplicativity in the left argument at
   arbitrary degree bounds.
@@ -72,14 +73,17 @@ theorem resultant_mul_left_of_natDegree_le {f₁ f₂ g : R[X]} {m₁ m₂ n : �
     resultant_add_left_deg _ _ _ _ _ le_rfl]
   ring
 
+/-- The linear polynomial `1 - t X` has degree at most one. -/
+theorem natDegree_one_sub_C_mul_X_le (t : R) : (1 - C t * X).natDegree ≤ 1 := by
+  compute_degree
+
 /-- The resultant of `f` with the linear polynomial `1 - t X`, at the degree bound `n` for `f`, is
 the value at `t` of the reversal of `f` in degree `n`. When `f = ∏ (X - αᵢ)` has degree `n`, both
 sides are `∏ (1 - αᵢ t)`. -/
 theorem resultant_one_sub_C_mul_X_right (f : R[X]) (t : R) {n : ℕ} (hf : f.natDegree ≤ n) :
     f.resultant (1 - C t * X) n 1 = (f.reflect n).eval t := by
   set ℓ : R[X] := 1 - C t * X
-  have hℓ : ℓ.natDegree ≤ 1 :=
-    (natDegree_sub_le _ _).trans (max_le (by simp) ((natDegree_C_mul_le _ _).trans natDegree_X_le))
+  have hℓ : ℓ.natDegree ≤ 1 := natDegree_one_sub_C_mul_X_le t
   -- the value of the reversal, as a sum over the coefficients of `f`
   set c : R := ∑ j ∈ Finset.range (n + 1), f.coeff j * t ^ (n - j)
   have hc : (f.reflect n).eval t = c := by

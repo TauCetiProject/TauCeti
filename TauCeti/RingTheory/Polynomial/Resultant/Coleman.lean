@@ -107,8 +107,8 @@ variable {B P : R[X]} {n m : ℕ}
 theorem colemanDBounded_add_right_deg (hB : B.natDegree ≤ m) (hP0 : P.coeff 0 = 1) (k : ℕ) :
     colemanDBounded B P n (m + k) = colemanDBounded B P n m := by
   rw [colemanDBounded, resultant_add_right_deg _ _ _ _ _
-    ((natDegree_one_sub_C_X_mul_le B).trans hB), coeff_map_reflect_self, hP0, C_1, one_pow,
-    one_mul, colemanDBounded]
+    ((natDegree_one_sub_C_X_mul_le B).trans hB)]
+  simp [hP0, colemanDBounded]
 
 /-- Coleman's transform does not depend on the chosen bound for the degree of `B`. -/
 theorem colemanDBounded_of_natDegree_le (hB : B.natDegree ≤ m) (hP0 : P.coeff 0 = 1) :
@@ -122,11 +122,13 @@ theorem colemanDBounded_succ (hP : P.natDegree ≤ n) (hB : B.natDegree ≤ m) :
     colemanDBounded B P (n + 1) m = (1 - C (B.coeff 0) * X) * colemanDBounded B P n m := by
   have hX : P.reflect (n + 1) = X * P.reflect n := by
     simpa [reflect_one, add_comm 1 n] using reflect_mul (1 : R[X]) P (F := 1) (by simp) hP
+  -- the resultant with `X` at degree bound one is the constant coefficient
+  have hXres : X.resultant (1 - C X * B.map C) 1 m = 1 - C (B.coeff 0) * X := by
+    have h := resultant_X_pow_left _ 1 m ((natDegree_one_sub_C_X_mul_le B).trans hB)
+    rwa [pow_one, pow_one, coeff_zero_one_sub_C_X_mul] at h
   rw [colemanDBounded, hX, Polynomial.map_mul, map_X, add_comm n 1,
     resultant_mul_left_of_natDegree_le natDegree_X_le (natDegree_map_reflect_le hP)
-      ((natDegree_one_sub_C_X_mul_le B).trans hB), ← sub_zero X, ← C_0,
-    resultant_X_sub_C_left _ _ _ ((natDegree_one_sub_C_X_mul_le B).trans hB),
-    ← coeff_zero_eq_eval_zero, coeff_zero_one_sub_C_X_mul, colemanDBounded]
+      ((natDegree_one_sub_C_X_mul_le B).trans hB), hXres, colemanDBounded]
 
 /-- Padding the rank by `k` multiplies Coleman's transform by `(1 - B(0) T) ^ k`. -/
 theorem colemanDBounded_add (hP : P.natDegree ≤ n) (hB : B.natDegree ≤ m) (k : ℕ) :
@@ -197,11 +199,15 @@ theorem natDegree_colemanDBounded_le (B P : R[X]) (n m : ℕ) :
 /-- Coleman's transform has constant coefficient one. -/
 theorem coeff_zero_colemanDBounded (hP0 : P.coeff 0 = 1) (B : R[X]) (n m : ℕ) :
     (colemanDBounded B P n m).coeff 0 = 1 := by
+  -- `simp` cannot rewrite the arguments of `resultant`, whose degree bounds are `optParam`s
+  -- depending on them, so the evaluations at `T = 0` are computed separately
   have hC : (evalRingHom (0 : R)).comp C = RingHom.id R := by ext; simp
-  rw [coeff_zero_eq_eval_zero, ← coe_evalRingHom, colemanDBounded, ← resultant_map_map,
-    Polynomial.map_map, Polynomial.map_sub, Polynomial.map_one, Polynomial.map_mul, map_C,
-    Polynomial.map_map, hC, Polynomial.map_id, coe_evalRingHom, eval_X, C_0, zero_mul, sub_zero,
-    resultant_one_right, coeff_reflect, revAt_le le_rfl, Nat.sub_self, hP0, one_pow]
+  have hf : ((P.reflect n).map C).map (evalRingHom 0) = P.reflect n := by
+    simp [Polynomial.map_map, hC]
+  have hg : (1 - C X * B.map C).map (evalRingHom (0 : R)) = 1 := by simp
+  rw [coeff_zero_eq_eval_zero, ← coe_evalRingHom, colemanDBounded, ← resultant_map_map, hf, hg,
+    resultant_one_right]
+  simp [coeff_reflect, hP0]
 
 /-- With `B = T`, Coleman's transform returns `P`: the eigenvalues are unchanged. -/
 @[simp]
@@ -227,9 +233,7 @@ theorem colemanDBounded_one_right (hB : B.natDegree ≤ m) (n : ℕ) :
 /-- Coleman's transform of a single factor `1 - α T` is `1 - B(α) T`. -/
 theorem colemanDBounded_one_sub_C_mul_X (hB : B.natDegree ≤ m) (α : R) :
     colemanDBounded B (1 - C α * X) 1 m = 1 - C (B.eval α) * X := by
-  have hr : (1 - C α * X).reflect 1 = X - C α := by
-    rw [← pow_one X, reflect_sub, reflect_C_mul_X_pow, ← C_1, reflect_C, revAt_le le_rfl,
-      Nat.sub_self, pow_zero, mul_one, C_1, one_mul]
+  have hr : (1 - C α * X).reflect 1 = X - C α := by simp
   rw [colemanDBounded, hr, Polynomial.map_sub, map_X, map_C,
     resultant_X_sub_C_left _ _ _ ((natDegree_one_sub_C_X_mul_le B).trans hB), eval_sub, eval_one,
     eval_mul, eval_C, eval_map, eval₂_hom, mul_comm]
@@ -241,13 +245,13 @@ theorem colemanDBounded_prod_one_sub_C_mul_X {ι : Type*} (s : Finset ι) (α : 
     colemanDBounded B (∏ i ∈ s, (1 - C (α i) * X)) s.card m =
       ∏ i ∈ s, (1 - C (B.eval (α i)) * X) := by
   classical
-  have hdeg (a : R) : (1 - C a * X).natDegree ≤ 1 :=
-    (natDegree_sub_le _ _).trans (max_le (by simp) ((natDegree_C_mul_le _ _).trans natDegree_X_le))
   induction s using Finset.induction_on with
   | empty => simp [colemanDBounded_one_right hB]
   | insert a s ha ih =>
     rw [Finset.prod_insert ha, Finset.prod_insert ha, Finset.card_insert_of_notMem ha,
-      add_comm, colemanDBounded_mul (hdeg _) ?_ hB, colemanDBounded_one_sub_C_mul_X hB, ih]
-    exact (natDegree_prod_le _ _).trans (by simpa using Finset.sum_le_sum fun i _ ↦ hdeg (α i))
+      add_comm, colemanDBounded_mul (natDegree_one_sub_C_mul_X_le _) ?_ hB,
+      colemanDBounded_one_sub_C_mul_X hB, ih]
+    exact (natDegree_prod_le _ _).trans
+      (by simpa using Finset.sum_le_sum fun i _ ↦ natDegree_one_sub_C_mul_X_le (α i))
 
 end Polynomial
