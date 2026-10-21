@@ -16,9 +16,10 @@ This file identifies Mathlib's vertex-based walks in a simple graph `H` with the
 walks in `Graph.ofSimpleGraph H`.  In the latter graph, the edge joining `x` and `y` is the
 unordered pair `s(x, y)`, so no edge choice is lost in either direction.
 
-The two conversions preserve length, vertex support, edge lists, concatenation, trails, paths,
-and cycles.  Their equivalence also identifies the two reachability predicates, providing the
-basic bridge through which simple-graph connectivity results can be used for multigraph walks.
+The two conversions preserve length, vertex support, edge lists, concatenation, reversal,
+trails, paths, and cycles.  Their equivalence also identifies the two reachability predicates,
+providing the basic bridge through which simple-graph connectivity results can be used for
+multigraph walks.
 -/
 
 public section
@@ -49,20 +50,26 @@ theorem toGraph_cons (h : H.Adj x y) (p : H.Walk y z) :
 
 @[simp]
 theorem length_toGraph (p : H.Walk x y) : p.toGraph.length = p.length := by
-  induction p <;> simp_all [toGraph]
+  induction p <;> simp_all
 
 @[simp]
 theorem support_toGraph (p : H.Walk x y) : p.toGraph.support = p.support := by
-  induction p <;> simp_all [toGraph]
+  induction p <;> simp_all
 
 @[simp]
 theorem edges_toGraph (p : H.Walk x y) : p.toGraph.edges = p.edges := by
-  induction p <;> simp_all [toGraph]
+  induction p <;> simp_all
 
 @[simp]
 theorem toGraph_append (p : H.Walk x y) (q : H.Walk y z) :
     (p.append q).toGraph = p.toGraph.append q.toGraph := by
-  induction p <;> simp_all [toGraph]
+  induction p <;> simp_all
+
+@[simp]
+theorem toGraph_reverse (p : H.Walk x y) : p.reverse.toGraph = p.toGraph.reverse := by
+  induction p with
+  | nil => simp
+  | cons h p ih => simp [ih, Graph.IsLink.toWalk_eq_cons, Sym2.eq_swap]
 
 end Walk
 
@@ -84,14 +91,21 @@ theorem toSimpleGraph_nil :
     (nil : (Graph.ofSimpleGraph H).Walk x x).toSimpleGraph = .nil := (rfl)
 
 @[simp]
+theorem toSimpleGraph_cons {e : Sym2 α} (h : (Graph.ofSimpleGraph H).IsLink e x y)
+    (p : (Graph.ofSimpleGraph H).Walk y z) :
+    (cons e h p).toSimpleGraph =
+      .cons ((Graph.ofSimpleGraph_adj_iff x y).mp ⟨e, h⟩) p.toSimpleGraph :=
+  (rfl)
+
+@[simp]
 theorem length_toSimpleGraph (p : (Graph.ofSimpleGraph H).Walk x y) :
     p.toSimpleGraph.length = p.length := by
-  induction p <;> simp_all [toSimpleGraph]
+  induction p <;> simp_all
 
 @[simp]
 theorem support_toSimpleGraph (p : (Graph.ofSimpleGraph H).Walk x y) :
     p.toSimpleGraph.support = p.support := by
-  induction p <;> simp_all [toSimpleGraph]
+  induction p <;> simp_all
 
 @[simp]
 theorem edges_toSimpleGraph (p : (Graph.ofSimpleGraph H).Walk x y) :
@@ -100,14 +114,14 @@ theorem edges_toSimpleGraph (p : (Graph.ofSimpleGraph H).Walk x y) :
   | nil => simp
   | cons e h p ih =>
       rw [Graph.ofSimpleGraph_isLink] at h
-      simp only [toSimpleGraph, SimpleGraph.Walk.edges_cons, Graph.Walk.edges_cons, ih]
+      simp only [toSimpleGraph_cons, SimpleGraph.Walk.edges_cons, Graph.Walk.edges_cons, ih]
       exact congrArg (· :: p.edges) h.1.symm
 
 @[simp]
 theorem toSimpleGraph_append (p : (Graph.ofSimpleGraph H).Walk x y)
     (q : (Graph.ofSimpleGraph H).Walk y z) :
     (p.append q).toSimpleGraph = p.toSimpleGraph.append q.toSimpleGraph := by
-  induction p <;> simp_all [toSimpleGraph]
+  induction p <;> simp_all
 
 end Graph.Walk
 
@@ -117,7 +131,7 @@ variable {α : Type u} {H : SimpleGraph α} {x y : α}
 
 @[simp]
 theorem toSimpleGraph_toGraph (p : H.Walk x y) : p.toGraph.toSimpleGraph = p := by
-  induction p <;> simp_all [toGraph, Graph.Walk.toSimpleGraph]
+  induction p <;> simp_all
 
 end SimpleGraph.Walk
 
@@ -133,10 +147,16 @@ theorem toGraph_toSimpleGraph (p : (Graph.ofSimpleGraph H).Walk x y) :
   | cons e h p ih =>
       rw [Graph.ofSimpleGraph_isLink] at h
       rcases h with ⟨rfl, _⟩
-      simp [toSimpleGraph, ih]
+      simp [ih]
 
 @[simp]
-theorem toSimpleGraph_nil_iff (p : (Graph.ofSimpleGraph H).Walk x y) :
+theorem toSimpleGraph_reverse (p : (Graph.ofSimpleGraph H).Walk x y) :
+    p.reverse.toSimpleGraph = p.toSimpleGraph.reverse := by
+  conv_lhs => rw [← toGraph_toSimpleGraph p, ← SimpleGraph.Walk.toGraph_reverse,
+    SimpleGraph.Walk.toSimpleGraph_toGraph]
+
+@[simp]
+theorem nil_toSimpleGraph_iff (p : (Graph.ofSimpleGraph H).Walk x y) :
     p.toSimpleGraph.Nil ↔ p.Nil := by
   rw [← SimpleGraph.Walk.length_eq_zero_iff, ← Graph.Walk.length_eq_zero_iff,
     length_toSimpleGraph]
@@ -150,7 +170,7 @@ variable {α : Type u} {H : SimpleGraph α} {x y : α}
 namespace Walk
 
 @[simp]
-theorem toGraph_nil_iff (p : H.Walk x y) : p.toGraph.Nil ↔ p.Nil := by
+theorem nil_toGraph_iff (p : H.Walk x y) : p.toGraph.Nil ↔ p.Nil := by
   rw [← Graph.Walk.length_eq_zero_iff, ← SimpleGraph.Walk.length_eq_zero_iff,
     length_toGraph]
 
@@ -186,7 +206,7 @@ theorem isPath_toGraph_iff (p : H.Walk x y) : p.toGraph.IsPath ↔ p.IsPath := b
 /-- The walk equivalence identifies simple-graph cycles with edge-labelled multigraph cycles. -/
 @[simp]
 theorem isCycle_toGraph_iff (p : H.Walk x x) : p.toGraph.IsCycle ↔ p.IsCycle := by
-  have hne : ¬ p.toGraph.Nil ↔ ¬ p.Nil := not_congr (toGraph_nil_iff p)
+  have hne : ¬ p.toGraph.Nil ↔ ¬ p.Nil := not_congr (nil_toGraph_iff p)
   simp only [Graph.Walk.isCycle_def, SimpleGraph.Walk.isCycle_def,
     SimpleGraph.Walk.isTrail_def, support_toGraph, edges_toGraph, ne_eq,
     Graph.Walk.eq_nil_iff_nil, SimpleGraph.Walk.eq_nil_iff_nil]
@@ -204,7 +224,7 @@ theorem reachable_ofSimpleGraph_iff (H : SimpleGraph α) (x y : α) :
   · rintro ⟨_, ⟨p⟩⟩
     exact ⟨p.toSimpleGraph⟩
   · rintro ⟨p⟩
-    exact ⟨by simp [Graph.ofSimpleGraph], ⟨p.toGraph⟩⟩
+    exact ⟨by simp, ⟨p.toGraph⟩⟩
 
 end SimpleGraph
 
@@ -215,21 +235,16 @@ variable {α : Type u} {H : SimpleGraph α} {x y : α}
 @[simp]
 theorem isTrail_toSimpleGraph_iff (p : (Graph.ofSimpleGraph H).Walk x y) :
     p.toSimpleGraph.IsTrail ↔ p.IsTrail := by
-  rw [SimpleGraph.Walk.isTrail_def, Graph.Walk.isTrail_def, edges_toSimpleGraph]
+  rw [← SimpleGraph.Walk.isTrail_toGraph_iff, toGraph_toSimpleGraph]
 
 @[simp]
 theorem isPath_toSimpleGraph_iff (p : (Graph.ofSimpleGraph H).Walk x y) :
     p.toSimpleGraph.IsPath ↔ p.IsPath := by
-  rw [SimpleGraph.Walk.isPath_def, Graph.Walk.isPath_def, support_toSimpleGraph]
+  rw [← SimpleGraph.Walk.isPath_toGraph_iff, toGraph_toSimpleGraph]
 
 @[simp]
 theorem isCycle_toSimpleGraph_iff (p : (Graph.ofSimpleGraph H).Walk x x) :
     p.toSimpleGraph.IsCycle ↔ p.IsCycle := by
-  have hne : ¬ p.toSimpleGraph.Nil ↔ ¬ p.Nil := not_congr (toSimpleGraph_nil_iff p)
-  simp only [SimpleGraph.Walk.isCycle_def, Graph.Walk.isCycle_def,
-    SimpleGraph.Walk.isTrail_def, support_toSimpleGraph, edges_toSimpleGraph, ne_eq,
-    SimpleGraph.Walk.eq_nil_iff_nil, Graph.Walk.eq_nil_iff_nil]
-  rw [hne]
-  tauto
+  rw [← SimpleGraph.Walk.isCycle_toGraph_iff, toGraph_toSimpleGraph]
 
 end Graph.Walk
