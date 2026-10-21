@@ -59,6 +59,11 @@ def betaNegativeBinomialWeightReal (r a b : ℝ) (k : ℕ) : ℝ :=
 def betaNegativeBinomialWeight (r a b : ℝ) (k : ℕ) : ℝ≥0∞ :=
   ENNReal.ofReal (betaNegativeBinomialWeightReal r a b k)
 
+/-- The `ℝ≥0∞`-valued mass is the extended-real image of the real mass. -/
+theorem betaNegativeBinomialWeight_def (r a b : ℝ) (k : ℕ) :
+    betaNegativeBinomialWeight r a b k = ENNReal.ofReal (betaNegativeBinomialWeightReal r a b k) :=
+  (rfl)
+
 /-- At shape zero the real mass is one at zero and vanishes elsewhere. -/
 @[simp]
 theorem betaNegativeBinomialWeightReal_zero (a b : ℝ) (k : ℕ) :
@@ -141,7 +146,7 @@ theorem betaNegativeBinomialWeightReal_nonneg {r a b : ℝ} (hr : 0 ≤ r) (ha :
 theorem betaNegativeBinomialWeight_toReal {r a b : ℝ} (hr : 0 ≤ r) (ha : 0 < a)
     (hb : 0 < b) (k : ℕ) :
     (betaNegativeBinomialWeight r a b k).toReal = betaNegativeBinomialWeightReal r a b k := by
-  rw [betaNegativeBinomialWeight, ENNReal.toReal_ofReal]
+  rw [betaNegativeBinomialWeight_def, ENNReal.toReal_ofReal]
   exact betaNegativeBinomialWeightReal_nonneg hr ha hb k
 
 /-- The real singleton mass of a beta-negative-binomial law. -/
@@ -193,7 +198,7 @@ theorem betaNegativeBinomialMeasure_singleton {r a b : ℝ} (hr : 0 ≤ r) (ha :
     betaNegativeBinomialMeasure r a b {k} = betaNegativeBinomialWeight r a b k := by
   let _ := isProbabilityMeasure_betaNegativeBinomialMeasure hr ha hb
   rw [← ofReal_measureReal (s := {k}), betaNegativeBinomialMeasure_real_singleton hr ha hb,
-    betaNegativeBinomialWeight]
+    betaNegativeBinomialWeight_def]
 
 /-- A valid beta-negative-binomial law is the weighted Dirac sum of its singleton masses. -/
 theorem betaNegativeBinomialMeasure_eq_sum_dirac {r a b : ℝ} (hr : 0 ≤ r) (ha : 0 < a)
@@ -228,7 +233,7 @@ theorem betaNegativeBinomialWeightReal_pos_iff {r a b : ℝ} (hr : 0 ≤ r) (ha 
 theorem betaNegativeBinomialMeasure_singleton_ne_zero_iff {r a b : ℝ} (hr : 0 ≤ r)
     (ha : 0 < a) (hb : 0 < b) (k : ℕ) :
     betaNegativeBinomialMeasure r a b {k} ≠ 0 ↔ k = 0 ∨ 0 < r := by
-  rw [betaNegativeBinomialMeasure_singleton hr ha hb, betaNegativeBinomialWeight,
+  rw [betaNegativeBinomialMeasure_singleton hr ha hb, betaNegativeBinomialWeight_def,
     ENNReal.ofReal_ne_zero_iff, betaNegativeBinomialWeightReal_pos_iff hr ha hb]
 
 /-- The beta-negative-binomial family is jointly measurable in all three real parameters. -/
