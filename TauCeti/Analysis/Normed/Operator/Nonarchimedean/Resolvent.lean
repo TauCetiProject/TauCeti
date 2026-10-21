@@ -222,9 +222,8 @@ theorem IsRowCompact.ringOpNorm_resolventCoeff_le {u : C₀(I, R) →L[R] C₀(I
     ‖u.resolventCoeff m‖ ≤ c := by
   -- Approximate `u` by its output truncations `π_S ∘ u`, which have finitely many nonzero rows.
   let uS := fun S : Finset I ↦ (indicatorCLM R (S : Set I)).comp u
-  have huS : Tendsto (fun S ↦ ‖uS S - u‖) atTop (𝓝 0) := by
-    simpa only [uS, ← neg_sub u, ringOpNorm_neg] using
-      isRowCompact_iff_tendsto_ringOpNorm_sub_indicatorCLM_comp.1 hu
+  have huS : Tendsto (fun S ↦ ‖uS S - u‖) atTop (𝓝 0) :=
+    hu.tendsto_ringOpNorm_indicatorCLM_comp_sub
   have huS' : Tendsto uS atTop (𝓝 u) := tendsto_iff_norm_sub_tendsto_zero.2 huS
   have hV : Tendsto (fun S ↦ (uS S).resolventCoeff m) atTop (𝓝 (u.resolventCoeff m)) := by
     simp only [resolventCoeff_def]

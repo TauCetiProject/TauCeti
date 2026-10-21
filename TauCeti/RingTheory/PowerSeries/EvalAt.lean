@@ -36,6 +36,7 @@ coefficient rings here may have nilpotents.
 
 * `PowerSeries.evalAt_coe`: on polynomials, `evalAt` is `Polynomial.aeval`.
 * `PowerSeries.evalAt_map_algebraMap`: evaluation is compatible with extension of scalars.
+* `PowerSeries.evalAt_rescale`: rescaling the variable rescales the point of evaluation.
 * `PowerSeries.commute_evalAt`: the values of a series at `b` commute with `b`.
 * `PowerSeries.norm_evalAt_le_gaussNorm`: the Gauss-norm bound in an ultrametric algebra.
 -/
@@ -106,6 +107,13 @@ theorem evalAt_at_zero (f : R⟦X⟧) : f.evalAt (0 : A) = algebraMap R A (const
 theorem evalAt_map_algebraMap {S : Type*} [CommSemiring S] [Algebra R S] [Algebra S A]
     [IsScalarTower R S A] (f : R⟦X⟧) (b : A) : (map (algebraMap R S) f).evalAt b = f.evalAt b := by
   simp [evalAt_def]
+
+/-- Rescaling the variable by `a` evaluates at the rescaled point: `f(a X)` at `b` is
+`f(a • b)`. -/
+@[simp]
+theorem evalAt_rescale (f : R⟦X⟧) (a : R) (b : A) :
+    (rescale a f).evalAt b = f.evalAt (a • b) := by
+  simp only [evalAt_def, coeff_rescale, smul_pow, mul_comm (a ^ _), mul_smul]
 
 /-- Over a field, `evalAt` is the sum `FormalMultilinearSeries.ofScalarsSum` of the scalar
 series with the same coefficients. -/
