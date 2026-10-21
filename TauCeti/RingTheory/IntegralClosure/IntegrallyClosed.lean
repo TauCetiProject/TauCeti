@@ -82,12 +82,13 @@ theorem pow_dvd_pow_iff {n : ℕ} (hn : n ≠ 0) {a b : R} (ha : IsUnit (algebra
     a ^ n ∣ b ^ n ↔ a ∣ b := by
   refine ⟨fun ⟨c, hc⟩ ↦ ?_, fun h ↦ pow_dvd_pow_of_dvd h n⟩
   obtain ⟨u, hu⟩ := ha
-  have hpow : ((↑u⁻¹ : A) * algebraMap R A b) ^ n = algebraMap R A c := by
-    rw [mul_pow, ← map_pow, hc, map_mul, map_pow, ← hu, ← mul_assoc, ← mul_pow, Units.inv_mul,
-      one_pow, one_mul]
+  obtain ⟨x, hx⟩ : ∃ x : A, algebraMap R A b = u * x := ⟨↑u⁻¹ * algebraMap R A b, by simp⟩
+  have hpow : x ^ n = algebraMap R A c := by
+    have h := congrArg (algebraMap R A) hc
+    simp only [map_pow, map_mul, hx, ← hu, mul_pow] at h
+    exact (u.isUnit.pow n).mul_left_cancel h
   obtain ⟨d, hd⟩ := exists_algebraMap_eq_of_isIntegral_pow (Nat.pos_of_ne_zero hn)
     (hpow ▸ isIntegral_algebraMap)
-  refine ⟨d, IsIntegralClosure.algebraMap_injective R R A ?_⟩
-  rw [map_mul, hd, ← hu, ← mul_assoc, Units.mul_inv, one_mul]
+  exact ⟨d, IsIntegralClosure.algebraMap_injective R R A (by simp [hx, hd, hu])⟩
 
 end IsIntegrallyClosedIn

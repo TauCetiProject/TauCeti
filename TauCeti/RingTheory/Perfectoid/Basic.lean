@@ -6,10 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Padics.Complex
+public import TauCeti.RingTheory.Huber.Frobenius
 public import TauCeti.RingTheory.Huber.Normed
 public import TauCeti.RingTheory.Huber.Uniform
-public import TauCeti.RingTheory.Ideal.Quotient.Frobenius
-public import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
 
 /-!
 # Perfectoid Tate rings
@@ -27,8 +26,8 @@ excludes `ℚ_p`, although Frobenius on `ℤ_p ⧸ p` is bijective.
 
 The class `IsPerfectoidTateRing p R` states the Frobenius condition elementwise. Injectivity of
 `Φ` is automatic: `R°` is integrally closed in `R`, so `ϖ ^ p ∣ y ^ p` forces `ϖ ∣ y`
-(`quotientFrobenius_powerBoundedSubring_injective`). Hence a perfectoid Tate ring may be produced
-from surjectivity of `Φ` alone (`IsPerfectoidTateRing.of_surjective`).
+(`TauCeti.Huber.quotientFrobenius_powerBoundedSubring_injective`). Hence a perfectoid Tate ring
+may be produced from surjectivity of `Φ` alone (`IsPerfectoidTateRing.of_surjective`).
 
 ## Main definitions
 
@@ -63,24 +62,6 @@ public section
 open Ideal TauCeti.Huber
 
 namespace TauCeti.Perfectoid
-
-section Frobenius
-
-variable (p : ℕ) [Fact p.Prime] {R : Type*} [CommRing R] [TopologicalSpace R]
-  [NonarchimedeanAddGroup R] [SeparatelyContinuousMul R]
-
-/-- **Injectivity of the Frobenius `R° ⧸ ϖ → R° ⧸ ϖ ^ p` is automatic** for every `ϖ ∈ R°` that is
-a unit of `R`: the power-bounded subring is integrally closed in `R`. -/
-theorem quotientFrobenius_powerBoundedSubring_injective {ϖ : powerBoundedSubring R}
-    (hϖ : IsUnit (ϖ : R)) (hp : (p : powerBoundedSubring R) ∈ span {ϖ ^ p})
-    (hpow : ∀ x ∈ span {ϖ}, x ^ p ∈ span {ϖ ^ p}) :
-    Function.Injective (quotientFrobenius (span {ϖ}) (span {ϖ ^ p}) p hp hpow) := by
-  rw [quotientFrobenius_injective_iff]
-  intro y hy
-  rw [mem_span_singleton] at hy ⊢
-  exact (IsIntegrallyClosedIn.pow_dvd_pow_iff (Fact.out : p.Prime).ne_zero hϖ).mp hy
-
-end Frobenius
 
 /-- A complete Hausdorff Tate ring `R` is a *perfectoid Tate ring* (Scholze, *Étale cohomology of
 diamonds*, Definition 3.1) if its power-bounded subring `R°` is bounded and some
