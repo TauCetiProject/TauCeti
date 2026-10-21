@@ -100,6 +100,7 @@ lemma ι_mapBifunctorLeftUnitor_hom_f (K : HomologicalComplex D c)
       (F.map (singleObjXSelf c 0 X).hom).app (K.X j) ≫ e.hom.app (K.X j) := by
   simp [mapBifunctorLeftUnitor, mapBifunctorLeftUnitorX]
 
+@[simp, reassoc]
 lemma mapBifunctorLeftUnitor_inv_f (K : HomologicalComplex D c)
     [HasMapBifunctor ((single C c 0).obj X) K F c] (j : I) :
     (mapBifunctorLeftUnitor F X e K).inv.f j =
@@ -117,7 +118,7 @@ lemma mapBifunctorLeftUnitor_inv_naturality {K L : HomologicalComplex D c} (f : 
   have h := (F.map (singleObjXSelf c 0 X).inv).naturality (f.f j)
   have h' := e.inv.naturality (f.f j)
   dsimp at h h'
-  simp [mapBifunctorLeftUnitor_inv_f, reassoc_of% h, reassoc_of% h']
+  simp [reassoc_of% h, reassoc_of% h']
 
 @[reassoc]
 lemma mapBifunctorLeftUnitor_naturality {K L : HomologicalComplex D c} (f : K ⟶ L)
