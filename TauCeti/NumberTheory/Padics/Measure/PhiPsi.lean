@@ -10,7 +10,7 @@ public import Mathlib.RingTheory.PowerSeries.Substitution
 public import TauCeti.NumberTheory.Padics.Division
 public import TauCeti.NumberTheory.Padics.Measure.Multiples
 public import TauCeti.NumberTheory.Padics.Measure.Pushforward
-import TauCeti.NumberTheory.Padics.MahlerDilation
+import TauCeti.NumberTheory.Padics.MahlerBasis
 
 /-!
 # The operators `φ` and `ψ` on measures on `ℤ_p`
