@@ -46,7 +46,8 @@ monoidal category.
 
 * `SymmetricSequence`: symmetric sequences of pointed simplicial sets, with the Day convolution
   product.
-* The instance `SymmetricCategory SymmetricSequence`.
+* The symmetric monoidal structure on `SymmetricSequence`, the instance
+  `DayFunctor.symmetricCategory`.
 
 ## Main statements
 
@@ -59,7 +60,7 @@ monoidal category.
   Section 2.1.
 -/
 
-@[expose] public section
+public section
 
 universe u
 
@@ -73,9 +74,9 @@ open scoped DayFunctor
 to pointed simplicial sets, with the Day convolution product along the block sum. -/
 abbrev SymmetricSequence := FiniteBijection ⊛⥤ PointedSSet.{u}
 
-/-- Day convolution makes symmetric sequences of pointed simplicial sets a symmetric monoidal
-category. -/
-noncomputable instance : SymmetricCategory SymmetricSequence.{u} := inferInstance
+/- Day convolution makes symmetric sequences of pointed simplicial sets a symmetric monoidal
+category, through the instance `DayFunctor.symmetricCategory`. -/
+noncomputable example : SymmetricCategory SymmetricSequence.{u} := inferInstance
 
 /-- The unit symmetric sequence is initial, the point, in every positive level `n + 1`: no
 bijection reaches `Fin (n + 1)` from `Fin 0`. -/
