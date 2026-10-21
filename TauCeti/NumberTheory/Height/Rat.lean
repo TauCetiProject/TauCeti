@@ -34,9 +34,9 @@ height estimates such as Roth's lemma.
   at most its height.
 * `Rat.mulHeight₁_le_max_one_abs_mul_den`: conversely, `H(q) ≤ max(1, |q|) den(q)`.
 * `Rat.mulHeight₁_intCast_div_le`: `H(x / y) ≤ max(|x|, |y|)` for integers `x` and `y ≠ 0`.
-* `padicValNat_mul_log_le_log`, `Rat.abs_padicValRat_mul_log_le_logHeight₁`: the `p`-adic
+* `padicValNat.mul_log_le_log`, `Rat.abs_padicValRat_mul_log_le_logHeight₁`: the `p`-adic
   valuation is bounded by the height, `v_p(n) log p ≤ log n` and `|v_p(q)| log p ≤ h(q)`.
-* `Rat.abs_padicValRat_le_logHeight₁_div_log_two`: `|v_p(q)| ≤ h(q) / log 2` for prime `p`.
+* `Rat.abs_padicValRat_le_logHeight₁_div_log_two`: `|v_p(q)| ≤ h(q) / log 2` for `2 ≤ p`.
 * `Finsupp.mulHeight_mapRange_intCast_le`, `Finsupp.mulHeight_mapRange_intCast_eq`: the bound,
   and the equality for coprime entries, for finitely supported integer vectors.
 * `Finsupp.mulHeight_mapRange_intCast_le_of_abs_le`: `H(x) ≤ B` if all entries of the nonzero
@@ -132,7 +132,7 @@ theorem log_den_le_logHeight₁ (q : ℚ) : Real.log q.den ≤ logHeight₁ q :=
   exact Real.log_le_log (by positivity) (den_le_mulHeight₁ q)
 
 /-- The `p`-adic valuation of a natural number `n` satisfies `v_p(n) log p ≤ log n`. -/
-theorem _root_.padicValNat_mul_log_le_log (p n : ℕ) :
+theorem _root_.padicValNat.mul_log_le_log (p n : ℕ) :
     (padicValNat p n : ℝ) * Real.log p ≤ Real.log n := by
   rcases eq_or_ne n 0 with rfl | hn
   · simp
@@ -151,11 +151,11 @@ theorem abs_padicValRat_mul_log_le_logHeight₁ (p : ℕ) (q : ℚ) :
   have hnum : (padicValNat p q.num.natAbs : ℝ) * Real.log p ≤ logHeight₁ q := by
     rcases eq_or_ne q.num.natAbs 0 with h | h
     · simpa [h] using zero_le_logHeight₁ q
-    refine (padicValNat_mul_log_le_log p _).trans ?_
+    refine (padicValNat.mul_log_le_log p _).trans ?_
     rw [logHeight₁_eq_log_mulHeight₁, mulHeight₁_eq_max]
     exact Real.log_le_log (Nat.cast_pos.2 (Nat.pos_of_ne_zero h))
       (by exact_mod_cast le_max_left _ _)
-  have hden := (padicValNat_mul_log_le_log p q.den).trans (log_den_le_logHeight₁ q)
+  have hden := (padicValNat.mul_log_le_log p q.den).trans (log_den_le_logHeight₁ q)
   -- `v_p(q) = v_p(num q) - v_p(den q)` is a difference of two naturals.
   have habs : |(padicValRat p q : ℝ)| ≤
       max (padicValNat p q.num.natAbs : ℝ) (padicValNat p q.den) := by
@@ -171,15 +171,15 @@ theorem abs_padicValRat_mul_log_le_logHeight₁ (p : ℕ) (q : ℚ) :
           ((padicValNat p q.den : ℝ) * Real.log p) := max_mul_of_nonneg _ _ hp
     _ ≤ logHeight₁ q := max_le hnum hden
 
-/-- For a prime `p`, the `p`-adic valuation of a rational number `q` satisfies
+/-- For `2 ≤ p`, the `p`-adic valuation of a rational number `q` satisfies
 `|v_p(q)| ≤ h(q) / log 2`, where `h` is the logarithmic height. -/
-theorem abs_padicValRat_le_logHeight₁_div_log_two {p : ℕ} (hp : p.Prime) (q : ℚ) :
+theorem abs_padicValRat_le_logHeight₁_div_log_two {p : ℕ} (hp : 2 ≤ p) (q : ℚ) :
     |(padicValRat p q : ℝ)| ≤ logHeight₁ q / Real.log 2 := by
   have hlog2 : 0 < Real.log 2 := Real.log_pos one_lt_two
   rw [le_div_iff₀ hlog2]
   refine le_trans ?_ (abs_padicValRat_mul_log_le_logHeight₁ p q)
   gcongr
-  exact_mod_cast hp.two_le
+  exact_mod_cast hp
 
 end Rat
 
