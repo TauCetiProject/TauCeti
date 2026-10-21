@@ -289,7 +289,7 @@ theorem isSemialgebraic_setOf_exists_root_derivative_signs_eq
       (isSemialgebraic_setOf_tarskiQuery_map_eval P Q Φ))
   by_cases hτ : τ = 0 <;> simp [hτ]
 
-/-- Two distinct roots of `P.map (MvPolynomial.eval x)` with the same consecutive derivative signs
+/-- Two roots of `P.map (MvPolynomial.eval x)` with the same consecutive derivative signs
 of orders `1, …, P.natDegree` are equal. -/
 private theorem eq_of_mem_roots_derivative_signs_eq {P : (MvPolynomial σ R)[X]} {x : σ → R}
     {τ : Fin P.natDegree → SignType} {r r' : R}
@@ -300,7 +300,8 @@ private theorem eq_of_mem_roots_derivative_signs_eq {P : (MvPolynomial σ R)[X]}
     (hτ' : ∀ j : Fin P.natDegree,
       SignType.sign (((derivative^[j.val + 1] P).map (MvPolynomial.eval x)).eval r') = τ j) :
     r = r' := by
-  have hp : P.map (MvPolynomial.eval x) ≠ 0 := fun hp => by simp [hp] at hr
+  have hp : P.map (MvPolynomial.eval x) ≠ 0 :=
+    Polynomial.ne_zero_of_mem_roots (Multiset.mem_toFinset.mp hr)
   refine Polynomial.eq_of_derivativeSign_succ_eq_of_natDegree_le natDegree_map_le
     RealClosure.polynomialRolle_of_isRealClosed hp
     (Polynomial.isRoot_of_mem_roots (Multiset.mem_toFinset.mp hr))
@@ -349,10 +350,41 @@ theorem isSemialgebraic_setOf_mem_roots_derivative_signs_eq_and_eval_eq
     ← eval_map_apply, funext_iff]
   constructor
   · rintro ⟨r, hr, hτ, rfl⟩
-    have hp : P.map (MvPolynomial.eval x) ≠ 0 := fun hp => by simp [hp] at hr
+    have hp : P.map (MvPolynomial.eval x) ≠ 0 := Polynomial.ne_zero_of_mem_roots hr
     exact ⟨hp, (Polynomial.mem_roots hp).mp hr, hτ⟩
   · rintro ⟨hp, hr, hτ⟩
     exact ⟨MvPolynomial.eval x T, (Polynomial.mem_roots hp).mpr hr, hτ, rfl⟩
+
+/-- Combine realization of a Thom word with a comparison determined by derivative signs. -/
+private theorem isSemialgebraic_setOf_mem_roots_derivative_signs_eq_and
+    (P : (MvPolynomial σ R)[X]) (T : MvPolynomial σ R) (τ : Fin P.natDegree → SignType)
+    (Φ : R → R → Prop)
+    (Ψ : (Fin (P.natDegree + 1) → SignType) → (Fin P.natDegree → SignType) → Prop)
+    (hiff : ∀ {p : R[X]}, p.natDegree ≤ P.natDegree → p ≠ 0 → ∀ {a b : R},
+      p.eval b = 0 → (Φ a b ↔ Ψ (fun i => derivativeSign p a i.val)
+        (fun j => derivativeSign p b (j.val + 1)))) :
+    IsSemialgebraic {x : σ → R | ∃ r ∈ (P.map (MvPolynomial.eval x)).roots.toFinset,
+      (∀ j : Fin P.natDegree,
+        SignType.sign (((derivative^[j.val + 1] P).map
+          (MvPolynomial.eval x)).eval r) = τ j) ∧ Φ (MvPolynomial.eval x T) r} := by
+  convert (isSemialgebraic_setOf_mem_roots_derivative_signs_eq P τ).inter
+    (isSemialgebraic_setOf_sign_eval
+      (fun i : Fin (P.natDegree + 1) => (derivative^[i.val] P).eval T)
+      (fun υ => Ψ υ τ)) using 1
+  ext x
+  simp only [mem_ofPred_eq, mem_inter_iff, ← eval_map_apply, ← iterate_derivative_map,
+    ← Polynomial.derivativeSign_def]
+  have hcmp {r : R} (hr : r ∈ (P.map (MvPolynomial.eval x)).roots.toFinset)
+      (hτ : ∀ j : Fin P.natDegree,
+        derivativeSign (P.map (MvPolynomial.eval x)) r (j.val + 1) = τ j) :
+      Φ (MvPolynomial.eval x T) r ↔
+        Ψ (fun i => derivativeSign (P.map (MvPolynomial.eval x)) (MvPolynomial.eval x T) i.val)
+          τ := by
+    simpa only [funext hτ] using hiff natDegree_map_le
+      (Polynomial.ne_zero_of_mem_roots (Multiset.mem_toFinset.mp hr))
+      (Polynomial.isRoot_of_mem_roots (Multiset.mem_toFinset.mp hr))
+  exact ⟨fun ⟨r, hr, hτ, h⟩ => ⟨⟨r, hr, hτ⟩, (hcmp hr hτ).mp h⟩,
+    fun ⟨⟨r, hr, hτ⟩, h⟩ => ⟨r, hr, hτ, (hcmp hr hτ).mpr h⟩⟩
 
 /-- **Strict inequality below a Thom-encoded root.** For a polynomial `T` and sign word `τ`, the
 parameters `x` at which `P.map (MvPolynomial.eval x)` has a root `r ∈ roots.toFinset` with
@@ -364,26 +396,10 @@ theorem isSemialgebraic_setOf_mem_roots_derivative_signs_eq_and_eval_lt
         SignType.sign (((derivative^[j.val + 1] P).map
           (MvPolynomial.eval x)).eval r) = τ j) ∧
         MvPolynomial.eval x T < r} := by
-  convert (isSemialgebraic_setOf_mem_roots_derivative_signs_eq P τ).inter
-    (isSemialgebraic_setOf_sign_eval
-      (fun i : Fin (P.natDegree + 1) => (derivative^[i.val] P).eval T)
-      (fun υ => ThomLT υ (Fin.cons 0 τ))) using 1
-  ext x
-  simp only [mem_ofPred_eq, mem_inter_iff, ← eval_map_apply, ← iterate_derivative_map,
-    ← Polynomial.derivativeSign_def]
-  constructor
-  · rintro ⟨r, hr, hτ, hlt⟩
-    have hp : P.map (MvPolynomial.eval x) ≠ 0 := fun hp => by simp [hp] at hr
-    have hr0 := Polynomial.isRoot_of_mem_roots (Multiset.mem_toFinset.mp hr)
-    rw [Polynomial.lt_iff_thomLT_cons_derivativeSign_of_eval_eq_zero_right natDegree_map_le
-      RealClosure.polynomialRolle_of_isRealClosed hp hr0, funext hτ] at hlt
-    exact ⟨⟨r, hr, hτ⟩, hlt⟩
-  · rintro ⟨⟨r, hr, hτ⟩, hlt⟩
-    have hp : P.map (MvPolynomial.eval x) ≠ 0 := fun hp => by simp [hp] at hr
-    have hr0 := Polynomial.isRoot_of_mem_roots (Multiset.mem_toFinset.mp hr)
-    rw [← funext hτ, ← Polynomial.lt_iff_thomLT_cons_derivativeSign_of_eval_eq_zero_right
-      natDegree_map_le RealClosure.polynomialRolle_of_isRealClosed hp hr0] at hlt
-    exact ⟨r, hr, hτ, hlt⟩
+  exact isSemialgebraic_setOf_mem_roots_derivative_signs_eq_and P T τ
+    (· < ·) (fun υ τ => ThomLT υ (Fin.cons 0 τ)) (fun {_} hd hp {_ _} hr =>
+      Polynomial.lt_iff_thomLT_cons_derivativeSign_of_eval_eq_zero_right hd
+        RealClosure.polynomialRolle_of_isRealClosed hp hr)
 
 /-- **Strict inequality above a Thom-encoded root.** For a polynomial `T` and sign word `τ`, the
 parameters `x` at which `P.map (MvPolynomial.eval x)` has a root `r ∈ roots.toFinset` with
@@ -395,26 +411,10 @@ theorem isSemialgebraic_setOf_mem_roots_derivative_signs_eq_and_lt_eval
         SignType.sign (((derivative^[j.val + 1] P).map
           (MvPolynomial.eval x)).eval r) = τ j) ∧
         r < MvPolynomial.eval x T} := by
-  convert (isSemialgebraic_setOf_mem_roots_derivative_signs_eq P τ).inter
-    (isSemialgebraic_setOf_sign_eval
-      (fun i : Fin (P.natDegree + 1) => (derivative^[i.val] P).eval T)
-      (fun υ => ThomLT (Fin.cons 0 τ) υ)) using 1
-  ext x
-  simp only [mem_ofPred_eq, mem_inter_iff, ← eval_map_apply, ← iterate_derivative_map,
-    ← Polynomial.derivativeSign_def]
-  constructor
-  · rintro ⟨r, hr, hτ, hlt⟩
-    have hp : P.map (MvPolynomial.eval x) ≠ 0 := fun hp => by simp [hp] at hr
-    have hr0 := Polynomial.isRoot_of_mem_roots (Multiset.mem_toFinset.mp hr)
-    rw [Polynomial.lt_iff_thomLT_cons_derivativeSign_of_eval_eq_zero_left natDegree_map_le
-      RealClosure.polynomialRolle_of_isRealClosed hp hr0, funext hτ] at hlt
-    exact ⟨⟨r, hr, hτ⟩, hlt⟩
-  · rintro ⟨⟨r, hr, hτ⟩, hlt⟩
-    have hp : P.map (MvPolynomial.eval x) ≠ 0 := fun hp => by simp [hp] at hr
-    have hr0 := Polynomial.isRoot_of_mem_roots (Multiset.mem_toFinset.mp hr)
-    rw [← funext hτ, ← Polynomial.lt_iff_thomLT_cons_derivativeSign_of_eval_eq_zero_left
-      natDegree_map_le RealClosure.polynomialRolle_of_isRealClosed hp hr0] at hlt
-    exact ⟨r, hr, hτ, hlt⟩
+  exact isSemialgebraic_setOf_mem_roots_derivative_signs_eq_and P T τ
+    (fun a b => b < a) (fun υ τ => ThomLT (Fin.cons 0 τ) υ) (fun {_} hd hp {_ _} hr =>
+      Polynomial.lt_iff_thomLT_cons_derivativeSign_of_eval_eq_zero_left hd
+        RealClosure.polynomialRolle_of_isRealClosed hp hr)
 
 /-- **Thom-encoding realization with prescribed root index.** For a sign word `τ` and index `i`,
 the parameters `x` at which `P.map (MvPolynomial.eval x)` has a root `r ∈ roots.toFinset` with

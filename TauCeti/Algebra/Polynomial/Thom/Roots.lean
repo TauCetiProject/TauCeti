@@ -121,29 +121,9 @@ theorem ThomLT.trans {σ τ υ : Fin d → SignType} (hστ : ThomLT σ τ) (hτ
     refine ⟨i, hk' i hik ▸ hi, fun j hj ↦ (ht j hj).trans (hk' j (hik.trans hj)), hd, ?_⟩
     rwa [← hk' i hik]
 
-/-- Distinct sign words of length `d` have a last coordinate where they differ. -/
-private theorem exists_ne_forall_gt_eq {σ τ : Fin d → SignType} (hne : σ ≠ τ) :
-    ∃ i : Fin d, σ i ≠ τ i ∧ ∀ j, i < j → σ j = τ j := by
-  classical
-  obtain ⟨k, hk⟩ := Function.ne_iff.mp hne
-  let s := Finset.univ.filter fun j : Fin d => σ j ≠ τ j
-  have hs : s.Nonempty := ⟨k, Finset.mem_filter.mpr ⟨Finset.mem_univ k, hk⟩⟩
-  refine ⟨s.max' hs, (Finset.mem_filter.mp (Finset.max'_mem s hs)).2, fun j hj => ?_⟩
-  by_contra hne'
-  exact hj.not_ge (Finset.le_max' s j (Finset.mem_filter.mpr ⟨Finset.mem_univ j, hne'⟩))
-
 end Comparison
 
 section Realized
-
-/-- Prepending `0` to the derivative signs of orders `1, …, d` at a root gives the derivative signs
-of orders `0, …, d`. -/
-theorem cons_zero_derivativeSign_succ_eq {R : Type*} [Semiring R] [LinearOrder R] {p : R[X]}
-    (d : ℕ) {x : R} (hx : p.eval x = 0) :
-    (Fin.cons 0 (fun j : Fin d => derivativeSign p x (j.val + 1)) : Fin (d + 1) → SignType) =
-      fun i => derivativeSign p x i.val := by
-  ext i
-  refine Fin.cases ?_ (fun _ => ?_) i <;> simp [hx]
 
 variable {R : Type*} [CommRing R] [IsDomain R] [LinearOrder R]
 
@@ -205,7 +185,7 @@ noncomputable def thomEncodingEquiv (hrolle : PolynomialRolle R) (p : R[X]) :
   Equiv.ofBijective
     (fun x ↦ ⟨thomEncoding p x, Finset.mem_image_of_mem _ x.2⟩)
     ⟨fun a b h ↦ by
-      have hp : p ≠ 0 := fun hp ↦ by simpa [hp] using a.2
+      have hp : p ≠ 0 := ne_zero_of_mem_roots (Multiset.mem_toFinset.mp a.2)
       have ha := a.2
       have hb := b.2
       simp only [Multiset.mem_toFinset, mem_roots hp, IsRoot.def] at ha hb
@@ -226,7 +206,7 @@ theorem coe_thomEncodingEquiv_apply (hrolle : PolynomialRolle R) (p : R[X])
 theorem eval_thomEncodingEquiv_symm (hrolle : PolynomialRolle R) (p : R[X])
     (σ : p.thomEncodings) : p.eval ((thomEncodingEquiv hrolle p).symm σ : R) = 0 := by
   have h := ((thomEncodingEquiv hrolle p).symm σ).2
-  have hp : p ≠ 0 := fun hp ↦ by simp [hp] at h
+  have hp : p ≠ 0 := ne_zero_of_mem_roots (Multiset.mem_toFinset.mp h)
   simpa only [Multiset.mem_toFinset, mem_roots hp, IsRoot.def] using h
 
 /-- The reconstructed root has the prescribed Thom encoding. -/
@@ -237,17 +217,6 @@ theorem thomEncoding_thomEncodingEquiv_symm (hrolle : PolynomialRolle R) (p : R[
   simpa only [coe_thomEncodingEquiv_apply] using
     congrArg Subtype.val ((thomEncodingEquiv hrolle p).apply_symm_apply σ)
 
-/-- Roots of a nonzero polynomial with the same derivative signs of orders `1, …, d`
-(where `p.natDegree ≤ d`) are equal. -/
-theorem eq_of_derivativeSign_succ_eq_of_natDegree_le {p : R[X]} {d : ℕ} (hd : p.natDegree ≤ d)
-    (hrolle : PolynomialRolle R) (hp : p ≠ 0) {a b : R} (ha : p.eval a = 0) (hb : p.eval b = 0)
-    (h : (fun j : Fin d => derivativeSign p a (j.val + 1)) =
-      fun j => derivativeSign p b (j.val + 1)) : a = b := by
-  refine eq_of_derivativeSign_eq p hrolle hp ha hb fun k hk => ?_
-  by_cases hkd : k ≤ d
-  · simpa [Nat.sub_add_cancel hk] using congrFun h ⟨k - 1, by omega⟩
-  · simp [derivativeSign_eq_zero p _ (by omega : p.natDegree < k)]
-
 /-- **Extended comparison.** Any two points whose derivative signs of orders `0, …, d`
 (with `p.natDegree ≤ d`) differ are ordered as those sign words are by `ThomLT`. -/
 theorem lt_iff_thomLT_derivativeSign_of_natDegree_le {p : R[X]} {d : ℕ} (hd : p.natDegree ≤ d)
@@ -256,7 +225,7 @@ theorem lt_iff_thomLT_derivativeSign_of_natDegree_le {p : R[X]} {d : ℕ} (hd : 
       fun i => derivativeSign p b i.val) :
     a < b ↔ ThomLT (fun i : Fin (d + 1) => derivativeSign p a i.val)
       (fun i => derivativeSign p b i.val) := by
-  obtain ⟨i, hi, ht⟩ := exists_ne_forall_gt_eq hne
+  obtain ⟨i, hi, ht⟩ := TauCeti.exists_ne_forall_gt_eq hne
   rw [thomLT_iff_of_ne hi ht]
   have hdeg : i.val + 1 < d + 1 := by
     by_contra h
@@ -318,11 +287,8 @@ theorem lt_iff_thomLT_cons_derivativeSign_of_eval_eq_zero_right {p : R[X]} {d : 
   rw [cons_zero_derivativeSign_succ_eq d hb]
   rcases eq_or_ne a b with rfl | hab
   · simp [thomLT_irrefl]
-  · refine lt_iff_thomLT_derivativeSign_of_natDegree_le hd hrolle fun h => ?_
-    refine eval_ne_zero_of_derivativeSign_eq p hrolle hp hab (fun k => ?_) Set.right_mem_uIcc hb
-    by_cases hkd : k ≤ d
-    · exact congrFun h ⟨k, by omega⟩
-    · simp [derivativeSign_eq_zero p _ (by omega : p.natDegree < k)]
+  · exact lt_iff_thomLT_derivativeSign_of_natDegree_le hd hrolle
+      (TauCeti.derivativeSign_ne_of_eval_eq_zero hd hrolle hp hab hb)
 
 /-- For a root `a` of a nonzero polynomial `p` and any point `b`, `a < b` holds exactly when `0`
 followed by the derivative signs of `p` at `a` of orders `1, …, d` (with `p.natDegree ≤ d`)
@@ -335,11 +301,8 @@ theorem lt_iff_thomLT_cons_derivativeSign_of_eval_eq_zero_left {p : R[X]} {d : �
   rw [cons_zero_derivativeSign_succ_eq d ha]
   rcases eq_or_ne a b with rfl | hab
   · simp [thomLT_irrefl]
-  · refine lt_iff_thomLT_derivativeSign_of_natDegree_le hd hrolle fun h => ?_
-    refine eval_ne_zero_of_derivativeSign_eq p hrolle hp hab (fun k => ?_) Set.left_mem_uIcc ha
-    by_cases hkd : k ≤ d
-    · exact congrFun h ⟨k, by omega⟩
-    · simp [derivativeSign_eq_zero p _ (by omega : p.natDegree < k)]
+  · exact lt_iff_thomLT_derivativeSign_of_natDegree_le hd hrolle
+      (TauCeti.derivativeSign_ne_of_eval_eq_zero hd hrolle hp hab.symm ha).symm
 
 /-- Two roots of a nonzero polynomial are ordered as their Thom encodings are by `ThomLT`. -/
 theorem lt_iff_thomLT_of_eval_eq_zero (hrolle : PolynomialRolle R) {p : R[X]} (hp : p ≠ 0)
@@ -354,7 +317,7 @@ theorem thomEncodingEquiv_lt_iff (hrolle : PolynomialRolle R) (p : R[X])
     (x y : p.roots.toFinset) :
     ThomLT (thomEncodingEquiv hrolle p x : Fin p.natDegree → SignType)
         (thomEncodingEquiv hrolle p y) ↔ (x : R) < y := by
-  have hp : p ≠ 0 := fun hp ↦ by simpa [hp] using x.2
+  have hp : p ≠ 0 := ne_zero_of_mem_roots (Multiset.mem_toFinset.mp x.2)
   have hx := x.2
   have hy := y.2
   simp only [Multiset.mem_toFinset, mem_roots hp, IsRoot.def] at hx hy
@@ -375,20 +338,20 @@ theorem card_roots_lt_eq_card_filter_thomLT_of_natDegree_le {p : R[X]} {d : ℕ}
   refine Finset.card_bij (fun x _ j => derivativeSign p x (j.val + 1)) ?_ ?_ ?_
   · intro x hx
     obtain ⟨hx, hlt⟩ := Finset.mem_filter.mp hx
-    have hp : p ≠ 0 := fun hp => by simp [hp] at hx
+    have hp : p ≠ 0 := ne_zero_of_mem_roots (Multiset.mem_toFinset.mp hx)
     have hx0 : p.eval x = 0 := isRoot_of_mem_roots (Multiset.mem_toFinset.mp hx)
     rw [lt_iff_thomLT_derivativeSign_succ_of_eval_eq_zero hd hrolle hp hx0 hr, hτ] at hlt
     exact Finset.mem_filter.mpr ⟨Finset.mem_univ _, hlt, x, hx, rfl⟩
   · intro a ha b hb h
     have ha' := (Finset.mem_filter.mp ha).1
     have hb' := (Finset.mem_filter.mp hb).1
-    have hp : p ≠ 0 := fun hp => by simp [hp] at ha'
+    have hp : p ≠ 0 := ne_zero_of_mem_roots (Multiset.mem_toFinset.mp ha')
     exact eq_of_derivativeSign_succ_eq_of_natDegree_le hd hrolle hp
       (isRoot_of_mem_roots (Multiset.mem_toFinset.mp ha'))
       (isRoot_of_mem_roots (Multiset.mem_toFinset.mp hb')) h
   · intro σ hσ
     obtain ⟨-, hlt, x, hx, rfl⟩ := Finset.mem_filter.mp hσ
-    have hp : p ≠ 0 := fun hp => by simp [hp] at hx
+    have hp : p ≠ 0 := ne_zero_of_mem_roots (Multiset.mem_toFinset.mp hx)
     have hx0 : p.eval x = 0 := isRoot_of_mem_roots (Multiset.mem_toFinset.mp hx)
     rw [← hτ, ← lt_iff_thomLT_derivativeSign_succ_of_eval_eq_zero hd hrolle hp hx0 hr] at hlt
     exact ⟨x, Finset.mem_filter.mpr ⟨hx, hlt⟩, rfl⟩

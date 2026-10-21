@@ -40,6 +40,21 @@ open TauCeti (PolynomialRolle)
 
 open Polynomial SignType Set
 
+namespace TauCeti
+
+/-- Distinct words of length `d` have a last coordinate where they differ. -/
+theorem exists_ne_forall_gt_eq {α : Type*} {d : ℕ} {σ τ : Fin d → α} (hne : σ ≠ τ) :
+    ∃ i : Fin d, σ i ≠ τ i ∧ ∀ j, i < j → σ j = τ j := by
+  classical
+  obtain ⟨k, hk⟩ := Function.ne_iff.mp hne
+  let s := Finset.univ.filter fun j : Fin d => σ j ≠ τ j
+  have hs : s.Nonempty := ⟨k, Finset.mem_filter.mpr ⟨Finset.mem_univ k, hk⟩⟩
+  refine ⟨s.max' hs, (Finset.mem_filter.mp (Finset.max'_mem s hs)).2, fun j hj => ?_⟩
+  by_contra hne'
+  exact hj.not_ge (Finset.le_max' s j (Finset.mem_filter.mpr ⟨Finset.mem_univ j, hne'⟩))
+
+end TauCeti
+
 namespace Polynomial
 
 section Basic
@@ -99,6 +114,15 @@ theorem derivativeSign_C (a x : R) (k : ℕ) :
 theorem derivativeSign_derivative (p : R[X]) (x : R) (k : ℕ) :
     derivativeSign p.derivative x k = derivativeSign p x (k + 1) := by
   simp only [derivativeSign_def, Function.iterate_succ_apply]
+
+/-- Prepending `0` to the derivative signs of orders `1, …, d` at a root gives the derivative signs
+of orders `0, …, d`. -/
+theorem cons_zero_derivativeSign_succ_eq {p : R[X]}
+    (d : ℕ) {x : R} (hx : p.eval x = 0) :
+    (Fin.cons 0 (fun j : Fin d => derivativeSign p x (j.val + 1)) : Fin (d + 1) → SignType) =
+      fun i => derivativeSign p x i.val := by
+  ext i
+  refine Fin.cases ?_ (fun _ => ?_) i <;> simp [hx]
 
 /-- Shifting the polynomial shifts the derivative index. -/
 @[simp, grind =]
@@ -193,18 +217,6 @@ theorem exists_derivativeSign_ne (p : R[X]) {a b : R}
       exact ⟨by omega, hne⟩
     have hle : j ≤ k := Finset.le_max' s j hjs
     omega
-
-/-- Distinct finite Thom encodings have a last differing coordinate. -/
-theorem exists_thomEncoding_ne (p : R[X]) {a b : R}
-    (henc : thomEncoding p a ≠ thomEncoding p b) :
-    ∃ i : Fin p.natDegree, thomEncoding p a i ≠ thomEncoding p b i ∧
-      ∀ j : Fin p.natDegree, i < j → thomEncoding p a j = thomEncoding p b j := by
-  obtain ⟨k, hk, hkd, hne, ht⟩ := exists_derivativeSign_ne p henc
-  refine ⟨⟨k - 1, by omega⟩, ?_, ?_⟩
-  · simpa only [thomEncoding_apply, Nat.sub_add_cancel hk] using hne
-  · intro j hj
-    simp only [Fin.lt_def] at hj
-    simpa only [thomEncoding_apply] using ht (j.val + 1) (by omega)
 
 /-- **Restriction to a derivative.** Coordinate `i` of the Thom encoding of the `k`th derivative
 is coordinate `i + k` of the Thom encoding of `p`. -/
@@ -381,6 +393,17 @@ theorem thomEncoding_injOn (p : R[X]) (hrolle : PolynomialRolle R) (hp : p ≠ 0
   apply eq_of_derivativeSign_eq p hrolle hp ha hb
   exact (thomEncoding_eq_iff p a b).mp h
 
+/-- Roots of a nonzero polynomial with the same derivative signs of orders `1, …, d`
+(where `p.natDegree ≤ d`) are equal. -/
+theorem eq_of_derivativeSign_succ_eq_of_natDegree_le {p : R[X]} {d : ℕ} (hd : p.natDegree ≤ d)
+    (hrolle : PolynomialRolle R) (hp : p ≠ 0) {a b : R} (ha : p.eval a = 0) (hb : p.eval b = 0)
+    (h : (fun j : Fin d => derivativeSign p a (j.val + 1)) =
+      fun j => derivativeSign p b (j.val + 1)) : a = b := by
+  refine eq_of_derivativeSign_eq p hrolle hp ha hb fun k hk => ?_
+  by_cases hkd : k ≤ d
+  · simpa [Nat.sub_add_cancel hk] using congrFun h ⟨k - 1, by omega⟩
+  · simp [derivativeSign_eq_zero p _ (by omega : p.natDegree < k)]
+
 private theorem sign_order_aux (p : R[X]) (hrolle : PolynomialRolle R) {a b : R} (hab : a < b)
     (hne : sign (p.eval a) ≠ sign (p.eval b))
     (htail : ∀ k, 0 < k → derivativeSign p a k = derivativeSign p b k) :
@@ -488,5 +511,22 @@ theorem thomEncoding_succ_ne_zero (p : R[X]) (hrolle : PolynomialRolle R) {a b :
   exact derivativeSign_succ_ne_zero p hrolle hne
     (derivativeSign_tail p (fun j hj => htail j (Nat.lt_of_succ_lt_succ hj)))
 
-
 end Polynomial
+
+namespace TauCeti
+
+/-- A root and a distinct point have different derivative signs through any degree bound. -/
+theorem derivativeSign_ne_of_eval_eq_zero {R : Type*} [Field R] [LinearOrder R]
+    [IsStrictOrderedRing R] {p : Polynomial R} {d : ℕ} (hd : p.natDegree ≤ d)
+    (hrolle : PolynomialRolle R) (hp : p ≠ 0) {a b : R} (hab : a ≠ b)
+    (hb : p.eval b = 0) :
+    (fun i : Fin (d + 1) => Polynomial.derivativeSign p a i.val) ≠
+      fun i => Polynomial.derivativeSign p b i.val := by
+  intro h
+  refine Polynomial.eval_ne_zero_of_derivativeSign_eq p hrolle hp hab
+    (fun k => ?_) Set.right_mem_uIcc hb
+  by_cases hkd : k ≤ d
+  · exact congrFun h ⟨k, by omega⟩
+  · simp [Polynomial.derivativeSign_eq_zero p _ (by omega : p.natDegree < k)]
+
+end TauCeti
