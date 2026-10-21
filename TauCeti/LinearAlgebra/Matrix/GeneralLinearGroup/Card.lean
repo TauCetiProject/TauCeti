@@ -25,6 +25,7 @@ recorded here in the two associations the two maximal tori call for: the split t
 
 * `TauCeti.natCard_GL_fin_two`: `|GL₂(𝔽_q)| = (q - 1)² · q(q + 1)`.
 * `TauCeti.natCard_GL_fin_two_eq_sq_sub_one_mul`: `|GL₂(𝔽_q)| = (q² - 1) · q(q - 1)`.
+* `TauCeti.natCard_GL_fin_two_of_card_eq_two`: `|GL₂(𝔽₂)| = 6`.
 
 ## References
 
@@ -68,5 +69,13 @@ theorem natCard_GL_fin_two_eq_sq_sub_one_mul :
   rw [natCard_GL_fin_two, hm]
   simp only [Nat.add_sub_cancel, h1]
   ring
+
+variable {F} in
+/-- **`GL₂` over a field with two elements has order `6`.** This is `(q - 1)² · q(q + 1)` at
+`q = 2`. -/
+theorem natCard_GL_fin_two_of_card_eq_two (hF : Fintype.card F = 2) :
+    Nat.card (GL (Fin 2) F) = 6 := by
+  rw [natCard_GL_fin_two F, hF]
+  norm_num
 
 end TauCeti

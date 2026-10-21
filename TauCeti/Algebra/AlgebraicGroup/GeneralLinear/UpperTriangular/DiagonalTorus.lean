@@ -124,7 +124,6 @@ theorem diagonalTorus_comp_inclusion :
   rw [← Category.assoc ((AlgebraicGeometry.hopfSpec _).map _),
     CommHopfAlgCat.hopfSpec_map_comp_quotientSpecι, ← coordinateMap_def,
     coordinateMap_comp_diagonalTorusCoordinateMap]
-  rfl
 
 variable {A : Type w} [CommRing A] [Algebra R A]
 
@@ -145,7 +144,7 @@ theorem pointsMulEquiv_diagonalTorusCoordinateMap
     (by simpa only [coordinateMap_def] using coordinateMap_comp_diagonalTorusCoordinateMap R n)
     (CommAlgCat.of R A) f
   rw [GeneralLinear.mapPointsFunctor_diagonalTorusCoordinateMap_app,
-    CommHopfAlgCat.mapPointsFunctor_app_apply] at h
+    CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at h
   rw [← pointsMulEquiv_coe, GeneralLinear.pointsMulEquiv_apply, ← h]
 
 end DiagonalTorus

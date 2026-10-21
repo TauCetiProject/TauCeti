@@ -21,7 +21,7 @@ import TauCeti.RepresentationTheory.CharacterTable.Determined
 import TauCeti.RepresentationTheory.CharacterTable.VirtualCharacter
 -- Non-public: `FDRep.finrank_hom_indFDRep`, Frobenius reciprocity as an identity of intertwining
 -- dimensions, is the engine of the proof and occurs in no statement.
-import TauCeti.RepresentationTheory.Induction.FrobeniusReciprocity
+import TauCeti.RepresentationTheory.Induction.FiniteDimensional.Adjunction
 
 /-!
 # Surjectivity in the Clifford correspondence

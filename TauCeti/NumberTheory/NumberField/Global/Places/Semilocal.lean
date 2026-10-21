@@ -95,7 +95,7 @@ theorem sum_finrank_infiniteCompletion_eq_finrank :
     _ = ∑ w : {w : InfinitePlace L // w.LiesOver v}, v.inertiaDeg w.1 :=
       Finset.sum_congr rfl fun w _ ↦ (inertiaDeg_eq_finrank v w.1).symm
     _ = ∑ w ∈ (v.placesOver L).toFinset, v.inertiaDeg w :=
-      (Finset.sum_subtype _ (fun _ ↦ Set.mem_toFinset) _).symm
+      Finset.sum_set_coe (v.placesOver L)
     _ = finrank K L := sum_inertiaDeg_eq_finrank K L v
 
 omit [NumberField K] in

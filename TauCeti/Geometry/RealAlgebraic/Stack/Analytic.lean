@@ -32,6 +32,24 @@ public section
 open Filter Function Polynomial Set Topology
 
 namespace TauCeti
+
+/-- An ambient section whose defining function is analytic on the base is an analytic
+submanifold of the same dimension. Only the values of the extension on the base matter. -/
+theorem isAnalyticSubmanifold_image_cylinder_sectionSet {𝕜 : Type*}
+    [NontriviallyNormedField 𝕜] {n d k : ℕ}
+    {S : Set (Fin n → 𝕜)} {θ : Fin k → S → 𝕜} (hS : IsAnalyticSubmanifold d S)
+    (i : Fin k) {r : (Fin n → 𝕜) → 𝕜} (hr : ∀ x : S, r x = θ i x)
+    (ha : AnalyticOnSubmanifold (𝕜 := 𝕜) d r S) :
+    IsAnalyticSubmanifold d (cylinder S '' sectionSet θ i) := by
+  convert hS.graph ha using 1
+  ext v
+  simp only [mem_image_cylinder, mem_sectionSet, mem_ofPred_eq]
+  constructor
+  · rintro ⟨hv, heq⟩
+    exact ⟨hv, (heq.symm.trans (hr ⟨Fin.tail v, hv⟩).symm)⟩
+  · rintro ⟨hv, heq⟩
+    exact ⟨hv, (heq.trans (hr ⟨Fin.tail v, hv⟩)).symm⟩
+
 namespace Delineation
 
 variable {n d : ℕ} {S : Set (Fin n → ℝ)} {ι : Type*}
@@ -66,14 +84,8 @@ theorem isAnalyticSubmanifold_sectionSet (hS : IsAnalyticSubmanifold d S)
     IsAnalyticSubmanifold d (cylinder S '' sectionSet D.root i) := by
   let r := Function.extend Subtype.val (D.root i) (fun _ ↦ 0)
   have hr (x : S) : r x = D.root i x := Subtype.val_injective.extend_apply _ _ x
-  convert hS.graph (D.analyticOnSubmanifold_root hS hcoeff i hr) using 1
-  ext v
-  simp only [mem_image_cylinder, mem_sectionSet, mem_ofPred_eq]
-  constructor
-  · rintro ⟨hv, heq⟩
-    exact ⟨hv, (heq.symm.trans (hr ⟨Fin.tail v, hv⟩).symm)⟩
-  · rintro ⟨hv, heq⟩
-    exact ⟨hv, (heq.trans (hr ⟨Fin.tail v, hv⟩)).symm⟩
+  exact isAnalyticSubmanifold_image_cylinder_sectionSet hS i hr
+    (D.analyticOnSubmanifold_root hS hcoeff i hr)
 
 end Delineation
 end TauCeti

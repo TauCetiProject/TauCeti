@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.LinearAlgebra.Dual.Lemmas
+public import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # Finite-dimensional normed spaces
@@ -22,6 +24,12 @@ isomorphic. This allows pointwise choices of complements to be identified with a
 In real dimension one, equal-norm vectors agree up to sign; in particular, a nonzero-radius
 sphere consists of two antipodal points.
 
+A linear endomorphism of a finite-dimensional normed space that is bounded below by `c > 0` is
+injective, hence invertible, and its inverse is bounded by `c⁻¹`.
+
+A family of bases whose vectors depend continuously on a parameter has frame and coordinate maps
+that depend continuously on the parameter in the operator norm.
+
 ## Main results
 
 * `ContinuousLinearMap.dual_finrank_eq`: in finite dimensions the continuous dual has the same
@@ -30,6 +38,9 @@ sphere consists of two antipodal points.
   the same space in a finite-dimensional space are isomorphic.
 * `TauCeti.continuous_det_div_conj`: the determinant phase `det A / conj (det A)` of a continuous
   family of continuous linear automorphisms varies continuously.
+* `Module.Basis.continuous_equivFunL_symm_of_continuous`,
+  `Module.Basis.continuous_equivFunL_of_continuous`: a family of bases whose vectors depend
+  continuously on a parameter has continuously varying frame and coordinate maps.
 -/
 
 public section
@@ -106,5 +117,63 @@ theorem continuous_det_div_conj (A : X → E ≃L[𝕜] E)
 end Star
 
 end TauCeti
+
+namespace Module.Basis
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {Y : Type*} [TopologicalSpace Y] {ι : Type*} [Finite ι] {B : Y → Basis ι 𝕜 F}
+
+/-- **Continuity of a family of frames.** If every vector of a family of bases depends continuously
+on the parameter, then so does the frame `x ↦ ∑ i, x i • B y i`, in the operator norm. -/
+theorem continuous_equivFunL_symm_of_continuous (h : ∀ i, Continuous fun y ↦ B y i) :
+    Continuous fun y ↦ ((B y).equivFunL.symm : (ι → 𝕜) →L[𝕜] F) := by
+  have := Fintype.ofFinite ι
+  refine continuous_clm_apply.2 fun x ↦ ?_
+  simp only [ContinuousLinearEquiv.coe_coe, equivFunL_symm_apply]
+  exact continuous_finsetSum _ fun i _ ↦ continuous_const.smul (h i)
+
+/-- **Continuity of a family of coordinate maps.** If every vector of a family of bases depends
+continuously on the parameter, then so does the coordinate map `F → ι → 𝕜`, in the operator
+norm. -/
+theorem continuous_equivFunL_of_continuous (h : ∀ i, Continuous fun y ↦ B y i) :
+    Continuous fun y ↦ ((B y).equivFunL : F →L[𝕜] ι → 𝕜) := by
+  have := Fintype.ofFinite ι
+  have h' : (fun y ↦ ((B y).equivFunL : F →L[𝕜] ι → 𝕜)) =
+      fun y ↦ ((B y).equivFunL.symm : (ι → 𝕜) →L[𝕜] F).inverse := by
+    ext1 y
+    rw [ContinuousLinearMap.inverse_equiv, ContinuousLinearEquiv.symm_symm]
+  rw [h', continuous_iff_continuousAt]
+  intro y
+  have := (B y).finiteDimensional_of_finite
+  have := FiniteDimensional.complete 𝕜 F
+  exact ContinuousAt.comp (g := ContinuousLinearMap.inverse)
+    (contDiffAt_map_inverse (n := 0) (B y).equivFunL.symm).continuousAt
+    (continuous_equivFunL_symm_of_continuous h).continuousAt
+
+end Module.Basis
+
+namespace LinearMap
+
+variable {K V : Type*} [DivisionRing K] [NormedAddCommGroup V] [Module K V] [FiniteDimensional K V]
+
+/-- A linear endomorphism of a finite-dimensional normed space bounded below by `c > 0` is
+invertible, with inverse bounded by `c⁻¹`. -/
+theorem exists_comp_eq_id_of_mul_norm_le {C : V →ₗ[K] V} {c : ℝ} (hc : 0 < c)
+    (hC : ∀ v, c * ‖v‖ ≤ ‖C v‖) :
+    ∃ G : V →ₗ[K] V, C ∘ₗ G = .id ∧ G ∘ₗ C = .id ∧ ∀ v, ‖G v‖ ≤ c⁻¹ * ‖v‖ := by
+  have hinj : Function.Injective C := (injective_iff_map_eq_zero C).mpr fun v hv ↦
+    norm_eq_zero.mp <| le_antisymm (nonpos_of_mul_nonpos_right (by simpa [hv] using hC v) hc)
+      (norm_nonneg v)
+  set e := LinearEquiv.ofInjectiveEndo C hinj
+  refine ⟨e.symm, LinearEquiv.ofInjectiveEndo_right_inv C hinj,
+    LinearEquiv.ofInjectiveEndo_left_inv C hinj, fun v ↦ ?_⟩
+  rw [le_inv_mul_iff₀ hc]
+  have hv : C (e.symm v) = v := by
+    rw [← LinearEquiv.coe_ofInjectiveEndo C hinj]
+    exact e.apply_symm_apply v
+  simpa [hv] using hC (e.symm v)
+
+end LinearMap
 
 end

@@ -7,8 +7,11 @@ module
 
 public import Mathlib.RingTheory.FormalGroup.Basic
 public import Mathlib.RingTheory.PowerSeries.Inverse
+public import Mathlib.RingTheory.PowerSeries.Log
 public import TauCeti.RingTheory.MvPowerSeries.Derivative
 public import TauCeti.RingTheory.MvPowerSeries.Substitution
+
+import Mathlib.RingTheory.PowerSeries.WellKnown
 
 /-!
 # The invariant differential and the logarithm of a formal group law
@@ -31,6 +34,11 @@ exponential** `exp_F`, and `F(X, Y) = exp_F(log_F(X) + log_F(Y))`: over a `ℚ`-
 formal group law is strictly isomorphic to the additive one. Up to a scalar, `log_F` is the only
 power series that is additive along `F`.
 
+For the additive formal group law `X + Y` the invariant differential is `dT` and both `log` and
+`exp` are `T`. For the multiplicative formal group law `X + Y + XY` the invariant differential is
+`dT / (1 + T)`, and `log` and `exp` are Mathlib's `PowerSeries.log`, the series of `log(1 + T)`,
+and `e^T - 1`.
+
 ## Main definitions
 
 * `FormalGroup.invariantDifferential`: the coefficient `P(T)` of the normalised invariant
@@ -51,6 +59,11 @@ power series that is additive along `F`.
   `g(F(X, Y)) = g(X) + g(Y)` exactly when it is a scalar multiple of `log_F`.
 * `FormalGroup.subst_exp_log` and `FormalGroup.subst_log_exp`: `log_F` and `exp_F` are inverse.
 * `FormalGroup.toPowerSeries_eq_subst_exp`: `F(X, Y) = exp_F(log_F(X) + log_F(Y))`.
+* `FormalGroup.invariantDifferential_𝔾ₐ`, `FormalGroup.log_𝔾ₐ`, `FormalGroup.exp_𝔾ₐ`: the additive
+  formal group law has invariant differential `dT`, and logarithm and exponential `T`.
+* `FormalGroup.invariantDifferential_𝔾ₘ`, `FormalGroup.log_𝔾ₘ`, `FormalGroup.exp_𝔾ₘ`: the
+  multiplicative formal group law has invariant differential `dT / (1 + T)`, logarithm
+  `log(1 + T)` and exponential `e^T - 1`.
 
 ## References
 
@@ -71,14 +84,11 @@ variable {R : Type*} [CommRing R] (F : FormalGroup R)
 private noncomputable abbrev derivZeroX : PowerSeries R :=
   subst ![0, PowerSeries.X] (pderiv 0 F.toPowerSeries)
 
-private theorem hasSubst_zero_X : HasSubst (![0, PowerSeries.X] : Fin 2 → PowerSeries R) :=
-  hasSubst_of_constantCoeff_zero fun s ↦ by fin_cases s <;> simp [PowerSeries.X]
-
 private theorem constantCoeff_derivZeroX : PowerSeries.constantCoeff F.derivZeroX = 1 := by
   have hD : constantCoeff (pderiv 0 F.toPowerSeries) = 1 := by
     rw [← coeff_zero_eq_constantCoeff_apply, coeff_pderiv, _root_.zero_add, F.lin_coeff_X]
     simp
-  have ha := hasSubst_zero_X (R := R)
+  have ha : HasSubst (![0, PowerSeries.X] : Fin 2 → PowerSeries R) := HasSubst.zero_X
   -- `F_X - 1` has zero constant coefficient, and so does its substitution
   have := constantCoeff_subst_eq_zero ha (fun s ↦ by fin_cases s <;> simp [PowerSeries.X])
     (f := pderiv 0 F.toPowerSeries - 1) (by simp [hD])
@@ -89,7 +99,8 @@ private theorem constantCoeff_derivZeroX : PowerSeries.constantCoeff F.derivZero
 private theorem subst_derivZeroX {σ : Type*} {g : MvPowerSeries σ R}
     (hg : PowerSeries.HasSubst g) :
     PowerSeries.subst g F.derivZeroX = subst ![0, g] (pderiv 0 F.toPowerSeries) := by
-  rw [derivZeroX, PowerSeries.subst_def, subst_comp_subst_apply hasSubst_zero_X hg.const]
+  have ha : HasSubst (![0, PowerSeries.X] : Fin 2 → PowerSeries R) := HasSubst.zero_X
+  rw [derivZeroX, PowerSeries.subst_def, subst_comp_subst_apply ha hg.const]
   congr 1
   funext s
   fin_cases s
@@ -179,8 +190,7 @@ theorem subst_invariantDifferential_mul_pderiv_one [F.IsComm] :
     PowerSeries.subst F.toPowerSeries F.invariantDifferential * pderiv 1 F.toPowerSeries =
       PowerSeries.subst (X 1) F.invariantDifferential := by
   have hF := PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff
-  have hsw : HasSubst (![X 1, X 0] : Fin 2 → MvPowerSeries (Fin 2) R) :=
-    hasSubst_of_constantCoeff_zero fun s ↦ by fin_cases s <;> simp
+  have hsw : HasSubst (![X 1, X 0] : Fin 2 → MvPowerSeries (Fin 2) R) := HasSubst.X_X
   have hc : F.toPowerSeries =
       subst (![X 1, X 0] : Fin 2 → MvPowerSeries (Fin 2) R) F.toPowerSeries := IsComm.comm
   -- `F_Y(X, Y) = F_X(Y, X)`, differentiating `F(X, Y) = F(Y, X)` in `Y`
@@ -193,6 +203,29 @@ theorem subst_invariantDifferential_mul_pderiv_one [F.IsComm] :
     F.subst_invariantDifferential_mul_pderiv
   rwa [subst_mul hsw, subst_powerSeriesSubst hsw hF, ← hc, ← hY,
     subst_powerSeriesSubst hsw (PowerSeries.HasSubst.X 0), subst_X hsw] at this
+
+/-! ### The additive and multiplicative formal group laws -/
+
+/-- The invariant differential of the additive formal group law `X + Y` is `dT`. -/
+@[simp]
+theorem invariantDifferential_𝔾ₐ : (𝔾ₐ (R := R)).invariantDifferential = 1 := by
+  have ha : HasSubst (![0, PowerSeries.X] : Fin 2 → PowerSeries R) := HasSubst.zero_X
+  have hD : pderiv 0 (𝔾ₐ (R := R)).toPowerSeries = 1 := by simp [pderiv_X_of_ne]
+  have h := (𝔾ₐ (R := R)).invariantDifferential_mul_subst_pderiv
+  rwa [hD, ← coe_substAlgHom ha, map_one, mul_one] at h
+
+/-- The invariant differential of the multiplicative formal group law `X + Y + XY` is
+`dT / (1 + T) = (1 - T + T² - ⋯) dT`. -/
+@[simp]
+theorem invariantDifferential_𝔾ₘ :
+    (𝔾ₘ (R := R)).invariantDifferential = PowerSeries.mk fun n ↦ (-1) ^ n := by
+  have ha : HasSubst (![0, PowerSeries.X] : Fin 2 → PowerSeries R) := HasSubst.zero_X
+  have hD : pderiv 0 (𝔾ₘ (R := R)).toPowerSeries = 1 + X 1 := by simp [pderiv_X_of_ne]
+  have h := (𝔾ₘ (R := R)).invariantDifferential_mul_subst_pderiv
+  rw [hD, ← coe_substAlgHom ha, map_add, map_one, coe_substAlgHom, subst_X ha] at h
+  -- `P(T) · (1 + T) = 1`, and `1 - T + T² - ⋯` is the inverse of `1 + T`
+  refine left_inv_eq_right_inv (by simpa using h) ?_
+  rw [mul_comm, PowerSeries.mk_neg_one_pow_mul_one_add_eq_one]
 
 /-! ### The logarithm -/
 
@@ -239,9 +272,8 @@ theorem subst_toPowerSeries_log :
       PowerSeries.subst (X 0) F.log + PowerSeries.subst (X 1) F.log := by
   have hF := PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff
   have hX (i : Fin 2) := PowerSeries.HasSubst.X (S := R) i
-  have hb : HasSubst (![0, X 1] : Fin 2 → MvPowerSeries (Fin 2) R) :=
-    hasSubst_of_constantCoeff_zero fun s ↦ by fin_cases s <;> simp
-  have : IsAddTorsionFree R := .of_isTorsionFree ℚ R
+  have hb : HasSubst (![0, X 1] : Fin 2 → MvPowerSeries (Fin 2) R) := HasSubst.zero_X
+  have : HasUniqueDiv R := .of_isTorsionFree ℚ R
   rw [← sub_eq_zero]
   apply eq_zero_of_pderiv_eq_zero_of_subst_eq_zero (i := 0)
   -- the derivative in `X` is `P(F(X, Y)) · F_X(X, Y) - P(X) = 0`
@@ -262,8 +294,7 @@ theorem subst_subst_toPowerSeries_log {σ : Type*} {f₀ f₁ : MvPowerSeries σ
     (h₀ : PowerSeries.HasSubst f₀) (h₁ : PowerSeries.HasSubst f₁) :
     PowerSeries.subst (subst ![f₀, f₁] F.toPowerSeries) F.log =
       PowerSeries.subst f₀ F.log + PowerSeries.subst f₁ F.log := by
-  have hf : HasSubst ![f₀, f₁] :=
-    hasSubst_of_constantCoeff_nilpotent fun s ↦ by fin_cases s <;> simpa
+  have hf : HasSubst ![f₀, f₁] := hasSubst_finTwo h₀ h₁
   have := congrArg (subst ![f₀, f₁]) F.subst_toPowerSeries_log
   rwa [subst_add hf, subst_powerSeriesSubst hf (PowerSeries.HasSubst.X _),
     subst_powerSeriesSubst hf (PowerSeries.HasSubst.X _),
@@ -279,7 +310,7 @@ theorem subst_toPowerSeries_eq_add_iff {g : PowerSeries R} :
   have hF := PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff
   have hX (i : Fin 2) := PowerSeries.HasSubst.X (S := R) i
   refine ⟨fun h ↦ ⟨PowerSeries.coeff 1 g, ?_⟩, ?_⟩
-  · have : IsAddTorsionFree R := .of_isTorsionFree ℚ R
+  · have : HasUniqueDiv R := .of_isTorsionFree ℚ R
     -- `g(0) = g(0) + g(0)`
     have hg₀ : PowerSeries.constantCoeff g = 0 := by
       have := congrArg constantCoeff h
@@ -292,10 +323,10 @@ theorem subst_toPowerSeries_eq_add_iff {g : PowerSeries R} :
     rw [map_add, PowerSeries.pderiv_subst hF, PowerSeries.pderiv_subst (hX 0),
       PowerSeries.pderiv_subst (hX 1), pderiv_X_self, pderiv_X_of_ne (by decide), mul_one,
       mul_zero, _root_.add_zero] at hd
+    have ha : HasSubst (![0, PowerSeries.X] : Fin 2 → PowerSeries R) := HasSubst.zero_X
     have := congrArg (subst (![0, PowerSeries.X] : Fin 2 → PowerSeries R)) hd
-    rw [subst_mul hasSubst_zero_X, subst_powerSeriesSubst hasSubst_zero_X hF,
-      subst_powerSeriesSubst hasSubst_zero_X (hX 0), F.zero_add PowerSeries.HasSubst.X',
-      subst_X hasSubst_zero_X, PowerSeries.X_subst] at this
+    rw [subst_mul ha, subst_powerSeriesSubst ha hF, subst_powerSeriesSubst ha (hX 0),
+      F.zero_add PowerSeries.HasSubst.X', subst_X ha, PowerSeries.X_subst] at this
     -- so `g' = g'(0) · P`
     have hg' : PowerSeries.derivative g = PowerSeries.coeff 1 g • F.invariantDifferential := by
       rw [Matrix.cons_val_zero, PowerSeries.subst_zero_eq_C_constantCoeff,
@@ -349,5 +380,34 @@ theorem toPowerSeries_eq_subst_exp :
   have hlog := PowerSeries.HasSubst.of_constantCoeff_zero' F.constantCoeff_log
   rw [← subst_toPowerSeries_log, ← PowerSeries.subst_comp_subst_apply hlog hF, subst_log_exp,
     PowerSeries.subst_X hF]
+
+/-! ### The logarithms of the additive and multiplicative formal group laws -/
+
+/-- The logarithm of the additive formal group law is `log_{𝔾ₐ}(T) = T`. -/
+@[simp]
+theorem log_𝔾ₐ : (𝔾ₐ (R := R)).log = PowerSeries.X := by
+  have : HasUniqueDiv R := .of_isTorsionFree ℚ R
+  exact PowerSeries.derivative.ext (by simp) (by simp)
+
+/-- The exponential of the additive formal group law is `exp_{𝔾ₐ}(T) = T`. -/
+@[simp]
+theorem exp_𝔾ₐ : (𝔾ₐ (R := R)).exp = PowerSeries.X := by
+  simpa [PowerSeries.X_subst] using (𝔾ₐ (R := R)).subst_log_exp
+
+/-- The logarithm of the multiplicative formal group law is the logarithm series
+`log_{𝔾ₘ}(T) = log(1 + T) = T - T² / 2 + T³ / 3 - ⋯`. -/
+@[simp]
+theorem log_𝔾ₘ : (𝔾ₘ (R := R)).log = PowerSeries.log R := by
+  have : HasUniqueDiv R := .of_isTorsionFree ℚ R
+  exact PowerSeries.derivative.ext (by simp [PowerSeries.derivative_log]) (by simp)
+
+/-- The exponential of the multiplicative formal group law is `exp_{𝔾ₘ}(T) = e^T - 1`. -/
+@[simp]
+theorem exp_𝔾ₘ : (𝔾ₘ (R := R)).exp = PowerSeries.exp R - 1 := by
+  have hlog {Q : PowerSeries R} := (PowerSeries.log R).eq_substInvOfIsUnit_of_subst_eq_X (Q := Q)
+    PowerSeries.constantCoeff_log (by simp)
+  rw [hlog (PowerSeries.HasSubst.of_constantCoeff_zero' (𝔾ₘ (R := R)).constantCoeff_exp)
+    (by rw [← log_𝔾ₘ, subst_exp_log]), hlog PowerSeries.HasSubst.exp_sub_one
+    (PowerSeries.subst_log_exp_sub_one R)]
 
 end FormalGroup

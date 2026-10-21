@@ -45,7 +45,7 @@ theorem apply_antipode (d : Derivation R A (Bialgebra.CounitAlgebra R A B)) (a :
   have h := congrArg (fun ψ : tangentKer R A B ↦ TrivSqZeroExt.snd (ψ.val.ofConv a))
     (map_inv (derivationMulEquivTangentKer R A B) (.ofAdd d))
   rw [← ofAdd_neg, derivationMulEquivTangentKer_apply_snd, toAdd_ofAdd, Subgroup.coe_inv,
-    convInv_def, ofConv_toConv, AlgHom.antipodeComp_apply,
+    algHom_inv_def, ofConv_toConv, AlgHom.antipodeComp_apply,
     derivationMulEquivTangentKer_apply_snd, toAdd_ofAdd] at h
   rw [← h, neg_apply]
 

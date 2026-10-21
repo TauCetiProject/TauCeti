@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.HilbertSymbol.NormSubgroup
-public import TauCeti.NumberTheory.LocalField.QuadraticForm.Defect
+public import TauCeti.NumberTheory.LocalField.QuadraticForm.Defect.Basic
 public import TauCeti.NumberTheory.LocalField.Squares
 
 import TauCeti.NumberTheory.LocalField.QuadraticForm.Norm.Index
-import TauCeti.NumberTheory.LocalField.QuadraticForm.RamificationDictionary
+import TauCeti.NumberTheory.LocalField.QuadraticForm.Ramification.Dictionary
 
 /-!
 # Deep units are quadratic norms

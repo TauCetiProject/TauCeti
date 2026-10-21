@@ -19,11 +19,11 @@ part, however, always is a metric: `gₛ(v, w) = ω(v, J w) + ω(w, J v)` is sym
 Symplectic Topology*, Section 2.5), the first step of the proof that the space of tame almost
 complex structures is contractible, recorded here at the pointwise linear-algebra level.
 
-The roadmap keeps tame and compatible as separate named hypotheses, so this file builds the
-metric from the strictly weaker `SymplecticForm.Tames` predicate, paralleling the compatible
-construction `SymplecticForm.Compatible.innerProductCore` rather than reusing it. When `ω` is
-in fact compatible, the symmetric part is just twice the asymmetric metric `ω(·, J ·)`, which is
-recorded as the bridge `SymplecticForm.Compatible.symmetrizedBilinForm_apply`.
+Tame and compatible are kept as separate named hypotheses, so this file builds the metric from the
+strictly weaker `SymplecticForm.Tames` predicate, paralleling the compatible construction
+`SymplecticForm.Compatible.innerProductCore` rather than reusing it. When `ω` is in fact compatible,
+the symmetric part is just twice the asymmetric metric `ω(·, J ·)`, which is recorded as the bridge
+`SymplecticForm.Compatible.symmetrizedBilinForm_apply`.
 
 ## Main declarations
 

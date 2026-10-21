@@ -8,6 +8,8 @@ module
 public import Mathlib.NumberTheory.NumberField.ProductFormula
 public import TauCeti.Algebra.BigOperators.Finprod
 
+import TauCeti.NumberTheory.NumberField.FinitePlace
+
 /-!
 # Places of a number field and their normalized absolute values
 
@@ -148,10 +150,8 @@ theorem normalizedAbsValue_inl_algebraMap_eq_one_iff :
 at most `1`. -/
 theorem normalizedAbsValue_inl_le_one_iff (y : K) :
     normalizedAbsValue (Sum.inl v) y ≤ 1 ↔ v.valuation K y ≤ 1 := by
-  rw [normalizedAbsValue_inl, NumberField.HeightOneSpectrum.adicAbv_def]
-  norm_cast
-  exact WithZeroMulInt.toNNReal_le_one_iff
-    (NumberField.HeightOneSpectrum.one_lt_absNorm_nnreal v)
+  simpa only [normalizedAbsValue_inl, FinitePlace.mk_apply, FinitePlace.norm_embedding]
+    using FinitePlace.mk_apply_le_one_iff v y
 
 /-- An element of a number field is an algebraic integer exactly when its normalized absolute
 value is at most `1` at every finite place. -/

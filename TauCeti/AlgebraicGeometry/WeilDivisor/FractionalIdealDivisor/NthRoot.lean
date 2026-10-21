@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.WeilDivisor.FractionalIdealDivisor.Basic
 public import TauCeti.RingTheory.ClassGroup.Basic
+import TauCeti.RingTheory.FractionalIdeal.Operations
 
 /-!
 # `n`-th roots of invertible fractional ideals, and the `n`-th root class map

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.DirectSum.Finite
 public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
+public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import Mathlib.RingTheory.Noetherian.Basic
 public import TauCeti.Algebra.Category.GradedModuleCat.Projective
 

@@ -62,8 +62,7 @@ namespace TauCeti
 
 universe uR uA uP
 
-variable {R : Type uR} {A : Type uA} [CommRing R] [Ring A] [Algebra R A]
-
+variable {R : Type uR} {A : Type uA} [CommRing R] [Ring A] [Algebra R A] in
 /-- A **twisting cocycle** with values in the differential graded algebra `(𝒜, d)`, on the finite
 set `P` of generators graded by `ind`.  The entry `m x y` is the coefficient of `y` in the twisted
 differential of `x`.  It is homogeneous of cohomological degree `ind y - ind x + 1`, the matrix
@@ -82,7 +81,26 @@ structure TwistingCocycle (𝒜 : ℤ → Submodule R A) (d : A →ₗ[R] A) (P 
 
 namespace TwistingCocycle
 
-variable {𝒜 : ℤ → Submodule R A} {d : A →ₗ[R] A} {P : Type uP} [Fintype P] {ind : P → ℤ}
+section Semiring
+
+variable {R : Type uR} {A : Type uA} [Semiring R] [AddCommMonoid A] [Module R A]
+  {𝒜 : ℤ → Submodule R A} {P : Type uP} {ind : P → ℤ}
+
+/-- Over a cohomologically nonpositive algebra, the degree condition alone forces one-sidedness:
+an entry `m x y` with `ind x ≤ ind y` lives in a positive degree, where the algebra vanishes.  This
+is the situation of the cubical chains on a loop space.  No differential and no twisting equation
+is involved. -/
+theorem one_sided_of_nonpos (m : P → P → A) (hm : ∀ x y, m x y ∈ 𝒜 (ind y - ind x + 1))
+    (h𝒜 : ∀ n, 0 < n → 𝒜 n = ⊥) : ∀ x y, ind x ≤ ind y → m x y = 0 := by
+  intro x y hxy
+  have h := hm x y
+  rw [h𝒜 _ (by omega)] at h
+  exact (Submodule.mem_bot R).1 h
+
+end Semiring
+
+variable {R : Type uR} {A : Type uA} [CommRing R] [Ring A] [Algebra R A]
+  {𝒜 : ℤ → Submodule R A} {d : A →ₗ[R] A} {P : Type uP} [Fintype P] {ind : P → ℤ}
 
 @[ext]
 theorem ext {m₁ m₂ : TwistingCocycle 𝒜 d P ind} (h : ∀ x y, m₁.m x y = m₂.m x y) : m₁ = m₂ := by
@@ -101,6 +119,60 @@ theorem m_eq_zero_of_le (m : TwistingCocycle 𝒜 d P ind) {x y : P} (hxy : ind 
     m.m x y = 0 :=
   m.one_sided x y hxy
 
+/-- The entries between generators whose indices differ by one have degree zero. -/
+theorem m_mem_zero_of_eq_add_one (m : TwistingCocycle 𝒜 d P ind) {x y : P}
+    (hxy : ind x = ind y + 1) : m.m x y ∈ 𝒜 0 := by
+  have h := m.mem_graded x y
+  have hdeg : ind y - ind x + 1 = 0 := by omega
+  rwa [hdeg] at h
+
+/-- The entries between generators whose indices differ by two have degree `-1`. -/
+theorem m_mem_neg_one_of_eq_add_two (m : TwistingCocycle 𝒜 d P ind) {x y : P}
+    (hxy : ind x = ind y + 2) : m.m x y ∈ 𝒜 (-1) := by
+  have h := m.mem_graded x y
+  have hdeg : ind y - ind x + 1 = -1 := by omega
+  rwa [hdeg] at h
+
+/-- A product of two consecutive entries vanishes unless the middle generator has strictly
+intermediate index, by one-sidedness. -/
+theorem m_mul_m_eq_zero_of_not_lt_lt (m : TwistingCocycle 𝒜 d P ind) {x y z : P}
+    (h : ¬(ind z < ind y ∧ ind y < ind x)) : m.m x y * m.m y z = 0 := by
+  rcases le_or_gt (ind x) (ind y) with hxy | hxy
+  · rw [m.one_sided x y hxy, zero_mul]
+  · rw [m.one_sided y z (by omega), mul_zero]
+
+/-- The entries between generators whose indices differ by one are cycles: no generator has an
+index strictly between theirs. -/
+theorem d_m_eq_zero_of_eq_add_one (m : TwistingCocycle 𝒜 d P ind) {x y : P}
+    (hxy : ind x = ind y + 1) : d (m.m x y) = 0 := by
+  rw [m.twisting x y]
+  exact Finset.sum_eq_zero fun z _ ↦ by
+    rw [m.m_mul_m_eq_zero_of_not_lt_lt (by omega), smul_zero]
+
+/-- **The twisting equation at index difference two**: between generators whose indices differ
+by two, the sum of the products of the entries through the generators of the intermediate index
+is minus the differential of the entry. -/
+theorem sum_m_mul_m_of_eq_add_two (m : TwistingCocycle 𝒜 d P ind) {x z : P}
+    (hxz : ind x = ind z + 2) : ∑ y, m.m x y * m.m y z = -d (m.m x z) := by
+  rw [m.twisting x z, ← Finset.sum_neg_distrib]
+  refine Finset.sum_congr rfl fun y _ ↦ ?_
+  by_cases hy : ind y = ind z + 1
+  · have hdeg : ind x - ind y = 1 := by omega
+    simp [hdeg]
+  · rw [m.m_mul_m_eq_zero_of_not_lt_lt (by omega), smul_zero, neg_zero]
+
+/-- The twisting equation at index difference two, as a sum over the generators of the
+intermediate index only. -/
+theorem sum_subtype_m_mul_m_of_eq_add_two (m : TwistingCocycle 𝒜 d P ind) {x z : P} (q : ℤ)
+    (hx : ind x = q + 1 + 1) (hz : ind z = q) :
+    ∑ y : {y : P // ind y = q + 1}, m.m x y * m.m y z = -d (m.m x z) := by
+  rw [← m.sum_m_mul_m_of_eq_add_two (by omega),
+    ← Finset.sum_subtype (Finset.univ.filter fun y ↦ ind y = q + 1) (by simp)
+      fun y ↦ m.m x y * m.m y z]
+  refine Finset.sum_filter_of_ne fun y _ hy ↦ ?_
+  by_contra hne
+  exact hy (m.m_mul_m_eq_zero_of_not_lt_lt (by omega))
+
 /-- The zero matrix is a twisting cocycle: both sides of the twisting equation vanish. -/
 instance : Zero (TwistingCocycle 𝒜 d P ind) where
   zero :=
@@ -112,18 +184,6 @@ instance : Zero (TwistingCocycle 𝒜 d P ind) where
 @[simp]
 theorem zero_m (x y : P) : (0 : TwistingCocycle 𝒜 d P ind).m x y = 0 :=
   rfl
-
-omit [Fintype P] in
-/-- Over a cohomologically nonpositive algebra, the degree condition alone forces one-sidedness:
-an entry `m x y` with `ind x ≤ ind y` lives in a positive degree, where the algebra vanishes.  This
-is the situation of the cubical chains on a loop space.  No differential and no twisting equation
-is involved. -/
-theorem one_sided_of_nonpos (m : P → P → A) (hm : ∀ x y, m x y ∈ 𝒜 (ind y - ind x + 1))
-    (h𝒜 : ∀ n, 0 < n → 𝒜 n = ⊥) : ∀ x y, ind x ≤ ind y → m x y = 0 := by
-  intro x y hxy
-  have h := hm x y
-  rw [h𝒜 _ (by omega)] at h
-  exact (Submodule.mem_bot R).1 h
 
 /-- A twisting cocycle over a cohomologically nonpositive algebra, from the graded matrix and the
 twisting equation alone: one-sidedness is supplied by `one_sided_of_nonpos`. -/

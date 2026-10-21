@@ -13,8 +13,7 @@ public import TauCeti.Geometry.Symplectic.JHolomorphic.Transport
 # Operations preserving constant-structure `J`-holomorphic maps
 
 This file is the aggregate import for elementary map-level operations under which the
-normed-vector-space constant-structure `J`-holomorphic predicates are invariant, used by the
-analytic Heegaard Floer roadmap.
+normed-vector-space constant-structure `J`-holomorphic predicates are invariant.
 
 * **Negation.** A real-linear map satisfies `F ∘ J = J' ∘ F` exactly when it satisfies the same
   equation after both almost complex structures are negated, `F ∘ (-J) = (-J') ∘ F`, so the
@@ -29,10 +28,7 @@ analytic Heegaard Floer roadmap.
   in `TauCeti.Geometry.Symplectic.Transport`; `JHolomorphicTransport` adds the matching map-level
   calculus.
 
-These lemmas are the chart-level bookkeeping needed before the roadmap upgrades the local
-Cauchy--Riemann equation to almost complex manifolds, where maps are constantly replaced by equal
-local representatives in overlapping charts, restricted domains are reflected or reoriented, and
-tangent charts change coordinates.
+These are invariance lemmas for the flat constant-structure model.
 
 ## Main declarations
 

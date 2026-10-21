@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Probability.Exchangeability.Arrays.Basic
+public import TauCeti.Probability.Process.Array.Context
 public import Mathlib.Probability.Kernel.CondDistrib
 public import TauCeti.Probability.Kernel.Randomization
 
@@ -15,7 +16,8 @@ public import TauCeti.Probability.Kernel.Randomization
 Fix two sequences of hidden row and column indices, `e` and `f`. A visible cell `(i,j)` is
 observed together with the hidden block, its row against the hidden columns, and its column
 against the hidden rows. `cellContext e f i j` packages these three observations in the same
-measurable space for every visible cell.
+measurable space for every visible cell. These observations and their deterministic transport
+identities are defined in `TauCeti.Probability.Process.Array.Context`.
 
 For a separately exchangeable array law, the joint law of this context and the cell is
 independent of the choice of `i` and `j`, as long as they lie outside the two hidden index
@@ -42,56 +44,6 @@ open MeasureTheory ProbabilityTheory unitInterval
 namespace TauCeti.Probability
 
 variable {α : Type*} [MeasurableSpace α]
-
-/-- The hidden block and the two hidden strips adjacent to cell `(i,j)`. The first component
-contains the block and the row strip, and the second contains the column strip. -/
-def cellContext (e f : ℕ → ℕ) (i j : ℕ) (x : ℕ × ℕ → α) :
-    ((ℕ × ℕ → α) × (ℕ → α)) × (ℕ → α) :=
-  ((fun p => x (e p.1, f p.2), fun b => x (i, f b)), fun a => x (e a, j))
-
-omit [MeasurableSpace α] in
-@[simp]
-theorem cellContext_block_apply (e f : ℕ → ℕ) (i j : ℕ) (x : ℕ × ℕ → α) (p : ℕ × ℕ) :
-    (cellContext e f i j x).1.1 p = x (e p.1, f p.2) :=
-  (rfl)
-
-omit [MeasurableSpace α] in
-@[simp]
-theorem cellContext_rowStrip_apply (e f : ℕ → ℕ) (i j : ℕ) (x : ℕ × ℕ → α) (b : ℕ) :
-    (cellContext e f i j x).1.2 b = x (i, f b) :=
-  (rfl)
-
-omit [MeasurableSpace α] in
-@[simp]
-theorem cellContext_colStrip_apply (e f : ℕ → ℕ) (i j : ℕ) (x : ℕ × ℕ → α) (a : ℕ) :
-    (cellContext e f i j x).2 a = x (e a, j) :=
-  (rfl)
-
-/-- Reading a cell context from an array is measurable. -/
-theorem measurable_cellContext (e f : ℕ → ℕ) (i j : ℕ) :
-    Measurable (cellContext (α := α) e f i j) :=
-  ((Measurable.of_eval fun p => measurable_pi_apply (e p.1, f p.2)).prodMk
-    (Measurable.of_eval fun b => measurable_pi_apply (i, f b))).prodMk
-      (Measurable.of_eval fun a => measurable_pi_apply (e a, j))
-
-omit [MeasurableSpace α] in
-/-- Reindexing while fixing the hidden indices transports the visible cell context to the
-context at the reindexed cell. -/
-theorem cellContext_pairReindex (e f : ℕ → ℕ) (i j : ℕ)
-    (rowPerm colPerm : Equiv.Perm ℕ)
-    (he : ∀ a, rowPerm (e a) = e a) (hf : ∀ b, colPerm (f b) = f b)
-    (x : ℕ × ℕ → α) :
-    cellContext e f i j (pairReindex rowPerm colPerm x) =
-      cellContext e f (rowPerm i) (colPerm j) x := by
-  simp only [cellContext, pairReindex_apply]
-  congr 1
-  · congr 1
-    · funext p
-      rw [he p.1, hf p.2]
-    · funext b
-      rw [hf b]
-  · funext a
-    rw [he a]
 
 /-- The joint law of a cell and its hidden context is invariant under reindexing that fixes the
 hidden rows and columns pointwise. -/

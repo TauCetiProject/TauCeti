@@ -142,14 +142,16 @@ theorem _root_.IsCoveringMap.existsUnique_continuousMap_lifts_powerSubstitution
       Circle.fundamentalGroupMulEquiv _ (FundamentalGroup.map dA a g) ^ n := by
     have h₁ : W (FundamentalGroup.map q a g) =
         Circle.fundamentalGroupMulEquiv _ (FundamentalGroup.map (dX.comp q) a g) :=
-      congrArg (Circle.fundamentalGroupMulEquiv _) (FundamentalGroupoid.map_comp_map dX q g).symm
+      congrArg (Circle.fundamentalGroupMulEquiv _)
+        (CategoryTheory.End.ext (FundamentalGroupoid.map_comp_map dX q g.asHom)).symm
     -- rewriting `dX.comp q` also changes the base point of the circle, so it is done on a
     -- statement whose base point is that of `FundamentalGroup.map (dX.comp q) a`
     have h₂ : Circle.fundamentalGroupMulEquiv _ (FundamentalGroup.map (dX.comp q) a g) =
         Circle.fundamentalGroupMulEquiv _ (FundamentalGroup.map (pow.comp dA) a g) := by
       rw [hd]
     rw [h₁, h₂]
-    exact (congrArg _ (FundamentalGroupoid.map_comp_map pow dA g)).trans
+    exact (congrArg _
+      (CategoryTheory.End.ext (FundamentalGroupoid.map_comp_map pow dA g.asHom))).trans
       (Circle.fundamentalGroupMulEquiv_map_pow n _)
   -- So the image of `g` is an `n`-th power, which has trivial monodromy.
   obtain ⟨h, hh⟩ := hW.2 (Circle.fundamentalGroupMulEquiv _ (FundamentalGroup.map dA a g))

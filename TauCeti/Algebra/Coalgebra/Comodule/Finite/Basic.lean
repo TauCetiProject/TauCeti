@@ -192,7 +192,6 @@ theorem ofHom_id {M : Type w} [AddCommMonoid M] [Module R M] [Comodule R C M] [M
 
 /-- Categorical composition of finitely generated bundled comodule morphisms is the bundled
 form of composition of comodule morphisms. -/
-@[simp]
 theorem ofHom_comp {M N P : Type w} [AddCommMonoid M] [Module R M] [Comodule R C M]
     [Module.Finite R M] [AddCommMonoid N] [Module R N] [Comodule R C N]
     [Module.Finite R N] [AddCommMonoid P] [Module R P] [Comodule R C P]

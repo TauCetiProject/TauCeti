@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Regularity.LocalBoundedness
+public import TauCeti.Analysis.PDE.Regularity.LocalBoundedness.Basic
 import TauCeti.Analysis.Sobolev.W1p.Truncation
 
 /-!
@@ -86,13 +86,12 @@ namespace TauCeti
 
 namespace PDE
 
-variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpace ℝ ι)}
+variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)}
   [mu.IsAddHaarMeasure] {Omega : Opens (EuclideanSpace ℝ ι)}
   {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ}
 
 /-! ### Convex nonincreasing functions of supersolutions -/
 
-omit [DecidableEq ι] in
 /-- The pointwise form of `a(F(u), φ⁺) ≤ -a(u, (-φ F'(u))⁺)`. At a point where `φ = z`,
 `F'(u) = d₁ ≤ 0`, `F''(u) = d₂ ≥ 0`, `∇u = g` and `∇φ = q`, the gradient of `φ⁺` is `q` or `0`,
 and that of `(-φ F'(u))⁺` is `-z d₂ g - d₁ q` or `0`, according to the sign of `φ`, respectively
@@ -114,6 +113,8 @@ private theorem matrixBilinearForm_ite_smul_le {A : Matrix ι ι ℝ}
   · have hT : ¬ 0 < -(z * d₁) := by nlinarith
     rw [ite_eq_right hz, ite_eq_right hT]
     simp
+
+variable [DecidableEq ι]
 
 /-- The test-function case of `TauCeti.PDE.UniformlyEllipticOn.energyFormH1_contDiffComp_nonpos`:
 `a(F(u), φ⁺) ≤ 0` for every `φ ∈ C_c^∞(Ω)`. The supersolution inequality is tested against

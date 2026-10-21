@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
+public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Coefficients
 public import TauCeti.RingTheory.MvPowerSeries.Basic
 public import Mathlib.RingTheory.MvPowerSeries.Substitution
 public import TauCeti.RingTheory.MvPolynomial.NormCoeff
@@ -132,12 +132,6 @@ end SeminormedCommRing
 
 variable {σ τ R : Type*} [NormedCommRing R] [IsUltrametricDist R]
 
-omit [IsUltrametricDist R] in
-/-- Restrictedness at the unit radius is convergence of the coefficient norms to zero. -/
-theorem isRestricted_one_iff {f : MvPowerSeries σ R} :
-    IsRestricted (fun _ ↦ 1) f ↔ Tendsto (fun t ↦ ‖coeff t f‖) cofinite (𝓝 0) := by
-  simp [IsRestricted]
-
 variable [NormOneClass R]
 
 /-- **Substitution of unit-ball polynomials preserves restrictedness.** If finitely many
@@ -162,7 +156,7 @@ theorem IsRestricted.subst [Finite σ] {a : σ → MvPolynomial τ R}
   refine (norm_coeff_subst_coe_le ha₀ ha₁ f e (half_pos hε).le fun d hd ↦ ?_).trans_lt
     (half_lt_self hε)
   by_contra hlt
-  exact he (Set.mem_biUnion (le_of_not_ge hlt) (MvPolynomial.mem_support_iff.mpr hd))
+  exact he (Set.mem_iUnion₂.mpr ⟨d, le_of_not_ge hlt, MvPolynomial.mem_support_iff.mpr hd⟩)
 
 variable [Finite σ] (a : σ → MvPolynomial τ R) (ha₀ : ∀ s, (a s).constantCoeff = 0)
   (ha₁ : ∀ s t, ‖(a s).coeff t‖ ≤ 1)

@@ -257,28 +257,18 @@ private theorem map_prod_tail_eq_pathLaw_map {μ : Measure Ω} [IsFiniteMeasure 
       μ.map (fun ω (i : ℕ) ↦ X (φ i) ω) = pathLaw μ X :=
     fun φ hφ ↦ hX.map_reindex_pathLaw_eq hX_ae hφ
   -- the selection `(h, g 0, g 1, …)` is strictly monotone, and splitting it recovers the pair
-  set φ : ℕ → ℕ := fun i ↦ if i = 0 then h else g (i - 1) with hφdef
-  have hφmono : StrictMono φ := by
-    intro a b hab
-    simp only [hφdef]
-    rcases Nat.eq_zero_or_pos a with ha | ha
-    · subst ha
-      rw [ite_eq_left rfl, ite_eq_right (by omega : b ≠ 0)]
-      exact hh.trans_le (hg.monotone (Nat.zero_le _))
-    · rw [ite_eq_right (by omega : a ≠ 0), ite_eq_right (by omega : b ≠ 0)]
-      exact hg (by omega : a - 1 < b - 1)
-  have hφ0 : φ 0 = h := by simp [hφdef]
-  -- the tail-index identity, stated explicitly rather than left to definitional reduction
-  have hφsucc : ∀ n, φ (n + 1) = g n := by
-    intro n
-    simp only [hφdef]
-    rw [ite_eq_right (by omega : n + 1 ≠ 0), Nat.add_sub_cancel]
+  let φ : ℕ → ℕ := fun
+    | 0 => h
+    | n + 1 => g n
+  have hφmono : StrictMono φ := strictMono_nat_of_lt_succ fun
+    | 0 => hh
+    | n + 1 => hg n.lt_succ_self
   have hpath_ae : AEMeasurable (fun ω (i : ℕ) ↦ X (φ i) ω) μ :=
     AEMeasurable.of_eval fun i ↦ hX_ae (φ i)
+  -- `φ 0 = h` and `φ (n + 1) = g n` hold by the defining equations of `φ`
   have hfun : (fun ω ↦ (X h ω, fun n ↦ X (g n) ω))
-      = headTail ∘ (fun ω (i : ℕ) ↦ X (φ i) ω) := by
-    funext ω
-    simp only [headTail, Function.comp_apply, hφ0, hφsucc]
+      = headTail ∘ (fun ω (i : ℕ) ↦ X (φ i) ω) :=
+    rfl
   rw [hfun, ← AEMeasurable.map_map_of_aemeasurable hheadTail_meas.aemeasurable hpath_ae,
     hreindex φ hφmono]
 

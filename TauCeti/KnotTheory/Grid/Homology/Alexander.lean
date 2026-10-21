@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.GradedModule.Homology
-public import TauCeti.KnotTheory.Grid.Grading.UnblockedChain
+public import TauCeti.KnotTheory.Grid.Grading.Unblocked.Chain
 public import TauCeti.KnotTheory.Grid.Homology.Unblocked
 
 /-!

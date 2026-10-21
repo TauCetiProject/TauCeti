@@ -25,8 +25,9 @@ This file records that this points homomorphism is, under the two worked-example
 identifications, exactly the inclusion of `n`th roots of unity into the unit group: reading
 the image `μ_n(A) → 𝔾ₘ(A)` on the group-algebra generator `Multiplicative.ofAdd 1` of `𝔾ₘ`
 returns the underlying unit of the root of unity. The same statement holds against the
-canonical Laurent-polynomial `𝔾ₘ` of `TauCeti.MultiplicativeGroup`, and the inclusion is
-injective (a monomorphism of functors) and natural in the value algebra.
+Laurent evaluation equivalence `TauCeti.laurentEvalEquiv` from
+`TauCeti.Algebra.Polynomial.Laurent.Basic`. The inclusion is injective (a monomorphism of
+functors) and natural in the value algebra.
 
 ## Main definitions
 
@@ -41,24 +42,22 @@ injective (a monomorphism of functors) and natural in the value algebra.
   is the `μ_n` character precomposed with the quotient `ℤ ↠ ℤ/n`.
 * `TauCeti.RootsOfUnityGroup.charOfPoint_inclusion_ofAdd_one`: reading the included point on the
   `𝔾ₘ` generator `Multiplicative.ofAdd 1` returns the underlying unit of the root of unity.
-* `TauCeti.RootsOfUnityGroup.multiplicativeGroup_pointEquiv_inclusion`: the same identification
-  against the canonical Laurent-polynomial `𝔾ₘ` of `TauCeti.MultiplicativeGroup`.
+* `TauCeti.RootsOfUnityGroup.map_laurentEvalEquiv_symm_inclusion`: the same identification
+  via the Laurent evaluation equivalence `TauCeti.laurentEvalEquiv`.
 * `TauCeti.RootsOfUnityGroup.inclusion_injective`: the inclusion is injective on points, so
   `μ_n → 𝔾ₘ` is a monomorphism of group functors.
 * `TauCeti.RootsOfUnityGroup.mapValue_inclusion`: the inclusion is natural in the value algebra.
 
-This is a worked-example check for the reductive-groups roadmap
-(`ReductiveGroups/README.md` in TauCetiRoadmap, Layer 4: "`μ_n = D(ℤ/n)`", "`𝔾_m = D(ℤ)`",
-and the diagonalizable anti-equivalence `M ↦ D(M)`), assembling the `μ_n` and `𝔾ₘ` worked
-examples through the diagonalizable-group functoriality `DiagonalizableGroup.pointsMap`.
+This assembles the `μ_n` and `𝔾ₘ` examples through the diagonalizable-group functoriality
+`DiagonalizableGroup.pointsMap`.
 
 ## References
 
 The contravariant functoriality of the diagonalizable group is Tau Ceti's
-`TauCeti.DiagonalizableGroup.pointsMap`; the `μ_n` and `𝔾ₘ` points calculations are
-`TauCeti.RootsOfUnityGroup.pointsMulEquiv` and `TauCeti.MultiplicativeGroup.pointEquiv`. The
-multiplicative quotient `ℤ ↠ ℤ/n` uses Mathlib's `AddMonoidHom.toMultiplicative` and
-`Int.castAddHom`.
+`TauCeti.DiagonalizableGroup.pointsMap`. The roots-of-unity convolution points are read with
+`TauCeti.RootsOfUnityGroup.pointsMulEquiv`, and Laurent algebra maps are read as units using
+`TauCeti.laurentEvalEquiv` from `TauCeti.Algebra.Polynomial.Laurent.Basic`. The multiplicative
+quotient `ℤ ↠ ℤ/n` uses Mathlib's `AddMonoidHom.toMultiplicative` and `Int.castAddHom`.
 -/
 
 public section
@@ -133,27 +132,18 @@ theorem charOfPoint_inclusion_ofAdd_one (n : ℕ)
   apply Units.ext
   rw [DiagonalizableGroup.charOfPoint_apply_coe, pointsMulEquiv_apply]
 
-/-- The same identification against the canonical Laurent-polynomial `𝔾ₘ` of
-`TauCeti.MultiplicativeGroup`: pushing the included point along
-`AddMonoidAlgebra.toMultiplicativeAlgEquiv` and reading it with `MultiplicativeGroup.pointEquiv`
-returns the underlying unit of the root of unity. -/
+/-- The unit read by `TauCeti.laurentEvalEquiv.symm` from
+`AddMonoidAlgebra.toMultiplicativeAlgEquiv` maps under the included point to the underlying
+unit of the root of unity. -/
 @[simp]
-theorem multiplicativeGroup_pointEquiv_inclusion (n : ℕ)
+theorem map_laurentEvalEquiv_symm_inclusion (n : ℕ)
     (f : WithConv (MonoidAlgebra R (Multiplicative (ZMod n)) →ₐ[R] A)) :
     Units.map (inclusion n f).ofConv
-        (MultiplicativeGroup.unitOfPoint
+        (laurentEvalEquiv.symm
           (AddMonoidAlgebra.toMultiplicativeAlgEquiv (R := R) R ℤ).toAlgHom) =
       (RootsOfUnityGroup.pointsMulEquiv n f : Aˣ) := by
-  -- `Units.map` uses the underlying monoid hom of the algebra map; expose that coercion so
-  -- `MultiplicativeGroup.unitOfPoint_comp` matches the goal.
-  change Units.map ((inclusion n f).ofConv).toMonoidHom
-        (MultiplicativeGroup.unitOfPoint
-          (AddMonoidAlgebra.toMultiplicativeAlgEquiv (R := R) R ℤ).toAlgHom) =
-      (RootsOfUnityGroup.pointsMulEquiv n f : Aˣ)
-  rw [← MultiplicativeGroup.unitOfPoint_comp,
-    ← MultiplicativeGroup.pointEquiv_apply,
-    ← DiagonalizableGroup.multiplicativeGroup_pointEquiv_apply,
-    charOfPoint_inclusion_ofAdd_one]
+  simpa using (DiagonalizableGroup.charOfPoint_ofAdd_one (inclusion n f).ofConv).symm.trans
+    (charOfPoint_inclusion_ofAdd_one n f)
 
 /-- The multiplicative quotient `ℤ ↠ ℤ/n` is surjective. -/
 theorem toMultiplicativeZMod_surjective (n : ℕ) : Function.Surjective (toMultiplicativeZMod n) := by

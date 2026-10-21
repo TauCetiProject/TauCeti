@@ -34,6 +34,8 @@ supplies: it serves the underlying complex of a DG algebra and of a DG module on
 * `TauCeti.gradedCochainComplex`: the cochain complex whose degree-`p` term is the submodule
   `ℳ p` and whose differential is the restriction of `dM`.
 * `TauCeti.gradedCochainComplexXEquiv`: its degree-`p` term identified with `ℳ p`.
+* `TauCeti.gradedCochainComplexInclusion`: the cochain map induced by inclusions of grading
+  submodules preserved by the same ambient differential.
 * `TauCeti.gradedCochainComplexLift`: the same complex with its terms lifted to a larger
   module universe.
 * `TauCeti.gradedCochainComplexMap`: the induced map in a common module universe.
@@ -119,6 +121,45 @@ theorem gradedCochainComplexXEquiv_d (p : ℤ) (x : (gradedCochainComplex ℳ dM
   rw [show (eqToHom (gradedCochainComplex_X p).symm) (gradedCochainComplexXEquiv p x) = x from
     (eqToIso (gradedCochainComplex_X (hdeg := hdeg) (hsq := hsq) p)).hom_inv_id_apply x] at key
   exact congrArg Subtype.val key
+
+section Inclusion
+
+variable {𝒩 : ℤ → Submodule R M}
+  {hdegN : LinearMap.IsHomogeneous dM 𝒩 𝒩 1}
+  {hsqN : ∀ p (x : 𝒩 p), dM (dM x) = 0}
+
+/-- Degreewise inclusions of grading submodules induce a cochain map when both complexes
+use the same ambient differential. -/
+noncomputable def gradedCochainComplexInclusion (h : ∀ n, ℳ n ≤ 𝒩 n) :
+    gradedCochainComplex ℳ dM hdeg hsq ⟶ gradedCochainComplex 𝒩 dM hdegN hsqN :=
+  CochainComplex.ofHom (fun n ↦ by
+    -- Both degree terms definitionally use their grading submodules, so the component is
+    -- the submodule inclusion with the scalar actions used by those terms.
+    change ModuleCat.of R (ℳ n) ⟶ ModuleCat.of R (𝒩 n)
+    exact ModuleCat.ofHom (Submodule.inclusion (h n))) (fun n ↦ by
+      apply ModuleCat.hom_ext
+      apply LinearMap.ext
+      intro x
+      apply Subtype.ext
+      dsimp [gradedCochainComplex, ModuleCat.hom_comp, LinearMap.comp_apply]
+      simp only [CochainComplex.of_d]
+      -- Both sides have ambient value `dM x`: inclusion preserves values, and the
+      -- restricted differential applies the same ambient map `dM`.
+      rfl)
+
+/-- The cochain inclusion preserves the underlying homogeneous element. -/
+@[simp]
+theorem gradedCochainComplexInclusion_apply (h : ∀ n, ℳ n ≤ 𝒩 n) (n : ℤ)
+    (x : (gradedCochainComplex ℳ dM hdeg hsq).X n) :
+    (gradedCochainComplexXEquiv (hdeg := hdegN) (hsq := hsqN) n
+      (((gradedCochainComplexInclusion (hdeg := hdeg) (hsq := hsq)
+        (hdegN := hdegN) (hsqN := hsqN) h).f n).hom x) : M) =
+      gradedCochainComplexXEquiv (hdeg := hdeg) (hsq := hsq) n x := by
+  unfold gradedCochainComplexXEquiv
+  rw [gradedCochainComplex_X_proof_eq_rfl, gradedCochainComplex_X_proof_eq_rfl]
+  rfl
+
+end Inclusion
 
 /-- The graded cochain complex in a common module universe. Its degree-`p` term is
 `ULift (ℳ p)`, and its differential is the lifted restriction of `dM`. -/

@@ -91,12 +91,9 @@ The core of the file is the lattice-level and weight-level content:
 
 ## References
 
-This advances `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane L ("lattice homology"),
-whose programme is "Plumbing trees/graphs and their lattices; Némethi's lattice (co)homology …;
-invariance under **Neumann moves**; … `d`-invariant analogues". The plumbing calculus is
-W. Neumann, *A calculus for plumbing applied to the topology of complex surface singularities and
-degenerating complex curves*, Trans. Amer. Math. Soc. **268** (1981), 299--344; the weight
-conventions and the behaviour of `χ_k` under blowing up follow Némethi,
+The plumbing calculus is W. Neumann, *A calculus for plumbing applied to the topology of complex
+surface singularities and degenerating complex curves*, Trans. Amer. Math. Soc. **268** (1981),
+299--344; the weight conventions and the behaviour of `χ_k` under blowing up follow Némethi,
 [arXiv:0709.0841](https://arxiv.org/abs/0709.0841), Sections 2--3, after Ozsváth--Szabó,
 [arXiv:math/0203265](https://arxiv.org/abs/math/0203265).
 -/

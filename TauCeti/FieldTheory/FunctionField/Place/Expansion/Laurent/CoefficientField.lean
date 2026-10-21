@@ -9,17 +9,23 @@ public import TauCeti.FieldTheory.FunctionField.Place.Expansion.CoefficientField
 public import TauCeti.FieldTheory.FunctionField.Place.Expansion.Laurent.Basic
 
 /-!
-# Laurent expansions and residues at places with separable residue field
+# Laurent expansions over the residue field, and residues at places with separable residue field
 
-Let `P` be a place of `F / k` whose residue field `F_P` is separable over `k`, and let `t` have
-order one at `P`. The identification of the completed valuation ring with `F_P[[T]]` through the
-coefficient field (`TauCeti.Place.completionIntegersEquivPowerSeriesResidueField`) extends to
-fraction fields: the completion of `F` at `P` is the Laurent-series field `F_P((T))`, with `t`
-sent to `T`. Every function `z ∈ F` therefore has a Laurent expansion `∑ aᵢ tⁱ` with
-coefficients `aᵢ ∈ F_P`, and its coefficient of `t⁻¹` is the residue `res_{P,t}(z) ∈ F_P`.
-Composing with the trace of `F_P / k` gives a `k`-valued residue, the form in which residues at
-places of arbitrary degree enter the residue theorem and the comparison of Weil differentials with
-differentials.
+Let `P` be a place of `F / k` and let `t` be a uniformizer of the completion `F̂_P`. Through any
+coefficient field `s` of the completed valuation ring, the identification of `𝒪̂_P` with
+`F_P[[T]]` (`TauCeti.Place.completionIntegersEquivPowerSeriesOfSection`) extends to fraction
+fields: `F̂_P` is the Laurent-series field `F_P((T))`, with `t` sent to `T` and the valuation of
+`P` sent to the `T`-adic valuation. This holds at every place, but when `F_P` is inseparable over
+`k` there may be no `k`-linear coefficient field, and then no `k`-linear expansion.
+
+Now let `F_P` be separable over `k`, and let `t ∈ F` have order one at `P`. The coefficient
+field over `k` gives the `k`-linear identification
+(`TauCeti.Place.completionIntegersEquivPowerSeriesResidueField`), and its extension to fraction
+fields identifies the completion of `F` at `P` with `F_P((T))` over `k`. Every function `z ∈ F`
+therefore has a Laurent expansion `∑ aᵢ tⁱ` with coefficients `aᵢ ∈ F_P`, and its coefficient of
+`t⁻¹` is the residue `res_{P,t}(z) ∈ F_P`. Composing with the trace of `F_P / k` gives a
+`k`-valued residue, the form in which residues at places of arbitrary degree enter the residue
+theorem and the comparison of Weil differentials with differentials.
 
 At a rational place the coefficient field is `k` itself, and these expansions and residues are
 the ones of `TauCeti.Place.laurentSeriesExpansion` and `TauCeti.Place.residue`, read in `F_P`
@@ -28,6 +34,8 @@ residue (`TauCeti.Place.traceResidue_eq_residue`).
 
 ## Main definitions
 
+* `TauCeti.Place.completionEquivLaurentSeriesOfSection`: through a coefficient field, the
+  completion at any place is `F_P((T))`.
 * `TauCeti.Place.completionEquivLaurentSeriesResidueField`: the completion at `P` is `F_P((T))`.
 * `TauCeti.Place.laurentSeriesExpansionResidueField`: the Laurent expansion of functions at `P`
   in `t`, with coefficients in `F_P`.
@@ -39,6 +47,8 @@ residue (`TauCeti.Place.traceResidue_eq_residue`).
 
 ## Main results
 
+* `TauCeti.Place.exists_completion_ringEquiv_laurentSeries`: at every place, separable residue
+  field or not, `F̂_P` is isomorphic to `F_P((T))` by a valuation-preserving ring isomorphism.
 * `TauCeti.Place.mem_filtration_iff_le_order_powerSeriesExpansionResidueField`: a regular
   function vanishes to order `n` exactly when its expansion has order at least `n`.
 * `TauCeti.Place.exists_trunc_powerSeriesExpansionResidueField_eq`: every power series over
@@ -67,7 +77,81 @@ open scoped LaurentSeries
 namespace TauCeti.Place
 
 variable {k F : Type*} [Field k] [Field F] [Algebra k F] (P : Place k F)
-  [Algebra.IsSeparable k P.ResidueField]
+
+/-! ### Laurent expansions over a coefficient field -/
+
+section OfSection
+
+variable (s : P.ResidueField →+* P.completionPlace.integers)
+  (hs : ∀ a, IsLocalRing.residue P.completionPlace.integers (s a) = P.residueFieldEquivCompletion a)
+  {t : P.Completion} (ht : P.completionPlace.ord t = 1)
+
+/-- **The completion at a place is `F_P((T))`.** Given a coefficient field `s` of the completed
+valuation ring, a ring embedding of the residue field `F_P` lifting it, a uniformizer `t` of the
+completion identifies it with the Laurent-series field over the residue field, sending `t` to
+`T`; this is the fraction-field extension of
+`TauCeti.Place.completionIntegersEquivPowerSeriesOfSection`. -/
+noncomputable def completionEquivLaurentSeriesOfSection :
+    P.Completion ≃+* LaurentSeries P.ResidueField :=
+  IsFractionRing.ringEquivOfRingEquiv (P.completionIntegersEquivPowerSeriesOfSection s hs ht)
+
+/-- Laurent-series expansion restricts to power-series expansion on the completed valuation
+ring. -/
+@[simp]
+theorem completionEquivLaurentSeriesOfSection_apply_integer (x : P.completionPlace.integers) :
+    P.completionEquivLaurentSeriesOfSection s hs ht (x : P.Completion) =
+      (P.completionIntegersEquivPowerSeriesOfSection s hs ht x :
+        LaurentSeries P.ResidueField) :=
+  IsFractionRing.ringEquivOfRingEquiv_algebraMap _ x
+
+/-- A completed function is integral exactly when its Laurent expansion comes from a power
+series. -/
+theorem exists_powerSeries_eq_completionEquivLaurentSeriesOfSection_iff_mem_integers
+    (z : P.Completion) :
+    (∃ f : PowerSeries P.ResidueField,
+        (f : LaurentSeries P.ResidueField) = P.completionEquivLaurentSeriesOfSection s hs ht z) ↔
+      z ∈ P.completionPlace.integers :=
+  P.exists_powerSeries_eq_iff_mem_integers
+    (P.completionEquivLaurentSeriesOfSection_apply_integer s hs ht) z
+
+/-- The uniformizer expands as the Laurent variable `T`. -/
+@[simp]
+theorem completionEquivLaurentSeriesOfSection_uniformizer :
+    P.completionEquivLaurentSeriesOfSection s hs ht t = HahnSeries.single 1 1 := by
+  have h := P.completionEquivLaurentSeriesOfSection_apply_integer s hs ht
+    ⟨t, P.completionPlace.mem_integers_iff_ord_nonneg.mpr (by omega)⟩
+  rw [completionIntegersEquivPowerSeriesOfSection_uniformizer, HahnSeries.ofPowerSeries_X] at h
+  exact h
+
+/-- The coefficient field expands to the constant Laurent series. -/
+theorem completionEquivLaurentSeriesOfSection_section (a : P.ResidueField) :
+    P.completionEquivLaurentSeriesOfSection s hs ht (s a) = HahnSeries.C a := by
+  rw [completionEquivLaurentSeriesOfSection_apply_integer,
+    completionIntegersEquivPowerSeriesOfSection_section, HahnSeries.ofPowerSeries_C]
+
+/-- Laurent-series expansion preserves the normalized valuation. -/
+@[simp]
+theorem valuation_completionEquivLaurentSeriesOfSection (x : P.Completion) :
+    Valued.v (P.completionEquivLaurentSeriesOfSection s hs ht x) =
+      P.completionPlace.valuation x :=
+  P.valuation_apply_eq_completionPlace_valuation
+    (P.completionEquivLaurentSeriesOfSection_apply_integer s hs ht) x
+
+end OfSection
+
+/-- **At every place the completion is `F_P((T))`**, separable residue field or not: some
+isomorphism of the completion with the Laurent-series field over the residue field carries the
+valuation of `P` to the `T`-adic valuation. When `F_P` is inseparable over `k` there may be no
+`k`-linear such isomorphism (`TauCeti.Place.isEmpty_completion_algEquiv_laurentSeries`). -/
+theorem exists_completion_ringEquiv_laurentSeries :
+    ∃ e : P.Completion ≃+* LaurentSeries P.ResidueField,
+      ∀ x, Valued.v (e x) = P.completionPlace.valuation x := by
+  obtain ⟨s, hs⟩ := P.exists_completionResidueFieldSection
+  obtain ⟨t, -, ht⟩ := P.completionPlace.exists_ne_zero_ord_eq 1
+  exact ⟨P.completionEquivLaurentSeriesOfSection s hs ht,
+    P.valuation_completionEquivLaurentSeriesOfSection s hs ht⟩
+
+variable [Algebra.IsSeparable k P.ResidueField]
 
 /-! ### Laurent expansions in the completion -/
 
@@ -100,7 +184,10 @@ theorem exists_powerSeries_eq_completionEquivLaurentSeriesResidueField_iff_mem_i
     (∃ f : PowerSeries P.ResidueField,
         (f : LaurentSeries P.ResidueField) = P.completionEquivLaurentSeriesResidueField ht z) ↔
       z ∈ P.completionPlace.integers :=
-  P.exists_powerSeries_eq_algEquivOfAlgEquiv_iff_mem_integers _ z
+  P.exists_powerSeries_eq_iff_mem_integers
+    (e := (P.completionIntegersEquivPowerSeriesResidueField ht).toRingEquiv)
+    (e' := (P.completionEquivLaurentSeriesResidueField ht).toRingEquiv)
+    (P.completionEquivLaurentSeriesResidueField_apply_integer ht) z
 
 /-- The uniformizer expands as the Laurent variable `T`. -/
 @[simp]
@@ -112,12 +199,24 @@ theorem completionEquivLaurentSeriesResidueField_uniformizer :
     HahnSeries.ofPowerSeries_X] at h
   exact h
 
+/-- The coefficient field expands to the constant Laurent series. -/
+theorem completionEquivLaurentSeriesResidueField_completionResidueFieldSection
+    (a : P.ResidueField) :
+    P.completionEquivLaurentSeriesResidueField ht (P.completionResidueFieldSection a) =
+      HahnSeries.C a := by
+  rw [completionEquivLaurentSeriesResidueField_apply_integer,
+    completionIntegersEquivPowerSeriesResidueField_completionResidueFieldSection,
+    HahnSeries.ofPowerSeries_C]
+
 /-- Laurent-series expansion preserves the normalized valuation. -/
 @[simp]
 theorem valuation_completionEquivLaurentSeriesResidueField (x : P.Completion) :
     Valued.v (P.completionEquivLaurentSeriesResidueField ht x) =
       P.completionPlace.valuation x :=
-  P.valuation_algEquivOfAlgEquiv _ x
+  P.valuation_apply_eq_completionPlace_valuation
+    (e := (P.completionIntegersEquivPowerSeriesResidueField ht).toRingEquiv)
+    (e' := (P.completionEquivLaurentSeriesResidueField ht).toRingEquiv)
+    (P.completionEquivLaurentSeriesResidueField_apply_integer ht) x
 
 end Completion
 

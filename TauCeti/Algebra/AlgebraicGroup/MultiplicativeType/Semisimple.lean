@@ -36,8 +36,8 @@ multiplicative type is trivial.
 * J. S. Milne, *Algebraic Groups* (2017), Proposition 12.40.
 * T. A. Springer, *Linear Algebraic Groups*, §2.4.
 
-This advances Layer 4, "Diagonalizable groups and groups of multiplicative type", and supplies a
-prerequisite for the torus worked example in Layer 6 of the ReductiveGroups roadmap.
+This supplies a prerequisite for the proof that tori are reductive in
+`TauCeti.Algebra.AlgebraicGroup.Torus.Reductive`.
 -/
 
 public section

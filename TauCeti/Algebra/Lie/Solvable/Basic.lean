@@ -178,7 +178,7 @@ private theorem restrictIncl_injective (I J : LieIdeal R L) :
 
 private theorem restrictIncl_surjective {I J : LieIdeal R L} (h : J ≤ I) :
     Function.Surjective (restrictIncl I J) :=
-  fun x => ⟨⟨⟨(x : L), h x.2⟩, x.2⟩, rfl⟩
+  fun x => ⟨⟨⟨(x : L), h x.2⟩, x.2⟩, Subtype.ext (I.incl.coe_lieIdealComap_apply J _)⟩
 
 /-- Read inside an ideal, a solvable ideal stays solvable. -/
 instance isSolvable_restrict (I J : LieIdeal R L) [IsSolvable ↥J] :
@@ -240,9 +240,9 @@ theorem isSolvable_of_isSolvable_ker_of_surjective {f : L →ₗ⁅R⁆ L'} (h :
 and the quotient by it are. -/
 theorem isSolvable_iff_ideal_quotient (I : LieIdeal R L) :
     IsSolvable L ↔ IsSolvable ↥I ∧ IsSolvable (L ⧸ I) := by
-  refine ⟨fun _ => ⟨inferInstance, I.mkQ_surjective.lieAlgebra_isSolvable⟩, fun h => ?_⟩
+  refine ⟨fun _ => ⟨inferInstance, I.surjective_mkQ.lieAlgebra_isSolvable⟩, fun h => ?_⟩
   obtain ⟨h₁, h₂⟩ := h
-  exact isSolvable_of_isSolvable_ker_of_surjective I.mkQ_surjective (by rwa [I.ker_mkQ]) h₂
+  exact isSolvable_of_isSolvable_ker_of_surjective I.surjective_mkQ (by rwa [I.mkQ_ker]) h₂
 
 /-- **Triviality of the radical transfers along an isomorphism of Lie algebras.**
 
@@ -267,9 +267,9 @@ semisimplicity by Cartan's criterion, this says that `L ⧸ radical R L` is semi
 instance hasTrivialRadical_quotient_radical [IsNoetherian R L] :
     HasTrivialRadical R (L ⧸ radical R L) where
   radical_eq_bot := by
-    rw [← LieIdeal.radical_map_eq (radical R L).mkQ (radical R L).mkQ_surjective
-        (by rw [LieIdeal.ker_mkQ]; infer_instance),
-      LieIdeal.map_eq_bot_iff, LieIdeal.ker_mkQ]
+    rw [← LieIdeal.radical_map_eq (radical R L).mkQ (radical R L).surjective_mkQ
+        (by rw [LieIdeal.mkQ_ker]; infer_instance),
+      LieIdeal.map_eq_bot_iff, LieIdeal.mkQ_ker]
 
 variable {R L}
 
@@ -279,8 +279,8 @@ theorem radical_le_of_hasTrivialRadical_quotient [IsNoetherian R L] (I : LieIdea
     [HasTrivialRadical R (L ⧸ I)] : radical R L ≤ I := by
   have hbot : (radical R L).map I.mkQ = ⊥ :=
     HasTrivialRadical.eq_bot_of_isSolvable
-      (hI := LieIdeal.isSolvable_map I.mkQ _ I.mkQ_surjective) _
-  rwa [LieIdeal.map_eq_bot_iff, I.ker_mkQ] at hbot
+      (hI := LieIdeal.isSolvable_map I.mkQ _ I.surjective_mkQ) _
+  rwa [LieIdeal.map_eq_bot_iff, I.mkQ_ker] at hbot
 
 /-- **The radical is the unique solvable ideal whose quotient has trivial radical.** -/
 @[simp]

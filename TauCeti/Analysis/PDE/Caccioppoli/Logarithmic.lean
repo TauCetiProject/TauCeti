@@ -73,11 +73,10 @@ namespace TauCeti
 
 namespace PDE
 
-variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpace ℝ ι)}
+variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)}
   [mu.IsAddHaarMeasure] {Omega : Opens (EuclideanSpace ℝ ι)}
   {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ}
 
-omit [DecidableEq ι] in
 /-- If `|ψ| ≤ M` and `u ≥ m > 0` on the support of `ψ`, then `ψ² ‖∇u‖² / u²` is integrable on
 `Ω`, being dominated by `(M/m)² ‖∇u‖²`. -/
 private theorem integrable_sq_mul_norm_gradient_sq_div_sq {u : W1p mu Omega 2}
@@ -109,6 +108,8 @@ private theorem integrable_sq_mul_norm_gradient_sq_div_sq {u : W1p mu Omega 2}
   · rw [image_eq_zero_of_notMem_tsupport hxs]
     simp only [ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, zero_mul, zero_div]
     positivity
+
+variable [DecidableEq ι]
 
 /-- The pointwise form of the logarithmic Caccioppoli inequality. Let `A` satisfy the ellipticity
 bounds with constants `λ, Λ`. At a point where `u = c > 0`, `∇u = g`, `ψ = z` and `∇ψ = q`, the
@@ -295,7 +296,7 @@ theorem exists_setIntegral_ball_norm_gradient_sq_div_sq_le :
   refine ⟨2 * (c + 1), by positivity, ?_⟩
   intro mu _ Omega a lam Lam u x₀ r R m h ha hu hr hrR hball hm hum
   -- A cutoff equal to one on `B(x₀, r)`, supported in `closedBall x₀ ((r + R)/2) ⊆ B(x₀, R)`.
-  obtain ⟨ψ, hψ, hrange, hone, hts, hgrad⟩ := hc x₀ hr (by linarith : r < (r + R) / 2)
+  obtain ⟨ψ, hψ, hrange, hone, hts, hgrad, -⟩ := hc x₀ hr.le (by linarith : r < (r + R) / 2)
   have hsubR : closedBall x₀ ((r + R) / 2) ⊆ ball x₀ R := closedBall_subset_ball (by linarith)
   have htsR : tsupport ψ ⊆ ball x₀ R := hts.trans hsubR
   have hcpt : HasCompactSupport ψ :=

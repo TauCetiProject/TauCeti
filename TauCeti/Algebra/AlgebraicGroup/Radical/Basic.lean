@@ -37,8 +37,7 @@ algebra is bialgebra-equivalent to the algebraic closure via the counit.
 * `TauCeti.geometricNormalSubgroupFreeCommHopfAlgProperty.geometricFiberCounitBialgEquiv`: a
   geometric fibre satisfying the candidate property is trivial.
 
-This is shared infrastructure for the reductive and semisimple definitions in Layer 6,
-"Reductive and semisimple groups", of the ReductiveGroups roadmap.
+This is shared infrastructure for the definitions of reductive and semisimple groups.
 -/
 
 public section

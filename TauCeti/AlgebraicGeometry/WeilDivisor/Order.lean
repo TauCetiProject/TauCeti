@@ -12,10 +12,9 @@ public import Mathlib.Order.Preorder.Finsupp
 /-!
 # The order on Weil divisors and the positive/negative part decomposition
 
-This file continues the Jacobian roadmap's Layer A formal Weil divisor API
-(`TauCeti.AlgebraicGeometry.WeilDivisor.Basic`) by recording the lattice-ordered-group structure of
-formal divisors and the canonical decomposition of a divisor into its effective positive and
-negative parts.
+This file extends the formal Weil divisor API (`TauCeti.AlgebraicGeometry.WeilDivisor.Basic`) by
+recording the lattice-ordered-group structure of formal divisors and the canonical decomposition of
+a divisor into its effective positive and negative parts.
 
 The point set `X →₀ ℤ` already carries the coefficientwise partial order, the lattice
 operations `⊔`/`⊓`, and (because `ℤ` is an ordered group) the lattice-ordered-group positive and
@@ -30,9 +29,6 @@ This reuses Mathlib's lattice-ordered-group `posPart`/`negPart` API
 (`Mathlib.Algebra.Order.Group.PosPart`) and the coefficientwise order and lattice on finitely
 supported functions (`Mathlib.Order.Preorder.Finsupp`, `Mathlib.Data.Finsupp.Order`); no
 external mathematics is vendored.
-
-This advances the Tau Ceti Jacobian roadmap, Layer A, "Divisors on a curve: Weil divisors
-`⊕_x ℤ`", "principal divisors", and "Degree".
 -/
 
 public section

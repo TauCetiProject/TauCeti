@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.NormCoeff
-public import TauCeti.RingTheory.DedekindDomain.Ideal
+public import TauCeti.RingTheory.DedekindDomain.Ideal.Basic
 public import TauCeti.RingTheory.Ideal.Norm.AbsNorm
 
 /-!
@@ -26,8 +26,8 @@ therefore deliberately too narrow for the ideal Möbius function or for coeffici
 whose prime-power values are independent local data; those get separate carriers.
 
 The good ideals of a weight are the ideals prime to its bad primes in the sense of
-`Ideal.IsPrimeTo` (from `TauCeti.RingTheory.DedekindDomain.Ideal`): nonzero and divisible by no
-prime of the set. Its induction principle `Ideal.IsPrimeTo.induction_on` factors a good ideal
+`Ideal.IsPrimeTo` (from `TauCeti.RingTheory.DedekindDomain.Ideal.Basic`): nonzero and divisible
+by no prime of the set. Its induction principle `Ideal.IsPrimeTo.induction_on` factors a good ideal
 into good primes; this is the engine behind both
 `TauCeti.MultiplicativeIdealWeight.apply_ne_zero_iff_isGood` and
 `TauCeti.UnitaryIdealWeight.norm_eq_one`.

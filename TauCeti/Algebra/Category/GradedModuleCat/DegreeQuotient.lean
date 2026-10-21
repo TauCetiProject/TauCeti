@@ -72,7 +72,7 @@ theorem isHomogeneous_offDegreeSpan (M : GradedModuleCat.{v} 𝒜) (p : ℤ) :
   rw [decompose_sum, DFinsupp.finsetSum_apply, AddSubmonoidClass.coe_finsetSum]
   refine Submodule.sum_mem _ fun i _ ↦ ?_
   obtain ⟨d, hd, hg⟩ := (g i).property
-  have h := TauCeti.DirectSum.coe_decompose_smul_add_of_right_mem 𝒜 M.grading.piece hg
+  have h := DirectSum.coe_decompose_smul_add_of_right_mem 𝒜 M.grading.piece hg
     (a := c i) (i := q - d)
   rw [sub_add_cancel] at h
   rw [h]
@@ -214,7 +214,7 @@ theorem piece_inf_offDegreeSpan_le_positive_smul_top (M : GradedModuleCat.{v} �
     DFinsupp.finsetSum_apply, AddSubmonoidClass.coe_finsetSum]
   refine Submodule.sum_mem _ fun t _ ↦ ?_
   obtain ⟨q, hq, ht⟩ := (g t).property
-  have h := TauCeti.DirectSum.coe_decompose_smul_add_of_right_mem 𝒜 M.grading.piece ht
+  have h := DirectSum.coe_decompose_smul_add_of_right_mem 𝒜 M.grading.piece ht
     (a := c t) (i := p - q)
   rw [sub_add_cancel] at h
   rw [h]

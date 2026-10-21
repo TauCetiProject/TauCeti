@@ -17,9 +17,8 @@ The Fredholm index is locally constant in a continuous family of Fredholm operat
 it is constant when the parameter space is preconnected, and in particular at the endpoints of a
 path of Fredholm operators.
 
-This is the continuous-family form of stability under small perturbations. It is a basic input to
-the spectral-flow and Riemann--Roch-with-boundary developments in Lanes F0 and F1.3 of the analytic
-Heegaard Floer roadmap: a family can change index only by leaving the Fredholm locus.
+This is the continuous-family form of stability under small perturbations: a family can change index
+only by leaving the Fredholm locus.
 
 The proofs use the operator-norm neighborhood on which
 `ContinuousLinearMap.IsFredholm.eventually_isFredholm_and_index_eq` makes the index constant,

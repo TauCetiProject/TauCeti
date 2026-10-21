@@ -149,7 +149,7 @@ in every characteristic and also in rank zero. -/
 theorem mapPointsFunctor_conjugationMap_app_surjective {R : Type u} [CommRing R]
     (K : Type w) [Field K] [IsAlgClosed K] [Algebra R K] :
     Function.Surjective
-      ((CommHopfAlgCat.mapPointsFunctor (conjugationMap n R)).app (CommAlgCat.of R K)) := by
+      ((CommHopfAlgCat.Hom.mapPointsFunctor (conjugationMap n R)).app (CommAlgCat.of R K)) := by
   -- Combine Mathlib's `PSL ≃ PGL` equivalence over algebraically closed fields with the
   -- Skolem–Noether identification `Matrix.ProjGenLinGroup.innerAut_bijective`.
   intro q
@@ -160,7 +160,7 @@ theorem mapPointsFunctor_conjugationMap_app_surjective {R : Type u} [CommRing R]
   obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective s
   refine ⟨(pointsMulEquiv (R := R) (A := K) n).symm g,
     (ProjectiveGeneralLinear.pointsMulEquiv n R _).injective ?_⟩
-  rw [CommHopfAlgCat.mapPointsFunctor_app_apply,
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
     pointsMulEquiv_conjugationMap, MulEquiv.apply_symm_apply]
   rw [← Matrix.ProjGenLinGroup.innerAut_mk]
   have hs' : Matrix.ProjectiveSpecialLinearGroup.toPGL (QuotientGroup.mk g) = p := by

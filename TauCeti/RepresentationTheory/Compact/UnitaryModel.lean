@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.PositiveDefinite
+public import TauCeti.Analysis.InnerProductSpace.Positive.Definite
 public import TauCeti.RepresentationTheory.Compact.Unitarizable
 public import TauCeti.RepresentationTheory.Continuous.Representative
 

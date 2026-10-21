@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.OptimalTransport.GromovWasserstein.Basic
-public import TauCeti.Probability.ProbabilityMassFunction.Finite
+public import TauCeti.Probability.Distributions.Uniform.Finite
 import Mathlib.MeasureTheory.Function.LpSeminorm.Indicator
 
 /-!
@@ -52,16 +52,16 @@ theorem twoPointKernel_apply (a : ℝ) (i j : Fin 2) :
 The formula includes `p = ∞`, since `∞.toReal = 0`. -/
 theorem eLpNorm_twoPointKernel_edist (a b : ℝ) {p : ℝ≥0∞} (hp : p ≠ 0) :
     eLpNorm (fun q ↦ edist (twoPointKernel a q) (twoPointKernel b q)) p
-      ((PMF.uniformOfFintype (Fin 2)).toMeasure.prod
-        (PMF.uniformOfFintype (Fin 2)).toMeasure) =
+      ((Measure.uniformOfFinset (.univ : Finset (Fin 2))).prod
+        (Measure.uniformOfFinset (.univ : Finset (Fin 2)))) =
       (2 : ℝ≥0∞) ^ (-1 / p.toReal) * ENNReal.ofReal |a - b| := by
   have h : (fun q ↦ edist (twoPointKernel a q) (twoPointKernel b q)) =
       {q : Fin 2 × Fin 2 | q.1 ≠ q.2}.indicator (fun _ ↦ edist a b) := by
     funext q
     by_cases hq : q.1 = q.2 <;> simp [twoPointKernel, hq]
   rw [h, eLpNorm_indicator_const' (Set.toFinite _).measurableSet.nullMeasurableSet
-    (by rw [PMF.uniformOfFintype_fin_two_prod_offDiagonal]; norm_num) hp,
-    enorm_eq_self, PMF.uniformOfFintype_fin_two_prod_offDiagonal, ENNReal.inv_rpow,
+    (by rw [Probability.uniformOfFinset_univ_fin_two_prod_offDiagonal]; norm_num) hp,
+    enorm_eq_self, Probability.uniformOfFinset_univ_fin_two_prod_offDiagonal, ENNReal.inv_rpow,
     ← ENNReal.rpow_neg]
   simp [edist_dist, Real.dist_eq, neg_div, mul_comm]
 
@@ -69,18 +69,18 @@ theorem eLpNorm_twoPointKernel_edist (a b : ℝ) {p : ℝ≥0∞} (hp : p ≠ 0)
 theorem gromovWassersteinDistortion_twoPoint_diagonal (a b : ℝ) {p : ℝ≥0∞}
     (hp : p ≠ 0) :
     gromovWassersteinDistortion p (twoPointKernel a) (twoPointKernel b)
-      (PMF.uniformOfFintype (Fin 2)).toMeasure.diagonalCoupling =
+      (Measure.uniformOfFinset (.univ : Finset (Fin 2))).diagonalCoupling =
       (2 : ℝ≥0∞) ^ (-1 / p.toReal) * ENNReal.ofReal |a - b| := by
-  rw [← (PMF.uniformOfFintype (Fin 2)).toMeasure.measurePreserving_diagonal.map_eq]
+  rw [← (Measure.uniformOfFinset (.univ : Finset (Fin 2))).measurePreserving_diagonal.map_eq]
   exact (gromovWassersteinDistortion_map_prodMk
-    (MeasurePreserving.id (PMF.uniformOfFintype (Fin 2)).toMeasure)
-    (MeasurePreserving.id (PMF.uniformOfFintype (Fin 2)).toMeasure)
+    (MeasurePreserving.id (Measure.uniformOfFinset (.univ : Finset (Fin 2))))
+    (MeasurePreserving.id (Measure.uniformOfFinset (.univ : Finset (Fin 2))))
     (measurable_of_countable (twoPointKernel a)).aestronglyMeasurable
     (measurable_of_countable (twoPointKernel b)).aestronglyMeasurable p).trans
       (eLpNorm_twoPointKernel_edist a b hp)
 
 private theorem gromovWassersteinEDist_twoPoint_dirac (a : ℝ) {p : ℝ≥0∞} (hp : p ≠ 0) :
-    gromovWassersteinEDist p (PMF.uniformOfFintype (Fin 2)).toMeasure (twoPointKernel a)
+    gromovWassersteinEDist p (Measure.uniformOfFinset (.univ : Finset (Fin 2))) (twoPointKernel a)
       (Measure.dirac ()) (fun _ : Unit × Unit ↦ (0 : ℝ)) =
       (2 : ℝ≥0∞) ^ (-1 / p.toReal) * ENNReal.ofReal |a| := by
   rw [gromovWassersteinEDist_dirac_right () _ (measurable_of_countable _).aestronglyMeasurable]
@@ -90,20 +90,22 @@ private theorem gromovWassersteinEDist_twoPoint_dirac (a : ℝ) {p : ℝ≥0∞}
 The nonnegative distances may vanish; positive ones give genuine two-point metric spaces. -/
 theorem gromovWassersteinEDist_twoPoint {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b)
     {p : ℝ≥0∞} (hp : 1 ≤ p) :
-    gromovWassersteinEDist p (PMF.uniformOfFintype (Fin 2)).toMeasure (twoPointKernel a)
-      (PMF.uniformOfFintype (Fin 2)).toMeasure (twoPointKernel b) =
+    gromovWassersteinEDist p (Measure.uniformOfFinset (.univ : Finset (Fin 2))) (twoPointKernel a)
+      (Measure.uniformOfFinset (.univ : Finset (Fin 2))) (twoPointKernel b) =
       (2 : ℝ≥0∞) ^ (-1 / p.toReal) * ENNReal.ofReal |a - b| := by
   have hp0 : p ≠ 0 := ne_of_gt (lt_of_lt_of_le zero_lt_one hp)
   refine le_antisymm ((gromovWassersteinEDist_le
-    (PMF.uniformOfFintype (Fin 2)).toMeasure.isCoupling_diagonalCoupling p _ _).trans_eq
+    (Measure.uniformOfFinset (.univ : Finset (Fin 2))).isCoupling_diagonalCoupling p _ _).trans_eq
       (gromovWassersteinDistortion_twoPoint_diagonal a b hp0)) ?_
   have lower (a b : ℝ) (ha : 0 ≤ a) (hb : 0 ≤ b) :
       (2 : ℝ≥0∞) ^ (-1 / p.toReal) * ENNReal.ofReal (a - b) ≤
-        gromovWassersteinEDist p (PMF.uniformOfFintype (Fin 2)).toMeasure (twoPointKernel a)
-          (PMF.uniformOfFintype (Fin 2)).toMeasure (twoPointKernel b) := by
+        gromovWassersteinEDist p (Measure.uniformOfFinset (.univ : Finset (Fin 2)))
+          (twoPointKernel a) (Measure.uniformOfFinset (.univ : Finset (Fin 2)))
+          (twoPointKernel b) := by
     rw [ENNReal.ofReal_sub _ hb, ENNReal.mul_sub (by intros; finiteness), tsub_le_iff_right]
-    have h := gromovWassersteinEDist_triangle (μ := (PMF.uniformOfFintype (Fin 2)).toMeasure)
-      (ν := (PMF.uniformOfFintype (Fin 2)).toMeasure) (ρ := Measure.dirac ())
+    have h := gromovWassersteinEDist_triangle
+      (μ := Measure.uniformOfFinset (.univ : Finset (Fin 2)))
+      (ν := Measure.uniformOfFinset (.univ : Finset (Fin 2))) (ρ := Measure.dirac ())
       (ωX := twoPointKernel a) (ωY := twoPointKernel b) (ωW := fun _ ↦ (0 : ℝ)) hp
       (measurable_of_countable _).aestronglyMeasurable
       (measurable_of_countable _).aestronglyMeasurable aestronglyMeasurable_const
@@ -117,8 +119,8 @@ theorem gromovWassersteinEDist_twoPoint {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b
 /-- At infinity the exact uniform two-point GW distance is the absolute difference of the
 distances. -/
 theorem gromovWassersteinEDist_twoPoint_top {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) :
-    gromovWassersteinEDist ∞ (PMF.uniformOfFintype (Fin 2)).toMeasure (twoPointKernel a)
-      (PMF.uniformOfFintype (Fin 2)).toMeasure (twoPointKernel b) =
+    gromovWassersteinEDist ∞ (Measure.uniformOfFinset (.univ : Finset (Fin 2))) (twoPointKernel a)
+      (Measure.uniformOfFinset (.univ : Finset (Fin 2))) (twoPointKernel b) =
       ENNReal.ofReal |a - b| := by
   simpa using gromovWassersteinEDist_twoPoint ha hb (p := ∞) le_top
 
@@ -126,9 +128,9 @@ theorem gromovWassersteinEDist_twoPoint_top {a b : ℝ} (ha : 0 ≤ a) (hb : 0 �
 theorem gromovWassersteinDistortion_twoPoint_diagonal_eq_edist {a b : ℝ}
     (ha : 0 ≤ a) (hb : 0 ≤ b) {p : ℝ≥0∞} (hp : 1 ≤ p) :
     gromovWassersteinDistortion p (twoPointKernel a) (twoPointKernel b)
-      (PMF.uniformOfFintype (Fin 2)).toMeasure.diagonalCoupling =
-      gromovWassersteinEDist p (PMF.uniformOfFintype (Fin 2)).toMeasure (twoPointKernel a)
-        (PMF.uniformOfFintype (Fin 2)).toMeasure (twoPointKernel b) := by
+      (Measure.uniformOfFinset (.univ : Finset (Fin 2))).diagonalCoupling =
+      gromovWassersteinEDist p (Measure.uniformOfFinset (.univ : Finset (Fin 2))) (twoPointKernel a)
+        (Measure.uniformOfFinset (.univ : Finset (Fin 2))) (twoPointKernel b) := by
   rw [gromovWassersteinDistortion_twoPoint_diagonal _ _ (ne_of_gt (zero_lt_one.trans_le hp)),
     gromovWassersteinEDist_twoPoint ha hb hp]
 
@@ -144,8 +146,8 @@ on the labels give genuine two-point metric spaces. -/
 theorem gromovWassersteinEDist_dist_fin_two {X Y : Type*}
     [PseudoMetricSpace X] [PseudoMetricSpace Y] (x : Fin 2 → X) (y : Fin 2 → Y)
     {p : ℝ≥0∞} (hp : 1 ≤ p) :
-    gromovWassersteinEDist p (PMF.uniformOfFintype (Fin 2)).toMeasure
-      (fun q ↦ dist (x q.1) (x q.2)) (PMF.uniformOfFintype (Fin 2)).toMeasure
+    gromovWassersteinEDist p (Measure.uniformOfFinset (.univ : Finset (Fin 2)))
+      (fun q ↦ dist (x q.1) (x q.2)) (Measure.uniformOfFinset (.univ : Finset (Fin 2)))
       (fun q ↦ dist (y q.1) (y q.2)) =
       (2 : ℝ≥0∞) ^ (-1 / p.toReal) * ENNReal.ofReal |dist (x 0) (x 1) - dist (y 0) (y 1)| := by
   rw [← twoPointKernel_dist x, ← twoPointKernel_dist y]

@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.W1p.Basic
 import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # The Sobolev space `W^{1,p}_0(Ω)`
@@ -159,6 +160,9 @@ noncomputable instance instSeminormedAddCommGroupW1p0 :
 Sobolev subspaces. -/
 noncomputable instance instNormedSpaceW1p0 : NormedSpace ℝ (W1p0 mu Omega p) := inferInstance
 
+/-- The zero-boundary Sobolev space contains the zero function. -/
+instance W1p0.instNonempty : Nonempty (w1p0Submodule mu Omega p) := ⟨0⟩
+
 /-- **The canonical value map of `W^{1,p}_0(Ω)`**, the value component of the Sobolev jet read
 off a zero-boundary function, as a continuous linear map into `Lᵖ(Ω)`. -/
 def W1p0.valueL : W1p0 mu Omega p →L[ℝ] Lp ℝ p (mu.restrict Omega) :=
@@ -189,8 +193,7 @@ theorem W1p0.denseRange_valueL_two :
     have hzero : ∀ᵐ x ∂mu.restrict Omega, f x = 0 := by
       rw [ae_restrict_iff' Omega.isOpen.measurableSet]
       refine Omega.isOpen.ae_eq_zero_of_integral_contDiff_smul_eq_zero
-        (locallyIntegrableOn_of_locallyIntegrable_restrict
-          ((Lp.memLp f).locallyIntegrable (by simp))) fun g hg hgc hgs => ?_
+        (Lp.locallyIntegrableOn f (by simp)) fun g hg hgc hgs => ?_
       let phi : 𝓓(Omega, ℝ) := ⟨g, hg, hgc, hgs⟩
       let u : W1p0 mu Omega 2 :=
         ⟨W1p.ofTestFunctionₗ mu Omega 2 phi, W1p.ofTestFunctionₗ_mem_w1p0Submodule phi⟩

@@ -211,7 +211,7 @@ variable {m : ℕ}
 
 /-- Classical coordinates carry the pinned type `Cₘ` character lattice to the character lattice
 of the diagonal torus. -/
-private noncomputable def characterEquiv (m : ℕ) :
+noncomputable def characterEquiv (m : ℕ) :
     (Fin m → ℤ) ≃ₗ[ℤ] (ULift.{u} (Fin m) →₀ ℤ) :=
   (TypeC.classicalWeightEquiv m).trans
     ((LinearEquiv.funCongrLeft ℤ ℤ Equiv.ulift).trans
@@ -223,7 +223,10 @@ private noncomputable def cocharacterEquiv (m : ℕ) :
     (Fin m → ℤ) ≃ₗ[ℤ] (ULift.{u} (Fin m) → ℤ) :=
   (TypeC.classicalCoweightEquiv m).trans (LinearEquiv.funCongrLeft ℤ ℤ Equiv.ulift)
 
-private lemma characterEquiv_weight (a : Fin m) :
+/-- Each classical type-C weight becomes the corresponding coordinate character of the
+diagonal torus. -/
+@[simp]
+lemma characterEquiv_weight (a : Fin m) :
     characterEquiv.{u} m (TypeC.weight m a) = Finsupp.single (ULift.up a) 1 := by
   ext b
   simp [characterEquiv, Finsupp.single_apply, Pi.single_apply, ULift.ext_iff, eq_comm]

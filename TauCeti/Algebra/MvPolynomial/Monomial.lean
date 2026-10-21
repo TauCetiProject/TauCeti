@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.MvPolynomial.Basic
+public import Mathlib.Algebra.MvPolynomial.Equiv
 public import Mathlib.Data.Finsupp.Multiset
 
 /-!
-# A monomial as a product of variables
+# Monomials in multivariate polynomial rings
 
 Multiplying together a multiset of variables, one factor per element, gives the monomial whose
 exponent vector is the multiplicity function of the multiset: `TauCeti.prod_map_X_eq_monomial`.
@@ -17,10 +17,19 @@ Mathlib's `MvPolynomial.prod_X_pow_eq_monomial` says the same thing for a produc
 support of an exponent vector; this is the multiset-indexed form, which is how the monomials of
 `MvPolynomial.hsymm` and `MvPolynomial.msymm` are written.
 
+The file also computes Mathlib's embedding `Polynomial.toMvPolynomial i`, which places a
+univariate polynomial in the variable `Xᵢ`, on monomials.
+
 ## Main results
 
 * `TauCeti.prod_map_X_eq_monomial`: the product of a multiset of variables is the monomial with
   coefficient `1` at the multiplicity function of the multiset.
+* `MvPolynomial.coeff_sum_monomial`, `MvPolynomial.degreeOf_sum_monomial_le`,
+  `MvPolynomial.sum_monomial_ne_zero`: the coefficients, partial degrees and nonvanishing of the
+  polynomial `∑_{μ ∈ s} x_μ X^μ` whose coefficient vector `x` is indexed by a finite set `s` of
+  exponents.
+* `Polynomial.toMvPolynomial_monomial`: a univariate monomial placed in `Xᵢ` is the multivariate
+  monomial with exponent `n eᵢ`.
 -/
 
 public section
@@ -38,3 +47,58 @@ theorem prod_map_X_eq_monomial {σ : Type*} [DecidableEq σ] {R : Type*} [CommSe
   exact Finset.prod_congr rfl fun a _ => by rw [Multiset.toFinsupp_apply]
 
 end TauCeti
+
+namespace MvPolynomial
+
+variable {ι A : Type*} [CommSemiring A]
+
+/-- The coefficients of the polynomial `∑_{μ ∈ s} x_μ X^μ` whose coefficient vector `x` is
+indexed by a finite set `s` of exponents. -/
+theorem coeff_sum_monomial [Fintype ι] {s : Finset (ι → ℕ)} (x : s → A) (m : ι →₀ ℕ) :
+    (∑ μ : s, monomial (Finsupp.equivFunOnFinite.symm μ.1) (x μ)).coeff m =
+      if h : ⇑m ∈ s then x ⟨m, h⟩ else 0 := by
+  classical
+  simp only [coeff_sum, coeff_monomial]
+  split_ifs with h
+  · rw [Finset.sum_eq_single ⟨m, h⟩]
+    · simp
+    · intro μ _ hμ
+      refine ite_eq_right_iff.mpr fun h' ↦ absurd (Subtype.ext ?_) hμ
+      simpa using congrArg DFunLike.coe h'
+    · simp
+  · refine Finset.sum_eq_zero fun μ _ ↦ ite_eq_right_iff.mpr fun h' ↦ absurd ?_ h
+    simp [← h']
+
+/-- The polynomial `∑_{μ ∈ s} x_μ X^μ` has degree at most `rᵢ` in `Xᵢ` when every exponent
+`μ ∈ s` satisfies `μᵢ ≤ rᵢ`. -/
+theorem degreeOf_sum_monomial_le [Finite ι] {s : Finset (ι → ℕ)} {r : ι → ℕ}
+    (hs : ∀ μ ∈ s, ∀ i, μ i ≤ r i) (x : s → A) (i : ι) :
+    (∑ μ : s, monomial (Finsupp.equivFunOnFinite.symm μ.1) (x μ)).degreeOf i ≤ r i := by
+  have := Fintype.ofFinite ι
+  refine degreeOf_le_iff.mpr fun m hm ↦ ?_
+  rw [mem_support_iff, coeff_sum_monomial] at hm
+  split_ifs at hm with h
+  · exact hs _ h i
+  · exact absurd rfl hm
+
+/-- The polynomial `∑_{μ ∈ s} x_μ X^μ` is nonzero when its coefficient vector `x` is. -/
+theorem sum_monomial_ne_zero [Finite ι] {s : Finset (ι → ℕ)} {x : s → A} (hx : x ≠ 0) :
+    ∑ μ : s, monomial (Finsupp.equivFunOnFinite.symm μ.1) (x μ) ≠ 0 := by
+  have := Fintype.ofFinite ι
+  obtain ⟨μ, hμ⟩ := Function.ne_iff.mp hx
+  refine ne_of_apply_ne (fun Q : MvPolynomial ι A ↦ Q.coeff (Finsupp.equivFunOnFinite.symm μ.1)) ?_
+  rw [coeff_sum_monomial]
+  simpa [μ.2] using hμ
+
+end MvPolynomial
+
+namespace Polynomial
+
+/-- A univariate monomial placed in the variable `Xᵢ` is the monomial with exponent `n eᵢ`. -/
+@[simp]
+theorem toMvPolynomial_monomial {R σ : Type*} [CommSemiring R] (i : σ) (n : ℕ) (a : R) :
+    (monomial n a).toMvPolynomial i = MvPolynomial.monomial (Finsupp.single i n) a := by
+  simp [toMvPolynomial, MvPolynomial.X_pow_eq_monomial, ← C_mul_X_pow_eq_monomial,
+    MvPolynomial.C_mul_monomial]
+
+end Polynomial

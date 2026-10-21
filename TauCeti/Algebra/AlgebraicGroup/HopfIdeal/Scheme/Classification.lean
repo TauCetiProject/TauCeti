@@ -54,6 +54,8 @@ commutative base ring and uses categorical subobjects to identify isomorphic pre
 
 public section
 
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
+
 open CategoryTheory
 
 namespace TauCeti

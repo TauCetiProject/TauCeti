@@ -18,9 +18,13 @@ public import TauCeti.RingTheory.DedekindDomain.AdicValuation.RamificationIndex
 /-!
 # The Tate cohomology of the semi-local units
 
-Let `L/K` be a cyclic extension of number fields and `v` a place of `K`. This file computes
-the factors at `v` in the Tate cohomology of the `S`-ideles of `L`, which together with the
-Herbrand quotient of the `S`-units gives the first fundamental inequality for cyclic extensions.
+Let `L/K` be a finite Galois extension of number fields and `v` a place of `K`. This file
+computes the semi-local factors in the cohomology of the `S`-ideles of `L`. For cyclic
+extensions, their Herbrand quotients together with that of the `S`-units give the first
+fundamental inequality. For arbitrary Galois extensions, their first cohomology vanishes,
+supplying the placewise input to Hilbert 90 for ideles.
+
+For cyclic `L/K`, the local factors have the following properties:
 
 * For a finite place `v ∈ S`, the factor is the Galois module `∏_{w ∣ v} L_wˣ`, realized as the
   units of the semi-local algebra `K_v ⊗[K] L` (`TauCeti.semilocalUnitsRep`). Its Tate
@@ -33,9 +37,14 @@ Herbrand quotient of the `S`-units gives the first fundamental inequality for cy
   units of `K_v ⊗[K] L` (`TauCeti.GlobalNumberFields.infiniteSemilocalUnitsRep`). Its Herbrand
   quotient is the local degree `[L_w : K_v]`: `2` when `v` is real and the places above it are
   complex, and `1` otherwise.
+* Without cyclicity, at every finite and infinite place, the first Tate cohomology of the
+  semi-local units vanishes for any finite Galois extension, by positive-degree Shapiro
+  (`TauCeti.TateCohomology.coindIsoPos`) and field Hilbert 90
+  (`groupCohomology.H1ofAutOnUnitsUnique`).
 
-All three proofs combine three identifications. The semi-local units are coinduced from the units
-of `L_w` as a representation of the decomposition group `D_w` (`TauCeti.semilocalUnitsCoindIso`,
+The cyclic computations combine three identifications. The semi-local units are coinduced from
+the units of `L_w` as a representation of the decomposition group `D_w`
+(`TauCeti.semilocalUnitsCoindIso`,
 `TauCeti.semilocalIntegralUnitsCoindIso` for the integral units, and
 `TauCeti.GlobalNumberFields.infiniteSemilocalUnitsCoindIso` at the infinite places), so by
 Shapiro's lemma (`TauCeti.TateCohomology.herbrandQuotient_coind` and
@@ -54,9 +63,16 @@ unramified the units of its ring of integers have no Tate cohomology
 * `TauCeti.ClassFieldTheory.semilocalUnitsTateCohomologyIso`: Shapiro's lemma for the semi-local
   units at a finite place, `H-hat^n(Gal(L/K), (K_v ⊗[K] L)ˣ) ≅ H-hat^n(Gal(L_w/K_v), L_wˣ)` for
   `L/K` cyclic.
+* `IsDedekindDomain.HeightOneSpectrum.semilocalUnitsTateCohomologyIsoPos`,
+  `NumberField.InfinitePlace.infiniteSemilocalUnitsTateCohomologyIsoPos`: Shapiro
+  isomorphisms at finite and infinite places in every positive degree, without cyclicity.
 
 ## Main results
 
+* `IsDedekindDomain.HeightOneSpectrum.isZero_tateCohomology_one_semilocalUnitsRep`,
+  `NumberField.InfinitePlace.isZero_tateCohomology_one_infiniteSemilocalUnitsRep`: first
+  cohomology vanishes at every place, for any finite Galois extension, by Shapiro and field
+  Hilbert 90.
 * `TauCeti.ClassFieldTheory.herbrandQuotient_semilocalUnitsRep`: `h((K_v ⊗[K] L)ˣ) = [L_w : K_v]`
   for `L/K` cyclic and `v` finite.
 * `TauCeti.ClassFieldTheory.isZero_tateCohomology_semilocalIntegralUnitsRep`:
@@ -70,7 +86,10 @@ unramified the units of its ring of integers have no Tate cohomology
 
 ## References
 
-* J. S. Milne, *Class Field Theory*, Chapter VII, Lemma 2.4 and Proposition 2.7.
+* J. S. Milne, *Class Field Theory*, v4.03, Chapter VII, Lemma 2.4, Corollary 2.6
+  and Proposition 2.7.
+
+The first-cohomology computations reuse Mathlib's `groupCohomology.H1ofAutOnUnitsUnique`.
 -/
 
 public section
@@ -196,3 +215,67 @@ theorem herbrandQuotient_infiniteSemilocalUnitsRep (v : InfinitePlace K) (w : In
 end InfinitePlace
 
 end TauCeti.ClassFieldTheory
+
+open TauCeti TauCeti.ClassFieldTheory
+open scoped NumberField.LiesOver
+
+variable {K L : Type} [Field K] [NumberField K] [Field L] [NumberField L]
+  [Algebra K L] [IsGalois K L]
+
+namespace IsDedekindDomain.HeightOneSpectrum
+
+/-- **Shapiro's lemma for semi-local units in positive degrees.** For any finite Galois
+extension `L/K` of number fields and a place `w` above a finite place `v`, the semi-local
+Tate cohomology at `v` is the cohomology of `L_wˣ` over `Gal(L_w/K_v)` in every degree `n > 0`. -/
+def semilocalUnitsTateCohomologyIsoPos (v : HeightOneSpectrum (𝓞 K))
+    (w : HeightOneSpectrum (𝓞 L)) [w.asIdeal.LiesOver v.asIdeal] (n : ℕ) [NeZero n] :
+    tateCohomology (semilocalUnitsRep L v) n ≅
+      tateCohomology (Rep.ofAlgebraAutOnUnits (v.adicCompletion K) (w.adicCompletion L)) n :=
+  (tateCohomologyFunctor n).mapIso (semilocalUnitsCoindIso v w) ≪≫
+    TauCeti.TateCohomology.coindIsoPos _ _ n ≪≫
+    -- The decomposition representation is restriction along the hom of this equivalence.
+    (TauCeti.TateCohomology.resIso (MulEquiv.ofBijective (decompositionHom v w)
+      ⟨decompositionHom_injective v w, decompositionHom_surjective v w⟩) n).app _
+
+/-- The first Tate cohomology of the semi-local units at a finite place vanishes, for any
+finite Galois extension of number fields. -/
+theorem isZero_tateCohomology_one_semilocalUnitsRep (v : HeightOneSpectrum (𝓞 K)) :
+    IsZero (tateCohomology (semilocalUnitsRep L v) 1) := by
+  obtain ⟨w, rfl⟩ := HeightOneSpectrum.under_surjective (𝓞 K) (𝓞 L) v
+  let A := Rep.ofAlgebraAutOnUnits ((w.under (𝓞 K)).adicCompletion K) (w.adicCompletion L)
+  have hA : IsZero (groupCohomology A 1) := ModuleCat.isZero_of_subsingleton _
+  exact hA.of_iso <| semilocalUnitsTateCohomologyIsoPos _ w 1 ≪≫
+    (_root_.TateCohomology.isoGroupCohomology 1).app A
+
+end IsDedekindDomain.HeightOneSpectrum
+
+namespace NumberField.InfinitePlace
+
+/-- **Shapiro's lemma for infinite semi-local units in positive degrees.** For any finite
+Galois extension `L/K` of number fields and an infinite place `w` above `v`, the semi-local
+Tate cohomology at `v` is the cohomology of `L_wˣ` over `Gal(L_w/K_v)` in every degree `n > 0`. -/
+def infiniteSemilocalUnitsTateCohomologyIsoPos (v : InfinitePlace K) (w : InfinitePlace L)
+    [w.LiesOver v] (n : ℕ) [NeZero n] :
+    tateCohomology (GlobalNumberFields.infiniteSemilocalUnitsRep L v) n ≅
+      tateCohomology (Rep.ofAlgebraAutOnUnits v.Completion w.Completion) n := by
+  classical
+  let : Fintype (MulAction.stabilizer (L ≃ₐ[K] L) w) := Fintype.ofFinite _
+  exact (tateCohomologyFunctor n).mapIso
+      (GlobalNumberFields.infiniteSemilocalUnitsCoindIso v w) ≪≫
+    TauCeti.TateCohomology.coindIsoPos _ _ n ≪≫
+    -- The decomposition representation is restriction along the hom of this equivalence.
+    (TauCeti.TateCohomology.resIso (MulEquiv.ofBijective (decompositionHom v w)
+      ⟨decompositionHom_injective v w, decompositionHom_surjective v w⟩) n).app _
+
+/-- The first Tate cohomology of the semi-local units at an infinite place vanishes, including
+at real places that become complex in the extension. -/
+theorem isZero_tateCohomology_one_infiniteSemilocalUnitsRep (v : InfinitePlace K) :
+    IsZero (tateCohomology (GlobalNumberFields.infiniteSemilocalUnitsRep L v) 1) := by
+  classical
+  obtain ⟨w, rfl⟩ := InfinitePlace.comap_surjective (K := L) v
+  let A := Rep.ofAlgebraAutOnUnits (w.comap (algebraMap K L)).Completion w.Completion
+  have hA : IsZero (groupCohomology A 1) := ModuleCat.isZero_of_subsingleton _
+  exact hA.of_iso <| infiniteSemilocalUnitsTateCohomologyIsoPos _ w 1 ≪≫
+    (_root_.TateCohomology.isoGroupCohomology 1).app A
+
+end NumberField.InfinitePlace

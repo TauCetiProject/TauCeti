@@ -70,10 +70,6 @@ finiteness follows because both the dominant members and the Weyl group are fini
 
 ## References
 
-This is the root-system content of the "weight-cone bound" milestone of Layer 4, "the
-classification of finite-dimensional irreducibles", of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`.
-
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §13.2 and
   §21.2.
 -/

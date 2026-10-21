@@ -15,14 +15,13 @@ import TauCeti.LowDimTopology.Plumbing.Weight.MinusTwo
 /-!
 # The negative-definite E₈ plumbing
 
-This file defines the `E₈` plumbing used as the first concrete calculation in the lattice-homology
-lane. Its eight vertices all have framing `-2`; vertices `0, ..., 6` form a chain and vertex `7`
-is attached to vertex `2`. Thus the negative of its intersection matrix is the `E₈` Cartan
-matrix.
+This file defines the negative-definite `E₈` plumbing, whose boundary is the Poincaré homology
+sphere. Its eight vertices all have framing `-2`; vertices `0, ..., 6` form a chain and vertex `7`
+is attached to vertex `2`. Thus the negative of its intersection matrix is the `E₈` Cartan matrix.
 
 The proof of negative-definiteness gives an explicit integral completion of squares. This both
 certifies the plumbing without appealing to a classification theorem and records a formula useful
-for checking later computations on this example.
+for checking computations on this example.
 
 ## Main definitions
 
@@ -41,10 +40,8 @@ for checking later computations on this example.
 
 ## References
 
-This advances `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane L, and specifically its
-acceptance check asking that lattice homology be computed for the negative-definite `E₈` plumbing
-of the Poincaré sphere. The plumbing convention follows Némethi,
-[arXiv:0709.0841](https://arxiv.org/abs/0709.0841), Section 2.
+The plumbing convention follows Némethi, [arXiv:0709.0841](https://arxiv.org/abs/0709.0841),
+Section 2.
 -/
 
 public section
@@ -232,8 +229,8 @@ theorem e8Plumbing_sInfCharacteristicWeight_canonical_eq_zero :
     e8Plumbing_weight
 
 /-- The characteristic-two lattice homology of the `E₈` plumbing is nonzero in every spin^c
-structure. This is the roadmap's concrete negative-definite plumbing, the one whose lattice
-homology computes the Heegaard Floer homology of the Poincaré homology sphere. -/
+structure. This is the concrete negative-definite plumbing whose lattice homology computes the
+Heegaard Floer homology of the Poincaré homology sphere. -/
 theorem e8Plumbing_not_isZero_latticeHomology (k : e8Plumbing.characteristicVectors) :
     ¬ CategoryTheory.Limits.IsZero (e8Plumbing.latticeHomology k) :=
   e8Plumbing.not_isZero_latticeHomology e8Plumbing_isNegativeDefinite k

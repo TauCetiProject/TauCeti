@@ -43,6 +43,8 @@ disc, continuous up to the boundary, with infinite Dirichlet energy.
 * `TauCeti.PDE.exists_isWeakSolutionDirichlet_laplacian_of_contDiffOn`: a `C²` function
   continuous up to the boundary and vanishing there is a weak solution in `H¹₀(Ω)` of the
   Dirichlet problem for its own Laplacian.
+* `TauCeti.PDE.exists_value_ae_eq_and_energyFormH1_eq_of_laplacian_eq`: a classical Dirichlet
+  eigenfunction of `-Δ`, `-Δw = κ w` in `Ω` with `w = 0` on `∂Ω`, is a weak one.
 * `TauCeti.PDE.IsWeakSolutionDirichlet.value_ae_eq_of_contDiffOn`: on a domain inside a ball, the
   weak solution of `-Δu = f`, `u = 0` on `∂Ω`, equals any such classical solution.
 
@@ -65,15 +67,16 @@ namespace PDE
 open InnerProductSpace Laplacian MeasureTheory Metric Set Filter TopologicalSpace
 open scoped Distributions Gradient InnerProductSpace ENNReal Topology
 
-variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpace ℝ ι)}
+variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)}
   [mu.IsAddHaarMeasure] {Omega : Opens (EuclideanSpace ℝ ι)} {w : EuclideanSpace ℝ ι → ℝ}
 
 /-- **Green's first identity against `H¹₀(Ω)`.** Let `u ∈ H¹(Ω)` agree almost everywhere on `Ω`
 with a function `w` of class `C²` on `Ω` whose Laplacian lies in `L²(Ω)`. Then
 `∫_Ω ∇v · ∇u = -∫_Ω Δw v` for every `v ∈ H¹₀(Ω)`: `u` solves `-Δu = -Δw` weakly. No boundary
 condition is imposed on `u`. -/
-theorem energyFormH1_one_zero_zero_eq_setIntegral_neg_laplacian_mul {u : W1p mu Omega 2}
-    (hw : ContDiffOn ℝ 2 w Omega) (hu : W1p.value u =ᵐ[mu.restrict Omega] w)
+theorem energyFormH1_one_zero_zero_eq_setIntegral_neg_laplacian_mul [DecidableEq ι]
+    {u : W1p mu Omega 2} (hw : ContDiffOn ℝ 2 w Omega)
+    (hu : W1p.value u =ᵐ[mu.restrict Omega] w)
     (hΔ : MemLp (Δ w) 2 (mu.restrict Omega)) (v : W1p0 mu Omega 2) :
     energyFormH1 (fun _ => 1) 0 0 u (v : W1p mu Omega 2) =
       ∫ x in Omega, -Δ w x * W1p.value (v : W1p mu Omega 2) x ∂mu := by
@@ -89,7 +92,7 @@ theorem energyFormH1_one_zero_zero_eq_setIntegral_neg_laplacian_mul {u : W1p mu 
   · -- Against a test function: `∫ ⟪∇φ, ∇u⟫ = -∫ Δφ u = -∫ Δφ w = -∫ φ Δw`.
     have hgrad : energyFormH1 (fun _ => 1) 0 0 u (W1p.ofTestFunctionₗ mu Omega 2 φ) =
         ∫ x, ⟪∇ (φ : EuclideanSpace ℝ ι → ℝ) x, W1p.gradient u x⟫_ℝ ∂mu := by
-      rw [energyFormH1_const_eq_setIntegral]
+      rw [energyFormH1_zero_zero_eq_setIntegral]
       refine (integral_congr_ae ?_).trans
         (setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => ?_)
       · filter_upwards [gradientTestFunctionLp_apply_ae (mu := mu) 2 φ] with x hx
@@ -119,7 +122,6 @@ theorem energyFormH1_one_zero_zero_eq_setIntegral_neg_laplacian_mul {u : W1p mu 
   · filter_upwards [hf] with x hx
     rw [hx, Pi.neg_apply]
 
-omit [DecidableEq ι] in
 /-- **The energy of a classical solution above a positive level.** Let `w` be of class `C²` on a
 bounded open set `Ω`, continuous on its closure, zero on its frontier, with `|w| ≤ S` on `Ω` and
 `Δw` integrable on `Ω`. Then for `ε > 0`, testing `-Δw` against the truncation `(w - ε)⁺`, which
@@ -206,7 +208,6 @@ private theorem setLIntegral_enorm_gradient_sq_le
     _ ≤ ENNReal.ofReal (S * ∫ x in Omega, |Δ w x| ∂mu) :=
         ENNReal.ofReal_le_ofReal (hleft ▸ hgreen ▸ hright)
 
-omit [DecidableEq ι] in
 /-- **The Dirichlet energy of a classical solution is finite.** Under the hypotheses of
 `setLIntegral_enorm_gradient_sq_le`, `∫_Ω ‖∇w‖² ≤ 2 S ∫_Ω |Δw|`: the bound above each level `ε > 0`
 of `w` and of `-w`, in the limit `ε → 0`, controls the energy on `{w ≠ 0}`, and `∇w = 0` almost
@@ -277,6 +278,8 @@ private theorem setLIntegral_enorm_gradient_sq_le_add
           inter_eq_left.2 inter_subset_left]
     _ ≤ C + C := hnz
 
+variable [DecidableEq ι]
+
 /-- **A classical solution of the Dirichlet problem is the weak solution.** Let `Ω` be a bounded
 open set and let `w` be of class `C²` on `Ω`, continuous on `closure Ω` and zero on
 `frontier Ω`, with `Δw ∈ L²(Ω)`. Then `w` has finite Dirichlet energy and represents an element
@@ -316,6 +319,39 @@ theorem exists_isWeakSolutionDirichlet_laplacian_of_contDiffOn
   refine integral_congr_ae ?_
   filter_upwards [hΔ.neg.coeFn_toLp] with x hx
   rw [hx, Pi.neg_apply]
+
+/-- **A classical Dirichlet eigenfunction of `-Δ` is a weak one.** Let `Ω` be a bounded open set
+and let `w` be of class `C²` on `Ω`, continuous on `closure Ω` and zero on `frontier Ω`, with
+`-Δw = κ w` on `Ω`. Then `w` represents some `u ∈ H¹₀(Ω)` with `∫_Ω ∇v · ∇u = κ ∫_Ω u v` for
+every `v ∈ H¹₀(Ω)`. No regularity of `∂Ω` is assumed. -/
+theorem exists_value_ae_eq_and_energyFormH1_eq_of_laplacian_eq
+    (hb : Bornology.IsBounded (Omega : Set (EuclideanSpace ℝ ι))) (hw : ContDiffOn ℝ 2 w Omega)
+    (hwc : ContinuousOn w (closure (Omega : Set (EuclideanSpace ℝ ι))))
+    (hw0 : ∀ x ∈ frontier (Omega : Set (EuclideanSpace ℝ ι)), w x = 0) {kappa : ℝ}
+    (hΔ : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), Δ w x = -kappa * w x) :
+    ∃ u : W1p0 mu Omega 2, W1p.value (u : W1p mu Omega 2) =ᵐ[mu.restrict Omega] w ∧
+      ∀ v : W1p0 mu Omega 2,
+        energyFormH1 (fun _ => 1) 0 0 (u : W1p mu Omega 2) (v : W1p mu Omega 2) =
+          kappa * ⟪W1p.value (u : W1p mu Omega 2), W1p.value (v : W1p mu Omega 2)⟫_ℝ := by
+  have hOm := Omega.isOpen.measurableSet
+  have : IsFiniteMeasure (mu.restrict Omega) := isFiniteMeasure_restrict.2 hb.measure_lt_top.ne
+  have hΔae : Δ w =ᵐ[mu.restrict Omega] fun x => -kappa * w x :=
+    (ae_restrict_iff' hOm).2 (ae_of_all _ hΔ)
+  -- `w` is bounded on `Ω`, so `Δw = -κ w` is square integrable there.
+  obtain ⟨S, hS⟩ := hb.isCompact_closure.exists_bound_of_continuousOn hwc
+  have hΔ2 : MemLp (Δ w) 2 (mu.restrict Omega) := by
+    refine (MemLp.of_bound (((hw.continuousOn.aestronglyMeasurable hOm).const_mul (-kappa)))
+      (|kappa| * S) ((ae_restrict_iff' hOm).2 (ae_of_all _ fun x hx => ?_))).ae_eq hΔae.symm
+    rw [norm_mul, norm_neg, Real.norm_eq_abs]
+    exact mul_le_mul_of_nonneg_left (hS x (subset_closure hx)) (abs_nonneg _)
+  obtain ⟨u, hu, hsol⟩ := exists_isWeakSolutionDirichlet_laplacian_of_contDiffOn hb hw hwc hw0 hΔ2
+  refine ⟨u, hu, fun v => ?_⟩
+  rw [(isWeakSolutionDirichlet_iff _ _).1 hsol v, W1p.inner_value_eq_setIntegral,
+    ← integral_const_mul]
+  refine integral_congr_ae ?_
+  filter_upwards [hΔ2.neg.coeFn_toLp, hu, hΔae] with x h1 h2 h3
+  rw [h1, Pi.neg_apply, h3, h2]
+  ring
 
 /-- **The weak solution of the Dirichlet problem is the classical one.** Let `Ω ⊆ ℝ^{n+1}` be an
 open set contained in a ball, and let `w` be of class `C²` on `Ω`, continuous on `closure Ω` and

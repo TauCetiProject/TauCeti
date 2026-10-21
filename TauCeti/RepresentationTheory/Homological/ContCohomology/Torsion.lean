@@ -10,7 +10,7 @@ public import TauCeti.RepresentationTheory.Continuous.Coinduced
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Additive
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CompactDiscrete
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.HomologySequence
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Basic
 
 /-!
 # Continuous cohomology of a compact group is torsion in positive degrees

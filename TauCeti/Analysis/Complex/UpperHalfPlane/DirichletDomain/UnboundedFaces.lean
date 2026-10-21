@@ -15,7 +15,8 @@ public import TauCeti.Topology.Order.Interval
 A nonempty unbounded equality face of a hyperbolic Dirichlet domain is either a geodesic ray or a
 complete geodesic line. In the ray case the face has one finite endpoint and one ideal endpoint;
 in the line case both endpoints are ideal. This supplies the unbounded sides and ideal vertices
-needed when assembling a cuspidal Dirichlet polygon.
+needed when assembling a cuspidal Dirichlet polygon. Combined with the bounded case, every
+nonempty face is one extended geodesic segment (`exists_dirichletFace_eq_extGeodesicSegment`).
 
 The result does not assume finite covolume or finite-sidedness. It applies to an individual face
 for any family of translates of the centre: the face is a closed order-connected interval in its
@@ -77,5 +78,18 @@ theorem exists_dirichletFace_eq_extGeodesicSegment_of_not_isBounded
   · refine Or.inr ⟨k • ((0 : ℝ) : OnePoint ℝ), k • (∞ : OnePoint ℝ),
       (MulAction.injective k).ne (OnePoint.coe_ne_infty (0 : ℝ)), ?_⟩
     rw [← himage, hS, image_univ, range_geodesicLine_eq_extGeodesicSegment]
+
+/-- Every nonempty equality face indexed by an element moving the centre is one extended
+geodesic segment. The endpoints may coincide in the bounded singleton case. -/
+theorem exists_dirichletFace_eq_extGeodesicSegment {p : ℍ} {g : G} (hg : g • p ≠ p)
+    (hne : (dirichletFace p g).Nonempty) :
+    ∃ a b : ℍ ⊕ OnePoint ℝ, dirichletFace p g = extGeodesicSegment a b := by
+  by_cases hb : Bornology.IsBounded (dirichletFace p g)
+  · obtain ⟨z, w, hzw⟩ := exists_dirichletFace_eq_geodesicSegment hg hne hb
+    exact ⟨.inl z, .inl w, hzw.trans (extGeodesicSegment_inl_inl z w).symm⟩
+  · rcases exists_dirichletFace_eq_extGeodesicSegment_of_not_isBounded hg hne hb with
+      ⟨z, ξ, hzξ⟩ | ⟨ξ, η, -, hξη⟩
+    · exact ⟨.inl z, .inr ξ, hzξ⟩
+    · exact ⟨.inr ξ, .inr η, hξη⟩
 
 end TauCeti.UpperHalfPlane

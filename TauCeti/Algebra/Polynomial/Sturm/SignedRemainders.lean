@@ -23,7 +23,7 @@ namespace TauCeti.Sturm
 
 open Polynomial
 
-variable {R : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R]
+variable {R : Type*} [Field R] [LinearOrder R]
 
 /-- A positively scaled signed remainder identity. -/
 def IsRemainder (p q r : Polynomial R) : Prop :=
@@ -43,18 +43,15 @@ structure IsSignedRemainderSeq (cs : List (Polynomial R)) : Prop where
 
 namespace IsRemainder
 
-omit [IsStrictOrderedRing R] in
 /-- Construct the signed remainder relation from positive scalings and a polynomial identity. -/
 theorem of_identity {p q r : Polynomial R} (a b : R) (u : Polynomial R)
     (ha : 0 < a) (hb : 0 < b) (heq : C a * p = u * q - C b * r) : IsRemainder p q r :=
   ⟨a, b, u, ha, hb, heq⟩
 
-omit [IsStrictOrderedRing R] in
 /-- A signed remainder relation supplies positive scalings and its polynomial identity. -/
 theorem exists_identity {p q r : Polynomial R} (h : IsRemainder p q r) :
     ∃ a b : R, ∃ u : Polynomial R, 0 < a ∧ 0 < b ∧ C a * p = u * q - C b * r := h
 
-omit [IsStrictOrderedRing R] in
 /-- A common divisor of the two later entries divides the earlier entry. -/
 theorem dvd {p q r d : Polynomial R} (h : IsRemainder p q r) (hq : d ∣ q) (hr : d ∣ r) :
     d ∣ p := by
@@ -63,6 +60,18 @@ theorem dvd {p q r d : Polynomial R} (h : IsRemainder p q r) (hq : d ∣ q) (hr 
   apply hu.dvd_mul_left.mp
   rw [heq]
   exact dvd_sub (dvd_mul_of_dvd_right hq _) (dvd_mul_of_dvd_right hr _)
+
+/-- Cancel a nonzero common polynomial factor from a signed remainder identity. -/
+theorem cancel {d p q r : Polynomial R} (hd : d ≠ 0)
+    (h : IsRemainder (d * p) (d * q) (d * r)) : IsRemainder p q r := by
+  obtain ⟨a, b, u, ha, hb, heq⟩ := h.exists_identity
+  refine IsRemainder.of_identity a b u ha hb (mul_left_cancel₀ hd ?_)
+  calc
+    d * (C a * p) = C a * (d * p) := by ring
+    _ = u * (d * q) - C b * (d * r) := heq
+    _ = d * (u * q - C b * r) := by ring
+
+variable [IsStrictOrderedRing R]
 
 /-- At a zero of the middle entry, the neighbors have opposite signs,
 provided the right neighbor does not vanish. -/
@@ -87,7 +96,6 @@ end IsRemainder
 
 namespace IsSignedRemainderSeq
 
-omit [IsStrictOrderedRing R] in
 /-- A nonzero polynomial alone forms a signed remainder sequence. -/
 theorem singleton {p : Polynomial R} (hp : p ≠ 0) : IsSignedRemainderSeq [p] where
   nonzero := by simpa
@@ -100,7 +108,6 @@ theorem singleton {p : Polynomial R} (hp : p ≠ 0) : IsSignedRemainderSeq [p] w
     simp only [List.length_cons, List.length_nil, List.length_append] at this
     omega
 
-omit [IsStrictOrderedRing R] in
 /-- A two-entry chain terminates when its second polynomial divides its first. -/
 theorem pair {p q : Polynomial R} (hp : p ≠ 0) (hdvd : q ∣ p) :
     IsSignedRemainderSeq [p, q] where
@@ -125,7 +132,6 @@ theorem pair {p q : Polynomial R} (hp : p ≠ 0) (hdvd : q ∣ p) :
     rcases heq with ⟨rfl, rfl, _⟩
     exact hdvd
 
-omit [IsStrictOrderedRing R] in
 /-- Prepend one signed recurrence to a chain. -/
 theorem cons {p q r : Polynomial R} {cs : List (Polynomial R)}
     (hp : p ≠ 0) (hrel : IsRemainder p q r) (h : IsSignedRemainderSeq (q :: r :: cs)) :
@@ -150,7 +156,6 @@ theorem cons {p q r : Polynomial R} {cs : List (Polynomial R)}
       have ht : q :: r :: cs = pre ++ [p0, p1] := (List.cons.inj heq).2
       exact h.terminal pre p0 p1 ht
 
-omit [IsStrictOrderedRing R] in
 theorem tail {p : Polynomial R} {cs : List (Polynomial R)} (h : IsSignedRemainderSeq (p :: cs)) :
     IsSignedRemainderSeq cs where
   nonzero q hq := h.nonzero q (List.mem_cons_of_mem _ hq)
@@ -158,7 +163,6 @@ theorem tail {p : Polynomial R} {cs : List (Polynomial R)} (h : IsSignedRemainde
     h.relation (i + 1) q0 q1 q2 (by simpa using h0) (by simpa using h1) (by simpa using h2)
   terminal pre q r heq := h.terminal (p :: pre) q r (by simp [heq])
 
-omit [IsStrictOrderedRing R] in
 /-- The terminal polynomial divides every chain entry. -/
 theorem last_dvd {cs : List (Polynomial R)} (h : IsSignedRemainderSeq cs) {d : Polynomial R}
     (hd : cs.getLast? = some d) : ∀ p ∈ cs, d ∣ p := by
@@ -183,6 +187,19 @@ theorem last_dvd {cs : List (Polynomial R)} (h : IsSignedRemainderSeq cs) {d : P
       rcases List.mem_cons.mp hs with rfl | hs
       · exact hdp
       · exact ht s hs
+
+/-- Dividing out a nonzero common factor preserves the signed chain conditions:
+if `cs.map (d * ·)` is signed, so is `cs`. -/
+theorem cancel {d : Polynomial R} {cs : List (Polynomial R)} (hd : d ≠ 0)
+    (h : IsSignedRemainderSeq (cs.map (d * ·))) : IsSignedRemainderSeq cs where
+  nonzero p hp hp0 := h.nonzero (d * p) (List.mem_map.mpr ⟨p, hp, rfl⟩) (by simp [hp0])
+  relation i p q r h0 h1 h2 := IsRemainder.cancel hd (h.relation i (d * p) (d * q) (d * r)
+    (by simp [List.getElem?_map, h0]) (by simp [List.getElem?_map, h1])
+    (by simp [List.getElem?_map, h2]))
+  terminal pre p q heq := (mul_dvd_mul_iff_left hd).mp
+    (h.terminal (pre.map (d * ·)) (d * p) (d * q) (by simp [heq]))
+
+variable [IsStrictOrderedRing R]
 
 /-- A signed remainder chain with a root-free last entry is alternating. -/
 theorem isAlternating {cs : List (Polynomial R)} (h : IsSignedRemainderSeq cs)
@@ -215,12 +232,10 @@ theorem isAlternating {cs : List (Polynomial R)} (h : IsSignedRemainderSeq cs)
           subst q2
           exact (h.relation 0 p q r rfl rfl rfl).alternate hz (ht.second_eval_ne_zero hz)
 
-end IsSignedRemainderSeq
-
 /-- Mathlib's signed remainder sequence satisfies the algebraic chain conditions. -/
-theorem IsSignedRemainderSeq.sturmSeq (p q : R[X]) : IsSignedRemainderSeq (sturmSeq p q) := by
+theorem sturmSeq (p q : R[X]) : IsSignedRemainderSeq (Polynomial.sturmSeq p q) := by
   classical
-  induction p, q using sturmSeq.induct
+  induction p, q using Polynomial.sturmSeq.induct
   next q =>
     rw [sturmSeq_zero_left]
     exact ⟨by simp, by simp, by simp⟩
@@ -239,31 +254,6 @@ theorem IsSignedRemainderSeq.sturmSeq (p q : R[X]) : IsSignedRemainderSeq (sturm
         rw [map_one, one_mul, one_mul, neg_mod, sub_neg_eq_add]
         exact (EuclideanDomain.mod_add_div p q).symm.trans (by ring)
       · rwa [sturmSeq_cons hq, sturmSeq_cons hr] at ih
-
-omit [IsStrictOrderedRing R] in
-/-- Cancel a nonzero common polynomial factor from a signed remainder identity. -/
-theorem IsRemainder.cancel {d p q r : Polynomial R} (hd : d ≠ 0)
-    (h : IsRemainder (d * p) (d * q) (d * r)) : IsRemainder p q r := by
-  obtain ⟨a, b, u, ha, hb, heq⟩ := h.exists_identity
-  refine IsRemainder.of_identity a b u ha hb (mul_left_cancel₀ hd ?_)
-  calc
-    d * (C a * p) = C a * (d * p) := by ring
-    _ = u * (d * q) - C b * (d * r) := heq
-    _ = d * (u * q - C b * r) := by ring
-
-namespace IsSignedRemainderSeq
-
-omit [IsStrictOrderedRing R] in
-/-- Dividing out a nonzero common factor preserves the signed chain conditions:
-if `cs.map (d * ·)` is signed, so is `cs`. -/
-theorem cancel {d : Polynomial R} {cs : List (Polynomial R)} (hd : d ≠ 0)
-    (h : IsSignedRemainderSeq (cs.map (d * ·))) : IsSignedRemainderSeq cs where
-  nonzero p hp hp0 := h.nonzero (d * p) (List.mem_map.mpr ⟨p, hp, rfl⟩) (by simp [hp0])
-  relation i p q r h0 h1 h2 := IsRemainder.cancel hd (h.relation i (d * p) (d * q) (d * r)
-    (by simp [List.getElem?_map, h0]) (by simp [List.getElem?_map, h1])
-    (by simp [List.getElem?_map, h2]))
-  terminal pre p q heq := (mul_dvd_mul_iff_left hd).mp
-    (h.terminal (pre.map (d * ·)) (d * p) (d * q) (by simp [heq]))
 
 /-- Divide every entry by the terminal common factor. The resulting chain is
 alternating and ends at `1`, even when the original terminal factor is nonconstant. -/

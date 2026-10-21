@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.Vertex.Stabilizer
+import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.Ideal
 
 /-!
 # Finite vertex cycles are vertex orbits
@@ -19,8 +20,10 @@ one full turn about the first vertex.
 Together with the vertex stabilizer theorem, this identifies the finite vertex cycles and their
 cycle orders with the corresponding orbits and stabilizer orders in the coarse quotient. It does
 not assert that every elliptic orbit meets a vertex: a self-paired side can also have an elliptic
-midpoint. `EllipticVertexCycle` restricts the finite cycles to those with nonidentity cycle
-transformation. Neither discreteness nor local finiteness is needed for the finite vertex result.
+midpoint. `FiniteVertexCycle` is the type of finite vertex cycles, counted vertex by vertex in
+`natCard_finiteVertexCycle_eq_sum`, and `EllipticVertexCycle` restricts the finite cycles to those
+with nonidentity cycle transformation. Neither discreteness nor local finiteness is needed for the
+finite vertex result.
 
 ## References
 
@@ -75,6 +78,24 @@ theorem finiteVertex_quotientMk_eq_quotientMk_iff_sameCycle
   exact ⟨fun ⟨m, hm⟩ ↦ hm ▸ Equiv.Perm.sameCycle_pow_right.2 (.refl _ _),
     Equiv.Perm.SameCycle.exists_nat_pow_eq⟩
 
+/-- The same-cycle quotient of the finite vertices: the finite vertex cycles of `σ`, including
+those whose cycle transformation is the identity. It is independent of the ambient subgroup and
+of the fundamental-polygon hypotheses. -/
+abbrev FiniteVertexCycle : Type :=
+  Quotient (Setoid.comap Subtype.val (Equiv.Perm.SameCycle.setoid σ.next) :
+    Setoid {i : Fin n // (P.vertex i).isLeft})
+
+/-- The number of finite vertex cycles is the sum, over the finite vertices, of the inverse
+lengths of their cycles. -/
+theorem natCard_finiteVertexCycle_eq_sum {K : Type*} [Semifield K] [CharZero K] :
+    (Nat.card σ.FiniteVertexCycle : K) =
+      ∑ i, if (P.vertex i).isLeft then (1 : K) / σ.cycleLength i else 0 := by
+  classical
+  rw [← σ.finsum_eq_sum_ite_div_cycleLength (fun hi ↦ by rw [σ.isLeft_vertex_eq_of_mem_cycle hi])
+      (fun _ ↦ 1) _ fun _ ↦ rfl,
+    finsum_eq_sum_of_fintype, Finset.sum_const, Finset.card_univ, nsmul_one,
+    Nat.card_eq_fintype_card]
+
 /-- The same-cycle quotient of the finite vertices whose cycle transformation is nonidentity.
 It is independent of the ambient subgroup and of the fundamental-polygon hypotheses. -/
 abbrev EllipticVertexCycle : Type :=
@@ -90,9 +111,7 @@ noncomputable def finiteVertexCycleEquiv
     (hmap : ∀ i, σ.map i ∈ Γ)
     (hdisj : ∀ γ : Γ, γ ≠ 1 →
       Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier)) :
-    Quotient (Setoid.comap Subtype.val
-      (Equiv.Perm.SameCycle.setoid σ.next) : Setoid {i : Fin n // (P.vertex i).isLeft}) ≃
-      Set.range (fun j : {i : Fin n // (P.vertex i).isLeft} ↦
+    σ.FiniteVertexCycle ≃ Set.range (fun j : {i : Fin n // (P.vertex i).isLeft} ↦
         (Quotient.mk'' ((P.vertex j).getLeft j.2) : MulAction.orbitRel.Quotient Γ ℍ)) := by
   let f : {i : Fin n // (P.vertex i).isLeft} → MulAction.orbitRel.Quotient Γ ℍ :=
     fun j ↦ Quotient.mk'' ((P.vertex j).getLeft j.2)

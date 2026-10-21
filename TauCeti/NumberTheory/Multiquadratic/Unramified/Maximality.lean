@@ -144,7 +144,7 @@ theorem exists_mem_candidateGenusField_sq_eq_intCast {d a : ℤ} (hd : Squarefre
     obtain ⟨c, e, hsfc, he, hce⟩ :=
       Int.exists_squarefree_mul_sq (mul_ne_zero hsfa.ne_zero hd.ne_zero)
     obtain ⟨u, hu, hue, huprod⟩ :=
-      (isFundamentalDiscriminant_fundamentalDiscriminant hsfa).exists_finset_primeDiscriminant
+      (isFundamentalDiscr_fundamentalDiscriminant hsfa).exists_finset_primeDiscriminant
     obtain ⟨hs, hse, hsprod⟩ := genusPrimeDiscriminants_spec hd
     refine exists_mem_candidateGenusField_sq_eq_intCast_of_subset hd huprod
       (subset_of_forall_prime_dvd_fundamentalDiscriminant hs hse hsprod hu hue huprod hce

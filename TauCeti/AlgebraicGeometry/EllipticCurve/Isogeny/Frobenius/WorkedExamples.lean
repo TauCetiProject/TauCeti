@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Frobenius.Subring
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.ComplexMultiplication
+public import TauCeti.AlgebraicGeometry.EllipticCurve.CurveX3SubX
 public import TauCeti.AlgebraicGeometry.EllipticCurve.PointCount
 import Mathlib.FieldTheory.Finite.GaloisField
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.Degree
@@ -76,31 +77,29 @@ open WeierstrassCurve TauCeti.Isogeny
 
 namespace TauCeti.WorkedExamples
 
-/-- The curve `y² = x³ - x` over `𝔽₃`. -/
-abbrev curveX3SubX : WeierstrassCurve (ZMod 3) := ⟨0, 0, 0, -1, 0⟩
-
-instance : curveX3SubX.IsElliptic := by
-  rw [isElliptic_iff]
-  decide
+/-- `2 ≠ 0` in `𝔽₃`, so `y² = x³ - x` is an elliptic curve over `𝔽₃`. -/
+instance : NeZero (2 : ZMod 3) :=
+  ⟨by decide⟩
 
 /-- `y² = x³ - x` has `4` points over `𝔽₃`: the point at infinity and `(0, 0)`, `(1, 0)`,
 `(2, 0)`. -/
-theorem pointCount_curveX3SubX : curveX3SubX.pointCount = 4 := by
+theorem pointCount_curveX3SubX : (CurveX3SubX.curve (ZMod 3)).pointCount = 4 := by
   rw [pointCount_def, Nat.card_congr (Equiv.subtypeEquivRight
     (q := fun P : ZMod 3 × ZMod 3 ↦ P.2 ^ 2 = P.1 ^ 3 - P.1) fun P ↦ by
       rw [Affine.equation_iff]; simp), Nat.card_eq_fintype_card]
   decide
 
 /-- The Frobenius trace of `y² = x³ - x` over `𝔽₃` is `a_3 = 3 + 1 - 4 = 0`. -/
-theorem frobeniusTrace_curveX3SubX : curveX3SubX.frobeniusTrace = 0 := by
+theorem frobeniusTrace_curveX3SubX : (CurveX3SubX.curve (ZMod 3)).frobeniusTrace = 0 := by
   rw [frobeniusTrace_def, pointCount_curveX3SubX, Nat.card_zmod]
   norm_num
 
 /-- Over `𝔽₃`, the Frobenius endomorphism of `y² = x³ - x` is not an integer and `ℤ[π₃]` has
 rank `2`, since `3` is not a square. -/
 theorem finrank_adjoin_ofIsogeny_frobeniusIsogeny_curveX3SubX :
-    Module.finrank ℤ (Algebra.adjoin ℤ {Hom.ofIsogeny (frobeniusIsogeny curveX3SubX.toAffine)}) =
-      2 :=
+    Module.finrank ℤ
+      (Algebra.adjoin ℤ {Hom.ofIsogeny (frobeniusIsogeny (CurveX3SubX.curve (ZMod 3)).toAffine)}) =
+        2 :=
   (finrank_adjoin_ofIsogeny_frobeniusIsogeny_eq_two_iff _).2 <|
     ofIsogeny_frobeniusIsogeny_notMem_range_intCast_of_not_isSquare _ <| by
       rw [Nat.card_zmod]
@@ -113,7 +112,7 @@ variable (K : Type*) [Field K] [Finite K] [Algebra (ZMod 3) K]
 /-- Over a field with `9` elements the Frobenius trace of `y² = x³ - x` is
 `a_9 = a_3 · a_3 - 3 · 2 = -6`. -/
 theorem frobeniusTrace_baseChange_curveX3SubX (hK : Nat.card K = 9) :
-    (curveX3SubX⁄K).frobeniusTrace = -6 := by
+    ((CurveX3SubX.curve (ZMod 3))⁄K).frobeniusTrace = -6 := by
   have hfin : Module.finrank (ZMod 3) K = 2 := by
     have h := Module.natCard_eq_pow_finrank (K := ZMod 3) (V := K)
     rw [hK, Nat.card_zmod] at h
@@ -125,8 +124,9 @@ theorem frobeniusTrace_baseChange_curveX3SubX (hK : Nat.card K = 9) :
 /-- **Over a field with `9` elements the Frobenius endomorphism of `y² = x³ - x` is `[-3]`**: it is
 a root of `X² - a_9 X + 9 = (X + 3)²`, and the endomorphism ring is a domain. -/
 theorem ofIsogeny_frobeniusIsogeny_baseChange_curveX3SubX (hK : Nat.card K = 9) :
-    Hom.ofIsogeny (frobeniusIsogeny (curveX3SubX⁄K).toAffine) = -3 := by
-  have h := ofIsogeny_frobeniusIsogeny_comp_ofIsogeny_frobeniusIsogeny (curveX3SubX⁄K).toAffine
+    Hom.ofIsogeny (frobeniusIsogeny ((CurveX3SubX.curve (ZMod 3))⁄K).toAffine) = -3 := by
+  have h := ofIsogeny_frobeniusIsogeny_comp_ofIsogeny_frobeniusIsogeny
+    ((CurveX3SubX.curve (ZMod 3))⁄K).toAffine
   rw [frobeniusTrace_baseChange_curveX3SubX K hK, hK, ← Hom.mul_def, ← Hom.one_def,
     zsmul_eq_mul, nsmul_eq_mul, mul_one] at h
   rw [← sub_eq_zero, sub_neg_eq_add, ← pow_eq_zero_iff two_ne_zero]
@@ -139,13 +139,14 @@ theorem ofIsogeny_frobeniusIsogeny_baseChange_curveX3SubX (hK : Nat.card K = 9) 
 case of the rank dichotomy. -/
 theorem finrank_adjoin_ofIsogeny_frobeniusIsogeny_baseChange_curveX3SubX (hK : Nat.card K = 9) :
     Module.finrank ℤ
-      (Algebra.adjoin ℤ {Hom.ofIsogeny (frobeniusIsogeny (curveX3SubX⁄K).toAffine)}) = 1 :=
+      (Algebra.adjoin ℤ
+        {Hom.ofIsogeny (frobeniusIsogeny ((CurveX3SubX.curve (ZMod 3))⁄K).toAffine)}) = 1 :=
   (finrank_adjoin_ofIsogeny_frobeniusIsogeny_eq_one_iff _).2 ⟨-3, by
     rw [ofIsogeny_frobeniusIsogeny_baseChange_curveX3SubX K hK, Int.cast_neg, Int.cast_ofNat]⟩
 
 /-- **`y² = x³ - x` is supersingular over `𝔽₃`**: over `𝔽₉` its Frobenius endomorphism is the
 integer `-3`, and supersingularity is invariant under base change. -/
-theorem isSupersingular_curveX3SubX : curveX3SubX.IsSupersingular 3 := by
+theorem isSupersingular_curveX3SubX : (CurveX3SubX.curve (ZMod 3)).IsSupersingular 3 := by
   have hK : Nat.card (GaloisField 3 2) = 9 := GaloisField.card 3 2 two_ne_zero
   refine (isSupersingular_baseChange_iff three_ne_zero (GaloisField 3 2)).1 <|
     isSupersingular_of_ofIsogeny_frobeniusIsogeny_mem_range_intCast 3 _ ⟨-3, ?_⟩

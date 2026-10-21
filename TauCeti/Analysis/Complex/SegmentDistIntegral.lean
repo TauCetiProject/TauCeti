@@ -102,11 +102,7 @@ theorem integral_dist_rpow_segment_le {p : ℂ} {u : ℝ} (hu : -1 < u) (hu0 : u
     have hcontd : Continuous fun s : ℝ => dist (w + s • (z - w)) p := by fun_prop
     exact (hcontd.measurable.pow measurable_const).aestronglyMeasurable
   -- the segment meets `p` at the single parameter `c` at worst, so that parameter is discarded
-  have hne_ae : ∀ t : Set ℝ, ∀ᵐ s ∂(volume.restrict t), s ≠ c := by
-    intro t
-    refine ae_restrict_of_ae ?_
-    rw [ae_iff]
-    simp
+  have hne_ae : ∀ t : Set ℝ, ∀ᵐ s ∂(volume.restrict t), s ≠ c := fun t ↦ Measure.ae_ne _ c
   have hbnd : ∀ s ∈ Icc (0 : ℝ) 1, s ≠ c →
       dist (w + s • (z - w)) p ^ u ≤ ‖z - w‖ ^ u * |s - c| ^ u := by
     intro s hs hsne

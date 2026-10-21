@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.ENat.SuccOrder
+public import Mathlib.Order.SuccPred.ENat
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.RestrictScalars

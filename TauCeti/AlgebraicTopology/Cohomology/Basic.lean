@@ -7,7 +7,7 @@ module
 
 public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 public import TauCeti.Algebra.Homology.LinearYoneda
-public import TauCeti.Algebra.Homology.ModuleCat
+public import TauCeti.Algebra.Homology.ModuleCat.Basic
 
 /-!
 # Singular cochains and singular cohomology

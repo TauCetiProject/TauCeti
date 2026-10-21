@@ -112,7 +112,7 @@ private lemma raisedCharWeight_intCast (htuv : t * (u * v) ∣ N) (x : Fin 2 →
 
 private lemma charEisensteinSeriesMFRaise_eq_weighted (hk : 3 ≤ k)
     (htuv : t * (u * v) ∣ N) :
-    ModularForm.ofLe (Subgroup.map_mono (Gamma_le_Gamma1 N))
+    ModularForm.restrict (Subgroup.map_mono (Gamma_le_Gamma1 N))
       (charEisensteinSeriesMFRaise ψ φ t hk htuv) =
         weightedEisensteinSeriesMF (raisedCharWeight N t ψ φ) hk := by
   let _ : NeZero t := NeZero.of_dvd (dvd_of_mul_right_dvd htuv)
@@ -128,7 +128,7 @@ private lemma charEisensteinSeriesMFRaise_eq_weighted (hk : 3 ≤ k)
     · exact mul_left_cancel₀ ht0 h0
     · exact h1
   ext z
-  simp only [ModularForm.coe_ofLe, coe_weightedEisensteinSeriesMF,
+  simp only [ModularForm.coe_restrict, coe_weightedEisensteinSeriesMF,
     weightedEisensteinSeries_def]
   rw [charEisensteinSeriesMFRaise_apply_eq_tsum ψ φ hk htuv]
   -- The raised weight is supported on the image of the diagonal lattice embedding.

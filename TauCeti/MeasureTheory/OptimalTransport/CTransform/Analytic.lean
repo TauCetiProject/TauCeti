@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.MeasureTheory.Function.EReal.Residuation
 public import TauCeti.MeasureTheory.MeasurableSpace.Analytic
 public import TauCeti.MeasureTheory.OptimalTransport.CTransform.CyclicalMonotonicity
+public import TauCeti.MeasureTheory.OptimalTransport.CTransform.Extended
 
 /-!
 # Analytic measurability of the infimal `c`-transform
@@ -20,6 +22,9 @@ measurability regime used to integrate general Kantorovich potentials without in
 Borel measurability.
 
 The symmetric transform is included with the same hypotheses on the transposed integrand.
+For extended costs, additive residuation supplies safe integrands even at infinite values.
+The extended-transform results require only a standard Borel indexing space and a Polish Borel
+space for the output; Borel costs and potentials give completion-measurable transforms.
 
 The same projection argument applies to Rüschendorf's potential `TauCeti.rockafellarPotential`
 of a Borel set `S`, an infimum over finite chains of points of `S`: for each chain length, a strict
@@ -36,6 +41,9 @@ set be integrated.
 * `TauCeti.nullMeasurable_cTransform`: the transform itself is null-measurable for each s-finite
   Borel measure;
 * the corresponding three results with `cTransformSymm` in their names;
+* `TauCeti.analyticSet_setOf_cTransformExtended_lt` and
+  `TauCeti.nullMeasurable_cTransformExtended`: analytic sublevels and completion measurability
+  for extended costs, together with their symmetric counterparts;
 * `TauCeti.analyticSet_setOf_rockafellarPotential_lt` and
   `TauCeti.nullMeasurable_rockafellarPotential`: the same two statements for Rüschendorf's
   potential of a Borel set.
@@ -53,6 +61,57 @@ open MeasureTheory Set
 noncomputable section
 
 namespace TauCeti
+
+section ExtendedForward
+
+variable {X Y : Type*} [MeasurableSpace X] [StandardBorelSpace X]
+  [TopologicalSpace Y] [PolishSpace Y] [MeasurableSpace Y] [BorelSpace Y]
+  {c : X × Y → EReal} {φ : X → EReal}
+
+/-- Borel strict sublevels of the residual integrand give analytic strict sublevels of the
+extended-cost transform. -/
+theorem analyticSet_setOf_cTransformExtended_lt (a : EReal)
+    (h : MeasurableSet {z : X × Y | AddQuantale.rightAddResiduation (φ z.1) (c z) < a}) :
+    AnalyticSet {y | cTransformExtended c φ y < a} := by
+  simpa only [cTransformExtended_apply] using
+    MeasureTheory.analyticSet_setOf_iInf_lt
+      (fun z : X × Y ↦ AddQuantale.rightAddResiduation (φ z.1) (c z)) a h
+
+/-- The extended-cost transform is measurable in the completion of each s-finite Borel measure
+when the cost and potential are Borel. -/
+theorem nullMeasurable_cTransformExtended (μ : Measure Y) [SFinite μ]
+    (hc : Measurable c) (hφ : Measurable φ) :
+    NullMeasurable (cTransformExtended c φ) μ :=
+  measurable_of_Iio fun a ↦ MeasureTheory.AnalyticSet.nullMeasurableSet
+    (analyticSet_setOf_cTransformExtended_lt a
+      (((hφ.comp measurable_fst).ereal_rightAddResiduation hc) measurableSet_Iio)) μ
+
+end ExtendedForward
+
+section ExtendedSymmetric
+
+variable {X Y : Type*} [TopologicalSpace X] [PolishSpace X] [MeasurableSpace X] [BorelSpace X]
+  [MeasurableSpace Y] [StandardBorelSpace Y]
+  {c : X × Y → EReal} {ψ : Y → EReal}
+
+/-- Borel strict sublevels of the symmetric residual integrand give analytic strict sublevels. -/
+theorem analyticSet_setOf_cTransformSymmExtended_lt (a : EReal)
+    (h : MeasurableSet {z : X × Y | AddQuantale.rightAddResiduation (ψ z.2) (c z) < a}) :
+    AnalyticSet {x | cTransformSymmExtended c ψ x < a} := by
+  simpa only [cTransformSymmExtended_eq_cTransformExtended] using
+    analyticSet_setOf_cTransformExtended_lt (c := fun z : Y × X ↦ c (z.2, z.1)) a
+      (h.preimage measurable_swap)
+
+/-- The symmetric extended-cost transform is measurable after completing each s-finite Borel
+measure on the source when the cost and potential are Borel. -/
+theorem nullMeasurable_cTransformSymmExtended (μ : Measure X) [SFinite μ]
+    (hc : Measurable c) (hψ : Measurable ψ) :
+    NullMeasurable (cTransformSymmExtended c ψ) μ :=
+  measurable_of_Iio fun a ↦ MeasureTheory.AnalyticSet.nullMeasurableSet
+    (analyticSet_setOf_cTransformSymmExtended_lt a
+      (((hψ.comp measurable_snd).ereal_rightAddResiduation hc) measurableSet_Iio)) μ
+
+end ExtendedSymmetric
 
 variable {X Y : Type*} [TopologicalSpace X] [PolishSpace X] [MeasurableSpace X] [BorelSpace X]
   [TopologicalSpace Y] [PolishSpace Y] [MeasurableSpace Y] [BorelSpace Y]

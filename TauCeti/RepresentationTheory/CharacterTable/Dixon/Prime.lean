@@ -80,7 +80,6 @@ as the proposition `TauCeti.exists_isGoodDixonPrime` and once as
   446--450.
 * G. Schneider, *Dixon's character table algorithm revisited*, J. Symbolic Comput. 9 (1990),
   601--606.
-* The roadmap `RepresentationTheory/CharacterTheory`, Layer 6, "Certified Dixon prime data".
 -/
 
 public section

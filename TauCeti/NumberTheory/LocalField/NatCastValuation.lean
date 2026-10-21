@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.NormalizedValuation
+public import TauCeti.RingTheory.Valuation.ValuativeRel.Basic
 import TauCeti.Algebra.CharP.LocalRing
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
 
@@ -70,24 +71,14 @@ namespace TauCeti
 
 variable {K : Type*} [Field K] [ValuativeRel K]
 
-/-- A natural number that is a unit in the integer ring is nonzero in the field. -/
-theorem natCast_ne_zero_of_isUnit {n : ℕ} (hn : IsUnit (n : 𝒪[K])) : (n : K) ≠ 0 := by
-  simpa only [map_natCast] using (hn.map (Subring.subtype 𝒪[K])).ne_zero
-
 /-- A natural number prime to the residue characteristic is nonzero in the field. -/
 theorem natCast_ne_zero_of_coprime_ringChar {n : ℕ} (hn : n.Coprime (ringChar 𝓀[K])) :
     (n : K) ≠ 0 :=
   natCast_ne_zero_of_isUnit <| IsLocalRing.isUnit_natCast_iff_not_dvd.2 fun h ↦
     CharP.ringChar_ne_one (hn.symm.eq_one_of_dvd h)
 
-/-- If `2` is a unit in the integer ring, it is nonzero in the field. -/
-theorem two_ne_zero_of_isUnit_two (h2 : IsUnit (2 : 𝒪[K])) : (2 : K) ≠ 0 := by
-  exact_mod_cast natCast_ne_zero_of_isUnit (K := K) (n := 2) (by exact_mod_cast h2)
-
 variable [TopologicalSpace K] [IsNonarchimedeanLocalField K]
 
--- The declaration sequence follows the human-authored specification in
--- `TauCetiRoadmap/LocalFieldsRamification/Suggested.lean`.
 variable (K) in
 /-- The normalized valuation `v_K((n : K))` of the image of a natural number `n` in a
 nonarchimedean local field `K`, as a natural number. The proof `hn` that the image is nonzero
@@ -133,8 +124,7 @@ invertible in the ring of integers. -/
 @[simp]
 theorem natCastValuation_eq_zero_iff (n : ℕ) (hn : (n : K) ≠ 0) :
     natCastValuation K n hn = 0 ↔ IsUnit (n : 𝒪[K]) := by
-  have hcast : ((n : 𝒪[K]) : K) = (n : K) := by push_cast; rfl
-  rw [isUnit_iff_normalizedValuationWithZero_eq_one, hcast,
+  rw [isUnit_iff_normalizedValuationWithZero_eq_one, Subring.coe_natCast,
     normalizedValuationWithZero_natCast K n hn, ← WithZero.exp_zero, WithZero.exp_inj,
     Nat.cast_eq_zero]
 
@@ -187,7 +177,7 @@ theorem natCastValuation_one :
   exact (natCastValuation_eq_zero_iff K 1 h1).mpr (by simp)
 
 variable (K) in
-/-- The normalized valuation of a natural number is additive in it. -/
+/-- The normalized valuation of a product of natural numbers is the sum of their valuations. -/
 @[simp]
 theorem natCastValuation_mul {m n : ℕ} (hm : (m : K) ≠ 0) (hn : (n : K) ≠ 0) :
     natCastValuation K (m * n) (by simpa only [Nat.cast_mul] using mul_ne_zero hm hn) =

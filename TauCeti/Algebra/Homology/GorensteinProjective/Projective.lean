@@ -44,16 +44,10 @@ theorem IsGorensteinProjective.nonempty_splitting_of_projective
     (hS : S.ShortExact) [Module.Finite A S.X₁] [Module.Projective A S.X₁] :
     Nonempty S.Splitting := by
   obtain ⟨P, hP, ⟨e⟩⟩ := (isGorensteinProjective_iff S.X₃).mp hN
-  let T := ShortComplex.mk (P.iCycles (-1)) (P.toCycles (-1) 0) (by
-    rw [← cancel_mono (P.iCycles 0)]
-    simp)
+  let T := ShortComplex.mk (P.iCycles (-1)) (P.toCycles (-1) 0) (P.iCycles_toCycles (-1) 0)
   have hT : T.ShortExact := by
-    -- Transport the existing cycle presentation along its public carrier equations.
-    let E : P.cyclesShortComplex (-1) ≅ T := ShortComplex.isoMk
-      (eqToIso (by simp [T])) (eqToIso (by simp [T])) (eqToIso (by simp [T]))
-      (by simp [T]) (by simp [T])
-    exact ShortComplex.shortExact_of_iso E
-      (HomologicalComplex.cyclesShortComplex_shortExact (-1) (hP.acyclic 0))
+    simpa only [HomologicalComplex.cyclesShortComplex_def] using
+      P.cyclesShortComplex_shortExact (-1) 0 (by simp) (hP.acyclic 0)
   have := hS.mono_f
   have := hS.epi_g
   have := hT.epi_g
@@ -81,14 +75,10 @@ theorem IsGorensteinProjective.exists_extend
     {S : ShortComplex (ModuleCat.{v} A)} (hN : IsGorensteinProjective A S.X₃)
     (hS : S.ShortExact) (Q : ModuleCat.{v} A) [Module.Finite A Q] [Module.Projective A Q]
     (f : S.X₁ ⟶ Q) : ∃ g : S.X₂ ⟶ Q, S.f ≫ g = f := by
-  let E := ExactStructure.abelian (ModuleCat.{v} A)
   let sq := IsPushout.of_hasPushout S.f f
-  have hT := E.conflation_cobaseChange
-    ((ExactStructure.abelian_conflation S).mpr hS) sq
-  rw [cobaseChange_def] at hT
-  have hT' := (ExactStructure.abelian_conflation _).mp hT
+  have hT := shortExact_cobaseChange hS sq
   obtain ⟨s⟩ := IsGorensteinProjective.nonempty_splitting_of_projective
-    (S := ShortComplex.mk (pushout.inr S.f f) (cobaseChangeπ S sq) (by simp)) hN hT'
+    (S := ShortComplex.mk (pushout.inr S.f f) (cobaseChangeπ S sq) (by simp)) hN hT
   refine ⟨pushout.inl S.f f ≫ s.r, ?_⟩
   rw [← Category.assoc, pushout.condition, Category.assoc]
   simpa using congrArg (f ≫ ·) s.f_r

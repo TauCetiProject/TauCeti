@@ -103,7 +103,8 @@ corestriction on the invariant `σ b` of the fixing subgroup is the product of t
 * `TauCeti.explicitIso_kummerMap`: the explicit and canonical Kummer maps agree under the
   degree-one comparison isomorphism.
 * `TauCeti.explicitMap1_kummerMap`: pullback along an arbitrary field extension carries the
-  Kummer class of a unit to the Kummer class of its image.
+  Kummer class of a unit to the Kummer class of its image, and `TauCeti.explicitMap1_kummerIso` is
+  the same statement on power classes.
 * `TauCeti.kummerIso_res`: the Kummer isomorphism is natural for restriction along a field
   extension, restriction corresponding to the map of power classes `Kˣ ⧸ (Kˣ)ⁿ → Lˣ ⧸ (Lˣ)ⁿ`;
   `TauCeti.kummerRes_kummerMap` is the same statement on units.
@@ -168,6 +169,13 @@ theorem kummerCoeffIncl_kummerCocycle
   Additive.toMul.injective <| by
     rw [toMul_kummerCoeffIncl, toMul_kummerCocycle, toMul_sub, Additive.toMul_smul,
       toMul_ofMul, div_eq_mul_inv]
+
+/-- **The Kummer cocycle vanishes exactly at the automorphisms fixing the chosen root.** -/
+@[simp]
+theorem kummerCocycle_eq_zero_iff
+    (hα : α ^ n = Units.map (algebraMap K (SeparableClosure K)).toMonoidHom a)
+    (g : AbsoluteGaloisGroup K) : kummerCocycle hα g = 0 ↔ g • α = α := by
+  rw [← toMul_eq_one, ← OneMemClass.coe_eq_one, toMul_kummerCocycle, mul_inv_eq_one]
 
 /-- **The Kummer ratio `g ↦ g α / α` is a continuous `1`-cocycle** with values in `μₙ`. -/
 theorem kummerCocycle_mem_Z1
@@ -741,6 +749,19 @@ theorem explicitMap1_kummerMap (hn : IsUnit (n : K)) (a : Kˣ) :
   obtain ⟨α, hα⟩ := exists_pow_eq_units_map hn a
   rw [kummerMap_eq_kummerCocycleClass hn hα, explicitMap1_kummerCocycleClass n τ hα,
     ← kummerMap_eq_kummerCocycleClass hnL]
+
+/-- **The Kummer isomorphism is natural for pullback along an arbitrary field extension**:
+pullback along `τ : Kˢ → Lˢ` corresponds under the Kummer isomorphisms to the map of power classes
+`Kˣ ⧸ (Kˣ)ⁿ → Lˣ ⧸ (Lˣ)ⁿ` induced by `K → L`. -/
+theorem explicitMap1_kummerIso (hn : IsUnit (n : K)) (x : powerClassQuotient Kˣ n) :
+    explicitMap1 (AbsoluteGaloisGroup K) (KummerCoeff K n) (AbsoluteGaloisGroup L)
+      (KummerCoeff L n) (absoluteGaloisGroupMap τ) (kummerCoeffBaseChange n τ)
+      continuous_of_discreteTopology (kummerCoeffBaseChange_smul n τ)
+      (kummerIso K n hn x).toAdd =
+        (kummerIso L n (by simpa using hn.map (algebraMap K L))
+          (powerClassMap n (Units.map (algebraMap K L : K →* L)) x)).toAdd := by
+  induction x using QuotientGroup.induction_on with
+  | H a => rw [kummerIso_mk, powerClassMap_mk, kummerIso_mk, explicitMap1_kummerMap]
 
 end BaseChange
 

@@ -7,9 +7,11 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Solvable.Radical.Semisimple
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Basic
+import TauCeti.Algebra.AlgebraicGroup.Connected.Finite
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Normal.Image
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Image.Smooth
 import TauCeti.Algebra.AlgebraicGroup.Solvable.Reduced
+import TauCeti.RingTheory.Smooth.GeometricallyReduced
 
 /-!
 # Solvable radicals under quotient homomorphisms
@@ -20,8 +22,9 @@ solvable subgroup is again such a subgroup: dominance preserves normality, and c
 smoothness, and solvability descend to the image.
 
 Consequently, a homomorphism to a group with trivial solvable radical kills the source radical.
-If its kernel is itself connected, smooth, and solvable, that kernel is the radical. In
-particular this identifies such kernels for semisimple quotients. These statements use defining
+A finite kernel forces the source radical to be trivial. If its kernel is itself connected,
+smooth, and solvable, that kernel is the radical. In particular this identifies such kernels for
+semisimple quotients. These statements use defining
 Hopf ideals, whose order reverses inclusion of closed subgroups; coordinate morphisms also run
 opposite to the homomorphisms of represented groups.
 
@@ -31,6 +34,8 @@ opposite to the homomorphisms of represented groups.
   under a schematically dominant homomorphism is a candidate in the target.
 * `TauCeti.FiniteTypeCommHopfAlgCat.solvableRadicalDefiningIdeal_le_comap`: the image of the
   source radical lies in the target radical.
+* `TauCeti.FiniteTypeCommHopfAlgCat.solvableRadicalDefiningIdeal_eq_augmentation_of_finite_kernel`:
+  a dominant homomorphism with finite kernel and trivial target radical has trivial source radical.
 * `TauCeti.FiniteTypeCommHopfAlgCat.solvableRadicalDefiningIdeal_eq_kernelHopfIdeal_of_semisimple`:
   a connected smooth solvable kernel with semisimple quotient is the radical.
 
@@ -108,6 +113,39 @@ kernelHopfIdeal_le_solvableRadicalDefiningIdeal_of_solvableRadicalDefiningIdeal_
   rw [← hD]
   intro x hx
   exact HopfIdeal.mem_comap.mp (solvableRadicalDefiningIdeal_le_comap H D f hf hx)
+
+/-- A schematically dominant homomorphism with finite scheme-theoretic kernel to a group
+with trivial solvable radical has trivial source radical. Neither the ambient groups nor
+the kernel need be smooth or connected. Coordinate arrows run from target to source. -/
+theorem solvableRadicalDefiningIdeal_eq_augmentation_of_finite_kernel
+    {Q G : FiniteTypeCommHopfAlgCat.{u, u} k}
+    (f : Q.obj ⟶ G.obj) (hf : Function.Injective f.hom)
+    [Module.Finite k (CommHopfAlgCat.quotient G.obj (CommHopfAlgCat.kernelHopfIdeal f))]
+    (hQ : solvableRadicalDefiningIdeal Q = HopfIdeal.augmentation k Q) :
+    solvableRadicalDefiningIdeal G = HopfIdeal.augmentation k G := by
+  let I := solvableRadicalDefiningIdeal G
+  have hI := isSolvableRadicalCandidate_solvableRadicalDefiningIdeal G
+  have hle : CommHopfAlgCat.kernelHopfIdeal f ≤ I :=
+    kernelHopfIdeal_le_solvableRadicalDefiningIdeal_of_solvableRadicalDefiningIdeal_eq_augmentation
+      G Q hQ f hf
+  -- The radical is a closed subgroup of the finite scheme-theoretic kernel.
+  let p := CommHopfAlgCat.quotientMapOfLe G.obj hle
+  let _ : Module.Finite k (CommHopfAlgCat.quotient G.obj I) :=
+    Module.Finite.of_surjective p.hom.toLinearMap
+      (CommHopfAlgCat.quotientMapOfLe_surjective G.obj hle)
+  let _ : Algebra.Smooth k (CommHopfAlgCat.quotient G.obj I) := hI.smooth
+  let _ : IsReduced (CommHopfAlgCat.quotient G.obj I) := isReduced_of_smooth k _
+  let _ : ConnectedSpace (PrimeSpectrum (CommHopfAlgCat.quotient G.obj I)) :=
+    geometricallyConnectedCommHopfAlgProperty.connectedSpace k _ hI.geometricallyConnected
+  have hbot := HopfIdeal.augmentation_eq_bot_of_moduleFinite
+    (k := k) (H := CommHopfAlgCat.quotient G.obj I)
+  have hsurj : Function.Surjective (Bialgebra.Quotient.mkBialgHom (R := k) I.toIdeal) :=
+    Ideal.Quotient.mk_surjective
+  have h := HopfIdeal.comapOfSurjective_augmentation
+    (Bialgebra.Quotient.mkBialgHom (R := k) I.toIdeal) hsurj
+  rw [hbot] at h
+  rw [HopfIdeal.comapOfSurjective_bot, HopfIdeal.kerOfSurjective_mkBialgHom] at h
+  exact h
 
 /-- A connected normal smooth solvable kernel of a schematically dominant homomorphism to a
 group with trivial solvable radical is the solvable radical of the source. -/

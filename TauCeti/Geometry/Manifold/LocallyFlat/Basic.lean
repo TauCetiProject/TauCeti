@@ -822,6 +822,23 @@ theorem isLocallyFlat_graph
   · dsimp [Function.comp_apply, shear]
     simp only [zero_add]
 
+/-- If `f` is continuous on an open set `s`, its graph parametrized by `s` is locally flat in the
+ambient product `E × F`, with complementary model `F`. This is the local graph form used when a
+map is described on an open coordinate domain. -/
+theorem _root_.ContinuousOn.isLocallyFlat_graph_of_isOpen
+    {E F : Type*} [TopologicalSpace E]
+    [AddGroup F] [TopologicalSpace F] [IsTopologicalAddGroup F]
+    {f : E → F} {s : Set E} (hf : ContinuousOn f s) (hs : IsOpen s) :
+    IsLocallyFlat s F (fun x : s => ((x.1, f x.1) : E × F)) := by
+  have hcont : Continuous (s.domRestrict f) :=
+    continuousOn_iff_continuous_domRestrict.mp hf
+  have hgraph : IsLocallyFlat s F (fun x : s => (x, s.domRestrict f x)) := by
+    apply TauCeti.isLocallyFlat_graph
+    exact hcont
+  have hopen : Topology.IsOpenEmbedding (Prod.map (Subtype.val : s → E) (id : F → F)) :=
+    hs.isOpenEmbedding_subtypeVal.prodMap Topology.IsOpenEmbedding.id
+  exact hgraph.isOpenEmbedding_comp hopen
+
 /-- A continuous map is locally flat when an ambient homeomorphism presents its image as a graph.
 The section equation `(Φ (f x)).1 = x` identifies `f` with the graph of the second coordinate of
 `Φ ∘ f`, and the conclusion gives local flatness with complementary model `F`. -/

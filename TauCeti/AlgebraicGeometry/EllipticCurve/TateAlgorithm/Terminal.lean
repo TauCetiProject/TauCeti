@@ -61,6 +61,11 @@ at least `2`.
 * `WeierstrassCurve.exists_isTateTerminal`: **Tate's algorithm terminates.** Over a discrete
   valuation ring with perfect residue field, a minimal equation with nonzero discriminant is carried
   by a change of variables over `R` to an equation on which the algorithm stops.
+* `WeierstrassCurve.IsTateTerminal.isTateOddStage_zero_of_IStar`: every positive `Iₙ*`
+  stopping condition implies the stage-one normal form.
+* `WeierstrassCurve.IsTateTerminal.isTateOddStage_of_IStar_two_mul_add_one` and
+  `WeierstrassCurve.IsTateTerminal.isTateEvenStage_of_IStar_two_mul_add_two`: the odd and even
+  stopping conditions supply their respective stage and discriminant tests.
 * `WeierstrassCurve.isTateTerminal_map_iff`: the stopping conditions transfer along a ring map
   that reflects divisibility by powers of the uniformiser.
 * `WeierstrassCurve.IsTateTerminal.addVal_Δ_eq`: at a symbol `Iₙ`, the discriminant has valuation
@@ -70,6 +75,10 @@ at least `2`.
 * `WeierstrassCurve.IsTateTerminal.dvd_b₂_and_dvd_a₃_and_dvd_a₄_and_dvd_a₆` and
   `WeierstrassCurve.IsTateTerminal.dvd_c₄`: at an additive symbol, `ϖ` divides `b₂`, `a₃`, `a₄`,
   `a₆` and hence `c₄`.
+* `WeierstrassCurve.IsTateTerminal.ne_zero`: at a symbol other than `I₀`, the uniformiser `ϖ` is
+  nonzero.
+* `WeierstrassCurve.IsTateTerminal.prime_and_not_dvd_of_IVStar`: at `IV*`, with `a₃ = ϖ² A₃` and
+  `a₆ = ϖ⁴ A₆`, the uniformiser is prime and `ϖ ∤ A₃² + 4 A₆`.
 * `WeierstrassCurve.IsTateTerminal.dvd_Δ_iff`: the algorithm stops at a symbol other than `I₀`
   exactly when `ϖ ∣ Δ`.
 * `WeierstrassCurve.IsTateTerminal.two_le_algorithmicOggExponent`: at an additive symbol, the
@@ -155,6 +164,41 @@ theorem isTateTerminal_IStar_add_one {n : ℕ} : W.IsTateTerminal ϖ (.IStar (n 
     (∃ k, n = 2 * k ∧ IsTateOddStage ϖ k W ∧ ¬ ϖ ^ (2 * k + 5) ∣ W.b₆) ∨
       ∃ k, n = 2 * k + 1 ∧ IsTateEvenStage ϖ k W ∧ ¬ ϖ ^ (2 * k + 7) ∣ discrim W.a₂ W.a₄ W.a₆ :=
   Iff.rfl
+
+/-- Both branches of the stopping test for `Iₙ*` satisfy the normal form of stage `1` of the
+subprocedure: `ϖ ∣ a₁`, `ϖ ∥ a₂`, `ϖ² ∣ a₃`, `ϖ³ ∣ a₄` and `ϖ⁴ ∣ a₆`. -/
+theorem IsTateTerminal.isTateOddStage_zero_of_IStar {n : ℕ}
+    (h : W.IsTateTerminal ϖ (.IStar (n + 1))) :
+    IsTateOddStage ϖ 0 W := by
+  rcases isTateTerminal_IStar_add_one.1 h with ⟨k, -, hs, -⟩ | ⟨k, -, hs, -⟩
+  · obtain ⟨h₁, h₂, h₂', h₃, h₄, h₆⟩ := isTateOddStage_iff.1 hs
+    exact isTateOddStage_iff.2 ⟨h₁, h₂, h₂', (pow_dvd_pow ϖ (by omega)).trans h₃,
+      (pow_dvd_pow ϖ (by omega)).trans h₄, (pow_dvd_pow ϖ (by omega)).trans h₆⟩
+  · obtain ⟨h₁, h₂, h₂', h₃, h₄, h₆⟩ := isTateEvenStage_iff.1 hs
+    exact isTateOddStage_iff.2 ⟨h₁, h₂, h₂', (pow_dvd_pow ϖ (by omega)).trans h₃,
+      (pow_dvd_pow ϖ (by omega)).trans h₄, (pow_dvd_pow ϖ (by omega)).trans h₆⟩
+
+/-- The stopping test at `I*_{2k+1}` is the odd stage `k` with `ϖ^(2k+5) ∤ b₆`. -/
+theorem IsTateTerminal.isTateOddStage_of_IStar_two_mul_add_one {k : ℕ}
+    (h : W.IsTateTerminal ϖ (.IStar (2 * k + 1))) :
+    IsTateOddStage ϖ k W ∧
+      ¬ ϖ ^ (2 * k + 5) ∣ W.b₆ := by
+  rcases isTateTerminal_IStar_add_one.1 h with ⟨k', hk, hs, hb⟩ | ⟨k', hk, -, -⟩
+  · obtain rfl : k' = k := by omega
+    exact ⟨hs, hb⟩
+  · omega
+
+/-- The stopping test at `I*_{2k+2}` is the even stage `k` with
+`ϖ^(2k+7) ∤ a₄² − 4 a₂ a₆`. -/
+theorem IsTateTerminal.isTateEvenStage_of_IStar_two_mul_add_two {k : ℕ}
+    (h : W.IsTateTerminal ϖ (.IStar (2 * k + 2))) :
+    IsTateEvenStage ϖ k W ∧
+      ¬ ϖ ^ (2 * k + 7) ∣ discrim W.a₂
+        W.a₄ W.a₆ := by
+  rcases isTateTerminal_IStar_add_one.1 h with ⟨k', hk, -, -⟩ | ⟨k', hk, hs, hb⟩
+  · omega
+  · obtain rfl : k' = k := by omega
+    exact ⟨hs, hb⟩
 
 @[simp]
 theorem isTateTerminal_IVStar : W.IsTateTerminal ϖ .IVStar ↔
@@ -264,6 +308,65 @@ theorem IsTateTerminal.dvd_c₄ {s : ReductionSymbol} (h : W.IsTateTerminal ϖ s
     ϖ hb₂ h₃ h₄ h₆).1
   rw [c₄]
   exact dvd_sub (dvd_pow hb₂ two_ne_zero) (dvd_mul_of_dvd_right hb₄ _)
+
+/-- **At a stopping symbol other than `I₀`, the uniformiser is nonzero.** If `ϖ = 0`, the
+divisibility conditions force the relevant coefficients to vanish, and then the stopping test
+`¬ 0 ^ k ∣ _` fails. -/
+theorem IsTateTerminal.ne_zero {s : ReductionSymbol} (h : W.IsTateTerminal ϖ s) (hs : s ≠ .I 0) :
+    ϖ ≠ 0 := by
+  rintro rfl
+  have hz {k : ℕ} (hk : k ≠ 0) {x : R} : (0 : R) ^ k ∣ x ↔ x = 0 := by
+    rw [zero_pow hk, zero_dvd_iff]
+  match s, h with
+  | .I 0, _ => exact hs rfl
+  | .I (n + 1), h =>
+    obtain ⟨-, -, -, -, hΔ, hΔ'⟩ := isTateTerminal_I_add_one.1 h
+    exact hΔ' ((hz (by omega)).2 ((hz (by omega)).1 hΔ))
+  | .II, h =>
+    obtain ⟨-, -, -, h₆, h₆'⟩ := isTateTerminal_II.1 h
+    exact h₆' ((hz two_ne_zero).2 (zero_dvd_iff.1 h₆))
+  | .III, h =>
+    obtain ⟨-, h₃, h₄, h₆, hb₈⟩ := isTateTerminal_III.1 h
+    rw [zero_dvd_iff] at h₃ h₄
+    exact hb₈ ((hz three_ne_zero).2 (by rw [b₈, h₃, h₄, (hz two_ne_zero).1 h₆]; ring))
+  | .IV, h =>
+    obtain ⟨-, h₃, -, h₆, -, hb₆⟩ := isTateTerminal_IV.1 h
+    rw [zero_dvd_iff] at h₃
+    exact hb₆ ((hz three_ne_zero).2 (by rw [b₆, h₃, (hz two_ne_zero).1 h₆]; ring))
+  | .IStar 0, h =>
+    obtain ⟨-, -, -, h₄, h₆, hd⟩ := isTateTerminal_IStar_zero.1 h
+    exact hd ((hz (by norm_num)).2
+      (by rw [Cubic.discr, (hz two_ne_zero).1 h₄, (hz three_ne_zero).1 h₆]; ring))
+  | .IStar (_ + 1), h =>
+    rcases isTateTerminal_IStar_add_one.1 h with ⟨_, -, hW, -⟩ | ⟨_, -, hW, -⟩
+    · obtain ⟨-, h₂, h₂', -⟩ := isTateOddStage_iff.1 hW
+      exact h₂' ((hz two_ne_zero).2 (zero_dvd_iff.1 h₂))
+    · obtain ⟨-, h₂, h₂', -⟩ := isTateEvenStage_iff.1 hW
+      exact h₂' ((hz two_ne_zero).2 (zero_dvd_iff.1 h₂))
+  | .IVStar, h =>
+    obtain ⟨-, -, h₃, -, h₆, hb₆⟩ := isTateTerminal_IVStar.1 h
+    exact hb₆ ((hz (by norm_num)).2
+      (by rw [b₆, (hz two_ne_zero).1 h₃, (hz (by norm_num)).1 h₆]; ring))
+  | .IIIStar, h =>
+    obtain ⟨-, -, -, h₄, -, h₄'⟩ := isTateTerminal_IIIStar.1 h
+    exact h₄' ((hz (by norm_num)).2 ((hz three_ne_zero).1 h₄))
+  | .IIStar, h =>
+    obtain ⟨-, -, -, -, h₆, h₆'⟩ := isTateTerminal_IIStar.1 h
+    exact h₆' ((hz (by norm_num)).2 ((hz (by norm_num)).1 h₆))
+
+/-- **At the symbol `IV*`, the residue quadratic has distinct roots.** If `(ϖ)` is a prime ideal,
+`a₃ = ϖ² A₃` and `a₆ = ϖ⁴ A₆`, then the test `ϖ⁵ ∤ b₆ = ϖ⁴ (A₃² + 4 A₆)` says that `ϖ` is prime
+and does not divide the discriminant `A₃² + 4 A₆` of `T² + A₃ T − A₆`. -/
+theorem IsTateTerminal.prime_and_not_dvd_of_IVStar (hϖ : (Ideal.span {ϖ}).IsPrime)
+    (h : W.IsTateTerminal ϖ .IVStar) {A₃ A₆ : R} (h₃ : W.a₃ = ϖ ^ 2 * A₃)
+    (h₆ : W.a₆ = ϖ ^ 4 * A₆) : Prime ϖ ∧ ¬ ϖ ∣ A₃ ^ 2 + 4 * A₆ := by
+  obtain ⟨-, -, -, -, -, hb₆⟩ := isTateTerminal_IVStar.1 h
+  have hb : W.b₆ = ϖ ^ 4 * (A₃ ^ 2 + 4 * A₆) := by
+    rw [b₆, h₃, h₆]
+    ring
+  refine ⟨(Ideal.span_singleton_prime (h.ne_zero nofun)).1 hϖ, fun hd ↦ hb₆ ?_⟩
+  rw [hb, pow_succ]
+  exact mul_dvd_mul_left _ hd
 
 /-- **Tate's algorithm stops at a symbol other than `I₀` exactly when `ϖ` divides the
 discriminant.** -/

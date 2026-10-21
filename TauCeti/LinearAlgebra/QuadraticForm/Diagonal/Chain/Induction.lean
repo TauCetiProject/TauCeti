@@ -36,10 +36,47 @@ coefficients agree.
 * `TauCeti.PermutationStep.prod_prod_Ioi_eq`: invariance under a permutation step.
 * `TauCeti.BinaryStep.prod_prod_Ioi_eq`: invariance under a binary step.
 
+## Which invariant each source means
+
+The sources give the name *Hasse invariant* to two different products of symbols, and the name
+*Witt invariant* to a third invariant that is not a pairwise product at all. Below,
+`q ≅ ⟨a₁, …, aₙ⟩` and `(a, b)` is a symbol: the quaternion algebra up to isomorphism, its class
+in the Brauer group, or the `{±1}`-valued Hilbert symbol over a local field.
+
+* **Lam's `s`** (Lam V.3.17) is `∏_{i<j} (aᵢ, aⱼ)`, the product over pairs of distinct indices
+  treated in this file, with the empty product in ranks `0` and `1`. The Hasse invariants of
+  Tau Ceti follow this convention: `TauCeti.RegularFormClass.hasseInvariant` with values in the
+  Brauer group, and `TauCeti.RegularFormClass.localHasse` with Hilbert symbols over a
+  nonarchimedean local field.
+* **Serre's `ε`** (Serre, *A Course in Arithmetic*, IV.2.1) is the same product
+  `∏_{i<j} (aᵢ, aⱼ)` of Hilbert symbols over `ℚ_p` or `ℝ`, so it agrees with Lam's `s`; over
+  `ℚ_p` it is `localHasse`. It has nothing to do with Serre's sign `ε(u) = (u - 1)/2 mod 2` of
+  a unit `u` of `ℤ_2` (Serre II.3.3), which is `TauCeti.serreEps`.
+* **O'Meara's Hasse symbol**, the invariant of his classification over local fields
+  (O'Meara 63:20), is `∏_{i≤j} (aᵢ, aⱼ)`, which also takes the diagonal pairs. Since
+  `(a, a) = (a, -1)`, it is Lam's `s(q)` times `(d, -1)`, where `d = a₁ ⋯ aₙ` is the unsigned
+  discriminant (`TauCeti.RegularFormClass.omearaHasseSymbol_eq` and
+  `TauCeti.RegularFormClass.omearaLocalHasseSymbol_eq`). The two conventions differ already in
+  rank one: for `⟨-1⟩` over `ℝ`, Lam's `s` is the empty product `1`, while O'Meara's symbol is
+  `(-1, -1) = -1`.
+* **Lam's `c`**, the Witt invariant (Lam V.3.12), is the class of the Clifford algebra of `q`
+  when `n` is even, and of its even Clifford algebra when `n` is odd
+  (`TauCeti.RegularFormClass.cliffordInvariant`). It is not a product over pairs, but Lam V.3.20
+  expresses it through `s(q)`, the discriminant and the rank
+  (`TauCeti.RegularFormClass.cliffordInvariant_eq_hasseInvariant_mul`).
+
+⚠ Lam (p. 120, Caution) records that the formula relating `c` and `s` published by
+C. T. C. Wall is incorrect; `TauCeti.RegularFormClass.cliffordInvariant_eq_hasseInvariant_mul`
+is Lam's formula, so a comparison with another source should start from it.
+
 ## References
 
 * T. Y. Lam, *Introduction to Quadratic Forms over Fields*, Graduate Studies in Mathematics 67,
-  American Mathematical Society (2005), Chapter I, Theorem 5.2, and Chapter V, Proposition 3.18.
+  American Mathematical Society (2005), Chapter I, Theorem 5.2, and Chapter V, §3, in particular
+  3.12, 3.17, 3.18, 3.20 and the Caution on p. 120.
+* J.-P. Serre, *A Course in Arithmetic*, Graduate Texts in Mathematics 7, Springer (1973),
+  Chapter II, §3.3, and Chapter IV, §2.1.
+* O. T. O'Meara, *Introduction to Quadratic Forms*, Springer (1963), §63:20.
 -/
 
 public section

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.Polynomial.Basic
 public import Mathlib.Analysis.RCLike.Lemmas
-public import TauCeti.Analysis.Polynomial.ContinuityOfRoots
+public import TauCeti.Analysis.Polynomial.ContinuityOfRoots.Basic
 
 import TauCeti.Topology.MetricSpace.SeparatedBalls
 

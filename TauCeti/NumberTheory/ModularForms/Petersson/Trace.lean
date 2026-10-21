@@ -93,7 +93,7 @@ theorem peterssonInnerCosets_sum_slash_left {Γ Γ' : Subgroup SL(2, ℤ)} [Γ.F
     (h : CuspForm (Γ'.map (mapGL ℝ)) k) (g F : CuspForm (Γ.map (mapGL ℝ)) k)
     (hF : ⇑F = ∑ i, ⇑h ∣[k] ((γ i : SL(2, ℤ)))⁻¹) :
     peterssonInnerCosets F g =
-      peterssonInnerCosets h (CuspForm.ofLe (Subgroup.map_mono hle) g) := by
+      peterssonInnerCosets h (CuspForm.restrict (Subgroup.map_mono hle) g) := by
   -- the cosets of `Γ'·{±I}` are the pairs of a coset `p` of `Γ·{±I}` and an index `i`, via
   -- `(p, i) ↦ p.out * γ i`: Mathlib's coset tower `G/H ≃ G/K × K/H`, with the second factor
   -- `Γ·{±I} / Γ'·{±I}` enumerated by the `γ i`
@@ -136,11 +136,11 @@ theorem peterssonInnerCosets_sum_slash_left {Γ Γ' : Subgroup SL(2, ℤ)} [Γ.F
   rw [hF, SlashAction.sum_slash, UpperHalfPlane.peterssonInner_sum_left k fd Finset.univ _ _
     fun i _ ↦ by
       rw [hsummand i, ← SlashAction.slash_mul]
-      simpa only [CuspForm.coe_ofLe] using
-        integrableOn_petersson_slash_left k _ h (CuspForm.ofLe (Subgroup.map_mono hle) g) _]
+      simpa only [CuspForm.coe_restrict] using
+        integrableOn_petersson_slash_left k _ h (CuspForm.restrict (Subgroup.map_mono hle) g) _]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [Equiv.ofBijective_apply, hΦ_def, peterssonInner_slash_inv_out, mul_inv_rev, hsummand i,
-    CuspForm.coe_ofLe, SlashAction.slash_mul, SlashAction.slash_mul]
+    CuspForm.coe_restrict, SlashAction.slash_mul, SlashAction.slash_mul]
 
 /-- **The trace is adjoint to restriction.** Let `𝒢 ≤ GL₂(ℝ)` meet the image of a finite-index
 `Γ ≤ SL₂(ℤ)` in the image of `Γ' ≤ Γ`, with `-I ∈ Γ → -I ∈ Γ'`. For a cusp form `h` for `𝒢` and
@@ -161,8 +161,8 @@ theorem peterssonInnerCosets_trace_left {𝒢 : Subgroup (GL (Fin 2) ℝ)} {Γ �
     (hneg : (-1 : SL(2, ℤ)) ∈ Γ → (-1 : SL(2, ℤ)) ∈ Γ')
     (h : CuspForm 𝒢 k) (g : CuspForm (Γ.map (mapGL ℝ)) k) :
     peterssonInnerCosets (CuspForm.trace (Γ.map (mapGL ℝ)) h) g =
-      peterssonInnerCosets (CuspForm.ofLe (hΓ'.trans_le inf_le_left) h)
-        (CuspForm.ofLe (hΓ'.trans_le inf_le_right) g) := by
+      peterssonInnerCosets (CuspForm.restrict (hΓ'.trans_le inf_le_left) h)
+        (CuspForm.restrict (hΓ'.trans_le inf_le_right) g) := by
   have hinj : Function.Injective (mapGL ℝ : SL(2, ℤ) →* GL (Fin 2) ℝ) := mapGL_injective
   have hle : Γ' ≤ Γ := (Subgroup.map_le_map_iff_of_injective hinj).mp (hΓ'.trans_le inf_le_right)
   set e := Subgroup.equivMapOfInjective Γ (mapGL ℝ) hinj
@@ -195,7 +195,7 @@ theorem peterssonInnerCosets_trace_left {𝒢 : Subgroup (GL (Fin 2) ℝ)} {Γ �
     (Subgroup.coe_equivMapOfInjective_apply Γ (mapGL ℝ) hinj _).symm.trans
       (congrArg Subtype.val (e.apply_symm_apply _))
   conv_lhs => rw [← Quotient.out_eq q]
-  rw [SlashInvariantForm.quotientFunc_mk, CuspForm.coe_ofLe, ModularForm.SL_slash,
+  rw [SlashInvariantForm.quotientFunc_mk, CuspForm.coe_restrict, ModularForm.SL_slash,
     map_inv, map_inv, hq]
 
 /-! ### The adjoint of a double coset operator -/
@@ -274,13 +274,14 @@ theorem peterssonInnerCosets_trace_translate {Γ₁ Γ₂ : Subgroup SL(2, ℤ)}
   set d : ℂ := ((α : Matrix (Fin 2) (Fin 2) ℝ).det : ℂ) ^ (k - 2)
   have hd : d ≠ 0 := zpow_ne_zero _ (Complex.ofReal_ne_zero.mpr hα.ne')
   have hC := TauCeti.CuspForm.peterssonInnerCosets_slash_of_inv_conjAct_eq hα hconj
-    (f := CuspForm.ofLe (h₃'.trans_le inf_le_right) f)
-    (g := CuspForm.ofLe (h₃'.trans_le inf_le_left) (CuspForm.translate g (TauCeti.adjugateGL α)))
-    (F := CuspForm.ofLe (h₃.trans_le inf_le_left) (CuspForm.translate f α))
-    (G := d • CuspForm.ofLe (h₃.trans_le inf_le_right) g)
-    (by rw [CuspForm.coe_ofLe, CuspForm.coe_translate, CuspForm.coe_ofLe])
-    (by rw [CuspForm.coe_ofLe, CuspForm.coe_translate, ← SlashAction.slash_mul, hscal,
-      ModularForm.slash_scalar, FunLike.coe_smul, CuspForm.coe_ofLe,
+    (f := CuspForm.restrict (h₃'.trans_le inf_le_right) f)
+    (g := CuspForm.restrict (h₃'.trans_le inf_le_left)
+      (CuspForm.translate g (TauCeti.adjugateGL α)))
+    (F := CuspForm.restrict (h₃.trans_le inf_le_left) (CuspForm.translate f α))
+    (G := d • CuspForm.restrict (h₃.trans_le inf_le_right) g)
+    (by rw [CuspForm.coe_restrict, CuspForm.coe_translate, CuspForm.coe_restrict])
+    (by rw [CuspForm.coe_restrict, CuspForm.coe_translate, ← SlashAction.slash_mul, hscal,
+      ModularForm.slash_scalar, FunLike.coe_smul, CuspForm.coe_restrict,
       Matrix.GeneralLinearGroup.val_det_apply])
   rw [peterssonInnerCosets_smul_right] at hC
   rw [peterssonInnerCosets_trace_left h₃ hneg₁, mul_left_cancel₀ hd hC,

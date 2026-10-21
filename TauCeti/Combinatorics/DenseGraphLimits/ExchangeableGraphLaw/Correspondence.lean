@@ -60,7 +60,7 @@ theorem mixtureExchangeableLaw_injective :
     (TauCeti.MeasureTheory.ext_of_forall_mem_submonoid_integral_eq_of_polish
       (S := homDensitySubmonoid) (fun x y hxy => ?_) (mixtureExchangeableLaw_eq_iff.1 h))
   by_contra! hsep
-  exact hxy ((graphonSpace_ext_iff_homDensity x y).2 fun n F _ => by
+  exact hxy ((graphonSpace_ext_homDensity x y).2 fun n F _ => by
     simpa using hsep _ (homDensityBCF_mem_homDensitySubmonoid F))
 
 /-- **The Diaconis–Janson correspondence.** The mixture map is an equivalence between probability

@@ -119,6 +119,7 @@ private def sIdelesToFiniteSIdelesHom : sIdeles (K := K) L S →* finiteSIdeles 
   ((IdeleGroup.toFiniteIdele (𝓞 L) L).comp (sIdeles L _).subtype).codRestrict _ fun x ↦
     toFiniteIdele_mem_finiteSIdeles_iff.2 x.2
 
+omit [NumberField K] in
 private theorem coe_sIdelesToFiniteSIdelesHom (x : sIdeles (K := K) L S) :
     ((sIdelesToFiniteSIdelesHom L S x : (FiniteAdeleRing (𝓞 L) L)ˣ) : FiniteAdeleRing (𝓞 L) L) =
       ((x : IdeleGroup (𝓞 L) L) : AdeleRing (𝓞 L) L).2 :=
@@ -130,6 +131,7 @@ private theorem sIdelesToFiniteSIdelesHom_smul (σ : L ≃ₐ[K] L) (x : sIdeles
   simp only [coe_sIdelesToFiniteSIdelesHom, coe_smul_finiteSIdeles, Units.coe_map,
     MonoidHom.coe_ofClass, coe_smul_sIdeles, coe_idele_smul, adeleGaloisAction_snd]
 
+omit [NumberField K] in
 /-- An `S`-idele with trivial finite part is the idele of its infinite part. -/
 private theorem sIdelesToFiniteSIdelesHom_eq_one_iff (x : sIdeles (K := K) L S) :
     sIdelesToFiniteSIdelesHom L S x = 1 ↔ ∃ y, infiniteIdelesToSIdelesHom L S y = x := by
@@ -155,6 +157,7 @@ private theorem infiniteIdelesToSIdelesHom_injective :
   simpa only [coe_infiniteIdelesToSIdelesHom] using
     congrArg (fun z : sIdeles (K := K) L S ↦ ((z : IdeleGroup (𝓞 L) L) : AdeleRing (𝓞 L) L).1) hxy
 
+omit [NumberField K] in
 private theorem sIdelesToFiniteSIdelesHom_surjective :
     Function.Surjective (sIdelesToFiniteSIdelesHom L S) := fun y ↦
   ⟨⟨IdeleGroup.ofFiniteIdele (𝓞 L) L y,
@@ -267,7 +270,8 @@ theorem sIdeles_hom_decomp :
   -- the two summands, computed on the `S`-idele `a`
   let a : sIdeles L (S : Set (HeightOneSpectrum (𝓞 K))) := Additive.toMul x
   have h₁ : (infiniteIdelesToSIdeles L S).hom
-      ((idelesToInfiniteIdeles K L).hom ((sIdelesToIdeles L S).hom x)) =
+      ((idelesToInfiniteIdeles K L).hom
+        ((sIdelesToIdeles L (S : Set (HeightOneSpectrum (𝓞 K)))).hom x)) =
       Additive.ofMul ⟨IdeleGroup.ofInfiniteIdele (𝓞 L) L
         (Units.map (MonoidHom.fst (InfiniteAdeleRing L) (FiniteAdeleRing (𝓞 L) L)) a.1),
         ofInfiniteIdele_mem_sIdeles _ _⟩ :=
@@ -302,23 +306,46 @@ theorem sIdeles_hom_decomp :
       exact (one_mul _).symm
   exact (congrArg Additive.ofMul ha).trans (congrArg₂ (· + ·) h₁ h₂).symm
 
+/-- The finite part of the idele `(1, a)` of a finite `S`-idele `a` is `a`. -/
+@[reassoc (attr := simp)]
+theorem finiteSIdelesToSIdeles_comp_sIdelesToFiniteSIdeles :
+    finiteSIdelesToSIdeles (K := K) L S ≫ sIdelesToFiniteSIdeles L S = 𝟙 _ := by
+  ext a
+  exact congrArg Additive.ofMul (Subtype.ext (IdeleGroup.toFiniteIdele_ofFiniteIdele _ _ _))
+
+/-- The infinite part of the idele `(1, a)` of a finite `S`-idele `a` is trivial. -/
+@[reassoc (attr := simp)]
+theorem finiteSIdelesToSIdeles_comp_idelesToInfiniteIdeles :
+    finiteSIdelesToSIdeles L S ≫ sIdelesToIdeles (K := K) L S ≫ idelesToInfiniteIdeles K L = 0 := by
+  ext a
+  refine (congrArg (idelesToInfiniteIdeles K L).hom (sIdelesToIdeles_hom_apply L _ _)).trans ?_
+  -- `Units.map (MonoidHom.fst _ _)` takes the infinite component of the underlying adele
+  exact congrArg Additive.ofMul
+    (Units.ext (congrArg Prod.fst (IdeleGroup.coe_ofFiniteIdele (𝓞 L) L _)))
+
+/-- The infinite part of the idele `(x, 1)` of an infinite idele `x` is `x`. -/
+@[reassoc (attr := simp)]
+theorem infiniteIdelesToSIdeles_comp_idelesToInfiniteIdeles :
+    infiniteIdelesToSIdeles L S ≫ sIdelesToIdeles (K := K) L S ≫ idelesToInfiniteIdeles K L =
+      𝟙 _ := by
+  ext a
+  refine (congrArg (idelesToInfiniteIdeles K L).hom (sIdelesToIdeles_hom_apply L _ _)).trans ?_
+  exact congrArg Additive.ofMul
+    (Units.ext (congrArg Prod.fst (IdeleGroup.coe_ofInfiniteIdele (𝓞 L) L _)))
+
+/-- The finite part of the idele `(x, 1)` of an infinite idele `x` is trivial. -/
+@[reassoc (attr := simp)]
+theorem infiniteIdelesToSIdeles_comp_sIdelesToFiniteSIdeles :
+    infiniteIdelesToSIdeles (K := K) L S ≫ sIdelesToFiniteSIdeles L S = 0 :=
+  (sIdelesInfiniteShortComplex L S).zero
+
 /-! ### The Herbrand quotient -/
 
 section Herbrand
 
 open scoped AdicCompletionExtension NumberField.LiesOver
 
-variable [IsGalois K L] [IsCyclic (L ≃ₐ[K] L)]
-
-/-- A choice of a place of `L` above each place of `S`. -/
-private def placeAbove (v : S) :
-    {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.1.asIdeal} :=
-  have hw : ∃ w : HeightOneSpectrum (𝓞 L), w.asIdeal.LiesOver v.1.asIdeal := by
-    obtain ⟨w, hw⟩ := under_surjective (𝓞 K) (𝓞 L) v.1
-    exact ⟨w, ⟨congrArg HeightOneSpectrum.asIdeal hw.symm⟩⟩
-  ⟨hw.choose, hw.choose_spec⟩
-
-variable {L S}
+variable [IsGalois K L] [IsCyclic (L ≃ₐ[K] L)] {L S}
 
 /-- The Herbrand quotient of the `S`-ideles is that of the infinite ideles times that of the
 finite `S`-ideles. -/

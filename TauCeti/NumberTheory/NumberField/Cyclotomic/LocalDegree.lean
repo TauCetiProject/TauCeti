@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.NumberField.Cyclotomic.Ideal
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.LocalDegree
 import TauCeti.Data.ZMod.OrderOf
 import TauCeti.NumberTheory.NumberField.ResidueDegree
+import TauCeti.NumberTheory.RamificationInertia.Tower
 
 /-!
 # Local degrees in the cyclotomic towers of prime-power level
@@ -28,11 +29,12 @@ totally ramified in `ℚ(ζ)`, with ramification index `φ(ℓ ^ r)`; if `p ≠ 
 large `r` (`ZMod.eventually_pow_dvd_orderOf_natCast`). Ramification indices and residue degrees
 are multiplicative in towers, so `e(w ∣ p) f(w ∣ p)` is a multiple of the corresponding product
 for `ℚ(ζ)` and equals `[F_w : K_v] · e(v ∣ p) f(v ∣ p)`, where the last factor does not depend on
-`r`.
+`r`. An intermediate field `E` with `[F : E] ≤ d` inherits the divisibility, with `j` lowered by
+at most `d`: a prime of `F` contributes at most `[F : E]` to the fundamental identity of `F/E`.
 
 This is the local input to the classical fact that a global Brauer class is split everywhere
-locally by a cyclic cyclotomic extension (Milne, Lemma VII.7.3); for `ℓ` odd the Galois group of
-`K(μ_{ℓ ^ r})/K` is cyclic.
+locally by a cyclic cyclotomic extension (Milne, Lemma VII.7.3). For `ℓ` odd the Galois group of
+`K(μ_{ℓ ^ r})/K` is cyclic; for `ℓ = 2` the cyclic extension is a subfield of index at most two.
 
 ## Main results
 
@@ -41,6 +43,8 @@ locally by a cyclic cyclotomic extension (Milne, Lemma VII.7.3); for `ℓ` odd t
   for all large `r`.
 * `IsCyclotomicExtension.eventually_pow_dvd_finrank_adicCompletion`: the same for the local
   degree `[F_w : K_v]` of the completions.
+* `IsCyclotomicExtension.eventually_pow_dvd_finrank_adicCompletion_of_finrank_le`: the same for
+  the local degrees of the intermediate fields `E` of `F/K` of bounded relative degree `[F : E]`.
 
 ## References
 
@@ -127,5 +131,49 @@ theorem eventually_pow_dvd_finrank_adicCompletion {ℓ : ℕ} (hℓ : ℓ.Prime)
   have : Finite (𝓞 F ⧸ w.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient w.ne_bot
   rw [HeightOneSpectrum.finrank_adicCompletion]
   exact hr F w.asIdeal
+
+/-- **Local degrees of subextensions of bounded index in the cyclotomic towers.** Let `v` be a
+finite place of a number field `K`, `ℓ` a prime and `d` a natural number. For every `j`, the power
+`ℓ ^ j` divides the local degree `[E_w : K_v]` at every place `w` above `v` of every intermediate
+field `E` of relative degree `[F : E] ≤ d` in a cyclotomic extension `F/K` of level `ℓ ^ r`, for all
+large `r`. -/
+theorem eventually_pow_dvd_finrank_adicCompletion_of_finrank_le {ℓ : ℕ} (hℓ : ℓ.Prime)
+    (j d : ℕ) (v : HeightOneSpectrum (𝓞 K)) :
+    ∀ᶠ r in Filter.atTop, ∀ (F : Type u) [Field F] [NumberField F] [Algebra K F]
+      [IsCyclotomicExtension {ℓ ^ r} K F] (E : IntermediateField K F),
+      Module.finrank E F ≤ d → ∀ (w : HeightOneSpectrum (𝓞 E)) [w.asIdeal.LiesOver v.asIdeal],
+      ℓ ^ j ∣ Module.finrank (v.adicCompletion K) (w.adicCompletion E) := by
+  filter_upwards [eventually_pow_dvd_ramificationIdx_mul_inertiaDeg.{u} hℓ (j + d) v] with r hr F
+    _ _ _ _ E hE w _
+  have : Finite (𝓞 E ⧸ w.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient w.ne_bot
+  rw [HeightOneSpectrum.finrank_adicCompletion]
+  -- A prime `P` of `𝓞 F` above `w`; its contribution `a = e(P ∣ w) f(P ∣ w)` is at most `d`.
+  obtain ⟨P, hP, hPw⟩ := Ideal.exists_maximal_ideal_liesOver_of_isIntegral (S := 𝓞 F) w.asIdeal
+  have : P.LiesOver v.asIdeal := Ideal.LiesOver.trans P w.asIdeal v.asIdeal
+  set a := P.ramificationIdx (𝓞 E) * P.inertiaDeg (𝓞 E)
+  set b := w.asIdeal.ramificationIdx (𝓞 K) * w.asIdeal.inertiaDeg (𝓞 K)
+  have ha : 0 < a := Nat.mul_pos (Ideal.ramificationIdx_pos (R := 𝓞 E) (q := P))
+    (Ideal.inertiaDeg_pos P (𝓞 E))
+  have had : a ≤ d := by
+    refine (TauCeti.RamificationInertia.ramificationIdx_mul_inertiaDeg_le_finrank
+      w.asIdeal P).trans ?_
+    rwa [← IsFractionRing.finrank_eq (𝓞 E) E (𝓞 F) F]
+  -- Multiplicativity in the tower `𝓞 K ⊆ 𝓞 E ⊆ 𝓞 F` gives `ℓ ^ (j + d) ∣ a * b`; as `a < ℓ ^ d`,
+  -- at most `d` factors `ℓ` lie in `a`.
+  have hab : ℓ ^ (j + d) ∣ a * b := by
+    have := hr F P
+    rw [Ideal.ramificationIdx_tower w.asIdeal P, Ideal.inertiaDeg_tower w.asIdeal P] at this
+    convert this using 1
+    ring
+  rcases eq_or_ne b 0 with hb | hb
+  · rw [hb]
+    exact dvd_zero _
+  have : Fact ℓ.Prime := ⟨hℓ⟩
+  rw [padicValNat_dvd_iff_le hb]
+  rw [padicValNat_dvd_iff_le (mul_ne_zero ha.ne' hb), padicValNat.mul ha.ne' hb] at hab
+  have hlt : padicValNat ℓ a < d :=
+    (Nat.pow_lt_pow_iff_right hℓ.one_lt).mp <|
+      (Nat.le_of_dvd ha pow_padicValNat_dvd).trans_lt (had.trans_lt (Nat.lt_pow_self hℓ.one_lt))
+  omega
 
 end IsCyclotomicExtension

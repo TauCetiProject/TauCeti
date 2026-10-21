@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Ricci
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Prod
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
@@ -19,15 +20,20 @@ is the product of the curvature tensors of the factors:
 
 `R((u₁, u₂), (v₁, v₂)) (w₁, w₂) = (R(u₁, v₁) w₁, R(u₂, v₂) w₂)`,
 
-and its Ricci tensor is the sum of the Ricci tensors of the factors:
+its Ricci tensor is the sum of the Ricci tensors of the factors:
 
-`Ric((u₁, u₂), (v₁, v₂)) = Ric(u₁, v₁) + Ric(u₂, v₂)`.
+`Ric((u₁, u₂), (v₁, v₂)) = Ric(u₁, v₁) + Ric(u₂, v₂)`,
+
+and its scalar curvature is the sum of the scalar curvatures of the factors:
+
+`Scal(x, y) = Scal(x) + Scal(y)`.
 
 So mixed curvature terms vanish, and a flat factor contributes nothing to the Ricci tensor. This
 reduces the Ricci tensor of the product geometries `S² × ℝ` and `ℍ² × ℝ` to that of their surface
 factor. Since every isometry preserves the Ricci tensor
-(`TauCeti.RiemannianIsometry.ricciTensor_mfderiv`), it is the curvature input for showing that the
-isometries of these geometries preserve the line factor.
+(`TauCeti.IsLocalRiemannianIsometry.ricciTensor_mfderiv`), it is the curvature input for showing
+that the isometries of these geometries preserve the line factor. The scalar curvature formula is
+the input for constructing metrics of positive scalar curvature on products.
 
 The curvature tensor is evaluated on smooth product fields, on which the Levi-Civita connection
 of the product acts factor by factor (`TauCeti.Manifold.leviCivitaConnection_prodVectorField`) and
@@ -42,11 +48,15 @@ whose Lie brackets are computed factor by factor
   tensor of the product metric is the product of the curvature tensors.
 * `TauCeti.Manifold.ricciTensor_leviCivitaConnection_prod`: the Ricci tensor of the product metric
   is the sum of the Ricci tensors.
+* `TauCeti.Manifold.scalarCurvature_leviCivitaConnection_prod`: the scalar curvature of the product
+  metric is the sum of the scalar curvatures.
+* `Bundle.ContMDiffRiemannianMetric.scalarCurvature_prodTangentSpace`: the same for the product
+  `Bundle.ContMDiffRiemannianMetric.prodTangentSpace` of two smooth metrics.
 
 ## References
 
 * J. M. Lee, *Introduction to Riemannian Manifolds*, 2nd ed., Springer GTM 176 (2018), Chapter 7
-  (the curvature tensor and the Ricci tensor).
+  (the curvature tensor, the Ricci tensor and the scalar curvature).
 -/
 
 public section
@@ -161,4 +171,54 @@ theorem ricciTensor_leviCivitaConnection_prod (p : M × N) (u v : TangentSpace (
   rw [ricciTensor_apply, ricciTensor_apply, ricciTensor_apply,
     ← LinearMap.trace_conj' _ e.toLinearEquiv, hconj, LinearMap.trace_prodMap']
 
+/-- **The scalar curvature of a product metric** is the sum of the scalar curvatures of the
+factors: `Scal(x, y) = Scal(x) + Scal(y)`. -/
+theorem scalarCurvature_leviCivitaConnection_prod (p : M × N) :
+    (leviCivitaConnection (I.prod J) (M × N)).scalarCurvature p =
+      (leviCivitaConnection I M).scalarCurvature p.1 +
+        (leviCivitaConnection J N).scalarCurvature p.2 := by
+  -- Orthonormal bases of the factors combine into an orthonormal basis of the product, whose
+  -- vectors lie in one factor each, so only that factor's Ricci tensor contributes.
+  let b₁ := stdOrthonormalBasis ℝ (TangentSpace I p.1)
+  let b₂ := stdOrthonormalBasis ℝ (TangentSpace J p.2)
+  rw [scalarCurvature_eq_sum _ p ((b₁.prod b₂).map (tangentSpaceProdLinearIsometryEquiv p).symm),
+    scalarCurvature_eq_sum _ p.1 b₁, scalarCurvature_eq_sum _ p.2 b₂, Fintype.sum_sum_type]
+  simp only [ricciTensor_leviCivitaConnection_prod, OrthonormalBasis.map_apply,
+    tangentSpaceProdLinearIsometryEquiv_symm_apply, ContinuousLinearEquiv.apply_symm_apply,
+    OrthonormalBasis.prod_apply, Sum.elim_inl, Sum.elim_inr, Function.comp_apply,
+    LinearMap.inl_apply, LinearMap.inr_apply, map_zero, add_zero, zero_add]
+
 end TauCeti.Manifold
+
+namespace Bundle.ContMDiffRiemannianMetric
+
+variable
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [T2Space M] [ChartedSpace H M] [IsManifold I ∞ M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {G : Type*} [TopologicalSpace G] {J : ModelWithCorners ℝ F G}
+  {N : Type*} [TopologicalSpace N] [T2Space N] [ChartedSpace G N] [IsManifold J ∞ N]
+
+/-- **The scalar curvature of a product metric** `g₁ × g₂` is the sum of the scalar curvatures of
+the factors: `Scal(x, y) = Scal_{g₁}(x) + Scal_{g₂}(y)`. -/
+@[simp]
+theorem scalarCurvature_prodTangentSpace
+    (g₁ : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+    (g₂ : ContMDiffRiemannianMetric J ∞ F (fun y : N ↦ TangentSpace J y)) (p : M × N) :
+    (g₁.prodTangentSpace g₂).scalarCurvature p =
+      g₁.scalarCurvature p.1 + g₂.scalarCurvature p.2 := by
+  rw [scalarCurvature_def, scalarCurvature_def, scalarCurvature_def]
+  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g₁.toRiemannianMetric⟩
+  let _ : RiemannianBundle (fun y : N ↦ TangentSpace J y) := ⟨g₂.toRiemannianMetric⟩
+  -- With the factor metrics installed, the product metric `g₁ × g₂` is the installed product
+  -- metric `TauCeti.Manifold.instRiemannianBundleProd`.
+  have hg : (⟨(g₁.prodTangentSpace g₂).toRiemannianMetric⟩ :
+      RiemannianBundle (fun p : M × N ↦ TangentSpace (I.prod J) p)) =
+      TauCeti.Manifold.instRiemannianBundleProd := by
+    rw [prodTangentSpace_toRiemannianMetric]
+    exact congrArg RiemannianBundle.mk TauCeti.Manifold.riemannianBundleProd_g.symm
+  -- `convert` identifies the two product-metric instances through `hg`.
+  convert TauCeti.Manifold.scalarCurvature_leviCivitaConnection_prod (I := I) (J := J) p using 3
+
+end Bundle.ContMDiffRiemannianMetric

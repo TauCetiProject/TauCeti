@@ -30,6 +30,8 @@ half-spin models requires a separate choice of exterior-basis signs.
 ## Main declarations
 
 * `TauCeti.D4Tripled.Block`: the coordinates belonging to one of the three blocks.
+* `TauCeti.D4Tripled.blockLocalIndexEquiv`: identification of each block with its eight local
+  coordinates.
 * `TauCeti.D4Tripled.blockIndexEquiv`: triality restricted from one block to the next.
 * `TauCeti.D4Tripled.blockModuleEquiv`: the induced coordinate equivalence over any semiring.
 * `TauCeti.D4Tripled.blockModuleEquiv_raising_mulVec` and its lowering and Cartan analogues:
@@ -83,6 +85,34 @@ universe u
 
 /-- The eight coordinates in the `j`-th block of the tripled weight table. -/
 abbrev Block (j : Fin 3) := {a : Fin 24 // d4TripledSummand a = j}
+
+/-- The position of a coordinate inside one of the three consecutive eight-coordinate blocks. -/
+def blockLocalIndexEquiv (j : Fin 3) : Block j ≃ Fin 8 where
+  toFun a := ⟨a.1.val % 8, Nat.mod_lt _ (by omega)⟩
+  invFun i := ⟨⟨8 * j.val + i.val, by omega⟩, by
+    fin_cases j <;> fin_cases i <;> decide +kernel⟩
+  left_inv a := by
+    apply Subtype.ext
+    apply Fin.ext
+    simp only
+    have ha := a.2
+    simp only [d4TripledSummand] at ha
+    omega
+  right_inv i := by
+    apply Fin.ext
+    simp
+
+/-- The local coordinate of a block index is its table index modulo eight. -/
+@[simp]
+theorem blockLocalIndexEquiv_apply_val (j : Fin 3) (a : Block j) :
+    (blockLocalIndexEquiv j a).val = a.1.val % 8 :=
+  by simp [blockLocalIndexEquiv]
+
+/-- The table index at local position `i` in block `j` is `8 * j + i`. -/
+@[simp]
+theorem blockLocalIndexEquiv_symm_val (j : Fin 3) (i : Fin 8) :
+    ((blockLocalIndexEquiv j).symm i).1.val = 8 * j.val + i.val :=
+  by simp [blockLocalIndexEquiv]
 
 /-- Triality restricted to an equivalence from one eight-dimensional block to the next. -/
 abbrev blockIndexEquiv (j : Fin 3) : Block j ≃ Block (finRotate 3 j) :=
@@ -236,15 +266,33 @@ noncomputable def d4BlockZeroToOneEquiv :
     (Block 0 → ℚ) ≃ₗ[ℚ] (Block 1 → ℚ) :=
   LinearEquiv.piCongrLeft' ℚ (fun _ => ℚ) d4BlockZeroToOneIndexEquiv
 
+/-- The block-zero-to-block-one equivalence is the coordinate reindexing induced by triality. -/
+theorem d4BlockZeroToOneEquiv_apply (v : Block 0 → ℚ) :
+    d4BlockZeroToOneEquiv v =
+      LinearEquiv.piCongrLeft' ℚ (fun _ => ℚ) d4BlockZeroToOneIndexEquiv v := by
+  rfl
+
 /-- The rational coordinate equivalence induced by triality from block one to block two. -/
 noncomputable def d4BlockOneToTwoEquiv :
     (Block 1 → ℚ) ≃ₗ[ℚ] (Block 2 → ℚ) :=
   LinearEquiv.piCongrLeft' ℚ (fun _ => ℚ) d4BlockOneToTwoIndexEquiv
 
+/-- The block-one-to-block-two equivalence is the coordinate reindexing induced by triality. -/
+theorem d4BlockOneToTwoEquiv_apply (v : Block 1 → ℚ) :
+    d4BlockOneToTwoEquiv v =
+      LinearEquiv.piCongrLeft' ℚ (fun _ => ℚ) d4BlockOneToTwoIndexEquiv v := by
+  rfl
+
 /-- The rational coordinate equivalence induced by triality from block two to block zero. -/
 noncomputable def d4BlockTwoToZeroEquiv :
     (Block 2 → ℚ) ≃ₗ[ℚ] (Block 0 → ℚ) :=
   LinearEquiv.piCongrLeft' ℚ (fun _ => ℚ) d4BlockTwoToZeroIndexEquiv
+
+/-- The block-two-to-block-zero equivalence is the coordinate reindexing induced by triality. -/
+theorem d4BlockTwoToZeroEquiv_apply (v : Block 2 → ℚ) :
+    d4BlockTwoToZeroEquiv v =
+      LinearEquiv.piCongrLeft' ℚ (fun _ => ℚ) d4BlockTwoToZeroIndexEquiv v := by
+  rfl
 
 /-- Three successive concrete block intertwiners return every block-zero coordinate vector to
 itself. -/

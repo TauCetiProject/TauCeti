@@ -55,10 +55,12 @@ Brauer diagrams and its middle-loop count.
 
 The generator and all five relations need no subtraction and no inverses, so they are stated over a
 commutative semiring; only the orthogonal group itself, and hence the closing commutation theorem,
-needs a commutative ring. Everything here is the symmetric (orthogonal) form: the arc is an
-unordered pair of strands (`TauCeti.orthogonalCupCapAt_comm`), which is exactly what fails for an
-alternating form, so the symplectic mirror is not a relabelling of this file but needs a chosen
-ordering of each arc.
+needs a commutative ring. Everything here is the symmetric (orthogonal) form: the cap and the cup
+are each unchanged by exchanging their two endpoints, and so is the arc
+(`TauCeti.orthogonalCupCapAt_comm`). For an alternating form the cap and the cup each change sign
+instead, so the symplectic mirror is not a relabelling of this file; it is
+`TauCeti/RepresentationTheory/ClassicalGroups/BrauerGenerators/Symplectic/TensorPower.lean`, where
+the two sign changes cancel on a single arc and the arc is again an unordered pair of strands.
 
 ## Implementation notes
 
@@ -86,6 +88,7 @@ at every strand one of the two factors is the identity.
 
 * `TauCeti.orthogonalCupCapAt_tprod`: the value of the generator on a pure tensor at distinct
   strands.
+* `TauCeti.orthogonalCupCapAt_tensorPowerBasis`: the coordinate-basis formula for a contraction.
 * `TauCeti.orthogonalCupCapAt_self_tprod`: the degenerate value at `i = j`, which is a rank-one
   map at the single slot and not a self-contraction, so it is not an arc.
 * `TauCeti.orthogonalCupCapAt_comm`: the generator depends only on the unordered pair of strands.
@@ -237,6 +240,33 @@ theorem orthogonalCupCapAt_tprod {i j : Fin d} (hij : i ≠ j) (v : Fin d → (F
   refine Finset.sum_congr rfl fun c _ => ?_
   rw [← Finset.sum_smul]
   rfl
+
+-- Keep this as an explicit rewrite: simp expands the basis vector using tensorPowerBasis_apply,
+-- so the left-hand side is not in simp normal form.
+/-- On a coordinate tensor, an arc kills unequal coordinates and replaces an equal-coordinate
+pair by the sum of all equal-coordinate pairs. -/
+theorem orthogonalCupCapAt_tensorPowerBasis {i j : Fin d} (hij : i ≠ j)
+    (f : Fin d → Fin n) :
+    orthogonalCupCapAt k n d i j (tensorPowerBasis k n d f) =
+      if f i = f j then
+        ∑ c : Fin n, tensorPowerBasis k n d (Function.update (Function.update f i c) j c)
+      else 0 := by
+  classical
+  rw [tensorPowerBasis_apply, orthogonalCupCapAt_tprod hij]
+  have htuple (c : Fin n) :
+      Function.update (Function.update (fun t => Pi.single (f t) (1 : k)) i (Pi.single c 1))
+        j (Pi.single c 1) =
+      fun t => (Pi.single (Function.update (Function.update f i c) j c t) (1 : k) : Fin n → k) := by
+    exact ((Function.comp_update (fun a : Fin n => (Pi.single a (1 : k) : Fin n → k))
+      (Function.update f i c) j c).trans
+      (congrArg (fun g => Function.update g j (Pi.single c (1 : k)))
+        (Function.comp_update (fun a : Fin n => (Pi.single a (1 : k) : Fin n → k))
+          f i c))).symm
+  simp only [single_dotProduct, one_mul, Pi.single_apply]
+  split_ifs with hf
+  · simp only [one_smul]
+    exact Finset.sum_congr rfl fun c _ => by rw [htuple, tensorPowerBasis_apply]
+  · simp
 
 /-- **The degenerate value at coincident strands**: at `i = j` the cap and the cup land on the
 same slot, and `TauCeti.orthogonalCupCapAt k n d i i` is *not* the contraction of that slot against

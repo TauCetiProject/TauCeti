@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Idempotents.Corner
+public import TauCeti.RingTheory.Idempotents.Corner.Basic
 public import TauCeti.RingTheory.Idempotents.Primitive.Basic
 
 /-!
@@ -17,7 +17,7 @@ module into, and this file identifies the homomorphisms between two of them:
 
 `Hom_A(Ae, Af) ≅ eAf`, by `φ ↦ φ e`.
 
-The corner `eAf` is defined in `TauCeti.RingTheory.Idempotents.Corner` as the range of the
+The corner `eAf` is defined in `TauCeti.RingTheory.Idempotents.Corner.Basic` as the range of the
 `k`-linear map `x ↦ e x f`. When `e` and `f` are idempotent, the identification here is
 `k`-linear.
 

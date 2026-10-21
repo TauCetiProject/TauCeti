@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Basic
-public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic
+public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.SimpleBasis
+public import TauCeti.RepresentationTheory.GrothendieckGroup.SimpleBasis
 -- Identify the induced structures locally while keeping their bodies hidden from consumers.
 import all TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic
 
@@ -18,13 +18,19 @@ projectives to finite projectives. These functors preserve the induced conflatio
 an internal shift with the original underlying module. Consequently their maps on Grothendieck
 groups factor through specialization at `q = 1`.
 
-The resulting square with the graded and ungraded Cartan maps commutes. This is a comparison of
-maps, not an assertion that either forgetful map is an isomorphism: an underlying module need
-not admit a grading. No decomposition hypothesis on the algebra grading is needed, since the
-graded projective subcategory is defined by projectivity of the underlying module.
+The resulting square with the graded and ungraded Cartan maps commutes. An underlying module need
+not admit a grading, so the forgetful map need not be an isomorphism in general. It is an
+isomorphism when matched graded and ungraded simple families give bases of the two Grothendieck
+groups: after specialization, forgetting sends one basis to the other. When both Cartan maps are
+bijective, forgetting grading on projective `K₀` is bijective exactly when it is on `G₀`
+(`TauCeti.gradedFiniteProjectiveModulesForgetK0_bijective_iff`). No decomposition hypothesis
+on the algebra grading is needed for the comparison square, since the graded projective subcategory
+is defined by projectivity of the underlying module.
 
 The construction uses `LaurentK0.forgetGrading` and the graded Cartan map. See Z. Dancso and
-A. Licata, "Koszul algebras and flow lattices", Section 2.2, for the specialization convention.
+A. Licata, "Koszul algebras and flow lattices", Section 2.2, for the specialization convention,
+and I. Assem, D. Simson and A. Skowroński, *Elements of the Representation Theory of Associative
+Algebras I*, Chapter III, Section 3, for the simple-class basis.
 -/
 
 public section
@@ -96,12 +102,6 @@ instance : (gradedFiniteProjectiveModulesForget 𝒜).Additive := by
 
 section ConflationExact
 
-local instance : PreservesFiniteLimits (GradedModuleCat.toModuleCat.{uA} (𝒜 := 𝒜)) :=
-  Functor.preservesFiniteLimits_of_preservesHomology _
-
-local instance : PreservesFiniteColimits (GradedModuleCat.toModuleCat.{uA} (𝒜 := 𝒜)) :=
-  Functor.preservesFiniteColimits_of_preservesHomology _
-
 /-- Forgetting grading preserves the conflations of finite modules. -/
 theorem isConflationExact_gradedFiniteModulesForget :
     (gradedFiniteModulesExactStructure 𝒜).toExactStructure.IsConflationExact
@@ -139,6 +139,16 @@ theorem isConflationExact_gradedFiniteProjectiveModulesForget :
         GradedExactStructure.abelian_toExactStructure]
       using (ExactStructure.isConflationExact_abelian
         (GradedModuleCat.toModuleCat.{uA} (𝒜 := 𝒜))))
+
+/-- Forgetting grading preserves the conflations of finite modules, with the exact structure on
+finite modules induced from all modules. -/
+theorem isConflationExact_gradedFiniteModulesForget_fullSubcategory :
+    (gradedFiniteModulesExactStructure 𝒜).toExactStructure.IsConflationExact
+      ((ExactStructure.abelian (ModuleCat.{uA} A)).fullSubcategory _
+        (isExtensionClosed_finiteModules A)) (gradedFiniteModulesForget 𝒜) where
+  map_conflation hS := by
+    simpa [ExactStructure.fullSubcategory_conflation_iff] using
+      (isConflationExact_gradedFiniteModulesForget 𝒜).map_conflation hS
 
 end ConflationExact
 
@@ -209,6 +219,106 @@ theorem gradedFiniteProjectiveModulesForgetK0_mk_of
     (isConflationExact_gradedFiniteProjectiveModulesForget 𝒜)
     (gradedFiniteProjectiveModulesForgetShiftIso 𝒜) M
 
+/-- Forgetting grading into either exact structure on finite modules gives the same classes:
+`finiteModulesExactK0Equiv` carries `gradedFiniteModulesForgetK0` to the forgetful map into the
+exact structure induced from all modules. -/
+theorem finiteModulesExactK0Equiv_gradedFiniteModulesForgetK0
+    (x : LaurentSpecialization (1 : ℤˣ) (LaurentK0.{uA} (gradedFiniteModulesExactStructure 𝒜))) :
+    finiteModulesExactK0Equiv A (gradedFiniteModulesForgetK0 𝒜 x) =
+      LaurentK0.forgetGrading.{uA, uA}
+        (isConflationExact_gradedFiniteModulesForget_fullSubcategory 𝒜)
+        (gradedFiniteModulesForgetShiftIso 𝒜) x := by
+  have h : (finiteModulesExactK0Equiv A).toAddMonoidHom.toIntLinearMap.comp
+      (gradedFiniteModulesForgetK0 𝒜) = LaurentK0.forgetGrading.{uA, uA}
+        (isConflationExact_gradedFiniteModulesForget_fullSubcategory 𝒜)
+        (gradedFiniteModulesForgetShiftIso 𝒜) :=
+    LaurentK0.hom_ext_laurentSpecialization 1 fun M => by
+      simp [LaurentK0.forgetGrading_mk_of]
+  simpa using LinearMap.congr_fun h x
+
+section SimpleBasis
+
+universe uk' uA' uI
+
+variable {k' : Type uk'} [Field k'] {A' : Type uA'} [Ring A'] [Algebra k' A']
+  [Module.Finite k' A'] {𝒜' : ℤ → Submodule k' A'} {I : Type uI}
+  (S : I → (gradedFiniteModules 𝒜').FullSubcategory)
+  (T : I → FGModuleCat.{uA'} A') [∀ i, IsSimpleModule A' (T i)]
+  {e : I → A'} (he : ∀ i, IsIdempotentElem (e i)) (he₀ : ∀ i, e i ∈ 𝒜' 0)
+  (hne : Pairwise fun i j => (S j).obj.smulGradedDimension (e i) = 0)
+  (hself : ∀ i, (S i).obj.smulGradedDimension (e i) = 1)
+  (hS : IsExhaustiveGradedSimpleFamily S)
+  (hTnoniso : Pairwise fun i j => IsEmpty ((T i : Type uA') ≃ₗ[A'] T j))
+  (hT : IsExhaustiveSimpleFamily T)
+
+/-- **Forgetting grading is an isomorphism at `q = 1` when it matches simple-class bases.**
+The graded family is a Laurent basis through its degree-zero idempotent coordinates, and the
+ungraded family is a basis through Jordan--Hölder multiplicities. If forgetting sends corresponding
+members to isomorphic modules, it sends the specialized graded basis to the ungraded basis. -/
+def gradedFiniteModulesForgetK0EquivOfSimpleFamilies
+    (_hforget : ∀ i, Nonempty ((gradedFiniteModulesForget 𝒜').obj (S i) ≅ T i)) :
+    LaurentSpecialization (1 : ℤˣ)
+        (LaurentK0.{uA'} (gradedFiniteModulesExactStructure 𝒜')) ≃ₗ[ℤ]
+      ExactK0.{uA'} (finiteModulesExactStructure A') :=
+  let _ : IsArtinianRing A' := IsArtinianRing.of_finite k' A'
+  (LaurentSpecialization.basis 1 (gradedSimpleClassBasis S he he₀ hne hself hS)).repr.trans
+    (simpleClassBasis T hTnoniso hT).repr.symm
+
+/-- The simple-family comparison equivalence is the map induced by forgetting grading. -/
+@[simp]
+theorem gradedFiniteModulesForgetK0EquivOfSimpleFamilies_toLinearMap
+    (hforget : ∀ i, Nonempty ((gradedFiniteModulesForget 𝒜').obj (S i) ≅ T i)) :
+    (gradedFiniteModulesForgetK0EquivOfSimpleFamilies (𝒜' := 𝒜') S T he he₀ hne hself hS
+      hTnoniso hT hforget).toLinearMap = gradedFiniteModulesForgetK0 𝒜' := by
+  let _ : IsArtinianRing A' := IsArtinianRing.of_finite k' A'
+  let b := LaurentSpecialization.basis 1 (gradedSimpleClassBasis S he he₀ hne hself hS)
+  apply b.ext
+  intro i
+  calc
+    gradedFiniteModulesForgetK0EquivOfSimpleFamilies S T he he₀ hne hself hS hTnoniso hT
+        hforget (b i) = ExactK0.of (T i) := by
+      simp only [gradedFiniteModulesForgetK0EquivOfSimpleFamilies, b,
+        LinearEquiv.trans_apply, Module.Basis.repr_self, Module.Basis.repr_symm_single_one,
+        simpleClassBasis_apply]
+    _ = ExactK0.of ((gradedFiniteModulesForget 𝒜').obj (S i)) :=
+      (ExactK0.of_congr (hforget i).some).symm
+    _ = gradedFiniteModulesForgetK0 𝒜' (b i) := by
+      dsimp only [b]
+      rw [LaurentSpecialization.basis_apply, gradedSimpleClassBasis_apply,
+        gradedFiniteModulesForgetK0_mk_of]
+
+/-- On a specialized graded module class, the simple-family equivalence returns its underlying
+ungraded class. -/
+@[simp]
+theorem gradedFiniteModulesForgetK0EquivOfSimpleFamilies_mk_of
+    (hforget : ∀ i, Nonempty ((gradedFiniteModulesForget 𝒜').obj (S i) ≅ T i))
+    (M : (gradedFiniteModules 𝒜').FullSubcategory) :
+    gradedFiniteModulesForgetK0EquivOfSimpleFamilies (𝒜' := 𝒜') S T he he₀ hne hself hS
+        hTnoniso hT hforget
+        (LaurentSpecialization.mk 1
+          (LaurentK0.of.{uA'} (gradedFiniteModulesExactStructure 𝒜') M)) =
+      ExactK0.of.{uA'} ((gradedFiniteModulesForget 𝒜').obj M) := by
+  rw [← LinearEquiv.coe_coe,
+    gradedFiniteModulesForgetK0EquivOfSimpleFamilies_toLinearMap]
+  exact gradedFiniteModulesForgetK0_mk_of 𝒜' M
+
+/-- The inverse simple-family comparison sends an ungraded simple basis class to the
+corresponding specialized graded class. -/
+@[simp]
+theorem gradedFiniteModulesForgetK0EquivOfSimpleFamilies_symm_simple
+    (hforget : ∀ i, Nonempty ((gradedFiniteModulesForget 𝒜').obj (S i) ≅ T i)) (i : I) :
+    (gradedFiniteModulesForgetK0EquivOfSimpleFamilies (𝒜' := 𝒜') S T he he₀ hne hself hS
+      hTnoniso hT hforget).symm (ExactK0.of (T i)) =
+        LaurentSpecialization.mk 1
+          (LaurentK0.of.{uA'} (gradedFiniteModulesExactStructure 𝒜') (S i)) := by
+  apply (gradedFiniteModulesForgetK0EquivOfSimpleFamilies (𝒜' := 𝒜') S T he he₀ hne hself hS
+    hTnoniso hT hforget).injective
+  rw [LinearEquiv.apply_symm_apply,
+    gradedFiniteModulesForgetK0EquivOfSimpleFamilies_mk_of]
+  exact (ExactK0.of_congr (hforget i).some).symm
+
+end SimpleBasis
+
 /-- The Cartan map specialized at a unit of `ℤ`. In particular it is defined at `q = ±1`. -/
 def gradedCartanMapSpecialized (ε : ℤˣ) :
     LaurentSpecialization ε
@@ -235,5 +345,21 @@ theorem gradedFiniteModulesForgetK0_comp_gradedCartanMapSpecialized :
     gradedCartanMap_of, gradedFiniteModulesForgetK0_mk_of,
     gradedFiniteProjectiveModulesForgetK0_mk_of, AddMonoidHom.coe_toIntLinearMap,
     gradedFiniteProjectiveModulesForget_obj, cartanMap_of, gradedFiniteModulesForget_obj]
+
+/-- **Forgetting grading is bijective on projective `K₀` exactly when it is on `G₀`**, at
+`q = 1` and provided both the graded and the ungraded Cartan maps are bijective, for instance
+over a left Noetherian algebra whose finitely generated modules, graded or not, have finite
+projective dimension. The two forgetful maps
+then differ by the Cartan isomorphisms in the commuting square
+`TauCeti.gradedFiniteModulesForgetK0_comp_gradedCartanMapSpecialized`. -/
+theorem gradedFiniteProjectiveModulesForgetK0_bijective_iff
+    (hc : Function.Bijective (cartanMap A)) (hgc : Function.Bijective (gradedCartanMap 𝒜)) :
+    Function.Bijective (gradedFiniteProjectiveModulesForgetK0 𝒜) ↔
+      Function.Bijective (gradedFiniteModulesForgetK0 𝒜) := by
+  have hsq := congrArg DFunLike.coe
+    (gradedFiniteModulesForgetK0_comp_gradedCartanMapSpecialized 𝒜)
+  simp only [LinearMap.coe_comp, AddMonoidHom.coe_toIntLinearMap] at hsq
+  rw [← hc.of_comp_iff' (gradedFiniteProjectiveModulesForgetK0 𝒜), ← hsq]
+  exact (LaurentSpecialization.map_bijective 1 hgc).of_comp_iff _
 
 end TauCeti

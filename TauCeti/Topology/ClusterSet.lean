@@ -559,6 +559,39 @@ theorem isPreconnectedApproachAt_of_forall_exists_isPreconnected_superset
     rw [heq]
     exact hCpre
 
+/-- A set with preconnected traces on the balls `ball a δ`, `0 < δ ≤ ρ`, has preconnected approach
+regions at `a`. -/
+theorem isPreconnectedApproachAt_of_isPreconnected_inter_ball {Y : Type*} [PseudoMetricSpace Y]
+    {U : Set Y} {a : Y} {ρ : ℝ} (hρ : 0 < ρ)
+    (h : ∀ δ, 0 < δ → δ ≤ ρ → IsPreconnected (U ∩ ball a δ)) :
+    IsPreconnectedApproachAt U a :=
+  isPreconnectedApproachAt_of_forall_exists_isPreconnected_superset fun ε hε =>
+    ⟨min ε ρ, lt_min hε hρ, U ∩ ball a (min ε ρ),
+      inter_subset_inter_right _ (ball_subset_ball (min_le_left _ _)),
+      h _ (lt_min hε hρ) (min_le_right _ _), subset_rfl⟩
+
+/-- **Preconnected approach regions are carried along a map with a continuous left inverse.**
+Let `φ` be continuous on `U` and at `a`, and let `κ` be a left inverse of `φ` on `U` which is
+continuous at `φ a` and sends it back to `a`. If `U` has preconnected approach regions at `a`, then
+`φ '' U` has preconnected approach regions at `φ a`. -/
+theorem IsPreconnectedApproachAt.image {Y : Type*} [TopologicalSpace Y] {U : Set X} {a : X}
+    {φ : X → Y} {κ : Y → X} (h : IsPreconnectedApproachAt U a) (hφa : ContinuousAt φ a)
+    (hφU : ContinuousOn φ U) (hκ : ContinuousAt κ (φ a)) (hκa : κ (φ a) = a)
+    (hκφ : LeftInvOn κ φ U) : IsPreconnectedApproachAt (φ '' U) (φ a) := by
+  intro s hs
+  obtain ⟨t, ht, hts, htU⟩ := h _ (hφa.preimage_mem_nhds hs)
+  refine ⟨κ ⁻¹' t ∩ s, inter_mem (hκ.preimage_mem_nhds (by rwa [hκa])) hs, inter_subset_right,
+    ?_⟩
+  have heq : φ '' U ∩ (κ ⁻¹' t ∩ s) = φ '' (U ∩ t) := by
+    ext y
+    constructor
+    · rintro ⟨⟨x, hx, rfl⟩, hxt, -⟩
+      exact ⟨x, ⟨hx, by rwa [mem_preimage, hκφ hx] at hxt⟩, rfl⟩
+    · rintro ⟨x, ⟨hx, hxt⟩, rfl⟩
+      exact ⟨mem_image_of_mem φ hx, by rwa [mem_preimage, hκφ hx], hts hxt⟩
+  rw [heq]
+  exact htU.image _ (hφU.mono inter_subset_left)
+
 end ApproachRegions
 
 end TauCeti

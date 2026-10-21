@@ -30,6 +30,9 @@ graded nonunital algebra with zero differential is formal.
 
 * `TauCeti.AInfinityAlgebra.IsFormal`: existence of an `A∞` quasi-isomorphism to
   `cohomologyAInfinityAlgebra`.
+* `TauCeti.AInfinityAlgebra.IsMinimal.toCohomology`: the identification of a minimal algebra with
+  its cohomology, as a strict morphism out of any minimal structure with the same grading and `m₂`
+  and no higher operations.
 
 ## Main results
 
@@ -38,6 +41,9 @@ graded nonunital algebra with zero differential is formal.
   applies this to DG algebras with zero differential.
 * `TauCeti.AInfinityAlgebra.IsFormal.of_isQuasiIso`: formality is reflected along
   quasi-isomorphisms.
+* `TauCeti.AInfinityAlgebra.IsMinimal.isFormal_iff_exists_isIso`: a minimal `A∞` structure with
+  the grading and binary operation of a graded algebra is formal exactly when it is `A∞` isomorphic
+  to that graded algebra.
 
 ## References
 
@@ -80,12 +86,18 @@ theorem IsFormal.of_isQuasiIso {f : AInfinityHom 𝒜 ℬ} (hf : f.IsQuasiIso) (
 
 namespace IsMinimal
 
-/-- The identification of a minimal algebra with vanishing higher operations with its cohomology,
-as a strict morphism to the cohomology `A∞` algebra. -/
-private noncomputable def toCohomology (h : 𝒜.IsMinimal) (hm : ∀ n, 3 ≤ n → 𝒜.m n = 0) :
-    AInfinityStrictHom 𝒜 𝒜.cohomologyAInfinityAlgebra where
+variable {ℋ : AInfinityAlgebra R A}
+
+/-- For a minimal `𝒜`, and a minimal `A∞` structure `ℋ` on the same graded module with the same
+binary operation and no operations above arity two, the identification of `A` with the cohomology
+of `𝒜`, as a strict morphism from `ℋ` to the cohomology `A∞` algebra of `𝒜`.  Taking `ℋ = 𝒜`
+identifies a minimal algebra with vanishing higher operations with its cohomology. -/
+noncomputable def toCohomology (h : 𝒜.IsMinimal) (hℋ : ℋ.IsMinimal)
+    (hm : ∀ n, 3 ≤ n → ℋ.m n = 0) (hG : 𝒜.grading = ℋ.grading) (h₂ : 𝒜.m 2 = ℋ.m 2) :
+    AInfinityStrictHom ℋ 𝒜.cohomologyAInfinityAlgebra where
   toLinearMap := h.cohomologyEquiv.toLinearMap
   map_mem' hx := by
+    rw [← hG] at hx
     simpa only [add_zero, cohomologyAInfinityAlgebra_grading] using
       h.isHomogeneous_cohomologyEquiv.map_mem hx
   map_m' n := by
@@ -93,21 +105,50 @@ private noncomputable def toCohomology (h : 𝒜.IsMinimal) (hm : ∀ n, 3 ≤ n
     rw [LinearMap.compMultilinearMap_apply, MultilinearMap.compLinearMap_apply]
     match n with
     | 0 => simp
-    | 1 => simp [h.m_one]
+    | 1 => simp [hℋ.m_one]
     | 2 =>
-      rw [cohomologyAInfinityAlgebra_m_two_apply]
+      rw [cohomologyAInfinityAlgebra_m_two_apply, ← h₂]
       obtain ⟨a, b, rfl⟩ : ∃ a b, x = ![a, b] :=
         ⟨x 0, x 1, funext fun i ↦ by fin_cases i <;> rfl⟩
       exact h.cohomologyEquiv_m_two a b
     | n + 3 => simp [hm (n + 3) (by omega)]
 
+/-- The strict morphism `toCohomology` is the identification of a minimal algebra with its
+cohomology. -/
+@[simp]
+theorem coe_toCohomology (h : 𝒜.IsMinimal) (hℋ : ℋ.IsMinimal) (hm : ∀ n, 3 ≤ n → ℋ.m n = 0)
+    (hG : 𝒜.grading = ℋ.grading) (h₂ : 𝒜.m 2 = ℋ.m 2) :
+    ⇑(h.toCohomology hℋ hm hG h₂) = h.cohomologyEquiv := (rfl)
+
+/-- The strict morphism `toCohomology` is bijective. -/
+theorem bijective_toCohomology (h : 𝒜.IsMinimal) (hℋ : ℋ.IsMinimal)
+    (hm : ∀ n, 3 ≤ n → ℋ.m n = 0) (hG : 𝒜.grading = ℋ.grading) (h₂ : 𝒜.m 2 = ℋ.m 2) :
+    Function.Bijective (h.toCohomology hℋ hm hG h₂) := by
+  rw [coe_toCohomology]
+  exact h.cohomologyEquiv.bijective
+
 /-- A minimal `A∞` algebra whose operations of arity at least three vanish is formal: the
 identification with its cohomology is a strict isomorphism. -/
 theorem isFormal (h : 𝒜.IsMinimal) (hm : ∀ n, 3 ≤ n → 𝒜.m n = 0) : 𝒜.IsFormal := by
-  refine ⟨(h.toCohomology hm).toAInfinityHom, ?_⟩
+  refine ⟨(h.toCohomology h hm rfl rfl).toAInfinityHom, ?_⟩
   rw [AInfinityHom.isQuasiIso_iff_linearPart_bijective h 𝒜.isMinimal_cohomologyAInfinityAlgebra,
     AInfinityStrictHom.linearPart_toAInfinityHom]
-  exact h.cohomologyEquiv.bijective
+  exact h.bijective_toCohomology h hm rfl rfl
+
+/-- A minimal `A∞` structure `𝒜` with the grading and the binary operation of a minimal `ℋ`
+without operations above arity two is formal exactly when it is `A∞` isomorphic to `ℋ`. -/
+theorem isFormal_iff_exists_isIso (h : 𝒜.IsMinimal) (hℋ : ℋ.IsMinimal)
+    (hm : ∀ n, 3 ≤ n → ℋ.m n = 0) (hG : 𝒜.grading = ℋ.grading) (h₂ : 𝒜.m 2 = ℋ.m 2) :
+    𝒜.IsFormal ↔ ∃ f : AInfinityHom 𝒜 ℋ, f.IsIso := by
+  refine ⟨fun h𝒜 ↦ ?_, fun ⟨f, hf⟩ ↦ (hℋ.isFormal hm).of_isQuasiIso hf.isQuasiIso⟩
+  obtain ⟨g, hg⟩ := (isFormal_def 𝒜).1 h𝒜
+  -- Follow `g : 𝒜 ⟶ H(𝒜)` by the inverse of the identification `ℋ ≅ H(𝒜)`.
+  let s := (h.toCohomology hℋ hm hG h₂).toAInfinityHom
+  have hs : Function.Bijective s.linearPart := by
+    rw [AInfinityStrictHom.linearPart_toAInfinityHom, AInfinityStrictHom.coe_toLinearMap]
+    exact h.bijective_toCohomology hℋ hm hG h₂
+  exact ⟨(s.inverse hs).comp g, (AInfinityHom.isIso_inverse s hs).comp
+    (hg.isIso h 𝒜.isMinimal_cohomologyAInfinityAlgebra)⟩
 
 end IsMinimal
 

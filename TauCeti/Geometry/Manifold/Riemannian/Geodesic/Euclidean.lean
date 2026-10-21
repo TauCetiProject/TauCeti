@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
-public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal
+public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Coordinate.ModelSpace
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 
@@ -78,7 +78,17 @@ noncomputable section
 namespace TauCeti.Manifold
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
-  [FiniteDimensional ℝ F]
+
+/-- The identification `NormedSpace.fromTangentSpace p`, typed with the instances that the
+Riemannian metric induces on `T_p F`, so that it can be differentiated. -/
+private def tangentSpaceEquivModel (p : F) : TangentSpace 𝓘(ℝ, F) p ≃L[ℝ] F :=
+  ContinuousLinearEquiv.refl ℝ F
+
+-- Both maps are the identity of `F`; they differ only in the instances elaborated on `T_p F`.
+private theorem tangentSpaceEquivModel_apply (p : F) (v : TangentSpace 𝓘(ℝ, F) p) :
+    tangentSpaceEquivModel p v = NormedSpace.fromTangentSpace p v := (rfl)
+
+variable [FiniteDimensional ℝ F]
 
 private theorem leviCivitaConnection_const_apply (u v : F) (x : F) :
     leviCivitaConnection 𝓘(ℝ, F) F (fun _ : F ↦ v) x u = 0 := by
@@ -280,16 +290,6 @@ theorem riemannianExp_model_space (p : F) (v : TangentSpace 𝓘(ℝ, F) p) :
     riemannianExp 𝓘(ℝ, F) F p v = p + NormedSpace.fromTangentSpace p v :=
   (riemannianExp_def p v).trans <| (maximalGeodesic_model_space p v 1).trans <|
     congrArg (p + ·) (one_smul ℝ (NormedSpace.fromTangentSpace p v))
-
-/-- The identification `NormedSpace.fromTangentSpace p`, typed with the instances that the
-Riemannian metric induces on `T_p F`, so that it can be differentiated. -/
-private def tangentSpaceEquivModel (p : F) : TangentSpace 𝓘(ℝ, F) p ≃L[ℝ] F :=
-  ContinuousLinearEquiv.refl ℝ F
-
-omit [FiniteDimensional ℝ F] in
--- Both maps are the identity of `F`; they differ only in the instances elaborated on `T_p F`.
-private theorem tangentSpaceEquivModel_apply (p : F) (v : TangentSpace 𝓘(ℝ, F) p) :
-    tangentSpaceEquivModel p v = NormedSpace.fromTangentSpace p v := (rfl)
 
 private theorem hasFDerivAt_riemannianExp_model_space (p : F) (v : TangentSpace 𝓘(ℝ, F) p) :
     HasFDerivAt (riemannianExp 𝓘(ℝ, F) F p)

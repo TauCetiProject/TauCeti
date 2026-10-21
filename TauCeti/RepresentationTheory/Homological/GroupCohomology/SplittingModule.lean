@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Functoriality
-public import TauCeti.RepresentationTheory.Homological.Augmentation
+public import TauCeti.RepresentationTheory.Homological.Augmentation.Basic
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.LowDegree
 public import TauCeti.RepresentationTheory.Rep.TensorShortExact
 
@@ -188,6 +188,16 @@ theorem splittingModuleProj_apply (x : splittingModule A u) :
 theorem splittingModuleIncl_comp_splittingModuleProj :
     splittingModuleIncl A u ≫ splittingModuleProj A u = 0 := by
   ext; rfl
+
+/-- The inclusion of `A` into the splitting module is injective. -/
+theorem splittingModuleIncl_injective : Function.Injective (splittingModuleIncl A u).hom :=
+  LinearMap.inr_injective
+
+/-- The kernel of the projection to `I_G` is the image of the inclusion of `A`. -/
+theorem ker_splittingModuleProj_eq_range :
+    LinearMap.ker (splittingModuleProj A u).hom.toLinearMap =
+      LinearMap.range (splittingModuleIncl A u).hom.toLinearMap :=
+  LinearMap.ker_fst _ _ _
 
 /-- The short complex `A → A(u) → I_G` associated to the splitting module. -/
 def splittingModuleSES : ShortComplex (Rep k G) :=

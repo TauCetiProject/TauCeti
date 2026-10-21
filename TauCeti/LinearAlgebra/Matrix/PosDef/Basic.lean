@@ -7,14 +7,18 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.RingTheory.Localization.Integer
-import Mathlib.Data.Rat.Star
+import Mathlib.Algebra.Order.Star.Rat
+import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 
 /-!
 # Positive definiteness over the rationals
 
 For an integer matrix, positive definiteness over `ℤ` is equivalent to positive definiteness
 after casting its entries to `ℚ`. This lets results about rational quadratic forms certify
-positive definiteness of integer matrices, and conversely.
+positive definiteness of integer matrices, and conversely. Likewise a rational matrix is positive
+definite exactly when its cast to `ℝ`, or to any linearly ordered field whose order is its star
+order, is: a symmetric rational matrix is congruent over `ℚ` to a diagonal one, and congruence by
+an invertible matrix and the positivity of diagonal entries both survive the cast.
 
 The file also records the standard way of certifying a rational matrix as positive definite: write
 it as `Bᴴ * B` for an explicit `B`, and check that it is invertible. One general fact about
@@ -28,6 +32,8 @@ Cartan families need.
 * `TauCeti.Matrix.posDef_map_intCast`: an integer matrix that is positive definite over `ℤ` is
   positive definite over `ℚ`.
 * `TauCeti.Matrix.posDef_map_intCast_iff`: positive definiteness over `ℤ` and over `ℚ` agree.
+* `TauCeti.Matrix.posDef_map_ratCast_iff`: positive definiteness over `ℚ` and over `ℝ` agree, and
+  more generally over any linearly ordered field with the star order.
 * `TauCeti.Matrix.posDef_conjTranspose_mul_self_of_isUnit`: an invertible rational matrix of the
   form `Bᴴ * B` is positive definite.
 -/
@@ -132,6 +138,35 @@ theorem posDef_map_intCast_iff {A : Matrix n n ℤ} :
     simp only [Finsupp.sum_mapRange_index, star_trivial, _root_.Matrix.map_apply, mul_zero,
       implies_true] at h
     exact_mod_cast h
+
+/-- **A rational matrix is positive definite exactly when its cast to `ℝ` is**, and more generally
+its cast to any linearly ordered field `K` whose order is the star order of the trivial star. -/
+theorem posDef_map_ratCast_iff {K : Type*} [Field K] [LinearOrder K] [StarRing K] [TrivialStar K]
+    [StarOrderedRing K] [Finite n] {A : Matrix n n ℚ} :
+    (A.map (Rat.cast : ℚ → K)).PosDef ↔ A.PosDef := by
+  classical
+  have _i : Fintype n := Fintype.ofFinite n
+  by_cases hA : A.IsSymm
+  · obtain ⟨P, d, hP, hPAP⟩ := hA.exists_isUnit_transpose_mul_mul_eq_diagonal
+    have hP' : IsUnit (P.map (Rat.cast : ℚ → K)) := hP.map (Rat.castHom K).mapMatrix
+    -- The congruence `Pᵀ * A * P = diagonal d` survives the cast.
+    have hPAP' : star (P.map (Rat.cast : ℚ → K)) * A.map Rat.cast * P.map Rat.cast =
+        _root_.Matrix.diagonal fun i ↦ (d i : K) := by
+      have h := congrArg (Rat.castHom K).mapMatrix hPAP
+      simp only [map_mul, RingHom.mapMatrix_apply, Rat.coe_castHom] at h
+      rw [_root_.Matrix.star_eq_conjTranspose, _root_.Matrix.conjTranspose_eq_transpose_of_trivial,
+        ← _root_.Matrix.transpose_map, h, _root_.Matrix.diagonal_map Rat.cast_zero]
+    rw [← _root_.Matrix.IsUnit.posDef_star_left_conjugate_iff hP,
+      ← _root_.Matrix.IsUnit.posDef_star_left_conjugate_iff hP', hPAP',
+      _root_.Matrix.star_eq_conjTranspose, _root_.Matrix.conjTranspose_eq_transpose_of_trivial,
+      hPAP, _root_.Matrix.posDef_diagonal_iff, _root_.Matrix.posDef_diagonal_iff]
+    simp only [Rat.cast_pos]
+  · -- A positive definite matrix over either field is symmetric, since the star is trivial.
+    refine iff_of_false (fun h ↦ hA ?_) (fun h ↦ hA ?_)
+    · ext i j
+      simpa using h.isHermitian.apply i j
+    · ext i j
+      simpa using h.isHermitian.apply i j
 
 /-- **An invertible rational matrix of the form `Bᴴ * B` is positive definite.** Being of that
 form gives positive *semi*definiteness for free; invertibility upgrades it, by way of the

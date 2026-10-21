@@ -22,10 +22,11 @@ interpolation between that bound and the `L²` bound
 `‖T f‖_p ≤ (p / (p - 1) · 2 C + p / (2 - p) · 4 ‖T‖²) ^ (1 / p) ‖f‖_p`
 
 for every `1 < p < 2` and every `f ∈ L²`, where `C = 2ⁿ (4 ‖T‖² + 1) + 4 B` is the weak type
-`(1, 1)` constant. This constant blows up as `p → 1`, and also as `p → 2` when `‖T‖ > 0`. That
-is a limitation of the interpolation argument, not of every operator satisfying the hypotheses
-(the zero operator satisfies them), although classical singular integrals such as the Hilbert
-transform are indeed not bounded on `L¹`.
+`(1, 1)` constant, or `C = 4 · 2ⁿ ‖T‖² + cⁿ + 4 B` for the cancellation condition with dilation
+factor `c` in place of `2`. This constant blows up as `p → 1`, and also as `p → 2` when
+`‖T‖ > 0`. That is a limitation of the interpolation argument, not of every operator satisfying
+the hypotheses (the zero operator satisfies them), although classical singular integrals such as
+the Hilbert transform are indeed not bounded on `L¹`.
 
 For Hilbert space valued functions, the range `2 < p < ∞` follows by duality
 (`ContinuousLinearMap.eLpNorm_le_of_eLpNorm_adjoint_le`): if the adjoint `T†` satisfies the
@@ -35,7 +36,8 @@ cancellation condition, the bound for `T†` at the conjugate exponent `p / (p -
 
 for every `f ∈ L²`, with `C = 2ⁿ (4 ‖T‖² + 1) + 4 B` and `B` the cancellation constant of `T†`.
 When `T` and `T†` both satisfy the cancellation condition, `T` is therefore bounded in the `Lᵖ`
-norm for every `1 < p < ∞`.
+norm for every `1 < p < ∞`, with a constant depending only on `n`, `p`, the dilation factor, a
+bound for `‖T‖` and the cancellation constants.
 
 Since `T` is only given on `L²`, the estimates are stated for `f ∈ L²`, and they are informative
 for `f ∈ L² ∩ Lᵖ`. Extending `T` to a bounded operator on all of `Lᵖ` is a separate density
@@ -54,9 +56,9 @@ Points of `ℝⁿ` are functions `ι → ℝ`, so distances and balls are taken 
   `2 < p < ∞`.
 * `ContinuousLinearMap.eLpNorm_le_of_hormander_adjoint`: the same when the adjoint is given by a
   kernel satisfying Hörmander's condition.
-* `ContinuousLinearMap.exists_eLpNorm_le_of_setLIntegral_compl_closedBall_le`: if an operator and
+* `TauCeti.exists_eLpNorm_le_of_setLIntegral_compl_closedBall_le`: if an operator and
   its adjoint both satisfy the cancellation condition, the operator is of strong type `(p, p)` for
-  every `1 < p < ∞`.
+  every `1 < p < ∞`, uniformly over operators with the same bounds.
 
 ## References
 
@@ -77,24 +79,26 @@ variable {ι : Type*} [Fintype ι] [Nonempty ι] {E F : Type*} [NormedAddCommGro
   [NormedSpace ℝ E] [CompleteSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F] {p : ℝ≥0∞}
 
 /-- **The Calderón–Zygmund theorem**, strong type `(p, p)` for `1 < p < 2`. Let `T` be a bounded
-linear operator on `L²(ℝⁿ)` satisfying the cancellation condition: for every `b ∈ L²` vanishing off
-a closed ball `closedBall y r` with integral zero, `∫_{ℝⁿ \ closedBall y (2r)} ‖T b‖ ≤ B ‖b‖₁`.
-Then for every `1 < p < 2` and every `f ∈ L²`,
+linear operator on `L²(ℝⁿ)` satisfying the cancellation condition with dilation factor `c`: for
+every `b ∈ L²` vanishing off a closed ball `closedBall y r` with integral zero,
+`∫_{ℝⁿ \ closedBall y (c r)} ‖T b‖ ≤ B ‖b‖₁`. Then for every `1 < p < 2` and every `f ∈ L²`,
 
 `‖T f‖_p ≤ (p / (p - 1) · 2 C + p / (2 - p) · 4 ‖T‖²) ^ (1 / p) ‖f‖_p`,
 
-where `C = 2ⁿ (4 ‖T‖² + 1) + 4 B` is the weak type `(1, 1)` constant of
+where `C = 4 · 2ⁿ ‖T‖² + cⁿ + 4 B` is the weak type `(1, 1)` constant of
 `ContinuousLinearMap.mul_volume_lt_enorm_le_of_setLIntegral_compl_closedBall_le`. The bound is
 vacuous unless `f` also lies in `Lᵖ`. -/
 theorem eLpNorm_le_of_setLIntegral_compl_closedBall_le
     (T : Lp E 2 (volume : Measure (ι → ℝ)) →L[ℝ] Lp F 2 (volume : Measure (ι → ℝ))) {B : ℝ≥0∞}
+    {c : ℝ}
     (hT : ∀ (b : Lp E 2 (volume : Measure (ι → ℝ))) (y : ι → ℝ) (r : ℝ),
       (∀ᵐ x, x ∉ closedBall y r → b x = 0) → ∫ x, b x = 0 →
-        ∫⁻ x in (closedBall y (2 * r))ᶜ, ‖T b x‖ₑ ≤ B * ∫⁻ x, ‖b x‖ₑ)
+        ∫⁻ x in (closedBall y (c * r))ᶜ, ‖T b x‖ₑ ≤ B * ∫⁻ x, ‖b x‖ₑ)
     (hp : 1 < p) (hp₂ : p < 2) (f : Lp E 2 (volume : Measure (ι → ℝ))) :
     eLpNorm (T f) p volume ≤
       (ENNReal.ofReal (p.toReal / (p.toReal - 1)) *
-          (2 * (2 ^ Fintype.card ι * (4 * ‖T‖ₑ ^ 2 + 1) + 4 * B)) +
+          (2 * (2 ^ Fintype.card ι * (4 * ‖T‖ₑ ^ 2) + ENNReal.ofReal c ^ Fintype.card ι +
+            4 * B)) +
         ENNReal.ofReal (p.toReal / (2 - p.toReal)) * (4 * ‖T‖ₑ ^ 2)) ^ (1 / p.toReal) *
         eLpNorm f p volume := by
   have h := eLpNorm_le_of_rpow_mul_meas_lt_le T zero_lt_one hp hp₂ ENNReal.ofNat_ne_top
@@ -131,23 +135,26 @@ variable {H K : Type*} [NormedAddCommGroup H] [InnerProductSpace ℝ H] [Complet
 
 /-- **The Calderón–Zygmund theorem**, strong type `(p, p)` for `2 < p < ∞`. Let `T` be a bounded
 linear operator on `L²(ℝⁿ)` of Hilbert space valued functions whose adjoint `T†` satisfies the
-cancellation condition: for every `b ∈ L²` vanishing off a closed ball `closedBall y r` with
-integral zero, `∫_{ℝⁿ \ closedBall y (2r)} ‖T† b‖ ≤ B ‖b‖₁`. Then for every `2 < p < ∞` and every
-`f ∈ L²`,
+cancellation condition with dilation factor `c`: for every `b ∈ L²` vanishing off a closed ball
+`closedBall y r` with integral zero, `∫_{ℝⁿ \ closedBall y (c r)} ‖T† b‖ ≤ B ‖b‖₁`. Then for every
+`2 < p < ∞` and every `f ∈ L²`,
 
 `‖T f‖_p ≤ (p · 2 C + p / (p - 2) · 4 ‖T‖²) ^ (1 - 1 / p) ‖f‖_p`,
 
-where `C = 2ⁿ (4 ‖T‖² + 1) + 4 B`. This is the bound of
+where `C = 4 · 2ⁿ ‖T‖² + cⁿ + 4 B`. This is the bound of
 `ContinuousLinearMap.eLpNorm_le_of_setLIntegral_compl_closedBall_le` for `T†` at the conjugate
 exponent `p / (p - 1) ∈ (1, 2)`, transferred to `T` by duality. -/
 theorem eLpNorm_le_of_setLIntegral_compl_closedBall_adjoint_le
     (T : Lp H 2 (volume : Measure (ι → ℝ)) →L[ℝ] Lp K 2 (volume : Measure (ι → ℝ))) {B : ℝ≥0∞}
+    {c : ℝ}
     (hT : ∀ (b : Lp K 2 (volume : Measure (ι → ℝ))) (y : ι → ℝ) (r : ℝ),
       (∀ᵐ x, x ∉ closedBall y r → b x = 0) → ∫ x, b x = 0 →
-        ∫⁻ x in (closedBall y (2 * r))ᶜ, ‖adjoint T b x‖ₑ ≤ B * ∫⁻ x, ‖b x‖ₑ)
+        ∫⁻ x in (closedBall y (c * r))ᶜ, ‖adjoint T b x‖ₑ ≤ B * ∫⁻ x, ‖b x‖ₑ)
     (hp : 2 < p) (hp_top : p ≠ ∞) (f : Lp H 2 (volume : Measure (ι → ℝ))) :
     eLpNorm (T f) p volume ≤
-      (ENNReal.ofReal p.toReal * (2 * (2 ^ Fintype.card ι * (4 * ‖T‖ₑ ^ 2 + 1) + 4 * B)) +
+      (ENNReal.ofReal p.toReal *
+          (2 * (2 ^ Fintype.card ι * (4 * ‖T‖ₑ ^ 2) + ENNReal.ofReal c ^ Fintype.card ι +
+            4 * B)) +
         ENNReal.ofReal (p.toReal / (p.toReal - 2)) * (4 * ‖T‖ₑ ^ 2)) ^ (1 - 1 / p.toReal) *
         eLpNorm f p volume := by
   set P := p.toReal
@@ -198,39 +205,79 @@ theorem eLpNorm_le_of_hormander_adjoint
       (ENNReal.ofReal p.toReal * (2 * (2 ^ Fintype.card ι * (4 * ‖T‖ₑ ^ 2 + 1) + 4 * B)) +
         ENNReal.ofReal (p.toReal / (p.toReal - 2)) * (4 * ‖T‖ₑ ^ 2)) ^ (1 - 1 / p.toReal) *
         eLpNorm f p volume :=
-  eLpNorm_le_of_setLIntegral_compl_closedBall_adjoint_le T
-    (setLIntegral_compl_closedBall_enorm_apply_le_of_hormander (adjoint T) hk hB hrep) hp hp_top f
+  (eLpNorm_le_of_setLIntegral_compl_closedBall_adjoint_le T
+    (setLIntegral_compl_closedBall_enorm_apply_le_of_hormander (adjoint T) hk hB hrep) hp hp_top
+      f).trans_eq (by rw [ENNReal.ofReal_ofNat, mul_add_one])
 
-/-- **The Calderón–Zygmund theorem** on `Lᵖ`, `1 < p < ∞`. Let `T` be a bounded linear operator
-on `L²(ℝⁿ)` of Hilbert space valued functions such that both `T` and its adjoint satisfy the
-cancellation condition, with finite constants `B` and `B'`. Then for every `1 < p < ∞` there is a
-constant `C` with `‖T f‖_p ≤ C ‖f‖_p` for every `f ∈ L²`. Explicit constants are given by
-`ContinuousLinearMap.eLpNorm_le_of_setLIntegral_compl_closedBall_le` for `p < 2` and by
-`ContinuousLinearMap.eLpNorm_le_of_setLIntegral_compl_closedBall_adjoint_le` for `p > 2`. -/
-theorem exists_eLpNorm_le_of_setLIntegral_compl_closedBall_le
-    (T : Lp H 2 (volume : Measure (ι → ℝ)) →L[ℝ] Lp K 2 (volume : Measure (ι → ℝ)))
-    {B B' : ℝ≥0∞} (hB : B ≠ ∞) (hB' : B' ≠ ∞)
-    (hT : ∀ (b : Lp H 2 (volume : Measure (ι → ℝ))) (y : ι → ℝ) (r : ℝ),
-      (∀ᵐ x, x ∉ closedBall y r → b x = 0) → ∫ x, b x = 0 →
-        ∫⁻ x in (closedBall y (2 * r))ᶜ, ‖T b x‖ₑ ≤ B * ∫⁻ x, ‖b x‖ₑ)
-    (hT' : ∀ (b : Lp K 2 (volume : Measure (ι → ℝ))) (y : ι → ℝ) (r : ℝ),
-      (∀ᵐ x, x ∉ closedBall y r → b x = 0) → ∫ x, b x = 0 →
-        ∫⁻ x in (closedBall y (2 * r))ᶜ, ‖adjoint T b x‖ₑ ≤ B' * ∫⁻ x, ‖b x‖ₑ)
-    (hp : 1 < p) (hp_top : p ≠ ∞) :
-    ∃ C : ℝ≥0, ∀ f : Lp H 2 (volume : Measure (ι → ℝ)),
-      eLpNorm (T f) p volume ≤ C * eLpNorm f p volume := by
-  suffices ∃ C : ℝ≥0∞, C ≠ ∞ ∧ ∀ f : Lp H 2 (volume : Measure (ι → ℝ)),
-      eLpNorm (T f) p volume ≤ C * eLpNorm f p volume by
+end ContinuousLinearMap
+
+namespace TauCeti
+
+open MeasureTheory Metric Set
+open ContinuousLinearMap (adjoint)
+open scoped ENNReal NNReal
+
+variable {ι : Type*} [Fintype ι] [Nonempty ι] {H K : Type*} [NormedAddCommGroup H]
+  [InnerProductSpace ℝ H] [CompleteSpace H] [NormedAddCommGroup K] [InnerProductSpace ℝ K]
+  [CompleteSpace K] {p : ℝ≥0∞}
+
+/-- **The Calderón–Zygmund theorem** on `Lᵖ`, `1 < p < ∞`, with a constant depending only on the
+data. Let `c` be a dilation factor, `M` a bound on operator norms and `B`, `B'` cancellation
+constants, all finite. Then for every `1 < p < ∞` there is a constant `C` with the following
+property. Let `T` be a bounded linear operator on `L²(ℝⁿ)` of Hilbert space valued functions with
+`‖T‖ ≤ M`, such that `T` and its adjoint satisfy the cancellation condition with dilation factor
+`c` and constants `B` and `B'`. Then `‖T f‖_p ≤ C ‖f‖_p` for every `f ∈ L²`.
+
+Explicit constants are given by `ContinuousLinearMap.eLpNorm_le_of_setLIntegral_compl_closedBall_le`
+for `p < 2` and by `ContinuousLinearMap.eLpNorm_le_of_setLIntegral_compl_closedBall_adjoint_le` for
+`p > 2`. That `C` does not depend on `T` is what makes the theorem apply uniformly to families of
+operators, such as the truncations of a singular integral. -/
+theorem exists_eLpNorm_le_of_setLIntegral_compl_closedBall_le (c : ℝ) {M B B' : ℝ≥0∞}
+    (hM : M ≠ ∞) (hB : B ≠ ∞) (hB' : B' ≠ ∞) (hp : 1 < p) (hp_top : p ≠ ∞) :
+    ∃ C : ℝ≥0, ∀ T : Lp H 2 (volume : Measure (ι → ℝ)) →L[ℝ] Lp K 2 (volume : Measure (ι → ℝ)),
+      ‖T‖ₑ ≤ M →
+      (∀ (b : Lp H 2 (volume : Measure (ι → ℝ))) (y : ι → ℝ) (r : ℝ),
+        (∀ᵐ x, x ∉ closedBall y r → b x = 0) → ∫ x, b x = 0 →
+          ∫⁻ x in (closedBall y (c * r))ᶜ, ‖T b x‖ₑ ≤ B * ∫⁻ x, ‖b x‖ₑ) →
+      (∀ (b : Lp K 2 (volume : Measure (ι → ℝ))) (y : ι → ℝ) (r : ℝ),
+        (∀ᵐ x, x ∉ closedBall y r → b x = 0) → ∫ x, b x = 0 →
+          ∫⁻ x in (closedBall y (c * r))ᶜ, ‖adjoint T b x‖ₑ ≤ B' * ∫⁻ x, ‖b x‖ₑ) →
+      ∀ f : Lp H 2 (volume : Measure (ι → ℝ)),
+        eLpNorm (T f) p volume ≤ C * eLpNorm f p volume := by
+  -- The explicit constants are monotone in `‖T‖`, so replacing `‖T‖` by `M` gives a constant
+  -- independent of `T`.
+  suffices ∃ C : ℝ≥0∞, C ≠ ∞ ∧ ∀ T : Lp H 2 (volume : Measure (ι → ℝ)) →L[ℝ]
+      Lp K 2 (volume : Measure (ι → ℝ)), ‖T‖ₑ ≤ M →
+      (∀ (b : Lp H 2 (volume : Measure (ι → ℝ))) (y : ι → ℝ) (r : ℝ),
+        (∀ᵐ x, x ∉ closedBall y r → b x = 0) → ∫ x, b x = 0 →
+          ∫⁻ x in (closedBall y (c * r))ᶜ, ‖T b x‖ₑ ≤ B * ∫⁻ x, ‖b x‖ₑ) →
+      (∀ (b : Lp K 2 (volume : Measure (ι → ℝ))) (y : ι → ℝ) (r : ℝ),
+        (∀ᵐ x, x ∉ closedBall y r → b x = 0) → ∫ x, b x = 0 →
+          ∫⁻ x in (closedBall y (c * r))ᶜ, ‖adjoint T b x‖ₑ ≤ B' * ∫⁻ x, ‖b x‖ₑ) →
+      ∀ f : Lp H 2 (volume : Measure (ι → ℝ)),
+        eLpNorm (T f) p volume ≤ C * eLpNorm f p volume by
     obtain ⟨C, hC, h⟩ := this
     exact ⟨C.toNNReal, by simpa [ENNReal.coe_toNNReal hC] using h⟩
   rcases lt_trichotomy p 2 with hp2 | rfl | hp2
-  · exact ⟨_, ENNReal.rpow_ne_top_of_nonneg (by positivity) (by finiteness),
-      eLpNorm_le_of_setLIntegral_compl_closedBall_le T hT hp hp2⟩
-  · exact ⟨‖T‖ₑ, enorm_ne_top, fun f => by simpa only [Lp.enorm_def] using T.le_opENorm f⟩
-  · refine ⟨_, ENNReal.rpow_ne_top_of_nonneg ?_ (by finiteness),
-      eLpNorm_le_of_setLIntegral_compl_closedBall_adjoint_le T hT' hp2 hp_top⟩
-    have : 1 ≤ p.toReal := by simpa using (ENNReal.toReal_le_toReal (by norm_num) hp_top).2 hp.le
-    rw [sub_nonneg]
-    exact div_le_one_of_le₀ this (by positivity)
+  · refine ⟨(ENNReal.ofReal (p.toReal / (p.toReal - 1)) *
+          (2 * (2 ^ Fintype.card ι * (4 * M ^ 2) + ENNReal.ofReal c ^ Fintype.card ι + 4 * B)) +
+        ENNReal.ofReal (p.toReal / (2 - p.toReal)) * (4 * M ^ 2)) ^ (1 / p.toReal),
+      ENNReal.rpow_ne_top_of_nonneg (by positivity) (by finiteness),
+      fun T hTM hT _ f => (T.eLpNorm_le_of_setLIntegral_compl_closedBall_le hT hp hp2 f).trans ?_⟩
+    gcongr
+  · refine ⟨M, hM, fun T hTM _ _ f => ?_⟩
+    rw [← Lp.enorm_def, ← Lp.enorm_def]
+    exact (T.le_opENorm f).trans (by gcongr)
+  · have : 0 ≤ 1 - 1 / p.toReal := by
+      have : 1 ≤ p.toReal := by
+        simpa using (ENNReal.toReal_le_toReal (by norm_num) hp_top).2 hp.le
+      rw [sub_nonneg]
+      exact div_le_one_of_le₀ this (by positivity)
+    refine ⟨(ENNReal.ofReal p.toReal *
+          (2 * (2 ^ Fintype.card ι * (4 * M ^ 2) + ENNReal.ofReal c ^ Fintype.card ι + 4 * B')) +
+        ENNReal.ofReal (p.toReal / (p.toReal - 2)) * (4 * M ^ 2)) ^ (1 - 1 / p.toReal),
+      ENNReal.rpow_ne_top_of_nonneg this (by finiteness), fun T hTM _ hT' f =>
+      (T.eLpNorm_le_of_setLIntegral_compl_closedBall_adjoint_le hT' hp2 hp_top f).trans ?_⟩
+    gcongr
 
-end ContinuousLinearMap
+end TauCeti

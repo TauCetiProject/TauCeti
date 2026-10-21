@@ -47,8 +47,6 @@ and `ℝ≥0∞` bridge.
 
 * O. Kallenberg, *Probabilistic Symmetries and Invariance Principles*, Springer, 2005, Chapter 1,
   Theorem 1.1.
-* Roadmap: `TauCetiRoadmap/Exchangeability/README.md`, **Layer 5** (Koopman operators and
-  invariant σ-algebras), whose milestone is `deFinetti_viaKoopman`.
 -/
 
 public section

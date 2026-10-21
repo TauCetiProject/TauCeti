@@ -28,7 +28,8 @@ case of the bad-prime eigenvalue classification.
 
 * `isAtkinLehnerMatrix_descendExtra`: the extra descent matrix is an Atkin–Lehner matrix.
 * `descendSlash_eq_heckeSlashUpperTri_add_slash_atkinLehnerGL`: the identity on functions.
-* `ofLe_descendCuspForm_eq_heckeUCuspNat_add_atkinLehnerOperatorGamma1Cusp`: the bundled identity.
+* `restrict_descendCuspForm_eq_heckeUCuspNat_add_atkinLehnerOperatorGamma1Cusp`: the bundled
+  identity.
 * `heckeUCuspNat_add_atkinLehnerOperatorGamma1Cusp_mem_cuspFormsOld_inf_cuspFormCharSpace`:
   the sum is old and has the original nebentypus.
 
@@ -113,19 +114,19 @@ variable [NeZero N] (k : ℤ)
 
 /-- For a nebentypus descending to `N/p`, the restriction of Miyake's descent is exactly
 `U_p f + W_p f` as a cusp form of level `Γ₁(N)`. -/
-theorem ofLe_descendCuspForm_eq_heckeUCuspNat_add_atkinLehnerOperatorGamma1Cusp
+theorem restrict_descendCuspForm_eq_heckeUCuspNat_add_atkinLehnerOperatorGamma1Cusp
     (hp : p.Prime) (hpN : p ∣ N) (hpsq : ¬ p ^ 2 ∣ N)
     {χ : (ZMod N)ˣ →* ℂˣ} {χ₀ : (ZMod (N / p))ˣ →* ℂˣ}
     (hcomp : χ = χ₀.comp (ZMod.unitsMap (Nat.div_dvd_of_dvd hpN)))
     {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k} (hf : f ∈ cuspFormCharSpace k χ) :
-    CuspForm.ofLe (Gamma1_map_le_Gamma1_map_of_dvd (Nat.div_dvd_of_dvd hpN))
+    CuspForm.restrict (Gamma1_map_le_Gamma1_map_of_dvd (Nat.div_dvd_of_dvd hpN))
         (descendCuspForm k hp hpN hcomp hf) =
       heckeUCuspNat k p hp hpN f +
         atkinLehnerOperatorGamma1Cusp hp.pos hpN
           (isAtkinLehnerMatrix_descendExtra hp hpN hpsq) k f := by
   have : NeZero p := ⟨hp.ne_zero⟩
   refine DFunLike.coe_injective ?_
-  rw [CuspForm.coe_ofLe, coe_descendCuspForm,
+  rw [CuspForm.coe_restrict, coe_descendCuspForm,
     descendSlash_eq_heckeSlashUpperTri_add_slash_atkinLehnerGL k hp hpN hpsq,
     FunLike.coe_add, heckeUCuspNat_eq_heckeTCuspNat, heckeTCuspNat_eq_upperTri k hpN,
     coe_heckeSlashUpperTriCuspFormEnd, coe_atkinLehnerOperatorGamma1Cusp]
@@ -143,11 +144,11 @@ theorem heckeUCuspNat_add_atkinLehnerOperatorGamma1Cusp_mem_cuspFormsOld_inf_cus
           (isAtkinLehnerMatrix_descendExtra hp hpN hpsq) k f ∈
       cuspFormsOld N k ⊓ cuspFormCharSpace k χ := by
   subst χ
-  rw [← ofLe_descendCuspForm_eq_heckeUCuspNat_add_atkinLehnerOperatorGamma1Cusp
+  rw [← restrict_descendCuspForm_eq_heckeUCuspNat_add_atkinLehnerOperatorGamma1Cusp
     k hp hpN hpsq rfl hf]
-  exact ⟨ofLe_mem_cuspFormsOld (Nat.div_dvd_of_dvd hpN)
+  exact ⟨restrict_mem_cuspFormsOld (Nat.div_dvd_of_dvd hpN)
       (Nat.div_lt_self (NeZero.pos N) hp.one_lt).ne k _,
-    CuspForm.ofLe_mem_cuspFormCharSpace χ₀ (Nat.div_dvd_of_dvd hpN)
+    CuspForm.restrict_mem_cuspFormCharSpace χ₀ (Nat.div_dvd_of_dvd hpN)
       (descendCuspForm_mem_cuspFormCharSpace k hp hpN rfl hf)⟩
 
 end TauCeti

@@ -66,9 +66,9 @@ other side. Then their two terminal sides occur in one of the two possible cycli
 the common side, while the row of the common corner lies strictly between the other two corner
 rows.
 
-The disjunction records which L-shaped repartition is needed later. The row order is independent
-of that choice: emptiness of the rectangle whose column interval contains the third side forces
-the corresponding third corner outside its row interior. -/
+The disjunction records which L-shaped repartition applies. The row order is independent of that
+choice: emptiness of the rectangle whose column interval contains the third side forces the
+corresponding third corner outside its row interior. -/
 theorem cyclicOrder_of_isEmpty_of_left_eq_left (D : GridRectangleDecomposition x z)
     (hleft : D.first.left = D.second.left) (hright : D.first.right ≠ D.second.right)
     (hfirst : D.first.IsEmpty) (hsecond : D.second.IsEmpty) :

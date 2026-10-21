@@ -123,6 +123,31 @@ theorem conjugate_mono (g : WithConv (H →ₐ[R] R)) {I J : HopfIdeal R H} (h :
   intro x hx
   exact mem_conjugate.mpr (h (mem_conjugate.mp hx))
 
+/-- Conjugating a closed subgroup inside another closed subgroup agrees with conjugating
+its image in the ambient group. -/
+@[simp]
+theorem conjugate_comapOfSurjective {K : Type w} [CommRing K] [HopfAlgebra R K]
+    (I : HopfIdeal R K) (π : H →ₐc[R] K) (hπ : Function.Surjective π)
+    (g : WithConv (K →ₐ[R] R)) :
+    (I.comapOfSurjective π hπ).conjugate (WithConv.toConv (g.ofConv.comp π.toAlgHom)) =
+      (I.conjugate g).comapOfSurjective π hπ := by
+  ext x
+  simp only [mem_conjugate, mem_comapOfSurjective]
+  have h := AlgHom.congr_fun (π.comp_pointConjugationAlgHom_mapDomain g) x
+  simpa only [AlgHom.comp_apply, BialgHom.coe_toAlgHom, BialgHom.mapDomain_apply] using
+    (congrArg (· ∈ I) h).to_iff
+
+/-- Conjugate closed subgroups of a closed subgroup are conjugate in the ambient group,
+using the image of the same conjugating point. No rational-point surjectivity is needed. -/
+theorem exists_conjugate_eq_comapOfSurjective {K : Type w} [CommRing K] [HopfAlgebra R K]
+    (I J : HopfIdeal R K) (π : H →ₐc[R] K) (hπ : Function.Surjective π)
+    (h : ∃ g : WithConv (K →ₐ[R] R), I.conjugate g = J) :
+    ∃ g : WithConv (H →ₐ[R] R),
+      (I.comapOfSurjective π hπ).conjugate g = J.comapOfSurjective π hπ := by
+  obtain ⟨g, hg⟩ := h
+  exact ⟨BialgHom.mapDomain π g, by
+    rw [BialgHom.mapDomain_apply, conjugate_comapOfSurjective, hg]⟩
+
 /-- If a conjugated point annihilates `J` and the kernel of the original point is contained in
 `I`, then conjugating `J` by the inverse point gives an ideal contained in `I`. -/
 theorem conjugate_inv_le_of_mem_quotientPointsSubgroup
@@ -205,8 +230,8 @@ theorem IsNormal.le_conjugate {I : HopfIdeal R H} (hI : I.IsNormal)
     apply WithConv.toConv_injective
     rw [HopfAlgebra.toConv_pointConjugationAlgHom, HopfAlgebra.productMap_comp_conjugationAlgHom,
       WithConv.toConv_ofConv]
-  have hker : rightTensorIdeal (R := R) (H := H) I.toIdeal ≤ I.toIdeal.comap f.toRingHom := by
-    rw [rightTensorIdeal_le_iff]
+  have hker : Ideal.rightTensorIdeal (R := R) (A := H) I.toIdeal ≤ I.toIdeal.comap f.toRingHom := by
+    rw [Ideal.rightTensorIdeal_le_iff]
     intro y hy
     simpa [f] using hy
   intro x hx
@@ -264,7 +289,7 @@ by its conjugate. -/
 theorem mapDomain_pointConjugation_mem_conjugate_iff
     (I : HopfIdeal R H) (g : WithConv (H →ₐ[R] R))
     (A : CommAlgCat.{w} R) (x : HopfAlgebra.points (R := R) (H := H) A) :
-    AlgHom.mapDomain (A := A) (HopfAlgebra.pointConjugationBialgEquiv g).toBialgHom x ∈
+    BialgHom.mapDomain (A := A) (HopfAlgebra.pointConjugationBialgEquiv g).toBialgHom x ∈
         quotientPointsSubgroup (_root_.CommHopfAlgCat.of R H) (I.conjugate g) A ↔
       x ∈ quotientPointsSubgroup (_root_.CommHopfAlgCat.of R H) I A := by
   have hsurj : Function.Surjective

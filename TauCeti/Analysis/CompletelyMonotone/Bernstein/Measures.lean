@@ -115,7 +115,7 @@ lemma continuousOn_chafaiDensity {n : ℕ} (hf : ContDiffOn ℝ (n : WithTop ℕ
       t ^ (n - 1) * iteratedDerivWithin n f (Ici 0) t :=
     funext (chafaiDensity_of_ne_zero hn f)
   rw [heq]
-  exact (continuousOn_const.mul ((continuousOn_pow _).mono fun _ _ => trivial)).mul
+  exact (continuousOn_const.mul (continuous_pow _).continuousOn).mul
     (hf.continuousOn_iteratedDerivWithin le_rfl (uniqueDiffOn_Ici 0))
 
 /-- The `n`-th Chafaï approximating measure `σ_n` for the Bernstein representation, with density

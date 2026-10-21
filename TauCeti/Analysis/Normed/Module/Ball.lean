@@ -27,7 +27,8 @@ The range formula identifies a positive real scaling of the unit sphere with the
 of that radius in a seminormed real vector space. Two points on a sphere of nonzero radius
 centered at zero lie on the same line exactly when they are equal or antipodal.
 
-The normalization lemmas characterize the unit norm conditions for `R⁻¹ • z` when `R > 0`.
+The normalization lemmas compute the norm of `R⁻¹ • z` when `R ≥ 0` and characterize the unit
+norm conditions for `R⁻¹ • z` when `R > 0`.
 They need only a norm homogeneous under real scalar multiplication; no additive structure
 or metric on the vector type is required.
 
@@ -132,6 +133,10 @@ original norm equals that radius. -/
 theorem norm_inv_smul_eq_one_iff {z : E} {R : ℝ} (hR : 0 < R) :
     ‖R⁻¹ • z‖ = 1 ↔ ‖z‖ = R := by
   simp [norm_smul, Real.norm_of_nonneg hR.le, inv_mul_eq_iff_eq_mul₀ hR.ne']
+
+/-- Scaling a vector by the inverse of a nonnegative real divides its norm by that real. -/
+theorem norm_inv_smul_of_nonneg {z : E} {R : ℝ} (hR : 0 ≤ R) : ‖R⁻¹ • z‖ = ‖z‖ / R := by
+  rw [norm_smul, norm_inv, Real.norm_of_nonneg hR, inv_mul_eq_div]
 
 end Normalization
 

@@ -342,7 +342,7 @@ private theorem graph_D_connected {n : ℕ} (hn : 4 ≤ n) : (D n).graph.Connect
 constructors outside `TauCeti.AffineDynkinType.Valid`, such as `D 2`, are disconnected. -/
 theorem graph_connected {t : AffineDynkinType} (ht : t.Valid) : t.graph.Connected := by
   cases t with
-  | A n => exact (graph_A n) ▸ SimpleGraph.cycleGraph_connected
+  | A n => exact (graph_A n) ▸ SimpleGraph.connected_cycleGraph_add_one
   | D n => exact graph_D_connected ht
   | E6 => exact SimpleGraph.connected_fin_of_exists_adj_lt E6.nodes_pos (by decide)
   | E7 => exact SimpleGraph.connected_fin_of_exists_adj_lt E7.nodes_pos (by decide)
@@ -597,7 +597,8 @@ private lemma sum_dMarks_neighborFinset {n : ℕ} (hn : 4 ≤ n) (i : Fin (n + 1
        omega)
     | (simp only [List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, dMarks]
        split_ifs <;> omega)
-    | (simp [Fin.ext_iff] <;> omega)
+    | (simp [Fin.ext_iff]; omega)
+    | simp [Fin.ext_iff]
 
 /-- The local balance condition for `Aₙ`: every node of a cycle on at least three nodes has two
 neighbours, and every mark of `Aₙ` is `1`. -/

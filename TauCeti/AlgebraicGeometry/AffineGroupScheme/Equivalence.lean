@@ -12,10 +12,9 @@ public import TauCeti.AlgebraicGeometry.AffineGroupScheme.HopfSpec
 /-!
 # Affine group schemes are anti-equivalent to commutative Hopf algebras
 
-Over a commutative ring `S`, the contravariant functor `Spec` is an equivalence from the
-opposite of the category of commutative `S`-Hopf algebras onto the category of affine
-group schemes over `Spec S`. This is the assembled Layer 0 dictionary of the
-reductive-groups roadmap.
+Over a commutative ring `S`, the contravariant functor `Spec` is an equivalence from the opposite of
+the category of commutative `S`-Hopf algebras onto the category of affine group schemes over
+`Spec S`.
 
 Mathlib's `AlgebraicGeometry/Group/Affine.lean` provides the functor
 (`AlgebraicGeometry.hopfSpec`), its full faithfulness, and the characterization of its

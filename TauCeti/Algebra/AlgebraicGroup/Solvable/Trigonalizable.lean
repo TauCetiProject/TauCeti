@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Coalgebra.Comodule.Flag.Triangular
-public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction
+public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Basic
+public import TauCeti.Algebra.Coalgebra.Comodule.Weight.Space
 import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
-import TauCeti.Algebra.Coalgebra.Subcomodule.PointSeparation
 import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Exists
 
 /-!
@@ -31,8 +31,6 @@ enters, is not proved here.
 
 ## Main declarations
 
-* `TauCeti.Comodule.hasNonzeroWeightVector_of_basePointsRepresentation_stable`: a nonzero vector
-  spanning a point-stable line is a weight vector.
 * `TauCeti.Comodule.hasNonzeroWeightVector_of_pairwise_commute`: commuting point actions produce a
   weight vector.
 * `TauCeti.Comodule.hasNonzeroWeightVector_of_isCocomm`: every nonzero finite-dimensional
@@ -63,24 +61,6 @@ noncomputable section
 variable {k : Type u} {H : Type v} {M : Type w}
 variable [Field k] [CommRing H] [HopfAlgebra k H]
 variable [AddCommGroup M] [Module k M] [Comodule k H M]
-
-/-- A nonzero vector spanning a submodule preserved by every base-valued point is a weight
-vector. -/
-theorem hasNonzeroWeightVector_of_basePointsRepresentation_stable
-    [IsAlgClosed k] [Algebra.FiniteType k H] [IsReduced H]
-    (p : Submodule k M) (v : M) (hv : v ≠ 0) (hspan : p = k ∙ v)
-    (hact : ∀ (g : WithConv (H →ₐ[k] k)) {m : M}, m ∈ p →
-      basePointsRepresentation (R := k) (H := H) M g m ∈ p) :
-    HasNonzeroWeightVector k H M := by
-  have hstable : ∀ (g : H →ₐ[k] k) {m : M}, m ∈ p →
-      Comodule.endOfPoint M g ((1 : k) ⊗ₜ[k] m) ∈ p.baseChange k := by
-    intro g m hm
-    rw [endOfPoint_tmul, one_smul,
-      endOfPoint_one_tmul_eq_one_tmul_basePointsRepresentation]
-    exact Submodule.tmul_mem_baseChange_of_mem _ (hact (toConv g) hm)
-  exact hasNonzeroWeightVector_of_toSubmodule_eq_span
-    (Subcomodule.ofEndOfPointStable (K := k) p hstable) hv
-    ((Subcomodule.ofEndOfPointStable_toSubmodule (K := k) p hstable).trans hspan)
 
 /-- If the base-valued points of a reduced finite-type commutative Hopf algebra over an
 algebraically closed field act on a nonzero finite-dimensional comodule by pairwise-commuting

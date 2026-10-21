@@ -36,9 +36,8 @@ underlying finite-type affine group scheme and every morphism unchanged.
 * J. S. Milne, *Algebraic Groups* (2017), Section 21.
 * T. A. Springer, *Linear Algebraic Groups*, Chapter 8.
 
-This is the scheme-side structural implication in Layer 6, "Reductive and semisimple groups", of
-the ReductiveGroups roadmap. It synchronizes the coordinate and affine-group-scheme models used
-by the simply connected and adjoint form constructions.
+This synchronizes the coordinate and affine-group-scheme models used by the simply connected and
+adjoint form constructions.
 -/
 
 public section

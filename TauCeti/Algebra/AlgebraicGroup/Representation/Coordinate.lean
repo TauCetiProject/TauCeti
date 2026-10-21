@@ -44,9 +44,8 @@ faithful-representation criterion identifies with a closed immersion into `GLₙ
 
 ## References
 
-This is the standard coordinate morphism of a finite free representation; see J. S.
-Milne, *Algebraic Groups* (2017), Chapter 4, especially Remark 4.1 and Theorem 4.9.  It advances
-`ReductiveGroups/README.md`, Layer 1, "Faithfulness done right".
+This is the standard coordinate morphism of a finite free representation; see J. S. Milne,
+*Algebraic Groups* (2017), Chapter 4, especially Remark 4.1 and Theorem 4.9.
 -/
 
 public section

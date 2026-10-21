@@ -24,7 +24,6 @@ tensoring by sixteen-by-sixteen real matrices.
 ## References
 
 * H. B. Lawson and M.-L. Michelsohn, *Spin Geometry*, Chapter I.
-* [TauCeti SpinRepresentations roadmap, Layer 7](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md#layer-7-real-clifford-algebras-bott-periodicity-and-spinp-q)
 -/
 
 public section

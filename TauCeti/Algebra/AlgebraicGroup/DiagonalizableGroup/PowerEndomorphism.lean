@@ -69,7 +69,7 @@ variable {R : Type u} {A : Type v} [CommSemiring R] [CommSemiring A] [Algebra R 
 /-- The convolution group structure on the points of `𝔾ₘ`. -/
 noncomputable local instance multiplicativeGroupPointsCommGroup :
     CommGroup (WithConv (MonoidAlgebra R (Multiplicative ℤ) →ₐ[R] A)) :=
-  AlgHom.instCommGroup
+  AlgHom.convCommGroupOfSemiring
 
 /-- **The power endomorphism is the power map.** The `z`th power endomorphism of
 `𝔾ₘ = D(Multiplicative ℤ)`, defined through the diagonalizable-group functoriality, acts on the

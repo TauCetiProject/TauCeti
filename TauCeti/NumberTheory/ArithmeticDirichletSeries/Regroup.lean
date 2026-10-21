@@ -9,6 +9,7 @@ public import Mathlib.Algebra.BigOperators.Field
 public import Mathlib.NumberTheory.LSeries.Convergence
 public import Mathlib.Topology.Algebra.InfiniteSum.Real
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.NormCoeff
+public import TauCeti.NumberTheory.LSeries.Conjugate
 
 /-!
 # Regrouping an ideal-indexed Dirichlet series by absolute norm
@@ -205,6 +206,23 @@ theorem LSeries_normCoeff {f : IdealArithmeticFunction K} {s : ℂ}
     (h : Summable (idealTerm K f s)) :
     LSeries (normCoeff K f) s = ∑' I, idealTerm K f s I :=
   LSeriesHasSum.LSeries_eq (regroupByNorm K h.hasSum)
+
+/-- Conjugation reflects the norm-regrouped Dirichlet series of any ideal arithmetic function.
+The equality also holds at nonsummable arguments. -/
+@[simp]
+theorem LSeries_normCoeff_star (f : IdealArithmeticFunction K) (s : ℂ) :
+    LSeries (normCoeff K (star f)) ((starRingEnd ℂ) s) = star (LSeries (normCoeff K f) s) := by
+  rw [← LSeries.LSeries_star]
+  exact LSeries_congr (fun _ ↦ normCoeff_star_apply K f _) _
+
+/-- Conjugation preserves absolute convergence of the norm-regrouped Dirichlet series after
+reflection of the argument. -/
+@[simp]
+theorem LSeriesSummable_normCoeff_star_iff (f : IdealArithmeticFunction K) (s : ℂ) :
+    LSeriesSummable (normCoeff K (star f)) ((starRingEnd ℂ) s) ↔
+      LSeriesSummable (normCoeff K f) s := by
+  rw [LSeriesSummable_congr ((starRingEnd ℂ) s) (fun _ ↦ normCoeff_star_apply K f _)]
+  exact LSeries.LSeriesSummable_star_iff _ _
 
 /-! ### The ideal-indexed abscissa of absolute convergence -/
 

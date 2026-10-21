@@ -213,10 +213,8 @@ variable {G : Type} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 theorem isMulCommutative_gal_ofOpenNormal {V : OpenNormalSubgroup G}
     (hV : V.IsAbelianClassFieldLayer) :
     IsMulCommutative (NormalLayer.ofOpenNormal V).Gal := by
-  apply Function.Surjective.isMulCommutative
-    (f := (NormalLayer.galOfOpenNormalEquiv V).symm)
-    (NormalLayer.galOfOpenNormalEquiv V).symm.surjective
-  exact V.isAbelianClassFieldLayer_iff_isMulCommutative.1 hV
+  have := V.isAbelianClassFieldLayer_iff_isMulCommutative.1 hV
+  exact (NormalLayer.galOfOpenNormalEquiv V).symm.surjective.isMulCommutative
 
 open scoped IsMulCommutative in
 /-- For an abelian layer, the canonical quotient map to its algebraic abelianization is an

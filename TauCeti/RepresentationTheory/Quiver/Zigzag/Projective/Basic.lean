@@ -45,10 +45,8 @@ of paths which begin at `i`.
 
 ## References
 
-This is the vertex-projective part of Layer 3 of
-`TauCetiRoadmap/ZigzagPreprojective/README.md`.  See Huerfano--Khovanov, *A category for the
-adjoint representation*, Section 3, and Ehrig--Tubbenhauer, *Algebraic properties of zigzag
-algebras*, Section 2.
+See Huerfano--Khovanov, *A category for the adjoint representation*, Section 3, and
+Ehrig--Tubbenhauer, *Algebraic properties of zigzag algebras*, Section 2.
 -/
 
 public section

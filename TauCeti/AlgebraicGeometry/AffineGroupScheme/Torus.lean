@@ -41,8 +41,7 @@ coordinate and scheme models.
 * J. S. Milne, *Algebraic Groups* (2017), Definitions 12.14 and 12.17 and Corollary 12.41.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Chapter 2.
 
-This supplies the scheme-side torus model and its reductivity theorem for Layers 4 and 6 of the
-ReductiveGroups roadmap.
+This supplies the scheme-side torus model and its reductivity theorem.
 -/
 
 public section

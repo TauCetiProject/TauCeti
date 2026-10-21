@@ -52,6 +52,11 @@ the empty subfan. Sufficiency holds without it.
   then the analytic map is proper.
 * `TauCeti.Toric.FanHom.isProperMap_analyticMap_iff`: the cone-by-cone properness criterion for a
   nonempty source fan.
+* `TauCeti.Toric.FanHom.isProperMap_analyticMap_of_isEmpty` and
+  `TauCeti.Toric.FanHom.not_forall_preimage_realMap_eq_iUnion_of_isEmpty`: a map out of a fan with
+  no cones is proper but, for a nonempty target, fails the support condition.
+* `TauCeti.Toric.FanHom.isProperMap_analyticMap_iff_isEmpty_or`: the criterion for an arbitrary
+  source fan.
 
 ## References
 
@@ -193,8 +198,6 @@ theorem isProperMap_analyticMap_of_preimage_realMap_subset
     ⟨(f.analyticMap hΦ hΨ).hom.continuous, fun K hK ↦ ?_⟩
   rcases isEmpty_or_nonempty Φ.cones with hΦ0 | hΦ0
   · -- The realization of the empty fan is empty.
-    have : IsEmpty (Φ.analyticRealization hΦ) :=
-      ⟨fun x ↦ isEmptyElim (Φ.exists_analyticAffineChartι_apply_eq hΦ x).choose⟩
     exact (Set.toFinite _).isCompact
   -- Cover `K` by finitely many parts of charts where the generators are bounded.
   let U : Ψ.cones × ℕ → Set (Ψ.analyticRealization hΨ) := fun p ↦
@@ -224,12 +227,46 @@ theorem isProperMap_analyticMap_of_preimage_realMap_subset
 with nonempty source is proper exactly when, for every target cone `τ`, the inverse image of `τ`
 under the real-linear map is the union of the source cones mapped into `τ`. The nonemptiness
 hypothesis is necessary: the inclusion of the empty subfan is proper, but `0` lies in the inverse
-image of every cone and in no cone of the empty fan. -/
+image of every cone and in no cone of the empty fan. See
+`TauCeti.Toric.FanHom.isProperMap_analyticMap_iff_isEmpty_or` for the form without it. -/
 theorem isProperMap_analyticMap_iff (hΦ0 : Nonempty Φ.cones) :
     IsProperMap (f.analyticMap hΦ hΨ) ↔ ∀ τ : Ψ.cones, f.realMap ⁻¹' (τ.1 : Set V') =
       ⋃ σ : Φ.cones, ⋃ (_ : σ.1.map f.realMap ≤ τ.1), (σ.1 : Set V) :=
   ⟨fun hf ↦ f.preimage_realMap_eq_iUnion_of_isProperMap hΦ hΨ hΦ0 hf, fun h ↦
     f.isProperMap_analyticMap_of_preimage_realMap_subset hΦ hΨ fun τ ↦ (h τ).subset⟩
+
+/-- The analytic map out of the realization of a fan with no cones is proper, since that
+realization is empty. -/
+theorem isProperMap_analyticMap_of_isEmpty [IsEmpty Φ.cones] :
+    IsProperMap (f.analyticMap hΦ hΨ) :=
+  (f.analyticMap hΦ hΨ).hom.continuous.isProperMap
+
+/-- A morphism from a fan with no cones to a nonempty fan fails the cone-by-cone support
+condition: `0` lies in the inverse image of every target cone, and in no source cone. Together
+with `TauCeti.Toric.FanHom.isProperMap_analyticMap_of_isEmpty`, this shows that the
+nonemptiness hypothesis of `TauCeti.Toric.FanHom.isProperMap_analyticMap_iff` cannot be dropped;
+the inclusion of the empty subfan of a nonempty fan is such a morphism. -/
+theorem not_forall_preimage_realMap_eq_iUnion_of_isEmpty [IsEmpty Φ.cones]
+    (hΨ0 : Nonempty Ψ.cones) :
+    ¬ ∀ τ : Ψ.cones, f.realMap ⁻¹' (τ.1 : Set V') =
+      ⋃ σ : Φ.cones, ⋃ (_ : σ.1.map f.realMap ≤ τ.1), (σ.1 : Set V) := fun h ↦ by
+  obtain ⟨τ⟩ := hΨ0
+  have h0 : (0 : V) ∈ f.realMap ⁻¹' (τ.1 : Set V') := by simp
+  rw [h τ] at h0
+  simp at h0
+
+/-- **The cone-by-cone properness criterion**, for an arbitrary source fan. The analytic map of
+a morphism of regular fans is proper exactly when the source fan has no cones or, for every target
+cone `τ`, the inverse image of `τ` under the real-linear map is the union of the source cones
+mapped into `τ`. By `TauCeti.Toric.FanHom.not_forall_preimage_realMap_eq_iUnion_of_isEmpty`, the
+first case cannot be absorbed into the second when the target fan is nonempty. -/
+theorem isProperMap_analyticMap_iff_isEmpty_or :
+    IsProperMap (f.analyticMap hΦ hΨ) ↔ IsEmpty Φ.cones ∨ ∀ τ : Ψ.cones,
+      f.realMap ⁻¹' (τ.1 : Set V') =
+        ⋃ σ : Φ.cones, ⋃ (_ : σ.1.map f.realMap ≤ τ.1), (σ.1 : Set V) := by
+  rcases isEmpty_or_nonempty Φ.cones with hΦ0 | hΦ0
+  · exact iff_of_true (f.isProperMap_analyticMap_of_isEmpty hΦ hΨ) (Or.inl hΦ0)
+  · rw [or_iff_right (not_isEmpty_of_nonempty _), f.isProperMap_analyticMap_iff hΦ hΨ hΦ0]
 
 end TauCeti.Toric.FanHom
 

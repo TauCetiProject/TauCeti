@@ -43,6 +43,7 @@ idele classes, from which the first fundamental inequality for cyclic extensions
 
 ## Main definitions
 
+* `TauCeti.ClassFieldTheory.placeAbove`: a choice of a place of `L` above each place of `S`.
 * `TauCeti.ClassFieldTheory.finiteSIdelesTateCohomologyEquiv`: for `L/K` cyclic and unramified
   outside `S`, `H-hat^n(Gal(L/K), I_{L,S}^f) ≃ ∏_{v ∈ S} H-hat^n(Gal(L/K), (K_v ⊗[K] L)ˣ)`.
 
@@ -75,6 +76,16 @@ local notation "𝒪" => _root_.NumberField.RingOfIntegers
 
 variable {K : Type} [Field K] [NumberField K] {L : Type} [Field L] [NumberField L] [Algebra K L]
   [IsGalois K L] [IsCyclic (L ≃ₐ[K] L)]
+
+omit [IsGalois K L] [IsCyclic (L ≃ₐ[K] L)] in
+variable (L) in
+/-- A choice of a place of `L` above each place of a finite set `S` of finite places of `K`. -/
+def placeAbove (S : Finset (HeightOneSpectrum (𝒪 K))) (v : S) :
+    {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.1.asIdeal} :=
+  have hw : ∃ w : HeightOneSpectrum (𝒪 L), w.asIdeal.LiesOver v.1.asIdeal := by
+    obtain ⟨w, hw⟩ := under_surjective (𝒪 K) (𝒪 L) v.1
+    exact ⟨w, ⟨congrArg HeightOneSpectrum.asIdeal hw.symm⟩⟩
+  ⟨hw.choose, hw.choose_spec⟩
 
 /-- The integral semi-local units at a place `v ∉ S` have no Tate cohomology when `L/K` is
 unramified outside `S`. -/
@@ -172,13 +183,9 @@ theorem herbrandQuotient_finiteSIdelesRep_ne_zero (S : Finset (HeightOneSpectrum
     (hS : ∀ w : HeightOneSpectrum (𝒪 L), w.under (𝒪 K) ∉ S →
       Algebra.IsUnramifiedAt (𝒪 K) w.asIdeal) :
     TateCohomology.herbrandQuotient (finiteSIdelesRep L S) ≠ 0 := by
-  have hw (v : S) : ∃ w : HeightOneSpectrum (𝒪 L), w.asIdeal.LiesOver v.1.asIdeal := by
-    obtain ⟨w, hw⟩ := under_surjective (𝒪 K) (𝒪 L) v.1
-    exact ⟨w, ⟨congrArg HeightOneSpectrum.asIdeal hw.symm⟩⟩
-  rw [herbrandQuotient_finiteSIdelesRep S hS fun v ↦ ⟨(hw v).choose, (hw v).choose_spec⟩,
-    Finset.prod_ne_zero_iff]
+  rw [herbrandQuotient_finiteSIdelesRep S hS (placeAbove L S), Finset.prod_ne_zero_iff]
   intro v _
-  have := (hw v).choose_spec
+  have := (placeAbove L S v).2
   rw [Nat.cast_ne_zero, ← card_stabilizer_eq_finrank_adicCompletion v.1]
   exact Nat.card_pos.ne'
 

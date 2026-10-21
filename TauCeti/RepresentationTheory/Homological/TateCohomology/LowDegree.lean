@@ -70,7 +70,7 @@ variable {R G : Type u} [CommRing R] [Group G] [Fintype G]
 
 /-- The norm square shared by the degree-zero and degree `-1` short complexes. -/
 private theorem chainsIso₀_hom_comp_norm (M : Rep R G) :
-    (chainsIso₀ M).hom ≫ M.norm.toModuleCatHom = M.tateNorm ≫ (cochainsIso₀ M).hom := by
+    (chainsIso₀ M).hom ≫ M.norm.asHom.toModuleCatHom = M.tateNorm ≫ (cochainsIso₀ M).hom := by
   simp only [Rep.tateNorm, Category.assoc, Iso.inv_hom_id, Category.comp_id]
 
 namespace Zero
@@ -79,7 +79,7 @@ variable (M : Rep R G)
 
 /-- The concrete short complex whose homology is degree-zero Tate cohomology. -/
 private def shortComplex : ShortComplex (ModuleCat R) :=
-  .mk M.norm.toModuleCatHom (d₀₁ M) (norm_comp_d_eq_zero M)
+  .mk M.norm.asHom.toModuleCatHom (d₀₁ M) (norm_comp_d_eq_zero M)
 
 /-- The degree-zero part of the Tate complex is the norm-to-coboundary short complex. -/
 private def isoShortComplex' : (tateComplex M).sc' (-1) 0 1 ≅ shortComplex M :=
@@ -123,7 +123,7 @@ private def homologyIsoNormQuotient :
     · rintro ⟨_, ⟨y, rfl⟩, hy⟩
       exact ⟨y, congr(Subtype.val $hy)⟩
     · rintro ⟨y, rfl⟩
-      exact ⟨⟨M.norm.hom y, norm_comp_d_eq_zero_apply _ y⟩, ⟨_, rfl⟩, rfl⟩
+      exact ⟨⟨M.norm.asHom.hom y, norm_comp_d_eq_zero_apply _ y⟩, ⟨_, rfl⟩, rfl⟩
 
 @[reassoc]
 private theorem cyclesIso_inv_comp_homologyπ_comp_homologyIso_hom :
@@ -263,7 +263,7 @@ variable (M : Rep R G)
 
 /-- The concrete short complex computing degree `-1` Tate cohomology. -/
 private def shortComplex : ShortComplex (ModuleCat R) :=
-  .mk (d₁₀ M) M.norm.toModuleCatHom (Rep.comp_eq_zero M)
+  .mk (d₁₀ M) M.norm.asHom.toModuleCatHom (Rep.comp_eq_zero M)
 
 /-- The degree `-1` part of the Tate complex is the augmentation-to-norm short complex. -/
 private def isoShortComplex : (tateComplex M).sc (-1) ≅ shortComplex M :=

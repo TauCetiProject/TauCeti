@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.NumberField.Global.Orders.Quadratic
+public import TauCeti.NumberTheory.NumberField.Global.Orders.Quadratic.Basic
 public import Mathlib.RingTheory.DedekindDomain.Different
 import TauCeti.NumberTheory.NumberField.Global.Orders.Lattice
 import TauCeti.RingTheory.FractionalIdeal.Operations

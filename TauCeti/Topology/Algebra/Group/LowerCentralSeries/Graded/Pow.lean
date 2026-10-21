@@ -220,8 +220,7 @@ it is the class of the commutator `⁅g ^ (p ^ j), g⁆ = 1`. -/
 theorem gradedBracket_gradedPowIter_self (j : ℕ) (x : gradedPiece p G 0) :
     gradedBracket p G j 0 (gradedPowIter p G j x) x = 0 := by
   obtain ⟨g, rfl⟩ := gradedMkZero_surjective x
-  rw [gradedPowIter_gradedMkZero, ← gradedMk_zero ⟨g, mem_pLowerCentralSeries_zero p g⟩,
-    gradedBracket_gradedMk, gradedMk_eq_zero_iff]
+  rw [gradedPowIter_gradedMkZero, gradedBracket_gradedMk_gradedMkZero, gradedMk_eq_zero_iff]
   simp only [commutatorElement_eq_one_iff_commute.mpr (Commute.pow_self g _)]
   exact one_mem _
 

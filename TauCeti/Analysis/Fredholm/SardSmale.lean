@@ -10,10 +10,12 @@ public import Mathlib.Analysis.Normed.Operator.Fredholm.Basic
 public import Mathlib.Topology.GDelta.Basic
 import Mathlib.Topology.Baire.Lemmas
 import Mathlib.Topology.Maps.Proper.CompactlyGenerated
+import TauCeti.Algebra.Group.Prod
 import TauCeti.Analysis.Calculus.Sard.OutermostStratum
 import TauCeti.Analysis.Fredholm.NormalForm
 import TauCeti.Analysis.Fredholm.Proper
 import TauCeti.Analysis.Normed.Operator.Surjective
+import TauCeti.Topology.Constructions.SumProd
 
 /-!
 # The Sard--Smale theorem
@@ -50,7 +52,7 @@ derivative at `Φ.symm y` is surjective exactly when the derivative of the *slic
 `pkg.decCodom.X₀ = coker`. Finite-dimensional Morse--Sard
 (`TauCeti.interior_image_criticalPoints_eq_empty`) applies to each slice, so the image of the
 critical set meets every fibre of the product `pkg.decCodom.X₁ × pkg.decCodom.X₀` in a set with
-empty interior. A set whose fibres over the second factor all have empty interior has empty
+empty interior. A set whose vertical fibres all have empty interior has empty
 interior, because an interior point would supply a whole box; this is where the infinite
 dimension of the first factor is harmless.
 
@@ -97,61 +99,6 @@ namespace TauCeti
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
-
-/-- A subset of a product has empty interior as soon as all of its vertical fibres do: an
-interior point of the subset would supply a whole box, whose second factor is an open subset of a
-fibre. This is the step of the Sard--Smale argument where the infinite dimension of the first
-factor is harmless. -/
-private theorem interior_eq_empty_of_forall_interior_fiber_eq_empty {X Z : Type*}
-    [TopologicalSpace X] [TopologicalSpace Z] {A : Set (X × Z)}
-    (h : ∀ x : X, interior {z | (x, z) ∈ A} = ∅) : interior A = ∅ := by
-  rw [Set.eq_empty_iff_forall_notMem]
-  rintro ⟨x, z⟩ hxz
-  have hopen : IsOpen {z' : Z | (x, z') ∈ interior A} := isOpen_interior.preimage (by fun_prop)
-  have hsub : {z' : Z | (x, z') ∈ interior A} ⊆ {z' : Z | (x, z') ∈ A} :=
-    fun _ hz' ↦ interior_subset (s := A) hz'
-  have hz : z ∈ interior {z' : Z | (x, z') ∈ A} := interior_maximal hsub hopen hxz
-  rw [h x] at hz
-  exact hz
-
-/-- Surjectivity of `w ↦ w.1 + D w`, where `D` takes values in a topological complement of the
-subspace `w.1` ranges over, is decided by the partial map `z ↦ D (0, z)`: the first coordinate is
-free, so only the complementary direction can obstruct. This is the linear core of the
-Lyapunov--Schmidt reduction of surjectivity to a finite-dimensional condition. -/
-private theorem surjective_add_coe_iff {X₁ Y₀ : Submodule ℝ F} (h : Submodule.IsTopCompl X₁ Y₀)
-    {Z : Type*} [NormedAddCommGroup Z] [NormedSpace ℝ Z] (D : (X₁ × Z) →L[ℝ] Y₀) :
-    Surjective (fun w : X₁ × Z ↦ ((w.1 : F) + (D w : F))) ↔ Surjective fun z : Z ↦ D (0, z) := by
-  have hu : ∀ (w₁ : X₁) (w₂ : Z), ((w₁ : F) + (D (w₁, w₂) : F)) =
-      Submodule.prodEquivOfIsTopCompl X₁ Y₀ h (w₁, D (w₁, w₂)) :=
-    fun w₁ w₂ ↦ (Submodule.prodEquivOfIsTopCompl_apply h (w₁, D (w₁, w₂))).symm
-  have hsplit : ∀ (w₁ : X₁) (w₂ : Z), D (w₁, w₂) = D (w₁, 0) + D (0, w₂) := by
-    intro w₁ w₂
-    rw [← map_add]
-    congr 1
-    simp
-  constructor
-  · intro hs v
-    obtain ⟨⟨w₁, w₂⟩, hw⟩ := hs (Submodule.prodEquivOfIsTopCompl X₁ Y₀ h (0, v))
-    have hw' : ((w₁ : F) + (D (w₁, w₂) : F)) =
-        Submodule.prodEquivOfIsTopCompl X₁ Y₀ h (0, v) := hw
-    rw [hu w₁ w₂] at hw'
-    have hpair := (Submodule.prodEquivOfIsTopCompl X₁ Y₀ h).injective hw'
-    rw [Prod.mk.injEq] at hpair
-    exact ⟨w₂, by rw [← hpair.2, hpair.1]⟩
-  · intro hs y
-    obtain ⟨⟨p₁, p₂⟩, hp⟩ := (Submodule.prodEquivOfIsTopCompl X₁ Y₀ h).surjective y
-    obtain ⟨z, hz⟩ := hs (p₂ - D (p₁, 0))
-    have hz' : D (0, z) = p₂ - D (p₁, 0) := hz
-    -- The goal is the value of the displayed function at `(p₁, z)`; state that value as a typed
-    -- `have`, which is rewritable, and let `exact` cross the beta reduction.
-    have hval : ((p₁ : F) + (D (p₁, z) : F)) = y := by
-      rw [hu p₁ z, ← hp]
-      congr 1
-      rw [Prod.mk.injEq]
-      refine ⟨rfl, ?_⟩
-      rw [hsplit, hz']
-      abel
-    exact ⟨(p₁, z), hval⟩
 
 section Local
 
@@ -213,8 +160,16 @@ private theorem surjective_fderiv_iff_slice (pkg : ContinuousLinearMap.FredholmP
       ((fderiv ℝ q y).comp (ContinuousLinearMap.inr ℝ pkg.decCodom.X₁ pkg.decDom.X₀)) y.2 := by
     rw [hqdef]
     exact pkg.hasFDerivAt_obstructionSlice hT hq
-  rw [hstep₁, hufun, surjective_add_coe_iff pkg.decCodom.isTopCompl, hslice.fderiv]
-  simp [ContinuousLinearMap.coe_comp, Function.comp_def]
+  rw [hstep₁, hufun, hslice.fderiv]
+  -- Identify the codomain with its algebraic splitting, then apply the triangular-map criterion.
+  let D := (fderiv ℝ q y).toLinearMap.toAddMonoidHom
+  simpa only [D, Function.comp_def, Submodule.coe_prodEquivOfIsCompl', AddMonoidHom.prod_apply,
+    AddMonoidHom.coe_fst, AddMonoidHom.coe_comp, AddMonoidHom.inr_apply,
+    LinearMap.toAddMonoidHom_coe, ContinuousLinearMap.coe_coe, ContinuousLinearMap.coe_comp,
+    ContinuousLinearMap.inr_apply] using
+    (EquivLike.comp_surjective ((AddMonoidHom.fst _ _).prod D)
+      (Submodule.prodEquivOfIsCompl _ _ pkg.decCodom.isTopCompl.isCompl)).trans
+      D.surjective_fst_prod_iff
 
 /-- **Sard--Smale, locally.** Near a point where a sufficiently smooth map has Fredholm
 derivative there is a neighbourhood on which the critical values form a closed nowhere dense set.
@@ -328,14 +283,13 @@ theorem exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints
       ({z | (p.1, z) ∈ V} ∩
         {z | ¬ Surjective (fderiv ℝ (pkg.obstructionSlice hT p.1) z)})} with hAdef
   have hAint : interior A = ∅ := by
-    refine interior_eq_empty_of_forall_interior_fiber_eq_empty fun p₁ ↦ ?_
+    refine interior_eq_empty_of_forall_interior_preimage_prodMk_eq_empty fun p₁ ↦ ?_
     -- The fibre of `A` over `p₁` is the image of the critical set of the slice at `p₁`.
-    have hfiber : {z | (p₁, z) ∈ A} = pkg.obstructionSlice hT p₁ ''
+    have hfiber : Prod.mk p₁ ⁻¹' A = pkg.obstructionSlice hT p₁ ''
         ({z | (p₁, z) ∈ V} ∩
           {z | ¬ Surjective (fderiv ℝ (pkg.obstructionSlice hT p₁) z)}) := by
       rw [hAdef]
-      ext z
-      simp only [Set.mem_ofPred_eq]
+      simp only [preimage_ofPred_eq, ofPred_mem_eq]
     rw [hfiber]
     have hUC : ∀ z ∈ {z : pkg.decDom.X₀ | (p₁, z) ∈ V},
         ContDiffAt ℝ (k : ℕ∞ω) (pkg.obstructionSlice hT p₁) z := by

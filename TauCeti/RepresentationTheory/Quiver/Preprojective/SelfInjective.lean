@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Injective
-public import TauCeti.RepresentationTheory.Quiver.Preprojective.KoszulComplex
+public import TauCeti.RepresentationTheory.Quiver.Preprojective.Koszul.Complex
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Opposite
 
 /-!

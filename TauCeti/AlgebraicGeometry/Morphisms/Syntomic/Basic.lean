@@ -15,7 +15,8 @@ public import Mathlib.AlgebraicGeometry.Morphisms.FinitePresentation
 
 A syntomic morphism of relative dimension `n` is locally on affine charts standard syntomic
 of relative dimension `n`. These morphisms are flat and locally finitely presented, are local
-on both source and target, and are stable under arbitrary base change. They have relative
+on both source and target, and are stable under arbitrary base change. Relative dimensions
+add under composition, and syntomic morphisms of relative dimension `n` have relative
 dimension at most `n`. The affine criterion connects the scheme property to the existing
 algebraic complete-intersection presentations.
 
@@ -113,6 +114,32 @@ instance (priority := 900) [IsOpenImmersion f] : SyntomicOfRelativeDimension 0 f
   HasRingHomProperty.of_isOpenImmersion fun R _ ↦
     RingHom.locally_of (isStandardSyntomicOfRelativeDimension_respectsIso 0) _
       (IsStandardSyntomicOfRelativeDimension.id R)
+
+/-- If `f` is syntomic of relative dimension `n` and `g` is syntomic of relative dimension `m`,
+then `f ≫ g` is syntomic of relative dimension `n + m`. -/
+instance syntomicOfRelativeDimension_comp {m : ℕ} {Z : Scheme.{u}} (g : Y ⟶ Z)
+    [hf : SyntomicOfRelativeDimension n f] [hg : SyntomicOfRelativeDimension m g] :
+    SyntomicOfRelativeDimension (n + m) (f ≫ g) where
+  exists_isStandardSyntomicOfRelativeDimension x := by
+    obtain ⟨U₂, V₂, hfx₂, e₂, hf₂⟩ := hg.exists_isStandardSyntomicOfRelativeDimension (f x)
+    obtain ⟨U₁, V₁, hx₁, e₁, hf₁⟩ := hf.exists_isStandardSyntomicOfRelativeDimension x
+    -- Shrink the chart of `f` to basic opens `D(s) ⊆ V₁` lying over `D(r) ⊆ V₂`.
+    obtain ⟨r, s, hxs, ers, hfrs⟩ := exists_basicOpen_le_appLE_of_appLE_of_isAffine
+      (isStandardSyntomicOfRelativeDimension_stableUnderCompositionWithLocalizationAway n).right
+      (isStandardSyntomicOfRelativeDimension_isStableUnderBaseChange n).localizationPreserves.away
+      x V₂ U₁ V₁ V₁ hx₁ hx₁ e₁ hf₁ hfx₂
+    have e : X.basicOpen s ≤ (f ≫ g) ⁻¹ᵁ U₂ :=
+      ers.trans <| f.preimage_mono <| (Y.basicOpen_le r).trans e₂
+    have heq : (f ≫ g).appLE U₂ (X.basicOpen s) e = g.appLE U₂ V₂ e₂ ≫
+        CommRingCat.ofHom (algebraMap Γ(Y, V₂) Γ(Y, Y.basicOpen r)) ≫
+          f.appLE (Y.basicOpen r) (X.basicOpen s) ers := by
+      rw [RingHom.algebraMap_toAlgebra, CommRingCat.ofHom_hom, g.appLE_map_assoc,
+        Scheme.Hom.appLE_comp_appLE]
+    refine ⟨U₂, ⟨X.basicOpen s, V₁.2.basicOpen s⟩, hxs, e, heq ▸ ?_⟩
+    refine IsStandardSyntomicOfRelativeDimension.comp ?_ hf₂
+    have : IsLocalization.Away r Γ(Y, Y.basicOpen r) := V₂.2.isLocalization_basicOpen r
+    exact (isStandardSyntomicOfRelativeDimension_stableUnderCompositionWithLocalizationAway n).left
+      _ r _ hfrs
 
 /-- Syntomic morphisms are flat. -/
 theorem SyntomicOfRelativeDimension.flat [SyntomicOfRelativeDimension n f] : Flat f := by

@@ -389,7 +389,6 @@ private theorem reflectRepMapApp_self
   · rename_i h
     exact (h rfl).elim
 
-@[simp]
 private theorem reflectRepMapApp_of_ne
     {M N : QuiverRep.{u, v, w, max v w x} k Q} (η : M ⟶ N) {i : Q} (hi : IsSink i)
     {j : Reflect Q i} (hj : j ≠ i) :

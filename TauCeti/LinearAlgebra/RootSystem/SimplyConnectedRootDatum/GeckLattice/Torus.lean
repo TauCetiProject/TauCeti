@@ -25,11 +25,9 @@ an arbitrary Dynkin type. The spanning condition is known for the three unimodul
 types `E₈`, `F₄`, and `G₂`, where the root and weight lattices coincide, and this file records
 the resulting closed immersions explicitly.
 
-This supplies the intended closed split-torus component of a future pinning for those
-three types. Proving that it is maximal, constructing a compatible Borel, identifying the carrier
-as split reductive with the stated root datum, and constructing full-weight admissible lattices for
-the remaining types are separate Layer 9 steps in the ReductiveGroups roadmap. The resulting
-completed carriers are consumed by milestone L0 of the CFSGStatement roadmap.
+This supplies a candidate for the closed split-torus component of a pinning for those three types.
+Its maximality, a compatible Borel, the identification of the carrier as split reductive with the
+stated root datum, and full-weight admissible lattices for the remaining types are not treated here.
 
 ## Main declarations
 

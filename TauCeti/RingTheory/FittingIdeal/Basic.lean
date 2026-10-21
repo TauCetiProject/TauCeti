@@ -10,7 +10,7 @@ public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
 public import Mathlib.RingTheory.Finiteness.Cardinality
 public import Mathlib.RingTheory.Finiteness.Prod
-public import TauCeti.LinearAlgebra.Determinant
+public import TauCeti.LinearAlgebra.Determinant.Basic
 
 /-!
 # Fitting ideals

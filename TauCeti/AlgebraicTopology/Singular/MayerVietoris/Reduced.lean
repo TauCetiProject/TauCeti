@@ -210,7 +210,7 @@ theorem eq_zero_of_comp_reducedSingularHomologyFunctor_map_inclusion {Y : TopCat
     rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply]
     dsimp only [iU, iUV]
     rw [isoOfHomeo_hom, isoOfHomeo_hom]
-    simp only [ConcreteCategory.hom_ofHom, ContinuousMap.coe_coe,
+    simp only [ConcreteCategory.hom_ofHom, ContinuousMap.coe_ofClass,
       IsEmbedding.homeomorphOfSubsetRange_apply_coe, ContinuousMap.inclusion_apply_coe, U, V, eU]
     -- `U ∩ V` is `Subtype.val ⁻¹' (A ∩ B)` by `Set.preimage_inter`, which holds by definition.
     exact (IsEmbedding.homeomorphOfSubsetRange_apply_coe (s := A ∩ B) _ _ x).symm
@@ -220,7 +220,7 @@ theorem eq_zero_of_comp_reducedSingularHomologyFunctor_map_inclusion {Y : TopCat
     rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply]
     dsimp only [iV, iUV]
     rw [isoOfHomeo_hom, isoOfHomeo_hom]
-    simp only [ConcreteCategory.hom_ofHom, ContinuousMap.coe_coe,
+    simp only [ConcreteCategory.hom_ofHom, ContinuousMap.coe_ofClass,
       IsEmbedding.homeomorphOfSubsetRange_apply_coe, ContinuousMap.inclusion_apply_coe, U, V, eV]
     -- `U ∩ V` is `Subtype.val ⁻¹' (A ∩ B)` by `Set.preimage_inter`, which holds by definition.
     exact (IsEmbedding.homeomorphOfSubsetRange_apply_coe (s := A ∩ B) _ _ x).symm

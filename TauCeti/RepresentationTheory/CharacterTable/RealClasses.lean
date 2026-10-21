@@ -51,7 +51,6 @@ no irreducibility of the dual representation is needed as an input.
 
 ## References
 
-* [Character Theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md), Layer 7.
 * I. M. Isaacs, *Character Theory of Finite Groups* (1976), Theorem 6.32 and Problem 6.13.
 * J.-P. Serre, *Linear Representations of Finite Groups* (1977), §13.2.
 -/

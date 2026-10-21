@@ -22,6 +22,9 @@ The formulas are on the ambient coordinate spaces and agree with the actual `clo
 on its whole domain. The ambient complexes and the target vertex type may be infinite.
 Empty links are allowed: their stars consist only of the apex.
 
+The constructions below do not assert that a link map is PL; callers provide ambient formulas and
+their `IsPLOn` proofs.
+
 The construction factors through `TauCeti.coneMap`: remove the apex coordinate and record
 the remaining mass as height, then reinsert the target apex coordinate after coning the
 link formula. These two changes of coordinates are continuous affine maps.
@@ -46,35 +49,22 @@ namespace AbstractSimplicialComplex
 variable {ι κ : Type*} [DecidableEq ι] [DecidableEq κ]
   {K : AbstractSimplicialComplex ι} {L : AbstractSimplicialComplex κ} {v : ι} {w : κ}
 
-/-- Reinsert the target apex, whose coordinate is one minus the cone height. -/
-private def coneToStar (w : κ) : ((κ → ℝ) × ℝ) →ᴬ[ℝ] (κ → ℝ) :=
-  let apex : κ → ℝ := Pi.single w 1
-  let linear : ((κ → ℝ) × ℝ) →L[ℝ] (κ → ℝ) :=
-    ContinuousLinearMap.fst ℝ (κ → ℝ) ℝ -
-      (ContinuousLinearMap.snd ℝ (κ → ℝ) ℝ).smulRight apex
-  linear.toContinuousAffineMap + ContinuousAffineMap.const ℝ ((κ → ℝ) × ℝ) apex
-
-private theorem coneToStar_apply (w : κ) (p : (κ → ℝ) × ℝ) :
-    coneToStar w p = p.1 - p.2 • Pi.single w 1 + Pi.single w 1 := (rfl)
 
 
-private theorem coneToStar_coneMap_eq
+private theorem coneToJoin_coneMap_eq
     (f : geometricLink K v → geometricLink L w) (F : (ι → ℝ) → (κ → ℝ))
     (hF : ∀ y : geometricLink K v, F (y.1.1 : ι → ℝ) = (f y).1.1)
     (x : closedStarRealization K {v}) :
-    coneToStar w (coneMap F (starToCone v (x.1.1 : ι → ℝ))) =
+    coneToJoin (Pi.single w 1) (coneMap F (starToCone v (x.1.1 : ι → ℝ))) =
       ((closedStarMap f x).1.1 : κ → ℝ) := by
   by_cases hx : x.1.1 v < 1
   · rw [starToCone_of_lt x hx, coneMap_smul F _ (sub_pos.mpr hx).ne',
-      coneToStar_apply, hF]
+      coneToJoin_apply, hF]
     ext j
     rw [closedStarMap_apply_of_lt f x hx j]
     by_cases hj : j = w <;> simp [hj]
-  · rw [starToCone_of_not_lt x hx, coneMap_zero, coneToStar_apply]
-    have he : x.1 = vertex K v := (Realization.eq_vertex_iff K x.1 v).mpr
-      (le_antisymm (Realization.le_one K x.1 v) (not_lt.mp hx))
-    have hex : x = starApex K v := Subtype.ext (by simpa only [starApex_val] using he)
-    rw [hex, closedStarMap_starApex]
+  · rw [starToCone_of_not_lt x hx, coneMap_zero, coneToJoin_apply]
+    rw [eq_starApex_of_not_lt K v hx, closedStarMap_starApex]
     ext j
     simp [vertex_val, Finsupp.single_apply, Pi.single_apply, eq_comm]
 
@@ -96,10 +86,11 @@ theorem exists_isPiecewiseAffineOn_closedStarMap
     exact starToCone_mem x
   have hcone := hf.coneMap.comp
     (isPiecewiseAffineOn_continuousAffineMap (starToCone v) S) hin
-  have hout := (isPiecewiseAffineOn_continuousAffineMap (coneToStar w) univ).comp
-    hcone (mapsTo_univ _ _)
-  exact ⟨(coneToStar w) ∘ coneMap F ∘ (starToCone v), hout,
-    coneToStar_coneMap_eq f F hF⟩
+  have hout :=
+    (isPiecewiseAffineOn_continuousAffineMap (coneToJoin (Pi.single w 1)) univ).comp
+      hcone (mapsTo_univ _ _)
+  exact ⟨(coneToJoin (Pi.single w 1)) ∘ coneMap F ∘ (starToCone v), hout,
+    coneToJoin_coneMap_eq f F hF⟩
 
 /-- A PL coordinate formula on a geometric link extends to a PL coordinate formula on
 its entire closed star, including the apex, whenever the link is compact. Neither ambient
@@ -118,5 +109,35 @@ theorem exists_isPLOn_closedStarMap
   obtain ⟨G, hG, heq⟩ := exists_isPiecewiseAffineOn_closedStarMap f F hF
     (hf.isPiecewiseAffineOn_of_isCompact hcoord)
   exact ⟨G, hG.isPLOn, heq⟩
+
+variable {ν : Type*} [DecidableEq ν]
+  {N : AbstractSimplicialComplex ν} {u : ν}
+
+/-- Two piecewise-linear radial closed-star maps compose piecewise linearly.
+
+The returned ambient formula is piecewise linear on the source closed star and agrees there with
+the radial extension of `g ∘ f`. Only compactness of the source link is required.
+-/
+theorem exists_isPLOn_closedStarMap_comp
+    (hK : IsCompact (geometricLink K v))
+    (f : geometricLink K v → geometricLink L w)
+    (g : geometricLink L w → geometricLink N u)
+    (F : (ι → ℝ) → (κ → ℝ))
+    (hF : ∀ y : geometricLink K v, F (y.1.1 : ι → ℝ) = (f y).1.1)
+    (hFpl : IsPLOn F (range (fun y : geometricLink K v => (y.1.1 : ι → ℝ))))
+    (G : (κ → ℝ) → (ν → ℝ))
+    (hG : ∀ y : geometricLink L w, G (y.1.1 : κ → ℝ) = (g y).1.1)
+    (hGpl : IsPLOn G (range (fun y : geometricLink L w => (y.1.1 : κ → ℝ)))) :
+    ∃ H : (ι → ℝ) → (ν → ℝ),
+      IsPLOn H (range (fun x : closedStarRealization K {v} => (x.1.1 : ι → ℝ))) ∧
+        ∀ x : closedStarRealization K {v},
+          H (x.1.1 : ι → ℝ) = (closedStarMap (g ∘ f) x).1.1 := by
+  have hGF : IsPLOn (G ∘ F)
+      (range (fun y : geometricLink K v => (y.1.1 : ι → ℝ))) := by
+    apply hGpl.comp hFpl
+    rintro _ ⟨y, rfl⟩
+    exact ⟨f y, (hF y).symm⟩
+  exact exists_isPLOn_closedStarMap hK (g ∘ f) (G ∘ F)
+    (fun y => by simp [hF, hG]) hGF
 
 end AbstractSimplicialComplex

@@ -7,22 +7,34 @@ module
 
 public import Mathlib.Algebra.Group.Action.Defs
 public import Mathlib.Data.Finset.Basic
+public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.GroupTheory.GroupAction.Quotient
+import Mathlib.GroupTheory.QuotientGroup.Basic
 import Mathlib.Data.Set.Finite.Basic
 import Mathlib.Logic.Function.Iterate
 import Mathlib.Order.Preorder.Finite
 
 /-!
-# A descent principle for free actions
+# Free actions
+
+## A descent principle
 
 Let a monoid `G` act freely on `X`, and let `E, P ⊆ G` with `1 ∈ P` be such that `e * p ∈ P` and
 `e * p ≠ 1` for all `e ∈ E` and `p ∈ P`. Then a finite subset `s ⊆ X` in which every point is
 moved back into `s` by some element of `E` is empty: following such moves from a point of `s`,
 some point must return to itself under a product `e * p ≠ 1`, which freeness forbids.
 
+## Counting
+
+If a group `G` acts freely on `X`, every orbit is a copy of `G`, so `Nat.card G` divides
+`Nat.card X`.
+
 ## Main results
 
 * `TauCeti.MulAction.eq_empty_of_forall_exists_smul_mem`: the descent principle.
+* `TauCeti.MulAction.natCard_dvd_natCard_of_isCancelSMul`: the order of a group acting freely
+  divides the number of points.
 
 ## References
 
@@ -65,5 +77,26 @@ theorem eq_empty_of_forall_exists_smul_mem [IsCancelSMul G X] {E P : Set G} (hP 
   refine (hE _ (he _ hmem) p hp).2 (IsCancelSMul.eq_one_of_smul (x := f^[i] x) ?_)
   rw [mul_smul, ← hpx]
   exact heq.symm
+
+open _root_.MulAction in
+/-- **The order of a group acting freely divides the number of points**: every orbit of a free
+action of `G` is a copy of `G`. No finiteness is needed, as `Nat.card` vanishes on infinite types,
+and a free action on a nonempty finite type is by a finite group. -/
+theorem natCard_dvd_natCard_of_isCancelSMul {G X : Type*} [Group G] [MulAction G X]
+    [IsCancelSMul G X] : Nat.card G ∣ Nat.card X := by
+  classical
+  rcases finite_or_infinite X with hX | hX
+  swap
+  · simp
+  rcases isEmpty_or_nonempty X with hX | ⟨⟨x⟩⟩
+  · simp
+  have : Finite G := .of_injective (· • x) fun _ _ ↦ IsCancelSMul.right_cancel _ _ x
+  let Ω := orbitRel.Quotient G X
+  let _ : Fintype Ω := Fintype.ofFinite Ω
+  let _ (ω : Ω) : Finite (G ⧸ stabilizer G ω.out) := Quotient.finite _
+  rw [Nat.card_congr (selfEquivSigmaOrbitsQuotientStabilizer G X), Nat.card_sigma]
+  simp_rw [IsCancelSMul.stabilizer_eq_bot]
+  rw [Nat.card_congr QuotientGroup.quotientBot.toEquiv]
+  simp
 
 end TauCeti.MulAction

@@ -116,9 +116,6 @@ theorem resK0_of_asModule (φ : H →* G) {V : Type u} [AddCommGroup V] [Module 
     Module.Finite.of_restrictScalars_finite k k[G] ρ.asModule
   let : Module.Finite k[H] (Representation.asModule (ρ.comp φ)) :=
     Module.Finite.of_restrictScalars_finite k k[H] (Representation.asModule (ρ.comp φ))
-  have hρ : ρ.asAlgebraHom.comp (MonoidAlgebra.mapDomainAlgHom k k φ) =
-      (Representation.asAlgebraHom (ρ.comp φ)) :=
-    MonoidAlgebra.algHom_ext (fun h ↦ by simp) (Subsingleton.elim _ _)
   rw [resK0_of]
   refine ExactK0.of_congr (ObjectProperty.isoMk _
     ((RingHom.finiteModulesRestrictScalarsCompιIso _ _).app _ ≪≫ LinearEquiv.toModuleIso
@@ -128,7 +125,7 @@ theorem resK0_of_asModule (φ : H →* G) {V : Type u} [AddCommGroup V] [Module 
         (M₂ := (Representation.asModule (ρ.comp φ))) (by rfl) fun a x ↦ ?_)))
   -- Both actions of `a : k[H]` on the underlying space `V` are the endomorphism
   -- `ρ.asAlgebraHom (mapDomain φ a) = (ρ ∘ φ).asAlgebraHom a`.
-  exact congrArg (fun T : Module.End k V ↦ T x) (AlgHom.congr_fun hρ a)
+  exact congrArg (fun T : Module.End k V ↦ T x) (MonoidAlgebra.lift_mapDomain ρ φ a)
 
 /-- Restriction sends the class of the trivial line to the class of the trivial line. -/
 -- Priority above `resK0_of_asModule`, whose left-hand side this one specializes.

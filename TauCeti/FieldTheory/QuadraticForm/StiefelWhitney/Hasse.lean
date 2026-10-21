@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.QuadraticForm.StiefelWhitney.Class
-public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Hasse
+public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Hasse.Basic
 
 /-!
 # The second Stiefel–Whitney class and the Hasse invariant

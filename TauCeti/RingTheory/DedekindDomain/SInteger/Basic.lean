@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.DedekindDomain.SInteger
-public import TauCeti.RingTheory.DedekindDomain.Ideal
+public import TauCeti.RingTheory.DedekindDomain.Ideal.Basic
 public import TauCeti.RingTheory.Localization.DenIdeal
 
 /-!
@@ -69,6 +69,11 @@ example : IsFractionRing (S.integer K) K := inferInstance
 `Set.integer` through `Subalgebra.copy`, but provides no membership lemma; this is it. -/
 @[simp] lemma _root_.Set.mem_integer_iff {x : K} :
     x ∈ S.integer K ↔ ∀ v ∉ S, v.valuation K x ≤ 1 := Iff.rfl
+
+/-- The integers outside the empty set of primes are exactly the images of the base ring. -/
+lemma _root_.Set.mem_integer_empty_iff {x : K} :
+    x ∈ (∅ : Set (HeightOneSpectrum R)).integer K ↔ ∃ a : R, algebraMap R K a = x := by
+  rw [integer_empty, Algebra.mem_bot, Set.mem_range]
 
 /-- The ring of `S`-integers is integrally closed: it is an intersection of valuation subrings
 of `K`, each of which is integrally closed in `K`. -/

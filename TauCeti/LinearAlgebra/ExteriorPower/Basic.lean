@@ -36,6 +36,8 @@ injective map embeds `⋀ⁿ V` with its binomial dimension.
   `Module.finrank R M < d`.
 * `exteriorPower.fromTensorPower_comp_toTensorPower`: antisymmetrizing and projecting back is
   multiplication by `n!`, whence `exteriorPower.toTensorPower_injective`.
+* `exteriorPower.ιMulti_ne_zero_iff`: over a field, an exterior product of vectors is nonzero
+  exactly when the vectors are linearly independent.
 * `exteriorPower.toTensorPower_injective_of_free`: antisymmetrization is injective for free
   modules in every characteristic, without factorial invertibility.
 * `exteriorPower.range_toTensorPower`: the image of the antisymmetrization is the image of the
@@ -46,6 +48,9 @@ injective map embeds `⋀ⁿ V` with its binomial dimension.
   under the map induced by `f` is the `n`th power of the degree-one image of `f`.
 * `TauCeti.exteriorPower.finrank_range_map`: over a field, the image of `⋀ⁿ V` under the map
   induced by an injective linear map has dimension `(dim V).choose n`.
+* `TauCeti.exteriorPower.mem_span_range_iff_ι_mul_ιMulti_eq_zero`: over a field, a vector lies in
+  the span of a linearly independent family exactly when its product with the exterior product of
+  the family vanishes.
 
 ## References
 
@@ -203,6 +208,26 @@ theorem range_toTensorPower :
 
 end FromTensorPower
 
+/-! ### Exterior products over a field -/
+
+section Field
+
+variable {K : Type*} [Field K] {V : Type*} [AddCommGroup V] [Module K V]
+
+/-- Over a field, the exterior product of `n` vectors is nonzero exactly when they are linearly
+independent. -/
+theorem ιMulti_ne_zero_iff {n : ℕ} (v : Fin n → V) :
+    ιMulti K n v ≠ 0 ↔ LinearIndependent K v := by
+  refine ⟨fun h ↦ by_contra fun hv ↦ h ((ιMulti K n).map_linearDependent v hv), fun hv ↦ ?_⟩
+  -- The only `n`-element subset of `Fin n` is enumerated by the identity.
+  have hs : (Finset.univ : Finset (Fin n)).card = n := by simp
+  have he : ⇑(Set.powersetCard.ofFinEmbEquiv.symm (Set.powersetCard.ofCard hs)) = id := by
+    rw [Set.powersetCard.ofFinEmbEquiv_symm_apply]
+    exact (Finset.orderEmbOfFin_unique hs (fun _ ↦ Finset.mem_univ _) strictMono_id).symm
+  simpa [ιMulti_family, he] using (ιMulti_family_linearIndependent_field (n := n) hv).ne_zero
+    (Set.powersetCard.ofCard hs)
+
+end Field
 
 end exteriorPower
 
@@ -234,6 +259,23 @@ theorem finrank_range_map {f : V →ₗ[K] W} (hf : Function.Injective f) (n : �
       (Module.finrank K V).choose n := by
   rw [LinearMap.finrank_range_of_inj (_root_.exteriorPower.map_injective_field hf),
     _root_.exteriorPower.finrank_eq]
+
+omit [Module.Finite K V] in
+/-- Over a field, a vector lies in the span of a linearly independent family of `n` vectors exactly
+when its product with the exterior product of the family vanishes in the exterior algebra. -/
+theorem mem_span_range_iff_ι_mul_ιMulti_eq_zero {n : ℕ} {v : Fin n → V}
+    (hv : LinearIndependent K v) (w : V) :
+    w ∈ Submodule.span K (Set.range v) ↔
+      _root_.ExteriorAlgebra.ι K w * (_root_.exteriorPower.ιMulti K n v : ExteriorAlgebra K V) =
+        0 := by
+  have hcons : w ∈ Submodule.span K (Set.range v) ↔
+      ¬LinearIndependent K (Fin.cons w v : Fin (n + 1) → V) := by
+    rw [linearIndependent_finCons]
+    tauto
+  rw [hcons, ← _root_.exteriorPower.ιMulti_ne_zero_iff, not_not, ← ZeroMemClass.coe_eq_zero,
+    _root_.exteriorPower.ιMulti_apply_coe, _root_.ExteriorAlgebra.ιMulti_succ_apply,
+    _root_.exteriorPower.ιMulti_apply_coe]
+  simp [Matrix.vecTail, Function.comp_def]
 
 end exteriorPower
 

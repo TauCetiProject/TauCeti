@@ -174,7 +174,9 @@ some divisor of degree two has a Riemann--Roch space of dimension at least two.
 
 The characteristic hypothesis is used only to make the index-two subextension separable, so the
 forward implication `TauCeti.IsHyperellipticFunctionField.exists_degree_eq_two_and_two_le_dim`
-and the subfield half of the converse hold without it. -/
+and the subfield half of the converse hold without it. The characterization in every
+characteristic, with separability as an extra condition, is
+`isHyperellipticFunctionField_iff_two_le_genus_and_exists_degree_eq_two_and_forall_isSeparable`. -/
 theorem isHyperellipticFunctionField_iff_two_le_genus_and_exists_degree_eq_two_and_two_le_dim
     (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F) (h2 : (2 : k) ≠ 0) :
     IsHyperellipticFunctionField k F ↔

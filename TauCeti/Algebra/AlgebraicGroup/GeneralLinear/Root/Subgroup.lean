@@ -170,7 +170,7 @@ noncomputable def rootSubgroupCoordinateMap (hij : i ≠ j) :
 /-- Precomposition by the root-subgroup coordinate morphism is the previously constructed
 natural map on convolution points. -/
 theorem mapPointsFunctor_rootSubgroupCoordinateMap (hij : i ≠ j) :
-    (CommHopfAlgCat.mapPointsFunctor.{u, u, u}
+    (CommHopfAlgCat.Hom.mapPointsFunctor.{u, u, u}
       (rootSubgroupCoordinateMap (R := R) (N := N) hij) :
       HopfAlgebra.pointsFunctor (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R) ⟶
         HopfAlgebra.pointsFunctor (R := R) (H := coordinateHopfAlgebra R N)) =
@@ -185,7 +185,7 @@ morphism is the elementary root subgroup homomorphism already constructed on poi
 theorem mapPointsFunctor_rootSubgroupCoordinateMap_app (hij : i ≠ j)
     (A : CommAlgCat.{u} R)
     (f : HopfAlgebra.points (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R) A) :
-    (CommHopfAlgCat.mapPointsFunctor
+    (CommHopfAlgCat.Hom.mapPointsFunctor
       (rootSubgroupCoordinateMap (R := R) (N := N) hij)).app A f =
       rootSubgroupPoints hij f := by
   rw [mapPointsFunctor_rootSubgroupCoordinateMap, rootSubgroupPointsMap_app]
@@ -203,7 +203,7 @@ theorem rootSubgroupCoordinateMap_apply_X (hij : i ≠ j) (a b : Fin N) :
   let A := AdditiveGroup.coordinateHopfAlgebra R
   let q : WithConv (A →ₐ[R] A) := toConv (AlgHom.id R A)
   let p : WithConv (coordinateHopfAlgebra R N →ₐ[R] A) :=
-    (CommHopfAlgCat.mapPointsFunctor
+    (CommHopfAlgCat.Hom.mapPointsFunctor
       (rootSubgroupCoordinateMap (R := R) (N := N) hij)).app (CommAlgCat.of R A) q
   have h := congrArg
     (fun p' : WithConv (coordinateHopfAlgebra R N →ₐ[R] A) ↦
@@ -215,7 +215,7 @@ theorem rootSubgroupCoordinateMap_apply_X (hij : i ≠ j) (a b : Fin N) :
   rw [pointsMulEquiv_rootSubgroupPoints, coe_transvectionUnit] at h
   rw [pointsMulEquiv_apply, pointToGeneralLinear_apply] at h
   simp only [Matrix.transvection, Matrix.add_apply] at h
-  rw [CommHopfAlgCat.mapPointsFunctor_app_apply_apply] at h
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply_apply] at h
   simp only [AdditiveGroup.toAdd_gaPointsMulEquiv] at h
   dsimp [q] at h
   exact h

@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.ZMod.IntUnitsPower
 public import Mathlib.NumberTheory.LegendreSymbol.ZModChar
 public import TauCeti.NumberTheory.Padics.PrincipalUnits
+import TauCeti.Algebra.Group.Units.Basic
 import TauCeti.NumberTheory.Padics.DyadicUnits
 
 /-!
@@ -40,6 +41,8 @@ for some unit `w`. Read in `ℚ_2`, a unit of `ℤ_2` is a square of `ℚ_2` exa
 
 * `TauCeti.serreEps_eq_one_iff`, `TauCeti.serreOmega_eq_one_iff` (and the `_eq_zero_iff`
   variants): the values of `ε` and `ω` in terms of `u mod 8`.
+* `TauCeti.serreEps_eq_natCast_div_two_of_coe_eq_natCast`: `ε(m) = (m − 1)/2 mod 2` for a
+  natural number `m` that is a unit of `ℤ_2`.
 * `TauCeti.serreEps_mul`, `TauCeti.serreOmega_mul`: `ε` and `ω` are homomorphisms to the
   additive group `ZMod 2`; `TauCeti.serreEps_pow`, `TauCeti.serreOmega_pow` are the power forms.
 * `TauCeti.coe_neg_one_uzpow_serreEps`, `TauCeti.coe_neg_one_uzpow_serreOmega`: `(-1) ^ ε(u)` is
@@ -48,7 +51,8 @@ for some unit `w`. Read in `ℚ_2`, a unit of `ℤ_2` is a square of `ℚ_2` exa
   `u ≡ 1 mod 8`.
 * `TauCeti.exists_eq_neg_one_pow_mul_five_pow_mul_sq`: `u = (-1) ^ ε(u) · 5 ^ ω(u) · w²`.
 * `TauCeti.isSquare_coe_iff_mem_unitsPrincipal_three`: a unit of `ℤ_2` is a square in `ℚ_2`
-  exactly when it lies in `U^(3) = 1 + 8ℤ_2`.
+  exactly when it lies in `U^(3) = 1 + 8ℤ_2`, and
+  `TauCeti.isSquare_iff_serreEps_eq_zero_and_serreOmega_eq_zero` exactly when `ε(u) = ω(u) = 0`.
 
 ## References
 
@@ -135,6 +139,23 @@ theorem serreEps_eq_zero_of_coe_eq_five {u : ℤ_[2]ˣ} (hu : (u : ℤ_[2]) = 5)
     serreEps u = 0 := by
   have h : ¬((5 : ZMod (2 ^ 3)) = 3 ∨ (5 : ZMod (2 ^ 3)) = 7) := by decide
   simp [serreEps, hu, map_ofNat, h]
+
+/-- `ε(m) = ⌊m/2⌋ mod 2` for a unit of `ℤ_2` that is a natural number `m`; as `m` is odd, this
+is Serre's `(m − 1)/2 mod 2`. -/
+theorem serreEps_eq_natCast_div_two_of_coe_eq_natCast {u : ℤ_[2]ˣ} {m : ℕ}
+    (hu : (u : ℤ_[2]) = m) :
+    serreEps u = ((m / 2 : ℕ) : ZMod 2) := by
+  have h8 : PadicInt.toZModPow 3 (u : ℤ_[2]) = ((m % 8 : ℕ) : ZMod (2 ^ 3)) := by
+    rw [hu, map_natCast, ZMod.natCast_mod]
+  have h2 : ((m / 2 : ℕ) : ZMod 2) = ((m % 8 / 2 : ℕ) : ZMod 2) := by
+    rw [show m / 2 = 2 * (2 * (m / 8)) + m % 8 / 2 by omega, Nat.cast_add, Nat.cast_mul,
+      ZMod.natCast_self, zero_mul, zero_add]
+  have hunit := exists_toZModPow_three_mul_eq_one u
+  rw [serreEps, h8, h2]
+  rw [h8] at hunit
+  have hr : m % 8 < 8 := Nat.mod_lt _ (by norm_num)
+  generalize m % 8 = r at hr hunit
+  interval_cases r <;> revert hunit <;> decide
 
 /-- `ω(5) = 1`, for the unit `5` of `ℤ_2`. -/
 theorem serreOmega_eq_one_of_coe_eq_five {u : ℤ_[2]ˣ} (hu : (u : ℤ_[2]) = 5) :
@@ -247,5 +268,11 @@ theorem isSquare_coe_iff_mem_unitsPrincipal_three (u : ℤ_[2]ˣ) :
     rw [unitsPrincipal_three_eq_range_powMonoidHom_two] at hu
     obtain ⟨w, rfl⟩ := hu
     exact ⟨w, by simp [pow_two]⟩
+
+/-- A unit `u` of `ℤ_2` is a square of `ℚ_2ˣ` exactly when `ε(u) = ω(u) = 0`. -/
+theorem isSquare_iff_serreEps_eq_zero_and_serreOmega_eq_zero {a : ℚ_[2]ˣ} {u : ℤ_[2]ˣ}
+    (ha : (a : ℚ_[2]) = u) : IsSquare a ↔ serreEps u = 0 ∧ serreOmega u = 0 := by
+  rw [← isSquare_units_val_iff, ha, isSquare_coe_iff_mem_unitsPrincipal_three,
+    serreEps_eq_zero_and_serreOmega_eq_zero_iff]
 
 end TauCeti

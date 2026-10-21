@@ -44,8 +44,8 @@ class `g` at `x₁` is monodromy along `g`, conjugated by monodromy along `γ`: 
 around `g`, then return along `γ`. -/
 theorem _root_.IsCoveringMap.monodromy_fundamentalGroupMulEquivOfPath_symm_apply
     (hp : IsCoveringMap p) (γ : Path x₀ x₁) (g : FundamentalGroup X x₁) (e₀ : p ⁻¹' {x₀}) :
-    hp.monodromy ((FundamentalGroup.fundamentalGroupMulEquivOfPath γ).symm g) e₀ =
-      (coveringFiberEquiv hp (.mk γ)).symm (hp.monodromy g (hp.monodromy (.mk γ) e₀)) := by
+    hp.monodromy ((FundamentalGroup.fundamentalGroupMulEquivOfPath γ).symm g).toPath e₀ =
+      (coveringFiberEquiv hp (.mk γ)).symm (hp.monodromy g.toPath (hp.monodromy (.mk γ) e₀)) := by
   rw [FundamentalGroup.fundamentalGroupMulEquivOfPath_symm_apply, hp.monodromy_trans_apply,
     hp.monodromy_trans_apply, coveringFiberEquiv_symm_apply]
 
@@ -69,9 +69,9 @@ amounts to conjugating the classes that the monodromy action fixes. -/
 theorem _root_.IsCoveringMap.monodromy_eq_self_iff_fundamentalGroupMulEquivOfPath_symm_apply
     (hp : IsCoveringMap p) (γ : Path x₀ x₁) (e₀ : p ⁻¹' {x₀})
     (g : FundamentalGroup X x₁) :
-    hp.monodromy g (hp.monodromy ⟦γ⟧ e₀) = hp.monodromy ⟦γ⟧ e₀ ↔
+    hp.monodromy g.toPath (hp.monodromy ⟦γ⟧ e₀) = hp.monodromy ⟦γ⟧ e₀ ↔
       hp.monodromy
-        ((FundamentalGroup.fundamentalGroupMulEquivOfPath γ).symm g) e₀ = e₀ := by
+        ((FundamentalGroup.fundamentalGroupMulEquivOfPath γ).symm g).toPath e₀ = e₀ := by
   rw [hp.monodromy_fundamentalGroupMulEquivOfPath_symm_apply, Equiv.symm_apply_eq,
     coveringFiberEquiv_apply]
   -- `⟦γ⟧` and `.mk γ` are the same class of `γ`, written with two spellings of the quotient map.

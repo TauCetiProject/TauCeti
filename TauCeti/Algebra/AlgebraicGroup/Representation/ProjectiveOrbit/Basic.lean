@@ -26,7 +26,9 @@ ensures that the vector generates a direct summand of rank one.
 The matrix coefficients generate the unit ideal by
 `Comodule.span_matrixCoefficient_eq_top_iff_isUnimodular`. The construction then uses
 Mathlib's `Proj.fromOfGlobalSections`, including its chart and base-morphism formulas.
-No smoothness, reducedness, or finite-type hypothesis on `H` is imposed.
+No smoothness, reducedness, or finite-type hypothesis on `H` is imposed. If the spectrum of `H`
+is irreducible, so is the image of the orbit morphism
+(`TauCeti.Comodule.isIrreducible_range_projectiveOrbitMap`).
 
 ## References
 
@@ -168,6 +170,14 @@ theorem projectiveOrbitMap_toSpecZero (m : M) (hm : Module.IsUnimodular R m) :
   simp only [CommRingCat.ofHom_comp, Spec.map_comp, CommRingCat.ofHom_hom,
     Category.assoc]
   rw [← Scheme.isoSpec_Spec_inv, Scheme.toSpecΓ_isoSpec_inv_assoc]
+
+/-- The orbit of a line under an affine group with irreducible spectrum is irreducible. -/
+theorem isIrreducible_range_projectiveOrbitMap [IrreducibleSpace (PrimeSpectrum H)]
+    (m : M) (hm : Module.IsUnimodular R m) :
+    IsIrreducible (Set.range (projectiveOrbitMap (H := H) m hm)) := by
+  rw [← Set.image_univ]
+  exact (IrreducibleSpace.isIrreducible_univ (PrimeSpectrum H)).image _
+    (projectiveOrbitMap (H := H) m hm).continuous.continuousOn
 
 end Scheme
 

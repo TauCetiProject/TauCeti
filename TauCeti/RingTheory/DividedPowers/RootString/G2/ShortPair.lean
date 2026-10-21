@@ -300,7 +300,7 @@ theorem dividedPower_mul_dividedPower_of_g2_short_pair_scaled
   classical
   have hseries := dividedPower_mul_of_ad_dividedPower_series (x := x)
     (d := g2ShortPairSeries y z w s n)
-    (fun k => mul_g2ShortPairSeries hxy hxz hzy hxw hxs hys hzw hzs hws n k) m
+    m (fun k _ ↦ mul_g2ShortPairSeries hxy hxz hzy hxw hxs hys hzw hzs hws n k)
   rw [g2ShortPairSeries_zero] at hseries
   rw [hseries]
   simp only [mul_assoc]

@@ -215,7 +215,7 @@ theorem mem_interior_carrier_iff_sideForm_neg (z : ℍ) :
 negative there. -/
 theorem sideForm_sideGeodesic_toComplex_neg {i j : Fin n} (hj : P.vertex j ≠ .inr ∞) (hji : j ≠ i)
     (hji' : j ≠ i + 1) : sideForm (P.sideGeodesic i) (toComplex (P.vertex j)) < 0 :=
-  sideForm_toComplex_neg_of_mem_extLeftHalfPlane hj
+  (mem_extLeftHalfPlane_iff_sideForm_toComplex_neg hj).1
     (P.vertex_mem_extLeftHalfPlane_sideGeodesic hji hji')
 
 /-- Every vertex other than `∞` lies in the closed left half-plane of every edge: the side form of
@@ -320,6 +320,17 @@ theorem interiorAngle_pos_of_isLeft_vertex {i : Fin n} (hi : (P.vertex i).isLeft
   rw [hray.extLeftHalfPlane_eq hg] at hleft
   rw [interiorAngle_def, hA, vertexAngle_comm]
   exact vertexAngle_pos_of_mem_extLeftHalfPlane hleft
+
+/-- The interior angle of a convex polygon vanishes exactly at its ideal vertices. -/
+@[simp]
+theorem interiorAngle_eq_zero_iff (i : Fin n) :
+    P.interiorAngle i = 0 ↔ (P.vertex i).isRight := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · cases hv : P.vertex i with
+    | inl A => exact absurd h (P.interiorAngle_pos_of_isLeft_vertex (by rw [hv]; rfl)).ne'
+    | inr ξ => rfl
+  · obtain ⟨ξ, hξ⟩ := Sum.isRight_iff.1 h
+    exact P.interiorAngle_eq_zero_of_vertex_eq_inr hξ
 
 /-- Every interior angle of a convex polygon is less than `π`, including ideal vertices. -/
 theorem interiorAngle_lt_pi (i : Fin n) : P.interiorAngle i < π := by

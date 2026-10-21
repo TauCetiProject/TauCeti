@@ -174,6 +174,19 @@ theorem normResidue_mk (ι : L →ₐ[K] SeparableClosure K) (a : Kˣ) :
   rw [localArtinMap_apply, ← toAdditive_normResidue K L ι, MulEquiv.toAdditive_apply_apply,
     toMul_ofMul, toMul_ofMul]
 
+/-- The norm residue symbol of the class of `a ∈ Kˣ` is trivial exactly when `a` is a norm from
+`L`. -/
+theorem normResidue_mk_eq_one_iff (a : Kˣ) :
+    normResidue K L (a : Kˣ ⧸ normGroup K L) = 1 ↔ a ∈ normGroup K L := by
+  rw [EmbeddingLike.map_eq_one_iff, QuotientGroup.eq_one_iff]
+
+/-- **Powers to the order of `Gal(L/K)^ab` are norms**: the norm residue isomorphism identifies
+`Kˣ / N_{L/K}(Lˣ)` with `Gal(L/K)^ab`, so `a ^ #Gal(L/K)^ab ∈ N_{L/K}(Lˣ)` for every `a ∈ Kˣ`. -/
+theorem pow_natCard_abelianization_mem_normGroup (a : Kˣ) :
+    a ^ Nat.card (Abelianization Gal(L/K)) ∈ normGroup K L := by
+  rw [← normResidue_mk_eq_one_iff, QuotientGroup.mk_pow, map_pow]
+  exact pow_card_eq_one'
+
 open scoped IsMulCommutative in
 /-- **The norm index of a finite abelian extension**: if `Gal(L/K)` is commutative, then
 `[Kˣ : N_{L/K}(Lˣ)] = [L : K]`, since the norm residue isomorphism identifies the norm quotient
@@ -183,5 +196,18 @@ theorem index_normGroup_of_isMulCommutative [IsMulCommutative Gal(L/K)] :
   rw [Subgroup.index, Nat.card_congr (normResidue K L).toEquiv,
     ← Nat.card_congr (Abelianization.equivOfComm (H := Gal(L/K))).toEquiv,
     IsGalois.card_aut_eq_finrank]
+
+/-- **`n`-th powers are norms when `n` kills the Galois group.** If `σ ^ n = 1` for every
+`σ ∈ Gal(L/K)`, then `(Kˣ)ⁿ ≤ N_{L/K}(Lˣ)`: the norm residue isomorphism identifies
+`Kˣ / N_{L/K}(Lˣ)` with `Gal(L/K)^ab`, a quotient of `Gal(L/K)`, so `n` kills it. -/
+theorem powerSubgroup_le_normGroup_of_exponent_dvd {n : ℕ}
+    (hn : Monoid.exponent Gal(L/K) ∣ n) : powerSubgroup Kˣ n ≤ normGroup K L := by
+  intro x hx
+  obtain ⟨y, rfl⟩ := (mem_powerSubgroup_iff n).1 hx
+  have hsurj : Function.Surjective
+      ((normResidue K L).symm.toMonoidHom.comp (Abelianization.of (G := Gal(L/K)))) :=
+    (normResidue K L).symm.surjective.comp (QuotientGroup.mk'_surjective _)
+  rw [← QuotientGroup.eq_one_iff, QuotientGroup.mk_pow]
+  exact Monoid.exponent_dvd_iff_forall_pow_eq_one.mp ((MonoidHom.exponent_dvd hsurj).trans hn) _
 
 end TauCeti.ClassFieldTheory

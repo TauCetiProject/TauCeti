@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Induction.Mackey.Decomposition
 public import TauCeti.RepresentationTheory.Induction.FiniteDimensional.Basic
-public import TauCeti.RepresentationTheory.Rep.DirectSum
+public import TauCeti.RepresentationTheory.Rep.DirectSum.Basic
 
 /-!
 # The Mackey decomposition of intertwining spaces

@@ -1,6 +1,6 @@
 # Roadmap completion statistics
 
-`roadmap_completion.py` generates three Statistics-page SVGs and
+`roadmap_completion.py` generates two Statistics-page SVGs, a responsive HTML forecast and
 `roadmap-completion.json`, using full-history clones of TauCeti and TauCetiRoadmap.
 No GitHub API or model invocation is needed. The Pages workflow regenerates these
 at every deployment and retains the previous assets if generation fails.
@@ -31,9 +31,11 @@ is explicit), so crossing midnight between generators does not change the window
   Only `done` receives credit; partial, untouched and unassessed remain in the
   denominator. The graph highlights unassessed layers. Human archival marks all
   that archived specification's layers complete, even if a report still has gaps.
-- `roadmap-exhaustion.svg`: two authoring scenarios for each of two measures,
-  archived specification size and completed layer count. These measures need
-  not agree, since archival decisions and reports differ and goals vary in size.
+- `roadmap-exhaustion.html`: the remaining layer count and two scenarios, no new
+  roadmap work or new work continuing at the last seven days' pace. Durations are
+  rounded to days, weeks, months or years. The responsive text remains readable
+  on phones; calculation details live in a separate disclosure on the page.
+  Archived specification-size estimates remain in JSON but are not displayed.
 
 Histories sample the final first-parent snapshot of each complete UTC day;
 unchanged days carry forward. They do not read feature branches, untracked files,

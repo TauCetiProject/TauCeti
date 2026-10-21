@@ -32,7 +32,7 @@ shows that each contribution depends only on its double coset.
 The local input is
 `IsDedekindDomain.HeightOneSpectrum.ramificationIdx_mul_multiplicity_differentIdeal_fixedField`.
 The global step combines `TauCeti.multiplicity_relDiscr` with
-`Ideal.doubleCosetQuotientEquivPrimesOver` to sum these local contributions.
+`Ideal.doubleCosetQuotientEquivPrimesOverOfIsInvariant` to sum these local contributions.
 
 ## References
 
@@ -122,7 +122,7 @@ theorem multiplicity_relDiscr_fixedField_eq_sum
     (DoubleCoset.Quotient (H : Set G) (MulAction.stabilizer G w.asIdeal : Set G))
   rw [multiplicity_relDiscr _ _ v.ne_bot (differentIdeal_ne_bot (A := 𝓞 K)),
     finsum_eq_sum_of_fintype]
-  let e := Ideal.doubleCosetQuotientEquivPrimesOver v.asIdeal w.asIdeal H
+  let e := w.asIdeal.doubleCosetQuotientEquivPrimesOverOfIsInvariant v.asIdeal H (𝓞 ↥(fixedField H))
   have hsum := e.sum_comp (fun P ↦ P.1.inertiaDeg (𝓞 K) *
     multiplicity P.1 (differentIdeal (𝓞 K) (𝓞 ↥(fixedField H))))
   rw [Finset.sum_subtype _ (fun _ ↦ Set.mem_toFinset) _]
@@ -132,7 +132,8 @@ theorem multiplicity_relDiscr_fixedField_eq_sum
   have he : (e q : Ideal (𝓞 ↥(fixedField H))) =
       (r q • w.asIdeal).under (𝓞 ↥(fixedField H)) := by
     simpa only [hr q] using
-      Ideal.doubleCosetQuotientEquivPrimesOver_mk v.asIdeal w.asIdeal H (r q)
+      w.asIdeal.doubleCosetQuotientEquivPrimesOverOfIsInvariant_mk v.asIdeal H
+        (𝓞 ↥(fixedField H)) (r q)
   rw [he]
   exact inertiaDeg_mul_multiplicity_differentIdeal_under_fixedField_smul_eq K L w H (r q)
 

@@ -34,8 +34,12 @@ consumer instantiate it. For a short model (`a₁ = a₃ = 0`, so
 * `WeierstrassCurve.dvd_four_mul_Δ_of_dvd_Ψ₂Sq_of_dvd_four_mul_Ψ₃`: over any commutative
   ring, a common divisor of `Ψ₂Sq(x)` and `4·Ψ₃(x)` divides `4Δ`.
 * `WeierstrassCurve.evalEval_ψ₂_sq`: on the curve, `ψ₂(x, y)² = Ψ₂Sq(x)`.
+* `WeierstrassCurve.isUnit_two_of_evalEval_ψ₂_eq_zero`: if `W` is elliptic and `ψ₂` vanishes at
+  two points whose `x`-coordinates differ by a unit, then `2` is a unit, since modulo `2` both `a₁`
+  and `a₃` vanish and then so does `Δ`.
 
-Stated over an arbitrary commutative ring: no domain, integrality or ellipticity hypothesis.
+Stated over an arbitrary commutative ring: no domain or integrality hypothesis, and no ellipticity
+hypothesis outside `isUnit_two_of_evalEval_ψ₂_eq_zero`.
 
 ⚠ **No torsion hypothesis appears here, and no part of `lutz_nagell` is proved.** The headline is a
 statement about polynomials, usable by any caller with a common divisor in hand, and
@@ -59,6 +63,8 @@ that roadmap at `dev/modular-curves @ 9fec8eba7652`:
 Mathlib's `ψ₂`, `Ψ₂Sq` and `Ψ₃` rather than the raw expressions the source carries, so no
 `eval_Ψ₃` bridge lemma is needed; the source's `[IsDomain]`, `[IsPrincipalIdealRing]` and
 `[CharZero]` hypotheses were already `omit`ted there and are absent here too.
+`isUnit_two_of_evalEval_ψ₂_eq_zero` is not ported; it was written for the Legendre form over a
+ring in `TauCeti.AlgebraicGeometry.EllipticCurve.Legendre`.
 -/
 
 public section
@@ -123,6 +129,36 @@ theorem _root_.WeierstrassCurve.dvd_four_mul_Δ_of_dvd_Ψ₂Sq_of_dvd_four_mul_�
   rw [← WeierstrassCurve.bezout_four_mul_Δ W x]
   exact dvd_add (Dvd.dvd.mul_left hd _)
     (Dvd.dvd.mul_left (WeierstrassCurve.dvd_sq_of_dvd_Ψ₂Sq_of_dvd_four_mul_Ψ₃ W hd hΨ₃) _)
+
+end
+
+/-! ### Two points of order two force `2` to be a unit -/
+
+section
+
+variable {R : Type*} [CommRing R] (W : _root_.WeierstrassCurve R) {x₁ y₁ x₂ y₂ : R}
+
+/-- **Two points of order two force `2` to be a unit.** If `W` is elliptic and `ψ₂` vanishes at
+`(x₁, y₁)` and at `(x₂, y₂)` with `x₂ - x₁` a unit, then `2` is a unit: modulo `2` both `a₁` and
+`a₃` vanish, and then so does the discriminant. -/
+theorem _root_.WeierstrassCurve.isUnit_two_of_evalEval_ψ₂_eq_zero [W.IsElliptic]
+    (hψ₁ : W.ψ₂.evalEval x₁ y₁ = 0) (hψ₂ : W.ψ₂.evalEval x₂ y₂ = 0) (hx : IsUnit (x₂ - x₁)) :
+    IsUnit (2 : R) := by
+  rw [_root_.WeierstrassCurve.ψ₂, _root_.WeierstrassCurve.Affine.evalEval_polynomialY]
+    at hψ₁ hψ₂
+  obtain ⟨w, hw⟩ := hx.exists_right_inv
+  -- `a₁ = 2α` and `a₃ = 2β`
+  set α := -(y₂ - y₁) * w
+  set β := -y₁ - α * x₁
+  have ha₁ : W.a₁ = 2 * α := by linear_combination w * hψ₂ - w * hψ₁ - W.a₁ * hw
+  have ha₃ : W.a₃ = 2 * β := by linear_combination hψ₁ - x₁ * ha₁
+  -- so `b₂` and `b₆` are divisible by `4` and `b₄` by `2`, and the discriminant is even
+  have hΔ : W.Δ = 2 * (-8 * (α ^ 2 + W.a₂) ^ 2 * W.b₈ - 32 * (W.a₄ + 2 * α * β) ^ 3 -
+      216 * (β ^ 2 + W.a₆) ^ 2 + 144 * (α ^ 2 + W.a₂) * (W.a₄ + 2 * α * β) * (β ^ 2 + W.a₆)) := by
+    rw [_root_.WeierstrassCurve.Δ, _root_.WeierstrassCurve.b₂, _root_.WeierstrassCurve.b₄,
+      _root_.WeierstrassCurve.b₆, ha₁, ha₃]
+    ring
+  exact isUnit_of_mul_isUnit_left (hΔ ▸ W.isUnit_Δ)
 
 end
 

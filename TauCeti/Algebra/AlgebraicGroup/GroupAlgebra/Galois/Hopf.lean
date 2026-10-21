@@ -194,6 +194,23 @@ theorem groupAlgebraInvariantsTensorEquiv_comul (x : B) :
   change groupAlgebraInvariantsTensorEquiv rho (descendedComul rho x) = _
   simp [descendedComul]
 
+/-- The invariant coordinate Hopf algebra is cocommutative. -/
+instance groupAlgebraInvariantsIsCocomm : Coalgebra.IsCocomm k B := by
+  have hswap (t : B ⊗[k] B) :
+      (groupAlgebraInvariantsTensorEquiv rho (TensorProduct.comm k B B t) : A ⊗[L] A) =
+        TensorProduct.comm L A A (groupAlgebraInvariantsTensorEquiv rho t) := by
+    induction t using TensorProduct.inductionOn with
+    | tmul x y => simp
+    | add x y hx hy => simp only [map_add, AddMemClass.coe_add, hx, hy]
+  constructor
+  apply LinearMap.ext
+  intro x
+  apply (groupAlgebraInvariantsTensorEquiv rho).injective
+  apply Subtype.val_injective
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, hswap,
+    groupAlgebraInvariantsTensorEquiv_comul, groupAlgebraInvariantsComul_apply,
+    Coalgebra.comm_comul]
+
 /-- The counit on the invariant Hopf algebra is the descended counit. -/
 @[simp]
 theorem counit_groupAlgebraInvariants (x : B) :

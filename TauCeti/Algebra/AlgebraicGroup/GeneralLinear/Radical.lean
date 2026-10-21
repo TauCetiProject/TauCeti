@@ -77,13 +77,13 @@ theorem centerDefiningIdeal_le_of_isNormal_of_isSolvable
       (geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra k n)
   -- Lie–Kolchin and normality make the standard action scalar on rational subgroup points.
   have hcentral (f : Q →ₐ[k] k) :
-      AlgHom.mapDomain q (toConv f) ∈
+      BialgHom.mapDomain q (toConv f) ∈
         CommHopfAlgCat.centerPointsSubgroup H (CommAlgCat.of k k) := by
-    have hmatrix : pointsMulEquiv n (AlgHom.mapDomain q (toConv f)) ∈
+    have hmatrix : pointsMulEquiv n (BialgHom.mapDomain q (toConv f)) ∈
         Subgroup.center (Matrix.GeneralLinearGroup (Fin n) k) := by
       cases n with
       | zero =>
-        have h : pointsMulEquiv 0 (AlgHom.mapDomain q (toConv f)) = 1 :=
+        have h : pointsMulEquiv 0 (BialgHom.mapDomain q (toConv f)) = 1 :=
           Matrix.GeneralLinearGroup.ext fun i ↦ i.elim0
         rw [h]
         exact Subgroup.one_mem _
@@ -91,7 +91,7 @@ theorem centerDefiningIdeal_le_of_isNormal_of_isSolvable
         let _ : NeZero (m + 1) := ⟨Nat.succ_ne_zero m⟩
         obtain ⟨c, hc⟩ := HopfIdeal.exists_basePointsRepresentation_eq_smul
           (V := Fin (m + 1) → k) I hI (toConv f)
-        have hm : pointsMulEquiv (m + 1) (AlgHom.mapDomain q (toConv f)) =
+        have hm : pointsMulEquiv (m + 1) (BialgHom.mapDomain q (toConv f)) =
             Matrix.GeneralLinearGroup.scalar (Fin (m + 1)) c := by
           apply Units.ext
           apply Matrix.mulVec_injective
@@ -112,7 +112,7 @@ theorem centerDefiningIdeal_le_of_isNormal_of_isSolvable
   intro f
   have h := (CommHopfAlgCat.mem_quotientPointsSubgroup_iff H
     (CommHopfAlgCat.centerDefiningIdeal H) (CommAlgCat.of k k) _).mp (hcentral f) x hx
-  simpa [AlgHom.mapDomain_apply, q] using h
+  simpa [BialgHom.mapDomain_apply, q] using h
 
 end AlgebraicallyClosed
 
@@ -128,7 +128,7 @@ theorem isSolvableRadicalCandidate_centerDefiningIdeal
       apply (CommHopfAlgCat.centerDefiningIdeal_eq_augmentation_iff_forall_isCentralPoint_eq_one
         (finiteTypeCoordinateHopfAlgebra k 0).obj).mpr
       intro A g _
-      let e := (AlgHom.mapDomainMulEquiv (A := A)
+      let e := (BialgEquiv.mapDomainMulEquiv (A := A)
         (_root_.CommHopfAlgCat.ofIso
           (eqToIso (finiteTypeCoordinateHopfAlgebra_obj k 0)).symm)).trans
           (pointsMulEquiv (R := k) (A := A) 0)

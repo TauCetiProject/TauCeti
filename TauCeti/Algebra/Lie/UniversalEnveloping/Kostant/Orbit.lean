@@ -78,7 +78,7 @@ variable {e : ι → L} {h : κ → L} {v : V}
 
 This is the span of `v` over the subring `kostantForm e h`, regarded as a `ℤ`-submodule of `V`.
 No finite-generation or lattice property is asserted. -/
-def kostantOrbit (e : ι → L) (h : κ → L) (v : V) : Submodule ℤ V :=
+noncomputable def kostantOrbit (e : ι → L) (h : κ → L) (v : V) : Submodule ℤ V :=
   (Submodule.span (kostantForm e h) {v}).restrictScalars ℤ
 
 /-- The Kostant orbit consists exactly of the vectors `u • v` for `u` in the integral form. -/

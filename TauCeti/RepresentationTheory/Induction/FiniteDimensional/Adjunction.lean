@@ -6,12 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.Algebra.Category.ModuleCat.Ulift
+import Mathlib.CategoryTheory.Adjunction.Additive
 import Mathlib.CategoryTheory.Adjunction.Restrict
+public import Mathlib.CategoryTheory.Linear.Basic
 public import Mathlib.CategoryTheory.Adjunction.Limits
 public import TauCeti.RepresentationTheory.Induction.FiniteDimensional.Basic
+public import TauCeti.RepresentationTheory.Induction.Restriction
 
 /-!
-# Adjunctions and exactness of finite-dimensional induction
+# Adjunctions, Frobenius reciprocity, and exactness of finite-dimensional induction
 
 Induction from a finite-index subgroup is both left and right adjoint to restriction on
 finite-dimensional representations. Consequently it preserves finite limits and finite colimits,
@@ -24,6 +27,11 @@ along fully faithful inclusions using `ModuleCat.uliftFunctor` to place the carr
 containing both the field and the group. The private comparison with ordinary induction follows
 `Rep.indMap`'s tensor-and-coinvariants construction and uses `TauCeti.indFDRepForgetEquiv`, so the
 field and group may lie in separate universes.
+
+The linear Hom-space forms are `FDRep.indResFDRepHomEquiv` and `FDRep.resIndFDRepHomEquiv`,
+with the dimension identities `FDRep.finrank_hom_indFDRep` and `FDRep.finrank_hom_resFDRep` as
+corollaries. These use the ordinary induced and restricted objects, with application lemmas
+expressing both directions in terms of the categorical adjunctions.
 
 Import this file to infer `PreservesFiniteLimits` and `PreservesFiniteColimits` for
 `indFDRepFunctor`. With the short-exact-sequence API imported, apply
@@ -148,3 +156,86 @@ noncomputable instance indFDRepFunctor_isRightAdjoint :
   resIndFDRepAdjunction.isRightAdjoint
 
 end TauCeti
+
+namespace FDRep
+
+open CategoryTheory TauCeti
+
+universe u v
+
+variable {k : Type u} {G : Type v} [Field k] [Group G] {S : Subgroup G}
+
+/-- **Frobenius reciprocity** for finite-dimensional representations, as a `k`-linear equivalence of
+intertwining spaces: `Hom_G(Ind_S^G A, B) ≃ₗ[k] Hom_S(A, Res_S B)`.
+
+This is the linear form of `TauCeti.indResFDRepAdjunction`, transported along the object
+comparison for `TauCeti.indFDRepFunctor`. -/
+noncomputable def indResFDRepHomEquiv [S.FiniteIndex] (A : FDRep k S) (B : FDRep k G) :
+    (indFDRep A ⟶ B) ≃ₗ[k] (A ⟶ Subgroup.resFDRep S B) := by
+  let e : ((indFDRepFunctor (k := k)).obj A ⟶ B) ≃ₗ[k] (A ⟶ Subgroup.resFDRep S B) :=
+    { indResFDRepAdjunction.homAddEquiv A B with
+      map_smul' := fun r f ↦ by simp [Adjunction.homEquiv_apply] }
+  exact (Linear.homCongr k (eqToIso (indFDRepFunctor_obj A)).symm (Iso.refl B)).trans e
+
+/-- On morphisms, reciprocity is the categorical adjunction after comparing the induced objects. -/
+@[simp]
+theorem indResFDRepHomEquiv_apply [S.FiniteIndex] (A : FDRep k S) (B : FDRep k G)
+    (f : indFDRep A ⟶ B) :
+    indResFDRepHomEquiv A B f =
+      indResFDRepAdjunction.homEquiv A B (eqToHom (indFDRepFunctor_obj A) ≫ f) := by
+  simp [indResFDRepHomEquiv, Linear.homCongr_apply]
+
+/-- The inverse reciprocity map is the inverse categorical adjunction with the induced objects
+compared. -/
+@[simp]
+theorem indResFDRepHomEquiv_symm_apply [S.FiniteIndex] (A : FDRep k S) (B : FDRep k G)
+    (f : A ⟶ Subgroup.resFDRep S B) :
+    (indResFDRepHomEquiv A B).symm f =
+      eqToHom (indFDRepFunctor_obj A).symm ≫
+        (indResFDRepAdjunction.homEquiv A B).symm f := by
+  simp [indResFDRepHomEquiv, Linear.homCongr_symm_apply]
+
+/-- The intertwining space out of an induced representation has the same dimension as the
+intertwining space into the corresponding restriction. This is the quantitative content of
+Frobenius reciprocity, and holds over an arbitrary field. -/
+theorem finrank_hom_indFDRep [S.FiniteIndex] (A : FDRep k S) (B : FDRep k G) :
+    Module.finrank k (indFDRep A ⟶ B) = Module.finrank k (A ⟶ Subgroup.resFDRep S B) :=
+  (indResFDRepHomEquiv A B).finrank_eq
+
+/-- **The second reciprocity**, available because induction from a finite-index subgroup is also a
+*right* adjoint to restriction: `Hom_S(Res_S B, A) ≃ₗ[k] Hom_G(B, Ind_S^G A)`.
+
+This is the linear form of `TauCeti.resIndFDRepAdjunction`, transported along the object
+comparison for `TauCeti.indFDRepFunctor`. -/
+noncomputable def resIndFDRepHomEquiv [S.FiniteIndex] (A : FDRep k S) (B : FDRep k G) :
+    (Subgroup.resFDRep S B ⟶ A) ≃ₗ[k] (B ⟶ indFDRep A) := by
+  let e : (B ⟶ (indFDRepFunctor (k := k)).obj A) ≃ₗ[k] (Subgroup.resFDRep S B ⟶ A) :=
+    { (resIndFDRepAdjunction.homAddEquiv B A).symm with
+      map_smul' := fun r f ↦ by simp [Adjunction.homEquiv_symm_apply] }
+  exact e.symm.trans (Linear.homCongr k (Iso.refl B) (eqToIso (indFDRepFunctor_obj A)))
+
+/-- On morphisms, the second reciprocity is the categorical adjunction followed by the
+comparison of induced objects. -/
+@[simp]
+theorem resIndFDRepHomEquiv_apply [S.FiniteIndex] (A : FDRep k S) (B : FDRep k G)
+    (f : Subgroup.resFDRep S B ⟶ A) :
+    resIndFDRepHomEquiv A B f =
+      resIndFDRepAdjunction.homEquiv B A f ≫ eqToHom (indFDRepFunctor_obj A) := by
+  simp [resIndFDRepHomEquiv, Linear.homCongr_apply]
+
+/-- The inverse second reciprocity map is the inverse categorical adjunction after comparing the
+induced objects. -/
+@[simp]
+theorem resIndFDRepHomEquiv_symm_apply [S.FiniteIndex] (A : FDRep k S) (B : FDRep k G)
+    (f : B ⟶ indFDRep A) :
+    (resIndFDRepHomEquiv A B).symm f =
+      (resIndFDRepAdjunction.homEquiv B A).symm
+        (f ≫ eqToHom (indFDRepFunctor_obj A).symm) := by
+  simp [resIndFDRepHomEquiv, Linear.homCongr_symm_apply]
+
+/-- The dimension form of the second reciprocity. -/
+theorem finrank_hom_resFDRep [S.FiniteIndex] (A : FDRep k S) (B : FDRep k G) :
+    Module.finrank k (Subgroup.resFDRep S B ⟶ A) = Module.finrank k (B ⟶ indFDRep A) :=
+  (resIndFDRepHomEquiv A B).finrank_eq
+
+end FDRep

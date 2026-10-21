@@ -86,7 +86,7 @@ lemma integer_count_spanSingleton {v : HeightOneSpectrum R} (hv : v ∉ S) {x : 
     intro r
     rw [hcoe r, integer_count_coeIdeal_map K S hv, coeIdeal_span_singleton]
   rcases eq_or_ne x 0 with rfl | hx
-  · simp only [spanSingleton_zero, count_zero]
+  · simp only [map_zero (spanSingleton _), count_zero]
   obtain ⟨a, b, hb, rfl⟩ := IsFractionRing.div_surjective (A := R) x
   have hb0 : algebraMap R K b ≠ 0 :=
     (map_ne_zero_iff _ (IsFractionRing.injective R K)).mpr (nonZeroDivisors.ne_zero hb)

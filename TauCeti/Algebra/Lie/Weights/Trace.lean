@@ -68,10 +68,6 @@ recursion, by the normalization `⟨λ, α^∨⟩⟨α, α⟩ = 2⟨λ, α⟩` o
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §22.3, where
   this trace computation is the lemma behind Freudenthal's formula.
-* [Highest-weight roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md),
-  Layer 7, "Freudenthal's multiplicity formula", to be proved "from the Casimir eigenvalue and the
-  `sl₂`-string action of each `⟨eₐ, hₐ, fₐ⟩` on the weight spaces".  The string action is what is
-  computed here.
 -/
 
 public section

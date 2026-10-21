@@ -11,6 +11,7 @@ module
 public import Mathlib.Algebra.Azumaya.Defs
 public import Mathlib.RingTheory.TensorProduct.Basic
 public import Mathlib.RingTheory.TensorProduct.Maps
+public import TauCeti.Algebra.TensorProduct.Module
 
 /-!
 # An algebra as a module over `B ⊗[K] Aᵐᵒᵖ`
@@ -148,6 +149,29 @@ instance : IsScalarTower K (B ⊗[K] Aᵐᵒᵖ) (Bimodule f) where
   smul_assoc c r x := by
     rw [← (of f).apply_symm_apply x, smul_def, smul_def, map_smul (toEnd f),
       LinearMap.smul_apply, map_smul (of f)]
+
+/-- The left `B`-action on `Bimodule f`, obtained by restricting the enveloping-algebra action. -/
+noncomputable instance moduleLeft : Module B (Bimodule f) :=
+  Algebra.TensorProduct.moduleLeft (k := K) (A := B) (B := Aᵐᵒᵖ) (Bimodule f)
+
+/-- The right `A`-action on `Bimodule f`, obtained by restricting the enveloping-algebra action. -/
+noncomputable instance moduleRight : Module Aᵐᵒᵖ (Bimodule f) :=
+  Algebra.TensorProduct.moduleRight (k := K) (A := B) (B := Aᵐᵒᵖ) (Bimodule f)
+
+/-- The restricted left `B`-action on `Bimodule f` respects the ground-ring action. -/
+noncomputable instance moduleScalarTowerLeft : IsScalarTower K B (Bimodule f) :=
+  Algebra.TensorProduct.moduleLeftIsScalarTower
+    (k := K) (A := B) (B := Aᵐᵒᵖ) (Bimodule f)
+
+/-- The restricted right `A`-action on `Bimodule f` respects the ground-ring action. -/
+noncomputable instance moduleScalarTowerRight : IsScalarTower K Aᵐᵒᵖ (Bimodule f) :=
+  Algebra.TensorProduct.moduleRightIsScalarTower
+    (k := K) (A := B) (B := Aᵐᵒᵖ) (Bimodule f)
+
+/-- The restricted left and right actions on `Bimodule f` commute. -/
+noncomputable instance moduleSMulCommClass : SMulCommClass B Aᵐᵒᵖ (Bimodule f) :=
+  Algebra.TensorProduct.moduleSMulCommClass
+    (k := K) (A := B) (B := Aᵐᵒᵖ) (Bimodule f)
 
 instance [Module.Finite K A] : Module.Finite K (Bimodule f) :=
   inferInstanceAs (Module.Finite K A)

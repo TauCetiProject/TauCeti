@@ -24,6 +24,8 @@ Dirichlet boundary data, as needed in weak comparison arguments.
 * `TauCeti.W1p.continuous_posPartAbove`: continuity in the full Sobolev norm.
 * `TauCeti.W1p.posPartAbove_mem_w1p0Submodule`: preservation of the homogeneous Dirichlet
   condition.
+* `TauCeti.W1p.posPartAbove_mem_w1p0Submodule_of_le`: a boundary bound `u ≤ k` on `∂Ω`, expressed
+  by `(u - k)⁺ ∈ W^{1,p}_0(Ω)`, persists at every higher level.
 
 The corresponding positive-part results are the special case `k = 0`.
 -/
@@ -205,5 +207,15 @@ theorem W1p.posPart_mem_w1p0Submodule (hp : p ≠ ∞) {u : W1p mu Omega p}
     W1p.posPart hp u ∈ w1p0Submodule mu Omega p := by
   simpa only [W1p.posPartAbove_zero] using
     W1p.posPartAbove_mem_w1p0Submodule hp (le_refl 0) hu
+
+/-- If `(u - k)⁺` satisfies the homogeneous Dirichlet boundary condition, then so does
+`(u - l)⁺` at every higher level `l ≥ k`: boundary values at most `k` are at most `l`. -/
+theorem W1p.posPartAbove_mem_w1p0Submodule_of_le (hp : p ≠ ∞) {k l : ℝ} (hk : 0 ≤ k)
+    (hkl : k ≤ l) {u : W1p mu Omega p}
+    (hu : W1p.posPartAbove hp hk u ∈ w1p0Submodule mu Omega p) :
+    W1p.posPartAbove hp (hk.trans hkl) u ∈ w1p0Submodule mu Omega p := by
+  have h := W1p.posPartAbove_mem_w1p0Submodule hp (sub_nonneg.2 hkl) hu
+  rw [W1p.posPartAbove_posPartAbove] at h
+  simpa only [add_sub_cancel] using h
 
 end TauCeti

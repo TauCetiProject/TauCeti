@@ -9,7 +9,7 @@ public import Mathlib.LinearAlgebra.Matrix.FixedDetMatrices
 public import Mathlib.RepresentationTheory.Coinvariants
 public import TauCeti.NumberTheory.ModularForms.BinaryForms
 public import TauCeti.NumberTheory.ModularForms.Cusps.ModularGroup
-public import TauCeti.RepresentationTheory.Augmentation
+public import TauCeti.RepresentationTheory.Augmentation.Basic
 public import TauCeti.RingTheory.MvPolynomial.Finrank
 
 /-!

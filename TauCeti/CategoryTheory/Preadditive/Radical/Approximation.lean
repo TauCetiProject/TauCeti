@@ -18,7 +18,9 @@ For a finite family of objects whose radical morphism spaces into `Y` are finite
 one radical morphism from a finite biproduct absorbs every radical morphism from that family.
 Take one copy of each object for each vector of a basis of its radical space. The resulting
 evaluation morphism is the first step in constructing right almost-split morphisms in categories
-of finite representation type.
+of finite representation type. Dually, finite-dimensional radical spaces out of one object give
+a radical morphism into a finite biproduct through which all those maps factor. This supplies
+the left almost-split construction.
 
 ## References
 
@@ -60,5 +62,31 @@ theorem exists_jacobsonRadical_biproduct_factorization {ι : Type*} [Finite ι] 
     simp only [Preadditive.sum_comp, Linear.smul_comp, f, biproduct.ι_desc]
     simpa only [map_sum, map_smul, Submodule.subtype_apply] using
       congrArg (jacobsonRadicalSubmodule k (X i) Y).subtype ((b i).sum_repr g')
+
+/-- A finite family with finite-dimensional radical spaces out of `Y` admits a single radical
+morphism through which all those maps factor. Its target is a finite biproduct of copies of
+the given objects. -/
+theorem exists_jacobsonRadical_biproduct_left_factorization {ι : Type*} [Finite ι]
+    (Y : C) (X : ι → C)
+    [∀ i, FiniteDimensional k (jacobsonRadicalSubmodule k Y (X i))] :
+    ∃ (n : ι → ℕ) (f : Y ⟶ (⨁ fun j : Σ i, Fin (n i) ↦ X j.1)),
+      f ∈ jacobsonRadical Y _ ∧ ∀ i (g : Y ⟶ X i), g ∈ jacobsonRadical Y (X i) →
+        ∃ h : (⨁ fun j : Σ i, Fin (n i) ↦ X j.1) ⟶ X i, f ≫ h = g := by
+  classical
+  let n i := Module.finrank k (jacobsonRadicalSubmodule k Y (X i))
+  let b i := Module.finBasis k (jacobsonRadicalSubmodule k Y (X i))
+  let Z (j : Σ i, Fin (n i)) := X j.1
+  let f : Y ⟶ (⨁ Z) := biproduct.lift fun j ↦ (b j.1 j.2).val
+  refine ⟨n, f, ?_, fun i g hg ↦ ?_⟩
+  · apply (mem_jacobsonRadical_biproduct_right_iff Z).mpr
+    intro j
+    simpa only [f, biproduct.lift_π] using
+      (mem_jacobsonRadicalSubmodule.mp (b j.1 j.2).property)
+  · let g' : jacobsonRadicalSubmodule k Y (X i) :=
+      ⟨g, mem_jacobsonRadicalSubmodule.mpr hg⟩
+    refine ⟨∑ j, (b i).repr g' j • biproduct.π Z ⟨i, j⟩, ?_⟩
+    simp only [Preadditive.comp_sum, Linear.comp_smul, f, biproduct.lift_π]
+    simpa only [map_sum, map_smul, Submodule.subtype_apply] using
+      congrArg (jacobsonRadicalSubmodule k Y (X i)).subtype ((b i).sum_repr g')
 
 end TauCeti

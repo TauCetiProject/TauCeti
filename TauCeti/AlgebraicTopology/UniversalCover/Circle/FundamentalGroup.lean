@@ -10,11 +10,13 @@ public import Mathlib.Topology.Instances.AddCircle.Real
 public import Mathlib.Analysis.Convex.Contractible
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 import TauCeti.AlgebraicTopology.FundamentalGroup.BasepointChange
+import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
 public import TauCeti.AlgebraicTopology.FundamentalGroup.Homeomorph
 public import TauCeti.AlgebraicTopology.UniversalCover.AddCircle
 public import TauCeti.AlgebraicTopology.UniversalCover.Deck.FundamentalGroup.Basic
 public import TauCeti.Topology.Circle.AddCircle
 public import TauCeti.Topology.Circle.Degree
+public import TauCeti.Topology.Circle.Loop
 
 /-!
 # Fundamental groups of additive and complex circles
@@ -56,6 +58,8 @@ transformation, so `deck ((↑) : 𝕜 → AddCircle p)` acts transitively on ev
 * `Circle.fundamentalGroupMulEquiv`: `π₁(Circle, x) ≃* Multiplicative ℤ`.
 * `Circle.expLoop` and `Circle.fundamentalGroupMulEquiv_expLoop`: the loop `t ↦ exp(2πit)`,
   going once counterclockwise around the circle, is sent to the generator `ofAdd 1`.
+* `Circle.mapOfEq_toCircle_expLoop`: a loop `γ`, read as a map from the circle, sends the class
+  of `Circle.expLoop` to the class of `γ`.
 * `Circle.fundamentalGroupMulEquiv_fromPath`: the class of a loop is sent to its degree
   `Circle.degree`, computed from angle lifts.
 * `Circle.fundamentalGroupMulEquiv_map_pow`: the `n`-th power map of the circle acts on the
@@ -98,7 +102,7 @@ lemma fundamentalGroupMulEquivZMultiples_apply_eq_iff (hcov : IsCoveringMap ((�
     {x : AddCircle p} (e : ((↑) : 𝕜 → AddCircle p) ⁻¹' {x})
     (γ : FundamentalGroup (AddCircle p) x) (n : Multiplicative (zmultiples p)) :
     fundamentalGroupMulEquivZMultiples hcov e γ = n ↔
-      (hcov.monodromy γ e : 𝕜) = (e : 𝕜) + (n.toAdd : 𝕜) := by
+      (hcov.monodromy γ.toPath e : 𝕜) = (e : 𝕜) + (n.toAdd : 𝕜) := by
   rw [fundamentalGroupMulEquivZMultiples, MulEquiv.trans_apply, MulEquiv.symm_apply_eq,
     Deck.IsRegular.fundamentalGroupDeckEquiv_apply_eq_iff]
   simp only [deck.smul_eq_apply, Deck.addCircleMulEquiv_apply,
@@ -110,7 +114,7 @@ translates the chosen lift by `n`. -/
 lemma fundamentalGroupMulEquivZMultiples_symm_monodromy
     (hcov : IsCoveringMap ((↑) : 𝕜 → AddCircle p))
     {x : AddCircle p} (e : ((↑) : 𝕜 → AddCircle p) ⁻¹' {x}) (n : Multiplicative (zmultiples p)) :
-    (hcov.monodromy ((fundamentalGroupMulEquivZMultiples hcov e).symm n) e : 𝕜) =
+    (hcov.monodromy ((fundamentalGroupMulEquivZMultiples hcov e).symm n).toPath e : 𝕜) =
       (e : 𝕜) + (n.toAdd : 𝕜) := by
   exact (fundamentalGroupMulEquivZMultiples_apply_eq_iff hcov e
     ((fundamentalGroupMulEquivZMultiples hcov e).symm n) n).1
@@ -120,10 +124,10 @@ lemma fundamentalGroupMulEquivZMultiples_symm_monodromy
 fixes the chosen lift. -/
 lemma fundamentalGroupMulEquivZMultiples_eq_one_iff (hcov : IsCoveringMap ((↑) : 𝕜 → AddCircle p))
     {x : AddCircle p} (e : ((↑) : 𝕜 → AddCircle p) ⁻¹' {x}) (γ : FundamentalGroup (AddCircle p) x) :
-    fundamentalGroupMulEquivZMultiples hcov e γ = 1 ↔ hcov.monodromy γ e = e := by
+    fundamentalGroupMulEquivZMultiples hcov e γ = 1 ↔ hcov.monodromy γ.toPath e = e := by
   rw [fundamentalGroupMulEquivZMultiples_apply_eq_iff]
   simpa using (Iff.symm Subtype.ext_iff :
-    ((hcov.monodromy γ e : 𝕜) = (e : 𝕜) ↔ hcov.monodromy γ e = e))
+    ((hcov.monodromy γ.toPath e : 𝕜) = (e : 𝕜) ↔ hcov.monodromy γ.toPath e = e))
 
 /-- For a covering projection `(↑) : 𝕜 → AddCircle p` from a simply connected preconnected
 topological additive commutative group with totally disconnected non-torsion period subgroup,
@@ -142,7 +146,7 @@ lemma fundamentalGroupMulEquivInt_apply_eq_iff
     {x : AddCircle p} (e : ((↑) : 𝕜 → AddCircle p) ⁻¹' {x})
     (γ : FundamentalGroup (AddCircle p) x) (n : Multiplicative ℤ) :
     fundamentalGroupMulEquivInt hcov hp e γ = n ↔
-      (hcov.monodromy γ e : 𝕜) = (e : 𝕜) + n.toAdd • p := by
+      (hcov.monodromy γ.toPath e : 𝕜) = (e : 𝕜) + n.toAdd • p := by
   dsimp [fundamentalGroupMulEquivInt]
   rw [MulEquiv.symm_apply_eq]
   simpa using fundamentalGroupMulEquivZMultiples_apply_eq_iff hcov e γ
@@ -154,7 +158,7 @@ translates the chosen lift by `n • p`. -/
 lemma fundamentalGroupMulEquivInt_symm_monodromy
     (hcov : IsCoveringMap ((↑) : 𝕜 → AddCircle p)) (hp : ¬ IsOfFinAddOrder p)
     {x : AddCircle p} (e : ((↑) : 𝕜 → AddCircle p) ⁻¹' {x}) (n : Multiplicative ℤ) :
-    (hcov.monodromy ((fundamentalGroupMulEquivInt hcov hp e).symm n) e : 𝕜) =
+    (hcov.monodromy ((fundamentalGroupMulEquivInt hcov hp e).symm n).toPath e : 𝕜) =
       (e : 𝕜) + n.toAdd • p := by
   exact (fundamentalGroupMulEquivInt_apply_eq_iff hcov hp e
     ((fundamentalGroupMulEquivInt hcov hp e).symm n) n).1
@@ -165,10 +169,10 @@ fixes the chosen lift. -/
 lemma fundamentalGroupMulEquivInt_eq_one_iff
     (hcov : IsCoveringMap ((↑) : 𝕜 → AddCircle p)) (hp : ¬ IsOfFinAddOrder p)
     {x : AddCircle p} (e : ((↑) : 𝕜 → AddCircle p) ⁻¹' {x}) (γ : FundamentalGroup (AddCircle p) x) :
-    fundamentalGroupMulEquivInt hcov hp e γ = 1 ↔ hcov.monodromy γ e = e := by
+    fundamentalGroupMulEquivInt hcov hp e γ = 1 ↔ hcov.monodromy γ.toPath e = e := by
   rw [fundamentalGroupMulEquivInt_apply_eq_iff]
   simpa using (Iff.symm Subtype.ext_iff :
-    ((hcov.monodromy γ e : 𝕜) = (e : 𝕜) ↔ hcov.monodromy γ e = e))
+    ((hcov.monodromy γ.toPath e : 𝕜) = (e : 𝕜) ↔ hcov.monodromy γ.toPath e = e))
 
 variable (p : ℝ)
 
@@ -187,7 +191,7 @@ lemma fundamentalGroupMulEquiv_apply_eq_iff (hp : p ≠ 0) {x : AddCircle p}
     (e : ((↑) : ℝ → AddCircle p) ⁻¹' {x}) (γ : FundamentalGroup (AddCircle p) x)
     (n : Multiplicative ℤ) :
     fundamentalGroupMulEquiv p hp e γ = n ↔
-      ((AddCircle.isCoveringMap_coe p).monodromy γ e : ℝ) = (e : ℝ) + n.toAdd • p :=
+      ((AddCircle.isCoveringMap_coe p).monodromy γ.toPath e : ℝ) = (e : ℝ) + n.toAdd • p :=
   fundamentalGroupMulEquivInt_apply_eq_iff (AddCircle.isCoveringMap_coe p)
     (not_isOfFinAddOrder_of_isAddTorsionFree hp) e γ n
 
@@ -196,7 +200,7 @@ lift by `n • p`. -/
 @[simp]
 lemma fundamentalGroupMulEquiv_symm_monodromy (hp : p ≠ 0) {x : AddCircle p}
     (e : ((↑) : ℝ → AddCircle p) ⁻¹' {x}) (n : Multiplicative ℤ) :
-    ((AddCircle.isCoveringMap_coe p).monodromy ((fundamentalGroupMulEquiv p hp e).symm n) e :
+    ((AddCircle.isCoveringMap_coe p).monodromy ((fundamentalGroupMulEquiv p hp e).symm n).toPath e :
       ℝ) = (e : ℝ) + n.toAdd • p :=
   fundamentalGroupMulEquivInt_symm_monodromy (AddCircle.isCoveringMap_coe p)
     (not_isOfFinAddOrder_of_isAddTorsionFree hp) e n
@@ -205,7 +209,8 @@ lemma fundamentalGroupMulEquiv_symm_monodromy (hp : p ≠ 0) {x : AddCircle p}
 the chosen lift. -/
 lemma fundamentalGroupMulEquiv_eq_one_iff (hp : p ≠ 0) {x : AddCircle p}
     (e : ((↑) : ℝ → AddCircle p) ⁻¹' {x}) (γ : FundamentalGroup (AddCircle p) x) :
-    fundamentalGroupMulEquiv p hp e γ = 1 ↔ (AddCircle.isCoveringMap_coe p).monodromy γ e = e :=
+    fundamentalGroupMulEquiv p hp e γ = 1 ↔
+      (AddCircle.isCoveringMap_coe p).monodromy γ.toPath e = e :=
   fundamentalGroupMulEquivInt_eq_one_iff (AddCircle.isCoveringMap_coe p)
     (not_isOfFinAddOrder_of_isAddTorsionFree hp) e γ
 
@@ -219,7 +224,7 @@ noncomputable def fundamentalGroupMulEquivZero (hp : p ≠ 0) :
 lemma fundamentalGroupMulEquivZero_apply_eq_iff (hp : p ≠ 0)
     (γ : FundamentalGroup (AddCircle p) 0) (n : Multiplicative ℤ) :
     fundamentalGroupMulEquivZero p hp γ = n ↔
-      ((AddCircle.isCoveringMap_coe p).monodromy γ ⟨0, by simp⟩ : ℝ) = n.toAdd • p := by
+      ((AddCircle.isCoveringMap_coe p).monodromy γ.toPath ⟨0, by simp⟩ : ℝ) = n.toAdd • p := by
   rw [fundamentalGroupMulEquivZero]
   simpa using fundamentalGroupMulEquiv_apply_eq_iff p hp ⟨0, by simp⟩ γ n
 
@@ -238,7 +243,7 @@ lemma fundamentalGroupMulEquivZero_symm_apply (hp : p ≠ 0) (n : Multiplicative
 
 /-- The inverse of the basepoint-`0` specialization has monodromy translation `n • p`. -/
 lemma fundamentalGroupMulEquivZero_symm_monodromy (hp : p ≠ 0) (n : Multiplicative ℤ) :
-    ((AddCircle.isCoveringMap_coe p).monodromy ((fundamentalGroupMulEquivZero p hp).symm n)
+    ((AddCircle.isCoveringMap_coe p).monodromy ((fundamentalGroupMulEquivZero p hp).symm n).toPath
       ⟨0, by simp⟩ : ℝ) = n.toAdd • p := by
   rw [fundamentalGroupMulEquivZero]
   simp
@@ -247,7 +252,7 @@ lemma fundamentalGroupMulEquivZero_symm_monodromy (hp : p ≠ 0) (n : Multiplica
 fixes the zero lift. -/
 lemma fundamentalGroupMulEquivZero_eq_one_iff (hp : p ≠ 0) (γ : FundamentalGroup (AddCircle p) 0) :
     fundamentalGroupMulEquivZero p hp γ = 1 ↔
-      (AddCircle.isCoveringMap_coe p).monodromy γ ⟨0, by simp⟩ = ⟨0, by simp⟩ := by
+      (AddCircle.isCoveringMap_coe p).monodromy γ.toPath ⟨0, by simp⟩ = ⟨0, by simp⟩ := by
   rw [fundamentalGroupMulEquivZero]
   exact fundamentalGroupMulEquiv_eq_one_iff p hp ⟨0, by simp⟩ γ
 
@@ -265,21 +270,21 @@ noncomputable def fundamentalGroupMulEquiv :
 lemma fundamentalGroupMulEquiv_apply_eq_iff (γ : FundamentalGroup UnitAddCircle 0)
     (n : Multiplicative ℤ) :
     fundamentalGroupMulEquiv γ = n ↔
-      ((AddCircle.isCoveringMap_coe 1).monodromy γ ⟨0, by simp⟩ : ℝ) = n.toAdd := by
+      ((AddCircle.isCoveringMap_coe 1).monodromy γ.toPath ⟨0, by simp⟩ : ℝ) = n.toAdd := by
   simpa [fundamentalGroupMulEquiv] using
     AddCircle.fundamentalGroupMulEquivZero_apply_eq_iff 1 one_ne_zero γ n
 
 /-- The inverse of the unit-circle equivalence has monodromy translation by `n`. -/
 @[simp]
 lemma fundamentalGroupMulEquiv_symm_monodromy (n : Multiplicative ℤ) :
-    ((AddCircle.isCoveringMap_coe 1).monodromy (fundamentalGroupMulEquiv.symm n)
+    ((AddCircle.isCoveringMap_coe 1).monodromy (fundamentalGroupMulEquiv.symm n).toPath
       ⟨0, by simp⟩ : ℝ) = n.toAdd := by
   simp [fundamentalGroupMulEquiv]
 
 /-- A unit-circle loop class maps to `1` exactly when its monodromy fixes the zero lift. -/
 lemma fundamentalGroupMulEquiv_eq_one_iff (γ : FundamentalGroup UnitAddCircle 0) :
     fundamentalGroupMulEquiv γ = 1 ↔
-      (AddCircle.isCoveringMap_coe 1).monodromy γ ⟨0, by simp⟩ = ⟨0, by simp⟩ := by
+      (AddCircle.isCoveringMap_coe 1).monodromy γ.toPath ⟨0, by simp⟩ = ⟨0, by simp⟩ := by
   simpa [fundamentalGroupMulEquiv] using
     AddCircle.fundamentalGroupMulEquivZero_eq_one_iff 1 one_ne_zero γ
 
@@ -321,7 +326,8 @@ private theorem monodromy_homeomorphMulEquivOfEq_fromPath (γ : Path (1 : Circle
       ((TauCeti.FundamentalGroup.homeomorphMulEquivOfEq
         (AddCircle.homeomorphCircle (T := 2 * Real.pi) Real.two_pi_pos.ne').symm
           (AddCircle.homeomorphCircle_symm_one Real.two_pi_pos.ne'))
-        (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ))) ⟨0, by simp⟩ : ℝ) = a := by
+        (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ))).toPath
+      ⟨0, by simp⟩ : ℝ) = a := by
   -- The additive-circle point of an angle `r` corresponds to `exp r` on the complex circle.
   have hcoe (r : ℝ) : ((r : ℝ) : AddCircle (2 * Real.pi)) =
       (AddCircle.homeomorphCircle Real.two_pi_pos.ne').symm (exp r) := by
@@ -396,12 +402,27 @@ theorem fundamentalGroupMulEquiv_expLoop :
     degree_eq_of_sub_eq expLoop (θ := fun t => 2 * Real.pi * t) (by fun_prop) (fun _ => rfl)
       (n := 1) (by simp)]
 
+/-- A loop `γ`, read as a map from the circle by `Path.toCircle`, sends the class of the
+counterclockwise loop `expLoop` to the class of `γ`. So every element of a fundamental group is
+the image of the generator of `π₁(S¹)` under a based map from the circle. -/
+theorem mapOfEq_toCircle_expLoop {X : Type*} [TopologicalSpace X] {x : X} (γ : Path x x) :
+    FundamentalGroup.mapOfEq γ.toCircle γ.toCircle_one
+        (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk expLoop)) =
+      FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ) := by
+  have h : (expLoop.map γ.toCircle.continuous).cast γ.toCircle_one.symm γ.toCircle_one.symm =
+      γ := by
+    ext t
+    exact γ.toCircle_exp t
+  conv_rhs => rw [← h, Path.Homotopic.Quotient.mk_cast, Path.Homotopic.Quotient.mk_map]
+  exact FundamentalGroup.mapOfEq_apply _ _ _
+
 /-- **The `n`-th power map of the circle acts on `π₁(S¹) ≅ ℤ` as multiplication by `n`.** The
 isomorphism `fundamentalGroupMulEquiv` sends the image of a loop class under `z ↦ z ^ n` to the
 `n`-th power of the image of the class. -/
 theorem fundamentalGroupMulEquiv_map_pow (n : ℕ) {x : Circle} (γ : FundamentalGroup Circle x) :
     fundamentalGroupMulEquiv _ (FundamentalGroup.map ⟨(· ^ n), continuous_pow n⟩ x γ) =
       fundamentalGroupMulEquiv x γ ^ n := by
+  obtain ⟨γ⟩ := γ
   induction γ using Path.Homotopic.Quotient.ind with | mk γ => ?_
   calc _ = Multiplicative.ofAdd (degree (γ.map (continuous_pow n))) :=
         fundamentalGroupMulEquiv_fromPath _
@@ -423,8 +444,7 @@ theorem zpowers_fromPath_eq_top_of_degree_map_eq_one {x : X}
   have h : fundamentalGroupMulEquiv _
       (FundamentalGroup.map d x (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ))) =
         Multiplicative.ofAdd 1 := by
-    rw [FundamentalGroup.map_apply, ← Path.Homotopic.Quotient.mk_map,
-      fundamentalGroupMulEquiv_fromPath, hγ]
+    rw [FundamentalGroup.map_fromPath d x γ, fundamentalGroupMulEquiv_fromPath, hγ]
   refine (Subgroup.eq_top_iff' _).mpr fun g =>
     ⟨(fundamentalGroupMulEquiv _ (FundamentalGroup.map d x g)).toAdd,
       hd ((fundamentalGroupMulEquiv _).injective ?_)⟩
@@ -438,9 +458,12 @@ theorem homotopic_trans_of_degree_map_eq {x y : X}
     (hd : Function.Injective (FundamentalGroup.map d x)) {γ : Path x x} {δ : Path y y}
     (h : degree (γ.map d.continuous) = degree (δ.map d.continuous)) (α : Path x y) :
     γ.Homotopic (α.trans (δ.trans α.symm)) := by
-  refine Path.Homotopic.Quotient.exact (hd ((fundamentalGroupMulEquiv _).injective ?_))
-  rw [FundamentalGroup.map_apply, FundamentalGroup.map_apply, ← Path.Homotopic.Quotient.mk_map,
-    ← Path.Homotopic.Quotient.mk_map, fundamentalGroupMulEquiv_fromPath,
+  refine Path.Homotopic.Quotient.exact (congrArg CategoryTheory.End.asHom
+    (@hd (FundamentalGroup.fromPath (.mk γ))
+      (FundamentalGroup.fromPath (.mk (α.trans (δ.trans α.symm))))
+      ((fundamentalGroupMulEquiv _).injective ?_)))
+  rw [FundamentalGroup.map_fromPath d x γ, FundamentalGroup.map_fromPath d x _,
+    fundamentalGroupMulEquiv_fromPath,
     fundamentalGroupMulEquiv_fromPath, Path.map_trans, Path.map_trans, ← Path.map_symm, h]
   -- Conjugating by the image of `α` does not change the degree.
   simpa using (degree_symm_trans_trans (δ.map d.continuous) (α.map d.continuous).symm).symm

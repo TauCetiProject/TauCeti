@@ -28,9 +28,8 @@ Two consequences follow. First, lattice homology is not zero: the short complex 
 differential is not exact. Second, and more precisely, the class of a minimal-weight lattice point
 generates a *free* `𝔽₂[U]`-submodule: no nonzero multiple `U ^ j` of it is a boundary, an infinite
 `U`-tower. Nothing here locates that tower in a homological grading, so no `d`-invariant is
-identified; in Némethi's theory it is the graded bottom of such a tower that gives the
-`d`-invariant of the plumbed three-manifold, and a graded statement to that effect is left to
-future work.
+identified; in Némethi's theory it is the graded bottom of such a tower that gives the `d`-invariant
+of the plumbed three-manifold.
 
 ## Main definitions
 
@@ -52,10 +51,8 @@ future work.
 
 ## References
 
-This advances `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane L ("lattice homology"),
-which asks for Némethi's lattice homology as a `ℤ[U]`-module together with computations of
-concrete negative-definite plumbings and `d`-invariant analogues. The `U`-tower and the role of
-`min χ_k` follow A. Némethi, [arXiv:0709.0841](https://arxiv.org/abs/0709.0841), Section 3.
+The `U`-tower and the role of `min χ_k` follow A. Némethi,
+[arXiv:0709.0841](https://arxiv.org/abs/0709.0841), Section 3.
 -/
 
 public section
@@ -274,10 +271,7 @@ theorem not_exact_latticeShortComplex (P : PlumbingGraph V) (h : P.IsNegativeDef
   rw [hone] at hzero
   exact one_ne_zero hzero
 
-/-- The characteristic-two lattice homology of a negative-definite plumbing is nonzero.
-
-This is the first nonvanishing statement for the invariant: up to now the only computed lattice
-homology was that of the zero-vertex plumbing. -/
+/-- The characteristic-two lattice homology of a negative-definite plumbing is nonzero. -/
 theorem not_isZero_latticeHomology (P : PlumbingGraph V) (h : P.IsNegativeDefinite)
     (k : P.characteristicVectors) : ¬ Limits.IsZero (P.latticeHomology k) := by
   rw [latticeHomology_def, ← ShortComplex.exact_iff_isZero_homology]

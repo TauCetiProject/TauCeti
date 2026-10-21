@@ -10,6 +10,9 @@ public import TauCeti.FieldTheory.RatFunc.Automorphism
 -- Non-public: `Matrix.GeneralLinearGroup.mem_center_iff_entries` identifies the kernel of the
 -- action below with the centre of `GL₂(k)`, in the proofs only.
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.CenterFinTwo
+-- Non-public: finiteness and order of `PGL₂` over a finite field, read through
+-- `RatFunc.pglEquivAlgEquiv` in the proofs only.
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.ProjGenLinGroup
 
 /-!
 # Linear fractional transformations of the rational function field
@@ -44,6 +47,9 @@ invertible `2 × 2` matrix over `k` has nonzero determinant, so the construction
   `GL₂(k) →* Aut(k(X)/k)`.
 * `RatFunc.infinite_algEquiv`: over an infinite field the translations already make
   `Aut(k(X)/k)` infinite.
+* `RatFunc.finite_algEquiv` and `RatFunc.infinite_algEquiv_iff`: over a finite field
+  `Aut(k(X)/k) ≅ PGL₂(k)` is finite, so it is infinite exactly when `k` is.
+* `RatFunc.card_algEquiv`: over a field with `q` elements, `Aut(k(X)/k)` has order `q³ - q`.
 
 ## References
 
@@ -479,5 +485,27 @@ theorem infinite_algEquiv [Infinite K] : Infinite (RatFunc K ≃ₐ[K] RatFunc K
   Infinite.of_injective _ (translationAut_injective (K := K))
 
 end Translation
+
+section Finite
+
+/-- **The automorphism group of `k(X)` over a finite field is finite**, because it is `PGL₂(k)`. -/
+instance finite_algEquiv [Finite K] : Finite (RatFunc K ≃ₐ[K] RatFunc K) :=
+  Finite.of_equiv _ pglEquivAlgEquiv.toEquiv
+
+/-- **The automorphism group of `k(X)` is infinite exactly when `k` is infinite**: the
+translations make it infinite over an infinite field, and over a finite field it is the finite
+group `PGL₂(k)`. -/
+theorem infinite_algEquiv_iff : Infinite (RatFunc K ≃ₐ[K] RatFunc K) ↔ Infinite K := by
+  refine ⟨fun h ↦ ?_, fun _ ↦ infinite_algEquiv⟩
+  by_contra hK
+  rw [not_infinite_iff_finite] at hK
+  exact not_finite (RatFunc K ≃ₐ[K] RatFunc K)
+
+/-- **The order of the automorphism group of `𝔽_q(X)` is `q³ - q`**, the order of `PGL₂(𝔽_q)`. -/
+theorem card_algEquiv [Fintype K] :
+    Nat.card (RatFunc K ≃ₐ[K] RatFunc K) = Fintype.card K ^ 3 - Fintype.card K := by
+  rw [← Nat.card_congr pglEquivAlgEquiv.toEquiv, TauCeti.natCard_PGL_fin_two]
+
+end Finite
 
 end RatFunc

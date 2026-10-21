@@ -48,9 +48,7 @@ source lies above that range.
 
 ## References
 
-This supplies the cubical grading needed by the lattice-homology construction in
-`TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane L ("lattice homology"). The grading
-by cube dimension and its degree-minus-one differential follow A. Némethi,
+The grading by cube dimension and its degree-minus-one differential follow A. Némethi,
 [arXiv:0709.0841](https://arxiv.org/abs/0709.0841), Section 3.
 -/
 

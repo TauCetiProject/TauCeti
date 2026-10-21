@@ -72,16 +72,11 @@ has a carrier in the universe of the group, `TauCeti.indFDRep` transports it to 
 model whose carrier lies in the universe of the coefficient ring. It therefore produces an object
 of `FDRep ℂ (GL (Fin 2) F)` without restricting the universe of `F`.
 
-`TauCetiRoadmap/RepresentationTheory/CharacterTheory/Suggested.lean` pins `GL2PrincipalSeries`
-with a `[DecidableEq F]` hypothesis. It is not needed: `GL (Fin 2) F` needs decidable equality only
-on the index type `Fin 2`, and carrying an unused instance argument would be flagged by the
-`unusedArguments` linter, so it is dropped here.
+No `[DecidableEq F]` hypothesis is assumed: `GL (Fin 2) F` needs decidable equality only on the
+index type `Fin 2`.
 
 ## References
 
-* [Character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md),
-  Layer 9, "The Borel and the principal series": the targets `GL2PrincipalSeries` and
-  `character_one_GL2PrincipalSeries`, whose names are the roadmap's.
 * C. Bonnafé, *Representations of `SL₂(𝔽_q)`* (2011), Chapter 5.
 * W. Fulton and J. Harris, *Representation Theory: A First Course* (1991), Lecture 5.2.
 -/

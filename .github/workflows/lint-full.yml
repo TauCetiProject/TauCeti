@@ -53,9 +53,17 @@ jobs:
           # Harmless (just a slightly deeper fetch) when the cache is off.
           fetch-depth: 100
 
+      - name: Prepare pinned shared tools
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+        with:
+          tools-repository: TauCetiProject/TauCetiTools
+          tools-ref: ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+          project-directory: .
       - name: Infrastructure policy unit tests
         run: |
+          python3 scripts/test_cancel_bors_candidate.py
           PYTHONPATH=scripts python3 scripts/test_ci_graphs.py
+          python3 -m unittest discover -s scripts -p test_ci_live_summary.py
           PYTHONPATH=scripts python3 scripts/test_loc_graph.py
           PYTHONPATH=scripts python3 scripts/test_roadmap_completion.py
           PYTHONPATH=scripts python3 scripts/test_loc_roadmap_graph.py
@@ -66,6 +74,7 @@ jobs:
           PYTHONPATH=scripts python3 scripts/test_pipeline_health.py
           python3 scripts/pr_status/test_stuck_alerts.py
           python3 scripts/test_roadmap_label.py
+          python3 scripts/test_roadmap_api.py
           PYTHONPATH=scripts python3 scripts/test_housekeeping.py
           python3 scripts/pr_status/test_pr_labels.py
           python3 scripts/pr_status/test_zulip.py
@@ -73,13 +82,16 @@ jobs:
           python3 scripts/test_structure_nudge.py
           python3 scripts/test_workflow_pins.py
           python3 scripts/test_queue_release.py
+          python3 scripts/test_pick_runner.py
           python3 scripts/test_bwrap_pin.py
           PYTHONPATH=scripts python3 scripts/test_bump_manifest.py
           python3 scripts/test_build_lint_driver.py
           python3 scripts/test_elan_pin.py
           python3 scripts/test_duplicate_audit_workflow.py
+          python3 scripts/test_ci_host_resources.py
           python3 scripts/test_web_pins.py
           python3 scripts/test_attest_pr_config.py
+          python3 scripts/test_prepare_pr_integration.py
           python3 scripts/test_profile_workflow.py
           python3 scripts/test_lake_cache_probe.py
           python3 scripts/test_lake_cache_get.py
@@ -88,6 +100,7 @@ jobs:
           PYTHONPATH=scripts python3 scripts/test_claims_access.py
           python3 scripts/test_lint_dot_notation.py
           python3 scripts/test_check_expired_mathlib_shims.py
+          python3 scripts/test_check_source_options.py
           python3 scripts/test_toolchain_tags.py
 
       # The two-library split is build convenience, not a trust boundary.
@@ -100,16 +113,12 @@ jobs:
             exit 1
           fi
 
-      # No-set_option guard. `set_option` is an escape hatch (it can raise maxHeartbeats,
-      # silence linters, bump maxRecDepth, ...), so TauCeti/ source may not use it. Like the
-      # import guard it is a textual scan that needs no elaboration, so it runs trusted and
-      # outside the sandbox.
-      - name: No-set_option guard (TauCeti/ and TauCeti.lean use no set_option)
+      # Option overrides, heartbeat instrumentation, and explicit metaprogramming are forbidden.
+      # This cheap trusted scan ignores comments without double quotes, conservatively
+      # includes strings and names, and needs no elaboration or sandbox access.
+      - name: Reject option overrides and metaprogramming (allow local macros)
         run: |
-          if grep -rIn '^set_option ' TauCeti/ TauCeti.lean; then
-            echo "::error::TauCeti/ and TauCeti.lean may not use set_option (it can weaken maxHeartbeats, linters, maxRecDepth, ...); remove it"
-            exit 1
-          fi
+          python3 scripts/check_source_options.py TauCeti/ TauCeti.lean
 
       # Restore only Mathlib's compressed, content-addressed `.ltar` download store. This is
       # deliberately narrower than a cache of the whole multi-gigabyte `./.lake` tree: `lake exe

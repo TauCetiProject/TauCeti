@@ -251,7 +251,6 @@ variable [AddCommMonoid P] [Module R P] [Comodule R C P]
 variable [AddCommMonoid P'] [Module R P']
 
 /-- Transporting morphisms preserves composition. -/
-@[simp]
 theorem transportHom_comp (eM : M ≃ₗ[R] N) (eM' : M' ≃ₗ[R] N') (eP : P ≃ₗ[R] P')
     (f : Hom R C M M') (g : Hom R C M' P) :
     letI : Comodule R C N := Transport (R := R) (C := C) (M := M) (N := N) eM

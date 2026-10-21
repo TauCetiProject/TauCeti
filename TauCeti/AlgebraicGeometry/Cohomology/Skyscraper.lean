@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.Flasque
 public import TauCeti.AlgebraicGeometry.Modules.Skyscraper
-public import TauCeti.AlgebraicGeometry.ResidueDegree
 
 /-!
 # Cohomology of skyscraper sheaves of residue fields
@@ -59,9 +58,10 @@ theorem _root_.AlgebraicGeometry.Scheme.finrank_cohomology_zero_skyscraperResidu
   congr 1
   have hx : x ∈ (⊤ : X.Opens) := trivial
   refine rank_eq_of_equiv_equiv _ (skyscraperResidueFieldEquiv x hx)
-    (Γevaluation_comp_ΓSpecIso_inv_bijective k (f x)) fun c s ↦ ?_
+    (ConcreteCategory.bijective_of_isIso
+      ((Scheme.ΓSpecIso (.of k)).inv ≫ (Spec (.of k)).Γevaluation (f x))) fun c s ↦ ?_
   rw [Scheme.Modules.base_smul_globalSections, skyscraperResidueFieldEquiv_smul,
-    Algebra.smul_def, RingHom.algebraMap_toAlgebra, Function.comp_apply,
+    Algebra.smul_def, RingHom.algebraMap_toAlgebra, CommRingCat.comp_apply,
     Scheme.Γevaluation_naturality_apply, Scheme.Modules.baseRingToGlobalSections_apply]
 
 /-- At a point whose residue field is finite over `k`, the skyscraper sheaf `κ(x)ₓ` has

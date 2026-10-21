@@ -109,7 +109,7 @@ instance isIrreducible_typeB_standard :
       coe_typeBShortRootGenerator] at h
     have heq : typeBShortRootMatrix i *ᵥ Pi.single (.inl ()) (1 : K) =
         (2 : K) • Pi.single (.inr (.inl i)) 1 := by
-      have h := toLinAlgEquiv_typeBShortRootMatrix_apply_basis
+      have h := Module.Basis.toLinAlgEquiv_typeBShortRootMatrix_apply_basis
         (Pi.basisFun K (Unit ⊕ ι ⊕ ι)) i (.inl ())
       rw [Matrix.toLinAlgEquiv_self] at h
       ext a
@@ -122,7 +122,7 @@ instance isIrreducible_typeB_standard :
       coe_typeBShortNegativeRootGenerator] at h
     have heq : typeBShortNegativeRootMatrix i *ᵥ Pi.single (.inl ()) (1 : K) =
         -((2 : K) • Pi.single (.inr (.inr i)) 1) := by
-      have h := toLinAlgEquiv_typeBShortNegativeRootMatrix_apply_basis
+      have h := Module.Basis.toLinAlgEquiv_typeBShortNegativeRootMatrix_apply_basis
         (Pi.basisFun K (Unit ⊕ ι ⊕ ι)) i (.inl ())
       rw [Matrix.toLinAlgEquiv_self] at h
       ext a

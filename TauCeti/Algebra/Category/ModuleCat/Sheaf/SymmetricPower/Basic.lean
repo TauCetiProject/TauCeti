@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Defs
-public import TauCeti.Algebra.Category.ModuleCat.Presheaf.SymmetricPower
+public import TauCeti.Algebra.Category.ModuleCat.Presheaf.SymmetricPower.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Restriction.Basic
 
 /-!
@@ -28,7 +28,10 @@ sectionwise symmetric algebras) and sheafifying, exactly as the tensor product
   sheaves of `R`-modules;
 * `SheafOfModules.symmetricPowerIso` and `SheafOfModules.symmetricPower_map` are its
   defining identification with the sheafification of the sectionwise symmetric power;
-* `SheafOfModules.symmetricPowerZeroIso` identifies `Sym⁰ M` with the structure sheaf;
+* `TauCeti.SheafOfModules.symmetricPower_hom_ext` checks equality of maps out of a symmetric
+  power on the sheafifications of sectionwise symmetric tensors;
+* `SheafOfModules.symmetricPowerZeroIso` identifies `Sym⁰ M` with the structure sheaf, with
+  components computed by `symmetricPowerZeroIso_hom_app` and `symmetricPowerZeroIso_inv_app`;
 * `SheafOfModules.symmetricPowerOneIso` identifies `Sym¹ M` with `M`;
 * `SheafOfModules.overSymmetricPowerIso` identifies the restriction of `Symⁿ M` to a slice site
   with the symmetric power of the restriction of `M`.
@@ -76,6 +79,24 @@ theorem symmetricPower_map (n : ℕ) {M N : SheafOfModules.{u} (ringCatSheaf R)}
         ((PresheafOfModulesOfCommRing.symmetricPower n).map φ.val) ≫ (symmetricPowerIso n N).inv :=
   (rfl)
 
+/-- On sections over `X`, the symmetric power of a morphism `φ` sends the sheafification of a
+sectionwise symmetric tensor `x` to the sheafification of its image under `Symⁿ (φ_X)`. -/
+@[simp]
+theorem symmetricPower_map_val_app_unit (n : ℕ) {M N : SheafOfModules.{u} (ringCatSheaf R)}
+    (φ : M ⟶ N) (X : Cᵒᵖ)
+    (x : (PresheafOfModulesOfCommRing.obj (R := R.obj) M.val X).symmetricPower n) :
+    ((symmetricPower R n).map φ).val.app X ((symmetricPowerIso n M).inv.val.app X
+      (((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app
+        ((PresheafOfModulesOfCommRing.symmetricPower n).obj M.val)).app X x)) =
+    (symmetricPowerIso n N).inv.val.app X
+      (((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app
+        ((PresheafOfModulesOfCommRing.symmetricPower n).obj N.val)).app X
+          (ModuleCat.symmetricPower.map (φ.val.app' X) n x)) :=
+  -- `symmetricPowerIso` is the identity, so this is naturality of the sheafification unit.
+  (ConcreteCategory.congr_hom (congrArg (fun α ↦ α.app X)
+    ((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.naturality
+      ((PresheafOfModulesOfCommRing.symmetricPower n).map φ.val))) x).symm
+
 variable (R) in
 /-- The zeroth symmetric power of a sheaf of modules is the structure sheaf, naturally: the
 sheafification of the presheaf-level identification
@@ -117,6 +138,19 @@ theorem symmetricPowerZeroIso_hom_app (M : SheafOfModules.{u} (ringCatSheaf R)) 
           ((PresheafOfModulesOfCommRing.symmetricPowerZeroIso R.obj).hom.app M.val) ≫
         (TauCeti.SheafOfModules.sheafificationIso (ringCatSheaf R)
           (SheafOfModules.unit (ringCatSheaf R))).hom :=
+  (rfl)
+
+/-- On components, the inverse of `symmetricPowerZeroIso` is the identification of the structure
+sheaf with the sheafified unit, followed by the sheafification of the inverse presheaf-level
+identification `PresheafOfModulesOfCommRing.symmetricPowerZeroIso`. -/
+@[simp, reassoc]
+theorem symmetricPowerZeroIso_inv_app (M : SheafOfModules.{u} (ringCatSheaf R)) :
+    (symmetricPowerZeroIso R).inv.app M =
+      (TauCeti.SheafOfModules.sheafificationIso (ringCatSheaf R)
+          (SheafOfModules.unit (ringCatSheaf R))).inv ≫
+        (PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj)).map
+          ((PresheafOfModulesOfCommRing.symmetricPowerZeroIso R.obj).inv.app M.val) ≫
+        (symmetricPowerIso 0 M).inv :=
   (rfl)
 
 /-- On components, `symmetricPowerOneIso` is the sheafification of the presheaf-level
@@ -297,5 +331,32 @@ theorem overSymmetricPowerIso_hom_naturality (n : ℕ)
 end Pushforward
 
 end SheafOfModules
+
+namespace TauCeti.SheafOfModules
+
+open _root_.SheafOfModules
+
+variable {R}
+
+/-- Maps from a sheaf symmetric power are determined by their values on the sheafifications of
+sectionwise symmetric tensors. -/
+theorem symmetricPower_hom_ext (n : ℕ) (M : _root_.SheafOfModules.{u} (ringCatSheaf R))
+    {N : _root_.SheafOfModules.{u} (ringCatSheaf R)}
+    {f g : (symmetricPower R n).obj M ⟶ N}
+    (h : ∀ (U : Cᵒᵖ)
+      (x : (PresheafOfModulesOfCommRing.obj (R := R.obj) M.val U).symmetricPower n),
+      f.val.app U ((symmetricPowerIso n M).inv.val.app U
+        (((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app
+          ((PresheafOfModulesOfCommRing.symmetricPower n).obj M.val)).app U x)) =
+      g.val.app U ((symmetricPowerIso n M).inv.val.app U
+        (((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app
+          ((PresheafOfModulesOfCommRing.symmetricPower n).obj M.val)).app U x))) : f = g := by
+  rw [← cancel_epi (symmetricPowerIso n M).inv]
+  apply ((PresheafOfModules.sheafificationAdjunction
+    (𝟙 (ringCatSheaf R).obj)).homEquiv _ _).injective
+  ext U x
+  exact h U x
+
+end TauCeti.SheafOfModules
 
 end

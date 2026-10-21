@@ -62,6 +62,16 @@ namespace TauCeti
 
 variable {ι : Type*} [Fintype ι]
 
+/-- At a point of an interval containing no prevertex with nonzero exponent, the sum of the
+exponents at that point vanishes. -/
+theorem sum_filter_eq_zero_of_mem_Ioo (a e : ι → ℝ) {p q x : ℝ}
+    (ha : ∀ i, e i ≠ 0 → a i ∉ Ioo p q) (hx : x ∈ Ioo p q) :
+    ∑ i with a i = x, e i = 0 := by
+  apply Finset.sum_eq_zero
+  intro i hi
+  by_contra he
+  exact ha i he (by simpa only [(Finset.mem_filter.mp hi).2] using hx)
+
 /-- The **boundary value of the Schwarz--Christoffel map** at a real point: the value at that
 point of Mathlib's `extendFrom` extension of the normalized primitive from the upper half-plane.
 The extension is total, so this is a limit of the primitive only where such a limit exists; that
@@ -253,13 +263,7 @@ theorem continuousOn_schwarzChristoffelBoundary_Icc (a e : ι → ℝ)
   · exact hp
   rcases eq_or_lt_of_le hx.2 with rfl | hxq
   · exact hq
-  have hzero : ∑ i with a i = x, e i = 0 := by
-    apply Finset.sum_eq_zero
-    intro i hi
-    simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hi
-    by_contra hei
-    exact ha i hei ⟨hi ▸ hpx, hi ▸ hxq⟩
-  rw [hzero]
+  rw [sum_filter_eq_zero_of_mem_Ioo a e ha ⟨hpx, hxq⟩]
   norm_num
 
 end TauCeti

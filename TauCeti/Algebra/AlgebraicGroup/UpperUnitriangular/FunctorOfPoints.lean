@@ -15,8 +15,7 @@ of the upper-unitriangular coordinate Hopf algebra with the existing upper-unitr
 group. The equivalence is natural in the commutative value algebra and therefore assembles into
 a natural isomorphism of group-valued functors.
 
-The construction includes empty finite index types and zero rings. It does not yet package a
-group scheme.
+The construction includes empty finite index types and zero rings.
 
 ## Main declarations
 
@@ -34,8 +33,6 @@ group scheme.
 
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
 * T. A. Springer, *Linear Algebraic Groups*, Section 2.4.
-
-The layout follows `GeneralLinear.FunctorOfPoints`.
 -/
 
 public section

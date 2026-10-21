@@ -53,6 +53,9 @@ coroots, so the reflection equation reads `wt (s_i a) j = wt a j - wt a i * CM j
 
 * `TauCeti.MinusculeWeightTable.raisingMatrix_apply`, `loweringMatrix_apply` and
   `cartanGeneratorMatrix_apply`: their entry formulas.
+* `TauCeti.MinusculeWeightTable.raisingMatrix_apply_eq_zero_of_weight_sub_ne` and
+  `loweringMatrix_apply_eq_zero_of_weight_sub_ne`: the raising and lowering matrices vanish off the
+  entries whose weight difference is the positive or negative simple root.
 * `TauCeti.MinusculeWeightTable.raisingMatrix_pow_two` and `loweringMatrix_pow_two`: the raising
   and lowering matrices square to zero.
 * `TauCeti.MinusculeWeightTable.isSl2Triple`: the three matrices at a node are an `sl₂` triple when
@@ -433,6 +436,30 @@ theorem loweringMatrix_apply (i : B) (a b : ι) :
   rw [← PEquiv.mem_iff_mem]
   simp only [raisingPEquiv, PEquiv.symm]
   simp [loweringTarget, eq_comm]
+
+/-- A raising matrix vanishes off the entries whose weight difference is its simple root, the
+`i`-th column of the Cartan matrix. -/
+theorem raisingMatrix_apply_eq_zero_of_weight_sub_ne (i : B) (a b : ι)
+    (h : T.weight a - T.weight b ≠ fun j ↦ T.cartanMatrix j i) :
+    T.raisingMatrix i a b = 0 := by
+  rw [raisingMatrix_apply, ite_eq_right_iff]
+  rintro ⟨hb, rfl⟩
+  refine absurd ?_ h
+  ext j
+  rw [Pi.sub_apply, T.weight_reflection, hb]
+  ring
+
+/-- A lowering matrix vanishes off the entries whose weight difference is its negative simple
+root, the negated `i`-th column of the Cartan matrix. -/
+theorem loweringMatrix_apply_eq_zero_of_weight_sub_ne (i : B) (a b : ι)
+    (h : T.weight a - T.weight b ≠ -fun j ↦ T.cartanMatrix j i) :
+    T.loweringMatrix i a b = 0 := by
+  rw [loweringMatrix_apply, ite_eq_right_iff]
+  rintro ⟨hb, rfl⟩
+  refine absurd ?_ h
+  ext j
+  rw [Pi.sub_apply, Pi.neg_apply, T.weight_reflection, hb]
+  ring
 
 /-- The column of a raising matrix over any commutative ring is the reflected coordinate
 vector exactly at a raising edge, and otherwise is zero. -/

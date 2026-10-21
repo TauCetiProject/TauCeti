@@ -105,6 +105,17 @@ theorem schwarzChristoffelFiniteBoundary_eq_preimage_range (a e : ι → ℝ)
           simpa only [schwarzChristoffelSphereBoundary_coe_of_exponent_sum_gt_neg_one
             a e z₀ p hp] using hx)⟩
 
+/-- When every boundary value is finite, the finite trace is the range of the complex-valued
+compactified boundary. -/
+theorem schwarzChristoffelFiniteBoundary_eq_range_compactifiedBoundary
+    (a e : ι → ℝ) (z₀ : UpperHalfPlane)
+    (hfinite : ∀ j, -1 < ∑ i with a i = a j, e i) (hinfty : ∑ i, e i < -1) :
+    schwarzChristoffelFiniteBoundary a e z₀ =
+      range (schwarzChristoffelCompactifiedBoundary a e z₀) := by
+  rw [schwarzChristoffelFiniteBoundary_eq_preimage_range a e z₀ (fun j => (hfinite j).le),
+    schwarzChristoffelSphereBoundary_eq_coe_compactifiedBoundary a e z₀ hfinite hinfty,
+    range_comp, preimage_image_eq _ OnePoint.coe_injective]
+
 /-- The finite boundary trace is closed, even when several real parameters map to infinity. -/
 theorem isClosed_schwarzChristoffelFiniteBoundary (a e : ι → ℝ)
     (z₀ : UpperHalfPlane) (hfinite : ∀ j, -1 ≤ ∑ i with a i = a j, e i) :

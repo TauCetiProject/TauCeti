@@ -62,7 +62,7 @@ theorem mem_normalizerPoints (g : WithConv (H →ₐ[R] R)) :
 /-- The points of the diagonalizable subgroup map into its scheme normalizer. -/
 noncomputable def mapDomainToNormalizer :
     WithConv (MonoidAlgebra R X →ₐ[R] R) →* normalizerPoints π hπ :=
-  (AlgHom.mapDomain π).codRestrict (normalizerPoints π hπ) fun t ↦ by
+  (BialgHom.mapDomain π).codRestrict (normalizerPoints π hπ) fun t ↦ by
     rw [mem_normalizerPoints]
     apply HopfIdeal.ext
     intro x
@@ -74,7 +74,7 @@ noncomputable def mapDomainToNormalizer :
 /-- The normalizer inclusion recovers the original point of the ambient group. -/
 @[simp]
 theorem coe_mapDomainToNormalizer (t : WithConv (MonoidAlgebra R X →ₐ[R] R)) :
-    (mapDomainToNormalizer π hπ t : WithConv (H →ₐ[R] R)) = AlgHom.mapDomain π t := (rfl)
+    (mapDomainToNormalizer π hπ t : WithConv (H →ₐ[R] R)) = BialgHom.mapDomain π t := (rfl)
 
 /-- A normalizing point's inverse also normalizes the subgroup. -/
 private theorem le_conjugate_inv (g : normalizerPoints π hπ) :

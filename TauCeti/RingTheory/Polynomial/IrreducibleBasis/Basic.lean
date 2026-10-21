@@ -7,8 +7,6 @@ module
 
 public import Mathlib.RingTheory.Polynomial.GaussLemma
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
-public import Mathlib.RingTheory.Polynomial.UniqueFactorization
-public import Mathlib.RingTheory.UniqueFactorizationDomain.GCDMonoid
 
 import Mathlib.Algebra.BigOperators.Associated
 import Mathlib.Algebra.Squarefree.Basic
@@ -18,13 +16,12 @@ import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 /-!
 # Irreducible bases of finite families of polynomials
 
-Let `D` be a unique factorization domain and `F` a finite family of polynomials in one
+Let `D` be a GCD domain and `F` a finite family of polynomials in one
 distinguished variable over `D`. An *irreducible basis* of `F` is a finite set `B` of pairwise
 nonassociated irreducible polynomials of positive degree such that every member of `F` is a
 constant times a product of powers of members of `B`, and every member of `B` divides some
-nonzero member of `F`. The constant collects the unit and the irreducible factors that do not
-involve the distinguished variable, that is, the content of the member up to a unit; the
-product of powers is primitive. Zero members are reconstructed with the constant `0` and
+nonzero member of `F`. The constant is the content of the member up to a unit; the product of
+powers is primitive. Zero members are reconstructed with the constant `0` and
 contribute nothing to the basis.
 
 The intended coefficient ring is `D = MvPolynomial (Fin n) R` over a field `R`, which is a
@@ -43,8 +40,8 @@ irreducible member can be inseparable.
 
 * `Finset.IsIrreducibleBasis F B`: `B` is an irreducible basis of the finite family `F`.
 * `Finset.exists_isIrreducibleBasis`: every finite family has an irreducible basis. It rests on
-  `Polynomial.exists_eq_C_mul_prod_filter_factors`: a nonzero polynomial is a constant times the
-  product of its irreducible factors of positive degree.
+  `Polynomial.exists_eq_C_mul_prod_irreducible`: every polynomial is a constant times a
+  product of irreducible polynomials of positive degree.
 * `Finset.IsIrreducibleBasis.isPrimitive`, `Finset.IsIrreducibleBasis.isPrimitive_prod`: the
   members of the basis, and all products of their powers, are primitive.
 * `Finset.IsIrreducibleBasis.exists_eq_C_content_mul_unit_mul_prod`: every member of the family
@@ -129,11 +126,9 @@ variable [IsDomain D]
 theorem isPrimitive (hB : F.IsIrreducibleBasis B) (hb : b ∈ B) : b.IsPrimitive :=
   (hB.irreducible b hb).isPrimitive (hB.natDegree_pos b hb).ne'
 
-variable [UniqueFactorizationMonoid D]
-
 /-- Every product of powers of the members of an irreducible basis is primitive, so the
 constant in `exists_eq_C_mul_prod` is the content of the member up to a unit. -/
-theorem isPrimitive_prod (hB : F.IsIrreducibleBasis B) (e : D[X] → ℕ) :
+theorem isPrimitive_prod [IsGCDMonoid D] (hB : F.IsIrreducibleBasis B) (e : D[X] → ℕ) :
     (∏ b ∈ B, b ^ e b).IsPrimitive := by
   let := Classical.arbitrary (NormalizedGCDMonoid D)
   refine Finset.prod_induction _ IsPrimitive (fun _ _ ↦ IsPrimitive.mul) isPrimitive_one
@@ -153,6 +148,8 @@ theorem exists_eq_C_content_mul_unit_mul_prod [NormalizedGCDMonoid D]
   obtain ⟨u, hu⟩ := hc.symm
   exact ⟨u⁻¹, e, by rw [← hu, Units.mul_inv_cancel_right]⟩
 
+variable [IsGCDMonoid D]
+
 /-- The product of the members of an irreducible basis is squarefree. -/
 theorem squarefree_prod (hB : F.IsIrreducibleBasis B) : Squarefree (∏ b ∈ B, b) :=
   Finset.squarefree_prod_of_pairwise_isCoprime
@@ -170,7 +167,7 @@ theorem exists_associated_iff (hB : F.IsIrreducibleBasis B) {q : D[X]} (hq : Irr
     exact ⟨f, hf, hf0, hqb.dvd.trans hbf⟩
   obtain ⟨c, e, rfl⟩ := hB.exists_eq_C_mul_prod f hf
   have hc : c ≠ 0 := by rintro rfl; simp at hf0
-  have hq' := UniqueFactorizationMonoid.irreducible_iff_prime.1 hq
+  have hq' := hq.prime
   rcases hq'.dvd_or_dvd hqf with h | h
   · have := natDegree_le_of_dvd h (C_ne_zero.2 hc)
     rw [natDegree_C] at this
@@ -305,81 +302,105 @@ end Finset
 
 namespace Polynomial
 
-variable {D : Type*} [CommRing D] [IsDomain D] [UniqueFactorizationMonoid D]
+variable {D : Type*} [CommRing D] [IsDomain D] [IsGCDMonoid D]
 
-/-- Over a unique factorization domain, a nonzero polynomial is a constant times the product of
-its irreducible factors of positive degree. -/
-theorem exists_eq_C_mul_prod_filter_factors {f : D[X]} (hf : f ≠ 0) :
-    ∃ c, f = C c * ((UniqueFactorizationMonoid.factors f).filter (0 < ·.natDegree)).prod := by
-  set m := UniqueFactorizationMonoid.factors f
-  -- the factors of degree zero multiply to a constant
-  obtain ⟨c, hc⟩ : ∃ c, (m.filter fun q ↦ ¬0 < q.natDegree).prod = C c := by
-    refine ⟨_, eq_C_of_natDegree_eq_zero (Nat.eq_zero_of_le_zero
-      ((natDegree_multiset_prod_le _).trans (Multiset.sum_eq_zero fun d hd ↦ ?_).le))⟩
-    obtain ⟨q, hq, rfl⟩ := Multiset.mem_map.1 hd
-    simpa using (Multiset.mem_filter.1 hq).2
-  obtain ⟨u, hu⟩ := UniqueFactorizationMonoid.factors_prod hf
-  obtain ⟨r, -, hr⟩ := isUnit_iff.1 u.isUnit
-  refine ⟨c * r, ?_⟩
-  rw [← hu, ← Multiset.prod_filter_mul_prod_filter_not (s := m) (0 < ·.natDegree), hc, ← hr,
-    C_mul]
-  ring
+/-- Over a GCD domain, every polynomial is a constant times a product of irreducible
+polynomials of positive degree. The zero polynomial is included by taking the constant zero. -/
+theorem exists_eq_C_mul_prod_irreducible (f : D[X]) :
+    ∃ (c : D) (s : Multiset D[X]),
+      (∀ q ∈ s, Irreducible q ∧ 0 < q.natDegree) ∧ f = C c * s.prod := by
+  classical
+  let := Classical.arbitrary (NormalizedGCDMonoid D)
+  induction hn : f.natDegree using Nat.strong_induction_on generalizing f with
+  | h n ih =>
+    by_cases hf : f.natDegree = 0
+    · exact ⟨f.coeff 0, 0, by simp, by simpa using eq_C_of_natDegree_eq_zero hf⟩
+    have hp := f.isPrimitive_primPart
+    have hd : 0 < f.primPart.natDegree := by
+      simpa only [natDegree_primPart] using Nat.pos_of_ne_zero hf
+    rcases irreducible_or_factor (fun h ↦ hd.ne' (natDegree_eq_zero_of_isUnit h)) with
+      hi | ⟨g, h, hg, hh, heq⟩
+    · exact ⟨f.content, {f.primPart}, by simpa using And.intro hi hd,
+        by simpa using f.eq_C_content_mul_primPart⟩
+    have hg0 : g ≠ 0 := left_ne_zero_of_mul (heq ▸ hp.ne_zero)
+    have hh0 : h ≠ 0 := right_ne_zero_of_mul (heq ▸ hp.ne_zero)
+    -- A nonunit factor of the primitive part cannot be constant.
+    have hpos (q : D[X]) (hq : q ∣ f.primPart) (hu : ¬IsUnit q) : 0 < q.natDegree := by
+      by_contra hdeg
+      have hqC := eq_C_of_natDegree_eq_zero (Nat.eq_zero_of_not_pos hdeg)
+      apply hu
+      rw [hqC, isUnit_C]
+      exact (isPrimitive_of_dvd hp hq) _ (by rw [← hqC])
+    have hdeg : f.natDegree = g.natDegree + h.natDegree := by
+      rw [← f.natDegree_primPart, heq, natDegree_mul hg0 hh0]
+    obtain ⟨cg, sg, hsg, hgfact⟩ := ih g.natDegree (by
+      have := hpos h (heq ▸ dvd_mul_left h g) hh
+      omega) g rfl
+    obtain ⟨ch, sh, hsh, hhfact⟩ := ih h.natDegree (by
+      have := hpos g (heq ▸ dvd_mul_right g h) hg
+      omega) h rfl
+    refine ⟨f.content * cg * ch, sg + sh, ?_, ?_⟩
+    · intro q hq
+      exact (Multiset.mem_add.mp hq).elim (hsg q) (hsh q)
+    · calc
+        f = C f.content * f.primPart := f.eq_C_content_mul_primPart
+        _ = C (f.content * cg * ch) * (sg + sh).prod := by
+          rw [heq, hgfact, hhfact, Multiset.prod_add, C_mul, C_mul]
+          ring
 
 end Polynomial
 
 namespace Finset
 
-variable {D : Type*} [CommRing D] [IsDomain D] [UniqueFactorizationMonoid D]
+variable {D : Type*} [CommRing D] [IsDomain D] [IsGCDMonoid D]
 
-/-- Every finite family of polynomials over a unique factorization domain has an irreducible
-basis. -/
+/-- Every finite family of polynomials over a GCD domain has an irreducible basis. -/
 theorem exists_isIrreducibleBasis (F : Finset D[X]) : ∃ B, F.IsIrreducibleBasis B := by
   classical
-  -- the irreducible factors of positive degree of the members of `F`
-  let S := F.biUnion fun f ↦
-    ((UniqueFactorizationMonoid.factors f).filter (0 < ·.natDegree)).toFinset
-  have mem_S {q : D[X]} :
-      q ∈ S ↔ ∃ f ∈ F, q ∈ UniqueFactorizationMonoid.factors f ∧ 0 < q.natDegree := by
-    simp [S]
+  choose c factors hirr hfactor using (exists_eq_C_mul_prod_irreducible (D := D))
+  -- Collect the positive-degree irreducible factors of the nonzero members of `F`.
+  let S := (F.filter (· ≠ 0)).biUnion fun f ↦ (factors f).toFinset
+  have mem_S {q : D[X]} : q ∈ S ↔ ∃ f ∈ F, f ≠ 0 ∧ q ∈ factors f := by
+    simp [S, and_assoc]
   -- one representative of each associate class
   let rep : D[X] → D[X] := fun q ↦ Quot.out (Associates.mk q)
   have hrep (q : D[X]) : Associated (rep q) q :=
     Associates.mk_eq_mk_iff_associated.1 (Associates.quot_out _)
   refine ⟨S.image rep, ⟨?_, ?_, ?_, fun f hf ↦ ?_, ?_⟩⟩
   · simp only [mem_image, mem_S]
-    rintro _ ⟨q, ⟨f, -, hq, -⟩, rfl⟩
-    exact (hrep q).symm.irreducible (UniqueFactorizationMonoid.irreducible_of_factor q hq)
+    rintro _ ⟨q, ⟨f, -, -, hq⟩, rfl⟩
+    exact (hrep q).symm.irreducible (hirr f q hq).1
   · simp only [mem_image, mem_S]
     rintro _ ⟨q, ⟨f, -, -, hq⟩, rfl⟩
-    rwa [natDegree_eq_of_degree_eq (degree_eq_degree_of_associated (hrep q))]
+    rw [natDegree_eq_of_degree_eq (degree_eq_degree_of_associated (hrep q))]
+    exact (hirr f q hq).2
   · simp only [mem_image]
     rintro _ ⟨q, -, rfl⟩ _ ⟨q', -, rfl⟩ h
     rw [← Associates.mk_eq_mk_iff_associated, Associates.quot_out, Associates.quot_out] at h
     simp only [rep, h]
   · by_cases hf0 : f = 0
     · exact ⟨0, 0, by simp [hf0]⟩
-    obtain ⟨c, hc⟩ := exists_eq_C_mul_prod_filter_factors hf0
-    set m := (UniqueFactorizationMonoid.factors f).filter (0 < ·.natDegree)
+    set m := factors f
     -- replace each factor by its representative, and collect equal representatives
     have hprod : (m.map rep).prod = ∏ b ∈ S.image rep, b ^ (m.map rep).count b := by
-      rw [Finset.prod_multiset_count]
-      refine Finset.prod_subset (fun b hb ↦ ?_) fun b _ hb ↦ by
-        rw [Multiset.count_eq_zero_of_notMem (by simpa using hb), pow_zero]
+      refine Finset.prod_multiset_count_of_subset (m.map rep) (S.image rep) fun b hb ↦ ?_
       obtain ⟨q, hq, rfl⟩ := Multiset.mem_map.1 (Multiset.mem_toFinset.1 hb)
-      obtain ⟨hqm, hq⟩ := Multiset.mem_filter.1 hq
-      exact mem_image_of_mem rep (mem_S.2 ⟨f, hf, hqm, hq⟩)
+      exact mem_image_of_mem rep (mem_S.2 ⟨f, hf, hf0, hq⟩)
     obtain ⟨u, hu⟩ : Associated (m.map rep).prod m.prod := by
       rw [← Associates.mk_eq_mk_iff_associated, ← Associates.prod_mk, ← Associates.prod_mk,
         Multiset.map_map]
       exact congrArg _ (Multiset.map_congr rfl fun q _ ↦ Associates.quot_out _)
     obtain ⟨r, -, hr⟩ := Polynomial.isUnit_iff.1 u.isUnit
-    refine ⟨c * r, fun b ↦ (m.map rep).count b, ?_⟩
-    rw [hc, ← hu, ← hr, ← hprod, C_mul]
-    ring
+    refine ⟨c f * r, fun b ↦ (m.map rep).count b, ?_⟩
+    calc
+      f = C (c f) * m.prod := hfactor f
+      _ = C (c f * r) * ∏ b ∈ S.image rep, b ^ (m.map rep).count b := by
+        rw [← hu, ← hr, ← hprod, C_mul]
+        ring
   · simp only [mem_image, mem_S]
-    rintro _ ⟨q, ⟨f, hf, hq, -⟩, rfl⟩
-    refine ⟨f, hf, ?_, (hrep q).dvd.trans (UniqueFactorizationMonoid.dvd_of_mem_factors hq)⟩
-    rintro rfl
-    simp at hq
+    rintro _ ⟨q, ⟨f, hf, hf0, hq⟩, rfl⟩
+    refine ⟨f, hf, hf0, (hrep q).dvd.trans ?_⟩
+    rw [hfactor f]
+    exact (Multiset.dvd_prod hq).mul_left _
 
 end Finset

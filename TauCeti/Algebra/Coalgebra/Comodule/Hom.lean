@@ -18,11 +18,6 @@ commute with the coactions.
 
 The `IsZeroApply` and `IsAddApply` instances give pointwise finite sums via Mathlib's
 `sum_apply` and `FunLike.coe_sum`, also for categorical morphisms in `ComoduleCat`.
-
-This is basic infrastructure for the reductive-groups roadmap Layer 1 target
-"Comodules over a coalgebra/Hopf algebra": the representation category of an affine group
-scheme should have additive hom-sets before finite-dimensional, tensor, and dual structures
-are built on top.
 -/
 
 public section
@@ -94,10 +89,10 @@ theorem add_apply (f g : Hom R C M N) (m : M) : (f + g) m = f m + g m :=
   rfl
 
 /-- The zero comodule morphism evaluates pointwise, as required by Mathlib's `FunLike` API. -/
-instance : IsZeroApply (Hom R C M N) M N where
+instance : IsZeroApply (Hom R C M N) where
 
 /-- Addition of comodule morphisms evaluates pointwise, as required by Mathlib's `FunLike` API. -/
-instance : IsAddApply (Hom R C M N) M N where
+instance : IsAddApply (Hom R C M N) where
 
 /-- Scalar multiplication of comodule morphisms is pointwise scalar multiplication. -/
 @[simp]
@@ -170,7 +165,7 @@ theorem add_comp (g h : Hom R C N P) (f : Hom R C M N) :
 theorem comp_add (g : Hom R C N P) (f h : Hom R C M N) :
     comp g (f + h) = comp g f + comp g h := by
   ext m
-  exact map_add g.toLinearMap (f m) (h m)
+  exact map_add g (f m) (h m)
 
 /-- Composition of comodule morphisms is compatible with scalar multiplication in the left
 argument. -/
@@ -186,7 +181,7 @@ argument. -/
 theorem comp_smul (r : R) (g : Hom R C N P) (f : Hom R C M N) :
     comp g (r • f) = r • comp g f := by
   ext m
-  exact map_smul g.toLinearMap r (f m)
+  exact map_smul g r (f m)
 
 /-- Composing the zero morphism on the left gives the zero morphism. -/
 @[simp]
@@ -198,7 +193,7 @@ theorem zero_comp (f : Hom R C M N) : comp (0 : Hom R C N P) f = 0 := by
 @[simp]
 theorem comp_zero (g : Hom R C N P) : comp g (0 : Hom R C M N) = 0 := by
   ext _
-  exact map_zero g.toLinearMap
+  exact map_zero g
 
 end Comp
 

@@ -73,11 +73,6 @@ The field is taken in `Type` rather than an arbitrary universe, matching
 
 ## References
 
-This implements the involution-counting item of Layer 7 of the
-[character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md),
-whose `Suggested.lean` pins it as `card_sq_eq_sum_frobeniusSchur` over `ℂ` and the `ℂ`-valued
-character table, together with the per-row indicator `frobeniusSchurIndicatorRow`.
-
 See I. M. Isaacs, *Character Theory of Finite Groups* (1976), Corollary 4.6, or J.-P. Serre,
 *Linear Representations of Finite Groups*, GTM 42 (1977), §13.2, Proposition 39.
 -/

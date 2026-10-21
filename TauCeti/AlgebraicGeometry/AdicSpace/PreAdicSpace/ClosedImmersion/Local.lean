@@ -19,8 +19,9 @@ and the same identification applies to its inverse image in the source.
 This allows closed subspaces specified on affinoid charts to be recognized globally. No
 finiteness condition on the cover, or Tate, noetherianity, or sheafiness assumption on the
 ambient spaces, is needed; the local models already include closed ideals and sheafy quotients.
-The result is descent along a cover, not stability under restricting a closed immersion to
-an arbitrary target open.
+The result is descent along a cover. Stability under restricting a closed immersion to an
+arbitrary target open, for sheafy targets, is
+`TauCeti.PreAdicSpace.IsClosedImmersion.restrictPreimage`.
 
 ## References
 

@@ -47,6 +47,10 @@ to the inclusion, puts it back into the continuous cocycles.
   and `δ¹` is bijective.
 * `TauCeti.ContCohomology.DiscreteShortExact.explicitCoeff0_surjective_of_subsingleton`: when
   `H¹(G, A)` vanishes, `H⁰(G, B) → H⁰(G, C)` is onto.
+* `TauCeti.ContCohomology.DiscreteShortExact.ker_explicitDelta0_comp`,
+  `range_explicitDelta0_comp` and `exact_lift_explicitDelta0_comp`: the kernel and image of `δ⁰`
+  and the induced exact sequence `X ⧸ N → H¹(G, A) → H¹(G, B)`, with `H⁰(G, C)` read through a
+  group `X`. Kummer maps are built and analysed this way.
 
 The maps and their normalization are those of
 `TauCeti/RepresentationTheory/Homological/ContCohomology/LowDegree.lean`,
@@ -625,6 +629,62 @@ theorem explicitCoeff0_surjective_of_subsingleton [Subsingleton (H1 G A)] :
   rwa [← S.explicitLongExact_H0C] at hc
 
 end AcyclicLeft
+
+/-! ### Reading the low-degree sequence through the invariants
+
+In applications `H⁰(G, B)` and `H⁰(G, C)` are usually known groups `Y` and `X`, such as the
+rational points of an elliptic curve, and the projection on invariants is a known map `f : Y → X`.
+Composing `δ⁰` with the identification of `X` gives a map `X → H¹(G, A)`, such as a Kummer map.
+Its kernel is the image of `f`, its image is the kernel of `H¹(G, A) → H¹(G, B)`, and it induces
+an exact sequence `X ⧸ f(Y) → H¹(G, A) → H¹(G, B)`. -/
+
+section ThroughInvariants
+
+variable {G : Type u} [Group G] [TopologicalSpace G]
+  {A : Type vA} [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A]
+    [DistribMulAction G A] [ContinuousSMul G A]
+  {B : Type vB} [AddCommGroup B] [TopologicalSpace B] [DiscreteTopology B]
+    [DistribMulAction G B] [ContinuousSMul G B]
+  {C : Type vC} [AddCommGroup C] [TopologicalSpace C] [DiscreteTopology C]
+    [DistribMulAction G C]
+  (S : DiscreteShortExact G A B C) {X Y : Type*} [AddCommGroup X] [AddCommGroup Y]
+
+/-- **The kernel of `δ⁰` read through the invariants.** Let `e : X → H⁰(G, C)` be injective,
+`eY : Y → H⁰(G, B)` surjective, and `f : Y → X` the projection on invariants read through them.
+Then the kernel of `δ⁰ ∘ e` is the image of `f`. This is exactness at `H⁰(G, C)`. -/
+theorem ker_explicitDelta0_comp {e : X →+ H0 G C} (he : Function.Injective e)
+    {eY : Y →+ H0 G B} (heY : Function.Surjective eY) {f : Y →+ X}
+    (hf : ∀ y, explicitCoeff0 G B S.projDistribMulActionHom (eY y) = e (f y)) :
+    (S.explicitDelta0.comp e).ker = f.range := by
+  ext x
+  rw [AddMonoidHom.mem_ker, AddMonoidHom.comp_apply, ← AddMonoidHom.mem_ker,
+    ← S.explicitLongExact_H0C, AddMonoidHom.mem_range, AddMonoidHom.mem_range]
+  refine ⟨fun ⟨u, hu⟩ => ?_, fun ⟨y, hy⟩ => ⟨eY y, by rw [hf, hy]⟩⟩
+  obtain ⟨y, rfl⟩ := heY u
+  exact ⟨y, he (by rw [← hf, hu])⟩
+
+/-- **The image of `δ⁰` read through the invariants.** If `e : X → H⁰(G, C)` is surjective, the
+image of `δ⁰ ∘ e` is the kernel of `H¹(G, A) → H¹(G, B)`. This is exactness at `H¹(G, A)`. -/
+theorem range_explicitDelta0_comp {e : X →+ H0 G C} (he : Function.Surjective e) :
+    (S.explicitDelta0.comp e).range =
+      (explicitCoeff1 G A S.inclDistribMulActionHom continuous_of_discreteTopology).ker := by
+  rw [← S.explicitLongExact_H1A, AddMonoidHom.range_comp, AddMonoidHom.range_eq_top.2 he,
+    ← AddMonoidHom.range_eq_map]
+
+/-- **The quotient sequence read through the invariants.** If `e : X → H⁰(G, C)` is surjective,
+then `δ⁰ ∘ e` induces on any quotient of `X` by a subgroup `N` of its kernel an exact sequence
+`X ⧸ N → H¹(G, A) → H¹(G, B)`. -/
+theorem exact_lift_explicitDelta0_comp {e : X →+ H0 G C} (he : Function.Surjective e)
+    {N : AddSubgroup X} (hN : N ≤ (S.explicitDelta0.comp e).ker) :
+    Function.Exact (QuotientAddGroup.lift N (S.explicitDelta0.comp e) hN)
+      (explicitCoeff1 G A S.inclDistribMulActionHom continuous_of_discreteTopology) := by
+  rw [AddMonoidHom.exact_iff, ← S.range_explicitDelta0_comp he]
+  ext c
+  refine ⟨fun ⟨x, hx⟩ => ⟨QuotientAddGroup.mk x, hx⟩, fun ⟨x, hx⟩ => ?_⟩
+  induction x using QuotientAddGroup.induction_on with
+  | _ x => exact ⟨x, hx⟩
+
+end ThroughInvariants
 
 end DiscreteShortExact
 

@@ -85,11 +85,11 @@ private noncomputable def leftRightInverse (E : GridPentagonRectangleDecompositi
     (E.toRectangleDecomposition.hasOneCommonSide_of_left_eq_left (by simpa using hcommon)
       (by simpa using Grid.ne_right_of_mem_cIoo hcol))
     (E.underlying_first_isEmpty hp) (E.underlying_second_isEmpty hr)).middle
-  rectangle := (E.toRectangleDecomposition.recut
+  first := (E.toRectangleDecomposition.recut
     (E.toRectangleDecomposition.hasOneCommonSide_of_left_eq_left (by simpa using hcommon)
       (by simpa using Grid.ne_right_of_mem_cIoo hcol))
     (E.underlying_first_isEmpty hp) (E.underlying_second_isEmpty hr)).first
-  pentagon := GridPentagonBetween.ofRightEq
+  second := GridPentagonBetween.ofRightEq
     (E.toRectangleDecomposition.recut
       (E.toRectangleDecomposition.hasOneCommonSide_of_left_eq_left (by simpa using hcommon)
         (by simpa using Grid.ne_right_of_mem_cIoo hcol))
@@ -120,7 +120,8 @@ private theorem leftRightInverse_toRectangleDecomposition
           (by simpa using Grid.ne_right_of_mem_cIoo hcol))
         (E.underlying_first_isEmpty hp) (E.underlying_second_isEmpty hr) := by
   apply GridRectangleDecomposition.ext <;>
-    simp [leftRightInverse, (E.leftRightInverse_geometry hcommon hcol hp hr).2.1]
+    simp [leftRightInverse, GridRectanglePentagonDecomposition.pentagon,
+      (E.leftRightInverse_geometry hcommon hcol hp hr).2.1]
 
 end TauCeti.GridPentagonRectangleDecomposition
 

@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Algebra.Module.ZLattice.Covolume
 public import TauCeti.LinearAlgebra.IntegralLattice.Gram
 public import TauCeti.LinearAlgebra.IntegralLattice.Signature
+public import TauCeti.LinearAlgebra.IntegralLattice.Unimodular
 
 /-!
 # The covolume of an integral lattice realized in Euclidean space
@@ -33,7 +34,7 @@ basis and rescale the coordinates by the square roots of its nonnegative diagona
 positive definite lattice the image spans, so every positive definite lattice has a realization;
 this is what lets geometry-of-numbers arguments in `ℝⁿ` be applied to an abstract positive
 definite lattice. In particular the determinant of a positive definite lattice is the square of a
-covolume, hence positive.
+covolume, hence positive, and a positive definite unimodular lattice has determinant `1`.
 
 ## Main results
 
@@ -53,6 +54,8 @@ covolume, hence positive.
   realization in `ℝⁿ`.
 * `TauCeti.IntegralLattice.IsPosDef.determinant_pos`: a positive definite lattice has positive
   determinant.
+* `TauCeti.IntegralLattice.IsPosDef.determinant_eq_one_of_isUnimodular`: a positive definite
+  unimodular lattice has determinant `1`.
 
 ## References
 
@@ -218,5 +221,14 @@ theorem IsPosDef.determinant_pos (hL : L.IsPosDef) : 0 < L.determinant := by
   have : IsZLattice ℝ (LinearMap.range φ) := ⟨by rw [LinearMap.coe_range, hspan]⟩
   have h := covolume_range_sq_eq_determinant hφ hspan
   exact_mod_cast h ▸ pow_pos (ZLattice.covolume_pos _ _) 2
+
+/-- A positive definite unimodular lattice has determinant `1`. -/
+theorem IsPosDef.determinant_eq_one_of_isUnimodular (hLp : L.IsPosDef) (hLu : L.IsUnimodular) :
+    L.determinant = 1 := by
+  have : L.IsNondegenerate := ⟨hLu.nondegenerate⟩
+  have hpos := hLp.determinant_pos
+  rcases Int.isUnit_iff.mp (L.isUnimodular_iff_isUnit_determinant.mp hLu) with h | h
+  · exact h
+  · omega
 
 end TauCeti.IntegralLattice

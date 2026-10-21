@@ -174,9 +174,10 @@ theorem contMDiff_apply_single (g : AddGeneratingFamily (dualSemigroup hi σ) s)
     (a.1.prod fun ρ p ↦ w.1 (κ ρ) ^ p) * a.2.prod fun c q ↦ w.2 c ^ q
   have hF : ContDiffOn ℂ n F (mixedChartDomain k l) := fun w hw ↦
     ((contDiffAt_prod fun ρ _ ↦
-        (((contDiff_apply ℂ ℂ (κ ρ)).comp contDiff_fst).pow _).contDiffAt).mul
-      (contDiffAt_prod fun c _ ↦ (((contDiff_apply ℂ ℂ c).comp contDiff_snd).contDiffAt).zpow
-        (Or.inl (mem_mixedChartDomain.1 hw c)))).contDiffWithinAt
+        (((contDiff_apply ℂ (fun _ ↦ ℂ) (κ ρ)).comp contDiff_fst).pow _).contDiffAt).mul
+      (contDiffAt_prod fun c _ ↦
+        (((contDiff_apply ℂ (fun _ ↦ ℂ) c).comp contDiff_snd).contDiffAt).zpow
+          (Or.inl (mem_mixedChartDomain.1 hw c)))).contDiffWithinAt
   refine (hF.contMDiffOn.comp_contMDiff (contMDiff_coneChartAmbient hi hσ hB κ g n)
     (coneChartAmbient_mem_mixedChartDomain hi hσ hB κ)).congr fun x ↦ ?_
   conv_lhs => rw [← (coneChartEquiv hi hσ hB).symm_apply_apply x]
@@ -204,7 +205,7 @@ theorem contMDiffOn_iff_forall_contMDiffOn_apply_single {E H M : Type*} [NormedA
   -- The ambient chart coordinates of `f` are values of `f` on monomials.
   have hc : ContMDiffOn I 𝓘(ℂ, (Fin k → ℂ) × (Fin l → ℂ)) n
       (coneChartAmbient hi hσ hB κ ∘ f) t := by
-    rw [contMDiffOn_prod_module_iff, contMDiffOn_pi_space, contMDiffOn_pi_space]
+    rw [contMDiffOn_prod_module_iff, contMDiffOn_pi_module_iff, contMDiffOn_pi_module_iff]
     exact ⟨fun a ↦ (hf (dualSemigroupCoord hi hσ hB (.inl (κ.symm a)))).congr fun y _ ↦ by simp,
       fun c ↦ (hf (dualSemigroupCoord hi hσ hB (.inr c))).congr fun y _ ↦ by simp⟩
   refine (((contMDiffOn_isOpenEmbedding_symm he (I := 𝓘(ℂ, (Fin k → ℂ) × (Fin l → ℂ)))

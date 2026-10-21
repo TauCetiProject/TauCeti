@@ -48,11 +48,8 @@ reading a single vertex coordinate.
   the number of vertices.
 ## References
 
-This proves the socle and top part of the first clause of Layer 2 of
-`TauCetiRoadmap/ZigzagPreprojective/README.md`, completing that clause alongside
-`TauCeti.RepresentationTheory.Quiver.Zigzag.Radical`.  See Huerfano--Khovanov, *A category for the
-adjoint representation*, Section 3, and Ehrig--Tubbenhauer, *Algebraic properties of zigzag
-algebras*, Section 2.
+See Huerfano--Khovanov, *A category for the adjoint representation*, Section 3, and
+Ehrig--Tubbenhauer, *Algebraic properties of zigzag algebras*, Section 2.
 -/
 
 public section

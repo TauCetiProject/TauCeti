@@ -69,10 +69,8 @@ without first passing through root-system combinatorics.
 
 ## References
 
-This implements the Coxeter-element half of the "Coxeter functor" target of Layer 4 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, which the reflection
-induction of Layer 5 consumes. See Bernstein--Gelfand--Ponomarev, *Coxeter functors and Gabriel's
-theorem*, and Derksen--Weyman, *An Introduction to Quiver Representations*.
+See Bernstein--Gelfand--Ponomarev, *Coxeter functors and Gabriel's theorem*, and Derksen--Weyman,
+*An Introduction to Quiver Representations*.
 -/
 
 public section

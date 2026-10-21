@@ -77,7 +77,7 @@ def toRiemannianIsometry (f : F ≃ᵃⁱ[ℝ] G) :
         simp
       · ext u
         simpa using (f.map_vsub u 0).trans
-          (f.toAffineIsometry.toContinuousAffineMap.contLinear_map_vsub u 0).symm
+          (f.toAffineIsometry.toContinuousAffineMap.contLinear_apply_vsub u 0).symm
     have h : mfderiv 𝓘(ℝ, F) 𝓘(ℝ, G) f x =
         (f.linearIsometryEquiv.toContinuousLinearEquiv : F →L[ℝ] G) :=
       hf.hasMFDerivAt.mfderiv

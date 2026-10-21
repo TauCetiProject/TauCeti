@@ -66,6 +66,8 @@ provide the basic examples of smooth discrete objects used by coefficient constr
 
 * `TauCeti.isSmoothDiscrete_iff_continuousSMul`: for a topological group, smoothness of a discrete
   object is continuity of the action map `G × X.V → X.V`.
+* `TauCeti.IsSmoothDiscrete.continuous_conj`: between smooth discrete objects, the conjugates
+  `(v, x) ↦ x • φ (x⁻¹ • v)` of every linear map are jointly continuous.
 * `TauCeti.isSmoothDiscrete_iff_discreteTopology_and_isContinuous`: the predicate is Mathlib's
   `Action.IsContinuous` together with discreteness, read on `Action (TopModuleCat R) G` through
   `TopRep.toActionTopModFunc`, so the subcategory below is Mathlib's `DiscreteContAction` carried
@@ -375,6 +377,19 @@ lemma IsSmoothDiscrete.continuousSMul {X : TopRep R G} (hX : IsSmoothDiscrete R 
     ContinuousSMul G X.V :=
   haveI := hX.discreteTopology
   (isSmoothDiscrete_iff_continuousSMul X).1 hX
+
+/-- Between **smooth discrete** representations, every linear map has jointly continuous
+conjugates `(v, x) ↦ x • φ (x⁻¹ • v)`, so continuity conditions on conjugated linear maps, such as
+those of `TopRep.ResolutionContraction`, hold automatically on complexes of smooth discrete
+representations. -/
+theorem IsSmoothDiscrete.continuous_conj {Y Z : TopRep R G} (hY : IsSmoothDiscrete R Y)
+    (hZ : IsSmoothDiscrete R Z) (φ : Y.V →ₗ[R] Z.V) :
+    Continuous fun p : Y.V × G ↦ Z.ρ p.2 (φ (Y.ρ p.2⁻¹ p.1)) := by
+  have := hY.discreteTopology
+  have := hY.continuousSMul
+  have := hZ.continuousSMul
+  simp only [← TopRep.distribMulAction_smul]
+  fun_prop
 
 omit [IsTopologicalGroup G] in
 /-- Smoothness passes to the target of a surjective morphism with discrete target: the stabilizer

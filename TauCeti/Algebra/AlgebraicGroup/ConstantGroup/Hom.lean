@@ -78,7 +78,7 @@ bialgebra homomorphism `g : H →ₐc[R] C` is determined by, and can be prescri
 homomorphism `a ↦ p a ∘ g` from `A` to the `R`-points of `H`. -/
 theorem mapDomain_comp_bijective
     (hp : Function.Bijective (AlgHom.pi fun a ↦ (p a).ofConv)) :
-    Function.Bijective fun g : H →ₐc[R] C ↦ (AlgHom.mapDomain g).comp p := by
+    Function.Bijective fun g : H →ₐc[R] C ↦ (BialgHom.mapDomain g).comp p := by
   refine ⟨fun g g' hgg' ↦ BialgHom.ext fun x ↦ hp.1 <| funext fun a ↦ ?_, fun φ ↦ ?_⟩
   · simpa using DFunLike.congr_fun (congrArg WithConv.ofConv (DFunLike.congr_fun hgg' a)) x
   let e := AlgEquiv.ofBijective _ hp
@@ -183,7 +183,7 @@ schemes over `T` from the constant monoid, where `G = Spec H`, and `a` goes to t
 of the point `a` of `A_T`. -/
 noncomputable def pointsOfBialgHom (g : T ⊗[R] H →ₐc[T] T ⊗[R] coordinateRing R A) :
     A →* WithConv (T ⊗[R] H →ₐ[T] T) :=
-  (AlgHom.mapDomain (H₁ := T ⊗[R] H) (H₂ := T ⊗[R] coordinateRing R A) (A := T) g).comp
+  (BialgHom.mapDomain (H₁ := T ⊗[R] H) (H₂ := T ⊗[R] coordinateRing R A) (A := T) g).comp
     ((AlgHom.pointsBaseChange T).comp (toPoints R A))
 
 variable {H}

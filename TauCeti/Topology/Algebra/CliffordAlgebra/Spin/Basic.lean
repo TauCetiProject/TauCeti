@@ -45,7 +45,8 @@ topologized special orthogonal group.
 ## Main results
 
 * `QuadraticMap.Isometry.continuous_spinGroupMap` proves continuity of the Spin-group map induced
-  by an isometry of quadratic spaces.
+  by an isometry of quadratic spaces, and `QuadraticMap.IsometryEquiv.continuous_spinGroupEquiv`
+  that of the Spin-group equivalence induced by an isometric equivalence.
 * `QuadraticMap.Isometry.isEmbedding_spinGroupMap` restricts an embedding of the induced Clifford
   map to the corresponding Spin groups.
 * `CliffordAlgebra.instIsTopologicalGroupSpinGroup` equips `spinGroup Q` with a topological
@@ -124,6 +125,20 @@ theorem continuous_spinGroupMap (f : Q →qᵢ P) : Continuous f.spinGroupMap :=
   exact fun x ↦ (coe_spinGroupMap_apply f x).symm
 
 end QuadraticMap.Isometry
+
+namespace QuadraticMap.IsometryEquiv
+
+variable {R : Type*} [CommRing R] [TopologicalSpace R]
+  {V : Type*} {W : Type*} [AddCommGroup V] [Module R V] [AddCommGroup W] [Module R W]
+  {Q : QuadraticForm R V} {P : QuadraticForm R W}
+
+/-- The Spin-group equivalence induced by an isometric equivalence of quadratic spaces is
+continuous for the canonical subtype topologies. -/
+@[fun_prop]
+theorem continuous_spinGroupEquiv (e : Q.IsometryEquiv P) : Continuous e.spinGroupEquiv :=
+  e.toIsometry.continuous_spinGroupMap.congr fun x ↦ (e.spinGroupEquiv_apply x).symm
+
+end QuadraticMap.IsometryEquiv
 
 
 namespace CliffordAlgebra

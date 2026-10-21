@@ -25,8 +25,8 @@ asked of `B`. This file shows that `B` then has the structure that Wedhorn's def
   open bounded subring of `B`, and the image of a pseudouniformiser of `A` is a pseudouniformiser
   of `B`.
 * Over a strongly noetherian Tate ring, `A⟨X₁, …, Xₖ⟩` is a complete metrisable noetherian Tate
-  ring, so every ideal of it is closed (`Ideal.isClosed_restrictedMvPowerSeriesCompletion`), the
-  kernel of `π` among them. Hence `B` is Hausdorff, and it is noetherian.
+  ring, so every ideal of it is closed (`Ideal.isClosed_restrictedMvPowerSeriesCompletion`). Hence
+  every ideal of `B` is closed, `B` is Hausdorff, and it is noetherian.
 
 Over a complete nonarchimedean field `k` these are Wedhorn's Propositions 5.58 and 5.59. A
 topological `k`-algebra `B` is *topologically of finite type* (Wedhorn, Definition 5.57) when it
@@ -43,6 +43,8 @@ makes its adic spectrum an affinoid adic space.
   topologically of finite type is complete for any uniformity compatible with its additive group
   structure.
 * `TauCeti.Huber.IsTopologicallyFiniteType.isTateRing`: over a Tate ring, it is a Tate ring.
+* `TauCeti.Huber.IsTopologicallyFiniteType.isClosed_ideal`: over a strongly noetherian Tate ring,
+  every ideal of an algebra topologically of finite type is closed.
 * `TauCeti.Huber.IsTopologicallyFiniteType.t2Space`: over a strongly noetherian Tate ring, an
   algebra topologically of finite type is Hausdorff.
 * `TauCeti.Huber.IsTopologicallyFiniteType.isNoetherianRing`: over a strongly noetherian Tate
@@ -97,18 +99,24 @@ theorem IsTopologicallyFiniteType.isTateRing (hφ : IsTopologicallyFiniteType φ
 variable [IsStronglyNoetherian A]
 
 omit [IsTopologicalRing B] in
-/-- **An algebra topologically of finite type over a strongly noetherian Tate ring is Hausdorff**
-(Wedhorn, Proposition 5.58, over a field): `{0}` is closed in it, because its preimage in
-`A⟨X₁, …, Xₖ⟩` is an ideal, and every ideal there is closed. Only the additive group of `B` need
-be topological. -/
-theorem IsTopologicallyFiniteType.t2Space [IsTopologicalAddGroup B]
-    (hφ : IsTopologicallyFiniteType φ) : T2Space B := by
+/-- **Every ideal of an algebra topologically of finite type over a strongly noetherian Tate ring
+is closed**: its preimage in `A⟨X₁, …, Xₖ⟩` under a presentation is an ideal, every ideal there is
+closed, and the presentation is a quotient map. -/
+theorem IsTopologicallyFiniteType.isClosed_ideal (hφ : IsTopologicallyFiniteType φ)
+    (I : Ideal B) : IsClosed (I : Set B) := by
   obtain ⟨k, π, hπ, -⟩ :=
     isStrictlyTopologicallyFiniteType_iff.mp hφ.isStrictlyTopologicallyFiniteType
-  -- `{0}` is closed in `B`, since its preimage under the quotient map `π` is the closed kernel
-  have h0 : IsClosed ({0} : Set B) := hπ.isQuotientMap.isClosed_preimage.mp
-    (Ideal.isClosed_restrictedMvPowerSeriesCompletion (RingHom.ker π))
-  have : T1Space B := IsTopologicalAddGroup.t1Space B h0
+  exact hπ.isQuotientMap.isClosed_preimage.mp
+    (Ideal.isClosed_restrictedMvPowerSeriesCompletion (I.comap π))
+
+omit [IsTopologicalRing B] in
+/-- **An algebra topologically of finite type over a strongly noetherian Tate ring is Hausdorff**
+(Wedhorn, Proposition 5.58, over a field): `{0}` is closed in it, because it is the zero ideal
+(`IsTopologicallyFiniteType.isClosed_ideal`). Only the additive group of `B` need be
+topological. -/
+theorem IsTopologicallyFiniteType.t2Space [IsTopologicalAddGroup B]
+    (hφ : IsTopologicallyFiniteType φ) : T2Space B := by
+  have : T1Space B := IsTopologicalAddGroup.t1Space B (by simpa using hφ.isClosed_ideal ⊥)
   infer_instance
 
 omit [IsTopologicalRing B] in

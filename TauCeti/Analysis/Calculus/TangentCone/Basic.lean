@@ -6,11 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.Deriv.Basic
+public import Mathlib.Analysis.Calculus.TangentCone.Real
 
 /-!
 # Tangent cones of linear subspaces and of curves
 
-Two basic facts about Mathlib's tangent cone `tangentConeAt` in topological modules.
+Basic facts about Mathlib's tangent cone `tangentConeAt` in topological modules.
 The subspace calculation lets flattening charts identify their model subspaces with intrinsic
 tangent spaces, while the curve lemma places velocities of invariant flows in the tangent cones
 of their invariant sets.
@@ -19,6 +20,7 @@ of their invariant sets.
 
 * `Submodule.tangentConeAt_eq`: the tangent cone of a closed subspace at one of its points is the
   subspace itself.
+* `TauCeti.uniqueDiffOn_pi_halfSpace`: a coordinate half-space is a set of unique differentiability.
 * `HasDerivAt.mem_tangentConeAt`: the velocity of a curve lying in a set is tangent to the set.
 -/
 
@@ -68,3 +70,14 @@ theorem HasDerivAt.mem_tangentConeAt {γ : 𝕜 → E} {v : E} {t : 𝕜} {S : S
     simpa only [add_sub_cancel, ContinuousLinearMap.toSpanSingleton_apply, one_smul] using
       hγ.hasFDerivAt.hasFDerivWithinAt.lim hd
         (Eventually.of_forall fun _ ↦ mem_univ _) hcd
+
+/-- A closed coordinate half-space has unique derivatives, including at its boundary. -/
+theorem TauCeti.uniqueDiffOn_pi_halfSpace {ι : Type*} (i : ι) (a : ℝ) :
+    UniqueDiffOn ℝ {x : ι → ℝ | a ≤ x i} := by
+  have hlinear : IsLinearMap ℝ (fun x : ι → ℝ ↦ x i) :=
+    ⟨fun _ _ ↦ rfl, fun _ _ ↦ rfl⟩
+  apply uniqueDiffOn_convex (convex_halfSpace_ge hlinear a)
+  refine ⟨fun _ ↦ a + 1, mem_interior_iff_mem_nhds.mpr ?_⟩
+  have ha : a < a + 1 := lt_add_one a
+  exact mem_of_superset ((isOpen_lt continuous_const (continuous_apply i)).mem_nhds ha)
+    fun x hx ↦ hx.le

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
 
@@ -22,12 +23,16 @@ It also records an a priori bound from a difference of two quadratic penalties
 This is the arithmetic behind the equicoercivity of penalized energies in Moreau–Yosida
 regularization.
 
+Finally, it records the rescaling identity `q |q x - m| = q² |x - m / q|` for `q > 0`, which
+converts between the two usual forms of an approximation `x ≈ m / q`.
+
 ## Main results
 
 * `TauCeti.one_div_add_one_div_le_two_div`: for `0 < b ≤ c`, the sum `1 / b + 1 / c` is at most
   `2 / b`.
 * `TauCeti.le_of_sq_div_sub_sq_div_le`: an upper bound on `a` from `a ≤ R + b` and an upper bound
   on `b² / (2τ) - a² / (2τ₀)`, for `0 < τ < τ₀`.
+* `TauCeti.mul_abs_mul_sub_eq_sq_mul_abs_sub_div`: `q |q x - m| = q² |x - m / q|` for `q > 0`.
 -/
 
 public section
@@ -66,5 +71,13 @@ theorem le_of_sq_div_sub_sq_div_le {α : Type*} [Field α] [LinearOrder α] [IsS
     exact le_of_mul_le_mul_right this (by linarith)
   rw [← le_div_iff₀' hs] at key
   linarith
+
+/-- The rescaling identity `q |q x - m| = q ^ 2 |x - m / q|` for `q > 0`. -/
+theorem mul_abs_mul_sub_eq_sq_mul_abs_sub_div {α : Type*} [Field α] [LinearOrder α]
+    [IsStrictOrderedRing α] {q : α} (hq : 0 < q) (x m : α) :
+    q * |q * x - m| = q ^ 2 * |x - m / q| := by
+  have h : x - m / q = (q * x - m) / q := by field_simp
+  rw [h, abs_div, abs_of_pos hq]
+  field_simp
 
 end TauCeti

@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.NumberField.Global.Ideles.Congruence
 
 import TauCeti.Analysis.Normed.Algebra.NoSmallSubgroups
 import TauCeti.NumberTheory.NumberField.Global.Ideles.Ray.OpenSubgroup
+import TauCeti.RingTheory.DedekindDomain.Factorization
 import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 /-!
@@ -133,7 +134,7 @@ theorem exists_modulus_finitePart_eq_one (χ : HeckeCharacter K) :
   -- `χ` as a character of the idele group, and a neighbourhood of `1` on which it kills every
   -- subgroup.
   let f : IdeleGroup (𝓞 K) K →ₜ* ℂˣ :=
-    χ.comp (ContinuousMonoidHom.quotientMk (IdeleGroup.principalSubgroup (𝓞 K) K))
+    χ.comp (Subgroup.quotientMkContinuousMonoidHom (IdeleGroup.principalSubgroup (𝓞 K) K))
   obtain ⟨N, hN, hNker⟩ := f.exists_mem_nhds_one_forall_le_ker
   obtain ⟨𝔪, h𝔪⟩ := exists_ideleCongruenceSubgroup_ofFiniteIdele_mem_of_mem_nhds hN
   -- The finite parts of the ideles of `ideleCongruenceSubgroup 𝔪` form a subgroup inside `N`.
@@ -141,7 +142,8 @@ theorem exists_modulus_finitePart_eq_one (χ : HeckeCharacter K) :
     (IdeleGroup.ofFiniteIdele (𝓞 K) K).comp (IdeleGroup.toFiniteIdele (𝓞 K) K)
   have hker : (ideleCongruenceSubgroup 𝔪).map φ ≤ f.ker :=
     hNker _ (by rintro _ ⟨x, hx, rfl⟩; exact h𝔪 x hx)
-  exact ⟨𝔪, fun x hx ↦ MonoidHom.mem_ker.mp (hker ⟨x, hx, rfl⟩)⟩
+  refine ⟨𝔪, fun x hx ↦ ?_⟩
+  simpa [f, φ] using MonoidHom.mem_ker.mp (hker ⟨x, hx, rfl⟩)
 
 /-- **A Hecke character is trivial on a congruence subgroup at every finite place.** There is a
 modulus `𝔪` such that at every finite place `v` the component of `χ` is trivial on the step
@@ -184,7 +186,8 @@ theorem finiteComponent_eq_one_of_mem_unitFiltration (χ : HeckeCharacter K)
     {v : HeightOneSpectrum (𝓞 K)} {u : (v.adicCompletion K)ˣ}
     (hu : u ∈ TauCeti.unitFiltration (v.adicCompletion K) (χ.conductorExponent v)) :
     χ.finiteComponent v u = 1 :=
-  Nat.sInf_mem (χ.exists_finiteComponent_eq_one v) u hu
+  Nat.sInf_mem (s := {n | ∀ u ∈ TauCeti.unitFiltration (v.adicCompletion K) n,
+    χ.finiteComponent v u = 1}) (χ.exists_finiteComponent_eq_one v) u hu
 
 /-- **The characterizing property of the conductor exponent**: `a_v(χ) ≤ n` exactly when the
 component of `χ` at `v` is trivial on `U(K_v, n)`. -/
@@ -275,16 +278,8 @@ theorem finiteConductor_ne_bot (χ : HeckeCharacter K) : χ.finiteConductor ≠ 
 theorem count_finiteConductor (χ : HeckeCharacter K) (v : HeightOneSpectrum (𝓞 K)) :
     (Associates.mk v.asIdeal).count (Associates.mk χ.finiteConductor).factors =
       χ.conductorExponent v := by
-  have hcoe : ((χ.finiteConductor : Ideal (𝓞 K)) : FractionalIdeal (nonZeroDivisors (𝓞 K)) K) =
-      ∏ᶠ w : HeightOneSpectrum (𝓞 K),
-        (w.asIdeal : FractionalIdeal (nonZeroDivisors (𝓞 K)) K) ^ (χ.conductorExponent w : ℤ) := by
-    rw [finiteConductor_def, FractionalIdeal.coeIdeal_finprod (nonZeroDivisors (𝓞 K)) K le_rfl]
-    simp [FractionalIdeal.coeIdeal_pow]
-  have h := FractionalIdeal.count_finprod K v (fun w ↦ (χ.conductorExponent w : ℤ))
-    (χ.eventually_conductorExponent_eq_zero.mono fun w hw ↦ by simp [hw])
-  rw [← hcoe, FractionalIdeal.count_coe K v (by
-    rw [Ideal.zero_eq_bot]; exact χ.finiteConductor_ne_bot)] at h
-  exact_mod_cast h
+  rw [finiteConductor_def]
+  exact Ideal.count_finprod_asIdeal_pow χ.hasFiniteMulSupport_pow_conductorExponent v
 
 /-- **The characterizing property of the finite conductor**: `v ^ n` divides the finite conductor
 exactly when `n` is at most the conductor exponent at `v`. -/

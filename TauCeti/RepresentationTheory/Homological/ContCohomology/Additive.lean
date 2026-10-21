@@ -222,6 +222,33 @@ noncomputable instance continuousCohomologyFunctor_additive (n : ℕ) :
     (continuousCohomologyFunctor R G n).Additive where
   map_add {_X _Y} {f g} := coeffMap_add R G f g n
 
+/-- Multiplication by `k` on a discrete coefficient module induces multiplication by `k`
+on continuous cohomology in every degree. -/
+@[simp]
+theorem coeffMap_nsmulAddMonoidHom {M : Type v} [AddCommGroup M] [TopologicalSpace M]
+    [DiscreteTopology M] [DistribMulAction G M] (k n : ℕ) :
+    coeffMap (ofDiscreteModuleMap (nsmulAddMonoidHom k : M →+ M).toIntLinearMap
+      (fun g m ↦ smul_comm k g m)) n =
+      k • 𝟙 (continuousCohomology n (ofDiscreteModule ℤ G M)) := by
+  have hmul : ofDiscreteModuleMap (nsmulAddMonoidHom k : M →+ M).toIntLinearMap
+      (fun g m ↦ smul_comm k g m) = k • 𝟙 (ofDiscreteModule ℤ G M) := by
+    refine TopRep.hom_ext (DFunLike.ext _ _ fun (m : M) ↦ ?_)
+    -- Read both categorical wrappers through their evaluation lemmas.
+    refine (ofDiscreteModuleMap_hom_apply _ _ m).trans ?_
+    refine (congrFun (AddMonoidHom.coe_toIntLinearMap (nsmulAddMonoidHom k : M →+ M)) m).trans ?_
+    refine (nsmulAddMonoidHom_apply k m).trans ?_
+    have hs : (((k : ℤ) • 𝟙 (ofDiscreteModule ℤ G M)).hom m) = k • m :=
+      (DFunLike.congr_fun (TopRep.hom_smul (k : ℤ) (𝟙 (ofDiscreteModule ℤ G M))) m).trans
+        ((ContIntertwiningMap.smul_apply (k : ℤ)
+          (𝟙 (ofDiscreteModule ℤ G M) : ofDiscreteModule ℤ G M ⟶ _).hom m).trans
+          ((congrArg (fun a : M ↦ (k : ℤ) • a) (TopRep.id_apply (ofDiscreteModule ℤ G M) m)).trans
+            (Nat.cast_smul_eq_nsmul ℤ k m)))
+    exact hs.symm.trans (congrArg (fun f : ofDiscreteModule ℤ G M ⟶ _ ↦ f.hom m)
+      (Nat.cast_smul_eq_nsmul ℤ k (𝟙 (ofDiscreteModule ℤ G M))))
+  rw [hmul]
+  exact (continuousCohomologyFunctor ℤ G n).map_nsmul.trans
+    (congrArg (k • ·) ((continuousCohomologyFunctor ℤ G n).map_id _))
+
 variable {R G} in
 /-- Continuous cohomology vanishes on a coefficient representation whose carrier is a
 subsingleton: the identity of such a representation is the zero morphism, and the additive functor

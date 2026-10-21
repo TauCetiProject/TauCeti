@@ -38,7 +38,7 @@ theorem exists_hasSexticRoot_iff (f : ℤ[X]) :
         ((resolventSextic f).map (Int.castRingHom ℚ)).Separable := by
   constructor
   · rintro ⟨a, ha⟩
-    exact ⟨⟨a, ha.isRoot.map⟩, ha.separable_map_rat⟩
+    exact ⟨⟨a, ha.isRoot.map (Int.castRingHom ℚ)⟩, ha.separable_map_rat⟩
   · rintro ⟨⟨a, ha⟩, hsep⟩
     have haeval : aeval a (resolventSextic f) = 0 := by
       rwa [aeval_def, algebraMap_int_eq, ← eval_map]

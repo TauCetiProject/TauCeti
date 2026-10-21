@@ -146,7 +146,7 @@ theorem exists_sylow_le_le_normalizer_of_card_sylow_five_eq_one (hα : Nat.card 
     norm_num at this
   have : Subsingleton (Sylow 5 G) := (Nat.card_eq_one_iff_unique.mp h1).1
   have := Q.normal_of_subsingleton
-  obtain ⟨P, hP⟩ := (Q.isPGroup'.map G.subtype).exists_le_sylow
+  obtain ⟨P, hP⟩ := (Q.isPGroup.map G.subtype).exists_le_sylow
   have hPQ : (Q : Subgroup G).map G.subtype = P := by
     refine eq_of_le_of_card_ge hP ?_
     rw [card_map_of_injective G.subtype_injective, hQ,

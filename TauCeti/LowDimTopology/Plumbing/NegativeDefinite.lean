@@ -62,10 +62,8 @@ computations.
 
 ## References
 
-This supplies a prerequisite for `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane L
-("lattice homology"), whose standing hypothesis is a negative-definite plumbing: Némethi's
-lattice homology `ℍ⁻`/`ℍ⁰` and its weight functions are defined on, and finite because of, the
-negative-definite intersection lattice. See Némethi,
+Némethi's lattice homology `ℍ⁻`/`ℍ⁰` and its weight functions are defined on, and finite because of,
+the negative-definite intersection lattice. See Némethi,
 [arXiv:0709.0841](https://arxiv.org/abs/0709.0841), after Ozsváth--Szabó,
 [arXiv:math/0203265](https://arxiv.org/abs/math/0203265).
 -/
@@ -227,7 +225,7 @@ end PlumbingGraph
 /-- The `A₂` plumbing is negative definite: its negated intersection matrix is the `A₂` Cartan
 matrix `!![2, -1; -1, 2]`, whose quadratic form `2x₀² - 2x₀x₁ + 2x₁² = (x₀ - x₁)² + x₀² + x₁²` is
 positive on every nonzero integer vector. A self-validating instance of the negative-definite
-hypothesis used in Lane L. -/
+hypothesis of lattice homology. -/
 theorem a2Plumbing_isNegativeDefinite : a2Plumbing.IsNegativeDefinite := by
   rw [PlumbingGraph.isNegativeDefinite_iff_forall_intersectionForm_self_neg]
   intro x hx

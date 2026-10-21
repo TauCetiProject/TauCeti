@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.Series
 public import TauCeti.RingTheory.MvPowerSeries.Substitution
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.PairSubst
@@ -28,9 +29,13 @@ supplies one; `map_specialize` carries the conclusion to every `W` over every co
 ## Main statements
 
 * `WeierstrassCurve.formalAdd_assoc` : **the associativity of the addition series**, for every
-  Weierstrass curve over every commutative ring. It is this module's only exported result; the
-  fraction-field base change, the parametrized point `θ` and the chord additions it satisfies are
-  private implementation details of its proof.
+  Weierstrass curve over every commutative ring.
+* `WeierstrassCurve.thetaPoint_add_of_subst_separates` : the chord addition of parametrized
+  points, `θ(q₁) + θ(q₂) = θ(F(q₁, q₂))` on the curve `WeierstrassCurve.fracCurve` over a fraction
+  field of the series ring, whenever a substitution separates `q₁` from `q₂`. It is exported, with
+  the parametrized point `WeierstrassCurve.thetaPoint` and its coordinates
+  (`WeierstrassCurve.thetaPoint_eq_some`), because it is also how the addition series is compared
+  with other descriptions of the group law of `W`, such as the projective addition laws.
 
 ## Provenance
 
@@ -56,11 +61,12 @@ this repository applies to that development, so `subst_wSeries_ne_zero` is
 `subst_formalW_ne_zero`.
 
 The `Universal` section of the same file (declarations `universal_Δ_ne_zero` and
-`assoc_addSeries_universal`) is `fracCurve_universal_Δ_ne_zero` and `assoc_formalAdd_universal`
-here. Four of that section's nine declarations are not ported, because this repository already
-has them: `universal`, `exists_map_universal` and `universal_Δ_ne_zero` are `Universal.curve`,
-`map_specialize` and `Universal.curve_Δ_ne_zero`, and the source's `X_ne_X` and `X_ne_zero'` are
-Mathlib's `MvPowerSeries.X_inj` and `nonZeroDivisors.ne_zero MvPowerSeries.X_mem_nonZeroDivisors`.
+`assoc_addSeries_universal`) is `fracCurve_Δ_ne_zero`, stated here for every curve with nonzero
+discriminant, and `assoc_formalAdd_universal`. Four of that section's nine declarations are not
+ported, because this repository already has them: `universal`, `exists_map_universal` and
+`universal_Δ_ne_zero` are `Universal.curve`, `map_specialize` and `Universal.curve_Δ_ne_zero`,
+and the source's `X_ne_X` and `X_ne_zero'` are Mathlib's `MvPowerSeries.X_inj` and
+`nonZeroDivisors.ne_zero MvPowerSeries.X_mem_nonZeroDivisors`.
 
 The source's `interceptSeries_ne_zero` and `X_pair_intercept_ne_zero` have no counterpart. The
 source needs them only because it supplies the nonvanishing intercept two different ways, an
@@ -98,9 +104,15 @@ field of the series ring, which is where the chord construction needs division, 
 itself asks only for a commutative algebra. There is no `Algebra O KK` to run
 `WeierstrassCurve.baseChange` along, so this is the composite `map`, and it is Mathlib's `map_*`
 lemmas that unfolding it exposes. -/
-private noncomputable def fracCurve (W : WeierstrassCurve O) (σ : Type*) (KK : Type*)
+noncomputable def fracCurve (W : WeierstrassCurve O) (σ : Type*) (KK : Type*)
     [CommRing KK] [Algebra (MvPowerSeries σ O) KK] : WeierstrassCurve KK :=
   W.map <| (algebraMap (MvPowerSeries σ O) KK).comp (algebraMap O (MvPowerSeries σ O))
+
+/-- `fracCurve W σ KK` is the base change of `W` along `O → MvPowerSeries σ O → KK`. -/
+theorem fracCurve_def (W : WeierstrassCurve O) (σ : Type*) (KK : Type*) [CommRing KK]
+    [Algebra (MvPowerSeries σ O) KK] : fracCurve W σ KK =
+      W.map ((algebraMap (MvPowerSeries σ O) KK).comp (algebraMap O (MvPowerSeries σ O))) :=
+  (rfl)
 
 variable (W : WeierstrassCurve O) {σ : Type*} {KK : Type*} [Field KK]
   [Algebra (MvPowerSeries σ O) KK]
@@ -119,7 +131,7 @@ private theorem algebraMap_subst_formalW_wEquation {q : MvPowerSeries σ O}
       (fracCurve W σ KK) (algebraMap (MvPowerSeries σ O) KK q)
       (algebraMap (MvPowerSeries σ O) KK (PowerSeries.subst q (formalW W))) := by
   conv_lhs => rw [subst_formalW_wEquation W hq]
-  simp [fracCurve, wEquationRHS_def]
+  simp [fracCurve_def, wEquationRHS_def]
 
 /-! ### The formal inverse at a parameter -/
 
@@ -212,7 +224,7 @@ private theorem subst_subst_pair_formalAdd_eq_zero {σ' : Type*}
 
 /-- The addition series at a pair of parameters is nonzero, as soon as some substitution
 separates the two: it sends the sum to `X` and the zero series to `0`. -/
-private theorem subst_pair_formalAdd_ne_zero [Nontrivial O] {σ' : Type*}
+theorem subst_pair_formalAdd_ne_zero [Nontrivial O] {σ' : Type*}
     {g : σ' → MvPowerSeries Unit O} (hg : HasSubst g) {a b : MvPowerSeries σ' O}
     (ha : constantCoeff a = 0) (hb : constantCoeff b = 0)
     (hga : subst g a = PowerSeries.X) (hgb : subst g b = 0) :
@@ -262,7 +274,7 @@ localization map of a fraction field is injective, so it cannot introduce a zero
 
 Every parametrized point of this file needs its `w`-coordinate invertible in `KK`, so this is the
 form `subst_formalW_ne_zero` is actually used in. -/
-private theorem algebraMap_subst_formalW_ne_zero {q : MvPowerSeries σ O}
+theorem algebraMap_subst_formalW_ne_zero {q : MvPowerSeries σ O}
     (hq : constantCoeff q = 0) (hq0 : q ≠ 0) :
     algebraMap (MvPowerSeries σ O) KK (PowerSeries.subst q (formalW W)) ≠ 0 := fun h ↦
   W.subst_formalW_ne_zero hq hq0
@@ -270,7 +282,7 @@ private theorem algebraMap_subst_formalW_ne_zero {q : MvPowerSeries σ O}
 
 /-- The point of the base-changed curve carried by the parameter `q`: the solution `(q, w(q))` of
 the `w`-equation, read in `KK` and in the affine coordinates `(q / w, -1 / w)` of the chart. -/
-private noncomputable def thetaPoint (hΔ : (fracCurve W σ KK).Δ ≠ 0)
+noncomputable def thetaPoint (hΔ : (fracCurve W σ KK).Δ ≠ 0)
     {q : MvPowerSeries σ O} (hq : constantCoeff q = 0) (hq0 : q ≠ 0) :
     (fracCurve W σ KK).toAffine.Point :=
   Affine.Point.some _ _ (chord_point_nonsingular (fracCurve W σ KK)
@@ -280,6 +292,17 @@ private noncomputable def thetaPoint (hΔ : (fracCurve W σ KK).Δ ≠ 0)
           (PowerSeries.HasSubst.of_constantCoeff_zero hq))
     (W.algebraMap_subst_formalW_ne_zero hq hq0)
     hΔ)
+
+/-- The coordinates of the parametrized point: `θ(q)` is the affine point
+`(q / w(q), -1 / w(q))`, read in `KK`. The nonsingularity proof is taken rather than built. -/
+theorem thetaPoint_eq_some (hΔ : (fracCurve W σ KK).Δ ≠ 0) {q : MvPowerSeries σ O}
+    (hq : constantCoeff q = 0) (hq0 : q ≠ 0)
+    (h : (fracCurve W σ KK).toAffine.Nonsingular
+      (algebraMap (MvPowerSeries σ O) KK q /
+        algebraMap (MvPowerSeries σ O) KK (PowerSeries.subst q (formalW W)))
+      (-1 / algebraMap (MvPowerSeries σ O) KK (PowerSeries.subst q (formalW W)))) :
+    W.thetaPoint hΔ hq hq0 = .some _ _ h :=
+  (rfl)
 
 variable [DecidableEq KK] in
 /-- **The chord addition of parametrized points**: `θ(q₁) + θ(q₂) = θ(F(q₁, q₂))`.
@@ -523,7 +546,7 @@ A single substitution sending `q₁` to `X` and `q₂` to `0` supplies both dist
 `thetaPoint_add_of_ne` at once: `q₁ ≠ q₂` directly, and `q₁ ≠ ι(q₂)` because the formal inverse of
 `q₂` has no constant term either, so the substitution kills it too. This is the form the
 associativity assembly uses, where the separating substitution is a `coordSpecialize`. -/
-private theorem thetaPoint_add_of_subst_separates (hΔ : (fracCurve W σ KK).Δ ≠ 0)
+theorem thetaPoint_add_of_subst_separates (hΔ : (fracCurve W σ KK).Δ ≠ 0)
     {g : σ → MvPowerSeries Unit O} (hg : HasSubst g)
     {q₁ q₂ : MvPowerSeries σ O} (h₁ : constantCoeff q₁ = 0) (h₂ : constantCoeff q₂ = 0)
     (hq₁0 : q₁ ≠ 0) (hq₂0 : q₂ ≠ 0)
@@ -537,22 +560,14 @@ private theorem thetaPoint_add_of_subst_separates (hΔ : (fracCurve W σ KK).Δ 
 
 /-! ### Associativity -/
 
-/-- The universal curve stays nonsingular over the fraction field of its series ring: `Δ` is a
-nonzero polynomial, and both `C` and the localization map are injective. -/
-private theorem fracCurve_universal_Δ_ne_zero (KK : Type*) [Field KK]
-    [Algebra (MvPowerSeries (Unit ⊕ Unit ⊕ Unit) (MvPolynomial Coeff ℤ)) KK]
-    [IsFractionRing (MvPowerSeries (Unit ⊕ Unit ⊕ Unit) (MvPolynomial Coeff ℤ)) KK] :
-    (fracCurve Universal.curve (Unit ⊕ Unit ⊕ Unit) KK).Δ ≠ 0 := by
-  rw [fracCurve, map_Δ]
-  intro h
-  rw [RingHom.comp_apply] at h
-  have h1 : (MvPowerSeries.C Universal.curve.Δ :
-      MvPowerSeries (Unit ⊕ Unit ⊕ Unit) (MvPolynomial Coeff ℤ)) = 0 := by
-    refine IsFractionRing.injective (MvPowerSeries (Unit ⊕ Unit ⊕ Unit) (MvPolynomial Coeff ℤ))
-      KK ?_
-    rw [map_zero]
-    simpa [MvPowerSeries.c_eq_algebraMap] using h
-  exact Universal.curve_Δ_ne_zero (MvPowerSeries.C_injective (h1.trans (map_zero _).symm))
+omit [IsDomain O] in
+/-- A curve with nonzero discriminant stays nonsingular over a fraction field of its series ring:
+`Δ` is carried there by the injective maps `C` and `algebraMap (MvPowerSeries σ O) KK`. -/
+theorem fracCurve_Δ_ne_zero (hΔ : W.Δ ≠ 0) : (fracCurve W σ KK).Δ ≠ 0 := by
+  rw [fracCurve_def, map_Δ, RingHom.comp_apply,
+    map_ne_zero_iff _ (IsFractionRing.injective (MvPowerSeries σ O) KK), ← c_eq_algebraMap,
+    map_ne_zero_iff _ C_injective]
+  exact hΔ
 
 /-- **Associativity of the addition series for the universal curve.**
 
@@ -579,7 +594,8 @@ private theorem assoc_formalAdd_universal :
   -- the specialization separating the first parameter from the other two
   set χ := coordSpecialize (O := R) (Sum.inl () : Unit ⊕ Unit ⊕ Unit)
   have hχ : HasSubst χ := hasSubst_coordSpecialize _
-  have hΔ := fracCurve_universal_Δ_ne_zero KK
+  have hΔ := fracCurve_Δ_ne_zero Universal.curve (σ := Unit ⊕ Unit ⊕ Unit) (KK := KK)
+    Universal.curve_Δ_ne_zero
   have hc₁ : constantCoeff (X (Sum.inl ()) : MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R) = 0 :=
     constantCoeff_X _
   have hc₂ : constantCoeff (X (Sum.inr (Sum.inl ())) : MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R) = 0 :=

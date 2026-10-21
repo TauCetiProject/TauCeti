@@ -35,6 +35,8 @@ subgroup-valued definition of the derived series cannot be compared pointwise in
 * `TauCeti.isSolvable_prod_iff`: `G × H` is solvable if and only if both `G` and `H` are.
 * `Group.IsSolvable.exists_normal_index_prime`: a nontrivial finite solvable group has a normal
   subgroup of prime index.
+* `Subgroup.exists_normal_le_index_prime`: a proper normal subgroup with finite solvable
+  quotient lies in a normal subgroup of prime index.
 * `TauCeti.DerivedWordArgs`: the recursively paired arguments of a derived word.
 * `TauCeti.derivedWord`: the balanced iterated commutator word.
 * `TauCeti.map_derivedWord`: derived words commute with group homomorphisms.
@@ -85,6 +87,17 @@ theorem _root_.Group.IsSolvable.exists_normal_index_prime (G : Type*) [Group G] 
   have := Subgroup.Normal.quotient_commutative_iff_commutator_le.mpr hle
   exact ⟨M, inferInstance,
     M.index_eq_card ▸ Group.is_simple_iff_prime_card.mp (Group.isSimpleGroup_of_isCoatom hM)⟩
+
+/-- A proper normal subgroup with finite solvable quotient lies in a normal subgroup of prime
+index: the preimage of a normal subgroup of prime index of the quotient. -/
+theorem _root_.Subgroup.exists_normal_le_index_prime {G : Type*} [Group G] (H : Subgroup G)
+    [H.Normal] [Finite (G ⧸ H)] [Group.IsSolvable (G ⧸ H)] (hH : H ≠ ⊤) :
+    ∃ N : Subgroup G, N.Normal ∧ H ≤ N ∧ N.index.Prime := by
+  have : Nontrivial (G ⧸ H) := QuotientGroup.nontrivial_iff.mpr hH
+  obtain ⟨N, hN, hp⟩ := Group.IsSolvable.exists_normal_index_prime (G ⧸ H)
+  refine ⟨N.comap (QuotientGroup.mk' H), hN.comap _,
+    (QuotientGroup.ker_mk' H).ge.trans (MonoidHom.ker_le_comap _ _), ?_⟩
+  rwa [Subgroup.index_comap_of_surjective _ (QuotientGroup.mk'_surjective H)]
 
 universe u v
 
@@ -141,7 +154,7 @@ end DerivedWordArgs
 
 /-- Evaluate a depth-`n` argument tree by balanced commutators: a leaf evaluates to its element,
 and a node to the commutator of the values of its two subtrees. Its values generate
-`derivedSeries G n` (`derivedSeries_eq_closure_range_derivedWord`). -/
+`Subgroup.derivedSeries G n` (`derivedSeries_eq_closure_range_derivedWord`). -/
 def derivedWord (G : Type u) [Group G] :
     (n : ℕ) → DerivedWordArgs G n → G
   | 0, .leaf x => x
@@ -181,16 +194,16 @@ private theorem conj_derivedWord (G : Type u) [Group G] (g : G) (n : ℕ)
 
 /-- The values of the `n`th derived word generate the `n`th derived subgroup. -/
 theorem derivedSeries_eq_closure_range_derivedWord (G : Type u) [Group G] (n : ℕ) :
-    derivedSeries G n = Subgroup.closure (Set.range (derivedWord G n)) := by
+    Subgroup.derivedSeries G n = Subgroup.closure (Set.range (derivedWord G n)) := by
   induction n with
   | zero =>
-      rw [derivedSeries_zero]
+      rw [Subgroup.derivedSeries_zero]
       apply le_antisymm
       · intro x _
         exact Subgroup.subset_closure ⟨.leaf x, rfl⟩
       · exact le_top
   | succ n ih =>
-      rw [derivedSeries_succ, ih]
+      rw [Subgroup.derivedSeries_succ, ih]
       apply le_antisymm
       · let N := Subgroup.closure (Set.range (derivedWord G (n + 1)))
         have hnorm : Subgroup.closure (Set.range (derivedWord G n)) ≤
@@ -214,14 +227,14 @@ theorem derivedSeries_eq_closure_range_derivedWord (G : Type u) [Group G] (n : �
 /-- Every value of the `n`th derived word belongs to the `n`th derived subgroup. -/
 theorem derivedWord_mem_derivedSeries (G : Type u) [Group G] (n : ℕ)
     (x : DerivedWordArgs G n) :
-    derivedWord G n x ∈ derivedSeries G n := by
+    derivedWord G n x ∈ Subgroup.derivedSeries G n := by
   rw [derivedSeries_eq_closure_range_derivedWord]
   exact Subgroup.subset_closure ⟨x, rfl⟩
 
 /-- The `n`th derived subgroup is trivial exactly when the `n`th derived word is identically
 one. -/
 theorem derivedSeries_eq_bot_iff_derivedWord_eq_one (G : Type u) [Group G] (n : ℕ) :
-    derivedSeries G n = ⊥ ↔ ∀ x : DerivedWordArgs G n, derivedWord G n x = 1 := by
+    Subgroup.derivedSeries G n = ⊥ ↔ ∀ x : DerivedWordArgs G n, derivedWord G n x = 1 := by
   constructor
   · intro hn x
     exact Subgroup.mem_bot.mp (hn ▸ derivedWord_mem_derivedSeries G n x)

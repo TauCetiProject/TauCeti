@@ -13,7 +13,7 @@ public import Mathlib.GroupTheory.QuotientGroup.Basic
 public import Mathlib.SetTheory.Cardinal.Finite
 public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 import Mathlib.GroupTheory.Coset.Card
-import Mathlib.GroupTheory.SpecificGroups.Cyclic.Basic
+import Mathlib.GroupTheory.SpecificGroups.Cyclic.Subgroup
 import TauCeti.Algebra.Group.Subgroup.Pointwise
 import TauCeti.GroupTheory.QuotientGroup.Basic
 
@@ -148,6 +148,11 @@ theorem stabilizer_eq_bot_of_disjoint_smul
   exact disjoint_left.mp (hU g hne) (hgx ▸ smul_mem_smul_set hx) hx
 
 variable {G α : Type*} [Group G] [MulAction G α]
+
+/-- Two group elements carrying the same point to `y` differ by an element stabilizing `y`. -/
+theorem mul_inv_mem_stabilizer_of_smul_eq (g h : G) {x y : α}
+    (hg : g • x = y) (hh : h • x = y) : g * h⁻¹ ∈ MulAction.stabilizer G y := by
+  rw [MulAction.mem_stabilizer_iff, mul_smul, inv_smul_eq_iff.mpr hh.symm, hg]
 
 /-- **The order of a stabiliser is constant along an orbit**: points related by the orbit
 relation have conjugate stabilisers, hence stabilisers of equal cardinality.

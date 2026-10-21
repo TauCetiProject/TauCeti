@@ -52,9 +52,11 @@ variable {R : Type uR} {A : Type uA} {B : Type uB}
   [GradedAlgebra 𝒜] [GradedAlgebra ℬ]
   {dA : A →ₗ[R] A} {dB : B →ₗ[R] B}
   {hA : IsDGAlgebra 𝒜 dA} {hB : IsDGAlgebra ℬ dB}
-  {P : Type uP} [Fintype P] {ind : P → ℤ}
+  {P : Type uP} {ind : P → ℤ}
 
 namespace TwistingCocycle
+
+variable [Fintype P]
 
 /-- The **image of a twisting cocycle** under a morphism of differential graded algebras. -/
 def map (f : DGAlgHom hA hB) (m : TwistingCocycle 𝒜 dA P ind) :
@@ -92,15 +94,24 @@ end TwistingCocycle
 
 section Restrict
 
-variable {M : Type uM} [AddCommGroup M] [Module R M] [Module Bᵐᵒᵖ M]
-  [IsScalarTower R Bᵐᵒᵖ M]
-  {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ]
-  [SetLike.GradedSMul (InternalGrading.ofDecomposition ℬ).opposite.piece ℳ]
-  {dM : M →ₗ[R] M} (f : DGAlgHom hA hB)
+variable {M : Type uM} [AddCommGroup M] [Module R M]
+  {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ] (f : DGAlgHom hA hB)
 
-variable (m : P → P → A)
+/-- The identification of `P → f^* M` with `P → M` matches the total gradings. -/
+theorem map_twistedTotalGrading_restrictScalarsPiEquiv (n : ℤ) :
+    (twistedTotalGrading (IsDGRightModule.restrictScalarsGrading (ℳ := ℳ) f) ind n).map
+        (restrictScalarsPiEquiv (M := M) (P := P) f :
+          (P → DGRightModule.RestrictScalars f M) →ₗ[R] (P → M)) =
+      twistedTotalGrading ℳ ind n := by
+  ext g
+  rw [Submodule.mem_map_equiv, mem_twistedTotalGrading_iff, mem_twistedTotalGrading_iff]
+  refine forall_congr' fun x ↦ ?_
+  rw [IsDGRightModule.mem_restrictScalarsGrading_iff,
+    DGRightModule.RestrictScalars.linearEquiv_apply, ← restrictScalarsPiEquiv_apply,
+    LinearEquiv.apply_symm_apply]
 
-omit [SetLike.GradedSMul (InternalGrading.ofDecomposition ℬ).opposite.piece ℳ] in
+variable [Fintype P] [Module Bᵐᵒᵖ M] [IsScalarTower R Bᵐᵒᵖ M] {dM : M →ₗ[R] M} (m : P → P → A)
+
 /-- On underlying elements, the twisted differential of a restricted module with the matrix `m` is
 the twisted differential of the original module with the matrix `f ∘ m`. -/
 theorem val_twistedDifferential_restrictScalars (g : P → DGRightModule.RestrictScalars f M)
@@ -116,24 +127,10 @@ theorem val_twistedDifferential_restrictScalars (g : P → DGRightModule.Restric
   rw [DGRightModule.RestrictScalars.linearEquiv_apply, DGRightModule.RestrictScalars.val_op_smul,
     val_koszulTwist_restrictScalars]
 
-omit [Fintype P] [Module Bᵐᵒᵖ M] [IsScalarTower R Bᵐᵒᵖ M]
-  [SetLike.GradedSMul (InternalGrading.ofDecomposition ℬ).opposite.piece ℳ] in
-/-- The identification of `P → f^* M` with `P → M` matches the total gradings. -/
-theorem map_twistedTotalGrading_restrictScalarsPiEquiv (n : ℤ) :
-    (twistedTotalGrading (IsDGRightModule.restrictScalarsGrading (ℳ := ℳ) f) ind n).map
-        (restrictScalarsPiEquiv (M := M) (P := P) f :
-          (P → DGRightModule.RestrictScalars f M) →ₗ[R] (P → M)) =
-      twistedTotalGrading ℳ ind n := by
-  ext g
-  rw [Submodule.mem_map_equiv, mem_twistedTotalGrading_iff, mem_twistedTotalGrading_iff]
-  refine forall_congr' fun x ↦ ?_
-  rw [IsDGRightModule.mem_restrictScalarsGrading_iff,
-    DGRightModule.RestrictScalars.linearEquiv_apply, ← restrictScalarsPiEquiv_apply,
-    LinearEquiv.apply_symm_apply]
-
 namespace TwistingCocycle
 
-variable (m : TwistingCocycle 𝒜 dA P ind) (hM : IsDGRightModule hB ℳ dM)
+variable [SetLike.GradedSMul (InternalGrading.ofDecomposition ℬ).opposite.piece ℳ]
+  (m : TwistingCocycle 𝒜 dA P ind) (hM : IsDGRightModule hB ℳ dM)
 
 /-- The degree-`n` part of the identification of the two twisted complexes. -/
 noncomputable def twistedCochainComplexRestrictScalarsXEquiv (n : ℤ) :

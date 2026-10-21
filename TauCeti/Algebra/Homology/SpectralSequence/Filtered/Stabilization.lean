@@ -7,12 +7,13 @@ module
 
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.SpectralObject
 public import TauCeti.Algebra.Homology.SpectralObject.Stabilization
+public import TauCeti.Algebra.Homology.Subobject
 
 /-!
 # Stabilization of the pages of the spectral sequence of a filtered complex
 
 Let `F : ℤ → Subobject K` be an increasing filtration of a cochain complex `K`. On the spectral
-sequence of `CochainComplex.filtrationFunctor F hF`, the object at `(p, q)` on page `r` is
+sequence of `CochainComplex.filtrationFunctor F hF`, the object at `(p, q)` on page `r ≥ 2` is
 isomorphic to the limit object `E^{p+q}(⊥ ≤ q ≤ q + 1 ≤ ⊤)` as soon as
 `H^{p+q+1}(F_{q-r+2}) = 0` and `H^{p+q-1}(K / F_{q+r-1}) = 0`
 (`CochainComplex.filtrationSpectralSequencePageXIsoEInfty`). For a finite filtration,
@@ -72,11 +73,9 @@ lemma isZero_spectralObject_H_top (b m : ℤ)
   refine IsZero.of_iso ?_ ((HomologicalComplex.homologyFunctor C _ m).mapIso
     ((cokernelCompIsIso _ ((filtrationFunctorObjIso F hF ⊤).hom ≫
       (filtrationEInt F ⊤).arrow)).symm ≪≫ cokernelIsoOfEq e ≪≫ cokernelEpiComp _ _))
-  have key (S T : Subobject K) (hST : S = T) (hT : IsZero ((cokernel T.arrow).homology m)) :
-      IsZero ((cokernel S.arrow).homology m) := by
-    subst hST
-    exact hT
-  exact key _ _ (filtrationEInt_coe F b) h
+  rw [HomologicalComplex.homologyFunctor_obj]
+  convert h using 1
+  rw [filtrationEInt_coe]
 
 /-- **Stabilization of the pages of the spectral sequence of a filtered complex.** The object at
 `pq = (p, q)` on page `r ≥ 2` is `E^{p+q}(⊥ ≤ q ≤ q + 1 ≤ ⊤)` when `H^{p+q+1}(F_{q-r+2})` and
@@ -90,19 +89,6 @@ noncomputable def filtrationSpectralSequencePageXIsoEInfty (r : ℤ) (hr : 2 ≤
   (spectralObject _).spectralSequencePageXIsoEInfty r hr pq n hn
     (isZero_spectralObject_H_bot F hF _ _ h₀) (isZero_spectralObject_H_top F hF _ _ h₃)
 
-/-- The homology of the zero subcomplex vanishes. -/
-lemma isZero_homology_of_eq_bot {a : ℤ} (ha : F a = ⊥) (m : ℤ) :
-    IsZero ((F a : CochainComplex C ℤ).homology m) := by
-  rw [ha]
-  exact (HomologicalComplex.homologyFunctor C _ m).map_isZero
-    (IsZero.of_iso (isZero_zero _) Subobject.botCoeIsoZero)
-
-/-- The quotient of `K` by the whole complex has vanishing homology. -/
-lemma isZero_homology_cokernel_of_eq_top {b : ℤ} (hb : F b = ⊤) (m : ℤ) :
-    IsZero ((cokernel (F b).arrow).homology m) := by
-  rw [hb]
-  exact (HomologicalComplex.homologyFunctor C _ m).map_isZero (isZero_cokernel_of_epi _)
-
 /-- **Stabilization for a finite filtration.** If `F_a = ⊥` and `F_b = ⊤`, then the object at
 `pq = (p, q)` on every page `r ≥ 2` with `q - r + 2 ≤ a` and `b ≤ q + r - 1` is
 `E^{p+q}(⊥ ≤ q ≤ q + 1 ≤ ⊤)`. -/
@@ -112,7 +98,7 @@ noncomputable def filtrationSpectralSequencePageXIsoEInftyOfFinite {a b : ℤ} (
     ((spectralSequence (filtrationFunctor F hF)).page r).X pq ≅
       (spectralObject (filtrationFunctor F hF)).EInfty pq.2 (pq.1 + pq.2) :=
   filtrationSpectralSequencePageXIsoEInfty F hF r hr pq _ rfl
-    (isZero_homology_of_eq_bot F (eq_bot_iff.2 ((hF hra).trans ha.le)) _)
-    (isZero_homology_cokernel_of_eq_top F (eq_top_iff.2 (hb.ge.trans (hF hrb))) _)
+    ((F _).isZero_homology_of_eq_bot (eq_bot_iff.2 ((hF hra).trans ha.le)) _)
+    ((F _).isZero_homology_cokernel_of_eq_top (eq_top_iff.2 (hb.ge.trans (hF hrb))) _)
 
 end CochainComplex

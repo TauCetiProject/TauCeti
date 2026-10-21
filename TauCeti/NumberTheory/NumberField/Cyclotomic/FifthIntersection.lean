@@ -217,6 +217,8 @@ theorem finrank_adjoin_primitiveRoot_eq_two_of_sq_eq_five (hb : b ^ 2 = 5)
     rw [show Module.finrank ℚ (IntermediateField.adjoin ℚ⟮b⟯ {ζ})
         = Module.finrank ℚ ((IntermediateField.adjoin ℚ⟮b⟯ {ζ}).restrictScalars ℚ) from rfl,
       hres, hζ.finrank_adjoin_eq_totient, Nat.totient_prime (by norm_num : Nat.Prime 5)]
+  have : Module.Free ℚ⟮b⟯ (IntermediateField.adjoin ℚ⟮b⟯ {ζ}) :=
+    Module.Free.of_divisionRing _ _
   have htower := Module.finrank_mul_finrank ℚ ℚ⟮b⟯ (IntermediateField.adjoin ℚ⟮b⟯ {ζ})
   rw [finrank_adjoin_of_sq_eq_five hb', habs] at htower
   omega

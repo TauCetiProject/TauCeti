@@ -21,6 +21,7 @@ Composition with Frobenius is also injective on morphisms.
 
 * `TauCeti.Isogeny.frobeniusIsogeny_comp`: Frobenius commutes with an isogeny.
 * `TauCeti.Isogeny.Hom.frobenius_comp`: Frobenius is central in the endomorphism carrier.
+* `TauCeti.Isogeny.Hom.frobenius_pow_comp`: so is every power of Frobenius.
 * `TauCeti.Isogeny.Hom.frobenius_comp_add`: composition by Frobenius preserves addition.
 * `TauCeti.Isogeny.Hom.frobenius_comp_injective` and
   `TauCeti.Isogeny.Hom.frobenius_comp_inj`: composition with Frobenius cancels.
@@ -63,6 +64,17 @@ theorem frobenius_comp (f : Hom W₁ W₂) :
   rcases f.eq_zero_or_exists_ofIsogeny with rfl | ⟨φ, rfl⟩
   · simp
   · rw [ofIsogeny_comp_ofIsogeny, ofIsogeny_comp_ofIsogeny, frobeniusIsogeny_comp]
+
+omit [W₂.IsElliptic] in
+/-- Every power of Frobenius commutes with every morphism, including the zero morphism. -/
+theorem frobenius_pow_comp (f : Hom W₁ W₂) (n : ℕ) :
+    (ofIsogeny (frobeniusIsogeny W₂) ^ n).comp f =
+      f.comp (ofIsogeny (frobeniusIsogeny W₁) ^ n) := by
+  induction n with
+  | zero => rw [pow_zero, pow_zero, one_def, one_def, id_comp, comp_id]
+  | succ n ih =>
+    rw [pow_succ, pow_succ, mul_def, mul_def, comp_assoc, frobenius_comp, ← comp_assoc, ih,
+      comp_assoc]
 
 /-- Frobenius preserves sums of morphisms under composition. -/
 @[simp]

@@ -81,15 +81,12 @@ theorem neg_gradient_mem_tangentConeAt_unstableSet_inter_stableSet (hf : Lipschi
     (hyu : y ∈ Flow.unstableSet (negativeGradientFlow f hf) p)
     (hys : y ∈ Flow.stableSet (negativeGradientFlow f hf) q) :
     -∇ f y ∈ tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p ∩
-      Flow.stableSet (negativeGradientFlow f hf) q) y := by
-  set φ := negativeGradientFlow f hf
-  have hvel : HasDerivAt (fun t ↦ φ t y) (-∇ f y) 0 := by
-    simpa only [φ, _root_.Flow.map_zero_apply] using
-      (isNegativeGradient_negativeGradientFlow f hf).isIntegralCurve y 0
-  simpa only [φ, _root_.Flow.map_zero_apply] using
-    hvel.mem_tangentConeAt (S := Flow.unstableSet φ p ∩ Flow.stableSet φ q)
-      (Filter.Eventually.of_forall fun t ↦
-        ⟨Flow.isInvariant_unstableSet φ p t hyu, Flow.isInvariant_stableSet φ q t hys⟩)
+      Flow.stableSet (negativeGradientFlow f hf) q) y :=
+  neg_gradient_mem_tangentConeAt_of_isInvariant f hf (S := Flow.unstableSet
+      (negativeGradientFlow f hf) p ∩ Flow.stableSet (negativeGradientFlow f hf) q)
+    (fun t ⦃_⦄ hz ↦
+      ⟨Flow.isInvariant_unstableSet _ p t hz.1, Flow.isInvariant_stableSet _ q t hz.2⟩)
+    ⟨hyu, hys⟩
 
 namespace IsNondegenerateCriticalPoint
 

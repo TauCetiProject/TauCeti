@@ -1,0 +1,217 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.AlgebraicGeometry.Morphisms.FiniteType
+public import Mathlib.AlgebraicGeometry.ValuativeCriterion
+public import TauCeti.AlgebraicGeometry.Grassmannian.Points
+public import TauCeti.RingTheory.Grassmannian.ValuationRing
+
+import TauCeti.LinearAlgebra.SymmetricAlgebra.FiniteType
+
+/-!
+# The Grassmannian scheme is proper
+
+Let `M` be a module over a commutative ring `R` and `k` a natural number. This file proves that the
+Grassmannian scheme `Module.Grassmannian.scheme R M k` is separated over `Spec R`
+(`Module.Grassmannian.isSeparated_toSpec`), and that it is proper over `Spec R` when `M` is a
+finite module (`Module.Grassmannian.isProper_toSpec`).
+
+The file also records that the structure morphism satisfies the uniqueness part of the valuative
+criterion for every `M` and the full valuative criterion for finite `M`, and that the charts at
+subfamilies of a generating family of `M` cover the Grassmannian. For finite `M`, this makes the
+Grassmannian available as a proper parameter scheme over `Spec R`.
+
+## Main results
+
+* `Module.Grassmannian.valuativeCriterion_uniqueness_toSpec`: lifts in the valuative criterion are
+  unique.
+* `Module.Grassmannian.valuativeCriterion_toSpec`: for finite `M`, the structure morphism satisfies
+  the valuative criterion.
+* `Module.Grassmannian.isSeparated_toSpec`: the Grassmannian is separated over `Spec R`.
+* `Module.Grassmannian.exists_mem_range_chartι_comp`: the charts at subfamilies of a generating
+  family cover the Grassmannian.
+* `Module.Grassmannian.isProper_toSpec`: for finite `M`, the Grassmannian is proper over `Spec R`.
+
+## References
+
+* A. Grothendieck, J. Dieudonné, *Éléments de géométrie algébrique I* (Springer, 1971), 9.7.
+* [The Stacks Project, Tag 089R](https://stacks.math.columbia.edu/tag/089R), for the Grassmannian
+  functor, and [Tag 0BX5](https://stacks.math.columbia.edu/tag/0BX5) for the valuative criterion
+  of properness.
+-/
+
+public section
+
+universe u
+
+open CategoryTheory Limits AlgebraicGeometry TensorProduct
+
+namespace Module.Grassmannian
+
+variable {R : Type u} [CommRing R] {M : Type u} [AddCommGroup M] [Module R M] {k : ℕ}
+
+open ChartAlgebra
+
+section QuasiSeparated
+
+/-- The charts at `x` and `y` meet in the image of their overlap. -/
+private lemma range_chartι_inter_range_chartι (x y : Fin k → M) :
+    Set.range (chartι R x) ∩ Set.range (chartι R y) =
+      Set.range (Spec.map (CommRingCat.ofHom
+        (algebraMap (ChartAlgebra R x) (OverlapAlgebra R x y))) ≫ chartι R x) := by
+  rw [← IsOpenImmersion.range_pullback_to_base_of_left (chartι R x) (chartι R y),
+    ← (isPullback_chartι x y).isoPullback_hom_fst, Category.assoc]
+  exact ((Scheme.Hom.surjective _).range_comp _).symm
+
+/-- The Grassmannian is quasi-separated: it is covered by the affine charts, and any two charts
+meet in the image of an affine scheme, which is quasi-compact. -/
+instance : QuasiSeparatedSpace (scheme R M k) := by
+  refine Scheme.quasiSeparatedSpace_of_isOpenCover (fun x : Fin k → M ↦ (chartι R x).opensRange)
+    ?_ (fun x ↦ isAffineOpen_opensRange _) fun x y ↦ ?_
+  · refine eq_top_iff.mpr fun z _ ↦ ?_
+    obtain ⟨x, y, rfl⟩ := chartι_jointly_surjective z
+    exact TopologicalSpace.Opens.mem_iSup.mpr ⟨x, y, rfl⟩
+  · simp only [Scheme.Hom.coe_opensRange]
+    rw [range_chartι_inter_range_chartι]
+    exact isCompact_range (Scheme.Hom.continuous _)
+
+end QuasiSeparated
+
+section Valuative
+
+/-- **Uniqueness in the valuative criterion.** For every module `M`, a valuative square over the
+structure morphism of the Grassmannian has at most one lift. -/
+theorem valuativeCriterion_uniqueness_toSpec :
+    ValuativeCriterion.Uniqueness (toSpec R M k) := by
+  intro S
+  obtain ⟨φ, hφ⟩ := Spec.map_surjective S.i₂
+  -- make `V` and `K` into `R`-algebras through the bottom map
+  let : Algebra R S.R := φ.hom.toAlgebra
+  let : Algebra R S.K := ((algebraMap S.R S.K).comp φ.hom).toAlgebra
+  have : IsScalarTower R S.R S.K := IsScalarTower.of_algebraMap_eq' rfl
+  refine ⟨fun l₁ l₂ ↦ CommSq.LiftStruct.ext ?_⟩
+  -- each lift lies over `Spec R` for this algebra structure, so it classifies a point over `V`
+  obtain ⟨N₁, hN₁⟩ := exists_toSchemeHom_eq l₁.l (l₁.fac_right.trans hφ.symm)
+  obtain ⟨N₂, hN₂⟩ := exists_toSchemeHom_eq l₂.l (l₂.fac_right.trans hφ.symm)
+  -- the two points have the same base change to `K`, so they agree
+  have h : map (IsScalarTower.toAlgHom R S.R S.K) N₁ = map (IsScalarTower.toAlgHom R S.R S.K) N₂ :=
+    toSchemeHom_injective <| by
+      rw [toSchemeHom_map, toSchemeHom_map, IsScalarTower.coe_toAlgHom, hN₁, hN₂, l₁.fac_left,
+        l₂.fac_left]
+  rw [← hN₁, ← hN₂, map_injective (IsFractionRing.injective S.R S.K) h]
+
+/-- **Existence in the valuative criterion.** For a finite module `M`, every valuative square over
+the structure morphism of the Grassmannian has a lift. -/
+theorem valuativeCriterion_existence_toSpec [Module.Finite R M] :
+    ValuativeCriterion.Existence (toSpec R M k) := by
+  intro S
+  obtain ⟨φ, hφ⟩ := Spec.map_surjective S.i₂
+  let : Algebra R S.R := φ.hom.toAlgebra
+  let : Algebra R S.K := ((algebraMap S.R S.K).comp φ.hom).toAlgebra
+  have : IsScalarTower R S.R S.K := IsScalarTower.of_algebraMap_eq' rfl
+  -- the top map classifies a point over `K`, which extends to a point over `V`; the `rfl`s below
+  -- hold because `algebraMap R V` is `φ` and `algebraMap R K` is the composite `R → V → K`
+  obtain ⟨N, hN⟩ := exists_toSchemeHom_eq S.i₁ <| by
+    rw [S.commSq.w, ← hφ, ← Spec.map_comp]
+    rfl
+  obtain ⟨N₀, hN₀⟩ := exists_map_eq_of_valuationRing (V := S.R) N
+  refine ⟨⟨⟨toSchemeHom N₀, ?_, ?_⟩⟩⟩
+  · rw [← IsScalarTower.coe_toAlgHom R S.R S.K, ← toSchemeHom_map, hN₀, hN]
+  · rw [toSchemeHom_toSpec, ← hφ]
+    rfl
+
+/-- **The valuative criterion for the Grassmannian.** For a finite module `M`, every valuative
+square over the structure morphism of the Grassmannian has a unique lift. -/
+theorem valuativeCriterion_toSpec [Module.Finite R M] : ValuativeCriterion (toSpec R M k) :=
+  ValuativeCriterion.iff.mpr
+    ⟨valuativeCriterion_existence_toSpec, valuativeCriterion_uniqueness_toSpec⟩
+
+/-- **The Grassmannian is separated** over `Spec R`, for every module `M`. -/
+instance isSeparated_toSpec : IsSeparated (toSpec R M k) :=
+  IsSeparated.of_valuativeCriterion _ valuativeCriterion_uniqueness_toSpec
+
+end Valuative
+
+section Finite
+
+/-- **The charts at subfamilies of a generating family cover the Grassmannian.** If `m : ι → M`
+generates `M`, then every point of the Grassmannian lies in the chart at `m ∘ y` for some
+`y : Fin k → ι`. -/
+theorem exists_mem_range_chartι_comp {ι : Type*} (m : ι → M)
+    (hm : Submodule.span R (Set.range m) = ⊤) (z : scheme R M k) :
+    ∃ y : Fin k → ι, z ∈ Set.range (chartι R (m ∘ y)) := by
+  obtain ⟨x, p, rfl⟩ := chartι_jointly_surjective z
+  -- the universal point of the chart at `x`
+  let A := ChartAlgebra R x
+  let N : G(k, A ⊗[R] M; A) := (chartHomEquiv R x A (AlgHom.id R A)).1
+  have hN : toSchemeHom N = chartι R x := by
+    -- `Spec.map` of the identity of `A` is the identity of `Spec A`
+    have hid : CommRingCat.ofHom ((AlgHom.id R A : A →ₐ[R] A) : A →+* A) = 𝟙 _ := rfl
+    rw [toSchemeHom_chartHomEquiv, hid, Spec.map_id, Category.id_comp]
+  -- the chart loci of `N` at the subfamilies of `1 ⊗ₜ m` generate the unit ideal, so one of them is
+  -- not contained in `p`
+  have hspan : N.toSubmodule ⊔ Submodule.span A (Set.range fun i ↦ (1 : A) ⊗ₜ[R] m i) = ⊤ := by
+    refine eq_top_iff.mpr (le_sup_of_le_right ?_)
+    rw [← Submodule.baseChange_top A, ← hm, Submodule.baseChange_span, ← Set.range_comp]
+    simp only [Function.comp_def, TensorProduct.mk_apply, le_refl]
+  obtain ⟨y, hy⟩ : ∃ y : Fin k → ι,
+      ¬ chartLocus N (fun i ↦ (1 : A) ⊗ₜ[R] (m ∘ y) i) ≤ p.asIdeal := by
+    by_contra! h
+    refine p.isPrime.ne_top (eq_top_iff.mpr ?_)
+    rw [← iSup_chartLocus_eq_top N _ hspan]
+    exact iSup_le h
+  obtain ⟨a, ha, hap⟩ := Set.not_subset.mp hy
+  -- over `D(a)`, the point `N` lies in the chart at `m ∘ y`
+  let B := Localization.Away a
+  have hmem : map (IsScalarTower.toAlgHom R A B) N ∈
+      chart B (fun i ↦ (1 : B) ⊗ₜ[R] (m ∘ y) i) :=
+    (map_mem_chart_iff _ N _).mpr <| Ideal.eq_top_of_isUnit_mem _ (Ideal.mem_map_of_mem _ ha)
+      (IsLocalization.Away.algebraMap_isUnit a)
+  let g := (chartHomEquiv R (m ∘ y) B).symm ⟨_, hmem⟩
+  have hg : Spec.map (CommRingCat.ofHom (algebraMap A B)) ≫ chartι R x =
+      Spec.map (CommRingCat.ofHom (g : ChartAlgebra R (m ∘ y) →+* B)) ≫ chartι R (m ∘ y) := by
+    rw [← hN, ← IsScalarTower.coe_toAlgHom R A B]
+    exact (specMap_comp_toSchemeHom_eq_iff N _ _ g).mpr (by simp [g])
+  -- and `p` lies in `D(a)`
+  obtain ⟨q, rfl⟩ : p ∈ Set.range (PrimeSpectrum.comap (algebraMap A B)) := by
+    rw [PrimeSpectrum.localization_away_comap_range B a]
+    exact hap
+  exact ⟨y, _, congrArg (fun f : Spec (CommRingCat.of B) ⟶ scheme R M k ↦ f q) hg.symm⟩
+
+/-- For `M` finitely generated, the Grassmannian is quasi-compact: the charts at `k`-tuples of a
+finite generating family form a finite affine open cover. -/
+instance [Module.Finite R M] : CompactSpace (scheme R M k) := by
+  obtain ⟨n, m, hm⟩ := Module.Finite.exists_fin (R := R) (M := M)
+  let 𝒰 : (scheme R M k).OpenCover := Scheme.Cover.mkOfCovers (Fin k → Fin n) _
+    (fun y ↦ chartι R (m ∘ y)) (exists_mem_range_chartι_comp m hm)
+  -- the index type and the components of `mkOfCovers` are not reducibly `Fin k → Fin n` and `Spec`
+  have : Finite 𝒰.I₀ := inferInstanceAs (Finite (Fin k → Fin n))
+  have (y : 𝒰.I₀) : CompactSpace (𝒰.X y) := inferInstanceAs (CompactSpace (Spec _))
+  exact 𝒰.compactSpace
+
+instance quasiCompact_toSpec [Module.Finite R M] : QuasiCompact (toSpec R M k) :=
+  (quasiCompact_iff_compactSpace _).mpr inferInstance
+
+instance locallyOfFiniteType_toSpec [Module.Finite R M] :
+    LocallyOfFiniteType (toSpec R M k) := by
+  -- `LocallyOfFiniteType` is local at the source, as a property defined by a ring hom property
+  have := HasRingHomProperty.instIsZariskiLocalAtSource (P := @LocallyOfFiniteType)
+  -- on the chart at `x`, the structure morphism is `Spec` of the finite type `ChartAlgebra R x`
+  have h (x : Fin k → M) : LocallyOfFiniteType (chartι R x ≫ toSpec R M k) := by
+    rw [chartι_toSpec, HasRingHomProperty.Spec_iff (P := @LocallyOfFiniteType)]
+    exact RingHom.finiteType_algebraMap.mpr inferInstance
+  exact IsZariskiLocalAtSource.of_openCover
+    (Scheme.Cover.mkOfCovers (Fin k → M) _ (chartι R) chartι_jointly_surjective :
+      (scheme R M k).OpenCover) h
+
+/-- **The Grassmannian of a finite module is proper** over `Spec R`. -/
+instance isProper_toSpec [Module.Finite R M] : IsProper (toSpec R M k) :=
+  IsProper.of_valuativeCriterion _ valuativeCriterion_toSpec
+
+end Finite
+
+end Module.Grassmannian

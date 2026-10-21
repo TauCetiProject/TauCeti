@@ -18,6 +18,9 @@ In particular, a lift from a free profinite presentation to an arithmetic Galois
 a comparison between their class-module extensions. This comparison can detect a generating
 extension class independently of a separately constructed surjection on the kernels.
 
+If `f` maps `V` onto `W`, its map on class modules is surjective. For normal subgroups,
+that map intertwines the quotient conjugation actions.
+
 The construction uses `TopologicalAbelianization.map` followed by `maximalProPQuotient.map`
 to show that the extension kernels are preserved.
 
@@ -67,6 +70,18 @@ theorem abelianizationProPMap_mk (v : V) :
     congrArg (maximalProPQuotient.mk p (TopologicalAbelianization W))
       (TopologicalAbelianization.map_mk r hr v)
 
+/-- Surjectivity on the specified subgroups implies surjectivity on their pro-`p`
+class modules. Surjectivity on the ambient groups is not required. -/
+theorem abelianizationProPMap_surjective (hWV : W ≤ V.map f) :
+    Function.Surjective (abelianizationProPMap p f hf hVW) := by
+  intro a
+  obtain ⟨w, rfl⟩ := abelianizationProPMk_surjective p H W a
+  obtain ⟨v, hv, hvw⟩ := hWV w.2
+  refine ⟨abelianizationProPMk p G V ⟨v, hv⟩, ?_⟩
+  rw [abelianizationProPMap_mk]
+  congr 1
+  exact Subtype.ext hvw
+
 /-- The identity induces the identity on a pro-`p` class module. -/
 @[simp]
 theorem abelianizationProPMap_id :
@@ -103,6 +118,18 @@ theorem abelianizationProPExtensionKernel_le_comap :
   simpa only [hvone, map_one] using (abelianizationProPMap_mk p f hf hVW ⟨x, hv⟩).symm
 
 variable [V.Normal] [W.Normal] [U.Normal]
+
+/-- The induced class-module map intertwines conjugation by an ambient element with
+conjugation by its image. -/
+@[simp]
+theorem abelianizationProPMap_smul (g : G) (a : abelianizationProP p G V) :
+    abelianizationProPMap p f hf hVW ((g : G ⧸ V) • a) =
+      (f g : H ⧸ W) • abelianizationProPMap p f hf hVW a := by
+  obtain ⟨v, rfl⟩ := abelianizationProPMk_surjective p G V a
+  simp only [abelianizationProPMk_conj, abelianizationProPMap_mk]
+  congr 1
+  ext
+  simp [MulAut.conjNormal_apply]
 
 /-- The continuous map on total groups of pro-`p` class-module extensions induced by a
 continuous homomorphism carrying `V` into `W`. -/

@@ -8,18 +8,17 @@ module
 public import TauCeti.GroupTheory.Index.Basic
 public import TauCeti.RepresentationTheory.CharacterTable.Pairing
 public import TauCeti.RepresentationTheory.Induction.ClassFunction
-public import TauCeti.RepresentationTheory.Induction.FiniteDimensional.Basic
+public import TauCeti.RepresentationTheory.Induction.FiniteDimensional.Adjunction
 public import TauCeti.RepresentationTheory.Induction.Restriction
-public import Mathlib.CategoryTheory.Linear.Basic
 public import Mathlib.RepresentationTheory.Character
 import TauCeti.RepresentationTheory.Invariants
 
 /-!
 # Frobenius reciprocity as a character identity
 
-For a finite-index subgroup `S` of a group `G`, Mathlib's adjunction `Rep.indResAdjunction`
-identifies `Hom_G(Ind_S^G A, B)` with `Hom_S(A, Res_S B)`.  This file transports that adjunction to
-finite-dimensional representations and reads it off as an identity of character scalar products:
+For a finite-index subgroup `S` of a group `G`, the finite-dimensional induction adjunctions
+identify the corresponding intertwining spaces. This file reads the dimension identities from
+`Induction.FiniteDimensional.Adjunction` as identities of character scalar products:
 
 `⟨Ind χ, ψ⟩_G = ⟨χ, Res ψ⟩_S`,
 
@@ -32,8 +31,6 @@ representation is involved, so it also covers class functions that are not chara
 
 ## Main statements
 
-* `FDRep.finrank_hom_indFDRep`, `FDRep.finrank_hom_resFDRep`: the paired intertwining spaces
-  have the same dimension.
 * `TauCeti.frobenius_reciprocity` and `TauCeti.frobenius_reciprocity_resFDRep`: the character form
   in both directions, with all scalar products written out as explicit normalized sums.
 * `TauCeti.characterPairing_indFDRep`, `TauCeti.characterPairing_resFDRep`: the same two identities
@@ -64,9 +61,9 @@ just that one with both sides flipped, by `TauCeti.ClassFunction.characterPairin
 derived rather than proved again from `FDRep.finrank_hom_indFDRep`. Neither direction needs a
 reindexing of the sums.
 
-The two `k`-linear equivalences of intertwining spaces that carry the reciprocities are private:
-only their `finrank` corollaries are intended as API, and both are opaque transports whose bodies
-would have to be exposed before a consumer could identify the transported intertwiner.
+The dimension identities use the two adjunctions on finite-dimensional representations. These
+adjunctions lift the carriers to a universe containing both the field and the group, so the field
+and group may lie in separate universes.
 
 ## References
 
@@ -86,60 +83,7 @@ open TauCeti
 
 section HomSpaces
 
-variable {k G : Type u} [Field k] [Group G] {S : Subgroup G}
-
-/-- **Frobenius reciprocity** for finite-dimensional representations, as a `k`-linear equivalence of
-intertwining spaces: `Hom_G(Ind_S^G A, B) ≃ₗ[k] Hom_S(A, Res_S B)`.
-
-This is Mathlib's `Rep.indResHomEquiv`, the linear form of the adjunction
-`Rep.indResAdjunction`, conjugated by the fully faithful forgetful functor
-`FDRep k G ⥤ Rep k G` and by `TauCeti.indFDRepForgetIso`.
-
-It is private: only `finrank_hom_indFDRep` is intended as API. -/
-private noncomputable def indResFDRepHomEquiv [S.FiniteIndex] (A : FDRep k S) (B : FDRep k G) :
-    (indFDRep A ⟶ B) ≃ₗ[k] (A ⟶ Subgroup.resFDRep S B) :=
-  -- `Subgroup.resFDRep` is an abbreviation for `Action.res`, so its image under `forget₂` is
-  -- `Rep.res`
-  -- definitionally and the restriction side needs no comparison isomorphism.
-  -- The universes of `Rep.indResHomEquiv` are pinned: left to unification, the constraint
-  -- `max ?w u u = u` makes elaborating this composite cost about a second (see #8353).
-  (FDRep.forget₂HomLinearEquiv (indFDRep A) B).symm.trans <|
-    ((Linear.homCongr k (indFDRepForgetIso A) (Iso.refl _)).trans
-      (Rep.indResHomEquiv.{u, u, u, u} S.subtype _ _)).trans
-        (FDRep.forget₂HomLinearEquiv A (Subgroup.resFDRep S B))
-
-/-- The intertwining space out of an induced representation has the same dimension as the
-intertwining space into the corresponding restriction. This is the quantitative content of
-Frobenius reciprocity, and holds over an arbitrary field. -/
-theorem finrank_hom_indFDRep [S.FiniteIndex] (A : FDRep k S) (B : FDRep k G) :
-    Module.finrank k (indFDRep A ⟶ B) = Module.finrank k (A ⟶ Subgroup.resFDRep S B) :=
-  (indResFDRepHomEquiv A B).finrank_eq
-
-/-- **The second reciprocity**, available because induction from a finite-index subgroup is also a
-*right* adjoint to restriction: `Hom_S(Res_S B, A) ≃ₗ[k] Hom_G(B, Ind_S^G A)`.
-
-Where `FDRep.indResFDRepHomEquiv` transports Mathlib's `Rep.indResHomEquiv`, this transports
-`Rep.resCoindHomEquiv` along Mathlib's finite-index identification `Rep.indCoindIso` of induction
-with coinduction; the pair is the finite-dimensional shadow of `Rep.resIndAdjunction`.
-
-It is private: only `finrank_hom_resFDRep` is intended as API. -/
-private noncomputable def resIndFDRepHomEquiv [S.FiniteIndex] (A : FDRep k S) (B : FDRep k G) :
-    (Subgroup.resFDRep S B ⟶ A) ≃ₗ[k] (B ⟶ indFDRep A) :=
-  -- `Rep.indCoindIso` picks coset representatives, so it wants the coset relation to be decidable.
-  -- The universes of `Rep.resCoindHomEquiv` and `Rep.indCoindIso` are pinned: left to
-  -- unification, the constraints `max ?w u = u` make this composite cost about a second
-  -- (see #8353).
-  letI : DecidableRel ⇑(QuotientGroup.rightRel S) := Classical.decRel _
-  (FDRep.forget₂HomLinearEquiv (Subgroup.resFDRep S B) A).symm.trans <|
-    (Rep.resCoindHomEquiv.{u, u, u, u} S.subtype _ _).trans <|
-      (Linear.homCongr k (Iso.refl _)
-        ((indFDRepForgetIso A).trans (Rep.indCoindIso.{u, u, u} _)).symm).trans
-          (FDRep.forget₂HomLinearEquiv B (indFDRep A))
-
-/-- The dimension form of the second reciprocity. -/
-theorem finrank_hom_resFDRep [S.FiniteIndex] (A : FDRep k S) (B : FDRep k G) :
-    Module.finrank k (Subgroup.resFDRep S B ⟶ A) = Module.finrank k (B ⟶ indFDRep A) :=
-  (resIndFDRepHomEquiv A B).finrank_eq
+variable {k : Type u} {G : Type v} [Field k] [Group G] {S : Subgroup G}
 
 /-- **Induction preserves the dimension of invariants.** The invariant subspace of
 `Ind_S^G A` has the same dimension as the invariant subspace of `A`. -/
@@ -147,7 +91,7 @@ theorem finrank_invariants_indFDRep [S.FiniteIndex] (A : FDRep k S) :
     Module.finrank k (Representation.invariants (indFDRep A).ρ) =
       Module.finrank k (Representation.invariants A.ρ) := by
   -- Intertwiners in `FDRep` out of the trivial line are the invariant vectors.
-  have h {H : Type u} [Group H] (B : FDRep k H) :
+  have h {H : Type v} [Group H] (B : FDRep k H) :
       Module.finrank k (FDRep.of (Representation.trivial k H k) ⟶ B) =
         Module.finrank k (Representation.invariants B.ρ) :=
     ((FDRep.forget₂HomLinearEquiv _ B).symm.trans
@@ -163,7 +107,7 @@ namespace TauCeti
 
 section Characters
 
-variable {k G : Type u} [Field k] [Group G] {S : Subgroup G}
+variable {k : Type u} {G : Type v} [Field k] [Group G] {S : Subgroup G}
 
 open scoped Classical in
 /-- **Frobenius reciprocity as a character identity.**  The scalar product over `G` of an induced

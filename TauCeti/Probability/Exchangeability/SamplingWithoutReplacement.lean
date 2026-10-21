@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Exchangeability.ExchangeableAtMonotone
-public import TauCeti.Probability.PopulationSampling
-public import TauCeti.Probability.UniformSampling
-import Mathlib.MeasureTheory.Measure.Typeclasses.Finite
+public import TauCeti.Probability.PopulationSampling.Finite
 
 /-!
 # Finite exchangeability as sampling without replacement
@@ -16,11 +14,10 @@ import Mathlib.MeasureTheory.Measure.Typeclasses.Finite
 This file identifies every shorter marginal of a finite exchangeable process with sampling
 without replacement from its observed finite population.
 
-Given a population law `ρ : Measure (κ → α)`, `sampleWithoutReplacement ρ` first draws
-`x ∼ ρ`, independently draws a uniform injective selection `k : ι → κ`, and returns `x ∘ k`. It is
-the random-population reindexing construction `samplePopulation` along uniform injective
-selections; sampling with replacement (`sampleWithReplacement`, in `FiniteDeFinetti.lean`) is the
-same construction along all index maps.
+The general sampling laws and their collision bounds live in
+`TauCeti.Probability.PopulationSampling.Finite`. Given a population law `ρ : Measure (κ → α)`,
+`sampleWithoutReplacement ρ` first draws `x ∼ ρ`, independently draws a uniform injective
+selection `k : ι → κ`, and returns `x ∘ k`.
 
 The main theorem says that if the first `n` coordinates of a process are exchangeable, then
 sampling `m ≤ n` entries without replacement from that random `n`-tuple has exactly the original
@@ -33,14 +30,11 @@ same law by `ExchangeableAt.blockLaw_eq_prefixLaw_of_injective`, so the average 
 
 ## Main declarations
 
-* `sampleWithoutReplacement` — sample a random finite population at uniformly chosen distinct
-  indices;
 * `ExchangeableAt.sampleWithoutReplacement_eq_prefixLaw` — the finite exchangeable
   without-replacement representation.
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/Exchangeability/README.md`, Layer 8, “finite de Finetti bounds”.
 * P. Diaconis and D. Freedman, “Finite exchangeable sequences”, *Annals of Probability* 8
   (1980), 745–764.
 
@@ -59,40 +53,6 @@ namespace TauCeti
 namespace Probability
 
 variable {α : Type*} [MeasurableSpace α]
-
-/-- The law obtained by sampling a random finite population without replacement.
-
-First draw a population `x : κ → α` with law `ρ`; independently and uniformly draw an injective
-selection `k : ι → κ`; then return the sample `i ↦ x (k i)`. This is `samplePopulation` along the
-uniform law on injective index maps. If no injective selection exists, Mathlib's `uniformOn`
-convention makes this the zero measure.
-
-The population index is finite because uniform counting only distributes mass over finitely many
-injective selections. -/
-def sampleWithoutReplacement {ι κ : Type*} [Finite κ] [MeasurableSpace κ]
-    [MeasurableSingletonClass κ] (ρ : Measure (κ → α)) : Measure (ι → α) :=
-  samplePopulation (uniformOn {k : ι → κ | Function.Injective k}) ρ
-
-/-- Sampling without replacement is `samplePopulation` along uniform injective selections. -/
-theorem sampleWithoutReplacement_def {ι κ : Type*} [Finite κ] [MeasurableSpace κ]
-    [MeasurableSingletonClass κ] (ρ : Measure (κ → α)) :
-    sampleWithoutReplacement (ι := ι) ρ =
-      samplePopulation (uniformOn {k : ι → κ | Function.Injective k}) ρ :=
-  (rfl)
-
-/-- Sampling without replacement preserves probability mass whenever an injective selection
-exists. -/
-theorem isProbabilityMeasure_sampleWithoutReplacement {ι κ : Type*} [Finite κ]
-    [MeasurableSpace κ] [MeasurableSingletonClass κ] (ρ : Measure (κ → α))
-    [IsProbabilityMeasure ρ] (e : ι ↪ κ) :
-    IsProbabilityMeasure
-      (sampleWithoutReplacement (ι := ι) (κ := κ) (α := α) ρ) := by
-  have : Finite ι := Finite.of_injective e e.injective
-  let E : Set (ι → κ) := {k | Function.Injective k}
-  let _ : IsProbabilityMeasure (uniformOn E) :=
-    isProbabilityMeasure_uniformOn (Set.toFinite E) ⟨e, e.injective⟩
-  rw [sampleWithoutReplacement_def]
-  infer_instance
 
 /-- **Finite exchangeability is sampling without replacement.** If the first `n` coordinates are
 exchangeable, then drawing `m ≤ n` distinct positions uniformly from that random `n`-tuple has

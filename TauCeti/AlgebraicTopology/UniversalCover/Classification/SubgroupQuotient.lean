@@ -16,10 +16,10 @@ For a subgroup `H` of the fundamental group of `X`, this file defines the orbit 
 cover and proves that this map is a quotient covering map. The class of the constant path
 supplies its distinguished point.
 
-This is the first construction step in the subgroup-to-cover direction of the classification
-of covering spaces. This file descends `UniversalCover.proj` to the quotient;
-`Classification.RecoveredSubgroup` identifies the subgroup recovered by that map, while a later
-file will prove that the descended map is a covering map.
+This is the first construction step in the subgroup-to-cover direction of the classification of
+covering spaces. This file descends `UniversalCover.proj` to the quotient;
+`Classification.RecoveredSubgroup` identifies the subgroup recovered by that map, and
+`Classification.Existence` proves that the descended map is a covering map.
 
 ## Main declarations
 
@@ -39,10 +39,9 @@ file will prove that the descended map is a covering map.
 
 ## References
 
-This advances `TauCetiRoadmap/UniversalCovers/README.md`, Stage 2, item 7: construct the pointed
-connected cover associated to `H ≤ π₁(X, x₀)`. It reuses the fundamental-group action adapted
-from Kim Morrison's work in [mathlib4#38292](https://github.com/leanprover-community/mathlib4/pull/38292)
-and Mathlib's quotient-covering-map interface due to Junyan Xu.
+This file reuses the fundamental-group action adapted from Kim Morrison's work in
+[mathlib4#38292](https://github.com/leanprover-community/mathlib4/pull/38292) and Mathlib's
+quotient-covering-map interface due to Junyan Xu.
 -/
 
 public section

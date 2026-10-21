@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Jon Crall, Claude Fable 5
 -/
 module
 
@@ -17,6 +17,10 @@ This file records general results relating matrix rank to the corresponding line
 
 * `Matrix.rank_eq_card_iff_vecMul_injective` characterizes full row rank by injectivity of right
   multiplication by the matrix.
+* `Matrix.rank_eq_card_iff_mulVec_injective` characterizes full column rank by injectivity of
+  matrix-vector multiplication.
+* `Matrix.rank_left_factor_eq` and `Matrix.range_left_factor_eq`: an exact-rank
+  factorization gives a full-column-rank left factor with the same column range.
 * `Matrix.rank_add_rank_le_rank_mul_add_card`: Sylvester's rank inequality
   `rank A + rank B ≤ rank (A * B) + n` for an `m × n` matrix `A` and an `n × o` matrix `B`.
 * `Matrix.exists_eq_mul_fin_rank`: a rectangular matrix factors through `Fin A.rank`.
@@ -29,7 +33,60 @@ public section
 
 namespace Matrix
 
-variable {K : Type*} [Field K] {m n : Type*} [Fintype m] [Fintype n]
+section FullColumnRank
+
+variable {R m n : Type*} [CommSemiring R] [OrzechProperty R] [Nontrivial R] [Fintype n]
+
+/-- A matrix has full column rank exactly when matrix-vector multiplication by it is injective.
+The row index type need not be finite. -/
+theorem rank_eq_card_iff_mulVec_injective (B : Matrix m n R) :
+    B.rank = Fintype.card n ↔ Function.Injective B.mulVec := by
+  rw [mulVec_injective_iff, rank_eq_finrank_span_cols,
+    linearIndependent_iff_card_eq_finrank_span, Set.finrank, eq_comm]
+
+end FullColumnRank
+
+section ExactRankFactorization
+
+variable {R m n : Type*} [CommSemiring R] [StrongRankCondition R] [Fintype n]
+
+/-- If `M = L * C` has rank equal to the number of columns of `L`, then `L`
+has full column rank. This holds over a commutative semiring with the strong rank condition;
+the row index type need not be finite. -/
+theorem rank_left_factor_eq {ι : Type*} [Fintype ι]
+    {M : Matrix m n R} {L : Matrix m ι R}
+    {C : Matrix ι n R} (hM : M.rank = Fintype.card ι)
+    (h : M = L * C) : L.rank = Fintype.card ι := by
+  refine le_antisymm (by simpa using L.rank_le_card_width) ?_
+  calc Fintype.card ι = M.rank := hM.symm
+    _ = (L * C).rank := by rw [h]
+    _ ≤ L.rank := Matrix.rank_mul_le_left L C
+
+end ExactRankFactorization
+
+section ExactRankFactorRange
+
+variable {𝕜 m n : Type*} [Field 𝕜] [Fintype n]
+
+/-- An exact-rank left factor spans the column space of the factored matrix. -/
+theorem range_left_factor_eq {ι : Type*} [Fintype ι]
+    {M : Matrix m n 𝕜} {L : Matrix m ι 𝕜}
+    {R : Matrix ι n 𝕜} (hM : M.rank = Fintype.card ι) (h : M = L * R) :
+    LinearMap.range L.mulVecLin = LinearMap.range M.mulVecLin := by
+  refine (Submodule.eq_of_le_of_finrank_eq ?_ ?_).symm
+  · rw [h, Matrix.mulVecLin_mul]
+    exact LinearMap.range_comp_le_range _ _
+  · have hL := rank_left_factor_eq hM h
+    rw [Matrix.rank] at hM hL
+    exact hM.trans hL.symm
+
+end ExactRankFactorRange
+
+variable {K : Type*} [Field K] {m n : Type*} [Fintype n]
+
+section
+
+variable [Fintype m]
 
 /-- A matrix has full row rank exactly when right multiplication by it is injective. -/
 theorem rank_eq_card_iff_vecMul_injective (B : Matrix m n K) :
@@ -37,7 +94,8 @@ theorem rank_eq_card_iff_vecMul_injective (B : Matrix m n K) :
   rw [vecMul_injective_iff, rank_eq_finrank_span_row,
     linearIndependent_iff_card_eq_finrank_span, Set.finrank, eq_comm]
 
-omit [Fintype m] in
+end
+
 /-- Every matrix with finitely many columns over a field factors through a space whose dimension
 is its rank. The factorization also applies to a rank-zero matrix, with inner index type `Fin 0`. -/
 theorem exists_eq_mul_fin_rank (A : Matrix m n K) :
@@ -53,7 +111,6 @@ theorem exists_eq_mul_fin_rank (A : Matrix m n K) :
   refine ⟨LinearMap.toMatrix' l, LinearMap.toMatrix' r, ?_⟩
   rw [← LinearMap.toMatrix'_comp, h, ← Matrix.toLin'_apply', LinearMap.toMatrix'_toLin']
 
-omit [Fintype m] in
 /-- A rank bound gives a factorization through `Fin r`, padding an exact-rank factorization
 with zero columns and rows when necessary. -/
 theorem exists_eq_mul_of_rank_le (A : Matrix m n K) {r : ℕ} (h : A.rank ≤ r) :
@@ -67,7 +124,6 @@ theorem exists_eq_mul_of_rank_le (A : Matrix m n K) {r : ℕ} (h : A.rank ≤ r)
   simpa only [submatrix_mul_equiv, fromCols_mul_fromRows, Matrix.zero_mul, add_zero,
     submatrix_id_id] using hA
 
-omit [Fintype m] in
 /-- Matrix rank is at most `r` if and only if the matrix is a product with inner index `Fin r`.
 In particular, rank is the least possible inner dimension of a factorization. -/
 theorem rank_le_iff_exists_eq_mul (A : Matrix m n K) (r : ℕ) :
@@ -76,7 +132,6 @@ theorem rank_le_iff_exists_eq_mul (A : Matrix m n K) (r : ℕ) :
   rintro ⟨L, R, rfl⟩
   exact (rank_mul_le_left L R).trans (by simpa using L.rank_le_card_width)
 
-omit [Fintype m] in
 /-- **Sylvester's rank inequality**: for an `m × n` matrix `A` and an `n × o` matrix `B` over a
 field, `rank A + rank B ≤ rank (A * B) + n`. Equivalently, multiplying by `A` lowers the rank of
 `B` by at most the nullity of `A`. -/

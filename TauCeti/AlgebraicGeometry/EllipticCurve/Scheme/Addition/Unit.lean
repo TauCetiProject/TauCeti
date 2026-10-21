@@ -8,23 +8,28 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.AdditionLaw.Unit
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Addition.Points
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.ZeroSection
+import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Addition.Comm
 
 /-!
 # The unit law for the projective Weierstrass addition morphism
 
 Let `W` be an elliptic Weierstrass curve over a commutative ring `R`, let `E = projModel W`, and
-let `S = Spec R`. This file proves that the zero section is a right identity for the
+let `S = Spec R`. This file proves that the zero section is a right and a left identity for the
 Bosma–Lenstra addition morphism `E ×_S E ⟶ E`.
 
 The proof is scheme-theoretic over an arbitrary base. The standard charts `D₊(Y)` and `D₊(Z)`
 cover `E`: the complement of `D₊(Z)` is exactly the zero section, which lies in `D₊(Y)`. On
 `D₊(Z)`, the addition law attached to `Z = 0` evaluates at `(P, [0 : 1 : 0])` to `-P₂ • P`;
 on `D₊(Y)`, the law attached to `Y = 0` evaluates to `P₁ • P`. The chosen chart coordinate is
-one in each case, so both laws define the original projective point.
+one in each case, so both laws define the original projective point. The left unit law follows
+from the right one, because the addition morphism is commutative
+(`WeierstrassCurve.additionMorphism_comm`).
 
-## Main result
+## Main results
 
 * `WeierstrassCurve.additionMorphism_right_unit`: adding the zero section on the right is the
+  identity morphism of `projModel W`.
+* `WeierstrassCurve.additionMorphism_left_unit`: adding the zero section on the left is the
   identity morphism of `projModel W`.
 
 ## References
@@ -34,7 +39,9 @@ one in each case, so both laws define the original projective point.
 * AINTLIB (`github.com/CBirkbeck/AINTLIB`, Apache-2.0), `mulOver_oneOver` in
   `projects/ModularCurves/ModularCurves/EllipticCurve/GroupLawAxioms.lean` at commit
   `c3415f32a313e19ace43e05479aeaa0d56ca287a`: a formalization of the same right unit law, proved
-  by descent from a universal atlas and field-valued points rather than on two affine charts.
+  by descent from a universal atlas and field-valued points rather than on two affine charts. The
+  left unit law is deduced from the right one and commutativity as in `oneOver_mulOver`, in the
+  same file.
 -/
 
 public section
@@ -119,5 +126,20 @@ theorem additionMorphism_right_unit [W.IsElliptic] :
     rw [projModelPoint_eq_projModelPoint_iff]
     refine ⟨rfl, -1, ?_⟩
     simp [Projective.addXYZ_zero_right, Units.smul_def]
+
+/-- The zero section is a left identity for the Bosma–Lenstra addition morphism on the projective
+Weierstrass model, over an arbitrary commutative base ring. -/
+@[reassoc (attr := simp)]
+theorem additionMorphism_left_unit [W.IsElliptic] :
+    pullback.lift (f := W.projModelOver) (g := W.projModelOver)
+      (W.projModelOver ≫ W.projModelZero) (𝟙 W.projModel) (by simp) ≫ W.additionMorphism =
+        𝟙 W.projModel := by
+  -- swapping the two factors turns the left unit law into the right one
+  have h : pullback.lift (f := W.projModelOver) (g := W.projModelOver)
+      (W.projModelOver ≫ W.projModelZero) (𝟙 W.projModel) (by simp) =
+      pullback.lift (𝟙 W.projModel) (W.projModelOver ≫ W.projModelZero) (by simp) ≫
+        (pullbackSymmetry _ _).hom := by
+    apply pullback.hom_ext <;> simp
+  rw [h, Category.assoc, additionMorphism_comm, additionMorphism_right_unit]
 
 end WeierstrassCurve

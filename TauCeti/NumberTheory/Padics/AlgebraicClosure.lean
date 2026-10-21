@@ -86,7 +86,7 @@ theorem algebraMap_norm_eq_prod_embeddings_of_le_adjoin (p : ℕ) [Fact p.Prime]
   have hagree : ∀ h₁ h₂ : AlgebraicClosure ℚ_[p] ≃ₐ[ℚ_[p]] AlgebraicClosure ℚ_[p],
       (∀ x ∈ K, h₁ x = h₂ x) → ∀ x ∈ M, h₁ x = h₂ x := by
     intro h₁ h₂ hK x hx
-    refine IntermediateField.adjoin_induction ℚ_[p] (p := fun x _ ↦ h₁ x = h₂ x)
+    refine IntermediateField.adjoin_induction ℚ_[p] (motive := fun x _ ↦ h₁ x = h₂ x)
       (fun x hx ↦ hK x hx)
       (fun r ↦ by simp) (fun x y _ _ hx hy ↦ by rw [map_add, map_add, hx, hy])
       (fun x _ hx ↦ by rw [map_inv₀, map_inv₀, hx])

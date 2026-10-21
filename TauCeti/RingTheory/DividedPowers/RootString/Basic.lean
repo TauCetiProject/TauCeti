@@ -256,7 +256,7 @@ theorem dividedPower_mul_dividedPower_of_commutator_eq_two_nsmul (hxy : x * y = 
     simpa only [hS] using (mem_chainLeTwoIndex (m := m) (n := n) (p := p))
   have hseries := dividedPower_mul_of_ad_dividedPower_series
     (x := x) (d := rootStringSeries y z w n)
-    (fun k => mul_rootStringSeries hxy hxz hxw hyz hzw n k) m
+    m (fun k _ ↦ mul_rootStringSeries hxy hxz hxw hyz hzw n k)
   rw [rootStringSeries_zero] at hseries
   rw [hseries]
   -- Group the flat sum by the value of `b + 2c`, which is the index of the series.

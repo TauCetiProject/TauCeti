@@ -52,7 +52,8 @@ describes its action.
   `TauCeti.forall_lie_eq_smul_of_lie_eq_smul` are the half of Schur's lemma that needs neither
   algebraic closedness nor finite-dimensionality: a scalar already known on one nonzero vector of
   an irreducible module describes the whole action.
-* `TauCeti.exists_centralWeight_of_isIrreducible` is the existential form the roadmap pins.
+* `TauCeti.exists_centralWeight_of_isIrreducible`: the centre acts by a central weight, in
+  existential form.
 * `TauCeti.lie_eq_centralWeight_smul` and `TauCeti.toEnd_eq_centralWeight_smul` are the defining
   property of the central weight, and `TauCeti.centralWeight_eq_of_forall_lie_eq_smul` its
   characterization.
@@ -75,15 +76,6 @@ eigenvalue of the underlying linear map. That is why the ambient hypotheses are
 `TauCeti.eq_of_forall_lie_eq_smul` is stated for any bracket action and any faithful scalar action,
 rather than under an irreducibility hypothesis, since uniqueness of the scalar needs nothing else.
 A nontrivial module over a division ring is faithful, which is how the central weight uses it.
-
-## References
-
-This is the "irreducibles of a reductive algebra" item of Layer 9 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`: *"Over algebraically closed `K`
-the centre acts on a finite-dimensional irreducible by a **central weight**, a functional on the
-centre with **no integrality constraint**"*, the target named there
-`exists_centralWeight_of_isIrreducible`, together with the API that makes the functional a named
-object rather than an existential.
 -/
 
 public section
@@ -262,9 +254,9 @@ theorem centralWeight_eq_zero_iff (z : LieAlgebra.center K L) :
   · rw [h m, zero_smul]
 
 /-- **The centre acts by a central weight**, in existential form: there is a linear functional on
-`LieAlgebra.center K L` by which every central element acts. This is the form the roadmap pins; the
-named witness is `TauCeti.centralWeight`. The roadmap signature also carries `[CharZero K]` and
-`[FiniteDimensional K L]`, neither of which the statement needs. -/
+`LieAlgebra.center K L` by which every central element acts. The named witness is
+`TauCeti.centralWeight`. The statement needs neither `[CharZero K]` nor `[FiniteDimensional K L]`.
+-/
 theorem exists_centralWeight_of_isIrreducible :
     ∃ xi : Module.Dual K (LieAlgebra.center K L),
       ∀ (z : LieAlgebra.center K L) (m : M), ⁅(z : L), m⁆ = xi z • m :=

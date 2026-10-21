@@ -25,6 +25,9 @@ designated atom `x₀` -- so that `g` arises from `f` by transferring weight ont
 designated atom can only gain, and it gains exactly the total excess.  Only equality of the two
 finite total masses is used there, not normalization to one.
 
+A weighted sum with weights summing to one is at most twice its part over the large terms, as
+soon as it is at least twice the threshold separating large terms from small ones.
+
 Rounding to a common denominator `M` cannot be done pointwise, since the weights have to keep
 summing to one.  `TauCeti.exists_nat_weights_of_sum_eq_one` rounds every weight but the one at
 `x₀` down to a multiple of `1 / M` and lets `x₀` absorb the slack; the rounded weights are then
@@ -34,6 +37,7 @@ dominated away from `x₀` and lose less than `1 / M` each.
 
 * `Finset.sum_min_add_sum_tsub` -- the matched mass and the excess mass add up to the total;
 * `ENNReal.toReal_sub_add_toReal_sub` -- the excesses in both directions add up to the distance;
+* `TauCeti.sum_mul_le_two_mul_sum_mul_ite` -- a weighted sum is dominated by its large terms;
 * `TauCeti.le_of_sum_eq_of_forall_ne_le` -- an atom dominating everywhere else can only gain;
 * `TauCeti.add_sum_tsub_eq_of_forall_ne_le` -- it gains exactly the total excess;
 * `TauCeti.exists_nat_weights_of_sum_eq_one` -- rounding a weight vector to a common denominator.
@@ -41,7 +45,7 @@ dominated away from `x₀` and lose less than `1 / M` each.
 
 public section
 
-open scoped ENNReal
+open scoped ENNReal NNReal
 
 namespace TauCeti
 
@@ -62,6 +66,34 @@ theorem _root_.ENNReal.toReal_sub_add_toReal_sub {a b : ℝ≥0∞} (ha : a ≠ 
       abs_sub_comm, abs_of_nonneg (sub_nonneg.2 (ENNReal.toReal_mono hb h))]
   · rw [tsub_eq_zero_of_le h, ENNReal.toReal_sub_of_le h ha, ENNReal.toReal_zero, add_zero,
       abs_of_nonneg (sub_nonneg.2 (ENNReal.toReal_mono ha h))]
+
+/-- For weights summing to `1` and a threshold `t < ∞` with `2 t ≤ ∑ j, w j * a j`, the weighted
+sum is at most twice its part over the indices with `t ≤ a j`: the other terms contribute at most
+`t`. -/
+theorem sum_mul_le_two_mul_sum_mul_ite {J : Type*} [Fintype J] {w : J → ℝ≥0}
+    (hw : ∑ j, w j = 1) (a : J → ℝ≥0∞) {t : ℝ≥0∞} (ht : t ≠ ∞)
+    (h : 2 * t ≤ ∑ j, (w j : ℝ≥0∞) * a j) :
+    ∑ j, (w j : ℝ≥0∞) * a j ≤ 2 * ∑ j, (w j : ℝ≥0∞) * if t ≤ a j then a j else 0 := by
+  set B := ∑ j, (w j : ℝ≥0∞) * if t ≤ a j then a j else 0
+  have hsplit : ∑ j, (w j : ℝ≥0∞) * a j ≤ B + t := by
+    calc ∑ j, (w j : ℝ≥0∞) * a j
+        ≤ ∑ j, ((w j : ℝ≥0∞) * (if t ≤ a j then a j else 0) + (w j : ℝ≥0∞) * t) := by
+          gcongr with j
+          split_ifs with hj
+          · exact le_self_add
+          · rw [mul_zero, zero_add]
+            gcongr
+            exact (not_le.1 hj).le
+      _ = B + t := by
+          rw [Finset.sum_add_distrib, ← Finset.sum_mul, ← ENNReal.ofNNReal_finsetSum, hw,
+            ENNReal.coe_one, one_mul]
+  have htB : t ≤ B := (ENNReal.add_le_add_iff_right ht).1 <| by
+    rw [← two_mul]
+    exact h.trans hsplit
+  calc ∑ j, (w j : ℝ≥0∞) * a j ≤ B + t := hsplit
+    _ ≤ B + B := by gcongr
+    _ = 2 * B := (two_mul B).symm
+
 
 variable {s : Finset X} {f g : X → ℝ≥0∞} {x₀ : X}
 

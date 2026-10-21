@@ -38,6 +38,9 @@ and the identification of morphisms with their tautological points in `Isogeny.H
   composition and addition.
 * `TauCeti.Isogeny.Hom.degree_map`: preservation of the degree.
 * `TauCeti.Isogeny.Hom.pointMap_map`: compatibility with the action on points.
+* `TauCeti.Isogeny.Hom.pointMap_map_algebraMap_map`: compatibility of the action on points of the
+  base changes `W⁄L` and `W⁄M` with Mathlib's point map along an algebra homomorphism `L →ₐ[F] M`;
+  for an automorphism of `L` over `F` this is Galois equivariance.
 
 ## References
 
@@ -260,6 +263,38 @@ theorem pointMap_map (h : Hom W₁ W₂) (f : F →+* K) (P : W₁.Point) :
     have h₂ := he.lt_one_iff_lt_one.mpr hQ.2
     rw [Valuation.comap_apply, _root_.map_sub, FunctionField.map_algebraMap] at h₁ h₂
     exact ⟨h₁, h₂⟩
+
+-- A morphism transported along equalities of its source and target curves acts on the transported
+-- points by transport.
+private theorem pointMap_cast {V₁ V₁' V₂ V₂' : WeierstrassCurve K} [V₁.IsElliptic]
+    [V₂.IsElliptic] [V₁'.IsElliptic] [V₂'.IsElliptic] (e₁ : V₁ = V₁') (e₂ : V₂ = V₂')
+    {h : Hom V₁.toAffine V₂.toAffine} {h' : Hom V₁'.toAffine V₂'.toAffine} (hh : HEq h h')
+    (P : V₁.toAffine.Point) :
+    h'.pointMap (cast (congrArg (fun V : WeierstrassCurve K ↦ V.toAffine.Point) e₁) P) =
+      cast (congrArg (fun V : WeierstrassCurve K ↦ V.toAffine.Point) e₂) (h.pointMap P) := by
+  subst e₁ e₂
+  cases eq_of_heq hh
+  rfl
+
+omit [DecidableEq F] in
+/-- **Base change commutes with the point maps along algebra homomorphisms**: for an
+`F`-algebra homomorphism `σ : L →ₐ[F] M` of fields, the base change of `h` to `M` sends the image
+under `σ` of a point `P` of `W₁⁄L` to the image under `σ` of the image of `P` under the base change
+of `h` to `L`. For an automorphism `σ` of `L` over `F` this says that the action of `h` on the
+points over `L` is equivariant for the Galois action. -/
+theorem pointMap_map_algebraMap_map {L M : Type*} [Field L] [Field M] [Algebra F L] [Algebra F M]
+    [DecidableEq L] [DecidableEq M] (h : Hom W₁ W₂) (σ : L →ₐ[F] M)
+    (P : (W₁⁄L).toAffine.Point) :
+    (h.map (algebraMap F M)).pointMap (Point.map σ P) =
+      Point.map σ ((h.map (algebraMap F L)).pointMap P) := by
+  classical
+  -- transport `Point.map σ` to the transport `mapAlong σ`, along `(W⁄L).map σ = W⁄M` on both sides
+  refine (congrArg _ (Point.map_eq_cast_mapAlong σ P)).trans ?_
+  refine (pointMap_cast (W₁.map_baseChange σ) (W₂.map_baseChange σ)
+    (h := (h.map (algebraMap F L)).map (σ : L →+* M)) ?_ _).trans ?_
+  · rw [map_map]
+    exact congr_arg_heq (fun g ↦ h.map g) σ.comp_algebraMap
+  · exact (congrArg _ (pointMap_map _ _ P)).trans (Point.map_eq_cast_mapAlong σ _).symm
 
 end PointMap
 

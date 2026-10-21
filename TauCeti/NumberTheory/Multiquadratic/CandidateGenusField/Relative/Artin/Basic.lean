@@ -368,7 +368,7 @@ abelian over `ℚ`, and `isUnramifiedIn_candidateGenusField` makes every prime o
 theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_artinHomAway
     (hd : Squarefree d) (hnsq : ¬ IsSquare ((d : ℤ) : ℚ))
     (S : Finset (IsDedekindDomain.HeightOneSpectrum (𝓞 (candidateGenusFieldBase hd))))
-    (I : NumberFieldArithmetic.idealsAway (K := candidateGenusFieldBase hd) S) :
+    (I : NumberFieldArithmetic.idealsAway (candidateGenusFieldBase hd) S) :
     autCandidateGenusFieldEquivNarrowElementaryTwoQuotient hd hnsq
         (NumberFieldArithmetic.artinHomAway IsMulCommutative.is_comm.comm S
           (fun v _ Q _ _ ↦ isUnramifiedIn_candidateGenusField hd hnsq v.asIdeal Q
@@ -378,7 +378,7 @@ theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_artinHomAway
           (NarrowClassGroup.mk (I : (FractionalIdeal (𝓞 (candidateGenusFieldBase hd))⁰
             (candidateGenusFieldBase hd))ˣ))) := by
   -- The narrow elementary-`2` class, as a homomorphism on the ideals away from `S`.
-  let cls : NumberFieldArithmetic.idealsAway (K := candidateGenusFieldBase hd) S →*
+  let cls : NumberFieldArithmetic.idealsAway (candidateGenusFieldBase hd) S →*
       Multiplicative (NarrowClassGroup.ElementaryTwoQuotient (candidateGenusFieldBase hd)) :=
     MonoidHom.mk' (fun J ↦ Multiplicative.ofAdd
       (TauCeti.elementaryTwoQuotientMk
@@ -386,7 +386,7 @@ theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_artinHomAway
           (candidateGenusFieldBase hd))ˣ)))) fun J J' ↦ by
       rw [Subgroup.coe_mul, map_mul, TauCeti.elementaryTwoQuotientMk_mul, ofAdd_add]
   -- `MonoidHom.mk'` stores the underlying function, so this is the computation rule for `cls`.
-  have hcls : ∀ J : NumberFieldArithmetic.idealsAway (K := candidateGenusFieldBase hd) S,
+  have hcls : ∀ J : NumberFieldArithmetic.idealsAway (candidateGenusFieldBase hd) S,
       cls J = Multiplicative.ofAdd
         (TauCeti.elementaryTwoQuotientMk
           (NarrowClassGroup.mk (J : (FractionalIdeal (𝓞 (candidateGenusFieldBase hd))⁰
@@ -421,7 +421,7 @@ when its narrow ideal class lies in `Cl⁺(K)²`; in particular the Artin map fa
 theorem artinHomAway_candidateGenusField_eq_one_iff
     (hd : Squarefree d) (hnsq : ¬ IsSquare ((d : ℤ) : ℚ))
     (S : Finset (IsDedekindDomain.HeightOneSpectrum (𝓞 (candidateGenusFieldBase hd))))
-    (I : NumberFieldArithmetic.idealsAway (K := candidateGenusFieldBase hd) S) :
+    (I : NumberFieldArithmetic.idealsAway (candidateGenusFieldBase hd) S) :
     NumberFieldArithmetic.artinHomAway IsMulCommutative.is_comm.comm S
         (fun v _ Q _ _ ↦ isUnramifiedIn_candidateGenusField hd hnsq v.asIdeal Q
           inferInstance inferInstance) I = 1 ↔
@@ -458,7 +458,7 @@ the invertible fractional ideals prime to `disc K`, the Artin map of `K_gen / K`
 inverse of the genus-field isomorphism composed with the narrow elementary-`2` class. -/
 theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_artinHomAway_excludedPrimes
     (hd : Squarefree d) (hnsq : ¬ IsSquare ((d : ℤ) : ℚ))
-    (I : NumberFieldArithmetic.idealsAway (K := candidateGenusFieldBase hd)
+    (I : NumberFieldArithmetic.idealsAway (candidateGenusFieldBase hd)
       (genusFieldArtinExcludedPrimes hd)) :
     autCandidateGenusFieldEquivNarrowElementaryTwoQuotient hd hnsq
         (NumberFieldArithmetic.artinHomAway IsMulCommutative.is_comm.comm
@@ -499,7 +499,7 @@ theorem artinHomAwayIntegral_candidateGenusField_surjective
     Ideal.span_singleton_nonZeroDivisors.mpr (mem_nonZeroDivisors_iff_ne_zero.mpr hDne)
   obtain ⟨J, hJC, hcop⟩ := NarrowClassGroup.exists_mk0_eq_and_isCoprime C ⟨_, hM⟩
   have hmem : (J : Ideal (𝓞 (candidateGenusFieldBase hd))) ∈
-      NumberFieldArithmetic.integralIdealsAway (K := candidateGenusFieldBase hd)
+      NumberFieldArithmetic.integralIdealsAway (R := 𝓞 (candidateGenusFieldBase hd))
         (genusFieldArtinExcludedPrimes hd) := by
     rw [NumberFieldArithmetic.mem_integralIdealsAway_iff]
     refine ⟨mem_nonZeroDivisors_iff_ne_zero.mp J.2, fun v hv hdvdJ ↦ ?_⟩
@@ -517,8 +517,9 @@ theorem artinHomAwayIntegral_candidateGenusField_surjective
   rw [NumberFieldArithmetic.artinHomAwayIntegral_apply,
     autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_artinHomAway_excludedPrimes]
   have hcoe : ((NumberFieldArithmetic.integralIdealsAwayHom
-      (K := candidateGenusFieldBase hd) (genusFieldArtinExcludedPrimes hd) ⟨_, hmem⟩ :
-        NumberFieldArithmetic.idealsAway (genusFieldArtinExcludedPrimes hd)) :
+      (candidateGenusFieldBase hd) (genusFieldArtinExcludedPrimes hd) ⟨_, hmem⟩ :
+        NumberFieldArithmetic.idealsAway (candidateGenusFieldBase hd)
+          (genusFieldArtinExcludedPrimes hd)) :
       (FractionalIdeal (𝓞 (candidateGenusFieldBase hd))⁰ (candidateGenusFieldBase hd))ˣ) =
       FractionalIdeal.mk0 (candidateGenusFieldBase hd) J :=
     Units.ext (by
@@ -537,7 +538,7 @@ theorem artinHomAway_candidateGenusField_surjective
           inferInstance inferInstance)) := by
   intro σ
   obtain ⟨I, hI⟩ := artinHomAwayIntegral_candidateGenusField_surjective hd hnsq σ
-  refine ⟨NumberFieldArithmetic.integralIdealsAwayHom _ I, ?_⟩
+  refine ⟨NumberFieldArithmetic.integralIdealsAwayHom (candidateGenusFieldBase hd) _ I, ?_⟩
   simpa only [NumberFieldArithmetic.artinHomAwayIntegral_apply] using hI
 
 end TauCeti.Multiquadratic

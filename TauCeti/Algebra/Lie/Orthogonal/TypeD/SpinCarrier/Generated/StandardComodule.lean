@@ -67,7 +67,7 @@ theorem pointToGeneralLinear_mapDomain_generatedCoordinateLift_inl_eq_rootSubgro
     (i : Fin n ⊕ Fin n) (B : CommAlgCat.{v} R)
     (q : HopfAlgebra.points (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R) B) :
     GeneralLinear.pointToGeneralLinear (dimension n)
-        (AlgHom.mapDomain (generatedCoordinateMap n hn R).hom
+        (BialgHom.mapDomain (generatedCoordinateMap n hn R).hom
           (no_index (toConv (q.ofConv.comp
             (generatedCoordinateLift n hn R (.inl i)).hom.toAlgHom)))) =
       (rootSubgroupPoints n hn i B (AdditiveGroup.gaPointsMulEquiv q) :
@@ -76,12 +76,13 @@ theorem pointToGeneralLinear_mapDomain_generatedCoordinateLift_inl_eq_rootSubgro
       coordinateMap n hn R ≫ rootSubgroupToBaseChangeCoordinateMap n hn R i := by
     rw [generatedCoordinateMap_comp_generatedCoordinateLift, generatorCoordinateMap_inl]
     exact (coordinateMap_comp_rootSubgroupToBaseChangeCoordinateMap n hn R i).symm
-  have hpoint : AlgHom.mapDomain (generatedCoordinateMap n hn R).hom
+  have hpoint : BialgHom.mapDomain (generatedCoordinateMap n hn R).hom
       (toConv (q.ofConv.comp (generatedCoordinateLift n hn R (.inl i)).hom.toAlgHom)) =
-      AlgHom.mapDomain (coordinateMap n hn R).hom
+      BialgHom.mapDomain (coordinateMap n hn R).hom
         (toConv (q.ofConv.comp (rootSubgroupToBaseChangeCoordinateMap n hn R i).hom.toAlgHom)) := by
     apply WithConv.ext
     ext x
+    simp only [BialgHom.mapDomain_apply_apply]
     exact congrArg (fun f ↦ q.ofConv (f.hom x)) hcomp
   rw [hpoint]
   have h := congrArg (fun g : points n hn B ↦
@@ -89,13 +90,14 @@ theorem pointToGeneralLinear_mapDomain_generatedCoordinateLift_inl_eq_rootSubgro
     (baseChangePointsMulEquiv_mapPointsFunctor_rootSubgroupToBaseChangeCoordinateMap
       n hn R B i q)
   have hcoe := coe_baseChangePointsMulEquiv_apply n hn R B
-    ((CommHopfAlgCat.mapPointsFunctor
+    ((CommHopfAlgCat.Hom.mapPointsFunctor
       (rootSubgroupToBaseChangeCoordinateMap n hn R i)).app B q)
   rw [hcoe] at h
   -- The functor component uses an indexed presentation of the same algebra-valued points.
   erw [← mapPointsFunctor_coordinateMap_app, GeneralLinear.pointsMulEquiv_apply,
-    CommHopfAlgCat.mapPointsFunctor_app_apply,
-    CommHopfAlgCat.mapPointsFunctor_app_apply] at h
+    CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
+    CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at h
+  rw [BialgHom.mapDomain_apply]
   exact h
 
 /-- The standard right comodule of the generated full-weight type-D spin subgroup. -/

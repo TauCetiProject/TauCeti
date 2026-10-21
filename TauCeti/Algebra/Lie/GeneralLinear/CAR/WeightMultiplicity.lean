@@ -52,7 +52,6 @@ namespace TauCeti
 open CliffordAlgebra LieModule Module
 
 attribute [local instance 100] LieRing.ofAssociativeRing
-attribute [local instance] Classical.decEq
 
 noncomputable section
 
@@ -262,13 +261,6 @@ private theorem carOccupationElement_mul_eq_self_of_mem_commonFixed
   simpa [carOccupationEnd, Module.toModuleEnd_apply,
     DistribSMul.toLinearMap_apply, smul_eq_mul] using h
 
-private theorem matrix_single_self_eq_classical
-    {K : Type*} [Field K] {N : ℕ} (i : Fin N) :
-    Matrix.single i i (1 : K) =
-      @Matrix.single (Fin N) (Fin N) K (Classical.decEq _) (Classical.decEq _) _ i i 1 := by
-  ext a b
-  simp [Matrix.single_apply]
-
 private theorem diagonal_lie_eq_glHalfStaircase_smul_of_occupation_fixed
     {K : Type*} [Field K] [Invertible (2 : K)] {N : ℕ}
     (x : carAlgebra K N)
@@ -289,10 +281,7 @@ private theorem diagonal_lie_eq_glHalfStaircase_smul_of_occupation_fixed
         (∑ k : Fin N, if k < i then 1 - carOccupationElement (K := K) k i
           else carOccupationElement (K := K) i k) * x :=
       congrArg (fun z => z * x)
-        (by
-          rw [matrix_single_self_eq_classical]
-          exact glCliffordHom_single_self_eq_sum_positive_occupation
-            (K := K) (n := Fin N) i)
+        (glCliffordHom_single_self_eq_sum_positive_occupation (K := K) (n := Fin N) i)
     _ = ∑ k : Fin N, (if k < i then 1 - carOccupationElement (K := K) k i
           else carOccupationElement (K := K) i k) * x := by rw [Finset.sum_mul]
     _ = ∑ k : Fin N, (if k < i then (0 : K)
@@ -320,8 +309,7 @@ private theorem sum_upper_occupation_smul_eq_card_smul
     · simp [hki, ne_of_lt hki, not_lt_of_ge hki.le, hlower hki, sub_mul]
     · simp [carOccupationElement_self]
     · simp [hik, not_lt_of_ge hik.le]
-  rw [car_lie_def, matrix_single_self_eq_classical,
-    glCliffordHom_single_self_eq_sum_positive_occupation,
+  rw [car_lie_def, glCliffordHom_single_self_eq_sum_positive_occupation,
     Finset.sum_mul, Finset.sum_congr rfl fun k _ => hterm k] at hdiag
   have hsum :
       (∑ k : Fin N, if i < k then carOccupationElement (K := K) i k * x

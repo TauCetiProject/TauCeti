@@ -252,7 +252,7 @@ theorem discr_integralNormalization_reverse_comp_X_add_C (f : R[X]) {a : R}
     (h : f.eval a ≠ 0) :
     (f.comp (X + C a)).reverse.integralNormalization.discr =
       f.eval a ^ ((f.natDegree - 1) * (f.natDegree - 2)) * f.discr := by
-  rw [TauCeti.discr_integralNormalization, leadingCoeff_reverse_comp_X_add_C f h,
+  rw [discr_integralNormalization, leadingCoeff_reverse_comp_X_add_C f h,
     natDegree_reverse_comp_X_add_C f h,
     discr_reverse _ (by rwa [← taylor_apply, taylor_coeff_zero]), discr_comp_X_add_C]
 

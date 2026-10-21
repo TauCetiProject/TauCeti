@@ -381,6 +381,13 @@ theorem boundary_one [Nonempty N] :
     boundary (1 : RelHomotopyGroup N X) = 1 :=
   boundaryHom.map_one
 
+/-- The boundary homomorphism `π_{n+1}(X, A, a₀) →* π_n(A, a₀)` is natural in the based pair. -/
+theorem boundaryHom_comp_mapHom [Nonempty N] (f : X ⟶ Y) :
+    boundaryHom.comp (mapHom (N := N) f) =
+      (HomotopyGroup.mapHom (TopPair.Hom.snd f.toTopPairHom).hom f.map_basepoint).comp
+        boundaryHom :=
+  MonoidHom.ext fun a => by simp [boundary_map]
+
 /-- The map `π_{n+1}(X, a₀) →* π_{n+1}(X, A, a₀)` as a homomorphism, where `π_{n+1}(X, a₀)` is
 modelled on the cube `I^(Option N)`. -/
 def ofHomotopyGroupHom [Nonempty N] :

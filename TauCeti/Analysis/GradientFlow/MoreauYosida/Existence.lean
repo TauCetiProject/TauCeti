@@ -82,9 +82,48 @@ open scoped ENNReal NNReal
 
 namespace TauCeti
 
-section PseudoEMetricSpace
+section EDist
 
-variable {X : Type*} [PseudoEMetricSpace X] {φ : X → EReal} {τ τ' τ₀ : ℝ≥0} {x x₀ : X}
+variable {X : Type*} [EDist X] {φ : X → EReal} {τ : ℝ≥0} {x : X}
+
+/-- **Lower semicontinuity of the penalized energy.** If `φ y ≤ liminf φ (w n)` and
+`d(x, y) ≤ liminf d(x, w n)`, then the penalized energy `φ + d(x, ·)² / (2τ)` satisfies the same
+inequality, including at `τ = 0` with extended nonnegative division. -/
+theorem le_liminf_apply_add_edist_sq_div {ι : Type*} {f : Filter ι} {w : ι → X}
+    {y : X} (hd : edist x y ≤ liminf (fun n ↦ edist x (w n)) f)
+    (hφ : φ y ≤ liminf (fun n ↦ φ (w n)) f) :
+    φ y + (edist x y ^ 2 / (2 * τ) : ℝ≥0∞) ≤
+      liminf (fun n ↦ φ (w n) + (edist x (w n) ^ 2 / (2 * τ) : ℝ≥0∞)) f := by
+  rcases f.eq_or_neBot with rfl | _
+  · simp
+  have hsq : edist x y ^ 2 ≤ liminf (fun n ↦ edist x (w n) ^ 2) f := by
+    calc edist x y ^ 2 ≤ (liminf (fun n ↦ edist x (w n)) f) ^ 2 := by gcongr
+      _ ≤ liminf (fun n ↦ edist x (w n) ^ 2) f := by
+        simpa only [sq, Pi.mul_def] using
+          (ENNReal.le_liminf_mul (f := f) (u := fun n ↦ edist x (w n)) (v := fun n ↦ edist x (w n)))
+  have hpenalty : edist x y ^ 2 / (2 * τ) ≤
+      liminf (fun n ↦ edist x (w n) ^ 2 / (2 * τ)) f := by
+    calc edist x y ^ 2 / (2 * τ) ≤
+        liminf (fun n ↦ edist x (w n) ^ 2) f / (2 * τ) := by gcongr
+      _ ≤ liminf (fun n ↦ edist x (w n) ^ 2 / (2 * τ)) f := by
+        simpa only [Pi.mul_def, liminf_const, ← div_eq_mul_inv] using
+          (ENNReal.le_liminf_mul (f := f) (u := fun n ↦ edist x (w n) ^ 2)
+            (v := fun _ ↦ (2 * (τ : ℝ≥0∞))⁻¹))
+  have hcoe : Monotone (fun t : ℝ≥0∞ ↦ (t : EReal)) :=
+    fun _ _ h ↦ EReal.coe_ennreal_le_coe_ennreal_iff.2 h
+  calc φ y + (edist x y ^ 2 / (2 * τ) : ℝ≥0∞)
+      ≤ liminf (fun n ↦ φ (w n)) f +
+        liminf (fun n ↦ ((edist x (w n) ^ 2 / (2 * τ) : ℝ≥0∞) : EReal)) f :=
+        add_le_add hφ ((hcoe hpenalty).trans_eq (hcoe.map_liminf_of_continuousAt _
+          continuous_coe_ennreal_ereal.continuousAt))
+    _ ≤ liminf (fun n ↦ φ (w n) + (edist x (w n) ^ 2 / (2 * τ) : ℝ≥0∞)) f :=
+      EReal.le_liminf_add
+
+end EDist
+
+section WeakPseudoEMetricSpace
+
+variable {X : Type*} [TopologicalSpace X] [WeakPseudoEMetricSpace X] {τ τ₀ : ℝ≥0}
 
 /-- For time steps `τ < τ₀`, the penalty `d(x₀, z)² / (2τ₀)` is at most
 `d(x, z)² / (2τ) + d(x, x₀)² / (2 (τ₀ - τ))`. With `a = d(x, z)`, `b = d(x, x₀)` and `s = τ₀ - τ`,
@@ -131,7 +170,14 @@ theorem edist_sq_div_le_add (hττ₀ : τ < τ₀) (x x₀ z : X) :
         (by simp only [Finset.mem_univ, Fin.forall_fin_two, Matrix.cons_val_zero,
           Matrix.cons_val_one, forall_const]; constructor <;> positivity)
       simp only [Fin.sum_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one] at this
-      rwa [show (2 : ℝ) * τ₀ = 2 * (τ₀ - τ) + 2 * τ by ring, add_comm (_ ^ 2 / (2 * (τ : ℝ)))]
+      have hsum : (2 : ℝ) * τ₀ = 2 * (τ₀ - τ) + 2 * τ := by ring
+      rwa [hsum, add_comm (_ ^ 2 / (2 * (τ : ℝ)))]
+
+end WeakPseudoEMetricSpace
+
+section PseudoEMetricSpace
+
+variable {X : Type*} [PseudoEMetricSpace X] {φ : X → EReal} {τ τ' τ₀ : ℝ≥0} {x x₀ : X}
 
 /-- **Propagation of coercivity**, quantitatively (Ambrosio–Gigli–Savaré, Lemma 2.2.1). For time
 steps `τ < τ₀` and a point `x` at finite distance from `x₀`,
@@ -194,26 +240,6 @@ private theorem toReal_edist_sq_mul_le (hτ : 0 < τ) (hττ' : τ < τ') {A B :
       field_simp
     linarith
   rwa [div_le_iff₀ (by positivity)] at key
-
-/-- **Lower semicontinuity of the penalized energy.** If `φ y ≤ liminf φ (w n)` and
-`d(x, y) ≤ liminf d(x, w n)`, then the penalized energy `φ + d(x, ·)² / (2τ)` satisfies the same
-inequality: the penalty is a monotone continuous function of `d(x, ·)`, and the `liminf` of a sum
-dominates the sum of the `liminf`s. -/
-theorem le_liminf_apply_add_edist_sq_div {ι : Type*} {f : Filter ι} (hτ : 0 < τ) {w : ι → X}
-    {y : X} (hd : edist x y ≤ liminf (fun n ↦ edist x (w n)) f)
-    (hφ : φ y ≤ liminf (fun n ↦ φ (w n)) f) :
-    φ y + (edist x y ^ 2 / (2 * τ) : ℝ≥0∞) ≤
-      liminf (fun n ↦ φ (w n) + (edist x (w n) ^ 2 / (2 * τ) : ℝ≥0∞)) f := by
-  rcases f.eq_or_neBot with rfl | _
-  · simp
-  set g : ℝ≥0∞ → EReal := fun t ↦ ((t ^ 2 / (2 * τ) : ℝ≥0∞) : EReal)
-  have hg : Monotone g := fun a b hab ↦ EReal.coe_ennreal_le_coe_ennreal_iff.2 (by gcongr)
-  have hgc : Continuous g := continuous_coe_ennreal_ereal.comp
-    ((ENNReal.continuous_div_const _ (by simp [hτ.ne'])).comp (ENNReal.continuous_pow 2))
-  calc φ y + g (edist x y)
-      ≤ liminf (fun n ↦ φ (w n)) f + liminf (fun n ↦ g (edist x (w n))) f :=
-        add_le_add hφ ((hg hd).trans_eq (hg.map_liminf_of_continuousAt _ hgc.continuousAt))
-    _ ≤ liminf (fun n ↦ φ (w n) + g (edist x (w n))) f := EReal.le_liminf_add
 
 /-- **Existence of resolvent steps** (Ambrosio–Gigli–Savaré, Corollary 2.2.2). Let `l y` be the
 filter of an auxiliary convergence `y_n ⇀ y` on `X`, possibly weaker than that of the metric (for
@@ -290,7 +316,7 @@ theorem moreauYosidaResolvent_nonempty {l : X → Filter X}
   refine ⟨y, mem_moreauYosidaResolvent_iff_eq_moreauYosida.2
     ⟨hyx, le_antisymm ?_ (moreauYosida_le φ τ hyx)⟩⟩
   rw [hM, ← hlim.liminf_eq]
-  exact (le_liminf_apply_add_edist_sq_div hτ (hd hy) (hφ hdiam' hy)).trans
+  exact (le_liminf_apply_add_edist_sq_div (hd hy) (hφ hdiam' hy)).trans
     (liminf_le_liminf (Eventually.of_forall fun k ↦ (hv (ψ k)).le))
 
 /-- **Existence of minimizing movement sequences** (Ambrosio–Gigli–Savaré, Corollary 2.2.2).

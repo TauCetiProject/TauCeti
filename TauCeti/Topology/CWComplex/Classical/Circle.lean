@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import TauCeti.Analysis.Complex.Circle
-public import TauCeti.Topology.CWComplex.Classical.Sphere
+public import TauCeti.Topology.CWComplex.Classical.Sphere.Basic
 
 /-!
 # The circle has finite CW type

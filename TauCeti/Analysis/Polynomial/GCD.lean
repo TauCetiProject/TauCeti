@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Polynomial.Subresultant.FirstNonzero
-public import TauCeti.Analysis.Polynomial.ContinuityOfRoots
+public import TauCeti.Analysis.Polynomial.ContinuityOfRoots.Basic
 import Mathlib.Topology.Instances.Matrix
 
 /-!

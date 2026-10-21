@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Toric.Analytic.Fan.Affine
+public import TauCeti.Geometry.Toric.Analytic.Fan.Affine.Basic
 public import TauCeti.Geometry.Toric.Analytic.Fan.Character
 public import TauCeti.Geometry.Toric.Analytic.Fan.TorusAction.Holomorphic
 
@@ -77,7 +77,7 @@ theorem contMDiff_analyticZeroConeHomeomorph_symm (n : ℕ∞ω) :
   let _ := (ofCone hi (isToricCone_bot i)).analyticChartedSpace h₀
   have hcomp : ContMDiff 𝓘(ℂ, Fin (Module.finrank ℤ N) → ℂ) 𝓘(ℂ, ι → ℂ) n
       (complexTorusAmbient e ∘ (analyticZeroConeHomeomorph hi).symm) := by
-    rw [contMDiff_pi_space]
+    rw [contMDiff_pi_module_iff]
     intro j
     let m : IntegralCharacter N := e.symm (Finsupp.single j 1)
     have hm : ∀ σ : (ofCone hi (isToricCone_bot i)).cones,

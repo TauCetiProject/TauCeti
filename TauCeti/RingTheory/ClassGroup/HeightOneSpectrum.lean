@@ -111,7 +111,7 @@ lemma _root_.ClassGroup.exists_finite_closure_classGroupMk_image_eq_top [Finite 
   rw [← hJ c]
   refine Subgroup.closure_mono (Set.image_mono (Set.subset_iUnion T c))
     (ClassGroup.mk0_mem_closure_of_count_eq F 1 fun v hv ↦ ?_)
-  rw [Units.val_one, FractionalIdeal.spanSingleton_one, FractionalIdeal.count_one]
+  rw [Units.val_one, map_one (FractionalIdeal.spanSingleton _), FractionalIdeal.count_one]
   exact not_not.mp hv
 
 end

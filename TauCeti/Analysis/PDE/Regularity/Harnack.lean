@@ -15,12 +15,13 @@ import TauCeti.MeasureTheory.Measure.OpenPos
 # Moser's weak Harnack inequality and the Harnack inequality
 
 Let `a` be measurable and uniformly elliptic on `Ω ⊆ ℝⁿ` with constants `0 < λ ≤ Λ`. This file
-proves, in dimension `n ≥ 3`, the two Harnack inequalities of Moser for the divergence-form
+proves, in every dimension `n ≥ 1`, the two Harnack inequalities of Moser for the divergence-form
 equation `-∂ⱼ(aⁱʲ ∂ᵢu) = 0`, with no regularity of the coefficients beyond measurability.
 
 * The **weak Harnack inequality**: if `u ∈ H¹(Ω)` is a weak supersolution, `a(u, v) ≥ 0` for
-  every nonnegative `v ∈ H¹₀(Ω)`, and `u ≥ 0` almost everywhere, then for every exponent
-  `0 < s < n/(n - 2)` and every ball with `B(x₀, 12√n r) ⊆ Ω`,
+  every nonnegative `v ∈ H¹₀(Ω)`, and `u ≥ 0` almost everywhere, then for every exponent `s > 0`
+  with `(n - 2) s < n` (that is `s < n/(n - 2)` when `n ≥ 3`, and any `s > 0` when `n ≤ 2`) and
+  every ball with `B(x₀, 12√n r) ⊆ Ω`,
 
   `(⨍_{B(x₀, r)} u^s)^{1/s} ≤ C u(x)` for almost every `x ∈ B(x₀, r)`,
 
@@ -51,20 +52,16 @@ dimension `n ≥ 1`. A nonnegative supersolution is reduced to this case by appl
 on the bounded ball `B(x₀, 12√n r)`, where constants lie in `H¹`, and letting `δ → 0`. Moser's
 iteration for small positive powers of nonnegative supersolutions
 (`TauCeti.PDE.exists_setAverage_rpow_rpow_inv_le_mul_setAverage_rpow_rpow_inv`) then raises the
-exponent from `p₀` to any `s < n/(n - 2)`. The Harnack inequality combines the weak Harnack
-inequality at `s = 1` with the local boundedness of subsolutions in `L¹`
-(`TauCeti.PDE.exists_ae_value_le_add_mul_rpow_mul_setIntegral_rpow`).
-
-The restriction `n ≥ 3` is inherited from Moser's iteration, which uses the Sobolev inequality of
-`W^{1,2}_0(Ω)` with exponent `2n/(n - 2)`; it is expressed, as there, by an exponent `2*` with
-`1/2* + 1/n = 1/2`. Only the passage from `p₀` to larger exponents needs it.
+exponent from `p₀` to any `s` with `(n - 2) s < n`. The Harnack inequality combines the weak
+Harnack inequality at `s = 1`, which is admissible in every dimension, with the local boundedness
+of subsolutions in `L¹` (`TauCeti.PDE.exists_ae_value_le_add_mul_rpow_mul_setIntegral_rpow`).
 
 ## Main declarations
 
 * `TauCeti.PDE.exists_pos_ae_setAverage_rpow_rpow_inv_le_mul_value`: the weak Harnack inequality
   at a small exponent `p₀`, in every dimension, for nonnegative supersolutions.
 * `TauCeti.PDE.exists_ae_setAverage_rpow_rpow_inv_le_mul_value`: Moser's weak Harnack
-  inequality for nonnegative supersolutions, for every exponent `0 < s < n/(n - 2)`.
+  inequality for nonnegative supersolutions, for every exponent `s > 0` with `(n - 2) s < n`.
 * `TauCeti.PDE.exists_ae_ae_value_le_mul_value`: Moser's Harnack inequality for nonnegative
   solutions.
 
@@ -272,21 +269,20 @@ theorem exists_pos_ae_setAverage_rpow_rpow_inv_le_mul_value [Nonempty ι] :
         rw [mul_div_cancel₀ ε hC.ne'] at this
         linarith
 
-/-- **Moser's weak Harnack inequality.** Let `2*` be the Sobolev exponent of `W^{1,2}` in
-dimension `n`, so that `1/2* + 1/n = 1/2` and `2* < ∞` (this forces `n ≥ 3`). For every exponent
-`0 < s < 2*/2 = n/(n - 2)` there is `C > 0`, depending only on `λ`, `Λ`, `s`, the dimension and
-the normalization of the additive Haar measure `mu`, with the following property. Let `a` be
-measurable and uniformly elliptic on `Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a
-nonnegative weak supersolution of `-∂ⱼ(aⁱʲ ∂ᵢu) ≥ 0`, that is `a(u, v) ≥ 0` for every nonnegative
-`v ∈ H¹₀(Ω)`. Then on every ball with `B(x₀, 12√n r) ⊆ Ω`,
+/-- **Moser's weak Harnack inequality.** Let `n ≥ 1` be the dimension. For every exponent `s > 0`
+with `(n - 2) s < n`, that is `s < n/(n - 2)` when `n ≥ 3` and `s` arbitrary when `n ≤ 2`, there
+is `C > 0`, depending only on `λ`, `Λ`, `s`, the dimension and the normalization of the additive
+Haar measure `mu`, with the following property. Let `a` be measurable and uniformly elliptic on
+`Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a nonnegative weak supersolution of
+`-∂ⱼ(aⁱʲ ∂ᵢu) ≥ 0`, that is `a(u, v) ≥ 0` for every nonnegative `v ∈ H¹₀(Ω)`. Then on every ball
+with `B(x₀, 12√n r) ⊆ Ω`,
 
 `(⨍_{B(x₀, r)} u^s)^{1/s} ≤ C u(x)` for almost every `x ∈ B(x₀, r)`,
 
 and `u^s` is integrable on `B(x₀, r)`, so the left side is a genuine average even for `s > 2`.
 The constant does not depend on `u` or the ball. -/
-theorem exists_ae_setAverage_rpow_rpow_inv_le_mul_value {pstar : ℝ≥0∞}
-    (hpstar : pstar ≠ (∞ : ℝ≥0∞)) (hexp : pstar⁻¹ + (Fintype.card ι : ℝ≥0∞)⁻¹ = 2⁻¹)
-    {s : ℝ} (hs : 0 < s) (hsχ : s < pstar.toReal / 2) :
+theorem exists_ae_setAverage_rpow_rpow_inv_le_mul_value [Nonempty ι] {s : ℝ} (hs : 0 < s)
+    (hsn : ((Fintype.card ι : ℝ) - 2) * s < Fintype.card ι) :
     ∃ C : ℝ, 0 < C ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
       {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {u : W1p mu Omega 2}
       {x₀ : EuclideanSpace ℝ ι} {r : ℝ},
@@ -299,11 +295,10 @@ theorem exists_ae_setAverage_rpow_rpow_inv_le_mul_value {pstar : ℝ≥0∞}
       ball x₀ (12 * √(Fintype.card ι) * r) ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
       IntegrableOn (fun y => W1p.value u y ^ s) (ball x₀ r) mu ∧ ∀ᵐ x ∂mu.restrict (ball x₀ r),
         (⨍ y in ball x₀ r, W1p.value u y ^ s ∂mu) ^ s⁻¹ ≤ C * W1p.value u x := by
-  have := Fintype.card_pos_iff.1 <| Nat.pos_of_ne_zero <| ne_zero_of_inv_add_inv_eq_inv hexp
   obtain ⟨p₀, hp₀, hp₀2, C₁, hC₁, hsmall⟩ :=
     exists_pos_ae_setAverage_rpow_rpow_inv_le_mul_value (mu := mu) (lam := lam) (Lam := Lam)
   obtain ⟨D, hD, hiter⟩ := exists_setAverage_rpow_rpow_inv_le_mul_setAverage_rpow_rpow_inv
-    (mu := mu) (lam := lam) (Lam := Lam) hpstar hexp hp₀ hp₀2 hs hsχ
+    (mu := mu) (lam := lam) (Lam := Lam) hp₀ hp₀2 hs hsn
   refine ⟨D * C₁, by positivity, ?_⟩
   intro Omega a u x₀ r h ha hu hu0 hball
   rcases le_or_gt r 0 with hr | hr
@@ -320,8 +315,7 @@ theorem exists_ae_setAverage_rpow_rpow_inv_le_mul_value {pstar : ℝ≥0∞}
     _ ≤ D * (C₁ * W1p.value u x) := by gcongr
     _ = D * C₁ * W1p.value u x := by ring
 
-/-- **Moser's Harnack inequality.** Let `2*` be the Sobolev exponent of `W^{1,2}` in dimension
-`n`, so that `1/2* + 1/n = 1/2` and `2* < ∞` (this forces `n ≥ 3`). There is `C > 0`, depending
+/-- **Moser's Harnack inequality.** Let `n ≥ 1` be the dimension. There is `C > 0`, depending
 only on `λ`, `Λ`, the dimension and the normalization of the additive Haar measure `mu`, with the
 following property. Let `a` be measurable and uniformly elliptic on `Ω` with constants `λ, Λ`,
 and let `u ∈ H¹(Ω)` be a weak solution of `-∂ⱼ(aⁱʲ ∂ᵢu) = 0`, that is `a(u, v) = 0` for every
@@ -331,8 +325,7 @@ and let `u ∈ H¹(Ω)` be a weak solution of `-∂ⱼ(aⁱʲ ∂ᵢu) = 0`, tha
 
 that is, `ess sup_{B(x₀, r)} u ≤ C ess inf_{B(x₀, r)} u`. The constant does not depend on `u`
 or the ball. -/
-theorem exists_ae_ae_value_le_mul_value {pstar : ℝ≥0∞}
-    (hpstar : pstar ≠ (∞ : ℝ≥0∞)) (hexp : pstar⁻¹ + (Fintype.card ι : ℝ≥0∞)⁻¹ = 2⁻¹) :
+theorem exists_ae_ae_value_le_mul_value [Nonempty ι] :
     ∃ C : ℝ, 0 < C ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
       {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {u : W1p mu Omega 2}
       {x₀ : EuclideanSpace ℝ ι} {r : ℝ},
@@ -343,11 +336,9 @@ theorem exists_ae_ae_value_le_mul_value {pstar : ℝ≥0∞}
       ball x₀ (24 * √(Fintype.card ι) * r) ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
       ∀ᵐ x ∂mu.restrict (ball x₀ r), ∀ᵐ y ∂mu.restrict (ball x₀ r),
         W1p.value u y ≤ C * W1p.value u x := by
-  have := Fintype.card_pos_iff.1 <| Nat.pos_of_ne_zero <| ne_zero_of_inv_add_inv_eq_inv hexp
   -- The weak Harnack inequality at `s = 1`, and local boundedness in `L¹`.
   obtain ⟨C₁, hC₁, hweak⟩ := exists_ae_setAverage_rpow_rpow_inv_le_mul_value (mu := mu)
-    (lam := lam) (Lam := Lam) hpstar hexp one_pos
-    (one_lt_toReal_div_two_and_div_mul_eq hpstar hexp).1
+    (lam := lam) (Lam := Lam) one_pos (by linarith)
   obtain ⟨D, hD, hbdd⟩ := exists_ae_value_le_add_mul_rpow_mul_setIntegral_rpow (mu := mu)
     (lam := lam) (Lam := Lam) one_pos one_le_two
   set V := mu.real (ball (0 : EuclideanSpace ℝ ι) 1)

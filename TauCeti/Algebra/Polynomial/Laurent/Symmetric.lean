@@ -18,6 +18,9 @@ integer coefficients and to rings of characteristic two.
 
 The shifted generator `T + T⁻¹ - 2` is convenient for converting a symmetric
 Alexander polynomial to the square of the Conway variable.
+
+The rescaled Chebyshev polynomials of the second kind give the companion identity
+`(T - T⁻¹) Sₙ(T + T⁻¹) = Tⁿ⁺¹ - T⁻ⁿ⁻¹` for the antisymmetric Laurent polynomials.
 -/
 
 public section
@@ -51,6 +54,37 @@ variable {R : Type*} [CommRing R]
     have hright : (-1 : ℤ) + (n + 1) = n := by omega
     rw [hpos, hneg, hleft, hright]
     ring
+
+/-- The rescaled Chebyshev polynomial of the second kind expresses a difference of opposite
+Laurent powers, once multiplied by `T - T⁻¹`. -/
+@[simp] theorem T_sub_T_neg_mul_eval₂_S_add_T_neg (n : ℕ) :
+    (LaurentPolynomial.T 1 - LaurentPolynomial.T (-1) : R[T;T⁻¹]) *
+        Polynomial.eval₂ LaurentPolynomial.C (LaurentPolynomial.T 1 + LaurentPolynomial.T (-1))
+          (S R n) =
+      LaurentPolynomial.T ((n : ℤ) + 1) - LaurentPolynomial.T (-((n : ℤ) + 1)) := by
+  induction n using Nat.twoStepInduction with
+  | zero => simp
+  | one =>
+    simp only [Nat.cast_one, S_one, Polynomial.eval₂_X, mul_add, sub_mul, ← T_add]
+    norm_num
+  | more n h₀ h₁ =>
+    have hrec := S_add_two R (n : ℤ)
+    push_cast
+    push_cast at h₁
+    rw [hrec, Polynomial.eval₂_sub, Polynomial.eval₂_mul, Polynomial.eval₂_X]
+    have e₁ : (LaurentPolynomial.T 1 + LaurentPolynomial.T (-1) : R[T;T⁻¹]) *
+        (LaurentPolynomial.T ((n : ℤ) + 1 + 1) - LaurentPolynomial.T (-((n : ℤ) + 1 + 1))) =
+        LaurentPolynomial.T ((n : ℤ) + 2 + 1) - LaurentPolynomial.T (-((n : ℤ) + 2 + 1)) +
+          (LaurentPolynomial.T ((n : ℤ) + 1) - LaurentPolynomial.T (-((n : ℤ) + 1))) := by
+      simp only [add_mul, mul_sub, ← T_add]
+      have h₁ : (1 : ℤ) + (n + 1 + 1) = n + 2 + 1 := by omega
+      have h₂ : (1 : ℤ) + -(n + 1 + 1) = -(n + 1) := by omega
+      have h₃ : (-1 : ℤ) + (n + 1 + 1) = n + 1 := by omega
+      have h₄ : (-1 : ℤ) + -(n + 1 + 1) = -(n + 2 + 1) := by omega
+      rw [h₁, h₂, h₃, h₄]
+      ring
+    linear_combination
+      (LaurentPolynomial.T 1 + LaurentPolynomial.T (-1) : R[T;T⁻¹]) * h₁ - h₀ + e₁
 
 end Polynomial.Chebyshev
 

@@ -20,10 +20,9 @@ For a diagonal path `x → y → x`, this set is exactly the full one-swap neigh
 factorization through a distinct intermediate state. Consequently every nonempty nondiagonal
 intermediate set has at least two elements.
 
-These state-level factorizations do not yet pair rectangles: a later juxtaposition argument must
-also track which of the two rectangles with given corners is used and whether its domain avoids
-the markings. They provide the finite diagonal/nondiagonal case split on which that argument is
-built.
+These state-level factorizations do not pair rectangles: the juxtaposition argument must also track
+which of the two rectangles with given corners is used and whether its domain avoids the markings.
+They provide the finite diagonal/nondiagonal case split on which that argument is built.
 
 ## Main definitions
 
@@ -41,10 +40,9 @@ built.
 
 ## References
 
-This supplies the state-level two-step case split for
-`TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane G.3, "The complexes and `∂² = 0`".
-The later differential proof pairs juxtaposed rectangle decompositions as in
-Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 4.6.
+The square-zero proof (`TauCeti.KnotTheory.Grid.Differential.Square.Zero`) pairs juxtaposed
+rectangle decompositions as in Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*,
+Chapter 4.6.
 -/
 
 public section

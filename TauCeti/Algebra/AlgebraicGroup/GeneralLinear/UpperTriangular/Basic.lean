@@ -415,7 +415,7 @@ noncomputable def rootSubgroupCoordinateMap (hij : i < j) :
       have hmem := rootSubgroupPoints_mem R hij
         (toConv (AlgHom.id R (AdditiveGroup.coordinateHopfAlgebra R)))
       rw [← GeneralLinear.mapPointsFunctor_rootSubgroupCoordinateMap_app,
-        CommHopfAlgCat.mapPointsFunctor_app_apply,
+        CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
         CommHopfAlgCat.mem_quotientPointsSubgroup_iff] at hmem
       intro x hx
       exact hmem x hx)
@@ -478,7 +478,7 @@ theorem rootSubgroup_comp_inclusion (hij : i < j) :
   rw [← coordinateMap_def, coordinateMap_comp_rootSubgroupCoordinateMap] at hcomp
   rw [rootSubgroup_def, inclusion, GeneralLinear.rootSubgroup_def,
     GeneralLinear.weightParabolicInclusion_def, ← hcomp]
-  simp only [Category.assoc, eqToHom_refl, Category.id_comp, eqToIso.hom]
+  simp only [Category.assoc, eqToHom_refl, Category.id_comp]
 
 end RootSubgroup
 

@@ -5,9 +5,6 @@
 // it reaches the document, and the data's shape is checked before anything is rendered.
 (function () {
   "use strict";
-  var root = document.getElementById("progress-board");
-  if (!root) return;
-
   var STATES = ["done", "partial", "untouched", "unassessed"];
   var STATE_CLASS = { done: "d", partial: "p", untouched: "u", unassessed: "q" };
   var STATE_WORD = { done: "reported done", partial: "reported partial", untouched: "reported untouched", unassessed: "unassessed" };
@@ -29,6 +26,14 @@
   var DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
   var TS_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
 
+  // Let the generator's cache check reuse the board's schema validator under Node.
+  if (typeof module === "object" && module.exports) {
+    module.exports = validate;
+    return;
+  }
+  var root = document.getElementById("progress-board");
+  if (!root) return;
+
   function esc(s) {
     return String(s).replace(/[&<>"']/g, function (c) {
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
@@ -49,6 +54,8 @@
   function plural(n, word) { return n + " " + word + (n === 1 ? "" : "s"); }
 
   // ---- data validation: everything that is rendered is checked first ----
+  // A file that fails `validate` is refused whole. A row that fails `rowProblem` is left out and
+  // named above the board, so one roadmap's malformed row cannot take every other roadmap down.
   function validate(data) {
     if (!data || data.schema_version !== 3) return "unexpected data version";
     if (!Array.isArray(data.rows) || !Array.isArray(data.weeks) || !data.global) return "missing rows, weeks or global figures";
@@ -64,35 +71,62 @@
     if (!g.unattributed || !isCount(g.unattributed.no_label) || !isCount(g.unattributed.several_labels) || !isCount(g.unattributed.unknown_area)) return "malformed attribution counts";
     var ids = {};
     for (var i = 0; i < data.rows.length; i++) {
-      var r = data.rows[i], where = "row " + i;
-      if (typeof r.id !== "string" || typeof r.name !== "string" || typeof r.title !== "string" || typeof r.topic !== "string" || typeof r.readme !== "string") return "malformed " + where;
+      var r = data.rows[i];
+      if (!r || typeof r.id !== "string") return "malformed row " + i;
       if (ids[r.id]) return "duplicate roadmap id " + r.id;
       ids[r.id] = true;
-      if (r.parent_id !== null && typeof r.parent_id !== "string") return "malformed parent in " + r.id;
-      if (!Array.isArray(r.layers) || !Array.isArray(r.states) || !Array.isArray(r.layer_ids) || !Array.isArray(r.layer_lines) || r.layers.length !== r.states.length || r.layer_ids.length !== r.layers.length || r.layer_lines.length !== r.layers.length) return "layers, ids, lines and states do not align in " + r.id;
-      if (!r.layer_lines.every(function (n) { return isCount(n) && n > 0; })) return "malformed layer lines in " + r.id;
-      if (!Array.isArray(r.links) || !r.links.every(function (l) { return l && typeof l.label === "string" && typeof l.url === "string" && /^https:\/\//.test(l.url); })) return "malformed links in " + r.id;
-      if (!r.layers.every(function (l) { return typeof l === "string"; }) || !r.layer_ids.every(function (l) { return typeof l === "string"; })) return "malformed layer titles in " + r.id;
-      var seenIds = {};
-      for (var q = 0; q < r.layer_ids.length; q++) { if (seenIds[r.layer_ids[q]]) return "repeated layer id in " + r.id; seenIds[r.layer_ids[q]] = true; }
-      for (var j = 0; j < r.states.length; j++) if (STATES.indexOf(r.states[j]) < 0) return "unknown layer state in " + r.id;
-      if (!r.assessment || typeof r.assessment.reason !== "string") return "missing assessment in " + r.id;
-      if (r.assessment.readme_changed !== undefined && typeof r.assessment.readme_changed !== "boolean") return "malformed README flag in " + r.id;
-      if (r.status !== null) {
-        var s = r.status;
-        if (!s || typeof s.to_sha !== "string" || !/^[0-9a-f]{7,40}$/.test(s.to_sha) || (s.ts !== null && !isTs(s.ts)) || typeof s.glance !== "string" || !Array.isArray(s.frontier) || typeof s.path !== "string" || typeof s.progress_path !== "string") return "malformed report in " + r.id;
-        if (!s.frontier.every(function (f) { return f && typeof f.name === "string" && typeof f.text === "string"; })) return "malformed frontier in " + r.id;
-      }
-      if (r.activity !== null) {
-        var a = r.activity;
-        if (!a || !Array.isArray(a.weekly) || a.weekly.length !== data.weeks.length || !a.weekly.every(isCount) || !isCount(a.total) || !isCount(a.recent) || !isCount(a.open)) return "malformed activity in " + r.id;
-        if (a.last !== null && !isTs(a.last)) return "malformed last-merge date in " + r.id;
-        if (a.since_report !== null && !isCount(a.since_report)) return "malformed since-report count in " + r.id;
-      }
-      if (r.retired !== null && (!r.retired || !Array.isArray(r.retired.states) || r.retired.states.length !== r.layers.length || !r.retired.states.every(function (s) { return STATES.indexOf(s) >= 0; }))) return "malformed retired reading in " + r.id;
     }
-    for (var k = 0; k < data.rows.length; k++) if (data.rows[k].parent_id !== null && !ids[data.rows[k].parent_id]) return "unknown parent for " + data.rows[k].id;
     return null;
+  }
+  function rowProblem(r, data) {
+    if (typeof r.name !== "string" || typeof r.title !== "string" || typeof r.topic !== "string" || typeof r.readme !== "string") return "malformed row";
+    if (r.parent_id !== null && typeof r.parent_id !== "string") return "malformed parent";
+    if (!Array.isArray(r.layers) || !Array.isArray(r.states) || !Array.isArray(r.layer_ids) || !Array.isArray(r.layer_lines) || r.layers.length !== r.states.length || r.layer_ids.length !== r.layers.length || r.layer_lines.length !== r.layers.length) return "layers, ids, lines and states do not align";
+    if (!r.layer_lines.every(function (n) { return isCount(n) && n > 0; })) return "malformed layer lines";
+    if (!Array.isArray(r.links) || !r.links.every(function (l) { return l && typeof l.label === "string" && typeof l.url === "string" && /^https:\/\//.test(l.url); })) return "malformed links";
+    if (!r.layers.every(function (l) { return typeof l === "string"; }) || !r.layer_ids.every(function (l) { return typeof l === "string"; })) return "malformed layer titles";
+    var seenIds = {};
+    for (var q = 0; q < r.layer_ids.length; q++) { if (seenIds[r.layer_ids[q]]) return "repeated layer id"; seenIds[r.layer_ids[q]] = true; }
+    for (var j = 0; j < r.states.length; j++) if (STATES.indexOf(r.states[j]) < 0) return "unknown layer state";
+    if (!r.assessment || typeof r.assessment.reason !== "string") return "missing assessment";
+    if (r.assessment.readme_changed !== undefined && typeof r.assessment.readme_changed !== "boolean") return "malformed README flag";
+    if (r.status !== null) {
+      var s = r.status;
+      if (!s || typeof s.to_sha !== "string" || !/^[0-9a-f]{7,40}$/.test(s.to_sha) || (s.ts !== null && !isTs(s.ts)) || typeof s.glance !== "string" || !Array.isArray(s.frontier) || typeof s.path !== "string" || typeof s.progress_path !== "string") return "malformed report";
+      if (!s.frontier.every(function (f) { return f && typeof f.name === "string" && typeof f.text === "string"; })) return "malformed frontier";
+    }
+    if (r.activity !== null) {
+      var a = r.activity;
+      if (!a || !Array.isArray(a.weekly) || a.weekly.length !== data.weeks.length || !a.weekly.every(isCount) || !isCount(a.total) || !isCount(a.recent) || !isCount(a.open)) return "malformed activity";
+      if (a.last !== null && !isTs(a.last)) return "malformed last-merge date";
+      if (a.since_report !== null && !isCount(a.since_report)) return "malformed since-report count";
+    }
+    if (r.retired !== null && (!r.retired || !Array.isArray(r.retired.states) || r.retired.states.length !== r.layers.length || !r.retired.states.every(function (s) { return STATES.indexOf(s) >= 0; }))) return "malformed retired reading";
+    return null;
+  }
+  // Drops from `data.rows` each row that fails `rowProblem`, then each row whose umbrella is not
+  // among the rows kept, and returns the dropped rows' ids with the reason. An umbrella left with
+  // no sub-roadmaps is a leaf again, so its own layers stand in for theirs in every total.
+  function leaveOut(data) {
+    var all = {}, kept = {}, left = [];
+    data.rows.forEach(function (r) { all[r.id] = true; });
+    var rows = data.rows.filter(function (r) {
+      var p = rowProblem(r, data);
+      if (p) left.push({ id: r.id, problem: p }); else kept[r.id] = true;
+      return !p;
+    });
+    for (var changed = true; changed;) {
+      changed = false;
+      rows = rows.filter(function (r) {
+        if (r.parent_id === null || kept[r.parent_id]) return true;
+        left.push({ id: r.id, problem: all[r.parent_id] ? "its umbrella roadmap is left out" : "unknown parent" });
+        delete kept[r.id];
+        changed = true;
+        return false;
+      });
+    }
+    data.rows = rows;
+    return left;
   }
 
   // ---- URL state ----
@@ -129,7 +163,7 @@
     } catch (e) { /* history unavailable */ }
   }
 
-  function render(data) {
+  function render(data, leftOut) {
     var rows = data.rows;
     var cutoff = data.cutoff, cutoffDay = cutoff.slice(0, 10);
     var byId = {};
@@ -236,7 +270,9 @@
       var q = state.q.toLowerCase();
       if (!q) return { hit: true, where: null };
       if ((r.name + " " + r.title).toLowerCase().indexOf(q) >= 0) return { hit: true, where: null };
-      if (r.topic.toLowerCase().indexOf(q) >= 0) return { hit: true, where: "topic " + r.topic };
+      // A category is shown by its name, but its arXiv code (math.NT) still finds it.
+      if (r.topic.toLowerCase().indexOf(q) >= 0 ||
+          (typeof r.arxiv === "string" && r.arxiv.toLowerCase().indexOf(q) >= 0)) return { hit: true, where: "topic " + r.topic };
       for (var i = 0; i < r.layers.length; i++) if (r.layers[i].toLowerCase().indexOf(q) >= 0) return { hit: true, where: "layer “" + r.layers[i] + "”" };
       if (r.status) {
         if (r.status.glance.toLowerCase().indexOf(q) >= 0) return { hit: true, where: "the report’s summary" };
@@ -359,7 +395,7 @@
       if (r.completed) sources.push('<a href="' + ROADMAP_REPO + '/blob/main/Completed/README.md">completion decision</a>');
       r.links.forEach(function (l) { sources.push('<a href="' + esc(l.url) + '" rel="noopener">' + esc(l.label) + " \u2197</a>"); });
       left += '<div class="pb-links">' + sources.join("") + '<button type="button" class="pb-copy" data-copy="' + esc(r.id) + '">Copy link to this roadmap</button></div>';
-      var evid = "Topic: " + esc(r.topic) + " (a hand assignment). ";
+      var evid = "arXiv category: " + esc(r.topic) + ". ";
       if (a.reason === "ok") evid += "Layer states come from " + (a.source === "marker" ? "the coverage marker in the report" : "a hand transcription of the report’s prose, bound to that exact report and README") + "; they are the report’s assessment at library commit " + esc(s.to_sha.slice(0, 7)) + ", not a certificate that each layer’s specification is fully met. ";
       else evid += "Layer states are unassessed: " + esc(REASON_TEXT[a.reason] || a.reason) + (typeof a.detail === "string" && a.detail ? " (" + esc(a.detail) + ")" : "") + ". ";
       if (staleKids(r).length) evid += esc(staleKidsText(staleKids(r))) + " ";
@@ -449,9 +485,12 @@
     root.innerHTML =
       legend() +
       '<p class="pb-lede">' + when + (age > 2 ? " That cutoff is <b>" + plural(age, "day") + " ago</b>; dates below are relative to it, not to today." : " Dates below are relative to the cutoff.") + "</p>" +
+      (leftOut.length ? '<p class="pb-left-out">' + plural(leftOut.length, "roadmap") + " not shown, because the board’s data for " + (leftOut.length === 1 ? "it" : "them") + " is not in the expected shape: " +
+        leftOut.map(function (x) { return "<code>" + esc(x.id) + "</code> (" + esc(x.problem) + ")"; }).join(", ") + ". The roadmap, layer and report figures below leave " + (leftOut.length === 1 ? "it" : "them") +
+        " out; the pull-request figures, which count all of Tau Ceti, do not.</p>" : "") +
       tiles() +
       '<div class="pb-controls" id="pb-roadmaps" aria-label="Group, sort and filter">' +
-        '<label class="pb-group"><span>Group</span><select data-group><option value="topic">by topic</option><option value="none">no grouping</option></select></label>' +
+        '<label class="pb-group"><span>Group</span><select data-group><option value="topic">by arXiv category</option><option value="none">no grouping</option></select></label>' +
         '<label class="pb-group"><span>Sort</span><select data-sort><option value="activity">recent activity</option><option value="done">layers reported done</option><option value="due">update due</option><option value="name">name</option></select></label>' +
         '<label class="pb-group"><span>Show</span><select data-show><option value="all">all</option><option value="active">active</option><option value="completed">declared complete</option><option value="reported">with a report</option><option value="unreported">without a report</option><option value="unassessed">with unassessed layers</option><option value="due">update due</option></select></label>' +
         '<label class="pb-group"><span class="pb-vh">Find</span><input type="search" class="pb-search" placeholder="Find a roadmap, layer or theorem" value="' + esc(state.q) + '"></label>' +
@@ -538,7 +577,7 @@
     .then(function (data) {
       var problem = validate(data);
       if (problem) throw new Error("the progress data is not in the expected shape: " + problem);
-      render(data);
+      render(data, leaveOut(data));
     })
     .catch(function (err) {
       root.innerHTML = '<p class="pb-error">The progress board could not be shown (' + esc(err.message) + "). The roadmaps themselves, with each one’s STATUS.md report, are at " +

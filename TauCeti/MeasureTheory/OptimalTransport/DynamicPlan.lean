@@ -41,6 +41,8 @@ plan interpolate between `μ` and `ν`, with `W_p (η_s, η_t) ≤ |s - t| * W_p
 
 * `MeasureTheory.Measure.timeMarginal η t`: the law at time `t` of a dynamic plan `η`.
 * `MeasureTheory.Measure.endpointLaw η`: the joint law of the two endpoints of a dynamic plan `η`.
+* `MeasureTheory.Measure.IsQuadraticOptimalDynamicPlan`: a dynamic plan concentrated on geodesics
+  whose endpoint law is a quadratic optimal coupling.
 
 A dynamic plan is a plain `Measure C(I, X)`, so these declarations live in the namespace of
 Mathlib's `MeasureTheory.Measure`, where dot notation such as `η.timeMarginal t` finds them.
@@ -125,6 +127,10 @@ instance isProbabilityMeasure_endpointLaw (η : Measure C(I, X)) [IsProbabilityM
 
 variable [BorelSpace X]
 
+/-- The pair of endpoints `γ ↦ (γ 0, γ 1)` of a path is a measurable function on `C(I, X)`. -/
+theorem _root_.ContinuousMap.measurable_endpoints : Measurable fun γ : C(I, X) ↦ (γ 0, γ 1) :=
+  (ContinuousMap.measurable_eval 0).prodMk (ContinuousMap.measurable_eval 1)
+
 /-- The value of the law at time `t` on a measurable set `s` is the `η`-measure of the paths
 lying in `s` at time `t`. -/
 theorem timeMarginal_apply (η : Measure C(I, X)) (t : I) {s : Set X} (hs : MeasurableSet s) :
@@ -135,8 +141,7 @@ theorem timeMarginal_apply (η : Measure C(I, X)) (t : I) {s : Set X} (hs : Meas
 pair of endpoints lies in `s`. -/
 theorem endpointLaw_apply (η : Measure C(I, X)) {s : Set (X × X)} (hs : MeasurableSet s) :
     endpointLaw η s = η {γ | (γ 0, γ 1) ∈ s} :=
-  Measure.map_apply
-    ((ContinuousMap.measurable_eval 0).prodMk (ContinuousMap.measurable_eval 1)) hs
+  Measure.map_apply ContinuousMap.measurable_endpoints hs
 
 /-- The first marginal of the endpoint law is the law at time `0`. -/
 @[simp]
@@ -154,6 +159,46 @@ theorem isCoupling_map_timeMarginal (η : Measure C(I, X)) (s t : I) :
   TauCeti.isCoupling_map_prodMk_of_measurePreserving
     ⟨ContinuousMap.measurable_eval s, (timeMarginal_def η s).symm⟩
     ⟨ContinuousMap.measurable_eval t, (timeMarginal_def η t).symm⟩
+
+/-- The law at time `t` is monotone in the dynamic plan. -/
+@[gcongr]
+theorem timeMarginal_mono {η η' : Measure C(I, X)} (h : η ≤ η') (t : I) :
+    timeMarginal η t ≤ timeMarginal η' t :=
+  Measure.map_mono h (ContinuousMap.measurable_eval t)
+
+/-- Scaling a dynamic plan by `c` scales its law at every time by `c`. -/
+@[simp]
+theorem timeMarginal_smul (c : ℝ≥0∞) (η : Measure C(I, X)) (t : I) :
+    timeMarginal (c • η) t = c • timeMarginal η t :=
+  Measure.map_smul c (ContinuousMap.measurable_eval t).aemeasurable
+
+/-- The law at time `t` of the image of a measure `μ` under a measurable family of paths `F` is the
+image of `μ` under `a ↦ F a t`. -/
+theorem timeMarginal_map {α : Type*} [MeasurableSpace α] (μ : Measure α) {F : α → C(I, X)}
+    (hF : Measurable F) (t : I) : timeMarginal (μ.map F) t = μ.map fun a ↦ F a t :=
+  Measure.map_map (ContinuousMap.measurable_eval t) hF
+
+/-- A measurable property holds almost everywhere for the law at time `t` exactly when almost
+every path has it at time `t`. -/
+theorem ae_timeMarginal_iff {η : Measure C(I, X)} {t : I} {p : X → Prop}
+    (hp : MeasurableSet {x | p x}) : (∀ᵐ x ∂timeMarginal η t, p x) ↔ ∀ᵐ γ ∂η, p (γ t) :=
+  ae_map_iff (ContinuousMap.measurable_eval t).aemeasurable hp
+
+/-- If the law at time `t` is the Dirac mass at `x`, almost every path passes through `x` at
+time `t`. -/
+theorem ae_eq_of_timeMarginal_eq_dirac [MeasurableSingletonClass X] {η : Measure C(I, X)} {t : I}
+    {x : X} (h : timeMarginal η t = dirac x) : ∀ᵐ γ ∂η, γ t = x :=
+  (ae_timeMarginal_iff (p := (· = x)) (measurableSet_singleton x)).1
+    (h ▸ (ae_dirac_iff (measurableSet_singleton x)).2 rfl)
+
+/-- If the density `w` equals `c` at almost every path lying in `s` at time `t`, then the law at
+time `t` of `η` weighted by `w` gives `s` the mass `c * η {γ | γ t ∈ s}`. -/
+theorem timeMarginal_withDensity_apply_of_ae_eq {η : Measure C(I, X)} {w : C(I, X) → ℝ≥0∞}
+    {c : ℝ≥0∞} {t : I} {s : Set X} (hs : MeasurableSet s) (hw : ∀ᵐ γ ∂η, γ t ∈ s → w γ = c) :
+    timeMarginal (η.withDensity w) t s = c * η {γ | γ t ∈ s} := by
+  have hS : MeasurableSet {γ : C(I, X) | γ t ∈ s} := ContinuousMap.measurable_eval t hs
+  rw [timeMarginal_apply _ t hs, withDensity_apply _ hS, setLIntegral_congr_fun_ae hS hw,
+    setLIntegral_const]
 
 section Polish
 
@@ -189,18 +234,68 @@ theorem exists_ae_mem_geodesicPaths_endpointLaw_eq (π : Measure (X × X)) [SFin
     ∃ η : Measure C(I, X), SFinite η ∧ (∀ᵐ γ ∂η, γ ∈ geodesicPaths X) ∧
       endpointLaw η = π := by
   obtain ⟨G, hG, hGπ⟩ := exists_measurable_ae_mem_geodesicPaths π hπ
-  have he : Measurable fun γ : C(I, X) ↦ (γ 0, γ 1) :=
-    (ContinuousMap.measurable_eval 0).prodMk (ContinuousMap.measurable_eval 1)
   refine ⟨π.map G, inferInstance,
     (ae_map_iff hG.aemeasurable isClosed_geodesicPaths.measurableSet).2 ?_, ?_⟩
   · filter_upwards [hGπ] with z hz using hz.1
-  · rw [endpointLaw_def, Measure.map_map he hG]
+  · rw [endpointLaw_def, Measure.map_map ContinuousMap.measurable_endpoints hG]
     conv_rhs => rw [← Measure.map_id (μ := π)]
     refine Measure.map_congr ?_
     filter_upwards [hGπ] with z hz
     simp [hz.2.1, hz.2.2]
 
 end Polish
+
+section QuadraticOptimal
+
+open TauCeti
+
+variable {X : Type*} [MetricSpace X] [MeasurableSpace X]
+
+/-- A **quadratic optimal dynamic plan** from `μ₀` to `μ₁`: a measure on path space concentrated
+on constant-speed geodesics whose endpoint law is an optimal coupling for the squared-distance
+cost. The optimal-coupling field forces the plan to have total mass one when the endpoints are
+probability laws. -/
+structure IsQuadraticOptimalDynamicPlan (η : Measure C(I, X))
+    (μ₀ μ₁ : ProbabilityMeasure X) : Prop where
+  /-- Almost every path of the dynamic plan is a constant-speed geodesic. -/
+  ae_mem_geodesicPaths : ∀ᵐ γ ∂η, γ ∈ geodesicPaths X
+  /-- The joint law of the two endpoints is a quadratic optimal coupling. -/
+  endpointLaw_isOptimalCoupling :
+    IsOptimalCoupling (fun z : X × X ↦ edist z.1 z.2 ^ (2 : ℝ)) η.endpointLaw
+      (μ₀ : Measure X) (μ₁ : Measure X)
+
+/-- The endpoint law of a quadratic optimal dynamic plan couples its prescribed endpoints. -/
+theorem IsQuadraticOptimalDynamicPlan.endpointLaw_isCoupling {η : Measure C(I, X)}
+    {μ₀ μ₁ : ProbabilityMeasure X} (hη : η.IsQuadraticOptimalDynamicPlan μ₀ μ₁) :
+    TauCeti.IsCoupling η.endpointLaw (μ₀ : Measure X) (μ₁ : Measure X) :=
+  hη.endpointLaw_isOptimalCoupling.toIsCoupling
+
+variable [BorelSpace X]
+
+/-- The time-zero marginal of a quadratic optimal dynamic plan is its source law. -/
+theorem IsQuadraticOptimalDynamicPlan.timeMarginal_zero {η : Measure C(I, X)}
+    {μ₀ μ₁ : ProbabilityMeasure X} (hη : η.IsQuadraticOptimalDynamicPlan μ₀ μ₁) :
+    η.timeMarginal 0 = (μ₀ : Measure X) := by
+  rw [← fst_endpointLaw, hη.endpointLaw_isCoupling.fst_eq]
+
+/-- The time-one marginal of a quadratic optimal dynamic plan is its target law. -/
+theorem IsQuadraticOptimalDynamicPlan.timeMarginal_one {η : Measure C(I, X)}
+    {μ₀ μ₁ : ProbabilityMeasure X} (hη : η.IsQuadraticOptimalDynamicPlan μ₀ μ₁) :
+    η.timeMarginal 1 = (μ₁ : Measure X) := by
+  rw [← snd_endpointLaw, hη.endpointLaw_isCoupling.snd_eq]
+
+/-- A quadratic optimal dynamic plan between probability laws is itself a probability measure on
+path space. -/
+theorem IsQuadraticOptimalDynamicPlan.isProbabilityMeasure {η : Measure C(I, X)}
+    {μ₀ μ₁ : ProbabilityMeasure X} (hη : η.IsQuadraticOptimalDynamicPlan μ₀ μ₁) :
+    IsProbabilityMeasure η := by
+  refine ⟨?_⟩
+  have hend : η.endpointLaw univ = 1 := by
+    rw [← hη.endpointLaw_isCoupling.measure_univ_left, measure_univ]
+  rw [endpointLaw_apply η MeasurableSet.univ] at hend
+  simpa using hend
+
+end QuadraticOptimal
 
 end MeasureTheory.Measure
 
@@ -271,7 +366,7 @@ theorem exists_ae_mem_geodesicPaths_wassersteinEDist_timeMarginal_le [IsGeodesic
     rw [← Measure.endpointLaw_def, hηπ]
     infer_instance
   refine ⟨η, Measure.isFiniteMeasure_of_map (μ := η) (f := fun γ ↦ (γ 0, γ 1))
-    ((ContinuousMap.measurable_eval 0).prodMk (ContinuousMap.measurable_eval 1)).aemeasurable,
+    ContinuousMap.measurable_endpoints.aemeasurable,
     hη, ?_, ?_, fun s t ↦ ?_⟩
   · rw [← Measure.fst_endpointLaw, hηπ, hπ.fst_eq]
   · rw [← Measure.snd_endpointLaw, hηπ, hπ.snd_eq]

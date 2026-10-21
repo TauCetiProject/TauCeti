@@ -54,47 +54,47 @@ universe u
 
 namespace TauCeti
 
-variable {E B : Type u} [TopologicalSpace E] [TopologicalSpace B] {p : E → B}
+variable {E B : Type u} [TopologicalSpace E] [TopologicalSpace B] [T2Space B] {p : E → B}
   (C : Set B) [CWComplex C] [RelCWComplex.Finite C]
   (hp : IsCoveringMap p) (hfin : ∀ b, Finite ↥(p ⁻¹' {b}))
+
+include hp hfin
 
 /-- The alternating count of the cells of the lift of `C` along `p` is the alternating sum, over the
 cells of `C`, of the number of points over their centres. -/
 theorem cwEulerChar_preimage :
-    letI := cwComplexPreimage C hp hfin
+    letI := cwComplexPreimage C hp
     cwEulerChar (p ⁻¹' C) =
       ∑ᶠ n : ℕ, (-1 : ℤ) ^ n * ∑ᶠ i : cell C n, (Nat.card ↥(p ⁻¹' {map n i 0}) : ℤ) := by
-  let := cwComplexPreimage C hp hfin
+  let := cwComplexPreimage C hp
   rw [cwEulerChar_def]
   refine finsum_congr fun n ↦ ?_
   have : _root_.Finite (cell C n) := FiniteType.finite_cell n
-  rw [nat_card_cell_preimage, Nat.cast_finsum]
+  rw [nat_card_cell_preimage C hp hfin, Nat.cast_finsum]
 
 /-- **The cells of a `d`-sheeted cover.** If every fibre of `p` over `C` has `d` points, the
 alternating count of the cells of the lift of `C` along `p` is `d` times that of `C`. -/
 theorem cwEulerChar_preimage_of_card_fiber {d : ℕ} (hd : ∀ b ∈ C, Nat.card ↥(p ⁻¹' {b}) = d) :
-    letI := cwComplexPreimage C hp hfin
+    letI := cwComplexPreimage C hp
     cwEulerChar (p ⁻¹' C) = d * cwEulerChar C := by
-  let := cwComplexPreimage C hp hfin
+  let := cwComplexPreimage C hp
   obtain ⟨N, hN⟩ := Filter.eventually_atTop.1
     (FiniteDimensional.eventually_isEmpty_cell (C := C) (D := ∅))
   have hN' (n : ℕ) (hn : N ≤ n) : IsEmpty (cell (p ⁻¹' C) n) :=
-    (cellPreimageEquiv C hp hfin n).isEmpty_congr.2 ⟨fun c ↦ (hN n hn).false c.1⟩
+    (cellPreimageEquiv C hp n).isEmpty_congr.2 ⟨fun c ↦ (hN n hn).false c.1⟩
   rw [cwEulerChar_eq_sum_range _ hN', cwEulerChar_eq_sum_range _ hN, Finset.mul_sum]
   refine Finset.sum_congr rfl fun n _ ↦ ?_
   rw [nat_card_cell_preimage_of_card_fiber C hp hfin hd, Nat.cast_mul]
   ring
 
-variable [T2Space B]
-
 /-- If every fibre of `p` over the finite CW complex `C` has `d` points, then
 `χ(p⁻¹(C)) = d · χ(C)`. -/
 theorem eulerChar_preimage_of_card_fiber {d : ℕ} (hd : ∀ b ∈ C, Nat.card ↥(p ⁻¹' {b}) = d) :
-    letI := cwComplexPreimage C hp hfin
+    letI := cwComplexPreimage C hp
     haveI := finite_cwComplexPreimage C hp hfin
     haveI := hp.t2Space
     eulerChar ↥(p ⁻¹' C) = d * eulerChar ↥C := by
-  let := cwComplexPreimage C hp hfin
+  let := cwComplexPreimage C hp
   have := finite_cwComplexPreimage C hp hfin
   have := hp.t2Space
   rw [eulerChar_cwComplex, eulerChar_cwComplex, cwEulerChar_preimage_of_card_fiber C hp hfin hd]
@@ -108,7 +108,7 @@ theorem eulerChar_eq_mul_of_isCoveringMap [CWComplex (univ : Set B)]
     haveI := hp.finiteCWType hfin
     eulerChar E = d * eulerChar B := by
   have := hp.finiteCWType hfin
-  let := cwComplexPreimage univ hp hfin
+  let := cwComplexPreimage univ hp
   have := finite_cwComplexPreimage univ hp hfin
   have := hp.t2Space
   have h := eulerChar_preimage_of_card_fiber univ hp hfin fun b _ ↦ hd b

@@ -67,7 +67,7 @@ public section
 
 open _root_.ContRepresentation
 
-open Module TauCeti TauCeti.ContRepresentation
+open Module TauCeti
 
 namespace ContRepresentation
 

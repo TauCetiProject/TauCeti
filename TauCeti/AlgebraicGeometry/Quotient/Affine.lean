@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Limits
 public import Mathlib.AlgebraicGeometry.Morphisms.IsIso
 
 /-!
@@ -25,6 +26,7 @@ The finite-group properties of the projection are developed in
 * `quotient`: the spectrum of the fixed subring.
 * `projection`: the invariant-spectrum projection.
 * `specComap`: the contravariant spectrum map of an action element.
+* `actionMap`: the action graphs mapped into the kernel pair of the quotient projection.
 * `desc`: descent of an invariant morphism to an affine target.
 
 ## Main results
@@ -40,7 +42,7 @@ The finite-group properties of the projection are developed in
 
 public section
 
-open CategoryTheory AlgebraicGeometry
+open CategoryTheory Limits AlgebraicGeometry
 open scoped Pointwise
 
 namespace TauCeti.AffineInvariantQuotient
@@ -121,6 +123,41 @@ theorem specComap_projection (g : G) :
   congr 1
   ext a
   exact a.property g
+
+section ActionMap
+
+variable [Small.{u} G]
+
+/-- The action graphs over the invariant quotient. On the component indexed by `g`, the two
+projections are the identity and `specComap A G g`, respectively. The latter is the right action
+on spectra, induced contravariantly by `a ↦ g • a`. The assumption `Small.{u} G` ensures that
+the coproduct exists in `Scheme.{u}`; it is automatic for finite `G`. -/
+noncomputable def actionMap : (∐ fun _ : G ↦ Spec (CommRingCat.of A)) ⟶
+    pullback (projection A G) (projection A G) :=
+  Sigma.desc fun g ↦ pullback.lift (𝟙 _) (specComap A G g) (by simp)
+
+/-- The restriction of the action map to one component is the graph of its action element. -/
+@[reassoc (attr := simp)]
+theorem ι_actionMap (g : G) :
+    Sigma.ι (fun _ : G ↦ Spec (CommRingCat.of A)) g ≫ actionMap A G =
+      pullback.lift (𝟙 _) (specComap A G g) (by simp) := by
+  simp [actionMap]
+
+/-- The first projection of the action relation forgets the group element. -/
+@[reassoc (attr := simp)]
+theorem actionMap_fst : actionMap A G ≫ pullback.fst _ _ =
+    Sigma.desc (fun _ : G ↦ 𝟙 (Spec (CommRingCat.of A))) := by
+  ext g
+  simp
+
+/-- The second projection of the action relation applies the action element. -/
+@[reassoc (attr := simp)]
+theorem actionMap_snd : actionMap A G ≫ pullback.snd _ _ =
+    Sigma.desc (fun g : G ↦ specComap A G g) := by
+  ext g
+  simp
+
+end ActionMap
 
 variable {A G}
 

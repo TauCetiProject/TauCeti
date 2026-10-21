@@ -8,12 +8,14 @@ module
 public import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
 
 /-!
-# The difference of two variables is a non-zero-divisor
+# Non-zero-divisors of multivariate power series
 
 Mathlib shows that a *single* variable is a non-zero-divisor over an arbitrary semiring
 (`MvPowerSeries.X_mem_nonZeroDivisors`), and that `MvPowerSeries σ R` inherits `NoZeroDivisors`
 from `R`. Between those lies a gap: over a ring that *has* zero divisors, is `X i - X j` still
-regular? It is, and this file proves it.
+regular? It is, and this file proves it. It also records that power series over a domain form a
+domain, the multivariate analogue of Mathlib's instance for `PowerSeries`; subrings of power
+series, such as Tate algebras, then inherit `IsDomain` from Mathlib's subring instance.
 
 ## Main results
 
@@ -35,7 +37,13 @@ namespace MvPowerSeries
 
 open Finsupp nonZeroDivisors
 
-variable {σ R : Type*} [CommRing R]
+variable {σ R : Type*}
+
+/-- Power series in any set of variables over a domain form a domain. -/
+instance [Ring R] [IsDomain R] : IsDomain (MvPowerSeries σ R) :=
+  NoZeroDivisors.to_isDomain _
+
+variable [CommRing R]
 
 /-- **The difference of two distinct variables is a non-zero-divisor**, over an arbitrary
 commutative ring: `f * (X i - X j) = 0` forces `f = 0`, with no hypothesis on `R`.

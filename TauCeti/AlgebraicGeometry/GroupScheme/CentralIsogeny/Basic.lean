@@ -5,19 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Morphisms.Finite
-public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.CommGrp_
 public import Mathlib.GroupTheory.Subgroup.Center
+public import TauCeti.AlgebraicGeometry.GroupScheme.Isogeny.Basic
 
 /-!
 # Central isogenies of group schemes
 
-For group schemes over the spectrum of a commutative ring, an isogeny is a homomorphism whose
-underlying scheme morphism is finite, flat, and surjective. It is central when its
-scheme-theoretic kernel is central. We express the latter condition intrinsically through the
-functor of points: for every test scheme over the base, every point killed by the homomorphism
-commutes with every other point of the source.
+Over the spectrum of a commutative ring, an isogeny of group schemes
+(`TauCeti.GroupScheme.IsIsogeny`) is central when its scheme-theoretic kernel is central. We
+express the latter condition intrinsically through the functor of points: for every test scheme
+over the base, every point killed by the homomorphism commutes with every other point of the
+source.
 
 Quantifying over all test schemes is essential. Centrality only on base-ring-valued points would
 miss infinitesimal points and need not describe a central subgroup scheme. The functorial definition
@@ -35,8 +34,6 @@ central kernel and that every isogeny out of a commutative group scheme is centr
   injective map on points over every test scheme.
 * `TauCeti.GroupScheme.HasCentralKernel`: every functor-of-points kernel is central.
 * `TauCeti.GroupScheme.hasCentralKernel`: the corresponding morphism property.
-* `TauCeti.GroupScheme.isogenies`: the finite, flat, surjective morphism property on group schemes.
-* `TauCeti.GroupScheme.IsIsogeny`: the corresponding predicate on a group-scheme morphism.
 * `TauCeti.GroupScheme.centralIsogenies`: the central-isogeny morphism property.
 * `TauCeti.GroupScheme.IsCentralIsogeny`: an isogeny with central kernel.
 * `TauCeti.GroupScheme.isCentralIsogeny_iff_isIsogeny_and_hasCentralKernel`: the predicate-level
@@ -45,9 +42,6 @@ central kernel and that every isogeny out of a commutative group scheme is centr
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), §18.a.
-
-The property-level isogeny API is adapted from
-`TauCeti.AlgebraicGeometry.AbelianVariety.Isogeny`.
 
 This supplies the central-isogeny interface required by Layer 6 of the ReductiveGroups roadmap.
 -/
@@ -146,97 +140,13 @@ section Isogeny
 
 section Ring
 
-variable {R : Type u} [CommRing R]
-variable {G H K : Grp (Over (Spec (CommRingCat.of R)))}
-
-/-- The morphism property of being an isogeny of group schemes over a commutative ring: the
-underlying scheme morphism is finite, flat, and surjective. -/
-def isogenies (R : Type u) [CommRing R] :
-    MorphismProperty (Grp (Over (Spec (CommRingCat.of R)))) :=
-  (@IsFinite ⊓ (@Flat ⊓ @Surjective) : MorphismProperty Scheme).inverseImage
-    (Grp.forget _ ⋙ Over.forget _)
-
-/-- A homomorphism of group schemes is an isogeny when its underlying scheme morphism is finite,
-flat, and surjective. -/
-abbrev IsIsogeny (f : G ⟶ H) : Prop :=
-  isogenies R f
-
-/-- A group-scheme morphism is an isogeny exactly when its underlying scheme morphism is finite,
-flat, and surjective. -/
-theorem isIsogeny_iff (f : G ⟶ H) :
-    IsIsogeny f ↔
-      IsFinite f.hom.hom.left ∧ Flat f.hom.hom.left ∧ Surjective f.hom.hom.left :=
-  Iff.rfl
-
-/-- Group-scheme isogenies contain identities and are closed under composition. -/
-instance : (isogenies R).IsMultiplicative := by
-  unfold isogenies
-  let : (@Flat ⊓ @Surjective : MorphismProperty Scheme).IsMultiplicative :=
-    MorphismProperty.IsMultiplicative.inf
-  let : (@IsFinite ⊓ (@Flat ⊓ @Surjective) : MorphismProperty Scheme).IsMultiplicative :=
-    MorphismProperty.IsMultiplicative.inf
-  infer_instance
-
-/-- Being a group-scheme isogeny is invariant under isomorphisms of arrows. -/
-instance : (isogenies R).RespectsIso := by
-  unfold isogenies
-  let _ : MorphismProperty.RespectsIso (@IsFinite : MorphismProperty Scheme) :=
-    MorphismProperty.respectsIso_of_isStableUnderComposition
-      (fun _ _ f (_ : IsIso f) ↦ inferInstance)
-  let _ : MorphismProperty.RespectsIso (@Flat : MorphismProperty Scheme) :=
-    MorphismProperty.respectsIso_of_isStableUnderComposition
-      (fun _ _ f (_ : IsIso f) ↦ inferInstance)
-  let _ : MorphismProperty.RespectsIso
-      (@Flat ⊓ @Surjective : MorphismProperty Scheme) :=
-    MorphismProperty.RespectsIso.inf @Flat @Surjective
-  let _ : MorphismProperty.RespectsIso
-      (@IsFinite ⊓ (@Flat ⊓ @Surjective) : MorphismProperty Scheme) :=
-    MorphismProperty.RespectsIso.inf @IsFinite (@Flat ⊓ @Surjective)
-  exact MorphismProperty.RespectsIso.inverseImage
-    (@IsFinite ⊓ (@Flat ⊓ @Surjective) : MorphismProperty Scheme)
-    (Grp.forget (Over (Spec (CommRingCat.of R))) ⋙ Over.forget (Spec (CommRingCat.of R)))
-
-/-- The identity of a group scheme is an isogeny. -/
-@[simp]
-theorem isIsogeny_id (G : Grp (Over (Spec (CommRingCat.of R)))) : IsIsogeny (𝟙 G) :=
-  (isogenies R).id_mem G
-
-/-- Every isomorphism of group schemes is an isogeny. -/
-theorem isIsogeny_of_isIso (f : G ⟶ H) [IsIso f] : IsIsogeny f :=
-  (isogenies R).of_isIso f
-
-namespace IsIsogeny
-
-/-- The underlying scheme morphism of a group-scheme isogeny is finite. -/
-theorem isFinite {f : G ⟶ H} (hf : IsIsogeny f) : IsFinite f.hom.hom.left :=
-  (isIsogeny_iff f).mp hf |>.1
-
-/-- The underlying scheme morphism of a group-scheme isogeny is flat. -/
-theorem flat {f : G ⟶ H} (hf : IsIsogeny f) : Flat f.hom.hom.left :=
-  (isIsogeny_iff f).mp hf |>.2.1
-
-/-- The underlying scheme morphism of a group-scheme isogeny is surjective. -/
-theorem surjective {f : G ⟶ H} (hf : IsIsogeny f) : Surjective f.hom.hom.left :=
-  (isIsogeny_iff f).mp hf |>.2.2
-
-/-- A composite of group-scheme isogenies is an isogeny. -/
-theorem comp {f : G ⟶ H} {g : H ⟶ K} (hf : IsIsogeny f) (hg : IsIsogeny g) :
-    IsIsogeny (f ≫ g) :=
-  (isogenies R).comp_mem f g hf hg
-
-end IsIsogeny
-
-end Ring
-
-section Ring
-
 variable {k : Type u} [CommRing k]
 variable {G H K : Grp (Over (Spec (CommRingCat.of k)))}
 
 /-- The morphism property of being a central isogeny of group schemes over a commutative ring. -/
 def centralIsogenies (k : Type u) [CommRing k] :
     MorphismProperty (Grp (Over (Spec (CommRingCat.of k)))) :=
-  isogenies k ⊓ hasCentralKernel (Spec (CommRingCat.of k))
+  isogenies (Spec (CommRingCat.of k)) ⊓ hasCentralKernel (Spec (CommRingCat.of k))
 
 /-- A central isogeny is an isogeny whose scheme-theoretic kernel is central, expressed on the
 functor of points over every test scheme. -/
@@ -250,7 +160,8 @@ theorem isCentralIsogeny_iff_isIsogeny_and_hasCentralKernel (f : G ⟶ H) :
 
 /-- Central isogenies are the intersection of isogenies and morphisms with central kernel. -/
 theorem centralIsogenies_eq :
-    centralIsogenies k = isogenies k ⊓ hasCentralKernel (Spec (CommRingCat.of k)) := by
+    centralIsogenies k =
+      isogenies (Spec (CommRingCat.of k)) ⊓ hasCentralKernel (Spec (CommRingCat.of k)) := by
   ext _ _ f
   exact isCentralIsogeny_iff_isIsogeny_and_hasCentralKernel f
 

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.LocalRing.Quotient
 public import Mathlib.RingTheory.Unramified.LocalRing
+public import TauCeti.RingTheory.LocalRing.Localization
 
 /-!
 # Unramifiedness of a local algebra at its maximal ideal
@@ -45,12 +46,8 @@ variable (R S : Type*) [CommRing R] [CommRing S] [Algebra R S] [IsLocalRing S]
 over `R`: localizing a local ring at its maximal ideal inverts only units. -/
 theorem isUnramifiedAt_maximalIdeal_iff :
     Algebra.IsUnramifiedAt R (IsLocalRing.maximalIdeal S) ↔ Algebra.FormallyUnramified R S :=
-  have primeCompl_le : (IsLocalRing.maximalIdeal S).primeCompl ≤ IsUnit.submonoid S :=
-    fun x hx ↦ (IsUnit.mem_submonoid_iff x).2
-      (IsLocalRing.notMem_maximalIdeal.1 (Ideal.mem_primeCompl_iff.1 hx))
   (Algebra.FormallyUnramified.iff_of_equiv
-    ((IsLocalization.atUnits S (IsLocalRing.maximalIdeal S).primeCompl
-      primeCompl_le).restrictScalars R)).symm
+    (IsLocalRing.algEquivLocalizationAtMaximalIdeal R S)).symm
 
 section ResidueSpan
 

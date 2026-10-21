@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Operator.Prod
 public import TauCeti.LinearAlgebra.TotallyReal.Complex
-public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Index
+public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Path
 
 /-!
 # The Maslov index is additive under the direct sum
@@ -18,14 +18,22 @@ winding number adds over a direct sum. This file proves the corresponding **dire
 `μ(Λ ⊕ Λ') = μ(Λ) + μ(Λ')`,
 
 where `Λ ⊕ Λ'` is the loop `t ↦ Λ t ⊕ Λ' t` of coordinate subspaces of `E × E'`, packaged as
-`TauCeti.TotallyRealLoop.prod`.
+`TauCeti.TotallyRealLoop.prod`, and its counterpart for the relative Maslov index of two paths with
+common endpoints,
+
+`μ(Λ ⊕ Λ', Γ ⊕ Γ') = μ(Λ, Γ) + μ(Λ', Γ')`,
+
+where `TauCeti.TotallyRealPath.prod` is the direct sum of two paths. The direct sum of two loops
+is built from the direct sum of the underlying paths.
 
 The two ingredients are multiplicative. The Maslov phase of a direct sum is the product of the two
 phases, `ρ(L₀ ⊕ L₀', L ⊕ L') = ρ(L₀, L) ρ(L₀', L')`, because an automorphism carrying `L₀` to `L`
 and `L₀'` to `L'` is carried out blockwise, its determinant is the product of the two block
 determinants, and the determinant phase is multiplicative. And the degree of a pointwise product of
 loops in the circle is the sum of the degrees. Composing the two, and reading the Maslov index as
-the degree of the loop of phases relative to an arbitrary reference subspace, gives the axiom.
+the degree of the loop of phases relative to an arbitrary reference subspace, gives the axiom; for
+paths, the relative phase loop of the direct sum is likewise the product of the two relative phase
+loops.
 
 The linear-algebra input, that a coordinate submodule `L.prod M` of a product of complex modules is
 maximal totally real whenever the two summands are, is
@@ -46,10 +54,14 @@ on a surface, each of which carries a loop of its own, is a further step built o
 
 * `TauCeti.IsMaximalTotallyReal.maslovPhase_prod`: the Maslov phase of a direct sum is the product
   of the two phases.
-* `TauCeti.TotallyRealLoop.prod`: the loop of coordinate subspaces of a pair of loops.
+* `TauCeti.TotallyRealPath.prod`, `TauCeti.TotallyRealLoop.prod`: the path, respectively loop,
+  of coordinate subspaces of a pair of paths or loops.
+* `TauCeti.TotallyRealPath.relativeMaslovIndex_prod`: the direct-sum axiom of the relative
+  Maslov index.
 * `TauCeti.TotallyRealLoop.maslovPhasePath_prod_apply`: the loop of Maslov phases of a direct sum
   is the product of the two loops of Maslov phases.
-* `TauCeti.TotallyRealLoop.maslovIndex_prod`: **the direct-sum axiom.**
+* `TauCeti.TotallyRealLoop.maslovIndex_prod`: **the direct-sum axiom** of the Maslov index of
+  loops.
 * `TauCeti.TotallyRealLoop.maslovIndex_prod_rotation`: the two half-turns, taken in the two
   summands, have Maslov index the sum of the two complex dimensions.
 
@@ -118,15 +130,15 @@ theorem maslovPhase_prod {L' : Submodule ℝ E} {M' : Submodule ℝ E'}
 
 end IsMaximalTotallyReal
 
-namespace TotallyRealLoop
+namespace TotallyRealPath
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
   {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℂ E']
 
-/-- The loop of coordinate subspaces of a pair of loops of maximal totally real subspaces: the
+/-- The path of coordinate subspaces of a pair of paths of maximal totally real subspaces: the
 direct sum `Λ ⊕ Λ'` of `t ↦ Λ t` and `t ↦ Λ' t`, in the product of the ambient spaces. -/
-noncomputable def prod (Λ : TotallyRealLoop E) (Λ' : TotallyRealLoop E') :
-    TotallyRealLoop (E × E') where
+noncomputable def prod (Λ : TotallyRealPath E) (Λ' : TotallyRealPath E') :
+    TotallyRealPath (E × E') where
   toFun t := (Λ t).prod (Λ' t)
   exists_frame := by
     obtain ⟨L₁, hL₁, A, hAc, hA⟩ := Λ.exists_frame
@@ -148,6 +160,45 @@ noncomputable def prod (Λ : TotallyRealLoop E) (Λ' : TotallyRealLoop E') :
       rcases x with ⟨x, y⟩
       simp
     rw [hmap]
+
+@[simp]
+theorem prod_apply (Λ : TotallyRealPath E) (Λ' : TotallyRealPath E') (t : I) :
+    Λ.prod Λ' t = (Λ t).prod (Λ' t) :=
+  (rfl)
+
+variable [FiniteDimensional ℂ E] [FiniteDimensional ℂ E']
+
+/-- **The direct-sum axiom of the relative Maslov index:**
+`μ(Λ ⊕ Λ', Γ ⊕ Γ') = μ(Λ, Γ) + μ(Λ', Γ')`. -/
+@[simp]
+theorem relativeMaslovIndex_prod (Λ Γ : TotallyRealPath E) (Λ' Γ' : TotallyRealPath E')
+    (h₀ : Λ 0 = Γ 0) (h₁ : Λ 1 = Γ 1) (h₀' : Λ' 0 = Γ' 0) (h₁' : Λ' 1 = Γ' 1) :
+    relativeMaslovIndex (Λ.prod Λ') (Γ.prod Γ') (by simp [h₀, h₀']) (by simp [h₁, h₁']) =
+      relativeMaslovIndex Λ Γ h₀ h₁ + relativeMaslovIndex Λ' Γ' h₀' h₁' := by
+  -- The relative phase loop of the direct sum is the pointwise product of the two phase loops.
+  rw [relativeMaslovIndex_eq_degree _ _ _ _ ((Λ.relativeMaslovPhasePath Γ h₀ h₁).mul
+    (Λ'.relativeMaslovPhasePath Γ' h₀' h₁')) fun t => ?_, Circle.degree_mul,
+    ← relativeMaslovIndex_def, ← relativeMaslovIndex_def]
+  rw [Path.mul_apply, Circle.coe_mul, relativeMaslovPhasePath_apply,
+    relativeMaslovPhasePath_apply, ← IsMaximalTotallyReal.maslovPhase_prod]
+  exact (IsMaximalTotallyReal.maslovPhase_congr_left _ _ _ (prod_apply Γ Γ' t)).trans
+    (IsMaximalTotallyReal.maslovPhase_congr _ _ _ (prod_apply Λ Λ' t))
+
+end TotallyRealPath
+
+namespace TotallyRealLoop
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℂ E']
+
+/-- The loop of coordinate subspaces of a pair of loops of maximal totally real subspaces: the
+direct sum `Λ ⊕ Λ'` of `t ↦ Λ t` and `t ↦ Λ' t`, in the product of the ambient spaces. -/
+noncomputable def prod (Λ : TotallyRealLoop E) (Λ' : TotallyRealLoop E') :
+    TotallyRealLoop (E × E') where
+  toFun t := (Λ t).prod (Λ' t)
+  exists_frame := by
+    obtain ⟨L₀, hL₀, A, hA, h⟩ := (Λ.toTotallyRealPath.prod Λ'.toTotallyRealPath).exists_frame
+    exact ⟨L₀, hL₀, A, hA, fun t => by simpa using h t⟩
   toFun_zero_eq_toFun_one :=
     by rw [Λ.toFun_zero_eq_toFun_one, Λ'.toFun_zero_eq_toFun_one]
 

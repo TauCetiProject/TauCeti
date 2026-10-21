@@ -10,6 +10,8 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Weierstrass
 public import TauCeti.RingTheory.DedekindDomain.LocalizationAtPrime
 -- Proof-only: of two coprime elements of a local ring, one is a unit.
 import TauCeti.RingTheory.LocalRing.Basic
+-- Proof-only: the integral model of an equation read over the fraction field.
+import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
 
 /-!
 # Semistable elliptic curves over a Dedekind domain
@@ -48,6 +50,11 @@ own, or over zero, where the curve has good reduction.
 * `WeierstrassCurve.isSemistable_iff_forall_valuation_Δ_eq_one_or_valuation_c₄_eq_one`:
   the corresponding global criterion.
 * `WeierstrassCurve.isSemistable_smul`: semistability is invariant under a change of variables.
+* `WeierstrassCurve.hasGoodReduction_minimal_baseChange_of_Δ_notMem`: an equation over `O` has
+  good reduction at every height-one prime not containing its discriminant.
+* `WeierstrassCurve.not_hasAdditiveReduction_minimal_baseChange_of_Δ_notMem_or_c₄_notMem`: an
+  equation over `O` has no additive reduction at a height-one prime not containing both its
+  discriminant and its `c₄`.
 * `WeierstrassCurve.isSemistable_baseChange_of_isCoprime`: an equation over `O` whose
   discriminant and `c₄` are coprime is semistable.
 * `WeierstrassCurve.not_hasAdditiveReduction_minimal_iff_exists_isUnit`: no additive reduction
@@ -238,17 +245,45 @@ theorem isSemistable_smul (D : VariableChange F) (W : WeierstrassCurve F) [W.IsE
   refine forall_congr' fun v ↦ ?_
   rw [valuation_Δ_minimal_smul, valuation_c₄_minimal_smul]
 
+/-- **An equation over `O` has good reduction at every height-one prime not containing its
+discriminant**: read over the localisation at such a prime, its discriminant is a unit. -/
+theorem hasGoodReduction_minimal_baseChange_of_Δ_notMem (W : WeierstrassCurve O)
+    {v : HeightOneSpectrum O} (hv : W.Δ ∉ v.asIdeal) :
+    ((W.baseChange F).minimal (Localization.AtPrime v.asIdeal)).HasGoodReduction
+      (Localization.AtPrime v.asIdeal) := by
+  set W₀ := W.map (algebraMap O (Localization.AtPrime v.asIdeal))
+  have : IsIntegral (Localization.AtPrime v.asIdeal) (W₀.baseChange F) := ⟨⟨W₀, rfl⟩⟩
+  have h : (W₀.baseChange F).HasGoodReduction (Localization.AtPrime v.asIdeal) := by
+    rw [hasGoodReduction_iff_isUnit_integralModel_Δ, integralModel_baseChange_self, map_Δ]
+    exact (IsLocalization.AtPrime.isUnit_to_map_iff _ v.asIdeal W.Δ).2 hv
+  have hW₀ : W₀.baseChange F = W.baseChange F :=
+    W.map_baseChange (IsScalarTower.toAlgHom O (Localization.AtPrime v.asIdeal) F)
+  exact hW₀ ▸ h.hasGoodReduction_minimal
+
+/-- **An equation over `O` has no additive reduction at a height-one prime not containing both its
+discriminant and its `c₄`**: read over the localisation at such a prime, one of the two is a unit,
+so the reduction there is good or multiplicative. -/
+theorem not_hasAdditiveReduction_minimal_baseChange_of_Δ_notMem_or_c₄_notMem
+    (W : WeierstrassCurve O) [(W.baseChange F).IsElliptic] {v : HeightOneSpectrum O}
+    (hv : W.Δ ∉ v.asIdeal ∨ W.c₄ ∉ v.asIdeal) :
+    ¬ ((W.baseChange F).minimal (Localization.AtPrime v.asIdeal)).HasAdditiveReduction
+      (Localization.AtPrime v.asIdeal) :=
+  (not_hasAdditiveReduction_minimal_iff_exists_isUnit _ _).mpr
+    ⟨W.map (algebraMap O (Localization.AtPrime v.asIdeal)), 1, by
+      simpa only [map_Δ, map_c₄, IsLocalization.AtPrime.isUnit_to_map_iff _ v.asIdeal,
+        Ideal.mem_primeCompl_iff] using hv, by
+      rw [one_smul, baseChange, baseChange, map_map, ← IsScalarTower.algebraMap_eq]⟩
+
 /-- **An equation over `O` whose discriminant and `c₄` are coprime is semistable.** At each
 height-one prime one of the two is a unit of the local ring, so the reduction there is good or
 multiplicative. -/
 theorem isSemistable_baseChange_of_isCoprime (W : WeierstrassCurve O)
     [(W.baseChange F).IsElliptic] (h : IsCoprime W.Δ W.c₄) : IsSemistable O (W.baseChange F) :=
   IsSemistable.of_forall_not_hasAdditiveReduction fun v =>
-    (not_hasAdditiveReduction_minimal_iff_exists_isUnit _ _).mpr
-      ⟨W.map (algebraMap O (Localization.AtPrime v.asIdeal)), 1, by
-        rw [map_Δ, map_c₄]
-        exact (h.map _).isUnit_or_isUnit, by
-        rw [one_smul, baseChange, baseChange, map_map, ← IsScalarTower.algebraMap_eq]⟩
+    not_hasAdditiveReduction_minimal_baseChange_of_Δ_notMem_or_c₄_notMem W <| by
+      simpa only [IsLocalization.AtPrime.isUnit_to_map_iff (Localization.AtPrime v.asIdeal)
+        v.asIdeal, Ideal.mem_primeCompl_iff] using
+        (h.map (algebraMap O (Localization.AtPrime v.asIdeal))).isUnit_or_isUnit
 
 variable (O' : Type*) [CommRing O'] [IsDedekindDomain O'] {L : Type*} [Field L] [Algebra O' L]
   [IsFractionRing O' L] [Algebra O O'] [Algebra F L] [Algebra O L] [IsScalarTower O O' L]

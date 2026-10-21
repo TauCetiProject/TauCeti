@@ -325,11 +325,13 @@ noncomputable def carGenerator {K : Type*} [CommRing K] {m : Type*} [Fintype m]
   ι (traceQuadraticForm K m) (Matrix.single i j 1)
 
 omit [DecidableEq n] in
-/-- The matrix-unit formula for `carGenerator`. -/
-theorem carGenerator_def {K : Type*} [CommRing K] {m : Type*} [Fintype m] (i j : m) :
+/-- The matrix-unit formula for `carGenerator`, at any decidable-equality instance on the
+indices. -/
+theorem carGenerator_def {K : Type*} [CommRing K] {m : Type*} [Fintype m] [DecidableEq m]
+    (i j : m) :
     carGenerator (K := K) i j =
       ι (traceQuadraticForm K m) (Matrix.single i j 1) := by
-  rfl
+  rw [carGenerator, Subsingleton.elim (Classical.decEq m) ‹_›]
 
 omit [DecidableEq n] in
 /-- The matrix-unit generators satisfy the CAR anticommutation relation. -/

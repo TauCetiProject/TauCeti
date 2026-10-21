@@ -12,7 +12,8 @@ public import Mathlib.Algebra.Algebra.Operations
 # Positive-degree action on concentrated graded modules
 
 A graded module concentrated in a single internal degree is annihilated by positive-degree
-scalars. Such modules are the test targets for detecting the generating degrees of minimal
+scalars. Concentration is preserved by graded surjections.
+Such modules are the test targets for detecting the generating degrees of minimal
 projective resolution terms via Ext. The algebra itself need not be nonnegatively graded.
 
 ## References

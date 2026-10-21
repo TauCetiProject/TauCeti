@@ -67,6 +67,8 @@ directions before taking products.
 * `TauCeti.Grid.cIco_union_cIco_eq_cIco_of_mem_cIoo`: an interior point cuts a half-open arc
   into two adjacent half-open arcs.
 * `TauCeti.Grid.disjoint_cIco_cIco_of_mem_cIoo`: the two pieces of such a cut are disjoint.
+* `TauCeti.Grid.ite_eq_or_mem_cIoo_eq_add_add`: a cut at two points partitions a closed-end
+  cyclic-order test into three disjoint cases, counted in `ℕ`.
 * `TauCeti.Grid.cIoo_union_insert_cIoo_eq_cIoo_of_mem_cIoo`: an interior point cuts an open arc
   into two open arcs and the cutting point itself.
 * `TauCeti.Grid.cIoo_subset_cIoo_right_of_mem_cIoo`,
@@ -474,6 +476,22 @@ theorem disjoint_cIco_cIco_of_mem_cIoo {a b c : Fin n} (h : b ∈ cIoo a c) :
   rw [mem_cIoo] at h
   split_ifs at h hxab hxbc <;> omega
 
+/-- Of two distinct points of arcs with a common start, one lies in the arc of the other, and the
+other lies strictly between it and the end of that arc. -/
+theorem mem_cIco_and_mem_cIoo_or_mem_cIco_and_mem_cIoo_of_ne {a b c x y : Fin n}
+    (hx : x ∈ cIco a b) (hy : y ∈ cIco a c) (hxy : x ≠ y) :
+    (x ∈ cIco a c ∧ y ∈ cIoo x c) ∨ (y ∈ cIco a b ∧ x ∈ cIoo y b) := by
+  simp only [mem_cIco, mem_cIoo, ne_eq, ← Fin.val_inj] at hx hy hxy ⊢
+  split_ifs at * <;> omega
+
+/-- Of two distinct points of arcs with a common end, one lies strictly between the other and that
+end. -/
+theorem mem_cIoo_or_mem_cIoo_of_ne {a b c x y : Fin n}
+    (hx : x ∈ cIco a c) (hy : y ∈ cIco b c) (hxy : x ≠ y) :
+    y ∈ cIoo x c ∨ x ∈ cIoo y c := by
+  simp only [mem_cIco, mem_cIoo, ne_eq, ← Fin.val_inj] at hx hy hxy ⊢
+  split_ifs at * <;> omega
+
 /-- An interior point cuts a clockwise open arc into two open arcs and the cutting point. -/
 theorem cIoo_union_insert_cIoo_eq_cIoo_of_mem_cIoo {a b c : Fin n} (h : b ∈ cIoo a c) :
     cIoo a b ∪ insert b (cIoo b c) = cIoo a c := by
@@ -521,6 +539,17 @@ theorem ite_mem_cIco_eq_add_add {u w s : Fin n} (hs : s ∈ cIco u w) (t : Fin n
         if t ∈ cIoo s w then 1 else 0 := by
   simp only [mem_cIco, mem_cIoo, ne_eq, ← Fin.val_inj] at hs ⊢
   split_ifs at hs ⊢ <;> omega
+
+/-- Cutting the circle at distinct points `u` and `v` splits the event that `v` lies after `s`
+and at or before `t` into three disjoint cyclic orders. The first two place both `t` and `s`
+on one side of the cut, with `t` before `s`; the third separates them across the cut. -/
+theorem ite_eq_or_mem_cIoo_eq_add_add {u v s t : Fin n} (huv : u ≠ v) (hst : s ≠ t) :
+    (if v = t ∨ v ∈ cIoo s t then 1 else 0 : ℕ) =
+      (if t ∈ cIco u v ∧ s ∈ cIoo t v then 1 else 0) +
+      (if t ∈ cIco v u ∧ s ∈ cIoo t u then 1 else 0) +
+      (if s ∈ cIco u v ∧ t ∈ cIco v u then 1 else 0) := by
+  simp only [mem_cIco, mem_cIoo, Fin.ext_iff] at *
+  split_ifs <;> omega
 
 /-- A point outside the clockwise interval from `a` to `b` is either an endpoint or lies in
 the opposite clockwise interval. -/
@@ -982,6 +1011,13 @@ theorem insert_cIco_subset_cIco {A C s s' : Fin n} (hs : s ∈ cIco A C) (hs' : 
   have hr' : r = s' ∨ r ∈ cIco s s' := Finset.mem_insert.mp hr
   simp only [mem_cIco, mem_cIoo, ne_eq, ← Fin.val_inj] at hs hs' hr' ⊢
   split_ifs at hs hs' hr' ⊢ <;> omega
+
+/-- A point strictly between `s` and an interior point `b` of `cIoo a c`, where `s` lies in the
+initial piece `cIco a b`, also lies strictly between `s` and `c`. -/
+theorem mem_cIoo_of_mem_cIco_of_mem_cIoo {a b c s s' : Fin n} (hb : b ∈ cIoo a c)
+    (hs : s ∈ cIco a b) (hs' : s' ∈ cIoo s b) : s' ∈ cIoo s c := by
+  simp only [mem_cIco, mem_cIoo, ne_eq, ← Fin.val_inj] at hb hs hs' ⊢
+  split_ifs at hb hs hs' ⊢ <;> omega
 
 /-- A point is never in the half-open cyclic interval starting at its own successor.
 Going clockwise from `c + 1`, the point `c` is the last point reached — only after a full

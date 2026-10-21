@@ -72,21 +72,15 @@ theorem exists_isCAD_signInvariant (F : Finset (MvPolynomial (Fin n) ℝ)) :
       Finset.mem_image_of_mem _ hf
     obtain ⟨𝒟, h𝒟, hproj⟩ := ih G.collinsProjection
     -- over each base cell, the stack of a delineation of the fibers of `G`
-    have hstack (C : Set (Fin n → ℝ)) : ∃ (k : ℕ) (θ : Fin k → C → ℝ), C ∈ 𝒟 →
-        IsSemialgebraicStack C θ ∧
-          ∀ E ∈ stackCells C θ, ∀ f ∈ F, SignInvariant (fun y ↦ eval y f) E := by
-      by_cases hC : C ∈ 𝒟
-      · obtain ⟨D⟩ := nonempty_delineation_of_signInvariant_collinsProjection
+    obtain ⟨𝒞, h𝒞, -, hsign⟩ := h𝒟.exists_succ_of_forall_exists_stack
+      (fun E ↦ ∀ f ∈ F, SignInvariant (fun y ↦ eval y f) E) fun C hC ↦ by
+        obtain ⟨D⟩ := nonempty_delineation_of_signInvariant_collinsProjection
           (φ := RingHom.id ℝ) (h𝒟.isConnected hC).isPreconnected fun q hq ↦ by
             simpa only [eval₂_id] using hproj q hq C hC
-        refine ⟨D.count, D.root, fun _ ↦ ⟨D.isSemialgebraicStack (h𝒟.isSemialgebraic hC),
-          fun E hE f hf ↦ ?_⟩⟩
+        refine ⟨D.count, D.root, D.isSemialgebraicStack (h𝒟.isSemialgebraic hC),
+          fun E hE f hf ↦ ?_⟩
         simpa only [eval₂_id] using D.signInvariant_eval₂_of_mem_stackCells (hFG hf) hE
-      · exact ⟨0, Fin.elim0, fun h ↦ (hC h).elim⟩
-    choose k θ hθ using hstack
-    refine ⟨_, .succ k θ h𝒟 fun C hC ↦ (hθ C hC).1, fun f hf E hE ↦ ?_⟩
-    obtain ⟨C, hC, hE⟩ := mem_iUnion₂.1 hE
-    exact (hθ C hC).2 E hE f hf
+    exact ⟨𝒞, h𝒞, fun f hf E hE ↦ hsign E hE f hf⟩
 
 /-- **The Tarski–Seidenberg theorem.** The projection of a semialgebraic subset of `ℝ ^ (n + 1)`
 forgetting the coordinate `0` is semialgebraic. So quantifier elimination, the identification of

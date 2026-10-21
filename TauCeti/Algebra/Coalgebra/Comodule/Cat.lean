@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Semi
+public import Mathlib.CategoryTheory.ConcreteCategory.ReflectsIso
 public import Mathlib.CategoryTheory.Limits.Shapes.ZeroMorphisms
 public import TauCeti.Algebra.Coalgebra.Comodule.Hom
 
@@ -17,10 +18,8 @@ category. For a fixed coalgebra `C` over a commutative semiring `R`, objects are
 `R`-semimodules with a right `C`-coaction and morphisms are the comodule morphisms already
 defined by `Comodule.Hom`.
 
-The reductive-groups roadmap asks for the category of finite-dimensional comodules over a
-Hopf algebra as the representation category of an affine group scheme. This file supplies the
-underlying bundled category and its forgetful functor to `SemimoduleCat`; finiteness, tensor
-products, duals, and the Hopf-algebra specialization can be added on top.
+The file also supplies the forgetful functor to `SemimoduleCat`. Forgetting to types or
+semimodules reflects isomorphisms: a bijective comodule morphism is a comodule isomorphism.
 
 ## Main definitions
 
@@ -31,9 +30,8 @@ products, duals, and the Hopf-algebra specialization can be added on top.
 
 ## References
 
-This is the categorical packaging of the standard right-comodule definition, added for
-Layer 1 of the Tau Ceti reductive-groups roadmap: "Comodules over a coalgebra/Hopf algebra".
-The bundled-category API follows the pattern of `Mathlib.Algebra.Category.CoalgCat.Basic` and
+This is the categorical packaging of the standard right-comodule definition. The bundled-category
+API follows the pattern of `Mathlib.Algebra.Category.CoalgCat.Basic` and
 `Mathlib.LinearAlgebra.QuadraticForm.QuadraticModuleCat`.
 -/
 
@@ -92,6 +90,10 @@ instance category : Category (ComoduleCat.{u, v, w} R C) where
 instance homFunLike (M N : ComoduleCat.{u, v, w} R C) : FunLike (M ⟶ N) M N :=
   inferInstanceAs (FunLike (Comodule.Hom R C M N) M N)
 
+/-- Categorical morphisms inherit the generic linear-map API of comodule morphisms. -/
+instance homLinearMapClass (M N : ComoduleCat.{u, v, w} R C) : LinearMapClass (M ⟶ N) R M N :=
+  inferInstanceAs (LinearMapClass (Comodule.Hom R C M N) R M N)
+
 /-- The zero structure on categorical morphisms is the zero comodule morphism. -/
 instance homZero (M N : ComoduleCat.{u, v, w} R C) : Zero (M ⟶ N) :=
   inferInstanceAs (Zero (Comodule.Hom R C M N))
@@ -101,12 +103,12 @@ instance homAdd (M N : ComoduleCat.{u, v, w} R C) : Add (M ⟶ N) :=
   inferInstanceAs (Add (Comodule.Hom R C M N))
 
 /-- Categorical morphisms reuse pointwise zero evaluation of comodule morphisms. -/
-instance homIsZeroApply (M N : ComoduleCat.{u, v, w} R C) : IsZeroApply (M ⟶ N) M N :=
-  inferInstanceAs (IsZeroApply (Comodule.Hom R C M N) M N)
+instance homIsZeroApply (M N : ComoduleCat.{u, v, w} R C) : IsZeroApply (M ⟶ N) :=
+  inferInstanceAs (IsZeroApply (Comodule.Hom R C M N))
 
 /-- Categorical morphisms reuse pointwise addition evaluation of comodule morphisms. -/
-instance homIsAddApply (M N : ComoduleCat.{u, v, w} R C) : IsAddApply (M ⟶ N) M N :=
-  inferInstanceAs (IsAddApply (Comodule.Hom R C M N) M N)
+instance homIsAddApply (M N : ComoduleCat.{u, v, w} R C) : IsAddApply (M ⟶ N) :=
+  inferInstanceAs (IsAddApply (Comodule.Hom R C M N))
 
 /-- Categorical morphisms form an additive commutative monoid under pointwise operations. -/
 instance homAddCommMonoid (M N : ComoduleCat.{u, v, w} R C) : AddCommMonoid (M ⟶ N) :=
@@ -442,6 +444,18 @@ theorem isoOfLinearEquiv_isoToLinearEquiv {M N : ComoduleCat.{u, v, w} R C} (i :
       (by simp [i.hom.map_coact]) = i := by
   ext m
   rfl
+
+/-- A comodule morphism whose underlying function is an isomorphism is an isomorphism. -/
+instance forget_reflects_isos : (forget (ComoduleCat.{u, v, w} R C)).ReflectsIsomorphisms where
+  reflects {M N} f _ := by
+    let i := asIso ((forget (ComoduleCat.{u, v, w} R C)).map f)
+    let e : M ≃ₗ[R] N := { f.toLinearMap, i.toEquiv with }
+    let j : M ≅ N := isoOfLinearEquiv (R := R) (C := C) e f.map_coact
+    have hj : j.hom = f := by
+      ext m
+      exact isoOfLinearEquiv_hom_apply (R := R) (C := C) e _ m
+    rw [← hj]
+    infer_instance
 
 end ComoduleCat
 

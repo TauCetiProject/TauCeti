@@ -33,8 +33,9 @@ representing morphisms propagates along arrows of `Ell/B` (`RelRepData.rep_mem_o
 (`RelRepData.hasProperty_congr`).
 
 The trivial problem `[Γ(1)]` is the terminal presheaf `𝟙_`, relatively represented by the
-identities of the bases (`RelRepData.tensorUnit`). The simultaneous problem `(𝒫, 𝒬)` is the
-product presheaf `𝒫 ⊗ 𝒬`, relatively represented by the fibre products
+identities of the bases (`RelRepData.tensorUnit`); every problem with exactly one level structure
+on each object is isomorphic to it (`ModuliProblem.isoTensorUnitOfUnique`). The simultaneous
+problem `(𝒫, 𝒬)` is the product presheaf `𝒫 ⊗ 𝒬`, relatively represented by the fibre products
 `𝒫_{E/S} ×_S 𝒬_{E/S}` (`RelRepData.tensor`).
 
 A moduli problem is **rigid** when no automorphism of an elliptic curve `E/S` other than the
@@ -48,14 +49,21 @@ and every problem representable by an object of `Ell/B` is rigid (`isRigid_of_re
 * `TauCeti.AlgebraicGeometry.ModuliProblem.fibre`: the functor `T ↦ 𝒫(E_T/T)` on schemes over the
   base of `E`.
 * `TauCeti.AlgebraicGeometry.ModuliProblem.RelRepData`: relative-representability data.
+* `TauCeti.AlgebraicGeometry.ModuliProblem.RelRepData.universal`: the universal level structure
+  over the representing scheme `𝒫_{E/S}`.
 * `TauCeti.AlgebraicGeometry.ModuliProblem.RelRepData.HasProperty`: a property of morphisms of
   schemes holds for every representing morphism.
 * `TauCeti.AlgebraicGeometry.ModuliProblem.IsRigid`: rigidity.
+* `TauCeti.AlgebraicGeometry.ModuliProblem.isoTensorUnitOfUnique`: a moduli problem with exactly
+  one level structure on every object is the trivial problem `[Γ(1)]`.
 
 ## Main results
 
 * `TauCeti.AlgebraicGeometry.ModuliProblem.RelRepData.isPullback`: for an arrow `(E'/S') ⟶ (E/S)`
   of `Ell/B`, `𝒫_{E'/S'}` is the base change of `𝒫_{E/S}` along `S' ⟶ S`.
+* `TauCeti.AlgebraicGeometry.ModuliProblem.RelRepData.hasProperty_surjective_iff`: a relatively
+  representable problem is surjective over `Ell/B` exactly when every point of the base of every
+  object lies under a scheme over which the base-changed curve carries a level structure.
 * `TauCeti.AlgebraicGeometry.ModuliProblem.RelRepData.tensor` and
   `TauCeti.AlgebraicGeometry.ModuliProblem.RelRepData.HasProperty.tensor`: the simultaneous
   problem of two relatively representable problems is relatively representable, and inherits every
@@ -102,6 +110,17 @@ theorem fibreIso_hom_app (f : X ⟶ Y) (T : (Over X.base)ᵒᵖ) :
     (P.fibreIso f).hom.app T = P.map ((EllObj.baseChangeFunctorIso f).inv.app T.unop).op :=
   (rfl)
 
+/-- **A moduli problem with exactly one level structure on every object is trivial**: if `𝒫(E/S)`
+has exactly one element for every object `(E/S)` of `Ell/B`, then `𝒫` is the trivial moduli
+problem `[Γ(1)]`, the terminal presheaf `𝟙_`. -/
+noncomputable def isoTensorUnitOfUnique [∀ X, Unique (P.obj X)] : P ≅ 𝟙_ (ModuliProblem B) where
+  hom := toUnit _
+  inv :=
+    { app X := TypeCat.ofHom fun _ ↦ default
+      naturality _ _ _ := by ext; exact Subsingleton.elim _ _ }
+  hom_inv_id := by ext; exact Subsingleton.elim _ _
+  inv_hom_id := toUnit_unique _ _
+
 /-- **Relative-representability data** for a moduli problem `𝒫` (Katz–Mazur 4.2): for every
 object `X = (E/S)` of `Ell/B`, a scheme `rep X = 𝒫_{E/S}` over `S` representing the fibre
 `T ↦ 𝒫(E_T/T)`. -/
@@ -114,6 +133,19 @@ structure RelRepData where
 namespace RelRepData
 
 variable {P Q} (D : P.RelRepData)
+
+/-- The **universal level structure** of a relatively representable moduli problem `𝒫` over an
+object `X = (E/S)` of `Ell/B`: the `𝒫`-structure on the base change of `E` to the representing
+scheme `𝒫_{E/S}` which corresponds to the identity of `𝒫_{E/S}`. Every level structure on a base
+change of `E` is pulled back from it (`Functor.RepresentableBy.homEquiv_eq` together with
+`RelRepData.representableBy_homEquiv_id`). -/
+noncomputable def universal (X : EllObj B) : P.obj (op (X.baseChangeFunctor.obj (D.rep X))) :=
+  (D.representableBy X).homEquiv (𝟙 (D.rep X))
+
+/-- The universal level structure corresponds to the identity of the representing scheme. -/
+theorem representableBy_homEquiv_id (X : EllObj B) :
+    (D.representableBy X).homEquiv (𝟙 (D.rep X)) = D.universal X :=
+  (rfl)
 
 /-- Along an arrow `f : X ⟶ Y` of `Ell/B`, the base change of the representing scheme over `Y`
 along `f.base` represents the fibre of the problem over `X`. -/
@@ -168,6 +200,36 @@ theorem hasProperty_congr (D' : P.RelRepData) (W : MorphismProperty Scheme.{u}) 
   refine forall_congr' fun X ↦ ?_
   let e := (D.representableBy X).uniqueUpToIso (D'.representableBy X)
   rw [← Over.w e.hom, W.cancel_left_of_respectsIso]
+
+/-- Transport relative-representability data along an isomorphism of moduli problems. -/
+noncomputable def ofIso (D : P.RelRepData) (e : P ≅ Q) : Q.RelRepData where
+  rep X := D.rep X
+  representableBy X :=
+    (D.representableBy X).ofIso (Functor.isoWhiskerLeft X.baseChangeFunctor.op e)
+
+@[simp]
+theorem ofIso_rep (D : P.RelRepData) (e : P ≅ Q) (X : EllObj B) :
+    (D.ofIso e).rep X = D.rep X :=
+  (rfl)
+
+/-- Isomorphic moduli problems have the same isomorphism-invariant properties of representing
+morphisms. -/
+theorem hasProperty_iff_of_iso (D : P.RelRepData) (D' : Q.RelRepData) (e : P ≅ Q)
+    (W : MorphismProperty Scheme.{u}) [W.RespectsIso] :
+    D.HasProperty W ↔ D'.HasProperty W :=
+  (D.ofIso e).hasProperty_congr D' W
+
+/-- **Surjectivity over `Ell/B`.** A relatively representable moduli problem `𝒫` is surjective
+over `Ell/B`, that is, every representing morphism `𝒫_{E/S} ⟶ S` is surjective, exactly when every
+point `s` of the base of every object `(E/S)` lies in the image of a scheme `T` over `S` such that
+the base change `E_T` carries a `𝒫`-structure. -/
+theorem hasProperty_surjective_iff :
+    D.HasProperty @Surjective ↔ ∀ (X : EllObj B) (s : X.base), ∃ T : Over X.base,
+      s ∈ Set.range T.hom ∧ Nonempty (P.obj (op (X.baseChangeFunctor.obj T))) := by
+  refine ⟨fun h X s ↦ ⟨D.rep X, (h X).surj s, ⟨D.universal X⟩⟩, fun h X ↦ ⟨fun s ↦ ?_⟩⟩
+  obtain ⟨T, ⟨p, rfl⟩, ⟨α⟩⟩ := h X s
+  let u := (D.representableBy X).homEquiv.symm α
+  exact ⟨u.left p, by rw [← Scheme.Hom.comp_apply, Over.w u]⟩
 
 variable (B) in
 /-- The trivial moduli problem `[Γ(1)]`, the terminal presheaf `𝟙_` on `Ell/B`, is relatively

@@ -47,6 +47,17 @@ theorem rootGeneratorWeight_inr (i j : Fin 6) :
     rootGeneratorWeight (.inr i) j = -CartanMatrix.E 6 i j := by
   rw [rootGeneratorWeight]
 
+/-- A signed simple-root character of type `E₆` is nonzero: its value at its own node is `±2`. -/
+theorem rootGeneratorWeight_ne_zero (k : Fin 6 ⊕ Fin 6) : rootGeneratorWeight k ≠ 0 := by
+  intro h
+  rcases k with i | i
+  · have hi := congrFun h i
+    rw [rootGeneratorWeight_inl, CartanMatrix.E_diag, Pi.zero_apply] at hi
+    exact two_ne_zero hi
+  · have hi := congrFun h i
+    rw [rootGeneratorWeight_inr, CartanMatrix.E_diag, Pi.zero_apply] at hi
+    exact two_ne_zero (neg_eq_zero.mp hi)
+
 private def cartanNeighbor : Fin 6 → Fin 6 :=
   ![2, 3, 0, 1, 3, 4]
 

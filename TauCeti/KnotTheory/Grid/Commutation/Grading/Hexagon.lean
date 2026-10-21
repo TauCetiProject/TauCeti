@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Commutation.Hexagon
-public import TauCeti.KnotTheory.Grid.Grading.UnblockedChain
+public import TauCeti.KnotTheory.Grid.Grading.Unblocked.Chain
 import Mathlib.Tactic.Linarith
 
 /-!

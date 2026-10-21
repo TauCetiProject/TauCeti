@@ -170,32 +170,10 @@ theorem mul_assoc {p q r : ℕ} (a : NormalizedCubicalChain G R p) (b : Normaliz
     (c : NormalizedCubicalChain G R r) :
     cast R (Nat.add_assoc p q r) (mul G R (p + q) r (mul G R p q a b) c) =
       mul G R p (q + r) a (mul G R q r b c) := by
-  have hZ := crossProduct_assoc R a b c
-  -- `a × (b × c)` is the reindexed push-forward of `(a × b) × c` along the associator.
-  have hW : crossProduct G (G × G) R p (q + r) a (crossProduct G G R q r b c) =
-      cast R (Nat.add_assoc p q r)
-        (map R (Homeomorph.prodAssoc G G G : C((G × G) × G, G × G × G)) (p + q + r)
-          (crossProduct (G × G) G R (p + q) r (crossProduct G G R p q a b) c)) := by
-    rw [hZ, cast_cast, cast_rfl]
-  have key : (mulMap G).comp ((mulMap G).prodMap (ContinuousMap.id G)) =
-      (mulMap G).comp (((ContinuousMap.id G).prodMap (mulMap G)).comp
-        (Homeomorph.prodAssoc G G G : C((G × G) × G, G × G × G))) := by
-    ext x
-    simp [_root_.mul_assoc, Homeomorph.prodAssoc, Equiv.prodAssoc]
-  -- Push the inner products out of the cross products.
-  have hl : crossProduct G G R (p + q) r (map R (mulMap G) (p + q) (crossProduct G G R p q a b)) c =
-      map R ((mulMap G).prodMap (ContinuousMap.id G)) (p + q + r)
-        (crossProduct (G × G) G R (p + q) r (crossProduct G G R p q a b) c) := by
-    rw [map_crossProduct, map_id, LinearMap.id_apply]
-  have hr : crossProduct G G R p (q + r) a (map R (mulMap G) (q + r) (crossProduct G G R q r b c)) =
-      map R ((ContinuousMap.id G).prodMap (mulMap G)) (p + (q + r))
-        (crossProduct G (G × G) R p (q + r) a (crossProduct G G R q r b c)) := by
-    rw [map_crossProduct, map_id, LinearMap.id_apply]
   simp only [mul_def]
-  rw [hl, hr, hW, map_cast, map_cast]
-  congr 1
-  rw [← LinearMap.comp_apply (map R (mulMap G) (p + q + r)), ← map_comp, key, map_comp, map_comp,
-    LinearMap.comp_apply, LinearMap.comp_apply]
+  refine map_crossProduct_map_assoc R ?_ a b c
+  ext x
+  simp [_root_.mul_assoc, Homeomorph.prodAssoc, Equiv.prodAssoc]
 
 end Semigroup
 

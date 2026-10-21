@@ -48,9 +48,8 @@ ordinary zigzag relation ideal, so the two presentations agree there.
 
 ## References
 
-This is the scalar-labelled/skew-zigzag definition clause of Layer 1 of
-`TauCetiRoadmap/ZigzagPreprojective/README.md`.  See C. Couture, *Skew-Zigzag Algebras*,
-Definition 3.1 and Definition 3.2, https://arxiv.org/abs/1509.08405.
+See C. Couture, *Skew-Zigzag Algebras*, Definition 3.1 and Definition 3.2,
+https://arxiv.org/abs/1509.08405.
 -/
 
 public section

@@ -24,11 +24,6 @@ The identification is built by sending a central element to its coefficient func
 `TauCeti.ClassFunction`, and composing with the equivalence
 `TauCeti.ClassFunction.equivConjClasses`, so the descent to the quotient and its linearity are
 reused rather than repeated here.
-
-This implementation follows the
-[Character Theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md)
-and its
-[suggested declarations](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/Suggested.lean).
 -/
 
 public section

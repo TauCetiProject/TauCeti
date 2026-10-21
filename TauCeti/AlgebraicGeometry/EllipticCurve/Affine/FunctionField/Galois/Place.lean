@@ -92,10 +92,6 @@ theorem placeGaloisAction_infinity (σ : K ≃ₐ[F] K) :
 
 variable [DecidableEq K] [W.IsElliptic]
 
-local instance : IsDedekindDomain (W⁄K).toAffine.CoordinateRing :=
-  have := Affine.isIntegrallyClosed_coordinateRing (W⁄K).toAffine
-  (W⁄K).toAffine.isDedekindDomain_coordinateRing_of_isIntegrallyClosed
-
 /-- **The point–place dictionary is Galois-equivariant.** Conjugating a point conjugates its
 place by the semilinear function-field action. -/
 @[simp]

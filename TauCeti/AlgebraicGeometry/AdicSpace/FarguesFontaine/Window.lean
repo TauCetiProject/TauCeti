@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.FarguesFontaine.Y
-import Mathlib.Data.Int.LeastGreatest
+import Mathlib.Order.Int.LeastGreatest
 import TauCeti.Algebra.Order.GroupWithZero.Pow
 import TauCeti.Data.NNRat.CommonDenominator
 import TauCeti.RingTheory.Huber.Adic

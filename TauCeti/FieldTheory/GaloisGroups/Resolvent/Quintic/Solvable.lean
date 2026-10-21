@@ -78,7 +78,7 @@ the polynomial Galois group is solvable if and only if that resolvent has a root
 field. -/
 theorem isSolvable_gal_iff_exists_isRoot_specialize_quinticF20Spec (hf : f.Monic)
     (hsep : f.Separable) (hirr : Irreducible f) (hdeg : f.natDegree = 5)
-    (hres : (quinticF20Spec.specialize F f).Separable) :
+    (hres : ResolventSeparationEvidence quinticF20Spec f) :
     Group.IsSolvable f.Gal ↔
       ∃ a : F, (quinticF20Spec.specialize F f).IsRoot a := by
   refine ⟨exists_isRoot_specialize_quinticF20Spec_of_isSolvable hf hsep hirr hdeg,

@@ -271,8 +271,8 @@ polynomial**, `s_{(1ⁿ)} = e_n`. -/
 @[simp]
 theorem schurPoly_ones (n : ℕ) : schurPoly σ R (Nat.Partition.ones n) = esymm σ R n := by
   rw [schurPoly_eq_rename,
-    diagramSchurPoly_eq_esymm_of_rowLen_le_one (rowLen_diagramOf_ones_le_one n 0),
-    card_diagramOf, rename_esymm]
+    diagramSchurPoly_eq_esymm_of_rowLen_le_one (YoungDiagram.rowLen_ofPartition_ones_le_one n 0),
+    YoungDiagram.card_ofPartition, rename_esymm]
 
 end Partition
 

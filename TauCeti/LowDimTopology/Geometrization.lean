@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.FundamentalGroup.Incompressible
 public import TauCeti.Geometry.Manifold.Irreducible
-public import TauCeti.Geometry.Manifold.Orientation
+public import TauCeti.Geometry.Manifold.Orientation.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.FiniteVolume
 public import TauCeti.LowDimTopology.SeifertFibration
 
@@ -143,7 +143,7 @@ torus decomposition: finitely many disjoint locally flat incompressible tori who
 Seifert-fibred and finite-volume hyperbolic components. -/
 def GeometrizationConjecture : Prop :=
   ∀ (M : Type u) [MetricSpace M] [ChartedSpace (EuclideanSpace ℝ (Fin 3)) M]
-    [IsManifold (𝓡 3) ∞ M] [CompactSpace M] [ConnectedSpace M] [Orientable (𝓡 3) ∞ M],
+    [IsManifold (𝓡 3) ∞ M] [CompactSpace M] [ConnectedSpace M] [Orientable (𝓡 3) M],
     IsSphereBoundsBall M →
       ∃ (n : ℕ) (T : Fin n → C(Circle × Circle, M)), IsGeometricTorusDecomposition T
 
@@ -152,7 +152,7 @@ def GeometrizationConjecture : Prop :=
 theorem GeometrizationConjecture.exists_isGeometricTorusDecomposition
     (h : GeometrizationConjecture.{u}) (M : Type u) [MetricSpace M]
     [ChartedSpace (EuclideanSpace ℝ (Fin 3)) M] [IsManifold (𝓡 3) ∞ M] [CompactSpace M]
-    [ConnectedSpace M] [Orientable (𝓡 3) ∞ M] (hM : IsSphereBoundsBall M) :
+    [ConnectedSpace M] [Orientable (𝓡 3) M] (hM : IsSphereBoundsBall M) :
     ∃ (n : ℕ) (T : Fin n → C(Circle × Circle, M)), IsGeometricTorusDecomposition T :=
   h M hM
 
@@ -160,7 +160,7 @@ theorem GeometrizationConjecture.exists_isGeometricTorusDecomposition
 theorem geometrizationConjecture_iff :
     GeometrizationConjecture.{u} ↔
       ∀ (M : Type u) [MetricSpace M] [ChartedSpace (EuclideanSpace ℝ (Fin 3)) M]
-        [IsManifold (𝓡 3) ∞ M] [CompactSpace M] [ConnectedSpace M] [Orientable (𝓡 3) ∞ M],
+        [IsManifold (𝓡 3) ∞ M] [CompactSpace M] [ConnectedSpace M] [Orientable (𝓡 3) M],
         IsSphereBoundsBall M →
           ∃ (n : ℕ) (T : Fin n → C(Circle × Circle, M)), IsGeometricTorusDecomposition T :=
   Iff.rfl

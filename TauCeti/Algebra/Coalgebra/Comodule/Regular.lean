@@ -19,10 +19,6 @@ This file packages the regular right comodule of a coalgebra as a bundled object
 the rank-one free module `R` into the regular comodule, and multiplication of a bialgebra
 as a morphism from the tensor square of its regular comodule.
 
-This is Layer 1 infrastructure for the Tau Ceti reductive-groups roadmap target
-"Comodules over a coalgebra/Hopf algebra", specifically the regular-representation part of
-the finitely generated comodule category.
-
 ## Main definitions
 
 * `TauCeti.ComoduleCat.regular`: the bundled regular right comodule.

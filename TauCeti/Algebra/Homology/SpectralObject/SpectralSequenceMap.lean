@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.SpectralObject.Map
 public import Mathlib.Algebra.Homology.SpectralObject.SpectralSequence
-public import TauCeti.Algebra.Homology.HomologicalComplex
+public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 public import TauCeti.Algebra.Homology.ShortComplex.LeftHomology
 -- The statement of `SpectralObject.spectralSequence_iso` refers to private auxiliary proofs of
 -- this file, so that it may only be used with access to its private declarations.

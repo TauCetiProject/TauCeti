@@ -346,7 +346,8 @@ quotient is the coboundary of the difference of the sections, which is continuou
 theorem isContCohomologous_factorSet (hσc : Continuous ⇑σ) (hσ'c : Continuous ⇑σ') :
     FactorSet.IsContCohomologous (factorSet σ hσ hact) (factorSet σ' hσ' hact) :=
   (FactorSet.isContCohomologous_iff _ _).2 ⟨sectionDiff σ σ', continuous_sectionDiff hinl hσc hσ'c,
-    fun g h => (factorSet_div_factorSet σ σ' hσ hσ' hact g h).symm⟩
+    fun g h => by
+      simpa only [coe_factorSet] using (σ.factorSetFun_div_factorSetFun σ' hact g h).symm⟩
 
 /-- **The class of the factor set of a continuous normalized section does not depend on the
 section**, so it is an invariant of the extension. -/
@@ -723,13 +724,12 @@ end Map
 
 section Lift
 
-omit [IsTopologicalGroup M]
-
 variable [IsTopologicalGroup G] [CompactSpace G] [TotallyDisconnectedSpace G] [CompactSpace M]
   {N : Type*} [CommGroup N] [TopologicalSpace N] [IsTopologicalGroup N] [MulDistribMulAction G N]
   [ContinuousSMul G N] [CompactSpace N] [TotallyDisconnectedSpace N]
   (X : ProfiniteGroupExtension G M) (f : M →*[G] N) (hf : Continuous f)
 
+omit [IsTopologicalGroup M] in
 /-- **The canonical homomorphism from a profinite extension to its pushforward**,
 `X.E → (X.map f hf).E`: identify `X.E` with the twisted product of the factor set of its chosen
 section, by the inverse of `TauCeti.GroupExtension.factorSetToGroupExtensionEquiv`, and apply `f`
@@ -746,12 +746,14 @@ noncomputable def mapHom : X.E →* (X.map f hf).E :=
 -- The bodies of `map` and `mapHom` are visible only inside this module, so the two unfolding
 -- lemmas that the properties of `mapHom` rewrite with are private to it.
 
+omit [IsTopologicalGroup M] in
 private theorem map_toGroupExtension :
     (X.map f hf).toGroupExtension =
       ((GroupExtension.factorSet X.continuousSection X.continuousSection_one
         X.inducesAction).map f).groupExtension :=
   (rfl)
 
+omit [IsTopologicalGroup M] in
 private theorem mapHom_apply (x : X.E) :
     X.mapHom f hf x = (GroupExtension.factorSet X.continuousSection X.continuousSection_one
       X.inducesAction).mapExtension f
@@ -759,6 +761,7 @@ private theorem mapHom_apply (x : X.E) :
           X.continuousSection_one X.inducesAction).symm x) :=
   (rfl)
 
+omit [IsTopologicalGroup M] in
 theorem continuous_mapHom : Continuous (X.mapHom f hf) :=
   (FactorSet.continuous_mapExtension _ f hf).comp
     (GroupExtension.continuous_factorSetToGroupExtensionEquiv_symm
@@ -766,6 +769,7 @@ theorem continuous_mapHom : Continuous (X.mapHom f hf) :=
       X.continuous_rightHom X.continuous_continuousSection X.continuousSection_one
       X.inducesAction)
 
+omit [IsTopologicalGroup M] in
 /-- The canonical homomorphism to the pushforward restricts to `f` on the kernels. -/
 @[simp]
 theorem mapHom_inl (m : M) :
@@ -774,6 +778,7 @@ theorem mapHom_inl (m : M) :
     FactorSet.groupExtension_inl, FactorSet.groupExtension_inl]
   exact DFunLike.congr_fun (FactorSet.mapExtension_comp_inl _ f) m
 
+omit [IsTopologicalGroup M] in
 /-- The canonical homomorphism to the pushforward covers the identity of `G`. -/
 @[simp]
 theorem rightHom_mapHom (x : X.E) :
@@ -783,17 +788,20 @@ theorem rightHom_mapHom (x : X.E) :
       X.inducesAction).symm x, FactorSet.groupExtension_rightHom, FactorSet.groupExtension_rightHom]
   exact DFunLike.congr_fun (FactorSet.rightHom_comp_mapExtension _ f) _
 
+omit [IsTopologicalGroup M] in
 theorem mapHom_comp_inl :
     (X.mapHom f hf).comp X.toGroupExtension.inl =
       (X.map f hf).toGroupExtension.inl.comp f.toMonoidHom :=
   MonoidHom.ext fun m => X.mapHom_inl f hf m
 
+omit [IsTopologicalGroup M] in
 theorem rightHom_comp_mapHom :
     (X.map f hf).toGroupExtension.rightHom.comp (X.mapHom f hf) = X.toGroupExtension.rightHom :=
   MonoidHom.ext fun x => X.rightHom_mapHom f hf x
 
 variable (Y : ProfiniteGroupExtension G N)
 
+omit [IsTopologicalGroup M] in
 /-- **Lifting a coefficient map along the class** (Neukirch–Schmidt–Wingberg, I §5 Exercise 4,
 at `ϕ = id`). Let `X` be a profinite extension of `G` by `M` and `Y` one by `N`. If the
 continuous equivariant `f : M → N` carries the class of `X` to the class of `Y`, then `f` is the
@@ -816,6 +824,7 @@ theorem exists_continuous_monoidHom_of_contCohomologyClass_map_eq
   · ext x
     simp
 
+omit [IsTopologicalGroup M] in
 /-- **The converse of the lifting lemma.** A continuous homomorphism `φ : X.E → Y.E` over the
 identity of `G` that restricts to the continuous equivariant `f` on the kernels carries the class
 of `X` to the class of `Y`. The forward direction is

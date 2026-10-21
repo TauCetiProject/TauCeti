@@ -214,7 +214,7 @@ private theorem spinThreeEquivMatrix_positiveRoot
   simp only [spinThreeEquivMatrix, AlgEquiv.trans_apply, P.evenCliffordEquivEnd_apply]
   refine bas.ext fun i => ?_
   rcases finTwo_eq_vacuum_or_occupied i with rfl | rfl
-  · rw [TauCeti.toLinAlgEquiv_single_apply_basis]
+  · rw [Module.Basis.toLinAlgEquiv_single_apply_basis]
     simp only [ite_eq_left, one_smul]
     have h := P.typeBSpinRep_simpleRootGenerator_last_exteriorBasis_empty b z hz hcoord
     simp only [typeBSimpleRootGeneratorFamily_inl, typeBSimpleRootGenerator_last,
@@ -223,7 +223,7 @@ private theorem spinThreeEquivMatrix_positiveRoot
     simpa only [Matrix.toLinAlgEquiv_toMatrixAlgEquiv, bas,
       spinThreeExteriorBasis_vacuum, spinThreeExteriorBasis_occupied,
       coe_evenBivector, Fin.last_zero] using h
-  · rw [TauCeti.toLinAlgEquiv_single_apply_basis]
+  · rw [Module.Basis.toLinAlgEquiv_single_apply_basis]
     simp only [ite_eq_right vacuumIndex_ne_occupiedIndex, zero_smul]
     simpa only [Matrix.toLinAlgEquiv_toMatrixAlgEquiv, bas,
       spinThreeExteriorBasis_occupied, coe_evenBivector] using
@@ -242,12 +242,12 @@ private theorem spinThreeEquivMatrix_negativeRoot
   simp only [spinThreeEquivMatrix, AlgEquiv.trans_apply, P.evenCliffordEquivEnd_apply]
   refine bas.ext fun i => ?_
   rcases finTwo_eq_vacuum_or_occupied i with rfl | rfl
-  · rw [TauCeti.toLinAlgEquiv_single_apply_basis]
+  · rw [Module.Basis.toLinAlgEquiv_single_apply_basis]
     simp only [ite_eq_right vacuumIndex_ne_occupiedIndex.symm, zero_smul]
     simpa only [Matrix.toLinAlgEquiv_toMatrixAlgEquiv, bas,
       spinThreeExteriorBasis_vacuum, coe_evenBivector] using
       spinAction_negativeRoot_empty P b z
-  · rw [TauCeti.toLinAlgEquiv_single_apply_basis]
+  · rw [Module.Basis.toLinAlgEquiv_single_apply_basis]
     simp only [ite_eq_left, one_smul]
     have h := P.typeBSpinRep_simpleNegativeRootGenerator_last_exteriorBasis_singleton
       b z hz hcoord

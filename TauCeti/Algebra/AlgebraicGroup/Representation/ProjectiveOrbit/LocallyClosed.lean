@@ -25,7 +25,8 @@ The argument combines `isConstructible_range_projectiveOrbitMap`,
 `range_projectiveOrbitMap_kernelPoint_eq_range_inter_closedPoints`, translation invariance,
 and `isLocallyClosed_of_isConstructible_of_closedPoints_transitive`. Rational translations
 are transitive on the closed points of the image, even though they need not be transitive
-on all its points.
+on all its points. Consequently the boundary `closure O \ O` of the orbit `O` is closed
+(`TauCeti.Comodule.isClosed_closure_diff_range_projectiveOrbitMap`).
 
 ## References
 
@@ -76,5 +77,12 @@ theorem isLocallyClosed_range_projectiveOrbitMap (m : M) (hm : Module.IsUnimodul
       image_projectivePointTranslation_range_projectiveOrbitMap g⁻¹ m hm
   · intro x hx y hy
     exact exists_smul_eq_of_mem_range_projectiveOrbitMap_inter_closedPoints m hm hx hy
+
+/-- The boundary `closure O \ O` of the orbit `O` of a line is closed, because the orbit is
+locally closed. -/
+theorem isClosed_closure_diff_range_projectiveOrbitMap (m : M) (hm : Module.IsUnimodular k m) :
+    IsClosed (closure (Set.range (projectiveOrbitMap (H := H) m hm)) \
+      Set.range (projectiveOrbitMap (H := H) m hm)) :=
+  isOpen_compl_iff.mp (isLocallyClosed_range_projectiveOrbitMap (H := H) m hm).isOpen_coborder
 
 end TauCeti.Comodule

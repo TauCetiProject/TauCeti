@@ -16,7 +16,7 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Frobenius.Torsion
 -- Proof-only: `deg (1 - π) = #E(𝔽_q)`.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.OneSubFrobenius.Degree
 -- Proof-only: the determinant of the pencil `r • M - s • 1` of a `2 × 2` matrix.
-import TauCeti.LinearAlgebra.Matrix.CharpolyFinTwo
+import TauCeti.LinearAlgebra.Matrix.Charpoly.FinTwo
 -- Proof-only: the Cayley–Hamilton recurrence for traces of powers of a `2 × 2` matrix.
 import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
 

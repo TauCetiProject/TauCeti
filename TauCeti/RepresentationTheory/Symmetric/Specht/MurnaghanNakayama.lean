@@ -36,6 +36,7 @@ public section
 
 namespace TauCeti
 
+open YoungDiagram (ofPartition)
 open Finset MvPolynomial
 
 open scoped Classical in
@@ -45,8 +46,8 @@ signed sum over the shapes obtained by removing a rim hook of size `r` from `μ`
 theorem spechtCharValue_eq_sum_rimHook {n m r : ℕ} (μ ρ : n.Partition)
     (ν : m.Partition) (hρ : ρ.parts = r ::ₘ ν.parts) :
     spechtCharValue μ ρ =
-      ∑ τ : m.Partition with (diagramOf μ).IsRimHook (diagramOf τ),
-        (-1) ^ (diagramOf μ).rimHookHeight (diagramOf τ) * spechtCharValue τ ν := by
+      ∑ τ : m.Partition with (ofPartition μ).IsRimHook (ofPartition τ),
+        (-1) ^ (ofPartition μ).rimHookHeight (ofPartition τ) * spechtCharValue τ ν := by
   classical
   have hr : 0 < r := ρ.parts_pos (by simp [hρ])
   have hn : n = m + r := by
@@ -60,8 +61,8 @@ theorem spechtCharValue_eq_sum_rimHook {n m r : ℕ} (μ ρ : n.Partition)
       (∑ η : (m + r).Partition,
         spechtCharValue η ρ • schurPoly (Fin (m + r)) ℤ η) =
       ∑ η : (m + r).Partition,
-        (∑ τ : m.Partition with (diagramOf η).IsRimHook (diagramOf τ),
-          (-1) ^ (diagramOf η).rimHookHeight (diagramOf τ) * spechtCharValue τ ν) •
+        (∑ τ : m.Partition with (ofPartition η).IsRimHook (ofPartition τ),
+          (-1) ^ (ofPartition η).rimHookHeight (ofPartition τ) * spechtCharValue τ ν) •
             schurPoly (Fin (m + r)) ℤ η := by
     rw [← psumPart_eq_sum_spechtCharValue_smul_schurPoly, hp,
       psumPart_eq_sum_spechtCharValue_smul_schurPoly, mul_sum]
@@ -83,8 +84,8 @@ compute the character by signed rim-hook removal. Repeated parts are removed one
 theorem spechtCharValue_eq_sum_rimHook_removePart {n r : ℕ} (μ ρ : n.Partition)
     (hρ : r ∈ ρ.parts) :
     spechtCharValue μ ρ =
-      ∑ τ : (n - r).Partition with (diagramOf μ).IsRimHook (diagramOf τ),
-        (-1) ^ (diagramOf μ).rimHookHeight (diagramOf τ) *
+      ∑ τ : (n - r).Partition with (ofPartition μ).IsRimHook (ofPartition τ),
+        (-1) ^ (ofPartition μ).rimHookHeight (ofPartition τ) *
           spechtCharValue τ (Nat.Partition.partitionWithPartEquiv
             (Nat.succ_le_of_lt (ρ.parts_pos hρ)) (Nat.Partition.le_of_mem_parts hρ) ⟨ρ, hρ⟩) := by
   apply spechtCharValue_eq_sum_rimHook (r := r) μ ρ _
@@ -98,8 +99,8 @@ theorem spechtChar_eq_sum_rimHook {n m r : ℕ} (μ : n.Partition)
     (π : Equiv.Perm (Fin n)) (π' : Equiv.Perm (Fin m))
     (hπ : π.partition.parts = r ::ₘ π'.partition.parts) :
     spechtChar μ π =
-      ∑ τ : m.Partition with (diagramOf μ).IsRimHook (diagramOf τ),
-        (-1) ^ (diagramOf μ).rimHookHeight (diagramOf τ) * spechtChar τ π' := by
+      ∑ τ : m.Partition with (ofPartition μ).IsRimHook (ofPartition τ),
+        (-1) ^ (ofPartition μ).rimHookHeight (ofPartition τ) * spechtChar τ π' := by
   simp_rw [spechtChar_eq_value]
   apply spechtCharValue_eq_sum_rimHook (r := r) _ _ _
   simpa only [parts_partitionEquivConjClasses_symm_mk] using hπ

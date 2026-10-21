@@ -7,6 +7,8 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Action
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Generators
+public import TauCeti.LinearAlgebra.QuadraticForm.Representation
 
 /-!
 # Functoriality of Lipschitz groups
@@ -21,6 +23,9 @@ a homomorphism, and its action on vectors is natural with respect to that isomet
   to the Lipschitz groups.
 * `QuadraticMap.Isometry.lipschitzGroupMap` is the homomorphism induced on Lipschitz groups.
 * `QuadraticMap.IsometryEquiv.lipschitzGroupEquiv` is the equivalence induced on Lipschitz groups.
+* `QuadraticMap.Isometry.lipschitzGroupMap_unitι` and
+  `QuadraticMap.Isometry.lipschitzGroupMap_scalarUnits` show that the distinguished vector and
+  scalar units are natural under quadratic isometries.
 * `QuadraticMap.Isometry.map_lipschitzVectorAction` proves naturality of the Lipschitz action.
 * `QuadraticMap.IsometryEquiv.orthogonalGroupCongr_lipschitzToOrthogonal` packages that result as
   an equality of orthogonal-group homomorphisms.
@@ -132,6 +137,54 @@ theorem map_lipschitzGroup_inv_coe (f : Q₁ →qᵢ Q₂) (x : lipschitzGroup Q
   CliffordAlgebra.lipschitzGroupMapOf_inv_coe (CliffordAlgebra.map f).toRingHom f
     (CliffordAlgebra.map_apply_ι f) x
 
+/-! ### Naturality of the distinguished units -/
+
+/-- A quadratic isometry maps the Clifford unit represented by a vector to the unit represented
+by its image. -/
+@[simp]
+theorem map_unitι (f : Q₁ →qᵢ Q₂) (v : M₁) [Invertible (Q₁ v)] :
+    let _ : Invertible (Q₂ (f v)) := (f.map_app v).symm ▸ inferInstance
+    Units.map (CliffordAlgebra.map f) (CliffordAlgebra.unitι Q₁ v) =
+      CliffordAlgebra.unitι Q₂ (f v) := by
+  let _ : Invertible (Q₂ (f v)) := (f.map_app v).symm ▸ inferInstance
+  apply Units.ext
+  rw [Units.coe_map, CliffordAlgebra.coe_unitι, CliffordAlgebra.coe_unitι]
+  exact CliffordAlgebra.map_apply_ι f v
+
+/-- The Lipschitz-group map induced by a quadratic isometry preserves the distinguished vector
+units. -/
+@[simp]
+theorem lipschitzGroupMap_unitι (f : Q₁ →qᵢ Q₂) (v : M₁) [Invertible (Q₁ v)] :
+    let _ : Invertible (Q₂ (f v)) := (f.map_app v).symm ▸ inferInstance
+    f.lipschitzGroupMap
+        ⟨CliffordAlgebra.unitι Q₁ v, CliffordAlgebra.unitι_mem_lipschitzGroup v⟩ =
+      ⟨CliffordAlgebra.unitι Q₂ (f v), CliffordAlgebra.unitι_mem_lipschitzGroup (f v)⟩ := by
+  let _ : Invertible (Q₂ (f v)) := (f.map_app v).symm ▸ inferInstance
+  apply Subtype.ext
+  exact f.map_unitι v
+
+/-- The Lipschitz-group map induced by a quadratic isometry preserves scalar units. -/
+@[simp]
+theorem lipschitzGroupMap_scalarUnits (f : Q₁ →qᵢ Q₂)
+    (hQ₁ : ∃ v, IsUnit (Q₁ v)) (a : Rˣ) :
+    f.lipschitzGroupMap (CliffordAlgebra.scalarUnits Q₁ hQ₁ a) =
+      CliffordAlgebra.scalarUnits Q₂ (f.exists_isUnit_apply hQ₁) a := by
+  apply Subtype.ext
+  apply Units.ext
+  rw [coe_lipschitzGroupMap_apply, CliffordAlgebra.coe_scalarUnits,
+    CliffordAlgebra.coe_scalarUnits]
+  exact (CliffordAlgebra.map f).commutes (a : R)
+
+/-- Mapping scalar units into a target Lipschitz group commutes with the scalar-unit
+homomorphisms. -/
+theorem lipschitzGroupMap_comp_scalarUnits (f : Q₁ →qᵢ Q₂)
+    (hQ₁ : ∃ v, IsUnit (Q₁ v)) :
+    f.lipschitzGroupMap.comp (CliffordAlgebra.scalarUnits Q₁ hQ₁) =
+      CliffordAlgebra.scalarUnits Q₂ (f.exists_isUnit_apply hQ₁) := by
+  apply MonoidHom.ext
+  intro a
+  exact f.lipschitzGroupMap_scalarUnits hQ₁ a
+
 -- The functoriality and equivalence API below adapts the corresponding Spin-group interface in
 -- `TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Map`.
 
@@ -210,6 +263,26 @@ theorem lipschitzGroupEquiv_symm (e : Q₁.IsometryEquiv Q₂) :
     e.lipschitzGroupEquiv.symm = e.symm.lipschitzGroupEquiv := by
   ext x
   rfl
+
+/-- The Lipschitz equivalence induced by an isometric equivalence preserves the distinguished
+vector units.
+
+This has high simplifier priority so it fires before `lipschitzGroupEquiv_apply`; after that
+general evaluation rule, the opaque `unitι` retains the spelling `e.toIsometry v` rather than
+the canonical `e v`. -/
+@[simp high]
+theorem lipschitzGroupEquiv_unitι (e : Q₁.IsometryEquiv Q₂) (v : M₁) [Invertible (Q₁ v)] :
+    let _ : Invertible (Q₂ (e v)) := (e.map_app v).symm ▸ inferInstance
+    e.lipschitzGroupEquiv
+        ⟨CliffordAlgebra.unitι Q₁ v, CliffordAlgebra.unitι_mem_lipschitzGroup v⟩ =
+      ⟨CliffordAlgebra.unitι Q₂ (e v), CliffordAlgebra.unitι_mem_lipschitzGroup (e v)⟩ := by
+  let _ : Invertible (Q₂ (e v)) := (e.map_app v).symm ▸ inferInstance
+  apply Subtype.ext
+  apply Units.ext
+  rw [lipschitzGroupEquiv_apply, Isometry.coe_lipschitzGroupMap_apply,
+    CliffordAlgebra.coe_unitι, CliffordAlgebra.coe_unitι]
+  simpa only [IsometryEquiv.toIsometry_apply] using
+    CliffordAlgebra.map_apply_ι e.toIsometry v
 
 /-- The Lipschitz action is natural under a quadratic isometry equivalence. -/
 @[simp]

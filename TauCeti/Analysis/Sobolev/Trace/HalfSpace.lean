@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Normed.Lp.GraphDomain
 public import TauCeti.Analysis.Sobolev.Trace.Hyperplane
 public import TauCeti.Analysis.Sobolev.W1p.Restriction
 import TauCeti.MeasureTheory.Function.Lp.Norm
@@ -39,26 +40,15 @@ open scoped Distributions Gradient ENNReal
 
 variable {E : Type*} [NormedAddCommGroup E]
 
-/-- The open half-space to the right of the normal coordinate `a` in the Euclidean product
-`ℝ × E`. -/
-def normalHalfSpace (a : ℝ) : Opens (WithLp 2 (ℝ × E)) :=
-  ⟨{x | a < (WithLp.ofLp x).1},
-    isOpen_lt continuous_const (WithLp.prod_continuous_ofLp 2 ℝ E).fst⟩
-
-/-- Membership in the normal-coordinate half-space is a strict inequality. -/
-@[simp]
-theorem mem_normalHalfSpace (a : ℝ) (x : WithLp 2 (ℝ × E)) :
-    x ∈ normalHalfSpace (E := E) a ↔ a < (WithLp.ofLp x).1 := Iff.rfl
-
 variable [MeasurableSpace E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E]
 
 private theorem norm_hyperplaneTrace_ofTestFunction_le (a : ℝ)
     (φ : 𝓓((⊤ : Opens (WithLp 2 (ℝ × E))), ℝ)) :
     ‖W1p.hyperplaneTrace a (W1p.ofTestFunctionₗ volume ⊤ 2 φ)‖ ≤
-      ‖W1p.restrictL (show normalHalfSpace (E := E) a ≤ ⊤ from le_top)
+      ‖W1p.restrictL (le_top (a := normalHalfSpace (E := E) a))
         (W1p.ofTestFunctionₗ volume ⊤ 2 φ)‖ := by
-  let v := W1p.restrictL (show normalHalfSpace (E := E) a ≤ ⊤ from le_top)
+  let v := W1p.restrictL (le_top (a := normalHalfSpace (E := E) a))
     (W1p.ofTestFunctionₗ volume ⊤ 2 φ)
   have hv : W1p.value v =ᵐ[volume.restrict (normalHalfSpace (E := E) a)] φ := by
     apply (W1p.value_restrictL_ae le_top _).trans
@@ -91,17 +81,19 @@ private theorem norm_hyperplaneTrace_ofTestFunction_le (a : ℝ)
       filter_upwards [W1p.hyperplaneTrace_ofTestFunction_apply_ae a φ] with y hy
       simp only [hy, Real.norm_eq_abs, sq_abs]
     _ ≤ _ := (integral_hyperplane_sq_le_integral_halfSpace_sq_add_norm_fderiv_sq
-      (φ.contDiff.of_le (by simp)) φ.hasCompactSupport a).trans_eq henergy
+      (φ.contDiff.of_le (by simp)) φ.hasCompactSupport a).trans_eq
+        (by simpa only [coe_normalHalfSpace, v] using henergy)
 
 /-- The flat `H¹` trace is controlled by the Sobolev norm on the right-hand half-space alone. -/
 theorem W1p.norm_hyperplaneTrace_le_norm_restrictL (a : ℝ)
     (u : W1p (volume : Measure (WithLp 2 (ℝ × E))) ⊤ 2) :
     ‖W1p.hyperplaneTrace a u‖ ≤
-      ‖W1p.restrictL (show normalHalfSpace (E := E) a ≤ ⊤ from le_top) u‖ := by
+      ‖W1p.restrictL (le_top (a := normalHalfSpace (E := E) a)) u‖ := by
   refine (W1p.denseRange_ofTestFunctionₗ_top
     (mu := (volume : Measure (WithLp 2 (ℝ × E)))) (p := 2) (by norm_num)).induction_on u
       (isClosed_le (W1p.hyperplaneTrace a).continuous.norm
-        (W1p.restrictL (show normalHalfSpace (E := E) a ≤ ⊤ from le_top)).continuous.norm)
+        (W1p.restrictL (mu := volume) (p := 2)
+          (le_top (a := normalHalfSpace (E := E) a))).continuous.norm)
       (norm_hyperplaneTrace_ofTestFunction_le a)
 
 /-- Whole-space extensions whose values agree almost everywhere on the right-hand half-space
@@ -110,14 +102,14 @@ theorem W1p.hyperplaneTrace_eq_of_value_ae_eq (a : ℝ)
     {u v : W1p (volume : Measure (WithLp 2 (ℝ × E))) ⊤ 2}
     (hvalue : W1p.value u =ᵐ[volume.restrict (normalHalfSpace (E := E) a)] W1p.value v) :
     W1p.hyperplaneTrace a u = W1p.hyperplaneTrace a v := by
-  have h : W1p.restrictL (show normalHalfSpace (E := E) a ≤ ⊤ from le_top) u =
-      W1p.restrictL (show normalHalfSpace (E := E) a ≤ ⊤ from le_top) v := by
+  have h : W1p.restrictL (le_top (a := normalHalfSpace (E := E) a)) u =
+      W1p.restrictL (le_top (a := normalHalfSpace (E := E) a)) v := by
     apply W1p.ext_value
     apply Lp.ext
     exact ((W1p.value_restrictL_ae le_top u).trans hvalue).trans
       (W1p.value_restrictL_ae le_top v).symm
   have hsub :
-      W1p.restrictL (show normalHalfSpace (E := E) a ≤ ⊤ from le_top) (u - v) = 0 := by
+      W1p.restrictL (le_top (a := normalHalfSpace (E := E) a)) (u - v) = 0 := by
     rw [map_sub, h, sub_self]
   have hb := W1p.norm_hyperplaneTrace_le_norm_restrictL (E := E) a (u - v)
   rw [hsub, norm_zero] at hb

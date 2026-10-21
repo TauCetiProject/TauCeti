@@ -74,7 +74,7 @@ private theorem groupSchemeProperty_hopfSpec_baseChange
 theorem IsIsogeny.baseChange {f : H ⟶ K} (hf : IsIsogeny f) :
     IsIsogeny (baseChangeMap (K := L) f) := by
   apply (isIsogeny_iff_isIsogeny_hopfSpec_map _).2
-  apply groupSchemeProperty_hopfSpec_baseChange (GroupScheme.isogenies L) f
+  apply groupSchemeProperty_hopfSpec_baseChange (GroupScheme.isogenies (Spec (CommRingCat.of L))) f
   exact GroupScheme.IsIsogeny.baseChange
     (Spec.map (CommRingCat.ofHom (algebraMap k L)))
     ((isIsogeny_iff_isIsogeny_hopfSpec_map f).1 hf)

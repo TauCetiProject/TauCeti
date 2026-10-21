@@ -28,7 +28,8 @@ increment by `‖h‖ ‖∇u‖ₚ`.  Restriction back to `Ω` then gives compa
 map `TauCeti.W1p0.valueL`.
 
 The corresponding statement for all of `W^{1,p}(Ω)` requires a boundary-regular extension
-operator and is not claimed here.
+operator; for bounded Lipschitz domains it is
+`TauCeti.W1p.isCompactOperator_valueL_of_isLipschitzDomainWith`.
 
 ## Main declaration
 

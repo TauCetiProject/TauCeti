@@ -50,9 +50,13 @@ finiteness is asserted.
 * `TauCeti.Bialgebra.fixedSubgroup_iterateFrobeniusPoints_le_of_dvd`: the fixed subgroups grow
   along divisibility of the exponent, the inclusion `G(𝔽_{p ^ m}) ⊆ G(𝔽_{p ^ k})` in the
   motivating case.
+* `TauCeti.Bialgebra.fixedSubgroup_iterateFrobeniusPoints_inf`: fixed subgroups at exponents
+  `m` and `n` intersect in the fixed subgroup at `m.gcd n`.
 * `TauCeti.Bialgebra.map_fixedSubgroup_iterateFrobeniusPoints_le` and
   `TauCeti.Bialgebra.mapValue_mem_fixedSubgroup_iterateFrobeniusPoints`: a homomorphism of value
   algebras carries Frobenius-fixed points to Frobenius-fixed points.
+* `TauCeti.Bialgebra.map_fixedSubgroup_iterateFrobeniusPoints_of_injective`: for an injective
+  homomorphism, those images are exactly the Frobenius-fixed points in its range.
 
 ## References
 
@@ -201,6 +205,24 @@ theorem fixedSubgroup_iterateFrobeniusPoints_le_of_dvd {m k : ℕ} (hmk : m ∣ 
     mem_frobeniusFixedSubring.mp (frobeniusFixedSubring_le_of_dvd hmk
       (mem_frobeniusFixedSubring.mpr ((iterateFrobeniusPoints_eq_self_iff p m).mp hf h)))
 
+/-- Two Frobenius-fixed point subgroups intersect in the fixed subgroup at the gcd of their
+exponents. In the motivating case this is the intersection formula for groups of rational points. -/
+@[simp]
+theorem fixedSubgroup_iterateFrobeniusPoints_inf (m n : ℕ) :
+    fixedSubgroup (iterateFrobeniusPoints p m (H := H) (A := A)) ⊓
+        fixedSubgroup (iterateFrobeniusPoints p n) =
+      fixedSubgroup (iterateFrobeniusPoints p (m.gcd n)) := by
+  refine le_antisymm ?_ (le_inf
+    (fixedSubgroup_iterateFrobeniusPoints_le_of_dvd p (Nat.gcd_dvd_left m n))
+    (fixedSubgroup_iterateFrobeniusPoints_le_of_dvd p (Nat.gcd_dvd_right m n)))
+  rintro f ⟨hm, hn⟩
+  apply (iterateFrobeniusPoints_eq_self_iff p (m.gcd n)).mpr
+  intro h
+  apply mem_frobeniusFixedSubring.mp
+  rw [← frobeniusFixedSubring_inf m n]
+  exact ⟨mem_frobeniusFixedSubring.mpr ((iterateFrobeniusPoints_eq_self_iff p m).mp hm h),
+    mem_frobeniusFixedSubring.mpr ((iterateFrobeniusPoints_eq_self_iff p n).mp hn h)⟩
+
 variable {B : Type w} [CommRing B] [ExpChar B p]
 
 /-- The image of the Frobenius-fixed subgroup under a homomorphism of value algebras lands in the
@@ -215,6 +237,17 @@ theorem map_fixedSubgroup_iterateFrobeniusPoints_le (φ : A →ₐ[ℤ] B) :
         (fixedSubgroup (iterateFrobeniusPoints p n)) ≤
       fixedSubgroup (iterateFrobeniusPoints p n) :=
   map_fixedSubgroup_le _ (mapValue_comp_iterateFrobeniusPoints p n φ)
+
+/-- Under an injective homomorphism of value algebras, the image of the Frobenius-fixed points
+is exactly the intersection of the image on points with the target Frobenius-fixed subgroup. -/
+theorem map_fixedSubgroup_iterateFrobeniusPoints_of_injective (φ : A →ₐ[ℤ] B)
+    (hφ : Function.Injective φ) :
+    Subgroup.map (AlgHom.mapValue (H := H) φ)
+        (fixedSubgroup (iterateFrobeniusPoints p n)) =
+      (AlgHom.mapValue (H := H) φ).range ⊓ fixedSubgroup (iterateFrobeniusPoints p n) :=
+  (AlgHom.mapValue (H := H) φ).map_fixedSubgroup_of_injective
+    (mapValue_comp_iterateFrobeniusPoints p n φ)
+    (AlgHom.mapValue_injective hφ)
 
 /-- The pointwise form of `map_fixedSubgroup_iterateFrobeniusPoints_le`: a homomorphism of value
 algebras carries Frobenius-fixed points to Frobenius-fixed points. -/

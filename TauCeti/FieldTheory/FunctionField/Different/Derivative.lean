@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Different.Complementary
+public import TauCeti.RingTheory.DedekindDomain.Different.Derivative
 public import TauCeti.RingTheory.DedekindDomain.Different.Monogenic
 import TauCeti.FieldTheory.FunctionField.Different.Localization
 
@@ -38,6 +39,8 @@ every place `P'` finite on `C`.
   for a generator of the integral closure of an affine model.
 * `TauCeti.Place.differentExponent_eq_zero_of_valuation_aeval_derivative_eq_one`: if `ψ'(y)` is a
   unit at `P'`, then `d(P' ∣ P) = 0`.
+* `TauCeti.Place.differentExponent_eq_zero_of_finrank_eq_one`: a degree-one extension has different
+  exponent zero.
 
 ## References
 
@@ -91,13 +94,8 @@ theorem differentExponent_le_ord_aeval_derivative {y : F'} (hgen : F⟮y⟯ = �
   have hinj : Function.Injective (algebraMap (integralClosure A F') F') :=
     FaithfulSMul.algebraMap_injective _ _
   have hqx : aeval x q = 0 := hinj (by rw [← aeval_algebraMap_apply, hx, hqy, map_zero])
-  -- The minimal polynomial of `x` over the integrally closed `𝒪_P` divides `q`, so `q'(x)` is a
-  -- multiple of the element `φ'(x)` of the different ideal.
-  obtain ⟨h, hh⟩ := minpoly.isIntegrallyClosed_dvd (integralClosure.isIntegral x) hqx
-  have hmem : aeval x (derivative q) ∈
-      differentIdeal A (integralClosure A F') := by
-    rw [hh, derivative_mul, map_add, map_mul, map_mul, minpoly.aeval, zero_mul, add_zero]
-    exact Ideal.mul_mem_right _ _ (aeval_derivative_mem_differentIdeal A F F' x hgen')
+  have hmem : aeval x (derivative q) ∈ differentIdeal A (integralClosure A F') :=
+    aeval_derivative_mem_differentIdeal_of_aeval_eq_zero (K := F) (L := F') hgen' hqx
   have hval : algebraMap (integralClosure A F') F' (aeval x (derivative q)) =
       aeval y (derivative ψ) := by
     rw [← aeval_algebraMap_apply, hx, ← hq, derivative_map, aeval_map_algebraMap]
@@ -202,6 +200,15 @@ theorem differentExponent_eq_zero_of_valuation_aeval_derivative_eq_one {y : F'}
     rw [P'.ord_eq_iff_valuation_eq_exp_neg hne, neg_zero, WithZero.exp_zero, hψ']
   have := differentExponent_le_ord_aeval_derivative k F hgen hψ hcoeff hy hne
   omega
+
+/-- **A degree-one extension has different exponent zero**: when `[F' : F] = 1`, every place
+of `F'` has different exponent zero over its restriction to `F`. -/
+theorem differentExponent_eq_zero_of_finrank_eq_one (P' : Place k' F')
+    (h : Module.finrank F F' = 1) : differentExponent k F P' = 0 :=
+  differentExponent_eq_zero_of_valuation_aeval_derivative_eq_one k F
+    (IntermediateField.finrank_eq_one_iff_eq_top.mp
+      (by rw [IntermediateField.adjoin_zero, IntermediateField.finrank_bot', h]))
+    monic_X (fun i ↦ by rw [coeff_X]; split_ifs <;> simp) (aeval_X 0) (by simp)
 
 end Place
 

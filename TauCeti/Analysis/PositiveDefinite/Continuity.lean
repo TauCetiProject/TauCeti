@@ -20,9 +20,6 @@ the origin is uniformly continuous. The file also records the local estimates
 `x + star x = 0` and `y + star y = 0`, together with their specializations to additive groups
 whose involution is negation.
 
-This advances Part C of the `OneParameterSemigroups` roadmap, whose positive-definite-function
-API asks for the basic fact "continuity at `0` ⇒ uniform continuity" before Bochner's theorem.
-
 ## Main declarations
 
 In the namespace `TauCeti.IsPositiveDefinite`:

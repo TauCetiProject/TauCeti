@@ -27,7 +27,7 @@ roadmap. It combines Mathlib's `NumberField.not_dvd_discr_iff_isUnramifiedIn` wi
 discriminant computation `TauCeti.Multiquadratic.discr_eq_fundamentalDiscriminant`.
 
 The second half of the file counts the ramified primes. Writing `fundamentalDiscriminant d` as a
-product of prime discriminants (`IsFundamentalDiscriminant.exists_finset_primeDiscriminant`), each
+product of prime discriminants (`Int.IsFundamentalDiscr.exists_finset_primeDiscriminant`), each
 factor contributes exactly one ramified prime — the prime `primeDiscriminantPrime` lying under it —
 and distinct factors contribute distinct primes. So the number `t` of ramified primes of `ℚ(√d)` is
 the number of prime discriminants in that factorization: the `t` of the genus-theory `2`-rank
@@ -201,7 +201,7 @@ theorem exists_finset_primeDiscriminant_ncard_ramifiedPrimes (hmin : minpoly ℤ
     ∃ s : Finset ℤ, (∀ P ∈ s, IsPrimeDiscriminant P) ∧
       ∏ P ∈ s, P = fundamentalDiscriminant d ∧ (ramifiedPrimes K).ncard = s.card := by
   obtain ⟨s, hs, heven, hprod⟩ :=
-    (isFundamentalDiscriminant_fundamentalDiscriminant hsf).exists_finset_primeDiscriminant
+    (isFundamentalDiscr_fundamentalDiscriminant hsf).exists_finset_primeDiscriminant
   exact ⟨s, hs, hprod, ncard_ramifiedPrimes_eq_card hmin hgen hsf hs heven hprod⟩
 
 /-! ### Total ramification

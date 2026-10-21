@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.DG.Bimodule.TensorProduct
+public import TauCeti.Algebra.Homology.DG.Bimodule.TensorProduct.Basic
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Grading.Associator
 
 /-!

@@ -99,11 +99,9 @@ include hp in
 /-- **Shimura, Theorem 3.24(2)**: `T(1, pᵏ) = T(pᵏ) − T(p,p) · T(p^(k−2))` for `k ≥ 2`:
 the divisor-pair expansion of `T(pᵏ)` telescopes against the index shift. -/
 theorem heckeTDiag_one_prime_pow_eq (k : ℕ) (hk : 2 ≤ k) :
-    heckeTDiag 1 (p ^ k) = heckeT ⟨p ^ k, pow_pos hp.pos k⟩ -
-      heckeTScalar p * heckeT ⟨p ^ (k - 2), pow_pos hp.pos (k - 2)⟩ := by
-  suffices h : heckeTDiag 1 (p ^ k) +
-      heckeTScalar p * heckeT ⟨p ^ (k - 2), pow_pos hp.pos (k - 2)⟩ =
-      heckeT ⟨p ^ k, pow_pos hp.pos k⟩ from eq_sub_iff_add_eq.mpr h
+    heckeTDiag 1 (p ^ k) = heckeT (p ^ k) - heckeTScalar p * heckeT (p ^ (k - 2)) := by
+  suffices h : heckeTDiag 1 (p ^ k) + heckeTScalar p * heckeT (p ^ (k - 2)) = heckeT (p ^ k) from
+    eq_sub_iff_add_eq.mpr h
   rw [heckeT_prime_pow_expansion p hp k, heckeT_prime_pow_expansion p hp (k - 2), Finset.mul_sum]
   have shift : ∀ j ∈ Finset.range ((k - 2) / 2 + 1),
       heckeTScalar p * heckeTDiag (p ^ j) (p ^ (k - 2 - j)) =
@@ -551,7 +549,7 @@ include hp in
 /-- **Shimura, Theorem 3.24(5)**: `T(p) · T(1, pᵏ) = T(1, p^(k+1)) + m · T(p, pᵏ)`, where
 the multiplicity `m` is `p + 1` for `k = 1` and `p` for `k ≥ 2`. -/
 theorem heckeT_prime_mul_heckeTDiag_one_prime_pow (k : ℕ) :
-    heckeT ⟨p, hp.pos⟩ * heckeTDiag 1 (p ^ k) =
+    heckeT p * heckeTDiag 1 (p ^ k) =
       heckeTDiag 1 (p ^ (k + 1)) +
         (if k = 1 then ((p : ℤ) + 1) else (p : ℤ)) • heckeTDiag p (p ^ k) := by
   rcases Nat.eq_zero_or_pos k with rfl | hk

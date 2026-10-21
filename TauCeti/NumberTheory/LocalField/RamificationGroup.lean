@@ -163,6 +163,14 @@ theorem lowerRamificationGroup_zero_eq_top_iff [IsGalois K L] :
   rw [← Subgroup.card_eq_iff_eq_top, natCard_lowerRamificationGroup_zero,
     IsGalois.card_aut_eq_finrank, isTotallyRamified_iff_ramificationIndex_eq_finrank]
 
+variable {K L} in
+/-- If a nonnegative lower ramification group is the whole Galois group, the extension is
+totally ramified. -/
+theorem isTotallyRamified_of_lowerRamificationGroup_eq_top [IsGalois K L] {i : ℤ}
+    (hi : 0 ≤ i) (hG : lowerRamificationGroup K L i = ⊤) : IsTotallyRamified K L :=
+  (lowerRamificationGroup_zero_eq_top_iff K L).1 <|
+    top_le_iff.1 (hG ▸ lowerRamificationGroup_antitone K L hi)
+
 /-! ### Comparison with Mathlib's inertia subgroup of a valuation subring -/
 
 /-- The zeroth lower ramification group is Mathlib's `ValuationSubring.inertiaSubgroup` of the

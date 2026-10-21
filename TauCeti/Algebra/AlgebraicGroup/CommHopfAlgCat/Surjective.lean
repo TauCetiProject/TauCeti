@@ -48,7 +48,8 @@ theorem comap_surjective_of_injective (f : H ⟶ K) (hf : Function.Injective f.h
     (IsScalarTower.toAlgHom k H p.asIdeal.ResidueField)
   obtain ⟨q, hq⟩ := mapPointsFunctor_app_surjective_of_injective L f hf (toConv a)
   have hcomp : q.ofConv.comp f.hom.toAlgHom = a :=
-    congrArg ofConv ((mapPointsFunctor_app_apply f (CommAlgCat.of k L) q).symm.trans hq)
+    congrArg ofConv ((CommHopfAlgCat.Hom.mapPointsFunctor_app_apply f (CommAlgCat.of k L)
+      q).symm.trans hq)
   refine ⟨⟨RingHom.ker q.ofConv.toRingHom, RingHom.ker_isPrime _⟩, ?_⟩
   apply PrimeSpectrum.ext
   rw [PrimeSpectrum.comap_asIdeal, RingHom.comap_ker]

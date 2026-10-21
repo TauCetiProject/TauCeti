@@ -104,11 +104,11 @@ variable [LinearOrder R] (b : P.Base)
 
 /-- The **closed Weyl chamber** attached to a Weyl-group element: the translate of the closed
 dominant chamber by that element. -/
-def weylChamber (w : P.weylGroup) : Set M := w • dominantChamber P b
+noncomputable def weylChamber (w : P.weylGroup) : Set M := w • dominantChamber P b
 
 /-- The **open Weyl chamber** attached to a Weyl-group element: the translate of the open dominant
 chamber by that element. -/
-def openWeylChamber (w : P.weylGroup) : Set M := w • openDominantChamber P b
+noncomputable def openWeylChamber (w : P.weylGroup) : Set M := w • openDominantChamber P b
 
 /-- Membership in a closed Weyl chamber, pulled back to the dominant one. -/
 @[simp]
@@ -165,7 +165,7 @@ lemma mem_openWeylChamber_iff (w : P.weylGroup) (x : M) :
 
 /-- The set of **open Weyl chambers** of a base: the Weyl translates of the open dominant
 chamber. -/
-def openWeylChambers : Set (Set M) := Set.range (openWeylChamber P b)
+noncomputable def openWeylChambers : Set (Set M) := Set.range (openWeylChamber P b)
 
 /-- Membership in the set of open Weyl chambers: a set is a chamber exactly when some Weyl-group
 element labels it. -/
@@ -191,7 +191,7 @@ theorem exists_smul_eq_of_mem_openWeylChambers {C D : Set M} (hC : C ∈ openWey
 
 /-- The Weyl group acts on the open chambers themselves: a translate of a chamber is a chamber, so
 the pointwise action on `Set M` restricts to `TauCeti.openWeylChambers`. -/
-instance : SMul P.weylGroup (openWeylChambers P b) where
+noncomputable instance : SMul P.weylGroup (openWeylChambers P b) where
   smul v C := ⟨v • (C : Set M), by
     obtain ⟨w, hw⟩ := C.2
     exact ⟨v * w, by rw [← smul_openWeylChamber, hw]⟩⟩
@@ -202,7 +202,7 @@ lemma openWeylChambers.coe_smul (v : P.weylGroup) (C : openWeylChambers P b) :
     ((v • C : openWeylChambers P b) : Set M) = v • (C : Set M) := (rfl)
 
 /-- The restricted action is a `MulAction`, inherited from the pointwise action on `Set M`. -/
-instance : MulAction P.weylGroup (openWeylChambers P b) where
+noncomputable instance : MulAction P.weylGroup (openWeylChambers P b) where
   one_smul _ := Subtype.ext (one_smul _ _)
   mul_smul _ _ _ := Subtype.ext (mul_smul _ _ _)
 

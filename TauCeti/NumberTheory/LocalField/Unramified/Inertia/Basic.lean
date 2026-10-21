@@ -283,7 +283,7 @@ theorem inertiaSubgroup_le_fixingSubgroup_iff (E : IntermediateField K (Algebrai
   have hfix := fixedField_fixingSubgroup_lift_inf_separableClosure (restrict hM)
   rw [lift_restrict] at hfix
   rw [← hfix]
-  exact le_inf (((le_iff_le _ E).2 le_rfl).trans (fixedField_antitone h))
+  exact le_inf (((le_fixedField_iff_le_fixingSubgroup _ E).2 le_rfl).trans (fixedField_antitone h))
     (le_separableClosure K _ E)
 
 /-! ### Inertia at finite level -/
@@ -438,10 +438,10 @@ theorem zpowers_restrictNormalHom_unramifiedExtension (hσ : IsArithFrobeniusLif
     Subgroup.zpowers
       (AlgEquiv.restrictNormalHom (unramifiedExtension K (AlgebraicClosure K) f) σ) = ⊤ := by
   set F := unramifiedExtension K (AlgebraicClosure K) f
-  let := finiteExtensionValuativeRel K F
-  let := finiteExtensionNormedFieldTopology K F
+  let := algebraicExtensionValuativeRel K F
+  let := algebraicExtensionNormedFieldTopology K F
   have := finiteExtension_isNonarchimedeanLocalField K F
-  have := finiteExtension_valuativeExtension K F
+  have := algebraicExtension_valuativeExtension K F
   have : IsUnramified K F := isUnramified_unramifiedExtension hf
   rw [hσ.restrictNormalHom_unramifiedExtension_eq_frobeniusAlgEquiv, zpowers_frobeniusAlgEquiv]
 

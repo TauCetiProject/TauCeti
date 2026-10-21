@@ -11,7 +11,7 @@ import TauCeti.CategoryTheory.MorphismProperty.Limits
 import TauCeti.RingTheory.Unramified.Fiber
 
 /-!
-# The fibre criterion for formal unramifiedness
+# The fibre criterion for formal unramifiedness, and equalizers
 
 A morphism locally of finite type is formally unramified exactly when its residue-field fibres
 are formally unramified. Thus relative unramifiedness can be established by calculations over
@@ -20,6 +20,12 @@ fields, even over a nonreduced or nonnoetherian base and without flatness.
 The affine case uses `Algebra.FormallyUnramified.of_formallyUnramified_baseChange_field`.
 The passage between arbitrary field-valued points and residue-field fibres uses Mathlib's
 factorization of a field-valued point through the residue field of its image.
+
+Dually to Mathlib's `isClosedImmersion_equalizer_ι_left` for separated targets, the equalizer of
+two morphisms over `S` into a scheme formally unramified and locally of finite type over `S` is an
+open subscheme of their source (`isOpenImmersion_equalizer_ι_left`): it is a base change of the
+diagonal, which is an open immersion by Mathlib's `FormallyUnramified.isOpenImmersion_diagonal`.
+In particular two sections of an unramified morphism agree on an open subscheme.
 
 ## References
 
@@ -109,5 +115,17 @@ theorem FormallyUnramified.iff_formallyUnramified_fiberToSpecResidueField
     exact MorphismProperty.of_isPullback (P := @FormallyUnramified.{u})
       (.of_hasPullback f (Y.fromSpecResidueField y)) hf
   · exact FormallyUnramified.of_formallyUnramified_fiberToSpecResidueField f
+
+/-- **Equalizers into an unramified scheme are open.** If `Y` is formally unramified and locally
+of finite type over `S`, the equalizer of two morphisms `X ⟶ Y` over `S` is an open subscheme of
+`X`: it is the base change of the diagonal of `Y ⟶ S`, which is an open immersion. -/
+instance isOpenImmersion_equalizer_ι_left {S : Scheme} {X Y : Over S} [FormallyUnramified Y.hom]
+    [LocallyOfFiniteType Y.hom] (f g : X ⟶ Y) : IsOpenImmersion (equalizer.ι f g).left := by
+  refine MorphismProperty.of_isPullback
+    ((Limits.isPullback_equalizer_prod f g).map (Over.forget _)).flip ?_
+  rw [← MorphismProperty.cancel_right_of_respectsIso @IsOpenImmersion _
+    (Over.prodLeftIsoPullback Y Y).hom]
+  convert! (inferInstance : IsOpenImmersion (pullback.diagonal Y.hom))
+  ext1 <;> simp [← Over.comp_left]
 
 end AlgebraicGeometry

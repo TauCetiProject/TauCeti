@@ -28,7 +28,7 @@ including the dyadic case (`TauCeti.hilbertSymbol_mul_left`).
 Together with the rank and the discriminant, this sign is the third invariant in the
 classification of regular quadratic forms over a nonarchimedean local field. It is the
 `{±1}`-valued counterpart of the Brauer-valued `TauCeti.RegularFormClass.hasseInvariant` of
-`TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Hasse`, whose construction and whose
+`TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Hasse.Basic`, whose construction and whose
 orthogonal-sum and scaling formulas are adapted here to the Hilbert symbol. O'Meara's `i ≤ j`
 Hasse symbol differs from this `i < j` sign by the Hilbert symbol of the discriminant with `-1`.
 

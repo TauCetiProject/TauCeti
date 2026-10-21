@@ -124,7 +124,8 @@ theorem iUnion_smul_carrier_eq_univ {Γ : Subgroup PSL(2, ℝ)} (hmap : ∀ i, �
   set V := ⋃ (γ : Γ) (i : Fin n), (γ : PSL(2, ℝ)) • {z : ℍ | P.vertex i = .inl z}
   have hV : V.Countable := countable_iUnion fun γ ↦ countable_iUnion fun i ↦ by
     rw [← image_smul]
-    exact (Subsingleton.countable fun _ ha _ hb ↦ Sum.inl_injective (ha.symm.trans hb)).image _
+    exact (Set.Subsingleton.countable
+      (by exact fun _ ha _ hb ↦ Sum.inl_injective (ha.symm.trans hb))).image _
   -- off `V`, the union `U` is a neighbourhood of each of its points
   have hint (y : ℍ) (hy : y ∈ U) (hyV : y ∉ V) : y ∈ interior U := by
     obtain ⟨γ, hγ⟩ := mem_iUnion.1 hy

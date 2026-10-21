@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.Grid.Grading.UnblockedChain
+public import TauCeti.KnotTheory.Grid.Grading.Unblocked.Chain
 public import TauCeti.KnotTheory.Grid.Stabilization.Basic
 public import TauCeti.KnotTheory.Grid.XHomotopy.Basic
 import TauCeti.Data.Fin.Basic
@@ -305,6 +305,17 @@ def stabilizeX : OddComponentGridDiagram (n + 1) :=
 @[simp]
 theorem val_stabilizeX : (G.stabilizeX s).1 = G.1.stabilizeX s.castSucc (G.1.X s).castSucc s :=
   (rfl)
+
+/-- Inserting the center lowers both state gradings by one. -/
+@[simp]
+theorem bidegree_stabilizeX_insertPoint (x : GridState n) :
+    (G.stabilizeX s).bidegree (x.insertPoint s.succ (G.1.X s).succ) = G.bidegree x - (1, 1) := by
+  have hA := G.1.alexanderTwoℤ_stabilizeX_insertPoint s x
+  rw [← val_stabilizeX, ← two_mul_alexanderℤ, ← G.two_mul_alexanderℤ] at hA
+  apply Prod.ext
+  · simp [bidegree_fst]
+  · simp only [bidegree_snd, Prod.snd_sub]
+    omega
 
 end OddComponentGridDiagram
 

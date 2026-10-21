@@ -32,9 +32,9 @@ sending the unique object to `X` and `g` to the continuous map `g • ·`. -/
 @[expose]
 def actionFunctor : SingleObj G ⥤ TopCat.{w} :=
   SingleObj.functor
-    { toFun g := ofHom ⟨(g • · : X → X), continuous_const_smul g⟩
-      map_one' := ConcreteCategory.hom_ext _ _ fun x ↦ one_smul G x
-      map_mul' g h := ConcreteCategory.hom_ext _ _ fun x ↦ mul_smul g h x }
+    { toFun g := .of (ofHom ⟨(g • · : X → X), continuous_const_smul g⟩)
+      map_one' := End.ext <| ConcreteCategory.hom_ext _ _ fun x ↦ one_smul G x
+      map_mul' g h := End.ext <| ConcreteCategory.hom_ext _ _ fun x ↦ mul_smul g h x }
 
 @[simp]
 lemma actionFunctor_obj (Y : SingleObj G) : (X.actionFunctor G).obj Y = X :=

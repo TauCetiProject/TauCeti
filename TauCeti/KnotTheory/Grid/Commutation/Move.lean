@@ -140,6 +140,17 @@ theorem one_lt (C : ColumnCommutationData G) : 1 < n := by
     have := (finRotate n C.column).isLt
     omega))
 
+/-- The two intersection rows of validated commutation data are distinct: otherwise both
+markings of the first column would occupy the same square. -/
+theorem turnRow_ne_oppositeTurnRow (C : ColumnCommutationData G) :
+    C.turnRow ≠ C.oppositeTurnRow := by
+  intro h
+  have hO := C.O_column_below
+  have hX := C.X_column_below
+  rw [← h] at hO hX
+  simp only [Grid.cIco_self, Finset.mem_insert, Finset.notMem_empty, or_false] at hO hX
+  exact G.disjoint C.column (hO.trans hX.symm)
+
 /-- Validated column-commutation data determines an elementary column commutation. -/
 theorem isColumnCommutation (C : ColumnCommutationData G) :
     IsColumnCommutation G (G.swapColumns C.column (finRotate n C.column)) :=

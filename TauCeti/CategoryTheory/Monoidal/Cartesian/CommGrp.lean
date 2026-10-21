@@ -124,14 +124,14 @@ noncomputable instance instPreadditive : Preadditive (CommGrp C) where
 by `n`: the `n`-th power of the identity of `A.X` for the group law on points. -/
 @[simp]
 theorem intCast_hom_hom_hom (A : CommGrp C) (n : ℤ) :
-    (n : End A).hom.hom.hom = 𝟙 A.X ^ n := by
-  rw [← zsmul_one, zsmul_hom_hom_hom, End.one_def, id_hom, Grp.id_hom_hom]
+    (n : End A).asHom.hom.hom.hom = 𝟙 A.X ^ n := by
+  rw [← zsmul_one, End.zsmul_asHom, zsmul_hom_hom_hom, End.one_asHom, id_hom, Grp.id_hom_hom]
 
 /-- The natural number `n` in the endomorphism ring of a commutative group object `A` is
 multiplication by `n`: the `n`-th power of the identity of `A.X` for the group law on points. -/
 @[simp]
 theorem natCast_hom_hom_hom (A : CommGrp C) (n : ℕ) :
-    (n : End A).hom.hom.hom = 𝟙 A.X ^ n := by
+    (n : End A).asHom.hom.hom.hom = 𝟙 A.X ^ n := by
   rw [← Int.cast_natCast, intCast_hom_hom_hom, zpow_natCast]
 
 end CategoryTheory.CommGrp

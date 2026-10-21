@@ -17,9 +17,8 @@ functions in `L²(Polynomial.Chebyshev.measureT)`.  Evaluation followed by the c
 `L²` is bundled as a linear map.  Since every Chebyshev polynomial is a nonzero scalar multiple
 of its normalized mode, every polynomial evaluation belongs to the linear span of those modes.
 
-This is the algebra-to-analysis handoff in Part C of the `OrthogonalL2Bases` roadmap.  In the
-completeness argument, it upgrades orthogonality against every Chebyshev mode to orthogonality
-against every polynomial.
+In the completeness argument for the Chebyshev Hilbert basis, it upgrades orthogonality against
+every Chebyshev mode to orthogonality against every polynomial.
 
 ## Main declarations
 

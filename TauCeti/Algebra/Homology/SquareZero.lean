@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Homology.QuasiIso
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.LinearAlgebra.Finsupp.SumProd
 public import TauCeti.Algebra.Module.Submodule.Ker
+public import TauCeti.LinearAlgebra.Quotient.Prod
 
 /-!
 # The homology of a square-zero linear endomorphism
@@ -252,6 +253,50 @@ theorem homologyMap_injective_iff (f : M →ₗ[S] N) (hd : d ∘ₗ d = 0) (he 
     exact h m m.2 hc
 
 end Map
+
+section Product
+
+variable {N : Type*} [AddCommGroup N] [Module S N] (e : N →ₗ[S] N)
+
+/-- Homology of a product differential is the product of the two homologies. -/
+noncomputable def homologyProdEquiv (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0) :
+    (d.prodMap e).homology (by rw [prodMap_comp, hd, he]; ext <;> simp) ≃ₗ[S]
+      d.homology hd × e.homology he := by
+  let E : ker (d.prodMap e) ≃ₗ[S] ker d × ker e :=
+    (LinearEquiv.ofEq _ _ (ker_prodMap d e)).trans ((ker d).prodEquiv (ker e))
+  refine (Submodule.Quotient.equiv (d.prodMap e).boundariesInKer
+    (d.boundariesInKer.prod e.boundariesInKer) E ?_).trans
+      (Submodule.quotientProdEquiv _ _)
+  ext z
+  rw [Submodule.mem_map]
+  constructor
+  · rintro ⟨w, hw, rfl⟩
+    obtain ⟨v, hv⟩ := (mem_boundariesInKer _).mp hw
+    exact ⟨⟨v.1, congrArg Prod.fst hv⟩, ⟨v.2, congrArg Prod.snd hv⟩⟩
+  · rintro ⟨⟨u, hu⟩, ⟨v, hv⟩⟩
+    refine ⟨E.symm z, ?_, E.apply_symm_apply z⟩
+    exact ⟨(u, v), Prod.ext hu hv⟩
+
+/-- The product-homology equivalence sends a cycle class to its two component classes. -/
+@[simp]
+theorem homologyProdEquiv_mk (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0)
+    (z : ker (d.prodMap e)) :
+    d.homologyProdEquiv e hd he (Submodule.Quotient.mk z) =
+      (Submodule.Quotient.mk ⟨z.1.1, congrArg Prod.fst (mem_ker.mp z.2)⟩,
+        Submodule.Quotient.mk ⟨z.1.2, congrArg Prod.snd (mem_ker.mp z.2)⟩) := by
+  simp [homologyProdEquiv, Submodule.Quotient.equiv_apply, Submodule.mapQ_apply]
+
+/-- The inverse product-homology equivalence sends two cycle classes to their product class. -/
+@[simp]
+theorem homologyProdEquiv_symm_mk (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0)
+    (x : ker d) (y : ker e) :
+    (d.homologyProdEquiv e hd he).symm (Submodule.Quotient.mk x, Submodule.Quotient.mk y) =
+      Submodule.Quotient.mk
+        ⟨((x : M), (y : N)), mem_ker.mpr (Prod.ext (mem_ker.mp x.2) (mem_ker.mp y.2))⟩ := by
+  apply (d.homologyProdEquiv e hd he).injective
+  simp only [LinearEquiv.apply_symm_apply, homologyProdEquiv_mk]
+
+end Product
 
 end Ring
 

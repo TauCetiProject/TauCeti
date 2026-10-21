@@ -48,6 +48,8 @@ correspond to the closed points of `Spec K⟨T⟩`, which need not be `K`-ration
   the classical point at `a` is that ideal.
 * `TauCeti.ValuationSpectrum.eq_classicalPoint_of_weightedX_sub_weightedC_mem_supp`: a point of the
   closed unit disc whose support contains `T - a` is the classical point at `a`.
+* `TauCeti.ValuationSpectrum.isClosed_singleton_classicalPoint`: consequently the classical
+  points are closed.
 * `TauCeti.ValuationSpectrum.exists_weightedX_sub_weightedC_mem_supp`: over an algebraically
   closed field, a point with nonzero support kills `T - a` for some `a` with `‖a‖ ≤ 1`.
 * `TauCeti.ValuationSpectrum.supp_ne_bot_iff_exists_eq_classicalPoint`: over an algebraically
@@ -157,6 +159,28 @@ theorem eq_classicalPoint_of_weightedX_sub_weightedC_mem_supp (v : closedPolydis
   rw [classicalPoint_vle, vle_iff_norm_le_of_mem_spa x.2, ← closedPolydisc_vle_weightedC_iff v,
     ← valuation_le_iff, ← valuation_le_iff, valuation_eq_valuation_weightedC_evalAtHom v a ha hv f,
     valuation_eq_valuation_weightedC_evalAtHom v a ha hv g]
+
+/-- **The classical points of the closed unit disc are closed**, over a complete nonarchimedean
+field: the classical point at `a` is the only point whose support contains `T - a`, and the locus
+of points whose support contains a given ideal is closed. These are the points of type (1) in
+Wedhorn's Example 7.57. -/
+theorem isClosed_singleton_classicalPoint (x : spa (powerBoundedSubring K)) (a : Fin 1 → K)
+    (ha : ∀ i, IsPowerBounded (a i)) :
+    IsClosed ({classicalPoint x a ha} : Set (closedPolydisc 1 K)) := by
+  set s := weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0 -
+    weightedC _ isWeightFamily_one_weight (a 0)
+  have hset : ({classicalPoint x a ha} : Set (closedPolydisc 1 K)) =
+      Subtype.val ⁻¹' {v | Ideal.span {s} ≤ v.supp} := by
+    ext v
+    rw [Set.mem_singleton_iff, Set.mem_preimage, Set.mem_ofPred_eq,
+      Ideal.span_singleton_le_iff_mem]
+    refine ⟨?_, fun hv ↦ eq_classicalPoint_of_weightedX_sub_weightedC_mem_supp v a ha hv x⟩
+    rintro rfl
+    rw [supp_classicalPoint_eq_span_weightedX_sub_weightedC]
+    exact Ideal.mem_span_singleton_self s
+  have h := isClosed_support_locus (powerBoundedSubring _) (Ideal.span {s})
+  rw [← closedPolydisc_def] at h
+  rwa [hset]
 
 /-- **A point of the closed unit disc with nonzero support kills some `T - a` with `‖a‖ ≤ 1`**,
 over an algebraically closed complete nonarchimedean field. -/

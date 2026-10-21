@@ -102,19 +102,20 @@ private theorem contDiff_faceMapZero : ContDiff ℝ 1 (faceMapZero K) := by
   refine (contDiff_expMapBasis K).comp (contDiff_pi.mpr fun w ↦ ?_)
   by_cases hw : w = w₀
   · simpa [hw] using contDiff_const
-  · simpa [hw] using contDiff_apply ℝ ℝ _
+  · simpa [hw] using contDiff_apply ℝ (fun _ ↦ ℝ) _
 
 open scoped Classical in
 /-- A side face map is `C¹`. -/
 private theorem contDiff_faceMapSide (i : {w : InfinitePlace K // w ≠ w₀}) (a : ℝ) :
     ContDiff ℝ 1 (faceMapSide K i a) := by
-  refine (contDiff_apply ℝ ℝ i).smul ((contDiff_expMapBasis K).comp (contDiff_pi.mpr fun w ↦ ?_))
+  refine (contDiff_apply ℝ (fun _ ↦ ℝ) i).smul
+    ((contDiff_expMapBasis K).comp (contDiff_pi.mpr fun w ↦ ?_))
   by_cases hw : w = w₀
   · simpa [hw] using contDiff_const
   · simp only [hw, ↓reduceDIte]
     by_cases hi : (⟨w, hw⟩ : {w : InfinitePlace K // w ≠ w₀}) = i
     · simpa [hi] using contDiff_const
-    · simpa [hi] using contDiff_apply ℝ ℝ _
+    · simpa [hi] using contDiff_apply ℝ (fun _ ↦ ℝ) _
 
 /-- **The closure of the box image adds only the origin.** The origin is what the `w₀` coordinate
 escapes to as it runs to `-∞`, and it is the sole reason the closure of the image is not the image

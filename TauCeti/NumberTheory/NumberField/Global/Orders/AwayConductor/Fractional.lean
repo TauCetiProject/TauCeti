@@ -114,7 +114,7 @@ contracts both separately. -/
 def fractionalIdealsAwayConductorEquiv :
     O.fractionalIdealsAwayConductor ≃* idealsPrimeTo O.conductorModulus :=
   O.fractionalLocalizationMap.mulEquivOfMulEquiv
-    (NumberFieldArithmetic.integralIdealsAwayLocalizationMap O.conductorModulus.support)
+    (NumberFieldArithmetic.integralIdealsAwayLocalizationMap K O.conductorModulus.support)
     (j := O.integralIdealsAwayConductorEquiv)
     (by simp)
 
@@ -124,13 +124,14 @@ conductor. -/
 theorem fractionalIdealsAwayConductorEquiv_integralIdealsAwayConductorHom
     (I : O.integralIdealsAwayConductor) :
     O.fractionalIdealsAwayConductorEquiv (O.integralIdealsAwayConductorHom I) =
-      NumberFieldArithmetic.integralIdealsAwayHom O.conductorModulus.support
+      NumberFieldArithmetic.integralIdealsAwayHom K O.conductorModulus.support
         (O.integralIdealsAwayConductorEquiv I) := by
   rw [fractionalIdealsAwayConductorEquiv]
   simpa only [fractionalLocalizationMap_apply,
     NumberFieldArithmetic.integralIdealsAwayLocalizationMap_apply] using
     O.fractionalLocalizationMap.mulEquivOfMulEquiv_eq
-      (k := NumberFieldArithmetic.integralIdealsAwayLocalizationMap O.conductorModulus.support)
+      (k := NumberFieldArithmetic.integralIdealsAwayLocalizationMap K
+        O.conductorModulus.support)
       (j := O.integralIdealsAwayConductorEquiv) (by simp) I
 
 /-- Fractional contraction agrees with integral contraction on integral ideals prime to the
@@ -139,7 +140,7 @@ conductor. -/
 theorem fractionalIdealsAwayConductorEquiv_symm_integralIdealsAwayHom
     (J : integralIdealsPrimeTo O.conductorModulus) :
     O.fractionalIdealsAwayConductorEquiv.symm
-        (NumberFieldArithmetic.integralIdealsAwayHom O.conductorModulus.support J) =
+        (NumberFieldArithmetic.integralIdealsAwayHom K O.conductorModulus.support J) =
       O.integralIdealsAwayConductorHom (O.integralIdealsAwayConductorEquiv.symm J) := by
   apply O.fractionalIdealsAwayConductorEquiv.symm_apply_eq.mpr
   simp

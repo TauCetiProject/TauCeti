@@ -61,6 +61,10 @@ maps below therefore live in the same `IsDedekindDomain.selmerGroup` namespace a
 * `IsDedekindDomain.selmerGroup.range_toClassGroup`: **exactness on the right** — the image is the
   `n`-torsion of the `S`-class group. (Surjectivity onto the whole class group is false in
   general.) Of the three, only this one needs `n ≠ 0`.
+* `IsDedekindDomain.selmerGroup.fromSUnit_surjective` and
+  `IsDedekindDomain.selmerGroup.exists_mul_pow_mem_unit`: when the classes of the primes in `S`
+  generate the class group of `R`, every Selmer class comes from an `S`-unit, so every
+  representative is an `S`-unit up to an `n`-th power.
 * `IsDedekindDomain.selmerGroup.finite`: **the Selmer group `K⟮S, n⟯` is finite** when the
   `S`-class group is finite, the `S`-units are finitely generated and `n ≠ 0`.
 
@@ -308,6 +312,32 @@ theorem range_toClassGroup [NeZero n] : (toClassGroup K S n).range =
     refine units_eq_of_forall_count_eq _ _ fun v ↦ ?_
     rw [count_nthRootHom, coe_unitsNDivisibleToNDivisible, coe_toPrincipalIdeal, hcount v,
       Int.mul_ediv_cancel_left _ (Int.natCast_ne_zero.mpr (NeZero.ne n))]
+
+/-- **Every Selmer class comes from an `S`-unit when `S` generates the class group.** If the
+classes of the primes in `S` generate the class group of `R`, `fromSUnit` is surjective: every
+Selmer class is represented by an `S`-unit. -/
+theorem fromSUnit_surjective
+    (hS : Subgroup.closure (HeightOneSpectrum.classGroupMk '' S) = ⊤) :
+    Function.Surjective (fromSUnit K S n) := by
+  have := (subsingleton_integer_classGroup_iff K S).mpr hS
+  intro x
+  rw [← MonoidHom.mem_range, ← ker_toClassGroup]
+  exact Subsingleton.elim _ _
+
+/-- **A Selmer representative is an `S`-unit up to an `n`-th power** when the classes of the
+primes in `S` generate the class group of `R`: if the class of `a` lies in `K⟮S, n⟯`, then
+`a * c ^ n` is an `S`-unit for some `c ∈ Kˣ`. -/
+theorem exists_mul_pow_mem_unit
+    (hS : Subgroup.closure (HeightOneSpectrum.classGroupMk '' S) = ⊤) {a : Kˣ}
+    (ha : (QuotientGroup.mk a : Kˣ ⧸ (powMonoidHom n : Kˣ →* Kˣ).range) ∈
+      selmerGroup (R := R) (K := K) (S := S) (n := n)) :
+    ∃ c : Kˣ, a * c ^ n ∈ S.unit K := by
+  obtain ⟨u, hu⟩ := fromSUnit_surjective K S n hS ⟨_, ha⟩
+  obtain ⟨c, hc⟩ := QuotientGroup.eq.mp (congrArg Subtype.val hu)
+  refine ⟨c⁻¹, ?_⟩
+  rw [powMonoidHom_apply] at hc
+  rw [inv_pow, hc, mul_inv_rev, inv_inv, mul_inv_cancel_left]
+  exact u.2
 
 /-! ### Finiteness -/
 

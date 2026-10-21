@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Grading
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Projective.Basic
-public import TauCeti.RingTheory.Idempotents.Corner
+public import TauCeti.RingTheory.Idempotents.Corner.Basic
 
 /-!
 # The graded Cartan matrix of a zigzag algebra
@@ -76,10 +76,8 @@ corners `e_i Z e_j` over `i`, together with the resulting numerical comparison
 
 ## References
 
-This is the graded Cartan matrix of Layer 3 of
-`TauCetiRoadmap/ZigzagPreprojective/README.md`.  See Huerfano--Khovanov, *A category for the
-adjoint representation*, Section 3, and Ehrig--Tubbenhauer, *Algebraic properties of zigzag
-algebras*, Section 2.
+See Huerfano--Khovanov, *A category for the adjoint representation*, Section 3, and
+Ehrig--Tubbenhauer, *Algebraic properties of zigzag algebras*, Section 2.
 -/
 
 public section

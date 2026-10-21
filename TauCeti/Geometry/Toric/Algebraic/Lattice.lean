@@ -47,6 +47,8 @@ forcing the integral and real ranks to agree.
   map `ℝ ⊗[ℤ] N →ₗ[ℝ] V` induced by `i` is injective (as it is when `i` extends scalars from `ℤ`
   to `ℝ`, by `IsBaseChange.liftBaseChange_injective`), a family of integral vectors is linearly
   independent over `ℤ` exactly when its image is linearly independent over `ℝ`.
+* `TauCeti.Toric.IsIntegralLattice.linearIndependent_basis`: the images of the vectors of an
+  integral basis are linearly independent over the reals.
 * `TauCeti.Toric.IsIntegralLattice.extend` and `TauCeti.Toric.IsIntegralLattice.eq_extend`: a map
   of integral vectors extends to a unique real-linear map, so the real-linear map accompanying a
   map of lattices is determined by it rather than being extra data.
@@ -169,6 +171,14 @@ theorem IsIntegralLattice.range_eq_span {ι : Type*} (h : IsIntegralLattice i)
   exact congrArg (Submodule.span ℤ) (congrArg Set.range (funext fun j ↦ by
     simpa only [Function.comp_apply, AddMonoidHom.coe_toIntLinearMap] using
       (h.isBaseChange.basis_apply b j).symm))
+
+/-- The images of the vectors of an integral basis of an integral lattice are linearly
+independent over the reals. -/
+theorem IsIntegralLattice.linearIndependent_basis {ι : Type*} (h : IsIntegralLattice i)
+    (b : Module.Basis ι ℤ N) : LinearIndependent ℝ fun j ↦ i (b j) := by
+  have hB (j : ι) : h.isBaseChange.basis b j = i (b j) := by
+    simpa using h.isBaseChange.basis_apply b j
+  exact funext hB ▸ (h.isBaseChange.basis b).linearIndependent
 
 end Basic
 

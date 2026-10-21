@@ -45,11 +45,9 @@ in the quiver obtained after all the reflections.
 
 ## References
 
-This is the admissible-ordering milestone opening Layer 5 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, the input the Coxeter
-functor of Layer 4 is assembled from. See Bernstein--Gelfand--Ponomarev, *Coxeter functors and
-Gabriel's theorem*, and Assem--Simson--Skowroński, *Elements of the Representation Theory of
-Associative Algebras* I, VII.5.
+Admissible orderings are the input the Coxeter functor is assembled from. See
+Bernstein--Gelfand--Ponomarev, *Coxeter functors and Gabriel's theorem*, and
+Assem--Simson--Skowroński, *Elements of the Representation Theory of Associative Algebras* I, VII.5.
 -/
 
 public section

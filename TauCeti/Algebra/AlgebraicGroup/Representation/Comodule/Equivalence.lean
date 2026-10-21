@@ -39,8 +39,8 @@ algebra descriptions agree not only on objects, but also on morphisms.
 * J. S. Milne, *Basic Theory of Affine Group Schemes*, Chapter VIII, §§2, 4, and 6.
 * J. S. Milne, *Algebraic Groups* (2017), Chapter 4(a), Remark 4.1.
 
-This supplies the categorical form of the Layer 1 representation--comodule dictionary in the
-ReductiveGroups roadmap; the monoidal and rigid refinements are not provided here.
+This supplies the categorical form of the representation--comodule dictionary; its monoidal and
+rigid refinements are in `TauCeti.Algebra.AlgebraicGroup.Representation.Comodule.Monoidal`.
 -/
 
 public section

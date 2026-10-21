@@ -206,8 +206,9 @@ theorem exists_homotopyRel_notMem_range {D : Set E} (f : C(D, Y)) (hD : IsClosed
       exact hφf.add ((β.continuous.comp_continuousOn hφf).smul
         ((hG.continuous.comp continuous_subtype_val).continuousOn.sub hφf)))
     (by
-      refine (closure_minimal (fun x hx => hK_of x hx.1 fun hβ => hx.2 ?_) hK).trans hKsource
-      simp [d, hβ])
+      refine (closure_minimal ?_ hK).trans hKsource
+      intro x hx
+      exact hK_of x hx.1 fun hβ => hx.2 (by simp [d, hβ]))
     hseg
     (by
       intro x hx hs

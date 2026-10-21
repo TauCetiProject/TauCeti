@@ -255,7 +255,6 @@ private theorem baseChangePresentationSymplecticIso_hom_comp_inclusion :
   rw [Symplectic.inclusion_eq_constantForm,
     ConstantForm.inclusion_eq_eqToHom_comp_hopfSpec_map,
     GeneralLinear.hopfIdealInclusion_def, baseChangePresentationSymplecticIso_hom]
-  rw [eqToIso.hom]
   simp only [eqToHom_refl, Category.id_comp]
   rw [← Category.assoc]
   rw [cancel_mono]
@@ -376,7 +375,7 @@ theorem baseChangeSymplecticPointsMulEquiv_apply
         (GeneralLinear.coordinateHopfAlgebra k ((n + 1) + (n + 1)))
         (baseChangeDefiningIdeal n k)) (CommAlgCat.of k A)) :
     baseChangeSymplecticPointsMulEquiv n k A q =
-      (CommHopfAlgCat.mapPointsFunctor
+      (CommHopfAlgCat.Hom.mapPointsFunctor
         (baseChangeCoordinateSymplecticIso n k).inv).app (CommAlgCat.of k A) q :=
   by
     rw [baseChangeSymplecticPointsMulEquiv]

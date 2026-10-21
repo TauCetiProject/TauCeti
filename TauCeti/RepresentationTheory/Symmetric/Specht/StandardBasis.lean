@@ -73,6 +73,7 @@ public section
 
 namespace TauCeti
 
+open YoungDiagram (ofPartition)
 open scoped BigOperators
 
 namespace YoungTableau
@@ -354,10 +355,10 @@ theorem coe_standardPolytabloidBasis (μ : YoungDiagram) (T : StandardYoungTable
 /-- **The standard basis of the Specht module `S^μ` of a partition `μ` of `n`**, the
 partition-indexed packaging `TauCeti.spechtModule` of
 `TauCeti.standardPolytabloidBasis`: `S^μ` has the polytabloids of the standard tableaux of shape
-`diagramOf μ` as a basis. -/
+`YoungDiagram.ofPartition μ` as a basis. -/
 noncomputable def spechtModuleStandardBasis {n : ℕ} (μ : n.Partition) :
-    Module.Basis (StandardYoungTableau (diagramOf μ)) ℚ (spechtModule μ) :=
-  standardPolytabloidBasis (diagramOf μ)
+    Module.Basis (StandardYoungTableau (ofPartition μ)) ℚ (spechtModule μ) :=
+  standardPolytabloidBasis (ofPartition μ)
 
 -- `simp` also rewrites the `FGModuleCat` carrier of `spechtModule μ` by
 -- `FGModuleCat.of_carrier` before it looks this left-hand side up, so it is stated with that
@@ -366,11 +367,11 @@ noncomputable def spechtModuleStandardBasis {n : ℕ} (μ : n.Partition) :
 tableau `T` is the polytabloid of `T`. -/
 @[simp]
 theorem coe_spechtModuleStandardBasis {n : ℕ} (μ : n.Partition)
-    (T : StandardYoungTableau (diagramOf μ)) :
+    (T : StandardYoungTableau (ofPartition μ)) :
     (dsimp% only [FGModuleCat.of_carrier]
-        (spechtModuleStandardBasis μ T : (permutationModule (shapePartition (diagramOf μ))).V)) =
+        (spechtModuleStandardBasis μ T : (permutationModule (shapePartition (ofPartition μ))).V)) =
       polytabloid T.toTableau :=
-  coe_standardPolytabloidBasis (diagramOf μ) T
+  coe_standardPolytabloidBasis (ofPartition μ) T
 
 /-- **The dimension of the Specht module is the number of standard Young tableaux**, `dim S^μ =
 f^μ`. -/
@@ -388,7 +389,7 @@ theorem finrank_spechtSubrepresentation (μ : YoungDiagram) :
 /-- **The dimension of the Specht module `S^μ` of a partition `μ` of `n` is the number `f^μ` of
 standard Young tableaux of shape `μ`.** -/
 theorem finrank_spechtModule {n : ℕ} (μ : n.Partition) :
-    Module.finrank ℚ (spechtModule μ) = standardCount (diagramOf μ) :=
-  finrank_spechtSubrepresentation (diagramOf μ)
+    Module.finrank ℚ (spechtModule μ) = standardCount (ofPartition μ) :=
+  finrank_spechtSubrepresentation (ofPartition μ)
 
 end TauCeti

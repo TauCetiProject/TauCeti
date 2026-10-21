@@ -115,7 +115,7 @@ theorem commutatorElement_differenceShortRootUnit_differenceShortRootUnit
     rw [commutatorElement_transvectionUnit_reverse hJ'I' hK'J' hK'I']
     congr 1
     ring
-  -- All cross-block terms commute, including the two factors in the resulting root element.
+  -- The cross-block terms commute.
   have hBC : Commute (transvectionUnit hJ'I' (-a)) (transvectionUnit hJK b) :=
     commute_transvectionUnit hJ'I' hJK
       (finSumFinEquiv_inr_ne_inl i j) (finSumFinEquiv_inl_ne_inr k j) _ _
@@ -128,13 +128,8 @@ theorem commutatorElement_differenceShortRootUnit_differenceShortRootUnit
   have hAQ : Commute (transvectionUnit hIJ a) (transvectionUnit hK'I' (-(a * b))) :=
     commute_transvectionUnit hIJ hK'I'
       (finSumFinEquiv_inl_ne_inr j k) (finSumFinEquiv_inr_ne_inl i i) _ _
-  have hPQ : Commute (transvectionUnit hIK (a * b))
-      (transvectionUnit hK'I' (-(a * b))) :=
-    commute_transvectionUnit hIK hK'I'
-      (finSumFinEquiv_inl_ne_inr k k) (finSumFinEquiv_inr_ne_inl i i) _ _
   rw [TauCeti.commutatorElement_mul_mul_eq_mul_of_commute hBC hAD
-    (by simpa only [hBD] using hCQ) (by simpa only [hBD] using hAQ)
-    (by simpa only [hAC, hBD] using hPQ), hAC, hBD]
+    (by simpa only [hBD] using hCQ.mul_left hAQ), hAC, hBD]
 
 /-- **The multiply-laced Chevalley relation in the standard symplectic group.** The commutator
 of `x_{eᵢ-eⱼ}(a)` and `x_{2eⱼ}(b)` is the product of the two remaining root subgroups in

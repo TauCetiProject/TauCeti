@@ -162,10 +162,10 @@ theorem qExpansion_coeff_prime_eq_neg_atkinLehnerSign_mul (f : Newform N k) (hχ
       (c * f.atkinLehnerSign hχ h) • f.toCuspForm := by
     have heq : atkinLehnerOperatorGamma1Cusp hp.pos hpN
         (isAtkinLehnerMatrix_descendExtra hp hpN hpsq) k f.toCuspForm =
-        CuspForm.ofLe (Gamma1_map_le_Gamma0_map N)
+        CuspForm.restrict (Gamma1_map_le_Gamma0_map N)
           (h.atkinLehnerOperatorCusp k (f.toCuspFormGamma0 hχ)) := by
       refine DFunLike.coe_injective ?_
-      rw [coe_atkinLehnerOperatorGamma1Cusp, CuspForm.coe_ofLe,
+      rw [coe_atkinLehnerOperatorGamma1Cusp, CuspForm.coe_restrict,
         h.atkinLehnerOperatorCusp_eq (isAtkinLehnerMatrix_descendExtra hp hpN hpsq),
         coe_atkinLehnerOperatorCusp, coe_toCuspFormGamma0]
     rw [heq, hW]

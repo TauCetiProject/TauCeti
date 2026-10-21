@@ -41,10 +41,17 @@ convex.
 * `TauCeti.mem_subdifferential_coe_iff` — for a real-valued `f` the finiteness condition is
   automatic and membership is the subgradient inequality, and
   `TauCeti.mem_subdifferential_iff_forall_toReal_add_le` is the same statement between real
-  representatives for an `f` that is never `⊥`;
+  representatives for an `f` that is never `⊥`, whose forward direction is
+  `TauCeti.toReal_add_le_toReal_of_mem_subdifferential`;
 * `TauCeti.mem_subdifferential_ite_iff` — for a real function extended by `⊤` off `Ω`, a
   subgradient at a point of `Ω` is a `y` satisfying the subgradient inequality on `Ω`;
+* `TauCeti.mem_subdifferential_add_affine_iff` and `TauCeti.subgradientImage_add_affine` —
+  adding the affine function `z ↦ B z q + c` translates subdifferentials and subgradient images
+  by `q`, and `TauCeti.convex_epigraph_add_affine_iff` — it preserves convexity of the real
+  epigraph;
 * `TauCeti.apply_le_apply_of_mem_subdifferential` — the subdifferential is monotone;
+* `StrictConvexOn.eq_of_mem_subdifferential` — a strictly convex function has disjoint
+  subdifferentials at distinct points;
 * `TauCeti.convex_subdifferential` and `TauCeti.isClosed_subdifferential` — the subdifferential
   is convex, and closed for a topology making every `B x` continuous;
 * `TauCeti.convex_setOf_mem_subdifferential` — for a convex `f`, the points at which a fixed `y`
@@ -54,7 +61,9 @@ convex.
 * `TauCeti.fenchelConjugate_flip_fenchelConjugate_eq_of_mem_subdifferential` — `f⋆⋆ x = f x`
   wherever `f` has a subgradient;
 * `TauCeti.mem_subdifferential_fenchelConjugate_iff` — where `f⋆⋆ x = f x`, the two subgradient
-  relations are equivalent.
+  relations are equivalent;
+* `TauCeti.mem_subdifferential_fenchelConjugate_flip_of_le` — a subgradient `y` of `f` at `x` is
+  a subgradient of `g⋆` for every `g ≥ f⋆` agreeing with `f⋆` at `y`.
 
 ## References
 
@@ -127,6 +136,15 @@ theorem mem_subdifferential_coe_iff (f : E → ℝ) :
   simp only [mem_subdifferential_iff, ne_eq, EReal.coe_ne_bot, EReal.coe_ne_top,
     not_false_eq_true, true_and, ← EReal.coe_add, EReal.coe_le_coe_iff]
 
+/-- A subgradient of a real-valued function is a linear tilt for which the point is a
+global minimizer. -/
+theorem mem_subdifferential_coe_iff_isMinOn_sub (f : E → ℝ) :
+    y ∈ subdifferential B (fun z => (f z : EReal)) x ↔
+      IsMinOn (fun z => f z - B z y) Set.univ x := by
+  rw [mem_subdifferential_coe_iff, isMinOn_iff]
+  simp only [map_sub, LinearMap.sub_apply, Set.mem_univ, forall_const]
+  constructor <;> intro h z <;> have := h z <;> linarith
+
 /-- For a real function `u` extended by `⊤` off `Ω`, a subgradient at a point `x ∈ Ω` is a `y`
 satisfying the subgradient inequality `u x + B (x' - x) y ≤ u x'` at every `x' ∈ Ω`. -/
 -- Not `@[simp]`: `mem_subdifferential_iff` already rewrites the left-hand side.
@@ -160,6 +178,13 @@ theorem mem_subdifferential_iff_forall_toReal_add_le (hbot : ∀ x', f x' ≠ �
     exact le_top
   exact (key x' hx').2 (h x' hx')
 
+/-- The subgradient inequality between real representatives: if `y ∈ ∂f(x)` and `f x'` is finite,
+then `(f x).toReal + B (x' - x) y ≤ (f x').toReal`. -/
+theorem toReal_add_le_toReal_of_mem_subdifferential (h : y ∈ subdifferential B f x) {x' : E}
+    (hx' : f x' ≠ ⊤) : (f x).toReal + B (x' - x) y ≤ (f x').toReal :=
+  (mem_subdifferential_iff_forall_toReal_add_le B (apply_ne_bot_of_mem_subdifferential B h)
+    (ne_top_of_mem_subdifferential B h)).1 h x' hx'
+
 /-- **Subgradients are monotone.** If `y₁ ∈ ∂f(x₁)` and `y₂ ∈ ∂f(x₂)`, then
 `B (x₂ - x₁) y₁ ≤ B (x₂ - x₁) y₂`; for the inner product this is the monotonicity
 `⟪x₂ - x₁, y₂ - y₁⟫ ≥ 0` of the subdifferential. -/
@@ -173,6 +198,22 @@ theorem apply_le_apply_of_mem_subdifferential {x₁ x₂ : E} {y₁ y₂ : F}
     (ne_top_of_mem_subdifferential B h₂)).1 h₂ x₁ (ne_top_of_mem_subdifferential B h₁)
   rw [← neg_sub x₂ x₁, map_neg, LinearMap.neg_apply] at e₂
   linarith
+
+/-- **Strict convexity separates subdifferentials.** If `f` is strictly convex on `s`, two points
+of `s` at which `f` has a common subgradient coincide: the subdifferentials of `f` at distinct
+points of `s` are disjoint. -/
+theorem _root_.StrictConvexOn.eq_of_mem_subdifferential {s : Set E} {f : E → ℝ}
+    (hf : StrictConvexOn ℝ s f) {x₁ x₂ : E} (hx₁ : x₁ ∈ s) (hx₂ : x₂ ∈ s)
+    (h₁ : y ∈ subdifferential B (fun x => (f x : EReal)) x₁)
+    (h₂ : y ∈ subdifferential B (fun x => (f x : EReal)) x₂) : x₁ = x₂ := by
+  -- A common subgradient `y` makes `x₁` and `x₂` minimisers of the strictly convex `f - B · y`.
+  have hmin {x₀ : E} (h : y ∈ subdifferential B (fun x => (f x : EReal)) x₀) :
+      IsMinOn (f - ⇑(B.flip y)) s x₀ := fun x _ => by
+    have := (mem_subdifferential_coe_iff B f).1 h x
+    simp only [map_sub, LinearMap.sub_apply] at this
+    simp only [Set.mem_ofPred_eq, Pi.sub_apply, LinearMap.flip_apply]
+    linarith
+  exact (hf.sub_concaveOn ((B.flip y).concaveOn hf.1)).eq_of_isMinOn (hmin h₁) (hmin h₂) hx₁ hx₂
 
 /-! ### Subgradient images -/
 
@@ -351,12 +392,72 @@ theorem isClosed_subdifferential [TopologicalSpace F] (hB : ∀ x, Continuous (B
 
 end
 
-/-! ### Conjugate-subgradient reciprocity -/
-
 section
 
 variable {E F : Type*} [AddCommGroup E] [Module ℝ E] [AddCommGroup F] [Module ℝ F]
   (B : E →ₗ[ℝ] F →ₗ[ℝ] ℝ) {f : E → EReal} {x : E} {y : F}
+
+/-! ### Adding an affine function -/
+
+/-- Adding the affine function `z ↦ B z q + c` to `f` translates its subdifferential by `q`. -/
+-- Not `@[simp]`: `mem_subdifferential_iff` already rewrites the left-hand side.
+theorem mem_subdifferential_add_affine_iff (q : F) (c : ℝ) :
+    y ∈ subdifferential B (fun z => f z + ((B z q + c : ℝ) : EReal)) x ↔
+      y - q ∈ subdifferential B f x := by
+  rcases eq_or_ne (f x) ⊥ with hbot | hbot
+  · simp [hbot]
+  rcases eq_or_ne (f x) ⊤ with htop | htop
+  · simp [htop]
+  obtain ⟨r, hr⟩ : ∃ r : ℝ, f x = r := ⟨(f x).toReal, (EReal.coe_toReal htop hbot).symm⟩
+  simp only [mem_subdifferential_iff, hr, ← EReal.coe_add, ne_eq, EReal.coe_ne_bot,
+    EReal.coe_ne_top, not_false_eq_true, true_and]
+  refine forall_congr' fun x' => ?_
+  generalize f x' = z
+  induction z with
+  | bot => simp only [EReal.bot_add, le_bot_iff, EReal.coe_ne_bot]
+  | top => simp only [EReal.top_add_coe, le_top]
+  | coe s =>
+    rw [← EReal.coe_add, EReal.coe_le_coe_iff, EReal.coe_le_coe_iff]
+    simp only [map_sub, LinearMap.sub_apply]
+    constructor <;> intro h <;> linarith
+
+/-- Adding the affine function `z ↦ B z q + c` to `f` translates its subgradient images by `q`;
+the right-hand side is written as a preimage under `y ↦ y - q`. -/
+theorem subgradientImage_add_affine (q : F) (c : ℝ) (s : Set E) :
+    subgradientImage B (fun z => f z + ((B z q + c : ℝ) : EReal)) s =
+      (· - q) ⁻¹' subgradientImage B f s := by
+  ext y
+  simp only [mem_subgradientImage_iff, Set.mem_preimage, mem_subdifferential_add_affine_iff]
+
+/-- Adding the affine function `z ↦ B z q + c` to `f` preserves convexity of the real epigraph,
+in both directions. -/
+theorem convex_epigraph_add_affine_iff (q : F) (c : ℝ) :
+    Convex ℝ {p : E × ℝ | f p.1 + ((B p.1 q + c : ℝ) : EReal) ≤ p.2} ↔
+      Convex ℝ {p : E × ℝ | f p.1 ≤ p.2} := by
+  -- The forward implication, for every function and affine function.
+  have key (g : E → EReal) (q : F) (c : ℝ) (hg : Convex ℝ {p : E × ℝ | g p.1 ≤ p.2}) :
+      Convex ℝ {p : E × ℝ | g p.1 + ((B p.1 q + c : ℝ) : EReal) ≤ p.2} := by
+    let L : E × ℝ →ₗ[ℝ] E × ℝ :=
+      (LinearMap.fst ℝ E ℝ).prod (LinearMap.snd ℝ E ℝ - B.flip q ∘ₗ LinearMap.fst ℝ E ℝ)
+    convert (hg.translate_preimage_right ((0 : E), -c)).linear_preimage L using 1
+    ext ⟨z, t⟩
+    simp only [Set.mem_ofPred_eq, Set.preimage_ofPred_eq, Prod.fst_add, zero_add, Prod.snd_add,
+      LinearMap.prod_apply, LinearMap.coe_fst, Function.prod_apply, LinearMap.sub_apply,
+      LinearMap.snd_apply, LinearMap.coe_comp, Function.comp_apply, LinearMap.flip_apply, L]
+    rw [← EReal.le_sub_iff_add_le (.inl (EReal.coe_ne_bot _)) (.inl (EReal.coe_ne_top _)),
+      ← EReal.coe_sub]
+    congr! 2
+    ring
+  refine ⟨fun h => ?_, key f q c⟩
+  convert key (fun z => f z + ((B z q + c : ℝ) : EReal)) (-q) (-c) h using 4 with p
+  induction f p.1 with
+  | bot => simp
+  | top => simp
+  | coe r =>
+    simp only [← EReal.coe_add, map_neg, EReal.coe_eq_coe_iff]
+    ring
+
+/-! ### Conjugate-subgradient reciprocity -/
 
 /-- **Conjugate-subgradient reciprocity.** If `y` is a subgradient of `f` at `x`, then `x` is a
 subgradient of the conjugate `f⋆` at `y`, for the transposed pairing. -/
@@ -409,6 +510,32 @@ theorem mem_subdifferential_fenchelConjugate_iff
     x ∈ subdifferential B.flip (fenchelConjugate B f) y ↔ y ∈ subdifferential B f x := by
   rw [mem_subdifferential_iff_add_fenchelConjugate_eq,
     mem_subdifferential_iff_add_fenchelConjugate_eq, hx, LinearMap.flip_apply, add_comm]
+
+end
+
+section
+
+variable {E F : Type*} [AddCommGroup E] [Module ℝ E] [AddCommMonoid F] [Module ℝ F]
+  (B : E →ₗ[ℝ] F →ₗ[ℝ] ℝ) {f : E → EReal} {x : E} {y : F}
+
+/-- **Subgradients survive raising the conjugate away from them.** Let `g ≥ f⋆` agree with `f⋆`
+at `y`. If `y ∈ ∂f(x)`, then `y` is also a subgradient at `x` of the conjugate `g⋆` (for the
+transposed pairing), which lies below `f` and agrees with `f` at `x`. Taking `g = f⋆` on a set
+`K ∋ y` and `g = ⊤` off it gives a function below `f` that keeps the slope `y`; on a Hilbert space
+with `K` closed and convex, all its slopes lie in `K`
+(`TauCeti.subdifferential_fenchelConjugate_subset_of_eq_top`). -/
+theorem mem_subdifferential_fenchelConjugate_flip_of_le {g : F → EReal}
+    (hg : fenchelConjugate B f ≤ g) (hgy : g y ≤ fenchelConjugate B f y)
+    (h : y ∈ subdifferential B f x) :
+    y ∈ subdifferential B (fenchelConjugate B.flip g) x := by
+  -- Reciprocity needs `F` to be a group; every real module is one.
+  let : AddCommGroup F := Module.addCommMonoidToAddCommGroup ℝ
+  -- Reciprocity gives `x ∈ ∂f⋆(y)`; raising `f⋆` to `g` away from `y` keeps this subgradient.
+  have h' := mem_subdifferential_fenchelConjugate_of_mem_subdifferential B h
+  have hx : x ∈ subdifferential B.flip g y := by
+    rw [mem_subdifferential_iff, le_antisymm hgy (hg y)]
+    exact ⟨h'.1, h'.2.1, fun y' => (h'.2.2 y').trans (hg y')⟩
+  simpa using mem_subdifferential_fenchelConjugate_of_mem_subdifferential B.flip hx
 
 end
 

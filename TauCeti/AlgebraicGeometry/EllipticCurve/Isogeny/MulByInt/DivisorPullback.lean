@@ -74,11 +74,6 @@ open AlgebraicGeometry
 
 variable {F : Type*} [Field F] [DecidableEq F] (W : WeierstrassCurve F) [W.IsElliptic]
 
-/-- The coordinate ring of an elliptic curve is a Dedekind domain. -/
-local instance : IsDedekindDomain W.toAffine.CoordinateRing :=
-  have := WeierstrassCurve.Affine.isIntegrallyClosed_coordinateRing W.toAffine
-  W.toAffine.isDedekindDomain_coordinateRing_of_isIntegrallyClosed
-
 /-- **The coefficient of `[n]^* D` at the place of `R` is the coefficient of `D` at the place of
 `n • R`**, for `n` invertible in `F`: the place of `R` lies over that of `n • R`, and `[n]` is
 unramified, being separable. -/

@@ -32,6 +32,8 @@ operations that need them.
   the index.
 * `ContinuousLinearMap.index_equiv_comp` and `index_comp_equiv`: composition with a
   continuous linear equivalence preserves the index.
+* `ContinuousLinearMap.index_prodMap`: the index is additive under products with finite free
+  kernels and cokernels.
 * `ContinuousLinearMap.index_of_surjective` and `index_of_injective`: the index in the one-sided
   cases.
 * `ContinuousLinearMap.finrank_ker_eq_iff_index_eq` and
@@ -142,6 +144,28 @@ lemma index_eq_zero_of_bijective (T : E →L[𝕜] F)
   rw [LinearMap.index_comp_equiv]
 
 end Ring
+
+section Prod
+
+variable {𝕜 E₁ E₂ F₁ F₂ : Type*} [Ring 𝕜] [StrongRankCondition 𝕜]
+variable [AddCommGroup E₁] [Module 𝕜 E₁] [TopologicalSpace E₁]
+variable [AddCommGroup E₂] [Module 𝕜 E₂] [TopologicalSpace E₂]
+variable [AddCommGroup F₁] [Module 𝕜 F₁] [TopologicalSpace F₁]
+variable [AddCommGroup F₂] [Module 𝕜 F₂] [TopologicalSpace F₂]
+
+/-- The index is additive under Cartesian products when the kernels and cokernels are finite
+free modules. In particular, this applies to Fredholm operators over a nontrivially normed field. -/
+@[simp]
+lemma index_prodMap (T : E₁ →L[𝕜] F₁) (S : E₂ →L[𝕜] F₂)
+    [Module.Free 𝕜 T.ker] [Module.Free 𝕜 S.ker]
+    [Module.Finite 𝕜 T.ker] [Module.Finite 𝕜 S.ker]
+    [Module.Free 𝕜 (F₁ ⧸ T.range)] [Module.Free 𝕜 (F₂ ⧸ S.range)]
+    [Module.Finite 𝕜 (F₁ ⧸ T.range)] [Module.Finite 𝕜 (F₂ ⧸ S.range)] :
+    (T.prodMap S).index = T.index + S.index := by
+  simpa only [index_def, coe_prodMap] using
+    (T : E₁ →ₗ[𝕜] F₁).index_prodMap (S : E₂ →ₗ[𝕜] F₂)
+
+end Prod
 
 section DivisionRing
 

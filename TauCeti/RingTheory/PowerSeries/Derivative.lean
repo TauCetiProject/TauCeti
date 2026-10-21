@@ -47,7 +47,7 @@ theorem derivative_map (φ : R⟦X⟧) (f : R →+* S) : d⁄dX (map f φ) = map
 
 /-- The identity `coeff_succ_pow_succ_eq_coeff_pow_mul_derivative` when `n + 1` can be
 cancelled. -/
-private theorem coeff_succ_pow_succ_eq_of_isAddTorsionFree [IsAddTorsionFree R] (v : R⟦X⟧)
+private theorem coeff_succ_pow_succ_eq_of_hasUniqueDiv [HasUniqueDiv R] (v : R⟦X⟧)
     (n : ℕ) :
     coeff (n + 1) (v ^ (n + 1)) = coeff n (v ^ n * d⁄dX v) := by
   have h := coeff_derivative (v ^ (n + 1)) n
@@ -68,7 +68,7 @@ theorem coeff_succ_pow_succ_eq_coeff_pow_mul_derivative (v : R⟦X⟧) (n : ℕ)
   have hV : map f V = v := by
     ext i
     simp [V, f]
-  have h := congrArg f (coeff_succ_pow_succ_eq_of_isAddTorsionFree V n)
+  have h := congrArg f (coeff_succ_pow_succ_eq_of_hasUniqueDiv V n)
   rwa [← coeff_map, ← coeff_map, (map f).map_pow, (map f).map_mul, (map f).map_pow,
     ← derivative_map, hV] at h
 

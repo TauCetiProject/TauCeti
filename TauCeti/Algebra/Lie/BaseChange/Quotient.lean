@@ -27,11 +27,6 @@ the base change of the solvable radical does.
 
 * `LieIdeal.quotientBaseChangeEquiv`: **extension of scalars commutes with quotients.**
 
-## Main results
-
-* `LieIdeal.ker_baseChange_mkQ`: the extension of scalars of the quotient map of `I` kills exactly
-  the extension of `I`.
-
 ## References
 
 * [N. Bourbaki, *Algebra I, Chapters 1-3*][bourbaki1989], Chapter II, §3, n°6, for the
@@ -49,11 +44,6 @@ universe u v w
 variable {R : Type u} {L : Type w} [CommRing R] [LieRing L] [LieAlgebra R L]
 variable (A : Type v) [CommRing A] [Algebra R A] (I : LieIdeal R L)
 
-/-- The extension of scalars of the quotient map of `I` kills exactly the extension of `I`. -/
-@[simp]
-theorem ker_baseChange_mkQ : (LieHom.baseChange A I.mkQ).ker = I.baseChange A := by
-  rw [LieHom.ker_baseChange_of_surjective A I.mkQ I.mkQ_surjective, ker_mkQ]
-
 /-- **Extension of scalars commutes with quotients of Lie algebras.**  The extension of `L ⧸ I`
 is the quotient of the extension of `L` by the extension of `I`, for an arbitrary coefficient
 algebra `A`.
@@ -64,10 +54,9 @@ describes its inverse.  Both are phrased with `LieSubmodule.Quotient.mk` rather 
 `LieIdeal.mkQ`, the form in which the quotient's induction principle presents a class. -/
 noncomputable def quotientBaseChangeEquiv :
     ((A ⊗[R] L) ⧸ I.baseChange A) ≃ₗ⁅A⁆ A ⊗[R] (L ⧸ I) :=
-  LieEquiv.ofBijective (liftQ (I.baseChange A) (LieHom.baseChange A I.mkQ)
-      (ker_baseChange_mkQ A I).ge)
-    ⟨liftQ_injective _ _ _ (ker_baseChange_mkQ A I).le,
-      liftQ_surjective _ _ _ (LieHom.baseChange_surjective A I.mkQ I.mkQ_surjective)⟩
+  LieEquiv.ofBijective (liftQ (I.baseChange A) (LieHom.baseChange A I.mkQ) (by simp))
+    ⟨liftQ_injective _ _ _ (by simp),
+      liftQ_surjective _ _ _ (LieHom.baseChange_surjective A I.mkQ I.surjective_mkQ)⟩
 
 @[simp]
 theorem quotientBaseChangeEquiv_mk (x : A ⊗[R] L) :

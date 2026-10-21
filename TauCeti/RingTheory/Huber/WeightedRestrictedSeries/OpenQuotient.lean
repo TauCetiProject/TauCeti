@@ -9,35 +9,24 @@ public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Completion
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.FirstCountable
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Surjective
 
-import Mathlib.Data.Finsupp.Encodable
 import TauCeti.Topology.Algebra.Nonarchimedean.Completion.Surjective
-import TauCeti.Topology.LiftTendstoCofinite
 
 /-!
-# Restricted series preserve open quotient maps
+# Weighted restricted series preserve open quotient maps
 
-An open quotient map `φ : A → B` of nonarchimedean rings, with `𝓝 (0 : A)` countably generated,
-induces open quotient maps `A⟨X₁, …, Xₖ⟩ → B⟨X₁, …, Xₖ⟩` coefficientwise, both on the rings of
-restricted power series (`TauCeti.Huber.weightedRestrictedSubring` at the trivial weight) and on
-their separated completions (`TauCeti.Huber.restrictedMvPowerSeriesCompletion`).
+An open quotient map `φ : A → B` of nonarchimedean rings, with `𝓝 (0 : A)` countably
+generated, induces open quotient maps on weighted restricted series and their separated
+completions when each target weight is the image of the corresponding source weight.
 
-Surjectivity on the uncompleted rings is
-`IsOpenQuotientMap.weightedMap_one_weight_surjective`. Openness is the additional point: a
-restricted series over `B` whose coefficients all lie in `φ(U)`, for an open subgroup `U` of `A`,
-lifts to a restricted series over `A` whose coefficients all lie in `U`. The completed statement
-then follows from the general fact that the completion of a continuous open surjection out of a
-first-countable nonarchimedean group is again open and surjective
-(`AddMonoidHom.isOpenMap_completion`, `AddMonoidHom.surjective_completion`).
+Surjectivity is `IsOpenQuotientMap.weightedMap_surjective`. For openness, a target series whose
+coefficients lie in the image of a weighted neighbourhood lifts to a series in that
+neighbourhood: a restricted lift can be corrected at its finitely many exceptional
+coefficients using `IsWeightedRestricted.exists_coeff_mem_weightMul`.
+Completion then preserves openness and surjectivity through
+`AddMonoidHom.isOpenMap_completion` and `AddMonoidHom.surjective_completion`.
 
-This is what makes strict topological finite type stable under composition: the coefficientwise
-map `A⟨X⟩⟨Y⟩ → B⟨Y⟩` induced by a presentation `A⟨X⟩ ↠ B` is again a presentation.
-
-## Main results
-
-* `IsOpenQuotientMap.weightedMap_one_weight`: the coefficientwise map on restricted power series
-  is an open quotient map.
-* `IsOpenQuotientMap.weightedMapCompletion_one_weight`: so is the induced map on the completed
-  algebras `A⟨X₁, …, Xₖ⟩ → B⟨X₁, …, Xₖ⟩`.
+These coefficientwise open quotients let finite-type presentations be transported to
+weighted restricted-series algebras in further variables.
 
 ## References
 
@@ -50,71 +39,70 @@ open Filter Topology UniformSpace
 
 namespace TauCeti.Huber
 
-variable {k : ℕ} {A B : Type*} [CommRing A] [TopologicalSpace A] [NonarchimedeanRing A]
-  [CommRing B] [TopologicalSpace B] [NonarchimedeanRing B]
+variable {k : ℕ} {A : Type*} [CommRing A] [TopologicalSpace A]
 
-/-- **An open quotient map induces an open quotient map on restricted power series**, provided
-`𝓝 (0 : A)` is countably generated. Besides surjectivity
-(`IsOpenQuotientMap.weightedMap_one_weight_surjective`), the content is that a restricted series
-over `B` with every coefficient in `φ(U)`, for an open subgroup `U` of `A`, is the image of a
-restricted series over `A` with every coefficient in `U`. -/
-theorem _root_.IsOpenQuotientMap.weightedMap_one_weight [(𝓝 (0 : A)).IsCountablyGenerated]
-    {φ : A →+* B} (hq : IsOpenQuotientMap φ) :
-    IsOpenQuotientMap (weightedMap (k := k) hq.continuous isWeightFamily_one_weight
-      isWeightFamily_one_weight fun _ ↦ by simp) := by
-  set F := weightedMap (k := k) hq.continuous isWeightFamily_one_weight
-    isWeightFamily_one_weight fun _ ↦ by simp
-  refine ⟨hq.weightedMap_one_weight_surjective, continuous_weightedMap .., ?_⟩
-  -- openness of an additive map is decided at zero, on the basic neighbourhoods `U⟨X⟩`
+variable {B : Type*} [NonarchimedeanRing A] [CommRing B] [TopologicalSpace B]
+  [NonarchimedeanRing B]
+
+/-- An open quotient map induces an open quotient map on weighted restricted series when each
+source weight maps onto the corresponding target weight. The source neighbourhood filter
+must be countably generated. -/
+theorem _root_.IsOpenQuotientMap.weightedMap [(𝓝 (0 : A)).IsCountablyGenerated]
+    {φ : A →+* B} (hq : IsOpenQuotientMap φ)
+    {T : Fin k → Set A} {S : Fin k → Set B} (hT : IsWeightFamily T) (hS : IsWeightFamily S)
+    (hTS : ∀ i, φ '' T i = S i) :
+    IsOpenQuotientMap (Huber.weightedMap hq.continuous hT hS (fun i ↦ (hTS i).subset)) := by
+  set F := Huber.weightedMap hq.continuous hT hS (fun i ↦ (hTS i).subset)
+  refine ⟨hq.weightedMap_surjective hT hS hTS, continuous_weightedMap .., ?_⟩
   refine IsTopologicalAddGroup.isOpenMap_iff_nhds_zero.mpr <|
-    ((hasBasis_nhds_zero_weightedTopology isWeightFamily_one_weight).map F).ge_iff.mpr
-      fun U _ ↦ ?_
+    ((hasBasis_nhds_zero_weightedTopology hT).map F).ge_iff.mpr fun U _ ↦ ?_
   let V : OpenAddSubgroup B :=
     { U.toAddSubgroup.map (φ : A →+ B) with
       isOpen' := hq.isOpenMap _ U.isOpen }
   refine Filter.mem_of_superset
-    ((hasBasis_nhds_zero_weightedTopology isWeightFamily_one_weight).mem_of_mem (i := V) trivial)
-    fun g hg ↦ ?_
-  -- every coefficient of `g` has a preimage in `U`
-  have hgU : ∀ ν, ∃ u ∈ U, φ u = MvPowerSeries.coeff ν (g : MvPowerSeries (Fin k) B) := by
+    ((hasBasis_nhds_zero_weightedTopology hS).mem_of_mem (i := V) trivial) fun g hg ↦ ?_
+  -- Equality of the weighted subgroup images supplies a preimage for every coefficient.
+  have hgU : ∀ ν, ∃ u ∈ weightMul T ν U.toAddSubgroup,
+      φ u = MvPowerSeries.coeff ν (g : MvPowerSeries (Fin k) B) := by
     intro ν
-    simpa [V] using mem_weightedNhd.mp hg ν
+    apply (Set.mem_image (φ : A → B) (weightMul T ν U.toAddSubgroup : Set A) _).mp
+    rw [φ.image_weightMul_of_image_eq hTS]
+    exact mem_weightedNhd.mp hg ν
   choose u huU hu using hgU
-  -- a family of preimages tending to zero, which then lies in `U` for almost all indices
-  obtain ⟨L, hL, hL0⟩ := exists_lift_tendsto_cofinite_nhds φ hq.surjective
-    (map_zero φ ▸ hq.isOpenMap.nhds_le 0)
-    (fun ν ↦ MvPowerSeries.coeff ν (g : MvPowerSeries (Fin k) B))
-    ((isWeightedRestricted_one_weight_iff (A := B)).mp (mem_weightedRestrictedSubring.mp g.2))
+  obtain ⟨L, hL⟩ := hq.weightedMap_surjective hT hS hTS g
+  have hLφ (ν) : φ (MvPowerSeries.coeff ν (L : MvPowerSeries (Fin k) A)) =
+      MvPowerSeries.coeff ν (g : MvPowerSeries (Fin k) B) := by
+    simpa only [coe_weightedMap, MvPowerSeries.coeff_map] using
+      congrArg (fun x : weightedRestrictedSubring S hS ↦
+        MvPowerSeries.coeff ν (x : MvPowerSeries (Fin k) B)) hL
+  -- Correct the restricted lift only at the finitely many coefficients outside the U bound.
   classical
-  let L' : MvPowerSeries (Fin k) A := fun ν ↦ if L ν ∈ U then L ν else u ν
-  have hL' : ∀ ν, MvPowerSeries.coeff ν L' = if L ν ∈ U then L ν else u ν :=
-    MvPowerSeries.coeff_apply L'
-  have hL'U : ∀ ν, MvPowerSeries.coeff ν L' ∈ U := fun ν ↦ by
-    by_cases h : L ν ∈ U <;> simp [hL', h, huU]
-  have hL'φ : ∀ ν, φ (MvPowerSeries.coeff ν L') = MvPowerSeries.coeff ν
-      (g : MvPowerSeries (Fin k) B) := fun ν ↦ by
-    by_cases h : L ν ∈ U <;> simp [hL', h, hL, hu]
-  have hL'0 : Tendsto (fun ν ↦ MvPowerSeries.coeff ν L') cofinite (𝓝 0) :=
-    hL0.congr' <| (hL0.eventually_mem (U.isOpen.mem_nhds U.zero_mem)).mono fun ν h ↦
-      ((hL' ν).trans (ite_eq_left h)).symm
-  refine ⟨⟨L', mem_weightedRestrictedSubring.mpr
-    ((isWeightedRestricted_one_weight_iff (A := A)).mpr hL'0)⟩,
-    mem_weightedNhd.mpr fun ν ↦ by simpa using hL'U ν, Subtype.ext ?_⟩
+  obtain ⟨L', hL', hL'U, hcoeff⟩ :=
+    (mem_weightedRestrictedSubring.mp L.2).exists_coeff_mem_weightMul U u huU
+  have hL'φ : ∀ ν, φ (MvPowerSeries.coeff ν L') =
+      MvPowerSeries.coeff ν (g : MvPowerSeries (Fin k) B) := by
+    intro ν
+    rw [hcoeff]
+    split_ifs
+    · exact hLφ ν
+    · exact hu ν
+  refine ⟨⟨L', mem_weightedRestrictedSubring.mpr hL'⟩,
+    mem_weightedNhd.mpr hL'U, Subtype.ext ?_⟩
   ext ν
-  simp [F, hL'φ]
+  simpa only [F, coe_weightedMap, MvPowerSeries.coeff_map] using hL'φ ν
 
-/-- **An open quotient map induces an open quotient map `A⟨X₁, …, Xₖ⟩ → B⟨X₁, …, Xₖ⟩` on the
-completed restricted power-series algebras**, provided `𝓝 (0 : A)` is countably generated. -/
-theorem _root_.IsOpenQuotientMap.weightedMapCompletion_one_weight
-    [(𝓝 (0 : A)).IsCountablyGenerated] {φ : A →+* B} (hq : IsOpenQuotientMap φ) :
-    IsOpenQuotientMap (weightedMapCompletion (k := k) hq.continuous isWeightFamily_one_weight
-      isWeightFamily_one_weight fun _ ↦ by simp) := by
-  have hF := hq.weightedMap_one_weight (k := k)
-  set F := weightedMap (k := k) hq.continuous isWeightFamily_one_weight
-    isWeightFamily_one_weight fun _ ↦ by simp
-  -- the completed map is the completion of `F` as an additive group homomorphism
-  have heq : ⇑(weightedMapCompletion (k := k) hq.continuous isWeightFamily_one_weight
-      isWeightFamily_one_weight fun _ ↦ by simp) =
+/-- An open quotient map induces an open quotient map on completed weighted restricted-series
+algebras with image weights, when the source neighbourhood filter is countably generated. -/
+theorem _root_.IsOpenQuotientMap.weightedMapCompletion
+    [(𝓝 (0 : A)).IsCountablyGenerated] {φ : A →+* B} (hq : IsOpenQuotientMap φ)
+    {T : Fin k → Set A} {S : Fin k → Set B} (hT : IsWeightFamily T) (hS : IsWeightFamily S)
+    (hTS : ∀ i, φ '' T i = S i) :
+    IsOpenQuotientMap (Huber.weightedMapCompletion hq.continuous hT hS
+      (fun i ↦ (hTS i).subset)) := by
+  have hF := hq.weightedMap hT hS hTS
+  set F := Huber.weightedMap hq.continuous hT hS (fun i ↦ (hTS i).subset)
+  -- The completed ring map is the completion of the additive coefficientwise map.
+  have heq : ⇑(Huber.weightedMapCompletion hq.continuous hT hS (fun i ↦ (hTS i).subset)) =
       ⇑(F.toAddMonoidHom.completion hF.continuous) :=
     Completion.ext (continuous_weightedMapCompletion ..)
       (AddMonoidHom.continuous_completion _ _) fun a ↦ by simp [F]

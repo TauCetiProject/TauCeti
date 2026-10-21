@@ -156,7 +156,8 @@ theorem exists_boundary_eq {β : Ω^ N X.pair.snd X.basepoint}
   · simp
   · rcases h with rfl | ht
     · simp
-    · exact (F.eq_fst s ht).trans (congrArg X.pair.map.hom (β.2 t ht))
+    · exact (F.eq_fst s ht).trans
+        ((GenLoop.map_apply _ _ β t).trans (congrArg X.pair.map.hom (β.2 t ht)))
   · ext t
     rw [boundary_apply_eq_iff]
     simp

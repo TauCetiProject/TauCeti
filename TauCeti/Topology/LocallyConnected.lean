@@ -36,6 +36,8 @@ boundary, so the set-level result applies. This application is in
   locally connected space in a Hausdorff space is locally connected.
 * `TauCeti.locallyConnectedSpace_image_of_isCompact` — the set-level form: `f '' s` is locally
   connected for a compact, locally connected `s` on which `f` is continuous.
+* `TauCeti.locallyConnectedSpace_iUnion_image_of_isCompact` — a finite union of such images is
+  locally connected; for instance a finite union of arcs.
 
 ## References
 
@@ -68,5 +70,24 @@ theorem locallyConnectedSpace_image_of_isCompact [T2Space Y] {s : Set X} {f : X 
   have : CompactSpace s := isCompact_iff_compactSpace.mp hs
   exact locallyConnectedSpace_of_continuous_surjective (hf.mapsToRestrict (mapsTo_image f s))
     (surjective_mapsTo_image_restrict f s)
+
+/-- **A finite union of continuous images of a compact, locally connected set is locally
+connected.** For instance a finite union of arcs `f i '' Icc 0 1` is locally connected, although a
+union of two closed locally connected sets need not be. The union is the continuous image of the
+compact, locally connected product of the discrete index type with `s`. -/
+theorem locallyConnectedSpace_iUnion_image_of_isCompact [T2Space Y] {ι : Type*} [Finite ι]
+    {s : Set X} {f : ι → X → Y} [LocallyConnectedSpace s] (hs : IsCompact s)
+    (hf : ∀ i, ContinuousOn (f i) s) : LocallyConnectedSpace (⋃ i, f i '' s) := by
+  let _ : TopologicalSpace ι := ⊥
+  have : DiscreteTopology ι := ⟨rfl⟩
+  have : CompactSpace s := isCompact_iff_compactSpace.mp hs
+  let F : ι × s → ⋃ i, f i '' s := fun p =>
+    ⟨f p.1 p.2, mem_iUnion.mpr ⟨p.1, mem_image_of_mem _ p.2.2⟩⟩
+  refine locallyConnectedSpace_of_continuous_surjective (f := F) ?_ ?_
+  · exact continuous_induced_rng.mpr
+      (continuous_prod_of_discrete_left.mpr fun i => (hf i).domRestrict)
+  · rintro ⟨y, hy⟩
+    obtain ⟨i, x, hx, rfl⟩ := mem_iUnion.mp hy
+    exact ⟨(i, ⟨x, hx⟩), rfl⟩
 
 end TauCeti

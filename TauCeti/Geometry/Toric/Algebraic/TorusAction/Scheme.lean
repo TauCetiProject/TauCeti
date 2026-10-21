@@ -15,6 +15,8 @@ The grading coaction of an affine toric coordinate ring gives a morphism from th
 the dense torus and the affine toric scheme to the affine toric scheme. The product is the fibre
 product over `Spec ℂ`, identified with the spectrum of the tensor product of coordinate rings.
 This is the affine action map that the global fan-scheme action glues along face opens.
+Compatible maps of lattice cones induce maps between the two action domains and intertwine
+the affine actions.
 
 The defining equation on the tensor-product affine chart keeps the construction tied to the
 coordinate-ring coaction, whose counit, coassociativity, and face-compatibility laws are proved
@@ -69,6 +71,110 @@ theorem affineToricSchemeAction_comp_specMap_algebraMap :
   rw [← cancel_epi (pullbackSpecIso ℂ _ _).inv]
   simp [← Spec.map_comp, ← CommRingCat.ofHom_comp,
     (affineCoordinateRingCoaction hi σ).comp_algebraMap]
+
+/-! ### Naturality -/
+
+private theorem mapsTo_bot
+    {N' : Type} {V' : Type*} [AddCommGroup N'] [AddCommGroup V'] [Module ℝ V']
+    {i' : N' →+ V'} (f : N →+ N') (g : V →ₗ[ℝ] V') (_hfg : ∀ n, g (i n) = i' (f n)) :
+    Set.MapsTo g (⊥ : PointedCone ℝ V) (⊥ : PointedCone ℝ V') := by
+  simp [Set.MapsTo]
+
+/-- A compatible map of lattice cones induces the product map from the source torus action
+domain to the target torus action domain.  Its two factors are the induced dense-torus map and
+the induced affine toric morphism. -/
+noncomputable def affineToricSchemeActionMap
+    {N' : Type} {V' : Type*} [AddCommGroup N'] [AddCommGroup V'] [Module ℝ V']
+    {i' : N' →+ V'} (hi' : IsIntegralLattice i') {τ : PointedCone ℝ V'}
+    (f : N →+ N') (g : V →ₗ[ℝ] V') (hfg : ∀ n, g (i n) = i' (f n))
+    (hστ : Set.MapsTo g σ τ) :
+    pullback
+        (Spec.map (CommRingCat.ofHom (algebraMap ℂ
+          (affineCoordinateRing hi (⊥ : PointedCone ℝ V)))))
+        (Spec.map (CommRingCat.ofHom (algebraMap ℂ (affineCoordinateRing hi σ)))) ⟶
+      pullback
+        (Spec.map (CommRingCat.ofHom (algebraMap ℂ
+          (affineCoordinateRing hi' (⊥ : PointedCone ℝ V')))))
+        (Spec.map (CommRingCat.ofHom (algebraMap ℂ (affineCoordinateRing hi' τ)))) :=
+  pullback.map _ _ _ _
+    (affineToricSchemeMap hi hi' f g hfg (mapsTo_bot f g hfg))
+    (affineToricSchemeMap hi hi' f g hfg hστ) (𝟙 _)
+    (by
+      rw [Category.comp_id, affineToricSchemeMap_def]
+      exact (comp_over (Spec.map (CommRingCat.ofHom
+        (affineCoordinateRingMap hi hi' f g hfg
+          (mapsTo_bot f g hfg)).toRingHom)) (Spec (.of ℂ))).symm)
+    (by
+      rw [Category.comp_id, affineToricSchemeMap_def]
+      exact (comp_over (Spec.map (CommRingCat.ofHom
+        (affineCoordinateRingMap hi hi' f g hfg hστ).toRingHom)) (Spec (.of ℂ))).symm)
+
+/-- The product map on action domains has the induced dense-torus map as its first projection. -/
+@[reassoc (attr := simp)]
+theorem affineToricSchemeActionMap_comp_fst
+    {N' : Type} {V' : Type*} [AddCommGroup N'] [AddCommGroup V'] [Module ℝ V']
+    {i' : N' →+ V'} (hi' : IsIntegralLattice i') {τ : PointedCone ℝ V'}
+    (f : N →+ N') (g : V →ₗ[ℝ] V') (hfg : ∀ n, g (i n) = i' (f n))
+    (hστ : Set.MapsTo g σ τ) :
+    affineToricSchemeActionMap hi σ hi' f g hfg hστ ≫ pullback.fst _ _ =
+      pullback.fst _ _ ≫
+        affineToricSchemeMap hi hi' f g hfg (by simp [Set.MapsTo]) := by
+  simp [affineToricSchemeActionMap]
+
+/-- The product map on action domains has the induced affine toric morphism as its second
+projection. -/
+@[reassoc (attr := simp)]
+theorem affineToricSchemeActionMap_comp_snd
+    {N' : Type} {V' : Type*} [AddCommGroup N'] [AddCommGroup V'] [Module ℝ V']
+    {i' : N' →+ V'} (hi' : IsIntegralLattice i') {τ : PointedCone ℝ V'}
+    (f : N →+ N') (g : V →ₗ[ℝ] V') (hfg : ∀ n, g (i n) = i' (f n))
+    (hστ : Set.MapsTo g σ τ) :
+    affineToricSchemeActionMap hi σ hi' f g hfg hστ ≫ pullback.snd _ _ =
+      pullback.snd _ _ ≫ affineToricSchemeMap hi hi' f g hfg hστ := by
+  simp [affineToricSchemeActionMap]
+
+/-- In tensor-product coordinates, the product map on action domains is `Spec` of the tensor
+product of the two coordinate-ring maps. -/
+@[reassoc]
+theorem pullbackSpecIso_inv_comp_affineToricSchemeActionMap
+    {N' : Type} {V' : Type*} [AddCommGroup N'] [AddCommGroup V'] [Module ℝ V']
+    {i' : N' →+ V'} (hi' : IsIntegralLattice i') {τ : PointedCone ℝ V'}
+    (f : N →+ N') (g : V →ₗ[ℝ] V') (hfg : ∀ n, g (i n) = i' (f n))
+    (hστ : Set.MapsTo g σ τ) :
+    (pullbackSpecIso ℂ (affineCoordinateRing hi ⊥) (affineCoordinateRing hi σ)).inv ≫
+        affineToricSchemeActionMap hi σ hi' f g hfg hστ =
+      Spec.map (CommRingCat.ofHom (Algebra.TensorProduct.map
+          (affineCoordinateRingMap hi hi' f g hfg (by simp [Set.MapsTo]))
+          (affineCoordinateRingMap hi hi' f g hfg hστ)).toRingHom) ≫
+        (pullbackSpecIso ℂ (affineCoordinateRing hi' ⊥) (affineCoordinateRing hi' τ)).inv := by
+  apply pullback.hom_ext <;>
+  · simp only [Category.assoc, affineToricSchemeActionMap_comp_fst,
+      affineToricSchemeActionMap_comp_snd, pullbackSpecIso_inv_fst_assoc,
+      pullbackSpecIso_inv_snd_assoc, pullbackSpecIso_inv_fst, pullbackSpecIso_inv_snd,
+      affineToricSchemeMap_def, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
+    congr 1
+    apply CommRingCat.hom_ext
+    apply RingHom.ext
+    intro x
+    simp
+
+/-- Affine toric morphisms intertwine the dense-torus actions induced by their lattice maps. -/
+@[reassoc]
+theorem affineToricSchemeActionMap_comp_action
+    {N' : Type} {V' : Type*} [AddCommGroup N'] [AddCommGroup V'] [Module ℝ V']
+    {i' : N' →+ V'} (hi' : IsIntegralLattice i') {τ : PointedCone ℝ V'}
+    (f : N →+ N') (g : V →ₗ[ℝ] V') (hfg : ∀ n, g (i n) = i' (f n))
+    (hστ : Set.MapsTo g σ τ) :
+    affineToricSchemeActionMap hi σ hi' f g hfg hστ ≫
+        affineToricSchemeAction hi' τ =
+      affineToricSchemeAction hi σ ≫ affineToricSchemeMap hi hi' f g hfg hστ := by
+  rw [← cancel_epi (pullbackSpecIso ℂ _ _).inv,
+    pullbackSpecIso_inv_comp_affineToricSchemeActionMap_assoc]
+  simp only [pullbackSpecIso_inv_comp_affineToricSchemeAction,
+    pullbackSpecIso_inv_comp_affineToricSchemeAction_assoc, affineToricSchemeMap_def,
+    ← Spec.map_comp, ← CommRingCat.ofHom_comp]
+  exact congrArg (fun k ↦ Spec.map (CommRingCat.ofHom k.toRingHom))
+    (affineCoordinateRingCoaction_comp_map hi hi' f g hfg hστ).symm
 
 /-- For the zero cone, the affine action is multiplication of the dense torus scheme. -/
 theorem affineToricSchemeAction_bot :

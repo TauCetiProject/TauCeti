@@ -40,14 +40,14 @@ namespace TauCeti.EisensteinSeries
 /-- The corrected weight-two Eisenstein series of level `d`, restricted to `Γ₀(N)`. -/
 def correctedE2AtLevel (N : ℕ) (d : {d : ℕ // 1 < d ∧ d ∣ N}) :
     ModularForm ((Gamma0 N).map (mapGL ℝ)) 2 :=
-  ModularForm.ofLe (Subgroup.map_mono
+  ModularForm.restrict (Subgroup.map_mono
     (CongruenceSubgroup.Gamma0_le_Gamma0_of_dvd d.2.2)) (@correctedE2 d.val ⟨by omega⟩)
 
 /-- Evaluating a corrected series after restricting its level gives the original series. -/
 @[simp]
 theorem correctedE2AtLevel_apply (N : ℕ) (d : {d : ℕ // 1 < d ∧ d ∣ N}) (z : ℍ) :
     correctedE2AtLevel N d z = @correctedE2 d.val ⟨by omega⟩ z := by
-  simp only [correctedE2AtLevel, ModularForm.coe_ofLe]
+  simp only [correctedE2AtLevel, ModularForm.coe_restrict]
 
 /-- The q-expansion coefficients of the corrected series restricted from `Γ₀(d)` to `Γ₀(N)`. -/
 @[simp]
@@ -57,7 +57,7 @@ theorem qExpansion_coeff_correctedE2AtLevel (N : ℕ)
     if n = 0 then 1 - (d.val : ℂ) else
         -24 * ((σ 1 n : ℂ) -
           if d.val ∣ n then d.val * (σ 1 (n / d.val) : ℂ) else 0) := by
-  simpa only [correctedE2AtLevel, ModularForm.coe_ofLe] using
+  simpa only [correctedE2AtLevel, ModularForm.coe_restrict] using
     @qExpansion_coeff_correctedE2 d.val ⟨by omega⟩ n
 
 private lemma coeff_sum_eq_zero (N : ℕ) (s : Finset {d : ℕ // 1 < d ∧ d ∣ N})
@@ -66,9 +66,7 @@ private lemma coeff_sum_eq_zero (N : ℕ) (s : Finset {d : ℕ // 1 < d ∧ d �
     (n : ℕ) (hn : n ≠ 0) :
     ∑ j ∈ s, g j * (-24 * ((σ 1 n : ℂ) -
       if j.val ∣ n then j.val * (σ 1 (n / j.val) : ℂ) else 0)) = 0 := by
-  have hp : (1 : ℝ) ∈ ((Gamma0 N).map (mapGL ℝ)).strictPeriods := by
-    simp [CongruenceSubgroup.strictPeriods_Gamma0]
-  let Q := ModularForm.qExpansionLinearMap one_pos hp 2
+  let Q := ModularForm.qExpansionLinearMap one_pos (one_mem_strictPeriods_Gamma0_map N) 2
   let Qcoeff : ModularForm ((Gamma0 N).map (mapGL ℝ)) 2 →ₗ[ℂ] ℂ :=
     (PowerSeries.coeff n).comp Q
   have hc := congrArg Qcoeff hsum

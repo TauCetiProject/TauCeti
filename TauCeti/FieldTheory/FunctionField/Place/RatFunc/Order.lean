@@ -36,6 +36,7 @@ rational function field.
 * `TauCeti.Place.valuation_ofIrreducible_le_one_iff` and
   `TauCeti.Place.residue_adicOfIrreducible_eq_zero_iff`: regularity and vanishing in the residue
   field are detected by the denominator and numerator respectively.
+* `RatFunc.pow_ne_X`: `X` is not a proper power in `k(X)`.
 * `TauCeti.Place.forall_ord_adicOfIrreducible_nonneg_iff`: the functions regular at every finite
   place are the polynomials.
 
@@ -110,6 +111,14 @@ theorem ord_adicOfIrreducible_X_self :
     (adicOfIrreducible (irreducible_X (R := k))).ord (RatFunc.X : RatFunc k) = 1 := by
   classical
   rw [ord_adicOfIrreducible_X, ite_eq_left (Associated.refl _)]
+
+/-- `X` is not a proper power in `k(X)`: it has order one at the place `X = 0`. -/
+theorem _root_.RatFunc.pow_ne_X {n : ℕ} (hn : 1 < n) (c : RatFunc k) : c ^ n ≠ RatFunc.X := by
+  intro h
+  have h1 := congrArg (adicOfIrreducible (irreducible_X (R := k))).ord h
+  rw [ord_pow, ord_adicOfIrreducible_X_self] at h1
+  have := Int.eq_one_of_dvd_one (by positivity) ⟨_, h1.symm⟩
+  omega
 
 /-- `X` has order zero at every finite place other than its own. -/
 @[simp]

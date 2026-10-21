@@ -34,13 +34,15 @@ factorisation into linear factors over an algebraically closed field, reach `A�
 ## Main results
 
 * `TauCeti.Huber.denseRange_eval₂RingHom_weightedX`: evaluation of `A[T]` at the variable has
-  dense range in `A⟨T⟩_T`.
+  dense range in `A⟨T⟩_T`, and keeps coefficients
+  (`TauCeti.Huber.coeff_eval₂_weightedC_weightedX`).
 * `TauCeti.Huber.isRestricted_renameEquiv_finOne_iff`: renaming the sole variable from `Fin 1`
   to `Unit` identifies the Huber restrictedness predicate with Mathlib's radius-one one.
 * `TauCeti.Huber.restrictedMvPowerSeriesSubringOneEquiv`: the two uncompleted one-variable
   restricted-series models are equivalent as rings.
 * `TauCeti.Huber.weightedRestrictedSubringOneEquiv`: the same equivalence for the trivially
-  weighted ring `R⟨T⟩`, the coordinate ring of the closed unit disc.
+  weighted ring `R⟨T⟩`, the coordinate ring of the closed unit disc; it preserves coefficients
+  (`TauCeti.Huber.coeff_weightedRestrictedSubringOneEquiv`).
 * `TauCeti.Huber.restrictedMvPowerSeriesCompletionOneEquiv`: over a complete base, the completed
   Huber model is equivalent to Mathlib's univariate restricted-series ring.
 
@@ -73,6 +75,23 @@ theorem denseRange_eval₂RingHom_weightedX {T : Fin 1 → Set A} (hT : IsWeight
   refine ⟨MvPolynomial.eval₂Hom Polynomial.C (fun _ ↦ Polynomial.X)
     ((weightedPolynomialsEquiv hT).symm ⟨f, hf⟩), ?_⟩
   rw [← RingHom.comp_apply, ← hcomp, ← coe_weightedPolynomialsEquiv, RingEquiv.apply_symm_apply]
+
+/-- **Evaluating a polynomial at the variable keeps its coefficients**: the coefficient of `Tⁿ` in
+`p(T) ∈ A⟨T⟩_T` is the `n`-th coefficient of `p`. -/
+@[simp]
+theorem coeff_eval₂_weightedC_weightedX {T : Fin 1 → Set A} (hT : IsWeightFamily T)
+    (p : Polynomial A) (n : ℕ) :
+    MvPowerSeries.coeff (Finsupp.single 0 n)
+      ((Polynomial.eval₂ (weightedC T hT) (weightedX T hT 0) p : weightedRestrictedSubring T hT) :
+        MvPowerSeries (Fin 1) A) = p.coeff n := by
+  rw [Polynomial.eval₂_eq_sum_range]
+  simp only [AddSubmonoidClass.coe_finsetSum, Subring.coe_mul, SubmonoidClass.coe_pow,
+    coe_weightedC, coe_weightedX, map_sum, MvPowerSeries.coeff_C_mul, MvPowerSeries.coeff_X_pow,
+    (Finsupp.single_injective (0 : Fin 1)).eq_iff, mul_ite, mul_one, mul_zero,
+    Finset.sum_ite_eq, Finset.mem_range]
+  split_ifs with h
+  · rfl
+  · exact (Polynomial.coeff_eq_zero_of_natDegree_lt (by omega)).symm
 
 end Polynomial
 
@@ -159,6 +178,18 @@ theorem coe_weightedRestrictedSubringOneEquiv
         PowerSeries R) =
       MvPowerSeries.renameEquiv R finOneEquiv (f : MvPowerSeries (Fin 1) R) := by
   simp [weightedRestrictedSubringOneEquiv]
+
+/-- The trivially weighted one-variable equivalence preserves coefficients: the coefficient of
+`Tⁿ` in `f` is the `n`-th coefficient of the corresponding univariate series. -/
+@[simp]
+theorem coeff_weightedRestrictedSubringOneEquiv
+    (f : weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight)
+    (n : ℕ) :
+    PowerSeries.coeff n
+        ((weightedRestrictedSubringOneEquiv f : PowerSeries.IsRestricted.subring (R := R) 1) :
+          PowerSeries R) =
+      MvPowerSeries.coeff (Finsupp.single 0 n) (f : MvPowerSeries (Fin 1) R) := by
+  simp [coe_weightedRestrictedSubringOneEquiv, Subsingleton.elim (finOneEquiv.symm ()) 0]
 
 /-- The inverse trivially weighted one-variable equivalence renames the sole variable back from
 `Unit` to `Fin 1` on underlying power series. -/

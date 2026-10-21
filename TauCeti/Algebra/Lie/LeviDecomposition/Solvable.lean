@@ -69,16 +69,16 @@ private theorem exists_lieSubalgebra_isCompl_of_isCompl_map_mkQ [CharZero K] {L 
     refine codisjoint_iff.2 (Submodule.eq_top_iff'.2 fun x ↦ ?_)
     obtain ⟨k, hk, s₁, hs₁, hks⟩ :=
       Submodule.mem_sup.1 (hS₁.codisjoint.eq_top ▸ Submodule.mem_top (x := A.mkQ x))
-    obtain ⟨⟨i, hi⟩, rfl⟩ := LieIdeal.mem_map_of_surjective A.mkQ_surjective hk
-    obtain ⟨s, rfl⟩ := A.mkQ_surjective s₁
+    obtain ⟨⟨i, hi⟩, rfl⟩ := LieIdeal.mem_map_of_surjective A.surjective_mkQ hk
+    obtain ⟨s, rfl⟩ := A.surjective_mkQ s₁
     have hxs : x - s - i ∈ A := by
-      rw [← LieIdeal.ker_mkQ A, LieHom.mem_ker, map_sub, map_sub, ← hks]
+      rw [← LieIdeal.mkQ_ker A, LieHom.mem_ker, map_sub, map_sub, ← hks]
       abel
     refine Submodule.mem_sup.2 ⟨x - s, ?_, s, hs₁, sub_add_cancel x s⟩
     rw [← sub_add_cancel (x - s) i]
     exact I.add_mem (hAI hxs) hi
   have hPI {x : L} (hxP : x ∈ P) (hxI : x ∈ I) : x ∈ A := by
-    rw [← LieIdeal.ker_mkQ A, LieHom.mem_ker]
+    rw [← LieIdeal.mkQ_ker A, LieHom.mem_ker]
     exact Submodule.disjoint_def.1 hS₁.disjoint _ (LieIdeal.mem_map hxI) hxP
   -- The ideal `I ∩ P = A` of `P` is abelian with quotient `L ⧸ I`: apply the abelian case.
   have : IsLieAbelian (I.comap P.incl) := by
@@ -114,12 +114,12 @@ private theorem exists_lieSubalgebra_isCompl_of_isSolvable_of_finrank_eq [CharZe
     exact isCompl_bot_top
   have hAI : A ≤ I := derivedAbelianOfIdeal_le I
   -- The quotient `L ⧸ A` is smaller, and its ideal `I ⧸ A` is solvable with quotient `L ⧸ I`.
-  have : IsSolvable (I.map A.mkQ) := LieIdeal.isSolvable_map A.mkQ I A.mkQ_surjective
+  have : IsSolvable (I.map A.mkQ) := LieIdeal.isSolvable_map A.mkQ I A.surjective_mkQ
   have : IsKilling K ((L ⧸ A) ⧸ I.map A.mkQ) := by
-    have hAI' : A ≤ I.mkQ.ker := by rwa [LieIdeal.ker_mkQ]
+    have hAI' : A ≤ I.mkQ.ker := by rwa [LieIdeal.mkQ_ker]
     rw [← I.ker_liftQ_mkQ hAI']
     exact isKilling_of_equiv
-      ((A.liftQ I.mkQ hAI').quotKerEquivOfSurjective (A.liftQ_surjective _ _ I.mkQ_surjective)).symm
+      ((A.liftQ I.mkQ hAI').quotKerEquivOfSurjective (A.liftQ_surjective _ _ I.surjective_mkQ)).symm
   have hlt : finrank K (L ⧸ A) < n := by
     have h := Submodule.finrank_quotient_add_finrank A.toSubmodule
     have hpos : 0 < finrank K A.toSubmodule := Nat.pos_of_ne_zero fun h0 ↦

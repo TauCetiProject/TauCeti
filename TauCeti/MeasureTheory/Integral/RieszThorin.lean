@@ -313,7 +313,7 @@ private theorem norm_integral_mul_le_of_eLpNorm_le_one (T : SimpleFunc α ℂ �
     ‖∫ y, T u y * v y ∂ν‖ ≤ M := by
   have h : ‖∫ y, T u y * v y ∂ν‖ₑ ≤ M := by
     calc ‖∫ y, T u y * v y ∂ν‖ₑ ≤ eLpNorm (T u) t ν * eLpNorm v t' ν :=
-          enorm_integral_mul_le (T u).aestronglyMeasurable v.aestronglyMeasurable
+          enorm_integral_mul_le
       _ ≤ (M * eLpNorm u s μ) * 1 := by gcongr; exact hT u
       _ ≤ M * 1 * 1 := by gcongr
       _ = M := by simp

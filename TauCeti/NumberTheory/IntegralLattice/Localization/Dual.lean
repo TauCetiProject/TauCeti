@@ -76,7 +76,7 @@ theorem isBaseChange_localizationDualToCompletion :
     IsBaseChange ℚ_[p] (L.localizationDualToCompletion p) := by
   have hL : IsLocalizedModule (nonZeroDivisors ℤ) L.carrier.subtype :=
     (isLocalizedModule_iff_isBaseChange (nonZeroDivisors ℤ) ℚ _).mpr
-      (Submodule.IsLattice.isBaseChange_subtype L.carrier)
+      (Submodule.isBaseChange_subtype L.carrier)
   let : IsLocalizedModule (nonZeroDivisors ℤ) L.dualCarrier.subtype :=
     { map_units := hL.map_units
       surj := fun v ↦ by
@@ -92,7 +92,7 @@ theorem isBaseChange_localizationDualToCompletion :
 /-- The localization of the dual carrier embeds injectively in the completed rational space. -/
 theorem localizationDualToCompletion_injective :
     Function.Injective (L.localizationDualToCompletion p) := by
-  let : IsAddTorsionFree V := .of_module_rat V
+  let : HasUniqueDiv V := .of_module_rat V
   exact (L.isBaseChange_localizationDualToCompletion p).injective_of_tensorProduct_mk_injective
     (Module.Flat.tensorProduct_mk_injective ℤ_[p] (L.LocalDualCarrier p) ℚ_[p])
 

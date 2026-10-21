@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic
-public import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange
+public import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic
 import Mathlib.Algebra.Polynomial.Roots
 
 /-!

@@ -290,6 +290,26 @@ end TauCeti
 
 namespace ContinuousLinearMap
 
+/-- A linear functional nonnegative on the coordinate half-space is determined by its normal
+coefficient. Tangential directions lie in the kernel. -/
+theorem eq_mul_apply_zero_of_nonneg {k : ℕ} [NeZero k]
+    (ν : EuclideanSpace ℝ (Fin k) →L[ℝ] ℝ)
+    (hnonneg : ∀ v : EuclideanSpace ℝ (Fin k), 0 ≤ v 0 → 0 ≤ ν v)
+    (u : EuclideanSpace ℝ (Fin k)) :
+    ν u = ν (EuclideanSpace.single 0 1) * u 0 := by
+  have hker (v : EuclideanSpace ℝ (Fin k)) (hv : v 0 = 0) : ν v = 0 := by
+    refine le_antisymm ?_ (hnonneg v hv.ge)
+    have hn := hnonneg (-v) (by simp [hv])
+    rwa [map_neg, neg_nonneg] at hn
+  let e₀ : EuclideanSpace ℝ (Fin k) := EuclideanSpace.single 0 1
+  have he₀ : e₀ 0 = 1 := by simp [e₀]
+  have hdec : u = u 0 • e₀ + (u - u 0 • e₀) := by abel
+  have hrest : (u - u 0 • e₀) 0 = 0 := by simp [he₀]
+  calc
+    ν u = ν (u 0 • e₀ + (u - u 0 • e₀)) := congrArg ν hdec
+    _ = ν e₀ * u 0 := by
+      rw [map_add, hker _ hrest, map_smul, smul_eq_mul, add_zero, mul_comm]
+
 open Filter Topology in
 /-- A continuous linear functional on `ℝᵏ` which vanishes at a point `p` of the boundary hyperplane
 of the half-space `{y | y 0 ≥ 0}`, and which near `p` within the half-space is nonnegative and
@@ -322,11 +342,6 @@ theorem exists_pos_eq_mul_apply_zero_of_eventually_nonneg {k : ℕ} [NeZero k]
     obtain ⟨t, ht, htn, -⟩ := key v hv
     rw [hshift] at htn
     exact (mul_nonneg_iff_of_pos_left ht).1 htn
-  have hker : ∀ v : EuclideanSpace ℝ (Fin k), v 0 = 0 → ν v = 0 := by
-    intro v hv
-    refine le_antisymm ?_ (hν_nonneg v hv.ge)
-    have := hν_nonneg (-v) (by simp [hv])
-    rwa [map_neg, neg_nonneg] at this
   set e₀ : EuclideanSpace ℝ (Fin k) := EuclideanSpace.single 0 1
   have he₀ : e₀ 0 = 1 := by simp [e₀]
   refine ⟨ν e₀, ?_, fun u => ?_⟩
@@ -334,9 +349,6 @@ theorem exists_pos_eq_mul_apply_zero_of_eventually_nonneg {k : ℕ} [NeZero k]
     have := htp (by simp [hp, he₀, ht])
     rw [hshift] at this
     exact pos_of_mul_pos_right this ht.le
-  · have hdec : u = u 0 • e₀ + (u - u 0 • e₀) := by abel
-    have hrest : (u - u 0 • e₀) 0 = 0 := by simp [he₀]
-    calc ν u = ν (u 0 • e₀ + (u - u 0 • e₀)) := congrArg ν hdec
-      _ = ν e₀ * u 0 := by rw [map_add, hker _ hrest, map_smul, smul_eq_mul, add_zero, mul_comm]
+  · exact ν.eq_mul_apply_zero_of_nonneg hν_nonneg u
 
 end ContinuousLinearMap

@@ -35,6 +35,8 @@ these to arbitrary finite quotients.
 
 public section
 
+open Subgroup (quotientSubgroupOfEquivMap)
+
 namespace TauCeti
 
 open ContCohomology

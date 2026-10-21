@@ -366,6 +366,12 @@ theorem toPath_apply (γ : MooreLoopSpace X x) (s : I) :
 theorem continuous_toPath : Continuous (toPath : MooreLoopSpace X x → Path x x) :=
   continuous_induced_rng.2 (MoorePath.continuous_toUnitPath.comp continuous_toMoorePath)
 
+/-- Normalizing the Moore unit gives the constant fixed-interval loop. -/
+@[simp]
+theorem toPath_one : (1 : MooreLoopSpace X x).toPath = Path.refl x := by
+  ext t
+  simp [toPath_apply]
+
 /-- A loop on the unit interval at `x`, as a Moore loop of length one. -/
 def _root_.Path.toMooreLoop (p : Path x x) : MooreLoopSpace X x :=
   ⟨p.toMoorePath, Path.source_toMoorePath p, Path.target_toMoorePath p⟩

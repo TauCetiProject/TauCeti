@@ -89,7 +89,7 @@ theorem Free.of_flat_fiber [IsLocalRing B] [Module.FinitePresentation B M] [Flat
   refine free_of_lTensor_residueField_injective _ g hg hex ?_
   -- `F ⊗[B] K → F ⊗[B] Bⁿ` is injective, since `M` is flat over `R`.
   have h₁ : Function.Injective ((LinearMap.ker g).subtype.baseChange F) := by
-    rw [LinearMap.baseChange_eq_ltensor]
+    rw [LinearMap.baseChange_eq_lTensor]
     exact (LinearMap.injective_lTensor_iff_injective_lTensor_restrictScalars k _).mpr <|
       LinearMap.lTensor_injective_of_exact_of_flat (g.restrictScalars R) hg _
         Subtype.val_injective hex k

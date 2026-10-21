@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Homology.Curved.Shift
 public import TauCeti.CategoryTheory.Exact.Stable.Triangulated
-public import TauCeti.CategoryTheory.Localization.Triangulated
 
 /-!
 # The homotopy category of curved duplexes is triangulated
@@ -78,12 +77,9 @@ variable (C w)
 the images of Happel's distinguished triangles under the equivalence with the componentwise split
 stable category. -/
 noncomputable instance instPretriangulated : Pretriangulated (HomotopyCategory C w) :=
-  letI := (curvedDuplex_split_isFrobenius C w).stableHasShift
-  letI := (curvedDuplex_split_isFrobenius C w).stableShiftFunctor_additive
-  letI := (curvedDuplex_split_isFrobenius C w).stablePretriangulated
-  letI := curvedDuplexSplitStableToHomotopyCommShift C w
-  Triangulated.Localization.pretriangulated (curvedDuplexSplitStableToHomotopy C w)
-    (MorphismProperty.isomorphisms _)
+  (curvedDuplex_split_isFrobenius C w).pretriangulatedOfCommShiftEquivalence
+      (curvedDuplexSplitStableToHomotopy C w)
+      (curvedDuplexSplitStableToHomotopyCommShift C w)
 
 end CurvedDuplex.HomotopyCategory
 
@@ -99,11 +95,9 @@ theorem curvedDuplexSplitStableToHomotopy_isTriangulated :
     letI := (curvedDuplex_split_isFrobenius C w).stablePretriangulated
     letI := curvedDuplexSplitStableToHomotopyCommShift C w
     (curvedDuplexSplitStableToHomotopy C w).IsTriangulated :=
-  letI := (curvedDuplex_split_isFrobenius C w).stableHasShift
-  letI := (curvedDuplex_split_isFrobenius C w).stableShiftFunctor_additive
-  letI := (curvedDuplex_split_isFrobenius C w).stablePretriangulated
-  letI := curvedDuplexSplitStableToHomotopyCommShift C w
-  Triangulated.Localization.isTriangulated_functor _ (MorphismProperty.isomorphisms _)
+  (curvedDuplex_split_isFrobenius C w).isTriangulated_functor_ofCommShiftEquivalence
+      (curvedDuplexSplitStableToHomotopy C w)
+      (curvedDuplexSplitStableToHomotopyCommShift C w)
 
 end ExactStructure
 
@@ -113,14 +107,9 @@ variable (C w) in
 /-- **The homotopy category of curved duplexes is triangulated**, with the shift by `1` given by
 the parity shift. -/
 instance instIsTriangulated : IsTriangulated (HomotopyCategory C w) :=
-  letI := (curvedDuplex_split_isFrobenius C w).stableHasShift
-  letI := (curvedDuplex_split_isFrobenius C w).stableShiftFunctor_additive
-  letI := (curvedDuplex_split_isFrobenius C w).stablePretriangulated
-  letI := curvedDuplexSplitStableToHomotopyCommShift C w
-  haveI := (curvedDuplex_split_isFrobenius C w).stableIsTriangulated
-  haveI := curvedDuplexSplitStableToHomotopy_isTriangulated C w
-  Triangulated.Localization.isTriangulated (curvedDuplexSplitStableToHomotopy C w)
-    (MorphismProperty.isomorphisms _)
+  (curvedDuplex_split_isFrobenius C w).isTriangulated_ofCommShiftEquivalence
+      (curvedDuplexSplitStableToHomotopy C w)
+      (curvedDuplexSplitStableToHomotopyCommShift C w)
 
 variable {S : ShortComplex (CurvedDuplex C w)}
 
@@ -195,9 +184,11 @@ theorem mk_distinguished_of_conflation (hS : ((split C).curvedDuplex w).Conflati
   let := (curvedDuplex_split_isFrobenius C w).stableShiftFunctor_additive
   let := (curvedDuplex_split_isFrobenius C w).stablePretriangulated
   let := curvedDuplexSplitStableToHomotopyCommShift C w
-  refine ⟨_, mapStableConflationTriangleIso hS a δ ha hδ, ?_⟩
-  rw [IsFrobenius.stablePretriangulated_distinguishedTriangles]
-  exact (curvedDuplex_split_isFrobenius C w).stableConflationTriangle_mem S hS
+  exact isomorphic_distinguished _
+    ((curvedDuplex_split_isFrobenius C w).map_stableConflationTriangle_mem_distTriang
+      (curvedDuplexSplitStableToHomotopy C w)
+      (curvedDuplexSplitStableToHomotopyCommShift C w) S hS) _
+    (mapStableConflationTriangleIso hS a δ ha hδ)
 
 variable (C w) in
 /-- The distinguished triangles of the homotopy category of curved duplexes are exactly the
@@ -213,15 +204,16 @@ theorem mem_distTriang_iff (T : Triangle (HomotopyCategory C w)) :
           ((nullHomotopic C w).quotientFunctor.map S.g)
           ((nullHomotopic C w).quotientFunctor.map δ ≫
             (parityShiftCompQuotientFunctorIso C w).hom.app S.X₁)) := by
-  refine ⟨fun ⟨T', e, hT'⟩ ↦ ?_, fun ⟨S, hS, a, δ, ha, hδ, ⟨e⟩⟩ ↦
+  refine ⟨fun hT ↦ ?_, fun ⟨S, hS, a, δ, ha, hδ, ⟨e⟩⟩ ↦
     isomorphic_distinguished _ (mk_distinguished_of_conflation hS a δ ha hδ) _ e⟩
   let := (curvedDuplex_split_isFrobenius C w).stableHasShift
   let := (curvedDuplex_split_isFrobenius C w).stableShiftFunctor_additive
   let := (curvedDuplex_split_isFrobenius C w).stablePretriangulated
   let := curvedDuplexSplitStableToHomotopyCommShift C w
-  rw [IsFrobenius.stablePretriangulated_distinguishedTriangles] at hT'
-  obtain ⟨S, hS, ⟨e'⟩⟩ := ((curvedDuplex_split_isFrobenius C w).mem_stableDistinguishedTriangles_iff
-    T').1 hT'
+  obtain ⟨S, hS, ⟨e⟩⟩ :=
+    ((curvedDuplex_split_isFrobenius C w).mem_distTriang_ofCommShiftEquivalence_iff
+      (curvedDuplexSplitStableToHomotopy C w)
+      (curvedDuplexSplitStableToHomotopyCommShift C w) T).1 hT
   -- Extend the inclusion into the disk sum across the inflation of `S`, and pass to cokernels.
   have hI := (curvedDuplexSplitSuspensionPresentation S.X₁).isInjective
   have hi := ((split C).curvedDuplex w).isInflation_f hS
@@ -230,7 +222,7 @@ theorem mem_distTriang_iff (T : Triangle (HomotopyCategory C w)) :
   have hkc := ((split C).curvedDuplex w).isKernelCokernelPair S hS
   refine ⟨S, hS, a, hkc.desc (a ≫ diskSumToParityShift S.X₁)
     (by rw [reassoc_of% ha, toDiskSum_comp_diskSumToParityShift]), ha, hkc.g_desc _ _, ⟨?_⟩⟩
-  exact e ≪≫ (curvedDuplexSplitStableToHomotopy C w).mapTriangle.mapIso e' ≪≫
+  exact e ≪≫
     (mapStableConflationTriangleIso hS a _ ha (hkc.g_desc _ _)).symm
 
 end CurvedDuplex.HomotopyCategory

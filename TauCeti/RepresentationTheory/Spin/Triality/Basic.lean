@@ -73,6 +73,30 @@ noncomputable def d4SpinPlusToVectorEquiv :
     d4BlockTwoToZeroEquiv |>.trans
       D4Tripled.vectorBlockEquiv.symm
 
+/-- The vector-to-odd-spin triality equivalence agrees with the coordinate block rotation. -/
+@[simp]
+theorem d4SpinMinusBlockEquiv_d4VectorToSpinMinusEquiv (v : Fin 4 ⊕ Fin 4 → ℚ) :
+    P.d4SpinMinusBlockEquiv b (P.d4VectorToSpinMinusEquiv b v) =
+      d4BlockZeroToOneEquiv (D4Tripled.vectorBlockEquiv v) := by
+  simp only [d4VectorToSpinMinusEquiv, LinearEquiv.trans_apply,
+    LinearEquiv.apply_symm_apply]
+
+/-- The odd-to-even-spin triality equivalence agrees with the coordinate block rotation. -/
+@[simp]
+theorem d4SpinPlusBlockEquiv_d4SpinMinusToSpinPlusEquiv (x : spinMinus Q P) :
+    P.d4SpinPlusBlockEquiv b (P.d4SpinMinusToSpinPlusEquiv b x) =
+      d4BlockOneToTwoEquiv (P.d4SpinMinusBlockEquiv b x) := by
+  simp only [d4SpinMinusToSpinPlusEquiv, LinearEquiv.trans_apply,
+    LinearEquiv.apply_symm_apply]
+
+/-- The even-spin-to-vector triality equivalence agrees with the coordinate block rotation. -/
+@[simp]
+theorem vectorBlockEquiv_d4SpinPlusToVectorEquiv (y : spinPlus Q P) :
+    D4Tripled.vectorBlockEquiv (P.d4SpinPlusToVectorEquiv b y) =
+      d4BlockTwoToZeroEquiv (P.d4SpinPlusBlockEquiv b y) := by
+  simp only [d4SpinPlusToVectorEquiv, LinearEquiv.trans_apply,
+    LinearEquiv.apply_symm_apply]
+
 /-- Three successive concrete triality intertwiners return every vector to itself. -/
 @[simp]
 theorem d4TrialityCycle_apply_apply_apply (v : Fin 4 ⊕ Fin 4 → ℚ) :

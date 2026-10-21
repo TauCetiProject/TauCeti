@@ -29,8 +29,7 @@ a finite-type ambient affine group.
 * `TauCeti.smoothCommHopfAlgProperty.productOfNormal`: the multiplication image of a normal
   smooth subgroup and another smooth subgroup is smooth in a finite-type ambient affine group.
 
-This supplies the smoothness part of binary-product closure in Layer 5, "The unipotent radical",
-of the ReductiveGroups roadmap.
+This supplies the smoothness part of binary-product closure for the unipotent radical.
 -/
 
 public section

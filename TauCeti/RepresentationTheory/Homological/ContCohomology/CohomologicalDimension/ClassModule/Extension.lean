@@ -154,6 +154,19 @@ theorem abelianizationProPExtensionSection_apply (q : G ⧸ V) :
     abelianizationProPExtensionSection p G V q = QuotientGroup.mk q.out :=
   (rfl)
 
+/-- The defect of the representative section of the class-module extension is the explicit
+class-module cocycle, read multiplicatively. No normalization of the representatives is needed. -/
+@[simp]
+theorem factorSetFun_abelianizationProPExtensionSection (q r : G ⧸ V) :
+    Additive.ofMul (GroupExtension.factorSetFun (abelianizationProPExtensionSection p G V) (q, r)) =
+      abelianizationProPFactorSet p G V (q, r) := by
+  rw [abelianizationProPFactorSet_apply]
+  apply Additive.toMul.injective
+  simp only [toMul_ofMul]
+  apply (abelianizationProPExtension p G V).inl_injective
+  rw [GroupExtension.inl_factorSetFun]
+  simp [abelianizationProPExtensionSection_apply]
+
 /-- Conjugation in the extension induces the canonical quotient action on `Vᵃᵇ(p)`. -/
 theorem abelianizationProPExtension_inducesAction :
     TauCeti.GroupExtension.InducesAction (abelianizationProPExtension p G V) := by

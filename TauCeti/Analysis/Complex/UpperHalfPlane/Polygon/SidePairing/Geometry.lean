@@ -31,6 +31,7 @@ coverage by all translates, require additional hypotheses.
   the interior of the original polygon.
 * `ConvexPolygon.SidePairing.inter_smul_carrier_subset_range_sideGeodesic`: intersections occur
   only on the supporting geodesic of the paired side.
+* `ConvexPolygon.SidePairing.map_injective`: distinct sides have distinct side-pairing maps.
 * `ConvexPolygon.SidePairing.mem_interior_union_smul_carrier`: local coverage when the other
   side inequalities in both tiles are strict.
 * `ConvexPolygon.SidePairing.mem_interior_union_smul_carrier_of_mem_side`: local coverage at
@@ -158,6 +159,18 @@ theorem mem_interior_union_smul_carrier (i : Fin n) {z : ℍ}
       rwa [← σ.map_smul_leftHalfPlane, closure_smul,
         Set.mem_smul_set_iff_inv_smul_mem] at hright
     · exact subset_closure (hwinv j hj)
+
+/-- Distinct sides have distinct side-pairing maps: the translate of the polygon by the map of
+side `i` meets the polygon only on the supporting geodesic of `pair i`, which contains no other
+side. -/
+theorem map_injective : Function.Injective σ.map := by
+  intro i i' h
+  obtain ⟨z, hz, hzp, hzq⟩ := P.exists_mem_side_ne_endpoints (σ.pair i')
+  have hzi : z ∈ range (geodesicLine (P.sideGeodesic (σ.pair i))) :=
+    σ.inter_smul_carrier_subset_range_sideGeodesic i (h ▸ σ.side_subset_inter_smul_carrier i' hz)
+  by_contra hne
+  exact disjoint_left.1 (disjoint_leftHalfPlane_range_geodesicLine _)
+    (P.mem_leftHalfPlane_of_mem_side hz hzp hzq (σ.pair.injective.ne hne)) hzi
 
 /-- At every point of the paired side other than its finite endpoints, the two adjacent
 polygon tiles together contain a neighbourhood. No extra side inequalities are assumed. -/

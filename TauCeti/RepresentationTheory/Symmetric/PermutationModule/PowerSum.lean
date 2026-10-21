@@ -107,7 +107,7 @@ not at all. -/
 private theorem card_filter_youngColouring [DecidableEq σ] (ν : n.Partition)
     (hν : ν.parts.card ≤ Fintype.card σ) (x : σ) :
     #{j | youngColouring ν hν j = x} = partWeight σ ν x := by
-  rw [partWeight_apply, rowLen_diagramOf]
+  rw [partWeight_apply, YoungDiagram.rowLen_ofPartition]
   rcases lt_or_ge (Fintype.equivFin σ x : ℕ) (ν.parts.sort (· ≥ ·)).length with hx | hx
   · -- The letter `x` is the row `i`, whose cells are the fibre of `youngBlock ν` over `i`.
     let i : Fin (ν.parts.sort (· ≥ ·)).length := ⟨Fintype.equivFin σ x, hx⟩
