@@ -10,7 +10,7 @@ public import Mathlib.RingTheory.HahnSeries.PowerSeries
 /-!
 # Power series as scalars on Hahn series
 
-For an `A⟦X⟧`-algebra `S`, the `S`-algebra structure on `A⟦Γ⟧` is inherited from `A⟦X⟧`
+If `A⟦X⟧` is an `S`-algebra, the `S`-algebra structure on `A⟦Γ⟧` is inherited from `A⟦X⟧`
 through `HahnSeries.ofPowerSeries`. This file records that the resulting algebra actions form a
 scalar tower `S → A⟦X⟧ → A⟦Γ⟧`.
 
@@ -26,7 +26,7 @@ open scoped PowerSeries
 
 namespace TauCeti
 
-/-- For an `A⟦X⟧`-algebra `S`, the scalars of `S` on the Hahn series `A⟦Γ⟧` factor through
+/-- If `A⟦X⟧` is an `S`-algebra, the scalars of `S` on the Hahn series `A⟦Γ⟧` factor through
 `A⟦X⟧`. The `S`-algebra structure on `A⟦Γ⟧` is the one inherited from `A⟦X⟧`. -/
 instance hahnSeries_isScalarTower_powerSeries {Γ A S : Type*} [Semiring Γ] [PartialOrder Γ]
     [IsStrictOrderedRing Γ] [CommSemiring A] [CommSemiring S] [Algebra S A⟦X⟧] :

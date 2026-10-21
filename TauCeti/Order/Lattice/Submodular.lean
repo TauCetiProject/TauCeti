@@ -77,7 +77,7 @@ protected theorem apply [Add K] [LE K] [Lattice L] {f : L → K} (hf : IsSubmodu
   (isSubmodular_def f).mp hf a b
 
 /-- The pointwise sum of two submodular functions is submodular. -/
-theorem add [AddCommMonoid K] [PartialOrder K] [IsOrderedAddMonoid K] [Lattice L]
+theorem add [AddCommMonoid K] [Preorder K] [IsOrderedAddMonoid K] [Lattice L]
     {f g : L → K} (hf : IsSubmodular f) (hg : IsSubmodular g) :
     IsSubmodular (fun a ↦ f a + g a) := by
   intro a b
@@ -97,7 +97,7 @@ theorem comp_latticeHom [Add K] [LE K] [Lattice L] [Lattice M] {f : L → K}
 /-- Let `a` minimize a submodular function over `s` and `b` minimize it over `t`. If the meet
 lies in `s` and the join lies in `t`, then the join minimizes over `t` and the meet minimizes
 over `s`. -/
-theorem isMinOn_sup_inf [AddCommMonoid K] [PartialOrder K] [IsOrderedCancelAddMonoid K]
+theorem isMinOn_sup_inf [AddCommMonoid K] [Preorder K] [IsOrderedCancelAddMonoid K]
     [Lattice L] {f : L → K} (hf : IsSubmodular f) {s t : Set L} {a b : L}
     (hamin : IsMinOn f s a) (hbmin : IsMinOn f t b) (hsup : a ⊔ b ∈ t) (hinf : a ⊓ b ∈ s) :
     IsMinOn f t (a ⊔ b) ∧ IsMinOn f s (a ⊓ b) := by
@@ -115,7 +115,7 @@ theorem isMinOn_sup_inf [AddCommMonoid K] [PartialOrder K] [IsOrderedCancelAddMo
 
 /-- The minimizers of a submodular function over a sublattice form a sublattice. Membership in
 this set records both membership in the original domain and minimality there. -/
-theorem isSublattice_minimizers [AddCommMonoid K] [PartialOrder K]
+theorem isSublattice_minimizers [AddCommMonoid K] [Preorder K]
     [IsOrderedCancelAddMonoid K] [Lattice L] {f : L → K} (hf : IsSubmodular f)
     {s : Set L} (hs : IsSublattice s) :
     IsSublattice {a | a ∈ s ∧ IsMinOn f s a} := by

@@ -35,9 +35,9 @@ variable {V K : Type*}
 
 namespace TerminalCut
 
-section PartialOrder
+section Preorder
 
-variable [DecidableEq V] [AddCommMonoid K] [PartialOrder K]
+variable [DecidableEq V] [AddCommMonoid K] [Preorder K]
   [IsOrderedCancelAddMonoid K]
 variable {f : Finset V → K}
 
@@ -66,7 +66,7 @@ theorem IsMinimum.uncross_sdiff [Fintype V] (hf : IsSymmSubmodular f)
     (isAdmissible_compl_iff.mp (by rwa [hTS_eq])) (by rwa [← hST_eq])
   exact ⟨hST_eq ▸ h.2, hTS_eq ▸ h.1.compl hf.symm⟩
 
-end PartialOrder
+end Preorder
 
 section LinearOrder
 

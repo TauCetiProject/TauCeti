@@ -11,6 +11,7 @@ public import TauCeti.LinearAlgebra.ExteriorPower.Basic
 import Mathlib.Algebra.Field.ZMod
 import Mathlib.LinearAlgebra.Matrix.Rank
 import TauCeti.LinearAlgebra.Matrix.Determinant.SumElim
+import TauCeti.LinearAlgebra.Matrix.Gram
 
 /-!
 # Plücker coordinates
@@ -55,6 +56,10 @@ Plücker coordinate, equal to `1`, and a family of more than `#ι` vectors has n
 * `TauCeti.plucker_sum_smul`: replacing the family by its product with a square matrix
   multiplies the Plücker coordinates by the determinant of that matrix.
 * `TauCeti.det_mul_transpose_eq_sum_plucker_mul`: the Cauchy–Binet formula.
+* `Matrix.det_mul_transpose_eq_sum_plucker_sq`: its Gram-determinant form for a matrix.
+* `Matrix.det_mul_transpose_nonneg` and `Matrix.det_mul_transpose_pos_iff`: over a linearly
+  ordered commutative ring, the Gram determinant of a matrix is nonnegative, and positive exactly
+  when the rows are linearly independent.
 * `TauCeti.det_mul_conjTranspose_eq_sum_plucker_mul_star`: its Hermitian form.
 * `TauCeti.plucker_ne_zero_iff`: over a field, the Plücker coordinates of a family are not all
   zero exactly when the family is linearly independent.
@@ -120,6 +125,16 @@ theorem plucker_map (f : R →+* S) (x : Fin p → ι → R) (s : powersetCard �
   refine congrArg Matrix.det (Matrix.ext fun i j ↦ ?_)
   simp
 
+/-- The maximal minors of a matrix with a ring homomorphism applied to all entries are the
+images of the maximal minors of the matrix. -/
+theorem _root_.Matrix.plucker_row_map (f : R →+* S) (A : Matrix (Fin p) ι R) :
+    plucker (A.map f).row = f ∘ plucker A.row := by
+  have h : (A.map f).row = fun i k ↦ f (A.row i k) := by
+    ext i k
+    simp
+  ext s
+  rw [h, plucker_map, Function.comp_apply]
+
 /-- Replacing a family by its product with a square matrix `A` multiplies its Plücker
 coordinates by `det A`. -/
 theorem plucker_sum_smul (A : Matrix (Fin p) (Fin p) R) (x : Fin p → ι → R)
@@ -165,6 +180,34 @@ theorem det_mul_transpose_eq_sum_plucker_mul [Fintype ι] (x y : Fin p → ι �
   rw [h, ← b.sum_repr (ιMulti R p x), map_sum]
   refine Finset.sum_congr rfl fun s _ ↦ ?_
   rw [map_smul, pairingDual_ιMulti_exteriorPower_basisFun, ← plucker_eq_repr_ιMulti, smul_eq_mul]
+
+/-- **The Cauchy–Binet formula for a Gram determinant.** The determinant of `A Aᵀ` is the sum of
+the squares of the maximal minors of `A`, the Plücker coordinates of its rows. -/
+theorem _root_.Matrix.det_mul_transpose_eq_sum_plucker_sq [Fintype ι] (A : Matrix (Fin p) ι R) :
+    (A * A.transpose).det = ∑ s, plucker A.row s ^ 2 := by
+  simpa [sq, Matrix.row_eq_self] using det_mul_transpose_eq_sum_plucker_mul A.row A.row
+
+/-- Over a linearly ordered commutative ring, the Gram determinant `det (A * Aᵀ)` of the rows of a
+matrix is nonnegative: by the Cauchy–Binet formula it is a sum of squares. -/
+theorem _root_.Matrix.det_mul_transpose_nonneg {R m n : Type*} [CommRing R] [LinearOrder R]
+    [IsStrictOrderedRing R] [Fintype m] [DecidableEq m] [Fintype n] (A : Matrix m n R) :
+    0 ≤ (A * A.transpose).det := by
+  -- Reindex the rows and columns by `Fin`, where the Cauchy–Binet formula applies.
+  set e := Fintype.equivFin m
+  set f := Fintype.equivFin n
+  set B := A.submatrix e.symm f.symm
+  have h : A * A.transpose = (B * B.transpose).submatrix e e := by
+    simp [B, Matrix.transpose_submatrix]
+  rw [h, Matrix.det_submatrix_equiv_self, Matrix.det_mul_transpose_eq_sum_plucker_sq]
+  exact Finset.sum_nonneg fun _ _ ↦ sq_nonneg _
+
+/-- Over a linearly ordered commutative ring, the Gram determinant `det (A * Aᵀ)` of the rows of a
+matrix is positive exactly when the rows are linearly independent. -/
+theorem _root_.Matrix.det_mul_transpose_pos_iff {R m n : Type*} [CommRing R] [LinearOrder R]
+    [IsStrictOrderedRing R] [Fintype m] [DecidableEq m] [Fintype n] {A : Matrix m n R} :
+    0 < (A * A.transpose).det ↔ LinearIndependent R A.row := by
+  rw [← Matrix.det_mul_transpose_ne_zero_iff, (Matrix.det_mul_transpose_nonneg A).lt_iff_ne',
+    ne_eq]
 
 /-- **The Cauchy–Binet formula, Hermitian form.** Over a commutative star ring, the determinant
 of the Hermitian Gram matrix `∑ₖ x i k * star (x j k)` of a family is the sum of the products of

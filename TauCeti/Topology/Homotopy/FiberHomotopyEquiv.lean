@@ -22,6 +22,11 @@ equivalence restricts to a homotopy equivalence of the fibres over each point
 * `TauCeti.FiberHomotopyEquiv p q`: fibre homotopy equivalences from `p` to `q`.
 * `TauCeti.fiberMap`: the map of fibres induced by a map over `B`.
 * `TauCeti.FiberHomotopyEquiv.fiber`: the homotopy equivalence of the fibres over a point.
+
+## Main results
+
+* `ContinuousMap.homotopic_of_fiber`: a homotopy of maps to the total space staying over one point
+  is a homotopy of maps into the fiber.
 -/
 
 public section
@@ -117,3 +122,19 @@ theorem coe_fiber_symm_apply (b : B) (e' : {e' // q e' = b}) :
 end FiberHomotopyEquiv
 
 end TauCeti
+
+namespace ContinuousMap
+
+/-- A homotopy of maps to the total space of a map `p`, staying over a fixed point `b`, gives a
+homotopy of maps into the fiber over `b`. -/
+theorem homotopic_of_fiber {E B Y : Type*} [TopologicalSpace E]
+    [TopologicalSpace Y] {p : E → B} {b : B} (f g : C(Y, p ⁻¹' {b}))
+    (K : C(Y × I, E)) (h₀ : ∀ y, K (y, 0) = f y) (h₁ : ∀ y, K (y, 1) = g y)
+    (hK : ∀ y s, p (K (y, s)) = b) : f.Homotopic g :=
+  ⟨{ toFun := fun z ↦ ⟨K (z.2, z.1), hK z.2 z.1⟩
+     continuous_toFun := by fun_prop
+     map_zero_left := fun y ↦ Subtype.ext (h₀ y)
+     map_one_left := fun y ↦ Subtype.ext (h₁ y) }⟩
+
+end ContinuousMap
+

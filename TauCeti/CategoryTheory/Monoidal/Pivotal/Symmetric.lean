@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Monoidal.Pivotal.Trace
+public import TauCeti.CategoryTheory.Monoidal.Pivotal.Spherical
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Drinfeld
 
 /-!
@@ -21,21 +21,23 @@ pairing `(X, Xᘁ)`, so both traces are computed by the braiding:
 `rightTrace f = η_ X Xᘁ ≫ f ▷ Xᘁ ≫ (β_ X Xᘁ).hom ≫ ε_ X Xᘁ` and
 `leftTrace f = η_ X Xᘁ ≫ (β_ X Xᘁ).hom ≫ Xᘁ ◁ f ≫ ε_ X Xᘁ`. Naturality of the braiding then
 shows that the left and right traces of every endomorphism agree: the canonical pivotal
-structure satisfies the sphericity condition.
+structure is spherical, registered as the instance `TauCeti.symmetricSphericalCategory`.
 
 ## Main declarations
 
 * `TauCeti.symmetricPivotalCategory`: the canonical pivotal structure on a symmetric rigid
   category, whose components are the Drinfeld isomorphisms (`TauCeti.pivotalIsoApp_eq_drinfeldIso`);
 * `TauCeti.rightTrace_eq_braiding` and `TauCeti.leftTrace_eq_braiding`: the traces as braided
-  loops, and `TauCeti.leftTrace_eq_rightTrace_of_symmetric`: the two traces agree.
+  loops, and `TauCeti.leftTrace_eq_rightTrace_of_symmetric`: the two traces agree;
+* `TauCeti.symmetricSphericalCategory`: the canonical pivotal structure is spherical, and
+  `TauCeti.trace_eq_braiding`: its trace as a braided loop.
 
 ## References
 
 * [P. Etingof, S. Gelaki, D. Nikshych, V. Ostrik, *Tensor categories*][egno15], §§8.9–8.10
 * [leanprover-community/mathlib4#42192](https://github.com/leanprover-community/mathlib4/pull/42192),
-  for the name `symmetricPivotalCategory` and the construction of the pivotal structure from the
-  Drinfeld isomorphism
+  for the names `symmetricPivotalCategory` and `symmetricSphericalCategory` and the construction
+  of the pivotal structure from the Drinfeld isomorphism
 -/
 
 public section
@@ -81,6 +83,16 @@ of every endomorphism agree. -/
 theorem leftTrace_eq_rightTrace_of_symmetric {X : C} (f : X ⟶ X) :
     leftTrace f = rightTrace f := by
   rw [leftTrace_eq_braiding, rightTrace_eq_braiding, braiding_naturality_left_assoc]
+
+/-- The canonical pivotal structure on a symmetric rigid category is spherical. -/
+instance symmetricSphericalCategory : SphericalCategory C where
+  leftTrace_eq_rightTrace := leftTrace_eq_rightTrace_of_symmetric
+
+/-- In a symmetric rigid category with its canonical spherical structure, the trace of `f`
+closes up `f` with the coevaluation of `(X, Xᘁ)` and the braided evaluation. -/
+theorem trace_eq_braiding {X : C} (f : X ⟶ X) :
+    trace f = η_ X Xᘁ ≫ f ▷ Xᘁ ≫ (β_ X Xᘁ).hom ≫ ε_ X Xᘁ := by
+  rw [trace_eq_rightTrace, rightTrace_eq_braiding]
 
 end Pivotal
 

@@ -9,13 +9,14 @@ public import Mathlib.Analysis.Complex.Trigonometric
 public import Mathlib.Analysis.SpecialFunctions.Artanh
 
 /-!
-# The addition formula and the monotonicity of the hyperbolic tangent
+# The addition formula and the monotonicity of the hyperbolic tangent, and `sinh (r / 2)`
 
 Mathlib's `Analysis/Complex/Trigonometric.lean` defines `Real.sinh`, `Real.cosh` and `Real.tanh`
 and proves the two addition formulae `Real.sinh_add` and `Real.cosh_add`, but records none for
 `Real.tanh`; `Analysis/SpecialFunctions/Artanh.lean` inverts `Real.tanh` on `(-1, 1)` and proves
 that the inverse is strictly monotone, but does not state the monotonicity of `Real.tanh`
-itself, nor its continuity. This file supplies these.
+itself, nor its continuity. This file supplies these, together with the square of
+`Real.sinh (r / 2)` in terms of the exponentials `exp (± r / 2)`.
 
 ## Main declarations
 
@@ -25,8 +26,9 @@ itself, nor its continuity. This file supplies these.
   compares two real numbers exactly as they compare, and is positive on the positive reals.
 * `Real.tanh_nonneg` and `Real.continuous_tanh` — `Real.tanh` is nonnegative on `[0, ∞)` and
   continuous.
+* `Real.four_mul_sinh_half_sq` — `4 * sinh (r / 2) ^ 2 = (exp (r / 2) - exp (-(r / 2))) ^ 2`.
 
-The formula is the quotient of the other two, both sides carrying the factor
+The formula `Real.tanh_add` is the quotient of the other two, both sides carrying the factor
 `cosh a * cosh b`, which is nonzero because `Real.cosh` is positive.
 
 Where it is used: `TauCeti/Analysis/SpecialFunctions/Artanh.lean` inverts it into the additive
@@ -95,5 +97,12 @@ theorem _root_.Real.continuous_tanh : Continuous Real.tanh := by
   simp_rw [funext Real.tanh_eq]
   exact (by fun_prop : Continuous fun x ↦ Real.exp x - Real.exp (-x)).div (by fun_prop)
     fun x ↦ (add_pos (Real.exp_pos x) (Real.exp_pos (-x))).ne'
+
+/-- The square of `sinh (r / 2)` in terms of `exp (± r / 2)`:
+`4 * sinh (r / 2) ^ 2 = (exp (r / 2) - exp (-(r / 2))) ^ 2`. -/
+theorem _root_.Real.four_mul_sinh_half_sq (r : ℝ) :
+    4 * Real.sinh (r / 2) ^ 2 = (Real.exp (r / 2) - Real.exp (-(r / 2))) ^ 2 := by
+  rw [Real.sinh_eq]
+  ring
 
 end TauCeti
