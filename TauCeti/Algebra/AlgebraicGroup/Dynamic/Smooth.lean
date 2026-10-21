@@ -16,8 +16,8 @@ Let `λ : 𝔾ₘ → G` be a cocharacter of an affine group `G = Spec H`, with 
 `P(λ)`, dynamic unipotent subgroup `U(λ)` and dynamic Levi subgroup `Z(λ)`. This file proves that
 `P(λ)` is formally smooth whenever `G` is, over an arbitrary commutative base ring. Since `U(λ)`
 and `Z(λ)` are retracts of `P(λ)`, all three are smooth when `G` is a smooth affine group of
-finite type over a field. Smoothness of `P(λ)` is part of what makes it a parabolic subgroup in
-the sense of `TauCeti.HopfIdeal.IsParabolic`.
+finite type over a Noetherian ring, for example a field. Smoothness of `P(λ)` is part of what
+makes it a parabolic subgroup in the sense of `TauCeti.HopfIdeal.IsParabolic`.
 
 The proof is the infinitesimal lifting criterion. Let `C → C ⧸ J` be a square-zero thickening
 and `g₀ ∈ P(λ)(C ⧸ J)`. By definition `T ↦ λ(T) g₀ λ(T)⁻¹` extends to a point `F₀` over
@@ -36,7 +36,8 @@ conjugation, `Ψ` is a single monomial whose constant coefficient is the `Xⁿ`-
 * `BialgHom.smoothCommHopfAlgProperty_quotient_parabolicDefiningHopfIdeal`,
   `BialgHom.smoothCommHopfAlgProperty_quotient_unipotentDefiningHopfIdeal` and
   `BialgHom.smoothCommHopfAlgProperty_quotient_leviDefiningHopfIdeal`: the dynamic parabolic,
-  unipotent and Levi subgroups of a smooth affine group of finite type over a field are smooth.
+  unipotent and Levi subgroups of a smooth affine group of finite type over a Noetherian ring
+  are smooth.
 
 ## References
 
@@ -201,34 +202,39 @@ instance formallySmooth_quotient_parabolicDefiningHopfIdeal (l : H →ₐc[R] La
     Ideal.Quotient.algHom_ext R ?_⟩
   rw [AlgHom.comp_assoc, Ideal.Quotient.liftₐ_comp, mkₐ_comp_constCoeffAlgHom]
 
-variable {k : Type u} [Field k] {H : FiniteTypeCommHopfAlgCat.{u, v} k}
+section FiniteType
 
-/-- **The dynamic parabolic of a smooth affine group of finite type over a field is smooth.** -/
+variable [IsNoetherianRing R] {H : FiniteTypeCommHopfAlgCat.{u, v} R}
+
+/-- **The dynamic parabolic of a smooth affine group of finite type over a Noetherian ring is
+smooth.** -/
 theorem smoothCommHopfAlgProperty_quotient_parabolicDefiningHopfIdeal
-    [Algebra.Smooth k H] (l : H →ₐc[k] LaurentPolynomial k) :
-    smoothCommHopfAlgProperty k
+    [Algebra.Smooth R H] (l : H →ₐc[R] LaurentPolynomial R) :
+    smoothCommHopfAlgProperty R
       (FiniteTypeCommHopfAlgCat.quotient H (parabolicDefiningHopfIdeal l)).obj := by
   rw [smoothCommHopfAlgProperty_iff]
   exact ⟨inferInstance, Algebra.FinitePresentation.of_finiteType.mp inferInstance⟩
 
-/-- **The dynamic unipotent subgroup of a smooth affine group of finite type over a field is
-smooth.** -/
+/-- **The dynamic unipotent subgroup of a smooth affine group of finite type over a Noetherian ring
+is smooth.** -/
 theorem smoothCommHopfAlgProperty_quotient_unipotentDefiningHopfIdeal
-    [Algebra.Smooth k H] (l : H →ₐc[k] LaurentPolynomial k) :
-    smoothCommHopfAlgProperty k
+    [Algebra.Smooth R H] (l : H →ₐc[R] LaurentPolynomial R) :
+    smoothCommHopfAlgProperty R
       (FiniteTypeCommHopfAlgCat.quotient H l.unipotentDefiningHopfIdeal).obj := by
   have := formallySmooth_quotient_unipotentDefiningHopfIdeal l
   rw [smoothCommHopfAlgProperty_iff]
   exact ⟨inferInstance, Algebra.FinitePresentation.of_finiteType.mp inferInstance⟩
 
-/-- **The dynamic Levi subgroup of a smooth affine group of finite type over a field is
-smooth.** -/
+/-- **The dynamic Levi subgroup of a smooth affine group of finite type over a Noetherian ring
+is smooth.** -/
 theorem smoothCommHopfAlgProperty_quotient_leviDefiningHopfIdeal
-    [Algebra.Smooth k H] (l : H →ₐc[k] LaurentPolynomial k) :
-    smoothCommHopfAlgProperty k
+    [Algebra.Smooth R H] (l : H →ₐc[R] LaurentPolynomial R) :
+    smoothCommHopfAlgProperty R
       (FiniteTypeCommHopfAlgCat.quotient H (leviDefiningHopfIdeal l)).obj := by
   have := formallySmooth_quotient_leviDefiningHopfIdeal l
   rw [smoothCommHopfAlgProperty_iff]
   exact ⟨inferInstance, Algebra.FinitePresentation.of_finiteType.mp inferInstance⟩
+
+end FiniteType
 
 end BialgHom
