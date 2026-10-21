@@ -172,10 +172,9 @@ theorem orthogonal_range_trajectoryOperator_le_map_ker
     filter_upwards [lift.coeFn_compLp ((ContinuousLinearMap.id ℝ (E →L[ℝ] E)).holder 2 AL v),
       (ContinuousLinearMap.id ℝ (E →L[ℝ] E)).coeFn_holder (r := 2) AL v] with s hs hAs
     simp [D, lift, hs, hAs]
-  refine ⟨mk _ v D hD, ?_, by simp⟩
-  rw [SetLike.mem_coe, LinearMap.mem_ker, ContinuousLinearMap.coe_coe,
-    trajectoryOperator_neg_eq_zero_iff, prev_mk]
-  exact h
+  exact ⟨mk _ v D hD,
+    LinearMap.mem_ker.mpr ((trajectoryOperator_neg_eq_zero_iff AL _).mpr (by simpa using h)),
+    by simp⟩
 
 /-- **The kernel of the formal adjoint is orthogonal to the range.** If the coefficient of
 `D_A u = u' + A u` is almost everywhere symmetric and `E` is finite dimensional, the value of
@@ -195,10 +194,10 @@ theorem map_ker_le_orthogonal_range_trajectoryOperator [FiniteDimensional ℝ E]
   -- The paths `u` with `⟪v, D_A u⟫ = 0` form a closed subspace containing the test fields.
   let K := ((innerSL ℝ v).comp (trajectoryOperator (p := 2) AL)).ker
   have hK := ((innerSL ℝ v).comp (trajectoryOperator (p := 2) AL)).isClosed_ker
+  have mem_K (u) : u ∈ K ↔ ⟪v, trajectoryOperator (p := 2) AL u⟫_ℝ = 0 := by simp [K]
   have htest (e : E) (φ : 𝓓((⊤ : Opens ℝ), ℝ)) :
       smulRightW1pL e (W1p.ofTestFunctionₗ volume ⊤ 2 φ) ∈ K := by
-    rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, ContinuousLinearMap.comp_apply,
-      innerSL_apply_apply, real_inner_comm, inner_trajectoryOperator_smulRightW1pL hsym,
+    rw [mem_K, real_inner_comm, inner_trajectoryOperator_smulRightW1pL hsym,
       h.integral_lineDeriv_smul_eq_neg_integral_smul, neg_add_cancel, inner_zero_right]
   -- By density of test functions, `K` contains every coordinate field, hence every path.
   have hcoord (e : E) (w : W1p volume ⊤ 2) : smulRightW1pL e w ∈ K :=
@@ -209,10 +208,7 @@ theorem map_ker_le_orthogonal_range_trajectoryOperator [FiniteDimensional ℝ E]
   have hu : u ∈ K := by
     rw [← sum_smulRightW1pL_toW1pL (Module.finBasis ℝ E) u]
     exact K.sum_mem fun i _ ↦ hcoord _ _
-  rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, ContinuousLinearMap.comp_apply,
-    innerSL_apply_apply] at hu
-  rw [ContinuousLinearMap.coe_coe, prevL_apply]
-  exact hu
+  simpa [v, prevL_apply] using (mem_K u).mp hu
 
 /-- **The orthogonal complement of the range of `D_A` is the kernel of its formal adjoint.** If
 the coefficient of
