@@ -75,15 +75,14 @@ theorem constantCoeff_commutationPentagonCoefficient (x y : GridState n) :
 unblocked pentagon coefficients. It counts empty pentagons carrying neither `X` nor `O` markings,
 over any commutative coefficient semiring. -/
 noncomputable def fullyBlockedCommutationMap : GridChain R n →ₗ[R] GridChain R n :=
-  Finsupp.linearCombination R fun x =>
-    (G.commutationMap R C (Finsupp.single x 1)).mapRange constantCoeff (map_zero _)
+  (G.commutationMap R C).constantCoeffReduction
 
 /-- On a single generator, the fully blocked map reads the constant pentagon coefficient. -/
 theorem fullyBlockedCommutationMap_single_apply (x y : GridState n) (r : R) :
     G.fullyBlockedCommutationMap R C (Finsupp.single x r) y =
       r * constantCoeff (G.commutationPentagonCoefficient R C x y) := by
-  rw [fullyBlockedCommutationMap, Finsupp.linearCombination_single, Finsupp.smul_apply,
-    smul_eq_mul, Finsupp.mapRange_apply, G.commutationMap_single_apply]
+  rw [fullyBlockedCommutationMap, LinearMap.constantCoeffReduction_single_apply,
+    G.commutationMap_single_apply]
 
 /-- On an arbitrary chain, the fully blocked map multiplies by the matrix of constant pentagon
 coefficients. -/
@@ -103,17 +102,8 @@ semilinear variable swap of the unblocked map becomes an ordinary linear map aft
 theorem fullyBlockedCommutationMap_mapRange_constantCoeff (c : GridChainMinus R n) :
     G.fullyBlockedCommutationMap R C (c.mapRange constantCoeff (map_zero _)) =
       (G.commutationMap R C c).mapRange constantCoeff (map_zero _) := by
-  induction c using Finsupp.induction_linear with
-  | zero => rw [Finsupp.mapRange_zero, map_zero, map_zero, Finsupp.mapRange_zero]
-  | add c d hc hd =>
-    rw [Finsupp.mapRange_add (map_add _), map_add, hc, hd, map_add,
-      Finsupp.mapRange_add (map_add _)]
-  | single x p =>
-    ext y
-    rw [Finsupp.mapRange_single, fullyBlockedCommutationMap_single_apply,
-      Finsupp.mapRange_apply, commutationMap_apply_apply,
-      Finsupp.sum_single_index (by simp), map_mul, constantCoeff_rename,
-      commutationPentagonCoefficient_def]
+  exact LinearMap.constantCoeffReduction_mapRange_constantCoeff (G.commutationMap R C) c
+    (fun p => constantCoeff_rename _ p)
 
 /-- The pentagon map after blocking all marking variables intertwines the fully blocked
 differentials. -/
@@ -121,19 +111,16 @@ theorem fullyBlockedCommutationMap_comp_fullyBlockedDifferential :
     G.fullyBlockedCommutationMap (ZMod 2) C ∘ₗ G.fullyBlockedDifferential =
       (G.swapColumns C.column (finRotate n C.column)).fullyBlockedDifferential ∘ₗ
         G.fullyBlockedCommutationMap (ZMod 2) C := by
-  have hred (H : GridDiagram n) (c : GridChainMinus (ZMod 2) n) :
-      H.fullyBlockedDifferential (c.mapRange constantCoeff (map_zero _)) =
-        (H.unblockedDifferential (ZMod 2) c).mapRange constantCoeff (map_zero _) := by
-    rw [← H.constantCoeffReduction_unblockedDifferential_eq_fullyBlockedDifferential,
-      LinearMap.constantCoeffReduction_mapRange_constantCoeff]
-  apply LinearMap.ext
-  intro c
-  obtain ⟨w, hw⟩ := Finsupp.mapRange_surjective
-    (constantCoeff : MvPolynomial (Fin n) (ZMod 2) → ZMod 2) (map_zero _)
-    (fun r => ⟨MvPolynomial.C r, constantCoeff_C _ r⟩) c
-  rw [← hw]
-  simp only [LinearMap.comp_apply, hred, fullyBlockedCommutationMap_mapRange_constantCoeff]
-  exact congrArg (fun c => c.mapRange constantCoeff (map_zero _))
-    (LinearMap.congr_fun (G.commutationMap_comp_unblockedDifferential C (ZMod 2)) w)
+  apply LinearMap.eq_of_mapRange_constantCoeff _ _ (f :=
+    (G.commutationMap (ZMod 2) C).comp (G.unblockedDifferential (ZMod 2))) (f' :=
+    ((G.swapColumns C.column (finRotate n C.column)).unblockedDifferential (ZMod 2)).comp
+      (G.commutationMap (ZMod 2) C))
+  · intro c
+    simp only [LinearMap.comp_apply, fullyBlockedDifferential_mapRange_constantCoeff,
+      fullyBlockedCommutationMap_mapRange_constantCoeff]
+  · intro c
+    simp only [LinearMap.comp_apply, fullyBlockedCommutationMap_mapRange_constantCoeff,
+      fullyBlockedDifferential_mapRange_constantCoeff]
+  · exact G.commutationMap_comp_unblockedDifferential C (ZMod 2)
 
 end TauCeti.GridDiagram
