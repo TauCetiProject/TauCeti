@@ -17,6 +17,9 @@ It is the canonical pushforward comparison for the functor sending an open to it
 with coefficient map the inverse structure-sheaf isomorphism. No quasicoherence, finiteness,
 or flatness hypothesis is required.
 
+The natural isomorphism is `TauCeti.AlgebraicGeometry.restrictExteriorPowerIso`;
+`TauCeti.AlgebraicGeometry.restrictExteriorPowerIso_hom_app` identifies its forward map.
+
 This is a comparison for `AlgebraicGeometry.Scheme.Modules.restrictFunctor`. Identifying its
 inverse with the adjunction-defined exterior-power pullback comparison requires compatibility
 with the restriction--pushforward adjunction; that identification is not asserted here.
