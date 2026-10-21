@@ -37,16 +37,18 @@ into the averaged variable.
 
 ## Main declarations
 
-* `inhomogeneousCochains.averageLast`: the average of an `(n + 1)`-cochain over its last
+* `TauCeti.inhomogeneousCochains.averageLast`: the average of an `(n + 1)`-cochain over its last
   argument.
-* `inhomogeneousCochains.d_comp_averageLast`: `h ∘ d = d ∘ h + (-1)^n` on `(n + 1)`-cochains.
-* `inhomogeneousCochains.d_zero_comp_averageLast`: `h ∘ d = averageMap - 1` on `0`-cochains.
-* `inhomogeneousCochains.d_smul_averageLast_of_d_eq_zero`: the explicit primitive of a
+* `TauCeti.inhomogeneousCochains.d_comp_averageLast`: `h ∘ d = d ∘ h + (-1)^n` on
+  `(n + 1)`-cochains.
+* `TauCeti.inhomogeneousCochains.d_zero_comp_averageLast`: `h ∘ d = averageMap - 1` on
+  `0`-cochains.
+* `TauCeti.inhomogeneousCochains.d_smul_averageLast_of_d_eq_zero`: the explicit primitive of a
   positive-degree cocycle.
-* `groupCohomology.averageCochainMap`: the averaging projection in degree `0`, as an
+* `TauCeti.groupCohomology.averageCochainMap`: the averaging projection in degree `0`, as an
   endomorphism of `inhomogeneousCochains A`.
-* `groupCohomology.averagingHomotopy`: the homotopy from the identity of
-  `inhomogeneousCochains A` to `groupCohomology.averageCochainMap A`.
+* `TauCeti.groupCohomology.averagingHomotopy`: the homotopy from the identity of
+  `inhomogeneousCochains A` to `TauCeti.groupCohomology.averageCochainMap A`.
 
 ## References
 
@@ -63,7 +65,9 @@ universe u
 
 open CategoryTheory
 
-namespace inhomogeneousCochains
+namespace TauCeti.inhomogeneousCochains
+
+open _root_.inhomogeneousCochains
 
 variable {k G : Type u} [CommRing k] [Group G] [Fintype G] [Invertible (Fintype.card G : k)]
 variable (A : Rep k G)
@@ -82,12 +86,13 @@ def averageLast (n : ℕ) :
       simp [Finset.smul_sum, smul_comm r] }
 
 /-- The value of the average over the last argument. -/
+@[simp]
 theorem averageLast_hom_apply (n : ℕ) (f : ModuleCat.of k ((Fin (n + 1) → G) → A))
     (x : Fin n → G) :
     (averageLast A n).hom f x = ⅟(Fintype.card G : k) • ∑ g : G, f (Fin.snoc x g) :=
   (rfl)
 
-/-- **Averaging over the last argument commutes with the differential up to sign.** On
+/-- **Averaging over the last argument is a homotopy relation with the differential.** On
 `(n + 1)`-cochains, `h ∘ d = d ∘ h + (-1)^n`. -/
 theorem d_comp_averageLast (n : ℕ) :
     d A (n + 1) ≫ averageLast A (n + 1) = averageLast A n ≫ d A n + (-1 : k) ^ n • 𝟙 _ := by
@@ -144,11 +149,11 @@ theorem d_smul_averageLast_of_d_eq_zero {n : ℕ} {f : ModuleCat.of k ((Fin (n +
   rw [map_smul, eq_neg_of_add_eq_zero_left h.symm, smul_neg, smul_smul, hsign, neg_one_smul,
     neg_neg]
 
-end inhomogeneousCochains
+end TauCeti.inhomogeneousCochains
 
-namespace groupCohomology
+namespace TauCeti.groupCohomology
 
-open _root_.inhomogeneousCochains
+open _root_.groupCohomology _root_.inhomogeneousCochains TauCeti.inhomogeneousCochains
 
 variable {k G : Type u} [CommRing k] [Group G] [Fintype G] [Invertible (Fintype.card G : k)]
 variable (A : Rep k G)
@@ -170,19 +175,16 @@ def averageCochainMap : inhomogeneousCochains A ⟶ inhomogeneousCochains A wher
       simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_ofHom,
         _root_.inhomogeneousCochains.d_hom_apply, LinearMap.compLeft_apply, Function.comp_apply, hf,
         A.ρ.averageMap_invariant _ (g 0)]
-      simp
-      -- The zero `1`-cochain evaluated at `g`; `Pi.zero_apply` does not fire through the
-      -- `ModuleCat.of` carrier.
-      rfl
+      simp [Pi.zero_apply (M := fun _ => A)]
     · simp
 
-/-- In degree `0`, `groupCohomology.averageCochainMap` is the averaging projection. -/
+/-- In degree `0`, `TauCeti.groupCohomology.averageCochainMap` is the averaging projection. -/
 @[simp]
 theorem averageCochainMap_f_zero :
     (averageCochainMap A).f 0 = ModuleCat.ofHom (A.ρ.averageMap.compLeft (Fin 0 → G)) :=
   (rfl)
 
-/-- In positive degrees, `groupCohomology.averageCochainMap` is zero. -/
+/-- In positive degrees, `TauCeti.groupCohomology.averageCochainMap` is zero. -/
 @[simp]
 theorem averageCochainMap_f_succ (n : ℕ) : (averageCochainMap A).f (n + 1) = 0 :=
   (rfl)
@@ -216,16 +218,17 @@ private theorem sub_averageCochainMap_eq_nullHomotopicMap' :
 /-- **The averaging contraction.** The identity of the complex of inhomogeneous cochains is
 homotopic to the averaging projection onto the invariants placed in degree `0`, through the
 homotopy whose component from degree `n + 1` to degree `n` is `(-1)^(n+1)` times the average
-over the last argument (`groupCohomology.averagingHomotopy_hom_succ`). -/
+over the last argument (`TauCeti.groupCohomology.averagingHomotopy_hom_succ`). -/
 def averagingHomotopy : Homotopy (𝟙 (inhomogeneousCochains A)) (averageCochainMap A) :=
   Homotopy.equivSubZero.symm <|
     (Homotopy.ofEq (sub_averageCochainMap_eq_nullHomotopicMap' A)).trans (Homotopy.nullHomotopy' _)
 
-/-- The component of `groupCohomology.averagingHomotopy` from degree `n + 1` to degree `n` is
-`(-1)^(n+1)` times the average over the last argument. -/
+/-- The component of `TauCeti.groupCohomology.averagingHomotopy` from degree `n + 1` to degree
+`n` is `(-1)^(n+1)` times the average over the last argument. -/
+@[simp]
 theorem averagingHomotopy_hom_succ (n : ℕ) :
     (averagingHomotopy A).hom (n + 1) n = (-1 : k) ^ (n + 1) • averageLast A n := by
-  simp [averagingHomotopy, Homotopy.equivSubZero, Homotopy.nullHomotopy', Homotopy.nullHomotopy,
-    Homotopy.trans, Homotopy.ofEq, averagingHomotopyHom]
+  simp [averagingHomotopy, Homotopy.equivSubZero, Homotopy.trans_hom, Homotopy.ofEq_hom,
+    Homotopy.nullHomotopy'_hom, averagingHomotopyHom]
 
-end groupCohomology
+end TauCeti.groupCohomology
