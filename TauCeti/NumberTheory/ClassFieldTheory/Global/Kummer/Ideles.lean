@@ -247,8 +247,7 @@ theorem auxiliaryKummerIdeleSubgroup_mk_surjective
 
 /-- Restricting the auxiliary Kummer subgroup to the exponent-one subgroup before taking
 its image in the idele class group gives the same auxiliary Kummer idele-class subgroup. -/
-@[simp]
-theorem map_subgroupOf_auxiliaryKummerIdeleSubgroup
+private theorem map_subgroupOf_auxiliaryKummerIdeleSubgroup
     (S T : Finset (HeightOneSpectrum (𝓞 K))) (n : ℕ) :
     ((auxiliaryKummerIdeleSubgroup S T n).subgroupOf
       (auxiliaryKummerIdeleSubgroup S T 1)).map
