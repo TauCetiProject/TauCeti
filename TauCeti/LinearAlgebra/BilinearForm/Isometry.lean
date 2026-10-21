@@ -14,6 +14,7 @@ public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import TauCeti.Algebra.Group.Subgroup.Map
 public import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
 public import TauCeti.LinearAlgebra.GeneralLinearGroup.Congr
+public import TauCeti.LinearAlgebra.Matrix.IsometryMatrices
 import Mathlib.LinearAlgebra.Charpoly.BaseChange
 
 /-!
@@ -73,6 +74,8 @@ Two statements are worth singling out.
 ## Main results
 
 * `TauCeti.BilinForm.isIsometry_iff_toMatrix`: the Gram-matrix criterion `Aᵀ * G * A = G`.
+* `TauCeti.BilinForm.isIsometry_toLin_iff_mem_isometryMatrices`: the same criterion, as
+  membership of a matrix in `Matrix.isometryMatrices` of the Gram matrix.
 * `TauCeti.BilinForm.IsIsometry.det_sq_eq_one`: `(det f) ^ 2 = 1` for an isometry of a form whose
   Gram determinant is a non-zero-divisor.
 * `TauCeti.BilinForm.IsIsometry.bijective`: over an integral domain, an isometry of a
@@ -268,6 +271,13 @@ theorem isIsometry_iff_toMatrix (b : Basis ι R M) :
         = LinearMap.BilinForm.toMatrix b B := by
   rw [isIsometry_iff_comp, ← (LinearMap.BilinForm.toMatrix b).injective.eq_iff,
     LinearMap.BilinForm.toMatrix_comp b b B f f]
+
+/-- A matrix `X` preserves the Gram matrix of `B` in a basis `b` exactly when the endomorphism it
+represents in `b` is an isometry of `B`. -/
+theorem isIsometry_toLin_iff_mem_isometryMatrices (b : Basis ι R M) {X : Matrix ι ι R} :
+    IsIsometry B (Matrix.toLin b b X) ↔
+      X ∈ Matrix.isometryMatrices (LinearMap.BilinForm.toMatrix b B) := by
+  rw [isIsometry_iff_toMatrix b, LinearMap.toMatrix_toLin, Matrix.mem_isometryMatrices]
 
 end Matrix
 
