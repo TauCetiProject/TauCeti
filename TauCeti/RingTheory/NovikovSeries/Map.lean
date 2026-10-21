@@ -8,8 +8,8 @@ module
 public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.Algebra.Group.Subgroup.Ker
 public import Mathlib.Data.Finsupp.Basic
-import Mathlib.GroupTheory.Coset.Basic
 public import TauCeti.RingTheory.NovikovSeries.Basic
+import TauCeti.GroupTheory.Coset.Fiber
 
 /-!
 # Pushforward and restriction of Novikov series
@@ -152,13 +152,27 @@ theorem coeff_map_eq_zero_of_notMem_range (a : NovikovSeries R H N) {h' : H'}
   obtain ⟨h, -, rfl⟩ := support_map_subset ρ φ hφ a (mem_support.2 hne)
   exact hh' ⟨h, rfl⟩
 
+/-- If `h` is the only exponent of nonzero coefficient in its fibre, the pushforward moves the
+coefficient at `h` to `φ h`. -/
+theorem coeff_map_of_support_inter_subset_singleton (a : NovikovSeries R H N) {h : H}
+    (hs : a.support ∩ φ ⁻¹' {φ h} ⊆ {h}) : (map ρ φ hφ a).coeff (φ h) = ρ (a.coeff h) := by
+  rw [coeff_map_eq_sum ρ φ hφ a {h} (fun g hg => Finset.mem_singleton.2 (hs hg))
+    fun g hg => by rw [Finset.mem_singleton.1 hg], Finset.sum_singleton]
+
 /-- Along an injective exponent homomorphism, the pushforward moves each coefficient to the image
 exponent. -/
 @[simp]
 theorem coeff_map_of_injective (hinj : Injective φ) (a : NovikovSeries R H N) (h : H) :
-    (map ρ φ hφ a).coeff (φ h) = ρ (a.coeff h) := by
-  rw [coeff_map_eq_sum ρ φ hφ a {h} (fun g hg => Finset.mem_singleton.2 (hinj hg.2))
-    fun g hg => by rw [Finset.mem_singleton.1 hg], Finset.sum_singleton]
+    (map ρ φ hφ a).coeff (φ h) = ρ (a.coeff h) :=
+  coeff_map_of_support_inter_subset_singleton ρ φ hφ a fun _ hg => hinj hg.2
+
+/-- The pushforward along the identity of exponents applies the coefficient map to each
+coefficient. -/
+@[simp]
+theorem coeff_map_id_right (hφ : ∃ c > 0, ∀ h, N (AddMonoidHom.id H h) = c * N h)
+    (a : NovikovSeries R H N) (h : H) :
+    (map ρ (AddMonoidHom.id H) hφ a).coeff h = ρ (a.coeff h) :=
+  coeff_map_of_injective ρ _ hφ injective_id a h
 
 /-- The pushforward sends a series vanishing below the period cutoff `C` to a series vanishing
 below `c * C`, where `c` is the period rescaling factor of `φ`. -/
@@ -176,7 +190,7 @@ theorem map_id {M : Type*} [AddCommMonoid M]
     (hφ : ∃ c > 0, ∀ h, N (AddMonoidHom.id H h) = c * N h) :
     map (AddMonoidHom.id M) (AddMonoidHom.id H) hφ = AddMonoidHom.id (NovikovSeries M H N) := by
   ext a h
-  exact coeff_map_of_injective _ _ hφ injective_id a h
+  exact coeff_map_id_right _ hφ a h
 
 /-- The pushforward along composite coefficient and exponent maps is the composite of the
 pushforwards. -/
@@ -210,6 +224,7 @@ theorem map_map (ρ' : S →+ T) (φ' : H' →+ H'') (hφ' : ∃ c > 0, ∀ h, N
 
 /-- The pushforward of a finitely supported series is the pushforward of the group ring, along
 `ρ` on coefficients and along `φ` on exponents. -/
+@[simp]
 theorem map_ofFinsupp (f : H →₀ R) :
     map ρ φ hφ (ofFinsupp f) =
       ofFinsupp (Finsupp.mapDomain φ (Finsupp.mapRange ρ ρ.map_zero f)) := by
@@ -220,18 +235,17 @@ theorem map_ofFinsupp (f : H →₀ R) :
   | single h r =>
     ext h'
     rw [Finsupp.mapRange_single, Finsupp.mapDomain_single, coeff_ofFinsupp]
-    have hs : ∀ g ∈ (ofFinsupp (N := N) (Finsupp.single h r)).support, g = h := fun g hg => by
-      by_contra hgh
-      exact mem_support.1 hg (by rw [coeff_ofFinsupp, Finsupp.single_eq_of_ne hgh])
+    have hs : (ofFinsupp (N := N) (Finsupp.single h r)).support ⊆ {h} := by
+      rw [support_ofFinsupp, ← Finset.coe_singleton, Finset.coe_subset]
+      exact Finsupp.support_single_subset
     by_cases hh : φ h = h'
     · subst hh
-      rw [coeff_map_eq_sum ρ φ hφ _ {h} (fun g hg => Finset.mem_singleton.2 (hs g hg.1))
-        fun g hg => by rw [Finset.mem_singleton.1 hg], Finset.sum_singleton, coeff_ofFinsupp,
-        Finsupp.single_eq_same, Finsupp.single_eq_same]
+      rw [coeff_map_of_support_inter_subset_singleton ρ φ hφ _ (inter_subset_left.trans hs),
+        coeff_ofFinsupp, Finsupp.single_eq_same, Finsupp.single_eq_same]
     · rw [Finsupp.single_eq_of_ne (Ne.symm hh), coeff_map_eq_sum ρ φ hφ _ ∅ ?_ (by simp),
         Finset.sum_empty]
       rintro g ⟨hg, hφg⟩
-      exact absurd (by rw [← hs g hg]; exact hφg) hh
+      exact absurd (by rw [← mem_singleton_iff.1 (hs hg)]; exact hφg) hh
 
 end Map
 
@@ -249,12 +263,8 @@ def comap (φ : H →+ H') (hφ : ∃ c > 0, ∀ h, N' (φ h) = c * N h)
       finite_lt C := by
         obtain ⟨c, hc, hcφ⟩ := hφ
         have := hker.to_subtype
-        refine ((b.finite_lt (c * C)).preimage' fun h' _ => ?_).subset fun h hh =>
-          ⟨hh.1, (hcφ h).symm ▸ mul_lt_mul_of_pos_left hh.2 hc⟩
-        by_cases hh' : h' ∈ range φ
-        · obtain ⟨h, rfl⟩ := hh'
-          exact finite_coe_iff.1 (Finite.of_equiv _ (φ.fiberEquivKer h).symm)
-        · exact finite_empty.subset fun g (hg : φ g = h') => (hh' ⟨g, hg⟩).elim }
+        exact ((b.finite_lt (c * C)).preimage' fun h' _ => finite_coe_iff.1 (φ.finite_fiber h')
+          ).subset fun h hh => ⟨hh.1, (hcφ h).symm ▸ mul_lt_mul_of_pos_left hh.2 hc⟩ }
   map_zero' := rfl
   map_add' _ _ := rfl
 
@@ -294,8 +304,7 @@ theorem comap_map_of_injective [AddCommMonoid S] (ρ : R →+ S) (hinj : Injecti
     (hid : ∃ c > 0, ∀ h, N (AddMonoidHom.id H h) = c * N h) (a : NovikovSeries R H N) :
     comap φ hφ hker (map ρ φ hφ a) = map ρ (AddMonoidHom.id H) hid a := by
   ext h
-  rw [coeff_comap, coeff_map_of_injective _ _ _ hinj,
-    ← coeff_map_of_injective ρ (AddMonoidHom.id H) hid injective_id a h, AddMonoidHom.id_apply]
+  rw [coeff_comap, coeff_map_of_injective _ _ _ hinj, coeff_map_id_right]
 
 end Comap
 
