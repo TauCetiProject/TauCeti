@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.ForgetGrading
-public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Head
+public import TauCeti.Algebra.Category.GradedModuleCat.Idempotent.Head
 
 /-!
 # Forgetting a nonnegative grading with split degree-zero part
