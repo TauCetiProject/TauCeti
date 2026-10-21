@@ -70,12 +70,13 @@ theorem betaNegativeBinomialWeightReal_zero (a b : ℝ) (k : ℕ) :
     betaNegativeBinomialWeightReal 0 a b k = if k = 0 then 1 else 0 := by
   simp [betaNegativeBinomialWeightReal]
 
-/-- At positive shape the real mass is the classical Gamma--Beta expression. -/
-theorem betaNegativeBinomialWeightReal_of_pos {r : ℝ} (hr : 0 < r) (a b : ℝ) (k : ℕ) :
+/-- At nonzero shape the real mass is the classical Gamma--Beta expression. -/
+@[simp]
+theorem betaNegativeBinomialWeightReal_of_ne_zero {r : ℝ} (hr : r ≠ 0) (a b : ℝ) (k : ℕ) :
     betaNegativeBinomialWeightReal r a b k =
       Real.Gamma (r + k) / (Real.Gamma r * k.factorial) * beta (a + r) (b + k) /
         beta a b := by
-  rw [betaNegativeBinomialWeightReal, ite_eq_right hr.ne']
+  rw [betaNegativeBinomialWeightReal, ite_eq_right hr]
 
 /-- The beta-negative-binomial law with negative-binomial shape `r` and Beta shapes `a`, `b`.
 
@@ -133,7 +134,7 @@ theorem betaNegativeBinomialWeightReal_nonneg {r a b : ℝ} (hr : 0 ≤ r) (ha :
   rcases hr.eq_or_lt with rfl | hr
   · rw [betaNegativeBinomialWeightReal_zero]
     split_ifs <;> norm_num
-  rw [betaNegativeBinomialWeightReal_of_pos hr]
+  rw [betaNegativeBinomialWeightReal_of_ne_zero hr.ne']
   exact div_nonneg
     (mul_nonneg
       (div_nonneg (Real.Gamma_pos_of_pos (by positivity)).le
@@ -176,7 +177,7 @@ theorem betaNegativeBinomialMeasure_real_singleton {r a b : ℝ} (hr : 0 ≤ r) 
       rw [negativeBinomialMeasure_real_singleton hr.le hp.1 hp.2.le,
         negativeBinomialWeightReal_eq_gamma hr.ne' k, Real.rpow_eq_pow]
       ring_nf
-    rw [integral_congr_ae hpointwise, betaNegativeBinomialWeightReal_of_pos hr]
+    rw [integral_congr_ae hpointwise, betaNegativeBinomialWeightReal_of_ne_zero hr.ne']
     simp_rw [mul_assoc]
     rw [integral_const_mul]
     have har : 0 < a + r := add_pos ha hr
@@ -218,7 +219,7 @@ theorem betaNegativeBinomialWeightReal_pos_iff {r a b : ℝ} (hr : 0 ≤ r) (ha 
     0 < betaNegativeBinomialWeightReal r a b k ↔ k = 0 ∨ 0 < r := by
   rcases hr.eq_or_lt with rfl | hr
   · by_cases hk : k = 0 <;> simp [hk]
-  · rw [betaNegativeBinomialWeightReal_of_pos hr]
+  · rw [betaNegativeBinomialWeightReal_of_ne_zero hr.ne']
     constructor
     · exact fun _ => Or.inr hr
     · exact fun _ => div_pos
