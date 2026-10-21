@@ -119,6 +119,7 @@ theorem mvfderiv_mlieBracket {f : M → F} {V W : ∀ x : M, TangentSpace I x} {
   change (mfderiv% f x) _ = _
   have h2n : (2 : ℕ∞ω) ≤ n :=
     (le_minSmoothness (𝕜 := 𝕜) (n := (2 : ℕ∞ω))).trans hn
+  have h1n : (1 : ℕ∞ω) ≤ n := (by norm_num : (1 : ℕ∞ω) ≤ 2).trans h2n
   have hf' : MDiffAt f x := (hf.of_le h2n).mdifferentiableAt (by norm_num)
   have hchain := mfderiv_comp_mfderivWithin_of_eq
     (I := 𝓘(𝕜, E)) (I' := I) (I'' := 𝓘(𝕜, F))
@@ -162,13 +163,13 @@ theorem mvfderiv_mlieBracket {f : M → F} {V W : ∀ x : M, TangentSpace I x} {
   have hVf := TauCeti.mdifferentiableAt_mvfderiv_apply hf hn hV
   have hWf := TauCeti.mdifferentiableAt_mvfderiv_apply hf hn hW
   have hcoordW := (TauCeti.eventuallyEq_fderivWithin_chart_apply_mpullbackWithin
-    (I := I) (U := W) hf hn).fderivWithin_eq
+    (I := I) (U := W) hf h1n).fderivWithin_eq
     (𝕜 := 𝕜) (by
       simpa only [Function.comp_apply, extChartAt_to_inv] using
         TauCeti.fderivWithin_chart_apply_mpullbackWithin
           (I := I) (U := W) (mem_extChartAt_target x) hf_chart)
   have hcoordV := (TauCeti.eventuallyEq_fderivWithin_chart_apply_mpullbackWithin
-    (I := I) (U := V) hf hn).fderivWithin_eq
+    (I := I) (U := V) hf h1n).fderivWithin_eq
     (𝕜 := 𝕜) (by
       simpa only [Function.comp_apply, extChartAt_to_inv] using
         TauCeti.fderivWithin_chart_apply_mpullbackWithin

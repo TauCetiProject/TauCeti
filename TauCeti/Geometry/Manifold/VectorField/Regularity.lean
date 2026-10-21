@@ -311,28 +311,21 @@ theorem fderivWithin_chart_apply_mpullbackWithin
   exact congrArg (mfderiv% p ((extChartAt I x).symm z))
     ((isInvertible_mfderivWithin_extChartAt_symm hz).self_apply_inverse _)
 
-omit [IsManifold I 1 M]
-
-variable [IsManifold I (minSmoothness 𝕜 2) M]
-
 /-- Near the chart centre within the model range, the coordinate directional derivative
 agrees with the manifold directional derivative composed with the inverse chart. -/
 theorem eventuallyEq_fderivWithin_chart_apply_mpullbackWithin
     {f : M → F} {U : ∀ y : M, TangentSpace I y} {x : M}
-    (hf : CMDiffAt n f x) (hn : minSmoothness 𝕜 2 ≤ n) :
+    (hf : CMDiffAt n f x) (hn : 1 ≤ n) :
     (fun z ↦ (fderivWithin 𝕜 (f ∘ (extChartAt I x).symm) (Set.range I) z)
       (mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x).symm U (Set.range I) z)) =ᶠ[
       𝓝[Set.range I] (extChartAt I x x)]
     (fun y ↦ mvfderiv I f y (U y)) ∘ (extChartAt I x).symm := by
-  have h1n : (1 : ℕ∞ω) ≤ n :=
-    (by norm_num : (1 : ℕ∞ω) ≤ 2).trans
-      ((le_minSmoothness (𝕜 := 𝕜) (n := (2 : ℕ∞ω))).trans hn)
-  have hf_eventually := ContMDiffAt.eventually_mdifferentiableAt hf h1n
+  have hf_eventually := ContMDiffAt.eventually_mdifferentiableAt hf hn
   have hsymm_tendsto : Tendsto (extChartAt I x).symm
       (𝓝[Set.range I] (extChartAt I x x)) (𝓝 x) := by
     simpa only [extChartAt_to_inv] using
       (contMDiffWithinAt_extChartAt_symm_range_self
-        (I := I) (n := minSmoothness 𝕜 2) x).continuousWithinAt.tendsto
+        (I := I) (n := 1) x).continuousWithinAt.tendsto
   have htarget : ∀ᶠ z in 𝓝[Set.range I] (extChartAt I x x),
       z ∈ (extChartAt I x).target :=
     extChartAt_target_mem_nhdsWithin x

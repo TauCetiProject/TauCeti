@@ -460,8 +460,6 @@ theorem criticalHessian_apply_eq_mvfderiv [IsManifold I 2 M]
   -- The first-order chain rule identifies the coordinate directional derivative with `df(Y)`.
   have heq : (fun z ↦ fderiv ℝ g z (V z)) =ᶠ[𝓝 (ψ x)]
       (fun y ↦ mvfderiv I f y (Y y)) ∘ ψ.symm := by
-    let : IsManifold I (minSmoothness ℝ 2) M := by
-      simpa using (inferInstance : IsManifold I 2 M)
     simpa only [g, V, ψ, ModelWithCorners.Boundaryless.range_eq_univ, nhdsWithin_univ,
       fderivWithin_univ] using
       eventuallyEq_fderivWithin_chart_apply_mpullbackWithin (U := Y) hf (by norm_num)
