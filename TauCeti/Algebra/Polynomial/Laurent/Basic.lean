@@ -47,6 +47,8 @@ every `R[T;T⁻¹]`-module. That automorphism is what a shift-compatible invaria
 
 * `LaurentPolynomial.T_sum`: the monomial of a finite sum of exponents is the product of the
   monomials.
+* `LaurentPolynomial.eval₂_neg_neg_T_one_add_T_neg_one`: evaluation of a negative reciprocal sum
+  at a negative unit is the sum of that unit and its inverse.
 * `TauCeti.laurentEval_unique`: an algebra map out of `R[T;T⁻¹]` is determined by its value at `T`.
 * `TauCeti.laurentEval_eq_eval₂`: over a commutative target, this evaluation is Mathlib's
   `LaurentPolynomial.eval₂`.
@@ -84,6 +86,12 @@ theorem T_sum {ι : Type*} (s : Finset ι) (f : ι → ℤ) :
     (T (∑ i ∈ s, f i) : LaurentPolynomial R) = ∏ i ∈ s, T (f i) := by
   unfold T
   rw [AddMonoidAlgebra.prod_single, Finset.prod_const_one]
+
+/-- Evaluating `-(T + T⁻¹)` at the negative of a unit gives the sum of that unit and its inverse. -/
+theorem eval₂_neg_neg_T_one_add_T_neg_one {S U : Type*} [CommRing S] [CommRing U]
+    (f : S →+* U) (u : Uˣ) :
+    eval₂ f (-u) (-(T 1 + T (-1)) : LaurentPolynomial S) = (u : U) + (↑(u⁻¹) : U) := by
+  simp [add_comm]
 
 end LaurentPolynomial
 

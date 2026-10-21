@@ -197,7 +197,7 @@ theorem enhancedStateSum_eq_mul_eval₂_jonesPolynomial (D : OrientedPDCode n)
   -- At `t ^ (1/2) = -q`, the Jones loop value `-(t ^ (1/2) + t ^ (-1/2))` becomes `q + q⁻¹`.
   have hloop : eval₂ (Int.castRingHom ℤ[T;T⁻¹]) (-genericUnit ℤ) (-(T 1 + T (-1)) : ℤ[T;T⁻¹]) =
       T 1 + T (-1) := by
-    simp [add_comm]
+    simpa using eval₂_neg_neg_T_one_add_T_neg_one (Int.castRingHom ℤ[T;T⁻¹]) (genericUnit ℤ)
   rw [enhancedStateSum_eq_sum, jonesPolynomial_def, map_sum, Finset.mul_sum]
   refine Finset.sum_congr rfl fun s _ ↦ ?_
   rw [map_mul, map_pow, eval₂_neg_genericUnit_jonesStateWeight, hloop,
