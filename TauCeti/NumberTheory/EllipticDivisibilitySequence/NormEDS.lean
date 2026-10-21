@@ -12,15 +12,13 @@ public import TauCeti.NumberTheory.EllipticDivisibilitySequence.Universal
 
 Mathlib identifies `normEDS (2 : ℤ) 3 2` with the identity sequence and computes its
 2-complement. This module transports those identities along `Int.castRingHom` to
-arbitrary commutative rings and proves that the universal normalised EDS vanishes
-only at zero.
+arbitrary commutative rings.
 
 ## Main results
 
 * `normEDS_two_three_two_eq_intCast`: `normEDS (2 : R) 3 2 = Int.cast`.
 * `complEDS₂_two_three_two_eq_two`: the 2-complement is constantly `2` over any
   commutative ring, extending Mathlib's integer-valued result.
-* `universalNormEDS_ne_zero`: the universal sequence vanishes only at `0`.
 
 ## Provenance
 
@@ -30,9 +28,6 @@ in AINTLIB (`github.com/CBirkbeck/AINTLIB`, Apache-2.0, `main` at
 Angdinata as its author. The special values extend its `normEDS_two_three_two` and
 `compl₂EDS_two_three_two` from integers to arbitrary commutative rings.
 
-`universalNormEDS_ne_zero` adapts the same file's declaration at the roadmap's NagellLutz
-pin `dev/modular-curves @ 9fec8eba7652`. Its proof uses the equation lemma
-`universalNormEDS_def`, since the definition is unexposed across module boundaries.
 -/
 
 public section
@@ -57,10 +52,3 @@ theorem normEDS_two_three_two_eq_intCast (R : Type*) [CommRing R] :
   have h := map_normEDS (f := Int.castRingHom R) (b := (2 : ℤ)) (c := 3) (d := 2) n
   rw [normEDS_two_three_two] at h
   simpa using h.symm
-
-/-- **The universal normalised EDS is nonzero away from `0`.** Specialising the three
-indeterminates at `(2, 3, 2)` sends `universalNormEDS n` to `n` itself, by
-`normEDS_two_three_two`, so a vanishing value forces a vanishing index. -/
-theorem universalNormEDS_ne_zero {n : ℤ} (hn : n ≠ 0) : universalNormEDS n ≠ 0 := fun h ↦ hn <| by
-  apply_fun aeval (NormEDSParam.rec (2 : ℤ) 3 2) at h
-  simpa using h

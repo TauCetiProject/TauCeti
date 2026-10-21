@@ -41,6 +41,7 @@ parameters' ring need not be.
 
 * `normEDS_eq_aeval`: every sequence of the form `normEDS b c d` is `universalNormEDS` specialised
   along `NormEDSParam.rec b c d`.
+* `universalNormEDS_ne_zero`: the universal sequence vanishes only at `0`.
 * `preNormEDS_eq_aeval`, `complEDS₂_eq_aeval`, `complEDS_eq_aeval`: the same for the three companion
   sequences, each specialising **its own** construction over `ℤ[B, C, D]` — `preNormEDS`,
   `complEDS₂` and `complEDS` at the three indeterminates — not `universalNormEDS`, which is only
@@ -87,9 +88,9 @@ complements but not for `preNormEDS`, although Mathlib's `map_preNormEDS` makes 
 one-line proof and consumers reaching for the pre-normalised sequence would otherwise have to
 redo it.
 
-`universalNormEDS_ne_zero` lives in `NormEDS.lean`: it specialises the universal parameters
-using Mathlib's `normEDS_two_three_two`. Thus `NormEDS.lean` imports this file and the
-nonvanishing lemma follows the same import direction.
+`universalNormEDS_ne_zero` adapts the same AINTLIB file's declaration at the roadmap's NagellLutz
+pin `dev/modular-curves @ 9fec8eba7652`. It specialises the universal parameters using Mathlib's
+`normEDS_two_three_two`.
 -/
 
 public section
@@ -151,3 +152,12 @@ theorem complEDS_eq_aeval :
   simp_rw [map_complEDS, aeval_X]
 
 end NormEDSParam
+
+open NormEDSParam
+
+/-- **The universal normalised EDS is nonzero away from `0`.** Specialising the three
+indeterminates at `(2, 3, 2)` sends `universalNormEDS n` to `n` itself, by
+`normEDS_two_three_two`, so a vanishing value forces a vanishing index. -/
+theorem universalNormEDS_ne_zero {n : ℤ} (hn : n ≠ 0) : universalNormEDS n ≠ 0 := fun h ↦ hn <| by
+  apply_fun aeval (NormEDSParam.rec (2 : ℤ) 3 2) at h
+  simpa using h
