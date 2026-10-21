@@ -24,12 +24,11 @@ We use Mathlib's convention: right translation of the argument multiplies an int
 For a Haar measure `μ` and a compactly supported continuous function `f` with values in a real
 normed space, we prove the right-translation formula `∫ f (x * g) dμ = c(g) • ∫ f dμ` and the
 inversion formula `∫ f x⁻¹ dμ = ∫ c(x) • f x dμ`, equivalently `∫ c(x) • f x⁻¹ dμ = ∫ f dμ`.
-These need no regularity, countability or σ-finiteness of `μ`: the inversion formula follows
-from Mathlib's comparison of a left and a right invariant measure on compactly supported
-functions. For an inner regular Haar measure we deduce the measure identity
-`μ.inv = μ.withDensity c`; inversion of a left Haar measure thus has the continuous, strictly
-positive density `c`. These are the change-of-variables formulas behind the twisted involution
-`f*(s) = c(s) α_s(f(s⁻¹)*)` of crossed-product convolution algebras.
+These need no regularity, countability or σ-finiteness of `μ`. For an inner regular Haar
+measure we deduce the measure identity `μ.inv = μ.withDensity c`; inversion of a left Haar
+measure thus has the continuous, strictly positive density `c`. These are the
+change-of-variables formulas behind the twisted involution `f*(s) = c(s) α_s(f(s⁻¹)*)` of
+crossed-product convolution algebras.
 
 ## Main statements
 
@@ -116,13 +115,14 @@ theorem integral_mul_right_eq_modularCharacter_smul {f : G → E} (hf : Continuo
     exact hreal (φ.continuous.comp hf) (hfc.comp_left φ.map_zero)
   · simp [integral_of_not_completeSpace hE]
 
-/-- The real-valued case of `integral_modularCharacter_smul_inv_eq_self`. It compares `μ` with
-the right invariant measure `μ.inv` using
-`Measure.integral_isMulLeftInvariant_isMulRightInvariant_combo`, whose density is computed by the
-right-translation formula. -/
+/-- The real-valued case of `integral_modularCharacter_smul_inv_eq_self`:
+`∫ c(x) * F x⁻¹ dμ = ∫ F dμ` for a continuous compactly supported `F : G → ℝ`. -/
 private theorem integral_modularCharacter_mul_inv_eq_self_real {F : G → ℝ} (hF : Continuous F)
     (hFc : HasCompactSupport F) :
     ∫ x, (Measure.modularCharacter x : ℝ) * F x⁻¹ ∂μ = ∫ x, F x ∂μ := by
+  -- Compare `μ` with the right invariant measure `μ.inv` using Mathlib's
+  -- `Measure.integral_isMulLeftInvariant_isMulRightInvariant_combo`; the density it involves is
+  -- computed by the right-translation formula.
   obtain ⟨g, hgc, hgn, hg1⟩ := exists_continuous_nonneg_pos (1 : G)
   have hgi : 0 < ∫ x, g x ∂μ :=
     g.continuous.integral_pos_of_hasCompactSupport_nonneg_nonzero hgc hgn hg1
@@ -200,11 +200,12 @@ theorem isMulRightInvariant_withDensity_modularCharacter :
   simp only [Pi.smul_apply, smul_eq_mul, ← modularCharacter_apply, ← ENNReal.coe_mul]
   rw [map_mul, mul_left_comm, ← map_mul, mul_inv_cancel, map_one, mul_one]
 
-/-- The inverse of `μ.withDensity c` agrees with `μ` on compact sets: both are left invariant,
-and the inversion formula shows that they integrate compactly supported functions alike. -/
+/-- The inverse of `μ.withDensity c` agrees with `μ` on compact sets. -/
 private theorem inv_withDensity_modularCharacter_apply_of_isCompact {K : Set G}
     (hK : IsCompact K) :
     (μ.withDensity fun x => (modularCharacter x : ℝ≥0∞)).inv K = μ K := by
+  -- Both measures are left invariant, and the inversion formula shows that they integrate
+  -- compactly supported functions alike.
   set ν := μ.withDensity fun x => (modularCharacter x : ℝ≥0∞) with hν
   have : ν.IsMulRightInvariant := isMulRightInvariant_withDensity_modularCharacter μ
   have : IsLocallyFiniteMeasure ν := IsLocallyFiniteMeasure.withDensity_coe
