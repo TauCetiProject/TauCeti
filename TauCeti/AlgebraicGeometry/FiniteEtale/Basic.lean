@@ -69,6 +69,11 @@ theorem ofHom_obj {S X : Scheme.{u}} (f : X ⟶ S) [IsFinite f] [Etale f] :
     (ofHom f).obj = Over.mk f :=
   (rfl)
 
+/-- The base itself, through its identity, is a terminal finite étale scheme. -/
+noncomputable def isTerminalOfHomId (S : Scheme.{u}) : Limits.IsTerminal (ofHom (𝟙 S)) :=
+  Limits.IsTerminal.isTerminalOfObj (finiteEtaleSchemeProperty S).ι _
+    (Over.mkIdTerminal.ofIso (eqToIso (ofHom_obj (𝟙 S)).symm))
+
 variable (R : CommRingCat.{u})
 
 /-- The spectrum functor on finite étale algebras, with target finite étale schemes. -/

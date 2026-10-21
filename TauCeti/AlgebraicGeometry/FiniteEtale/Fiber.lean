@@ -111,11 +111,6 @@ theorem pullbackComp_inv_app_hom (f : T ⟶ S) (g : S ⟶ U) (X : FiniteEtaleSch
     ((pullbackComp f g).inv.app X).hom = (Over.pullbackComp f g).inv.app X.obj :=
   (rfl)
 
-/-- The base itself, through its identity, is a terminal finite étale scheme. -/
-noncomputable def isTerminalOfHomId (S : Scheme.{u}) : IsTerminal (ofHom (𝟙 S)) :=
-  IsTerminal.isTerminalOfObj (finiteEtaleSchemeProperty S).ι _
-    (Over.mkIdTerminal.ofIso (eqToIso (ofHom_obj (𝟙 S)).symm))
-
 variable (Ω : Type u) [Field Ω] [IsSepClosed Ω]
 
 /-- Over a separably closed field `Ω`, the finite set attached to a finite étale scheme by
@@ -143,6 +138,8 @@ noncomputable def equivOfIsSepClosedFunctorCompInclIso :
           eqToHom_refl, Category.id_comp]
       right_inv y := by
         simp only [eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
+        -- Mathlib has no eta lemma `homMk φ.hom = φ` for full-subcategory morphisms, so the
+        -- `homMk` wrapper must be removed by `hom_ext` before `Functor.map_preimage` matches.
         rw [show ObjectProperty.homMk (E.functor.preimage (FintypeCat.homMk fun _ ↦ y)).hom =
           E.functor.preimage (FintypeCat.homMk fun _ ↦ y) from
           ObjectProperty.hom_ext _ (ObjectProperty.homMk_hom _), Functor.map_preimage,
@@ -152,6 +149,8 @@ noncomputable def equivOfIsSepClosedFunctorCompInclIso :
     suffices E.functor.map (ObjectProperty.homMk (eqToHom (ofHom_obj _) ≫ g ≫ f.hom)) default =
         E.functor.map f (E.functor.map (ObjectProperty.homMk (eqToHom (ofHom_obj _) ≫ g))
           default) by simpa
+    -- Mathlib has no lemma moving a composite out of `homMk`, so `hom_ext` rewrites the
+    -- `homMk` of the composite in `Over` as a composite in `FiniteEtaleScheme`.
     rw [← FintypeCat.comp_apply, ← Functor.map_comp,
       show ObjectProperty.homMk (eqToHom (ofHom_obj _) ≫ g ≫ f.hom) =
         ObjectProperty.homMk (eqToHom (ofHom_obj _) ≫ g) ≫ f from
