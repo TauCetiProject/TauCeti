@@ -153,7 +153,7 @@ theorem arrowSum_union_right [DecidableEq V] (f : Assignment Q K) (S : Finset V)
 summing them over the arrows between two vertex sets. -/
 theorem map_arrowSum {L F : Type*} [AddCommMonoid L] [FunLike F K L] [AddMonoidHomClass F K L]
     (φ : F) (f : Assignment Q K) (S T : Finset V) :
-    φ (arrowSum f S T) = arrowSum (fun ⦃a b⦄ (e : Q a b) ↦ φ (f e)) S T := by
+    φ (arrowSum f S T) = arrowSum (f.map φ) S T := by
   simp [arrowSum_def, map_sum]
 
 /-- Summing over the arrows between two vertex sets is monotone in the assignment. -/
@@ -312,7 +312,7 @@ theorem excessAt_sink_eq_arrowSum_sub [DecidableEq V] (f : Assignment Q K) {s t 
 taking excess. -/
 theorem map_excessAt {L F : Type*} [AddCommGroup L] [FunLike F K L] [AddMonoidHomClass F K L]
     (φ : F) (f : Assignment Q K) (v : V) :
-    φ (excessAt f v) = excessAt (fun ⦃a b⦄ (e : Q a b) ↦ φ (f e)) v := by
+    φ (excessAt f v) = excessAt (f.map φ) v := by
   simp [excessAt_def, map_sum]
 
 /-- Excess is invariant under transport along an identification `σ` of the vertices and
