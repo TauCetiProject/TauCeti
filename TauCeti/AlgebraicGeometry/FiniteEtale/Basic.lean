@@ -236,6 +236,30 @@ noncomputable def equivOfIsSepClosedFunctorCompInclIso (K : Type u) [Field K] [I
     rw [← FintypeCat.comp_apply, ← Functor.map_comp, ← Category.assoc, ObjectProperty.homMk_comp,
       ObjectProperty.homMk_eta])
 
+/-- A section `g` of a finite étale scheme `Y` over a separably closed field `K` corresponds to
+the image under `(equivOfIsSepClosed K).functor` of `g` of the unique point attached to `Spec K`.
+The point `a` is arbitrary, since that finite set has exactly one element. -/
+theorem equivOfIsSepClosedFunctorCompInclIso_inv_app_apply (K : Type u) [Field K]
+    [IsSepClosed K] (Y : FiniteEtaleScheme (Spec (.of K))) (g : Over.mk (𝟙 _) ⟶ Y.obj)
+    (a : (equivOfIsSepClosed K).functor.obj (ofHom (𝟙 (Spec (.of K))))) :
+    (equivOfIsSepClosedFunctorCompInclIso K).inv.app Y g =
+      (equivOfIsSepClosed K).functor.map (ObjectProperty.homMk (eqToHom (ofHom_obj _) ≫ g)) a := by
+  let : Unique ((equivOfIsSepClosed K).functor.obj (ofHom (𝟙 (Spec (.of K))))) :=
+    Limits.Concrete.uniqueOfTerminalOfPreserves _
+      ((isTerminalOfHomId _).isTerminalObj (equivOfIsSepClosed K).functor _)
+  rw [Unique.eq_default a]
+  rfl
+
+/-- A point `y` of the finite set attached to a finite étale scheme `Y` over a separably closed
+field `K` corresponds to the section preimage of the map from the one-point set picking `y`. -/
+theorem equivOfIsSepClosedFunctorCompInclIso_hom_app_apply (K : Type u) [Field K]
+    [IsSepClosed K] (Y : FiniteEtaleScheme (Spec (.of K)))
+    (y : (equivOfIsSepClosed K).functor.obj Y) :
+    (equivOfIsSepClosedFunctorCompInclIso K).hom.app Y y =
+      eqToHom (ofHom_obj _).symm ≫ ((equivOfIsSepClosed K).functor.preimage
+        (FintypeCat.homMk fun _ ↦ y)).hom :=
+  (rfl)
+
 end FiniteEtaleScheme
 
 end TauCeti

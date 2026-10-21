@@ -114,7 +114,7 @@ variable {Ω : Type u} [Field Ω] [IsSepClosed Ω]
 
 /-- The geometric fibre functor at a geometric point `x : Spec Ω ⟶ S`, for `Ω` separably
 closed: a finite étale `S`-scheme `X` goes to the finite set classifying `X ×_S Spec Ω`. -/
-noncomputable def fiber (x : Spec (.of Ω) ⟶ S) : FiniteEtaleScheme S ⥤ FintypeCat.{u} :=
+@[expose] noncomputable def fiber (x : Spec (.of Ω) ⟶ S) : FiniteEtaleScheme S ⥤ FintypeCat.{u} :=
   pullback x ⋙ (equivOfIsSepClosed Ω).functor
 
 /-- The geometric fibre functor is base change to the geometric point followed by the
@@ -134,16 +134,67 @@ noncomputable def fiberCompInclIso (x : Spec (.of Ω) ⟶ S) :
         (Over.mapPullbackAdj x).compCoyonedaIso.app (op (Over.mk (𝟙 _)))) ≪≫
     Functor.isoWhiskerLeft (pullback x) (equivOfIsSepClosedFunctorCompInclIso Ω).symm
 
+/-- A lift `g : Over.mk x ⟶ X` of the geometric point `x` gives the point of the fibre
+corresponding, under `equivOfIsSepClosedFunctorCompInclIso`, to the section of `X ×_S Spec Ω`
+adjoint to `g` under `Over.map x ⊣ Over.pullback x`. -/
+theorem fiberCompInclIso_inv_app_apply (x : Spec (.of Ω) ⟶ S) (X : FiniteEtaleScheme S)
+    (g : Over.mk x ⟶ X.obj) :
+    (fiberCompInclIso x).inv.app X g =
+      (equivOfIsSepClosedFunctorCompInclIso Ω).inv.app ((pullback x).obj X)
+        ((Over.mapPullbackAdj x).homEquiv _ _ (Over.homMk (𝟙 _) ≫ g)) :=
+  (rfl)
+
+/-- A point `y` of the fibre gives the lift of `x` adjoint, under `Over.map x ⊣ Over.pullback x`,
+to the section of `X ×_S Spec Ω` corresponding to `y` under
+`equivOfIsSepClosedFunctorCompInclIso`. -/
+theorem fiberCompInclIso_hom_app_apply (x : Spec (.of Ω) ⟶ S) (X : FiniteEtaleScheme S)
+    (y : (fiber x).obj X) :
+    (fiberCompInclIso x).hom.app X y =
+      Over.homMk (𝟙 _) ≫ ((Over.mapPullbackAdj x).homEquiv _ _).symm
+        ((equivOfIsSepClosedFunctorCompInclIso Ω).hom.app ((pullback x).obj X) y) :=
+  (rfl)
+
 variable (Ω) in
 /-- The geometric fibre functor of `Spec Ω` at its identity point is the classification of
 finite étale schemes over the separably closed field `Ω` by finite sets. -/
 noncomputable def fiberIdIso : fiber (𝟙 (Spec (.of Ω))) ≅ (equivOfIsSepClosed Ω).functor :=
   Functor.isoWhiskerRight pullbackId _ ≪≫ Functor.leftUnitor _
 
+variable (Ω) in
+/-- The components of `fiberIdIso` are the images of those of `pullbackId`. -/
+@[simp]
+theorem fiberIdIso_hom_app (X : FiniteEtaleScheme (Spec (.of Ω))) :
+    (fiberIdIso Ω).hom.app X = (equivOfIsSepClosed Ω).functor.map (pullbackId.hom.app X) :=
+  (rfl)
+
+variable (Ω) in
+/-- The components of `(fiberIdIso Ω).inv` are the images of those of `pullbackId.inv`. -/
+@[simp]
+theorem fiberIdIso_inv_app (X : FiniteEtaleScheme (Spec (.of Ω))) :
+    (fiberIdIso Ω).inv.app X = (equivOfIsSepClosed Ω).functor.map (pullbackId.inv.app X) :=
+  (rfl)
+
 /-- Base change along `f : T ⟶ S` followed by the geometric fibre at `x : Spec Ω ⟶ T` is the
 geometric fibre at the composite geometric point `x ≫ f`. -/
 noncomputable def pullbackCompFiberIso (f : T ⟶ S) (x : Spec (.of Ω) ⟶ T) :
     pullback f ⋙ fiber x ≅ fiber (x ≫ f) :=
   Functor.isoWhiskerRight (pullbackComp x f).symm _
+
+/-- The components of `pullbackCompFiberIso` are the images of those of `pullbackComp`. -/
+@[simp]
+theorem pullbackCompFiberIso_hom_app (f : T ⟶ S) (x : Spec (.of Ω) ⟶ T)
+    (X : FiniteEtaleScheme S) :
+    (pullbackCompFiberIso f x).hom.app X =
+      (equivOfIsSepClosed Ω).functor.map ((pullbackComp x f).inv.app X) :=
+  (rfl)
+
+/-- The components of `(pullbackCompFiberIso f x).inv` are the images of those of
+`pullbackComp`. -/
+@[simp]
+theorem pullbackCompFiberIso_inv_app (f : T ⟶ S) (x : Spec (.of Ω) ⟶ T)
+    (X : FiniteEtaleScheme S) :
+    (pullbackCompFiberIso f x).inv.app X =
+      (equivOfIsSepClosed Ω).functor.map ((pullbackComp x f).hom.app X) :=
+  (rfl)
 
 end TauCeti.FiniteEtaleScheme
