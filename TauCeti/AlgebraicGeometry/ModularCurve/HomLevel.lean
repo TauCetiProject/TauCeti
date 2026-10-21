@@ -31,6 +31,8 @@ Restriction along a homomorphism `A' →* A` which carries the condition on `A` 
   `(E/S)` of `Ell/B` are the homomorphisms `A →* E(S)` satisfying `p`.
 * `TauCeti.AlgebraicGeometry.ModuliProblem.homLevelMap`: restriction of level structures along a
   homomorphism of groups.
+* `TauCeti.AlgebraicGeometry.ModuliProblem.homLevelAction`: the right action of automorphisms
+  of the source group, for a condition invariant under precomposition.
 
 ## Main results
 
@@ -105,6 +107,16 @@ theorem homLevelEquiv_map {X Y : EllObj B} (f : X ⟶ Y) (α : (homLevel B A p h
       (EllipticCurveGeom.pointsPullback f.isPullback f.zero_total).comp (homLevelEquiv Y α).1 :=
   (rfl)
 
+/-- Two morphisms into `homLevel` agree if their underlying homomorphisms agree on every
+level structure. -/
+@[ext]
+theorem homLevel_hom_ext {P : ModuliProblem B} {f g : P ⟶ homLevel B A p hp}
+    (h : ∀ (X : EllObj B) (α : P.obj (op X)),
+      (homLevelEquiv X (f.app (op X) α)).1 = (homLevelEquiv X (g.app (op X) α)).1) :
+    f = g := by
+  ext X α
+  exact (homLevelEquiv X.unop).injective (Subtype.ext (h X.unop α))
+
 section Map
 
 variable {A' : Type} [Group A']
@@ -130,6 +142,52 @@ theorem homLevelEquiv_homLevelMap_app (ψ : A' →* A) (hψ : ∀ X φ, p X φ �
   (rfl)
 
 end Map
+
+section Action
+
+variable (B A)
+  (hσ : ∀ (X : EllObj B) φ (σ : MulAut A), p X φ → p X (φ.comp σ.toMonoidHom))
+
+/-- The right action of automorphisms of `A` on level structures whose condition is invariant
+under precomposition. An automorphism `σ` sends a homomorphism `φ` to `φ ∘ σ`. -/
+noncomputable def homLevelAction : (MulAut A)ᵐᵒᵖ →* Aut (homLevel B A p hp) where
+  toFun σ := Aut.of
+    { hom := homLevelMap B σ.unop.toMonoidHom fun X φ h ↦ hσ X φ σ.unop h
+      inv := homLevelMap B σ.unop.symm.toMonoidHom fun X φ h ↦ hσ X φ σ.unop.symm h
+      hom_inv_id := by ext; simp
+      inv_hom_id := by ext; simp }
+  map_one' := by
+    apply Aut.ext
+    rw [Aut.one_asIso]
+    apply Iso.ext
+    refine homLevel_hom_ext fun X α ↦ MonoidHom.ext fun a ↦ ?_
+    simp
+  map_mul' σ τ := by
+    apply Aut.ext
+    rw [Aut.mul_asIso]
+    apply Iso.ext
+    refine homLevel_hom_ext fun X α ↦ MonoidHom.ext fun a ↦ ?_
+    simp
+
+variable {B A}
+
+/-- The action of `σ` precomposes a level structure with `σ`. -/
+@[simp]
+theorem homLevelEquiv_homLevelAction_hom_app (σ : (MulAut A)ᵐᵒᵖ) (X : EllObj B)
+    (α : (homLevel B A p hp).obj (op X)) :
+    (homLevelEquiv X ((homLevelAction B A hσ σ).asIso.hom.app (op X) α)).1 =
+      (homLevelEquiv X α).1.comp σ.unop.toMonoidHom :=
+  homLevelEquiv_homLevelMap_app _ (fun X φ h ↦ hσ X φ σ.unop h) X α
+
+/-- The inverse action precomposes a level structure with `σ⁻¹`. -/
+@[simp]
+theorem homLevelEquiv_homLevelAction_inv_app (σ : (MulAut A)ᵐᵒᵖ) (X : EllObj B)
+    (α : (homLevel B A p hp).obj (op X)) :
+    (homLevelEquiv X ((homLevelAction B A hσ σ).asIso.inv.app (op X) α)).1 =
+      (homLevelEquiv X α).1.comp σ.unop.symm.toMonoidHom :=
+  homLevelEquiv_homLevelMap_app _ (fun X φ h ↦ hσ X φ σ.unop.symm h) X α
+
+end Action
 
 end ModuliProblem
 

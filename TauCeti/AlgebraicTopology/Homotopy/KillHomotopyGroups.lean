@@ -319,16 +319,9 @@ private lemma nullhomotopic_killingAttachingMaps_comp {Y : TopCat.{u}} {y : Y} {
   match m, i with
   | k + 1, q => by
     have : NeZero k := ⟨((NeZero.pos n).trans_le q.2).ne'⟩
-    -- The image of the attaching loop is trivial in `πₖ(Z, g y)`, so its sphere map is
-    -- null-homotopic, and the attaching map is that sphere map read on `TopCat.diskBoundary`.
-    have h := (HomotopyGroup.mk_eq_one_iff_nullhomotopic_toSphere
-      (GenLoop.map g.hom rfl q.1)).1 ((hZ k rfl q.2).elim _ _)
-    rw [GenLoop.toSphere_map] at h
-    have he : (GenLoop.diskBoundaryMap q.1 ≫ g).hom =
-        (g.hom.comp (GenLoop.toSphere q.1)).comp ⟨ULift.down, continuous_uliftDown⟩ := by
-      ext s
-      exact congrArg g.hom (GenLoop.diskBoundaryMap_apply q.1 s)
-    exact he ▸ h.comp_left _
+    -- The image of the attaching loop is trivial in `πₖ(Z, g y)`.
+    exact (HomotopyGroup.map_mk_eq_one_iff_nullhomotopic_diskBoundaryMap_comp g rfl q.1).1
+      ((hZ k rfl q.2).elim _ _)
 
 /-- **A based map extends over one step of the tower.** If the homotopy group of `Z` vanishes in
 the dimension of the spheres attached at step `m`, every map `g` out of stage `m` extends over

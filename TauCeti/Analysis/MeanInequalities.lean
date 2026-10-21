@@ -8,7 +8,9 @@ module
 public import Mathlib.Analysis.MeanInequalities
 
 /-!
-# Superadditivity of the weighted geometric mean
+# Mean inequalities
+
+This file collects two classical inequalities complementing `Mathlib.Analysis.MeanInequalities`.
 
 For nonnegative weights `w i` summing to `1`, the weighted geometric mean
 `G(a) = ∏ i, a i ^ w i` of a nonnegative family is superadditive:
@@ -24,9 +26,18 @@ The proof divides by `a i + b i` and applies the inequality of arithmetic and ge
 `Real.geom_mean_le_arith_mean_weighted` to the two normalized families, whose weighted means add
 up to at most `1`.
 
+Minkowski's inequality also holds for unconditional sums of `ℝ≥0∞`-valued families over an
+arbitrary index type, with no summability hypotheses: infinite sums and infinite terms are allowed.
+Mathlib states it for finite sums (`ENNReal.Lp_add_le`) and for summable `ℝ≥0`-valued families
+(`NNReal.Lp_add_le_tsum`); the `ℝ≥0∞` form follows from the finite one by taking the supremum over
+finite partial sums. It is the counting-measure case of `ENNReal.lintegral_Lp_add_le`, stated
+without measure theory. It gives the triangle inequality for gauges defined as `ℓᵖ` sums in `ℝ≥0∞`,
+such as the Hilbert–Schmidt energy of an operator.
+
 ## Main statements
 
 * `Real.prod_rpow_add_prod_rpow_le_prod_add_rpow`: the weighted geometric mean is superadditive.
+* `ENNReal.Lp_add_le_tsum`: Minkowski's inequality for unconditional sums in `ℝ≥0∞`.
 
 ## References
 
@@ -72,3 +83,22 @@ theorem prod_rpow_add_prod_rpow_le_prod_add_rpow {ι : Type*} (s : Finset ι) {w
     _ = 1 := hw'
 
 end Real
+
+namespace ENNReal
+
+open scoped ENNReal
+
+/-- **Minkowski's inequality** for unconditional sums in `ℝ≥0∞`: for `1 ≤ p`,
+`(∑' i, (f i + g i) ^ p) ^ (1 / p) ≤ (∑' i, f i ^ p) ^ (1 / p) + (∑' i, g i ^ p) ^ (1 / p)`.
+No summability hypotheses are needed; both sides may be infinite. -/
+theorem Lp_add_le_tsum {ι : Type*} (f g : ι → ℝ≥0∞) {p : ℝ} (hp : 1 ≤ p) :
+    (∑' i, (f i + g i) ^ p) ^ (1 / p) ≤
+      (∑' i, f i ^ p) ^ (1 / p) + (∑' i, g i ^ p) ^ (1 / p) := by
+  have hp0 : 0 < p := zero_lt_one.trans_le hp
+  -- Bound each finite partial sum by the finite Minkowski inequality.
+  rw [one_div, rpow_inv_le_iff hp0, ENNReal.tsum_eq_iSup_sum]
+  refine iSup_le fun s ↦ ?_
+  rw [← rpow_inv_le_iff hp0, ← one_div]
+  grw [Lp_add_le s f g hp, ENNReal.sum_le_tsum s, ENNReal.sum_le_tsum (f := fun i ↦ g i ^ p) s]
+
+end ENNReal

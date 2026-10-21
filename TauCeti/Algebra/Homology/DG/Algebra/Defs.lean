@@ -50,6 +50,8 @@ its degree alone.
 * `TauCeti.IsNonUnitalDGAlgebra.leibniz_of_map_eq_zero` and
   `TauCeti.IsNonUnitalDGAlgebra.map_mul_eq_zero_of_map_eq_zero` specialize the Leibniz rule
   when the right factor is a cycle.
+* `TauCeti.IsNonUnitalDGAlgebra.leibniz_of_mem_zero` specializes the Leibniz rule when the left
+  factor has degree zero.
 * `TauCeti.IsDGAlgebra.map_one_eq_zero` and `TauCeti.IsDGAlgebra.map_algebraMap`: the differential
   annihilates the unit and, more generally, the image of the ground ring.
 * `TauCeti.isNonUnitalDGAlgebra_zero` and `TauCeti.isDGAlgebra_zero`: a graded algebra with zero
@@ -138,6 +140,11 @@ arbitrary left factor, without a homogeneity hypothesis. -/
 theorem leibniz_of_map_eq_zero (h : IsNonUnitalDGAlgebra 𝒜 d) (a : A) {b : A}
     (hb : d b = 0) : d (a * b) = d a * b :=
   map_mul_of_leibniz_of_map_eq_zero h.leibniz a hb
+
+/-- The Leibniz rule for a left factor of degree zero, where the sign is trivial. -/
+theorem leibniz_of_mem_zero (h : IsNonUnitalDGAlgebra 𝒜 d) {a : A} (ha : a ∈ 𝒜 0) (b : A) :
+    d (a * b) = d a * b + a * d b := by
+  simpa using h.leibniz ha b
 
 /-- The product of two cycles in a nonunital DG algebra is a cycle. -/
 theorem map_mul_eq_zero_of_map_eq_zero (h : IsNonUnitalDGAlgebra 𝒜 d) {a b : A}

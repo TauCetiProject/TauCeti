@@ -24,7 +24,7 @@ instances in the scope `TauCeti.RingOpNorm`:
 * evaluation `(f, x) ↦ f x` is jointly continuous;
 * `E →L[R] F` is complete when `F` is a complete normed group;
 * the endomorphisms `E →L[R] E` form a seminormed ring, normed when `E` is, with `‖1‖ = 1` as
-  soon as `E` has a vector of nonzero norm.
+  soon as `E` has a vector of nonzero norm, and composition is jointly continuous.
 
 Mathlib's topology of bounded convergence on continuous linear maps is only defined over normed
 fields, so over other scalar rings these instances introduce no diamond. Over a nontrivially
@@ -129,6 +129,12 @@ for the operator norm. -/
 noncomputable scoped instance seminormedRing : SeminormedRing (E →L[R] E) :=
   { seminormedAddCommGroup, ContinuousLinearMap.ring with
     norm_mul_le := ringOpNorm_comp_le }
+
+/-- Composition of operators is jointly continuous for the operator norm. This is the continuity
+of multiplication in `TauCeti.RingOpNorm.seminormedRing`, stated directly for the multiplication of
+continuous linear maps so that instance search need not unfold the ring structure. -/
+scoped instance continuousMul : ContinuousMul (E →L[R] E) :=
+  (NonUnitalSeminormedRing.toIsTopologicalRing (α := E →L[R] E)).toContinuousMul
 
 /-- The identity has operator norm one on a module with a vector of nonzero norm. -/
 scoped instance normOneClass [NontrivialTopology E] : NormOneClass (E →L[R] E) :=

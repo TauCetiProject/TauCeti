@@ -55,6 +55,8 @@ preserved by every algebra isomorphism between Clifford algebras of finite-dimen
 * `CliffordAlgebra.scalarTrace_eq_zero_of_mem_evenOdd_one`: the scalar part of an odd element is
   zero.
 * `CliffordAlgebra.scalarTrace_mul_comm`: cyclicity, `τ (x * y) = τ (y * x)`.
+* `CliffordAlgebra.scalarTrace_prod_map_ι_append_cons_eq_zero`: a product of vectors with a factor
+  orthogonal to all the others has scalar part zero.
 * `CliffordAlgebra.eq_smul_scalarTrace`: for `M` spanned by pairwise orthogonal vectors, every
   cyclic functional invariant under the grade involution is `f 1 • τ`.
 * `CliffordAlgebra.trace_mulLeft_eq_finrank_mul_scalarTrace`: the regular-trace formula for a
@@ -182,6 +184,17 @@ private theorem apply_ι_mul_prod_eq_zero (f : CliffordAlgebra Q →ₗ[R] R)
     rw [hprod, map_neg]
   · nth_rewrite 1 [hmul]
     rw [prod_map_ι_mul_ι_of_forall_isOrtho h, ho.neg_one_pow, neg_one_smul, map_neg]
+
+/-- **A product with a factor orthogonal to all the others has scalar part zero**: if the factor
+`a` of `l₁ ++ a :: l₂` is orthogonal to every other factor, then `τ` vanishes on the product.
+Cyclicity moves `l₁` behind the remaining factors, so that `a` comes first. -/
+theorem scalarTrace_prod_map_ι_append_cons_eq_zero {l₁ l₂ : List M} {a : M}
+    (h : ∀ x ∈ l₁ ++ l₂, Q.IsOrtho x a) :
+    scalarTrace Q ((l₁ ++ a :: l₂).map (ι Q)).prod = 0 := by
+  rw [List.map_append, List.prod_append, scalarTrace_mul_comm, List.map_cons, List.prod_cons,
+    mul_assoc, ← List.prod_append, ← List.map_append]
+  exact apply_ι_mul_prod_eq_zero _ scalarTrace_mul_comm scalarTrace_involute fun x hx ↦
+    h x (List.mem_append.mpr (List.mem_append.mp hx).symm)
 
 /-- **The scalar part is the unique normalized cyclic functional invariant under the grade
 involution**, as soon as `M` is spanned by a list of pairwise orthogonal vectors: every such

@@ -164,6 +164,12 @@ theorem sweep_apply {m : ℕ} (c : SingularCube X m) (y : Fin (m + 1) → I) :
     D.sweep c y = D.homotopy c (y 0, Fin.tail y) := by
   simp [sweep]
 
+/-- The swept cube starts at the origin of `c`. -/
+theorem sweep_apply_zero {m : ℕ} (c : SingularCube X m) : D.sweep c 0 = c 0 := by
+  rw [sweep_apply, Pi.zero_apply, D.homotopy_zero]
+  -- `Fin.tail 0` is the zero vector, coordinatewise by definition.
+  exact congrArg c (funext fun _ ↦ rfl)
+
 /-- The swept cube starts at `c`. -/
 @[simp]
 theorem face_zero_zero_sweep {m : ℕ} (c : SingularCube X m) :
