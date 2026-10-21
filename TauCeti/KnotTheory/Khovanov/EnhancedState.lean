@@ -13,8 +13,8 @@ public import TauCeti.KnotTheory.PDCode.ResolvedCircle
 # Enhanced states and the Jones polynomial
 
 An enhanced state of a PD-code is a state `s` together with a label `1` or `X` on every circle of
-the diagram smoothed according to `s`. The enhanced states are meant to index a basis of the
-Khovanov chain groups, which are not yet defined; this file fixes their bigrading. A state selects
+the diagram smoothed according to `s`. The enhanced states form the standard basis of the
+Khovanov chain groups (Bar-Natan §1), and this file fixes their bigrading. A state selects
 the `B`-smoothing at the crossings `S` where it is `false`. For an oriented code with `n₊` positive
 and `n₋` negative crossings, the enhanced state has cochain degree `|S| - n₋`. Its quantum degree
 is `|S| + n₊ - 2 n₋` plus `1` for each circle labelled `1` and minus `1` for each circle labelled
@@ -22,9 +22,9 @@ is `|S| + n₊ - 2 n₋` plus `1` for each circle labelled `1` and minus `1` for
 
 The signed count of enhanced states by bidegree is the sum
 `TauCeti.OrientedPDCode.enhancedStateSum` of `(-1) ^ i q ^ j` over all enhanced states; here the
-generator `T` of `ℤ[T;T⁻¹]` plays the role of `q`. Once the Khovanov chain groups `Cⁱʲ` are defined,
-with basis the enhanced states of bidegree `(i, j)`, this sum is meant to compute their graded
-Euler characteristic `∑ (-1) ^ i q ^ j rank Cⁱʲ`.
+generator `T` of `ℤ[T;T⁻¹]` plays the role of `q`. With `Cⁱʲ` the Khovanov chain group, the free
+module on the enhanced states of bidegree `(i, j)`, this sum is the graded Euler characteristic
+`∑ (-1) ^ i q ^ j rank Cⁱʲ`.
 This file proves that, for a nonempty diagram, this sum is the Jones polynomial in Khovanov's
 normalization: with the substitution `t ^ (1/2) ↦ -q`, it is `(q + q⁻¹)` times
 `TauCeti.OrientedPDCode.jonesPolynomial`
@@ -120,9 +120,8 @@ theorem enhancedQuantumDegree_def (D : OrientedPDCode n) (e : D.toPDCode.Enhance
 
 /-- **The enhanced state sum** of an oriented code: the sum of `(-1) ^ i q ^ j` over all enhanced
 states, where `i` is the cochain degree and `j` the quantum degree, with `q = T`; that is, the
-signed count of enhanced states by bidegree. Once the Khovanov chain groups `Cⁱʲ` are defined, with
-basis the enhanced states of bidegree `(i, j)`, it is meant to compute their graded Euler
-characteristic `∑ (-1) ^ i q ^ j rank Cⁱʲ`. -/
+signed count of enhanced states by bidegree. With `Cⁱʲ` the free module on the enhanced states of
+bidegree `(i, j)`, this is the graded Euler characteristic `∑ (-1) ^ i q ^ j rank Cⁱʲ`. -/
 noncomputable def enhancedStateSum (D : OrientedPDCode n) : ℤ[T;T⁻¹] :=
   ∑ e : D.toPDCode.EnhancedState,
     (D.stateCochainDegree e.1).negOnePow • T (D.enhancedQuantumDegree e)
