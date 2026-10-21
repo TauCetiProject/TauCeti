@@ -60,26 +60,13 @@ universe w v u
 
 namespace CategoryTheory
 
-variable {C : Type u} [Category.{v} C] [Preadditive C] [HasFiniteBiproducts C]
+variable {C : Type u} [Category.{v} C]
 
 namespace Functor
 
-section Congr
+section Faces
 
-variable {κ : Type w} [Fintype κ] [LinearOrder κ] (G : Finset κ ⥤ C)
-
-/-- An edge map followed by the inclusion of its target vertex only depends on the target vertex
-up to equality. -/
-private lemma map_homOfLE_comp_cubeComplexι_congr {r : ℤ} {T U U' : Finset κ} (e : U = U')
-    (h : T ⊆ U) (hU : (#U : ℤ) = r) :
-    G.map (homOfLE h) ≫ G.cubeComplexι ⟨U, hU⟩ =
-      G.map (homOfLE (e ▸ h)) ≫ G.cubeComplexι ⟨U', e ▸ hU⟩ := by
-  subst e
-  rfl
-
-end Congr
-
-variable {ι : Type w} [Fintype ι] [LinearOrder ι] (F : Finset (WithBot ι) ⥤ C)
+variable {ι : Type w} [DecidableEq ι] (F : Finset (WithBot ι) ⥤ C)
 
 /-- The `0`-face of a cube indexed by `WithBot ι`: the restriction to the vertices `S` not
 containing the first index `⊥`, as a cube indexed by `ι`. -/
@@ -115,7 +102,6 @@ def cubeFaceMap : F.cubeFaceZero ⟶ F.cubeFaceOne where
     -- Morphisms in the preorder category of subsets are proofs of inclusion.
     rfl
 
-omit [Preadditive C] [HasFiniteBiproducts C] [Fintype ι] in
 /-- The component of `Functor.cubeFaceMap F` at a vertex `S` is the edge map of `F` from `S` to
 `insert ⊥ S`. -/
 @[simp]
@@ -123,6 +109,27 @@ lemma cubeFaceMap_app (S : Finset ι) :
     F.cubeFaceMap.app S =
       F.map (homOfLE (subset_insert ⊥ (S.map Function.Embedding.coeWithBot))) :=
   (rfl)
+
+end Faces
+
+variable [Preadditive C] [HasFiniteBiproducts C]
+
+section Congr
+
+variable {κ : Type w} [Fintype κ] [LinearOrder κ] (G : Finset κ ⥤ C)
+
+/-- An edge map followed by the inclusion of its target vertex only depends on the target vertex
+up to equality. -/
+private lemma map_homOfLE_comp_cubeComplexι_congr {r : ℤ} {T U U' : Finset κ} (e : U = U')
+    (h : T ⊆ U) (hU : (#U : ℤ) = r) :
+    G.map (homOfLE h) ≫ G.cubeComplexι ⟨U, hU⟩ =
+      G.map (homOfLE (e ▸ h)) ≫ G.cubeComplexι ⟨U', e ▸ hU⟩ := by
+  subst e
+  rfl
+
+end Congr
+
+variable {ι : Type w} [Fintype ι] [LinearOrder ι] (F : Finset (WithBot ι) ⥤ C)
 
 /-! ### The vertices of the two faces -/
 
