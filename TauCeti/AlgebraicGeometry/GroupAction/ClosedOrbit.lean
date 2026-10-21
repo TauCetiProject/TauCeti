@@ -34,6 +34,8 @@ their nonclosed points. The closed orbit produced is not claimed to be unique.
 
 * `TauCeti.SchemeAction.orbit_subset_iff_of_isClosed`: a closed translation-stable subset contains
   the orbit of a rational point exactly when it contains the point.
+* `TauCeti.SchemeAction.orbitClosure_subset_iff_of_isClosed`: the same criterion for the orbit
+  closure.
 * `TauCeti.SchemeAction.orbitClosure_subset_orbitBoundary`: the orbit closure of a rational point
   of the boundary of `O_x` lies in that boundary.
 * `TauCeti.SchemeAction.isClosed_orbit_of_forall_mem_orbitClosure`: an orbit of minimal dimension
@@ -58,21 +60,6 @@ namespace TauCeti.SchemeAction
 universe u
 
 variable {k : Type u} [Field k] [IsAlgClosed k]
-
-/-- A nonempty closed subset of a scheme of finite type over an algebraically closed field
-contains the point underlying a rational point. -/
-private theorem exists_left_apply_mem_of_isClosed {X : Over (Spec (.of k))}
-    [LocallyOfFiniteType X.hom] {Z : Set X.left} (hZ : IsClosed Z) (hne : Z.Nonempty) :
-    ∃ y : 𝟙_ (Over (Spec (.of k))) ⟶ X, ∀ a, y.left a ∈ Z := by
-  have : JacobsonSpace X.left := LocallyOfFiniteType.jacobsonSpace X.hom
-  obtain ⟨p, hp, hpc⟩ := nonempty_inter_closedPoints hne hZ.isLocallyClosed
-  let y : 𝟙_ (Over (Spec (.of k))) ⟶ X :=
-    Over.homMk (pointOfClosedPoint X.hom p (mem_closedPoints_iff.mp hpc))
-      (pointOfClosedPoint_comp X.hom p _)
-  refine ⟨y, fun a ↦ ?_⟩
-  have hya : y.left a = p := pointOfClosedPoint_apply X.hom p _ a
-  rw [hya]
-  exact hp
 
 variable (G : Over (Spec (.of k))) {X : Over (Spec (.of k))} [GrpObj G] [ModObj G X]
   [LocallyOfFiniteType G.hom] [CompactSpace G.left] [LocallyOfFiniteType X.hom]
@@ -99,22 +86,29 @@ theorem orbit_subset_iff_of_isClosed {Z : Set X.left} (hZ : IsClosed Z)
   rw [← translationMulAction_smul_apply, translationMulAction_smul]
   exact hinv g hy
 
+/-- A closed subset of `X` stable under translation by the rational points of `G` contains the
+orbit closure of a rational point `y` exactly when it contains `y`. -/
+theorem orbitClosure_subset_iff_of_isClosed {Z : Set X.left} (hZ : IsClosed Z)
+    (hinv : ∀ g : 𝟙_ (Over (Spec (.of k))) ⟶ G, Set.MapsTo (translation X g).hom.left Z Z)
+    (y : 𝟙_ (Over (Spec (.of k))) ⟶ X) (a : (𝟙_ (Over (Spec (.of k)))).left) :
+    orbitClosure G y ⊆ Z ↔ y.left a ∈ Z := by
+  rw [orbitClosure_def, hZ.closure_subset_iff]
+  exact orbit_subset_iff_of_isClosed G hZ hinv y a
+
 /-- The orbit closure of a rational point `y` lies in the orbit closure of `x` exactly when `y`
 does. -/
 theorem orbitClosure_subset_orbitClosure_iff (x y : 𝟙_ (Over (Spec (.of k))) ⟶ X)
     (a : (𝟙_ (Over (Spec (.of k)))).left) :
-    orbitClosure G y ⊆ orbitClosure G x ↔ y.left a ∈ orbitClosure G x := by
-  rw [orbitClosure_def G y, (isClosed_orbitClosure G x).closure_subset_iff]
-  exact orbit_subset_iff_of_isClosed G (isClosed_orbitClosure G x)
+    orbitClosure G y ⊆ orbitClosure G x ↔ y.left a ∈ orbitClosure G x :=
+  orbitClosure_subset_iff_of_isClosed G (isClosed_orbitClosure G x)
     (fun g ↦ Set.mapsTo_iff_image_subset.mpr (image_translation_orbitClosure G g x).subset) y a
 
 /-- The orbit closure of a rational point `y` of the boundary of the orbit of `x` lies in that
 boundary. -/
 theorem orbitClosure_subset_orbitBoundary {x y : 𝟙_ (Over (Spec (.of k))) ⟶ X}
     {a : (𝟙_ (Over (Spec (.of k)))).left} (hy : y.left a ∈ orbitBoundary G x) :
-    orbitClosure G y ⊆ orbitBoundary G x := by
-  rw [orbitClosure_def, (isClosed_orbitBoundary G x).closure_subset_iff]
-  exact (orbit_subset_iff_of_isClosed G (isClosed_orbitBoundary G x)
+    orbitClosure G y ⊆ orbitBoundary G x :=
+  (orbitClosure_subset_iff_of_isClosed G (isClosed_orbitBoundary G x)
     (fun g ↦ Set.mapsTo_iff_image_subset.mpr (image_translation_orbitBoundary G g x).subset)
     y a).mpr hy
 
@@ -137,11 +131,10 @@ theorem isClosed_orbit_of_forall_mem_orbitClosure (x : 𝟙_ (Over (Spec (.of k)
     IsClosed (orbit G x) := by
   rw [isClosed_orbit_iff_orbitBoundary_eq_empty]
   by_contra hne
-  obtain ⟨y, hy⟩ := exists_left_apply_mem_of_isClosed (isClosed_orbitBoundary G x)
-    (Set.nonempty_iff_ne_empty.mpr hne)
-  have hy := hy (IsLocalRing.closedPoint k)
-  exact (hmin y _ ((mem_orbitBoundary G x _).mp hy).1).not_gt
-    (topologicalKrullDim_orbit_lt_of_mem_orbitBoundary G hy)
+  obtain ⟨y, hyπ, hy⟩ := (isClosed_orbitBoundary G x).isLocallyClosed.exists_rationalPoint_mem
+    X.hom (Set.nonempty_iff_ne_empty.mpr hne)
+  exact (hmin (Over.homMk y hyπ) _ ((mem_orbitBoundary G x _).mp hy).1).not_gt
+    (topologicalKrullDim_orbit_lt_of_mem_orbitBoundary G (y := Over.homMk y hyπ) hy)
 
 /-- **Existence of closed orbits.** The closure of the orbit of every rational point contains the
 closed orbit of a rational point. -/
@@ -154,13 +147,12 @@ theorem exists_isClosed_orbit_subset_orbitClosure (x : 𝟙_ (Over (Spec (.of k)
   | ind d ih =>
   by_cases hclosed : IsClosed (orbit G x)
   · exact ⟨x, hclosed, orbit_subset_orbitClosure G x⟩
-  obtain ⟨y, hy⟩ := exists_left_apply_mem_of_isClosed (isClosed_orbitBoundary G x)
-    (Set.nonempty_iff_ne_empty.mpr ((isClosed_orbit_iff_orbitBoundary_eq_empty G x).not.mp
+  obtain ⟨y, hyπ, hy⟩ := (isClosed_orbitBoundary G x).isLocallyClosed.exists_rationalPoint_mem
+    X.hom (Set.nonempty_iff_ne_empty.mpr ((isClosed_orbit_iff_orbitBoundary_eq_empty G x).not.mp
       hclosed))
-  have hy := hy (IsLocalRing.closedPoint k)
-  obtain ⟨z, hz, hzy⟩ :=
-    ih _ (hd ▸ topologicalKrullDim_orbit_lt_of_mem_orbitBoundary G hy) y rfl
-  exact ⟨z, hz, hzy.trans ((orbitClosure_subset_orbitBoundary G hy).trans
+  have hlt := topologicalKrullDim_orbit_lt_of_mem_orbitBoundary G (y := Over.homMk y hyπ) hy
+  obtain ⟨z, hz, hzy⟩ := ih _ (hd ▸ hlt) _ rfl
+  exact ⟨z, hz, hzy.trans ((orbitClosure_subset_orbitBoundary G (y := Over.homMk y hyπ) hy).trans
     fun p hp ↦ ((mem_orbitBoundary G x p).mp hp).1)⟩
 
 /-- Every nonempty closed subset of `X` stable under translation by the rational points of `G`
@@ -169,11 +161,9 @@ theorem exists_isClosed_orbit_subset_of_isClosed {Z : Set X.left} (hZ : IsClosed
     (hne : Z.Nonempty)
     (hinv : ∀ g : 𝟙_ (Over (Spec (.of k))) ⟶ G, Set.MapsTo (translation X g).hom.left Z Z) :
     ∃ y : 𝟙_ (Over (Spec (.of k))) ⟶ X, IsClosed (orbit G y) ∧ orbit G y ⊆ Z := by
-  obtain ⟨x, hx⟩ := exists_left_apply_mem_of_isClosed hZ hne
-  obtain ⟨y, hy, hyx⟩ := exists_isClosed_orbit_subset_orbitClosure G x
-  refine ⟨y, hy, hyx.trans ?_⟩
-  rw [orbitClosure_def, hZ.closure_subset_iff]
-  exact (orbit_subset_iff_of_isClosed G hZ hinv x _).mpr (hx (IsLocalRing.closedPoint k))
+  obtain ⟨x, hxπ, hx⟩ := hZ.isLocallyClosed.exists_rationalPoint_mem X.hom hne
+  obtain ⟨y, hy, hyx⟩ := exists_isClosed_orbit_subset_orbitClosure G (Over.homMk x hxπ)
+  exact ⟨y, hy, hyx.trans ((orbitClosure_subset_iff_of_isClosed G hZ hinv _ _).mpr hx)⟩
 
 /-- **Existence of closed orbits.** A nonempty scheme of finite type over an algebraically closed
 field, acted on by a group scheme of finite type, contains the closed orbit of a rational
