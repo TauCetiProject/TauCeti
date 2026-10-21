@@ -21,7 +21,8 @@ public import Mathlib.Topology.Algebra.Polynomial
 A nonconstant complex polynomial `p` of degree `d` extends to the Riemann sphere `OnePoint ℂ` by
 sending `∞` to `∞`; this extension is Mathlib's `OnePoint.map`. In the affine chart it is
 `z ↦ p(z)`. In the inverted chart at `∞` it is `w ↦ w ^ d / q(w)`, where `q = p.reverse` is the
-reversed polynomial, `q(w) = w ^ d p(w⁻¹)`, whose value at `0` is the leading coefficient of `p`.
+reversed polynomial, `q(w) = w ^ d p(w⁻¹)` for `w ≠ 0`, whose value at `0` is the leading
+coefficient of `p`.
 So the extension is holomorphic, and its local multiplicity is `d` at `∞`. At a finite point `z`
 the local multiplicity is the multiplicity of `z` as a root of `p - p(z)`, and it exceeds `1`
 exactly when `z` is a critical point of `p`, a root of the derivative.

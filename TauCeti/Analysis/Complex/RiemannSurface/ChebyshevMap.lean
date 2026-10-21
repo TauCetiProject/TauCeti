@@ -11,10 +11,10 @@ public import TauCeti.Analysis.Complex.RiemannSurface.Polynomial
 # The map `z ↦ 4z(1 - z)` of the Riemann sphere
 
 The polynomial `4X(1 - X)` has degree `2`, so its extension to the Riemann sphere `OnePoint ℂ`,
-sending `∞` to `∞`, is a holomorphic map of degree `2`. Its only critical point is `1/2`, with
-critical value `1`, so its branch values are `1` and `∞`. Its fibre over `0` is the two points `0`
-and `1`, where it is unramified; its fibres over `1` and `∞` are the single points `1/2` and `∞`,
-where it is ramified of index `2`. So its ramification partitions over `0`, `1` and `∞` are
+sending `∞` to `∞`, is a holomorphic map of degree `2`. Its only finite critical point is `1/2`,
+with critical value `1`, so its branch values are `1` and `∞`. Its fibre over `0` is the two points
+`0` and `1`, where it is unramified; its fibres over `1` and `∞` are the single points `1/2` and
+`∞`, where it is ramified of index `2`. So its ramification partitions over `0`, `1` and `∞` are
 `[1, 1]`, `[2]` and `[2]`. All of this is read off from the general facts about polynomial maps of
 the sphere in `TauCeti.Analysis.Complex.RiemannSurface.Polynomial`.
 
@@ -129,8 +129,8 @@ theorem localMultiplicity_onePointMap_four_mul_mul_one_sub_infty :
     localMultiplicity_onePointMap_eval_infty natDegree_four_mul_X_mul_one_sub_X_pos,
     natDegree_four_mul_X_mul_one_sub_X]
 
-/-- The branch values of `z ↦ 4z(1 - z)` are exactly `1` and `∞`: its only critical point is
-`1/2`, with critical value `1`. -/
+/-- The branch values of `z ↦ 4z(1 - z)` are exactly `1` and `∞`: its only finite critical point
+is `1/2`, with critical value `1`. -/
 theorem branchValues_spherePolynomial_four_mul_X_mul_one_sub_X :
     (FiniteHolomorphicMap.spherePolynomial natDegree_four_mul_X_mul_one_sub_X_pos).branchValues =
       {((1 : ℂ) : OnePoint ℂ), ∞} := by

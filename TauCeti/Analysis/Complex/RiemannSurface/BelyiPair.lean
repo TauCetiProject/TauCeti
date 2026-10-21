@@ -507,6 +507,7 @@ theorem degree_β_chebyshev : degree chebyshev.β = 2 :=
   (congrArg degree coe_β_chebyshev).trans degree_onePointMap_four_mul_mul_one_sub
 
 /-- The branch values of `z ↦ 4z(1 - z)` are exactly `1` and `∞`: it is unramified over `0`. -/
+@[simp]
 theorem branchValues_β_chebyshev : chebyshev.β.branchValues = {((1 : ℂ) : OnePoint ℂ), ∞} :=
   -- `chebyshev.β` is the polynomial map of `4X(1 - X)` by definition.
   RiemannSurface.branchValues_spherePolynomial_four_mul_X_mul_one_sub_X
