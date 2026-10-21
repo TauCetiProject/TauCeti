@@ -132,11 +132,11 @@ smaller field `𝕜` is its derivative over `𝕜'` with scalars restricted to `
 spaces. For instance, the real derivative of a holomorphic map is its complex derivative. -/
 theorem MDifferentiableAt.mfderiv_restrictScalars
     (h : MDifferentiableAt 𝓘(𝕜', E) 𝓘(𝕜', E') f x) :
-    ((tangentSpaceCastModel 𝓘(𝕜', E') (f x) : _ →L[𝕜'] E') ∘L
-        mfderiv 𝓘(𝕜', E) 𝓘(𝕜', E') f x ∘L
-        ((tangentSpaceCastModel 𝓘(𝕜', E) x).symm : E →L[𝕜'] _)).restrictScalars 𝕜 =
-      (tangentSpaceCastModel 𝓘(𝕜, E') (f x) : _ →L[𝕜] E') ∘L
+    (tangentSpaceCastModel 𝓘(𝕜, E') (f x) : _ →L[𝕜] E') ∘L
         mfderiv 𝓘(𝕜, E) 𝓘(𝕜, E') f x ∘L
-        ((tangentSpaceCastModel 𝓘(𝕜, E) x).symm : E →L[𝕜] _) := by
+        ((tangentSpaceCastModel 𝓘(𝕜, E) x).symm : E →L[𝕜] _) =
+      ((tangentSpaceCastModel 𝓘(𝕜', E') (f x) : _ →L[𝕜'] E') ∘L
+        mfderiv 𝓘(𝕜', E) 𝓘(𝕜', E') f x ∘L
+        ((tangentSpaceCastModel 𝓘(𝕜', E) x).symm : E →L[𝕜'] _)).restrictScalars 𝕜 := by
   simpa only [mfderivWithin_univ] using
-    h.mdifferentiableWithinAt.restrictScalars_mfderivWithin 𝕜 (uniqueMDiffWithinAt_univ _)
+    (h.mdifferentiableWithinAt.restrictScalars_mfderivWithin 𝕜 (uniqueMDiffWithinAt_univ _)).symm
