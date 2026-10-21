@@ -45,7 +45,8 @@ theorem, to the degree theory of finite holomorphic maps.
 * `TauCeti.RiemannSurface.mdifferentiableAt_sphereMap` and
   `TauCeti.RiemannSurface.mdifferentiable_sphereMap`: it is holomorphic when `f` is meromorphic.
 * `TauCeti.RiemannSurface.FiniteHolomorphicMap.ofMeromorphic`: the finite holomorphic map to the
-  sphere defined by a nonconstant meromorphic function on a compact connected Riemann surface.
+  sphere defined by a meromorphic function which is not constant near some point, on a compact
+  connected Riemann surface.
 
 ## References
 
@@ -142,9 +143,10 @@ private theorem exists_mdifferentiableAt_eventuallyEq {g : ℂ → ℂ} {z₀ : 
       rw [meromorphicOrderAt_inv, ← hn]
       exact_mod_cast neg_pos.2 (WithTop.coe_lt_coe.1 hord)
     have han := hg.inv.meromorphicOrderAt_nonneg_iff_analyticAt_toMeromorphicNFAt.1 hinv.le
-    have hsymm : ∀ w, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) (invChart.symm : ℂ → OnePoint ℂ) w :=
-      fun w ↦ mdifferentiableAt_atlas_symm (chart_mem_atlas ℂ (∞ : OnePoint ℂ))
-        (by simp [invChart_target])
+    have hsymm : ∀ w, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) (invChart.symm : ℂ → OnePoint ℂ) w := by
+      intro w
+      rw [← chartAt_infty (𝕜 := ℂ)]
+      exact mdifferentiableAt_atlas_symm (chart_mem_atlas ℂ _) (by simp [invChart_target])
     refine ⟨fun w ↦ invChart.symm (toMeromorphicNFAt g⁻¹ z₀ w), ?_, ?_, ?_⟩
     · filter_upwards [han.eventually_analyticAt] with w hw
       exact (hsymm _).comp w (mdifferentiableAt_iff_differentiableAt.2 hw.differentiableAt)
