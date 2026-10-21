@@ -181,6 +181,7 @@ theorem subst_toPowerSeries_nsmulSeries [F.IsComm] (n : ℕ) :
   fin_cases s <;> rfl
 
 /-- Multiplication by `n` on the additive formal group law `X + Y` is `[n](T) = n T`. -/
+@[simp]
 theorem nsmulSeries_𝔾ₐ (n : ℕ) :
     (𝔾ₐ (R := R)).nsmulSeries n = (n : PowerSeries R) * PowerSeries.X := by
   induction n with
@@ -192,6 +193,7 @@ theorem nsmulSeries_𝔾ₐ (n : ℕ) :
 
 /-- Multiplication by `n` on the multiplicative formal group law `X + Y + X Y` is
 `[n](T) = (1 + T) ^ n - 1`. -/
+@[simp]
 theorem nsmulSeries_𝔾ₘ (n : ℕ) :
     (𝔾ₘ (R := R)).nsmulSeries n = (1 + PowerSeries.X) ^ n - 1 := by
   induction n with
