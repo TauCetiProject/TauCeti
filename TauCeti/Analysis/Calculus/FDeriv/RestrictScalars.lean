@@ -8,15 +8,17 @@ module
 public import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
 
 /-!
-# The range of the derivative under restriction of scalars
+# The derivative under restriction of scalars
 
 For a map differentiable over a larger field `𝕜'`, the derivative over `𝕜` is the restriction of
-scalars of the derivative over `𝕜'`, so the two derivatives have the same range, and one is
-injective exactly when the other is. For a holomorphic map, the real tangent space is the complex
-tangent space, and the map is a real immersion at a point exactly when it is a complex one.
+scalars of the derivative over `𝕜'`, so it is `𝕜'`-linear, the two derivatives have the same
+range, and one is injective exactly when the other is. For a holomorphic map, the real derivative
+commutes with multiplication by `I`, the real tangent space is the complex tangent space, and the
+map is a real immersion at a point exactly when it is a complex one.
 
 ## Main results
 
+* `DifferentiableAt.fderiv_restrictScalars_smul`: the derivative over `𝕜` is `𝕜'`-linear.
 * `DifferentiableAt.range_fderiv_restrictScalars`: the range of the derivative does not depend
   on the field of scalars.
 * `DifferentiableAt.injective_fderiv_restrictScalars_iff`: neither does its injectivity.
@@ -30,6 +32,12 @@ variable (𝕜 : Type*) {𝕜' V E : Type*} [NontriviallyNormedField 𝕜] [Nont
   [NormedAlgebra 𝕜 𝕜'] [NormedAddCommGroup V] [NormedSpace 𝕜 V] [NormedSpace 𝕜' V]
   [IsScalarTower 𝕜 𝕜' V] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedSpace 𝕜' E]
   [IsScalarTower 𝕜 𝕜' E] {i : V → E} {x : V}
+
+/-- The derivative over `𝕜` of a map differentiable over a larger field `𝕜'` is `𝕜'`-linear. For
+a holomorphic map, the real derivative commutes with multiplication by `I`. -/
+theorem _root_.DifferentiableAt.fderiv_restrictScalars_smul (hi : DifferentiableAt 𝕜' i x)
+    (c : 𝕜') (u : V) : fderiv 𝕜 i x (c • u) = c • fderiv 𝕜 i x u := by
+  simp [hi.fderiv_restrictScalars 𝕜]
 
 /-- The tangent space of a map differentiable over a larger field `𝕜'` is the same over `𝕜`. For
 a holomorphic map, the real tangent space is the complex tangent space; in particular it is stable

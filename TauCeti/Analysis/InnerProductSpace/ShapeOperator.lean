@@ -246,12 +246,6 @@ attribute [local instance] InnerProductSpace.complexToReal
 variable {V E : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [FiniteDimensional ℂ V]
   [NormedAddCommGroup E] [InnerProductSpace ℂ E] {i : V → E} {x : V}
 
-omit [FiniteDimensional ℂ V] in
-/-- The real derivative of a holomorphic map commutes with multiplication by `I`. -/
-private theorem fderiv_real_I_smul (hi : ContDiffAt ℂ 2 i x) (u : V) :
-    fderiv ℝ i x (I • u) = I • fderiv ℝ i x u := by
-  simp [(hi.differentiableAt (by norm_num)).fderiv_restrictScalars ℝ]
-
 /-- **The shape operator anticommutes with `J`.** For a `C²` holomorphic map,
 `S_ν (I • v) = -(I • S_ν v)`. -/
 theorem _root_.ContDiffAt.shapeOperator_apply_I_smul (hi : ContDiffAt ℂ 2 i x) (ν : E) (v : V) :
@@ -262,9 +256,9 @@ theorem _root_.ContDiffAt.shapeOperator_apply_I_smul (hi : ContDiffAt ℂ 2 i x)
   refine eq_of_forall_inner_comp (L := (fderiv ℝ i x : V →ₗ[ℝ] E)) hR fun w ↦ ?_
   have hw := inner_fderiv_shapeOperator_apply hR ν v (I • w)
   simp only [ContinuousLinearMap.coe_coe]
+  have hI := (hi.differentiableAt (by norm_num)).fderiv_restrictScalars_smul ℝ I
   rw [inner_fderiv_shapeOperator_apply hR, hi.secondFundamentalForm_I_smul_left,
-    ← hi.secondFundamentalForm_I_smul_right, ← hw, map_neg, fderiv_real_I_smul hi,
-    fderiv_real_I_smul hi]
+    ← hi.secondFundamentalForm_I_smul_right, ← hw, map_neg, hI, hI]
   simp [real_inner_eq_re_inner, inner_smul_left, inner_smul_right]
 
 /-- **Rotating the normal vector by `J`.** For a `C²` holomorphic map,
@@ -276,9 +270,10 @@ theorem _root_.ContDiffAt.shapeOperator_I_smul_apply (hi : ContDiffAt ℂ 2 i x)
   · simp [shapeOperator_of_not_injective hR]
   refine eq_of_forall_inner_comp (L := (fderiv ℝ i x : V →ₗ[ℝ] E)) hR fun w ↦ ?_
   have hw := inner_fderiv_shapeOperator_apply hR ν v (I • w)
-  rw [fderiv_real_I_smul hi, hi.secondFundamentalForm_I_smul_right] at hw
+  have hI := (hi.differentiableAt (by norm_num)).fderiv_restrictScalars_smul ℝ I
+  rw [hI, hi.secondFundamentalForm_I_smul_right] at hw
   simp only [ContinuousLinearMap.coe_coe]
-  rw [inner_fderiv_shapeOperator_apply hR, fderiv_real_I_smul hi]
+  rw [inner_fderiv_shapeOperator_apply hR, hI]
   -- Both sides are the imaginary part of `⟪ν, B(v, w)⟫_ℂ`, which `hw` computes.
   simp only [real_inner_eq_re_inner, inner_smul_left, inner_smul_right] at hw ⊢
   simp at hw ⊢
