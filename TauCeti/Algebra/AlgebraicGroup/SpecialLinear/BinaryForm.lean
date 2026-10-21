@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Polynomial.Homogenize
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.StandardComodule
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.UpperTriangular.Basic
-public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.PointAction
 public import TauCeti.Algebra.Coalgebra.Comodule.SymmetricAlgebra.Polynomial
 
 /-!
@@ -71,38 +70,6 @@ noncomputable def polynomialComodule :
 
 variable {R n} {A : Type v} [CommRing A] [Algebra R A]
 
-/-- In the base change of the standard basis, coordinates on `A ⊗[R] Rⁿ` are read off through
-`piScalarRight`. -/
-private theorem baseChange_basisFun_repr (x : A ⊗[R] (Fin n → R)) (p : Fin n) :
-    ((Pi.basisFun R (Fin n)).baseChange A).repr x p =
-      TensorProduct.piScalarRight R A A (Fin n) x p := by
-  induction x using TensorProduct.inductionOn with
-  | tmul a v => simp [Basis.baseChange_repr_tmul]
-  | add x y hx hy => simp [hx, hy]
-
-/-- In the standard basis, a point of `SLₙ` acts on the standard comodule by its matrix. -/
-private theorem toMatrix_endOfPoint_standardComodule
-    (g : WithConv (coordinateHopfAlgebra R n →ₐ[R] A)) :
-    LinearMap.toMatrix ((Pi.basisFun R (Fin n)).baseChange A)
-        ((Pi.basisFun R (Fin n)).baseChange A) (Comodule.endOfPoint (Fin n → R) g.ofConv) =
-      (pointsMulEquiv (R := R) (A := A) n g : Matrix (Fin n) (Fin n) A) := by
-  ext p q
-  have h := LinearMap.congr_fun (piScalarRight_comp_endOfPoint R n g)
-    ((Pi.basisFun R (Fin n)).baseChange A q)
-  rw [LinearMap.comp_apply, LinearMap.comp_apply] at h
-  rw [LinearMap.toMatrix_apply, baseChange_basisFun_repr, ← LinearEquiv.coe_coe, h]
-  simp [Matrix.mulVec, dotProduct, Pi.single_apply]
-
-/-- A point of `SLₙ` takes the coefficient matrix of the standard comodule to its matrix. -/
-private theorem ofConv_coefficientMatrix (g : WithConv (coordinateHopfAlgebra R n →ₐ[R] A))
-    (i j : Fin n) :
-    g.ofConv (Comodule.coefficientMatrix (C := coordinateHopfAlgebra R n)
-        (Pi.basisFun R (Fin n)) i j) =
-      (pointsMulEquiv (R := R) (A := A) n g : Matrix (Fin n) (Fin n) A) i j := by
-  have h := congrFun (congrFun (Comodule.toMatrix_endOfPoint (Pi.basisFun R (Fin n)) g.ofConv) i) j
-  rw [toMatrix_endOfPoint_standardComodule, Matrix.map_apply] at h
-  exact h.symm
-
 /-- **Points of `SLₙ` act on polynomial functions contragrediently.** Under
 `A ⊗[R] R[X] ≃ A[X]`, a point with matrix `g` substitutes `∑ j, (g⁻¹)ᵢⱼ X j` for `X i`, so that
 `(g • f)(v) = f(g⁻¹ v)`. -/
@@ -116,11 +83,8 @@ theorem algebraTensorAlgEquiv_endOfPoint_polynomialComodule
           MvPolynomial.X j) f := by
   rw [polynomialComodule, Comodule.algebraTensorAlgEquiv_endOfPoint_polynomial]
   refine congrArg (MvPolynomial.aeval · f) (funext fun i ↦ Finset.sum_congr rfl fun j _ ↦ ?_)
-  have h := congrFun (congrFun (Comodule.toMatrix_endOfPoint (Pi.basisFun R (Fin n))
-    (g⁻¹).ofConv) i) j
-  rw [toMatrix_endOfPoint_standardComodule, map_inv, Matrix.map_apply,
-    Comodule.coefficientMatrix_apply] at h
-  rw [h, ← WithConv.algHom_inv_apply]
+  rw [← Comodule.coefficientMatrix_apply, ← WithConv.algHom_inv_apply, ofConv_coefficientMatrix,
+    map_inv]
 
 /-! ### Binary forms -/
 
@@ -179,49 +143,6 @@ end BinaryForm
 
 section HighestLine
 
-variable (R n) in
-/-- In `O(SLₙ)` the antipode of the coefficient matrix of the standard comodule is its adjugate:
-the inverse of a determinant-one matrix. -/
-private theorem map_antipode_coefficientMatrix :
-    (Comodule.coefficientMatrix (C := coordinateHopfAlgebra R n) (Pi.basisFun R (Fin n))).map
-        (HopfAlgebra.antipode R) =
-      (Comodule.coefficientMatrix (C := coordinateHopfAlgebra R n)
-        (Pi.basisFun R (Fin n))).adjugate := by
-  -- Evaluate on the universal point, whose matrix is the coefficient matrix itself.
-  let g : WithConv (coordinateHopfAlgebra R n →ₐ[R] coordinateHopfAlgebra R n) :=
-    toConv (AlgHom.id R _)
-  have hg : (pointsMulEquiv (R := R) (A := coordinateHopfAlgebra R n) n g :
-      Matrix (Fin n) (Fin n) _) =
-      Comodule.coefficientMatrix (C := coordinateHopfAlgebra R n) (Pi.basisFun R (Fin n)) :=
-    Matrix.ext fun i j ↦ (ofConv_coefficientMatrix g i j).symm
-  ext i j
-  rw [Matrix.map_apply]
-  calc HopfAlgebra.antipode R
-        (Comodule.coefficientMatrix (C := coordinateHopfAlgebra R n) (Pi.basisFun R (Fin n)) i j)
-      = (g⁻¹).ofConv
-          (Comodule.coefficientMatrix (C := coordinateHopfAlgebra R n)
-            (Pi.basisFun R (Fin n)) i j) := (WithConv.algHom_inv_apply g _).symm
-    _ = _ := ofConv_coefficientMatrix _ i j
-    _ = _ := by rw [map_inv, Matrix.SpecialLinearGroup.coe_inv, hg]
-
-variable (R) in
-/-- The coordinate `c` of `SL₂` vanishes on the upper-triangular subgroup. -/
-private theorem coordinateMap_coefficientMatrix_one_zero :
-    (UpperTriangular.coordinateMap R 2).hom
-        (Comodule.coefficientMatrix (C := coordinateHopfAlgebra R 2) (Pi.basisFun R (Fin 2)) 1 0) =
-      0 := by
-  -- Evaluate on the universal point of the upper-triangular subgroup.
-  let u : HopfAlgebra.points (R := R) (H := UpperTriangular.coordinateHopfAlgebra R 2)
-      (CommAlgCat.of R (UpperTriangular.coordinateHopfAlgebra R 2)) := toConv (AlgHom.id R _)
-  have h := ofConv_coefficientMatrix (CommHopfAlgCat.quotientPointsHom
-    (coordinateHopfAlgebra R 2) (UpperTriangular.definingHopfIdeal R 2) _ u) 1 0
-  rw [UpperTriangular.pointsMulEquiv_coe, CommHopfAlgCat.quotientPointsHom_apply, ofConv_toConv,
-    AlgHom.comp_apply, AlgHom.id_apply, BialgHom.coe_toAlgHom] at h
-  rw [h]
-  exact UpperTriangularGroup.mem_comap_toGL_iff.mp
-    (UpperTriangular.pointsMulEquiv R 2 (A := UpperTriangular.coordinateHopfAlgebra R 2) u).2
-    (by decide : (0 : Fin 2) < 1)
-
 /-- **The line `R yᵈ` is stable under the upper-triangular subgroup.** Restricted to the
 upper-triangular subgroup, the coaction of `yᵈ` is `yᵈ ⊗ aᵈ`, where `a` is the upper-left
 coordinate: `yᵈ` is a highest weight vector of weight `d`. -/
@@ -234,13 +155,9 @@ theorem lTensor_coact_X_one_pow (d : ℕ) :
         (Comodule.coefficientMatrix (C := coordinateHopfAlgebra R 2)
           (Pi.basisFun R (Fin 2)) 0 0) ^ d) := by
   let q := (UpperTriangular.coordinateMap R 2).hom
-  -- On the tensor factor `O(SL₂)`, restriction to the upper-triangular subgroup is multiplicative.
-  have hq (z : MvPolynomial (Fin 2) R ⊗[R] coordinateHopfAlgebra R 2) :
-      q.toLinearMap.lTensor (MvPolynomial (Fin 2) R) z =
-        Algebra.TensorProduct.map (AlgHom.id R _) (q : _ →ₐ[R] _) z := by
-    induction z using TensorProduct.inductionOn with
-    | tmul x h => simp [BialgHom.toCoalgHom_apply]
-    | add x y hx hy => simp only [map_add, hx, hy]
+  -- Restriction to the upper-triangular subgroup is an algebra homomorphism.
+  have hq : q.toLinearMap = (q : _ →ₐ[R] _).toLinearMap :=
+    LinearMap.ext fun x ↦ by simp [BialgHom.toCoalgHom_apply]
   have hS := map_antipode_coefficientMatrix R 2
   rw [Matrix.adjugate_fin_two] at hS
   have hS₁₀ := congrFun (congrFun hS 1) 0
@@ -248,10 +165,12 @@ theorem lTensor_coact_X_one_pow (d : ℕ) :
   simp only [Matrix.map_apply, Matrix.of_apply, Matrix.cons_val_one, Matrix.cons_val_zero,
     Matrix.cons_val', Matrix.empty_val', Matrix.cons_val_fin_one] at hS₁₀ hS₁₁
   rw [polynomialComodule, Comodule.polynomial_coact_apply, map_pow,
-    Comodule.polynomialCoact_X, Fin.sum_univ_two, hq]
+    Comodule.polynomialCoact_X, Fin.sum_univ_two, hq, AlgHom.lTensor_toLinearMap_apply]
   simp only [← Comodule.coefficientMatrix_apply, hS₁₀, hS₁₁, map_pow, map_add,
     Algebra.TensorProduct.map_tmul, AlgHom.id_apply, map_neg, BialgHom.coe_toAlgHom, q]
-  rw [coordinateMap_coefficientMatrix_one_zero, neg_zero, TensorProduct.tmul_zero, zero_add,
+  rw [coefficientMatrix_basisFun, Matrix.map_apply,
+    UpperTriangular.coordinateMap_coordinateMap_genericMatrix_of_lt (by decide : (0 : Fin 2) < 1),
+    neg_zero, TensorProduct.tmul_zero, zero_add,
     Algebra.TensorProduct.tmul_pow]
 
 end HighestLine
@@ -358,12 +277,8 @@ theorem exists_lTensor_coact_eq_tmul_iff_mem_span [IsDomain R] {d : ℕ} {f : Mv
     have key : Comodule.endOfPoint (MvPolynomial (Fin 2) R) g.ofConv (1 ⊗ₜ f) =
         uB.ofConv h • (1 ⊗ₜ f) := by
       have hgB : g.ofConv.toLinearMap = uB.ofConv.toLinearMap ∘ₗ
-          (UpperTriangular.coordinateMap R 2).hom.toLinearMap := by
-        simp only [g, CommHopfAlgCat.quotientPointsHom_apply, ofConv_toConv,
-          AlgHom.comp_toLinearMap]
-        -- The quotient map has the same underlying linear map as an algebra homomorphism and as
-        -- a bialgebra homomorphism (`BialgHom.toAlgHom_toLinearMap`).
-        rfl
+          (UpperTriangular.coordinateMap R 2).hom.toLinearMap := LinearMap.ext fun x ↦ by
+        simp [g, BialgHom.toCoalgHom_apply]
       rw [Comodule.endOfPoint_tmul, one_smul, hgB, LinearMap.lTensor_comp_apply, hfh,
         LinearMap.lTensor_tmul, TensorProduct.comm_tmul, TensorProduct.smul_tmul', smul_eq_mul,
         mul_one, AlgHom.toLinearMap_apply]

@@ -11,6 +11,8 @@ public import Mathlib.RingTheory.TensorProduct.MvPolynomial
 public import TauCeti.Algebra.Coalgebra.Comodule.Dual
 public import TauCeti.Algebra.Coalgebra.Comodule.SymmetricAlgebra.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.Transport
+public import TauCeti.LinearAlgebra.SymmetricAlgebra.BasisComparison
+public import TauCeti.RingTheory.TensorProduct.Maps
 
 /-!
 # Polynomial functions on a comodule
@@ -75,42 +77,9 @@ theorem polynomialCoact_X (b : Basis ι R V) (i : ι) :
       HopfAlgebra.antipode R (matrixCoefficient (C := H) (b.coord i) (b j)) :=
   MvPolynomial.aeval_X _ _
 
-/-- The coaction maps homogeneous polynomials of degree `d` into the image of the degree-`d`
-component tensored with `H`. -/
-theorem polynomialCoact_mem_decomposeTensor (b : Basis ι R V) {d : ℕ} {f : MvPolynomial ι R}
-    (hf : f ∈ MvPolynomial.homogeneousSubmodule ι R d) :
-    polynomialCoact H b f ∈
-      DirectSum.decomposeTensor (MvPolynomial.homogeneousSubmodule ι R) H d := by
-  have : SetLike.GradedMonoid (MvPolynomial.homogeneousSubmodule ι R) :=
-    MvPolynomial.HomogeneousSubmodule.gradedMonoid
-  rw [MvPolynomial.mem_homogeneousSubmodule] at hf
-  rw [f.as_sum, map_sum]
-  refine Submodule.sum_mem _ fun s hs ↦ ?_
-  rw [polynomialCoact, MvPolynomial.aeval_monomial, ← Algebra.smul_def]
-  refine Submodule.smul_mem _ _ ?_
-  have hdeg : ∑ i ∈ s.support, s i • (1 : ℕ) = d := by
-    rw [← hf (MvPolynomial.mem_support_iff.mp hs), Finsupp.weight_apply, Finsupp.sum]
-    simp
-  rw [Finsupp.prod, ← hdeg]
-  refine SetLike.prod_pow_mem_graded _ _ _ _ fun i _ ↦ Submodule.sum_mem _ fun j _ ↦ ?_
-  exact DirectSum.tmul_mem_decomposeTensor
-    (MvPolynomial.isHomogeneous_X R j) _
-
 end Coact
 
 variable [DecidableEq ι]
-
-/-- The dual coaction of a coordinate functional, written in a basis: the coefficient of `b*ⱼ` is
-the antipode of the matrix coefficient `c(φ, b j)`. -/
-theorem dualCoact_eq_sum [Module.Finite R V] [Module.Projective R V] (b : Basis ι R V)
-    (φ : Module.Dual R V) :
-    dualCoact (R := R) (H := H) (M := V) φ =
-      ∑ j, b.dualBasis j ⊗ₜ[R] HopfAlgebra.antipode R (matrixCoefficient (C := H) φ (b j)) := by
-  apply (dualTensorHomEquivOfBasis (N := H) b).injective
-  rw [dualTensorHomEquivOfBasis_apply, dualTensorHomEquivOfBasis_apply]
-  refine b.ext fun l ↦ ?_
-  rw [dualTensorHom_dualCoact_apply, map_sum, LinearMap.sum_apply]
-  simp [dualTensorHom_apply, Finsupp.single_apply]
 
 variable (H) in
 /-- The comodule of polynomial functions on a comodule `V` with a finite basis `b`, in the
@@ -161,18 +130,11 @@ theorem polynomial_coact (b : Basis ι R V) :
       ((symmetricAlgebraCoact R H (Module.Dual R V)).comp e.symm.toAlgHom)
   have hφ : (letI := polynomial H b; coact (R := R) (C := H) (M := MvPolynomial ι R)) =
       φ.toLinearMap := by
-    have hmap (z : SymmetricAlgebra R (Module.Dual R V) ⊗[R] H) :
-        TensorProduct.map (e.toLinearEquiv : _ →ₗ[R] MvPolynomial ι R) LinearMap.id z =
-          Algebra.TensorProduct.map e.toAlgHom (AlgHom.id R H) z := by
-      induction z using TensorProduct.inductionOn with
-      | tmul x h => simp
-      | add x y hx hy => simp only [map_add, hx, hy]
     refine LinearMap.ext fun f ↦ ?_
-    rw [polynomial, transport_coact_apply, hmap]
-    simp only [φ, AlgHom.toLinearMap_apply, AlgHom.comp_apply, symmetricAlgebra_coact,
-      AlgEquiv.coe_toAlgHom]
-    -- The inverse of `e.toLinearEquiv` is `e.symm` as a function.
-    rfl
+    rw [polynomial, transport_coact_apply, ← LinearMap.rTensor_def,
+      ← AlgEquiv.toAlgHom_toLinearMap, AlgHom.rTensor_toLinearMap_apply,
+      ← AlgEquiv.toLinearEquiv_symm, AlgEquiv.toLinearEquiv_apply, symmetricAlgebra_coact]
+    simp only [φ, e, AlgHom.toLinearMap_apply, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom]
   have h : φ = polynomialCoact H b := MvPolynomial.algHom_ext fun i ↦ by
     rw [polynomialCoact_X, ← polynomial_coact_X b i, hφ, AlgHom.toLinearMap_apply]
   exact hφ.trans (by rw [h])
@@ -184,19 +146,31 @@ theorem polynomial_coact_apply (b : Basis ι R V) (f : MvPolynomial ι R) :
 
 variable (H) in
 /-- The homogeneous polynomial functions of degree `d` on `V`, as a subcomodule of
-`polynomial H b`. -/
+`polynomial H b`: the image of the `d`-th symmetric power of `V*`. -/
 noncomputable def polynomialHomogeneousSubcomodule (b : Basis ι R V) (d : ℕ) :
     letI := polynomial H b
     Subcomodule R H (MvPolynomial ι R) :=
   letI := polynomial H b
-  Subcomodule.ofSubmodule (MvPolynomial.homogeneousSubmodule ι R d) fun _ hf ↦ by
-    rw [polynomial_coact_apply, ← LinearMap.rTensor_def, ← DirectSum.decomposeTensor_apply]
-    exact polynomialCoact_mem_decomposeTensor b hf
+  haveI := Module.Finite.of_basis b
+  haveI := Module.Projective.of_basis b
+  letI := dual R H V
+  letI := symmetricAlgebra R H (Module.Dual R V)
+  (symmetricPowerSubcomodule R H (Module.Dual R V) d).map
+    (transportToHom (SymmetricAlgebra.equivMvPolynomial b.dualBasis).toLinearEquiv)
 
 @[simp]
 theorem mem_polynomialHomogeneousSubcomodule (b : Basis ι R V) {d : ℕ} {f : MvPolynomial ι R} :
-    f ∈ polynomialHomogeneousSubcomodule H b d ↔ f.IsHomogeneous d :=
-  MvPolynomial.mem_homogeneousSubmodule d f
+    f ∈ polynomialHomogeneousSubcomodule H b d ↔ f.IsHomogeneous d := by
+  let _ := polynomial H b
+  have := Module.Finite.of_basis b
+  have := Module.Projective.of_basis b
+  let _ := dual R H V
+  let _ := symmetricAlgebra R H (Module.Dual R V)
+  rw [polynomialHomogeneousSubcomodule, ← Subcomodule.mem_toSubmodule,
+    Subcomodule.map_toSubmodule, transportToHom_toLinearMap, AlgEquiv.toLinearEquiv_toLinearMap,
+    symmetricPowerSubcomodule_toSubmodule,
+    SymmetricAlgebra.map_homogeneousSubmodule_equivMvPolynomial,
+    MvPolynomial.mem_homogeneousSubmodule]
 
 section Points
 
@@ -223,10 +197,8 @@ theorem algebraTensorAlgEquiv_endOfPoint_polynomial (b : Basis ι R V) (g : H �
         Ψ f := by
     rw [endOfPoint_tmul, one_smul, polynomial_coact_apply]
     simp only [Ψ, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, AlgHom.coe_restrictScalars']
-    generalize polynomialCoact H b f = z
-    induction z using TensorProduct.inductionOn with
-    | tmul x h => simp
-    | add x y hx hy => simp only [map_add, hx, hy]
+    rw [AlgHom.lTensor_toLinearMap_apply, ← Algebra.TensorProduct.comm_toLinearEquiv,
+      AlgEquiv.toLinearEquiv_apply]
   rw [hΨ]
   congr 1
   refine MvPolynomial.algHom_ext fun i ↦ ?_
