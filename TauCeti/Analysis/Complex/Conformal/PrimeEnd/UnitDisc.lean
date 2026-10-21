@@ -52,6 +52,11 @@ namespace TauCeti
 def unitDiscChord (ζ : ℂ) (t : ℝ) : Set ℂ :=
   segment ℝ (ζ * (t + √(1 - t ^ 2) * I)) (ζ * (t - √(1 - t ^ 2) * I))
 
+/-- The chord perpendicular to `ζ` at level `t` is the segment between its two endpoints. -/
+theorem unitDiscChord_def (ζ : ℂ) (t : ℝ) :
+    unitDiscChord ζ t = segment ℝ (ζ * (t + √(1 - t ^ 2) * I)) (ζ * (t - √(1 - t ^ 2) * I)) :=
+  (rfl)
+
 variable {ζ : ℂ} {t : ℝ}
 
 private lemma mul_conj_eq_one (hζ : ‖ζ‖ = 1) : ζ * (starRingEnd ℂ) ζ = 1 := by
@@ -60,9 +65,6 @@ private lemma mul_conj_eq_one (hζ : ‖ζ‖ = 1) : ζ * (starRingEnd ℂ) ζ =
 
 private lemma inner_mul_left (hζ : ‖ζ‖ = 1) (w : ℂ) : inner ℝ ζ (ζ * w) = w.re := by
   rw [Complex.inner, mul_comm ζ w, mul_assoc, mul_conj_eq_one hζ, mul_one]
-
-private lemma isLinearMap_inner (ζ : ℂ) : IsLinearMap ℝ (fun z : ℂ => inner ℝ ζ z) :=
-  ⟨fun x y => inner_add_right ζ x y, fun c x => real_inner_smul_right ζ x c⟩
 
 private lemma mul_add_mul_I_mem_sphere (hζ : ‖ζ‖ = 1) (s : ℝ)
     (hs : s ^ 2 = 1 - t ^ 2) : ζ * (t + s * I) ∈ sphere (0 : ℂ) 1 := by
@@ -92,7 +94,7 @@ private lemma chord_endpoints_ne (hζ : ‖ζ‖ = 1) (ht : |t| < 1) :
 
 private lemma inner_eq_of_mem_unitDiscChord (hζ : ‖ζ‖ = 1) {z : ℂ}
     (hz : z ∈ unitDiscChord ζ t) : inner ℝ ζ z = t := by
-  refine (convex_hyperplane (isLinearMap_inner ζ) t).segment_subset ?_ ?_ hz <;>
+  refine (convex_hyperplane (innerₗ ℂ ζ).isLinear t).segment_subset ?_ ?_ hz <;>
     exact (inner_mul_left hζ _).trans (by simp)
 
 private lemma unitDiscChord_subset_closedBall (hζ : ‖ζ‖ = 1) (ht : |t| ≤ 1) :
@@ -149,7 +151,7 @@ private def cap (ζ : ℂ) (t : ℝ) : Set ℂ :=
   ball 0 1 ∩ {z | t < inner ℝ ζ z}
 
 private lemma isPreconnected_cap (ζ : ℂ) (t : ℝ) : IsPreconnected (cap ζ t) :=
-  ((convex_ball 0 1).inter (convex_halfSpace_gt (isLinearMap_inner ζ) t)).isPreconnected
+  ((convex_ball 0 1).inter (convex_halfSpace_gt (innerₗ ℂ ζ).isLinear t)).isPreconnected
 
 private lemma cap_subset_sdiff (hζ : ‖ζ‖ = 1) : cap ζ t ⊆ ball 0 1 \ unitDiscChord ζ t :=
   fun _ hz => ⟨hz.1, fun hzc => (inner_eq_of_mem_unitDiscChord hζ hzc).not_gt hz.2⟩
@@ -170,6 +172,13 @@ private lemma norm_sub_sq_le (hζ : ‖ζ‖ = 1) {z : ℂ} (hz : ‖z‖ ≤ 1)
     ‖z - ζ‖ ^ 2 ≤ 2 * (1 - t) := by
   rw [norm_sub_sq_real, hζ, real_inner_comm]
   nlinarith [norm_nonneg z]
+
+/-- The squared triangle inequality through an intermediate point `c`. -/
+private lemma norm_sub_sq_le_two_mul (a b c : ℂ) :
+    ‖a - b‖ ^ 2 ≤ 2 * (‖a - c‖ ^ 2 + ‖b - c‖ ^ 2) :=
+  (pow_le_pow_left₀ (norm_nonneg _)
+    ((norm_sub_le_norm_sub_add_norm_sub a c b).trans_eq (by rw [norm_sub_rev c b])) 2).trans
+    add_sq_le
 
 /-- The chords of the unit disc perpendicular to `ζ` at the levels `1 - 1 / (n + 2)`. -/
 def unitDiscRadialChain (ζ : ℂ) (n : ℕ) : Set ℂ :=
@@ -192,6 +201,17 @@ private lemma level_lt_one (n : ℕ) : 1 - 1 / ((n : ℝ) + 2) < 1 := by
 private lemma abs_level_lt_one (n : ℕ) : |1 - 1 / ((n : ℝ) + 2)| < 1 := by
   rw [abs_of_pos (level_pos n)]
   exact level_lt_one n
+
+/-- Eventually the level `1 - 1 / (n + 2)` is close enough to `1` that `8 (1 - t) < ε ^ 2`. -/
+private lemma eventually_eight_mul_lt {ε : ℝ} (hε : 0 < ε) :
+    ∀ᶠ n : ℕ in atTop, 8 * (1 / ((n : ℝ) + 2)) < ε ^ 2 := by
+  obtain ⟨N, hN⟩ := exists_nat_gt (8 / ε ^ 2)
+  refine eventually_atTop.mpr ⟨N, fun n hn => ?_⟩
+  have hn' : (N : ℝ) ≤ n := by exact_mod_cast hn
+  have h8 : 8 / ε ^ 2 < (n : ℝ) + 2 := by linarith
+  rw [div_lt_iff₀ (by positivity)] at h8
+  rw [mul_one_div, div_lt_iff₀ (by positivity)]
+  linarith
 
 private lemma level_strictMono : StrictMono fun n : ℕ => 1 - 1 / ((n : ℝ) + 2) := by
   intro m n hmn
@@ -242,8 +262,7 @@ theorem isNullChain_unitDiscRadialChain (hζ : ‖ζ‖ = 1) :
     rw [nullChainDomain_unitDiscRadialChain hζ, nullChainDomain_unitDiscRadialChain hζ]
     exact inter_subset_inter_right _ fun z hz => (level_strictMono n.lt_succ_self).trans hz
   eventually_chordal_lt ε hε := by
-    obtain ⟨N, hN⟩ := exists_nat_gt (8 / ε ^ 2)
-    refine eventually_atTop.mpr ⟨N, fun n hn z hz w hw => ?_⟩
+    refine (eventually_eight_mul_lt hε).mono fun n hsmall z hz w hw => ?_
     have ht := abs_level_lt_one n
     have hzb : ‖z‖ ≤ 1 := by
       simpa using unitDiscChord_subset_closedBall hζ ht.le hz
@@ -251,18 +270,8 @@ theorem isNullChain_unitDiscRadialChain (hζ : ‖ζ‖ = 1) :
       simpa using unitDiscChord_subset_closedBall hζ ht.le hw
     have hz' := norm_sub_sq_le hζ hzb (inner_eq_of_mem_unitDiscChord hζ hz).ge
     have hw' := norm_sub_sq_le hζ hwb (inner_eq_of_mem_unitDiscChord hζ hw).ge
-    have htri : ‖z - w‖ ≤ ‖z - ζ‖ + ‖w - ζ‖ := by
-      simpa [norm_sub_rev w ζ] using norm_sub_le_norm_sub_add_norm_sub z ζ w
-    have hn' : (N : ℝ) ≤ n := by exact_mod_cast hn
-    have hsmall : 8 * (1 / ((n : ℝ) + 2)) < ε ^ 2 := by
-      have h8 : 8 / ε ^ 2 < (n : ℝ) + 2 := by linarith
-      rw [div_lt_iff₀ (by positivity)] at h8
-      rw [mul_one_div, div_lt_iff₀ (by positivity)]
-      linarith
-    have h₁ : ‖z - w‖ ^ 2 ≤ (‖z - ζ‖ + ‖w - ζ‖) ^ 2 := pow_le_pow_left₀ (norm_nonneg _) htri 2
-    have h₂ : (‖z - ζ‖ + ‖w - ζ‖) ^ 2 ≤ 2 * ‖z - ζ‖ ^ 2 + 2 * ‖w - ζ‖ ^ 2 := by
-      nlinarith [sq_nonneg (‖z - ζ‖ - ‖w - ζ‖)]
-    have hzw : ‖z - w‖ < ε := lt_of_pow_lt_pow_left₀ 2 hε.le (by linarith)
+    have hzw : ‖z - w‖ < ε :=
+      lt_of_pow_lt_pow_left₀ 2 hε.le (by linarith [norm_sub_sq_le_two_mul z w ζ])
     refine lt_of_le_of_lt (div_le_self (norm_nonneg _) ?_) hzw
     rw [Real.one_le_sqrt]
     nlinarith [sq_nonneg ‖z‖, sq_nonneg ‖w‖]
@@ -279,7 +288,7 @@ theorem unitDiscPrimeEnd_injective : Function.Injective unitDiscPrimeEnd := by
   rw [mem_sphere_zero_iff_norm] at hζ hζ'
   by_contra hne
   have hd : 0 < ‖ζ - ζ'‖ := norm_pos_iff.mpr (sub_ne_zero.mpr fun h' => hne (by simp [h']))
-  obtain ⟨m, hm⟩ := exists_nat_gt (8 / ‖ζ - ζ'‖ ^ 2)
+  obtain ⟨m, hm⟩ := (eventually_eight_mul_lt hd).exists
   have hequiv : NullChainEquivalent (ball 0 1) (unitDiscRadialChain ζ) (unitDiscRadialChain ζ') :=
     PrimeEnd.mk_eq_mk_iff.mp h
   obtain ⟨hequiv, -⟩ := nullChainEquivalent_def.mp hequiv
@@ -304,17 +313,9 @@ theorem unitDiscPrimeEnd_injective : Function.Injective unitDiscPrimeEnd := by
     hn ⟨mem_ball_zero_iff.mpr hqn, lt_of_le_of_lt hnt hqt⟩
   have h₁ := norm_sub_sq_le hζ hqn.le hqζ.2.le
   have h₂ := norm_sub_sq_le hζ' hqn.le (hut.trans hqt.le)
-  have htri : ‖ζ - ζ'‖ ≤ ‖q - ζ‖ + ‖q - ζ'‖ := by
-    simpa [norm_sub_rev q ζ] using norm_sub_le_norm_sub_add_norm_sub ζ q ζ'
-  have hsmall : 8 * (1 - u) < ‖ζ - ζ'‖ ^ 2 := by
-    have hm' : 8 / ‖ζ - ζ'‖ ^ 2 < (m : ℝ) + 2 := by linarith
-    rw [div_lt_iff₀ (by positivity)] at hm'
-    have : 1 - u = 1 / ((m : ℝ) + 2) := by ring
-    rw [this, mul_one_div, div_lt_iff₀ (by positivity)]
-    linarith
-  have h₃ : ‖ζ - ζ'‖ ^ 2 ≤ (‖q - ζ‖ + ‖q - ζ'‖) ^ 2 := pow_le_pow_left₀ (norm_nonneg _) htri 2
-  have h₄ : (‖q - ζ‖ + ‖q - ζ'‖) ^ 2 ≤ 2 * ‖q - ζ‖ ^ 2 + 2 * ‖q - ζ'‖ ^ 2 := by
-    nlinarith [sq_nonneg (‖q - ζ‖ - ‖q - ζ'‖)]
+  have h₃ := norm_sub_sq_le_two_mul ζ ζ' q
+  rw [norm_sub_rev ζ q, norm_sub_rev ζ' q] at h₃
+  have hu : 1 - u = 1 / ((m : ℝ) + 2) := by ring
   linarith
 
 end TauCeti

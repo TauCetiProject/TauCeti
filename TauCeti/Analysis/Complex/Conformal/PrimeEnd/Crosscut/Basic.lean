@@ -34,7 +34,8 @@ to choose and compare the components of `U` cut off by its crosscuts.
 * `Path.IsCrosscut` — a simple path with endpoints on `frontier U` and interior in `U`.
 * `Path.IsCrosscut.range_subset_closure` — a crosscut lies in the domain's closure.
 * `Path.IsCrosscut.range_inter_frontier` — it meets the frontier exactly at its endpoints.
-* `Path.IsCrosscut.isConnected_range_inter` — inside an open set, its open arc is connected.
+* `Path.IsCrosscut.isConnected_range_inter` — the part of a crosscut inside its domain is
+  connected.
 * `Path.isCrosscut_symm` — crosscuts are invariant under reversing orientation.
 * `Path.IsCrosscut.map_homeomorph` — ambient homeomorphisms carry crosscuts to crosscuts.
 * `Path.isCrosscut_segment_ball` — every nondegenerate chord of a disc is a crosscut.
@@ -145,11 +146,15 @@ theorem IsCrosscut.range_inter_eq_image_Ioo (hγ : IsCrosscut γ U) (hU : IsOpen
   · rintro ⟨t, ht, rfl⟩
     exact ⟨⟨t, rfl⟩, hγ.mapsTo_interior ht⟩
 
-/-- The open arc of a crosscut of an open set is connected. -/
-theorem IsCrosscut.isConnected_range_inter (hγ : IsCrosscut γ U) (hU : IsOpen U) :
+/-- The part of a crosscut inside its domain is connected: it contains the open arc and lies in
+its closure. -/
+theorem IsCrosscut.isConnected_range_inter (hγ : IsCrosscut γ U) :
     IsConnected (range γ ∩ U) := by
-  rw [hγ.range_inter_eq_image_Ioo hU]
-  exact (isConnected_Ioo (by norm_num)).image _ γ.continuous.continuousOn
+  refine ((isConnected_Ioo zero_lt_one).image _ γ.continuous.continuousOn).subset_closure
+    (image_subset_iff.mpr fun t ht => ⟨⟨t, rfl⟩, hγ.mapsTo_interior ht⟩) ?_
+  have h : closure (Ioo (0 : I) 1) = univ := by rw [closure_Ioo zero_ne_one]; exact Icc_bot_top
+  rw [← image_univ, ← h]
+  exact inter_subset_left.trans (image_closure_subset_closure_image γ.continuous)
 
 /-- Reversing an oriented crosscut gives a crosscut with the opposite orientation. -/
 theorem IsCrosscut.symm (hγ : IsCrosscut γ U) : IsCrosscut γ.symm U := by

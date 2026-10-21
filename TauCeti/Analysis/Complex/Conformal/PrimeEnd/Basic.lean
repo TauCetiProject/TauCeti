@@ -27,20 +27,23 @@ infinity, as the semicircles `|z| = R` of the upper half-plane do as `R → ∞`
 Pommerenke requires instead that each crosscut `C n`, `n ≥ 1`, separates `C 0` from `C (n + 1)`,
 and then deduces that the domains are nested from the fact that a crosscut cuts a simply connected
 domain into exactly two pieces. Nesting is taken as part of the definition here, and Pommerenke's
-separation condition follows from it on every open set (`TauCeti.IsNullChain.separatesIn`); by
-the two-pieces theorem the definitions agree on simply connected domains, though only the
-implication from nesting to separation is proved here. The nested-domain form makes the
+separation condition follows from it (`TauCeti.IsNullChain.separatesIn`); by the two-pieces
+theorem the definitions agree on bounded simply connected domains, though only the implication
+from nesting to separation is proved here. On unbounded domains this definition is narrower than
+Pommerenke's, whose crosscuts live in the Riemann sphere and may end at `∞`, while the crosscuts
+here have finite endpoints. The nested-domain form makes the
 equivalence of chains visibly an equivalence relation.
 
 ## Main declarations
 
 * `TauCeti.nullChainDomain` -- the domain cut off by the `n`-th crosscut of a chain.
 * `TauCeti.IsNullChain` -- the null-chain predicate.
-* `TauCeti.IsNullChain.nullChainDomain_eq_connectedComponentIn` -- on an open set each domain is
-  the component of the cut set containing the next crosscut.
+* `TauCeti.IsNullChain.nullChainDomain_eq_connectedComponentIn` -- each domain is the component
+  of the cut set containing the next crosscut.
 * `TauCeti.IsNullChain.separatesIn` -- Pommerenke's separation condition.
 * `TauCeti.NullChainEquivalent` -- equivalence of chains, an equivalence relation.
 * `TauCeti.PrimeEnd` -- the prime ends of a plane set.
+* `TauCeti.PrimeEnd.lift`, `TauCeti.PrimeEnd.ind` -- maps out of prime ends and induction on them.
 
 ## References
 
@@ -60,8 +63,8 @@ namespace TauCeti
 variable {U : Set ℂ} {C C' C'' : ℕ → Set ℂ} {n : ℕ}
 
 /-- The domain cut off by the `n`-th crosscut of a sequence of cuts `C` of `U`: the union of the
-connected components of `U \ C n` that meet `C (n + 1)`. For a null chain of an open set it is a
-single component (`TauCeti.IsNullChain.nullChainDomain_eq_connectedComponentIn`). -/
+connected components of `U \ C n` that meet `C (n + 1)`. For a null chain it is a single
+component (`TauCeti.IsNullChain.nullChainDomain_eq_connectedComponentIn`). -/
 def nullChainDomain (U : Set ℂ) (C : ℕ → Set ℂ) (n : ℕ) : Set ℂ :=
   ⋃ z ∈ C (n + 1), connectedComponentIn (U \ C n) z
 
@@ -95,11 +98,10 @@ namespace IsNullChain
 theorem antitone_nullChainDomain (hC : IsNullChain U C) : Antitone (nullChainDomain U C) :=
   antitone_nat_of_succ_le hC.nullChainDomain_succ_subset
 
-/-- On an open set, the part of a crosscut of a null chain inside the set is connected. -/
-theorem isConnected_inter (hC : IsNullChain U C) (hU : IsOpen U) (n : ℕ) :
-    IsConnected (C n ∩ U) := by
+/-- The part of a crosscut of a null chain inside the set is connected. -/
+theorem isConnected_inter (hC : IsNullChain U C) (n : ℕ) : IsConnected (C n ∩ U) := by
   obtain ⟨x, y, γ, hγ, hrange⟩ := hC.exists_isCrosscut n
-  exact hrange ▸ hγ.isConnected_range_inter hU
+  exact hrange ▸ hγ.isConnected_range_inter
 
 /-- The next crosscut lies, inside `U`, in the domain cut off by the previous one. -/
 theorem inter_subset_nullChainDomain (hC : IsNullChain U C) (n : ℕ) :
@@ -107,14 +109,14 @@ theorem inter_subset_nullChainDomain (hC : IsNullChain U C) (n : ℕ) :
   mem_nullChainDomain_iff.mpr ⟨z, hz.1,
     mem_connectedComponentIn ⟨hz.2, disjoint_right.mp (hC.disjoint_succ n) hz.1⟩⟩
 
-/-- **The domain of a crosscut is a component.** On an open set, the domain cut off by the
-`n`-th crosscut of a null chain is the connected component of `U \ C n` containing any point of
-`C (n + 1)` inside `U`. -/
-theorem nullChainDomain_eq_connectedComponentIn (hC : IsNullChain U C) (hU : IsOpen U)
-    {z : ℂ} (hz : z ∈ C (n + 1) ∩ U) :
+/-- **The domain of a crosscut is a component.** The domain cut off by the `n`-th crosscut of a
+null chain is the connected component of `U \ C n` containing any point of `C (n + 1)` inside
+`U`. -/
+theorem nullChainDomain_eq_connectedComponentIn (hC : IsNullChain U C) {z : ℂ}
+    (hz : z ∈ C (n + 1) ∩ U) :
     nullChainDomain U C n = connectedComponentIn (U \ C n) z := by
   have hsub : C (n + 1) ∩ U ⊆ connectedComponentIn (U \ C n) z :=
-    (hC.isConnected_inter hU (n + 1)).isPreconnected.subset_connectedComponentIn hz
+    (hC.isConnected_inter (n + 1)).isPreconnected.subset_connectedComponentIn hz
       fun w hw => ⟨hw.2, disjoint_right.mp (hC.disjoint_succ n) hw.1⟩
   refine Subset.antisymm (fun q hq => ?_) fun q hq =>
     mem_nullChainDomain_iff.mpr ⟨z, hz.1, hq⟩
@@ -122,20 +124,20 @@ theorem nullChainDomain_eq_connectedComponentIn (hC : IsNullChain U C) (hU : IsO
   have hwU : w ∈ U := (connectedComponentIn_nonempty_iff.mp ⟨q, hqw⟩).1
   rwa [connectedComponentIn_eq (hsub ⟨hw, hwU⟩)]
 
-/-- On an open set, every domain cut off by a null chain is nonempty. -/
-theorem nonempty_nullChainDomain (hC : IsNullChain U C) (hU : IsOpen U) (n : ℕ) :
+/-- Every domain cut off by a null chain is nonempty. -/
+theorem nonempty_nullChainDomain (hC : IsNullChain U C) (n : ℕ) :
     (nullChainDomain U C n).Nonempty :=
-  (hC.isConnected_inter hU (n + 1)).nonempty.mono (hC.inter_subset_nullChainDomain n)
+  (hC.isConnected_inter (n + 1)).nonempty.mono (hC.inter_subset_nullChainDomain n)
 
 /-- Inside `U`, every crosscut after the first lies in the domain cut off by the first. -/
 theorem inter_subset_nullChainDomain_zero (hC : IsNullChain U C) (n : ℕ) :
     C (n + 1) ∩ U ⊆ nullChainDomain U C 0 :=
   (hC.inter_subset_nullChainDomain n).trans (hC.antitone_nullChainDomain (Nat.zero_le n))
 
-/-- **Pommerenke's separation condition.** For a null chain of an open set, each crosscut
+/-- **Pommerenke's separation condition.** For a null chain, each crosscut
 `C (n + 1)` separates the first crosscut from the next one: their points inside `U` lie in
 different components of `U \ C (n + 1)`. -/
-theorem separatesIn (hC : IsNullChain U C) (hU : IsOpen U) {x y : ℂ} {γ : Path x y}
+theorem separatesIn (hC : IsNullChain U C) {x y : ℂ} {γ : Path x y}
     (hγ : range γ = C (n + 1)) {z w : ℂ} (hz : z ∈ C 0 ∩ U) (hw : w ∈ C (n + 2) ∩ U) :
     γ.SeparatesIn U z w := by
   have h0 : nullChainDomain U C 0 ⊆ U \ C 0 := nullChainDomain_subset
@@ -145,7 +147,7 @@ theorem separatesIn (hC : IsNullChain U C) (hU : IsOpen U) {x y : ℂ} {γ : Pat
   rw [Path.separatesIn_def, hγ]
   refine ⟨⟨hz.2, hzC⟩, nullChainDomain_subset hwD, fun heq => ?_⟩
   have hzD : z ∈ nullChainDomain U C (n + 1) := by
-    rw [hC.nullChainDomain_eq_connectedComponentIn hU hw, heq.symm]
+    rw [hC.nullChainDomain_eq_connectedComponentIn hw, heq.symm]
     exact mem_connectedComponentIn ⟨hz.2, hzC⟩
   exact (h0 (hC.antitone_nullChainDomain (Nat.zero_le _) hzD)).2 hz.1
 
@@ -202,6 +204,7 @@ def mk (C : ℕ → Set ℂ) (hC : IsNullChain U C) : PrimeEnd U :=
   Quotient.mk (nullChainSetoid U) ⟨C, hC⟩
 
 /-- Two null chains represent the same prime end exactly when they are equivalent. -/
+@[simp]
 theorem mk_eq_mk_iff {hC : IsNullChain U C} {hC' : IsNullChain U C'} :
     mk C hC = mk C' hC' ↔ NullChainEquivalent U C C' :=
   Quotient.eq (r := nullChainSetoid U)
@@ -209,6 +212,29 @@ theorem mk_eq_mk_iff {hC : IsNullChain U C} {hC' : IsNullChain U C'} :
 /-- Every prime end is represented by a null chain. -/
 theorem exists_eq_mk (p : PrimeEnd U) : ∃ (C : ℕ → Set ℂ) (hC : IsNullChain U C), p = mk C hC :=
   Quotient.inductionOn p fun C => ⟨C.1, C.2, rfl⟩
+
+/-- **Induction on prime ends.** To prove a property of every prime end, it suffices to prove it
+for the prime end of each null chain. -/
+@[elab_as_elim]
+theorem ind {motive : PrimeEnd U → Prop} (h : ∀ (C : ℕ → Set ℂ) (hC : IsNullChain U C),
+    motive (mk C hC)) (p : PrimeEnd U) : motive p :=
+  Quotient.ind (fun C => h C.1 C.2) p
+
+/-- Lift a function on null chains that respects equivalence of chains to a function on prime
+ends. -/
+def lift {α : Sort*} (f : ∀ C : ℕ → Set ℂ, IsNullChain U C → α)
+    (hf : ∀ (C C' : ℕ → Set ℂ) (hC : IsNullChain U C) (hC' : IsNullChain U C'),
+      NullChainEquivalent U C C' → f C hC = f C' hC') : PrimeEnd U → α :=
+  Quotient.lift (fun C => f C.1 C.2) fun C C' h => hf C.1 C'.1 C.2 C'.2 h
+
+/-- A lifted function evaluates on the prime end of a null chain as on the chain. -/
+@[simp]
+theorem lift_mk {α : Sort*} (f : ∀ C : ℕ → Set ℂ, IsNullChain U C → α)
+    (hf : ∀ (C C' : ℕ → Set ℂ) (hC : IsNullChain U C) (hC' : IsNullChain U C'),
+      NullChainEquivalent U C C' → f C hC = f C' hC') (C : ℕ → Set ℂ) (hC : IsNullChain U C) :
+    lift f hf (mk C hC) = f C hC := by
+  unfold lift mk
+  exact Quotient.lift_mk _ _ _
 
 end PrimeEnd
 
