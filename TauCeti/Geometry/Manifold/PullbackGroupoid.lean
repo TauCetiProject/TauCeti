@@ -54,6 +54,8 @@ charts belong to the maximal atlas of `N`, so the two structures are compatible.
 * `Homeomorph.pullbackChartedSpace_refl`, `Homeomorph.pullbackChartedSpace_trans` and
   `Homeomorph.pullbackChartedSpace_symm_pullbackChartedSpace`: the identity, composition and
   inverse laws of the transport.
+* `Diffeomorph.transOpenPartialHomeomorph_mem_maximalAtlas`: a `C^n` diffeomorphism pulls a chart
+  of the maximal atlas of its target back to a chart of the maximal atlas of its source.
 * `Diffeomorph.atlas_pullbackChartedSpace_subset_maximalAtlas`: the charts pulled back along a
   `C^n` diffeomorphism belong to the maximal atlas of its source.
 
@@ -238,20 +240,25 @@ end Homeomorph
 namespace Diffeomorph
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCommGroup E]
-  [NormedSpace 𝕜 E] {I : ModelWithCorners 𝕜 E H} {n : ℕ∞ω} [IsManifold I n M]
-  [ChartedSpace H N] [IsManifold I n N]
+  [NormedSpace 𝕜 E] {I : ModelWithCorners 𝕜 E H} {n : ℕ∞ω} [ChartedSpace H N] [IsManifold I n N]
+
+/-- A `C^n` diffeomorphism `h : N ≃ₘ^n⟮I, I⟯ M` pulls a chart `φ` of the maximal `C^n` atlas of
+`M` back to the chart `φ ∘ h` of the maximal `C^n` atlas of `N`. For a mere homeomorphism the
+pulled-back chart lies in the topological atlas, but not in general in the maximal `C^n` atlas. -/
+theorem transOpenPartialHomeomorph_mem_maximalAtlas (h : N ≃ₘ^n⟮I, I⟯ M)
+    {φ : OpenPartialHomeomorph M H} (hφ : φ ∈ IsManifold.maximalAtlas I n M) :
+    h.toHomeomorph.transOpenPartialHomeomorph φ ∈ IsManifold.maximalAtlas I n N := by
+  rw [IsManifold.mem_maximalAtlas_iff_contMDiffOn]
+  exact ⟨(contMDiffOn_of_mem_maximalAtlas hφ).comp h.contMDiff.contMDiffOn fun _ hx ↦ hx,
+    h.symm.contMDiff.comp_contMDiffOn (contMDiffOn_symm_of_mem_maximalAtlas hφ)⟩
 
 /-- The charts pulled back along a `C^n` diffeomorphism `h : N ≃ₘ^n⟮I, I⟯ M` belong to the maximal
 `C^n` atlas of `N`. So the pulled-back structure is compatible with the structure that `N` already
 carries. -/
-theorem atlas_pullbackChartedSpace_subset_maximalAtlas (h : N ≃ₘ^n⟮I, I⟯ M) :
+theorem atlas_pullbackChartedSpace_subset_maximalAtlas [IsManifold I n M]
+    (h : N ≃ₘ^n⟮I, I⟯ M) :
     (h.toHomeomorph.pullbackChartedSpace (H := H)).atlas ⊆ IsManifold.maximalAtlas I n N := by
   rintro _ ⟨c, hc, rfl⟩
-  have hc' := IsManifold.subset_maximalAtlas (I := I) (n := n) hc
-  refine OpenPartialHomeomorph.mem_maximalAtlas_of_contMDiffOn _ ?_ ?_
-  · exact ((contMDiffOn_of_mem_maximalAtlas hc').comp h.contMDiff.contMDiffOn
-      fun x hx ↦ hx).congr fun x _ ↦ by simp
-  · exact (h.symm.contMDiff.comp_contMDiffOn (contMDiffOn_symm_of_mem_maximalAtlas hc')).congr
-      fun x _ ↦ by simp
+  exact h.transOpenPartialHomeomorph_mem_maximalAtlas (IsManifold.subset_maximalAtlas hc)
 
 end Diffeomorph
