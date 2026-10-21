@@ -142,8 +142,8 @@ theorem val_pointEquivDegreeZeroDivisorClass_sub (R S : W.Point) :
         (WeilDivisor.pointDifference (W.pointEquivDegreeOnePlace R).1
           (W.pointEquivDegreeOnePlace S).1) := by
   rw [map_sub, AddSubgroup.coe_sub, val_pointEquivDegreeZeroDivisorClass,
-    val_pointEquivDegreeZeroDivisorClass, ← map_sub, WeilDivisor.pointDifference,
-    WeilDivisor.pointDifference, WeilDivisor.pointDifference, sub_sub_sub_cancel_right]
+    val_pointEquivDegreeZeroDivisorClass, ← map_sub, sub_eq_add_neg,
+    ← WeilDivisor.pointDifference_swap, WeilDivisor.pointDifference_add_pointDifference_cancel]
 
 end WeierstrassCurve.Affine
 

@@ -157,9 +157,7 @@ theorem normal_range_translationHom : (h.translationHom hF hP).range.Normal := b
 /-- The translations of an elliptic function field have finite index in `Aut(F / k)`. -/
 theorem finiteIndex_range_translationHom : (h.translationHom hF hP).range.FiniteIndex := by
   rw [range_translationHom]
-  exact ⟨by
-    rw [Subgroup.index_map_of_bijective (AlgEquiv.autCongr _).bijective]
-    exact (Affine.finiteIndex_range_translationHom W.toAffine).index_ne_zero⟩
+  exact .map_of_surjective _ (AlgEquiv.autCongr _).surjective
 
 /-- **A translation moves each place of degree one by its class**: the automorphism attached to
 `c ∈ Cl⁰(F)` sends a place `Q` of degree one to the place `σ_c(Q)` with `[Q - σ_c(Q)] = c`. In
