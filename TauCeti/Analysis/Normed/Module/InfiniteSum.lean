@@ -91,7 +91,7 @@ variable (B : E → F → G) {C : ℝ} (hB : ∀ x y, ‖B x y‖ ≤ C * ‖x�
 
 include hB
 
-variable {A : Type*} [AddCommMonoid A] [Finset.HasAntidiagonal A]
+variable {A : Type*} [Add A] [Finset.HasAntidiagonal A]
 
 /-- The antidiagonal Cauchy product is summable under a bilinear norm bound.
 Additivity of the map is not needed for this assertion. -/
@@ -150,7 +150,7 @@ theorem bilinear_tsum_tsum_of_nonarchimedean [T0Space G]
 
 section CauchyProduct
 
-variable {A : Type*} [AddCommMonoid A] [Finset.HasAntidiagonal A]
+variable {A : Type*} [Add A] [Finset.HasAntidiagonal A]
 
 /-- Grouping a bilinear double sum by antidiagonals preserves its sum. -/
 theorem hasSum_sum_bilinear_antidiagonal_of_nonarchimedean
@@ -161,7 +161,7 @@ theorem hasSum_sum_bilinear_antidiagonal_of_nonarchimedean
   exact hsigma.sigma fun n ↦ Finset.hasSum (Finset.antidiagonal n)
     fun ij ↦ B (f ij.1) (g ij.2)
 
-/-- The bilinear Cauchy-product formula for an additive index monoid. -/
+/-- The bilinear Cauchy-product formula for an additive index type. -/
 theorem bilinear_tsum_tsum_eq_tsum_sum_antidiagonal_of_nonarchimedean
     [T0Space G] {f : A → E} {g : A → F}
     (hf : Summable f) (hg : Summable g) :
