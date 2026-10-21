@@ -44,6 +44,11 @@ functor `K^b(C)/[n] ⥤ K_n(C)` (`TauCeti.PeriodicComplex.orbitCompressionFuncto
   551–581, Section 1.
 * T. Stai, *The triangulated hull of periodic complexes*, Mathematical Research Letters **25**
   (2018), 199–236, Section 3.3.
+* The naturality proof of `compressionFunctorPeriodicityIso` on bounded complexes is adapted from
+  that of `TauCeti.PeriodicComplex.compressionFunctorShiftIso`
+  (`TauCeti.Algebra.Homology.Periodic.Compression.Shift`), and the descent of
+  `homotopyCompressionFunctorPeriodicityIso` along the localization functor follows the
+  construction of Mathlib's `CategoryTheory.Functor.commShiftOfLocalization.iso`.
 -/
 
 public section
@@ -257,6 +262,7 @@ noncomputable def homotopyCompressionFunctorPeriodicityIso :
 /-- On the class of a bounded complex, the periodicity isomorphism of `K^b(C) ⥤ K_n(C)` is the
 class of the periodicity isomorphism of compression, conjugated by the identifications of the
 descended compression on classes of bounded complexes. -/
+@[simp]
 lemma homotopyCompressionFunctorPeriodicityIso_hom_app_quotient_obj
     (K : CochainComplex.Bounded C) :
     (homotopyCompressionFunctorPeriodicityIso n k hk).hom.app ((quotient C).obj K) =
