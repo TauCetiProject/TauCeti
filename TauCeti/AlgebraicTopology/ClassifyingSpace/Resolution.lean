@@ -9,9 +9,13 @@ public import Mathlib.CategoryTheory.Preadditive.Projective.Resolution
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Acyclic
 public import TauCeti.RepresentationTheory.Augmentation.Basic
 public import TauCeti.RepresentationTheory.Rep.OfMulAction
+public import TauCeti.AlgebraicTopology.Cellular.Resolution
+public import TauCeti.AlgebraicTopology.ClassifyingSpace.CWComplex
+public import TauCeti.AlgebraicTopology.ClassifyingSpace.WeakContractibility
+public import TauCeti.AlgebraicTopology.Singular.Cubical.Based.Retraction
 
 /-!
-# The ordered chains of Milnor's countable join as a projective resolution
+# Projective resolutions from Milnor's countable join
 
 A group `G` acts on the simplices of the countable join `indexedJoin fun _ : ℕ => G` by
 translating the labels of their vertices, and this action commutes with taking faces
@@ -32,6 +36,14 @@ the ordered chains of the countable join a projective resolution of the trivial 
 resolution `Rep.standardResolution`; on underlying complexes of modules,
 `TauCeti.universalGSpaceToStandardComplex` maps the former to the latter.
 
+The cellular chains give a second resolution. The CW structure of the classifying space lifts
+along the orbit map to a CW structure on the countable join whose cells `G` permutes freely, and
+the countable join has vanishing singular homology in positive degrees
+(`TauCeti.isZero_singularHomology_universalGSpace`), since all its homotopy groups vanish. So
+its cellular chains are a projective resolution of the trivial representation as well
+(`TauCeti.classifyingSpaceCellularResolution`), by the general statement for acyclic free
+`G`-CW complexes, `TauCeti.cellularResolution`.
+
 ## Main definitions
 
 * `TauCeti.universalGSpaceChainComplex`: the ordered chain complex of the countable join, as a
@@ -39,12 +51,16 @@ resolution `Rep.standardResolution`; on underlying complexes of modules,
 * `TauCeti.universalGSpaceAugmentation`: its augmentation onto the trivial representation.
 * `TauCeti.universalGSpaceResolution`: the resulting projective resolution of the trivial
   representation.
+* `TauCeti.classifyingSpaceCellularResolution`: the cellular chains of the CW structure lifted
+  from the classifying space, as a projective resolution of the trivial representation.
 
 ## Main results
 
 * `TauCeti.universalGSpaceChainComplexForget₂Iso`: forgetting the action gives the ordered
   simplicial chain complex of the countable join.
 * `TauCeti.quasiIso_universalGSpaceAugmentation`: the augmentation is a quasi-isomorphism.
+* `TauCeti.isZero_singularHomology_universalGSpace`: the singular homology of the countable join
+  vanishes in positive degrees.
 
 ## References
 
@@ -235,5 +251,36 @@ theorem universalGSpaceResolution_π :
   (rfl)
 
 end Resolution
+
+section Cellular
+
+/-- **The singular homology of Milnor's countable join vanishes in positive degrees**, since all
+its homotopy groups vanish. -/
+theorem isZero_singularHomology_universalGSpace (k : Type u) [Ring k] (G : Type u) [Nonempty G]
+    (n : ℕ) :
+    Limits.IsZero (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) (n + 1)).obj
+      (ModuleCat.of k k)).obj (TopCat.of (universalGSpace G))) := by
+  obtain ⟨x⟩ : Nonempty (universalGSpace G) := inferInstance
+  refine isZero_singularHomologyFunctor_of_subsingleton_homotopyGroup (n := n + 2)
+    (X := TopCat.of (universalGSpace G)) (x := x) (fun m _ ↦ ?_) k (by lia) (by lia)
+  rcases m with _ | m
+  · exact HomotopyGroup.pi0EquivZerothHomotopy.subsingleton
+  · exact subsingleton_homotopyGroup_universalGSpace G m x
+
+variable (k : Type u) [CommRing k] (G : Type u) [Group G]
+
+/-- **The cellular chains of Milnor's countable join are a projective resolution** of the trivial
+representation of `G`, for the CW structure lifted from the classifying space
+`TauCeti.instCWComplexClassifyingSpace` along the orbit map, whose cells are permuted freely by
+`G`. -/
+def classifyingSpaceCellularResolution : ProjectiveResolution (Rep.trivial k G k) :=
+  haveI : PathConnectedSpace (classifyingSpaceProj G ⁻¹' (Set.univ : Set (classifyingSpace G))) :=
+    isPathConnected_iff_pathConnectedSpace.1 (pathConnectedSpace_iff_univ.1 inferInstance)
+  cellularResolution Set.univ (isQuotientCoveringMap_classifyingSpaceProj G) k fun n ↦
+    (isZero_singularHomology_universalGSpace k G n).of_iso
+      (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) (n + 1)).obj
+        (ModuleCat.of k k)).mapIso (TopCat.isoOfHomeo (Homeomorph.Set.univ _)))
+
+end Cellular
 
 end TauCeti

@@ -204,6 +204,17 @@ def cellularChainComplexRepForget₂Iso :
       -- definition, so both sides are the cellular differential.
       rfl
 
+/-- In each degree, `TauCeti.cellularChainComplexRepForget₂Iso` is the transport along the
+equality of the underlying module of the representation with the cellular chain group. -/
+@[simp]
+lemma cellularChainComplexRepForget₂Iso_hom_f (n : ℕ) :
+    letI := cwComplexPreimage C hG.isCoveringMap
+    haveI := hG.isCoveringMap.t2Space
+    (cellularChainComplexRepForget₂Iso C hG R).hom.f n = eqToHom (by
+      rw [Functor.mapHomologicalComplex_obj_X, cellularChainComplex_X, cellularChainComplexRep_X]
+      rfl) :=
+  (rfl)
+
 section Free
 
 variable {n : ℕ}
