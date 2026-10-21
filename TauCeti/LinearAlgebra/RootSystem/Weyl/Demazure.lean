@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.MonoidAlgebra.MapDomain
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Invariant
 import TauCeti.Algebra.MonoidAlgebra.Eigenvector
+import TauCeti.Algebra.MonoidAlgebra.Telescope
 
 /-!
 # The integral Demazure operator of a root
@@ -84,9 +85,8 @@ theorem demazureOperator_single (x : M) (c : ℤ) :
     P.demazureOperator i (single x c) =
       c • (∑ j ∈ Finset.range (P.coroot' i x + 1).toNat, single (x - j • P.root i) 1 -
         ∑ j ∈ Finset.range (-P.coroot' i x - 1).toNat, single (x + (j + 1) • P.root i) 1) := by
-  rw [show single x c = c • single x (1 : ℤ) by rw [smul_single', mul_one], map_smul,
-    demazureOperator, ← AddMonoidAlgebra.basis_apply,
-    Module.Basis.constr_basis]
+  have hc : single x c = c • single x (1 : ℤ) := by rw [smul_single', mul_one]
+  rw [hc, map_smul, demazureOperator, ← AddMonoidAlgebra.basis_apply, Module.Basis.constr_basis]
 
 /-- On a weight `x` with `⟨x, αᵢ^∨⟩ = n ≥ 0`, the Demazure operator is the root string
 `e^x + e^{x - αᵢ} + ⋯ + e^{x - n αᵢ}` from `x` down to `sᵢ x`. -/
@@ -94,9 +94,10 @@ theorem demazureOperator_single_of_coroot'_eq_natCast {x : M} {n : ℕ}
     (h : P.coroot' i x = n) :
     P.demazureOperator i (single x 1) =
       ∑ j ∈ Finset.range (n + 1), single (x - j • P.root i) 1 := by
-  rw [demazureOperator_single, h, one_smul,
-    show (-(n : ℤ) - 1).toNat = 0 by omega, show ((n : ℤ) + 1).toNat = n + 1 by omega,
-    Finset.range_zero, Finset.sum_empty, sub_zero]
+  have hneg : (-(n : ℤ) - 1).toNat = 0 := by omega
+  have hpos : ((n : ℤ) + 1).toNat = n + 1 := by omega
+  rw [demazureOperator_single, h, one_smul, hneg, hpos, Finset.range_zero, Finset.sum_empty,
+    sub_zero]
 
 /-- On a weight `x` with `⟨x, αᵢ^∨⟩ = -n - 1 < 0`, the Demazure operator is the negative of the
 root string `e^{x + αᵢ} + ⋯ + e^{x + n αᵢ}` strictly between `x` and `sᵢ x`. -/
@@ -104,9 +105,10 @@ theorem demazureOperator_single_of_coroot'_eq_neg_natCast_sub_one {x : M} {n : �
     (h : P.coroot' i x = -n - 1) :
     P.demazureOperator i (single x 1) =
       -∑ j ∈ Finset.range n, single (x + (j + 1) • P.root i) 1 := by
-  rw [demazureOperator_single, h, one_smul,
-    show (-(n : ℤ) - 1 + 1).toNat = 0 by omega, show (-(-(n : ℤ) - 1) - 1).toNat = n by omega,
-    Finset.range_zero, Finset.sum_empty, zero_sub]
+  have hpos : (-(n : ℤ) - 1 + 1).toNat = 0 := by omega
+  have hneg : (-(-(n : ℤ) - 1) - 1).toNat = n := by omega
+  rw [demazureOperator_single, h, one_smul, hpos, hneg, Finset.range_zero, Finset.sum_empty,
+    zero_sub]
 
 /-- On a weight `x` with `⟨x, αᵢ^∨⟩ = -1`, the Demazure operator vanishes. -/
 theorem demazureOperator_single_of_coroot'_eq_neg_one {x : M} (h : P.coroot' i x = -1) :
@@ -123,30 +125,6 @@ theorem demazureOperator_one : P.demazureOperator i 1 = 1 := by
 
 /-! ### The localization identity -/
 
-/-- Multiplying the descending root string `e^y + e^{y - α} + ⋯ + e^{y - (n - 1) α}` by
-`1 - e^{-α}` telescopes. -/
-private lemma one_sub_single_neg_mul_sum_sub (α y : M) (n : ℕ) :
-    (1 - single (-α) (1 : ℤ)) * ∑ j ∈ Finset.range n, single (y - j • α) 1 =
-      single y 1 - single (y - n • α) 1 := by
-  have h := Finset.sum_range_sub' (fun j ↦ single (y - j • α) (1 : ℤ)) n
-  rw [zero_nsmul, sub_zero] at h
-  rw [Finset.mul_sum, ← h]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  rw [sub_mul, one_mul, single_mul_single, mul_one,
-    show -α + (y - j • α) = y - (j + 1) • α by rw [succ_nsmul]; abel]
-
-/-- Multiplying the ascending root string `e^{y + α} + ⋯ + e^{y + n α}` by `1 - e^{-α}`
-telescopes. -/
-private lemma one_sub_single_neg_mul_sum_add (α y : M) (n : ℕ) :
-    (1 - single (-α) (1 : ℤ)) * ∑ j ∈ Finset.range n, single (y + (j + 1) • α) 1 =
-      single (y + n • α) 1 - single y 1 := by
-  have h := Finset.sum_range_sub (fun j ↦ single (y + j • α) (1 : ℤ)) n
-  rw [zero_nsmul, add_zero] at h
-  rw [Finset.mul_sum, ← h]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  rw [sub_mul, one_mul, single_mul_single, mul_one,
-    show -α + (y + (j + 1) • α) = y + j • α by rw [succ_nsmul]; abel]
-
 /-- The localization identity on a basis element. -/
 private lemma one_sub_single_neg_root_mul_demazureOperator_single (x : M) :
     (1 - single (-P.root i) 1) * P.demazureOperator i (single x 1) =
@@ -156,13 +134,14 @@ private lemma one_sub_single_neg_root_mul_demazureOperator_single (x : M) :
     rcases le_or_gt 0 (P.coroot' i x) with h | h
     · exact ⟨(P.coroot' i x).toNat, .inl (by omega)⟩
     · exact ⟨(-P.coroot' i x - 1).toNat, .inr (by omega)⟩
-  · rw [P.demazureOperator_single_of_coroot'_eq_natCast i hn, one_sub_single_neg_mul_sum_sub, hn,
-      show -P.root i + (x - (n : ℤ) • P.root i) = x - (n + 1) • P.root i by
-        rw [natCast_zsmul, succ_nsmul]; abel]
-  · rw [P.demazureOperator_single_of_coroot'_eq_neg_natCast_sub_one i hn, mul_neg,
-      one_sub_single_neg_mul_sum_add, neg_sub, hn,
-      show -P.root i + (x - (-(n : ℤ) - 1) • P.root i) = x + n • P.root i by
-        rw [sub_smul, neg_smul, natCast_zsmul, one_smul]; abel]
+  · have hx : -P.root i + (x - (n : ℤ) • P.root i) = x - (n + 1) • P.root i := by
+      rw [natCast_zsmul, succ_nsmul]; abel
+    rw [P.demazureOperator_single_of_coroot'_eq_natCast i hn, one_sub_single_neg_mul_sum_sub, hn,
+      hx]
+  · have hx : -P.root i + (x - (-(n : ℤ) - 1) • P.root i) = x + n • P.root i := by
+      rw [sub_smul, neg_smul, natCast_zsmul, one_smul]; abel
+    rw [P.demazureOperator_single_of_coroot'_eq_neg_natCast_sub_one i hn, mul_neg,
+      one_sub_single_neg_mul_sum_add, neg_sub, hn, hx]
 
 /-- **The localization identity** of the Demazure operator:
 `(1 - e^{-αᵢ}) Dᵢ(f) = f - e^{-αᵢ} sᵢ(f)`, where `sᵢ` reindexes `ℤ[M]` along the reflection of
@@ -174,9 +153,9 @@ theorem one_sub_single_neg_root_mul_demazureOperator (f : AddMonoidAlgebra ℤ M
   | zero => simp
   | add f g hf hg => rw [map_add, mul_add, hf, hg, map_add, mul_add]; abel
   | single x c =>
-    rw [show single x c = c • single x (1 : ℤ) by rw [smul_single', mul_one], map_smul,
-      mul_smul_comm,
-      one_sub_single_neg_root_mul_demazureOperator_single, map_zsmul, mul_smul_comm, smul_sub]
+    have hc : single x c = c • single x (1 : ℤ) := by rw [smul_single', mul_one]
+    rw [hc, map_smul, mul_smul_comm, one_sub_single_neg_root_mul_demazureOperator_single,
+      map_zsmul, mul_smul_comm, smul_sub]
     simp
 
 /-- Multiplication by `1 - e^{-αᵢ}` is injective on `ℤ[M]`, since `-αᵢ` has infinite order. -/
@@ -190,7 +169,7 @@ private lemma eq_of_one_sub_single_neg_root_mul_eq {f g : AddMonoidAlgebra ℤ M
       nsmul_eq_mul, neg_eq_zero] at this
     omega
   rw [← sub_eq_zero]
-  refine TauCeti.AddMonoidAlgebra.eq_zero_of_mul_single_eq_self hα ?_
+  refine AddMonoidAlgebra.eq_zero_of_mul_single_eq_self hα ?_
   linear_combination -h
 
 /-- The localization identity characterizes the Demazure operator: `Dᵢ f` is the unique `g` with

@@ -27,9 +27,9 @@ stable under right translation by `g`, hence infinite.
   satisfies `c ^ orderOf g = 1`.
 * `TauCeti.nat_eq_one_of_mul_single_sub_eq_zero`: in characteristic zero, a
   natural-number eigenvalue of an element of finite order is `1`.
-* `TauCeti.MonoidAlgebra.eq_zero_of_mul_single_eq_self`: if `g` has infinite order, then
+* `MonoidAlgebra.eq_zero_of_mul_single_eq_self`: if `g` has infinite order, then
   `x * g = x` forces `x = 0`; its additive form is
-  `TauCeti.AddMonoidAlgebra.eq_zero_of_mul_single_eq_self`.
+  `AddMonoidAlgebra.eq_zero_of_mul_single_eq_self`.
 -/
 
 public section
@@ -82,16 +82,18 @@ theorem nat_eq_one_of_mul_single_sub_eq_zero [CharZero R] {x : MonoidAlgebra R G
     exact_mod_cast pow_orderOf_eq_one_of_mul_single_sub_eq_zero hx h
   exact (Nat.pow_eq_one.mp ha).resolve_right hg.orderOf_pos.ne'
 
+end TauCeti
+
 namespace MonoidAlgebra
 
 variable {R : Type*} [Semiring R] {G : Type*} [CancelMonoid G]
 
 /-- An element `g` of infinite order has no nonzero eigenvector of eigenvalue `1` under right
 multiplication: `x * g = x` forces `x = 0`. -/
-@[to_additive (dont_translate := R) TauCeti.AddMonoidAlgebra.eq_zero_of_mul_single_eq_self
+@[to_additive (dont_translate := R) AddMonoidAlgebra.eq_zero_of_mul_single_eq_self
   /-- An element `a` of infinite order has no nonzero eigenvector of eigenvalue `1` under
   multiplication by `e^a`: `x * e^a = x` forces `x = 0`. -/]
-theorem eq_zero_of_mul_single_eq_self {x : _root_.MonoidAlgebra R G} {g : G}
+theorem eq_zero_of_mul_single_eq_self {x : MonoidAlgebra R G} {g : G}
     (hg : ¬IsOfFinOrder g) (h : x * single g (1 : R) = x) : x = 0 := by
   by_contra hx
   obtain ⟨y, hy⟩ : ∃ y, x.coeff y ≠ 0 := by
@@ -110,5 +112,3 @@ theorem eq_zero_of_mul_single_eq_self {x : _root_.MonoidAlgebra R G} {g : G}
   simpa [hpow n] using hy
 
 end MonoidAlgebra
-
-end TauCeti
