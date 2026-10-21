@@ -31,7 +31,7 @@ public section
 
 namespace Derivation
 
-variable {R A M : Type*} [CommRing R] [CommRing A] [Algebra R A] [AddCommGroup M] [Module A M]
+variable {R A M : Type*} [CommSemiring R] [CommRing A] [Algebra R A] [AddCommGroup M] [Module A M]
   [Module R M]
 
 /-- Every derivation `D : A → M` is continuous for the `I`-adic topologies on `A` and on `M`,
