@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.AInfinity.Algebra
+public import TauCeti.CategoryTheory.Graded.ComposableWords
 public import TauCeti.CategoryTheory.Graded.Multilinear.Basic
-public import TauCeti.CategoryTheory.Graded.TotalHom
 
 /-!
 # A-infinity categories
@@ -106,6 +106,24 @@ theorem isPathCompatible_m (n : ℕ) : IsPathCompatible id (𝒞.m n) := by
   · rw [𝒞.m_zero]
     exact ⟨fun _ _ ↦ zero_mem _, fun _ _ _ _ _ _ _ ↦ rfl⟩
   · exact 𝒞.isPathCompatible_m_of_pos n hn
+
+/-- On words of length `n`, the Taylor map of an `A∞` category is `mₙ` after the Koszul twists of
+the suspension. -/
+private theorem taylor_compMultilinearMap (n : ℕ) (hn : 0 < n) :
+    (𝒞.taylor ∘ₗ ReducedTensorWords.of R _ ⟨n, hn⟩).compMultilinearMap
+        (PiTensorProduct.tprod R (s := fun _ : Fin n ↦ TotalHom R C)) =
+      (𝒞.m n).compLinearMap fun i ↦ (totalGrading R C).koszulTwist ((n : ℤ) - 1 - i) := by
+  refine MultilinearMap.ext fun x ↦ ?_
+  rw [LinearMap.compMultilinearMap_apply, LinearMap.comp_apply, AInfinityAlgebra.taylor_of_tprod,
+    𝒞.grading_eq]
+  rfl
+
+/-- The Taylor map of an `A∞` category sends composable words from `X` to `Y` to morphisms
+`X ⟶ Y`, and non-composable words to zero. -/
+theorem isWordPathCompatible_taylor : IsWordPathCompatible id 𝒞.taylor :=
+  isWordPathCompatible_iff.2 fun n hn ↦ by
+    rw [𝒞.taylor_compMultilinearMap n hn]
+    exact (𝒞.isPathCompatible_m n).compLinearMap_koszulTwist _
 
 /-- The operation `mₙ` sends inputs of degrees `dᵢ` to an element of degree `∑ dᵢ + 2 - n`. -/
 theorem m_mem_totalGrading_piece {n : ℕ} (d : Fin n → ℤ) (x : Fin n → TotalHom R C)

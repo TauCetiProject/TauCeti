@@ -93,6 +93,45 @@ structure AInfinityFunctor (ℬ : AInfinityCategory R C) (𝒞 : AInfinityCatego
   isPathCompatible_component_of_pos (n : ℕ) (hn : 0 < n) :
     IsPathCompatible (InducedQuiver.mk (F := obj)) (toAInfinityHom.component n)
 
+namespace AInfinityHom
+
+variable {ℬ : AInfinityCategory R C} {𝒞 : AInfinityCategory R D}
+  (f : AInfinityHom ℬ.toAInfinityAlgebra 𝒞.toAInfinityAlgebra)
+
+/-- On words of length `n`, the Taylor map of an `A∞` morphism of total algebras of morphisms is its
+component `fₙ` after the Koszul twists of the suspension. -/
+private theorem taylor_compMultilinearMap (n : ℕ) (hn : 0 < n) :
+    (f.taylor ∘ₗ ReducedTensorWords.of R _ ⟨n, hn⟩).compMultilinearMap
+        (PiTensorProduct.tprod R (s := fun _ : Fin n ↦ TotalHom R C)) =
+      (f.component n).compLinearMap fun i ↦ (totalGrading R C).koszulTwist ((n : ℤ) - 1 - i) := by
+  refine MultilinearMap.ext fun x ↦ ?_
+  rw [LinearMap.compMultilinearMap_apply, LinearMap.comp_apply, MultilinearMap.compLinearMap_apply,
+    f.component_apply n hn, ℬ.grading_eq]
+  simp only [InternalGrading.koszulTwist_koszulTwist]
+
+/-- In positive arity `n`, the component `fₙ` of an `A∞` morphism of total algebras of morphisms
+is its Taylor map on words of length `n` after the Koszul twists of the suspension. -/
+private theorem component_eq_compLinearMap (n : ℕ) (hn : 0 < n) :
+    f.component n = ((f.taylor ∘ₗ ReducedTensorWords.of R _ ⟨n, hn⟩).compMultilinearMap
+        (PiTensorProduct.tprod R (s := fun _ : Fin n ↦ TotalHom R C))).compLinearMap
+      fun i ↦ (totalGrading R C).koszulTwist ((n : ℤ) - 1 - i) := by
+  refine MultilinearMap.ext fun x ↦ ?_
+  rw [f.component_apply n hn, ℬ.grading_eq]
+  rfl
+
+/-- **Path compatibility of the components of an `A∞` morphism is path compatibility of its Taylor
+map on words.** -/
+theorem isWordPathCompatible_taylor_iff {φ : C → D} :
+    IsWordPathCompatible φ f.taylor ↔ ∀ n, 0 < n → IsPathCompatible φ (f.component n) := by
+  rw [isWordPathCompatible_iff]
+  refine ⟨fun h n hn ↦ ?_, fun h n hn ↦ ?_⟩
+  · rw [f.component_eq_compLinearMap n hn]
+    exact (h n hn).compLinearMap_koszulTwist _
+  · rw [f.taylor_compMultilinearMap n hn]
+    exact (h n hn).compLinearMap_koszulTwist _
+
+end AInfinityHom
+
 namespace AInfinityFunctor
 
 variable {ℬ : AInfinityCategory R C} {𝒞 : AInfinityCategory R D}
@@ -118,6 +157,12 @@ theorem isPathCompatible_component (n : ℕ) :
   · rw [AInfinityHom.component_zero]
     exact ⟨fun _ _ ↦ zero_mem _, fun _ _ _ _ _ _ _ ↦ rfl⟩
   · exact ℱ.isPathCompatible_component_of_pos n hn
+
+/-- The Taylor map of an `A∞` functor sends composable words from `X` to `Y` to morphisms from
+`⟨X⟩` to `⟨Y⟩` in the induced category, and non-composable words to zero. -/
+theorem isWordPathCompatible_taylor :
+    IsWordPathCompatible (InducedQuiver.mk (F := ℱ.obj)) ℱ.toAInfinityHom.taylor :=
+  ℱ.toAInfinityHom.isWordPathCompatible_taylor_iff.2 fun n _ ↦ ℱ.isPathCompatible_component n
 
 /-! ### The map on Hom modules -/
 

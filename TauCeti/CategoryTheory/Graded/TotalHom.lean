@@ -199,6 +199,30 @@ theorem homInclusion_mem_totalGrading_piece_iff {X Y : C} (n : ℤ) (f : homModu
   · rw [homProjection_homInclusion_of_ne hXY]
     exact zero_mem _
 
+/-- The inclusion of a hom module into the total module of morphisms preserves degrees. -/
+theorem isHomogeneous_homInclusion (X Y : C) :
+    LinearMap.IsHomogeneous (homInclusion (R := R) X Y) (grading (R := R) X Y).piece
+      (totalGrading R C).piece 0 := by
+  rw [LinearMap.isHomogeneous_def]
+  intro p f hf
+  rwa [add_zero, homInclusion_mem_totalGrading_piece_iff]
+
+/-- The Koszul twist of the total module of morphisms acts on each hom module by its own Koszul
+twist. -/
+@[simp]
+theorem koszulTwist_homInclusion (q : ℤ) (X Y : C) (f : homModule (R := R) X Y) :
+    (totalGrading R C).koszulTwist q (homInclusion X Y f) =
+      homInclusion X Y ((grading (R := R) X Y).koszulTwist q f) := by
+  simpa using LinearMap.congr_fun ((isHomogeneous_homInclusion X Y).koszulTwist_comp q) f
+
+/-- The Koszul twist of the total module of morphisms preserves each hom module. -/
+theorem koszulTwist_mem_range_homInclusion (q : ℤ) {X Y : C} {u : TotalHom R C}
+    (hu : u ∈ LinearMap.range (homInclusion (R := R) X Y)) :
+    (totalGrading R C).koszulTwist q u ∈ LinearMap.range (homInclusion (R := R) X Y) := by
+  obtain ⟨f, rfl⟩ := hu
+  rw [koszulTwist_homInclusion]
+  exact LinearMap.mem_range_self _ _
+
 /-- **Multilinear maps on homogeneous elements are controlled by homogeneous morphisms.** A
 multilinear map out of the total module of morphisms sends every tuple of elements of degrees `d`
 into a submodule `S` as soon as it does so on every tuple of morphisms of degrees `d`, each lying
@@ -341,5 +365,19 @@ theorem isPathCompatible_of_homogeneous {C' : Type u'} [GradedLinearQuiver.{u', 
       (fun k ↦ grading (R := R) (s k) (t k))
       (f := f.compLinearMap fun k ↦ homInclusion (s k) (t k))
       (fun d x hx ↦ (Submodule.mem_bot R).2 (eq_zero s t x d hx i j hij hne)) x
+
+/-- Twisting the inputs of a path-compatible operation by Koszul twists of the total grading
+leaves it path-compatible, since the twists act on each hom module separately. -/
+theorem IsPathCompatible.compLinearMap_koszulTwist {C' : Type u'}
+    [GradedLinearQuiver.{u', v', w} R C'] {φ : C → C'} {n : ℕ}
+    {f : MultilinearMap R (fun _ : Fin n ↦ TotalHom R C) (TotalHom R C')}
+    (hf : IsPathCompatible φ f) (q : Fin n → ℤ) :
+    IsPathCompatible φ (f.compLinearMap fun i ↦ (totalGrading R C).koszulTwist (q i)) where
+  mem_range_homInclusion X x := by
+    simpa only [MultilinearMap.compLinearMap_apply, koszulTwist_homInclusion] using
+      hf.mem_range_homInclusion X fun i ↦ (grading (R := R) _ _).koszulTwist (q i) (x i)
+  eq_zero_of_ne s t x i j hij hne := by
+    simpa only [MultilinearMap.compLinearMap_apply, koszulTwist_homInclusion] using
+      hf.eq_zero_of_ne s t (fun k ↦ (grading (R := R) _ _).koszulTwist (q k) (x k)) i j hij hne
 
 end TauCeti.GradedLinearQuiver

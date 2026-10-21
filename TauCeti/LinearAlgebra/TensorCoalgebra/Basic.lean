@@ -412,6 +412,18 @@ theorem map_bijective (e : M ≃ₗ[R] N) :
   Function.bijective_iff_has_inverse.2
     ⟨ReducedTensorWords.map (R := R) e.symm.toLinearMap, map_symm_map R e, map_map_symm R e⟩
 
+/-- Mapping a word with a letter prepended prepends the image of the letter to the mapped word. -/
+theorem map_prepend (f : M →ₗ[R] N) (a : M) (w : ReducedTensorWords R M) :
+    ReducedTensorWords.map (R := R) f (prepend R M a w) =
+      prepend R N (f a) (ReducedTensorWords.map (R := R) f w) := by
+  suffices h : ReducedTensorWords.map (R := R) f ∘ₗ prepend R M a =
+      prepend R N (f a) ∘ₗ ReducedTensorWords.map (R := R) f from LinearMap.congr_fun h w
+  refine linearMap_ext R M fun n x ↦ ?_
+  rw [LinearMap.comp_apply, LinearMap.comp_apply, prepend_of_tprod, map_of_tprod, map_of_tprod,
+    prepend_of_tprod]
+  refine of_tprod_congr R N _ rfl fun i ↦ ?_
+  induction i using Fin.cases <;> simp
+
 /-- Reduced deconcatenation is natural with respect to linear maps of the letters. -/
 theorem deconcatenation_natural (f : M →ₗ[R] N) :
     deconcatenation R N ∘ₗ ReducedTensorWords.map (R := R) f =

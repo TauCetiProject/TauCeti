@@ -115,6 +115,21 @@ theorem totalHomMap_mem_totalGrading_piece {n : ℤ} {x : TotalHom R (InducedQui
   · intro X Y f hf
     rwa [totalHomMap_homInclusion, homInclusion_mem_totalGrading_piece_iff]
 
+/-- The map of total modules of an induced quiver is homogeneous of degree zero. -/
+theorem isHomogeneous_totalHomMap :
+    LinearMap.IsHomogeneous (totalHomMap R F) (totalGrading R (InducedQuiver C F)).piece
+      (totalGrading R C).piece 0 := by
+  rw [LinearMap.isHomogeneous_def]
+  intro p x hx
+  rw [add_zero]
+  exact totalHomMap_mem_totalGrading_piece hx
+
+/-- The map of total modules of an induced quiver commutes with the Koszul twists. -/
+theorem koszulTwist_totalHomMap (q : ℤ) (x : TotalHom R (InducedQuiver C F)) :
+    (totalGrading R C).koszulTwist q (totalHomMap R F x) =
+      totalHomMap R F ((totalGrading R (InducedQuiver C F)).koszulTwist q x) := by
+  simpa using LinearMap.congr_fun (isHomogeneous_totalHomMap.koszulTwist_comp q) x
+
 /-- The component of the image of an element between two objects of `C` not both in the image of
 `F` vanishes. -/
 theorem homProjection_totalHomMap_of_not {X Y : C} (h : ¬ (X ∈ Set.range F ∧ Y ∈ Set.range F))

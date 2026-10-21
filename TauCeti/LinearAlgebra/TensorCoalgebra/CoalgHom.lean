@@ -321,6 +321,14 @@ theorem coalgHom_comp_letter (g : M →ₗ[R] N) :
     coalgHom R (g ∘ₗ letter R M) = ReducedTensorWords.map (R := R) g := by
   rw [(isCoalgHom_map g).eq_coalgHom, letter_comp_map]
 
+/-- Applying a linear map `g` to every letter of the values of the coalgebra morphism with Taylor
+components `f` gives the coalgebra morphism with Taylor components `g ∘ f`. -/
+theorem map_comp_coalgHom {P : Type uP} [AddCommMonoid P] [Module R P] (g : N →ₗ[R] P)
+    (f : ReducedTensorWords R M →ₗ[R] N) :
+    ReducedTensorWords.map (R := R) g ∘ₗ coalgHom R f = coalgHom R (g ∘ₗ f) := by
+  rw [((isCoalgHom_map g).comp (isCoalgHom_coalgHom f)).eq_coalgHom, ← LinearMap.comp_assoc,
+    letter_comp_map, LinearMap.comp_assoc, letter_comp_coalgHom]
+
 end CoalgHom
 
 /-! ### The length filtration and bijectivity
