@@ -76,6 +76,18 @@ local notation "𝔻*" => Set.Elem (ball (0 : ℂ) 1 \ {0})
 
 variable {E : Type*} [TopologicalSpace E] {p : E → ThricePuncturedSphere} {n : ℕ}
 
+/-- Multiplication by a complex number of norm `1` maps the punctured unit disc to itself. -/
+private theorem mul_mem_puncturedDisc_of_norm_eq_one {ζ : ℂ} (hζ : ‖ζ‖ = 1) (w : 𝔻*) :
+    ζ * w ∈ ball (0 : ℂ) 1 \ {0} := by
+  refine ⟨mem_ball_zero_iff.2 ?_, mul_ne_zero (norm_ne_zero_iff.1 (by simp [hζ])) w.2.2⟩
+  rw [norm_mul, hζ, one_mul]
+  exact mem_ball_zero_iff.1 w.2.1
+
+/-- Rotation by `exp (2πi/e)` does not change `e`-th powers. -/
+private theorem exp_mul_pow {e : ℕ} (he : e ≠ 0) (z : ℂ) :
+    (exp (2 * π * I / e) * z) ^ e = z ^ e := by
+  rw [mul_pow, (isPrimitiveRoot_exp e he).pow_eq_one, one_mul]
+
 /-! ### The local argument at a puncture -/
 
 section Local
@@ -102,59 +114,6 @@ variable (hp : IsCoveringMap p) (ν : p ⁻¹' {basePt} ≃ Fin n) {q : Puncture
     (FundamentalGroup.map ⟨Subtype.val, continuous_subtype_val⟩ y
       (FundamentalGroup.fromPath (.mk δ))) = g)
 
-omit [TopologicalSpace E] in
-include hφq hseg in
-/-- Along a chart in which `p` is `w ↦ w ^ e` in the coordinate of `D_q*`, and when `(0, 1)` is the
-positive real axis in that coordinate, a point of the chart lies over `(0, 1)` exactly when its
-`e`-th power is a positive real. -/
-private theorem mem_unitSegment_iff
-    (w : 𝔻*) : p (φ w) ∈ unitSegment ↔ ((w : ℂ) ^ e).im = 0 ∧ 0 < ((w : ℂ) ^ e).re := by
-  obtain ⟨hw, h⟩ := hφq w
-  rw [hseg _ hw, h]
-
-include hφ hφq hseg in
-/-- **Radial motion does not change the edge.** Scaling a point of the chart by a positive real
-keeps it over `(0, 1)` and in the same component of `p ⁻¹' (0, 1)`. -/
-private theorem exists_mk_eq_of_coe_eq_ofReal_mul
-    {w w' : 𝔻*} {s : ℝ} (hs : 0 < s) (hww' : (w' : ℂ) = s * w)
-    (hw : p (φ w) ∈ unitSegment) :
-    ∃ hw' : p (φ w') ∈ unitSegment,
-      ConnectedComponents.mk (⟨φ w', hw'⟩ : p ⁻¹' unitSegment) =
-        ConnectedComponents.mk ⟨φ w, hw⟩ := by
-  -- The scalars `c t = (1 - t) + t * s` interpolate between `1` and `s`, and stay positive.
-  have hc (t : unitInterval) : 0 < (1 - t : ℝ) + t * s := by
-    rcases t.2.2.lt_or_eq with ht | ht
-    · nlinarith [mul_nonneg t.2.1 hs.le]
-    · rw [ht]
-      linarith
-  have hmem (t : unitInterval) : (((1 - t : ℝ) + t * s : ℝ) : ℂ) * w ∈ ball (0 : ℂ) 1 \ {0} := by
-    have hw1 : ‖(w : ℂ)‖ < 1 := mem_ball_zero_iff.1 w.2.1
-    have hw'1 : s * ‖(w : ℂ)‖ < 1 := by
-      have := mem_ball_zero_iff.1 w'.2.1
-      rwa [hww', norm_mul, norm_real, Real.norm_of_nonneg hs.le] at this
-    refine ⟨mem_ball_zero_iff.2 ?_, mul_ne_zero (ofReal_ne_zero.2 (hc t).ne') w.2.2⟩
-    rw [norm_mul, norm_real, Real.norm_of_nonneg (hc t).le]
-    rcases t.2.2.lt_or_eq with ht | ht
-    · nlinarith [mul_pos (sub_pos.2 ht) (sub_pos.2 hw1), mul_nonneg t.2.1 (sub_pos.2 hw'1).le]
-    · rw [ht]
-      linarith
-  -- Positive scalings of a point over `(0, 1)` lie over `(0, 1)`.
-  have hseg' (c : ℝ) (hc : 0 < c) (v : 𝔻*) (hv : (v : ℂ) = c * w) : p (φ v) ∈ unitSegment := by
-    rw [mem_unitSegment_iff hφq hseg] at hw ⊢
-    rw [hv, mul_pow, ← ofReal_pow, re_ofReal_mul, im_ofReal_mul, hw.1, mul_zero]
-    exact ⟨rfl, mul_pos (pow_pos hc _) hw.2⟩
-  let γ : Path (φ w) (φ w') :=
-    { toFun t := φ ⟨_, hmem t⟩
-      continuous_toFun := hφ.comp (Continuous.subtype_mk (by fun_prop) _)
-      source' := by simp
-      target' := by
-        congr 1
-        exact Subtype.ext (by simp [hww']) }
-  have hγ (t : unitInterval) : γ t ∈ p ⁻¹' unitSegment := hseg' _ (hc t) _ rfl
-  refine ⟨hseg' s hs w' hww', ConnectedComponents.coe_eq_coe.2 ?_⟩
-  exact (connectedComponent_eq
-    (pathComponent_subset_component _ (JoinedIn.joined_subtype ⟨γ, hγ⟩))).symm
-
 include hσ hg in
 /-- If `σ` is the monodromy of the transport along `α` of the loop `δ` at `y`, then the lift of `δ`
 from the endpoint of the lift of `α` from the sheet `m` ends at the endpoint of the lift of `α` from
@@ -163,10 +122,12 @@ private theorem monodromy_δ_monodromy_α (m : Fin n) :
     hp.monodromy (.mk (δ.map continuous_subtype_val)) (hp.monodromy (.mk α) (ν.symm m)) =
       hp.monodromy (.mk α) (ν.symm (σ m)) := by
   subst hσ hg
-  rw [permCongr_apply, symm_apply_apply, hp.monodromyPerm_fundamentalGroupMulEquivOfPath_symm,
-    permCongr_apply, symm_symm]
-  conv_rhs => rw [← coveringFiberEquiv_apply, apply_symm_apply]
-  rw [coveringFiberEquiv_apply, FundamentalGroup.map_fromPath, IsCoveringMap.coe_monodromyPerm]
+  -- Lifting the transport of `δ` and then `α` is lifting `α` and then `δ`.
+  have h := hp.monodromy_fundamentalGroupMulEquivOfPath_symm_apply α
+    (FundamentalGroup.fromPath (.mk (δ.map continuous_subtype_val))) (ν.symm m)
+  rw [eq_symm_apply, coveringFiberEquiv_apply] at h
+  rw [FundamentalGroup.map_fromPath]
+  simpa only [permCongr_apply, symm_apply_apply, IsCoveringMap.coe_monodromyPerm] using h.symm
 
 include hp hφq hy in
 /-- A point of the chart whose `e`-th power is `1/2` lies over `y`, so it is the endpoint of the
@@ -188,12 +149,9 @@ private theorem monodromy_δ_eq {v v' : 𝔻*}
     {x : p ⁻¹' {(y : ThricePuncturedSphere)}} (hx : φ v = x) :
     (hp.monodromy (.mk (δ.map continuous_subtype_val)) x : E) = φ v' := by
   have hmem (t : unitInterval) : exp (2 * π * I * t / e) * v ∈ ball (0 : ℂ) 1 \ {0} := by
-    refine ⟨mem_ball_zero_iff.2 ?_, mul_ne_zero (exp_ne_zero _) v.2.2⟩
-    have harg : 2 * π * I * t / e = ((2 * π * t / e : ℝ) : ℂ) * I := by
-      push_cast
-      ring
-    rw [norm_mul, harg, norm_exp_ofReal_mul_I, one_mul]
-    exact mem_ball_zero_iff.1 v.2.1
+    refine mul_mem_puncturedDisc_of_norm_eq_one ?_ v
+    rw [show 2 * π * I * t / e = ((2 * π * t / e : ℝ) : ℂ) * I by push_cast; ring]
+    exact norm_exp_ofReal_mul_I _
   -- The arc `t ↦ exp (2πit/e) * v` lifts `δ`.
   let Γ : C(unitInterval, E) := ⟨fun t ↦ φ ⟨_, hmem t⟩,
     hφ.comp (Continuous.subtype_mk (by fun_prop) _)⟩
@@ -233,7 +191,7 @@ private theorem exists_mk_eq_σ
     subst hx
     exact (hα m hxseg).symm
   -- Write `w ^ e = a` with `a > 0`, and scale `w` by `r > 0` with `r ^ e * a = 1/2`.
-  have hwe := (mem_unitSegment_iff hφq hseg w).1 hw
+  have hwe := (mem_unitSegment_iff_of_coe_coord_eq_pow hφq hseg w).1 hw
   set a := ((w : ℂ) ^ e).re with ha
   have hwa : (w : ℂ) ^ e = a := Complex.ext (by simp [ha]) (by simp [hwe.1])
   set r : ℝ := (2 * a)⁻¹ ^ (e⁻¹ : ℝ)
@@ -251,7 +209,7 @@ private theorem exists_mk_eq_σ
     exact (pow_lt_one_iff_of_nonneg (norm_nonneg _) he).1 (by rw [h]; norm_num)
   -- The rotated point also has `e`-th power `a`.
   have hw'a : (w' : ℂ) ^ e = a := by
-    rw [hw', mul_pow, (isPrimitiveRoot_exp e he).pow_eq_one, one_mul, hwa]
+    rw [hw', exp_mul_pow he, hwa]
   let v : 𝔻* := ⟨_, hmem w hwa⟩
   let v' : 𝔻* := ⟨_, hmem w' hw'a⟩
   -- The point `φ v` lies on the edge of `k` and over `y`, so it is the endpoint of the lift of `α`
@@ -266,7 +224,7 @@ private theorem exists_mk_eq_σ
     exact (monodromy_δ_eq hp hφ he hφq hδ (hrw w hwa) (by simp only [v, v', hw']; ring) hm).symm
   -- Radial motion from `w'` to `v'` stays on one edge.
   have hw'seg : p (φ w') ∈ unitSegment :=
-    (mem_unitSegment_iff hφq hseg w').2 (by rw [hw'a]; simpa using hwe.2)
+    (mem_unitSegment_iff_of_coe_coord_eq_pow hφq hseg w').2 (by rw [hw'a]; simpa using hwe.2)
   obtain ⟨hv'seg, hv'w'⟩ := exists_mk_eq_of_coe_eq_ofReal_mul hφ hφq hseg (w' := v') hr rfl hw'seg
   exact ⟨hw'seg, by rw [← hv'w', hlabel hv' hv'seg]⟩
 
@@ -283,10 +241,9 @@ private theorem exists_mk_eq_σ_iff {w w' : 𝔻*} (hw' : (w' : ℂ) = exp (2 * 
   refine ⟨fun ⟨hw'', hk⟩ ↦ ?_, fun ⟨hw, hk⟩ ↦
     exists_mk_eq_σ hp ν hφ he hφq hseg hy hα hδ hσ hg hw' hw hk⟩
   -- `w` and `w'` have the same `e`-th power, so `φ w` lies over `(0, 1)` as well.
-  have hpow : (w' : ℂ) ^ e = (w : ℂ) ^ e := by
-    rw [hw', mul_pow, (isPrimitiveRoot_exp e he).pow_eq_one, one_mul]
   have hw : p (φ w) ∈ unitSegment := by
-    rw [mem_unitSegment_iff hφq hseg, ← hpow, ← mem_unitSegment_iff hφq hseg]
+    rw [mem_unitSegment_iff_of_coe_coord_eq_pow hφq hseg, ← exp_mul_pow he, ← hw',
+      ← mem_unitSegment_iff_of_coe_coord_eq_pow hφq hseg]
     exact hw''
   -- The edge of `φ w` is that of some sheet `m`, and rotation carries it to the edge of `σ m`.
   set m := (hp.finEquivConnectedComponentsUnitSegment ν).symm (ConnectedComponents.mk ⟨φ w, hw⟩)
@@ -309,43 +266,6 @@ private theorem exists_coe_coord_chart_eq_pow_of_eq (hp : IsCoveringMap p)
   subst hq
   obtain ⟨hw, -, h⟩ := exists_coe_coord_chart_eq_pow hp hfin i w
   exact ⟨hw, h⟩
-
-/-- In the coordinate `z ↦ 2 * z` of `D₀*`, the segment `(0, 1)` is the positive real axis. -/
-private theorem mem_unitSegment_iff_zero (z : ThricePuncturedSphere)
-    (hz : z ∈ Puncture.zero.neighborhood) :
-    z ∈ unitSegment ↔ (Puncture.zero.coord ⟨z, hz⟩ : ℂ).im = 0 ∧
-      0 < (Puncture.zero.coord ⟨z, hz⟩ : ℂ).re := by
-  have hre : (z : ℂ).re < 1 := by
-    have : ‖(z : ℂ)‖ < 1 / 2 := by simpa using hz
-    linarith [re_le_norm (z : ℂ)]
-  have him2 : (2 * (z : ℂ)).im = 2 * (z : ℂ).im := by simp
-  have hre2 : (2 * (z : ℂ)).re = 2 * (z : ℂ).re := by simp
-  rw [mem_unitSegment, Puncture.coe_coord_zero, him2, hre2]
-  constructor
-  · rintro ⟨h0, h1, -⟩
-    exact ⟨by rw [h0, mul_zero], by linarith⟩
-  · rintro ⟨h0, h1⟩
-    exact ⟨by linarith, by linarith, hre⟩
-
-/-- In the coordinate `z ↦ 2 * (1 - z)` of `D₁*`, the segment `(0, 1)` is the positive real
-axis. -/
-private theorem mem_unitSegment_iff_one (z : ThricePuncturedSphere)
-    (hz : z ∈ Puncture.one.neighborhood) :
-    z ∈ unitSegment ↔ (Puncture.one.coord ⟨z, hz⟩ : ℂ).im = 0 ∧
-      0 < (Puncture.one.coord ⟨z, hz⟩ : ℂ).re := by
-  have hre : 0 < (z : ℂ).re := by
-    have : ‖(z : ℂ) - 1‖ < 1 / 2 := by simpa using hz
-    have := abs_re_le_norm ((z : ℂ) - 1)
-    rw [sub_re, one_re] at this
-    linarith [neg_abs_le ((z : ℂ).re - 1)]
-  have him2 : (2 * (1 - (z : ℂ))).im = -(2 * (z : ℂ).im) := by simp
-  have hre2 : (2 * (1 - (z : ℂ))).re = 2 * (1 - (z : ℂ).re) := by simp
-  rw [mem_unitSegment, Puncture.coe_coord_one, him2, hre2]
-  constructor
-  · rintro ⟨h0, -, h1⟩
-    exact ⟨by rw [h0, mul_zero, neg_zero], by linarith⟩
-  · rintro ⟨h0, h1⟩
-    exact ⟨by linarith, hre, by linarith⟩
 
 /-! ### Rotations at the black and white points -/
 
@@ -382,11 +302,7 @@ private theorem chartAt_center_symm_mul_mem_edge_iff_of (hp : IsCoveringMap p)
   -- Off the centre, both points lie in `E`, on the filling chart.
   obtain ⟨w, rfl⟩ : ∃ w : 𝔻*, inclusion sdiff_subset w = d :=
     ⟨⟨d, d.2, fun h ↦ hd (Subtype.ext h)⟩, rfl⟩
-  have hmem : ζ * (w : ℂ) ∈ ball (0 : ℂ) 1 \ {0} := by
-    refine ⟨mem_ball_zero_iff.2 ?_, mul_ne_zero (norm_ne_zero_iff.1 (by simp [hζ])) w.2.2⟩
-    rw [norm_mul, hζ, one_mul]
-    exact mem_ball_zero_iff.1 w.2.1
-  let w' : 𝔻* := ⟨_, hmem⟩
+  let w' : 𝔻* := ⟨_, mul_mem_puncturedDisc_of_norm_eq_one hζ w⟩
   have hw' : ζ * ((inclusion sdiff_subset w : ball (0 : ℂ) 1) : ℂ) =
       ((inclusion sdiff_subset w' : ball (0 : ℂ) 1) : ℂ) := by
     simp [w']
@@ -411,7 +327,7 @@ theorem incl_chart_overZero_mem_edge_iff (hp : IsCoveringMap p) (ν : p ⁻¹' {
     (degree_ne_zero hp hfin _)
     (exists_coe_coord_chart_eq_pow_of_eq hp hfin (q := .zero)
       (congrArg Sigma.fst (sigmaEquiv_overZero (p := p) b)))
-    mem_unitSegment_iff_zero (y := zeroBasePt)
+    mem_unitSegment_iff_coord_zero (y := zeroBasePt)
     ((Puncture.coe_coord_zero zeroBasePt).trans (by rw [coe_zeroBasePt]; norm_num)) (α := αZero)
     (fun m _ ↦ hp.finEquivConnectedComponentsUnitSegment_eq_mk_monodromy_αZero ν m) (δ := δZero)
     (fun t ↦ (Puncture.coe_coord_zero (δZero t)).trans (by rw [coe_δZero]; simp [circleMap]; ring))
@@ -434,7 +350,7 @@ theorem incl_chart_overOne_mem_edge_iff (hp : IsCoveringMap p) (ν : p ⁻¹' {b
     (degree_ne_zero hp hfin _)
     (exists_coe_coord_chart_eq_pow_of_eq hp hfin (q := .one)
       (congrArg Sigma.fst (sigmaEquiv_overOne (p := p) b)))
-    mem_unitSegment_iff_one (y := oneBasePt)
+    mem_unitSegment_iff_coord_one (y := oneBasePt)
     ((Puncture.coe_coord_one oneBasePt).trans (by rw [coe_oneBasePt]; norm_num)) (α := αOne)
     (fun m _ ↦ hp.finEquivConnectedComponentsUnitSegment_eq_mk_monodromy_αOne ν m) (δ := δOne)
     (fun t ↦ (Puncture.coe_coord_one (δOne t)).trans (by rw [coe_δOne]; simp [circleMap]; ring))
