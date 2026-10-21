@@ -430,6 +430,12 @@ theorem support_single_subset (h : H) (r : R) :
   exact hg (coeff_single_of_ne hgh r)
 
 @[simp]
+theorem support_single_of_ne {h : H} {r : R} (hr : r ≠ 0) :
+    (single h r : NovikovSeries R H N).support = {h} := by
+  classical
+  rw [support, coeff_single, Pi.support_single_of_ne hr]
+
+@[simp]
 theorem single_zero (h : H) : (single h 0 : NovikovSeries R H N) = 0 := by
   ext g
   by_cases hgh : g = h
@@ -445,12 +451,26 @@ theorem single_eq_zero_iff {h : H} {r : R} : (single h r : NovikovSeries R H N) 
 
 end Zero
 
+@[simp]
 theorem single_add [AddZeroClass R] (h : H) (r s : R) :
     (single h (r + s) : NovikovSeries R H N) = single h r + single h s := by
   ext g
   by_cases hgh : g = h
   · rw [hgh, coeff_add, coeff_single_same, coeff_single_same, coeff_single_same]
   · rw [coeff_add, coeff_single_of_ne hgh, coeff_single_of_ne hgh, coeff_single_of_ne hgh, add_zero]
+
+@[simp]
+theorem single_neg [NegZeroClass R] (h : H) (r : R) :
+    (single h (-r) : NovikovSeries R H N) = -single h r := by
+  classical
+  refine coeff_injective ?_
+  rw [coeff_neg', coeff_single, coeff_single]
+  exact Pi.single_op (fun _ => (Neg.neg : R → R)) (fun _ => neg_zero) h r
+
+@[simp]
+theorem single_sub [AddGroup R] (h : H) (r s : R) :
+    (single h (r - s) : NovikovSeries R H N) = single h r - single h s := by
+  rw [sub_eq_add_neg, single_add, single_neg, sub_eq_add_neg]
 
 theorem smul_single {S : Type*} [Zero R] [SMulZeroClass S R] (s : S) (h : H) (r : R) :
     s • (single h r : NovikovSeries R H N) = single h (s • r) := by

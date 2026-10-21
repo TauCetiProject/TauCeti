@@ -202,6 +202,12 @@ theorem coeff_single_zero_mul (r : R) (a : NovikovSeries R H N) (h : H) :
   rw [zero_add] at huv
   rw [huv, mem_singleton]
 
+/-- Multiplying by a constant series is scalar multiplication. -/
+@[simp]
+theorem single_zero_mul_eq_smul (r : R) (a : NovikovSeries R H N) : single 0 r * a = r • a := by
+  ext h
+  rw [coeff_single_zero_mul, coeff_smul, smul_eq_mul]
+
 /-- Multiplying by a constant series `single 0 r` multiplies each coefficient on the right. -/
 @[simp]
 theorem coeff_mul_single_zero (a : NovikovSeries R H N) (r : R) (h : H) :
@@ -295,13 +301,6 @@ instance instNonAssocSemiring [NonAssocSemiring R] :
   mul_one a := by
     ext h
     rw [one_def, coeff_mul_single_zero, mul_one]
-
-/-- Multiplying by a constant series is scalar multiplication. -/
-@[simp]
-theorem single_zero_mul_eq_smul [NonAssocSemiring R] (r : R)
-    (a : NovikovSeries R H N) : single 0 r * a = r • a := by
-  ext h
-  rw [coeff_single_zero_mul, coeff_smul, smul_eq_mul]
 
 instance instNonUnitalNonAssocRing [NonUnitalNonAssocRing R] :
     NonUnitalNonAssocRing (NovikovSeries R H N) where
