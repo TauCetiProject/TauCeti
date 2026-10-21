@@ -53,12 +53,16 @@ operators, whose Fredholm determinants are entire series.
 * `PowerSeries.IsEntire.add_divByMonic` and `PowerSeries.IsEntire.smul_divByMonic`, with their
   `modByMonic` companions: on entire series, quotient and remainder are additive and
   `R`-linear.
+* `PowerSeries.IsEntire.map_divByMonic` and `PowerSeries.IsEntire.map_modByMonic`: continuous
+  coefficient homomorphisms commute with quotient and remainder.
 * `PowerSeries.divByMonic_coe` and `PowerSeries.modByMonic_coe`: on polynomials, these are
   `Polynomial.divByMonic` and `Polynomial.modByMonic`.
 * `PowerSeries.divByMonic_modByMonic_unique`: over an ultrametric ring with `‖1‖ = 1`, a division
   with entire quotient and remainder of degree less than `d` is this one.
 * `PowerSeries.IsEntire.coe_mul_divByMonic_cancel_left`: over an ultrametric ring with
   `‖1‖ = 1`, dividing `p * q` by `p` returns `q` for entire `q`.
+* `PowerSeries.IsEntire.modByMonic_coe_add_coe_mul`: over an ultrametric ring with `‖1‖ = 1`,
+  the remainder of `g + p * q`, for a polynomial `g` and entire `q`, is `g %ₘ p`.
 * `PowerSeries.IsEntire.modByMonic_eq_zero_iff`: over an ultrametric ring with `‖1‖ = 1`, the
   remainder vanishes exactly when `p` divides `f` with entire quotient.
 
@@ -294,6 +298,37 @@ theorem IsEntire.smul_modByMonic (hf : f.IsEntire) (a : R) (p : Polynomial R) :
     (a • f).modByMonic p = a • f.modByMonic p := by
   rw [modByMonic, modByMonic, hf.smul_divByMonic, ← map_smul, mul_smul_comm, smul_sub]
 
+section Map
+
+variable {S : Type*} [CommRing S] [TopologicalSpace S] [T2Space S]
+
+/-- A continuous coefficient homomorphism commutes with the quotient of entire division by a
+monic polynomial. -/
+theorem IsEntire.map_divByMonic (hf : f.IsEntire) (hp : p.Monic) (φ : R →+* S)
+    (hφ : Continuous φ) :
+    (PowerSeries.map φ f).divByMonic (p.map φ) = PowerSeries.map φ (f.divByMonic p) := by
+  ext n
+  nontriviality S
+  -- The inverse of the reverse of `p.map φ` is the image of the inverse of the reverse of `p`.
+  have hinv : invOfUnit ((p.map φ).reverse : S⟦X⟧) 1 =
+      PowerSeries.map φ (invOfUnit (p.reverse : R⟦X⟧) 1) := by
+    rw [map_invOfUnit_ringHom, map_one, Polynomial.reverse, Polynomial.reverse, hp.natDegree_map,
+      Polynomial.reflect_map, Polynomial.polynomial_map_coe]
+  rw [coeff_divByMonic, coeff_map, hinv, hp.natDegree_map]
+  simp only [coeff_map]
+  simpa only [Function.comp_def, map_mul] using
+    ((hasSum_coeff_divByMonic hf p n).map φ hφ).tsum_eq
+
+/-- A continuous coefficient homomorphism commutes with the remainder of entire division by a
+monic polynomial. -/
+theorem IsEntire.map_modByMonic (hf : f.IsEntire) (hp : p.Monic) (φ : R →+* S)
+    (hφ : Continuous φ) : (PowerSeries.map φ f).modByMonic (p.map φ) = (f.modByMonic p).map φ := by
+  nontriviality S
+  rw [modByMonic, modByMonic, hf.map_divByMonic hp φ hφ, hp.natDegree_map,
+    Polynomial.polynomial_map_coe, ← map_mul, ← map_sub, trunc_map]
+
+end Map
+
 /-- On a polynomial, entire division is polynomial division: the quotient vanishes past the
 degree of the polynomial, so the division identity is one of polynomials. -/
 private theorem divByMonic_coe_and_modByMonic_coe (g : Polynomial R) (hp : p.Monic) :
@@ -387,6 +422,16 @@ monic polynomial `p`, for entire `q`. -/
 theorem IsEntire.coe_mul_modByMonic {q : R⟦X⟧} (hq : q.IsEntire) (hp : p.Monic) :
     ((p : R⟦X⟧) * q).modByMonic p = 0 :=
   (hq.coe_mul_divByMonic_and_modByMonic hp).2
+
+/-- Over an ultrametric ring with `‖1‖ = 1`, adding `p * q` to a polynomial `g`, for entire `q`,
+does not change its remainder on division by the monic polynomial `p`. -/
+theorem IsEntire.modByMonic_coe_add_coe_mul {q : R⟦X⟧} (hq : q.IsEntire) (hp : p.Monic)
+    (g : Polynomial R) : ((g : R⟦X⟧) + p * q).modByMonic p = g %ₘ p := by
+  have : Nontrivial R := NormOneClass.nontrivial
+  refine (divByMonic_modByMonic_unique (((g /ₘ p : Polynomial R) : R⟦X⟧) + q) (g %ₘ p) hp
+    ((isEntire_coe _).add hq) ⟨?_, Polynomial.degree_modByMonic_lt _ hp⟩).2
+  rw [mul_add, ← add_assoc, ← Polynomial.coe_mul, ← Polynomial.coe_add,
+    Polynomial.modByMonic_add_div]
 
 /-- Over an ultrametric ring with `‖1‖ = 1`, an entire series leaves no remainder on division by
 a monic polynomial `p` exactly when it is `p` times an entire series. -/
