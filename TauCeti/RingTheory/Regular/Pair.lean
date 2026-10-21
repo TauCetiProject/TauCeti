@@ -97,7 +97,6 @@ theorem koszulPairRight_comp_koszulPairLeft (x y : R) :
     smul_neg, smul_smul, LinearMap.zero_apply]
   rw [mul_comm x y, neg_add_cancel]
 
-@[simp]
 theorem koszulPairRight_koszulPairLeft_apply (x y : R) (c : M) :
     koszulPairRight x y (koszulPairLeft x y c) = 0 := by
   simpa only [LinearMap.comp_apply, LinearMap.zero_apply] using
