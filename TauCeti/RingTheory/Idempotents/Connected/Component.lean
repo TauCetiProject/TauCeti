@@ -8,6 +8,8 @@ module
 public import Mathlib.Topology.Connected.LocallyConnected
 public import TauCeti.RingTheory.Spectrum.Prime.Topology
 
+import TauCeti.Topology.Homeomorph.SetCongr
+
 /-!
 # The idempotent cutting out a connected component
 
