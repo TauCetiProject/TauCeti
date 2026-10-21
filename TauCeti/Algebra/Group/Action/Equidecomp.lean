@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Group.Action.Equidecomp
 public import Mathlib.Algebra.Group.Action.Pointwise.Set.Basic
 public import Mathlib.Data.Set.Lattice.Disjoint
-public import Mathlib.Order.FixedPoints
+public import Mathlib.SetTheory.Cardinal.SchroederBernstein
 
 /-!
 # Equidecomposability of sets
@@ -25,9 +25,10 @@ subsets, finite disjoint unions, single translations, equivariant bijections and
 acting group that do not change the action, and that `EquidecomposableLE G` is a preorder. The main
 result is the Schröder–Bernstein theorem for equidecompositions (`EquidecomposableLE.antisymm`):
 if each of `A` and `B` is equidecomposable with a subset of the other, then `A` and `B` are
-equidecomposable. Banach's proof splits `A` along a fixed point of a monotone map on `Set X`, so the
-resulting equidecomposition uses only the finitely many group elements of the first given
-equidecomposition together with the inverses of those of the second.
+equidecomposable. It follows from Mathlib's Schröder–Bernstein theorem for injections preserving a
+relation (`Function.Embedding.schroeder_bernstein_of_rel`), so the resulting equidecomposition uses
+only the finitely many group elements of the first given equidecomposition together with the
+inverses of those of the second.
 These are the basic tools for paradoxical decompositions, for instance in Tarski's characterization
 of amenable groups.
 
@@ -324,28 +325,32 @@ theorem equidecomposable_smul_set (g : G) (A : Set X) : Equidecomposable G A (g 
 equidecomposable with a subset of the other, then `A` and `B` are equidecomposable. -/
 theorem EquidecomposableLE.antisymm (hAB : EquidecomposableLE G A B)
     (hBA : EquidecomposableLE G B A) : Equidecomposable G A B := by
+  classical
   obtain ⟨B', hB', f, rfl, rfl⟩ := hAB
   obtain ⟨A', hA', g, rfl, rfl⟩ := hBA
-  -- Banach's argument: a fixed point `C = f.source \ g '' (g.source \ f '' C)` splits `f.source`
-  -- into `C`, moved by `f`, and its complement, which is the `g`-image of `g.source \ f '' C`.
-  let φ : Set X →o Set X :=
-    ⟨fun C => f.source \ g '' (g.source \ f '' C), fun _ _ h =>
-      sdiff_subset_sdiff_right (image_mono (sdiff_subset_sdiff_right (image_mono h)))⟩
-  set C := φ.lfp
-  have hC : f.source \ g '' (g.source \ f '' C) = C := φ.map_lfp
-  have hCs : C ⊆ f.source := hC ▸ sdiff_subset
-  have hfC : f '' C ⊆ g.source := (image_mono hCs).trans (f.image_source_eq_target ▸ hB')
-  have hgD : g '' (g.source \ f '' C) = f.source \ C :=
-    calc g '' (g.source \ f '' C)
-        = f.source \ (f.source \ g '' (g.source \ f '' C)) :=
-          (sdiff_sdiff_cancel_left ((image_mono sdiff_subset).trans
-            (g.image_source_eq_target ▸ hA'))).symm
-      _ = f.source \ C := by rw [hC]
-  have h₁ := f.equidecomposable_image hCs
-  have h₂ := (g.equidecomposable_image (A := g.source \ f '' C) sdiff_subset).symm
-  rw [hgD] at h₂
-  simpa [union_sdiff_cancel hCs, union_sdiff_cancel hfC] using
-    h₁.union h₂ disjoint_sdiff_right disjoint_sdiff_right
+  obtain hX | hX := isEmpty_or_nonempty X
+  · simp [eq_empty_of_isEmpty]
+  -- Schröder–Bernstein for the induced injections `f.source → g.source → f.source`, keeping track
+  -- of the group element moving each point.
+  obtain ⟨h, hh, hR⟩ := Embedding.schroeder_bernstein_of_rel
+    (f := fun a : f.source => (⟨f a, hB' (f.apply_mem_target a.2)⟩ : g.source))
+    (g := fun b : g.source => (⟨g b, hA' (g.apply_mem_target b.2)⟩ : f.source))
+    (fun a b hab => Subtype.ext (f.injOn a.2 b.2 (congrArg Subtype.val hab)))
+    (fun a b hab => Subtype.ext (g.injOn a.2 b.2 (congrArg Subtype.val hab)))
+    (fun a b => ∃ k ∈ f.witness ∪ g.witness⁻¹, (b : X) = k • (a : X))
+    (fun a => let ⟨k, hk, e⟩ := f.isDecompOn a a.2; ⟨k, Finset.mem_union_left _ hk, e⟩)
+    (fun b => let ⟨k, hk, e⟩ := g.isDecompOn b b.2
+      ⟨k⁻¹, Finset.mem_union_right _ (Finset.inv_mem_inv hk), by simp [e]⟩)
+  let F : X → X := fun x => if hx : x ∈ f.source then h ⟨x, hx⟩ else x
+  have hF : BijOn F f.source g.source := by
+    refine ⟨fun x hx => by simp [F, hx], fun x hx y hy hxy => ?_, fun y hy => ?_⟩
+    · exact congrArg Subtype.val (hh.1 (Subtype.ext (by simpa [F, hx, hy] using hxy)) :
+        (⟨x, hx⟩ : f.source) = ⟨y, hy⟩)
+    · obtain ⟨a, ha⟩ := hh.2 ⟨y, hy⟩
+      exact ⟨a, a.2, by simp [F, ha]⟩
+  refine ⟨⟨hF.toPartialEquiv F _ _, f.witness ∪ g.witness⁻¹, fun a ha => ?_⟩, rfl, rfl⟩
+  obtain ⟨k, hk, e⟩ := hR ⟨a, ha⟩
+  exact ⟨k, hk, (dite_eq_left_of_eq_true (eq_true ha)).trans e⟩
 
 /-- Equidecomposability is the equivalence relation induced by the preorder
 `EquidecomposableLE G`. -/
