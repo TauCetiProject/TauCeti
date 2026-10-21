@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Group.InfiniteSum
+public import Mathlib.Analysis.Normed.Operator.NormedSpace
 public import Mathlib.Analysis.SpecificLimits.Basic
 public import Mathlib.Topology.Algebra.InfiniteSum.Module
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Tower
@@ -18,15 +19,44 @@ Let `P n : E (n + 1) → E n` be continuous linear maps between Banach spaces an
 are so small that their images under the tower composites `E (m + k) → E m` decay
 geometrically in `k`, then the series `∑ U n (y n)` converges, and every tail of it factors
 through `U m` with a small preimage. This is the summation step of gliding-hump arguments, such
-as the proof of the stability lemma for separating spaces.
+as the proof of the stability lemma for separating spaces. The selection step chooses the humps:
+a discontinuous linear map sends arbitrarily small vectors to vectors of arbitrarily large norm.
 
 ## Main declarations
 
+* `LinearMap.exists_norm_le_le_norm_of_not_continuous`: small vectors with large images under a
+  discontinuous linear map.
 * `TauCeti.exists_norm_le_and_apply_eq_sub_sum`: the tails of the gliding-hump series factor
   through the maps `U m` with small preimages.
 -/
 
 public section
+
+namespace LinearMap
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- A discontinuous linear map between normed spaces sends arbitrarily small vectors to vectors
+of arbitrarily large norm. -/
+theorem exists_norm_le_le_norm_of_not_continuous (f : E →ₗ[𝕜] F) (hf : ¬Continuous f) {ε : ℝ}
+    (hε : 0 < ε) (M : ℝ) : ∃ y, ‖y‖ ≤ ε ∧ M ≤ ‖f y‖ := by
+  by_contra! h
+  have hM : 0 < M := (norm_nonneg _).trans_lt (h 0 (by simpa using hε.le))
+  obtain ⟨c, hc⟩ := NontriviallyNormedField.non_trivial (α := 𝕜)
+  have hc0 : 0 < ‖c‖ := one_pos.trans hc
+  have hb : ∀ x, ‖f x‖ ≤ M * ‖c‖ / ε * ‖x‖ := by
+    intro x
+    rcases eq_or_ne x 0 with rfl | hx
+    · simp
+    refine SemilinearMapClass.bound_of_shell_semi_normed f hε hc (fun x hx hx' ↦ ?_)
+      (norm_ne_zero_iff.2 hx)
+    calc ‖f x‖ ≤ M := (h x hx'.le).le
+      _ = M * ‖c‖ / ε * (ε / ‖c‖) := by field_simp
+      _ ≤ M * ‖c‖ / ε * ‖x‖ := by gcongr
+  exact hf (AddMonoidHomClass.continuous_of_bound f _ hb)
+
+end LinearMap
 
 namespace TauCeti
 
