@@ -19,8 +19,9 @@ units is `{1, -1}` and the torsion order is `2`. This generalises Mathlib's
 `NumberField.Units.torsionOrder_eq_two_of_odd_finrank`, which obtains the real place from odd
 degree, to every field with a real place, in particular to the real quadratic fields.
 
-For an arbitrary number field `K`, the torsion order `w` is bounded by the degree: `K` contains a
-primitive `w`-th root of unity, which generates a subfield of degree `φ(w)`, so `φ(w) ≤ [K : ℚ]`.
+For an arbitrary number field `K` with torsion order `w`, the degree bounds `φ(w)` (not `w`
+itself): `K` contains a primitive `w`-th root of unity, which generates a subfield of degree
+`φ(w)`, so `φ(w) ≤ [K : ℚ]`.
 When the unit rank is `0` (for `ℚ` and the imaginary quadratic fields) every unit is torsion.
 
 ## Main results
@@ -100,8 +101,8 @@ theorem exists_isPrimitiveRoot_torsionOrder : ∃ ζ : K, IsPrimitiveRoot ζ (to
     ← IsPrimitiveRoot.coe_coe_iff] at hμ
   exact ⟨_, hμ⟩
 
-/-- **The degree bounds the roots of unity.** A number field `K` contains the cyclotomic field
-of order `torsionOrder K`, whose degree over `ℚ` is `φ(torsionOrder K)`; hence
+/-- **The degree bounds the totient of the torsion order.** A number field `K` contains the
+cyclotomic field of order `torsionOrder K`, whose degree over `ℚ` is `φ(torsionOrder K)`; hence
 `φ(torsionOrder K) ≤ [K : ℚ]`. -/
 theorem totient_torsionOrder_le_finrank : (torsionOrder K).totient ≤ finrank ℚ K := by
   obtain ⟨ζ, hζ⟩ := exists_isPrimitiveRoot_torsionOrder (K := K)
