@@ -25,9 +25,9 @@ and `g₀ ∈ P(λ)(C ⧸ J)`. By definition `T ↦ λ(T) g₀ λ(T)⁻¹` exten
 not be equivariant, so `F(1)` need not lie in `P(λ)(C)`. The point `Ψ = λ(T)⁻¹ F λ(T)` over
 `C[T;T⁻¹]` reduces to the constant point `g₀` modulo `J`, and the constant coefficient of `Ψ` is
 the required lift. It is multiplicative because the nonconstant coefficients of `Ψ` lie in the
-square-zero ideal `J`. It lies in `P(λ)(C)` because on a coefficient of weight `n` of universal
-conjugation, `Ψ` is a single monomial whose constant coefficient is the `Xⁿ`-coefficient of
-`F`. That coefficient vanishes for `n < 0`.
+square-zero ideal `J`. It lies in `P(λ)(C)` because on a coefficient `x` of weight `n` of
+universal conjugation, `Ψ` is `F(x) · T⁻ⁿ`, whose constant coefficient is the `Xⁿ`-coefficient
+of `F(x)`. That coefficient vanishes for `n < 0`.
 
 ## Main declarations
 
@@ -64,8 +64,8 @@ private noncomputable def twistedPoint (F : WithConv (H →ₐ[R] Polynomial C))
     WithConv (H →ₐ[R] LaurentPolynomial C) :=
   (genericPoint C l)⁻¹ * ofPolyPoint C F * genericPoint C l
 
-/-- On a coefficient of weight `n` of universal conjugation, the twisted point is the single
-monomial `F · T⁻ⁿ`. -/
+/-- On a coefficient of weight `n` of universal conjugation, the twisted point is the value of
+`F`, read as a Laurent polynomial, times `T⁻ⁿ`. -/
 private theorem twistedPoint_coeff_conjugationAlgHom (F : WithConv (H →ₐ[R] Polynomial C))
     (h : H) (n : ℤ) :
     (twistedPoint l F).ofConv ((conjugationAlgHom l h).coeff n) =
