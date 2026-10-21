@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.PowerSeries.Inverse
 public import Mathlib.RingTheory.PowerSeries.WellKnown
 public import TauCeti.RingTheory.PowerSeries.Expand
+public import TauCeti.RingTheory.PowerSeries.PiTopology
 
 /-!
 # Four-twist multiplicity weights of square-zero pseudoholomorphic tori

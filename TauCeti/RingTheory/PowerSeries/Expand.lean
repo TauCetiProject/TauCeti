@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Data.Finset.Finsupp
 public import Mathlib.RingTheory.PowerSeries.Expand
-public import Mathlib.RingTheory.PowerSeries.PiTopology
 
 /-!
 # Products of expanded power series
@@ -21,22 +20,11 @@ the sum running over the multiplicity functions `l` supported on `s` with `∑ i
 This is the generating-function form of independent-component expansion: the factor `i` occurs
 with multiplicity `l i` and contributes `l i * d i` to the total degree.
 
-When the factors are congruent to `1` modulo higher and higher powers of `X`, products over
-infinitely many factors make sense in the coefficientwise topology, and each coefficient is computed
-by a finite cutoff of the product. An expanded series `f (X ^ d)` with constant coefficient `1`
-is congruent to `1` modulo `X ^ d`, so products of expanded series with finitely many factors of
-each expansion degree are of this kind.
-
 ## Main results
 
 * `PowerSeries.coeff_prod_expand`: the coefficients of a finite product of expanded series, as a
   sum over multiplicity functions.
 * `PowerSeries.X_pow_dvd_expand_sub_C_constantCoeff`: `f (X ^ p) - f(0)` is divisible by `X ^ p`.
-* `PowerSeries.coeff_prod_eq_coeff_prod_of_X_pow_dvd_sub_one`: factors congruent to `1` modulo
-  `X ^ (n + 1)` do not affect the `n`-th coefficient of a finite product.
-* `PowerSeries.WithPiTopology.hasProd_of_X_pow_dvd_sub_one`: if, for each `n`, every factor outside
-  a finite set `F n` is congruent to `1` modulo `X ^ (n + 1)`, the infinite product converges and
-  its `n`-th coefficient is that of the finite product over `F n`.
 -/
 
 public section
@@ -108,39 +96,5 @@ theorem X_pow_dvd_expand_sub_C_constantCoeff (p : ℕ) (hp : p ≠ 0) (f : R⟦X
   obtain ⟨g, hg⟩ := X_dvd_iff.2 (by simp : constantCoeff (f - C (constantCoeff f)) = 0)
   refine ⟨expand p hp g, ?_⟩
   rw [← expand_C p hp, ← map_sub, hg, map_mul, expand_X]
-
-/-- **Finite cutoff.** Factors congruent to `1` modulo `X ^ (n + 1)` do not change the `n`-th
-coefficient of a finite product. -/
-theorem coeff_prod_eq_coeff_prod_of_X_pow_dvd_sub_one [DecidableEq ι] {s t : Finset ι}
-    (hts : t ⊆ s) {g : ι → R⟦X⟧} {n : ℕ} (h : ∀ i ∈ s \ t, X ^ (n + 1) ∣ g i - 1) :
-    coeff n (∏ i ∈ s, g i) = coeff n (∏ i ∈ t, g i) := by
-  have hdvd : X ^ (n + 1) ∣ ∏ i ∈ s \ t, g i - 1 := by
-    refine prod_induction g (fun a ↦ X ^ (n + 1) ∣ a - 1) (fun a b ha hb ↦ ?_) (by simp) h
-    have := dvd_add (dvd_mul_of_dvd_right hb a) ha
-    rwa [mul_sub_one, sub_add_sub_cancel] at this
-  obtain ⟨q, hq⟩ := hdvd
-  rw [← prod_sdiff hts, sub_eq_iff_eq_add.1 hq, add_mul, one_mul, map_add, mul_assoc,
-    coeff_X_pow_mul']
-  simp
-
-namespace WithPiTopology
-
-open scoped PowerSeries.WithPiTopology
-
-variable [TopologicalSpace R]
-
-/-- **Infinite products through finite cutoffs.** If, for each `n`, every factor `g i` with
-`i ∉ F n` is congruent to `1` modulo `X ^ (n + 1)`, then the product of all the `g i` converges
-in the coefficientwise topology, and its `n`-th coefficient is that of `∏ i ∈ F n, g i`. -/
-theorem hasProd_of_X_pow_dvd_sub_one {g : ι → R⟦X⟧} (F : ℕ → Finset ι)
-    (hF : ∀ n i, i ∉ F n → X ^ (n + 1) ∣ g i - 1) :
-    HasProd g (mk fun n ↦ coeff n (∏ i ∈ F n, g i)) := by
-  classical
-  rw [HasProd, tendsto_iff_coeff_tendsto]
-  refine fun n ↦ tendsto_atTop_of_eventually_const (i₀ := F n) fun s hs ↦ ?_
-  rw [coeff_mk]
-  exact coeff_prod_eq_coeff_prod_of_X_pow_dvd_sub_one hs fun i hi ↦ hF n i (mem_sdiff.1 hi).2
-
-end WithPiTopology
 
 end PowerSeries
