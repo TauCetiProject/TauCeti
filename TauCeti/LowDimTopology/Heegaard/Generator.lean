@@ -184,6 +184,13 @@ theorem point_injective : Function.Injective D.point := by
       (g i).property.2
   exact congrArg (Sigma.mk σ) (funext fun i => Subtype.ext (congrFun h i))
 
+open Finset in
+/-- Two generators whose points agree on every `α`-curve are equal. -/
+theorem eq_of_card_filter_point_ne_eq_zero [DecidableEq Point] {g g' : D.Generator}
+    (h : #{i | D.point g i ≠ D.point g' i} = 0) : g = g' :=
+  D.point_injective (funext fun i => by
+    simpa using filter_eq_empty_iff.mp (card_eq_zero.mp h) (mem_univ i))
+
 /-- The chosen point over `i` has `α`-label `i`. -/
 @[simp]
 theorem alpha_coe (g : D.Generator) (i : Fin n) : D.alpha (g.2 i) = i :=
