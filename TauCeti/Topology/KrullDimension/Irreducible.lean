@@ -21,6 +21,10 @@ The argument only uses that the closure of the image of `Z` is not all of `Y`, s
 for an inducing map `f : X → Y` with non-dense range. The set-level form concerns a closed subset
 `Z` of an ambient space strictly contained in an irreducible subset `Y`.
 
+In the other extreme, an irreducible `T₀` space has Krull dimension zero exactly when it has at
+most one point: in dimension zero the closure of every point is a maximal irreducible closed
+subset, hence the whole space, and in a `T₀` space two points with the same closure coincide.
+
 ## Main declarations
 
 * `Topology.IsInducing.topologicalKrullDim_add_one_le`: if `f : X → Y` is inducing with
@@ -34,6 +38,8 @@ for an inducing map `f : X → Y` with non-dense range. The set-level form conce
 * `IsIrreducible.topologicalKrullDim_add_one_le`, `IsIrreducible.topologicalKrullDim_lt`: the
   same statements for a closed subset strictly contained in an irreducible subset of an ambient
   space.
+* `TauCeti.topologicalKrullDim_eq_zero_iff_subsingleton`: an irreducible `T₀` space has Krull
+  dimension zero if and only if it is a subsingleton.
 
 ## References
 
@@ -126,3 +132,27 @@ theorem topologicalKrullDim_lt (hY : IsIrreducible Y) (hZ : IsClosed Z) (hZY : Z
     hZY.not_subset <| hZ.closure_eq ▸ (denseRange_inclusion_iff _).mp h) hYd
 
 end IsIrreducible
+
+namespace TauCeti
+
+variable {X : Type*} [TopologicalSpace X] [IrreducibleSpace X]
+
+/-- An irreducible `T₀` space has Krull dimension zero if and only if it has at most one point. -/
+theorem topologicalKrullDim_eq_zero_iff_subsingleton [T0Space X] :
+    topologicalKrullDim X = 0 ↔ Subsingleton X := by
+  let top : IrreducibleCloseds X := ⟨univ, IrreducibleSpace.isIrreducible_univ X, isClosed_univ⟩
+  constructor
+  · intro h
+    have hmax := krullDim_nonpos_iff_forall_isMax.mp h.le
+    have hclosure (x : X) : closure {x} = univ := by
+      let Z : IrreducibleCloseds X :=
+        ⟨closure {x}, isIrreducible_singleton.closure, isClosed_closure⟩
+      exact univ_subset_iff.mp (hmax Z (b := top) (subset_univ _))
+    exact ⟨fun x y ↦ (inseparable_iff_closure_eq.mpr ((hclosure x).trans (hclosure y).symm)).eq⟩
+  · intro _
+    have : Subsingleton (IrreducibleCloseds X) := ⟨fun Z W ↦ IrreducibleCloseds.ext <|
+      (Z.isIrreducible.nonempty.eq_univ).trans W.isIrreducible.nonempty.eq_univ.symm⟩
+    have : Nonempty (IrreducibleCloseds X) := ⟨top⟩
+    exact krullDim_eq_zero
+
+end TauCeti
