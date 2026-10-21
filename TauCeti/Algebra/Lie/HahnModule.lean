@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Lie.Basic
 public import TauCeti.RingTheory.HahnSeries.Multiplication
 -- Proof-only: reindexing double sums over antidiagonals.
 import TauCeti.Data.Finset.MulAntidiagonal
-import TauCeti.Data.Finset.SMulAntidiagonal
 
 /-!
 # Lie algebras of Hahn series with Lie algebra coefficients
@@ -242,7 +241,7 @@ instance instLieAlgebraHahnSeries : LieAlgebra (HahnSeries Γ R) (HahnModule Γ 
       coeff_smul_right (hx.add hy) (support_lie_subset x y)]
     simp_rw [coeff_smul, coeff_lie, lie_sum, smul_sum, lie_smul]
     rw [sum_sigma', sum_sigma']
-    exact sum_sigma_vaddAntidiagonal_left_comm hx f.isPWO_support hy d fun i k j ↦
+    exact sum_sigma_antidiagonal_left_comm hx f.isPWO_support hy d fun i k j ↦
       f.coeff k • ⁅((of R).symm x).coeff i, ((of R).symm y).coeff j⁆
 
 end LieAlgebra
