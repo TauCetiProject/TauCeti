@@ -226,23 +226,6 @@ private theorem inner_mem (hx : ∀ i < n, x i ∈ LinearMap.range (homInclusion
     (a := fun j ↦ a (p + j)) (b := fun j ↦ b (p + j)) fun i hi ↦ hx (p + i) (by omega)
   rwa [show p + (s - 1) = p + s - 1 by omega, add_zero] at h
 
-/-- Replacing a block of a string of morphisms `aᵢ ⟶ bᵢ` by a morphism from `a (p + s - 1)` to
-`b p` gives a string of morphisms between the replaced objects. -/
-private theorem replaceBlock_mem
-    (hx : ∀ i < n, x i ∈ LinearMap.range (homInclusion (R := R) (a i) (b i)))
-    {e : TotalHom R (InducedQuiver C F)}
-    (he : e ∈ LinearMap.range (homInclusion (R := R) (a (p + s - 1)) (b p))) (hps : p + s ≤ n) :
-    ∀ i < p + 1 + (n - p - s), replaceBlock x p s e i ∈ LinearMap.range
-      (homInclusion (R := R) (replaceBlock a p s (a (p + s - 1)) i)
-        (replaceBlock b p s (b p) i)) := by
-  intro i hi
-  rcases lt_trichotomy i p with h | rfl | h
-  · rw [replaceBlock_of_lt _ _ _ _ h, replaceBlock_of_lt _ _ _ _ h, replaceBlock_of_lt _ _ _ _ h]
-    exact hx i (by omega)
-  · rwa [replaceBlock_self, replaceBlock_self, replaceBlock_self]
-  · rw [replaceBlock_of_gt _ _ _ _ h, replaceBlock_of_gt _ _ _ _ h, replaceBlock_of_gt _ _ _ _ h]
-    exact hx (i + s - 1) (by omega)
-
 /-- A Stasheff term of the induced category on a string of morphisms `aᵢ ⟶ bᵢ` is a morphism from
 `a (n - 1)` to `b 0`. -/
 private theorem stasheffTerm_mem
@@ -253,7 +236,7 @@ private theorem stasheffTerm_mem
   rw [stasheffTerm_def]
   refine Submodule.smul_mem _ _ ?_
   have h := evalNat_inducedOperation_mem (𝒞 := 𝒞) (by omega)
-    (replaceBlock_mem hx (inner_mem (𝒞 := 𝒞) hx hs hps) hps)
+    (replaceBlock_mem_range_homInclusion hx (inner_mem (𝒞 := 𝒞) hx hs hps) hps)
   have ha : replaceBlock a p s (a (p + s - 1)) (p + 1 + (n - p - s) - 1) = a (n - 1) := by
     rcases Nat.eq_or_lt_of_le (show p ≤ p + 1 + (n - p - s) - 1 by omega) with he | hlt
     · rw [← he, replaceBlock_self, show p + s - 1 = n - 1 by omega]
@@ -273,7 +256,8 @@ private theorem totalHomMap_stasheffTerm
       stasheffTerm 𝒞.m d (fun i ↦ totalHomMap R F (x i)) p s (n - p - s) := by
   rw [stasheffTerm_def, stasheffTerm_def, map_smul,
     totalHomMap_evalNat_inducedOperation (by omega)
-      (replaceBlock_mem hx (inner_mem (𝒞 := 𝒞) hx hs hps) hps) (hab.replaceBlock hs hps),
+      (replaceBlock_mem_range_homInclusion hx (inner_mem (𝒞 := 𝒞) hx hs hps) hps)
+      (hab.replaceBlock hs hps),
     ← totalHomMap_evalNat_inducedOperation hs (fun i hi ↦ hx (p + i) (by omega)) (hab.block hps)]
   congr 2
   exact funext fun i ↦ apply_replaceBlock _ _ _ _ _ _
@@ -289,7 +273,8 @@ private theorem stasheffTerm_eq_zero
       (MultilinearMap.map_coord_zero _ (⟨p, by omega⟩ : Fin (p + 1 + (n - p - s))) (by simp)),
       smul_zero]
   · rw [stasheffTerm_def,
-      evalNat_inducedOperation_eq_zero (replaceBlock_mem hx (inner_mem (𝒞 := 𝒞) hx hs hps) hps) h,
+      evalNat_inducedOperation_eq_zero
+        (replaceBlock_mem_range_homInclusion hx (inner_mem (𝒞 := 𝒞) hx hs hps) hps) h,
       smul_zero]
 
 /-- The Stasheff identities of the induced category on homogeneous morphisms `aᵢ ⟶ bᵢ`.  On a
@@ -491,6 +476,23 @@ theorem eq_induced {𝒟 : AInfinityCategory R (InducedQuiver C F)}
   simp only [totalHomMap_homInclusion] at e
   rw [← h (n + 1) X x, ← hf, ← hg, totalHomMap_homInclusion, totalHomMap_homInclusion] at e
   rw [← hf, ← hg, homInclusion_injective _ _ e]
+
+/-- **The induced category has the Taylor map of `𝒞` on composable words.**  On a composable word,
+the map of total modules sends the Taylor map of the induced category to the Taylor map of `𝒞` on
+the letterwise image of the word. -/
+theorem totalHomMap_taylor_induced {X Y : InducedQuiver C F}
+    {w : ReducedTensorWords R (TotalHom R (InducedQuiver C F))} (hw : w ∈ composableWords R X Y) :
+    totalHomMap R F ((𝒞.induced F).taylor w) =
+      𝒞.taylor (ReducedTensorWords.map (R := R) (totalHomMap R F) w) := by
+  refine composableWords_induction (fun n hn a b z hz hab _ _ ↦ ?_) (by simp)
+    (fun x y hx hy ↦ by simp only [map_add, hx, hy]) (fun r x hx ↦ by simp only [map_smul, hx]) hw
+  · rw [ReducedTensorWords.map_of_tprod, AInfinityAlgebra.taylor_of_tprod,
+      AInfinityAlgebra.taylor_of_tprod, (𝒞.induced F).grading_eq, 𝒞.grading_eq]
+    simp only [koszulTwist_totalHomMap]
+    exact 𝒞.totalHomMap_induced_m_of_chain F (fun i ↦ a i) (fun i ↦ b i)
+      (fun i ↦ koszulTwist_mem_range_homInclusion _ (hz i i.isLt)) fun i j hij ↦ by
+        rw [hij]
+        exact hab.eq i (by have := j.isLt; omega)
 
 /-- The differential of the induced category is the differential of `𝒞`. -/
 @[simp]

@@ -213,6 +213,15 @@ theorem map_f (f : M → M') (hf : ContMDiff I I' ∞ f) (k : ℕ) :
       (deRhamComplexXIso I' k).hom ≫ ModuleCat.ofHom (SmoothForm.mpullback f hf) := by
   simp [map]
 
+/-- The induced cochain map, on a form read through the canonical identification of the
+degree-`k` object, is pullback of that form. -/
+theorem map_f_inv_apply (f : M → M') (hf : ContMDiff I I' ∞ f) (k : ℕ)
+    (φ : SmoothForm I' M' ℝ k) :
+    (map f hf).f k ((deRhamComplexXIso I' k).inv φ) =
+      (deRhamComplexXIso I k).inv (SmoothForm.mpullback f hf φ) := by
+  rw [(Iso.eq_comp_inv _).mpr (map_f f hf k)]
+  simp
+
 /-- The identity map induces the identity cochain map. -/
 @[simp]
 theorem map_id : map (I := I) (I' := I) (M := M) (M' := M) id contMDiff_id = 𝟙 _ := by

@@ -99,6 +99,13 @@ theorem hessianQuadraticForm_congr_of_eventuallyEq (hfg : f =ᶠ[𝓝 x] g) :
     hessianQuadraticForm f x = hessianQuadraticForm g x := by
   rw [hessianQuadraticForm, hessianQuadraticForm, hfg.fderiv.fderiv_eq]
 
+/-- The Hessian quadratic form is additive on functions which are `C²` at the point. -/
+theorem hessianQuadraticForm_add (hf : ContDiffAt ℝ 2 f x) (hg : ContDiffAt ℝ 2 g x) :
+    hessianQuadraticForm (f + g) x = hessianQuadraticForm f x + hessianQuadraticForm g x := by
+  ext v
+  simpa [iteratedFDeriv_two_apply] using
+    congr($(iteratedFDeriv_add_apply (i := 2) hf hg) ![v, v])
+
 /-- Negating a function negates its Hessian quadratic form. -/
 @[simp]
 theorem hessianQuadraticForm_neg (f : E → ℝ) (x : E) :
