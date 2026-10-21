@@ -136,14 +136,10 @@ ordered signs of `a` and `b` is the sign of their Gram pairing. -/
 theorem orderedSign_div_orderedSign_swap (hB : B.IsSymm) (hdiag : ∀ i, Even (B i i))
     (a b : Multiplicative (I → ℤ)) :
     orderedSign B a b / orderedSign B b a = (a.toAdd ⬝ᵥ B *ᵥ b.toAdd).negOnePow := by
-  have hd : Even (2 * orderedSignForm B b.toAdd a.toAdd + ∑ i, a.toAdd i * B i i * b.toAdd i) :=
-    (even_two_mul _).add (Finset.even_sum _ fun i _ => ((hdiag i).mul_left _).mul_right _)
-  have hsum : a.toAdd ⬝ᵥ B *ᵥ b.toAdd = orderedSignForm B a.toAdd b.toAdd -
-      orderedSignForm B b.toAdd a.toAdd +
-        (2 * orderedSignForm B b.toAdd a.toAdd + ∑ i, a.toAdd i * B i i * b.toAdd i) := by
-    linarith [orderedSignForm_add_orderedSignForm_swap B hB a.toAdd b.toAdd]
-  rw [orderedSign_apply, orderedSign_apply, hsum, Int.negOnePow_add, Int.negOnePow_even _ hd,
-    mul_one, Int.negOnePow_sub, div_eq_mul_inv, Int.units_inv_eq_self]
+  rw [div_eq_mul_inv, Int.units_inv_eq_self, orderedSign_apply, orderedSign_apply,
+    ← Int.negOnePow_add, Int.negOnePow_eq_iff, ← orderedSignForm_add_orderedSignForm_swap B hB]
+  -- The two exponents differ by the diagonal sum `∑ i, a i * B i i * b i`, which is even.
+  simpa using Finset.even_sum _ fun i _ => ((hdiag i).mul_left _).mul_right _
 
 section Cover
 
