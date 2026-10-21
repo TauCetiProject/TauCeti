@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 public import Mathlib.LinearAlgebra.Matrix.Trace
 import Mathlib.LinearAlgebra.Matrix.Notation
 import Mathlib.Tactic.LinearCombination
+import TauCeti.Analysis.SpecialFunctions.ExpHalf
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
 /-!
@@ -106,21 +107,11 @@ theorem eq_dilation_two_mul_log {A : SL(2, ℝ)} (h₁₀ : A 1 0 = 0) (h₀₁ 
   fin_cases i <;> fin_cases j <;>
     simp [h₁₀, h₀₁, h₁₁, Real.exp_neg, Real.exp_log hpos]
 
-private theorem exp_half_mul (r : ℝ) :
-    Real.exp (r / 2) * Real.exp (r / 2) = Real.exp r ∧
-      Real.exp (-(r / 2)) * Real.exp (-(r / 2)) = Real.exp (-r) ∧
-      Real.exp (r / 2) * Real.exp (-(r / 2)) = 1 := by
-  refine ⟨?_, ?_, ?_⟩ <;> rw [← Real.exp_add]
-  · rw [add_halves]
-  · rw [← neg_add, add_halves]
-  · rw [add_neg_cancel, Real.exp_zero]
-
 /-! ### Conjugates of a dilation -/
 
 attribute [local simp] Matrix.adjugate_fin_two
 
 /-- The top-left entry of a conjugate `X * dilation s * X⁻¹` of a dilation. -/
-@[simp]
 theorem conj_dilation_apply_zero_zero (s : ℝ) (X : SL(2, ℝ)) :
     (X * dilation s * X⁻¹) 0 0 =
       Real.exp (s / 2) + (Real.exp (s / 2) - Real.exp (-(s / 2))) * (X 0 1 * X 1 0) := by
@@ -129,21 +120,18 @@ theorem conj_dilation_apply_zero_zero (s : ℝ) (X : SL(2, ℝ)) :
   linear_combination Real.exp (s / 2) * h
 
 /-- The top-right entry of a conjugate `X * dilation s * X⁻¹` of a dilation. -/
-@[simp]
 theorem conj_dilation_apply_zero_one (s : ℝ) (X : SL(2, ℝ)) :
     (X * dilation s * X⁻¹) 0 1 = X 0 0 * X 0 1 * (Real.exp (-(s / 2)) - Real.exp (s / 2)) := by
   simp [Matrix.mul_apply, Fin.sum_univ_two]
   ring
 
 /-- The bottom-left entry of a conjugate `X * dilation s * X⁻¹` of a dilation. -/
-@[simp]
 theorem conj_dilation_apply_one_zero (s : ℝ) (X : SL(2, ℝ)) :
     (X * dilation s * X⁻¹) 1 0 = X 1 0 * X 1 1 * (Real.exp (s / 2) - Real.exp (-(s / 2))) := by
   simp [Matrix.mul_apply, Fin.sum_univ_two]
   ring
 
 /-- The bottom-right entry of a conjugate `X * dilation s * X⁻¹` of a dilation. -/
-@[simp]
 theorem conj_dilation_apply_one_one (s : ℝ) (X : SL(2, ℝ)) :
     (X * dilation s * X⁻¹) 1 1 =
       Real.exp (-(s / 2)) - (Real.exp (s / 2) - Real.exp (-(s / 2))) * (X 0 1 * X 1 0) := by
@@ -152,32 +140,28 @@ theorem conj_dilation_apply_one_one (s : ℝ) (X : SL(2, ℝ)) :
   linear_combination Real.exp (-(s / 2)) * h
 
 /-- Conjugation by a dilation fixes the top-left entry. -/
-@[simp]
 theorem dilation_conj_apply_zero_zero (r : ℝ) (X : SL(2, ℝ)) :
     (dilation r * X * dilation (-r)) 0 0 = X 0 0 := by
   simp [Matrix.mul_apply, Fin.sum_univ_two, Matrix.vecMul, dotProduct, neg_div]
-  linear_combination X 0 0 * (exp_half_mul r).2.2
+  linear_combination X 0 0 * Real.exp_half_mul_exp_neg_half r
 
 /-- Conjugation by `dilation r` multiplies the top-right entry by `exp r`. -/
-@[simp]
 theorem dilation_conj_apply_zero_one (r : ℝ) (X : SL(2, ℝ)) :
     (dilation r * X * dilation (-r)) 0 1 = Real.exp r * X 0 1 := by
   simp [Matrix.mul_apply, Fin.sum_univ_two, Matrix.vecMul, dotProduct, neg_div]
-  linear_combination X 0 1 * (exp_half_mul r).1
+  linear_combination X 0 1 * Real.exp_half_mul_exp_half r
 
 /-- Conjugation by `dilation r` multiplies the bottom-left entry by `exp (-r)`. -/
-@[simp]
 theorem dilation_conj_apply_one_zero (r : ℝ) (X : SL(2, ℝ)) :
     (dilation r * X * dilation (-r)) 1 0 = Real.exp (-r) * X 1 0 := by
   simp [Matrix.mul_apply, Fin.sum_univ_two, Matrix.vecMul, dotProduct, neg_div]
-  linear_combination X 1 0 * (exp_half_mul r).2.1
+  linear_combination X 1 0 * Real.exp_neg_half_mul_exp_neg_half r
 
 /-- Conjugation by a dilation fixes the bottom-right entry. -/
-@[simp]
 theorem dilation_conj_apply_one_one (r : ℝ) (X : SL(2, ℝ)) :
     (dilation r * X * dilation (-r)) 1 1 = X 1 1 := by
   simp [Matrix.mul_apply, Fin.sum_univ_two, Matrix.vecMul, dotProduct, neg_div]
-  linear_combination X 1 1 * (exp_half_mul r).2.2
+  linear_combination X 1 1 * Real.exp_half_mul_exp_neg_half r
 
 /-- A diagonal matrix of `SL(2, ℝ)` commutes with every dilation: it fixes the fixed points `0`
 and `∞` of the dilation. -/
@@ -241,7 +225,9 @@ theorem trace_commutatorElement_dilation (s : ℝ) (X : SL(2, ℝ)) :
     ((⁅dilation s, X⁆ : SL(2, ℝ)) : Matrix (Fin 2) (Fin 2) ℝ).trace =
       2 - (Real.exp (s / 2) - Real.exp (-(s / 2))) ^ 2 * (X 0 1 * X 1 0) := by
   have h := X.fin_two_mul_sub_mul_eq_one
-  obtain ⟨hu, hv, huv⟩ := exp_half_mul s
+  have hu := Real.exp_half_mul_exp_half s
+  have hv := Real.exp_neg_half_mul_exp_neg_half s
+  have huv := Real.exp_half_mul_exp_neg_half s
   rw [commutatorElement_def, coe_mul _ X⁻¹, Matrix.trace_fin_two]
   simp only [Matrix.mul_apply, Fin.sum_univ_two, dilation_inv, dilation_conj_apply_zero_zero,
     dilation_conj_apply_zero_one, dilation_conj_apply_one_zero, dilation_conj_apply_one_one]

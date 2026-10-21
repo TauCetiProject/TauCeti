@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Complex.Trigonometric
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Dilation
 public import TauCeti.Topology.Algebra.Matrix.ProjectiveSpecialLinearGroup
 import Mathlib.Analysis.Real.Sqrt
+import TauCeti.Analysis.SpecialFunctions.ExpHalf
 import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Endpoint
 import TauCeti.GroupTheory.JorgensenSequence
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
@@ -72,11 +73,6 @@ open Matrix.SpecialLinearGroup (dilation dilation_inv dilation_zpow conj_dilatio
   trace_commutatorElement_dilation tendsto_iff_tendsto_apply)
 
 attribute [local simp] Matrix.adjugate_fin_two
-
-private theorem four_mul_sinh_half_sq (r : ℝ) :
-    4 * Real.sinh (r / 2) ^ 2 = (Real.exp (r / 2) - Real.exp (-(r / 2))) ^ 2 := by
-  rw [Real.sinh_eq]
-  ring
 
 /-! ### Jørgensen's sequence for a dilation -/
 
@@ -308,8 +304,8 @@ theorem one_le_four_mul_sinh_sq_mul_of_dilation_mem [DiscreteTopology Γ]
     · refine diag_or_antidiag_of_lt (s := -s) (neg_pos.2 hneg) ?_ hB ?_
       · rw [← dilation_inv, QuotientGroup.mk_inv]
         exact Γ.inv_mem hD
-      · rwa [← four_mul_sinh_half_sq, neg_div, Real.sinh_neg, neg_sq]
-    · exact diag_or_antidiag_of_lt hpos hD hB (by rwa [← four_mul_sinh_half_sq])
+      · rwa [← Real.four_mul_sinh_half_sq, neg_div, Real.sinh_neg, neg_sq]
+    · exact diag_or_antidiag_of_lt hpos hD hB (by rwa [← Real.four_mul_sinh_half_sq])
   simp only [← QuotientGroup.mk_inv, ← QuotientGroup.mk_mul] at h₁ h₂
   rcases hB' with ⟨h01, h10⟩ | ⟨h00, h11⟩
   · exact h₁ (congrArg _ (Matrix.SpecialLinearGroup.conj_dilation_eq_dilation s h01 h10))
@@ -340,10 +336,8 @@ private theorem abs_trace_sq_sub_four_add_abs_trace_commutatorElement_sub_two_eq
       · rw [h, trace_conj, trace_dilation]
       · rw [h, Matrix.SpecialLinearGroup.coe_neg, Matrix.trace_neg, neg_sq, trace_conj,
           trace_dilation]
-    have huv : Real.exp (s / 2) * Real.exp (-(s / 2)) = 1 := by
-      rw [← Real.exp_add, add_neg_cancel, Real.exp_zero]
     rw [h2]
-    linear_combination 4 * huv
+    linear_combination 4 * Real.exp_half_mul_exp_neg_half s
   have hcomm : ⁅A, B⁆ = P * ⁅dilation s, P⁻¹ * B * P⁆ * P⁻¹ := by
     have h : ⁅P * dilation s * P⁻¹, B⁆ = P * ⁅dilation s, P⁻¹ * B * P⁆ * P⁻¹ := by
       simp only [commutatorElement_def]
@@ -353,7 +347,7 @@ private theorem abs_trace_sq_sub_four_add_abs_trace_commutatorElement_sub_two_eq
     · rw [hA', ← h]
       simp [commutatorElement_def]
   rw [htrA, hcomm, trace_conj, trace_commutatorElement_dilation, sub_sub_cancel_left, abs_neg,
-    abs_mul, abs_sq, ← four_mul_sinh_half_sq]
+    abs_mul, abs_sq, ← Real.four_mul_sinh_half_sq]
   ring
 
 /-- **Jørgensen's inequality for hyperbolic elements.** Let `Γ ≤ PSL(2, ℝ)` be a discrete subgroup
