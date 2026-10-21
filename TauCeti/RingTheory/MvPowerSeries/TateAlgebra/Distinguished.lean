@@ -312,7 +312,7 @@ theorem exists_algEquiv_isDistinguished [Finite σ] (f : ExtraTate) (hf : f ≠ 
       Subtype.ext (coe_algebraMap_isRestrictedSubring _)
     rw [h, norm_C, hνM]
   refine ⟨triangularEquiv α hα, s, a, he, hνM,
-    PowerSeries.isDistinguished_of_norm_coeff_sub_lt zero_lt_one
+    PowerSeries.isDistinguished_of_norm_coeff_sub_lt zero_le_one
       (by rw [one_pow, mul_one, hGn, hCa])
       (by rw [one_pow, mul_one, hGn]; exact hat.trans_lt hεM)
       (fun m hm ↦ by rw [one_pow, mul_one, hGn]; exact (hbeyond m hm).trans_lt hεM),
