@@ -31,6 +31,11 @@ the identity of the relative cubical homology in degree `m` is zero
 (`TauCeti.SubspaceCubeDeformation.isZero_homology_cubicalChainComplex`), and the comparison of
 relative cubical and simplicial chains transports this to relative singular homology.
 
+The long exact sequence of the pair then gives the range in which the inclusion of `A` sees the
+homology of `X`: `Hₘ(A; R) ⟶ Hₘ(X; R)` is surjective for `m < n`
+(`TauCeti.epi_singularHomologyMap_subtypeVal_of_relHomotopyGroup`) and bijective for `m + 1 < n`
+(`TauCeti.isIso_singularHomologyMap_subtypeVal_of_relHomotopyGroup_of_add_one_lt`).
+
 ## Main results
 
 * `TauCeti.SubspaceCubeDeformation.relEndHomotopy`: the chain homotopy from the identity to the
@@ -39,6 +44,10 @@ relative cubical and simplicial chains transports this to relative singular homo
   homology vanishes below the dimension bound of a deformation into `A`.
 * `TauCeti.isZero_singularHomology_ofSubset_of_relHomotopyGroup`: relative singular homology
   vanishes below the connectivity of the pair.
+* `TauCeti.epi_singularHomologyMap_subtypeVal_of_relHomotopyGroup`,
+  `TauCeti.isIso_singularHomologyMap_subtypeVal_of_relHomotopyGroup_of_add_one_lt`: the inclusion
+  of the subspace is surjective on homology below the connectivity of the pair, and bijective one
+  degree lower.
 
 ## References
 
@@ -166,5 +175,42 @@ theorem isZero_singularHomology_ofSubset_of_relHomotopyGroup {X : TopCat.{u}} {A
     h k (by exact_mod_cast hk)
   rw [← TopPair.range_ofSubset_map (B := A)] at D
   exact D.isZero_singularHomology R (by exact_mod_cast hm)
+
+/-- **The inclusion of a subspace induces surjections on homology below the connectivity of the
+pair.** If every point of `X` is joined by a path to a point of `A`, and the relative homotopy set
+`π_{k+1}(X, A, a)` is trivial for every `k + 1 < n` and every `a ∈ A`, then the inclusion of `A`
+into `X` induces an epimorphism `Hₘ(A; R) ⟶ Hₘ(X; R)` for every `m < n` and every coefficient
+ring `R`. -/
+theorem epi_singularHomologyMap_subtypeVal_of_relHomotopyGroup {X : TopCat.{u}} {A : Set X}
+    {n : ℕ} (h₀ : ∀ x : X, ∃ a ∈ A, Joined x a)
+    (h : ∀ k : ℕ, k + 1 < n → ∀ a : A,
+      Subsingleton (RelHomotopyGroup (Fin k) ⟨TopPair.ofSubset A, a⟩))
+    (R : Type u) [Ring R] {m : ℕ} (hm : m < n) :
+    Epi (((singularHomologyFunctor (ModuleCat.{u} R) m).obj (ModuleCat.of R R)).map
+      (TopCat.ofHom (ContinuousMap.subtypeVal A))) :=
+  -- The map induced on singular homology is `SSet.homologyMap (TopCat.toSSet.map P.map)` for the
+  -- pair `P = TopPair.ofSubset A`, whose subspace inclusion is `Subtype.val`, by definition.
+  (TopPair.ofSubset A).epi_homologyMap_map_of_isZero _
+    (isZero_singularHomology_ofSubset_of_relHomotopyGroup h₀ h R hm)
+
+/-- **The inclusion of a subspace induces isomorphisms on homology below the connectivity of the
+pair minus one.** If every point of `X` is joined by a path to a point of `A`, and the relative
+homotopy set `π_{k+1}(X, A, a)` is trivial for every `k + 1 < n` and every `a ∈ A`, then the
+inclusion of `A` into `X` induces an isomorphism `Hₘ(A; R) ≅ Hₘ(X; R)` for every `m + 1 < n` and
+every coefficient ring `R`. Together with
+`TauCeti.epi_singularHomologyMap_subtypeVal_of_relHomotopyGroup` in degree `m = n - 1`, this is
+the range given by the long exact sequence of the pair. -/
+theorem isIso_singularHomologyMap_subtypeVal_of_relHomotopyGroup_of_add_one_lt {X : TopCat.{u}}
+    {A : Set X} {n : ℕ} (h₀ : ∀ x : X, ∃ a ∈ A, Joined x a)
+    (h : ∀ k : ℕ, k + 1 < n → ∀ a : A,
+      Subsingleton (RelHomotopyGroup (Fin k) ⟨TopPair.ofSubset A, a⟩))
+    (R : Type u) [Ring R] {m : ℕ} (hm : m + 1 < n) :
+    IsIso (((singularHomologyFunctor (ModuleCat.{u} R) m).obj (ModuleCat.of R R)).map
+      (TopCat.ofHom (ContinuousMap.subtypeVal A))) :=
+  -- The map induced on singular homology is `SSet.homologyMap (TopCat.toSSet.map P.map)` for the
+  -- pair `P = TopPair.ofSubset A`, whose subspace inclusion is `Subtype.val`, by definition.
+  (TopPair.ofSubset A).isIso_homologyMap_map_of_isZero _
+    (isZero_singularHomology_ofSubset_of_relHomotopyGroup h₀ h R hm)
+    (isZero_singularHomology_ofSubset_of_relHomotopyGroup h₀ h R (by lia))
 
 end TauCeti

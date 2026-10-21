@@ -32,6 +32,9 @@ compactness nor closedness of `K` carries any measurability with it. (Absent a s
 Pairing a locally integrable function with a fixed vector in an inner product space gives a
 locally integrable scalar function, as Mathlib records for `Integrable` and `MemLp`.
 
+An `Lᵖ` function for a locally finite restriction of a measure to a set, with `1 ≤ p`, is locally
+integrable on that set.
+
 A function continuous on a compact set is bounded there, so for a measure finite on compact sets
 it lies in every `Lᵖ` on each measurable subset of that compact set.
 
@@ -47,6 +50,8 @@ it lies in every `Lᵖ` on each measurable subset of that compact set.
   extension by zero of a locally integrable function supported in a null-measurable compact subset.
 * `MeasureTheory.LocallyIntegrable.inner_const`: pairing with a fixed vector preserves local
   integrability.
+* `MeasureTheory.Lp.locallyIntegrableOn`: an `Lᵖ` function on a set, with `1 ≤ p`, is locally
+  integrable on it.
 * `ContinuousOn.memLp_restrict_of_subset_isCompact`: a function continuous on a compact set is in
   every `Lᵖ` on its measurable subsets.
 
@@ -192,6 +197,20 @@ theorem inner_const (hf : LocallyIntegrable f μ) (c : E) :
       ((innerSLFlip 𝕜 c).locallyIntegrableOn_comp (hf.locallyIntegrableOn univ))
 
 end MeasureTheory.LocallyIntegrable
+
+namespace MeasureTheory.Lp
+
+variable {X E : Type*} [MeasurableSpace X] [TopologicalSpace X] [OpensMeasurableSpace X]
+  {μ : Measure X} {s : Set X} [IsLocallyFiniteMeasure (μ.restrict s)] [NormedAddCommGroup E]
+  {p : ENNReal}
+
+/-- An `Lᵖ` function on `s`, for `1 ≤ p` and a measure whose restriction to `s` is locally finite,
+is locally integrable on `s`. -/
+theorem locallyIntegrableOn (g : Lp E p (μ.restrict s)) (hp : 1 ≤ p) :
+    LocallyIntegrableOn g s μ :=
+  locallyIntegrableOn_of_locallyIntegrable_restrict ((Lp.memLp g).locallyIntegrable hp)
+
+end MeasureTheory.Lp
 
 section ContinuousOn
 
