@@ -25,14 +25,14 @@ of its fixed set, is closed as well as open. So if `g` acts as the identity on a
 `M`) of some point of a connected set, it acts as the identity on a neighbourhood of every point of
 that set.
 
-In terms of the germ kernel `MulAction.germKernel G x` of the elements acting as the identity near
-`x`, this says that for a torsion group acting by `C¹` maps the germ kernel is constant on
-connected sets. On a connected manifold it is the kernel of the action at every point, so it is a
-normal subgroup, and in general it is a locally constant function of the point, as is its order.
-This is the statement that the ineffective kernel of a local action chart `[U/G]` of an orbifold
-acts trivially on the whole connected chart: an element acting trivially near one point acts
-trivially everywhere, so the ineffective part of the isotropy is the same at every point of the
-chart.
+In terms of the germ kernel `TauCeti.MulAction.germKernel G x` of the elements acting as the
+identity near `x`, this says that for a torsion group acting by `C¹` maps the germ kernel is
+constant on connected sets. On a connected manifold it is the kernel of the action at every point,
+so it is a normal subgroup, and in general it is a locally constant function of the point, as is
+its order. This is the statement that the ineffective kernel of a local action chart `[U/G]` of an
+orbifold acts trivially on the whole connected chart: an element acting trivially near one point
+acts trivially everywhere, so the ineffective part of the isotropy is the same at every point of
+the chart.
 
 The proof is Bochner linearization (`OpenPartialHomeomorph.exists_equivariant_chart`), which on a
 manifold gives a chart at a common fixed point of a finite group acting by `C¹` maps in which the
@@ -72,7 +72,7 @@ two origins is smooth, has order two, and is the identity off the origins, but n
 
 public section
 
-open MulAction Set Filter Topology
+open MulAction TauCeti.MulAction Set Filter Topology
 open scoped Manifold ContDiff
 
 namespace TauCeti
@@ -123,8 +123,9 @@ private theorem mem_interior_fixedBy_of_mem_closure {g : G} (hg : IsOfFinOrder g
   have hsK (k : K) : ContMDiff I I 1 fun x : M ↦ k • x :=
     contMDiff_smul_of_mem_zpowers hg hsmooth k.2
   have : ContinuousConstSMul K M := ⟨fun k ↦ (hsK k).continuous⟩
-  have hfix (k : K) : k • y = y :=
-    mem_stabilizer_iff.mp (Subgroup.zpowers_le.mpr (mem_stabilizer_iff.mpr hy) k.2)
+  have hfix (k : K) : k • y = y := by
+    rw [Subgroup.smul_def]
+    exact mem_stabilizer_iff.mp (Subgroup.zpowers_le.mpr (mem_stabilizer_iff.mpr hy) k.2)
   obtain ⟨σ, e, hye, he, hker⟩ := exists_equivariant_chart_of_contMDiffAt (fun k ↦ hsK k y) hfix
   let gK : K := ⟨g, Subgroup.mem_zpowers g⟩
   -- The linear map `σ gK` is the identity on the nonempty open image of the interior of the
@@ -136,13 +137,16 @@ private theorem mem_interior_fixedBy_of_mem_closure {g : G} (hg : IsOfFinOrder g
   have hsub : e '' (e.source ∩ interior (fixedBy M g)) ⊆
       LinearMap.eqLocus ((σ gK : E →L[𝕜] E) : E →ₗ[𝕜] E) LinearMap.id := by
     rintro _ ⟨z, ⟨hz, hzg⟩, rfl⟩
-    have hgz : gK • z = z := interior_subset hzg
-    rw [SetLike.mem_coe, LinearMap.mem_eqLocus, ContinuousLinearMap.coe_coe, LinearMap.id_apply,
-      ← (he gK z hz).2, hgz]
+    have hgz : gK • z = z := by
+      rw [Subgroup.smul_def]
+      exact mem_fixedBy.mp (interior_subset hzg)
+    simp [LinearMap.mem_eqLocus, ← (he gK z hz).2, hgz]
   have htop := Submodule.eq_top_of_nonempty_interior' _ (hWne.mono (interior_maximal hsub hW))
   have hσ : σ gK = 1 := ContinuousLinearMap.coe_injective (LinearMap.eqLocus_eq_top.mp htop)
   -- Hence `g` acts as the identity near `y`.
-  exact mem_interior_iff_mem_nhds.mpr (mem_germKernel (G := K).mp ((hker gK).mp hσ))
+  have hgK : ∀ᶠ z in 𝓝 y, gK • z = z := mem_germKernel.mp ((hker gK).mp hσ)
+  simp only [Subgroup.smul_def] at hgK
+  exact mem_germKernel_iff_mem_interior_fixedBy.mp (mem_germKernel.mpr hgK)
 
 /-- **Identity principle for finite-order actions.** For an element of finite order acting by a
 `C¹` map on a Hausdorff manifold without boundary, the set of points near which it acts as the

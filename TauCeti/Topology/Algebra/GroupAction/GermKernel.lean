@@ -12,9 +12,9 @@ public import Mathlib.Topology.Algebra.ConstMulAction
 # The germ kernel of a group action
 
 For a group `G` acting on a topological space `X`, the germ kernel at a point `x` is the subgroup
-`MulAction.germKernel G x` of the elements acting as the identity on some neighbourhood of `x`,
-that is, the elements whose germ at `x` is the germ of the identity. Equivalently, `g` lies in the
-germ kernel at `x` exactly when `x` is in the interior of the fixed set of `g`. The germ kernel
+`TauCeti.MulAction.germKernel G x` of the elements acting as the identity on some neighbourhood of
+`x`, that is, the elements whose germ at `x` is the germ of the identity. Equivalently, `g` lies in
+the germ kernel at `x` exactly when `x` is in the interior of the fixed set of `g`. The germ kernel
 lies between the kernel of the action, made of the elements acting trivially on all of `X`, and
 the stabilizer of `x`.
 
@@ -25,13 +25,13 @@ Transport along the action conjugates germ kernels, as it does stabilizers.
 
 ## Main declarations
 
-* `MulAction.germKernel G x`: the elements of `G` acting as the identity near `x`.
-* `MulAction.mem_germKernel_iff_mem_interior_fixedBy`: `g` is in the germ kernel at `x` exactly
-  when `x` is in the interior of the fixed set of `g`.
-* `MulAction.ker_toPermHom_le_germKernel`, `MulAction.germKernel_le_stabilizer`: the germ kernel
-  contains the kernel of the action and is contained in the stabilizer.
-* `MulAction.germKernel_smul_eq_germKernel_map_conj`: the germ kernel at `h • x` is the conjugate
-  by `h` of the germ kernel at `x`.
+* `TauCeti.MulAction.germKernel G x`: the elements of `G` acting as the identity near `x`.
+* `TauCeti.MulAction.mem_germKernel_iff_mem_interior_fixedBy`: `g` is in the germ kernel at `x`
+  exactly when `x` is in the interior of the fixed set of `g`.
+* `TauCeti.MulAction.ker_toPermHom_le_germKernel`, `TauCeti.MulAction.germKernel_le_stabilizer`:
+  the germ kernel contains the kernel of the action and is contained in the stabilizer.
+* `TauCeti.MulAction.germKernel_smul_eq_germKernel_map_conj`: the germ kernel at `h • x` is the
+  conjugate by `h` of the germ kernel at `x`.
 
 ## References
 
@@ -42,9 +42,9 @@ Transport along the action conjugates germ kernels, as it does stabilizers.
 
 public section
 
-open Filter Set Topology
+open Filter MulAction Set Topology
 
-namespace MulAction
+namespace TauCeti.MulAction
 
 variable (G : Type*) {X : Type*} [Group G] [MulAction G X] [TopologicalSpace X]
 
@@ -92,4 +92,4 @@ theorem germKernel_smul_eq_germKernel_map_conj [ContinuousConstSMul G X] (h : G)
   refine eventually_congr (Eventually.of_forall fun y ↦ ?_)
   rw [mul_smul, mul_smul, inv_smul_eq_iff]
 
-end MulAction
+end TauCeti.MulAction
