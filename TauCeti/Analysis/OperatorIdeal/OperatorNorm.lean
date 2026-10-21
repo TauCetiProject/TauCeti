@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.OperatorIdeal.Family.Carrier
-public import TauCeti.Analysis.OperatorIdeal.Family.SymmetricGauge
 
 /-!
 # The operator-norm ideal family
@@ -15,18 +14,14 @@ The extended operator norm `A ↦ ‖A‖ₑ` is the smallest operator-ideal fam
 dominates it by the law `OperatorIdealFamily.enorm_le_gauge`. Its ideal consists of all bounded
 operators, and its carrier is complete because the operator norm is continuous.
 
-It is the `p = ∞` endpoint of the Schatten scale: since the approximation numbers decrease from
-`a₀(T) = ‖T‖`, the family induced by the supremum symmetric gauge `supₙ aₙ(T)` is the
-operator-norm family. Taking adjoints preserves the operator norm, so its diagonal-universe
-restriction is a symmetric family.
+Taking adjoints preserves the operator norm, so its diagonal-universe restriction is a symmetric
+family.
 
 ## Main declarations
 
 * `TauCeti.OperatorIdealFamily.opNorm`: the operator-ideal family with gauge `‖A‖ₑ`.
 * `TauCeti.OperatorIdealFamily.finiteSubmodule_opNorm`: every bounded operator lies in its ideal.
 * `TauCeti.OperatorIdealFamily.opNorm_isComplete`: the operator-norm family is complete.
-* `TauCeti.SymmetricGauge.operatorIdealFamily_supGauge`: the family induced by the supremum
-  gauge is the operator-norm family.
 * `TauCeti.SymmetricOperatorIdealFamily.opNorm`: the adjoint-invariant diagonal family.
 -/
 
@@ -90,24 +85,5 @@ theorem opNorm_toOperatorIdealFamily (𝕜 : Type u) [RCLike 𝕜] :
   (rfl)
 
 end SymmetricOperatorIdealFamily
-
-namespace SymmetricGauge
-
-variable (𝕜 : Type u) [RCLike 𝕜]
-
-/-- **The operator-norm endpoint of the Schatten scale.** The family induced by the supremum
-gauge, with gauge `supₙ aₙ(T)`, is the operator-norm family. -/
-theorem operatorIdealFamily_supGauge :
-    supGauge.operatorIdealFamily.{u, v, w} 𝕜 = OperatorIdealFamily.opNorm 𝕜 := by
-  ext
-  simp
-
-/-- The symmetric family induced by the supremum gauge is the symmetric operator-norm family. -/
-theorem symmetricOperatorIdealFamily_supGauge :
-    supGauge.symmetricOperatorIdealFamily.{u, v} 𝕜 = SymmetricOperatorIdealFamily.opNorm 𝕜 := by
-  ext
-  simp
-
-end SymmetricGauge
 
 end TauCeti
