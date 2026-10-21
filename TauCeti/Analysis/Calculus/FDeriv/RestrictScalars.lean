@@ -11,13 +11,15 @@ public import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
 # The range of the derivative under restriction of scalars
 
 For a map differentiable over a larger field `𝕜'`, the derivative over `𝕜` is the restriction of
-scalars of the derivative over `𝕜'`, so the two derivatives have the same range. For a holomorphic
-map, the real tangent space is the complex tangent space.
+scalars of the derivative over `𝕜'`, so the two derivatives have the same range, and one is
+injective exactly when the other is. For a holomorphic map, the real tangent space is the complex
+tangent space, and the map is a real immersion at a point exactly when it is a complex one.
 
-## Main result
+## Main results
 
 * `DifferentiableAt.range_fderiv_restrictScalars`: the range of the derivative does not depend
   on the field of scalars.
+* `DifferentiableAt.injective_fderiv_restrictScalars_iff`: neither does its injectivity.
 -/
 
 public section
@@ -36,5 +38,13 @@ theorem _root_.DifferentiableAt.range_fderiv_restrictScalars (hi : Differentiabl
     (fderiv 𝕜 i x).range = (fderiv 𝕜' i x).range.restrictScalars 𝕜 := by
   rw [hi.fderiv_restrictScalars 𝕜]
   exact LinearMap.range_restrictScalars _
+
+/-- The derivative over `𝕜` of a map differentiable over a larger field `𝕜'` is injective exactly
+when its derivative over `𝕜'` is. For a holomorphic map, it is a real immersion at `x` exactly
+when it is a complex immersion there. -/
+theorem _root_.DifferentiableAt.injective_fderiv_restrictScalars_iff
+    (hi : DifferentiableAt 𝕜' i x) :
+    Function.Injective (fderiv 𝕜 i x) ↔ Function.Injective (fderiv 𝕜' i x) := by
+  rw [hi.fderiv_restrictScalars 𝕜, ContinuousLinearMap.coe_restrictScalars']
 
 end TauCeti
