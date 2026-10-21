@@ -21,8 +21,9 @@ degree-`d` homogeneous piece of the divided power algebra. After scalar extensio
 commutative `R`-algebra `S` it is given by
 `γ_d(∑ⱼ sⱼ ⊗ mⱼ) = ∑_{∑ⱼ nⱼ = d} (∏ⱼ sⱼ ^ nⱼ) ⊗ ∏ⱼ dp nⱼ mⱼ`,
 so that its ground value is `γ_d(m) = dp R d m`, and over a polynomial ring the coefficient of
-`∏ⱼ Tⱼ ^ nⱼ` in `γ_d(∑ⱼ Tⱼ ⊗ mⱼ)` is `∏ⱼ dp nⱼ mⱼ`. No factorial is inverted: over `ℤ` the
-coefficient of `U V` in `γ_2(U ⊗ x + V ⊗ y)` is `dp 1 x * dp 1 y`, with no factor `2`.
+`∏ⱼ Tⱼ ^ nⱼ` in `γ_d(∑ⱼ Tⱼ ⊗ mⱼ)` is `∏ⱼ dp nⱼ mⱼ` when `∑ⱼ nⱼ = d`, and zero otherwise. No
+factorial is inverted: over `ℤ` the coefficient of `U V` in `γ_2(U ⊗ x + V ⊗ y)` is
+`dp 1 x * dp 1 y`, with no factor `2`.
 
 Roby's representability theorem identifies the degree-`d` homogeneous laws `M → N` with the linear
 maps `Γ^d_R(M) → N`, by composition with `γ_d`.
@@ -179,10 +180,9 @@ private theorem exp_smul (s : S) (x : S ⊗[R] M) :
   induction x using TensorProduct.inductionOn with
   | tmul s' m =>
       ext n
-      rw [smul_tmul', smul_eq_mul, exp_tmul, exp_tmul,
-        coeff_rescale (R := S ⊗[R] DividedPowerAlgebra R M), coeff_expTmul, coeff_expTmul,
-        Algebra.TensorProduct.tmul_pow, one_pow,
-        Algebra.TensorProduct.tmul_mul_tmul, one_mul, mul_pow]
+      rw [smul_tmul', exp_tmul, exp_tmul, coeff_rescale (R := S ⊗[R] DividedPowerAlgebra R M),
+        coeff_expTmul, coeff_expTmul]
+      simp [mul_pow]
   | add x y hx hy => rw [smul_add, exp_add, exp_add, hx, hy, map_mul]
 
 /-- The exponential of a finite sum of pure tensors. -/
@@ -240,10 +240,10 @@ private theorem gamma_toFun (d : ℕ) (S : Type*) [CommSemiring S] [Algebra R S]
 theorem isHomogeneousOfDegree_gamma (d : ℕ) : (gamma R M d).IsHomogeneousOfDegree d :=
   PolynomialLaw.isHomogeneousOfDegree_iff.mpr fun S _ _ s x ↦ by
     rw [PolynomialLaw.toFun'_eq_toFun, gamma_toFun, gamma_toFun]
-    have h : (s ^ d) ⊗ₜ[R] (1 : DividedPowerAlgebra R M) = algebraMap S _ (s ^ d) := by
-      rw [Algebra.TensorProduct.algebraMap_apply, Algebra.algebraMap_self, RingHom.id_apply]
     rw [gammaFun, gammaFun, exp_smul, coeff_rescale (R := S ⊗[R] DividedPowerAlgebra R M),
-      Algebra.TensorProduct.tmul_pow, one_pow, h, ← Algebra.smul_def, LinearMap.smul_lTensor]
+      LinearMap.smul_lTensor]
+    congr 1
+    simpa using (Algebra.smul_def (s ^ d) (coeff d (exp x))).symm
 
 /-- The value of `γ_d` on a finite sum of pure tensors:
 `γ_d(∑ⱼ sⱼ ⊗ mⱼ) = ∑_{∑ⱼ nⱼ = d} (∏ⱼ sⱼ ^ nⱼ) ⊗ ∏ⱼ dp R nⱼ mⱼ`. Each product
@@ -287,15 +287,13 @@ theorem coe_lid_rTensor_lcoeff_gamma_toFun_sum_X_tmul (d : ℕ) {ι : Type*} [Fi
   classical
   have hX (l : ι →₀ ℕ) : ∏ j, (MvPolynomial.X j : MvPolynomial ι R) ^ l j = monomial l 1 := by
     rw [monomial_eq, C_1, one_mul, Finsupp.prod_fintype _ _ fun _ ↦ pow_zero _]
-  rw [gamma_toFun_sum_tmul, map_sum, map_sum, Submodule.coe_sum]
-  simp_rw [LinearMap.rTensor_tmul, hX, lid_tmul, lcoeff_apply, MvPolynomial.coeff_monomial,
-    ite_smul, one_smul, zero_smul, apply_ite (fun y : homogeneousSubmodule (R := R) (M := M) d ↦
-      (y : DividedPowerAlgebra R M)), Submodule.coe_zero, Finset.sum_ite_eq',
-    Finset.mem_finsuppAntidiag, Finset.subset_univ, and_true]
-  split_ifs with h
-  · refine DirectSum.decompose_of_mem_same _ ?_
-    rw [← h]
-    exact SetLike.prod_mem_graded _ _ _ fun j _ ↦ dp_mem_homogeneousSubmodule (k j) (m j)
-  · rfl
+  have hdec (h : ∑ j, k j = d) : (DirectSum.decompose (homogeneousSubmodule (R := R) (M := M))
+      (∏ j, dp R (k j) (m j)) d : DividedPowerAlgebra R M) = ∏ j, dp R (k j) (m j) :=
+    DirectSum.decompose_of_mem_same _ <| h ▸
+      SetLike.prod_mem_graded _ _ _ fun j _ ↦ dp_mem_homogeneousSubmodule (k j) (m j)
+  rw [gamma_toFun_sum_tmul]
+  simp +contextual [hX, MvPolynomial.coeff_monomial, ite_smul,
+    apply_ite (Subtype.val : homogeneousSubmodule (R := R) (M := M) d → _), Finset.sum_ite_eq',
+    Finset.mem_finsuppAntidiag, hdec]
 
 end DividedPowerAlgebra
