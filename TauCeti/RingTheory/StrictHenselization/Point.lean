@@ -38,10 +38,12 @@ variable (R : Type u) (Ω : Type v) [CommRing R] [CommRing Ω] [Algebra R Ω]
 
 /-- An étale algebra, a prime, and an algebra map from its residue field to `Ω`. -/
 structure TripleNeighbourhood where
+  /-- The étale algebra underlying the triple. -/
   carrier : Type (max u v)
   [commRing : CommRing carrier]
   [algebra : Algebra R carrier]
   [etale : Algebra.Etale R carrier]
+  /-- The prime and residue-field embedding specifying the point. -/
   data : PointData R carrier Ω
 
 attribute [instance] TripleNeighbourhood.commRing TripleNeighbourhood.algebra
@@ -148,9 +150,11 @@ section CommRing
 
 variable (R : Type u) (Ω : Type v) [CommRing R] [CommRing Ω] [Algebra R Ω]
 
-/-- The category of étale algebra, prime, and residue-field map triples. -/
+/-- The category of étale algebra, prime, and residue-field map triples over a nontrivial target. -/
 abbrev TripleCategory :=
-  InducedCategory (Neighbourhood R Ω) (TripleNeighbourhood.toNeighbourhood R Ω)
+  InducedCategory (Neighbourhood R Ω)
+    (fun triple : Subtype (fun _ : TripleNeighbourhood R Ω => Nontrivial Ω) =>
+      triple.val.toNeighbourhood R Ω)
 
 /-- Triple morphisms agree when their underlying algebra maps agree. -/
 @[ext]
@@ -166,15 +170,15 @@ theorem TripleCategory.hom_ext {first second : TripleCategory R Ω}
 @[simp]
 theorem TripleCategory.hom_point {first second : TripleCategory R Ω}
     (morphism : first ⟶ second) :
-    second.data.toAlgHom.comp morphism.hom.hom.left.hom = first.data.toAlgHom := by
+    second.val.data.toAlgHom.comp morphism.hom.hom.left.hom = first.val.data.toAlgHom := by
   have h := congrArg CommAlgCat.Hom.hom morphism.hom.hom.w
   ext element
   exact congrArg ULift.down (DFunLike.congr_fun h element)
 
 /-- Construct a morphism of triples from a map preserving their points. -/
 noncomputable def TripleCategory.homMk (first second : TripleCategory R Ω)
-    (map : first.carrier →ₐ[R] second.carrier)
-    (hpoint : second.data.toAlgHom.comp map = first.data.toAlgHom) : first ⟶ second :=
+    (map : first.val.carrier →ₐ[R] second.val.carrier)
+    (hpoint : second.val.data.toAlgHom.comp map = first.val.data.toAlgHom) : first ⟶ second :=
   InducedCategory.homMk (ObjectProperty.homMk (Over.homMk (CommAlgCat.ofHom map) (by
     apply CommAlgCat.hom_ext
     ext element
@@ -183,28 +187,27 @@ noncomputable def TripleCategory.homMk (first second : TripleCategory R Ω)
 /-- The algebra map underlying a constructed triple morphism is the supplied map. -/
 @[simp]
 theorem TripleCategory.homMk_left (first second : TripleCategory R Ω)
-    (map : first.carrier →ₐ[R] second.carrier)
-    (hpoint : second.data.toAlgHom.comp map = first.data.toAlgHom) :
+    (map : first.val.carrier →ₐ[R] second.val.carrier)
+    (hpoint : second.val.data.toAlgHom.comp map = first.val.data.toAlgHom) :
     (TripleCategory.homMk R Ω first second map hpoint).hom.hom.left.hom = map := by
   rfl
 
-variable [Nontrivial Ω]
-
 /-- A morphism of triples is an algebra map preserving the prime and residue-field map. -/
 theorem tripleCategory_hom_iff (first second : TripleCategory R Ω)
-    (map : first.carrier →ₐ[R] second.carrier) :
+    (map : first.val.carrier →ₐ[R] second.val.carrier) :
     (∃ morphism : first ⟶ second, morphism.hom.hom.left.hom = map) ↔
-      ∃ hprime : first.data.1.asIdeal = second.data.1.asIdeal.comap map.toRingHom,
-        second.data.2.comp
-          (Ideal.ResidueField.mapₐ first.data.1.asIdeal second.data.1.asIdeal map hprime) =
-          first.data.2 := by
+      ∃ hprime : first.val.data.1.asIdeal = second.val.data.1.asIdeal.comap map.toRingHom,
+        second.val.data.2.comp
+          (Ideal.ResidueField.mapₐ first.val.data.1.asIdeal second.val.data.1.asIdeal map hprime) =
+          first.val.data.2 := by
+  have : Nontrivial Ω := first.property
   constructor
   · rintro ⟨morphism, equality⟩
-    apply (PointData.toAlgHom_comp_iff first.data second.data map).mp
+    apply (PointData.toAlgHom_comp_iff first.val.data second.val.data map).mp
     rw [← equality]
     exact TripleCategory.hom_point R Ω morphism
   · intro h
-    have hcomp := (PointData.toAlgHom_comp_iff first.data second.data map).mpr h
+    have hcomp := (PointData.toAlgHom_comp_iff first.val.data second.val.data map).mpr h
     exact ⟨TripleCategory.homMk R Ω first second map hcomp,
       TripleCategory.homMk_left R Ω first second map hcomp⟩
 
@@ -212,8 +215,19 @@ end CommRing
 
 variable (R : Type u) (Ω : Type v) [CommRing R] [Field Ω] [Algebra R Ω]
 
+/-- Triples with a nontrivial target are equivalent as objects to pointed neighbourhoods. -/
+noncomputable def tripleCategoryObjectEquiv :
+    Subtype (fun _ : TripleNeighbourhood R Ω => Nontrivial Ω) ≃ Neighbourhood R Ω where
+  toFun := fun triple => tripleNeighbourhoodEquiv R Ω triple.val
+  invFun := fun point => ⟨(tripleNeighbourhoodEquiv R Ω).symm point, inferInstance⟩
+  left_inv := by
+    intro triple
+    apply Subtype.ext
+    exact (tripleNeighbourhoodEquiv R Ω).left_inv triple.val
+  right_inv := (tripleNeighbourhoodEquiv R Ω).right_inv
+
 /-- The category of Stacks 04GW triples is equivalent to pointed étale neighbourhoods. -/
 noncomputable def tripleCategoryEquivalence : TripleCategory R Ω ≌ Neighbourhood R Ω :=
-  Equivalence.induced (tripleNeighbourhoodEquiv R Ω)
+  Equivalence.induced (tripleCategoryObjectEquiv R Ω)
 
 end TauCeti.StrictHenselization
