@@ -89,9 +89,10 @@ synonyms. -/
 theorem IsSpectralMap.continuous_withConstructibleTopology {f : X → Y} (hf : IsSpectralMap f) :
     Continuous (WithTopology.toTopology (constructibleTopology Y) ∘ f ∘ WithTopology.ofTopology :
       WithConstructibleTopology X → WithConstructibleTopology Y) :=
-  continuous_def.2 fun _ hV ↦ WithConstructibleTopology.isOpen_iff.2 <|
-    @Continuous.isOpen_preimage X Y (constructibleTopology X) (constructibleTopology Y) f
-      hf.continuous_constructibleTopology _ (WithConstructibleTopology.isOpen_iff.1 hV)
+  @Continuous.comp _ Y _ _ (constructibleTopology Y) _ _ _
+    (WithTopology.continuous_toTopology _) <|
+    @Continuous.comp _ X Y _ (constructibleTopology X) (constructibleTopology Y) _ _
+      hf.continuous_constructibleTopology (WithTopology.continuous_ofTopology _)
 
 /-- Every generic point of the closure of a subset lies in its closure for the constructible
 topology. -/
