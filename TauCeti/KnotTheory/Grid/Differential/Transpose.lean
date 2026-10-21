@@ -142,8 +142,8 @@ theorem OColumns_transpose (r : GridRectangle n) :
   ext c
   obtain ⟨d, rfl⟩ := G.O.toPerm.surjective c
   have h : (G.O.toPerm d, G.transpose.O (G.O.toPerm d)) = Prod.swap (d, G.O d) := by
-    rw [transpose_O, GridState.transpose_apply, Equiv.symm_apply_apply]
-    rfl
+    rw [transpose_O, GridState.transpose_apply, Equiv.symm_apply_apply, Prod.swap_prod_mk]
+    -- `rw` closes the goal by `rfl`: `G.O d` is `G.O.toPerm d` by the `CoeFun` instance.
   rw [mem_OColumns, GridRectangle.coveredSquares_transpose, h,
     Prod.swap_injective.mem_finset_image, Finset.mem_map_equiv, Equiv.symm_apply_apply,
     mem_OColumns]
