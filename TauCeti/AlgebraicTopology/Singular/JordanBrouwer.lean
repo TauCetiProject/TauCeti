@@ -47,6 +47,8 @@ complement has exactly two path components: the **Jordan–Brouwer separation th
   coefficients in degree `n - d`.
 * `TauCeti.natCard_zerothHomotopy_sphere_compl_range_eq_two`: **the Jordan–Brouwer separation
   theorem**: the complement of an embedded `Sⁿ⁻¹` in `Sⁿ` has exactly two path components.
+* `TauCeti.not_isPreconnected_compl_range_sphere`: in particular that complement is not
+  preconnected.
 
 ## References
 
@@ -237,6 +239,23 @@ theorem natCard_zerothHomotopy_sphere_compl_range_eq_two (hEF : finrank ℝ F = 
     @Unique.mk' _ ⟨Classical.arbitrary _⟩ hsub
   rw [← Nat.card_congr (Equiv.optionSubtypeNe (ZerothHomotopy.mk x)), Finite.card_option,
     Nat.card_unique]
+
+/-- **The Jordan–Brouwer separation theorem, connected form.** If the unit sphere of a real normed
+space of dimension `dim E + 1` is locally path connected, the complement of the image of a
+continuous injection into it of the unit sphere of a finite-dimensional real normed space `E` is not
+preconnected: being open, its two path components are its connected components. -/
+theorem not_isPreconnected_compl_range_sphere [LocallyPathConnectedSpace (sphere (0 : F) 1)]
+    (hEF : finrank ℝ F = finrank ℝ E + 1) (hc : Continuous h) (hi : Function.Injective h) :
+    ¬ IsPreconnected (range h)ᶜ := by
+  intro hconn
+  have hcard := natCard_zerothHomotopy_sphere_compl_range_eq_two hEF hc hi
+  have := (isCompact_range hc).isClosed.isOpen_compl.locallyPathConnectedSpace
+  have := isPreconnected_iff_preconnectedSpace.mp hconn
+  have hle : Nat.card (ZerothHomotopy ↥(range h)ᶜ) ≤ 1 := by
+    rw [← Nat.card_congr connectedComponentsEquivZerothHomotopy]
+    simpa using Nat.card_le_card_of_injective
+      (f := fun _ : ConnectedComponents ↥(range h)ᶜ => ()) (fun _ _ _ => Subsingleton.elim _ _)
+  omega
 
 end Sphere
 
