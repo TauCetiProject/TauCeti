@@ -341,8 +341,8 @@ theorem resolventAt_mem_closure_adjoin (u : C₀(I, R) →L[R] C₀(I, R)) (a : 
 
 /-- **Operator-norm bound for the value of the Fredholm resolvent.** If `c ≥ 0` bounds
 `‖a‖ ^ m * ‖Vₘ‖` for every `m`, then it bounds the operator norm of `V(a)`. -/
-theorem ringOpNorm_resolventAt_le [NormOneClass R] (u : C₀(I, R) →L[R] C₀(I, R)) (a : R) {c : ℝ}
-    (hc : 0 ≤ c) (h : ∀ m, ‖a‖ ^ m * ‖u.resolventCoeff m‖ ≤ c) : ‖u.resolventAt a‖ ≤ c :=
+theorem ringOpNorm_resolventAt_le (u : C₀(I, R) →L[R] C₀(I, R)) (a : R) {c : ℝ} (hc : 0 ≤ c)
+    (h : ∀ m, ‖a‖ ^ m * ‖u.resolventCoeff m‖ ≤ c) : ‖u.resolventAt a‖ ≤ c :=
   PowerSeries.norm_evalScalar_le (F := u.resolventSeries) hc fun m ↦ by
     simpa only [coeff_resolventSeries] using h m
 

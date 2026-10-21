@@ -46,8 +46,8 @@ coefficient rings here may have nilpotents.
 * `PowerSeries.evalScalar_monomial`, `PowerSeries.evalScalar_at_zero`,
   `PowerSeries.evalScalar_add`: evaluation at a scalar of monomials, at the scalar `0`, and of
   sums.
-* `PowerSeries.norm_evalScalar_le`: a uniform bound on the terms `aⁿ • Fₙ` bounds `F(a)` in an
-  ultrametric ring.
+* `PowerSeries.norm_evalScalar_le`: in an ultrametric ring, over scalars with `‖1‖ = 1`, a uniform
+  bound `c ≥ 0` on `‖a‖ ^ n * ‖Fₙ‖` bounds `‖F(a)‖`.
 -/
 
 public section
@@ -181,6 +181,11 @@ theorem evalScalar_monomial (n : ℕ) (c : A) (a : R) :
 @[simp]
 theorem evalScalar_C (c : A) (a : R) : (C c).evalScalar a = c := by
   simpa using evalScalar_monomial 0 c a
+
+/-- The variable `X` evaluates to `a • 1` at the scalar `a`. -/
+@[simp]
+theorem evalScalar_X (a : R) : (X : A⟦X⟧).evalScalar a = a • 1 := by
+  rw [X_eq, evalScalar_monomial, pow_one]
 
 /-- The series `1` evaluates to `1` at every scalar. -/
 @[simp]
