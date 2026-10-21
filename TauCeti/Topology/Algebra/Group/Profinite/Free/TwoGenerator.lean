@@ -14,18 +14,19 @@ public import Mathlib.LinearAlgebra.Determinant
 Let `F = freeProP p (Fin 2)` be the free pro-`p` group on two generators `x_0`, `x_1`, and let
 `gr_n(F)` be the graded pieces of its closed lower central series, which are `ℤ_p`-modules. By the
 degree-zero and degree-one bases of a free pro-`p` group, `gr_0(F)` is free over `ℤ_p` on the
-classes `x̄_0`, `x̄_1` (so `gr_0(F) ≃ ℤ_p²` by `(freeProP.lcsDegreeZeroBasis p (Fin 2)).equivFun`),
-and `gr_1(F)` is free over `ℤ_p` on the brackets `[x̄_i, x̄_j]` with `i < j`. In rank two there is
-exactly one such pair, so `gr_1(F) = ℤ_p [x̄_0, x̄_1]` is free of rank one. This file makes the
+classes `e_0`, `e_1` of `x_0`, `x_1` (so `gr_0(F) ≃ ℤ_p²` by
+`(freeProP.lcsDegreeZeroBasis p (Fin 2)).equivFun`), and `gr_1(F)` is free over `ℤ_p` on the
+brackets `[e_i, e_j]` with `i < j`. In rank two there is exactly one such pair, so
+`gr_1(F) = ℤ_p [e_0, e_1]` is free of rank one. This file makes the
 rank-one statement explicit and computes the bracket and the functoriality in these coordinates:
 
 * the bracket `gr_0(F) × gr_0(F) → gr_1(F)` is the determinant: `[a, b]` is
-  `det (a, b) • [x̄_0, x̄_1]`, where `det (a, b)` is the determinant of the coordinates of `a` and
-  `b` in the basis `x̄_0, x̄_1`;
+  `det (a, b) • [e_0, e_1]`, where `det (a, b)` is the determinant of the coordinates of `a` and
+  `b` in the basis `e_0, e_1`;
 * a continuous endomorphism of `F` acts on `gr_1(F)` by multiplication by the determinant of its
   action on `gr_0(F)`.
 
-The first is the alternating bilinear expansion of `[a_0 x̄_0 + a_1 x̄_1, b_0 x̄_0 + b_1 x̄_1]`.
+The first is the alternating bilinear expansion of `[a_0 e_0 + a_1 e_1, b_0 e_0 + b_1 e_1]`.
 The second follows from it because graded maps commute with the bracket and with the `ℤ_p`-action.
 Together they say that `gr_1(F)` is the determinant line of `gr_0(F)`, the rank-two case of the
 identification of `gr_1(F)` with the exterior square of `gr_0(F)`.
@@ -33,11 +34,11 @@ identification of `gr_1(F)` with the exterior square of `gr_0(F)`.
 ## Main definitions
 
 * `TauCeti.freeProP.padicIntEquivLcsGradedPieceOne`: the isomorphism `ℤ_p ≃ gr_1(F)`,
-  `c ↦ c • [x̄_0, x̄_1]`.
+  `c ↦ c • [e_0, e_1]`.
 
 ## Main results
 
-* `TauCeti.freeProP.lcsBracket_eq_det_smul`: `[a, b] = det (a, b) • [x̄_0, x̄_1]` in `gr_1(F)`.
+* `TauCeti.freeProP.lcsBracket_eq_det_smul`: `[a, b] = det (a, b) • [e_0, e_1]` in `gr_1(F)`.
 * `TauCeti.freeProP.padicIntEquivLcsGradedPieceOne_symm_lcsBracket`: in the coordinate of
   `gr_1(F) ≃ ℤ_p`, the bracket of `a` and `b` is `det (a, b)`.
 * `TauCeti.freeProP.gradedMap_one_eq_det_smul`: a continuous endomorphism `f` of `F` acts on
@@ -67,7 +68,7 @@ attribute [local instance] uniquePairs
 
 /-- **The bracket of the free pro-`p` group of rank two is the determinant.** For classes `a`, `b`
 in `gr_0` of the free pro-`p` group on two generators, the bracket `[a, b]` in `gr_1` is the
-determinant of the coordinates of `a` and `b` in the basis `x̄_0, x̄_1`, times `[x̄_0, x̄_1]`. -/
+determinant of the coordinates of `a` and `b` in the basis `e_0, e_1`, times `[e_0, e_1]`. -/
 theorem lcsBracket_eq_det_smul (a b : lcsGradedPiece (freeProP p (Fin 2)) 0) :
     lcsBracket (freeProP p (Fin 2)) 0 0 a b =
       (lcsDegreeZeroBasis p (Fin 2)).det ![a, b] •
@@ -75,7 +76,7 @@ theorem lcsBracket_eq_det_smul (a b : lcsGradedPiece (freeProP p (Fin 2)) 0) :
           (gradedMkZero 0 _ (of 1)) := by
   have hF := isProP_freeProP p (Fin 2)
   set B := lcsDegreeZeroBasis p (Fin 2)
-  -- Skew-symmetry, `[x̄_1, x̄_0] = -[x̄_0, x̄_1]`.
+  -- Skew-symmetry, `[e_1, e_0] = -[e_0, e_1]`.
   have hswap : lcsBracket (freeProP p (Fin 2)) 0 0 (B 1) (B 0) =
       -lcsBracket (freeProP p (Fin 2)) 0 0 (B 0) (B 1) := by
     rw [← gradedCast_gradedBracket_swap, gradedCast_rfl]
@@ -89,7 +90,7 @@ theorem lcsBracket_eq_det_smul (a b : lcsGradedPiece (freeProP p (Fin 2)) 0) :
   abel
 
 /-- **`gr_1` of the free pro-`p` group of rank two is free of rank one** over `ℤ_p`, on the bracket
-`[x̄_0, x̄_1]`: the isomorphism `ℤ_p ≃ gr_1`, `c ↦ c • [x̄_0, x̄_1]`
+`[e_0, e_1]`: the isomorphism `ℤ_p ≃ gr_1`, `c ↦ c • [e_0, e_1]`
 (`padicIntEquivLcsGradedPieceOne_apply`). -/
 noncomputable def padicIntEquivLcsGradedPieceOne :
     ℤ_[p] ≃ₗ[ℤ_[p]] lcsGradedPiece (freeProP p (Fin 2)) 1 :=
@@ -106,7 +107,7 @@ theorem padicIntEquivLcsGradedPieceOne_apply (c : ℤ_[p]) :
   simp
 
 /-- **In the coordinate of `gr_1 ≃ ℤ_p`, the bracket is the determinant**: the coordinate of
-`[a, b]` is the determinant of the coordinates of `a` and `b` in the basis `x̄_0, x̄_1`. -/
+`[a, b]` is the determinant of the coordinates of `a` and `b` in the basis `e_0, e_1`. -/
 @[simp]
 theorem padicIntEquivLcsGradedPieceOne_symm_lcsBracket
     (a b : lcsGradedPiece (freeProP p (Fin 2)) 0) :
@@ -116,7 +117,7 @@ theorem padicIntEquivLcsGradedPieceOne_symm_lcsBracket
 
 /-- **Continuous endomorphisms act on `gr_1` by the determinant.** A continuous endomorphism `f` of
 the free pro-`p` group of rank two acts on `gr_1` as multiplication by the determinant of the
-matrix of its action on `gr_0` in the basis `x̄_0, x̄_1`. -/
+matrix of its action on `gr_0` in the basis `e_0, e_1`. -/
 theorem gradedMap_one_eq_det_smul (f : freeProP p (Fin 2) →* freeProP p (Fin 2))
     (hf : Continuous f) (z : lcsGradedPiece (freeProP p (Fin 2)) 1) :
     gradedMap 0 f hf 1 z =
