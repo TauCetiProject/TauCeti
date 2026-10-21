@@ -62,7 +62,7 @@ theorem isCompl_span_correctedE2AtLevel_cuspFormSubmodule_of_squarefree (hN : Sq
     exact finrank_span_correctedE2AtLevel
   have hlt : Module.finrank ℂ (LinearMap.range Q) < N.divisors.card := by
     have h := Submodule.finrank_lt_finrank_of_lt
-      (lt_top_iff_ne_top.mpr (range_constantTermsAtDivisors_ne_top_of_squarefree hN))
+      (lt_top_iff_ne_top.mpr (weight_two_range_constantTermsAtDivisors_ne_top_of_squarefree hN))
     simpa using h
   have heq : E.map Q = LinearMap.range Q :=
     Submodule.eq_of_le_of_finrank_le LinearMap.map_le_range

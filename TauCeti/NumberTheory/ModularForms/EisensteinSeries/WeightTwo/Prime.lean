@@ -9,7 +9,6 @@ public import TauCeti.NumberTheory.ModularForms.Cusps.Prime
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightTwo.ConstantTerm
 import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightTwo.Squarefree
 import TauCeti.NumberTheory.ModularForms.SturmBound
-import Mathlib.Data.Nat.Squarefree
 import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 
 /-!

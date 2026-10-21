@@ -74,7 +74,7 @@ theorem constantTermAt_eq_of_gcd_eq_of_squarefree
     constantTermAt_mul_left (Subgroup.mem_map_of_mem _ hδ)]
 
 /-- At squarefree level, the divisor-indexed values recover every cusp constant term. -/
-theorem constantTermAt_eq_constantTermsAtDivisors
+theorem constantTermAt_eq_constantTermsAtDivisors_of_squarefree
     (hN : Squarefree N) (f : ModularForm ((Gamma0 N).map (mapGL ℝ)) k) (γ : SL(2, ℤ)) :
     constantTermAt γ f = constantTermsAtDivisors f
       ⟨Int.gcd (γ 1 0) N,
@@ -93,7 +93,7 @@ theorem ker_constantTermsAtDivisors_of_squarefree (hN : Squarefree N) :
   rw [LinearMap.mem_ker, mem_cuspFormSubmodule_iff_constantTermAt_eq_zero]
   constructor
   · intro h γ
-    rw [constantTermAt_eq_constantTermsAtDivisors hN f γ, h]
+    rw [constantTermAt_eq_constantTermsAtDivisors_of_squarefree hN f γ, h]
     rfl
   · intro h
     ext d
@@ -101,13 +101,13 @@ theorem ker_constantTermsAtDivisors_of_squarefree (hN : Squarefree N) :
     exact h _
 
 /-- In weight two, not every divisor-indexed boundary vector occurs at squarefree level. -/
-theorem range_constantTermsAtDivisors_ne_top_of_squarefree (hN : Squarefree N) :
+theorem weight_two_range_constantTermsAtDivisors_ne_top_of_squarefree (hN : Squarefree N) :
     LinearMap.range (constantTermsAtDivisors (N := N) (k := 2)) ≠ ⊤ := by
   classical
   intro htop
   obtain ⟨f, hf⟩ := LinearMap.range_eq_top.mp htop (1 : N.divisors → ℂ)
   have hall (γ : SL(2, ℤ)) : constantTermAt γ f = 1 := by
-    rw [constantTermAt_eq_constantTermsAtDivisors hN f γ, hf]
+    rw [constantTermAt_eq_constantTermsAtDivisors_of_squarefree hN f γ, hf]
     rfl
   have horbit (c : TauCeti.ModularForm.CuspTranslationOrbit ((Gamma0 N).map (mapGL ℝ))) :
       TauCeti.ModularForm.constantTermAtCuspTranslationOrbit f c = 1 := by
