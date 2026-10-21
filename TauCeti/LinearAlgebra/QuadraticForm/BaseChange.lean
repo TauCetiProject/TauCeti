@@ -29,7 +29,8 @@ nondegenerate over a field extension. It also identifies the base change of a di
 the diagonal form obtained by mapping its coefficients into the target algebra, extends
 orthogonal and special orthogonal automorphisms so a quadratic space's rational symmetries act on
 each scalar extension, and shows that extending scalars carries the reflection in a vector `v` to
-the reflection in `1 ⊗ₜ v`.
+the reflection in `1 ⊗ₜ v`, so that a reflection factorization `τ_{v₀} ⋯ τ_{vₙ₋₁}` extends to the
+factorization `τ_{1 ⊗ v₀} ⋯ τ_{1 ⊗ vₙ₋₁}`.
 
 These results complement Mathlib's construction `QuadraticForm.baseChange` and its pure-tensor
 evaluation theorem.  They allow localizations of a quadratic space to inherit maps, injective
@@ -610,6 +611,28 @@ theorem reflection_baseChange (Q : _root_.QuadraticForm R M) (v : M) [Invertible
       _root_.QuadraticForm.polar_baseChange_tmul]
     simp [TensorProduct.tmul_sub, TensorProduct.smul_tmul', Algebra.smul_def, mul_assoc]
   | add x y hx hy => simp only [map_add, hx, hy]
+
+/-- Extending scalars carries the orthogonal reflection in `v` to the orthogonal reflection in
+`1 ⊗ₜ v`, as elements of the orthogonal group of `Q.baseChange A`. -/
+theorem orthogonalGroupBaseChange_reflectionOrthogonal (Q : _root_.QuadraticForm R M) (v : M)
+    [Invertible (Q v)] [Invertible (Q.baseChange A (1 ⊗ₜ v))] :
+    orthogonalGroupBaseChange (A := A) Q (reflectionOrthogonal Q v) =
+      reflectionOrthogonal (Q.baseChange A) (1 ⊗ₜ v) :=
+  Subtype.ext <| by
+    rw [coe_orthogonalGroupBaseChange, coe_reflectionOrthogonal, coe_reflectionOrthogonal,
+      reflection_baseChange]
+
+/-- **Reflection factorizations extend scalars.** If `g = τ_{v₀} ⋯ τ_{vₙ₋₁}` is a product of
+reflections of `Q`, then its scalar extension is the product of the reflections of
+`Q.baseChange A` in the vectors `1 ⊗ₜ vᵢ`, in the same order. Applied to the completions of a
+number field, a global reflection factorization localizes to one at every place. -/
+theorem orthogonalGroupBaseChange_prod_ofFn_reflectionOrthogonal (Q : _root_.QuadraticForm R M)
+    {n : ℕ} (v : Fin n → M) [∀ i, Invertible (Q (v i))]
+    [∀ i, Invertible (Q.baseChange A (1 ⊗ₜ v i))] :
+    orthogonalGroupBaseChange (A := A) Q (List.ofFn fun i ↦ reflectionOrthogonal Q (v i)).prod =
+      (List.ofFn fun i ↦ reflectionOrthogonal (Q.baseChange A) (1 ⊗ₜ v i)).prod := by
+  simp only [map_list_prod, List.map_ofFn, Function.comp_def,
+    orthogonalGroupBaseChange_reflectionOrthogonal]
 
 end QuadraticMap
 
