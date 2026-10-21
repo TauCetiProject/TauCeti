@@ -7,8 +7,13 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.AddOneForm
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Conformal
+public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar
+import Mathlib.Analysis.SpecialFunctions.Log.Deriv
+import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
+import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 
 /-!
 # Curvature under a conformal change of metric
@@ -25,9 +30,7 @@ from that of `g`:
 where `∇` is the Levi-Civita connection of `g` and
 `(∇_X A)(Z, Y) = ∇_X (A(Z, Y)) - A(∇_X Z, Y) - A(Z, ∇_X Y)`. Writing `f = e^(2φ)`, the tensor
 is `A(Y, X) = dφ(X) Y + dφ(Y) X - g(X, Y) grad_g φ`, and this is the classical transformation law
-of the Riemann curvature under the conformal change `e^(2φ) g`. It is the input from which the
-Ricci and scalar curvatures of `ĝ`, and hence the conformal Laplacian of the Yamabe problem, are
-computed.
+of the Riemann curvature under the conformal change `e^(2φ) g`.
 
 The identity holds at a point `x` for a `Cⁿ` metric with `1 ≤ n`, and with the Levi-Civita
 connection of `g` replaced by any connection that is Levi-Civita for `g`. The conformal factor `f`
@@ -39,12 +42,31 @@ As for the conformal change of the Levi-Civita connection
 on a metric, so each metric is installed in turn as the `RiemannianBundle` instance of the tangent
 bundle of `M` and the connections are compared directly on `M`.
 
+For a smooth metric and a smooth conformal factor `f = e^(2φ)`, the difference of the two
+curvatures is a tensor built from the Hessian `Hess φ`, the differential `dφ` and the gradient
+`grad φ`, so it can be evaluated pointwise and contracted. The factor is given as a smooth
+positive function `f` together with a function `φ` satisfying `f = e^(2φ)`; such a `φ` is
+automatically smooth. With `n` the dimension, `Δ = div grad`
+the Laplace–Beltrami operator of `g` and `R(u, v) w = ∇_u ∇_v w - ∇_v ∇_u w - ∇_[u,v] w`, the
+contractions are the classical formulas
+
+`Ric^ĝ = Ric^g - (n - 2) (Hess φ - dφ ⊗ dφ) + (-Δφ - (n - 2) |dφ|²) g`,
+
+`Scal^ĝ = e^(-2φ) (Scal^g - 2 (n - 1) Δφ - (n - 1) (n - 2) |dφ|²)`.
+
+The scalar formula is the input from which the conformal Laplacian of the Yamabe problem arises.
+
 ## Main results
 
 * `Bundle.ContMDiffRiemannianMetric.curvatureOperator_leviCivitaConnection_rescale`: the curvature
   of `f g` in terms of a Levi-Civita connection of `g` and the conformal connection tensor of `f`.
 * `Bundle.ContMDiffRiemannianMetric.curvatureOperator_leviCivitaConnection_rescale_of_contMDiff`:
   the same identity for a smooth metric, a smooth conformal factor and smooth vector fields.
+* `Bundle.ContMDiffRiemannianMetric.curvatureTensor_leviCivitaConnection_rescale`: the pointwise
+  curvature tensor of `e^(2φ) g` in terms of that of `g`, `Hess φ`, `dφ` and `grad φ`.
+* `Bundle.ContMDiffRiemannianMetric.ricciTensor_leviCivitaConnection_rescale`: the Ricci tensor of
+  `e^(2φ) g`.
+* `Bundle.ContMDiffRiemannianMetric.scalarCurvature_rescale`: the scalar curvature of `e^(2φ) g`.
 
 ## References
 
@@ -176,5 +198,288 @@ theorem curvatureOperator_leviCivitaConnection_rescale_of_contMDiff [IsManifold 
     (CovariantDerivative.isLeviCivitaConnection_leviCivitaConnection I)
     (hX.mdifferentiableAt (by simp)) (hY.mdifferentiableAt (by simp))
     (hZ.mdifferentiable (by simp)) (hcov hX) (hcov hY) (hA hZ hX) (hA hZ hY)
+
+end Bundle.ContMDiffRiemannianMetric
+
+namespace TauCeti.Manifold
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+
+/-- The covariant derivative of the conformal connection tensor `A` of `e^(2φ)`:
+`(∇_X A)(Z, Y) = Hess φ(X, Y) Z + Hess φ(X, Z) Y - g(Z, Y) ∇_X grad φ`. -/
+private theorem leviCivitaConnection_conformalConnectionTensor_exp {φ : M → ℝ}
+    (hφ : ContMDiff I 𝓘(ℝ) ∞ φ) {X Y Z : Π x : M, TangentSpace I x}
+    (hY : CMDiff ∞ (T% Y)) (hZ : CMDiff ∞ (T% Z)) (x : M) :
+    CovariantDerivative.leviCivitaConnection I M
+        (fun y ↦ conformalConnectionTensor I (fun y ↦ Real.exp (2 * φ y)) y (Z y) (Y y)) x
+        (X x) -
+      conformalConnectionTensor I (fun y ↦ Real.exp (2 * φ y)) x
+        (CovariantDerivative.leviCivitaConnection I M Z x (X x)) (Y x) -
+      conformalConnectionTensor I (fun y ↦ Real.exp (2 * φ y)) x (Z x)
+        (CovariantDerivative.leviCivitaConnection I M Y x (X x)) =
+    hessian I φ x (X x) (Y x) • Z x + hessian I φ x (X x) (Z x) • Y x -
+      inner ℝ (Z x) (Y x) •
+        CovariantDerivative.leviCivitaConnection I M (mgradient I φ) x (X x) := by
+  let _ : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
+  have hφ' : MDiff φ := hφ.mdifferentiable (by simp)
+  have hG : CMDiff ∞ (T% (mgradient I φ)) := contMDiff_mgradient hφ
+  have hinner {U W : Π x : M, TangentSpace I x} (hU : CMDiff ∞ (T% U)) (hW : CMDiff ∞ (T% W)) :
+      MDiffAt (fun y ↦ inner ℝ (U y) (W y)) x :=
+    mdifferentiableAt_inner (hU.mdifferentiableAt (by simp)) (hW.mdifferentiableAt (by simp))
+  have hd {W : Π x : M, TangentSpace I x} (hW : CMDiff ∞ (T% W)) :
+      MDiffAt (fun y ↦ mvfderiv I φ y (W y)) x := by
+    simpa only [inner_mgradient] using hinner hG hW
+  -- Write `A(Z, Y) = dφ(Y) Z + dφ(Z) Y - g(Z, Y) grad φ` and apply the Leibniz rule.
+  have hfield :
+      (fun y ↦ conformalConnectionTensor I (fun y ↦ Real.exp (2 * φ y)) y (Z y) (Y y)) =
+      (fun y ↦ mvfderiv I φ y (Y y)) • Z + (fun y ↦ mvfderiv I φ y (Z y)) • Y +
+        (fun y ↦ -inner ℝ (Z y) (Y y)) • mgradient I φ := by
+    funext y
+    simp only [conformalConnectionTensor_exp_two_mul_apply (hφ' y), Pi.add_apply,
+      Pi.smul_apply', neg_smul, sub_eq_add_neg]
+  have hYx := hY.mdifferentiableAt (x := x) (by simp)
+  have hZx := hZ.mdifferentiableAt (x := x) (by simp)
+  have hGx := hG.mdifferentiableAt (x := x) (by simp)
+  have hn : MDiffAt (fun y ↦ -inner ℝ (Z y) (Y y)) x := (hinner hZ hY).neg
+  rw [hfield, (CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv.add
+      (mdifferentiableAt_add_section ((hd hY).smul_section hZx) ((hd hZ).smul_section hYx))
+      (hn.smul_section hGx),
+    (CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv.add
+      ((hd hY).smul_section hZx) ((hd hZ).smul_section hYx),
+    (CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv.leibniz hZx (hd hY),
+    (CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv.leibniz hYx (hd hZ),
+    (CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv.leibniz hGx hn]
+  -- The derivatives of `dφ(Y)` and `dφ(Z)` give the Hessian, and that of `g(Z, Y)` cancels by
+  -- metric compatibility.
+  have hHY := hessian_apply_eq_mvfderiv_sub hφ x X Y hYx
+  have hHZ := hessian_apply_eq_mvfderiv_sub hφ x X Z hZx
+  have hm := (CovariantDerivative.isMetricCompatible_leviCivitaConnection I).mvfderiv_inner_eq
+      X hZx hYx
+  simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, mvfderiv_fun_neg,
+    neg_apply, conformalConnectionTensor_exp_two_mul_apply (hφ' x), hHY, hHZ, hm]
+  module
+
+end TauCeti.Manifold
+
+namespace Bundle.ContMDiffRiemannianMetric
+
+open TauCeti.Manifold
+open scoped RealInnerProductSpace
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
+
+omit [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M] in
+/-- A function `φ` with `e^(2φ)` smooth is smooth. -/
+private theorem contMDiff_of_eq_exp {f : M → ℝ}
+    (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hf_pos : ∀ x, 0 < f x) {φ : M → ℝ}
+    (hfφ : ∀ x, f x = Real.exp (2 * φ x)) : ContMDiff I 𝓘(ℝ) ∞ φ := by
+  have h : φ = fun y ↦ Real.log (f y) / 2 := by
+    funext y
+    rw [hfφ, Real.log_exp]
+    ring
+  rw [h]
+  intro y
+  exact ((Real.contDiffAt_log.2 (hf_pos y).ne').comp_contMDiffAt (hf y)).div_const 2
+
+/-- **Curvature tensor under conformal change.** Let `g` be a smooth metric and `f = e^(2φ)` a
+smooth positive function. With `Hess φ`, `∇` and `grad φ` taken for `g`, the curvature tensor of
+`f g` at `x` is
+
+`R^(f g)(u, v) w = R^g(u, v) w + Hess φ(u, w) v - Hess φ(v, w) u + g(u, w) ∇_v grad φ`
+`- g(v, w) ∇_u grad φ + dφ(v) dφ(w) u - dφ(u) dφ(w) v + (dφ(u) g(v, w) - dφ(v) g(u, w)) grad φ`
+`- |dφ|² (g(v, w) u - g(u, w) v)`. -/
+theorem curvatureTensor_leviCivitaConnection_rescale
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+    {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hf_pos : ∀ x, 0 < f x) {φ : M → ℝ}
+    (hfφ : ∀ x, f x = Real.exp (2 * φ x)) (x : M) (u v w : TangentSpace I x) :
+    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+        ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩;
+      (CovariantDerivative.leviCivitaConnection I M).curvatureTensor x u v w) =
+    letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+    letI cov := CovariantDerivative.leviCivitaConnection I M
+    cov.curvatureTensor x u v w + hessian I φ x u w • v - hessian I φ x v w • u +
+      ⟪u, w⟫ • cov (mgradient I φ) x v - ⟪v, w⟫ • cov (mgradient I φ) x u +
+      (mvfderiv I φ x v * mvfderiv I φ x w) • u - (mvfderiv I φ x u * mvfderiv I φ x w) • v +
+      (mvfderiv I φ x u * ⟪v, w⟫ - mvfderiv I φ x v * ⟪u, w⟫) • mgradient I φ x -
+      ‖mgradient I φ x‖ ^ 2 • (⟪v, w⟫ • u - ⟪u, w⟫ • v) := by
+  have hφ := contMDiff_of_eq_exp hf hf_pos hfφ
+  obtain rfl : f = fun y ↦ Real.exp (2 * φ y) := funext hfφ
+  obtain ⟨X, hX, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E u
+  obtain ⟨Y, hY, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E v
+  obtain ⟨Z, hZ, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E w
+  have h₁ : (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+        ⟨(g.rescale _ hf hf_pos).toRiemannianMetric⟩;
+      (CovariantDerivative.leviCivitaConnection I M).curvatureTensor x (X x) (Y x) (Z x)) =
+      (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+        ⟨(g.rescale _ hf hf_pos).toRiemannianMetric⟩;
+      (CovariantDerivative.leviCivitaConnection I M).curvatureOperator X Y Z x) := by
+    let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+      ⟨(g.rescale _ hf hf_pos).toRiemannianMetric⟩
+    exact CovariantDerivative.curvatureTensor_apply _ x hX hY hZ
+  rw [h₁, curvatureOperator_leviCivitaConnection_rescale_of_contMDiff g hf hf_pos hX hY hZ x]
+  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+  have hφx : MDiffAt φ x := hφ.mdifferentiableAt (by simp)
+  rw [CovariantDerivative.curvatureTensor_apply _ x hX hY hZ]
+  have hXYZ := leviCivitaConnection_conformalConnectionTensor_exp hφ (X := X) hY hZ x
+  have hYXZ := leviCivitaConnection_conformalConnectionTensor_exp hφ (X := Y) hX hZ x
+  rw [hXYZ, hYXZ, hessian_symm hφ x (Y x) (X x)]
+  simp only [conformalConnectionTensor_exp_two_mul_apply hφx, map_add, map_sub, map_smul,
+    add_apply, sub_apply, smul_apply, inner_mgradient, mvfderiv_apply_mgradient,
+    real_inner_self_eq_norm_sq]
+  simp only [real_inner_comm (X x) (Z x), real_inner_comm (Y x) (Z x),
+    real_inner_comm (X x) (Y x)]
+  module
+
+/-- **Ricci tensor under conformal change.** Let `g` be a smooth metric on a manifold of
+dimension `n` and `f = e^(2φ)` a smooth positive function. Then
+`Ric^(f g) = Ric^g - (n - 2) (Hess φ - dφ ⊗ dφ) + (-Δφ - (n - 2) |dφ|²) g`, where `Hess φ`,
+`Δφ = div grad φ` and `|dφ|` are taken for `g`. -/
+theorem ricciTensor_leviCivitaConnection_rescale
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+    {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hf_pos : ∀ x, 0 < f x) {φ : M → ℝ}
+    (hfφ : ∀ x, f x = Real.exp (2 * φ x)) (x : M) (u v : TangentSpace I x) :
+    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+        ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩;
+      (CovariantDerivative.leviCivitaConnection I M).ricciTensor x u v) =
+    letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+    (CovariantDerivative.leviCivitaConnection I M).ricciTensor x u v -
+      (Module.finrank ℝ E - 2) * (hessian I φ x u v - mvfderiv I φ x u * mvfderiv I φ x v) +
+      (-laplaceBeltrami I φ x - (Module.finrank ℝ E - 2) * ‖mgradient I φ x‖ ^ 2) * ⟪u, v⟫ := by
+  have hφ := contMDiff_of_eq_exp hf hf_pos hfφ
+  -- The Ricci tensor is a trace, which does not involve the metric.
+  have hRic : (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+        ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩;
+      (CovariantDerivative.leviCivitaConnection I M).ricciTensor x u v) =
+      LinearMap.trace ℝ (TangentSpace I x)
+        (((letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+          ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩;
+        (CovariantDerivative.leviCivitaConnection I M).curvatureTensor x).flip u).flip v) := by
+    let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+      ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩
+    exact CovariantDerivative.ricciTensor_apply _ x u v
+  rw [hRic]
+  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+  let b := stdOrthonormalBasis ℝ (TangentSpace I x)
+  rw [LinearMap.trace_eq_sum_inner _ b,
+    CovariantDerivative.ricciTensor_eq_sum_inner _ x b u v]
+  simp only [LinearMap.flip_apply, curvatureTensor_leviCivitaConnection_rescale g hf hf_pos hfφ]
+  simp only [inner_add_right, inner_sub_right, inner_smul_right, Finset.sum_add_distrib,
+    Finset.sum_sub_distrib, ← Finset.mul_sum]
+  -- The contractions against the orthonormal basis `b`.
+  have hsum (a c : TangentSpace I x) : ∑ i, ⟪b i, a⟫ * ⟪b i, c⟫ = ⟪a, c⟫ := by
+    rw [← b.sum_inner_mul_inner a c]
+    simp only [real_inner_comm a]
+  have hdim : ∑ i, ⟪b i, b i⟫ = Module.finrank ℝ E := by
+    simp only [real_inner_self_eq_norm_sq, b.orthonormal.1, one_pow, Finset.sum_const,
+      Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, mul_one]
+    -- The tangent space `TangentSpace I x` is the model space `E`.
+    rfl
+  have hΔ : ∑ i, ⟪b i, CovariantDerivative.leviCivitaConnection I M (mgradient I φ) x (b i)⟫ =
+      laplaceBeltrami I φ x := by
+    simp only [laplaceBeltrami_eq_sum_hessian I φ x b, hessian_def, real_inner_comm]
+  have hH₁ : ∑ i, hessian I φ x (b i) v * ⟪b i, u⟫ = hessian I φ x u v := by
+    calc ∑ i, hessian I φ x (b i) v * ⟪b i, u⟫ =
+        ∑ i, ⟪CovariantDerivative.leviCivitaConnection I M (mgradient I φ) x v, b i⟫ *
+          ⟪b i, u⟫ :=
+          Finset.sum_congr rfl fun i _ ↦ by rw [hessian_symm hφ, hessian_def]
+      _ = hessian I φ x u v := by rw [b.sum_inner_mul_inner, ← hessian_def, hessian_symm hφ]
+  have hH₂ : ∑ i, ⟪b i, v⟫ *
+      ⟪b i, CovariantDerivative.leviCivitaConnection I M (mgradient I φ) x u⟫ =
+      hessian I φ x u v := by
+    rw [hsum, real_inner_comm, hessian_def]
+  have hP₁ : ∑ i, mvfderiv I φ x (b i) * mvfderiv I φ x v * ⟪b i, u⟫ =
+      mvfderiv I φ x u * mvfderiv I φ x v := by
+    calc ∑ i, mvfderiv I φ x (b i) * mvfderiv I φ x v * ⟪b i, u⟫ =
+        ∑ i, ⟪mgradient I φ x, b i⟫ * ⟪b i, u⟫ * mvfderiv I φ x v :=
+          Finset.sum_congr rfl fun i _ ↦ by
+            rw [← inner_mgradient (b i)]
+            ring
+      _ = mvfderiv I φ x u * mvfderiv I φ x v := by
+        rw [← Finset.sum_mul, b.sum_inner_mul_inner, inner_mgradient]
+  have hP₂ : ∑ i, (mvfderiv I φ x (b i) * ⟪u, v⟫ - mvfderiv I φ x u * ⟪b i, v⟫) *
+      ⟪b i, mgradient I φ x⟫ =
+      ⟪u, v⟫ * ‖mgradient I φ x‖ ^ 2 - mvfderiv I φ x u * mvfderiv I φ x v := by
+    calc ∑ i, (mvfderiv I φ x (b i) * ⟪u, v⟫ - mvfderiv I φ x u * ⟪b i, v⟫) *
+          ⟪b i, mgradient I φ x⟫ =
+        ∑ i, (⟪u, v⟫ * (⟪mgradient I φ x, b i⟫ * ⟪b i, mgradient I φ x⟫) -
+          mvfderiv I φ x u * (⟪v, b i⟫ * ⟪b i, mgradient I φ x⟫)) :=
+          Finset.sum_congr rfl fun i _ ↦ by
+            rw [← inner_mgradient (b i), real_inner_comm (b i) v]
+            ring
+      _ = ⟪u, v⟫ * ‖mgradient I φ x‖ ^ 2 - mvfderiv I φ x u * mvfderiv I φ x v := by
+        rw [Finset.sum_sub_distrib, ← Finset.mul_sum, ← Finset.mul_sum, b.sum_inner_mul_inner,
+          b.sum_inner_mul_inner, real_inner_self_eq_norm_sq, inner_mgradient_right]
+  rw [hH₁, hdim, hH₂, hΔ, hP₁, hP₂, hsum v u, real_inner_comm v u]
+  ring
+
+/-- **Scalar curvature under conformal change.** Let `g` be a smooth metric on a manifold of
+dimension `n` and `f = e^(2φ)` a smooth positive function. Then
+`Scal^(f g) = f⁻¹ (Scal^g - 2 (n - 1) Δφ - (n - 1) (n - 2) |dφ|²)`, where `Δφ = div grad φ` and
+`|dφ|` are taken for `g`. -/
+theorem scalarCurvature_rescale
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+    {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hf_pos : ∀ x, 0 < f x) {φ : M → ℝ}
+    (hfφ : ∀ x, f x = Real.exp (2 * φ x)) (x : M) :
+    (g.rescale f hf hf_pos).scalarCurvature x =
+      letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+      (f x)⁻¹ * (g.scalarCurvature x - 2 * (Module.finrank ℝ E - 1) * laplaceBeltrami I φ x -
+        (Module.finrank ℝ E - 1) * (Module.finrank ℝ E - 2) * ‖mgradient I φ x‖ ^ 2) := by
+  rw [scalarCurvature_def, scalarCurvature_def]
+  -- A `g`-orthonormal basis, recorded through the inner products of `g` itself, and the
+  -- contractions in it of the tensors appearing in the conformal change of the Ricci tensor.
+  obtain ⟨d, b, hb, hs, hΔ, hG, hd⟩ : ∃ (d : ℕ) (b : Module.Basis (Fin d) ℝ (TangentSpace I x)),
+      (∀ i j, g.inner x (b i) (b j) = if i = j then 1 else 0) ∧
+      (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
+        (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x) =
+        ∑ j, (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
+          (CovariantDerivative.leviCivitaConnection I M).ricciTensor x) (b j) (b j) ∧
+      (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
+        laplaceBeltrami I φ x) =
+        ∑ j, (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
+          hessian I φ x (b j) (b j)) ∧
+      (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
+        ‖mgradient I φ x‖ ^ 2) = ∑ j, mvfderiv I φ x (b j) * mvfderiv I φ x (b j) ∧
+      (d : ℝ) = Module.finrank ℝ E := by
+    let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+    let b := stdOrthonormalBasis ℝ (TangentSpace I x)
+    refine ⟨_, b.toBasis, fun i j ↦ ?_, ?_, ?_, ?_, rfl⟩
+    · rw [b.coe_toBasis, ← inner_riemannianBundle]
+      exact orthonormal_iff_ite.1 b.orthonormal i j
+    · rw [b.coe_toBasis]
+      exact CovariantDerivative.scalarCurvature_eq_sum _ x b
+    · rw [b.coe_toBasis]
+      exact laplaceBeltrami_eq_sum_hessian I φ x b
+    · rw [b.coe_toBasis, ← real_inner_self_eq_norm_sq, ← b.sum_inner_mul_inner]
+      simp only [inner_mgradient, inner_mgradient_right]
+  set s := Real.sqrt (f x)
+  have hs0 : 0 < s := Real.sqrt_pos.2 (hf_pos x)
+  have hss : s⁻¹ * s⁻¹ = (f x)⁻¹ := by rw [← mul_inv, Real.mul_self_sqrt (hf_pos x).le]
+  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+    ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩
+  -- Dividing it by `√(f x)` gives a basis orthonormal for the rescaled metric at `x`.
+  have hon : Orthonormal ℝ (b.unitsSMul fun _ ↦ Units.mk0 s⁻¹ (inv_ne_zero hs0.ne')) := by
+    rw [orthonormal_iff_ite]
+    intro i j
+    simp only [Module.Basis.unitsSMul_apply, Units.smul_def, Units.val_mk0,
+      inner_riemannianBundle, rescale_inner, map_smul, smul_apply, smul_eq_mul, hb]
+    split_ifs
+    · field_simp
+      exact (Real.sq_sqrt (hf_pos x).le).symm
+    · simp
+  rw [CovariantDerivative.scalarCurvature_eq_sum _ x ((b.unitsSMul _).toOrthonormalBasis hon)]
+  simp only [Module.Basis.coe_toOrthonormalBasis, Module.Basis.unitsSMul_apply, Units.smul_def,
+    Units.val_mk0, map_smul, LinearMap.smul_apply, smul_eq_mul, ← mul_assoc, hss,
+    ricciTensor_leviCivitaConnection_rescale g hf hf_pos hfφ, inner_riemannianBundle, hb,
+    ite_true, mul_one]
+  rw [← Finset.mul_sum, hs, hΔ, hG]
+  simp only [Finset.sum_add_distrib, Finset.sum_sub_distrib, ← Finset.mul_sum, Finset.sum_const,
+    Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, hd]
+  ring
 
 end Bundle.ContMDiffRiemannianMetric
