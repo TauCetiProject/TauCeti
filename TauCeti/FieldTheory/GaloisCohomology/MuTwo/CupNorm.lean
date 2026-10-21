@@ -141,6 +141,7 @@ theorem cup_kummerClass_neg_self (a : Kˣ) :
     (BrauerGroup.quaternionClass_neg_self a)
 
 /-- The relation `(a) ∪ (a) = (a) ∪ (-1)`, the cohomological form of `[(a, a)] = [(a, -1)]`. -/
+@[simp]
 theorem cup_kummerClass_self (a : Kˣ) :
     (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1 (kummerClass a) (kummerClass a) =
       (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1 (kummerClass a) (kummerClass (-1)) := by
