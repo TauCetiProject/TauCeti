@@ -172,6 +172,15 @@ theorem hasGaussNorm_add (hc : 0 ≤ c) (hf : f.HasGaussNorm norm c)
   ⟨_, Set.forall_mem_range.mpr fun m ↦ (norm_coeff_add_mul_pow_le_max f g hc m).trans
     (max_le_max (PowerSeries.le_gaussNorm norm c _ hf m) (PowerSeries.le_gaussNorm norm c _ hg m))⟩
 
+/-- The Gauss norm is submultiplicative on series with bounded weighted coefficient norms,
+at a nonnegative radius over an ultrametric seminormed ring. -/
+theorem gaussNorm_mul_le_of_hasGaussNorm (hc : 0 ≤ c) (hf : f.HasGaussNorm norm c)
+    (hg : g.HasGaussNorm norm c) :
+    (f * g).gaussNorm norm c ≤ f.gaussNorm norm c * g.gaussNorm norm c :=
+  MvPowerSeries.gaussNorm_mul_le norm (fun _ : Unit ↦ c) f g (fun _ ↦ hc)
+    norm_nonneg norm_mul_le IsUltrametricDist.isNonarchimedean_norm norm_zero
+    hf.hasMvGaussNorm hg.hasMvGaussNorm
+
 /-- The product of two power series with bounded weighted coefficient norms again has bounded
 weighted coefficient norms at a nonnegative radius. -/
 theorem hasGaussNorm_mul (hc : 0 ≤ c) (hf : f.HasGaussNorm norm c)
@@ -743,9 +752,7 @@ private theorem gaussNorm_mul_eq_of_norm_coeff_mul_pow_eq (hc : 0 < c)
     (hk : ‖(f * g).coeff k‖ * c ^ k = f.gaussNorm norm c * g.gaussNorm norm c) :
     (f * g).gaussNorm norm c = f.gaussNorm norm c * g.gaussNorm norm c :=
   le_antisymm
-    (MvPowerSeries.gaussNorm_mul_le norm (fun _ : Unit ↦ c) f g (fun _ ↦ hc.le)
-      norm_nonneg norm_mul_le IsUltrametricDist.isNonarchimedean_norm norm_zero
-      hbf.hasMvGaussNorm hbg.hasMvGaussNorm)
+    (gaussNorm_mul_le_of_hasGaussNorm (f := f) (g := g) hc.le hbf hbg)
     (hk.symm.trans_le (PowerSeries.le_gaussNorm norm c (f * g) (hasGaussNorm_mul hc.le hbf hbg) k))
 
 /-- If degrees `i` and `j` attain the Gauss norms of `f` and `g`, the product of the two

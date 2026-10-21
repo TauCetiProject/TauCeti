@@ -137,9 +137,8 @@ theorem IsDistinguished.gaussNorm_le_gaussNorm_mul_add (hf : IsDistinguished c s
     hasGaussNorm_of_isRestricted (isRestricted_of_forall_coeff_eq_zero hr)
   have hbsum : (q * f + r).HasGaussNorm norm c := hasGaussNorm_add hc.le hbqf hbr
   have hqf : (q * f).gaussNorm norm c ≤ (q * f + r).gaussNorm norm c :=
-    (MvPowerSeries.gaussNorm_mul_le norm (fun _ : Unit ↦ c) q f (fun _ ↦ hc.le)
-      norm_nonneg norm_mul_le IsUltrametricDist.isNonarchimedean_norm norm_zero
-      (hasGaussNorm_of_isRestricted hq).hasMvGaussNorm hf.hasGaussNorm.hasMvGaussNorm).trans
+    (gaussNorm_mul_le_of_hasGaussNorm (f := q) (g := f) hc.le (hasGaussNorm_of_isRestricted hq)
+      hf.hasGaussNorm).trans
       (hf.le_gaussNorm_mul_add hc hmul hq hr)
   have hbneg : (-(q * f)).HasGaussNorm norm c := by
     simpa only [PowerSeries.HasGaussNorm, map_neg, norm_neg] using hbqf
@@ -170,9 +169,8 @@ theorem IsDistinguished.gaussNorm_mul_add_eq_max (hf : IsDistinguished c s f) (h
   refine le_antisymm ?_ (max_le (hf.le_gaussNorm_mul_add hc hmul hq hr)
     (hf.gaussNorm_le_gaussNorm_mul_add hc hmul hq hr))
   have hqf : (q * f).gaussNorm norm c ≤ q.gaussNorm norm c * f.gaussNorm norm c :=
-    MvPowerSeries.gaussNorm_mul_le norm (fun _ : Unit ↦ c) q f (fun _ ↦ hc.le)
-      norm_nonneg norm_mul_le IsUltrametricDist.isNonarchimedean_norm norm_zero
-      (hasGaussNorm_of_isRestricted hq).hasMvGaussNorm hf.hasGaussNorm.hasMvGaussNorm
+    gaussNorm_mul_le_of_hasGaussNorm (f := q) (g := f) hc.le
+      (hasGaussNorm_of_isRestricted hq) hf.hasGaussNorm
   exact (PowerSeries.gaussNorm_add_le_max norm c (q * f) r hc.le norm_nonneg
     IsUltrametricDist.isNonarchimedean_norm
     (hasGaussNorm_mul hc.le (hasGaussNorm_of_isRestricted hq) hf.hasGaussNorm)
@@ -240,7 +238,7 @@ theorem IsMulDistinguished.gaussNorm_mul_add_eq_max (hg : IsMulDistinguished c s
       max (g.gaussNorm norm c * q.gaussNorm norm c) (r.gaussNorm norm c) := by
   rw [mul_comm g, mul_comm (g.gaussNorm norm c)]
   exact hg.toIsDistinguished.gaussNorm_mul_add_eq_max hc
-    (fun x ↦ by rw [mul_comm, hg.isNormMulUnit_coeff.norm_mul, mul_comm]) hq hr
+    hg.norm_mul_coeff hq hr
 
 end MulDistinguished
 
@@ -264,7 +262,9 @@ private theorem exists_gaussNorm_sub_mul_add_le (hf : IsDistinguished c s f)
   -- The polynomial part `f⁻` of `f`, which is again distinguished of degree `s`, and its tail.
   have hzero : (0 : PowerSeries R).gaussNorm norm c = 0 :=
     PowerSeries.gaussNorm_zero norm c (norm_zero : ‖(0 : R)‖ = 0)
-  have hFd : IsDistinguished c s ((f.trunc (s + 1) : Polynomial R) : PowerSeries R) := hf.trunc
+  have hfmul : IsMulDistinguished c s f := ⟨hf, hu⟩
+  have hFd : IsMulDistinguished c s ((f.trunc (s + 1) : Polynomial R) : PowerSeries R) :=
+    hfmul.trunc
   have hFn : ((f.trunc (s + 1) : Polynomial R) : PowerSeries R).gaussNorm norm c
       = f.gaussNorm norm c := hf.gaussNorm_trunc
   have htailr : (f - ((f.trunc (s + 1) : Polynomial R) : PowerSeries R)).IsRestricted c := by
@@ -339,10 +339,7 @@ private theorem exists_gaussNorm_sub_mul_add_le (hf : IsDistinguished c s f)
         + (rp : PowerSeries R) := by
     rw [hdiv]; push_cast; ring
   -- The norm identity for `f⁻` bounds the quotient and the remainder by `‖g‖`.
-  have hmul (x : R) : ‖x * (((f.trunc (s + 1) : Polynomial R) : PowerSeries R).coeff s)‖ =
-      ‖x‖ * ‖(((f.trunc (s + 1) : Polynomial R) : PowerSeries R).coeff s)‖ := by
-    rw [Polynomial.coeff_coe, hPs, mul_comm x, hu.norm_mul, mul_comm]
-  have hnorm := hFd.gaussNorm_mul_add_eq_max hc hmul hQr hrpz
+  have hnorm := hFd.toIsDistinguished.gaussNorm_mul_add_eq_max hc hFd.norm_mul_coeff hQr hrpz
   rw [← hdivPS, hFn] at hnorm
   have hmax : max ((Qp : PowerSeries R).gaussNorm norm c * f.gaussNorm norm c)
       ((rp : PowerSeries R).gaussNorm norm c) ≤ g.gaussNorm norm c := by
@@ -361,10 +358,10 @@ private theorem exists_gaussNorm_sub_mul_add_le (hf : IsDistinguished c s f)
   have hmulbound : ((Qp : PowerSeries R)
       * (f - ((f.trunc (s + 1) : Polynomial R) : PowerSeries R))).gaussNorm norm c
       ≤ θ * g.gaussNorm norm c := by
-    refine (MvPowerSeries.gaussNorm_mul_le norm (fun _ : Unit ↦ c) _ _ (fun _ ↦ hc.le)
-      norm_nonneg norm_mul_le IsUltrametricDist.isNonarchimedean_norm norm_zero
-      (hasGaussNorm_of_isRestricted hQr).hasMvGaussNorm
-      (hasGaussNorm_of_isRestricted htailr).hasMvGaussNorm).trans ?_
+    refine (gaussNorm_mul_le_of_hasGaussNorm (f := (Qp : PowerSeries R))
+      (g := f - ((f.trunc (s + 1) : Polynomial R) : PowerSeries R)) hc.le
+      (hasGaussNorm_of_isRestricted hQr)
+      (hasGaussNorm_of_isRestricted htailr)).trans ?_
     calc (Qp : PowerSeries R).gaussNorm norm c
           * (f - ((f.trunc (s + 1) : Polynomial R) : PowerSeries R)).gaussNorm norm c
         ≤ (Qp : PowerSeries R).gaussNorm norm c * (θ * f.gaussNorm norm c) :=
@@ -525,7 +522,7 @@ theorem IsMulDistinguished.existsUnique_mul_add_eq [CompleteSpace R] (hf : IsMul
   obtain ⟨q, r, hq, hr, hqr⟩ := hf.exists_mul_add_eq hc hfr hg
   refine ⟨(q, r), ⟨hq, hr, hqr⟩, fun p ⟨h1, h2, h3⟩ ↦ ?_⟩
   obtain ⟨e1, e2⟩ := hf.toIsDistinguished.eq_and_eq_of_mul_add_eq_mul_add hc
-    (fun x ↦ by rw [mul_comm x, hf.isNormMulUnit_coeff.norm_mul, mul_comm]) h1 hq h2 hr
+    hf.norm_mul_coeff h1 hq h2 hr
     (h3.trans hqr.symm)
   exact Prod.ext e1 e2
 
@@ -582,7 +579,7 @@ theorem IsMulDistinguished.existsUnique_mul_add_eq_subring (hc : 0 < c)
       (h3.trans hqr.symm)
     simpa using this
   obtain ⟨e1, e2⟩ := hf.toIsDistinguished.eq_and_eq_of_mul_add_eq_mul_add hc
-    (fun x ↦ by rw [mul_comm x, hf.isNormMulUnit_coeff.norm_mul, mul_comm]) p.1.2 q.2 h2 hr
+    hf.norm_mul_coeff p.1.2 q.2 h2 hr
     hcoe
   exact Prod.ext (Subtype.ext e1) (Subtype.ext e2)
 
