@@ -62,12 +62,25 @@ class PickerTests(unittest.TestCase):
             "rate_limit": [dict(resources=dict(core=dict(remaining=5000)))],
         }
 
-    def pick(self, fixture, budget="18", app_token="installation-token", fallback_token="repository-token", repository_reserve=None):
+    def pick(self, fixture, budget="18", app_token="installation-token", fallback_token="repository-token", repository_reserve=None, state_token=""):
         with tempfile.TemporaryDirectory() as directory:
             directory = Path(directory)
             (directory / "gh").write_text(FAKE_GH)
             (directory / "gh").chmod(0o755)
             (directory / "fixture.json").write_text(json.dumps(fixture))
+            (directory / "sitecustomize.py").write_text("""
+import io,json,os,time,urllib.request,urllib.error
+original=urllib.request.urlopen
+def urlopen(request,*args,**kwargs):
+    if getattr(request,'full_url','').startswith('https://github-state.taucetiproject.org/v1/runner-capacity?'):
+        fixture=json.load(open(os.environ['FIXTURE']))
+        value=fixture.get('_shared')
+        if value is None:raise urllib.error.URLError('fixture unavailable')
+        value={'observed_at':time.time()*1000,'retry_at':time.time()*1000+30000,**value}
+        return io.BytesIO(json.dumps(value).encode())
+    return original(request,*args,**kwargs)
+urllib.request.urlopen=urlopen
+""")
             output, summary, calls = (directory / name for name in ["output", "summary", "calls"])
             step = next(s for s in PICKER["jobs"]["pick"]["steps"] if s.get("id") == "pick")
             variables = SimpleNamespace(PICKER_API_RESERVE="",
@@ -82,13 +95,35 @@ class PickerTests(unittest.TestCase):
                    "FIXTURE": str(directory / "fixture.json"),
                    "API_RESERVE": selected_reserve, "FALLBACK_TOKEN": fallback_token,
                    "REPOSITORY_API_RESERVE": selected_repository_reserve,
-                   "GH_TOKEN": app_token or "repository-token"}
+                   "GH_TOKEN": app_token or "repository-token",
+                   "GITHUB_STATE_TOKEN": state_token, "CAPACITY_REPOSITORY": "Test/code",
+                   "PYTHONPATH": str(directory)}
             step = next(s for s in PICKER["jobs"]["pick"]["steps"] if s.get("id") == "pick")
-            result = subprocess.run(["bash", "-c", step["run"]], env=env,
+            result = subprocess.run(["bash", "-e", "-c", step["run"]], env=env,
                                     text=True, capture_output=True, timeout=20)
             self.assertEqual(result.returncode, 0, result.stderr)
             return (dict(line.split("=", 1) for line in output.read_text().splitlines()),
                     summary.read_text(), calls.read_text().splitlines() if calls.exists() else [])
+
+    def test_prepared_shared_capacity_avoids_all_github_calls(self):
+        for busy, expected in ((9, "true"), (19, "false")):
+            fixture={'_shared':dict(complete=True, organization='Test', busy=busy, cached=True, requests=25)}
+            output, summary, calls=self.pick(fixture, state_token='state-client')
+            self.assertEqual(output['github'],expected)
+            self.assertEqual(output['busy'],str(busy))
+            self.assertEqual(calls,[])
+            self.assertIn('Shared capacity observation:',summary)
+
+    def test_unavailable_incomplete_wrong_org_and_expired_cache_use_direct_discovery(self):
+        good=dict(complete=True,organization='Test',busy=0,cached=True,requests=25)
+        for shared in (None,{**good,'complete':False},{**good,'organization':'other'},
+                       {**good,'observed_at':0},{**good,'retry_at':0},{**good,'busy':True}):
+            fixture=self.fixture();fixture['_shared']=shared
+            output, summary, calls=self.pick(fixture,state_token='state-client')
+            self.assertEqual(output['github'],'true')
+            self.assertEqual(output['busy'],'2')
+            self.assertIn('Shared capacity unavailable',summary)
+            self.assertTrue(calls)
 
     def test_namespace_backlog_does_not_spill_idle_github_capacity(self):
         fixture = self.fixture()

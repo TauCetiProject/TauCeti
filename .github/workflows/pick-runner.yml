@@ -51,6 +51,7 @@ on:
       # `github.token`, which pr-build.yml's volume would exhaust. Without it, the picker
       # uses `github.token`.
       FLEET_READ_TOKEN: { required: false }
+      TAUCETI_GITHUB_STATE_TOKEN: { required: false }
       APP_ID: { required: false }
       APP_PRIVATE_KEY: { required: false }
     outputs:
@@ -129,6 +130,8 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token || github.token }}
           FALLBACK_TOKEN: ${{ github.token }}
+          GITHUB_STATE_TOKEN: ${{ secrets.TAUCETI_GITHUB_STATE_TOKEN }}
+          CAPACITY_REPOSITORY: ${{ github.repository }}
           ORG: ${{ github.repository_owner }}
           BUDGET: ${{ vars.HOSTED_RUNNER_BUDGET || '18' }}
           API_RESERVE: ${{ steps.app-token.outputs.token && (vars.PICKER_API_RESERVE || '1500') || (vars.PICKER_REPOSITORY_API_RESERVE || '250') }}
@@ -167,6 +170,36 @@ jobs:
             fi
             [ "$remaining" -gt "$((10#$API_RESERVE + $1))" ]
           }
+          # The existing state service coalesces organization discovery. This is
+          # advisory capacity; GitHub still makes the final slot assignment.
+          if [ -n "${GITHUB_STATE_TOKEN:-}" ]; then
+            if snapshot=$(python3 - <<'PY_SHARED'
+          import json,os,time,urllib.request,urllib.parse
+          repo=os.environ['CAPACITY_REPOSITORY']
+          try:
+              request=urllib.request.Request('https://github-state.taucetiproject.org/v1/runner-capacity?'+urllib.parse.urlencode({'repository':repo}),headers={
+                  'Authorization':'Bearer '+os.environ['GITHUB_STATE_TOKEN'],
+                  'User-Agent':'TauCetiWorker/1.0 (+https://github.com/TauCetiProject/TauCetiWorker)'})
+              with urllib.request.urlopen(request,timeout=10) as response:
+                  raw=response.read(16385)
+              if len(raw)>16384:raise ValueError('oversized capacity response')
+              value=json.loads(raw);now=time.time()*1000
+              assert value.get('complete') is True and value.get('organization')==repo.split('/')[0]
+              assert type(value.get('busy')) is int and 0<=value['busy']<=10000
+              assert isinstance(value.get('observed_at'),(int,float)) and -5000<=now-value['observed_at']<=60000
+              assert isinstance(value.get('retry_at'),(int,float)) and value['retry_at']>now
+              print(json.dumps({k:value[k] for k in ('busy','observed_at','cached','requests')}))
+          except Exception:
+              raise SystemExit(1)
+          PY_SHARED
+            ); then
+              busy=$(printf '%s' "$snapshot" | python3 -c 'import json,sys;print(json.load(sys.stdin)["busy"])')
+              echo "Shared capacity observation: $snapshot" >> "$GITHUB_STEP_SUMMARY"
+              if [ "$busy" -le "$BUDGET" ]; then decide true "$busy hosted jobs observed by shared discovery (budget $BUDGET): using GitHub."; fi
+              decide false "$busy hosted jobs observed by shared discovery (budget $BUDGET): using Namespace."
+            fi
+            echo "Shared capacity unavailable; using bounded direct discovery." >> "$GITHUB_STEP_SUMMARY"
+          fi
           # Both API pools serve merge and review automation; protect the active reserve.
           quota_available 0 || decide false "Preserving the shared API quota reserve: using Namespace."
 

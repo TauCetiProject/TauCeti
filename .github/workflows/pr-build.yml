@@ -84,6 +84,7 @@ jobs:
       contents: read  # immutable fleet selector checkout
     secrets:
       FLEET_READ_TOKEN: ${{ secrets.FLEET_READ_TOKEN }}
+      TAUCETI_GITHUB_STATE_TOKEN: ${{ secrets.TAUCETI_GITHUB_STATE_TOKEN }}
       APP_ID: ${{ secrets.APP_ID }}
       APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
 
