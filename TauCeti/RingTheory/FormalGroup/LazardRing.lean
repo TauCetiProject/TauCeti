@@ -9,6 +9,7 @@ public import Mathlib.Algebra.MvPolynomial.Eval
 public import Mathlib.Data.PNat.Defs
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import TauCeti.RingTheory.FormalGroup.BaseChange
+import TauCeti.RingTheory.MvPowerSeries.Substitution
 
 /-!
 # The Lazard ring and its universal formal group law
@@ -77,31 +78,13 @@ variable {R : Type*} [CommRing R] (F : FormalGroup R)
 `n = 1` and `0` otherwise. -/
 theorem coeff_single_zero (n : ℕ) :
     coeff (single 0 n) F.toPowerSeries = if n = 1 then 1 else 0 := by
-  have h := congrArg (PowerSeries.coeff n) F.Xzero_eq_X
-  rw [PowerSeries.coeff_X, PowerSeries.coeff, Xzero,
-    coeff_subst (a := ![PowerSeries.X, 0]) HasSubst.X_zero,
-    finsum_eq_single _ (single 0 n)] at h
-  · simpa [PowerSeries.coeff_X_pow] using h
-  · intro d hd
-    by_cases hd₁ : d 1 = 0
-    · have : n ≠ d 0 := fun h => hd (by ext i; fin_cases i <;> simp_all)
-      simp [Finsupp.prod_fintype, hd₁, PowerSeries.coeff_X_pow, this]
-    · simp [Finsupp.prod_fintype, hd₁]
+  rw [← coeff_subst_X_zero, ← Xzero, Xzero_eq_X, PowerSeries.coeff_X]
 
 /-- The coefficient of `Yⁿ` in a formal group law `F(X, Y)`: since `F(0, Y) = Y`, it is `1` for
 `n = 1` and `0` otherwise. -/
 theorem coeff_single_one (n : ℕ) :
     coeff (single 1 n) F.toPowerSeries = if n = 1 then 1 else 0 := by
-  have h := congrArg (PowerSeries.coeff n) F.zeroX_eq_X
-  rw [PowerSeries.coeff_X, PowerSeries.coeff, zeroX,
-    coeff_subst (a := ![0, PowerSeries.X]) HasSubst.zero_X,
-    finsum_eq_single _ (single 1 n)] at h
-  · simpa [PowerSeries.coeff_X_pow] using h
-  · intro d hd
-    by_cases hd₀ : d 0 = 0
-    · have : n ≠ d 1 := fun h => hd (by ext i; fin_cases i <;> simp_all)
-      simp [Finsupp.prod_fintype, hd₀, PowerSeries.coeff_X_pow, this]
-    · simp [Finsupp.prod_fintype, hd₀]
+  rw [← coeff_subst_zero_X, ← zeroX, zeroX_eq_X, PowerSeries.coeff_X]
 
 end FormalGroup
 

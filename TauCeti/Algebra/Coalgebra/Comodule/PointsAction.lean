@@ -9,7 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
 public import TauCeti.Algebra.Coalgebra.Comodule.Corestrict
 public import TauCeti.Algebra.Coalgebra.Comodule.TensorProduct
 public import TauCeti.Algebra.Coalgebra.Comodule.Trivial
-import TauCeti.LinearAlgebra.End.ScalarExtension
+import TauCeti.LinearAlgebra.TensorProduct.Tower
 public import Mathlib.RingTheory.Bialgebra.Convolution
 public import Mathlib.RepresentationTheory.Basic
 import TauCeti.LinearAlgebra.TensorProduct.Submodule
@@ -116,7 +116,8 @@ lemma rTensor_comp_endOfPoint (φ : A →ₐ[R] A') (g : H →ₐ[R] A) :
   simp only [LinearMap.coe_comp, Function.comp_apply,
     LinearEquiv.coe_toLinearMap] at hc
   simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.restrictScalars_apply,
-    LinearMap.rTensor_tmul, endOfPoint_tmul, rTensor_algHom_smul, hc, AlgHom.toLinearMap_apply]
+    LinearMap.rTensor_tmul, endOfPoint_tmul, AlgHom.rTensor_toLinearMap_apply_smul, hc,
+    AlgHom.toLinearMap_apply]
 
 end BaseChange
 

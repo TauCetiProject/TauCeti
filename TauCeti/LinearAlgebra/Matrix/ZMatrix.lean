@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.Group.PosPart
 public import TauCeti.LinearAlgebra.Matrix.QuadraticForm
 import Mathlib.Topology.Instances.Matrix
 import Mathlib.Topology.Instances.Real.Lemmas
@@ -26,8 +27,13 @@ definite `M` admits no such `δ`, since `δᵀ M δ ≤ 0`, so for a symmetric Z
 `δ` is equivalent to the failure of positive definiteness. Such a vector is the input to growth
 arguments for algebras attached to a graph whose form `2I - A` is not positive definite.
 
+More elementarily, over any linearly ordered commutative ring the positive and negative parts of a
+vector `x = x⁺ - x⁻` pair nonpositively under a Z-matrix `A`: `(x⁺)ᵀ A x⁻ ≤ 0`.
+
 ## Main results
 
+* `Matrix.posPart_dotProduct_mulVec_negPart_nonpos`: with nonpositive off-diagonal entries, the
+  positive and negative parts of a vector pair nonpositively.
 * `Matrix.exists_nonneg_mulVec_nonpos_of_dotProduct_mulVec_nonpos`: a symmetric real Z-matrix
   with a nonzero vector `x` satisfying `xᵀ M x ≤ 0` has a nonzero nonnegative `δ` with `M δ ≤ 0`.
 * `Matrix.exists_nonneg_mulVec_nonpos_of_not_posDef`: the same for a symmetric real Z-matrix that
@@ -47,6 +53,27 @@ namespace Matrix
 open Finset
 
 variable {n : Type*} [Fintype n]
+
+/-- The positive and negative parts of a vector pair nonpositively when every off-diagonal entry
+of the matrix is nonpositive: the diagonal terms vanish because the two parts have disjoint
+supports. -/
+theorem posPart_dotProduct_mulVec_negPart_nonpos {R : Type*} [CommRing R]
+    [LinearOrder R] [IsOrderedRing R] {A : Matrix n n R} (hoff : ∀ i j, i ≠ j → A i j ≤ 0)
+    (x : n → R) : x⁺ ⬝ᵥ A *ᵥ x⁻ ≤ 0 := by
+  simp only [dotProduct, mulVec, Finset.mul_sum]
+  refine Finset.sum_nonpos fun i _ ↦ Finset.sum_nonpos fun j _ ↦ ?_
+  have hp : 0 ≤ x⁺ i := posPart_nonneg x i
+  have hn : 0 ≤ x⁻ j := negPart_nonneg x j
+  rcases eq_or_ne i j with rfl | hij
+  · have : x⁺ i * x⁻ i = 0 := by
+      simp only [Pi.posPart_apply, Pi.negPart_apply]
+      rcases le_total 0 (x i) with h | h
+      · simp [negPart_eq_zero.mpr h]
+      · simp [posPart_eq_zero.mpr h]
+    calc x⁺ i * (A i i * x⁻ i) = A i i * (x⁺ i * x⁻ i) := by ring
+      _ ≤ 0 := by rw [this, mul_zero]
+  · calc x⁺ i * (A i j * x⁻ j) = A i j * (x⁺ i * x⁻ j) := by ring
+      _ ≤ 0 := mul_nonpos_of_nonpos_of_nonneg (hoff i j hij) (mul_nonneg hp hn)
 
 /-- **A symmetric Z-matrix with a nonpositive value of its form is nonpositive on a nonnegative
 vector.**

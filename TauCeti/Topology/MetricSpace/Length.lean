@@ -330,6 +330,30 @@ theorem IsGeodesicSegment.congr {γ' : ℝ → X} (h : IsGeodesicSegment γ x y)
   target := by rw [h' (right_mem_Icc.2 zero_le_one), h.target]
   dist_eq s hs t ht := by rw [h' hs, h' ht, h.dist_eq s hs t ht]
 
+/-- A curve from `x` to `y` whose pieces obey the affine bound
+`dist (γ s) (γ t) ≤ (t - s) * dist x y` for `0 ≤ s ≤ t ≤ 1` is a geodesic segment: the triangle
+inequality along `0 ≤ s ≤ t ≤ 1` turns each bound into an equality. -/
+theorem isGeodesicSegment_of_dist_le (h0 : γ 0 = x) (h1 : γ 1 = y)
+    (h : ∀ s ∈ Icc (0 : ℝ) 1, ∀ t ∈ Icc (0 : ℝ) 1, s ≤ t →
+      dist (γ s) (γ t) ≤ (t - s) * dist x y) :
+    IsGeodesicSegment γ x y where
+  source := h0
+  target := h1
+  dist_eq s hs t ht := by
+    wlog hst : s ≤ t generalizing s t
+    · rw [dist_comm, abs_sub_comm]
+      exact this t ht s hs (le_of_not_ge hst)
+    have h0I : (0 : ℝ) ∈ Icc (0 : ℝ) 1 := left_mem_Icc.2 zero_le_one
+    have h1I : (1 : ℝ) ∈ Icc (0 : ℝ) 1 := right_mem_Icc.2 zero_le_one
+    have htri : dist x y ≤ dist (γ 0) (γ s) + dist (γ s) (γ t) + dist (γ t) (γ 1) := by
+      rw [← h0, ← h1]
+      exact dist_triangle4 _ _ _ _
+    have h0s := h 0 h0I s hs hs.1
+    have ht1 := h t ht 1 h1I ht.2
+    have hst' := h s hs t ht hst
+    rw [abs_of_nonpos (sub_nonpos.2 hst), neg_sub]
+    linarith
+
 /-- No piece of a geodesic segment is longer than the affine bound its parametrisation predicts.
 The reverse inequality is `eVariationOn.edist_le`, so the two together identify the length of
 every piece. -/

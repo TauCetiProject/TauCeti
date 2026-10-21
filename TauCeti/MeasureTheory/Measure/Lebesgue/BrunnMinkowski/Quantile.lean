@@ -49,6 +49,9 @@ volume fractions.
   interior points.
 * `Convex.quantile_map_inner_cond_mem_image_interior`: each interior level goes to the height of
   an interior point.
+* `Convex.volume_real_hyperplaneSection_quantile_pos`,
+  `Convex.continuousOn_volume_real_hyperplaneSection_quantile`: the hyperplane section at the
+  quantile has positive volume, depending continuously on the level.
 * `Convex.hasDerivAt_quantile_map_inner_cond`: the derivative of the quantile.
 
 ## References
@@ -202,6 +205,31 @@ theorem _root_.Convex.quantile_map_inner_cond_mem_image_interior (hs : Convex �
     (hs0 : volume s ≠ 0) (hsi : volume s ≠ ∞) {τ : ℝ} (hτ : τ ∈ Ioo 0 1) :
     ((volume[|s]).map fun x ↦ ⟪e, x⟫).quantile τ ∈ (fun x ↦ ⟪e, x⟫) '' interior s :=
   hs.image_quantile_map_inner_cond_Ioo he hs0 hsi ▸ mem_image_of_mem _ hτ
+
+/-- The hyperplane section of a bounded convex set of positive volume at its height quantile has
+positive finite volume at every level in `Ioo 0 1`. -/
+theorem _root_.Convex.volume_real_hyperplaneSection_quantile_pos (hs : Convex ℝ s)
+    (hsb : Bornology.IsBounded s) (hs0 : volume s ≠ 0) (he : ‖e‖ = 1) {τ : ℝ}
+    (hτ : τ ∈ Ioo 0 1) :
+    0 < volume.real {y : (ℝ ∙ e)ᗮ |
+      (y : E) + ((volume[|s]).map fun x ↦ ⟪e, x⟫).quantile τ • e ∈ s} :=
+  ENNReal.toReal_pos (volume_hyperplaneSection_pos e he
+    (hs.quantile_map_inner_cond_mem_image_interior he hs0 hsb.measure_lt_top.ne hτ)).ne'
+    (hsb.volume_hyperplaneSection_lt_top e _).ne
+
+/-- The volume of the hyperplane section of a bounded convex set of positive volume at its height
+quantile is continuous on the levels in `Ioo 0 1`. -/
+theorem _root_.Convex.continuousOn_volume_real_hyperplaneSection_quantile (hs : Convex ℝ s)
+    (hsb : Bornology.IsBounded s) (hs0 : volume s ≠ 0) (he : ‖e‖ = 1) :
+    ContinuousOn (fun τ ↦ volume.real {y : (ℝ ∙ e)ᗮ |
+      (y : E) + ((volume[|s]).map fun x ↦ ⟪e, x⟫).quantile τ • e ∈ s}) (Ioo 0 1) := by
+  have hsi : volume s ≠ ∞ := hsb.measure_lt_top.ne
+  refine (hs.continuousOn_volume_real_hyperplaneSection he
+    fun t ↦ (hsb.volume_hyperplaneSection_lt_top e t).ne).comp
+    (continuousOn_quantile _ (continuous_cdf_map_inner_cond he hs0 hsi)
+      (hs.strictMonoOn_cdf_map_inner_cond he hs0 hsi)) fun τ hτ ↦ ?_
+  exact interior_maximal (image_mono interior_subset) (isOpen_image_inner_interior he s)
+    (hs.quantile_map_inner_cond_mem_image_interior he hs0 hsi hτ)
 
 /-- **Derivative of the height quantile.** For a bounded Borel convex set `s` of positive volume
 and a unit vector `e`, the quantile function `z` of the height law along `e` is differentiable at

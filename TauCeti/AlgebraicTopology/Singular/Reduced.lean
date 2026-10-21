@@ -13,6 +13,7 @@ public import Mathlib.AlgebraicTopology.SingularHomology.HomotopyInvariance
 public import Mathlib.Algebra.Homology.ShortComplex.Exact
 public import Mathlib.Topology.Homotopy.Equiv
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
+public import Mathlib.Algebra.Category.ModuleCat.Products
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.RingTheory.Finiteness.Prod
 
@@ -33,6 +34,10 @@ In degree zero, a chosen point identifies reduced homology with the coproduct of
 coefficient object indexed by the path components other than that of the point
 (`TauCeti.reducedSingularHomology₀Iso`); the generator at the component of `y` is the class
 `[y] - [x]`. This is the kernel of the codiagonal of Mathlib's `TopCat.singularHomology₀Iso`.
+With coefficients in a ring with the strong rank condition, such as a field, its rank is therefore
+the number of path components other than that of the point
+(`TauCeti.rank_reducedSingularHomologyFunctor_zero`). With coefficients in any nontrivial ring, a
+nonempty space with vanishing reduced zeroth homology is path-connected.
 
 With coefficients in a module `M`, the splitting shows that `H_q(X; M)` of a nonempty space is
 free or finitely generated when the reduced homology in degree `q` is and `M` is, and that its
@@ -318,6 +323,39 @@ lemma singularHomology₀SplitIso_inv_naturality {X Y : TopCat.{w}} (f : X ⟶ Y
   · simp only [biprod.inl_map_assoc, inl_singularHomology₀SplitIso_inv,
       inl_singularHomology₀SplitIso_inv_assoc, (reducedSingularHomologyι R 0).naturality]
   · simp
+
+section Rank
+
+variable {K : Type w} [Ring K] [StrongRankCondition K]
+
+/-- **The rank of reduced zeroth homology counts path components.** With coefficients in a ring
+with the strong rank condition, such as a field, the rank of the reduced zeroth singular homology
+of `X` is the number of path components of `X` other than that of a chosen point `x`. -/
+theorem rank_reducedSingularHomologyFunctor_zero {X : TopCat.{w}} (x : X) :
+    Module.rank K ((reducedSingularHomologyFunctor (ModuleCat.of K K) 0).obj X) =
+      Cardinal.mk {c : ZerothHomotopy X // c ≠ ZerothHomotopy.mk x} := by
+  classical
+  have := ((ModuleCat.coprodIsoDirectSum _).symm ≪≫
+    (reducedSingularHomology₀Iso (ModuleCat.of K K) x).symm).toLinearEquiv.rank_eq
+  simpa only [rank_directSum, Module.rank_self, Cardinal.sum_const', mul_one] using this.symm
+
+end Rank
+
+/-- A nonempty space whose reduced zeroth singular homology vanishes, with coefficients in a
+nontrivial ring, is path-connected. This is the converse of
+`TauCeti.isZero_reducedSingularHomologyFunctor_zero`. -/
+theorem pathConnectedSpace_of_isZero_reducedSingularHomologyFunctor_zero {K : Type w} [Ring K]
+    [Nontrivial K] {X : TopCat.{w}} [Nonempty X]
+    (h : IsZero ((reducedSingularHomologyFunctor (ModuleCat.of K K) 0).obj X)) :
+    PathConnectedSpace X := by
+  obtain ⟨x⟩ := ‹Nonempty X›
+  -- Every summand `K` of the coproduct `reducedSingularHomology₀Iso` is a retract of it, so
+  -- there is no path component other than that of `x`.
+  have hc : ∀ c : ZerothHomotopy X, c = .mk x := fun c ↦ by_contra fun hc ↦
+    not_subsingleton K <| ModuleCat.subsingleton_of_isZero <|
+      (h.of_iso (reducedSingularHomology₀Iso (ModuleCat.of K K) x).symm).of_mono
+        (Sigma.ι (fun _ : {c : ZerothHomotopy X // c ≠ .mk x} ↦ ModuleCat.of K K) ⟨c, hc⟩)
+  exact pathConnectedSpace_iff_zerothHomotopy.2 ⟨⟨.mk x⟩, ⟨fun c d ↦ by rw [hc c, hc d]⟩⟩
 
 end TauCeti
 

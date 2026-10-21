@@ -22,6 +22,10 @@ feeds the Grothendieck-group computation for finite-dimensional vector spaces.
   analogue of Mathlib's `ModuleCat.hom_ofHom`.
 * `FGModuleCat.hom_hom_add`: morphisms of finitely generated modules add pointwise, the
   companion of Mathlib's `FGModuleCat.hom_hom_comp` and `FGModuleCat.hom_hom_id`.
+* `FGModuleCat.braiding_hom_hom_hom`: the braiding of finitely generated modules is the swap
+  `TensorProduct.comm` of the tensor product.
+* `FGModuleCat.whiskerRight_hom_hom`: right whiskering of finitely generated modules is
+  `LinearMap.rTensor`.
 * `FGModuleCat.biprodIsoProd`: the biproduct of two finitely generated modules is their product,
   the analogue of Mathlib's `ModuleCat.biprodIsoProd`, with its projection lemmas
   `FGModuleCat.biprodIsoProd_inv_comp_fst` and `FGModuleCat.biprodIsoProd_inv_comp_snd`.
@@ -49,6 +53,25 @@ addition of the underlying linear maps. -/
 @[simp]
 theorem _root_.FGModuleCat.hom_hom_add {R : Type u} [Ring R] {V W : FGModuleCat.{v} R}
     (f g : V ⟶ W) : (f + g).hom.hom = f.hom.hom + g.hom.hom :=
+  (rfl)
+
+open MonoidalCategory in
+/-- The linear map underlying the braiding of finitely generated modules over a commutative ring
+is the swap of the factors of the tensor product. -/
+@[simp]
+theorem _root_.FGModuleCat.braiding_hom_hom_hom {R : Type u} [CommRing R]
+    (V W : FGModuleCat.{u} R) :
+    (β_ V W).hom.hom.hom = (TensorProduct.comm R V W).toLinearMap :=
+  (rfl)
+
+open MonoidalCategory in
+/-- The linear map underlying the right whiskering `f ▷ U` of finitely generated modules over a
+commutative ring is `LinearMap.rTensor U f`. Not a simp lemma: simp first unfolds `f ▷ U` to the
+whiskering in `ModuleCat` via `ObjectProperty.whiskerRight_def`, and Mathlib's
+`ModuleCat.hom_whiskerRight` is likewise not a simp lemma. -/
+theorem _root_.FGModuleCat.whiskerRight_hom_hom {R : Type u} [CommRing R]
+    {V W : FGModuleCat.{u} R} (f : V ⟶ W) (U : FGModuleCat.{u} R) :
+    (f ▷ U).hom.hom = f.hom.hom.rTensor U :=
   (rfl)
 
 attribute [local instance] HasBinaryBiproducts.of_hasBinaryCoproducts
