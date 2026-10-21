@@ -36,11 +36,14 @@ All results live in the namespace `TauCeti.Manifold.ContMDiffNondegenerateMetric
 
 * `IsMetricCompatible.hasDerivWithinAt_apply_alongCurveWithin` and
   `IsMetricCompatible.hasDerivAt_apply_alongCurve`: the product rule within a parameter set and
-  with unrestricted derivatives.
+  with unrestricted derivatives, with the differentiability and `derivWithin`/`deriv` forms
+  `IsMetricCompatible.differentiableWithinAt_apply`,
+  `IsMetricCompatible.derivWithin_apply_alongCurveWithin`,
+  `IsMetricCompatible.differentiableAt_apply` and `IsMetricCompatible.deriv_apply_alongCurve`.
 * `IsMetricCompatible.apply_eq_of_alongCurveWithin_eq_zero`: parallel fields along a curve have
   constant pairing on a preconnected parameter set.
-* `IsMetricCompatible.apply_curveVelocityWithin_eq_of_accelerationWithin_eq_zero`: a curve with
-  vanishing covariant acceleration has constant `g(γ', γ')` on a preconnected parameter set.
+* `IsMetricCompatible.apply_curveVelocityWithin_self_eq_of_accelerationWithin_eq_zero`: a curve
+  with vanishing covariant acceleration has constant `g(γ', γ')` on a preconnected parameter set.
 
 ## References
 
@@ -81,6 +84,26 @@ theorem IsMetricCompatible.hasDerivWithinAt_apply_alongCurveWithin (h : g.IsMetr
     (fun _ _ hY hZ ↦ g.mdifferentiableAt_apply hY hZ) (fun _ _ hY hZ v ↦ h.mvfderiv_eq hY hZ v)
     hu hγ hV hW
 
+/-- The pairing `g(V, W)` of two tangent fields along a differentiable real curve, whose coordinate
+readings are differentiable within `s` at `t`, is differentiable within `s` at `t`. -/
+theorem IsMetricCompatible.differentiableWithinAt_apply (h : g.IsMetricCompatible cov)
+    (hu : UniqueDiffWithinAt ℝ s t) (hγ : MDifferentiableWithinAt 𝓘(ℝ, ℝ) I γ s t)
+    (hV : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V (γ t)) s t)
+    (hW : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ W (γ t)) s t) :
+    DifferentiableWithinAt ℝ (fun r ↦ g (γ r) (V r) (W r)) s t :=
+  (h.hasDerivWithinAt_apply_alongCurveWithin hu hγ hV hW).differentiableWithinAt
+
+/-- The product rule along a curve for a covariant derivative compatible with a nondegenerate
+metric, as an identity for `derivWithin`. -/
+theorem IsMetricCompatible.derivWithin_apply_alongCurveWithin (h : g.IsMetricCompatible cov)
+    (hu : UniqueDiffWithinAt ℝ s t) (hγ : MDifferentiableWithinAt 𝓘(ℝ, ℝ) I γ s t)
+    (hV : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V (γ t)) s t)
+    (hW : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ W (γ t)) s t) :
+    derivWithin (fun r ↦ g (γ r) (V r) (W r)) s t =
+      g (γ t) (alongCurveWithin cov γ V s t) (W t) +
+        g (γ t) (V t) (alongCurveWithin cov γ W s t) :=
+  (h.hasDerivWithinAt_apply_alongCurveWithin hu hγ hV hW).derivWithin hu
+
 /-- The product rule along a curve for a covariant derivative compatible with a nondegenerate
 metric, with unrestricted derivatives: `(d/dt) g(V, W) = g(D V / dt, W) + g(V, D W / dt)`. -/
 theorem IsMetricCompatible.hasDerivAt_apply_alongCurve (h : g.IsMetricCompatible cov)
@@ -93,6 +116,25 @@ theorem IsMetricCompatible.hasDerivAt_apply_alongCurve (h : g.IsMetricCompatible
   simpa only [alongCurveWithin_univ] using
     h.hasDerivWithinAt_apply_alongCurveWithin uniqueDiffWithinAt_univ
       hγ.mdifferentiableWithinAt hV.differentiableWithinAt hW.differentiableWithinAt
+
+/-- The pairing `g(V, W)` of two tangent fields along a differentiable real curve, whose coordinate
+readings are differentiable at `t`, is differentiable at `t`. -/
+theorem IsMetricCompatible.differentiableAt_apply (h : g.IsMetricCompatible cov)
+    (hγ : MDifferentiableAt 𝓘(ℝ, ℝ) I γ t)
+    (hV : DifferentiableAt ℝ (sectionCoord (F := E) γ V (γ t)) t)
+    (hW : DifferentiableAt ℝ (sectionCoord (F := E) γ W (γ t)) t) :
+    DifferentiableAt ℝ (fun r ↦ g (γ r) (V r) (W r)) t :=
+  (h.hasDerivAt_apply_alongCurve hγ hV hW).differentiableAt
+
+/-- The product rule along a curve for a covariant derivative compatible with a nondegenerate
+metric, as an identity for `deriv`. -/
+theorem IsMetricCompatible.deriv_apply_alongCurve (h : g.IsMetricCompatible cov)
+    (hγ : MDifferentiableAt 𝓘(ℝ, ℝ) I γ t)
+    (hV : DifferentiableAt ℝ (sectionCoord (F := E) γ V (γ t)) t)
+    (hW : DifferentiableAt ℝ (sectionCoord (F := E) γ W (γ t)) t) :
+    deriv (fun r ↦ g (γ r) (V r) (W r)) t =
+      g (γ t) (alongCurve cov γ V t) (W t) + g (γ t) (V t) (alongCurve cov γ W t) :=
+  (h.hasDerivAt_apply_alongCurve hγ hV hW).deriv
 
 /-- **Parallel transport preserves a compatible nondegenerate metric.** On a preconnected
 parameter set `s` with unique derivatives, two tangent fields along a differentiable curve that
@@ -118,7 +160,7 @@ theorem IsMetricCompatible.apply_eq_of_alongCurveWithin_eq_zero (h : g.IsMetricC
 parameter set `s` with unique derivatives, a `C²` curve whose covariant acceleration vanishes on
 `s` pairs its within-set velocity with itself to the same value at every two parameters of `s`.
 For a Lorentzian metric this says that a geodesic keeps its causal character. -/
-theorem IsMetricCompatible.apply_curveVelocityWithin_eq_of_accelerationWithin_eq_zero
+theorem IsMetricCompatible.apply_curveVelocityWithin_self_eq_of_accelerationWithin_eq_zero
     (h : g.IsMetricCompatible cov) (hs : UniqueDiffOn ℝ s) (hconn : IsPreconnected s)
     (hγ : ContMDiffOn 𝓘(ℝ, ℝ) I 2 γ s) (hacc : ∀ t ∈ s, accelerationWithin cov γ s t = 0)
     {a b : ℝ} (ha : a ∈ s) (hb : b ∈ s) :
