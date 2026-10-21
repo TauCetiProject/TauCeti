@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Reflection
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex
 import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.GaussBonnet
+import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.VertexSector
 
 /-!
 # The double of a hyperbolic triangle
@@ -17,8 +18,9 @@ two ends `P 0`, `P 1` of side `0` are acute. Reflecting `P` in the geodesic line
 a second triangle, and together they form the convex quadrilateral `P.doubleTriangle` with
 vertices `P 0`, `P 2'`, `P 1`, `P 2`, where `P 2'` is the mirror image of `P 2`
 (`ConvexPolygon.carrier_doubleTriangle`). The acute angles are what makes it strictly convex at
-`P 0` and `P 1`. Another side of `P` can be doubled by first relabelling the vertices with
-`ConvexPolygon.rotate`.
+`P 0` and `P 1`. Its interior angles there are twice those of `P`, and at `P 2` and its
+mirror image they equal the angle of `P` at `P 2`. Another side of `P` can be doubled by first
+relabelling the vertices with `ConvexPolygon.rotate`.
 
 Its side pairing by products of reflections, used to construct hyperbolic triangle groups, is
 `ConvexPolygon.doubleTriangleSidePairing` in
@@ -31,6 +33,11 @@ Its side pairing by products of reflections, used to construct hyperbolic triang
   side of a convex polygon fixes the ends of that side.
 * `ConvexPolygon.doubleTriangle`: the double of a triangle across side `0`.
 * `ConvexPolygon.carrier_doubleTriangle`: it is the union of the triangle and its mirror image.
+* `ConvexPolygon.interiorAngle_doubleTriangle_zero`,
+  `ConvexPolygon.interiorAngle_doubleTriangle_two`: the angles at `P 0` and `P 1` double.
+* `ConvexPolygon.interiorAngle_doubleTriangle_one`,
+  `ConvexPolygon.interiorAngle_doubleTriangle_three`: the angles at `P 2` and at its mirror image
+  are the angle of `P` at `P 2`.
 
 ## References
 
@@ -204,5 +211,106 @@ theorem carrier_doubleTriangle :
   · rintro (hz | ⟨y, hy, rfl⟩)
     · exact carrier_subset_carrier_doubleTriangle hz
     · exact geodesicReflection_mem_carrier_doubleTriangle (carrier_subset_carrier_doubleTriangle hy)
+
+/-! ### Interior angles -/
+
+/-- If the oriented angles `θ` and `α` add up to `β ∈ (0, π)`, where `|θ| = α` and `2α < π`,
+then `β = 2α`: the other possibility `θ = -α` would force `β = 0`. -/
+private theorem eq_two_mul_of_abs_toReal_eq {θ : Real.Angle} {α β : ℝ} (hθ : |θ.toReal| = α)
+    (hβ : θ + α = β) (hβ₀ : 0 < β) (hβπ : β < π) (hα : 2 * α < π) : β = 2 * α := by
+  have hα₀ : 0 ≤ α := hθ ▸ abs_nonneg _
+  have hcases := (abs_eq hα₀).1 hθ
+  have hπ := Real.pi_pos
+  have hsum : ((θ.toReal + α : ℝ) : Real.Angle) = β := by
+    rw [Real.Angle.coe_add, θ.coe_toReal, hβ]
+  have h := congrArg Real.Angle.toReal hsum
+  rw [Real.Angle.toReal_coe_eq_self_iff.2 ⟨by rcases hcases with h | h <;> linarith,
+      by rcases hcases with h | h <;> linarith⟩,
+    Real.Angle.toReal_coe_eq_self_iff.2 ⟨by linarith, by linarith⟩] at h
+  rcases hcases with h' | h' <;> linarith
+
+/-- **The angle of the double at `P 0` is twice that of `P`**: the ray towards `P 1` bisects it,
+the reflection in side `0` exchanging its two halves. -/
+theorem interiorAngle_doubleTriangle_zero :
+    (P.doubleTriangle h₀ h₁).interiorAngle 0 = 2 * P.interiorAngle 0 := by
+  set Q := P.doubleTriangle h₀ h₁
+  rcases hz : P.vertex 0 with z | ξ
+  · have hQz : Q.vertex 0 = .inl z := by simp [Q, hz]
+    -- the points at parameter `1` of the rays from `z` towards `P 1`, `P 2` and its mirror image
+    set C := geodesicLine (rayToward z (P.vertex 1)) 1
+    set D := geodesicLine (rayToward z (P.vertex 2)) 1
+    set D' := geodesicLine (rayToward z (extGeodesicReflection (P.sideGeodesic 0) (P.vertex 2))) 1
+    have hQ : orientedAngle z D' D = Q.interiorAngle 0 := by
+      simpa [Q] using Q.orientedAngle_rayToward_vertex_eq_interiorAngle hQz
+    have hP : orientedAngle z C D = P.interiorAngle 0 := by
+      simpa [show (-1 : Fin 3) = 2 by decide] using
+        P.orientedAngle_rayToward_vertex_eq_interiorAngle hz
+    -- the angle between the mirror image of `P 2` and `P 1` is that of `P` at `P 0`
+    have habs : |(orientedAngle z D' C).toReal| = P.interiorAngle 0 := by
+      have hρ := vertexAngle_extGeodesicReflection (P.sideGeodesic 0)
+        (P.vertex_injective.ne (by decide : (0 : Fin 3) ≠ 2))
+        (P.vertex_injective.ne (by decide : (0 : Fin 3) ≠ 1))
+      rw [extGeodesicReflection_sideGeodesic_vertex,
+        extGeodesicReflection_sideGeodesic_vertex_of_add_one_eq _ (i := 0) (j := 1) rfl, hz] at hρ
+      rw [← interiorAngle_eq_abs_toReal_orientedAngle, ← vertexAngle_inl_eq_interiorAngle, hρ,
+        interiorAngle_def, hz]
+      simp [show (-1 : Fin 3) = 2 by decide]
+    refine eq_two_mul_of_abs_toReal_eq habs ?_
+      (Q.interiorAngle_pos_of_isLeft_vertex (by simp [hQz]))
+      (Q.interiorAngle_lt_pi 0) (by linarith)
+    rw [← hP, orientedAngle_add, hQ]
+  · have hQξ : Q.vertex 0 = .inr ξ := by simp [Q, hz]
+    rw [Q.interiorAngle_eq_zero_of_vertex_eq_inr hQξ, P.interiorAngle_eq_zero_of_vertex_eq_inr hz,
+      mul_zero]
+
+/-- **The angle of the double at `P 1` is twice that of `P`**: the ray towards `P 0` bisects it,
+the reflection in side `0` exchanging its two halves. -/
+theorem interiorAngle_doubleTriangle_two :
+    (P.doubleTriangle h₀ h₁).interiorAngle 2 = 2 * P.interiorAngle 1 := by
+  set Q := P.doubleTriangle h₀ h₁
+  rcases hz : P.vertex 1 with z | ξ
+  · have hQz : Q.vertex 2 = .inl z := by simp [Q, hz]
+    -- the points at parameter `1` of the rays from `z` towards `P 0`, `P 2` and its mirror image
+    set C := geodesicLine (rayToward z (P.vertex 0)) 1
+    set D := geodesicLine (rayToward z (P.vertex 2)) 1
+    set D' := geodesicLine (rayToward z (extGeodesicReflection (P.sideGeodesic 0) (P.vertex 2))) 1
+    have hQ : orientedAngle z D D' = Q.interiorAngle 2 := by
+      simpa [Q] using Q.orientedAngle_rayToward_vertex_eq_interiorAngle hQz
+    have hP : orientedAngle z D C = P.interiorAngle 1 := by
+      simpa using P.orientedAngle_rayToward_vertex_eq_interiorAngle hz
+    -- the angle between `P 0` and the mirror image of `P 2` is that of `P` at `P 1`
+    have habs : |(orientedAngle z C D').toReal| = P.interiorAngle 1 := by
+      have hρ := vertexAngle_extGeodesicReflection (P.sideGeodesic 0)
+        (P.vertex_injective.ne (by decide : (1 : Fin 3) ≠ 0))
+        (P.vertex_injective.ne (by decide : (1 : Fin 3) ≠ 2))
+      rw [extGeodesicReflection_sideGeodesic_vertex,
+        extGeodesicReflection_sideGeodesic_vertex_of_add_one_eq _ (i := 0) (j := 1) rfl, hz] at hρ
+      rw [← interiorAngle_eq_abs_toReal_orientedAngle, ← vertexAngle_inl_eq_interiorAngle, hρ,
+        interiorAngle_def, hz]
+      simp
+    refine eq_two_mul_of_abs_toReal_eq habs ?_
+      (Q.interiorAngle_pos_of_isLeft_vertex (by simp [hQz]))
+      (Q.interiorAngle_lt_pi 2) (by linarith)
+    rw [← hP, add_comm, orientedAngle_add, hQ]
+  · have hQξ : Q.vertex 2 = .inr ξ := by simp [Q, hz]
+    rw [Q.interiorAngle_eq_zero_of_vertex_eq_inr hQξ, P.interiorAngle_eq_zero_of_vertex_eq_inr hz,
+      mul_zero]
+
+/-- The angle of the double at the mirror image of `P 2` is the angle of `P` at `P 2`. -/
+theorem interiorAngle_doubleTriangle_one :
+    (P.doubleTriangle h₀ h₁).interiorAngle 1 = P.interiorAngle 2 := by
+  have hρ := vertexAngle_extGeodesicReflection (P.sideGeodesic 0)
+    (P.vertex_injective.ne (by decide : (2 : Fin 3) ≠ 0))
+    (P.vertex_injective.ne (by decide : (2 : Fin 3) ≠ 1))
+  rw [extGeodesicReflection_sideGeodesic_vertex,
+    extGeodesicReflection_sideGeodesic_vertex_of_add_one_eq _ (i := 0) (j := 1) rfl] at hρ
+  rw [interiorAngle_def, interiorAngle_def]
+  simpa [vertexAngle_comm] using hρ
+
+/-- The angle of the double at `P 2` is the angle of `P` there. -/
+theorem interiorAngle_doubleTriangle_three :
+    (P.doubleTriangle h₀ h₁).interiorAngle 3 = P.interiorAngle 2 := by
+  rw [interiorAngle_def, interiorAngle_def]
+  simp
 
 end TauCeti.UpperHalfPlane.ConvexPolygon
