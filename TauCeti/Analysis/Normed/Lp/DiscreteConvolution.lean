@@ -310,6 +310,17 @@ private theorem addConvolutionExists_of_summable_sq_one_add_abs_rpow_mul_norm [C
         rw [ENNReal.tsum_prod (f := fun m n ↦ ‖L‖ₑ * ‖a m‖ₑ * ‖b n‖ₑ)]
         simp only [ENNReal.tsum_mul_left, ENNReal.tsum_mul_right, mul_assoc]
 
+/-- The total convolution of two weighted square-summable sequences on `ℤ` is weighted
+square-summable for `s > 1 / 2`, without requiring completeness of its target. -/
+theorem summable_sq_one_add_abs_rpow_mul_norm_addConvolution
+    (L : E →L[𝕜] E' →L[𝕜] F) {s : ℝ} (hs : 1 / 2 < s) {a : ℤ → E} {b : ℤ → E'}
+    (ha : Summable fun n : ℤ ↦ ((1 + |(n : ℝ)|) ^ s * ‖a n‖) ^ 2)
+    (hb : Summable fun n : ℤ ↦ ((1 + |(n : ℝ)|) ^ s * ‖b n‖) ^ 2) :
+    Summable fun n : ℤ ↦ ((1 + |(n : ℝ)|) ^ s * ‖(a ⋆₊[L.toLinearMap₁₂] b) n‖) ^ 2 :=
+  (ENNReal.summable_toReal (ne_top_of_le_ne_top ENNReal.ofReal_ne_top
+    (ofReal_tsum_sq_one_add_abs_rpow_mul_norm_addConvolution_le L hs ha hb))).congr
+    fun _ ↦ ENNReal.toReal_ofReal (sq_nonneg _)
+
 /-- **Convolution of weighted `ℓ²` sequences on `ℤ` is weighted `ℓ²`.** For `s > 1 / 2` and a
 complete target, if `(1 + |n|) ^ s ‖a n‖` and `(1 + |n|) ^ s ‖b n‖` are square-summable, then the
 convolution `a ⋆ b` exists, so it is the pointwise convolution sum, and
@@ -321,14 +332,12 @@ theorem addConvolutionExists_and_summable_sq_one_add_abs_rpow_mul_norm_addConvol
     AddConvolutionExists L.toLinearMap₁₂ a b ∧
       Summable fun n : ℤ ↦ ((1 + |(n : ℝ)|) ^ s * ‖(a ⋆₊[L.toLinearMap₁₂] b) n‖) ^ 2 :=
   ⟨addConvolutionExists_of_summable_sq_one_add_abs_rpow_mul_norm L hs ha hb,
-    (ENNReal.summable_toReal (ne_top_of_le_ne_top ENNReal.ofReal_ne_top
-      (ofReal_tsum_sq_one_add_abs_rpow_mul_norm_addConvolution_le L hs ha hb))).congr
-      fun _ ↦ ENNReal.toReal_ofReal (sq_nonneg _)⟩
+    summable_sq_one_add_abs_rpow_mul_norm_addConvolution L hs ha hb⟩
 
-/-- **The weighted `ℓ²` convolution estimate on `ℤ`.** For `s > 1 / 2` and a complete target,
+/-- **The weighted `ℓ²` convolution estimate on `ℤ`.** For `s > 1 / 2`,
 `∑ₙ ((1 + |n|) ^ s ‖(a ⋆ b) n‖)² ≤ 4 ^ (s + 1) ‖L‖² (∑ₙ (1 + |n|) ^ (-2 s))
 (∑ₙ ((1 + |n|) ^ s ‖a n‖)²) (∑ₙ ((1 + |n|) ^ s ‖b n‖)²)`. -/
-theorem tsum_sq_one_add_abs_rpow_mul_norm_addConvolution_le [CompleteSpace F]
+theorem tsum_sq_one_add_abs_rpow_mul_norm_addConvolution_le
     (L : E →L[𝕜] E' →L[𝕜] F) {s : ℝ} (hs : 1 / 2 < s) {a : ℤ → E} {b : ℤ → E'}
     (ha : Summable fun n : ℤ ↦ ((1 + |(n : ℝ)|) ^ s * ‖a n‖) ^ 2)
     (hb : Summable fun n : ℤ ↦ ((1 + |(n : ℝ)|) ^ s * ‖b n‖) ^ 2) :
@@ -338,7 +347,7 @@ theorem tsum_sq_one_add_abs_rpow_mul_norm_addConvolution_le [CompleteSpace F]
         ∑' n : ℤ, ((1 + |(n : ℝ)|) ^ s * ‖b n‖) ^ 2 := by
   rw [← ENNReal.ofReal_le_ofReal_iff (by positivity), ENNReal.ofReal_tsum_of_nonneg
     (fun _ ↦ sq_nonneg _)
-    (addConvolutionExists_and_summable_sq_one_add_abs_rpow_mul_norm_addConvolution L hs ha hb).2]
+    (summable_sq_one_add_abs_rpow_mul_norm_addConvolution L hs ha hb)]
   exact ofReal_tsum_sq_one_add_abs_rpow_mul_norm_addConvolution_le L hs ha hb
 
 end Seminormed
