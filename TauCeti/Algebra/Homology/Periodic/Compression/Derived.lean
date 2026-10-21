@@ -52,27 +52,32 @@ theorem homotopyCompressionFunctor_obj_mem_subcategoryAcyclic_iff
     ← HomotopyCategory.Bounded.quotient_obj_rep K,
     _root_.HomotopyCategory.quotient_obj_mem_subcategoryAcyclic_iff_acyclic]
 
+/-- The acyclic objects of the bounded homotopy category are the inverse image of the acyclic
+objects of the `n`-periodic homotopy category under compression. -/
+theorem subcategoryAcyclic_inverseImage_homotopyCompressionFunctor :
+    (subcategoryAcyclic C n).inverseImage (homotopyCompressionFunctor n) =
+      HomotopyCategory.Bounded.subcategoryAcyclic C :=
+  funext fun K ↦ propext (homotopyCompressionFunctor_obj_mem_subcategoryAcyclic_iff n K)
+
 /-- A morphism of the bounded homotopy category is a quasi-isomorphism exactly when its
-compression has an acyclic cone, that is, becomes an isomorphism in the periodic derived
+compression has an acyclic cone, and hence becomes an isomorphism in the periodic derived
 category. -/
 theorem quasiIso_iff_trW_homotopyCompressionFunctor_map
     {K L : HomotopyCategory.Bounded C} (f : K ⟶ L) :
     HomotopyCategory.Bounded.quasiIso C f ↔
       (subcategoryAcyclic C n).trW ((homotopyCompressionFunctor n).map f) := by
-  obtain ⟨Z, g, h, hT⟩ := distinguished_cocone_triangle f
-  rw [HomotopyCategory.Bounded.quasiIso_eq_subcategoryAcyclic_trW]
-  exact ((HomotopyCategory.Bounded.subcategoryAcyclic C).trW_iff_of_distinguished _ hT).trans
-    ((homotopyCompressionFunctor_obj_mem_subcategoryAcyclic_iff n Z).symm.trans
-      ((subcategoryAcyclic C n).trW_iff_of_distinguished _
-        ((homotopyCompressionFunctor n).map_distinguished _ hT)).symm)
+  rw [HomotopyCategory.Bounded.quasiIso_eq_subcategoryAcyclic_trW,
+    ← subcategoryAcyclic_inverseImage_homotopyCompressionFunctor]
+  exact ObjectProperty.inverseImage_trW_iff _ _ f
 
 /-- Compression followed by the localization to the periodic derived category inverts the
 quasi-isomorphisms of bounded complexes. -/
 lemma homotopyCompressionFunctor_comp_Qh_inverts_quasiIso :
     (HomotopyCategory.Bounded.quasiIso C).IsInvertedBy
-      (homotopyCompressionFunctor n ⋙ DerivedCategory.Qh C n) := fun _ _ f hf ↦
-  Localization.inverts (DerivedCategory.Qh C n) (subcategoryAcyclic C n).trW _
-    ((quasiIso_iff_trW_homotopyCompressionFunctor_map n f).mp hf)
+      (homotopyCompressionFunctor n ⋙ DerivedCategory.Qh C n) := by
+  rw [HomotopyCategory.Bounded.quasiIso_eq_subcategoryAcyclic_trW,
+    ← subcategoryAcyclic_inverseImage_homotopyCompressionFunctor]
+  exact ObjectProperty.inverseImage_trW_isInverted _ _ _
 
 variable [HasDerivedCategory.{w} C]
 
