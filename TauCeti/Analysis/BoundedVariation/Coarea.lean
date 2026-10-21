@@ -7,14 +7,11 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import TauCeti.Analysis.BoundedVariation.Perimeter
-import Mathlib.Analysis.SpecialFunctions.SmoothTransition
-import Mathlib.MeasureTheory.Integral.IntegralEqImproper
-import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.Analysis.Calculus.Rademacher
+import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Integral.LayerCake
-import TauCeti.Topology.EMetricSpace.Lipschitz
 
 /-!
 # The coarea formula for total variation
@@ -139,66 +136,6 @@ theorem totalVariationOn_le_lintegral_perimeter (hu : LocallyIntegrableOn u Ω �
 
 /-! ### The coarea formula for locally Lipschitz functions -/
 
-/-- The integral over all levels of the rescaled derivative of the smooth transition function
-is one: `∫_ℝ c ψ'(c (a - t)) dt = 1` for `c > 0`. -/
-private theorem lintegral_ofReal_mul_deriv_smoothTransition (a : ℝ) {c : ℝ} (hc : 0 < c) :
-    ∫⁻ t, ENNReal.ofReal (c * deriv Real.smoothTransition (c * (a - t))) = 1 := by
-  have hdiff : Differentiable ℝ Real.smoothTransition :=
-    (Real.smoothTransition.contDiff (n := 1)).differentiable (by simp)
-  have hsupp : HasCompactSupport (deriv Real.smoothTransition) := by
-    refine HasCompactSupport.intro (isCompact_Icc (a := 0) (b := 1)) fun x hx => ?_
-    have hx' : x < 0 ∨ 1 < x := by
-      rcases lt_or_ge x 0 with h | h
-      · exact .inl h
-      · exact .inr (lt_of_not_ge fun h' => hx ⟨h, h'⟩)
-    rcases hx' with hx0 | hx1
-    · have h : Real.smoothTransition =ᶠ[𝓝 x] fun _ => 0 := by
-        filter_upwards [Iio_mem_nhds hx0] with y hy
-        exact Real.smoothTransition.zero_of_nonpos (le_of_lt hy)
-      rw [h.deriv_eq, deriv_const]
-    · have h : Real.smoothTransition =ᶠ[𝓝 x] fun _ => 1 := by
-        filter_upwards [Ioi_mem_nhds hx1] with y hy
-        exact Real.smoothTransition.one_of_one_le (le_of_lt hy)
-      rw [h.deriv_eq, deriv_const]
-  have hint : Integrable (deriv Real.smoothTransition) :=
-    ((Real.smoothTransition.contDiff (n := 1)).continuous_deriv
-      le_rfl).integrable_of_hasCompactSupport hsupp
-  have hone : ∫ s, deriv Real.smoothTransition s = 1 := by
-    have := integral_of_hasDerivAt_of_tendsto (fun x => (hdiff x).hasDerivAt) hint
-      ((tendsto_const_nhds (x := (0 : ℝ))).congr' ?_)
-      ((tendsto_const_nhds (x := (1 : ℝ))).congr' ?_)
-    · simpa using this
-    · filter_upwards [eventually_le_atBot 0] with x hx
-      exact (Real.smoothTransition.zero_of_nonpos hx).symm
-    · filter_upwards [eventually_ge_atTop 1] with x hx
-      exact (Real.smoothTransition.one_of_one_le hx).symm
-  have hint' : Integrable fun t => c * deriv Real.smoothTransition (c * (a - t)) :=
-    ((hint.comp_mul_left' hc.ne').comp_sub_left a).const_mul c
-  rw [← ofReal_integral_eq_lintegral_ofReal hint'
-    (.of_forall fun t => mul_nonneg hc.le Real.smoothTransition.monotone.deriv_nonneg),
-    integral_const_mul, integral_sub_left_eq_self (fun s => deriv Real.smoothTransition (c * s)),
-    Measure.integral_comp_mul_left, hone, abs_inv, abs_of_pos hc, smul_eq_mul, mul_one,
-    mul_inv_cancel₀ hc.ne', ENNReal.ofReal_one]
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- The chain rule for `y ↦ ψ (c (u y - t))`, with `ψ` the smooth transition function. -/
-private theorem hasFDerivAt_smoothTransition_comp {x : E} (hx : DifferentiableAt ℝ u x)
-    (c t : ℝ) :
-    HasFDerivAt (fun y => Real.smoothTransition (c * (u y - t)))
-      ((c * deriv Real.smoothTransition (c * (u x - t))) • fderiv ℝ u x) x := by
-  have hψ := ((Real.smoothTransition.contDiff (n := 1)).differentiable (by simp)
-    (c * (u x - t))).hasDerivAt
-  have h := hψ.comp_hasFDerivAt x ((hx.hasFDerivAt.sub_const t).const_mul c)
-  rw [smul_smul, mul_comm] at h
-  exact h
-
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-private theorem locallyLipschitzOn_smoothTransition_comp (hu : LocallyLipschitzOn Ω u)
-    (c t : ℝ) : LocallyLipschitzOn Ω fun x => Real.smoothTransition (c * (u x - t)) :=
-  ((Real.smoothTransition.contDiff (n := 1)).comp
-    (contDiff_const.mul (contDiff_id.sub contDiff_const))).locallyLipschitz
-    |>.comp_locallyLipschitzOn hu
-
 /-- The variation of the smoothed superlevel function `ψ (c (u - t))` of a locally Lipschitz `u`
 is `∫_Ω c ψ'(c (u - t)) ‖Du‖`. -/
 private theorem totalVariationOn_smoothTransition_comp (hu : LocallyLipschitzOn Ω u) {c : ℝ}
@@ -206,11 +143,11 @@ private theorem totalVariationOn_smoothTransition_comp (hu : LocallyLipschitzOn 
     totalVariationOn μ Ω (fun x => Real.smoothTransition (c * (u x - t))) =
       ∫⁻ x in Ω, ENNReal.ofReal (c * deriv Real.smoothTransition (c * (u x - t))) *
         ‖fderiv ℝ u x‖ₑ ∂μ := by
-  have hv := locallyLipschitzOn_smoothTransition_comp hu c t
-  rw [hv.totalVariationOn_eq_setLIntegral_enorm_fderiv]
+  rw [(hu.smoothTransition_mul_sub c t).totalVariationOn_eq_setLIntegral_enorm_fderiv]
   refine setLIntegral_congr_fun_ae Ω.isOpen.measurableSet ?_
   filter_upwards [hu.ae_differentiableAt_of_mem (μ := μ) Ω.isOpen] with x hx hxΩ
-  rw [(hasFDerivAt_smoothTransition_comp (hx hxΩ) _ _).fderiv, enorm_smul,
+  rw [((hx hxΩ).hasFDerivAt.sub_const t).const_mul c |>.smoothTransition |>.fderiv, smul_smul,
+    mul_comm, enorm_smul,
     Real.enorm_of_nonneg (mul_nonneg hc Real.smoothTransition.monotone.deriv_nonneg)]
 
 /-- The indicator of `{u > t}` is the pointwise limit of the smoothed superlevel functions
@@ -221,7 +158,7 @@ private theorem perimeter_le_liminf_totalVariationOn_smoothTransition_comp
     perimeter μ Ω {x | t < u x} ≤ liminf (fun n : ℕ => totalVariationOn μ Ω
       fun x => Real.smoothTransition (((n : ℝ) + 1) * (u x - t))) atTop := by
   have hΩm : MeasurableSet (Ω : Set E) := Ω.isOpen.measurableSet
-  have hv (n : ℕ) := locallyLipschitzOn_smoothTransition_comp hu ((n : ℝ) + 1) t
+  have hv (n : ℕ) := hu.smoothTransition_mul_sub ((n : ℝ) + 1) t
   have hS : IsOpen ((Ω : Set E) ∩ u ⁻¹' Ioi t) :=
     hu.continuousOn.isOpen_inter_preimage Ω.isOpen isOpen_Ioi
   have hind : EqOn (((Ω : Set E) ∩ u ⁻¹' Ioi t).indicator 1)
@@ -293,7 +230,7 @@ theorem _root_.LocallyLipschitzOn.lintegral_perimeter_eq_setLIntegral_enorm_fder
     rw [lintegral_lintegral_swap (hF n)]
     refine lintegral_congr fun x => ?_
     rw [lintegral_mul_const' _ _ enorm_ne_top,
-      lintegral_ofReal_mul_deriv_smoothTransition _ (by positivity), one_mul]
+      Real.smoothTransition.lintegral_ofReal_mul_deriv _ (by positivity), one_mul]
   -- Lower semicontinuity, then Fatou's lemma and Tonelli's theorem.
   calc ∫⁻ t, perimeter μ Ω {x | t < u x}
       ≤ ∫⁻ t, liminf (fun n => ∫⁻ x in Ω, F n t x ∂μ) atTop := lintegral_mono fun t =>

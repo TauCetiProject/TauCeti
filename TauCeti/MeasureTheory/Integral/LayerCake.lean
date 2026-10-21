@@ -9,6 +9,8 @@ public import Mathlib.MeasureTheory.Integral.Layercake
 public import Mathlib.Data.Set.SymmDiff
 -- Proof-only: the layer-cake formula for a power and the power integral on `(0, a)`.
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
+-- Proof-only: the integrability of indicators of bounded intervals.
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 
 /-!
 # Layer-cake formulas for products and distances
@@ -420,10 +422,6 @@ theorem indicator_Iio_sub_indicator_Iio_zero (a : ℝ) :
   ext t
   simp only [Pi.sub_apply, indicator_apply, mem_Iio, mem_Ico, Pi.one_apply]
   split_ifs <;> grind
-
-private theorem integrable_indicator_Ico_one (a b : ℝ) :
-    Integrable ((Ico a b).indicator (1 : ℝ → ℝ)) :=
-  (integrableOn_const measure_Ico_lt_top.ne).integrable_indicator measurableSet_Ico
 
 /-- The signed indicator `t ↦ 1_{t < a} - 1_{t < 0}` is Lebesgue integrable. -/
 theorem integrable_indicator_Iio_sub_indicator_Iio_zero (a : ℝ) :
