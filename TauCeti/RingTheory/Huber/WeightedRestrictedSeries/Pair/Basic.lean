@@ -104,7 +104,7 @@ theorem exists_mvPolynomial_sub_mem_weightedNhd_of_mem_weightedSubring {R : Subr
 
 /-- A subring of `A⟨X⟩_T` containing every weighted variable `t Xᵢ` with `t ∈ Tᵢ` contains every
 weighted monomial `t Xν` with `t ∈ Tν`. -/
-private theorem weightedPolynomialHom_monomial_mem {B : Subring (weightedRestrictedSubring T hT)}
+theorem weightedPolynomialHom_monomial_mem {B : Subring (weightedRestrictedSubring T hT)}
     (hX : ∀ i, ∀ t ∈ T i, weightedC T hT t * weightedX T hT i ∈ B) (ν : Fin k →₀ ℕ) :
     ∀ t ∈ weightPow T ν, weightedPolynomialHom T hT (MvPolynomial.monomial ν t) ∈ B := by
   induction ν using Finsupp.induction_linear with
@@ -134,7 +134,7 @@ private theorem weightedPolynomialHom_monomial_mem {B : Subring (weightedRestric
 
 /-- A subring of `A⟨X⟩_T` containing the constants from `R` and every weighted monomial `t Xν`
 with `t ∈ Tν` contains every monomial `a Xν` with `a ∈ Tν · R`. -/
-private theorem weightedPolynomialHom_monomial_mem_of_mem_weightMul
+theorem weightedPolynomialHom_monomial_mem_of_mem_weightMul
     {Q : Subring (weightedRestrictedSubring T hT)} {R : Subring A}
     (hC : ∀ a ∈ R, weightedC T hT a ∈ Q)
     (hmon : ∀ ν, ∀ t ∈ weightPow T ν, weightedPolynomialHom T hT (MvPolynomial.monomial ν t) ∈ Q)
