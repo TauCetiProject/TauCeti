@@ -85,9 +85,11 @@ theorem map_invariantDifferential (F : FormalGroup R) (f : R →+* S) :
   have hD : PowerSeries.map f
       (subst ![0, PowerSeries.X] (pderiv 0 F.toPowerSeries)) =
       subst ![0, PowerSeries.X] (pderiv 0 (F.map f).toPowerSeries) := by
+    -- Multivariate substitution returns a series in Unit variables here; unfold the
+    -- univariate wrappers to apply its coefficient-map theorem.
     simp only [PowerSeries.map, PowerSeries.X]
     rw [MvPowerSeries.map_subst (HasSubst.zero_X :
-      HasSubst (![0, PowerSeries.X] : Fin 2 → PowerSeries R)), map_pderiv,
+      HasSubst (![0, PowerSeries.X] : Fin 2 → PowerSeries R)), ← pderiv_map,
       map_toPowerSeries]
     congr 1
     funext i
@@ -124,12 +126,15 @@ theorem map_exp [Algebra ℚ R] [Algebra ℚ S] (F : FormalGroup R) (f : R →+*
   -- Compose with the known inverse; no recursive description of the exponential is needed.
   have he := PowerSeries.HasSubst.of_constantCoeff_zero F.constantCoeff_exp
   have hm : PowerSeries.HasSubst (PowerSeries.map f F.exp) := by
-    simpa only [PowerSeries.HasSubst, PowerSeries.map,
-      MvPowerSeries.constantCoeff_map] using he.map f
+    apply PowerSeries.HasSubst.of_constantCoeff_zero'
+    rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply, PowerSeries.coeff_map,
+      PowerSeries.coeff_zero_eq_constantCoeff_apply, F.constantCoeff_exp, map_zero]
   have hl := PowerSeries.HasSubst.of_constantCoeff_zero (F.map f).constantCoeff_log
   have hi : PowerSeries.subst (PowerSeries.map f F.exp) (F.map f).log = PowerSeries.X := by
     rw [← map_log]
     have h := PowerSeries.map_subst (h := f) he F.log
+    -- map_subst uses MvPowerSeries.map even for its univariate result; unfold
+    -- PowerSeries.map and X to match those Unit-variable wrappers.
     simp only [PowerSeries.map] at h ⊢
     rw [← h, subst_exp_log]
     simp [PowerSeries.X]
