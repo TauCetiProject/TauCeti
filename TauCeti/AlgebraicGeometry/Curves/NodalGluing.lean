@@ -115,6 +115,21 @@ def flagPointOf {ι Flag : Type*} {X : ι → Type*} (fst snd : Flag → ι)
     (p : Flag × Bool) : Σ i, X i :=
   if p.2 then ⟨snd p.1, sndPt p.1⟩ else ⟨fst p.1, fstPt p.1⟩
 
+-- The bodies of `flagPointOf`, `fstPoint` and `sndPoint` stay unexposed: the value lemmas below
+-- are closed by `(rfl)`, written with the parentheses that suppress the automatic `@[defeq]` tag,
+-- so that they export and import cleanly from this module.
+/-- The flag point selected by `false` is the first point of the flag pair. -/
+@[simp] theorem flagPointOf_false {ι Flag : Type*} {X : ι → Type*} (fst snd : Flag → ι)
+    (fstPt : ∀ f : Flag, X (fst f)) (sndPt : ∀ f : Flag, X (snd f)) (f : Flag) :
+    flagPointOf fst snd fstPt sndPt (f, false) = ⟨fst f, fstPt f⟩ :=
+  (rfl)
+
+/-- The flag point selected by `true` is the second point of the flag pair. -/
+@[simp] theorem flagPointOf_true {ι Flag : Type*} {X : ι → Type*} (fst snd : Flag → ι)
+    (fstPt : ∀ f : Flag, X (fst f)) (sndPt : ∀ f : Flag, X (snd f)) (f : Flag) :
+    flagPointOf fst snd fstPt sndPt (f, true) = ⟨snd f, sndPt f⟩ :=
+  (rfl)
+
 /-- The gluing data of a nodal curve: the flag pairs at which the normalization components are
 glued.  A flag pair `f` names the two components `fst f` and `snd f` together with the points
 `fstPt f` and `sndPt f` of those components that are identified.
@@ -147,6 +162,16 @@ def fstPoint (d : FlagPairData ι Flag X) (f : Flag) : Σ i, X i := ⟨d.fst f, 
 /-- The second point of a flag pair, as a point of the disjoint union of the components. -/
 def sndPoint (d : FlagPairData ι Flag X) (f : Flag) : Σ i, X i := ⟨d.snd f, d.sndPt f⟩
 
+/-- The first point of a flag pair, with its two components. -/
+@[simp] theorem fstPoint_def (d : FlagPairData ι Flag X) (f : Flag) :
+    fstPoint d f = ⟨d.fst f, d.fstPt f⟩ :=
+  (rfl)
+
+/-- The second point of a flag pair, with its two components. -/
+@[simp] theorem sndPoint_def (d : FlagPairData ι Flag X) (f : Flag) :
+    sndPoint d f = ⟨d.snd f, d.sndPt f⟩ :=
+  (rfl)
+
 /-- The two points of a flag pair, selected by a boolean: `false` selects the first point of the
 flag pair, `true` the second. -/
 def flagPoint (d : FlagPairData ι Flag X) (p : Flag × Bool) : Σ i, X i :=
@@ -161,12 +186,12 @@ theorem flagPoint_injective (d : FlagPairData ι Flag X) : Function.Injective (f
 /-- The first point of a flag pair is the flag point selected by `false`. -/
 @[simp] theorem flagPoint_false (d : FlagPairData ι Flag X) (f : Flag) :
     flagPoint d (f, false) = fstPoint d f := by
-  simp [flagPoint, flagPointOf, fstPoint]
+  simp only [flagPoint, flagPointOf_false, fstPoint_def]
 
 /-- The second point of a flag pair is the flag point selected by `true`. -/
 @[simp] theorem flagPoint_true (d : FlagPairData ι Flag X) (f : Flag) :
     flagPoint d (f, true) = sndPoint d f := by
-  simp [flagPoint, flagPointOf, sndPoint]
+  simp only [flagPoint, flagPointOf_true, sndPoint_def]
 
 /-- Two flag pairs with the same first point are the same flag pair. -/
 theorem fstPoint_injective (d : FlagPairData ι Flag X) : Function.Injective (fstPoint d) := by
@@ -217,17 +242,17 @@ theorem flagRel_def (d : FlagPairData ι Flag X) (x y : Σ i, X i) :
 /-- The generating relation is symmetric. -/
 theorem flagRel_symm (d : FlagPairData ι Flag X) {x y : Σ i, X i} (h : flagRel d x y) :
     flagRel d y x := by
-  rcases h with ⟨f, (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩)⟩
-  · exact ⟨f, Or.inr ⟨rfl, rfl⟩⟩
-  · exact ⟨f, Or.inl ⟨rfl, rfl⟩⟩
+  obtain ⟨f, ⟨hx, hy⟩ | ⟨hx, hy⟩⟩ := (flagRel_def d x y).mp h
+  · exact (flagRel_def d y x).mpr ⟨f, Or.inr ⟨hy, hx⟩⟩
+  · exact (flagRel_def d y x).mpr ⟨f, Or.inl ⟨hy, hx⟩⟩
 
 /-- **The flag pairs form a matching.**  Two flag relations that meet in a point glue the same two
 points: the flag points being pairwise distinct forces the two flag pairs to be equal, so every
 chain of flag pairs reduces to equality or to a single generating step. -/
 theorem eq_of_flagRel_of_flagRel (d : FlagPairData ι Flag X) {x y z : Σ i, X i}
     (h₁ : flagRel d x y) (h₂ : flagRel d y z) : x = z := by
-  obtain ⟨f, hf⟩ := h₁
-  obtain ⟨g, hg⟩ := h₂
+  obtain ⟨f, hf⟩ := (flagRel_def d x y).mp h₁
+  obtain ⟨g, hg⟩ := (flagRel_def d y z).mp h₂
   rcases hf with ⟨hxf, hyf⟩ | ⟨hxf, hyf⟩
   · rcases hg with ⟨hyg, hzg⟩ | ⟨hyg, hzg⟩
     · exact absurd (hyf.symm.trans hyg) (fun h => fstPoint_ne_sndPoint d g f h.symm)
@@ -257,21 +282,24 @@ theorem gluedRel_def (d : FlagPairData ι Flag X) (x y : Σ i, X i) :
 
 /-- The glued relation is symmetric. -/
 theorem gluedRel_symm (d : FlagPairData ι Flag X) {x y : Σ i, X i} (h : gluedRel d x y) :
-    gluedRel d y x :=
-  h.imp Eq.symm (flagRel_symm d)
+    gluedRel d y x := by
+  rcases (gluedRel_def d x y).mp h with h | h
+  · exact (gluedRel_def d y x).mpr (Or.inl h.symm)
+  · exact (gluedRel_def d y x).mpr (Or.inr (flagRel_symm d h))
 
 /-- The glued relation is transitive. -/
 theorem gluedRel_trans (d : FlagPairData ι Flag X) {x y z : Σ i, X i}
     (h₁ : gluedRel d x y) (h₂ : gluedRel d y z) : gluedRel d x z := by
-  rcases h₁ with h₁ | h₁ <;> rcases h₂ with h₂ | h₂
-  · exact Or.inl (h₁.trans h₂)
-  · exact Or.inr (h₁.symm ▸ h₂)
-  · exact Or.inr (h₂ ▸ h₁)
-  · exact Or.inl (eq_of_flagRel_of_flagRel d h₁ h₂)
+  rcases (gluedRel_def d x y).mp h₁ with h₁ | h₁ <;>
+    rcases (gluedRel_def d y z).mp h₂ with h₂ | h₂
+  · exact (gluedRel_def d x z).mpr (Or.inl (h₁.trans h₂))
+  · exact (gluedRel_def d x z).mpr (Or.inr (h₁.symm ▸ h₂))
+  · exact (gluedRel_def d x z).mpr (Or.inr (h₂ ▸ h₁))
+  · exact (gluedRel_def d x z).mpr (Or.inl (eq_of_flagRel_of_flagRel d h₁ h₂))
 
 /-- The generating relation is contained in the glued relation. -/
 theorem flagRel_le_gluedRel (d : FlagPairData ι Flag X) : flagRel d ≤ gluedRel d :=
-  fun _ _ h => Or.inr h
+  fun x y h => (gluedRel_def d x y).mpr (Or.inr h)
 
 /-- **The relation between two flag points.**  Two flag points of the disjoint union are related
 by `gluedRel` exactly when they belong to the same flag pair. -/
@@ -282,7 +310,7 @@ theorem gluedRel_iff_of_flagPoints (d : FlagPairData ι Flag X) {f g : Flag}
     gluedRel d p q ↔ f = g := by
   constructor
   · intro h
-    rcases h with h | ⟨c, hc⟩
+    rcases (gluedRel_def d p q).mp h with h | ⟨c, hc⟩
     · have hpg : p = fstPoint d g ∨ p = sndPoint d g := by
         rcases hq with hq | hq
         · exact Or.inl (h.trans hq)
@@ -298,14 +326,14 @@ theorem gluedRel_iff_of_flagPoints (d : FlagPairData ι Flag X) {f g : Flag}
   · intro h
     subst h
     rcases hp with hp | hp <;> rcases hq with hq | hq
-    · exact Or.inl (hp.trans hq.symm)
-    · exact Or.inr ⟨f, Or.inl ⟨hp, hq⟩⟩
-    · exact Or.inr ⟨f, Or.inr ⟨hp, hq⟩⟩
-    · exact Or.inl (hp.trans hq.symm)
+    · exact (gluedRel_def d p q).mpr (Or.inl (hp.trans hq.symm))
+    · exact (gluedRel_def d p q).mpr (Or.inr ⟨f, Or.inl ⟨hp, hq⟩⟩)
+    · exact (gluedRel_def d p q).mpr (Or.inr ⟨f, Or.inr ⟨hp, hq⟩⟩)
+    · exact (gluedRel_def d p q).mpr (Or.inl (hp.trans hq.symm))
 
 /-- The glued relation, as an equivalence relation. -/
 theorem gluedRel_equivalence (d : FlagPairData ι Flag X) : Equivalence (gluedRel d) where
-  refl := fun _ => Or.inl rfl
+  refl := fun x => (gluedRel_def d x x).mpr (Or.inl rfl)
   symm := fun h => gluedRel_symm d h
   trans := fun h₁ h₂ => gluedRel_trans d h₁ h₂
 
@@ -317,7 +345,7 @@ theorem gluedRel_iff_eqvGen (d : FlagPairData ι Flag X) (x y : Σ i, X i) :
     gluedRel d x y ↔ Relation.EqvGen (flagRel d) x y := by
   constructor
   · intro h
-    rcases h with h | h
+    rcases (gluedRel_def d x y).mp h with h | h
     · subst h
       exact Relation.EqvGen.refl _
     · exact Relation.EqvGen.rel _ _ h
@@ -355,7 +383,7 @@ theorem flagPointSet_finite [Finite Flag] : (flagPointSet d).Finite :=
 when both of them are flag points. -/
 theorem eq_or_mem_flagPointSet_of_gluedRel (d : FlagPairData ι Flag X) {a b : Σ i, X i}
     (h : gluedRel d a b) : a = b ∨ (a ∈ flagPointSet d ∧ b ∈ flagPointSet d) := by
-  rcases h with h | ⟨f, hf⟩
+  rcases (gluedRel_def d a b).mp h with h | ⟨f, hf⟩
   · exact Or.inl h
   · rcases hf with ⟨ha, hb⟩ | ⟨ha, hb⟩
     · exact Or.inr ⟨(mem_flagPointSet d a).mpr ⟨f, Or.inl ha⟩,
@@ -384,7 +412,7 @@ constant on the classes of the generated relation. -/
 private theorem lift_agree (d : FlagPairData ι Flag X) {Y : Type*} (g : (Σ i, X i) → Y)
     (hg : ∀ f, g (fstPoint d f) = g (sndPoint d f)) {x y : Σ i, X i}
     (hxy : gluedRel d x y) : g x = g y := by
-  rcases hxy with hxy | ⟨f, hxy | hxy⟩
+  rcases (gluedRel_def d x y).mp hxy with hxy | ⟨f, hxy | hxy⟩
   · exact hxy ▸ rfl
   · exact (congrArg g hxy.1).trans ((hg f).trans (congrArg g hxy.2).symm)
   · exact (congrArg g hxy.1).trans ((hg f).symm.trans (congrArg g hxy.2).symm)
@@ -447,7 +475,8 @@ def nodeOfFlag (d : FlagPairData ι Flag X) (f : Flag) : GluedCurve d :=
     Quotient.mk (gluedRelSetoid d) (sndPoint d f) = nodeOfFlag d f := by
   rw [← mk_fstPoint]
   refine Quotient.sound ?_
-  exact (gluedRel_iff_of_flagPoints d (f := f) (g := f) (Or.inr rfl) (Or.inl rfl)).mpr rfl
+  exact (gluedRelSetoid_r d (sndPoint d f) (fstPoint d f)).mpr
+    ((gluedRel_iff_of_flagPoints d (f := f) (g := f) (Or.inr rfl) (Or.inl rfl)).mpr rfl)
 
 /-- **The fibres of the flag-pair map.**  Two flag pairs have the same node exactly when they are
 equal, so every non-empty fibre of `nodeOfFlag` is a singleton.  The fibres over the points that
@@ -502,7 +531,8 @@ node exactly when that point is a flag point: the preimage of the node set is th
     rw [Set.mem_preimage] at hx
     -- The point `x` is sent to a node, so it is glued to the first point of a flag pair.
     obtain ⟨f, hxf⟩ := (mem_nodeSet d (Quotient.mk (gluedRelSetoid d) x)).mp hx
-    have hrel : gluedRel d x (fstPoint d f) := Quotient.exact hxf.symm
+    have hrel : gluedRel d x (fstPoint d f) :=
+      (gluedRelSetoid_r d x (fstPoint d f)).mp (Quotient.exact hxf.symm)
     rcases eq_or_mem_flagPointSet_of_gluedRel d hrel with heq | ⟨hxF, _⟩
     · exact (mem_flagPointSet d _).mpr ⟨f, Or.inl heq⟩
     · exact hxF
@@ -595,6 +625,31 @@ def quotientMapOnComplNodeSetHomeomorph (d : FlagPairData ι Flag X)
     ↑((flagPointSet d)ᶜ) ≃ₜ ↑(complNodeSet d) :=
   (isOpenEmbedding_domRestrict_quotient_mk d).toIsEmbedding.toHomeomorph.trans
     (.setCongr (by rw [Set.range_domRestrict, image_quotient_mk_compl]))
+
+/-- **The bundled homeomorphism acts by the quotient map.**  On the complement of the flag points,
+the homeomorphism of the complement of the node set is the quotient map: it sends a point to its
+class in the glued curve. -/
+@[simp] theorem quotientMapOnComplNodeSetHomeomorph_apply (d : FlagPairData ι Flag X)
+    [∀ i, TopologicalSpace (X i)] [∀ i, T1Space (X i)] [Finite Flag]
+    (x : ↑((flagPointSet d)ᶜ)) :
+    ((quotientMapOnComplNodeSetHomeomorph d x : ↑(complNodeSet d)) : GluedCurve d) =
+      Quotient.mk (gluedRelSetoid d) x := by
+  rw [quotientMapOnComplNodeSetHomeomorph, Homeomorph.trans_apply]
+  exact Topology.IsEmbedding.toHomeomorph_apply_coe
+    (isOpenEmbedding_domRestrict_quotient_mk d).toIsEmbedding x
+
+/-- **The inverse of the bundled homeomorphism lands in the same class.**  The inverse of the
+homeomorphism of the complement of the node set sends a point of the complement to a point of the
+disjoint union that represents it in the glued curve. -/
+@[simp] theorem quotientMapOnComplNodeSetHomeomorph_symm_apply (d : FlagPairData ι Flag X)
+    [∀ i, TopologicalSpace (X i)] [∀ i, T1Space (X i)] [Finite Flag]
+    (y : ↑(complNodeSet d)) :
+    Quotient.mk (gluedRelSetoid d)
+        (((quotientMapOnComplNodeSetHomeomorph d).symm y : ↑((flagPointSet d)ᶜ)) : Σ i, X i) =
+      (y : GluedCurve d) := by
+  obtain ⟨x, rfl⟩ := (quotientMapOnComplNodeSetHomeomorph d).surjective y
+  rw [Homeomorph.symm_apply_apply]
+  exact (quotientMapOnComplNodeSetHomeomorph_apply d x).symm
 
 end NodalGluing
 
