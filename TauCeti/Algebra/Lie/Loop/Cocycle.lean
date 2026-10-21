@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Lie.Loop
 public import TauCeti.Algebra.Lie.Killing.InvariantForm
 -- Non-public: these appear only inside proofs, never in the type of an exported declaration.
 import TauCeti.Algebra.Lie.Cochain
+import TauCeti.Algebra.Lie.Killing.Basic
 import TauCeti.Algebra.Lie.Whitehead
 
 /-!
@@ -46,12 +47,12 @@ coboundary of the 1-cochain `y_n ↦ φ_n y` removes all values on constant loop
 at a time avoids any Whitehead lemma for the infinite-dimensional dual of the loop algebra.
 
 Combining the two steps, the 2-cocycles on `loopAlgebra K ℤ L` are the sums of a multiple of the
-residue cocycle and a coboundary. Conversely a nonzero multiple of the residue cocycle of a nonzero
-symmetric form is never a coboundary: on `(x_1, y_{-1})` and `(x_{-1}, y_1)` it takes opposite
-values `∓Ψ(x, y)`, while a coboundary takes the same value `-f(⁅x, y⁆_0)` on both. Thus for a
-simple Lie algebra over an algebraically closed field of characteristic zero the second cohomology
-of its loop algebra with trivial coefficients is one-dimensional, spanned by the residue class of
-the Killing form.
+residue cocycle and a coboundary. Conversely a nonzero multiple of the residue 2-cochain of a
+nonzero symmetric form is never a coboundary: on `(x_1, y_{-1})` and `(x_{-1}, y_1)` it takes
+opposite values `∓Ψ(x, y)`, while a coboundary takes the same value `-f(⁅x, y⁆_0)` on both.
+Thus for a simple Lie algebra over an algebraically closed field of characteristic zero the second
+cohomology of its loop algebra with trivial coefficients is one-dimensional, spanned by the residue
+class of the Killing form.
 
 ## Main results
 
@@ -66,7 +67,7 @@ the Killing form.
 * `TauCeti.LieAlgebra.LoopAlgebra.exists_apply_one_tmul_eq_d₁₂_apply`: **every 2-cocycle agrees
   with a coboundary on constant loops**, for any exponent monoid.
 * `TauCeti.LieAlgebra.LoopAlgebra.smul_twoCochainOfBilinear_mem_range_d₁₂_iff`: a multiple of the
-  residue cocycle of a nonzero symmetric form is a coboundary only when the multiple is zero.
+  residue 2-cochain of a nonzero symmetric form is a coboundary only when the multiple is zero.
 * `TauCeti.LieAlgebra.LoopAlgebra.twoCocycle_eq_span_sup_range_d₁₂`: **the 2-cocycles are the
   multiples of the residue cocycle plus coboundaries**.
 * `TauCeti.LieAlgebra.LoopAlgebra.twoCocycle_eq_span_killingForm_sup_range_d₁₂`: the case of the
@@ -301,7 +302,7 @@ section ResidueClass
 
 variable {K L : Type*} [CommRing K] [IsDomain K] [CharZero K] [LieRing L] [LieAlgebra K L]
 
-/-- **The residue cocycle of a nonzero symmetric form is not a coboundary.** Over a
+/-- **The residue 2-cochain of a nonzero symmetric form is not a coboundary.** Over a
 characteristic-zero domain, a multiple `t • c_Ψ` of the residue 2-cochain of a nonzero symmetric
 form `Ψ` on `L` is a coboundary on the loop algebra `loopAlgebra K ℤ L` only for `t = 0`. -/
 theorem smul_twoCochainOfBilinear_mem_range_d₁₂_iff {Ψ : LinearMap.BilinForm K L}
@@ -313,7 +314,7 @@ theorem smul_twoCochainOfBilinear_mem_range_d₁₂_iff {Ψ : LinearMap.BilinFor
   obtain ⟨x, y, hxy⟩ : ∃ x y : L, Ψ x y ≠ 0 := by
     by_contra! h
     exact hΨ (LinearMap.ext₂ h)
-  -- On `(x_m, y_{-m})` the residue cocycle is `-m Ψ(x, y)`, while every coboundary takes the
+  -- On `(x_m, y_{-m})` the residue 2-cochain is `-m Ψ(x, y)`, while every coboundary takes the
   -- value `-f([x, y]_0)`, independent of `m`.
   have hval (m : ℤ) : t * (-m * Ψ x y) = -TrivialLieModule.equiv K (loopAlgebra K ℤ L) K
       (f (AddMonoidAlgebra.single 0 1 ⊗ₜ ⁅x, y⁆)) := by
