@@ -159,7 +159,7 @@ end Zero
 
 section Convolution
 
-variable {R S H : Type*} [Zero R] [Zero S] [AddMonoid H] {N : H →+ ℝ}
+variable {R S H : Type*} [Zero R] [Zero S] [AddZeroClass H] {N : H →+ ℝ}
 
 /-- Uniform cutoff finiteness for convolution: for Novikov series `a` and `b`, only finitely many
 pairs `(u, v)` of support exponents have `N (u + v) < C`. -/
@@ -392,7 +392,8 @@ theorem ofFinsupp_surjective_iff [AddMonoid R] [Nontrivial R] :
   · by_contra hN
     obtain ⟨h, hh⟩ : ∃ h, 0 < N h := by
       obtain ⟨g, hg⟩ := DFunLike.ne_iff.1 hN
-      rcases (show N g ≠ 0 from hg).lt_or_gt with hg | hg
+      simp only [AddMonoidHom.zero_apply] at hg
+      rcases hg.lt_or_gt with hg | hg
       · exact ⟨-g, by simpa using hg⟩
       · exact ⟨g, hg⟩
     obtain ⟨r, hr⟩ := exists_ne (0 : R)
