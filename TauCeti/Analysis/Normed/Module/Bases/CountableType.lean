@@ -1,0 +1,243 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.LinearAlgebra.Dimension.OrzechProperty
+public import Mathlib.Topology.Algebra.Module.FiniteDimension
+public import TauCeti.Analysis.Normed.Module.Bases.TOrthogonal
+public import TauCeti.Analysis.Normed.Module.RieszLemma
+
+/-!
+# `t`-orthogonal bases of normed spaces of countable type
+
+Let `K` be a complete nontrivially normed field and `E` an ultrametric normed `K`-space. The space
+`E` is *of countable type* if some sequence `v : ℕ → E` has dense span. Over a field whose value
+group is not discrete, such a space need not have an orthogonal basis, but for every `t < 1` it
+has a `t`-orthogonal one. This file constructs these bases by an approximate Gram–Schmidt process.
+
+* `TauCeti.exists_isTOrthogonalFamily_span_image_Iio_eq`: every sequence `w : ℕ → E` can be
+  replaced by a `t`-orthogonal sequence `e` with the same initial spans,
+  `span (e '' Iio n) = span (w '' Iio n)`. The vector `e n` is `w n` minus an almost best
+  approximation of `w n` in the span of the previous vectors (`TauCeti.riesz_lemma_translate`);
+  the losses at the successive steps are chosen with product at least `t`.
+* `TauCeti.exists_isTOrthogonalBasis_of_dense_span`: a space of countable type has a
+  `t`-orthogonal basis indexed by a set of natural numbers.
+* `TauCeti.exists_basis_isTOrthogonalFamily`: a finite-dimensional space has a `t`-orthogonal
+  basis in the sense of `Module.Basis`, indexed by `Fin (finrank K E)`.
+* `TauCeti.exists_isTOrthogonalBasis_nat_of_dense_span`: an infinite-dimensional space of
+  countable type has a `t`-orthogonal basis indexed by `ℕ`.
+
+Neither a discrete valuation nor completeness of `E` is needed: only the finite-dimensional
+subspaces spanned by initial segments have to be closed, which holds over a complete field.
+Together with `TauCeti.IsTOrthogonalBasis.toUnconditionalSchauderBasis`, these bases give the
+coordinates in which Banach spaces of countable type are compared with `C₀(ℕ, K)`.
+
+## References
+
+* C. Perez-Garcia and W. H. Schikhof, *Locally Convex Spaces over Non-Archimedean Valued
+  Fields*, Cambridge Studies in Advanced Mathematics 119, Cambridge University Press, 2010,
+  Chapter 2.
+-/
+
+public section
+
+open Set Submodule
+open scoped NNReal
+
+namespace TauCeti
+
+variable {K E : Type*} [NontriviallyNormedField K] [NormedAddCommGroup E] [NormedSpace K E]
+
+/-- For `t < 1`, a strictly decreasing sequence of positive constants in `[t, 1]`. These are the
+orthogonality constants of the successive initial segments in the Gram–Schmidt process. -/
+private theorem exists_strictAnti_mem_Icc {t : ℝ≥0} (ht : t < 1) :
+    ∃ T : ℕ → ℝ≥0, StrictAnti T ∧ ∀ n, 0 < T n ∧ t ≤ T n ∧ T n ≤ 1 := by
+  have h1t : 0 < 1 - t := tsub_pos_of_lt ht
+  refine ⟨fun n ↦ t + (1 - t) / 2 ^ n, strictAnti_nat_of_succ_lt fun n ↦ ?_, fun n ↦ ⟨?_, ?_, ?_⟩⟩
+  · exact add_lt_add_right (div_lt_div_of_pos_left h1t (by positivity)
+      (pow_lt_pow_right₀ one_lt_two n.lt_succ_self)) t
+  · positivity
+  · exact le_self_add
+  · calc t + (1 - t) / 2 ^ n ≤ t + (1 - t) := by
+          gcongr
+          exact div_le_self zero_le (one_le_pow₀ one_le_two)
+      _ = 1 := add_tsub_cancel_of_le ht.le
+
+/-- If `w` is `r`-orthogonal to a submodule `F` (that is, `r * ‖w‖ ≤ ‖w - z‖` for `z ∈ F`) with
+`r ≤ 1`, then in an ultrametric space `r * max ‖c • w‖ ‖z‖ ≤ ‖c • w + z‖` for every scalar `c` and
+every `z ∈ F`. -/
+private theorem mul_max_nnnorm_le_nnnorm_smul_add [IsUltrametricDist E] {F : Submodule K E}
+    {w : E} {r : ℝ≥0} (hr : r ≤ 1) (hw : ∀ z ∈ F, r * ‖w‖₊ ≤ ‖w - z‖₊) (c : K) {z : E}
+    (hz : z ∈ F) : r * max ‖c • w‖₊ ‖z‖₊ ≤ ‖c • w + z‖₊ := by
+  have h₁ : r * ‖c • w‖₊ ≤ ‖c • w + z‖₊ := by
+    rcases eq_or_ne c 0 with rfl | hc
+    · simp
+    have : c • w + z = c • (w - (-c⁻¹) • z) := by
+      rw [smul_sub, smul_smul, mul_neg, mul_inv_cancel₀ hc, neg_smul, one_smul, sub_neg_eq_add]
+    rw [this, nnnorm_smul, nnnorm_smul, mul_left_comm]
+    exact mul_le_mul_of_nonneg_left (hw _ (F.smul_mem _ hz)) zero_le
+  rw [mul_max_of_nonneg _ _ zero_le]
+  refine max_le h₁ ?_
+  rcases le_or_gt ‖z‖₊ ‖c • w‖₊ with h | h
+  · exact (mul_le_mul_of_nonneg_left h zero_le).trans h₁
+  · rw [IsUltrametricDist.nnnorm_add_eq_max_of_nnnorm_ne_nnnorm h.ne, max_eq_right h.le]
+    exact mul_le_of_le_one_left zero_le hr
+
+/-- If two sequences have the same initial spans, the span of the first is contained in the span
+of the second. -/
+private theorem span_range_le_of_span_image_Iio_eq {f g : ℕ → E}
+    (h : ∀ n, span K (f '' Iio n) = span K (g '' Iio n)) : span K (range f) ≤ span K (range g) :=
+  span_le.2 <| range_subset_iff.2 fun n ↦ by
+    have hn : f n ∈ span K (f '' Iio (n + 1)) := subset_span ⟨n, n.lt_succ_self, rfl⟩
+    rw [h] at hn
+    exact span_mono (image_subset_range g _) hn
+
+/-- If each `e N` is `T (N + 1) / T N`-orthogonal to the span of the previous vectors, for a
+strictly decreasing sequence `T` of positive constants at most one, then in an ultrametric space
+the vectors `e i` with `i < N` are `T N`-orthogonal. -/
+private theorem mul_sup_nnnorm_le_of_forall_lt [IsUltrametricDist E] {e : ℕ → E}
+    {T : ℕ → ℝ≥0} (hT : StrictAnti T) (hT' : ∀ n, 0 < T n ∧ T n ≤ 1)
+    (he : ∀ N, ∀ z ∈ span K (e '' Iio N), T (N + 1) / T N * ‖e N‖₊ ≤ ‖e N - z‖₊) (N : ℕ) :
+    ∀ s : Finset ℕ, (∀ i ∈ s, i < N) → ∀ a : ℕ → K,
+      T N * s.sup (fun i ↦ ‖a i • e i‖₊) ≤ ‖∑ i ∈ s, a i • e i‖₊ := by
+  induction N with
+  | zero =>
+    intro s hs a
+    rw [Finset.eq_empty_of_forall_notMem fun i hi ↦ Nat.not_lt_zero i (hs i hi)]
+    simp
+  | succ N ih =>
+    intro s hs a
+    have hs' (i : ℕ) (hi : i ∈ s) (hiN : i ≠ N) : i < N :=
+      lt_of_le_of_ne (Nat.lt_succ_iff.1 (hs i hi)) hiN
+    by_cases hN : N ∈ s
+    · -- Split off the last term `a N • e N`; the others lie in the span of the previous vectors.
+      rw [← Finset.insert_erase hN, Finset.sum_insert (Finset.notMem_erase N s),
+        Finset.sup_insert]
+      have hlt (i : ℕ) (hi : i ∈ s.erase N) : i < N :=
+        hs' i (Finset.mem_of_mem_erase hi) (Finset.ne_of_mem_erase hi)
+      have hz : ∑ i ∈ s.erase N, a i • e i ∈ span K (e '' Iio N) :=
+        sum_mem fun i hi ↦ smul_mem _ _ (subset_span ⟨i, hlt i hi, rfl⟩)
+      have hTN : T (N + 1) = T (N + 1) / T N * T N := (div_mul_cancel₀ _ (hT' N).1.ne').symm
+      calc T (N + 1) * max ‖a N • e N‖₊ ((s.erase N).sup fun i ↦ ‖a i • e i‖₊)
+          = T (N + 1) / T N * max (T N * ‖a N • e N‖₊)
+              (T N * (s.erase N).sup fun i ↦ ‖a i • e i‖₊) := by
+            rw [← mul_max_of_nonneg _ _ zero_le, ← mul_assoc, ← hTN]
+        _ ≤ T (N + 1) / T N * max ‖a N • e N‖₊ ‖∑ i ∈ s.erase N, a i • e i‖₊ := by
+            gcongr
+            · exact mul_le_of_le_one_left zero_le (hT' N).2
+            · exact ih _ hlt a
+        _ ≤ ‖a N • e N + ∑ i ∈ s.erase N, a i • e i‖₊ :=
+            mul_max_nnnorm_le_nnnorm_smul_add
+              (div_le_one_of_le₀ (hT N.lt_succ_self).le zero_le) (he N) (a N) hz
+    · exact (mul_le_mul_of_nonneg_right (hT N.lt_succ_self).le zero_le).trans
+        (ih s (fun i hi ↦ hs' i hi fun h ↦ hN (h ▸ hi)) a)
+
+variable [CompleteSpace K] [IsUltrametricDist E]
+
+/-- **Approximate Gram–Schmidt process**: over a complete nontrivially normed field, every sequence
+`w` in an ultrametric normed space can be replaced, for each `t < 1`, by a `t`-orthogonal sequence
+`e` with the same initial spans: `span K (e '' Iio n) = span K (w '' Iio n)` for every `n`. -/
+theorem exists_isTOrthogonalFamily_span_image_Iio_eq (w : ℕ → E) {t : ℝ≥0} (ht : t < 1) :
+    ∃ e : ℕ → E, IsTOrthogonalFamily K t e ∧
+      ∀ n, span K (e '' Iio n) = span K (w '' Iio n) := by
+  obtain ⟨T, hT, hT'⟩ := exists_strictAnti_mem_Icc ht
+  -- The initial spans `span K (w '' Iio n)` are finite-dimensional, hence closed.
+  have hF (n : ℕ) : IsClosed (span K (w '' Iio n) : Set E) :=
+    have := FiniteDimensional.span_of_finite K ((finite_Iio n).image w)
+    (span K (w '' Iio n)).closed_of_finiteDimensional
+  -- Subtract from `w n` an almost best approximation `y n` in the previous span, with loss
+  -- `T (n + 1) / T n < 1`.
+  have hr (n : ℕ) : ((T (n + 1) / T n : ℝ≥0) : ℝ) < 1 := by
+    exact_mod_cast (div_lt_one (hT' n).1).2 (hT n.lt_succ_self)
+  choose y hyF hy using fun n ↦ riesz_lemma_translate (hF n) (w n) (hr n)
+  set e : ℕ → E := fun n ↦ w n - y n
+  have hspan (n : ℕ) : span K (e '' Iio n) = span K (w '' Iio n) := by
+    induction n with
+    | zero => simp
+    | succ n ih =>
+      rw [← Order.succ_eq_add_one, Order.Iio_succ_eq_insert, image_insert_eq, image_insert_eq,
+        span_insert, span_insert, ih]
+      refine le_antisymm (sup_le ?_ le_sup_right) (sup_le ?_ le_sup_right)
+      · exact span_singleton_le_iff_mem _ _ |>.2 <|
+          sub_mem (mem_sup_left (mem_span_singleton_self _)) (mem_sup_right (hyF n))
+      · rw [span_singleton_le_iff_mem, ← sub_add_cancel (w n) (y n)]
+        exact add_mem (mem_sup_left (mem_span_singleton_self _)) (mem_sup_right (hyF n))
+  -- Each `e n` is `T (n + 1) / T n`-orthogonal to the previous vectors, so for every `N` the
+  -- vectors `e i` with `i < N` are `T N`-orthogonal, and `t ≤ T N`.
+  have key := mul_sup_nnnorm_le_of_forall_lt (K := K) hT (fun n ↦ ⟨(hT' n).1, (hT' n).2.2⟩)
+    fun N z hz ↦ by
+      rw [hspan] at hz
+      exact_mod_cast hy N z hz
+  refine ⟨e, isTOrthogonalFamily_def.2 fun s a ↦ ?_, hspan⟩
+  have hs (i : ℕ) (hi : i ∈ s) : i < s.sup id + 1 :=
+    Nat.lt_succ_of_le (Finset.le_sup (f := id) hi)
+  exact (mul_le_mul_of_nonneg_right (hT' _).2.1 zero_le).trans (key _ s hs a)
+
+/-- **`t`-orthogonal bases of spaces of countable type**: over a complete nontrivially normed
+field, if a sequence `v` has dense span in an ultrametric normed space `E`, then for every `t < 1`
+the space `E` has a `t`-orthogonal basis indexed by a set of natural numbers. -/
+theorem exists_isTOrthogonalBasis_of_dense_span {v : ℕ → E}
+    (hv : Dense (span K (range v) : Set E)) {t : ℝ≥0} (ht : t < 1) :
+    ∃ (S : Set ℕ) (e : S → E), IsTOrthogonalBasis K t e := by
+  obtain ⟨e, he, hspan⟩ := exists_isTOrthogonalFamily_span_image_Iio_eq (K := K) v ht
+  -- Discard the zero vectors of `e`; they do not change its span.
+  refine ⟨{n | e n ≠ 0}, fun n ↦ e n, he.comp Subtype.val_injective, fun n ↦ n.2, ?_⟩
+  have hrange : range e ⊆ insert 0 (range fun n : {n | e n ≠ 0} ↦ e n) := by
+    rintro _ ⟨n, rfl⟩
+    by_cases h : e n = 0
+    · exact Or.inl h
+    · exact Or.inr ⟨⟨n, h⟩, rfl⟩
+  have : span K (range fun n : {n | e n ≠ 0} ↦ e n) = span K (range v) := by
+    refine le_antisymm ((span_mono ?_).trans (span_range_le_of_span_image_Iio_eq hspan)) ?_
+    · rintro _ ⟨n, rfl⟩
+      exact ⟨n, rfl⟩
+    · calc span K (range v) ≤ span K (range e) :=
+            span_range_le_of_span_image_Iio_eq fun n ↦ (hspan n).symm
+        _ ≤ span K (insert 0 (range fun n : {n | e n ≠ 0} ↦ e n)) := span_mono hrange
+        _ = _ := span_insert_zero
+  rw [this]
+  exact hv
+
+/-- **`t`-orthogonal bases of finite-dimensional spaces**: over a complete nontrivially normed
+field, a finite-dimensional ultrametric normed space has, for every `t < 1`, a basis indexed by
+`Fin (finrank K E)` which is a `t`-orthogonal family. -/
+theorem exists_basis_isTOrthogonalFamily [FiniteDimensional K E] {t : ℝ≥0} (ht : t < 1) :
+    ∃ b : Module.Basis (Fin (Module.finrank K E)) K E, IsTOrthogonalFamily K t b := by
+  set d := Module.finrank K E
+  let b₀ := Module.finBasis K E
+  -- Run the Gram–Schmidt process on `b₀`, extended by zero to a sequence.
+  let w : ℕ → E := fun n ↦ if h : n < d then b₀ ⟨n, h⟩ else 0
+  obtain ⟨e, he, hspan⟩ := exists_isTOrthogonalFamily_span_image_Iio_eq (K := K) w ht
+  have htop : ⊤ ≤ span K (range fun i : Fin d ↦ e i) :=
+    calc ⊤ = span K (range b₀) := b₀.span_eq.symm
+      _ ≤ span K (w '' Iio d) :=
+        span_mono <| range_subset_iff.2 fun i ↦ ⟨i, i.2, by simp [w, d, i.isLt]⟩
+      _ = span K (e '' Iio d) := (hspan d).symm
+      _ ≤ span K (range fun i : Fin d ↦ e i) := span_mono <| by
+        rintro _ ⟨n, hn, rfl⟩
+        exact ⟨⟨n, hn⟩, rfl⟩
+  refine ⟨basisOfTopLeSpanOfCardEqFinrank (fun i : Fin d ↦ e i) htop (Fintype.card_fin d), ?_⟩
+  rw [coe_basisOfTopLeSpanOfCardEqFinrank]
+  exact he.comp Fin.val_injective
+
+/-- **`t`-orthogonal bases of infinite-dimensional spaces of countable type**: over a complete
+nontrivially normed field, if a sequence has dense span in an infinite-dimensional ultrametric
+normed space `E`, then for every `t < 1` the space `E` has a `t`-orthogonal basis indexed by `ℕ`. -/
+theorem exists_isTOrthogonalBasis_nat_of_dense_span (hE : ¬FiniteDimensional K E) {v : ℕ → E}
+    (hv : Dense (span K (range v) : Set E)) {t : ℝ≥0} (ht : t < 1) :
+    ∃ e : ℕ → E, IsTOrthogonalBasis K t e := by
+  obtain ⟨S, e, he⟩ := exists_isTOrthogonalBasis_of_dense_span hv ht
+  -- A finite basis would span a closed, hence everything, finite-dimensional subspace.
+  have : Infinite S := by
+    refine not_finite_iff_infinite.1 fun hS ↦ hE ?_
+    have := FiniteDimensional.span_of_finite K (finite_range e)
+    have htop : span K (range e) = ⊤ := eq_top_iff'.2 fun x ↦
+      (span K (range e)).closed_of_finiteDimensional.closure_subset (he.dense_span x)
+    exact Module.finite_def.2 (htop ▸ fg_span (finite_range e))
+  obtain ⟨σ⟩ : Nonempty (ℕ ≃ S) := nonempty_equiv_of_countable
+  exact ⟨e ∘ σ, he.comp_equiv σ⟩
+
+end TauCeti
