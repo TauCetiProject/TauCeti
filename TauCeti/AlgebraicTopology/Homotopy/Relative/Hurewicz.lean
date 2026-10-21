@@ -49,6 +49,8 @@ Hurewicz map, splits its relative Hurewicz class into those of `p` and `q`.
 
 * `TauCeti.cubeBoundaryPairHom`: a singular cube sending the boundary of the cube into the
   subspace, as a map of pairs `(Iᵐ, ∂Iᵐ) ⟶ (X, A)`.
+* `TauCeti.singularHomologyMap_cubeBoundaryPairHom_eq`: maps `(I × Iⁿ, ∂(I × Iⁿ)) → (X, A)`
+  homotopic through maps of pairs induce the same map `Hₖ(Iⁿ⁺¹, ∂Iⁿ⁺¹; R) ⟶ Hₖ(X, A; R)`.
 * `TauCeti.RelGenLoop.toCubeBoundaryPairHom`: a relative cube as a map of pairs
   `(Iⁿ⁺¹, ∂Iⁿ⁺¹) ⟶ (X, A)`.
 * `TauCeti.RelGenLoop.hurewicz`: the relative Hurewicz class of a relative cube.
@@ -136,6 +138,12 @@ def toCubeBoundaryPairHom (p : RelGenLoop (Fin n) X) : cubeBoundaryPair.{w} (n +
     ((p : C(I × (I^(Fin n)), X.pair.fst)).comp ⟨fun z ↦ (z 0, Fin.tail z), by fun_prop⟩)
     fun _ hz ↦ apply_mem_range_of_mem_boundary p hz
 
+lemma toCubeBoundaryPairHom_def (p : RelGenLoop (Fin n) X) :
+    toCubeBoundaryPairHom p = cubeBoundaryPairHom
+      ((p : C(I × (I^(Fin n)), X.pair.fst)).comp ⟨fun z ↦ (z 0, Fin.tail z), by fun_prop⟩)
+      fun _ hz ↦ apply_mem_range_of_mem_boundary p hz :=
+  (rfl)
+
 @[simp]
 lemma toCubeBoundaryPairHom_fst_apply (p : RelGenLoop (Fin n) X)
     (z : (cubeBoundaryPair.{w} (n + 1)).fst) :
@@ -144,6 +152,37 @@ lemma toCubeBoundaryPairHom_fst_apply (p : RelGenLoop (Fin n) X)
 
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
 
+/-- **Maps of pairs out of the cube that are homotopic through maps of pairs induce the same map
+on relative homology**: if `g₀, g₁ : (I × Iⁿ, ∂(I × Iⁿ)) → (X, A)` are homotopic through maps of
+pairs, then so are the maps of pairs `(Iⁿ⁺¹, ∂Iⁿ⁺¹) ⟶ (X, A)` they induce. -/
+theorem _root_.TauCeti.singularHomologyMap_cubeBoundaryPairHom_eq {P : TopPair.{w}}
+    {g₀ g₁ : C(I × (I^(Fin n)), P.fst)}
+    (h : g₀.HomotopicWith g₁ fun f ↦ Set.MapsTo f (Cube.prodBoundary (Fin n)) (Set.range P.map))
+    (hg₀ : Set.MapsTo (g₀.comp ⟨fun z ↦ (z 0, Fin.tail z), by fun_prop⟩)
+      (Cube.boundary (Fin (n + 1))) (Set.range P.map))
+    (hg₁ : Set.MapsTo (g₁.comp ⟨fun z ↦ (z 0, Fin.tail z), by fun_prop⟩)
+      (Cube.boundary (Fin (n + 1))) (Set.range P.map)) (k : ℕ) :
+    TopPair.singularHomologyMap (cubeBoundaryPairHom _ hg₀) R k =
+      TopPair.singularHomologyMap (cubeBoundaryPairHom _ hg₁) R k := by
+  obtain ⟨F⟩ := h
+  let G : C(I × (cubeBoundaryPair.{w} (n + 1)).snd, P.fst) :=
+    ⟨fun x ↦ F (x.1, cubeSplit n x.2.1), by fun_prop⟩
+  have hG (x : I × (cubeBoundaryPair.{w} (n + 1)).snd) : G x ∈ Set.range P.map :=
+    F.prop x.1 (cubeSplit_mem_prodBoundary x.2.2)
+  exact TopPair.Homotopy.congr_singularHomologyMap
+    { fst := F.toHomotopy.compContinuousMap (cubeSplit n)
+      snd :=
+        { toContinuousMap := P.liftSnd G hG
+          map_zero_left z := P.isEmbedding_map.injective <| by
+            rw [ContinuousMap.toFun_eq_coe, TopPair.map_liftSnd, TopPair.Hom.w_apply]
+            exact F.apply_zero _
+          map_one_left z := P.isEmbedding_map.injective <| by
+            rw [ContinuousMap.toFun_eq_coe, TopPair.map_liftSnd, TopPair.Hom.w_apply]
+            exact F.apply_one _ }
+      w := by
+        ext x
+        exact (TopPair.map_liftSnd G hG (TopCat.I.homeomorph x.2, x.1)).symm } R k
+
 /-- **Homotopic relative cubes induce the same map on relative homology**: a homotopy through
 relative cubes is a homotopy of the maps of pairs `(Iⁿ⁺¹, ∂Iⁿ⁺¹) ⟶ (X, A)`. -/
 theorem singularHomologyMap_toCubeBoundaryPairHom_eq {p q : RelGenLoop (Fin n) X}
@@ -151,23 +190,8 @@ theorem singularHomologyMap_toCubeBoundaryPairHom_eq {p q : RelGenLoop (Fin n) X
     TopPair.singularHomologyMap (toCubeBoundaryPairHom p) R k =
       TopPair.singularHomologyMap (toCubeBoundaryPairHom q) R k := by
   obtain ⟨F⟩ := homotopic_iff.1 h
-  let G : C(I × (cubeBoundaryPair.{w} (n + 1)).snd, X.pair.fst) :=
-    ⟨fun x ↦ F (x.1, cubeSplit n x.2.1), by fun_prop⟩
-  have hG (x : I × (cubeBoundaryPair.{w} (n + 1)).snd) : G x ∈ Set.range X.pair.map :=
-    apply_mem_range_of_mem_boundary ⟨_, F.prop x.1⟩ x.2.2
-  exact TopPair.Homotopy.congr_singularHomologyMap
-    { fst := F.toHomotopy.compContinuousMap (cubeSplit n)
-      snd :=
-        { toContinuousMap := X.pair.liftSnd G hG
-          map_zero_left z := X.pair.isEmbedding_map.injective <| by
-            rw [ContinuousMap.toFun_eq_coe, TopPair.map_liftSnd, TopPair.Hom.w_apply]
-            exact F.apply_zero _
-          map_one_left z := X.pair.isEmbedding_map.injective <| by
-            rw [ContinuousMap.toFun_eq_coe, TopPair.map_liftSnd, TopPair.Hom.w_apply]
-            exact F.apply_one _ }
-      w := by
-        ext x
-        exact (TopPair.map_liftSnd G hG (TopCat.I.homeomorph x.2, x.1)).symm } R k
+  exact singularHomologyMap_cubeBoundaryPairHom_eq R
+    ⟨{ toHomotopy := F.toHomotopy, prop' := fun t ↦ mapsTo_prodBoundary (F.prop' t) }⟩ _ _ k
 
 /-- Postcomposing a relative cube with a morphism of based pairs postcomposes its map of pairs. -/
 lemma toCubeBoundaryPairHom_map (f : X ⟶ Y) (p : RelGenLoop (Fin n) X) :

@@ -188,7 +188,8 @@ theorem homologyπ_mem_of_cube {m : ℕ} (hm : (m : ℕ∞) < n)
     | smul r a ha => simp [ha]
     | ofCube c =>
       simp only [j, LinearMap.comp_apply, SubspaceCubeDeformation.endChain_ofCube]
-      exact TopPair.d_cubicalChainOfCube R (D.mapsTo_endCube_boundary hm c)
+      simpa [TopPair.cubicalChainOfCube_def] using
+        TopPair.d_cubicalChainOfCube R (D.mapsTo_endCube_boundary hm c)
   have hΦ (g : NormalizedCubicalChain P.fst R (m + 1)) :
       (P.cubicalChainComplex R).moduleCatHomologyClass (by simp) j hj g ∈ T := by
     induction g using NormalizedCubicalChain.induction_on with
@@ -201,7 +202,7 @@ theorem homologyπ_mem_of_cube {m : ℕ} (hm : (m : ℕ∞) < n)
       apply (P.cubicalChainComplex R).moduleCat_iCycles_injective
       simp only [HomologicalComplex.iCycles_moduleCatCyclesMk, j, LinearMap.comp_apply,
         SubspaceCubeDeformation.endChain_ofCube, TopPair.iCycles_cubicalCycleOfCube,
-        LinearEquiv.coe_coe]
+        TopPair.cubicalChainOfCube_def, LinearEquiv.coe_coe]
   -- The end of the deformation induces the identity on homology.
   obtain ⟨w, hw⟩ := (ModuleCat.epi_iff_surjective
     ((cokernel.π ((normalizedCubicalChainComplex R).map P.map)).f (m + 1))).1 inferInstance

@@ -83,10 +83,14 @@ variable {Y : TopCat.{0}} {B : Set Y}
 private def idCube (m : ℕ) : SingularCube (cubeBoundaryPair.{0} m).fst m :=
   ⟨ULift.up, continuous_uliftUp⟩
 
+private lemma mapsTo_idCube (m : ℕ) :
+    MapsTo (idCube m) (Cube.boundary (Fin m)) (range (cubeBoundaryPair.{0} m).map) :=
+  fun y hy ↦ ⟨⟨ULift.up y, hy⟩, rfl⟩
+
 /-- The identity cube, as a relative cycle of the cube pair `(Iᵐ⁺¹, ∂Iᵐ⁺¹)`. -/
 private def idCubeCycle (m : ℕ) :
     ((cubeBoundaryPair.{0} (m + 1)).cubicalChainComplex ℤ).cycles (m + 1) :=
-  TopPair.cubicalCycleOfCube ℤ (idCube (m + 1)) fun y hy ↦ ⟨⟨ULift.up y, hy⟩, rfl⟩
+  TopPair.cubicalCycleOfCube ℤ (idCube (m + 1)) (mapsTo_idCube (m + 1))
 
 /-- The map of pairs given by a cube `c` sends the class of the identity cube to the class of `c`
 in relative cubical homology. -/
@@ -97,21 +101,12 @@ private lemma homologyMap_cubeBoundaryPairHom_idCube {P : TopPair.{0}} {m : ℕ}
         (((cubeBoundaryPair.{0} (m + 1)).cubicalChainComplex ℤ).homologyπ (m + 1)
           (idCubeCycle m)) =
       (P.cubicalChainComplex ℤ).homologyπ (m + 1) (TopPair.cubicalCycleOfCube ℤ c hc) := by
-  rw [← ModuleCat.comp_apply, HomologicalComplex.homologyπ_naturality, ModuleCat.comp_apply]
-  congr 1
-  apply (P.cubicalChainComplex ℤ).moduleCat_iCycles_injective
-  have hid : ((cubeBoundaryPair.{0} (m + 1)).cubicalChainComplex ℤ).iCycles (m + 1)
-      (idCubeCycle m) = TopPair.cubicalChainOfCube ℤ (idCube (m + 1)) :=
-    TopPair.iCycles_cubicalCycleOfCube ℤ _ _
-  rw [← ModuleCat.comp_apply, HomologicalComplex.cyclesMap_i, ModuleCat.comp_apply, hid,
-    TopPair.iCycles_cubicalCycleOfCube, TopPair.cubicalChainOfCube, ← ModuleCat.comp_apply,
-    ← HomologicalComplex.comp_f,
-    TopPair.π_cubicalChainComplexMap, HomologicalComplex.comp_f, ModuleCat.comp_apply]
   -- The cube `c ∘ idCube` is `c`.
-  have hc' : (TopPair.Hom.fst (cubeBoundaryPairHom c hc)).hom.comp (idCube (m + 1)) = c :=
+  have hcid : (TopPair.Hom.fst (cubeBoundaryPairHom c hc)).hom.comp (idCube (m + 1)) = c :=
     ContinuousMap.ext fun y ↦ cubeBoundaryPairHom_fst_apply c hc _
-  exact congrArg _ ((normalizedCubicalChainComplex_map_f_apply _ (m + 1) _).trans
-    ((NormalizedCubicalChain.map_ofCube ℤ _ _).trans (congrArg _ hc')))
+  rw [← ModuleCat.comp_apply, HomologicalComplex.homologyπ_naturality, ModuleCat.comp_apply,
+    idCubeCycle, TopPair.cyclesMap_cubicalCycleOfCube ℤ _ _ _ (by rw [hcid]; exact hc)]
+  congr 2
 
 namespace RelHomotopyGroup
 
@@ -131,36 +126,30 @@ theorem exists_hurewicz_eq_singularHomologyMap (b : B) (hB : IsPathConnected B) 
         (singularHomologyCubeBoundaryPairIso R (n + 1)).inv ≫
           TopPair.singularHomologyMap (cubeBoundaryPairHom c hc) R (n + 1) := by
   -- Read `c` on `I × Iⁿ` and deform it, through maps of pairs, to a relative cube at some `b'`.
-  rw [TopPair.range_ofSubset_map] at hc
   let g : C(I × (I^(Fin n)), Y) := c.comp ⟨fun x ↦ Fin.cons x.1 x.2, by fun_prop⟩
-  have hg : MapsTo g (Cube.prodBoundary (Fin n)) B := fun x hx ↦ hc <|
-    Cube.boundary_fin_succ_iff.2 (by simpa using hx)
+  have hg : MapsTo g (Cube.prodBoundary (Fin n)) B := fun x hx ↦ by
+    have := @hc (Fin.cons x.1 x.2) (Cube.boundary_fin_succ_iff.2 (by simpa using hx))
+    rwa [TopPair.range_ofSubset_map] at this
   obtain ⟨b', -, p, hgp⟩ := exists_homotopicWith_relGenLoop g hg
   -- Transport that relative cube along a path in `B` from `b'` to `b`.
   let γ : Path b' b := (hB.joinedIn _ b'.2 _ b.2).joined_subtype.somePath
   let q := RelGenLoop.transport γ p
   have hpq := (RelGenLoop.collarHomotopyAlong γ p).homotopicWith
   rw [TopPair.range_ofSubset_map] at hpq
-  obtain ⟨F⟩ := hgp.trans hpq
   refine ⟨RelHomotopyGroup.mk q, ?_⟩
   rw [RelHomotopyGroup.hurewicz_mk, RelGenLoop.hurewicz_def]
   congr 1
-  -- The homotopy `F`, read on `Iⁿ⁺¹`, is a homotopy of maps of pairs from `c` to `q`.
-  have H := TopPair.ofSubsetHomotopy (X := TopCat.of (ULift.{0} (I^(Fin (n + 1)))))
-    (B := ULift.down ⁻¹' Cube.boundary (Fin (n + 1))) (B' := B)
-    (g₀ := TopCat.ofHom (g.comp (cubeSplit n))) (g₁ := TopCat.ofHom (q.1.comp (cubeSplit n)))
-    (F.toHomotopy.compContinuousMap (cubeSplit n))
-    fun τ z hz ↦ F.prop τ (cubeSplit_mem_prodBoundary (z := z) hz)
-  refine (congrArg (TopPair.singularHomologyMap · R (n + 1)) ?_).trans
-    ((H.congr_singularHomologyMap R (n + 1)).symm.trans
-      (congrArg (TopPair.singularHomologyMap · R (n + 1)) ?_)) <;>
-    refine TopPair.hom_ext_of_fst _ ?_
-  · exact TopCat.ext fun z ↦ (RelGenLoop.toCubeBoundaryPairHom_fst_apply q z).trans
-      ((congrArg q.1 (cubeSplit_apply z).symm).trans
-        (TopPair.ofSubsetMap_fst_apply (TopCat.ofHom (q.1.comp (cubeSplit n))) _ z).symm)
-  · exact TopCat.ext fun z ↦ (TopPair.ofSubsetMap_fst_apply _ _ z).trans
-      ((congrArg g (cubeSplit_apply z)).trans ((congrArg c (Fin.cons_self_tail z.down)).trans
-        (cubeBoundaryPairHom_fst_apply c _ z).symm))
+  -- The relative cube `q` is homotopic to `g`, that is to `c`, through maps of pairs.
+  have H : q.1.HomotopicWith g
+      fun f ↦ MapsTo f (Cube.prodBoundary (Fin n)) (range (TopPair.ofSubset B).map) := by
+    rw [TopPair.range_ofSubset_map]
+    exact (hgp.trans hpq).symm
+  have hcg : g.comp ⟨fun z ↦ (z 0, Fin.tail z), by fun_prop⟩ = c :=
+    ContinuousMap.ext fun z ↦ congrArg c (Fin.cons_self_tail z)
+  rw [RelGenLoop.toCubeBoundaryPairHom_def]
+  convert singularHomologyMap_cubeBoundaryPairHom_eq R H
+    (fun _ hz ↦ RelGenLoop.apply_mem_range_of_mem_boundary q hz) (hcg ▸ hc) (n + 1) using 3
+  exact hcg.symm
 
 /-! ### Surjectivity of the relative Hurewicz map -/
 
