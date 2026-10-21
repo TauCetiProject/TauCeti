@@ -9,6 +9,8 @@ public import TauCeti.Analysis.Calculus.BumpFunction.Average
 public import TauCeti.MeasureTheory.Function.Lp.Convolution
 public import TauCeti.MeasureTheory.Function.Lp.Translation
 
+import TauCeti.Analysis.Convolution
+
 /-!
 # Smooth approximate identities in `Lᵖ`
 
@@ -192,16 +194,12 @@ theorem tendsto_setLIntegral_enorm_normed_convolution_sub [CompleteSpace F] {I :
   have hKs (x : E) (hx : x ∈ K) :
       ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] f) x - f x =
         ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] s.indicator f) x - s.indicator f x := by
-    rw [indicator_of_mem (self_subset_cthickening K hx), convolution_lsmul, convolution_lsmul]
-    congr 1
-    refine integral_congr_ae (.of_forall fun t ↦ ?_)
-    by_cases ht : (phi i).normed mu t = 0
-    · simp [ht]
-    · have htr : t ∈ Function.support ((phi i).normed mu) := ht
-      rw [(phi i).support_normed_eq, mem_ball_zero_iff] at htr
-      refine congrArg _ (indicator_of_mem (mem_cthickening_of_dist_le _ x _ _ hx ?_) f).symm
-      rw [dist_eq_norm, sub_sub_cancel_left, norm_neg]
-      exact htr.le.trans hi.le
+    rw [indicator_of_mem (self_subset_cthickening K hx)]
+    refine congrArg (· - f x) (convolution_indicator_eq_of_forall_sub_mem _ fun t ht ↦ ?_).symm
+    rw [(phi i).support_normed_eq, mem_ball_zero_iff] at ht
+    refine mem_cthickening_of_dist_le _ x _ _ hx ?_
+    rw [dist_eq_norm, sub_sub_cancel_left, norm_neg]
+    exact ht.le.trans hi.le
   rw [setLIntegral_congr_fun hK.measurableSet fun x hx ↦ by rw [hKs x hx]]
   exact (setLIntegral_le_lintegral _ _).trans lintegral_enorm_le_eLpNorm_one
 
