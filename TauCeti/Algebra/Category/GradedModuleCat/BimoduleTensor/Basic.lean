@@ -968,8 +968,6 @@ namespace TauCeti
 
 universe w uA
 
-variable (k : Type w) [CommRing k]
-
 /-- The category of graded bimodules over the graded algebra `A` with internal grading `Ξ`:
 the graded modules over the enveloping grading `Ξ.tensorProduct Ξ.opposite`. -/
 abbrev GradedBimoduleCat (k : Type w) [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
