@@ -48,7 +48,7 @@ of `(-2)`-indices is either small or a chain or a fork, the two shapes treated i
 ## Main results
 
 * `TauCeti.NumericalType.exists_chain_or_fork_or_exceptional`: the classification above.
-* `TauCeti.NumericalType.IsSelfIntersectionMinusTwoChain.not_card_eq_succ_of_branch_two`: the
+* `TauCeti.NumericalType.IsSelfIntersectionMinusTwoChain.card_ne_add_one_of_branch_two`: the
   exceptional configuration of `5 ≤ t ≤ 7` chain components with a leaf at `c 2` cannot exhaust a
   numerical type.
 * `TauCeti.NumericalType.topologicalGenus_pos_or_exists_chain_or_fork_or_star_or_affine` and
@@ -265,7 +265,7 @@ lemma two_le_of_intersection_pos (hc : T.IsSelfIntersectionMinusTwoChain t c)
 cannot exhaust a numerical type: the five-component subfork on `c 0, c 1, c 2, c 3, x` and the
 chain classification fix all weights below `t - 1`, and the resulting fibre relations on the
 multiplicities are incompatible at the right end of the chain. -/
-lemma not_card_eq_succ_of_branch_two (hc : T.IsSelfIntersectionMinusTwoChain t c)
+lemma card_ne_add_one_of_branch_two (hc : T.IsSelfIntersectionMinusTwoChain t c)
     (ht5 : 5 ≤ t) (ht7 : t ≤ 7) {x : T.Component}
     (hx_ne : ∀ i < t, x ≠ c i) (hx_self : T.intersection x x = -(2 * (T.weight x : ℤ)))
     (hx_pos : 0 < T.intersection (c 2) x)
@@ -687,7 +687,7 @@ private lemma exists_affineE7_or_affineE8_of_card_eq_succ
   obtain rfl : r = 2 := by omega
   by_cases ht8 : 8 ≤ t
   · exact .inr (hc.exists_affineE8 ht8 hx_ne hx)
-  · exact (hc.not_card_eq_succ_of_branch_two (by omega) (by omega)
+  · exact (hc.card_ne_add_one_of_branch_two (by omega) (by omega)
       hx_ne hx_self hx hx_zero hcard).elim
 
 end IsSelfIntersectionMinusTwoChain
@@ -741,7 +741,7 @@ theorem topologicalGenus_pos_or_exists_chain_or_fork_or_star_or_affine
     have hcard : Fintype.card T.Component = t := by
       rw [← card_univ, ← hAU, hAcard]
     by_cases hends : 2 < t ∧ 0 < T.intersection (c 0) (c (t - 1))
-    · exact .inl (hc.topologicalGenus_pos_of_card_eq hcard hends.1 hends.2)
+    · exact .inl (hc.topologicalGenus_pos_of_card_eq_of_intersection_pos hcard hends.1 hends.2)
     · refine .inr (.inl ⟨t, c, by omega, hcard, hc, hc.intersection_eq_zero_of_card_eq hcard ?_⟩)
       intro ht2
       have hle : T.intersection (c 0) (c (t - 1)) ≤ 0 := not_lt.mp fun h ↦ hends ⟨ht2, h⟩

@@ -269,8 +269,9 @@ theorem IsMinimal.isGenusOneAffineDShape (hT : T.IsMinimal) (hg : T.arithmeticGe
       simpa only [show t - 1 - (t - 2) = 1 by omega] using hleft_pos⟩
     hcard ht
 
-/-- The displayed genus-one shape has weight ratios at most four and multiplicity ratios
-at most six, with integral ratios from suitable components. -/
+/-- For a genus-one affine `D` shape whose chain and two branch vertices exhaust all components,
+some component's weight divides every weight with quotient at most four, and some component's
+multiplicity divides every multiplicity with quotient at most six. -/
 lemma IsGenusOneAffineDShape.exists_weight_and_multiplicity_dvd_and_le
     {t : ℕ} {c : ℕ → T.Component} {left right : T.Component}
     (hD : T.IsGenusOneAffineDShape t c left right) (ht : 4 ≤ t)
@@ -282,7 +283,9 @@ lemma IsGenusOneAffineDShape.exists_weight_and_multiplicity_dvd_and_le
         (T.multiplicity i : ℕ) ≤ 6 * T.multiplicity j) := by
   classical
   obtain ⟨w, m, _, _, hw, hwl, hwr, hm, hml, hmr, -⟩ := isGenusOneAffineDShape_iff.mp hD
-  refine T.exists_weight_and_multiplicity_dvd_and_le_of_int left left (fun i ↦ ?_) (fun i ↦ ?_)
+  refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6)
+    left left (fun i ↦ ?_) (fun i ↦ ?_)
+  all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
   · rcases hr.eq_or_eq_or_exists_lt_eq_of_card_eq hl ht hcard i with rfl | rfl | ⟨k, hk, rfl⟩
     · omega
     · omega

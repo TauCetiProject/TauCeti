@@ -685,8 +685,9 @@ theorem isMinimal_and_arithmeticGenus_eq_one_iff_of_card_eq_three
           rw [card_insert_of_notMem (by simp [hxj, hxz]), card_pair hjz, hcard])).symm
       exact fun l ↦ ⟨hg l, intersection_self_eq_of_card_eq_three hxj hxz hjz hu hxz₀ hpat l⟩
 
-/-- The displayed genus-one shape has weight ratios at most four and multiplicity ratios
-at most six, with integral ratios from suitable components. -/
+/-- For a genus-one pair of distinct components exhausting a two-component type, some component's
+weight divides every weight with quotient at most four, and some component's multiplicity
+divides every multiplicity with quotient at most six. -/
 lemma IsGenusOnePairShape.exists_weight_and_multiplicity_dvd_and_le
     {x y : T.Component} (h2 : T.IsGenusOnePairShape x y)
     (hcard : Fintype.card T.Component = 2) (hxy : x ≠ y) :
@@ -700,13 +701,16 @@ lemma IsGenusOnePairShape.exists_weight_and_multiplicity_dvd_and_le
     simpa using (hu ▸ mem_univ i : i ∈ ({x, y} : Finset T.Component))
   rcases isGenusOnePairShape_iff.mp h2 with ⟨hw, hm, -⟩ | ⟨hw, hm, -⟩
   all_goals first
-    | (refine T.exists_weight_and_multiplicity_dvd_and_le_of_int x x ?_ ?_
+    | (refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) x x ?_ ?_
+       all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
        all_goals intro i; rcases mem i with rfl | rfl <;> omega)
-    | (refine T.exists_weight_and_multiplicity_dvd_and_le_of_int x y ?_ ?_
+    | (refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) x y ?_ ?_
+       all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
        all_goals intro i; rcases mem i with rfl | rfl <;> omega)
 
-/-- The displayed genus-one shape has weight ratios at most four and multiplicity ratios
-at most six, with integral ratios from suitable components. -/
+/-- For a genus-one chain of three distinct components exhausting a three-component type, some
+component's weight divides every weight with quotient at most four, and some component's
+multiplicity divides every multiplicity with quotient at most six. -/
 lemma IsGenusOneChainShape.exists_weight_and_multiplicity_dvd_and_le
     {x j z : T.Component} (h3 : T.IsGenusOneChainShape x j z)
     (hcard : Fintype.card T.Component = 3) (hxj : x ≠ j) (hxz : x ≠ z) (hjz : j ≠ z) :
@@ -723,13 +727,17 @@ lemma IsGenusOneChainShape.exists_weight_and_multiplicity_dvd_and_le
     ⟨hw1, hw2, hm1, hm2, -⟩ | ⟨hw1, hw2, hm1, hm2, -⟩ |
     ⟨hw1, hw2, hm1, hm2, -⟩ | ⟨hw1, hw2, hm1, hm2, -⟩
   all_goals first
-    | (refine T.exists_weight_and_multiplicity_dvd_and_le_of_int x x ?_ ?_
+    | (refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) x x ?_ ?_
+       all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
        all_goals intro i; rcases mem i with rfl | rfl | rfl <;> omega)
-    | (refine T.exists_weight_and_multiplicity_dvd_and_le_of_int z x ?_ ?_
+    | (refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) z x ?_ ?_
+       all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
        all_goals intro i; rcases mem i with rfl | rfl | rfl <;> omega)
-    | (refine T.exists_weight_and_multiplicity_dvd_and_le_of_int x z ?_ ?_
+    | (refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) x z ?_ ?_
+       all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
        all_goals intro i; rcases mem i with rfl | rfl | rfl <;> omega)
-    | (refine T.exists_weight_and_multiplicity_dvd_and_le_of_int j x ?_ ?_
+    | (refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) j x ?_ ?_
+       all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
        all_goals intro i; rcases mem i with rfl | rfl | rfl <;> omega)
 
 end NumericalType

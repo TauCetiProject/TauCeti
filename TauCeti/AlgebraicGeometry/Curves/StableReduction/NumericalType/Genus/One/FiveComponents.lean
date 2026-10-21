@@ -376,8 +376,9 @@ theorem isGenusOneFivePathShape_or_isGenusOneFivePathShape_of_isMinimal_and_arit
     (T.isMinusTwoIndex_iff.mp (h₂ e)).2 hac₀ had₀ hae₀ hbd₀ hbe₀ hce₀
     hab₀ hbc₀ hcd₀ hde₀
 
-/-- The displayed genus-one shape has weight ratios at most four and multiplicity ratios
-at most six, with integral ratios from suitable components. -/
+/-- For a genus-one five-component path whose vertices exhaust all components, some component's
+weight divides every weight with quotient at most four, and some component's multiplicity
+divides every multiplicity with quotient at most six. -/
 lemma IsGenusOneFivePathShape.exists_weight_and_multiplicity_dvd_and_le
     {x y z t u : T.Component} (h5 : T.IsGenusOneFivePathShape x y z t u)
     (huniv : ({x, y, z, t, u} : Finset T.Component) = univ) :
@@ -394,11 +395,14 @@ lemma IsGenusOneFivePathShape.exists_weight_and_multiplicity_dvd_and_le
     ⟨hw0, hw1, hw2, hw3, hw4, hm0, hm1, hm2, hm3, hm4, -⟩⟩ :=
       isGenusOneFivePathShape_iff.mp h5
   all_goals first
-    | (refine T.exists_weight_and_multiplicity_dvd_and_le_of_int x x ?_ ?_
+    | (refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) x x ?_ ?_
+       all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
        all_goals intro i; rcases mem i with rfl | rfl | rfl | rfl | rfl <;> omega)
-    | (refine T.exists_weight_and_multiplicity_dvd_and_le_of_int t x ?_ ?_
+    | (refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) t x ?_ ?_
+       all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
        all_goals intro i; rcases mem i with rfl | rfl | rfl | rfl | rfl <;> omega)
-    | (refine T.exists_weight_and_multiplicity_dvd_and_le_of_int x u ?_ ?_
+    | (refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) x u ?_ ?_
+       all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
        all_goals intro i; rcases mem i with rfl | rfl | rfl | rfl | rfl <;> omega)
 
 end TauCeti.NumericalType

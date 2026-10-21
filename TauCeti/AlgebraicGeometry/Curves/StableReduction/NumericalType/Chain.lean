@@ -850,7 +850,7 @@ lemma IsSelfIntersectionMinusTwoChain.exists_lt_eq_of_card_eq {t : ℕ} {c : ℕ
 /-- If a chain of at least three components exhausts a numerical type and its two endpoints meet,
 then every component has at least two neighbours in the intersection graph, so the topological
 genus is positive. -/
-lemma IsSelfIntersectionMinusTwoChain.topologicalGenus_pos_of_card_eq
+lemma IsSelfIntersectionMinusTwoChain.topologicalGenus_pos_of_card_eq_of_intersection_pos
     {t : ℕ} {c : ℕ → T.Component} (hc : T.IsSelfIntersectionMinusTwoChain t c)
     (hcard : Fintype.card T.Component = t) (ht : 2 < t)
     (hends : 0 < T.intersection (c 0) (c (t - 1))) :

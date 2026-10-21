@@ -389,8 +389,9 @@ theorem exists_isGenusOneFourStarShape_of_isMinimal_and_arithmeticGenus_eq_one
     (T.isMinusTwoIndex_iff.mp (h₂ i)).2 (T.isMinusTwoIndex_iff.mp (h₂ j)).2
     (T.isMinusTwoIndex_iff.mp (h₂ k)).2 hij0 hik0 hjk0 hci0 hcj0 hck0
 
-/-- The displayed genus-one shape has weight ratios at most four and multiplicity ratios
-at most six, with integral ratios from suitable components. -/
+/-- For a genus-one four-component path whose vertices exhaust all components, some component's
+weight divides every weight with quotient at most four, and some component's multiplicity
+divides every multiplicity with quotient at most six. -/
 lemma IsGenusOneFourPathShape.exists_weight_and_multiplicity_dvd_and_le
     {x y z t : T.Component} (h4 : T.IsGenusOneFourPathShape x y z t)
     (huniv : ({x, y, z, t} : Finset T.Component) = univ) :
@@ -403,15 +404,19 @@ lemma IsGenusOneFourPathShape.exists_weight_and_multiplicity_dvd_and_le
   rcases isGenusOneFourPathShape_iff.mp h4 with ⟨hw1, hw2, hw3, hm1, hm2, hm3, -⟩ |
     ⟨hw1, hw2, hw3, hm1, hm2, hm3, -⟩ | ⟨hw1, hw2, hw3, hm1, hm2, hm3, -⟩
   all_goals first
-    | (refine T.exists_weight_and_multiplicity_dvd_and_le_of_int x t ?_ ?_
+    | (refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) x t ?_ ?_
+       all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
        all_goals intro i; rcases mem i with rfl | rfl | rfl | rfl <;> omega)
-    | (refine T.exists_weight_and_multiplicity_dvd_and_le_of_int x x ?_ ?_
+    | (refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) x x ?_ ?_
+       all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
        all_goals intro i; rcases mem i with rfl | rfl | rfl | rfl <;> omega)
-    | (refine T.exists_weight_and_multiplicity_dvd_and_le_of_int y x ?_ ?_
+    | (refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) y x ?_ ?_
+       all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
        all_goals intro i; rcases mem i with rfl | rfl | rfl | rfl <;> omega)
 
-/-- The displayed genus-one shape has weight ratios at most four and multiplicity ratios
-at most six, with integral ratios from suitable components. -/
+/-- For a genus-one four-component star whose vertices exhaust all components, some component's
+weight divides every weight with quotient at most four, and some component's multiplicity
+divides every multiplicity with quotient at most six. -/
 lemma IsGenusOneFourStarShape.exists_weight_and_multiplicity_dvd_and_le
     {c₀ x y z : T.Component} (hstar : T.IsGenusOneFourStarShape c₀ x y z)
     (huniv : ({c₀, x, y, z} : Finset T.Component) = univ) :
@@ -424,9 +429,11 @@ lemma IsGenusOneFourStarShape.exists_weight_and_multiplicity_dvd_and_le
   rcases isGenusOneFourStarShape_iff.mp hstar with ⟨hw1, hw2, hw3, hm1, hm2, hm3, -⟩ |
     ⟨hw1, hw2, hw3, hm1, hm2, hm3, -⟩
   all_goals first
-    | (refine T.exists_weight_and_multiplicity_dvd_and_le_of_int c₀ x ?_ ?_
+    | (refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) c₀ x ?_ ?_
+       all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
        all_goals intro i; rcases mem i with rfl | rfl | rfl | rfl <;> omega)
-    | (refine T.exists_weight_and_multiplicity_dvd_and_le_of_int z x ?_ ?_
+    | (refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) z x ?_ ?_
+       all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
        all_goals intro i; rcases mem i with rfl | rfl | rfl | rfl <;> omega)
 
 end NumericalType

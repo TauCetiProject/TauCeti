@@ -22,20 +22,14 @@ import Mathlib.Tactic.IntervalCases
 /-!
 # Classification of minimal numerical types of genus one
 
-This file assembles the graph-shape and numerical classification of minimal numerical types of
-arithmetic genus one ([Stacks, Lemma 55.6.2](https://stacks.math.columbia.edu/tag/0C8T)).
-
-Combining this structural classification with the per-shape classifications of paths, forks, stars,
-cycles, and affine `D` and `E` diagrams yields the full list of minimal numerical types of genus
-one, together with uniform divisibility and ratio bounds on their multiplicities and weights.
+This file combines the structural classification imported from `NumericalType.Classification`
+with the per-shape classifications of paths, forks, stars, cycles, and affine `D` and `E` diagrams.
+It yields the full list of minimal numerical types of arithmetic genus one
+([Stacks, Lemma 55.6.2](https://stacks.math.columbia.edu/tag/0C8T)), together with uniform
+divisibility and ratio bounds on their multiplicities and weights.
 
 ## Main results
 
-* `TauCeti.NumericalType.exists_chain_or_fork_or_star_or_affine_of_topologicalGenus_eq_zero`:
-  structural classification of tree-shaped numerical types whose components have self-intersection
-  `-2w`.
-* `TauCeti.NumericalType.topologicalGenus_pos_or_exists_chain_or_fork_or_star_or_affine`:
-  the same without the tree assumption, including the cycle case `0 < T.topologicalGenus`.
 * `TauCeti.NumericalType.IsGenusOneMinimalShape` and
   `TauCeti.NumericalType.isGenusOneMinimalShape_iff_isMinimal_and_arithmeticGenus_eq_one`:
   the complete classification of minimal numerical types of arithmetic genus one ([Stacks, Lemma 55.6.2](https://stacks.math.columbia.edu/tag/0C8T)).
@@ -595,12 +589,12 @@ private lemma exists_weight_and_multiplicity_dvd_and_le (h : T.IsGenusOneMinimal
     ⟨t, c, b, ht, hcard, hf, hfork⟩ |
     ⟨t, c, left, right, ht, hcard, hr, hl, hD⟩ |
     ⟨e, hw, hm, -⟩ | ⟨e, hw, hm, -⟩ | ⟨e, hw, hm, -⟩⟩
-  · exact T.exists_weight_and_multiplicity_dvd_and_le_of_int j₀ j₀
-      (fun i ↦ by rw [Fintype.card_le_one_iff.mp hcard1.le i j₀]; omega)
-      (fun i ↦ by rw [Fintype.card_le_one_iff.mp hcard1.le i j₀]; omega)
-  · exact T.exists_weight_and_multiplicity_dvd_and_le_of_int j₀ j₀
-      (fun i ↦ by rw [(hwm i j₀).1]; omega)
-      (fun i ↦ by rw [(hwm i j₀).2]; omega)
+  · exact T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) j₀ j₀
+      (fun i ↦ ⟨1, by decide, by rw [Fintype.card_le_one_iff.mp hcard1.le i j₀]; simp⟩)
+      (fun i ↦ ⟨1, by decide, by rw [Fintype.card_le_one_iff.mp hcard1.le i j₀]; simp⟩)
+  · exact T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) j₀ j₀
+      (fun i ↦ ⟨1, by decide, by rw [(hwm i j₀).1]; simp⟩)
+      (fun i ↦ ⟨1, by decide, by rw [(hwm i j₀).2]; simp⟩)
   · exact h2.exists_weight_and_multiplicity_dvd_and_le hcard hxy
   · exact h3.exists_weight_and_multiplicity_dvd_and_le hcard hxj hxz hjz
   · apply h4.exists_weight_and_multiplicity_dvd_and_le
@@ -614,16 +608,22 @@ private lemma exists_weight_and_multiplicity_dvd_and_le (h : T.IsGenusOneMinimal
     intro i
     obtain ⟨k, hk, rfl⟩ := hc.exists_lt_eq_of_card_eq hcard i
     interval_cases k <;> simp
-  · refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (e none) (e (some 0))
+  · refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6)
+      (e none) (e (some 0))
       (fun i ↦ ?_) (fun i ↦ ?_)
+    all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
     · rw [← e.apply_symm_apply i, hw (e.symm i)]; omega
     · have hv := hm (e.symm i); rw [e.apply_symm_apply] at hv; split_ifs at hv <;> omega
-  · refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (e 1) (e 0) (fun i ↦ ?_) (fun i ↦ ?_)
+  · refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6)
+      (e 1) (e 0) (fun i ↦ ?_) (fun i ↦ ?_)
+    all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
     · rw [← e.apply_symm_apply i, hw (e.symm i), hw 1]
       generalize e.symm i = k; fin_cases k <;> simp
     · rw [← e.apply_symm_apply i, hm (e.symm i), hm 0]
       generalize e.symm i = k; fin_cases k <;> simp
-  · refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (e 0) (e 3) (fun i ↦ ?_) (fun i ↦ ?_)
+  · refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6)
+      (e 0) (e 3) (fun i ↦ ?_) (fun i ↦ ?_)
+    all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
     · rw [← e.apply_symm_apply i, hw (e.symm i), hw 0]
       generalize e.symm i = k; fin_cases k <;> simp
     · rw [← e.apply_symm_apply i, hm (e.symm i), hm 3]
@@ -631,15 +631,21 @@ private lemma exists_weight_and_multiplicity_dvd_and_le (h : T.IsGenusOneMinimal
   · exact hlong.exists_weight_and_multiplicity_dvd_and_le (by omega) hcard hc
   · exact hfork.exists_weight_and_multiplicity_dvd_and_le hcard hf
   · exact hD.exists_weight_and_multiplicity_dvd_and_le ht hcard hr hl
-  · refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (e 0) (e 2) (fun i ↦ ?_) (fun i ↦ ?_)
+  · refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6)
+      (e 0) (e 2) (fun i ↦ ?_) (fun i ↦ ?_)
+    all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
     · rw [← e.apply_symm_apply i, hw (e.symm i)]; omega
     · rw [← e.apply_symm_apply i, hm (e.symm i)]
       generalize e.symm i = k; fin_cases k <;> simp [mul_comm]
-  · refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (e 0) (e 4) (fun i ↦ ?_) (fun i ↦ ?_)
+  · refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6)
+      (e 0) (e 4) (fun i ↦ ?_) (fun i ↦ ?_)
+    all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
     · rw [← e.apply_symm_apply i, hw (e.symm i)]; omega
     · rw [← e.apply_symm_apply i, hm (e.symm i)]
       generalize e.symm i = k; fin_cases k <;> simp
-  · refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (e 0) (e 8) (fun i ↦ ?_) (fun i ↦ ?_)
+  · refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6)
+      (e 0) (e 8) (fun i ↦ ?_) (fun i ↦ ?_)
+    all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
     · rw [← e.apply_symm_apply i, hw (e.symm i)]; omega
     · rw [← e.apply_symm_apply i, hm (e.symm i)]
       generalize e.symm i = k; fin_cases k <;> simp

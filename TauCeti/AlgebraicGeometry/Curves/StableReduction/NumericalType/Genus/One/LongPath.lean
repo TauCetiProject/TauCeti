@@ -552,8 +552,9 @@ theorem isGenusOneLongPathShape_or_isGenusOneLongPathShape_of_isMinimal_and_arit
   · exact ⟨hinj, fun i hi ↦ (T.isMinusTwoIndex_iff.mp (h₂ (c i))).2, hpos⟩
   · exact hzero
 
-/-- The displayed genus-one shape has weight ratios at most four and multiplicity ratios
-at most six, with integral ratios from suitable components. -/
+/-- For a genus-one long path on a minus-two chain exhausting all components, some component's
+weight divides every weight with quotient at most four, and some component's multiplicity
+divides every multiplicity with quotient at most six. -/
 lemma IsGenusOneLongPathShape.exists_weight_and_multiplicity_dvd_and_le
     {n : ℕ} {c : ℕ → T.Component} (hlong : T.IsGenusOneLongPathShape n c)
     (hn : 3 ≤ n) (hcard : Fintype.card T.Component = n)
@@ -564,18 +565,23 @@ lemma IsGenusOneLongPathShape.exists_weight_and_multiplicity_dvd_and_le
   classical
   obtain ⟨w, m, _, _, ⟨hw, hm, -⟩ | ⟨hw, hm, -⟩ | ⟨hw, hm, -⟩⟩ :=
     isGenusOneLongPathShape_iff.mp hlong
-  · refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (c 0) (c (n - 1))
+  · refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) (c 0) (c (n - 1))
       (fun i ↦ ?_) (fun i ↦ ?_)
+    all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
     · obtain ⟨k, hk, rfl⟩ := hc.exists_lt_eq_of_card_eq hcard i
       have hwk := hw k hk; have hw0 := hw 0 (by omega); split_ifs at hwk hw0 <;> omega
     · obtain ⟨k, hk, rfl⟩ := hc.exists_lt_eq_of_card_eq hcard i
       have hmk := hm k hk; have hm0 := hm (n - 1) (by omega); split_ifs at hmk hm0 <;> omega
-  · refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (c 0) (c 0) (fun i ↦ ?_) (fun i ↦ ?_)
+  · refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6)
+      (c 0) (c 0) (fun i ↦ ?_) (fun i ↦ ?_)
+    all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
     · obtain ⟨k, hk, rfl⟩ := hc.exists_lt_eq_of_card_eq hcard i
       have hwk := hw k hk; have hw0 := hw 0 (by omega); split_ifs at hwk hw0 <;> omega
     · obtain ⟨k, hk, rfl⟩ := hc.exists_lt_eq_of_card_eq hcard i
       have hmk := hm k hk; have hm0 := hm 0 (by omega); omega
-  · refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (c 1) (c 0) (fun i ↦ ?_) (fun i ↦ ?_)
+  · refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6)
+      (c 1) (c 0) (fun i ↦ ?_) (fun i ↦ ?_)
+    all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
     · have hw1 := hw 1 (by omega); rw [ite_eq_right (by omega)] at hw1
       obtain ⟨k, hk, rfl⟩ := hc.exists_lt_eq_of_card_eq hcard i
       have hwk := hw k hk; split_ifs at hwk <;> omega
