@@ -39,7 +39,7 @@ field, the two notions agree (`TauCeti.isCompactoidSet_iff_totallyBounded`).
 * `TauCeti.IsCompactoidSet.mono`, `TauCeti.IsCompactoidSet.union`,
   `TauCeti.IsCompactoidSet.add`, `TauCeti.IsCompactoidSet.smul`,
   `TauCeti.IsCompactoidSet.image`, `TauCeti.isCompactoidSet_closure_iff`: stability under
-  subsets, finite unions, sums, scalar multiples, bounded linear images and closure.
+  subsets, finite unions, sums, scalar multiples, continuous linear images and closure.
 * `TotallyBounded.isCompactoidSet`, `Set.Finite.isCompactoidSet`: totally bounded sets, in
   particular finite sets, are compactoid.
 * `TauCeti.IsCompactoidSet.isBounded`: compactoid sets are bounded.
@@ -170,31 +170,6 @@ theorem isCompactoidSet_closure_iff {S : Set E} :
     IsCompactoidSet K (closure S) ↔ IsCompactoidSet K S :=
   ⟨fun h ↦ h.mono subset_closure, IsCompactoidSet.closure⟩
 
-/-- The image of a compactoid set under a linear map bounded by `‖f x‖ ≤ C * ‖x‖` is
-compactoid. -/
-theorem IsCompactoidSet.image_of_norm_le {S : Set E} (hS : IsCompactoidSet K S)
-    (f : E →ₗ[K] F) (C : ℝ) (hf : ∀ x, ‖f x‖ ≤ C * ‖x‖) : IsCompactoidSet K (f '' S) := by
-  intro ε hε
-  have hC : 0 < |C| + 1 := by positivity
-  obtain ⟨n, v, hv⟩ := hS (ε / (|C| + 1)) (div_pos hε hC)
-  refine ⟨n, fun i ↦ f (v i), ?_⟩
-  rintro _ ⟨x, hx, rfl⟩
-  obtain ⟨a, ha, hx⟩ := hv x hx
-  refine ⟨a, ha, ?_⟩
-  have hlt : |C| * ‖x - ∑ i, a i • v i‖ < ε := by
-    rw [lt_div_iff₀ hC] at hx
-    nlinarith [abs_nonneg C, norm_nonneg (x - ∑ i, a i • v i)]
-  calc ‖f x - ∑ i, a i • f (v i)‖ = ‖f (x - ∑ i, a i • v i)‖ := by simp
-    _ ≤ C * ‖x - ∑ i, a i • v i‖ := hf _
-    _ ≤ |C| * ‖x - ∑ i, a i • v i‖ := by gcongr; exact le_abs_self C
-    _ < ε := hlt
-
-/-- A scalar multiple of a compactoid set is compactoid. -/
-theorem IsCompactoidSet.smul {S : Set E} (hS : IsCompactoidSet K S) (c : K) :
-    IsCompactoidSet K (c • S) := by
-  rw [← Set.image_smul]
-  exact hS.image_of_norm_le (c • LinearMap.id) ‖c‖ fun x ↦ by simp [norm_smul]
-
 /-- A compactoid set is bounded. -/
 theorem IsCompactoidSet.isBounded {S : Set E} (hS : IsCompactoidSet K S) :
     Bornology.IsBounded S := by
@@ -218,6 +193,12 @@ theorem IsCompactoidSet.image {S : Set E} (hS : IsCompactoidSet K S) (u : E →L
   rintro _ ⟨x, hx, rfl⟩
   obtain ⟨a, ha, hx⟩ := hv x hx
   exact ⟨a, ha, by simpa using hx⟩
+
+/-- A scalar multiple of a compactoid set is compactoid. -/
+theorem IsCompactoidSet.smul {S : Set E} (hS : IsCompactoidSet K S) (c : K) :
+    IsCompactoidSet K (c • S) := by
+  rw [← Set.image_smul]
+  exact hS.image (c • ContinuousLinearMap.id K E)
 
 end NormedField
 
