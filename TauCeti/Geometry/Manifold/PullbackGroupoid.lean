@@ -195,25 +195,21 @@ def pullbackDiffeomorph (e : N ≃ₜ M) :
     letI := e.pullbackChartedSpace (H := H)
     N ≃ₘ^n⟮I, I⟯ M :=
   letI := e.pullbackChartedSpace (H := H)
+  -- In matching charts `e` and `e.symm` read as the identity, since the pulled-back chart at `x`
+  -- is the chart of `M` at `e x` precomposed with `e` (`pullbackChartedSpace_chartAt`, a simp
+  -- lemma). So both fields reduce to the smoothness of the identity of `M`.
   { e.toEquiv with
     contMDiff_toFun := fun x ↦ by
       have h := contMDiffAt_id (I := I) (n := n) (x := e x)
       rw [contMDiffAt_iff] at h ⊢
       refine ⟨e.continuous.continuousAt, ?_⟩
-      convert h.2 using 1
-      · funext y
-        simp only [pullbackChartedSpace_extChartAt, Function.comp_apply,
-          Equiv.transPartialEquiv_symm_apply, coe_toEquiv, coe_symm_toEquiv, apply_symm_apply,
-          id_eq]
-      · simp only [pullbackChartedSpace_extChartAt, Equiv.transPartialEquiv_apply, coe_toEquiv]
+      convert h.2 using 1 <;> simp [Function.comp_def]
     contMDiff_invFun := fun y ↦ by
       have h := contMDiffAt_id (I := I) (n := n) (x := y)
       rw [contMDiffAt_iff] at h ⊢
       refine ⟨e.symm.continuous.continuousAt, ?_⟩
       convert h.2 using 1
-      funext z
-      simp only [pullbackChartedSpace_extChartAt, Function.comp_apply,
-        Equiv.transPartialEquiv_apply, coe_toEquiv, coe_symm_toEquiv, apply_symm_apply, id_eq] }
+      simp [Function.comp_def] }
 
 /-- The underlying map of the pulled-back diffeomorphism is `e`. -/
 @[simp]
