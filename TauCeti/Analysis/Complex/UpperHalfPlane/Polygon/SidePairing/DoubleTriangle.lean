@@ -31,9 +31,9 @@ of `P` can be doubled by first relabelling the vertices with `ConvexPolygon.rota
 The vertex cycles of this pairing are `{P 0}`, `{P 1}` and `{P 2, P 2'}`. Their angle sums are
 twice the angles of `P` at `P 0`, `P 1` and `P 2`. The cycle transformation at each vertex of `P`
 is the product of the reflections in the two sides of `P` meeting there; at `P 2'` it is the
-conjugate of the one at `P 2` by the reflection in side `0`. So if `P` has angle `π / m` at a
-vertex, the corresponding product of reflections has exact order `m`: these are the relations of
-the triangle group.
+conjugate of the inverse of the one at `P 2` by the reflection in side `0`. So if `P` has angle
+`π / m` at a vertex, the corresponding product of reflections has exact order `m`: these are the
+relations of the triangle group.
 
 ## Main declarations
 
@@ -187,8 +187,8 @@ theorem doubleTriangleSidePairing_cycleMap_three :
       geodesicReflectionComp (P.sideGeodesic 1) (P.sideGeodesic 2) := by
   simp [SidePairing.cycleMap_def, SidePairing.partialCycleMap_succ]
 
-/-- The cycle transformation at `P 2'` is the product of the reflections in the sides `2` and `1`
-of `P`, conjugated by the reflection in side `0`. -/
+/-- The cycle transformation at `P 2'` is the product of the reflections in the sides `1` and `2`
+of `P`, the inverse of the one at `P 2`, conjugated by the reflection in side `0`. -/
 @[simp]
 theorem doubleTriangleSidePairing_cycleMap_one :
     (P.doubleTriangleSidePairing h₀ h₁).cycleMap 1 =

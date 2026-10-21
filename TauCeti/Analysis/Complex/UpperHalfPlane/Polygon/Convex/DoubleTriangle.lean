@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Reflection
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex
 import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.GaussBonnet
 import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.VertexSector
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Angle
 
 /-!
 # The double of a hyperbolic triangle
@@ -214,23 +215,9 @@ theorem carrier_doubleTriangle :
 
 /-! ### Interior angles -/
 
-/-- If the oriented angles `θ` and `α` add up to `β ∈ (0, π)`, where `|θ| = α` and `2α < π`,
-then `β = 2α`: the other possibility `θ = -α` would force `β = 0`. -/
-private theorem eq_two_mul_of_abs_toReal_eq {θ : Real.Angle} {α β : ℝ} (hθ : |θ.toReal| = α)
-    (hβ : θ + α = β) (hβ₀ : 0 < β) (hβπ : β < π) (hα : 2 * α < π) : β = 2 * α := by
-  have hα₀ : 0 ≤ α := hθ ▸ abs_nonneg _
-  have hcases := (abs_eq hα₀).1 hθ
-  have hπ := Real.pi_pos
-  have hsum : ((θ.toReal + α : ℝ) : Real.Angle) = β := by
-    rw [Real.Angle.coe_add, θ.coe_toReal, hβ]
-  have h := congrArg Real.Angle.toReal hsum
-  rw [Real.Angle.toReal_coe_eq_self_iff.2 ⟨by rcases hcases with h | h <;> linarith,
-      by rcases hcases with h | h <;> linarith⟩,
-    Real.Angle.toReal_coe_eq_self_iff.2 ⟨by linarith, by linarith⟩] at h
-  rcases hcases with h' | h' <;> linarith
-
 /-- **The angle of the double at `P 0` is twice that of `P`**: the ray towards `P 1` bisects it,
 the reflection in side `0` exchanging its two halves. -/
+@[simp]
 theorem interiorAngle_doubleTriangle_zero :
     (P.doubleTriangle h₀ h₁).interiorAngle 0 = 2 * P.interiorAngle 0 := by
   set Q := P.doubleTriangle h₀ h₁
@@ -255,7 +242,7 @@ theorem interiorAngle_doubleTriangle_zero :
       rw [← interiorAngle_eq_abs_toReal_orientedAngle, ← vertexAngle_inl_eq_interiorAngle, hρ,
         interiorAngle_def, hz]
       simp [show (-1 : Fin 3) = 2 by decide]
-    refine eq_two_mul_of_abs_toReal_eq habs ?_
+    refine Real.Angle.eq_two_mul_of_abs_toReal_eq habs ?_
       (Q.interiorAngle_pos_of_isLeft_vertex (by simp [hQz]))
       (Q.interiorAngle_lt_pi 0) (by linarith)
     rw [← hP, orientedAngle_add, hQ]
@@ -265,6 +252,7 @@ theorem interiorAngle_doubleTriangle_zero :
 
 /-- **The angle of the double at `P 1` is twice that of `P`**: the ray towards `P 0` bisects it,
 the reflection in side `0` exchanging its two halves. -/
+@[simp]
 theorem interiorAngle_doubleTriangle_two :
     (P.doubleTriangle h₀ h₁).interiorAngle 2 = 2 * P.interiorAngle 1 := by
   set Q := P.doubleTriangle h₀ h₁
@@ -288,7 +276,7 @@ theorem interiorAngle_doubleTriangle_two :
       rw [← interiorAngle_eq_abs_toReal_orientedAngle, ← vertexAngle_inl_eq_interiorAngle, hρ,
         interiorAngle_def, hz]
       simp
-    refine eq_two_mul_of_abs_toReal_eq habs ?_
+    refine Real.Angle.eq_two_mul_of_abs_toReal_eq habs ?_
       (Q.interiorAngle_pos_of_isLeft_vertex (by simp [hQz]))
       (Q.interiorAngle_lt_pi 2) (by linarith)
     rw [← hP, add_comm, orientedAngle_add, hQ]
@@ -297,6 +285,7 @@ theorem interiorAngle_doubleTriangle_two :
       mul_zero]
 
 /-- The angle of the double at the mirror image of `P 2` is the angle of `P` at `P 2`. -/
+@[simp]
 theorem interiorAngle_doubleTriangle_one :
     (P.doubleTriangle h₀ h₁).interiorAngle 1 = P.interiorAngle 2 := by
   have hρ := vertexAngle_extGeodesicReflection (P.sideGeodesic 0)
@@ -308,6 +297,7 @@ theorem interiorAngle_doubleTriangle_one :
   simpa [vertexAngle_comm] using hρ
 
 /-- The angle of the double at `P 2` is the angle of `P` there. -/
+@[simp]
 theorem interiorAngle_doubleTriangle_three :
     (P.doubleTriangle h₀ h₁).interiorAngle 3 = P.interiorAngle 2 := by
   rw [interiorAngle_def, interiorAngle_def]

@@ -33,6 +33,8 @@ angles of the same sign, the difference counterpart of Mathlib's `toReal_add_of_
   `toReal` of the difference is the difference of the `toReal`s.
 * `Real.Angle.sign_sub_pos_iff_toReal_lt_of_sign_eq`: for angles of the same nonzero sign, the
   difference has positive sign exactly when the representatives increase.
+* `Real.Angle.eq_two_mul_of_abs_toReal_eq`: if `θ + α = β ∈ (0, π)` with `|θ| = α < π / 2`, then
+  `β = 2α`.
 -/
 
 public section
@@ -80,5 +82,21 @@ theorem _root_.Real.exists_int_eq_add_of_cos_sin_eq {a b : ℝ}
   refine ⟨n, ?_⟩
   have hpi : (2 * Real.pi) ≠ 0 := by positivity
   exact mul_left_cancel₀ hpi (by linarith)
+
+/-- If the oriented angles `θ` and `α` add up to `β ∈ (0, π)`, where `|θ| = α` and `2α < π`,
+then `β = 2α`: the other possibility `θ = -α` would force `β = 0`. -/
+theorem _root_.Real.Angle.eq_two_mul_of_abs_toReal_eq {θ : Real.Angle} {α β : ℝ}
+    (hθ : |θ.toReal| = α) (hβ : θ + α = β) (hβ₀ : 0 < β) (hβπ : β < Real.pi)
+    (hα : 2 * α < Real.pi) : β = 2 * α := by
+  have hα₀ : 0 ≤ α := hθ ▸ abs_nonneg _
+  have hcases := (abs_eq hα₀).1 hθ
+  have hπ := Real.pi_pos
+  have hsum : ((θ.toReal + α : ℝ) : Real.Angle) = β := by
+    rw [Real.Angle.coe_add, θ.coe_toReal, hβ]
+  have h := congrArg Real.Angle.toReal hsum
+  rw [Real.Angle.toReal_coe_eq_self_iff.2 ⟨by rcases hcases with h | h <;> linarith,
+      by rcases hcases with h | h <;> linarith⟩,
+    Real.Angle.toReal_coe_eq_self_iff.2 ⟨by linarith, by linarith⟩] at h
+  rcases hcases with h' | h' <;> linarith
 
 end TauCeti
