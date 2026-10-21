@@ -8,15 +8,17 @@ module
 public import Mathlib.Topology.ContinuousMap.ZeroAtInfty
 
 /-!
-# Bounded scalar actions and pointwise norms on `C₀(α, β)`
+# Scalar actions and pointwise norms on `C₀(α, β)`
 
 Mathlib equips the space `C₀(α, β)` of continuous functions vanishing at infinity with the sup
 distance and, for normed fields, with a normed-space structure. This file supplies the structure
-needed when the scalars form a normed ring rather than a field:
+needed for scalar actions beyond normed fields:
 
 * `ZeroAtInftyContinuousMap.instIsBoundedSMul`: a bounded scalar action on `β` induces one on
   `C₀(α, β)`, so for instance `C₀(α, R)` is a module with contractive action over a seminormed
   ring `R`;
+* `ZeroAtInftyContinuousMap.instContinuousConstSMul`: a continuous distributive scalar action
+  on an additive uniform group `β` induces continuous fixed-scalar multiplication on `C₀(α, β)`;
 * `ZeroAtInftyContinuousMap.norm_le` and `ZeroAtInftyContinuousMap.norm_eq_iSup_norm`: the norm
   on `C₀(α, β)` is the supremum of the pointwise norms;
 * `ZeroAtInftyContinuousMap.evalCLM`: evaluation at a point as a continuous linear map over an
@@ -51,6 +53,18 @@ instance instIsBoundedSMul {𝕜 : Type*} [PseudoMetricSpace 𝕜] [Zero 𝕜] [
   dist_pair_smul' c₁ c₂ f := dist_pair_smul c₁ c₂ f.toBCF
 
 end PseudoMetric
+
+/-- A continuous distributive scalar action on an additive uniform group induces continuous
+fixed-scalar multiplication on functions vanishing at infinity, with their sup metric. -/
+-- Prefer the existing continuity instances obtained from bounded scalar actions.
+instance (priority := 90) instContinuousConstSMul
+    [PseudoMetricSpace β] [AddGroup β] [IsUniformAddGroup β]
+    {R : Type*} [DistribSMul R β] [ContinuousConstSMul R β] : ContinuousConstSMul R C₀(α, β) where
+  continuous_const_smul r := by
+    let := uniformContinuousConstSMul_of_continuousConstSMul R β
+    exact continuous_iff_continuousAt.2 fun f ↦ tendsto_iff_tendstoUniformly.2 <|
+      (uniformContinuous_const_smul r).comp_tendstoUniformly <|
+        tendsto_iff_tendstoUniformly.1 Filter.tendsto_id
 
 /-- The coercion to functions commutes with finite sums. -/
 @[simp, norm_cast]
