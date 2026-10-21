@@ -91,6 +91,8 @@ theorem steppedInducedGraphCount3_eq_sum_part (R : Finpartition (univ : Finset V
       else 1 - (G.edgeDensity (R.part (g p.1.1)) (R.part (g p.1.2)) : ℝ) := by
   rw [← Fintype.piFinset_univ, ← R.sum_sum_piFinset_parts, steppedInducedGraphCount3_def]
   refine sum_congr rfl fun φ _ ↦ ?_
+  -- On the box of `φ`, `R.part (g i) = φ i`, so the summand no longer depends on `g`; the
+  -- closing `rfl` only instantiates the summand metavariable left by `sum_congr` to that constant.
   rw [sum_congr rfl fun g hg ↦ by simp_rw [R.part_eq_of_mem_piFinset_parts hg]; rfl, sum_const,
     Fintype.card_piFinset, nsmul_eq_mul, Nat.cast_prod]
 
