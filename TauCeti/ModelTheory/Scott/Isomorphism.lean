@@ -58,6 +58,7 @@ theorem realize_scottSentenceAt_iff {α : Ordinal.{o}} (hα : α < ω₁)
 
 /-- The canonical Scott sentence of a countable structure `M` holds in a countable structure
 exactly when that structure is isomorphic to `M`. -/
+@[simp]
 theorem realize_scottSentence_iff (N : Type w') [L.Structure N] [Countable N] :
     SentenceInf.Realize (scottSentence (L := L) M) N ↔ Nonempty (M ≃[L] N) :=
   ⟨fun h => countable_potentialIso_iff_iso.mp (potentialIso_of_realize_scottSentence M h),
