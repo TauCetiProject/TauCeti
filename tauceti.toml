@@ -78,10 +78,10 @@ zulip_topic = "Progress logs"
 
 [tools.tools]
 repo="TauCetiProject/TauCetiTools"
-ref="6b468630edbf2eacb048466519c825b586fee84e"
+ref="915e7efe4e5ff7592525d3d2899da3dc9facba09"
 [tools.review]
 repo="TauCetiProject/TauCetiReview"
-ref="dff64733b34e4e4e69d768242f198dd79411d9a8"
+ref="34726de1c8a04a9292418fd8a3c8f65deffe61e8"
 [tools.progress]
 repo="TauCetiProject/TauCetiProgress"
 ref="047029660478ea2af4ad8cdfe0c88db0d5d1ca29"
