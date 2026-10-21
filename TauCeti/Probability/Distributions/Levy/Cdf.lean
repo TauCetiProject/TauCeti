@@ -38,6 +38,7 @@ variable {m c : ℝ}
 
 /-- **The cdf of a Lévy law** with positive scale is `erfc (√(c / (2 (x - m))))` above the
 location `m` and zero at or below it. -/
+@[simp]
 theorem cdf_levyMeasure_eq (hc : 0 < c) (m x : ℝ) :
     cdf (levyMeasure m c) x = if x ≤ m then 0 else Real.erfc (√(c / (2 * (x - m)))) := by
   let _ := isProbabilityMeasure_inverseGammaMeasure one_half_pos (half_pos hc)
