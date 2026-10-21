@@ -9,6 +9,8 @@ public import Mathlib.Algebra.Lie.Derivation.Basic
 public import Mathlib.Algebra.Lie.Killing
 public import Mathlib.Algebra.Lie.Cochain
 -- Non-public: these appear only inside proofs, never in the type of an exported declaration.
+import TauCeti.Algebra.Lie.Cochain
+import TauCeti.Algebra.Lie.Derivation.Cocycle
 import TauCeti.Algebra.Lie.Extension
 import TauCeti.Algebra.Lie.HighestWeight.CompleteReducibility
 import TauCeti.Algebra.Lie.LeviDecomposition.Abelian
