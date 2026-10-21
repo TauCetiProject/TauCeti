@@ -99,7 +99,7 @@ theorem smul_mem_of_mem_adjoin_singleton {R B N : Type*} [CommSemiring R] [Semir
   | add y z _ _ hy hz => rw [add_smul]; exact P.add_mem (hy hx) (hz hx)
   | mul y z _ _ hy hz => rw [mul_smul]; exact hy (hz hx)
 
-variable {R B N : Type*} [CommRing R] [CommRing B] [Algebra R B] [AddCommGroup N]
+variable {R B N : Type*} [CommRing R] [CommSemiring B] [Algebra R B] [AddCommGroup N]
   [Module R N] [Module B N] [IsScalarTower R B N] {F G : B}
 
 /-- **Finiteness of a cokernel over `R[F, F⁻¹]`.** Let `B = R[F, G]` with `F * G = 1`, and let `N`
