@@ -9,7 +9,9 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvatu
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Conformal
 public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 import TauCeti.Geometry.Manifold.ContMDiff.Log
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Scaling
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
@@ -341,8 +343,6 @@ theorem ricciTensor_leviCivitaConnection_rescale
     (CovariantDerivative.leviCivitaConnection I M).ricciTensor x u v -
       (Module.finrank ℝ E - 2) * (hessian I φ x u v - mvfderiv I φ x u * mvfderiv I φ x v) +
       (-laplaceBeltrami I φ x - (Module.finrank ℝ E - 2) * ‖mgradient I φ x‖ ^ 2) * ⟪u, v⟫ := by
-  have hφ : ContMDiff I 𝓘(ℝ) ∞ φ := by
-    simpa [hfφ] using (hf.log fun y ↦ (hf_pos y).ne').div_const 2
   -- The Ricci tensor is a trace, which does not involve the metric.
   have hRic : (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
         ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩;
@@ -362,27 +362,19 @@ theorem ricciTensor_leviCivitaConnection_rescale
   simp only [LinearMap.flip_apply, curvatureTensor_leviCivitaConnection_rescale g hf hf_pos hfφ]
   simp only [inner_add_right, inner_sub_right, inner_smul_right, Finset.sum_add_distrib,
     Finset.sum_sub_distrib, ← Finset.mul_sum]
-  -- The contractions against the orthonormal basis `b`: a linear functional `ℓ` satisfies
-  -- `∑ i, ℓ (b i) ⟪b i, a⟫ = ℓ a`, and in particular `∑ i, ⟪b i, a⟫ ⟪b i, c⟫ = ⟪a, c⟫`.
-  have hℓ (ℓ : TangentSpace I x →L[ℝ] ℝ) (a : TangentSpace I x) :
-      ∑ i, ℓ (b i) * ⟪b i, a⟫ = ℓ a := by
-    conv_rhs => rw [← b.sum_repr' a]
-    simp only [map_sum, map_smul, smul_eq_mul, mul_comm]
+  -- The contractions against the orthonormal basis `b`.
   have hsum (a c : TangentSpace I x) : ∑ i, ⟪b i, a⟫ * ⟪b i, c⟫ = ⟪a, c⟫ := by
     rw [← b.sum_inner_mul_inner a c]
     simp only [real_inner_comm a]
   have hdim : ∑ i, ⟪b i, b i⟫ = Module.finrank ℝ E := by
-    simp only [real_inner_self_eq_norm_sq, b.orthonormal.1, one_pow, Finset.sum_const,
-      Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, mul_one]
-    -- The tangent space `TangentSpace I x` is the model space `E`.
-    rfl
+    rw [b.sum_inner_self, Fintype.card_fin, TauCeti.finrank_tangentSpace]
   have hΔ : ∑ i, ⟪b i, CovariantDerivative.leviCivitaConnection I M (mgradient I φ) x (b i)⟫ =
       laplaceBeltrami I φ x := by
     simp only [laplaceBeltrami_eq_sum_hessian I φ x b, hessian_def, real_inner_comm]
   have hH₁ : ∑ i, hessian I φ x (b i) v * ⟪b i, u⟫ = hessian I φ x u v := by
     simpa only [hessian_def, ContinuousLinearMap.comp_apply, ContinuousLinearMap.flip_apply,
       innerSL_apply_apply] using
-      hℓ (((innerSL ℝ).flip v).comp
+      b.sum_apply_mul_inner (((innerSL ℝ).flip v).comp
         (CovariantDerivative.leviCivitaConnection I M (mgradient I φ) x)) u
   have hH₂ : ∑ i, ⟪b i, v⟫ *
       ⟪b i, CovariantDerivative.leviCivitaConnection I M (mgradient I φ) x u⟫ =
@@ -390,12 +382,13 @@ theorem ricciTensor_leviCivitaConnection_rescale
     rw [hsum, real_inner_comm, hessian_def]
   have hP₁ : ∑ i, mvfderiv I φ x (b i) * mvfderiv I φ x v * ⟪b i, u⟫ =
       mvfderiv I φ x u * mvfderiv I φ x v := by
-    simp only [mul_right_comm _ (mvfderiv I φ x v), ← Finset.sum_mul, hℓ]
+    simp only [mul_right_comm _ (mvfderiv I φ x v), ← Finset.sum_mul, b.sum_apply_mul_inner]
   have hP₂ : ∑ i, (mvfderiv I φ x (b i) * ⟪u, v⟫ - mvfderiv I φ x u * ⟪b i, v⟫) *
       ⟪b i, mgradient I φ x⟫ =
       ⟪u, v⟫ * ‖mgradient I φ x‖ ^ 2 - mvfderiv I φ x u * mvfderiv I φ x v := by
     simp only [sub_mul, Finset.sum_sub_distrib, mul_right_comm _ ⟪u, v⟫,
-      mul_assoc (mvfderiv I φ x u), ← Finset.mul_sum, ← Finset.sum_mul, hℓ, hsum]
+      mul_assoc (mvfderiv I φ x u), ← Finset.mul_sum, ← Finset.sum_mul, b.sum_apply_mul_inner,
+      hsum]
     rw [mvfderiv_apply_mgradient, real_inner_self_eq_norm_sq, inner_mgradient_right]
     ring
   rw [hH₁, hdim, hH₂, hΔ, hP₁, hP₂, hsum v u, real_inner_comm v u]
@@ -419,14 +412,12 @@ theorem scalarCurvature_rescale
   have hG : ‖mgradient I φ x‖ ^ 2 = ∑ j, mvfderiv I φ x (b j) * mvfderiv I φ x (b j) := by
     rw [← real_inner_self_eq_norm_sq, ← b.sum_inner_mul_inner]
     simp only [inner_mgradient, inner_mgradient_right]
-  -- The tangent space `TangentSpace I x` is the model space `E`.
-  have hd : (Module.finrank ℝ (TangentSpace I x) : ℝ) = Module.finrank ℝ E := rfl
   rw [scalarCurvature_rescale_eq_sum g hf hf_pos b, scalarCurvature_def,
     CovariantDerivative.scalarCurvature_eq_sum _ x b]
   simp only [ricciTensor_leviCivitaConnection_rescale g hf hf_pos hfφ, real_inner_self_eq_norm_sq,
     b.orthonormal.1, one_pow, mul_one, laplaceBeltrami_eq_sum_hessian I φ x b, hG]
   simp only [Finset.sum_add_distrib, Finset.sum_sub_distrib, ← Finset.mul_sum, Finset.sum_const,
-    Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, hd]
+    Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, TauCeti.finrank_tangentSpace]
   ring
 
 end Bundle.ContMDiffRiemannianMetric
