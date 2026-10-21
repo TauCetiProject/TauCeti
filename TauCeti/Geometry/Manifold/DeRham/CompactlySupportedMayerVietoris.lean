@@ -175,6 +175,7 @@ zero. -/
 
 /-- The first term of the compactly supported Mayer–Vietoris short complex is the compactly
 supported de Rham complex of `U ⊓ V`. -/
+@[simp]
 theorem compactlySupportedMayerVietorisShortComplex_X₁ (U V : Opens M) :
     (compactlySupportedMayerVietorisShortComplex I U V).X₁ =
       compactlySupportedDeRhamComplex I (U ⊓ V : Opens M) :=
@@ -182,6 +183,7 @@ theorem compactlySupportedMayerVietorisShortComplex_X₁ (U V : Opens M) :
 
 /-- The middle term of the compactly supported Mayer–Vietoris short complex is the biproduct of the
 compactly supported de Rham complexes of `U` and `V`. -/
+@[simp]
 theorem compactlySupportedMayerVietorisShortComplex_X₂ (U V : Opens M) :
     (compactlySupportedMayerVietorisShortComplex I U V).X₂ =
       (compactlySupportedDeRhamComplex I U ⊞ compactlySupportedDeRhamComplex I V) :=
@@ -189,6 +191,7 @@ theorem compactlySupportedMayerVietorisShortComplex_X₂ (U V : Opens M) :
 
 /-- The last term of the compactly supported Mayer–Vietoris short complex is the compactly
 supported de Rham complex of `U ⊔ V`. -/
+@[simp]
 theorem compactlySupportedMayerVietorisShortComplex_X₃ (U V : Opens M) :
     (compactlySupportedMayerVietorisShortComplex I U V).X₃ =
       compactlySupportedDeRhamComplex I (U ⊔ V : Opens M) :=
@@ -196,6 +199,7 @@ theorem compactlySupportedMayerVietorisShortComplex_X₃ (U V : Opens M) :
 
 /-- The first map of the compactly supported Mayer–Vietoris short complex is the pair of the
 extension by zero to `U` and the negative of the extension by zero to `V`. -/
+@[simp]
 theorem compactlySupportedMayerVietorisShortComplex_f (U V : Opens M) :
     (compactlySupportedMayerVietorisShortComplex I U V).f =
       biprod.lift
@@ -205,6 +209,7 @@ theorem compactlySupportedMayerVietorisShortComplex_f (U V : Opens M) :
 
 /-- The second map of the compactly supported Mayer–Vietoris short complex is the sum of the
 extensions by zero from `U` and from `V` to `U ⊔ V`. -/
+@[simp]
 theorem compactlySupportedMayerVietorisShortComplex_g (U V : Opens M) :
     (compactlySupportedMayerVietorisShortComplex I U V).g =
       biprod.desc
