@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.GCDMonoid.Finset
 public import Mathlib.Algebra.GCDMonoid.Nat
+public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import Mathlib.Data.Nat.Choose.Lucas
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
@@ -19,6 +20,8 @@ import Mathlib.Tactic.LinearCombination
 -- Proof-only: Bézout's identity and faithfulness of scalars, for uniqueness of the multiple.
 import TauCeti.Algebra.GCDMonoid.Finset
 import TauCeti.Algebra.MvPolynomial.Coeff
+-- Proof-only: the coefficients of `C_n` sum to `(2ⁿ - 2) / d_n`.
+import TauCeti.Data.Nat.Choose.Basic
 -- Proof-only: the coefficients of the four terms of the cocycle identity.
 import TauCeti.Algebra.MvPolynomial.Fin.Three
 
@@ -64,11 +67,14 @@ additive 2-cocycle of degree `n` is a multiple of `C_n`
   2-cocycle vanishes for `n ≠ 0`.
 * `TauCeti.lazardGcd_eq_minFac_of_isPrimePow`, `TauCeti.lazardGcd_eq_one_of_not_isPrimePow`:
   `d_n` is `p` for `n = pᵏ`, and `1` for `n ≥ 2` not a prime power.
+* `TauCeti.prime_dvd_lazardGcd_iff`: for `n ≥ 2` and a prime `p`, `p ∣ d_n` exactly when `n` is a
+  power of `p`. In particular `d_n` is odd unless `n` is a power of two.
 * `TauCeti.gcd_choose_div_lazardGcd_eq_one`: for `n ≥ 2`, the coefficients `n.choose i / d_n`
   have greatest common divisor `1`.
 * `TauCeti.coeff_lazardCocycle`: the coefficient of `XⁱYʲ` in `C_n` is
   `n.choose i / d_n` when `i + j = n` and `i, j ≠ 0`, and `0` otherwise.
 * `TauCeti.lazardGcd_nsmul_lazardCocycle`: `d_n • C_n = (X + Y)ⁿ - Xⁿ - Yⁿ` for `n ≠ 0`.
+* `TauCeti.aeval_X_X_lazardCocycle`: the diagonal `C_n(X, X)` is `((2ⁿ - 2) / d_n) • Xⁿ`.
 * `TauCeti.map_lazardCocycle`: `C_n` is compatible with ring homomorphisms.
 * `TauCeti.isHomogeneous_lazardCocycle`, `TauCeti.isSymmetric_lazardCocycle`,
   `TauCeti.isAddCocycle₂_lazardCocycle`: `C_n` is a homogeneous symmetric additive 2-cocycle
@@ -190,6 +196,25 @@ theorem lazardGcd_eq_one_of_not_isPrimePow {n : ℕ} (hn : 1 < n) (h : ¬IsPrime
 theorem lazardGcd_eq_zero_of_lt_two {n : ℕ} (hn : n < 2) : lazardGcd n = 0 := by
   rw [lazardGcd, Finset.Icc_eq_empty (by omega), Finset.gcd_empty]
 
+/-- For a prime `p` and `k ≠ 0`, `d_{pᵏ} = p`. -/
+theorem lazardGcd_prime_pow {p k : ℕ} (hp : p.Prime) (hk : k ≠ 0) : lazardGcd (p ^ k) = p := by
+  rw [lazardGcd_eq_minFac_of_isPrimePow (hp.isPrimePow.pow hk), hp.pow_minFac hk]
+
+/-- For `n ≥ 2` and a prime `p`, `p` divides `d_n` exactly when `n` is a power of `p`. -/
+theorem prime_dvd_lazardGcd_iff {n p : ℕ} (hp : p.Prime) (hn : 2 ≤ n) :
+    p ∣ lazardGcd n ↔ ∃ k, n = p ^ k := by
+  refine ⟨fun h => ?_, ?_⟩
+  · by_cases hpp : IsPrimePow n
+    · obtain ⟨q, k, hq, hk, rfl⟩ := (isPrimePow_nat_iff n).1 hpp
+      rw [lazardGcd_prime_pow hq hk.ne', Nat.prime_dvd_prime_iff_eq hp hq] at h
+      exact ⟨k, h ▸ rfl⟩
+    · rw [lazardGcd_eq_one_of_not_isPrimePow (by omega) hpp, Nat.dvd_one] at h
+      exact absurd h hp.one_lt.ne'
+  · rintro ⟨k, rfl⟩
+    rw [lazardGcd_prime_pow hp]
+    rintro rfl
+    simp at hn
+
 /-- `d ∣ d_n` if and only if `d` divides every `n.choose i`, `0 < i < n`. -/
 theorem dvd_lazardGcd_iff {n d : ℕ} :
     d ∣ lazardGcd n ↔ ∀ i, 0 < i → i < n → d ∣ n.choose i := by
@@ -297,6 +322,30 @@ theorem lazardGcd_nsmul_aeval_lazardCocycle {A : Type*} [CommRing A] [Algebra R 
     lazardGcd n • aeval ![a, b] (lazardCocycle n R) = (a + b) ^ n - a ^ n - b ^ n := by
   rw [← map_nsmul, lazardGcd_nsmul_lazardCocycle hn]
   simp
+
+/-- The diagonal `C_n(X, X)` of the Lazard cocycle is `((2ⁿ - 2) / d_n) • Xⁿ`: the coefficients
+`n.choose i`, `0 < i < n`, of `(X + Y)ⁿ - Xⁿ - Yⁿ` sum to `2ⁿ - 2`. For `n < 2` both sides
+vanish. -/
+theorem aeval_X_X_lazardCocycle (n : ℕ) :
+    aeval ![Polynomial.X, Polynomial.X] (lazardCocycle n R) =
+      ((2 ^ n - 2) / lazardGcd n) • (Polynomial.X : Polynomial R) ^ n := by
+  -- The coefficient is the sum of the coefficients `n.choose i / d_n` of `C_n`.
+  have hsum : (2 ^ n - 2) / lazardGcd n = ∑ i ∈ Icc 1 (n - 1), n.choose i / lazardGcd n := by
+    rcases lt_or_ge n 2 with hn | hn
+    · rw [lazardGcd_eq_zero_of_lt_two hn, Icc_eq_empty (by omega)]
+      simp
+    · refine Nat.div_eq_of_eq_mul_right (Nat.pos_of_ne_zero (lazardGcd_ne_zero hn)) ?_
+      rw [Finset.mul_sum, ← Nat.sum_Icc_choose_eq_two_pow_sub_two]
+      refine Finset.sum_congr rfl fun i hi => ?_
+      rw [mem_Icc] at hi
+      exact (lazardGcd_mul_choose_div_lazardGcd (by omega) (by omega)).symm
+  rw [hsum, Finset.sum_smul, lazardCocycle, map_sum]
+  refine Finset.sum_congr rfl fun i hi => ?_
+  rw [mem_Icc] at hi
+  rw [aeval_monomial, Finsupp.prod_add_index' (by simp) (by simp [pow_add]),
+    Finsupp.prod_single_index (by simp), Finsupp.prod_single_index (by simp)]
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, ← pow_add,
+    show i + (n - i) = n by omega, nsmul_eq_mul, Polynomial.algebraMap_eq, map_natCast]
 
 /-- `C_n` is homogeneous of degree `n`. -/
 theorem isHomogeneous_lazardCocycle (n : ℕ) : (lazardCocycle n R).IsHomogeneous n :=
