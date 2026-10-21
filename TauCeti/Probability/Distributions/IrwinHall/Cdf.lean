@@ -8,7 +8,7 @@ module
 public import TauCeti.Probability.Distributions.IrwinHall.Basic
 public import TauCeti.Probability.Cdf
 public import TauCeti.MeasureTheory.Integral.IntervalIntegral.PositivePart
-public import TauCeti.Data.Nat.Choose.Sum
+public import TauCeti.Algebra.Group.ForwardDiff
 
 /-!
 # Cumulative distribution functions of Irwin–Hall laws
@@ -80,7 +80,12 @@ theorem cdf_irwinHallMeasure_eq {n : ℕ} (hn : 0 < n) (x : ℝ) :
           rw [intervalIntegral.integral_max_sub_zero_pow hn']
           simp [mul_div_assoc, sub_sub]
         _ = _ := by
-          rw [← Finset.sum_div, sum_neg_one_pow_mul_choose_succ]
+          rw [← Finset.sum_div]
+          have hsum := congrFun (neg_one_pow_mul_fwdDiff_iter_succ n
+            (fun k : ℕ ↦ max (x - k) 0 ^ (n + 1)) 1) 0
+          simp only [neg_one_pow_mul_fwdDiff_iter_eq_alternating_sum,
+            smul_eq_mul, mul_one, zero_add, Pi.neg_apply, fwdDiff, neg_sub] at hsum
+          rw [hsum]
           push_cast [Nat.factorial_succ]
           field_simp
     · exact fun k _ ↦ hint k
