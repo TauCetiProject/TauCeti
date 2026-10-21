@@ -224,45 +224,17 @@ theorem mem_cyclicCocycles_iff_complex (n : ℕ) (φ : cyclicCochains R A M n) :
     φ ∈ cyclicCocycles R A M n ↔
       (cyclicCochainComplex R A M).d n (n + 1)
         ((cyclicCochainComplexXIso R A M n).inv φ) = 0 := by
-  rw [cyclicCocycles, LinearMap.mem_ker]
-  constructor
-  · intro hφ
-    apply (ModuleCat.mono_iff_injective (cyclicCochainComplexXIso R A M (n + 1)).hom).1
-      inferInstance
-    rw [cyclicCochainComplex_d_apply, Iso.inv_hom_id_apply, hφ, map_zero]
-  · intro hφ
-    have h := congrArg (cyclicCochainComplexXIso R A M (n + 1)).hom hφ
-    rw [cyclicCochainComplex_d_apply, Iso.inv_hom_id_apply, map_zero] at h
-    exact h
+  rw [cyclicCocycles, LinearMap.mem_ker, (cyclicCochainComplex R A M).moduleCat_d_inv_eq_zero_iff
+    (cyclicHochschildCoboundary R A M) (cyclicCochainComplex_d R A M)]
 
 private theorem mem_cyclicCoboundaries_iff_complex (n : ℕ) (φ : cyclicCochains R A M n) :
     φ ∈ cyclicCoboundaries R A M n ↔
       ∃ y : (cyclicCochainComplex R A M).X ((ComplexShape.up ℕ).prev n),
         (cyclicCochainComplex R A M).d ((ComplexShape.up ℕ).prev n) n y =
-          (cyclicCochainComplexXIso R A M n).inv φ := by
-  cases n with
-  | zero =>
-    rw [cyclicCoboundaries_zero, Submodule.mem_bot, CochainComplex.prev_nat_zero]
-    rw [(cyclicCochainComplex R A M).shape 0 0 (by simp)]
-    constructor
-    · rintro rfl
-      exact ⟨0, by rw [map_zero, map_zero]⟩
-    · rintro ⟨y, hy⟩
-      apply (ModuleCat.mono_iff_injective (cyclicCochainComplexXIso R A M 0).inv).1 inferInstance
-      rw [← hy]
-      simp only [ModuleCat.hom_zero, LinearMap.zero_apply, map_zero]
-  | succ n =>
-    rw [cyclicCoboundaries_succ, LinearMap.mem_range, CochainComplex.prev_nat_succ]
-    constructor
-    · rintro ⟨ψ, hψ⟩
-      refine ⟨(cyclicCochainComplexXIso R A M n).inv ψ, ?_⟩
-      apply (ModuleCat.mono_iff_injective (cyclicCochainComplexXIso R A M (n + 1)).hom).1
-        inferInstance
-      rw [cyclicCochainComplex_d_apply, Iso.inv_hom_id_apply, hψ,
-        Iso.inv_hom_id_apply]
-    · rintro ⟨ψ, hψ⟩
-      refine ⟨(cyclicCochainComplexXIso R A M n).hom ψ, ?_⟩
-      rw [← cyclicCochainComplex_d_apply, hψ, Iso.inv_hom_id_apply]
+          (cyclicCochainComplexXIso R A M n).inv φ :=
+  (cyclicCochainComplex R A M).moduleCat_mem_iff_exists_d_eq_inv (cyclicCoboundaries R A M)
+    (cyclicHochschildCoboundary R A M) (cyclicCochainComplex_d R A M)
+    (cyclicCoboundaries_zero R A M) (cyclicCoboundaries_succ R A M) n φ
 
 private abbrev toCycles (n : ℕ) (φ : cyclicCocycles R A M n) :=
   (cyclicCochainComplex R A M).moduleCatCyclesMk ((cyclicCochainComplexXIso R A M n).inv φ.1)
