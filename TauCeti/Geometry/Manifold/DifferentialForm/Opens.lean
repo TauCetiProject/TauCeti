@@ -315,6 +315,19 @@ theorem IsSmoothForm.of_mpullback_inclusion {W : Opens M} {ι : Type*} {U : ι �
   obtain ⟨i, hi⟩ := hcover x
   exact (contMDiffAt_mpullback_inclusion_iff (hU i) γ ⟨x, hi⟩).mp ((hγ i).contMDiff _)
 
+/-- A form on the union of two open subsets is `C^n` when both restrictions are `C^n`. -/
+theorem IsSmoothForm.of_mpullback_inclusion_sup {U V : Opens M} {n : WithTop ℕ∞}
+    {γ : RoughForm I (U ⊔ V : Opens M) F k}
+    (hU : IsSmoothForm I n (mpullback I I (Opens.inclusion le_sup_left) γ))
+    (hV : IsSmoothForm I n (mpullback I I (Opens.inclusion le_sup_right) γ)) :
+    IsSmoothForm I n γ := by
+  refine IsSmoothForm.of_mpullback_inclusion (U := fun b : Bool ↦ cond b U V)
+    (fun b ↦ by cases b <;> simp) (fun x ↦ ?_) fun b ↦ ?_
+  · rcases Opens.mem_sup.mp x.2 with hx | hx
+    exacts [⟨true, hx⟩, ⟨false, hx⟩]
+  · cases b
+    · exact hV
+    · exact hU
 
 /-- The extension by zero of a `C^n` form on an open subset `U ≤ W` is `C^n`, provided it vanishes
 near every point of `W` outside `U`. -/

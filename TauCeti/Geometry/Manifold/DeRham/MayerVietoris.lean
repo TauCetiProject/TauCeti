@@ -134,14 +134,8 @@ theorem exact_mayerVietoris (U V : Opens M) :
       by_cases hy : (y : M) ∈ U
       · exact (dite_eq_left hy).trans (hagree y hy y.2)
       · exact dite_eq_right hy
-    have hγ : IsSmoothForm I ∞ γ := by
-      refine IsSmoothForm.of_mpullback_inclusion (U := fun b : Bool ↦ cond b U V)
-        (fun b ↦ by cases b <;> simp) (fun x ↦ ?_) fun b ↦ ?_
-      · rcases Opens.mem_sup.mp x.2 with hx | hx
-        exacts [⟨true, hx⟩, ⟨false, hx⟩]
-      · cases b
-        · exact hγV ▸ β.isSmoothForm
-        · exact hγU ▸ α.isSmoothForm
+    have hγ : IsSmoothForm I ∞ γ :=
+      IsSmoothForm.of_mpullback_inclusion_sup (hγU ▸ α.isSmoothForm) (hγV ▸ β.isSmoothForm)
     exact ⟨⟨γ, hγ.mem_smoothForms⟩, Subtype.ext ((coe_mpullback _ _ _).trans hγU),
       Subtype.ext ((coe_mpullback _ _ _).trans hγV)⟩
   · rintro ⟨φ, rfl, rfl⟩
@@ -257,14 +251,10 @@ theorem exists_closedForms_coe_eq_extendByZero_mextDeriv (φ : closedForms I (U 
   obtain ⟨hU, hV⟩ := mpullback_extendByZero_mextDeriv_cutoff hρ hρV hρU φ
   -- The extension is smooth, since its restrictions to `U` and to `V` are smooth.
   have hσ : IsSmoothForm I ∞ (RoughForm.extendByZero (U ⊔ V)
-      (mextDeriv fun y : (U ⊓ V : Opens M) ↦ ρ (Opens.inclusion inf_le_sup y) • φ.1.1 y)) := by
-    refine IsSmoothForm.of_mpullback_inclusion (U := fun b : Bool ↦ cond b U V)
-      (fun b ↦ by cases b <;> simp) (fun x ↦ ?_) fun b ↦ ?_
-    · rcases Opens.mem_sup.mp x.2 with hx | hx
-      exacts [⟨true, hx⟩, ⟨false, hx⟩]
-    · cases b
-      · exact hV ▸ (mextDerivₗ I k (cutoffRight hρ hρU φ.1)).isSmoothForm
-      · exact hU ▸ (mextDerivₗ I k (cutoffLeft hρ hρV φ.1)).isSmoothForm
+      (mextDeriv fun y : (U ⊓ V : Opens M) ↦ ρ (Opens.inclusion inf_le_sup y) • φ.1.1 y)) :=
+    IsSmoothForm.of_mpullback_inclusion_sup
+      (hU ▸ (mextDerivₗ I k (cutoffLeft hρ hρV φ.1)).isSmoothForm)
+      (hV ▸ (mextDerivₗ I k (cutoffRight hρ hρU φ.1)).isSmoothForm)
   let σ : SmoothForm I (U ⊔ V : Opens M) ℝ (k + 1) := ⟨_, hσ.mem_smoothForms⟩
   -- It is closed, since its restrictions to `U` and to `V` are exact.
   refine ⟨⟨σ, (mem_closedForms_iff_mextDerivₗ_eq_zero I σ).mpr <|
@@ -437,6 +427,13 @@ de Rham complexes. -/
 def mayerVietorisδ (U V : Opens M) (k : ℕ) :
     deRhamCohomology I (U ⊓ V : Opens M) k →ₗ[ℝ] deRhamCohomology I (U ⊔ V : Opens M) (k + 1) :=
   ((mayerVietorisShortComplex_shortExact (I := I) U V).δ k (k + 1) rfl).hom
+
+/-- The Mayer–Vietoris connecting map is the connecting morphism of the homology sequence of the
+Mayer–Vietoris short exact sequence, so Mathlib's exactness results for that sequence apply. -/
+theorem ofHom_mayerVietorisδ (U V : Opens M) (k : ℕ) :
+    ModuleCat.ofHom (mayerVietorisδ I U V k) =
+      (mayerVietorisShortComplex_shortExact (I := I) U V).δ k (k + 1) rfl :=
+  (rfl)
 
 /-- **The Mayer–Vietoris connecting map on classes.** Let `φ` be a closed form on `U ⊓ V`, written
 as the difference `α - β` of the restrictions of forms `α` on `U` and `β` on `V`. If `σ` is a
