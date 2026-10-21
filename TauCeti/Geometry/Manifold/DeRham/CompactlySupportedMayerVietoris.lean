@@ -6,10 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DeRham.ExtendByZero
-public import Mathlib.Algebra.Category.ModuleCat.Biproducts
-public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
-public import Mathlib.Algebra.Homology.HomologicalComplexBiprod
-public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
+public import TauCeti.Algebra.Homology.ModuleCat.Biprod
 import Mathlib.Geometry.Manifold.PartitionOfUnity
 
 /-!
@@ -146,7 +143,7 @@ theorem surjective_coprod_extendByZero [FiniteDimensional ℝ E] [IsManifold I �
   have hsum := ρ.sum_eq_one (mem_univ x)
   rw [finsum_eq_sum_of_fintype, Fintype.sum_bool] at hsum
   -- Sums of compactly supported forms, and the cut-off forms, are computed pointwise.
-  change ρ false x • φ.1.1 x + ρ true x • φ.1.1 x = φ.1.1 x
+  simp only [Submodule.coe_add, Pi.add_apply, ρφ]
   rw [← add_smul, add_comm, hsum, one_smul]
 
 end compactlySupportedForms
@@ -225,32 +222,14 @@ theorem compactlySupportedMayerVietorisShortComplex_shortExact [FiniteDimensiona
   -- along the identification of `(Ω_c^•(U) ⊞ Ω_c^•(V))^k` with the product module
   -- `Ω_cᵏ(U) × Ω_cᵏ(V)`.
   unfold compactlySupportedMayerVietorisShortComplex
-  refine HomologicalComplex.shortExact_of_degreewise_shortExact _ fun k ↦ ?_
-  have hinl : biprod.inl ≫ (ModuleCat.biprodIsoProd (.of ℝ (compactlySupportedForms I U k))
-      (.of ℝ (compactlySupportedForms I V k))).hom = ModuleCat.ofHom (LinearMap.inl ℝ _ _) := by
-    rw [← Iso.eq_comp_inv]
-    apply biprod.hom_ext <;> ext x <;> simp
-  have hinr : biprod.inr ≫ (ModuleCat.biprodIsoProd (.of ℝ (compactlySupportedForms I U k))
-      (.of ℝ (compactlySupportedForms I V k))).hom = ModuleCat.ofHom (LinearMap.inr ℝ _ _) := by
-    rw [← Iso.eq_comp_inv]
-    apply biprod.hom_ext <;> ext x <;> simp
-  have hmap {U₁ U₂ : Opens M} (h : U₁ ≤ U₂) :
-      (compactlySupportedDeRhamComplex.extendByZero (I := I) h).f k =
-        (compactlySupportedDeRhamComplexXIso I k).hom ≫
-          ModuleCat.ofHom (compactlySupportedForms.extendByZero h k) ≫
-            (compactlySupportedDeRhamComplexXIso I k).inv := by
-    rw [← compactlySupportedDeRhamComplex.extendByZero_f_assoc, Iso.hom_inv_id, Category.comp_id]
-  let e₂ := HomologicalComplex.biprodXIso (compactlySupportedDeRhamComplex I U)
-      (compactlySupportedDeRhamComplex I V) k ≪≫
-    biprod.mapIso (compactlySupportedDeRhamComplexXIso I k)
-      (compactlySupportedDeRhamComplexXIso I k) ≪≫ ModuleCat.biprodIsoProd _ _
   -- The sign is written as a scalar `-1`: synthesizing negation of linear maps between these
   -- submodules of smooth forms times out.
-  let f := (compactlySupportedForms.extendByZero (I := I) (inf_le_left : U ⊓ V ≤ U) k).prod
+  let f (k : ℕ) := (compactlySupportedForms.extendByZero (I := I) (inf_le_left : U ⊓ V ≤ U) k).prod
     ((-1 : ℝ) • compactlySupportedForms.extendByZero (I := I) (inf_le_right : U ⊓ V ≤ V) k)
-  let g := (compactlySupportedForms.extendByZero (I := I) (le_sup_left : U ≤ U ⊔ V) k).coprod
-    (compactlySupportedForms.extendByZero (I := I) (le_sup_right : V ≤ U ⊔ V) k)
-  have hexact : Function.Exact f g := by
+  let g (k : ℕ) :=
+    (compactlySupportedForms.extendByZero (I := I) (le_sup_left : U ≤ U ⊔ V) k).coprod
+      (compactlySupportedForms.extendByZero (I := I) (le_sup_right : V ≤ U ⊔ V) k)
+  have hexact (k : ℕ) : Function.Exact (f k) (g k) := by
     rintro ⟨α, β⟩
     simp only [f, g, LinearMap.coprod_apply, Set.mem_range, LinearMap.prod_apply,
       Function.prod_apply, LinearMap.smul_apply, Prod.mk.injEq,
@@ -259,41 +238,26 @@ theorem compactlySupportedMayerVietorisShortComplex_shortExact [FiniteDimensiona
     rw [neg_one_smul ℝ
       (compactlySupportedForms.extendByZero (I := I) (inf_le_right : U ⊓ V ≤ V) k θ)]
     exact (neg_eq_iff_eq_neg (G := compactlySupportedForms I V k)).symm
-  have hinj : Function.Injective f := fun _ _ h ↦
+  have hinj (k : ℕ) : Function.Injective (f k) := fun _ _ h ↦
     compactlySupportedForms.extendByZero_injective (I := I) (inf_le_left : U ⊓ V ≤ U) k
       (congrArg Prod.fst h)
-  have hsurj : Function.Surjective g := compactlySupportedForms.surjective_coprod_extendByZero U V
-  refine ShortComplex.shortExact_of_iso (ShortComplex.isoMk
-      (compactlySupportedDeRhamComplexXIso I k).symm e₂.symm
-      (compactlySupportedDeRhamComplexXIso I k).symm ?_ ?_)
-    (ModuleCat.shortComplex_shortExact
-      (ModuleCat.shortComplexOfCompEqZero f g hexact.linearMap_comp_eq_zero) hexact hinj hsurj)
-  -- The two squares commute: compare components of the biproducts.
-  · rw [← cancel_mono (HomologicalComplex.biprodXIso (compactlySupportedDeRhamComplex I U)
-      (compactlySupportedDeRhamComplex I V) k).hom]
-    apply biprod.hom_ext
-    · ext x
-      simp [f, e₂, hmap, reassoc_of% ModuleCat.biprodIsoProd_inv_comp_fst]
-    · ext x
-      simp only [ShortComplex.map_X₁, HomologicalComplex.eval_obj, ShortComplex.map_X₂,
-        Iso.symm_hom, ShortComplex.map_f, HomologicalComplex.eval_map, Category.assoc,
-        HomologicalComplex.biprodXIso_hom_snd, BinaryBiproduct.bicone_snd,
-        HomologicalComplex.biprod_lift_snd_f, HomologicalComplex.neg_f_apply, hmap,
-        Preadditive.comp_neg, Iso.inv_hom_id_assoc, ModuleCat.hom_neg, ModuleCat.hom_comp,
-        ConcreteCategory.hom_ofHom, LinearMap.neg_apply, LinearMap.coe_comp, Function.comp_apply,
-        Iso.trans_symm, Iso.trans_assoc, Iso.trans_hom, biprod.mapIso_inv, Iso.inv_hom_id,
-        Category.comp_id, biprod.map_snd, reassoc_of% ModuleCat.biprodIsoProd_inv_comp_snd,
-        LinearMap.coe_snd, e₂]
-      -- The second component of `f` is the scalar multiple by `-1` of the extension by zero.
-      exact (map_neg _ _).symm.trans (congrArg _ (neg_one_smul ℝ
-        (compactlySupportedForms.extendByZero (I := I) (inf_le_right : U ⊓ V ≤ V) k x)).symm)
-  · refine (cancel_epi (ModuleCat.biprodIsoProd (.of ℝ (compactlySupportedForms I U k))
-      (.of ℝ (compactlySupportedForms I V k))).hom).mp ?_
-    apply biprod.hom_ext'
-    · ext x
-      simp [f, g, e₂, hmap, reassoc_of% hinl]
-    · ext x
-      simp [f, g, e₂, hmap, reassoc_of% hinr]
+  exact HomologicalComplex.moduleCat_shortExact_biprod _
+    (fun k ↦ compactlySupportedDeRhamComplexXIso I k)
+    (fun k ↦ compactlySupportedDeRhamComplexXIso I k)
+    (fun k ↦ compactlySupportedDeRhamComplexXIso I k)
+    (fun k ↦ compactlySupportedDeRhamComplexXIso I k) _
+    (fun k ↦ (-1 : ℝ) • compactlySupportedForms.extendByZero (I := I) (inf_le_right : U ⊓ V ≤ V) k)
+    _ _ (fun k ↦ compactlySupportedDeRhamComplex.extendByZero_f _ k)
+    (fun k ↦ by
+      rw [HomologicalComplex.neg_f_apply, Preadditive.neg_comp,
+        compactlySupportedDeRhamComplex.extendByZero_f, ← Preadditive.comp_neg]
+      congr 1
+      ext : 1
+      rw [ModuleCat.hom_neg, ModuleCat.hom_ofHom, ModuleCat.hom_ofHom]
+      exact (neg_one_smul ℝ _).symm)
+    (fun k ↦ compactlySupportedDeRhamComplex.extendByZero_f _ k)
+    (fun k ↦ compactlySupportedDeRhamComplex.extendByZero_f _ k) hexact hinj
+    fun _ ↦ compactlySupportedForms.surjective_coprod_extendByZero U V
 
 end Complex
 

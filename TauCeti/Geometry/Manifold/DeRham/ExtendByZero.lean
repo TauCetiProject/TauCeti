@@ -137,6 +137,8 @@ theorem mem_range_extendByZero_iff {U W : Opens M} (h : U ≤ W) {k : ℕ}
   by_cases hx : (x : M) ∈ U
   · rw [coe_extendByZero, RoughForm.extendByZero_apply_of_mem _ hx, SmoothForm.coe_mpullback,
       mpullback_inclusion_apply]
+    -- The inclusion of `U` in `W` sends `⟨x, hx⟩` to `⟨x, h hx⟩`, which is `x` by eta for
+    -- subtypes; both hold by definition.
     rfl
   · rw [coe_extendByZero, RoughForm.extendByZero_apply_of_notMem _ hx]
     exact (_root_.image_eq_zero_of_notMem_tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ)
