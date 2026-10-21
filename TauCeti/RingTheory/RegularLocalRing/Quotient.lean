@@ -69,13 +69,9 @@ private theorem exists_regularSystem_aux (dimension : ℕ) :
     have hle : span {parameter} ≤ I := (span_singleton_le_iff_mem _).mpr hmem
     have : IsRegularLocalRing (quotient ⧸ I.map quotientMap) :=
       .of_ringEquiv (DoubleQuot.quotQuotEquivQuotOfLE hle).symm
-    have hdrop : (maximalIdeal quotient).spanFinrank + 1 =
-        (maximalIdeal R).spanFinrank := by
-      have hdim := ringKrullDim_quotient_span_singleton_succ_eq_ringKrullDim_of_mem_nonZeroDivisors
-        (mem_nonZeroDivisors_of_ne_zero hparameter) hmax
-      rw [← spanFinrank_maximalIdeal (R := quotient),
-        ← spanFinrank_maximalIdeal (R := R)] at hdim
-      exact_mod_cast hdim
+    have hdrop : (maximalIdeal quotient).spanFinrank + 1 = (maximalIdeal R).spanFinrank :=
+      TauCeti.IsRegularLocalRing.spanFinrank_maximalIdeal_quotient_span_singleton_add_one hmax
+        hparameter
     obtain ⟨size, count, generators, hcount, hspan, hsize, hideal⟩ :=
       induction (maximalIdeal quotient).spanFinrank (by omega) quotient rfl
         (I.map quotientMap)
