@@ -352,11 +352,7 @@ end Trivial
 section TrivialConnecting
 
 variable {Λ E T : Type} [AddCommGroup Λ] [AddCommGroup E] [AddCommGroup T] {m : ℕ} [NeZero m]
-  {i : Λ →ₗ[ℤ] E} {p : E →ₗ[ℤ] T} {hE : (⇑(AddEquiv.refl E))^[m] = _root_.id}
-  {hT : (⇑(AddEquiv.refl T))^[m] = _root_.id}
-  {hi : ∀ x, i.toAddMonoidHom (AddEquiv.refl Λ x) = AddEquiv.refl E (i.toAddMonoidHom x)}
-  {hp : ∀ x, p.toAddMonoidHom (AddEquiv.refl E x) = AddEquiv.refl T (p.toAddMonoidHom x)}
-  {hpi : ∀ x, p.toAddMonoidHom (i.toAddMonoidHom x) = 0}
+  {i : Λ →ₗ[ℤ] E} {p : E →ₗ[ℤ] T}
   (hinj : Function.Injective i) (hexact : Function.Exact i p) (hsurj : Function.Surjective p)
 
 /-- **The connecting map of trivial actions is the snake map.** For the trivial actions of `C_m`
@@ -365,10 +361,11 @@ with `Λ ⧸ m Λ`. Then the connecting homomorphism `δ` becomes the snake-lemm
 `TauCeti.torsionByδ`, which sends `t` to the coset of `v` when `m • s = i v` for a lift `s` of
 `t`. -/
 theorem groupCohomologyEvenEquivQuotSMulTop_δ
-    (x : groupCohomology ((AddEquiv.refl T).cyclicRep hT) 1) :
+    (x : groupCohomology ((AddEquiv.refl T).cyclicRep (AddEquiv.iterate_refl m)) 1) :
     groupCohomologyEvenEquivQuotSMulTop Λ m 2 even_two
-        (δ (i.toAddMonoidHom.shortExact_cyclicRepShortComplex p.toAddMonoidHom (hE := hE)
-          (hi := hi) (hp := hp) (hpi := hpi) hinj hexact hsurj) 1 2 rfl x) =
+        (δ (i.toAddMonoidHom.shortExact_cyclicRepShortComplex p.toAddMonoidHom
+          (hE := AddEquiv.iterate_refl m) (hi := by simp) (hp := by simp)
+          (hpi := by simpa using hexact.apply_apply_eq_zero) hinj hexact hsurj) 1 2 rfl x) =
       torsionByδ (m : ℤ) hexact hinj hsurj (groupCohomologyOddEquivTorsionBy T m 1 odd_one x) := by
   -- Write `x` as the class of `t ∈ T[m]`, lift `t` to `s : E` and write `m • s = i v`.
   obtain ⟨t, rfl⟩ := (groupCohomologyOddEquivTorsionBy T m 1 odd_one).symm.surjective x
@@ -379,8 +376,9 @@ theorem groupCohomologyEvenEquivQuotSMulTop_δ
   -- `δ` sends the class of `t` to the class of `v`, and so does the snake map.
   have hδ := δ_cyclicRepShortComplex_groupCohomologyπOdd_one
     (i.toAddMonoidHom.shortExact_cyclicRepShortComplex p.toAddMonoidHom
-      (hΛ := AddEquiv.iterate_refl m) (hE := hE) (hT := hT) (hi := hi) (hp := hp) (hpi := hpi)
-      hinj hexact hsurj)
+      (hΛ := AddEquiv.iterate_refl m) (hE := AddEquiv.iterate_refl m)
+      (hT := AddEquiv.iterate_refl m) (hi := by simp) (hp := by simp)
+      (hpi := by simpa using hexact.apply_apply_eq_zero) hinj hexact hsurj)
     ⟨t, (AddEquiv.mem_ker_cyclicRep_refl_norm_iff _).2 t.2⟩ s (by simpa using hs)
     ⟨v, AddEquiv.mem_ker_cyclicRep_refl_applyAsHom_sub v⟩ (by simp [hv])
   rw [LinearEquiv.apply_symm_apply, groupCohomologyOddEquivTorsionBy_symm_apply, hδ,
@@ -396,7 +394,8 @@ theorem torsionByδEquiv_eq_trans_cyclicConnectingEquiv
     torsionByδEquiv (m : ℤ) hexact hinj hsurj (by simpa only [natCast_zsmul] using hm) =
       ((groupCohomologyOddEquivTorsionBy T m 1 odd_one).symm.trans
         (cyclicConnectingEquiv (i.toAddMonoidHom.shortExact_cyclicRepShortComplex
-          p.toAddMonoidHom (hE := hE) (hi := hi) (hp := hp) (hpi := hpi) hinj hexact hsurj)
+          p.toAddMonoidHom (hE := AddEquiv.iterate_refl m) (hi := by simp)
+          (hp := by simp) (hpi := by simpa using hexact.apply_apply_eq_zero) hinj hexact hsurj)
           hm)).trans (groupCohomologyEvenEquivQuotSMulTop Λ m 2 even_two) :=
   LinearEquiv.ext fun t ↦ by
     simp [groupCohomologyEvenEquivQuotSMulTop_δ hinj hexact hsurj]
