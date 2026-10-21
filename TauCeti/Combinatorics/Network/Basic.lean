@@ -31,7 +31,11 @@ namespace Assignment
 
 variable {Hom : V → V → Type v} {K L M : Type*}
 
-/-- Change the coefficients of an assignment by applying `φ` to its value on every arrow. -/
+/-- Change the coefficients of an assignment by applying `φ` to its value on every arrow.
+
+This definition is exposed so that flows whose bounds are mapped in different but definitionally
+equal ways, such as along `ψ ∘ φ` or along `φ` and then `ψ`, can be compared. -/
+@[expose]
 def map (f : Assignment Hom K) (φ : K → L) : Assignment Hom L :=
   fun _ _ e ↦ φ (f e)
 

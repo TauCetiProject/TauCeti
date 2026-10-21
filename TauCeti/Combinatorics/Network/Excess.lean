@@ -53,6 +53,8 @@ at the sink `t`. A loop at `v` enters and leaves `v`, so it contributes nothing 
   translate of that kernel.
 * `TauCeti.map_excessAt` and `TauCeti.excessAt_comp_equiv`: excess commutes with additive maps of
   coefficients and with transport along an identification of arrow families.
+* `TauCeti.IsCirculation.map` and `TauCeti.Assignment.map_mem_Icc`: additive changes of
+  coefficients preserve circulations, and monotone ones preserve feasibility.
 
 ## Implementation notes
 
@@ -392,6 +394,64 @@ theorem setOf_excessAt_eq_eq_vadd_ker {f₀ : Assignment Q K} {b : V → K}
     simpa using hc
 
 end AddCommGroup
+
+/-! ### Change of coefficients -/
+
+namespace Assignment
+
+section Algebra
+
+variable {L F : Type*} [FunLike F K L]
+
+@[simp]
+theorem map_zero [Zero K] [Zero L] [ZeroHomClass F K L] (φ : F) :
+    (0 : Assignment Q K).map φ = 0 := by
+  funext _ _ e
+  exact (map_apply _ _ e).trans (_root_.map_zero φ)
+
+@[simp]
+theorem map_add [Add K] [Add L] [AddHomClass F K L] (φ : F) (f g : Assignment Q K) :
+    (f + g).map φ = f.map φ + g.map φ := by
+  funext _ _ e
+  simp
+
+@[simp]
+theorem map_neg [AddGroup K] [AddGroup L] [AddMonoidHomClass F K L] (φ : F)
+    (f : Assignment Q K) : (-f).map φ = -f.map φ := by
+  funext _ _ e
+  simp
+
+@[simp]
+theorem map_sub [AddGroup K] [AddGroup L] [AddMonoidHomClass F K L] (φ : F)
+    (f g : Assignment Q K) : (f - g).map φ = f.map φ - g.map φ := by
+  funext _ _ e
+  simp
+
+end Algebra
+
+section Order
+
+variable {L : Type*} [Preorder K] [Preorder L] {φ : K → L}
+
+theorem map_mono (hφ : Monotone φ) {f g : Assignment Q K} (h : f ≤ g) : f.map φ ≤ g.map φ := by
+  intro x y e
+  simpa only [map_apply] using hφ (h x y e)
+
+/-- A monotone coefficient map preserves feasibility, with the bounds mapped as well. -/
+theorem map_mem_Icc (hφ : Monotone φ) {lo hi f : Assignment Q K} (hf : f ∈ Set.Icc lo hi) :
+    f.map φ ∈ Set.Icc (lo.map φ) (hi.map φ) :=
+  ⟨map_mono hφ hf.1, map_mono hφ hf.2⟩
+
+end Order
+
+end Assignment
+
+/-- A circulation stays a circulation after an additive change of coefficients. -/
+theorem IsCirculation.map [Fintype V] [∀ v w, Fintype (Q v w)] [AddCommGroup K] {L F : Type*}
+    [AddCommGroup L] [FunLike F K L] [AddMonoidHomClass F K L] {f : Assignment Q K}
+    (hf : IsCirculation f) (φ : F) : IsCirculation (f.map φ) :=
+  (isCirculation_iff _).2 fun v ↦ by
+    rw [← map_excessAt, (isCirculation_iff f).1 hf v, _root_.map_zero]
 
 namespace Network
 

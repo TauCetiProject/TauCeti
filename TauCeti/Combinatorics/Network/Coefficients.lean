@@ -34,11 +34,6 @@ augmenting walks.
 
 ## Main results
 
-* `TauCeti.map_cutBound`: cut bounds commute with additive coefficient maps.
-* `TauCeti.Assignment.map_residualCapacity` and `TauCeti.Assignment.map_residualUpdate`:
-  residual capacities and residual updates commute with additive coefficient maps.
-* `TauCeti.positiveReachable_map_iff`: a coefficient map preserving and reflecting positivity
-  does not change positive reachability.
 * `TauCeti.BoundedFlow.val_map` and `TauCeti.Flow.val_map`: the value of the image is the image
   of the value.
 * `TauCeti.BoundedFlow.IsMaximum.map` and `TauCeti.Flow.IsMaximum.map`: maximum assignments and
@@ -54,102 +49,6 @@ namespace TauCeti
 open Finset
 
 variable {V : Type*} {Q : V → V → Type*} {K L : Type*}
-
-/-! ### Assignments -/
-
-namespace Assignment
-
-section Algebra
-
-variable {F : Type*} [FunLike F K L]
-
-@[simp]
-theorem map_zero [Zero K] [Zero L] [ZeroHomClass F K L] (φ : F) :
-    (0 : Assignment Q K).map φ = 0 := by
-  funext _ _ e
-  exact (map_apply _ _ e).trans (_root_.map_zero φ)
-
-@[simp]
-theorem map_add [Add K] [Add L] [AddHomClass F K L] (φ : F) (f g : Assignment Q K) :
-    (f + g).map φ = f.map φ + g.map φ := by
-  funext _ _ e
-  simp
-
-@[simp]
-theorem map_neg [AddGroup K] [AddGroup L] [AddMonoidHomClass F K L] (φ : F)
-    (f : Assignment Q K) : (-f).map φ = -f.map φ := by
-  funext _ _ e
-  simp
-
-@[simp]
-theorem map_sub [AddGroup K] [AddGroup L] [AddMonoidHomClass F K L] (φ : F)
-    (f g : Assignment Q K) : (f - g).map φ = f.map φ - g.map φ := by
-  funext _ _ e
-  simp
-
-/-- Residual capacities commute with additive coefficient maps. -/
-theorem map_residualCapacity [AddGroup K] [AddGroup L] [AddMonoidHomClass F K L] (φ : F)
-    (lo hi f : Assignment Q K) :
-    (residualCapacity lo hi f).map φ = residualCapacity (lo.map φ) (hi.map φ) (f.map φ) := by
-  funext _ _ e
-  rcases e with e | e <;> simp
-
-theorem map_residualNet [AddCommGroup K] [AddCommGroup L] [AddMonoidHomClass F K L] (φ : F)
-    (r : Assignment (ResidualHom Q) K) : (residualNet r).map φ = residualNet (r.map φ) := by
-  funext _ _ e
-  simp
-
-/-- Residual updates commute with additive coefficient maps. -/
-theorem map_residualUpdate [AddCommGroup K] [AddCommGroup L] [AddMonoidHomClass F K L] (φ : F)
-    (f : Assignment Q K) (r : Assignment (ResidualHom Q) K) :
-    (residualUpdate f r).map φ = residualUpdate (f.map φ) (r.map φ) := by
-  rw [residualUpdate_def, residualUpdate_def, map_add, map_residualNet]
-
-end Algebra
-
-section Order
-
-variable [Preorder K] [Preorder L] {φ : K → L}
-
-theorem map_mono (hφ : Monotone φ) {f g : Assignment Q K} (h : f ≤ g) : f.map φ ≤ g.map φ := by
-  intro x y e
-  simpa only [map_apply] using hφ (h x y e)
-
-/-- A monotone coefficient map preserves feasibility, with the bounds mapped as well. -/
-theorem map_mem_Icc (hφ : Monotone φ) {lo hi f : Assignment Q K} (hf : f ∈ Set.Icc lo hi) :
-    f.map φ ∈ Set.Icc (lo.map φ) (hi.map φ) :=
-  ⟨map_mono hφ hf.1, map_mono hφ hf.2⟩
-
-end Order
-
-end Assignment
-
-/-! ### Excess, cuts and positive reachability -/
-
-section Excess
-
-variable [Fintype V] [∀ v w, Fintype (Q v w)] [AddCommGroup K] [AddCommGroup L] {F : Type*}
-  [FunLike F K L] [AddMonoidHomClass F K L]
-
-/-- A circulation stays a circulation after an additive change of coefficients. -/
-theorem IsCirculation.map {f : Assignment Q K} (hf : IsCirculation f) (φ : F) :
-    IsCirculation (f.map φ) :=
-  (isCirculation_iff _).2 fun v ↦ by
-    rw [← map_excessAt, (isCirculation_iff f).1 hf v, _root_.map_zero]
-
-/-- Cut bounds commute with additive coefficient maps. -/
-theorem map_cutBound [DecidableEq V] (φ : F) (lo hi : Assignment Q K) (S : Finset V) :
-    φ (cutBound lo hi S) = cutBound (lo.map φ) (hi.map φ) S := by
-  rw [cutBound_def, cutBound_def, _root_.map_sub, map_arrowSum, map_arrowSum]
-
-end Excess
-
-/-- Positive reachability is unchanged by a coefficient map that preserves and reflects
-positivity, such as a strictly monotone additive map. -/
-theorem positiveReachable_map_iff [Zero K] [LT K] [Zero L] [LT L] {c : Assignment Q K}
-    {φ : K → L} (hφ : ∀ x, 0 < φ x ↔ 0 < x) {s t : V} :
-    PositiveReachable (c.map φ) s t ↔ PositiveReachable c s t := by
-  simp only [positiveReachable_def, Assignment.map_apply, hφ]
 
 /-! ### Networks -/
 
@@ -233,6 +132,15 @@ theorem val_map (φ : K →+o L) (f : BoundedFlow lo hi s t) : (f.map φ).val = 
 theorem map_swap (φ : K →+o L) (f : BoundedFlow lo hi s t) : f.swap.map φ = (f.map φ).swap :=
   BoundedFlow.ext (by simp)
 
+@[simp]
+theorem map_id (f : BoundedFlow lo hi s t) : f.map (OrderAddMonoidHom.id K) = f :=
+  BoundedFlow.ext (rfl)
+
+@[simp]
+theorem map_map {M : Type*} [AddCommGroup M] [Preorder M] (φ : K →+o L) (ψ : L →+o M)
+    (f : BoundedFlow lo hi s t) : (f.map φ).map ψ = f.map (ψ.comp φ) :=
+  BoundedFlow.ext (rfl)
+
 end Preorder
 
 variable [LinearOrder K] [IsOrderedAddMonoid K] {lo hi : Assignment Q K}
@@ -251,7 +159,7 @@ theorem isMaximum_map_iff [LinearOrder L] [IsOrderedAddMonoid L] (hst : s ≠ t)
     (hφ : StrictMono φ) {f : BoundedFlow lo hi s t} : (f.map φ).IsMaximum ↔ f.IsMaximum := by
   rw [isMaximum_iff_not_positiveReachable hst, isMaximum_iff_not_positiveReachable hst,
     map_toFun, ← Assignment.map_residualCapacity,
-    positiveReachable_map_iff fun x ↦ by simpa using hφ.lt_iff_lt (a := 0) (b := x)]
+    positiveReachable_map_iff_of_strictMono hφ (map_zero φ)]
 
 end BoundedFlow
 
@@ -280,6 +188,15 @@ theorem map_toFun (φ : K →+o L) (f : Flow cap s t) : (f.map φ).toFun = f.toF
 theorem val_map (φ : K →+o L) (f : Flow cap s t) : (f.map φ).val = φ f.val := by
   rw [BoundedFlow.val_def, BoundedFlow.val_def, map_toFun, map_excessAt]
 
+@[simp]
+theorem map_id (f : Flow cap s t) : f.map (OrderAddMonoidHom.id K) = f :=
+  Flow.ext (rfl)
+
+@[simp]
+theorem map_map {M : Type*} [AddCommGroup M] [Preorder M] (φ : K →+o L) (ψ : L →+o M)
+    (f : Flow cap s t) : (f.map φ).map ψ = f.map (ψ.comp φ) :=
+  Flow.ext (rfl)
+
 end Preorder
 
 variable [LinearOrder K] [IsOrderedAddMonoid K] {cap : Assignment Q K}
@@ -300,7 +217,7 @@ theorem isMaximum_map_iff [LinearOrder L] [IsOrderedAddMonoid L] (hst : s ≠ t)
     (hφ : StrictMono φ) {f : Flow cap s t} : (f.map φ).IsMaximum ↔ f.IsMaximum := by
   rw [isMaximum_iff_not_positiveReachable hst, isMaximum_iff_not_positiveReachable hst,
     map_toFun, ← Assignment.map_zero φ, ← Assignment.map_residualCapacity,
-    positiveReachable_map_iff fun x ↦ by simpa using hφ.lt_iff_lt (a := 0) (b := x)]
+    positiveReachable_map_iff_of_strictMono hφ (map_zero φ)]
 
 end Flow
 
