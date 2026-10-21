@@ -138,10 +138,16 @@ def incl : orbitFiber G x y ⟶ G :=
   pullback.fst (orbitMap G x) y
 
 /-- The fiber maps to `y` under the orbit morphism. -/
-@[reassoc (attr := simp)]
+@[reassoc]
 theorem incl_orbitMap : incl G x y ≫ orbitMap G x = toUnit (orbitFiber G x y) ≫ y :=
   (pullback.condition (f := orbitMap G x) (g := y)).trans <|
     congrArg (· ≫ y) (toUnit_unique _ _)
+
+/-- The inclusion acts on the base point as the defining point of the fiber. -/
+@[simp]
+theorem incl_smul :
+    incl G x y • (toUnit (orbitFiber G x y) ≫ x) = toUnit (orbitFiber G x y) ≫ y := by
+  rw [← comp_orbitMap, incl_orbitMap]
 
 /-- Morphisms into the fiber agree when their composites with the inclusion agree. -/
 @[ext]
