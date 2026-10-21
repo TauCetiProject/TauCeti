@@ -32,14 +32,17 @@ split-semisimplicity product `∏_{d=1}^{n} [d]_Q` of `Q`-integers is nonzero.
 * `YoungDiagram.IsAddable`: the predicate cutting out the addable cells of a diagram.
 * `YoungDiagram.addCell`: the diagram with the principal lower set of a cell added; at an addable
   cell exactly that cell is added.
-* `YoungDiagram.cellContent`: the content `j - i` of the cell `(i, j)`.
+
+The content `YoungDiagram.cellContent` of a cell is defined in
+`TauCeti.Combinatorics.Young.Diagram`.
 
 ## Main results
 
 * `YoungDiagram.isAddable_iff_isLowerSet`: a cell outside `μ` is addable exactly when adding it
   to `μ` gives a Young diagram.
+* `YoungDiagram.addCell_le_iff`: `addCell μ c` is the least diagram containing `μ` and `c`.
 * `YoungDiagram.isAddable_iff_rowLen`: the cell `(i, j)` is addable exactly when `j` is the
-  length of row `i` and row `i` is shorter than row `i - 1`.
+  length of row `i` and, unless `i = 0`, row `i` is shorter than row `i - 1`.
 * `YoungDiagram.IsAddable.isCorner_addCell` and `YoungDiagram.IsCorner.isAddable_erase`, with
   `YoungDiagram.IsAddable.erase_addCell` and `YoungDiagram.IsCorner.addCell_erase`: adding an
   addable cell and removing a corner are mutually inverse.
@@ -170,6 +173,14 @@ theorem le_addCell (μ : YoungDiagram) (c : ℕ × ℕ) : μ ≤ addCell μ c :=
 theorem mem_addCell_self (μ : YoungDiagram) (c : ℕ × ℕ) : c ∈ addCell μ c :=
   mem_addCell.mpr (.inr le_rfl)
 
+/-- `addCell μ c` is the least Young diagram containing `μ` and the cell `c`. -/
+@[simp]
+theorem addCell_le_iff {ν : YoungDiagram} : addCell μ c ≤ ν ↔ μ ≤ ν ∧ c ∈ ν := by
+  refine ⟨fun h ↦ ⟨(le_addCell μ c).trans h, h (mem_addCell_self μ c)⟩, fun ⟨hμ, hc⟩ d hd ↦ ?_⟩
+  rcases mem_addCell.mp hd with hd | hd
+  · exact hμ hd
+  · exact ν.isLowerSet hd hc
+
 namespace IsAddable
 
 /-- Adding an addable cell adds exactly that cell. -/
@@ -241,16 +252,6 @@ theorem addCell_erase (h : IsCorner μ c) : addCell (erase μ c) c = μ := by
 end IsCorner
 
 /-! ### Contents -/
-
-/-- The **content** of the cell `(i, j)`: its column index minus its row index, `j - i`. -/
-def cellContent (c : ℕ × ℕ) : ℤ := c.2 - c.1
-
-@[simp]
-theorem cellContent_mk (i j : ℕ) : cellContent (i, j) = j - i := (rfl)
-
-@[simp]
-theorem cellContent_swap (c : ℕ × ℕ) : cellContent c.swap = -cellContent c := by
-  simp [cellContent]
 
 namespace IsAddable
 
