@@ -47,8 +47,6 @@ Hurewicz map, splits its relative Hurewicz class into those of `p` and `q`.
 
 ## Main declarations
 
-* `TauCeti.cubeSplitHomeomorph`: the homeomorphism `Iⁿ⁺¹ ≃ₜ I × Iⁿ` splitting off the first
-  coordinate.
 * `TauCeti.cubeBoundaryPairHom`: a singular cube sending the boundary of the cube into the
   subspace, as a map of pairs `(Iᵐ, ∂Iᵐ) ⟶ (X, A)`.
 * `TauCeti.singularHomologyMap_cubeBoundaryPairHom_eq`: maps `(I × Iⁿ, ∂(I × Iⁿ)) → (X, A)`
@@ -99,23 +97,6 @@ lemma cubeBoundaryPairHom_fst_apply {P : TopPair.{w}} {m : ℕ} (c : C(I^(Fin m)
     TopPair.Hom.fst (cubeBoundaryPairHom c hc) z = c z.down :=
   (rfl)
 
-/-- The homeomorphism `Iⁿ⁺¹ ≃ₜ I × Iⁿ` splitting a point into its first coordinate and the
-remaining ones, `Fin.consEquiv` as a homeomorphism. -/
-def cubeSplitHomeomorph (n : ℕ) : (I^(Fin (n + 1))) ≃ₜ I × (I^(Fin n)) where
-  toEquiv := (Fin.consEquiv fun _ ↦ I).symm
-  continuous_toFun := (continuous_apply 0).prodMk continuous_id.finTail
-  continuous_invFun := continuous_fst.finCons (A := fun _ ↦ I) continuous_snd
-
-@[simp]
-lemma cubeSplitHomeomorph_apply {n : ℕ} (z : I^(Fin (n + 1))) :
-    cubeSplitHomeomorph n z = (z 0, Fin.tail z) :=
-  (rfl)
-
-@[simp]
-lemma cubeSplitHomeomorph_symm_apply {n : ℕ} (x : I × (I^(Fin n))) :
-    (cubeSplitHomeomorph n).symm x = Fin.cons x.1 x.2 :=
-  (rfl)
-
 /-- Split a point of `Iⁿ⁺¹` into its first coordinate and the remaining ones. -/
 def cubeSplit (n : ℕ) : C(ULift.{w} (I^(Fin (n + 1))), I × (I^(Fin n))) :=
   (cubeSplitHomeomorph n : C(_, _)).comp ⟨ULift.down, continuous_uliftDown⟩
@@ -123,13 +104,12 @@ def cubeSplit (n : ℕ) : C(ULift.{w} (I^(Fin (n + 1))), I × (I^(Fin n))) :=
 @[simp]
 lemma cubeSplit_apply {n : ℕ} (z : ULift.{w} (I^(Fin (n + 1)))) :
     cubeSplit n z = (z.down 0, Fin.tail z.down) :=
-  (rfl)
+  cubeSplitHomeomorph_apply z.down
 
 /-- `cubeSplit` sends the boundary of `Iⁿ⁺¹` to the boundary of `I × Iⁿ`. -/
 lemma cubeSplit_mem_prodBoundary {n : ℕ} {z : ULift.{w} (I^(Fin (n + 1)))}
-    (hz : z.down ∈ Cube.boundary (Fin (n + 1))) : cubeSplit n z ∈ Cube.prodBoundary (Fin n) := by
-  rw [Cube.mem_prodBoundary_iff]
-  exact Cube.boundary_fin_succ_iff.1 hz
+    (hz : z.down ∈ Cube.boundary (Fin (n + 1))) : cubeSplit n z ∈ Cube.prodBoundary (Fin n) :=
+  cubeSplitHomeomorph_mem_prodBoundary_iff.2 hz
 
 namespace RelGenLoop
 
@@ -168,7 +148,7 @@ lemma toCubeBoundaryPairHom_def (p : RelGenLoop (Fin n) X) :
 lemma toCubeBoundaryPairHom_fst_apply (p : RelGenLoop (Fin n) X)
     (z : (cubeBoundaryPair.{w} (n + 1)).fst) :
     TopPair.Hom.fst (toCubeBoundaryPairHom p) z = p (z.down 0, Fin.tail z.down) :=
-  (rfl)
+  congrArg p (cubeSplitHomeomorph_apply z.down)
 
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
 

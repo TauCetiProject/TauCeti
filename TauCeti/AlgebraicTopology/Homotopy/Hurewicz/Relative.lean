@@ -143,8 +143,8 @@ theorem exists_hurewicz_eq_singularHomologyMap (b : B) (hB : IsPathConnected B) 
   -- Read `c` on `I × Iⁿ` and deform it, through maps of pairs, to a relative cube at some `b'`.
   let g : C(I × (I^(Fin n)), Y) := c.comp ((cubeSplitHomeomorph n).symm : C(_, _))
   have hg : MapsTo g (Cube.prodBoundary (Fin n)) B := fun x hx ↦ by
-    have := @hc (Fin.cons x.1 x.2) (Cube.boundary_fin_succ_iff.2 (by simpa using hx))
-    rwa [TopPair.range_ofSubset_map, ← cubeSplitHomeomorph_symm_apply] at this
+    have := hc (cubeSplitHomeomorph_symm_mem_boundary hx)
+    rwa [TopPair.range_ofSubset_map] at this
   obtain ⟨b', -, p, hgp⟩ := exists_homotopicWith_relGenLoop g hg
   -- Transport that relative cube along a path in `B` from `b'` to `b`.
   let γ : Path b' b := (hB.joinedIn _ b'.2 _ b.2).joined_subtype.somePath
