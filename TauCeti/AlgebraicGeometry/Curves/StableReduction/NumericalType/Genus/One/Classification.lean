@@ -57,7 +57,7 @@ variable {T : NumericalType.{u}}
 
 /-! ### Complete classification of minimal numerical types of genus one -/
 
-/-- The twelve shape families into which the 34 minimal numerical types of arithmetic genus one
+/-- The fifteen shape families into which the 34 minimal numerical types of arithmetic genus one
 ([Stacks, Lemma 55.6.2](https://stacks.math.columbia.edu/tag/0C8T)) organize:
 
 * Case (1): a single component of component genus one;
@@ -77,8 +77,9 @@ variable {T : NumericalType.{u}}
   `IsGenusOneLongForkShape`;
 * Case (31): `t + 2 ≥ 6` rational components forming a double fork of shape
   `IsGenusOneAffineDShape`;
-* Cases (32)--(34): seven, eight, or nine rational components forming an affine `E₆`, `E₇`, or
-  `E₈` configuration. -/
+* Case (32): seven rational components forming an affine `E₆` configuration;
+* Case (33): eight rational components forming an affine `E₇` configuration;
+* Case (34): nine rational components forming an affine `E₈` configuration. -/
 def IsGenusOneMinimalShape (T : NumericalType.{u}) : Prop :=
   (Fintype.card T.Component = 1 ∧ ∀ i, T.genus i = 1 ∧ T.intersection i i = 0) ∨
   ((∀ i, T.genus i = 0 ∧ T.intersection i i = -(2 * (T.weight i : ℤ))) ∧

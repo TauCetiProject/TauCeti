@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.LinearAlgebra.Matrix.Symmetric
 -- the no-disconnected-cut criterion that discharges the `connected` field of a numerical type
 public import TauCeti.LinearAlgebra.Matrix.Connected
-import TauCeti.Data.PNat.Bounds
+import TauCeti.Data.Nat.Bounds
 import Mathlib.LinearAlgebra.Matrix.Notation
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.Linarith
@@ -619,8 +619,8 @@ lemma exists_weight_and_multiplicity_dvd_and_le_of_int (jw jm : T.Component)
     (∃ j, ∀ i, (T.weight j : ℕ) ∣ T.weight i ∧ (T.weight i : ℕ) ≤ 4 * T.weight j) ∧
       (∃ j, ∀ i, (T.multiplicity j : ℕ) ∣ T.multiplicity i ∧
         (T.multiplicity i : ℕ) ≤ 6 * T.multiplicity j) :=
-  ⟨⟨jw, fun i ↦ PNat.dvd_and_le_four_of_int (hw i)⟩,
-    ⟨jm, fun i ↦ PNat.dvd_and_le_six_of_int (hm i)⟩⟩
+  ⟨⟨jw, fun i ↦ Nat.dvd_and_le_four_of_int (hw i)⟩,
+    ⟨jm, fun i ↦ Nat.dvd_and_le_six_of_int (hm i)⟩⟩
 
 /-! ### Worked examples -/
 
