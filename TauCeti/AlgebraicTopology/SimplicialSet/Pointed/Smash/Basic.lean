@@ -8,12 +8,12 @@ module
 public import Mathlib.AlgebraicTopology.SimplicialSet.Monoidal
 public import Mathlib.CategoryTheory.Monoidal.Braided.Transport
 public import TauCeti.AlgebraicTopology.SimplicialSet.Pointed.Basic
-public import TauCeti.CategoryTheory.Category.Pointed.Smash
+public import TauCeti.CategoryTheory.Category.Pointed.Smash.Basic
 
 -- The simplices of the smash product are classes of pairs only after unfolding the
 -- pointed smash and the pointed-simplicial equivalence, whose bodies are not exposed.
 import all TauCeti.AlgebraicTopology.SimplicialSet.Pointed.Basic
-import all TauCeti.CategoryTheory.Category.Pointed.Smash
+import all TauCeti.CategoryTheory.Category.Pointed.Smash.Basic
 
 /-!
 # The smash product of pointed simplicial sets

@@ -29,6 +29,10 @@ No splitting hypothesis is needed.
 Evaluating the reversal of `p` at `0` gives the leading coefficient of `p`, which is nonzero
 when `p` is, and at a nonzero point `w` of a field it gives `w ^ d p(w⁻¹)`, where `d` is the
 degree of `p`: the reversal is `p` read in the reciprocal coordinate.
+
+The file also records how reversal interacts with products of monic polynomials and with the
+binomials `X ^ n - C a`, which together compute the reverse of a characteristic polynomial that
+factors into such binomials.
 -/
 
 public section
@@ -134,6 +138,30 @@ theorem rootMultiplicity_map_reverse_zero [Semiring R] [Ring S] (p : R[X])
     (p.reverse.map f).rootMultiplicity 0 = p.natDegree - (p.map f).natDegree := by
   rw [reverse, ← reflect_map]
   exact (p.map f).rootMultiplicity_reflect_zero hp natDegree_map_le
+
+/-- The reverse of `X ^ n - C a` is `1 - C a * X ^ n`. -/
+@[simp]
+theorem reverse_X_pow_sub_C [Ring R] (n : ℕ) (a : R) :
+    (X ^ n - C a).reverse = 1 - C a * X ^ n := by
+  nontriviality R
+  have hX : (X ^ n : R[X]).reverse = 1 := by
+    rw [← mul_one (X ^ n), reverse_X_pow_mul, ← C_1, reverse_C]
+  rw [sub_eq_add_neg, ← C_neg, reverse_add_C, hX, natDegree_X_pow, C_neg, neg_mul,
+    ← sub_eq_add_neg]
+
+/-- The reverse of a product of monic polynomials is the product of their reverses. -/
+theorem reverse_multiset_prod_of_monic [CommSemiring R] {s : Multiset R[X]}
+    (hs : ∀ p ∈ s, p.Monic) : s.prod.reverse = (s.map reverse).prod := by
+  nontriviality R
+  induction s using Multiset.induction_on with
+  | empty => rw [Multiset.prod_zero, Multiset.map_zero, Multiset.prod_zero, ← C_1, reverse_C]
+  | cons p s ih =>
+    have hp : p.Monic := hs p (Multiset.mem_cons_self p s)
+    have hs' : ∀ q ∈ s, q.Monic := fun q hq => hs q (Multiset.mem_cons_of_mem hq)
+    have hprod : s.prod.Monic := by simpa using monic_multiset_prod_of_monic s id hs'
+    rw [Multiset.prod_cons, Multiset.map_cons, Multiset.prod_cons,
+      reverse_mul (by rw [hp.leadingCoeff, hprod.leadingCoeff, one_mul]; exact one_ne_zero),
+      ih hs']
 
 /-- The reversal of a polynomial takes the value of the leading coefficient at `0`. -/
 @[simp]

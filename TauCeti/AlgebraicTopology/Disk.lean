@@ -40,7 +40,9 @@ boundary going to the unit sphere (`TauCeti.diskHomeomorphClosedBall`); this is 
 compared with the domains of characteristic maps of CW complexes and with the cube.  Composing it
 with the affine homeomorphism `TauCeti.cubeHomeomorphClosedBall` of the cube onto the same ball
 identifies the disk pair with the pair `TauCeti.cubeBoundaryPair n = (Iⁿ, ∂Iⁿ)` formed by the cube
-and its boundary (`TauCeti.diskBoundaryPairIsoCube`).
+and its boundary (`TauCeti.diskBoundaryPairIsoCube`).  A singular cube of a pair sending the
+boundary of the cube into the subspace is a map of pairs out of the cube pair
+(`TauCeti.cubeBoundaryPairHom`).
 -/
 
 public section
@@ -284,6 +286,29 @@ variable (n : ℕ)
 abbrev cubeBoundaryPair : TopPair.{u} :=
   TopPair.ofSubset (X := TopCat.of (ULift.{u} (I^(Fin n))))
     (ULift.down ⁻¹' Cube.boundary (Fin n))
+
+/-- A singular `m`-cube of the ambient space of a pair `P` sending the boundary of the cube into
+the subspace, as a map of pairs `(Iᵐ, ∂Iᵐ) ⟶ P`. -/
+def cubeBoundaryPairHom {P : TopPair.{u}} {m : ℕ} (c : C(I^(Fin m), P.fst))
+    (hc : Set.MapsTo c (Cube.boundary (Fin m)) (Set.range P.map)) :
+    cubeBoundaryPair.{u} m ⟶ P :=
+  TopPair.ofHom (TopCat.ofHom (c.comp ⟨ULift.down, continuous_uliftDown⟩))
+    (TopCat.ofHom (P.liftSnd ((c.comp ⟨ULift.down, continuous_uliftDown⟩).comp
+      ⟨Subtype.val, continuous_subtype_val⟩) fun z ↦ hc z.2))
+    (by ext z; exact TopPair.map_liftSnd _ _ z)
+
+@[simp]
+lemma cubeBoundaryPairHom_fst_apply {P : TopPair.{u}} {m : ℕ} (c : C(I^(Fin m), P.fst))
+    (hc : Set.MapsTo c (Cube.boundary (Fin m)) (Set.range P.map))
+    (z : (cubeBoundaryPair.{u} m).fst) :
+    TopPair.Hom.fst (cubeBoundaryPairHom c hc) z = c z.down :=
+  (rfl)
+
+/-- The ambient map of `TauCeti.cubeBoundaryPairHom c hc` is `c` precomposed with `ULift.down`. -/
+lemma cubeBoundaryPairHom_fst_hom {P : TopPair.{u}} {m : ℕ} (c : C(I^(Fin m), P.fst))
+    (hc : Set.MapsTo c (Cube.boundary (Fin m)) (Set.range P.map)) :
+    (TopPair.Hom.fst (cubeBoundaryPairHom c hc)).hom = c.comp ⟨ULift.down, continuous_uliftDown⟩ :=
+  (rfl)
 
 /-- The homeomorphism from the Euclidean disk `Dⁿ` onto the cube `Iⁿ`: the radial rescaling of the
 disk onto the closed unit ball of the sup norm on `Fin n → ℝ`, followed by the inverse of the affine

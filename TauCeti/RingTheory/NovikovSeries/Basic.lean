@@ -29,15 +29,20 @@ one-form whose periods are recorded by `N`.
 Neither injectivity nor discreteness of `N` is assumed: finitely many nonzero coefficients may
 share a period value, and the periods of an infinite support tend to `+∞`.
 
-This file sets up the carrier and its additive structure, and the finiteness facts on which the
-convolution product rests. The design of the additive API follows that of Mathlib's `HahnSeries`
-in `Mathlib/RingTheory/HahnSeries/Addition.lean`; no code is copied from there.
+This file sets up the carrier and its additive structure, the monomials, and the finiteness facts
+on which the convolution product of `TauCeti.RingTheory.NovikovSeries.Multiplication` rests. The
+design of the additive API follows that of Mathlib's `HahnSeries` in
+`Mathlib/RingTheory/HahnSeries/Addition.lean`; no code is copied from there.
 
 ## Main definitions
 
 * `TauCeti.NovikovSeries R H N`: Novikov series over `R` on `H` for the period map `N`.
 * `TauCeti.NovikovSeries.ofFinsupp`: a finitely supported coefficient function as a Novikov
   series.
+* `TauCeti.NovikovSeries.single`: the monomial `r e^h`, with coefficient `r` at `h` and `0`
+  elsewhere.
+* `TauCeti.NovikovSeries.trunc C a`: the finitely supported truncation of `a` below the period
+  cutoff `C`.
 
 ## Main results
 
@@ -50,6 +55,9 @@ in `Mathlib/RingTheory/HahnSeries/Addition.lean`; no code is copied from there.
   support exponents whose sum has period below a fixed cutoff form a finite set. In particular
   (`TauCeti.NovikovSeries.finite_setOf_add_eq`) each coefficient of the convolution is a finite
   sum.
+* `TauCeti.NovikovSeries.finite_setOf_period_add_add_lt` and
+  `TauCeti.NovikovSeries.finite_setOf_add_add_eq`: the same uniform cutoff finiteness for triples
+  of support exponents, on which associativity of the convolution rests.
 * `TauCeti.NovikovSeries.ofFinsupp_surjective_iff`: over a nontrivial coefficient type, every
   Novikov series is finitely supported if and only if `N = 0`.
 
@@ -189,6 +197,33 @@ theorem finite_setOf_add_eq_mul_ne_zero {R : Type*} [MulZeroClass R]
     {p : H × H | p.1 + p.2 = h ∧ a.coeff p.1 * b.coeff p.2 ≠ 0}.Finite :=
   (finite_setOf_add_eq a b h).subset fun _ hp =>
     ⟨hp.1, left_ne_zero_of_mul hp.2, right_ne_zero_of_mul hp.2⟩
+
+/-- Uniform cutoff finiteness for triple products: for Novikov series `a`, `b` and `c`, only
+finitely many triples `(u, v, w)` of support exponents have `N (u + v + w) < C`. -/
+theorem finite_setOf_period_add_add_lt {T : Type*} [Zero T] (a : NovikovSeries R H N)
+    (b : NovikovSeries S H N) (c : NovikovSeries T H N) (C : ℝ) :
+    {t : H × H × H | N (t.1 + t.2.1 + t.2.2) < C ∧ a.coeff t.1 ≠ 0 ∧ b.coeff t.2.1 ≠ 0 ∧
+      c.coeff t.2.2 ≠ 0}.Finite := by
+  obtain ⟨ma, hma⟩ := a.bddBelow_image_support
+  obtain ⟨mb, hmb⟩ := b.bddBelow_image_support
+  obtain ⟨mc, hmc⟩ := c.bddBelow_image_support
+  refine ((a.finite_lt (C - mb - mc)).prod
+    ((b.finite_lt (C - ma - mc)).prod (c.finite_lt (C - ma - mb)))).subset ?_
+  rintro ⟨u, v, w⟩ ⟨huvw, hu, hv, hw⟩
+  have hu' : ma ≤ N u := hma ⟨u, hu, rfl⟩
+  have hv' : mb ≤ N v := hmb ⟨v, hv, rfl⟩
+  have hw' : mc ≤ N w := hmc ⟨w, hw, rfl⟩
+  rw [map_add, map_add] at huvw
+  exact ⟨⟨hu, by linarith⟩, ⟨hv, by linarith⟩, ⟨hw, by linarith⟩⟩
+
+/-- For Novikov series `a`, `b` and `c` and an exponent `h`, only finitely many triples
+`(u, v, w)` with `u + v + w = h` have all three coefficients nonzero. -/
+theorem finite_setOf_add_add_eq {T : Type*} [Zero T] (a : NovikovSeries R H N)
+    (b : NovikovSeries S H N) (c : NovikovSeries T H N) (h : H) :
+    {t : H × H × H | t.1 + t.2.1 + t.2.2 = h ∧ a.coeff t.1 ≠ 0 ∧ b.coeff t.2.1 ≠ 0 ∧
+      c.coeff t.2.2 ≠ 0}.Finite :=
+  (finite_setOf_period_add_add_lt a b c (N h + 1)).subset fun t ht =>
+    ⟨by rw [ht.1]; exact lt_add_one _, ht.2⟩
 
 end Convolution
 
@@ -357,6 +392,162 @@ theorem mem_range_ofFinsupp_iff {a : NovikovSeries R H N} :
   simp
 
 end ofFinsupp
+
+section Single
+
+variable {R H : Type*} [AddZeroClass H] {N : H →+ ℝ}
+
+section Zero
+
+variable [Zero R]
+
+open scoped Classical in
+/-- The monomial `r e^h`: the Novikov series with coefficient `r` at `h` and `0` elsewhere. -/
+def single (h : H) (r : R) : NovikovSeries R H N where
+  coeff := Pi.single h r
+  finite_lt _ := (finite_singleton h).subset fun _ hg => mem_singleton_iff.2 <| by
+    by_contra hgh
+    exact hg.1 (by simp [hgh])
+
+theorem coeff_single [DecidableEq H] (h : H) (r : R) :
+    (single h r : NovikovSeries R H N).coeff = Pi.single h r := by
+  ext g
+  simp only [single, Pi.single_apply]
+  congr
+
+@[simp]
+theorem coeff_single_same (h : H) (r : R) : (single h r : NovikovSeries R H N).coeff h = r := by
+  classical
+  rw [coeff_single, Pi.single_eq_same]
+
+@[simp]
+theorem coeff_single_of_ne {g h : H} (hgh : g ≠ h) (r : R) :
+    (single h r : NovikovSeries R H N).coeff g = 0 := by
+  classical
+  rw [coeff_single, Pi.single_eq_of_ne hgh]
+
+theorem support_single_subset (h : H) (r : R) :
+    (single h r : NovikovSeries R H N).support ⊆ {h} := fun g hg => by
+  by_contra hgh
+  exact hg (coeff_single_of_ne hgh r)
+
+@[simp]
+theorem support_single_of_ne {h : H} {r : R} (hr : r ≠ 0) :
+    (single h r : NovikovSeries R H N).support = {h} := by
+  classical
+  rw [support, coeff_single, Pi.support_single_of_ne hr]
+
+@[simp]
+theorem single_zero (h : H) : (single h 0 : NovikovSeries R H N) = 0 := by
+  ext g
+  by_cases hgh : g = h
+  · rw [hgh, coeff_single_same, coeff_zero]
+  · rw [coeff_single_of_ne hgh, coeff_zero]
+
+theorem single_injective (h : H) : Injective (single h : R → NovikovSeries R H N) :=
+  fun r s hrs => by rw [← coeff_single_same (N := N) h r, hrs, coeff_single_same]
+
+@[simp]
+theorem single_eq_zero_iff {h : H} {r : R} : (single h r : NovikovSeries R H N) = 0 ↔ r = 0 :=
+  ⟨fun hr => single_injective h (hr.trans (single_zero h).symm), fun hr => hr ▸ single_zero h⟩
+
+end Zero
+
+@[simp]
+theorem single_add [AddZeroClass R] (h : H) (r s : R) :
+    (single h (r + s) : NovikovSeries R H N) = single h r + single h s := by
+  ext g
+  by_cases hgh : g = h
+  · rw [hgh, coeff_add, coeff_single_same, coeff_single_same, coeff_single_same]
+  · rw [coeff_add, coeff_single_of_ne hgh, coeff_single_of_ne hgh, coeff_single_of_ne hgh, add_zero]
+
+@[simp]
+theorem single_neg [NegZeroClass R] (h : H) (r : R) :
+    (single h (-r) : NovikovSeries R H N) = -single h r := by
+  classical
+  refine coeff_injective ?_
+  rw [coeff_neg', coeff_single, coeff_single]
+  exact Pi.single_op (fun _ => (Neg.neg : R → R)) (fun _ => neg_zero) h r
+
+@[simp]
+theorem single_sub [AddGroup R] (h : H) (r s : R) :
+    (single h (r - s) : NovikovSeries R H N) = single h r - single h s := by
+  rw [sub_eq_add_neg, single_add, single_neg, sub_eq_add_neg]
+
+theorem smul_single {S : Type*} [Zero R] [SMulZeroClass S R] (s : S) (h : H) (r : R) :
+    s • (single h r : NovikovSeries R H N) = single h (s • r) := by
+  ext g
+  by_cases hgh : g = h
+  · rw [hgh, coeff_smul, coeff_single_same, coeff_single_same]
+  · rw [coeff_smul, coeff_single_of_ne hgh, coeff_single_of_ne hgh, smul_zero]
+
+@[simp]
+theorem ofFinsupp_single [AddMonoid R] (h : H) (r : R) :
+    ofFinsupp (N := N) (Finsupp.single h r) = single h r := by
+  classical
+  ext g
+  rw [coeff_ofFinsupp, coeff_single, Finsupp.single_eq_pi_single]
+
+end Single
+
+section Truncation
+
+variable {R H : Type*} [AddZeroClass H] {N : H →+ ℝ} {C : ℝ}
+
+section Zero
+
+variable [Zero R] {a : NovikovSeries R H N}
+
+/-- The truncation of a Novikov series `a` below the period cutoff `C`: the finitely supported
+coefficient function that agrees with `a` at exponents of period `< C` and vanishes elsewhere. -/
+def trunc (C : ℝ) (a : NovikovSeries R H N) : H →₀ R :=
+  Finsupp.ofSupportFinite ({h | N h < C}.indicator a.coeff) <| by
+    rw [support_indicator]
+    exact (a.finite_lt C).subset fun _ hh => ⟨hh.2, hh.1⟩
+
+@[simp]
+theorem trunc_apply (C : ℝ) (a : NovikovSeries R H N) (h : H) :
+    trunc C a h = if N h < C then a.coeff h else 0 := by
+  simp [trunc, Finsupp.ofSupportFinite_coe, indicator_apply]
+
+theorem trunc_apply_of_lt {h : H} (hh : N h < C) : trunc C a h = a.coeff h := by
+  simp [hh]
+
+theorem trunc_apply_of_le {h : H} (hh : C ≤ N h) : trunc C a h = 0 := by
+  simp [hh.not_gt]
+
+@[simp]
+theorem trunc_zero (C : ℝ) : trunc C (0 : NovikovSeries R H N) = 0 := by
+  ext h
+  simp
+
+end Zero
+
+@[simp]
+theorem trunc_add [AddZeroClass R] (C : ℝ) (a b : NovikovSeries R H N) :
+    trunc C (a + b) = trunc C a + trunc C b := by
+  ext h
+  by_cases hh : N h < C <;> simp [hh]
+
+@[simp]
+theorem trunc_neg [NegZeroClass R] (C : ℝ) (a : NovikovSeries R H N) :
+    trunc C (-a) = -trunc C a := by
+  ext h
+  by_cases hh : N h < C <;> simp [hh]
+
+@[simp]
+theorem trunc_sub [AddGroup R] (C : ℝ) (a b : NovikovSeries R H N) :
+    trunc C (a - b) = trunc C a - trunc C b := by
+  ext h
+  by_cases hh : N h < C <;> simp [hh]
+
+@[simp]
+theorem trunc_smul {S : Type*} [Zero R] [SMulZeroClass S R] (C : ℝ) (s : S)
+    (a : NovikovSeries R H N) : trunc C (s • a) = s • trunc C a := by
+  ext h
+  by_cases hh : N h < C <;> simp [hh]
+
+end Truncation
 
 section Surjective
 
