@@ -36,6 +36,7 @@ the comparison of the two carriers uses `CliffordAlgebra.equivBaseChange` and
 
 * `TauCeti.baseChange_scalarTrace_star_mul_self`: the weighted squared-coefficient formula.
 * `TauCeti.baseChange_scalarTrace_star_mul_self_nonneg`: positivity on the tensor carrier.
+* `TauCeti.exists_ne_zero_scalarTrace_star_mul_self_eq_zero`: a real obstruction to faithfulness.
 * `TauCeti.scalarTrace_conjStar_mul_self_eq_zero_iff`: faithfulness on the Clifford carrier.
 * `TauCeti.scalarTrace_conjStar_faithful_iff`: the intrinsic negative-definiteness criterion.
 
@@ -118,6 +119,16 @@ theorem baseChange_scalarTrace_star_mul_self_eq_zero_iff [Finite I]
   simpa only [map_zero, Finsupp.zero_apply] using
     Complex.normSq_eq_zero.mp ((mul_eq_zero.mp hs).resolve_right hpos.ne')
 
+/-- A nonzero vector of nonnegative quadratic value gives a nonzero real Clifford element
+of zero squared trace norm. No finite-dimensionality hypothesis is needed. -/
+theorem exists_ne_zero_scalarTrace_star_mul_self_eq_zero {v : V} (hv : v ≠ 0)
+    (hQ : 0 ≤ Q v) : ∃ y : CliffordAlgebra Q, y ≠ 0 ∧ scalarTrace Q (star y * y) = 0 := by
+  refine ⟨algebraMap ℝ _ (Real.sqrt (Q v)) + ι Q v, ?_, ?_⟩
+  · intro hy
+    exact hv (by simpa using congrArg (ιInv Q) hy)
+  · simp [add_mul, mul_add, Algebra.algebraMap_eq_smul_one,
+      ← mul_smul, Real.mul_self_sqrt hQ]
+
 variable [FiniteDimensional ℝ V]
 
 /-- Positivity on the native base-changed Clifford carrier for every nonpositive real quadratic
@@ -149,26 +160,13 @@ theorem scalarTrace_conjStar_faithful_iff :
     (∀ x : CliffordAlgebra (Q.baseChange ℂ),
       scalarTrace (Q.baseChange ℂ) (conjStar Q x * x) = 0 ↔ x = 0) ↔ (-Q).PosDef := by
   refine ⟨fun h v hv ↦ ?_, fun h x ↦ scalarTrace_conjStar_mul_self_eq_zero_iff h⟩
-  have hne : Q v ≠ 0 := by
-    intro hzero
-    have hx : ofBaseChangeAux ℂ Q (ι Q v) = 0 := (h _).mp (by
-      simp [neg_mul, ι_sq_scalar, hzero])
-    have hi : ι Q v = 0 := (ofBaseChangeAux_injective (A := ℂ) Q) (by simpa using hx)
-    exact hv ((CliffordAlgebra.ι_eq_zero_iff Q v).mp hi)
-  have hnpos : ¬ 0 < Q v := by
-    intro hpos
-    let a := algebraMap ℝ (CliffordAlgebra Q) (Real.sqrt (Q v))
-    let y := a + ι Q v
-    have hy : scalarTrace Q (star y * y) = 0 := by
-      simp [y, a, add_mul, mul_add, Algebra.algebraMap_eq_smul_one,
-        ← mul_smul, Real.mul_self_sqrt hpos.le]
-    have hx := (h (ofBaseChangeAux ℂ Q y)).mp (by
-      rw [conjStar_ofBaseChangeAux, ← map_mul, scalarTrace_ofBaseChangeAux, hy, map_zero])
-    have htrace := congrArg (scalarTrace (Q.baseChange ℂ)) hx
-    have hsqrt : Real.sqrt (Q v) = 0 := by
-      rw [scalarTrace_ofBaseChangeAux] at htrace
-      simpa [y, a] using htrace
-    exact (Real.sqrt_pos.mpr hpos).ne' hsqrt
-  exact neg_pos.mpr (lt_of_le_of_ne (le_of_not_gt hnpos) hne)
+  apply neg_pos.mpr
+  by_contra hneg
+  obtain ⟨y, hy, htrace⟩ :=
+    exists_ne_zero_scalarTrace_star_mul_self_eq_zero hv (le_of_not_gt hneg)
+  apply hy
+  apply ofBaseChangeAux_injective (A := ℂ) Q
+  simpa only [map_zero] using (h (ofBaseChangeAux ℂ Q y)).mp (by
+    rw [conjStar_ofBaseChangeAux, ← map_mul, scalarTrace_ofBaseChangeAux, htrace, map_zero])
 
 end TauCeti
