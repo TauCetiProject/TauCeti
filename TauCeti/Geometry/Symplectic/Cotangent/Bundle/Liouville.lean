@@ -212,6 +212,12 @@ form `TauCeti.strongDualCotangentSymplecticForm`, that is `Σ dqᵢ ∧ dpᵢ`. 
 def symplecticForm : SmoothTwoForm (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (CotangentBundle I M) :=
   -mextDerivₗ (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) 1 (liouvilleForm I M)
 
+/-- The canonical symplectic form is minus the bundled exterior derivative of the Liouville
+form. -/
+theorem symplecticForm_eq_neg_mextDerivₗ :
+    symplecticForm I M = -mextDerivₗ (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) 1 (liouvilleForm I M) :=
+  (rfl)
+
 /-- The canonical symplectic form is minus the exterior derivative of the Liouville form. -/
 theorem symplecticForm_eq_neg_mextDeriv :
     (symplecticForm I M).1 = -mextDeriv (liouvilleForm I M).1 := by
