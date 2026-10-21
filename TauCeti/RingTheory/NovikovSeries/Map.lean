@@ -17,8 +17,8 @@ public import TauCeti.RingTheory.NovikovSeries.Basic
 Let `N : H →+ ℝ` and `N' : H' →+ ℝ` be period homomorphisms and `φ : H →+ H'` a homomorphism of
 exponent groups that rescales periods by a positive constant: `N' (φ h) = c * N h` for some
 `c > 0`. For instance, the inclusion of a subgroup `K ≤ H`, with the restricted period map
-`N.comp K.subtype`, rescales periods by `c = 1`; such inclusions relate the deck groups of a
-finite cyclic covering and of its base.
+`N.comp K.subtype`, rescales periods by `c = 1`. For a finite cyclic covering, the exponent
+group of the cover is such a finite-index subgroup of the exponent group of the base.
 
 Together with an additive map `ρ : R →+ S` of coefficients, `φ` pushes a Novikov series forward
 by summing coefficients along the fibres of `φ`:
@@ -199,6 +199,8 @@ theorem coeff_map_eq_zero_of_lt {c C : ℝ} (hc : 0 ≤ c) (hcφ : ∀ h, N' (φ
   exact mem_support.1 hh (ha h (lt_of_not_ge fun hCh => hh'.not_ge
     (mul_le_mul_of_nonneg_left hCh hc)))
 
+/-- Pushing forward along the identity coefficient map and the identity exponent homomorphism is
+the identity. -/
 @[simp]
 theorem map_id {M : Type*} [AddCommMonoid M] :
     map (AddMonoidHom.id M) (AddMonoidHom.id H) exists_period_rescale_id =
@@ -287,6 +289,7 @@ def comap (φ : H →+ H') (hφ : ∃ c > 0, ∀ h, N' (φ h) = c * N h)
 
 variable (φ : H →+ H') (hφ : ∃ c > 0, ∀ h, N' (φ h) = c * N h) (hker : (φ.ker : Set H).Finite)
 
+/-- The coefficient of a restriction at `h` is the coefficient of the series at `φ h`. -/
 @[simp]
 theorem coeff_comap (b : NovikovSeries R H' N') (h : H) :
     (comap φ hφ hker b).coeff h = b.coeff (φ h) := by
@@ -307,6 +310,7 @@ theorem coeff_comap_eq_zero_of_lt {c C : ℝ} (hc : 0 < c) (hcφ : ∀ h, N' (φ
     (hh : N h < C) : (comap φ hφ hker b).coeff h = 0 :=
   hb _ ((hcφ h).symm ▸ mul_lt_mul_of_pos_left hh hc)
 
+/-- Restricting along the identity exponent homomorphism is the identity. -/
 @[simp]
 theorem comap_id :
     comap (AddMonoidHom.id H) exists_period_rescale_id (by simp [AddMonoidHom.ker_id]) =
