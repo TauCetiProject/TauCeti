@@ -68,38 +68,15 @@ namespace Equiv.Perm
 
 variable {n : ℕ}
 
-/-- The value of an adjacent transposition, on the underlying natural numbers. -/
-private theorem val_transposition_apply (i : Fin (n - 1)) (x : Fin n) :
-    (transposition i x : ℕ) =
-      if (x : ℕ) = i then (i : ℕ) + 1 else if (x : ℕ) = (i : ℕ) + 1 then (i : ℕ) else (x : ℕ) := by
-  rw [transposition_eq_swap, Equiv.swap_apply_def]
-  split_ifs <;> simp_all [Fin.ext_iff]
-
-private theorem transposition_mul_self (i : Fin (n - 1)) :
-    transposition i * transposition i = 1 := by
-  rw [transposition_eq_swap, Equiv.swap_mul_self]
-
-private theorem transposition_mul_transposition_mul (i : Fin (n - 1)) (σ : Equiv.Perm (Fin n)) :
-    transposition i * (transposition i * σ) = σ := by
-  rw [← mul_assoc, transposition_mul_self, one_mul]
-
-private theorem transposition_ne_transposition {i j : Fin (n - 1)} (h : i ≠ j) :
-    transposition i ≠ transposition j := by
-  intro hij
-  have := congrArg (fun σ : Equiv.Perm (Fin n) ↦ (σ (strand i) : ℕ)) hij
-  simp only [val_transposition_apply, val_strand] at this
-  have hv : (i : ℕ) ≠ j := fun hv ↦ h (Fin.ext hv)
-  split_ifs at this <;> omega
-
 /-- The product of two adjacent transpositions has the order prescribed by the type-`A` Coxeter
 matrix. -/
 private theorem orderOf_transposition_mul_transposition (i j : Fin (n - 1)) :
     orderOf (transposition i * transposition j) = CoxeterMatrix.A (n - 1) i j := by
   rcases eq_or_ne i j with rfl | hij
-  · simp [transposition_mul_self]
+  · simp
   have hne : transposition i * transposition j ≠ 1 := fun h ↦
-    transposition_ne_transposition hij (mul_eq_one_iff_eq_inv.mp h |>.trans
-      (inv_eq_of_mul_eq_one_right (transposition_mul_self j)))
+    hij (transposition_injective (mul_eq_one_iff_eq_inv.mp h |>.trans
+      (inv_eq_of_mul_eq_one_right (transposition_mul_self j))))
   have hv : (i : ℕ) ≠ j := fun hv ↦ hij (Fin.ext hv)
   by_cases hadj : (i : ℕ) + 1 = j ∨ (j : ℕ) + 1 = i
   · rw [coxeterMatrixA_eq_three hadj]
@@ -112,22 +89,13 @@ private theorem orderOf_transposition_mul_transposition (i j : Fin (n - 1)) :
             (transposition i * transposition j * transposition i) := by
           rw [transposition_braid hadj]
       _ = 1 := by
-          simp only [mul_assoc, transposition_mul_transposition_mul, transposition_mul_self]
+          simp only [← mul_assoc, mul_transposition_mul_transposition, transposition_mul_self]
   · have h2 : (i : ℕ) + 2 ≤ j ∨ (j : ℕ) + 2 ≤ i := by omega
     rw [coxeterMatrixA_eq_two h2]
     refine orderOf_eq_prime ?_ hne
     rw [pow_two, mul_assoc, ← mul_assoc (transposition j),
       ← transposition_mul_transposition_comm h2, mul_assoc, transposition_mul_self, mul_one,
       transposition_mul_self]
-
-/-- An adjacent transposition preserves the relative order of every pair of letters except the
-two letters it swaps. -/
-private theorem eq_strand_of_transposition_lt {a : Fin (n - 1)} {x y : Fin n} (hxy : x < y)
-    (h : transposition a y < transposition a x) : x = strand a ∧ y = strandSucc a := by
-  rw [Fin.lt_def] at hxy h
-  simp only [val_transposition_apply] at h
-  simp only [Fin.ext_iff, val_strand, val_strandSucc]
-  split_ifs at h <;> omega
 
 /-- **Exchange for adjacent transpositions.** If the product `σ` of a word in the adjacent
 transpositions reverses the order of the letters `i` and `i + 1`, then deleting one letter of the
@@ -145,12 +113,10 @@ private theorem exists_prod_eraseIdx_eq_mul_transposition (ω : List (Fin (n - 1
   | cons a ω ih =>
     simp only [List.map_cons, List.prod_cons, Equiv.Perm.coe_mul, Function.comp_apply] at h ⊢
     set τ := (ω.map transposition).prod
-    by_cases hτ : τ (strandSucc i) < τ (strand i)
+    rcases (τ.injective.ne (strand_ne_strandSucc i).symm).lt_or_gt with hτ | hlt
     · obtain ⟨j, hj, he⟩ := ih hτ
       exact ⟨j + 1, by simpa using hj, by simp [he, mul_assoc]⟩
-    · have hlt : τ (strand i) < τ (strandSucc i) :=
-        lt_of_le_of_ne (not_lt.mp hτ) (τ.injective.ne (strand_ne_strandSucc i))
-      obtain ⟨h₁, h₂⟩ := eq_strand_of_transposition_lt hlt h
+    · obtain ⟨h₁, h₂⟩ := eq_strand_of_transposition_lt hlt h
       have hcomm : τ * transposition i = transposition a * τ := by
         rw [transposition_eq_swap, Equiv.mul_swap_eq_swap_mul, h₁, h₂, ← transposition_eq_swap]
       refine ⟨0, by simp, ?_⟩
@@ -207,20 +173,18 @@ private theorem exchange_toPerm (ω : List (Fin (n - 1))) (i : Fin (n - 1))
         (CoxeterMatrix.A (n - 1)).toCoxeterSystem.simple i) := by
   simp only [map_mul, toPerm_simple, toPerm_wordProd] at hω hi ⊢
   set σ := (ω.map transposition).prod
-  by_cases hd : σ (strandSucc i) < σ (strand i)
+  rcases (σ.injective.ne (strand_ne_strandSucc i).symm).lt_or_gt with hd | hlt
   · exact exists_prod_eraseIdx_eq_mul_transposition ω hd
   -- Otherwise `σ * s i` reverses the pair, and deleting a letter from one of its shortest words
   -- would spell `σ` with fewer than `ω.length` letters.
   exfalso
-  have hlt : σ (strand i) < σ (strandSucc i) :=
-    lt_of_le_of_ne (not_lt.mp hd) (σ.injective.ne (strand_ne_strandSucc i))
   obtain ⟨ω', hω', hlen⟩ := (isLeast_wordLength (σ * transposition i)).1
   rw [toPerm_wordProd] at hω'
   have hrev : (ω'.map transposition).prod (strandSucc i) <
       (ω'.map transposition).prod (strand i) := by
-    simpa [hω', transposition_eq_swap] using hlt
+    simpa [hω'] using hlt
   obtain ⟨j, hj, he⟩ := exists_prod_eraseIdx_eq_mul_transposition ω' hrev
-  rw [hω', mul_assoc, transposition_mul_self, mul_one] at he
+  rw [hω', mul_transposition_mul_transposition] at he
   have hle := (isLeast_wordLength σ).2 ⟨ω'.eraseIdx j, by rw [toPerm_wordProd, he], rfl⟩
   rw [List.length_eraseIdx_of_lt hj] at hle
   omega
@@ -268,12 +232,12 @@ theorem isRightDescent_coxeterSystem_iff {σ : Equiv.Perm (Fin n)} {i : Fin (n -
     (coxeterSystem n).IsRightDescent σ i ↔ σ (strandSucc i) < σ (strand i) := by
   refine ⟨fun hd ↦ ?_, fun h ↦ by
     simpa [CoxeterSystem.IsRightDescent] using length_mul_transposition_lt h⟩
-  by_contra h
-  have hlt : σ (strand i) < σ (strandSucc i) :=
-    lt_of_le_of_ne (not_lt.mp h) (σ.injective.ne (strand_ne_strandSucc i))
+  rcases (σ.injective.ne (strand_ne_strandSucc i).symm).lt_or_gt with h | hlt
+  · exact h
+  exfalso
   have hlen := length_mul_transposition_lt (σ := σ * transposition i) (i := i)
-    (by simpa [transposition_eq_swap] using hlt)
-  rw [mul_assoc, transposition_mul_self, mul_one] at hlen
+    (by simpa using hlt)
+  rw [mul_transposition_mul_transposition] at hlen
   rw [CoxeterSystem.IsRightDescent, coxeterSystem_simple] at hd
   omega
 
@@ -303,25 +267,23 @@ private theorem card_inversions_mul_transposition {σ : Equiv.Perm (Fin n)} {i :
       Equiv.prodCongr_apply, Prod.map_apply, hτ, Equiv.Perm.coe_mul, Function.comp_apply]
     constructor
     · rintro ⟨hxy, hσ⟩
-      by_cases hτxy : τ x < τ y
+      rcases (τ.injective.ne hxy.ne).lt_or_gt with hτxy | hyx
       · exact .inr ⟨hτxy, hσ⟩
-      · left
-        have hyx : τ y < τ x := lt_of_le_of_ne (not_lt.mp hτxy) (τ.injective.ne hxy.ne')
-        exact eq_strand_of_transposition_lt hxy (by simpa [τ, transposition_eq_swap] using hyx)
+      · exact .inl (eq_strand_of_transposition_lt hxy hyx)
     · rintro (⟨rfl, rfl⟩ | ⟨hτxy, hσ⟩)
       · refine ⟨Fin.lt_def.mpr (by simp), ?_⟩
-        simpa [τ, transposition_eq_swap] using h
+        simpa [τ] using h
       · refine ⟨?_, hσ⟩
         by_contra hxy
         have hyx : y < x := lt_of_le_of_ne (not_lt.mp hxy) fun hyx ↦ by
           simp [hyx] at hτxy
         obtain ⟨rfl, rfl⟩ := eq_strand_of_transposition_lt hyx hτxy
-        simp only [τ, transposition_eq_swap, Equiv.swap_apply_left, Equiv.swap_apply_right] at hσ
+        simp only [τ, transposition_apply_strand, transposition_apply_strandSucc] at hσ
         exact lt_asymm hσ h
   rw [hset, Finset.card_insert_of_notMem, Finset.card_map]
   rw [Finset.mem_map_equiv, Finset.mem_filter]
-  simp only [e, Equiv.prodCongr_symm, Equiv.prodCongr_apply, Prod.map_apply, τ,
-    transposition_eq_swap]
+  simp only [e, Equiv.prodCongr_symm, Equiv.prodCongr_apply, Prod.map_apply, hτ, τ,
+    transposition_apply_strand, transposition_apply_strandSucc]
   rintro ⟨-, hlt, -⟩
   exact lt_asymm hlt (Fin.lt_def.mpr (by simp))
 
@@ -347,8 +309,8 @@ theorem length_coxeterSystem (σ : Equiv.Perm (Fin n)) :
       rw [coxeterSystem_simple] at this hi
       omega
     have hcard := card_inversions_mul_transposition (σ := σ * transposition i) (i := i)
-      (by simpa [transposition_eq_swap] using hdesc)
-    rw [mul_assoc, transposition_mul_self, mul_one] at hcard
+      (by simpa using hdesc)
+    rw [mul_transposition_mul_transposition] at hcard
     rw [hcard, ← ih _ hlen]
 
 end Equiv.Perm
