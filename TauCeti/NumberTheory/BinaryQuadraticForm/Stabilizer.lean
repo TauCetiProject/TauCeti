@@ -230,6 +230,11 @@ private noncomputable def unitaryEquivStabilizer (hfD : f.discrim = D) (hf : f.I
         congrArg (fun γ : stabilizer SL(2, ℤ) f ↦ ((γ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ)) h,
       unitaryToStabilizer_surjective f hfD hf⟩
 
+private theorem unitaryEquivStabilizer_apply (hfD : f.discrim = D) (hf : f.IsPrimitive)
+    (z : unitary (QuadraticAlgebra ℤ ((D - D ^ 2) / 4) D)) :
+    unitaryEquivStabilizer f hfD hf z = unitaryToStabilizer f hfD z :=
+  MulEquiv.ofBijective_apply _ _ _
+
 /-! ### Automorphs and norm-one units -/
 
 variable {f}
@@ -260,7 +265,9 @@ theorem map_stabilizerEquivNormOneUnits_symm_apply (hf : f.IsPrimitive) (hfD : f
     rw [← QuadraticOrder.coe_equivToSubalgebra_apply,
       QuadraticOrder.coe_normOneUnitsEquivUnitary_apply, AlgEquiv.apply_symm_apply]
   have hsymm : ((stabilizerEquivNormOneUnits hf hfD).symm u : SL(2, ℤ)) =
-      (unitaryToStabilizer f hfD z : SL(2, ℤ)) := (rfl)
+      (unitaryToStabilizer f hfD z : SL(2, ℤ)) := by
+    rw [stabilizerEquivNormOneUnits, MulEquiv.symm_symm, MulEquiv.trans_apply,
+      unitaryEquivStabilizer_apply]
   have he : (2 : ℚ) * (((D - f.b) / 2 : ℤ) : ℚ) = D - f.b := by
     exact_mod_cast two_mul_ediv_two_of_discrim_eq (discrim_eq_sq_sub_four_mul f hfD)
   rw [hsymm, coe_unitaryToStabilizer, regularRep_eq, hu, QuadraticOrder.lift_apply]
