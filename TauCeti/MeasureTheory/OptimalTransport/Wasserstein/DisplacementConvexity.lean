@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Convex.MongeAmpere.Interpolation
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.InternalEnergy
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Geodesic
 public import TauCeti.Analysis.GradientFlow.GeodesicConvex
-import TauCeti.Analysis.Convex.FunctionTopology
 import TauCeti.Analysis.Convex.McCannCondition
 import TauCeti.Analysis.Matrix.MinkowskiDeterminant
 import TauCeti.Data.ENNReal.Real
@@ -91,58 +90,7 @@ namespace TauCeti
 
 section McCannCondition
 
-variable {U : ℝ → ℝ} {n : ℕ}
-
-/-- **McCann's pointwise inequality.** Let `U 0 = 0` and let `φ(s) = sⁿ U(s⁻ⁿ)` be convex and
-nonincreasing on `(0, ∞)`, with `n ≠ 0`. If `a > 0` and `a₁ ≥ 0` satisfy the concavity bound
-`(1 - t) + t a₁ ≤ a` for some `t ∈ [0, 1]`, then for every `r ≥ 0`,
-`aⁿ U(r / aⁿ) ≤ (1 - t) U(r) + t a₁ⁿ U(r / a₁ⁿ)` when `a₁ > 0`, and
-`aⁿ U(r / aⁿ) ≤ (1 - t) U(r) + t r L` when `a₁ = 0`, where `L` bounds `φ` above. -/
-private theorem pow_mul_apply_div_pow_le (hn : n ≠ 0) (hU0 : U 0 = 0)
-    (hc : ConvexOn ℝ (Ioi 0) fun s : ℝ => s ^ n * U (s ^ n)⁻¹)
-    (ha : AntitoneOn (fun s : ℝ => s ^ n * U (s ^ n)⁻¹) (Ioi 0)) {r t a a₁ L : ℝ} (hr : 0 ≤ r)
-    (ht : t ∈ Icc (0 : ℝ) 1) (hapos : 0 < a) (ha₁ : 0 ≤ a₁) (hle : 1 - t + t * a₁ ≤ a)
-    (hL : a₁ = 0 → 0 < r → ∀ s ∈ Ioi (0 : ℝ), s ^ n * U (s ^ n)⁻¹ ≤ L) :
-    a ^ n * U (r / a ^ n) ≤
-      (1 - t) * U r + t * (if a₁ = 0 then r * L else a₁ ^ n * U (r / a₁ ^ n)) := by
-  rcases hr.eq_or_lt with rfl | hr
-  · simp [hU0]
-  set φ : ℝ → ℝ := fun s => s ^ n * U (s ^ n)⁻¹
-  set c := r⁻¹ ^ (n⁻¹ : ℝ)
-  have hc0 : 0 < c := Real.rpow_pos_of_pos (inv_pos.2 hr) _
-  have hU1 : U r = r * φ (c * 1) := by
-    simpa using pow_mul_apply_div_pow_eq (U := U) hn hr one_pos
-  rw [pow_mul_apply_div_pow_eq hn hr hapos, hU1, mul_one]
-  split_ifs with ha₁0
-  · -- The degenerate case: compare with `φ (c (1 - t))` and use the bound `L` at `0`.
-    subst ha₁0
-    have hφL := hL rfl hr
-    rcases ht.2.eq_or_lt with rfl | ht₁
-    · simpa using mul_le_mul_of_nonneg_left (hφL _ (mul_pos hc0 hapos)) hr.le
-    have hb : 0 < 1 - t := sub_pos.2 ht₁
-    have h₁ : φ (c * a) ≤ φ ((1 - t) * c) :=
-      ha (mem_Ioi.2 (mul_pos hb hc0)) (mem_Ioi.2 (mul_pos hc0 hapos))
-        (by nlinarith)
-    have h₂ := hc.apply_mul_le_of_forall_le hφL hc0 hb (by linarith [ht.1])
-    have := mul_le_mul_of_nonneg_left (h₁.trans h₂) hr.le
-    linarith
-  · have ha₁' : 0 < a₁ := lt_of_le_of_ne ha₁ (Ne.symm ha₁0)
-    rw [pow_mul_apply_div_pow_eq hn hr ha₁']
-    have hpos : 0 < 1 - t + t * a₁ := by
-      rcases ht.2.eq_or_lt with rfl | ht₁
-      · simpa using ha₁'
-      · nlinarith [ht.1]
-    have h₁ : φ (c * a) ≤ φ (c * (1 - t + t * a₁)) :=
-      ha (mem_Ioi.2 (mul_pos hc0 hpos)) (mem_Ioi.2 (mul_pos hc0 hapos))
-        (mul_le_mul_of_nonneg_left hle hc0.le)
-    have h₂ : φ (c * (1 - t + t * a₁)) ≤ (1 - t) * φ c + t * φ (c * a₁) := by
-      have := hc.2 (mem_Ioi.2 hc0) (mem_Ioi.2 (mul_pos hc0 ha₁')) (sub_nonneg.2 ht.2) ht.1
-        (by ring)
-      simp only [smul_eq_mul] at this
-      convert this using 2
-      ring
-    have := mul_le_mul_of_nonneg_left (h₁.trans h₂) hr.le
-    linarith
+variable {U : ℝ → ℝ}
 
 /-- **McCann's inequality at a positive operator.** Let `U 0 = 0` and let `φ(s) = sⁿ U(s⁻ⁿ)` be
 convex and nonincreasing on `(0, ∞)`, where `n ≥ 1` is the dimension of `E`. For a positive operator
