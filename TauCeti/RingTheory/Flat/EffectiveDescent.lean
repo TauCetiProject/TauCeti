@@ -17,7 +17,11 @@ as an `S`-algebra map `θ : B → S ⊗[R] B` (the *coaction*) which is a sectio
 multiplication map `S ⊗[R] B → B` and satisfies the coassociativity condition
 `(id ⊗ θ) ∘ θ = (id ⊗ (1 ⊗ ·)) ∘ θ` in `S ⊗[R] (S ⊗[R] B)`.
 
-This is equivalent to the classical isomorphism-plus-cocycle formulation
+The definitions of descent data and their morphisms, and the equivalence with classical gluing
+data below, allow commutative semirings `R` and `S` and a possibly noncommutative semiring `B`.
+The flatness and effectivity results assume rings.
+
+The coaction formulation is equivalent to the classical isomorphism-plus-cocycle formulation
 `TauCeti.Algebra.IsoDescentDatum`: an isomorphism of `S ⊗[R] S`-algebras
 `φ : B ⊗[R] S ≅ S ⊗[R] B` with `φ₁₃ = φ₂₃ ∘ φ₁₂` on `B ⊗[R] S ⊗[R] S`. The equivalence
 `TauCeti.Algebra.DescentDatum.equivIsoDescentDatum` is given by `θ b = φ (b ⊗ 1)` and
@@ -129,8 +133,10 @@ namespace TauCeti
 
 namespace Algebra
 
-variable (R S B : Type*) [CommRing R] [CommRing S] [Algebra R S]
-  [Ring B] [Algebra R B] [Algebra S B] [IsScalarTower R S B]
+section Semiring
+
+variable (R S B : Type*) [CommSemiring R] [CommSemiring S] [Algebra R S]
+  [Semiring B] [Algebra R B] [Algebra S B] [IsScalarTower R S B]
 
 /-- A descent datum on the `S`-algebra `B` relative to `R → S`, in coalgebra form: an
 `S`-algebra map `coaction : B → S ⊗[R] B` (where `S` acts on the left factor) which is a section
@@ -182,6 +188,39 @@ private theorem coaction_baseChangeHom (x : S ⊗[R] D.descended) :
       Algebra.TensorProduct.tmul_mul_tmul]
   | add x y hx hy => simp [hx, hy]
 
+variable (R S) in
+/-- The canonical descent datum on `S ⊗[R] A`, with coaction `s ⊗ a ↦ s ⊗ (1 ⊗ a)`. -/
+noncomputable def baseChange (A : Type*) [Semiring A] [Algebra R A] :
+    DescentDatum R S (S ⊗[R] A) where
+  coaction := Algebra.TensorProduct.map (AlgHom.id S S) Algebra.TensorProduct.includeRight
+  counit_coaction x := by
+    induction x using TensorProduct.inductionOn with
+    | tmul s a =>
+      simp [Algebra.TensorProduct.algebraMap_apply, Algebra.TensorProduct.tmul_mul_tmul]
+    | add x y hx hy => simp only [map_add, hx, hy]
+  coassoc x := by
+    induction x using TensorProduct.inductionOn with
+    | tmul s a => simp
+    | add x y hx hy => simp only [map_add, hx, hy]
+
+@[simp]
+theorem baseChange_coaction_tmul {A : Type*} [Semiring A] [Algebra R A] (s : S) (a : A) :
+    (baseChange R S A).coaction (s ⊗ₜ a) = s ⊗ₜ (1 ⊗ₜ a) :=
+  (rfl)
+
+end DescentDatum
+
+end Semiring
+
+section Ring
+
+variable (R S B : Type*) [CommRing R] [CommRing S] [Algebra R S]
+  [Ring B] [Algebra R B] [Algebra S B] [IsScalarTower R S B]
+
+namespace DescentDatum
+
+variable {R S B} (D : DescentDatum R S B)
+
 private theorem baseChangeHom_bijective [Module.Flat R S] :
     Function.Bijective D.baseChangeHom := by
   have hθ : ∀ x : S ⊗[R] D.descended,
@@ -218,26 +257,6 @@ theorem coaction_baseChangeEquiv [Module.Flat R S] (x : S ⊗[R] D.descended) :
     D.coaction (D.baseChangeEquiv x) =
       Algebra.TensorProduct.map (AlgHom.id R S) D.descended.val x :=
   D.coaction_baseChangeHom x
-
-variable (R S) in
-/-- The canonical descent datum on `S ⊗[R] A`, with coaction `s ⊗ a ↦ s ⊗ (1 ⊗ a)`. -/
-noncomputable def baseChange (A : Type*) [Ring A] [Algebra R A] :
-    DescentDatum R S (S ⊗[R] A) where
-  coaction := Algebra.TensorProduct.map (AlgHom.id S S) Algebra.TensorProduct.includeRight
-  counit_coaction x := by
-    induction x using TensorProduct.inductionOn with
-    | tmul s a =>
-      simp [Algebra.TensorProduct.algebraMap_apply, Algebra.TensorProduct.tmul_mul_tmul]
-    | add x y hx hy => simp only [map_add, hx, hy]
-  coassoc x := by
-    induction x using TensorProduct.inductionOn with
-    | tmul s a => simp
-    | add x y hx hy => simp only [map_add, hx, hy]
-
-@[simp]
-theorem baseChange_coaction_tmul {A : Type*} [Ring A] [Algebra R A] (s : S) (a : A) :
-    (baseChange R S A).coaction (s ⊗ₜ a) = s ⊗ₜ (1 ⊗ₜ a) :=
-  (rfl)
 
 /-- If `S` is faithfully flat over `R`, the canonical descent datum on `S ⊗[R] A` descends to
 the image of `A`, i.e. the elements of the form `1 ⊗ a`. -/
@@ -312,12 +331,25 @@ theorem baseChangeEquiv_comp_includeRight [Module.Flat R S] :
   change D.baseChangeEquiv (1 ⊗ₜ a) = (a : B)
   rw [← D.baseChangeEquiv_symm_coe, AlgEquiv.apply_symm_apply]
 
+end DescentDatum
+
+end Ring
+
+section Semiring
+
+variable (R S B : Type*) [CommSemiring R] [CommSemiring S] [Algebra R S]
+  [Semiring B] [Algebra R B] [Algebra S B] [IsScalarTower R S B]
+
+namespace DescentDatum
+
+variable {R S B}
+
 /-! ### Morphisms of descent data -/
 
 section Hom
 
-variable {B' B'' : Type*} [Ring B'] [Algebra R B'] [Algebra S B'] [IsScalarTower R S B']
-  [Ring B''] [Algebra R B''] [Algebra S B''] [IsScalarTower R S B'']
+variable {B' B'' : Type*} [Semiring B'] [Algebra R B'] [Algebra S B'] [IsScalarTower R S B']
+  [Semiring B''] [Algebra R B''] [Algebra S B''] [IsScalarTower R S B'']
 
 /-- A morphism of descent data from `D` on `B` to `D'` on `B'`: an `S`-algebra map `f : B → B'`
 intertwining the coactions, `θ' ∘ f = (id ⊗ f) ∘ θ`. -/
@@ -387,6 +419,53 @@ theorem descend_comp (g : Hom D' D'') (f : Hom D D') :
     (g.comp f).descend = g.descend.comp f.descend :=
   (rfl)
 
+end Hom
+
+end Hom
+
+section BaseChange
+
+variable {A A' : Type*} [Semiring A] [Algebra R A] [Semiring A'] [Algebra R A']
+
+/-- The morphism of canonical descent data `S ⊗[R] A → S ⊗[R] A'` induced by an `R`-algebra map
+`A → A'`. -/
+noncomputable def Hom.baseChange (f : A →ₐ[R] A') :
+    Hom (DescentDatum.baseChange R S A) (DescentDatum.baseChange R S A') where
+  toAlgHom := Algebra.TensorProduct.map (AlgHom.id S S) f
+  coaction_toAlgHom x := by
+    induction x using TensorProduct.inductionOn with
+    | tmul s a => simp
+    | add x y hx hy => simp only [map_add, hx, hy]
+
+@[simp]
+theorem Hom.baseChange_toAlgHom (f : A →ₐ[R] A') :
+    (Hom.baseChange (S := S) f).toAlgHom = Algebra.TensorProduct.map (AlgHom.id S S) f :=
+  (rfl)
+
+end BaseChange
+
+end DescentDatum
+
+end Semiring
+
+section Ring
+
+variable (R S B : Type*) [CommRing R] [CommRing S] [Algebra R S]
+  [Ring B] [Algebra R B] [Algebra S B] [IsScalarTower R S B]
+
+namespace DescentDatum
+
+variable {R S B}
+
+section Hom
+
+variable {B' B'' : Type*} [Ring B'] [Algebra R B'] [Algebra S B'] [IsScalarTower R S B']
+  [Ring B''] [Algebra R B''] [Algebra S B''] [IsScalarTower R S B'']
+
+namespace Hom
+
+variable {D : DescentDatum R S B} {D' : DescentDatum R S B'} {D'' : DescentDatum R S B''}
+
 /-- Under the effectivity isomorphisms `baseChangeEquiv`, a morphism of descent data is the base
 change of the induced morphism of descended algebras. -/
 theorem toAlgHom_baseChangeEquiv [Module.Flat R S] (f : Hom D D') (x : S ⊗[R] D.descended) :
@@ -444,21 +523,6 @@ end Hom
 section BaseChange
 
 variable {A A' : Type*} [Ring A] [Algebra R A] [Ring A'] [Algebra R A']
-
-/-- The morphism of canonical descent data `S ⊗[R] A → S ⊗[R] A'` induced by an `R`-algebra map
-`A → A'`. -/
-noncomputable def Hom.baseChange (f : A →ₐ[R] A') :
-    Hom (DescentDatum.baseChange R S A) (DescentDatum.baseChange R S A') where
-  toAlgHom := Algebra.TensorProduct.map (AlgHom.id S S) f
-  coaction_toAlgHom x := by
-    induction x using TensorProduct.inductionOn with
-    | tmul s a => simp
-    | add x y hx hy => simp only [map_add, hx, hy]
-
-@[simp]
-theorem Hom.baseChange_toAlgHom (f : A →ₐ[R] A') :
-    (Hom.baseChange (S := S) f).toAlgHom = Algebra.TensorProduct.map (AlgHom.id S S) f :=
-  (rfl)
 
 /-- The isomorphism of `A` with the algebra descended from the canonical descent datum on
 `S ⊗[R] A`, for `S` faithfully flat over `R`. -/
@@ -524,6 +588,8 @@ theorem toBaseChangeDescended_toAlgHom [Module.Flat R S] (D : DescentDatum R S B
     D.toBaseChangeDescended.toAlgHom = D.baseChangeEquiv.symm :=
   (rfl)
 
+variable (D : DescentDatum R S B)
+
 /-! ### Change of the base ring
 
 If `S` is faithfully flat over `R`, the equalizer `D.descended → B ⇉ S ⊗[R] B` stays an equalizer
@@ -532,17 +598,17 @@ base change `R → R'`. -/
 
 section ChangeOfBase
 
-variable [Module.FaithfullyFlat R S]
-
 /-- The isomorphism `S ⊗[R] (M ⊗[R] D.descended) ≃ M ⊗[R] B`, `s ⊗ m ⊗ a ↦ m ⊗ s • a`. -/
-private noncomputable def leftCommBaseChangeEquiv (M : Type*) [AddCommGroup M] [Module R M] :
+private noncomputable def leftCommBaseChangeEquiv [Module.Flat R S] (M : Type*) [AddCommGroup M]
+    [Module R M] :
     S ⊗[R] (M ⊗[R] D.descended) ≃ₗ[R] M ⊗[R] B :=
   TensorProduct.leftComm R S M D.descended ≪≫ₗ
     (D.baseChangeEquiv.toLinearEquiv.restrictScalars R).lTensor M
 
 /-- The isomorphism `S ⊗[R] (S ⊗[R] (M ⊗[R] D.descended)) ≃ M ⊗[R] (S ⊗[R] B)`,
 `s ⊗ t ⊗ m ⊗ a ↦ m ⊗ s ⊗ t • a`. -/
-private noncomputable def leftCommBaseChangeEquiv₂ (M : Type*) [AddCommGroup M] [Module R M] :
+private noncomputable def leftCommBaseChangeEquiv₂ [Module.Flat R S] (M : Type*) [AddCommGroup M]
+    [Module R M] :
     S ⊗[R] (S ⊗[R] (M ⊗[R] D.descended)) ≃ₗ[R] M ⊗[R] (S ⊗[R] B) :=
   (TensorProduct.leftComm R S M D.descended).lTensor S ≪≫ₗ TensorProduct.leftComm R S M _ ≪≫ₗ
     ((D.baseChangeEquiv.toLinearEquiv.restrictScalars R).lTensor S).lTensor M
@@ -551,7 +617,7 @@ variable (M : Type*) [AddCommGroup M] [Module R M]
 
 /-- Under `leftCommBaseChangeEquiv`, the inclusion `M ⊗ D.descended → M ⊗ B` is the first map
 `x ↦ 1 ⊗ x` of the Amitsur complex of `M ⊗ D.descended`. -/
-private theorem lTensor_descended_val_eq :
+private theorem lTensor_descended_val_eq [Module.Flat R S] :
     D.descended.val.toLinearMap.lTensor M =
       (D.leftCommBaseChangeEquiv M).toLinearMap ∘ₗ
         TensorProduct.mk R S (M ⊗[R] D.descended) 1 := by
@@ -560,7 +626,7 @@ private theorem lTensor_descended_val_eq :
 
 /-- If `S` is faithfully flat over `R`, the inclusion `D.descended → B` is universally
 injective: it stays injective after tensoring with any `R`-module `M`. -/
-theorem lTensor_descended_val_injective :
+theorem lTensor_descended_val_injective [Module.FaithfullyFlat R S] :
     Function.Injective (D.descended.val.toLinearMap.lTensor M) := by
   rw [lTensor_descended_val_eq, LinearMap.coe_comp, LinearEquiv.coe_coe,
     EquivLike.comp_injective]
@@ -569,7 +635,7 @@ theorem lTensor_descended_val_injective :
 /-- **The descended algebra is a universal equalizer.** If `S` is faithfully flat over `R`, then
 for every `R`-module `M` the sequence `M ⊗ D.descended → M ⊗ B → M ⊗ (S ⊗ B)`, whose second map
 is `m ⊗ b ↦ m ⊗ (θ b - 1 ⊗ b)`, is exact. -/
-theorem exact_lTensor_descended_val :
+theorem exact_lTensor_descended_val [Module.FaithfullyFlat R S] :
     Function.Exact (D.descended.val.toLinearMap.lTensor M)
       (((D.coaction.restrictScalars R).toLinearMap -
         (Algebra.TensorProduct.includeRight : B →ₐ[R] S ⊗[R] B).toLinearMap).lTensor M) := by
@@ -670,6 +736,13 @@ theorem coe_tensorDescendedEquiv_tmul [Module.FaithfullyFlat R S]
 end Comparison
 
 end DescentDatum
+
+end Ring
+
+section Semiring
+
+variable (R S B : Type*) [CommSemiring R] [CommSemiring S] [Algebra R S]
+  [Semiring B] [Algebra R B] [Algebra S B] [IsScalarTower R S B]
 
 /-! ### The classical form of a descent datum -/
 
@@ -947,6 +1020,8 @@ theorem toDescentDatum_toIsoDescentDatum (E : IsoDescentDatum R S B) :
   (DescentDatum.equivIsoDescentDatum R S B).right_inv E
 
 end IsoDescentDatum
+
+end Semiring
 
 end Algebra
 
