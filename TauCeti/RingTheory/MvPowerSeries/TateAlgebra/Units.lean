@@ -43,6 +43,8 @@ positive polyradii.
 * `MvPowerSeries.isNormMulUnit_of_norm_coeff_mul_prod_lt`: a series whose constant coefficient is
   a multiplicative unit strictly dominating every other weighted coefficient is a multiplicative
   unit.
+* `MvPowerSeries.norm_eq_norm_constantCoeff_of_norm_coeff_mul_prod_le`: a constant coefficient
+  dominating every other weighted coefficient attains the Gauss norm.
 * `MvPowerSeries.norm_coeff_mul_prod_lt_of_isUnit`: for a multiplicative coefficient norm, the
   constant coefficient of a unit strictly dominates every other weighted coefficient.
 * `MvPowerSeries.isUnit_iff_isUnit_constantCoeff_and_norm_coeff_mul_prod_lt` and, over a division
@@ -76,6 +78,19 @@ private theorem codRestrict_C_eq (a : R) :
   Subtype.ext (RingHom.codRestrict_apply _ _ _ a)
 
 variable [∀ i, Fact (0 < c i)]
+
+/-- A constant coefficient dominating the weighted norm of every other coefficient attains the
+Gauss norm. -/
+theorem norm_eq_norm_constantCoeff_of_norm_coeff_mul_prod_le
+    {f : IsRestricted.subring (R := R) c}
+    (h : ∀ t ≠ 0, ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·) ≤
+      ‖constantCoeff (f : MvPowerSeries σ R)‖) :
+    ‖f‖ = ‖constantCoeff (f : MvPowerSeries σ R)‖ := by
+  refine le_antisymm ((norm_le_iff (norm_nonneg _)).2 fun t ↦ ?_) ?_
+  · rcases eq_or_ne t 0 with rfl | ht
+    · simp [coeff_zero_eq_constantCoeff_apply]
+    · exact h t ht
+  · simpa [coeff_zero_eq_constantCoeff_apply] using norm_coeff_mul_prod_le f 0
 
 section NormOne
 
