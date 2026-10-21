@@ -17,11 +17,11 @@ import Mathlib.Tactic.Ring
 
 This file records arithmetic identities involving natural-number binomial coefficients.
 
-Besides three identities for the second binomial coefficient, it develops Vandermonde's convolution
-`∑ i, C(A, i) * C(B, r - i) = C(A + B, r)` in the shape taken by factorial moments of a law
-supported on such a convolution: each summand is weighted by the falling factorial `(i)ₘ` of the
-summation index. The weighted sum is again a single binomial coefficient,
-`(A)ₘ * C(A + B - m, r - m)`, because `(i)ₘ` lowers both indices of `C(A, i)` at once.
+Besides three identities and a parity formula for the second binomial coefficient, it develops
+Vandermonde's convolution `∑ i, C(A, i) * C(B, r - i) = C(A + B, r)` in the shape taken by
+factorial moments of a law supported on such a convolution: each summand is weighted by the
+falling factorial `(i)ₘ` of the summation index. The weighted sum is again a single binomial
+coefficient, `(A)ₘ * C(A + B - m, r - m)`, because `(i)ₘ` lowers both indices of `C(A, i)` at once.
 
 ## Main results
 
@@ -29,6 +29,7 @@ summation index. The weighted sum is again a single binomial coefficient,
   the triangular number is the corresponding square.
 * `Nat.add_choose_two`: the second binomial coefficient of a sum, with its cross term.
 * `Nat.pow_three_sub_self_eq_mul_choose_two`: `g³ - g = (2g + 2) · C(g, 2)`.
+* `Nat.choose_two_mod_two`: `C(m, 2)` and `⌊m / 2⌋` have the same parity.
 * `Nat.descFactorial_mul_choose`: a falling factorial of the lower index lowers both indices,
   `(i)ₘ * C(A, i) = (A)ₘ * C(A - m, i - m)`.
 * `Nat.sum_range_descFactorial_mul_choose_mul_choose`: Vandermonde's convolution weighted by a
@@ -85,6 +86,19 @@ theorem pow_three_sub_self_eq_mul_choose_two (g : ℕ) :
       ring
     rw [h]
     exact Nat.sub_eq_of_eq_add (by ring)
+
+/-- `C(m, 2)` and `⌊m / 2⌋` have the same parity: going from `m` to `m + 2` adds `2m + 1` to the
+first and `1` to the second. -/
+theorem choose_two_mod_two (m : ℕ) : m.choose 2 % 2 = m / 2 % 2 := by
+  induction m using Nat.twoStepInduction with
+  | zero => rfl
+  | one => rfl
+  | more m ih _ =>
+    have h : (m + 2).choose 2 = m.choose 2 + 2 * m + 1 := by
+      rw [add_choose_two, Nat.choose_self]
+      ring
+    have h' : (m + 2) / 2 = m / 2 + 1 := by omega
+    rw [h, h', Nat.add_mod, Nat.add_mul_mod_self_left, ih, ← Nat.add_mod]
 
 /-- **A falling factorial of the lower index lowers both indices of a binomial coefficient:**
 `(i)ₘ * C(A, i) = (A)ₘ * C(A - m, i - m)` for `m ≤ i`.

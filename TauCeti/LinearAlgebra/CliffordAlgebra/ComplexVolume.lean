@@ -8,7 +8,9 @@ module
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Complexification
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
--- Private: the orthogonal-basis and orthogonal-product computations are used only inside proofs.
+-- Private: the parity, orthogonal-basis and orthogonal-product computations are used only inside
+-- proofs.
+import TauCeti.Data.Nat.Choose.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthogonalBasis
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
@@ -20,8 +22,13 @@ import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 
 Let `V` be an oriented real inner product space of dimension `n` and `Q` a quadratic form on `V`.
 The **volume element** `CliffordAlgebra.volumeElement Q o` is the quantization, under
-`CliffordAlgebra.equivExterior`, of the unit volume element of `⋀ⁿ V`; for every positively
-oriented orthonormal basis `e` it is the Clifford basis vector `e₁ ⋯ eₙ` of all of `e`.
+`CliffordAlgebra.equivExterior`, of the unit volume element of `⋀ⁿ V`. For every positively
+oriented orthonormal basis `e` it is the top Clifford basis vector `CliffordAlgebra.basis Q e univ`,
+the quantization of `e₁ ∧ ⋯ ∧ eₙ`; this is the Clifford product `c(e₁) ⋯ c(eₙ)` when `e` is
+moreover orthogonal for `Q`. For an arbitrary quadratic form the volume element is a multiple of
+the top Clifford basis vector of every basis (`CliffordAlgebra.volumeElement_eq_inv_smul_basis`),
+hence of the product of a `Q`-orthogonal basis, so in even dimension it anticommutes with every
+vector and in odd dimension it commutes with every vector.
 
 For the geometric convention `Q v = -‖v‖²`, so that `c(v) c(w) + c(w) c(v) = -2 ⟪v, w⟫`, the
 **normalized complex volume element** is
@@ -54,16 +61,18 @@ orientation and `-1` for the negative one.
 * `CliffordAlgebra.complexVolume_eq`: `Γ = i ^ ⌊(n + 1) / 2⌋ c(e₁) ⋯ c(eₙ)` for every positively
   oriented orthonormal basis `e` that is orthogonal for `Q`.
 * `CliffordAlgebra.complexVolume_neg_orientation`: reversing the orientation negates `Γ`.
-* `CliffordAlgebra.complexVolume_mul_self`: `Γ² = 1`.
+* `CliffordAlgebra.complexVolume_mul_self`: `Γ² = 1` for `Q v = -‖v‖²`.
 * `CliffordAlgebra.conjStar_complexVolume`: `Γ` is fixed by the conjugate-linear Clifford
   involution, while `CliffordAlgebra.star_complexVolume` computes the complex-linear Clifford
   conjugation `star Γ = (-1) ^ ⌊(n + 1) / 2⌋ Γ`; in dimension `2ℓ` this is `(-1) ^ ℓ Γ`.
-* `CliffordAlgebra.complexVolume_mul_mul_complexVolume`: in even dimension, conjugation by `Γ` is
-  the grade involution; hence `Γ` commutes with even elements
-  (`CliffordAlgebra.commute_complexVolume_of_mem_even`) and anticommutes with odd ones
-  (`CliffordAlgebra.complexVolume_mul_of_mem_odd`), and in particular with vectors
-  (`CliffordAlgebra.complexVolume_mul_ι_of_even`).
+* `CliffordAlgebra.complexVolume_mul_eq_involute_mul`: in even dimension, `Γ x = involute x Γ`;
+  hence `Γ` commutes with even elements (`CliffordAlgebra.commute_complexVolume_of_mem_even`) and
+  anticommutes with odd ones (`CliffordAlgebra.complexVolume_mul_of_mem_odd`), and in particular
+  with vectors (`CliffordAlgebra.complexVolume_mul_ι_of_even`). For `Q v = -‖v‖²`, conjugation by
+  `Γ` is the grade involution (`CliffordAlgebra.complexVolume_mul_mul_complexVolume`).
 * `CliffordAlgebra.complexVolume_mem_center`: in odd dimension, `Γ` is central.
+
+Only the statements involving `Γ²` assume `Q v = -‖v‖²`; the others hold for every `Q`.
 
 ## References
 
@@ -78,23 +87,6 @@ noncomputable section
 open Module
 open scoped TensorProduct ComplexConjugate
 
-/-- `(-1) ^ ((n + 1).choose 2)` and `(-1) ^ ⌊(n + 1) / 2⌋` agree: the two exponents have the
-same parity. -/
-private theorem neg_one_pow_succ_choose_two {R : Type*} [Monoid R] [HasDistribNeg R] (n : ℕ) :
-    (-1 : R) ^ (n + 1).choose 2 = (-1) ^ ((n + 1) / 2) := by
-  obtain ⟨m, rfl | rfl⟩ := Nat.even_or_odd' n
-  · have h : (2 * m + 1).choose 2 = 2 * (m * m) + m := by
-      rw [Nat.choose_two_right, show 2 * m + 1 - 1 = 2 * m by omega,
-        show (2 * m + 1) * (2 * m) = 2 * (2 * (m * m) + m) by ring,
-        Nat.mul_div_cancel_left _ two_pos]
-    rw [h, show (2 * m + 1) / 2 = m by omega, pow_add, pow_mul, neg_one_sq, one_pow, one_mul]
-  · have h : (2 * m + 1 + 1).choose 2 = 2 * (m * m + m) + (m + 1) := by
-      rw [Nat.choose_two_right, show 2 * m + 1 + 1 - 1 = 2 * m + 1 by omega,
-        show (2 * m + 1 + 1) * (2 * m + 1) = 2 * (2 * (m * m + m) + (m + 1)) by ring,
-        Nat.mul_div_cancel_left _ two_pos]
-    rw [h, show (2 * m + 1 + 1) / 2 = m + 1 by omega, pow_add, pow_mul, neg_one_sq, one_pow,
-      one_mul]
-
 namespace CliffordAlgebra
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
@@ -105,9 +97,10 @@ variable (Q : QuadraticForm ℝ V) (o : Orientation ℝ V (Fin n))
 /-! ### The real volume element -/
 
 /-- The volume element of the Clifford algebra of an oriented real inner product space: the
-quantization of the unit volume element of the top exterior power. It is the Clifford basis
-vector `e₁ ⋯ eₙ` of every positively oriented orthonormal basis `e`
-(`CliffordAlgebra.volumeElement_eq_basis`). -/
+quantization of the unit volume element of the top exterior power. It is the top Clifford basis
+vector of every positively oriented orthonormal basis `e`
+(`CliffordAlgebra.volumeElement_eq_basis`), and the product `c(e₁) ⋯ c(eₙ)` when `e` is moreover
+orthogonal for `Q` (`CliffordAlgebra.volumeElement_eq`). -/
 def volumeElement : CliffordAlgebra Q :=
   (equivExterior Q).symm (o.volumeEquiv.symm 1 : ExteriorAlgebra ℝ V)
 
@@ -133,7 +126,8 @@ theorem volumeElement_neg_orientation : volumeElement Q (-o) = -volumeElement Q 
   rw [volumeElement_def, volumeElement_def, Orientation.volumeEquiv_symm_neg_orientation,
     Submodule.coe_neg, map_neg]
 
-/-- For an arbitrary orthonormal basis `e`, the volume element is `± e₁ ⋯ eₙ`. -/
+/-- For an arbitrary orthonormal basis `e`, the volume element is plus or minus the top Clifford
+basis vector of `e`. -/
 private theorem volumeElement_eq_basis_or_eq_neg (b : OrthonormalBasis (Fin n) ℝ V) :
     volumeElement Q o = basis Q b.toBasis Finset.univ ∨
       volumeElement Q o = -basis Q b.toBasis Finset.univ := by
@@ -192,59 +186,50 @@ theorem volumeElement_eq (b : OrthonormalBasis (Fin n) ℝ V) (hb : b.toBasis.or
   rw [volumeElement_eq_basis o b hb, basis_eq_prod_map_sort hQb, Fin.sort_univ,
     OrthonormalBasis.coe_toBasis]
 
-omit [FiniteDimensional ℝ V] [Fact (finrank ℝ V = n)] in
-/-- Every vector lies in the span of an orthonormal basis, listed in order. -/
-private theorem mem_span_finRange (b : OrthonormalBasis (Fin n) ℝ V) (v : V) :
-    v ∈ Submodule.span ℝ {x : V | x ∈ (List.finRange n).map b} := by
-  have h : {x : V | x ∈ (List.finRange n).map b} = Set.range b := by
-    ext; simp
-  rw [h, ← OrthonormalBasis.coe_toBasis, b.toBasis.span_eq]
-  exact Submodule.mem_top
+/-- The volume element is a multiple of the top Clifford basis vector of every basis `f`: the
+scalar is the inverse of the volume of `f₁ ∧ ⋯ ∧ fₙ`. For a positively oriented orthonormal basis
+this scalar is `1` (`CliffordAlgebra.volumeElement_eq_basis`). -/
+theorem volumeElement_eq_inv_smul_basis {ι : Type*} [Fintype ι] [LinearOrder ι]
+    (f : Basis ι ℝ V) :
+    volumeElement Q o = (o.volumeEquiv f.topVector)⁻¹ • basis Q f Finset.univ := by
+  have hf := exteriorPower.isUnit_apply_topVector o.volumeEquiv f
+  have h : o.volumeEquiv.symm 1 = (o.volumeEquiv f.topVector)⁻¹ • f.topVector := by
+    rw [LinearEquiv.symm_apply_eq, map_smul, smul_eq_mul, inv_mul_cancel₀ hf.ne_zero]
+  rw [volumeElement_def, h, Submodule.coe_smul, Basis.coe_topVector, map_smul, basis_apply]
 
-section Form
+/-- The volume element is a multiple of the ordered product of `n` pairwise `Q`-orthogonal vectors
+spanning `V`, namely of a `Q`-orthogonal basis. -/
+private theorem exists_volumeElement_eq_smul_prod :
+    ∃ (l : List V) (c : ℝ), l.Pairwise Q.IsOrtho ∧ l.length = n ∧
+      (∀ v, v ∈ Submodule.span ℝ {x | x ∈ l}) ∧ volumeElement Q o = c • (l.map (ι Q)).prod := by
+  obtain ⟨f, hf⟩ :=
+    LinearMap.BilinForm.exists_orthogonal_basis (QuadraticForm.associated_isSymm ℝ Q)
+  refine ⟨Finset.univ.sort.map f, _, List.pairwise_map.mpr <| (Finset.univ.sort_nodup _).imp
+    fun hij ↦ QuadraticMap.associated_isOrtho.mp (hf hij), by simp [Fact.out], fun v ↦ ?_,
+    by rw [volumeElement_eq_inv_smul_basis o f, basis_eq_prod_map_sort hf]⟩
+  simp only [List.mem_map, Finset.mem_sort, Finset.mem_univ, true_and]
+  exact f.mem_span v
 
-variable (hQ : ∀ v, Q v = -‖v‖ ^ 2)
-include hQ
+/-- In even dimension the volume element anticommutes with every vector. -/
+theorem volumeElement_mul_ι_of_even (hn : Even n) (v : V) :
+    volumeElement Q o * ι Q v = -(ι Q v * volumeElement Q o) := by
+  obtain ⟨l, c, hl, hln, hspan, h⟩ := exists_volumeElement_eq_smul_prod (Q := Q) o
+  rw [h, smul_mul_assoc, prod_map_ι_mul_ι_of_even_length hl (hln ▸ hn) (hspan v), mul_smul_comm,
+    smul_neg]
 
-/-- For `Q v = -‖v‖²` and an arbitrary orthonormal basis `e`, the volume element is
-`± c(e₁) ⋯ c(eₙ)`. -/
-private theorem volumeElement_eq_prod_or_eq_neg (b : OrthonormalBasis (Fin n) ℝ V) :
-    volumeElement Q o = (((List.finRange n).map b).map (ι Q)).prod ∨
-      volumeElement Q o = -(((List.finRange n).map b).map (ι Q)).prod := by
-  have h := basis_eq_prod_map_sort (Q := Q) (b.isOrthoᵢ_associated hQ) Finset.univ
-  rw [Fin.sort_univ, OrthonormalBasis.coe_toBasis] at h
-  rw [← h]
-  exact volumeElement_eq_basis_or_eq_neg o b
+/-- In odd dimension the volume element commutes with every vector. -/
+theorem volumeElement_mul_ι_of_odd (hn : Odd n) (v : V) :
+    volumeElement Q o * ι Q v = ι Q v * volumeElement Q o := by
+  obtain ⟨l, c, hl, hln, hspan, h⟩ := exists_volumeElement_eq_smul_prod (Q := Q) o
+  rw [h, smul_mul_assoc, prod_map_ι_mul_ι_of_odd_length hl (hln ▸ hn) (hspan v), mul_smul_comm]
 
 /-- For `Q v = -‖v‖²`, the volume element squares to `(-1) ^ ((n + 1).choose 2)`. -/
-theorem volumeElement_mul_self :
+theorem volumeElement_mul_self (hQ : ∀ v, Q v = -‖v‖ ^ 2) :
     volumeElement Q o * volumeElement Q o = (-1) ^ (n + 1).choose 2 := by
   have h := basis_mul_self_of_orthonormal hQ (frame V n) Finset.univ
   rw [Finset.card_univ, Fintype.card_fin] at h
   rcases volumeElement_eq_basis_or_eq_neg (Q := Q) o (frame V n) with h' | h' <;>
     simp only [h', neg_mul_neg, h]
-
-/-- In even dimension the volume element anticommutes with every vector. -/
-theorem volumeElement_mul_ι_of_even (hn : Even n) (v : V) :
-    volumeElement Q o * ι Q v = -(ι Q v * volumeElement Q o) := by
-  have h := prod_map_ι_mul_ι_of_even_length
-    ((frame V n).pairwise_isOrtho_map hQ (List.nodup_finRange n))
-    (by simpa using hn)
-    (mem_span_finRange (frame V n) v)
-  rcases volumeElement_eq_prod_or_eq_neg (Q := Q) o hQ (frame V n) with h' | h' <;>
-    simp only [h', neg_mul, mul_neg, h, neg_neg]
-
-/-- In odd dimension the volume element commutes with every vector. -/
-theorem volumeElement_mul_ι_of_odd (hn : Odd n) (v : V) :
-    volumeElement Q o * ι Q v = ι Q v * volumeElement Q o := by
-  have h := prod_map_ι_mul_ι_of_odd_length
-    ((frame V n).pairwise_isOrtho_map hQ (List.nodup_finRange n))
-    (by simpa using hn)
-    (mem_span_finRange (frame V n) v)
-  rcases volumeElement_eq_prod_or_eq_neg (Q := Q) o hQ (frame V n) with h' | h' <;>
-    simp only [h', neg_mul, mul_neg, h]
-
-end Form
 
 /-! ### The normalized complex volume element -/
 
@@ -252,9 +237,10 @@ variable (Q)
 
 /-- The normalized complex volume element `Γ = i ^ ⌊(n + 1) / 2⌋ c(e₁) ⋯ c(eₙ)` of the
 complexified Clifford algebra of an oriented real inner product space of dimension `n`, for any
-positively oriented orthonormal basis `e` (`CliffordAlgebra.complexVolume_eq`). For
-`Q v = -‖v‖²` it squares to `1` and is fixed by `CliffordAlgebra.conjStar`; in even dimension it
-is the chirality operator, and in odd dimension it is central. -/
+positively oriented orthonormal basis `e` that is orthogonal for `Q`
+(`CliffordAlgebra.complexVolume_eq`). It is fixed by `CliffordAlgebra.conjStar`; in even
+dimension it anticommutes with every vector, and in odd dimension it is central. For
+`Q v = -‖v‖²` it squares to `1`, so in even dimension it is the chirality operator. -/
 def complexVolume : CliffordAlgebra (Q.baseChange ℂ) :=
   Complex.I ^ ((n + 1) / 2) • ofBaseChangeAux ℂ Q (volumeElement Q o)
 
@@ -289,28 +275,19 @@ theorem complexVolume_eq (b : OrthonormalBasis (Fin n) ℝ V) (hb : b.toBasis.or
   rw [complexVolume_def, volumeElement_eq o b hb hQb, map_list_prod, List.map_map, List.map_map]
   simp [Function.comp_def]
 
-omit [FiniteDimensional ℝ V] in
-/-- A real sign `(-1) ^ m` of the real Clifford algebra passes to the complex sign `(-1) ^ m`
-in the complexified algebra. -/
-private theorem smul_ofBaseChangeAux_neg_one_pow_smul (z : ℂ) (m : ℕ) (x : CliffordAlgebra Q) :
-    z • ofBaseChangeAux ℂ Q ((-1 : ℝ) ^ m • x) = (-1 : ℂ) ^ m • z • ofBaseChangeAux ℂ Q x := by
-  rw [Algebra.smul_def ((-1 : ℝ) ^ m) x, map_mul, AlgHom.commutes]
-  simp only [Algebra.smul_def, map_pow, map_neg, map_one]
-  rw [← mul_assoc, ← mul_assoc, ((Commute.neg_one_right _).pow_right _).eq]
-
 /-- The grade involution multiplies `Γ` by `(-1) ^ n`. -/
 @[simp]
 theorem involute_complexVolume :
     involute (complexVolume Q o) = (-1 : ℂ) ^ n • complexVolume Q o := by
   rw [complexVolume_def, map_smul, ← ofBaseChangeAux_involute, involute_volumeElement,
-    smul_ofBaseChangeAux_neg_one_pow_smul]
+    ofBaseChangeAux_smul, smul_comm, map_pow, map_neg, map_one]
 
 /-- Reversal multiplies `Γ` by `(-1) ^ (n.choose 2)`. -/
 @[simp]
 theorem reverse_complexVolume :
     reverse (complexVolume Q o) = (-1 : ℂ) ^ n.choose 2 • complexVolume Q o := by
   rw [complexVolume_def, map_smul, ← ofBaseChangeAux_reverse, reverse_volumeElement,
-    smul_ofBaseChangeAux_neg_one_pow_smul]
+    ofBaseChangeAux_smul, smul_comm, map_pow, map_neg, map_one]
 
 /-- Complex-linear Clifford conjugation multiplies `Γ` by `(-1) ^ ⌊(n + 1) / 2⌋`; in dimension
 `2ℓ` this is `star Γ = (-1) ^ ℓ Γ`. -/
@@ -318,7 +295,9 @@ theorem reverse_complexVolume :
 theorem star_complexVolume :
     star (complexVolume Q o) = (-1 : ℂ) ^ ((n + 1) / 2) • complexVolume Q o := by
   rw [complexVolume_def, star_smul, ← ofBaseChangeAux_star, star_volumeElement,
-    neg_one_pow_succ_choose_two, smul_ofBaseChangeAux_neg_one_pow_smul]
+    ofBaseChangeAux_smul, smul_comm, map_pow, map_neg, map_one,
+    neg_one_pow_eq_pow_mod_two ((n + 1).choose 2), Nat.choose_two_mod_two,
+    ← neg_one_pow_eq_pow_mod_two]
 
 /-- Complex conjugation of the coefficients multiplies `Γ` by `(-1) ^ ⌊(n + 1) / 2⌋`. -/
 @[simp]
@@ -343,10 +322,57 @@ private theorem complexVolume_mul_ι_of_forall {s : ℂ}
     complexVolume Q o * ι (Q.baseChange ℂ) w = s • (ι (Q.baseChange ℂ) w * complexVolume Q o) := by
   induction w using TensorProduct.inductionOn with
   | tmul z v =>
-    rw [show z ⊗ₜ[ℝ] v = z • ((1 : ℂ) ⊗ₜ[ℝ] v) by rw [TensorProduct.smul_tmul', smul_eq_mul,
-      mul_one], map_smul, complexVolume_def, smul_mul_smul_comm, smul_mul_smul_comm, h,
+    have hz : z ⊗ₜ[ℝ] v = z • ((1 : ℂ) ⊗ₜ[ℝ] v) := by
+      rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
+    rw [hz, map_smul, complexVolume_def, smul_mul_smul_comm, smul_mul_smul_comm, h,
       smul_comm _ s, mul_comm z]
   | add x y hx hy => rw [map_add, mul_add, add_mul, hx, hy, smul_add]
+
+/-- **In even dimension `Γ` anticommutes with every vector**: `Γ c(w) = -c(w) Γ`. -/
+theorem complexVolume_mul_ι_of_even (hn : Even n) (w : ℂ ⊗[ℝ] V) :
+    complexVolume Q o * ι (Q.baseChange ℂ) w =
+      -(ι (Q.baseChange ℂ) w * complexVolume Q o) := by
+  rw [← neg_one_smul ℂ (_ * complexVolume Q o)]
+  refine complexVolume_mul_ι_of_forall o (fun v ↦ ?_) w
+  rw [neg_one_smul, ← ofBaseChangeAux_ι, ← map_mul, volumeElement_mul_ι_of_even o hn, map_neg,
+    map_mul]
+
+/-- **In even dimension `Γ` intertwines the grade involution**: `Γ x = involute x Γ`. -/
+theorem complexVolume_mul_eq_involute_mul (hn : Even n) (x : CliffordAlgebra (Q.baseChange ℂ)) :
+    complexVolume Q o * x = involute x * complexVolume Q o := by
+  induction x using CliffordAlgebra.induction with
+  | algebraMap r => rw [AlgHom.commutes, Algebra.commutes]
+  | ι w => rw [complexVolume_mul_ι_of_even o hn, involute_ι, neg_mul]
+  | mul a b ha hb => rw [← mul_assoc, ha, mul_assoc, hb, map_mul, mul_assoc]
+  | add a b ha hb => rw [mul_add, ha, hb, map_add, add_mul]
+
+/-- In even dimension `Γ` commutes with every even element. -/
+theorem commute_complexVolume_of_mem_even (hn : Even n) {x : CliffordAlgebra (Q.baseChange ℂ)}
+    (hx : x ∈ evenOdd (Q.baseChange ℂ) 0) : Commute (complexVolume Q o) x := by
+  rw [Commute, SemiconjBy, complexVolume_mul_eq_involute_mul o hn, involute_eq_of_mem_even hx]
+
+/-- In even dimension `Γ` anticommutes with every odd element. -/
+theorem complexVolume_mul_of_mem_odd (hn : Even n) {x : CliffordAlgebra (Q.baseChange ℂ)}
+    (hx : x ∈ evenOdd (Q.baseChange ℂ) 1) : complexVolume Q o * x = -(x * complexVolume Q o) := by
+  rw [complexVolume_mul_eq_involute_mul o hn, involute_eq_of_mem_odd hx, neg_mul]
+
+/-- In odd dimension `Γ` commutes with every vector. -/
+theorem complexVolume_mul_ι_of_odd (hn : Odd n) (w : ℂ ⊗[ℝ] V) :
+    complexVolume Q o * ι (Q.baseChange ℂ) w = ι (Q.baseChange ℂ) w * complexVolume Q o := by
+  rw [← one_smul ℂ (_ * complexVolume Q o)]
+  refine complexVolume_mul_ι_of_forall o (fun v ↦ ?_) w
+  rw [one_smul, ← ofBaseChangeAux_ι, ← map_mul, volumeElement_mul_ι_of_odd o hn, map_mul]
+
+/-- **In odd dimension `Γ` is central.** -/
+theorem complexVolume_mem_center (hn : Odd n) :
+    complexVolume Q o ∈ Subalgebra.center ℂ (CliffordAlgebra (Q.baseChange ℂ)) := by
+  rw [Subalgebra.mem_center_iff]
+  intro x
+  induction x using CliffordAlgebra.induction with
+  | algebraMap r => exact Algebra.commutes r _
+  | ι w => exact (complexVolume_mul_ι_of_odd o hn w).symm
+  | mul a b ha hb => rw [mul_assoc, hb, ← mul_assoc, ha, mul_assoc]
+  | add a b ha hb => rw [add_mul, mul_add, ha, hb]
 
 section Form
 
@@ -356,70 +382,14 @@ include hQ
 /-- **`Γ` is an involution**: `Γ² = 1`. -/
 theorem complexVolume_mul_self : complexVolume Q o * complexVolume Q o = 1 := by
   rw [complexVolume_def, smul_mul_smul_comm, ← map_mul, volumeElement_mul_self o hQ, map_pow,
-    map_neg, map_one, neg_one_pow_succ_choose_two, ← mul_pow, Complex.I_mul_I, Algebra.smul_def,
-    map_pow, map_neg, map_one, ← pow_add, Even.neg_one_pow ⟨_, rfl⟩]
-
-/-- **In even dimension `Γ` anticommutes with every vector**: `Γ c(w) = -c(w) Γ`. -/
-theorem complexVolume_mul_ι_of_even (hn : Even n) (w : ℂ ⊗[ℝ] V) :
-    complexVolume Q o * ι (Q.baseChange ℂ) w =
-      -(ι (Q.baseChange ℂ) w * complexVolume Q o) := by
-  rw [← neg_one_smul ℂ (_ * complexVolume Q o)]
-  refine complexVolume_mul_ι_of_forall o (fun v ↦ ?_) w
-  rw [neg_one_smul, ← ofBaseChangeAux_ι, ← map_mul, volumeElement_mul_ι_of_even o hQ hn, map_neg,
-    map_mul]
+    map_neg, map_one, neg_one_pow_eq_pow_mod_two ((n + 1).choose 2), Nat.choose_two_mod_two,
+    ← neg_one_pow_eq_pow_mod_two, ← mul_pow, Complex.I_mul_I, Algebra.smul_def, map_pow, map_neg,
+    map_one, ← pow_add, Even.neg_one_pow ⟨_, rfl⟩]
 
 /-- **In even dimension, conjugation by `Γ` is the grade involution**: `Γ x Γ = involute x`. -/
 theorem complexVolume_mul_mul_complexVolume (hn : Even n) (x : CliffordAlgebra (Q.baseChange ℂ)) :
     complexVolume Q o * x * complexVolume Q o = involute x := by
-  induction x using CliffordAlgebra.induction with
-  | algebraMap r =>
-    rw [← Algebra.commutes, mul_assoc, complexVolume_mul_self o hQ, mul_one, AlgHom.commutes]
-  | ι w =>
-    rw [complexVolume_mul_ι_of_even o hQ hn, neg_mul, mul_assoc, complexVolume_mul_self o hQ,
-      mul_one, involute_ι]
-  | mul a b ha hb =>
-    rw [map_mul, ← ha, ← hb]
-    simp only [mul_assoc]
-    rw [← mul_assoc (complexVolume Q o) (complexVolume Q o), complexVolume_mul_self o hQ, one_mul]
-  | add a b ha hb => rw [map_add, ← ha, ← hb, mul_add, add_mul]
-
-/-- In even dimension `Γ` commutes with every even element. -/
-theorem commute_complexVolume_of_mem_even (hn : Even n) {x : CliffordAlgebra (Q.baseChange ℂ)}
-    (hx : x ∈ evenOdd (Q.baseChange ℂ) 0) : Commute (complexVolume Q o) x := by
-  have h := complexVolume_mul_mul_complexVolume o hQ hn x
-  rw [involute_eq_of_mem_even hx] at h
-  calc complexVolume Q o * x
-      = complexVolume Q o * x * (complexVolume Q o * complexVolume Q o) := by
-        rw [complexVolume_mul_self o hQ, mul_one]
-    _ = x * complexVolume Q o := by rw [← mul_assoc, h]
-
-/-- In even dimension `Γ` anticommutes with every odd element. -/
-theorem complexVolume_mul_of_mem_odd (hn : Even n) {x : CliffordAlgebra (Q.baseChange ℂ)}
-    (hx : x ∈ evenOdd (Q.baseChange ℂ) 1) : complexVolume Q o * x = -(x * complexVolume Q o) := by
-  have h := complexVolume_mul_mul_complexVolume o hQ hn x
-  rw [involute_eq_of_mem_odd hx] at h
-  calc complexVolume Q o * x
-      = complexVolume Q o * x * (complexVolume Q o * complexVolume Q o) := by
-        rw [complexVolume_mul_self o hQ, mul_one]
-    _ = -(x * complexVolume Q o) := by rw [← mul_assoc, h, neg_mul]
-
-/-- In odd dimension `Γ` commutes with every vector. -/
-theorem complexVolume_mul_ι_of_odd (hn : Odd n) (w : ℂ ⊗[ℝ] V) :
-    complexVolume Q o * ι (Q.baseChange ℂ) w = ι (Q.baseChange ℂ) w * complexVolume Q o := by
-  rw [← one_smul ℂ (_ * complexVolume Q o)]
-  refine complexVolume_mul_ι_of_forall o (fun v ↦ ?_) w
-  rw [one_smul, ← ofBaseChangeAux_ι, ← map_mul, volumeElement_mul_ι_of_odd o hQ hn, map_mul]
-
-/-- **In odd dimension `Γ` is central.** -/
-theorem complexVolume_mem_center (hn : Odd n) :
-    complexVolume Q o ∈ Subalgebra.center ℂ (CliffordAlgebra (Q.baseChange ℂ)) := by
-  rw [Subalgebra.mem_center_iff]
-  intro x
-  induction x using CliffordAlgebra.induction with
-  | algebraMap r => exact Algebra.commutes r _
-  | ι w => exact (complexVolume_mul_ι_of_odd o hQ hn w).symm
-  | mul a b ha hb => rw [mul_assoc, hb, ← mul_assoc, ha, mul_assoc]
-  | add a b ha hb => rw [add_mul, mul_add, ha, hb]
+  rw [complexVolume_mul_eq_involute_mul o hn, mul_assoc, complexVolume_mul_self o hQ, mul_one]
 
 end Form
 
