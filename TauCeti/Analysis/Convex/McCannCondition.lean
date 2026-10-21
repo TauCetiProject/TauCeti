@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Convex.Function
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
+public import TauCeti.Analysis.Convex.RecessionConstant
 import Mathlib.Analysis.Convex.Continuous
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import Mathlib.Tactic.FieldSimp
@@ -27,6 +28,8 @@ about `U` and `φ` that it is used through, independently of any transport.
 * `TauCeti.pow_mul_apply_div_pow_eq`: for `r, a > 0`, `aⁿ U(r / aⁿ) = r φ(r^{-1/n} a)`.
 * `TauCeti.pow_mul_apply_div_pow_le`: McCann's pointwise inequality, comparing `aⁿ U(r / aⁿ)` with
   the convex combination of its values at `1` and `a₁` when `(1 - t) + t a₁ ≤ a`.
+* `TauCeti.pow_mul_apply_inv_pow_le_recessionConstant`: if `φ` is nonincreasing on `(0, ∞)`, then
+  the recession constant of `U` bounds `φ` above there.
 * `TauCeti.measurable_apply_max_of_convexOn`: if `φ` is convex on `(0, ∞)`, then `U` is measurable
   on `[0, ∞)`.
 
@@ -51,6 +54,27 @@ theorem pow_mul_apply_div_pow_eq (hn : n ≠ 0) {r : ℝ} (hr : 0 < r) {a : ℝ}
   rw [mul_pow, Real.rpow_inv_natCast_pow (inv_nonneg.2 hr.le) hn,
     show (r⁻¹ * a ^ n)⁻¹ = r / a ^ n by field_simp]
   field_simp
+
+/-- If `φ(s) = sⁿ U(s⁻ⁿ)` is nonincreasing on `(0, ∞)`, with `n ≠ 0`, then the recession constant
+`U'(∞) = lim U(r) / r` bounds `φ` above on `(0, ∞)`, because `U(r) / r = φ(r^{-1/n})`. -/
+theorem pow_mul_apply_inv_pow_le_recessionConstant (hn : n ≠ 0)
+    (ha : AntitoneOn (fun s : ℝ => s ^ n * U (s ^ n)⁻¹) (Ioi 0)) {s : ℝ} (hs : 0 < s) :
+    ((s ^ n * U (s ^ n)⁻¹ : ℝ) : EReal) ≤ recessionConstant U := by
+  rw [recessionConstant_def]
+  refine le_limsup_of_frequently_le (Eventually.frequently ?_)
+  filter_upwards [eventually_ge_atTop (s ^ n)⁻¹, eventually_gt_atTop 0] with r hr hr0
+  set c := r⁻¹ ^ (n⁻¹ : ℝ)
+  have hc0 : 0 < c := Real.rpow_pos_of_pos (inv_pos.2 hr0) _
+  have hcn : c ^ n = r⁻¹ := Real.rpow_inv_natCast_pow (inv_nonneg.2 hr0.le) hn
+  have hcs : c ≤ s := by
+    refine (pow_le_pow_iff_left₀ hc0.le hs.le hn).1 ?_
+    rw [hcn]
+    exact inv_le_of_inv_le₀ (by positivity) hr
+  have := ha (mem_Ioi.2 hc0) (mem_Ioi.2 hs) hcs
+  rw [EReal.coe_le_coe_iff]
+  refine this.trans_eq ?_
+  simp only [hcn, inv_inv]
+  ring
 
 /-- **McCann's pointwise inequality.** Let `U 0 = 0` and let `φ(s) = sⁿ U(s⁻ⁿ)` be convex and
 nonincreasing on `(0, ∞)`, with `n ≠ 0`. If `a > 0` and `a₁ ≥ 0` satisfy the concavity bound

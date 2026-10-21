@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Convex.Slope
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.Topology.Instances.EReal.Lemmas
-import Mathlib.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # The recession constant of a function on the half-line
@@ -31,8 +30,6 @@ genuinely converges to it (`ConvexOn.tendsto_div_recessionConstant`).
 * `ConvexOn.tendsto_div_recessionConstant`: for `U` convex on `[0, ∞)`, `U(s) / s` tends to the
   recession constant.
 * `TauCeti.recessionConstant_mul_log`: the recession constant of `r ↦ r log r` is `⊤`.
-* `TauCeti.pow_mul_apply_inv_pow_le_recessionConstant`: if `φ(s) = sⁿ U(s⁻ⁿ)` is nonincreasing on
-  `(0, ∞)`, then the recession constant of `U` bounds `φ` above there.
 
 ## References
 
@@ -73,27 +70,6 @@ theorem recessionConstant_mul_log : recessionConstant (fun r ↦ r * Real.log r)
     (EReal.tendsto_coe_atTop.comp Real.tendsto_log_atTop).congr' ?_
   filter_upwards [eventually_gt_atTop 0] with s hs
   simp [mul_div_cancel_left₀ _ hs.ne']
-
-/-- If `φ(s) = sⁿ U(s⁻ⁿ)` is nonincreasing on `(0, ∞)`, with `n ≠ 0`, then the recession constant
-`U'(∞) = lim U(r) / r` bounds `φ` above on `(0, ∞)`, because `U(r) / r = φ(r^{-1/n})`. -/
-theorem pow_mul_apply_inv_pow_le_recessionConstant {U : ℝ → ℝ} {n : ℕ} (hn : n ≠ 0)
-    (ha : AntitoneOn (fun s : ℝ => s ^ n * U (s ^ n)⁻¹) (Ioi 0)) {s : ℝ} (hs : 0 < s) :
-    ((s ^ n * U (s ^ n)⁻¹ : ℝ) : EReal) ≤ recessionConstant U := by
-  rw [recessionConstant_def]
-  refine le_limsup_of_frequently_le (Eventually.frequently ?_)
-  filter_upwards [eventually_ge_atTop (s ^ n)⁻¹, eventually_gt_atTop 0] with r hr hr0
-  set c := r⁻¹ ^ (n⁻¹ : ℝ)
-  have hc0 : 0 < c := Real.rpow_pos_of_pos (inv_pos.2 hr0) _
-  have hcn : c ^ n = r⁻¹ := Real.rpow_inv_natCast_pow (inv_nonneg.2 hr0.le) hn
-  have hcs : c ≤ s := by
-    refine (pow_le_pow_iff_left₀ hc0.le hs.le hn).1 ?_
-    rw [hcn]
-    exact inv_le_of_inv_le₀ (by positivity) hr
-  have := ha (mem_Ioi.2 hc0) (mem_Ioi.2 hs) hcs
-  rw [EReal.coe_le_coe_iff]
-  refine this.trans_eq ?_
-  simp only [hcn, inv_inv]
-  ring
 
 end TauCeti
 
