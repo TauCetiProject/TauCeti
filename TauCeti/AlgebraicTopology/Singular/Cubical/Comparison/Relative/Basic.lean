@@ -36,6 +36,8 @@ relative homotopy invariance of cubical homology is transported from the simplic
 
 * `TopPair.cubicalChainComplex k P`: the relative normalized cubical chain complex of a pair.
 * `TopPair.cubicalChainComplexMap k f`: the chain map induced by a map of pairs.
+* `TopPair.cubicalChainOfCube k c`, `TopPair.cubicalCycleOfCube k c hc`: a singular cube as a
+  relative chain, and as a relative cycle when it sends the boundary of the cube into the subspace.
 * `TopPair.singularToCubicalRel k P`, `TopPair.cubicalToSingularRel k P`: the relative comparison
   maps.
 * `TopPair.singularCubicalHomologyIso k P n`: relative cubical homology is relative singular
@@ -122,6 +124,53 @@ theorem cubicalChainComplexMap_id (P : TopPair.{u}) :
 theorem cubicalChainComplexMap_comp {P P' P'' : TopPair.{u}} (f : P ⟶ P') (g : P' ⟶ P'') :
     cubicalChainComplexMap k (f ≫ g) = cubicalChainComplexMap k f ≫ cubicalChainComplexMap k g :=
   coequalizer.hom_ext (by simp)
+
+/-! ### Singular cubes as relative chains -/
+
+/-- A singular cube of the ambient space of `P`, as a relative normalized cubical chain of `P`. -/
+abbrev cubicalChainOfCube {P : TopPair.{u}} {m : ℕ} (c : SingularCube P.fst m) :
+    (P.cubicalChainComplex k).X m :=
+  (cokernel.π ((normalizedCubicalChainComplex k).map P.map)).f m
+    ((normalizedCubicalChainComplexXEquiv P.fst m).symm (NormalizedCubicalChain.ofCube P.fst k c))
+
+/-- A singular cube sending the boundary of the cube into the subspace is a relative cycle. -/
+theorem d_cubicalChainOfCube {P : TopPair.{u}} {m : ℕ} {c : SingularCube P.fst (m + 1)}
+    (hc : Set.MapsTo c (Cube.boundary (Fin (m + 1))) (Set.range P.map)) :
+    (P.cubicalChainComplex k).d (m + 1) m (cubicalChainOfCube k c) = 0 := by
+  -- The boundary of `c` is a chain of the subspace, which vanishes in the relative chains.
+  obtain ⟨a, ha⟩ :
+      NormalizedCubicalChain.boundary P.fst k m (NormalizedCubicalChain.ofCube P.fst k c) ∈
+        LinearMap.range (NormalizedCubicalChain.map k P.map.hom m) := by
+    rw [NormalizedCubicalChain.boundary_ofCube]
+    refine Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem _ _ (Submodule.sub_mem _ ?_ ?_) <;>
+      refine NormalizedCubicalChain.ofCube_mem_range_map k P.isEmbedding_map.isInducing ?_ <;>
+      rintro _ ⟨y, rfl⟩ <;>
+      rw [SingularCube.face_apply] <;>
+      exact hc ⟨i, by simp⟩
+  have hd : ((normalizedCubicalChainComplex k).obj P.fst).d (m + 1) m
+      ((normalizedCubicalChainComplexXEquiv P.fst (m + 1)).symm
+        (NormalizedCubicalChain.ofCube P.fst k c)) =
+        ((normalizedCubicalChainComplex k).map P.map).f m
+          ((normalizedCubicalChainComplexXEquiv P.snd m).symm a) :=
+    (normalizedCubicalChainComplex_obj_d_apply P.fst m _).trans
+      (ha.symm.trans (normalizedCubicalChainComplex_map_f_apply P.map m a).symm)
+  rw [cubicalChainOfCube, HomologicalComplex.Hom.comm_apply, hd]
+  exact congr(ModuleCat.Hom.hom $(cubicalChainComplex_condition_f k P m) _)
+
+/-- A singular cube sending the boundary of the cube into the subspace, as a relative cycle of the
+normalized cubical chains of `P`. -/
+def cubicalCycleOfCube {P : TopPair.{u}} {m : ℕ} (c : SingularCube P.fst (m + 1))
+    (hc : Set.MapsTo c (Cube.boundary (Fin (m + 1))) (Set.range P.map)) :
+    (P.cubicalChainComplex k).cycles (m + 1) :=
+  HomologicalComplex.moduleCatCyclesMk _ (cubicalChainOfCube k c) m (by simp)
+    (d_cubicalChainOfCube k hc)
+
+@[simp]
+theorem iCycles_cubicalCycleOfCube {P : TopPair.{u}} {m : ℕ} (c : SingularCube P.fst (m + 1))
+    (hc : Set.MapsTo c (Cube.boundary (Fin (m + 1))) (Set.range P.map)) :
+    (P.cubicalChainComplex k).iCycles (m + 1) (cubicalCycleOfCube k c hc) =
+      cubicalChainOfCube k c :=
+  HomologicalComplex.iCycles_moduleCatCyclesMk ..
 
 /-! ### The relative comparison maps -/
 

@@ -47,6 +47,8 @@ Hurewicz map, splits its relative Hurewicz class into those of `p` and `q`.
 
 ## Main declarations
 
+* `TauCeti.cubeBoundaryPairHom`: a singular cube sending the boundary of the cube into the
+  subspace, as a map of pairs `(Iᵐ, ∂Iᵐ) ⟶ (X, A)`.
 * `TauCeti.RelGenLoop.toCubeBoundaryPairHom`: a relative cube as a map of pairs
   `(Iⁿ⁺¹, ∂Iⁿ⁺¹) ⟶ (X, A)`.
 * `TauCeti.RelGenLoop.hurewicz`: the relative Hurewicz class of a relative cube.
@@ -76,13 +78,41 @@ universe w v u
 
 namespace TauCeti
 
+/-- A singular `m`-cube of the ambient space of a pair `P` sending the boundary of the cube into
+the subspace, as a map of pairs `(Iᵐ, ∂Iᵐ) ⟶ P`. -/
+def cubeBoundaryPairHom {P : TopPair.{w}} {m : ℕ} (c : C(I^(Fin m), P.fst))
+    (hc : Set.MapsTo c (Cube.boundary (Fin m)) (Set.range P.map)) :
+    cubeBoundaryPair.{w} m ⟶ P :=
+  TopPair.ofHom (TopCat.ofHom (c.comp ⟨ULift.down, continuous_uliftDown⟩))
+    (TopCat.ofHom (P.liftSnd ((c.comp ⟨ULift.down, continuous_uliftDown⟩).comp
+      ⟨Subtype.val, continuous_subtype_val⟩) fun z ↦ hc z.2))
+    (by ext z; exact TopPair.map_liftSnd _ _ z)
+
+@[simp]
+lemma cubeBoundaryPairHom_fst_apply {P : TopPair.{w}} {m : ℕ} (c : C(I^(Fin m), P.fst))
+    (hc : Set.MapsTo c (Cube.boundary (Fin m)) (Set.range P.map))
+    (z : (cubeBoundaryPair.{w} m).fst) :
+    TopPair.Hom.fst (cubeBoundaryPairHom c hc) z = c z.down :=
+  (rfl)
+
+/-- Split a point of `Iⁿ⁺¹` into its first coordinate and the remaining ones. -/
+def cubeSplit (n : ℕ) : C(ULift.{w} (I^(Fin (n + 1))), I × (I^(Fin n))) :=
+  ⟨fun z ↦ (z.down 0, Fin.tail z.down), by fun_prop⟩
+
+@[simp]
+lemma cubeSplit_apply {n : ℕ} (z : ULift.{w} (I^(Fin (n + 1)))) :
+    cubeSplit n z = (z.down 0, Fin.tail z.down) :=
+  (rfl)
+
+/-- `cubeSplit` sends the boundary of `Iⁿ⁺¹` to the boundary of `I × Iⁿ`. -/
+lemma cubeSplit_mem_prodBoundary {n : ℕ} {z : ULift.{w} (I^(Fin (n + 1)))}
+    (hz : z.down ∈ Cube.boundary (Fin (n + 1))) : cubeSplit n z ∈ Cube.prodBoundary (Fin n) := by
+  rw [Cube.mem_prodBoundary_iff]
+  exact Cube.boundary_fin_succ_iff.1 hz
+
 namespace RelGenLoop
 
 variable {n : ℕ} {X Y : BasedTopPair.{w}}
-
-/-- Split a point of `Iⁿ⁺¹` into its first coordinate and the remaining ones. -/
-private def cubeSplit (n : ℕ) : C(ULift.{w} (I^(Fin (n + 1))), I × (I^(Fin n))) :=
-  ⟨fun z ↦ (z.down 0, Fin.tail z.down), by fun_prop⟩
 
 /-- A relative cube sends the boundary of the cube into the subspace. -/
 theorem apply_mem_range_of_mem_boundary (p : RelGenLoop (Fin n) X) {z : I^(Fin (n + 1))}
@@ -102,10 +132,9 @@ private def cubeMap (p : RelGenLoop (Fin n) X) : C(ULift.{w} (I^(Fin (n + 1))), 
 /-- A relative cube `p : I × Iⁿ → X`, read on `Iⁿ⁺¹` with the first coordinate as the distinguished
 direction, as a map of pairs `(Iⁿ⁺¹, ∂Iⁿ⁺¹) ⟶ (X, A)`. -/
 def toCubeBoundaryPairHom (p : RelGenLoop (Fin n) X) : cubeBoundaryPair.{w} (n + 1) ⟶ X.pair :=
-  TopPair.ofHom (TopCat.ofHom (cubeMap p))
-    (TopCat.ofHom (X.pair.liftSnd ((cubeMap p).comp ⟨Subtype.val, continuous_subtype_val⟩)
-      fun z ↦ apply_mem_range_of_mem_boundary p z.2))
-    (by ext z; exact TopPair.map_liftSnd _ _ z)
+  cubeBoundaryPairHom
+    ((p : C(I × (I^(Fin n)), X.pair.fst)).comp ⟨fun z ↦ (z 0, Fin.tail z), by fun_prop⟩)
+    fun _ hz ↦ apply_mem_range_of_mem_boundary p hz
 
 @[simp]
 lemma toCubeBoundaryPairHom_fst_apply (p : RelGenLoop (Fin n) X)
