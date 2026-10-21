@@ -7,7 +7,6 @@ module
 
 public import TauCeti.FieldTheory.QuadraticForm.StiefelWhitney.Hasse
 public import TauCeti.LinearAlgebra.QuadraticForm.Witt.Pfister.Basic
-import TauCeti.Data.Nat.Choose.Basic
 
 /-!
 # The Stiefel–Whitney classes of Pfister forms
@@ -122,8 +121,10 @@ theorem sw2Class_pfisterFormClass_two (a b : Kˣ) :
 @[simp]
 theorem sw2Class_pfisterFormClass_of_three_le {n : ℕ} (a : Fin n → Kˣ) (hn : 3 ≤ n) :
     sw2Class (pfisterFormClass a) = 0 := by
-  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' (show 1 ≤ n by omega)
-  obtain ⟨k, hk⟩ := Nat.two_dvd_two_pow_choose_two (show 2 ≤ m by omega)
+  have hn1 : 1 ≤ n := by omega
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' hn1
+  have hm : 2 ≠ 2 ^ m := (Nat.pow_lt_pow_right one_lt_two (by omega : 1 < m)).ne
+  obtain ⟨k, hk⟩ := Nat.prime_two.dvd_choose_pow two_ne_zero hm
   rw [← Fin.cons_self_tail a, pfisterFormClass_cons, add_mul, one_mul,
     sw2Class_add_mk_rankOne_mul, rank_pfisterFormClass, sw1Class_pfisterFormClass _ (by omega),
     hk, two_mul, add_nsmul, ZModModule.add_self]
@@ -136,7 +137,8 @@ theorem sw2Class_mk_rankOne_mul_pfisterFormClass (c : Kˣ) {n : ℕ} (a : Fin n 
     (hn : 2 ≤ n) :
     sw2Class (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => c⟩ * pfisterFormClass a) =
       sw2Class (pfisterFormClass a) := by
-  obtain ⟨k, hk⟩ := Nat.two_dvd_two_pow_choose_two hn
+  have hn' : 2 ≠ 2 ^ n := (Nat.pow_lt_pow_right one_lt_two (by omega : 1 < n)).ne
+  obtain ⟨k, hk⟩ := Nat.prime_two.dvd_choose_pow two_ne_zero hn'
   rw [sw2Class_mk_rankOne_mul, rank_pfisterFormClass, sw1Class_pfisterFormClass a hn, hk,
     two_mul, add_nsmul, ZModModule.add_self]
   simp
