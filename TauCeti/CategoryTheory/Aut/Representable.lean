@@ -40,6 +40,10 @@ along `σ`, by uniqueness of representing objects
 
 * `CategoryTheory.Functor.RepresentableBy.homEquiv_comp_autMulEquiv_hom`: the automorphism of `Y`
   attached to `σ` acts on `homEquiv f` as `σ`.
+* `CategoryTheory.Functor.RepresentableBy.homEquiv_autMulEquiv_hom`: the automorphism of `Y`
+  attached to `σ` classifies `σ (homEquiv (𝟙 Y))`.
+* `CategoryTheory.Functor.RepresentableBy.homEquiv_uniqueUpToIso_hom`: the isomorphism between two
+  representing objects classifies the universal element of the first.
 * `CategoryTheory.Functor.RepresentableBy.autMulEquiv_symm_hom_app`: conversely, the automorphism of
   `F` attached to an automorphism `s` of `Y` is postcomposition with `s`.
 -/
@@ -75,17 +79,23 @@ objects, it compares the representation `R` with its transport along `σ`. -/
 private def toAutObj (σ : Aut F) : Aut Y :=
   .of ((R.ofIso σ.asIso).uniqueUpToIso R)
 
-private theorem homEquiv_comp_toAutObj_hom (σ : Aut F) {X : C} (f : X ⟶ Y) :
-    R.homEquiv (f ≫ (R.toAutObj σ).asIso.hom) = σ.asIso.hom.app (op X) (R.homEquiv f) := by
-  have h : (R.toAutObj σ).asIso.hom =
-      R.homEquiv.symm (σ.asIso.hom.app (op Y) (R.homEquiv (𝟙 Y))) := by
-    simp [toAutObj, Yoneda.fullyFaithful_preimage, ofIso]
-  rw [h, homEquiv_comp, Equiv.apply_symm_apply, ← NatTrans.naturality_apply, ← homEquiv_comp,
-    Category.comp_id]
+/-- The isomorphism between two representing objects of `F` classifies, under the second
+representation, the universal element of the first. -/
+theorem homEquiv_uniqueUpToIso_hom {Y' : C} (R' : F.RepresentableBy Y') :
+    R'.homEquiv (R.uniqueUpToIso R').hom = R.homEquiv (𝟙 Y) := by
+  rw [uniqueUpToIso_hom, Yoneda.fullyFaithful_preimage]
+  -- the preimage under Yoneda is the image of `𝟙 Y` under `R'.homEquiv.symm ∘ R.homEquiv`
+  exact R'.homEquiv.apply_symm_apply _
 
 private theorem homEquiv_toAutObj_hom (σ : Aut F) :
-    R.homEquiv (R.toAutObj σ).asIso.hom = σ.asIso.hom.app (op Y) (R.homEquiv (𝟙 Y)) := by
-  rw [← R.homEquiv_comp_toAutObj_hom, Category.id_comp]
+    R.homEquiv (R.toAutObj σ).asIso.hom = σ.asIso.hom.app (op Y) (R.homEquiv (𝟙 Y)) :=
+  -- the universal element of `R.ofIso σ.asIso` is `σ (homEquiv (𝟙 Y))` by definition
+  (R.ofIso σ.asIso).homEquiv_uniqueUpToIso_hom R
+
+private theorem homEquiv_comp_toAutObj_hom (σ : Aut F) {X : C} (f : X ⟶ Y) :
+    R.homEquiv (f ≫ (R.toAutObj σ).asIso.hom) = σ.asIso.hom.app (op X) (R.homEquiv f) := by
+  rw [homEquiv_comp, homEquiv_toAutObj_hom, ← NatTrans.naturality_apply, ← homEquiv_comp,
+    Category.comp_id]
 
 /-- **Automorphisms of a represented presheaf are automorphisms of the representing object.** If
 `F` is represented by `Y`, an automorphism `σ` of `F` corresponds to the automorphism `s` of `Y`
@@ -112,8 +122,7 @@ def autMulEquiv : Aut F ≃* Aut Y where
   map_mul' σ τ := by
     ext
     refine R.homEquiv.injective ?_
-    rw [Aut.mul_asIso, Iso.trans_hom, homEquiv_comp_toAutObj_hom, homEquiv_toAutObj_hom,
-      homEquiv_toAutObj_hom, Aut.mul_asIso, Iso.trans_hom, NatTrans.comp_app, types_comp_apply]
+    simp [homEquiv_comp_toAutObj_hom, homEquiv_toAutObj_hom]
 
 /-- The automorphism of `Y` attached to an automorphism `σ` of `F` acts on `homEquiv f` as `σ`. -/
 @[simp]
@@ -128,6 +137,20 @@ theorem homEquiv_comp_autMulEquiv_inv (σ : Aut F) {X : C} (f : X ⟶ Y) :
     R.homEquiv (f ≫ (R.autMulEquiv σ).asIso.inv) = σ.asIso.inv.app (op X) (R.homEquiv f) := by
   rw [← Iso.symm_hom, ← Aut.inv_asIso, ← _root_.map_inv, homEquiv_comp_autMulEquiv_hom,
     Aut.inv_asIso, Iso.symm_hom]
+
+/-- The automorphism of `Y` attached to an automorphism `σ` of `F` classifies the image under `σ`
+of the universal element `homEquiv (𝟙 Y)`. -/
+@[simp]
+theorem homEquiv_autMulEquiv_hom (σ : Aut F) :
+    R.homEquiv (R.autMulEquiv σ).asIso.hom = σ.asIso.hom.app (op Y) (R.homEquiv (𝟙 Y)) := by
+  rw [← R.homEquiv_comp_autMulEquiv_hom, Category.id_comp]
+
+/-- The inverse of the automorphism of `Y` attached to an automorphism `σ` of `F` classifies the
+image under `σ⁻¹` of the universal element `homEquiv (𝟙 Y)`. -/
+@[simp]
+theorem homEquiv_autMulEquiv_inv (σ : Aut F) :
+    R.homEquiv (R.autMulEquiv σ).asIso.inv = σ.asIso.inv.app (op Y) (R.homEquiv (𝟙 Y)) := by
+  rw [← R.homEquiv_comp_autMulEquiv_inv, Category.id_comp]
 
 /-- The automorphism of `F` attached to an automorphism `s` of `Y` is postcomposition with `s`. -/
 @[simp]

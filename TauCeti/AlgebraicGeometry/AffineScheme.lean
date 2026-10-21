@@ -9,7 +9,7 @@ public import Mathlib.AlgebraicGeometry.AffineScheme
 public import Mathlib.AlgebraicGeometry.Properties
 
 /-!
-# Affine schemes: the isomorphism with the spectrum, and fixed points of endomorphisms
+# Affine schemes: the spectrum, fixed points, and actions on global sections
 
 For an affine scheme `X`, Mathlib's `AlgebraicGeometry.Scheme.isoSpec` is the isomorphism
 `X ≅ Spec Γ(X, ⊤)`. This file computes the map of global sections of its inverse: it is the
@@ -20,7 +20,13 @@ Through this isomorphism, the scheme-theoretic fixed locus of an endomorphism `f
 closed subscheme cut out by the elements `f^*(a) - a` of `Γ(X, ⊤)`. Hence these elements generate
 the unit ideal exactly when `f` fixes no point of `X` with values in a nonempty scheme. This is the
 form in which a free action of a finite group on an affine scheme enters the theory of invariant
-quotients (`TauCeti.AffineInvariantQuotient.etale_projection`).
+quotients (`TauCeti.AffineInvariantQuotient.etale_projection`), once the group acts on `Γ(X, ⊤)` by
+pullback along inverses (`AlgebraicGeometry.Scheme.globalSectionsMulSemiringAction`).
+
+## Main definitions
+
+* `AlgebraicGeometry.Scheme.globalSectionsMulSemiringAction`: a group acting on a scheme `X` acts on
+  `Γ(X, ⊤)` by `g • a = (σ g⁻¹)^*(a)`.
 
 ## Main results
 
@@ -81,5 +87,30 @@ theorem Scheme.Hom.span_range_appTop_sub_eq_top_iff {X : Scheme.{u}} [IsAffine X
     congr 2
     ext a
     exact Ideal.Quotient.eq.2 (Ideal.subset_span ⟨a, rfl⟩)
+
+/-- **A group acting on a scheme acts on its global functions**, by pullback along inverses:
+`g • a = (σ g⁻¹)^*(a)`. Pullback reverses composition, so pulling back along inverses makes this a
+left action. For affine `X`, this is the ring action whose invariant quotient
+`TauCeti.AffineInvariantQuotient` forms. -/
+noncomputable abbrev Scheme.globalSectionsMulSemiringAction {X : Scheme.{u}} {G : Type*} [Group G]
+    (σ : G →* Aut X) : MulSemiringAction G Γ(X, ⊤) where
+  smul g a := (σ g⁻¹).asIso.hom.appTop a
+  one_smul a := by simp [HSMul.hSMul]
+  mul_smul g h a := by
+    change (σ (g * h)⁻¹).asIso.hom.appTop a = (σ g⁻¹).asIso.hom.appTop ((σ h⁻¹).asIso.hom.appTop a)
+    simp only [mul_inv_rev, map_mul, Aut.mul_asIso, Iso.trans_hom, Scheme.Hom.comp_appTop,
+      CommRingCat.comp_apply]
+  smul_zero g := map_zero _
+  smul_add g := map_add _
+  smul_one g := map_one _
+  smul_mul g := map_mul _
+
+/-- Under `Scheme.globalSectionsMulSemiringAction σ`, `g` acts on a global function by pullback
+along `σ g⁻¹`. -/
+theorem Scheme.globalSectionsMulSemiringAction_smul_def {X : Scheme.{u}} {G : Type*} [Group G]
+    (σ : G →* Aut X) (g : G) (a : Γ(X, ⊤)) :
+    letI := Scheme.globalSectionsMulSemiringAction σ
+    g • a = (σ g⁻¹).asIso.hom.appTop a :=
+  rfl
 
 end AlgebraicGeometry
