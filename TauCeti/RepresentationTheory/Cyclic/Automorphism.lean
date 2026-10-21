@@ -40,6 +40,10 @@ Its group cohomology is read off in
 * `AddEquiv.mem_ker_cyclicRep_applyAsHom_sub_iff`,
   `AddEquiv.mem_range_cyclicRep_applyAsHom_sub_iff`: the kernel of `ρ(g) - 𝟙` for the generator
   `g` is the fixed points of `A`, and its image is that of `1 - A`.
+* `AddMonoidHom.exists_apply_eq_sum_range_iterate`,
+  `AddMonoidHom.sum_range_iterate_add_apply`: for an exact sequence `0 → Λ → E → T` with maps
+  intertwining automorphisms of order dividing `m`, the norm of a lift of a norm-zero element of
+  `T` is the image of a fixed point, and changing the lift by `l` adds the norm of `l`.
 -/
 
 public section
@@ -161,5 +165,39 @@ theorem coe_cyclicRepHom_hom :
       (f.cyclicRepHom hA hB hf).hom = f := by
   ext x
   simp [cyclicRepHom]
+
+end AddMonoidHom
+
+namespace AddMonoidHom
+
+/-! ### Norms along an equivariant exact sequence -/
+
+variable {Λ E T : Type*} [AddCommGroup Λ] [AddCommGroup E] [AddCommGroup T] {m : ℕ}
+  {AΛ : Λ ≃+ Λ} {AE : E ≃+ E} {AT : T ≃+ T} (i : Λ →+ E) (p : E →+ T)
+
+/-- Changing the lift `s` by the image of `l : Λ` changes the norm `∑ j < m, AE^j s` by the image
+of the norm `∑ j < m, AΛ^j l`. -/
+theorem sum_range_iterate_add_apply (hi : ∀ x, i (AΛ x) = AE (i x)) (s : E) (l : Λ) :
+    ∑ j ∈ Finset.range m, (⇑AE)^[j] (s + i l) =
+      ∑ j ∈ Finset.range m, (⇑AE)^[j] s + i (∑ j ∈ Finset.range m, (⇑AΛ)^[j] l) := by
+  rw [map_sum, ← Finset.sum_add_distrib]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  rw [iterate_map_add, Function.Semiconj.iterate_right hi j l]
+
+/-- The norm `∑ j < m, AE^j s` of a lift `s` of a norm-zero element of `T` is the image of a
+fixed point of `AΛ`. -/
+theorem exists_apply_eq_sum_range_iterate [NeZero m] (hE : (⇑AE)^[m] = _root_.id)
+    (hi : ∀ x, i (AΛ x) = AE (i x)) (hp : ∀ x, p (AE x) = AT (p x)) (hinj : Function.Injective i)
+    (hexact : Function.Exact i p) {s : E}
+    (hs : ∑ j ∈ Finset.range m, (⇑AT)^[j] (p s) = 0) :
+    ∃ v : Λ, AΛ v = v ∧ i v = ∑ j ∈ Finset.range m, (⇑AE)^[j] s := by
+  obtain ⟨v, hv⟩ := (hexact _).1 <| by
+    rw [map_sum, ← hs]
+    exact Finset.sum_congr rfl fun j _ ↦ Function.Semiconj.iterate_right hp j s
+  refine ⟨v, hinj ?_, hv⟩
+  -- The norm is fixed by `AE`.
+  have hN := (AE.cyclicRepresentation hE).self_norm_apply (.ofAdd 1) s
+  rwa [AddEquiv.cyclicRepresentation_ofAdd_one_apply, AddEquiv.cyclicRepresentation_norm_apply,
+    ← hv, ← hi] at hN
 
 end AddMonoidHom

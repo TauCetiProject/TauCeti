@@ -396,18 +396,17 @@ theorem norm_apply_eq_sum_range_pow (a : A) :
 
 include hg in
 /-- Reducing the length `i + j` of a partial norm modulo `n` loses a full norm exactly when
-`i + j` carries. -/
+`i + j` carries: this is `geomSum_add_sub_geomSum_mod` acting on `a`. -/
 private theorem sum_range_add_mod_orderOf (a : A) (i j : ℕ) (hi : i < orderOf g)
     (hj : j < orderOf g) :
     ∑ l ∈ Finset.range ((i + j) % orderOf g), A.ρ (g ^ l) a +
         (if orderOf g ≤ i + j then A.ρ.norm a else 0) =
       ∑ l ∈ Finset.range (i + j), A.ρ (g ^ l) a := by
-  split_ifs with h
-  · obtain ⟨r, hr⟩ := Nat.exists_eq_add_of_le h
-    rw [hr, Nat.add_mod_left, Nat.mod_eq_of_lt (by omega), Finset.sum_range_add,
-      ← norm_apply_eq_sum_range_pow A g hg, add_comm]
-    simp only [pow_add, pow_orderOf_eq_one, one_mul]
-  · rw [Nat.mod_eq_of_lt (not_le.1 h), add_zero]
+  have h := congrArg (A.ρ.asAlgebraHom · a) (geomSum_add_sub_geomSum_mod k g hg i j hi hj)
+  simp only [map_sub, map_sum, apply_ite, map_zero, Representation.asAlgebraHom_single_one,
+    LinearMap.sub_apply, LinearMap.sum_apply, sub_eq_iff_eq_add'] at h
+  rw [h, Representation.norm]
+  split_ifs <;> simp only [LinearMap.sum_apply, LinearMap.zero_apply]
 
 /-- The partial norm cochain of `a` at `(gⁱ, gʲ)`, after the coboundary: `x • f y - f (x y) + f x`
 is `ρ.norm a` if `i + j` carries and `0` otherwise. -/
@@ -461,6 +460,46 @@ end PartialNormCocycle
 
 variable [Fintype G]
 
+/-- Moving a homology class through a comparison map: the homology class of `S`, sent to the
+homology of `X` in degree `n` by `φ : S ⟶ X.sc n` and then along `ψ₁` and `ψ₂`, is the class of
+`f`, for any map `f` into the cycles of `Z` that agrees with `φ` followed by `ψ₁ ≫ ψ₂` after the
+inclusions into degree `n`. This is the categorical part of the comparisons in degrees `1`
+and `2`.
+
+The compositions are reassociated by hand, with `Category.assoc` under `congrArg`: in the
+applications the leading factor `moduleCatCyclesIso.inv` has source `moduleCatLeftHomologyData.K`,
+which is the domain of Mathlib's `groupCohomologyπEven` and `groupCohomologyπOdd` only up to
+unfolding, so the goal is not type-correct at instance transparency and
+`simp only [Category.assoc, …]` and `rw [ShortComplex.homologyπ_naturality_assoc]` make no
+progress on it; the same holds here for `HomologicalComplex.homologyMap ψ₁ n`, whose source is
+`(X.sc n).homology` only up to unfolding. -/
+private theorem moduleCatCyclesIso_inv_comp_homologyπ_comp_homologyMap {ι : Type*}
+    {c : ComplexShape ι} {S : ShortComplex (ModuleCat.{u} k)}
+    {X Y Z : HomologicalComplex (ModuleCat.{u} k) c} {n : ι} (φ : S ⟶ X.sc n) (ψ₁ : X ⟶ Y)
+    (ψ₂ : Y ⟶ Z) (f : S.moduleCatLeftHomologyData.K ⟶ Z.cycles n)
+    (hf : S.moduleCatLeftHomologyData.i ≫ φ.τ₂ ≫ (ψ₁ ≫ ψ₂).f n = f ≫ Z.iCycles n) :
+    S.moduleCatCyclesIso.inv ≫ S.homologyπ ≫
+        (ShortComplex.homologyMap φ ≫ HomologicalComplex.homologyMap ψ₁ n) ≫
+          HomologicalComplex.homologyMap ψ₂ n =
+      f ≫ Z.homologyπ n := by
+  -- By naturality of `homologyπ`, the left side is a map into the cycles of `Z` followed by the
+  -- projection to the homology.
+  refine (congrArg (_ ≫ ·) ((congrArg (_ ≫ ·) (Category.assoc _ _ _)).trans
+    ((Category.assoc _ _ _).symm.trans ((congrArg₂ (· ≫ ·) (ShortComplex.homologyπ_naturality _)
+      (HomologicalComplex.homologyMap_comp _ _ n).symm).trans ((Category.assoc _ _ _).trans
+        (congrArg (_ ≫ ·) (HomologicalComplex.homologyπ_naturality _ n))))))).trans ?_
+  refine ((congrArg (_ ≫ ·) (Category.assoc _ _ _).symm).trans (Category.assoc _ _ _).symm).trans
+    (congrArg (· ≫ Z.homologyπ n) ?_)
+  -- The two maps into the cycles agree after the inclusion into degree `n`.
+  rw [← cancel_mono (Z.iCycles n), ← hf]
+  refine (Category.assoc _ _ _).trans ?_
+  refine (congrArg (_ ≫ ·) ((Category.assoc _ _ _).trans
+    (congrArg (_ ≫ ·) (HomologicalComplex.cyclesMap_i _ n)))).trans ?_
+  refine (congrArg (_ ≫ ·) ((Category.assoc _ _ _).symm.trans
+    (congrArg (· ≫ _) (ShortComplex.cyclesMap_i _)))).trans ?_
+  refine ((congrArg (_ ≫ ·) (Category.assoc _ _ _)).trans (Category.assoc _ _ _).symm).trans ?_
+  exact congrArg (· ≫ _) (ShortComplex.moduleCatCyclesIso_inv_iCycles _)
+
 /-- The comparison map on cochains in degree `2` sends `k[G] ⟶ A, 1 ↦ a` to the carry cochain of
 `a`: it evaluates the map on the image `barToPeriodic₂ [v₀ | v₁]` of a basis element, which is the
 carry of `v₀, v₁`. -/
@@ -486,31 +525,11 @@ theorem groupCohomologyπEven_two :
     (barToPeriodic_f_zero_comp_π k g hg)]
   rw [HomologicalComplex.alternatingConstHomologyIsoEven, ShortComplex.homologyMapIso_inv,
     HomologicalComplex.homologyMapIso_inv]
-  -- The compositions are reassociated by hand, with `Category.assoc` under `congrArg`: the leading
-  -- factor `moduleCatCyclesIso.inv` of Mathlib's `groupCohomologyπEven` has source
-  -- `moduleCatLeftHomologyData.K`, which is the kernel in its type only up to unfolding, so the
-  -- goal is not type-correct at instance transparency and `simp only [Category.assoc, …]` and
-  -- `rw [ShortComplex.homologyπ_naturality_assoc]` make no progress on it.
-  -- Move the homology class through the comparison map: by naturality of `homologyπ`, the left
-  -- side is a map into the `2`-cocycles followed by the projection to `H²(G, A)`.
-  refine (congrArg (_ ≫ ·) ((congrArg (_ ≫ ·) (Category.assoc _ _ _)).trans
-    ((Category.assoc _ _ _).symm.trans ((congrArg₂ (· ≫ ·) (ShortComplex.homologyπ_naturality _)
-      (HomologicalComplex.homologyMap_comp _ _ 2).symm).trans ((Category.assoc _ _ _).trans
-        (congrArg (_ ≫ ·) (HomologicalComplex.homologyπ_naturality _ 2))))))).trans ?_
-  rw [H2π]
-  refine ((congrArg (_ ≫ ·) (Category.assoc _ _ _).symm).trans (Category.assoc _ _ _).symm).trans
-    (Eq.trans ?_ (Category.assoc _ _ _))
-  refine congrArg (· ≫ groupCohomology.π A 2) ?_
-  -- The two maps into the `2`-cocycles agree after the inclusion into the `2`-cochains.
-  rw [← cancel_mono (iCocycles A 2), Category.assoc (ModuleCat.ofHom _),
-    isoCocycles₂_inv_comp_iCocycles]
-  refine (Category.assoc _ _ _).trans ?_
-  refine (congrArg (_ ≫ ·) ((Category.assoc _ _ _).trans
-    (congrArg (_ ≫ ·) (HomologicalComplex.cyclesMap_i _ 2)))).trans ?_
-  refine (congrArg (_ ≫ ·) ((Category.assoc _ _ _).symm.trans
-    (congrArg (· ≫ _) (ShortComplex.cyclesMap_i _)))).trans ?_
-  refine ((congrArg (_ ≫ ·) (Category.assoc _ _ _)).trans (Category.assoc _ _ _).symm).trans ?_
-  refine (congrArg (· ≫ _) (ShortComplex.moduleCatCyclesIso_inv_iCycles _)).trans ?_
+  refine (moduleCatCyclesIso_inv_comp_homologyπ_comp_homologyMap _ _ _
+    (ModuleCat.ofHom (carryCocycle A g hg) ≫ (isoCocycles₂ A).inv) (Eq.trans ?_
+      ((Category.assoc _ _ _).trans
+        (congrArg (_ ≫ ·) (isoCocycles₂_inv_comp_iCocycles A))).symm)).trans
+    (Category.assoc _ _ _)
   ext x v
   -- Both sides are definitionally values of cochains at `v`: on the left, `homResolutionIso` sends
   -- `x` to `k[G] ⟶ A, 1 ↦ x` and the middle component of `alternatingConstScIsoEven` is the
@@ -554,27 +573,11 @@ theorem groupCohomologyπOdd_one :
     (barToPeriodic_f_zero_comp_π k g hg)]
   rw [HomologicalComplex.alternatingConstHomologyIsoOdd, ShortComplex.homologyMapIso_inv,
     HomologicalComplex.homologyMapIso_inv]
-  -- The compositions are reassociated by hand, for the reason explained in
-  -- `groupCohomologyπEven_two`. By naturality of `homologyπ`, the left side is a map into the
-  -- `1`-cocycles followed by the projection to `H¹(G, A)`.
-  refine (congrArg (_ ≫ ·) ((congrArg (_ ≫ ·) (Category.assoc _ _ _)).trans
-    ((Category.assoc _ _ _).symm.trans ((congrArg₂ (· ≫ ·) (ShortComplex.homologyπ_naturality _)
-      (HomologicalComplex.homologyMap_comp _ _ 1).symm).trans ((Category.assoc _ _ _).trans
-        (congrArg (_ ≫ ·) (HomologicalComplex.homologyπ_naturality _ 1))))))).trans ?_
-  rw [H1π]
-  refine ((congrArg (_ ≫ ·) (Category.assoc _ _ _).symm).trans (Category.assoc _ _ _).symm).trans
-    (Eq.trans ?_ (Category.assoc _ _ _))
-  refine congrArg (· ≫ groupCohomology.π A 1) ?_
-  -- The two maps into the `1`-cocycles agree after the inclusion into the `1`-cochains.
-  rw [← cancel_mono (iCocycles A 1), Category.assoc (ModuleCat.ofHom _),
-    isoCocycles₁_inv_comp_iCocycles]
-  refine (Category.assoc _ _ _).trans ?_
-  refine (congrArg (_ ≫ ·) ((Category.assoc _ _ _).trans
-    (congrArg (_ ≫ ·) (HomologicalComplex.cyclesMap_i _ 1)))).trans ?_
-  refine (congrArg (_ ≫ ·) ((Category.assoc _ _ _).symm.trans
-    (congrArg (· ≫ _) (ShortComplex.cyclesMap_i _)))).trans ?_
-  refine ((congrArg (_ ≫ ·) (Category.assoc _ _ _)).trans (Category.assoc _ _ _).symm).trans ?_
-  refine (congrArg (· ≫ _) (ShortComplex.moduleCatCyclesIso_inv_iCycles _)).trans ?_
+  refine (moduleCatCyclesIso_inv_comp_homologyπ_comp_homologyMap _ _ _
+    (ModuleCat.ofHom (partialNormCocycle A g hg) ≫ (isoCocycles₁ A).inv) (Eq.trans ?_
+      ((Category.assoc _ _ _).trans
+        (congrArg (_ ≫ ·) (isoCocycles₁_inv_comp_iCocycles A))).symm)).trans
+    (Category.assoc _ _ _)
   ext x v
   -- Both sides are definitionally values of cochains at `v`: on the left, `homResolutionIso` sends
   -- `x` to `k[G] ⟶ A, 1 ↦ x` and the middle component of `alternatingConstScIsoOdd` is the

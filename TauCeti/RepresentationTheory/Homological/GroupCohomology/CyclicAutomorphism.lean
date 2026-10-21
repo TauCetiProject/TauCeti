@@ -46,11 +46,13 @@ homomorphism `δ : H¹(C_m, T) ⟶ H²(C_m, Λ)` is computed on classes: for `t`
 and a lift `s : E` of `t`, the norm `∑ j < m, AE^j s` is the image of a fixed point `v` of `AΛ`
 (`AddMonoidHom.exists_apply_eq_sum_range_iterate`), and `δ` sends the class of `t` to the class
 of `v` (`AddMonoidHom.δ_cyclicRepShortComplex_groupCohomologyπOdd_one`). Changing `s` by the
-image of `l : Λ` changes `v` by the norm of `l`, which does not change its class. In particular,
-when `m • s = i v` the class of the image of `s` is sent to the class of `v`, that is
-`δ [v / m] = [v]`. When multiplication by `m` is bijective on `E`, as for a real vector space,
-the cohomology of `E` vanishes in positive degrees and `δ` is an isomorphism
-(`AddMonoidHom.cyclicConnectingEquiv`).
+image of `l : Λ` changes `v` by the norm of `l` (`AddMonoidHom.sum_range_iterate_add_apply`),
+which does not change its class. In particular, when multiplication by `m` is injective on `E`
+and `m • s = i v`, the class of the image of `s` is sent to the class of `v`, that is
+`δ [v / m] = [v]`
+(`AddMonoidHom.δ_cyclicRepShortComplex_groupCohomologyπOdd_one_of_nsmul_eq`). When multiplication
+by `m` is bijective on `E`, as for a real vector space, the cohomology of `E` vanishes in positive
+degrees and `δ` is an isomorphism (`AddMonoidHom.cyclicConnectingEquiv`).
 
 ## Main definitions
 
@@ -69,9 +71,6 @@ the cohomology of `E` vanishes in positive degrees and `δ` is an isomorphism
   of `A` modulo the image of the norm.
 * `AddMonoidHom.shortExact_cyclicRepShortComplex`: an exact sequence of abelian groups with
   equivariant maps is a short exact sequence of cyclic representations.
-* `AddMonoidHom.exists_apply_eq_sum_range_iterate`,
-  `AddMonoidHom.sum_range_iterate_add_apply`: the norm of a lift of a norm-zero element is the
-  image of a fixed point, and changing the lift by `l` adds the norm of `l`.
 * `AddMonoidHom.δ_cyclicRepShortComplex_groupCohomologyπOdd_one`,
   `AddMonoidHom.δ_cyclicRepShortComplex_groupCohomologyπOdd_one_of_nsmul_eq`: the connecting
   homomorphism sends the class of `t` to the class of the norm of a lift of `t`, and the class of
@@ -172,32 +171,6 @@ theorem shortExact_cyclicRepShortComplex {hΛ : (⇑AΛ)^[m] = _root_.id}
         ((hexact x).1 ((hg x).symm.trans hx)).imp fun y hy ↦ (hf y).trans hy
     mono_f := (Rep.mono_iff_injective _).2 fun x y h ↦ hinj ((hf x).symm.trans (h.trans (hf y)))
     epi_g := (Rep.epi_iff_surjective _).2 fun x ↦ (hsurj x).imp fun y hy ↦ (hg y).trans hy }
-
-omit [NeZero m] in
-/-- Changing the lift `s` by the image of `l : Λ` changes the norm `∑ j < m, AE^j s` by the image
-of the norm `∑ j < m, AΛ^j l`. -/
-theorem sum_range_iterate_add_apply (hi : ∀ x, i (AΛ x) = AE (i x)) (s : E) (l : Λ) :
-    ∑ j ∈ Finset.range m, (⇑AE)^[j] (s + i l) =
-      ∑ j ∈ Finset.range m, (⇑AE)^[j] s + i (∑ j ∈ Finset.range m, (⇑AΛ)^[j] l) := by
-  rw [map_sum, ← Finset.sum_add_distrib]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  rw [iterate_map_add, Function.Semiconj.iterate_right hi j l]
-
-/-- The norm `∑ j < m, AE^j s` of a lift `s` of a norm-zero element of `T` is the image of a
-fixed point of `AΛ`. -/
-theorem exists_apply_eq_sum_range_iterate (hE : (⇑AE)^[m] = _root_.id)
-    (hi : ∀ x, i (AΛ x) = AE (i x)) (hp : ∀ x, p (AE x) = AT (p x)) (hinj : Function.Injective i)
-    (hexact : Function.Exact i p) {s : E}
-    (hs : ∑ j ∈ Finset.range m, (⇑AT)^[j] (p s) = 0) :
-    ∃ v : Λ, AΛ v = v ∧ i v = ∑ j ∈ Finset.range m, (⇑AE)^[j] s := by
-  obtain ⟨v, hv⟩ := (hexact _).1 <| by
-    rw [map_sum, ← hs]
-    exact Finset.sum_congr rfl fun j _ ↦ Function.Semiconj.iterate_right hp j s
-  refine ⟨v, hinj ?_, hv⟩
-  -- The norm is fixed by `AE`.
-  have hN := (AE.cyclicRepresentation hE).self_norm_apply (.ofAdd 1) s
-  rwa [AddEquiv.cyclicRepresentation_ofAdd_one_apply, AddEquiv.cyclicRepresentation_norm_apply,
-    ← hv, ← hi] at hN
 
 variable {i p} {hΛ : (⇑AΛ)^[m] = _root_.id} {hE : (⇑AE)^[m] = _root_.id}
   {hT : (⇑AT)^[m] = _root_.id} {hi : ∀ x, i (AΛ x) = AE (i x)} {hp : ∀ x, p (AE x) = AT (p x)}
