@@ -86,6 +86,7 @@ theorem integrable_deriv : Integrable (deriv smoothTransition) :=
 
 /-- The derivative of the smooth transition function has integral one, the total increase of the
 function from `0` to `1`. -/
+@[simp]
 theorem integral_deriv : ∫ x, deriv smoothTransition x = 1 := by
   have hdiff : Differentiable ℝ smoothTransition :=
     (smoothTransition.contDiff (n := 1)).differentiable (by simp)
@@ -100,6 +101,7 @@ theorem integral_deriv : ∫ x, deriv smoothTransition x = 1 := by
 
 /-- The rescaled derivatives `t ↦ c ψ'(c (a - t))` of the smooth transition function `ψ`
 integrate to one: `∫_ℝ c ψ'(c (a - t)) dt = 1` for `c > 0`. -/
+@[simp]
 theorem lintegral_ofReal_mul_deriv (a : ℝ) {c : ℝ} (hc : 0 < c) :
     ∫⁻ t, ENNReal.ofReal (c * deriv smoothTransition (c * (a - t))) = 1 := by
   have hint : Integrable fun t => c * deriv smoothTransition (c * (a - t)) :=

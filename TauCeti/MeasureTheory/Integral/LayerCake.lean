@@ -431,6 +431,7 @@ theorem integrable_indicator_Iio_sub_indicator_Iio_zero (a : ℝ) :
 
 /-- **The signed layer-cake representation of a real number:**
 `∫ (1_{t < a} - 1_{t < 0}) dt = a`. -/
+@[simp]
 theorem integral_indicator_Iio_sub_indicator_Iio_zero (a : ℝ) :
     ∫ t, ((Iio a).indicator (1 : ℝ → ℝ) t - (Iio 0).indicator 1 t) = a := by
   rw [indicator_Iio_sub_indicator_Iio_zero, integral_sub' (integrable_indicator_Ico_one _ _)
