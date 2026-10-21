@@ -128,7 +128,7 @@ theorem mapValue_comp_rTensor (f : A →ₐ[R] B) (φ : Module.End A (A ⊗[R] M
     rw [← map_smul, TensorProduct.smul_tmul', smul_eq_mul, mul_one]
   simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.restrictScalars_apply,
     LinearMap.rTensor_tmul, AlgHom.toLinearMap_apply, mapValue_tmul, hsmul,
-    AlgHom.rTensor_smul]
+    AlgHom.rTensor_toLinearMap_apply_smul]
 
 /-- Evaluation form of the transport square. -/
 @[simp]

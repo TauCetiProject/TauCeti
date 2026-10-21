@@ -21,8 +21,8 @@ agree as functions, so the `A`-linearity of the first applies to the second.
 
 ## Main results
 
-* `AlgHom.rTensor_smul`: the scalar-extension comparison induced by an algebra map is
-  semilinear over that map.
+* `AlgHom.rTensor_toLinearMap_apply_smul`: the scalar-extension comparison induced by an algebra
+  map is semilinear over that map.
 * `TensorProduct.AlgebraTensorModule.rTensor_linearMap_apply`: the `A`-linear base change of the
   structure map `A → B` is the base change of the `R`-algebra map `A →ₐ[R] B`.
 -/
@@ -34,8 +34,8 @@ open TensorProduct
 /-- The comparison `A ⊗[R] M → B ⊗[R] M` of scalar extensions induced by an algebra map `f`
 is semilinear over `f`. -/
 @[simp]
-theorem AlgHom.rTensor_smul {R A B M : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
-    [Semiring B] [Algebra R B] [AddCommMonoid M] [Module R M]
+theorem AlgHom.rTensor_toLinearMap_apply_smul {R A B M : Type*} [CommSemiring R] [Semiring A]
+    [Algebra R A] [Semiring B] [Algebra R B] [AddCommMonoid M] [Module R M]
     (f : A →ₐ[R] B) (a : A) (z : A ⊗[R] M) :
     LinearMap.rTensor M f.toLinearMap (a • z) =
       f a • LinearMap.rTensor M f.toLinearMap z := by

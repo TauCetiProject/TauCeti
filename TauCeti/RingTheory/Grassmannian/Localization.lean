@@ -167,7 +167,7 @@ private theorem exists_pow_smul_rTensor_mem
     rTensor_mem_map_iff (Algebra.algebraMapSubmonoid (B r') (.powers r.1))] at hx'
   obtain ⟨_, ⟨_, ⟨n, rfl⟩, rfl⟩, hn⟩ := hx'
   refine ⟨n, ?_⟩
-  rwa [AlgHom.rTensor_smul, IsScalarTower.toAlgHom_apply]
+  rwa [AlgHom.rTensor_toLinearMap_apply_smul, IsScalarTower.toAlgHom_apply]
 
 /-- Under the compatibility hypothesis, the image of `x` in `B r ⊗[R] M` lies in `N r` exactly
 when some power of `r` moves `x` into `glueSubmodule N`. -/
@@ -189,10 +189,11 @@ private theorem rTensor_mem_iff_exists_pow_smul_mem (hs : Ideal.span s = ⊤)
       (((N r'').toSubmodule.restrictScalars A).comap
         (AlgebraTensorModule.rTensor R M (Algebra.linearMap A (B r'')))) _ ht _ fun r' ↦ ?_
     refine exists_pow_smul_rTensor_mem N hN (r := ⟨r'.1, hts r'.2⟩) ?_ r''
-    rw [← Nat.sub_add_cancel (hn₀ r'), pow_add, mul_smul, AlgHom.rTensor_smul]
+    rw [← Nat.sub_add_cancel (hn₀ r'), pow_add, mul_smul, AlgHom.rTensor_toLinearMap_apply_smul]
     exact Submodule.smul_mem _ _ (hn r')
   · have := (mem_glueSubmodule_iff N).mp hn r
-    rw [AlgHom.rTensor_smul, IsScalarTower.toAlgHom_apply, algebraMap_smul] at this
+    rw [AlgHom.rTensor_toLinearMap_apply_smul, IsScalarTower.toAlgHom_apply,
+      algebraMap_smul] at this
     exact (IsLocalization.smul_mem_iff (S := .powers r.1) (s := ⟨r.1 ^ n, n, rfl⟩)).mp this
 
 /-- Under the compatibility hypothesis, the base change of `glueSubmodule N` to `B r` is `N r`. -/
