@@ -17,3 +17,9 @@ Upgrade common tooling with a normal human-reviewed pin/workflow PR. Existing re
 pins, runner selection and merge policy are retained by this migration.
 
 The complete installation inventory is in the [setup manual](https://github.com/TauCetiProject/TauCetiTools/blob/main/docs/project-setup.md).
+
+The no-stacking workflow pins its batching implementation separately in
+`.github/workflows/stack-policy.yml`. Use that workflow's Tools revision for local
+checkpointed no-stacking commands. The project default and other workflow pins
+remain independent. The policy workflow runs its full unit-test suite under that
+pin; main CI avoids duplicating its workflow-shape test under an older default.
