@@ -52,8 +52,8 @@ half of the archimedean classification; the complex half is in
   `QuadraticForm.equivalent_atRealPlace_realSignatureForm`: the localization is the normal form
   `p⟨1⟩ ⊥ q⟨-1⟩` exactly when `(p, q)` is its signature, hence is always the normal form of its
   own signature.
-* `anisotropic_atRealPlace_iff_realNegativeIndex_eq_zero_or_realPositiveIndex_eq_zero`:
-  a regular form is anisotropic at a real place exactly when it is definite there.
+* `QuadraticForm.anisotropic_atRealPlace_iff_realNegativeIndex_eq_zero_or_realPositiveIndex_eq_zero`
+  says that a regular form is anisotropic at a real place exactly when it is definite there.
 * `QuadraticForm.anisotropic_atRealPlace_weightedSumSquares_iff`: a diagonal form is
   anisotropic at a real place exactly when its coefficients there all have the same sign.
 
