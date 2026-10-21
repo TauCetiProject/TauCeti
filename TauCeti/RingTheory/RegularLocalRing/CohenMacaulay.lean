@@ -82,13 +82,7 @@ private theorem isRegular_of_ofList_eq_maximalIdeal_aux (n : ℕ) :
       omega
     have hx0 : x ≠ 0 := fun h ↦ hx2 (h ▸ zero_mem _)
     have : IsRegularLocalRing (R ⧸ span {x}) := quotient_span_singleton hxm hx2
-    have hdrop : (maximalIdeal (R ⧸ span {x})).spanFinrank + 1 =
-        (maximalIdeal R).spanFinrank := by
-      have hdim := ringKrullDim_quotient_span_singleton_succ_eq_ringKrullDim
-        (IsSMulRegular.of_ne_zero hx0) hxm
-      rw [← _root_.IsRegularLocalRing.spanFinrank_maximalIdeal (R := R ⧸ span {x}),
-        ← _root_.IsRegularLocalRing.spanFinrank_maximalIdeal (R := R)] at hdim
-      exact_mod_cast hdim
+    have hdrop := spanFinrank_maximalIdeal_quotient_span_singleton_add_one hxm hx0
     have hQ : IsRegular (R ⧸ span {x}) (rs.map mk) := ih _ _ (by simpa using hn)
       (hmap ▸ map_maximalIdeal_of_surjective mk Ideal.Quotient.mk_surjective)
       (by rw [List.length_map]; omega)
