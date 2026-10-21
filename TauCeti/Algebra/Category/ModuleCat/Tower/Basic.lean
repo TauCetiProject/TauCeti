@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.CategoryTheory.Category.Preorder
+public import Mathlib.CategoryTheory.Functor.OfSequence
 public import Mathlib.CategoryTheory.Limits.IsLimit
 public import Mathlib.CategoryTheory.Preadditive.FunctorCategory
 public import Mathlib.LinearAlgebra.Pi
@@ -110,21 +111,6 @@ theorem mem_lim {x : F.Product} : x ∈ F.lim ↔ ∀ n, F.transition n (x (n + 
   simp only [shift_apply, Pi.zero_apply, sub_eq_zero]
   exact forall_congr' fun n ↦ eq_comm
 
-/-- An element of `lim A` is compatible with every composite transition `Aₙ → Aₘ`, `m ≤ n`. -/
-theorem map_apply_of_mem_lim {x : F.Product} (hx : x ∈ F.lim) {m n : ℕ} (f : op n ⟶ op m) :
-    (F.map f).hom (x n) = x m := by
-  have hmn : m ≤ n := leOfHom f.unop
-  -- Morphisms in `ℕᵒᵖ` are unique, so `f` factors through the successor transitions.
-  induction n, hmn using Nat.le_induction with
-  | base =>
-    obtain rfl : f = 𝟙 (op m) := Quiver.Hom.unop_inj (Subsingleton.elim _ _)
-    rw [F.map_id, ModuleCat.hom_id, LinearMap.id_apply]
-  | succ n hmn ih =>
-    obtain rfl : f = (homOfLE (Nat.le_succ n)).op ≫ (homOfLE hmn).op :=
-      Quiver.Hom.unop_inj (Subsingleton.elim _ _)
-    rw [F.map_comp, ModuleCat.hom_comp, LinearMap.comp_apply, ← transition_def, F.mem_lim.1 hx n,
-      ih]
-
 /-- The projection `lim A → Aₙ`. -/
 def limπ (n : ℕ) : F.lim →ₗ[R] F.obj (op n) :=
   LinearMap.proj n ∘ₗ F.lim.subtype
@@ -167,11 +153,9 @@ theorem limπ_comp_limLift {P : Type*} [AddCommGroup P] [Module R P]
 @[expose]
 def limCone : Limits.Cone F where
   pt := ModuleCat.of R F.lim
-  π :=
-    { app n := ModuleCat.ofHom (F.limπ n.unop)
-      naturality n m f := by
-        ext x
-        exact (F.map_apply_of_mem_lim x.2 f).symm }
+  π := NatTrans.ofOpSequence (fun n ↦ ModuleCat.ofHom (F.limπ n)) fun n ↦ by
+    ext x
+    exact (F.mem_lim.1 x.2 n).symm
 
 @[simp]
 theorem limCone_pt : F.limCone.pt = ModuleCat.of R F.lim :=
@@ -180,6 +164,11 @@ theorem limCone_pt : F.limCone.pt = ModuleCat.of R F.lim :=
 @[simp]
 theorem limCone_π_app (n : ℕ) : (F.limCone.π.app (op n)).hom = F.limπ n :=
   (rfl)
+
+/-- An element of `lim A` is compatible with every composite transition `Aₙ → Aₘ`, `m ≤ n`. -/
+theorem map_apply_of_mem_lim {x : F.Product} (hx : x ∈ F.lim) {m n : ℕ} (f : op n ⟶ op m) :
+    (F.map f).hom (x n) = x m :=
+  (LinearMap.congr_fun (congrArg ModuleCat.Hom.hom (F.limCone.π.naturality f)) ⟨x, hx⟩).symm
 
 /-- `lim A`, with its projections, is a limit of the tower `A` in `ModuleCat R`. -/
 def isLimitLimCone : Limits.IsLimit F.limCone where
