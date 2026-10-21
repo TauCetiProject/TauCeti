@@ -17,8 +17,8 @@ not change, both operations preserve the support and edge list. In particular, t
 paths, trails, cycles, and reachability. In particular, reachability after deleting a set of edges
 is witnessed exactly by walks avoiding those edges.
 
-The interface follows Mathlib's `SimpleGraph.Walk.mapLe` and `SimpleGraph.Walk.transfer`, adapted
-to retain multigraph edge identities.
+The interface follows Mathlib's `SimpleGraph.Walk.mapLe`, `SimpleGraph.Walk.transfer`, and
+`SimpleGraph.reachable_deleteEdges_iff_exists_walk`, adapted to retain multigraph edge identities.
 -/
 
 public section

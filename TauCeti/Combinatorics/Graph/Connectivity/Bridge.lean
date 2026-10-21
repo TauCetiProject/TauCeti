@@ -33,8 +33,10 @@ edge is a bridge.  The statements need no finiteness assumptions.
 
 The statements follow the corresponding results for simple graphs in Mathlib,
 `SimpleGraph.isBridge_iff`, `SimpleGraph.isBridge_iff_forall_walk_mem_edges`,
-`SimpleGraph.isBridge_iff_forall_cycle_notMem`, and `SimpleGraph.isAcyclic_iff_forall_isBridge`,
-adapted to multigraphs whose walks record edge identities.
+`SimpleGraph.isBridge_iff_forall_cycle_notMem`, `SimpleGraph.IsBridge.notMem_edges_of_isCycle`,
+`SimpleGraph.isAcyclic_iff_forall_isBridge`, and `SimpleGraph.IsAcyclic.anti`, adapted to
+multigraphs whose walks record edge identities. The proof of `Graph.isForest_iff_forall_isBridge`
+is adapted from Mathlib's proof of `SimpleGraph.isAcyclic_iff_forall_isBridge`.
 -/
 
 public section
@@ -121,16 +123,11 @@ theorem isBridge_iff_forall_cycle_notMem (he : e ∈ E(G)) :
   obtain ⟨x, y, h⟩ := exists_isLink_of_mem_edgeSet he
   rw [h.isBridge_iff_not_reachable_deleteEdges]
   intro hr
-  obtain ⟨q, hq⟩ := hr.symm.exists_isPath
-  have hqe : e ∉ (q.mapLe deleteEdges_le).edges := by
-    rw [Walk.edges_mapLe_eq_edges]
-    intro hm
-    have hm' := q.edges_subset_edgeSet hm
-    rw [edgeSet_deleteEdges] at hm'
-    exact hm'.2 rfl
-  refine hcyc (.cons e h (q.mapLe deleteEdges_le)) ?_ (by simp)
-  rw [Walk.cons_isCycle_iff, Walk.isPath_mapLe]
-  exact ⟨hq, hqe⟩
+  classical
+  obtain ⟨-, q, hq⟩ := reachable_deleteEdges_iff_exists_walk.mp hr.symm
+  refine hcyc (.cons e h q.bypass) ?_ (by simp)
+  exact (Walk.cons_isCycle_iff ..).mpr
+    ⟨q.bypass_isPath, fun hm ↦ hq e (q.edges_bypass_subset_edges hm) rfl⟩
 
 /-! ### Forests -/
 
@@ -144,9 +141,7 @@ theorem isForest_def : G.IsForest ↔ ∀ ⦃u : α⦄ (p : G.Walk u u), ¬ p.Is
 theorem isForest_iff_forall_isBridge : G.IsForest ↔ ∀ ⦃e⦄, e ∈ E(G) → G.IsBridge e := by
   refine ⟨fun hG e he ↦ (isBridge_iff_forall_cycle_notMem he).mpr fun _ p hp ↦ (hG p hp).elim,
     fun hG u p hp ↦ ?_⟩
-  obtain ⟨e, he⟩ := List.exists_mem_of_ne_nil p.edges <| by
-    rw [Ne, ← List.length_eq_zero_iff, Walk.length_edges, Walk.length_eq_zero_iff]
-    exact hp.not_nil
+  obtain ⟨e, he⟩ := p.edges.exists_mem_of_ne_nil <| by simp [hp.not_nil]
   exact (hG (p.edges_subset_edgeSet he)).notMem_edges_of_isCycle hp he
 
 /-- Every actual edge of a forest is a bridge. -/
