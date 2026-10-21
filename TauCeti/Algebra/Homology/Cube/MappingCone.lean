@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Homology.HomotopyCategory.Shift
 public import Mathlib.Data.Fintype.WithTopBot
 public import Mathlib.Order.Hom.WithTopBot
 public import TauCeti.Algebra.Homology.Cube.Basic
+import TauCeti.Data.Finset.WithBot
 
 /-!
 # The cube complex as a mapping cone
@@ -125,40 +126,6 @@ lemma cubeFaceMap_app (S : Finset ι) :
 
 /-! ### The vertices of the two faces -/
 
-omit [Fintype ι] in
-private lemma card_insert_bot_map_coeWithBot (S : Finset ι) :
-    #(insert ⊥ (S.map Function.Embedding.coeWithBot)) = #S + 1 := by
-  rw [card_insert_of_notMem (by simp), card_map]
-
-omit [Fintype ι] in
-/-- Every vertex of a cube indexed by `WithBot ι` lies in the `0`-face or in the `1`-face. -/
-private lemma exists_eq_map_or_exists_eq_insert_bot (T : Finset (WithBot ι)) :
-    (∃ S : Finset ι, T = S.map Function.Embedding.coeWithBot) ∨
-      ∃ S : Finset ι, T = insert ⊥ (S.map Function.Embedding.coeWithBot) := by
-  let S : Finset ι := T.preimage (↑) WithBot.coe_injective.injOn
-  have key : ∀ a : ι, (a : WithBot ι) ∈ S.map Function.Embedding.coeWithBot ↔ (a : WithBot ι) ∈ T :=
-    fun a ↦ by simp [S]
-  by_cases h : ⊥ ∈ T
-  · refine .inr ⟨S, Finset.ext fun a ↦ ?_⟩
-    induction a using WithBot.recBotCoe with
-    | bot => simp [h]
-    | coe a => simp [key a]
-  · refine .inl ⟨S, Finset.ext fun a ↦ ?_⟩
-    induction a using WithBot.recBotCoe with
-    | bot => simp [h]
-    | coe a => exact (key a).symm
-
-omit [Fintype ι] in
-private lemma map_coeWithBot_ne_insert_bot (S T : Finset ι) :
-    S.map Function.Embedding.coeWithBot ≠ insert ⊥ (T.map Function.Embedding.coeWithBot) :=
-  fun e ↦ by simpa using congrArg (⊥ ∈ ·) e
-
-omit [Fintype ι] in
-private lemma insert_bot_map_coeWithBot_injective {S T : Finset ι}
-    (e : insert ⊥ (S.map Function.Embedding.coeWithBot) =
-      insert ⊥ (T.map Function.Embedding.coeWithBot)) : S = T := by
-  simpa using congrArg (Finset.erase · ⊥) e
-
 /-- The inclusion of the totalization of the `0`-face into the cube complex. -/
 private def faceZeroι (r : ℤ) : F.cubeFaceZero.cubeComplex.X r ⟶ F.cubeComplex.X r :=
   F.cubeFaceZero.cubeComplexDesc fun S ↦
@@ -224,7 +191,7 @@ private lemma cubeComplexι_faceOneπ {s r : ℤ} (h : s + 1 = r)
   · subst hST
     simp
   · rw [cubeComplexι_π_of_ne _ fun e ↦ hST (Subtype.ext
-      (insert_bot_map_coeWithBot_injective (Subtype.ext_iff.1 e))),
+      (insert_bot_map_coeWithBot_inj.1 (Subtype.ext_iff.1 e))),
       cubeComplexι_π_of_ne _ hST]
 
 @[reassoc]
@@ -274,7 +241,7 @@ private lemma faceZeroπ_faceZeroι_add_faceOneπ_faceOneι {s r : ℤ} (h : s +
     F.faceZeroπ r ≫ F.faceZeroι r + F.faceOneπ s r h ≫ F.faceOneι s r h = 𝟙 _ := by
   refine cubeComplex_hom_ext _ fun ⟨T, hT⟩ ↦ ?_
   rw [Preadditive.comp_add, Category.comp_id]
-  obtain ⟨S, rfl⟩ | ⟨S, rfl⟩ := exists_eq_map_or_exists_eq_insert_bot T
+  obtain ⟨S, rfl⟩ | ⟨S, rfl⟩ := exists_eq_map_coeWithBot_or_exists_eq_insert_bot T
   · have hS : (#S : ℤ) = r := by rwa [card_map] at hT
     rw [F.cubeComplexι_faceZeroπ_assoc ⟨S, hS⟩, F.cubeComplexι_map_faceOneπ_assoc h ⟨S, hS⟩,
       zero_comp, add_zero, cubeComplexι_faceZeroι]
@@ -285,19 +252,6 @@ private lemma faceZeroπ_faceZeroι_add_faceOneπ_faceOneι {s r : ℤ} (h : s +
       zero_comp, zero_add, cubeComplexι_faceOneι]
 
 /-! ### The differential on the two faces -/
-
-omit [Fintype ι] in
-private lemma card_filter_lt_coe_map (S : Finset ι) (a : ι) :
-    #{b ∈ S.map Function.Embedding.coeWithBot | b < (a : WithBot ι)} = #{b ∈ S | b < a} := by
-  rw [filter_map, card_map]
-  simp
-
-omit [Fintype ι] in
-private lemma card_filter_lt_coe_insert_bot_map (S : Finset ι) (a : ι) :
-    #{b ∈ insert ⊥ (S.map Function.Embedding.coeWithBot) | b < (a : WithBot ι)} =
-      #{b ∈ S | b < a} + 1 := by
-  rw [filter_insert, ite_eq_left_of_eq_true _ _ (eq_true (WithBot.bot_lt_coe a)),
-    card_insert_of_notMem (by simp), card_filter_lt_coe_map]
 
 /-- On the `0`-face, the cube differential is the differential of the `0`-face followed by the
 edges in the direction of `⊥`. -/
@@ -331,7 +285,7 @@ private lemma faceZeroι_d (r : ℤ) :
   · refine Finset.sum_congr rfl fun a _ ↦ ?_
     simp only [j, Option.elim_some, Preadditive.zsmul_comp, Category.assoc,
       cubeComplexι_faceZeroι]
-    refine congrArg₂ (· • ·) (congrArg _ (card_filter_lt_coe_map _ _)) ?_
+    refine congrArg₂ (· • ·) (congrArg _ (card_filter_lt_coe_map_coeWithBot _ _)) ?_
     exact F.map_homOfLE_comp_cubeComplexι_congr (map_insert _ _ _).symm _ _
 
 /-- On the `1`-face, the cube differential is the negative of the differential of the `1`-face. -/
@@ -352,7 +306,7 @@ private lemma faceOneι_d {s r : ℤ} (h : s + 1 = r) :
     | coe a => exact ⟨⟨a, by simpa using ha⟩, rfl⟩
   refine (Fintype.sum_bijective j hj _ _ fun _ ↦ rfl).symm.trans ?_
   refine Finset.sum_congr rfl fun a _ ↦ ?_
-  simp only [j, card_filter_lt_coe_insert_bot_map, pow_succ, mul_neg_one, neg_smul,
+  simp only [j, card_filter_lt_coe_insert_bot_map_coeWithBot, pow_succ, mul_neg_one, neg_smul,
     Preadditive.zsmul_comp, Category.assoc, cubeComplexι_faceOneι]
   refine congrArg (fun x ↦ -(_ • x)) ?_
   refine F.map_homOfLE_comp_cubeComplexι_congr ?_ _ _
