@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.ODE.EnergyEstimate.Fredholm
+public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+public import TauCeti.Analysis.ODE.TrajectoryOperator
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.ODE.Caratheodory
 import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
@@ -25,13 +26,10 @@ derivative `-A v` is again in `Lᵖ` because `A` is essentially bounded.
 For `p = 2` this identifies the kernel of `D_A` with the space
 `TauCeti.squareIntegrableSolutions A` of initial values `v 0` of square-integrable solutions of
 `v' + A v = 0`, by evaluating the continuous representative at time `0`; that this is injective is
-uniqueness of solutions of linear equations. Combined with
-`TauCeti.WeakDerivStep.index_trajectoryOperator_of_isClosed_range`, whenever `D_A` has closed range
-its index is
-
-`dim {square-integrable solutions of v' = -A v} - dim {square-integrable solutions of v' = A v}`,
-
-the form in which the index is computed from the asymptotic behaviour of solutions.
+uniqueness of solutions of linear equations. Neither symmetry of `A`, finite dimensionality of `F`
+nor any Fredholm property of `D_A` is used. The resulting formula for the index of `D_A` as a
+difference of dimensions of spaces of square-integrable solutions is
+`TauCeti.WeakDerivStep.index_trajectoryOperator_eq_finrank_sub_finrank_of_isClosed_range`.
 
 ## Main declarations
 
@@ -43,11 +41,8 @@ the form in which the index is computed from the asymptotic behaviour of solutio
   solution of `v' = -A v` is the value of an element of the kernel of `D_A`.
 * `TauCeti.WeakDerivStep.kerTrajectoryOperatorEquiv`: the kernel of `D_A` on `W^{1,2}(ℝ, F)` is
   linearly equivalent to `TauCeti.squareIntegrableSolutions A`.
-* `TauCeti.WeakDerivStep.index_trajectoryOperator_eq_finrank_sub_finrank_of_isClosed_range`: when
-  the range of `D_A` is closed, the index of `D_A` is the dimension of the square-integrable
-  solutions of `v' = -A v` minus that of `v' = A v`.
-* `TauCeti.WeakDerivStep.index_trajectoryOperator_eq_finrank_sub_finrank`: the same formula under
-  the hypotheses of `TauCeti.WeakDerivStep.isFredholm_trajectoryOperator`.
+* `TauCeti.WeakDerivStep.finrank_ker_trajectoryOperator`: the kernel of `D_A` on
+  `W^{1,2}(ℝ, F)` has the dimension of `TauCeti.squareIntegrableSolutions A`.
 
 ## References
 
@@ -229,17 +224,14 @@ private def kerEval (hA : Continuous A)
     rw [kerSolution_eq hA hAL (u + w)
       ((continuous_kerSolution hA hAL u).add (continuous_kerSolution hA hAL w)) ?_]
     · rfl
-    filter_upwards [Lp.coeFn_add (prev _ u.1) (prev _ w.1),
-      prev_ae_eq_kerSolution hA hAL u, prev_ae_eq_kerSolution hA hAL w] with s hs hu hw
-    rw [Submodule.coe_add, ← prevL_apply, map_add, prevL_apply, prevL_apply, hs, Pi.add_apply,
-      hu, hw, Pi.add_apply]
+    rw [Submodule.coe_add, ← prevL_apply, map_add, prevL_apply, prevL_apply]
+    exact (Lp.coeFn_add _ _).trans
+      ((prev_ae_eq_kerSolution hA hAL u).add (prev_ae_eq_kerSolution hA hAL w))
   map_smul' c u := by
     rw [kerSolution_eq hA hAL (c • u) ((continuous_kerSolution hA hAL u).const_smul c) ?_]
     · rfl
-    filter_upwards [Lp.coeFn_smul c (prev _ u.1), prev_ae_eq_kerSolution hA hAL u]
-      with s hs hu
-    rw [Submodule.coe_smul, ← prevL_apply, map_smul, prevL_apply, hs, Pi.smul_apply, hu,
-      Pi.smul_apply]
+    rw [Submodule.coe_smul, ← prevL_apply, map_smul, prevL_apply]
+    exact (Lp.coeFn_smul c _).trans ((prev_ae_eq_kerSolution hA hAL u).const_smul c)
 
 private theorem kerEval_apply (hA : Continuous A)
     {AL : Lp (F →L[ℝ] F) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
@@ -318,53 +310,5 @@ theorem finrank_ker_trajectoryOperator (hA : Continuous A)
   (kerTrajectoryOperatorEquiv hA AL hAL).finrank_eq
 
 end SquareIntegrable
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  {A : ℝ → E →L[ℝ] E}
-
-/-- **The index of a trajectory operator with closed range counts square-integrable solutions.**
-For a continuous family `A` of symmetric operators on a finite-dimensional real inner product
-space `E` such that the range of `D_A u = u' + A u` from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)` is closed,
-the index of `D_A` is the dimension of the space of square-integrable solutions of `v' = -A v`
-minus the dimension of the space of square-integrable solutions of `v' = A v`. -/
-theorem index_trajectoryOperator_eq_finrank_sub_finrank_of_isClosed_range
-    (hA : Continuous A) (hsym : ∀ s, (A s).toLinearMap.IsSymmetric)
-    (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
-    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A)
-    (hclosed : IsClosed ((trajectoryOperator (p := 2) AL).range :
-      Set (Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
-    (trajectoryOperator (p := 2) AL).index =
-      (Module.finrank ℝ (squareIntegrableSolutions A) : ℤ) -
-        Module.finrank ℝ (squareIntegrableSolutions (-A)) := by
-  have hALsym : ∀ᵐ s ∂volume.restrict ((⊤ : Opens ℝ) : Set ℝ),
-      (AL s).toLinearMap.IsSymmetric := by
-    filter_upwards [hAL] with s hs
-    rw [hs]
-    exact hsym s
-  have hnegAL : -AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] -A := by
-    filter_upwards [Lp.coeFn_neg AL, hAL] with s hs hAs
-    simp only [hs, Pi.neg_apply, hAs]
-  rw [index_trajectoryOperator_of_isClosed_range hALsym hclosed,
-    finrank_ker_trajectoryOperator hA AL hAL, finrank_ker_trajectoryOperator hA.neg (-AL) hnegAL]
-
-/-- **The index of the trajectory operator counts square-integrable solutions.** Under the
-hypotheses of `TauCeti.WeakDerivStep.isFredholm_trajectoryOperator`, the index of
-`D_A u = u' + A u` from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)` is the dimension of the space of
-square-integrable solutions of `v' = -A v` minus the dimension of the space of square-integrable
-solutions of `v' = A v`. This specializes
-`TauCeti.WeakDerivStep.index_trajectoryOperator_eq_finrank_sub_finrank_of_isClosed_range`. -/
-theorem index_trajectoryOperator_eq_finrank_sub_finrank
-    (hA : ContDiff ℝ 1 A) (hsym : ∀ s, (A s).toLinearMap.IsSymmetric)
-    {Aminus Aplus : E →L[ℝ] E} {α : ℝ} (hα : 0 < α)
-    (hminus : ∀ v, α * ‖v‖ ≤ ‖Aminus v‖) (hplus : ∀ v, α * ‖v‖ ≤ ‖Aplus v‖)
-    (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus))
-    (hdbot : Tendsto (deriv A) atBot (𝓝 0)) (hdtop : Tendsto (deriv A) atTop (𝓝 0))
-    (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
-    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
-    (trajectoryOperator (p := 2) AL).index =
-      (Module.finrank ℝ (squareIntegrableSolutions A) : ℤ) -
-        Module.finrank ℝ (squareIntegrableSolutions (-A)) :=
-  index_trajectoryOperator_eq_finrank_sub_finrank_of_isClosed_range hA.continuous hsym AL hAL
-    (isClosed_range_trajectoryOperator hA hsym hα hminus hplus hbot htop hdbot hdtop AL hAL)
 
 end TauCeti.WeakDerivStep
