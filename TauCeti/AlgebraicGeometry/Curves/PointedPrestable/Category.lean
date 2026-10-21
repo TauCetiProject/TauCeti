@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.PointedPrestable.Basic
+public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.Map
 public import Mathlib.CategoryTheory.Comma.Over.Pullback
 public import Mathlib.CategoryTheory.Endomorphism
 
@@ -302,19 +303,8 @@ theorem pullbackCompIso_inv_hom (P : PointedPrestableFamily S n) (g : T ⟶ S) (
 theorem pullbackCompIso_inv_naturality (g : T ⟶ S) (h : U ⟶ T) (f : P ⟶ Q) :
     pullbackMap (h ≫ g) f ≫ (pullbackCompIso Q g h).inv =
       (pullbackCompIso P g h).inv ≫ pullbackMap h (pullbackMap g f) := by
-  -- On total spaces this is the naturality of `pullbackLeftPullbackSndIso` in the morphism being
-  -- pulled back. It is proved for arbitrary schemes over `S`: for the iterated base change of a
-  -- family, the instances of the pullback API are only definitionally equal to those of the
-  -- underlying pullbacks, so the simplifier cannot apply that API there.
-  have key {X Y : Scheme.{u}} (a : X ⟶ S) (b : Y ⟶ S) (φ : X ⟶ Y) (hφ : φ ≫ b = a) :
-      pullback.map a (h ≫ g) b (h ≫ g) φ (𝟙 U) (𝟙 S) (by simp [hφ]) (by simp) ≫
-          (pullbackLeftPullbackSndIso b g h).inv =
-        (pullbackLeftPullbackSndIso a g h).inv ≫
-          pullback.map (pullback.snd a g) h (pullback.snd b g) h
-            (pullback.map a g b g φ (𝟙 T) (𝟙 S) (by simp [hφ]) (by simp)) (𝟙 U) (𝟙 T)
-            (by simp) (by simp) := by
-    ext <;> simp
-  exact hom_ext (key P.toBase Q.toBase f.hom f.hom_comp_toBase)
+  exact hom_ext (pullbackLeftPullbackSndIso_inv_naturality
+    P.toBase Q.toBase g h f.hom f.hom_comp_toBase)
 
 /-- Base change along a composite `h ≫ g` is canonically isomorphic to base change along `g`
 followed by base change along `h`. -/
