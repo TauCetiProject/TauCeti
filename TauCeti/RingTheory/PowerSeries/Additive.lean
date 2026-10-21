@@ -17,6 +17,8 @@ Over a commutative ring killed by a prime `p`, the identity `f(X + Y) = f(X) + f
 holds exactly when the coefficients of `f` vanish outside the degrees `p ^ k`.
 No reducedness or field hypothesis is needed. The series `frobeniusSeries p a`
 parametrizes these additive series by the sequence of their Frobenius coefficients.
+Here `X₀` and `X₁` are the two variables of `MvPowerSeries (Fin 2) R`, so
+`f.subst (X₀ + X₁)` expresses `f(X + Y)`.
 The proof uses Mathlib’s `PowerSeries.coeff_subst_X_zero_add_X_one` and the
 Lucas criterion `Choose.eq_pow_multiplicity_of_choose_modEq_zero_nat`.
 At `p = 2` this classification determines the ambiguity in strict logarithms of
