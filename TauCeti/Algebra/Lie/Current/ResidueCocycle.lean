@@ -203,14 +203,14 @@ theorem residuePairing_ofLoop (Φ : LinearMap.BilinForm R L)
   simp only [_root_.LieAlgebra.LoopAlgebra.toFinsupp_symm_single, ofLoop_tmul,
     residuePairing_tmul, _root_.LieAlgebra.LoopAlgebra.residuePairing_apply_apply,
     _root_.LieAlgebra.LoopAlgebra.toFinsupp_single_tmul]
-  have hT (k : ℤ) : LaurentPolynomial.toLaurentSeries (AddMonoidAlgebra.single k (1 : R)) =
-      HahnSeries.single k 1 := by
-    rw [LaurentPolynomial.single_eq_C_mul_T, map_one, one_mul, LaurentPolynomial.toLaurentSeries_T]
-  rw [hT, hT, LaurentSeries.residuePairing_single, Finsupp.sum_single_index (by simp),
-    Finsupp.single_apply]
+  rw [LaurentPolynomial.toLaurentSeries_single, LaurentPolynomial.toLaurentSeries_single,
+    LaurentSeries.residuePairing_single, Finsupp.sum_single_index (by simp), Finsupp.single_apply]
+  -- Both sides test the same condition, `m + n = 0` on the left and `m = -n` on the right.
   by_cases h : m + n = 0
-  · simp [show m = -n by omega]
-  · simp [h, show m ≠ -n by omega]
+  · have hm : m = -n := by omega
+    simp [hm]
+  · have hm : m ≠ -n := by omega
+    simp [h, hm]
 
 /-- The alternating residue 2-cochain with trivial coefficients attached to a symmetric bilinear
 form on `L`: `(f ⊗ x, g ⊗ y) ↦ Res(f dg) Φ(x, y)`. -/

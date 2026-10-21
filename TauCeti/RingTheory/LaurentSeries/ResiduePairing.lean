@@ -184,7 +184,8 @@ theorem residuePairing_eq_sum {M N : ℤ} {f g : R⸨X⸩} (hf : (M : WithTop �
       simpa using hn
   · rintro ⟨i, j⟩ hij _
     rw [Finset.mem_antidiagonal] at hij
-    rw [coeff_derivative, show i = -(j + 1) by omega, mul_smul_comm]
+    have hi : i = -(j + 1) := by omega
+    rw [coeff_derivative, hi, mul_smul_comm]
 
 /-- A constant in the differentiated input pairs to zero. -/
 @[simp]
