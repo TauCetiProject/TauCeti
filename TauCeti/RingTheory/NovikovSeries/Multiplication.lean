@@ -442,7 +442,6 @@ theorem coeff_mul_single [NonUnitalNonAssocSemiring R] (a : NovikovSeries R H N)
   rw [← coeff_mul_single_add, sub_add_cancel]
 
 /-- The monomial `u e^g` with unit coefficient `u`, as a unit with inverse `u⁻¹ e^(-g)`. -/
-@[expose]
 def unitsSingle [Semiring R] (g : H) (u : Rˣ) : (NovikovSeries R H N)ˣ where
   val := single g u
   inv := single (-g) ↑u⁻¹
@@ -453,14 +452,14 @@ def unitsSingle [Semiring R] (g : H) (u : Rˣ) : (NovikovSeries R H N)ˣ where
 @[simp]
 theorem val_unitsSingle [Semiring R] (g : H) (u : Rˣ) :
     ((unitsSingle g u : (NovikovSeries R H N)ˣ) : NovikovSeries R H N) = single g (u : R) :=
-  rfl
+  (rfl)
 
 /-- The inverse of `unitsSingle g u` is the monomial `u⁻¹ e^(-g)`. -/
 @[simp]
 theorem val_inv_unitsSingle [Semiring R] (g : H) (u : Rˣ) :
     (((unitsSingle g u)⁻¹ : (NovikovSeries R H N)ˣ) : NovikovSeries R H N) =
       single (-g) (↑u⁻¹ : R) :=
-  rfl
+  (rfl)
 
 /-- A monomial `r e^g` with unit coefficient is a unit. -/
 theorem isUnit_single [Semiring R] (g : H) {r : R} (hr : IsUnit r) :
