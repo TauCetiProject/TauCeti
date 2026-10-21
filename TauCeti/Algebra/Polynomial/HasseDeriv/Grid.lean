@@ -26,9 +26,9 @@ nonvanishing on rectangular integer grids.
 
 ## Main results
 
-* `TauCeti.Grid.Polynomial.exists_eval_hasseDeriv_ne_zero`: nonvanishing of a bounded-order
+* `TauCeti.exists_eval_polynomial_hasseDeriv_ne_zero`: nonvanishing of a bounded-order
   Hasse derivative on a finite set, in any characteristic.
-* `TauCeti.Grid.Polynomial.exists_eval_hasseDeriv_intCast_ne_zero`: for nonzero `p : R[X]` of
+* `TauCeti.exists_eval_polynomial_hasseDeriv_intCast_ne_zero`: for nonzero `p : R[X]` of
   degree `≤ s` and `B > 0`, there exist `z : ℤ` and `i : ℕ` with `|z| ≤ B`, `i ≤ s / B`, and
   `(hasseDeriv i p).eval (z : R) ≠ 0`.
 * `TauCeti.lt_two_mul_floor_add_one_mul_floor_div_add_one`: the number of
@@ -72,15 +72,13 @@ theorem lt_two_mul_floor_add_one_mul_floor_div_add_one (s : ℕ) {B : ℝ} (hB :
           mul_lt_mul'' h1 h2 hB.le (div_nonneg (Nat.cast_nonneg s) hB.le)
   exact_mod_cast h3
 
-namespace Grid.Polynomial
-
 open _root_.Polynomial
 
 variable {R : Type*}
 
 /-- A nonzero polynomial has a nonvanishing Hasse derivative of order at most `N` at a point
 of `S` whenever `S.card * (N + 1)` exceeds its degree. -/
-theorem exists_eval_hasseDeriv_ne_zero [CommRing R] [IsDomain R] {p : R[X]} (hp : p ≠ 0)
+theorem exists_eval_polynomial_hasseDeriv_ne_zero [CommRing R] [IsDomain R] {p : R[X]} (hp : p ≠ 0)
     (S : Finset R) (N : ℕ) (hdeg : p.natDegree < S.card * (N + 1)) :
     ∃ a ∈ S, ∃ i ≤ N, (hasseDeriv i p).eval a ≠ 0 := by
   by_contra! h
@@ -95,12 +93,12 @@ theorem exists_eval_hasseDeriv_ne_zero [CommRing R] [IsDomain R] {p : R[X]} (hp 
 /-- Over an integral domain of characteristic zero, for any nonzero polynomial `p : R[X]` of degree
 at most `s` and any `B > 0`, there exist an integer `z` with `|z| ≤ B` and an order `i` with
 `i ≤ s / B` such that the `i`-th Hasse derivative of `p` does not vanish at `z`. -/
-theorem exists_eval_hasseDeriv_intCast_ne_zero [CommRing R] [IsDomain R] [CharZero R]
+theorem exists_eval_polynomial_hasseDeriv_intCast_ne_zero [CommRing R] [IsDomain R] [CharZero R]
     {p : R[X]} (hp : p ≠ 0) {s : ℕ} (hs : p.natDegree ≤ s) {B : ℝ} (hB : 0 < B) :
     ∃ z : ℤ, ∃ i : ℕ,
       (z.natAbs : ℝ) ≤ B ∧ (i : ℝ) ≤ (s : ℝ) / B ∧ (hasseDeriv i p).eval (z : R) ≠ 0 := by
   let I : Finset ℤ := Finset.Icc (-(⌊B⌋₊ : ℤ)) (⌊B⌋₊ : ℤ)
-  obtain ⟨a, ha, i, hi, hne⟩ := exists_eval_hasseDeriv_ne_zero hp
+  obtain ⟨a, ha, i, hi, hne⟩ := exists_eval_polynomial_hasseDeriv_ne_zero hp
     (I.map ⟨Int.cast, Int.cast_injective⟩) ⌊(s : ℝ) / B⌋₊ (by
       rw [card_intCast_Icc_floor]
       exact hs.trans_lt (lt_two_mul_floor_add_one_mul_floor_div_add_one s hB))
@@ -126,8 +124,9 @@ example : (∀ i < 3, (hasseDeriv i (X ^ 3 : ℤ[X])).eval (0 : ℤ) = 0) ∧
   refine ⟨fun i hi ↦ ?_, by simp [← taylor_coeff]⟩
   rw [← taylor_coeff, taylor_zero', LinearMap.id_apply, coeff_X_pow, ite_eq_right (by omega)]
 
-/-- In positive characteristic, `exists_eval_hasseDeriv_intCast_ne_zero` can fail: over `ZMod 2`,
-the nonzero polynomial `X² - X` of degree `2` vanishes in order `0` at every integer cast, so
+/-- In positive characteristic, `exists_eval_polynomial_hasseDeriv_intCast_ne_zero` can fail:
+over `ZMod 2`, the nonzero polynomial `X² - X` of degree `2` vanishes in order `0` at every integer
+cast, so
 `s = 2` and `B = 3` (which forces `i ≤ ⌊2 / 3⌋ = 0`) admit no nonvanishing grid jet. -/
 example : (X ^ 2 - X : (ZMod 2)[X]) ≠ 0 ∧
     ∀ z : ℤ, (hasseDeriv 0 (X ^ 2 - X : (ZMod 2)[X])).eval (z : ZMod 2) = 0 := by
@@ -138,7 +137,5 @@ example : (X ^ 2 - X : (ZMod 2)[X]) ≠ 0 ∧
   · rw [hasseDeriv_zero, LinearMap.id_apply, eval_sub, eval_pow, eval_X]
     generalize (z : ZMod 2) = x
     fin_cases x <;> rfl
-
-end Grid.Polynomial
 
 end TauCeti

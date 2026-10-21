@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.MvPolynomial.Basic
 public import TauCeti.Algebra.Polynomial.HasseDeriv.Grid
 public import TauCeti.RingTheory.MvPolynomial.HasseDeriv.Taylor
 
@@ -33,8 +32,8 @@ orders at most `M j`. The integer-grid statements follow by counting integer poi
 
 ## Main results
 
-* `TauCeti.Grid.MvPolynomial.exists_eval_hasseDeriv_ne_zero`: nonvanishing on finite grids.
-* `TauCeti.Grid.MvPolynomial.exists_eval_hasseDeriv_intCast_ne_zero`: Evertse's Lemma 25 on
+* `TauCeti.exists_eval_mvPolynomial_hasseDeriv_ne_zero`: nonvanishing on finite grids.
+* `TauCeti.exists_eval_mvPolynomial_hasseDeriv_intCast_ne_zero`: Evertse's Lemma 25 on
   nonvanishing of a Hasse derivative on a rectangular integer grid.
 
 ## References
@@ -45,16 +44,14 @@ orders at most `M j`. The integer-grid statements follow by counting integer poi
 
 public section
 
-namespace TauCeti.Grid
-
-namespace MvPolynomial
+namespace TauCeti
 
 open _root_.MvPolynomial
 
 variable {R : Type*}
 
-/-- Inductive form of `exists_eval_hasseDeriv_ne_zero` on `Fin n`. -/
-private theorem exists_eval_hasseDeriv_ne_zero_fin {n : ℕ} [CommRing R] [IsDomain R]
+/-- Inductive form of `exists_eval_mvPolynomial_hasseDeriv_ne_zero` on `Fin n`. -/
+private theorem exists_eval_mvPolynomial_hasseDeriv_ne_zero_fin {n : ℕ} [CommRing R] [IsDomain R]
     {P : MvPolynomial (Fin n) R} (hP : P ≠ 0) (S : Fin n → Finset R) (M : Fin n → ℕ)
     (hdeg : ∀ j, P.degreeOf j < (S j).card * (M j + 1)) :
     ∃ x : Fin n → R, (∀ j, x j ∈ S j) ∧ ∃ i : Fin n →₀ ℕ,
@@ -68,7 +65,7 @@ private theorem exists_eval_hasseDeriv_ne_zero_fin {n : ℕ} [CommRing R] [IsDom
     rw [eq_C_of_isEmpty P] at h0 ⊢
     simpa using congrArg (C : R → MvPolynomial (Fin 0) R) h0
   | succ n ih =>
-    obtain ⟨a, ha, k, hk, hQ⟩ := Polynomial.exists_eval_hasseDeriv_ne_zero
+    obtain ⟨a, ha, k, hk, hQ⟩ := exists_eval_polynomial_hasseDeriv_ne_zero
       ((EmbeddingLike.map_ne_zero_iff (f := finSuccEquiv R n)).2 hP)
       ((S 0).map ⟨C, C_injective _ _⟩) (M 0) (by
         simpa only [natDegree_finSuccEquiv, Finset.card_map] using hdeg 0)
@@ -90,7 +87,7 @@ private theorem exists_eval_hasseDeriv_ne_zero_fin {n : ℕ} [CommRing R] [IsDom
 /-- A nonzero polynomial on a product of finite sets has a nonvanishing Hasse derivative with
 coordinate orders bounded by `M`, provided each grid size times `M j + 1` exceeds the corresponding
 partial degree. The coefficient ring may be an integral domain of any characteristic. -/
-theorem exists_eval_hasseDeriv_ne_zero {σ : Type*} [Finite σ] [CommRing R] [IsDomain R]
+theorem exists_eval_mvPolynomial_hasseDeriv_ne_zero {σ : Type*} [Finite σ] [CommRing R] [IsDomain R]
     {P : MvPolynomial σ R} (hP : P ≠ 0) (S : σ → Finset R) (M : σ → ℕ)
     (hdeg : ∀ j, P.degreeOf j < (S j).card * (M j + 1)) :
     ∃ x : σ → R, (∀ j, x j ∈ S j) ∧ ∃ i : σ →₀ ℕ,
@@ -103,7 +100,7 @@ theorem exists_eval_hasseDeriv_ne_zero {σ : Type*} [Finite σ] [CommRing R] [Is
     conv_lhs => rw [← e.apply_symm_apply j, degreeOf_rename_of_injective e.injective]
     exact hdeg (e.symm j)
   obtain ⟨x, hx, i, hi, hne⟩ :=
-    exists_eval_hasseDeriv_ne_zero_fin hPe (S ∘ e.symm) (M ∘ e.symm) hdege
+    exists_eval_mvPolynomial_hasseDeriv_ne_zero_fin hPe (S ∘ e.symm) (M ∘ e.symm) hdege
   refine ⟨x ∘ e, fun j ↦ ?_, i.equivMapDomain e.symm, fun j ↦ ?_, ?_⟩
   · simpa using hx (e j)
   · simpa using hi (e j)
@@ -119,15 +116,15 @@ polynomial `P : MvPolynomial σ R` in finitely many variables, any partial-degre
 `P.degreeOf j ≤ s j`, and any positive real numbers `B j > 0`, there exist an integer grid point
 `z : σ → ℤ` with `|z j| ≤ B j` and a multi-index `i : σ →₀ ℕ` with `i j ≤ s j / B j` such that
 the Hasse derivative `∂^i P` does not vanish at `z`. -/
-theorem exists_eval_hasseDeriv_intCast_ne_zero {σ : Type*} [Finite σ] [CommRing R] [IsDomain R]
-    [CharZero R] {P : MvPolynomial σ R} (hP : P ≠ 0) (s : σ → ℕ)
+theorem exists_eval_mvPolynomial_hasseDeriv_intCast_ne_zero {σ : Type*} [Finite σ] [CommRing R]
+    [IsDomain R] [CharZero R] {P : MvPolynomial σ R} (hP : P ≠ 0) (s : σ → ℕ)
     (hs : ∀ j, P.degreeOf j ≤ s j) (B : σ → ℝ) (hB : ∀ j, 0 < B j) :
     ∃ z : σ → ℤ, ∃ i : σ →₀ ℕ,
       (∀ j, ((z j).natAbs : ℝ) ≤ B j) ∧
       (∀ j, (i j : ℝ) ≤ (s j : ℝ) / B j) ∧
       eval (fun j ↦ (z j : R)) (hasseDeriv i P) ≠ 0 := by
   let I (j : σ) : Finset ℤ := Finset.Icc (-(⌊B j⌋₊ : ℤ)) (⌊B j⌋₊ : ℤ)
-  obtain ⟨x, hx, i, hi, hne⟩ := exists_eval_hasseDeriv_ne_zero hP
+  obtain ⟨x, hx, i, hi, hne⟩ := exists_eval_mvPolynomial_hasseDeriv_ne_zero hP
     (fun j ↦ (I j).map ⟨Int.cast, Int.cast_injective⟩) (fun j ↦ ⌊(s j : ℝ) / B j⌋₊)
     (fun j ↦ by
       rw [card_intCast_Icc_floor]
@@ -168,6 +165,4 @@ example :
   rw [← coeff_taylor, taylor_zero, sub_mul, h1, h2]
   simp [hne]
 
-end MvPolynomial
-
-end TauCeti.Grid
+end TauCeti
