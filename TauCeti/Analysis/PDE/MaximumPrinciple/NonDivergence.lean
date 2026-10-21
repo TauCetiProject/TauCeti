@@ -12,6 +12,7 @@ public import TauCeti.Analysis.PDE.Ellipticity.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Analysis.InnerProductSpace.Positive
 import TauCeti.Analysis.Calculus.DerivativeTest
+import TauCeti.Analysis.Calculus.SecondDerivative
 
 /-!
 # The weak maximum principle for elliptic operators in non-divergence form
@@ -220,9 +221,8 @@ theorem sum_mul_fderiv_fderiv_add_fderiv_add_smul {A : Matrix ι ι ℝ}
     ext v w
     simpa [iteratedFDeriv_two_apply] using
       congrArg (· ![v, w]) (iteratedFDeriv_add_apply hf hg')
-  rw [h2, fderiv_add (hf.differentiableAt two_ne_zero)
-    (hg'.differentiableAt two_ne_zero), fderiv_const_smul_field,
-    fderiv_const_smul_field (f := fderiv ℝ g)]
+  rw [h2, fderiv_fderiv_const_smul, fderiv_add (hf.differentiableAt two_ne_zero)
+    (hg'.differentiableAt two_ne_zero), fderiv_const_smul_field]
   simp only [_root_.add_apply, Pi.smul_apply, _root_.smul_apply, smul_eq_mul, mul_add,
     Finset.sum_add_distrib, Finset.mul_sum]
   have h : ∑ i, ∑ j, A i j * (r * fderiv ℝ (fderiv ℝ g) x (EuclideanSpace.single i 1)

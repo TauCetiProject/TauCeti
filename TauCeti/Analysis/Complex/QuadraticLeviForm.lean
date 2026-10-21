@@ -231,14 +231,11 @@ theorem _root_.ContinuousLinearMap.hessianQuadraticForm_mul_norm_sq_add_re_apply
       2 * a * ‖v‖ ^ 2 + 2 * (q v v).re := by
   have h : ContDiffAt ℝ 2 (a • fun z : E ↦ ‖z‖ ^ 2) x :=
     ((contDiff_norm_sq ℂ).const_smul a).contDiffAt
-  have h2 : fderiv ℝ (fderiv ℝ (a • fun z : E ↦ ‖z‖ ^ 2)) x =
-      a • fderiv ℝ (fderiv ℝ fun z : E ↦ ‖z‖ ^ 2) x := by
-    rw [fderiv_const_smul_field,
-      fderiv_const_smul_field (𝕜 := ℝ) (f := fderiv ℝ fun z : E ↦ ‖z‖ ^ 2), Pi.smul_apply]
-  have hadd := congr($(hessianQuadraticForm_add h (contDiffAt_re_apply_self q x)) v)
-  simp only [Pi.add_def, Pi.smul_apply, smul_eq_mul] at hadd
-  simp [hadd, q.hessianQuadraticForm_re_apply_self, hessianQuadraticForm_apply, h2,
-    fderiv_fderiv_norm_sq_apply_complex, inner_self_eq_norm_sq_to_K, ← ofReal_pow]
+  have hfun : (fun z ↦ a * ‖z‖ ^ 2 + (q z z).re) =
+      (a • fun z : E ↦ ‖z‖ ^ 2) + fun z ↦ (q z z).re := rfl
+  rw [hfun, hessianQuadraticForm_add h (contDiffAt_re_apply_self q x), _root_.add_apply,
+    hessianQuadraticForm_smul, _root_.smul_apply, smul_eq_mul,
+    hessianQuadraticForm_norm_sq_complex, q.hessianQuadraticForm_re_apply_self]
   ring
 
 end NormSq

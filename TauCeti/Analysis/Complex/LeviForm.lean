@@ -175,10 +175,7 @@ theorem leviForm_neg (f : V → ℝ) (x : V) : leviForm (-f) x = -leviForm f x :
 @[simp]
 theorem leviForm_smul (a : ℝ) (f : V → ℝ) (x : V) :
     leviForm (a • f) x = (a : ℂ) • leviForm f x := by
-  have h2 : fderiv ℝ (fderiv ℝ (a • f)) x = a • fderiv ℝ (fderiv ℝ f) x := by
-    rw [fderiv_const_smul_field, fderiv_const_smul_field (𝕜 := ℝ) (f := fderiv ℝ f),
-      Pi.smul_apply]
-  rw [leviForm_def, leviForm_def, h2, ← LinearMap.BilinForm.leviForm_smul]
+  rw [leviForm_def, leviForm_def, fderiv_fderiv_const_smul, ← LinearMap.BilinForm.leviForm_smul]
   exact congrArg _ (map_smul ContinuousLinearMap.toLinearMap₁₂ a _)
 
 /-- **The product rule** for the Levi form. Writing `∂f` for the complex-linear extension
