@@ -30,6 +30,9 @@ equivalent to `orderOf f ∣ m` independently of the point `x` of the support.
   cycle exactly when it holds for all of them, namely exactly when `orderOf f ∣ n`.
 * `Equiv.Perm.IsCycle.cycleType_pow_of_not_dvd`: for `n ∤ k`, the cycle type of `f ^ k` is
   `gcd n k` copies of `n / gcd n k`.
+* `Equiv.Perm.isCycleOn_univ_of_forall_sameCycle`,
+  `Equiv.Perm.pow_card_eq_one_of_forall_sameCycle`: a permutation with a single orbit on a finite
+  type `α` is a cycle on all of `α`, and its `card α`-th power is the identity.
 
 The declarations are stated in the `Equiv.Perm.IsCycle` namespace, giving dot notation from
 `hf : f.IsCycle`, as upstream candidates.
@@ -115,5 +118,20 @@ theorem _root_.Equiv.Perm.IsCycle.cycleType_pow_of_not_dvd (hf : f.IsCycle) {k :
     refine Nat.eq_of_mul_eq_mul_right hpos ?_
     rw [hsum, Nat.mul_div_cancel' hd]
   rw [hrep, hcard]
+
+omit [DecidableEq α] in
+/-- A permutation whose points all lie in one cycle is a cycle on the whole of `α`. -/
+theorem _root_.Equiv.Perm.isCycleOn_univ_of_forall_sameCycle (hf : ∀ x y, f.SameCycle x y) :
+    f.IsCycleOn (Finset.univ : Finset α) := by
+  rw [Finset.coe_univ]
+  exact ⟨Set.bijOn_univ.mpr f.bijective, fun x _ y _ => hf x y⟩
+
+omit [DecidableEq α] in
+/-- A permutation with a single orbit on a finite type `α` has `f ^ card α = 1`. -/
+theorem _root_.Equiv.Perm.pow_card_eq_one_of_forall_sameCycle (hf : ∀ x y, f.SameCycle x y) :
+    f ^ Fintype.card α = 1 := by
+  ext x
+  rw [← Finset.card_univ,
+    (isCycleOn_univ_of_forall_sameCycle hf).pow_card_apply (Finset.mem_univ x), one_apply]
 
 end TauCeti

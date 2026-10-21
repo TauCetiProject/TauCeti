@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.BigOperators
 public import Mathlib.Algebra.Polynomial.Reverse
 public import Mathlib.Algebra.Polynomial.RingDivision
 
@@ -25,6 +26,10 @@ coordinate, these correspond to the original finite roots away from the translat
 The multiplicity transport at invertible roots works over arbitrary commutative rings,
 including rings with zero divisors. The zero-root statements work over arbitrary rings.
 No splitting hypothesis is needed.
+
+The file also records `Polynomial.reflect_sum_prod_X_pow_sub_one`: reflecting `∏ (X ^ d - 1)` at
+its degree `∑ d` gives `∏ (1 - X ^ d)`, the passage between the characteristic polynomial of a
+permutation matrix and its reversed form.
 -/
 
 public section
@@ -130,5 +135,20 @@ theorem rootMultiplicity_map_reverse_zero [Semiring R] [Ring S] (p : R[X])
     (p.reverse.map f).rootMultiplicity 0 = p.natDegree - (p.map f).natDegree := by
   rw [reverse, ← reflect_map]
   exact (p.map f).rootMultiplicity_reflect_zero hp natDegree_map_le
+
+/-- Reflecting `∏ (X ^ d - 1)` at its degree `∑ d` gives `∏ (1 - X ^ d)`. -/
+theorem reflect_sum_prod_X_pow_sub_one [CommRing R] (s : Multiset ℕ) :
+    reflect s.sum (s.map fun d => (X : R[X]) ^ d - 1).prod = (s.map fun d => 1 - X ^ d).prod := by
+  nontriviality R
+  have hdeg : ∀ d : ℕ, ((X : R[X]) ^ d - 1).natDegree = d := fun d => by
+    rw [← C_1, natDegree_X_pow_sub_C]
+  induction s using Multiset.induction_on with
+  | empty => simp
+  | cons a s ih =>
+    rw [Multiset.sum_cons, Multiset.map_cons, Multiset.prod_cons, Multiset.map_cons,
+      Multiset.prod_cons, reflect_mul _ _ (hdeg a).le, ih, reflect_sub]
+    · simp
+    · refine (natDegree_multiset_prod_le _).trans ?_
+      simp [Multiset.map_map, hdeg]
 
 end Polynomial

@@ -237,7 +237,9 @@ omit [Fintype X] [DecidableEq X] in
 private theorem ofMulAction_eq_conj_lmapDomain (g : G) :
     ofMulAction k G X g = (coeffLinearEquiv k).symm.conj
       (Finsupp.lmapDomain k k (MulAction.toPerm g : Equiv.Perm X)) := by
-  rw [LinearEquiv.conj_apply]
+  -- `ofMulAction_def` is stated with `(g • ·)`; `MulAction.toPerm_apply` bridges the coercion.
+  have h : ⇑(MulAction.toPerm g : Equiv.Perm X) = (g • ·) := funext (MulAction.toPerm_apply g)
+  rw [LinearEquiv.conj_apply, h]
   exact ofMulAction_def g
 
 /-- The characteristic polynomial of `g` on the permutation representation `k[X]` is the product

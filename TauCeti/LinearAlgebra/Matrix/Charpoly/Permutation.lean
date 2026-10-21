@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Polynomial.Degree.IsMonicOfDegree
 public import Mathlib.LinearAlgebra.Charpoly.ToMatrix
 public import Mathlib.LinearAlgebra.Matrix.Permutation
+public import TauCeti.Algebra.Polynomial.Reverse
+public import TauCeti.GroupTheory.Perm.Cycle.Power
 public import TauCeti.GroupTheory.Perm.Partition
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Reverse
 
@@ -44,10 +46,10 @@ the permutation action on the standard basis; the version for the permutation re
 * `Matrix.blockTriangular_permMatrix`, `Matrix.toSquareBlock_permMatrix`: a labelling of the
   coordinates that is constant along the cycles makes a permutation matrix block triangular, and
   its diagonal blocks are the permutation matrices of the restrictions.
-* `Equiv.Perm.pow_card_eq_one_of_forall_sameCycle`,
-  `Equiv.Perm.eq_zero_of_aeval_permMatrix_eq_zero`: a permutation `σ` with a single orbit on `n`
-  satisfies `σ ^ card n = 1`, and no nonzero polynomial of degree less than `card n` kills its
-  permutation matrix.
+* `Equiv.Perm.eq_zero_of_aeval_permMatrix_eq_zero`: if `σ` has a single orbit on `n`, no nonzero
+  polynomial of degree less than `card n` kills its permutation matrix; together with
+  `Equiv.Perm.pow_card_eq_one_of_forall_sameCycle` (`σ ^ card n = 1`) this pins down the
+  characteristic polynomial of a single cycle.
 * `Equiv.Perm.charpoly_permMatrix_of_forall_sameCycle`: a permutation with a single orbit on a
   nonempty set of size `d` has characteristic polynomial `X ^ d - 1`.
 * `Equiv.Perm.charpoly_permMatrix`: the characteristic polynomial of a permutation matrix is the
@@ -104,49 +106,16 @@ theorem toSquareBlock_permMatrix {α : Type*} (σ : Equiv.Perm n) {b : n → α}
 
 end Matrix
 
-namespace Polynomial
-
-variable {R : Type*} [CommRing R]
-
-/-- Reflecting `∏ (X ^ d - 1)` at its degree `∑ d` gives `∏ (1 - X ^ d)`. -/
-theorem reflect_sum_prod_X_pow_sub_one (s : Multiset ℕ) :
-    reflect s.sum (s.map fun d => (X : R[X]) ^ d - 1).prod = (s.map fun d => 1 - X ^ d).prod := by
-  nontriviality R
-  have hdeg : ∀ d : ℕ, ((X : R[X]) ^ d - 1).natDegree = d := fun d => by
-    rw [← C_1, natDegree_X_pow_sub_C]
-  induction s using Multiset.induction_on with
-  | empty => simp
-  | cons a s ih =>
-    rw [Multiset.sum_cons, Multiset.map_cons, Multiset.prod_cons, Multiset.map_cons,
-      Multiset.prod_cons, reflect_mul _ _ (hdeg a).le, ih, reflect_sub]
-    · simp
-    · refine (natDegree_multiset_prod_le _).trans ?_
-      simp [Multiset.map_map, hdeg]
-
-end Polynomial
-
 namespace Equiv.Perm
 
 variable {n R : Type*} [Fintype n] [DecidableEq n]
-
-omit [DecidableEq n] in
-/-- A permutation with a single orbit on a finite set `n` has `σ ^ card n = 1`. -/
-theorem pow_card_eq_one_of_forall_sameCycle {σ : Perm n} (hσ : ∀ x y, σ.SameCycle x y) :
-    σ ^ Fintype.card n = 1 := by
-  have hf : σ.IsCycleOn (Finset.univ : Finset n) := by
-    rw [Finset.coe_univ]
-    exact ⟨Set.bijOn_univ.mpr σ.bijective, fun x _ y _ => hσ x y⟩
-  ext x
-  rw [← Finset.card_univ, hf.pow_card_apply (Finset.mem_univ x), one_apply]
 
 /-- If `σ` has a single orbit on `n`, then no nonzero polynomial of degree less than `card n` kills
 the permutation matrix of `σ`. -/
 theorem eq_zero_of_aeval_permMatrix_eq_zero [CommRing R] {σ : Perm n}
     (hσ : ∀ x y, σ.SameCycle x y) {p : R[X]} (hp : p.natDegree < Fintype.card n)
     (hA : aeval (σ.permMatrix R) p = 0) : p = 0 := by
-  have hf : σ.IsCycleOn (Finset.univ : Finset n) := by
-    rw [Finset.coe_univ]
-    exact ⟨Set.bijOn_univ.mpr σ.bijective, fun x _ y _ => hσ x y⟩
+  have hf := isCycleOn_univ_of_forall_sameCycle hσ
   obtain ⟨x₀⟩ : Nonempty n := Fintype.card_pos_iff.mp (p.natDegree.zero_le.trans_lt hp)
   -- The entry of `aeval P p` in row `x₀` and column `σ ^ j x₀` is the coefficient of `X ^ j`.
   ext j
