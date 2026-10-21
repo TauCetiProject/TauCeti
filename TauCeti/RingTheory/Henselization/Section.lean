@@ -74,10 +74,8 @@ private theorem nonempty_algHom_of_isIdempotentElem [Algebra.FinitePresentation 
   have hKJ : K ≤ J := by
     intro s hs
     obtain ⟨a, ha⟩ := Ideal.mem_span_singleton'.mp (Ideal.Quotient.eq_zero_iff_mem.mp hs)
-    rw [← Ideal.Quotient.eq_zero_iff_mem]
-    apply hC
-    rw [reducedMap_mk, map_zero, Ideal.Quotient.eq_zero_iff_mem]
-    exact ha ▸ Ideal.mul_mem_left _ a he1
+    exact mem_of_algebraMap_mem_map_of_reducedMap_injective J hC
+      (ha ▸ Ideal.mul_mem_left _ a he1)
   have : Algebra.FinitePresentation S D :=
     Algebra.FinitePresentation.quotient (Submodule.fg_span_singleton _)
   have hKfg : K.FG := Algebra.FinitePresentation.ker_fG_of_surjective _ hsurj
@@ -152,10 +150,7 @@ private theorem exists_mul_sub_smul_mem (hC : Function.Surjective (reducedMap J 
       ∀ x : C', ∃ σ : S, (x : C) - algebraMap S C σ ∈ J.map (algebraMap S C) ∧
         γ * x - σ • γ ∈ J.map (algebraMap S C') := by
   classical
-  have hlift (c : C) : ∃ σ : S, c - algebraMap S C σ ∈ J.map (algebraMap S C) := by
-    obtain ⟨t, ht⟩ := hC (Ideal.Quotient.mk _ c)
-    obtain ⟨σ, rfl⟩ := Ideal.Quotient.mk_surjective t
-    exact ⟨σ, Ideal.Quotient.eq.mp (by rw [← reducedMap_mk, ht])⟩
+  have hlift := exists_sub_algebraMap_mem_map_of_reducedMap_surjective J hC
   -- Write each generator `gₗ` of `C'` as a scalar plus a `J`-combination of elements of `C`.
   obtain ⟨k, g, hg⟩ := Module.Finite.exists_fin (R := S) (M := C')
   choose σ hσ using fun l ↦ hlift (g l : C)
@@ -208,9 +203,8 @@ private theorem exists_isIdempotentElem_smul_eq_mul [HenselianRing S J]
   have hγ : γ * γ - γ ∈ J.map (algebraMap S C') := by
     obtain ⟨σ, h1, h2⟩ := hP γ
     have hσ : σ - 1 ∈ J := by
-      rw [← Ideal.Quotient.eq_zero_iff_mem]
-      apply hC
-      rw [reducedMap_mk, map_zero, Ideal.Quotient.eq_zero_iff_mem, map_sub, map_one]
+      apply mem_of_algebraMap_mem_map_of_reducedMap_injective J hC
+      rw [map_sub, map_one]
       convert sub_mem hγ1 h1 using 1
       ring
     convert add_mem h2 (Ideal.mul_mem_right γ _ (Ideal.mem_map_of_mem (algebraMap S C') hσ))
