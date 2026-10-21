@@ -72,16 +72,17 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {ι : Type*} [Fintype ι]
 
 omit [FiniteDimensional ℝ E'] in
-/-- Let `f` be a `C¹` map whose derivative at each `x` is the equivalence `D x`, and let `ω x` be an
-orientation of the tangent space of `M'` at `f x`, locally constant near `a` when read in the
-preferred trivialization at `f a`. Then the orientations of the tangent spaces of `M` obtained by
-transporting `ω x` back along `D x` are locally constant near `a` when read in the preferred
-trivialization at `a`. -/
-theorem eventually_mapOrientation_map_symm_eq {f : M → M'} (hf : ContMDiff I I' 1 f)
+/-- Let `f` be a map that is `C¹` at `a` and whose derivative at each `x` is the equivalence `D x`,
+and let `ω x` be an orientation of the tangent space of `M'` at `f x`, locally constant near `a`
+when read in the preferred trivialization at `f a`. Then the orientations of the tangent spaces of
+`M` obtained by transporting `ω x` back along `D x` are locally constant near `a` when read in the
+preferred trivialization at `a`. -/
+theorem eventually_mapOrientation_map_symm_eq {f : M → M'} {a : M}
+    (hf : ContMDiffAt I I' 1 f a)
     (D : ∀ x, TangentSpace I x ≃L[ℝ] TangentSpace I' (f x))
     (hD : ∀ x, (D x : TangentSpace I x →L[ℝ] TangentSpace I' (f x)) = mfderiv I I' f x)
     (hι : Fintype.card ι = finrank ℝ E)
-    (ω : ∀ x, _root_.Orientation ℝ (TangentSpace I' (f x)) ι) (a : M)
+    (ω : ∀ x, _root_.Orientation ℝ (TangentSpace I' (f x)) ι)
     (hω : ∀ᶠ x in 𝓝 a, ∀ hx : f x ∈ (trivializationAt E' (TangentSpace I') (f a)).baseSet,
       (trivializationAt E' (TangentSpace I') (f a)).mapOrientation ι hx (ω x) =
         (trivializationAt E' (TangentSpace I') (f a)).mapOrientation ι
@@ -110,7 +111,7 @@ theorem eventually_mapOrientation_map_symm_eq {f : M → M'} (hf : ContMDiff I I
     exact congrArg (fun L ↦ _root_.Orientation.map ι L (ω x))
       (LinearEquiv.ext fun v ↦ by simp [T, e'.symm_apply_apply_mk hfx])
   let c := inTangentCoordinates I I' id f (mfderiv I I' f) a
-  have hc : ContinuousAt c a := ((hf a).mfderiv_const (m := 0) (by simp)).continuousAt
+  have hc : ContinuousAt c a := (hf.mfderiv_const (m := 0) (by simp)).continuousAt
   have hcT (x : M) (hx : x ∈ e.baseSet) (hfx : f x ∈ e'.baseSet) :
       c x = (T x hx hfx : E →L[ℝ] E') := by
     simp only [c, inTangentCoordinates, id]
@@ -129,7 +130,7 @@ theorem eventually_mapOrientation_map_symm_eq {f : M → M'} (hf : ContMDiff I I
       (lt_mem_nhds (by simp [hKa, ContinuousLinearMap.det]))
   have hbase : ∀ᶠ x in 𝓝 a, x ∈ e.baseSet := e.open_baseSet.mem_nhds ha
   have hfbase : ∀ᶠ x in 𝓝 a, f x ∈ e'.baseSet :=
-    hf.continuous.continuousAt.preimage_mem_nhds (e'.open_baseSet.mem_nhds hfa)
+    hf.continuousAt.preimage_mem_nhds (e'.open_baseSet.mem_nhds hfa)
   filter_upwards [hω, hpos, hbase, hfbase] with x hωx hKx hx₀ hfx hx
   rw [hread x hx hfx, hread a ha hfa, hωx hfx]
   set ω' := e'.mapOrientation ι hfa (ω a)
@@ -172,8 +173,8 @@ def pullback (o' : Orientation I' M' ι) {f : M → M'} (hf : ContMDiff I I' 1 f
           (trivializationAt E' (TangentSpace I') (f a))
           (FiberBundle.mem_baseSet_trivializationAt' (f a))
         simp only [toVectorBundleOrientation_apply] at h
-        exact eventually_mapOrientation_map_symm_eq hf (fun x ↦ (hdf x).choose)
-          (fun x ↦ (hdf x).choose_spec) hι _ a ((hf.continuous.tendsto a).eventually h)⟩
+        exact eventually_mapOrientation_map_symm_eq (hf a) (fun x ↦ (hdf x).choose)
+          (fun x ↦ (hdf x).choose_spec) hι _ ((hf.continuous.tendsto a).eventually h)⟩
 
 variable (o' : Orientation I' M' ι) {f : M → M'} (hf : ContMDiff I I' 1 f)
   (hdf : ∀ x, (mfderiv I I' f x).IsInvertible) (hι : Fintype.card ι = finrank ℝ E)
