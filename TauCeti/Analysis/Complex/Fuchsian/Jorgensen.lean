@@ -19,6 +19,7 @@ import TauCeti.Analysis.SpecialFunctions.Hyperbolic
 import TauCeti.GroupTheory.JorgensenSequence
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjAct
+import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
 import TauCeti.Topology.Algebra.Matrix.SpecialLinearGroup
 
 /-!
@@ -378,8 +379,9 @@ private theorem one_le_four_sub_trace_sq_mul_one_add_cosh_div_two [DiscreteTopol
     strictAnti_nat_of_succ_lt fun n ↦ (hstep n (hdec n).1 (hdec n).2).2
   -- so the elements `Bₙ` of `Γ` are distinct, yet all move `z` at most as far as `B` does
   let f : ℕ → Γ := fun n ↦ ⟨J n, jorgensenSeq_mem hA hB n⟩
-  have hinj : Function.Injective f := fun m n h ↦
-    hanti.injective (by simp only [c, show J m = J n from congrArg Subtype.val h])
+  have hinj : Function.Injective f := fun m n h ↦ by
+    have hJ : J m = J n := congrArg Subtype.val h
+    exact hanti.injective (by simp only [c, hJ])
   have hfin := ProperlyDiscontinuousSMul.finite_disjoint_inter_image (Γ := Γ)
     (isCompact_singleton (x := z)) (isCompact_closedBall z (dist (B • z) z))
   refine Set.infinite_range_of_injective hinj (hfin.subset ?_)

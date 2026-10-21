@@ -346,13 +346,6 @@ end Subgroup
 
 namespace Matrix.SpecialLinearGroup
 
-/-- An element of `SL(2, ℝ)` is elliptic exactly when the square of its trace is less than `4`. -/
-theorem isElliptic_mapGL_iff (g : SL(2, ℝ)) :
-    Matrix.GeneralLinearGroup.IsElliptic (mapGL ℝ g) ↔
-      (g : Matrix (Fin 2) (Fin 2) ℝ).trace ^ 2 < 4 := by
-  simp [Matrix.GeneralLinearGroup.IsElliptic, Matrix.IsElliptic, Matrix.discr_fin_two,
-    mapGL_coe_matrix]
-
 /-- **A nonidentity element fixing a point of `ℍ` is elliptic.** -/
 theorem isElliptic_of_smul_eq_self_of_ne_one {g : SL(2, ℝ)} {z : ℍ} (hz : g • z = z)
     (hg : (g : PSL(2, ℝ)) ≠ 1) : Matrix.GeneralLinearGroup.IsElliptic (mapGL ℝ g) := by

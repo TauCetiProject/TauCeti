@@ -32,7 +32,8 @@ computed explicitly.
 
 * `TauCeti.UpperHalfPlane.rotation_smul_I` — every rotation fixes `I`.
 * `Matrix.SpecialLinearGroup.smul_I_eq_I_iff` — the elements of `SL(2, ℝ)` fixing `I` are the
-  matrices `!![a, b; -b, a]`.
+  matrices `!![a, b; -b, a]`, and `Matrix.SpecialLinearGroup.sq_add_sq_eq_one_of_smul_I_eq_I`
+  — these have `a² + b² = 1`.
 * `TauCeti.UpperHalfPlane.exists_rotation_smul_re_eq_zero` — some rotation about `I` moves any
   point onto the imaginary axis.
 -/
@@ -66,6 +67,15 @@ theorem _root_.Matrix.SpecialLinearGroup.smul_I_eq_I_iff (k : SL(2, ℝ)) :
     exact ⟨h₀.symm, by linear_combination h₁⟩
   · rintro ⟨h₀, h₁⟩
     exact ⟨h₀.symm, by linear_combination h₁⟩
+
+/-- The first row `(a, b)` of an element `!![a, b; -b, a]` of `SL(2, ℝ)` fixing `I` is a unit
+vector: `a² + b² = 1`. -/
+theorem _root_.Matrix.SpecialLinearGroup.sq_add_sq_eq_one_of_smul_I_eq_I {k : SL(2, ℝ)}
+    (hk : k • UpperHalfPlane.I = UpperHalfPlane.I) : k 0 0 ^ 2 + k 0 1 ^ 2 = 1 := by
+  obtain ⟨h₁₁, h₁₀⟩ := (Matrix.SpecialLinearGroup.smul_I_eq_I_iff k).1 hk
+  have hdet := k.det_coe
+  rw [Matrix.det_fin_two, h₁₁, h₁₀] at hdet
+  linear_combination hdet
 
 /-- Some rotation about `I` moves any point onto the imaginary axis. -/
 theorem exists_rotation_smul_re_eq_zero (w : ℍ) :

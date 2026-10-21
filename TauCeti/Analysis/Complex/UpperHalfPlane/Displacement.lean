@@ -81,11 +81,8 @@ theorem cosh_dist_smul_I (g : SL(2, ℝ)) :
 
 /-- An element of `SL(2, ℝ)` fixing `I` is `!![a, b; -b, a]` with `a² + b² = 1`. -/
 private theorem eq_of_smul_I_eq_I {k : SL(2, ℝ)} (hk : k • I = I) :
-    k 1 1 = k 0 0 ∧ k 1 0 = -k 0 1 ∧ k 0 0 ^ 2 + k 0 1 ^ 2 = 1 := by
-  obtain ⟨h₁₁, h₁₀⟩ := (smul_I_eq_I_iff k).1 hk
-  have hdet := k.det_coe
-  rw [Matrix.det_fin_two, h₁₁, h₁₀] at hdet
-  exact ⟨h₁₁, h₁₀, by linear_combination hdet⟩
+    k 1 1 = k 0 0 ∧ k 1 0 = -k 0 1 ∧ k 0 0 ^ 2 + k 0 1 ^ 2 = 1 :=
+  ⟨((smul_I_eq_I_iff k).1 hk).1, ((smul_I_eq_I_iff k).1 hk).2, sq_add_sq_eq_one_of_smul_I_eq_I hk⟩
 
 /-- The base-point displacement of a conjugate of `k = !![a, b; -b, a]`:
 `N(B k B⁻¹) - 2 = b² (N(B)² - 4)`, where `N` is the sum of the squares of the entries. -/
@@ -119,9 +116,11 @@ theorem cosh_dist_smul_of_smul_eq_self {g : SL(2, ℝ)} {z : ℍ} (hz : g • z 
   have hg : g = P * k * P⁻¹ := by
     rw [hk]
     group
+  have hconj : Q⁻¹ * P * k * (Q⁻¹ * P)⁻¹ = Q⁻¹ * g * Q := by
+    rw [hg]
+    group
   have hdist₁ : dist (g • Q • I) (Q • I) = dist (((Q⁻¹ * P) * k * (Q⁻¹ * P)⁻¹) • I) I := by
-    rw [← dist_smul Q⁻¹, inv_smul_smul,
-      show Q⁻¹ * P * k * (Q⁻¹ * P)⁻¹ = Q⁻¹ * g * Q by rw [hg]; group, mul_smul, mul_smul]
+    rw [← dist_smul Q⁻¹, inv_smul_smul, hconj, mul_smul, mul_smul]
   have hdist₂ : dist (Q • I) (P • I) = dist ((Q⁻¹ * P) • I) I := by
     rw [dist_comm, ← dist_smul Q⁻¹, ← mul_smul, inv_smul_smul]
   have htr := ConjAct.trace_specialLinearGroup_smul (ConjAct.toConjAct P)
@@ -155,11 +154,14 @@ theorem trace_commutatorElement_of_smul_eq_self {g : SL(2, ℝ)} {z : ℍ} (hz :
     group
   have hdist : dist (h • P • I) (P • I) = dist (X • I) I := by
     rw [← dist_smul P⁻¹, inv_smul_smul, ← mul_smul, ← mul_smul, hX, mul_assoc]
+  have hg : P * k * P⁻¹ = g := by
+    rw [hk]
+    group
   have htr : (g : Matrix (Fin 2) (Fin 2) ℝ).trace = 2 * k 0 0 := by
     have := ConjAct.trace_specialLinearGroup_smul (ConjAct.toConjAct P)
       (k : Matrix (Fin 2) (Fin 2) ℝ)
     simp only [ConjAct.specialLinearGroup_smul_def, ConjAct.ofConjAct_toConjAct, ← coe_mul,
-      show P * k * P⁻¹ = g by rw [hk]; group] at this
+      hg] at this
     rw [this, Matrix.trace_fin_two, h₁₁]
     ring
   have hdet := X.det_coe
