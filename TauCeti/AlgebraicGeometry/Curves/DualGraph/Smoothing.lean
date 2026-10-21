@@ -51,7 +51,7 @@ This file describes the effect on dual graphs. For a finite set `S` of edges of 
   smoothing preserves stability and semistability (`TauCeti.DualGraph.IsStable.smoothing`,
   `TauCeti.DualGraph.IsSemistable.smoothing`).
 
-The opposite operation, cutting a node open into two markings, is the inverse of clutching; its
+A different way to remove a node is to cut it open into two markings, which undoes clutching; its
 effect on the invariants is computed in `TauCeti.AlgebraicGeometry.Curves.DualGraph.Clutching`.
 
 ## Implementation notes
@@ -221,7 +221,6 @@ lemma endpoint_smoothing (e : (G.smoothing S).Edge) (i : Fin 2) :
     (G.smoothing S).endpoint e i = G.smoothingVertex S (G.endpoint e.1 i) :=
   rfl
 
-@[simp]
 lemma genus_smoothing (x : (G.smoothing S).Vertex) :
     (G.smoothing S).genus x = (G.smoothingComponent S x).arithmeticGenus :=
   rfl
