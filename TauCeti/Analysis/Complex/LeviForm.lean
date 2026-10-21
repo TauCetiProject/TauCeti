@@ -404,16 +404,10 @@ multiplication by `I` exchanges the positive and negative directions of the Hess
 theorem morseIndex_neg_eq_of_leviForm_eq_zero (h : leviForm f x = 0) :
     morseIndex (-f) x = morseIndex f x := by
   have hB := (LinearMap.BilinForm.leviForm_eq_zero_iff _).1 ((leviForm_def f x).symm.trans h)
-  have hI (v : V) : hessianQuadraticForm f x (I • v) = -hessianQuadraticForm f x v := by
-    simpa [hessianQuadraticForm_apply] using hB v v
-  let e : V ≃ₗ[ℝ] V := (LinearEquiv.smulOfNeZero ℂ V I I_ne_zero).restrictScalars ℝ
-  have hcomp : (hessianQuadraticForm f x).comp (e : V →ₗ[ℝ] V) =
-      hessianQuadraticForm (-f) x := by
-    ext v
-    simp [e, hessianQuadraticForm_neg, hI]
-  rw [morseIndex_def, morseIndex_def, ← hcomp]
-  exact (QuadraticMap.Equivalent.sigNeg_eq
-    ⟨(hessianQuadraticForm f x).isometryEquivOfCompLinearEquiv e⟩).symm
+  rw [morseIndex_def, morseIndex_def, hessianQuadraticForm_neg, sigNeg_neg]
+  refine (QuadraticForm.sigNeg_eq_sigPos_of_comp_eq_neg _
+    ((LinearEquiv.smulOfNeZero ℂ V I I_ne_zero).restrictScalars ℝ) fun v ↦ ?_).symm
+  simpa [hessianQuadraticForm_apply] using hB v v
 
 /-- **The Morse index of a Levi-flat function.** If the Levi form of `f` vanishes at `x` and its
 Hessian there is nondegenerate, then the Morse index of `f` at `x` is the complex dimension. This
