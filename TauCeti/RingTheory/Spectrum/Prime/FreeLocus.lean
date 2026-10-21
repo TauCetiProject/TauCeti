@@ -43,8 +43,9 @@ module is constant when the base change sees the elements cutting out the rank l
   module is the basic open set of an idempotent.
 * `Module.exists_rankAtStalk_prod_quotient_eq_max`: adding the complement of that support gives a
   module of positive rank at every prime.
-* `Module.exists_rankAtStalk_tensorProduct_eq`: a finite flat module whose rank loci are cut out
-  by elements that a base change sees uniformly acquires constant rank after that base change.
+* `TauCeti.Module.exists_rankAtStalk_tensorProduct_eq`: a finite flat module whose rank loci are
+  cut out by elements that a base change sees uniformly acquires constant rank after that base
+  change.
 
 ## References
 
@@ -172,6 +173,12 @@ theorem exists_rankAtStalk_prod_quotient_eq_max {R : Type*} (M : Type*) [CommRin
     have := hM.mpr hp
     omega
 
+end Module
+
+namespace TauCeti.Module
+
+open _root_.Module
+
 open scoped TensorProduct in
 /-- Let the loci where a finite flat module `M` has rank `k ≤ N` be the basic open sets of
 elements `ε k`. If, for each `k`, whether `ε k` lies in the prime of `R` below a prime of `T'` does
@@ -196,7 +203,7 @@ theorem exists_rankAtStalk_tensorProduct_eq {R T' M : Type*} [CommRing R] [CommR
       rw [rankAtStalk_baseChange, Pi.natCast_apply, key q₀ q, Nat.cast_id]⟩
   · exact ⟨0, funext fun q ↦ (hne ⟨q⟩).elim⟩
 
-end Module
+end TauCeti.Module
 
 namespace PrimeSpectrum
 

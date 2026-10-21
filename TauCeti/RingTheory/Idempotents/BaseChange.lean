@@ -18,14 +18,14 @@ Tensoring with a `T`-algebra `X` splits `X` accordingly into the product of its 
 the components (`CompleteOrthogonalIdempotents.tensorProductEquiv`). Hence properties of `X` that
 are compatible with finite products and with restriction of scalars along `T → T ⧸ (1 - f i)` can
 be checked on each component; this file records it for module finiteness
-(`Module.Finite.of_completeOrthogonalIdempotents`).
+(`TauCeti.Module.Finite.of_completeOrthogonalIdempotents`).
 
 ## Main declarations
 
 * `CompleteOrthogonalIdempotents.tensorProductEquiv`: the splitting
   `X ≃ₐ[T] Π i, (T ⧸ (1 - f i)) ⊗[T] X`.
-* `Module.Finite.of_completeOrthogonalIdempotents`: an algebra is finite if its base change to
-  every component is.
+* `TauCeti.Module.Finite.of_completeOrthogonalIdempotents`: an algebra is finite if its base
+  change to every component is.
 -/
 
 public section
@@ -63,8 +63,8 @@ end CompleteOrthogonalIdempotents
 /-- Module finiteness is local for a decomposition of the base by complete orthogonal
 idempotents: if the base change of `X` to every component `T ⧸ (1 - f i)` is finite, then `X` is
 finite over `T`. -/
-theorem Module.Finite.of_completeOrthogonalIdempotents {X : Type*} [CommRing X] [Algebra T X]
-    {ι : Type*} [Fintype ι] {f : ι → T} (hf : CompleteOrthogonalIdempotents f)
+theorem TauCeti.Module.Finite.of_completeOrthogonalIdempotents {X : Type*} [CommRing X]
+    [Algebra T X] {ι : Type*} [Fintype ι] {f : ι → T} (hf : CompleteOrthogonalIdempotents f)
     (h : ∀ i, Module.Finite (T ⧸ Ideal.span {1 - f i}) ((T ⧸ Ideal.span {1 - f i}) ⊗[T] X)) :
     Module.Finite T X := by
   classical

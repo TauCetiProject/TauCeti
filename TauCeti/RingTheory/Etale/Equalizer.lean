@@ -16,6 +16,7 @@ import Mathlib.RingTheory.Localization.Away.Lemmas
 import TauCeti.Algebra.Algebra.Pi
 import TauCeti.Algebra.Algebra.Subalgebra.Equalizer
 import TauCeti.RingTheory.Etale.Idempotent
+import TauCeti.RingTheory.Ideal.Quotient.Operations
 import TauCeti.RingTheory.Idempotents.Refinement
 import TauCeti.RingTheory.Spectrum.Prime.FreeLocus
 import TauCeti.RingTheory.TensorProduct.Pi
@@ -26,7 +27,8 @@ import TauCeti.RingTheory.TensorProduct.Pi
 The equalizer of two algebra maps `f g : A →ₐ[R] B` between finite étale `R`-algebras is a finite
 étale `R`-algebra (`AlgHom.etale_equalizer`, `AlgHom.finite_equalizer`). In particular, the
 invariants of a finite étale algebra under a finite monoid acting by algebra endomorphisms form a
-finite étale algebra (`FixedPoints.etale_subalgebra`, `FixedPoints.finite_subalgebra`).
+finite étale algebra (`TauCeti.FixedPoints.etale_subalgebra`,
+`TauCeti.FixedPoints.finite_subalgebra`).
 Geometrically, the affine coequalizer of two morphisms of finite étale `Spec R`-schemes, and the
 invariant quotient of a finite étale `Spec R`-scheme by a finite group, are again finite étale.
 The invariant quotients supply the quotients by finite groups that the axioms of a Galois category
@@ -36,8 +38,8 @@ require of finite étale covers.
 
 * `AlgHom.etale_equalizer`, `AlgHom.finite_equalizer`: equalizers of finite étale algebras are
   finite étale.
-* `FixedPoints.etale_subalgebra`, `FixedPoints.finite_subalgebra`: invariants of a finite étale
-  algebra under a finite monoid are finite étale.
+* `TauCeti.FixedPoints.etale_subalgebra`, `TauCeti.FixedPoints.finite_subalgebra`: invariants of
+  a finite étale algebra under a finite monoid are finite étale.
 
 ## Implementation notes
 
@@ -45,16 +47,17 @@ The proof reduces to split algebras in three steps.
 
 * Over a split base, an algebra map `φ : (ι → T) →ₐ[T] (κ → T)` has idempotent matrix entries
   `φ (Pi.single i 1) j`. Over the component of each atom of the Boolean algebra they generate
-  (`CompleteOrthogonalIdempotents.prod_ite`), every entry is `0` or `1`, so `φ` is induced by a map
-  `κ → ι`, and the equalizer of two such maps is the algebra of functions on a quotient of `ι`.
+  (`TauCeti.completeOrthogonalIdempotents_prod_ite`), every entry is `0` or `1`, so `φ` is induced
+  by a map `κ → ι`, and the equalizer of two such maps is the algebra of functions on a quotient
+  of `ι`.
 * If `A` and `B` have constant ranks, they both split after a faithfully flat finite étale base
   change (`Algebra.IsFiniteSplit.exists_tensorProduct_of_etale`). Flat base change commutes with
   equalizers (`AlgHom.tensorEqualizerEquiv`), and finite étaleness descends along faithfully flat
   maps.
 * In general the ranks are locally constant, and the atoms of the idempotents cutting out their
   fibres decompose the base into components where both ranks are constant. Finite étaleness is
-  local for such a decomposition (`Algebra.Etale.of_completeOrthogonalIdempotents`,
-  `Module.Finite.of_completeOrthogonalIdempotents`).
+  local for such a decomposition (`TauCeti.Algebra.Etale.of_completeOrthogonalIdempotents`,
+  `TauCeti.Module.Finite.of_completeOrthogonalIdempotents`).
 
 The main results take `R`, `A` and `B` in one universe, as
 `Algebra.IsFiniteSplit.exists_tensorProduct_of_etale` does.
@@ -89,12 +92,12 @@ private theorem etale_and_finite_equalizer_of_prod_ite {T ι : Type*} [CommRing 
           (Algebra.TensorProduct.map (AlgHom.id T' T') g))) :
     Algebra.Etale T (equalizer f g) ∧ Module.Finite T (equalizer f g) := by
   classical
-  have hF := CompleteOrthogonalIdempotents.prod_ite ha
+  have hF := TauCeti.completeOrthogonalIdempotents_prod_ite ha
   suffices H' : ∀ σ : ι → Bool,
       let T' := T ⧸ Ideal.span {1 - ∏ x, if σ x then a x else 1 - a x}
       Algebra.Etale T' (T' ⊗[T] equalizer f g) ∧ Module.Finite T' (T' ⊗[T] equalizer f g) from
-    ⟨Algebra.Etale.of_completeOrthogonalIdempotents hF fun σ ↦ (H' σ).1,
-      Module.Finite.of_completeOrthogonalIdempotents hF fun σ ↦ (H' σ).2⟩
+    ⟨TauCeti.Algebra.Etale.of_completeOrthogonalIdempotents hF fun σ ↦ (H' σ).1,
+      TauCeti.Module.Finite.of_completeOrthogonalIdempotents hF fun σ ↦ (H' σ).2⟩
   intro σ T'
   have : IsLocalization.Away (∏ x, if σ x then a x else 1 - a x) T' :=
     IsLocalization.Away.quotient_of_isIdempotentElem (hF.idem σ)
@@ -156,15 +159,15 @@ private theorem etale_and_finite_equalizer_pi {ι κ : Type*} [_root_.Finite ι]
   have hT' (x : Bool × ι × κ) : algebraMap T T' (a x) = 0 ∨ algebraMap T T' (a x) = 1 := by
     have hfactor :=
       congrArg (Ideal.Quotient.mk (Ideal.span {1 - ∏ y, if σ y then a y else 1 - a y}))
-        (CompleteOrthogonalIdempotents.ite_mul_prod_ite ha σ x)
-    rw [map_mul, Ideal.Quotient.mk_span_singleton_one_sub_self, mul_one] at hfactor
+        (TauCeti.ite_mul_prod_ite ha σ x)
+    rw [map_mul, TauCeti.Ideal.Quotient.mk_span_singleton_one_sub_self, mul_one] at hfactor
     rw [Ideal.Quotient.algebraMap_eq]
     split at hfactor
     · exact .inr hfactor
     · exact .inl (by simpa [sub_eq_self] using hfactor)
   let eι := Algebra.TensorProduct.piScalarRight T T' T' ι
   let eκ := Algebra.TensorProduct.piScalarRight T T' T' κ
-  let e := equalizerCongr eι eκ (Algebra.TensorProduct.map (AlgHom.id T' T') φ)
+  let e := TauCeti.AlgHom.equalizerCongr eι eκ (Algebra.TensorProduct.map (AlgHom.id T' T') φ)
     (Algebra.TensorProduct.map (AlgHom.id T' T') ψ)
   obtain ⟨h₁, h₂⟩ := etale_and_finite_equalizer_of_entries
     ((eκ : (T' ⊗[T] (κ → T)) →ₐ[T'] (κ → T')).comp
@@ -172,10 +175,10 @@ private theorem etale_and_finite_equalizer_pi {ι κ : Type*} [_root_.Finite ι]
     ((eκ : (T' ⊗[T] (κ → T)) →ₐ[T'] (κ → T')).comp
       ((Algebra.TensorProduct.map (AlgHom.id T' T') ψ).comp (eι.symm : (ι → T') →ₐ[T'] _)))
     (fun i j ↦ by
-      simpa [a, eι, eκ, Algebra.TensorProduct.piScalarRight_map_symm_single] using
+      simpa [a, eι, eκ, TauCeti.Algebra.TensorProduct.piScalarRight_map_symm_single] using
         hT' (true, i, j))
     (fun i j ↦ by
-      simpa [a, eι, eκ, Algebra.TensorProduct.piScalarRight_map_symm_single] using
+      simpa [a, eι, eκ, TauCeti.Algebra.TensorProduct.piScalarRight_map_symm_single] using
         hT' (false, i, j))
   exact ⟨.of_equiv e.symm, .equiv e.symm.toLinearEquiv⟩
 
@@ -186,7 +189,7 @@ private theorem etale_and_finite_equalizer_of_isFiniteSplit {A B : Type*} [CommR
     Algebra.Etale T (equalizer f g) ∧ Module.Finite T (equalizer f g) := by
   obtain ⟨m, ⟨eA⟩⟩ := Algebra.IsFiniteSplit.nonempty_algEquiv_fun T A
   obtain ⟨n, ⟨eB⟩⟩ := Algebra.IsFiniteSplit.nonempty_algEquiv_fun T B
-  let e := equalizerCongr eA eB f g
+  let e := TauCeti.AlgHom.equalizerCongr eA eB f g
   obtain ⟨h₁, h₂⟩ := etale_and_finite_equalizer_pi
     ((eB : B →ₐ[T] (Fin n → T)).comp (f.comp (eA.symm : (Fin m → T) →ₐ[T] A)))
     ((eB : B →ₐ[T] (Fin n → T)).comp (g.comp (eA.symm : (Fin m → T) →ₐ[T] A)))
@@ -257,13 +260,13 @@ private theorem etale_and_finite_equalizer {R A B : Type u} [CommRing R] [CommRi
   -- Every prime of `T'` lies over the component of the atom, where the ranks of `A` and `B` are
   -- read off from the atom.
   have hσ (q : PrimeSpectrum T') : ∀ x, a x ∉ (q.comap (algebraMap R T')).asIdeal ↔ σ x := by
-    refine CompleteOrthogonalIdempotents.notMem_iff_of_one_sub_prod_ite_mem ha σ ?_
+    refine TauCeti.notMem_iff_of_one_sub_prod_ite_mem ha σ ?_
     have h0 : algebraMap R T' (1 - ∏ x, if σ x then a x else 1 - a x) = 0 :=
       Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.mem_span_singleton_self _)
     exact Ideal.mem_comap.mpr (h0 ▸ q.asIdeal.zero_mem)
-  obtain ⟨m, hm⟩ := Module.exists_rankAtStalk_tensorProduct_eq (T' := T') εA hNA hεA'
+  obtain ⟨m, hm⟩ := TauCeti.Module.exists_rankAtStalk_tensorProduct_eq (T' := T') εA hNA hεA'
     fun q q' k ↦ (hσ q (.inl k)).trans (hσ q' (.inl k)).symm
-  obtain ⟨n, hn⟩ := Module.exists_rankAtStalk_tensorProduct_eq (T' := T') εB hNB hεB'
+  obtain ⟨n, hn⟩ := TauCeti.Module.exists_rankAtStalk_tensorProduct_eq (T' := T') εB hNB hεB'
     fun q q' k ↦ (hσ q (.inr k)).trans (hσ q' (.inr k)).symm
   exact etale_and_finite_equalizer_of_rankAtStalk_eq hm hn _ _
 
@@ -284,7 +287,7 @@ end
 
 end AlgHom
 
-namespace FixedPoints
+namespace TauCeti.FixedPoints
 
 variable {R S : Type u} [CommRing R] [CommRing S] [Algebra R S] (G : Type*) [Monoid G]
   [MulSemiringAction G S] [SMulCommClass G R S]
@@ -305,4 +308,4 @@ instance finite_subalgebra : Module.Finite R (FixedPoints.subalgebra R S G) := b
   rw [subalgebra_eq_equalizer G σ.symm.surjective]
   infer_instance
 
-end FixedPoints
+end TauCeti.FixedPoints

@@ -20,7 +20,7 @@ map between function algebras `ι → T`, identified with `T' ⊗[T] (ι → T) 
 ## Main declarations
 
 * `TauCeti.Algebra.TensorProduct.prodLeft`: the algebra equivalence above.
-* `Algebra.TensorProduct.piScalarRight_map_symm_single`: under Mathlib's
+* `TauCeti.Algebra.TensorProduct.piScalarRight_map_symm_single`: under Mathlib's
   `Algebra.TensorProduct.piScalarRight`, the base change of an algebra map between function
   algebras has the images of the original matrix entries as its matrix entries.
 -/
@@ -57,23 +57,22 @@ theorem prodLeft_symm_tmul (a₁ : A₁) (a₂ : A₂) (b : B) :
     (prodLeft R A₁ A₂ B).symm (a₁ ⊗ₜ b, a₂ ⊗ₜ b) = (a₁, a₂) ⊗ₜ b :=
   (AlgEquiv.symm_apply_eq _).2 (prodLeft_tmul a₁ a₂ b).symm
 
-end TauCeti.Algebra.TensorProduct
-
-namespace Algebra.TensorProduct
 
 /-- The matrix entries of the base change of an algebra map between split algebras are the images
 of the original entries: under `piScalarRight`, the base change of `φ : (ι → T) →ₐ[T] (κ → T)` to
 `T'` sends `Pi.single i 1` to the image of `φ (Pi.single i 1)`. -/
-theorem piScalarRight_map_symm_single {T : Type*} (T' : Type*) [CommRing T] [CommRing T']
+theorem piScalarRight_map_symm_single {T : Type*} (T' : Type*) [CommSemiring T] [CommSemiring T']
     [Algebra T T'] {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ]
     (φ : (ι → T) →ₐ[T] (κ → T)) (i : ι) (j : κ) :
-    piScalarRight T T' T' κ
-        (map (AlgHom.id T' T') φ ((piScalarRight T T' T' ι).symm (Pi.single i 1))) j =
+    Algebra.TensorProduct.piScalarRight T T' T' κ
+        (Algebra.TensorProduct.map (AlgHom.id T' T') φ
+          ((Algebra.TensorProduct.piScalarRight T T' T' ι).symm (Pi.single i 1))) j =
       algebraMap T T' (φ (Pi.single i 1) j) := by
-  have h : (piScalarRight T T' T' ι).symm (Pi.single i 1) = 1 ⊗ₜ Pi.single i 1 := by
+  have h : (Algebra.TensorProduct.piScalarRight T T' T' ι).symm (Pi.single i 1) =
+      1 ⊗ₜ Pi.single i 1 := by
     rw [AlgEquiv.symm_apply_eq]
     ext k
     simp [Pi.single_apply]
   simp [h, Algebra.algebraMap_eq_smul_one]
 
-end Algebra.TensorProduct
+end TauCeti.Algebra.TensorProduct

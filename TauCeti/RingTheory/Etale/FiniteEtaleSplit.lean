@@ -23,6 +23,7 @@ import Mathlib.RingTheory.TensorProduct.Pi
 import Mathlib.RingTheory.TensorProduct.Quotient
 import Mathlib.Tactic.LinearCombination
 import TauCeti.RingTheory.AdjoinRoot.Separable
+import TauCeti.RingTheory.Ideal.Quotient.Operations
 import TauCeti.RingTheory.Ideal.Quotient.Pi
 
 /-!
