@@ -14,7 +14,7 @@ public import TauCeti.CategoryTheory.Preadditive.Radical.IrreducibleComposite
 import TauCeti.CategoryTheory.Preadditive.Indecomposable
 import TauCeti.CategoryTheory.Preadditive.KrullSchmidt
 import TauCeti.CategoryTheory.Preadditive.Radical.Nilpotent
-import Mathlib.RingTheory.Artinian.Ring
+import Mathlib.RingTheory.Artinian.Module
 import Mathlib.RingTheory.Jacobson.Semiprimary
 
 /-!
@@ -97,6 +97,7 @@ theorem mem_closure_isIrreducibleComposite_of_finite_indecomposables
   have := isLocalRing_end_of_indecomposable (R := R) hY
   obtain ⟨N, hN⟩ := exists_jacobsonRadicalIdeal_pow_eq_bot_of_finite_indecomposables R P hP
   exact mem_closure_isIrreducibleComposite_of_mem_jacobsonRadical
-    (exists_isLocalRing_end_sum_comp_eq_id R) hN (mem_jacobsonRadical_iff_not_isIso.mpr hf)
+    (fun Z ↦ exists_isLocalRing_end_sum_comp_eq_id R Z) hN
+    (mem_jacobsonRadical_iff_not_isIso.mpr hf)
 
 end TauCeti
