@@ -699,6 +699,8 @@ private theorem fst_perturbedFlow_apply_eventuallyEq (hfs : ContDiff ℝ 2 f)
       hh hc (by linarith [norm_nonneg s₀]) hK₂]
   dsimp only
   have hrec := perturb_perturb f h s₀ p.2
+  -- The Lipschitz witness `hK₂` depends on the function, so the function is generalized together
+  -- with it before the equation `hrec` is substituted.
   generalize perturb (perturb f h s₀) h p.2 = g at hrec hK₂ ⊢
   subst hrec
   rw [negativeGradientFlow_congr _ hK₂ hK₁]
@@ -722,15 +724,12 @@ theorem fst_fderiv_perturbedFlow_apply_eq_neg_integral_of_norm_lt (hfs : ContDif
   have hΦ : DifferentiableAt ℝ Φ (x, s₀) := differentiableAt_perturbedFlow hfs hf hh hc T _
   have hΨ : DifferentiableAt ℝ Ψ (x, 0) :=
     differentiableAt_perturbedFlow (contDiff_perturb hfs hh s₀) hf' hh hc T _
-  have hfst : ∀ {G : E × EuclideanSpace ℝ ι → E × EuclideanSpace ℝ ι} {y},
-      DifferentiableAt ℝ G y → fderiv ℝ (fun p ↦ (G p).1) y = (ContinuousLinearMap.fst ℝ E _).comp
-        (fderiv ℝ G y) := fun hG ↦ (hasFDerivAt_fst.comp _ hG.hasFDerivAt).fderiv
   have hpt : ((0 : E), s₀) + (x, 0) = (x, s₀) := by simp
   have hshift := fderiv_comp_add_left (𝕜 := ℝ) (f := fun p : E × EuclideanSpace ℝ ι ↦ (Φ p).1)
     (x := (x, 0)) ((0 : E), s₀)
-  rw [hpt, hfst hΦ] at hshift
+  rw [hpt, fderiv.fst hΦ] at hshift
   rw [(fst_perturbedFlow_apply_eventuallyEq hfs hf hh hc hs₀ hf' T x).fderiv_eq,
-    hfst hΨ] at hshift
+    fderiv.fst hΨ] at hshift
   exact (congrArg (· (0, e)) hshift).symm
 
 end ParameterDerivative
