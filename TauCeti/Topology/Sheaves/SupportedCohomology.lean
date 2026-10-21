@@ -318,17 +318,24 @@ noncomputable def supportedHδ (Z S : Closeds X) (W : Opens X) {n₀ n₁ : ℕ}
     F.supportedH S (W ⊓ Z.compl) n₀ →+ F.supportedH Z W n₁ :=
   relativeH'.tripleδ F (S.complInclusion (W ⊓ Z.compl)) (Z.complInclusion W) h
 
-/-- If `Z ≤ S`, the inclusion `(W ∖ Z) ∖ S ⟶ W ∖ S` is an isomorphism. -/
-private lemma isIso_homOfLE_inf_compl (hZS : Z ≤ S) (W : Opens X) :
-    IsIso (homOfLE (inf_le_inf_right S.compl inf_le_left) : W ⊓ Z.compl ⊓ S.compl ⟶ W ⊓ S.compl) :=
-  ⟨homOfLE (le_inf (inf_le_inf_left W ((Closeds.complOrderIso X).monotone hZS)) inf_le_right),
-    Subsingleton.elim _ _, Subsingleton.elim _ _⟩
+/-- The connecting map of the long exact sequence of supports is the connecting map
+`Hⁿ(W ∖ Z, (W ∖ Z) ∖ S; F) ⟶ Hⁿ⁺¹(W, W ∖ Z; F)` of the triple `(W ∖ Z) ∖ S ⟶ W ∖ Z ⟶ W`. -/
+lemma supportedHδ_apply (Z S : Closeds X) (W : Opens X) {n₀ n₁ : ℕ} (h : 1 + n₀ = n₁)
+    (x : F.supportedH S (W ⊓ Z.compl) n₀) :
+    F.supportedHδ Z S W h x =
+      relativeH'.tripleδ F (S.complInclusion (W ⊓ Z.compl)) (Z.complInclusion W) h x :=
+  -- `supportedHδ` is defined as this connecting map
+  (rfl)
 
 /-- If `Z ≤ S`, the cohomology with supports `H_Sⁿ(W, F)` is the relative cohomology of the
 triple's composite inclusion `(W ∖ Z) ∖ S ⟶ W`. -/
 private noncomputable def supportedHTripleEquiv (hZS : Z ≤ S) (W : Opens X) (n : ℕ) :
     F.supportedH S W n ≃+ F.relativeH' (S.complInclusion (W ⊓ Z.compl) ≫ Z.complInclusion W) n :=
-  haveI := isIso_homOfLE_inf_compl hZS W
+  -- since `S.compl ≤ Z.compl`, the opens `(W ∖ Z) ∖ S` and `W ∖ S` are equal
+  haveI : IsIso (homOfLE (inf_le_inf_right S.compl inf_le_left) :
+      W ⊓ Z.compl ⊓ S.compl ⟶ W ⊓ S.compl) :=
+    homOfLE_isIso_of_eq _ (by rw [inf_assoc,
+      inf_eq_right.2 (show S.compl ≤ Z.compl from (Closeds.complOrderIso X).monotone hZS)])
   relativeH'.mapAddEquiv F (S.complInclusion W) _
     (homOfLE (inf_le_inf_right S.compl inf_le_left)) (𝟙 W) rfl n
 
@@ -337,7 +344,6 @@ private lemma map_triple_eq_supportedHMap (hZS : Z ≤ S) (W : Opens X) (n : ℕ
     (relativeH'.map F (Z.complInclusion W) (S.complInclusion (W ⊓ Z.compl) ≫ Z.complInclusion W)
         (S.complInclusion (W ⊓ Z.compl)) (𝟙 W) (by simp) n).comp (AddEquiv.refl _).toAddMonoidHom =
       (supportedHTripleEquiv F hZS W n).toAddMonoidHom.comp (F.supportedHMap hZS W n) := by
-  have := isIso_homOfLE_inf_compl hZS W
   ext x
   simp only [AddMonoidHom.coe_comp, AddEquiv.coe_toAddMonoidHom, Function.comp_apply,
     AddEquiv.refl_apply, supportedHTripleEquiv, relativeH'.mapAddEquiv_apply, supportedHMap,
@@ -351,7 +357,6 @@ private lemma map_triple_comp_eq_supportedHRestrict (hZS : Z ≤ S) (W : Opens X
         (S.complInclusion (W ⊓ Z.compl)) (𝟙 _) (Z.complInclusion W) (by simp) n).comp
         (supportedHTripleEquiv F hZS W n).toAddMonoidHom =
       (AddEquiv.refl _).toAddMonoidHom.comp (F.supportedHRestrict S inf_le_left n) := by
-  have := isIso_homOfLE_inf_compl hZS W
   ext x
   simp only [AddMonoidHom.coe_comp, AddEquiv.coe_toAddMonoidHom, Function.comp_apply,
     AddEquiv.refl_apply, supportedHTripleEquiv, relativeH'.mapAddEquiv_apply, supportedHRestrict,
