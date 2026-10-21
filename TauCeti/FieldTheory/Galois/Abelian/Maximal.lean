@@ -177,7 +177,7 @@ theorem fixingSubgroup_maximalAbelianExtension :
     refine (commutator Gal(Ω/K)).topologicalClosure_minimal ?_
       (fixingSubgroup_isClosed_of_isAlgebraic _)
     rw [← IntermediateField.restrictNormalHom_ker]
-    exact Abelianization.commutator_subset_ker _
+    exact Abelianization.commutator_le_ker _
 
 variable (K Ω) in
 /-- **The maximal abelian extension is the separable part of the fixed field of the closed

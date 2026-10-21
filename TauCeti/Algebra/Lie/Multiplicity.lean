@@ -230,7 +230,7 @@ theorem isotypicMultiplicity_eq_ncard_of_isInternal :
   have _i : Fintype ι := Fintype.ofFinite ι
   have hfin : ∀ i, FiniteDimensional K (S →ₗ⁅K,L⁆ N i) := fun i ↦
     have := hirr i
-    TauCeti.LieModule.finiteDimensional_lieModuleHom_of_isIrreducible K L
+    TauCeti.LieModule.finite_lieModuleHom_of_isIrreducible
   rw [isotypicMultiplicity_def,
     TauCeti.LieModule.finrank_lieModuleHom_eq_sum_of_isInternal S N h hfin]
   have hsum : ∀ i : ι,

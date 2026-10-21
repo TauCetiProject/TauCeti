@@ -10,12 +10,19 @@ public import TauCeti.Algebra.Homology.Monoidal.Braiding
 public import TauCeti.CategoryTheory.Enriched.NaturalTransformation
 
 /-!
-# DG natural transformations on homotopy categories
+# DG natural transformations and their components
 
 A DG natural transformation has closed degree-zero components that commute with every homogeneous
 arrow. Mathlib's unit-graded `GradedNatTrans` supplies closed degree-zero components and naturality
 on all degrees. Passing the components to cohomology gives a natural transformation between the
 induced functors on `H⁰`.
+
+The enriched naturality square is equivalent to its elementwise form: for every homogeneous
+morphism `f` of degree `n`, `F f` followed by the component at the target equals the component at
+the source followed by `G f`, with no sign since the components have degree zero
+(`TauCeti.DGNatTrans.dgComp_dgMap_dgApp`).  Conversely, closed degree-zero components satisfying
+this condition define a DG natural transformation (`TauCeti.DGNatTrans.ofDGApp`), and a DG
+natural transformation is determined by its components (`TauCeti.DGNatTrans.ext_dgApp`).
 
 ## Reference
 
@@ -65,6 +72,158 @@ theorem comp_app {F G H : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ)
       (ForgetEnrichment.homOf _ (α.app X) ≫ ForgetEnrichment.homOf _ (β.app X)) := by
   simp only [comp, UnitGradedNatTrans.unitComp_app]
   rfl
+
+/-! ### Components as closed degree-zero morphisms -/
+
+/-- The degree-zero element of a complex named by a map out of the tensor unit. -/
+private noncomputable def unitElem {K : CochainComplex (ModuleCat.{v} R) ℤ}
+    (a : 𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ) ⟶ K) : K.X 0 :=
+  (a.f 0).hom ((HomologicalComplex.singleObjXSelf (ComplexShape.up ℤ) 0
+    (𝟙_ (ModuleCat.{v} R))).inv 1)
+
+/-- On a degree-`n` element, the right unitor followed by composition with a map out of the
+tensor unit is composition with the closed degree-zero morphism that map names. -/
+private theorem rightUnitor_inv_tensorHom_eComp_apply {X Y Z : D}
+    {W : CochainComplex (ModuleCat.{v} R) ℤ} (φ : W ⟶ dgHomComplex R X Y)
+    (a : 𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ) ⟶ dgHomComplex R Y Z) (n : ℤ) (w : W.X n) :
+    (((ρ_ W).inv ≫ (φ ⊗ₘ a) ≫ eComp _ X Y Z).f n).hom w =
+      dgComp R ((φ.f n).hom w) (unitElem a) (add_zero n) := by
+  simp only [HomologicalComplex.comp_f, HomologicalComplex.rightUnitor_inv_f,
+    HomologicalComplex.rightUnitor'_inv, Category.assoc, tensorHom_def',
+    HomologicalComplex.ι_whiskerRight_assoc, HomologicalComplex.ι_whiskerLeft_assoc,
+    ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.MonoidalCategory.rightUnitor_inv_apply,
+    ModuleCat.MonoidalCategory.whiskerLeft_apply, ModuleCat.MonoidalCategory.whiskerRight_apply]
+  rw [unitElem, ← dgCompMap_tmul, dgCompMap_def]
+  rfl
+
+/-- On a degree-`n` element, the left unitor followed by composition after a map out of the
+tensor unit is composition after the closed degree-zero morphism that map names. -/
+private theorem leftUnitor_inv_tensorHom_eComp_apply {X Y Z : D}
+    {W : CochainComplex (ModuleCat.{v} R) ℤ}
+    (a : 𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ) ⟶ dgHomComplex R X Y)
+    (φ : W ⟶ dgHomComplex R Y Z) (n : ℤ) (w : W.X n) :
+    (((λ_ W).inv ≫ (a ⊗ₘ φ) ≫ eComp _ X Y Z).f n).hom w =
+      dgComp R (unitElem a) ((φ.f n).hom w) (zero_add n) := by
+  simp only [HomologicalComplex.comp_f, HomologicalComplex.leftUnitor_inv_f,
+    HomologicalComplex.leftUnitor'_inv, Category.assoc, tensorHom_def,
+    HomologicalComplex.ι_whiskerRight_assoc, HomologicalComplex.ι_whiskerLeft_assoc,
+    ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.MonoidalCategory.leftUnitor_inv_apply,
+    ModuleCat.MonoidalCategory.whiskerLeft_apply, ModuleCat.MonoidalCategory.whiskerRight_apply]
+  rw [unitElem, ← dgCompMap_tmul, dgCompMap_def]
+  rfl
+
+/-- The naturality square of a family of maps out of the tensor unit holds exactly when the
+closed degree-zero morphisms they name commute with the actions of the two functors on
+homogeneous morphisms of every degree. -/
+private theorem naturality_iff {F G : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D}
+    {X Y : C} (aX : 𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ) ⟶ dgHomComplex R (F.obj X) (G.obj X))
+    (aY : 𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ) ⟶ dgHomComplex R (F.obj Y) (G.obj Y)) :
+    (β_ (𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ)) (dgHomComplex R X Y)).hom ≫
+        (F.map X Y ⊗ₘ aY) ≫ eComp _ (F.obj X) (F.obj Y) (G.obj Y) =
+      (aX ⊗ₘ G.map X Y) ≫ eComp _ (F.obj X) (G.obj X) (G.obj Y) ↔
+    ∀ (n : ℤ) (f : DGHom R n X Y),
+      dgComp R (F.dgMap n f) (unitElem aY) (add_zero n) =
+        dgComp R (unitElem aX) (G.dgMap n f) (zero_add n) := by
+  -- Precomposing with the left unitor turns the braiding of the tensor unit into the right
+  -- unitor, after which both sides are evaluated on homogeneous morphisms.
+  rw [← cancel_epi (λ_ (dgHomComplex R X Y)).inv, leftUnitor_inv_braiding_assoc]
+  constructor
+  · intro h n f
+    have key := congrArg (fun φ ↦ (φ.f n).hom f) h
+    simpa only [rightUnitor_inv_tensorHom_eComp_apply, leftUnitor_inv_tensorHom_eComp_apply,
+      EnrichedFunctor.dgMap_apply] using key
+  · intro h
+    ext n f
+    rw [rightUnitor_inv_tensorHom_eComp_apply, leftUnitor_inv_tensorHom_eComp_apply]
+    simpa only [EnrichedFunctor.dgMap_apply] using h n f
+
+/-- The element named by the underlying morphism of a closed degree-zero morphism is that
+morphism. -/
+private theorem unitElem_eHomEquiv_dgClosedHomOf {X Y : D} (f : DGHom R 0 X Y)
+    (hf : f ∈ dgCycles R X Y) :
+    unitElem (K := dgHomComplex R X Y)
+      (eHomEquiv (CochainComplex (ModuleCat.{v} R) ℤ) (dgClosedHomOf R f hf)) = f :=
+  (dgClosedHom_def R _).symm.trans (dgClosedHom_dgClosedHomOf R f hf)
+
+variable {F G : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D}
+
+/-- The **component** of a DG natural transformation at an object, as a closed degree-zero
+morphism. -/
+noncomputable def dgApp (α : DGNatTrans F G) (X : C) : DGHom R 0 (F.obj X) (G.obj X) :=
+  unitElem (α.app X)
+
+/-- The component of a DG natural transformation is the closed degree-zero morphism underlying its
+enriched component. -/
+theorem dgApp_eq_dgClosedHom (α : DGNatTrans F G) (X : C) :
+    α.dgApp X = dgClosedHom R (ForgetEnrichment.homOf _ (α.app X)) :=
+  (dgClosedHom_def R _).symm
+
+/-- The component of a DG natural transformation is closed. -/
+theorem dgApp_mem_dgCycles (α : DGNatTrans F G) (X : C) :
+    α.dgApp X ∈ dgCycles R (F.obj X) (G.obj X) := by
+  rw [dgApp_eq_dgClosedHom]
+  exact dgClosedHom_mem_dgCycles R _
+
+/-- **Naturality of a DG natural transformation** on homogeneous morphisms of every degree: for
+`f` of degree `n`, `F f` followed by the component at the target is the component at the source
+followed by `G f`. -/
+theorem dgComp_dgMap_dgApp (α : DGNatTrans F G) {X Y : C} {n : ℤ} (f : DGHom R n X Y) :
+    dgComp R (F.dgMap n f) (α.dgApp Y) (add_zero n) =
+      dgComp R (α.dgApp X) (G.dgMap n f) (zero_add n) :=
+  (naturality_iff (α.app X) (α.app Y)).1 (α.naturality X Y) n f
+
+/-- DG natural transformations are determined by their components. -/
+theorem ext_dgApp {α β : DGNatTrans F G} (h : ∀ X, α.dgApp X = β.dgApp X) : α = β := by
+  apply GradedNatTrans.ext
+  funext X
+  have := congrArg (ForgetEnrichment.homTo (CochainComplex (ModuleCat.{v} R) ℤ))
+    (dgClosedHom_injective R (by simpa only [dgApp_eq_dgClosedHom] using h X))
+  -- `homTo` and `homOf` are mutually inverse identifications of the same morphisms.
+  exact this
+
+/-- The **DG natural transformation with prescribed components**: closed degree-zero morphisms
+`η X : F X ⟶ G X` which commute with the actions of `F` and `G` on homogeneous morphisms of every
+degree. -/
+noncomputable def ofDGApp (η : ∀ X, DGHom R 0 (F.obj X) (G.obj X))
+    (hη : ∀ X, η X ∈ dgCycles R (F.obj X) (G.obj X))
+    (naturality : ∀ {X Y : C} (n : ℤ) (f : DGHom R n X Y),
+      dgComp R (F.dgMap n f) (η Y) (add_zero n) = dgComp R (η X) (G.dgMap n f) (zero_add n)) :
+    DGNatTrans F G where
+  app X := eHomEquiv _ (dgClosedHomOf R (η X) (hη X))
+  naturality X Y := by
+    dsimp only [Center.ofBraided, Center.ofBraidedObj]
+    refine (naturality_iff _ _).2 fun n f ↦ ?_
+    rw [unitElem_eHomEquiv_dgClosedHomOf, unitElem_eHomEquiv_dgClosedHomOf]
+    exact naturality n f
+
+/-- The components of the DG natural transformation with prescribed components are the
+prescribed ones. -/
+@[simp]
+theorem dgApp_ofDGApp (η : ∀ X, DGHom R 0 (F.obj X) (G.obj X))
+    (hη : ∀ X, η X ∈ dgCycles R (F.obj X) (G.obj X))
+    (naturality : ∀ {X Y : C} (n : ℤ) (f : DGHom R n X Y),
+      dgComp R (F.dgMap n f) (η Y) (add_zero n) = dgComp R (η X) (G.dgMap n f) (zero_add n))
+    (X : C) :
+    (ofDGApp η hη naturality).dgApp X = η X :=
+  unitElem_eHomEquiv_dgClosedHomOf (η X) (hη X)
+
+/-- The components of the identity DG natural transformation are identities. -/
+@[simp]
+theorem dgApp_id (F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D) (X : C) :
+    (DGNatTrans.id F).dgApp X = dgId R (F.obj X) := by
+  rw [dgApp_eq_dgClosedHom, id_app, ForgetEnrichment.homOf_eId, dgClosedHom_id]
+  -- `ForgetEnrichment.to` is the identity on objects.
+  rfl
+
+/-- The components of a composite DG natural transformation are the composites of the
+components. -/
+@[simp]
+theorem dgApp_comp {H : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D}
+    (α : DGNatTrans F G) (β : DGNatTrans G H) (X : C) :
+    (comp α β).dgApp X = dgCompZero R (α.dgApp X) (β.dgApp X) := by
+  simp only [dgApp_eq_dgClosedHom, comp_app]
+  -- `eHomEquiv` is the identity on the underlying category of the enrichment.
+  exact dgClosedHom_comp (C := D) R _ _
 
 end DGNatTrans
 

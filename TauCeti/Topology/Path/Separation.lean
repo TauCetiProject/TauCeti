@@ -23,6 +23,8 @@ and an ambient homeomorphism preserves the relation.
 
 * `Path.SeparatesIn` -- a path separates two points inside a set.
 * `Path.separatesIn_symm` -- reversing the path does not change separation.
+* `Path.exists_separatesIn_iff_not_isPreconnected` -- a path separates some pair of points exactly
+  when the cut set is not preconnected.
 * `Path.separatesIn_map_homeomorph` -- separation is invariant under ambient homeomorphisms.
 -/
 
@@ -59,6 +61,23 @@ theorem separatesIn_comm : γ.SeparatesIn U z w ↔ γ.SeparatesIn U w z := by
 @[simp]
 theorem not_separatesIn_self : ¬ γ.SeparatesIn U z z := by
   simp [SeparatesIn]
+
+/-- A path separates some pair of points in `U` exactly when removing its range from `U` leaves a
+set that is not preconnected. -/
+theorem exists_separatesIn_iff_not_isPreconnected :
+    (∃ z w, γ.SeparatesIn U z w) ↔ ¬ IsPreconnected (U \ range γ) := by
+  constructor
+  · rintro ⟨z, w, hz, hw, hne⟩ hpre
+    exact hne ((hpre.connectedComponentIn hz).trans (hpre.connectedComponentIn hw).symm)
+  · intro hpre
+    by_contra h
+    refine hpre (isPreconnected_of_forall_pair fun z hz w hw =>
+      ⟨connectedComponentIn (U \ range γ) z, connectedComponentIn_subset _ _,
+        mem_connectedComponentIn hz, ?_, isPreconnected_connectedComponentIn⟩)
+    have hzw : connectedComponentIn (U \ range γ) z = connectedComponentIn (U \ range γ) w := by
+      by_contra hne
+      exact h ⟨z, w, hz, hw, hne⟩
+    exact hzw ▸ mem_connectedComponentIn hw
 
 /-- Reversing a path does not change which points it separates. -/
 @[simp]

@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.Coordinates
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.Specialization
 import Mathlib.Topology.Algebra.InfiniteSum.NatInt
 import TauCeti.Analysis.SpecificLimits.Normed
-import TauCeti.Algebra.GroupWithZero.Units.Basic
+import TauCeti.Algebra.Group.Units.Basic
 import TauCeti.Analysis.Normed.Ring.Basic
 
 /-!

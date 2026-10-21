@@ -33,6 +33,12 @@ jobs:
         with:
           ref: main
           persist-credentials: false
+      - name: Prepare pinned shared tools
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+        with:
+          tools-repository: TauCetiProject/TauCetiTools
+          tools-ref: ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+          project-directory: .
       - name: Install checksum-verified elan
         env:
           ELAN_SHA256: df0b2b3a439961ffcbb3985214365ffe40f49bc871df04dff268c7d8e21ca8b2
@@ -71,6 +77,12 @@ jobs:
           token: ${{ steps.app-token.outputs.token }}
           ref: main
           fetch-depth: 0
+      - name: Prepare pinned shared tools
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+        with:
+          tools-repository: TauCetiProject/TauCetiTools
+          tools-ref: ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+          project-directory: .
       - name: Publish the fixed-target bump
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}

@@ -40,6 +40,8 @@ derivative of `P - ξ₂ Q` of order `m` does not vanish at `ξ₁`.
 
 * `TauCeti.exists_hasseDeriv_eval_ne_mul_of_dvd`: the general statement over a field `K` of
   characteristic zero, with `k + d (r - 1) ≤ 2 N`.
+* `TauCeti.exists_hasseDeriv_aeval_ne_mul_of_natDegree_le`: the integer-polynomial form,
+  retaining the natural-degree bound and `k ≤ N`.
 * `TauCeti.exists_hasseDeriv_aeval_ne_mul_of_dvd`: the form used in Thue's theorem, for integer
   polynomials of degree at most `⌊(1 / 2 + ε) d r⌋`, rational points `ξ₁, ξ₂` and
   `k ≤ d (2 ε r + 1)`.
@@ -134,6 +136,44 @@ theorem exists_hasseDeriv_eval_ne_mul_of_dvd [CharZero K] {α : L}
   refine ⟨m, by omega, fun h ↦ hm ?_⟩
   simp [A, ← smul_eq_C_mul, h]
 
+/-- The integer-polynomial form of derivative nonvanishing, retaining the natural-degree
+bound `k + d (r - 1) ≤ 2 N`. The nonzero derivative also forces `k ≤ N`. -/
+theorem exists_hasseDeriv_aeval_ne_mul_of_natDegree_le {F : Type*} [Field F] [CharZero F]
+    {α : F} (hd : 2 ≤ (minpoly ℚ α).natDegree) {P Q : ℤ[X]}
+    (hPQ : P ≠ 0 ∨ Q ≠ 0) {N r : ℕ} (hP : P.natDegree ≤ N) (hQ : Q.natDegree ≤ N)
+    (hN : N < (minpoly ℚ α).natDegree * r)
+    (hdvd : (X - C α) ^ r ∣ P.map (Int.castRingHom F) - C α * Q.map (Int.castRingHom F))
+    (ξ₁ ξ₂ : ℚ) :
+    ∃ k : ℕ, k ≤ N ∧ k + (minpoly ℚ α).natDegree * (r - 1) ≤ 2 * N ∧
+      aeval ξ₁ (hasseDeriv k P) ≠ ξ₂ * aeval ξ₁ (hasseDeriv k Q) := by
+  have hmap (p : ℤ[X]) : p.map (Int.castRingHom F) =
+      (p.map (Int.castRingHom ℚ)).map (algebraMap ℚ F) := by
+    rw [Polynomial.map_map, RingHom.ext_int ((algebraMap ℚ F).comp _) (Int.castRingHom F)]
+  obtain ⟨k, hk, hne⟩ := exists_hasseDeriv_eval_ne_mul_of_dvd
+    (P := P.map (Int.castRingHom ℚ)) (Q := Q.map (Int.castRingHom ℚ)) hd
+    (hPQ.imp (Polynomial.map_ne_zero_iff (RingHom.injective_int _)).2
+      (Polynomial.map_ne_zero_iff (RingHom.injective_int _)).2)
+    (natDegree_map_le.trans hP) (natDegree_map_le.trans hQ) hN
+    (by simpa only [← hmap] using hdvd) ξ₁ ξ₂
+  have hne' : aeval ξ₁ (hasseDeriv k P) ≠ ξ₂ * aeval ξ₁ (hasseDeriv k Q) := by
+    simpa only [hasseDeriv_map, ← algebraMap_int_eq, eval_map_algebraMap] using hne
+  refine ⟨k, ?_, hk, hne'⟩
+  by_contra! h
+  have hPk := hasseDeriv_eq_zero_of_lt_natDegree P k (hP.trans_lt h)
+  have hQk := hasseDeriv_eq_zero_of_lt_natDegree Q k (hQ.trans_lt h)
+  simp [hPk, hQk] at hne'
+
+/-- Convert the natural-degree order bound into the real order bound used in Thue's
+construction, whenever the auxiliary degree is at most `(1 / 2 + ε) d r`. -/
+theorem thue_order_le_of_add_mul_le {d r k N : ℕ} {ε : ℝ} (hr : 0 < r)
+    (hN : (N : ℝ) ≤ (1 / 2 + ε) * d * r) (hk : k + d * (r - 1) ≤ 2 * N) :
+    (k : ℝ) ≤ d * (2 * ε * r + 1) := by
+  have hk' : (k : ℝ) + d * ((r : ℝ) - 1) ≤ 2 * N := by
+    have : ((k + d * (r - 1) : ℕ) : ℝ) ≤ ((2 * N : ℕ) : ℝ) := by exact_mod_cast hk
+    push_cast [Nat.cast_sub hr] at this
+    exact this
+  nlinarith
+
 /-- **Nonvanishing derivatives of Thue's polynomials**, in the form used in Thue's theorem. Let
 `α` be algebraic of degree `d ≥ 2` over `ℚ`, let `0 ≤ ε < 1 / 2` and `r ≥ 1`, and let `P, Q` be
 integer polynomials, not both zero, of degree at most `⌊(1 / 2 + ε) d r⌋`, such that `(X - α) ^ r`
@@ -158,20 +198,8 @@ theorem exists_hasseDeriv_aeval_ne_mul_of_dvd {F : Type*} [Field F] [CharZero F]
     rw [Nat.floor_lt (by positivity)]
     push_cast
     nlinarith
-  have hmap (p : ℤ[X]) : p.map (Int.castRingHom F) = (p.map (Int.castRingHom ℚ)).map
-      (algebraMap ℚ F) := by
-    rw [Polynomial.map_map, RingHom.ext_int ((algebraMap ℚ F).comp _) (Int.castRingHom F)]
-  rw [hmap, hmap] at hdvd
-  obtain ⟨k, hk, hne⟩ := exists_hasseDeriv_eval_ne_mul_of_dvd hd
-    (hPQ.imp (Polynomial.map_ne_zero_iff (RingHom.injective_int _)).2
-      (Polynomial.map_ne_zero_iff (RingHom.injective_int _)).2)
-    ((natDegree_map_le).trans hP) ((natDegree_map_le).trans hQ) hN hdvd ξ₁ ξ₂
-  refine ⟨k, ?_, ?_⟩
-  · have hk' : (k : ℝ) + d * ((r : ℝ) - 1) ≤ 2 * N := by
-      have : ((k + d * (r - 1) : ℕ) : ℝ) ≤ ((2 * N : ℕ) : ℝ) := by exact_mod_cast hk
-      push_cast [Nat.cast_sub hr] at this
-      exact this
-    nlinarith
-  · simpa [hasseDeriv_map, ← algebraMap_int_eq, eval_map_algebraMap] using hne
+  obtain ⟨k, _, hk, hne⟩ :=
+    exists_hasseDeriv_aeval_ne_mul_of_natDegree_le hd hPQ hP hQ hN hdvd ξ₁ ξ₂
+  exact ⟨k, thue_order_le_of_add_mul_le hr hNle hk, hne⟩
 
 end TauCeti

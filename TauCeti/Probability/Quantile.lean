@@ -175,11 +175,6 @@ theorem quantile_map_abs (μ : Measure ℝ) [IsProbabilityMeasure μ] [μ.IsNegI
 
 variable {t x : ℝ}
 
-/-- Below the level `1` some point has cumulative mass at least the level, because the cumulative
-distribution function tends to `1` at `+∞`. -/
-theorem nonempty_setOf_le_cdf (μ : Measure ℝ) (ht : t < 1) : {x : ℝ | t ≤ cdf μ x}.Nonempty :=
-  ((tendsto_cdf_atTop μ).eventually (eventually_gt_nhds ht)).exists.imp fun _ h ↦ h.le
-
 /-- Above the level `0` the points whose cumulative mass reaches the level are bounded below,
 because the cumulative distribution function tends to `0` at `-∞`. -/
 theorem bddBelow_setOf_le_cdf (μ : Measure ℝ) (ht : 0 < t) : BddBelow {x : ℝ | t ≤ cdf μ x} := by
@@ -333,21 +328,39 @@ theorem quantile_lt_iff (μ : Measure ℝ) (hμ : Continuous (cdf μ))
     · exact h1.trans_le hx1
   · exact (hq ▸ monotone_cdf μ hx).not_gt h
 
+/-- If the cdf is strictly increasing on an interval containing all interior quantiles,
+the quantile is continuous on the interior levels, even when the law has atoms. -/
+theorem continuousOn_quantile_of_strictMonoOn (μ : Measure ℝ) {s : Set ℝ}
+    (hs : s.OrdConnected) (hmono : StrictMonoOn (cdf μ) s)
+    (hq : MapsTo μ.quantile (Ioo 0 1) s) : ContinuousOn μ.quantile (Ioo 0 1) := by
+  intro u hu
+  refine tendsto_order.2 ⟨fun a ha ↦ ?_, fun b hb ↦ ?_⟩
+  · have ha' := (lt_quantile_iff μ hu.1 hu.2).1 ha
+    filter_upwards [self_mem_nhdsWithin,
+      eventually_nhdsWithin_of_eventually_nhds (eventually_gt_nhds ha')] with v hv hav
+    exact (lt_quantile_iff μ hv.1 hv.2).2 hav
+  · by_cases hbound : ∀ v ∈ Ioo 0 1, μ.quantile v < b
+    · filter_upwards [self_mem_nhdsWithin] with v hv using hbound v hv
+    push Not at hbound
+    obtain ⟨v, hv, hbv⟩ := hbound
+    obtain ⟨c, hqc, hcb⟩ := exists_between hb
+    have hcs : c ∈ s := hs.out (hq hu) (hq hv) ⟨hqc.le, hcb.le.trans hbv⟩
+    have hc : u < cdf μ c := (le_cdf_quantile μ hu.2).trans_lt (hmono (hq hu) hcs hqc)
+    filter_upwards [self_mem_nhdsWithin,
+      eventually_nhdsWithin_of_eventually_nhds (eventually_lt_nhds hc)] with w hw hwc
+    exact ((quantile_le_iff μ hw.1 hw.2).2 hwc.le).trans_lt hcb
+
 /-- For a law whose cumulative distribution function is continuous, and strictly increasing where
 its values lie strictly between `0` and `1`, the quantile function is continuous on the levels
 strictly between `0` and `1`. -/
 theorem continuousOn_quantile (μ : Measure ℝ) (hμ : Continuous (cdf μ))
     (hmono : StrictMonoOn (cdf μ) (cdf μ ⁻¹' Ioo 0 1)) :
-    ContinuousOn μ.quantile (Ioo 0 1) := fun t ht => by
-  -- A monotone function whose image of a neighbourhood is a neighbourhood is continuous; here the
-  -- image of `Ioo 0 1` is the open set where the cumulative distribution function lies in
-  -- `Ioo 0 1`.
-  have hmem : μ.quantile t ∈ cdf μ ⁻¹' Ioo 0 1 := by
-    rw [mem_preimage, cdf_quantile μ hμ ht.1 ht.2]
-    exact ht
-  exact (continuousAt_of_monotoneOn_of_image_mem_nhds (monotoneOn_quantile μ)
-    (isOpen_Ioo.mem_nhds ht) (mem_of_superset ((isOpen_Ioo.preimage hμ).mem_nhds hmem)
-      fun y hy => ⟨cdf μ y, hy, quantile_cdf μ hmono hy⟩)).continuousWithinAt
+    ContinuousOn μ.quantile (Ioo 0 1) := by
+  refine continuousOn_quantile_of_strictMonoOn μ
+    (ordConnected_Ioo.preimage_mono (monotone_cdf μ)) hmono ?_
+  intro t ht
+  rw [mem_preimage, cdf_quantile μ hμ ht.1 ht.2]
+  exact ht
 
 /-- The quantile function is left continuous at every level strictly between `0` and `1`. -/
 theorem continuousWithinAt_Iio_quantile (μ : Measure ℝ) (h0 : 0 < t) (h1 : t < 1) :

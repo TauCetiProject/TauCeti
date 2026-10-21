@@ -25,6 +25,8 @@ elementary metric properties.
 * `LipschitzWith.normalGraphEmbedding`: a `K`-Lipschitz function has a `(K + 1)`-Lipschitz
   graph parametrization.
 * `ContinuousLinearMap.normalGraphL`: the continuous linear graph map `x ↦ (A x, x)`.
+* `ContinuousLinearMap.injective_normalGraphL`: the linear graph map is injective.
+* `ContinuousLinearMap.range_normalGraphL`: its range is the linear graph of `A`.
 -/
 
 public section
@@ -184,6 +186,24 @@ theorem _root_.ContinuousLinearMap.normalGraphL_apply (A : E →L[ℝ] ℝ) (x :
     A.normalGraphL x = normalGraphEmbedding A x :=
   (WithLp.ext_iff 2).2 <| Prod.ext (normalGraphEmbedding_fst A x).symm
     (normalGraphEmbedding_snd A x).symm
+
+/-- As a function, the continuous linear graph map is the normal graph parametrization of `A`. -/
+theorem _root_.ContinuousLinearMap.coe_normalGraphL (A : E →L[ℝ] ℝ) :
+    ⇑A.normalGraphL = normalGraphEmbedding A :=
+  funext A.normalGraphL_apply
+
+/-- A continuous linear normal graph map is injective, since its tangential coordinate is its
+argument. -/
+theorem _root_.ContinuousLinearMap.injective_normalGraphL (A : E →L[ℝ] ℝ) :
+    Function.Injective A.normalGraphL :=
+  A.coe_normalGraphL ▸ injective_normalGraphEmbedding A
+
+/-- The range of the normal graph linear map is the graph of the functional. -/
+theorem _root_.ContinuousLinearMap.range_normalGraphL (A : E →L[ℝ] ℝ) :
+    (LinearMap.range A.normalGraphL.toLinearMap : Set (WithLp 2 (ℝ × E))) =
+      {z | z.fst = A z.snd} := by
+  rw [LinearMap.coe_range, ContinuousLinearMap.coe_coe, A.coe_normalGraphL,
+    range_normalGraphEmbedding]
 
 end Linear
 

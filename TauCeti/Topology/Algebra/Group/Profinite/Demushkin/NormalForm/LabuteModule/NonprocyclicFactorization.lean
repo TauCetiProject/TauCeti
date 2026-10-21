@@ -112,7 +112,7 @@ theorem one_add_add_of_inv_mem_span_one_add_of_two_pow_sub_one_add_of
   have := χ.isClosed_ker
   have : IsMulCommutative (G ⧸ χ.toMonoidHom.ker) :=
     Subgroup.Normal.quotient_commutative_iff_commutator_le.mpr
-      (Abelianization.commutator_subset_ker _)
+      (Abelianization.commutator_le_ker _)
   have hΓ := hG.quotient χ.toMonoidHom.ker
   -- `1 + a = -χ(x)⁻¹` lies in `U^(f)`, which `χ(y) = 1 - 2^f` topologically generates.
   have he : ((-(χ x)⁻¹ : ℤ_[2]ˣ) : ℤ_[2]) = 1 + a := by
@@ -187,7 +187,7 @@ theorem exists_ofMul_mk_demushkinWordTwoEvenPadic_ker_eq_add_smul
   have := χ.isClosed_ker
   have : IsMulCommutative (G ⧸ χ.toMonoidHom.ker) :=
     Subgroup.Normal.quotient_commutative_iff_commutator_le.mpr
-      (Abelianization.commutator_subset_ker _)
+      (Abelianization.commutator_le_ker _)
   let _ := (hG.topologicalAbelianization χ.toMonoidHom.ker).completedGroupAlgebraModule
     (G ⧸ χ.toMonoidHom.ker)
   obtain ⟨c, d, hcd⟩ := Ideal.mem_span_pair.mp

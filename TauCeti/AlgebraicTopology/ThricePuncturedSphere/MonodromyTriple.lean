@@ -148,7 +148,7 @@ end ThricePuncturedSphere
 
 open ThricePuncturedSphere
 
-variable {n : ℕ} {E F : Type u} [TopologicalSpace E] [TopologicalSpace F]
+variable {n : ℕ} {E : Type u} {F : Type*} [TopologicalSpace E] [TopologicalSpace F]
   {p : E → ThricePuncturedSphere} {q : F → ThricePuncturedSphere}
 
 /-- The monodromy triple of a covering map `p : E → ℂ ∖ {0, 1}` whose fibre over the basepoint

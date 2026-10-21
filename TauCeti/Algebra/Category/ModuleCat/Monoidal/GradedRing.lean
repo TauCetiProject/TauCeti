@@ -41,24 +41,25 @@ open CategoryTheory MonoidalCategory
 
 namespace TauCeti.ModuleCat
 
-universe u
+universe u v
 
-variable {R : Type u} [CommRing R] {ι : Type*}
+variable {R : Type u} {ι : Type*}
 
 /-- Transporting an element along an identification of degrees does not change the element of
 the graded monoid. -/
-lemma gradedMonoid_mk_eqToHom_hom (M : ι → ModuleCat.{u} R) {n m : ι} (h : n = m) (x : M n) :
+lemma gradedMonoid_mk_eqToHom_hom [Ring R] (M : ι → ModuleCat.{v} R) {n m : ι}
+    (h : n = m) (x : M n) :
     GradedMonoid.mk (A := fun i ↦ M i) m ((eqToHom (congrArg M h)).hom x) =
       GradedMonoid.mk n x := by
   subst h
   rfl
 
-section AddMonoid
+variable [CommRing R]
 
-variable [AddMonoid ι] (M : ι → ModuleCat.{u} R) (one : 𝟙_ (ModuleCat.{u} R) ⟶ M 0)
-  (mul : ∀ i j, M i ⊗ M j ⟶ M (i + j))
+section AddZeroClass
 
-variable {M one mul}
+variable [AddZeroClass ι] {M : ι → ModuleCat.{u} R} {one : 𝟙_ (ModuleCat.{u} R) ⟶ M 0}
+  {mul : ∀ i j, M i ⊗ M j ⟶ M (i + j)}
 
 /-- The left unit law, applied to `r ⊗ₜ a`: multiplying by the image of `r` in degree zero is
 scalar multiplication by `r`, as elements of the graded monoid. -/
@@ -84,8 +85,13 @@ lemma gradedMonoid_mk_mul_tmul_one_hom
     congr($(ModuleCat.hom_ext_iff.mp (mul_one n)) (a ⊗ₜ r))).trans
     (gradedMonoid_mk_eqToHom_hom M (add_zero n).symm _)
 
-variable (M one mul)
-variable (one_mul : ∀ n, (one ▷ M n) ≫ mul 0 n =
+end AddZeroClass
+
+section AddMonoid
+
+variable [AddMonoid ι] (M : ι → ModuleCat.{u} R) (one : 𝟙_ (ModuleCat.{u} R) ⟶ M 0)
+  (mul : ∀ i j, M i ⊗ M j ⟶ M (i + j))
+  (one_mul : ∀ n, (one ▷ M n) ≫ mul 0 n =
     (λ_ (M n)).hom ≫ eqToHom (congrArg M (zero_add n).symm))
   (mul_one : ∀ n, (M n ◁ one) ≫ mul n 0 =
     (ρ_ (M n)).hom ≫ eqToHom (congrArg M (add_zero n).symm))

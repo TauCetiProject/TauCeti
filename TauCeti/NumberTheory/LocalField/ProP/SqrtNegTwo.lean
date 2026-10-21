@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.FiniteExtension.Basic
-public import TauCeti.NumberTheory.LocalField.ProP.Marked
+public import TauCeti.NumberTheory.LocalField.ProP.Marked.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Orientation
 import Mathlib.RingTheory.Prime
 import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.FiniteExtension

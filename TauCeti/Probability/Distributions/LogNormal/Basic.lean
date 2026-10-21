@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.MeasureTheory.Measure.Dirac
 public import TauCeti.Probability.Density
 public import TauCeti.Probability.Distributions.Dirac
 public import TauCeti.Probability.Distributions.Gaussian.Cdf
@@ -46,6 +47,8 @@ hence the general mean and variance, need no hypothesis on `v` at all.
 * `logNormalMeasure_eq_withDensity`, `hasPDF_of_hasLaw_logNormalMeasure` and
   `rnDeriv_logNormalMeasure` — the density, the `HasPDF` bridge and the Radon–Nikodym derivative;
 * `cdf_logNormalMeasure_eq` and `cdf_logNormalMeasure_zero_var` — the cdf and its boundary form;
+* `support_logNormalMeasure` and `support_logNormalMeasure_zero_var` — the topological support of
+  the positive-variance family and its Dirac boundary;
 * `integral_rpow_logNormalMeasure`, `integral_id_logNormalMeasure` and
   `variance_id_logNormalMeasure` — the real-power moments `exp (q * m + q ^ 2 * v / 2)`, the
   mean `exp (m + v / 2)` and the variance `(exp v - 1) * exp (2 * m + v)`;
@@ -76,11 +79,8 @@ The failure of the exponential moments for `t > 0` is a growth statement:
 function, pulled back along `exp`, is eventually at least `1` on a half-line of infinite Lebesgue
 measure.
 
-## References
+## Reference
 
-* Roadmap: `TauCetiRoadmap/StandardDistributions/README.md`, Layer 3, the **Log-normal** target,
-  together with the log-normal case of the items 1–4 required of every family in "What every
-  distribution must provide".
 * N. L. Johnson, S. Kotz, N. Balakrishnan, *Continuous Univariate Distributions*, vol. 1, 2nd ed.,
   Wiley (1994), ch. 14.
 -/
@@ -146,6 +146,11 @@ def logNormalPDFReal (m : ℝ) (v : ℝ≥0) (x : ℝ) : ℝ :=
 def logNormalPDF (m : ℝ) (v : ℝ≥0) (x : ℝ) : ℝ≥0∞ :=
   ENNReal.ofReal (logNormalPDFReal m v x)
 
+/-- The extended-real log-normal density is obtained from its real density by `ENNReal.ofReal`. -/
+theorem logNormalPDF_eq_ofReal (m : ℝ) (v : ℝ≥0) (x : ℝ) :
+    logNormalPDF m v x = ENNReal.ofReal (logNormalPDFReal m v x) :=
+  (rfl)
+
 /-- The log-normal density vanishes off the positive half-line. -/
 @[simp]
 theorem logNormalPDFReal_of_nonpos (hx : x ≤ 0) (m : ℝ) (v : ℝ≥0) :
@@ -184,6 +189,33 @@ theorem logNormalPDFReal_nonneg (m : ℝ) (v : ℝ≥0) (x : ℝ) : 0 ≤ logNor
   · rw [logNormalPDFReal_of_nonpos hx]
   · rw [logNormalPDFReal_eq_gaussianPDFReal hx]
     exact mul_nonneg (inv_nonneg.mpr hx.le) (gaussianPDFReal_nonneg m v _)
+
+/-- The real-valued log-normal density is positive on the positive half-line when the log-variance
+is nonzero. -/
+theorem logNormalPDFReal_pos (m : ℝ) (hv : v ≠ 0) (hx : 0 < x) :
+    0 < logNormalPDFReal m v x := by
+  rw [logNormalPDFReal_eq_gaussianPDFReal hx]
+  exact mul_pos (inv_pos.mpr hx) (gaussianPDFReal_pos m v (Real.log x) hv)
+
+/-- The `ℝ≥0∞`-valued log-normal density is positive on the positive half-line when the log-variance
+is nonzero. -/
+theorem logNormalPDF_pos (m : ℝ) (hv : v ≠ 0) (hx : 0 < x) : 0 < logNormalPDF m v x := by
+  rw [logNormalPDF, ENNReal.ofReal_pos]
+  exact logNormalPDFReal_pos m hv hx
+
+/-- For nonzero log-variance, the function support of the log-normal density is the positive
+half-line. -/
+@[simp]
+theorem support_logNormalPDF (m : ℝ) (hv : v ≠ 0) :
+    Function.support (logNormalPDF m v) = Ioi 0 := by
+  ext x
+  rw [Function.mem_support]
+  simp only [Set.mem_Ioi]
+  constructor
+  · intro h
+    by_contra hx
+    exact h (logNormalPDF_of_nonpos (le_of_not_gt hx) m v)
+  · exact fun hx => (logNormalPDF_pos m hv hx).ne'
 
 @[simp]
 theorem toReal_logNormalPDF (m : ℝ) (v : ℝ≥0) (x : ℝ) :
@@ -256,6 +288,23 @@ theorem rnDeriv_logNormalMeasure (m : ℝ) (hv : v ≠ 0) :
   rw [logNormalMeasure_eq_withDensity m hv]
   exact Measure.rnDeriv_withDensity volume (measurable_logNormalPDF m v)
 
+/-! ### Topological support -/
+
+/-- **The topological support of a nondegenerate log-normal law** is the closed nonnegative
+half-line. Although the law is almost surely strictly positive, every neighborhood of zero has
+positive mass. -/
+@[simp]
+theorem support_logNormalMeasure (m : ℝ) (hv : v ≠ 0) :
+    (logNormalMeasure m v).support = Ici 0 := by
+  rw [logNormalMeasure_eq_withDensity m hv,
+    Measure.support_withDensity_eq_closure (measurable_logNormalPDF m v) isOpen_Ioi
+      (support_logNormalPDF m hv), closure_Ioi]
+
+/-- At zero log-variance, the topological support of the log-normal law is its single atom. -/
+theorem support_logNormalMeasure_zero_var (m : ℝ) :
+    (logNormalMeasure m 0).support = {Real.exp m} := by
+  rw [logNormalMeasure_zero_var, Measure.support_dirac, closure_singleton]
+
 /-! ### The cumulative distribution function -/
 
 /-- **The cumulative distribution function of the log-normal law** with nonzero log-variance. -/
@@ -272,6 +321,14 @@ theorem cdf_logNormalMeasure_eq (m : ℝ) (hv : v ≠ 0) (x : ℝ) :
     rw [logNormalMeasure_map_exp, Measure.map_apply measurable_exp measurableSet_Iic, hpre,
       ← measureReal_def, ← cdf_eq_real]
     exact cdf_gaussianReal_eq m hv (Real.log x)
+
+/-- A log-normal law of positive log-variance has positive survival at every finite point. -/
+theorem cdf_logNormalMeasure_lt_one (m : ℝ) (hv : v ≠ 0) (x : ℝ) :
+    cdf (logNormalMeasure m v) x < 1 := by
+  rw [cdf_logNormalMeasure_eq m hv]
+  split_ifs
+  · norm_num
+  · linarith [Real.erf_lt_one ((Real.log x - m) / √(2 * (v : ℝ)))]
 
 /-- At the singular boundary `v = 0` the cdf of the log-normal law is a step function. -/
 theorem cdf_logNormalMeasure_zero_var (m x : ℝ) :

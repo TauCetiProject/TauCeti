@@ -654,9 +654,9 @@ private theorem setLAverage_preimage_closedBall_le [Nonempty ι] [CompleteSpace 
       ENNReal.ofReal_le_ofReal_iff (by positivity)] at h
     have h' := (pow_le_pow_iff_left₀ (by positivity) (by positivity) Fintype.card_ne_zero).1 h
     linarith
-  have hdist : dist z x₀ ≤ s * r₀ := (EuclideanSpace.dist_le_sqrt_card_mul_dist_ofLp z x₀).trans
+  have hdist : dist z x₀ ≤ s * r₀ := (PiLp.dist_le_sqrt_card_mul_dist_ofLp z x₀).trans
     (mul_le_mul_of_nonneg_left (mem_closedBall.1 (hy (mem_closedBall_self hρ.le))) hs.le)
-  have hQB : Q ⊆ B := (preimage_ofLp_closedBall_subset_closedBall z ρ).trans
+  have hQB : Q ⊆ B := (PiLp.preimage_ofLp_closedBall_subset_closedBall z ρ).trans
     (closedBall_subset_ball (by nlinarith))
   have hBR : B ⊆ ball x₀ R := ball_subset_ball' <| by
     have h3 : 3 * s * r₀ = R := by
@@ -715,7 +715,7 @@ private theorem setLIntegral_exp_preimage_closedBall_le [Nonempty ι] [CompleteS
     rw [MeasurableEquiv.coe_toLp_symm]
   -- The cube lies in `B(x₀, R)`, since its points are within `√n r₀ = R / 3` of `x₀`.
   have hQR : ofLp ⁻¹' closedBall (ofLp x₀) r₀ ⊆ ball x₀ R :=
-    (preimage_ofLp_closedBall_subset_closedBall x₀ r₀).trans <| closedBall_subset_ball <| by
+    (PiLp.preimage_ofLp_closedBall_subset_closedBall x₀ r₀).trans <| closedBall_subset_ball <| by
       simp only [r₀]
       field_simp
       linarith

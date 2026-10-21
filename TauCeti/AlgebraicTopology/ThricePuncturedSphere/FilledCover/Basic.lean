@@ -258,6 +258,31 @@ private theorem tendsto_comp_chart_cocompact (i : FilledPoint p) :
     pow_le_of_le_one (norm_nonneg _) (mem_ball_zero_iff.1 w.2.1).le (degree_ne_zero hp hfin i)
   linarith
 
+/-- **The end of a filling chart.** Approaching the puncture of `𝔻*` along the filling chart of
+the component `i` of `p ⁻¹' D_q*` is the same as going to infinity in `ℂ ∖ {0, 1}` within that
+component: the image of the end of `𝔻*` is the filter of points of the component whose images
+under `p` eventually leave every compact subset of `ℂ ∖ {0, 1}`. In particular, the end does not
+depend on the chosen chart. -/
+theorem map_chart_comap_nhds_zero (i : FilledPoint p) :
+    map (chart p i) (comap (↑) (𝓝 (0 : ℂ))) =
+      𝓟 (range (chart p i)) ⊓ comap p (cocompact ThricePuncturedSphere) := by
+  refine le_antisymm (le_inf (le_principal_iff.2 range_mem_map) (map_le_iff_le_comap.1 ?_))
+    fun S hS ↦ ?_
+  · rw [map_map]
+    exact tendsto_comp_chart_cocompact hp hfin i
+  -- A point of the component outside the image of the disc of radius `r` lies over the compact
+  -- core of radius `r ^ degree p i / 2`.
+  obtain ⟨t, ht, hts⟩ := mem_comap.1 (mem_map.1 hS)
+  obtain ⟨r, hr, hrt⟩ := Metric.mem_nhds_iff.1 ht
+  have hρ : 0 < r ^ degree p i / 2 := by positivity
+  refine mem_inf_of_inter (mem_principal_self _)
+    (preimage_mem_comap (hasBasis_cocompact.mem_of_mem hρ)) ?_
+  rintro _ ⟨⟨w, rfl⟩, hw⟩
+  refine hts (hrt (mem_ball_zero_iff.2 (not_le.1 fun hle ↦ hw ?_)))
+  obtain ⟨hw', -, hcoord⟩ := exists_coe_coord_chart_eq_pow hp hfin i w
+  rw [(sigmaEquiv p i).1.mem_compactCore_iff hρ hw', hcoord, norm_pow]
+  linarith [pow_le_pow_left₀ hr.le hle (degree p i)]
+
 /-- The filling charts of distinct components have disjoint ranges. -/
 private theorem disjoint_range_chart {i j : FilledPoint p} (hij : i ≠ j) :
     Disjoint (range (chart p i)) (range (chart p j)) := by

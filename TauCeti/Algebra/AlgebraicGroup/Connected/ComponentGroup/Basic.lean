@@ -275,9 +275,7 @@ private theorem componentGroupPointsToConnectedComponents_surjective
   refine ⟨componentGroupPointsMk H g, ?_⟩
   rw [componentGroupPointsToConnectedComponents_mk, ConnectedComponents.coe_eq_coe']
   rw [← PrimeSpectrum.basicOpen_connectedComponentIdempotent]
-  apply (PrimeSpectrum.mem_basicOpen e (rationalKernelPoint H g)).mpr
-  rw [rationalKernelPoint, AlgHom.kernelPoint_asIdeal, RingHom.mem_ker]
-  exact hf
+  exact (AlgHom.kernelPoint_mem_basicOpen_iff g.ofConv e).mpr hf
 
 private theorem componentGroupPointsToConnectedComponents_injective
     (H : FiniteTypeCommHopfAlgCat.{u, u} k) :

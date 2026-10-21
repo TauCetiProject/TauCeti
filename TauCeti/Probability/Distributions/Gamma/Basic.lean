@@ -40,9 +40,11 @@ exactly the half-line on which the shifted rate is still positive.
 
 ## Main results
 
-* `TauCeti.Probability.integrable_gammaMeasure_iff` and
+* `TauCeti.Probability.integrable_gammaMeasure_iff`,
+  `TauCeti.Probability.integrable_gammaMeasure_iff_integrableOn_Ioi`, and
   `TauCeti.Probability.integral_gammaMeasure_eq` — integrability
-  and integration against the gamma law, transferred to the real density;
+  and integration against the gamma law, transferred to the real density and the positive
+  half-line;
 * `TauCeti.Probability.integrable_rpow_gammaMeasure_iff` and
   `TauCeti.Probability.integral_rpow_gammaMeasure` — the exact real-power moment criterion and
   formula;
@@ -140,6 +142,11 @@ theorem gammaMeasure_eq_withDensity_ofReal (a r : ℝ) :
     gammaMeasure a r = volume.withDensity fun x ↦ ENNReal.ofReal (gammaPDFReal a r x) :=
   (rfl)
 
+/-- A Gamma measure has null singletons for all parameter values. -/
+instance (a r : ℝ) : NullSingletonClass (gammaMeasure a r) := by
+  rw [gammaMeasure_eq_withDensity_ofReal]
+  infer_instance
+
 section Transfer
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -152,6 +159,23 @@ theorem integrable_gammaMeasure_iff (ha : 0 < a) (hr : 0 < r) {g : ℝ → E} :
   exact Probability.integrable_withDensity_ofReal_iff
     (ProbabilityTheory.measurable_gammaPDFReal a r).aemeasurable
     (ae_of_all _ (gammaPDFReal_nonneg ha hr))
+
+/-- Integrability against the gamma law is integrability of the weighted integrand over
+`(0, ∞)`. -/
+theorem integrable_gammaMeasure_iff_integrableOn_Ioi (ha : 0 < a) (hr : 0 < r) (f : ℝ → E) :
+    Integrable f (gammaMeasure a r) ↔
+      IntegrableOn
+        (fun x ↦ (r ^ a / Real.Gamma a * x ^ (a - 1) * exp (-(r * x))) • f x) (Ioi 0) := by
+  have hpos : ∀ x ∈ Ioi (0 : ℝ), gammaPDFReal a r x • f x =
+      (r ^ a / Real.Gamma a * x ^ (a - 1) * exp (-(r * x))) • f x := fun x hx ↦ by
+    rw [gammaPDFReal_of_nonneg hx.le]
+  have hneg : IntegrableOn (fun x ↦ gammaPDFReal a r x • f x) (Iio 0) := by
+    refine integrableOn_zero.congr_fun (fun x hx ↦ ?_) measurableSet_Iio
+    rw [gammaPDFReal, ite_eq_right (not_le.mpr hx), zero_smul]
+  rw [integrable_gammaMeasure_iff ha hr, ← integrableOn_univ,
+    ← Iio_union_Ici (a := (0 : ℝ)), integrableOn_union, integrableOn_Ici_iff_integrableOn_Ioi]
+  exact ⟨fun h ↦ h.2.congr_fun hpos measurableSet_Ioi,
+    fun h ↦ ⟨hneg, h.congr_fun (fun x hx ↦ (hpos x hx).symm) measurableSet_Ioi⟩⟩
 
 /-- **Integral transfer.** An integral against a gamma law with positive shape and rate is the
 density-weighted Lebesgue integral. -/
@@ -175,26 +199,6 @@ theorem integral_gammaMeasure_eq_integral_Ioi (ha : 0 < a) (hr : 0 < r) (f : ℝ
   exact setIntegral_congr_fun measurableSet_Ioi fun x hx ↦ by rw [gammaPDFReal_of_nonneg hx.le]
 
 end Transfer
-
-/-- Integrability against the gamma law is integrability of the weighted integrand over
-`(0, ∞)`. -/
-private lemma integrable_gammaMeasure_iff_integrableOn_Ioi (ha : 0 < a) (hr : 0 < r) (f : ℝ → ℝ) :
-    Integrable f (gammaMeasure a r) ↔
-      IntegrableOn
-        (fun x ↦ r ^ a / Real.Gamma a * x ^ (a - 1) * exp (-(r * x)) * f x) (Ioi 0) := by
-  have hpos : ∀ x ∈ Ioi (0 : ℝ), f x * gammaPDFReal a r x =
-      r ^ a / Real.Gamma a * x ^ (a - 1) * exp (-(r * x)) * f x := fun x hx ↦ by
-    rw [gammaPDFReal_of_nonneg hx.le, mul_comm]
-  have hneg : IntegrableOn (fun x ↦ f x * gammaPDFReal a r x) (Iio 0) := by
-    refine integrableOn_zero.congr_fun (fun x hx ↦ ?_) measurableSet_Iio
-    rw [gammaPDFReal, ite_eq_right (not_le.mpr hx), mul_zero]
-  rw [integrable_gammaMeasure_iff ha hr]
-  simp_rw [smul_eq_mul]
-  rw [integrable_congr (.of_forall fun x ↦ mul_comm (gammaPDFReal a r x) (f x))]
-  rw [← integrableOn_univ, ← Iio_union_Ici (a := (0 : ℝ)), integrableOn_union,
-    integrableOn_Ici_iff_integrableOn_Ioi]
-  exact ⟨fun h ↦ h.2.congr_fun hpos measurableSet_Ioi,
-    fun h ↦ ⟨hneg, h.congr_fun (fun x hx ↦ (hpos x hx).symm) measurableSet_Ioi⟩⟩
 
 /-- A constant multiple of Euler's Gamma integral, in quotient form. -/
 private lemma integral_const_mul_gammaKernel (C s b : ℝ) (hs : 0 < s) (hb : 0 < b) :
@@ -224,6 +228,7 @@ negative shape parameter. -/
 theorem integrable_rpow_gammaMeasure_iff (ha : 0 < a) (hr : 0 < r) (q : ℝ) :
     Integrable (fun x : ℝ ↦ x ^ q) (gammaMeasure a r) ↔ -a < q := by
   rw [integrable_gammaMeasure_iff_integrableOn_Ioi ha hr]
+  simp only [smul_eq_mul]
   constructor
   · intro hint
     by_contra hq
@@ -347,6 +352,7 @@ private lemma gammaWeight_mul_exp (a r t x : ℝ) :
 theorem integrable_exp_mul_id_gammaMeasure (ha : 0 < a) (hr : 0 < r) {t : ℝ} (ht : t < r) :
     Integrable (fun x ↦ exp (t * x)) (gammaMeasure a r) := by
   rw [integrable_gammaMeasure_iff_integrableOn_Ioi ha hr]
+  simp only [smul_eq_mul]
   refine IntegrableOn.congr_fun ?_ (fun x _ ↦ (gammaWeight_mul_exp a r t x).symm)
     measurableSet_Ioi
   have h : IntegrableOn (fun x : ℝ ↦ x ^ (a - 1) * exp (-((r - t) * x))) (Ioi 0) := by
@@ -373,6 +379,7 @@ theorem not_integrable_exp_mul_id_gammaMeasure (ha : 0 < a) (hr : 0 < r) {t : �
     ¬ Integrable (fun x ↦ exp (t * x)) (gammaMeasure a r) := by
   have hC : (0 : ℝ) < r ^ a / Real.Gamma a := by positivity
   rw [integrable_gammaMeasure_iff_integrableOn_Ioi ha hr]
+  simp only [smul_eq_mul]
   intro h
   have hmono : IntegrableOn (fun x : ℝ ↦ r ^ a / Real.Gamma a * x ^ (a - 1)) (Ioi 1) := by
     have h1 : IntegrableOn

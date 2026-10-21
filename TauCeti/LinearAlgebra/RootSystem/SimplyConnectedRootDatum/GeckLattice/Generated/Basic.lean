@@ -137,6 +137,14 @@ noncomputable def geckGeneratedCoordinateMap :
   CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A (t.geckDim ht))
     (t.geckGeneratedDefiningIdeal ht A)
 
+/-- The generated coordinate map is the quotient map of its defining ideal. -/
+theorem geckGeneratedCoordinateMap_def :
+    t.geckGeneratedCoordinateMap ht A =
+      CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A (t.geckDim ht))
+        (t.geckGeneratedDefiningIdeal ht A) ≫
+        eqToHom (t.geckGeneratedCoordinateHopfAlgebra_def ht A).symm := by
+  rfl
+
 /-- The quotient coordinate morphism of the generated subgroup is surjective. -/
 theorem geckGeneratedCoordinateMap_surjective :
     Function.Surjective (t.geckGeneratedCoordinateMap ht A).hom :=

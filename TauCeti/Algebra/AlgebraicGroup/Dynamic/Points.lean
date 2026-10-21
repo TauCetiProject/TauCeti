@@ -196,6 +196,19 @@ theorem genericPoint_eq_pointsHom (l : H →ₐc[R] LaurentPolynomial R) :
       pointsHom (LaurentPolynomial A) l (LaurentPolynomial.genericUnit A) := by
   rw [genericPoint]
 
+/-- The generic cocharacter point is its coordinate map with coefficients extended to the
+value algebra. -/
+theorem genericPoint_ofConv (l : H →ₐc[R] LaurentPolynomial R) :
+    (genericPoint A l).ofConv =
+      (AddMonoidAlgebra.mapAlgHom ℤ (Algebra.ofId R A)).comp l.toAlgHom := by
+  have he : laurentEval (R := R) (LaurentPolynomial.genericUnit A) =
+      AddMonoidAlgebra.mapAlgHom ℤ (Algebra.ofId R A) := by
+    apply Eq.symm
+    apply laurentEval_unique
+    simp [LaurentPolynomial.genericUnit_val]
+  rw [genericPoint_eq_pointsHom, pointsHom_apply, BialgHom.mapDomain_apply,
+    ofConv_toConv, he]
+
 /-! ### Naturality in the value algebra -/
 
 section Naturality

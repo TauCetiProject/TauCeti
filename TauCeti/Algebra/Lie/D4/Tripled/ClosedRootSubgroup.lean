@@ -106,7 +106,7 @@ instance isClosedImmersion_rootSubgroup (k : Fin 4 ⊕ Fin 4) :
 
 /-- Every numbered root-subgroup map into the tripled type-`D₄` carrier is a monomorphism. -/
 theorem mono_rootSubgroup (k : Fin 4 ⊕ Fin 4) : Mono (rootSubgroup k) :=
-  mono_of_isClosedImmersion_underlying (rootSubgroup k)
+  Grp.mono_of_mono_left (rootSubgroup k)
 
 /-- Surjectivity of the numbered root-subgroup coordinate maps persists over every commutative
 base ring, in the transported quotient presentation of the carrier. -/

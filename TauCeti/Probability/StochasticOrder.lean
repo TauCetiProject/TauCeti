@@ -25,6 +25,10 @@ measures while still providing the characteristic forms used in stochastic-order
   pairs forces the reversed cdf inequality.
 * `MeasureTheory.Measure.exists_isCoupling_ae_fst_le_snd_iff_cdf_le` packages the coupling
   characterization.
+* `MeasureTheory.Measure.cdf_map_le_cdf_map_of_monotone` shows that nondecreasing images preserve
+  the comparison.
+* `MeasureTheory.Measure.cdf_conv_le_cdf_conv` shows that convolution preserves the comparison in
+  both arguments.
 * `ProbabilityTheory.HasLaw.cdf_le_of_ae_le` gives the random-variable form of the converse.
 
 ## References
@@ -61,6 +65,22 @@ end IsCoupling
 end TauCeti
 
 namespace MeasureTheory.Measure
+
+/-- Reversed pointwise cdf comparison is reflexive. -/
+theorem cdf_le_refl (μ : Measure ℝ) : ∀ x, cdf μ x ≤ cdf μ x := fun _ ↦ le_rfl
+
+/-- Reversed pointwise cdf comparison is transitive. -/
+theorem cdf_le_trans {μ ν ρ : Measure ℝ} (hμν : ∀ x, cdf ν x ≤ cdf μ x)
+    (hνρ : ∀ x, cdf ρ x ≤ cdf ν x) : ∀ x, cdf ρ x ≤ cdf μ x :=
+  fun x ↦ (hνρ x).trans (hμν x)
+
+/-- Two real probability laws that compare in both directions by their cdfs are equal. -/
+theorem eq_of_cdf_le_cdf_le (μ ν : Measure ℝ) [IsProbabilityMeasure μ]
+    [IsProbabilityMeasure ν] (hμν : ∀ x, cdf ν x ≤ cdf μ x)
+    (hνμ : ∀ x, cdf μ x ≤ cdf ν x) : μ = ν := by
+  apply Measure.eq_of_cdf
+  ext x
+  exact (hνμ x).antisymm (hμν x)
 
 /-- Two real probability laws have reversed cdfs exactly when they admit a coupling concentrated
 on ordered pairs. The forward implication is witnessed by the common-uniform quantile coupling. -/
@@ -101,3 +121,71 @@ theorem cdf_le_of_ae_le {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
   exact hπ.cdf_le_of_ae_fst_le_snd hπle x
 
 end ProbabilityTheory.HasLaw
+
+namespace MeasureTheory.Measure
+
+/-- A nondecreasing image preserves reversed pointwise cdf comparison of probability laws. -/
+theorem cdf_map_le_cdf_map_of_monotone {μ ν : Measure ℝ} [IsProbabilityMeasure μ]
+    [IsProbabilityMeasure ν] {g : ℝ → ℝ} (hg : Monotone g)
+    (hμν : ∀ x, cdf ν x ≤ cdf μ x) :
+    ∀ x, cdf (ν.map g) x ≤ cdf (μ.map g) x := by
+  let π := μ.quantileCoupling ν
+  have hπ : TauCeti.IsCoupling π μ ν := μ.isCoupling_quantileCoupling ν
+  let _ : IsProbabilityMeasure π := hπ.isProbabilityMeasure
+  have hfst : HasLaw Prod.fst μ π := hπ.measurePreserving_fst.hasLaw
+  have hsnd : HasLaw Prod.snd ν π := hπ.measurePreserving_snd.hasLaw
+  have hmapfst : HasLaw (fun z : ℝ × ℝ ↦ g z.1) (μ.map g) π :=
+    (hasLaw_map hg.measurable.aemeasurable).fun_comp hfst
+  have hmapsnd : HasLaw (fun z : ℝ × ℝ ↦ g z.2) (ν.map g) π :=
+    (hasLaw_map hg.measurable.aemeasurable).fun_comp hsnd
+  intro x
+  refine hmapfst.cdf_le_of_ae_le hmapsnd ?_ x
+  filter_upwards [μ.ae_fst_le_snd_quantileCoupling ν hμν] with z hz
+  exact hg hz
+
+/-- Convolving two pairs of comparably ordered real probability laws preserves the reversed cdf
+comparison. -/
+theorem cdf_conv_le_cdf_conv {μ₁ ν₁ μ₂ ν₂ : Measure ℝ} [IsProbabilityMeasure μ₁]
+    [IsProbabilityMeasure ν₁] [IsProbabilityMeasure μ₂] [IsProbabilityMeasure ν₂]
+    (h₁ : ∀ x, cdf ν₁ x ≤ cdf μ₁ x) (h₂ : ∀ x, cdf ν₂ x ≤ cdf μ₂ x) :
+    ∀ x, cdf (ν₁ ∗ ν₂) x ≤ cdf (μ₁ ∗ μ₂) x := by
+  let π₁ := μ₁.quantileCoupling ν₁
+  let π₂ := μ₂.quantileCoupling ν₂
+  have hπ₁ : TauCeti.IsCoupling π₁ μ₁ ν₁ := μ₁.isCoupling_quantileCoupling ν₁
+  have hπ₂ : TauCeti.IsCoupling π₂ μ₂ ν₂ := μ₂.isCoupling_quantileCoupling ν₂
+  let P := π₁.prod π₂
+  let _ : IsProbabilityMeasure π₁ := hπ₁.isProbabilityMeasure
+  let _ : IsProbabilityMeasure π₂ := hπ₂.isProbabilityMeasure
+  let _ : IsProbabilityMeasure P := inferInstance
+  have hμ₁ : HasLaw (fun z : (ℝ × ℝ) × (ℝ × ℝ) ↦ z.1.1) μ₁ P :=
+    hπ₁.measurePreserving_fst.hasLaw.fun_comp
+      (measurePreserving_fst (μ := π₁) (ν := π₂)).hasLaw
+  have hμ₂ : HasLaw (fun z : (ℝ × ℝ) × (ℝ × ℝ) ↦ z.2.1) μ₂ P :=
+    hπ₂.measurePreserving_fst.hasLaw.fun_comp
+      (measurePreserving_snd (μ := π₁) (ν := π₂)).hasLaw
+  have hν₁ : HasLaw (fun z : (ℝ × ℝ) × (ℝ × ℝ) ↦ z.1.2) ν₁ P :=
+    hπ₁.measurePreserving_snd.hasLaw.fun_comp
+      (measurePreserving_fst (μ := π₁) (ν := π₂)).hasLaw
+  have hν₂ : HasLaw (fun z : (ℝ × ℝ) × (ℝ × ℝ) ↦ z.2.2) ν₂ P :=
+    hπ₂.measurePreserving_snd.hasLaw.fun_comp
+      (measurePreserving_snd (μ := π₁) (ν := π₂)).hasLaw
+  have hindepμ :
+      (fun z : (ℝ × ℝ) × (ℝ × ℝ) ↦ z.1.1) ⟂ᵢ[P]
+        (fun z : (ℝ × ℝ) × (ℝ × ℝ) ↦ z.2.1) :=
+    indepFun_prod measurable_fst measurable_fst
+  have hindepν :
+      (fun z : (ℝ × ℝ) × (ℝ × ℝ) ↦ z.1.2) ⟂ᵢ[P]
+        (fun z : (ℝ × ℝ) × (ℝ × ℝ) ↦ z.2.2) :=
+    indepFun_prod measurable_snd measurable_snd
+  have hsumμ : HasLaw (fun z : (ℝ × ℝ) × (ℝ × ℝ) ↦ z.1.1 + z.2.1)
+      (μ₁ ∗ μ₂) P := hindepμ.hasLaw_fun_add hμ₁ hμ₂
+  have hsumν : HasLaw (fun z : (ℝ × ℝ) × (ℝ × ℝ) ↦ z.1.2 + z.2.2)
+      (ν₁ ∗ ν₂) P := hindepν.hasLaw_fun_add hν₁ hν₂
+  have hle : ∀ᵐ z ∂P, z.1.1 + z.2.1 ≤ z.1.2 + z.2.2 := by
+    rw [ae_prod_iff_ae_ae (measurableSet_le (by fun_prop) (by fun_prop))]
+    filter_upwards [μ₁.ae_fst_le_snd_quantileCoupling ν₁ h₁] with z₁ hz₁
+    filter_upwards [μ₂.ae_fst_le_snd_quantileCoupling ν₂ h₂] with z₂ hz₂
+    exact add_le_add hz₁ hz₂
+  exact fun x ↦ hsumμ.cdf_le_of_ae_le hsumν hle x
+
+end MeasureTheory.Measure

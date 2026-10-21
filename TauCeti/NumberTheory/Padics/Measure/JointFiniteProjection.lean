@@ -107,21 +107,21 @@ section Profinite
 
 variable [CompactSpace X] [T2Space X] [TotallyDisconnectedSpace X]
 
-/-- An integral `p`-adic measure on a profinite space is determined by all its joint finite and
-coefficient projections. -/
+/-- An integral `p`-adic measure on a profinite space is determined by its binary projections
+at all coefficient precisions. -/
 theorem jointFiniteProjection_ext (μ ν : D(X, ℤ_[p]))
-    (h : ∀ (r n : ℕ) (q : C(X, Fin n)),
+    (h : ∀ (r : ℕ) (q : C(X, Fin 2)),
       jointFiniteProjection r q μ = jointFiniteProjection r q ν) :
     μ = ν := by
   apply finiteProjection_ext μ ν
-  intro n q
+  intro q
   apply Finsupp.ext
   intro a
   rw [← PadicInt.ext_of_toZModPow]
   intro r
   rw [finiteProjection_apply, finiteProjection_apply]
   simpa only [jointFiniteProjection_apply] using
-    congrArg (fun c : Fin n →₀ ZMod (p ^ r) ↦ c a) (h r n q)
+    congrArg (fun c : Fin 2 →₀ ZMod (p ^ r) ↦ c a) (h r q)
 
 end Profinite
 

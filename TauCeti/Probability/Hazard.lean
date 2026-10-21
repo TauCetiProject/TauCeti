@@ -99,6 +99,16 @@ section Density
 
 variable [IsProbabilityMeasure μ]
 
+/-- The hazard of a law with a nonnegative density is integrable on every compact interval
+where survival stays positive. -/
+theorem intervalIntegrable_div_one_sub_cdf_of_eq_withDensity
+    (hμ : μ = volume.withDensity fun t => ENNReal.ofReal (f t)) (hfm : AEMeasurable f)
+    (hnn : 0 ≤ᵐ[volume] f) (a b : ℝ) (hS : ∀ t ∈ uIcc a b, cdf μ t < 1) :
+    IntervalIntegrable (fun t => f t / (1 - cdf μ t)) volume a b :=
+  intervalIntegrable_div_one_sub_cdf
+    (absolutelyContinuousOnInterval_cdf_of_eq_withDensity hμ hfm hnn a b) hS
+    ((ae_hasDerivAt_cdf_of_eq_withDensity hμ hfm hnn).mono fun _ ht _ => ht)
+
 /-- **Survival on the half-line from the cumulative hazard.** For a law with a nonnegative density
 `f` carried by `[0, ∞)`, survival at `x` is `exp (-∫ t in 0..x, f t / (1 - cdf μ t))`
 whenever it is positive. -/
@@ -118,6 +128,17 @@ theorem one_sub_cdf_eq_exp_neg_integral_of_eq_withDensity
     (absolutelyContinuousOnInterval_cdf_of_eq_withDensity hμ hfm hnn 0 x) hS
     ((ae_hasDerivAt_cdf_of_eq_withDensity hμ hfm hnn).mono fun _ ht _ => ht),
     one_sub_cdf_zero_eq_one h0, one_mul]
+
+/-- For a law with a nonnegative density carried by `[0, ∞)`, the integral of the hazard from
+zero is the cumulative hazard wherever survival is positive. -/
+theorem integral_div_one_sub_cdf_of_eq_withDensity
+    (hμ : μ = volume.withDensity fun t => ENNReal.ofReal (f t)) (hfm : AEMeasurable f)
+    (hnn : 0 ≤ᵐ[volume] f) (h0 : μ (Iio 0) = 0) (hSx : cdf μ x < 1) :
+    ∫ t in (0 : ℝ)..x, f t / (1 - cdf μ t) = -Real.log (1 - cdf μ x) := by
+  have h := congrArg Real.log
+    (one_sub_cdf_eq_exp_neg_integral_of_eq_withDensity hμ hfm hnn h0 hSx)
+  rw [Real.log_exp] at h
+  linarith
 
 /-- **Survival on the half-line for an absolutely continuous law.** For a law that is absolutely
 continuous with respect to Lebesgue measure and carried by `[0, ∞)`, survival at `x` is

@@ -21,6 +21,8 @@ ideal contained in the Jacobson radical is again contained in the Jacobson radic
 
 * `Ideal.exists_comap_eq_of_isIntegral`: a prime of `S` containing the kernel of `g` is the
   contraction along `g` of a prime of `T`.
+* `Ideal.primesOver_eq_singleton_under_of_primesOver_eq_singleton`: a prime alone above `p` in
+  `T` contracts to a prime alone above `p` in any intermediate ring over which `T` is integral.
 * `Ideal.map_le_jacobson_bot_of_isIntegral`: along an integral algebra, the extension of an ideal
   in the Jacobson radical lies in the Jacobson radical.
 
@@ -49,6 +51,21 @@ theorem exists_comap_eq_of_isIntegral (P : Ideal S) [P.IsPrime]
   obtain ⟨Q, -, hQ, hQP⟩ := exists_ideal_over_prime_of_isIntegral P (⊥ : Ideal T)
     (by rwa [under_def, RingHom.algebraMap_toAlgebra, ← RingHom.ker_eq_comap_bot])
   exact ⟨Q, hQ, hQP⟩
+
+/-- If `P` is the only prime of `T` above an ideal `p` of `R`, then `P.under S` is the only prime
+of `S` above `p`, for any intermediate ring `S` over which `T` is integral and faithful. -/
+theorem primesOver_eq_singleton_under_of_primesOver_eq_singleton {R : Type*} [CommRing R]
+    [Algebra R S] [Algebra S T] [Algebra R T] [IsScalarTower R S T] [Algebra.IsIntegral S T]
+    [FaithfulSMul S T] {p : Ideal R} {P : Ideal T} (h : p.primesOver T = {P}) :
+    p.primesOver S = {P.under S} := by
+  obtain ⟨_, _⟩ : P ∈ p.primesOver T := h ▸ rfl
+  refine Set.eq_singleton_iff_unique_mem.mpr ⟨⟨inferInstance, inferInstance⟩, ?_⟩
+  rintro Q ⟨_, _⟩
+  obtain ⟨⟨Q', _, _⟩⟩ := nonempty_primesOver (S := T) Q
+  have : Q'.LiesOver p := .trans Q' Q p
+  have hmem : Q' ∈ p.primesOver T := ⟨inferInstance, inferInstance⟩
+  rw [h] at hmem
+  rw [LiesOver.over (P := Q') (p := Q), hmem]
 
 /-- Along an integral algebra, the extension of an ideal in the Jacobson radical lies in the
 Jacobson radical, since maximal ideals contract to maximal ideals. -/

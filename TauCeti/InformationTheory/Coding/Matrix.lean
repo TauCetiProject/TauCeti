@@ -11,6 +11,8 @@ public import TauCeti.InformationTheory.Coding.Basic
 public import TauCeti.LinearAlgebra.Matrix.ColumnRowPartitioned
 
 import Mathlib.LinearAlgebra.Basis.Submodule
+import TauCeti.Algebra.Module.Submodule.Map
+import TauCeti.LinearAlgebra.Basis.Basic
 
 /-!
 # Matrix presentations of linear codes
@@ -407,18 +409,14 @@ theorem IsGeneratorMatrix.vecMul_encodingEquiv_symm_apply (hG : C.IsGeneratorMat
 theorem isGeneratorMatrix_of_basis (b : Module.Basis ρ F C) :
     C.IsGeneratorMatrix (Matrix.of fun r ↦ (b r : ι → F)) := by
   rw [isGeneratorMatrix_def, generatedBy_eq_span_rows, Matrix.of_row]
-  calc
-    Submodule.span F (Set.range fun r ↦ (b r : ι → F)) =
-        Submodule.map C.subtype (Submodule.span F (Set.range b)) := by
-      rw [Submodule.map_span, ← Set.range_comp]
-      rfl
-    _ = C := by rw [b.span_eq, Submodule.map_top, C.range_subtype]
+  simpa only [LinearMap.id_apply, Submodule.map_id] using
+    (Submodule.map_eq_span_basis C b LinearMap.id).symm
 
 omit [Fintype ρ] in
 /-- The matrix whose rows are the vectors of a basis has linearly independent rows. -/
 theorem linearIndependent_row_of_basis (b : Module.Basis ρ F C) :
     LinearIndependent F (Matrix.of fun r ↦ (b r : ι → F)).row :=
-  b.linearIndependent.map' C.subtype (Submodule.ker_subtype C)
+  b.linearIndependent_coe_basis
 
 end Basis
 

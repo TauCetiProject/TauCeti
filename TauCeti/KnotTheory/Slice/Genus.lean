@@ -62,6 +62,8 @@ compact surfaces and is not proved here.
 * `TauCeti.SmoothSliceSurface.genus`: the genus `dim H₁(S; ℚ) / 2` of a slice surface.
 * `TauCeti.sliceGenus K`: the smooth slice genus of `K`, in `ℕ∞`.
 * `TauCeti.IsSmoothSliceDisc.toSmoothSliceSurface`: a smooth slice disc as a slice surface.
+* `TauCeti.SmoothSliceSurface.mapLinearIsometryEquiv`: a slice surface for `K`, transported along
+  a linear isometry `e` of the ambient spaces to a slice surface for `e ∘ K`.
 
 ## Main results
 
@@ -71,6 +73,8 @@ compact surfaces and is not proved here.
   exactly when a slice surface exists, and is then attained.
 * `TauCeti.sliceGenus_congr_range`, `TauCeti.sliceGenus_rotate`, `TauCeti.sliceGenus_reverse`: the
   slice genus only depends on the image of the knot.
+* `TauCeti.sliceGenus_congr_linearIsometryEquiv`: the slice genus is invariant under linear
+  isometries of the ambient spaces.
 * `TauCeti.IsSmoothSliceDisc.genus_toSmoothSliceSurface`: a slice disc has genus `0`.
 * `TauCeti.IsSmoothlySlice.sliceGenus_eq_zero`, `TauCeti.sliceGenus_unknot`: smoothly slice knots,
   and in particular the unknot, have slice genus `0`.
@@ -94,8 +98,9 @@ namespace TauCeti
 
 attribute [local instance] Complex.finrank_real_complex_fact
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
-  [Fact (finrank ℝ E = n + 1)]
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
+  [Fact (finrank ℝ E = n + 1)] [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+  [Fact (finrank ℝ F = n + 1)]
 
 /-- A **smooth slice surface** for a smooth circle embedding `K : S¹ → Sⁿ` in the unit sphere of
 `E`: a compact, connected, orientable smooth surface with boundary, together with a smooth
@@ -161,6 +166,36 @@ theorem genus_congrRange (S : SmoothSliceSurface K) (h : range K = range K') :
     (S.congrRange h).genus = S.genus :=
   (rfl)
 
+/-- Transport of a slice surface for `K` along a linear isometry `e : E ≃ₗᵢ[ℝ] F` of the ambient
+spaces: the same surface, embedded by `e ∘ S.toFun`, is a slice surface for `K' = e ∘ K`. -/
+def mapLinearIsometryEquiv (S : SmoothSliceSurface K) (e : E ≃ₗᵢ[ℝ] F)
+    {K' : SmoothCircleEmbedding (𝓡 n) (sphere (0 : F) 1)} (hK' : ∀ z, (K' z : F) = e (K z)) :
+    SmoothSliceSurface K' where
+  carrier := S.carrier
+  toFun := e.toLinearIsometry.unitClosedBallMap ∘ S.toFun
+  isSmoothEmbedding := by
+    have := isSmoothEmbedding_diffeomorph_comp S.isSmoothEmbedding
+      (e.unitClosedBallDiffeomorph (k := ∞))
+    rwa [LinearIsometryEquiv.coe_unitClosedBallDiffeomorph] at this
+  preimage_boundary := by
+    rw [← S.preimage_boundary]
+    ext x
+    simp [boundary_closedBall]
+  image_boundary := by
+    have hcomp : Subtype.val ∘ (e.toLinearIsometry.unitClosedBallMap ∘ S.toFun) =
+        e ∘ (Subtype.val ∘ S.toFun) :=
+      funext fun x ↦ by simp
+    rw [hcomp, image_comp, S.image_boundary]
+    simp only [← range_comp]
+    exact congrArg range (funext fun z ↦ by simp [hK'])
+
+/-- Transporting a slice surface along a linear isometry of the ambient spaces keeps its genus. -/
+@[simp]
+theorem genus_mapLinearIsometryEquiv (S : SmoothSliceSurface K) (e : E ≃ₗᵢ[ℝ] F)
+    {K' : SmoothCircleEmbedding (𝓡 n) (sphere (0 : F) 1)} (hK' : ∀ z, (K' z : F) = e (K z)) :
+    (S.mapLinearIsometryEquiv e hK').genus = S.genus :=
+  (rfl)
+
 end SmoothSliceSurface
 
 open SmoothSliceSurface
@@ -210,6 +245,18 @@ theorem sliceGenus_rotate (a : Circle) : sliceGenus (K.rotate a) = sliceGenus K 
 @[simp]
 theorem sliceGenus_reverse : sliceGenus K.reverse = sliceGenus K :=
   sliceGenus_congr_range K.range_reverse
+
+/-- The slice genus is invariant under linear isometries of the ambient spaces: if `K' = e ∘ K` for
+a linear isometry `e : E ≃ₗᵢ[ℝ] F`, then `K'` and `K` have the same slice genus. -/
+theorem sliceGenus_congr_linearIsometryEquiv (e : E ≃ₗᵢ[ℝ] F)
+    {K' : SmoothCircleEmbedding (𝓡 n) (sphere (0 : F) 1)} (hK' : ∀ z, (K' z : F) = e (K z)) :
+    sliceGenus K' = sliceGenus K := by
+  have hK : ∀ z, (K z : E) = e.symm (K' z) := fun z ↦ by simp [hK']
+  exact le_antisymm
+    (le_sliceGenus_iff.2 fun S ↦ by
+      simpa using sliceGenus_le_genus (S.mapLinearIsometryEquiv e hK'))
+    (le_sliceGenus_iff.2 fun S ↦ by
+      simpa using sliceGenus_le_genus (S.mapLinearIsometryEquiv e.symm hK))
 
 /-! ### Slice discs -/
 

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.ConstantForm.Basic
-public import TauCeti.Algebra.AlgebraicGroup.ConstantMultiplication.Basic
+public import TauCeti.Algebra.AlgebraicGroup.ConstantMultiplication.Tangent
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Generated.Basic
 
 /-!
@@ -22,6 +22,8 @@ Because the defining ideal of the generated subgroup scheme is the largest Hopf 
 all the `f i`, each containment is tested on the generators alone: it suffices that the generic
 matrix of every `f i` satisfies the relation. On matrix-valued points the containment says that
 every point of the generated subgroup scheme satisfies the relation, over every `R`-algebra.
+Differentiating the multiplication containment makes every tangent matrix a derivation of the
+multiplication, with coefficients in any commutative `R`-algebra.
 
 Only the containments are proved. Nothing here asserts that the generated subgroup scheme
 exhausts the points of the ambient constant-multiplication or constant-form subgroup scheme, nor
@@ -37,6 +39,12 @@ In the namespace `TauCeti.GeneralLinear`:
   multiplication and its consequence on matrix points.
 * `constantFormDefiningHopfIdeal_le_commonKernelHopfIdeal` and
   `mul_mul_transpose_of_mem_generatedPointsSubgroup`: the same pair for a constant form.
+* `tangentMatrix_mul_of_constantMultiplicationDefiningHopfIdeal_le`: tangent matrices of the
+  generated subgroup scheme are derivations of the constant multiplication.
+
+The multiplication tangent argument is factored from
+`TauCeti.G2ShortRoot.PrimeField.tangentMatrix_mul_crossOperatorPrime` in
+`TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Root.Space`.
 
 ## References
 
@@ -96,6 +104,34 @@ theorem preserves_of_mem_generatedPointsSubgroup
     (CommHopfAlgCat.mem_quotientPointsSubgroup_iff _ _ _ _).mpr hsub
   rw [ConstantMultiplication.mem_definingPointsSubgroup_iff, MulEquiv.apply_symm_apply] at hmem
   exact hmem
+
+/-- Tangent matrices of a generated subgroup scheme contained in a constant-multiplication
+stabilizer are derivations of that multiplication, over any commutative coefficient algebra. -/
+theorem tangentMatrix_mul_of_constantMultiplicationDefiningHopfIdeal_le
+    (hC : ConstantMultiplication.definingHopfIdeal R n C ≤
+      CommHopfAlgCat.commonKernelHopfIdeal f)
+    {B : Type w} [CommRing B] [Algebra R B]
+    (d : Derivation R
+      (CommHopfAlgCat.quotient (coordinateHopfAlgebra R n)
+        (CommHopfAlgCat.commonKernelHopfIdeal f))
+      (Bialgebra.CounitAlgebra R
+        (CommHopfAlgCat.quotient (coordinateHopfAlgebra R n)
+          (CommHopfAlgCat.commonKernelHopfIdeal f)) B)) (a : Fin n) :
+    tangentMatrix n (HopfIdeal.quotientLieHom (CommHopfAlgCat.commonKernelHopfIdeal f) d) *
+        (C a).map (algebraMap R B) =
+      ConstantMultiplication.imageStructureMatrix R n C
+          (tangentMatrix n (HopfIdeal.quotientLieHom
+            (CommHopfAlgCat.commonKernelHopfIdeal f) d)) a +
+        (C a).map (algebraMap R B) *
+          tangentMatrix n (HopfIdeal.quotientLieHom
+            (CommHopfAlgCat.commonKernelHopfIdeal f) d) := by
+  apply (ConstantMultiplication.mem_lieSubalgebra_definingHopfIdeal_iff C _).mp ?_ a
+  rw [HopfIdeal.mem_lieSubalgebra_iff]
+  intro y hy
+  have hcarrier := (HopfIdeal.mem_lieSubalgebra_iff _ _).mp
+    (HopfIdeal.quotientLieEquiv (B := B) (CommHopfAlgCat.commonKernelHopfIdeal f) d).2
+  rw [HopfIdeal.quotientLieEquiv_apply_coe] at hcarrier
+  exact hcarrier y (HopfIdeal.toIdeal_le_toIdeal.mpr hC hy)
 
 end ConstantMultiplication
 

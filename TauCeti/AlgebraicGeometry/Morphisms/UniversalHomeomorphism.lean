@@ -28,11 +28,32 @@ This criterion applies to Frobenius without imposing finiteness or reducedness a
 
 public section
 
-open CategoryTheory Limits AlgebraicGeometry
-
-namespace TauCeti.AlgebraicGeometry
+open CategoryTheory Limits MorphismProperty AlgebraicGeometry
 
 universe u
+
+namespace AlgebraicGeometry
+
+variable {X Y : Scheme.{u}} {f : X ⟶ Y}
+
+/-- A universal homeomorphism is surjective. -/
+theorem Surjective.of_universally_isHomeomorph (hf : (topologically @IsHomeomorph).universally f) :
+    Surjective f :=
+  ⟨(universally_le _ _ hf).surjective⟩
+
+/-- A universal homeomorphism is universally injective. -/
+theorem UniversallyInjective.of_universally_isHomeomorph
+    (hf : (topologically @IsHomeomorph).universally f) : UniversallyInjective f :=
+  ⟨universally_mono (fun _ _ _ ↦ IsHomeomorph.injective) _ hf⟩
+
+/-- A universal homeomorphism is universally closed. -/
+theorem UniversallyClosed.of_universally_isHomeomorph
+    (hf : (topologically @IsHomeomorph).universally f) : UniversallyClosed f :=
+  ⟨universally_mono (fun _ _ _ ↦ IsHomeomorph.isClosedMap) _ hf⟩
+
+end AlgebraicGeometry
+
+namespace TauCeti.AlgebraicGeometry
 
 variable {X Y Z S : Scheme.{u}}
 
@@ -59,30 +80,22 @@ instance isUniversalHomeomorphism_isStableUnderBaseChange :
   infer_instance
 
 /-- A universal homeomorphism induces a homeomorphism before any base change. -/
-theorem _root_.AlgebraicGeometry.Scheme.Hom.isHomeomorph_of_isUniversalHomeomorphism
+theorem Scheme.Hom.isHomeomorph_of_isUniversalHomeomorphism
     (f : X ⟶ Y) [IsUniversalHomeomorphism f] : IsHomeomorph f :=
   MorphismProperty.universally_le _ _ IsUniversalHomeomorphism.universally_isHomeomorph
 
 /-- Universal homeomorphisms are surjective on points. -/
 instance (f : X ⟶ Y) [IsUniversalHomeomorphism f] : Surjective f :=
-  ⟨f.isHomeomorph_of_isUniversalHomeomorphism.surjective⟩
+  Surjective.of_universally_isHomeomorph IsUniversalHomeomorphism.universally_isHomeomorph
 
 /-- Universal homeomorphisms are universally closed. -/
-instance (f : X ⟶ Y) [IsUniversalHomeomorphism f] : UniversallyClosed f := by
-  rw [universallyClosed_eq]
-  have h : topologically IsHomeomorph ≤ topologically IsClosedMap := by
-    intro X Y f hf
-    exact hf.isClosedMap
-  exact MorphismProperty.universally_mono h f
+instance (f : X ⟶ Y) [IsUniversalHomeomorphism f] : UniversallyClosed f :=
+  UniversallyClosed.of_universally_isHomeomorph
     IsUniversalHomeomorphism.universally_isHomeomorph
 
 /-- Universal homeomorphisms are universally injective. -/
-instance (f : X ⟶ Y) [IsUniversalHomeomorphism f] : UniversallyInjective f := by
-  rw [universallyInjective_eq]
-  have h : topologically IsHomeomorph ≤ topologically Function.Injective := by
-    intro X Y f hf
-    exact hf.injective
-  exact MorphismProperty.universally_mono h f
+instance (f : X ⟶ Y) [IsUniversalHomeomorphism f] : UniversallyInjective f :=
+  UniversallyInjective.of_universally_isHomeomorph
     IsUniversalHomeomorphism.universally_isHomeomorph
 
 /-- An explicit universal-homeomorphism hypothesis implies surjectivity on points. -/
@@ -140,8 +153,8 @@ theorem isUniversalHomeomorphism_iff_universallyClosed_universallyInjective_surj
 /-- Universal homeomorphisms are integral. -/
 instance (f : X ⟶ Y) [IsUniversalHomeomorphism f] : IsIntegralHom f := by
   have : IsAffineHom f := isAffineHom_of_isInducing f
-    f.isHomeomorph_of_isUniversalHomeomorphism.isInducing
-    f.isHomeomorph_of_isUniversalHomeomorphism.isClosedEmbedding.isClosed_range
+    (Scheme.Hom.isHomeomorph_of_isUniversalHomeomorphism f).isInducing
+    (Scheme.Hom.isHomeomorph_of_isUniversalHomeomorphism f).isClosedEmbedding.isClosed_range
   exact IsIntegralHom.iff_universallyClosed_and_isAffineHom.mpr
     ⟨inferInstance, inferInstance⟩
 
@@ -212,30 +225,30 @@ instance IsUniversalHomeomorphism.of_isIso (f : X ⟶ Y) [IsIso f] :
     ⟨inferInstance, inferInstance, inferInstance⟩
 
 /-- The homeomorphism of underlying spaces induced by a universal homeomorphism of schemes. -/
-noncomputable def _root_.AlgebraicGeometry.Scheme.Hom.homeomorphOfIsUniversalHomeomorphism
+noncomputable def Scheme.Hom.homeomorphOfIsUniversalHomeomorphism
     (f : X ⟶ Y) [IsUniversalHomeomorphism f] : X ≃ₜ Y :=
-  f.isHomeomorph_of_isUniversalHomeomorphism.homeomorph f
+  (Scheme.Hom.isHomeomorph_of_isUniversalHomeomorphism f).homeomorph f
 
 @[simp]
-theorem _root_.AlgebraicGeometry.Scheme.Hom.homeomorphOfIsUniversalHomeomorphism_apply
+theorem Scheme.Hom.homeomorphOfIsUniversalHomeomorphism_apply
     (f : X ⟶ Y) [IsUniversalHomeomorphism f] (x : X) :
-    f.homeomorphOfIsUniversalHomeomorphism x = f x :=
+    (Scheme.Hom.homeomorphOfIsUniversalHomeomorphism f) x = f x :=
   (rfl)
 
 /-- The inverse underlying homeomorphism sends the image of a point back to that point. -/
 @[simp]
-theorem _root_.AlgebraicGeometry.Scheme.Hom.homeomorphOfIsUniversalHomeomorphism_symm_apply_apply
+theorem Scheme.Hom.homeomorphOfIsUniversalHomeomorphism_symm_apply_apply
     (f : X ⟶ Y) [IsUniversalHomeomorphism f] (x : X) :
-    f.homeomorphOfIsUniversalHomeomorphism.symm (f x) = x := by
+    (Scheme.Hom.homeomorphOfIsUniversalHomeomorphism f).symm (f x) = x := by
   simpa only [Scheme.Hom.homeomorphOfIsUniversalHomeomorphism_apply] using
-    f.homeomorphOfIsUniversalHomeomorphism.symm_apply_apply x
+    (Scheme.Hom.homeomorphOfIsUniversalHomeomorphism f).symm_apply_apply x
 
 /-- Mapping the point supplied by the inverse homeomorphism recovers the original point. -/
 @[simp]
-theorem _root_.AlgebraicGeometry.Scheme.Hom.homeomorphOfIsUniversalHomeomorphism_apply_symm_apply
+theorem Scheme.Hom.homeomorphOfIsUniversalHomeomorphism_apply_symm_apply
     (f : X ⟶ Y) [IsUniversalHomeomorphism f] (y : Y) :
-    f (f.homeomorphOfIsUniversalHomeomorphism.symm y) = y := by
+    f ((Scheme.Hom.homeomorphOfIsUniversalHomeomorphism f).symm y) = y := by
   simpa only [Scheme.Hom.homeomorphOfIsUniversalHomeomorphism_apply] using
-    f.homeomorphOfIsUniversalHomeomorphism.apply_symm_apply y
+    (Scheme.Hom.homeomorphOfIsUniversalHomeomorphism f).apply_symm_apply y
 
 end TauCeti.AlgebraicGeometry
