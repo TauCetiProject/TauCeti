@@ -51,8 +51,8 @@ abelian group `M`, and we classify their solutions there.
 
 * `TauCeti.isCocycleCoeff_coeff`: the coefficients of a symmetric additive 2-cocycle satisfy the
   coefficient equations.
-* `TauCeti.IsCocycleCoeff.exists_eq_nsmul`: for `n ≥ 2`, every solution of the coefficient
-  equations in an abelian group is a multiple of the coefficients `n.choose i / d_n` of `C_n`.
+* `TauCeti.IsCocycleCoeff.exists_eq_nsmul`: every solution of the coefficient equations in an
+  abelian group is a multiple of the coefficients `n.choose i / d_n` of `C_n`.
 * `TauCeti.exists_eq_smul_lazardCocycle`: a homogeneous symmetric additive 2-cocycle of degree
   `n ≠ 0` is `r • C_n` for some `r`.
 * `TauCeti.existsUnique_eq_smul_lazardCocycle`: for `n ≥ 2`, the multiple `r` is unique.
@@ -349,11 +349,13 @@ private theorem eq_zero_of_sum_smul_eq_zero {n : ℕ} (hn : 2 ≤ n) {l : ℕ �
   rw [← Submodule.mem_bot ℤ, ← hS]
   exact Submodule.subset_span ⟨i, mem_Icc.2 ⟨hi, by omega⟩, rfl⟩
 
-/-- Every solution of the coefficient equations in degree `n ≥ 2`, with coefficients in an
-arbitrary abelian group, is a multiple of the coefficients `n.choose i / d_n` of `C_n`. -/
-theorem IsCocycleCoeff.exists_eq_nsmul {n : ℕ} (hn : 2 ≤ n) {b : ℕ → M}
-    (hbc : IsCocycleCoeff n b) :
+/-- Every solution of the coefficient equations in degree `n`, with coefficients in an arbitrary
+abelian group, is a multiple of the coefficients `n.choose i / d_n` of `C_n`. -/
+theorem IsCocycleCoeff.exists_eq_nsmul {n : ℕ} {b : ℕ → M} (hbc : IsCocycleCoeff n b) :
     ∃ r : M, ∀ i, 0 < i → i < n → b i = (n.choose i / lazardGcd n) • r := by
+  -- For `n < 2` there is no index `0 < i < n`, so the statement is vacuous.
+  rcases lt_or_ge n 2 with hn | hn
+  · exact ⟨0, fun i hi hin => by omega⟩
   have hcZ : ∀ i ∈ Icc 1 (n - 1), lazardCoeff n i = (n.choose i / lazardGcd n : ℕ) :=
     fun i hi => by
       rw [mem_Icc] at hi
@@ -388,12 +390,7 @@ additive 2-cocycle `f(X, Y)` of degree `n ≠ 0` is a multiple `r • C_n` of th
 theorem exists_eq_smul_lazardCocycle {n : ℕ} (hn : n ≠ 0) {f : MvPolynomial (Fin 2) R}
     (hh : f.IsHomogeneous n) (hs : f.IsSymmetric) (hf : f.IsAddCocycle₂) :
     ∃ r : R, f = r • lazardCocycle n R := by
-  obtain ⟨r, hr⟩ : ∃ r : R, ∀ i, 0 < i → i < n →
-      f.coeff (Finsupp.single 0 i + Finsupp.single 1 (n - i)) =
-        (n.choose i / lazardGcd n) • r := by
-    rcases lt_or_ge n 2 with h2 | h2
-    · exact ⟨0, fun i hi hin => by omega⟩
-    · exact (isCocycleCoeff_coeff hs hf n).exists_eq_nsmul h2
+  obtain ⟨r, hr⟩ := (isCocycleCoeff_coeff hs hf n).exists_eq_nsmul
   refine ⟨r, MvPolynomial.ext _ _ fun d => ?_⟩
   rw [coeff_smul, coeff_lazardCocycle, smul_eq_mul]
   by_cases hd : d 0 + d 1 = n
