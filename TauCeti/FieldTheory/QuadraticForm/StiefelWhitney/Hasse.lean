@@ -30,6 +30,8 @@ products of quaternion symbols become sums of Kummer cup products.
 * `TauCeti.brauer2EquivH2_hasseInvariant`: the two-torsion comparison sends `s(q)` to `w₂(q)`.
 * `TauCeti.sw2Class_eq_iff_hasseInvariant_eq` and
   `TauCeti.sw2Class_eq_zero_iff_hasseInvariant_eq_one`: equality and vanishing criteria.
+* `TauCeti.sw2Class_mk_rankOne_mul`: the scaling formula for `w₂`, transported from the scaling
+  formula for the Hasse invariant.
 
 ## References
 
@@ -80,5 +82,23 @@ theorem sw2Class_eq_zero_iff_hasseInvariant_eq_one (q : RegularFormClass K) :
     sw2Class q = 0 ↔ q.hasseInvariant = 1 := by
   simpa only [sw2Class_zero, RegularFormClass.hasseInvariant_zero] using
     sw2Class_eq_iff_hasseInvariant_eq q 0
+
+/-- **Scaling formula for `w₂`**: for `q` of rank `n`,
+`w₂(⟨c⟩ ⊗ q) = w₂(q) + C(n, 2) · (c) ∪ (-1) + (n - 1) · (c) ∪ w₁(q)`.
+It is the image of the scaling formula `TauCeti.RegularFormClass.hasseInvariant_mk_rankOne_mul`
+for the Hasse invariant. -/
+theorem sw2Class_mk_rankOne_mul (c : Kˣ) (x : RegularFormClass K) :
+    sw2Class (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => c⟩ * x) =
+      sw2Class x + x.rank.choose 2 • (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1
+          (kummerClass c) (kummerClass (-1)) +
+        (x.rank - 1) • (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1
+          (kummerClass c) (sw1Class x) := by
+  apply h2MuToUnits_injective K
+  induction x using Quotient.inductionOn with
+  | h p =>
+    rw [← brauerCohomologyEquiv_hasseInvariant, RegularFormClass.hasseInvariant_mk_rankOne_mul_mk,
+      RegularFormClass.rank_mk, sw1Class_mk, sw1_eq_kummerClass_prod]
+    simp only [ofMul_mul, ofMul_pow, map_add, map_nsmul, brauerCohomologyEquiv_hasseInvariant,
+      brauerCohomologyEquiv_quaternionClass]
 
 end TauCeti
