@@ -16,8 +16,7 @@ public import Mathlib.Data.Int.Interval
 
 Multiplication by a positive scalar preserves and reflects positive-definiteness when the scalar
 action preserves and reflects strict inequalities on values. A diagonal form is positive definite
-exactly when its weights are positive; since negating a diagonal form negates its weights, this
-also characterizes negative definite diagonal forms.
+exactly when its weights are positive.
 
 A positive definite quadratic form on a finitely generated free `ℤ`-module takes each of its values
 only finitely often: the sets `{x | q x ≤ n}` and `{x | q x = n}` are finite. This is the
@@ -30,7 +29,6 @@ the one that turns an orbit lying in a level set into a periodic orbit.
   its multiple by a positive scalar is positive definite.
 * `QuadraticMap.posDef_weightedSumSquares_iff`: a diagonal form over a linearly ordered ring is
   positive definite exactly when all of its weights are positive.
-* `QuadraticMap.neg_weightedSumSquares`: negating a diagonal form negates its weights.
 * `QuadraticMap.PosDef.finite_setOf_apply_le`: a positive definite quadratic form on a
   finitely generated free `ℤ`-module has only finitely many vectors of value at most `n`.
 * `QuadraticMap.PosDef.finite_setOf_apply_eq`: consequently only finitely many vectors of
@@ -75,13 +73,6 @@ end QuadraticMap
 namespace QuadraticMap
 
 variable {ι : Type*} [Fintype ι]
-
-/-- Negating a weighted sum of squares negates its weights. -/
-theorem neg_weightedSumSquares {R S : Type*} [CommRing R] [Ring S] [Module S R]
-    [SMulCommClass S R R] (w : ι → S) :
-    -weightedSumSquares R w = weightedSumSquares R (-w) := by
-  ext x
-  simp [Finset.sum_neg_distrib]
 
 /-- A diagonal form `⟨w₁, …, wₙ⟩` over a linearly ordered ring is positive definite exactly when
 all of its weights are positive. -/
