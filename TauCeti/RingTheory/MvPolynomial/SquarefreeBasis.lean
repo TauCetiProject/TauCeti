@@ -5,18 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Polynomial.IrreducibleBasis.Basic
+public import TauCeti.RingTheory.Polynomial.SquarefreeBasis
 public import TauCeti.RingTheory.MvPolynomial.OrderAt
 import TauCeti.Algebra.MvPolynomial.Equiv
 
 /-!
-# Reconstructing ambient orders from an irreducible basis
+# Reconstructing ambient orders from a squarefree basis
 
-An irreducible basis reconstructs each input polynomial as its content, a unit, and a
-product of powers of basis members. Over a polynomial coefficient ring over a domain,
-the unit has order zero, so the ambient Taylor order of the input is the order of its
-content plus the weighted sum of the orders of its basis factors. Thus constant ambient
-orders for the content and basis transfer to the input family.
+A squarefree basis, in particular an irreducible basis, reconstructs each input polynomial
+as its content, a unit, and a product of powers of basis members. Over a polynomial
+coefficient ring over a domain, the unit has order zero, so the ambient Taylor order of the
+input is the order of its content plus the weighted sum of the orders of its basis factors.
+Thus constant ambient orders for the content and basis transfer to the input family.
 
 The distinguished variable is coordinate zero, through `MvPolynomial.finSuccEquiv`.
 The content is evaluated at the remaining coordinates. The statements include zero
@@ -33,7 +33,7 @@ public section
 
 open MvPolynomial Polynomial
 
-namespace Finset.IsIrreducibleBasis
+namespace Finset.IsSquarefreeBasis
 
 variable {R : Type*} [CommRing R] {n : ℕ}
   [NormalizedGCDMonoid (MvPolynomial (Fin n) R)]
@@ -46,7 +46,7 @@ variable [IsDomain R]
 /-- The ambient order of an input is the order of its content plus the sum of the
 orders of the basis factors, weighted by their exponents in its factorization.
 The same exponents work at every point, including where the content vanishes. -/
-theorem exists_orderAt_eq_content_add_sum (hB : F.IsIrreducibleBasis B)
+theorem exists_orderAt_eq_content_add_sum (hB : F.IsSquarefreeBasis B)
     {f : Polynomial (MvPolynomial (Fin n) R)} (hf : f ∈ F) :
     ∃ e : Polynomial (MvPolynomial (Fin n) R) → ℕ, ∀ a : Fin (n + 1) → R,
       ((finSuccEquiv R n).symm f).orderAt a =
@@ -67,7 +67,7 @@ theorem exists_orderAt_eq_content_add_sum (hB : F.IsIrreducibleBasis B)
 
 /-- Constant ambient orders for the content and basis factors imply constant ambient
 order for each input polynomial. No connectedness assumption is needed. -/
-theorem orderAt_eq (hB : F.IsIrreducibleBasis B)
+theorem orderAt_eq (hB : F.IsSquarefreeBasis B)
     {f : Polynomial (MvPolynomial (Fin n) R)} (hf : f ∈ F)
     {a a' : Fin (n + 1) → R}
     (hc : f.content.orderAt (Fin.tail a) = f.content.orderAt (Fin.tail a'))
@@ -81,4 +81,4 @@ theorem orderAt_eq (hB : F.IsIrreducibleBasis B)
 
 end Orders
 
-end Finset.IsIrreducibleBasis
+end Finset.IsSquarefreeBasis

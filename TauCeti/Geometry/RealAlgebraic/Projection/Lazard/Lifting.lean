@@ -78,7 +78,7 @@ theorem nonempty_lazardDelineation_subfamily_of_lazardProjection
     rw [coeff_zero_prod]
     exact Finset.prod_ne_zero_iff.mpr hconst
   obtain ⟨D⟩ := p.nonempty_lazardDelineation_of_lazardValuation_eq hS hconn
-    (leadingCoeff_ne_zero.mpr hp) hpconst (hB.discr_prod_ne_zero hAB)
+    (leadingCoeff_ne_zero.mpr hp) hpconst (hB.isSquarefreeBasis.discr_prod_ne_zero hAB)
     (fun x hx y hy ↦ Finset.lazardValuation_leadingCoeff_prod_eq_of_lazardProjection hAB x y
       (fun q hq ↦ hproj q hq x hx y hy))
     (fun x hx y hy ↦ Finset.lazardValuation_coeff_zero_prod_eq_of_lazardProjection hAB x y
