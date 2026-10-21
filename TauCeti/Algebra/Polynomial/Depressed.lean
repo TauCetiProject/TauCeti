@@ -22,10 +22,10 @@ A polynomial `p` of degree `m` over a field is *depressed* when its subleading c
 `p.nextCoeff` vanishes. When `m` is invertible, the Tschirnhaus shift `X ↦ X + r` with
 `r = -p.nextCoeff / (m * p.leadingCoeff)` depresses `p`.
 
-A monic depressed polynomial that splits and is not `X ^ m` cannot be a power `(X - a) ^ m` of a
-single linear factor: for `a ≠ 0` its subleading coefficient would be `-m a ≠ 0`, and for `a = 0`
-it would be `X ^ m`. So it has a nonzero root `a` of multiplicity `r` with `0 < r < m`, and
-`p = (X - a) ^ r * q` with `q` monic and coprime to `(X - a) ^ r`.
+A monic depressed polynomial of invertible degree `m` that splits and is not `X ^ m` cannot be a
+power `(X - a) ^ m` of a single linear factor: for `a ≠ 0` its subleading coefficient would be
+`-m a ≠ 0`, and for `a = 0` it would be `X ^ m`. So it has a nonzero root `a` of multiplicity `r`
+with `0 < r < m`, and `p = (X - a) ^ r * q` with `q` monic and coprime to `(X - a) ^ r`.
 
 This is the factor-splitting input of the Newton–Puiseux algorithm: after normalization, the
 reduction modulo `t` of a monic depressed polynomial over `K⟦t⟧` has this shape, and Hensel's lemma
@@ -92,8 +92,7 @@ theorem Monic.exists_isCoprime_mul_eq_of_nextCoeff_eq_zero {p : K[X]} (hp : p.Mo
     by_contra! h0
     rw [Nat.le_zero, hh.natDegree_eq_zero] at h0
     rw [h0, mul_one] at hgh
-    have hr : p.natDegree = r := by rw [← hgh, hdeg]
-    simp [← hgh, nextCoeff_pow hX_sub] at hnext
-    exact hnext.elim (by rwa [← hr]) ha0
+    have hr : (r : K) ≠ 0 := by rwa [← hdeg, hgh]
+    simp [← hgh, nextCoeff_pow hX_sub, hr, ha0] at hnext
 
 end Polynomial
