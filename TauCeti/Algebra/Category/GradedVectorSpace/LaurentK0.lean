@@ -148,6 +148,14 @@ noncomputable def finiteExactStructure : GradedExactStructure (finite k).FullSub
   (GradedExactStructure.abelian _ (shift k)).fullSubcategory (finite k)
     (by simpa using isExtensionClosed_finite k) (by simpa using finite_shift k)
 
+/-- The graded exact structure of finite graded vector spaces is the one induced on the full
+subcategory from the abelian category of graded vector spaces with its grading shift. -/
+theorem finiteExactStructure_def :
+    finiteExactStructure k =
+      (GradedExactStructure.abelian _ (shift k)).fullSubcategory (finite k)
+        (by simpa using isExtensionClosed_finite k) (by simpa using finite_shift k) :=
+  (rfl)
+
 /-- The conflations of finite graded vector spaces are the short exact sequences. -/
 @[simp]
 theorem finiteExactStructure_conflation_iff (S : ShortComplex (finite k).FullSubcategory) :
