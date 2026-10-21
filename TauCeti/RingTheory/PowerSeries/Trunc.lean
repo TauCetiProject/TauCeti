@@ -173,13 +173,6 @@ theorem trunc_val_zpow_eq_of_trunc_eq {m : ℕ} {u v : R⟦X⟧ˣ}
       Units.val_pow_eq_pow_val]
     exact trunc_pow_eq_of_trunc_eq (trunc_val_inv_eq_of_trunc_eq h) (n + 1)
 
-/-- For `n < m`, the `n`-th coefficient of an integer power `u ^ k` of a unit `u : R⟦X⟧ˣ` depends
-only on `trunc m u`. -/
-theorem coeff_val_zpow_eq_of_trunc_eq {n m : ℕ} {u v : R⟦X⟧ˣ}
-    (h : trunc m (u : R⟦X⟧) = trunc m (v : R⟦X⟧)) (k : ℤ) (hn : n < m) :
-    coeff n (↑(u ^ k) : R⟦X⟧) = coeff n (↑(v ^ k) : R⟦X⟧) :=
-  coeff_eq_of_trunc_eq (trunc_val_zpow_eq_of_trunc_eq h k) hn
-
 end Ring
 
 section CommRing
@@ -195,14 +188,6 @@ theorem trunc_val_zpow_mul_derivative_eq_of_trunc_eq {m : ℕ} {u v : R⟦X⟧ˣ
   trunc_mul_eq_of_trunc_eq
     (trunc_val_zpow_eq_of_trunc_eq (trunc_eq_of_trunc_eq_of_le h (Nat.le_succ m)) k)
     (by rw [trunc_derivative, trunc_derivative, h])
-
-/-- For `n < m`, the `n`-th coefficient of `(u ^ k) * d⁄dX u` for a unit `u : R⟦X⟧ˣ` depends only on
-`trunc (m + 1) u`. -/
-theorem coeff_val_zpow_mul_derivative_eq_of_trunc_eq {n m : ℕ} {u v : R⟦X⟧ˣ}
-    (h : trunc (m + 1) (u : R⟦X⟧) = trunc (m + 1) (v : R⟦X⟧)) (k : ℤ) (hn : n < m) :
-    coeff n ((↑(u ^ k) : R⟦X⟧) * d⁄dX (u : R⟦X⟧)) =
-      coeff n ((↑(v ^ k) : R⟦X⟧) * d⁄dX (v : R⟦X⟧)) :=
-  coeff_eq_of_trunc_eq (trunc_val_zpow_mul_derivative_eq_of_trunc_eq h k) hn
 
 end CommRing
 
