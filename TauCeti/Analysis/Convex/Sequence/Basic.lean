@@ -457,6 +457,21 @@ theorem isAdmissible_add_affine_iff {a : ℕ → WithTop ℝ} (c m : ℝ) :
   exact ⟨fun ha => funext (fun n => (a n).add_affine_add_neg_affine c m n) ▸
     ha.add_affine (-c) (-m), fun ha => ha.add_affine c m⟩
 
+/-- Adding a real affine function does not change the finite unit edges. -/
+theorem finiteEdges_add_affine (h : ℕ → WithTop ℝ) (c m : ℝ) :
+    finiteEdges (fun n => h n + ((c + m * n : ℝ) : WithTop ℝ)) = finiteEdges h := by
+  ext n
+  simp only [mem_finiteEdges, ne_eq, WithTop.add_eq_top, WithTop.coe_ne_top, or_false]
+
+/-- Adding the real affine function with slope `m` adds `m` to the slope of every finite unit
+edge. -/
+theorem unitSlope_add_affine {h : ℕ → WithTop ℝ} {n : ℕ} (hn : n ∈ finiteEdges h) (c m : ℝ) :
+    unitSlope (fun n => h n + ((c + m * n : ℝ) : WithTop ℝ)) n = unitSlope h n + m := by
+  simp only [unitSlope_def, WithTop.untop₀_add hn.1 WithTop.coe_ne_top,
+    WithTop.untop₀_add hn.2 WithTop.coe_ne_top, WithTop.untop₀_coe]
+  push_cast
+  ring
+
 
 /-! ### Translation of indices -/
 
@@ -501,5 +516,29 @@ theorem isAdmissible_shift_iff {a : ℕ → WithTop ℝ} (k : ℕ) :
   · dsimp only
     split_ifs
     exacts [hga _, le_rfl]
+
+/-- Shifting heights `k` places to the right, with infinite heights at the first `k` indices,
+shifts the finite unit edges `k` places to the right. -/
+theorem finiteEdges_shift (h : ℕ → WithTop ℝ) (k : ℕ) :
+    finiteEdges (fun n => if k ≤ n then h (n - k) else ⊤) = (· + k) '' finiteEdges h := by
+  ext n
+  simp only [mem_finiteEdges, Set.mem_image]
+  constructor
+  · rintro ⟨h₀, h₁⟩
+    have hk : k ≤ n := by
+      by_contra hk
+      simp [hk] at h₀
+    refine ⟨n - k, ⟨by simpa [hk] using h₀, ?_⟩, by omega⟩
+    simpa [show k ≤ n + 1 by omega, show n + 1 - k = n - k + 1 by omega] using h₁
+  · rintro ⟨m, ⟨h₀, h₁⟩, rfl⟩
+    simpa [show m + k + 1 - k = m + 1 by omega, show k ≤ m + k + 1 by omega] using
+      And.intro h₀ h₁
+
+/-- Shifting heights `k` places to the right, with infinite heights at the first `k` indices,
+moves every unit slope `k` places to the right. -/
+@[simp]
+theorem unitSlope_shift (h : ℕ → WithTop ℝ) (k n : ℕ) :
+    unitSlope (fun n => if k ≤ n then h (n - k) else ⊤) (n + k) = unitSlope h n := by
+  simp [unitSlope_def, show k ≤ n + k + 1 by omega, show n + k + 1 - k = n + 1 by omega]
 
 end TauCeti

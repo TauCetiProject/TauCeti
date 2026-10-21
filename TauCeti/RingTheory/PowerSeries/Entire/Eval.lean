@@ -22,6 +22,10 @@ hypothesis is needed for convergence, so this evaluates entire series both at op
 evaluation at `b` is a ring homomorphism (`PowerSeries.IsEntire.evalAtHom`); it commutes with
 continuous algebra homomorphisms.
 
+The same bound shows that an entire series `F = ∑ Fₙ Xⁿ` with coefficients in a complete normed
+ring, such as a series of operators, can be evaluated at every scalar: the sum
+`PowerSeries.evalScalar F a = ∑ₙ aⁿ • Fₙ` converges absolutely.
+
 A consequence used for Fredholm determinants: if `f(0) = 1` and `f(a) = 0`, then `a` is a unit
 with inverse `-∑ₙ aₙ₊₁ • aⁿ`, since `f(a) = 1 + a ∑ₙ aₙ₊₁ • aⁿ`.
 
@@ -32,6 +36,8 @@ with inverse `-∑ₙ aₙ₊₁ • aⁿ`, since `f(a) = 1 + a ∑ₙ aₙ₊�
 ## Main results
 
 * `PowerSeries.IsEntire.hasSum_evalAt`: the series `∑ aₙ • bⁿ` converges to `f(b)`.
+* `PowerSeries.IsEntire.hasSum_evalScalar`: the series `∑ aⁿ • Fₙ` converges to `F(a)`.
+* `PowerSeries.IsEntire.evalScalar_add`: evaluation at a scalar is additive on entire series.
 * `PowerSeries.IsEntire.evalAt_add`, `PowerSeries.IsEntire.evalAt_mul`: evaluation is additive and
   multiplicative on entire series.
 * `PowerSeries.IsEntire.map_evalAt`: naturality in the algebra.
@@ -184,5 +190,36 @@ theorem IsEntire.inverse_eq_of_evalAt_eq_zero (hf : f.IsEntire) (h0 : constantCo
   Ring.inverse_unit ⟨a, _, h.1, h.2⟩
 
 end Normed
+
+section Scalar
+
+variable {R A : Type*} [SeminormedRing R] [NormedRing A] [Module R A] [IsBoundedSMul R A]
+  {F : A⟦X⟧}
+
+/-- For an entire series `F = ∑ Fₙ Xⁿ` over a normed ring, the terms `aⁿ • Fₙ` of its value at a
+scalar `a` are absolutely summable. -/
+theorem IsEntire.summable_norm_pow_smul_coeff (hF : F.IsEntire) (a : R) :
+    Summable fun n ↦ ‖a ^ n • coeff n F‖ := by
+  -- `‖aⁿ‖ ≤ ‖a‖ⁿ` only holds for `n ≥ 1`, so the term of index `0` is set aside
+  rw [← summable_nat_add_iff 1]
+  refine ((summable_nat_add_iff 1).mpr (hF.summable_norm_coeff_mul_pow ‖a‖)).of_nonneg_of_le
+    (fun _ ↦ norm_nonneg _) fun n ↦ ?_
+  exact (norm_smul_le _ _).trans <| (mul_le_mul_of_nonneg_right (norm_pow_le' a n.succ_pos)
+    (norm_nonneg _)).trans_eq (mul_comm _ _)
+
+/-- **Evaluation of entire series at scalars.** For an entire series `F = ∑ Fₙ Xⁿ` over a complete
+normed ring and any scalar `a`, the series `∑ aⁿ • Fₙ` converges to `F(a)`. -/
+theorem IsEntire.hasSum_evalScalar [CompleteSpace A] (hF : F.IsEntire) (a : R) :
+    HasSum (fun n ↦ a ^ n • coeff n F) (F.evalScalar a) := by
+  rw [evalScalar_def]
+  exact (hF.summable_norm_pow_smul_coeff a).of_norm.hasSum
+
+/-- Evaluation at a scalar is additive on entire series over a complete normed ring. -/
+theorem IsEntire.evalScalar_add [CompleteSpace A] {G : A⟦X⟧} (hF : F.IsEntire) (hG : G.IsEntire)
+    (a : R) : (F + G).evalScalar a = F.evalScalar a + G.evalScalar a :=
+  PowerSeries.evalScalar_add (hF.summable_norm_pow_smul_coeff a).of_norm
+    (hG.summable_norm_pow_smul_coeff a).of_norm
+
+end Scalar
 
 end PowerSeries

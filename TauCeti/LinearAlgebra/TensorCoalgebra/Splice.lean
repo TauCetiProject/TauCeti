@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.Graded.Insertion
 public import TauCeti.LinearAlgebra.TensorCoalgebra.Basic
 
 /-!
@@ -81,6 +82,20 @@ theorem splice_eq_of_tprod {n : ℕ} (x : Fin n → M) {a b p d : ℕ} (e : M) (
           else if _ : j.1 = p then e
           else x ⟨a + (j.1 + d - 1), by omega⟩) := by
   rw [splice, dite_eq_left ⟨hd, hpd, hab⟩]
+
+/-- A spliced word of a natural-indexed string is the word of the string with the block
+replaced. -/
+theorem splice_eq_of_tprod_replaceBlock (x : ℕ → M) {n p d : ℕ} (hd : 0 < d) (hpd : p + d ≤ n)
+    (e : M) :
+    splice R (fun i : Fin n ↦ x i) 0 n p d e =
+      of R M ⟨p + 1 + (n - p - d), by omega⟩
+        (PiTensorProduct.tprod R fun j : Fin (p + 1 + (n - p - d)) ↦ replaceBlock x p d e j) := by
+  rw [splice_eq_of_tprod R _ e (a := 0) (b := n) hd hpd (by omega)]
+  refine of_tprod_congr R M _ (by omega) fun j ↦ ?_
+  rcases lt_trichotomy (j : ℕ) p with h | h | h
+  · simp [h]
+  · simp [h]
+  · simp [h, show ¬ (j : ℕ) < p by omega, show (j : ℕ) ≠ p by omega]
 
 /-- Collapsing an empty subblock is zero: a letter is never produced out of nothing. -/
 @[simp]
