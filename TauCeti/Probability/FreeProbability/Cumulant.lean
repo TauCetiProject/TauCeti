@@ -145,8 +145,7 @@ moments. -/
 @[simp]
 theorem partitionCumulant_bot :
     partitionCumulant φ a (⊥ : NoncrossingPartition s) = ∏ i ∈ s, φ (a i) := by
-  rw [partitionCumulant_def, Iic_bot, sum_singleton, mu_self, one_mul,
-    NoncrossingPartition.coe_bot, partitionMoment_bot]
+  simp [partitionCumulant_def]
 
 /-- The free cumulant of a word is the sum over the noncrossing partitions `π` of its block
 moments weighted by the Möbius function, `κ_s(a) = ∑_{π ∈ NC(s)} μ(π, 1_s) φ_π(a)`. -/
