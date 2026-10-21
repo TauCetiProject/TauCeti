@@ -339,10 +339,7 @@ theorem aeval_X_X_lazardCocycle (n : ℕ) :
   rw [hsum, Finset.sum_smul, lazardCocycle, map_sum]
   refine Finset.sum_congr rfl fun i hi => ?_
   rw [mem_Icc] at hi
-  rw [aeval_monomial, Finsupp.prod_add_index' (by simp) (by simp [pow_add]),
-    Finsupp.prod_single_index (by simp), Finsupp.prod_single_index (by simp)]
-  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, ← pow_add,
-    Nat.add_sub_cancel' (by omega : i ≤ n), nsmul_eq_mul, Polynomial.algebraMap_eq, map_natCast]
+  simp [aeval_monomial, Finsupp.prod_add_index', ← pow_add, Nat.add_sub_cancel' (by omega : i ≤ n)]
 
 /-- `C_n` is homogeneous of degree `n`. -/
 theorem isHomogeneous_lazardCocycle (n : ℕ) : (lazardCocycle n R).IsHomogeneous n :=

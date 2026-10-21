@@ -97,13 +97,10 @@ theorem sum_Icc_choose_eq_two_pow_sub_two (n : ℕ) :
   rcases n with _ | n
   · simp
   have h := sum_range_choose (n + 1)
-  rw [range_eq_Ico, sum_eq_sum_Ico_succ_bot (by omega), sum_Ico_succ_top (by omega),
-    choose_zero_right, choose_self] at h
-  have hI : Ico (0 + 1) (n + 1) = Icc 1 (n + 1 - 1) := by
-    ext i
-    simp only [mem_Ico, mem_Icc]
-    omega
-  rw [hI] at h
+  rw [sum_range_succ, sum_range_succ'] at h
+  rw [Nat.add_sub_cancel, ← Ico_add_one_right_eq_Icc, sum_Ico_eq_sum_range]
+  simp only [Nat.add_sub_cancel, Nat.add_comm 1]
+  simp at h
   omega
 
 /-- **A falling factorial of the lower index lowers both indices of a binomial coefficient:**
