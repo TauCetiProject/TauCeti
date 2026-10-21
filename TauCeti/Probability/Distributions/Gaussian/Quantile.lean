@@ -28,7 +28,8 @@ to `⊥` at level zero and to `⊤` at level one, while the zero-variance law ha
 ## Main declarations
 
 * `TauCeti.Probability.quantile_gaussianReal` — the quantile of `gaussianReal m v`;
-* `TauCeti.Probability.quantile_gaussianReal_zero_one` — the standard Gaussian quantile.
+* `TauCeti.Probability.quantile_gaussianReal_zero_one` — the standard Gaussian quantile;
+* `TauCeti.Probability.quantile_gaussianReal_eq_add_mul` — the affine form `m + √v * z(u)`;
 * `TauCeti.Probability.tendsto_quantile_gaussianReal_nhdsGT_zero` and
   `TauCeti.Probability.tendsto_quantile_gaussianReal_nhdsLT_one` — the one-sided endpoint limits.
 -/
@@ -64,6 +65,13 @@ theorem quantile_gaussianReal (m : ℝ) (v : ℝ≥0) (hu : u ∈ Ioo 0 1) :
 theorem quantile_gaussianReal_zero_one (hu : u ∈ Ioo 0 1) :
     (gaussianReal 0 1).quantile u = √2 * Real.erfInv (2 * u - 1) := by
   simpa using quantile_gaussianReal 0 1 hu
+
+/-- Every Gaussian quantile is the affine image `m + √v * z(u)` of the standard Gaussian
+quantile `z(u)`, including at the Dirac boundary `v = 0`. -/
+theorem quantile_gaussianReal_eq_add_mul (m : ℝ) (v : ℝ≥0) (hu : u ∈ Ioo 0 1) :
+    (gaussianReal m v).quantile u = m + √(v : ℝ) * (gaussianReal 0 1).quantile u := by
+  rw [quantile_gaussianReal m v hu, quantile_gaussianReal_zero_one hu, Real.sqrt_mul zero_le_two]
+  ring
 
 /-- The lower endpoint limit of a Gaussian quantile is minus infinity at positive variance and
 the mean at zero variance. -/
