@@ -41,12 +41,12 @@ not `-H_a`: the vector `x_(-a)` indexed by `-a ∈ Φ` is a section vector, not 
 inverse lift of `a` to the cover.
 
 The bracket is antisymmetric and alternating as soon as `B` is symmetric with even diagonal
-(`ShellLieAlgebra.bracket_swap`, `ShellLieAlgebra.bracket_self`): interchanging `a` and `b` changes
+(`ShellLieAlgebra.lie_skew`, `ShellLieAlgebra.lie_self`): interchanging `a` and `b` changes
 `ε` by `(-1) ^ ⟪a, b⟫`. For `B` positive definite with even diagonal it satisfies the Jacobi
-identity over `ℤ` (`ShellLieAlgebra.jacobi`), so it is a Lie ring (`ShellLieAlgebra.lieRing`) and
-hence a Lie algebra over `ℤ`. Positive definiteness confines the pairing of two roots that are
-neither equal nor opposite to `{-1, 0, 1}`, and the proof is a case analysis on these pairings
-for three root vectors, in which no division by `2` occurs.
+identity over `ℤ` (`ShellLieAlgebra.lie_jacobi`), so it is a Lie ring
+(`ShellLieAlgebra.lieRing`) and hence a Lie algebra over `ℤ`. Positive definiteness confines the
+pairing of two roots that are neither equal nor opposite to `{-1, 0, 1}`, and the proof is a case
+analysis on these pairings for three root vectors, in which no division by `2` occurs.
 
 ## Main definitions
 
@@ -59,11 +59,11 @@ for three root vectors, in which no division by `2` occurs.
 
 ## Main results
 
-* `Matrix.ShellLieAlgebra.cartan_bracket_root`, `Matrix.ShellLieAlgebra.root_bracket_root`: the
+* `Matrix.ShellLieAlgebra.cartan_lie_root`, `Matrix.ShellLieAlgebra.root_lie_root`: the
   bracket on Cartan and root vectors.
-* `Matrix.ShellLieAlgebra.cartan_bracket_rootBracket`: `⁅x_a, x_b⁆` has weight `a + b`.
-* `Matrix.ShellLieAlgebra.bracket_swap`: antisymmetry, for symmetric `B` with even diagonal.
-* `Matrix.ShellLieAlgebra.jacobi`: the Jacobi identity, for positive definite `B` with even
+* `Matrix.ShellLieAlgebra.cartan_lie_rootBracket`: `⁅x_a, x_b⁆` has weight `a + b`.
+* `Matrix.ShellLieAlgebra.lie_skew`: antisymmetry, for symmetric `B` with even diagonal.
+* `Matrix.ShellLieAlgebra.lie_jacobi`: the Jacobi identity, for positive definite `B` with even
   diagonal.
 
 ## References
@@ -156,7 +156,7 @@ theorem rootBracket_of_add_eq_zero {a b : B.normTwoShell} (h : (a : I → ℤ) +
 variable {B} in
 /-- Two root vectors whose sum is neither in the norm-two shell nor zero have bracket zero. -/
 @[simp]
-theorem rootBracket_of_not_mem_of_add_ne_zero {a b : B.normTwoShell}
+theorem rootBracket_of_notMem_of_add_ne_zero {a b : B.normTwoShell}
     (h : (a : I → ℤ) + b ∉ B.normTwoShell) (h' : (a : I → ℤ) + b ≠ 0) :
     rootBracket B a b = 0 := by
   rw [rootBracket, dite_eq_right h, ite_eq_right h', smul_zero]
@@ -185,98 +185,98 @@ noncomputable instance : Bracket (ShellLieAlgebra B) (ShellLieAlgebra B) :=
 theorem bracketBilin_apply_apply (x y : ShellLieAlgebra B) : bracketBilin B x y = ⁅x, y⁆ :=
   (rfl)
 
-private theorem bracket_basis_basis (i j : I ⊕ B.normTwoShell) :
+private theorem lie_basis_basis (i j : I ⊕ B.normTwoShell) :
     ⁅basis B i, basis B j⁆ = basisBracket B i j := by
   rw [← bracketBilin_apply_apply, bracketBilin, Basis.constr_basis, Basis.constr_basis]
 
 variable {B}
 
 @[simp]
-theorem add_bracket (x y z : ShellLieAlgebra B) : ⁅x + y, z⁆ = ⁅x, z⁆ + ⁅y, z⁆ := by
+protected theorem add_lie (x y z : ShellLieAlgebra B) : ⁅x + y, z⁆ = ⁅x, z⁆ + ⁅y, z⁆ := by
   simp only [← bracketBilin_apply_apply, map_add, LinearMap.add_apply]
 
 @[simp]
-theorem bracket_add (x y z : ShellLieAlgebra B) : ⁅x, y + z⁆ = ⁅x, y⁆ + ⁅x, z⁆ := by
+protected theorem lie_add (x y z : ShellLieAlgebra B) : ⁅x, y + z⁆ = ⁅x, y⁆ + ⁅x, z⁆ := by
   simp only [← bracketBilin_apply_apply, map_add]
 
 @[simp]
-theorem smul_bracket (n : ℤ) (x y : ShellLieAlgebra B) : ⁅n • x, y⁆ = n • ⁅x, y⁆ := by
+protected theorem smul_lie (n : ℤ) (x y : ShellLieAlgebra B) : ⁅n • x, y⁆ = n • ⁅x, y⁆ := by
   simp only [← bracketBilin_apply_apply, map_smul, LinearMap.smul_apply]
 
 @[simp]
-theorem bracket_smul (n : ℤ) (x y : ShellLieAlgebra B) : ⁅x, n • y⁆ = n • ⁅x, y⁆ := by
+protected theorem lie_smul (n : ℤ) (x y : ShellLieAlgebra B) : ⁅x, n • y⁆ = n • ⁅x, y⁆ := by
   simp only [← bracketBilin_apply_apply, map_smul]
 
 /-- Cartan vectors commute. -/
 @[simp]
-theorem cartan_bracket_cartan (h k : I → ℤ) : ⁅cartan B h, cartan B k⁆ = 0 := by
+theorem cartan_lie_cartan (h k : I → ℤ) : ⁅cartan B h, cartan B k⁆ = 0 := by
   have key : (bracketBilin B).compl₁₂ (cartan B) (cartan B) = 0 :=
     (Pi.basisFun ℤ I).ext fun i ↦ (Pi.basisFun ℤ I).ext fun j ↦ by
-      simpa [← basis_inl, basisBracket] using bracket_basis_basis B (.inl i) (.inl j)
+      simpa [← basis_inl, basisBracket] using lie_basis_basis B (.inl i) (.inl j)
   simpa using congr($key h k)
 
 /-- The Cartan vector `H_h` acts on the root vector `x_b` by the pairing `⟪h, b⟫`. -/
 @[simp]
-theorem cartan_bracket_root (h : I → ℤ) (b : B.normTwoShell) :
+theorem cartan_lie_root (h : I → ℤ) (b : B.normTwoShell) :
     ⁅cartan B h, root B b⁆ = (h ⬝ᵥ B *ᵥ (b : I → ℤ)) • root B b := by
   have key : (bracketBilin B).flip (root B b) ∘ₗ cartan B =
       ((toBilin' B).flip b).smulRight (root B b) :=
     (Pi.basisFun ℤ I).ext fun i ↦ by
       simpa [← basis_inl, ← basis_inr, toBilin'_apply', basisBracket] using
-        bracket_basis_basis B (.inl i) (.inr b)
+        lie_basis_basis B (.inl i) (.inr b)
   simpa [toBilin'_apply'] using congr($key h)
 
 /-- The bracket `⁅x_a, H_k⁆ = -⟪k, a⟫ x_a`. -/
 @[simp]
-theorem root_bracket_cartan (a : B.normTwoShell) (k : I → ℤ) :
+theorem root_lie_cartan (a : B.normTwoShell) (k : I → ℤ) :
     ⁅root B a, cartan B k⁆ = -((k ⬝ᵥ B *ᵥ (a : I → ℤ)) • root B a) := by
   have key : bracketBilin B (root B a) ∘ₗ cartan B =
       -((toBilin' B).flip a).smulRight (root B a) :=
     (Pi.basisFun ℤ I).ext fun i ↦ by
       simpa [← basis_inl, ← basis_inr, toBilin'_apply', basisBracket] using
-        bracket_basis_basis B (.inr a) (.inl i)
+        lie_basis_basis B (.inr a) (.inl i)
   simpa [toBilin'_apply'] using congr($key k)
 
 /-- The bracket of two root vectors is their root bracket. -/
 @[simp]
-theorem root_bracket_root (a b : B.normTwoShell) : ⁅root B a, root B b⁆ = rootBracket B a b := by
-  simpa [basisBracket] using bracket_basis_basis B (.inr a) (.inr b)
+theorem root_lie_root (a b : B.normTwoShell) : ⁅root B a, root B b⁆ = rootBracket B a b := by
+  simpa [basisBracket] using lie_basis_basis B (.inr a) (.inr b)
 
 @[simp]
-theorem zero_bracket (y : ShellLieAlgebra B) : ⁅(0 : ShellLieAlgebra B), y⁆ = 0 := by
+protected theorem zero_lie (y : ShellLieAlgebra B) : ⁅(0 : ShellLieAlgebra B), y⁆ = 0 := by
   simp only [← bracketBilin_apply_apply, map_zero, LinearMap.zero_apply]
 
 @[simp]
-theorem bracket_zero (x : ShellLieAlgebra B) : ⁅x, (0 : ShellLieAlgebra B)⁆ = 0 := by
+protected theorem lie_zero (x : ShellLieAlgebra B) : ⁅x, (0 : ShellLieAlgebra B)⁆ = 0 := by
   simp only [← bracketBilin_apply_apply, map_zero]
 
 @[simp]
-theorem neg_bracket (x y : ShellLieAlgebra B) : ⁅-x, y⁆ = -⁅x, y⁆ := by
+protected theorem neg_lie (x y : ShellLieAlgebra B) : ⁅-x, y⁆ = -⁅x, y⁆ := by
   simp only [← bracketBilin_apply_apply, map_neg, LinearMap.neg_apply]
 
 @[simp]
-theorem bracket_neg (x y : ShellLieAlgebra B) : ⁅x, -y⁆ = -⁅x, y⁆ := by
+protected theorem lie_neg (x y : ShellLieAlgebra B) : ⁅x, -y⁆ = -⁅x, y⁆ := by
   simp only [← bracketBilin_apply_apply, map_neg]
 
 @[simp]
-theorem units_smul_bracket (u : ℤˣ) (x y : ShellLieAlgebra B) : ⁅u • x, y⁆ = u • ⁅x, y⁆ := by
-  simp only [Units.smul_def, smul_bracket]
+protected theorem units_smul_lie (u : ℤˣ) (x y : ShellLieAlgebra B) : ⁅u • x, y⁆ = u • ⁅x, y⁆ := by
+  simp only [Units.smul_def, ShellLieAlgebra.smul_lie]
 
 @[simp]
-theorem bracket_units_smul (u : ℤˣ) (x y : ShellLieAlgebra B) : ⁅x, u • y⁆ = u • ⁅x, y⁆ := by
-  simp only [Units.smul_def, bracket_smul]
+protected theorem lie_units_smul (u : ℤˣ) (x y : ShellLieAlgebra B) : ⁅x, u • y⁆ = u • ⁅x, y⁆ := by
+  simp only [Units.smul_def, ShellLieAlgebra.lie_smul]
 
 /-- **The Cartan weight of a root bracket.** The bracket of two root vectors has weight the sum of
 their roots. -/
 @[simp]
-theorem cartan_bracket_rootBracket (h : I → ℤ) (a b : B.normTwoShell) :
+theorem cartan_lie_rootBracket (h : I → ℤ) (a b : B.normTwoShell) :
     ⁅cartan B h, rootBracket B a b⁆ = (h ⬝ᵥ B *ᵥ ((a : I → ℤ) + b)) • rootBracket B a b := by
   by_cases hm : (a : I → ℤ) + b ∈ B.normTwoShell
-  · rw [rootBracket_of_mem hm, bracket_units_smul, cartan_bracket_root, smul_comm]
+  · rw [rootBracket_of_mem hm, ShellLieAlgebra.lie_units_smul, cartan_lie_root, smul_comm]
   by_cases hz : (a : I → ℤ) + b = 0
-  · rw [rootBracket_of_add_eq_zero hz, bracket_units_smul, cartan_bracket_cartan, hz]
+  · rw [rootBracket_of_add_eq_zero hz, ShellLieAlgebra.lie_units_smul, cartan_lie_cartan, hz]
     simp
-  · simp [rootBracket_of_not_mem_of_add_ne_zero hm hz]
+  · simp [rootBracket_of_notMem_of_add_ne_zero hm hz]
 
 /-- **Antisymmetry of the root bracket**, for a symmetric `B` with even diagonal: interchanging the
 two roots changes the ordered sign exactly when the roots pair to an odd integer. -/
@@ -303,16 +303,16 @@ theorem rootBracket_swap (hB : B.IsSymm) (hdiag : ∀ i, Even (B i i)) (a b : B.
     have hcartan : cartan B b = -cartan B a := by rw [hb, map_neg]
     rw [rootBracket_of_add_eq_zero hz, rootBracket_of_add_eq_zero (by rwa [add_comm]), hsign,
       hcartan, smul_neg]
-  · rw [rootBracket_of_not_mem_of_add_ne_zero hm hz,
-      rootBracket_of_not_mem_of_add_ne_zero (by rwa [add_comm]) (by rwa [add_comm]), neg_zero]
+  · rw [rootBracket_of_notMem_of_add_ne_zero hm hz,
+      rootBracket_of_notMem_of_add_ne_zero (by rwa [add_comm]) (by rwa [add_comm]), neg_zero]
 
 /-- **Antisymmetry of the bracket**, for a symmetric `B` with even diagonal. -/
-theorem bracket_swap (hB : B.IsSymm) (hdiag : ∀ i, Even (B i i)) (x y : ShellLieAlgebra B) :
+protected theorem lie_skew (hB : B.IsSymm) (hdiag : ∀ i, Even (B i i)) (x y : ShellLieAlgebra B) :
     ⁅y, x⁆ = -⁅x, y⁆ := by
   have key : (bracketBilin B).flip = -bracketBilin B :=
     (basis B).ext fun i ↦ (basis B).ext fun j ↦ by
       simp only [LinearMap.flip_apply, LinearMap.neg_apply, bracketBilin_apply_apply,
-        bracket_basis_basis]
+        lie_basis_basis]
       rcases i with i | a <;> rcases j with j | b
       · simp [basisBracket]
       · simp [basisBracket]
@@ -321,9 +321,9 @@ theorem bracket_swap (hB : B.IsSymm) (hdiag : ∀ i, Even (B i i)) (x y : ShellL
   simpa using congr($key x y)
 
 /-- **The bracket is alternating**, for a symmetric `B` with even diagonal. -/
-theorem bracket_self (hB : B.IsSymm) (hdiag : ∀ i, Even (B i i)) (x : ShellLieAlgebra B) :
+protected theorem lie_self (hB : B.IsSymm) (hdiag : ∀ i, Even (B i i)) (x : ShellLieAlgebra B) :
     ⁅x, x⁆ = 0 := by
-  have h := bracket_swap hB hdiag x x
+  have h := ShellLieAlgebra.lie_skew hB hdiag x x
   refine (basis B).repr.injective (Finsupp.ext fun i ↦ ?_)
   have hi := congr((basis B).repr $h i)
   simp only [map_neg, Finsupp.neg_apply] at hi
@@ -342,12 +342,12 @@ private theorem rootOf_coe (a : B.normTwoShell) : rootOf B a = root B a := by
   rw [rootOf, dite_eq_left a.2]
 
 omit [LinearOrder I] in
-private theorem rootOf_of_not_mem {v : I → ℤ} (h : v ∉ B.normTwoShell) : rootOf B v = 0 := by
+private theorem rootOf_of_notMem {v : I → ℤ} (h : v ∉ B.normTwoShell) : rootOf B v = 0 := by
   rw [rootOf, dite_eq_right h]
 
 omit [LinearOrder I] in
 private theorem rootOf_zero : rootOf B 0 = 0 :=
-  rootOf_of_not_mem fun h ↦ ne_zero_of_mem_normTwoShell h rfl
+  rootOf_of_notMem fun h ↦ ne_zero_of_mem_normTwoShell h rfl
 
 /-- The root bracket in a form uniform in the three cases. -/
 private theorem rootBracket_eq_rootOf (a b : B.normTwoShell) :
@@ -358,22 +358,22 @@ private theorem rootBracket_eq_rootOf (a b : B.normTwoShell) :
     rw [rootBracket_of_mem hm, ite_eq_right hz, add_zero, rootOf, dite_eq_left hm]
   by_cases hz : (a : I → ℤ) + b = 0
   · rw [rootBracket_of_add_eq_zero hz, ite_eq_left hz, hz, rootOf_zero, zero_add]
-  · rw [rootBracket_of_not_mem_of_add_ne_zero hm hz, rootOf_of_not_mem hm, ite_eq_right hz,
+  · rw [rootBracket_of_notMem_of_add_ne_zero hm hz, rootOf_of_notMem hm, ite_eq_right hz,
       add_zero, smul_zero]
 
 open scoped Classical in
 /-- The double bracket `⁅x_a, ⁅x_b, x_c⁆⁆` when `b + c ≠ 0`. -/
-private theorem root_bracket_rootBracket {a b c : B.normTwoShell} (hbc : (b : I → ℤ) + c ≠ 0) :
+private theorem root_lie_rootBracket {a b c : B.normTwoShell} (hbc : (b : I → ℤ) + c ≠ 0) :
     ⁅root B a, rootBracket B b c⁆ = if (b : I → ℤ) + c ∈ B.normTwoShell then
       ((B.orderedSignForm b c).negOnePow * (B.orderedSignForm a (b + c)).negOnePow) •
         (rootOf B (a + b + c) + if (a : I → ℤ) + b + c = 0 then cartan B a else 0)
     else 0 := by
-  rw [rootBracket_eq_rootOf b c, ite_eq_right hbc, add_zero, bracket_units_smul]
+  rw [rootBracket_eq_rootOf b c, ite_eq_right hbc, add_zero, ShellLieAlgebra.lie_units_smul]
   by_cases hm : (b : I → ℤ) + c ∈ B.normTwoShell
-  · rw [rootOf, dite_eq_left hm, ite_eq_left hm, root_bracket_root, rootBracket_eq_rootOf,
+  · rw [rootOf, dite_eq_left hm, ite_eq_left hm, root_lie_root, rootBracket_eq_rootOf,
       mul_smul]
     simp only [add_assoc]
-  · rw [rootOf_of_not_mem hm, ite_eq_right hm, bracket_zero, smul_zero]
+  · rw [rootOf_of_notMem hm, ite_eq_right hm, ShellLieAlgebra.lie_zero, smul_zero]
 
 /-- The Jacobi identity for three root vectors, none two of which are equal or opposite. -/
 private theorem jacobi_root_root_root_of_ne (hB : B.PosDef) (hdiag : ∀ i, Even (B i i))
@@ -421,7 +421,7 @@ private theorem jacobi_root_root_root_of_ne (hB : B.PosDef) (hdiag : ∀ i, Even
   -- Each double bracket lands on the same lattice vector `a + b + c`, in a rotated order.
   have hbca : (b : I → ℤ) + c + a = (a : I → ℤ) + b + c := by abel
   have hcab : (c : I → ℤ) + a + b = (a : I → ℤ) + b + c := by abel
-  rw [root_bracket_rootBracket hbc', root_bracket_rootBracket hca', root_bracket_rootBracket hab',
+  rw [root_lie_rootBracket hbc', root_lie_rootBracket hca', root_lie_rootBracket hab',
     hbca, hcab]
   simp only [map_add]
   by_cases hd : (a : I → ℤ) + b + c = 0
@@ -457,7 +457,7 @@ private theorem jacobi_root_root_root_of_ne (hB : B.PosDef) (hdiag : ∀ i, Even
         sign_neg (B.orderedSignForm a b) (B.orderedSignForm c a + B.orderedSignForm c b)
           (B.orderedSignForm b c) (B.orderedSignForm a b + B.orderedSignForm a c) (by omega)]
       simp
-  · simp [rootOf_of_not_mem hdm]
+  · simp [rootOf_of_notMem hdm]
 
 /-- The Jacobi identity for three root vectors, the first two of which are opposite. -/
 private theorem jacobi_root_root_root_of_add_eq_zero (hB : B.PosDef) (hdiag : ∀ i, Even (B i i))
@@ -484,8 +484,8 @@ private theorem jacobi_root_root_root_of_add_eq_zero (hB : B.PosDef) (hdiag : �
   -- Since `a + b = 0`, both nonzero double brackets land on the root `c`.
   have habc : (a : I → ℤ) + b + c = c := by rw [hab, zero_add]
   have hbca : (b : I → ℤ) + c + a = c := by rw [hbv]; abel
-  rw [root_bracket_rootBracket hbc, root_bracket_rootBracket hca', rootBracket_of_add_eq_zero hab,
-    bracket_units_smul, root_bracket_cartan, habc, hbca, rootOf_coe]
+  rw [root_lie_rootBracket hbc, root_lie_rootBracket hca', rootBracket_of_add_eq_zero hab,
+    ShellLieAlgebra.lie_units_smul, root_lie_cartan, habc, hbca, rootOf_coe]
   simp only [hc0, ↓reduceIte, add_zero]
   rcases (by omega : (a : I → ℤ) ⬝ᵥ B *ᵥ c = -1 ∨ (a : I → ℤ) ⬝ᵥ B *ᵥ c = 0 ∨
       (a : I → ℤ) ⬝ᵥ B *ᵥ c = 1) with hd | hd | hd
@@ -514,8 +514,8 @@ private theorem jacobi_root_root_root (hB : B.PosDef) (hdiag : ∀ i, Even (B i 
   have hS := hB.isHermitian.isSymm
   -- A repeated root: the identity follows from antisymmetry and alternation.
   have repeated (x z : ShellLieAlgebra B) : ⁅x, ⁅x, z⁆⁆ + ⁅x, ⁅z, x⁆⁆ + ⁅z, ⁅x, x⁆⁆ = 0 := by
-    rw [bracket_swap hS hdiag x z, bracket_self hS hdiag, bracket_neg, bracket_zero, add_zero,
-      add_neg_cancel]
+    rw [ShellLieAlgebra.lie_skew hS hdiag x z, ShellLieAlgebra.lie_self hS hdiag,
+      ShellLieAlgebra.lie_neg, ShellLieAlgebra.lie_zero, add_zero, add_neg_cancel]
   by_cases hab : a = b
   · subst hab
     exact repeated _ _
@@ -527,7 +527,7 @@ private theorem jacobi_root_root_root (hB : B.PosDef) (hdiag : ∀ i, Even (B i 
   · subst hca
     rw [add_rotate, add_rotate]
     exact repeated _ _
-  simp only [root_bracket_root]
+  simp only [root_lie_root]
   -- Two opposite roots.
   by_cases hab' : (a : I → ℤ) + b = 0
   · exact jacobi_root_root_root_of_add_eq_zero hB hdiag hab' hca (Ne.symm hbc)
@@ -543,8 +543,8 @@ private theorem jacobi_root_root_root (hB : B.PosDef) (hdiag : ∀ i, Even (B i 
 private theorem jacobi_cartan_cartan_root (h k : I → ℤ) (c : B.normTwoShell) :
     ⁅cartan B h, ⁅cartan B k, root B c⁆⁆ + ⁅cartan B k, ⁅root B c, cartan B h⁆⁆ +
       ⁅root B c, ⁅cartan B h, cartan B k⁆⁆ = 0 := by
-  simp only [cartan_bracket_root, root_bracket_cartan, cartan_bracket_cartan, bracket_smul,
-    bracket_neg, bracket_zero]
+  simp only [cartan_lie_root, root_lie_cartan, cartan_lie_cartan, ShellLieAlgebra.lie_smul,
+    ShellLieAlgebra.lie_neg, ShellLieAlgebra.lie_zero]
   module
 
 /-- The Jacobi identity for a Cartan vector and two root vectors. -/
@@ -552,8 +552,8 @@ private theorem jacobi_cartan_root_root (hB : B.IsSymm) (hdiag : ∀ i, Even (B 
     (b c : B.normTwoShell) :
     ⁅cartan B h, ⁅root B b, root B c⁆⁆ + ⁅root B b, ⁅root B c, cartan B h⁆⁆ +
       ⁅root B c, ⁅cartan B h, root B b⁆⁆ = 0 := by
-  simp only [root_bracket_root, cartan_bracket_rootBracket, root_bracket_cartan,
-    cartan_bracket_root, bracket_smul, bracket_neg, rootBracket_swap hB hdiag b c, mulVec_add,
+  simp only [root_lie_root, cartan_lie_rootBracket, root_lie_cartan, cartan_lie_root,
+    ShellLieAlgebra.lie_smul, ShellLieAlgebra.lie_neg, rootBracket_swap hB hdiag b c, mulVec_add,
     dotProduct_add]
   module
 
@@ -579,7 +579,8 @@ private theorem jacobi_basis (hB : B.PosDef) (hdiag : ∀ i, Even (B i i))
   · exact jacobi_root_root_root hB hdiag _ _ _
 
 /-- **The Jacobi identity**, for a positive definite `B` with even diagonal. -/
-theorem jacobi (hB : B.PosDef) (hdiag : ∀ i, Even (B i i)) (x y z : ShellLieAlgebra B) :
+protected theorem lie_jacobi (hB : B.PosDef) (hdiag : ∀ i, Even (B i i))
+    (x y z : ShellLieAlgebra B) :
     ⁅x, ⁅y, z⁆⁆ + ⁅y, ⁅z, x⁆⁆ + ⁅z, ⁅x, y⁆⁆ = 0 := by
   -- Each side is linear in each variable, so it suffices to check it on the basis, one variable
   -- at a time.
@@ -605,11 +606,12 @@ theorem jacobi (hB : B.PosDef) (hdiag : ∀ i, Even (B i i)) (x y z : ShellLieAl
 
 /-- **The Leibniz form of the Jacobi identity**, for a positive definite `B` with even
 diagonal. -/
-theorem leibniz_bracket (hB : B.PosDef) (hdiag : ∀ i, Even (B i i)) (x y z : ShellLieAlgebra B) :
+protected theorem leibniz_lie (hB : B.PosDef) (hdiag : ∀ i, Even (B i i))
+    (x y z : ShellLieAlgebra B) :
     ⁅x, ⁅y, z⁆⁆ = ⁅⁅x, y⁆, z⁆ + ⁅y, ⁅x, z⁆⁆ := by
   have hS := hB.isHermitian.isSymm
-  rw [bracket_swap hS hdiag z ⁅x, y⁆, bracket_swap hS hdiag z x, bracket_neg, ← sub_eq_zero,
-    ← jacobi hB hdiag x y z]
+  rw [ShellLieAlgebra.lie_skew hS hdiag z ⁅x, y⁆, ShellLieAlgebra.lie_skew hS hdiag z x,
+    ShellLieAlgebra.lie_neg, ← sub_eq_zero, ← ShellLieAlgebra.lie_jacobi hB hdiag x y z]
   abel
 
 /-- **The signed Lie ring of the norm-two shell** of a positive definite integer matrix `B` with
@@ -618,10 +620,10 @@ locally when needed. -/
 @[instance_reducible]
 noncomputable def lieRing (hB : B.PosDef) (hdiag : ∀ i, Even (B i i)) :
     LieRing (ShellLieAlgebra B) where
-  add_lie := add_bracket
-  lie_add := bracket_add
-  lie_self := bracket_self hB.isHermitian.isSymm hdiag
-  leibniz_lie := leibniz_bracket hB hdiag
+  add_lie := ShellLieAlgebra.add_lie
+  lie_add := ShellLieAlgebra.lie_add
+  lie_self := ShellLieAlgebra.lie_self hB.isHermitian.isSymm hdiag
+  leibniz_lie := ShellLieAlgebra.leibniz_lie hB hdiag
 
 end ShellLieAlgebra
 
