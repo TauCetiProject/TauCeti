@@ -10,7 +10,7 @@ public import Mathlib.RingTheory.PowerSeries.Substitution
 public import TauCeti.NumberTheory.Padics.Division
 public import TauCeti.NumberTheory.Padics.Measure.Multiples
 public import TauCeti.NumberTheory.Padics.Measure.Pushforward
-import Mathlib.RingTheory.PowerSeries.Binomial
+import TauCeti.NumberTheory.Padics.MahlerDilation
 
 /-!
 # The operators `φ` and `ψ` on measures on `ℤ_p`
@@ -41,8 +41,6 @@ norm.
 
 ## Main results
 
-* `PadicInt.mahler_natCast_mul`: the Mahler function `(m x choose n)` is the integral combination
-  of the `(x choose k)`, `k ≤ n`, with coefficients those of `((1 + T) ^ m - 1) ^ k` at `T ^ n`.
 * `AbstractMeasure.amiceTransform_phiMeasure`: `A_(φ μ) (T) = A_μ ((1 + T) ^ p - 1)`.
 * `AbstractMeasure.psiMeasure_phiMeasure`: `ψ (φ μ) = μ`.
 * `AbstractMeasure.phiMeasure_psiMeasure`: `φ (ψ μ)` is the restriction of `μ` to `pℤ_p`.
@@ -65,50 +63,6 @@ open ContinuousMap PowerSeries
 open scoped AbstractMeasure
 
 variable {p : ℕ} [Fact p.Prime]
-
-namespace PadicInt
-
-/-- **Mahler functions of a dilation.** For `m : ℕ`, the function `x ↦ (m x choose n)` is the
-integral combination `∑_{k ≤ n} c_{n,k} (x choose k)`, where `c_{n,k}` is the coefficient of `T ^ n`
-in `((1 + T) ^ m - 1) ^ k`. This is the coefficientwise form of
-`(1 + T) ^ (m x) = ((1 + T) ^ m) ^ x = ∑_k (x choose k) ((1 + T) ^ m - 1) ^ k`. -/
-theorem mahler_natCast_mul (m n : ℕ) (x : ℤ_[p]) :
-    mahler n ((m : ℤ_[p]) * x) = ∑ k ∈ Finset.range (n + 1),
-      ((coeff n (((1 + X) ^ m - 1) ^ k : ℤ⟦X⟧) : ℤ) : ℤ_[p]) * mahler k x := by
-  set G : ℤ⟦X⟧ := (1 + X) ^ m - 1
-  have hG : constantCoeff G = 0 := by simp [G]
-  -- Both sides are continuous in `x`, so it suffices to compare them on `ℕ`.
-  have hcont : Continuous fun x : ℤ_[p] ↦ mahler n ((m : ℤ_[p]) * x) :=
-    (mahler n).continuous.comp (continuous_const.mul continuous_id)
-  refine congrFun (denseRange_natCast.equalizer hcont
-    (continuous_finsetSum _ fun k _ ↦ continuous_const.mul (mahler k).continuous)
-    (funext fun l ↦ ?_)) x
-  simp only [Function.comp_apply, ← Nat.cast_mul, Pi.mul_apply, mahler_natCast_eq]
-  -- For natural `l`, expand `(1 + T) ^ (m l) = (G + 1) ^ l` by the binomial theorem.
-  have hnat :
-      ((m * l).choose n : ℤ) = ∑ k ∈ Finset.range (l + 1), coeff n (G ^ k) * l.choose k := by
-    have hpow : ((1 + X : ℤ⟦X⟧) ^ (m * l)) = (G + 1) ^ l := by
-      rw [pow_mul, sub_add_cancel]
-    have hcoeff := congrArg (coeff n) hpow
-    rw [← binomialSeries_nat (R := ℤ), binomialSeries_coeff, Ring.choose_natCast, add_pow,
-      map_sum] at hcoeff
-    simpa using hcoeff
-  -- Both finite sums agree with the sum over `k ≤ n + l`.
-  have hsub₁ : ∑ k ∈ Finset.range (l + 1), coeff n (G ^ k) * (l.choose k : ℤ) =
-      ∑ k ∈ Finset.range (n + l + 1), coeff n (G ^ k) * (l.choose k : ℤ) :=
-    Finset.sum_subset (Finset.range_subset_range.mpr (by lia)) fun k _ hk ↦ by
-      rw [Nat.choose_eq_zero_of_lt (by simpa using hk), Nat.cast_zero, mul_zero]
-  have hsub₂ : ∑ k ∈ Finset.range (n + 1), coeff n (G ^ k) * (l.choose k : ℤ) =
-      ∑ k ∈ Finset.range (n + l + 1), coeff n (G ^ k) * (l.choose k : ℤ) :=
-    Finset.sum_subset (Finset.range_subset_range.mpr (by lia)) fun k _ hk ↦ by
-      rw [coeff_of_lt_order _ ((Nat.cast_lt.mpr (by simpa using hk)).trans_le
-        (le_order_pow_of_constantCoeff_eq_zero k hG)), zero_mul]
-  have hint : ((m * l).choose n : ℤ) =
-      ∑ k ∈ Finset.range (n + 1), coeff n (G ^ k) * (l.choose k : ℤ) := by
-    rw [hnat, hsub₁, hsub₂]
-  exact_mod_cast congrArg (Int.cast : ℤ → ℤ_[p]) hint
-
-end PadicInt
 
 namespace AbstractMeasure
 
@@ -149,8 +103,10 @@ theorem amiceTransform_phiMeasure (μ : D(ℤ_[p], R)) :
     amiceTransform (phiMeasure μ) = (amiceTransform μ).subst ((1 + X : R⟦X⟧) ^ p - 1) := by
   set G : ℤ⟦X⟧ := (1 + X) ^ p - 1
   have hG : constantCoeff ((1 + X : R⟦X⟧) ^ p - 1) = 0 := by simp
-  -- Over `R`, the substituted series is the image of the integral series `G`.
-  have hGR : (1 + X : R⟦X⟧) ^ p - 1 = PowerSeries.map (Int.castRingHom R) G := by simp [G]
+  -- Over `R`, the coefficients of the powers of the substituted series are those of `G`.
+  have hcoeff (n k : ℕ) : coeff n (((1 + X : R⟦X⟧) ^ p - 1) ^ k) = ((coeff n (G ^ k) : ℤ) : R) := by
+    rw [show (1 + X : R⟦X⟧) ^ p - 1 = PowerSeries.map (Int.castRingHom R) G by simp [G], ← map_pow,
+      coeff_map, eq_intCast]
   -- The Mahler function `x ↦ (p x choose n)`, with values in `R`, in the Mahler basis.
   have hmahler (n : ℕ) :
       ((mahler n : C(ℤ_[p], ℤ_[p])) • (1 : C(ℤ_[p], R))).comp (ContinuousMap.mulLeft (p : ℤ_[p])) =
@@ -165,8 +121,7 @@ theorem amiceTransform_phiMeasure (μ : D(ℤ_[p], R)) :
     finsum_eq_sum_of_support_subset (s := Finset.range (n + 1)) _ fun k hk ↦ ?_]
   · rw [coeff_amiceTransform, phiMeasure_apply, hmahler, map_sum]
     refine Finset.sum_congr rfl fun k _ ↦ ?_
-    rw [map_smul, ← coeff_amiceTransform μ k, hGR, ← map_pow, coeff_map, eq_intCast, smul_eq_mul,
-      smul_eq_mul, mul_comm]
+    simp [hcoeff, coeff_amiceTransform, mul_comm]
   · -- Only the powers `k ≤ n` of a series without constant term contribute to `T ^ n`.
     rw [Function.mem_support] at hk
     rw [Finset.coe_range, Set.mem_Iio]
