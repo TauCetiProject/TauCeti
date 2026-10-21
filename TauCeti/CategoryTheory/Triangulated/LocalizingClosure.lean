@@ -64,10 +64,17 @@ universe v u
 
 namespace CategoryTheory.ObjectProperty
 
-open Limits Pretriangulated ZeroObject
+open Limits Pretriangulated Pretriangulated.Opposite ZeroObject
 
 variable {C : Type u} [Category.{v} C] [HasZeroObject C] [Preadditive C] [HasShift C ℤ]
   [∀ n : ℤ, (shiftFunctor C n).Additive] [Pretriangulated C]
+
+/-- Third-object closure of a property becomes first-object closure on the opposite category. -/
+instance (P : ObjectProperty C) [P.IsTriangulatedClosed₃] : P.op.IsTriangulatedClosed₁ where
+  ext₁' T hT h₂ h₃ := by
+    obtain ⟨X, hX, ⟨e⟩⟩ := P.ext_of_isTriangulatedClosed₃' _
+      ((mem_distTriang_op_iff T).1 hT) h₃ h₂
+    exact ⟨Opposite.op X, hX, ⟨e.symm.op⟩⟩
 
 section Thick
 
@@ -90,9 +97,6 @@ retracts. This applies in particular to triangulated subcategories. -/
 theorem isStableUnderRetracts_of_isClosedUnderProducts_nat [P.IsTriangulatedClosed₃]
     [HasProductsOfShape ℕ C] [P.IsClosedUnderLimitsOfShape (Discrete ℕ)] :
     P.IsStableUnderRetracts := by
-  open Pretriangulated.Opposite in
-  have : P.op.IsTriangulatedClosed₁ := .mk' fun T hT h₂ h₃ ↦
-    P.ext_of_isTriangulatedClosed₃ _ ((mem_distTriang_op_iff T).1 hT) h₃ h₂
   have : P.op.IsClosedUnderColimitsOfShape (Discrete ℕ) :=
     have := (P.isClosedUnderLimitsOfShape_iff_op (Discrete ℕ)).1 inferInstance
     .of_equivalence (Discrete.opposite ℕ)
