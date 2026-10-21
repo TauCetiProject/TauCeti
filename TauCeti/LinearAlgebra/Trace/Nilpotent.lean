@@ -81,7 +81,7 @@ theorem isNilpotent_iff_forall_trace_pow_eq_zero [CharZero K] {f : Module.End K 
   rw [map_zero, sub_zero] at hpq hq
   obtain ⟨a, b, hab⟩ := ((irreducible_X.coprime_iff_not_dvd.2 hq).pow_left (m := m + 1))
   -- `P = a(f) * f ^ (m + 1)` is an idempotent without constant term.
-  set P := aeval f (a * X ^ (m + 1))
+  set P := aeval f (a * X ^ (m + 1)) with hPdef
   have hPP : P * P = (1 : K) • P := by
     have h : (a * X ^ (m + 1)) * (a * X ^ (m + 1)) - a * X ^ (m + 1) =
         -(a * b * X) * f.charpoly := by
@@ -100,10 +100,9 @@ theorem isNilpotent_iff_forall_trace_pow_eq_zero [CharZero K] {f : Module.End K 
   have hbq : aeval f b * aeval f q = 1 := by
     have h1 := congrArg (aeval f) hab
     rw [map_add, map_one, map_mul (aeval f) b] at h1
-    rwa [show aeval f (a * X ^ (m + 1)) = 0 from hP, zero_add] at h1
+    rwa [← hPdef, hP, zero_add] at h1
   have hfq : aeval f q * f ^ m = 0 := by
-    rw [show f ^ m = aeval f ((X : K[X]) ^ m) by simp, ← map_mul, mul_comm, ← hpq,
-      aeval_self_charpoly]
+    rw [← aeval_X_pow (R := K), ← map_mul, mul_comm, ← hpq, aeval_self_charpoly]
   refine ⟨m, ?_⟩
   calc f ^ m = aeval f b * aeval f q * f ^ m := by rw [hbq, one_mul]
     _ = 0 := by rw [mul_assoc, hfq, mul_zero]
@@ -142,20 +141,22 @@ theorem trace_mul_eq_zero_of_isNilpotent_of_lie_lie_eq_zero (hA : IsNilpotent A)
           rw [hAB, add_mul, mul_assoc, ← pow_succ', ← (hc.pow_left (n + 1)).eq, add_assoc,
             ← succ_nsmul']
   let V : ℕ → Submodule K M := fun i => ker (A ^ i)
-  have hBV (i : ℕ) : ∀ v ∈ V i, B v ∈ V (i + 1) := fun v (hv : (A ^ i) v = 0) => by
-    change (A ^ (i + 1)) (B v) = 0
-    rw [← Module.End.mul_apply, hpow, add_apply, smul_apply,
-      Module.End.mul_apply, Module.End.mul_apply, pow_succ', Module.End.mul_apply, hv, map_zero,
-      map_zero, zero_add, ← Module.End.mul_apply (A ^ i), (hc.pow_left i).eq, Module.End.mul_apply,
-      hv, map_zero, smul_zero]
-  have hAV (i : ℕ) : ∀ v ∈ V (i + 1), A v ∈ V i := fun v (hv : (A ^ (i + 1)) v = 0) => by
-    change (A ^ i) (A v) = 0
+  have hCV (i : ℕ) : ∀ v ∈ V i, ⁅A, B⁆ v ∈ V i := fun v hv => by
+    simp only [V, mem_ker] at hv ⊢
+    rw [← Module.End.mul_apply, (hc.pow_left i).eq, Module.End.mul_apply, hv, map_zero]
+  have hBV (i : ℕ) : ∀ v ∈ V i, B v ∈ V (i + 1) := fun v hv => by
+    have hCv := hCV i v hv
+    simp only [V, mem_ker] at hv hCv ⊢
+    -- Both terms of `hpow i` applied to `v` vanish, since `A ^ i` kills `v` and `⁅A, B⁆ v`.
+    have hv' : (A ^ (i + 1)) v = 0 := by rw [pow_succ', Module.End.mul_apply, hv, map_zero]
+    rw [← Module.End.mul_apply, hpow]
+    simp only [add_apply, smul_apply, Module.End.mul_apply, hv', hCv, map_zero, smul_zero,
+      add_zero]
+  have hAV (i : ℕ) : ∀ v ∈ V (i + 1), A v ∈ V i := fun v hv => by
+    simp only [V, mem_ker] at hv ⊢
     rwa [← Module.End.mul_apply, ← pow_succ]
   have hABV (i : ℕ) : ∀ v ∈ V i, (A * B) v ∈ V i := fun v hv => hAV i _ (hBV i v hv)
   have hBAV (i : ℕ) : ∀ v ∈ V (i + 1), (B * A) v ∈ V (i + 1) := fun v hv => hBV i _ (hAV i v hv)
-  have hCV (i : ℕ) : ∀ v ∈ V i, ⁅A, B⁆ v ∈ V i := fun v (hv : (A ^ i) v = 0) => by
-    change (A ^ i) (⁅A, B⁆ v) = 0
-    rw [← Module.End.mul_apply, (hc.pow_left i).eq, Module.End.mul_apply, hv, map_zero]
   -- The trace of `A * B` on `V i` does not depend on `i`.
   have hstep (i : ℕ) : trace K (V (i + 1)) ((A * B).restrict (hABV (i + 1))) =
       trace K (V i) ((A * B).restrict (hABV i)) := by
@@ -184,7 +185,6 @@ theorem trace_mul_eq_zero_of_isNilpotent_of_lie_lie_eq_zero (hA : IsNilpotent A)
   obtain ⟨n, hn⟩ := hA
   rw [← hconst n, trace_restrict_eq_of_forall_mem]
   intro v
-  change (A ^ n) _ = 0
-  rw [hn, zero_apply]
+  simp only [V, mem_ker, hn, zero_apply]
 
 end LinearMap
