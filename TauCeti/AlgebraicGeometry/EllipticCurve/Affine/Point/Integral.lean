@@ -62,6 +62,14 @@ def pointOfIntegralSolution (x y : ℤ) (h : W.toAffine.Equation x y) :
     (W.baseChange ℚ).toAffine.Point :=
   .mk (W.integral_equation_baseChange x y h)
 
+/-- The point built from an integral solution is the affine point with those coordinates. -/
+@[simp]
+private theorem pointOfIntegralSolution_eq_some (x y : ℤ) (h : W.toAffine.Equation x y) :
+    W.pointOfIntegralSolution x y h =
+      .some (x : ℚ) (y : ℚ)
+        (Affine.equation_iff_nonsingular.mp (W.integral_equation_baseChange x y h)) :=
+  rfl
+
 /-- The affine coordinates of the rational point constructed from an integral solution. -/
 @[simp]
 theorem pointEquiv_pointOfIntegralSolution (x y : ℤ) (h : W.toAffine.Equation x y) :
@@ -289,7 +297,7 @@ variable {W : WeierstrassCurve ℚ}
 
 /-- The coordinates of an affine point with integral coordinates are integers, and conversely. -/
 @[simp]
-theorem some_hasIntegralCoordinates {x y : ℚ} (h : W.toAffine.Nonsingular x y) :
+theorem hasIntegralCoordinates_some {x y : ℚ} (h : W.toAffine.Nonsingular x y) :
     (.some x y h : W.toAffine.Point).HasIntegralCoordinates ↔
       ∃ x₀ y₀ : ℤ, x = (x₀ : ℚ) ∧ y = (y₀ : ℚ) := by
   constructor
@@ -330,14 +338,21 @@ theorem hasIntegralCoordinates_iff_mem_integralPoints
     have hEq : (W.baseChange ℚ).toAffine.Equation (x : ℚ) (y : ℚ) :=
       ((Affine.nonsingular_iff' (W := (W.baseChange ℚ).toAffine) (x : ℚ) (y : ℚ)).mp hP).1
     refine ⟨x, y, W.equation_baseChange_iff.mp hEq, ?_⟩
-    unfold pointOfIntegralSolution Affine.Point.mk
-    rw [Affine.Point.some.injEq]
+    rw [W.pointOfIntegralSolution_eq_some, Affine.Point.some.injEq]
     exact ⟨rfl, rfl⟩
   · rintro ⟨x, y, h, rfl⟩
     refine ⟨x, y, Affine.equation_iff_nonsingular.mp (W.integral_equation_baseChange x y h), ?_⟩
-    unfold pointOfIntegralSolution Affine.Point.mk
-    rw [Affine.Point.some.injEq]
+    rw [W.pointOfIntegralSolution_eq_some, Affine.Point.some.injEq]
     exact ⟨rfl, rfl⟩
+
+/-- An affine point of an integral model is an integral point exactly when both its coordinates are
+integer casts, the same normal form as `hasIntegralCoordinates_some`. -/
+@[simp]
+theorem some_mem_integralPoints_iff {x y : ℚ}
+    (h : (W.baseChange ℚ).toAffine.Nonsingular x y) :
+    (.some x y h : (W.baseChange ℚ).toAffine.Point) ∈ W.integralPoints ↔
+      ∃ x₀ y₀ : ℤ, x = (x₀ : ℚ) ∧ y = (y₀ : ℚ) := by
+  rw [← hasIntegralCoordinates_iff_mem_integralPoints, Affine.Point.hasIntegralCoordinates_some]
 
 end WeierstrassCurve
 
@@ -347,26 +362,26 @@ namespace TauCeti
 
 /-- The curve `y² + ½y = x³` over `ℚ`. Its coefficient `a₃ = ½` is not an integer, and that
 is what breaks stability of integral coordinates under negation. -/
-def halfYCurve : WeierstrassCurve ℚ := ⟨0, 0, 1 / 2, 0, 0⟩
+private def halfYCurve : WeierstrassCurve ℚ := ⟨0, 0, 1 / 2, 0, 0⟩
 
 /-- The point `(0, 0)` of `y² + ½y = x³` is nonsingular: the partial derivative in `y` is
 `2y + ½`, which is `½` there. -/
-theorem halfYCurve_nonsingular_zero : halfYCurve.toAffine.Nonsingular 0 0 := by
+private theorem halfYCurve_nonsingular_zero : halfYCurve.toAffine.Nonsingular 0 0 := by
   rw [WeierstrassCurve.Affine.nonsingular_zero]
   norm_num [halfYCurve]
 
 /-- The point `(0, 0)` of `y² + ½y = x³`. -/
-def halfYCurvePointZero : halfYCurve.toAffine.Point :=
+private def halfYCurvePointZero : halfYCurve.toAffine.Point :=
   .some 0 0 halfYCurve_nonsingular_zero
 
 /-- The point `(0, 0)` has integral coordinates. -/
-theorem halfYCurvePointZero_hasIntegralCoordinates :
+private theorem hasIntegralCoordinates_halfYCurvePointZero :
     halfYCurvePointZero.HasIntegralCoordinates :=
   ⟨0, 0, halfYCurve_nonsingular_zero, rfl⟩
 
 /-- **The negative of `(0, 0)` on `y² + ½y = x³` is `(0, -½)`**: negation is
 `-(x, y) = (x, -y - a₁x - a₃)`, and here `a₁ = 0` and `a₃ = ½`. -/
-theorem neg_halfYCurvePointZero :
+private theorem neg_halfYCurvePointZero :
     ∃ h : halfYCurve.toAffine.Nonsingular 0 (-(1 / 2)),
       -halfYCurvePointZero = .some 0 (-(1 / 2)) h := by
   have hneg : halfYCurve.toAffine.negY 0 0 = -(1 / 2) := by
@@ -379,10 +394,10 @@ theorem neg_halfYCurvePointZero :
 
 /-- **On `y² + ½y = x³` the negative of the integral point `(0, 0)` is not integral**: its
 ordinate is `-½`. -/
-theorem not_hasIntegralCoordinates_neg_halfYCurvePointZero :
+private theorem not_hasIntegralCoordinates_neg_halfYCurvePointZero :
     ¬ (-halfYCurvePointZero).HasIntegralCoordinates := by
   obtain ⟨_, hneg⟩ := neg_halfYCurvePointZero
-  rw [hneg, WeierstrassCurve.Affine.Point.some_hasIntegralCoordinates]
+  rw [hneg, WeierstrassCurve.Affine.Point.hasIntegralCoordinates_some]
   rintro ⟨_, y, _, hy⟩
   have h : (2 : ℚ) * (y : ℚ) = -1 := by
     rw [← hy]
@@ -397,7 +412,7 @@ coordinates. On an equation over `ℤ` this cannot happen (`neg_mem_integralPoin
 theorem exists_not_hasIntegralCoordinates_neg :
     ∃ (W : WeierstrassCurve ℚ) (P : W.toAffine.Point),
       P.HasIntegralCoordinates ∧ ¬ (-P).HasIntegralCoordinates :=
-  ⟨halfYCurve, halfYCurvePointZero, halfYCurvePointZero_hasIntegralCoordinates,
+  ⟨halfYCurve, halfYCurvePointZero, hasIntegralCoordinates_halfYCurvePointZero,
     not_hasIntegralCoordinates_neg_halfYCurvePointZero⟩
 
 /-! ### A change of variables needs `u = ±1` -/
