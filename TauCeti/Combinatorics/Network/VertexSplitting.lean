@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Fintype.Sigma
 public import TauCeti.Combinatorics.Network.Excess
 public import TauCeti.Combinatorics.Network.Walk
 
@@ -50,6 +49,8 @@ arrow capacities and arrow cuts.
 * `TauCeti.SplitHom.assignment f φ`: the split assignment with the values of `f` on original
   arrows and `φ v` on the split arrow of `v`; with capacities for `f` and `φ` these are the split
   capacities.
+* `TauCeti.SplitHom.network`: the split network, with zero lower bounds and the split capacities
+  as upper bounds.
 * `TauCeti.SplitHom.originalAssignment g`: the values of a split assignment on original arrows.
 
 ## Main results
@@ -63,8 +64,9 @@ arrow capacities and arrow cuts.
   assignment at `v` is the sum of its excesses at `v⁻` and `v⁺`.
 * `TauCeti.SplitHom.excessAt_entrance_eq_zero_and_excessAt_exit_eq_zero_iff`: conservation at
   both copies of `v` means that the incoming value, the split value and the outgoing value agree.
-* `TauCeti.SplitHom.arrowSum_originalAssignment_le_of_excessAt_entrance_eq_zero`: a split-arrow
-  capacity bounds the traffic through its vertex.
+* `TauCeti.SplitHom.arrowSum_originalAssignment_univ_singleton_le` and
+  `TauCeti.SplitHom.arrowSum_originalAssignment_singleton_univ_le`: a split-arrow capacity bounds
+  the traffic entering and leaving its vertex.
 
 ## References
 
@@ -158,6 +160,17 @@ theorem splitLift_false_cons {s t x : V} (p : ArrowWalk Q s t) (e : Q t x) :
     (p.cons e).splitLift false = (p.splitLift true).cons (SplitHom.original e) :=
   (rfl)
 
+@[simp]
+theorem splitLift_true_nil (s : V) :
+    (nil s : ArrowWalk Q s s).splitLift true = (nil (s, false)).cons (SplitHom.split s) :=
+  (rfl)
+
+@[simp]
+theorem splitLift_true_cons {s t x : V} (p : ArrowWalk Q s t) (e : Q t x) :
+    (p.cons e).splitLift true =
+      ((p.splitLift true).cons (SplitHom.original e)).cons (SplitHom.split x) :=
+  (rfl)
+
 /-- The lift ending at the exit of `t` is the lift ending at its entrance followed by the split
 arrow of `t`. -/
 theorem splitLift_true {s t : V} (p : ArrowWalk Q s t) :
@@ -203,8 +216,9 @@ theorem splitLift_splitProj {s : V} {y : V × Bool} (q : ArrowWalk (SplitHom Q) 
     · obtain rfl : u = w := e.2
       rw [SplitHom.eq_split e, splitProj_cons, SplitHom.toWalk_split, splitLift_true]
       simpa [comp] using ih
-    · rw [splitProj_cons, show e.toWalk = (nil u).cons e from rfl]
-      simp [comp, ih, SplitHom.original]
+    · obtain ⟨e, rfl⟩ : ∃ e' : Q u w, SplitHom.original e' = e := ⟨e, rfl⟩
+      rw [splitProj_cons, SplitHom.toWalk_original]
+      simp [comp, ih]
     · exact e.elim
 
 /-- Projection takes composition of walks to composition. -/
@@ -265,6 +279,12 @@ theorem vertices_splitLift_true {s t : V} (p : ArrowWalk Q s t) :
     simp only [vertices, splitLift_true, splitLift_false_cons] at ih ⊢
     simp [Quiver.Path.vertices_cons, ih]
 
+/-- The vertices of the lift of a nonempty walk ending at an entrance: the vertices of the lift of
+its prefix ending at an exit, followed by the entrance of its last vertex. -/
+theorem vertices_splitLift_false_cons {s t x : V} (p : ArrowWalk Q s t) (e : Q t x) :
+    ((p.cons e).splitLift false).vertices = (p.splitLift true).vertices ++ [(x, false)] := by
+  simp [Quiver.Path.vertices_cons]
+
 /-- A vertex of the split network lies on the lift of a walk ending at an exit exactly when its
 underlying vertex lies on the walk. -/
 @[simp]
@@ -278,20 +298,16 @@ theorem isPath_splitLift {s t : V} (b : Bool) (p : ArrowWalk Q s t) :
     (p.splitLift b).IsPath ↔ p.IsPath := by
   have htrue : ∀ {t : V} (p : ArrowWalk Q s t), (p.splitLift true).IsPath ↔ p.IsPath := by
     intro t p
-    simp only [isPath_def, vertices_splitLift_true, List.nodup_flatMap]
-    simp only [List.nodup_cons, List.mem_singleton, Prod.mk.injEq, Bool.false_eq_true, and_false,
-      not_false_eq_true, List.not_mem_nil, List.nodup_nil, and_self, implies_true, true_and]
+    rw [isPath_def, isPath_def, vertices_splitLift_true, List.nodup_flatMap,
+      and_iff_right fun v _ ↦ by simp]
     exact List.Pairwise.iff fun a b ↦ by simp [Function.onFun, eq_comm]
   cases b
   · cases p with
     | nil => simp [isPath_def]
     | cons p e =>
-      have h := htrue p
-      simp only [isPath_def, vertices, splitLift_false_cons, Quiver.Path.vertices_cons,
-        List.concat_eq_append, List.nodup_append] at h ⊢
-      have hm := @mem_vertices_splitLift_true _ _ _ _ p
-      simp only [vertices] at hm
-      simp [h, hm]
+      rw [isPath_def, vertices_splitLift_false_cons, List.nodup_append, ← isPath_def, htrue,
+        isPath_def, isPath_def]
+      simp [Quiver.Path.vertices_cons, List.nodup_append]
   · exact htrue p
 
 /-- A walk in the split network from the entrance of `s` is a path exactly when its projection
@@ -435,13 +451,47 @@ theorem assignment_le_assignment_iff [LE K] {f f' : Assignment Q K} {φ φ' : V 
     · exact hf v w e
     · exact e.elim
 
+/-- The split network: zero lower bounds, the capacity `cap e` on each original arrow `e` and the
+capacity `c v` on the split arrow of each vertex `v`. The body is exposed because the dependent
+arrow family occurs in the types of the projection lemmas below. -/
+@[expose]
+def network [Zero K] [LE K] (cap : Assignment Q K) (hcap : ∀ {v w} (e : Q v w), 0 ≤ cap e)
+    (c : V → K) (hc : ∀ v, 0 ≤ c v) : Network K (V × Bool) :=
+  Network.ofCapacity (SplitHom Q) (assignment cap c) fun {x y} e ↦ by
+    rcases x with ⟨v, _ | _⟩ <;> rcases y with ⟨w, _ | _⟩
+    · exact e.elim
+    · exact hc v
+    · exact hcap e
+    · exact e.elim
+
+section Network
+
+variable [Zero K] [LE K] (cap : Assignment Q K) (hcap : ∀ {v w} (e : Q v w), 0 ≤ cap e)
+  (c : V → K) (hc : ∀ v, 0 ≤ c v)
+
+@[simp]
+theorem network_Hom : (network cap hcap c hc).Hom = SplitHom Q :=
+  (rfl)
+
+@[simp]
+theorem network_lower {x y : V × Bool} (e : SplitHom Q x y) :
+    (network cap hcap c hc).lower e = 0 :=
+  (rfl)
+
+@[simp]
+theorem network_upper {x y : V × Bool} (e : SplitHom Q x y) :
+    (network cap hcap c hc).upper e = assignment cap c e :=
+  (rfl)
+
+end Network
+
 section Excess
 
 variable [AddCommGroup K] [Fintype V] [DecidableEq V] (g : Assignment (SplitHom Q) K) (v : V)
 
-/-- A vertex has no arrows between its own copies other than its split arrow, which leaves the
-entrance and enters the exit, so the value of a split assignment on the arrows leaving an entrance,
-or entering an exit, is its value on the split arrow. -/
+/-- The only arrow from the entrance of `v` to an exit, and the only arrow from an entrance to the
+exit of `v`, is the split arrow of `v`. So the value of a split assignment on the arrows leaving an
+entrance, or entering an exit, is its value on the split arrow. -/
 private theorem sum_sum_split (v : V) :
     (∑ w, ∑ e : SplitHom Q (v, false) (w, true), g e = g (split v)) ∧
       ∑ w, ∑ e : SplitHom Q (w, false) (v, true), g e = g (split v) := by
@@ -497,22 +547,22 @@ theorem excessAt_originalAssignment_eq_zero {g : Assignment (SplitHom Q) K} {v :
     excessAt (originalAssignment g) v = 0 := by
   rw [excessAt_originalAssignment, h₀, h₁, add_zero]
 
-variable [PartialOrder K] {cap : Assignment Q K} {c : V → K} {g}
+variable [LE K] {c : K} {g}
 
-/-- **Vertex capacities.** If a split assignment is bounded by capacities `c v` on the split arrows
+/-- **Vertex capacities.** If a split assignment has value at most `c` on the split arrow of `v`
 and is conserved at the entrance of `v`, then the total value entering `v` along original arrows is
-at most `c v`. -/
-theorem arrowSum_originalAssignment_univ_singleton_le (hg : g ≤ assignment cap c)
-    (h : excessAt g (v, false) = 0) : arrowSum (originalAssignment g) univ {v} ≤ c v := by
+at most `c`. -/
+theorem arrowSum_originalAssignment_univ_singleton_le (hg : g (split v) ≤ c)
+    (h : excessAt g (v, false) = 0) : arrowSum (originalAssignment g) univ {v} ≤ c := by
   rw [excessAt_entrance, sub_eq_zero] at h
-  exact h ▸ hg _ _ (split v)
+  exact h ▸ hg
 
-/-- If a split assignment is bounded by capacities `c v` on the split arrows and is conserved at
-the exit of `v`, then the total value leaving `v` along original arrows is at most `c v`. -/
-theorem arrowSum_originalAssignment_singleton_univ_le (hg : g ≤ assignment cap c)
-    (h : excessAt g (v, true) = 0) : arrowSum (originalAssignment g) {v} univ ≤ c v := by
+/-- If a split assignment has value at most `c` on the split arrow of `v` and is conserved at the
+exit of `v`, then the total value leaving `v` along original arrows is at most `c`. -/
+theorem arrowSum_originalAssignment_singleton_univ_le (hg : g (split v) ≤ c)
+    (h : excessAt g (v, true) = 0) : arrowSum (originalAssignment g) {v} univ ≤ c := by
   rw [excessAt_exit, sub_eq_zero, eq_comm] at h
-  exact h ▸ hg _ _ (split v)
+  exact h ▸ hg
 
 end Excess
 
