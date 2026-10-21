@@ -220,16 +220,6 @@ private theorem totalHomMap_inducedTaylor {X Y : InducedQuiver C F}
     LinearMap.comp_apply]
   exact e
 
-/-- The map of total modules of an induced quiver preserves the suspended degrees. -/
-private theorem isHomogeneous_totalHomMap_shift (c : ℤ) :
-    LinearMap.IsHomogeneous (totalHomMap R F) ((totalGrading R (InducedQuiver C F)).shift c).piece
-      ((totalGrading R C).shift c).piece 0 := by
-  rw [LinearMap.isHomogeneous_def]
-  intro p x hx
-  rw [InternalGrading.shift_piece] at hx
-  rw [add_zero, InternalGrading.shift_piece]
-  exact totalHomMap_mem_totalGrading_piece hx
-
 /-- The Taylor map of the induced morphism has degree zero between the suspended gradings. -/
 private theorem isHomogeneous_inducedTaylor :
     LinearMap.IsHomogeneous (inducedTaylor 𝒢 F)
@@ -298,7 +288,8 @@ private theorem inducedTaylor_comp_barDifferential :
     𝒢.totalHomMap_inducedTaylor F
       ((𝒞.induced F).isWordPathCompatible_taylor.gradedCoderiv_mem_composableWords 1 1 hw),
     LinearMap.comp_apply,
-    map_gradedCoderiv_of_mem_composableWords (isHomogeneous_totalHomMap_shift F 1)
+    map_gradedCoderiv_of_mem_composableWords
+      (LinearMap.isHomogeneous_shift_piece_iff.2 isHomogeneous_totalHomMap)
       (fun X Y v hv ↦ 𝒞.totalHomMap_taylor_induced F hv) 1 hw,
     ← hbar, 𝒟.totalHomMap_taylor_induced 𝒢.obj hg, 𝒢.toAInfinityHom.barMap_eq_coalgHom,
     ← LinearMap.comp_apply (ReducedTensorWords.map (R := R) _), map_comp_coalgHom]

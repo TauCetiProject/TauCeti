@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Stream.Defs
 public import TauCeti.Algebra.Module.GradedModule.Shift
 public import TauCeti.CategoryTheory.Graded.InducedQuiver
 public import TauCeti.LinearAlgebra.Graded.Insertion
@@ -272,21 +273,12 @@ theorem replaceBlock_mem_range_homInclusion {n p d : ℕ} {a b : ℕ → C} {y :
   · rw [replaceBlock_of_gt _ _ _ _ h, replaceBlock_of_gt _ _ _ _ h, replaceBlock_of_gt _ _ _ _ h]
     exact hy (i + d - 1) (by omega)
 
-/-- Prepending a morphism to a natural-indexed string of morphisms. -/
-private def natCons {α : Type*} (u : α) (z : ℕ → α) : ℕ → α
-  | 0 => u
-  | i + 1 => z i
-
-@[simp] private theorem natCons_zero {α : Type*} (u : α) (z : ℕ → α) : natCons u z 0 = u := rfl
-
-@[simp] private theorem natCons_succ {α : Type*} (u : α) (z : ℕ → α) (i : ℕ) :
-    natCons u z (i + 1) = z i := rfl
-
 /-- Prepending a letter to a pure word of a natural-indexed string conses it onto the string. -/
-private theorem prepend_of_tprod_natCons {M : Type*} [AddCommMonoid M] [Module R M] (u : M)
+private theorem prepend_of_tprod_cons {M : Type*} [AddCommMonoid M] [Module R M] (u : M)
     {n : ℕ} (hn : 0 < n) (z : ℕ → M) :
     prepend R M u (of R M ⟨n, hn⟩ (PiTensorProduct.tprod R fun i : Fin n ↦ z i)) =
-      of R M ⟨n + 1, by omega⟩ (PiTensorProduct.tprod R fun i : Fin (n + 1) ↦ natCons u z i) := by
+      of R M ⟨n + 1, by omega⟩
+        (PiTensorProduct.tprod R fun i : Fin (n + 1) ↦ Stream'.cons u z i) := by
   rw [prepend_of_tprod]
   congr 2
   funext i
@@ -295,20 +287,20 @@ private theorem prepend_of_tprod_natCons {M : Type*} [AddCommMonoid M] [Module R
   | succ i => rfl
 
 /-- The morphisms of a string with a morphism prepended lie in the expected hom modules. -/
-private theorem natCons_mem {n : ℕ} {a b : ℕ → C} {z : ℕ → TotalHom R C}
+private theorem cons_mem {n : ℕ} {a b : ℕ → C} {z : ℕ → TotalHom R C}
     (hz : ∀ i < n, z i ∈ LinearMap.range (homInclusion (R := R) (a i) (b i))) {Y Z : C}
     {u : TotalHom R C} (hu : u ∈ LinearMap.range (homInclusion (R := R) Y Z)) :
-    ∀ i < n + 1, natCons u z i ∈
-      LinearMap.range (homInclusion (R := R) (natCons Y a i) (natCons Z b i)) := by
+    ∀ i < n + 1, Stream'.cons u z i ∈
+      LinearMap.range (homInclusion (R := R) (Stream'.cons Y a i) (Stream'.cons Z b i)) := by
   rintro (_ | i) hi
   · exact hu
   · exact hz i (by omega)
 
 /-- If a string is not composable, neither is the string with a morphism prepended. -/
-private theorem not_isComposableString_natCons {n : ℕ} {a b : ℕ → C}
+private theorem not_isComposableString_cons {n : ℕ} {a b : ℕ → C}
     (hab : ¬ IsComposableString a b n) (Y Z : C) :
-    ¬ IsComposableString (natCons Y a) (natCons Z b) (n + 1) := fun h ↦
-  hab ⟨fun i hi ↦ by simpa using h.eq (i + 1) (by omega)⟩
+    ¬ IsComposableString (Stream'.cons Y a) (Stream'.cons Z b) (n + 1) := fun h ↦
+  hab ⟨fun i hi ↦ h.eq (i + 1) (by omega)⟩
 
 /-- Prepending a morphism `Y ⟶ Z` to a composable word from `X` to `Y` gives a composable word from
 `X` to `Z`. -/
@@ -318,14 +310,14 @@ theorem prepend_mem_composableWords {X Y Z : C} {u : TotalHom R C}
   induction hw using Submodule.span_induction with
   | mem w hw =>
     obtain ⟨n, hn, a, b, z, hz, hab, rfl, rfl, rfl⟩ := hw
-    rw [prepend_of_tprod_natCons]
-    have h := of_tprod_mem_composableWords (n := n + 1) (by omega) (natCons_mem hz hu)
-      (a := natCons (b 0) a) (b := natCons Z b) ⟨fun i hi ↦ by
+    rw [prepend_of_tprod_cons]
+    have h := of_tprod_mem_composableWords (n := n + 1) (by omega) (cons_mem hz hu)
+      (a := Stream'.cons (b 0) a) (b := Stream'.cons Z b) ⟨fun i hi ↦ by
         rcases i with _ | i
         · rfl
         · exact hab.eq i (by omega)⟩
     obtain ⟨m, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hn.ne'
-    simpa using h
+    exact h
   | zero => simp
   | add x y _ _ hx hy => simpa using add_mem hx hy
   | smul r x _ hx => simpa using Submodule.smul_mem _ r hx
@@ -337,9 +329,9 @@ theorem prepend_mem_nonComposableWords {Y Z : C} {u : TotalHom R C}
   induction hw using Submodule.span_induction with
   | mem w hw =>
     obtain ⟨n, hn, a, b, z, hz, hab, rfl⟩ := hw
-    rw [prepend_of_tprod_natCons]
-    exact of_tprod_mem_nonComposableWords _ (natCons_mem hz hu)
-      (not_isComposableString_natCons hab Y Z)
+    rw [prepend_of_tprod_cons]
+    exact of_tprod_mem_nonComposableWords _ (cons_mem hz hu)
+      (not_isComposableString_cons hab Y Z)
   | zero => simp
   | add x y _ _ hx hy => simpa using add_mem hx hy
   | smul r x _ hx => simpa using Submodule.smul_mem _ r hx
@@ -353,8 +345,8 @@ theorem prepend_mem_nonComposableWords_of_ne {X Y Y' Z : C} {u : TotalHom R C}
   induction hw using Submodule.span_induction with
   | mem w hw =>
     obtain ⟨n, hn, a, b, z, hz, hab, rfl, rfl, rfl⟩ := hw
-    rw [prepend_of_tprod_natCons]
-    exact of_tprod_mem_nonComposableWords _ (natCons_mem hz hu)
+    rw [prepend_of_tprod_cons]
+    exact of_tprod_mem_nonComposableWords _ (cons_mem hz hu)
       fun h ↦ hne (h.eq 0 (by omega))
   | zero => simp
   | add x y _ _ hx hy => simpa using add_mem hx hy
