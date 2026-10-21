@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.SpecialOrthogonal.Hyperbolic
+public import TauCeti.Topology.Algebra.Group.Connected
+public import TauCeti.Topology.Algebra.Group.Units.Real
 public import TauCeti.Topology.Algebra.Module.GeneralLinearGroup
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 import TauCeti.LinearAlgebra.QuadraticForm.Transvection.Basic
@@ -117,6 +119,36 @@ theorem hyperbolicTorusContinuousMulEquiv_symm_apply
     (g : specialOrthogonalGroup (hyperbolicPlane R)) :
     (hyperbolicTorusContinuousMulEquiv R).symm g = (hyperbolicTorusEquiv R).symm g :=
   (rfl)
+
+/-! ### The real identity component -/
+
+open Set
+
+/-- The identity component of the real special-orthogonal hyperbolic-plane group is the
+positive-unit part of its hyperbolic torus. -/
+theorem connectedComponentOfOne_specialOrthogonalGroup_hyperbolicPlane :
+    Subgroup.connectedComponentOfOne (specialOrthogonalGroup (hyperbolicPlane ℝ)) =
+      (Units.posSubgroup ℝ).map (hyperbolicTorus ℝ) := by
+  let e := hyperbolicTorusContinuousMulEquiv ℝ
+  apply le_antisymm
+  · intro g hg
+    have hback := Subgroup.map_connectedComponentOfOne_le
+      (f := e.symm.toMulEquiv.toMonoidHom) e.continuous_invFun
+    have hu : e.symm g ∈ Subgroup.connectedComponentOfOne ℝˣ := by
+      apply hback
+      refine ⟨g, hg, ?_⟩
+      exact rfl
+    rw [Units.connectedComponentOfOne_real] at hu
+    refine ⟨e.symm g, hu, ?_⟩
+    simpa [e] using e.apply_symm_apply g
+  · intro g hg
+    obtain ⟨u, hu, rfl⟩ := hg
+    have hforward := Subgroup.map_connectedComponentOfOne_le
+      (f := e.toMulEquiv.toMonoidHom) e.continuous_toFun
+    rw [Units.connectedComponentOfOne_real] at hforward
+    apply hforward
+    refine ⟨u, hu, ?_⟩
+    simp [e]
 
 /-! ### Worked examples over `ℝ` -/
 
