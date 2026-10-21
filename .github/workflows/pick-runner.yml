@@ -4,8 +4,8 @@ name: pick-runner
 # GitHub-hosted runners and Namespace for ordinary builds. Called by pr-build.yml and
 # nightly-verify.yml; callers interpret the explicit fleet/github outputs in their runs-on.
 #
-# With fleet-staging=true, the picker runs on a small priority Namespace runner rather than
-# waiting for a GitHub-hosted slot. FLEET_CI_ENABLED, a complete inventory from the configured
+# The selector runs on GitHub for both ordinary and staging builds, so Namespace build
+# saturation cannot delay selection of an idle fleet runner. FLEET_CI_ENABLED, a complete inventory from the configured
 # runner group, and an online idle matching runner are all required to answer fleet=true.
 # Disabled routing, missing credentials, unavailable capacity, and subsequent run attempts
 # retain Namespace. The picker reserves no capacity; GitHub makes the actual assignment.
@@ -70,8 +70,7 @@ on:
 
 jobs:
   pick:
-    runs-on: >-
-      ${{ inputs.fleet-staging && fromJSON(format('["nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0","namespace-features:github.run-id={0}"]', github.run_id)) || 'ubuntu-latest' }}
+    runs-on: ubuntu-latest
     timeout-minutes: 5
     continue-on-error: true
     outputs:
